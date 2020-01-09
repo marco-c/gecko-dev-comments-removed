@@ -97,11 +97,6 @@ enum PromiseAllResolveElementFunctionSlots {
   PromiseAllResolveElementFunctionSlot_ElementIndex,
 };
 
-enum PromiseAllSettledElementFunctionSlots {
-  PromiseAllSettledElementFunctionSlot_Data = 0,
-  PromiseAllSettledElementFunctionSlot_ElementIndex,
-};
-
 enum ReactionJobSlots {
   ReactionJobSlot_ReactionRecord = 0,
 };
@@ -2277,47 +2272,17 @@ static MOZ_MUST_USE bool PerformPromiseAll(
     JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
     Handle<PromiseCapability> resultCapability, bool* done);
 
-static MOZ_MUST_USE bool PerformPromiseAllSettled(
-    JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
-    Handle<PromiseCapability> resultCapability, bool* done);
 
-static MOZ_MUST_USE bool PerformPromiseRace(
-    JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
-    Handle<PromiseCapability> resultCapability, bool* done);
-
-enum class IterationMode { All, AllSettled, Race };
-
-
-
-
-
-
-
-
-
-
-
-static MOZ_MUST_USE bool CommonStaticAllRace(JSContext* cx, CallArgs& args,
-                                             IterationMode mode) {
+static bool Promise_static_all(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
   HandleValue iterable = args.get(0);
 
   
   HandleValue CVal = args.thisv();
   if (!CVal.isObject()) {
-    const char* message;
-    switch (mode) {
-      case IterationMode::All:
-        message = "Receiver of Promise.all call";
-        break;
-      case IterationMode::AllSettled:
-        message = "Receiver of Promise.allSettled call";
-        break;
-      case IterationMode::Race:
-        message = "Receiver of Promise.race call";
-        break;
-    }
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_NOT_NONNULL_OBJECT, message);
+                              JSMSG_NOT_NONNULL_OBJECT,
+                              "Receiver of Promise.all call");
     return false;
   }
 
@@ -2337,38 +2302,16 @@ static MOZ_MUST_USE bool CommonStaticAllRace(JSContext* cx, CallArgs& args,
   }
 
   if (!iter.valueIsIterable()) {
-    const char* message;
-    switch (mode) {
-      case IterationMode::All:
-        message = "Argument of Promise.all";
-        break;
-      case IterationMode::AllSettled:
-        message = "Argument of Promise.allSettled";
-        break;
-      case IterationMode::Race:
-        message = "Argument of Promise.race";
-        break;
-    }
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_NOT_ITERABLE,
-                              message);
+                              "Argument of Promise.all");
     return AbruptRejectPromise(cx, args, promiseCapability);
   }
 
   
 
   
-  bool done, result;
-  switch (mode) {
-    case IterationMode::All:
-      result = PerformPromiseAll(cx, iter, C, promiseCapability, &done);
-      break;
-    case IterationMode::AllSettled:
-      result = PerformPromiseAllSettled(cx, iter, C, promiseCapability, &done);
-      break;
-    case IterationMode::Race:
-      result = PerformPromiseRace(cx, iter, C, promiseCapability, &done);
-      break;
-  }
+  bool done;
+  bool result = PerformPromiseAll(cx, iter, C, promiseCapability, &done);
 
   
   if (!result) {
@@ -2384,13 +2327,6 @@ static MOZ_MUST_USE bool CommonStaticAllRace(JSContext* cx, CallArgs& args,
   
   args.rval().setObject(*promiseCapability.promise());
   return true;
-}
-
-
-
-static bool Promise_static_all(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  return CommonStaticAllRace(cx, args, IterationMode::All);
 }
 
 static MOZ_MUST_USE bool PerformPromiseThen(
@@ -2606,15 +2542,11 @@ static bool IsPromiseSpecies(JSContext* cx, JSFunction* species);
 
 
 
-
-
-
-
 template <typename T>
 static MOZ_MUST_USE bool CommonPerformPromiseAllRace(
     JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
-    HandleObject resultPromise, bool* done, bool resolveReturnsUndefined,
-    T getResolveAndReject) {
+    Handle<PromiseCapability> resultCapability, bool* done,
+    bool resolveReturnsUndefined, T getResolveFun) {
   RootedObject promiseCtor(
       cx, GlobalObject::getOrCreatePromiseConstructor(cx, cx->global()));
   if (!promiseCtor) {
@@ -2634,8 +2566,9 @@ static MOZ_MUST_USE bool CommonPerformPromiseAllRace(
   PromiseLookup& promiseLookup = cx->realm()->promiseLookup;
 
   RootedValue CVal(cx, ObjectValue(*C));
+  HandleObject resultPromise = resultCapability.promise();
   RootedValue resolveFunVal(cx);
-  RootedValue rejectFunVal(cx);
+  RootedValue rejectFunVal(cx, ObjectValue(*resultCapability.reject()));
 
   
   
@@ -2726,9 +2659,11 @@ static MOZ_MUST_USE bool CommonPerformPromiseAllRace(
 
     
     
-    if (!getResolveAndReject(&resolveFunVal, &rejectFunVal)) {
+    JSObject* resolveFun = getResolveFun();
+    if (!resolveFun) {
       return false;
     }
+    resolveFunVal.setObject(*resolveFun);
 
     
     
@@ -2886,7 +2821,6 @@ static MOZ_MUST_USE bool CommonPerformPromiseAllRace(
 }
 
 
-
 static MOZ_MUST_USE bool PerformPromiseAll(
     JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
     Handle<PromiseCapability> resultCapability, bool* done) {
@@ -2961,9 +2895,7 @@ static MOZ_MUST_USE bool PerformPromiseAll(
   
   uint32_t index = 0;
 
-  auto getResolveAndReject = [cx, &resultCapability, &valuesArray, &dataHolder,
-                              &index](MutableHandleValue resolveFunVal,
-                                      MutableHandleValue rejectFunVal) {
+  auto getResolve = [cx, &valuesArray, &dataHolder, &index]() -> JSObject* {
     
     {  
       
@@ -2971,7 +2903,7 @@ static MOZ_MUST_USE bool PerformPromiseAll(
       AutoRealm ar(cx, valuesArray);
 
       if (!NewbornArrayPush(cx, valuesArray, UndefinedValue())) {
-        return false;
+        return nullptr;
       }
     }
 
@@ -2980,7 +2912,7 @@ static MOZ_MUST_USE bool PerformPromiseAll(
         NewNativeFunction(cx, PromiseAllResolveElementFunction, 1, nullptr,
                           gc::AllocKind::FUNCTION_EXTENDED, GenericObject);
     if (!resolveFunc) {
-      return false;
+      return nullptr;
     }
 
     
@@ -2998,14 +2930,12 @@ static MOZ_MUST_USE bool PerformPromiseAll(
     index++;
     MOZ_ASSERT(index > 0);
 
-    resolveFunVal.setObject(*resolveFunc);
-    rejectFunVal.setObject(*resultCapability.reject());
-    return true;
+    return resolveFunc;
   };
 
   
-  if (!CommonPerformPromiseAllRace(cx, iterator, C, resultCapability.promise(),
-                                   done, true, getResolveAndReject)) {
+  if (!CommonPerformPromiseAllRace(cx, iterator, C, resultCapability, done,
+                                   true, getResolve)) {
     return false;
   }
 
@@ -3105,13 +3035,66 @@ static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
   return true;
 }
 
+static MOZ_MUST_USE bool PerformPromiseRace(
+    JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
+    Handle<PromiseCapability> resultCapability, bool* done);
 
 
 static bool Promise_static_race(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
-  return CommonStaticAllRace(cx, args, IterationMode::Race);
-}
+  HandleValue iterable = args.get(0);
 
+  
+  HandleValue CVal = args.thisv();
+  if (!CVal.isObject()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_NOT_NONNULL_OBJECT,
+                              "Receiver of Promise.race call");
+    return false;
+  }
+
+  
+  RootedObject C(cx, &CVal.toObject());
+
+  
+  Rooted<PromiseCapability> promiseCapability(cx);
+  if (!NewPromiseCapability(cx, C, &promiseCapability, false)) {
+    return false;
+  }
+
+  
+  PromiseForOfIterator iter(cx);
+  if (!iter.init(iterable, JS::ForOfIterator::AllowNonIterable)) {
+    return AbruptRejectPromise(cx, args, promiseCapability);
+  }
+
+  if (!iter.valueIsIterable()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_NOT_ITERABLE,
+                              "Argument of Promise.race");
+    return AbruptRejectPromise(cx, args, promiseCapability);
+  }
+
+  
+
+  
+  bool done;
+  bool result = PerformPromiseRace(cx, iter, C, promiseCapability, &done);
+
+  
+  if (!result) {
+    
+    if (!done) {
+      iter.closeThrow();
+    }
+
+    
+    return AbruptRejectPromise(cx, args, promiseCapability);
+  }
+
+  
+  args.rval().setObject(*promiseCapability.promise());
+  return true;
+}
 
 
 static MOZ_MUST_USE bool PerformPromiseRace(
@@ -3130,297 +3113,13 @@ static MOZ_MUST_USE bool PerformPromiseRace(
   bool isDefaultResolveFn =
       IsNativeFunction(resultCapability.resolve(), ResolvePromiseFunction);
 
-  auto getResolveAndReject = [&resultCapability](
-                                 MutableHandleValue resolveFunVal,
-                                 MutableHandleValue rejectFunVal) {
-    resolveFunVal.setObject(*resultCapability.resolve());
-    rejectFunVal.setObject(*resultCapability.reject());
-    return true;
+  auto getResolve = [&resultCapability]() -> JSObject* {
+    return resultCapability.resolve();
   };
 
   
-  return CommonPerformPromiseAllRace(cx, iterator, C,
-                                     resultCapability.promise(), done,
-                                     isDefaultResolveFn, getResolveAndReject);
-}
-
-enum class PromiseAllSettledElementFunctionKind { Resolve, Reject };
-
-
-
-
-
-
-template <PromiseAllSettledElementFunctionKind Kind>
-static bool PromiseAllSettledElementFunction(JSContext* cx, unsigned argc,
-                                             Value* vp);
-
-
-
-
-
-static bool Promise_static_allSettled(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  return CommonStaticAllRace(cx, args, IterationMode::AllSettled);
-}
-
-
-
-
-
-static MOZ_MUST_USE bool PerformPromiseAllSettled(
-    JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
-    Handle<PromiseCapability> resultCapability, bool* done) {
-  *done = false;
-
-  
-  MOZ_ASSERT(C->isConstructor());
-
-  
-
-  
-  
-  
-  RootedArrayObject valuesArray(cx);
-  RootedValue valuesArrayVal(cx);
-  if (IsWrapper(resultCapability.promise())) {
-    JSObject* unwrappedPromiseObj =
-        CheckedUnwrapStatic(resultCapability.promise());
-    MOZ_ASSERT(unwrappedPromiseObj);
-
-    {
-      AutoRealm ar(cx, unwrappedPromiseObj);
-      valuesArray = NewDenseEmptyArray(cx);
-      if (!valuesArray) {
-        return false;
-      }
-    }
-
-    valuesArrayVal.setObject(*valuesArray);
-    if (!cx->compartment()->wrap(cx, &valuesArrayVal)) {
-      return false;
-    }
-  } else {
-    valuesArray = NewDenseEmptyArray(cx);
-    if (!valuesArray) {
-      return false;
-    }
-
-    valuesArrayVal.setObject(*valuesArray);
-  }
-
-  
-  
-  
-  
-  
-  Rooted<PromiseAllDataHolder*> dataHolder(cx);
-  dataHolder =
-      NewPromiseAllDataHolder(cx, resultCapability.promise(), valuesArrayVal,
-                              resultCapability.resolve());
-  if (!dataHolder) {
-    return false;
-  }
-
-  
-  uint32_t index = 0;
-
-  auto getResolveAndReject = [cx, &valuesArray, &dataHolder, &index](
-                                 MutableHandleValue resolveFunVal,
-                                 MutableHandleValue rejectFunVal) {
-    
-    {  
-      
-      
-      AutoRealm ar(cx, valuesArray);
-
-      if (!NewbornArrayPush(cx, valuesArray, UndefinedValue())) {
-        return false;
-      }
-    }
-
-    auto PromiseAllSettledResolveElementFunction =
-        PromiseAllSettledElementFunction<
-            PromiseAllSettledElementFunctionKind::Resolve>;
-    auto PromiseAllSettledRejectElementFunction =
-        PromiseAllSettledElementFunction<
-            PromiseAllSettledElementFunctionKind::Reject>;
-
-    
-    JSFunction* resolveFunc = NewNativeFunction(
-        cx, PromiseAllSettledResolveElementFunction, 1, nullptr,
-        gc::AllocKind::FUNCTION_EXTENDED, GenericObject);
-    if (!resolveFunc) {
-      return false;
-    }
-
-    
-    resolveFunc->setExtendedSlot(PromiseAllSettledElementFunctionSlot_Data,
-                                 ObjectValue(*dataHolder));
-
-    
-    resolveFunc->setExtendedSlot(
-        PromiseAllSettledElementFunctionSlot_ElementIndex, Int32Value(index));
-
-    
-    JSFunction* rejectFunc = NewNativeFunction(
-        cx, PromiseAllSettledRejectElementFunction, 1, nullptr,
-        gc::AllocKind::FUNCTION_EXTENDED, GenericObject);
-    if (!rejectFunc) {
-      return false;
-    }
-
-    
-    rejectFunc->setExtendedSlot(PromiseAllSettledElementFunctionSlot_Data,
-                                ObjectValue(*dataHolder));
-
-    
-    rejectFunc->setExtendedSlot(
-        PromiseAllSettledElementFunctionSlot_ElementIndex, Int32Value(index));
-
-    
-    dataHolder->increaseRemainingCount();
-
-    
-    index++;
-    MOZ_ASSERT(index > 0);
-
-    resolveFunVal.setObject(*resolveFunc);
-    rejectFunVal.setObject(*rejectFunc);
-    return true;
-  };
-
-  
-  if (!CommonPerformPromiseAllRace(cx, iterator, C, resultCapability.promise(),
-                                   done, true, getResolveAndReject)) {
-    return false;
-  }
-
-  
-  int32_t remainingCount = dataHolder->decreaseRemainingCount();
-
-  
-  if (remainingCount == 0) {
-    return RunResolutionFunction(cx, resultCapability.resolve(), valuesArrayVal,
-                                 ResolveMode, resultCapability.promise());
-  }
-
-  return true;
-}
-
-
-
-
-
-
-template <PromiseAllSettledElementFunctionKind Kind>
-static bool PromiseAllSettledElementFunction(JSContext* cx, unsigned argc,
-                                             Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  HandleValue valueOrReason = args.get(0);
-
-  
-  JSFunction* resolve = &args.callee().as<JSFunction>();
-  Rooted<PromiseAllDataHolder*> data(
-      cx, &resolve->getExtendedSlot(PromiseAllSettledElementFunctionSlot_Data)
-               .toObject()
-               .as<PromiseAllDataHolder>());
-
-  
-
-  
-  int32_t index =
-      resolve
-          ->getExtendedSlot(PromiseAllSettledElementFunctionSlot_ElementIndex)
-          .toInt32();
-
-  
-  RootedValue valuesVal(cx, data->valuesArray());
-  RootedObject valuesObj(cx, &valuesVal.toObject());
-  bool needsWrapping = false;
-  if (IsProxy(valuesObj)) {
-    
-    valuesObj = UncheckedUnwrap(valuesObj);
-
-    if (JS_IsDeadWrapper(valuesObj)) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_DEAD_OBJECT);
-      return false;
-    }
-
-    needsWrapping = true;
-  }
-  HandleNativeObject values = valuesObj.as<NativeObject>();
-
-  
-  
-  
-  if (!values->getDenseElement(index).isUndefined()) {
-    args.rval().setUndefined();
-    return true;
-  }
-
-  
-
-  
-  RootedPlainObject obj(cx, NewBuiltinClassInstance<PlainObject>(cx));
-  if (!obj) {
-    return false;
-  }
-
-  
-  RootedId id(cx, NameToId(cx->names().status));
-  RootedValue statusValue(cx);
-  if (Kind == PromiseAllSettledElementFunctionKind::Resolve) {
-    statusValue.setString(cx->names().fulfilled);
-  } else {
-    statusValue.setString(cx->names().rejected);
-  }
-  if (!NativeDefineDataProperty(cx, obj, id, statusValue, JSPROP_ENUMERATE)) {
-    return false;
-  }
-
-  
-  if (Kind == PromiseAllSettledElementFunctionKind::Resolve) {
-    id = NameToId(cx->names().value);
-  } else {
-    id = NameToId(cx->names().reason);
-  }
-  if (!NativeDefineDataProperty(cx, obj, id, valueOrReason, JSPROP_ENUMERATE)) {
-    return false;
-  }
-
-  RootedValue objVal(cx, ObjectValue(*obj));
-  if (needsWrapping) {
-    AutoRealm ar(cx, valuesObj);
-    if (!cx->compartment()->wrap(cx, &objVal)) {
-      return false;
-    }
-  }
-
-  
-  values->setDenseElement(index, objVal);
-
-  
-  uint32_t remainingCount = data->decreaseRemainingCount();
-
-  
-  if (remainingCount == 0) {
-    
-    
-
-    
-    RootedObject resolveAllFun(cx, data->resolveObj());
-    RootedObject promiseObj(cx, data->promiseObj());
-    if (!RunResolutionFunction(cx, resolveAllFun, valuesVal, ResolveMode,
-                               promiseObj)) {
-      return false;
-    }
-  }
-
-  
-  args.rval().setUndefined();
-  return true;
+  return CommonPerformPromiseAllRace(cx, iterator, C, resultCapability, done,
+                                     isDefaultResolveFn, getResolve);
 }
 
 
@@ -5698,13 +5397,9 @@ static const JSPropertySpec promise_properties[] = {
 
 static const JSFunctionSpec promise_static_methods[] = {
     JS_FN("all", Promise_static_all, 1, 0),
-#ifdef NIGHTLY_BUILD
-    JS_FN("allSettled", Promise_static_allSettled, 1, 0),
-#endif
     JS_FN("race", Promise_static_race, 1, 0),
     JS_FN("reject", Promise_reject, 1, 0),
-    JS_FN("resolve", Promise_static_resolve, 1, 0),
-    JS_FS_END};
+    JS_FN("resolve", Promise_static_resolve, 1, 0), JS_FS_END};
 
 static const JSPropertySpec promise_static_properties[] = {
     JS_SYM_GET(species, Promise_static_species, 0), JS_PS_END};
