@@ -44,6 +44,7 @@
 #include "nsContentList.h"
 #include "nsPresContext.h"
 #include "nsIContent.h"
+#include "mozilla/dom/BrowserBridgeChild.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/PointerEventHandler.h"
 #include "mozilla/dom/PopupBlocker.h"
@@ -5373,6 +5374,22 @@ static nsView* FindViewContaining(nsView* aView, nsPoint aPt) {
   return aView;
 }
 
+static BrowserBridgeChild* GetChildBrowser(nsView* aView) {
+  if (!aView) {
+    return nullptr;
+  }
+  nsIFrame* frame = aView->GetFrame();
+  if (!frame && aView->GetParent()) {
+    
+    
+    frame = aView->GetParent()->GetFrame();
+  }
+  if (!frame || !frame->GetContent()) {
+    return nullptr;
+  }
+  return BrowserBridgeChild::GetFrom(frame->GetContent());
+}
+
 void PresShell::ProcessSynthMouseMoveEvent(bool aFromScroll) {
   
   nsCOMPtr<nsIDragSession> dragSession = nsContentUtils::GetDragSession();
@@ -5427,9 +5444,10 @@ void PresShell::ProcessSynthMouseMoveEvent(bool aFromScroll) {
   
   
   view = FindFloatingViewContaining(rootView, mMouseLocation);
+  nsView* pointView = view;
   if (!view) {
     view = rootView;
-    nsView* pointView = FindViewContaining(rootView, mMouseLocation);
+    pointView = FindViewContaining(rootView, mMouseLocation);
     
     pointVM = (pointView ? pointView : view)->GetViewManager();
     refpoint = mMouseLocation + rootView->ViewToWidgetOffset();
@@ -5452,7 +5470,17 @@ void PresShell::ProcessSynthMouseMoveEvent(bool aFromScroll) {
   
   
 
-  if (RefPtr<PresShell> presShell = pointVM->GetPresShell()) {
+  if (BrowserBridgeChild* bbc = GetChildBrowser(pointView)) {
+    
+    
+    event.mLayersId = bbc->GetLayersId();
+    bbc->SendDispatchSynthesizedMouseEvent(event);
+  } else if (RefPtr<PresShell> presShell = pointVM->GetPresShell()) {
+    
+    
+    
+    event.mLayersId = mMouseEventTargetGuid.mLayersId;
+
     
     
     
