@@ -146,6 +146,24 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
     ptrdiff_t lastNoteOffset() const { return lastNoteOffset_; }
     void setLastNoteOffset(ptrdiff_t offset) { lastNoteOffset_ = offset; }
 
+    
+
+    ptrdiff_t lastTargetOffset() const { return lastTarget_.offset; }
+    void setLastTargetOffset(ptrdiff_t offset) { lastTarget_.offset = offset; }
+
+    
+    bool lastOpcodeIsJumpTarget() const {
+      return offset() - lastTarget_.offset == ptrdiff_t(JSOP_JUMPTARGET_LENGTH);
+    }
+
+    
+    
+    
+    
+    ptrdiff_t lastNonJumpTargetOffset() const {
+      return lastOpcodeIsJumpTarget() ? lastTarget_.offset : offset();
+    }
+
    private:
     
 
@@ -159,6 +177,11 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
     
     ptrdiff_t lastNoteOffset_ = 0;
+
+    
+
+    
+    JumpTarget lastTarget_ = {-1 - ptrdiff_t(JSOP_JUMPTARGET_LENGTH)};
   };
 
   BytecodeSection bytecodeSection_;
@@ -192,9 +215,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   const FieldInitializers fieldInitializers_;
 
  public:
-  
-  JumpTarget lastTarget = {-1 - ptrdiff_t(JSOP_JUMPTARGET_LENGTH)};
-
   
   
   mozilla::Maybe<EitherParser> ep_ = {};
@@ -452,21 +472,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   void setCurrentLine(uint32_t line) {
     currentLine_ = line;
     lastColumn_ = 0;
-  }
-
-  
-  bool lastOpcodeIsJumpTarget() const {
-    return bytecodeSection().offset() - lastTarget.offset ==
-           ptrdiff_t(JSOP_JUMPTARGET_LENGTH);
-  }
-
-  
-  
-  
-  
-  ptrdiff_t lastNonJumpTargetOffset() const {
-    return lastOpcodeIsJumpTarget() ? lastTarget.offset
-                                    : bytecodeSection().offset();
   }
 
   void setFunctionBodyEndPos(uint32_t pos) {
