@@ -266,6 +266,32 @@ add_task(async function test_context_menu_username_login_fill() {
 
 
 
+add_task(async function test_context_menu_open_management() {
+  Services.prefs.setBoolPref("signon.schemeUpgrades", false);
+  await BrowserTestUtils.withNewTab({
+    gBrowser,
+    url: TEST_HOSTNAME + MULTIPLE_FORMS_PAGE_PATH,
+  }, async function(browser) {
+    await openPasswordContextMenu(browser, "#test-password-1");
+
+    gContextMenu.openPasswordManager();
+    
+    let dialogWindow = await waitForPasswordManagerDialog();
+    info("Management UI dialog was opened");
+
+    TelemetryTestUtils.assertEvents(
+      [["pwmgr", "open_management", "contextmenu"]],
+      {category: "pwmgr", method: "open_management"});
+
+    dialogWindow.close();
+    CONTEXT_MENU.hidePopup();
+  });
+});
+
+
+
+
+
 
 
 async function openPasswordContextMenu(browser, passwordInput, assertCallback = null) {

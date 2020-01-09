@@ -38,6 +38,7 @@ var LoginHelper = {
     
     Services.prefs.addObserver("signon.", () => this.updateSignonPrefs());
     this.updateSignonPrefs();
+    Services.telemetry.setEventRecordingEnabled("pwmgr", true);
   },
 
   updateSignonPrefs() {
@@ -597,7 +598,12 @@ var LoginHelper = {
 
 
 
-  openPasswordManager(window, filterString = "") {
+
+
+
+
+  openPasswordManager(window, { filterString = "", entryPoint = "" } = {}) {
+    Services.telemetry.recordEvent("pwmgr", "open_management", entryPoint);
     if (this.managementURI && window.openTrustedLinkIn) {
       let managementURL = this.managementURI.replace("%DOMAIN%", window.encodeURIComponent(filterString));
       window.openTrustedLinkIn(managementURL, "tab");
