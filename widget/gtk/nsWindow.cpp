@@ -2310,6 +2310,31 @@ static LayoutDeviceIntPoint GetRefPoint(nsWindow *aWindow, Event *aEvent) {
 }
 
 void nsWindow::OnMotionNotifyEvent(GdkEventMotion *aEvent) {
+  if (mWindowShouldStartDragging) {
+    mWindowShouldStartDragging = false;
+    
+    GdkWindow *gdk_window = gdk_window_get_toplevel(mGdkWindow);
+    MOZ_ASSERT(gdk_window, "gdk_window_get_toplevel should not return null");
+
+    bool canDrag = true;
+    if (mIsX11Display) {
+      
+      
+      
+      GdkScreen *screen = gdk_window_get_screen(gdk_window);
+      GdkAtom atom = gdk_atom_intern("_NET_WM_MOVERESIZE", FALSE);
+      if (!gdk_x11_screen_supports_net_wm_hint(screen, atom)) {
+        canDrag = false;
+      }
+    }
+
+    if (canDrag) {
+      gdk_window_begin_move_drag(gdk_window, 1, aEvent->x_root, aEvent->y_root,
+                                 aEvent->time);
+      return;
+    }
+  }
+
   
   
   
@@ -2538,7 +2563,13 @@ void nsWindow::OnButtonPressEvent(GdkEventButton *aEvent) {
   InitButtonEvent(event, aEvent);
   event.pressure = mLastMotionPressure;
 
-  DispatchInputEvent(&event);
+  nsEventStatus eventStatus = DispatchInputEvent(&event);
+
+  if (mDraggableRegion.Contains(aEvent->x, aEvent->y) &&
+      domButton == WidgetMouseEvent::eLeftButton &&
+      eventStatus != nsEventStatus_eConsumeNoDefault) {
+    mWindowShouldStartDragging = true;
+  }
 
   
   if (!nsBaseWidget::ShowContextMenuAfterMouseUp()) {
@@ -2548,6 +2579,10 @@ void nsWindow::OnButtonPressEvent(GdkEventButton *aEvent) {
 
 void nsWindow::OnButtonReleaseEvent(GdkEventButton *aEvent) {
   LOG(("Button %u release on %p\n", aEvent->button, (void *)this));
+
+  if (mWindowShouldStartDragging) {
+    mWindowShouldStartDragging = false;
+  }
 
   uint16_t domButton;
   switch (aEvent->button) {
@@ -5779,26 +5814,6 @@ bool nsWindow::GetDragInfo(WidgetMouseEvent *aMouseEvent, GdkWindow **aWindow,
   *aRootY = aMouseEvent->mRefPoint.y + offset.y;
 
   return true;
-}
-
-nsresult nsWindow::BeginMoveDrag(WidgetMouseEvent *aEvent) {
-  MOZ_ASSERT(aEvent, "must have event");
-  MOZ_ASSERT(aEvent->mClass == eMouseEventClass,
-             "event must have correct struct type");
-
-  GdkWindow *gdk_window;
-  gint button, screenX, screenY;
-  if (!GetDragInfo(aEvent, &gdk_window, &button, &screenX, &screenY)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  screenX = DevicePixelsToGdkCoordRoundDown(screenX);
-  screenY = DevicePixelsToGdkCoordRoundDown(screenY);
-  gdk_window_begin_move_drag(gdk_window, button, screenX, screenY,
-                             aEvent->mTime);
-
-  return NS_OK;
 }
 
 nsresult nsWindow::BeginResizeDrag(WidgetGUIEvent *aEvent, int32_t aHorizontal,
