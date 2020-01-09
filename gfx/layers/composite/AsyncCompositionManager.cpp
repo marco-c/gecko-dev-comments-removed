@@ -725,8 +725,9 @@ static bool SampleAnimations(Layer* aLayer,
                                                                 transformData);
             Matrix4x4 transformInDevice = FrameTransformToTransformInDevice(
                 frameTransform, layer, transformData);
-            MOZ_ASSERT(previousValue->mTransform.mTransformInDevSpace
-                           .FuzzyEqualsMultiplicative(transformInDevice));
+            MOZ_ASSERT(previousValue->Transform()
+                           .mTransformInDevSpace.FuzzyEqualsMultiplicative(
+                               transformInDevice));
 #endif
             
             
@@ -739,7 +740,7 @@ static bool SampleAnimations(Layer* aLayer,
                 
                 
                 
-                previousValue ? previousValue->mTransform.mTransformInDevSpace
+                previousValue ? previousValue->Transform().mTransformInDevSpace
                               : layer->GetBaseTransform());
             break;
           }
