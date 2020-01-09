@@ -5,7 +5,6 @@
 "use strict";
 
 var EXPORTED_SYMBOLS = [
-  "BrowserObserver",
   "TabObserver",
   "WindowObserver",
   "WindowManager",
@@ -18,9 +17,6 @@ const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyGetter(this, "log", Log.get);
-
-
-
 
 
 
@@ -149,79 +145,6 @@ class TabObserver {
 
   onWindowClose(window) {
     
-  }
-}
-
-
-
-
-
-
-
-
-
-
-class BrowserObserver {
-  constructor() {
-    EventEmitter.decorate(this);
-  }
-
-  start() {
-    
-    
-    Services.mm.addMessageListener("Browser:Init", this);
-    Services.obs.addObserver(this, "message-manager-disconnect");
-  }
-
-  stop() {
-    Services.mm.removeMessageListener("Browser:Init", this);
-    Services.obs.removeObserver(this, "message-manager-disconnect");
-  }
-
-  onBrowserInit(browser) {
-    this.emit("connected", browser);
-  }
-
-  onMessageManagerDisconnect(browser) {
-    if (!browser.isConnected) {
-      this.emit("disconnected", browser);
-    }
-  }
-
-  
-
-  receiveMessage({name, target}) {
-    switch (name) {
-      case "Browser:Init":
-        this.onBrowserInit(target);
-        break;
-
-      default:
-        log.warn("Unknown IPC message form browser: " + name);
-        break;
-    }
-  }
-
-  
-
-  observe(subject, topic) {
-    switch (topic) {
-      case "message-manager-disconnect":
-        this.onMessageManagerDisconnect(subject);
-        break;
-
-      default:
-        log.warn("Unknown system observer notification: " + topic);
-    }
-  }
-
-  
-
-  get QueryInterface() {
-    return ChromeUtils.generateQI([
-      Ci.nsIMessageListener,
-      Ci.nsIObserver,
-    ]);
   }
 }
 
