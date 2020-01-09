@@ -5284,7 +5284,31 @@ bool CallIRGenerator::tryAttachCallNative(HandleFunction calleeFunc) {
     return false;
   }
 
-  return false;
+  
+  
+  
+  
+  
+  
+  
+
+  
+  Int32OperandId argcId(writer.setInputOperandId(0));
+
+  
+  ValOperandId calleeValId = writer.loadStackValue(argc_ + 1);
+  ObjOperandId calleeObjId = writer.guardIsObject(calleeValId);
+
+  
+  writer.guardSpecificObject(calleeObjId, calleeFunc);
+
+  writer.callNativeFunction(calleeObjId, argcId, op_, calleeFunc);
+  writer.typeMonitorResult();
+
+  cacheIRStubKind_ = BaselineCacheIRStubKind::Monitored;
+  trackAttached("Call native func");
+
+  return true;
 }
 
 bool CallIRGenerator::tryAttachStub() {
