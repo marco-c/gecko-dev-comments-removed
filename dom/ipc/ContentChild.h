@@ -367,6 +367,8 @@ class ContentChild final : public PContentChild,
       const FileDescriptor& aMapFile, const uint32_t& aMapSize,
       nsTArray<IPCBlob>&& aBlobs, nsTArray<nsCString>&& aChangedKeys);
 
+  mozilla::ipc::IPCResult RecvFontListChanged();
+
   mozilla::ipc::IPCResult RecvGeolocationUpdate(nsIDOMGeoPosition* aPosition);
 
   
@@ -379,6 +381,7 @@ class ContentChild final : public PContentChild,
 
   mozilla::ipc::IPCResult RecvUpdateFontList(
       InfallibleTArray<SystemFontListEntry>&& aFontList);
+  mozilla::ipc::IPCResult RecvRebuildFontList();
 
   mozilla::ipc::IPCResult RecvUpdateAppLocales(
       nsTArray<nsCString>&& aAppLocales);

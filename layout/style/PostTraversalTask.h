@@ -12,9 +12,13 @@
 
 
 namespace mozilla {
+class ServoStyleSet;
 namespace dom {
 class FontFace;
 class FontFaceSet;
+}  
+namespace fontlist {
+struct Family;
 }  
 }  
 class gfxUserFontEntry;
@@ -68,6 +72,18 @@ class PostTraversalTask {
     return task;
   }
 
+  static PostTraversalTask InitializeFamily(fontlist::Family* aFamily) {
+    auto task = PostTraversalTask(Type::InitializeFamily);
+    task.mTarget = aFamily;
+    return task;
+  }
+
+  static PostTraversalTask FontInfoUpdate(ServoStyleSet* aSet) {
+    auto task = PostTraversalTask(Type::FontInfoUpdate);
+    task.mTarget = aSet;
+    return task;
+  }
+
   void Run();
 
  private:
@@ -90,6 +106,12 @@ class PostTraversalTask {
 
     
     LoadFontEntry,
+
+    
+    InitializeFamily,
+
+    
+    FontInfoUpdate,
   };
 
   explicit PostTraversalTask(Type aType)
