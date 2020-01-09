@@ -146,6 +146,34 @@ typedef enum {
 
 
 
+
+
+
+
+
+
+
+
+
+
+typedef enum {
+  ATK_TEXT_GRANULARITY_CHAR,
+  ATK_TEXT_GRANULARITY_WORD,
+  ATK_TEXT_GRANULARITY_SENTENCE,
+  ATK_TEXT_GRANULARITY_LINE,
+  ATK_TEXT_GRANULARITY_PARAGRAPH
+} AtkTextGranularity;
+
+
+
+
+
+
+
+
+
+
+
 typedef struct _AtkTextRectangle AtkTextRectangle;
 
 struct _AtkTextRectangle {
@@ -272,9 +300,33 @@ struct _AtkTextIface
                                                    AtkCoordType     coord_type,
                                                    AtkTextClipType  x_clip_type,
                                                    AtkTextClipType  y_clip_type);
- 
 
-  AtkFunction    pad4;
+  gchar*         (* get_string_at_offset)         (AtkText            *text,
+                                                   gint               offset,
+                                                   AtkTextGranularity granularity,
+                                                   gint               *start_offset,
+                                                   gint               *end_offset);
+  
+
+
+
+
+
+
+
+
+
+
+  gboolean       (* scroll_substring_to)          (AtkText          *text,
+                                                   gint             start_offset,
+                                                   gint             end_offset,
+                                                   AtkScrollType    type);
+  gboolean       (* scroll_substring_to_point)    (AtkText          *text,
+                                                   gint             start_offset,
+                                                   gint             end_offset,
+                                                   AtkCoordType     coords,
+                                                   gint             x,
+                                                   gint             y);
 };
 
 GType            atk_text_get_type (void);
@@ -307,6 +359,11 @@ gchar*        atk_text_get_text_before_offset             (AtkText          *tex
                                                            AtkTextBoundary  boundary_type,
 							   gint             *start_offset,
 							   gint	            *end_offset);
+gchar*        atk_text_get_string_at_offset               (AtkText            *text,
+                                                           gint               offset,
+                                                           AtkTextGranularity granularity,
+                                                           gint               *start_offset,
+                                                           gint               *end_offset);
 gint          atk_text_get_caret_offset                   (AtkText          *text);
 void          atk_text_get_character_extents              (AtkText          *text,
                                                            gint             offset,
@@ -358,6 +415,18 @@ G_CONST_RETURN gchar*  atk_text_attribute_get_name        (AtkTextAttribute attr
 AtkTextAttribute       atk_text_attribute_for_name        (const gchar      *name);
 G_CONST_RETURN gchar*  atk_text_attribute_get_value       (AtkTextAttribute attr,
                                                            gint             index_);
+
+gboolean      atk_text_scroll_substring_to                (AtkText          *text,
+                                                           gint             start_offset,
+                                                           gint             end_offset,
+                                                           AtkScrollType    type);
+
+gboolean      atk_text_scroll_substring_to_point          (AtkText          *text,
+                                                           gint             start_offset,
+                                                           gint             end_offset,
+                                                           AtkCoordType     coords,
+                                                           gint             x,
+                                                           gint             y);
 
 #ifdef __cplusplus
 }
