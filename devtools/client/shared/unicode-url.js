@@ -100,7 +100,7 @@ function getUnicodeUrl(url) {
       return url;
     }
     const readableHostname = getUnicodeHostname(hostname);
-    url = decodeURIComponent(url);
+    url = decodeURI(url);
     return url.replace(hostname, readableHostname);
   } catch (err) {
   }
