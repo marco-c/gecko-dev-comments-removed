@@ -2763,14 +2763,12 @@ void Selection::SelectAllChildren(nsINode& aNode, ErrorResult& aRv) {
   if (mFrameSelection) {
     mFrameSelection->PostReason(nsISelectionListener::SELECTALL_REASON);
   }
-  SelectionBatcher batch(this);
 
-  Collapse(aNode, 0, aRv);
-  if (aRv.Failed()) {
-    return;
-  }
-
-  Extend(aNode, aNode.GetChildCount(), aRv);
+  
+  
+  SetStartAndEndInternal(InLimiter::eNo, RawRangeBoundary(&aNode, 0),
+                         RawRangeBoundary(&aNode, aNode.GetChildCount()),
+                         eDirNext, aRv);
 }
 
 bool Selection::ContainsNode(nsINode& aNode, bool aAllowPartial,
@@ -3390,31 +3388,75 @@ void Selection::SetBaseAndExtentJS(nsINode& aAnchorNode, uint32_t aAnchorOffset,
   SetBaseAndExtent(aAnchorNode, aAnchorOffset, aFocusNode, aFocusOffset, aRv);
 }
 
-void Selection::SetBaseAndExtent(nsINode& aAnchorNode, uint32_t aAnchorOffset,
-                                 nsINode& aFocusNode, uint32_t aFocusOffset,
-                                 ErrorResult& aRv) {
+void Selection::SetBaseAndExtentInternal(InLimiter aInLimiter,
+                                         const RawRangeBoundary& aAnchorRef,
+                                         const RawRangeBoundary& aFocusRef,
+                                         ErrorResult& aRv) {
   if (!mFrameSelection) {
     return;
   }
 
-  if (!HasSameRoot(aAnchorNode) || !HasSameRoot(aFocusNode)) {
+  if (NS_WARN_IF(!aAnchorRef.IsSet()) || NS_WARN_IF(!aFocusRef.IsSet())) {
+    aRv.Throw(NS_ERROR_INVALID_ARG);
+    return;
+  }
+
+  if (!HasSameRoot(*aAnchorRef.Container()) ||
+      !HasSameRoot(*aFocusRef.Container())) {
     
     return;
   }
 
+  
+  
+  
+  
+  SelectionBatcher batch(this);
+  if (nsContentUtils::ComparePoints(aAnchorRef, aFocusRef) <= 0) {
+    SetStartAndEndInternal(aInLimiter, aAnchorRef, aFocusRef, eDirNext, aRv);
+    return;
+  }
+
+  SetStartAndEndInternal(aInLimiter, aFocusRef, aAnchorRef, eDirPrevious, aRv);
+}
+
+void Selection::SetStartAndEndInternal(InLimiter aInLimiter,
+                                       const RawRangeBoundary& aStartRef,
+                                       const RawRangeBoundary& aEndRef,
+                                       nsDirection aDirection,
+                                       ErrorResult& aRv) {
+  if (NS_WARN_IF(!aStartRef.IsSet()) || NS_WARN_IF(!aEndRef.IsSet())) {
+    aRv.Throw(NS_ERROR_INVALID_ARG);
+    return;
+  }
+
+  
   SelectionBatcher batch(this);
 
-  int32_t relativePosition = nsContentUtils::ComparePoints(
-      &aAnchorNode, aAnchorOffset, &aFocusNode, aFocusOffset);
-  nsINode* start = &aAnchorNode;
-  nsINode* end = &aFocusNode;
-  uint32_t startOffset = aAnchorOffset;
-  uint32_t endOffset = aFocusOffset;
-  if (relativePosition > 0) {
-    start = &aFocusNode;
-    end = &aAnchorNode;
-    startOffset = aFocusOffset;
-    endOffset = aAnchorOffset;
+  if (aInLimiter == InLimiter::eYes) {
+    if (!IsValidSelectionPoint(mFrameSelection, aStartRef.Container())) {
+      aRv.Throw(NS_ERROR_FAILURE);
+      return;
+    }
+    if (aStartRef.Container() != aEndRef.Container() &&
+        !IsValidSelectionPoint(mFrameSelection, aEndRef.Container())) {
+      aRv.Throw(NS_ERROR_FAILURE);
+      return;
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  if (!mCalledByJS && !mCachedRange) {
+    nsresult rv = RemoveAllRangesTemporarily();
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      aRv.Throw(rv);
+      return;
+    }
   }
 
   
@@ -3423,10 +3465,9 @@ void Selection::SetBaseAndExtent(nsINode& aAnchorNode, uint32_t aAnchorOffset,
 
   nsresult rv = NS_OK;
   if (newRange) {
-    rv = newRange->SetStartAndEnd(start, startOffset, end, endOffset);
+    rv = newRange->SetStartAndEnd(aStartRef, aEndRef);
   } else {
-    rv = nsRange::CreateRange(start, startOffset, end, endOffset,
-                              getter_AddRefs(newRange));
+    rv = nsRange::CreateRange(aStartRef, aEndRef, getter_AddRefs(newRange));
   }
 
   
@@ -3446,7 +3487,7 @@ void Selection::SetBaseAndExtent(nsINode& aAnchorNode, uint32_t aAnchorOffset,
     return;
   }
 
-  SetDirection(relativePosition > 0 ? eDirPrevious : eDirNext);
+  SetDirection(aDirection);
 }
 
 
