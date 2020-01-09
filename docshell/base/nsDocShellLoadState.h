@@ -18,6 +18,7 @@ class nsISHEntry;
 class nsIURI;
 class nsIDocShell;
 class nsIChildChannel;
+class nsIReferrerInfo;
 class OriginAttibutes;
 namespace mozilla {
 namespace dom {
@@ -41,9 +42,9 @@ class nsDocShellLoadState final {
 
   
 
-  nsIURI* Referrer() const;
+  nsIReferrerInfo* GetReferrerInfo() const;
 
-  void SetReferrer(nsIURI* aReferrer);
+  void SetReferrerInfo(nsIReferrerInfo* aReferrerInfo);
 
   nsIURI* URI() const;
 
@@ -112,14 +113,6 @@ class nsDocShellLoadState final {
   nsIInputStream* HeadersStream() const;
 
   void SetHeadersStream(nsIInputStream* aHeadersStream);
-
-  bool SendReferrer() const;
-
-  void SetSendReferrer(bool aSendReferrer);
-
-  mozilla::net::ReferrerPolicy ReferrerPolicy() const;
-
-  void SetReferrerPolicy(mozilla::net::ReferrerPolicy aReferrerPolicy);
 
   bool IsSrcdocLoad() const;
 
@@ -205,7 +198,7 @@ class nsDocShellLoadState final {
 
  protected:
   
-  nsCOMPtr<nsIURI> mReferrer;
+  nsCOMPtr<nsIReferrerInfo> mReferrerInfo;
 
   
   nsCOMPtr<nsIURI> mURI;
@@ -272,14 +265,6 @@ class nsDocShellLoadState final {
   
   
   bool mOriginalFrameSrc;
-
-  
-  
-  bool mSendReferrer;
-
-  
-  
-  mozilla::net::ReferrerPolicy mReferrerPolicy;
 
   
   

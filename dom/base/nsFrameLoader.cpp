@@ -52,6 +52,7 @@
 #include "nsView.h"
 #include "nsBaseWidget.h"
 #include "nsQueryObject.h"
+#include "ReferrerInfo.h"
 
 #include "nsIURI.h"
 #include "nsIURL.h"
@@ -430,25 +431,24 @@ nsresult nsFrameLoader::ReallyStartLoadingInternal() {
     bool isNullPrincipalScheme;
     rv = referrer->SchemeIs(NS_NULLPRINCIPAL_SCHEME, &isNullPrincipalScheme);
     if (NS_SUCCEEDED(rv) && !isNullPrincipalScheme) {
-      loadState->SetReferrer(referrer);
+      
+      
+      
+      
+      net::ReferrerPolicy referrerPolicy =
+          mOwnerContent->OwnerDoc()->GetReferrerPolicy();
+      HTMLIFrameElement* iframe = HTMLIFrameElement::FromNode(mOwnerContent);
+      if (iframe) {
+        net::ReferrerPolicy iframeReferrerPolicy =
+            iframe->GetReferrerPolicyAsEnum();
+        if (iframeReferrerPolicy != net::RP_Unset) {
+          referrerPolicy = iframeReferrerPolicy;
+        }
+      }
+      loadState->SetReferrerInfo(new ReferrerInfo(referrer, referrerPolicy));
     }
   }
 
-  
-  
-  
-  
-  net::ReferrerPolicy referrerPolicy =
-      mOwnerContent->OwnerDoc()->GetReferrerPolicy();
-  HTMLIFrameElement* iframe = HTMLIFrameElement::FromNode(mOwnerContent);
-  if (iframe) {
-    net::ReferrerPolicy iframeReferrerPolicy =
-        iframe->GetReferrerPolicyAsEnum();
-    if (iframeReferrerPolicy != net::RP_Unset) {
-      referrerPolicy = iframeReferrerPolicy;
-    }
-  }
-  loadState->SetReferrerPolicy(referrerPolicy);
 
   
   int32_t flags = nsIWebNavigation::LOAD_FLAGS_NONE;

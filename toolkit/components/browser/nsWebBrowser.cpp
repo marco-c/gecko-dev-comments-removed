@@ -611,13 +611,6 @@ nsWebBrowser::GetCurrentURI(nsIURI** aURI) {
   return mDocShellAsNav->GetCurrentURI(aURI);
 }
 
-NS_IMETHODIMP
-nsWebBrowser::GetReferringURI(nsIURI** aURI) {
-  NS_ENSURE_STATE(mDocShell);
-
-  return mDocShellAsNav->GetReferringURI(aURI);
-}
-
 
 
 NS_IMETHODIMP

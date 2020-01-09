@@ -88,6 +88,7 @@ class nsIURIFixup;
 class nsIURILoader;
 class nsIWebBrowserFind;
 class nsIWidget;
+class nsIReferrerInfo;
 
 class nsDocShell;
 class nsDocShellEditorData;
@@ -675,9 +676,7 @@ class nsDocShell final : public nsDocLoader,
 
 
 
-
-
-  void AddURIVisit(nsIURI* aURI, nsIURI* aReferrerURI, nsIURI* aPreviousURI,
+  void AddURIVisit(nsIURI* aURI, nsIURI* aPreviousURI,
                    uint32_t aChannelRedirectFlags,
                    uint32_t aResponseStatus = 0);
 
@@ -828,9 +827,8 @@ class nsDocShell final : public nsDocLoader,
   nsresult DispatchToTabGroup(mozilla::TaskCategory aCategory,
                               already_AddRefed<nsIRunnable>&& aRunnable);
 
-  void SetupReferrerFromChannel(nsIChannel* aChannel);
-  void SetReferrerURI(nsIURI* aURI);
-  void SetReferrerPolicy(uint32_t aReferrerPolicy);
+  void SetupReferrerInfoFromChannel(nsIChannel* aChannel);
+  void SetReferrerInfo(nsIReferrerInfo* aReferrerInfo);
   void ReattachEditorToWindow(nsISHEntry* aSHEntry);
   void RecomputeCanExecuteScripts();
   void ClearFrameHistory(nsISHEntry* aEntry);
@@ -964,7 +962,7 @@ class nsDocShell final : public nsDocLoader,
 
   
   nsCOMPtr<nsIURI> mCurrentURI;
-  nsCOMPtr<nsIURI> mReferrerURI;
+  nsCOMPtr<nsIReferrerInfo> mReferrerInfo;
 
   
   
@@ -1053,7 +1051,6 @@ class nsDocShell final : public nsDocLoader,
   AppType mAppType;
   uint32_t mLoadType;
   uint32_t mDefaultLoadFlags;
-  uint32_t mReferrerPolicy;
   uint32_t mFailedLoadType;
 
   
