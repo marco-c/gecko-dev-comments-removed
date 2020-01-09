@@ -2,7 +2,19 @@
 
 
 
-function testVal(aExpected) {
+
+
+
+
+
+
+
+
+
+
+
+
+function testVal(aExpected, aClobbered = null) {
   gURLBar.value = aExpected.replace(/[<>]/g, "");
 
   let selectionController = gURLBar.editor.selectionController;
@@ -16,7 +28,7 @@ function testVal(aExpected) {
     value = value.substring(pos + range.length);
   }
   result += value;
-  is(result, aExpected,
+  is(result, aClobbered || aExpected,
      "Correct part of the urlbar contents is highlighted");
 }
 
@@ -82,6 +94,7 @@ function test() {
   testVal("<foo.bar:@baz@>mozilla.org");
   testVal("<foo.bar@:ba:z@>mozilla.org");
   testVal("<foo.:bar:@baz@>mozilla.org");
+  testVal("foopy:\\blah@somewhere.com//whatever", "foopy</blah@somewhere.com//whatever>");
 
   testVal("<https://sub.>mozilla.org<:666/file.ext>");
   testVal("<sub.>mozilla.org<:666/file.ext>");
@@ -116,6 +129,7 @@ function test() {
     testVal("<https://>" + IP + "</file.ext>");
     testVal("<https://user:pass@>" + IP + "<:666/file.ext>");
     testVal("<user:pass@>" + IP + "<:666/file.ext>");
+    testVal("user:\\pass@" + IP, "user</pass@" + IP + ">");
   });
 
   testVal("mailto:admin@mozilla.org");
@@ -128,6 +142,7 @@ function test() {
   testVal("foo.://mozilla.org/");
   testVal("foo-://mozilla.org/");
 
+  
   Services.prefs.setBoolPref(prefname, false);
 
   testVal("https://mozilla.org");

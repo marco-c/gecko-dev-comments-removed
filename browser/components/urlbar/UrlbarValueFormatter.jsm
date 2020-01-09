@@ -90,7 +90,7 @@ class UrlbarValueFormatter {
     });
   }
 
-  _getUrlMetaData() {
+  _getUrlMetaData(allowReplacement = true) {
     if (this.urlbarInput.focused) {
       return null;
     }
@@ -124,12 +124,33 @@ class UrlbarValueFormatter {
       trimmedLength = "http://".length;
     }
 
+    
+    
+    
     let matchedURL = url.match(/^(([a-z]+:\/\/)(?:[^\/#?]+@)?)(\S+?)(?::\d+)?\s*(?:[\/#?]|$)/);
     if (!matchedURL) {
       return null;
     }
-
     let [, preDomain, schemeWSlashes, domain] = matchedURL;
+
+    
+    
+    
+    let replaceUrl = false;
+    try {
+      replaceUrl = Services.io.newURI("http://" + domain).displayHost != uriInfo.fixedURI.displayHost;
+    } catch (ex) {
+      return null;
+    }
+    if (replaceUrl) {
+      if (!allowReplacement) {
+        
+        return null;
+      }
+      this.window.URLBarSetURI(uriInfo.fixedURI);
+      return this._getUrlMetaData(false);
+    }
+
     return { preDomain, schemeWSlashes, domain, url, uriInfo, trimmedLength };
   }
 
