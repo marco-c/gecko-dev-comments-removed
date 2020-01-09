@@ -480,7 +480,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
   
   uint64_t mPendingSwitchID;
 
-  RefPtr<TabParent> mRemoteBrowser;
+  RefPtr<TabParent> mBrowserParent;
   uint64_t mChildID;
 
   
