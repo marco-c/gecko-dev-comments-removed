@@ -262,9 +262,9 @@ function createAppInfo(ID = "xpcshell@tests.mozilla.org", name = "XPCShell",
 
 
 function fakeSchedulerTimer(set, clear) {
-  let session = ChromeUtils.import("resource://gre/modules/TelemetrySession.jsm", null);
-  session.Policy.setSchedulerTickTimeout = set;
-  session.Policy.clearSchedulerTickTimeout = clear;
+  let scheduler = ChromeUtils.import("resource://gre/modules/TelemetryScheduler.jsm", null);
+  scheduler.Policy.setSchedulerTickTimeout = set;
+  scheduler.Policy.clearSchedulerTickTimeout = clear;
 }
 
 
@@ -287,6 +287,7 @@ function fakeNow(...args) {
     ChromeUtils.import("resource://gre/modules/TelemetryStorage.jsm", null),
     ChromeUtils.import("resource://gre/modules/TelemetrySend.jsm", null),
     ChromeUtils.import("resource://gre/modules/TelemetryReportingPolicy.jsm", null),
+    ChromeUtils.import("resource://gre/modules/TelemetryScheduler.jsm", null),
   ];
 
   for (let m of modules) {
