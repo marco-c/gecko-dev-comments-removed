@@ -4,7 +4,7 @@
 
 
 
-#include "mozilla/dom/ChromeBrowsingContext.h"
+#include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 
 namespace mozilla {
@@ -15,12 +15,12 @@ extern mozilla::LazyLogModule gUserInteractionPRLog;
 #define USER_ACTIVATION_LOG(msg, ...) \
   MOZ_LOG(gUserInteractionPRLog, LogLevel::Debug, (msg, ##__VA_ARGS__))
 
-ChromeBrowsingContext::ChromeBrowsingContext(BrowsingContext* aParent,
-                                             BrowsingContext* aOpener,
-                                             const nsAString& aName,
-                                             uint64_t aBrowsingContextId,
-                                             uint64_t aProcessId,
-                                             BrowsingContext::Type aType)
+CanonicalBrowsingContext::CanonicalBrowsingContext(BrowsingContext* aParent,
+                                                 BrowsingContext* aOpener,
+                                                 const nsAString& aName,
+                                                 uint64_t aBrowsingContextId,
+                                                 uint64_t aProcessId,
+                                                 BrowsingContext::Type aType)
     : BrowsingContext(aParent, aOpener, aName, aBrowsingContextId, aType),
       mProcessId(aProcessId) {
   
@@ -33,7 +33,8 @@ ChromeBrowsingContext::ChromeBrowsingContext(BrowsingContext* aParent,
 
 
 
- void ChromeBrowsingContext::CleanupContexts(uint64_t aProcessId) {
+ void CanonicalBrowsingContext::CleanupContexts(
+    uint64_t aProcessId) {
   nsTArray<RefPtr<BrowsingContext>> roots;
   BrowsingContext::GetRootBrowsingContexts(roots);
 
@@ -44,25 +45,25 @@ ChromeBrowsingContext::ChromeBrowsingContext(BrowsingContext* aParent,
   }
 }
 
- already_AddRefed<ChromeBrowsingContext> ChromeBrowsingContext::Get(
-    uint64_t aId) {
+ already_AddRefed<CanonicalBrowsingContext>
+CanonicalBrowsingContext::Get(uint64_t aId) {
   MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
-  return BrowsingContext::Get(aId).downcast<ChromeBrowsingContext>();
+  return BrowsingContext::Get(aId).downcast<CanonicalBrowsingContext>();
 }
 
- ChromeBrowsingContext* ChromeBrowsingContext::Cast(
+ CanonicalBrowsingContext* CanonicalBrowsingContext::Cast(
     BrowsingContext* aContext) {
   MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
-  return static_cast<ChromeBrowsingContext*>(aContext);
+  return static_cast<CanonicalBrowsingContext*>(aContext);
 }
 
- const ChromeBrowsingContext* ChromeBrowsingContext::Cast(
+ const CanonicalBrowsingContext* CanonicalBrowsingContext::Cast(
     const BrowsingContext* aContext) {
   MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
-  return static_cast<const ChromeBrowsingContext*>(aContext);
+  return static_cast<const CanonicalBrowsingContext*>(aContext);
 }
 
-void ChromeBrowsingContext::GetWindowGlobals(
+void CanonicalBrowsingContext::GetWindowGlobals(
     nsTArray<RefPtr<WindowGlobalParent>>& aWindows) {
   aWindows.SetCapacity(mWindowGlobals.Count());
   for (auto iter = mWindowGlobals.Iter(); !iter.Done(); iter.Next()) {
@@ -70,12 +71,13 @@ void ChromeBrowsingContext::GetWindowGlobals(
   }
 }
 
-void ChromeBrowsingContext::RegisterWindowGlobal(WindowGlobalParent* aGlobal) {
+void CanonicalBrowsingContext::RegisterWindowGlobal(
+    WindowGlobalParent* aGlobal) {
   MOZ_ASSERT(!mWindowGlobals.Contains(aGlobal), "Global already registered!");
   mWindowGlobals.PutEntry(aGlobal);
 }
 
-void ChromeBrowsingContext::UnregisterWindowGlobal(
+void CanonicalBrowsingContext::UnregisterWindowGlobal(
     WindowGlobalParent* aGlobal) {
   MOZ_ASSERT(mWindowGlobals.Contains(aGlobal), "Global not registered!");
   mWindowGlobals.RemoveEntry(aGlobal);
@@ -87,7 +89,7 @@ void ChromeBrowsingContext::UnregisterWindowGlobal(
   }
 }
 
-void ChromeBrowsingContext::SetCurrentWindowGlobal(
+void CanonicalBrowsingContext::SetCurrentWindowGlobal(
     WindowGlobalParent* aGlobal) {
   MOZ_ASSERT(mWindowGlobals.Contains(aGlobal), "Global not registered!");
 
@@ -95,12 +97,12 @@ void ChromeBrowsingContext::SetCurrentWindowGlobal(
   mCurrentWindowGlobal = aGlobal;
 }
 
-JSObject* ChromeBrowsingContext::WrapObject(JSContext* aCx,
-                                            JS::Handle<JSObject*> aGivenProto) {
-  return ChromeBrowsingContext_Binding::Wrap(aCx, this, aGivenProto);
+JSObject* CanonicalBrowsingContext::WrapObject(
+    JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
+  return CanonicalBrowsingContext_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-void ChromeBrowsingContext::NotifySetUserGestureActivationFromIPC(
+void CanonicalBrowsingContext::NotifySetUserGestureActivationFromIPC(
     bool aIsUserGestureActivation) {
   if (!mCurrentWindowGlobal) {
     return;
@@ -121,13 +123,13 @@ void ChromeBrowsingContext::NotifySetUserGestureActivationFromIPC(
   
 }
 
-void ChromeBrowsingContext::Traverse(nsCycleCollectionTraversalCallback& cb) {
-  ChromeBrowsingContext* tmp = this;
+void CanonicalBrowsingContext::Traverse(nsCycleCollectionTraversalCallback& cb) {
+  CanonicalBrowsingContext* tmp = this;
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mWindowGlobals);
 }
 
-void ChromeBrowsingContext::Unlink() {
-  ChromeBrowsingContext* tmp = this;
+void CanonicalBrowsingContext::Unlink() {
+  CanonicalBrowsingContext* tmp = this;
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mWindowGlobals);
 }
 
