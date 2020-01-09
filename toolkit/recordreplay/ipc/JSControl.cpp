@@ -337,7 +337,9 @@ static bool Middleman_RegisterReplayDebugger(JSContext* aCx, unsigned aArgc,
     }
   }
 
-  obj = ::js::CheckedUnwrap(obj);
+  
+  
+  obj = ::js::CheckedUnwrapDynamic(obj, aCx);
   if (!obj) {
     ::js::ReportAccessDenied(aCx);
     return false;
