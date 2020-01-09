@@ -4,6 +4,8 @@
 
 
 
+#include "mozilla/layers/CompositorBridgeParent.h"
+
 #include "ProtocolFuzzer.h"
 
 namespace mozilla {
@@ -26,5 +28,10 @@ mozilla::dom::ContentParent* ProtocolFuzzerHelper::CreateContentParent(
   cp->GetIPCChannel()->mMonitor = new RefCountedMonitor();
   return cp;
 }
+
+void ProtocolFuzzerHelper::CompositorBridgeParentSetup() {
+  mozilla::layers::CompositorBridgeParent::Setup();
+}
+
 }  
 }  
