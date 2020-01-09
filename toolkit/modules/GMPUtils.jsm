@@ -32,13 +32,14 @@ var GMPUtils = {
       
       return true;
     }
-    if (!aPlugin.isEME) {
-      return false;
-    }
 
     if (!this._isPluginSupported(aPlugin) ||
         !this._isPluginVisible(aPlugin)) {
       return true;
+    }
+
+    if (!aPlugin.isEME) {
+      return false;
     }
 
     if (!GMPPrefs.getBool(GMPPrefs.KEY_EME_ENABLED, true)) {

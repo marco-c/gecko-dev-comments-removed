@@ -480,13 +480,6 @@ pref("browser.tabs.remote.separatePrivilegedContentProcess", true);
 
 pref("browser.tabs.remote.useHTTPResponseProcessSelection", true);
 
-
-#ifdef RELEASE_OR_BETA
-pref("browser.tabs.unloadOnLowMemory", false);
-#else
-pref("browser.tabs.unloadOnLowMemory", true);
-#endif
-
 pref("browser.ctrlTab.recentlyUsedOrder", true);
 
 
@@ -1475,6 +1468,15 @@ pref("media.gmp-widevinecdm.visible", true);
 pref("media.gmp-widevinecdm.enabled", true);
 #endif
 
+#if defined(_ARM64_) && defined(XP_WIN)
+
+pref("media.gmp-gmpopenh264.visible", false);
+pref("media.gmp-gmpopenh264.enabled", false);
+#else
+
+pref("media.gmp-gmpopenh264.visible", true);
+pref("media.gmp-gmpopenh264.enabled", true);
+#endif
 
 pref("media.autoplay.enabled.user-gestures-needed", true);
 
@@ -1819,13 +1821,8 @@ pref("browser.engagement.recent_visited_origins.expiry", 86400);
 pref("browser.aboutConfig.showWarning", true);
 
 #if defined(XP_WIN) && defined(MOZ_LAUNCHER_PROCESS)
-#if defined(NIGHTLY_BUILD)
-
-pref("browser.launcherProcess.enabled", true);
-#else
 
 pref("browser.launcherProcess.enabled", false);
-#endif  // defined(NIGHTLY_BUILD)
 #endif // defined(XP_WIN) && defined(MOZ_LAUNCHER_PROCESS)
 
 pref("browser.toolbars.keyboard_navigation", false);
