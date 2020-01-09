@@ -1,0 +1,15 @@
+
+
+
+
+
+async function testSteps() {
+  const principal = getPrincipal("http://example.com^123");
+
+  try {
+    getSimpleDatabase(principal);
+    ok(false, "Should have thrown");
+  } catch (ex) {
+    ok(true, "Did throw");
+  }
+}
