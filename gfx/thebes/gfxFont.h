@@ -1570,9 +1570,11 @@ class gfxFont {
 
     gfxFloat aveCharWidth;
     gfxFloat spaceWidth;
-    gfxFloat zeroOrAveCharWidth;  
-                                  
-                                  
+    gfxFloat zeroWidth;  
+
+    gfxFloat ZeroOrAveCharWidth() const {
+      return zeroWidth >= 0 ? zeroWidth : aveCharWidth;
+    }
   };
 
   enum Orientation { eHorizontal, eVertical };
