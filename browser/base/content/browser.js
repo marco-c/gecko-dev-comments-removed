@@ -3105,7 +3105,7 @@ var BrowserOnClick = {
   },
 
   ignoreWarningLink(reason, blockedInfo) {
-    let triggeringPrincipal = E10SUtils.deserializePrincipal(blockedInfo.triggeringPrincipal) || _createNullPrincipalFromTabUserContextId();
+    let triggeringPrincipal = E10SUtils.deserializePrincipal(blockedInfo.triggeringPrincipal, _createNullPrincipalFromTabUserContextId());
     
     
     
