@@ -44,6 +44,7 @@ class InactiveCssTooltipHelper {
     tooltip.setContentSize({width: 275, height: Infinity});
   }
 
+  
 
 
 
@@ -79,7 +80,8 @@ class InactiveCssTooltipHelper {
     const { doc } = tooltip;
 
     this._currentTooltip = tooltip;
-    this._currentUrl = `https://developer.mozilla.org/docs/Web/CSS/${property}`;
+    this._currentUrl = `https://developer.mozilla.org/docs/Web/CSS/${property}` +
+                       `?utm_source=devtools&utm_medium=inspector-inactive-css`;
 
     const templateNode = doc.createElementNS(XHTML_NS, "template");
 
