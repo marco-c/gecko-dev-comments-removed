@@ -106,6 +106,46 @@ var E10SUtils = {
     return useCrossOriginOpenerPolicy;
   },
 
+  
+
+
+
+
+
+  serializeCSP(csp) {
+    let serializedCSP = null;
+
+    try {
+      if (csp) {
+        serializedCSP = serializationHelper.serializeToString(csp);
+      }
+    } catch (e) {
+      debug(`Failed to serialize csp '${csp}' ${e}`);
+    }
+    return serializedCSP;
+  },
+
+  
+
+
+
+
+
+
+  deserializeCSP(csp_b64) {
+    if (!csp_b64)
+      return null;
+
+    try {
+      let csp = serializationHelper.deserializeObject(csp_b64);
+      csp.QueryInterface(Ci.nsIContentSecurityPolicy);
+      return csp;
+    } catch (e) {
+      debug(`Failed to deserialize csp_b64 '${csp_b64}' ${e}`);
+    }
+    return null;
+  },
+
   canLoadURIInRemoteType(aURL, aRemoteType = DEFAULT_REMOTE_TYPE,
                          aPreferredRemoteType = undefined) {
     
@@ -462,7 +502,7 @@ var E10SUtils = {
     return this.shouldLoadURIInThisProcess(aURI);
   },
 
-  redirectLoad(aDocShell, aURI, aReferrer, aTriggeringPrincipal, aFreshProcess, aFlags) {
+  redirectLoad(aDocShell, aURI, aReferrer, aTriggeringPrincipal, aFreshProcess, aFlags, aCsp) {
     
     let messageManager = aDocShell.messageManager;
     let sessionHistory = aDocShell.QueryInterface(Ci.nsIWebNavigation).sessionHistory;
@@ -473,6 +513,7 @@ var E10SUtils = {
         flags: aFlags || Ci.nsIWebNavigation.LOAD_FLAGS_NONE,
         referrer: aReferrer ? aReferrer.spec : null,
         triggeringPrincipal: this.serializePrincipal(aTriggeringPrincipal || Services.scriptSecurityManager.createNullPrincipal({})),
+        csp: aCsp ? this.serializeCSP(aCsp) : null,
         reloadInFreshProcess: !!aFreshProcess,
       },
       historyIndex: sessionHistory.legacySHistory.requestedIndex,
