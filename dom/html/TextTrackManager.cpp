@@ -199,7 +199,7 @@ void TextTrackManager::AddCues(TextTrack* aTextTrack) {
     for (uint32_t i = 0; i < cueList->Length(); ++i) {
       mNewCues->AddCue(*cueList->IndexedGetter(i, dummy));
     }
-    DispatchTimeMarchesOn();
+    TimeMarchesOn();
   }
 }
 
@@ -224,7 +224,7 @@ void TextTrackManager::RemoveTextTrack(TextTrack* aTextTrack,
     for (uint32_t i = 0; i < removeCueList->Length(); ++i) {
       mNewCues->RemoveCue(*((*removeCueList)[i]));
     }
-    DispatchTimeMarchesOn();
+    TimeMarchesOn();
   }
 }
 
@@ -288,7 +288,7 @@ void TextTrackManager::NotifyCueAdded(TextTrackCue& aCue) {
   if (mNewCues) {
     mNewCues->AddCue(aCue);
   }
-  DispatchTimeMarchesOn();
+  TimeMarchesOn();
   ReportTelemetryForCue();
 }
 
@@ -297,7 +297,7 @@ void TextTrackManager::NotifyCueRemoved(TextTrackCue& aCue) {
   if (mNewCues) {
     mNewCues->RemoveCue(aCue);
   }
-  DispatchTimeMarchesOn();
+  TimeMarchesOn();
   if (aCue.GetActive()) {
     
     DispatchUpdateCueDisplay();
@@ -613,6 +613,8 @@ void TextTrackManager::DispatchTimeMarchesOn() {
 
 void TextTrackManager::TimeMarchesOn() {
   NS_ASSERTION(NS_IsMainThread(), "Wrong thread!");
+  mTimeMarchesOnDispatched = false;
+
   CycleCollectedJSContext* context = CycleCollectedJSContext::Get();
   if (context && context->IsInStableOrMetaStableState()) {
     
@@ -625,7 +627,6 @@ void TextTrackManager::TimeMarchesOn() {
     return;
   }
   WEBVTT_LOG("TimeMarchesOn");
-  mTimeMarchesOnDispatched = false;
 
   
   if (!mTextTracks || mTextTracks->Length() == 0 || IsShutdown()) {
@@ -825,7 +826,7 @@ void TextTrackManager::TimeMarchesOn() {
 void TextTrackManager::NotifyCueUpdated(TextTrackCue* aCue) {
   
   WEBVTT_LOG("NotifyCueUpdated");
-  DispatchTimeMarchesOn();
+  TimeMarchesOn();
   
   
   
