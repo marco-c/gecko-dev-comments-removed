@@ -285,8 +285,6 @@ pref("browser.sessionhistory.max_total_viewers", -1);
 pref("ui.use_native_colors", true);
 pref("ui.click_hold_context_menus", false);
 
-pref("ui.android.mouse_as_touch", 1);
-
 
 
 pref("ui.context_menus.after_mouseup", false);
@@ -5171,6 +5169,10 @@ pref("gfx.direct2d.destroy-dt-on-paintthread", true);
 
 pref("gfx.direct3d11.enable-debug-layer", false);
 pref("gfx.direct3d11.break-on-error", false);
+
+
+
+pref("gfx.direct3d11.use-double-buffering", true);
 
 pref("layers.prefer-opengl", false);
 #endif
