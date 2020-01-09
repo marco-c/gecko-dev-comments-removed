@@ -21,11 +21,11 @@ import org.mozilla.gecko.GeckoThread;
 import org.mozilla.gecko.Telemetry;
 import org.mozilla.gecko.TelemetryContract;
 import org.mozilla.gecko.adjust.AttributionHelperListener;
+import org.mozilla.gecko.telemetry.measurements.CampaignIdMeasurements;
 import org.mozilla.gecko.delegates.BrowserAppDelegateWithReference;
 import org.mozilla.gecko.distribution.DistributionStoreCallback;
 import org.mozilla.gecko.search.SearchEngineManager;
 import org.mozilla.gecko.sync.ExtendedJSONObject;
-import org.mozilla.gecko.telemetry.measurements.CampaignIdMeasurements;
 import org.mozilla.gecko.telemetry.measurements.SearchCountMeasurements;
 import org.mozilla.gecko.telemetry.measurements.SessionMeasurements;
 import org.mozilla.gecko.telemetry.pingbuilders.TelemetryCorePingBuilder;
@@ -139,43 +139,47 @@ public class TelemetryCorePingDelegate extends BrowserAppDelegateWithReference
         
         
         
-        ThreadUtils.postToBackgroundThread(() -> {
-            final BrowserApp activity = getBrowserApp();
-            if (activity == null) {
-                return;
+        ThreadUtils.postToBackgroundThread(new Runnable() {
+            @WorkerThread
+            @Override
+            public void run() {
+                final BrowserApp activity = getBrowserApp();
+                if (activity == null) {
+                    return;
+                }
+
+                final GeckoProfile profile = GeckoThread.getActiveProfile();
+                if (!TelemetryUploadService.isUploadEnabledByProfileConfig(activity, profile)) {
+                    Log.d(LOGTAG, "Core ping upload disabled by profile config. Returning.");
+                    return;
+                }
+
+                final String clientID;
+                final boolean hadCanaryClientId;
+                try {
+                    clientID = profile.getClientId();
+                    hadCanaryClientId = profile.getIfHadCanaryClientId();
+                } catch (final IOException e) {
+                    Log.w(LOGTAG, "Unable to get client ID properties to generate core ping: " + e);
+                    return;
+                }
+
+                
+                final SharedPreferences sharedPrefs = getSharedPreferences(activity);
+                final SessionMeasurements.SessionMeasurementsContainer sessionMeasurementsContainer =
+                        sessionMeasurements.getAndResetSessionMeasurements(activity);
+                final TelemetryCorePingBuilder pingBuilder = new TelemetryCorePingBuilder(activity)
+                        .setClientID(clientID)
+                        .setHadCanaryClientId(hadCanaryClientId)
+                        .setDefaultSearchEngine(TelemetryCorePingBuilder.getEngineIdentifier(engine))
+                        .setProfileCreationDate(TelemetryCorePingBuilder.getProfileCreationDate(activity, profile))
+                        .setSequenceNumber(TelemetryCorePingBuilder.getAndIncrementSequenceNumber(sharedPrefs))
+                        .setSessionCount(sessionMeasurementsContainer.sessionCount)
+                        .setSessionDuration(sessionMeasurementsContainer.elapsedSeconds);
+                maybeSetOptionalMeasurements(activity, sharedPrefs, pingBuilder);
+
+                getTelemetryDispatcher(activity).queuePingForUpload(activity, pingBuilder);
             }
-
-            final GeckoProfile profile = GeckoThread.getActiveProfile();
-            if (!TelemetryUploadService.isUploadEnabledByProfileConfig(activity, profile)) {
-                Log.d(LOGTAG, "Core ping upload disabled by profile config. Returning.");
-                return;
-            }
-
-            final String clientID;
-            final boolean hadCanaryClientId;
-            try {
-                clientID = profile.getClientId();
-                hadCanaryClientId = profile.getIfHadCanaryClientId();
-            } catch (final IOException e) {
-                Log.w(LOGTAG, "Unable to get client ID properties to generate core ping: " + e);
-                return;
-            }
-
-            
-            final SharedPreferences sharedPrefs = getSharedPreferences(activity);
-            final SessionMeasurements.SessionMeasurementsContainer sessionMeasurementsContainer =
-                    sessionMeasurements.getAndResetSessionMeasurements(activity);
-            final TelemetryCorePingBuilder pingBuilder = new TelemetryCorePingBuilder(activity)
-                    .setClientID(clientID)
-                    .setHadCanaryClientId(hadCanaryClientId)
-                    .setDefaultSearchEngine(TelemetryCorePingBuilder.getEngineIdentifier(engine))
-                    .setProfileCreationDate(TelemetryCorePingBuilder.getProfileCreationDate(activity, profile))
-                    .setSequenceNumber(TelemetryCorePingBuilder.getAndIncrementSequenceNumber(sharedPrefs))
-                    .setSessionCount(sessionMeasurementsContainer.sessionCount)
-                    .setSessionDuration(sessionMeasurementsContainer.elapsedSeconds);
-            maybeSetOptionalMeasurements(activity, sharedPrefs, pingBuilder);
-
-            getTelemetryDispatcher(activity).queuePingForUpload(activity, pingBuilder);
         });
     }
 
