@@ -204,6 +204,7 @@ void LIRGeneratorARM64::lowerDivI(MDiv* div) {
   }
 
   
+  
 
   LDivI* lir = new (alloc())
       LDivI(useRegister(div->lhs()), useRegister(div->rhs()), temp());
@@ -311,7 +312,24 @@ void LIRGenerator::visitWasmSelect(MWasmSelect* ins) {
   MOZ_CRASH("visitWasmSelect");
 }
 
-void LIRGeneratorARM64::lowerUDiv(MDiv* div) { MOZ_CRASH("lowerUDiv"); }
+void LIRGeneratorARM64::lowerUDiv(MDiv* div) {
+  LAllocation lhs = useRegister(div->lhs());
+  
+  
+
+  
+  LAllocation rhs = useRegister(div->rhs());
+  LDefinition remainder = LDefinition::BogusTemp();
+  if (!div->canTruncateRemainder()) {
+    remainder = temp();
+  }
+
+  LUDiv* lir = new (alloc()) LUDiv(lhs, rhs, remainder);
+  if (div->fallible()) {
+    assignSnapshot(lir, Bailout_DoubleOutput);
+  }
+  define(lir, div);
+}
 
 void LIRGeneratorARM64::lowerUMod(MMod* mod) {
   LUMod* lir = new (alloc())
