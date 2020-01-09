@@ -302,12 +302,14 @@ class ModifyBusyCountRunnable final : public WorkerControlRunnable {
 
 class CompileScriptRunnable final : public WorkerDebuggeeRunnable {
   nsString mScriptURL;
+  UniquePtr<SerializedStackHolder> mOriginStack;
 
  public:
   explicit CompileScriptRunnable(WorkerPrivate* aWorkerPrivate,
+                                 UniquePtr<SerializedStackHolder> aOriginStack,
                                  const nsAString& aScriptURL)
       : WorkerDebuggeeRunnable(aWorkerPrivate, WorkerThreadModifyBusyCount),
-        mScriptURL(aScriptURL) {}
+        mScriptURL(aScriptURL), mOriginStack(aOriginStack.release()) {}
 
  private:
   
@@ -337,8 +339,8 @@ class CompileScriptRunnable final : public WorkerDebuggeeRunnable {
     }
 
     ErrorResult rv;
-    workerinternals::LoadMainScript(aWorkerPrivate, mScriptURL, WorkerScript,
-                                    rv);
+    workerinternals::LoadMainScript(aWorkerPrivate, std::move(mOriginStack),
+                                    mScriptURL, WorkerScript, rv);
     rv.WouldReportJSException();
     
     
@@ -2256,8 +2258,10 @@ already_AddRefed<WorkerPrivate> WorkerPrivate::Constructor(
 
   MOZ_DIAGNOSTIC_ASSERT(worker->PrincipalIsValid());
 
+  UniquePtr<SerializedStackHolder> stack = GetCurrentStackForNetMonitor(aCx);
+
   RefPtr<CompileScriptRunnable> compiler =
-      new CompileScriptRunnable(worker, aScriptURL);
+      new CompileScriptRunnable(worker, std::move(stack), aScriptURL);
   if (!compiler->Dispatch()) {
     aRv.Throw(NS_ERROR_UNEXPECTED);
     return nullptr;
