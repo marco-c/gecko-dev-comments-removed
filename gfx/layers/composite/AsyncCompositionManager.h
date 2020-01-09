@@ -8,7 +8,6 @@
 #define GFX_ASYNCCOMPOSITIONMANAGER_H
 
 #include "Units.h"                                 
-#include "FrameMetrics.h"                          
 #include "mozilla/layers/LayerManagerComposite.h"  
 #include "mozilla/Attributes.h"                    
 #include "mozilla/RefPtr.h"                        
@@ -239,11 +238,6 @@ class AsyncCompositionManager final {
   void SetFixedLayerMargins(ScreenIntCoord aTop, ScreenIntCoord aBottom);
 
  private:
-  
-  bool FrameMetricsHaveUpdated(const FrameMetrics& aMetrics);
-  
-  
-  FrameMetrics mLastMetrics;
   
   
   
