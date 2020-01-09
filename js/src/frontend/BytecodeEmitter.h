@@ -62,25 +62,15 @@ struct CGTryNoteList {
   Vector<JSTryNote> list;
   explicit CGTryNoteList(JSContext* cx) : list(cx) {}
 
-  
-  
-
   MOZ_MUST_USE bool append(JSTryNoteKind kind, uint32_t stackDepth,
                            size_t start, size_t end);
   size_t length() const { return list.length(); }
-  void finish(mozilla::Span<JSTryNote> array, uint32_t prologueLength);
+  void finish(mozilla::Span<JSTryNote> array);
 };
 
 struct CGScopeNote : public ScopeNote {
   
-  
   uint32_t end;
-
-  
-  bool startInPrologue;
-
-  
-  bool endInPrologue;
 };
 
 struct CGScopeNoteList {
@@ -88,10 +78,10 @@ struct CGScopeNoteList {
   explicit CGScopeNoteList(JSContext* cx) : list(cx) {}
 
   MOZ_MUST_USE bool append(uint32_t scopeIndex, uint32_t offset,
-                           bool inPrologue, uint32_t parent);
-  void recordEnd(uint32_t index, uint32_t offset, bool inPrologue);
+                           uint32_t parent);
+  void recordEnd(uint32_t index, uint32_t offse);
   size_t length() const { return list.length(); }
-  void finish(mozilla::Span<ScopeNote> array, uint32_t prologueLength);
+  void finish(mozilla::Span<ScopeNote> array);
 };
 
 struct CGResumeOffsetList {
@@ -100,7 +90,7 @@ struct CGResumeOffsetList {
 
   MOZ_MUST_USE bool append(uint32_t offset) { return list.append(offset); }
   size_t length() const { return list.length(); }
-  void finish(mozilla::Span<uint32_t> array, uint32_t prologueLength);
+  void finish(mozilla::Span<uint32_t> array);
 };
 
 
@@ -128,35 +118,30 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   Rooted<LazyScript*> lazyScript; 
 
 
-  struct EmitSection {
-    BytecodeVector code;      
-    SrcNotesVector notes;     
-    ptrdiff_t lastNoteOffset; 
+ private:
+  BytecodeVector code_;  
+  SrcNotesVector notes_; 
 
-    
-    
-    
-    
-    uint32_t currentLine;
+  ptrdiff_t lastNoteOffset_; 
 
-    
-    
-    
-    
-    
-    uint32_t lastColumn;
+  
+  
+  
+  
+  uint32_t currentLine_;
 
-    JumpTarget lastTarget;  
+  
+  
+  
+  
+  
+  uint32_t lastColumn_;
 
-    EmitSection(JSContext* cx, uint32_t lineNum)
-        : code(cx),
-          notes(cx),
-          lastNoteOffset(0),
-          currentLine(lineNum),
-          lastColumn(0),
-          lastTarget{-1 - ptrdiff_t(JSOP_JUMPTARGET_LENGTH)} {}
-  };
-  EmitSection prologue, main, *current;
+  
+  mozilla::Maybe<uint32_t> mainOffset_;
+
+ public:
+  JumpTarget lastTarget;  
 
   
   
@@ -390,34 +375,37 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
   void tellDebuggerAboutCompiledScript(JSContext* cx);
 
-  BytecodeVector& code() const { return current->code; }
-  jsbytecode* code(ptrdiff_t offset) const {
-    return current->code.begin() + offset;
-  }
-  ptrdiff_t offset() const {
-    return current->code.end() - current->code.begin();
-  }
-  ptrdiff_t prologueOffset() const {
-    return prologue.code.end() - prologue.code.begin();
-  }
+  BytecodeVector& code() { return code_; }
+  const BytecodeVector& code() const { return code_; }
+
+  jsbytecode* code(ptrdiff_t offset) { return code_.begin() + offset; }
+  ptrdiff_t offset() const { return code_.end() - code_.begin(); }
+
+  uint32_t mainOffset() const { return *mainOffset_; }
+
+  bool inPrologue() const { return mainOffset_.isNothing(); }
+
   void switchToMain() {
     MOZ_ASSERT(inPrologue());
-    current = &main;
+    mainOffset_.emplace(code_.length());
   }
-  bool inPrologue() const { return current == &prologue; }
 
-  SrcNotesVector& notes() const {
+  SrcNotesVector& notes() {
     
     MOZ_ASSERT(!inPrologue());
-    return current->notes;
+    return notes_;
   }
-  ptrdiff_t lastNoteOffset() const { return current->lastNoteOffset; }
-  unsigned currentLine() const { return current->currentLine; }
+  ptrdiff_t lastNoteOffset() const { return lastNoteOffset_; }
+  unsigned currentLine() const { return currentLine_; }
+
+  void setCurrentLine(uint32_t line) {
+    currentLine_ = line;
+    lastColumn_ = 0;
+  }
 
   
   bool lastOpcodeIsJumpTarget() const {
-    return offset() - current->lastTarget.offset ==
-           ptrdiff_t(JSOP_JUMPTARGET_LENGTH);
+    return offset() - lastTarget.offset == ptrdiff_t(JSOP_JUMPTARGET_LENGTH);
   }
 
   
@@ -425,7 +413,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   
   
   ptrdiff_t lastNonJumpTargetOffset() const {
-    return lastOpcodeIsJumpTarget() ? current->lastTarget.offset : offset();
+    return lastOpcodeIsJumpTarget() ? lastTarget.offset : offset();
   }
 
   void setFunctionBodyEndPos(TokenPos pos) {
@@ -480,10 +468,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   void copySrcNotes(jssrcnote* destination, uint32_t nsrcnotes);
   MOZ_MUST_USE bool setSrcNoteOffset(unsigned index, unsigned which,
                                      ptrdiff_t offset);
-
-  
-  
-  MOZ_MUST_USE bool finishTakingSrcNotes(uint32_t* out);
 
   
   enum EmitLineNumberNote { EMIT_LINENOTE, SUPPRESS_LINENOTE };
