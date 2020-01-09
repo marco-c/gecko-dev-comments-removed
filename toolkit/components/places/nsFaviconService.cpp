@@ -43,6 +43,8 @@
 using namespace mozilla;
 using namespace mozilla::places;
 
+const uint16_t gFaviconSizes[7] = {192, 144, 96, 64, 48, 32, 16};
+
 
 
 
@@ -77,9 +79,9 @@ nsresult GetFramesInfoForContainer(imgIContainer* aContainer,
           continue;
         }
         
-        auto end = std::end(sFaviconSizes);
-        uint16_t* matchingSize =
-            std::find(std::begin(sFaviconSizes), end, nativeSize.width);
+        auto end = std::end(gFaviconSizes);
+        const uint16_t* matchingSize =
+            std::find(std::begin(gFaviconSizes), end, nativeSize.width);
         if (matchingSize != end) {
           
           
@@ -727,7 +729,7 @@ nsresult nsFaviconService::OptimizeIconSizes(IconData& aIcon) {
     IconPayload newPayload;
     newPayload.mimeType = NS_LITERAL_CSTRING(PNG_MIME_TYPE);
     newPayload.width = frameInfo.width;
-    for (uint16_t size : sFaviconSizes) {
+    for (uint16_t size : gFaviconSizes) {
       
       
       if (frameInfo.width >= 16) {
