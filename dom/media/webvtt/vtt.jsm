@@ -591,12 +591,9 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
       styles["writing-mode"] = this._getCueWritingMode(cue);
 
       
-      const {width, height} = this._getCueWidthAndHeight(cue);
+      const {width, height, left, top} = this._getCueSizeAndPosition(cue);
       styles["width"] = width;
       styles["height"] = height;
-
-      
-      const {left, top} = this._getCueLeftAndTop(cue);
       styles["left"] = left;
       styles["top"] = top;
     }
@@ -608,7 +605,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
       return cue.vertical == "lr" ? "vertical-lr" : "vertical-rl";
     }
 
-    _getCueWidthAndHeight(cue) {
+    _getCueSizeAndPosition(cue) {
       
       
       let maximumSize;
@@ -626,16 +623,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
           break;
       }
       const size = Math.min(cue.size, maximumSize);
-      return cue.vertical == "" ? {
-        width: size + "%",
-        height: "auto",
-      } : {
-        width: "auto",
-        height: size + "%",
-      };
-    }
 
-    _getCueLeftAndTop(cue) {
       
       
       let xPosition = 0.0, yPosition = 0.0;
@@ -650,16 +638,16 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
           break;
         case "center":
           if (isWritingDirectionHorizontal) {
-            xPosition = cue.computedPosition - (cue.size / 2);
+            xPosition = cue.computedPosition - (size / 2);
           } else {
-            yPosition = cue.computedPosition - (cue.size / 2);
+            yPosition = cue.computedPosition - (size / 2);
           }
           break;
         case "line-right":
           if (isWritingDirectionHorizontal) {
-            xPosition = cue.computedPosition - cue.size;
+            xPosition = cue.computedPosition - size;
           } else {
-            yPosition = cue.computedPosition - cue.size;
+            yPosition = cue.computedPosition - size;
           }
           break;
       }
@@ -680,7 +668,12 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
           xPosition = 0;
         }
       }
-      return { left: xPosition + "%", top: yPosition + "%"};
+      return {
+        left: xPosition + "%",
+        top: yPosition + "%",
+        width: isWritingDirectionHorizontal ? size + "%" : "auto",
+        height: isWritingDirectionHorizontal ? "auto" : size + "%",
+      };
     }
   }
 
