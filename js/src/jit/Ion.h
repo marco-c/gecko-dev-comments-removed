@@ -169,12 +169,17 @@ static inline bool IsIonEnabled(JSContext* cx) {
 #endif
 }
 
+inline bool IsIonInlinableGetterOrSetterPC(jsbytecode* pc) {
+  
+  
+  return IsGetPropPC(pc) || IsGetElemPC(pc) || IsSetPropPC(pc);
+}
+
 inline bool IsIonInlinablePC(jsbytecode* pc) {
   
   
-  
-  return (IsCallPC(pc) && !IsSpreadCallPC(pc)) || IsGetPropPC(pc) ||
-         IsSetPropPC(pc);
+  return (IsCallPC(pc) && !IsSpreadCallPC(pc)) ||
+         IsIonInlinableGetterOrSetterPC(pc);
 }
 
 inline bool TooManyActualArguments(unsigned nargs) {

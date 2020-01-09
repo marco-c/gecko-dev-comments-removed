@@ -1066,12 +1066,52 @@ static bool AddCacheIRGlobalGetter(
   return true;
 }
 
+static bool GuardSpecificAtomOrSymbol(CacheIRReader& reader, ICStub* stub,
+                                      const CacheIRStubInfo* stubInfo,
+                                      ValOperandId keyId, jsid id) {
+  
+  if (JSID_IS_ATOM(id)) {
+    if (!reader.matchOp(CacheOp::GuardIsString, keyId)) {
+      return false;
+    }
+    if (!reader.matchOp(CacheOp::GuardSpecificAtom, keyId)) {
+      return false;
+    }
+    JSString* str =
+        stubInfo->getStubField<JSString*>(stub, reader.stubOffset()).get();
+    if (AtomToId(&str->asAtom()) != id) {
+      return false;
+    }
+  } else {
+    MOZ_ASSERT(JSID_IS_SYMBOL(id));
+    if (!reader.matchOp(CacheOp::GuardIsSymbol, keyId)) {
+      return false;
+    }
+    if (!reader.matchOp(CacheOp::GuardSpecificSymbol, keyId)) {
+      return false;
+    }
+    Symbol* sym =
+        stubInfo->getStubField<Symbol*>(stub, reader.stubOffset()).get();
+    if (SYMBOL_TO_JSID(sym) != id) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 static bool AddCacheIRGetPropFunction(
-    ICCacheIR_Monitored* stub, bool innerized, JSObject** holder,
+    ICCacheIR_Monitored* stub, jsid id, bool innerized, JSObject** holder,
     Shape** holderShape, JSFunction** commonGetter, Shape** globalShape,
     bool* isOwnProperty, BaselineInspector::ReceiverVector& receivers,
     BaselineInspector::ObjectGroupVector& convertUnboxedGroups,
     JSScript* script) {
+  
+  
+  
+  
+  
+  
   
   
   
@@ -1104,6 +1144,13 @@ static bool AddCacheIRGetPropFunction(
     return AddCacheIRGlobalGetter(stub, innerized, holder, holderShape,
                                   commonGetter, globalShape, isOwnProperty,
                                   receivers, convertUnboxedGroups, script);
+  }
+
+  if (!JSID_IS_EMPTY(id)) {
+    ValOperandId keyId = ValOperandId(1);
+    if (!GuardSpecificAtomOrSymbol(reader, stub, stub->stubInfo(), keyId, id)) {
+      return false;
+    }
   }
 
   if (innerized) {
@@ -1211,15 +1258,22 @@ static bool AddCacheIRGetPropFunction(
 }
 
 bool BaselineInspector::commonGetPropFunction(
-    jsbytecode* pc, bool innerized, JSObject** holder, Shape** holderShape,
-    JSFunction** commonGetter, Shape** globalShape, bool* isOwnProperty,
-    ReceiverVector& receivers, ObjectGroupVector& convertUnboxedGroups) {
+    jsbytecode* pc, jsid id, bool innerized, JSObject** holder,
+    Shape** holderShape, JSFunction** commonGetter, Shape** globalShape,
+    bool* isOwnProperty, ReceiverVector& receivers,
+    ObjectGroupVector& convertUnboxedGroups) {
   if (!hasICScript()) {
     return false;
   }
 
+  MOZ_ASSERT(IsGetPropPC(pc) || IsGetElemPC(pc) || JSOp(*pc) == JSOP_GETGNAME);
   MOZ_ASSERT(receivers.empty());
   MOZ_ASSERT(convertUnboxedGroups.empty());
+
+  
+  if (!IsGetElemPC(pc)) {
+    id = JSID_EMPTY;
+  }
 
   *globalShape = nullptr;
   *commonGetter = nullptr;
@@ -1227,7 +1281,7 @@ bool BaselineInspector::commonGetPropFunction(
 
   for (ICStub* stub = entry.firstStub(); stub; stub = stub->next()) {
     if (stub->isCacheIR_Monitored()) {
-      if (!AddCacheIRGetPropFunction(stub->toCacheIR_Monitored(), innerized,
+      if (!AddCacheIRGetPropFunction(stub->toCacheIR_Monitored(), id, innerized,
                                      holder, holderShape, commonGetter,
                                      globalShape, isOwnProperty, receivers,
                                      convertUnboxedGroups, script)) {
@@ -1254,7 +1308,12 @@ bool BaselineInspector::commonGetPropFunction(
 }
 
 static JSFunction* GetMegamorphicGetterSetterFunction(
-    ICStub* stub, const CacheIRStubInfo* stubInfo, bool isGetter) {
+    ICStub* stub, const CacheIRStubInfo* stubInfo, jsid id, bool isGetter) {
+  
+  
+  
+  
+  
   
   
   
@@ -1269,6 +1328,13 @@ static JSFunction* GetMegamorphicGetterSetterFunction(
     return nullptr;
   }
 
+  if (!JSID_IS_EMPTY(id)) {
+    ValOperandId keyId = ValOperandId(1);
+    if (!GuardSpecificAtomOrSymbol(reader, stub, stubInfo, keyId, id)) {
+      return nullptr;
+    }
+  }
+
   if (!reader.matchOp(CacheOp::GuardHasGetterSetter, objId)) {
     return nullptr;
   }
@@ -1280,9 +1346,19 @@ static JSFunction* GetMegamorphicGetterSetterFunction(
 }
 
 bool BaselineInspector::megamorphicGetterSetterFunction(
-    jsbytecode* pc, bool isGetter, JSFunction** getterOrSetter) {
+    jsbytecode* pc, jsid id, bool isGetter, JSFunction** getterOrSetter) {
   if (!hasICScript()) {
     return false;
+  }
+
+  MOZ_ASSERT(IsGetPropPC(pc) || IsGetElemPC(pc) || IsSetPropPC(pc) ||
+             JSOp(*pc) == JSOP_GETGNAME || JSOp(*pc) == JSOP_INITGLEXICAL ||
+             JSOp(*pc) == JSOP_INITPROP || JSOp(*pc) == JSOP_INITLOCKEDPROP ||
+             JSOp(*pc) == JSOP_INITHIDDENPROP);
+
+  
+  if (!IsGetElemPC(pc)) {
+    id = JSID_EMPTY;
   }
 
   *getterOrSetter = nullptr;
@@ -1292,7 +1368,7 @@ bool BaselineInspector::megamorphicGetterSetterFunction(
     if (stub->isCacheIR_Monitored()) {
       MOZ_ASSERT(isGetter);
       JSFunction* getter = GetMegamorphicGetterSetterFunction(
-          stub, stub->toCacheIR_Monitored()->stubInfo(), isGetter);
+          stub, stub->toCacheIR_Monitored()->stubInfo(), id, isGetter);
       if (!getter || (*getterOrSetter && *getterOrSetter != getter)) {
         return false;
       }
@@ -1302,7 +1378,7 @@ bool BaselineInspector::megamorphicGetterSetterFunction(
     if (stub->isCacheIR_Updated()) {
       MOZ_ASSERT(!isGetter);
       JSFunction* setter = GetMegamorphicGetterSetterFunction(
-          stub, stub->toCacheIR_Updated()->stubInfo(), isGetter);
+          stub, stub->toCacheIR_Updated()->stubInfo(), id, isGetter);
       if (!setter || (*getterOrSetter && *getterOrSetter != setter)) {
         return false;
       }
@@ -1439,6 +1515,9 @@ bool BaselineInspector::commonSetPropFunction(
     return false;
   }
 
+  MOZ_ASSERT(IsSetPropPC(pc) || JSOp(*pc) == JSOP_INITGLEXICAL ||
+             JSOp(*pc) == JSOP_INITPROP || JSOp(*pc) == JSOP_INITLOCKEDPROP ||
+             JSOp(*pc) == JSOP_INITHIDDENPROP);
   MOZ_ASSERT(receivers.empty());
   MOZ_ASSERT(convertUnboxedGroups.empty());
 

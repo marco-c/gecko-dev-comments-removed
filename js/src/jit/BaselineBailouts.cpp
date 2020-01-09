@@ -13,6 +13,7 @@
 #include "jit/BaselineIC.h"
 #include "jit/BaselineJIT.h"
 #include "jit/CompileInfo.h"
+#include "jit/Ion.h"
 #include "jit/JitSpewer.h"
 #include "jit/mips32/Simulator-mips32.h"
 #include "jit/mips64/Simulator-mips64.h"
@@ -436,7 +437,7 @@ struct BaselineStackBuilder {
 #ifdef DEBUG
 static inline bool IsInlinableFallback(ICFallbackStub* icEntry) {
   return icEntry->isCall_Fallback() || icEntry->isGetProp_Fallback() ||
-         icEntry->isSetProp_Fallback();
+         icEntry->isSetProp_Fallback() || icEntry->isGetElem_Fallback();
 }
 #endif
 
@@ -448,6 +449,9 @@ static inline void* GetStubReturnAddress(JSContext* cx, jsbytecode* pc) {
   }
   if (IsSetPropPC(pc)) {
     return jitRealm->bailoutReturnAddr(BailoutReturnStub::SetProp);
+  }
+  if (IsGetElemPC(pc)) {
+    return jitRealm->bailoutReturnAddr(BailoutReturnStub::GetElem);
   }
 
   
@@ -901,7 +905,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
   uint32_t pushedSlots = 0;
   AutoValueVector savedCallerArgs(cx);
   bool needToSaveArgs =
-      op == JSOP_FUNAPPLY || IsGetPropPC(pc) || IsSetPropPC(pc);
+      op == JSOP_FUNAPPLY || IsIonInlinableGetterOrSetterPC(pc);
   if (iter.moreFrames() && (op == JSOP_FUNCALL || needToSaveArgs)) {
     uint32_t inlined_args = 0;
     if (op == JSOP_FUNCALL) {
@@ -909,7 +913,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
     } else if (op == JSOP_FUNAPPLY) {
       inlined_args = 2 + blFrame->numActualArgs();
     } else {
-      MOZ_ASSERT(IsGetPropPC(pc) || IsSetPropPC(pc));
+      MOZ_ASSERT(IsIonInlinableGetterOrSetterPC(pc));
       inlined_args = 2 + IsSetPropPC(pc);
     }
 
@@ -1085,7 +1089,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
         
         
         MOZ_ASSERT(expectedDepth - exprStackSlots <= 1);
-      } else if (iter.moreFrames() && (IsGetPropPC(pc) || IsSetPropPC(pc))) {
+      } else if (iter.moreFrames() && IsIonInlinableGetterOrSetterPC(pc)) {
         
         
         
@@ -1094,7 +1098,9 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
         
         
         
-        MOZ_ASSERT(exprStackSlots - expectedDepth == 1);
+        
+        
+        MOZ_ASSERT(exprStackSlots - expectedDepth == (IsGetElemPC(pc) ? 0 : 1));
       } else {
         
         

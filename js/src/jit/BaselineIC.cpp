@@ -504,6 +504,7 @@ void ICStubIterator::unlink(JSContext* cx) {
     
     case GetProp_Fallback:
     case SetProp_Fallback:
+    case GetElem_Fallback:
       return true;
     default:
       return false;
@@ -2195,22 +2196,55 @@ bool ICGetElem_Fallback::Compiler::generateStubCode(MacroAssembler& masm) {
     masm.pushValue(R1);  
     masm.pushValue(Address(masm.getStackPointer(), sizeof(Value) * 5));  
     masm.push(ICStubReg);
-    pushStubPayload(masm, R0.scratchReg());
+    masm.pushBaselineFramePtr(BaselineFrameReg, R0.scratchReg());
 
-    return tailCallVM(DoGetElemSuperFallbackInfo, masm);
+    if (!tailCallVM(DoGetElemSuperFallbackInfo, masm)) {
+      return false;
+    }
+  } else {
+    
+    masm.pushValue(R0);
+    masm.pushValue(R1);
+
+    
+    masm.pushValue(R1);
+    masm.pushValue(R0);
+    masm.push(ICStubReg);
+    masm.pushBaselineFramePtr(BaselineFrameReg, R0.scratchReg());
+
+    if (!tailCallVM(DoGetElemFallbackInfo, masm)) {
+      return false;
+    }
   }
 
   
-  masm.pushValue(R0);
-  masm.pushValue(R1);
+  
+  
+  assumeStubFrame();
+  bailoutReturnOffset_.bind(masm.currentOffset());
+
+  leaveStubFrame(masm, true);
 
   
-  masm.pushValue(R1);
-  masm.pushValue(R0);
-  masm.push(ICStubReg);
-  pushStubPayload(masm, R0.scratchReg());
+  
+  
+  
+  
+  masm.loadPtr(Address(ICStubReg,
+                       ICMonitoredFallbackStub::offsetOfFallbackMonitorStub()),
+               ICStubReg);
+  EmitEnterTypeMonitorIC(masm,
+                         ICTypeMonitor_Fallback::offsetOfFirstMonitorStub());
 
-  return tailCallVM(DoGetElemFallbackInfo, masm);
+  return true;
+}
+
+void ICGetElem_Fallback::Compiler::postGenerateStubCode(MacroAssembler& masm,
+                                                        Handle<JitCode*> code) {
+  BailoutReturnStub kind = hasReceiver_ ? BailoutReturnStub::GetElemSuper
+                                        : BailoutReturnStub::GetElem;
+  void* address = code->raw() + bailoutReturnOffset_.offset();
+  cx->realm()->jitRealm()->initBailoutReturnAddr(address, getKey(), kind);
 }
 
 static void SetUpdateStubData(ICCacheIR_Updated* stub,

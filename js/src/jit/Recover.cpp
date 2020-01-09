@@ -13,6 +13,7 @@
 #include "builtin/String.h"
 #include "builtin/TypedObject.h"
 #include "gc/Heap.h"
+#include "jit/Ion.h"
 #include "jit/JitSpewer.h"
 #include "jit/JSJitFrameIter.h"
 #include "jit/MIR.h"
@@ -87,8 +88,8 @@ bool MResumePoint::writeRecoverData(CompactBufferWriter& writer) const {
         
         
         MOZ_ASSERT(stackDepth - exprStack <= 1);
-      } else if (JSOp(*bailPC) != JSOP_FUNAPPLY && !IsGetPropPC(bailPC) &&
-                 !IsSetPropPC(bailPC)) {
+      } else if (JSOp(*bailPC) != JSOP_FUNAPPLY &&
+                 !IsIonInlinableGetterOrSetterPC(bailPC)) {
         
         
         
