@@ -80,7 +80,8 @@ MIDIPermissionRequest::Run() {
   }
 
   
-  if (nsContentUtils::IsExactSitePermAllow(mPrincipal, "midi-sysex")) {
+  if (nsContentUtils::IsExactSitePermAllow(mPrincipal,
+                                           NS_LITERAL_CSTRING("midi-sysex"))) {
     Allow(JS::UndefinedHandleValue);
     return NS_OK;
   }

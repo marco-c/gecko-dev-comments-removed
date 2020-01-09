@@ -9,9 +9,15 @@
 namespace mozilla {
 namespace dom {
 
-const char* kPermissionTypes[] = {"geo", "desktop-notification",
-                                  
-                                  "desktop-notification", "persistent-storage"};
+static const nsLiteralCString kPermissionTypes[] = {
+    
+    NS_LITERAL_CSTRING("geo"),
+    NS_LITERAL_CSTRING("desktop-notification"),
+    
+    NS_LITERAL_CSTRING("desktop-notification"),
+    NS_LITERAL_CSTRING("persistent-storage")
+    
+};
 
 
 const size_t kPermissionNameCount =
@@ -20,14 +26,14 @@ const size_t kPermissionNameCount =
 static_assert(MOZ_ARRAY_LENGTH(kPermissionTypes) == kPermissionNameCount,
               "kPermissionTypes and PermissionName count should match");
 
-const char* PermissionNameToType(PermissionName aName) {
+const nsLiteralCString& PermissionNameToType(PermissionName aName) {
   MOZ_ASSERT((size_t)aName < ArrayLength(kPermissionTypes));
   return kPermissionTypes[static_cast<size_t>(aName)];
 }
 
-Maybe<PermissionName> TypeToPermissionName(const char* aType) {
+Maybe<PermissionName> TypeToPermissionName(const nsACString& aType) {
   for (size_t i = 0; i < ArrayLength(kPermissionTypes); ++i) {
-    if (!strcmp(aType, kPermissionTypes[i])) {
+    if (kPermissionTypes[i].Equals(aType)) {
       return Some(static_cast<PermissionName>(i));
     }
   }

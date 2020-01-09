@@ -23,53 +23,53 @@
 #define BEHAVIOR_NOFOREIGN 3
 
 
-static const char *kTypeString[] = {
-    "other",
-    "script",
-    "image",
-    "stylesheet",
-    "object",
-    "document",
-    "subdocument",
-    "refresh",
-    "xbl",
-    "ping",
-    "xmlhttprequest",
-    "objectsubrequest",
-    "dtd",
-    "font",
-    "media",
-    "websocket",
-    "csp_report",
-    "xslt",
-    "beacon",
-    "fetch",
-    "image",
-    "manifest",
-    "",  
-    "",  
-    "",  
-    "",  
-    "",  
-    "",  
-    "",  
-    "",  
-    "",  
-    "",  
-    "",  
-    "",  
-    "",  
-    "",  
-    "",  
-    "",  
-    "",  
-    "",  
-    "",  
-    "",  
-    "saveas_download",
-    "speculative",
-    "",  
-    "",  
+static const nsLiteralCString kTypeString[] = {
+    NS_LITERAL_CSTRING("other"),
+    NS_LITERAL_CSTRING("script"),
+    NS_LITERAL_CSTRING("image"),
+    NS_LITERAL_CSTRING("stylesheet"),
+    NS_LITERAL_CSTRING("object"),
+    NS_LITERAL_CSTRING("document"),
+    NS_LITERAL_CSTRING("subdocument"),
+    NS_LITERAL_CSTRING("refresh"),
+    NS_LITERAL_CSTRING("xbl"),
+    NS_LITERAL_CSTRING("ping"),
+    NS_LITERAL_CSTRING("xmlhttprequest"),
+    NS_LITERAL_CSTRING("objectsubrequest"),
+    NS_LITERAL_CSTRING("dtd"),
+    NS_LITERAL_CSTRING("font"),
+    NS_LITERAL_CSTRING("media"),
+    NS_LITERAL_CSTRING("websocket"),
+    NS_LITERAL_CSTRING("csp_report"),
+    NS_LITERAL_CSTRING("xslt"),
+    NS_LITERAL_CSTRING("beacon"),
+    NS_LITERAL_CSTRING("fetch"),
+    NS_LITERAL_CSTRING("image"),
+    NS_LITERAL_CSTRING("manifest"),
+    NS_LITERAL_CSTRING(""),  
+    NS_LITERAL_CSTRING(""),  
+    NS_LITERAL_CSTRING(""),  
+    NS_LITERAL_CSTRING(""),  
+    NS_LITERAL_CSTRING(""),  
+    NS_LITERAL_CSTRING(""),  
+    NS_LITERAL_CSTRING(""),  
+    NS_LITERAL_CSTRING(""),  
+    NS_LITERAL_CSTRING(""),  
+    NS_LITERAL_CSTRING(""),  
+    NS_LITERAL_CSTRING(""),  
+    NS_LITERAL_CSTRING(""),  
+    NS_LITERAL_CSTRING(""),  
+    NS_LITERAL_CSTRING(""),  
+    NS_LITERAL_CSTRING(""),  
+    NS_LITERAL_CSTRING(""),  
+    NS_LITERAL_CSTRING(""),  
+    NS_LITERAL_CSTRING(""),  
+    NS_LITERAL_CSTRING(""),  
+    NS_LITERAL_CSTRING(""),  
+    NS_LITERAL_CSTRING("saveas_download"),
+    NS_LITERAL_CSTRING("speculative"),
+    NS_LITERAL_CSTRING(""),  
+    NS_LITERAL_CSTRING(""),  
 };
 
 #define NUMBER_OF_TYPES MOZ_ARRAY_LENGTH(kTypeString)
@@ -140,9 +140,10 @@ void nsContentBlocker::PrefChanged(nsIPrefBranch *aPrefBranch,
 #define PREF_CHANGED(_P) (!aPref || !strcmp(aPref, _P))
 
   for (uint32_t i = 0; i < NUMBER_OF_TYPES; ++i) {
-    if (*kTypeString[i] && PREF_CHANGED(kTypeString[i]) &&
-        NS_SUCCEEDED(aPrefBranch->GetIntPref(kTypeString[i], &val)))
+    if (!kTypeString[i].IsEmpty() && PREF_CHANGED(kTypeString[i].get()) &&
+        NS_SUCCEEDED(aPrefBranch->GetIntPref(kTypeString[i].get(), &val))) {
       mBehaviorPref[i] = LIMIT(val, 1, 3, 1);
+    }
   }
 }
 
@@ -262,7 +263,7 @@ nsresult nsContentBlocker::TestPermission(nsIURI *aCurrentURI,
   *aFromPrefs = false;
   nsresult rv;
 
-  if (!*kTypeString[aContentType - 1]) {
+  if (kTypeString[aContentType - 1].IsEmpty()) {
     
     *aPermission = false;
     return NS_OK;

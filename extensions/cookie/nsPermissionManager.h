@@ -176,7 +176,7 @@ class nsPermissionManager final : public nsIPermissionManager,
   
   static const int64_t cIDPermissionIsDefault = -1;
 
-  nsresult AddInternal(nsIPrincipal* aPrincipal, const nsCString& aType,
+  nsresult AddInternal(nsIPrincipal* aPrincipal, const nsACString& aType,
                        uint32_t aPermission, int64_t aID, uint32_t aExpireType,
                        int64_t aExpireTime, int64_t aModificationTime,
                        NotifyOperationType aNotifyOperation,
@@ -246,8 +246,8 @@ class nsPermissionManager final : public nsIPermissionManager,
 
 
 
-  static void GetKeyForPermission(nsIPrincipal* aPrincipal, const char* aType,
-                                  nsACString& aPermissionKey);
+  static void GetKeyForPermission(nsIPrincipal* aPrincipal,
+                                  const nsACString& aType, nsACString& aKey);
 
   
 
@@ -274,15 +274,17 @@ class nsPermissionManager final : public nsIPermissionManager,
 
   
   
-  static bool HasDefaultPref(const char* aType) {
+  static bool HasDefaultPref(const nsACString& aType) {
     
     
-    static const char* kPermissionsWithDefaults[] = {
-        "camera", "microphone", "geo", "desktop-notification", "shortcuts"};
+    static const nsLiteralCString kPermissionsWithDefaults[] = {
+        NS_LITERAL_CSTRING("camera"), NS_LITERAL_CSTRING("microphone"),
+        NS_LITERAL_CSTRING("geo"), NS_LITERAL_CSTRING("desktop-notification"),
+        NS_LITERAL_CSTRING("shortcuts")};
 
-    if (aType) {
-      for (const char* perm : kPermissionsWithDefaults) {
-        if (!strcmp(aType, perm)) {
+    if (!aType.IsEmpty()) {
+      for (const auto& perm : kPermissionsWithDefaults) {
+        if (perm.Equals(aType)) {
           return true;
         }
       }
@@ -292,7 +294,7 @@ class nsPermissionManager final : public nsIPermissionManager,
   }
 
   
-  int32_t GetTypeIndex(const char* aType, bool aAdd) {
+  int32_t GetTypeIndex(const nsACString& aType, bool aAdd) {
     for (uint32_t i = 0; i < mTypeArray.length(); ++i) {
       if (mTypeArray[i].Equals(aType)) {
         return i;
@@ -348,7 +350,7 @@ class nsPermissionManager final : public nsIPermissionManager,
 
 
   TestPreparationResult CommonPrepareToTestPermission(
-      nsIPrincipal* aPrincipal, int32_t aTypeIndex, const char* aType,
+      nsIPrincipal* aPrincipal, int32_t aTypeIndex, const nsACString& aType,
       uint32_t* aPermission, uint32_t aDefaultPermission,
       bool aDefaultPermissionIsValid, bool aExactHostMatch,
       bool aIncludingSession) {
@@ -366,8 +368,8 @@ class nsPermissionManager final : public nsIPermissionManager,
     int32_t defaultPermission =
         aDefaultPermissionIsValid ? aDefaultPermission : UNKNOWN_ACTION;
     if (!aDefaultPermissionIsValid && HasDefaultPref(aType)) {
-      mozilla::Unused << mDefaultPrefBranch->GetIntPref(aType,
-                                                        &defaultPermission);
+      mozilla::Unused << mDefaultPrefBranch->GetIntPref(
+          PromiseFlatCString(aType).get(), &defaultPermission);
     }
 
     
@@ -412,7 +414,7 @@ class nsPermissionManager final : public nsIPermissionManager,
 
   
   nsresult CommonTestPermission(nsIPrincipal* aPrincipal, int32_t aTypeIndex,
-                                const char* aType, uint32_t* aPermission,
+                                const nsACString& aType, uint32_t* aPermission,
                                 uint32_t aDefaultPermission,
                                 bool aDefaultPermissionIsValid,
                                 bool aExactHostMatch, bool aIncludingSession) {
@@ -429,7 +431,7 @@ class nsPermissionManager final : public nsIPermissionManager,
   }
   
   nsresult CommonTestPermission(nsIURI* aURI, int32_t aTypeIndex,
-                                const char* aType, uint32_t* aPermission,
+                                const nsACString& aType, uint32_t* aPermission,
                                 uint32_t aDefaultPermission,
                                 bool aDefaultPermissionIsValid,
                                 bool aExactHostMatch, bool aIncludingSession) {
@@ -445,12 +447,10 @@ class nsPermissionManager final : public nsIPermissionManager,
         aPermission, aExactHostMatch, aIncludingSession);
   }
   
-  nsresult CommonTestPermissionInternal(nsIPrincipal* aPrincipal, nsIURI* aURI,
-                                        const nsACString& aOriginNoSuffix,
-                                        int32_t aTypeIndex, const char* aType,
-                                        uint32_t* aPermission,
-                                        bool aExactHostMatch,
-                                        bool aIncludingSession);
+  nsresult CommonTestPermissionInternal(
+      nsIPrincipal* aPrincipal, nsIURI* aURI, const nsACString& aOriginNoSuffix,
+      int32_t aTypeIndex, const nsACString& aType, uint32_t* aPermission,
+      bool aExactHostMatch, bool aIncludingSession);
 
   nsresult OpenDatabase(nsIFile* permissionsFile);
   nsresult InitDB(bool aRemoveFile);
@@ -460,7 +460,7 @@ class nsPermissionManager final : public nsIPermissionManager,
   nsresult _DoImport(nsIInputStream* inputStream, mozIStorageConnection* aConn);
   nsresult Read();
   void NotifyObserversWithPermission(nsIPrincipal* aPrincipal,
-                                     const nsCString& aType,
+                                     const nsACString& aType,
                                      uint32_t aPermission, uint32_t aExpireType,
                                      int64_t aExpireTime,
                                      const char16_t* aData);
@@ -493,7 +493,7 @@ class nsPermissionManager final : public nsIPermissionManager,
 
 
 
-  bool PermissionAvailable(nsIPrincipal* aPrincipal, const char* aType);
+  bool PermissionAvailable(nsIPrincipal* aPrincipal, const nsACString& aType);
 
   nsRefPtrHashtable<nsCStringHashKey, mozilla::GenericPromise::Private>
       mPermissionKeyPromiseMap;

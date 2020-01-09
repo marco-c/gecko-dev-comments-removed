@@ -761,21 +761,14 @@ class nsContentUtils {
   
   
   
-  static bool IsSitePermAllow(nsIPrincipal* aPrincipal, const char* aType);
+  static bool IsSitePermAllow(nsIPrincipal* aPrincipal,
+                              const nsACString& aType);
 
   
   
   
   
-  static bool IsSitePermDeny(nsIPrincipal* aPrincipal, const char* aType);
-
-  
-  
-  
-  
-  
-  
-  static bool IsExactSitePermAllow(nsIPrincipal* aPrincipal, const char* aType);
+  static bool IsSitePermDeny(nsIPrincipal* aPrincipal, const nsACString& aType);
 
   
   
@@ -783,7 +776,17 @@ class nsContentUtils {
   
   
   
-  static bool IsExactSitePermDeny(nsIPrincipal* aPrincipal, const char* aType);
+  static bool IsExactSitePermAllow(nsIPrincipal* aPrincipal,
+                                   const nsACString& aType);
+
+  
+  
+  
+  
+  
+  
+  static bool IsExactSitePermDeny(nsIPrincipal* aPrincipal,
+                                  const nsACString& aType);
 
   
   static bool HaveEqualPrincipals(Document* aDoc1, Document* aDoc2);
