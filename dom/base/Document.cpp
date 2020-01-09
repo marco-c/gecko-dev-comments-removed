@@ -6773,9 +6773,8 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
 
       
       
-      CSSToScreenScale defaultPixelScale =
-          layoutDeviceScale * LayoutDeviceToScreenScale(1.0f);
-      CSSSize displaySize = ScreenSize(aDisplaySize) / defaultPixelScale;
+      
+      CSSSize displaySize = ScreenSize(aDisplaySize) / defaultScale;
 
       
       if (maxWidth == nsViewportInfo::DeviceSize) {
@@ -6852,7 +6851,7 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
       
       if (height == nsViewportInfo::Auto) {
         if (aDisplaySize.width == 0) {
-          height = aDisplaySize.height;
+          height = displaySize.height;
         } else {
           height = width * aDisplaySize.height / aDisplaySize.width;
         }
@@ -6895,8 +6894,8 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
       
       
       if (mScaleStrEmpty && !mWidthStrEmpty) {
-        CSSToScreenScale defaultScale(float(aDisplaySize.width) / size.width);
-        scaleFloat = (scaleFloat > defaultScale) ? scaleFloat : defaultScale;
+        CSSToScreenScale bestFitScale(float(aDisplaySize.width) / size.width);
+        scaleFloat = (scaleFloat > bestFitScale) ? scaleFloat : bestFitScale;
       }
 
       size.height = clamped(size.height, effectiveMinSize.height,
