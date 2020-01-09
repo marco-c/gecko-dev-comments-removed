@@ -43,9 +43,6 @@ const CHECK_LINKED_SHEET_DELAY = 500;
 const MAX_CHECK_COUNT = 10;
 
 
-const UNUSED_CLASS = "cm-unused-line";
-
-
 
 const SELECTOR_HIGHLIGHT_TIMEOUT = 500;
 
@@ -303,41 +300,6 @@ StyleSheetEditor.prototype = {
         throw e;
       }
     });
-  },
-
-  
-
-
-
-
-
-
-
-  addUnusedRegion: function(region) {
-    this.sourceEditor.addLineClass(region.start.line - 1, UNUSED_CLASS);
-    if (region.end) {
-      for (let i = region.start.line; i <= region.end.line; i++) {
-        this.sourceEditor.addLineClass(i - 1, UNUSED_CLASS);
-      }
-    }
-  },
-
-  
-
-
-  addUnusedRegions: function(regions) {
-    for (const region of regions) {
-      this.addUnusedRegion(region);
-    }
-  },
-
-  
-
-
-  removeAllUnusedRegions: function() {
-    for (let i = 0; i < this.sourceEditor.lineCount(); i++) {
-      this.sourceEditor.removeLineClass(i, UNUSED_CLASS);
-    }
   },
 
   
