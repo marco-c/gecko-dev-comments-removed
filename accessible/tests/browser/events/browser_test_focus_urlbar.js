@@ -119,6 +119,9 @@ async function runTests() {
   EventUtils.synthesizeKey("KEY_ArrowLeft");
   await focused;
   testStates(textBox, STATE_FOCUSED);
+  if (UrlbarPrefs.get("quantumbar")) {
+    gURLBar.view.close();
+  }
   
   
   EventUtils.synthesizeKey("KEY_ArrowRight");
