@@ -167,17 +167,6 @@ add_task(async function() {
   
   
   setCertTrust(ee_cert, "CTu,CTu,CTu");
-  await checkCertErrorGeneric(certdb, ee_cert, SEC_ERROR_UNKNOWN_ISSUER,
-                              certificateUsageSSLServer);
-  await checkCertErrorGeneric(certdb, ee_cert, SEC_ERROR_UNKNOWN_ISSUER,
-                              certificateUsageSSLClient);
-  await checkCertErrorGeneric(certdb, ee_cert, SEC_ERROR_UNKNOWN_ISSUER,
-                              certificateUsageEmailSigner);
-  await checkCertErrorGeneric(certdb, ee_cert, SEC_ERROR_UNKNOWN_ISSUER,
-                              certificateUsageEmailRecipient);
-
-  
-  setCertTrust(ca_cert, "CTu,CTu,CTu");
   await checkCertErrorGeneric(certdb, ee_cert, PRErrorCodeSuccess,
                               certificateUsageSSLServer);
   await checkCertErrorGeneric(certdb, ee_cert, PRErrorCodeSuccess,

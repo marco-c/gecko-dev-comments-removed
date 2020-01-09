@@ -58,6 +58,8 @@ typedef std::vector<VerifiedSCT> VerifiedSCTList;
 
 class CTVerifyResult {
  public:
+  CTVerifyResult() { Reset(); }
+
   
   
   VerifiedSCTList verifiedScts;

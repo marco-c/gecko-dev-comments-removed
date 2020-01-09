@@ -254,13 +254,7 @@ Result NSSCertDBTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
     }
 
     
-    
-    
-    
-    
-    
-    
-    if (flags & CERTDB_TRUSTED_CA && endEntityOrCA == EndEntityOrCA::MustBeCA) {
+    if (flags & CERTDB_TRUSTED_CA) {
       if (policy.IsAnyPolicy()) {
         trustLevel = TrustLevel::TrustAnchor;
         return Success;
@@ -872,7 +866,7 @@ Result NSSCertDBTrustDomain::IsChainValid(const DERArray& certArray, Time time,
     nsrv = nssCertList->SegmentCertificateChain(rootCert, intCerts, eeCert);
     if (NS_FAILED(nsrv)) {
       
-      return Result::FATAL_ERROR_LIBRARY_FAILURE;
+      return Result::ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED;
     }
 
     

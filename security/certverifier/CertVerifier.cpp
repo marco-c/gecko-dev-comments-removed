@@ -299,7 +299,19 @@ Result CertVerifier::VerifyCertificateTransparencyPolicy(
   CERTCertListNode* issuerNode = CERT_LIST_NEXT(endEntityNode);
   if (!issuerNode || CERT_LIST_END(issuerNode, builtChain)) {
     
-    return Result::FATAL_ERROR_INVALID_ARGS;
+    
+    
+    
+    
+    
+    
+    
+    if (ctInfo) {
+      CTVerifyResult emptyResult;
+      ctInfo->verifyResult = std::move(emptyResult);
+      ctInfo->policyCompliance = CTPolicyCompliance::NotEnoughScts;
+    }
+    return Success;
   }
 
   CERTCertificate* endEntity = endEntityNode->cert;
