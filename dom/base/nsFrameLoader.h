@@ -23,6 +23,7 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ParentSHistory.h"
+#include "mozilla/dom/RemoteBrowser.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "nsStubMutationObserver.h"
@@ -446,6 +447,10 @@ class nsFrameLoader final : public nsStubMutationObserver,
   nsresult ReallyStartLoadingInternal();
 
   
+  
+  bool EnsureRemoteBrowser();
+
+  
   bool TryRemoteBrowser();
 
   
@@ -492,11 +497,8 @@ class nsFrameLoader final : public nsStubMutationObserver,
   
   uint64_t mPendingSwitchID;
 
-  RefPtr<BrowserParent> mBrowserParent;
   uint64_t mChildID;
-
-  
-  RefPtr<mozilla::dom::BrowserBridgeChild> mBrowserBridgeChild;
+  RefPtr<mozilla::dom::RemoteBrowser> mRemoteBrowser;
 
   
   mozilla::ScreenIntSize mLazySize;
