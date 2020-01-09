@@ -87,7 +87,6 @@ module.exports = {
   }, {
     
     "files": [
-      "parser/htmlparser/tests/mochitest/parser_datreader.js",
       "testing/marionette/event.js",
       "testing/mochitest/**",
       "testing/modules/tests/xpcshell/test_assert.js",
