@@ -1220,21 +1220,26 @@ void js::Nursery::maybeResizeNursery(JS::GCReason reason) {
 
 
   const float factor = promotionRate / PromotionGoal;
-  const unsigned newCapacity = unsigned(float(capacity()) * factor);
+  MOZ_ASSERT(factor >= 0.0f);
+
+  MOZ_ASSERT((float(capacity()) * factor) <= SIZE_MAX);
+  const size_t newCapacity = size_t(float(capacity()) * factor);
 
   
   
   
   if (maxChunkCount() < chunkCountLimit() && promotionRate > GrowThreshold) {
-    unsigned lowLimit = capacity() + SubChunkStep;
-    unsigned highLimit =
-        Min(chunkCountLimit() * NurseryChunkUsableSize, capacity() * 2);
+    size_t lowLimit = (CheckedInt<size_t>(capacity()) + SubChunkStep).value();
+    size_t highLimit =
+        Min((CheckedInt<size_t>(chunkCountLimit()) * NurseryChunkUsableSize)
+                .value(),
+            (CheckedInt<size_t>(capacity()) * 2).value());
 
     growAllocableSpace(mozilla::Clamp(newCapacity, lowLimit, highLimit));
   } else if (capacity() >= SubChunkLimit + SubChunkStep &&
              promotionRate < ShrinkThreshold) {
-    unsigned lowLimit = Max(SubChunkLimit, capacity() / 2);
-    unsigned highLimit = capacity() - SubChunkStep;
+    size_t lowLimit = Max(SubChunkLimit, capacity() / 2);
+    size_t highLimit = (CheckedInt<size_t>(capacity()) - SubChunkStep).value();
 
     shrinkAllocableSpace(mozilla::Clamp(newCapacity, lowLimit, highLimit));
   }
@@ -1246,7 +1251,7 @@ void js::Nursery::maybeResizeNursery(JS::GCReason reason) {
       "Nursery limit must be at least one step from the full chunk size");
 }
 
-void js::Nursery::growAllocableSpace(unsigned newCapacity) {
+void js::Nursery::growAllocableSpace(size_t newCapacity) {
   MOZ_ASSERT_IF(!isSubChunkMode(),
                 newCapacity > currentChunk_ * NurseryChunkUsableSize);
   if (isSubChunkMode()) {
@@ -1270,16 +1275,16 @@ void js::Nursery::freeChunksFrom(unsigned firstFreeChunk) {
   chunks_.shrinkTo(firstFreeChunk);
 }
 
-void js::Nursery::shrinkAllocableSpace(unsigned newCapacity) {
+void js::Nursery::shrinkAllocableSpace(size_t newCapacity) {
 #ifdef JS_GC_ZEAL
   if (runtime()->hasZealMode(ZealMode::GenerationalGC)) {
     return;
   }
 #endif
 
-  unsigned stepSize = newCapacity < NurseryChunkUsableSize
-                          ? SubChunkStep
-                          : NurseryChunkUsableSize;
+  size_t stepSize = newCapacity < NurseryChunkUsableSize
+                        ? SubChunkStep
+                        : NurseryChunkUsableSize;
   newCapacity -= newCapacity % stepSize;
   
   
