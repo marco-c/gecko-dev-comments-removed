@@ -451,12 +451,9 @@ HashCompleterRequest.prototype = {
   },
 
   
-  
-  
   openChannel: function HCR_openChannel() {
     let loadFlags = Ci.nsIChannel.INHIBIT_CACHING |
-                    Ci.nsIChannel.LOAD_BYPASS_CACHE |
-                    Ci.nsIChannel.LOAD_BYPASS_URL_CLASSIFIER;
+                    Ci.nsIChannel.LOAD_BYPASS_CACHE;
 
     this.request = {
       url: this.gethashUrl,

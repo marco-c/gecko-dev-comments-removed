@@ -696,9 +696,6 @@ class HttpBaseChannel : public nsHashPropertyBag,
   uint32_t mReportTiming : 1;
   uint32_t mAllowSpdy : 1;
   uint32_t mAllowAltSvc : 1;
-  
-  
-  
   uint32_t mBeConservative : 1;
   uint32_t mTRR : 1;
   uint32_t mResponseTimeoutEnabled : 1;
