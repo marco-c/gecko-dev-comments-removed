@@ -10,7 +10,7 @@ from argparse import Namespace
 
 
 here = os.path.abspath(os.path.dirname(__file__))
-if os.environ.get('SCRIPTSPATH', None) is not None:
+if os.environ.get('SCRIPTSPATH') is not None:
     
     mozharness_dir = os.environ['SCRIPTSPATH']
 else:
