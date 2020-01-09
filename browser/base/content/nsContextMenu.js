@@ -897,6 +897,7 @@ nsContextMenu.prototype = {
     let {browser} = this;
     let openSelectionFn = function() {
       let tabBrowser = gBrowser;
+      const inNewWindow = !Services.prefs.getBoolPref("view_source.tab");
       
       
       
@@ -909,10 +910,16 @@ nsContextMenu.prototype = {
       let relatedToCurrent = gBrowser && gBrowser.selectedBrowser == browser;
       let tab = tabBrowser.loadOneTab("about:blank", {
         relatedToCurrent,
-        inBackground: false,
+        inBackground: inNewWindow,
+        skipAnimation: inNewWindow,
         triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
       });
-      return tabBrowser.getBrowserForTab(tab);
+      const viewSourceBrowser = tabBrowser.getBrowserForTab(tab);
+      if (inNewWindow) {
+        tabBrowser.hideTab(tab);
+        tabBrowser.replaceTabsWithWindow(tab);
+      }
+      return viewSourceBrowser;
     };
 
     top.gViewSourceUtils.viewPartialSourceInBrowser(browser, openSelectionFn);

@@ -2680,6 +2680,8 @@ async function BrowserViewSourceOfDocument(aArgsOrDocument) {
     tabBrowser = browserWindow.gBrowser;
   }
 
+  const inNewWindow = !Services.prefs.getBoolPref("view_source.tab");
+
   
   
   
@@ -2687,13 +2689,19 @@ async function BrowserViewSourceOfDocument(aArgsOrDocument) {
   
   let tab = tabBrowser.loadOneTab("about:blank", {
     relatedToCurrent: true,
-    inBackground: false,
+    inBackground: inNewWindow,
+    skipAnimation: inNewWindow,
     preferredRemoteType,
     sameProcessAsFrameLoader: args.browser ? args.browser.frameLoader : null,
     triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
   });
   args.viewSourceBrowser = tabBrowser.getBrowserForTab(tab);
   top.gViewSourceUtils.viewSourceInBrowser(args);
+
+  if (inNewWindow) {
+    tabBrowser.hideTab(tab);
+    tabBrowser.replaceTabWithWindow(tab);
+  }
 }
 
 
