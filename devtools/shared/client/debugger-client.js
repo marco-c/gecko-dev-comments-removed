@@ -22,7 +22,6 @@ loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 loader.lazyRequireGetter(this, "RootFront", "devtools/shared/fronts/root", true);
 loader.lazyRequireGetter(this, "ThreadClient", "devtools/shared/client/thread-client");
 loader.lazyRequireGetter(this, "ObjectClient", "devtools/shared/client/object-client");
-loader.lazyRequireGetter(this, "Pool", "devtools/shared/protocol", true);
 loader.lazyRequireGetter(this, "Front", "devtools/shared/protocol", true);
 
 
@@ -37,16 +36,6 @@ function DebuggerClient(transport) {
   
   
   this._clients = new Map();
-
-  
-  
-  
-  
-  
-  
-  
-  
-  this._frontPool = new Pool(this);
 
   this._pendingRequests = new Map();
   this._activeRequests = new Map();
@@ -64,7 +53,11 @@ function DebuggerClient(transport) {
   this.mainRoot = null;
   this.expectReply("root", (packet) => {
     this.mainRoot = new RootFront(this, packet);
-    this._frontPool.manage(this.mainRoot);
+
+    
+    
+    this.mainRoot.manage(this.mainRoot);
+
     this.emit("connected", packet.applicationType, packet.traits);
   });
 }
