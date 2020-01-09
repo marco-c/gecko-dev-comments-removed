@@ -29,6 +29,7 @@ StringRep.propTypes = {
   escapeWhitespace: PropTypes.bool,
   style: PropTypes.object,
   cropLimit: PropTypes.number.isRequired,
+  urlCropLimit: PropTypes.number,
   member: PropTypes.object,
   object: PropTypes.object.isRequired,
   openLink: PropTypes.func,
@@ -42,6 +43,7 @@ function StringRep(props) {
     className,
     style,
     cropLimit,
+    urlCropLimit,
     object,
     useQuotes = true,
     escapeWhitespace = true,
@@ -91,12 +93,13 @@ function StringRep(props) {
     if (containsURL(text)) {
       return span(
         config,
-        ...getLinkifiedElements(
+        getLinkifiedElements({
           text,
-          shouldCrop && cropLimit,
+          cropLimit: shouldCrop ? cropLimit : null,
+          urlCropLimit,
           openLink,
           isInContentPage
-        )
+        })
       );
     }
 
@@ -179,7 +182,17 @@ function maybeCropString(opts, text) {
 
 
 
-function getLinkifiedElements(text, cropLimit, openLink, isInContentPage) {
+
+
+
+
+function getLinkifiedElements({
+  text,
+  cropLimit,
+  urlCropLimit,
+  openLink,
+  isInContentPage
+}) {
   const halfLimit = Math.ceil((cropLimit - ELLIPSIS.length) / 2);
   const startCropIndex = cropLimit ? halfLimit : null;
   const endCropIndex = cropLimit ? text.length - halfLimit : null;
@@ -211,7 +224,7 @@ function getLinkifiedElements(text, cropLimit, openLink, isInContentPage) {
     }
 
     currentIndex = currentIndex + contentStart;
-    const linkText = getCroppedString(
+    let linkText = getCroppedString(
       useUrl,
       currentIndex,
       startCropIndex,
@@ -219,9 +232,20 @@ function getLinkifiedElements(text, cropLimit, openLink, isInContentPage) {
     );
 
     if (linkText) {
+      if (urlCropLimit && useUrl.length > urlCropLimit) {
+        const urlCropHalf = Math.ceil((urlCropLimit - ELLIPSIS.length) / 2);
+        linkText = getCroppedString(
+          useUrl,
+          0,
+          urlCropHalf,
+          useUrl.length - urlCropHalf
+        );
+      }
+
       items.push(
         a(
           {
+            key: `${useUrl}-${currentIndex}`,
             className: "url",
             title: useUrl,
             draggable: false,

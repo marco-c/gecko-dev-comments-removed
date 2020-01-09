@@ -3788,7 +3788,7 @@ const validProtocols = /(http|https|ftp|data|resource|chrome):/i;
 
 
 
-const urlRegex = /(^|[\s(,;'"`])((?:https?:\/\/|www\d{0,3}[.][a-z0-9.\-]{2,249}|[a-z0-9.\-]{2,250}[.][a-z]{2,4}\/)[-\w.!~*'();,/?:@&=+$#%]*)/im;
+const urlRegex = /(^|[\s(,;'"`“])((?:https?:\/\/|www\d{0,3}[.][a-z0-9.\-]{2,249}|[a-z0-9.\-]{2,250}[.][a-z]{2,4}\/)[-\w.!~*'();,/?:@&=+$#%]*)/im;
 
 
 
@@ -4396,6 +4396,7 @@ StringRep.propTypes = {
   escapeWhitespace: PropTypes.bool,
   style: PropTypes.object,
   cropLimit: PropTypes.number.isRequired,
+  urlCropLimit: PropTypes.number,
   member: PropTypes.object,
   object: PropTypes.object.isRequired,
   openLink: PropTypes.func,
@@ -4409,6 +4410,7 @@ function StringRep(props) {
     className,
     style,
     cropLimit,
+    urlCropLimit,
     object,
     useQuotes = true,
     escapeWhitespace = true,
@@ -4450,7 +4452,13 @@ function StringRep(props) {
 
   if (!isLong) {
     if (containsURL(text)) {
-      return span(config, ...getLinkifiedElements(text, shouldCrop && cropLimit, openLink, isInContentPage));
+      return span(config, getLinkifiedElements({
+        text,
+        cropLimit: shouldCrop ? cropLimit : null,
+        urlCropLimit,
+        openLink,
+        isInContentPage
+      }));
     }
 
     
@@ -4527,7 +4535,17 @@ function maybeCropString(opts, text) {
 
 
 
-function getLinkifiedElements(text, cropLimit, openLink, isInContentPage) {
+
+
+
+
+function getLinkifiedElements({
+  text,
+  cropLimit,
+  urlCropLimit,
+  openLink,
+  isInContentPage
+}) {
   const halfLimit = Math.ceil((cropLimit - ELLIPSIS.length) / 2);
   const startCropIndex = cropLimit ? halfLimit : null;
   const endCropIndex = cropLimit ? text.length - halfLimit : null;
@@ -4557,10 +4575,16 @@ function getLinkifiedElements(text, cropLimit, openLink, isInContentPage) {
     }
 
     currentIndex = currentIndex + contentStart;
-    const linkText = getCroppedString(useUrl, currentIndex, startCropIndex, endCropIndex);
+    let linkText = getCroppedString(useUrl, currentIndex, startCropIndex, endCropIndex);
 
     if (linkText) {
+      if (urlCropLimit && useUrl.length > urlCropLimit) {
+        const urlCropHalf = Math.ceil((urlCropLimit - ELLIPSIS.length) / 2);
+        linkText = getCroppedString(useUrl, 0, urlCropHalf, useUrl.length - urlCropHalf);
+      }
+
       items.push(a({
+        key: `${useUrl}-${currentIndex}`,
         className: "url",
         title: useUrl,
         draggable: false,
