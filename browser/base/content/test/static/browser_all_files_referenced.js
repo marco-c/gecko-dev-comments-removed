@@ -13,6 +13,10 @@ ChromeUtils.defineModuleGetter(this, "ActorManagerParent",
 
 var isDevtools = SimpleTest.harnessParameters.subsuite == "devtools";
 
+
+
+
+
 var gExceptionPaths = [
   "chrome://browser/content/defaultthemes/",
   "resource://app/defaults/settings/blocklists/",
@@ -41,11 +45,6 @@ var gExceptionPaths = [
 
   
   "resource://search-plugins/",
-
-  
-  
-  "chrome://global/content/config.js",
-  "chrome://global/content/config.xul",
 ];
 
 
@@ -54,6 +53,9 @@ if (AppConstants.platform == "macosx") {
   gExceptionPaths.push("resource://gre/res/cursors/");
   gExceptionPaths.push("resource://gre/res/touchbar/");
 }
+
+
+
 
 var whitelist = [
   
@@ -175,10 +177,10 @@ var whitelist = [
   {file: "chrome://devtools/skin/images/aboutdebugging-firefox-release.svg",
    isFromDevTools: true},
   {file: "chrome://devtools/skin/images/next.svg", isFromDevTools: true},
-   
-   {file: "resource://gre-resources/featuregates/FeatureGate.jsm"},
-   {file: "resource://gre-resources/featuregates/FeatureGateImplementation.jsm"},
-   {file: "resource://gre-resources/featuregates/feature_definitions.json"},
+  
+  {file: "resource://gre-resources/featuregates/FeatureGate.jsm"},
+  {file: "resource://gre-resources/featuregates/FeatureGateImplementation.jsm"},
+  {file: "resource://gre-resources/featuregates/feature_definitions.json"},
 ];
 
 whitelist = new Set(whitelist.filter(item =>
