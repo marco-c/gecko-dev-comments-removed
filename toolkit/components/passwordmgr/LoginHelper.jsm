@@ -24,54 +24,46 @@ const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm")
 
 
 
+
+
 var LoginHelper = {
-  debug: null,
-  enabled: null,
-  formlessCaptureEnabled: null,
-  schemeUpgrades: null,
-  insecureAutofill: null,
-  privateBrowsingCaptureEnabled: null,
+  
 
-  init() {
-    
-    Services.prefs.addObserver("signon.", () => this.updateSignonPrefs());
-    this.updateSignonPrefs();
-  },
 
-  updateSignonPrefs() {
-    this.autofillForms = Services.prefs.getBoolPref("signon.autofillForms");
-    this.debug = Services.prefs.getBoolPref("signon.debug");
-    this.enabled = Services.prefs.getBoolPref("signon.rememberSignons");
-    this.formlessCaptureEnabled = Services.prefs.getBoolPref("signon.formlessCapture.enabled");
-    this.insecureAutofill = Services.prefs.getBoolPref("signon.autofillForms.http");
-    this.privateBrowsingCaptureEnabled =
-      Services.prefs.getBoolPref("signon.privateBrowsingCapture.enabled");
-
-    this.schemeUpgrades = Services.prefs.getBoolPref("signon.schemeUpgrades");
-    this.storeWhenAutocompleteOff = Services.prefs.getBoolPref("signon.storeWhenAutocompleteOff");
-  },
+  debug: Services.prefs.getBoolPref("signon.debug"),
+  formlessCaptureEnabled: Services.prefs.getBoolPref("signon.formlessCapture.enabled"),
+  schemeUpgrades: Services.prefs.getBoolPref("signon.schemeUpgrades"),
+  insecureAutofill: Services.prefs.getBoolPref("signon.autofillForms.http"),
+  privateBrowsingCaptureEnabled:
+    Services.prefs.getBoolPref("signon.privateBrowsingCapture.enabled"),
 
   createLogger(aLogPrefix) {
     let getMaxLogLevel = () => {
-      return this.debug ? "Debug" : "Warn";
+      return this.debug ? "debug" : "warn";
     };
 
     let logger;
     function getConsole() {
       if (!logger) {
         
+        let ConsoleAPI = ChromeUtils.import("resource://gre/modules/Console.jsm", {}).ConsoleAPI;
         let consoleOptions = {
           maxLogLevel: getMaxLogLevel(),
           prefix: aLogPrefix,
         };
-        logger = console.createInstance(consoleOptions);
+        logger = new ConsoleAPI(consoleOptions);
       }
       return logger;
     }
 
     
-    Services.prefs.addObserver("signon.debug", () => {
+    Services.prefs.addObserver("signon.", () => {
       this.debug = Services.prefs.getBoolPref("signon.debug");
+      this.formlessCaptureEnabled = Services.prefs.getBoolPref("signon.formlessCapture.enabled");
+      this.schemeUpgrades = Services.prefs.getBoolPref("signon.schemeUpgrades");
+      this.insecureAutofill = Services.prefs.getBoolPref("signon.autofillForms.http");
+      this.privateBrowsingCaptureEnabled =
+        Services.prefs.getBoolPref("signon.privateBrowsingCapture.enabled");
       if (logger) {
         logger.maxLogLevel = getMaxLogLevel();
       }
@@ -216,43 +208,6 @@ var LoginHelper = {
       
     }
     return aURL;
-  },
-
-  
-
-
-
-  getLoginOrigin(uriString, allowJS) {
-    let realm = "";
-    try {
-      let uri = Services.io.newURI(uriString);
-
-      if (allowJS && uri.scheme == "javascript") {
-        return "javascript:";
-      }
-
-      
-      realm = uri.scheme + "://" + uri.displayHostPort;
-    } catch (e) {
-      
-      
-      log.warn("Couldn't parse origin for", uriString, e);
-      realm = null;
-    }
-
-    return realm;
-  },
-
-  getFormActionOrigin(form) {
-    let uriString = form.action;
-
-    
-    if (uriString == "") {
-      
-      uriString = form.baseURI;
-    }
-
-    return this.getLoginOrigin(uriString, true);
   },
 
   
@@ -830,8 +785,6 @@ var LoginHelper = {
     Services.obs.notifyObservers(dataObject, "passwordmgr-storage-changed", changeType);
   },
 };
-
-LoginHelper.init();
 
 XPCOMUtils.defineLazyPreferenceGetter(LoginHelper, "showInsecureFieldWarning",
                                       "security.insecure_field_warning.contextual.enabled");
