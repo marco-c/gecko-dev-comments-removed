@@ -2969,7 +2969,8 @@ class nsContentUtils {
 
 
 
-  static StorageAccess StorageAllowedForServiceWorker(nsIPrincipal* aPrincipal);
+
+  static StorageAccess StorageAllowedForPrincipal(nsIPrincipal* aPrincipal);
 
   
 
@@ -3372,11 +3373,9 @@ class nsContentUtils {
 
 
 
-  static StorageAccess InternalStorageAllowedCheck(nsIPrincipal* aPrincipal,
-                                                   nsPIDOMWindowInner* aWindow,
-                                                   nsIURI* aURI,
-                                                   nsIChannel* aChannel,
-                                                   uint32_t& aRejectedReason);
+  static StorageAccess InternalStorageAllowedForPrincipal(
+      nsIPrincipal* aPrincipal, nsPIDOMWindowInner* aWindow, nsIURI* aURI,
+      nsIChannel* aChannel, uint32_t& aRejectedReason);
 
   static nsINode* GetCommonAncestorHelper(nsINode* aNode1, nsINode* aNode2);
   static nsIContent* GetCommonFlattenedTreeAncestorHelper(
