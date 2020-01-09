@@ -66,10 +66,16 @@ def add_command_arguments(config, tasks):
                 all_locales.update(sub_partner.get('locales', []))
     for task in tasks:
         
+        if not task['attributes']['build_platform'].endswith('-nightly'):
+            raise Exception(
+                "Unexpected partner repack platform: {}".format(
+                    task['attributes']['build_platform'],
+                ),
+            )
         task['run']['options'] = [
             'version={}'.format(release_config['version']),
             'build-number={}'.format(release_config['build_number']),
-            'platform={}'.format(task['attributes']['build_platform'].split('-')[0]),
+            'platform={}'.format(task['attributes']['build_platform'].partition('-nightly')[0]),
         ]
         if task['extra']['limit-locales']:
             for locale in all_locales:
