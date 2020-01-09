@@ -460,26 +460,17 @@ class TabTracker extends TabTrackerBase {
             });
           }
         } else {
-          
-          
-          
+          if (!event.originalTarget.parentNode) {
+            
+            return;
+          }
           const currentTab = nativeTab.ownerGlobal.gBrowser.selectedTab;
           const {frameLoader} = currentTab.linkedBrowser;
           const currentTabSize = {
             width: frameLoader.lazyWidth,
             height: frameLoader.lazyHeight,
           };
-
-          
-          
-          
-          Promise.resolve().then(() => {
-            if (!event.originalTarget.parentNode) {
-              
-              return;
-            }
-            this.emitCreated(event.originalTarget, currentTabSize);
-          });
+          this.emitCreated(event.originalTarget, currentTabSize);
         }
         break;
 
