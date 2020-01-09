@@ -824,7 +824,7 @@ KeyHandlingState IMContextWrapper::OnKeyEvent(
   
   
   
-  bool maybeHandledAsynchronously =
+  bool probablyHandledAsynchronously =
       mIsIMInAsyncKeyHandlingMode && currentContext == mContext;
 
   
@@ -836,7 +836,7 @@ KeyHandlingState IMContextWrapper::OnKeyEvent(
   
   
   
-  if (maybeHandledAsynchronously) {
+  if (probablyHandledAsynchronously) {
     switch (mIMContextID) {
       case IMContextID::eIBus: {
         
@@ -866,7 +866,7 @@ KeyHandlingState IMContextWrapper::OnKeyEvent(
 
         
         if (mMaybeInDeadKeySequence && aEvent->type == GDK_KEY_PRESS) {
-          maybeHandledAsynchronously = false;
+          probablyHandledAsynchronously = false;
           if (isHandlingAsyncEvent) {
             isUnexpectedAsyncEvent = true;
             break;
@@ -884,7 +884,7 @@ KeyHandlingState IMContextWrapper::OnKeyEvent(
         
         
         if (mInputContext.mIMEState.mEnabled == IMEState::PASSWORD) {
-          maybeHandledAsynchronously = false;
+          probablyHandledAsynchronously = false;
           isUnexpectedAsyncEvent = isHandlingAsyncEvent;
           break;
         }
@@ -897,7 +897,7 @@ KeyHandlingState IMContextWrapper::OnKeyEvent(
                    "asynchronously anymore. Removing "
                    "the posted events from the queue",
                    this));
-          maybeHandledAsynchronously = false;
+          probablyHandledAsynchronously = false;
           mPostingKeyEvents.RemoveEvent(aEvent);
           break;
         }
@@ -933,7 +933,7 @@ KeyHandlingState IMContextWrapper::OnKeyEvent(
 
         
         if (mMaybeInDeadKeySequence && aEvent->type == GDK_KEY_PRESS) {
-          maybeHandledAsynchronously = false;
+          probablyHandledAsynchronously = false;
           if (isHandlingAsyncEvent) {
             isUnexpectedAsyncEvent = true;
             break;
@@ -960,7 +960,7 @@ KeyHandlingState IMContextWrapper::OnKeyEvent(
                    "asynchronously anymore. "
                    "Removing the posted events from the queue",
                    this));
-          maybeHandledAsynchronously = false;
+          probablyHandledAsynchronously = false;
           mPostingKeyEvents.RemoveEvent(aEvent);
           break;
         }
@@ -989,7 +989,7 @@ KeyHandlingState IMContextWrapper::OnKeyEvent(
   mProcessingKeyEvent = aEvent;
   gboolean isFiltered = gtk_im_context_filter_keypress(currentContext, aEvent);
   if (aEvent->type == GDK_KEY_PRESS) {
-    if (isFiltered && maybeHandledAsynchronously) {
+    if (isFiltered && probablyHandledAsynchronously) {
       sWaitingSynthesizedKeyPressHardwareKeyCode = aEvent->hardware_keycode;
     } else {
       sWaitingSynthesizedKeyPressHardwareKeyCode = 0;
@@ -1023,7 +1023,7 @@ KeyHandlingState IMContextWrapper::OnKeyEvent(
     
     
     
-    if (!maybeHandledAsynchronously) {
+    if (!probablyHandledAsynchronously) {
       MaybeDispatchKeyEventAsProcessedByIME(eVoidEvent);
       
     }
@@ -1053,11 +1053,11 @@ KeyHandlingState IMContextWrapper::OnKeyEvent(
   MOZ_LOG(gGtkIMLog, LogLevel::Debug,
           ("0x%p   OnKeyEvent(), succeeded, filterThisEvent=%s "
            "(isFiltered=%s, mFallbackToKeyEvent=%s, "
-           "maybeHandledAsynchronously=%s), mPostingKeyEvents.Length()=%zu, "
+           "probablyHandledAsynchronously=%s), mPostingKeyEvents.Length()=%zu, "
            "mCompositionState=%s, mMaybeInDeadKeySequence=%s, "
            "mKeyboardEventWasDispatched=%s, mKeyboardEventWasConsumed=%s",
            this, ToChar(filterThisEvent), ToChar(isFiltered),
-           ToChar(mFallbackToKeyEvent), ToChar(maybeHandledAsynchronously),
+           ToChar(mFallbackToKeyEvent), ToChar(probablyHandledAsynchronously),
            mPostingKeyEvents.Length(), GetCompositionStateName(),
            ToChar(mMaybeInDeadKeySequence), ToChar(mKeyboardEventWasDispatched),
            ToChar(mKeyboardEventWasConsumed)));
