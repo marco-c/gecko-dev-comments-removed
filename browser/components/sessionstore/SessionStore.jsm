@@ -2286,6 +2286,8 @@ var SessionStoreInternal = {
 
 
   async _doProcessSwitch(aBrowser, aRemoteType, aChannel, aSwitchId) {
+    debug(`[process-switch]: performing switch from ${aBrowser.remoteType} to ${aRemoteType}`);
+
     
     await aBrowser.ownerGlobal.delayedStartupPromise;
 
@@ -2309,7 +2311,9 @@ var SessionStoreInternal = {
     }
 
     
-    return aBrowser.frameLoader.tabParent;
+    let tabParent = aBrowser.frameLoader.tabParent;
+    debug(`[process-switch]: new tabID: ${tabParent.tabId}`);
+    return tabParent;
   },
 
   
@@ -2323,17 +2327,21 @@ var SessionStoreInternal = {
       return; 
     }
 
+    
     let cpType = aChannel.loadInfo.externalContentPolicyType;
     let toplevel = cpType == Ci.nsIContentPolicy.TYPE_DOCUMENT;
     if (!toplevel) {
-      return; 
+      debug(`[process-switch]: non-toplevel - ignoring`);
+      return;
     }
 
+    
     let browsingContext = toplevel
         ? aChannel.loadInfo.browsingContext
         : aChannel.loadInfo.frameBrowsingContext;
     if (!browsingContext) {
-      return; 
+      debug(`[process-switch]: no BrowsingContext - ignoring`);
+      return;
     }
 
     
@@ -2342,34 +2350,60 @@ var SessionStoreInternal = {
       currentPrincipal = browsingContext.currentWindowGlobal.documentPrincipal;
     }
 
-    let parentChannel = aChannel.notificationCallbacks
-                                .getInterface(Ci.nsIParentChannel);
-    if (!parentChannel) {
-      return; 
+    
+    let parentChannel;
+    try {
+      parentChannel = aChannel.notificationCallbacks
+                              .getInterface(Ci.nsIParentChannel);
+    } catch (e) {
+      debug(`[process-switch]: No nsIParentChannel callback - ignoring`);
+      return;
     }
 
-    let tabParent = parentChannel.QueryInterface(Ci.nsIInterfaceRequestor)
-                                 .getInterface(Ci.nsITabParent);
-    if (!tabParent || !tabParent.ownerElement) {
-      console.warn("warning: Missing tabParent");
-      return; 
+    
+    let tabParent;
+    try {
+      tabParent = parentChannel.QueryInterface(Ci.nsIInterfaceRequestor)
+                               .getInterface(Ci.nsITabParent);
+    } catch (e) {
+      debug(`[process-switch]: No nsITabParent for channel - ignoring`);
+      return;
     }
 
+    
     let browser = tabParent.ownerElement;
-    if (browser.tagName !== "browser") {
-      console.warn("warning: Not a xul:browser element:", browser.tagName);
-      return; 
+    if (!browser) {
+      debug(`[process-switch]: TabParent has no ownerElement - ignoring`);
     }
 
+    let tabbrowser = browser.ownerGlobal.gBrowser;
+    if (!tabbrowser) {
+      debug(`[process-switch]: cannot find tabbrowser for loading tab - ignoring`);
+      return;
+    }
+
+    let tab = tabbrowser.getTabForBrowser(browser);
+    if (!tab) {
+      debug(`[process-switch]: not a normal tab, so cannot swap processes - ignoring`);
+      return;
+    }
+
+    
     let resultPrincipal =
       Services.scriptSecurityManager.getChannelResultPrincipal(aChannel);
-    let useRemoteTabs = browser.ownerGlobal.gMultiProcessBrowser;
     let remoteType = E10SUtils.getRemoteTypeForPrincipal(resultPrincipal,
-                                                         useRemoteTabs,
+                                                         true,
                                                          browser.remoteType,
                                                          currentPrincipal);
     if (browser.remoteType == remoteType) {
-      return; 
+      debug(`[process-switch]: type (${remoteType}) is compatible - ignoring`);
+      return;
+    }
+
+    if (remoteType == E10SUtils.NOT_REMOTE ||
+        browser.remoteType == E10SUtils.NOT_REMOTE) {
+      debug(`[process-switch]: non-remote source/target - ignoring`);
+      return;
     }
 
     
