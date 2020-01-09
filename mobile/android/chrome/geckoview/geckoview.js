@@ -4,6 +4,7 @@
 
 "use strict";
 
+var {DelayedInit} = ChromeUtils.import("resource://gre/modules/DelayedInit.jsm");
 var {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
@@ -392,6 +393,10 @@ function createBrowser() {
   return browser;
 }
 
+function InitLater(fn, object, name) {
+  return DelayedInit.schedule(fn, object, name, 15000 );
+}
+
 function startup() {
   GeckoViewUtils.initLogging("XUL", window);
 
@@ -452,6 +457,27 @@ function startup() {
       resource: "resource://gre/modules/GeckoViewContentBlocking.jsm",
     },
   }]);
+
+  Services.tm.dispatchToMainThread(() => {
+    
+    
+    
+
+    
+    
+    
+    
+    InitLater(() => Services.obs.notifyObservers(window, "browser-delayed-startup-finished"));
+
+    
+    
+    
+
+    
+    
+    
+    InitLater(() => Services.obs.notifyObservers(window, "browser-idle-startup-tasks-finished"));
+  });
 
   
   
