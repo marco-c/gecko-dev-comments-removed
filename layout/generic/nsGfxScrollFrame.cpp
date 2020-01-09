@@ -6563,35 +6563,39 @@ static void AppendScrollPositionsForSnap(const nsIFrame* aFrame,
                                          ScrollSnapInfo& aSnapInfo) {
   nsRect targetRect = nsLayoutUtils::TransformFrameRectToAncestor(
       aFrame, aFrame->GetRectRelativeToSelf(), aScrolledFrame);
+
+  
+  
+  nsMargin scrollMargin = aFrame->StyleMargin()->GetScrollMargin();
+  nsRect snapArea =
+      InflateByScrollMargin(targetRect, scrollMargin, aScrolledRect);
+
   
   
   
-  if (aSnapport && !aSnapport->Intersects(targetRect)) {
+  if (aSnapport && !aSnapport->Intersects(snapArea)) {
     return;
   }
 
   
   
-  if (targetRect.width > aSnapInfo.mSnapportSize.width) {
+  if (snapArea.width > aSnapInfo.mSnapportSize.width) {
     aSnapInfo.mXRangeWiderThanSnapport.AppendElement(
-        ScrollSnapInfo::ScrollSnapRange(targetRect.X(), targetRect.XMost()));
+        ScrollSnapInfo::ScrollSnapRange(snapArea.X(), snapArea.XMost()));
   }
-  if (targetRect.height > aSnapInfo.mSnapportSize.height) {
+  if (snapArea.height > aSnapInfo.mSnapportSize.height) {
     aSnapInfo.mYRangeWiderThanSnapport.AppendElement(
-        ScrollSnapInfo::ScrollSnapRange(targetRect.Y(), targetRect.YMost()));
+        ScrollSnapInfo::ScrollSnapRange(snapArea.Y(), snapArea.YMost()));
   }
 
-  nsMargin scrollMargin = aFrame->StyleMargin()->GetScrollMargin();
-  targetRect = InflateByScrollMargin(targetRect, scrollMargin, aScrolledRect);
+  
+  
+  
+  
+  snapArea.y -= aScrollPadding.top;
+  snapArea.x -= aScrollPadding.left;
 
-  
-  
-  
-  
-  targetRect.y -= aScrollPadding.top;
-  targetRect.x -= aScrollPadding.left;
-
-  LogicalRect logicalTargetRect(aWritingModeOnScroller, targetRect,
+  LogicalRect logicalTargetRect(aWritingModeOnScroller, snapArea,
                                 aSnapInfo.mSnapportSize);
   LogicalSize logicalSnapportRect(aWritingModeOnScroller,
                                   aSnapInfo.mSnapportSize);
