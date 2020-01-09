@@ -926,8 +926,8 @@ AntiTrackingCommon::AddFirstPartyStorageAccessGrantedFor(
   return storePermission(false);
 }
 
- RefPtr<
-    mozilla::AntiTrackingCommon::FirstPartyStorageAccessGrantPromise>
+
+RefPtr<mozilla::AntiTrackingCommon::FirstPartyStorageAccessGrantPromise>
 AntiTrackingCommon::SaveFirstPartyStorageAccessGrantedForOriginOnParentProcess(
     nsIPrincipal* aParentPrincipal, nsIPrincipal* aTrackingPrincipal,
     const nsCString& aTrackingOrigin, const nsCString& aGrantedOrigin,
@@ -1507,7 +1507,8 @@ bool AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(
   return behavior != nsICookieService::BEHAVIOR_REJECT;
 }
 
- bool AntiTrackingCommon::MaybeIsFirstPartyStorageAccessGrantedFor(
+
+bool AntiTrackingCommon::MaybeIsFirstPartyStorageAccessGrantedFor(
     nsPIDOMWindowInner* aFirstPartyWindow, nsIURI* aURI) {
   MOZ_ASSERT(aFirstPartyWindow);
   MOZ_ASSERT(aURI);
@@ -1664,9 +1665,10 @@ nsresult AntiTrackingCommon::IsOnContentBlockingAllowList(
   return NS_OK;
 }
 
- void AntiTrackingCommon::NotifyBlockingDecision(
-    nsIChannel* aChannel, BlockingDecision aDecision,
-    uint32_t aRejectedReason) {
+
+void AntiTrackingCommon::NotifyBlockingDecision(nsIChannel* aChannel,
+                                                BlockingDecision aDecision,
+                                                uint32_t aRejectedReason) {
   MOZ_ASSERT(
       aRejectedReason == 0 ||
       aRejectedReason ==
@@ -1729,9 +1731,10 @@ nsresult AntiTrackingCommon::IsOnContentBlockingAllowList(
                                    aChannel, false, uri);
 }
 
- void AntiTrackingCommon::NotifyBlockingDecision(
-    nsPIDOMWindowInner* aWindow, BlockingDecision aDecision,
-    uint32_t aRejectedReason) {
+
+void AntiTrackingCommon::NotifyBlockingDecision(nsPIDOMWindowInner* aWindow,
+                                                BlockingDecision aDecision,
+                                                uint32_t aRejectedReason) {
   MOZ_ASSERT(aWindow);
   MOZ_ASSERT(
       aRejectedReason == 0 ||
@@ -1778,8 +1781,8 @@ nsresult AntiTrackingCommon::IsOnContentBlockingAllowList(
                                    channel, false, uri);
 }
 
- void AntiTrackingCommon::StoreUserInteractionFor(
-    nsIPrincipal* aPrincipal) {
+
+void AntiTrackingCommon::StoreUserInteractionFor(nsIPrincipal* aPrincipal) {
   if (XRE_IsParentProcess()) {
     nsCOMPtr<nsIURI> uri;
     Unused << aPrincipal->GetURI(getter_AddRefs(uri));
@@ -1824,8 +1827,8 @@ nsresult AntiTrackingCommon::IsOnContentBlockingAllowList(
   cc->SendStoreUserInteractionAsPermission(IPC::Principal(aPrincipal));
 }
 
- bool AntiTrackingCommon::HasUserInteraction(
-    nsIPrincipal* aPrincipal) {
+
+bool AntiTrackingCommon::HasUserInteraction(nsIPrincipal* aPrincipal) {
   nsPermissionManager* permManager = nsPermissionManager::GetInstance();
   if (NS_WARN_IF(!permManager)) {
     return false;
@@ -1876,8 +1879,9 @@ void AntiTrackingCommon::OnAntiTrackingSettingsChanged(
   gSettingsChangedCallbacks->AppendElement(aCallback);
 }
 
- already_AddRefed<nsIURI>
-AntiTrackingCommon::MaybeGetDocumentURIBeingLoaded(nsIChannel* aChannel) {
+
+already_AddRefed<nsIURI> AntiTrackingCommon::MaybeGetDocumentURIBeingLoaded(
+    nsIChannel* aChannel) {
   nsCOMPtr<nsIURI> uriBeingLoaded;
   nsLoadFlags loadFlags = 0;
   nsresult rv = aChannel->GetLoadFlags(&loadFlags);

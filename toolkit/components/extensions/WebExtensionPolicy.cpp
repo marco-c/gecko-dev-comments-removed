@@ -197,24 +197,27 @@ already_AddRefed<WebExtensionPolicy> WebExtensionPolicy::Constructor(
   return policy.forget();
 }
 
- void WebExtensionPolicy::GetActiveExtensions(
+
+void WebExtensionPolicy::GetActiveExtensions(
     dom::GlobalObject& aGlobal,
     nsTArray<RefPtr<WebExtensionPolicy>>& aResults) {
   EPS().GetAll(aResults);
 }
 
- already_AddRefed<WebExtensionPolicy> WebExtensionPolicy::GetByID(
+
+already_AddRefed<WebExtensionPolicy> WebExtensionPolicy::GetByID(
     dom::GlobalObject& aGlobal, const nsAString& aID) {
   return do_AddRef(EPS().GetByID(aID));
 }
 
- already_AddRefed<WebExtensionPolicy>
-WebExtensionPolicy::GetByHostname(dom::GlobalObject& aGlobal,
-                                  const nsACString& aHostname) {
+
+already_AddRefed<WebExtensionPolicy> WebExtensionPolicy::GetByHostname(
+    dom::GlobalObject& aGlobal, const nsACString& aHostname) {
   return do_AddRef(EPS().GetByHost(aHostname));
 }
 
- already_AddRefed<WebExtensionPolicy> WebExtensionPolicy::GetByURI(
+
+already_AddRefed<WebExtensionPolicy> WebExtensionPolicy::GetByURI(
     dom::GlobalObject& aGlobal, nsIURI* aURI) {
   return do_AddRef(EPS().GetByURL(aURI));
 }
@@ -316,13 +319,13 @@ void WebExtensionPolicy::InjectContentScripts(ErrorResult& aRv) {
   }
 }
 
- bool WebExtensionPolicy::UseRemoteWebExtensions(
-    GlobalObject& aGlobal) {
+
+bool WebExtensionPolicy::UseRemoteWebExtensions(GlobalObject& aGlobal) {
   return EPS().UseRemoteExtensions();
 }
 
- bool WebExtensionPolicy::IsExtensionProcess(
-    GlobalObject& aGlobal) {
+
+bool WebExtensionPolicy::IsExtensionProcess(GlobalObject& aGlobal) {
   return EPS().IsExtensionProcess();
 }
 
@@ -382,7 +385,8 @@ AtomSetPref::Observe(nsISupports* aSubject, const char* aTopic,
 NS_IMPL_ISUPPORTS(AtomSetPref, nsIObserver, nsISupportsWeakReference)
 };  
 
- bool WebExtensionPolicy::IsRestrictedDoc(const DocInfo& aDoc) {
+
+bool WebExtensionPolicy::IsRestrictedDoc(const DocInfo& aDoc) {
   
   
   
@@ -393,7 +397,8 @@ NS_IMPL_ISUPPORTS(AtomSetPref, nsIObserver, nsISupportsWeakReference)
   return IsRestrictedURI(aDoc.PrincipalURL());
 }
 
- bool WebExtensionPolicy::IsRestrictedURI(const URLInfo& aURI) {
+
+bool WebExtensionPolicy::IsRestrictedURI(const URLInfo& aURI) {
   static RefPtr<AtomSetPref> domains;
   if (!domains) {
     domains = AtomSetPref::Create(nsLiteralCString(kRestrictedDomainPref));
@@ -487,10 +492,10 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(WebExtensionPolicy)
 
 
 
- already_AddRefed<MozDocumentMatcher>
-MozDocumentMatcher::Constructor(GlobalObject& aGlobal,
-                                const dom::MozDocumentMatcherInit& aInit,
-                                ErrorResult& aRv) {
+
+already_AddRefed<MozDocumentMatcher> MozDocumentMatcher::Constructor(
+    GlobalObject& aGlobal, const dom::MozDocumentMatcherInit& aInit,
+    ErrorResult& aRv) {
   RefPtr<MozDocumentMatcher> matcher =
       new MozDocumentMatcher(aGlobal, aInit, false, aRv);
   if (aRv.Failed()) {
@@ -499,7 +504,8 @@ MozDocumentMatcher::Constructor(GlobalObject& aGlobal,
   return matcher.forget();
 }
 
- already_AddRefed<WebExtensionContentScript>
+
+already_AddRefed<WebExtensionContentScript>
 WebExtensionContentScript::Constructor(GlobalObject& aGlobal,
                                        WebExtensionPolicy& aExtension,
                                        const ContentScriptInit& aInit,
@@ -659,7 +665,8 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(MozDocumentMatcher)
 
 
 
- already_AddRefed<DocumentObserver> DocumentObserver::Constructor(
+
+already_AddRefed<DocumentObserver> DocumentObserver::Constructor(
     GlobalObject& aGlobal, dom::MozDocumentCallback& aCallbacks,
     ErrorResult& aRv) {
   RefPtr<DocumentObserver> matcher =

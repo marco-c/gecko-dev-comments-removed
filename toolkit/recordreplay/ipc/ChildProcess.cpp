@@ -23,8 +23,8 @@ static size_t gNumChannels;
 
 static bool gChildrenAreDebugging;
 
- void ChildProcessInfo::SetIntroductionMessage(
-    IntroductionMessage* aMessage) {
+
+void ChildProcessInfo::SetIntroductionMessage(IntroductionMessage* aMessage) {
   gIntroductionMessage = aMessage;
 }
 
@@ -345,7 +345,8 @@ Message::UniquePtr ChildProcessInfo::WaitUntilPaused() {
 
 
 
- void ChildProcessInfo::MaybeProcessPendingMessageRunnable() {
+
+void ChildProcessInfo::MaybeProcessPendingMessageRunnable() {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MonitorAutoLock lock(*gMonitor);
   MOZ_RELEASE_ASSERT(gHasPendingMessageRunnable);

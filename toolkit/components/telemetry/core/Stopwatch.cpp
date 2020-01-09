@@ -348,79 +348,85 @@ int32_t Timers::Finish(JSContext* aCx, const nsAString& aHistogram,
   return NS_SUCCEEDED(rv) ? delta : -1;
 }
 
- bool Stopwatch::Start(
-    const dom::GlobalObject& aGlobal, const nsAString& aHistogram,
-    JS::Handle<JSObject*> aObj,
-    const dom::TelemetryStopwatchOptions& aOptions) {
+
+bool Stopwatch::Start(const dom::GlobalObject& aGlobal,
+                      const nsAString& aHistogram, JS::Handle<JSObject*> aObj,
+                      const dom::TelemetryStopwatchOptions& aOptions) {
   return StartKeyed(aGlobal, aHistogram, VoidString(), aObj, aOptions);
 }
- bool Stopwatch::StartKeyed(
-    const dom::GlobalObject& aGlobal, const nsAString& aHistogram,
-    const nsAString& aKey, JS::Handle<JSObject*> aObj,
-    const dom::TelemetryStopwatchOptions& aOptions) {
+
+bool Stopwatch::StartKeyed(const dom::GlobalObject& aGlobal,
+                           const nsAString& aHistogram, const nsAString& aKey,
+                           JS::Handle<JSObject*> aObj,
+                           const dom::TelemetryStopwatchOptions& aOptions) {
   return Timers::Singleton().Start(aGlobal.Context(), aHistogram, aObj, aKey,
                                    aOptions.mInSeconds);
 }
 
- bool Stopwatch::Running(const dom::GlobalObject& aGlobal,
-                                     const nsAString& aHistogram,
-                                     JS::Handle<JSObject*> aObj) {
+
+bool Stopwatch::Running(const dom::GlobalObject& aGlobal,
+                        const nsAString& aHistogram,
+                        JS::Handle<JSObject*> aObj) {
   return RunningKeyed(aGlobal, aHistogram, VoidString(), aObj);
 }
 
- bool Stopwatch::RunningKeyed(const dom::GlobalObject& aGlobal,
-                                          const nsAString& aHistogram,
-                                          const nsAString& aKey,
-                                          JS::Handle<JSObject*> aObj) {
+
+bool Stopwatch::RunningKeyed(const dom::GlobalObject& aGlobal,
+                             const nsAString& aHistogram, const nsAString& aKey,
+                             JS::Handle<JSObject*> aObj) {
   return TimeElapsedKeyed(aGlobal, aHistogram, aKey, aObj, true) != -1;
 }
 
- int32_t Stopwatch::TimeElapsed(const dom::GlobalObject& aGlobal,
-                                            const nsAString& aHistogram,
-                                            JS::Handle<JSObject*> aObj,
-                                            bool aCanceledOkay) {
+
+int32_t Stopwatch::TimeElapsed(const dom::GlobalObject& aGlobal,
+                               const nsAString& aHistogram,
+                               JS::Handle<JSObject*> aObj, bool aCanceledOkay) {
   return TimeElapsedKeyed(aGlobal, aHistogram, VoidString(), aObj,
                           aCanceledOkay);
 }
 
- int32_t Stopwatch::TimeElapsedKeyed(
-    const dom::GlobalObject& aGlobal, const nsAString& aHistogram,
-    const nsAString& aKey, JS::Handle<JSObject*> aObj, bool aCanceledOkay) {
+
+int32_t Stopwatch::TimeElapsedKeyed(const dom::GlobalObject& aGlobal,
+                                    const nsAString& aHistogram,
+                                    const nsAString& aKey,
+                                    JS::Handle<JSObject*> aObj,
+                                    bool aCanceledOkay) {
   return Timers::Singleton().TimeElapsed(aGlobal.Context(), aHistogram, aObj,
                                          aKey, aCanceledOkay);
 }
 
- bool Stopwatch::Finish(const dom::GlobalObject& aGlobal,
-                                    const nsAString& aHistogram,
-                                    JS::Handle<JSObject*> aObj,
-                                    bool aCanceledOkay) {
+
+bool Stopwatch::Finish(const dom::GlobalObject& aGlobal,
+                       const nsAString& aHistogram, JS::Handle<JSObject*> aObj,
+                       bool aCanceledOkay) {
   return FinishKeyed(aGlobal, aHistogram, VoidString(), aObj, aCanceledOkay);
 }
 
- bool Stopwatch::FinishKeyed(const dom::GlobalObject& aGlobal,
-                                         const nsAString& aHistogram,
-                                         const nsAString& aKey,
-                                         JS::Handle<JSObject*> aObj,
-                                         bool aCanceledOkay) {
+
+bool Stopwatch::FinishKeyed(const dom::GlobalObject& aGlobal,
+                            const nsAString& aHistogram, const nsAString& aKey,
+                            JS::Handle<JSObject*> aObj, bool aCanceledOkay) {
   return Timers::Singleton().Finish(aGlobal.Context(), aHistogram, aObj, aKey,
                                     aCanceledOkay) != -1;
 }
 
- bool Stopwatch::Cancel(const dom::GlobalObject& aGlobal,
-                                    const nsAString& aHistogram,
-                                    JS::Handle<JSObject*> aObj) {
+
+bool Stopwatch::Cancel(const dom::GlobalObject& aGlobal,
+                       const nsAString& aHistogram,
+                       JS::Handle<JSObject*> aObj) {
   return CancelKeyed(aGlobal, aHistogram, VoidString(), aObj);
 }
 
- bool Stopwatch::CancelKeyed(const dom::GlobalObject& aGlobal,
-                                         const nsAString& aHistogram,
-                                         const nsAString& aKey,
-                                         JS::Handle<JSObject*> aObj) {
+
+bool Stopwatch::CancelKeyed(const dom::GlobalObject& aGlobal,
+                            const nsAString& aHistogram, const nsAString& aKey,
+                            JS::Handle<JSObject*> aObj) {
   return Timers::Singleton().Delete(aGlobal.Context(), aHistogram, aObj, aKey);
 }
 
- void Stopwatch::SetTestModeEnabled(
-    const dom::GlobalObject& aGlobal, bool aTesting) {
+
+void Stopwatch::SetTestModeEnabled(const dom::GlobalObject& aGlobal,
+                                   bool aTesting) {
   Timers::Singleton().SuppressErrors() = aTesting;
 }
 

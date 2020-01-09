@@ -76,7 +76,8 @@ static mozIExtensionProcessScript& ProcessScript() {
 
 
 
- bool ExtensionPolicyService::sRemoteExtensions;
+
+bool ExtensionPolicyService::sRemoteExtensions;
 
  ExtensionPolicyService& ExtensionPolicyService::GetSingleton() {
   static RefPtr<ExtensionPolicyService> sExtensionPolicyService;

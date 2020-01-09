@@ -68,7 +68,8 @@ static Lock* CreateNewLock(Thread* aThread, size_t aId) {
   return new Lock(aId);
 }
 
- void Lock::New(void* aNativeLock) {
+
+void Lock::New(void* aNativeLock) {
   Thread* thread = Thread::Current();
   RecordingEventSection res(thread);
   if (!res.CanAccessEvents()) {
@@ -102,7 +103,8 @@ static Lock* CreateNewLock(Thread* aThread, size_t aId) {
   thread->EndDisallowEvents();
 }
 
- void Lock::Destroy(void* aNativeLock) {
+
+void Lock::Destroy(void* aNativeLock) {
   Lock* lock = nullptr;
   {
     AutoWriteSpinLock ex(gLocksLock);
@@ -117,7 +119,8 @@ static Lock* CreateNewLock(Thread* aThread, size_t aId) {
   delete lock;
 }
 
- Lock* Lock::Find(void* aNativeLock) {
+
+Lock* Lock::Find(void* aNativeLock) {
   MOZ_RELEASE_ASSERT(IsRecordingOrReplaying());
 
   Maybe<AutoReadSpinLock> ex;
@@ -195,7 +198,8 @@ void Lock::Exit() {
   }
 }
 
- void Lock::LockAquiresUpdated(size_t aLockId) {
+
+void Lock::LockAquiresUpdated(size_t aLockId) {
   LockAcquires* acquires = gLockAcquires.MaybeGet(aLockId);
   if (acquires && acquires->mAcquires &&
       acquires->mNextOwner == LockAcquires::NoNextOwner) {
@@ -218,7 +222,8 @@ static Lock** gAtomicLocks;
 
 static SpinLock* gAtomicLockOwners;
 
- void Lock::InitializeLocks() {
+
+void Lock::InitializeLocks() {
   Thread* thread = Thread::Current();
 
   gNumLocks = 1;

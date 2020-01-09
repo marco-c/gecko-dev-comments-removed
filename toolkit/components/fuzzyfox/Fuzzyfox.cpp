@@ -47,7 +47,8 @@ Atomic<uint32_t, Relaxed> Fuzzyfox::sFuzzyfoxClockGrain;
 
 NS_IMPL_ISUPPORTS_INHERITED(Fuzzyfox, Runnable, nsIObserver)
 
- void Fuzzyfox::Start() {
+
+void Fuzzyfox::Start() {
   MOZ_ASSERT(NS_IsMainThread());
 
   RefPtr<Fuzzyfox> r = new Fuzzyfox();

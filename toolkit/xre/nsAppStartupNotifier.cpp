@@ -12,8 +12,8 @@
 #include "nsAppStartupNotifier.h"
 #include "nsISimpleEnumerator.h"
 
- nsresult nsAppStartupNotifier::NotifyObservers(
-    const char* aTopic) {
+
+nsresult nsAppStartupNotifier::NotifyObservers(const char* aTopic) {
   NS_ENSURE_ARG(aTopic);
   nsresult rv;
 

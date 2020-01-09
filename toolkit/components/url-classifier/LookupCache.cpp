@@ -263,7 +263,8 @@ void LookupCache::GetCacheInfo(nsIUrlClassifierCacheInfo** aCache) const {
   info.forget(aCache);
 }
 
- bool LookupCache::IsCanonicalizedIP(const nsACString& aHost) {
+
+bool LookupCache::IsCanonicalizedIP(const nsACString& aHost) {
   
   
   uint32_t i1, i2, i3, i4;
@@ -276,8 +277,9 @@ void LookupCache::GetCacheInfo(nsIUrlClassifierCacheInfo** aCache) const {
   return false;
 }
 
- nsresult LookupCache::GetLookupFragments(
-    const nsACString& aSpec, nsTArray<nsCString>* aFragments)
+
+nsresult LookupCache::GetLookupFragments(const nsACString& aSpec,
+                                         nsTArray<nsCString>* aFragments)
 
 {
   aFragments->Clear();
@@ -379,8 +381,9 @@ void LookupCache::GetCacheInfo(nsIUrlClassifierCacheInfo** aCache) const {
   return NS_OK;
 }
 
- nsresult LookupCache::GetHostKeys(const nsACString& aSpec,
-                                               nsTArray<nsCString>* aHostKeys) {
+
+nsresult LookupCache::GetHostKeys(const nsACString& aSpec,
+                                  nsTArray<nsCString>* aHostKeys) {
   nsACString::const_iterator begin, end, iter;
   aSpec.BeginReading(begin);
   aSpec.EndReading(end);

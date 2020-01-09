@@ -107,7 +107,8 @@ NS_INTERFACE_MAP_END
 NS_IMPL_ADDREF(ClearSiteData::PendingCleanupHolder)
 NS_IMPL_RELEASE(ClearSiteData::PendingCleanupHolder)
 
- void ClearSiteData::Initialize() {
+
+void ClearSiteData::Initialize() {
   MOZ_ASSERT(!gClearSiteData);
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -127,7 +128,8 @@ NS_IMPL_RELEASE(ClearSiteData::PendingCleanupHolder)
   gClearSiteData = service;
 }
 
- void ClearSiteData::Shutdown() {
+
+void ClearSiteData::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (!gClearSiteData) {
