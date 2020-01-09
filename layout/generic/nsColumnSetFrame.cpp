@@ -8,6 +8,7 @@
 
 #include "nsColumnSetFrame.h"
 
+#include "mozilla/ColumnUtils.h"
 #include "mozilla/Logging.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ToString.h"
@@ -275,15 +276,6 @@ nscoord nsColumnSetFrame::GetAvailableContentBSize(
   return std::max(0, aReflowInput.AvailableBSize() - bp.BStartEnd(wm));
 }
 
-static nscoord GetColumnGap(const nsColumnSetFrame* aFrame,
-                            nscoord aPercentageBasis) {
-  const auto& columnGap = aFrame->StylePosition()->mColumnGap;
-  if (columnGap.IsNormal()) {
-    return aFrame->StyleFont()->mFont.size;
-  }
-  return nsLayoutUtils::ResolveGapToLength(columnGap, aPercentageBasis);
-}
-
 static uint32_t ColumnBalancingDepth(const ReflowInput& aReflowInput,
                                      uint32_t aMaxDepth) {
   uint32_t depth = 0;
@@ -294,11 +286,6 @@ static uint32_t ColumnBalancingDepth(const ReflowInput& aReflowInput,
     }
   }
   return depth;
-}
-
-static nscoord ClampUsedColumnWidth(const Length& aColumnWidth) {
-  
-  return std::max(CSSPixel::ToAppUnits(1), aColumnWidth.ToAppUnits());
 }
 
 nsColumnSetFrame::ReflowConfig nsColumnSetFrame::ChooseColumnStrategy(
@@ -331,7 +318,8 @@ nsColumnSetFrame::ReflowConfig nsColumnSetFrame::ChooseColumnStrategy(
         std::min(colBSize, aReflowInput.mCBReflowInput->ComputedMaxBSize());
   }
 
-  nscoord colGap = GetColumnGap(this, aReflowInput.ComputedISize());
+  nscoord colGap =
+      ColumnUtils::GetColumnGap(this, aReflowInput.ComputedISize());
   int32_t numColumns = colStyle->mColumnCount;
 
   
@@ -350,7 +338,8 @@ nsColumnSetFrame::ReflowConfig nsColumnSetFrame::ChooseColumnStrategy(
   
   
   if (colStyle->mColumnWidth.IsLength()) {
-    colISize = ClampUsedColumnWidth(colStyle->mColumnWidth.AsLength());
+    colISize =
+        ColumnUtils::ClampUsedColumnWidth(colStyle->mColumnWidth.AsLength());
     NS_ASSERTION(colISize >= 0, "negative column width");
     
     
@@ -497,9 +486,9 @@ nscoord nsColumnSetFrame::GetMinISize(gfxContext* aRenderingContext) {
     iSize = mFrames.FirstChild()->GetMinISize(aRenderingContext);
   }
   const nsStyleColumn* colStyle = StyleColumn();
-  nscoord colISize;
   if (colStyle->mColumnWidth.IsLength()) {
-    colISize = ClampUsedColumnWidth(colStyle->mColumnWidth.AsLength());
+    nscoord colISize =
+        ColumnUtils::ClampUsedColumnWidth(colStyle->mColumnWidth.AsLength());
     
     
     
@@ -510,13 +499,8 @@ nscoord nsColumnSetFrame::GetMinISize(gfxContext* aRenderingContext) {
     
     
     
-    colISize = iSize;
-    iSize *= colStyle->mColumnCount;
-    nscoord colGap = GetColumnGap(this, NS_UNCONSTRAINEDSIZE);
-    iSize += colGap * (colStyle->mColumnCount - 1);
-    
-    
-    iSize = std::max(iSize, colISize);
+    nscoord colGap = ColumnUtils::GetColumnGap(this, NS_UNCONSTRAINEDSIZE);
+    iSize = ColumnUtils::IntrinsicISize(colStyle->mColumnCount, colGap, iSize);
   }
   
   
@@ -531,11 +515,11 @@ nscoord nsColumnSetFrame::GetPrefISize(gfxContext* aRenderingContext) {
   nscoord result = 0;
   DISPLAY_PREF_INLINE_SIZE(this, result);
   const nsStyleColumn* colStyle = StyleColumn();
-  nscoord colGap = GetColumnGap(this, NS_UNCONSTRAINEDSIZE);
 
   nscoord colISize;
   if (colStyle->mColumnWidth.IsLength()) {
-    colISize = ClampUsedColumnWidth(colStyle->mColumnWidth.AsLength());
+    colISize =
+        ColumnUtils::ClampUsedColumnWidth(colStyle->mColumnWidth.AsLength());
   } else if (mFrames.FirstChild() && !StyleDisplay()->IsContainSize()) {
     
     
@@ -545,16 +529,13 @@ nscoord nsColumnSetFrame::GetPrefISize(gfxContext* aRenderingContext) {
     colISize = 0;
   }
 
-  int32_t numColumns = colStyle->mColumnCount;
-  if (numColumns <= 0) {
-    
-    numColumns = 1;
-  }
-
-  nscoord iSize = colISize * numColumns + colGap * (numColumns - 1);
   
-  
-  result = std::max(iSize, colISize);
+  uint32_t numColumns =
+      colStyle->mColumnCount == nsStyleColumn::kColumnCountAuto
+          ? 1
+          : colStyle->mColumnCount;
+  nscoord colGap = ColumnUtils::GetColumnGap(this, NS_UNCONSTRAINEDSIZE);
+  result = ColumnUtils::IntrinsicISize(numColumns, colGap, colISize);
   return result;
 }
 
