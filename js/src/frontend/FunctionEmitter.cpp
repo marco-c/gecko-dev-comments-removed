@@ -476,8 +476,9 @@ bool FunctionScriptEmitter::prepareForBody() {
   }
 
   if (funbox_->function()->kind() ==
-      JSFunction::FunctionKind::ClassConstructor) {
-    if (!emitInitializeInstanceFields()) {
+          JSFunction::FunctionKind::ClassConstructor &&
+      !funbox_->isDerivedClassConstructor()) {
+    if (!bce_->emitInitializeInstanceFields()) {
       
       return false;
     }
@@ -585,63 +586,6 @@ bool FunctionScriptEmitter::emitExtraBodyVarScope() {
     }
 
     if (!noe.emitAssignment()) {
-      
-      return false;
-    }
-
-    if (!bce_->emit1(JSOP_POP)) {
-      
-      return false;
-    }
-  }
-
-  return true;
-}
-
-bool FunctionScriptEmitter::emitInitializeInstanceFields() {
-  MOZ_ASSERT(bce_->fieldInitializers_.valid);
-  size_t numFields = bce_->fieldInitializers_.numFieldInitializers;
-
-  if (numFields == 0) {
-    return true;
-  }
-
-  if (!bce_->emitGetName(bce_->cx->names().dotInitializers)) {
-    
-    return false;
-  }
-
-  for (size_t fieldIndex = 0; fieldIndex < numFields; fieldIndex++) {
-    if (fieldIndex < numFields - 1) {
-      
-      
-      
-      if (!bce_->emit1(JSOP_DUP)) {
-        
-        return false;
-      }
-    }
-
-    if (!bce_->emitNumberOp(fieldIndex)) {
-      
-      return false;
-    }
-
-    
-    
-    
-    if (!bce_->emit1(JSOP_GETELEM)) {
-      
-      return false;
-    }
-
-    
-    if (!bce_->emitGetName(bce_->cx->names().dotThis)) {
-      
-      return false;
-    }
-
-    if (!bce_->emitCall(JSOP_CALL_IGNORES_RV, 0)) {
       
       return false;
     }

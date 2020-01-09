@@ -1247,6 +1247,34 @@ class ScriptSourceObject : public NativeObject {
 enum class GeneratorKind : bool { NotGenerator, Generator };
 enum class FunctionAsyncKind : bool { SyncFunction, AsyncFunction };
 
+struct FieldInitializers {
+#ifdef DEBUG
+  bool valid;
+#endif
+  
+  
+  size_t numFieldInitializers;
+
+  explicit FieldInitializers(size_t numFieldInitializers)
+      :
+#ifdef DEBUG
+        valid(true),
+#endif
+        numFieldInitializers(numFieldInitializers) {
+  }
+
+  static FieldInitializers Invalid() { return FieldInitializers(); }
+
+ private:
+  FieldInitializers()
+      :
+#ifdef DEBUG
+        valid(false),
+#endif
+        numFieldInitializers(0) {
+  }
+};
+
 
 
 
@@ -1360,6 +1388,8 @@ class alignas(JS::Value) PrivateScriptData final {
   PackedOffsets packedOffsets = {};  
   uint32_t nscopes = 0;
 
+  js::FieldInitializers fieldInitializers_ = js::FieldInitializers::Invalid();
+
   
   template <typename T>
   T* offsetToPointer(size_t offset) {
@@ -1431,6 +1461,10 @@ class alignas(JS::Value) PrivateScriptData final {
   bool hasResumeOffsets() const {
     return packedOffsets.resumeOffsetsSpanOffset != 0;
   }
+  void setFieldInitializers(FieldInitializers fieldInitializers) {
+    fieldInitializers_ = fieldInitializers;
+  }
+  const FieldInitializers& getFieldInitializers() { return fieldInitializers_; }
 
   
   
@@ -2283,6 +2317,16 @@ class JSScript : public js::gc::TenuredCell {
     return hasFlag(ImmutableFlags::FunctionHasThisBinding);
   }
 
+  void setFieldInitializers(js::FieldInitializers fieldInitializers) {
+    MOZ_ASSERT(data_);
+    data_->setFieldInitializers(fieldInitializers);
+  }
+
+  const js::FieldInitializers& getFieldInitializers() const {
+    MOZ_ASSERT(data_);
+    return data_->getFieldInitializers();
+  }
+
   
 
 
@@ -2858,34 +2902,6 @@ static_assert(
 
 namespace js {
 
-struct FieldInitializers {
-#ifdef DEBUG
-  bool valid;
-#endif
-  
-  
-  size_t numFieldInitializers;
-
-  explicit FieldInitializers(size_t numFieldInitializers)
-      :
-#ifdef DEBUG
-        valid(true),
-#endif
-        numFieldInitializers(numFieldInitializers) {
-  }
-
-  static FieldInitializers Invalid() { return FieldInitializers(); }
-
- private:
-  FieldInitializers()
-      :
-#ifdef DEBUG
-        valid(false),
-#endif
-        numFieldInitializers(0) {
-  }
-};
-
 
 
 class alignas(uintptr_t) LazyScriptData final {
@@ -3270,9 +3286,9 @@ class LazyScript : public gc::TenuredCell {
     lazyData_->fieldInitializers_ = fieldInitializers;
   }
 
-  FieldInitializers getFieldInitializers() const {
-    return lazyData_ ? lazyData_->fieldInitializers_
-                     : FieldInitializers::Invalid();
+  const FieldInitializers& getFieldInitializers() const {
+    MOZ_ASSERT(lazyData_);
+    return lazyData_->fieldInitializers_;
   }
 
   const char* filename() const { return scriptSource()->filename(); }
