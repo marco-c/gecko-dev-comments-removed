@@ -4620,15 +4620,6 @@ void ContainerState::ProcessDisplayItems(nsDisplayList* aList) {
 
       
       
-      
-      
-      if (itemVisibleRect.IsEmpty() &&
-          !item->ShouldBuildLayerEvenIfInvisible(mBuilder)) {
-        continue;
-      }
-
-      
-      
       bool mayDrawOutOfOrder = itemType == DisplayItemType::TYPE_TRANSFORM &&
                                (item->Combines3DTransformWithAncestors() ||
                                 item->Frame()->Extend3DContext());
