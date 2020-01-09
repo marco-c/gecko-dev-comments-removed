@@ -4,14 +4,14 @@
 
 
 
-#include "mozilla/StyleComplexColor.h"
+#include "mozilla/StyleColorInlines.h"
 
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/ComputedStyleInlines.h"
 #include "nsIFrame.h"
 #include "nsStyleStruct.h"
 
-using namespace mozilla;
+namespace mozilla {
 
 
 
@@ -46,8 +46,8 @@ static nscolor LinearBlendColors(nscolor aBg, float aBgRatio, nscolor aFg,
   return NS_RGBA(r, g, b, NSToIntRound(a * 255));
 }
 
-template<>
-bool StyleComplexColor::MaybeTransparent() const {
+template <>
+bool StyleColor::MaybeTransparent() const {
   
   
   
@@ -59,8 +59,8 @@ static nscolor RGBAToNSColor(const StyleRGBA& aRGBA) {
   return NS_RGBA(aRGBA.red, aRGBA.green, aRGBA.blue, aRGBA.alpha);
 }
 
-template<>
-nscolor StyleComplexColor::CalcColor(nscolor aForegroundColor) const {
+template <>
+nscolor StyleColor::CalcColor(nscolor aForegroundColor) const {
   if (IsNumeric()) {
     return RGBAToNSColor(AsNumeric());
   }
@@ -73,8 +73,8 @@ nscolor StyleComplexColor::CalcColor(nscolor aForegroundColor) const {
                            aForegroundColor, complex.ratios.fg);
 }
 
-template<>
-nscolor StyleComplexColor::CalcColor(const ComputedStyle& aStyle) const {
+template <>
+nscolor StyleColor::CalcColor(const ComputedStyle& aStyle) const {
   
   
   
@@ -86,7 +86,9 @@ nscolor StyleComplexColor::CalcColor(const ComputedStyle& aStyle) const {
   return CalcColor(fgColor);
 }
 
-template<>
-nscolor StyleComplexColor::CalcColor(const nsIFrame* aFrame) const {
+template <>
+nscolor StyleColor::CalcColor(const nsIFrame* aFrame) const {
   return CalcColor(*aFrame->Style());
 }
+
+}  
