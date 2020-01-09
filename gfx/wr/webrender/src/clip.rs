@@ -272,7 +272,7 @@ impl ClipNodeInfo {
         resource_cache: &mut ResourceCache,
         clip_scroll_tree: &ClipScrollTree,
         request_resources: bool,
-    ) -> ClipNodeInstance {
+    ) -> Option<ClipNodeInstance> {
         
         
         let mut flags = match self.conversion {
@@ -358,16 +358,21 @@ impl ClipNodeInfo {
                 } else if request_resources {
                     resource_cache.request_image(request, gpu_cache);
                 }
+            } else {
+                
+                
+                warn!("Clip mask with missing image key {:?}", request.key);
+                return None;
             }
         }
 
-        ClipNodeInstance {
+        Some(ClipNodeInstance {
             handle: self.handle,
             flags,
             spatial_node_index: self.spatial_node_index,
             local_pos: self.local_pos,
             visible_tiles,
-        }
+        })
     }
 }
 
@@ -678,36 +683,36 @@ impl ClipStore {
                     );
 
                     
-                    let instance = node_info.create_instance(
+                    if let Some(instance) = node_info.create_instance(
                         node,
                         &local_bounding_rect,
                         gpu_cache,
                         resource_cache,
                         clip_scroll_tree,
                         request_resources,
-                    );
+                    ) {
+                        
+                        
+                        
+                        
+                        
+                        
+                        needs_mask |= match node.item {
+                            ClipItem::Rectangle(_, ClipMode::ClipOut) |
+                            ClipItem::RoundedRectangle(..) |
+                            ClipItem::Image { .. } |
+                            ClipItem::BoxShadow(..) => {
+                                true
+                            }
 
-                    
-                    
-                    
-                    
-                    
-                    
-                    needs_mask |= match node.item {
-                        ClipItem::Rectangle(_, ClipMode::ClipOut) |
-                        ClipItem::RoundedRectangle(..) |
-                        ClipItem::Image { .. } |
-                        ClipItem::BoxShadow(..) => {
-                            true
-                        }
+                            ClipItem::Rectangle(_, ClipMode::Clip) => {
+                                !instance.flags.contains(ClipNodeFlags::SAME_COORD_SYSTEM)
+                            }
+                        };
 
-                        ClipItem::Rectangle(_, ClipMode::Clip) => {
-                            !instance.flags.contains(ClipNodeFlags::SAME_COORD_SYSTEM)
-                        }
-                    };
-
-                    
-                    self.clip_node_instances.push(instance);
+                        
+                        self.clip_node_instances.push(instance);
+                    }
                 }
             }
         }
