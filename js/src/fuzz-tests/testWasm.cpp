@@ -162,12 +162,6 @@ static int testWasmFuzz(const uint8_t* buf, size_t size) {
         }
       }
 
-      
-      if (enableWasmCranelift) {
-        enableWasmCranelift = false;
-        enableWasmBaseline = true;
-      }
-
       if (enableWasmAwaitTier2) {
         
         enableWasmBaseline = true;
