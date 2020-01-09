@@ -4011,8 +4011,7 @@ Downloader.prototype = {
         
         try {
           Cc["@mozilla.org/updates/update-processor;1"].
-            createInstance(Ci.nsIUpdateProcessor).
-            processUpdate(this._update);
+            createInstance(Ci.nsIUpdateProcessor).processUpdate();
         } catch (e) {
           
           
