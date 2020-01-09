@@ -1,5 +1,4 @@
 
-const {NetUtil} = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 const SIMPLEURI_SPEC = "data:text/plain,hello world";
 const BLOBURI_SPEC = "blob:123456";
 

@@ -1,7 +1,6 @@
 
 
 const {HttpServer} = ChromeUtils.import("resource://testing-common/httpd.js");
-const {NetUtil} = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 
 function test_handler(metadata, response) {
   const originalBody = "the response";

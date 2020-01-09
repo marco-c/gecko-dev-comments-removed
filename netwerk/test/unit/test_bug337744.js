@@ -1,7 +1,6 @@
 
 
 
-const {NetUtil} = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 
 const specs = [
   "resource://res-test//",

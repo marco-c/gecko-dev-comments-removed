@@ -1,7 +1,6 @@
 
 
 
-const {NetUtil} = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 
 function makeChan(uri, isPrivate) {
   var chan = NetUtil.newChannel ({
