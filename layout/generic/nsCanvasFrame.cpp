@@ -12,6 +12,7 @@
 #include "gfxUtils.h"
 #include "nsContainerFrame.h"
 #include "nsContentCreatorFunctions.h"
+#include "nsContentUtils.h"
 #include "nsCSSRendering.h"
 #include "nsPresContext.h"
 #include "nsPopupSetFrame.h"
@@ -87,9 +88,11 @@ nsresult nsCanvasFrame::CreateAnonymousContent(
   
   
   
-  
   if (eventHub) {
-    eventHub->Init();
+    nsContentUtils::AddScriptRunner(
+      NewRunnableMethod("AccessibleCaretEventHub::Init",
+                        eventHub,
+                        &AccessibleCaretEventHub::Init));
   }
 
   
