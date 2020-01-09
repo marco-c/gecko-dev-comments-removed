@@ -211,6 +211,7 @@ class TouchBarHelper {
       return null;
     }
 
+    
     if (typeof kBuiltInInputs[inputName].context == "function") {
       inputName = kBuiltInInputs[inputName].context();
     }
@@ -224,15 +225,22 @@ class TouchBarHelper {
     let item = new TouchBarInput(inputData);
 
     
+    if (kBuiltInInputs[inputName].hasOwnProperty("localTitle")) {
+      return item;
+    }
+
+    
     this._l10n.formatValue(item.key).then((result) => {
       item.title = result;
       kBuiltInInputs[inputName].localTitle = result; 
       
       if (this.window) {
+        let wrapperArray = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
+        wrapperArray.appendElement(item);
         let baseWindow = this.window.docShell.treeOwner.QueryInterface(Ci.nsIBaseWindow);
         let updater = Cc["@mozilla.org/widget/touchbarupdater;1"]
                         .getService(Ci.nsITouchBarUpdater);
-        updater.updateTouchBarInput(baseWindow, item);
+        updater.updateTouchBarInputs(baseWindow, wrapperArray);
       }
     });
 
@@ -244,16 +252,27 @@ class TouchBarHelper {
 
 
 
-  _updateTouchBarInput(inputName) {
+
+
+  _updateTouchBarInputs(inputName, ...otherInputs) {
     let input = this.getTouchBarInput(inputName);
     if (!input || !this.window) {
       return;
+    }
+    let inputs = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
+    inputs.appendElement(input);
+    for (let otherInputName of otherInputs) {
+      input = this.getTouchBarInput(otherInputName);
+      if (!input) {
+        continue;
+      }
+      inputs.appendElement(input);
     }
 
     let baseWindow = this.window.docShell.treeOwner.QueryInterface(Ci.nsIBaseWindow);
     let updater = Cc["@mozilla.org/widget/touchbarupdater;1"]
                     .getService(Ci.nsITouchBarUpdater);
-    updater.updateTouchBarInput(baseWindow, input);
+    updater.updateTouchBarInputs(baseWindow, inputs);
   }
 
   observe(subject, topic, data) {
@@ -263,28 +282,26 @@ class TouchBarHelper {
         
         
         kBuiltInInputs.ReaderView.disabled = !data.startsWith("about:reader");
-        this._updateTouchBarInput("ReaderView");
         kBuiltInInputs.Back.disabled = !this.window.gBrowser.canGoBack;
-        this._updateTouchBarInput("Back");
         kBuiltInInputs.Forward.disabled = !this.window.gBrowser.canGoForward;
-        this._updateTouchBarInput("Forward");
+        this._updateTouchBarInputs("ReaderView", "Back", "Forward");
         break;
       case "bookmark-icon-updated":
         data == "starred" ?
           kBuiltInInputs.AddBookmark.image = "bookmark-filled.pdf"
           : kBuiltInInputs.AddBookmark.image = "bookmark.pdf";
-        this._updateTouchBarInput("AddBookmark");
+        this._updateTouchBarInputs("AddBookmark");
         break;
       case "reader-mode-available":
         kBuiltInInputs.ReaderView.disabled = false;
-        this._updateTouchBarInput("ReaderView");
+        this._updateTouchBarInputs("ReaderView");
         break;
       case "intl:app-locales-changed":
         
         for (let inputName of this._storedLayout) {
           delete kBuiltInInputs[inputName].localTitle;
-          this._updateTouchBarInput(inputName);
         }
+        this._updateTouchBarInputs(...this._storedLayout);
         break;
       case "quit-application":
         this.destructor();
