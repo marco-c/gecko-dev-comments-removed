@@ -115,13 +115,6 @@ class GridFront extends FrontClassWithSpec(gridSpec) {
   
 
 
-  get isSubgrid() {
-    return !!this._form.isSubgrid;
-  }
-
-  
-
-
 
   get writingMode() {
     if (!this._form.writingMode) {
@@ -129,30 +122,6 @@ class GridFront extends FrontClassWithSpec(gridSpec) {
     }
 
     return this._form.writingMode;
-  }
-
-  
-
-
-
-
-
-
-  async getParentGridNode(walker) {
-    if (this._form.parentGridNodeActorID) {
-      return this.conn.getActor(this._form.parentGridNodeActorID);
-    }
-
-    
-    
-    
-    try {
-      return await walker.getNodeFromActor(this.actorID, ["parentEl"]);
-    } catch (e) {
-      
-      
-      return null;
-    }
   }
 }
 

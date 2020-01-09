@@ -30,16 +30,7 @@ exports.grid = {
   highlighted: PropTypes.bool,
 
   
-  isSubgrid: PropTypes.bool,
-
-  
   nodeFront: PropTypes.object,
-
-  
-  parentNodeActorID: PropTypes.string,
-
-  
-  subgrids: PropTypes.arrayOf(PropTypes.number),
 
   
   writingMode: PropTypes.string,
