@@ -151,12 +151,6 @@ class GraphDriver {
   GraphDriver* PreviousDriver();
   void SetPreviousDriver(GraphDriver* aPreviousDriver);
 
-  
-
-
-
-  virtual TimeStamp GetCurrentTimeStamp() { return mCurrentTimeStamp; }
-
   GraphTime IterationEnd() { return mIterationEnd; }
 
   virtual AudioCallbackDriver* AsAudioCallbackDriver() { return nullptr; }
@@ -210,10 +204,6 @@ class GraphDriver {
   
   const RefPtr<MediaStreamGraphImpl> mGraphImpl;
 
-  
-  
-  
-  TimeStamp mCurrentTimeStamp;
   
   
   
@@ -297,6 +287,7 @@ class SystemClockDriver : public ThreadedDriver {
   
   
   TimeStamp mInitialTimeStamp;
+  TimeStamp mCurrentTimeStamp;
   TimeStamp mLastTimeStamp;
 
   
@@ -314,7 +305,6 @@ class OfflineClockDriver : public ThreadedDriver {
   virtual ~OfflineClockDriver();
   TimeDuration WaitInterval() override;
   MediaTime GetIntervalForIteration() override;
-  TimeStamp GetCurrentTimeStamp() override;
   OfflineClockDriver* AsOfflineClockDriver() override { return this; }
 
  private:

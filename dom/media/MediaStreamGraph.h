@@ -758,11 +758,6 @@ class SourceMediaStream : public MediaStream {
 
   bool HasPendingAudioTrack();
 
-  TimeStamp GetStreamTracksStrartTimeStamp() {
-    MutexAutoLock lock(mMutex);
-    return mStreamTracksStartTimeStamp;
-  }
-
   
 
   friend class MediaStreamGraphImpl;
@@ -829,10 +824,6 @@ class SourceMediaStream : public MediaStream {
 
   virtual void AdvanceTimeVaryingValuesToCurrentTime(
       GraphTime aCurrentTime, GraphTime aBlockedTime) override;
-  void SetStreamTracksStartTimeStamp(const TimeStamp& aTimeStamp) {
-    MutexAutoLock lock(mMutex);
-    mStreamTracksStartTimeStamp = aTimeStamp;
-  }
 
   
   
@@ -844,10 +835,6 @@ class SourceMediaStream : public MediaStream {
   
   Mutex mMutex;
   
-  
-  
-  
-  TimeStamp mStreamTracksStartTimeStamp;
   nsTArray<TrackData> mUpdateTracks;
   nsTArray<TrackData> mPendingTracks;
   nsTArray<TrackBound<DirectMediaStreamTrackListener>> mDirectTrackListeners;
