@@ -19,8 +19,33 @@ from mozpack.executables import (
 )
 from buildconfig import substs
 
-def dependentlibs_win32_objdump(lib):
-    proc = subprocess.Popen([substs['LLVM_OBJDUMP'], '--private-headers', lib], stdout = subprocess.PIPE)
+def dependentlibs_dumpbin(lib):
+    '''Returns the list of dependencies declared in the given DLL'''
+    try:
+        proc = subprocess.Popen(['dumpbin', '-dependents', lib], stdout = subprocess.PIPE)
+    except OSError:
+        
+        return dependentlibs_mingw_objdump(lib)
+    deps = []
+    for line in proc.stdout:
+        
+        match = re.match('    (\S+)', line)
+        if match:
+             deps.append(match.group(1))
+        elif len(deps):
+             
+             
+             
+             break
+    proc.wait()
+    return deps
+
+def dependentlibs_mingw_objdump(lib):
+    try:
+        proc = subprocess.Popen(['objdump', '-x', lib], stdout = subprocess.PIPE)
+    except OSError:
+        
+        proc = subprocess.Popen(['llvm-objdump', '-private-headers', lib], stdout = subprocess.PIPE)
     deps = []
     for line in proc.stdout:
         match = re.match('\s+DLL Name: (\S+)', line)
@@ -29,26 +54,34 @@ def dependentlibs_win32_objdump(lib):
     proc.wait()
     return deps
 
-def dependentlibs_elf_objdump(lib):
+def dependentlibs_readelf(lib):
     '''Returns the list of dependencies declared in the given ELF .so'''
-    proc = subprocess.Popen([substs['LLVM_OBJDUMP'], '--private-headers', lib], stdout = subprocess.PIPE)
+    proc = subprocess.Popen([substs.get('TOOLCHAIN_PREFIX', '') + 'readelf', '-d', lib], stdout = subprocess.PIPE)
     deps = []
     for line in proc.stdout:
         
         
-        tmp = line.split()
-        if len(tmp) == 2 and tmp[0] == 'NEEDED':
-            deps.append(tmp[1])
+        
+        
+        
+        tmp = line.split(' ', 3)
+        if len(tmp) > 3 and 'NEEDED' in tmp[2]:
+            
+            
+            
+            
+            match = re.search('\[(.*)\]', tmp[3])
+            if match:
+                deps.append(match.group(1))
     proc.wait()
     return deps
 
-def dependentlibs_mac_objdump(lib):
+def dependentlibs_otool(lib):
     '''Returns the list of dependencies declared in the given MACH-O dylib'''
-    proc = subprocess.Popen([substs['LLVM_OBJDUMP'], '--private-headers', lib], stdout = subprocess.PIPE)
-    deps = []
+    proc = subprocess.Popen([substs['OTOOL'], '-l', lib], stdout = subprocess.PIPE)
+    deps= []
     cmd = None
     for line in proc.stdout:
-        
         
         
         
@@ -90,13 +123,13 @@ def gen_list(output, lib):
     libpaths = [os.path.join(substs['DIST'], 'bin')]
     binary_type = get_type(lib)
     if binary_type == ELF:
-        func = dependentlibs_elf_objdump
+        func = dependentlibs_readelf
     elif binary_type == MACHO:
-        func = dependentlibs_mac_objdump
+        func = dependentlibs_otool
     else:
         ext = os.path.splitext(lib)[1]
         assert(ext == '.dll')
-        func = dependentlibs_win32_objdump
+        func = dependentlibs_dumpbin
 
     deps = dependentlibs(lib, libpaths, func)
     base_lib = mozpath.basename(lib)
