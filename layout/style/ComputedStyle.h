@@ -64,12 +64,20 @@ class ComputedStyle;
 
 
 
-enum class ComputedStyleBit : uint8_t {
+
+
+
+
+
+
+
+enum class ComputedStyleBit : uint16_t {
   HasTextDecorationLines = 1 << 0,
-  HasPseudoElementData = 1 << 1,
-  SuppressLineBreak = 1 << 2,
-  IsTextCombined = 1 << 3,
-  RelevantLinkVisited = 1 << 4,
+  SuppressLineBreak = 1 << 1,
+  IsTextCombined = 1 << 2,
+  RelevantLinkVisited = 1 << 3,
+  HasPseudoElementData = 1 << 4,
+  DependsOnFontMetrics = 1 << 9,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ComputedStyleBit)
@@ -80,6 +88,8 @@ class ComputedStyle {
  public:
   ComputedStyle(PseudoStyleType aPseudoType,
                 ServoComputedDataForgotten aComputedValues);
+
+  Bit Bits() const { return static_cast<Bit>(mSource.flags.mFlags); }
 
   void AddRef() { Servo_ComputedStyle_AddRef(this); }
   void Release() { Servo_ComputedStyle_Release(this); }
@@ -136,7 +146,7 @@ class ComputedStyle {
   
   
   bool HasTextDecorationLines() const {
-    return bool(mBits & Bit::HasTextDecorationLines);
+    return bool(Bits() & Bit::HasTextDecorationLines);
   }
 
   
@@ -147,26 +157,32 @@ class ComputedStyle {
   
   
   bool ShouldSuppressLineBreak() const {
-    return bool(mBits & Bit::SuppressLineBreak);
+    return bool(Bits() & Bit::SuppressLineBreak);
   }
 
   
   
-  bool IsTextCombined() const { return bool(mBits & Bit::IsTextCombined); }
+  bool IsTextCombined() const { return bool(Bits() & Bit::IsTextCombined); }
+
+  
+  
+  bool DependsOnFontMetrics() const {
+    return bool(Bits() & Bit::DependsOnFontMetrics);
+  }
 
   
   
   
   
   bool HasPseudoElementData() const {
-    return bool(mBits & Bit::HasPseudoElementData);
+    return bool(Bits() & Bit::HasPseudoElementData);
   }
 
   
   
   
   bool RelevantLinkVisited() const {
-    return bool(mBits & Bit::RelevantLinkVisited);
+    return bool(Bits() & Bit::RelevantLinkVisited);
   }
 
   ComputedStyle* GetCachedInheritingAnonBoxStyle(
@@ -285,7 +301,6 @@ class ComputedStyle {
   
   CachedInheritingStyles mCachedInheritingStyles;
 
-  const Bit mBits;
   const PseudoStyleType mPseudoType;
 };
 
