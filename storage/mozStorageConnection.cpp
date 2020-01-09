@@ -941,18 +941,30 @@ nsresult Connection::setClosedState() {
 }
 
 bool Connection::operationSupported(ConnectionOperation aOperationType) {
-  if (NS_WARN_IF(aOperationType == SYNCHRONOUS &&
-                 mSupportedOperations == ASYNCHRONOUS && NS_IsMainThread())) {
-    return false;
+  if (aOperationType == ASYNCHRONOUS) {
+    
+    return true;
   }
-  return true;
+  
+  
+  MOZ_ASSERT(aOperationType == SYNCHRONOUS);
+  return mSupportedOperations == SYNCHRONOUS || !NS_IsMainThread();
 }
 
 nsresult Connection::ensureOperationSupported(
     ConnectionOperation aOperationType) {
-  MOZ_ASSERT(operationSupported(aOperationType),
-             "Don't use async connections synchronously on the main thread");
-  return operationSupported(aOperationType) ? NS_OK : NS_ERROR_NOT_AVAILABLE;
+  if (NS_WARN_IF(!operationSupported(aOperationType))) {
+#ifdef DEBUG
+    if (NS_IsMainThread()) {
+      nsCOMPtr<nsIXPConnect> xpc = nsIXPConnect::XPConnect();
+      Unused << xpc->DebugDumpJSStack(false, false, false);
+    }
+#endif
+    MOZ_ASSERT(false,
+               "Don't use async connections synchronously on the main thread");
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+  return NS_OK;
 }
 
 bool Connection::isConnectionReadyOnThisThread() {
