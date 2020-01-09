@@ -49,7 +49,7 @@ class PageAction {
 
     this._popupStateChange = this._popupStateChange.bind(this);
     this._collapse = this._collapse.bind(this);
-    this._handleClick = this._handleClick.bind(this);
+    this._showPopupOnClick = this._showPopupOnClick.bind(this);
     this.dispatchUserAction = this.dispatchUserAction.bind(this);
 
     this._l10n = new Localization([
@@ -60,7 +60,7 @@ class PageAction {
     this.stateTransitionTimeoutIDs = [];
   }
 
-  async show(recommendation, shouldExpand = false) {
+  async showAddressBarNotifier(recommendation, shouldExpand = false) {
     this.container.hidden = false;
 
     this.label.value = await this.getStrings(recommendation.content.notification_text);
@@ -71,7 +71,7 @@ class PageAction {
     let [{width}] = await this.window.promiseDocumentFlushed(() => this.label.getClientRects());
     this.urlbar.style.setProperty("--cfr-label-width", `${width}px`);
 
-    this.container.addEventListener("click", this._handleClick);
+    this.container.addEventListener("click", this._showPopupOnClick);
     
     
     this.urlbar.addEventListener("focus", this._collapse);
@@ -93,11 +93,11 @@ class PageAction {
     }
   }
 
-  hide() {
+  hideAddressBarNotifier() {
     this.container.hidden = true;
     this._clearScheduledStateChanges();
     this.urlbar.removeAttribute("cfr-recommendation-state");
-    this.container.removeEventListener("click", this._handleClick);
+    this.container.removeEventListener("click", this._showPopupOnClick);
     this.urlbar.removeEventListener("focus", this._collapse);
     if (this.currentNotification) {
       this.window.PopupNotifications.remove(this.currentNotification);
@@ -221,27 +221,8 @@ class PageAction {
     return subAttribute ? mainString.attributes[subAttribute] : mainString;
   }
 
-  
-
-
-
-  async _handleClick(event) { 
-    const browser = this.window.gBrowser.selectedBrowser;
-    if (!RecommendationMap.has(browser)) {
-      
-      
-      this.hide();
-      return;
-    }
-    const {id, content} = RecommendationMap.get(browser);
-
-    
-    
-    this._clearScheduledStateChanges();
-
-    
-    
-    browser.cfrpopupnotificationanchor = this.container;
+  async _renderPopup(message, browser) { 
+    const {id, content} = message;
 
     const headerLabel = this.window.document.getElementById("cfr-notification-header-label");
     const headerLink = this.window.document.getElementById("cfr-notification-header-link");
@@ -329,7 +310,7 @@ class PageAction {
         primary.action.data.url = await CFRPageActions._fetchLatestAddonVersion(content.addon.id); 
         this._blockMessage(id);
         this.dispatchUserAction(primary.action);
-        this.hide();
+        this.hideAddressBarNotifier();
         this._sendTelemetry({message_id: id, bucket_id: content.bucket_id, event: "INSTALL"});
         RecommendationMap.delete(browser);
       },
@@ -347,7 +328,7 @@ class PageAction {
       accessKey: secondaryBtnStrings[1].attributes.accesskey,
       callback: () => {
         this._blockMessage(id);
-        this.hide();
+        this.hideAddressBarNotifier();
         this._sendTelemetry({message_id: id, bucket_id: content.bucket_id, event: "BLOCK"});
         RecommendationMap.delete(browser);
       },
@@ -366,7 +347,7 @@ class PageAction {
       eventCallback: this._popupStateChange,
     };
 
-    this._sendTelemetry({message_id: id, bucket_id: content.bucket_id, event: "CLICK_DOORHANGER"});
+    
     this.currentNotification = this.window.PopupNotifications.show(
       browser,
       POPUP_NOTIFICATION_ID,
@@ -376,6 +357,33 @@ class PageAction {
       secondaryActions,
       options
     );
+  }
+
+  
+
+
+
+  async _showPopupOnClick(event) {
+    const browser = this.window.gBrowser.selectedBrowser;
+    if (!RecommendationMap.has(browser)) {
+      
+      
+      this.hideAddressBarNotifier();
+      return;
+    }
+    const message = RecommendationMap.get(browser);
+    const {id, content} = message;
+
+    
+    
+    this._clearScheduledStateChanges(browser, message);
+
+    
+    
+    browser.cfrpopupnotificationanchor = this.container;
+
+    this._sendTelemetry({message_id: id, bucket_id: content.bucket_id, event: "CLICK_DOORHANGER"});
+    await this._renderPopup(message, browser);
   }
 }
 
@@ -404,21 +412,21 @@ const CFRPageActions = {
       if (isHostMatch(browser, recommendation.host)) {
         
         
-        pageAction.show(recommendation);
+        pageAction.showAddressBarNotifier(recommendation);
       } else if (recommendation.retain) {
         
         
-        pageAction.hide();
+        pageAction.hideAddressBarNotifier();
         recommendation.retain = false;
       } else {
         
         
         RecommendationMap.delete(browser);
-        pageAction.hide();
+        pageAction.hideAddressBarNotifier();
       }
     } else {
       
-      pageAction.hide();
+      pageAction.hideAddressBarNotifier();
     }
   },
 
@@ -456,7 +464,7 @@ const CFRPageActions = {
     if (!PageActionMap.has(win)) {
       PageActionMap.set(win, new PageAction(win, dispatchToASRouter));
     }
-    await PageActionMap.get(win).show(recommendation, true);
+    await PageActionMap.get(win).showAddressBarNotifier(recommendation, true);
     return true;
   },
 
@@ -481,7 +489,7 @@ const CFRPageActions = {
     if (!PageActionMap.has(win)) {
       PageActionMap.set(win, new PageAction(win, dispatchToASRouter));
     }
-    await PageActionMap.get(win).show(recommendation, true);
+    await PageActionMap.get(win).showAddressBarNotifier(recommendation, true);
     return true;
   },
 
@@ -494,7 +502,7 @@ const CFRPageActions = {
       if (win.closed || !PageActionMap.has(win)) {
         continue;
       }
-      PageActionMap.get(win).hide();
+      PageActionMap.get(win).hideAddressBarNotifier();
     }
     
     PageActionMap = new WeakMap();

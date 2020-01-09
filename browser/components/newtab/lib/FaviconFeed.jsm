@@ -153,7 +153,10 @@ this.FaviconFeed = class FaviconFeed {
 
 
   async getSite(domain) {
-    const sites = await this.tippyTop.get({filters: {domain}});
+    const sites = await this.tippyTop.get({
+      filters: {domain},
+      syncIfEmpty: false,
+    });
     return sites.length ? sites[0] : null;
   }
 
