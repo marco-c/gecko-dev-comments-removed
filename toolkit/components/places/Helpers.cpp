@@ -22,6 +22,16 @@
 
 #define MAX_CHARS_TO_HASH 1500U
 
+extern "C" {
+
+
+
+nsresult NS_GeneratePlacesGUID(nsACString* _guid) {
+  return mozilla::places::GenerateGUID(*_guid);
+}
+
+}  
+
 namespace mozilla {
 namespace places {
 

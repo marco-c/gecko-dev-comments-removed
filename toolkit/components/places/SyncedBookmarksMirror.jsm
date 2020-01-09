@@ -120,7 +120,7 @@ const DB_TITLE_LENGTH_MAX = 4096;
 
 
 
-const MIRROR_SCHEMA_VERSION = 2;
+const MIRROR_SCHEMA_VERSION = 3;
 
 const DEFAULT_MAX_FRECENCIES_TO_RECALCULATE = 400;
 
@@ -403,6 +403,11 @@ class SyncedBookmarksMirror {
       "SyncedBookmarksMirror: store",
       db => db.executeTransaction(async () => {
         for await (let record of yieldingIterator(records)) {
+          let guid = PlacesSyncUtils.bookmarks.recordIdToGuid(record.id);
+          if (guid == PlacesUtils.bookmarks.rootGuid) {
+            
+            throw new TypeError("Can't store Places root");
+          }
           MirrorLog.trace(`Storing in mirror: ${record.cleartextToString()}`);
           switch (record.type) {
             case "bookmark":
@@ -662,38 +667,34 @@ class SyncedBookmarksMirror {
   }
 
   async storeRemoteBookmark(record, { needsMerge }) {
-    let guid = validateGuid(record.id);
-    if (!guid) {
-      MirrorLog.warn("Ignoring bookmark with invalid ID", record.id);
-      return;
-    }
+    let guid = PlacesSyncUtils.bookmarks.recordIdToGuid(record.id);
 
     let url = validateURL(record.bmkUri);
-    if (!url) {
-      MirrorLog.warn("Ignoring bookmark ${guid} with invalid URL ${url}",
-                     { guid, url: record.bmkUri });
-      return;
+    if (url) {
+      await this.maybeStoreRemoteURL(url);
     }
 
-    await this.maybeStoreRemoteURL(url);
-
+    let parentGuid = PlacesSyncUtils.bookmarks.recordIdToGuid(record.parentid);
     let serverModified = determineServerModified(record);
     let dateAdded = determineDateAdded(record);
     let title = validateTitle(record.title);
     let keyword = validateKeyword(record.keyword);
+    let validity = url ?
+      Ci.mozISyncedBookmarksMerger.VALIDITY_VALID :
+      Ci.mozISyncedBookmarksMerger.VALIDITY_REPLACE;
 
     await this.db.executeCached(`
-      REPLACE INTO items(guid, serverModified, needsMerge, kind,
-                         dateAdded, title, keyword,
+      REPLACE INTO items(guid, parentGuid, serverModified, needsMerge, kind,
+                         dateAdded, title, keyword, validity,
                          urlId)
-      VALUES(:guid, :serverModified, :needsMerge, :kind,
-             :dateAdded, NULLIF(:title, ""), :keyword,
+      VALUES(:guid, :parentGuid, :serverModified, :needsMerge, :kind,
+             :dateAdded, NULLIF(:title, ""), :keyword, :validity,
              (SELECT id FROM urls
               WHERE hash = hash(:url) AND
                     url = :url))`,
-      { guid, serverModified, needsMerge,
+      { guid, parentGuid, serverModified, needsMerge,
         kind: Ci.mozISyncedBookmarksMerger.KIND_BOOKMARK, dateAdded, title,
-        keyword, url: url.href });
+        keyword, url: url ? url.href : null, validity });
 
     let tags = record.tags;
     if (tags && Array.isArray(tags)) {
@@ -712,82 +713,89 @@ class SyncedBookmarksMirror {
   }
 
   async storeRemoteQuery(record, { needsMerge }) {
-    let guid = validateGuid(record.id);
-    if (!guid) {
-      MirrorLog.warn("Ignoring query with invalid ID", record.id);
-      return;
-    }
+    let guid = PlacesSyncUtils.bookmarks.recordIdToGuid(record.id);
+
+    let validity = Ci.mozISyncedBookmarksMerger.VALIDITY_VALID;
 
     let url = validateURL(record.bmkUri);
-    if (!url) {
-      MirrorLog.warn("Ignoring query ${guid} with invalid URL ${url}",
-                     { guid, url: record.bmkUri });
-      return;
-    }
-
-    
-    
-    
-    let params = new URLSearchParams(url.pathname);
-    let type = +params.get("type");
-    if (type == Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAG_CONTENTS) {
-      let tagFolderName = validateTag(record.folderName);
-      if (!tagFolderName) {
-        MirrorLog.warn("Ignoring tag query ${guid} with invalid tag name " +
-                       "${tagFolderName}", { guid, tagFolderName });
-        return;
+    if (url) {
+      
+      
+      let params = new URLSearchParams(url.pathname);
+      let type = +params.get("type");
+      if (type == Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAG_CONTENTS) {
+        
+        
+        
+        
+        let tagFolderName = validateTag(record.folderName);
+        if (tagFolderName) {
+          url.href = `place:tag=${tagFolderName}`;
+          validity = Ci.mozISyncedBookmarksMerger.VALIDITY_REUPLOAD;
+        } else {
+          
+          
+          url = null;
+          validity = Ci.mozISyncedBookmarksMerger.VALIDITY_REPLACE;
+        }
+      } else {
+        let folder = params.get("folder");
+        if (folder && !params.has("excludeItems")) {
+          
+          
+          
+          
+          
+          url.href = `${url.href}&excludeItems=1`;
+          validity = Ci.mozISyncedBookmarksMerger.VALIDITY_REUPLOAD;
+        }
       }
-      url = new URL(`place:tag=${tagFolderName}`);
+
+      
+      
+
+      await this.maybeStoreRemoteURL(url);
     } else {
       
       
       
-      let folder = params.get("folder");
-      if (folder) {
-        url.href = `${url.href}&excludeItems=1`;
-      }
+      validity = Ci.mozISyncedBookmarksMerger.VALIDITY_REPLACE;
     }
 
-    await this.maybeStoreRemoteURL(url);
-
+    let parentGuid = PlacesSyncUtils.bookmarks.recordIdToGuid(record.parentid);
     let serverModified = determineServerModified(record);
     let dateAdded = determineDateAdded(record);
     let title = validateTitle(record.title);
 
     await this.db.executeCached(`
-      REPLACE INTO items(guid, serverModified, needsMerge, kind,
-                         dateAdded, title, urlId)
-      VALUES(:guid, :serverModified, :needsMerge, :kind,
+      REPLACE INTO items(guid, parentGuid, serverModified, needsMerge, kind,
+                         dateAdded, title,
+                         urlId,
+                         validity)
+      VALUES(:guid, :parentGuid, :serverModified, :needsMerge, :kind,
              :dateAdded, NULLIF(:title, ""),
              (SELECT id FROM urls
               WHERE hash = hash(:url) AND
-                    url = :url))`,
-      { guid, serverModified, needsMerge,
+                    url = :url),
+             :validity)`,
+      { guid, parentGuid, serverModified, needsMerge,
         kind: Ci.mozISyncedBookmarksMerger.KIND_QUERY, dateAdded, title,
-        url: url.href });
+        url: url ? url.href : null, validity });
   }
 
   async storeRemoteFolder(record, { needsMerge }) {
-    let guid = validateGuid(record.id);
-    if (!guid) {
-      MirrorLog.warn("Ignoring folder with invalid ID", record.id);
-      return;
-    }
-    if (guid == PlacesUtils.bookmarks.rootGuid) {
-      
-      MirrorLog.warn("Ignoring Places root record", record);
-    }
-
+    let guid = PlacesSyncUtils.bookmarks.recordIdToGuid(record.id);
+    let parentGuid = PlacesSyncUtils.bookmarks.recordIdToGuid(record.parentid);
     let serverModified = determineServerModified(record);
     let dateAdded = determineDateAdded(record);
     let title = validateTitle(record.title);
 
     await this.db.executeCached(`
-      REPLACE INTO items(guid, serverModified, needsMerge, kind,
+      REPLACE INTO items(guid, parentGuid, serverModified, needsMerge, kind,
                          dateAdded, title)
-      VALUES(:guid, :serverModified, :needsMerge, :kind,
+      VALUES(:guid, :parentGuid, :serverModified, :needsMerge, :kind,
              :dateAdded, NULLIF(:title, ""))`,
-      { guid, serverModified, needsMerge,
+      { guid, parentGuid, serverModified, needsMerge,
         kind: Ci.mozISyncedBookmarksMerger.KIND_FOLDER, dateAdded, title });
 
     let children = record.children;
@@ -795,103 +803,62 @@ class SyncedBookmarksMirror {
       for (let position = 0; position < children.length; ++position) {
         await maybeYield();
         let childRecordId = children[position];
-        let childGuid = validateGuid(childRecordId);
-        if (!childGuid) {
-          MirrorLog.warn("Ignoring child of folder ${parentGuid} with " +
-                         "invalid ID ${childRecordId}", { parentGuid: guid,
-                                                          childRecordId });
-          continue;
-        }
-        if (childGuid == PlacesUtils.bookmarks.rootGuid) {
-          MirrorLog.warn("Ignoring move for root", childGuid);
-          continue;
-        }
+        let childGuid = PlacesSyncUtils.bookmarks.recordIdToGuid(childRecordId);
         await this.db.executeCached(`
           REPLACE INTO structure(guid, parentGuid, position)
           VALUES(:childGuid, :parentGuid, :position)`,
           { childGuid, parentGuid: guid, position });
       }
     }
-    
-    
-    
-    
-    
-    
-    let parentGuid = validateGuid(record.parentid);
-    if (parentGuid == PlacesUtils.bookmarks.rootGuid) {
-        await this.db.executeCached(`
-          INSERT OR IGNORE INTO structure(guid, parentGuid, position)
-          VALUES(:guid, :parentGuid, -1)`,
-          { guid, parentGuid });
-      }
   }
 
   async storeRemoteLivemark(record, { needsMerge }) {
-    let guid = validateGuid(record.id);
-    if (!guid) {
-      MirrorLog.warn("Ignoring livemark with invalid ID", record.id);
-      return;
-    }
-
-    let feedURL = validateURL(record.feedUri);
-    if (!feedURL) {
-      MirrorLog.warn("Ignoring livemark ${guid} with invalid feed URL ${url}",
-                     { guid, url: record.feedUri });
-      return;
-    }
-
+    let guid = PlacesSyncUtils.bookmarks.recordIdToGuid(record.id);
+    let parentGuid = PlacesSyncUtils.bookmarks.recordIdToGuid(record.parentid);
     let serverModified = determineServerModified(record);
+    let feedURL = validateURL(record.feedUri);
     let dateAdded = determineDateAdded(record);
     let title = validateTitle(record.title);
     let siteURL = validateURL(record.siteUri);
 
+    let validity = feedURL ?
+      Ci.mozISyncedBookmarksMerger.VALIDITY_VALID :
+      Ci.mozISyncedBookmarksMerger.VALIDITY_REPLACE;
+
     await this.db.executeCached(`
-      REPLACE INTO items(guid, serverModified, needsMerge, kind, dateAdded,
-                         title, feedURL, siteURL)
-      VALUES(:guid, :serverModified, :needsMerge, :kind, :dateAdded,
-             NULLIF(:title, ""), :feedURL, :siteURL)`,
-      { guid, serverModified, needsMerge,
+      REPLACE INTO items(guid, parentGuid, serverModified, needsMerge, kind,
+                         dateAdded, title, feedURL, siteURL, validity)
+      VALUES(:guid, :parentGuid, :serverModified, :needsMerge, :kind,
+             :dateAdded, NULLIF(:title, ""), :feedURL, :siteURL, :validity)`,
+      { guid, parentGuid, serverModified, needsMerge,
         kind: Ci.mozISyncedBookmarksMerger.KIND_LIVEMARK,
-        dateAdded, title, feedURL: feedURL.href,
-        siteURL: siteURL ? siteURL.href : null });
+        dateAdded, title, feedURL: feedURL ? feedURL.href : null,
+        siteURL: siteURL ? siteURL.href : null, validity });
   }
 
   async storeRemoteSeparator(record, { needsMerge }) {
-    let guid = validateGuid(record.id);
-    if (!guid) {
-      MirrorLog.warn("Ignoring separator with invalid ID", record.id);
-      return;
-    }
-
+    let guid = PlacesSyncUtils.bookmarks.recordIdToGuid(record.id);
+    let parentGuid = PlacesSyncUtils.bookmarks.recordIdToGuid(record.parentid);
     let serverModified = determineServerModified(record);
     let dateAdded = determineDateAdded(record);
 
     await this.db.executeCached(`
-      REPLACE INTO items(guid, serverModified, needsMerge, kind,
+      REPLACE INTO items(guid, parentGuid, serverModified, needsMerge, kind,
                          dateAdded)
-      VALUES(:guid, :serverModified, :needsMerge, :kind,
+      VALUES(:guid, :parentGuid, :serverModified, :needsMerge, :kind,
              :dateAdded)`,
-      { guid, serverModified, needsMerge,
+      { guid, parentGuid, serverModified, needsMerge,
         kind: Ci.mozISyncedBookmarksMerger.KIND_SEPARATOR, dateAdded });
   }
 
   async storeRemoteTombstone(record, { needsMerge }) {
-    let guid = validateGuid(record.id);
-    if (!guid) {
-      MirrorLog.warn("Ignoring tombstone with invalid ID", record.id);
-      return;
-    }
-
-    if (guid == PlacesUtils.bookmarks.rootGuid) {
-      MirrorLog.warn("Ignoring tombstone for root", guid);
-      return;
-    }
+    let guid = PlacesSyncUtils.bookmarks.recordIdToGuid(record.id);
+    let serverModified = determineServerModified(record);
 
     await this.db.executeCached(`
       REPLACE INTO items(guid, serverModified, needsMerge, isDeleted)
       VALUES(:guid, :serverModified, :needsMerge, 1)`,
-      { guid, serverModified: determineServerModified(record), needsMerge });
+      { guid, serverModified, needsMerge });
   }
 
   async maybeStoreRemoteURL(url) {
@@ -1380,7 +1347,8 @@ async function attachAndInitMirrorDatabase(db, path) {
 
 
 async function migrateMirrorSchema(db, currentSchemaVersion) {
-  if (currentSchemaVersion < 2) {
+  if (currentSchemaVersion < 3) {
+    
     throw new DatabaseCorruptError(`Can't migrate from schema version ${
       currentSchemaVersion}; too old`);
   }
@@ -1397,7 +1365,7 @@ async function initializeMirrorDatabase(db) {
   
   
   await db.execute(`CREATE TABLE mirror.meta(
-    key TEXT PRIMARY KEY,
+    key TEXT NOT NULL PRIMARY KEY,
     value NOT NULL
   )`);
 
@@ -1406,9 +1374,13 @@ async function initializeMirrorDatabase(db) {
   await db.execute(`CREATE TABLE mirror.items(
     id INTEGER PRIMARY KEY,
     guid TEXT UNIQUE NOT NULL,
+    /* The "parentid" from the record. */
+    parentGuid TEXT,
     /* The server modified time, in milliseconds. */
     serverModified INTEGER NOT NULL DEFAULT 0,
     needsMerge BOOLEAN NOT NULL DEFAULT 0,
+    validity INTEGER NOT NULL DEFAULT ${
+      Ci.mozISyncedBookmarksMerger.VALIDITY_VALID},
     isDeleted BOOLEAN NOT NULL DEFAULT 0,
     kind INTEGER NOT NULL DEFAULT -1,
     /* The creation date, in milliseconds. */
@@ -1421,13 +1393,7 @@ async function initializeMirrorDatabase(db) {
     loadInSidebar BOOLEAN,
     smartBookmarkName TEXT,
     feedURL TEXT,
-    siteURL TEXT,
-    /* Only bookmarks and queries must have URLs. */
-    CHECK(CASE WHEN kind IN (${[
-                      Ci.mozISyncedBookmarksMerger.KIND_BOOKMARK,
-                      Ci.mozISyncedBookmarksMerger.KIND_QUERY,
-                    ].join(",")}) THEN urlId NOT NULL
-               ELSE urlId IS NULL END)
+    siteURL TEXT
   )`);
 
   await db.execute(`CREATE TABLE mirror.structure(
@@ -1484,9 +1450,10 @@ async function createMirrorRoots(db) {
 
   for (let { guid, parentGuid, position, needsMerge } of syncableRoots) {
     await db.executeCached(`
-      INSERT INTO items(guid, kind, needsMerge)
-      VALUES(:guid, :kind, :needsMerge)`,
-      { guid, kind: Ci.mozISyncedBookmarksMerger.KIND_FOLDER, needsMerge });
+      INSERT INTO items(guid, parentGuid, kind, needsMerge)
+      VALUES(:guid, :parentGuid, :kind, :needsMerge)`,
+      { guid, parentGuid, kind: Ci.mozISyncedBookmarksMerger.KIND_FOLDER,
+        needsMerge });
 
     await db.executeCached(`
       INSERT INTO structure(guid, parentGuid, position)
@@ -1515,14 +1482,16 @@ async function createMirrorRoots(db) {
 async function initializeTempMirrorEntities(db) {
   
   await db.execute(`CREATE TEMP TABLE mergeStates(
-    localGuid TEXT NOT NULL,
-    mergedGuid TEXT NOT NULL,
-    parentGuid TEXT NOT NULL,
+    mergedGuid TEXT PRIMARY KEY,
+    localGuid TEXT,
+    remoteGuid TEXT,
+    mergedParentGuid TEXT NOT NULL,
     level INTEGER NOT NULL,
     position INTEGER NOT NULL,
     useRemote BOOLEAN NOT NULL, /* Take the remote state when merging? */
     shouldUpload BOOLEAN NOT NULL, /* Flag the item for upload? */
-    PRIMARY KEY(localGuid, mergedGuid)
+    /* The node should exist on at least one side. */
+    CHECK(localGuid NOT NULL OR remoteGuid NOT NULL)
   ) WITHOUT ROWID`);
 
   
@@ -1607,12 +1576,14 @@ async function initializeTempMirrorEntities(db) {
   
   
   await db.execute(`
-    CREATE TEMP VIEW itemsToMerge(localId, remoteId, useRemote, shouldUpload,
-                                  newLevel, oldGuid, newGuid, newType,
-                                  newDateAddedMicroseconds, newTitle,
-                                  oldPlaceId, newPlaceId, newKeyword) AS
-    SELECT b.id, v.id, r.useRemote, r.shouldUpload,
-           r.level, r.localGuid, r.mergedGuid,
+    CREATE TEMP VIEW itemsToMerge(localId, localGuid, remoteId, remoteGuid,
+                                  mergedGuid, useRemote, shouldUpload, newLevel,
+                                  newType,
+                                  newDateAddedMicroseconds,
+                                  newTitle, oldPlaceId, newPlaceId,
+                                  newKeyword) AS
+    SELECT b.id, b.guid, v.id, v.guid,
+           r.mergedGuid, r.useRemote, r.shouldUpload, r.level,
            (CASE WHEN v.kind IN (${[
                         Ci.mozISyncedBookmarksMerger.KIND_BOOKMARK,
                         Ci.mozISyncedBookmarksMerger.KIND_QUERY,
@@ -1631,7 +1602,7 @@ async function initializeTempMirrorEntities(db) {
                                  n.url = u.url),
            v.keyword
     FROM mergeStates r
-    LEFT JOIN items v ON v.guid = r.mergedGuid
+    LEFT JOIN items v ON v.guid = r.remoteGuid
     LEFT JOIN moz_bookmarks b ON b.guid = r.localGuid
     LEFT JOIN moz_places h ON h.id = b.fk
     LEFT JOIN urls u ON u.id = v.urlId
@@ -1648,7 +1619,7 @@ async function initializeTempMirrorEntities(db) {
         /* We update GUIDs here, instead of in the "updateExistingLocalItems"
            trigger, because deduped items where we're keeping the local value
            state won't have "useRemote" set. */
-        guid = OLD.newGuid,
+        guid = OLD.mergedGuid,
         syncStatus = CASE WHEN OLD.useRemote
                      THEN ${PlacesUtils.bookmarks.SYNC_STATUS.NORMAL}
                      ELSE syncStatus
@@ -1660,17 +1631,18 @@ async function initializeTempMirrorEntities(db) {
 
       /* Record item changed notifications for the updated GUIDs. */
       INSERT INTO guidsChanged(itemId, oldGuid, level)
-      SELECT OLD.localId, OLD.oldGuid, OLD.newLevel
-      WHERE OLD.oldGuid <> OLD.newGuid;
+      SELECT OLD.localId, OLD.localGuid, OLD.newLevel
+      WHERE OLD.localGuid <> OLD.mergedGuid;
 
       /* Drop local tombstones for revived remote items. */
-      DELETE FROM moz_bookmarks_deleted WHERE guid = OLD.newGuid;
+      DELETE FROM moz_bookmarks_deleted
+      WHERE guid IN (OLD.localGuid, OLD.remoteGuid);
 
       /* Flag the remote item as merged. */
       UPDATE items SET
         needsMerge = 0
       WHERE needsMerge AND
-            id = OLD.remoteId;
+            guid IN (OLD.remoteGuid, OLD.localGuid);
     END`);
 
   await db.execute(`
@@ -1679,10 +1651,10 @@ async function initializeTempMirrorEntities(db) {
     BEGIN
       /* Record an item added notification for the new item. */
       INSERT INTO itemsAdded(guid, keywordChanged, level)
-      SELECT OLD.newGuid, OLD.newKeyword NOT NULL OR
-                          EXISTS(SELECT 1 FROM moz_keywords
-                                 WHERE place_id = OLD.newPlaceId OR
-                                       keyword = OLD.newKeyword),
+      SELECT OLD.mergedGuid, OLD.newKeyword NOT NULL OR
+                             EXISTS(SELECT 1 FROM moz_keywords
+                                    WHERE place_id = OLD.newPlaceId OR
+                                          keyword = OLD.newKeyword),
              OLD.newLevel
       WHERE OLD.localId IS NULL;
 
@@ -1728,7 +1700,7 @@ async function initializeTempMirrorEntities(db) {
       INSERT INTO moz_bookmarks(id, guid, parent, position, type, fk, title,
                                 dateAdded, lastModified, syncStatus,
                                 syncChangeCounter)
-      VALUES(OLD.localId, OLD.newGuid, -1, -1, OLD.newType, OLD.newPlaceId,
+      VALUES(OLD.localId, OLD.mergedGuid, -1, -1, OLD.newType, OLD.newPlaceId,
              OLD.newTitle, OLD.newDateAddedMicroseconds,
              STRFTIME('%s', 'now', 'localtime', 'utc') * 1000000,
              ${PlacesUtils.bookmarks.SYNC_STATUS.NORMAL}, OLD.shouldUpload)
@@ -1776,11 +1748,11 @@ async function initializeTempMirrorEntities(db) {
     SELECT b.id, b.parent, p.id, b.position, r.position, r.level
     FROM moz_bookmarks b
     JOIN mergeStates r ON r.mergedGuid = b.guid
-    JOIN moz_bookmarks p ON p.guid = r.parentGuid
+    JOIN moz_bookmarks p ON p.guid = r.mergedParentGuid
     /* Don't reposition roots, since we never upload the Places root, and our
        merged tree doesn't have a tags root. */
     WHERE '${PlacesUtils.bookmarks.rootGuid}' NOT IN (r.mergedGuid,
-                                                      r.parentGuid)`);
+                                                      r.mergedParentGuid)`);
 
   
   await db.execute(`
@@ -2026,13 +1998,6 @@ async function resetMirror(db) {
   
   
   await createMirrorRoots(db);
-}
-
-
-
-function validateGuid(recordId) {
-  let guid = PlacesSyncUtils.bookmarks.recordIdToGuid(recordId);
-  return PlacesUtils.isValidGuid(guid) ? guid : null;
 }
 
 
