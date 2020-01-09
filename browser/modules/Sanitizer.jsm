@@ -470,8 +470,7 @@ var Sanitizer = {
 
         
         
-        let existingWindow = Services.appShell.hiddenDOMWindow;
-        let startDate = existingWindow.performance.now();
+        let startDate = Date.now();
 
         
         let windowList = [];
@@ -487,10 +486,14 @@ var Sanitizer = {
           
           
           
-          if (existingWindow.performance.now() > (startDate + 60 * 1000)) {
+          if (Date.now() > (startDate + 60 * 1000)) {
             this._resetAllWindowClosures(windowList);
             throw new Error("Sanitize could not close windows: timeout");
           }
+        }
+
+        if (windowList.length == 0) {
+          return;
         }
 
         
@@ -503,8 +506,8 @@ var Sanitizer = {
         let handler = Cc["@mozilla.org/browser/clh;1"].getService(Ci.nsIBrowserHandler);
         let defaultArgs = handler.defaultArgs;
         let features = "chrome,all,dialog=no," + privateStateForNewWindow;
-        let newWindow = existingWindow.openDialog(AppConstants.BROWSER_CHROME_URL, "_blank",
-                                                  features, defaultArgs);
+        let newWindow = windowList[0].openDialog(AppConstants.BROWSER_CHROME_URL, "_blank",
+                                                 features, defaultArgs);
 
         let onFullScreen = null;
         if (AppConstants.platform == "macosx") {
