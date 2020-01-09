@@ -15,7 +15,7 @@ function run_test() {
   testFile.remove(false);
   Assert.ok(!testFile.exists(), MSG_SHOULD_NOT_EXIST);
 
-  if (AppConstants.platform == "win") {
+  if (IS_WIN) {
     
     debugDump("attempting to create mutex");
     let handle = createMutex(getPerInstallationMutexName());
@@ -40,7 +40,7 @@ function run_test() {
   
   Assert.ok(gAUS.canApplyUpdates, "should be able to apply updates");
 
-  if (AppConstants.platform == "win") {
+  if (IS_WIN) {
     
     
     debugDump("attempting to create mutex");

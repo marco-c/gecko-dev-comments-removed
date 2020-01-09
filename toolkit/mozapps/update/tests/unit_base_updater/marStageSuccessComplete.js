@@ -72,7 +72,7 @@ function waitForUpdateXMLFilesFinished() {
 function setupSymLinks() {
   
   
-  if (AppConstants.platform == "linux") {
+  if (IS_UNIX && !IS_MACOSX) {
     removeSymlink();
     createSymlink();
     registerCleanupFunction(removeSymlink);
@@ -97,7 +97,7 @@ function setupSymLinks() {
 function checkSymLinks() {
   
   
-  if (AppConstants.platform == "linux") {
+  if (IS_UNIX && !IS_MACOSX) {
     checkSymlink();
   }
 }
