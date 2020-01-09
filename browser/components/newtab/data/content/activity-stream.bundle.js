@@ -155,7 +155,7 @@ g = (function() {
 
 try {
 	
-	g = g || Function("return this")() || (1, eval)("this");
+	g = g || new Function("return this")();
 } catch (e) {
 	
 	if (typeof window === "object") g = window;
@@ -7237,6 +7237,7 @@ function enableASRouterContent(store, asrouterContent) {
  (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
+__webpack_require__.r(__webpack_exports__);
 
 
 var Actions = __webpack_require__(2);
@@ -8378,6 +8379,7 @@ const DiscoveryStreamBase = Object(external_ReactRedux_["connect"])(transform)(D
  (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
+__webpack_require__.r(__webpack_exports__);
 
 
 var external_React_ = __webpack_require__(10);
@@ -9220,6 +9222,7 @@ const SnippetsTemplates = {
  (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
+__webpack_require__.r(__webpack_exports__);
 
 
 
@@ -11321,6 +11324,7 @@ __webpack_require__.d(__webpack_exports__, "ftl", function() { return ftl; });
  (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
+__webpack_require__.r(__webpack_exports__);
 
 
 var external_React_ = __webpack_require__(10);
@@ -11836,6 +11840,7 @@ __webpack_require__.d(__webpack_exports__, "isReactLocalization", function() { r
  (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
+__webpack_require__.r(__webpack_exports__);
 
 
 var Actions = __webpack_require__(2);
@@ -12433,6 +12438,7 @@ var reducers = {
  (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
+__webpack_require__.r(__webpack_exports__);
 
 
 var Actions = __webpack_require__(2);
@@ -12797,6 +12803,7 @@ const PlaceholderCard = props => external_React_default.a.createElement(Card, { 
  (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
+__webpack_require__.r(__webpack_exports__);
 
 
 var Actions = __webpack_require__(2);
