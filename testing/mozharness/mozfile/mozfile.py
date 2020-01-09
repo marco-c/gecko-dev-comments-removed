@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from contextlib import contextmanager
 import os
@@ -29,19 +29,20 @@ __all__ = ['extract_tarball',
 try:
     WindowsError
 except NameError:
-    WindowsError = None  
+    WindowsError = None  # so we can unconditionally catch it later...
 
 
-
+# utilities for extracting archives
 
 def extract_tarball(src, dest):
     """extract a .tar file"""
 
     with tarfile.open(src) as bundle:
-        namelist = bundle.getnames()
+        namelist = []
 
-        for name in namelist:
-            bundle.extract(name, path=dest)
+        for m in bundle:
+            bundle.extract(m, path=dest)
+            namelist.append(m.name)
 
     return namelist
 
@@ -103,11 +104,11 @@ def extract(src, dest=None):
         raise Exception("mozfile.extract: no archive format found for '%s'" %
                         src)
 
-    
+    # namelist returns paths with forward slashes even in windows
     top_level_files = [os.path.join(dest, name.rstrip('/')) for name in namelist
                        if len(name.rstrip('/').split('/')) == 1]
 
-    
+    # namelist doesn't include folders, append these to the list
     for name in namelist:
         index = name.find('/')
         if index != -1:
@@ -118,7 +119,7 @@ def extract(src, dest=None):
     return top_level_files
 
 
-
+# utilities for removal of files and directories
 
 def rmtree(dir):
     """Deprecated wrapper method to remove a directory tree.
@@ -152,10 +153,10 @@ def remove(path):
                 func(path)
                 break
             except WindowsError as e:
-                
-                
-                
-                
+                # Error   5 == Access is denied
+                # Error  32 == The process cannot access the file because it is
+                #              being used by another process
+                # Error 145 == The directory is not empty
 
                 if retry_count == retry_max or e.winerror not in [5, 32, 145]:
                     raise
@@ -170,12 +171,12 @@ def remove(path):
     path_stats = os.stat(path)
 
     if os.path.isfile(path) or os.path.islink(path):
-        
+        # Verify the file or link is read/write for the current user
         os.chmod(path, path_stats.st_mode | stat.S_IRUSR | stat.S_IWUSR)
         _call_with_windows_retry(os.remove, path)
 
     elif os.path.isdir(path):
-        
+        # Verify the directory is read/write/execute for the current user
         os.chmod(path, path_stats.st_mode | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
         _call_with_windows_retry(shutil.rmtree, path)
 
@@ -193,14 +194,14 @@ def depth(directory):
     return level
 
 
-
+# ASCII delimeters
 ascii_delimeters = {
     'vertical_line': '|',
     'item_marker': '+',
     'last_child': '\\'
     }
 
-
+# unicode delimiters
 unicode_delimeters = {
     'vertical_line': '│',
     'item_marker': '├',
@@ -229,7 +230,7 @@ def tree(directory,
         parent = os.path.dirname(abspath)
         level = depth(abspath) - top
 
-        
+        # sort articles of interest
         for resource in (dirnames, filenames):
             resource[:] = sorted(resource, key=sort_key)
 
@@ -246,7 +247,7 @@ def tree(directory,
             files_end = last_child
 
         if last.get(parent) == os.path.basename(abspath):
-            
+            # last directory of parent
             dirpath_mark = last_child
             indent[-1] = ' '
         elif not indent:
@@ -254,11 +255,11 @@ def tree(directory,
         else:
             dirpath_mark = item_marker
 
-        
-        
+        # append the directory and piece of tree structure
+        # if the top-level entry directory, print as passed
         retval.append('%s%s%s' % (''.join(indent[:-1]),
                       dirpath_mark, basename if retval else directory))
-        
+        # add the files
         if filenames:
             last_file = filenames[-1]
             retval.extend([('%s%s%s' % (''.join(indent),
@@ -268,7 +269,7 @@ def tree(directory,
     return '\n'.join(retval)
 
 
-
+# utilities for temporary resources
 
 class NamedTemporaryFile(object):
     """
@@ -340,7 +341,7 @@ def TemporaryDirectory():
         shutil.rmtree(tempdir)
 
 
-
+# utilities dealing with URLs
 
 def is_url(thing):
     """
@@ -361,12 +362,12 @@ def load(resource):
     result of urllib2.urlopen()
     """
 
-    
+    # handle file URLs separately due to python stdlib limitations
     if resource.startswith('file://'):
         resource = resource[len('file://'):]
 
     if not is_url(resource):
-        
+        # if no scheme is given, it is a file path
         return file(resource)
 
     return urllib2.urlopen(resource)
