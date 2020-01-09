@@ -98,6 +98,9 @@ mozharness_run_schema = Schema({
     Required('requires-signed-builds'): bool,
 
     
+    Optional('use-caches'): bool,
+
+    
     
     Required('use-simple-package'): bool,
 
