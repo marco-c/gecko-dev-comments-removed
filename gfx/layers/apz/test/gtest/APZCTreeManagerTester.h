@@ -54,6 +54,16 @@ class APZCTreeManagerTester : public APZCTesterBase {
     }
   }
 
+  
+  
+  
+  template <typename Callback>
+  void ModifyFrameMetrics(Layer* aLayer, Callback aCallback) {
+    ScrollMetadata metadata = aLayer->GetScrollMetadata(0);
+    aCallback(metadata.GetMetrics());
+    aLayer->SetScrollMetadata(metadata);
+  }
+
   nsTArray<RefPtr<Layer> > layers;
   RefPtr<LayerManager> lm;
   RefPtr<Layer> root;
