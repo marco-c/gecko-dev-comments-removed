@@ -81,30 +81,10 @@ class nsExternalHelperAppService : public nsIExternalHelperAppService,
 
 
 
-
-  virtual already_AddRefed<nsIMIMEInfo> GetMIMEInfoFromOS(
-      const nsACString& aMIMEType, const nsACString& aFileExt,
-      bool* aFound) = 0;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
   virtual nsresult GetFileTokenForPath(const char16_t* platformAppPath,
                                        nsIFile** aFile);
 
-  virtual nsresult OSProtocolHandlerExists(const char* aScheme,
-                                           bool* aExists) = 0;
+  NS_IMETHOD OSProtocolHandlerExists(const char* aScheme, bool* aExists) = 0;
 
   
 
@@ -114,6 +94,8 @@ class nsExternalHelperAppService : public nsIExternalHelperAppService,
 
   virtual bool GetMIMETypeFromOSForExtension(const nsACString& aExtension,
                                              nsACString& aMIMEType);
+
+  static already_AddRefed<nsExternalHelperAppService> GetSingleton();
 
  protected:
   virtual ~nsExternalHelperAppService();
