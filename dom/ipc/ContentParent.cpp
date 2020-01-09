@@ -2393,8 +2393,12 @@ void ContentParent::InitInternal(ProcessPriority aInitialPriority) {
 
   
   
-  nsIURI* ucsURI = nsLayoutStylesheetCache::Singleton()->GetUserContentCSSURL();
-  SerializeURI(ucsURI, xpcomInit.userContentSheetURL());
+  StyleSheet* ucs = nsLayoutStylesheetCache::Singleton()->GetUserContentSheet();
+  if (ucs) {
+    SerializeURI(ucs->GetSheetURI(), xpcomInit.userContentSheetURL());
+  } else {
+    SerializeURI(nullptr, xpcomInit.userContentSheetURL());
+  }
 
   
   gfxPlatform::GetPlatform()->BuildContentDeviceData(
