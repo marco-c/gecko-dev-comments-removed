@@ -155,9 +155,6 @@ pref("dom.serviceWorkers.update_delay", 1000);
 pref("dom.serviceWorkers.testUpdateOverOneDay", false);
 
 
-pref("dom.performance.enable_scheduler_timing", true);
-
-
 pref("dom.permissions.revoke.enable", false);
 
 
@@ -2381,6 +2378,11 @@ pref("network.stricttransportsecurity.preloadlist", true);
 
 
 pref("network.mdns.use_js_fallback", false);
+
+
+pref("network.ssl_tokens_cache_enabled", false);
+
+pref("network.ssl_tokens_cache_capacity", 2048);
 
 pref("converter.html2txt.structs",          true); 
 pref("converter.html2txt.header_strategy",  1); 
