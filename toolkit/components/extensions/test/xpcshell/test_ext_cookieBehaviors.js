@@ -1,80 +1,447 @@
 "use strict";
 
-const {ExtensionParent} = ChromeUtils.import("resource://gre/modules/ExtensionParent.jsm");
+const {UrlClassifierTestUtils} = ChromeUtils.import("resource://testing-common/UrlClassifierTestUtils.jsm");
 
 const {
   
-  BEHAVIOR_REJECT_FOREIGN,
   BEHAVIOR_REJECT,
-  BEHAVIOR_LIMIT_FOREIGN,
+  BEHAVIOR_REJECT_TRACKER,
 
   
   ACCEPT_SESSION,
 } = Ci.nsICookieService;
 
-const server = createHttpServer();
+function createPage({script, body = ""} = {}) {
+  if (script) {
+    body += `<script src="${script}"></script>`;
+  }
+
+  return `<!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+      </head>
+      <body>
+        ${body}
+      </body>
+    </html>`;
+}
+
+const server = createHttpServer({hosts: [
+  "example.com",
+  "itisatracker.org",
+]});
 server.registerDirectory("/data/", do_get_file("data"));
+server.registerPathHandler("/test-cookies", (request, response) => {
+  response.setHeader("Cache-Control", "no-cache", false);
+  response.setHeader("Content-Type", "text/json", false);
+  response.setHeader("Set-Cookie", "myKey=myCookie", true);
+  response.write('{"success": true}');
+});
+server.registerPathHandler("/subframe.html", (request, response) => {
+  response.write(createPage());
+});
+server.registerPathHandler("/page-with-tracker.html", (request, response) => {
+  response.write(createPage({
+    body: `<iframe src="http://itisatracker.org/test-cookies"></iframe>`,
+  }));
+});
+server.registerPathHandler("/sw.js", (request, response) => {
+  response.setHeader("Content-Type", "text/javascript", false);
+  response.write("");
+});
 
-const BASE_URL = `http://localhost:${server.identity.primaryPort}/data`;
+function assertCookiesForHost(url, cookiesCount, message) {
+  const {host} = new URL(url);
+  const cookies = Array.from(Services.cookies.enumerator).filter((cookie) => cookie.host === host);
+  equal(cookies.length, cookiesCount, message);
+  return cookies;
+}
 
 
 
-async function test_bg_page_allowed_storage() {
-  function background() {
+add_task(async function test_ext_page_allowed_storage() {
+  function testWebStorages() {
+    const url = window.location.href;
+
     try {
-      void indexedDB;
-      void localStorage;
+      
+      
+      browser.test.assertTrue(indexedDB, "IndexedDB global should be accessible");
+
+      
+      
+      browser.test.assertTrue(localStorage, "localStorage global should be defined");
 
       const worker = new Worker("worker.js");
       worker.onmessage = (event) => {
-        if (event.data.pass) {
-          browser.test.notifyPass("bg_allowed_storage");
-        } else {
-          browser.test.notifyFail("bg_allowed_storage");
-        }
+        browser.test.assertTrue(
+          event.data.pass,
+          "extension page worker have access to indexedDB");
+
+        browser.test.sendMessage("test-storage:done", url);
       };
 
       worker.postMessage({});
     } catch (err) {
-      browser.test.notifyFail("bg_allowed_storage");
-      throw err;
+      browser.test.fail(`Unexpected error: ${err}`);
+      browser.test.sendMessage("test-storage:done", url);
     }
   }
 
-  let extension = ExtensionTestUtils.loadExtension({
-    background,
-    files: {
-      "worker.js": function worker() {
-        this.onmessage = () => {
-          try {
-            void indexedDB;
-            postMessage({pass: true});
-          } catch (err) {
-            postMessage({pass: false});
-            throw err;
-          }
-        };
+  function testWorker() {
+    this.onmessage = () => {
+      try {
+        void indexedDB;
+        postMessage({pass: true});
+      } catch (err) {
+        postMessage({pass: false});
+        throw err;
+      }
+    };
+  }
+
+  async function createExtension() {
+    let extension = ExtensionTestUtils.loadExtension({
+      files: {
+        "test_web_storages.js": testWebStorages,
+        "worker.js": testWorker,
+        "page_subframe.html": createPage({script: "test_web_storages.js"}),
+        "page_with_subframe.html": createPage({
+          body: '<iframe src="page_subframe.html"></iframe>',
+        }),
+        "page.html": createPage({
+          script: "test_web_storages.js",
+        }),
       },
+    });
+
+    await extension.startup();
+
+    const EXT_BASE_URL = `moz-extension://${extension.uuid}/`;
+
+    return {extension, EXT_BASE_URL};
+  }
+
+  const cookieBehaviors = [
+    "BEHAVIOR_LIMIT_FOREIGN", "BEHAVIOR_REJECT_FOREIGN",
+    "BEHAVIOR_REJECT", "BEHAVIOR_REJECT_TRACKER",
+  ];
+
+  for (const behavior of cookieBehaviors) {
+    info(`Test extension page access to indexedDB & localStorage with ${behavior}`);
+    ok(behavior in Ci.nsICookieService, `${behavior} is a valid CookieBehavior`);
+    Services.prefs.setIntPref("network.cookie.cookieBehavior", Ci.nsICookieService[behavior]);
+
+    
+    
+    const {extension, EXT_BASE_URL} = await createExtension();
+    const extPage = await ExtensionTestUtils.loadContentPage("about:blank", {
+      extension, remote: extension.extension.remote,
+    });
+
+    info("Test from a top level extension page");
+    await extPage.loadURL(`${EXT_BASE_URL}page.html`);
+
+    let testedFromURL = await extension.awaitMessage("test-storage:done");
+    equal(testedFromURL, `${EXT_BASE_URL}page.html`, "Got the results from the expected url");
+
+    info("Test from a sub frame extension page");
+    await extPage.loadURL(`${EXT_BASE_URL}page_with_subframe.html`);
+
+    testedFromURL = await extension.awaitMessage("test-storage:done");
+    equal(testedFromURL, `${EXT_BASE_URL}page_subframe.html`,
+          "Got the results from the expected url");
+
+    await extPage.close();
+    await extension.unload();
+  }
+});
+
+add_task({
+  
+  skip_if: () => Services.prefs.getBoolPref("extensions.cookiesBehavior.overrideOnTopLevel", false),
+}, async function test_ext_page_3rdparty_cookies() {
+  
+  
+  
+  Services.prefs.setBoolPref("privacy.trackingprotection.enabled", false);
+  await UrlClassifierTestUtils.addTestTrackers();
+  registerCleanupFunction(function() {
+    UrlClassifierTestUtils.cleanupTestTrackers();
+    Services.prefs.clearUserPref("privacy.trackingprotection.enabled");
+    Services.cookies.removeAll();
+  });
+
+  function testRequestScript() {
+    browser.test.onMessage.addListener((msg, url) => {
+      const done = () => {
+        browser.test.sendMessage(`${msg}:done`);
+      };
+
+      switch (msg) {
+        case "xhr": {
+          let req = new XMLHttpRequest();
+          req.onload = done;
+          req.open("GET", url);
+          req.send();
+          break;
+        }
+        case "fetch": {
+          window.fetch(url).then(done);
+          break;
+        }
+        case "worker fetch": {
+          const worker = new Worker("test_worker.js");
+          worker.onmessage = (evt) => {
+            if (evt.data.requestDone) {
+              done();
+            }
+          };
+          worker.postMessage({url});
+          break;
+        }
+        default: {
+          browser.test.fail(`Received an unexpected message: ${msg}`);
+          done();
+        }
+      }
+    });
+
+    browser.test.sendMessage("testRequestScript:ready", window.location.href);
+  }
+
+  function testWorker() {
+    this.onmessage = (evt) => {
+      fetch(evt.data.url).then(() => {
+        postMessage({requestDone: true});
+      });
+    };
+  }
+
+  async function createExtension() {
+    let extension = ExtensionTestUtils.loadExtension({
+      manifest: {
+        permissions: [
+          "http://example.com/*",
+          "http://itisatracker.org/*",
+        ],
+      },
+      files: {
+        "test_worker.js": testWorker,
+        "test_request.js": testRequestScript,
+        "page_subframe.html": createPage({script: "test_request.js"}),
+        "page_with_subframe.html": createPage({
+          body: '<iframe src="page_subframe.html"></iframe>',
+        }),
+        "page.html": createPage({script: "test_request.js"}),
+      },
+    });
+
+    await extension.startup();
+
+    const EXT_BASE_URL = `moz-extension://${extension.uuid}`;
+
+    return {extension, EXT_BASE_URL};
+  }
+
+  const testUrl = "http://example.com/test-cookies";
+  const testRequests = ["xhr", "fetch", "worker fetch"];
+  const tests = [
+    {behavior: "BEHAVIOR_ACCEPT", cookiesCount: 1},
+    {behavior: "BEHAVIOR_REJECT_FOREIGN", cookiesCount: 0},
+    {behavior: "BEHAVIOR_REJECT", cookiesCount: 0},
+    {behavior: "BEHAVIOR_LIMIT_FOREIGN", cookiesCount: 0},
+    {behavior: "BEHAVIOR_REJECT_TRACKER", cookiesCount: 1},
+  ];
+
+  function clearAllCookies() {
+    Services.cookies.removeAll();
+    let cookies = Array.from(Services.cookies.enumerator);
+    equal(cookies.length, 0, "There shouldn't be any cookies after clearing");
+  }
+
+  async function runTestRequests(extension, cookiesCount, msg) {
+    for (const testRequest of testRequests) {
+      clearAllCookies();
+      extension.sendMessage(testRequest, testUrl);
+      await extension.awaitMessage(`${testRequest}:done`);
+      assertCookiesForHost(testUrl, cookiesCount,
+                           `${msg}: cookies count on ${testRequest} "${testUrl}"`);
+    }
+  }
+
+  for (const {behavior, cookiesCount} of tests) {
+    info(`Test cookies on http requests with ${behavior}`);
+    ok(behavior in Ci.nsICookieService, `${behavior} is a valid CookieBehavior`);
+    Services.prefs.setIntPref("network.cookie.cookieBehavior", Ci.nsICookieService[behavior]);
+
+    
+    
+    const {extension, EXT_BASE_URL} = await createExtension();
+
+    
+    let extPage = await ExtensionTestUtils.loadContentPage(`${EXT_BASE_URL}/page.html`, {
+      extension, remote: extension.extension.remote,
+    });
+    await extension.awaitMessage("testRequestScript:ready");
+    await runTestRequests(extension, cookiesCount, `Test top level extension page on ${behavior}`);
+    await extPage.close();
+
+    
+    extPage = await ExtensionTestUtils.loadContentPage(`${EXT_BASE_URL}/page_with_subframe.html`, {
+      extension, remote: extension.extension.remote,
+    });
+    await extension.awaitMessage("testRequestScript:ready");
+    await runTestRequests(extension, cookiesCount, `Test sub frame extension page on ${behavior}`);
+    await extPage.close();
+
+    await extension.unload();
+  }
+
+  
+  info("Testing blocked tracker cookies in webpage subframe on BEHAVIOR_REJECT_TRACKERS");
+  Services.prefs.setIntPref("network.cookie.cookieBehavior", BEHAVIOR_REJECT_TRACKER);
+
+  const trackerURL = "http://itisatracker.org/test-cookies";
+  const {extension, EXT_BASE_URL} = await createExtension();
+  const extPage = await ExtensionTestUtils.loadContentPage(`${EXT_BASE_URL}/_generated_background_page.html`, {
+    extension, remote: extension.extension.remote,
+  });
+  clearAllCookies();
+
+  await extPage.spawn("http://example.com/page-with-tracker.html", async (iframeURL) => {
+    const iframe = this.content.document.createElement("iframe");
+    iframe.setAttribute("src", iframeURL);
+    return new Promise(resolve => {
+      iframe.onload = () => resolve();
+      this.content.document.body.appendChild(iframe);
+    });
+  });
+
+  assertCookiesForHost(
+    trackerURL, 0,
+    "Test cookies on web subframe inside top level extension page on BEHAVIOR_REJECT_TRACKER");
+  clearAllCookies();
+
+  await extPage.close();
+  await extension.unload();
+});
+
+
+
+add_task(async function test_webpage_subframe_storage_respect_cookiesBehavior() {
+  let extension = ExtensionTestUtils.loadExtension({
+    manifest: {
+      permissions: ["http://example.com/*"],
+      web_accessible_resources: ["subframe.html"],
+    },
+    files: {
+      "toplevel.html": createPage({
+        body: `
+          <iframe id="ext" src="subframe.html"></iframe>
+          <iframe id="web" src="http://example.com/subframe.html"></iframe>
+        `,
+      }),
+      "subframe.html": createPage(),
     },
   });
 
-  await extension.startup();
-  await extension.awaitFinish("bg_allowed_storage");
-  await extension.unload();
-}
-
-add_task(async function test_ext_page_allowed_storage_on_cookieBehaviors() {
-  info("Test background page indexedDB with BEHAVIOR_LIMIT_FOREIGN");
-  Services.prefs.setIntPref("network.cookie.cookieBehavior", BEHAVIOR_LIMIT_FOREIGN);
-  await test_bg_page_allowed_storage();
-
-  info("Test background page indexedDB with BEHAVIOR_REJECT_FOREIGN");
-  Services.prefs.setIntPref("network.cookie.cookieBehavior", BEHAVIOR_REJECT_FOREIGN);
-  await test_bg_page_allowed_storage();
-
-  info("Test background page indexedDB with BEHAVIOR_REJECT");
   Services.prefs.setIntPref("network.cookie.cookieBehavior", BEHAVIOR_REJECT);
-  await test_bg_page_allowed_storage();
+
+  await extension.startup();
+
+  let extensionPage = await ExtensionTestUtils.loadContentPage(
+    `moz-extension://${extension.uuid}/toplevel.html`, {
+      extension,
+      remote: extension.extension.remote,
+    });
+
+  let results = await extensionPage.spawn(null, async () => {
+    let extFrame = this.content.document.querySelector("iframe#ext");
+    let webFrame = this.content.document.querySelector("iframe#web");
+
+    function testIDB(win) {
+      try {
+        void win.indexedDB;
+        return {success: true};
+      } catch (err) {
+        return {error: `${err}`};
+      }
+    }
+
+    async function testServiceWorker(win) {
+      try {
+        await win.navigator.serviceWorker.register("sw.js");
+        return {success: true};
+      } catch (err) {
+        return {error: `${err}`};
+      }
+    }
+
+    return {
+      extTopLevel: testIDB(this.content),
+      extSubFrame: testIDB(extFrame.contentWindow),
+      webSubFrame: testIDB(webFrame.contentWindow),
+      webServiceWorker: await testServiceWorker(webFrame.contentWindow),
+    };
+  });
+
+  let contentPage = await ExtensionTestUtils.loadContentPage(
+    "http://example.com/subframe.html");
+
+  results.extSubFrameContent = await contentPage.spawn(extension.uuid, (uuid) => {
+    return new Promise(resolve => {
+      let frame = this.content.document.createElement("iframe");
+      frame.setAttribute("src", `moz-extension://${uuid}/subframe.html`);
+      frame.onload = () => {
+        try {
+          void frame.contentWindow.indexedDB;
+          resolve({success: true});
+        } catch (err) {
+          resolve({error: `${err}`});
+        }
+      };
+      this.content.document.body.appendChild(frame);
+    });
+  });
+
+  const overrideOnTopLevel = Services.prefs.getBoolPref("extensions.cookiesBehavior.overrideOnTopLevel", false);
+
+  Assert.deepEqual(
+    results.extTopLevel, {success: true},
+    "IndexedDB allowed in a top level extension page");
+
+  Assert.deepEqual(
+    results.extSubFrame, {success: true},
+    "IndexedDB allowed in a subframe extension page with a top level extension page");
+
+  if (overrideOnTopLevel) {
+    
+    Assert.deepEqual(
+      results.webSubFrame, {success: true},
+      "IndexedDB allowed in a subframe webpage with a top level extension page");
+    Assert.deepEqual(
+      results.webServiceWorker, {success: true},
+      "IndexedDB and Cache allowed in a service worker registered in the subframe webpage extension page");
+  } else {
+    Assert.deepEqual(
+      results.webSubFrame, {error: "SecurityError: The operation is insecure."},
+      "IndexedDB not allowed in a subframe webpage with a top level extension page");
+    Assert.deepEqual(
+      results.webServiceWorker, {error: "SecurityError: The operation is insecure."},
+      "IndexedDB and Cache not allowed in a service worker registered in the subframe webpage extension page");
+  }
+
+  Assert.deepEqual(
+    results.extSubFrameContent, {success: true},
+    "IndexedDB allowed in a subframe extension page with a top level webpage");
+
+
+  await extensionPage.close();
+  await contentPage.close();
+
+  await extension.unload();
 });
 
 
@@ -111,7 +478,7 @@ add_task(async function test_content_script_on_cookieBehaviorReject() {
 
   await extension.startup();
 
-  let contentPage = await ExtensionTestUtils.loadContentPage(`${BASE_URL}/file_sample.html`);
+  let contentPage = await ExtensionTestUtils.loadContentPage("http://example.com/data/file_sample.html");
 
   await extension.awaitFinish("cs_disallowed_storage");
 
@@ -125,80 +492,79 @@ add_task(function clear_cookieBehavior_pref() {
 
 
 
+
+
 add_task(async function test_localStorage_on_session_lifetimePolicy() {
   
   Services.prefs.setIntPref("network.cookie.lifetimePolicy", ACCEPT_SESSION);
 
-  function background() {
+  function extPageScript() {
     localStorage.setItem("test-key", "test-value");
 
-    browser.test.sendMessage("bg_localStorage_set", {uuid: window.location.hostname});
+    browser.test.sendMessage("bg_localStorage_set");
   }
 
   let extension = ExtensionTestUtils.loadExtension({
-    background,
+    manifest: {
+      permissions: ["http://example.com/*", "http://itisatracker.org/*"],
+    },
+    files: {
+      "ext.js": extPageScript,
+      "ext.html": createPage({
+        body: `<iframe src="http://example.com"></iframe>`,
+        script: "ext.js",
+      }),
+    },
   });
 
   await extension.startup();
-  const {uuid} = await extension.awaitMessage("bg_localStorage_set");
 
-  const fakeAddonActor = {addonId: extension.id};
-  const addonBrowser = await ExtensionParent.DebugUtils.getExtensionProcessBrowser(fakeAddonActor);
-  const {isRemoteBrowser} = addonBrowser;
+  let extensionPage = await ExtensionTestUtils.loadContentPage(`moz-extension://${extension.uuid}/ext.html`, {
+    extension,
+    remote: extension.extension.remote,
+  });
+  await extension.awaitMessage("bg_localStorage_set");
 
-  const {
-    isSessionOnly,
-    domStorageLength,
-    domStorageStoredValue,
-  } = await ContentTask.spawn(addonBrowser, {uuid, isRemoteBrowser}, (params) => {
-    const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-    let bgPageWindow;
+  const results = await extensionPage.spawn(null, async () => {
+    const iframe = this.content.document.querySelector("iframe").contentWindow;
+    const {localStorage} = this.content;
 
-    
-    for (let win of Services.ww.getWindowEnumerator()) {
-      
-      
-      
-      
-
-      if (!params.isRemoteBrowser) {
-        if (win.location.href !== "chrome://extensions/content/dummy.xul") {
-          
-          
-          
-          continue;
-        } else {
-          
-          
-          win = win.document.querySelector("browser").contentWindow;
-        }
-      }
-
-      if (win.location.hostname === params.uuid &&
-          win.location.pathname === "/_generated_background_page.html") {
-        
-        
-        bgPageWindow = win;
-        break;
-      }
-    }
-
-    if (!bgPageWindow) {
-      throw new Error("Unable to find the extension background page");
-    }
+    await this.content.fetch("http://itisatracker.org/test-cookies");
+    await iframe.fetch("http://example.com/test-cookies");
 
     return {
-      isSessionOnly: bgPageWindow.localStorage.isSessionOnly,
-      domStorageLength: bgPageWindow.localStorage.length,
-      domStorageStoredValue: bgPageWindow.localStorage.getItem("test-key"),
+      topLevel: {
+        isSessionOnly: localStorage.isSessionOnly,
+        domStorageLength: localStorage.length,
+        domStorageStoredValue: localStorage.getItem("test-key"),
+      },
+      webFrame: {
+        isSessionOnly: iframe.localStorage.isSessionOnly,
+      },
     };
   });
 
-  await ExtensionParent.DebugUtils.releaseExtensionProcessBrowser(fakeAddonActor);
+  equal(results.topLevel.isSessionOnly, false,
+        "the extension localStorage is not set in session-only mode");
+  equal(results.topLevel.domStorageLength, 1,
+        "the extension storage contains the expected number of keys");
+  equal(results.topLevel.domStorageStoredValue,
+        "test-value", "the extension storage contains the expected data");
 
-  equal(isSessionOnly, false, "the extension localStorage is not set in session-only mode");
-  equal(domStorageLength, 1, "the extension storage contains the expected number of keys");
-  equal(domStorageStoredValue, "test-value", "the extension storage contains the expected data");
+  equal(results.webFrame.isSessionOnly, true,
+        "the webpage sub frame localStorage is in session-only mode");
+
+  let cookies = assertCookiesForHost("http://example.com", 1,
+                                     "Got a cookie from the extension page request");
+  ok(cookies[0].isSession,
+     "Got a session cookie from the extension page request");
+
+  cookies = assertCookiesForHost("http://itisatracker.org", 1,
+                                 "Got a cookie from the web page request");
+  ok(cookies[0].isSession,
+     "Got a session cookie from the web page request");
+
+  await extensionPage.close();
 
   await extension.unload();
 });
