@@ -80,6 +80,10 @@ if __name__ == '__main__':
         env = os.environ.copy()
         env["MOZ_CRASHREPORTER_NO_REPORT"] = "1"
         env["XPCOM_DEBUG_BREAK"] = "warn"
+        
+        
+        
+        env["MOZ_FORCE_DISABLE_E10S"] = "1"
 
         
         if not substs.get('HAVE_64BIT_BUILD'):
