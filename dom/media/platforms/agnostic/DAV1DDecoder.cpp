@@ -65,16 +65,21 @@ void DAV1DDecoder::ReleaseDataBuffer(const uint8_t* buf) {
   
   
   
-  
-  
   RefPtr<DAV1DDecoder> self = this;
-  nsresult rv = mTaskQueue->Dispatch(
-      NS_NewRunnableFunction("DAV1DDecoder::ReleaseDataBuffer", [self, buf]() {
-        DebugOnly<bool> found = self->mDecodingBuffers.Remove(buf);
-        MOZ_ASSERT(found);
-      }));
-  MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-  Unused << rv;
+  auto releaseBuffer = [self, buf] {
+    MOZ_ASSERT(self->mTaskQueue->IsCurrentThreadIn());
+    DebugOnly<bool> found = self->mDecodingBuffers.Remove(buf);
+    MOZ_ASSERT(found);
+  };
+
+  if (mTaskQueue->IsCurrentThreadIn()) {
+    releaseBuffer();
+  } else {
+    nsresult rv = mTaskQueue->Dispatch(NS_NewRunnableFunction(
+        "DAV1DDecoder::ReleaseDataBuffer", std::move(releaseBuffer)));
+    MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
+    Unused << rv;
+  }
 }
 
 RefPtr<MediaDataDecoder::DecodePromise> DAV1DDecoder::InvokeDecode(
