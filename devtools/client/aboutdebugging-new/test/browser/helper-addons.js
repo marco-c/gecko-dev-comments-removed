@@ -15,9 +15,6 @@ function _getSupportsFile(path) {
 
 async function enableExtensionDebugging() {
   
-  await pushPref("devtools.chrome.enabled", true);
-  await pushPref("devtools.debugger.remote-enabled", true);
-  
   await pushPref("devtools.debugger.prompt-connection", false);
   
   await pushPref("devtools.browser-toolbox.allow-unsafe-script", true);
