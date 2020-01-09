@@ -17,7 +17,16 @@
 
 
 
-function getChangesTree(state) {
+
+
+
+
+
+
+
+function getChangesTree(state, filter = {}) {
+  
+  const { sourceIds: sourceIdsFilter = [], ruleIds: rulesIdsFilter = [] } = filter;
   
 
 
@@ -44,34 +53,52 @@ function getChangesTree(state) {
     };
   }
 
-  return Object.entries(state).reduce((sourcesObj, [sourceId, source]) => {
-    const { rules } = source;
-    
-    
-    
-    
-    
-    const visitedRules = new Set();
-
-    
-    sourcesObj[sourceId] = {
-      ...source,
+  return Object.entries(state)
+    .filter(([sourceId, source]) => {
       
-      rules: Object.entries(rules).reduce((rulesObj, [ruleId, rule]) => {
-        
-        
-        
-        const expandedRule = expandRuleChildren(ruleId, rule, rules, visitedRules);
-        if (expandedRule !== null) {
-          rulesObj[ruleId] = expandedRule;
-        }
+      if (sourceIdsFilter.length) {
+        return sourceIdsFilter.includes(sourceId);
+      }
 
-        return rulesObj;
-      }, {}),
-    };
+      return true;
+    })
+    .reduce((sourcesObj, [sourceId, source]) => {
+      const { rules } = source;
+      
+      
+      
+      
+      
+      const visitedRules = new Set();
 
-    return sourcesObj;
-  }, {});
+      
+      sourcesObj[sourceId] = {
+        ...source,
+        
+        rules: Object.entries(rules)
+          .filter(([ruleId, rule]) => {
+            
+            if (rulesIdsFilter.length) {
+              return rulesIdsFilter.includes(ruleId);
+            }
+
+            return true;
+          })
+          .reduce((rulesObj, [ruleId, rule]) => {
+            
+            
+            
+            const expandedRule = expandRuleChildren(ruleId, rule, rules, visitedRules);
+            if (expandedRule !== null) {
+              rulesObj[ruleId] = expandedRule;
+            }
+
+            return rulesObj;
+          }, {}),
+      };
+
+      return sourcesObj;
+    }, {});
 }
 
 module.exports = {
