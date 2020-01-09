@@ -47,6 +47,25 @@ using namespace JS;
 
 
 
+
+bool XPCConvert::IsMethodReflectable(const nsXPTMethodInfo& info) {
+  if (info.IsNotXPCOM() || info.IsHidden()) {
+    return false;
+  }
+
+  for (int i = info.GetParamCount() - 1; i >= 0; i--) {
+    const nsXPTParamInfo& param = info.GetParam(i);
+    const nsXPTType& type = param.GetType();
+
+    
+    
+    if (type.Tag() == nsXPTType::T_VOID) {
+      return false;
+    }
+  }
+  return true;
+}
+
 static JSObject* UnwrapNativeCPOW(nsISupports* wrapper) {
   nsCOMPtr<nsIXPConnectWrappedJS> underware = do_QueryInterface(wrapper);
   if (underware) {
