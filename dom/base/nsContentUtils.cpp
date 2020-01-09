@@ -9057,7 +9057,8 @@ bool nsContentUtils::SerializeNodeToMarkup(nsINode* aRoot,
 
       case nsINode::TEXT_NODE:
       case nsINode::CDATA_SECTION_NODE: {
-        const nsTextFragment* text = &current->AsText()->TextFragment();
+        const nsTextFragment* text =
+            static_cast<nsIContent*>(current)->GetText();
         nsIContent* parent = current->GetParent();
         if (ShouldEscape(parent)) {
           AppendEncodedCharacters(text, builder);
@@ -9401,14 +9402,14 @@ static void DoCustomElementCreate(Element** aElement, JSContext* aCx,
   UNWRAP_OBJECT(Element, &constructResult, element);
   if (aNodeInfo->NamespaceEquals(kNameSpaceID_XHTML)) {
     if (!element || !element->IsHTMLElement()) {
-      aRv.ThrowTypeError<MSG_THIS_DOES_NOT_IMPLEMENT_INTERFACE>(
-          NS_LITERAL_STRING("HTMLElement"));
+      aRv.ThrowTypeError<MSG_DOES_NOT_IMPLEMENT_INTERFACE>(
+          NS_LITERAL_STRING("\"this\""), NS_LITERAL_STRING("HTMLElement"));
       return;
     }
   } else {
     if (!element || !element->IsXULElement()) {
-      aRv.ThrowTypeError<MSG_THIS_DOES_NOT_IMPLEMENT_INTERFACE>(
-          NS_LITERAL_STRING("XULElement"));
+      aRv.ThrowTypeError<MSG_DOES_NOT_IMPLEMENT_INTERFACE>(
+          NS_LITERAL_STRING("\"this\""), NS_LITERAL_STRING("XULElement"));
       return;
     }
   }
