@@ -528,9 +528,16 @@ class LifoAlloc {
   size_t markCount;
   size_t defaultChunkSize_;
   size_t oversizeThreshold_;
+
+  
   size_t curSize_;
   size_t peakSize_;
-  size_t oversizeSize_;
+
+  
+  
+  
+  size_t smallAllocsSize_;
+
 #if defined(DEBUG) || defined(JS_OOM_BREAKPOINT)
   bool fallibleScope_;
 #endif
@@ -573,6 +580,7 @@ class LifoAlloc {
   void decrementCurSize(size_t size) {
     MOZ_ASSERT(curSize_ >= size);
     curSize_ -= size;
+    MOZ_ASSERT(curSize_ >= smallAllocsSize_);
   }
 
   void* allocImplColdPath(size_t n);
@@ -771,16 +779,22 @@ class LifoAlloc {
  public:
   void releaseAll() {
     MOZ_ASSERT(!markCount);
+
+    
+    
+    
+    smallAllocsSize_ = 0;
+
     for (detail::BumpChunk& bc : chunks_) {
       bc.release();
     }
     unused_.appendAll(std::move(chunks_));
+
     
     
     while (!oversize_.empty()) {
       UniqueBumpChunk bc = oversize_.popFirst();
       decrementCurSize(bc->computedSizeOfIncludingThis());
-      oversizeSize_ -= bc->computedSizeOfIncludingThis();
     }
   }
 

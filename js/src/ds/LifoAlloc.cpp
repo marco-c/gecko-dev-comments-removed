@@ -104,7 +104,7 @@ void LifoAlloc::reset(size_t defaultChunkSize) {
     chunks_.popFirst();
   }
   while (!oversize_.empty()) {
-    chunks_.popFirst();
+    oversize_.popFirst();
   }
   while (!unused_.empty()) {
     unused_.popFirst();
@@ -113,10 +113,15 @@ void LifoAlloc::reset(size_t defaultChunkSize) {
   oversizeThreshold_ = defaultChunkSize;
   markCount = 0;
   curSize_ = 0;
-  oversizeSize_ = 0;
+  smallAllocsSize_ = 0;
 }
 
 void LifoAlloc::freeAll() {
+  
+  
+  
+  smallAllocsSize_ = 0;
+
   while (!chunks_.empty()) {
     UniqueBumpChunk bc = chunks_.popFirst();
     decrementCurSize(bc->computedSizeOfIncludingThis());
@@ -124,7 +129,6 @@ void LifoAlloc::freeAll() {
   while (!oversize_.empty()) {
     UniqueBumpChunk bc = oversize_.popFirst();
     decrementCurSize(bc->computedSizeOfIncludingThis());
-    oversizeSize_ -= bc->computedSizeOfIncludingThis();
   }
   while (!unused_.empty()) {
     UniqueBumpChunk bc = unused_.popFirst();
@@ -134,7 +138,6 @@ void LifoAlloc::freeAll() {
   
   
   MOZ_ASSERT(curSize_ == 0);
-  MOZ_ASSERT(oversizeSize_ == 0);
 }
 
 
@@ -176,11 +179,14 @@ LifoAlloc::UniqueBumpChunk LifoAlloc::newChunkWithCapacity(size_t n,
     return nullptr;
   }
 
-  MOZ_ASSERT(curSize_ >= oversizeSize_);
+  
+  
+  
+  MOZ_ASSERT(curSize_ >= smallAllocsSize_);
   const size_t chunkSize =
       (oversize || minSize > defaultChunkSize_)
           ? MallocGoodSize(minSize)
-          : NextSize(defaultChunkSize_, curSize_ - oversizeSize_);
+          : NextSize(defaultChunkSize_, smallAllocsSize_);
 
   
   UniqueBumpChunk result = detail::BumpChunk::newWithCapacity(chunkSize);
@@ -219,8 +225,7 @@ LifoAlloc::UniqueBumpChunk LifoAlloc::getOrCreateChunk(size_t n) {
   if (!newChunk) {
     return newChunk;
   }
-  size_t size = newChunk->computedSizeOfIncludingThis();
-  incrementCurSize(size);
+  incrementCurSize(newChunk->computedSizeOfIncludingThis());
   return newChunk;
 }
 
@@ -230,6 +235,9 @@ void* LifoAlloc::allocImplColdPath(size_t n) {
   if (!newChunk) {
     return nullptr;
   }
+
+  
+  smallAllocsSize_ += newChunk->computedSizeOfIncludingThis();
 
   
   chunks_.append(std::move(newChunk));
@@ -245,7 +253,6 @@ void* LifoAlloc::allocImplOversize(size_t n) {
     return nullptr;
   }
   incrementCurSize(newChunk->computedSizeOfIncludingThis());
-  oversizeSize_ += newChunk->computedSizeOfIncludingThis();
 
   
   oversize_.append(std::move(newChunk));
@@ -266,9 +273,8 @@ bool LifoAlloc::ensureUnusedApproximateColdPath(size_t n, size_t total) {
   if (!newChunk) {
     return false;
   }
-  size_t size = newChunk->computedSizeOfIncludingThis();
+  incrementCurSize(newChunk->computedSizeOfIncludingThis());
   unused_.pushFront(std::move(newChunk));
-  incrementCurSize(size);
   return true;
 }
 
@@ -325,6 +331,10 @@ void LifoAlloc::release(Mark mark) {
   cutAtMark(mark.chunk, chunks_);
   for (detail::BumpChunk& bc : released) {
     bc.release();
+
+    
+    
+    smallAllocsSize_ -= bc.computedSizeOfIncludingThis();
   }
   unused_.appendAll(std::move(released));
 
@@ -333,7 +343,6 @@ void LifoAlloc::release(Mark mark) {
   while (!released.empty()) {
     UniqueBumpChunk bc = released.popFirst();
     decrementCurSize(bc->computedSizeOfIncludingThis());
-    oversizeSize_ -= bc->computedSizeOfIncludingThis();
   }
 }
 
@@ -353,7 +362,7 @@ void LifoAlloc::steal(LifoAlloc* other) {
   oversizeThreshold_ = other->oversizeThreshold_;
   curSize_ = other->curSize_;
   peakSize_ = Max(peakSize_, other->peakSize_);
-  oversizeSize_ = other->oversizeSize_;
+  smallAllocsSize_ = other->smallAllocsSize_;
 #if defined(DEBUG) || defined(JS_OOM_BREAKPOINT)
   fallibleScope_ = other->fallibleScope_;
 #endif
@@ -365,13 +374,19 @@ void LifoAlloc::transferFrom(LifoAlloc* other) {
   MOZ_ASSERT(!markCount);
   MOZ_ASSERT(!other->markCount);
 
+  
+  
+  
+  
+  
+  
   incrementCurSize(other->curSize_);
-  oversizeSize_ += other->oversizeSize_;
+
   appendUnused(std::move(other->unused_));
   chunks_.prependAll(std::move(other->chunks_));
   oversize_.prependAll(std::move(other->oversize_));
   other->curSize_ = 0;
-  other->oversizeSize_ = 0;
+  other->smallAllocsSize_ = 0;
 }
 
 void LifoAlloc::transferUnusedFrom(LifoAlloc* other) {
