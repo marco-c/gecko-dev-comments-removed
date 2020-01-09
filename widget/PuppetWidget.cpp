@@ -1,9 +1,9 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: sw=2 ts=8 et :
- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+
 
 #include "base/basictypes.h"
 
@@ -46,7 +46,7 @@ static void InvalidateRegion(nsIWidget* aWidget,
   }
 }
 
-/*static*/
+
 already_AddRefed<nsIWidget> nsIWidget::CreatePuppetWidget(
     BrowserChild* aBrowserChild) {
   MOZ_ASSERT(!aBrowserChild || nsIWidget::UsePuppetWidgets(),
@@ -64,8 +64,8 @@ static bool IsPopup(const nsWidgetInitData* aInitData) {
 }
 
 static bool MightNeedIMEFocus(const nsWidgetInitData* aInitData) {
-  // In the puppet-widget world, popup widgets are just dummies and
-  // shouldn't try to mess with IME state.
+  
+  
 #ifdef MOZ_CROSS_PROCESS_IME
   return !IsPopup(aInitData);
 #else
@@ -73,7 +73,7 @@ static bool MightNeedIMEFocus(const nsWidgetInitData* aInitData) {
 #endif
 }
 
-// Arbitrary, fungible.
+
 const size_t PuppetWidget::kMaxDimension = 4000;
 
 static bool gRemoteDesktopBehaviorEnabled = false;
@@ -94,7 +94,7 @@ PuppetWidget::PuppetWidget(BrowserChild* aBrowserChild)
       mVisible(false),
       mNeedIMEStateInit(false),
       mIgnoreCompositionEvents(false) {
-  // Setting 'Unknown' means "not yet cached".
+  
   mInputContext.mIMEState.mEnabled = IMEState::UNKNOWN;
 
   if (!gRemoteDesktopBehaviorInitialized) {
@@ -194,14 +194,14 @@ void PuppetWidget::Show(bool aState) {
   }
 
   if (!wasVisible && mVisible) {
-    // The previously attached widget listener is handy if
-    // we're transitioning from page to page without dropping
-    // layers (since we'll continue to show the old layers
-    // associated with that old widget listener). If the
-    // PuppetWidget was hidden, those layers are dropped,
-    // so the previously attached widget listener is really
-    // of no use anymore (and is actually actively harmful - see
-    // bug 1323586).
+    
+    
+    
+    
+    
+    
+    
+    
     mPreviouslyAttachedWidgetListener = nullptr;
     Resize(mBounds.Width(), mBounds.Height(), false);
     Invalidate(mBounds);
@@ -218,17 +218,17 @@ void PuppetWidget::Resize(double aWidth, double aHeight, bool aRepaint) {
     return;
   }
 
-  // XXX: roc says that |aRepaint| dictates whether or not to
-  // invalidate the expanded area
+  
+  
   if (oldBounds.Size() < mBounds.Size() && aRepaint) {
     LayoutDeviceIntRegion dirty(mBounds);
     dirty.Sub(dirty, oldBounds);
     InvalidateRegion(this, dirty);
   }
 
-  // call WindowResized() on both the current listener, and possibly
-  // also the previous one if we're in a state where we're drawing that one
-  // because the current one is paint suppressed
+  
+  
+  
   if (!oldBounds.IsEqualEdges(mBounds) && mAttachedWidgetListener) {
     if (GetCurrentWidgetListener() &&
         GetCurrentWidgetListener() != mAttachedWidgetListener) {
@@ -302,7 +302,7 @@ void PuppetWidget::InitEvent(WidgetGUIEvent& aEvent,
   if (nullptr == aPoint) {
     aEvent.mRefPoint = LayoutDeviceIntPoint(0, 0);
   } else {
-    // use the point override if provided
+    
     aEvent.mRefPoint = *aPoint;
   }
   aEvent.mTime = PR_Now() / 1000;
@@ -325,22 +325,22 @@ nsresult PuppetWidget::DispatchEvent(WidgetGUIEvent* aEvent,
              "before dispatched");
 
   if (aEvent->mClass == eCompositionEventClass) {
-    // If we've already requested to commit/cancel the latest composition,
-    // TextComposition for the old composition has been destroyed.  Then,
-    // the DOM tree needs to listen to next eCompositionStart and its
-    // following events.  So, until we meet new eCompositionStart, let's
-    // discard all unnecessary composition events here.
+    
+    
+    
+    
+    
     if (mIgnoreCompositionEvents) {
       if (aEvent->mMessage != eCompositionStart) {
         aStatus = nsEventStatus_eIgnore;
         return NS_OK;
       }
-      // Now, we receive new eCompositionStart.  Let's restart to handle
-      // composition in this process.
+      
+      
       mIgnoreCompositionEvents = false;
     }
-    // Store the latest native IME context of parent process's widget or
-    // TextEventDispatcher if it's in this process.
+    
+    
     WidgetCompositionEvent* compositionEvent = aEvent->AsCompositionEvent();
 #ifdef DEBUG
     if (mNativeIMEContext.IsValid() &&
@@ -353,25 +353,25 @@ nsresult PuppetWidget::DispatchEvent(WidgetGUIEvent* aEvent,
           "composition events caused by different native IME context are not "
           "allowed");
     }
-#endif  // #ifdef DEBUG
+#endif  
     mNativeIMEContext = compositionEvent->mNativeIMEContext;
   }
 
-  // If the event is a composition event or a keyboard event, it should be
-  // dispatched with TextEventDispatcher if we could do that with current
-  // design.  However, we cannot do that without big changes and the behavior
-  // is not so complicated for now.  Therefore, we should just notify it
-  // of dispatching events and TextEventDispatcher should emulate the state
-  // with events here.
+  
+  
+  
+  
+  
+  
   if (aEvent->mClass == eCompositionEventClass ||
       aEvent->mClass == eKeyboardEventClass) {
     TextEventDispatcher* dispatcher = GetTextEventDispatcher();
-    // However, if the event is being dispatched by the text event dispatcher
-    // or, there is native text event dispatcher listener, that means that
-    // native text input event handler is in this process like on Android,
-    // and the event is not synthesized for tests, the event is coming from
-    // the TextEventDispatcher.  In these cases, we shouldn't notify
-    // TextEventDispatcher of dispatching the event.
+    
+    
+    
+    
+    
+    
     if (!dispatcher->IsDispatchingEvent() &&
         !(mNativeTextEventDispatcherListener &&
           !aEvent->mFlags.mIsSynthesizedForTests)) {
@@ -406,9 +406,9 @@ nsEventStatus PuppetWidget::DispatchInputEvent(WidgetInputEvent* aEvent) {
   }
 
   if (PresShell* presShell = mBrowserChild->GetTopLevelPresShell()) {
-    // Because the root resolution is conceptually at the parent/child process
-    // boundary, we need to apply that resolution here because we're sending
-    // the event from the child to the parent process.
+    
+    
+    
     LayoutDevicePoint pt(aEvent->mRefPoint);
     pt = pt * presShell->GetResolution();
     aEvent->mRefPoint = LayoutDeviceIntPoint::Round(pt);
@@ -541,7 +541,7 @@ bool PuppetWidget::AsyncPanZoomEnabled() const {
 void PuppetWidget::GetEditCommands(NativeKeyBindingsType aType,
                                    const WidgetKeyboardEvent& aEvent,
                                    nsTArray<CommandInt>& aCommands) {
-  // Validate the arguments.
+  
   nsIWidget::GetEditCommands(aType, aEvent, aCommands);
 
   mBrowserChild->RequestEditCommands(aType, aEvent, aCommands);
@@ -552,17 +552,17 @@ LayerManager* PuppetWidget::GetLayerManager(
     LayerManagerPersistence aPersistence) {
   if (!mLayerManager) {
     if (XRE_IsParentProcess()) {
-      // On the parent process there is no CompositorBridgeChild which confuses
-      // some layers code, so we use basic layers instead. Note that we create
-      // a non-retaining layer manager since we don't care about performance.
+      
+      
+      
       mLayerManager = new BasicLayerManager(BasicLayerManager::BLM_OFFSCREEN);
       return mLayerManager;
     }
 
-    // If we know for sure that the parent side of this BrowserChild is not
-    // connected to the compositor, we don't want to use a "remote" layer
-    // manager like WebRender or Client. Instead we use a Basic one which
-    // can do drawing in this process.
+    
+    
+    
+    
     MOZ_ASSERT(!mBrowserChild ||
                mBrowserChild->IsLayersConnected() != Some(true));
     mLayerManager = new BasicLayerManager(this);
@@ -585,10 +585,10 @@ bool PuppetWidget::CreateRemoteLayerManager(
     return false;
   }
 
-  // Force the old LM to self destruct, otherwise if the reference dangles we
-  // could fail to revoke the most recent transaction. We only want to replace
-  // it if we successfully create its successor because a partially initialized
-  // layer manager is worse than a fully initialized but shutdown layer manager.
+  
+  
+  
+  
   DestroyLayerManager();
   mLayerManager = lm.forget();
   return true;
@@ -601,24 +601,24 @@ nsresult PuppetWidget::RequestIMEToCommitComposition(bool aCancel) {
 
   MOZ_ASSERT(!Destroyed());
 
-  // There must not be composition which is caused by the PuppetWidget instance.
+  
   if (NS_WARN_IF(!mNativeIMEContext.IsValid())) {
     return NS_OK;
   }
 
-  // We've already requested to commit/cancel composition.
+  
   if (NS_WARN_IF(mIgnoreCompositionEvents)) {
 #ifdef DEBUG
     RefPtr<TextComposition> composition =
         IMEStateManager::GetTextCompositionFor(this);
     MOZ_ASSERT(!composition);
-#endif  // #ifdef DEBUG
+#endif  
     return NS_OK;
   }
 
   RefPtr<TextComposition> composition =
       IMEStateManager::GetTextCompositionFor(this);
-  // This method shouldn't be called when there is no text composition instance.
+  
   if (NS_WARN_IF(!composition)) {
     return NS_OK;
   }
@@ -635,13 +635,13 @@ nsresult PuppetWidget::RequestIMEToCommitComposition(bool aCancel) {
     return NS_ERROR_FAILURE;
   }
 
-  // If the composition wasn't committed synchronously, we need to wait async
-  // composition events for destroying the TextComposition instance.
+  
+  
   if (!isCommitted) {
     return NS_OK;
   }
 
-  // Dispatch eCompositionCommit event.
+  
   WidgetCompositionEvent compositionCommitEvent(true, eCompositionCommit, this);
   InitEvent(compositionCommitEvent, nullptr);
   compositionCommitEvent.mData = committedString;
@@ -652,16 +652,16 @@ nsresult PuppetWidget::RequestIMEToCommitComposition(bool aCancel) {
   RefPtr<TextComposition> currentComposition =
       IMEStateManager::GetTextCompositionFor(this);
   MOZ_ASSERT(!currentComposition);
-#endif  // #ifdef DEBUG
+#endif  
 
-  // Ignore the following composition events until we receive new
-  // eCompositionStart event.
+  
+  
   mIgnoreCompositionEvents = true;
 
   Unused << mBrowserChild->SendOnEventNeedingAckHandled(
       eCompositionCommitRequestHandled);
 
-  // NOTE: PuppetWidget might be destroyed already.
+  
   return NS_OK;
 }
 
@@ -676,19 +676,19 @@ nsresult PuppetWidget::StartPluginIME(const WidgetKeyboardEvent& aKeyboardEvent,
                             aKeyboardEvent, aPanelX, aPanelY, &aCommitted)) {
     return NS_ERROR_FAILURE;
   }
-  // BrowserChild::SendStartPluginIME() sends back the keyboard event to the
-  // main process synchronously.  At this time,
-  // ParamTraits<WidgetEvent>::Write() marks the event as "posted to remote
-  // process".  However, this is not correct here since the event has been
-  // handled synchronously in the main process.  So, we adjust the cross process
-  // dispatching state here.
+  
+  
+  
+  
+  
+  
   const_cast<WidgetKeyboardEvent&>(aKeyboardEvent)
       .ResetCrossProcessDispatchingState();
-  // Although it shouldn't occur in content process,
-  // ResetCrossProcessDispatchingState() may reset propagation state too
-  // if the event was posted to a remote process and we're waiting its
-  // result.  So, if you saw hitting the following assertions, you'd
-  // need to restore the propagation state too.
+  
+  
+  
+  
+  
   MOZ_ASSERT(propagationAlreadyStopped ==
              aKeyboardEvent.mFlags.mPropagationStopped);
   MOZ_ASSERT(immediatePropagationAlreadyStopped ==
@@ -709,8 +709,8 @@ void PuppetWidget::DefaultProcOfPluginEvent(const WidgetPluginEvent& aEvent) {
   mBrowserChild->SendDefaultProcOfPluginEvent(aEvent);
 }
 
-// When this widget caches input context and currently managed by
-// IMEStateManager, the cache is valid.
+
+
 bool PuppetWidget::HaveValidInputContextCache() const {
   return (mInputContext.mIMEState.mEnabled != IMEState::UNKNOWN &&
           IMEStateManager::GetWidgetForActiveInputContext() == this);
@@ -719,9 +719,9 @@ bool PuppetWidget::HaveValidInputContextCache() const {
 void PuppetWidget::SetInputContext(const InputContext& aContext,
                                    const InputContextAction& aAction) {
   mInputContext = aContext;
-  // Any widget instances cannot cache IME open state because IME open state
-  // can be changed by user but native IME may not notify us of changing the
-  // open state on some platforms.
+  
+  
+  
   mInputContext.mIMEState.mOpen = IMEState::OPEN_STATE_NOT_SUPPORTED;
   if (!mBrowserChild) {
     return;
@@ -730,20 +730,20 @@ void PuppetWidget::SetInputContext(const InputContext& aContext,
 }
 
 InputContext PuppetWidget::GetInputContext() {
-  // XXX Currently, we don't support retrieving IME open state from child
-  //     process.
+  
+  
 
-  // If the cache of input context is valid, we can avoid to use synchronous
-  // IPC.
+  
+  
   if (HaveValidInputContextCache()) {
     return mInputContext;
   }
 
   NS_WARNING("PuppetWidget::GetInputContext() needs to retrieve it with IPC");
 
-  // Don't cache InputContext here because this process isn't managing IME
-  // state of the chrome widget.  So, we cannot modify mInputContext when
-  // chrome widget is set to new context.
+  
+  
+  
   InputContext context;
   if (mBrowserChild) {
     mBrowserChild->SendGetInputContext(&context.mIMEState);
@@ -764,20 +764,20 @@ nsresult PuppetWidget::NotifyIMEOfFocusChange(
   bool gotFocus = aIMENotification.mMessage == NOTIFY_IME_OF_FOCUS;
   if (gotFocus) {
     if (mInputContext.mIMEState.mEnabled != IMEState::PLUGIN) {
-      // When IME gets focus, we should initalize all information of the
-      // content.
+      
+      
       if (NS_WARN_IF(!mContentCache.CacheAll(this, &aIMENotification))) {
         return NS_ERROR_FAILURE;
       }
     } else {
-      // However, if a plugin has focus, only the editor rect information is
-      // available.
+      
+      
       if (NS_WARN_IF(!mContentCache.CacheEditorRect(this, &aIMENotification))) {
         return NS_ERROR_FAILURE;
       }
     }
   } else {
-    // When IME loses focus, we don't need to store anything.
+    
     mContentCache.Clear();
   }
 
@@ -789,6 +789,10 @@ nsresult PuppetWidget::NotifyIMEOfFocusChange(
           mBrowserChild->TabGroup()->EventTargetFor(TaskCategory::UI), __func__,
           [self](IMENotificationRequests&& aRequests) {
             self->mIMENotificationRequestsOfParent = aRequests;
+            if (TextEventDispatcher* dispatcher =
+                    self->GetTextEventDispatcher()) {
+              dispatcher->OnWidgetChangeIMENotificationRequests(self);
+            }
           },
           [self](mozilla::ipc::ResponseRejectReason&& aReason) {
             NS_WARNING("SendNotifyIMEFocus got rejected.");
@@ -820,21 +824,21 @@ nsresult PuppetWidget::NotifyIMEOfTextChange(
     return NS_ERROR_FAILURE;
   }
 
-  // While a plugin has focus, text change notification shouldn't be available.
+  
   if (NS_WARN_IF(mInputContext.mIMEState.mEnabled == IMEState::PLUGIN)) {
     return NS_ERROR_FAILURE;
   }
 
-  // FYI: text change notification is the first notification after
-  //      a user operation changes the content.  So, we need to modify
-  //      the cache as far as possible here.
+  
+  
+  
 
   if (NS_WARN_IF(!mContentCache.CacheText(this, &aIMENotification))) {
     return NS_ERROR_FAILURE;
   }
 
-  // BrowserParent doesn't this this to cache.  we don't send the notification
-  // if parent process doesn't request NOTIFY_TEXT_CHANGE.
+  
+  
   if (mIMENotificationRequestsOfParent.WantTextChange()) {
     mBrowserChild->SendNotifyIMETextChange(mContentCache, aIMENotification);
   } else {
@@ -851,14 +855,14 @@ nsresult PuppetWidget::NotifyIMEOfSelectionChange(
     return NS_ERROR_FAILURE;
   }
 
-  // While a plugin has focus, selection change notification shouldn't be
-  // available.
+  
+  
   if (NS_WARN_IF(mInputContext.mIMEState.mEnabled == IMEState::PLUGIN)) {
     return NS_ERROR_FAILURE;
   }
 
-  // Note that selection change must be notified after text change if it occurs.
-  // Therefore, we don't need to query text content again here.
+  
+  
   mContentCache.SetSelection(
       this, aIMENotification.mSelectionChangeData.mOffset,
       aIMENotification.mSelectionChangeData.Length(),
@@ -876,8 +880,8 @@ nsresult PuppetWidget::NotifyIMEOfMouseButtonEvent(
     return NS_ERROR_FAILURE;
   }
 
-  // While a plugin has focus, mouse button event notification shouldn't be
-  // available.
+  
+  
   if (NS_WARN_IF(mInputContext.mIMEState.mEnabled == IMEState::PLUGIN)) {
     return NS_ERROR_FAILURE;
   }
@@ -900,8 +904,8 @@ nsresult PuppetWidget::NotifyIMEOfPositionChange(
   if (NS_WARN_IF(!mContentCache.CacheEditorRect(this, &aIMENotification))) {
     return NS_ERROR_FAILURE;
   }
-  // While a plugin has focus, selection range isn't available.  So, we don't
-  // need to cache it at that time.
+  
+  
   if (mInputContext.mIMEState.mEnabled != IMEState::PLUGIN &&
       NS_WARN_IF(!mContentCache.CacheSelection(this, &aIMENotification))) {
     return NS_ERROR_FAILURE;
@@ -925,8 +929,8 @@ void PuppetWidget::SetCursor(nsCursor aCursor, imgIContainer* aCursorImage,
     return;
   }
 
-  // Don't cache on windows, Windowless flash breaks this via async cursor
-  // updates.
+  
+  
 #if !defined(XP_WIN)
   if (!mUpdateCursor && mCursor == aCursor && mCustomCursor == aCursorImage &&
       (!aCursorImage ||
@@ -987,7 +991,7 @@ nsresult PuppetWidget::Paint() {
 
   LayoutDeviceIntRegion region = mDirtyRegion;
 
-  // reset repaint tracking
+  
   mDirtyRegion.SetEmpty();
   mPaintTask.Revoke();
 
@@ -1008,7 +1012,7 @@ nsresult PuppetWidget::Paint() {
         (mozilla::layers::LayersBackend::LAYERS_BASIC ==
              mLayerManager->GetBackendType() &&
          mBrowserChild && mBrowserChild->IsLayersConnected().isSome())) {
-      // Do nothing, the compositor will handle drawing
+      
       if (mBrowserChild) {
         mBrowserChild->NotifyPainted();
       }
@@ -1068,8 +1072,8 @@ void PuppetWidget::OnMemoryPressure(layers::MemoryPressureReason aWhy) {
 }
 
 bool PuppetWidget::NeedsPaint() {
-  // e10s popups are handled by the parent process, so never should be painted
-  // here
+  
+  
   if (XRE_IsContentProcess() && gRemoteDesktopBehaviorEnabled &&
       mWindowType == eWindowType_popup) {
     NS_WARNING("Trying to paint an e10s popup in the child process!");
@@ -1088,8 +1092,8 @@ int32_t PuppetWidget::RoundsWidgetCoordinatesTo() { return mRounding; }
 void* PuppetWidget::GetNativeData(uint32_t aDataType) {
   switch (aDataType) {
     case NS_NATIVE_SHAREABLE_WINDOW: {
-      // NOTE: We can not have a tab child in some situations, such as when
-      // we're rendering to a fake widget for thumbnails.
+      
+      
       if (!mBrowserChild) {
         NS_WARNING("Need BrowserChild to get the nativeWindow from!");
       }
@@ -1102,7 +1106,7 @@ void* PuppetWidget::GetNativeData(uint32_t aDataType) {
     case NS_NATIVE_WINDOW:
     case NS_NATIVE_WIDGET:
     case NS_NATIVE_DISPLAY:
-      // These types are ignored (see bug 1183828, bug 1240891).
+      
       break;
     case NS_RAW_NATIVE_IME_CONTEXT:
       MOZ_CRASH("You need to call GetNativeIMEContext() instead");
@@ -1257,15 +1261,15 @@ void PuppetWidget::EnableIMEForPlugin(bool aEnable) {
     return;
   }
 
-  // If current IME state isn't plugin, we ignore this call.
+  
   if (NS_WARN_IF(HaveValidInputContextCache() &&
                  mInputContext.mIMEState.mEnabled != IMEState::UNKNOWN &&
                  mInputContext.mIMEState.mEnabled != IMEState::PLUGIN)) {
     return;
   }
 
-  // We don't have valid state in cache or state is plugin, so delegate to
-  // chrome process.
+  
+  
   mBrowserChild->SendEnableIMEForPlugin(aEnable);
 }
 
@@ -1301,7 +1305,7 @@ bool PuppetWidget::HasPendingInputEvent() {
       [&ret](const IPC::Message& aMsg) -> bool {
         if (nsContentUtils::IsMessageInputEvent(aMsg)) {
           ret = true;
-          return false;  // Stop peeking.
+          return false;  
         }
         return true;
       });
@@ -1334,17 +1338,17 @@ nsresult PuppetWidget::OnWindowedPluginKeyEvent(
   return NS_SUCCESS_EVENT_HANDLED_ASYNCHRONOUSLY;
 }
 
-// TextEventDispatcherListener
+
 
 NS_IMETHODIMP
 PuppetWidget::NotifyIME(TextEventDispatcher* aTextEventDispatcher,
                         const IMENotification& aIMENotification) {
   MOZ_ASSERT(aTextEventDispatcher == mTextEventDispatcher);
 
-  // If there is different text event dispatcher listener for handling
-  // text event dispatcher, that means that native keyboard events and
-  // IME events are handled in this process.  Therefore, we don't need
-  // to send any requests and notifications to the parent process.
+  
+  
+  
+  
   if (mNativeTextEventDispatcherListener) {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
@@ -1377,9 +1381,9 @@ PuppetWidget::NotifyIME(TextEventDispatcher* aTextEventDispatcher,
 NS_IMETHODIMP_(IMENotificationRequests)
 PuppetWidget::GetIMENotificationRequests() {
   if (mInputContext.mIMEState.mEnabled == IMEState::PLUGIN) {
-    // If a plugin has focus, we cannot receive text nor selection change
-    // in the plugin.  Therefore, PuppetWidget needs to receive only position
-    // change event for updating the editor rect cache.
+    
+    
+    
     return IMENotificationRequests(
         mIMENotificationRequestsOfParent.mWantUpdates |
         IMENotificationRequests::NOTIFY_POSITION_CHANGE);
@@ -1442,5 +1446,5 @@ nsresult PuppetWidget::ResetPrefersReducedMotionOverrideForTest() {
   return NS_OK;
 }
 
-}  // namespace widget
-}  // namespace mozilla
+}  
+}  

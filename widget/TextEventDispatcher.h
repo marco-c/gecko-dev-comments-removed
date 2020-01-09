@@ -89,6 +89,18 @@ class TextEventDispatcher final {
 
 
 
+  void OnWidgetChangeIMENotificationRequests(nsIWidget* aWidget) {
+    MOZ_ASSERT(aWidget);
+    if (mWidget == aWidget) {
+      UpdateNotificationRequests();
+    }
+  }
+
+  
+
+
+
+
 
 
 
