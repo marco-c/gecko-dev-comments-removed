@@ -58,7 +58,7 @@ config = {
     
 
     "suite_definitions": {
-        "mochitest": {
+        "mochitest-plain": {
             "run_filename": "runtestsremote.py",
             "testsdir": "mochitest",
             "options": [
