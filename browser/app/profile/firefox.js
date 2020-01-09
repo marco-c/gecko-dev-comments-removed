@@ -1474,15 +1474,9 @@ pref("media.gmp-widevinecdm.visible", true);
 pref("media.gmp-widevinecdm.enabled", true);
 #endif
 
-#if defined(_ARM64_) && defined(XP_WIN)
-
-pref("media.gmp-gmpopenh264.visible", false);
-pref("media.gmp-gmpopenh264.enabled", false);
-#else
-
 pref("media.gmp-gmpopenh264.visible", true);
 pref("media.gmp-gmpopenh264.enabled", true);
-#endif
+
 
 pref("media.autoplay.enabled.user-gestures-needed", true);
 
