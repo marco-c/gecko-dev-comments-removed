@@ -1056,6 +1056,11 @@ XMLPARSEAPI(const XML_Char*)
 MOZ_XML_GetMismatchedTag(XML_Parser parser);
 
 
+
+XMLPARSEAPI(XML_Bool)
+MOZ_XML_ProcessingEntityValue(XML_Parser parser);
+
+
 #ifdef __cplusplus
 }
 #endif

@@ -2463,6 +2463,13 @@ MOZ_XML_GetMismatchedTag(XML_Parser parser)
 
 
 
+XML_Bool XMLCALL
+MOZ_XML_ProcessingEntityValue(XML_Parser parser) {
+  return openInternalEntities != NULL;
+}
+
+
+
 
 
 
