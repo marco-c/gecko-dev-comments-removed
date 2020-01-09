@@ -13,10 +13,6 @@ from taskgraph.util.schema import resolve_keyed_by, Schema
 
 from voluptuous import Required
 
-
-
-task_description_schema = {str(k): v for k, v in task_description_schema.schema.iteritems()}
-
 google_play_description_schema = Schema({
     Required('name'): basestring,
     Required('description'): task_description_schema['description'],

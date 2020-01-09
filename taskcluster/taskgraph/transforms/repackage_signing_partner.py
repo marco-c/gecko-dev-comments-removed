@@ -20,10 +20,6 @@ from taskgraph.util.taskcluster import get_artifact_path
 from taskgraph.transforms.task import task_description_schema
 from voluptuous import Required, Optional
 
-
-
-task_description_schema = {str(k): v for k, v in task_description_schema.schema.iteritems()}
-
 transforms = TransformSequence()
 
 repackage_signing_description_schema = schema.extend({

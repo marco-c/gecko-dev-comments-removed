@@ -136,10 +136,6 @@ UPSTREAM_ARTIFACT_SIGNED_MAR_PATHS = [
     'target.bz2.complete.mar',
 ]
 
-
-
-task_description_schema = {str(k): v for k, v in task_description_schema.schema.iteritems()}
-
 beetmover_description_schema = schema.extend({
     
     Required('depname', default='build'): basestring,

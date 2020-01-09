@@ -37,10 +37,6 @@ CHECKSUMS_SIGNING_ARTIFACTS = [
 ]
 
 
-
-
-task_description_schema = {str(k): v for k, v in task_description_schema.schema.iteritems()}
-
 release_generate_checksums_beetmover_schema = schema.extend({
     
     Required('depname', default='build'): basestring,

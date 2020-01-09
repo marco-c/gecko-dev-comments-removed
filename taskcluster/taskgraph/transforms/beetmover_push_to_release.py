@@ -16,14 +16,8 @@ from taskgraph.util.scriptworker import (
     get_beetmover_bucket_scope, add_scope_prefix,
     get_worker_type_for_scope,
 )
-from taskgraph.transforms.job import job_description_schema
 from taskgraph.transforms.task import task_description_schema
 from voluptuous import Required, Optional
-
-
-
-task_description_schema = {str(k): v for k, v in task_description_schema.schema.iteritems()}
-job_description_schema = {str(k): v for k, v in job_description_schema.schema.iteritems()}
 
 
 beetmover_push_to_release_description_schema = Schema({

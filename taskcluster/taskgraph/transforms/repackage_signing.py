@@ -20,10 +20,6 @@ from taskgraph.util.scriptworker import (
 from taskgraph.transforms.task import task_description_schema
 from voluptuous import Required, Optional
 
-
-
-task_description_schema = {str(k): v for k, v in task_description_schema.schema.iteritems()}
-
 repackage_signing_description_schema = schema.extend({
     Required('depname', default='repackage'): basestring,
     Optional('label'): basestring,

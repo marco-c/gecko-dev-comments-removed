@@ -35,10 +35,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-
-
-task_description_schema = {str(k): v for k, v in task_description_schema.schema.iteritems()}
-
 beetmover_description_schema = schema.extend({
     
     Required('depname', default='build'): basestring,

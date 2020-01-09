@@ -23,10 +23,6 @@ from taskgraph.transforms.job import job_description_schema
 from voluptuous import Required, Optional
 
 
-
-job_description_schema = {str(k): v for k, v in job_description_schema.schema.iteritems()}
-
-
 packaging_description_schema = schema.extend({
     
     Required('depname', default='build'): basestring,

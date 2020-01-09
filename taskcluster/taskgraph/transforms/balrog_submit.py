@@ -21,10 +21,6 @@ from taskgraph.transforms.task import task_description_schema
 from voluptuous import Optional
 
 
-
-
-task_description_schema = {str(k): v for k, v in task_description_schema.schema.iteritems()}
-
 balrog_description_schema = schema.extend({
     
     Optional('label'): basestring,

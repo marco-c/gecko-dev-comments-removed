@@ -14,10 +14,6 @@ from taskgraph.util.attributes import copy_attributes_from_dependent_job
 from taskgraph.transforms.task import task_description_schema
 from voluptuous import Required, Optional
 
-
-
-task_description_schema = {str(k): v for k, v in task_description_schema.schema.iteritems()}
-
 beetmover_checksums_description_schema = schema.extend({
     Required('depname', default='build'): basestring,
     Optional('label'): basestring,

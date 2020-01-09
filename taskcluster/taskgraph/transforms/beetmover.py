@@ -114,10 +114,6 @@ UPSTREAM_SOURCE_ARTIFACTS = [
     "source.tar.xz.asc",
 ]
 
-
-
-task_description_schema = {str(k): v for k, v in task_description_schema.schema.iteritems()}
-
 transforms = TransformSequence()
 
 beetmover_description_schema = schema.extend({

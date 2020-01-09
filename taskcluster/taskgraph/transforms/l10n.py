@@ -36,11 +36,6 @@ def _by_platform(arg):
     return optionally_keyed_by('build-platform', arg)
 
 
-
-
-job_description_schema = {str(k): v for k, v in job_description_schema.schema.iteritems()}
-task_description_schema = {str(k): v for k, v in task_description_schema.schema.iteritems()}
-
 l10n_description_schema = schema.extend({
     
     Required('name'): basestring,

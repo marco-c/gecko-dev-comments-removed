@@ -13,10 +13,6 @@ from taskgraph.util.schema import optionally_keyed_by, resolve_keyed_by, Schema
 
 from voluptuous import Optional, Required
 
-
-
-task_description_schema = {str(k): v for k, v in task_description_schema.schema.iteritems()}
-
 push_snap_description_schema = Schema({
     Required('name'): basestring,
     Required('job-from'): task_description_schema['job-from'],
