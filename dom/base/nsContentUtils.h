@@ -83,7 +83,6 @@ class nsNameSpaceManager;
 class nsIObserver;
 class nsIParser;
 class nsIPluginTag;
-class nsIPresShell;
 class nsIPrincipal;
 class nsIRequest;
 class nsIRunnable;
@@ -2152,11 +2151,12 @@ class nsContentUtils {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   static nsresult DispatchXULCommand(
       nsIContent* aTarget, bool aTrusted,
       mozilla::dom::Event* aSourceEvent = nullptr,
-      nsIPresShell* aShell = nullptr, bool aCtrl = false, bool aAlt = false,
-      bool aShift = false, bool aMeta = false,
+      mozilla::PresShell* aPresShell = nullptr, bool aCtrl = false,
+      bool aAlt = false, bool aShift = false, bool aMeta = false,
       
       
       uint16_t inputSource = 0 );
@@ -2253,7 +2253,8 @@ class nsContentUtils {
 
 
 
-  static nsIPresShell* FindPresShellForDocument(const Document* aDoc);
+  static mozilla::PresShell* FindPresShellForDocument(
+      const Document* aDocument);
 
   
 
@@ -2263,7 +2264,7 @@ class nsContentUtils {
 
 
 
-  static nsIWidget* WidgetForDocument(const Document* aDoc);
+  static nsIWidget* WidgetForDocument(const Document* aDocument);
 
   
 
@@ -2880,13 +2881,13 @@ class nsContentUtils {
   
   
   static mozilla::Modifiers GetWidgetModifiers(int32_t aModifiers);
-  static nsIWidget* GetWidget(nsIPresShell* aPresShell, nsPoint* aOffset);
+  static nsIWidget* GetWidget(mozilla::PresShell* aPresShell, nsPoint* aOffset);
   static int16_t GetButtonsFlagForButton(int32_t aButton);
   static mozilla::LayoutDeviceIntPoint ToWidgetPoint(
       const mozilla::CSSPoint& aPoint, const nsPoint& aOffset,
       nsPresContext* aPresContext);
   static nsView* GetViewToDispatchEvent(nsPresContext* aPresContext,
-                                        nsIPresShell** aPresShell);
+                                        mozilla::PresShell** aPresShell);
 
   
 

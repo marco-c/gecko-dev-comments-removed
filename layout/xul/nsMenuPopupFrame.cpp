@@ -1948,9 +1948,11 @@ nsMenuPopupFrame::ChangeMenuItem(nsMenuFrame* aMenuItem, bool aSelectFirstItem,
       
       
       
-      nsContentUtils::DispatchXULCommand(
-          aMenuItem->GetContent(),  true, nullptr, PresShell(),
-          false, false, false, false);
+      nsCOMPtr<nsIContent> menuItemContent = aMenuItem->GetContent();
+      RefPtr<mozilla::PresShell> presShell = PresShell();
+      nsContentUtils::DispatchXULCommand(menuItemContent,  true,
+                                         nullptr, presShell, false, false,
+                                         false, false);
     }
 #endif
   }

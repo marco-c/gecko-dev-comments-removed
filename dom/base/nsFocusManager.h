@@ -351,7 +351,7 @@ class nsFocusManager final : public nsIFocusManager,
 
 
   void SendFocusOrBlurEvent(
-      mozilla::EventMessage aEventMessage, nsIPresShell* aPresShell,
+      mozilla::EventMessage aEventMessage, mozilla::PresShell* aPresShell,
       Document* aDocument, nsISupports* aTarget, uint32_t aFocusMethod,
       bool aWindowRaised, bool aIsRefocus = false,
       mozilla::dom::EventTarget* aRelatedTarget = nullptr);
@@ -365,7 +365,7 @@ class nsFocusManager final : public nsIFocusManager,
 
 
   void FireFocusOrBlurEvent(
-      mozilla::EventMessage aEventMessage, nsIPresShell* aPresShell,
+      mozilla::EventMessage aEventMessage, mozilla::PresShell* aPresShell,
       nsISupports* aTarget, bool aWindowRaised, bool aIsRefocus = false,
       mozilla::dom::EventTarget* aRelatedTarget = nullptr);
 
@@ -387,7 +387,7 @@ class nsFocusManager final : public nsIFocusManager,
 
 
   void FireFocusInOrOutEvent(
-      mozilla::EventMessage aEventMessage, nsIPresShell* aPresShell,
+      mozilla::EventMessage aEventMessage, mozilla::PresShell* aPresShell,
       nsISupports* aTarget, nsPIDOMWindowOuter* aCurrentFocusedWindow,
       nsIContent* aCurrentFocusedContent,
       mozilla::dom::EventTarget* aRelatedTarget = nullptr);
@@ -418,12 +418,12 @@ class nsFocusManager final : public nsIFocusManager,
   
 
 
-  void MoveCaretToFocus(nsIPresShell* aPresShell, nsIContent* aContent);
+  void MoveCaretToFocus(mozilla::PresShell* aPresShell, nsIContent* aContent);
 
   
 
 
-  nsresult SetCaretVisible(nsIPresShell* aPresShell, bool aVisible,
+  nsresult SetCaretVisible(mozilla::PresShell* aPresShell, bool aVisible,
                            nsIContent* aContent);
 
   
@@ -432,7 +432,8 @@ class nsFocusManager final : public nsIFocusManager,
 
 
 
-  nsresult GetSelectionLocation(Document* aDocument, nsIPresShell* aPresShell,
+  nsresult GetSelectionLocation(Document* aDocument,
+                                mozilla::PresShell* aPresShell,
                                 nsIContent** aStartContent,
                                 nsIContent** aEndContent);
 
@@ -539,7 +540,7 @@ class nsFocusManager final : public nsIFocusManager,
 
 
   nsresult GetNextTabbableContent(
-      nsIPresShell* aPresShell, nsIContent* aRootContent,
+      mozilla::PresShell* aPresShell, nsIContent* aRootContent,
       nsIContent* aOriginalStartContent, nsIContent* aStartContent,
       bool aForward, int32_t aCurrentTabIndex, bool aIgnoreTabIndex,
       bool aForDocumentNavigation, nsIContent** aResultContent);
