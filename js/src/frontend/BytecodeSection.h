@@ -139,7 +139,8 @@ class BytecodeSection {
 
   
   bool lastOpcodeIsJumpTarget() const {
-    return offset() - lastTarget_.offset == ptrdiff_t(JSOP_JUMPTARGET_LENGTH);
+    return lastTarget_.offset != -1 &&
+           offset() - lastTarget_.offset == ptrdiff_t(JSOP_JUMPTARGET_LENGTH);
   }
 
   
@@ -239,7 +240,7 @@ class BytecodeSection {
   
 
   
-  JumpTarget lastTarget_ = {-1 - ptrdiff_t(JSOP_JUMPTARGET_LENGTH)};
+  JumpTarget lastTarget_ = {-1};
 
   
 
