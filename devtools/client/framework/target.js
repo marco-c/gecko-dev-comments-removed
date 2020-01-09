@@ -448,7 +448,7 @@ class Target extends EventEmitter {
   }
 
   get isWorkerTarget() {
-    return this.activeTab && this.activeTab.typeName === "workerTarget";
+    return this.activeTab.typeName === "workerTarget";
   }
 
   get isLegacyAddon() {
@@ -481,7 +481,7 @@ class Target extends EventEmitter {
   }
 
   get canRewind() {
-    return this.activeTab && this.activeTab.traits.canRewind;
+    return this.activeTab.traits.canRewind;
   }
 
   isReplayEnabled() {
@@ -538,17 +538,7 @@ class Target extends EventEmitter {
 
     
     const attachBrowsingContextTarget = async () => {
-      
-      
-      
-      
-      
-      if (!this.activeTab) {
-        const [, targetFront] = await this._client.attachTarget(this.form);
-        this.activeTab = targetFront;
-      } else {
-        await this.activeTab.attach();
-      }
+      await this.activeTab.attach();
 
       this.activeTab.on("tabNavigated", this._onTabNavigated);
       this._onFrameUpdate = packet => {
@@ -654,32 +644,13 @@ class Target extends EventEmitter {
   _setupRemoteListeners() {
     this.client.addListener("closed", this.destroy);
 
-    
-    
-    
-    
-    
-    if (this.activeTab) {
-      this.activeTab.on("tabDetached", this.destroy);
+    this.activeTab.on("tabDetached", this.destroy);
 
-      
-      
-      this._onSourceUpdated = packet => this.emit("source-updated", packet);
-      this.activeTab.on("newSource", this._onSourceUpdated);
-      this.activeTab.on("updatedSource", this._onSourceUpdated);
-    } else {
-      this._onTabDetached = (type, packet) => {
-        
-        if (packet.from == this.form.actor) {
-          this.destroy();
-        }
-      };
-      this.client.addListener("tabDetached", this._onTabDetached);
-
-      this._onSourceUpdated = (type, packet) => this.emit("source-updated", packet);
-      this.client.addListener("newSource", this._onSourceUpdated);
-      this.client.addListener("updatedSource", this._onSourceUpdated);
-    }
+    
+    
+    this._onSourceUpdated = packet => this.emit("source-updated", packet);
+    this.activeTab.on("newSource", this._onSourceUpdated);
+    this.activeTab.on("updatedSource", this._onSourceUpdated);
   }
 
   
@@ -688,18 +659,12 @@ class Target extends EventEmitter {
   _teardownRemoteListeners() {
     
     this.client.removeListener("closed", this.destroy);
-    if (this.activeTab) {
-      this.activeTab.off("tabDetached", this.destroy);
-      this.activeTab.off("newSource", this._onSourceUpdated);
-      this.activeTab.off("updatedSource", this._onSourceUpdated);
-    } else {
-      this.client.removeListener("tabDetached", this._onTabDetached);
-      this.client.removeListener("newSource", this._onSourceUpdated);
-      this.client.removeListener("updatedSource", this._onSourceUpdated);
-    }
+    this.activeTab.off("tabDetached", this.destroy);
+    this.activeTab.off("newSource", this._onSourceUpdated);
+    this.activeTab.off("updatedSource", this._onSourceUpdated);
 
     
-    if (this.activeTab) {
+    if (this.isBrowsingContext) {
       this.activeTab.off("tabNavigated", this._onTabNavigated);
       this.activeTab.off("frameUpdate", this._onFrameUpdate);
     }
@@ -782,7 +747,7 @@ class Target extends EventEmitter {
         
         
         await this._client.close();
-      } else if (this.activeTab) {
+      } else {
         
         
         
@@ -834,7 +799,7 @@ class Target extends EventEmitter {
 
 
   logErrorInPage(text, category) {
-    if (this.activeTab && this.activeTab.traits.logInPage) {
+    if (this.activeTab.traits.logInPage) {
       const errorFlag = 0;
       return this.activeTab.logInPage({ text, category, flags: errorFlag });
     }
@@ -851,7 +816,7 @@ class Target extends EventEmitter {
 
 
   logWarningInPage(text, category) {
-    if (this.activeTab && this.activeTab.traits.logInPage) {
+    if (this.activeTab.traits.logInPage) {
       const warningFlag = 1;
       return this.activeTab.logInPage({ text, category, flags: warningFlag });
     }
