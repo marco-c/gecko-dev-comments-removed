@@ -85,9 +85,10 @@ class DecodePoolImpl {
 
     
     
-    SystemGroup::Dispatch(TaskCategory::Other,
-                          NewRunnableMethod("DecodePoolImpl::ShutdownThread",
-                                            aThisThread, &nsIThread::Shutdown));
+    SystemGroup::Dispatch(
+        TaskCategory::Other,
+        NewRunnableMethod("DecodePoolImpl::ShutdownThread", aThisThread,
+                          &nsIThread::AsyncShutdown));
   }
 
   

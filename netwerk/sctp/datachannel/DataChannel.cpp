@@ -330,7 +330,7 @@ DataChannelConnection::~DataChannelConnection() {
       
       
       nsCOMPtr<nsIRunnable> r = WrapRunnable(
-          nsCOMPtr<nsIThread>(mInternalIOThread), &nsIThread::Shutdown);
+          nsCOMPtr<nsIThread>(mInternalIOThread), &nsIThread::AsyncShutdown);
       Dispatch(r.forget());
     }
   } else {

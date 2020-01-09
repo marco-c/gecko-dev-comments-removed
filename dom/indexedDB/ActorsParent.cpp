@@ -9288,7 +9288,7 @@ DatabaseConnection::~DatabaseConnection() {
   MOZ_ASSERT(!mFileManager);
   MOZ_ASSERT(!mCachedStatements.Count());
   MOZ_ASSERT(!mUpdateRefcountFunction);
-  MOZ_DIAGNOSTIC_ASSERT(!mInWriteTransaction);
+  MOZ_ASSERT(!mInWriteTransaction);
   MOZ_ASSERT(!mDEBUGSavepointCount);
 }
 
@@ -9855,7 +9855,7 @@ void DatabaseConnection::Close() {
   AssertIsOnConnectionThread();
   MOZ_ASSERT(mStorageConnection);
   MOZ_ASSERT(!mDEBUGSavepointCount);
-  MOZ_DIAGNOSTIC_ASSERT(!mInWriteTransaction);
+  MOZ_ASSERT(!mInWriteTransaction);
 
   AUTO_PROFILER_LABEL("DatabaseConnection::Close", DOM);
 
@@ -11069,8 +11069,8 @@ void ConnectionPool::ShutdownThread(ThreadInfo& aThreadInfo) {
   
   MOZ_ALWAYS_SUCCEEDS(thread->Dispatch(runnable.forget(), NS_DISPATCH_NORMAL));
 
-  MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(
-      NewRunnableMethod("nsIThread::Shutdown", thread, &nsIThread::Shutdown)));
+  MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(NewRunnableMethod(
+      "nsIThread::AsyncShutdown", thread, &nsIThread::AsyncShutdown)));
 
   mTotalThreadCount--;
 }
@@ -11596,13 +11596,11 @@ ConnectionPool::IdleConnectionRunnable::Run() {
     
     if (mDatabaseInfo->mConnection) {
       mDatabaseInfo->mConnection->DoIdleProcessing(mNeedsCheckpoint);
+
+      MOZ_ALWAYS_SUCCEEDS(owningThread->Dispatch(this, NS_DISPATCH_NORMAL));
+      return NS_OK;
     }
-
-    MOZ_ALWAYS_SUCCEEDS(owningThread->Dispatch(this, NS_DISPATCH_NORMAL));
-    return NS_OK;
   }
-
-  AssertIsOnBackgroundThread();
 
   RefPtr<ConnectionPool> connectionPool = mDatabaseInfo->mConnectionPool;
   MOZ_ASSERT(connectionPool);
