@@ -18,7 +18,6 @@
 #include "js/CompilationAndEvaluation.h"  
 #include "js/CompileOptions.h"            
 #include "js/Conversions.h"               
-#include "js/GCAPI.h"                     
 #include "js/MemoryFunctions.h"           
 #include "js/RootingAPI.h"                
 #include "js/SourceText.h"                
@@ -27,6 +26,7 @@
 #include "js/Value.h"  
 #include "jsapi-tests/tests.h"
 #include "vm/Compression.h"  
+#include "vm/HelperThreads.h"  
 #include "vm/JSFunction.h"   
 #include "vm/JSScript.h"  
 
@@ -99,10 +99,7 @@ static void CompressSourceSync(JS::Handle<JSFunction*> fun, JSContext* cx) {
   MOZ_RELEASE_ASSERT(script);
   MOZ_RELEASE_ASSERT(script->scriptSource()->hasSourceText());
 
-  
-  
-  JS_GC(cx);
-  JS_GC(cx);
+  js::RunPendingSourceCompressions(cx->runtime());
 
   
   

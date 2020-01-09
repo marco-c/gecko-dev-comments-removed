@@ -5413,17 +5413,9 @@ static void SweepMisc(GCParallelTask* task) {
 static void SweepCompressionTasks(GCParallelTask* task) {
   JSRuntime* runtime = task->runtime();
 
-  AutoLockHelperThreadState lock;
-
   
-  auto& finished = HelperThreadState().compressionFinishedList(lock);
-  for (size_t i = 0; i < finished.length(); i++) {
-    if (finished[i]->runtimeMatches(runtime)) {
-      UniquePtr<SourceCompressionTask> compressionTask(std::move(finished[i]));
-      HelperThreadState().remove(finished, &i);
-      compressionTask->complete();
-    }
-  }
+  AutoLockHelperThreadState lock;
+  AttachFinishedCompressions(runtime, lock);
 
   
   auto& pending = HelperThreadState().compressionPendingList(lock);
@@ -6961,16 +6953,15 @@ void GCRuntime::incrementalSlice(SliceBudget& budget, JS::GCReason reason,
         bool(isIncremental), bool(lastMarkSlice), bool(useZeal), budgetBuffer);
   }
 #endif
-
-  MOZ_ASSERT_IF(isIncrementalGCInProgress(), isIncremental);
+  MOZ_ASSERT_IF(isIncrementalGCInProgress(), isIncremental || lastMarkSlice);
 
   
 
 
-  if (!isIncremental) {
-    MOZ_ASSERT(nursery().isEmpty());
-    storeBuffer().checkEmpty();
-  }
+
+
+  MOZ_ASSERT_IF(isIncrementalGCInProgress() && !isIncremental,
+                lastMarkSlice && nursery().isEmpty());
 
   isIncremental = !budget.isUnlimited();
 

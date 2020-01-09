@@ -662,6 +662,12 @@ bool EnqueueOffThreadCompression(JSContext* cx,
 
 void CancelOffThreadCompressions(JSRuntime* runtime);
 
+void AttachFinishedCompressions(JSRuntime* runtime,
+                                AutoLockHelperThreadState& lock);
+
+
+void RunPendingSourceCompressions(JSRuntime* runtime);
+
 class MOZ_RAII AutoLockHelperThreadState : public LockGuard<Mutex> {
   using Base = LockGuard<Mutex>;
 
