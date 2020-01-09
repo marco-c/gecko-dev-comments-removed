@@ -414,25 +414,6 @@ public class GeckoThread extends Thread {
         };
         Looper.myQueue().addIdleHandler(idleHandler);
 
-        final Context context = GeckoAppShell.getApplicationContext();
-        final List<String> env = getEnvFromExtras(mInitInfo.extras);
-
-        
-        
-        if ((mInitInfo.flags & FLAG_ENABLE_NATIVE_CRASHREPORTER) == 0 && !BuildConfig.DEBUG_BUILD) {
-            env.add(0, "MOZ_CRASHREPORTER_DISABLE=1");
-        } else if ((mInitInfo.flags & FLAG_ENABLE_NATIVE_CRASHREPORTER) != 0 && BuildConfig.DEBUG_BUILD) {
-            env.add(0, "MOZ_CRASHREPORTER=1");
-        }
-
-        if (!isChildProcess() && ((mInitInfo.flags & FLAG_ENABLE_MARIONETTE) != 0)) {
-            
-            
-            env.add(0, "MOZ_MARIONETTE=1");
-        }
-
-        GeckoLoader.setupGeckoEnvironment(context, context.getFilesDir().getPath(), env, mInitInfo.prefs);
-
         initGeckoEnvironment();
 
         
@@ -464,11 +445,30 @@ public class GeckoThread extends Thread {
 
         Log.w(LOGTAG, "zerdatime " + SystemClock.elapsedRealtime() + " - runGecko");
 
+        final Context context = GeckoAppShell.getApplicationContext();
         final String[] args = isChildProcess() ? mInitInfo.args : getMainProcessArgs();
 
         if ((mInitInfo.flags & FLAG_DEBUGGING) != 0) {
             Log.i(LOGTAG, "RunGecko - args = " + TextUtils.join(" ", args));
         }
+
+        final List<String> env = getEnvFromExtras(mInitInfo.extras);
+
+        
+        
+        if ((mInitInfo.flags & FLAG_ENABLE_NATIVE_CRASHREPORTER) == 0 && !BuildConfig.DEBUG_BUILD) {
+            env.add(0, "MOZ_CRASHREPORTER_DISABLE=1");
+        } else if ((mInitInfo.flags & FLAG_ENABLE_NATIVE_CRASHREPORTER) != 0 && BuildConfig.DEBUG_BUILD) {
+            env.add(0, "MOZ_CRASHREPORTER=1");
+        }
+
+        if (!isChildProcess() && ((mInitInfo.flags & FLAG_ENABLE_MARIONETTE) != 0)) {
+            
+            
+            env.add(0, "MOZ_MARIONETTE=1");
+        }
+
+        GeckoLoader.setupGeckoEnvironment(context, context.getFilesDir().getPath(), env, mInitInfo.prefs);
 
         
         GeckoLoader.nativeRun(args,
