@@ -3149,8 +3149,8 @@ void Document::SetPrincipals(nsIPrincipal* aNewPrincipal,
 #endif
 }
 
-mozilla::dom::DocGroup* Document::GetDocGroup() const {
 #ifdef DEBUG
+void Document::AssertDocGroupMatchesKey() const {
   
   if (mDocGroup) {
     nsAutoCString docGroupKey;
@@ -3162,10 +3162,8 @@ mozilla::dom::DocGroup* Document::GetDocGroup() const {
     }
     
   }
-#endif
-
-  return mDocGroup;
 }
+#endif
 
 nsresult Document::Dispatch(TaskCategory aCategory,
                             already_AddRefed<nsIRunnable>&& aRunnable) {
@@ -7334,7 +7332,8 @@ void Document::FlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
   
   
   
-  if (mParentDocument && IsSafeToFlush()) {
+  if (StyleOrLayoutObservablyDependsOnParentDocumentLayout() &&
+      IsSafeToFlush()) {
     mozilla::ChangesToFlush parentFlush = aFlush;
     if (flushType >= FlushType::Style) {
       parentFlush.mFlushType = std::max(FlushType::Layout, flushType);

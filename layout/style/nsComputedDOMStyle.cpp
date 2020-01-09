@@ -785,7 +785,8 @@ bool nsComputedDOMStyle::NeedsToFlush() const {
   Document* doc = mElement->OwnerDoc();
   
   
-  while (Document* parentDocument = doc->GetParentDocument()) {
+  while (doc->StyleOrLayoutObservablyDependsOnParentDocumentLayout()) {
+    Document* parentDocument = doc->GetParentDocument();
     Element* element = parentDocument->FindContentForSubDocument(doc);
     if (ElementNeedsRestyle(element, nullptr)) {
       return true;
