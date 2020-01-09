@@ -1654,12 +1654,17 @@ class nsIPresShell : public nsStubDocumentObserver {
   static void ClearMouseCapture(nsIFrame* aFrame);
 
   void SetVisualViewportSize(nscoord aWidth, nscoord aHeight);
+  void ResetVisualViewportSize();
   bool IsVisualViewportSizeSet() { return mVisualViewportSizeSet; }
   nsSize GetVisualViewportSize() {
     NS_ASSERTION(mVisualViewportSizeSet,
                  "asking for visual viewport size when its not set?");
     return mVisualViewportSize;
   }
+
+  
+  
+  void CompleteChangeToVisualViewportSize();
 
   
 
