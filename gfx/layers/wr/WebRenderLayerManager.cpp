@@ -152,6 +152,17 @@ void WebRenderLayerManager::StopFrameTimeRecording(
   }
 }
 
+void WebRenderLayerManager::PayloadPresented() {
+  MOZ_CRASH("WebRenderLayerManager::PayloadPresented should not be called");
+}
+
+void WebRenderLayerManager::TakeCompositionPayloads(
+    nsTArray<CompositionPayload>& aPayloads) {
+  aPayloads.Clear();
+
+  std::swap(mPayload, aPayloads);
+}
+
 bool WebRenderLayerManager::BeginTransactionWithTarget(gfxContext* aTarget,
                                                        const nsCString& aURL) {
   mTarget = aTarget;
@@ -568,9 +579,6 @@ void WebRenderLayerManager::DidComposite(
   
   
   RefPtr<WebRenderLayerManager> selfRef = this;
-
-  
-  mPayload.Clear();
 
   
   
