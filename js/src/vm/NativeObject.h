@@ -1484,7 +1484,6 @@ class NativeObject : public JSObject {
   
   inline js::gc::AllocKind allocKindForTenure() const;
 
-  void updateShapeAfterMovingGC();
   void sweepDictionaryListPointer();
   void updateDictionaryListPointerAfterMinorGC(NativeObject* old);
 
