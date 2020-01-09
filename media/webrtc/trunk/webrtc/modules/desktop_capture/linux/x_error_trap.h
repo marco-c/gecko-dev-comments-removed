@@ -8,8 +8,8 @@
 
 
 
-#ifndef MODULES_DESKTOP_CAPTURE_X11_X_ERROR_TRAP_H_
-#define MODULES_DESKTOP_CAPTURE_X11_X_ERROR_TRAP_H_
+#ifndef MODULES_DESKTOP_CAPTURE_LINUX_X_ERROR_TRAP_H_
+#define MODULES_DESKTOP_CAPTURE_LINUX_X_ERROR_TRAP_H_
 
 #include <X11/Xlibint.h>
 #undef max // Xlibint.h defines this and it breaks std::max

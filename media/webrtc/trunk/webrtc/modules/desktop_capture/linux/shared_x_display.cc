@@ -8,7 +8,7 @@
 
 
 
-#include "modules/desktop_capture/x11/shared_x_display.h"
+#include "modules/desktop_capture/linux/shared_x_display.h"
 
 #include <X11/Xlib.h>
 

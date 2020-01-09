@@ -176,7 +176,7 @@ bool ScreenCapturerLinux::Init(const DesktopCaptureOptions& options) {
   return true;
 }
 
-void ScreenCapturerLinux::InitXDamage() {
+void ScreenCapturerX11::InitXDamage() {
   
   if (!has_xfixes_) {
     return;
@@ -263,19 +263,19 @@ void ScreenCapturerLinux::CaptureFrame() {
   callback_->OnCaptureResult(Result::SUCCESS, std::move(result));
 }
 
-bool ScreenCapturerLinux::GetSourceList(SourceList* sources) {
+bool ScreenCapturerX11::GetSourceList(SourceList* sources) {
   RTC_DCHECK(sources->size() == 0);
   
   sources->push_back({0});
   return true;
 }
 
-bool ScreenCapturerLinux::SelectSource(SourceId id) {
+bool ScreenCapturerX11::SelectSource(SourceId id) {
   
   return true;
 }
 
-bool ScreenCapturerLinux::HandleXEvent(const XEvent& event) {
+bool ScreenCapturerX11::HandleXEvent(const XEvent& event) {
   if (use_damage_ && (event.type == damage_event_base_ + XDamageNotify)) {
     const XDamageNotifyEvent* damage_event =
         reinterpret_cast<const XDamageNotifyEvent*>(&event);
@@ -290,7 +290,7 @@ bool ScreenCapturerLinux::HandleXEvent(const XEvent& event) {
   return false;
 }
 
-std::unique_ptr<DesktopFrame> ScreenCapturerLinux::CaptureScreen() {
+std::unique_ptr<DesktopFrame> ScreenCapturerX11::CaptureScreen() {
   std::unique_ptr<SharedDesktopFrame> frame = queue_.current_frame()->Share();
   RTC_DCHECK(x_server_pixel_buffer_.window_size().equals(frame->size()));
 
@@ -359,7 +359,7 @@ void ScreenCapturerLinux::ScreenConfigurationChanged() {
   }
 }
 
-void ScreenCapturerLinux::SynchronizeFrame() {
+void ScreenCapturerX11::SynchronizeFrame() {
   
   
   
@@ -379,7 +379,7 @@ void ScreenCapturerLinux::SynchronizeFrame() {
   }
 }
 
-void ScreenCapturerLinux::DeinitXlib() {
+void ScreenCapturerX11::DeinitXlib() {
   if (gc_) {
     XFreeGC(display(), gc_);
     gc_ = nullptr;
@@ -400,15 +400,13 @@ void ScreenCapturerLinux::DeinitXlib() {
   }
 }
 
-}  
 
-
-std::unique_ptr<DesktopCapturer> DesktopCapturer::CreateRawScreenCapturer(
+std::unique_ptr<DesktopCapturer> ScreenCapturerX11::CreateRawScreenCapturer(
     const DesktopCaptureOptions& options) {
   if (!options.x_display())
     return nullptr;
 
-  std::unique_ptr<ScreenCapturerLinux> capturer(new ScreenCapturerLinux());
+  std::unique_ptr<ScreenCapturerX11> capturer(new ScreenCapturerX11());
   if (!capturer.get()->Init(options)) {
     return nullptr;
   }

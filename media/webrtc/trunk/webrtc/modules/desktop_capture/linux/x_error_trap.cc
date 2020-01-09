@@ -8,7 +8,7 @@
 
 
 
-#include "modules/desktop_capture/x11/x_error_trap.h"
+#include "modules/desktop_capture/linux/x_error_trap.h"
 
 #include <assert.h>
 
