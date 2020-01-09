@@ -688,6 +688,22 @@ add_test(function () {
 });
 
 
+add_test(function () {
+  certdb.openSignedAppFileAsync(
+    Ci.nsIX509CertDB.AppXPCShellRoot, original_app_path("big_manifest"),
+    check_open_result("add-on with big manifest file", Cr.NS_OK));
+});
+
+
+
+add_test(function () {
+  certdb.openSignedAppFileAsync(
+    Ci.nsIX509CertDB.AppXPCShellRoot, original_app_path("huge_manifest"),
+    check_open_result("add-on with huge manifest file",
+                      Cr.NS_ERROR_SIGNED_JAR_ENTRY_INVALID));
+});
+
+
 
 
 

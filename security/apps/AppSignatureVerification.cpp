@@ -105,10 +105,7 @@ nsresult ReadStream(const nsCOMPtr<nsIInputStream>& stream,
 
   
   
-  
-  
-  
-  static const uint32_t MAX_LENGTH = 1024 * 1024;
+  static const uint32_t MAX_LENGTH = 8 * 1000 * 1000;
   if (length > MAX_LENGTH) {
     return NS_ERROR_FILE_TOO_BIG;
   }
