@@ -1106,7 +1106,6 @@ var LoginManagerContent = {
 
 
 
-  
   _fillForm(form, foundLogins, recipes, {
     inputElement = null,
     autofillForm = false,
@@ -1134,7 +1133,6 @@ var LoginManagerContent = {
       NO_AUTOFILL_FORMS: 8,
       AUTOCOMPLETE_OFF: 9,
       INSECURE: 10,
-      PASSWORD_AUTOCOMPLETE_NEW_PASSWORD: 11,
     };
 
     try {
@@ -1246,14 +1244,6 @@ var LoginManagerContent = {
       if (logins.length == 0) {
         log("form not filled, none of the logins fit in the field");
         autofillResult = AUTOFILL_RESULT.NO_LOGINS_FIT;
-        return;
-      }
-
-      
-      
-      if (!userTriggered && passwordField.getAutocompleteInfo().fieldName == "new-password") {
-        log("not filling form, password field has the autocomplete new-password value");
-        autofillResult = AUTOFILL_RESULT.PASSWORD_AUTOCOMPLETE_NEW_PASSWORD;
         return;
       }
 
