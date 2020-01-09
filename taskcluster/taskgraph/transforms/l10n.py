@@ -187,8 +187,7 @@ def setup_name(config, jobs):
         dep = job['primary-dependency']
         
         
-        job['name'] = job.get('name',
-                              dep.task['metadata']['name'][len(dep.kind) + 1:])
+        job['name'] = job.get('name', dep.name)
         yield job
 
 
