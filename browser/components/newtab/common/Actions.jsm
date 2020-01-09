@@ -46,10 +46,12 @@ for (const type of [
   "DISCOVERY_STREAM_IMPRESSION_STATS",
   "DISCOVERY_STREAM_LAYOUT_RESET",
   "DISCOVERY_STREAM_LAYOUT_UPDATE",
+  "DISCOVERY_STREAM_LINK_BLOCKED",
   "DISCOVERY_STREAM_LOADED_CONTENT",
   "DISCOVERY_STREAM_OPT_OUT",
   "DISCOVERY_STREAM_SPOCS_CAPS",
   "DISCOVERY_STREAM_SPOCS_ENDPOINT",
+  "DISCOVERY_STREAM_SPOCS_FILL",
   "DISCOVERY_STREAM_SPOCS_UPDATE",
   "DISCOVERY_STREAM_SPOC_IMPRESSION",
   "DOWNLOAD_CHANGED",
@@ -298,6 +300,21 @@ function ASRouterUserEvent(data) {
 
 
 
+function DiscoveryStreamSpocsFill(data, importContext = globalImportContext) {
+  const action = {
+    type: actionTypes.DISCOVERY_STREAM_SPOCS_FILL,
+    data,
+  };
+  return importContext === UI_CODE ? AlsoToMain(action) : action;
+}
+
+
+
+
+
+
+
+
 function UndesiredEvent(data, importContext = globalImportContext) {
   const action = {
     type: actionTypes.TELEMETRY_UNDESIRED_EVENT,
@@ -398,6 +415,7 @@ this.actionCreators = {
   WebExtEvent,
   DiscoveryStreamImpressionStats,
   DiscoveryStreamLoadedContent,
+  DiscoveryStreamSpocsFill,
 };
 
 

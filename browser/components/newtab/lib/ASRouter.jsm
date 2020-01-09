@@ -695,18 +695,34 @@ class _ASRouter {
   }
 
   async _getBundledMessages(originalMessage, target, trigger, force = false) {
-    let result = [{content: originalMessage.content, id: originalMessage.id, order: originalMessage.order || 0}];
+    let result = [];
+    let bundleLength;
+    let bundleTemplate;
+    let originalId;
+
+    if (originalMessage.includeBundle) {
+      
+      bundleLength = originalMessage.includeBundle.length;
+      bundleTemplate =  originalMessage.includeBundle.template;
+    } else {
+      
+      bundleLength = originalMessage.bundled;
+      bundleTemplate =  originalMessage.template;
+      originalId = originalMessage.id;
+      
+      result.push({content: originalMessage.content, id: originalMessage.id, order: originalMessage.order || 0});
+    }
 
     
     let bundledMessagesOfSameTemplate = this._getUnblockedMessages()
-                                          .filter(msg => msg.bundled && msg.template === originalMessage.template && msg.id !== originalMessage.id);
+      .filter(msg => msg.bundled && msg.template === bundleTemplate && msg.id !== originalId);
 
     if (force) {
       
       for (const message of bundledMessagesOfSameTemplate) {
         result.push({content: message.content, id: message.id});
         
-        if (result.length === originalMessage.bundled) {
+        if (result.length === bundleLength) {
           break;
         }
       }
@@ -723,14 +739,14 @@ class _ASRouter {
         result.push({content: message.content, id: message.id, order: message.order || 0});
         bundledMessagesOfSameTemplate.splice(bundledMessagesOfSameTemplate.findIndex(msg => msg.id === message.id), 1);
         
-        if (result.length === originalMessage.bundled) {
+        if (result.length === bundleLength) {
           break;
         }
       }
     }
 
     
-    if (result.length < originalMessage.bundled) {
+    if (result.length < bundleLength) {
       return null;
     }
 
@@ -739,7 +755,12 @@ class _ASRouter {
     
     const extraTemplateStrings = await this._extraTemplateStrings(originalMessage);
 
-    return {bundle: this._orderBundle(result), ...(extraTemplateStrings && {extraTemplateStrings}), provider: originalMessage.provider, template: originalMessage.template};
+    return {
+      bundle: this._orderBundle(result),
+      ...(extraTemplateStrings && {extraTemplateStrings}),
+      provider: originalMessage.provider,
+      template: originalMessage.template,
+    };
   }
 
   async _extraTemplateStrings(originalMessage) {
@@ -776,7 +797,16 @@ class _ASRouter {
     } else if (message.bundled) {
       const bundledMessages = await this._getBundledMessages(message, target, trigger, force);
       const action = bundledMessages ? {type: "SET_BUNDLED_MESSAGES", data: bundledMessages} : {type: "CLEAR_ALL"};
-      target.sendAsyncMessage(OUTGOING_MESSAGE_NAME, action);
+      try {
+        target.sendAsyncMessage(OUTGOING_MESSAGE_NAME, action);
+      } catch (e) {}
+
+    
+    } else if (message.includeBundle) {
+      const bundledMessages = await this._getBundledMessages(message, target, message.includeBundle.trigger, force);
+      try {
+        target.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {type: "SET_MESSAGE", data: {...message, bundle: bundledMessages && bundledMessages.bundle}});
+      } catch (e) {}
 
     
     } else if (message.template === "cfr_doorhanger") {
@@ -788,7 +818,9 @@ class _ASRouter {
 
     
     } else {
-      target.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {type: "SET_MESSAGE", data: message});
+      try {
+        target.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {type: "SET_MESSAGE", data: message});
+      } catch (e) {}
     }
   }
 
