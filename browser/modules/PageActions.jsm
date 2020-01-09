@@ -529,6 +529,9 @@ var PageActions = {
 
 
 
+
+
+
 function Action(options) {
   setProperties(this, options, {
     id: true,
@@ -537,6 +540,7 @@ function Action(options) {
     disabled: false,
     extensionID: false,
     iconURL: false,
+    isBadged: false,
     labelForHistogram: false,
     onBeforePlacedInWindow: false,
     onCommand: false,
@@ -814,6 +818,10 @@ Action.prototype = {
 
   get wantsIframe() {
     return this._wantsIframe || false;
+  },
+
+  get isBadged() {
+    return this._isBadged || false;
   },
 
   get labelForHistogram() {
@@ -1184,6 +1192,7 @@ var gBuiltInActions = [
     id: "addSearchEngine",
     
     title: "",
+    isBadged: true,
     _transient: true,
     onShowingInPanel(buttonNode) {
       browserPageActions(buttonNode).addSearchEngine.onShowingInPanel();
