@@ -76,13 +76,11 @@ class nsJSURI final : public mozilla::net::nsSimpleURI {
   virtual mozilla::net::nsSimpleURI* StartClone(
       RefHandlingEnum refHandlingMode, const nsACString& newRef) override;
   NS_IMETHOD Mutate(nsIURIMutator** _retval) override;
+  NS_IMETHOD_(void) Serialize(mozilla::ipc::URIParams& aParams) override;
 
   
   NS_IMETHOD Read(nsIObjectInputStream* aStream) override;
   NS_IMETHOD Write(nsIObjectOutputStream* aStream) override;
-
-  
-  NS_DECL_NSIIPCSERIALIZABLEURI
 
   
   
