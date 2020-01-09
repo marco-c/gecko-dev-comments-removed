@@ -39,14 +39,6 @@ bool WebGLExtensionColorBufferFloat::IsSupported(const WebGLContext* webgl) {
   if (webgl->IsWebGL2()) return false;
 
   const auto& gl = webgl->gl;
-  if (gl->IsANGLE()) {
-    
-    
-    
-    
-    return true;
-  }
-
   return gl->IsSupported(gl::GLFeature::renderbuffer_color_float) &&
          gl->IsSupported(gl::GLFeature::frag_color_float);
 }
