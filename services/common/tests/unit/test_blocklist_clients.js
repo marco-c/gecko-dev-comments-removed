@@ -49,6 +49,8 @@ function run_test() {
   
   BlocklistClients.initialize();
 
+  
+  
   gBlocklistClients = [
     {client: BlocklistClients.AddonBlocklistClient, testData: ["i808", "i720", "i539"]},
     {client: BlocklistClients.PluginBlocklistClient, testData: ["p1044", "p32", "p28"]},

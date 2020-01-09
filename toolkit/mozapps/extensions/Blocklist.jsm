@@ -19,16 +19,23 @@ ChromeUtils.defineModuleGetter(this, "AddonManager",
                                "resource://gre/modules/AddonManager.jsm");
 ChromeUtils.defineModuleGetter(this, "AddonManagerPrivate",
                                "resource://gre/modules/AddonManager.jsm");
+
+
+
+ChromeUtils.defineModuleGetter(this, "BlocklistClients",
+                               "resource://services-common/blocklist-clients.js");
 ChromeUtils.defineModuleGetter(this, "CertUtils",
                                "resource://gre/modules/CertUtils.jsm");
 ChromeUtils.defineModuleGetter(this, "FileUtils",
                                "resource://gre/modules/FileUtils.jsm");
-ChromeUtils.defineModuleGetter(this, "UpdateUtils",
-                               "resource://gre/modules/UpdateUtils.jsm");
 ChromeUtils.defineModuleGetter(this, "OS",
                                "resource://gre/modules/osfile.jsm");
+ChromeUtils.defineModuleGetter(this, "RemoteSettings",
+                               "resource://services-settings/remote-settings.js");
 ChromeUtils.defineModuleGetter(this, "ServiceRequest",
                                "resource://gre/modules/ServiceRequest.jsm");
+ChromeUtils.defineModuleGetter(this, "UpdateUtils",
+                               "resource://gre/modules/UpdateUtils.jsm");
 
   
 
@@ -89,13 +96,6 @@ ChromeUtils.defineModuleGetter(this, "ServiceRequest",
 
 
 
-
-
-
-const BlocklistClients = {};
-ChromeUtils.defineModuleGetter(BlocklistClients, "initialize",
-                               "resource://services-common/blocklist-clients.js");
-
 const TOOLKIT_ID                      = "toolkit@mozilla.org";
 const KEY_PROFILEDIR                  = "ProfD";
 const KEY_APPDIR                      = "XCurProcD";
@@ -122,6 +122,139 @@ const SEVERITY_OUTDATED               = 0;
 const VULNERABILITYSTATUS_NONE             = 0;
 const VULNERABILITYSTATUS_UPDATE_AVAILABLE = 1;
 const VULNERABILITYSTATUS_NO_UPDATE        = 2;
+
+
+const PREF_BLOCKLIST_BUCKET                  = "services.blocklist.bucket";
+const PREF_BLOCKLIST_GFX_COLLECTION          = "services.blocklist.gfx.collection";
+const PREF_BLOCKLIST_GFX_CHECKED_SECONDS     = "services.blocklist.gfx.checked";
+const PREF_BLOCKLIST_GFX_SIGNER              = "services.blocklist.gfx.signer";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+this.GfxBlocklistRS = {
+  _ensureInitialized() {
+    if (this._initialized || !gBlocklistEnabled) {
+      return;
+    }
+    this._initialized = true;
+    this._client = RemoteSettings(Services.prefs.getCharPref(PREF_BLOCKLIST_GFX_COLLECTION), {
+      bucketNamePref: PREF_BLOCKLIST_BUCKET,
+      lastCheckTimePref: PREF_BLOCKLIST_GFX_CHECKED_SECONDS,
+      signerName: Services.prefs.getCharPref(PREF_BLOCKLIST_GFX_SIGNER),
+      filterFunc: BlocklistClients.targetAppFilter,
+    });
+    this.checkForEntries = this.checkForEntries.bind(this);
+    this._client.on("sync", this.checkForEntries);
+  },
+
+  shutdown() {
+    if (this._client) {
+      this._client.off("sync", this.checkForEntries);
+    }
+  },
+
+  async checkForEntries() {
+    this._ensureInitialized();
+    if (!gBlocklistEnabled) {
+      return []; 
+    }
+    let entries = await this._client.get();
+    
+    const trim = (s) => (s || "").replace(/(^[\s\uFEFF\xA0]+)|([\s\uFEFF\xA0]+$)/g, "");
+
+    entries = entries.map(entry => {
+      let props = [
+        "blockID", "driverVersion", "driverVersionMax", "driverVersionComparator",
+        "feature", "featureStatus", "os", "vendor", "devices",
+      ];
+      let rv = {};
+      for (let p of props) {
+        let val = entry[p];
+        
+        if (!val || (Array.isArray(val) && !val.length)) {
+          continue;
+        }
+        if (typeof val == "string") {
+          val = trim(val);
+        } else if (p == "devices") {
+          let invalidDevices = [];
+          let validDevices = [];
+          
+          
+          
+          val.forEach(v => v.includes(",") ? invalidDevices.push(v) : validDevices.push(v));
+          for (let dev of invalidDevices) {
+            const e = new Error(`Block ${entry.blockID} contains unsupported device: ${dev}`);
+            Cu.reportError(e);
+          }
+          if (!validDevices) {
+            continue;
+          }
+          val = validDevices;
+        }
+        rv[p] = val;
+      }
+      if (entry.versionRange) {
+        rv.versionRange = {
+          minVersion: trim(entry.versionRange.minVersion) || "0",
+          maxVersion: trim(entry.versionRange.maxVersion) || "*",
+        };
+      }
+      return rv;
+    });
+    if (entries.length) {
+      let sortedProps = [
+        "blockID", "devices", "driverVersion", "driverVersionComparator", "driverVersionMax",
+        "feature", "featureStatus", "hardware", "manufacturer", "model", "os", "osversion",
+        "product", "vendor", "versionRange",
+      ];
+      
+      let payload = [];
+      for (let gfxEntry of entries) {
+        let entryLines = [];
+        for (let key of sortedProps) {
+          if (gfxEntry[key]) {
+            let value = gfxEntry[key];
+            if (Array.isArray(value)) {
+              value = value.join(",");
+            } else if (value.maxVersion) {
+              
+              value = value.minVersion + "," + value.maxVersion;
+            }
+            entryLines.push(key + ":" + value);
+          }
+        }
+        payload.push(entryLines.join("\t"));
+      }
+      Services.obs.notifyObservers(null, "blocklist-data-gfxItems", payload.join("\n"));
+    }
+    
+    return entries;
+  },
+};
 
 const EXTENSION_BLOCK_FILTERS = ["id", "name", "creator", "homepageURL", "updateURL"];
 
@@ -1571,7 +1704,9 @@ BlocklistItemData.prototype = {
 
 let BlocklistRS = {
   _init() {
-    
+  },
+  shutdown() {
+    GfxBlocklistRS.shutdown();
   },
   isLoaded: true,
 
@@ -1581,6 +1716,8 @@ let BlocklistRS = {
   },
 
   loadBlocklistAsync() {
+    
+    GfxBlocklistRS.checkForEntries();
     
     
     gLoadingWasTriggered = true;
