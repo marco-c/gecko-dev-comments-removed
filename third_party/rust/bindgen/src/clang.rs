@@ -501,29 +501,6 @@ impl Cursor {
 
     
     
-    
-    
-    pub fn has_simple_attr(&self, attr: &str) -> bool {
-        let mut found_attr = false;
-        self.visit(|cur| {
-            if cur.kind() == CXCursor_UnexposedAttr {
-                found_attr = cur.tokens().iter().any(|t| {
-                    t.kind == CXToken_Identifier && t.spelling() == attr.as_bytes()
-                });
-
-                if found_attr {
-                    return CXChildVisit_Break;
-                }
-            }
-
-            CXChildVisit_Continue
-        });
-
-        found_attr
-    }
-
-    
-    
     pub fn typedef_type(&self) -> Option<Type> {
         let inner = Type {
             x: unsafe { clang_getTypedefDeclUnderlyingType(self.x) },
@@ -550,21 +527,27 @@ impl Cursor {
 
     
     
-    
-    
-    
     pub fn args(&self) -> Option<Vec<Cursor>> {
         
         
         
-        self.num_args().ok().map(|num| {
-            (0..num).map(|i| {
-                Cursor {
-                    x: unsafe { clang_Cursor_getArgument(self.x, i as c_uint) },
+        
+        unsafe {
+            let w = clang_Cursor_getNumArguments(self.x);
+            if w == -1 {
+                None
+            } else {
+                let num = w as u32;
+
+                let mut args = vec![];
+                for i in 0..num {
+                    args.push(Cursor {
+                        x: clang_Cursor_getArgument(self.x, i as c_uint),
+                    });
                 }
-            })
-            .collect()
-        })
+                Some(args)
+            }
+        }
     }
 
     
@@ -645,126 +628,64 @@ impl Cursor {
     }
 
     
-    pub fn tokens(&self) -> RawTokens {
-        RawTokens::new(self)
+    pub fn tokens(&self) -> Option<Vec<Token>> {
+        let range = self.extent();
+        let mut tokens = vec![];
+        unsafe {
+            let tu = clang_Cursor_getTranslationUnit(self.x);
+            let mut token_ptr = ptr::null_mut();
+            let mut num_tokens: c_uint = 0;
+            clang_tokenize(tu, range, &mut token_ptr, &mut num_tokens);
+            if token_ptr.is_null() {
+                return None;
+            }
+
+            let token_array =
+                slice::from_raw_parts(token_ptr, num_tokens as usize);
+            for &token in token_array.iter() {
+                let kind = clang_getTokenKind(token);
+                let spelling =
+                    cxstring_into_string(clang_getTokenSpelling(tu, token));
+
+                tokens.push(Token {
+                    kind: kind,
+                    spelling: spelling,
+                });
+            }
+            clang_disposeTokens(tu, token_ptr, num_tokens);
+        }
+        Some(tokens)
     }
 
     
-    pub fn cexpr_tokens(self) -> Vec<cexpr::token::Token> {
+    pub fn cexpr_tokens(self) -> Option<Vec<cexpr::token::Token>> {
         use cexpr::token;
 
-        self.tokens().iter().filter_map(|token| {
-            let kind = match token.kind {
-                CXToken_Punctuation => token::Kind::Punctuation,
-                CXToken_Literal => token::Kind::Literal,
-                CXToken_Identifier => token::Kind::Identifier,
-                CXToken_Keyword => token::Kind::Keyword,
-                
-                
-                CXToken_Comment => return None,
-                _ => {
-                    error!("Found unexpected token kind: {:?}", token);
-                    return None;
-                }
-            };
+        self.tokens().map(|tokens| {
+            tokens
+                .into_iter()
+                .filter_map(|token| {
+                    let kind = match token.kind {
+                        CXToken_Punctuation => token::Kind::Punctuation,
+                        CXToken_Literal => token::Kind::Literal,
+                        CXToken_Identifier => token::Kind::Identifier,
+                        CXToken_Keyword => token::Kind::Keyword,
+                        
+                        
+                        CXToken_Comment => return None,
+                        _ => {
+                            error!("Found unexpected token kind: {:?}", token);
+                            return None;
+                        }
+                    };
 
-            Some(token::Token {
-                kind,
-                raw: token.spelling().to_vec().into_boxed_slice(),
-            })
-        }).collect()
-    }
-}
-
-
-pub struct RawTokens<'a> {
-    cursor: &'a Cursor,
-    tu: CXTranslationUnit,
-    tokens: *mut CXToken,
-    token_count: c_uint,
-}
-
-impl<'a> RawTokens<'a> {
-    fn new(cursor: &'a Cursor) -> Self {
-        let mut tokens = ptr::null_mut();
-        let mut token_count = 0;
-        let range = cursor.extent();
-        let tu = unsafe {
-            clang_Cursor_getTranslationUnit(cursor.x)
-        };
-        unsafe { clang_tokenize(tu, range, &mut tokens, &mut token_count) };
-        Self { cursor, tu, tokens, token_count }
-    }
-
-    fn as_slice(&self) -> &[CXToken] {
-        if self.tokens.is_null() {
-            return &[];
-        }
-        unsafe { slice::from_raw_parts(self.tokens, self.token_count as usize) }
-    }
-
-    
-    pub fn iter(&self) -> ClangTokenIterator {
-        ClangTokenIterator {
-            tu: self.tu,
-            raw: self.as_slice().iter(),
-        }
-    }
-}
-
-impl<'a> Drop for RawTokens<'a> {
-    fn drop(&mut self) {
-        if !self.tokens.is_null() {
-            unsafe {
-                clang_disposeTokens(self.tu, self.tokens, self.token_count as c_uint);
-            }
-        }
-    }
-}
-
-
-
-
-#[derive(Debug)]
-pub struct ClangToken {
-    spelling: CXString,
-    
-    
-    pub kind: CXTokenKind,
-}
-
-impl ClangToken {
-    
-    pub fn spelling(&self) -> &[u8] {
-        let c_str = unsafe {
-            CStr::from_ptr(clang_getCString(self.spelling) as *const _)
-        };
-        c_str.to_bytes()
-    }
-}
-
-impl Drop for ClangToken {
-    fn drop(&mut self) {
-        unsafe { clang_disposeString(self.spelling) }
-    }
-}
-
-
-pub struct ClangTokenIterator<'a> {
-    tu: CXTranslationUnit,
-    raw: slice::Iter<'a, CXToken>,
-}
-
-impl<'a> Iterator for ClangTokenIterator<'a> {
-    type Item = ClangToken;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let raw = self.raw.next()?;
-        unsafe {
-            let kind = clang_getTokenKind(*raw);
-            let spelling = clang_getTokenSpelling(self.tu, *raw);
-            Some(ClangToken { kind, spelling })
-        }
+                    Some(token::Token {
+                        kind: kind,
+                        raw: token.spelling.into_bytes().into_boxed_slice(),
+                    })
+                })
+                .collect::<Vec<_>>()
+        })
     }
 }
 
@@ -931,37 +852,18 @@ impl Type {
         unsafe { clang_isConstQualifiedType(self.x) != 0 }
     }
 
-    #[inline]
-    fn is_non_deductible_auto_type(&self) -> bool {
-        self.kind() == CXType_Auto && self.canonical_type() == *self
-    }
-
-    #[inline]
-    fn clang_size_of(&self) -> c_longlong {
-        if self.is_non_deductible_auto_type() {
-            return -6; 
-        }
-        unsafe { clang_Type_getSizeOf(self.x) }
-    }
-
-    #[inline]
-    fn clang_align_of(&self) -> c_longlong {
-        if self.is_non_deductible_auto_type() {
-            return -6; 
-        }
-        unsafe { clang_Type_getAlignOf(self.x) }
-    }
-
     
     
     pub fn size(&self) -> usize {
-        let val = self.clang_size_of();
-        if val < 0 { 0 } else { val as usize }
+        unsafe {
+            let val = clang_Type_getSizeOf(self.x);
+            if val < 0 { 0 } else { val as usize }
+        }
     }
 
     
     pub fn fallible_size(&self) -> Result<usize, LayoutError> {
-        let val = self.clang_size_of();
+        let val = unsafe { clang_Type_getSizeOf(self.x) };
         if val < 0 {
             Err(LayoutError::from(val as i32))
         } else {
@@ -972,17 +874,21 @@ impl Type {
     
     
     pub fn align(&self) -> usize {
-        let val = self.clang_align_of();
-        if val < 0 { 0 } else { val as usize }
+        unsafe {
+            let val = clang_Type_getAlignOf(self.x);
+            if val < 0 { 0 } else { val as usize }
+        }
     }
 
     
     pub fn fallible_align(&self) -> Result<usize, LayoutError> {
-        let val = self.clang_align_of();
-        if val < 0 {
-            Err(LayoutError::from(val as i32))
-        } else {
-            Ok(val as usize)
+        unsafe {
+            let val = clang_Type_getAlignOf(self.x);
+            if val < 0 {
+                Err(LayoutError::from(val as i32))
+            } else {
+                Ok(val as usize)
+            }
         }
     }
 
@@ -1025,31 +931,6 @@ impl Type {
             }
         })
     }
-
-    
-    
-    
-    pub fn args(&self) -> Option<Vec<Type>> {
-        self.num_args().ok().map(|num| {
-            (0..num).map(|i| {
-                Type {
-                    x: unsafe { clang_getArgType(self.x, i as c_uint) },
-                }
-            })
-            .collect()
-        })
-    }
-
-    
-    
-    
-    pub fn num_args(&self) -> Result<u32, ()> {
-        unsafe {
-            let w = clang_getNumArgTypes(self.x);
-            if w == -1 { Err(()) } else { Ok(w as u32) }
-        }
-    }
-
 
     
     

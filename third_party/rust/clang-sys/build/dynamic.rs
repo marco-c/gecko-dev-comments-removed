@@ -200,12 +200,12 @@ pub fn link() {
 
         println!("cargo:rustc-link-lib=dylib=libclang");
     } else {
-        let name = filename.trim_left_matches("lib");
+        let name = filename.replace("lib", "");
 
         
-        let name = match name.find(".dylib").or(name.find(".so")) {
-            Some(index) => &name[0..index],
+        let name = match name.find(".so") {
             None => &name,
+            Some(index) => &name[0..index],
         };
 
         println!("cargo:rustc-link-lib=dylib={}", name);

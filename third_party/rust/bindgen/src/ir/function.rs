@@ -12,8 +12,6 @@ use ir::derive::{CanTriviallyDeriveDebug, CanTriviallyDeriveHash,
                  CanTriviallyDerivePartialEqOrPartialOrd, CanDerive};
 use parse::{ClangItemParser, ClangSubItemParser, ParseError, ParseResult};
 use quote;
-use quote::TokenStreamExt;
-use proc_macro2;
 use std::io;
 
 const RUST_DERIVE_FUNPTR_LIMIT: usize = 12;
@@ -194,7 +192,7 @@ impl Abi {
 }
 
 impl quote::ToTokens for Abi {
-    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+    fn to_tokens(&self, tokens: &mut quote::Tokens) {
         tokens.append_all(match *self {
             Abi::C => quote! { "C" },
             Abi::Stdcall => quote! { "stdcall" },
@@ -222,9 +220,6 @@ pub struct FunctionSig {
 
     
     is_variadic: bool,
-
-    
-    must_use: bool,
 
     
     abi: Abi,
@@ -309,45 +304,18 @@ pub fn cursor_mangling(
     Some(mangling)
 }
 
-fn args_from_ty_and_cursor(
-    ty: &clang::Type,
-    cursor: &clang::Cursor,
-    ctx: &mut BindgenContext,
-) -> Vec<(Option<String>, TypeId)> {
-    match (cursor.args(), ty.args()) {
-        (Some(cursor_args), Some(ty_args)) => {
-            ty_args.iter().enumerate().map(|(i, ty)| {
-                let name = cursor_args.get(i)
-                    .map(|c| c.spelling())
-                    .and_then(|name| if name.is_empty() { None } else { Some(name) });
-                (name, Item::from_ty_or_ref(*ty, *cursor, None, ctx))
-            }).collect()
-        }
-        (Some(cursor_args), None) => {
-            cursor_args.iter().map(|cursor| {
-                let name = cursor.spelling();
-                let name = if name.is_empty() { None } else { Some(name) };
-                (name, Item::from_ty_or_ref(cursor.cur_type(), *cursor, None, ctx))
-            }).collect()
-        }
-        _ => panic!()
-    }
-}
-
 impl FunctionSig {
     
     pub fn new(
         return_type: TypeId,
-        argument_types: Vec<(Option<String>, TypeId)>,
+        arguments: Vec<(Option<String>, TypeId)>,
         is_variadic: bool,
-        must_use: bool,
         abi: Abi,
     ) -> Self {
         FunctionSig {
-            return_type,
-            argument_types,
-            is_variadic,
-            must_use,
+            return_type: return_type,
+            argument_types: arguments,
+            is_variadic: is_variadic,
             abi: abi,
         }
     }
@@ -362,8 +330,7 @@ impl FunctionSig {
         debug!("FunctionSig::from_ty {:?} {:?}", ty, cursor);
 
         
-        let kind = cursor.kind();
-        if kind == CXCursor_FunctionTemplate {
+        if cursor.kind() == CXCursor_FunctionTemplate {
             return Err(ParseError::Continue);
         }
 
@@ -373,29 +340,34 @@ impl FunctionSig {
             return Err(ParseError::Continue);
         }
 
-        
-        
-        
-        if (kind == CXCursor_Constructor || kind == CXCursor_Destructor) &&
-            spelling.contains('<')
-        {
-            return Err(ParseError::Continue);
-        }
-
         let cursor = if cursor.is_valid() {
             *cursor
         } else {
             ty.declaration()
         };
 
-        let mut args = match kind {
+        let mut args: Vec<_> = match cursor.kind() {
             CXCursor_FunctionDecl |
             CXCursor_Constructor |
             CXCursor_CXXMethod |
             CXCursor_ObjCInstanceMethodDecl |
             CXCursor_ObjCClassMethodDecl => {
-                args_from_ty_and_cursor(&ty, &cursor, ctx)
-            },
+                
+                
+                cursor
+                    .args()
+                    .unwrap()
+                    .iter()
+                    .map(|arg| {
+                        let arg_ty = arg.cur_type();
+                        let name = arg.spelling();
+                        let name =
+                            if name.is_empty() { None } else { Some(name) };
+                        let ty = Item::from_ty_or_ref(arg_ty, *arg, None, ctx);
+                        (name, ty)
+                    })
+                    .collect()
+            }
             _ => {
                 
                 
@@ -415,12 +387,9 @@ impl FunctionSig {
             }
         };
 
-        let must_use =
-            ctx.options().enable_function_attribute_detection &&
-            cursor.has_simple_attr("warn_unused_result");
-        let is_method = kind == CXCursor_CXXMethod;
-        let is_constructor = kind == CXCursor_Constructor;
-        let is_destructor = kind == CXCursor_Destructor;
+        let is_method = cursor.kind() == CXCursor_CXXMethod;
+        let is_constructor = cursor.kind() == CXCursor_Constructor;
+        let is_destructor = cursor.kind() == CXCursor_Destructor;
         if (is_constructor || is_destructor || is_method) &&
             cursor.lexical_parent() != cursor.semantic_parent()
         {
@@ -463,8 +432,8 @@ impl FunctionSig {
             }
         }
 
-        let ty_ret_type = if kind == CXCursor_ObjCInstanceMethodDecl ||
-            kind == CXCursor_ObjCClassMethodDecl
+        let ty_ret_type = if cursor.kind() == CXCursor_ObjCInstanceMethodDecl ||
+            cursor.kind() == CXCursor_ObjCClassMethodDecl
         {
             ty.ret_type().or_else(|| cursor.ret_type()).ok_or(
                 ParseError::Continue,
@@ -489,7 +458,7 @@ impl FunctionSig {
             warn!("Unknown calling convention: {:?}", call_conv);
         }
 
-        Ok(Self::new(ret.into(), args, ty.is_variadic(), must_use, abi))
+        Ok(Self::new(ret.into(), args, ty.is_variadic(), abi))
     }
 
     
@@ -513,11 +482,6 @@ impl FunctionSig {
         
         
         self.is_variadic && !self.argument_types.is_empty()
-    }
-
-    
-    pub fn must_use(&self) -> bool {
-        self.must_use
     }
 
     
