@@ -359,6 +359,17 @@ function TargetMixin(parentClass) {
     }
 
     
+
+
+
+    get csp() {
+      if (!this.isLocalTab) {
+        return null;
+      }
+      return this.tab.linkedBrowser.csp;
+    }
+
+    
     async attachConsole() {
       this.activeConsole = await this.getFront("console");
       await this.activeConsole.startListeners([]);
