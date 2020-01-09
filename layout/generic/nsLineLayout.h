@@ -151,7 +151,7 @@ class nsLineLayout {
     
     
     MOZ_ASSERT(mBlockRI,
-               "Should not call this method if there is no block reflow state "
+               "Should not call this method if there is no block reflow input "
                "available");
     return mBlockRI->AddFloat(this, aFloat, aAvailableISize);
   }

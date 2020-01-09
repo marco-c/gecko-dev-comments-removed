@@ -9131,7 +9131,7 @@ bool nsIPresShell::DoReflow(nsIFrame* target, bool aInterruptible,
 
   
   NS_ASSERTION(reflowInput.ComputedPhysicalMargin() == nsMargin(0, 0, 0, 0),
-               "reflow state should not set margin for reflow roots");
+               "reflow input should not set margin for reflow roots");
   if (size.BSize(wm) != NS_UNCONSTRAINEDSIZE) {
     nscoord computedBSize =
         size.BSize(wm) -
@@ -9142,7 +9142,7 @@ bool nsIPresShell::DoReflow(nsIFrame* target, bool aInterruptible,
   NS_ASSERTION(reflowInput.ComputedISize() ==
                    size.ISize(wm) -
                        reflowInput.ComputedLogicalBorderPadding().IStartEnd(wm),
-               "reflow state computed incorrect inline size");
+               "reflow input computed incorrect inline size");
 
   mPresContext->ReflowStarted(aInterruptible);
   mIsReflowing = true;

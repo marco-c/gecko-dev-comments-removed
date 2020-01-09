@@ -1584,7 +1584,7 @@ void nsFlexContainerFrame::ResolveAutoFlexBasisAndMinSize(
   
   const ReflowInput* flexContainerRI = aItemReflowInput.mParentReflowInput;
   MOZ_ASSERT(flexContainerRI,
-             "flex item's reflow state should have ptr to container's state");
+             "flex item's reflow input should have ptr to container's state");
   if (NS_STYLE_FLEX_WRAP_NOWRAP == flexContainerRI->mStylePosition->mFlexWrap) {
     
     
@@ -1640,7 +1640,7 @@ void nsFlexContainerFrame::ResolveAutoFlexBasisAndMinSize(
       }
       NS_ASSERTION(!flexBasisNeedsToMeasureContent,
                    "flex-basis:auto should have been resolved in the "
-                   "reflow state, for horizontal flexbox. It shouldn't need "
+                   "reflow input, for horizontal flexbox. It shouldn't need "
                    "special handling here");
     } else {
       
