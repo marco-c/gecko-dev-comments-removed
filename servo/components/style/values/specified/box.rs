@@ -862,20 +862,6 @@ impl Parse for Contain {
 
 pub type Perspective = GenericPerspective<NonNegativeLength>;
 
-impl Parse for Perspective {
-    fn parse<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
-        if input.try(|i| i.expect_ident_matching("none")).is_ok() {
-            return Ok(GenericPerspective::None);
-        }
-        Ok(GenericPerspective::Length(NonNegativeLength::parse(
-            context, input,
-        )?))
-    }
-}
-
 
 
 #[derive(Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToComputedValue)]

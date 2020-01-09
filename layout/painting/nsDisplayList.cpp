@@ -3081,9 +3081,9 @@ static int32_t ZIndexForFrame(nsIFrame* aFrame) {
     return 0;
 
   const nsStylePosition* position = aFrame->StylePosition();
-  if (position->mZIndex.GetUnit() == eStyleUnit_Integer)
-    return position->mZIndex.GetIntValue();
-
+  if (position->mZIndex.IsInteger())
+    return position->mZIndex.integer._0;
+  MOZ_ASSERT(position->mZIndex.IsAuto());
   
   return 0;
 }
@@ -7446,12 +7446,15 @@ bool nsDisplayTransform::ShouldFlattenAway(nsDisplayListBuilder* aBuilder) {
   }
 
   
-
   const nsStyleDisplay* cbDisplay = cbFrame->StyleDisplay();
-  if (cbDisplay->mChildPerspective.GetUnit() != eStyleUnit_Coord) {
+  if (cbDisplay->mChildPerspective.IsNone()) {
     return false;
   }
-  nscoord perspective = cbDisplay->mChildPerspective.GetCoordValue();
+
+  MOZ_ASSERT(cbDisplay->mChildPerspective.IsLength());
+  
+  
+  nscoord perspective = cbDisplay->mChildPerspective.length._0.ToAppUnits();
   if (perspective < std::numeric_limits<Float>::epsilon()) {
     return true;
   }

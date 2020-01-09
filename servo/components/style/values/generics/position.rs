@@ -45,17 +45,21 @@ impl<H, V> Position<H, V> {
     Debug,
     MallocSizeOf,
     PartialEq,
+    Parse,
     SpecifiedValueInfo,
     ToAnimatedZero,
     ToComputedValue,
     ToCss,
 )]
-pub enum ZIndex<Integer> {
+#[repr(C, u8)]
+pub enum GenericZIndex<I> {
     
-    Integer(Integer),
+    Integer(I),
     
     Auto,
 }
+
+pub use self::GenericZIndex as ZIndex;
 
 impl<Integer> ZIndex<Integer> {
     

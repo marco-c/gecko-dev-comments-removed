@@ -74,6 +74,7 @@ pub enum AnimationIterationCount<Number> {
     Copy,
     Debug,
     MallocSizeOf,
+    Parse,
     PartialEq,
     SpecifiedValueInfo,
     ToAnimatedValue,
@@ -81,12 +82,15 @@ pub enum AnimationIterationCount<Number> {
     ToComputedValue,
     ToCss,
 )]
-pub enum Perspective<NonNegativeLength> {
+#[repr(C, u8)]
+pub enum GenericPerspective<NonNegativeLength> {
     
     Length(NonNegativeLength),
     
     None,
 }
+
+pub use self::GenericPerspective as Perspective;
 
 impl<L> Perspective<L> {
     
