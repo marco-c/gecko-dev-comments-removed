@@ -21,8 +21,14 @@
   background: var(--arrowpanel-background);
   color: var(--arrowpanel-color);
   border: 1px solid var(--arrowpanel-border-color);
-  border-radius: 3.5px;
   margin-top: -4px;
+}
+
+
+@media (-moz-os-version: windows-win7) {
+  #BMB_bookmarksPopup menupopup[placespopup=true] > hbox {
+    border-radius: 3.5px;
+  }
 }
 
 
@@ -41,17 +47,6 @@ menuitem.subviewbutton[disabled]:not(.menuitem-iconic) {
   
 
   min-height: 22px;
-}
-
-
-@media not (-moz-os-version: windows-win7) {
-  #BMB_bookmarksPopup menupopup[placespopup=true] > hbox,
-  #edit-controls@inAnyPanel@,
-  #zoom-controls@inAnyPanel@,
-  #edit-controls@inAnyPanel@ > toolbarbutton,
-  #zoom-controls@inAnyPanel@ > toolbarbutton {
-    border-radius: 0;
-  }
 }
 
 
