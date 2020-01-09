@@ -13,6 +13,9 @@ const kPrefSpoofEnglish = "privacy.spoof_english";
 const kTopicHttpOnModifyRequest = "http-on-modify-request";
 
 class _RFPHelper {
+  
+  
+  
   constructor() {
     this._initialized = false;
   }
@@ -23,7 +26,9 @@ class _RFPHelper {
     }
     this._initialized = true;
 
+    
     Services.prefs.addObserver(kPrefResistFingerprinting, this);
+    
     this._handleResistFingerprintingChanged();
   }
 
@@ -33,8 +38,10 @@ class _RFPHelper {
     }
     this._initialized = false;
 
+    
     Services.prefs.removeObserver(kPrefResistFingerprinting, this);
-    this._removeObservers();
+    
+    this._removeRFPObservers();
   }
 
   observe(subject, topic, data) {
@@ -50,24 +57,6 @@ class _RFPHelper {
     }
   }
 
-  _removeObservers() {
-    try {
-      Services.pref.removeObserver(kPrefSpoofEnglish, this);
-    } catch (e) {
-      
-    }
-    try {
-      Services.obs.removeObserver(this, kTopicHttpOnModifyRequest);
-    } catch (e) {
-      
-    }
-  }
-
-  _shouldPromptForLanguagePref() {
-    return (Services.locale.appLocaleAsLangTag.substr(0, 2) !== "en")
-      && (Services.prefs.getIntPref(kPrefSpoofEnglish) === 0);
-  }
-
   _handlePrefChanged(data) {
     switch (data) {
       case kPrefResistFingerprinting:
@@ -81,14 +70,34 @@ class _RFPHelper {
     }
   }
 
+  
+  
+  
+  _addRFPObservers() {
+    Services.prefs.addObserver(kPrefSpoofEnglish, this);
+    if (this._shouldPromptForLanguagePref()) {
+      Services.obs.addObserver(this, kTopicHttpOnModifyRequest);
+    }
+  }
+
+  _removeRFPObservers() {
+    try {
+      Services.pref.removeObserver(kPrefSpoofEnglish, this);
+    } catch (e) {
+      
+    }
+    try {
+      Services.obs.removeObserver(this, kTopicHttpOnModifyRequest);
+    } catch (e) {
+      
+    }
+  }
+
   _handleResistFingerprintingChanged() {
     if (Services.prefs.getBoolPref(kPrefResistFingerprinting)) {
-      Services.prefs.addObserver(kPrefSpoofEnglish, this);
-      if (this._shouldPromptForLanguagePref()) {
-        Services.obs.addObserver(this, kTopicHttpOnModifyRequest);
-      }
+      this._addRFPObservers();
     } else {
-      this._removeObservers();
+      this._removeRFPObservers();
     }
   }
 
@@ -112,6 +121,11 @@ class _RFPHelper {
       default:
         break;
     }
+  }
+
+  _shouldPromptForLanguagePref() {
+    return (Services.locale.appLocaleAsLangTag.substr(0, 2) !== "en")
+      && (Services.prefs.getIntPref(kPrefSpoofEnglish) === 0);
   }
 
   _handleHttpOnModifyRequest(subject, data) {
