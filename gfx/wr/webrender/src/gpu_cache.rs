@@ -24,9 +24,10 @@
 
 
 
-use api::{DebugFlags, DocumentId, PremultipliedColorF, TexelRect};
+use api::{DebugFlags, DocumentId, PremultipliedColorF};
 #[cfg(test)]
 use api::IdNamespace;
+use api::units::TexelRect;
 use euclid::{HomogeneousVector, TypedRect};
 use internal_types::{FastHashMap};
 use profiler::GpuCacheProfileCounters;

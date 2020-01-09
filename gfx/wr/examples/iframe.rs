@@ -12,6 +12,7 @@ mod boilerplate;
 
 use boilerplate::{Example, HandyDandyRectBuilder};
 use webrender::api::*;
+use webrender::api::units::*;
 
 
 

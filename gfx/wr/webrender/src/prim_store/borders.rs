@@ -2,11 +2,8 @@
 
 
 
-use api::{
-    AuHelpers, LayoutPrimitiveInfo, LayoutSideOffsets,
-    LayoutSideOffsetsAu, LayoutSize, NormalBorder, PremultipliedColorF,
-    Shadow, LayoutVector2D,
-};
+use api::{LayoutPrimitiveInfo, NormalBorder, PremultipliedColorF, Shadow};
+use api::units::*;
 use border::create_border_segments;
 use border::NormalBorderAu;
 use display_list_flattener::{CreateShadow, IsVisible};

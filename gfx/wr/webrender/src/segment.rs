@@ -2,8 +2,8 @@
 
 
 
-use api::{BorderRadius, ClipMode, LayoutPoint, LayoutPointAu, LayoutRect, LayoutSize};
-use app_units::Au;
+use api::{BorderRadius, ClipMode};
+use api::units::*;
 use prim_store::EdgeAaSegmentMask;
 use std::{cmp, usize};
 use util::{extract_inner_rect_safe, RectHelpers};
@@ -633,7 +633,8 @@ fn emit_segment_if_needed(
 
 #[cfg(test)]
 mod test {
-    use api::{BorderRadius, ClipMode, LayoutPoint, LayoutRect, LayoutSize};
+    use api::{BorderRadius, ClipMode};
+    use api::units::{LayoutPoint, LayoutRect, LayoutSize};
     use prim_store::EdgeAaSegmentMask;
     use super::{Segment, SegmentBuilder};
     use std::cmp;

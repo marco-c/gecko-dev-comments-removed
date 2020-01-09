@@ -12,7 +12,7 @@
 
 
 
-use app_units::Au;
+pub use app_units::Au;
 use euclid::{Length, TypedRect, TypedScale, TypedSize2D, TypedTransform3D, TypedTranslation2D};
 use euclid::{TypedPoint2D, TypedPoint3D, TypedVector2D, TypedVector3D, TypedSideOffsets2D};
 use euclid::HomogeneousVector;

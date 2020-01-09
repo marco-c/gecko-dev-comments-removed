@@ -2,9 +2,8 @@
 
 
 
-use api::{ColorF, DevicePixelScale, GlyphInstance, LayoutPrimitiveInfo};
-use api::{LayoutToWorldTransform, RasterSpace};
-use api::{LayoutVector2D, Shadow};
+use api::{ColorF, GlyphInstance, LayoutPrimitiveInfo, RasterSpace, Shadow};
+use api::units::{DevicePixelScale, LayoutToWorldTransform, LayoutVector2D};
 use display_list_flattener::{CreateShadow, IsVisible};
 use frame_builder::{FrameBuildingState, PictureContext};
 use glyph_rasterizer::{FontInstance, FontTransform, GlyphKey, FONT_SIZE_LIMIT};
