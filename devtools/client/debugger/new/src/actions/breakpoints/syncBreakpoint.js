@@ -5,7 +5,6 @@
 
 
 import { setBreakpointPositions } from "./breakpointPositions";
-import { setSymbols } from "../sources/symbols";
 import {
   assertPendingBreakpoint,
   findFunctionByName,
@@ -20,24 +19,23 @@ import { getSource, getBreakpoint } from "../../selectors";
 import { removeBreakpoint, addBreakpoint } from ".";
 
 import type { ThunkArgs } from "../types";
-import type { LoadedSymbols } from "../../reducers/types";
 
 import type {
   SourceLocation,
   ASTLocation,
   PendingBreakpoint,
   SourceId,
-  BreakpointPositions
+  Context
 } from "../../types";
 
 async function findBreakpointPosition(
+  cx: Context,
   { getState, dispatch },
   location: SourceLocation
 ) {
-  const positions: BreakpointPositions = await dispatch(
-    setBreakpointPositions({ sourceId: location.sourceId })
+  const positions = await dispatch(
+    setBreakpointPositions(cx, location.sourceId)
   );
-
   const position = findPosition(positions, location);
   return position && position.generatedLocation;
 }
@@ -45,13 +43,9 @@ async function findBreakpointPosition(
 async function findNewLocation(
   { name, offset, index }: ASTLocation,
   location: SourceLocation,
-  source,
-  thunkArgs
+  source
 ) {
-  const symbols: LoadedSymbols = await thunkArgs.dispatch(
-    setSymbols({ source })
-  );
-  const func = findFunctionByName(symbols, name, index);
+  const func = await findFunctionByName(source, name, index);
 
   
   let line = location.line;
@@ -85,6 +79,7 @@ async function findNewLocation(
 
 
 export function syncBreakpoint(
+  cx: Context,
   sourceId: SourceId,
   pendingBreakpoint: PendingBreakpoint
 ) {
@@ -131,6 +126,7 @@ export function syncBreakpoint(
       }
       return dispatch(
         addBreakpoint(
+          cx,
           sourceGeneratedLocation,
           pendingBreakpoint.options,
           pendingBreakpoint.disabled
@@ -143,11 +139,11 @@ export function syncBreakpoint(
     const newLocation = await findNewLocation(
       astLocation,
       previousLocation,
-      source,
-      thunkArgs
+      source
     );
 
     const newGeneratedLocation = await findBreakpointPosition(
+      cx,
       thunkArgs,
       newLocation
     );
@@ -169,7 +165,7 @@ export function syncBreakpoint(
     if (!isSameLocation) {
       const bp = getBreakpoint(getState(), sourceGeneratedLocation);
       if (bp) {
-        dispatch(removeBreakpoint(bp));
+        dispatch(removeBreakpoint(cx, bp));
       } else {
         const breakpointLocation = makeBreakpointLocation(
           getState(),
@@ -181,6 +177,7 @@ export function syncBreakpoint(
 
     return dispatch(
       addBreakpoint(
+        cx,
         newLocation,
         pendingBreakpoint.options,
         pendingBreakpoint.disabled

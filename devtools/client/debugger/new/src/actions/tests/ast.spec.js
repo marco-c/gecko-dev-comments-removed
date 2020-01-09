@@ -17,6 +17,7 @@ import {
 
 import readFixture from "./helpers/readFixture";
 const {
+  getSource,
   getSymbols,
   getOutOfScopeLocations,
   getInScopeLines,
@@ -66,13 +67,11 @@ describe("ast", () => {
     describe("when the source is loaded", () => {
       it("should be able to set symbols", async () => {
         const store = createStore(threadClient);
-        const { dispatch, getState } = store;
+        const { dispatch, getState, cx } = store;
         const base = makeSource("base.js");
         await dispatch(actions.newSource(base));
-        await dispatch(actions.loadSourceText({ source: base }));
-
-        const loadedSource = selectors.getSourceFromId(getState(), base.id);
-        await dispatch(actions.setSymbols({ source: loadedSource }));
+        await dispatch(actions.loadSourceText(cx, base));
+        await dispatch(actions.setSymbols(cx, "base.js"));
         await waitForState(store, state => !isSymbolsLoading(state, base));
 
         const baseSymbols = getSymbols(getState(), base);
@@ -102,27 +101,28 @@ describe("ast", () => {
     describe("frameworks", () => {
       it("should detect react components", async () => {
         const store = createStore(threadClient, {}, sourceMaps);
-        const { dispatch, getState } = store;
+        const { cx, dispatch, getState } = store;
         const source = makeOriginalSource("reactComponent.js");
 
         await dispatch(actions.newSource(makeSource("reactComponent.js")));
 
         await dispatch(actions.newSource(source));
 
-        await dispatch(actions.loadSourceText({ source }));
-        const loadedSource = selectors.getSourceFromId(getState(), source.id);
-        await dispatch(actions.setSymbols({ source: loadedSource }));
+        await dispatch(
+          actions.loadSourceText(cx, getSource(getState(), source.id))
+        );
+        await dispatch(actions.setSymbols(cx, source.id));
 
         expect(getFramework(getState(), source)).toBe("React");
       });
 
       it("should not give false positive on non react components", async () => {
         const store = createStore(threadClient);
-        const { dispatch, getState } = store;
+        const { cx, dispatch, getState } = store;
         const base = makeSource("base.js");
         await dispatch(actions.newSource(base));
-        await dispatch(actions.loadSourceText({ source: base }));
-        await dispatch(actions.setSymbols({ source: base }));
+        await dispatch(actions.loadSourceText(cx, base));
+        await dispatch(actions.setSymbols(cx, "base.js"));
 
         expect(getFramework(getState(), base)).toBe(undefined);
       });
@@ -136,13 +136,19 @@ describe("ast", () => {
 
     it("with selected line", async () => {
       const store = createStore(threadClient);
-      const { dispatch, getState } = store;
+      const { dispatch, getState, cx } = store;
       const source = makeSource("scopes.js");
       await dispatch(actions.newSource(source));
 
       await dispatch(
-        actions.selectLocation({ sourceId: "scopes.js", line: 5 })
+        actions.selectLocation(cx, { sourceId: "scopes.js", line: 5 })
       );
+
+      
+      await waitForState(store, state => {
+        const symbols = getSymbols(state, source);
+        return symbols && !symbols.loading && getOutOfScopeLocations(state);
+      });
 
       const frame = makeFrame({ id: "1", sourceId: "scopes.js" });
       await dispatch(
@@ -154,7 +160,8 @@ describe("ast", () => {
         })
       );
 
-      await dispatch(actions.setOutOfScopeLocations());
+      const ncx = selectors.getThreadContext(getState());
+      await dispatch(actions.setOutOfScopeLocations(ncx));
 
       await waitForState(store, state => getOutOfScopeLocations(state));
 
@@ -166,10 +173,10 @@ describe("ast", () => {
     });
 
     it("without a selected line", async () => {
-      const { dispatch, getState } = createStore(threadClient);
+      const { dispatch, getState, cx } = createStore(threadClient);
       const base = makeSource("base.js");
       await dispatch(actions.newSource(base));
-      await dispatch(actions.selectSource("base.js"));
+      await dispatch(actions.selectSource(cx, "base.js"));
 
       const locations = getOutOfScopeLocations(getState());
       

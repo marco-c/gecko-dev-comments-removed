@@ -35,7 +35,8 @@ import {
   getConditionalPanelLocation,
   getSymbols,
   getIsPaused,
-  getCurrentThread
+  getCurrentThread,
+  getThreadContext
 } from "../../selectors";
 
 
@@ -54,6 +55,7 @@ import ConditionalPanel from "./ConditionalPanel";
 
 import {
   showSourceText,
+  updateDocument,
   showLoading,
   showErrorMessage,
   getEditor,
@@ -79,13 +81,14 @@ import "./Highlight.css";
 
 import type SourceEditor from "../../utils/editor/source-editor";
 import type { SymbolDeclarations } from "../../workers/parser";
-import type { SourceLocation, Source } from "../../types";
+import type { SourceLocation, Source, ThreadContext } from "../../types";
 
 const cssVars = {
   searchbarHeight: "var(--editor-searchbar-height)"
 };
 
 export type Props = {
+  cx: ThreadContext,
   selectedLocation: ?SourceLocation,
   selectedSource: ?Source,
   searchOn: boolean,
@@ -126,25 +129,25 @@ class Editor extends PureComponent<Props, State> {
     };
   }
 
-  componentWillReceiveProps(nextProps: Props) {
-    let editor = this.state.editor;
-
-    if (!this.state.editor && nextProps.selectedSource) {
-      editor = this.setupEditor();
+  componentWillReceiveProps(nextProps) {
+    if (!this.state.editor) {
+      return;
     }
 
     startOperation();
-    this.setText(nextProps, editor);
-    this.setSize(nextProps, editor);
-    this.scrollToLocation(nextProps, editor);
+    resizeBreakpointGutter(this.state.editor.codeMirror);
+    resizeToggleButton(this.state.editor.codeMirror);
+    endOperation();
+  }
 
-    if (this.props.selectedSource != nextProps.selectedSource) {
-      this.props.updateViewport();
-      resizeBreakpointGutter(editor.codeMirror);
-      resizeToggleButton(editor.codeMirror);
+  componentWillUpdate(nextProps) {
+    if (!this.state.editor) {
+      return;
     }
 
-    endOperation();
+    this.setText(nextProps);
+    this.setSize(nextProps);
+    this.scrollToLocation(nextProps);
   }
 
   setupEditor() {
@@ -161,6 +164,11 @@ class Editor extends PureComponent<Props, State> {
 
     const { codeMirror } = editor;
     const codeMirrorWrapper = codeMirror.getWrapperElement();
+
+    startOperation();
+    resizeBreakpointGutter(codeMirror);
+    resizeToggleButton(codeMirror);
+    endOperation();
 
     codeMirror.on("gutterClick", this.onGutterClick);
 
@@ -225,11 +233,11 @@ class Editor extends PureComponent<Props, State> {
   }
 
   onClosePress = (key, e: KeyboardEvent) => {
-    const { selectedSource } = this.props;
+    const { cx, selectedSource } = this.props;
     if (selectedSource) {
       e.preventDefault();
       e.stopPropagation();
-      this.props.closeTab(selectedSource);
+      this.props.closeTab(cx, selectedSource);
     }
   };
 
@@ -253,6 +261,26 @@ class Editor extends PureComponent<Props, State> {
     shortcuts.off(searchAgainKey);
   }
 
+  componentDidUpdate(prevProps, prevState) {
+    const { selectedSource } = this.props;
+    
+    
+    
+    if (!prevState.editor && selectedSource) {
+      if (!this.state.editor) {
+        const editor = this.setupEditor();
+        updateDocument(editor, selectedSource);
+      } else {
+        this.setText(this.props);
+        this.setSize(this.props);
+      }
+    }
+
+    if (prevProps.selectedSource != selectedSource) {
+      this.props.updateViewport();
+    }
+  }
+
   getCurrentLine() {
     const { codeMirror } = this.state.editor;
     const { selectedSource } = this.props;
@@ -273,7 +301,7 @@ class Editor extends PureComponent<Props, State> {
       return;
     }
 
-    this.props.toggleBreakpointAtLine(line);
+    this.props.toggleBreakpointAtLine(this.props.cx, line);
   };
 
   onToggleConditionalPanel = (key, e: KeyboardEvent) => {
@@ -327,7 +355,7 @@ class Editor extends PureComponent<Props, State> {
   };
 
   onSearchAgain = (_, e: KeyboardEvent) => {
-    this.props.traverseResults(e.shiftKey, this.state.editor);
+    this.props.traverseResults(this.props.cx, e.shiftKey, this.state.editor);
   };
 
   openMenu(event: MouseEvent) {
@@ -335,6 +363,7 @@ class Editor extends PureComponent<Props, State> {
     event.preventDefault();
 
     const {
+      cx,
       selectedSource,
       breakpointActions,
       editorActions,
@@ -357,9 +386,9 @@ class Editor extends PureComponent<Props, State> {
 
     if (target.classList.contains("CodeMirror-linenumber")) {
       return showMenu(event, [
-        ...createBreakpointItems(location, breakpointActions),
+        ...createBreakpointItems(cx, location, breakpointActions),
         { type: "separator" },
-        continueToHereItem(location, isPaused, editorActions)
+        continueToHereItem(cx, location, isPaused, editorActions)
       ]);
     }
 
@@ -381,6 +410,7 @@ class Editor extends PureComponent<Props, State> {
     ev: MouseEvent
   ) => {
     const {
+      cx,
       selectedSource,
       conditionalPanelLocation,
       closeConditionalPanel,
@@ -412,10 +442,10 @@ class Editor extends PureComponent<Props, State> {
     }
 
     if (ev.metaKey) {
-      return continueToHere(sourceLine);
+      return continueToHere(cx, sourceLine);
     }
 
-    return addBreakpointAtLine(sourceLine);
+    return addBreakpointAtLine(cx, sourceLine);
   };
 
   onGutterContextMenu = (event: MouseEvent) => {
@@ -423,7 +453,7 @@ class Editor extends PureComponent<Props, State> {
   };
 
   onClick(e: MouseEvent) {
-    const { selectedSource, jumpToMappedLocation } = this.props;
+    const { cx, selectedSource, jumpToMappedLocation } = this.props;
 
     if (selectedSource && e.metaKey && e.altKey) {
       const sourceLocation = getSourceLocationFromMouseEvent(
@@ -431,7 +461,7 @@ class Editor extends PureComponent<Props, State> {
         selectedSource,
         e
       );
-      jumpToMappedLocation(sourceLocation);
+      jumpToMappedLocation(cx, sourceLocation);
     }
   }
 
@@ -461,8 +491,10 @@ class Editor extends PureComponent<Props, State> {
     );
   };
 
-  shouldScrollToLocation(nextProps, editor) {
+  shouldScrollToLocation(nextProps) {
     const { selectedLocation, selectedSource } = this.props;
+    const { editor } = this.state;
+
     if (
       !editor ||
       !nextProps.selectedSource ||
@@ -482,10 +514,11 @@ class Editor extends PureComponent<Props, State> {
     return isFirstLoad || locationChanged || symbolsChanged;
   }
 
-  scrollToLocation(nextProps, editor) {
+  scrollToLocation(nextProps) {
+    const { editor } = this.state;
     const { selectedLocation, selectedSource } = nextProps;
 
-    if (selectedLocation && this.shouldScrollToLocation(nextProps, editor)) {
+    if (selectedLocation && this.shouldScrollToLocation(nextProps)) {
       let { line, column } = toEditorPosition(selectedLocation);
 
       if (selectedSource && hasDocument(selectedSource.id)) {
@@ -493,13 +526,12 @@ class Editor extends PureComponent<Props, State> {
         const lineText: ?string = doc.getLine(line);
         column = Math.max(column, getIndentation(lineText));
       }
-
       scrollToColumn(editor.codeMirror, line, column);
     }
   }
 
-  setSize(nextProps, editor) {
-    if (!editor) {
+  setSize(nextProps) {
+    if (!this.state.editor) {
       return;
     }
 
@@ -507,14 +539,14 @@ class Editor extends PureComponent<Props, State> {
       nextProps.startPanelSize !== this.props.startPanelSize ||
       nextProps.endPanelSize !== this.props.endPanelSize
     ) {
-      editor.codeMirror.setSize();
+      this.state.editor.codeMirror.setSize();
     }
   }
 
-  setText(props, editor) {
+  setText(props) {
     const { selectedSource, symbols } = props;
 
-    if (!editor) {
+    if (!this.state.editor) {
       return;
     }
 
@@ -524,7 +556,7 @@ class Editor extends PureComponent<Props, State> {
     }
 
     if (!isLoaded(selectedSource)) {
-      return showLoading(editor);
+      return showLoading(this.state.editor);
     }
 
     if (selectedSource.error) {
@@ -532,7 +564,7 @@ class Editor extends PureComponent<Props, State> {
     }
 
     if (selectedSource) {
-      return showSourceText(editor, selectedSource, symbols);
+      return showSourceText(this.state.editor, selectedSource, symbols);
     }
   }
 
@@ -569,7 +601,7 @@ class Editor extends PureComponent<Props, State> {
   }
 
   renderItems() {
-    const { selectedSource, conditionalPanelLocation } = this.props;
+    const { cx, selectedSource, conditionalPanelLocation } = this.props;
     const { editor, contextMenu } = this.state;
 
     if (!selectedSource || !editor || !getDocument(selectedSource.id)) {
@@ -581,7 +613,7 @@ class Editor extends PureComponent<Props, State> {
         <DebugLine editor={editor} />
         <HighlightLine />
         <EmptyLines editor={editor} />
-        <Breakpoints editor={editor} />
+        <Breakpoints editor={editor} cx={cx} />
         <Preview editor={editor} editorRef={this.$editorWrapper} />
         <HighlightLines editor={editor} />
         {
@@ -638,6 +670,7 @@ const mapStateToProps = state => {
   const selectedSource = getSelectedSource(state);
 
   return {
+    cx: getThreadContext(state),
     selectedLocation: getSelectedLocation(state),
     selectedSource,
     searchOn: getActiveSearch(state) === "file",
