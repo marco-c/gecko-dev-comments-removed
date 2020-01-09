@@ -688,7 +688,6 @@ async function sanitizeOnShutdown(progress) {
     await maybeSanitizeSessionPrincipals(principals);
   }
 
-
   
   for (let permission of Services.perms.enumerator) {
     if (permission.type != "cookie" ||
@@ -805,6 +804,11 @@ function cookiesAllowedForDomainOrSubDomain(principal) {
 
   if (p == Ci.nsICookiePermission.ACCESS_DENY ||
       p == Ci.nsICookiePermission.ACCESS_SESSION) {
+    return false;
+  }
+
+  
+  if (p != Ci.nsICookiePermission.ACCESS_DEFAULT) {
     return false;
   }
 
