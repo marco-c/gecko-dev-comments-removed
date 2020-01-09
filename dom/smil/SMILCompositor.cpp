@@ -55,7 +55,7 @@ void SMILCompositor::ComposeAttribute(bool& aMightHavePendingStyleUpdates) {
 
   
   
-  UniquePtr<nsISMILAttr> smilAttr = CreateSMILAttr(baseComputedStyle);
+  UniquePtr<SMILAttr> smilAttr = CreateSMILAttr(baseComputedStyle);
   if (!smilAttr) {
     
     return;
@@ -102,14 +102,14 @@ void SMILCompositor::ComposeAttribute(bool& aMightHavePendingStyleUpdates) {
   
   nsresult rv = smilAttr->SetAnimValue(sandwichResultValue);
   if (NS_FAILED(rv)) {
-    NS_WARNING("nsISMILAttr::SetAnimValue failed");
+    NS_WARNING("SMILAttr::SetAnimValue failed");
   }
 }
 
 void SMILCompositor::ClearAnimationEffects() {
   if (!mKey.mElement || !mKey.mAttributeName) return;
 
-  UniquePtr<nsISMILAttr> smilAttr = CreateSMILAttr(nullptr);
+  UniquePtr<SMILAttr> smilAttr = CreateSMILAttr(nullptr);
   if (!smilAttr) {
     
     return;
@@ -119,7 +119,7 @@ void SMILCompositor::ClearAnimationEffects() {
 
 
 
-UniquePtr<nsISMILAttr> SMILCompositor::CreateSMILAttr(
+UniquePtr<SMILAttr> SMILCompositor::CreateSMILAttr(
     ComputedStyle* aBaseComputedStyle) {
   nsCSSPropertyID propID = GetCSSPropertyToAnimate();
 

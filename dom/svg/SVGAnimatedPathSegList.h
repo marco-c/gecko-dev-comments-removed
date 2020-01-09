@@ -9,9 +9,9 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/SMILAttr.h"
 #include "mozilla/UniquePtr.h"
 #include "nsAutoPtr.h"
-#include "nsISMILAttr.h"
 #include "SVGPathData.h"
 
 namespace mozilla {
@@ -83,7 +83,7 @@ class SVGAnimatedPathSegList final {
 
   bool IsAnimating() const { return !!mAnimVal; }
 
-  UniquePtr<nsISMILAttr> ToSMILAttr(dom::SVGElement* aElement);
+  UniquePtr<SMILAttr> ToSMILAttr(dom::SVGElement* aElement);
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const;
 
@@ -96,7 +96,7 @@ class SVGAnimatedPathSegList final {
   SVGPathData mBaseVal;
   nsAutoPtr<SVGPathData> mAnimVal;
 
-  struct SMILAnimatedPathSegList : public nsISMILAttr {
+  struct SMILAnimatedPathSegList : public SMILAttr {
    public:
     SMILAnimatedPathSegList(SVGAnimatedPathSegList* aVal,
                             dom::SVGElement* aElement)

@@ -85,7 +85,7 @@ class SMILTimeContainer {
 
 
 
-  nsSMILTime GetCurrentTimeAsSMILTime() const;
+  SMILTime GetCurrentTimeAsSMILTime() const;
 
   
 
@@ -93,21 +93,12 @@ class SMILTimeContainer {
 
 
 
-  void SetCurrentTime(nsSMILTime aSeekTo);
+  void SetCurrentTime(SMILTime aSeekTo);
 
   
 
 
-  virtual nsSMILTime GetParentTime() const;
-
-  
-
-
-
-
-
-
-  SMILTimeValue ContainerToParentTime(nsSMILTime aContainerTime) const;
+  virtual SMILTime GetParentTime() const;
 
   
 
@@ -116,7 +107,16 @@ class SMILTimeContainer {
 
 
 
-  SMILTimeValue ParentToContainerTime(nsSMILTime aParentTime) const;
+  SMILTimeValue ContainerToParentTime(SMILTime aContainerTime) const;
+
+  
+
+
+
+
+
+
+  SMILTimeValue ParentToContainerTime(SMILTime aParentTime) const;
 
   
 
@@ -247,7 +247,7 @@ class SMILTimeContainer {
   SMILTimeContainer* mParent;
 
   
-  nsSMILTime mCurrentTime;
+  SMILTime mCurrentTime;
 
   
   
@@ -255,10 +255,10 @@ class SMILTimeContainer {
   
   
   
-  nsSMILTime mParentOffset;
+  SMILTime mParentOffset;
 
   
-  nsSMILTime mPauseStart;
+  SMILTime mPauseStart;
 
   
   bool mNeedsPauseSample;

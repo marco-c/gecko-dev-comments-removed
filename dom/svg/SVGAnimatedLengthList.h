@@ -8,9 +8,9 @@
 #define MOZILLA_SVGANIMATEDLENGTHLIST_H__
 
 #include "mozilla/Attributes.h"
+#include "mozilla/SMILAttr.h"
 #include "mozilla/UniquePtr.h"
 #include "nsAutoPtr.h"
-#include "nsISMILAttr.h"
 #include "SVGLengthList.h"
 
 namespace mozilla {
@@ -68,9 +68,9 @@ class SVGAnimatedLengthList {
 
   bool IsAnimating() const { return !!mAnimVal; }
 
-  UniquePtr<nsISMILAttr> ToSMILAttr(dom::SVGElement* aSVGElement,
-                                    uint8_t aAttrEnum, uint8_t aAxis,
-                                    bool aCanZeroPadList);
+  UniquePtr<SMILAttr> ToSMILAttr(dom::SVGElement* aSVGElement,
+                                 uint8_t aAttrEnum, uint8_t aAxis,
+                                 bool aCanZeroPadList);
 
  private:
   
@@ -81,7 +81,7 @@ class SVGAnimatedLengthList {
   SVGLengthList mBaseVal;
   nsAutoPtr<SVGLengthList> mAnimVal;
 
-  struct SMILAnimatedLengthList : public nsISMILAttr {
+  struct SMILAnimatedLengthList : public SMILAttr {
    public:
     SMILAnimatedLengthList(SVGAnimatedLengthList* aVal,
                            dom::SVGElement* aSVGElement, uint8_t aAttrEnum,

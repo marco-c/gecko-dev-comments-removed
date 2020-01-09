@@ -26,9 +26,6 @@ class Element;
 
 class SMILCSSValueType : public SMILType {
  public:
-  typedef mozilla::dom::Element Element;
-  typedef mozilla::AnimationValue AnimationValue;
-
   
   static SMILCSSValueType sSingleton;
 
@@ -74,7 +71,8 @@ class SMILCSSValueType : public SMILType {
 
 
 
-  static void ValueFromString(nsCSSPropertyID aPropID, Element* aTargetElement,
+  static void ValueFromString(nsCSSPropertyID aPropID,
+                              dom::Element* aTargetElement,
                               const nsAString& aString, SMILValue& aValue,
                               bool* aIsContextSensitive);
 
@@ -90,7 +88,7 @@ class SMILCSSValueType : public SMILType {
 
 
   static SMILValue ValueFromAnimationValue(nsCSSPropertyID aPropID,
-                                           Element* aTargetElement,
+                                           dom::Element* aTargetElement,
                                            const AnimationValue& aValue);
 
   

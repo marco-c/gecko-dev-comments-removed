@@ -8,9 +8,9 @@
 #define MOZILLA_SVGANIMATEDTRANSFORMLIST_H__
 
 #include "mozilla/Attributes.h"
+#include "mozilla/SMILAttr.h"
 #include "mozilla/UniquePtr.h"
 #include "nsAutoPtr.h"
-#include "nsISMILAttr.h"
 #include "SVGTransformList.h"
 
 class nsAtom;
@@ -108,7 +108,7 @@ class SVGAnimatedTransformList {
     return mRequiresFrameReconstruction;
   }
 
-  mozilla::UniquePtr<nsISMILAttr> ToSMILAttr(dom::SVGElement* aSVGElement);
+  mozilla::UniquePtr<SMILAttr> ToSMILAttr(dom::SVGElement* aSVGElement);
 
  private:
   
@@ -122,7 +122,7 @@ class SVGAnimatedTransformList {
   
   bool mRequiresFrameReconstruction;
 
-  struct SMILAnimatedTransformList : public nsISMILAttr {
+  struct SMILAnimatedTransformList : public SMILAttr {
    public:
     SMILAnimatedTransformList(SVGAnimatedTransformList* aVal,
                               dom::SVGElement* aSVGElement)

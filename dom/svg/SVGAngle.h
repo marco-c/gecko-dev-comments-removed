@@ -7,9 +7,9 @@
 #ifndef __NS_SVGANGLE_H__
 #define __NS_SVGANGLE_H__
 
+#include "nsCOMPtr.h"
 #include "nsError.h"
-#include "nsISMILAttr.h"
-#include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/SMILAttr.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/SVGAngleBinding.h"
 #include "mozilla/UniquePtr.h"
@@ -67,7 +67,7 @@ class SVGAngle {
   static nsresult ToDOMSVGAngle(nsISupports** aResult);
   already_AddRefed<mozilla::dom::SVGAnimatedAngle> ToDOMAnimatedAngle(
       SVGElement* aSVGElement);
-  mozilla::UniquePtr<nsISMILAttr> ToSMILAttr(SVGElement* aSVGElement);
+  mozilla::UniquePtr<SMILAttr> ToSMILAttr(SVGElement* aSVGElement);
 
   static bool GetValueFromString(const nsAString& aString, float& aValue,
                                  uint16_t* aUnitType);
@@ -96,7 +96,7 @@ class SVGAngle {
   
   
 
-  struct SMILOrient final : public nsISMILAttr {
+  struct SMILOrient final : public SMILAttr {
    public:
     SMILOrient(mozilla::dom::nsSVGOrientType* aOrientType, SVGAngle* aAngle,
                SVGElement* aSVGElement)

@@ -10,7 +10,7 @@
 #define MOZILLA_SVGMOTIONSMILATTR_H_
 
 #include "mozilla/Attributes.h"
-#include "nsISMILAttr.h"
+#include "mozilla/SMILAttr.h"
 
 class nsIContent;
 
@@ -30,7 +30,7 @@ class SVGElement;
 
 
 
-class SVGMotionSMILAttr : public nsISMILAttr {
+class SVGMotionSMILAttr : public SMILAttr {
  public:
   explicit SVGMotionSMILAttr(dom::SVGElement* aSVGElement)
       : mSVGElement(aSVGElement) {}

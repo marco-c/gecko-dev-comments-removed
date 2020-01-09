@@ -38,7 +38,7 @@ namespace mozilla {
 
 class SMILMilestone {
  public:
-  SMILMilestone(nsSMILTime aTime, bool aIsEnd) : mTime(aTime), mIsEnd(aIsEnd) {}
+  SMILMilestone(SMILTime aTime, bool aIsEnd) : mTime(aTime), mIsEnd(aIsEnd) {}
 
   SMILMilestone() : mTime(0), mIsEnd(false) {}
 
@@ -64,7 +64,7 @@ class SMILMilestone {
     return !(*this < aOther);
   }
 
-  nsSMILTime mTime;  
+  SMILTime mTime;    
                      
   bool mIsEnd;       
                      

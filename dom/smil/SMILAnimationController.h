@@ -51,7 +51,7 @@ class SMILAnimationController final : public SMILTimeContainer,
   
   virtual void Pause(uint32_t aType) override;
   virtual void Resume(uint32_t aType) override;
-  virtual nsSMILTime GetParentTime() const override;
+  virtual SMILTime GetParentTime() const override;
 
   
   NS_IMETHOD_(MozExternalRefCountType) AddRef() override;
@@ -179,7 +179,7 @@ class SMILAnimationController final : public SMILTimeContainer,
   
   
   
-  nsSMILTime mAvgTimeBetweenSamples;
+  SMILTime mAvgTimeBetweenSamples;
 
   bool mResampleNeeded;
   

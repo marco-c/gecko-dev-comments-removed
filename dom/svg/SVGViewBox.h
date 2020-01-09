@@ -12,7 +12,7 @@
 #include "nsError.h"
 #include "SVGAttrTearoffTable.h"
 #include "mozilla/Attributes.h"
-#include "nsISMILAttr.h"
+#include "mozilla/SMILAttr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/SVGAnimatedRect.h"
 #include "mozilla/dom/SVGIRect.h"
@@ -92,7 +92,7 @@ class SVGViewBox {
   already_AddRefed<mozilla::dom::SVGIRect> ToDOMAnimVal(
       SVGElement* aSVGElement);
 
-  mozilla::UniquePtr<nsISMILAttr> ToSMILAttr(SVGElement* aSVGElement);
+  mozilla::UniquePtr<SMILAttr> ToSMILAttr(SVGElement* aSVGElement);
 
  private:
   SVGViewBoxRect mBaseVal;
@@ -183,7 +183,7 @@ class SVGViewBox {
     virtual ~DOMAnimVal();
   };
 
-  struct SMILViewBox : public nsISMILAttr {
+  struct SMILViewBox : public SMILAttr {
    public:
     SMILViewBox(SVGViewBox* aVal, SVGElement* aSVGElement)
         : mVal(aVal), mSVGElement(aSVGElement) {}

@@ -58,7 +58,7 @@ class SMILTimeValue {
       : mMilliseconds(kUnresolvedMillis), mState(STATE_UNRESOLVED) {}
 
   
-  explicit SMILTimeValue(nsSMILTime aMillis)
+  explicit SMILTimeValue(SMILTime aMillis)
       : mMilliseconds(aMillis), mState(STATE_DEFINITE) {}
 
   
@@ -81,14 +81,14 @@ class SMILTimeValue {
   }
 
   bool IsDefinite() const { return mState == STATE_DEFINITE; }
-  nsSMILTime GetMillis() const {
+  SMILTime GetMillis() const {
     MOZ_ASSERT(mState == STATE_DEFINITE,
                "GetMillis() called for unresolved or indefinite time");
 
     return mState == STATE_DEFINITE ? mMilliseconds : kUnresolvedMillis;
   }
 
-  void SetMillis(nsSMILTime aMillis) {
+  void SetMillis(SMILTime aMillis) {
     mState = STATE_DEFINITE;
     mMilliseconds = aMillis;
   }
@@ -120,9 +120,9 @@ class SMILTimeValue {
   }
 
  private:
-  static const nsSMILTime kUnresolvedMillis;
+  static const SMILTime kUnresolvedMillis;
 
-  nsSMILTime mMilliseconds;
+  SMILTime mMilliseconds;
   enum { STATE_DEFINITE, STATE_INDEFINITE, STATE_UNRESOLVED } mState;
 };
 

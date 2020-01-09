@@ -19,7 +19,6 @@ class SMILValue;
 namespace dom {
 class SVGAnimationElement;
 }  
-}  
 
 
 
@@ -30,9 +29,8 @@ class SVGAnimationElement;
 
 
 
-class nsISMILAttr {
+class SMILAttr {
  public:
-  typedef mozilla::SMILValue SMILValue;
   
 
 
@@ -94,7 +92,9 @@ class nsISMILAttr {
   
 
 
-  virtual ~nsISMILAttr() {}
+  virtual ~SMILAttr() {}
 };
+
+}  
 
 #endif  

@@ -10,9 +10,9 @@
 #include "nsAutoPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsError.h"
-#include "nsISMILAttr.h"
 #include "nsString.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/SMILAttr.h"
 #include "mozilla/UniquePtr.h"
 
 namespace mozilla {
@@ -40,13 +40,13 @@ class SVGClass {
   already_AddRefed<mozilla::dom::SVGAnimatedString> ToDOMAnimatedString(
       SVGElement* aSVGElement);
 
-  mozilla::UniquePtr<nsISMILAttr> ToSMILAttr(SVGElement* aSVGElement);
+  mozilla::UniquePtr<SMILAttr> ToSMILAttr(SVGElement* aSVGElement);
 
  private:
   nsAutoPtr<nsString> mAnimVal;
 
  public:
-  struct SMILString : public nsISMILAttr {
+  struct SMILString : public SMILAttr {
    public:
     SMILString(SVGClass* aVal, SVGElement* aSVGElement)
         : mVal(aVal), mSVGElement(aSVGElement) {}

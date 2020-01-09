@@ -10,10 +10,10 @@
 #include "nsCycleCollectionParticipant.h"
 #include "nsError.h"
 #include "SVGAnimatedInteger.h"
-#include "nsISMILAttr.h"
-#include "SVGElement.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/SMILAttr.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/dom/SVGElement.h"
 
 namespace mozilla {
 
@@ -52,7 +52,7 @@ class SVGInteger {
 
   already_AddRefed<mozilla::dom::SVGAnimatedInteger> ToDOMAnimatedInteger(
       SVGElement* aSVGElement);
-  mozilla::UniquePtr<nsISMILAttr> ToSMILAttr(SVGElement* aSVGElement);
+  mozilla::UniquePtr<SMILAttr> ToSMILAttr(SVGElement* aSVGElement);
 
  private:
   int32_t mAnimVal;
@@ -82,7 +82,7 @@ class SVGInteger {
     }
   };
 
-  struct SMILInteger : public nsISMILAttr {
+  struct SMILInteger : public SMILAttr {
    public:
     SMILInteger(SVGInteger* aVal, SVGElement* aSVGElement)
         : mVal(aVal), mSVGElement(aSVGElement) {}

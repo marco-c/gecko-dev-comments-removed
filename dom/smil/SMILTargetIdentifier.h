@@ -51,13 +51,13 @@ struct SMILTargetIdentifier {
 
 
 
-class nsSMILWeakTargetIdentifier {
+class SMILWeakTargetIdentifier {
  public:
   
-  nsSMILWeakTargetIdentifier() : mElement(nullptr), mAttributeName(nullptr) {}
+  SMILWeakTargetIdentifier() : mElement(nullptr), mAttributeName(nullptr) {}
 
   
-  nsSMILWeakTargetIdentifier& operator=(const SMILTargetIdentifier& aOther) {
+  SMILWeakTargetIdentifier& operator=(const SMILTargetIdentifier& aOther) {
     mElement = aOther.mElement;
     mAttributeName = aOther.mAttributeName;
     return *this;

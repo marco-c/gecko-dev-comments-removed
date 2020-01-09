@@ -23,7 +23,7 @@ namespace mozilla {
 
 
 
-typedef int64_t nsSMILTime;
+typedef int64_t SMILTime;
 
 }  
 

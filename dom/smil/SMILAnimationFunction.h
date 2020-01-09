@@ -7,6 +7,7 @@
 #ifndef NS_SMILANIMATIONFUNCTION_H_
 #define NS_SMILANIMATIONFUNCTION_H_
 
+#include "mozilla/SMILAttr.h"
 #include "mozilla/SMILKeySpline.h"
 #include "mozilla/SMILTargetIdentifier.h"
 #include "mozilla/SMILTimeValue.h"
@@ -14,7 +15,6 @@
 #include "mozilla/SMILValue.h"
 #include "nsAttrValue.h"
 #include "nsGkAtoms.h"
-#include "nsISMILAttr.h"
 #include "nsString.h"
 #include "nsTArray.h"
 
@@ -79,7 +79,7 @@ class SMILAnimationFunction {
 
 
 
-  void SampleAt(nsSMILTime aSampleTime, const SMILTimeValue& aSimpleDuration,
+  void SampleAt(SMILTime aSampleTime, const SMILTimeValue& aSimpleDuration,
                 uint32_t aRepeatIteration);
 
   
@@ -102,7 +102,7 @@ class SMILAnimationFunction {
 
 
 
-  void Activate(nsSMILTime aBeginTime);
+  void Activate(SMILTime aBeginTime);
 
   
 
@@ -124,7 +124,7 @@ class SMILAnimationFunction {
 
 
 
-  void ComposeResult(const nsISMILAttr& aSMILAttr, SMILValue& aResult);
+  void ComposeResult(const SMILAttr& aSMILAttr, SMILValue& aResult);
 
   
 
@@ -261,7 +261,7 @@ class SMILAnimationFunction {
   typedef FallibleTArray<SMILValue> SMILValueArray;
 
   
-  enum nsSMILCalcMode : uint8_t {
+  enum SMILCalcMode : uint8_t {
     CALC_LINEAR,
     CALC_DISCRETE,
     CALC_PACED,
@@ -269,12 +269,12 @@ class SMILAnimationFunction {
   };
 
   
-  nsSMILTime GetBeginTime() const { return mBeginTime; }
+  SMILTime GetBeginTime() const { return mBeginTime; }
 
   
   bool GetAccumulate() const;
   bool GetAdditive() const;
-  virtual nsSMILCalcMode GetCalcMode() const;
+  virtual SMILCalcMode GetCalcMode() const;
 
   
   nsresult SetAccumulate(const nsAString& aAccumulate, nsAttrValue& aResult);
@@ -305,7 +305,7 @@ class SMILAnimationFunction {
 
 
 
-  double ScaleSimpleProgress(double aProgress, nsSMILCalcMode aCalcMode);
+  double ScaleSimpleProgress(double aProgress, SMILCalcMode aCalcMode);
   
 
 
@@ -318,10 +318,10 @@ class SMILAnimationFunction {
   virtual const nsAttrValue* GetAttr(nsAtom* aAttName) const;
   virtual bool GetAttr(nsAtom* aAttName, nsAString& aResult) const;
 
-  bool ParseAttr(nsAtom* aAttName, const nsISMILAttr& aSMILAttr,
+  bool ParseAttr(nsAtom* aAttName, const SMILAttr& aSMILAttr,
                  SMILValue& aResult, bool& aPreventCachingOfSandwich) const;
 
-  virtual nsresult GetValues(const nsISMILAttr& aSMILAttr,
+  virtual nsresult GetValues(const SMILAttr& aSMILAttr,
                              SMILValueArray& aResult);
 
   virtual void CheckValueListDependentAttrs(uint32_t aNumValues);
@@ -405,11 +405,11 @@ class SMILAnimationFunction {
   
   
   
-  nsSMILTime mSampleTime;  
+  SMILTime mSampleTime;  
   SMILTimeValue mSimpleDuration;
   uint32_t mRepeatIteration;
 
-  nsSMILTime mBeginTime;  
+  SMILTime mBeginTime;  
 
   
   
@@ -425,7 +425,7 @@ class SMILAnimationFunction {
   
   
   
-  nsSMILWeakTargetIdentifier mLastTarget;
+  SMILWeakTargetIdentifier mLastTarget;
 
   
   bool mIsActive : 1;

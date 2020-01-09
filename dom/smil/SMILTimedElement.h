@@ -204,7 +204,7 @@ class SMILTimedElement {
 
 
 
-  void SampleAt(nsSMILTime aContainerTime);
+  void SampleAt(SMILTime aContainerTime);
 
   
 
@@ -218,7 +218,7 @@ class SMILTimedElement {
 
 
 
-  void SampleEndAt(nsSMILTime aContainerTime);
+  void SampleEndAt(SMILTime aContainerTime);
 
   
 
@@ -398,7 +398,7 @@ class SMILTimedElement {
   void ClearSpecs(TimeValueSpecList& aSpecs, InstanceTimeList& aInstances,
                   RemovalTestFunction aRemove);
   void ClearIntervals();
-  void DoSampleAt(nsSMILTime aContainerTime, bool aEndOnly);
+  void DoSampleAt(SMILTime aContainerTime, bool aEndOnly);
 
   
 
@@ -508,13 +508,13 @@ class SMILTimedElement {
                               const SMILTimeValue& aEnd) const;
   SMILTimeValue GetRepeatDuration() const;
   SMILTimeValue ApplyMinAndMax(const SMILTimeValue& aDuration) const;
-  nsSMILTime ActiveTimeToSimpleTime(nsSMILTime aActiveTime,
-                                    uint32_t& aRepeatIteration);
+  SMILTime ActiveTimeToSimpleTime(SMILTime aActiveTime,
+                                  uint32_t& aRepeatIteration);
   SMILInstanceTime* CheckForEarlyEnd(const SMILTimeValue& aContainerTime) const;
   void UpdateCurrentInterval(bool aForceChangeNotice = false);
-  void SampleSimpleTime(nsSMILTime aActiveTime);
+  void SampleSimpleTime(SMILTime aActiveTime);
   void SampleFillValue();
-  nsresult AddInstanceTimeFromCurrentTime(nsSMILTime aCurrentTime,
+  nsresult AddInstanceTimeFromCurrentTime(SMILTime aCurrentTime,
                                           double aOffsetSeconds, bool aIsBegin);
   void RegisterMilestone();
   bool GetNextMilestone(SMILMilestone& aNextMilestone) const;
@@ -564,16 +564,16 @@ class SMILTimedElement {
   SMILTimeValue mMin;
   SMILTimeValue mMax;
 
-  enum nsSMILFillMode : uint8_t { FILL_REMOVE, FILL_FREEZE };
-  nsSMILFillMode mFillMode;
+  enum SMILFillMode : uint8_t { FILL_REMOVE, FILL_FREEZE };
+  SMILFillMode mFillMode;
   static const nsAttrValue::EnumTable sFillModeTable[];
 
-  enum nsSMILRestartMode : uint8_t {
+  enum SMILRestartMode : uint8_t {
     RESTART_ALWAYS,
     RESTART_WHENNOTACTIVE,
     RESTART_NEVER
   };
-  nsSMILRestartMode mRestartMode;
+  SMILRestartMode mRestartMode;
   static const nsAttrValue::EnumTable sRestartModeTable[];
 
   InstanceTimeList mBeginInstances;
@@ -601,22 +601,22 @@ class SMILTimedElement {
 
 
 
-  enum nsSMILElementState {
+  enum SMILElementState {
     STATE_STARTUP,
     STATE_WAITING,
     STATE_ACTIVE,
     STATE_POSTACTIVE
   };
-  nsSMILElementState mElementState;
+  SMILElementState mElementState;
 
-  enum nsSMILSeekState {
+  enum SMILSeekState {
     SEEK_NOT_SEEKING,
     SEEK_FORWARD_FROM_ACTIVE,
     SEEK_FORWARD_FROM_INACTIVE,
     SEEK_BACKWARD_FROM_ACTIVE,
     SEEK_BACKWARD_FROM_INACTIVE
   };
-  nsSMILSeekState mSeekState;
+  SMILSeekState mSeekState;
 
   
   class AutoIntervalUpdateBatcher;

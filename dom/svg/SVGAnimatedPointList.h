@@ -8,9 +8,9 @@
 #define MOZILLA_SVGANIMATEDPOINTLIST_H__
 
 #include "mozilla/Attributes.h"
+#include "mozilla/SMILAttr.h"
 #include "mozilla/UniquePtr.h"
 #include "nsAutoPtr.h"
-#include "nsISMILAttr.h"
 #include "SVGPointList.h"
 
 namespace mozilla {
@@ -77,7 +77,7 @@ class SVGAnimatedPointList {
 
   bool IsAnimating() const { return !!mAnimVal; }
 
-  UniquePtr<nsISMILAttr> ToSMILAttr(dom::SVGElement* aElement);
+  UniquePtr<SMILAttr> ToSMILAttr(dom::SVGElement* aElement);
 
  private:
   
@@ -88,7 +88,7 @@ class SVGAnimatedPointList {
   SVGPointList mBaseVal;
   nsAutoPtr<SVGPointList> mAnimVal;
 
-  struct SMILAnimatedPointList : public nsISMILAttr {
+  struct SMILAnimatedPointList : public SMILAttr {
    public:
     SMILAnimatedPointList(SVGAnimatedPointList* aVal, dom::SVGElement* aElement)
         : mVal(aVal), mElement(aElement) {}

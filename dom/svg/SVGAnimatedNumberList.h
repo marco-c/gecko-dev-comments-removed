@@ -8,9 +8,9 @@
 #define MOZILLA_SVGANIMATEDNUMBERLIST_H__
 
 #include "mozilla/Attributes.h"
+#include "mozilla/SMILAttr.h"
 #include "mozilla/UniquePtr.h"
 #include "nsAutoPtr.h"
-#include "nsISMILAttr.h"
 #include "SVGNumberList.h"
 
 namespace mozilla {
@@ -75,8 +75,8 @@ class SVGAnimatedNumberList {
 
   bool IsAnimating() const { return !!mAnimVal; }
 
-  UniquePtr<nsISMILAttr> ToSMILAttr(dom::SVGElement* aSVGElement,
-                                    uint8_t aAttrEnum);
+  UniquePtr<SMILAttr> ToSMILAttr(dom::SVGElement* aSVGElement,
+                                 uint8_t aAttrEnum);
 
  private:
   
@@ -88,7 +88,7 @@ class SVGAnimatedNumberList {
   nsAutoPtr<SVGNumberList> mAnimVal;
   bool mIsBaseSet;
 
-  struct SMILAnimatedNumberList : public nsISMILAttr {
+  struct SMILAnimatedNumberList : public SMILAttr {
    public:
     SMILAnimatedNumberList(SVGAnimatedNumberList* aVal,
                            dom::SVGElement* aSVGElement, uint8_t aAttrEnum)

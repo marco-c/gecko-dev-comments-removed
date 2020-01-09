@@ -10,7 +10,7 @@
 #define NS_SMILCSSPROPERTY_H_
 
 #include "mozilla/Attributes.h"
-#include "nsISMILAttr.h"
+#include "mozilla/SMILAttr.h"
 #include "nsAtom.h"
 #include "nsCSSPropertyID.h"
 #include "nsCSSValue.h"
@@ -26,7 +26,7 @@ class Element;
 
 
 
-class SMILCSSProperty : public nsISMILAttr {
+class SMILCSSProperty : public SMILAttr {
  public:
   
 

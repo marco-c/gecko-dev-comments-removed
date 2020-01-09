@@ -9,8 +9,8 @@
 
 #include "nsCycleCollectionParticipant.h"
 #include "nsError.h"
-#include "nsISMILAttr.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/SMILAttr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/SVGAnimatedEnumeration.h"
 #include "mozilla/dom/SVGElement.h"
@@ -55,7 +55,7 @@ class SVGEnum {
   already_AddRefed<mozilla::dom::SVGAnimatedEnumeration> ToDOMAnimatedEnum(
       SVGElement* aSVGElement);
 
-  mozilla::UniquePtr<nsISMILAttr> ToSMILAttr(SVGElement* aSVGElement);
+  mozilla::UniquePtr<SMILAttr> ToSMILAttr(SVGElement* aSVGElement);
 
  private:
   SVGEnumValue mAnimVal;
@@ -89,7 +89,7 @@ class SVGEnum {
     }
   };
 
-  struct SMILEnum : public nsISMILAttr {
+  struct SMILEnum : public SMILAttr {
    public:
     SMILEnum(SVGEnum* aVal, SVGElement* aSVGElement)
         : mVal(aVal), mSVGElement(aSVGElement) {}

@@ -7,10 +7,10 @@
 #ifndef __NS_SVGBOOLEAN_H__
 #define __NS_SVGBOOLEAN_H__
 
+#include "nsCOMPtr.h"
 #include "nsError.h"
-#include "nsISMILAttr.h"
-#include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/SMILAttr.h"
 #include "mozilla/UniquePtr.h"
 
 class nsAtom;
@@ -46,7 +46,7 @@ class SVGBoolean {
 
   already_AddRefed<mozilla::dom::SVGAnimatedBoolean> ToDOMAnimatedBoolean(
       SVGElement* aSVGElement);
-  mozilla::UniquePtr<nsISMILAttr> ToSMILAttr(SVGElement* aSVGElement);
+  mozilla::UniquePtr<SMILAttr> ToSMILAttr(SVGElement* aSVGElement);
 
  private:
   bool mAnimVal;
@@ -55,7 +55,7 @@ class SVGBoolean {
   uint8_t mAttrEnum;  
 
  public:
-  struct SMILBool : public nsISMILAttr {
+  struct SMILBool : public SMILAttr {
    public:
     SMILBool(SVGBoolean* aVal, SVGElement* aSVGElement)
         : mVal(aVal), mSVGElement(aSVGElement) {}

@@ -9,11 +9,11 @@
 
 #include "nsCycleCollectionParticipant.h"
 #include "nsError.h"
-#include "nsISMILAttr.h"
 #include "nsMathUtils.h"
 #include "mozilla/dom/SVGAnimatedNumber.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/FloatingPoint.h"
+#include "mozilla/SMILAttr.h"
 #include "mozilla/UniquePtr.h"
 
 namespace mozilla {
@@ -61,7 +61,7 @@ class SVGNumberPair {
 
   already_AddRefed<mozilla::dom::SVGAnimatedNumber> ToDOMAnimatedNumber(
       PairIndex aIndex, SVGElement* aSVGElement);
-  mozilla::UniquePtr<nsISMILAttr> ToSMILAttr(SVGElement* aSVGElement);
+  mozilla::UniquePtr<SMILAttr> ToSMILAttr(SVGElement* aSVGElement);
 
  private:
   float mAnimVal[2];
@@ -96,7 +96,7 @@ class SVGNumberPair {
     }
   };
 
-  struct SMILNumberPair : public nsISMILAttr {
+  struct SMILNumberPair : public SMILAttr {
    public:
     SMILNumberPair(SVGNumberPair* aVal, SVGElement* aSVGElement)
         : mVal(aVal), mSVGElement(aSVGElement) {}

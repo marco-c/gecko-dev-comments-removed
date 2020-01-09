@@ -50,7 +50,7 @@ class SVGString {
   already_AddRefed<mozilla::dom::SVGAnimatedString> ToDOMAnimatedString(
       SVGElement* aSVGElement);
 
-  mozilla::UniquePtr<nsISMILAttr> ToSMILAttr(SVGElement* aSVGElement);
+  mozilla::UniquePtr<SMILAttr> ToSMILAttr(SVGElement* aSVGElement);
 
  private:
   nsAutoPtr<nsString> mAnimVal;
@@ -83,7 +83,7 @@ class SVGString {
    private:
     virtual ~DOMAnimatedString();
   };
-  struct SMILString : public nsISMILAttr {
+  struct SMILString : public SMILAttr {
    public:
     SMILString(SVGString* aVal, SVGElement* aSVGElement)
         : mVal(aVal), mSVGElement(aSVGElement) {}

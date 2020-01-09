@@ -99,8 +99,8 @@ void SMILAnimationController::Resume(uint32_t aType) {
   }
 }
 
-nsSMILTime SMILAnimationController::GetParentTime() const {
-  return (nsSMILTime)(mCurrentSampleTime - mStartTime).ToMilliseconds();
+SMILTime SMILAnimationController::GetParentTime() const {
+  return (SMILTime)(mCurrentSampleTime - mStartTime).ToMilliseconds();
 }
 
 
@@ -132,8 +132,8 @@ void SMILAnimationController::WillRefresh(mozilla::TimeStamp aTime) {
   
   static const double SAMPLE_DEV_THRESHOLD = 200.0;
 
-  nsSMILTime elapsedTime =
-      (nsSMILTime)(aTime - mCurrentSampleTime).ToMilliseconds();
+  SMILTime elapsedTime =
+      (SMILTime)(aTime - mCurrentSampleTime).ToMilliseconds();
   if (mAvgTimeBetweenSamples == 0) {
     
     mAvgTimeBetweenSamples = elapsedTime;
@@ -148,8 +148,8 @@ void SMILAnimationController::WillRefresh(mozilla::TimeStamp aTime) {
     
     
     mAvgTimeBetweenSamples =
-        (nsSMILTime)(elapsedTime * SAMPLE_DUR_WEIGHTING +
-                     mAvgTimeBetweenSamples * (1.0 - SAMPLE_DUR_WEIGHTING));
+        (SMILTime)(elapsedTime * SAMPLE_DUR_WEIGHTING +
+                   mAvgTimeBetweenSamples * (1.0 - SAMPLE_DUR_WEIGHTING));
   }
   mCurrentSampleTime = aTime;
 
@@ -464,7 +464,7 @@ void SMILAnimationController::DoMilestoneSamples() {
   
   
 
-  nsSMILTime sampleTime = INT64_MIN;
+  SMILTime sampleTime = INT64_MIN;
 
   while (true) {
     
@@ -526,8 +526,8 @@ void SMILAnimationController::DoMilestoneSamples() {
       if (!containerTimeValue.IsDefinite()) continue;
 
       
-      nsSMILTime containerTime =
-          std::max<nsSMILTime>(0, containerTimeValue.GetMillis());
+      SMILTime containerTime =
+          std::max<SMILTime>(0, containerTimeValue.GetMillis());
 
       if (nextMilestone.mIsEnd) {
         elem->TimedElement().SampleEndAt(containerTime);
@@ -554,7 +554,7 @@ void SMILAnimationController::DoMilestoneSamples() {
   
   if (!aActiveContainers->GetEntry(timeContainer)) return;
 
-  nsSMILTime containerTime = timeContainer->GetCurrentTimeAsSMILTime();
+  SMILTime containerTime = timeContainer->GetCurrentTimeAsSMILTime();
 
   MOZ_ASSERT(!timeContainer->IsSeeking(),
              "Doing a regular sample but the time container is still seeking");
