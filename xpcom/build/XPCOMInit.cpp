@@ -14,7 +14,6 @@
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/VideoDecoderManagerChild.h"
 #include "mozilla/XPCOM.h"
-#include "mozJSComponentLoader.h"
 #include "nsXULAppAPI.h"
 
 #ifndef ANDROID
@@ -592,6 +591,7 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
   }
 
   nsresult rv;
+  nsCOMPtr<nsISimpleEnumerator> moduleLoaders;
 
   
   {
@@ -662,7 +662,13 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
     
     mozilla::InitLateWriteChecks();
 
+    
+    
     if (observerService) {
+      mozilla::KillClearOnShutdown(ShutdownPhase::ShutdownLoaders);
+      observerService->EnumerateObservers(NS_XPCOM_SHUTDOWN_LOADERS_OBSERVER_ID,
+                                          getter_AddRefs(moduleLoaders));
+
       observerService->Shutdown();
     }
   }
@@ -692,11 +698,28 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
   free(gGREBinPath);
   gGREBinPath = nullptr;
 
-  
-  
-  
-  
-  mozJSComponentLoader::Unload();
+  if (moduleLoaders) {
+    bool more;
+    nsCOMPtr<nsISupports> el;
+    while (NS_SUCCEEDED(moduleLoaders->HasMoreElements(&more)) && more) {
+      moduleLoaders->GetNext(getter_AddRefs(el));
+
+      
+      
+      
+
+      
+      
+      
+      
+      nsCOMPtr<nsIObserver> obs(do_QueryInterface(el));
+      if (obs) {
+        obs->Observe(nullptr, NS_XPCOM_SHUTDOWN_LOADERS_OBSERVER_ID, nullptr);
+      }
+    }
+
+    moduleLoaders = nullptr;
+  }
 
   
   
