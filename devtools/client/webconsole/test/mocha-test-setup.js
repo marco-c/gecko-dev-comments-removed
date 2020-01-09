@@ -68,6 +68,12 @@ if (!global.URLSearchParams) {
 }
 
 
+global.ChromeUtils = {
+  import: () => {},
+  defineModuleGetter: () => {},
+};
+
+
 const requireHacker = require("require-hacker");
 requireHacker.global_hook("default", (path, module) => {
   switch (path) {
@@ -86,8 +92,6 @@ requireHacker.global_hook("default", (path, module) => {
       return getModule("devtools/client/shared/vendor/react-dev");
     case "chrome":
       return `module.exports = { Cc: {}, Ci: {}, Cu: {} }`;
-    case "ChromeUtils":
-      return `module.exports = { import: () => {} }`;
   }
 
   
