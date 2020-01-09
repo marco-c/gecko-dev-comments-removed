@@ -1,8 +1,14 @@
-use quote::ToTokens;
+
+
+
+
+
+
+
+
 use std::cell::RefCell;
 use std::fmt::Display;
 use std::thread;
-use syn;
 
 
 
@@ -13,7 +19,7 @@ use syn;
 pub struct Ctxt {
     
     
-    errors: RefCell<Option<Vec<syn::Error>>>,
+    errors: RefCell<Option<Vec<String>>>,
 }
 
 impl Ctxt {
@@ -27,23 +33,28 @@ impl Ctxt {
     }
 
     
-    
-    
-    pub fn error_spanned_by<A: ToTokens, T: Display>(&self, obj: A, msg: T) {
+    pub fn error<T: Display>(&self, msg: T) {
         self.errors
             .borrow_mut()
             .as_mut()
             .unwrap()
-            
-            .push(syn::Error::new_spanned(obj.into_token_stream(), msg));
+            .push(msg.to_string());
     }
 
     
-    pub fn check(self) -> Result<(), Vec<syn::Error>> {
-        let errors = self.errors.borrow_mut().take().unwrap();
+    pub fn check(self) -> Result<(), String> {
+        let mut errors = self.errors.borrow_mut().take().unwrap();
         match errors.len() {
             0 => Ok(()),
-            _ => Err(errors),
+            1 => Err(errors.pop().unwrap()),
+            n => {
+                let mut msg = format!("{} errors:", n);
+                for err in errors {
+                    msg.push_str("\n\t# ");
+                    msg.push_str(&err);
+                }
+                Err(msg)
+            }
         }
     }
 }
