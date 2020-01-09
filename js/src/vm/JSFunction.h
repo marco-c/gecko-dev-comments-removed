@@ -894,6 +894,19 @@ extern JSFunction* NewScriptedFunction(
     HandleObject proto = nullptr,
     gc::AllocKind allocKind = gc::AllocKind::FUNCTION,
     NewObjectKind newKind = GenericObject, HandleObject enclosingEnv = nullptr);
+
+
+
+
+
+
+
+
+
+extern bool GetFunctionPrototype(JSContext* cx, js::GeneratorKind generatorKind,
+                                 js::FunctionAsyncKind asyncKind,
+                                 js::MutableHandleObject proto);
+
 extern JSAtom* IdToFunctionName(
     JSContext* cx, HandleId id,
     FunctionPrefixKind prefixKind = FunctionPrefixKind::None);
