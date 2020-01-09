@@ -350,7 +350,7 @@
 
 
  \
-    MACRO(JSOP_POS, 35, "pos", "+ ", 1, 1, 1, JOF_BYTE|JOF_IC) \
+    MACRO(JSOP_POS, 35, "pos", "+ ", 1, 1, 1, JOF_BYTE) \
     
 
 
@@ -2529,7 +2529,15 @@
 
 
  \
-    IF_BIGINT(MACRO(JSOP_BIGINT, 236, "bigint", NULL, 5, 0, 1, JOF_BIGINT),)
+    MACRO(JSOP_TONUMERIC, 236, "tonumeric", NULL, 1, 1, 1, JOF_BYTE) \
+    
+
+
+
+
+
+ \
+    IF_BIGINT(MACRO(JSOP_BIGINT, 237, "bigint", NULL, 5, 0, 1, JOF_BIGINT),)
 
 
 
@@ -2537,8 +2545,7 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
-  IF_BIGINT(, MACRO(236))                      \
-  MACRO(237)                                   \
+  IF_BIGINT(, MACRO(237))                      \
   MACRO(238)                                   \
   MACRO(239)                                   \
   MACRO(240)                                   \

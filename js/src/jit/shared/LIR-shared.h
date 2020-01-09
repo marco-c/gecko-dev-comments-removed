@@ -5745,6 +5745,22 @@ class LLoadUnboxedExpando : public LInstructionHelper<1, 1, 0> {
 };
 
 
+
+class LToNumeric : public LInstructionHelper<BOX_PIECES, BOX_PIECES, 0> {
+ public:
+  LIR_HEADER(ToNumeric)
+
+  explicit LToNumeric(const LBoxAllocation& input)
+      : LInstructionHelper(classOpcode) {
+    setBoxOperand(Input, input);
+  }
+
+  static const size_t Input = 0;
+
+  const MToNumeric* mir() const { return mir_->toToNumeric(); }
+};
+
+
 class LTypeBarrierV : public LInstructionHelper<BOX_PIECES, BOX_PIECES, 2> {
  public:
   LIR_HEADER(TypeBarrierV)

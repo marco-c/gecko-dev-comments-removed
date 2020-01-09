@@ -1668,8 +1668,29 @@ bool BaselineCodeGen<Handler>::emit_JSOP_POS() {
   Label done;
   masm.branchTestNumber(Assembler::Equal, R0, &done);
 
+  prepareVMCall();
+  pushArg(R0);
+  if (!callVM(ToNumberInfo)) {
+    return false;
+  }
+
+  masm.bind(&done);
+  frame.push(R0);
+  return true;
+}
+
+template <typename Handler>
+bool BaselineCodeGen<Handler>::emit_JSOP_TONUMERIC() {
   
-  if (!emitNextIC()) {
+  frame.popRegsAndSync(1);
+
+  
+  Label done;
+  masm.branchTestNumber(Assembler::Equal, R0, &done);
+
+  prepareVMCall();
+  pushArg(R0);
+  if (!callVM(ToNumericInfo)) {
     return false;
   }
 

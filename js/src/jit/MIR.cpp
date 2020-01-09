@@ -3869,6 +3869,21 @@ bool MResumePoint::isRecoverableOperand(MUse* u) const {
   return block()->info().isRecoverableOperand(indexOf(u));
 }
 
+MDefinition* MToNumeric::foldsTo(TempAllocator& alloc) {
+  MDefinition* input = getOperand(0);
+
+  if (input->isBox()) {
+    MDefinition* unboxed = input->getOperand(0);
+    if (IsNumericType(unboxed->type())) {
+      
+      
+      return input;
+    }
+  }
+
+  return this;
+}
+
 MDefinition* MToNumberInt32::foldsTo(TempAllocator& alloc) {
   MDefinition* input = getOperand(0);
 

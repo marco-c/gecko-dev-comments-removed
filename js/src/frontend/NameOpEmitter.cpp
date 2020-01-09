@@ -357,7 +357,7 @@ bool NameOpEmitter::emitIncDec() {
     
     return false;
   }
-  if (!bce_->emit1(JSOP_POS)) {
+  if (!bce_->emit1(JSOP_TONUMERIC)) {
     
     return false;
   }
