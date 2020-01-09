@@ -18,6 +18,7 @@ use crate::stylist::CascadeData;
 
 
 
+#[derive(MallocSizeOf)]
 pub struct AuthorStyles<S>
 where
     S: StylesheetInDocument + PartialEq + 'static,
