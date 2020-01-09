@@ -568,6 +568,36 @@ bool DwarfCUToModule::InlinedSubroutineHandler::EndAttributes() {
 }
 
 
+class DwarfCUToModule::LexicalBlockHandler: public GenericDIEHandler {
+ public:
+  LexicalBlockHandler(CUContext *cu_context, DIEContext *parent_context,
+                      uint64 offset)
+      : GenericDIEHandler(cu_context, parent_context, offset) {}
+
+  bool EndAttributes();
+
+  DIEHandler* FindChildHandler(uint64 offset, enum DwarfTag tag);
+};
+
+
+bool DwarfCUToModule::LexicalBlockHandler::EndAttributes() {
+  
+  return true;
+}
+
+dwarf2reader::DIEHandler* DwarfCUToModule::LexicalBlockHandler::FindChildHandler(
+    uint64 offset,
+    enum DwarfTag tag) {
+  switch (tag) {
+    case dwarf2reader::DW_TAG_inlined_subroutine:
+      return new InlinedSubroutineHandler(cu_context_, parent_context_, offset);
+
+    default:
+      return NULL;
+  }
+}
+
+
 class DwarfCUToModule::FuncHandler: public GenericDIEHandler {
  public:
   FuncHandler(CUContext *cu_context, DIEContext *parent_context,
@@ -746,6 +776,14 @@ dwarf2reader::DIEHandler *DwarfCUToModule::FuncHandler::FindChildHandler(
   switch (tag) {
     case dwarf2reader::DW_TAG_inlined_subroutine:
       return new InlinedSubroutineHandler(cu_context_, parent_context_, offset);
+
+      
+      
+      
+      
+      
+    case dwarf2reader::DW_TAG_lexical_block:
+      return new LexicalBlockHandler(cu_context_, parent_context_, offset);
 
     default:
       return NULL;
