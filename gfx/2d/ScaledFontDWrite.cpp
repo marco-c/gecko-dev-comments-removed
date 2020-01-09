@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ScaledFontDWrite.h"
 #include "UnscaledFontDWrite.h"
@@ -15,14 +15,14 @@
 
 #include "dwrite_3.h"
 
-
-
-
-
-
-
-
-
+// Currently, we build with WINVER=0x601 (Win7), which means newer
+// declarations in dwrite_3.h will not be visible. Also, we don't
+// yet have the Fall Creators Update SDK available on build machines,
+// so even with updated WINVER, some of the interfaces we need would
+// not be present.
+// To work around this, until the build environment is updated,
+// we #include an extra header that contains copies of the relevant
+// classes/interfaces we need.
 #if !defined(__MINGW32__) && WINVER < 0x0A00
 #  include "dw-extra.h"
 #endif
@@ -68,8 +68,8 @@ static bool DoGrayscale(IDWriteFontFace* aDWFace, Float ppem) {
       return true;
     }
     struct gaspRange {
-      unsigned short maxPPEM;   
-      unsigned short behavior;  
+      unsigned short maxPPEM;   // Stored big-endian
+      unsigned short behavior;  // Stored big-endian
     };
     unsigned short numRanges = readShort(tableData + 2);
     if (tableSize < (UINT)4 + numRanges * 4) {
@@ -140,7 +140,7 @@ ScaledFontDWrite::ScaledFontDWrite(IDWriteFontFace* aFontFace,
   if (aStyle) {
     mStyle = SkFontStyle(aStyle->weight.ToIntRounded(),
                          DWriteFontStretchFromStretch(aStyle->stretch),
-                         
+                         // FIXME(jwatt): also use kOblique_Slant
                          aStyle->style == FontSlantStyle::Normal()
                              ? SkFontStyle::kUpright_Slant
                              : SkFontStyle::kItalic_Slant);
@@ -172,13 +172,13 @@ SkTypeface* ScaledFontDWrite::CreateSkTypeface() {
   }
 
   Float gamma = mGamma;
-  
+  // Skia doesn't support a gamma value outside of 0-4, so default to 2.2
   if (gamma < 0.0f || gamma > 4.0f) {
     gamma = 2.2f;
   }
 
   Float contrast = mContrast;
-  
+  // Skia doesn't support a contrast value outside of 0-1, so default to 1.0
   if (contrast < 0.0f || contrast > 1.0f) {
     contrast = 1.0f;
   }
@@ -286,10 +286,10 @@ bool UnscaledFontDWrite::GetFontFileData(FontFileDataOutput aDataCallback,
 
   const void* referenceKey;
   UINT32 refKeySize;
-  
-  
-  
-  
+  // XXX - This can currently crash for webfonts, as when we get the reference
+  // key out of the file, that can be an invalid reference key for the loader
+  // we use it with. The fix to this is not obvious but it will probably
+  // have to happen inside thebes.
   file->GetReferenceKey(&referenceKey, &refKeySize);
 
   RefPtr<IDWriteFontFileLoader> loader;
@@ -318,112 +318,65 @@ bool UnscaledFontDWrite::GetFontFileData(FontFileDataOutput aDataCallback,
   return true;
 }
 
-static bool GetDWriteName(RefPtr<IDWriteLocalizedStrings> aNames,
-                          std::vector<WCHAR>& aOutName) {
-  BOOL exists = false;
-  UINT32 index = 0;
-  HRESULT hr = aNames->FindLocaleName(L"en-us", &index, &exists);
-  if (FAILED(hr)) {
-    return false;
-  }
-  if (!exists) {
-    
-    index = 0;
-  }
-
-  UINT32 length;
-  hr = aNames->GetStringLength(index, &length);
-  if (FAILED(hr)) {
-    return false;
-  }
-  aOutName.resize(length + 1);
-  hr = aNames->GetString(index, aOutName.data(), length + 1);
-  return SUCCEEDED(hr);
-}
-
-static bool GetDWriteFamilyName(const RefPtr<IDWriteFontFamily>& aFamily,
-                                std::vector<WCHAR>& aOutName) {
-  RefPtr<IDWriteLocalizedStrings> names;
-  HRESULT hr = aFamily->GetFamilyNames(getter_AddRefs(names));
-  if (FAILED(hr)) {
-    return false;
-  }
-  return GetDWriteName(names, aOutName);
-}
-
-static void GetFontFileNames(RefPtr<IDWriteFontFace> aFontFace,
-                             std::vector<WCHAR>& aFamilyName,
-                             std::vector<WCHAR>& aFileNames) {
-  MOZ_ASSERT(aFamilyName.size() >= 1 && aFamilyName.back() == 0);
-
+static bool GetFontFileName(RefPtr<IDWriteFontFace> aFontFace,
+                            std::vector<WCHAR>& aFileName) {
   UINT32 numFiles;
   HRESULT hr = aFontFace->GetFiles(&numFiles, nullptr);
   if (FAILED(hr)) {
-    gfxCriticalNote << "Failed getting file count for font \""
-                    << &aFamilyName[0] << "\"";
-    return;
-  } else if (!numFiles) {
-    gfxCriticalNote << "No files found for font \"" << &aFamilyName[0] << "\"";
-    return;
-  }
-  std::vector<RefPtr<IDWriteFontFile>> files;
-  files.resize(numFiles);
-  hr = aFontFace->GetFiles(&numFiles, getter_AddRefs(files[0]));
-  if (FAILED(hr)) {
-    gfxCriticalNote << "Failed getting files for font \"" << &aFamilyName[0]
-                    << "\"";
-    return;
+    gfxDebug() << "Failed getting file count for WR font";
+    return false;
+  } else if (numFiles != 1) {
+    gfxDebug() << "Invalid file count " << numFiles << " for WR font";
+    return false;
   }
 
-  for (auto& file : files) {
-    const void* key;
-    UINT32 keySize;
-    hr = file->GetReferenceKey(&key, &keySize);
-    if (FAILED(hr)) {
-      gfxCriticalNote << "Failed getting file ref key for font \""
-                      << &aFamilyName[0] << "\"";
-      return;
-    }
-    RefPtr<IDWriteFontFileLoader> loader;
-    hr = file->GetLoader(getter_AddRefs(loader));
-    if (FAILED(hr)) {
-      gfxCriticalNote << "Failed getting file loader for font \""
-                      << &aFamilyName[0] << "\"";
-      return;
-    }
-    RefPtr<IDWriteLocalFontFileLoader> localLoader;
-    loader->QueryInterface(__uuidof(IDWriteLocalFontFileLoader),
-                           (void**)getter_AddRefs(localLoader));
-    if (!localLoader) {
-      gfxCriticalNote << "Failed querying loader interface for font \""
-                      << &aFamilyName[0] << "\"";
-      return;
-    }
-    UINT32 pathLen;
-    hr = localLoader->GetFilePathLengthFromKey(key, keySize, &pathLen);
-    if (FAILED(hr)) {
-      gfxCriticalNote << "Failed getting path length for font \""
-                      << &aFamilyName[0] << "\"";
-      return;
-    }
-    size_t offset = aFileNames.size();
-    aFileNames.resize(offset + pathLen + 1);
-    hr = localLoader->GetFilePathFromKey(key, keySize, &aFileNames[offset],
-                                         pathLen + 1);
-    if (FAILED(hr)) {
-      aFileNames.resize(offset);
-      gfxCriticalNote << "Failed getting path for font \"" << &aFamilyName[0]
-                      << "\"";
-      return;
-    }
-    MOZ_ASSERT(aFileNames.back() == 0);
-    DWORD attribs = GetFileAttributesW(&aFileNames[offset]);
-    if (attribs == INVALID_FILE_ATTRIBUTES) {
-      gfxCriticalNote << "sending font family \"" << &aFamilyName[0]
-                      << "\" with invalid file \"" << &aFileNames[offset]
-                      << "\"";
-    }
+  RefPtr<IDWriteFontFile> file;
+  hr = aFontFace->GetFiles(&numFiles, getter_AddRefs(file));
+  if (FAILED(hr)) {
+    gfxDebug() << "Failed getting file for WR font";
+    return false;
   }
+
+  const void* key;
+  UINT32 keySize;
+  hr = file->GetReferenceKey(&key, &keySize);
+  if (FAILED(hr)) {
+    gfxDebug() << "Failed getting file ref key for WR font";
+    return false;
+  }
+  RefPtr<IDWriteFontFileLoader> loader;
+  hr = file->GetLoader(getter_AddRefs(loader));
+  if (FAILED(hr)) {
+    gfxDebug() << "Failed getting file loader for WR font";
+    return false;
+  }
+  RefPtr<IDWriteLocalFontFileLoader> localLoader;
+  loader->QueryInterface(__uuidof(IDWriteLocalFontFileLoader),
+                         (void**)getter_AddRefs(localLoader));
+  if (!localLoader) {
+    gfxDebug() << "Failed querying loader interface for WR font";
+    return false;
+  }
+  UINT32 pathLen;
+  hr = localLoader->GetFilePathLengthFromKey(key, keySize, &pathLen);
+  if (FAILED(hr)) {
+    gfxDebug() << "Failed getting path length for WR font";
+    return false;
+  }
+  aFileName.resize(pathLen + 1);
+  hr = localLoader->GetFilePathFromKey(key, keySize, aFileName.data(),
+                                       pathLen + 1);
+  if (FAILED(hr) || aFileName.back() != 0) {
+    gfxDebug() << "Failed getting path for WR font";
+    return false;
+  }
+  DWORD attribs = GetFileAttributesW(aFileName.data());
+  if (attribs == INVALID_FILE_ATTRIBUTES) {
+    gfxDebug() << "Invalid file \"" << aFileName.data() << "\" for WR font";
+    return false;
+  }
+  aFileName.pop_back();
+  return true;
 }
 
 bool UnscaledFontDWrite::GetWRFontDescriptor(WRFontDescriptorOutput aCb,
@@ -432,52 +385,14 @@ bool UnscaledFontDWrite::GetWRFontDescriptor(WRFontDescriptorOutput aCb,
     return false;
   }
 
-  RefPtr<IDWriteFontFamily> family;
-  HRESULT hr = mFont->GetFontFamily(getter_AddRefs(family));
-  if (FAILED(hr)) {
+  std::vector<WCHAR> fileName;
+  if (!GetFontFileName(mFontFace, fileName)) {
     return false;
   }
+  uint32_t index = mFontFace->GetIndex();
 
-  DWRITE_FONT_WEIGHT weight = mFont->GetWeight();
-  DWRITE_FONT_STRETCH stretch = mFont->GetStretch();
-  DWRITE_FONT_STYLE style = mFont->GetStyle();
-
-  RefPtr<IDWriteFont> match;
-  hr = family->GetFirstMatchingFont(weight, stretch, style,
-                                    getter_AddRefs(match));
-  if (FAILED(hr) || match->GetWeight() != weight ||
-      match->GetStretch() != stretch || match->GetStyle() != style) {
-    return false;
-  }
-
-  std::vector<WCHAR> familyName;
-  if (!GetDWriteFamilyName(family, familyName)) {
-    return false;
-  }
-
-  RefPtr<IDWriteFontCollection> systemFonts = Factory::GetDWriteSystemFonts();
-  if (!systemFonts) {
-    return false;
-  }
-
-  UINT32 idx;
-  BOOL exists;
-  hr = systemFonts->FindFamilyName(familyName.data(), &idx, &exists);
-  if (FAILED(hr) || !exists) {
-    return false;
-  }
-
-  
-  GetFontFileNames(mFontFace, familyName, familyName);
-
-  
-  
-  
-  
-  
-  uint32_t index = weight | (stretch << 16) | (style << 24);
-  aCb(reinterpret_cast<const uint8_t*>(familyName.data()),
-      familyName.size() * sizeof(WCHAR), index, aBaton);
+  aCb(reinterpret_cast<const uint8_t*>(fileName.data()),
+      fileName.size() * sizeof(WCHAR), index, aBaton);
   return true;
 }
 
@@ -502,8 +417,8 @@ ScaledFontDWrite::InstanceData::InstanceData(
   }
 }
 
-
-
+// Helper for ScaledFontDWrite::GetFontInstanceData: if the font has variation
+// axes, get their current values into the aOutput vector.
 static void GetVariationsFromFontFace(IDWriteFontFace* aFace,
                                       std::vector<FontVariation>* aOutput) {
   RefPtr<IDWriteFontFace5> ff5;
@@ -545,7 +460,7 @@ bool ScaledFontDWrite::GetFontInstanceData(FontInstanceDataOutput aCb,
                                            void* aBaton) {
   InstanceData instance(this);
 
-  
+  // If the font has variations, get the list of axis values.
   std::vector<FontVariation> variations;
   GetVariationsFromFontFace(mFontFace, &variations);
 
@@ -590,9 +505,9 @@ bool ScaledFontDWrite::GetWRFontInstanceOptions(
   return true;
 }
 
-
-
-
+// Helper for UnscaledFontDWrite::CreateScaledFont: create a clone of the
+// given IDWriteFontFace, with specified variation-axis values applied.
+// Returns nullptr in case of failure.
 static already_AddRefed<IDWriteFontFace5> CreateFaceWithVariations(
     IDWriteFontFace* aFace, const FontVariation* aVariations,
     uint32_t aNumVariations) {
@@ -645,8 +560,8 @@ already_AddRefed<ScaledFont> UnscaledFontDWrite::CreateScaledFont(
 
   IDWriteFontFace* face = mFontFace;
 
-  
-  
+  // If variations are required, we create a separate IDWriteFontFace5 with
+  // the requested settings applied.
   RefPtr<IDWriteFontFace5> ff5;
   if (aNumVariations) {
     ff5 = CreateFaceWithVariations(mFontFace, aVariations, aNumVariations);
@@ -700,5 +615,5 @@ cairo_font_face_t* ScaledFontDWrite::GetCairoFontFace() {
 }
 #endif
 
-}  
-}  
+}  // namespace gfx
+}  // namespace mozilla
