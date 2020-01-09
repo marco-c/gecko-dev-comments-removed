@@ -7636,11 +7636,43 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
                                        PropListType type) {
   
 
+  size_t curFieldKeyIndex = 0;
   for (ParseNode* propdef : obj->contents()) {
     if (propdef->is<ClassField>()) {
+      MOZ_ASSERT(type == ClassBody);
       
       
-      
+      ClassField* field = &propdef->as<ClassField>();
+      if (field->name().getKind() == ParseNodeKind::ComputedName) {
+        if (!emitGetName(cx->names().dotFieldKeys)) {
+          
+          return false;
+        }
+
+        ParseNode* nameExpr = field->name().as<UnaryNode>().kid();
+
+        if (!emitTree(nameExpr)) {
+          
+          return false;
+        }
+
+        if (!emit1(JSOP_TOID)) {
+          
+          return false;
+        }
+
+        if (!emitUint32Operand(JSOP_INITELEM_ARRAY, curFieldKeyIndex)) {
+          
+          return false;
+        }
+
+        if (!emit1(JSOP_POP)) {
+          
+          return false;
+        }
+
+        curFieldKeyIndex++;
+      }
       continue;
     }
 
@@ -7945,6 +7977,7 @@ FieldInitializers BytecodeEmitter::setupFieldInitializers(
 
 
 
+
 bool BytecodeEmitter::emitCreateFieldKeys(ListNode* obj) {
   size_t numFieldKeys = 0;
   for (ParseNode* propdef : obj->contents()) {
@@ -7970,34 +8003,6 @@ bool BytecodeEmitter::emitCreateFieldKeys(ListNode* obj) {
     
     return false;
   }
-
-  size_t curFieldKeyIndex = 0;
-  for (ParseNode* propdef : obj->contents()) {
-    if (propdef->is<ClassField>()) {
-      ClassField* field = &propdef->as<ClassField>();
-      if (field->name().getKind() == ParseNodeKind::ComputedName) {
-        ParseNode* nameExpr = field->name().as<UnaryNode>().kid();
-
-        if (!emitTree(nameExpr)) {
-          
-          return false;
-        }
-
-        if (!emit1(JSOP_TOID)) {
-          
-          return false;
-        }
-
-        if (!emitUint32Operand(JSOP_INITELEM_ARRAY, curFieldKeyIndex)) {
-          
-          return false;
-        }
-
-        curFieldKeyIndex++;
-      }
-    }
-  }
-  MOZ_ASSERT(curFieldKeyIndex == numFieldKeys);
 
   if (!noe.emitAssignment()) {
     
@@ -8777,12 +8782,13 @@ bool BytecodeEmitter::emitClass(
       return false;
     }
   }
-  if (!emitPropertyList(classMembers, ce, ClassBody)) {
-    
+
+  if (!emitCreateFieldKeys(classMembers)) {
     return false;
   }
 
-  if (!emitCreateFieldKeys(classMembers)) {
+  if (!emitPropertyList(classMembers, ce, ClassBody)) {
+    
     return false;
   }
 
