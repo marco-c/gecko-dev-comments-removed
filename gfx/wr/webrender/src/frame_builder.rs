@@ -13,7 +13,7 @@ use gpu_types::{PrimitiveHeaders, TransformPalette, UvRectKind, ZBufferIdGenerat
 use hit_test::{HitTester, HitTestingRun};
 use internal_types::{FastHashMap, PlaneSplitter};
 use picture::{PictureSurface, PictureUpdateState, SurfaceInfo, ROOT_SURFACE_INDEX, SurfaceIndex};
-use picture::{RetainedTiles, TileCache};
+use picture::{RetainedTiles, TileCache, DirtyRegion};
 use prim_store::{PrimitiveStore, SpaceMapper, PictureIndex, PrimitiveDebugId, PrimitiveScratchBuffer};
 #[cfg(feature = "replay")]
 use prim_store::{PrimitiveStoreStats};
@@ -108,6 +108,24 @@ pub struct FrameBuildingState<'a> {
     pub transforms: &'a mut TransformPalette,
     pub segment_builder: SegmentBuilder,
     pub surfaces: &'a mut Vec<SurfaceInfo>,
+    pub dirty_region_stack: Vec<DirtyRegion>,
+}
+
+impl<'a> FrameBuildingState<'a> {
+    
+    pub fn current_dirty_region(&self) -> &DirtyRegion {
+        self.dirty_region_stack.last().unwrap()
+    }
+
+    
+    pub fn push_dirty_region(&mut self, region: DirtyRegion) {
+        self.dirty_region_stack.push(region);
+    }
+
+    
+    pub fn pop_dirty_region(&mut self) {
+        self.dirty_region_stack.pop().unwrap();
+    }
 }
 
 
@@ -123,7 +141,6 @@ pub struct PictureContext {
     pub raster_spatial_node_index: SpatialNodeIndex,
     
     pub surface_index: SurfaceIndex,
-    pub dirty_world_rect: WorldRect,
 }
 
 
@@ -346,7 +363,18 @@ impl FrameBuilder {
             transforms: transform_palette,
             segment_builder: SegmentBuilder::new(),
             surfaces: pic_update_state.surfaces,
+            dirty_region_stack: Vec::new(),
         };
+
+        
+        
+        
+        let mut default_dirty_region = DirtyRegion::new();
+        default_dirty_region.push(
+            frame_context.screen_world_rect,
+            frame_context.device_pixel_scale,
+        );
+        frame_state.push_dirty_region(default_dirty_region);
 
         let (pic_context, mut pic_state, mut prim_list) = self
             .prim_store
@@ -359,7 +387,6 @@ impl FrameBuilder {
                 true,
                 &mut frame_state,
                 &frame_context,
-                screen_world_rect,
             )
             .unwrap();
 
@@ -378,7 +405,10 @@ impl FrameBuilder {
             prim_list,
             pic_context,
             pic_state,
+            &mut frame_state,
         );
+
+        frame_state.pop_dirty_region();
 
         let child_tasks = frame_state
             .surfaces[ROOT_SURFACE_INDEX.0]
