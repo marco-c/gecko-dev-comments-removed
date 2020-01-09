@@ -308,3 +308,42 @@ struct DisallowMemberCallsOnRandomKnownLive {
   }
 };
 
+struct AllowConstMemberArgs {
+  const RefPtr<RefCountedBase> mRefCounted;
+  MOZ_CAN_RUN_SCRIPT void foo() {
+    mRefCounted->method_test();
+  }
+  MOZ_CAN_RUN_SCRIPT void bar() {
+    test2(mRefCounted);
+  }
+};
+
+struct AllowConstMemberArgsWithExplicitThis {
+  const RefPtr<RefCountedBase> mRefCounted;
+  MOZ_CAN_RUN_SCRIPT void foo() {
+    this->mRefCounted->method_test();
+  }
+  MOZ_CAN_RUN_SCRIPT void bar() {
+    test2(this->mRefCounted);
+  }
+};
+
+struct DisallowConstMemberArgsOfMembers {
+  RefPtr<AllowConstMemberArgs> mMember;
+  MOZ_CAN_RUN_SCRIPT void foo() {
+    mMember->mRefCounted->method_test(); 
+  }
+  MOZ_CAN_RUN_SCRIPT void bar() {
+    test2(mMember->mRefCounted); 
+  }
+};
+
+struct DisallowConstNonRefPtrMemberArgs {
+  RefCountedBase* const mRefCounted;
+  MOZ_CAN_RUN_SCRIPT void foo() {
+    mRefCounted->method_test(); 
+  }
+  MOZ_CAN_RUN_SCRIPT void bar() {
+    test2(mRefCounted); 
+  }
+};

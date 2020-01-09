@@ -44,6 +44,9 @@
 
 
 
+
+
+
 #include "CanRunScriptChecker.h"
 #include "CustomMatchers.h"
 
@@ -53,6 +56,16 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
     ignoreTrivials(
       declRefExpr(to(varDecl(hasAutomaticStorageDuration())),
                   hasType(isSmartPtrToRefCounted())));
+  auto ConstMemberOfThisSmartPtr =
+    memberExpr(hasType(isSmartPtrToRefCounted()),
+               hasType(isConstQualified()),
+               hasObjectExpression(cxxThisExpr()));
+  
+  
+  
+  
+  
+  auto KnownLiveSmartPtr = anyOf(StackSmartPtr, ConstMemberOfThisSmartPtr);
   auto MozKnownLiveCall =
     callExpr(callee(functionDecl(hasName("MOZ_KnownLive"))));
 
@@ -69,15 +82,15 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
           
           unless(cxxThisExpr()),
           
-          unless(StackSmartPtr),
+          unless(KnownLiveSmartPtr),
           
-          unless(cxxMemberCallExpr(on(StackSmartPtr))),
+          unless(cxxMemberCallExpr(on(KnownLiveSmartPtr))),
           
           unless(
             allOf(
               cxxOperatorCallExpr(hasOverloadedOperatorName("*")),
               callExpr(allOf(
-                hasAnyArgument(StackSmartPtr),
+                hasAnyArgument(KnownLiveSmartPtr),
                 argumentCountIs(1)
               ))
             )
