@@ -64,7 +64,7 @@ FRAGMENT(unwind, simple) {
   }
 
   JS::Rooted<JS::Value> rval(cx);
-  JS::Evaluate(cx, opts, srcBuf, &rval);
+  JS::EvaluateDontInflate(cx, opts, srcBuf, &rval);
 
   js::jit::JitOptions.baselineWarmUpThreshold = saveThreshold;
 }

@@ -54,7 +54,8 @@ BEGIN_TEST(testRedefineGlobalEval) {
   CHECK(srcBuf.init(cx, data, mozilla::ArrayLength(data) - 1,
                     JS::SourceOwnership::Borrowed));
 
-  CHECK(JS::Evaluate(cx, opts.setFileAndLine(__FILE__, __LINE__), srcBuf, &v));
+  CHECK(JS::EvaluateDontInflate(cx, opts.setFileAndLine(__FILE__, __LINE__),
+                                srcBuf, &v));
 
   return true;
 }
