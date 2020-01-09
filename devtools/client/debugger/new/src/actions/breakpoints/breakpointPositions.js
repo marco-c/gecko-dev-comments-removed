@@ -50,17 +50,39 @@ export function setBreakpointPositions(location: SourceLocation) {
 
     let source = getSourceFromId(getState(), sourceId);
 
-    let range;
+    let results = {};
     if (isOriginalId(sourceId)) {
-      range = await sourceMaps.getFileGeneratedRange(source);
+      const ranges = await sourceMaps.getGeneratedRangesForOriginal(
+        sourceId,
+        source.url,
+        true
+      );
       sourceId = originalToGeneratedId(sourceId);
       source = getSourceFromId(getState(), sourceId);
-    }
 
-    const results = await client.getBreakpointPositions(
-      source.actors[0],
-      range
-    );
+      
+      
+      
+      for (const range of ranges) {
+        
+        
+        
+        if (range.end.column === Infinity) {
+          range.end.line += 1;
+          range.end.column = 0;
+        }
+
+        const bps = await client.getBreakpointPositions(
+          source.actors[0],
+          range
+        );
+        for (const line in bps) {
+          results[line] = (results[line] || []).concat(bps[line]);
+        }
+      }
+    } else {
+      results = await client.getBreakpointPositions(source.actors[0]);
+    }
 
     let positions = convertToList(results, sourceId);
     positions = await mapLocations(positions, getState(), source, sourceMaps);
