@@ -11,8 +11,24 @@ const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm")
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
 
+
+
+XPCOMUtils.defineLazyGetter(this, "log", () => {
+  const { ConsoleAPI } = ChromeUtils.import("resource://gre/modules/Console.jsm", {});
+  return new ConsoleAPI({
+    maxLogLevel: "info",
+    maxLogLevelPref: "services.settings.loglevel",
+    prefix: "services.settings",
+  });
+});
+
 var Utils = {
   CHANGES_PATH: "/buckets/monitor/collections/changes/records",
+
+  
+
+
+  log,
 
   
 

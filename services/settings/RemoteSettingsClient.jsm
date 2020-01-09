@@ -33,6 +33,7 @@ const DB_NAME = "remote-settings";
 
 const TELEMETRY_COMPONENT = "remotesettings";
 
+XPCOMUtils.defineLazyGetter(this, "console", () => Utils.log);
 XPCOMUtils.defineLazyPreferenceGetter(this, "gServerURL",
                                       "services.settings.server");
 
@@ -212,9 +213,11 @@ class RemoteSettingsClient extends EventEmitter {
         
         if (await Utils.hasLocalDump(this.bucketName, this.collectionName)) {
           
+          console.debug("Local DB is empty, load JSON dump");
           await RemoteSettingsWorker.importJSONDump(this.bucketName, this.collectionName);
         } else {
           
+          console.debug("Local DB is empty, pull data from server");
           await this.sync({ loadDump: false });
         }
         
@@ -230,8 +233,8 @@ class RemoteSettingsClient extends EventEmitter {
     const kintoCollection = await this.openCollection();
     const { data } = await kintoCollection.list({ filters, order });
 
-    
     if (verifySignature) {
+      console.debug("Verify signature of local data");
       const localRecords = data.map(r => kintoCollection.cleanLocalFields(r));
       const timestamp = await kintoCollection.db.getLastModified();
       const metadata = await kintoCollection.metadata();
@@ -299,6 +302,7 @@ class RemoteSettingsClient extends EventEmitter {
           const imported = await RemoteSettingsWorker.importJSONDump(this.bucketName, this.collectionName);
           
           if (imported > 0) {
+            console.debug(`${imported} records loaded from JSON dump`);
             ({ data: importedFromDump } = await kintoCollection.list());
           }
           collectionLastModified = await kintoCollection.db.getLastModified();
@@ -311,6 +315,7 @@ class RemoteSettingsClient extends EventEmitter {
       
       
       if (expectedTimestamp <= collectionLastModified) {
+        console.debug(`${this.identifier} local data is up-to-date`);
         reportStatus = UptakeTelemetry.STATUS.UP_TO_DATE;
         return;
       }
@@ -331,6 +336,8 @@ class RemoteSettingsClient extends EventEmitter {
           
           return payload;
         }];
+      } else {
+        console.warn(`Signature disabled on ${this.identifier}`);
       }
 
       let syncResult;
@@ -354,6 +361,7 @@ class RemoteSettingsClient extends EventEmitter {
           
           
           try {
+            console.warn(`Signature verified failed for ${this.identifier}. Retry from scratch`);
             syncResult = await this._retrySyncFromScratch(kintoCollection, expectedTimestamp);
           } catch (e) {
             
@@ -392,6 +400,8 @@ class RemoteSettingsClient extends EventEmitter {
           reportStatus = UptakeTelemetry.STATUS.APPLY_ERROR;
           throw e;
         }
+      } else {
+        console.info(`All changes are filtered by JEXL expressions for ${this.identifier}`);
       }
     } catch (e) {
       
@@ -493,6 +503,7 @@ class RemoteSettingsClient extends EventEmitter {
     
     const localLastModified = await kintoCollection.db.getLastModified();
     if (timestamp >= localLastModified) {
+      console.debug(`Import raw data from server for ${this.identifier}`);
       await kintoCollection.clear();
       await kintoCollection.loadDump(remoteRecords);
       await kintoCollection.db.saveLastModified(timestamp);
