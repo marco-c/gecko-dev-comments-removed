@@ -1172,38 +1172,6 @@ VARCACHE_PREF(
 
 VARCACHE_PREF(
   Live,
-  "dom.gamepad.extensions.enabled",
-   dom_gamepad_extensions_enabled,
-   bool, true
-)
-
-
-VARCACHE_PREF(
-  Live,
-  "dom.gamepad.extensions.lightindicator",
-   dom_gamepad_extensions_lightindicator,
-   bool, false
-)
-
-
-VARCACHE_PREF(
-  Live,
-  "dom.gamepad.extensions.multitouch",
-   dom_gamepad_extensions_multitouch,
-   bool, false
-)
-
-
-VARCACHE_PREF(
-  Live,
-  "dom.gamepad.haptic_feedback.enabled",
-   dom_gamepad_haptic_feedback_enabled,
-   bool, true
-)
-
-
-VARCACHE_PREF(
-  Live,
   "dom.indexedDB.storageOption.enabled",
   dom_indexedDB_storageOption_enabled,
   RelaxedAtomicBool, false
