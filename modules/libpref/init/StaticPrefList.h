@@ -530,11 +530,18 @@ VARCACHE_PREF(
 
 
 
+#ifdef ANDROID
+
+# define PREF_VALUE true
+#else
+# define PREF_VALUE false
+#endif
 VARCACHE_PREF(
   "extensions.allowPrivateBrowsingByDefault",
    extensions_allowPrivateBrowsingByDefault,
-  bool, true
+  bool, PREF_VALUE
 )
+#undef PREF_VALUE
 
 
 
