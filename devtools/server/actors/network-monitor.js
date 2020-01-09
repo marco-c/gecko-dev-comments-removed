@@ -216,14 +216,25 @@ const NetworkMonitorActor = ActorClassWithSpec(networkMonitorSpec, {
 
   
   onNetworkEvent(event) {
-    const { channelId } = event;
+    const { channelId, cause, url } = event;
 
     const actor = this.getNetworkEventActor(channelId);
     this._netEvents.set(channelId, actor);
 
-    event.cause.stacktrace = this.stackTraces.has(channelId);
+    
+    
+    let id;
+    if (cause.type == "websocket") {
+      
+      
+      id = url.replace(/^http/, "ws");
+    } else {
+      id = channelId;
+    }
+
+    event.cause.stacktrace = this.stackTraces.has(id);
     if (event.cause.stacktrace) {
-      this.stackTraces.delete(channelId);
+      this.stackTraces.delete(id);
     }
     actor.init(event);
 
