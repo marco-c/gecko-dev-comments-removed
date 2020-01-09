@@ -2763,6 +2763,13 @@ class nsContentUtils {
 
 
 
+  static bool IsCORSSafelistedRequestHeader(const nsACString& aName,
+                                            const nsACString& aValue);
+
+  
+
+
+
   static bool IsForbiddenResponseHeader(const nsACString& aHeader);
 
   
