@@ -850,9 +850,10 @@ class SearchOneOffs {
 
 
 
+
   handleKeyPress(event, numListItems, allowEmptySelection, textboxUserValue) {
     if (!this.popup) {
-      return;
+      return false;
     }
     let handled = this._handleKeyPress(event, numListItems,
       allowEmptySelection,
@@ -861,6 +862,7 @@ class SearchOneOffs {
       event.preventDefault();
       event.stopPropagation();
     }
+    return handled;
   }
 
   _handleKeyPress(event, numListItems, allowEmptySelection, textboxUserValue) {
