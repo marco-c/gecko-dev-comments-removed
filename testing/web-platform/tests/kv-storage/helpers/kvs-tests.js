@@ -1,6 +1,17 @@
 import { StorageArea, storage as defaultArea } from "std:kv-storage";
 import { assertAsyncIteratorEquals, assertAsyncIteratorCustomEquals } from "./equality-asserters.js";
 
+
+
+
+export function testWithAreaNoCleanup(testFn, description) {
+  promise_test(t => {
+    const area = new StorageArea(description);
+
+    return testFn(area, t);
+  }, description);
+}
+
 export function testWithArea(testFn, description) {
   promise_test(t => {
     const area = new StorageArea(description);
