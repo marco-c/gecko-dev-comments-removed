@@ -225,11 +225,10 @@ function getChangesStylesheet(state, filter) {
   return Object.entries(changeTree).reduce((stylesheetText, [sourceId, source]) => {
     const { href, rules } = source;
     
-    stylesheetText += `\n/* ${getSourceForDisplay(source)} | ${href} */\n`;
+    stylesheetText += `/* ${getSourceForDisplay(source)} | ${href} */\n`;
     
     stylesheetText += Object.entries(rules).reduce((str, [ruleId, rule]) => {
-      
-      str += writeRule(ruleId, rule, 0) + "\n";
+      str += writeRule(ruleId, rule, 0);
       return str;
     }, "");
 
