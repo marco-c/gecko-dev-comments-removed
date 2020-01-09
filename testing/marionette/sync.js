@@ -213,6 +213,8 @@ function TimedPromise(fn,
   }
 
   return new Promise((resolve, reject) => {
+    let trace;
+
     
     
     let bail = () => {
@@ -220,11 +222,12 @@ function TimedPromise(fn,
         let err = new throws();
         reject(err);
       } else {
-        log.warn(`TimedPromise timed out after ${timeout} ms`, stack());
+        log.warn(`TimedPromise timed out after ${timeout} ms`, trace);
         resolve();
       }
     };
 
+    trace = stack();
     timer.initWithCallback({notify: bail}, timeout, TYPE_ONE_SHOT);
 
     try {
