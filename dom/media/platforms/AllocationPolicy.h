@@ -12,6 +12,7 @@
 #include "PlatformDecoderModule.h"
 #include "TimeUnits.h"
 #include "mozilla/MozPromise.h"
+#include "mozilla/NotNull.h"
 #include "mozilla/ReentrantMonitor.h"
 #include "mozilla/StaticMutex.h"
 
@@ -24,39 +25,66 @@ namespace mozilla {
 
 
 
+class AllocPolicy {
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AllocPolicy)
 
-class GlobalAllocPolicy {
  public:
   class Token {
     NS_INLINE_DECL_THREADSAFE_REFCOUNTING(Token)
    protected:
-    virtual ~Token() {}
+    virtual ~Token() = default;
   };
-
   using Promise = MozPromise<RefPtr<Token>, bool, true>;
 
   
-  RefPtr<Promise> Alloc();
+  virtual RefPtr<Promise> Alloc() = 0;
 
-  
-  void operator=(decltype(nullptr));
+ protected:
+  virtual ~AllocPolicy() = default;
+};
 
+
+
+
+
+
+
+class GlobalAllocPolicy {
+ public:
   
-  static GlobalAllocPolicy& Instance(TrackInfo::TrackType aTrack);
+  static NotNull<AllocPolicy*> Instance(TrackInfo::TrackType aTrack);
+
+ private:
+  
+  static StaticMutex sMutex;
+};
+
+
+
+
+
+
+
+
+class AllocPolicyImpl : public AllocPolicy {
+ public:
+  explicit AllocPolicyImpl(int aDecoderLimit);
+  RefPtr<Promise> Alloc() override;
+
+ protected:
+  virtual ~AllocPolicyImpl();
+  void RejectAll();
+  int MaxDecoderLimit() const { return mMaxDecoderLimit; }
 
  private:
   class AutoDeallocToken;
   using PromisePrivate = Promise::Private;
-  GlobalAllocPolicy();
-  ~GlobalAllocPolicy();
   
   void Dealloc();
   
   void ResolvePromise(ReentrantMonitorAutoEnter& aProofOfLock);
 
-  
-  static StaticMutex sMutex;
-
+  const int mMaxDecoderLimit;
   ReentrantMonitor mMonitor;
   
   int mDecoderLimit;
@@ -68,58 +96,23 @@ class GlobalAllocPolicy {
 
 
 
-class LocalAllocPolicy {
+class LocalAllocPolicy : public AllocPolicyImpl {
   using TrackType = TrackInfo::TrackType;
-  using Promise = GlobalAllocPolicy::Promise;
-  using Token = GlobalAllocPolicy::Token;
-
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(LocalAllocPolicy)
 
  public:
   LocalAllocPolicy(TrackType aTrack, TaskQueue* aOwnerThread)
-      : mTrack(aTrack), mOwnerThread(aOwnerThread) {}
+      : AllocPolicyImpl(1), mTrack(aTrack), mOwnerThread(aOwnerThread) {}
 
-  
-  
-  
-  
-  RefPtr<Promise> Alloc();
+  RefPtr<Promise> Alloc() override;
 
   
   
   void Cancel();
 
  private:
-  
+  class AutoDeallocCombinedToken;
+  virtual ~LocalAllocPolicy();
 
-
-  class AutoDeallocToken : public Token {
-   public:
-    explicit AutoDeallocToken(LocalAllocPolicy* aOwner) : mOwner(aOwner) {
-      MOZ_DIAGNOSTIC_ASSERT(mOwner->mDecoderLimit > 0);
-      --mOwner->mDecoderLimit;
-    }
-    
-    
-    
-    void Append(Token* aToken) { mToken = aToken; }
-
-   private:
-    
-    
-    ~AutoDeallocToken() {
-      mToken = nullptr;          
-      ++mOwner->mDecoderLimit;   
-      mOwner->ProcessRequest();  
-    }
-    RefPtr<LocalAllocPolicy> mOwner;
-    RefPtr<Token> mToken;
-  };
-
-  ~LocalAllocPolicy() = default;
-  void ProcessRequest();
-
-  int mDecoderLimit = 1;
   const TrackType mTrack;
   RefPtr<TaskQueue> mOwnerThread;
   MozPromiseHolder<Promise> mPendingPromise;
@@ -127,7 +120,7 @@ class LocalAllocPolicy {
 };
 
 class AllocationWrapper : public MediaDataDecoder {
-  using Token = GlobalAllocPolicy::Token;
+  using Token = AllocPolicy::Token;
 
  public:
   AllocationWrapper(already_AddRefed<MediaDataDecoder> aDecoder,
