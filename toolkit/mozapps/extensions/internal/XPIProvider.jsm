@@ -2043,18 +2043,6 @@ var XPIProvider = {
 
 
 
-  addonIsBuiltin(addonId) {
-    let state = XPIStates.findAddon(addonId);
-    return state && state.location.isBuiltin;
-  },
-
-  
-
-
-
-
-
-
 
 
 
