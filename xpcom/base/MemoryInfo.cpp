@@ -12,7 +12,8 @@
 
 namespace mozilla {
 
- MemoryInfo MemoryInfo::Get(const void* aPtr, size_t aSize) {
+
+MemoryInfo MemoryInfo::Get(const void* aPtr, size_t aSize) {
   MemoryInfo result;
 
   result.mStart = uintptr_t(aPtr);

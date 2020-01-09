@@ -368,15 +368,18 @@ struct ThreadInitData {
   return sList;
 }
 
- void nsThread::ClearThreadList() {
+
+void nsThread::ClearThreadList() {
   OffTheBooksMutexAutoLock mal(ThreadListMutex());
   while (ThreadList().popFirst()) {
   }
 }
 
- nsThreadEnumerator nsThread::Enumerate() { return {}; }
 
- uint32_t nsThread::MaxActiveThreads() {
+nsThreadEnumerator nsThread::Enumerate() { return {}; }
+
+
+uint32_t nsThread::MaxActiveThreads() {
   OffTheBooksMutexAutoLock mal(ThreadListMutex());
   return sMaxActiveThreads;
 }
@@ -399,7 +402,8 @@ void nsThread::MaybeRemoveFromThreadList() {
   }
 }
 
- void nsThread::ThreadFunc(void* aArg) {
+
+void nsThread::ThreadFunc(void* aArg) {
   using mozilla::ipc::BackgroundChild;
 
   ThreadInitData* initData = static_cast<ThreadInitData*>(aArg);

@@ -134,8 +134,8 @@ void nsAvailableMemoryWatcher::Shutdown() {
   }
 }
 
- bool nsAvailableMemoryWatcher::IsVirtualMemoryLow(
-    const MEMORYSTATUSEX& aStat) {
+
+bool nsAvailableMemoryWatcher::IsVirtualMemoryLow(const MEMORYSTATUSEX& aStat) {
   if ((kLowVirtualMemoryThreshold != 0) &&
       (aStat.ullAvailVirtual < kLowVirtualMemoryThreshold)) {
     sNumLowVirtualMemEvents++;
@@ -145,8 +145,8 @@ void nsAvailableMemoryWatcher::Shutdown() {
   return false;
 }
 
- bool nsAvailableMemoryWatcher::IsCommitSpaceLow(
-    const MEMORYSTATUSEX& aStat) {
+
+bool nsAvailableMemoryWatcher::IsCommitSpaceLow(const MEMORYSTATUSEX& aStat) {
   if ((kLowCommitSpaceThreshold != 0) &&
       (aStat.ullAvailPageFile < kLowCommitSpaceThreshold)) {
     sNumLowCommitSpaceEvents++;
@@ -159,7 +159,8 @@ void nsAvailableMemoryWatcher::Shutdown() {
   return false;
 }
 
- bool nsAvailableMemoryWatcher::IsPhysicalMemoryLow(
+
+bool nsAvailableMemoryWatcher::IsPhysicalMemoryLow(
     const MEMORYSTATUSEX& aStat) {
   if ((kLowPhysicalMemoryThreshold != 0) &&
       (aStat.ullAvailPhys < kLowPhysicalMemoryThreshold)) {

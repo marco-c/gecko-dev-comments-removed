@@ -1051,8 +1051,8 @@ static void StripRundll32(nsString& aCommandString) {
 
 
 
- bool nsLocalFile::CleanupCmdHandlerPath(
-    nsAString& aCommandHandler) {
+
+bool nsLocalFile::CleanupCmdHandlerPath(nsAString& aCommandHandler) {
   nsAutoString handlerCommand(aCommandHandler);
 
   

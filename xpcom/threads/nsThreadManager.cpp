@@ -78,7 +78,8 @@ static bool sShutdownComplete;
 
 
 
- void nsThreadManager::ReleaseThread(void* aData) {
+
+void nsThreadManager::ReleaseThread(void* aData) {
   if (sShutdownComplete) {
     
     
@@ -179,7 +180,8 @@ StaticRefPtr<ShutdownObserveHelper> gShutdownObserveHelper;
   return sInstance;
 }
 
- void nsThreadManager::InitializeShutdownObserver() {
+
+void nsThreadManager::InitializeShutdownObserver() {
   MOZ_ASSERT(!gShutdownObserveHelper);
 
   RefPtr<ShutdownObserveHelper> observer;

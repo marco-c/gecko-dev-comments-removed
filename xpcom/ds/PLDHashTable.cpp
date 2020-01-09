@@ -61,23 +61,27 @@ class AutoDestructorOp {
 
 #endif
 
- PLDHashNumber PLDHashTable::HashStringKey(const void* aKey) {
+
+PLDHashNumber PLDHashTable::HashStringKey(const void* aKey) {
   return HashString(static_cast<const char*>(aKey));
 }
 
- PLDHashNumber PLDHashTable::HashVoidPtrKeyStub(const void* aKey) {
+
+PLDHashNumber PLDHashTable::HashVoidPtrKeyStub(const void* aKey) {
   return nsPtrHashKey<void>::HashKey(aKey);
 }
 
- bool PLDHashTable::MatchEntryStub(const PLDHashEntryHdr* aEntry,
-                                               const void* aKey) {
+
+bool PLDHashTable::MatchEntryStub(const PLDHashEntryHdr* aEntry,
+                                  const void* aKey) {
   const PLDHashEntryStub* stub = (const PLDHashEntryStub*)aEntry;
 
   return stub->key == aKey;
 }
 
- bool PLDHashTable::MatchStringKey(const PLDHashEntryHdr* aEntry,
-                                               const void* aKey) {
+
+bool PLDHashTable::MatchStringKey(const PLDHashEntryHdr* aEntry,
+                                  const void* aKey) {
   const PLDHashEntryStub* stub = (const PLDHashEntryStub*)aEntry;
 
   
@@ -86,14 +90,16 @@ class AutoDestructorOp {
           strcmp((const char*)stub->key, (const char*)aKey) == 0);
 }
 
- void PLDHashTable::MoveEntryStub(PLDHashTable* aTable,
-                                              const PLDHashEntryHdr* aFrom,
-                                              PLDHashEntryHdr* aTo) {
+
+void PLDHashTable::MoveEntryStub(PLDHashTable* aTable,
+                                 const PLDHashEntryHdr* aFrom,
+                                 PLDHashEntryHdr* aTo) {
   memcpy(aTo, aFrom, aTable->mEntrySize);
 }
 
- void PLDHashTable::ClearEntryStub(PLDHashTable* aTable,
-                                               PLDHashEntryHdr* aEntry) {
+
+void PLDHashTable::ClearEntryStub(PLDHashTable* aTable,
+                                  PLDHashEntryHdr* aEntry) {
   memset(aEntry, 0, aTable->mEntrySize);
 }
 
@@ -272,8 +278,8 @@ void PLDHashTable::Hash2(PLDHashNumber aHash0, uint32_t& aHash2Out,
 
 
 
- bool PLDHashTable::MatchSlotKeyhash(Slot& aSlot,
-                                                 const PLDHashNumber aKeyHash) {
+
+bool PLDHashTable::MatchSlotKeyhash(Slot& aSlot, const PLDHashNumber aKeyHash) {
   return (aSlot.KeyHash() & ~kCollisionFlag) == aKeyHash;
 }
 

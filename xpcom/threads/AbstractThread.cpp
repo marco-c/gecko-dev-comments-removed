@@ -237,7 +237,8 @@ void AbstractThread::DispatchStateChange(
   GetCurrent()->TailDispatcher().AddStateChangeTask(this, std::move(aRunnable));
 }
 
- void AbstractThread::DispatchDirectTask(
+
+void AbstractThread::DispatchDirectTask(
     already_AddRefed<nsIRunnable> aRunnable) {
   GetCurrent()->TailDispatcher().AddDirectTask(std::move(aRunnable));
 }

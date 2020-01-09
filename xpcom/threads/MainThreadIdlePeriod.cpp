@@ -53,8 +53,7 @@ MainThreadIdlePeriod::GetIdlePeriodHint(TimeStamp* aIdleDeadline) {
   return NS_OK;
 }
 
- float MainThreadIdlePeriod::GetLongIdlePeriod() {
-  return kLongIdlePeriodMS;
-}
+
+float MainThreadIdlePeriod::GetLongIdlePeriod() { return kLongIdlePeriodMS; }
 
 }  

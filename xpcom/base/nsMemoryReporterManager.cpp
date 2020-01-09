@@ -1988,7 +1988,8 @@ void nsMemoryReporterManager::HandleChildReport(
                              s->mHandleReportData);
 }
 
- bool nsMemoryReporterManager::StartChildReport(
+
+bool nsMemoryReporterManager::StartChildReport(
     mozilla::MemoryReportingProcess* aChild,
     const PendingProcessesState* aState) {
   if (!aChild->IsAlive()) {
@@ -1999,7 +2000,7 @@ void nsMemoryReporterManager::HandleChildReport(
     return false;
   }
 
-  Maybe<mozilla::ipc::FileDescriptor> dmdFileDesc;
+  mozilla::dom::MaybeFileDesc dmdFileDesc = void_t();
 #ifdef MOZ_DMD
   if (!aState->mDMDDumpIdent.IsEmpty()) {
     FILE* dmdFile = nullptr;
@@ -2010,7 +2011,7 @@ void nsMemoryReporterManager::HandleChildReport(
       dmdFile = nullptr;
     }
     if (dmdFile) {
-      dmdFileDesc = Some(mozilla::ipc::FILEToFileDescriptor(dmdFile));
+      dmdFileDesc = mozilla::ipc::FILEToFileDescriptor(dmdFile);
       fclose(dmdFile);
     }
   }
@@ -2065,8 +2066,8 @@ void nsMemoryReporterManager::EndProcessReport(uint32_t aGeneration,
   }
 }
 
- void nsMemoryReporterManager::TimeoutCallback(nsITimer* aTimer,
-                                                           void* aData) {
+
+void nsMemoryReporterManager::TimeoutCallback(nsITimer* aTimer, void* aData) {
   nsMemoryReporterManager* mgr = static_cast<nsMemoryReporterManager*>(aData);
   PendingProcessesState* s = mgr->mPendingProcessesState;
 
@@ -2346,7 +2347,8 @@ nsMemoryReporterManager::GetResidentFast(int64_t* aAmount) {
 #endif
 }
 
- int64_t nsMemoryReporterManager::ResidentFast() {
+
+int64_t nsMemoryReporterManager::ResidentFast() {
 #ifdef HAVE_VSIZE_AND_RESIDENT_REPORTERS
   int64_t amount;
   nsresult rv = ResidentFastDistinguishedAmount(&amount);
@@ -2367,7 +2369,8 @@ nsMemoryReporterManager::GetResidentPeak(int64_t* aAmount) {
 #endif
 }
 
- int64_t nsMemoryReporterManager::ResidentPeak() {
+
+int64_t nsMemoryReporterManager::ResidentPeak() {
 #ifdef HAVE_RESIDENT_PEAK_REPORTER
   int64_t amount = 0;
   nsresult rv = ResidentPeakDistinguishedAmount(&amount);
@@ -2388,7 +2391,8 @@ nsMemoryReporterManager::GetResidentUnique(int64_t* aAmount) {
 #endif
 }
 
- int64_t nsMemoryReporterManager::ResidentUnique() {
+
+int64_t nsMemoryReporterManager::ResidentUnique() {
 #ifdef HAVE_RESIDENT_UNIQUE_REPORTER
   int64_t amount = 0;
   nsresult rv = ResidentUniqueDistinguishedAmount(&amount);

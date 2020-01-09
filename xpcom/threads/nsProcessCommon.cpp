@@ -599,7 +599,8 @@ void nsProcess::AddExecutableCrashAnnotation() {
 #endif  
 }
 
- void nsProcess::RemoveExecutableCrashAnnotation() {
+
+void nsProcess::RemoveExecutableCrashAnnotation() {
 #if defined(XP_WIN)
   CrashReporter::RemoveCrashReportAnnotation(
       CrashReporter::Annotation::ExecutableName);

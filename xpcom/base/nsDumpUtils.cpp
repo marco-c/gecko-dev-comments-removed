@@ -105,7 +105,8 @@ void FdWatcher::StopWatching() {
 
 StaticRefPtr<SignalPipeWatcher> SignalPipeWatcher::sSingleton;
 
- SignalPipeWatcher* SignalPipeWatcher::GetSingleton() {
+
+SignalPipeWatcher* SignalPipeWatcher::GetSingleton() {
   if (!sSingleton) {
     sSingleton = new SignalPipeWatcher();
     sSingleton->Init();
@@ -220,7 +221,8 @@ void SignalPipeWatcher::OnFileCanReadWithoutBlocking(int aFd) {
 
 StaticRefPtr<FifoWatcher> FifoWatcher::sSingleton;
 
- FifoWatcher* FifoWatcher::GetSingleton() {
+
+FifoWatcher* FifoWatcher::GetSingleton() {
   if (!sSingleton) {
     nsAutoCString dirPath;
     Preferences::GetCString("memory_info_dumper.watch_fifo.directory", dirPath);
@@ -231,7 +233,8 @@ StaticRefPtr<FifoWatcher> FifoWatcher::sSingleton;
   return sSingleton;
 }
 
- bool FifoWatcher::MaybeCreate() {
+
+bool FifoWatcher::MaybeCreate() {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (!XRE_IsParentProcess()) {
@@ -399,10 +402,9 @@ void FifoWatcher::OnFileCanReadWithoutBlocking(int aFd) {
 
 
 
- nsresult nsDumpUtils::OpenTempFile(const nsACString& aFilename,
-                                                nsIFile** aFile,
-                                                const nsACString& aFoldername,
-                                                Mode aMode) {
+
+nsresult nsDumpUtils::OpenTempFile(const nsACString& aFilename, nsIFile** aFile,
+                                   const nsACString& aFoldername, Mode aMode) {
 #ifdef ANDROID
   
   

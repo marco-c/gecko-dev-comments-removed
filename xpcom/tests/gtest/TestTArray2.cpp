@@ -283,8 +283,10 @@ class Moveable {
   static int Count() { return sCount; }
 };
 
- int Countable::sCount = 0;
- int Moveable::sCount = 0;
+
+int Countable::sCount = 0;
+
+int Moveable::sCount = 0;
 
 static nsTArray<int> returns_by_value() {
   nsTArray<int> result;

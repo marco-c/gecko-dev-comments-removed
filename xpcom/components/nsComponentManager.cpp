@@ -428,7 +428,8 @@ mozilla::Module const* const* end(AllStaticModules& _) {
   return &__stop_kPStaticModules;
 }
 
- void nsComponentManagerImpl::InitializeStaticModules() {
+
+void nsComponentManagerImpl::InitializeStaticModules() {
   if (sExtraStaticModules) {
     return;
   }
@@ -439,7 +440,8 @@ mozilla::Module const* const* end(AllStaticModules& _) {
 nsTArray<nsComponentManagerImpl::ComponentLocation>*
     nsComponentManagerImpl::sModuleLocations;
 
- void nsComponentManagerImpl::InitializeModuleLocations() {
+
+void nsComponentManagerImpl::InitializeModuleLocations() {
   if (sModuleLocations) {
     return;
   }

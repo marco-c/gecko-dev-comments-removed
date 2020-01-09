@@ -322,14 +322,16 @@ nsCategoryManager::Release() { return 1; }
 
 nsCategoryManager* nsCategoryManager::gCategoryManager;
 
- nsCategoryManager* nsCategoryManager::GetSingleton() {
+
+nsCategoryManager* nsCategoryManager::GetSingleton() {
   if (!gCategoryManager) {
     gCategoryManager = new nsCategoryManager();
   }
   return gCategoryManager;
 }
 
- void nsCategoryManager::Destroy() {
+
+void nsCategoryManager::Destroy() {
   
   
   

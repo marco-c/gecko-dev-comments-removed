@@ -92,7 +92,8 @@ SchedulerEventTarget::IsOnCurrentThreadInfallible() {
   return NS_IsMainThread();
 }
 
- nsresult SchedulerGroup::UnlabeledDispatch(
+
+nsresult SchedulerGroup::UnlabeledDispatch(
     TaskCategory aCategory, already_AddRefed<nsIRunnable>&& aRunnable) {
   if (NS_IsMainThread()) {
     return NS_DispatchToCurrentThread(std::move(aRunnable));
@@ -101,7 +102,8 @@ SchedulerEventTarget::IsOnCurrentThreadInfallible() {
   }
 }
 
- void SchedulerGroup::MarkVsyncReceived() {
+
+void SchedulerGroup::MarkVsyncReceived() {
   if (gEarliestUnprocessedVsync) {
     
     
@@ -118,9 +120,8 @@ SchedulerEventTarget::IsOnCurrentThreadInfallible() {
   gEarliestUnprocessedVsync = (TimeStamp::Now() - creation).ToMicroseconds();
 }
 
- void SchedulerGroup::MarkVsyncRan() {
-  gEarliestUnprocessedVsync = 0;
-}
+
+void SchedulerGroup::MarkVsyncRan() { gEarliestUnprocessedVsync = 0; }
 
 MOZ_THREAD_LOCAL(bool) SchedulerGroup::sTlsValidatingAccess;
 
@@ -202,8 +203,8 @@ already_AddRefed<nsISerialEventTarget> SchedulerGroup::CreateEventTargetFor(
   return target.forget();
 }
 
- SchedulerGroup* SchedulerGroup::FromEventTarget(
-    nsIEventTarget* aEventTarget) {
+
+SchedulerGroup* SchedulerGroup::FromEventTarget(nsIEventTarget* aEventTarget) {
   RefPtr<SchedulerEventTarget> target = do_QueryObject(aEventTarget);
   if (!target) {
     return nullptr;
@@ -223,7 +224,8 @@ nsresult SchedulerGroup::LabeledDispatch(
   return UnlabeledDispatch(aCategory, runnable.forget());
 }
 
- nsresult SchedulerGroup::InternalUnlabeledDispatch(
+
+nsresult SchedulerGroup::InternalUnlabeledDispatch(
     TaskCategory aCategory, already_AddRefed<Runnable>&& aRunnable) {
   if (NS_IsMainThread()) {
     
@@ -250,7 +252,8 @@ nsresult SchedulerGroup::LabeledDispatch(
   return rv;
 }
 
- void SchedulerGroup::SetValidatingAccess(ValidationType aType) {
+
+void SchedulerGroup::SetValidatingAccess(ValidationType aType) {
   bool validating = aType == StartValidation;
   sTlsValidatingAccess.set(validating);
 
