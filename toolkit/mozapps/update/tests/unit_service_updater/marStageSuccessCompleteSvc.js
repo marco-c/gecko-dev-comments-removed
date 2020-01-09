@@ -30,19 +30,13 @@ function setupUpdaterTestFinished() {
 
 
 
-function stageUpdateFinished() {
+async function stageUpdateFinished() {
   checkPostUpdateRunningFile(false);
   checkFilesAfterUpdateSuccess(getStageDirFile, true);
   checkUpdateLogContents(LOG_COMPLETE_SUCCESS, true);
   
   runUpdate(STATE_SUCCEEDED, true, 0, true);
-  checkPostUpdateAppLog();
-}
-
-
-
-
-async function checkPostUpdateAppLogFinished() {
+  await checkPostUpdateAppLog();
   checkAppBundleModTime();
   checkSymLinks();
   standardInit();

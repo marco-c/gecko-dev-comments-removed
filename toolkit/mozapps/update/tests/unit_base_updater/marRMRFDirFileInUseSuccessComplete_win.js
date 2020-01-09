@@ -21,13 +21,7 @@ async function setupUpdaterTestFinished() {
                            gTestDirs[4].subDirFiles[0], true);
   runUpdate(STATE_SUCCEEDED, false, 0, true);
   await waitForHelperExit();
-  checkPostUpdateAppLog();
-}
-
-
-
-
-async function checkPostUpdateAppLogFinished() {
+  await checkPostUpdateAppLog();
   standardInit();
   checkPostUpdateRunningFile(true);
   checkFilesAfterUpdateSuccess(getApplyDirFile, false, true);

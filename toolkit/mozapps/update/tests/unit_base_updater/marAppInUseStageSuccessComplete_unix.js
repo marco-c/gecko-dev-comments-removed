@@ -38,13 +38,7 @@ async function stageUpdateFinished() {
   
   runUpdate(STATE_SUCCEEDED, true, 0, true);
   await waitForHelperExit();
-  checkPostUpdateAppLog();
-}
-
-
-
-
-async function checkPostUpdateAppLogFinished() {
+  await checkPostUpdateAppLog();
   checkAppBundleModTime();
   checkSymLinks();
   standardInit();

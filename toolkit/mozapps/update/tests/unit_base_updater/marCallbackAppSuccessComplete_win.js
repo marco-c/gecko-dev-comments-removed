@@ -17,15 +17,9 @@ function run_test() {
 
 
 
-function setupUpdaterTestFinished() {
+async function setupUpdaterTestFinished() {
   runUpdate(STATE_SUCCEEDED, false, 0, true);
-  checkPostUpdateAppLog();
-}
-
-
-
-
-async function checkPostUpdateAppLogFinished() {
+  await checkPostUpdateAppLog();
   standardInit();
   checkPostUpdateRunningFile(true);
   checkFilesAfterUpdateSuccess(getApplyDirFile);
