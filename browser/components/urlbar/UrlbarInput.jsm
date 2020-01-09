@@ -10,6 +10,7 @@ const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm")
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
+  BrowserUtils: "resource://gre/modules/BrowserUtils.jsm",
   ExtensionSearchHandler: "resource://gre/modules/ExtensionSearchHandler.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   ReaderMode: "resource://gre/modules/ReaderMode.jsm",
@@ -112,7 +113,7 @@ class UrlbarInput {
 
     const inputFieldEvents = [
       "focus", "input", "keyup", "mouseover", "paste", "scrollend", "select",
-      "overflow", "underflow",
+      "overflow", "underflow", "dragstart", "dragover", "drop",
     ];
     for (let name of inputFieldEvents) {
       this.inputField.addEventListener(name, this);
@@ -1037,14 +1038,14 @@ class UrlbarInput {
     }
 
     let oldValue = this.inputField.value;
-    let oldStart = oldValue.substring(0, this.inputField.selectionStart);
+    let oldStart = oldValue.substring(0, this.selectionStart);
     
     
     
     if (oldStart.trim()) {
       return;
     }
-    let oldEnd = oldValue.substring(this.inputField.selectionEnd);
+    let oldEnd = oldValue.substring(this.selectionEnd);
 
     let pasteData = UrlbarUtils.stripUnsafeProtocolOnPaste(originalPasteData);
     if (originalPasteData != pasteData) {
@@ -1056,8 +1057,8 @@ class UrlbarInput {
       this.inputField.value = oldStart + pasteData + oldEnd;
       
       let newCursorPos = oldStart.length + pasteData.length;
-      this.inputField.selectionStart = newCursorPos;
-      this.inputField.selectionEnd = newCursorPos;
+      this.selectionStart = newCursorPos;
+      this.selectionEnd = newCursorPos;
     }
   }
 
@@ -1085,6 +1086,109 @@ class UrlbarInput {
   _on_popuphidden() {
     this.removeAttribute("open");
   }
+
+  _on_dragstart(event) {
+    
+    let nodePosition = this.inputField.compareDocumentPosition(event.originalTarget);
+    if (this.inputField != event.originalTarget &&
+        !(nodePosition & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
+      return;
+    }
+
+    
+    if (this.selectionStart != 0 ||
+        this.selectionEnd != this.inputField.textLength ||
+        this.getAttribute("pageproxystate") != "valid") {
+      return;
+    }
+
+    let href = this.window.gBrowser.currentURI.displaySpec;
+    let title = this.window.gBrowser.contentTitle || href;
+
+    event.dataTransfer.setData("text/x-moz-url", `${href}\n${title}`);
+    event.dataTransfer.setData("text/unicode", href);
+    event.dataTransfer.setData("text/html", `<a href="${href}">${title}</a>`);
+    event.dataTransfer.effectAllowed = "copyLink";
+    event.stopPropagation();
+  }
+
+  _on_dragover(event) {
+    if (!getDroppableData(event)) {
+      event.dataTransfer.dropEffect = "none";
+    }
+  }
+
+  _on_drop(event) {
+    let droppedItem = getDroppableData(event);
+    if (!droppedItem) {
+      return;
+    }
+    let principal = Services.droppedLinkHandler.getTriggeringPrincipal(event);
+    this.value = droppedItem instanceof URL ? droppedItem.href : droppedItem;
+    this.window.SetPageProxyState("invalid");
+    this.focus();
+    this.handleCommand(null, undefined, undefined, principal);
+    
+    
+    
+    
+    this.window.gBrowser.userTypedValue = null;
+    this.window.URLBarSetURI(null, true);
+  }
+}
+
+
+
+
+
+
+
+
+
+function getDroppableData(event) {
+  let links;
+  try {
+    links = Services.droppedLinkHandler.dropLinks(event);
+  } catch (ex) {
+    
+    
+    return null;
+  }
+  
+  
+  if (links.length > 0 && links[0].url) {
+    event.preventDefault();
+    let href = links[0].url;
+    if (UrlbarUtils.stripUnsafeProtocolOnPaste(href) != href) {
+      
+      
+      event.stopImmediatePropagation();
+      return null;
+    }
+
+    try {
+      
+      
+      
+      
+      let url = new URL(href);
+      
+      
+      try {
+        let principal = Services.droppedLinkHandler.getTriggeringPrincipal(event);
+        BrowserUtils.urlSecurityCheck(url,
+                                      principal,
+                                      Ci.nsIScriptSecurityManager.DISALLOW_INHERIT_PRINCIPAL);
+        return url;
+      } catch (ex) {
+        return null;
+      }
+    } catch (ex) {
+      
+    }
+  }
+  
+  return event.dataTransfer.getData("text/unicode");
 }
 
 
