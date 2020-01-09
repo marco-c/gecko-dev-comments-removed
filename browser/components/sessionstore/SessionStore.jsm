@@ -3612,6 +3612,36 @@ var SessionStoreInternal = {
 
 
 
+  _updateRestoredSelectedTabPinnedState(aWindow, aWinData, aRestoreIndex) {
+    let tabbrowser = aWindow.gBrowser;
+    let tabData = aWinData.tabs[aRestoreIndex];
+    let tab = tabbrowser.selectedTab;
+    let needsUnpin = tab.pinned && !tabData.pinned;
+    let needsPin = !tab.pinned && tabData.pinned;
+    if (needsUnpin) {
+      tabbrowser.unpinTab(tab);
+    } else if (needsPin && tab == tabbrowser.tabs[aRestoreIndex]) {
+      tabbrowser.pinTab(tab);
+    } else if (needsPin) {
+      tabbrowser.removeTab(tabbrowser.tabs[aRestoreIndex]);
+      tabbrowser.pinTab(tab);
+      tabbrowser.moveTabTo(tab, aRestoreIndex);
+    }
+    return tab;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
   restoreWindow: function ssi_restoreWindow(aWindow, winData, aOptions = {}) {
     let overwriteTabs = aOptions && aOptions.overwriteTabs;
     let firstWindow = aOptions && aOptions.firstWindow;
@@ -3685,14 +3715,7 @@ var SessionStoreInternal = {
       
       if (select &&
           tabbrowser.selectedTab.userContextId == userContextId) {
-        tab = tabbrowser.selectedTab;
-        if (tab.pinned && !tabData.pinned) {
-          tabbrowser.unpinTab(tab);
-        } else if (!tab.pinned && tabData.pinned) {
-          tabbrowser.removeTab(tabbrowser.tabs[t]);
-          tabbrowser.pinTab(tab);
-          tabbrowser.moveTabTo(tab, t);
-        }
+        tab = this._updateRestoredSelectedTabPinnedState(aWindow, winData, t);
 
         tabbrowser.moveTabToEnd();
         if (aWindow.gMultiProcessBrowser && !tab.linkedBrowser.isRemoteBrowser) {
