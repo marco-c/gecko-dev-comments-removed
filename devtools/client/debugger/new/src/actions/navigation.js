@@ -75,7 +75,7 @@ export function connect(url: string, actor: string, canRewind: boolean) {
 
 
 export function navigated() {
-  return async function({ dispatch, getState, client, onReload }: ThunkArgs) {
+  return async function({ dispatch, getState, client, panel }: ThunkArgs) {
     
     
     
@@ -84,6 +84,6 @@ export function navigated() {
       const sources = await client.fetchSources();
       dispatch(newSources(sources));
     }
-    onReload();
+    panel.emit("reloaded");
   };
 }
