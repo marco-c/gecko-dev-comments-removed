@@ -49,7 +49,6 @@ Realm::Realm(Compartment* comp, const JS::RealmOptions& options)
       runtime_(comp->runtimeFromMainThread()),
       creationOptions_(options.creationOptions()),
       behaviors_(options.behaviors()),
-      global_(nullptr),
       objects_(zone_),
       randomKeyGenerator_(runtime_->forkRandomKeyGenerator()),
       wasm(runtime_) {
@@ -269,6 +268,8 @@ void Realm::traceGlobal(JSTracer* trc) {
   
   
 
+  TraceEdge(trc, &lexicalEnv_, "realm-global-lexical");
+
   savedStacks_.trace(trc);
 
   
@@ -306,7 +307,7 @@ void Realm::traceRoots(JSTracer* trc,
     
     if (shouldTraceGlobal() && global_.unbarrieredGet()) {
       TraceRoot(trc, global_.unsafeUnbarrieredForTracing(),
-                "on-stack compartment global");
+                "on-stack realm global");
     }
   }
 
@@ -396,6 +397,9 @@ void Realm::sweepSavedStacks() { savedStacks_.sweep(); }
 void Realm::sweepGlobalObject() {
   if (global_ && IsAboutToBeFinalized(&global_)) {
     global_.set(nullptr);
+  }
+  if (lexicalEnv_ && IsAboutToBeFinalized(&lexicalEnv_)) {
+    lexicalEnv_.set(nullptr);
   }
 }
 
@@ -593,6 +597,7 @@ void Realm::purge() {
 
 void Realm::clearTables() {
   global_.set(nullptr);
+  lexicalEnv_.set(nullptr);
 
   
   
