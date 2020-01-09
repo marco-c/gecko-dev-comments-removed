@@ -23,6 +23,7 @@
 #include "mozilla/UniquePtrExtensions.h"
 #include "stdlib.h"
 #include "nsWildCard.h"
+#include "nsXULAppAPI.h"
 #include "nsZipArchive.h"
 #include "nsString.h"
 #include "prenv.h"
@@ -78,6 +79,9 @@ static uint32_t HashName(const char *aName, uint16_t nameLen);
 class ZipArchiveLogger {
  public:
   void Write(const nsACString &zip, const char *entry) const {
+    if (!XRE_IsParentProcess()) {
+      return;
+    }
     if (!fd) {
       char *env = PR_GetEnv("MOZ_JAR_LOG_FILE");
       if (!env) return;
@@ -591,7 +595,11 @@ nsresult nsZipArchive::BuildFileList(PRFileDesc *aFd) {
   const uint8_t *endp = startp + mFd->mLen;
   MOZ_WIN_MEM_TRY_BEGIN
   uint32_t centralOffset = 4;
-  if (mFd->mLen > ZIPCENTRAL_SIZE &&
+  
+  
+  
+  
+  if (XRE_IsParentProcess() && mFd->mLen > ZIPCENTRAL_SIZE &&
       xtolong(startp + centralOffset) == CENTRALSIG) {
     
     uint32_t readaheadLength = xtolong(startp);
