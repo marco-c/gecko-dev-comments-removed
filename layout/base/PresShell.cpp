@@ -4070,10 +4070,16 @@ void PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
     isSafeToFlush = isSafeToFlush && nsContentUtils::IsSafeToRunScript();
   }
 
+  
+  if (MOZ_UNLIKELY(mDocument->GetShell() != this)) {
+    MOZ_DIAGNOSTIC_ASSERT(!mDocument->GetShell(),
+                          "Where did this shell come from?");
+    isSafeToFlush = false;
+  }
+
   MOZ_DIAGNOSTIC_ASSERT(!mIsDestroying || !isSafeToFlush);
   MOZ_DIAGNOSTIC_ASSERT(mIsDestroying || mViewManager);
   MOZ_DIAGNOSTIC_ASSERT(mIsDestroying || mDocument->HasShellOrBFCacheEntry());
-  MOZ_DIAGNOSTIC_ASSERT(mIsDestroying || mDocument->GetShell() == this);
 
   
   RefPtr<nsViewManager> viewManager = mViewManager;
