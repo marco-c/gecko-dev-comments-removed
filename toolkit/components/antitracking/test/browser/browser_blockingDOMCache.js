@@ -1,3 +1,5 @@
+
+
 requestLongerTimeout(2);
 
 AntiTracking.runTest("DOM Cache",

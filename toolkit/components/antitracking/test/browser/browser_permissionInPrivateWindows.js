@@ -1,3 +1,5 @@
+
+
 AntiTracking.runTest("Test whether we receive any persistent permissions in private windows",
   
   async _ => {

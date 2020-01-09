@@ -1,3 +1,5 @@
+
+
 AntiTracking.runTest("localStorage",
   async _ => {
     is(window.localStorage, null, "LocalStorage is null");

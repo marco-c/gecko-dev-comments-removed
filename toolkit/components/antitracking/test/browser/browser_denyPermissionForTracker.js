@@ -1,6 +1,8 @@
 
 
 
+
+
 add_task(async _ => {
   Services.perms.add(Services.io.newURI("https://tracking.example.org"),
                      "cookie", Services.perms.DENY_ACTION);

@@ -1,3 +1,5 @@
+
+
 AntiTracking.runTest("IndexedDB in workers",
   async _ => {
     function blockCode() {

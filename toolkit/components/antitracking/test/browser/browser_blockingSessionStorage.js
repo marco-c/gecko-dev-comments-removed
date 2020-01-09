@@ -1,3 +1,5 @@
+
+
 AntiTracking.runTest("sessionStorage",
   async _ => {
     let shouldThrow = SpecialPowers.Services.prefs.getIntPref("network.cookie.cookieBehavior") == SpecialPowers.Ci.nsICookieService.BEHAVIOR_REJECT;
