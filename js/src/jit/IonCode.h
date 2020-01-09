@@ -150,7 +150,7 @@ class IonIC;
 struct IonScript {
  private:
   
-  PreBarrieredJitCode method_;
+  HeapPtrJitCode method_;
 
   
   jsbytecode* osrPc_;
@@ -257,6 +257,8 @@ struct IonScript {
     return (SnapshotOffset*)&bottomBuffer()[bailoutTable_];
   }
   PreBarrieredValue* constants() {
+    
+    
     return (PreBarrieredValue*)&bottomBuffer()[constantTable_];
   }
   const SafepointIndex* safepointIndices() const {

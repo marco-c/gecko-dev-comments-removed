@@ -1952,6 +1952,9 @@ class Breakpoint {
 
  private:
   
+
+
+
   js::PreBarrieredObject handler;
 
   
@@ -1969,7 +1972,7 @@ class Breakpoint {
 
   Breakpoint* nextInDebugger();
   Breakpoint* nextInSite();
-  const PreBarrieredObject& getHandler() const { return handler; }
+  JSObject* getHandler() const { return handler; }
   PreBarrieredObject& getHandlerRef() { return handler; }
 
   inline WasmBreakpoint* asWasm();

@@ -25,6 +25,8 @@ namespace js {
 
 
 class HashableValue {
+  
+  
   PreBarrieredValue value;
 
  public:

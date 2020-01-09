@@ -912,7 +912,7 @@ class Shape : public gc::TenuredCell {
 
  protected:
   GCPtrBaseShape base_;
-  PreBarrieredId propid_;
+  GCPtrId propid_;
 
   
   
@@ -1287,12 +1287,12 @@ class Shape : public gc::TenuredCell {
     mutableFlags = (mutableFlags & ~LINEAR_SEARCHES_MASK) | (count + 1);
   }
 
-  const PreBarrieredId& propid() const {
+  const GCPtrId& propid() const {
     MOZ_ASSERT(!isEmptyShape());
     MOZ_ASSERT(!JSID_IS_VOID(propid_));
     return propid_;
   }
-  PreBarrieredId& propidRef() {
+  GCPtrId& propidRef() {
     MOZ_ASSERT(!JSID_IS_VOID(propid_));
     return propid_;
   }
