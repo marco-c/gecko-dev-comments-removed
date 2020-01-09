@@ -5509,11 +5509,7 @@ pref("dom.vr.openvr.enabled", true);
 
 pref("dom.vr.openvr.enabled", false);
 #endif
-#ifdef RELEASE_OR_BETA
-pref("dom.vr.openvr.action_input", false);
-#else
 pref("dom.vr.openvr.action_input", true);
-#endif
 
 
 
