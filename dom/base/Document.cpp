@@ -3352,14 +3352,14 @@ bool Document::IsWebAnimationsEnabled(JSContext* aCx, JSObject* ) {
   MOZ_ASSERT(NS_IsMainThread());
 
   return nsContentUtils::IsSystemCaller(aCx) ||
-         nsContentUtils::AnimationsAPICoreEnabled();
+         StaticPrefs::dom_animations_api_core_enabled();
 }
 
 bool Document::IsWebAnimationsEnabled(CallerType aCallerType) {
   MOZ_ASSERT(NS_IsMainThread());
 
   return aCallerType == dom::CallerType::System ||
-         nsContentUtils::AnimationsAPICoreEnabled();
+         StaticPrefs::dom_animations_api_core_enabled();
 }
 
 bool Document::IsWebAnimationsGetAnimationsEnabled(JSContext* aCx,
@@ -10688,7 +10688,7 @@ bool Document::IsUnprefixedFullscreenEnabled(JSContext* aCx,
                                              JSObject* aObject) {
   MOZ_ASSERT(NS_IsMainThread());
   return nsContentUtils::IsSystemCaller(aCx) ||
-         nsContentUtils::IsUnprefixedFullscreenApiEnabled();
+         StaticPrefs::full_screen_api_unprefix_enabled();
 }
 
 static bool HasFullscreenSubDocument(Document* aDoc) {
@@ -10702,7 +10702,7 @@ static bool HasFullscreenSubDocument(Document* aDoc) {
 
 
 static const char* GetFullscreenError(Document* aDoc, CallerType aCallerType) {
-  bool apiEnabled = nsContentUtils::IsFullscreenApiEnabled();
+  bool apiEnabled = StaticPrefs::full_screen_api_enabled();
   if (apiEnabled && aCallerType == CallerType::System) {
     
     
