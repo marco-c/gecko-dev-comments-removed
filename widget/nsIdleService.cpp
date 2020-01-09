@@ -156,17 +156,8 @@ void nsIdleServiceDaily::Init() {
   
   
 
-  int32_t lastDaily = Preferences::GetInt(PREF_LAST_DAILY, 0);
-  
-  
-  
-  if (lastDaily == -1) {
-    MOZ_LOG(sLog, LogLevel::Debug,
-            ("nsIdleServiceDaily: Init: disabled idle-daily"));
-    return;
-  }
-
   int32_t nowSec = static_cast<int32_t>(PR_Now() / PR_USEC_PER_SEC);
+  int32_t lastDaily = Preferences::GetInt(PREF_LAST_DAILY, 0);
   if (lastDaily < 0 || lastDaily > nowSec) {
     
     lastDaily = 0;
