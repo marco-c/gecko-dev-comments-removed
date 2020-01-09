@@ -581,6 +581,10 @@ pref("media.autoplay.default", 1);
 pref("media.webspeech.synth.enabled", true);
 
 
+pref("media.gmp-gmpopenh264.visible", true);
+pref("media.gmp-gmpopenh264.enabled", true);
+
+
 pref("image.downscale-during-decode.enabled", true);
 
 
