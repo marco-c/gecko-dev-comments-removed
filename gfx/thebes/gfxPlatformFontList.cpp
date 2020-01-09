@@ -640,43 +640,20 @@ gfxFontEntry* gfxPlatformFontList::CommonFontFallback(
     uint32_t aCh, uint32_t aNextCh, Script aRunScript,
     const gfxFontStyle* aMatchStyle, gfxFontFamily** aMatchedFamily) {
   AutoTArray<const char*, NUM_FALLBACK_FONTS> defaultFallbacks;
-  uint32_t i, numFallbacks;
-
   gfxPlatform::GetPlatform()->GetCommonFallbackFonts(aCh, aNextCh, aRunScript,
                                                      defaultFallbacks);
-  numFallbacks = defaultFallbacks.Length();
-  for (i = 0; i < numFallbacks; i++) {
-    nsAutoCString familyName(defaultFallbacks[i]);
-    gfxFontFamily* fallback = FindFamilyByCanonicalName(familyName);
-    if (!fallback) {
-      continue;
-    }
-
-    gfxFontEntry* fontEntry;
-
-    
-    fontEntry = fallback->FindFontForStyle(*aMatchStyle);
-    if (fontEntry) {
-      if (fontEntry->HasCharacter(aCh)) {
+  GlobalFontMatch data(aCh, *aMatchStyle);
+  for (const auto name : defaultFallbacks) {
+    gfxFontFamily* fallback =
+        FindFamilyByCanonicalName(nsDependentCString(name));
+    if (fallback) {
+      fallback->FindFontForChar(&data);
+      if (data.mBestMatch) {
         *aMatchedFamily = fallback;
-        return fontEntry;
-      }
-      
-      
-      if (!fontEntry->IsNormalStyle()) {
-        
-        
-        
-        GlobalFontMatch data(aCh, *aMatchStyle);
-        fallback->SearchAllFontsForChar(&data);
-        if (data.mBestMatch) {
-          *aMatchedFamily = fallback;
-          return data.mBestMatch;
-        }
+        return data.mBestMatch;
       }
     }
   }
-
   return nullptr;
 }
 

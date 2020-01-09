@@ -150,6 +150,11 @@ struct gfxFontStyle {
   FontSlantStyle style;
 
   
+  bool IsNormalStyle() const {
+    return weight.IsNormal() && style.IsNormal() && stretch.IsNormal();
+  }
+
+  
   
   
 
