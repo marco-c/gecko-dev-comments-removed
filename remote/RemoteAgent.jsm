@@ -64,6 +64,8 @@ class RemoteAgentClass {
     });
     this.targets.on("disconnect", (eventName, target) => {
       
+      
+      delete this.server._handler._overridePaths[target.path];
     });
   }
 
