@@ -281,6 +281,10 @@ class BaselineCodeGen {
 
   
   
+  CodeOffset warmUpCheckPrologueOffset_;
+
+  
+  
   CodeOffset debugOsrPrologueOffset_;
 
   
