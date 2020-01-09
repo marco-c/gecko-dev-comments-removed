@@ -115,6 +115,13 @@ PK11SymKey *pk11_TokenKeyGenWithFlagsAndKeyType(PK11SlotInfo *slot,
 CK_MECHANISM_TYPE pk11_GetPBECryptoMechanism(SECAlgorithmID *algid,
                                              SECItem **param, SECItem *pwd, PRBool faulty3DES);
 
+
+
+
+
+
+int secmod_GetSystemFIPSEnabled();
+
 extern void pk11sdr_Init(void);
 extern void pk11sdr_Shutdown(void);
 
