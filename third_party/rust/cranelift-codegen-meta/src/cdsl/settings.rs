@@ -153,7 +153,7 @@ impl SettingGroup {
 
 
 pub enum ProtoSpecificSetting {
-    Bool(bool, u8),
+    Bool(bool),
     Enum(Vec<&'static str>),
     Num(u8),
 }
@@ -169,6 +169,7 @@ struct ProtoSetting {
 pub enum PredicateNode {
     OwnedBool(BoolSettingIndex),
     SharedBool(&'static str, &'static str),
+    Not(Box<PredicateNode>),
     And(Box<PredicateNode>, Box<PredicateNode>),
 }
 
@@ -198,8 +199,14 @@ impl PredicateNode {
             PredicateNode::And(ref lhs, ref rhs) => {
                 format!("{} && {}", lhs.render(group), rhs.render(group))
             }
+            PredicateNode::Not(ref node) => format!("!({})", node.render(group)),
         }
     }
+}
+
+struct ProtoPredicate {
+    pub name: &'static str,
+    node: PredicateNode,
 }
 
 pub struct Predicate {
@@ -218,8 +225,7 @@ pub struct SettingGroupBuilder {
     name: &'static str,
     settings: Vec<ProtoSetting>,
     presets: Vec<Preset>,
-    predicates: Vec<Predicate>,
-    predicate_number: u8,
+    predicates: Vec<ProtoPredicate>,
 }
 
 impl SettingGroupBuilder {
@@ -229,7 +235,6 @@ impl SettingGroupBuilder {
             settings: Vec::new(),
             presets: Vec::new(),
             predicates: Vec::new(),
-            predicate_number: 0,
         }
     }
 
@@ -256,13 +261,7 @@ impl SettingGroupBuilder {
             self.predicates.len() == 0,
             "predicates must be added after the boolean settings"
         );
-        let predicate_number = self.predicate_number;
-        self.predicate_number += 1;
-        self.add_setting(
-            name,
-            comment,
-            ProtoSpecificSetting::Bool(default, predicate_number),
-        );
+        self.add_setting(name, comment, ProtoSpecificSetting::Bool(default));
         BoolSettingIndex(self.settings.len() - 1)
     }
 
@@ -280,9 +279,7 @@ impl SettingGroupBuilder {
     }
 
     pub fn add_predicate(&mut self, name: &'static str, node: PredicateNode) {
-        let number = self.predicate_number;
-        self.predicate_number += 1;
-        self.predicates.push(Predicate { name, node, number });
+        self.predicates.push(ProtoPredicate { name, node });
     }
 
     pub fn add_preset(&mut self, name: &'static str, args: Vec<PresetType>) -> PresetIndex {
@@ -299,9 +296,6 @@ impl SettingGroupBuilder {
         PresetIndex(self.presets.len() - 1)
     }
 
-    
-    
-    
     
     
     
@@ -353,12 +347,12 @@ impl SettingGroupBuilder {
 
         group.bool_start_byte_offset = byte_offset;
 
+        let mut predicate_number = 0;
+
         
         for s in &self.settings {
-            let (default, predicate_number) = match s.specific {
-                ProtoSpecificSetting::Bool(default, predicate_number) => {
-                    (default, predicate_number)
-                }
+            let default = match s.specific {
+                ProtoSpecificSetting::Bool(default) => default,
                 ProtoSpecificSetting::Enum(_) | ProtoSpecificSetting::Num(_) => continue,
             };
             group.settings.push(Setting {
@@ -371,6 +365,7 @@ impl SettingGroupBuilder {
                     predicate_number,
                 }),
             });
+            predicate_number += 1;
         }
 
         assert!(
@@ -379,7 +374,22 @@ impl SettingGroupBuilder {
         );
         group.settings_size = group.byte_size();
 
-        group.predicates.extend(self.predicates);
+        
+        let mut predicates = self.predicates;
+        predicates.sort_by_key(|predicate| predicate.name);
+
+        group
+            .predicates
+            .extend(predicates.into_iter().map(|predicate| {
+                let number = predicate_number;
+                predicate_number += 1;
+                return Predicate {
+                    name: predicate.name,
+                    node: predicate.node,
+                    number,
+                };
+            }));
+
         group.presets.extend(self.presets);
 
         group

@@ -15,6 +15,7 @@ use crate::ir::{EbbOffsets, InstEncodings, SourceLocs, StackSlots, ValueLocation
 use crate::ir::{JumpTableOffsets, JumpTables};
 use crate::isa::{CallConv, EncInfo, Encoding, Legalize, TargetIsa};
 use crate::regalloc::RegDiversions;
+use crate::value_label::ValueLabelsRanges;
 use crate::write::write_function;
 use core::fmt;
 
@@ -155,7 +156,15 @@ impl Function {
 
     
     pub fn display<'a, I: Into<Option<&'a TargetIsa>>>(&'a self, isa: I) -> DisplayFunction<'a> {
-        DisplayFunction(self, isa.into())
+        DisplayFunction(self, isa.into().into())
+    }
+
+    
+    pub fn display_with<'a>(
+        &'a self,
+        annotations: DisplayFunctionAnnotations<'a>,
+    ) -> DisplayFunction<'a> {
+        DisplayFunction(self, annotations)
     }
 
     
@@ -202,26 +211,58 @@ impl Function {
     pub fn encode(&self, inst: ir::Inst, isa: &TargetIsa) -> Result<Encoding, Legalize> {
         isa.encode(&self, &self.dfg[inst], self.dfg.ctrl_typevar(inst))
     }
+
+    
+    pub fn collect_debug_info(&mut self) {
+        self.dfg.collect_debug_info();
+    }
 }
 
 
-pub struct DisplayFunction<'a>(&'a Function, Option<&'a TargetIsa>);
+pub struct DisplayFunctionAnnotations<'a> {
+    
+    pub isa: Option<&'a TargetIsa>,
+
+    
+    pub value_ranges: Option<&'a ValueLabelsRanges>,
+}
+
+impl<'a> DisplayFunctionAnnotations<'a> {
+    fn default() -> Self {
+        DisplayFunctionAnnotations {
+            isa: None,
+            value_ranges: None,
+        }
+    }
+}
+
+impl<'a> From<Option<&'a TargetIsa>> for DisplayFunctionAnnotations<'a> {
+    fn from(isa: Option<&'a TargetIsa>) -> DisplayFunctionAnnotations {
+        DisplayFunctionAnnotations {
+            isa,
+            value_ranges: None,
+        }
+    }
+}
+
+
+pub struct DisplayFunction<'a>(&'a Function, DisplayFunctionAnnotations<'a>);
 
 impl<'a> fmt::Display for DisplayFunction<'a> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write_function(fmt, self.0, self.1)
+        write_function(fmt, self.0, &self.1)
     }
 }
 
 impl fmt::Display for Function {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write_function(fmt, self, None)
+        write_function(fmt, self, &DisplayFunctionAnnotations::default())
     }
 }
 
 impl fmt::Debug for Function {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write_function(fmt, self, None)
+        write_function(fmt, self, &DisplayFunctionAnnotations::default())
     }
 }
 

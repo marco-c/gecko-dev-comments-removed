@@ -39,7 +39,7 @@ pub enum GlobalVariable {
 
 
 
-#[derive(Fail, Debug, PartialEq, Eq)]
+#[derive(Fail, Debug)]
 pub enum WasmError {
     
     
@@ -67,6 +67,10 @@ pub enum WasmError {
     
     #[fail(display = "Implementation limit exceeded")]
     ImplLimitExceeded,
+
+    
+    #[fail(display = "User error: {}", _0)]
+    User(std::string::String),
 }
 
 impl From<BinaryReaderError> for WasmError {
@@ -113,23 +117,9 @@ pub trait FuncEnvironment {
     
     
     
-    
-    
-    
-    
-    fn make_global(&mut self, func: &mut ir::Function, index: GlobalIndex) -> GlobalVariable;
-
-    
-    
-    
-    
-    fn make_heap(&mut self, func: &mut ir::Function, index: MemoryIndex) -> ir::Heap;
-
-    
-    
-    
-    
-    fn make_table(&mut self, func: &mut ir::Function, index: TableIndex) -> ir::Table;
+    fn return_mode(&self) -> ReturnMode {
+        ReturnMode::NormalReturns
+    }
 
     
     
@@ -138,9 +128,38 @@ pub trait FuncEnvironment {
     
     
     
+    fn make_global(
+        &mut self,
+        func: &mut ir::Function,
+        index: GlobalIndex,
+    ) -> WasmResult<GlobalVariable>;
+
     
     
-    fn make_indirect_sig(&mut self, func: &mut ir::Function, index: SignatureIndex) -> ir::SigRef;
+    
+    
+    fn make_heap(&mut self, func: &mut ir::Function, index: MemoryIndex) -> WasmResult<ir::Heap>;
+
+    
+    
+    
+    
+    fn make_table(&mut self, func: &mut ir::Function, index: TableIndex) -> WasmResult<ir::Table>;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn make_indirect_sig(
+        &mut self,
+        func: &mut ir::Function,
+        index: SignatureIndex,
+    ) -> WasmResult<ir::SigRef>;
 
     
     
@@ -153,7 +172,11 @@ pub trait FuncEnvironment {
     
     
     
-    fn make_direct_func(&mut self, func: &mut ir::Function, index: FuncIndex) -> ir::FuncRef;
+    fn make_direct_func(
+        &mut self,
+        func: &mut ir::Function,
+        index: FuncIndex,
+    ) -> WasmResult<ir::FuncRef>;
 
     
     
@@ -226,15 +249,9 @@ pub trait FuncEnvironment {
     
     
     
-    fn translate_loop_header(&mut self, _pos: FuncCursor) {
+    fn translate_loop_header(&mut self, _pos: FuncCursor) -> WasmResult<()> {
         
-    }
-
-    
-    
-    
-    fn return_mode(&self) -> ReturnMode {
-        ReturnMode::NormalReturns
+        Ok(())
     }
 }
 

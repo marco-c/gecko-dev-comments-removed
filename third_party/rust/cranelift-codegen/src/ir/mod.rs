@@ -32,7 +32,7 @@ pub use crate::ir::extfunc::{
     AbiParam, ArgumentExtension, ArgumentPurpose, ExtFuncData, Signature,
 };
 pub use crate::ir::extname::ExternalName;
-pub use crate::ir::function::Function;
+pub use crate::ir::function::{DisplayFunctionAnnotations, Function};
 pub use crate::ir::globalvalue::GlobalValueData;
 pub use crate::ir::heap::{HeapData, HeapStyle};
 pub use crate::ir::instructions::{
@@ -51,7 +51,7 @@ pub use crate::ir::types::Type;
 pub use crate::ir::valueloc::{ArgumentLoc, ValueLoc};
 
 use crate::binemit;
-use crate::entity::{PrimaryMap, SecondaryMap};
+use crate::entity::{entity_impl, PrimaryMap, SecondaryMap};
 use crate::isa;
 
 
@@ -71,3 +71,34 @@ pub type JumpTableOffsets = SecondaryMap<JumpTable, binemit::CodeOffset>;
 
 
 pub type SourceLocs = SecondaryMap<Inst, SourceLoc>;
+
+
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+pub struct ValueLabel(u32);
+entity_impl!(ValueLabel, "val");
+
+
+#[derive(Debug, Clone)]
+pub struct ValueLabelStart {
+    
+    pub from: SourceLoc,
+
+    
+    pub label: ValueLabel,
+}
+
+
+#[derive(Debug, Clone)]
+pub enum ValueLabelAssignments {
+    
+    Starts(std::vec::Vec<ValueLabelStart>),
+
+    
+    Alias {
+        
+        from: SourceLoc,
+
+        
+        value: Value,
+    },
+}

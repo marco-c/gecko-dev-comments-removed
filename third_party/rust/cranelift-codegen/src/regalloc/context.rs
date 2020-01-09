@@ -65,6 +65,11 @@ impl Context {
     }
 
     
+    pub fn liveness(&self) -> &Liveness {
+        &self.liveness
+    }
+
+    
     
     
     
