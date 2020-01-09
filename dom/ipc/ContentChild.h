@@ -489,9 +489,6 @@ class ContentChild final : public PContentChild,
   mozilla::ipc::IPCResult RecvRefreshScreens(
       nsTArray<ScreenDetails>&& aScreens);
 
-  mozilla::ipc::IPCResult RecvNetworkLinkTypeChange(const uint32_t& aType);
-  uint32_t NetworkLinkType() const { return mNetworkLinkType; }
-
   
   
   nsString& GetIndexedDBPath();
@@ -812,8 +809,6 @@ class ContentChild final : public PContentChild,
   
   mozilla::Atomic<uint32_t> mPendingInputEvents;
 #endif
-
-  uint32_t mNetworkLinkType = 0;
 
   DISALLOW_EVIL_CONSTRUCTORS(ContentChild);
 };

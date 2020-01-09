@@ -56,7 +56,7 @@ class MediaBlockCacheBase {
 
   
   
-  virtual size_t GetMaxBlocks(size_t aCacheSizeInKiB) const = 0;
+  virtual int32_t GetMaxBlocks() const = 0;
 
   
   virtual nsresult WriteBlock(uint32_t aBlockIndex, Span<const uint8_t> aData1,
