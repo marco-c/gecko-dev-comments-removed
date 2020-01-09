@@ -252,13 +252,15 @@ class PreferenceStudyListItem extends React.Component {
     const { study, translations } = this.props;
 
     
+    const [preferenceName, { preferenceValue }] = Object.entries(study.preferences)[0];
+    
     
     
     
     const sanitizer = document.createElement("code");
-    sanitizer.textContent = study.preferenceName;
+    sanitizer.textContent = preferenceName;
     const sanitizedPreferenceName = sanitizer.outerHTML;
-    sanitizer.textContent = study.preferenceValue;
+    sanitizer.textContent = preferenceValue;
     const sanitizedPreferenceValue = sanitizer.outerHTML;
     const description = translations.preferenceStudyDescription
       .replace(/%(?:1\$)?S/, sanitizedPreferenceName)

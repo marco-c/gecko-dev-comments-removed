@@ -57,7 +57,7 @@ class PreferenceExperimentAction extends BaseAction {
     if (!hasSlug) {
       
       const activeExperiments = await PreferenceExperiments.getAllActive();
-      const hasConflicts = activeExperiments.some(exp => exp.preferenceName === preferenceName);
+      const hasConflicts = activeExperiments.some(exp => exp.preferences.hasOwnProperty(preferenceName));
       if (hasConflicts) {
         throw new Error(
           `Experiment ${slug} ignored; another active experiment is already using the
