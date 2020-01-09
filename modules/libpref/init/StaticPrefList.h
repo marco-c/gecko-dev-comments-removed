@@ -617,6 +617,21 @@ VARCACHE_PREF(
 
 
 
+VARCACHE_PREF(
+  "layout.cursor.block.enabled",
+   layout_cursor_block_enabled,
+  bool, true
+)
+
+
+
+VARCACHE_PREF(
+  "layout.cursor.block.max-size",
+   layout_cursor_block_max_size,
+  uint32_t, 64
+)
+
+
 
 
 VARCACHE_PREF(
