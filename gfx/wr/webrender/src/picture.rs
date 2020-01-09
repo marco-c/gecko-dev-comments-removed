@@ -37,7 +37,6 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use texture_cache::TextureCacheHandle;
 use tiling::RenderTargetKind;
 use util::{ComparableVec, TransformedRectKind, MatrixHelpers, MaxRect};
-use ::filterdata::{FilterDataHandle};
 
 
 
@@ -1881,7 +1880,7 @@ bitflags! {
 
 
 #[allow(dead_code)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub enum PictureCompositeMode {
     
@@ -1900,8 +1899,6 @@ pub enum PictureCompositeMode {
     },
     
     Filter(FilterOp),
-    
-    ComponentTransferFilter(FilterDataHandle),
     
     
     Blit(BlitReason),
@@ -2867,7 +2864,6 @@ impl PicturePrimitive {
         surface_index: SurfaceIndex,
         frame_context: &FrameBuildingContext,
         frame_state: &mut FrameBuildingState,
-        data_stores: &mut DataStores,
     ) -> bool {
         let (mut pic_state_for_children, pic_context) = self.take_state_and_context();
 
@@ -2890,6 +2886,7 @@ impl PicturePrimitive {
                 surface_info.device_pixel_scale,
             )
         };
+        let surfaces = &mut frame_state.surfaces;
 
         let (map_raster_to_world, map_pic_to_raster) = create_raster_mappers(
             prim_instance.spatial_node_index,
@@ -2923,14 +2920,14 @@ impl PicturePrimitive {
             PictureCompositeMode::TileCache { .. } => {
                 
                 
-                let surface = &mut frame_state.surfaces[surface_index.0];
+                let surface = &mut surfaces[surface_index.0];
                 surface.tasks.extend(child_tasks);
 
                 return true;
             }
             PictureCompositeMode::Filter(FilterOp::Blur(blur_radius)) => {
                 let blur_std_deviation = blur_radius * device_pixel_scale.0;
-                let inflation_factor = frame_state.surfaces[raster_config.surface_index.0].inflation_factor;
+                let inflation_factor = surfaces[raster_config.surface_index.0].inflation_factor;
                 let inflation_factor = (inflation_factor * device_pixel_scale.0).ceil() as i32;
 
                 
@@ -2984,7 +2981,7 @@ impl PicturePrimitive {
 
                 let render_task_id = frame_state.render_tasks.add(blur_render_task);
 
-                frame_state.surfaces[surface_index.0].tasks.push(render_task_id);
+                surfaces[surface_index.0].tasks.push(render_task_id);
 
                 PictureSurface::RenderTask(render_task_id)
             }
@@ -3041,7 +3038,7 @@ impl PicturePrimitive {
                 self.secondary_render_task_id = Some(picture_task_id);
 
                 let render_task_id = frame_state.render_tasks.add(blur_render_task);
-                frame_state.surfaces[surface_index.0].tasks.push(render_task_id);
+                surfaces[surface_index.0].tasks.push(render_task_id);
 
                 if let Some(mut request) = frame_state.gpu_cache.request(&mut self.extra_gpu_data_handle) {
                     
@@ -3102,34 +3099,7 @@ impl PicturePrimitive {
                 );
 
                 let render_task_id = frame_state.render_tasks.add(picture_task);
-                frame_state.surfaces[surface_index.0].tasks.push(render_task_id);
-                PictureSurface::RenderTask(render_task_id)
-            }
-            PictureCompositeMode::ComponentTransferFilter(handle) => {
-                let filter_data = &mut data_stores.filterdata[handle];
-                filter_data.update(frame_state);
-
-                let uv_rect_kind = calculate_uv_rect_kind(
-                    &pic_rect,
-                    &transform,
-                    &clipped,
-                    device_pixel_scale,
-                    true,
-                );
-
-                let picture_task = RenderTask::new_picture(
-                    RenderTaskLocation::Dynamic(None, clipped.size),
-                    unclipped.size,
-                    pic_index,
-                    clipped.origin,
-                    child_tasks,
-                    uv_rect_kind,
-                    pic_context.raster_spatial_node_index,
-                    device_pixel_scale,
-                );
-
-                let render_task_id = frame_state.render_tasks.add(picture_task);
-                frame_state.surfaces[surface_index.0].tasks.push(render_task_id);
+                surfaces[surface_index.0].tasks.push(render_task_id);
                 PictureSurface::RenderTask(render_task_id)
             }
             PictureCompositeMode::Puppet { .. } |
@@ -3162,12 +3132,12 @@ impl PicturePrimitive {
                 );
 
                 let render_task_id = frame_state.render_tasks.add(picture_task);
-                frame_state.surfaces[surface_index.0].tasks.push(render_task_id);
+                surfaces[surface_index.0].tasks.push(render_task_id);
                 PictureSurface::RenderTask(render_task_id)
             }
         };
 
-        frame_state.surfaces[raster_config.surface_index.0].surface = Some(surface);
+        surfaces[raster_config.surface_index.0].surface = Some(surface);
 
         true
     }

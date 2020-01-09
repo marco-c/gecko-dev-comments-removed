@@ -34,13 +34,6 @@ class LayerManager;
 struct nsPoint;
 struct nsSize;
 
-struct WrFiltersHolder {
-  nsTArray<mozilla::wr::FilterOp> filters;
-  nsTArray<mozilla::wr::WrFilterData> filter_datas;
-  
-  nsTArray<nsTArray<float>> values;
-};
-
 
 
 
@@ -203,7 +196,7 @@ class nsSVGIntegrationUtils final {
 
 
   static bool BuildWebRenderFilters(nsIFrame* aFilteredFrame,
-                                    WrFiltersHolder& aWrFilters,
+                                    nsTArray<mozilla::wr::FilterOp>& aWrFilters,
                                     mozilla::Maybe<nsRect>& aPostFilterClip);
 
   
