@@ -96,6 +96,8 @@ this.FirefoxMonitor = {
       return;
     }
 
+    this._delayedInited = true;
+
     
     Services.scriptloader.loadSubScript(
       this.getURL("privileged/subscripts/Globals.jsm"));
@@ -147,8 +149,6 @@ this.FirefoxMonitor = {
 
     await this.loadStrings();
     await this.loadBreaches();
-
-    this._delayedInited = true;
   },
 
   loadStrings() {
@@ -236,8 +236,6 @@ this.FirefoxMonitor = {
       return;
     }
 
-    await this.delayedInit();
-
     EveryWindow.registerCallback(
       this.kNotificationID,
       (win) => {
@@ -249,49 +247,15 @@ this.FirefoxMonitor = {
         this.notificationsByWindow.set(win, new Set());
 
         
-        let DOMWindowUtils = win.windowUtils;
-        DOMWindowUtils.loadSheetUsingURIString(this.getURL("privileged/FirefoxMonitor.css"),
-                                               DOMWindowUtils.AUTHOR_SHEET);
-
-        
-        let doc = win.document;
-        let notificationBox = doc.getElementById("notification-popup-box");
         
         
-        
-        
-        let anchorBox = doc.createElementNS(XUL_NS, "box");
-        anchorBox.setAttribute("id", `${this.kNotificationID}-notification-anchor`);
-        anchorBox.classList.add("notification-anchor-icon");
-        let img = doc.createElementNS(XUL_NS, "image");
-        img.setAttribute("role", "button");
-        img.classList.add(`${this.kNotificationID}-icon`);
-        img.style.listStyleImage = `url(${this.getURL("assets/monitor32.svg")})`;
-        anchorBox.appendChild(img);
-        notificationBox.appendChild(anchorBox);
-        img.setAttribute("tooltiptext",
-          this.getFormattedString("fxmonitor.anchorIcon.tooltiptext",
-                                  [this.getString("fxmonitor.brandName")]));
-
-        
-        let parentElt = doc.defaultView.PopupNotifications.panel.parentNode;
-        let pn = doc.createElementNS(XUL_NS, "popupnotification");
-        let pnContent = doc.createElementNS(XUL_NS, "popupnotificationcontent");
-        let panelUI = new PanelUI(doc);
-        pnContent.appendChild(panelUI.box);
-        pn.appendChild(pnContent);
-        pn.setAttribute("id", `${this.kNotificationID}-notification`);
-        pn.setAttribute("hidden", "true");
-        parentElt.appendChild(pn);
-        this.panelUIsByWindow.set(win, panelUI);
-
-        
-        win.gBrowser.addTabsProgressListener(this);
+        this.delayedInit().then(() => {
+          win.gBrowser.addTabsProgressListener(this);
+        });
       },
-      (win) => {
+      (win, closing) => {
         
-        
-        if (!win.gBrowser) {
+        if (closing) {
           return;
         }
 
@@ -314,6 +278,46 @@ this.FirefoxMonitor = {
     );
 
     this.observerAdded = true;
+  },
+
+  setupPanelUI(win) {
+    
+    let DOMWindowUtils = win.windowUtils;
+    DOMWindowUtils.loadSheetUsingURIString(this.getURL("privileged/FirefoxMonitor.css"),
+                                           DOMWindowUtils.AUTHOR_SHEET);
+
+    
+    let doc = win.document;
+    let notificationBox = doc.getElementById("notification-popup-box");
+    
+    
+    
+    
+    let anchorBox = doc.createElementNS(XUL_NS, "box");
+    anchorBox.setAttribute("id", `${this.kNotificationID}-notification-anchor`);
+    anchorBox.classList.add("notification-anchor-icon");
+    let img = doc.createElementNS(XUL_NS, "image");
+    img.setAttribute("role", "button");
+    img.classList.add(`${this.kNotificationID}-icon`);
+    img.style.listStyleImage = `url(${this.getURL("assets/monitor32.svg")})`;
+    anchorBox.appendChild(img);
+    notificationBox.appendChild(anchorBox);
+    img.setAttribute("tooltiptext",
+      this.getFormattedString("fxmonitor.anchorIcon.tooltiptext",
+                              [this.getString("fxmonitor.brandName")]));
+
+    
+    let parentElt = doc.defaultView.PopupNotifications.panel.parentNode;
+    let pn = doc.createElementNS(XUL_NS, "popupnotification");
+    let pnContent = doc.createElementNS(XUL_NS, "popupnotificationcontent");
+    let panelUI = new PanelUI(doc);
+    pnContent.appendChild(panelUI.box);
+    pn.appendChild(pnContent);
+    pn.setAttribute("id", `${this.kNotificationID}-notification`);
+    pn.setAttribute("hidden", "true");
+    parentElt.appendChild(pn);
+    this.panelUIsByWindow.set(win, panelUI);
+    return panelUI;
   },
 
   stopObserving() {
@@ -355,6 +359,9 @@ this.FirefoxMonitor = {
     let doc = browser.ownerDocument;
     let win = doc.defaultView;
     let panelUI = this.panelUIsByWindow.get(win);
+    if (!panelUI) {
+      panelUI = this.setupPanelUI(win);
+    }
 
     let animatedOnce = false;
     let populatePanel = (event) => {
