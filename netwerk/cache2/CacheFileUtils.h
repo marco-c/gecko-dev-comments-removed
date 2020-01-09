@@ -217,6 +217,23 @@ nsresult ParseAlternativeDataInfo(const char *aInfo, int64_t *_offset,
 void BuildAlternativeDataInfo(const char *aInfo, int64_t aOffset,
                               nsACString &_retval);
 
+
+
+
+
+
+
+nsresult ParseBaseDomainAccessInfo(const char *aInfo, uint32_t aTrID,
+                                   const uint32_t *aSearchSiteID, bool *_found,
+                                   uint16_t *_count);
+
+
+
+
+
+void BuildOrAppendBaseDomainAccessInfo(const char *aOldInfo, uint32_t aTrID,
+                                       uint32_t aSiteID, nsACString &_retval);
+
 }  
 }  
 }  
