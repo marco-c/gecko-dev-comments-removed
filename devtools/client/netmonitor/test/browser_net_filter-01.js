@@ -38,7 +38,7 @@ const REQUESTS_WITH_MEDIA_AND_FLASH = REQUESTS_WITH_MEDIA.concat([
 
 const REQUESTS_WITH_MEDIA_AND_FLASH_AND_WS = REQUESTS_WITH_MEDIA_AND_FLASH.concat([
   
-  { url: "sjs_content-type-test-server.sjs?fmt=ws" },
+  { url: WS_URL + "sjs_content-type-test-server.sjs?fmt=ws", ws: true },
 ]);
 
 const EXPECTED_REQUESTS = [
@@ -187,7 +187,7 @@ const EXPECTED_REQUESTS = [
   },
   {
     method: "GET",
-    url: CONTENT_TYPE_SJS + "?fmt=ws",
+    url: WS_CONTENT_TYPE_SJS + "?fmt=ws",
     data: {
       fuzzyUrl: true,
       status: 101,

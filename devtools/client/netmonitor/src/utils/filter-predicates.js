@@ -63,7 +63,12 @@ function isMedia({ mimeType }) {
     mimeType === "application/x-mpegurl");
 }
 
-function isWS({ requestHeaders, responseHeaders }) {
+function isWS({ requestHeaders, responseHeaders, cause }) {
+  
+  
+  if (typeof cause.type === "string" && cause.type === "websocket") {
+    return true;
+  }
   
   if (!requestHeaders || !Array.isArray(requestHeaders.headers)) {
     return false;

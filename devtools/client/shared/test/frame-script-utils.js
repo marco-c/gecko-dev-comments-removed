@@ -87,6 +87,50 @@ function promiseXHR(data) {
 
 
 
+function promiseWS(data) {
+  return new Promise((resolve, reject) => {
+    let url = data.url;
+
+    if (data.nocache) {
+      url += "?devtools-cachebust=" + Math.random();
+    }
+
+    
+    const socket = new content.WebSocket(url);
+
+    
+    socket.onclose = (e) => {
+      socket.close();
+      resolve({
+        status: 101,
+        response: "",
+      });
+    };
+
+    socket.onerror = (e) => {
+      socket.close();
+      resolve({
+        status: 101,
+        response: "",
+      });
+    };
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -105,7 +149,12 @@ addMessageListener("devtools:test:xhr", async function({ data }) {
   const responses = [];
 
   for (const request of requests) {
-    const response = await promiseXHR(request);
+    let response = null;
+    if (request.ws) {
+      response = await promiseWS(request);
+    } else {
+      response = await promiseXHR(request);
+    }
     responses.push(response);
   }
 
