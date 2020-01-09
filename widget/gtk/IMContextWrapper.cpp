@@ -829,6 +829,14 @@ KeyHandlingState IMContextWrapper::OnKeyEvent(
 
   
   
+  bool maybeHandledAsynchronously = false;
+
+  
+  
+  bool isHandlingAsyncEvent = false;
+
+  
+  
   bool isUnexpectedAsyncEvent = false;
 
   
@@ -844,7 +852,7 @@ KeyHandlingState IMContextWrapper::OnKeyEvent(
         
         
         
-        bool isHandlingAsyncEvent = !!(aEvent->state & IBUS_IGNORED_MASK);
+        isHandlingAsyncEvent = !!(aEvent->state & IBUS_IGNORED_MASK);
         if (!isHandlingAsyncEvent) {
           
           
@@ -865,6 +873,21 @@ KeyHandlingState IMContextWrapper::OnKeyEvent(
         }
 
         
+        
+        
+        if (isHandlingAsyncEvent) {
+          MOZ_LOG(gGtkIMLog, LogLevel::Info,
+                  ("0x%p   OnKeyEvent(), aEvent->state has IBUS_IGNORED_MASK "
+                   "or aEvent is in the "
+                   "posting event queue, so, it won't be handled "
+                   "asynchronously anymore. Removing "
+                   "the posted events from the queue",
+                   this));
+          probablyHandledAsynchronously = false;
+          mPostingKeyEvents.RemoveEvent(aEvent);
+        }
+
+        
         if (mMaybeInDeadKeySequence && aEvent->type == GDK_KEY_PRESS) {
           probablyHandledAsynchronously = false;
           if (isHandlingAsyncEvent) {
@@ -880,25 +903,15 @@ KeyHandlingState IMContextWrapper::OnKeyEvent(
             isUnexpectedAsyncEvent = true;
             break;
           }
+          break;
         }
+        
+        
         
         
         if (mInputContext.mIMEState.mEnabled == IMEState::PASSWORD) {
           probablyHandledAsynchronously = false;
-          isUnexpectedAsyncEvent = isHandlingAsyncEvent;
-          break;
-        }
-
-        if (isHandlingAsyncEvent) {
-          MOZ_LOG(gGtkIMLog, LogLevel::Info,
-                  ("0x%p   OnKeyEvent(), aEvent->state has IBUS_IGNORED_MASK "
-                   "or aEvent is in the "
-                   "posting event queue, so, it won't be handled "
-                   "asynchronously anymore. Removing "
-                   "the posted events from the queue",
-                   this));
-          probablyHandledAsynchronously = false;
-          mPostingKeyEvents.RemoveEvent(aEvent);
+          maybeHandledAsynchronously = !isHandlingAsyncEvent;
           break;
         }
         break;
@@ -909,8 +922,7 @@ KeyHandlingState IMContextWrapper::OnKeyEvent(
         
         
         
-        bool isHandlingAsyncEvent =
-            !!(aEvent->state & FcitxKeyState_IgnoredMask);
+        isHandlingAsyncEvent = !!(aEvent->state & FcitxKeyState_IgnoredMask);
         if (!isHandlingAsyncEvent) {
           
           
@@ -988,6 +1000,16 @@ KeyHandlingState IMContextWrapper::OnKeyEvent(
   mFallbackToKeyEvent = false;
   mProcessingKeyEvent = aEvent;
   gboolean isFiltered = gtk_im_context_filter_keypress(currentContext, aEvent);
+
+  
+  
+  
+  
+  if (!isHandlingAsyncEvent && maybeHandledAsynchronously) {
+    probablyHandledAsynchronously |=
+        isFiltered && !mFallbackToKeyEvent && !mKeyboardEventWasDispatched;
+  }
+
   if (aEvent->type == GDK_KEY_PRESS) {
     if (isFiltered && probablyHandledAsynchronously) {
       sWaitingSynthesizedKeyPressHardwareKeyCode = aEvent->hardware_keycode;
@@ -1050,17 +1072,19 @@ KeyHandlingState IMContextWrapper::OnKeyEvent(
     mMaybeInDeadKeySequence = false;
   }
 
-  MOZ_LOG(gGtkIMLog, LogLevel::Debug,
-          ("0x%p   OnKeyEvent(), succeeded, filterThisEvent=%s "
-           "(isFiltered=%s, mFallbackToKeyEvent=%s, "
-           "probablyHandledAsynchronously=%s), mPostingKeyEvents.Length()=%zu, "
-           "mCompositionState=%s, mMaybeInDeadKeySequence=%s, "
-           "mKeyboardEventWasDispatched=%s, mKeyboardEventWasConsumed=%s",
-           this, ToChar(filterThisEvent), ToChar(isFiltered),
-           ToChar(mFallbackToKeyEvent), ToChar(probablyHandledAsynchronously),
-           mPostingKeyEvents.Length(), GetCompositionStateName(),
-           ToChar(mMaybeInDeadKeySequence), ToChar(mKeyboardEventWasDispatched),
-           ToChar(mKeyboardEventWasConsumed)));
+  MOZ_LOG(
+      gGtkIMLog, LogLevel::Debug,
+      ("0x%p   OnKeyEvent(), succeeded, filterThisEvent=%s "
+       "(isFiltered=%s, mFallbackToKeyEvent=%s, "
+       "probablyHandledAsynchronously=%s, maybeHandledAsynchronously=%s), "
+       "mPostingKeyEvents.Length()=%zu, mCompositionState=%s, "
+       "mMaybeInDeadKeySequence=%s, mKeyboardEventWasDispatched=%s, "
+       "mKeyboardEventWasConsumed=%s",
+       this, ToChar(filterThisEvent), ToChar(isFiltered),
+       ToChar(mFallbackToKeyEvent), ToChar(probablyHandledAsynchronously),
+       ToChar(maybeHandledAsynchronously), mPostingKeyEvents.Length(),
+       GetCompositionStateName(), ToChar(mMaybeInDeadKeySequence),
+       ToChar(mKeyboardEventWasDispatched), ToChar(mKeyboardEventWasConsumed)));
 
   if (filterThisEvent) {
     return KeyHandlingState::eHandled;
