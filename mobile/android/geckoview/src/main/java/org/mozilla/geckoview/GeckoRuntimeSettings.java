@@ -20,7 +20,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import org.mozilla.gecko.EventDispatcher;
-import org.mozilla.gecko.GeckoFontScaleListener;
 import org.mozilla.gecko.util.GeckoBundle;
 
 @AnyThread
@@ -179,12 +178,20 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
+
+
+
+
         public @NonNull Builder fontSizeFactor(float fontSizeFactor) {
             getSettings().setFontSizeFactor(fontSizeFactor);
             return this;
         }
 
         
+
+
+
+
 
 
 
@@ -621,7 +628,18 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
+
+
+
+
     public @NonNull GeckoRuntimeSettings setFontSizeFactor(float fontSizeFactor) {
+        if (getAutomaticFontSizeAdjustment()) {
+            throw new IllegalStateException("Not allowed when automatic font size adjustment is enabled");
+        }
+        return setFontSizeFactorInternal(fontSizeFactor);
+    }
+
+     @NonNull GeckoRuntimeSettings setFontSizeFactorInternal(float fontSizeFactor) {
         if (fontSizeFactor < 0) {
             throw new IllegalArgumentException("fontSizeFactor cannot be < 0");
         }
@@ -661,7 +679,18 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
+
+
+
+
     public @NonNull GeckoRuntimeSettings setFontInflationEnabled(boolean enabled) {
+        if (getAutomaticFontSizeAdjustment()) {
+            throw new IllegalStateException("Not allowed when automatic font size adjustment is enabled");
+        }
+        return setFontInflationEnabledInternal(enabled);
+    }
+
+     @NonNull GeckoRuntimeSettings setFontInflationEnabledInternal(boolean enabled) {
         final int minTwips =
                 enabled ? Math.round(FONT_INFLATION_BASE_VALUE * getFontSizeFactor()) : 0;
         mFontInflationMinTwips.commit(minTwips);

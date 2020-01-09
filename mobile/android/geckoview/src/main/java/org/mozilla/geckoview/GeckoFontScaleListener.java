@@ -3,7 +3,7 @@
 
 
 
-package org.mozilla.gecko;
+package org.mozilla.geckoview;
 
 import org.mozilla.gecko.util.ThreadUtils;
 import org.mozilla.geckoview.GeckoRuntimeSettings;
@@ -23,7 +23,7 @@ import android.util.Log;
 
 
 
-public final class GeckoFontScaleListener
+ final class GeckoFontScaleListener
         extends ContentObserver {
     private static final String LOGTAG = "GeckoFontScaleListener";
 
@@ -162,8 +162,8 @@ public final class GeckoFontScaleListener
             fontInflationEnabled = mPrevFontInflationState;
         }
 
-        mSettings.setFontInflationEnabled(fontInflationEnabled);
-        mSettings.setFontSizeFactor(fontScale);
+        mSettings.setFontInflationEnabledInternal(fontInflationEnabled);
+        mSettings.setFontSizeFactorInternal(fontScale);
     }
 
     @UiThread 
