@@ -5,12 +5,6 @@
 
 "use strict";
 
-
-
-Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/devtools/client/debugger/new/test/mochitest/helpers.js",
-  this);
-
 const TEST_URI =
   `data:text/html;charset=utf-8,Web Console test top-level await when debugger paused`;
 

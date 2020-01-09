@@ -9,12 +9,6 @@
 
 "use strict";
 
-
-
-Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/devtools/client/debugger/new/test/mochitest/helpers.js",
-  this);
-
 const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +
                  "test/mochitest/test-eval-in-stackframe.html";
 
