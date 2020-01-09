@@ -244,13 +244,18 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   }
 
   
-  JSObject* GetGlobalJSObject() override;
-  JSObject* GetGlobalJSObjectPreserveColor() const override;
-
+  JSObject* GetGlobalJSObject() final {
+    return GetWrapper();
+  }
+  JSObject* GetGlobalJSObjectPreserveColor() const final {
+    return GetWrapperPreserveColor();
+  }
   
   
   
-  JSObject* FastGetGlobalJSObject() const { return GetWrapperPreserveColor(); }
+  
+  
+  bool HasJSGlobal() const { return GetGlobalJSObjectPreserveColor(); }
 
   void TraceGlobalJSObject(JSTracer* aTrc);
 
