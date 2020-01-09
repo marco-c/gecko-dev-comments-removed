@@ -3043,8 +3043,18 @@ void ScrollFrameHelper::AppendScrollPartsTo(nsDisplayListBuilder* aBuilder,
   
   
   if (mIsRoot) {
-    clipState.ClipContentDescendants(mOuter->GetRectRelativeToSelf() +
-                                     aBuilder->ToReferenceFrame(mOuter));
+    nsRect scrollPartsClip =
+        mOuter->GetRectRelativeToSelf() + aBuilder->ToReferenceFrame(mOuter);
+    if (!gfxPrefs::LayoutUseContainersForRootFrames() &&
+        mOuter->PresContext()->IsRootContentDocument()) {
+      
+      
+      
+      double res = mOuter->PresShell()->GetResolution();
+      scrollPartsClip.width = NSToCoordRound(scrollPartsClip.width * res);
+      scrollPartsClip.height = NSToCoordRound(scrollPartsClip.height * res);
+    }
+    clipState.ClipContentDescendants(scrollPartsClip);
   }
 
   for (uint32_t i = 0; i < scrollParts.Length(); ++i) {
