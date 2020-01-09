@@ -1268,19 +1268,25 @@ WebConsoleActor.prototype =
 
 
   clearMessagesCache: function() {
-    
-    const windowId = !this.parentActor.isRootActor ?
-                   WebConsoleUtils.getInnerWindowId(this.window) : null;
-    const ConsoleAPIStorage = Cc["@mozilla.org/consoleAPI-storage;1"]
-                              .getService(Ci.nsIConsoleAPIStorage);
+    const windowId = !this.parentActor.isRootActor
+      ? WebConsoleUtils.getInnerWindowId(this.window)
+      : null;
+    const ConsoleAPIStorage =
+      Cc["@mozilla.org/consoleAPI-storage;1"].getService(Ci.nsIConsoleAPIStorage);
     ConsoleAPIStorage.clearEvents(windowId);
 
     CONSOLE_WORKER_IDS.forEach((id) => {
       ConsoleAPIStorage.clearEvents(id);
     });
 
+    
+    
+    
+    
     if (this.parentActor.isRootActor) {
       Services.console.reset();
+    } else {
+      this.consoleServiceListener.clearCachedMessages();
     }
   },
 
