@@ -88,6 +88,7 @@
 #include "js/CharacterEncoding.h"
 #include "js/CompilationAndEvaluation.h"
 #include "js/CompileOptions.h"
+#include "js/ContextOptions.h"  
 #include "js/Debug.h"
 #include "js/Equality.h"  
 #include "js/GCVector.h"
