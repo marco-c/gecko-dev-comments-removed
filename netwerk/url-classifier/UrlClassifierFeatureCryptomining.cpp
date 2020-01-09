@@ -101,7 +101,8 @@ UrlClassifierFeatureCryptomining::MaybeCreate(nsIChannel* aChannel) {
     return nullptr;
   }
 
-  if (!UrlClassifierCommon::ShouldEnableClassifier(aChannel)) {
+  if (!UrlClassifierCommon::ShouldEnableClassifier(
+          aChannel, AntiTrackingCommon::eCryptomining)) {
     return nullptr;
   }
 
@@ -132,37 +133,22 @@ UrlClassifierFeatureCryptomining::ProcessChannel(nsIChannel* aChannel,
   NS_ENSURE_ARG_POINTER(aChannel);
   NS_ENSURE_ARG_POINTER(aShouldContinue);
 
-  bool isAllowListed =
-      IsAllowListed(aChannel, AntiTrackingCommon::eCryptomining);
-
   
-  *aShouldContinue = isAllowListed;
+  *aShouldContinue = false;
 
-  if (isAllowListed) {
-    
-    
-    
-    
-    
-    UrlClassifierCommon::NotifyChannelClassifierProtectionDisabled(
-        aChannel, nsIWebProgressListener::STATE_LOADED_CRYPTOMINING_CONTENT);
+  UrlClassifierCommon::SetBlockedContent(aChannel, NS_ERROR_CRYPTOMINING_URI,
+                                         aList, EmptyCString(), EmptyCString());
+
+  UC_LOG(
+      ("UrlClassifierFeatureCryptomining::ProcessChannel, cancelling "
+       "channel[%p]",
+       aChannel));
+  nsCOMPtr<nsIHttpChannelInternal> httpChannel = do_QueryInterface(aChannel);
+
+  if (httpChannel) {
+    Unused << httpChannel->CancelByChannelClassifier(NS_ERROR_CRYPTOMINING_URI);
   } else {
-    UrlClassifierCommon::SetBlockedContent(aChannel, NS_ERROR_CRYPTOMINING_URI,
-                                           aList, EmptyCString(),
-                                           EmptyCString());
-
-    UC_LOG(
-        ("UrlClassifierFeatureCryptomining::ProcessChannel, cancelling "
-         "channel[%p]",
-         aChannel));
-    nsCOMPtr<nsIHttpChannelInternal> httpChannel = do_QueryInterface(aChannel);
-
-    if (httpChannel) {
-      Unused << httpChannel->CancelByChannelClassifier(
-          NS_ERROR_CRYPTOMINING_URI);
-    } else {
-      Unused << aChannel->Cancel(NS_ERROR_CRYPTOMINING_URI);
-    }
+    Unused << aChannel->Cancel(NS_ERROR_CRYPTOMINING_URI);
   }
 
   return NS_OK;

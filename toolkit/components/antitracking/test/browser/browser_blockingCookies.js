@@ -78,11 +78,7 @@ AntiTracking.runTest("Cookies and Storage Access API",
   
   async _ => {
     
-    if (allowListed) {
-      await hasStorageAccessInitially();
-    } else {
-      await noStorageAccessInitially();
-    }
+    await noStorageAccessInitially();
 
     is(document.cookie, "", "No cookies for me");
 

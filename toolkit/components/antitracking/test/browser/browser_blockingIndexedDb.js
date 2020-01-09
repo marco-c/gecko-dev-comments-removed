@@ -54,11 +54,7 @@ AntiTracking.runTest("IndexedDB and Storage Access API",
   
   async _ => {
     
-    if (allowListed) {
-      await hasStorageAccessInitially();
-    } else {
-      await noStorageAccessInitially();
-    }
+    await noStorageAccessInitially();
 
     indexedDB.open("test", "1");
     ok(true, "IDB should be allowed");

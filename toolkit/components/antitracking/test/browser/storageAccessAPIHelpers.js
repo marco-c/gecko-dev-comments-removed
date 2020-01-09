@@ -1,5 +1,3 @@
-
-
 async function hasStorageAccessInitially() {
   let hasAccess = await document.hasStorageAccess();
   ok(hasAccess, "Has storage access");

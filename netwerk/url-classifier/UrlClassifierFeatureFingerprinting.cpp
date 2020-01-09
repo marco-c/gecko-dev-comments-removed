@@ -103,7 +103,8 @@ UrlClassifierFeatureFingerprinting::MaybeCreate(nsIChannel* aChannel) {
     return nullptr;
   }
 
-  if (!UrlClassifierCommon::ShouldEnableClassifier(aChannel)) {
+  if (!UrlClassifierCommon::ShouldEnableClassifier(
+          aChannel, AntiTrackingCommon::eFingerprinting)) {
     return nullptr;
   }
 
@@ -134,37 +135,23 @@ UrlClassifierFeatureFingerprinting::ProcessChannel(nsIChannel* aChannel,
   NS_ENSURE_ARG_POINTER(aChannel);
   NS_ENSURE_ARG_POINTER(aShouldContinue);
 
-  bool isAllowListed =
-      IsAllowListed(aChannel, AntiTrackingCommon::eFingerprinting);
-
   
-  *aShouldContinue = isAllowListed;
+  *aShouldContinue = false;
 
-  if (isAllowListed) {
-    
-    
-    
-    
-    
-    UrlClassifierCommon::NotifyChannelClassifierProtectionDisabled(
-        aChannel, nsIWebProgressListener::STATE_LOADED_FINGERPRINTING_CONTENT);
+  UrlClassifierCommon::SetBlockedContent(aChannel, NS_ERROR_FINGERPRINTING_URI,
+                                         aList, EmptyCString(), EmptyCString());
+
+  UC_LOG(
+      ("UrlClassifierFeatureFingerprinting::ProcessChannel, cancelling "
+       "channel[%p]",
+       aChannel));
+  nsCOMPtr<nsIHttpChannelInternal> httpChannel = do_QueryInterface(aChannel);
+
+  if (httpChannel) {
+    Unused << httpChannel->CancelByChannelClassifier(
+        NS_ERROR_FINGERPRINTING_URI);
   } else {
-    UrlClassifierCommon::SetBlockedContent(aChannel,
-                                           NS_ERROR_FINGERPRINTING_URI, aList,
-                                           EmptyCString(), EmptyCString());
-
-    UC_LOG(
-        ("UrlClassifierFeatureFingerprinting::ProcessChannel, cancelling "
-         "channel[%p]",
-         aChannel));
-    nsCOMPtr<nsIHttpChannelInternal> httpChannel = do_QueryInterface(aChannel);
-
-    if (httpChannel) {
-      Unused << httpChannel->CancelByChannelClassifier(
-          NS_ERROR_FINGERPRINTING_URI);
-    } else {
-      Unused << aChannel->Cancel(NS_ERROR_FINGERPRINTING_URI);
-    }
+    Unused << aChannel->Cancel(NS_ERROR_FINGERPRINTING_URI);
   }
 
   return NS_OK;

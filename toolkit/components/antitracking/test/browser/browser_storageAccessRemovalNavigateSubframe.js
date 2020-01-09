@@ -8,11 +8,7 @@ AntiTracking.runTest("Storage Access is removed when subframe navigates",
   
   async _ => {
     
-    if (allowListed) {
-      await hasStorageAccessInitially();
-    } else {
-      await noStorageAccessInitially();
-    }
+    await noStorageAccessInitially();
 
     
     let [threw, rejected] = await callRequestStorageAccess();
