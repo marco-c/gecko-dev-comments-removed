@@ -238,6 +238,26 @@ bool Gecko_MediaFeatures_PrefersReducedMotion(Document* aDocument) {
   return LookAndFeel::GetInt(LookAndFeel::eIntID_PrefersReducedMotion, 0) == 1;
 }
 
+StylePrefersColorScheme Gecko_MediaFeatures_PrefersColorScheme(Document* aDocument) {
+  if (nsContentUtils::ShouldResistFingerprinting(aDocument)) {
+    return StylePrefersColorScheme::Light;
+  }
+  if (nsPresContext* pc = aDocument->GetPresContext()) {
+    if (pc->IsPrintingOrPrintPreview()) {
+      return StylePrefersColorScheme::Light;
+    }
+  }
+  
+  switch (LookAndFeel::GetInt(LookAndFeel::eIntID_SystemUsesDarkTheme, 2)) {
+    case 0: return StylePrefersColorScheme::Light;
+    case 1: return StylePrefersColorScheme::Dark;
+    case 2: return StylePrefersColorScheme::NoPreference;
+    default:
+      
+      return StylePrefersColorScheme::Light;
+  }
+}
+
 static PointerCapabilities GetPointerCapabilities(Document* aDocument,
                                                   LookAndFeel::IntID aID) {
   MOZ_ASSERT(aID == LookAndFeel::eIntID_PrimaryPointerCapabilities ||
