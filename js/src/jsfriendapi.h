@@ -405,7 +405,15 @@ class SourceHook {
 
 
 
-  virtual bool load(JSContext* cx, const char* filename, char16_t** src,
+
+
+
+
+
+
+
+  virtual bool load(JSContext* cx, const char* filename,
+                    char16_t** twoByteSource, char** utf8Source,
                     size_t* length) = 0;
 };
 

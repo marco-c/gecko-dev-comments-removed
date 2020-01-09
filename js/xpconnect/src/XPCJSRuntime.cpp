@@ -6,6 +6,7 @@
 
 
 
+#include "mozilla/ArrayUtils.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/UniquePtr.h"
 
@@ -2797,7 +2798,14 @@ static bool PreserveWrapper(JSContext* cx, JS::Handle<JSObject*> obj) {
 }
 
 static nsresult ReadSourceFromFilename(JSContext* cx, const char* filename,
-                                       char16_t** src, size_t* len) {
+                                       char16_t** twoByteSource,
+                                       char** utf8Source, size_t* len) {
+  MOZ_ASSERT(*len == 0);
+  MOZ_ASSERT((twoByteSource != nullptr) != (utf8Source != nullptr),
+             "must be called requesting only one of UTF-8 or UTF-16 source");
+  MOZ_ASSERT_IF(twoByteSource, !*twoByteSource);
+  MOZ_ASSERT_IF(utf8Source, !*utf8Source);
+
   nsresult rv;
 
   
@@ -2853,17 +2861,18 @@ static nsresult ReadSourceFromFilename(JSContext* cx, const char* filename,
   }
 
   
-  auto buf = MakeUniqueFallible<unsigned char[]>(rawLen);
+  
+  
+  JS::UniqueChars buf(js_pod_malloc<char>(rawLen));
   if (!buf) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
-  unsigned char* ptr = buf.get();
-  unsigned char* end = ptr + rawLen;
+  char* ptr = buf.get();
+  char* end = ptr + rawLen;
   while (ptr < end) {
     uint32_t bytesRead;
-    rv =
-        scriptStream->Read(reinterpret_cast<char*>(ptr), end - ptr, &bytesRead);
+    rv = scriptStream->Read(ptr, PointerRangeSize(ptr, end), &bytesRead);
     if (NS_FAILED(rv)) {
       return rv;
     }
@@ -2871,15 +2880,28 @@ static nsresult ReadSourceFromFilename(JSContext* cx, const char* filename,
     ptr += bytesRead;
   }
 
-  rv = ScriptLoader::ConvertToUTF16(scriptChannel, buf.get(), rawLen,
-                                    NS_LITERAL_STRING("UTF-8"), nullptr, *src,
-                                    *len);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (utf8Source) {
+    
+    *len = rawLen;
+    *utf8Source = buf.release();
+  } else {
+    MOZ_ASSERT(twoByteSource != nullptr);
 
-  if (!*src) {
-    return NS_ERROR_FAILURE;
+    
+
+    
+    rv = ScriptLoader::ConvertToUTF16(
+        scriptChannel, reinterpret_cast<const unsigned char*>(buf.get()),
+        rawLen, NS_LITERAL_STRING("UTF-8"), nullptr, *twoByteSource, *len);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    if (!*twoByteSource) {
+      return NS_ERROR_FAILURE;
+    }
   }
 
+  
+  
   
   
   
@@ -2892,10 +2914,17 @@ static nsresult ReadSourceFromFilename(JSContext* cx, const char* filename,
 
 
 class XPCJSSourceHook : public js::SourceHook {
-  bool load(JSContext* cx, const char* filename, char16_t** src,
-            size_t* length) override {
-    *src = nullptr;
+  bool load(JSContext* cx, const char* filename, char16_t** twoByteSource,
+            char** utf8Source, size_t* length) override {
+    MOZ_ASSERT((twoByteSource != nullptr) != (utf8Source != nullptr),
+               "must be called requesting only one of UTF-8 or UTF-16 source");
+
     *length = 0;
+    if (twoByteSource) {
+      *twoByteSource = nullptr;
+    } else {
+      *utf8Source = nullptr;
+    }
 
     if (!nsContentUtils::IsSystemCaller(cx)) {
       return true;
@@ -2905,7 +2934,8 @@ class XPCJSSourceHook : public js::SourceHook {
       return true;
     }
 
-    nsresult rv = ReadSourceFromFilename(cx, filename, src, length);
+    nsresult rv =
+        ReadSourceFromFilename(cx, filename, twoByteSource, utf8Source, length);
     if (NS_FAILED(rv)) {
       xpc::Throw(cx, rv);
       return false;
