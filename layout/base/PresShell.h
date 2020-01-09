@@ -199,7 +199,14 @@ class PresShell final : public nsIPresShell,
                                     dom::Event* aEvent,
                                     nsEventStatus* aStatus) override;
   bool ShouldIgnoreInvalidation() override;
-  void WillPaint() override;
+  
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT void WillPaint();
   void WillPaintWindow() override;
   void DidPaintWindow() override;
   void ScheduleViewManagerFlush(PaintType aType = PAINT_DEFAULT) override;

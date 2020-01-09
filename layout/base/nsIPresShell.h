@@ -1463,14 +1463,6 @@ class nsIPresShell : public nsStubDocumentObserver {
 
 
 
-
-
-  virtual void WillPaint() = 0;
-  
-
-
-
-
   virtual void WillPaintWindow() = 0;
   
 
