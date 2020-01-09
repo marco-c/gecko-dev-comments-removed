@@ -964,6 +964,7 @@ class JS_PUBLIC_API RealmCreationOptions {
         sharedMemoryAndAtomics_(false),
         streams_(false),
         bigint_(false),
+        fields_(false),
         secureContext_(false),
         clampAndJitterTime_(true) {}
 
@@ -1045,6 +1046,12 @@ class JS_PUBLIC_API RealmCreationOptions {
     return *this;
   }
 
+  bool getFieldsEnabled() const { return fields_; }
+  RealmCreationOptions& setFieldsEnabled(bool flag) {
+    fields_ = flag;
+    return *this;
+  }
+
   
   
   
@@ -1075,6 +1082,7 @@ class JS_PUBLIC_API RealmCreationOptions {
   bool sharedMemoryAndAtomics_;
   bool streams_;
   bool bigint_;
+  bool fields_;
   bool secureContext_;
   bool clampAndJitterTime_;
 };
