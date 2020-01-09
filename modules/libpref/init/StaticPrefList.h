@@ -1952,27 +1952,6 @@ VARCACHE_PREF(
 )
 
 
-VARCACHE_PREF(
-  "browser.safebrowsing.malware.enabled",
-   browser_safebrowsing_malware_enabled,
-  bool, true
-)
-
-
-VARCACHE_PREF(
-  "browser.safebrowsing.phishing.enabled",
-   browser_safebrowsing_phishing_enabled,
-  bool, true
-)
-
-
-VARCACHE_PREF(
-  "browser.safebrowsing.blockedURIs.enabled",
-   browser_safebrowsing_blockedURIs_enabled,
-  bool, true
-)
-
-
 
 
 

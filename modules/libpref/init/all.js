@@ -5586,6 +5586,8 @@ pref("urlclassifier.update.timeout_ms", 90000);
 pref("urlclassifier.alternate_error_page", "blocked");
 
 
+pref("browser.safebrowsing.phishing.enabled", true);
+pref("browser.safebrowsing.malware.enabled", true);
 pref("browser.safebrowsing.debug", false);
 
 
@@ -5648,6 +5650,7 @@ pref("browser.safebrowsing.provider.mozilla.lists.base", "moz-std");
 pref("browser.safebrowsing.provider.mozilla.lists.content", "moz-full");
 
 
+pref("browser.safebrowsing.blockedURIs.enabled", true);
 pref("urlclassifier.blockedTable", "test-block-simple,mozplugin-block-digest256");
 
 

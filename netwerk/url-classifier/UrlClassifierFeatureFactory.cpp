@@ -11,7 +11,6 @@
 #include "UrlClassifierFeatureFingerprinting.h"
 #include "UrlClassifierFeatureFlash.h"
 #include "UrlClassifierFeatureLoginReputation.h"
-#include "UrlClassifierFeaturePhishingProtection.h"
 #include "UrlClassifierFeatureTrackingProtection.h"
 #include "UrlClassifierFeatureTrackingAnnotation.h"
 #include "UrlClassifierFeatureCustomTables.h"
@@ -31,7 +30,6 @@ namespace net {
   UrlClassifierFeatureFingerprinting::MaybeShutdown();
   UrlClassifierFeatureFlash::MaybeShutdown();
   UrlClassifierFeatureLoginReputation::MaybeShutdown();
-  UrlClassifierFeaturePhishingProtection::MaybeShutdown();
   UrlClassifierFeatureTrackingAnnotation::MaybeShutdown();
   UrlClassifierFeatureTrackingProtection::MaybeShutdown();
 }
@@ -77,11 +75,6 @@ namespace net {
   nsTArray<nsCOMPtr<nsIUrlClassifierFeature>> flashFeatures;
   UrlClassifierFeatureFlash::MaybeCreate(aChannel, flashFeatures);
   aFeatures.AppendElements(flashFeatures);
-}
-
- void UrlClassifierFeatureFactory::GetPhishingProtectionFeatures(
-    nsTArray<RefPtr<nsIUrlClassifierFeature>>& aFeatures) {
-  UrlClassifierFeaturePhishingProtection::MaybeCreate(aFeatures);
 }
 
 
@@ -134,12 +127,6 @@ UrlClassifierFeatureFactory::GetFeatureByName(const nsACString& aName) {
     return feature.forget();
   }
 
-  
-  feature = UrlClassifierFeaturePhishingProtection::GetIfNameMatches(aName);
-  if (feature) {
-    return feature.forget();
-  }
-
   return nullptr;
 }
 
@@ -181,18 +168,9 @@ UrlClassifierFeatureFactory::GetFeatureByName(const nsACString& aName) {
   }
 
   
-  {
-    nsTArray<nsCString> features;
-    UrlClassifierFeatureFlash::GetFeatureNames(features);
-    aArray.AppendElements(features);
-  }
-
-  
-  {
-    nsTArray<nsCString> features;
-    UrlClassifierFeaturePhishingProtection::GetFeatureNames(features);
-    aArray.AppendElements(features);
-  }
+  nsTArray<nsCString> features;
+  UrlClassifierFeatureFlash::GetFeatureNames(features);
+  aArray.AppendElements(features);
 }
 
  already_AddRefed<nsIUrlClassifierFeature>

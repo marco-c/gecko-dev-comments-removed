@@ -44,7 +44,25 @@
 #define COMPLETE_LENGTH 32
 
 
+#define CHECK_MALWARE_PREF "browser.safebrowsing.malware.enabled"
+#define CHECK_MALWARE_DEFAULT false
+
+#define CHECK_PHISHING_PREF "browser.safebrowsing.phishing.enabled"
+#define CHECK_PHISHING_DEFAULT false
+
+#define CHECK_BLOCKED_PREF "browser.safebrowsing.blockedURIs.enabled"
+#define CHECK_BLOCKED_DEFAULT false
+
+
+#define MALWARE_TABLE_PREF "urlclassifier.malwareTable"
+#define PHISH_TABLE_PREF "urlclassifier.phishTable"
+#define TRACKING_TABLE_PREF "urlclassifier.trackingTable"
+#define TRACKING_WHITELIST_TABLE_PREF "urlclassifier.trackingWhitelistTable"
+#define BLOCKED_TABLE_PREF "urlclassifier.blockedTable"
+#define DOWNLOAD_BLOCK_TABLE_PREF "urlclassifier.downloadBlockTable"
+#define DOWNLOAD_ALLOW_TABLE_PREF "urlclassifier.downloadAllowTable"
 #define DISALLOW_COMPLETION_TABLE_PREF "urlclassifier.disallow_completions"
+#define PASSWORD_ALLOW_TABLE_PREF "urlclassifier.passwordAllowTable"
 
 using namespace mozilla::safebrowsing;
 
@@ -78,8 +96,6 @@ class nsUrlClassifierDBService final : public nsIUrlClassifierDBService,
   friend class mozilla::net::AsyncUrlChannelClassifier;
 
  public:
-  class FeatureHolder;
-
   
   nsUrlClassifierDBService();
 
@@ -110,14 +126,28 @@ class nsUrlClassifierDBService final : public nsIUrlClassifierDBService,
   
   static nsUrlClassifierDBServiceWorker* GetWorker();
 
+  const nsTArray<nsCString> kObservedPrefs = {
+      NS_LITERAL_CSTRING(CHECK_MALWARE_PREF),
+      NS_LITERAL_CSTRING(CHECK_PHISHING_PREF),
+      NS_LITERAL_CSTRING(CHECK_BLOCKED_PREF),
+      NS_LITERAL_CSTRING(MALWARE_TABLE_PREF),
+      NS_LITERAL_CSTRING(PHISH_TABLE_PREF),
+      NS_LITERAL_CSTRING(TRACKING_TABLE_PREF),
+      NS_LITERAL_CSTRING(TRACKING_WHITELIST_TABLE_PREF),
+      NS_LITERAL_CSTRING(BLOCKED_TABLE_PREF),
+      NS_LITERAL_CSTRING(DOWNLOAD_BLOCK_TABLE_PREF),
+      NS_LITERAL_CSTRING(DOWNLOAD_ALLOW_TABLE_PREF),
+      NS_LITERAL_CSTRING(DISALLOW_COMPLETION_TABLE_PREF)};
+
   
   ~nsUrlClassifierDBService();
 
   
   nsUrlClassifierDBService(nsUrlClassifierDBService&);
 
-  nsresult LookupURI(const nsACString& aKey, FeatureHolder* aHolder,
-                     nsIUrlClassifierCallback* c);
+  nsresult LookupURI(nsIPrincipal* aPrincipal, const nsACString& tables,
+                     nsIUrlClassifierCallback* c, bool forceCheck,
+                     bool* didCheck);
 
   
   
@@ -126,7 +156,7 @@ class nsUrlClassifierDBService final : public nsIUrlClassifierDBService,
   
   nsresult Shutdown();
 
-  nsresult ReadDisallowCompletionsTablesFromPrefs();
+  nsresult ReadTablesFromPrefs();
 
   
   
@@ -143,12 +173,30 @@ class nsUrlClassifierDBService final : public nsIUrlClassifierDBService,
 
   
   
+  bool mCheckMalware;
+
+  
+  
+  bool mCheckPhishing;
+
+  
+  
+  bool mCheckBlockedURIs;
+
+  
+  
   
   
   bool mInUpdate;
 
   
+  nsTArray<nsCString> mGethashTables;
+
+  
   nsTArray<nsCString> mDisallowCompletionsTables;
+
+  
+  nsCString mBaseTables;
 
   
   static nsIThread* gDbBackgroundThread;
@@ -165,9 +213,9 @@ class nsUrlClassifierDBServiceWorker final : public nsIUrlClassifierDBService {
                 nsUrlClassifierDBService* aDBService);
 
   
-  nsresult QueueLookup(const nsACString& aLookupKey,
-                       nsUrlClassifierDBService::FeatureHolder* aFeatureHolder,
-                       nsIUrlClassifierLookupCallback* aLallback);
+  
+  nsresult QueueLookup(const nsACString& lookupKey, const nsACString& tables,
+                       nsIUrlClassifierLookupCallback* callback);
 
   
   
@@ -178,6 +226,9 @@ class nsUrlClassifierDBServiceWorker final : public nsIUrlClassifierDBService {
   nsresult DoSingleLocalLookupWithURIFragments(
       const nsTArray<nsCString>& aSpecFragments, const nsACString& aTable,
       LookupResultArray& aResults);
+  nsresult DoLocalLookupWithURI(const nsACString& aSpec,
+                                const nsTArray<nsCString>& aTables,
+                                LookupResultArray& aResults);
 
   
   nsresult GCC_MANGLING_WORKAROUND OpenDb();
@@ -224,8 +275,7 @@ class nsUrlClassifierDBServiceWorker final : public nsIUrlClassifierDBService {
   void ResetUpdate();
 
   
-  nsresult DoLookup(const nsACString& spec,
-                    nsUrlClassifierDBService::FeatureHolder* aFeatureHolder,
+  nsresult DoLookup(const nsACString& spec, const nsACString& tables,
                     nsIUrlClassifierLookupCallback* c);
 
   nsresult AddNoise(const Prefix aPrefix, const nsCString tableName,
@@ -269,7 +319,7 @@ class nsUrlClassifierDBServiceWorker final : public nsIUrlClassifierDBService {
    public:
     mozilla::TimeStamp mStartTime;
     nsCString mKey;
-    RefPtr<nsUrlClassifierDBService::FeatureHolder> mFeatureHolder;
+    nsCString mTables;
     nsCOMPtr<nsIUrlClassifierLookupCallback> mCallback;
   };
 
