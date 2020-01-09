@@ -928,6 +928,8 @@ bool js::CreateWasmBuffer(JSContext* cx, const wasm::Limits& memory,
              "prior size checking should have guaranteed page-size multiple");
   MOZ_ASSERT(buffer->byteLength() > 0,
              "prior size checking should have excluded empty buffers");
+  MOZ_ASSERT(!buffer->isNoData(),
+             "size checking should have excluded detached or empty buffers");
 
   static_assert(wasm::PageSize > MaxInlineBytes,
                 "inline data must be too small to be a page size multiple");
@@ -1009,6 +1011,9 @@ void ArrayBufferObject::releaseData(FreeOp* fop) {
     case MALLOCED:
       fop->free_(dataPointer());
       break;
+    case NO_DATA:
+      MOZ_ASSERT(dataPointer() == nullptr);
+      break;
     case USER_OWNED:
       MOZ_ASSERT_UNREACHABLE("user-owned data should never be owned by this");
       break;
@@ -1029,7 +1034,6 @@ void ArrayBufferObject::releaseData(FreeOp* fop) {
       }
       break;
     case BAD1:
-    case BAD2:
       MOZ_CRASH("invalid BufferKind encountered");
       break;
   }
@@ -1150,8 +1154,7 @@ Maybe<uint32_t> js::WasmArrayBufferMaxSize(
   newBuf->initialize(newSize, contents, OwnsData);
 
   memcpy(newBuf->dataPointer(), oldBuf->dataPointer(), oldBuf->byteLength());
-  ArrayBufferObject::detach(cx, oldBuf,
-                            BufferContents::createMalloced(nullptr));
+  ArrayBufferObject::detach(cx, oldBuf, BufferContents::createNoData());
   return true;
 }
 
@@ -1203,6 +1206,7 @@ ArrayBufferObject* ArrayBufferObject::createForContents(
     OwnsState ownsState ) {
   MOZ_ASSERT(contents);
   MOZ_ASSERT(contents.kind() != INLINE_DATA);
+  MOZ_ASSERT(contents.kind() != NO_DATA);
   MOZ_ASSERT(contents.kind() != WASM);
 
   
@@ -1327,7 +1331,7 @@ ArrayBufferObject* ArrayBufferObject::createEmpty(JSContext* cx) {
   obj->setByteLength(0);
   obj->setFlags(0);
   obj->setFirstView(nullptr);
-  obj->setDataPointer(BufferContents::createMalloced(nullptr), DoesntOwnData);
+  obj->setDataPointer(BufferContents::createNoData(), OwnsData);
 
   return obj;
 }
@@ -1356,22 +1360,39 @@ ArrayBufferObject* ArrayBufferObject::createFromNewRawBuffer(
  ArrayBufferObject::BufferContents ArrayBufferObject::stealContents(
     JSContext* cx, Handle<ArrayBufferObject*> buffer,
     bool hasStealableContents) {
-  
-  
-  MOZ_ASSERT_IF(hasStealableContents,
-                buffer->hasStealableContents() ||
-                    (buffer->isWasm() && !buffer->isPreparedForAsmJS()));
   cx->check(buffer);
+
+  MOZ_ASSERT(!buffer->isPreparedForAsmJS(),
+             "asm.js-prepared buffers don't have detachable/stealable data");
+
+#ifdef DEBUG
+  if (hasStealableContents) {
+    MOZ_ASSERT(!buffer->isInlineData(),
+               "inline data is DoesntOwnData and isn't malloc-allocated");
+    MOZ_ASSERT(!buffer->isNoData(),
+               "null |dataPointer()| for the no-data case isn't stealable "
+               "because it would be confused with failure");
+    MOZ_ASSERT(!buffer->hasUserOwnedData(),
+               "user-owned data isn't stealable or necessarily malloc'd");
+
+    
+    
+    
+
+    
+    
+    
+
+    MOZ_ASSERT(!buffer->isExternal(),
+               "external data isn't necessarily malloc-allocated");
+  }
+#endif
 
   BufferContents oldContents = buffer->contents();
 
   if (hasStealableContents) {
-    
-    
-    auto newContents = BufferContents::createMalloced(nullptr);
     buffer->setOwnsData(DoesntOwnData);  
-    ArrayBufferObject::detach(cx, buffer, newContents);
-    buffer->setOwnsData(DoesntOwnData);  
+    ArrayBufferObject::detach(cx, buffer, BufferContents::createNoData());
     return oldContents;
   }
 
@@ -1411,6 +1432,9 @@ ArrayBufferObject* ArrayBufferObject::createFromNewRawBuffer(
             mallocSizeOf(buffer.dataPointer());
       }
       break;
+    case NO_DATA:
+      MOZ_ASSERT(buffer.dataPointer() == nullptr);
+      break;
     case USER_OWNED:
       MOZ_ASSERT_UNREACHABLE(
           "user-owned data should never be owned by this, and such memory "
@@ -1428,7 +1452,6 @@ ArrayBufferObject* ArrayBufferObject::createFromNewRawBuffer(
       MOZ_CRASH("external buffers not currently supported");
       break;
     case BAD1:
-    case BAD2:
       MOZ_CRASH("bad bufferKind()");
   }
 }
@@ -1663,9 +1686,11 @@ JS_FRIEND_API bool JS_DetachArrayBuffer(JSContext* cx, HandleObject obj) {
     return false;
   }
 
-  ArrayBufferObject::BufferContents newContents =
+  using BufferContents = ArrayBufferObject::BufferContents;
+
+  BufferContents newContents =
       buffer->hasStealableContents()
-          ? ArrayBufferObject::BufferContents::createMalloced(nullptr)
+          ? BufferContents::createNoData()
           : buffer->contents();
 
   ArrayBufferObject::detach(cx, buffer, newContents);
@@ -1787,6 +1812,8 @@ JS_PUBLIC_API void* JS_StealArrayBufferContents(JSContext* cx,
     return nullptr;
   }
 
+  
+  
   
   
   

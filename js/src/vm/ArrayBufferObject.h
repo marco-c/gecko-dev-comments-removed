@@ -189,16 +189,23 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
 
 
 
-    USER_OWNED = 0b010,
 
-    WASM = 0b011,
-    MAPPED = 0b100,
-    EXTERNAL = 0b101,
+    NO_DATA = 0b010,
+
+    
+
+
+
+
+    USER_OWNED = 0b011,
+
+    WASM = 0b100,
+    MAPPED = 0b101,
+    EXTERNAL = 0b110,
 
     
     
-    BAD1 = 0b110,
-    BAD2 = 0b111,
+    BAD1 = 0b111,
 
     KIND_MASK = 0b111
   };
@@ -266,6 +273,10 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
 
     static BufferContents createMalloced(void* data) {
       return BufferContents(static_cast<uint8_t*>(data), MALLOCED);
+    }
+
+    static BufferContents createNoData() {
+      return BufferContents(nullptr, NO_DATA);
     }
 
     static BufferContents createUserOwned(void* data) {
@@ -346,7 +357,15 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
 
   bool hasStealableContents() const {
     
-    return ownsData() && !isPreparedForAsmJS() && !isWasm();
+    if (ownsData()) {
+      MOZ_ASSERT(!isInlineData(), "inline data is always DoesntOwnData");
+
+      
+      
+      return !isPreparedForAsmJS() && !isNoData() && !isWasm();
+    }
+
+    return false;
   }
 
   static void addSizeOfExcludingThis(JSObject* obj,
@@ -406,6 +425,7 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
 
   bool isInlineData() const { return bufferKind() == INLINE_DATA; }
   bool isMalloced() const { return bufferKind() == MALLOCED; }
+  bool isNoData() const { return bufferKind() == NO_DATA; }
   bool hasUserOwnedData() const { return bufferKind() == USER_OWNED; }
 
   bool isWasm() const { return bufferKind() == WASM; }
