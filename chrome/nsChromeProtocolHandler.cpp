@@ -66,6 +66,13 @@ nsChromeProtocolHandler::GetProtocolFlags(uint32_t *result) {
 NS_IMETHODIMP
 nsChromeProtocolHandler::NewURI(const nsACString &aSpec, const char *aCharset,
                                 nsIURI *aBaseURI, nsIURI **result) {
+  return nsChromeProtocolHandler::CreateNewURI(aSpec, aCharset, aBaseURI,
+                                               result);
+}
+
+ nsresult nsChromeProtocolHandler::CreateNewURI(
+    const nsACString &aSpec, const char *aCharset, nsIURI *aBaseURI,
+    nsIURI **result) {
   
   
   nsresult rv;

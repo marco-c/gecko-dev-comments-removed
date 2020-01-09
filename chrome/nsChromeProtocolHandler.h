@@ -27,6 +27,8 @@ class nsChromeProtocolHandler final : public nsIProtocolHandler,
 
   
   nsChromeProtocolHandler() {}
+  static nsresult CreateNewURI(const nsACString &aSpec, const char *aCharset,
+                               nsIURI *aBaseURI, nsIURI **result);
 
  private:
   ~nsChromeProtocolHandler() {}
