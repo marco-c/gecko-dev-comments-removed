@@ -12,6 +12,7 @@
 #include "mozilla/MozPromise.h"
 #include "mozilla/RefPtr.h"
 #include "nsISupportsImpl.h"
+#include "mozilla/dom/MediaDebugInfoBinding.h"
 
 namespace mozilla {
 
@@ -129,9 +130,7 @@ class MediaSink {
   virtual void SetSecondaryVideoContainer(VideoFrameContainer* aSecondary) {}
   virtual void ClearSecondaryVideoContainer() {}
 
-  
-  
-  virtual nsCString GetDebugInfo() { return nsCString(); }
+  virtual void GetDebugInfo(dom::MediaSinkDebugInfo& aInfo) {}
 
  protected:
   virtual ~MediaSink() = default;
