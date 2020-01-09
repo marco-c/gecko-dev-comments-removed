@@ -1352,6 +1352,25 @@ class LSafepoint : public TempObject {
   
   SlotList slotsOrElementsSlots_;
 
+  
+  
+  bool isWasmTrap_;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  uint32_t framePushedAtStackMapBase_;
+
  public:
   void assertInvariants() {
     
@@ -1371,7 +1390,9 @@ class LSafepoint : public TempObject {
         nunboxParts_(alloc)
 #endif
         ,
-        slotsOrElementsSlots_(alloc) {
+        slotsOrElementsSlots_(alloc),
+        isWasmTrap_(false),
+        framePushedAtStackMapBase_(0) {
     assertInvariants();
   }
   void addLiveRegister(AnyRegister reg) {
@@ -1613,6 +1634,17 @@ class LSafepoint : public TempObject {
   void setOsiCallPointOffset(uint32_t osiCallPointOffset) {
     MOZ_ASSERT(!osiCallPointOffset_);
     osiCallPointOffset_ = osiCallPointOffset;
+  }
+
+  bool isWasmTrap() const { return isWasmTrap_; }
+  void setIsWasmTrap() { isWasmTrap_ = true; }
+
+  uint32_t framePushedAtStackMapBase() const {
+    return framePushedAtStackMapBase_;
+  }
+  void setFramePushedAtStackMapBase(uint32_t n) {
+    MOZ_ASSERT(framePushedAtStackMapBase_ == 0);
+    framePushedAtStackMapBase_ = n;
   }
 };
 

@@ -5917,6 +5917,7 @@ static void DumpTrackedOptimizations(TrackedOptimizations* optimizations) {
 }
 
 bool CodeGenerator::generateBody() {
+  JitSpew(JitSpew_Codegen, "==== BEGIN CodeGenerator::generateBody ====\n");
   IonScriptCounts* counts = maybeCreateScriptCounts();
 
 #if defined(JS_ION_PERF)
@@ -6060,6 +6061,7 @@ bool CodeGenerator::generateBody() {
 #endif
   }
 
+  JitSpew(JitSpew_Codegen, "==== END CodeGenerator::generateBody ====\n");
   return true;
 }
 
@@ -7004,11 +7006,6 @@ void CodeGenerator::visitComputeThis(LComputeThis* lir) {
   masm.bind(ool->rejoin());
 }
 
-typedef bool (*ImplicitThisFn)(JSContext*, HandleObject, HandlePropertyName,
-                               MutableHandleValue);
-static const VMFunction ImplicitThisInfo = FunctionInfo<ImplicitThisFn>(
-    ImplicitThisOperation, "ImplicitThisOperation");
-
 void CodeGenerator::visitImplicitThis(LImplicitThis* lir) {
   pushArg(ImmGCPtr(lir->mir()->name()));
   pushArg(ToRegister(lir->env()));
@@ -7255,7 +7252,11 @@ void CodeGenerator::visitGetNextEntryForIterator(
   }
 }
 
-void CodeGenerator::emitWasmCallBase(MWasmCall* mir, bool needsBoundsCheck) {
+template <size_t Defs>
+void CodeGenerator::emitWasmCallBase(LWasmCallBase<Defs>* lir) {
+  MWasmCall* mir = lir->mir();
+  bool needsBoundsCheck = lir->needsBoundsCheck();
+
   MOZ_ASSERT((sizeof(wasm::Frame) + masm.framePushed()) % WasmStackAlignment ==
              0);
   static_assert(
@@ -7304,6 +7305,15 @@ void CodeGenerator::emitWasmCallBase(MWasmCall* mir, bool needsBoundsCheck) {
       break;
   }
 
+  
+  markSafepointAt(masm.currentOffset(), lir);
+
+  
+  
+  lir->safepoint()->setFramePushedAtStackMapBase(
+      masm.framePushed() - mir->stackArgAreaSizeUnaligned());
+  MOZ_ASSERT(!lir->safepoint()->isWasmTrap());
+
   if (reloadRegs) {
     masm.loadWasmTlsRegFromFrame();
     masm.loadWasmPinnedRegsFromTls();
@@ -7316,15 +7326,15 @@ void CodeGenerator::emitWasmCallBase(MWasmCall* mir, bool needsBoundsCheck) {
 }
 
 void CodeGenerator::visitWasmCall(LWasmCall* ins) {
-  emitWasmCallBase(ins->mir(), ins->needsBoundsCheck());
+  emitWasmCallBase(ins);
 }
 
 void CodeGenerator::visitWasmCallVoid(LWasmCallVoid* ins) {
-  emitWasmCallBase(ins->mir(), ins->needsBoundsCheck());
+  emitWasmCallBase(ins);
 }
 
 void CodeGenerator::visitWasmCallI64(LWasmCallI64* ins) {
-  emitWasmCallBase(ins->mir(), ins->needsBoundsCheck());
+  emitWasmCallBase(ins);
 }
 
 void CodeGenerator::visitWasmLoadSlot(LWasmLoadSlot* ins) {
@@ -10208,17 +10218,341 @@ void CodeGenerator::visitRest(LRest* lir) {
            false, ToRegister(lir->output()));
 }
 
+
+
+
+typedef Vector<bool, 128, SystemAllocPolicy> StackMapBoolVector;
+
+static wasm::StackMap* ConvertStackMapBoolVectorToStackMap(
+                          const StackMapBoolVector& vec, bool hasRefs) {
+  wasm::StackMap* stackMap = wasm::StackMap::create(vec.length());
+  if (!stackMap) {
+    return nullptr;
+  }
+
+  bool hasRefsObserved = false;
+  size_t i = 0;
+  for (bool b : vec) {
+    if (b) {
+      stackMap->setBit(i);
+      hasRefsObserved = true;
+    }
+    i++;
+  }
+  MOZ_RELEASE_ASSERT(hasRefs == hasRefsObserved);
+
+  return stackMap;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static bool CreateStackMapFromLSafepoint(LSafepoint& safepoint,
+                                         const MachineState& trapExitLayout,
+                                         size_t trapExitLayoutNumWords,
+                                         size_t nInboundStackArgBytes,
+                                         wasm::StackMap** result) {
+  
+  *result = nullptr;
+
+  
+  const size_t nFrameBytes = sizeof(wasm::Frame);
+
+  
+  const size_t nBodyBytes = safepoint.framePushedAtStackMapBase();
+
+  
+  
+  const size_t nNonTrapBytes = nBodyBytes + nFrameBytes + nInboundStackArgBytes;
+  MOZ_ASSERT(nNonTrapBytes % sizeof(void*) == 0);
+
+  
+  const DebugOnly<size_t> nTotalBytes = nNonTrapBytes +
+      (safepoint.isWasmTrap() ? (trapExitLayoutNumWords * sizeof(void*)) : 0);
+
+  
+  
+  
+  
+  StackMapBoolVector vec;
+
+  
+  bool hasRefs = false;
+
+  
+  const LiveGeneralRegisterSet gcRegs = safepoint.gcRegs();
+  GeneralRegisterForwardIterator gcRegsIter(gcRegs);
+  if (safepoint.isWasmTrap()) {
+    
+    
+    
+    
+    if (!vec.appendN(false, trapExitLayoutNumWords)) {
+      return false;
+    }
+    for (; gcRegsIter.more(); ++gcRegsIter) {
+      Register reg = *gcRegsIter;
+      size_t offsetFromTop =
+        reinterpret_cast<size_t>(trapExitLayout.address(reg));
+
+      
+      
+      
+      MOZ_RELEASE_ASSERT(offsetFromTop < trapExitLayoutNumWords);
+
+      
+      
+      
+      size_t offsetFromBottom = trapExitLayoutNumWords - 1 - offsetFromTop;
+
+      vec[offsetFromBottom] = true;
+      hasRefs = true;
+    }
+  } else {
+    
+    
+    MOZ_RELEASE_ASSERT(!gcRegsIter.more());
+  }
+
+  
+  
+  size_t wordsSoFar = vec.length();
+  if (!vec.appendN(false, nNonTrapBytes / sizeof(void*))) {
+    return false;
+  }
+  const LSafepoint::SlotList& gcSlots = safepoint.gcSlots();
+  for (SafepointSlotEntry gcSlot : gcSlots) {
+    
+    
+    if (gcSlot.stack) {
+      
+      
+      MOZ_ASSERT(gcSlot.slot <= nBodyBytes);
+      uint32_t offsetInBytes = nBodyBytes - gcSlot.slot;
+      MOZ_ASSERT(offsetInBytes % sizeof(void*) == 0);
+      vec[wordsSoFar + offsetInBytes / sizeof(void*)] = true;
+    } else {
+      
+      MOZ_ASSERT(gcSlot.slot < nInboundStackArgBytes);
+      uint32_t offsetInBytes = nBodyBytes + nFrameBytes + gcSlot.slot;
+      MOZ_ASSERT(offsetInBytes % sizeof(void*) == 0);
+      vec[wordsSoFar + offsetInBytes / sizeof(void*)] = true;
+    }
+    hasRefs = true;
+  }
+
+#ifndef DEBUG
+  
+  
+  if (!hasRefs) {
+    return true;
+  }
+#endif
+
+  
+  MOZ_ASSERT(vec.length() * sizeof(void*) == nTotalBytes);
+  wasm::StackMap* stackMap = ConvertStackMapBoolVectorToStackMap(vec, hasRefs);
+  if (!stackMap) {
+    return false;
+  }
+  if (safepoint.isWasmTrap()) {
+    stackMap->setExitStubWords(trapExitLayoutNumWords);
+  }
+
+  
+  
+  
+  stackMap->setFrameOffsetFromTop((nInboundStackArgBytes + nFrameBytes)
+                                  / sizeof(void*));
+#ifdef DEBUG
+  for (uint32_t i = 0; i < nFrameBytes / sizeof(void*); i++) {
+    MOZ_ASSERT(stackMap->getBit(stackMap->numMappedWords -
+                                stackMap->frameOffsetFromTop + i) == 0);
+  }
+#endif
+
+  *result = stackMap;
+  return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static bool CreateStackMapForFunctionEntryTrap(
+                const wasm::ValTypeVector& argTypes,
+                const MachineState& trapExitLayout,
+                size_t trapExitLayoutWords,
+                size_t nBytesReservedBeforeTrap,
+                size_t nInboundStackArgBytes,
+                wasm::StackMap** result) {
+  
+  *result = nullptr;
+
+  
+  const size_t nFrameBytes = sizeof(wasm::Frame);
+
+  
+  const size_t trapExitLayoutBytes = trapExitLayoutWords * sizeof(void*);
+
+  
+  const DebugOnly<size_t> nTotalBytes =
+      trapExitLayoutBytes + nBytesReservedBeforeTrap + nFrameBytes +
+      nInboundStackArgBytes;
+
+  
+  
+  
+  
+  StackMapBoolVector vec;
+
+  
+  bool hasRefs = false;
+
+  
+  wasm::ExitStubMapVector trapExitExtras;
+  if (!GenerateStackmapEntriesForTrapExit(argTypes, trapExitLayout,
+                                          trapExitLayoutWords,
+                                          &trapExitExtras)) {
+    return false;
+  }
+  MOZ_ASSERT(trapExitExtras.length() == trapExitLayoutWords);
+
+  if (!vec.appendN(false, trapExitLayoutWords)) {
+    return false;
+  }
+  for (size_t i = 0; i < trapExitLayoutWords; i++) {
+    vec[i] = trapExitExtras[i];
+    hasRefs |= vec[i];
+  }
+
+  
+  MOZ_ASSERT(nBytesReservedBeforeTrap % sizeof(void*) == 0);
+  if (!vec.appendN(false, nBytesReservedBeforeTrap / sizeof(void*))) {
+    return false;
+  }
+
+  
+  if (!vec.appendN(false, nFrameBytes / sizeof(void*))) {
+    return false;
+  }
+
+  
+  MOZ_ASSERT(nInboundStackArgBytes % sizeof(void*) == 0);
+  const size_t numStackArgWords = nInboundStackArgBytes / sizeof(void*);
+
+  const size_t wordsSoFar = vec.length();
+  if (!vec.appendN(false, numStackArgWords)) {
+    return false;
+  }
+
+  for (ABIArgIter<const wasm::ValTypeVector> i(argTypes); !i.done(); i++) {
+    ABIArg argLoc = *i;
+    const wasm::ValType& ty = argTypes[i.index()];
+    MOZ_ASSERT(ToMIRType(ty) != MIRType::Pointer);
+    if (argLoc.kind() != ABIArg::Stack || !ty.isReference()) {
+      continue;
+    }
+    uint32_t offset = argLoc.offsetFromArgBase();
+    MOZ_ASSERT(offset < nInboundStackArgBytes);
+    MOZ_ASSERT(offset % sizeof(void*) == 0);
+    vec[wordsSoFar + offset / sizeof(void*)] = true;
+    hasRefs = true;
+  }
+
+#ifndef DEBUG
+  
+  
+  if (!hasRefs) {
+    return true;
+  }
+#endif
+
+  
+  MOZ_ASSERT(vec.length() * sizeof(void*) == nTotalBytes);
+  wasm::StackMap* stackMap = ConvertStackMapBoolVectorToStackMap(vec, hasRefs);
+  if (!stackMap) {
+    return false;
+  }
+  stackMap->setExitStubWords(trapExitLayoutWords);
+
+  stackMap->setFrameOffsetFromTop(nFrameBytes / sizeof(void*)
+                                  + numStackArgWords);
+#ifdef DEBUG
+  for (uint32_t i = 0; i < nFrameBytes / sizeof(void*); i++) {
+    MOZ_ASSERT(stackMap->getBit(stackMap->numMappedWords -
+                                stackMap->frameOffsetFromTop + i) == 0);
+  }
+#endif
+
+  *result = stackMap;
+  return true;
+}
+
 bool CodeGenerator::generateWasm(wasm::FuncTypeIdDesc funcTypeId,
                                  wasm::BytecodeOffset trapOffset,
-                                 wasm::FuncOffsets* offsets) {
+                                 const wasm::ValTypeVector& argTypes,
+                                 const MachineState& trapExitLayout,
+                                 size_t trapExitLayoutNumWords,
+                                 wasm::FuncOffsets* offsets,
+                                 wasm::StackMaps* stackMaps) {
   JitSpew(JitSpew_Codegen, "# Emitting wasm code");
 
+  size_t nInboundStackArgBytes = StackArgAreaSizeUnaligned(argTypes);
+
   wasm::GenerateFunctionPrologue(masm, funcTypeId, mozilla::Nothing(), offsets);
+
+  MOZ_ASSERT(masm.framePushed() == 0);
 
   if (omitOverRecursedCheck()) {
     masm.reserveStack(frameSize());
   } else {
-    masm.wasmReserveStackChecked(frameSize(), trapOffset);
+    std::pair<CodeOffset, uint32_t> pair =
+        masm.wasmReserveStackChecked(frameSize(), trapOffset);
+    CodeOffset trapInsnOffset = pair.first;
+    size_t nBytesReservedBeforeTrap = pair.second;
+
+    wasm::StackMap* functionEntryStackMap = nullptr;
+    if (!CreateStackMapForFunctionEntryTrap(argTypes, trapExitLayout,
+            trapExitLayoutNumWords, nBytesReservedBeforeTrap,
+            nInboundStackArgBytes, &functionEntryStackMap)) {
+      return false;
+    }
+    
+    
+    MOZ_ALWAYS_TRUE(functionEntryStackMap);
+    if (functionEntryStackMap &&
+        !stackMaps->add((uint8_t*)(uintptr_t)trapInsnOffset.offset(),
+                        functionEntryStackMap)) {
+      functionEntryStackMap->destroy();
+      return false;
+    }
   }
 
   MOZ_ASSERT(masm.framePushed() == frameSize());
@@ -10252,11 +10586,30 @@ bool CodeGenerator::generateWasm(wasm::FuncTypeIdDesc funcTypeId,
   MOZ_ASSERT(recovers_.size() == 0);
   MOZ_ASSERT(bailouts_.empty());
   MOZ_ASSERT(graph.numConstants() == 0);
-  MOZ_ASSERT(safepointIndices_.empty());
   MOZ_ASSERT(osiIndices_.empty());
   MOZ_ASSERT(icList_.empty());
   MOZ_ASSERT(safepoints_.size() == 0);
   MOZ_ASSERT(!scriptCounts_);
+
+  
+  
+  for (SafepointIndex& index : safepointIndices_) {
+    wasm::StackMap* stackMap = nullptr;
+    if (!CreateStackMapFromLSafepoint(*index.safepoint(), trapExitLayout,
+            trapExitLayoutNumWords, nInboundStackArgBytes, &stackMap)) {
+      return false;
+    }
+    
+    MOZ_ALWAYS_TRUE(stackMap);
+    if (!stackMap) {
+      continue;
+    }
+    if (!stackMaps->add((uint8_t*)(uintptr_t)index.displacement(), stackMap)) {
+      stackMap->destroy();
+      return false;
+    }
+  }
+
   return true;
 }
 
@@ -11120,7 +11473,7 @@ void CodeGenerator::visitSetPropertyCache(LSetPropertyCache* ins) {
 
 typedef bool (*ThrowFn)(JSContext*, HandleValue);
 static const VMFunction ThrowInfoCodeGen =
-    FunctionInfo<ThrowFn>(js::ThrowOperation, "ThrowOperation");
+    FunctionInfo<ThrowFn>(js::Throw, "Throw");
 
 void CodeGenerator::visitThrow(LThrow* lir) {
   pushArg(ToValue(lir, LThrow::Value));
@@ -12999,6 +13352,14 @@ void CodeGenerator::visitWasmInterruptCheck(LWasmInterruptCheck* lir) {
 
   masm.wasmInterruptCheck(ToRegister(lir->tlsPtr()),
                           lir->mir()->bytecodeOffset());
+
+  markSafepointAt(masm.currentOffset(), lir);
+
+  
+  
+  
+  lir->safepoint()->setFramePushedAtStackMapBase(masm.framePushed());
+  lir->safepoint()->setIsWasmTrap();
 }
 
 void CodeGenerator::visitWasmTrap(LWasmTrap* lir) {

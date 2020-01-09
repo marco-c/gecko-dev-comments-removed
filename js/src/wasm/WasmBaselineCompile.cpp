@@ -2155,39 +2155,9 @@ struct StackMapGenerator {
   
   
   MOZ_MUST_USE bool generateStackmapEntriesForTrapExit(
-      const ValTypeVector& args, ExitStubMapVector& extras) {
-    MOZ_ASSERT(extras.empty());
-
-    
-    
-    MOZ_ASSERT(trapExitLayoutNumWords_ < 0x100);
-
-    if (!extras.appendN(false, trapExitLayoutNumWords_)) {
-      return false;
-    }
-
-    for (ABIArgIter<const ValTypeVector> i(args); !i.done(); i++) {
-      if (!i->argInRegister() || i.mirType() != MIRType::RefOrNull) {
-        continue;
-      }
-
-      size_t offsetFromTop =
-          reinterpret_cast<size_t>(trapExitLayout_.address(i->gpr()));
-
-      
-      
-      
-      MOZ_RELEASE_ASSERT(offsetFromTop < trapExitLayoutNumWords_);
-
-      
-      
-      
-      size_t offsetFromBottom = trapExitLayoutNumWords_ - 1 - offsetFromTop;
-
-      extras[offsetFromBottom] = true;
-    }
-
-    return true;
+      const ValTypeVector& args, ExitStubMapVector* extras) {
+    return GenerateStackmapEntriesForTrapExit(args, trapExitLayout_,
+                                              trapExitLayoutNumWords_, extras);
   }
 
   
@@ -4145,7 +4115,7 @@ class BaseCompiler final : public BaseCompilerInterface {
 
     const ValTypeVector& args = funcType().args();
     ExitStubMapVector extras;
-    if (!stackMapGenerator_.generateStackmapEntriesForTrapExit(args, extras)) {
+    if (!stackMapGenerator_.generateStackmapEntriesForTrapExit(args, &extras)) {
       return false;
     }
     if (!createStackMap("stack check", extras, masm.currentOffset(),

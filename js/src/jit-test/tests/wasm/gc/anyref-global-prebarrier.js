@@ -34,7 +34,20 @@ startProfiling();
 gczeal(4, 1);
 e.set(obj);
 gczeal(0);
-assertEqPreciseStacks(endProfiling(), [['', '!>', '0,!>', '!>', '']]);
+assertEqPreciseStacks(
+    endProfiling(),
+    [
+        
+        ['', '!>', '0,!>', '<,0,!>', 'filtering GC postbarrier,0,!>',
+         '<,0,!>', '0,!>', '!>', ''],
+
+        
+        ['', '!>', '0,!>', '<,0,!>', 'GC postbarrier,0,!>',
+         '<,0,!>', '0,!>', '!>', ''],
+
+        
+        ['', '!>', '0,!>', '!>', ''],
+    ]);
 
 startProfiling();
 gczeal(4, 1);
@@ -42,4 +55,14 @@ e.set(null);
 gczeal(0);
 
 
-assertEqPreciseStacks(endProfiling(), [['', '!>', '0,!>', '', '0,!>', '!>', '']]);
+assertEqPreciseStacks(
+    endProfiling(),
+    [
+        
+        ['', '!>', '0,!>', '', '0,!>', '<,0,!>', 'filtering GC postbarrier,0,!>',
+         '<,0,!>', '0,!>', '!>', ''],
+
+        
+        ['', '!>', '0,!>', '', '0,!>', '!>', ''],
+    ]);
+

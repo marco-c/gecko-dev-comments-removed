@@ -65,7 +65,15 @@ if (!isSingleStepProfilingEnabled)
 enableGeckoProfiling();
 
 const EXPECTED_STACKS = [
-    ['', '!>', '0,!>', '<,0,!>', 'GC postbarrier,0,!>', '<,0,!>', '0,!>', '!>', ''],
+    
+    ['', '!>', '0,!>', '<,0,!>', 'GC postbarrier,0,!>',
+     '<,0,!>', '0,!>', '!>', ''],
+
+    
+    ['', '!>', '0,!>', '<,0,!>', 'filtering GC postbarrier,0,!>',
+     '<,0,!>', '0,!>', '!>', ''],
+
+    
     ['', '!>', '0,!>', '!>', ''],
 ];
 

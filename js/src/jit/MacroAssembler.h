@@ -1758,8 +1758,12 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   void wasmTrap(wasm::Trap trap, wasm::BytecodeOffset bytecodeOffset);
   void wasmInterruptCheck(Register tls, wasm::BytecodeOffset bytecodeOffset);
-  void wasmReserveStackChecked(uint32_t amount,
-                               wasm::BytecodeOffset trapOffset);
+
+  
+  
+  
+  std::pair<CodeOffset, uint32_t>
+  wasmReserveStackChecked(uint32_t amount, wasm::BytecodeOffset trapOffset);
 
   
   
