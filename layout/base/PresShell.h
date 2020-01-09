@@ -1201,6 +1201,13 @@ class PresShell final : public nsStubDocumentObserver,
   
   
   
+  
+  
+  
+  
+  
+  
+  
   void ScrollToVisual(const nsPoint& aVisualViewportOffset,
                       FrameMetrics::ScrollOffsetUpdateType aUpdateType,
                       ScrollMode aMode);
