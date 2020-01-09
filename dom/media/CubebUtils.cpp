@@ -460,11 +460,11 @@ cubeb* GetCubebContextUnlocked() {
         "Did not initialize sbrandName, and not on the main thread?");
   }
 
+  int rv = CUBEB_ERROR;
 #ifdef MOZ_CUBEB_REMOTING
   MOZ_LOG(gCubebLog, LogLevel::Info,
           ("%s: %s", PREF_CUBEB_SANDBOX, sCubebSandbox ? "true" : "false"));
 
-  int rv = CUBEB_OK;
   if (sCubebSandbox) {
     if (XRE_IsParentProcess()) {
       
@@ -490,11 +490,11 @@ cubeb* GetCubebContextUnlocked() {
 
     rv = audioipc_client_init(&sCubebContext, sBrandName, &initParams);
   } else {
+#endif
     rv = cubeb_init(&sCubebContext, sBrandName, sCubebBackendName.get());
+#ifdef MOZ_CUBEB_REMOTING
   }
   sIPCConnection = nullptr;
-#else   
-  int rv = cubeb_init(&sCubebContext, sBrandName, sCubebBackendName.get());
 #endif  
   NS_WARNING_ASSERTION(rv == CUBEB_OK, "Could not get a cubeb context.");
   sCubebState =
