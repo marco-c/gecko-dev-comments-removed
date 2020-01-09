@@ -9955,8 +9955,10 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
   nsCOMPtr<nsIContentSecurityPolicy> csp;
   aLoadState->TriggeringPrincipal()->GetCsp(getter_AddRefs(csp));
 #ifdef DEBUG
-  if (!aLoadState->TriggeringPrincipal()->GetIsNullPrincipal()) {
-    
+  
+  
+  
+  if (aLoadState->TriggeringPrincipal()->GetIsCodebasePrincipal()) {
     nsCOMPtr<nsIContentSecurityPolicy> argsCSP = aLoadState->Csp();
     MOZ_ASSERT(nsCSPContext::Equals(csp, argsCSP));
   }
