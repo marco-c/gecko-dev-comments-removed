@@ -264,7 +264,10 @@ function transformPageErrorPacket(packet) {
     private: pageError.private,
     executionPoint: pageError.executionPoint,
     chromeContext: pageError.chromeContext,
-    cssSelectors: pageError.cssSelectors,
+    
+    
+    
+    cssSelectors: pageError.cssSelectors || "",
   });
 }
 
