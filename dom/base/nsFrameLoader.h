@@ -71,6 +71,10 @@ class StructuredCloneData;
 
 }  
 
+namespace ipc {
+class MessageChannel;
+}  
+
 namespace layout {
 class RenderFrame;
 }  
@@ -390,6 +394,8 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
   void SkipBrowsingContextDetach();
 
+  void MaybeNotifyCrashed(mozilla::ipc::MessageChannel* aChannel);
+
  private:
   nsFrameLoader(mozilla::dom::Element* aOwner,
                 mozilla::dom::BrowsingContext* aBrowsingContext,
@@ -452,6 +458,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
   
   bool TryRemoteBrowser();
+  bool TryRemoteBrowserInternal();
 
   
   bool ShowRemoteFrame(const mozilla::ScreenIntSize& size,
@@ -526,6 +533,10 @@ class nsFrameLoader final : public nsStubMutationObserver,
   bool mRemoteBrowserShown : 1;
   bool mIsRemoteFrame : 1;
   bool mObservingOwnerContent : 1;
+
+  
+  
+  bool mTabProcessCrashFired : 1;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsFrameLoader, NS_FRAMELOADER_IID)

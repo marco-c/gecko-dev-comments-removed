@@ -83,6 +83,7 @@
 #include "mozilla/Unused.h"
 #include "mozilla/dom/ChromeMessageSender.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/FrameCrashedEvent.h"
 #include "mozilla/dom/FrameLoaderBinding.h"
 #include "mozilla/dom/MozFrameLoaderOwnerBinding.h"
 #include "mozilla/dom/SessionStoreListener.h"
@@ -186,7 +187,8 @@ nsFrameLoader::nsFrameLoader(Element* aOwner, BrowsingContext* aBrowsingContext,
       mLoadingOriginalSrc(false),
       mRemoteBrowserShown(false),
       mIsRemoteFrame(false),
-      mObservingOwnerContent(false) {
+      mObservingOwnerContent(false),
+      mTabProcessCrashFired(false) {
   mIsRemoteFrame = ShouldUseRemoteProcess();
   MOZ_ASSERT(!mIsRemoteFrame || !mBrowsingContext->HasOpener(),
              "Cannot pass aOpener for a remote frame!");
@@ -210,7 +212,8 @@ nsFrameLoader::nsFrameLoader(Element* aOwner, BrowsingContext* aBrowsingContext,
       mLoadingOriginalSrc(false),
       mRemoteBrowserShown(false),
       mIsRemoteFrame(false),
-      mObservingOwnerContent(false) {
+      mObservingOwnerContent(false),
+      mTabProcessCrashFired(false) {
   if (aOptions.mRemoteType.WasPassed() &&
       (!aOptions.mRemoteType.Value().IsVoid())) {
     mIsRemoteFrame = true;
@@ -2565,7 +2568,7 @@ bool nsFrameLoader::EnsureRemoteBrowser() {
   return mRemoteBrowser || TryRemoteBrowser();
 }
 
-bool nsFrameLoader::TryRemoteBrowser() {
+bool nsFrameLoader::TryRemoteBrowserInternal() {
   NS_ASSERTION(!mRemoteBrowser,
                "TryRemoteBrowser called with a remote browser already?");
 
@@ -2751,6 +2754,21 @@ bool nsFrameLoader::TryRemoteBrowser() {
   InitializeBrowserAPI();
 
   return true;
+}
+
+bool nsFrameLoader::TryRemoteBrowser() {
+  
+  if (TryRemoteBrowserInternal()) {
+    return true;
+  }
+
+  
+  
+  if (XRE_IsParentProcess() && mOwnerContent && mOwnerContent->IsXULElement()) {
+    MaybeNotifyCrashed(nullptr);
+  }
+
+  return false;
 }
 
 bool nsFrameLoader::IsRemoteFrame() {
@@ -3503,4 +3521,52 @@ void nsFrameLoader::SkipBrowsingContextDetach() {
   RefPtr<nsDocShell> docshell = GetDocShell();
   MOZ_ASSERT(docshell);
   docshell->SkipBrowsingContextDetach();
+}
+
+void nsFrameLoader::MaybeNotifyCrashed(mozilla::ipc::MessageChannel* aChannel) {
+  if (mTabProcessCrashFired) {
+    return;
+  }
+  mTabProcessCrashFired = true;
+
+  
+  nsCOMPtr<nsIObserverService> os = services::GetObserverService();
+  if (!os) {
+    return;
+  }
+  os->NotifyObservers(ToSupports(this), "oop-frameloader-crashed", nullptr);
+
+  
+  
+  RefPtr<nsFrameLoaderOwner> owner = do_QueryObject(mOwnerContent);
+  if (!owner) {
+    return;
+  }
+
+  RefPtr<nsFrameLoader> currentFrameLoader = owner->GetFrameLoader();
+  if (currentFrameLoader != this) {
+    return;
+  }
+
+  
+  nsString eventName;
+  if (aChannel && !aChannel->DoBuildIDsMatch()) {
+    eventName = NS_LITERAL_STRING("oop-browser-buildid-mismatch");
+  } else {
+    eventName = NS_LITERAL_STRING("oop-browser-crashed");
+  }
+
+  FrameCrashedEventInit init;
+  init.mBubbles = true;
+  init.mCancelable = true;
+  if (mBrowsingContext) {
+    init.mBrowsingContextId = mBrowsingContext->Id();
+    init.mIsTopFrame = !mBrowsingContext->GetParent();
+  }
+
+  RefPtr<FrameCrashedEvent> event = FrameCrashedEvent::Constructor(
+      mOwnerContent->OwnerDoc(), eventName, init);
+  event->SetTrusted(true);
+  EventDispatcher::DispatchDOMEvent(mOwnerContent, nullptr, event, nullptr,
+                                    nullptr);
 }
