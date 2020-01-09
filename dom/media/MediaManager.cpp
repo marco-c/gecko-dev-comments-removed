@@ -813,7 +813,7 @@ NS_IMPL_ISUPPORTS(MediaDevice, nsIMediaDevice)
 
 MediaDevice::MediaDevice(const RefPtr<MediaEngineSource>& aSource,
                          const nsString& aName, const nsString& aID,
-                         const nsString& aGroupID, const nsString& aRawID)
+                         const nsString& aRawID)
     : mSource(aSource),
       mSinkInfo(nullptr),
       mKind((mSource && MediaEngineSource::IsVideo(mSource->GetMediaSource()))
@@ -824,14 +824,12 @@ MediaDevice::MediaDevice(const RefPtr<MediaEngineSource>& aSource,
           dom::MediaDeviceKindValues::strings[uint32_t(mKind)].value)),
       mName(aName),
       mID(aID),
-      mGroupID(aGroupID),
       mRawID(aRawID) {
   MOZ_ASSERT(mSource);
 }
 
 MediaDevice::MediaDevice(const RefPtr<AudioDeviceInfo>& aAudioDeviceInfo,
-                         const nsString& aID, const nsString& aGroupID,
-                         const nsString& aRawID)
+                         const nsString& aID, const nsString& aRawID)
     : mSource(nullptr),
       mSinkInfo(aAudioDeviceInfo),
       mKind(mSinkInfo->Type() == AudioDeviceInfo::TYPE_INPUT
@@ -842,7 +840,6 @@ MediaDevice::MediaDevice(const RefPtr<AudioDeviceInfo>& aAudioDeviceInfo,
           dom::MediaDeviceKindValues::strings[uint32_t(mKind)].value)),
       mName(mSinkInfo->Name()),
       mID(aID),
-      mGroupID(aGroupID),
       mRawID(aRawID) {
   
   
@@ -853,7 +850,7 @@ MediaDevice::MediaDevice(const RefPtr<AudioDeviceInfo>& aAudioDeviceInfo,
 }
 
 MediaDevice::MediaDevice(const RefPtr<MediaDevice>& aOther, const nsString& aID,
-                         const nsString& aGroupID, const nsString& aRawID)
+                         const nsString& aRawID)
     : mSource(aOther->mSource),
       mSinkInfo(aOther->mSinkInfo),
       mKind(aOther->mKind),
@@ -861,7 +858,6 @@ MediaDevice::MediaDevice(const RefPtr<MediaDevice>& aOther, const nsString& aID,
       mType(aOther->mType),
       mName(aOther->mName),
       mID(aID),
-      mGroupID(aGroupID),
       mRawID(aRawID) {
   MOZ_ASSERT(aOther);
 }
@@ -952,13 +948,6 @@ NS_IMETHODIMP
 MediaDevice::GetRawId(nsAString& aID) {
   MOZ_ASSERT(NS_IsMainThread());
   aID.Assign(mRawID);
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-MediaDevice::GetGroupId(nsAString& aGroupID) {
-  MOZ_ASSERT(NS_IsMainThread());
-  aGroupID.Assign(mGroupID);
   return NS_OK;
 }
 
@@ -1784,70 +1773,6 @@ class GetUserMediaRunnableWrapper : public Runnable {
 
 
 
-
-
-
-void MediaManager::GuessVideoDeviceGroupIDs(MediaDeviceSet& aDevices) {
-  
-  auto updateGroupIdIfNeeded = [&](RefPtr<MediaDevice>& aVideo,
-                                   const dom::MediaDeviceKind aKind) -> bool {
-    MOZ_ASSERT(aVideo->mKind == dom::MediaDeviceKind::Videoinput);
-    MOZ_ASSERT(aKind == dom::MediaDeviceKind::Audioinput ||
-               aKind == dom::MediaDeviceKind::Audiooutput);
-    
-    nsString newVideoGroupID;
-    
-    
-    
-    
-    
-    bool updateGroupId = false;
-    for (const RefPtr<MediaDevice>& dev : aDevices) {
-      if (dev->mKind != aKind) {
-        continue;
-      }
-      if (!FindInReadable(aVideo->mName, dev->mName)) {
-        continue;
-      }
-      if (newVideoGroupID.IsEmpty()) {
-        
-        
-        updateGroupId = true;
-        newVideoGroupID = dev->mGroupID;
-      } else {
-        
-        
-        updateGroupId = false;
-        newVideoGroupID = NS_LITERAL_STRING("");
-        break;
-      }
-    }
-    if (updateGroupId) {
-      aVideo =
-          new MediaDevice(aVideo, aVideo->mID, newVideoGroupID, aVideo->mRawID);
-      return true;
-    }
-    return false;
-  };
-
-  for (RefPtr<MediaDevice>& video : aDevices) {
-    if (video->mKind != dom::MediaDeviceKind::Videoinput) {
-      continue;
-    }
-    if (updateGroupIdIfNeeded(video, dom::MediaDeviceKind::Audioinput)) {
-      
-      continue;
-    }
-    
-    updateGroupIdIfNeeded(video, dom::MediaDeviceKind::Audiooutput);
-  }
-}
-
-
-
-
-
-
 RefPtr<MediaManager::MgrPromise> MediaManager::EnumerateRawDevices(
     uint64_t aWindowId, MediaSourceEnum aVideoInputType,
     MediaSourceEnum aAudioInputType, MediaSinkEnum aAudioOutputType,
@@ -1954,9 +1879,6 @@ RefPtr<MediaManager::MgrPromise> MediaManager::EnumerateRawDevices(
       realBackend->EnumerateDevices(aWindowId, MediaSourceEnum::Other,
                                     MediaSinkEnum::Speaker, &outputs);
       aOutDevices->AppendElements(outputs);
-    }
-    if (hasVideo) {
-      GuessVideoDeviceGroupIDs(*aOutDevices);
     }
 
     holder->Resolve(false, __func__);
@@ -3082,27 +3004,14 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetDisplayMedia(
 
 
 void MediaManager::AnonymizeDevices(MediaDeviceSet& aDevices,
-                                    const nsACString& aOriginKey,
-                                    const uint64_t aWindowId) {
-
+                                    const nsACString& aOriginKey) {
   if (!aOriginKey.IsEmpty()) {
     for (RefPtr<MediaDevice>& device : aDevices) {
       nsString id;
       device->GetId(id);
       nsString rawId(id);
       AnonymizeId(id, aOriginKey);
-
-      nsString groupId;
-      device->GetGroupId(groupId);
-      
-      
-      
-      
-      
-      groupId.AppendInt(aWindowId);
-      AnonymizeId(groupId, aOriginKey);
-
-      device = new MediaDevice(device, id, groupId, rawId);
+      device = new MediaDevice(device, id, rawId);
     }
   }
 }
@@ -3281,8 +3190,7 @@ RefPtr<MediaManager::MgrPromise> MediaManager::EnumerateDevicesImpl(
                      MakeRefPtr<MediaMgrError>(MediaMgrError::Name::AbortError),
                      __func__);
                }
-               MediaManager::AnonymizeDevices(*aOutDevices, *originKey,
-                                              aWindowId);
+               MediaManager::AnonymizeDevices(*aOutDevices, *originKey);
                return MgrPromise::CreateAndResolve(false, __func__);
              },
              [](RefPtr<MediaMgrError>&& aError) {
