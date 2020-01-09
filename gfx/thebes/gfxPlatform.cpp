@@ -2147,23 +2147,6 @@ static void ShutdownCMS() {
   gCMSInitialized = false;
 }
 
-
-
-void gfxPlatform::SetupClusterBoundaries(gfxTextRun* aTextRun,
-                                         const char16_t* aString) {
-  if (aTextRun->GetFlags() & gfx::ShapedTextFlags::TEXT_IS_8BIT) {
-    
-    
-    
-    
-    
-    
-    return;
-  }
-
-  aTextRun->SetupClusterBoundaries(0, aString, aTextRun->GetLength());
-}
-
 int32_t gfxPlatform::GetBidiNumeralOption() {
   if (mBidiNumeralOption == UNINITIALIZED_VALUE) {
     mBidiNumeralOption = Preferences::GetInt(BIDI_NUMERAL_PREF, 0);

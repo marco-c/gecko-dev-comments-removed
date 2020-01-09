@@ -303,12 +303,10 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   mozilla::gfx::BackendType GetFallbackCanvasBackend() {
     return mFallbackCanvasBackend;
   }
+
   
 
 
-
-  virtual void SetupClusterBoundaries(gfxTextRun* aTextRun,
-                                      const char16_t* aString);
 
   
 
