@@ -23,6 +23,7 @@
 #ifdef JS_CODEGEN_ARM64
 #  include "jit/arm64/vixl/Cpu-vixl.h"
 #endif
+#include "jit/AtomicOperations.h"
 #include "threading/LockGuard.h"
 #include "threading/Mutex.h"
 #include "util/Windows.h"
@@ -724,6 +725,19 @@ bool js::jit::ReprotectRegion(void* start, size_t size,
   MOZ_ASSERT((uintptr_t(pageStart) % pageSize) == 0);
 
   execMemory.assertValidAddress(pageStart, size);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  std::atomic_thread_fence(std::memory_order_seq_cst);
 
 #ifdef XP_WIN
   DWORD oldProtect;
