@@ -401,8 +401,17 @@ void MobileViewportManager::UpdateResolution(
       
       
       
-      if (zoom < intrinsicScale) {
-        newZoom = Some(intrinsicScale);
+      CSSToScreenScale clampedZoom = zoom;
+
+      if (clampedZoom < intrinsicScale) {
+        clampedZoom = intrinsicScale;
+      }
+
+      
+      clampedZoom = ClampZoom(clampedZoom, aViewportInfo);
+
+      if (clampedZoom != zoom) {
+        newZoom = Some(clampedZoom);
       }
     }
   }
