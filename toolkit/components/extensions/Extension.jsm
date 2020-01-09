@@ -1854,24 +1854,26 @@ class Extension extends ExtensionData {
   async startup() {
     this.state = "Startup";
 
+    let resolveReadyPromise;
+    let readyPromise = new Promise(resolve => {
+      resolveReadyPromise = resolve;
+    });
+
     
     
     this.policy = new WebExtensionPolicy({
       id: this.id,
       mozExtensionHostname: this.uuid,
-      baseURL: this.baseURI.spec,
+      baseURL: this.resourceURL,
       allowedOrigins: new MatchPatternSet([]),
       localizeCallback() {},
+      readyPromise,
     });
-    if (!WebExtensionPolicy.getByID(this.id)) {
-      
-      
-      
-      
-      this.policy.active = true;
-    }
 
     this.policy.extension = this;
+    if (!WebExtensionPolicy.getByID(this.id)) {
+      this.policy.active = true;
+    }
 
     ExtensionTelemetry.extensionStartup.stopwatchStart(this);
     try {
@@ -1929,6 +1931,8 @@ class Extension extends ExtensionData {
           this.setSharedData("storageIDBPrincipal", ExtensionStorageIDB.getStoragePrincipal(this));
         }
       }
+
+      resolveReadyPromise(this.policy);
 
       
       
