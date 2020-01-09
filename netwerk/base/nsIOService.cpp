@@ -59,6 +59,7 @@
 #include "ReferrerPolicy.h"
 #include "nsContentSecurityManager.h"
 #include "nsContentUtils.h"
+#include "nsExceptionHandler.h"
 
 namespace mozilla {
 namespace net {
@@ -1763,6 +1764,22 @@ nsresult nsIOService::SpeculativeConnectInternal(
   nsCOMPtr<nsIPrincipal> loadingPrincipal = aPrincipal;
 
   MOZ_ASSERT(aPrincipal, "We expect passing a principal here.");
+
+  
+  
+  
+  if (!aPrincipal) {
+    JSContext *cx = nsContentUtils::GetCurrentJSContext();
+    if (cx) {
+      JS::UniqueChars chars = xpc_PrintJSStack(cx,
+                                               false,
+                                               false,
+                                               false);
+      CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::Bug_1537883,
+                                         chars.get());
+      MOZ_CRASH("aPrincipal can not be null");
+    }
+  }
 
   
   
