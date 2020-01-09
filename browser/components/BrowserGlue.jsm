@@ -215,9 +215,6 @@ let ACTORS = {
         "PageStyle:Switch",
         "PageStyle:Disable",
       ],
-      
-      
-      matches: ["*://*/*"],
     },
   },
 

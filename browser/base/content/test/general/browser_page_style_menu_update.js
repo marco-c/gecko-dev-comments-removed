@@ -6,6 +6,29 @@ const PAGE = "http://example.com/browser/browser/base/content/test/general/page_
 
 
 
+
+
+
+
+
+
+function promiseStylesheetsUpdated(browser) {
+  return ContentTask.spawn(browser, { PAGE }, async function(args) {
+    return new Promise((resolve) => {
+      addEventListener("pageshow", function onPageShow(e) {
+        if (e.target.location == args.PAGE) {
+          removeEventListener("pageshow", onPageShow);
+          content.setTimeout(resolve, 0);
+        }
+      });
+    });
+  });
+}
+
+
+
+
+
 add_task(async function() {
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank", false);
   let browser = tab.linkedBrowser;
@@ -27,7 +50,12 @@ add_task(async function() {
 
   
   
-  await promiseStylesheetsUpdated(browser);
+  
+  
+  
+  await ContentTask.spawn(browser, {}, async function() {
+    dump("\nJust wasting some time.\n");
+  });
 
   gPageStyleMenu.fillPopup(menupopup);
   
