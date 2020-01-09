@@ -812,3 +812,13 @@ function* makeDebuggeeIterator(object) {
 }
 
 exports.makeDebuggeeIterator = makeDebuggeeIterator;
+
+
+
+
+
+function getTopWindow(win) {
+  return win.windowRoot ? win.windowRoot.ownerGlobal : win.top;
+}
+
+exports.getTopWindow = getTopWindow;
