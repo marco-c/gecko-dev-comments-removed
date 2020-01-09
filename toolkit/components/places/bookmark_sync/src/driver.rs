@@ -2,9 +2,12 @@
 
 
 
-use std::fmt::Write;
+use std::{
+    fmt::Write,
+    sync::atomic::{AtomicBool, Ordering},
+};
 
-use dogear::Guid;
+use dogear::{AbortSignal, Guid};
 use log::{Level, LevelFilter, Log, Metadata, Record};
 use moz_task::{Task, TaskRunnable, ThreadPtrHandle};
 use nserror::nsresult;
@@ -22,6 +25,33 @@ fn generate_guid() -> Result<nsCString, nsresult> {
         Ok(guid)
     } else {
         Err(rv)
+    }
+}
+
+
+
+pub struct AbortController {
+    aborted: AtomicBool,
+}
+
+impl AbortController {
+    
+    pub fn abort(&self) {
+        self.aborted.store(true, Ordering::Release)
+    }
+}
+
+impl Default for AbortController {
+    fn default() -> AbortController {
+        AbortController {
+            aborted: AtomicBool::new(false),
+        }
+    }
+}
+
+impl AbortSignal for AbortController {
+    fn aborted(&self) -> bool {
+        self.aborted.load(Ordering::Acquire)
     }
 }
 

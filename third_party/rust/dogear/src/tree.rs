@@ -16,6 +16,7 @@ use std::{
     borrow::Cow,
     cmp::Ordering,
     collections::{HashMap, HashSet},
+    convert::{TryFrom, TryInto},
     fmt, mem,
     ops::Deref,
     ptr,
@@ -23,17 +24,11 @@ use std::{
 
 use smallbitvec::SmallBitVec;
 
-use crate::error::{ErrorKind, Result};
+use crate::error::{Error, ErrorKind, Result};
 use crate::guid::Guid;
 
 
 type Index = usize;
-
-
-pub trait IntoTree {
-    
-    fn into_tree(self) -> Result<Tree>;
-}
 
 
 
@@ -115,13 +110,6 @@ impl Tree {
     #[inline]
     pub fn problems(&self) -> &Problems {
         &self.problems
-    }
-}
-
-impl IntoTree for Tree {
-    #[inline]
-    fn into_tree(self) -> Result<Tree> {
-        Ok(self)
     }
 }
 
@@ -287,21 +275,30 @@ impl Builder {
         };
         ParentBuilder(self, entry_child)
     }
+
+    
+    
+    
+    
+    pub fn into_tree(self) -> Result<Tree> {
+        self.try_into()
+    }
 }
 
-impl IntoTree for Builder {
+impl TryFrom<Builder> for Tree {
+    type Error = Error;
     
     
     
-    fn into_tree(self) -> Result<Tree> {
+    fn try_from(builder: Builder) -> Result<Tree> {
         let mut problems = Problems::default();
 
         
         
-        let mut parents = Vec::with_capacity(self.entries.len());
+        let mut parents = Vec::with_capacity(builder.entries.len());
         let mut reparented_child_indices_by_parent: HashMap<Index, Vec<Index>> = HashMap::new();
-        for (entry_index, entry) in self.entries.iter().enumerate() {
-            let r = ResolveParent::new(&self, entry, &mut problems);
+        for (entry_index, entry) in builder.entries.iter().enumerate() {
+            let r = ResolveParent::new(&builder, entry, &mut problems);
             let resolved_parent = r.resolve();
             if let ResolvedParent::ByParentGuid(parent_index) = &resolved_parent {
                 
@@ -320,12 +317,12 @@ impl IntoTree for Builder {
         
         
         if let Some(index) = detect_cycles(&parents) {
-            return Err(ErrorKind::Cycle(self.entries[index].item.guid.clone()).into());
+            return Err(ErrorKind::Cycle(builder.entries[index].item.guid.clone()).into());
         }
 
         
-        let mut entries = Vec::with_capacity(self.entries.len());
-        for (entry_index, entry) in self.entries.into_iter().enumerate() {
+        let mut entries = Vec::with_capacity(builder.entries.len());
+        for (entry_index, entry) in builder.entries.into_iter().enumerate() {
             
             let mut divergence = Divergence::Consistent;
 
@@ -417,7 +414,7 @@ impl IntoTree for Builder {
 
         
         Ok(Tree {
-            entry_index_by_guid: self.entry_index_by_guid,
+            entry_index_by_guid: builder.entry_index_by_guid,
             entries,
             deleted_guids: HashSet::new(),
             problems,
@@ -1477,11 +1474,18 @@ impl<'t> MergedRoot<'t> {
     pub fn to_ascii_string(&self) -> String {
         self.node.to_ascii_fragment("")
     }
+
+    
+    #[cfg(test)]
+    pub(crate) fn into_tree(self) -> Result<Tree> {
+        self.try_into()
+    }
 }
 
 #[cfg(test)]
-impl<'t> IntoTree for MergedRoot<'t> {
-    fn into_tree(self) -> Result<Tree> {
+impl<'t> TryFrom<MergedRoot<'t>> for Tree {
+    type Error = Error;
+    fn try_from(merged_root: MergedRoot<'t>) -> Result<Tree> {
         fn to_item(merged_node: &MergedNode<'_>) -> Item {
             let node = merged_node.merge_state.node();
             let mut item = Item::new(merged_node.guid.clone(), node.kind);
@@ -1490,17 +1494,17 @@ impl<'t> IntoTree for MergedRoot<'t> {
             item
         }
 
-        let mut b = Tree::with_root(to_item(&self.node));
+        let mut b = Tree::with_root(to_item(&merged_root.node));
         for MergedDescendant {
             merged_parent_node,
             merged_node,
             ..
-        } in self.descendants()
+        } in merged_root.descendants()
         {
             b.item(to_item(merged_node))?
                 .by_structure(&merged_parent_node.guid)?;
         }
-        b.into_tree()
+        b.try_into()
     }
 }
 
