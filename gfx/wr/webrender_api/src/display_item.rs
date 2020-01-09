@@ -626,7 +626,7 @@ pub enum MixBlendMode {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub enum FilterOp {
     
     
@@ -650,7 +650,7 @@ pub enum FilterOp {
 impl FilterOp {
     
     
-    pub fn sanitize(self) -> FilterOp {
+    pub fn sanitize(&self) -> FilterOp {
         match self {
             FilterOp::Blur(radius) => {
                 let radius = radius.min(MAX_BLUR_RADIUS);
@@ -658,9 +658,9 @@ impl FilterOp {
             }
             FilterOp::DropShadow(offset, radius, color) => {
                 let radius = radius.min(MAX_BLUR_RADIUS);
-                FilterOp::DropShadow(offset, radius, color)
+                FilterOp::DropShadow(*offset, radius, *color)
             }
-            filter => filter,
+            filter => filter.clone(),
         }
     }
 }
