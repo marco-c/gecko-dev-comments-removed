@@ -912,7 +912,7 @@ pub struct RenderPass {
     pub kind: RenderPassKind,
     
     
-    tasks: Vec<RenderTaskId>,
+    pub tasks: Vec<RenderTaskId>,
 }
 
 impl RenderPass {
