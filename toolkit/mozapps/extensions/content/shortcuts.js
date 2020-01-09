@@ -217,6 +217,13 @@ function onShortcutChange(e) {
   e.preventDefault();
   e.stopPropagation();
 
+  
+  if (ShortcutUtils.getSystemActionForEvent(e)) {
+    e.defaultCancelled = true;
+    setError(input, "shortcuts-system");
+    return;
+  }
+
   let shortcutString = getShortcutForEvent(e);
   input.value = getShortcutValue(shortcutString);
 
