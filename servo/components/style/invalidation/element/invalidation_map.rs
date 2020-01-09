@@ -98,6 +98,7 @@ impl Dependency {
             
             Some(Combinator::PseudoElement) => DependencyInvalidationKind::ElementAndDescendants,
             Some(Combinator::SlotAssignment) => DependencyInvalidationKind::SlottedElements,
+            Some(Combinator::Part) => unimplemented!("Need to add invalidation for shadow parts"),
         }
     }
 }
