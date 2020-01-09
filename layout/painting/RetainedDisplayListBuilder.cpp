@@ -1085,7 +1085,8 @@ static void AddFramesForContainingBlock(nsIFrame* aBlock,
 
 
 
-void FindContainingBlocks(nsIFrame* aFrame, nsTArray<nsIFrame*>& aExtraFrames) {
+static void FindContainingBlocks(nsIFrame* aFrame,
+                                 nsTArray<nsIFrame*>& aExtraFrames) {
   for (nsIFrame* f = aFrame; f;
        f = nsLayoutUtils::GetParentOrPlaceholderForCrossDoc(f)) {
     if (f->ForceDescendIntoIfVisible()) return;

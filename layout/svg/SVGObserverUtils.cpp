@@ -966,7 +966,7 @@ typedef nsInterfaceHashtable<nsRefPtrHashKey<URLAndReferrerInfo>,
 using PaintingPropertyDescriptor =
     const mozilla::FramePropertyDescriptor<nsSVGPaintingProperty>*;
 
-void DestroyFilterProperty(SVGFilterObserverListForCSSProp* aProp) {
+static void DestroyFilterProperty(SVGFilterObserverListForCSSProp* aProp) {
   
   
   
