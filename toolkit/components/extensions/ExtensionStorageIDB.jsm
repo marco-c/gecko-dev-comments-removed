@@ -567,7 +567,7 @@ this.ExtensionStorageIDB = {
               ...parentResult,
               
               
-              storagePrincipal: parentResult.storagePrincipal.deserialize(this),
+              storagePrincipal: parentResult.storagePrincipal.deserialize(this, true),
             };
           }
 

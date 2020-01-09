@@ -2950,7 +2950,7 @@ class SchemaRoot extends Namespace {
     for (let [key, schema] of this.schemaJSON.entries()) {
       try {
         if (typeof schema.deserialize === "function") {
-          schema = schema.deserialize(global);
+          schema = schema.deserialize(global, isParentProcess);
 
           
           
