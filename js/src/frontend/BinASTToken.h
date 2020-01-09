@@ -185,14 +185,14 @@ namespace frontend {
   F(YieldExpression, "YieldExpression")                                       \
   F(YieldStarExpression, "YieldStarExpression")
 
-enum class BinKind {
+enum class BinASTKind {
 #define EMIT_ENUM(name, _) name,
   FOR_EACH_BIN_KIND(EMIT_ENUM)
 #undef EMIT_ENUM
 };
 
 
-const size_t BINKIND_LIMIT = 120;
+const size_t BINASTKIND_LIMIT = 120;
 
 
 
@@ -278,14 +278,14 @@ const size_t BINKIND_LIMIT = 120;
   F(Update, "update")                                 \
   F(Value, "value")
 
-enum class BinField {
+enum class BinASTField {
 #define EMIT_ENUM(name, _) name,
   FOR_EACH_BIN_FIELD(EMIT_ENUM)
 #undef EMIT_ENUM
 };
 
 
-const size_t BINFIELD_LIMIT = 69;
+const size_t BINASTFIELD_LIMIT = 69;
 
 
 
@@ -354,29 +354,29 @@ const size_t BINFIELD_LIMIT = 69;
   F(VariableDeclarationKindConst, "const")                    \
   F(VariableDeclarationKindLet, "let")
 
-enum class BinVariant {
+enum class BinASTVariant {
 #define EMIT_ENUM(name, _) name,
   FOR_EACH_BIN_VARIANT(EMIT_ENUM)
 #undef EMIT_ENUM
 };
 
 
-const size_t BINVARIANT_LIMIT = 49;
+const size_t BINASTVARIANT_LIMIT = 49;
 
 
 
 
-const char* describeBinKind(const BinKind& kind);
+const char* describeBinASTKind(const BinASTKind& kind);
 
 
 
 
-const char* describeBinField(const BinField& kind);
+const char* describeBinASTField(const BinASTField& kind);
 
 
 
 
-const char* describeBinVariant(const BinVariant& kind);
+const char* describeBinASTVariant(const BinASTVariant& kind);
 
 }  
 }  

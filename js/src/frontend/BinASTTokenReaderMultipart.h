@@ -40,9 +40,9 @@ class MOZ_STACK_CLASS BinASTTokenReaderMultipart
 
   
   
-  class BinFields {
+  class BinASTFields {
    public:
-    explicit BinFields(JSContext*) {}
+    explicit BinASTFields(JSContext*) {}
   };
   using Chars = CharSlice;
 
@@ -120,8 +120,8 @@ class MOZ_STACK_CLASS BinASTTokenReaderMultipart
   
 
 
-  MOZ_MUST_USE JS::Result<mozilla::Maybe<BinVariant>> readMaybeVariant();
-  MOZ_MUST_USE JS::Result<BinVariant> readVariant();
+  MOZ_MUST_USE JS::Result<mozilla::Maybe<BinASTVariant>> readMaybeVariant();
+  MOZ_MUST_USE JS::Result<BinASTVariant> readVariant();
 
   
 
@@ -171,7 +171,7 @@ class MOZ_STACK_CLASS BinASTTokenReaderMultipart
 
 
   MOZ_MUST_USE JS::Result<Ok> enterTaggedTuple(
-      BinKind& tag, BinASTTokenReaderMultipart::BinFields& fields,
+      BinASTKind& tag, BinASTTokenReaderMultipart::BinASTFields& fields,
       AutoTaggedTuple& guard);
 
   
@@ -190,7 +190,8 @@ class MOZ_STACK_CLASS BinASTTokenReaderMultipart
  private:
   
   
-  js::HashMap<uint32_t, BinVariant, DefaultHasher<uint32_t>, SystemAllocPolicy>
+  js::HashMap<uint32_t, BinASTVariant, DefaultHasher<uint32_t>,
+              SystemAllocPolicy>
       variantsTable_;
 
   enum class MetadataOwnership { Owned, Unowned };
@@ -279,15 +280,15 @@ class MOZ_STACK_CLASS BinASTTokenReaderMultipart
   }
 
   template <size_t N>
-  static JS::Result<Ok, JS::Error&> checkFields(const BinKind kind,
-                                                const BinFields& actual,
-                                                const BinField (&expected)[N]) {
+  static JS::Result<Ok, JS::Error&> checkFields(
+      const BinASTKind kind, const BinASTFields& actual,
+      const BinASTField (&expected)[N]) {
     
     return Ok();
   }
 
-  static JS::Result<Ok, JS::Error&> checkFields0(const BinKind kind,
-                                                 const BinFields& actual) {
+  static JS::Result<Ok, JS::Error&> checkFields0(const BinASTKind kind,
+                                                 const BinASTFields& actual) {
     
     return Ok();
   }
