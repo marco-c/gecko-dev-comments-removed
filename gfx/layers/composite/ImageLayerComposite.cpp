@@ -133,12 +133,7 @@ bool ImageLayerComposite::IsOpaque() {
     return false;
   }
 
-  
-  
   if (mScaleMode == ScaleMode::STRETCH) {
-    if ((GetContentFlags() & CONTENT_OPAQUE) && !mImageHost->IsOpaque()) {
-      NS_WARNING("Must have an opaque ImageHost if we reported CONTENT_OPAQUE");
-    }
     return mImageHost->IsOpaque();
   }
   return false;
