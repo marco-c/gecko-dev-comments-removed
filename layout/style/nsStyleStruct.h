@@ -1103,7 +1103,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleList {
   nsStyleList& operator=(const nsStyleList& aOther) = delete;
 
  public:
-  RefPtr<RawServoQuotes> mQuotes;
+  mozilla::StyleQuotes mQuotes;
   nsRect mImageRegion;  
   mozilla::StyleMozListReversed
       mMozListReversed;  

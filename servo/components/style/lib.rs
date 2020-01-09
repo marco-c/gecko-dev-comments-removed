@@ -1,27 +1,27 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-//! Calculate [specified][specified] and [computed values][computed] from a
-//! tree of DOM nodes and a set of stylesheets.
-//!
-//! [computed]: https://drafts.csswg.org/css-cascade/#computed
-//! [specified]: https://drafts.csswg.org/css-cascade/#specified
-//!
-//! In particular, this crate contains the definitions of supported properties,
-//! the code to parse them into specified values and calculate the computed
-//! values based on the specified values, as well as the code to serialize both
-//! specified and computed values.
-//!
-//! The main entry point is [`recalc_style_at`][recalc_style_at].
-//!
-//! [recalc_style_at]: traversal/fn.recalc_style_at.html
-//!
-//! Major dependencies are the [cssparser][cssparser] and [selectors][selectors]
-//! crates.
-//!
-//! [cssparser]: ../cssparser/index.html
-//! [selectors]: ../selectors/index.html
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #![deny(missing_docs)]
 
@@ -113,7 +113,7 @@ mod macros;
 
 pub mod animation;
 pub mod applicable_declarations;
-#[allow(missing_docs)] // TODO.
+#[allow(missing_docs)] 
 #[cfg(feature = "servo")]
 pub mod attr;
 pub mod author_styles;
@@ -138,7 +138,7 @@ pub mod gecko_bindings;
 pub mod global_style_data;
 pub mod hash;
 pub mod invalidation;
-#[allow(missing_docs)] // TODO.
+#[allow(missing_docs)] 
 pub mod logical_geometry;
 pub mod matching;
 #[macro_use]
@@ -190,9 +190,10 @@ pub use servo_atoms::Atom;
 
 pub use style_traits::arc_slice::ArcSlice;
 pub use style_traits::owned_slice::OwnedSlice;
+pub use style_traits::owned_str::OwnedStr;
 
-/// The CSS properties supported by the style system.
-/// Generated from the properties.mako.rs template by build.rs
+
+
 #[macro_use]
 #[allow(unsafe_code)]
 #[deny(missing_docs)]
@@ -204,7 +205,7 @@ pub mod properties {
 #[allow(unsafe_code)]
 pub mod gecko;
 
-// uses a macro from properties
+
 #[cfg(feature = "servo")]
 #[allow(unsafe_code)]
 pub mod servo;
@@ -236,9 +237,9 @@ use crate::gecko_string_cache::WeakAtom;
 #[cfg(feature = "servo")]
 use servo_atoms::Atom as WeakAtom;
 
-/// Extension methods for selectors::attr::CaseSensitivity
+
 pub trait CaseSensitivityExt {
-    /// Return whether two atoms compare equal according to this case sensitivity.
+    
     fn eq_atom(self, a: &WeakAtom, b: &WeakAtom) -> bool;
 }
 
@@ -251,13 +252,13 @@ impl CaseSensitivityExt for selectors::attr::CaseSensitivity {
     }
 }
 
-/// A trait pretty much similar to num_traits::Zero, but without the need of
-/// implementing `Add`.
+
+
 pub trait Zero {
-    /// Returns the zero value.
+    
     fn zero() -> Self;
 
-    /// Returns whether this value is zero.
+    
     fn is_zero(&self) -> bool;
 }
 
