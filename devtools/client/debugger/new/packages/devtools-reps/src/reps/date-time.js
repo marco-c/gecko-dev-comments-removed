@@ -22,16 +22,18 @@ function DateTime(props) {
   const grip = props.object;
   let date;
   try {
+    const dateObject = new Date(grip.preview.timestamp);
+    
+    
+    dateObject.toISOString();
+
     date = span(
       {
         "data-link-actor-id": grip.actor,
         className: "objectBox"
       },
       getTitle(grip),
-      span(
-        { className: "Date" },
-        new Date(grip.preview.timestamp).toISOString()
-      )
+      span({ className: "Date" }, dateObject.toString())
     );
   } catch (e) {
     date = span({ className: "objectBox" }, "Invalid Date");
