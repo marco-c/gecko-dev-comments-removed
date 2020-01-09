@@ -237,8 +237,6 @@ pref("browser.startup.homepage",            "about:home");
 
 pref("browser.startup.firstrunSkipsHomepage", true);
 
-pref("browser.dedicatedprofile.welcome.accounts.endpoint", "https://accounts.firefox.com/");
-
 
 
 
