@@ -5,43 +5,13 @@
 "use strict";
 
 const { Cc, Ci } = require("chrome");
-loader.lazyImporter(this, "BrowserToolboxProcess",
-  "resource://devtools/client/framework/ToolboxProcess.jsm");
 loader.lazyImporter(this, "AddonManager", "resource://gre/modules/AddonManager.jsm");
 
 const {Toolbox} = require("devtools/client/framework/toolbox");
 
 const {gDevTools} = require("devtools/client/framework/devtools");
 
-let browserToolboxProcess = null;
-let remoteAddonToolbox = null;
-function closeToolbox() {
-  if (browserToolboxProcess) {
-    browserToolboxProcess.close();
-  }
-
-  if (remoteAddonToolbox) {
-    remoteAddonToolbox.destroy();
-  }
-}
-
-
-
-
-
-
-
-exports.debugLocalAddon = async function(addonID) {
-  
-  closeToolbox();
-
-  browserToolboxProcess = BrowserToolboxProcess.init({
-    addonID,
-    onClose: () => {
-      browserToolboxProcess = null;
-    },
-  });
-};
+let addonToolbox = null;
 
 
 
@@ -51,18 +21,20 @@ exports.debugLocalAddon = async function(addonID) {
 
 
 
-exports.debugRemoteAddon = async function(id, client) {
+exports.debugAddon = async function(id, client) {
   const addonFront = await client.mainRoot.getAddon({ id });
 
   const target = await addonFront.connect();
 
   
-  closeToolbox();
+  if (addonToolbox) {
+    addonToolbox.destroy();
+  }
 
   const hostType = Toolbox.HostType.WINDOW;
-  remoteAddonToolbox = await gDevTools.showToolbox(target, null, hostType);
-  remoteAddonToolbox.once("destroy", () => {
-    remoteAddonToolbox = null;
+  addonToolbox = await gDevTools.showToolbox(target, null, hostType);
+  addonToolbox.once("destroy", () => {
+    addonToolbox = null;
   });
 };
 

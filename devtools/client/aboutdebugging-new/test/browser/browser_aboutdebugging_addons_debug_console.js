@@ -16,10 +16,6 @@ requestLongerTimeout(2);
 const ADDON_ID = "test-devtools-webextension@mozilla.org";
 const ADDON_NAME = "test-devtools-webextension";
 
-const {
-  BrowserToolboxProcess,
-} = ChromeUtils.import("resource://devtools/client/framework/ToolboxProcess.jsm", {});
-
 
 
 
@@ -45,29 +41,25 @@ add_task(async function testWebExtensionsToolboxWebConsole() {
   }, document);
   const target = findDebugTargetByText(ADDON_NAME, document);
 
-  info("Setup the toolbox test function as environment variable");
-  const env = Cc["@mozilla.org/process/environment;1"].getService(Ci.nsIEnvironment);
-  env.set("MOZ_TOOLBOX_TEST_SCRIPT", "new " + toolboxTestScript);
-  registerCleanupFunction(() => env.set("MOZ_TOOLBOX_TEST_SCRIPT", ""));
-
-  info("Click inspect to open the addon toolbox, wait for toolbox close event");
-  const onToolboxClose = BrowserToolboxProcess.once("close");
+  info("Open a toolbox to debug the addon");
+  const onToolboxReady = gDevTools.once("toolbox-ready");
+  const onToolboxClose = gDevTools.once("toolbox-destroyed");
   const inspectButton = target.querySelector(".js-debug-target-inspect-button");
   inspectButton.click();
-  await onToolboxClose;
+  const toolbox = await onToolboxReady;
+  toolboxTestScript(toolbox);
 
   
   
+  info("Wait for the toolbox to close");
+  await onToolboxClose;
   ok(true, "Addon toolbox closed");
 
   await removeTemporaryExtension(ADDON_NAME, document);
   await removeTab(tab);
 });
 
-
-
-function toolboxTestScript() {
-  
+function toolboxTestScript(toolbox) {
   function findMessages(hud, text, selector = ".message") {
     const messages = hud.ui.outputNode.querySelectorAll(selector);
     const elements = Array.prototype.filter.call(
@@ -92,8 +84,7 @@ function toolboxTestScript() {
       });
       await jsterm.execute("myWebExtensionAddonFunction()");
       await onMessage;
-      await toolbox.destroy();
+      await toolbox.closeToolbox();
     })
     .catch(e => dump("Exception from browser toolbox process: " + e + "\n"));
-  
 }

@@ -14,10 +14,6 @@ requestLongerTimeout(2);
 const ADDON_ID = "test-devtools-webextension@mozilla.org";
 const ADDON_NAME = "test-devtools-webextension";
 
-const {
-  BrowserToolboxProcess,
-} = ChromeUtils.import("resource://devtools/client/framework/ToolboxProcess.jsm");
-
 
 
 
@@ -44,49 +40,11 @@ add_task(async function testWebExtensionsToolboxWebConsole() {
     tab, document, debugBtn,
   } = await setupTestAboutDebuggingWebExtension(ADDON_NAME, addonFile);
 
-  
-  
-  const env = Cc["@mozilla.org/process/environment;1"]
-              .getService(Ci.nsIEnvironment);
-  const testScript = function() {
-    
-    function findMessages(hud, text, selector = ".message") {
-      const messages = hud.ui.outputNode.querySelectorAll(selector);
-      const elements = Array.prototype.filter.call(
-        messages,
-        (el) => el.textContent.includes(text)
-      );
-      return elements;
-    }
-
-    async function waitFor(condition) {
-      while (!condition()) {
-        await new Promise(done => window.setTimeout(done, 1000));
-      }
-    }
-
-    toolbox.selectTool("webconsole")
-      .then(async console => {
-        const { hud } = console;
-        const { jsterm } = hud;
-        const onMessage = waitFor(() => {
-          return findMessages(hud, "Background page function called").length > 0;
-        });
-        await jsterm.execute("myWebExtensionAddonFunction()");
-        await onMessage;
-        await toolbox.destroy();
-      })
-      .catch(e => dump("Exception from browser toolbox process: " + e + "\n"));
-    
-  };
-  env.set("MOZ_TOOLBOX_TEST_SCRIPT", "new " + testScript);
-  registerCleanupFunction(() => {
-    env.set("MOZ_TOOLBOX_TEST_SCRIPT", "");
-  });
-
-  const onToolboxClose = BrowserToolboxProcess.once("close");
-
+  const onToolboxReady = gDevTools.once("toolbox-ready");
+  const onToolboxClose = gDevTools.once("toolbox-destroyed");
   debugBtn.click();
+  const toolbox = await onToolboxReady;
+  testScript(toolbox);
 
   await onToolboxClose;
   ok(true, "Addon toolbox closed");
@@ -94,3 +52,33 @@ add_task(async function testWebExtensionsToolboxWebConsole() {
   await uninstallAddon({document, id: ADDON_ID, name: ADDON_NAME});
   await closeAboutDebugging(tab);
 });
+
+const testScript = function(toolbox) {
+  function findMessages(hud, text, selector = ".message") {
+    const messages = hud.ui.outputNode.querySelectorAll(selector);
+    const elements = Array.prototype.filter.call(
+      messages,
+      (el) => el.textContent.includes(text)
+    );
+    return elements;
+  }
+
+  async function waitFor(condition) {
+    while (!condition()) {
+      await new Promise(done => window.setTimeout(done, 1000));
+    }
+  }
+
+  toolbox.selectTool("webconsole")
+         .then(async console => {
+           const { hud } = console;
+           const { jsterm } = hud;
+           const onMessage = waitFor(() => {
+             return findMessages(hud, "Background page function called").length > 0;
+           });
+           await jsterm.execute("myWebExtensionAddonFunction()");
+           await onMessage;
+           await toolbox.destroy();
+         })
+         .catch(e => dump("Exception from browser toolbox process: " + e + "\n"));
+};
