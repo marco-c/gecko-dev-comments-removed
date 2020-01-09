@@ -773,11 +773,6 @@ pub trait TElement:
     fn containing_shadow(&self) -> Option<<Self::ConcreteNode as TNode>::ConcreteShadowRoot>;
 
     
-    fn has_same_xbl_proto_binding_as(&self, _other: Self) -> bool {
-        true
-    }
-
-    
     
     
     
@@ -796,52 +791,30 @@ pub trait TElement:
     
     
     
-    fn each_xbl_cascade_data<'a, F>(&self, _: F) -> bool
-    where
-        Self: 'a,
-        F: FnMut(&'a CascadeData, QuirksMode),
-    {
-        false
-    }
-
-    
-    
-    
-    
     
     
     
     fn each_applicable_non_document_style_rule_data<'a, F>(&self, mut f: F) -> bool
     where
         Self: 'a,
-        F: FnMut(&'a CascadeData, QuirksMode, Option<Self>),
+        F: FnMut(&'a CascadeData, Self),
     {
         use rule_collector::containing_shadow_ignoring_svg_use;
 
-        let mut doc_rules_apply = !self.each_xbl_cascade_data(|data, quirks_mode| {
-            f(data, quirks_mode, None);
-        });
+        let mut doc_rules_apply = self.matches_user_and_author_rules();
 
         
         
         if let Some(shadow) = containing_shadow_ignoring_svg_use(*self) {
             doc_rules_apply = false;
             if let Some(data) = shadow.style_data() {
-                f(
-                    data,
-                    self.as_node().owner_doc().quirks_mode(),
-                    Some(shadow.host()),
-                );
+                f(data, shadow.host());
             }
         }
 
         if let Some(shadow) = self.shadow_root() {
             if let Some(data) = shadow.style_data() {
-                f(
-                    data,
-                    self.as_node().owner_doc().quirks_mode(),
-                    Some(shadow.host()),
-                );
+                f(data, shadow.host());
             }
         }
 
@@ -850,11 +823,7 @@ pub trait TElement:
             
             let shadow = slot.containing_shadow().unwrap();
             if let Some(data) = shadow.style_data() {
-                f(
-                    data,
-                    self.as_node().owner_doc().quirks_mode(),
-                    Some(shadow.host()),
-                );
+                f(data, shadow.host());
             }
             current = slot.assigned_slot();
         }

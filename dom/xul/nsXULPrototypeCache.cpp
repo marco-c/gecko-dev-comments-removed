@@ -229,13 +229,6 @@ void nsXULPrototypeCache::FlushSkinFiles() {
       iter.Remove();
     }
   }
-
-  
-  
-  
-  for (auto iter = mXBLDocTable.Iter(); !iter.Done(); iter.Next()) {
-    iter.Data()->FlushSkinStylesheets();
-  }
 }
 
 void nsXULPrototypeCache::FlushScripts() { mScriptTable.Clear(); }

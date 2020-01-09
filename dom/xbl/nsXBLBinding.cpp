@@ -210,14 +210,6 @@ void nsXBLBinding::SetBoundElement(Element* aElement) {
   if (mNextBinding) mNextBinding->SetBoundElement(aElement);
 }
 
-bool nsXBLBinding::HasStyleSheets() const {
-  
-  
-  if (mPrototypeBinding->HasStyleSheets()) return true;
-
-  return mNextBinding ? mNextBinding->HasStyleSheets() : false;
-}
-
 void nsXBLBinding::GenerateAnonymousContent() {
   NS_ASSERTION(!nsContentUtils::IsSafeToRunScript(),
                "Someone forgot a script blocker");
@@ -689,24 +681,6 @@ void nsXBLBinding::ChangeDocument(Document* aOldDocument,
 
     ClearInsertionPoints();
   }
-}
-
-bool nsXBLBinding::InheritsStyle() const {
-  
-  
-  
-
-  
-  
-  if (mContent) return mPrototypeBinding->InheritsStyle();
-
-  if (mNextBinding) return mNextBinding->InheritsStyle();
-
-  return true;
-}
-
-const RawServoAuthorStyles* nsXBLBinding::GetServoStyles() const {
-  return mPrototypeBinding->GetServoStyles();
 }
 
 
