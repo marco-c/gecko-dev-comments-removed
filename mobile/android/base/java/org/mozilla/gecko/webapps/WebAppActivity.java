@@ -327,20 +327,8 @@ public class WebAppActivity extends AppCompatActivity
     }
 
     @Override 
-    public void onLocationChange(GeckoSession session, String url) {
-    }
-
-    @Override 
     public void onCanGoBack(GeckoSession session, boolean canGoBack) {
         mCanGoBack = canGoBack;
-    }
-
-    @Override 
-    public void onCanGoForward(GeckoSession session, boolean canGoForward) {
-    }
-
-    @Override 
-    public void onTitleChange(GeckoSession session, String title) {
     }
 
     @Override 
@@ -348,11 +336,6 @@ public class WebAppActivity extends AppCompatActivity
         Intent intent = new Intent(getIntent());
         intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
         startActivity(intent);
-    }
-
-    @Override 
-    public void onCloseRequest(GeckoSession session) {
-        
     }
 
     @Override 
@@ -368,20 +351,6 @@ public class WebAppActivity extends AppCompatActivity
         }
 
         WebApps.openInFennec(validUri, WebAppActivity.this);
-    }
-
-    @Override 
-    public void onExternalResponse(final GeckoSession session, final GeckoSession.WebResponseInfo request) {
-        
-    }
-
-    @Override 
-    public void onCrash(final GeckoSession session) {
-        
-    }
-
-    @Override
-    public void onFirstComposite(final GeckoSession session) {
     }
 
     @Override 
