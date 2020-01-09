@@ -13,6 +13,8 @@
 #include "mozilla/Mutex.h"
 #include "nsTObserverArray.h"
 
+class nsIEventTarget;
+class nsISerialEventTarget;
 class nsIThreadObserver;
 
 namespace mozilla {
@@ -87,6 +89,28 @@ class SynchronizedEventQueue : public ThreadTargetSink {
       mozilla::MallocSizeOf aMallocSizeOf) const override {
     return mEventObservers.ShallowSizeOfExcludingThis(aMallocSizeOf);
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+  virtual already_AddRefed<nsISerialEventTarget> PushEventQueue() = 0;
+
+  
+
+
+
+
+
+
+  virtual void PopEventQueue(nsIEventTarget* aTarget) = 0;
 
  protected:
   virtual ~SynchronizedEventQueue() {}

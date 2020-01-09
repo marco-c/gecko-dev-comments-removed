@@ -976,14 +976,9 @@ nsresult RequestHelper::StartAndReturnResponse(LSRequestResponse& aResponse) {
   {
     auto thread = static_cast<nsThread*>(NS_GetCurrentThread());
 
-    auto queue =
-        static_cast<ThreadEventQueue<EventQueue>*>(thread->EventQueue());
-
-    mNestedEventTarget = queue->PushEventQueue();
+    const nsLocalExecutionGuard localExecution(thread->EnterLocalExecution());
+    mNestedEventTarget = localExecution.GetEventTarget();
     MOZ_ASSERT(mNestedEventTarget);
-
-    auto autoPopEventQueue = mozilla::MakeScopeExit(
-        [&] { queue->PopEventQueue(mNestedEventTarget); });
 
     mNestedEventTargetWrapper =
         new NestedEventTargetWrapper(mNestedEventTarget);
@@ -1030,7 +1025,7 @@ nsresult RequestHelper::StartAndReturnResponse(LSRequestResponse& aResponse) {
         }
 
         return false;
-      }));
+      }, thread));
     }
 
     
@@ -1067,7 +1062,6 @@ nsresult RequestHelper::StartAndReturnResponse(LSRequestResponse& aResponse) {
       return NS_ERROR_FAILURE;
     }
 
-    
     
     
     
