@@ -31,6 +31,9 @@ class _MachCommand(object):
         'argument_group_names',
 
         
+        'conditional_name',
+
+        
 
         
         
@@ -53,7 +56,8 @@ class _MachCommand(object):
     )
 
     def __init__(self, name=None, subcommand=None, category=None,
-                 description=None, conditions=None, parser=None):
+                 description=None, conditions=None, parser=None,
+                 conditional_name=None):
         self.name = name
         self.subcommand = subcommand
         self.category = category
@@ -62,6 +66,7 @@ class _MachCommand(object):
         self._parser = parser
         self.arguments = []
         self.argument_group_names = []
+        self.conditional_name = conditional_name
 
         self.cls = None
         self.pass_context = None
