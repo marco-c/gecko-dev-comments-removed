@@ -3,7 +3,6 @@
 
 "use strict";
 
-var requests = [];
 var gServerCohort = "";
 
 const kUrlPref = "geoSpecificDefaults.url";
@@ -11,291 +10,207 @@ const kUrlPref = "geoSpecificDefaults.url";
 const kDayInSeconds = 86400;
 const kYearInSeconds = kDayInSeconds * 365;
 
-function run_test() {
-  let srv = new HttpServer();
-
-  srv.registerPathHandler("/lookup_defaults", (metadata, response) => {
-    response.setStatusLine("1.1", 200, "OK");
-    let data = {interval: kYearInSeconds,
-                settings: {searchDefault: "Test search engine"}};
-    if (gServerCohort)
-      data.cohort = gServerCohort;
-    response.write(JSON.stringify(data));
-    requests.push(metadata);
-  });
-
-  srv.registerPathHandler("/lookup_fail", (metadata, response) => {
-    response.setStatusLine("1.1", 404, "Not Found");
-    requests.push(metadata);
-  });
-
-  srv.registerPathHandler("/lookup_unavailable", (metadata, response) => {
-    response.setStatusLine("1.1", 503, "Service Unavailable");
-    response.setHeader("Retry-After", kDayInSeconds.toString());
-    requests.push(metadata);
-  });
-
-  srv.start(-1);
-  registerCleanupFunction(() => srv.stop(() => {}));
-
-  let url = "http://localhost:" + srv.identity.primaryPort + "/lookup_defaults?";
-  Services.prefs.getDefaultBranch(BROWSER_SEARCH_PREF).setCharPref(kUrlPref, url);
-  
-  Services.prefs.setCharPref(BROWSER_SEARCH_PREF + kUrlPref, "about:blank");
-  Services.prefs.setCharPref("browser.search.geoip.url",
-                             'data:application/json,{"country_code": "FR"}');
-
-  run_next_test();
-}
-
-function checkNoRequest() {
-  Assert.equal(requests.length, 0);
-}
-
-function checkRequest(cohort = "") {
-  Assert.equal(requests.length, 1);
-  let req = requests.pop();
-  Assert.equal(req._method, "GET");
-  Assert.equal(req._queryString, cohort ? "/" + cohort : "");
-}
-
 add_task(async function no_request_if_prefed_off() {
-  
-  Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", false);
-  await asyncInit();
-  checkNoRequest();
-  await promiseAfterCache();
+  await withGeoServer(async function cont(requests) {
+    
+    Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", false);
+    await Promise.all([asyncInit(), promiseAfterCache()]);
+    checkNoRequest(requests);
 
-  
-  await installTestEngine();
-  await promiseAfterCache();
+    
+    await Promise.all([installTestEngine(), promiseAfterCache()]);
 
-  
-  Assert.equal(Services.search.defaultEngine.name, getDefaultEngineName(false));
+    
+    Assert.equal((await Services.search.getDefault()).name, getDefaultEngineName(false));
 
-  
-  let metadata = await promiseGlobalMetadata();
-  Assert.equal(typeof metadata.searchDefaultExpir, "undefined");
-  Assert.equal(typeof metadata.searchDefault, "undefined");
-  Assert.equal(typeof metadata.searchDefaultHash, "undefined");
+    
+    let metadata = await promiseGlobalMetadata();
+    Assert.equal(typeof metadata.searchDefaultExpir, "undefined");
+    Assert.equal(typeof metadata.searchDefault, "undefined");
+    Assert.equal(typeof metadata.searchDefaultHash, "undefined");
 
-  Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", true);
+    Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", true);
+  });
 });
 
 add_task(async function should_get_geo_defaults_only_once() {
-  
-  
-  
-  Assert.ok(Services.prefs.prefHasUserValue("browser.search.region"));
-  Assert.equal(Services.prefs.getCharPref("browser.search.region"), "FR");
-  await asyncReInit();
-  checkRequest();
-  Assert.equal(Services.search.defaultEngine.name, kTestEngineName);
-  await promiseAfterCache();
+  await withGeoServer(async function cont(requests) {
+    
+    
+    
+    Assert.ok(Services.prefs.prefHasUserValue("browser.search.region"));
+    Assert.equal(Services.prefs.getCharPref("browser.search.region"), "FR");
+    await Promise.all([asyncReInit({ waitForRegionFetch: true }), promiseAfterCache()]);
+    checkRequest(requests);
+    Assert.equal((await Services.search.getDefault()).name, kTestEngineName);
 
-  
-  let metadata = await promiseGlobalMetadata();
-  Assert.equal(typeof metadata.searchDefaultExpir, "number");
-  Assert.ok(metadata.searchDefaultExpir > Date.now());
-  Assert.equal(typeof metadata.searchDefault, "string");
-  Assert.equal(metadata.searchDefault, "Test search engine");
-  Assert.equal(typeof metadata.searchDefaultHash, "string");
-  Assert.equal(metadata.searchDefaultHash.length, 44);
+    
+    let metadata = await promiseGlobalMetadata();
+    Assert.equal(typeof metadata.searchDefaultExpir, "number");
+    Assert.ok(metadata.searchDefaultExpir > Date.now());
+    Assert.equal(typeof metadata.searchDefault, "string");
+    Assert.equal(metadata.searchDefault, "Test search engine");
+    Assert.equal(typeof metadata.searchDefaultHash, "string");
+    Assert.equal(metadata.searchDefaultHash.length, 44);
 
-  
-  await asyncReInit();
-  checkNoRequest();
-  Assert.equal(Services.search.defaultEngine.name, kTestEngineName);
+    
+    await asyncReInit({ waitForRegionFetch: true });
+    checkNoRequest(requests);
+    Assert.equal((await Services.search.getDefault()).name, kTestEngineName);
+  });
 });
 
 add_task(async function should_request_when_region_not_set() {
-  Services.prefs.clearUserPref("browser.search.region");
-  await asyncReInit();
-  checkRequest();
-  await promiseAfterCache();
+  await withGeoServer(async function cont(requests) {
+    Services.prefs.clearUserPref("browser.search.region");
+    await Promise.all([asyncReInit({ waitForRegionFetch: true }), promiseAfterCache()]);
+    checkRequest(requests);
+  });
 });
 
 add_task(async function should_recheck_if_interval_expired() {
-  await forceExpiration();
+  await withGeoServer(async function cont(requests) {
+    await forceExpiration();
 
-  let date = Date.now();
-  await asyncReInit();
-  checkRequest();
-  await promiseAfterCache();
+    let date = Date.now();
+    await Promise.all([asyncReInit({ waitForRegionFetch: true }), promiseAfterCache()]);
+    checkRequest(requests);
 
-  
-  let metadata = await promiseGlobalMetadata();
-  Assert.equal(typeof metadata.searchDefaultExpir, "number");
-  Assert.ok(metadata.searchDefaultExpir >= date + kYearInSeconds * 1000);
-  Assert.ok(metadata.searchDefaultExpir < date + (kYearInSeconds + 3600) * 1000);
+    
+    let metadata = await promiseGlobalMetadata();
+    Assert.equal(typeof metadata.searchDefaultExpir, "number");
+    Assert.ok(metadata.searchDefaultExpir >= date + kYearInSeconds * 1000);
+    Assert.ok(metadata.searchDefaultExpir < date + (kYearInSeconds + 3600) * 1000);
+  });
 });
 
 add_task(async function should_recheck_if_appversion_changed() {
-  let data = await promiseCacheData();
+  await withGeoServer(async function cont(requests) {
+    let data = await promiseCacheData();
 
-  Assert.equal(data.appVersion, Services.appinfo.version);
+    Assert.equal(data.appVersion, Services.appinfo.version);
 
-  
-  data.appVersion = "1";
-  await promiseSaveCacheData(data);
+    
+    data.appVersion = "1";
+    await promiseSaveCacheData(data);
 
-  await asyncReInit();
-  checkRequest();
-  await promiseAfterCache();
+    await Promise.all([asyncReInit({ waitForRegionFetch: true }), promiseAfterCache()]);
+    checkRequest(requests);
 
-  
-  data = await promiseCacheData();
-  Assert.equal(data.appVersion, Services.appinfo.version);
-});
-
-add_task(async function should_recheck_if_appversion_changed_sync() {
-  let data = await promiseCacheData();
-
-  Assert.equal(data.appVersion, Services.appinfo.version);
-
-  
-  data.appVersion = "1";
-  await promiseSaveCacheData(data);
-
-  let commitPromise = promiseAfterCache();
-  let unInitPromise = waitForSearchNotification("uninit-complete");
-  let reInitPromise = asyncReInit();
-  await unInitPromise;
-
-  
-  
-  Assert.ok(!Services.search.isInitialized);
-  Services.search.getEngines();
-  Assert.ok(Services.search.isInitialized);
-
-  await reInitPromise;
-  checkRequest();
-  await commitPromise;
-
-  
-  data = await promiseCacheData();
-  Assert.equal(data.appVersion, Services.appinfo.version);
+    
+    data = await promiseCacheData();
+    Assert.equal(data.appVersion, Services.appinfo.version);
+  });
 });
 
 add_task(async function should_recheck_when_broken_hash() {
-  
-  
-  
-  
-
-  let metadata = await promiseGlobalMetadata();
-
-  
-  let hash = metadata.searchDefaultHash;
-  metadata.searchDefaultHash = "broken";
-  await promiseSaveGlobalMetadata(metadata);
-
-  let commitPromise = promiseAfterCache();
-  let unInitPromise = waitForSearchNotification("uninit-complete");
-  let reInitPromise = asyncReInit();
-  await unInitPromise;
-
-  
-  
-  Assert.ok(!Services.search.isInitialized);
-  Assert.equal(Services.search.defaultEngine.name, getDefaultEngineName(false));
-  Assert.ok(Services.search.isInitialized);
-
-  await reInitPromise;
-  checkRequest();
-  await commitPromise;
-
-  
-  metadata = await promiseGlobalMetadata();
-  Assert.equal(typeof metadata.searchDefaultHash, "string");
-  if (metadata.searchDefaultHash == "broken") {
+  await withGeoServer(async function cont(requests) {
     
     
     
-    info("waiting for the cache to be saved a second time");
-    await promiseAfterCache();
+
+    let metadata = await promiseGlobalMetadata();
+
+    
+    let hash = metadata.searchDefaultHash;
+    metadata.searchDefaultHash = "broken";
+    await promiseSaveGlobalMetadata(metadata);
+
+    let commitPromise = promiseAfterCache();
+    let unInitPromise = waitForSearchNotification("uninit-complete");
+    let reInitPromise = asyncReInit({ waitForRegionFetch: true });
+    await unInitPromise;
+
+    await reInitPromise;
+    checkRequest(requests);
+    await commitPromise;
+
+    
     metadata = await promiseGlobalMetadata();
-  }
-  Assert.equal(metadata.searchDefaultHash, hash);
+    Assert.equal(typeof metadata.searchDefaultHash, "string");
+    if (metadata.searchDefaultHash == "broken") {
+      
+      
+      
+      info("waiting for the cache to be saved a second time");
+      await promiseAfterCache();
+      metadata = await promiseGlobalMetadata();
+    }
+    Assert.equal(metadata.searchDefaultHash, hash);
 
-  
-  Assert.equal(Services.search.defaultEngine.name, getDefaultEngineName(false));
-
-  
-  
-  await asyncReInit();
-  checkNoRequest();
-  Assert.equal(Services.search.defaultEngine.name, kTestEngineName);
+    
+    
+    await asyncReInit({ waitForRegionFetch: true });
+    checkNoRequest(requests);
+    Assert.equal((await Services.search.getDefault()).name, kTestEngineName);
+  });
 });
 
 add_task(async function should_remember_cohort_id() {
-  
   const cohortPref = "browser.search.cohort";
-  Assert.equal(Services.prefs.getPrefType(cohortPref), Services.prefs.PREF_INVALID);
+  
+  const cohort = "xpcshell";
+
+  await withGeoServer(async function cont(requests) {
+    
+    Assert.equal(Services.prefs.getPrefType(cohortPref), Services.prefs.PREF_INVALID);
+
+    
+    await forceExpiration();
+    let commitPromise = promiseAfterCache();
+    await asyncReInit({ waitForRegionFetch: true });
+    checkRequest(requests);
+    await commitPromise;
+
+    
+    Assert.equal(Services.prefs.getPrefType(cohortPref), Services.prefs.PREF_STRING);
+    Assert.equal(Services.prefs.getCharPref(cohortPref), cohort);
+  }, {cohort});
 
   
-  let cohort = gServerCohort = "xpcshell";
-
-  
-  await forceExpiration();
-  let commitPromise = promiseAfterCache();
-  await asyncReInit();
-  checkRequest();
-  await commitPromise;
-
-  
-  Assert.equal(Services.prefs.getPrefType(cohortPref), Services.prefs.PREF_STRING);
-  Assert.equal(Services.prefs.getCharPref(cohortPref), cohort);
-
-  
-  gServerCohort = "";
-
-  
-  
-  await forceExpiration();
-  commitPromise = promiseAfterCache();
-  await asyncReInit();
-  checkRequest(cohort);
-  await commitPromise;
-  Assert.equal(Services.prefs.getPrefType(cohortPref), Services.prefs.PREF_INVALID);
+  await withGeoServer(async function cont(requests) {
+    
+    
+    await forceExpiration();
+    let commitPromise = promiseAfterCache();
+    await asyncReInit({ waitForRegionFetch: true });
+    checkRequest(requests, cohort);
+    await commitPromise;
+    Assert.equal(Services.prefs.getPrefType(cohortPref), Services.prefs.PREF_INVALID);
+  });
 });
 
 add_task(async function should_retry_after_failure() {
-  let defaultBranch = Services.prefs.getDefaultBranch(BROWSER_SEARCH_PREF);
-  let originalUrl = defaultBranch.getCharPref(kUrlPref);
-  defaultBranch.setCharPref(kUrlPref, originalUrl.replace("defaults", "fail"));
+  await withGeoServer(async function cont(requests) {
+    
+    await forceExpiration();
+    await asyncReInit({ waitForRegionFetch: true });
+    checkRequest(requests);
 
-  
-  await forceExpiration();
-  await asyncReInit();
-  checkRequest();
-
-  
-  
-  await asyncReInit();
-  checkRequest();
+    
+    
+    await asyncReInit({ waitForRegionFetch: true });
+    checkRequest(requests);
+  }, {path: "lookup_fail"});
 });
 
 add_task(async function should_honor_retry_after_header() {
-  let defaultBranch = Services.prefs.getDefaultBranch(BROWSER_SEARCH_PREF);
-  let originalUrl = defaultBranch.getCharPref(kUrlPref);
-  defaultBranch.setCharPref(kUrlPref, originalUrl.replace("fail", "unavailable"));
+  await withGeoServer(async function cont(requests) {
+    
+    await forceExpiration();
+    let date = Date.now();
+    await asyncReInit({ waitForRegionFetch: true });
+    await promiseAfterCache();
+    checkRequest(requests);
 
-  
-  await forceExpiration();
-  let date = Date.now();
-  let commitPromise = promiseAfterCache();
-  await asyncReInit();
-  checkRequest();
-  await commitPromise;
+    
+    let metadata = await promiseGlobalMetadata();
+    Assert.equal(typeof metadata.searchDefaultExpir, "number");
+    Assert.ok(metadata.searchDefaultExpir >= date + kDayInSeconds * 1000);
+    Assert.ok(metadata.searchDefaultExpir < date + (kDayInSeconds + 3600) * 1000);
 
-  
-  let metadata = await promiseGlobalMetadata();
-  Assert.equal(typeof metadata.searchDefaultExpir, "number");
-  Assert.ok(metadata.searchDefaultExpir >= date + kDayInSeconds * 1000);
-  Assert.ok(metadata.searchDefaultExpir < date + (kDayInSeconds + 3600) * 1000);
-
-  
-  await asyncReInit();
-  checkNoRequest();
+    
+    await asyncReInit({ waitForRegionFetch: true });
+    checkNoRequest(requests);
+  }, {path: "lookup_unavailable"});
 });

@@ -24,7 +24,7 @@ add_task(async function test_engineUpdate() {
   ]);
 
   engine.alias = KEYWORD;
-  Services.search.moveEngine(engine, 0);
+  await Services.search.moveEngine(engine, 0);
   
   
   engine.wrappedJSObject._updateURL = gDataUrl + FILENAME;

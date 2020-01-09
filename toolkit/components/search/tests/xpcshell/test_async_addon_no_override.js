@@ -11,20 +11,21 @@ function run_test() {
 
   Assert.ok(!Services.search.isInitialized);
 
-  Services.search.init(function search_initialized(aStatus) {
+  Services.search.init().then(function search_initialized(aStatus) {
     Assert.ok(Components.isSuccessCode(aStatus));
     Assert.ok(Services.search.isInitialized);
 
     
-    let engines = Services.search.getEngines();
-    Assert.equal(engines.length, 1);
+    Services.search.getEngines().then(engines => {
+      Assert.equal(engines.length, 1);
 
-    
-    let engine = Services.search.getEngineByName("bug645970");
-    Assert.notEqual(engine, null);
+      
+      let engine = Services.search.getEngineByName("bug645970");
+      Assert.notEqual(engine, null);
 
-    Assert.equal(engine.description, "bug645970");
+      Assert.equal(engine.description, "bug645970");
 
-    do_test_finished();
+      do_test_finished();
+    });
   });
 }

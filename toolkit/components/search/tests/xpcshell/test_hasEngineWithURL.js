@@ -4,15 +4,6 @@
 
 
 
-function run_test() {
-  info("Setting up test");
-
-  useHttpServer();
-
-  info("Test starting");
-  run_next_test();
-}
-
 
 
 function getEngineClone(engine) {
@@ -27,9 +18,9 @@ function checkEngineState(exists, engine) {
 }
 
 
-function addEngineWithParams(engine) {
-  Services.search.addEngineWithDetails(engine.name, null, null, null,
-                                       engine.method, engine.formURL);
+async function addEngineWithParams(engine) {
+  await Services.search.addEngineWithDetails(engine.name, null, null, null,
+                                             engine.method, engine.formURL);
 
   let addedEngine = Services.search.getEngineByName(engine.name);
   for (let param of engine.queryParams) {
@@ -39,6 +30,11 @@ function addEngineWithParams(engine) {
 
 
 add_task(async function test_hasEngineWithURL() {
+  info("Setting up test");
+
+  useHttpServer();
+
+  info("Test starting");
   
   await asyncInit();
 
@@ -111,7 +107,7 @@ add_task(async function test_hasEngineWithURL() {
 
 
   
-  addEngineWithParams(UNSORTED_ENGINE);
+  await addEngineWithParams(UNSORTED_ENGINE);
   info("The unsorted engine has been added.");
 
 

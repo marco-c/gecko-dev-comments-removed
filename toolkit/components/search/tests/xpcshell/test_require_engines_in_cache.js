@@ -12,9 +12,7 @@ function run_test() {
 
 add_task(async function ignore_cache_files_without_engines() {
   let commitPromise = promiseAfterCache();
-  await asyncInit();
-
-  let engineCount = Services.search.getEngines().length;
+  let engineCount = (await Services.search.getEngines()).length;
   Assert.equal(engineCount, 1);
 
   
@@ -28,7 +26,7 @@ add_task(async function ignore_cache_files_without_engines() {
   
   commitPromise = promiseAfterCache();
   await asyncReInit();
-  Assert.equal(engineCount, Services.search.getEngines().length);
+  Assert.equal(engineCount, (await Services.search.getEngines()).length);
   await commitPromise;
 
   
@@ -38,7 +36,7 @@ add_task(async function ignore_cache_files_without_engines() {
   await unInitPromise;
   Assert.ok(!Services.search.isInitialized);
   
-  Assert.equal(engineCount, Services.search.getEngines().length);
+  Assert.equal(engineCount, (await Services.search.getEngines()).length);
   Assert.ok(Services.search.isInitialized);
   await reInitPromise;
 });
@@ -57,7 +55,7 @@ add_task(async function skip_writing_cache_without_engines() {
 
   
   await reInitPromise;
-  Assert.equal(0, Services.search.getEngines().length);
+  Assert.strictEqual(0, (await Services.search.getEngines()).length);
 
   
   unInitPromise = waitForSearchNotification("uninit-complete");

@@ -51,7 +51,7 @@ async function test_opensearch(shouldWork) {
 add_task(async function test_install_and_set_default() {
   
   
-  isnot(Services.search.defaultEngine.name, "MozSearch",
+  isnot((await Services.search.getDefault()).name, "MozSearch",
         "Default search engine should not be MozSearch when test starts");
   is(Services.search.getEngineByName("Foo"), null,
      "Engine \"Foo\" should not be present when test starts");
@@ -69,21 +69,23 @@ add_task(async function test_install_and_set_default() {
       },
     },
   });
+  
+  await TestUtils.waitForTick();
 
   
   
-  is(Services.search.defaultEngine.name, "MozSearch",
+  is((await Services.search.getDefault()).name, "MozSearch",
      "Specified search engine should be the default");
 
   
-  Services.search.removeEngine(Services.search.defaultEngine);
+  await Services.search.removeEngine(await Services.search.getDefault());
   EnterprisePolicyTesting.resetRunOnceState();
 });
 
 
 
 add_task(async function test_install_and_set_default_prevent_installs() {
-  isnot(Services.search.defaultEngine.name, "MozSearch",
+  isnot((await Services.search.getDefault()).name, "MozSearch",
         "Default search engine should not be MozSearch when test starts");
   is(Services.search.getEngineByName("Foo"), null,
      "Engine \"Foo\" should not be present when test starts");
@@ -102,12 +104,14 @@ add_task(async function test_install_and_set_default_prevent_installs() {
       },
     },
   });
+  
+  await TestUtils.waitForTick();
 
-  is(Services.search.defaultEngine.name, "MozSearch",
+  is((await Services.search.getDefault()).name, "MozSearch",
      "Specified search engine should be the default");
 
   
-  Services.search.removeEngine(Services.search.defaultEngine);
+  await Services.search.removeEngine(await Services.search.getDefault());
   EnterprisePolicyTesting.resetRunOnceState();
 });
 
@@ -213,6 +217,8 @@ add_task(async function test_install_and_remove() {
       },
     },
   });
+  
+  await TestUtils.waitForTick();
 
   
 
@@ -230,6 +236,8 @@ add_task(async function test_install_and_remove() {
       },
     },
   });
+  
+  await TestUtils.waitForTick();
 
   
   is(Services.search.getEngineByName("Foo"), null,

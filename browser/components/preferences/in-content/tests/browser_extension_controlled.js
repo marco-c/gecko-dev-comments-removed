@@ -442,6 +442,10 @@ add_task(async function testExtensionControlledDefaultSearch() {
     },
   };
 
+  
+  
+  await Services.search.init();
+
   function setEngine(engine) {
     doc.querySelector(`#defaultEngine menuitem[label="${engine.name}"]`)
        .doCommand();
@@ -491,6 +495,8 @@ add_task(async function testExtensionControlledDefaultSearch() {
 
   
   setEngine(extensionEngine);
+  
+  await new Promise(resolve => executeSoon(resolve));
 
   is(extensionEngine, Services.search.defaultEngine,
      "default search engine is set back to extension");

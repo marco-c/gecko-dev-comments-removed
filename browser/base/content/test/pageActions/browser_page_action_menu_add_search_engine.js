@@ -66,7 +66,7 @@ add_task(async function one() {
     
     enginePromise =
       promiseEngine("engine-removed", "page_action_menu_add_search_engine_0");
-    Services.search.removeEngine(engine);
+    await Services.search.removeEngine(engine);
     await enginePromise;
 
     
@@ -207,7 +207,7 @@ add_task(async function many() {
     
     enginePromise =
       promiseEngine("engine-removed", "page_action_menu_add_search_engine_0");
-    Services.search.removeEngine(engines.shift());
+    await Services.search.removeEngine(engines.shift());
     await enginePromise;
 
     
@@ -229,7 +229,7 @@ add_task(async function many() {
     
     enginePromise =
       promiseEngine("engine-removed", "page_action_menu_add_search_engine_1");
-    Services.search.removeEngine(engines.shift());
+    await Services.search.removeEngine(engines.shift());
     await enginePromise;
 
     
@@ -263,7 +263,7 @@ add_task(async function many() {
     
     enginePromise =
       promiseEngine("engine-removed", "page_action_menu_add_search_engine_2");
-    Services.search.removeEngine(engines.shift());
+    await Services.search.removeEngine(engines.shift());
     await enginePromise;
 
     
@@ -323,7 +323,7 @@ add_task(async function urlbarOne() {
     enginePromise =
       promiseEngine("engine-removed", "page_action_menu_add_search_engine_0");
     placedPromise = promisePlacedInUrlbar();
-    Services.search.removeEngine(engine);
+    await Services.search.removeEngine(engine);
     await enginePromise;
 
     
@@ -439,7 +439,7 @@ add_task(async function urlbarMany() {
     enginePromise =
       promiseEngine("engine-removed", "page_action_menu_add_search_engine_0");
     placedPromise = promisePlacedInUrlbar();
-    Services.search.removeEngine(engines.shift());
+    await Services.search.removeEngine(engines.shift());
     await enginePromise;
 
     
@@ -452,7 +452,7 @@ add_task(async function urlbarMany() {
     
     enginePromise =
       promiseEngine("engine-removed", "page_action_menu_add_search_engine_1");
-    Services.search.removeEngine(engines.shift());
+    await Services.search.removeEngine(engines.shift());
     await enginePromise;
 
     
@@ -478,7 +478,7 @@ add_task(async function urlbarMany() {
     
     enginePromise =
       promiseEngine("engine-removed", "page_action_menu_add_search_engine_2");
-    Services.search.removeEngine(engines.shift());
+    await Services.search.removeEngine(engines.shift());
     await enginePromise;
 
     

@@ -13,7 +13,13 @@ function run_test() {
                              'data:application/json,{"country_code": "US"}');
 
   
- let url = "data:application/json,{\"interval\": 31536000, \"settings\": {\"searchDefault\": \"hidden\", \"visibleDefaultEngines\": [\"hidden\"]}}";
+  let url = "data:application/json," + JSON.stringify({
+    "interval": 31536000,
+    "settings": {
+      "searchDefault": "hidden",
+      "visibleDefaultEngines": ["hidden"],
+    },
+  });
   Services.prefs.getDefaultBranch(BROWSER_SEARCH_PREF).setCharPref(kUrlPref, url);
 
   Assert.ok(!Services.search.isInitialized);
@@ -25,7 +31,7 @@ add_task(async function async_init() {
   let commitPromise = promiseAfterCache();
   await asyncInit();
 
-  let engines = Services.search.getEngines();
+  let engines = await Services.search.getEngines();
   Assert.equal(engines.length, 1);
 
   
@@ -41,30 +47,6 @@ add_task(async function async_init() {
   await commitPromise;
 });
 
-add_task(async function sync_init() {
-  let unInitPromise = waitForSearchNotification("uninit-complete");
-  let reInitPromise = asyncReInit();
-  await unInitPromise;
-  Assert.ok(!Services.search.isInitialized);
-
-  
-  Assert.equal(Services.search.defaultEngine.name, "hidden");
-  Assert.ok(Services.search.isInitialized);
-
-  let engines = Services.search.getEngines();
-  Assert.equal(engines.length, 1);
-
-  
-  let engine = Services.search.getEngineByName("bug645970");
-  Assert.equal(engine, null);
-
-  
-  engine = Services.search.getEngineByName("hidden");
-  Assert.notEqual(engine, null);
-
-  await reInitPromise;
-});
-
 add_task(async function invalid_engine() {
   
   await forceExpiration();
@@ -72,12 +54,18 @@ add_task(async function invalid_engine() {
   
   
   
-  let url = "data:application/json,{\"interval\": 31536000, \"settings\": {\"searchDefault\": \"hidden\", \"visibleDefaultEngines\": [\"hidden\", \"bogus\"]}}";
+  let url = "data:application/json," + JSON.stringify({
+    "interval": 31536000,
+    "settings": {
+      "searchDefault": "hidden",
+      "visibleDefaultEngines": ["hidden", "bogus"],
+    },
+  });
   Services.prefs.getDefaultBranch(BROWSER_SEARCH_PREF).setCharPref(kUrlPref, url);
 
   await asyncReInit();
 
-  let engines = Services.search.getEngines();
+  let engines = await Services.search.getEngines();
   Assert.equal(engines.length, 1);
 
   

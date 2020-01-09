@@ -20,22 +20,23 @@ function promiseTimezoneMessage() {
 function run_test() {
   
   Services.prefs.setCharPref("browser.search.geoip.url", 'data:application/json,{"country_code"');
-  Services.search.init(() => {
+  Services.search.init().then(() => {
     ok(!Services.prefs.prefHasUserValue("browser.search.region"), "should be no region pref");
     
-    Services.search.getEngines();
-    ok(!Services.prefs.prefHasUserValue("browser.search.region"), "should be no region pref");
-    
-    checkCountryResultTelemetry(TELEMETRY_RESULT_ENUM.SUCCESS_WITHOUT_DATA);
-    
-    for (let hid of ["SEARCH_SERVICE_COUNTRY_TIMEOUT",
-                     "SEARCH_SERVICE_COUNTRY_FETCH_CAUSED_SYNC_INIT"]) {
-      let histogram = Services.telemetry.getHistogramById(hid);
-      let snapshot = histogram.snapshot();
-      deepEqual(snapshot.values, {0: 1, 1: 0}); 
-    }
-    do_test_finished();
-    run_next_test();
+    Services.search.getEngines().then(() => {
+      ok(!Services.prefs.prefHasUserValue("browser.search.region"), "should be no region pref");
+      
+      checkCountryResultTelemetry(TELEMETRY_RESULT_ENUM.SUCCESS_WITHOUT_DATA);
+      
+      for (let hid of ["SEARCH_SERVICE_COUNTRY_TIMEOUT",
+                       "SEARCH_SERVICE_COUNTRY_FETCH_CAUSED_SYNC_INIT"]) {
+        let histogram = Services.telemetry.getHistogramById(hid);
+        let snapshot = histogram.snapshot();
+        deepEqual(snapshot.values, {0: 1, 1: 0}); 
+      }
+      do_test_finished();
+      run_next_test();
+    });
   });
   do_test_pending();
 }

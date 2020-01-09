@@ -25,7 +25,8 @@ add_task(async function checkCtrlWorks() {
     ["1.1.1.1", "http://1.1.1.1/", { ctrlKey: true }],
     ["ftp://example", "ftp://example/", { ctrlKey: true }],
     ["ftp.example.bar", "http://ftp.example.bar/", { ctrlKey: true }],
-    ["ex ample", Services.search.defaultEngine.getSubmission("ex ample", null, "keyword").uri.spec, { ctrlKey: true }],
+    ["ex ample", (await Services.search.getDefault()).getSubmission("ex ample", null, "keyword").uri.spec,
+      { ctrlKey: true }],
   ];
 
   
@@ -49,9 +50,9 @@ add_task(async function checkPrefTurnsOffCanonize() {
   
   let engine = await SearchTestUtils.promiseNewSearchEngine(
     getRootDirectory(gTestPath) + TEST_ENGINE_BASENAME);
-  let oldCurrentEngine = Services.search.defaultEngine;
-  Services.search.defaultEngine = engine;
-  registerCleanupFunction(() => { Services.search.defaultEngine = oldCurrentEngine; });
+  let oldDefaultEngine = await Services.search.getDefault();
+  await Services.search.setDefault(engine);
+  registerCleanupFunction(async () => Services.search.setDefault(oldDefaultEngine));
 
   let tabsToClose = [];
   

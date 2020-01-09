@@ -164,7 +164,7 @@ var TelemetryEnvironment = {
   RECORD_DEFAULTPREF_STATE: 4, 
 
   
-  testWatchPreferences(prefMap) {
+  async testWatchPreferences(prefMap) {
     return getGlobal()._watchPreferences(prefMap);
   },
 
@@ -948,15 +948,14 @@ function EnvironmentCache() {
     system: this._getSystem(),
   };
 
-  this._updateSettings();
   this._addObservers();
 
   
   
 
-  let p = [];
+  let p = [ this._updateSettings() ];
   this._addonBuilder = new EnvironmentAddonBuilder(this);
-  p = [ this._addonBuilder.init() ];
+  p.push(this._addonBuilder.init());
 
   this._currentEnvironment.profile = {};
   p.push(this._updateProfile());
@@ -1112,10 +1111,10 @@ EnvironmentCache.prototype = {
 
 
 
-  _watchPreferences(aPreferences) {
+  async _watchPreferences(aPreferences) {
     this._stopWatchingPrefs();
     this._watchedPrefs = aPreferences;
-    this._updateSettings();
+    await this._updateSettings();
     this._startWatchingPrefs();
   },
 
@@ -1316,7 +1315,7 @@ EnvironmentCache.prototype = {
   
 
 
-  _updateSearchEngine() {
+  async _updateSearchEngine() {
     if (!this._canQuerySearch) {
       this._log.trace("_updateSearchEngine - ignoring early call");
       return;
@@ -1337,7 +1336,7 @@ EnvironmentCache.prototype = {
     
     this._currentEnvironment.settings.defaultSearchEngine = this._getDefaultSearchEngine();
     this._currentEnvironment.settings.defaultSearchEngineData =
-      Services.search.getDefaultEngineInfo();
+      await Services.search.getDefaultEngineInfo();
 
     
     if (Services.prefs.prefHasUserValue(PREF_SEARCH_COHORT)) {
@@ -1350,12 +1349,12 @@ EnvironmentCache.prototype = {
   
 
 
-  _onSearchEngineChange() {
+  async _onSearchEngineChange() {
     this._log.trace("_onSearchEngineChange");
 
     
     let oldEnvironment = Cu.cloneInto(this._currentEnvironment, myScope);
-    this._updateSearchEngine();
+    await this._updateSearchEngine();
     this._onEnvironmentChange("search-engine-changed", oldEnvironment);
   },
 
@@ -1465,7 +1464,7 @@ EnvironmentCache.prototype = {
   
 
 
-  _updateSettings() {
+  async _updateSettings() {
     let updateChannel = null;
     try {
       updateChannel = Utils.getUpdateChannel();
@@ -1499,7 +1498,7 @@ EnvironmentCache.prototype = {
 
     this._updateAttribution();
     this._updateDefaultBrowser();
-    this._updateSearchEngine();
+    await this._updateSearchEngine();
     this._updateAutoDownload();
   },
 

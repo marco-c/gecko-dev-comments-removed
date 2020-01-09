@@ -47,10 +47,7 @@ add_task(async function test_multipleIcons() {
 
 add_task(async function test_icon_not_in_file() {
   let engineUrl = gDataUrl + "engine-fr.xml";
-  let engine = await new Promise((resolve, reject) => {
-    Services.search.addEngine(engineUrl, "data:image/x-icon;base64,ico16",
-                              false, {onSuccess: resolve, onError: reject});
-  });
+  let engine = await Services.search.addEngine(engineUrl, "data:image/x-icon;base64,ico16", false);
 
   
   

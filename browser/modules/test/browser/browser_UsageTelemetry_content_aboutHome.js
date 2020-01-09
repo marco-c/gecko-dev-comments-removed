@@ -12,20 +12,20 @@ add_task(async function setup() {
   
   
   
-  Services.search.addEngineWithDetails("MozSearch", "", "mozalias", "", "GET",
-                                       "http://example.com/?q={searchTerms}");
+  await Services.search.addEngineWithDetails("MozSearch", "", "mozalias", "", "GET",
+                                             "http://example.com/?q={searchTerms}");
 
-  Services.search.addEngineWithDetails("MozSearch2", "", "mozalias2", "", "GET",
-                                       "http://example.com/?q={searchTerms}");
+  await Services.search.addEngineWithDetails("MozSearch2", "", "mozalias2", "", "GET",
+                                             "http://example.com/?q={searchTerms}");
 
   
   let engineDefault = Services.search.getEngineByName("MozSearch");
-  let originalEngine = Services.search.defaultEngine;
-  Services.search.defaultEngine = engineDefault;
+  let originalEngine = await Services.search.getDefault();
+  await Services.search.setDefault(engineDefault);
 
   
   let engineOneOff = Services.search.getEngineByName("MozSearch2");
-  Services.search.moveEngine(engineOneOff, 0);
+  await Services.search.moveEngine(engineOneOff, 0);
 
   
   let oldCanRecord = Services.telemetry.canRecordExtended;
@@ -36,9 +36,9 @@ add_task(async function setup() {
 
   
   registerCleanupFunction(async function() {
-    Services.search.defaultEngine = originalEngine;
-    Services.search.removeEngine(engineDefault);
-    Services.search.removeEngine(engineOneOff);
+    await Services.search.setDefault(originalEngine);
+    await Services.search.removeEngine(engineDefault);
+    await Services.search.removeEngine(engineOneOff);
     await PlacesUtils.history.clear();
     Services.telemetry.setEventRecordingEnabled("navigation", false);
     Services.telemetry.canRecordExtended = oldCanRecord;

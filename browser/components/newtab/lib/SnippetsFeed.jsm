@@ -71,20 +71,14 @@ this.SnippetsFeed = class SnippetsFeed {
   getSelectedSearchEngine() {
     return new Promise(resolve => {
       
-      Services.search.init(rv => {
-        
-        if (Components.isSuccessCode(rv)) {
-          let engines = Services.search.getVisibleEngines();
-          resolve({
-            searchEngineIdentifier: Services.search.defaultEngine.identifier,
-            engines: engines
-              .filter(engine => engine.identifier)
-              .map(engine => `${TARGET_SEARCHENGINE_PREFIX}${engine.identifier}`),
-          });
-        } else {
-          resolve({engines: [], searchEngineIdentifier: ""});
-        }
-      });
+      Services.search.getVisibleEngines().then(engines => {
+        resolve({
+          searchEngineIdentifier: Services.search.defaultEngine.identifier,
+          engines: engines
+            .filter(engine => engine.identifier)
+            .map(engine => `${TARGET_SEARCHENGINE_PREFIX}${engine.identifier}`),
+        });
+      }).catch(() => resolve({engines: [], searchEngineIdentifier: ""}));
     });
   }
 

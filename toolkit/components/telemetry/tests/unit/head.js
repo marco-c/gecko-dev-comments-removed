@@ -346,9 +346,8 @@ function getSnapshot(histogramId) {
 
 function setEmptyPrefWatchlist() {
   const {TelemetryEnvironment} = ChromeUtils.import("resource://gre/modules/TelemetryEnvironment.jsm");
-  return TelemetryEnvironment.onInitialized().then(() => {
-    TelemetryEnvironment.testWatchPreferences(new Map());
-  });
+  return TelemetryEnvironment.onInitialized().then(() =>
+    TelemetryEnvironment.testWatchPreferences(new Map()));
 }
 
 if (runningInParent) {

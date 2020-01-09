@@ -40,6 +40,6 @@ add_task(async function run_test() {
   Assert.notEqual(engine, null);
 
   
-  Services.search.removeEngine(engine);
+  await Services.search.removeEngine(engine);
   Assert.ok(!file.exists());
 });

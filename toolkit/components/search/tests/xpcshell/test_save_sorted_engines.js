@@ -29,8 +29,8 @@ add_task(async function test_save_sorted_engines() {
   let search = Services.search;
 
   
-  search.moveEngine(engine1, 0);
-  search.moveEngine(engine2, 1);
+  await search.moveEngine(engine1, 0);
+  await search.moveEngine(engine2, 1);
 
   
   await promiseAfterCache();

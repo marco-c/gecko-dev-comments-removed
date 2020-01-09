@@ -26,69 +26,45 @@ MockRegistrar.register("@mozilla.org/prompter;1", prompt);
 
 
 
-add_test(function init_search_service() {
-  Services.search.init(function(status) {
-    if (!Components.isSuccessCode(status))
-      do_throw("Failed to initialize search service");
-
-    run_next_test();
-  });
-});
-
-
-add_test(function simple_callback_test() {
-  let searchCallback = {
-    onSuccess(engine) {
-      Assert.ok(!!engine);
-      Assert.notEqual(engine.name, Services.search.defaultEngine.name);
-      Assert.equal(engine.wrappedJSObject._loadPath,
-                   "[http]localhost/test-search-engine.xml");
-      run_next_test();
-    },
-    onError(errorCode) {
-      do_throw("search callback returned error: " + errorCode);
-    },
-  };
-  Services.search.addEngine(gDataUrl + "engine.xml", null,
-                            false, searchCallback);
-});
-
-
-add_test(function duplicate_failure_test() {
-  let searchCallback = {
-    onSuccess(engine) {
-      do_throw("this addition should not have succeeded");
-    },
-    onError(errorCode) {
-      Assert.ok(!!errorCode);
-      Assert.equal(errorCode, Ci.nsISearchInstallCallback.ERROR_DUPLICATE_ENGINE);
-      run_next_test();
-    },
-  };
-  
-  Services.search.addEngine(gDataUrl + "engine.xml", null,
-                            false, searchCallback);
-});
-
-
-add_test(function load_failure_test() {
-  let searchCallback = {
-    onSuccess(engine) {
-      do_throw("this addition should not have succeeded");
-    },
-    onError(errorCode) {
-      Assert.ok(!!errorCode);
-      Assert.equal(errorCode, Ci.nsISearchInstallCallback.ERROR_UNKNOWN_FAILURE);
-      run_next_test();
-    },
-  };
-  
-  Services.search.addEngine("http://invalid/data/engine.xml", null,
-                            false, searchCallback);
-});
-
-function run_test() {
+add_task(async function init_search_service() {
   useHttpServer();
+});
 
-  run_next_test();
-}
+
+add_task(async function simple_callback_test() {
+  let engine = await Services.search.addEngine(gDataUrl + "engine.xml", null, false);
+  Assert.ok(!!engine);
+  Assert.notEqual(engine.name, (await Services.search.getDefault()).name);
+  Assert.equal(engine.wrappedJSObject._loadPath,
+               "[http]localhost/test-search-engine.xml");
+});
+
+
+add_task(async function duplicate_failure_test() {
+  
+  let engine;
+  try {
+    engine = await Services.search.addEngine(gDataUrl + "engine.xml", null, false);
+  } catch (ex) {
+    let errorCode = ex.result;
+    Assert.ok(!!errorCode);
+    Assert.equal(errorCode, Ci.nsISearchInstallCallback.ERROR_DUPLICATE_ENGINE);
+  } finally {
+    Assert.ok(!engine);
+  }
+});
+
+
+add_task(async function load_failure_test() {
+  
+  let engine;
+  try {
+    engine = await Services.search.addEngine("http://invalid/data/engine.xml", null, false);
+  } catch (ex) {
+    let errorCode = ex.result;
+    Assert.ok(!!errorCode);
+    Assert.equal(errorCode, Ci.nsISearchInstallCallback.ERROR_UNKNOWN_FAILURE);
+  } finally {
+    Assert.ok(!engine);
+  }
+});

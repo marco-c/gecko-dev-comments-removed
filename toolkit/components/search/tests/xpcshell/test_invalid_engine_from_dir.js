@@ -19,7 +19,7 @@ function run_test() {
   let engineTemplateFile = do_get_file("data/invalid-engine.xml");
   engineTemplateFile.copyTo(engineFile.parent, "test-search-engine.xml");
 
-  Services.search.init(function search_initialized(aStatus) {
+  Services.search.init().then(function search_initialized(aStatus) {
     
     
     Assert.ok(Components.isSuccessCode(aStatus));

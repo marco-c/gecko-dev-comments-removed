@@ -41,7 +41,7 @@ function run_test() {
   
   Services.prefs.setIntPref("browser.search.geoip.timeout", 10);
   let promiseXHRStarted = waitForSearchNotification("geoip-lookup-xhr-starting");
-  Services.search.init(() => {
+  Services.search.init().then(() => {
     ok(!Services.prefs.prefHasUserValue("browser.search.region"), "should be no region pref");
     
     checkCountryResultTelemetry(null);

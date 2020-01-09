@@ -1031,7 +1031,7 @@ var BrowserApp = {
         name = Services.prefs.getCharPref("browser.search.defaultenginename.US");
       }
       if (name) {
-        Services.search.init(() => {
+        Services.search.init().then(() => {
           let engine = Services.search.getEngineByName(name);
           if (engine) {
             Services.search.defaultEngine = engine;
@@ -4134,7 +4134,7 @@ Tab.prototype = {
       }
   },
 
-  sendOpenSearchMessage: function(eventTarget) {
+  sendOpenSearchMessage: async function(eventTarget) {
     let type = eventTarget.type && eventTarget.type.toLowerCase();
     
     type = type.replace(/^\s+|\s*(?:;.*)?$/g, "");
@@ -4142,49 +4142,47 @@ Tab.prototype = {
     
     let isOpenSearch = (type == "application/opensearchdescription+xml");
     if (isOpenSearch && eventTarget.title && /^(?:https?|ftp):/i.test(eventTarget.href)) {
-      Services.search.init(() => {
-        let visibleEngines = Services.search.getVisibleEngines();
+      let visibleEngines = await Services.search.getVisibleEngines();
+      
+      
+      if (visibleEngines.some(function(e) {
+        return e.name == eventTarget.title;
+      })) {
         
+        return null;
+      }
+
+      if (this.browser.engines) {
         
-        if (visibleEngines.some(function(e) {
-          return e.name == eventTarget.title;
+        if (this.browser.engines.some(function(e) {
+          return e.url == eventTarget.href;
         })) {
-          
           return null;
         }
+      } else {
+          this.browser.engines = [];
+      }
 
-        if (this.browser.engines) {
-          
-          if (this.browser.engines.some(function(e) {
-            return e.url == eventTarget.href;
-          })) {
-            return null;
-          }
-        } else {
-            this.browser.engines = [];
-        }
+      
+      let iconURL = eventTarget.ownerDocument.documentURIObject.prePath + "/favicon.ico";
 
-        
-        let iconURL = eventTarget.ownerDocument.documentURIObject.prePath + "/favicon.ico";
+      let newEngine = {
+        title: eventTarget.title,
+        url: eventTarget.href,
+        iconURL: iconURL
+      };
 
-        let newEngine = {
-          title: eventTarget.title,
-          url: eventTarget.href,
-          iconURL: iconURL
-        };
+      this.browser.engines.push(newEngine);
 
-        this.browser.engines.push(newEngine);
+      
+      if (this.browser.engines.length > 1)
+        return null;
 
-        
-        if (this.browser.engines.length > 1)
-          return null;
-
-        
-        GlobalEventDispatcher.sendRequest({
-          type: "Link:OpenSearch",
-          tabID: this.id,
-          visible: true
-        });
+      
+      GlobalEventDispatcher.sendRequest({
+        type: "Link:OpenSearch",
+        tabID: this.id,
+        visible: true
       });
     }
   },
@@ -5947,18 +5945,18 @@ var SearchEngines = {
   },
 
   
-  _handleSearchEnginesGetVisible: function _handleSearchEnginesGetVisible(rv, all) {
+  _handleSearchEnginesGetVisible: async function _handleSearchEnginesGetVisible(rv, all) {
     if (!Components.isSuccessCode(rv)) {
       Cu.reportError("Could not initialize search service, bailing out.");
       return;
     }
 
-    let engineData = Services.search.getVisibleEngines({});
+    let engineData = await Services.search.getVisibleEngines({});
 
     
     
-    if (engineData[0] !== Services.search.defaultEngine) {
-      engineData = engineData.filter(engine => engine !== Services.search.defaultEngine);
+    if (engineData[0].name !== Services.search.defaultEngine.name) {
+      engineData = engineData.filter(engine => engine.name !== Services.search.defaultEngine.name);
       engineData.unshift(Services.search.defaultEngine);
     }
 
@@ -6011,7 +6009,7 @@ var SearchEngines = {
         this.displaySearchEnginesList(data);
         break;
       case "SearchEngines:GetVisible":
-        Services.search.init(this._handleSearchEnginesGetVisible.bind(this));
+        Services.search.init().then(this._handleSearchEnginesGetVisible.bind(this));
         break;
       case "SearchEngines:Remove":
         
@@ -6027,8 +6025,7 @@ var SearchEngines = {
       case "SearchEngines:SetDefault":
         engine = this._extractEngineFromJSON(data);
         
-        Services.search.moveEngine(engine, 0);
-        Services.search.defaultEngine = engine;
+        Services.search.moveEngine(engine, 0).then(() => Services.search.defaultEngine = engine);
         break;
       default:
         dump("Unexpected message type observed: " + event);
@@ -6050,7 +6047,7 @@ var SearchEngines = {
   },
 
   migrateSearchActivityDefaultPref: function migrateSearchActivityDefaultPref() {
-    Services.search.init(() => this._setSearchActivityDefaultPref(Services.search.defaultEngine));
+    Services.search.init().then(() => this._setSearchActivityDefaultPref(Services.search.defaultEngine));
   },
 
   
@@ -6092,27 +6089,24 @@ var SearchEngines = {
     });
   },
 
-  addOpenSearchEngine: function addOpenSearchEngine(engine) {
-    Services.search.addEngine(engine.url, engine.iconURL, false, {
-      onSuccess: function() {
+  addOpenSearchEngine: async function addOpenSearchEngine(engine) {
+    try {
+      await Services.search.addEngine(engine.url, engine.iconURL, false);
+      
+      Snackbars.show(Strings.browser.formatStringFromName("alertSearchEngineAddedToast", [engine.title], 1), Snackbars.LENGTH_LONG);
+    } catch (ex) {
+      let code = ex.result;
+      let errorMessage;
+      if (code == 2) {
         
-        Snackbars.show(Strings.browser.formatStringFromName("alertSearchEngineAddedToast", [engine.title], 1), Snackbars.LENGTH_LONG);
-      },
-
-      onError: function(aCode) {
-        let errorMessage;
-        if (aCode == 2) {
-          
-          errorMessage = "alertSearchEngineDuplicateToast";
-
-        } else {
-          
-          errorMessage = "alertSearchEngineErrorToast";
-        }
-
-        Snackbars.show(Strings.browser.formatStringFromName(errorMessage, [engine.title], 1), Snackbars.LENGTH_LONG);
+        errorMessage = "alertSearchEngineDuplicateToast";
+      } else {
+        
+        errorMessage = "alertSearchEngineErrorToast";
       }
-    });
+
+      Snackbars.show(Strings.browser.formatStringFromName(errorMessage, [engine.title], 1), Snackbars.LENGTH_LONG);
+    }
   },
 
   
@@ -6222,7 +6216,7 @@ var SearchEngines = {
       return;
     }
 
-    Services.search.init(function addEngine_cb(rv) {
+    Services.search.init().then(function addEngine_cb(rv) {
       if (!Components.isSuccessCode(rv)) {
         Cu.reportError("Could not initialize search service, bailing out.");
         if (resultCallback) {
@@ -6235,7 +6229,7 @@ var SearchEngines = {
         type: 'Favicon:Request',
         url: docURI.spec,
         skipNetwork: false
-      }).then(data => {
+      }).then(async data => {
         
         
         let name = title.value;
@@ -6243,7 +6237,7 @@ var SearchEngines = {
             name = title.value + " " + i;
         }
 
-        Services.search.addEngineWithDetails(name, data, null, null, method, formURL);
+        await Services.search.addEngineWithDetails(name, data, null, null, method, formURL);
         Snackbars.show(Strings.browser.formatStringFromName("alertSearchEngineAddedToast", [name], 1), Snackbars.LENGTH_LONG);
 
         let engine = Services.search.getEngineByName(name);
@@ -6543,7 +6537,7 @@ var Distribution = {
       case "Distribution:Changed":
         
         try {
-          Services.search._asyncReInit();
+          Services.search._reInit();
         } catch (e) {
           console.log("Unable to reinit search service.");
         }

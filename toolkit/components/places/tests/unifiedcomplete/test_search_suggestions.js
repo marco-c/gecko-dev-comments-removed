@@ -35,9 +35,9 @@ add_task(async function setup() {
   });
 
   
-  let oldCurrentEngine = Services.search.defaultEngine;
-  registerCleanupFunction(() => Services.search.defaultEngine = oldCurrentEngine);
-  Services.search.defaultEngine = engine;
+  let oldDefaultEngine = await Services.search.getDefault();
+  registerCleanupFunction(async () => Services.search.setDefault(oldDefaultEngine));
+  Services.search.setDefault(engine);
 
   
   Cc["@mozilla.org/satchel/form-history-startup;1"]

@@ -27,7 +27,7 @@ add_task(async function test_disthidden() {
 
   Assert.ok(Services.search.isInitialized);
 
-  let engines = Services.search.getEngines();
+  let engines = await Services.search.getEngines();
   
   
   Assert.equal(engines.length, 6);

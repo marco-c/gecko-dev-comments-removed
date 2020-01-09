@@ -119,19 +119,15 @@ class MozSearchbar extends MozXULElement {
 
     (window.delayedStartupPromise || Promise.resolve()).then(() => {
       window.requestIdleCallback(() => {
-        Services.search.init(aStatus => {
+        Services.search.init().then(aStatus => {
           
           if (!this._initialized)
             return;
 
-          if (Components.isSuccessCode(aStatus)) {
-            
-            this.updateDisplay();
-            BrowserSearch.updateOpenSearchBadge();
-          } else {
-            Cu.reportError("Cannot initialize search service, bailing out: " + aStatus);
-          }
-        });
+          
+          this.updateDisplay();
+          BrowserSearch.updateOpenSearchBadge();
+        }).catch(status => Cu.reportError("Cannot initialize search service, bailing out: " + status));
       });
     });
 

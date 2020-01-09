@@ -144,14 +144,16 @@ var gSearchPane = {
     permanentPBLabel.hidden = urlbarSuggests.hidden || !permanentPB;
   },
 
-  buildDefaultEngineDropDown() {
+  async buildDefaultEngineDropDown() {
     
     let list = document.getElementById("defaultEngine");
     
-    let currentEngine = Services.search.defaultEngine.name;
+    let currentEngine = (await Services.search.getDefault()).name;
 
     
     let engines = gEngineView._engineStore._engines;
+    if (!engines.length)
+      return;
     if (!engines.some(e => e.name == currentEngine))
       currentEngine = engines[0].name;
 
@@ -389,9 +391,8 @@ var gSearchPane = {
       hiddenList.join(",");
   },
 
-  setDefaultEngine() {
-    Services.search.defaultEngine =
-      document.getElementById("defaultEngine").selectedItem.engine;
+  async setDefaultEngine() {
+    await Services.search.setDefault(document.getElementById("defaultEngine").selectedItem.engine);
     ExtensionSettingsStore.setByUser(SEARCH_TYPE, SEARCH_KEY);
   },
 };
@@ -411,12 +412,21 @@ function EngineStore() {
   let pref = Preferences.get("browser.search.hiddenOneOffs").value;
   this.hiddenList = pref ? pref.split(",") : [];
 
-  this._engines = Services.search.getVisibleEngines().map(this._cloneEngine, this);
-  this._defaultEngines = Services.search.getDefaultEngines().map(this._cloneEngine, this);
+  this._engines = [];
+  this._defaultEngines = [];
+  Promise.all([Services.search.getVisibleEngines(),
+    Services.search.getDefaultEngines()]).then(([visibleEngines, defaultEngines]) => {
+      for (let engine of visibleEngines) {
+        this.addEngine(engine);
+        gEngineView.rowCountChanged(gEngineView.lastIndex, 1);
+      }
+      this._defaultEngines = defaultEngines.map(this._cloneEngine, this);
+      gSearchPane.buildDefaultEngineDropDown();
 
-  
-  var someHidden = this._defaultEngines.some(e => e.hidden);
-  gSearchPane.showRestoreDefaults(someHidden);
+      
+      var someHidden = this._defaultEngines.some(e => e.hidden);
+      gSearchPane.showRestoreDefaults(someHidden);
+    });
 }
 EngineStore.prototype = {
   _engines: null,
@@ -464,13 +474,13 @@ EngineStore.prototype = {
       throw new Error("ES_moveEngine: invalid engine?");
 
     if (index == aNewIndex)
-      return; 
+      return Promise.resolve(); 
 
     
     var removedEngine = this._engines.splice(index, 1)[0];
     this._engines.splice(aNewIndex, 0, removedEngine);
 
-    Services.search.moveEngine(aEngine.originalEngine, aNewIndex);
+    return Services.search.moveEngine(aEngine.originalEngine, aNewIndex);
   },
 
   removeEngine(aEngine) {
@@ -492,7 +502,7 @@ EngineStore.prototype = {
     return index;
   },
 
-  restoreDefaultEngines() {
+  async restoreDefaultEngines() {
     var added = 0;
 
     for (var i = 0; i < this._defaultEngines.length; ++i) {
@@ -500,7 +510,7 @@ EngineStore.prototype = {
 
       
       if (this._engines.some(this._isSameEngine, e)) {
-        this.moveEngine(this._getEngineByName(e.name), i);
+        await this.moveEngine(this._getEngineByName(e.name), i);
       } else {
         
 
@@ -511,7 +521,7 @@ EngineStore.prototype = {
         this._engines.splice(i, 0, e);
         let engine = e.originalEngine;
         engine.hidden = false;
-        Services.search.moveEngine(engine, i);
+        await Services.search.moveEngine(engine, i);
         added++;
       }
     }
@@ -562,7 +572,8 @@ EngineView.prototype = {
 
   
   rowCountChanged(index, count) {
-    this.tree.rowCountChanged(index, count);
+    if (this.tree)
+      this.tree.rowCountChanged(index, count);
   },
 
   invalidate() {

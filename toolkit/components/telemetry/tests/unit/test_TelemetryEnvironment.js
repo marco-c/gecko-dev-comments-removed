@@ -29,6 +29,10 @@ async function installXPIFromURL(url) {
   return install.install();
 }
 
+function promiseNextTick() {
+  return new Promise(resolve => executeSoon(resolve));
+}
+
 
 var gHttpServer = null;
 
@@ -988,7 +992,7 @@ add_task(async function test_prefWatchPolicies() {
   Preferences.set(PREF_TEST_5, expectedValue);
 
   
-  TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
+  await TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
   let deferred = PromiseUtils.defer();
 
   
@@ -1033,7 +1037,7 @@ add_task(async function test_prefWatch_prefReset() {
   Preferences.set(PREF_TEST, false);
 
   
-  TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
+  await TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
   let deferred = PromiseUtils.defer();
   TelemetryEnvironment.registerChangeListener("testWatchPrefs_reset", deferred.resolve);
 
@@ -1062,7 +1066,7 @@ add_task(async function test_prefDefault() {
 
   
   
-  TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
+  await TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
 
   Assert.strictEqual(TelemetryEnvironment.currentEnvironment.settings.userPrefs[PREF_TEST], expectedValue);
 });
@@ -1075,7 +1079,7 @@ add_task(async function test_prefDefaultState() {
     [PREF_TEST, {what: TelemetryEnvironment.RECORD_DEFAULTPREF_STATE}],
   ]);
 
-  TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
+  await TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
 
   Assert.equal(PREF_TEST in TelemetryEnvironment.currentEnvironment.settings.userPrefs, false);
 
@@ -1094,7 +1098,7 @@ add_task(async function test_prefInvalid() {
     [PREF_TEST_2, {what: TelemetryEnvironment.RECORD_DEFAULTPREF_STATE}],
   ]);
 
-  TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
+  await TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
 
   Assert.strictEqual(TelemetryEnvironment.currentEnvironment.settings.userPrefs[PREF_TEST_1], undefined);
   Assert.strictEqual(TelemetryEnvironment.currentEnvironment.settings.userPrefs[PREF_TEST_2], undefined);
@@ -1575,7 +1579,8 @@ add_task(async function test_defaultSearchEngine() {
                           Services.io.newURI(url));
 
   
-  await new Promise(resolve => Services.search.init(resolve));
+  await Services.search.init();
+  await promiseNextTick();
 
   
   
@@ -1591,13 +1596,14 @@ add_task(async function test_defaultSearchEngine() {
   Assert.deepEqual(data.settings.defaultSearchEngineData, expectedSearchEngineData);
 
   
-  for (let engine of Services.search.getEngines()) {
-    Services.search.removeEngine(engine);
+  for (let engine of await Services.search.getEngines()) {
+    await Services.search.removeEngine(engine);
   }
   
   
   
   Services.obs.notifyObservers(null, "browser-search-engine-modified", "engine-current");
+  await promiseNextTick();
 
   
   data = TelemetryEnvironment.currentEnvironment;
@@ -1608,12 +1614,12 @@ add_task(async function test_defaultSearchEngine() {
   
   const SEARCH_ENGINE_ID = "telemetry_default";
   const SEARCH_ENGINE_URL = "http://www.example.org/?search={searchTerms}";
-  Services.search.addEngineWithDetails(SEARCH_ENGINE_ID, "", null, "", "get", SEARCH_ENGINE_URL);
+  await Services.search.addEngineWithDetails(SEARCH_ENGINE_ID, "", null, "", "get", SEARCH_ENGINE_URL);
 
   
   let deferred = PromiseUtils.defer();
   TelemetryEnvironment.registerChangeListener("testWatch_SearchDefault", deferred.resolve);
-  Services.search.defaultEngine = Services.search.getEngineByName(SEARCH_ENGINE_ID);
+  await Services.search.setDefault(Services.search.getEngineByName(SEARCH_ENGINE_ID));
   await deferred.promise;
 
   data = TelemetryEnvironment.currentEnvironment;
@@ -1650,10 +1656,9 @@ add_task(async function test_defaultSearchEngine() {
         reject(ex);
       }
     }, "browser-search-engine-modified");
-    Services.search.addEngine("file://" + do_get_cwd().path + "/engine.xml",
-                              null, false);
+    Services.search.addEngine("file://" + do_get_cwd().path + "/engine.xml", null, false);
   });
-  Services.search.defaultEngine = engine;
+  await Services.search.setDefault(engine);
   await promise;
   TelemetryEnvironment.unregisterChangeListener("testWatch_SearchDefault");
   data = TelemetryEnvironment.currentEnvironment;
@@ -1671,7 +1676,7 @@ add_task(async function test_defaultSearchEngine() {
   TelemetryEnvironment.unregisterChangeListener("testWatch_SearchDefault");
   data = TelemetryEnvironment.currentEnvironment;
   Assert.equal(data.settings.defaultSearchEngineData.origin, "invalid");
-  Services.search.removeEngine(engine);
+  await Services.search.removeEngine(engine);
 
   
   const PREF_TEST = "toolkit.telemetry.test.pref1";
@@ -1681,7 +1686,7 @@ add_task(async function test_defaultSearchEngine() {
   Preferences.reset(PREF_TEST);
 
   
-  TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
+  await TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
   deferred = PromiseUtils.defer();
   TelemetryEnvironment.registerChangeListener("testSearchEngine_pref", deferred.resolve);
   
@@ -1751,7 +1756,7 @@ add_task({ skip_if: () => AppConstants.MOZ_APP_NAME == "thunderbird" },
   Preferences.reset(PREF_TEST);
 
   
-  TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
+  await TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
   let deferred = PromiseUtils.defer();
   TelemetryEnvironment.registerChangeListener("testDefaultBrowser_pref", deferred.resolve);
   
@@ -1967,7 +1972,7 @@ add_task(async function test_environmentShutdown() {
   Preferences.reset(PREF_TEST);
 
   
-  TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
+  await TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
   TelemetryEnvironment.registerChangeListener("test_environmentShutdownChange", () => {
   
     Assert.ok(false, "No change should be propagated after shutdown.");

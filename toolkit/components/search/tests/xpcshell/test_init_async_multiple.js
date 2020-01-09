@@ -25,7 +25,7 @@ function run_test() {
   for (let i = 0; i < numberOfInitializers; ++i) {
     let me = i;
     pending[me] = true;
-    Services.search.init(function search_initialized_0(aStatus) {
+    Services.search.init().then(function search_initialized_0(aStatus) {
       Assert.ok(Components.isSuccessCode(aStatus));
       init_complete(me);
     });
@@ -40,13 +40,14 @@ function run_test() {
     Assert.ok(Services.search.isInitialized);
     if (numberPending == 0) {
       
-      let engines = Services.search.getEngines();
-      Assert.notEqual(engines, null);
+      Services.search.getEngines().then(engines => {
+        Assert.notEqual(engines, null);
 
-      
-      
-      do_timeout(1000, function() {
-        do_test_finished();
+        
+        
+        do_timeout(1000, function() {
+          do_test_finished();
+        });
       });
     }
   };

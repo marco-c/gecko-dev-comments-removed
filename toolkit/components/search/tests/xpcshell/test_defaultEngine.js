@@ -16,6 +16,7 @@ function run_test() {
 
 add_task(async function test_defaultEngine() {
   let search = Services.search;
+  await search.init();
 
   let originalDefault = search.defaultEngine;
 
@@ -38,7 +39,7 @@ add_task(async function test_defaultEngine() {
 
   
   
-  search.moveEngine(engine2, 0);
+  await search.moveEngine(engine2, 0);
   originalDefault.hidden = true;
   Assert.equal(search.defaultEngine, engine2);
 

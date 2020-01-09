@@ -67,8 +67,8 @@ var gTests = [
       gSS.defaultEngine = engine;
     },
     current(engine) {
-      let currentEngine = gSS.defaultEngine;
-      is(engine, currentEngine, "engine is current");
+      let defaultEngine = gSS.defaultEngine;
+      is(engine, defaultEngine, "engine is current");
       is(engine.name, this.engine.name, "current engine was changed successfully");
 
       gSS.removeEngine(engine);
@@ -80,9 +80,9 @@ var gTests = [
       
       Services.obs.removeObserver(observer, "browser-search-engine-modified");
 
-      let currentEngine = gSS.defaultEngine;
-      ok(currentEngine, "An engine is present.");
-      isnot(currentEngine.name, this.engine.name, "Current engine reset after removal");
+      let defaultEngine = gSS.defaultEngine;
+      ok(defaultEngine, "An engine is present.");
+      isnot(defaultEngine.name, this.engine.name, "Current engine reset after removal");
 
       nextTest();
     },
@@ -101,5 +101,5 @@ function nextTest() {
 
 function test() {
   waitForExplicitFinish();
-  nextTest();
+  gSS.init().then(nextTest);
 }

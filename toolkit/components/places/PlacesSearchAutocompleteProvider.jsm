@@ -38,26 +38,19 @@ const SearchAutocompleteProviderInternal = {
 
   tokenAliasEngines: [],
 
-  initialize() {
-    return new Promise((resolve, reject) => {
-      Services.search.init(status => {
-        if (!Components.isSuccessCode(status)) {
-          reject(new Error("Unable to initialize search service."));
-        }
+  async initialize() {
+    try {
+      await Services.search.init();
+    } catch (errorCode) {
+      throw new Error("Unable to initialize search service.");
+    }
 
-        try {
-          
-          this._refresh();
+    
+    await this._refresh();
 
-          Services.obs.addObserver(this, SEARCH_ENGINE_TOPIC, true);
+    Services.obs.addObserver(this, SEARCH_ENGINE_TOPIC, true);
 
-          this.initialized = true;
-          resolve();
-        } catch (ex) {
-          reject(ex);
-        }
-      });
-    });
+    this.initialized = true;
   },
 
   initialized: false,
@@ -72,14 +65,14 @@ const SearchAutocompleteProviderInternal = {
     }
   },
 
-  _refresh() {
+  async _refresh() {
     this.enginesByDomain.clear();
     this.enginesByAlias.clear();
     this.tokenAliasEngines = [];
 
     
     
-    Services.search.getEngines().forEach(e => this._addEngine(e));
+    (await Services.search.getEngines()).forEach(e => this._addEngine(e));
   },
 
   _addEngine(engine) {

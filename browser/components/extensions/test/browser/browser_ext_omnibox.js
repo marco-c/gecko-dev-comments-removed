@@ -301,6 +301,10 @@ add_task(async function() {
   });
 
   
+  
+  
+  SimpleTest.waitForExplicitFinish();
+  
   let waitForConsole = new Promise(resolve => {
     SimpleTest.monitorConsole(resolve, [{
       message: new RegExp(`The keyword provided is already registered: "${keyword}"`),

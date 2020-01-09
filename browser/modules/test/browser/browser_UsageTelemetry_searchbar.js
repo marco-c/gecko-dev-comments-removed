@@ -61,20 +61,20 @@ add_task(async function setup() {
   
   
   
-  Services.search.addEngineWithDetails("MozSearch", "", "mozalias", "", "GET",
-                                       "http://example.com/?q={searchTerms}");
+  await Services.search.addEngineWithDetails("MozSearch", "", "mozalias", "", "GET",
+                                             "http://example.com/?q={searchTerms}");
 
-  Services.search.addEngineWithDetails("MozSearch2", "", "mozalias2", "", "GET",
-                                       "http://example.com/?q={searchTerms}");
+  await Services.search.addEngineWithDetails("MozSearch2", "", "mozalias2", "", "GET",
+                                             "http://example.com/?q={searchTerms}");
 
   
   let engineDefault = Services.search.getEngineByName("MozSearch");
-  let originalEngine = Services.search.defaultEngine;
-  Services.search.defaultEngine = engineDefault;
+  let originalEngine = await Services.search.getDefault();
+  await Services.search.setDefault(engineDefault);
 
   
   let engineOneOff = Services.search.getEngineByName("MozSearch2");
-  Services.search.moveEngine(engineOneOff, 0);
+  await Services.search.moveEngine(engineOneOff, 0);
 
   
   let oldCanRecord = Services.telemetry.canRecordExtended;
@@ -84,11 +84,11 @@ add_task(async function setup() {
   Services.telemetry.setEventRecordingEnabled("navigation", true);
 
   
-  registerCleanupFunction(function() {
+  registerCleanupFunction(async function() {
     Services.telemetry.canRecordExtended = oldCanRecord;
-    Services.search.defaultEngine = originalEngine;
-    Services.search.removeEngine(engineDefault);
-    Services.search.removeEngine(engineOneOff);
+    await Services.search.setDefault(originalEngine);
+    await Services.search.removeEngine(engineDefault);
+    await Services.search.removeEngine(engineOneOff);
     Services.telemetry.setEventRecordingEnabled("navigation", false);
   });
 });
@@ -196,15 +196,9 @@ add_task(async function test_oneOff_enterSelection() {
   
   
   const url = getRootDirectory(gTestPath) + "usageTelemetrySearchSuggestions.xml";
-  let suggestionEngine = await new Promise((resolve, reject) => {
-    Services.search.addEngine(url, "", false, {
-      onSuccess(engine) { resolve(engine); },
-      onError() { reject(); },
-    });
-  });
-
-  let previousEngine = Services.search.defaultEngine;
-  Services.search.defaultEngine = suggestionEngine;
+  let suggestionEngine = await Services.search.addEngine(url, "", false);
+  let previousEngine = await Services.search.getDefault();
+  await Services.search.setDefault(suggestionEngine);
 
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank");
 
@@ -223,8 +217,8 @@ add_task(async function test_oneOff_enterSelection() {
     URLBAR_SELECTED_RESULT_METHODS.enterSelection,
     "FX_SEARCHBAR_SELECTED_RESULT_METHOD");
 
-  Services.search.defaultEngine = previousEngine;
-  Services.search.removeEngine(suggestionEngine);
+  await Services.search.setDefault(previousEngine);
+  await Services.search.removeEngine(suggestionEngine);
   BrowserTestUtils.removeTab(tab);
 });
 
@@ -267,15 +261,9 @@ add_task(async function test_suggestion_click() {
   
   
   const url = getRootDirectory(gTestPath) + "usageTelemetrySearchSuggestions.xml";
-  let suggestionEngine = await new Promise((resolve, reject) => {
-    Services.search.addEngine(url, "", false, {
-      onSuccess(engine) { resolve(engine); },
-      onError() { reject(); },
-    });
-  });
-
-  let previousEngine = Services.search.defaultEngine;
-  Services.search.defaultEngine = suggestionEngine;
+  let suggestionEngine = await Services.search.addEngine(url, "", false);
+  let previousEngine = await Services.search.getDefault();
+  await Services.search.setDefault(suggestionEngine);
 
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank");
 
@@ -310,8 +298,8 @@ add_task(async function test_suggestion_click() {
     URLBAR_SELECTED_RESULT_METHODS.click,
     "FX_SEARCHBAR_SELECTED_RESULT_METHOD");
 
-  Services.search.defaultEngine = previousEngine;
-  Services.search.removeEngine(suggestionEngine);
+  await Services.search.setDefault(previousEngine);
+  await Services.search.removeEngine(suggestionEngine);
   BrowserTestUtils.removeTab(tab);
 });
 
@@ -328,15 +316,9 @@ add_task(async function test_suggestion_enterSelection() {
   
   
   const url = getRootDirectory(gTestPath) + "usageTelemetrySearchSuggestions.xml";
-  let suggestionEngine = await new Promise((resolve, reject) => {
-    Services.search.addEngine(url, "", false, {
-      onSuccess(engine) { resolve(engine); },
-      onError() { reject(); },
-    });
-  });
-
-  let previousEngine = Services.search.defaultEngine;
-  Services.search.defaultEngine = suggestionEngine;
+  let suggestionEngine = await Services.search.addEngine(url, "", false);
+  let previousEngine = await Services.search.getDefault();
+  await Services.search.setDefault(suggestionEngine);
 
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank");
 
@@ -353,7 +335,7 @@ add_task(async function test_suggestion_enterSelection() {
     URLBAR_SELECTED_RESULT_METHODS.enterSelection,
     "FX_SEARCHBAR_SELECTED_RESULT_METHOD");
 
-  Services.search.defaultEngine = previousEngine;
-  Services.search.removeEngine(suggestionEngine);
+  await Services.search.setDefault(previousEngine);
+  await Services.search.removeEngine(suggestionEngine);
   BrowserTestUtils.removeTab(tab);
 });

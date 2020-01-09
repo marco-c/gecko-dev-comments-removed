@@ -152,7 +152,7 @@ add_task(async function test_subsessionsChaining() {
   
   moveClockForward(30);
   await TelemetryController.testReset();
-  TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
+  await TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
   moveClockForward(30);
   Preferences.set(PREF_TEST, 1);
   expectedReasons.push(REASON_ENVIRONMENT_CHANGE);
@@ -189,7 +189,7 @@ add_task(async function test_subsessionsChaining() {
 
   
   await TelemetryController.testReset();
-  TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
+  await TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
   moveClockForward(30);
   Preferences.set(PREF_TEST, 1);
   expectedReasons.push(REASON_ENVIRONMENT_CHANGE);

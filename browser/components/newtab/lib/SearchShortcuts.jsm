@@ -37,8 +37,8 @@ this.getSearchProvider = getSearchProvider;
 
 
 
-function checkHasSearchEngine(keyword) {
-  return Services.search.getDefaultEngines()
+async function checkHasSearchEngine(keyword) {
+  return (await Services.search.getDefaultEngines())
     .find(e => e.wrappedJSObject._internalAliases.includes(keyword));
 }
 this.checkHasSearchEngine = checkHasSearchEngine;

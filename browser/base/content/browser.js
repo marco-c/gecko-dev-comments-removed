@@ -3780,13 +3780,11 @@ const BrowserSearch = {
   delayedStartupInit() {
     
     
-    Services.search.init(rv => {
-      if (Components.isSuccessCode(rv)) {
-        
-        
-        this._updateURLBarPlaceholder(Services.search.defaultEngine, true);
-        this._searchInitComplete = true;
-      }
+    Services.search.getDefault().then(defaultEngine => {
+      
+      
+      this._updateURLBarPlaceholder(defaultEngine.name, true);
+      this._searchInitComplete = true;
     });
   },
 
@@ -3818,7 +3816,7 @@ const BrowserSearch = {
       break;
     case "engine-current":
       if (this._searchInitComplete) {
-        this._updateURLBarPlaceholder(engine);
+        this._updateURLBarPlaceholder(engineName);
       }
       break;
     }
@@ -3898,17 +3896,19 @@ const BrowserSearch = {
 
 
 
-  _updateURLBarPlaceholder(engine, delayUpdate = false) {
-    if (!engine) {
-      throw new Error("Expected an engine to be specified");
+  async _updateURLBarPlaceholder(engineName, delayUpdate = false) {
+    if (!engineName) {
+      throw new Error("Expected an engineName to be specified");
     }
 
-    let engineName = "";
-    if (Services.search.getDefaultEngines().includes(engine)) {
-      engineName = engine.name;
+    let defaultEngines = await Services.search.getDefaultEngines();
+    if (defaultEngines.some(defaultEngine => defaultEngine.name == engineName)) {
       Services.prefs.setStringPref("browser.urlbar.placeholderName", engineName);
     } else {
       Services.prefs.clearUserPref("browser.urlbar.placeholderName");
+      
+      
+      engineName = "";
     }
 
     
