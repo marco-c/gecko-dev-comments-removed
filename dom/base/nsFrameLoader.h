@@ -58,6 +58,7 @@ class ProcessMessageManager;
 class Promise;
 class TabParent;
 class MutableTabContext;
+class RemoteFrameChild;
 
 namespace ipc {
 class StructuredCloneData;
@@ -270,6 +271,18 @@ class nsFrameLoader final : public nsStubMutationObserver,
     return mOwnerContent ? mOwnerContent->OwnerDoc() : nullptr;
   }
 
+  
+
+
+
+
+
+  bool IsRemoteFrame();
+
+  
+
+
+
   PBrowserParent* GetRemoteBrowser() const;
 
   
@@ -357,11 +370,6 @@ class nsFrameLoader final : public nsStubMutationObserver,
   void SetOwnerContent(mozilla::dom::Element* aContent);
 
   bool ShouldUseRemoteProcess();
-
-  
-
-
-  bool IsRemoteFrame();
 
   bool IsForJSPlugin() { return mJSPluginID != nsFakePluginTag::NOT_JSPLUGIN; }
 
@@ -455,6 +463,9 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
   TabParent* mRemoteBrowser;
   uint64_t mChildID;
+
+  
+  RefPtr<mozilla::dom::RemoteFrameChild> mRemoteFrameChild;
 
   int32_t mJSPluginID;
 
