@@ -718,8 +718,6 @@ impl Ready {
     
     
     
-    
-    
     #[inline]
     pub fn is_empty(&self) -> bool {
         *self == Ready::empty()

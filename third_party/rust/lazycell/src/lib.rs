@@ -8,8 +8,6 @@
 
 
 
-#![cfg_attr(not(test), no_std)]
-
 #![deny(missing_docs)]
 #![cfg_attr(feature = "nightly", feature(plugin))]
 #![cfg_attr(feature = "clippy", plugin(clippy))]
@@ -45,17 +43,9 @@
 
 
 
-#[cfg(not(test))]
-#[macro_use]
-extern crate core as std;
 
 use std::cell::UnsafeCell;
-use std::mem;
 use std::sync::atomic::{AtomicUsize, Ordering};
-
-
-
-
 
 
 #[derive(Debug, Default)]
@@ -73,27 +63,13 @@ impl<T> LazyCell<T> {
     
     
     pub fn fill(&self, value: T) -> Result<(), T> {
-        let slot = unsafe { &mut *self.inner.get() };
+        let mut slot = unsafe { &mut *self.inner.get() };
         if slot.is_some() {
             return Err(value);
         }
         *slot = Some(value);
 
         Ok(())
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn replace(&mut self, value: T) -> Option<T> {
-        mem::replace(unsafe { &mut *self.inner.get() }, Some(value))
     }
 
     
@@ -144,26 +120,6 @@ impl<T> LazyCell<T> {
     
     
     
-    
-    
-    
-    
-    pub fn borrow_mut_with<F: FnOnce() -> T>(&mut self, f: F) -> &mut T {
-        if !self.filled() {
-            let value = f();
-            if self.fill(value).is_err() {
-                panic!("borrow_mut_with: cell was filled by closure")
-            }
-        }
-
-        self.borrow_mut().unwrap()
-    }
-
-    
-    
-    
-    
-    
     pub fn try_borrow_with<E, F>(&self, f: F) -> Result<&T, E>
         where F: FnOnce() -> Result<T, E>
     {
@@ -178,29 +134,7 @@ impl<T> LazyCell<T> {
     }
 
     
-    
-    
-    
-    
-    pub fn try_borrow_mut_with<E, F>(&mut self, f: F) -> Result<&mut T, E>
-        where F: FnOnce() -> Result<T, E>
-    {
-        if self.filled() {
-            return Ok(self.borrow_mut().unwrap());
-        }
-        let value = f()?;
-        if self.fill(value).is_err() {
-            panic!("try_borrow_mut_with: cell was filled by closure")
-        }
-        Ok(self.borrow_mut().unwrap())
-    }
-
-    
     pub fn into_inner(self) -> Option<T> {
-        
-        
-        
-        #[allow(unused_unsafe)]
         unsafe { self.inner.into_inner() }
     }
 }
@@ -212,17 +146,6 @@ impl<T: Copy> LazyCell<T> {
     
     pub fn get(&self) -> Option<T> {
         unsafe { *self.inner.get() }
-    }
-}
-
-impl <T: Clone> Clone for LazyCell<T> {
-    
-    
-    
-    
-    
-    fn clone(&self) -> LazyCell<T> {
-        LazyCell { inner: UnsafeCell::new(self.borrow().map(Clone::clone) ) }
     }
 }
 
@@ -240,14 +163,11 @@ pub struct AtomicLazyCell<T> {
 
 impl<T> AtomicLazyCell<T> {
     
-    pub const NONE: Self = Self {
-        inner: UnsafeCell::new(None),
-        state: AtomicUsize::new(NONE),
-    };
-
-    
     pub fn new() -> AtomicLazyCell<T> {
-        Self::NONE
+        AtomicLazyCell {
+            inner: UnsafeCell::new(None),
+            state: AtomicUsize::new(NONE),
+        }
     }
 
     
@@ -265,24 +185,6 @@ impl<T> AtomicLazyCell<T> {
         }
 
         Ok(())
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn replace(&mut self, value: T) -> Option<T> {
-        match mem::replace(self.state.get_mut(), SOME) {
-            NONE | SOME => {}
-            _ => panic!("cell in inconsistent state"),
-        }
-        mem::replace(unsafe { &mut *self.inner.get() }, Some(value))
     }
 
     
@@ -304,10 +206,6 @@ impl<T> AtomicLazyCell<T> {
 
     
     pub fn into_inner(self) -> Option<T> {
-        
-        
-        
-        #[allow(unused_unsafe)]
         unsafe { self.inner.into_inner() }
     }
 }
@@ -322,23 +220,6 @@ impl<T: Copy> AtomicLazyCell<T> {
             SOME => unsafe { *self.inner.get() },
             _ => None,
         }
-    }
-}
-
-impl<T: Clone> Clone for AtomicLazyCell<T> {
-    
-    
-    
-    
-    
-    fn clone(&self) -> AtomicLazyCell<T> {
-        self.borrow().map_or(
-            Self::NONE,
-            |v| AtomicLazyCell {
-                inner: UnsafeCell::new(Some(v.clone())),
-                state: AtomicUsize::new(SOME),
-            }
-        )
     }
 }
 
@@ -444,37 +325,6 @@ mod tests {
     }
 
     #[test]
-    fn test_borrow_mut_with() {
-        let mut lazycell = LazyCell::new();
-
-        {
-            let value = lazycell.borrow_mut_with(|| 1);
-            assert_eq!(&mut 1, value);
-            *value = 2;
-        }
-        assert_eq!(&2, lazycell.borrow().unwrap());
-    }
-
-    #[test]
-    fn test_borrow_mut_with_already_filled() {
-        let mut lazycell = LazyCell::new();
-        lazycell.fill(1).unwrap();
-
-        let value = lazycell.borrow_mut_with(|| 1);
-        assert_eq!(&1, value);
-    }
-
-    #[test]
-    fn test_borrow_mut_with_not_called_when_filled() {
-        let mut lazycell = LazyCell::new();
-
-        lazycell.fill(1).unwrap();
-
-        let value = lazycell.borrow_mut_with(|| 2);
-        assert_eq!(&1, value);
-    }
-
-    #[test]
     fn test_try_borrow_with_ok() {
         let lazycell = LazyCell::new();
         let result = lazycell.try_borrow_with::<(), _>(|| Ok(1));
@@ -508,32 +358,6 @@ mod tests {
             reference = lazycell.borrow().map(|r| &**r);
             Ok(Box::new(2))
         });
-    }
-
-    #[test]
-    fn test_try_borrow_mut_with_ok() {
-        let mut lazycell = LazyCell::new();
-        {
-            let result = lazycell.try_borrow_mut_with::<(), _>(|| Ok(1));
-            assert_eq!(result, Ok(&mut 1));
-            *result.unwrap() = 2;
-        }
-        assert_eq!(&mut 2, lazycell.borrow().unwrap());
-    }
-
-    #[test]
-    fn test_try_borrow_mut_with_err() {
-        let mut lazycell = LazyCell::<()>::new();
-        let result = lazycell.try_borrow_mut_with(|| Err(1));
-        assert_eq!(result, Err(1));
-    }
-
-    #[test]
-    fn test_try_borrow_mut_with_already_filled() {
-        let mut lazycell = LazyCell::new();
-        lazycell.fill(1).unwrap();
-        let result = lazycell.try_borrow_mut_with::<(), _>(|| unreachable!());
-        assert_eq!(result, Ok(&mut 1));
     }
 
     #[test]
@@ -586,64 +410,5 @@ mod tests {
         lazycell.fill(1).unwrap();
         let value = lazycell.into_inner();
         assert_eq!(value, Some(1));
-    }
-
-    #[test]
-    fn normal_replace() {
-        let mut cell = LazyCell::new();
-        assert_eq!(cell.fill(1), Ok(()));
-        assert_eq!(cell.replace(2), Some(1));
-        assert_eq!(cell.replace(3), Some(2));
-        assert_eq!(cell.borrow(), Some(&3));
-
-        let mut cell = LazyCell::new();
-        assert_eq!(cell.replace(2), None);
-    }
-
-    #[test]
-    fn atomic_replace() {
-        let mut cell = AtomicLazyCell::new();
-        assert_eq!(cell.fill(1), Ok(()));
-        assert_eq!(cell.replace(2), Some(1));
-        assert_eq!(cell.replace(3), Some(2));
-        assert_eq!(cell.borrow(), Some(&3));
-    }
-
-    #[test]
-    fn clone() {
-        let mut cell = LazyCell::new();
-        let clone1 = cell.clone();
-        assert_eq!(clone1.borrow(), None);
-        assert_eq!(cell.fill(1), Ok(()));
-        let mut clone2 = cell.clone();
-        assert_eq!(clone1.borrow(), None);
-        assert_eq!(clone2.borrow(), Some(&1));
-        assert_eq!(cell.replace(2), Some(1));
-        assert_eq!(clone1.borrow(), None);
-        assert_eq!(clone2.borrow(), Some(&1));
-        assert_eq!(clone1.fill(3), Ok(()));
-        assert_eq!(clone2.replace(4), Some(1));
-        assert_eq!(clone1.borrow(), Some(&3));
-        assert_eq!(clone2.borrow(), Some(&4));
-        assert_eq!(cell.borrow(), Some(&2));
-    }
-
-    #[test]
-    fn clone_atomic() {
-        let mut cell = AtomicLazyCell::new();
-        let clone1 = cell.clone();
-        assert_eq!(clone1.borrow(), None);
-        assert_eq!(cell.fill(1), Ok(()));
-        let mut clone2 = cell.clone();
-        assert_eq!(clone1.borrow(), None);
-        assert_eq!(clone2.borrow(), Some(&1));
-        assert_eq!(cell.replace(2), Some(1));
-        assert_eq!(clone1.borrow(), None);
-        assert_eq!(clone2.borrow(), Some(&1));
-        assert_eq!(clone1.fill(3), Ok(()));
-        assert_eq!(clone2.replace(4), Some(1));
-        assert_eq!(clone1.borrow(), Some(&3));
-        assert_eq!(clone2.borrow(), Some(&4));
-        assert_eq!(cell.borrow(), Some(&2));
     }
 }

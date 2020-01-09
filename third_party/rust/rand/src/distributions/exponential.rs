@@ -9,11 +9,9 @@
 
 
 
-use {Rng};
-use distributions::{ziggurat_tables, Distribution};
-use distributions::utils::ziggurat;
 
-
+use {Rng, Rand};
+use distributions::{ziggurat, ziggurat_tables, Sample, IndependentSample};
 
 
 
@@ -37,29 +35,27 @@ use distributions::utils::ziggurat;
 
 
 #[derive(Clone, Copy, Debug)]
-pub struct Exp1;
+pub struct Exp1(pub f64);
 
 
-impl Distribution<f64> for Exp1 {
+impl Rand for Exp1 {
     #[inline]
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> f64 {
+    fn rand<R:Rng>(rng: &mut R) -> Exp1 {
         #[inline]
         fn pdf(x: f64) -> f64 {
             (-x).exp()
         }
         #[inline]
-        fn zero_case<R: Rng + ?Sized>(rng: &mut R, _u: f64) -> f64 {
+        fn zero_case<R:Rng>(rng: &mut R, _u: f64) -> f64 {
             ziggurat_tables::ZIG_EXP_R - rng.gen::<f64>().ln()
         }
 
-        ziggurat(rng, false,
-                 &ziggurat_tables::ZIG_EXP_X,
-                 &ziggurat_tables::ZIG_EXP_F,
-                 pdf, zero_case)
+        Exp1(ziggurat(rng, false,
+                      &ziggurat_tables::ZIG_EXP_X,
+                      &ziggurat_tables::ZIG_EXP_F,
+                      pdf, zero_case))
     }
 }
-
-
 
 
 
@@ -91,24 +87,28 @@ impl Exp {
     }
 }
 
-impl Distribution<f64> for Exp {
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> f64 {
-        let n: f64 = rng.sample(Exp1);
+impl Sample<f64> for Exp {
+    fn sample<R: Rng>(&mut self, rng: &mut R) -> f64 { self.ind_sample(rng) }
+}
+impl IndependentSample<f64> for Exp {
+    fn ind_sample<R: Rng>(&self, rng: &mut R) -> f64 {
+        let Exp1(n) = rng.gen::<Exp1>();
         n * self.lambda_inverse
     }
 }
 
 #[cfg(test)]
 mod test {
-    use distributions::Distribution;
+    use distributions::{Sample, IndependentSample};
     use super::Exp;
 
     #[test]
     fn test_exp() {
-        let exp = Exp::new(10.0);
-        let mut rng = ::test::rng(221);
+        let mut exp = Exp::new(10.0);
+        let mut rng = ::test::rng();
         for _ in 0..1000 {
             assert!(exp.sample(&mut rng) >= 0.0);
+            assert!(exp.ind_sample(&mut rng) >= 0.0);
         }
     }
     #[test]

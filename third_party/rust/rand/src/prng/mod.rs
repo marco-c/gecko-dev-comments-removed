@@ -15,23 +15,37 @@
 
 
 
-#[doc(hidden)] #[allow(deprecated)]
-pub use deprecated::XorShiftRng;
-#[doc(hidden)] pub mod isaac {
-    
-    #[allow(deprecated)] pub use deprecated::IsaacRng;
-}
-#[doc(hidden)] pub mod isaac64 {
-    #[allow(deprecated)] pub use deprecated::Isaac64Rng;
-}
-#[doc(hidden)] #[allow(deprecated)] pub use deprecated::{IsaacRng, Isaac64Rng};
-#[doc(hidden)] pub mod chacha {
-    
-    #[allow(deprecated)] pub use deprecated::ChaChaRng;
-}
-#[doc(hidden)] #[allow(deprecated)] pub use deprecated::ChaChaRng;
-#[doc(hidden)] pub mod hc128 {
-    
-    #[allow(deprecated)] pub use deprecated::Hc128Rng;
-}
-#[doc(hidden)] #[allow(deprecated)] pub use deprecated::Hc128Rng;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+mod chacha;
+mod isaac;
+mod isaac64;
+mod xorshift;
+
+pub use self::chacha::ChaChaRng;
+pub use self::isaac::IsaacRng;
+pub use self::isaac64::Isaac64Rng;
+pub use self::xorshift::XorShiftRng;
