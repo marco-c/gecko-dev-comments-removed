@@ -4,8 +4,6 @@
 
 "use strict";
 
-
-
 XPCOMUtils.defineLazyGlobalGetters(this, ["URL"]);
 
 const LMCBackstagePass = ChromeUtils.import("resource://gre/modules/LoginManagerContent.jsm", null);
@@ -95,7 +93,7 @@ for (let tc of TESTCASES) {
       Object.defineProperty(document, "defaultView", {
         value: win,
       });
-      let formOrigin = LMCBackstagePass.LoginUtils._getPasswordOrigin(document.documentURI);
+      let formOrigin = LoginHelper.getLoginOrigin(document.documentURI);
       LoginRecipesContent.cacheRecipes(formOrigin, win, new Set());
 
       let actual = LoginManagerContent.getUserNameAndPasswordFields(input);
