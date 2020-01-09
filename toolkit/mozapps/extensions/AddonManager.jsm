@@ -3138,6 +3138,9 @@ var AddonManager = {
   
   
   PERM_CAN_ASK_TO_ACTIVATE: 16,
+  
+  
+  PERM_CAN_CHANGE_PRIVATEBROWSING_ACCESS: 32,
 
   
   
