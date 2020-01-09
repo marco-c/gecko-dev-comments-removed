@@ -46,7 +46,7 @@ class SVGFETileElement : public SVGFETileElementBase {
   virtual nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 
   
-  already_AddRefed<SVGAnimatedString> In1();
+  already_AddRefed<DOMSVGAnimatedString> In1();
 
  protected:
   virtual StringAttributesInfo GetStringInfo() override;

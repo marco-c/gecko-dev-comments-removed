@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGAnimatedEnumeration_h
-#define mozilla_dom_SVGAnimatedEnumeration_h
+#ifndef mozilla_dom_DOMSVGAnimatedEnumeration_h
+#define mozilla_dom_DOMSVGAnimatedEnumeration_h
 
 #include "nsWrapperCache.h"
 
@@ -14,10 +14,10 @@
 namespace mozilla {
 namespace dom {
 
-class SVGAnimatedEnumeration : public nsISupports, public nsWrapperCache {
+class DOMSVGAnimatedEnumeration : public nsISupports, public nsWrapperCache {
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(SVGAnimatedEnumeration)
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(DOMSVGAnimatedEnumeration)
 
   SVGElement* GetParentObject() const { return mSVGElement; }
 
@@ -28,9 +28,9 @@ class SVGAnimatedEnumeration : public nsISupports, public nsWrapperCache {
   virtual uint16_t AnimVal() = 0;
 
  protected:
-  explicit SVGAnimatedEnumeration(SVGElement* aSVGElement)
+  explicit DOMSVGAnimatedEnumeration(SVGElement* aSVGElement)
       : mSVGElement(aSVGElement) {}
-  virtual ~SVGAnimatedEnumeration(){};
+  virtual ~DOMSVGAnimatedEnumeration(){};
 
   RefPtr<SVGElement> mSVGElement;
 };

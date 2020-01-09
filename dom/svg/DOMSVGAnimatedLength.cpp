@@ -1,0 +1,36 @@
+
+
+
+
+
+
+#include "DOMSVGAnimatedLength.h"
+
+#include "mozilla/dom/SVGAnimatedLengthBinding.h"
+#include "nsSVGLength2.h"
+#include "DOMSVGLength.h"
+
+namespace mozilla {
+namespace dom {
+
+NS_SVG_VAL_IMPL_CYCLE_COLLECTION_WRAPPERCACHED(DOMSVGAnimatedLength,
+                                               mSVGElement)
+
+NS_IMPL_CYCLE_COLLECTION_ROOT_NATIVE(DOMSVGAnimatedLength, AddRef)
+NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(DOMSVGAnimatedLength, Release)
+
+JSObject* DOMSVGAnimatedLength::WrapObject(JSContext* aCx,
+                                           JS::Handle<JSObject*> aGivenProto) {
+  return SVGAnimatedLength_Binding::Wrap(aCx, this, aGivenProto);
+}
+
+already_AddRefed<DOMSVGLength> DOMSVGAnimatedLength::BaseVal() {
+  return mVal->ToDOMBaseVal(mSVGElement);
+}
+
+already_AddRefed<DOMSVGLength> DOMSVGAnimatedLength::AnimVal() {
+  return mVal->ToDOMAnimVal(mSVGElement);
+}
+
+}  
+}  

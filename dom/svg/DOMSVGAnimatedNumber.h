@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SVGAnimatedNumber_h
-#define mozilla_dom_SVGAnimatedNumber_h
+#ifndef mozilla_dom_DOMSVGAnimatedNumber_h
+#define mozilla_dom_DOMSVGAnimatedNumber_h
 
 #include "nsISupports.h"
 #include "nsWrapperCache.h"
@@ -15,10 +15,10 @@
 namespace mozilla {
 namespace dom {
 
-class SVGAnimatedNumber : public nsISupports, public nsWrapperCache {
+class DOMSVGAnimatedNumber : public nsISupports, public nsWrapperCache {
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(SVGAnimatedNumber)
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(DOMSVGAnimatedNumber)
 
   SVGElement* GetParentObject() const { return mSVGElement; }
 
@@ -29,9 +29,9 @@ class SVGAnimatedNumber : public nsISupports, public nsWrapperCache {
   virtual float AnimVal() = 0;
 
  protected:
-  explicit SVGAnimatedNumber(SVGElement* aSVGElement)
+  explicit DOMSVGAnimatedNumber(SVGElement* aSVGElement)
       : mSVGElement(aSVGElement) {}
-  virtual ~SVGAnimatedNumber(){};
+  virtual ~DOMSVGAnimatedNumber(){};
 
   RefPtr<SVGElement> mSVGElement;
 };

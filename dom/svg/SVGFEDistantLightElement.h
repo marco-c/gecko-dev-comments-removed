@@ -40,8 +40,8 @@ class SVGFEDistantLightElement : public SVGFEDistantLightElementBase {
   virtual nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 
   
-  already_AddRefed<SVGAnimatedNumber> Azimuth();
-  already_AddRefed<SVGAnimatedNumber> Elevation();
+  already_AddRefed<DOMSVGAnimatedNumber> Azimuth();
+  already_AddRefed<DOMSVGAnimatedNumber> Elevation();
 
  protected:
   virtual NumberAttributesInfo GetNumberInfo() override;

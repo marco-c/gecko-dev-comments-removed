@@ -79,7 +79,7 @@ class SVGFEImageElement final : public SVGFEImageElementBase,
   void MaybeLoadSVGImage();
 
   
-  already_AddRefed<SVGAnimatedString> Href();
+  already_AddRefed<DOMSVGAnimatedString> Href();
   already_AddRefed<DOMSVGAnimatedPreserveAspectRatio> PreserveAspectRatio();
 
  private:

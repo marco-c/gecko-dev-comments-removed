@@ -4,17 +4,17 @@
 
 
 
-#ifndef mozilla_dom_SVGAnimatedString_h
-#define mozilla_dom_SVGAnimatedString_h
+#ifndef mozilla_dom_DOMSVGAnimatedString_h
+#define mozilla_dom_DOMSVGAnimatedString_h
 
 #include "SVGElement.h"
 
 namespace mozilla {
 namespace dom {
 
-class SVGAnimatedString : public nsISupports, public nsWrapperCache {
+class DOMSVGAnimatedString : public nsISupports, public nsWrapperCache {
  public:
-  explicit SVGAnimatedString(SVGElement* aSVGElement)
+  explicit DOMSVGAnimatedString(SVGElement* aSVGElement)
       : mSVGElement(aSVGElement) {}
 
   virtual JSObject* WrapObject(JSContext* aCx,

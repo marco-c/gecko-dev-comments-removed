@@ -36,7 +36,7 @@ class SVGClipPathElement final : public SVGClipPathElementBase {
   virtual nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 
   
-  already_AddRefed<SVGAnimatedEnumeration> ClipPathUnits();
+  already_AddRefed<DOMSVGAnimatedEnumeration> ClipPathUnits();
 
   
   

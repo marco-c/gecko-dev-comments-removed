@@ -1,0 +1,20 @@
+
+
+
+
+
+
+#include "DOMSVGAnimatedString.h"
+
+#include "mozilla/dom/SVGAnimatedStringBinding.h"
+
+namespace mozilla {
+namespace dom {
+
+JSObject* DOMSVGAnimatedString::WrapObject(JSContext* aCx,
+                                           JS::Handle<JSObject*> aGivenProto) {
+  return SVGAnimatedString_Binding::Wrap(aCx, this, aGivenProto);
+}
+
+}  
+}  
