@@ -18,10 +18,8 @@ exports.CSS_ANGLEUNIT = {
 
 
 
-
-
 exports.CSS_TYPES = {
-  "COLOR": 2,
-  "GRADIENT": 4,
-  "TIMING_FUNCTION": 10,
+ "color": 2,
+ "gradient": 4,
+ "timing-function": 10,
 };

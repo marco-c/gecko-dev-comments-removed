@@ -25,6 +25,9 @@ var TRAILING_CHAR = ["[_a-z0-9-]", NON_ASCII, ESCAPE].join("|");
 var IS_VARIABLE_TOKEN = new RegExp(`^--(${FIRST_CHAR})(${TRAILING_CHAR})*$`,
                                    "i");
 
+loader.lazyRequireGetter(this, "CSS_TYPES", "devtools/shared/css/constants", true);
+
+
 
 
 
@@ -167,9 +170,11 @@ CssProperties.prototype = {
 
 
 
-
   supportsType(property, type) {
-    return this.properties[property] && this.properties[property].supports.includes(type);
+    const id = CSS_TYPES[type];
+    return this.properties[property] &&
+      (this.properties[property].supports.includes(type) ||
+       this.properties[property].supports.includes(id));
   },
 
   
