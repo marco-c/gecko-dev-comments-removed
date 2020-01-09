@@ -11,6 +11,36 @@
 
 namespace xpc {
 
+
+
+
+
+
+
+
+
+
+
+
+
+class CrossOriginObjectWrapper : public js::Wrapper {
+ public:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  constexpr explicit CrossOriginObjectWrapper()
+      : js::Wrapper(CROSS_COMPARTMENT,  false,
+                     true) {}
+
+  static const CrossOriginObjectWrapper singleton;
+};
+
 class WrapperFactory {
  public:
   enum {
@@ -27,6 +57,12 @@ class WrapperFactory {
 
   static bool IsXrayWrapper(JSObject* wrapper) {
     return HasWrapperFlag(wrapper, IS_XRAY_WRAPPER_FLAG);
+  }
+
+  static bool IsCrossOriginWrapper(JSObject* obj) {
+    return IsXrayWrapper(obj) ||
+           (js::IsProxy(obj) &&
+            js::GetProxyHandler(obj) == &CrossOriginObjectWrapper::singleton);
   }
 
   static bool HasWaiveXrayFlag(JSObject* wrapper) {
