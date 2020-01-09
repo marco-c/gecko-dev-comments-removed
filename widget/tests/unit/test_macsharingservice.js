@@ -5,8 +5,7 @@
 
 
 
-function test_getSharingProviders()
-{
+function test_getSharingProviders() {
   let sharingService = Cc["@mozilla.org/widget/macsharingservice;1"].
       getService(Ci.nsIMacSharingService);
   let providers = sharingService.getSharingProviders("http://example.org");
@@ -20,7 +19,6 @@ function test_getSharingProviders()
   });
 }
 
-function run_test()
-{
+function run_test() {
   test_getSharingProviders();
 }
