@@ -893,8 +893,9 @@ nsresult EventDispatcher::Dispatch(nsISupports* aTarget,
   
   
   nsEventStatus status = aEventStatus ? *aEventStatus : nsEventStatus_eIgnore;
+  nsCOMPtr<EventTarget> targetForPreVisitor = aEvent->mTarget;
   EventChainPreVisitor preVisitor(aPresContext, aEvent, aDOMEvent, status,
-                                  isInAnon, aEvent->mTarget);
+                                  isInAnon, targetForPreVisitor);
   targetEtci->GetEventTargetParent(preVisitor);
 
   if (!preVisitor.mCanHandle) {

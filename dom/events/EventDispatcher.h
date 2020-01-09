@@ -50,8 +50,11 @@ class EventTarget;
 
 
 
-class EventChainVisitor {
+class MOZ_STACK_CLASS EventChainVisitor {
  public:
+  
+  
+  MOZ_CAN_RUN_SCRIPT
   EventChainVisitor(nsPresContext* aPresContext, WidgetEvent* aEvent,
                     dom::Event* aDOMEvent,
                     nsEventStatus aEventStatus = nsEventStatus_eIgnore)
@@ -62,6 +65,9 @@ class EventChainVisitor {
         mItemFlags(0) {}
 
   
+
+
+
 
 
   nsPresContext* const mPresContext;
@@ -106,8 +112,9 @@ class EventChainVisitor {
   nsCOMPtr<nsISupports> mItemData;
 };
 
-class EventChainPreVisitor : public EventChainVisitor {
+class MOZ_STACK_CLASS EventChainPreVisitor final : public EventChainVisitor {
  public:
+  MOZ_CAN_RUN_SCRIPT
   EventChainPreVisitor(nsPresContext* aPresContext, WidgetEvent* aEvent,
                        dom::Event* aDOMEvent, nsEventStatus aEventStatus,
                        bool aIsInAnon,
@@ -292,10 +299,16 @@ class EventChainPreVisitor : public EventChainVisitor {
   dom::EventTarget* mTargetInKnownToBeHandledScope;
 };
 
-class EventChainPostVisitor : public mozilla::EventChainVisitor {
+class MOZ_STACK_CLASS EventChainPostVisitor final
+    : public mozilla::EventChainVisitor {
  public:
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT
   explicit EventChainPostVisitor(EventChainVisitor& aOther)
-      : EventChainVisitor(aOther.mPresContext, aOther.mEvent, aOther.mDOMEvent,
+      : EventChainVisitor(MOZ_KnownLive(aOther.mPresContext), aOther.mEvent,
+                          MOZ_KnownLive(aOther.mDOMEvent),
                           aOther.mEventStatus) {}
 };
 

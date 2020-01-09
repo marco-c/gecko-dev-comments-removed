@@ -153,6 +153,7 @@ class Selection final : public nsSupportsWeakReference,
   
   
   
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   nsresult ScrollIntoView(SelectionRegion aRegion,
                           ScrollAxis aVertical = ScrollAxis(),
                           ScrollAxis aHorizontal = ScrollAxis(),
@@ -209,7 +210,7 @@ class Selection final : public nsSupportsWeakReference,
 
   NS_IMETHOD Repaint(nsPresContext* aPresContext);
 
-  
+  MOZ_CAN_RUN_SCRIPT
   nsresult StartAutoScrollTimer(nsIFrame* aFrame, const nsPoint& aPoint,
                                 uint32_t aDelay);
 
@@ -377,7 +378,7 @@ class Selection final : public nsSupportsWeakReference,
                             bool aAllowAdjacent,
                             nsTArray<RefPtr<nsRange>>& aReturn,
                             mozilla::ErrorResult& aRv);
-
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void ScrollIntoView(int16_t aRegion, bool aIsSynchronous,
                       WhereToScroll aVPercent, WhereToScroll aHPercent,
                       mozilla::ErrorResult& aRv);
@@ -587,8 +588,7 @@ class Selection final : public nsSupportsWeakReference,
  private:
   friend class ::nsAutoScrollTimer;
 
-  
-  nsresult DoAutoScroll(nsIFrame* aFrame, nsPoint aPoint);
+  MOZ_CAN_RUN_SCRIPT nsresult DoAutoScroll(nsIFrame* aFrame, nsPoint aPoint);
 
   
   bool HasSameRoot(nsINode& aNode);

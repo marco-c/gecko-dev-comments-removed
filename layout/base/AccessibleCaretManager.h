@@ -212,6 +212,7 @@ class AccessibleCaretManager {
 
   
   
+  MOZ_CAN_RUN_SCRIPT
   void StartSelectionAutoScrollTimer(const nsPoint& aPoint) const;
   void StopSelectionAutoScrollTimer() const;
 
