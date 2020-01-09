@@ -88,6 +88,10 @@ class alignas(uintptr_t) JitScript final {
   RecompileInfoVector inlinedCompilations_;
 
   
+  
+  uint8_t* jitCodeSkipArgCheck_ = nullptr;
+
+  
   uint32_t typeSetOffset_ = 0;
 
   
@@ -254,6 +258,10 @@ class alignas(uintptr_t) JitScript final {
   static void Destroy(Zone* zone, JitScript* script);
 
   static constexpr size_t offsetOfICEntries() { return sizeof(JitScript); }
+
+  static constexpr size_t offsetOfJitCodeSkipArgCheck() {
+    return offsetof(JitScript, jitCodeSkipArgCheck_);
+  }
 
 #ifdef DEBUG
   void printTypes(JSContext* cx, HandleScript script);

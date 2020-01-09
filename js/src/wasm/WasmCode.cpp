@@ -1070,18 +1070,8 @@ const CodeRange* CodeTier::lookupRange(const void* pc) const {
 
 bool JumpTables::init(CompileMode mode, const ModuleSegment& ms,
                       const CodeRangeVector& codeRanges) {
-  
-  
-  
-  
-  
-  
-  
-
   static_assert(JSScript::offsetOfJitCodeRaw() == 0,
-                "wasm fast jit entry is at (void*) jit[2*funcIndex]");
-  static_assert(JSScript::offsetOfJitCodeSkipArgCheck() == sizeof(void*),
-                "wasm fast jit entry is also at (void*) jit[2*funcIndex+1]");
+                "wasm fast jit entry is at (void*) jit[funcIndex]");
 
   mode_ = mode;
 
@@ -1105,7 +1095,7 @@ bool JumpTables::init(CompileMode mode, const ModuleSegment& ms,
   
   
   
-  jit_ = TablePointer(js_pod_calloc<void*>(2 * numFuncs));
+  jit_ = TablePointer(js_pod_calloc<void*>(numFuncs));
   if (!jit_) {
     return false;
   }
