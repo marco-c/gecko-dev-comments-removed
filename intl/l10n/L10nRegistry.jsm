@@ -171,8 +171,18 @@ class L10nRegistryService {
 
 
 
+
+  hasSource(sourceName) {
+    return this.sources.has(sourceName);
+  }
+
+  
+
+
+
+
   registerSource(source) {
-    if (this.sources.has(source.name)) {
+    if (this.hasSource(source.name)) {
       throw new Error(`Source with name "${source.name}" already registered.`);
     }
     this.sources.set(source.name, source);
@@ -192,7 +202,7 @@ class L10nRegistryService {
 
 
   updateSource(source) {
-    if (!this.sources.has(source.name)) {
+    if (!this.hasSource(source.name)) {
       throw new Error(`Source with name "${source.name}" is not registered.`);
     }
     this.sources.set(source.name, source);
@@ -233,7 +243,7 @@ class L10nRegistryService {
   _setSourcesFromSharedData() {
     let sources = Services.cpmm.sharedData.get("L10nRegistry:Sources");
     for (let [name, data] of sources.entries()) {
-      if (!this.sources.has(name)) {
+      if (!this.hasSource(name)) {
         const source = new FileSource(name, data.locales, data.prePath);
         this.registerSource(source);
       }
