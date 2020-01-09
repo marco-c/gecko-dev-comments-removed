@@ -9086,7 +9086,7 @@ static void ComputeAndIncludeOutlineArea(nsIFrame* aFrame,
   
   SetOrUpdateRectValuedProperty(aFrame, nsIFrame::OutlineInnerRectProperty(),
                                 innerRect);
-  const nscoord offset = outline->mOutlineOffset;
+  const nscoord offset = outline->mOutlineOffset.ToAppUnits();
   nsRect outerRect(innerRect);
   bool useOutlineAuto = false;
   if (nsLayoutUtils::IsOutlineStyleAutoEnabled()) {
