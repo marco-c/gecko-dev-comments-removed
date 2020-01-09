@@ -143,6 +143,10 @@ class nsRangeFrame final : public nsContainerFrame,
   void UpdateForValueChange();
 
  private:
+  
+  
+  nscoord AutoCrossSize(nscoord aEm);
+
   nsresult MakeAnonymousDiv(Element** aResult, CSSPseudoElementType aPseudoType,
                             nsTArray<ContentInfo>& aElements);
 
