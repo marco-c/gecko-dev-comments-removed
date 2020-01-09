@@ -243,16 +243,6 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
   async onKeyShortcut(window, key, startTime) {
     
-    
-    if (gDevToolsBrowser._isAboutDevtoolsToolbox(window) &&
-        (key.toolId ||
-         key.id === "toggleToolbox" ||
-         key.id === "toggleToolboxF12" ||
-         key.id === "inspectorMac")) {
-      return;
-    }
-
-    
     if (key.toolId) {
       await gDevToolsBrowser.selectToolCommand(window.gBrowser, key.toolId, startTime);
       return;
@@ -599,10 +589,6 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
     for (const win of gDevToolsBrowser._trackedBrowserWindows) {
       BrowserMenus.insertToolMenuElements(win.document, toolDefinition, prevDef);
-      
-      
-      
-      gDevToolsBrowser._updateMenuItems(win);
     }
 
     if (toolDefinition.id === "jsdebugger") {
@@ -624,45 +610,17 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
 
 
-  _updateMenu() {
+  _updateMenuCheckbox() {
     for (const win of gDevToolsBrowser._trackedBrowserWindows) {
-      gDevToolsBrowser._updateMenuItems(win);
+      const hasToolbox = gDevToolsBrowser.hasToolboxOpened(win);
+
+      const menu = win.document.getElementById("menu_devToolbox");
+      if (hasToolbox) {
+        menu.setAttribute("checked", "true");
+      } else {
+        menu.removeAttribute("checked");
+      }
     }
-  },
-
-  
-
-
-
-
-  _updateMenuItems(win) {
-    if (gDevToolsBrowser._isAboutDevtoolsToolbox(win)) {
-      BrowserMenus.disableDevtoolsMenuItems(win.document);
-      return;
-    }
-
-    BrowserMenus.enableDevtoolsMenuItems(win.document);
-
-    const hasToolbox = gDevToolsBrowser.hasToolboxOpened(win);
-
-    const menu = win.document.getElementById("menu_devToolbox");
-    if (hasToolbox) {
-      menu.setAttribute("checked", "true");
-    } else {
-      menu.removeAttribute("checked");
-    }
-  },
-
-  
-
-
-
-
-
-
-  _isAboutDevtoolsToolbox(win) {
-    const currentURI = win.gBrowser.currentURI;
-    return currentURI.scheme === "about" && currentURI.filePath === "devtools-toolbox";
   },
 
   
@@ -717,7 +675,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
   handleEvent(event) {
     switch (event.type) {
       case "TabSelect":
-        gDevToolsBrowser._updateMenu();
+        gDevToolsBrowser._updateMenuCheckbox();
         break;
       case "unload":
         
@@ -769,8 +727,8 @@ gDevTools.on("tool-unregistered", function(toolId) {
   gDevToolsBrowser._removeToolFromWindows(toolId);
 });
 
-gDevTools.on("toolbox-ready", gDevToolsBrowser._updateMenu);
-gDevTools.on("toolbox-destroyed", gDevToolsBrowser._updateMenu);
+gDevTools.on("toolbox-ready", gDevToolsBrowser._updateMenuCheckbox);
+gDevTools.on("toolbox-destroyed", gDevToolsBrowser._updateMenuCheckbox);
 
 Services.obs.addObserver(gDevToolsBrowser, "quit-application");
 Services.obs.addObserver(gDevToolsBrowser, "browser-delayed-startup-finished");
