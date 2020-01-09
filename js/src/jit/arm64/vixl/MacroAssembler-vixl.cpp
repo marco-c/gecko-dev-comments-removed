@@ -208,9 +208,6 @@ void MacroAssembler::B(Label* label, Condition cond) {
     b(label);
     bind(&done);
   } else {
-    
-    
-    
     b(label, cond);
   }
 }
@@ -226,9 +223,6 @@ void MacroAssembler::Cbnz(const Register& rt, Label* label) {
     b(label);
     bind(&done);
   } else {
-    
-    
-    
     cbnz(rt, label);
   }
 }
@@ -244,9 +238,6 @@ void MacroAssembler::Cbz(const Register& rt, Label* label) {
     b(label);
     bind(&done);
   } else {
-    
-    
-    
     cbz(rt, label);
   }
 }
@@ -262,9 +253,6 @@ void MacroAssembler::Tbnz(const Register& rt, unsigned bit_pos, Label* label) {
     b(label);
     bind(&done);
   } else {
-    
-    
-    
     tbnz(rt, bit_pos, label);
   }
 }
@@ -280,9 +268,6 @@ void MacroAssembler::Tbz(const Register& rt, unsigned bit_pos, Label* label) {
     b(label);
     bind(&done);
   } else {
-    
-    
-    
     tbz(rt, bit_pos, label);
   }
 }
