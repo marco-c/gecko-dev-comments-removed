@@ -1287,6 +1287,7 @@ class EditorBase : public nsIEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult DeleteTextWithTransaction(dom::CharacterData& aCharacterData,
                                      uint32_t aOffset, uint32_t aLength);
 
