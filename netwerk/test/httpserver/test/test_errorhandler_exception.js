@@ -71,6 +71,6 @@ function register400Handler(ch) {
 
 
 function throwsException(metadata, response) {
-  throw "this shouldn't cause an exit...";
+  throw new Error("this shouldn't cause an exit...");
   do_throw("Not reached!"); 
 }
