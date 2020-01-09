@@ -4,9 +4,11 @@
 
 
 
+#include "cert_storage/src/cert_storage.h"
 #include "CSTrustDomain.h"
 #include "mozilla/Base64.h"
 #include "mozilla/Preferences.h"
+#include "nsDirectoryServiceUtils.h"
 #include "nsNSSCertificate.h"
 #include "nsNSSComponent.h"
 #include "NSSCertDBTrustDomain.h"
@@ -24,7 +26,7 @@ static LazyLogModule gTrustDomainPRLog("CSTrustDomain");
 
 CSTrustDomain::CSTrustDomain(UniqueCERTCertList& certChain)
     : mCertChain(certChain),
-      mCertBlocklist(do_GetService(NS_CERTBLOCKLIST_CONTRACTID)) {}
+      mCertBlocklist(do_GetService(NS_CERT_STORAGE_CID)) {}
 
 Result CSTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
                                    const CertPolicyId& policy,
@@ -53,14 +55,14 @@ Result CSTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
     return Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
 
-  bool isCertRevoked;
-  nsrv = mCertBlocklist->IsCertRevoked(encIssuer, encSerial, encSubject,
-                                       encPubKey, &isCertRevoked);
+  int16_t revocationState;
+  nsrv = mCertBlocklist->GetRevocationState(encIssuer, encSerial, encSubject,
+                                            encPubKey, &revocationState);
   if (NS_FAILED(nsrv)) {
     return Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
 
-  if (isCertRevoked) {
+  if (revocationState == nsICertStorage::STATE_ENFORCE) {
     CSTrust_LOG(("CSTrustDomain: certificate is revoked\n"));
     return Result::ERROR_REVOKED_CERTIFICATE;
   }

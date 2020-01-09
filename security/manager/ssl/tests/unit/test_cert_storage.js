@@ -12,9 +12,9 @@
 
 
 
-const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
-const { RemoteSettings } = ChromeUtils.import("resource://services-settings/remote-settings.js");
-const BlocklistClients = ChromeUtils.import("resource://services-common/blocklist-clients.js", null);
+const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm", {});
+const { RemoteSettings } = ChromeUtils.import("resource://services-settings/remote-settings.js", {});
+const BlocklistClients = ChromeUtils.import("resource://services-common/blocklist-clients.js", {});
 
 
 var id = "xpcshell@tests.mozilla.org";
@@ -187,8 +187,8 @@ function load_cert(cert, trust) {
 
 function test_is_revoked(certList, issuerString, serialString, subjectString,
                          pubKeyString) {
-  return certList.isCertRevoked(btoa(issuerString), btoa(serialString),
-                                btoa(subjectString), btoa(pubKeyString));
+  return certList.getRevocationState(btoa(issuerString), btoa(serialString),
+                                     btoa(subjectString), btoa(pubKeyString)) == Ci.nsICertStorage.STATE_ENFORCE;
 }
 
 function fetch_blocklist() {
@@ -202,89 +202,14 @@ function fetch_blocklist() {
   return RemoteSettings.pollChanges();
 }
 
-function* generate_revocations_txt_lines() {
-  let profile = do_get_profile();
-  let revocations = profile.clone();
-  revocations.append("revocations.txt");
-  ok(revocations.exists(), "the revocations file should exist");
-  let inputStream = Cc["@mozilla.org/network/file-input-stream;1"]
-                      .createInstance(Ci.nsIFileInputStream);
-  inputStream.init(revocations, -1, -1, 0);
-  inputStream.QueryInterface(Ci.nsILineInputStream);
-  let hasmore = false;
-  do {
-    let line = {};
-    hasmore = inputStream.readLine(line);
-    yield line.value;
-  } while (hasmore);
-}
-
-
-
-
-
-function check_revocations_txt_contents(expected) {
-  let lineGenerator = generate_revocations_txt_lines();
-  let firstLine = lineGenerator.next();
-  equal(firstLine.done, false,
-        "first line of revocations.txt should be present");
-  equal(firstLine.value, "# Auto generated contents. Do not edit.",
-        "first line of revocations.txt");
-  let line = lineGenerator.next();
-  let topLevelFound = {};
-  while (true) {
-    if (line.done) {
-      break;
-    }
-
-    ok(line.value in expected,
-       `${line.value} should be an expected top-level line in revocations.txt`);
-    ok(!(line.value in topLevelFound),
-       `should not have seen ${line.value} before in revocations.txt`);
-    topLevelFound[line.value] = true;
-    let topLevelLine = line.value;
-
-    let sublines = expected[line.value];
-    let subFound = {};
-    while (true) {
-      line = lineGenerator.next();
-      if (line.done || !(line.value in sublines)) {
-        break;
-      }
-      ok(!(line.value in subFound),
-         `should not have seen ${line.value} before in revocations.txt`);
-      subFound[line.value] = true;
-    }
-    for (let subline in sublines) {
-      ok(subFound[subline],
-         `should have found ${subline} below ${topLevelLine} in revocations.txt`);
-    }
-  }
-  for (let topLevelLine in expected) {
-    ok(topLevelFound[topLevelLine],
-       `should have found ${topLevelLine} in revocations.txt`);
-  }
-}
-
 function run_test() {
   
   load_cert("test-ca", "CTu,CTu,CTu");
   load_cert("test-int", ",,");
   load_cert("other-test-ca", "CTu,CTu,CTu");
 
-  let certList = Cc["@mozilla.org/security/certblocklist;1"]
-                  .getService(Ci.nsICertBlocklist);
-
-  let expected = { "MCIxIDAeBgNVBAMMF0Fub3RoZXIgVGVzdCBFbmQtZW50aXR5":
-                     { "\tVCIlmPM9NkgFQtrs4Oa5TeFcDu6MWRTKSNdePEhOgD8=": true },
-                   "MBgxFjAUBgNVBAMMDU90aGVyIHRlc3QgQ0E=":
-                     { " Rym6o+VN9xgZXT/QLrvN/nv1ZN4=": true},
-                   "MBIxEDAOBgNVBAMMB1Rlc3QgQ0E=":
-                     { " a0X7/7DlTaedpgrIJg25iBPOkIM=": true},
-                   "YW5vdGhlciBpbWFnaW5hcnkgaXNzdWVy":
-                     { " YW5vdGhlciBzZXJpYWwu": true,
-                       " c2VyaWFsMi4=": true },
-                 };
+  let certList = Cc["@mozilla.org/security/certstorage;1"]
+                  .getService(Ci.nsICertStorage);
 
   add_task(async function() {
     
@@ -349,10 +274,6 @@ function run_test() {
        "issuer / serial pair should be blocked");
 
     
-    
-    check_revocations_txt_contents(expected);
-
-    
     let file = "test_onecrl/test-int-ee.pem";
     await verify_cert(file, SEC_ERROR_REVOKED_CERTIFICATE);
     await verify_non_tls_usage_succeeds(file);
@@ -374,22 +295,10 @@ function run_test() {
     
     file = "bad_certs/unknownissuer.pem";
     await verify_cert(file, SEC_ERROR_UNKNOWN_ISSUER);
-
-    
-    let lastModified = gRevocations.lastModifiedTime;
-    
-    certList.revokeCertByIssuerAndSerial("YW5vdGhlciBpbWFnaW5hcnkgaXNzdWVy",
-                                         "c2VyaWFsMi4=");
-    certList.saveEntries();
-    let newModified = gRevocations.lastModifiedTime;
-    equal(lastModified, newModified,
-          "saveEntries with no modifications should not update the backing file");
   });
 
-  add_test(function() {
-    
-    check_revocations_txt_contents(expected);
-    run_next_test();
+  add_task(async function() {
+    ok(certList.isBlocklistFresh(), "Blocklist should be fresh.");
   });
 
   run_next_test();
