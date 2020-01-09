@@ -4285,7 +4285,9 @@ void AsyncPanZoomController::NotifyLayersUpdated(
   
   bool visualScrollOffsetUpdated =
       aLayerMetrics.GetVisualScrollUpdateType() != FrameMetrics::eNone;
-  if (aLayerMetrics.GetScrollUpdateType() == FrameMetrics::eMainThread ||
+  if ((aLayerMetrics.GetScrollUpdateType() == FrameMetrics::eMainThread &&
+       aLayerMetrics.GetVisualScrollUpdateType() !=
+           FrameMetrics::eMainThread) ||
       smoothScrollRequested) {
     visualScrollOffsetUpdated = false;
   }
