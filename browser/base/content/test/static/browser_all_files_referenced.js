@@ -160,9 +160,6 @@ var whitelist = [
   
   {file: "resource://gre/modules/ZipUtils.jsm"},
   
-  {file: AppConstants.BROWSER_CHROME_URL == "chrome://browser/content/browser.xul" ?
-    "chrome://browser/content/browser.xhtml" : "chrome://browser/content/browser.xul" },
-  
   
   
   {file: "chrome://devtools/skin/images/aboutdebugging-firefox-aurora.svg",
