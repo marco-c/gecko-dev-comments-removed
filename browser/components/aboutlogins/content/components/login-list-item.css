@@ -9,6 +9,11 @@
   padding: 10px;
 }
 
+
+:host([hidden]) {
+  display: none;
+}
+
 :host(:hover) {
   background-color: var(--grey-90-a10);
 }
