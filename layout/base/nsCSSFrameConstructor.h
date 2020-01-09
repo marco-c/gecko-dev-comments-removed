@@ -688,7 +688,8 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
 
 
-#define FCDATA_ALLOW_GRID_FLEX_COLUMNSET 0x200000
+
+#define FCDATA_ALLOW_GRID_FLEX_COLUMN 0x200000
   
 
 
