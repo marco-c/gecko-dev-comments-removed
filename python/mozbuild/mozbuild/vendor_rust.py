@@ -146,6 +146,10 @@ Please commit or stash these changes before vendoring, or re-run with `--ignore-
         'Apache-2.0',
         'Apache-2.0 WITH LLVM-exception',
         'BSD-2-Clause',
+        
+        
+        
+        
         'CC0-1.0',
         'ISC',
         'MIT',
@@ -166,6 +170,14 @@ Please commit or stash these changes before vendoring, or re-run with `--ignore-
 
     
     
+    RUNTIME_LICENSE_PACKAGE_WHITELIST = {
+        'BSD-3-Clause': [
+            'sha1',
+        ]
+    }
+
+    
+    
     
     
     
@@ -178,7 +190,7 @@ Please commit or stash these changes before vendoring, or re-run with `--ignore-
     }
 
     @staticmethod
-    def runtime_license(license_string):
+    def runtime_license(package, license_string):
         """Cargo docs say:
         ---
         https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -200,8 +212,11 @@ Please commit or stash these changes before vendoring, or re-run with `--ignore-
             return False
 
         license_list = re.split(r'\s*/\s*|\s+OR\s+', license_string)
-        if any(license in VendorRust.RUNTIME_LICENSE_WHITELIST for license in license_list):
-            return True
+        for license in license_list:
+            if license in VendorRust.RUNTIME_LICENSE_WHITELIST:
+                return True
+            if package in VendorRust.RUNTIME_LICENSE_PACKAGE_WHITELIST.get(license, []):
+                return True
         return False
 
     def _check_licenses(self, vendor_dir):
@@ -212,7 +227,7 @@ Please commit or stash these changes before vendoring, or re-run with `--ignore-
             self.log(logging.DEBUG, 'package_license', {},
                      'has license {}'.format(license))
 
-            if not self.runtime_license(license):
+            if not self.runtime_license(package, license):
                 if license not in self.BUILDTIME_LICENSE_WHITELIST:
                     self.log(logging.ERROR, 'package_license_error', {},
                             '''Package {} has a non-approved license: {}.
