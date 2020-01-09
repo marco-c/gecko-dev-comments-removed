@@ -766,6 +766,11 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   RefPtr<HitTestingTreeNode> mRootNode;
 
   
+
+
+  bool mUsingAsyncZoomContainer;
+
+  
   mutable mozilla::Mutex mMapLock;
   
 
