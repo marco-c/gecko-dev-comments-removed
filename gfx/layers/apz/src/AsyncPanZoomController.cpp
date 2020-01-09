@@ -1821,8 +1821,8 @@ nsEventStatus AsyncPanZoomController::OnScaleEnd(
 }
 
 nsEventStatus AsyncPanZoomController::HandleEndOfPan() {
-  MOZ_ASSERT(GetCurrentTouchBlock());
-  GetCurrentTouchBlock()->GetOverscrollHandoffChain()->FlushRepaints();
+  MOZ_ASSERT(GetCurrentTouchBlock() || GetCurrentPanGestureBlock());
+  GetCurrentInputBlock()->GetOverscrollHandoffChain()->FlushRepaints();
   ParentLayerPoint flingVelocity = GetVelocityVector();
 
   
@@ -1844,7 +1844,7 @@ nsEventStatus AsyncPanZoomController::HandleEndOfPan() {
   if (flingVelocity.Length() < gfxPrefs::APZFlingMinVelocityThreshold()) {
     
     
-    GetCurrentTouchBlock()
+    GetCurrentInputBlock()
         ->GetOverscrollHandoffChain()
         ->SnapBackOverscrolledApzc(this);
     return nsEventStatus_eConsumeNoDefault;
@@ -1855,8 +1855,8 @@ nsEventStatus AsyncPanZoomController::HandleEndOfPan() {
   
   if (APZCTreeManager* treeManagerLocal = GetApzcTreeManager()) {
     const FlingHandoffState handoffState{
-        flingVelocity, GetCurrentTouchBlock()->GetOverscrollHandoffChain(),
-        false , GetCurrentTouchBlock()->GetScrolledApzc()};
+        flingVelocity, GetCurrentInputBlock()->GetOverscrollHandoffChain(),
+        false , GetCurrentInputBlock()->GetScrolledApzc()};
     treeManagerLocal->DispatchFling(this, handoffState);
   }
   return nsEventStatus_eConsumeNoDefault;
@@ -2555,6 +2555,35 @@ nsEventStatus AsyncPanZoomController::OnPan(const PanGestureInput& aEvent,
   ScreenPoint physicalPanDisplacement = aEvent.mPanDisplacement;
   ParentLayerPoint logicalPanDisplacement =
       aEvent.UserMultipliedLocalPanDisplacement();
+  if (aEvent.mDeltaType == PanGestureInput::PANDELTA_PAGE) {
+    
+    
+    CSSSize pageScrollSize;
+    CSSToParentLayerScale2D zoom;
+    {
+      
+      RecursiveMutexAutoLock lock(mRecursiveMutex);
+      pageScrollSize = mScrollMetadata.GetPageScrollAmount() /
+                       Metrics().GetDevPixelsPerCSSPixel();
+      zoom = Metrics().GetZoom();
+    }
+    
+    auto scrollUnitWidth = std::min(std::pow(pageScrollSize.width, 2.0 / 3.0),
+                                    pageScrollSize.width / 2.0) *
+                           zoom.xScale;
+    auto scrollUnitHeight = std::min(std::pow(pageScrollSize.height, 2.0 / 3.0),
+                                     pageScrollSize.height / 2.0) *
+                            zoom.yScale;
+    
+    
+    ParentLayerPoint physicalPanDisplacementPL(
+        physicalPanDisplacement.x * scrollUnitWidth,
+        physicalPanDisplacement.y * scrollUnitHeight);
+    physicalPanDisplacement = ToScreenCoordinates(physicalPanDisplacementPL,
+                                                  aEvent.mLocalPanStartPoint);
+    logicalPanDisplacement.x *= scrollUnitWidth;
+    logicalPanDisplacement.y *= scrollUnitHeight;
+  }
 
   MOZ_ASSERT(GetCurrentPanGestureBlock());
   AdjustDeltaForAllowedScrollDirections(
@@ -2571,9 +2600,9 @@ nsEventStatus AsyncPanZoomController::OnPan(const PanGestureInput& aEvent,
   
   
   
-  mX.UpdateWithTouchAtDevicePoint(mX.GetPos() + logicalPanDisplacement.x,
+  mX.UpdateWithTouchAtDevicePoint(mX.GetPos() - logicalPanDisplacement.x,
                                   aEvent.mTime);
-  mY.UpdateWithTouchAtDevicePoint(mY.GetPos() + logicalPanDisplacement.y,
+  mY.UpdateWithTouchAtDevicePoint(mY.GetPos() - logicalPanDisplacement.y,
                                   aEvent.mTime);
 
   HandlePanningUpdate(physicalPanDisplacement);
@@ -2607,6 +2636,12 @@ nsEventStatus AsyncPanZoomController::OnPanEnd(const PanGestureInput& aEvent) {
 
   mX.EndTouch(aEvent.mTime);
   mY.EndTouch(aEvent.mTime);
+
+  
+  
+  if (aEvent.mSimulateMomentum) {
+    return HandleEndOfPan();
+  }
 
   
   
