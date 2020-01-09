@@ -19,7 +19,6 @@ import org.mozilla.gecko.sync.ExtendedJSONObject;
 import org.mozilla.gecko.sync.net.BaseResource;
 import org.mozilla.gecko.sync.net.BaseResourceDelegate;
 import org.mozilla.gecko.sync.net.Resource;
-import org.mozilla.gecko.telemetry.pingbuilders.TelemetryActivationPingBuilder;
 import org.mozilla.gecko.telemetry.stores.TelemetryPingStore;
 import org.mozilla.gecko.util.DateUtil;
 import org.mozilla.gecko.util.NetworkUtils;
@@ -126,8 +125,6 @@ public class TelemetryUploadService extends JobIntentService {
             if (delegate.hadConnectionError()) {
                 break;
             }
-
-            checkPingsPersistence(context, ping.getDocID());
         }
 
         final boolean wereAllUploadsSuccessful = !delegate.hadConnectionError();
@@ -137,23 +134,6 @@ public class TelemetryUploadService extends JobIntentService {
         }
         store.onUploadAttemptComplete(successfulUploadIDs);
         return wereAllUploadsSuccessful;
-    }
-
-    
-
-
-
-
-    private static void checkPingsPersistence(Context context, String successfulUploadID) {
-        final String activationID = TelemetryActivationPingBuilder.getActivationPingId(context);
-
-        if (activationID == null) {
-            return;
-        }
-
-        if (activationID.equals(successfulUploadID)) {
-            TelemetryActivationPingBuilder.setActivationPingSent(context, true);
-        }
     }
 
     private static void uploadPayload(final String url, final ExtendedJSONObject payload, final ResultDelegate delegate) {
