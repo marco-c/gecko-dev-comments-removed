@@ -103,14 +103,18 @@ def mozconfig(config, jobs):
 @transforms.add
 def use_profile_data(config, jobs):
     for job in jobs:
-        if not job.pop('use-pgo', False):
+        use_pgo = job.pop('use-pgo', False)
+        if not use_pgo:
             yield job
             continue
 
         
-        name = job['name']
-        if name.endswith('-nightly/opt'):
-            name = name.replace('-nightly/opt', '/pgo')
+        
+        
+        if use_pgo is True:
+            name = job['name']
+        else:
+            name = use_pgo
         dependencies = 'generate-profile-{}'.format(name)
         job.setdefault('dependencies', {})['generate-profile'] = dependencies
         job.setdefault('fetches', {})['generate-profile'] = ['profdata.tar.xz']
