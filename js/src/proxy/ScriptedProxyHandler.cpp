@@ -620,6 +620,12 @@ bool ScriptedProxyHandler::getOwnPropertyDescriptor(
     if (targetDesc.configurable()) {
       return js::Throw(cx, id, JSMSG_CANT_REPORT_C_AS_NC);
     }
+
+    if (resultDesc.hasWritable() && !resultDesc.writable()) {
+      if (targetDesc.writable()) {
+        return js::Throw(cx, id, JSMSG_CANT_REPORT_W_AS_NW);
+      }
+    }
   }
 
   
@@ -732,6 +738,17 @@ bool ScriptedProxyHandler::defineProperty(JSContext* cx, HandleObject proxy,
           "non-configurable";
       return js::Throw(cx, id, JSMSG_CANT_DEFINE_INVALID,
                        DETAILS_CANT_REPORT_C_AS_NC);
+    }
+
+    if (targetDesc.isDataDescriptor() && !targetDesc.configurable() &&
+        targetDesc.writable()) {
+      if (desc.hasWritable() && !desc.writable()) {
+        static const char DETAILS_CANT_DEFINE_NW[] =
+            "proxy can't define an existing non-configurable writable property "
+            "as non-writable";
+        return js::Throw(cx, id, JSMSG_CANT_DEFINE_INVALID,
+                         DETAILS_CANT_DEFINE_NW);
+      }
     }
   }
 
@@ -993,8 +1010,22 @@ bool ScriptedProxyHandler::delete_(JSContext* cx, HandleObject proxy,
   }
 
   
-  if (desc.object() && !desc.configurable()) {
+  if (!desc.object()) {
+    return result.succeed();
+  }
+
+  
+  if (!desc.configurable()) {
     return Throw(cx, id, JSMSG_CANT_DELETE);
+  }
+
+  bool extensible;
+  if (!IsExtensible(cx, target, &extensible)) {
+    return false;
+  }
+
+  if (!extensible) {
+    return Throw(cx, id, JSMSG_CANT_DELETE_NON_EXTENSIBLE);
   }
 
   
