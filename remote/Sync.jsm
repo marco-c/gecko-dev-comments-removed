@@ -7,6 +7,7 @@
 var EXPORTED_SYMBOLS = [
   "DOMContentLoadedPromise",
   "EventPromise",
+  "MessagePromise",
 ];
 
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -73,4 +74,29 @@ function DOMContentLoadedPromise(window, options = {mozSystemGroup: true}) {
     return Promise.resolve();
   }
   return new EventPromise(window, "DOMContentLoaded", options);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function MessagePromise(target, name) {
+  if (!(target instanceof Ci.nsIMessageSender)) {
+    throw new TypeError();
+  }
+
+  return new Promise(resolve => {
+    const onMessage = (...args) => {
+      target.removeMessageListener(name, onMessage);
+      resolve(...args);
+    };
+    target.addMessageListener(name, onMessage);
+  });
 }
