@@ -1805,6 +1805,16 @@ VARCACHE_PREF(
 
 
 
+VARCACHE_PREF(
+  "browser.sessionstore.dom_storage_limit",
+  browser_sessionstore_dom_storage_limit,
+  uint32_t, 2048
+)
+
+
+
+
+
 PREF("preferences.allow.omt-write", bool, true)
 
 
