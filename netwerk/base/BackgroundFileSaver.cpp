@@ -974,7 +974,6 @@ BackgroundFileSaverStreamListener::OnStartRequest(nsIRequest *aRequest) {
 
 NS_IMETHODIMP
 BackgroundFileSaverStreamListener::OnStopRequest(nsIRequest *aRequest,
-                                                 nsISupports *aContext,
                                                  nsresult aStatusCode) {
   
   

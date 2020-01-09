@@ -194,7 +194,7 @@ void nsIncrementalDownload::CallOnStopRequest() {
 
   mIsPending = false;
 
-  mObserver->OnStopRequest(this, mObserverContext, mStatus);
+  mObserver->OnStopRequest(this, mStatus);
   mObserver = nullptr;
   mObserverContext = nullptr;
 }
@@ -637,7 +637,7 @@ nsIncrementalDownload::OnStartRequest(nsIRequest *request) {
 }
 
 NS_IMETHODIMP
-nsIncrementalDownload::OnStopRequest(nsIRequest *request, nsISupports *context,
+nsIncrementalDownload::OnStopRequest(nsIRequest *request,
                                      nsresult status) {
   
   

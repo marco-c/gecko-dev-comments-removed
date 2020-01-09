@@ -209,7 +209,7 @@ already_AddRefed<Document> DOMParser::ParseFromStream(nsIInputStream* aStream,
     parserChannel->GetStatus(&status);
   }
 
-  rv = listener->OnStopRequest(parserChannel, nullptr, status);
+  rv = listener->OnStopRequest(parserChannel, status);
   
   
 

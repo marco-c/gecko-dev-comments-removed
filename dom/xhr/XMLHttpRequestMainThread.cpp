@@ -2021,7 +2021,7 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest* request) {
 }
 
 NS_IMETHODIMP
-XMLHttpRequestMainThread::OnStopRequest(nsIRequest* request, nsISupports* ctxt,
+XMLHttpRequestMainThread::OnStopRequest(nsIRequest* request,
                                         nsresult status) {
   AUTO_PROFILER_LABEL("XMLHttpRequestMainThread::OnStopRequest", NETWORK);
 
@@ -2044,7 +2044,7 @@ XMLHttpRequestMainThread::OnStopRequest(nsIRequest* request, nsISupports* ctxt,
   if (mRequestObserver) {
     NS_ASSERTION(mFirstStartRequestSeen, "Inconsistent state!");
     mFirstStartRequestSeen = false;
-    mRequestObserver->OnStopRequest(request, ctxt, status);
+    mRequestObserver->OnStopRequest(request, status);
   }
 
   
@@ -2052,13 +2052,13 @@ XMLHttpRequestMainThread::OnStopRequest(nsIRequest* request, nsISupports* ctxt,
   
   if (mState == XMLHttpRequest_Binding::UNSENT || mFlagTimedOut) {
     if (mXMLParserStreamListener)
-      (void)mXMLParserStreamListener->OnStopRequest(request, ctxt, status);
+      (void)mXMLParserStreamListener->OnStopRequest(request, status);
     return NS_OK;
   }
 
   
   if (mXMLParserStreamListener && mFlagParseBody) {
-    mXMLParserStreamListener->OnStopRequest(request, ctxt, status);
+    mXMLParserStreamListener->OnStopRequest(request, status);
   }
 
   mXMLParserStreamListener = nullptr;

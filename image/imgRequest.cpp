@@ -735,7 +735,7 @@ imgRequest::OnStartRequest(nsIRequest* aRequest) {
 }
 
 NS_IMETHODIMP
-imgRequest::OnStopRequest(nsIRequest* aRequest, nsISupports* ctxt,
+imgRequest::OnStopRequest(nsIRequest* aRequest,
                           nsresult status) {
   LOG_FUNC(gImgLog, "imgRequest::OnStopRequest");
   MOZ_ASSERT(NS_IsMainThread(), "Can't send notifications off-main-thread");
@@ -745,7 +745,7 @@ imgRequest::OnStopRequest(nsIRequest* aRequest, nsISupports* ctxt,
   RefPtr<imgRequest> strongThis = this;
 
   if (mIsMultiPartChannel && mNewPartPending) {
-    OnDataAvailable(aRequest, ctxt, nullptr, 0, 0);
+    OnDataAvailable(aRequest, nullptr, nullptr, 0, 0);
   }
 
   
@@ -779,7 +779,7 @@ imgRequest::OnStopRequest(nsIRequest* aRequest, nsISupports* ctxt,
   
   
   if (image) {
-    nsresult rv = image->OnImageDataComplete(aRequest, ctxt, status, lastPart);
+    nsresult rv = image->OnImageDataComplete(aRequest, nullptr, status, lastPart);
 
     
     

@@ -1330,7 +1330,7 @@ nsresult nsParser::OnDataAvailable(nsIRequest* request, nsISupports* aContext,
 
 
 
-nsresult nsParser::OnStopRequest(nsIRequest* request, nsISupports* aContext,
+nsresult nsParser::OnStopRequest(nsIRequest* request,
                                  nsresult status) {
   nsresult rv = NS_OK;
 
@@ -1362,7 +1362,7 @@ nsresult nsParser::OnStopRequest(nsIRequest* request, nsISupports* aContext,
   
   
   if (mObserver) {
-    mObserver->OnStopRequest(request, aContext, status);
+    mObserver->OnStopRequest(request, status);
   }
 
   return rv;

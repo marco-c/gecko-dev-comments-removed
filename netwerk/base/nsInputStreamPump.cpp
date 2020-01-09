@@ -652,7 +652,7 @@ uint32_t nsInputStreamPump::OnStateStop() {
     
     
     RecursiveMutexAutoUnlock unlock(mMutex);
-    mListener->OnStopRequest(this, nullptr, mStatus);
+    mListener->OnStopRequest(this, mStatus);
   }
   mListener = nullptr;
 
