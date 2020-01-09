@@ -2636,52 +2636,42 @@ async function waitForHelperSleep() {
 
 
 
+async function waitForHelperExit() {
+  let file = getApplyDirFile(DIR_RESOURCES + "input");
+  writeFile(file, "finish\n");
 
-
-function waitForHelperFinished() {
   
   
-  let output = getApplyDirFile(DIR_RESOURCES + "output");
-  if (readFile(output) != "finished\n") {
-    
-    do_timeout(FILE_IN_USE_TIMEOUT_MS, waitForHelperFinished);
-    return;
-  }
+  file = getApplyDirFile(DIR_RESOURCES + "output");
+  await TestUtils.waitForCondition(() => (file.exists()),
+    "Waiting for file to exist, Path: " + file.path);
+
+  let expectedContents = "finished\n";
+  await TestUtils.waitForCondition(() => (readFile(file) == expectedContents),
+    "Waiting for expected file contents: " + expectedContents);
+
   
   
-  waitForHelperFinishFileUnlock();
-}
-
-
-
-
-
-function waitForHelperFinishFileUnlock() {
-  try {
-    let output = getApplyDirFile(DIR_RESOURCES + "output");
-    if (output.exists()) {
-      output.remove(false);
+  await TestUtils.waitForCondition(() => {
+    try {
+      file.remove(false);
+    } catch (e) {
+      debugDump("failed to remove file. Path: " + file.path +
+                ", Exception: " + e);
     }
-    let input = getApplyDirFile(DIR_RESOURCES + "input");
-    if (input.exists()) {
-      input.remove(false);
+    return !file.exists();
+  }, "Waiting for file to be removed, Path: " + file.path);
+
+  file = getApplyDirFile(DIR_RESOURCES + "input");
+  await TestUtils.waitForCondition(() => {
+    try {
+      file.remove(false);
+    } catch (e) {
+      debugDump("failed to remove file. Path: " + file.path +
+                ", Exception: " + e);
     }
-  } catch (e) {
-    
-    
-    executeSoon(waitForHelperFinishFileUnlock);
-    return;
-  }
-  executeSoon(waitForHelperExitFinished);
-}
-
-
-
-
-function waitForHelperExit() {
-  let input = getApplyDirFile(DIR_RESOURCES + "input");
-  writeFile(input, "finish\n");
-  waitForHelperFinished();
+    return !file.exists();
+  }, "Waiting for file to be removed, Path: " + file.path);
 }
 
 

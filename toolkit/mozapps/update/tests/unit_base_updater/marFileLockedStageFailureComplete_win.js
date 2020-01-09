@@ -27,20 +27,14 @@ async function setupUpdaterTestFinished() {
 
 
 
-function stageUpdateFinished() {
+async function stageUpdateFinished() {
   checkPostUpdateRunningFile(false);
   
   
   checkUpdateLogContains(ERR_ENSURE_COPY);
   
   runUpdate(STATE_FAILED_WRITE_ERROR, false, 1, false);
-  waitForHelperExit();
-}
-
-
-
-
-async function waitForHelperExitFinished() {
+  await waitForHelperExit();
   standardInit();
   checkPostUpdateRunningFile(false);
   checkFilesAfterUpdateFailure(getApplyDirFile);

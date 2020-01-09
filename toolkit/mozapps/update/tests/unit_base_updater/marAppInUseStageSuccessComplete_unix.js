@@ -31,19 +31,13 @@ async function setupUpdaterTestFinished() {
 
 
 
-function stageUpdateFinished() {
+async function stageUpdateFinished() {
   checkPostUpdateRunningFile(false);
   checkFilesAfterUpdateSuccess(getStageDirFile, true);
   checkUpdateLogContents(LOG_COMPLETE_SUCCESS, true);
   
   runUpdate(STATE_SUCCEEDED, true, 0, true);
-  waitForHelperExit();
-}
-
-
-
-
-function waitForHelperExitFinished() {
+  await waitForHelperExit();
   checkPostUpdateAppLog();
 }
 

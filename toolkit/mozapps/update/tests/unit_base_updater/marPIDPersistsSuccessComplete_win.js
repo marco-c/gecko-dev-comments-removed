@@ -19,13 +19,7 @@ function run_test() {
 async function setupUpdaterTestFinished() {
   await runHelperPIDPersists(DIR_RESOURCES + gCallbackBinFile, false);
   runUpdate(STATE_SUCCEEDED, false, 0, true);
-  waitForHelperExit();
-}
-
-
-
-
-function waitForHelperExitFinished() {
+  await waitForHelperExit();
   checkPostUpdateAppLog();
 }
 
