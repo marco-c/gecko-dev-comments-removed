@@ -10,6 +10,7 @@
 #include "nsSMILInstanceTime.h"
 #include "nsTArray.h"
 
+namespace mozilla {
 
 
 
@@ -19,11 +20,12 @@
 
 
 
-class nsSMILInterval {
+
+class SMILInterval {
  public:
-  nsSMILInterval();
-  nsSMILInterval(const nsSMILInterval& aOther);
-  ~nsSMILInterval();
+  SMILInterval();
+  SMILInterval(const SMILInterval& aOther);
+  ~SMILInterval();
   void Unlink(bool aFiltered = false);
 
   const nsSMILInstanceTime* Begin() const {
@@ -78,5 +80,7 @@ class nsSMILInterval {
   bool mBeginFixed;
   bool mEndFixed;
 };
+
+}  
 
 #endif  

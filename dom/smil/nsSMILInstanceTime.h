@@ -10,10 +10,10 @@
 #include "nsISupportsImpl.h"
 #include "nsSMILTimeValue.h"
 
-class nsSMILInterval;
 class nsSMILTimeValueSpec;
 
 namespace mozilla {
+class SMILInterval;
 class SMILTimeContainer;
 }
 
@@ -38,6 +38,9 @@ class SMILTimeContainer;
 
 
 class nsSMILInstanceTime final {
+  typedef mozilla::SMILInterval SMILInterval;
+  typedef mozilla::SMILTimeContainer SMILTimeContainer;
+
  public:
   
   
@@ -56,10 +59,10 @@ class nsSMILInstanceTime final {
   explicit nsSMILInstanceTime(const nsSMILTimeValue& aTime,
                               nsSMILInstanceTimeSource aSource = SOURCE_NONE,
                               nsSMILTimeValueSpec* aCreator = nullptr,
-                              nsSMILInterval* aBaseInterval = nullptr);
+                              SMILInterval* aBaseInterval = nullptr);
 
   void Unlink();
-  void HandleChangedInterval(const mozilla::SMILTimeContainer* aSrcContainer,
+  void HandleChangedInterval(const SMILTimeContainer* aSrcContainer,
                              bool aBeginObjectChanged, bool aEndObjectChanged);
   void HandleDeletedInterval();
   void HandleFilteredInterval();
@@ -85,7 +88,7 @@ class nsSMILInstanceTime final {
 
   bool IsDependent() const { return !!mBaseInterval; }
   bool IsDependentOn(const nsSMILInstanceTime& aOther) const;
-  const nsSMILInterval* GetBaseInterval() const { return mBaseInterval; }
+  const SMILInterval* GetBaseInterval() const { return mBaseInterval; }
   const nsSMILInstanceTime* GetBaseTime() const;
 
   bool SameTimeAndBase(const nsSMILInstanceTime& aOther) const {
@@ -103,7 +106,7 @@ class nsSMILInstanceTime final {
   
   ~nsSMILInstanceTime();
 
-  void SetBaseInterval(nsSMILInterval* aBaseInterval);
+  void SetBaseInterval(SMILInterval* aBaseInterval);
 
   nsSMILTimeValue mTime;
 
@@ -159,7 +162,7 @@ class nsSMILInstanceTime final {
   nsSMILTimeValueSpec* mCreator;  
                                   
                                   
-  nsSMILInterval* mBaseInterval;  
+  SMILInterval* mBaseInterval;    
                                   
 };
 

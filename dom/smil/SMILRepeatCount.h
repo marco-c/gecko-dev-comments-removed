@@ -4,12 +4,13 @@
 
 
 
-#ifndef nsSMILRepeatCount_h
-#define nsSMILRepeatCount_h
+#ifndef SMILRepeatCount_h
+#define SMILRepeatCount_h
 
 #include "nsDebug.h"
 #include <math.h>
 
+namespace mozilla {
 
 
 
@@ -21,10 +22,11 @@
 
 
 
-class nsSMILRepeatCount {
+
+class SMILRepeatCount {
  public:
-  nsSMILRepeatCount() : mCount(kNotSet) {}
-  explicit nsSMILRepeatCount(double aCount) : mCount(kNotSet) {
+  SMILRepeatCount() : mCount(kNotSet) {}
+  explicit SMILRepeatCount(double aCount) : mCount(kNotSet) {
     SetCount(aCount);
   }
 
@@ -37,7 +39,7 @@ class nsSMILRepeatCount {
   bool IsIndefinite() const { return mCount == kIndefinite; }
   bool IsSet() const { return mCount != kNotSet; }
 
-  nsSMILRepeatCount& operator=(double aCount) {
+  SMILRepeatCount& operator=(double aCount) {
     SetCount(aCount);
     return *this;
   }
@@ -54,5 +56,7 @@ class nsSMILRepeatCount {
 
   double mCount;
 };
+
+}  
 
 #endif

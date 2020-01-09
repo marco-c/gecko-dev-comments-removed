@@ -1,0 +1,15 @@
+
+
+
+
+
+
+#include "SMILRepeatCount.h"
+
+namespace mozilla {
+
+ const double SMILRepeatCount::kNotSet = -1.0;
+ const double SMILRepeatCount::kIndefinite = -2.0;
+
+}  
+
