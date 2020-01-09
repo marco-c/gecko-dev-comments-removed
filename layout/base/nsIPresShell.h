@@ -1810,12 +1810,6 @@ class nsIPresShell : public nsStubDocumentObserver {
   DOMHighResTimeStamp GetPerformanceNowUnclamped();
 
   
-
-
-
-
-  void DidDoReflow(bool aInterruptible);
-  
   static void sReflowContinueCallback(nsITimer* aTimer, void* aPresShell);
   bool ScheduleReflowOffTimer();
   

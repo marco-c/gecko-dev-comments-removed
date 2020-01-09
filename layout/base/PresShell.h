@@ -368,6 +368,13 @@ class PresShell final : public nsIPresShell,
 
 
 
+  MOZ_CAN_RUN_SCRIPT void DidDoReflow(bool aInterruptible);
+
+  
+
+
+
+
 
 
 
