@@ -1044,6 +1044,7 @@ nsDisplayListBuilder::nsDisplayListBuilder(nsIFrame* aReferenceFrame,
       mIsInChromePresContext(false),
       mSyncDecodeImages(false),
       mIsPaintingToWindow(false),
+      mIsPaintingForWebRender(false),
       mIsCompositingCheap(false),
       mContainsPluginItem(false),
       mAncestorHasApzAwareEventHandler(false),
@@ -7651,6 +7652,14 @@ bool nsDisplayBackgroundColor::CanUseAsyncAnimations(
   
   nsRect overflow = aFrame->GetVisualOverflowRectRelativeToSelf();
   if (aDirtyRect->Contains(overflow)) {
+    return FullPrerender;
+  }
+
+  
+  
+  
+  if (aBuilder->IsPaintingForWebRender()) {
+    *aDirtyRect = overflow;
     return FullPrerender;
   }
 

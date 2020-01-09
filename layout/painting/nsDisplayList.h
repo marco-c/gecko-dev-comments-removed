@@ -677,6 +677,11 @@ class nsDisplayListBuilder {
   
 
 
+  void SetPaintingForWebRender(bool aForWebRender) { mIsPaintingForWebRender = true; }
+  bool IsPaintingForWebRender() const { return mIsPaintingForWebRender; }
+  
+
+
   void SetDescendIntoSubdocuments(bool aDescend) {
     mDescendIntoSubdocuments = aDescend;
   }
@@ -1970,6 +1975,7 @@ class nsDisplayListBuilder {
   bool mIsInChromePresContext;
   bool mSyncDecodeImages;
   bool mIsPaintingToWindow;
+  bool mIsPaintingForWebRender;
   bool mIsCompositingCheap;
   bool mContainsPluginItem;
   bool mAncestorHasApzAwareEventHandler;
