@@ -10,8 +10,6 @@
 
 var { Ci, Cu, components } = require("chrome");
 var Services = require("Services");
-var promise = require("promise");
-var defer = require("devtools/shared/defer");
 var flags = require("./flags");
 var {getStack, callFunctionWithAsyncStack} = require("devtools/shared/platform/stack");
 
@@ -74,9 +72,9 @@ exports.executeSoon = function(fn) {
 
 
 exports.waitForTick = function() {
-  const deferred = defer();
-  exports.executeSoon(deferred.resolve);
-  return deferred.promise;
+  return new Promise(resolve => {
+    exports.executeSoon(resolve);
+  });
 };
 
 
@@ -88,58 +86,7 @@ exports.waitForTick = function() {
 
 
 exports.waitForTime = function(delay) {
-  const deferred = defer();
-  setTimeout(deferred.resolve, delay);
-  return deferred.promise;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-exports.yieldingEach = function(array, fn) {
-  const deferred = defer();
-
-  let i = 0;
-  const len = array.length;
-  const outstanding = [deferred.promise];
-
-  (function loop() {
-    const start = Date.now();
-
-    while (i < len) {
-      
-      
-      
-      
-      if (Date.now() - start > 16) {
-        exports.executeSoon(loop);
-        return;
-      }
-
-      try {
-        outstanding.push(fn(array[i], i++));
-      } catch (e) {
-        deferred.reject(e);
-        return;
-      }
-    }
-
-    deferred.resolve();
-  }());
-
-  return promise.all(outstanding);
+  return new Promise(resolve => setTimeout(resolve, delay));
 };
 
 
@@ -562,130 +509,130 @@ function mainThreadFetch(urlIn, aOptions = { loadFromCache: true,
                                              charset: null,
                                              principal: null,
                                              cacheKey: 0 }) {
-  
-  const url = urlIn.split(" -> ").pop();
-  let channel;
-  try {
-    channel = newChannelForURL(url, aOptions);
-  } catch (ex) {
-    return promise.reject(ex);
-  }
-
-  
-  channel.loadFlags = aOptions.loadFromCache
-    ? channel.LOAD_FROM_CACHE
-    : channel.LOAD_BYPASS_CACHE;
-
-  
-  
-  if (aOptions.loadFromCache &&
-      aOptions.cacheKey != 0 && channel instanceof Ci.nsICacheInfoChannel) {
-    channel.cacheKey = aOptions.cacheKey;
-  }
-
-  if (aOptions.window) {
+  return new Promise((resolve, reject) =>{
     
-    channel.loadGroup = aOptions.window.docShell
-                          .QueryInterface(Ci.nsIDocumentLoader)
-                          .loadGroup;
-  }
-
-  const deferred = defer();
-  const onResponse = (stream, status, request) => {
-    if (!components.isSuccessCode(status)) {
-      deferred.reject(new Error(`Failed to fetch ${url}. Code ${status}.`));
+    const url = urlIn.split(" -> ").pop();
+    let channel;
+    try {
+      channel = newChannelForURL(url, aOptions);
+    } catch (ex) {
+      reject(ex);
       return;
     }
 
-    try {
-      
-      
-      
-      
+    
+    channel.loadFlags = aOptions.loadFromCache
+      ? channel.LOAD_FROM_CACHE
+      : channel.LOAD_BYPASS_CACHE;
 
-      
-      const available = stream.available();
-      let source = NetUtil.readInputStreamToString(stream, available);
-      stream.close();
+    
+    
+    if (aOptions.loadFromCache &&
+        aOptions.cacheKey != 0 && channel instanceof Ci.nsICacheInfoChannel) {
+      channel.cacheKey = aOptions.cacheKey;
+    }
 
+    if (aOptions.window) {
       
-      
-      
-      let bomCharset = null;
-      if (available >= 3 && source.codePointAt(0) == 0xef &&
-          source.codePointAt(1) == 0xbb && source.codePointAt(2) == 0xbf) {
-        bomCharset = "UTF-8";
-        source = source.slice(3);
-      } else if (available >= 2 && source.codePointAt(0) == 0xfe &&
-                 source.codePointAt(1) == 0xff) {
-        bomCharset = "UTF-16BE";
-        source = source.slice(2);
-      } else if (available >= 2 && source.codePointAt(0) == 0xff &&
-                 source.codePointAt(1) == 0xfe) {
-        bomCharset = "UTF-16LE";
-        source = source.slice(2);
+      channel.loadGroup = aOptions.window.docShell
+                            .QueryInterface(Ci.nsIDocumentLoader)
+                            .loadGroup;
+    }
+
+    const onResponse = (stream, status, request) => {
+      if (!components.isSuccessCode(status)) {
+        reject(new Error(`Failed to fetch ${url}. Code ${status}.`));
+        return;
       }
 
-      
-      
-      
-      
-      
-      
-      let charset = bomCharset;
-      if (!charset) {
-        try {
-          charset = channel.contentCharset;
-        } catch (e) {
+      try {
+        
+        
+        
+        
+
+        
+        const available = stream.available();
+        let source = NetUtil.readInputStreamToString(stream, available);
+        stream.close();
+
+        
+        
+        
+        let bomCharset = null;
+        if (available >= 3 && source.codePointAt(0) == 0xef &&
+            source.codePointAt(1) == 0xbb && source.codePointAt(2) == 0xbf) {
+          bomCharset = "UTF-8";
+          source = source.slice(3);
+        } else if (available >= 2 && source.codePointAt(0) == 0xfe &&
+                  source.codePointAt(1) == 0xff) {
+          bomCharset = "UTF-16BE";
+          source = source.slice(2);
+        } else if (available >= 2 && source.codePointAt(0) == 0xff &&
+                  source.codePointAt(1) == 0xfe) {
+          bomCharset = "UTF-16LE";
+          source = source.slice(2);
+        }
+
+        
+        
+        
+        
+        
+        
+        let charset = bomCharset;
+        if (!charset) {
+          try {
+            charset = channel.contentCharset;
+          } catch (e) {
+            
+            
+          }
+        }
+        if (!charset) {
+          charset = aOptions.charset || "UTF-8";
+        }
+        const unicodeSource = NetworkHelper.convertToUnicode(source, charset);
+
+        resolve({
+          content: unicodeSource,
+          contentType: request.contentType,
+        });
+      } catch (ex) {
+        const uri = request.originalURI;
+        if (ex.name === "NS_BASE_STREAM_CLOSED" && uri instanceof Ci.nsIFileURL) {
           
           
+          
+
+          uri.QueryInterface(Ci.nsIFileURL);
+          const result = OS.File.read(uri.file.path).then(bytes => {
+            
+            const decoder = new TextDecoder();
+            const content = decoder.decode(bytes);
+
+            
+            
+            return {
+              content,
+              contentType: "text/plain",
+            };
+          });
+
+          resolve(result);
+        } else {
+          reject(ex);
         }
       }
-      if (!charset) {
-        charset = aOptions.charset || "UTF-8";
-      }
-      const unicodeSource = NetworkHelper.convertToUnicode(source, charset);
+    };
 
-      deferred.resolve({
-        content: unicodeSource,
-        contentType: request.contentType,
-      });
+    
+    try {
+      NetUtil.asyncFetch(channel, onResponse);
     } catch (ex) {
-      const uri = request.originalURI;
-      if (ex.name === "NS_BASE_STREAM_CLOSED" && uri instanceof Ci.nsIFileURL) {
-        
-        
-        
-
-        uri.QueryInterface(Ci.nsIFileURL);
-        const result = OS.File.read(uri.file.path).then(bytes => {
-          
-          const decoder = new TextDecoder();
-          const content = decoder.decode(bytes);
-
-          
-          
-          return {
-            content,
-            contentType: "text/plain",
-          };
-        });
-
-        deferred.resolve(result);
-      } else {
-        deferred.reject(ex);
-      }
+      reject(ex);
     }
-  };
-
-  
-  try {
-    NetUtil.asyncFetch(channel, onResponse);
-  } catch (ex) {
-    return promise.reject(ex);
-  }
-
-  return deferred.promise;
+  });
 }
 
 

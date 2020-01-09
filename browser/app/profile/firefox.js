@@ -480,6 +480,13 @@ pref("browser.tabs.remote.separatePrivilegedContentProcess", true);
 
 pref("browser.tabs.remote.useHTTPResponseProcessSelection", true);
 
+
+#ifdef RELEASE_OR_BETA
+pref("browser.tabs.unloadOnLowMemory", false);
+#else
+pref("browser.tabs.unloadOnLowMemory", true);
+#endif
+
 pref("browser.ctrlTab.recentlyUsedOrder", true);
 
 
@@ -1821,8 +1828,13 @@ pref("browser.engagement.recent_visited_origins.expiry", 86400);
 pref("browser.aboutConfig.showWarning", true);
 
 #if defined(XP_WIN) && defined(MOZ_LAUNCHER_PROCESS)
+#if defined(NIGHTLY_BUILD)
+
+pref("browser.launcherProcess.enabled", true);
+#else
 
 pref("browser.launcherProcess.enabled", false);
+#endif  // defined(NIGHTLY_BUILD)
 #endif // defined(XP_WIN) && defined(MOZ_LAUNCHER_PROCESS)
 
 pref("browser.toolbars.keyboard_navigation", false);
