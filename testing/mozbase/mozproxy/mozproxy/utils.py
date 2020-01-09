@@ -77,13 +77,13 @@ def tooltool_download(manifest, run_local, raptor_dir):
         command = [sys.executable, TOOLTOOL_PATH, "fetch", "-o", "-m", manifest]
     else:
         
-        if os.environ.get("TOOLTOOLCACHE") is not None:
-            _cache = os.environ["TOOLTOOLCACHE"]
-        else:
-            
-            
-            
-            _cache = "/builds/tooltool_cache"
+        
+        
+        
+        _cache = next(x for x in (
+                    os.environ.get("TOOLTOOLCACHE"),
+                    os.environ.get("TOOLTOOL_CACHE"),
+                    "/builds/tooltool_cache") if x is not None)
 
         command = [
             sys.executable,
