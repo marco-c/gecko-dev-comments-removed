@@ -411,7 +411,6 @@ class nsBlockFrame : public nsContainerFrame {
   explicit nsBlockFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,
                         ClassID aID = kClassID)
       : nsContainerFrame(aStyle, aPresContext, aID),
-        mMinWidth(NS_INTRINSIC_ISIZE_UNKNOWN),
         mPrefWidth(NS_INTRINSIC_ISIZE_UNKNOWN) {
 #ifdef DEBUG
     InitDebugFlags();
@@ -906,7 +905,8 @@ class nsBlockFrame : public nsContainerFrame {
 
   
   
-  nscoord mMinWidth, mPrefWidth;
+  nscoord mCachedMinISize = NS_INTRINSIC_ISIZE_UNKNOWN;
+  nscoord mPrefWidth;
 
   nsLineList mLines;
 
