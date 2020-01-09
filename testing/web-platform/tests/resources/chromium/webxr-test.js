@@ -328,9 +328,16 @@ class MockRuntime {
   }
 
   getEnvironmentIntegrationProvider(environmentProviderRequest) {
-    let environmentProviderBinding = new mojo.AssociatedBinding(
+    this.environmentProviderBinding_ = new mojo.AssociatedBinding(
         device.mojom.XREnvironmentIntegrationProvider, this,
         environmentProviderRequest);
+  }
+
+  
+  
+  
+  closeEnvironmentIntegrationProvider() {
+    this.environmentProviderBinding_.close();
   }
 
   updateSessionGeometry(frame_size, display_rotation) {
