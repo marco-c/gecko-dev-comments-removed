@@ -1502,7 +1502,7 @@ nsresult AntiTrackingCommon::IsOnContentBlockingAllowList(
       
       
       if (aDecision == BlockingDecision::eBlock) {
-        parentChannel->NotifyTrackingCookieBlocked(aRejectedReason);
+        parentChannel->NotifyCookieBlocked(aRejectedReason);
       } else {
         parentChannel->NotifyCookieAllowed();
       }
