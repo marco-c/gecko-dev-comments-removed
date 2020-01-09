@@ -330,12 +330,39 @@ public final class GeckoRuntime implements Parcelable {
             }
         };
 
-        final GeckoBundle bundle = new GeckoBundle(1);
-        bundle.putString("locationUri", webExtension.location.toString());
+        final GeckoBundle bundle = new GeckoBundle(2);
+        bundle.putString("locationUri", webExtension.location);
         bundle.putString("id", webExtension.id);
 
         EventDispatcher.getInstance().dispatch("GeckoView:RegisterWebExtension",
                 bundle, result);
+
+        return result;
+    }
+
+    
+
+
+
+
+
+
+
+
+    @UiThread
+    public @NonNull GeckoResult<Void> unregisterWebExtension(
+            final @NonNull WebExtension webExtension) {
+        final CallbackResult<Void> result = new CallbackResult<Void>() {
+            @Override
+            public void sendSuccess(final Object response) {
+                complete(null);
+            }
+        };
+
+        final GeckoBundle bundle = new GeckoBundle(1);
+        bundle.putString("id", webExtension.id);
+
+        EventDispatcher.getInstance().dispatch("GeckoView:UnregisterWebExtension", bundle, result);
 
         return result;
     }
