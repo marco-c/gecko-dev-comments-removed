@@ -3335,7 +3335,7 @@ function BrowserReloadWithFlags(reloadFlags) {
   for (let tab of unchangedRemoteness) {
     SitePermissions.clearTemporaryPermissions(tab.linkedBrowser);
     
-    delete tab.linkedBrowser.canceledAuthenticationPromptCounter;
+    delete tab.linkedBrowser.authPromptAbuseCounter;
   }
   PanelMultiView.hidePopup(gIdentityHandler._identityPopup);
 

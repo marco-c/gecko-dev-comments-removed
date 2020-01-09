@@ -3548,7 +3548,7 @@ window._gBrowser = {
     
     SitePermissions.clearTemporaryPermissions(browser);
     
-    delete browser.canceledAuthenticationPromptCounter;
+    delete browser.authPromptAbuseCounter;
     PanelMultiView.hidePopup(gIdentityHandler._identityPopup);
     browser.reload();
   },
