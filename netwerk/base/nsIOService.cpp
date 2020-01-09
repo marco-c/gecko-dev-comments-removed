@@ -23,7 +23,6 @@
 #include "nsNetUtil.h"
 #include "nsNetCID.h"
 #include "nsCRT.h"
-#include "nsSecCheckWrapChannel.h"
 #include "nsSimpleNestedURI.h"
 #include "nsTArray.h"
 #include "nsIConsoleService.h"
@@ -935,39 +934,10 @@ nsresult nsIOService::NewChannelFromURIWithProxyFlagsInternal(
   if (pph) {
     rv = pph->NewProxiedChannel2(aURI, nullptr, aProxyFlags, aProxyURI,
                                  aLoadInfo, getter_AddRefs(channel));
-    
-    
-    if (NS_FAILED(rv)) {
-      rv = pph->NewProxiedChannel(aURI, nullptr, aProxyFlags, aProxyURI,
-                                  getter_AddRefs(channel));
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      
-      
-      
-      channel = nsSecCheckWrapChannel::MaybeWrap(channel, aLoadInfo);
-    }
   } else {
     rv = handler->NewChannel2(aURI, aLoadInfo, getter_AddRefs(channel));
-    
-    
-    if (rv == NS_ERROR_NOT_IMPLEMENTED ||
-        rv == NS_ERROR_XPC_JSOBJECT_HAS_NO_FUNCTION_NAMED) {
-      LOG(("NewChannel2 not implemented rv=%" PRIx32
-           ". Falling back to NewChannel\n",
-           static_cast<uint32_t>(rv)));
-      rv = handler->NewChannel(aURI, getter_AddRefs(channel));
-      if (NS_FAILED(rv)) {
-        return rv;
-      }
-      
-      
-      
-      channel = nsSecCheckWrapChannel::MaybeWrap(channel, aLoadInfo);
-    } else if (NS_FAILED(rv)) {
-      return rv;
-    }
   }
+  NS_ENSURE_SUCCESS(rv, rv);
 
   
   if (aLoadInfo) {
