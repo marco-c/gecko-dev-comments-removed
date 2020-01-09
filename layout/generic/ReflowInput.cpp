@@ -1443,7 +1443,7 @@ void ReflowInput::CalculateHypotheticalPosition(
   
   
   nsBlockFrame* blockFrame =
-      nsLayoutUtils::GetAsBlock(containingBlock->GetContentInsertionFrame());
+      do_QueryFrame(containingBlock->GetContentInsertionFrame());
   if (blockFrame) {
     
     

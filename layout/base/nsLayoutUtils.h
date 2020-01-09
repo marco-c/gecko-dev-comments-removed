@@ -1348,12 +1348,6 @@ class nsLayoutUtils {
   
 
 
-
-  static nsBlockFrame* GetAsBlock(nsIFrame* aFrame);
-
-  
-
-
   static bool IsNonWrapperBlock(nsIFrame* aFrame);
 
   
