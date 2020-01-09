@@ -1,13 +1,13 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsThreadUtils.h"
 #include "mozilla/PerformanceUtils.h"
 #include "mozilla/dom/DocGroup.h"
-#include "mozilla/dom/TabChild.h"
+#include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/WorkerDebugger.h"
 #include "mozilla/dom/WorkerDebuggerManager.h"
 
@@ -26,7 +26,7 @@ namespace mozilla {
 nsTArray<RefPtr<PerformanceInfoPromise>> CollectPerformanceInfo() {
   nsTArray<RefPtr<PerformanceInfoPromise>> promises;
 
-  
+  // collecting ReportPerformanceInfo from all WorkerDebugger instances
   RefPtr<mozilla::dom::WorkerDebuggerManager> wdm =
       WorkerDebuggerManager::GetOrCreate();
   if (NS_WARN_IF(!wdm)) {
@@ -38,13 +38,13 @@ nsTArray<RefPtr<PerformanceInfoPromise>> CollectPerformanceInfo() {
     promises.AppendElement(debugger->ReportPerformanceInfo());
   }
 
-  
+  // collecting ReportPerformanceInfo from all DocGroup instances
   LinkedList<TabGroup>* tabGroups = TabGroup::GetTabGroupList();
 
-  
+  // if GetTabGroupList() returns null, we don't have any tab group
   if (tabGroups) {
-    
-    
+    // Per Bug 1519038, we want to collect DocGroup objects
+    // and use them outside the iterator, to avoid a read-write conflict.
     nsTArray<RefPtr<DocGroup>> docGroups;
     for (TabGroup* tabGroup = tabGroups->getFirst(); tabGroup;
          tabGroup =
@@ -63,19 +63,19 @@ nsTArray<RefPtr<PerformanceInfoPromise>> CollectPerformanceInfo() {
 void AddWindowTabSizes(nsGlobalWindowOuter* aWindow, nsTabSizes* aSizes) {
   Document* document = aWindow->GetDocument();
   if (document && document->GetCachedSizes(aSizes)) {
-    
+    // We got a cached version
     return;
   }
-  
-  
-  
+  // We measure the sizes on a fresh nsTabSizes instance
+  // because we want to cache the value and aSizes might
+  // already have some values from other windows.
   nsTabSizes sizes;
 
-  
+  // Measure the window.
   SizeOfState state(moz_malloc_size_of);
   nsWindowSizes windowSizes(state);
   aWindow->AddSizeOfIncludingThis(windowSizes);
-  
+  // Measure the inner window, if there is one.
   nsGlobalWindowInner* inner = aWindow->GetCurrentInnerWindowInternal();
   if (inner != nullptr) {
     inner->AddSizeOfIncludingThis(windowSizes);
@@ -90,12 +90,12 @@ void AddWindowTabSizes(nsGlobalWindowOuter* aWindow, nsTabSizes* aSizes) {
 }
 
 nsresult GetTabSizes(nsGlobalWindowOuter* aWindow, nsTabSizes* aSizes) {
-  
+  // Add the window (and inner window) sizes. Might be cached.
   AddWindowTabSizes(aWindow, aSizes);
 
   nsDOMWindowList* frames = aWindow->GetFrames();
   uint32_t length = frames->GetLength();
-  
+  // Measure this window's descendents.
   for (uint32_t i = 0; i < length; i++) {
     nsCOMPtr<nsPIDOMWindowOuter> child = frames->IndexedGetter(i);
     NS_ENSURE_STATE(child);
@@ -109,7 +109,7 @@ nsresult GetTabSizes(nsGlobalWindowOuter* aWindow, nsTabSizes* aSizes) {
 RefPtr<MemoryPromise> CollectMemoryInfo(
     const nsCOMPtr<nsPIDOMWindowOuter>& aWindow,
     const RefPtr<AbstractThread>& aEventTarget) {
-  
+  // Getting Dom sizes. -- XXX should we reimplement GetTabSizes to async here ?
   nsGlobalWindowOuter* window = nsGlobalWindowOuter::Cast(aWindow);
   nsTabSizes sizes;
   nsresult rv = GetTabSizes(window, &sizes);
@@ -117,14 +117,14 @@ RefPtr<MemoryPromise> CollectMemoryInfo(
     return MemoryPromise::CreateAndReject(rv, __func__);
   }
 
-  
+  // Getting GC Heap Usage
   JSObject* obj = window->GetGlobalJSObject();
   uint64_t GCHeapUsage = 0;
   if (obj != nullptr) {
     GCHeapUsage = js::GetGCHeapUsageForObjectZone(obj);
   }
 
-  
+  // Getting Media sizes.
   return GetMediaMemorySizes()->Then(
       aEventTarget, __func__,
       [GCHeapUsage, sizes](const MediaMemoryInfo& media) {
@@ -138,4 +138,4 @@ RefPtr<MemoryPromise> CollectMemoryInfo(
       });
 }
 
-}  
+}  // namespace mozilla

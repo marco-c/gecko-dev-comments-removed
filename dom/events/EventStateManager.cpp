@@ -24,7 +24,7 @@
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/FrameLoaderBinding.h"
 #include "mozilla/dom/MouseEventBinding.h"
-#include "mozilla/dom/TabChild.h"
+#include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/UIEvent.h"
 #include "mozilla/dom/UIEventBinding.h"
@@ -1031,7 +1031,7 @@ bool EventStateManager::LookForAccessKeyAndExecute(
           
           nsIDocShell* docShell = mPresContext->GetDocShell();
           nsCOMPtr<nsIBrowserChild> child =
-              docShell ? docShell->GetTabChild() : nullptr;
+              docShell ? docShell->GetBrowserChild() : nullptr;
           if (child) {
             child->SendRequestFocus(false);
           }
@@ -2041,8 +2041,8 @@ nsresult EventStateManager::GetContentViewer(nsIContentViewer** aCv) {
   nsCOMPtr<nsPIDOMWindowOuter> rootWindow = window->GetPrivateRoot();
   if (!rootWindow) return NS_ERROR_FAILURE;
 
-  TabChild* tabChild = TabChild::GetFrom(rootWindow);
-  if (!tabChild) {
+  BrowserChild* browserChild = BrowserChild::GetFrom(rootWindow);
+  if (!browserChild) {
     nsIFocusManager* fm = nsFocusManager::GetFocusManager();
     if (!fm) return NS_ERROR_FAILURE;
 
@@ -2050,7 +2050,7 @@ nsresult EventStateManager::GetContentViewer(nsIContentViewer** aCv) {
     fm->GetActiveWindow(getter_AddRefs(activeWindow));
     if (rootWindow != activeWindow) return NS_OK;
   } else {
-    if (!tabChild->ParentIsActive()) return NS_OK;
+    if (!browserChild->ParentIsActive()) return NS_OK;
   }
 
   nsCOMPtr<nsPIDOMWindowOuter> contentWindow =

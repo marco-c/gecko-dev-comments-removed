@@ -967,7 +967,7 @@ class nsDocShell final : public nsDocLoader,
   RefPtr<mozilla::dom::BrowsingContext> mBrowsingContext;
 
   
-  nsWeakPtr mTabChild;
+  nsWeakPtr mBrowserChild;
 
   
   nsIntRect mBounds;

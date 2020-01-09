@@ -1299,7 +1299,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   nsCOMPtr<nsIPrincipal> mDocumentStoragePrincipal;
 
   
-  nsCOMPtr<nsIBrowserChild> mTabChild;
+  nsCOMPtr<nsIBrowserChild> mBrowserChild;
 
   uint32_t mSuspendDepth;
   uint32_t mFreezeDepth;

@@ -1,12 +1,12 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set sw=2 ts=8 et tw=80 : */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "WebSocketLog.h"
 #include "base/compiler_specific.h"
-#include "mozilla/dom/TabChild.h"
+#include "mozilla/dom/BrowserChild.h"
 #include "mozilla/net/NeckoChild.h"
 #include "WebSocketChannelChild.h"
 #include "nsContentUtils.h"
@@ -36,7 +36,7 @@ NS_IMETHODIMP_(MozExternalRefCountType) WebSocketChannelChild::Release() {
   }
 
   if (mRefCnt == 0) {
-    mRefCnt = 1; 
+    mRefCnt = 1; /* stabilize */
     delete this;
     return 0;
   }
@@ -174,7 +174,7 @@ class EventTargetDispatcher : public ChannelEvent {
   }
 
  private:
-  
+  // The lifetime of the child is ensured by ChannelEventQueue.
   WebSocketChannelChild* mChild;
   nsAutoPtr<WebSocketEvent> mWebSocketEvent;
   nsCOMPtr<nsIEventTarget> mEventTarget;
@@ -425,15 +425,16 @@ WebSocketChannelChild::AsyncOpen(nsIURI* aURI, const nsACString& aOrigin,
   MOZ_ASSERT(aListener && !mListenerMT,
              "Invalid state for WebSocketChannelChild::AsyncOpen");
 
-  mozilla::dom::TabChild* tabChild = nullptr;
-  nsCOMPtr<nsIBrowserChild> iTabChild;
+  mozilla::dom::BrowserChild* browserChild = nullptr;
+  nsCOMPtr<nsIBrowserChild> iBrowserChild;
   NS_QueryNotificationCallbacks(mCallbacks, mLoadGroup,
                                 NS_GET_IID(nsIBrowserChild),
-                                getter_AddRefs(iTabChild));
-  if (iTabChild) {
-    tabChild = static_cast<mozilla::dom::TabChild*>(iTabChild.get());
+                                getter_AddRefs(iBrowserChild));
+  if (iBrowserChild) {
+    browserChild =
+        static_cast<mozilla::dom::BrowserChild*>(iBrowserChild.get());
   }
-  if (MissingRequiredTabChild(tabChild, "websocket")) {
+  if (MissingRequiredBrowserChild(browserChild, "websocket")) {
     return NS_ERROR_ILLEGAL_VALUE;
   }
 
@@ -442,7 +443,7 @@ WebSocketChannelChild::AsyncOpen(nsIURI* aURI, const nsACString& aOrigin,
     return NS_ERROR_FAILURE;
   }
 
-  
+  // Corresponding release in DeallocPWebSocket
   AddIPDLReference();
 
   Maybe<URIParams> uri;
@@ -465,11 +466,11 @@ WebSocketChannelChild::AsyncOpen(nsIURI* aURI, const nsACString& aOrigin,
     transportProvider = Some(ipcChild);
   }
 
-  
+  // This must be called before sending constructor message.
   SetupNeckoTarget();
 
   gNeckoChild->SendPWebSocketConstructor(
-      this, tabChild, IPC::SerializedLoadContext(this), mSerial);
+      this, browserChild, IPC::SerializedLoadContext(this), mSerial);
   if (!SendAsyncOpen(uri, nsCString(aOrigin), aInnerWindowID, mProtocol,
                      mEncrypted, mPingInterval, mClientSetPingInterval,
                      mPingResponseTimeout, mClientSetPingTimeout, loadInfoArgs,
@@ -684,5 +685,5 @@ bool WebSocketChannelChild::IsOnTargetThread() {
   return NS_FAILED(rv) ? false : isOnTargetThread;
 }
 
-}  
-}  
+}  // namespace net
+}  // namespace mozilla

@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsContentSecurityManager.h"
 #include "nsEscape.h"
@@ -24,7 +24,7 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/nsMixedContentBlocker.h"
-#include "mozilla/dom/TabChild.h"
+#include "mozilla/dom/BrowserChild.h"
 #include "mozilla/Components.h"
 #include "mozilla/Logging.h"
 #include "xpcpublic.h"
@@ -34,17 +34,17 @@ NS_IMPL_ISUPPORTS(nsContentSecurityManager, nsIContentSecurityManager,
 
 static mozilla::LazyLogModule sCSMLog("CSMLog");
 
-
+/* static */
 bool nsContentSecurityManager::AllowTopLevelNavigationToDataURI(
     nsIChannel* aChannel) {
-  
-  
-  
-  
-  
-  
-  
-  
+  // Let's block all toplevel document navigations to a data: URI.
+  // In all cases where the toplevel document is navigated to a
+  // data: URI the triggeringPrincipal is a codeBasePrincipal, or
+  // a NullPrincipal. In other cases, e.g. typing a data: URL into
+  // the URL-Bar, the triggeringPrincipal is a SystemPrincipal;
+  // we don't want to block those loads. Only exception, loads coming
+  // from an external applicaton (e.g. Thunderbird) don't load
+  // using a codeBasePrincipal, but we want to block those loads.
   if (!mozilla::net::nsIOService::BlockToplevelDataUriNavigations()) {
     return true;
   }
@@ -54,8 +54,8 @@ bool nsContentSecurityManager::AllowTopLevelNavigationToDataURI(
     return true;
   }
   if (loadInfo->GetForceAllowDataURI()) {
-    
-    
+    // if the loadinfo explicitly allows the data URI navigation, let's allow it
+    // now
     return true;
   }
   nsCOMPtr<nsIURI> uri;
@@ -75,18 +75,18 @@ bool nsContentSecurityManager::AllowTopLevelNavigationToDataURI(
   rv = nsDataHandler::ParseURI(spec, contentType, nullptr, base64, nullptr);
   NS_ENSURE_SUCCESS(rv, true);
 
-  
+  // Whitelist data: images as long as they are not SVGs
   if (StringBeginsWith(contentType, NS_LITERAL_CSTRING("image/")) &&
       !contentType.EqualsLiteral("image/svg+xml")) {
     return true;
   }
-  
+  // Whitelist all plain text types as well as data: PDFs.
   if (nsContentUtils::IsPlainTextType(contentType) ||
       contentType.EqualsLiteral("application/pdf")) {
     return true;
   }
-  
-  
+  // Redirecting to a toplevel data: URI is not allowed, hence we make
+  // sure the RedirectChain is empty.
   if (!loadInfo->GetLoadTriggeredFromExternal() &&
       nsContentUtils::IsSystemPrincipal(loadInfo->TriggeringPrincipal()) &&
       loadInfo->RedirectChain().IsEmpty()) {
@@ -99,10 +99,10 @@ bool nsContentSecurityManager::AllowTopLevelNavigationToDataURI(
     dataSpec.AppendLiteral("...");
   }
   nsCOMPtr<nsISupports> context = loadInfo->ContextForTopLevelLoad();
-  nsCOMPtr<nsIBrowserChild> tabChild = do_QueryInterface(context);
+  nsCOMPtr<nsIBrowserChild> browserChild = do_QueryInterface(context);
   nsCOMPtr<Document> doc;
-  if (tabChild) {
-    doc = static_cast<mozilla::dom::TabChild*>(tabChild.get())
+  if (browserChild) {
+    doc = static_cast<mozilla::dom::BrowserChild*>(browserChild.get())
               ->GetTopLevelDocument();
   }
   NS_ConvertUTF8toUTF16 specUTF16(NS_UnescapeURL(dataSpec));
@@ -114,7 +114,7 @@ bool nsContentSecurityManager::AllowTopLevelNavigationToDataURI(
   return false;
 }
 
-
+/* static */
 bool nsContentSecurityManager::AllowInsecureRedirectToDataURI(
     nsIChannel* aNewChannel) {
   nsCOMPtr<nsILoadInfo> loadInfo = aNewChannel->LoadInfo();
@@ -133,9 +133,9 @@ bool nsContentSecurityManager::AllowInsecureRedirectToDataURI(
     return true;
   }
 
-  
-  
-  
+  // Web Extensions are exempt from that restriction and are allowed to redirect
+  // a channel to a data: URI. When a web extension redirects a channel, we set
+  // a flag on the loadInfo which allows us to identify such redirects here.
   if (loadInfo->GetAllowInsecureRedirectToDataURI()) {
     return true;
   }
@@ -160,7 +160,7 @@ bool nsContentSecurityManager::AllowInsecureRedirectToDataURI(
   return false;
 }
 
-
+/* static */
 void nsContentSecurityManager::AssertEvalNotUsingSystemPrincipal(
     nsIPrincipal* subjectPrincipal, JSContext* cx) {
   if (!subjectPrincipal->IsSystemPrincipal()) {
@@ -187,8 +187,8 @@ void nsContentSecurityManager::AssertEvalNotUsingSystemPrincipal(
 
     nsAutoCString fileName;
     fileName = nsAutoCString(scriptFilename.get());
-    
-    
+    // Extract file name alone if scriptFilename contains line number
+    // separated by multiple space delimiters in few cases.
     int32_t fileNameIndex = fileName.FindChar(' ');
     if (fileNameIndex != -1) {
       fileName = Substring(fileName, 0, fileNameIndex);
@@ -205,12 +205,12 @@ void nsContentSecurityManager::AssertEvalNotUsingSystemPrincipal(
   MOZ_ASSERT(false, "do not use eval with system privileges");
 }
 
-
+/* static */
 nsresult nsContentSecurityManager::CheckFTPSubresourceLoad(
     nsIChannel* aChannel) {
-  
-  
-  
+  // We dissallow using FTP resources as a subresource almost everywhere.
+  // The only valid way to use FTP resources is loading it as
+  // a top level document.
   if (!mozilla::net::nsIOService::BlockFTPSubresources()) {
     return NS_OK;
   }
@@ -218,15 +218,15 @@ nsresult nsContentSecurityManager::CheckFTPSubresourceLoad(
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
   nsContentPolicyType type = loadInfo->GetExternalContentPolicyType();
 
-  
-  
+  // Allow top-level FTP documents and save-as download of FTP files on
+  // HTTP pages.
   if (type == nsIContentPolicy::TYPE_DOCUMENT ||
       type == nsIContentPolicy::TYPE_SAVEAS_DOWNLOAD) {
     return NS_OK;
   }
 
-  
-  
+  // Allow the system principal to load everything. This is meant to
+  // temporarily fix downloads and pdf.js.
   nsIPrincipal* triggeringPrincipal = loadInfo->TriggeringPrincipal();
   if (nsContentUtils::IsSystemPrincipal(triggeringPrincipal)) {
     return NS_OK;
@@ -244,7 +244,7 @@ nsresult nsContentSecurityManager::CheckFTPSubresourceLoad(
     return NS_OK;
   }
 
-  
+  // Allow loading FTP subresources in FTP documents, like XML.
   nsCOMPtr<nsIURI> triggeringURI;
   triggeringPrincipal->GetURI(getter_AddRefs(triggeringURI));
   if (triggeringURI && nsContentUtils::SchemeIs(triggeringURI, "ftp")) {
@@ -272,10 +272,10 @@ nsresult nsContentSecurityManager::CheckFTPSubresourceLoad(
 static nsresult ValidateSecurityFlags(nsILoadInfo* aLoadInfo) {
   nsSecurityFlags securityMode = aLoadInfo->GetSecurityMode();
 
-  
-  
-  
-  
+  // We should never perform a security check on a loadInfo that uses the flag
+  // SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK, because that is only used for
+  // temporary loadInfos used for explicit nsIContentPolicy checks, but never be
+  // set as a security flag on an actual channel.
   if (securityMode != nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_INHERITS &&
       securityMode != nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED &&
       securityMode != nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS &&
@@ -287,14 +287,14 @@ static nsresult ValidateSecurityFlags(nsILoadInfo* aLoadInfo) {
     return NS_ERROR_FAILURE;
   }
 
-  
+  // all good, found the right security flags
   return NS_OK;
 }
 
 static bool IsImageLoadInEditorAppType(nsILoadInfo* aLoadInfo) {
-  
-  
-  
+  // Editor apps get special treatment here, editors can load images
+  // from anywhere.  This allows editor to insert images from file://
+  // into documents that are being edited.
   nsContentPolicyType type = aLoadInfo->InternalContentPolicyType();
   if (type != nsIContentPolicy::TYPE_INTERNAL_IMAGE &&
       type != nsIContentPolicy::TYPE_INTERNAL_IMAGE_PRELOAD &&
@@ -329,7 +329,7 @@ static bool IsImageLoadInEditorAppType(nsILoadInfo* aLoadInfo) {
 }
 
 static nsresult DoCheckLoadURIChecks(nsIURI* aURI, nsILoadInfo* aLoadInfo) {
-  
+  // Bug 1228117: determine the correct security policy for DTD loads
   if (aLoadInfo->GetExternalContentPolicyType() == nsIContentPolicy::TYPE_DTD) {
     return NS_OK;
   }
@@ -346,9 +346,9 @@ static nsresult DoCheckLoadURIChecks(nsIURI* aURI, nsILoadInfo* aLoadInfo) {
     flags |= nsIScriptSecurityManager::DISALLOW_SCRIPT;
   }
 
-  
-  
-  
+  // Only call CheckLoadURIWithPrincipal() using the TriggeringPrincipal and not
+  // the LoadingPrincipal when SEC_ALLOW_CROSS_ORIGIN_* security flags are set,
+  // to allow, e.g. user stylesheets to load chrome:// URIs.
   return nsContentUtils::GetSecurityManager()->CheckLoadURIWithPrincipal(
       aLoadInfo->TriggeringPrincipal(), aURI, flags);
 }
@@ -366,7 +366,7 @@ static nsresult DoSOPChecks(nsIURI* aURI, nsILoadInfo* aLoadInfo,
   if (aLoadInfo->GetAllowChrome() &&
       (URIHasFlags(aURI, nsIProtocolHandler::URI_IS_UI_RESOURCE) ||
        nsContentUtils::SchemeIs(aURI, "moz-safe-about"))) {
-    
+    // UI resources are allowed.
     return DoCheckLoadURIChecks(aURI, aLoadInfo);
   }
 
@@ -380,24 +380,24 @@ static nsresult DoCORSChecks(nsIChannel* aChannel, nsILoadInfo* aLoadInfo,
   MOZ_RELEASE_ASSERT(aInAndOutListener,
                      "can not perform CORS checks without a listener");
 
-  
-  
-  
+  // No need to set up CORS if TriggeringPrincipal is the SystemPrincipal.
+  // For example, allow user stylesheets to load XBL from external files
+  // without requiring CORS.
   if (nsContentUtils::IsSystemPrincipal(aLoadInfo->TriggeringPrincipal())) {
     return NS_OK;
   }
 
-  
-  
-  
+  // We use the triggering principal here, rather than the loading principal
+  // to ensure that anonymous CORS content in the browser resources and in
+  // WebExtensions is allowed to load.
   nsIPrincipal* principal = aLoadInfo->TriggeringPrincipal();
   RefPtr<nsCORSListenerProxy> corsListener = new nsCORSListenerProxy(
       aInAndOutListener, principal,
       aLoadInfo->GetCookiePolicy() == nsILoadInfo::SEC_COOKIES_INCLUDE);
-  
-  
-  
-  
+  // XXX: @arg: DataURIHandling::Allow
+  // lets use  DataURIHandling::Allow for now and then decide on callsite basis.
+  // see also:
+  // http://mxr.mozilla.org/mozilla-central/source/dom/security/nsCORSListenerProxy.h#33
   nsresult rv = corsListener->Init(aChannel, DataURIHandling::Allow);
   NS_ENSURE_SUCCESS(rv, rv);
   aInAndOutListener = corsListener;
@@ -468,7 +468,7 @@ static nsresult DoContentSecurityChecks(nsIChannel* aChannel,
     }
 
     case nsIContentPolicy::TYPE_XMLHTTPREQUEST: {
-      
+      // alias nsIContentPolicy::TYPE_DATAREQUEST:
 #ifdef DEBUG
       {
         nsCOMPtr<nsINode> node = aLoadInfo->LoadingNode();
@@ -476,8 +476,8 @@ static nsresult DoContentSecurityChecks(nsIChannel* aChannel,
                    "type_xml requires requestingContext of type Document");
       }
 #endif
-      
-      
+      // We're checking for the external TYPE_XMLHTTPREQUEST here in case
+      // an addon creates a request with that type.
       if (internalContentPolicyType ==
               nsIContentPolicy::TYPE_INTERNAL_XMLHTTPREQUEST ||
           internalContentPolicyType == nsIContentPolicy::TYPE_XMLHTTPREQUEST) {
@@ -538,8 +538,8 @@ static nsresult DoContentSecurityChecks(nsIChannel* aChannel,
     }
 
     case nsIContentPolicy::TYPE_WEBSOCKET: {
-      
-      
+      // Websockets have to use the proxied URI:
+      // ws:// instead of http:// for CSP checks
       nsCOMPtr<nsIHttpChannelInternal> httpChannelInternal =
           do_QueryInterface(aChannel);
       MOZ_ASSERT(httpChannelInternal);
@@ -606,7 +606,7 @@ static nsresult DoContentSecurityChecks(nsIChannel* aChannel,
     }
 
     default:
-      
+      // nsIContentPolicy::TYPE_INVALID
       MOZ_ASSERT(false,
                  "can not perform security check without a valid contentType");
   }
@@ -619,7 +619,7 @@ static nsresult DoContentSecurityChecks(nsIChannel* aChannel,
     if ((NS_SUCCEEDED(rv) && shouldLoad == nsIContentPolicy::REJECT_TYPE) &&
         (contentPolicyType == nsIContentPolicy::TYPE_DOCUMENT ||
          contentPolicyType == nsIContentPolicy::TYPE_SUBDOCUMENT)) {
-      
+      // for docshell loads we might have to return SHOW_ALT.
       return NS_ERROR_CONTENT_BLOCKED_SHOW_ALT;
     }
     return NS_ERROR_CONTENT_BLOCKED;
@@ -722,7 +722,7 @@ static void DebugDoContentSecurityCheck(nsIChannel* aChannel,
                                         nsILoadInfo* aLoadInfo) {
   nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(aChannel));
 
-  
+  // we only log http channels, unless loglevel is 5.
   if (httpChannel || MOZ_LOG_TEST(sCSMLog, LogLevel::Verbose)) {
     nsCOMPtr<nsIURI> channelURI;
     nsAutoCString channelSpec;
@@ -736,7 +736,7 @@ static void DebugDoContentSecurityCheck(nsIChannel* aChannel,
     MOZ_LOG(sCSMLog, LogLevel::Debug,
             ("  channelURI: %s\n", channelSpec.get()));
 
-    
+    // Log HTTP-specific things
     if (httpChannel) {
       nsresult rv;
       rv = httpChannel->GetRequestMethod(channelMethod);
@@ -746,7 +746,7 @@ static void DebugDoContentSecurityCheck(nsIChannel* aChannel,
       }
     }
 
-    
+    // Log Principals
     nsCOMPtr<nsIPrincipal> requestPrincipal = aLoadInfo->TriggeringPrincipal();
     LogPrincipal(aLoadInfo->LoadingPrincipal(),
                  NS_LITERAL_STRING("loadingPrincipal"));
@@ -754,7 +754,7 @@ static void DebugDoContentSecurityCheck(nsIChannel* aChannel,
     LogPrincipal(aLoadInfo->PrincipalToInherit(),
                  NS_LITERAL_STRING("principalToInherit"));
 
-    
+    // Log Redirect Chain
     MOZ_LOG(sCSMLog, LogLevel::Debug, ("  RedirectChain:\n"));
     for (nsIRedirectHistoryEntry* redirectHistoryEntry :
          aLoadInfo->RedirectChain()) {
@@ -776,7 +776,7 @@ static void DebugDoContentSecurityCheck(nsIChannel* aChannel,
             ("  initalSecurityChecksDone: %s\n",
              aLoadInfo->GetInitialSecurityCheckDone() ? "true" : "false"));
 
-    
+    // Log CSPrequestPrincipal
     nsCOMPtr<nsIContentSecurityPolicy> csp;
     requestPrincipal->GetCsp(getter_AddRefs(csp));
     if (csp) {
@@ -791,7 +791,7 @@ static void DebugDoContentSecurityCheck(nsIChannel* aChannel,
       }
     }
 
-    
+    // Security Flags
     MOZ_LOG(sCSMLog, LogLevel::Debug, ("  securityFlags: "));
     LogSecurityFlags(aLoadInfo->GetSecurityFlags());
     MOZ_LOG(sCSMLog, LogLevel::Debug, ("}\n\n"));
@@ -799,13 +799,13 @@ static void DebugDoContentSecurityCheck(nsIChannel* aChannel,
 }
 
 #if defined(DEBUG) || defined(FUZZING)
-
-
+// Assert that we never use the SystemPrincipal to load remote documents
+// i.e., HTTP, HTTPS, FTP URLs
 static void AssertSystemPrincipalMustNotLoadRemoteDocuments(
     nsIChannel* aChannel) {
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
 
-  
+  // bail out, if we're not loading with a SystemPrincipal
   if (!nsContentUtils::IsSystemPrincipal(loadInfo->LoadingPrincipal())) {
     return;
   }
@@ -817,23 +817,23 @@ static void AssertSystemPrincipalMustNotLoadRemoteDocuments(
   }
   nsCOMPtr<nsIURI> finalURI;
   NS_GetFinalChannelURI(aChannel, getter_AddRefs(finalURI));
-  
+  // bail out, if URL isn't pointing to remote resource
   if (!nsContentUtils::SchemeIs(finalURI, "http") &&
       !nsContentUtils::SchemeIs(finalURI, "https") &&
       !nsContentUtils::SchemeIs(finalURI, "ftp")) {
     return;
   }
 
-  
-  
+  // FIXME The discovery feature in about:addons uses the SystemPrincpal.
+  // We should remove this exception with bug 1544011.
   static nsAutoCString sDiscoveryPrePath;
   static bool recvdPrefValue = false;
   if (!recvdPrefValue) {
     nsAutoCString discoveryURLString;
     Preferences::GetCString("extensions.webservice.discoverURL",
                             discoveryURLString);
-    
-    
+    // discoverURL is by default suffixed with parameters in path like
+    // /%LOCALE%/ so, we use the prePath for comparison
     nsCOMPtr<nsIURI> discoveryURL;
     NS_NewURI(getter_AddRefs(discoveryURL), discoveryURLString);
     if (discoveryURL) {
@@ -851,35 +851,35 @@ static void AssertSystemPrincipalMustNotLoadRemoteDocuments(
     bool disallowSystemPrincipalRemoteDocuments = Preferences::GetBool(
         "security.disallow_non_local_systemprincipal_in_tests");
     if (disallowSystemPrincipalRemoteDocuments) {
-      
+      // our own mochitest needs NS_ASSERTION instead of MOZ_ASSERT
       NS_ASSERTION(false, "SystemPrincipal must not load remote documents.");
       return;
     }
-    
+    // but other mochitest are exempt from this
     return;
   }
   MOZ_ASSERT(false, "SystemPrincipal must not load remote documents.");
 }
 #endif
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * Based on the security flags provided in the loadInfo of the channel,
+ * doContentSecurityCheck() performs the following content security checks
+ * before opening the channel:
+ *
+ * (1) Same Origin Policy Check (if applicable)
+ * (2) Allow Cross Origin but perform sanity checks whether a principal
+ *     is allowed to access the following URL.
+ * (3) Perform CORS check (if applicable)
+ * (4) ContentPolicy checks (Content-Security-Policy, Mixed Content, ...)
+ *
+ * @param aChannel
+ *    The channel to perform the security checks on.
+ * @param aInAndOutListener
+ *    The streamListener that is passed to channel->AsyncOpen() that is now
+ * potentially wrappend within nsCORSListenerProxy() and becomes the
+ * corsListener that now needs to be set as new streamListener on the channel.
+ */
 nsresult nsContentSecurityManager::doContentSecurityCheck(
     nsIChannel* aChannel, nsCOMPtr<nsIStreamListener>& aInAndOutListener) {
   NS_ENSURE_ARG(aChannel);
@@ -892,14 +892,14 @@ nsresult nsContentSecurityManager::doContentSecurityCheck(
   AssertSystemPrincipalMustNotLoadRemoteDocuments(aChannel);
 #endif
 
-  
-  
+  // if dealing with a redirected channel then we have already installed
+  // streamlistener and redirect proxies and so we are done.
   if (loadInfo->GetInitialSecurityCheckDone()) {
     return NS_OK;
   }
 
-  
-  
+  // make sure that only one of the five security flags is set in the loadinfo
+  // e.g. do not require same origin and allow cross origin at the same time
   nsresult rv = ValidateSecurityFlags(loadInfo);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -912,18 +912,18 @@ nsresult nsContentSecurityManager::doContentSecurityCheck(
   rv = CheckChannel(aChannel);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
+  // Perform all ContentPolicy checks (MixedContent, CSP, ...)
   rv = DoContentSecurityChecks(aChannel, loadInfo);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
+  // Apply this after CSP to match Chrome.
   rv = CheckFTPSubresourceLoad(aChannel);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
+  // now lets set the initalSecurityFlag for subsequent calls
   loadInfo->SetInitialSecurityCheckDone(true);
 
-  
+  // all security checks passed - lets allow the load
   return NS_OK;
 }
 
@@ -941,8 +941,8 @@ nsContentSecurityManager::AsyncOnChannelRedirect(
     return rv;
   }
 
-  
-  
+  // Also verify that the redirecting server is allowed to redirect to the
+  // given URI
   nsCOMPtr<nsIPrincipal> oldPrincipal;
   nsContentUtils::GetSecurityManager()->GetChannelResultPrincipal(
       aOldChannel, getter_AddRefs(oldPrincipal));
@@ -951,9 +951,9 @@ nsContentSecurityManager::AsyncOnChannelRedirect(
   Unused << NS_GetFinalChannelURI(aNewChannel, getter_AddRefs(newURI));
   NS_ENSURE_STATE(oldPrincipal && newURI);
 
-  
+  // Do not allow insecure redirects to data: URIs
   if (!AllowInsecureRedirectToDataURI(aNewChannel)) {
-    
+    // cancel the old channel and return an error
     aOldChannel->Cancel(NS_ERROR_CONTENT_BLOCKED);
     return NS_ERROR_CONTENT_BLOCKED;
   }
@@ -976,26 +976,26 @@ static void AddLoadFlags(nsIRequest* aRequest, nsLoadFlags aNewFlags) {
   aRequest->SetLoadFlags(flags);
 }
 
-
-
-
-
+/*
+ * Check that this channel passes all security checks. Returns an error code
+ * if this requesst should not be permitted.
+ */
 nsresult nsContentSecurityManager::CheckChannel(nsIChannel* aChannel) {
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
   nsCOMPtr<nsIURI> uri;
   nsresult rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(uri));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
+  // Handle cookie policies
   uint32_t cookiePolicy = loadInfo->GetCookiePolicy();
   if (cookiePolicy == nsILoadInfo::SEC_COOKIES_SAME_ORIGIN) {
-    
+    // We shouldn't have the SEC_COOKIES_SAME_ORIGIN flag for top level loads
     MOZ_ASSERT(loadInfo->GetExternalContentPolicyType() !=
                nsIContentPolicy::TYPE_DOCUMENT);
     nsIPrincipal* loadingPrincipal = loadInfo->LoadingPrincipal();
 
-    
-    
+    // It doesn't matter what we pass for the third, data-inherits, argument.
+    // Any protocol which inherits won't pay attention to cookies anyway.
     rv = loadingPrincipal->CheckMayLoad(uri, false, false);
     if (NS_FAILED(rv)) {
       AddLoadFlags(aChannel, nsIRequest::LOAD_ANONYMOUS);
@@ -1006,7 +1006,7 @@ nsresult nsContentSecurityManager::CheckChannel(nsIChannel* aChannel) {
 
   nsSecurityFlags securityMode = loadInfo->GetSecurityMode();
 
-  
+  // CORS mode is handled by nsCORSListenerProxy
   if (securityMode == nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS) {
     if (NS_HasBeenCrossOrigin(aChannel)) {
       loadInfo->MaybeIncreaseTainting(LoadTainting::CORS);
@@ -1014,8 +1014,8 @@ nsresult nsContentSecurityManager::CheckChannel(nsIChannel* aChannel) {
     return NS_OK;
   }
 
-  
-  
+  // Allow subresource loads if TriggeringPrincipal is the SystemPrincipal.
+  // For example, allow user stylesheets to load XBL from external files.
   if (nsContentUtils::IsSystemPrincipal(loadInfo->TriggeringPrincipal()) &&
       loadInfo->GetExternalContentPolicyType() !=
           nsIContentPolicy::TYPE_DOCUMENT &&
@@ -1024,7 +1024,7 @@ nsresult nsContentSecurityManager::CheckChannel(nsIChannel* aChannel) {
     return NS_OK;
   }
 
-  
+  // if none of the REQUIRE_SAME_ORIGIN flags are set, then SOP does not apply
   if ((securityMode == nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_INHERITS) ||
       (securityMode == nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED)) {
     rv = DoSOPChecks(uri, loadInfo, aChannel);
@@ -1037,21 +1037,21 @@ nsresult nsContentSecurityManager::CheckChannel(nsIChannel* aChannel) {
       NS_ENSURE_FALSE(loadInfo->GetDontFollowRedirects(), NS_ERROR_DOM_BAD_URI);
       loadInfo->MaybeIncreaseTainting(LoadTainting::Opaque);
     }
-    
-    
-    
-    
+    // Please note that DoCheckLoadURIChecks should only be enforced for
+    // cross origin requests. If the flag SEC_REQUIRE_CORS_DATA_INHERITS is set
+    // within the loadInfo, then then CheckLoadURIWithPrincipal is performed
+    // within nsCorsListenerProxy
     rv = DoCheckLoadURIChecks(uri, loadInfo);
     NS_ENSURE_SUCCESS(rv, rv);
-    
-    
-    
+    // TODO: Bug 1371237
+    // consider calling SetBlockedRequest in
+    // nsContentSecurityManager::CheckChannel
   }
 
   return NS_OK;
 }
 
-
+// ==== nsIContentSecurityManager implementation =====
 
 NS_IMETHODIMP
 nsContentSecurityManager::PerformSecurityCheck(
@@ -1077,8 +1077,8 @@ nsContentSecurityManager::IsOriginPotentiallyTrustworthy(
     return NS_OK;
   }
 
-  
-  
+  // The following implements:
+  // https://w3c.github.io/webappsec-secure-contexts/#is-origin-trustworthy
 
   *aIsTrustWorthy = false;
 
@@ -1101,19 +1101,19 @@ nsContentSecurityManager::IsOriginPotentiallyTrustworthy(
     return NS_OK;
   }
 
-  
-  
-  
+  // Blobs are expected to inherit their principal so we don't expect to have
+  // a codebase principal with scheme 'blob' here.  We can't assert that though
+  // since someone could mess with a non-blob URI to give it that scheme.
   NS_WARNING_ASSERTION(!scheme.EqualsLiteral("blob"),
                        "IsOriginPotentiallyTrustworthy ignoring blob scheme");
 
-  
-  
-  
-  
-  
-  
-  
+  // According to the specification, the user agent may choose to extend the
+  // trust to other, vendor-specific URL schemes. We use this for "resource:",
+  // which is technically a substituting protocol handler that is not limited to
+  // local resource mapping, but in practice is never mapped remotely as this
+  // would violate assumptions a lot of code makes.
+  // We use nsIProtocolHandler flags to determine which protocols we consider a
+  // priori authenticated.
   bool aPrioriAuthenticated = false;
   if (NS_FAILED(NS_URIChainHasFlags(
           uri, nsIProtocolHandler::URI_IS_POTENTIALLY_TRUSTWORTHY,
@@ -1138,10 +1138,10 @@ nsContentSecurityManager::IsOriginPotentiallyTrustworthy(
     return NS_OK;
   }
 
-  
-  
-  
-  
+  // If a host is not considered secure according to the default algorithm, then
+  // check to see if it has been whitelisted by the user.  We only apply this
+  // whitelist for network resources, i.e., those with scheme "http" or "ws".
+  // The pref should contain a comma-separated list of hostnames.
   if (scheme.EqualsLiteral("http") || scheme.EqualsLiteral("ws")) {
     nsAutoCString whitelist;
     nsresult rv =
@@ -1156,8 +1156,8 @@ nsContentSecurityManager::IsOriginPotentiallyTrustworthy(
         }
       }
     }
-    
-    
+    // Maybe we have a .onion URL. Treat it as whitelisted as well if
+    // `dom.securecontext.whitelist_onions` is `true`.
     if (nsMixedContentBlocker::IsPotentiallyTrustworthyOnion(uri)) {
       *aIsTrustWorthy = true;
       return NS_OK;

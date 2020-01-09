@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ContentProcessManager.h"
 #include "ContentParent.h"
@@ -14,7 +14,7 @@
 #include "nsPrintfCString.h"
 #include "nsIScriptSecurityManager.h"
 
-
+// XXX need another bug to move this to a common header.
 #ifdef DISABLE_ASSERTS_FOR_FUZZING
 #  define ASSERT_UNLESS_FUZZING(...) \
     do {                             \
@@ -26,10 +26,10 @@
 namespace mozilla {
 namespace dom {
 
-
+/* static */
 StaticAutoPtr<ContentProcessManager> ContentProcessManager::sSingleton;
 
-
+/* static */
 ContentProcessManager* ContentProcessManager::GetSingleton() {
   MOZ_ASSERT(XRE_IsParentProcess());
 
@@ -71,7 +71,7 @@ void ContentProcessManager::RemoveContentProcess(
 
 bool ContentProcessManager::GetParentProcessId(
     const ContentParentId& aChildCpId,
-     ContentParentId* aParentCpId) {
+    /*out*/ ContentParentId* aParentCpId) {
   MOZ_ASSERT(NS_IsMainThread());
 
   auto iter = mContentParentMap.find(aChildCpId);
@@ -128,8 +128,8 @@ bool ContentProcessManager::RegisterRemoteFrame(
 
   struct RemoteFrameInfo info;
 
-  
-  
+  // If it's a PopupIPCTabContext, it's the case that a BrowserChild want to
+  // open a new tab. aOpenerTabId has to be it's parent frame's opener id.
   if (aContext.type() == IPCTabContext::TPopupIPCTabContext) {
     auto remoteFrameIter = iter->second.mRemoteFrames.find(aOpenerTabId);
     if (remoteFrameIter == iter->second.mRemoteFrames.end()) {
@@ -182,7 +182,7 @@ void ContentProcessManager::UnregisterRemoteFrame(
 
 bool ContentProcessManager::GetTabContextByProcessAndTabId(
     const ContentParentId& aChildCpId, const TabId& aChildTabId,
-     TabContext* aTabContext) {
+    /*out*/ TabContext* aTabContext) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aTabContext);
 
@@ -224,8 +224,8 @@ nsTArray<TabContext> ContentProcessManager::GetTabContextByContentProcess(
 
 bool ContentProcessManager::GetRemoteFrameOpenerTabId(
     const ContentParentId& aChildCpId, const TabId& aChildTabId,
-     ContentParentId* aOpenerCpId,
-     TabId* aOpenerTabId) {
+    /*out*/ ContentParentId* aOpenerCpId,
+    /*out*/ TabId* aOpenerTabId) {
   MOZ_ASSERT(NS_IsMainThread());
   auto iter = mContentParentMap.find(aChildCpId);
   if (NS_WARN_IF(iter == mContentParentMap.end())) {
@@ -282,30 +282,30 @@ ContentProcessManager::GetTopLevelBrowserParentByProcessAndTabId(
     const ContentParentId& aChildCpId, const TabId& aChildTabId) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  
-  
+  // Used to keep the current ContentParentId and the current TabId
+  // in the iteration(do-while loop below)
   ContentParentId currentCpId;
   TabId currentTabId;
 
-  
+  // To get the ContentParentId and the BrowserParentId on upper level
   ContentParentId parentCpId = aChildCpId;
   TabId openerTabId = aChildTabId;
 
-  
-  
+  // Stop this loop when the upper ContentParentId of
+  // the current ContentParentId is chrome(ContentParentId = 0).
   do {
-    
+    // Update the current ContentParentId and TabId in iteration
     currentCpId = parentCpId;
     currentTabId = openerTabId;
 
-    
+    // Get the ContentParentId and TabId on upper level
     if (!GetRemoteFrameOpenerTabId(currentCpId, currentTabId, &parentCpId,
                                    &openerTabId)) {
       return nullptr;
     }
   } while (parentCpId);
 
-  
+  // Get the top level BrowserParent by the current ContentParentId and TabId
   return GetBrowserParentByProcessAndTabId(currentCpId, currentTabId);
 }
 
@@ -340,5 +340,5 @@ uint32_t ContentProcessManager::GetBrowserParentCountByProcessId(
   return iter->second.mRemoteFrames.size();
 }
 
-}  
-}  
+}  // namespace dom
+}  // namespace mozilla

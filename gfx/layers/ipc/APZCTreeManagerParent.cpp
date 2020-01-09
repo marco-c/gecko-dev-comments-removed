@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/layers/APZCTreeManagerParent.h"
 
@@ -142,12 +142,12 @@ mozilla::ipc::IPCResult APZCTreeManagerParent::RecvStartScrollbarDrag(
 
 mozilla::ipc::IPCResult APZCTreeManagerParent::RecvStartAutoscroll(
     const SLGuidAndRenderRoot& aGuid, const ScreenPoint& aAnchorLocation) {
-  
-  
-  
-  
-  
-  
+  // Unlike RecvStartScrollbarDrag(), this message comes from the parent
+  // process (via nsBaseWidget::mAPZC) rather than from the child process
+  // (via BrowserChild::mApzcTreeManager), so there is no need to check the
+  // layers id against mWrRootId (and in any case, it wouldn't match, because
+  // mWrRootId stores the parent process's layers id, while nsBaseWidget is
+  // sending the child process's layers id).
 
   mUpdater->RunOnControllerThread(
       UpdaterQueueSelector(mWrRootId),
@@ -160,7 +160,7 @@ mozilla::ipc::IPCResult APZCTreeManagerParent::RecvStartAutoscroll(
 
 mozilla::ipc::IPCResult APZCTreeManagerParent::RecvStopAutoscroll(
     const SLGuidAndRenderRoot& aGuid) {
-  
+  // See RecvStartAutoscroll() for why we don't check the layers id.
 
   mUpdater->RunOnControllerThread(
       UpdaterQueueSelector(mWrRootId),
@@ -188,9 +188,9 @@ bool APZCTreeManagerParent::IsGuidValid(const SLGuidAndRenderRoot& aGuid) {
     return false;
   }
   if (mWrRootId.mRenderRoot == wr::RenderRoot::Content) {
-    
-    
-    
+    // If this APZCTreeManagerParent is for a content process IPDL bridge, then
+    // all the render root references that come over the bridge must be for
+    // the content render root.
     if (aGuid.mRenderRoot != wr::RenderRoot::Content) {
       NS_ERROR("Unexpected render root");
       return false;
@@ -199,5 +199,5 @@ bool APZCTreeManagerParent::IsGuidValid(const SLGuidAndRenderRoot& aGuid) {
   return true;
 }
 
-}  
-}  
+}  // namespace layers
+}  // namespace mozilla

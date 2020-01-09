@@ -1,9 +1,9 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set sw=2 ts=8 et tw=80 : */
 
-
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_net_NeckoCommon_h
 #define mozilla_net_NeckoCommon_h
@@ -15,9 +15,9 @@
 
 namespace mozilla {
 namespace dom {
-class TabChild;
-}  
-}  
+class BrowserChild;
+}  // namespace dom
+}  // namespace mozilla
 
 #if defined(DEBUG)
 #  define NECKO_ERRORS_ARE_FATAL_DEFAULT true
@@ -25,9 +25,9 @@ class TabChild;
 #  define NECKO_ERRORS_ARE_FATAL_DEFAULT false
 #endif
 
-
-
-
+// TODO: Eventually remove NECKO_MAYBE_ABORT and DROP_DEAD (bug 575494).
+// Still useful for catching listener interfaces we don't yet support across
+// processes, etc.
 
 #define NECKO_MAYBE_ABORT(msg)                                  \
   do {                                                          \
@@ -65,8 +65,8 @@ class TabChild;
     NS_ENSURE_TRUE(!mWasOpened, NS_ERROR_ALREADY_OPENED);                      \
   } while (0)
 
-
-
+// Fails call if made after request observers (on-modify-request, etc) have been
+// called
 
 #define ENSURE_CALLED_BEFORE_CONNECT()                                  \
   do {                                                                  \
@@ -103,17 +103,17 @@ inline bool IsSocketProcessChild() {
 namespace NeckoCommonInternal {
 extern bool gSecurityDisabled;
 extern bool gRegisteredBool;
-}  
+}  // namespace NeckoCommonInternal
 
-
+// This should always return true unless xpcshell tests are being used
 inline bool UsingNeckoIPCSecurity() {
   return !NeckoCommonInternal::gSecurityDisabled;
 }
 
-inline bool MissingRequiredTabChild(mozilla::dom::TabChild* tabChild,
-                                    const char* context) {
+inline bool MissingRequiredBrowserChild(
+    mozilla::dom::BrowserChild* browserChild, const char* context) {
   if (UsingNeckoIPCSecurity()) {
-    if (!tabChild) {
+    if (!browserChild) {
       printf_stderr(
           "WARNING: child tried to open %s IPDL channel w/o "
           "security info\n",
@@ -124,7 +124,7 @@ inline bool MissingRequiredTabChild(mozilla::dom::TabChild* tabChild,
   return false;
 }
 
-}  
-}  
+}  // namespace net
+}  // namespace mozilla
 
-#endif  
+#endif  // mozilla_net_NeckoCommon_h

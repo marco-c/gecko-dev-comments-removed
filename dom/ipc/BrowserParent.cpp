@@ -86,7 +86,7 @@
 #include "StructuredCloneData.h"
 #include "ColorPickerParent.h"
 #include "FilePickerParent.h"
-#include "TabChild.h"
+#include "BrowserChild.h"
 #include "LoadContext.h"
 #include "nsNetCID.h"
 #include "nsIAuthInformation.h"
@@ -2587,9 +2587,9 @@ BrowserParent* BrowserParent::GetFrom(nsIContent* aContent) {
 
 
 TabId BrowserParent::GetTabIdFrom(nsIDocShell* docShell) {
-  nsCOMPtr<nsIBrowserChild> tabChild(TabChild::GetFrom(docShell));
-  if (tabChild) {
-    return static_cast<TabChild*>(tabChild.get())->GetTabId();
+  nsCOMPtr<nsIBrowserChild> browserChild(BrowserChild::GetFrom(docShell));
+  if (browserChild) {
+    return static_cast<BrowserChild*>(browserChild.get())->GetTabId();
   }
   return TabId(0);
 }

@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <algorithm>
 #include "TCPSocketChild.h"
@@ -10,14 +10,14 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/net/NeckoChild.h"
 #include "mozilla/dom/PBrowserChild.h"
-#include "mozilla/dom/TabChild.h"
+#include "mozilla/dom/BrowserChild.h"
 #include "nsITCPSocketCallback.h"
 #include "TCPSocket.h"
 #include "nsContentUtils.h"
-#include "js/ArrayBuffer.h"  
-#include "js/RootingAPI.h"   
-#include "js/Utility.h"  
-#include "js/Value.h"  
+#include "js/ArrayBuffer.h"  // JS::NewArrayBufferWithContents
+#include "js/RootingAPI.h"   // JS::MutableHandle
+#include "js/Utility.h"  // js::ArrayBufferContentsArena, JS::FreePolicy, js_pod_arena_malloc
+#include "js/Value.h"  // JS::Value
 
 using mozilla::net::gNeckoChild;
 
@@ -35,15 +35,15 @@ bool DeserializeArrayBuffer(JSContext* cx,
   JSObject* obj =
       JS::NewArrayBufferWithContents(cx, aBuffer.Length(), data.get());
   if (!obj) return false;
-  
-  
+  // If JS::NewArrayBufferWithContents returns non-null, the ownership of
+  // the data is transfered to obj, so we release the ownership here.
   mozilla::Unused << data.release();
 
   aVal.setObject(*obj);
   return true;
 }
 
-}  
+}  // namespace IPC
 
 namespace mozilla {
 namespace dom {
@@ -97,7 +97,7 @@ void TCPSocketChild::SendOpen(nsITCPSocketCallback* aSocket, bool aUseSSL,
 
   AddIPDLReference();
   gNeckoChild->SendPTCPSocketConstructor(this, mHost, mPort);
-  MOZ_ASSERT(mFilterName.IsEmpty());  
+  MOZ_ASSERT(mFilterName.IsEmpty());  // Currently nobody should use this
   PTCPSocketChild::SendOpen(mHost, mPort, aUseSSL, aUseArrayBuffers);
 }
 
@@ -208,7 +208,7 @@ void TCPSocketChild::GetPort(uint16_t* aPort) { *aPort = mPort; }
 
 nsresult TCPSocketChild::SetFilterName(const nsACString& aFilterName) {
   if (!mFilterName.IsEmpty()) {
-    
+    // filter name can only be set once.
     return NS_ERROR_FAILURE;
   }
   mFilterName = aFilterName;
@@ -220,5 +220,5 @@ mozilla::ipc::IPCResult TCPSocketChild::RecvRequestDelete() {
   return IPC_OK();
 }
 
-}  
-}  
+}  // namespace dom
+}  // namespace mozilla

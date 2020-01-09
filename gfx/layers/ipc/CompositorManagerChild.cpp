@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/layers/CompositorManagerChild.h"
 
@@ -12,9 +12,9 @@
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/GPUProcessManager.h"
-#include "mozilla/dom/ContentChild.h"  
-#include "mozilla/dom/TabChild.h"      
-#include "mozilla/dom/TabGroup.h"      
+#include "mozilla/dom/ContentChild.h"  // for ContentChild
+#include "mozilla/dom/BrowserChild.h"  // for BrowserChild
+#include "mozilla/dom/TabGroup.h"      // for TabGroup
 #include "VsyncSource.h"
 
 namespace mozilla {
@@ -24,14 +24,14 @@ using gfx::GPUProcessManager;
 
 StaticRefPtr<CompositorManagerChild> CompositorManagerChild::sInstance;
 
-
+/* static */
 bool CompositorManagerChild::IsInitialized(uint64_t aProcessToken) {
   MOZ_ASSERT(NS_IsMainThread());
   return sInstance && sInstance->CanSend() &&
          sInstance->mProcessToken == aProcessToken;
 }
 
-
+/* static */
 void CompositorManagerChild::InitSameProcess(uint32_t aNamespace,
                                              uint64_t aProcessToken) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -49,14 +49,14 @@ void CompositorManagerChild::InitSameProcess(uint32_t aNamespace,
     return;
   }
 
-  parent->BindComplete( true);
+  parent->BindComplete(/* aIsRoot */ true);
   sInstance = child.forget();
 }
 
-
+/* static */
 bool CompositorManagerChild::Init(Endpoint<PCompositorManagerChild>&& aEndpoint,
                                   uint32_t aNamespace,
-                                  uint64_t aProcessToken ) {
+                                  uint64_t aProcessToken /* = 0 */) {
   MOZ_ASSERT(NS_IsMainThread());
   if (sInstance) {
     MOZ_ASSERT(sInstance->mNamespace != aNamespace);
@@ -67,7 +67,7 @@ bool CompositorManagerChild::Init(Endpoint<PCompositorManagerChild>&& aEndpoint,
   return sInstance->CanSend();
 }
 
-
+/* static */
 void CompositorManagerChild::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread());
   CompositorBridgeChild::ShutDown();
@@ -80,19 +80,19 @@ void CompositorManagerChild::Shutdown() {
   sInstance = nullptr;
 }
 
-
+/* static */
 void CompositorManagerChild::OnGPUProcessLost(uint64_t aProcessToken) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  
-  
-  
+  // Since GPUChild and CompositorManagerChild will race on ActorDestroy, we
+  // cannot know if the CompositorManagerChild is about to be released but has
+  // yet to be. As such, we want to pre-emptively set mCanSend to false.
   if (sInstance && sInstance->mProcessToken == aProcessToken) {
     sInstance->mCanSend = false;
   }
 }
 
-
+/* static */
 bool CompositorManagerChild::CreateContentCompositorBridge(
     uint32_t aNamespace) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -112,7 +112,7 @@ bool CompositorManagerChild::CreateContentCompositorBridge(
   return true;
 }
 
-
+/* static */
 already_AddRefed<CompositorBridgeChild>
 CompositorManagerChild::CreateWidgetCompositorBridge(
     uint64_t aProcessToken, LayerManager* aLayerManager, uint32_t aNamespace,
@@ -143,7 +143,7 @@ CompositorManagerChild::CreateWidgetCompositorBridge(
   return bridge.forget();
 }
 
-
+/* static */
 already_AddRefed<CompositorBridgeChild>
 CompositorManagerChild::CreateSameProcessWidgetCompositorBridge(
     LayerManager* aLayerManager, uint32_t aNamespace) {
@@ -249,12 +249,13 @@ CompositorManagerChild::GetSpecificMessageEventTarget(const Message& aMsg) {
       return nullptr;
     }
 
-    TabChild* tabChild = TabChild::GetFrom(layersId);
-    if (!tabChild) {
+    BrowserChild* browserChild = BrowserChild::GetFrom(layersId);
+    if (!browserChild) {
       return nullptr;
     }
 
-    return do_AddRef(tabChild->TabGroup()->EventTargetFor(TaskCategory::Other));
+    return do_AddRef(
+        browserChild->TabGroup()->EventTargetFor(TaskCategory::Other));
   }
 
   if (aMsg.type() == PCompositorBridge::Msg_ParentAsyncMessages__ID) {
@@ -266,7 +267,7 @@ CompositorManagerChild::GetSpecificMessageEventTarget(const Message& aMsg) {
 
 void CompositorManagerChild::SetReplyTimeout() {
 #ifndef DEBUG
-  
+  // Add a timeout for release builds to kill GPU process when it hangs.
   if (XRE_IsParentProcess() && GPUProcessManager::Get()->GetGPUChild()) {
     int32_t timeout = gfxPrefs::GPUProcessIPCReplyTimeoutMs();
     SetReplyTimeoutMs(timeout);
@@ -291,5 +292,5 @@ mozilla::ipc::IPCResult CompositorManagerChild::RecvNotifyWebRenderError(
   return IPC_OK();
 }
 
-}  
-}  
+}  // namespace layers
+}  // namespace mozilla

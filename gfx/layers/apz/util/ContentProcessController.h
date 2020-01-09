@@ -14,7 +14,7 @@ class nsIObserver;
 namespace mozilla {
 
 namespace dom {
-class TabChild;
+class BrowserChild;
 }  
 
 namespace layers {
@@ -35,7 +35,7 @@ class APZChild;
 
 class ContentProcessController final : public GeckoContentController {
  public:
-  explicit ContentProcessController(const RefPtr<dom::TabChild>& aBrowser);
+  explicit ContentProcessController(const RefPtr<dom::BrowserChild>& aBrowser);
 
   
 
@@ -80,7 +80,7 @@ class ContentProcessController final : public GeckoContentController {
   void DispatchToRepaintThread(already_AddRefed<Runnable> aTask) override;
 
  private:
-  RefPtr<dom::TabChild> mBrowser;
+  RefPtr<dom::BrowserChild> mBrowser;
 };
 
 }  

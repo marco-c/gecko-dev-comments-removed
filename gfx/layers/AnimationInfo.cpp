@@ -182,7 +182,7 @@ void AnimationInfo::EnumerateGenerationOnFrame(
       
       
       
-      if (widget->GetOwningTabChild() &&
+      if (widget->GetOwningBrowserChild() &&
           !static_cast<widget::PuppetWidget*>(widget)->HasLayerManager()) {
         for (auto displayItem : LayerAnimationInfo::sDisplayItemTypes) {
           aCallback(Nothing(), displayItem);

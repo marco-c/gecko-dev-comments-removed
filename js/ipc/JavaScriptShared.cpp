@@ -1,14 +1,14 @@
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=4 sw=2 et tw=80:
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "JavaScriptShared.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/CPOWManagerGetter.h"
-#include "mozilla/dom/TabChild.h"
+#include "mozilla/dom/BrowserChild.h"
 #include "jsfriendapi.h"
 #include "js/Symbol.h"
 #include "xpcprivate.h"
@@ -386,7 +386,7 @@ JS::Symbol* JavaScriptShared::fromSymbolVariant(JSContext* cx,
   }
 }
 
-
+/* static */
 void JavaScriptShared::ConvertID(const nsID& from, JSIID* to) {
   to->m0() = from.m0;
   to->m1() = from.m1;
@@ -401,7 +401,7 @@ void JavaScriptShared::ConvertID(const nsID& from, JSIID* to) {
   to->m3_7() = from.m3[7];
 }
 
-
+/* static */
 void JavaScriptShared::ConvertID(const JSIID& from, nsID* to) {
   to->m0 = from.m0();
   to->m1 = from.m1();
@@ -446,10 +446,10 @@ JSObject* JavaScriptShared::findObjectById(JSContext* cx,
     return nullptr;
   }
 
-  
-  
-  
-  
+  // Each process has a dedicated compartment for CPOW targets. All CPOWs
+  // from the other process point to objects in this scope. From there, they
+  // can access objects in other compartments using cross-compartment
+  // wrappers.
   JSAutoRealm ar(cx, scopeForTargetObjects());
   if (objId.hasXrayWaiver()) {
     obj = js::ToWindowProxyIfWindow(obj);
@@ -589,7 +589,7 @@ CrossProcessCpowHolder::CrossProcessCpowHolder(
     dom::CPOWManagerGetter* managerGetter,
     const InfallibleTArray<CpowEntry>& cpows)
     : js_(nullptr), cpows_(cpows), unwrapped_(false) {
-  
+  // Only instantiate the CPOW manager if we might need it later.
   if (cpows.Length()) {
     js_ = managerGetter->GetCPOWManager();
   }
@@ -597,16 +597,16 @@ CrossProcessCpowHolder::CrossProcessCpowHolder(
 
 CrossProcessCpowHolder::~CrossProcessCpowHolder() {
   if (cpows_.Length() && !unwrapped_) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // This should only happen if a message manager message
+    // containing CPOWs gets ignored for some reason. We need to
+    // unwrap every incoming CPOW in this process to ensure that
+    // the corresponding part of the CPOW in the other process
+    // will eventually be collected. The scope for this object
+    // doesn't really matter, because it immediately becomes
+    // garbage. Ignore this for middleman processes used when
+    // recording or replaying, as they do not have a CPOW manager
+    // and the message will also be received in the recording
+    // process.
     if (recordreplay::IsMiddleman()) {
       return;
     }
@@ -634,7 +634,7 @@ bool CrossProcessCpowHolder::ToObject(JSContext* cx,
 bool JavaScriptShared::Unwrap(JSContext* cx,
                               const InfallibleTArray<CpowEntry>& aCpows,
                               JS::MutableHandleObject objp) {
-  
+  // Middleman processes never operate on CPOWs.
   MOZ_ASSERT(!recordreplay::IsMiddleman());
 
   objp.set(nullptr);

@@ -38,8 +38,8 @@ already_AddRefed<BrowserBridgeChild> BrowserBridgeChild::Create(
   nsCOMPtr<nsIDocShell> docShell = do_GetInterface(owner->GetOwnerGlobal());
   MOZ_DIAGNOSTIC_ASSERT(docShell);
 
-  RefPtr<TabChild> tabChild = TabChild::GetFrom(docShell);
-  MOZ_DIAGNOSTIC_ASSERT(tabChild);
+  RefPtr<BrowserChild> browserChild = BrowserChild::GetFrom(docShell);
+  MOZ_DIAGNOSTIC_ASSERT(browserChild);
 
   uint32_t chromeFlags = 0;
 
@@ -67,7 +67,7 @@ already_AddRefed<BrowserBridgeChild> BrowserBridgeChild::Create(
   RefPtr<BrowserBridgeChild> browserBridge =
       new BrowserBridgeChild(aFrameLoader, aBrowsingContext);
   
-  tabChild->SendPBrowserBridgeConstructor(
+  browserChild->SendPBrowserBridgeConstructor(
       do_AddRef(browserBridge).take(),
       PromiseFlatString(aContext.PresentationURL()), aRemoteType,
       aBrowsingContext, chromeFlags);

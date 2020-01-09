@@ -1,9 +1,9 @@
 
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/PresShell.h"
@@ -114,24 +114,24 @@ using namespace mozilla::widget;
 using namespace mozilla;
 using base::Thread;
 
-
-
+// Global user preference for disabling native theme. Used
+// in NativeWindowTheme.
 bool gDisableNativeTheme = false;
 
-
+// Async pump timer during injected long touch taps
 #define TOUCH_INJECT_PUMP_TIMER_MSEC 50
 #define TOUCH_INJECT_LONG_TAP_DEFAULT_MSEC 1500
 int32_t nsIWidget::sPointerIdCounter = 0;
 
-
-
+// Some statics from nsIWidget.h
+/*static*/
 uint64_t AutoObserverNotifier::sObserverId = 0;
- nsDataHashtable<nsUint64HashKey, nsCOMPtr<nsIObserver>>
+/*static*/ nsDataHashtable<nsUint64HashKey, nsCOMPtr<nsIObserver>>
     AutoObserverNotifier::sSavedObservers;
 
-
-
-
+// The maximum amount of time to let the EnableDragDrop runnable wait in the
+// idle queue before timing out and moving it to the regular queue. Value is in
+// milliseconds.
 const uint32_t kAsyncDragDropTimeout = 1000;
 
 namespace mozilla {
@@ -146,16 +146,16 @@ WritingMode IMENotification::SelectionChangeDataBase::GetWritingMode() const {
   return WritingMode(mWritingMode);
 }
 
-}  
-}  
+}  // namespace widget
+}  // namespace mozilla
 
 NS_IMPL_ISUPPORTS(nsBaseWidget, nsIWidget, nsISupportsWeakReference)
 
-
-
-
-
-
+//-------------------------------------------------------------------------
+//
+// nsBaseWidget constructor
+//
+//-------------------------------------------------------------------------
 
 nsBaseWidget::nsBaseWidget()
     : mWidgetListener(nullptr),
@@ -201,9 +201,9 @@ WidgetShutdownObserver::WidgetShutdownObserver(nsBaseWidget* aWidget)
 }
 
 WidgetShutdownObserver::~WidgetShutdownObserver() {
-  
-  
-  
+  // No need to call Unregister(), we can't be destroyed until nsBaseWidget
+  // gets torn down. The observer service and nsBaseWidget have a ref on us
+  // so nsBaseWidget has to call Unregister and then clear its ref.
 }
 
 NS_IMETHODIMP
@@ -245,10 +245,10 @@ void nsBaseWidget::Shutdown() {
 }
 
 void nsBaseWidget::DestroyCompositor() {
-  
-  
-  
-  
+  // We release this before releasing the compositor, since it may hold the
+  // last reference to our ClientLayerManager. ClientLayerManager's dtor can
+  // trigger a paint, creating a new compositor, and we don't want to re-use
+  // the old vsync dispatcher.
   if (mCompositorVsyncDispatcher) {
     MOZ_ASSERT(mCompositorVsyncDispatcherLock.get());
 
@@ -257,34 +257,34 @@ void nsBaseWidget::DestroyCompositor() {
     mCompositorVsyncDispatcher = nullptr;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // The compositor shutdown sequence looks like this:
+  //  1. CompositorSession calls CompositorBridgeChild::Destroy.
+  //  2. CompositorBridgeChild synchronously sends WillClose.
+  //  3. CompositorBridgeParent releases some resources (such as the layer
+  //     manager, compositor, and widget).
+  //  4. CompositorBridgeChild::Destroy returns.
+  //  5. Asynchronously, CompositorBridgeParent::ActorDestroy will fire on the
+  //     compositor thread when the I/O thread closes the IPC channel.
+  //  6. Step 5 will schedule DeferredDestroy on the compositor thread, which
+  //     releases the reference CompositorBridgeParent holds to itself.
+  //
+  // When CompositorSession::Shutdown returns, we assume the compositor is gone
+  // or will be gone very soon.
   if (mCompositorSession) {
     ReleaseContentController();
     mAPZC = nullptr;
     SetCompositorWidgetDelegate(nullptr);
     mCompositorBridgeChild = nullptr;
 
-    
-    
+    // XXX CompositorBridgeChild and CompositorBridgeParent might be re-created
+    // in ClientLayerManager destructor. See bug 1133426.
     RefPtr<CompositorSession> session = mCompositorSession.forget();
     session->Shutdown();
   }
 }
 
-
-
+// This prevents the layer manager from starting a new transaction during
+// shutdown.
 void nsBaseWidget::RevokeTransactionIdAllocator() {
   if (!mLayerManager) {
     return;
@@ -316,11 +316,11 @@ void nsBaseWidget::FreeShutdownObserver() {
   mShutdownObserver = nullptr;
 }
 
-
-
-
-
-
+//-------------------------------------------------------------------------
+//
+// nsBaseWidget destructor
+//
+//-------------------------------------------------------------------------
 
 nsBaseWidget::~nsBaseWidget() {
   IMEStateManager::WidgetDestroyed(this);
@@ -343,11 +343,11 @@ nsBaseWidget::~nsBaseWidget() {
   delete mOriginalBounds;
 }
 
-
-
-
-
-
+//-------------------------------------------------------------------------
+//
+// Basic create.
+//
+//-------------------------------------------------------------------------
 void nsBaseWidget::BaseCreate(nsIWidget* aParent, nsWidgetInitData* aInitData) {
   static bool gDisableNativeThemeCached = false;
   if (!gDisableNativeThemeCached) {
@@ -357,7 +357,7 @@ void nsBaseWidget::BaseCreate(nsIWidget* aParent, nsWidgetInitData* aInitData) {
     gDisableNativeThemeCached = true;
   }
 
-  
+  // keep a reference to the device context
   if (nullptr != aInitData) {
     mWindowType = aInitData->mWindowType;
     mBorderStyle = aInitData->mBorderStyle;
@@ -371,11 +371,11 @@ void nsBaseWidget::BaseCreate(nsIWidget* aParent, nsWidgetInitData* aInitData) {
   }
 }
 
-
-
-
-
-
+//-------------------------------------------------------------------------
+//
+// Accessor functions to get/set the client data
+//
+//-------------------------------------------------------------------------
 
 nsIWidgetListener* nsBaseWidget::GetWidgetListener() { return mWidgetListener; }
 
@@ -390,9 +390,9 @@ already_AddRefed<nsIWidget> nsBaseWidget::CreateChild(
   nsNativeWidget nativeParent = nullptr;
 
   if (!aForceUseIWidgetParent) {
-    
-    
-    
+    // Use only either parent or nativeParent, not both, to match
+    // existing code.  Eventually Create() should be divested of its
+    // nativeWidget parameter.
     nativeParent = parent ? parent->GetNativeData(NS_NATIVE_WIDGET) : nullptr;
     parent = nativeParent ? nullptr : parent;
     MOZ_ASSERT(!parent || !nativeParent, "messed up logic");
@@ -413,7 +413,7 @@ already_AddRefed<nsIWidget> nsBaseWidget::CreateChild(
   return nullptr;
 }
 
-
+// Attach a view to our widget which we'll send events to.
 void nsBaseWidget::AttachViewToTopLevel(bool aUseAttachedEvents) {
   NS_ASSERTION((mWindowType == eWindowType_toplevel ||
                 mWindowType == eWindowType_dialog ||
@@ -441,38 +441,38 @@ void nsBaseWidget::SetAttachedWidgetListener(nsIWidgetListener* aListener) {
   mAttachedWidgetListener = aListener;
 }
 
-
-
-
-
-
+//-------------------------------------------------------------------------
+//
+// Close this nsBaseWidget
+//
+//-------------------------------------------------------------------------
 void nsBaseWidget::Destroy() {
-  
+  // Just in case our parent is the only ref to us
   nsCOMPtr<nsIWidget> kungFuDeathGrip(this);
-  
+  // disconnect from the parent
   nsIWidget* parent = GetParent();
   if (parent) {
     parent->RemoveChild(this);
   }
 
 #if defined(XP_WIN)
-  
+  // Allow our scroll capture container to be cleaned up, if we have one.
   mScrollCaptureContainer = nullptr;
 #endif
 }
 
-
-
-
-
-
+//-------------------------------------------------------------------------
+//
+// Get this nsBaseWidget parent
+//
+//-------------------------------------------------------------------------
 nsIWidget* nsBaseWidget::GetParent(void) { return nullptr; }
 
-
-
-
-
-
+//-------------------------------------------------------------------------
+//
+// Get this nsBaseWidget top level widget
+//
+//-------------------------------------------------------------------------
 nsIWidget* nsBaseWidget::GetTopLevelWidget() {
   nsIWidget *topLevelWidget = nullptr, *widget = this;
   while (widget) {
@@ -482,11 +482,11 @@ nsIWidget* nsBaseWidget::GetTopLevelWidget() {
   return topLevelWidget;
 }
 
-
-
-
-
-
+//-------------------------------------------------------------------------
+//
+// Get this nsBaseWidget's top (non-sheet) parent (if it's a sheet)
+//
+//-------------------------------------------------------------------------
 nsIWidget* nsBaseWidget::GetSheetWindowParent(void) { return nullptr; }
 
 float nsBaseWidget::GetDPI() { return 96.0f; }
@@ -501,11 +501,11 @@ CSSToLayoutDeviceScale nsIWidget::GetDefaultScale() {
   return CSSToLayoutDeviceScale(devPixelsPerCSSPixel);
 }
 
-
+/* static */
 double nsIWidget::DefaultScaleOverride() {
-  
-  
-  
+  // The number of device pixels per CSS pixel. A value <= 0 means choose
+  // automatically based on the DPI. A positive value is used as-is. This
+  // effectively controls the size of a CSS "px".
   static float devPixelsPerCSSPixel = -1.0f;
 
   static bool valueCached = false;
@@ -518,11 +518,11 @@ double nsIWidget::DefaultScaleOverride() {
   return devPixelsPerCSSPixel;
 }
 
-
-
-
-
-
+//-------------------------------------------------------------------------
+//
+// Add a child to the list of children
+//
+//-------------------------------------------------------------------------
 void nsBaseWidget::AddChild(nsIWidget* aChild) {
   MOZ_ASSERT(!aChild->GetNextSibling() && !aChild->GetPrevSibling(),
              "aChild not properly removed from its old child list");
@@ -530,7 +530,7 @@ void nsBaseWidget::AddChild(nsIWidget* aChild) {
   if (!mFirstChild) {
     mFirstChild = mLastChild = aChild;
   } else {
-    
+    // append to the list
     MOZ_ASSERT(mLastChild);
     MOZ_ASSERT(!mLastChild->GetNextSibling());
     mLastChild->SetNextSibling(aChild);
@@ -539,16 +539,16 @@ void nsBaseWidget::AddChild(nsIWidget* aChild) {
   }
 }
 
-
-
-
-
-
+//-------------------------------------------------------------------------
+//
+// Remove a child from the list of children
+//
+//-------------------------------------------------------------------------
 void nsBaseWidget::RemoveChild(nsIWidget* aChild) {
 #ifdef DEBUG
 #  ifdef XP_MACOSX
-  
-  
+  // nsCocoaWindow doesn't implement GetParent, so in that case parent will be
+  // null and we'll just have to do without this assertion.
   nsIWidget* parent = aChild->GetParent();
   NS_ASSERTION(!parent || parent == this, "Not one of our kids!");
 #  else
@@ -563,8 +563,8 @@ void nsBaseWidget::RemoveChild(nsIWidget* aChild) {
     mFirstChild = mFirstChild->GetNextSibling();
   }
 
-  
-  
+  // Now remove from the list.  Make sure that we pass ownership of the tail
+  // of the list correctly before we have aChild let go of it.
   nsIWidget* prev = aChild->GetPrevSibling();
   nsIWidget* next = aChild->GetNextSibling();
   if (prev) {
@@ -578,28 +578,28 @@ void nsBaseWidget::RemoveChild(nsIWidget* aChild) {
   aChild->SetPrevSibling(nullptr);
 }
 
-
-
-
-
-
+//-------------------------------------------------------------------------
+//
+// Sets widget's position within its parent's child list.
+//
+//-------------------------------------------------------------------------
 void nsBaseWidget::SetZIndex(int32_t aZIndex) {
-  
-  
+  // Hold a ref to ourselves just in case, since we're going to remove
+  // from our parent.
   nsCOMPtr<nsIWidget> kungFuDeathGrip(this);
 
   mZIndex = aZIndex;
 
-  
+  // reorder this child in its parent's list.
   auto* parent = static_cast<nsBaseWidget*>(GetParent());
   if (parent) {
     parent->RemoveChild(this);
-    
+    // Scope sib outside the for loop so we can check it afterward
     nsIWidget* sib = parent->GetFirstChild();
     for (; sib; sib = sib->GetNextSibling()) {
       int32_t childZIndex = GetZIndex();
       if (aZIndex < childZIndex) {
-        
+        // Insert ourselves before sib
         nsIWidget* prev = sib->GetPrevSibling();
         mNextSibling = sib;
         mPrevSibling = prev;
@@ -608,50 +608,50 @@ void nsBaseWidget::SetZIndex(int32_t aZIndex) {
           prev->SetNextSibling(this);
         } else {
           NS_ASSERTION(sib == parent->mFirstChild, "Broken child list");
-          
-          
+          // We've taken ownership of sib, so it's safe to have parent let
+          // go of it
           parent->mFirstChild = this;
         }
         PlaceBehind(eZPlacementBelow, sib, false);
         break;
       }
     }
-    
+    // were we added to the list?
     if (!sib) {
       parent->AddChild(this);
     }
   }
 }
 
-
-
-
-
-
-
+//-------------------------------------------------------------------------
+//
+// Maximize, minimize or restore the window. The BaseWidget implementation
+// merely stores the state.
+//
+//-------------------------------------------------------------------------
 void nsBaseWidget::SetSizeMode(nsSizeMode aMode) {
   MOZ_ASSERT(aMode == nsSizeMode_Normal || aMode == nsSizeMode_Minimized ||
              aMode == nsSizeMode_Maximized || aMode == nsSizeMode_Fullscreen);
   mSizeMode = aMode;
 }
 
-
-
-
-
-
+//-------------------------------------------------------------------------
+//
+// Get this component cursor
+//
+//-------------------------------------------------------------------------
 
 void nsBaseWidget::SetCursor(nsCursor aCursor, imgIContainer*, uint32_t,
                              uint32_t) {
-  
+  // We don't support the cursor image.
   mCursor = aCursor;
 }
 
-
-
-
-
-
+//-------------------------------------------------------------------------
+//
+// Window transparency methods
+//
+//-------------------------------------------------------------------------
 
 void nsBaseWidget::SetTransparencyMode(nsTransparencyMode aMode) {}
 
@@ -706,26 +706,26 @@ nsresult nsBaseWidget::SetWindowClipRegion(
   if (!aIntersectWithExisting) {
     StoreWindowClipRegion(aRects);
   } else {
-    
+    // get current rects
     nsTArray<LayoutDeviceIntRect> currentRects;
     GetWindowClipRegion(&currentRects);
-    
+    // create region from them
     LayoutDeviceIntRegion currentRegion = RegionFromArray(currentRects);
-    
+    // create region from new rects
     LayoutDeviceIntRegion newRegion = RegionFromArray(aRects);
-    
+    // intersect regions
     LayoutDeviceIntRegion intersection;
     intersection.And(currentRegion, newRegion);
-    
+    // create int rect array from intersection
     nsTArray<LayoutDeviceIntRect> rects;
     ArrayFromRegion(intersection, rects);
-    
+    // store
     StoreWindowClipRegion(rects);
   }
   return NS_OK;
 }
 
-
+/* virtual */
 void nsBaseWidget::PerformFullscreenTransition(FullscreenTransitionStage aStage,
                                                uint16_t aDuration,
                                                nsISupports* aData,
@@ -734,11 +734,11 @@ void nsBaseWidget::PerformFullscreenTransition(FullscreenTransitionStage aStage,
       "Should never call PerformFullscreenTransition on nsBaseWidget");
 }
 
-
-
-
-
-
+//-------------------------------------------------------------------------
+//
+// Put the window into full-screen mode
+//
+//-------------------------------------------------------------------------
 void nsBaseWidget::InfallibleMakeFullScreen(bool aFullScreen,
                                             nsIScreen* aScreen) {
   HideWindowChrome(aFullScreen);
@@ -749,7 +749,7 @@ void nsBaseWidget::InfallibleMakeFullScreen(bool aFullScreen,
     }
     *mOriginalBounds = GetScreenBounds();
 
-    
+    // Move to top-left corner of screen and size to the screen dimensions
     nsCOMPtr<nsIScreen> screen = aScreen;
     if (!screen) {
       screen = GetWidgetScreen();
@@ -809,9 +809,9 @@ bool nsBaseWidget::IsSmallPopup() const {
 
 bool nsBaseWidget::ComputeShouldAccelerate() {
   if (gfx::gfxVars::UseWebRender() && !AllowWebRenderForThisWindow()) {
-    
-    
-    
+    // If WebRender is enabled, non-WebRender widgets use the basic compositor
+    // (at least for now), even though they would get an accelerated compositor
+    // if WebRender wasn't enabled.
     return false;
   }
   return gfx::gfxConfig::IsEnabled(gfx::Feature::HW_COMPOSITING) &&
@@ -852,20 +852,20 @@ void nsBaseWidget::ConfigureAPZCTreeManager() {
   ConfigureAPZControllerThread();
 
   float dpi = GetDPI();
-  
+  // On Android the main thread is not the controller thread
   APZThreadUtils::RunOnControllerThread(
       NewRunnableMethod<float>("layers::IAPZCTreeManager::SetDPI", mAPZC,
                                &IAPZCTreeManager::SetDPI, dpi));
 
   if (gfxPrefs::APZKeyboardEnabled()) {
     KeyboardMap map = nsXBLWindowKeyHandler::CollectKeyboardShortcuts();
-    
+    // On Android the main thread is not the controller thread
     APZThreadUtils::RunOnControllerThread(NewRunnableMethod<KeyboardMap>(
         "layers::IAPZCTreeManager::SetKeyboardMap", mAPZC,
         &IAPZCTreeManager::SetKeyboardMap, map));
   }
 
-  RefPtr<IAPZCTreeManager> treeManager = mAPZC;  
+  RefPtr<IAPZCTreeManager> treeManager = mAPZC;  // for capture by the lambdas
 
   ContentReceivedInputBlockCallback callback(
       [treeManager](const ScrollableLayerGuid& aGuid, uint64_t aInputBlockId,
@@ -895,9 +895,9 @@ void nsBaseWidget::ConfigureAPZCTreeManager() {
     mCompositorSession->SetContentController(mRootContentController);
   }
 
-  
-  
-  
+  // When APZ is enabled, we can actually enable raw touch events because we
+  // have code that can deal with them properly. If APZ is not enabled, this
+  // function doesn't get called.
   if (Preferences::GetInt("dom.w3c_touch_events.enabled", 0) ||
       Preferences::GetBool("dom.w3c_pointer_events.enabled", false)) {
     RegisterTouchWindow();
@@ -905,7 +905,7 @@ void nsBaseWidget::ConfigureAPZCTreeManager() {
 }
 
 void nsBaseWidget::ConfigureAPZControllerThread() {
-  
+  // By default the controller thread is the main thread.
   APZThreadUtils::SetControllerThread(MessageLoop::current());
 }
 
@@ -932,8 +932,8 @@ void nsBaseWidget::UpdateZoomConstraints(
     }
 
     if (aConstraints) {
-      
-      
+      // We have some constraints, but the compositor and APZC aren't created
+      // yet. Save these so we can use them later.
       mInitialZoomConstraints = Some(
           InitialZoomConstraints(aPresShellId, aViewId, aConstraints.ref()));
     }
@@ -954,26 +954,26 @@ nsEventStatus nsBaseWidget::ProcessUntransformedAPZEvent(
   MOZ_ASSERT(NS_IsMainThread());
   InputAPZContext context(aGuid, aInputBlockId, aApzResponse);
 
-  
-  
-  
-  
-  
+  // If this is an event that the APZ has targeted to an APZC in the root
+  // process, apply that APZC's callback-transform before dispatching the
+  // event. If the event is instead targeted to an APZC in the child process,
+  // the transform will be applied in the child process before dispatching
+  // the event there (see e.g. BrowserChild::RecvRealTouchEvent()).
   if (aGuid.mLayersId == mCompositorSession->RootLayerTreeId()) {
     APZCCallbackHelper::ApplyCallbackTransform(*aEvent, aGuid,
                                                GetDefaultScale());
   }
 
-  
-  
-  
+  // Make a copy of the original event for the APZCCallbackHelper helpers that
+  // we call later, because the event passed to DispatchEvent can get mutated in
+  // ways that we don't want (i.e. touch points can get stripped out).
   nsEventStatus status;
   UniquePtr<WidgetEvent> original(aEvent->Duplicate());
   DispatchEvent(aEvent, status);
 
   if (mAPZC && !InputAPZContext::WasRoutedToChildProcess() && aInputBlockId) {
-    
-    
+    // EventStateManager did not route the event into the child process.
+    // It's safe to communicate to APZ that the event has been processed.
     UniquePtr<DisplayportSetListener> postLayerization;
     if (WidgetTouchEvent* touchEvent = aEvent->AsTouchEvent()) {
       if (touchEvent->mMessage == eTouchStart) {
@@ -1118,7 +1118,7 @@ nsEventStatus nsBaseWidget::DispatchInputEvent(WidgetInputEvent* aEvent) {
       APZThreadUtils::RunOnControllerThread(r.forget());
       return nsEventStatus_eConsumeDoDefault;
     }
-    
+    // Allow dispatching keyboard events on Gecko thread.
     MOZ_ASSERT(aEvent->AsKeyboardEvent());
   }
 
@@ -1137,7 +1137,7 @@ void nsBaseWidget::DispatchEventToAPZOnly(mozilla::WidgetInputEvent* aEvent) {
   }
 }
 
-
+// static
 bool nsBaseWidget::ShowContextMenuAfterMouseUp() {
   static bool gContextMenuAfterMouseUp = false;
   static bool gContextMenuAfterMouseUpCached = false;
@@ -1160,9 +1160,9 @@ Document* nsBaseWidget::GetDocument() const {
 }
 
 void nsBaseWidget::CreateCompositorVsyncDispatcher() {
-  
-  
-  
+  // Parent directly listens to the vsync source whereas
+  // child process communicate via IPC
+  // Should be called AFTER gfxPlatform is initialized
   if (XRE_IsParentProcess()) {
     if (!mCompositorVsyncDispatcherLock) {
       mCompositorVsyncDispatcherLock =
@@ -1190,14 +1190,14 @@ already_AddRefed<LayerManager> nsBaseWidget::CreateCompositorSession(
     CreateCompositorVsyncDispatcher();
 
     gfx::GPUProcessManager* gpu = gfx::GPUProcessManager::Get();
-    
-    
-    
+    // Make sure GPU process is ready for use.
+    // If it failed to connect to GPU process, GPU process usage is disabled in
+    // EnsureGPUReady(). It could update gfxVars and gfxConfigs.
     gpu->EnsureGPUReady();
 
-    
-    
-    
+    // If widget type does not supports acceleration, we use ClientLayerManager
+    // even when gfxVars::UseWebRender() is true. WebRender could coexist only
+    // with BasicCompositor.
     bool enableWR = gfx::gfxVars::UseWebRender() &&
                     WidgetTypeSupportsAcceleration() &&
                     AllowWebRenderForThisWindow();
@@ -1239,8 +1239,8 @@ already_AddRefed<LayerManager> nsBaseWidget::CreateCompositorSession(
       }
     }
 
-    
-    
+    // We need to retry in a loop because the act of failing to create the
+    // compositor can change our state (e.g. disable WebRender).
     if (mCompositorSession || !retry) {
       *aOptionsOut = options;
       return lm.forget();
@@ -1249,7 +1249,7 @@ already_AddRefed<LayerManager> nsBaseWidget::CreateCompositorSession(
 }
 
 void nsBaseWidget::CreateCompositor(int aWidth, int aHeight) {
-  
+  // This makes sure that gfxPlatforms gets initialized if it hasn't by now.
   gfxPlatform::GetPlatform();
 
   MOZ_ASSERT(gfxPlatform::UsesOffMainThreadCompositing(),
@@ -1263,11 +1263,11 @@ void nsBaseWidget::CreateCompositor(int aWidth, int aHeight) {
     mCompositorBridgeChild->Destroy();
   }
 
-  
-  
+  // Recreating this is tricky, as we may still have an old and we need
+  // to make sure it's properly destroyed by calling DestroyCompositor!
 
-  
-  
+  // If we've already received a shutdown notification, don't try
+  // create a new compositor.
   if (!mShutdownObserver) {
     return;
   }
@@ -1308,7 +1308,7 @@ void nsBaseWidget::CreateCompositor(int aWidth, int aHeight) {
 
   ShadowLayerForwarder* lf = lm->AsShadowForwarder();
   if (lf) {
-    
+    // lf is non-null if we are creating a ClientLayerManager above
     TextureFactoryIdentifier textureFactoryIdentifier;
     PLayerTransactionChild* shadowManager = nullptr;
 
@@ -1337,9 +1337,9 @@ void nsBaseWidget::CreateCompositor(int aWidth, int aHeight) {
 
     lf->SetShadowManager(shadowManager);
     lm->UpdateTextureFactoryIdentifier(textureFactoryIdentifier);
-    
-    
-    
+    // Some popup or transparent widgets may use a different backend than the
+    // compositors used with ImageBridge and VR (and more generally web
+    // content).
     if (WidgetTypeSupportsAcceleration()) {
       ImageBridgeChild::IdentifyCompositorTextureHost(textureFactoryIdentifier);
       gfx::VRManagerChild::IdentifyTextureHost(textureFactoryIdentifier);
@@ -1350,8 +1350,8 @@ void nsBaseWidget::CreateCompositor(int aWidth, int aHeight) {
 
   mLayerManager = lm.forget();
 
-  
-  
+  // Only track compositors for top-level windows, since other window types
+  // may use the basic compositor.  Except on the OS X - see bug 1306383
 #if defined(XP_MACOSX)
   bool getCompositorFromThisWindow = true;
 #else
@@ -1378,13 +1378,14 @@ LayerManager* nsBaseWidget::GetLayerManager(
     LayerManagerPersistence aPersistence) {
   if (!mLayerManager) {
     if (!mShutdownObserver) {
-      
+      // We are shutting down, do not try to re-create a LayerManager
       return nullptr;
     }
-    
+    // Try to use an async compositor first, if possible
     if (ShouldUseOffMainThreadCompositing()) {
-      
-      
+      // e10s uses the parameter to pass in the shadow manager from the
+      // BrowserChild so we don't expect to see it there since this doesn't
+      // support e10s.
       NS_ASSERTION(aShadowManager == nullptr,
                    "Async Compositor not supported with e10s");
       CreateCompositor();
@@ -1414,29 +1415,29 @@ already_AddRefed<gfx::DrawTarget> nsBaseWidget::StartRemoteDrawing() {
 
 uint32_t nsBaseWidget::GetGLFrameBufferFormat() { return LOCAL_GL_RGBA; }
 
-
-
-
-
-
+//-------------------------------------------------------------------------
+//
+// Destroy the window
+//
+//-------------------------------------------------------------------------
 void nsBaseWidget::OnDestroy() {
   if (mTextEventDispatcher) {
     mTextEventDispatcher->OnDestroyWidget();
-    
-    
+    // Don't release it until this widget actually released because after this
+    // is called, TextEventDispatcher() may create it again.
   }
 
-  
-  
-  
+  // If this widget is being destroyed, let the APZ code know to drop references
+  // to this widget. Callers of this function all should be holding a deathgrip
+  // on this widget already.
   ReleaseContentController();
 }
 
 void nsBaseWidget::MoveClient(double aX, double aY) {
   LayoutDeviceIntPoint clientOffset(GetClientOffset());
 
-  
-  
+  // GetClientOffset returns device pixels; scale back to desktop pixels
+  // if that's what this widget uses for the Move/Resize APIs
   if (BoundsUseDesktopPixels()) {
     DesktopPoint desktopOffset = clientOffset / GetDesktopToDeviceScale();
     Move(aX - desktopOffset.x, aY - desktopOffset.y);
@@ -1451,8 +1452,8 @@ void nsBaseWidget::ResizeClient(double aWidth, double aHeight, bool aRepaint) {
 
   LayoutDeviceIntRect clientBounds = GetClientBounds();
 
-  
-  
+  // GetClientBounds and mBounds are device pixels; scale back to desktop pixels
+  // if that's what this widget uses for the Move/Resize APIs
   if (BoundsUseDesktopPixels()) {
     DesktopSize desktopDelta =
         (LayoutDeviceIntSize(mBounds.Width(), mBounds.Height()) -
@@ -1491,31 +1492,31 @@ void nsBaseWidget::ResizeClient(double aX, double aY, double aWidth,
   }
 }
 
+//-------------------------------------------------------------------------
+//
+// Bounds
+//
+//-------------------------------------------------------------------------
 
-
-
-
-
-
-
-
-
-
-
+/**
+ * If the implementation of nsWindow supports borders this method MUST be
+ * overridden
+ *
+ **/
 LayoutDeviceIntRect nsBaseWidget::GetClientBounds() { return GetBounds(); }
 
-
-
-
-
-
+/**
+ * If the implementation of nsWindow supports borders this method MUST be
+ * overridden
+ *
+ **/
 LayoutDeviceIntRect nsBaseWidget::GetBounds() { return mBounds; }
 
-
-
-
-
-
+/**
+ * If the implementation of nsWindow uses a local coordinate system within the
+ *window, this method must be overridden
+ *
+ **/
 LayoutDeviceIntRect nsBaseWidget::GetScreenBounds() { return GetBounds(); }
 
 nsresult nsBaseWidget::GetRestoredBounds(LayoutDeviceIntRect& aRect) {
@@ -1542,11 +1543,11 @@ bool nsBaseWidget::ShowsResizeIndicator(LayoutDeviceIntRect* aResizerRect) {
   return false;
 }
 
-
-
-
-
-
+/**
+ * Modifies aFile to point at an icon file with the given name and suffix.  The
+ * suffix may correspond to a file extension with leading '.' if appropriate.
+ * Returns true if the icon file exists and can be read.
+ */
 static bool ResolveIconNameHelper(nsIFile* aFile, const nsAString& aIconName,
                                   const nsAString& aIconSuffix) {
   aFile->Append(NS_LITERAL_STRING("icons"));
@@ -1557,13 +1558,13 @@ static bool ResolveIconNameHelper(nsIFile* aFile, const nsAString& aIconName,
   return NS_SUCCEEDED(aFile->IsReadable(&readable)) && readable;
 }
 
-
-
-
-
-
-
-
+/**
+ * Resolve the given icon name into a local file object.  This method is
+ * intended to be called by subclasses of nsBaseWidget.  aIconSuffix is a
+ * platform specific icon file suffix (e.g., ".ico" under Win32).
+ *
+ * If no file is found matching the given parameters, then null is returned.
+ */
 void nsBaseWidget::ResolveIconName(const nsAString& aIconName,
                                    const nsAString& aIconSuffix,
                                    nsIFile** aResult) {
@@ -1573,7 +1574,7 @@ void nsBaseWidget::ResolveIconName(const nsAString& aIconName,
       do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID);
   if (!dirSvc) return;
 
-  
+  // first check auxilary chrome directories
 
   nsCOMPtr<nsISimpleEnumerator> dirs;
   dirSvc->Get(NS_APP_CHROME_DIR_LIST, NS_GET_IID(nsISimpleEnumerator),
@@ -1593,7 +1594,7 @@ void nsBaseWidget::ResolveIconName(const nsAString& aIconName,
     }
   }
 
-  
+  // then check the main app chrome directory
 
   nsCOMPtr<nsIFile> file;
   dirSvc->Get(NS_APP_CHROME_DIR, NS_GET_IID(nsIFile), getter_AddRefs(file));
@@ -1604,21 +1605,21 @@ void nsBaseWidget::ResolveIconName(const nsAString& aIconName,
 void nsBaseWidget::SetSizeConstraints(const SizeConstraints& aConstraints) {
   mSizeConstraints = aConstraints;
 
-  
-  
-  
-  
-  
-  
+  // Popups are constrained during layout, and we don't want to synchronously
+  // paint from reflow, so bail out... This is not great, but it's no worse than
+  // what we used to do.
+  //
+  // The right fix here is probably making constraint changes go through the
+  // view manager and such.
   if (mWindowType == eWindowType_popup) {
     return;
   }
 
-  
-  
-  
-  
-  
+  // If the current size doesn't meet the new constraints, trigger a
+  // resize to apply it. Note that, we don't want to invoke Resize if
+  // the new constraints don't affect the current size, because Resize
+  // implementation on some platforms may touch other geometry even if
+  // the size don't need to change.
   LayoutDeviceIntSize curSize = mBounds.Size();
   LayoutDeviceIntSize clampedSize =
       Max(aConstraints.mMinSize, Min(aConstraints.mMaxSize, curSize));
@@ -1638,9 +1639,9 @@ const widget::SizeConstraints nsBaseWidget::GetSizeConstraints() {
   return mSizeConstraints;
 }
 
-
+// static
 nsIRollupListener* nsBaseWidget::GetActiveRollupListener() {
-  
+  // If set, then this is likely an <html:select> dropdown.
   if (gRollupListener) return gRollupListener;
 
   return nsXULPopupManager::GetInstance();
@@ -1702,13 +1703,13 @@ nsresult nsBaseWidget::NotifyIME(const IMENotification& aIMENotification) {
   switch (aIMENotification.mMessage) {
     case REQUEST_TO_COMMIT_COMPOSITION:
     case REQUEST_TO_CANCEL_COMPOSITION:
-      
-      
-      
-      
-      
-      
-      
+      // We should send request to IME only when there is a TextEventDispatcher
+      // instance (this means that this widget has dispatched at least one
+      // composition event or keyboard event) and the it has composition.
+      // Otherwise, there is nothing to do.
+      // Note that if current input transaction is for native input events,
+      // TextEventDispatcher::NotifyIME() will call
+      // TextEventDispatcherListener::NotifyIME().
       if (mTextEventDispatcher && mTextEventDispatcher->IsComposing()) {
         return mTextEventDispatcher->NotifyIME(aIMENotification);
       }
@@ -1718,10 +1719,10 @@ nsresult nsBaseWidget::NotifyIME(const IMENotification& aIMENotification) {
         mIMEHasFocus = true;
       }
       EnsureTextEventDispatcher();
-      
-      
-      
-      
+      // TextEventDispatcher::NotifyIME() will always call
+      // TextEventDispatcherListener::NotifyIME().  I.e., even if current
+      // input transaction is for synthesized events for automated tests,
+      // notifications will be sent to native IME.
       nsresult rv = mTextEventDispatcher->NotifyIME(aIMENotification);
       if (aIMENotification.mMessage == NOTIFY_IME_OF_BLUR) {
         mIMEHasFocus = false;
@@ -1740,10 +1741,10 @@ void nsBaseWidget::EnsureTextEventDispatcher() {
 
 nsIWidget::NativeIMEContext nsBaseWidget::GetNativeIMEContext() {
   if (mTextEventDispatcher && mTextEventDispatcher->GetPseudoIMEContext()) {
-    
-    
-    
-    
+    // If we already have a TextEventDispatcher and it's working with
+    // a TextInputProcessor, we need to return pseudo IME context since
+    // TextCompositionArray::IndexOf(nsIWidget*) should return a composition
+    // on the pseudo IME context in such case.
     NativeIMEContext pseudoIMEContext;
     pseudoIMEContext.InitWithRawNativeIMEContext(
         mTextEventDispatcher->GetPseudoIMEContext());
@@ -1767,9 +1768,9 @@ void* nsBaseWidget::GetPseudoIMEContext() {
 
 TextEventDispatcherListener*
 nsBaseWidget::GetNativeTextEventDispatcherListener() {
-  
-  
-  
+  // TODO: If all platforms supported use of TextEventDispatcher for handling
+  //       native IME and keyboard events, this method should be removed since
+  //       in such case, this is overridden by all the subclasses.
   return nullptr;
 }
 
@@ -1798,13 +1799,13 @@ a11y::Accessible* nsBaseWidget::GetRootAccessible() {
       static_cast<PresShell*>(mWidgetListener->GetPresShell());
   NS_ENSURE_TRUE(presShell, nullptr);
 
-  
-  
+  // If container is null then the presshell is not active. This often happens
+  // when a preshell is being held onto for fastback.
   nsPresContext* presContext = presShell->GetPresContext();
   NS_ENSURE_TRUE(presContext->GetContainerWeak(), nullptr);
 
-  
-  
+  // Accessible creation might be not safe so use IsSafeToRunScript to
+  // make sure it's not created at unsafe times.
   nsAccessibilityService* accService = GetOrCreateAccService();
   if (accService) {
     return accService->GetRootDocumentAccessible(
@@ -1814,7 +1815,7 @@ a11y::Accessible* nsBaseWidget::GetRootAccessible() {
   return nullptr;
 }
 
-#endif  
+#endif  // ACCESSIBILITY
 
 void nsBaseWidget::StartAsyncScrollbarDrag(
     const AsyncDragMetrics& aDragMetrics) {
@@ -1890,7 +1891,7 @@ nsresult nsIWidget::SynthesizeNativeTouchTap(LayoutDeviceIntPoint aPoint,
                                       nullptr);
   }
 
-  
+  // initiate a long tap
   int elapse = Preferences::GetInt("ui.click_hold_context_menus.delay",
                                    TOUCH_INJECT_LONG_TAP_DEFAULT_MSEC);
   if (!mLongTapTimer) {
@@ -1900,8 +1901,8 @@ nsresult nsIWidget::SynthesizeNativeTouchTap(LayoutDeviceIntPoint aPoint,
                                  nullptr);
       return NS_ERROR_UNEXPECTED;
     }
-    
-    
+    // Windows requires recuring events, so we set this to a smaller window
+    // than the pref value.
     int timeout = elapse;
     if (timeout > TOUCH_INJECT_PUMP_TIMER_MSEC) {
       timeout = TOUCH_INJECT_PUMP_TIMER_MSEC;
@@ -1911,8 +1912,8 @@ nsresult nsIWidget::SynthesizeNativeTouchTap(LayoutDeviceIntPoint aPoint,
         "nsIWidget::SynthesizeNativeTouchTap");
   }
 
-  
-  
+  // If we already have a long tap pending, cancel it. We only allow one long
+  // tap to be active at a time.
   if (mLongTapTouchPoint) {
     SynthesizeNativeTouchPoint(mLongTapTouchPoint->mPointerId, TOUCH_CANCEL,
                                mLongTapTouchPoint->mPosition, 0, 0, nullptr);
@@ -1920,19 +1921,19 @@ nsresult nsIWidget::SynthesizeNativeTouchTap(LayoutDeviceIntPoint aPoint,
 
   mLongTapTouchPoint = MakeUnique<LongTapInfo>(
       pointerId, aPoint, TimeDuration::FromMilliseconds(elapse), aObserver);
-  notifier.SkipNotification();  
+  notifier.SkipNotification();  // we'll do it in the long-tap callback
   return NS_OK;
 }
 
-
+// static
 void nsIWidget::OnLongTapTimerCallback(nsITimer* aTimer, void* aClosure) {
   auto* self = static_cast<nsIWidget*>(aClosure);
 
   if ((self->mLongTapTouchPoint->mStamp + self->mLongTapTouchPoint->mDuration) >
       TimeStamp::Now()) {
 #ifdef XP_WIN
-    
-    
+    // Windows needs us to keep pumping feedback to the digitizer, so update
+    // the pointer id with the same position.
     self->SynthesizeNativeTouchPoint(
         self->mLongTapTouchPoint->mPointerId, TOUCH_CONTACT,
         self->mLongTapTouchPoint->mPosition, 1.0, 90, nullptr);
@@ -1943,7 +1944,7 @@ void nsIWidget::OnLongTapTimerCallback(nsITimer* aTimer, void* aClosure) {
   AutoObserverNotifier notifier(self->mLongTapTouchPoint->mObserver,
                                 "touchtap");
 
-  
+  // finished, remove the touch point
   self->mLongTapTimer->Cancel();
   self->mLongTapTimer = nullptr;
   self->SynthesizeNativeTouchPoint(
@@ -1974,11 +1975,11 @@ MultiTouchInput nsBaseWidget::UpdateSynthesizedTouchState(
   ScreenIntPoint pointerScreenPoint = ViewAs<ScreenPixel>(
       aPoint, PixelCastJustification::LayoutDeviceIsScreenForBounds);
 
-  
-  
-  
-  
-  
+  // We can't dispatch *aState directly because (a) dispatching
+  // it might inadvertently modify it and (b) in the case of touchend or
+  // touchcancel events aState will hold the touches that are
+  // still down whereas the input dispatched needs to hold the removed
+  // touch(es). We use |inputToDispatch| for this purpose.
   MultiTouchInput inputToDispatch;
   inputToDispatch.mInputType = MULTITOUCH_INPUT;
   inputToDispatch.mTime = aTime;
@@ -1987,14 +1988,14 @@ MultiTouchInput nsBaseWidget::UpdateSynthesizedTouchState(
   int32_t index = aState->IndexOfTouch((int32_t)aPointerId);
   if (aPointerState == TOUCH_CONTACT) {
     if (index >= 0) {
-      
+      // found an existing touch point, update it
       SingleTouchData& point = aState->mTouches[index];
       point.mScreenPoint = pointerScreenPoint;
       point.mRotationAngle = (float)aPointerOrientation;
       point.mForce = (float)aPointerPressure;
       inputToDispatch.mType = MultiTouchInput::MULTITOUCH_MOVE;
     } else {
-      
+      // new touch point, add it
       aState->mTouches.AppendElement(SingleTouchData(
           (int32_t)aPointerId, pointerScreenPoint, ScreenSize(0, 0),
           (float)aPointerOrientation, (float)aPointerPressure));
@@ -2003,7 +2004,7 @@ MultiTouchInput nsBaseWidget::UpdateSynthesizedTouchState(
     inputToDispatch.mTouches = aState->mTouches;
   } else {
     MOZ_ASSERT(aPointerState == TOUCH_REMOVE || aPointerState == TOUCH_CANCEL);
-    
+    // a touch point is being lifted, so remove it from the stored list
     if (index >= 0) {
       aState->mTouches.RemoveElementAt(index);
     }
@@ -2019,14 +2020,14 @@ MultiTouchInput nsBaseWidget::UpdateSynthesizedTouchState(
 }
 
 void nsBaseWidget::NotifyLiveResizeStarted() {
-  
-  
-  
+  // If we have mLiveResizeListeners already non-empty, we should notify those
+  // listeners that the resize stopped before starting anew. In theory this
+  // should never happen because we shouldn't get nested live resize actions.
   NotifyLiveResizeStopped();
   MOZ_ASSERT(mLiveResizeListeners.IsEmpty());
 
-  
-  
+  // If we can get the active remote tab for the current widget, suppress
+  // the displayport on it during the live resize.
   if (!mWidgetListener) {
     return;
   }
@@ -2094,7 +2095,7 @@ nsresult nsBaseWidget::AsyncEnableDragDrop(bool aEnable) {
       kAsyncDragDropTimeout, EventQueuePriority::Idle);
 }
 
-
+// static
 nsIWidget* nsIWidget::LookupRegisteredPluginWindow(uintptr_t aWindowID) {
 #if !defined(XP_WIN) && !defined(MOZ_WIDGET_GTK)
   MOZ_ASSERT_UNREACHABLE(
@@ -2108,7 +2109,7 @@ nsIWidget* nsIWidget::LookupRegisteredPluginWindow(uintptr_t aWindowID) {
 #endif
 }
 
-
+// static
 void nsIWidget::UpdateRegisteredPluginWindowVisibility(
     uintptr_t aOwnerWidget, nsTArray<uintptr_t>& aPluginIds) {
 #if !defined(XP_WIN) && !defined(MOZ_WIDGET_GTK)
@@ -2120,9 +2121,9 @@ void nsIWidget::UpdateRegisteredPluginWindowVisibility(
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(sPluginWidgetList);
 
-  
-  
-  
+  // Our visible list is associated with a compositor which is associated with
+  // a specific top level window. We use the parent widget during iteration
+  // to skip the plugin widgets owned by other top level windows.
   for (auto iter = sPluginWidgetList->Iter(); !iter.Done(); iter.Next()) {
     const void* windowId = iter.Key();
     nsIWidget* widget = iter.UserData();
@@ -2140,14 +2141,14 @@ void nsIWidget::UpdateRegisteredPluginWindowVisibility(
 }
 
 #if defined(XP_WIN)
-
+// static
 void nsIWidget::CaptureRegisteredPlugins(uintptr_t aOwnerWidget) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(sPluginWidgetList);
 
-  
-  
-  
+  // Our visible list is associated with a compositor which is associated with
+  // a specific top level window. We use the parent widget during iteration
+  // to skip the plugin widgets owned by other top level windows.
   for (auto iter = sPluginWidgetList->Iter(); !iter.Done(); iter.Next()) {
     DebugOnly<const void*> windowId = iter.Key();
     nsIWidget* widget = iter.UserData();
@@ -2175,14 +2176,14 @@ uint64_t nsBaseWidget::CreateScrollCaptureContainer() {
 }
 
 void nsBaseWidget::UpdateScrollCapture() {
-  
+  // Don't capture if no container or no size.
   if (!mScrollCaptureContainer || mBounds.IsEmpty()) {
     return;
   }
 
-  
-  
-  
+  // If the derived class cannot take a snapshot, for example due to clipping,
+  // then it is responsible for creating a fallback. If null is returned, this
+  // means that we want to keep the existing snapshot.
   RefPtr<gfx::SourceSurface> snapshot = CreateScrollSnapshot();
   if (!snapshot) {
     return;
@@ -2235,7 +2236,7 @@ already_AddRefed<nsIBidiKeyboard> nsIWidget::CreateBidiKeyboard() {
 
 #ifdef ANDROID
 already_AddRefed<nsIBidiKeyboard> nsIWidget::CreateBidiKeyboardInner() {
-  
+  // no bidi keyboard implementation
   return nullptr;
 }
 #endif
@@ -2293,10 +2294,10 @@ void NativeIMEContext::Init(nsIWidget* aWidget) {
     mOriginProcessID = 0;
     return;
   }
-  
-  
-  
-  
+  // If this is created in a child process, aWidget is an instance of
+  // PuppetWidget which doesn't support NS_RAW_NATIVE_IME_CONTEXT.
+  // Instead of that PuppetWidget::GetNativeIMEContext() returns cached
+  // native IME context of the parent process.
   *this = aWidget->GetNativeIMEContext();
 }
 
@@ -2324,126 +2325,126 @@ void IMENotification::TextChangeDataBase::MergeWith(
     return;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // |mStartOffset| and |mRemovedEndOffset| represent all replaced or removed
+  // text ranges.  I.e., mStartOffset should be the smallest offset of all
+  // modified text ranges in old text.  |mRemovedEndOffset| should be the
+  // largest end offset in old text of all modified text ranges.
+  // |mAddedEndOffset| represents the end offset of all inserted text ranges.
+  // I.e., only this is an offset in new text.
+  // In other words, between mStartOffset and |mRemovedEndOffset| of the
+  // premodified text was already removed.  And some text whose length is
+  // |mAddedEndOffset - mStartOffset| is inserted to |mStartOffset|.  I.e.,
+  // this allows IME to mark dirty the modified text range with |mStartOffset|
+  // and |mRemovedEndOffset| if IME stores all text of the focused editor and
+  // to compute new text length with |mAddedEndOffset| and |mRemovedEndOffset|.
+  // Additionally, IME can retrieve only the text between |mStartOffset| and
+  // |mAddedEndOffset| for updating stored text.
 
-  
-  
-  
-  
-  
-  
+  // For comparing new and old |mStartOffset|/|mRemovedEndOffset| values, they
+  // should be adjusted to be in same text. The |newData.mStartOffset| and
+  // |newData.mRemovedEndOffset| should be computed as in old text because
+  // |mStartOffset| and |mRemovedEndOffset| represent the modified text range
+  // in the old text but even if some text before the values of the newData
+  // has already been modified, the values don't include the changes.
 
-  
-  
-  
-  
-  
+  // For comparing new and old |mAddedEndOffset| values, they should be
+  // adjusted to be in same text.  The |oldData.mAddedEndOffset| should be
+  // computed as in the new text because |mAddedEndOffset| indicates the end
+  // offset of inserted text in the new text but |oldData.mAddedEndOffset|
+  // doesn't include any changes of the text before |newData.mAddedEndOffset|.
 
   const TextChangeDataBase& newData = aOther;
   const TextChangeDataBase oldData = *this;
 
-  
-  
+  // mCausedOnlyByComposition should be true only when all changes are caused
+  // by composition.
   mCausedOnlyByComposition =
       newData.mCausedOnlyByComposition && oldData.mCausedOnlyByComposition;
 
-  
-  
+  // mIncludingChangesWithoutComposition should be true if at least one of
+  // merged changes occurred without composition.
   mIncludingChangesWithoutComposition =
       newData.mIncludingChangesWithoutComposition ||
       oldData.mIncludingChangesWithoutComposition;
 
-  
-  
+  // mIncludingChangesDuringComposition should be true when at least one of
+  // the merged non-composition changes occurred during the latest composition.
   if (!newData.mCausedOnlyByComposition &&
       !newData.mIncludingChangesDuringComposition) {
     MOZ_ASSERT(newData.mIncludingChangesWithoutComposition);
     MOZ_ASSERT(mIncludingChangesWithoutComposition);
-    
-    
-    
-    
+    // If new change is neither caused by composition nor occurred during
+    // composition, set mIncludingChangesDuringComposition to false because
+    // IME doesn't want outdated text changes as text change during current
+    // composition.
     mIncludingChangesDuringComposition = false;
   } else {
-    
-    
+    // Otherwise, set mIncludingChangesDuringComposition to true if either
+    // oldData or newData includes changes during composition.
     mIncludingChangesDuringComposition =
         newData.mIncludingChangesDuringComposition ||
         oldData.mIncludingChangesDuringComposition;
   }
 
   if (newData.mStartOffset >= oldData.mAddedEndOffset) {
-    
-    
-    
-    
-    
-    
+    // Case 1:
+    // If new start is after old end offset of added text, it means that text
+    // after the modified range is modified.  Like:
+    // added range of old change:             +----------+
+    // removed range of new change:                           +----------+
+    // So, the old start offset is always the smaller offset.
     mStartOffset = oldData.mStartOffset;
-    
-    
-    
-    
+    // The new end offset of removed text is moved by the old change and we
+    // need to cancel the move of the old change for comparing the offsets in
+    // same text because it doesn't make sensce to compare offsets in different
+    // text.
     uint32_t newRemovedEndOffsetInOldText =
         newData.mRemovedEndOffset - oldData.Difference();
     mRemovedEndOffset =
         std::max(newRemovedEndOffsetInOldText, oldData.mRemovedEndOffset);
-    
+    // The new end offset of added text is always the larger offset.
     mAddedEndOffset = newData.mAddedEndOffset;
     return;
   }
 
   if (newData.mStartOffset >= oldData.mStartOffset) {
-    
-    
+    // If new start is in the modified range, it means that new data changes
+    // a part or all of the range.
     mStartOffset = oldData.mStartOffset;
     if (newData.mRemovedEndOffset >= oldData.mAddedEndOffset) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
+      // Case 2:
+      // If new end of removed text is greater than old end of added text, it
+      // means that all or a part of modified range modified again and text
+      // after the modified range is also modified.  Like:
+      // added range of old change:             +----------+
+      // removed range of new change:                   +----------+
+      // So, the new removed end offset is moved by the old change and we need
+      // to cancel the move of the old change for comparing the offsets in the
+      // same text because it doesn't make sense to compare the offsets in
+      // different text.
       uint32_t newRemovedEndOffsetInOldText =
           newData.mRemovedEndOffset - oldData.Difference();
       mRemovedEndOffset =
           std::max(newRemovedEndOffsetInOldText, oldData.mRemovedEndOffset);
-      
-      
-      
-      
+      // The old end of added text is replaced by new change. So, it should be
+      // same as the new start.  On the other hand, the new added end offset is
+      // always same or larger.  Therefore, the merged end offset of added
+      // text should be the new end offset of added text.
       mAddedEndOffset = newData.mAddedEndOffset;
       return;
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
+    // Case 3:
+    // If new end of removed text is less than old end of added text, it means
+    // that only a part of the modified range is modified again.  Like:
+    // added range of old change:             +------------+
+    // removed range of new change:               +-----+
+    // So, the new end offset of removed text should be same as the old end
+    // offset of removed text.  Therefore, the merged end offset of removed
+    // text should be the old text change's |mRemovedEndOffset|.
     mRemovedEndOffset = oldData.mRemovedEndOffset;
-    
-    
+    // The old end of added text is moved by new change.  So, we need to cancel
+    // the move of the new change for comparing the offsets in same text.
     uint32_t oldAddedEndOffsetInNewText =
         oldData.mAddedEndOffset + newData.Difference();
     mAddedEndOffset =
@@ -2452,49 +2453,49 @@ void IMENotification::TextChangeDataBase::MergeWith(
   }
 
   if (newData.mRemovedEndOffset >= oldData.mStartOffset) {
-    
-    
-    
+    // If new end of removed text is greater than old start (and new start is
+    // less than old start), it means that a part of modified range is modified
+    // again and some new text before the modified range is also modified.
     MOZ_ASSERT(newData.mStartOffset < oldData.mStartOffset,
                "new start offset should be less than old one here");
     mStartOffset = newData.mStartOffset;
     if (newData.mRemovedEndOffset >= oldData.mAddedEndOffset) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
+      // Case 4:
+      // If new end of removed text is greater than old end of added text, it
+      // means that all modified text and text after the modified range is
+      // modified.  Like:
+      // added range of old change:             +----------+
+      // removed range of new change:        +------------------+
+      // So, the new end of removed text is moved by the old change.  Therefore,
+      // we need to cancel the move of the old change for comparing the offsets
+      // in same text because it doesn't make sense to compare the offsets in
+      // different text.
       uint32_t newRemovedEndOffsetInOldText =
           newData.mRemovedEndOffset - oldData.Difference();
       mRemovedEndOffset =
           std::max(newRemovedEndOffsetInOldText, oldData.mRemovedEndOffset);
-      
-      
-      
-      
-      
+      // The old end of added text is replaced by new change.  So, the old end
+      // offset of added text is same as new text change's start offset.  Then,
+      // new change's end offset of added text is always same or larger than
+      // it.  Therefore, merged end offset of added text is always the new end
+      // offset of added text.
       mAddedEndOffset = newData.mAddedEndOffset;
       return;
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // Case 5:
+    // If new end of removed text is less than old end of added text, it
+    // means that only a part of the modified range is modified again.  Like:
+    // added range of old change:             +----------+
+    // removed range of new change:      +----------+
+    // So, the new end of removed text should be same as old end of removed
+    // text for preventing end of removed text to be modified.  Therefore,
+    // merged end offset of removed text is always the old end offset of removed
+    // text.
     mRemovedEndOffset = oldData.mRemovedEndOffset;
-    
-    
-    
+    // The old end of added text is moved by this change.  So, we need to
+    // cancel the move of the new change for comparing the offsets in same text
+    // because it doesn't make sense to compare the offsets in different text.
     uint32_t oldAddedEndOffsetInNewText =
         oldData.mAddedEndOffset + newData.Difference();
     mAddedEndOffset =
@@ -2502,18 +2503,18 @@ void IMENotification::TextChangeDataBase::MergeWith(
     return;
   }
 
-  
-  
-  
-  
-  
+  // Case 6:
+  // Otherwise, i.e., both new end of added text and new start are less than
+  // old start, text before the modified range is modified.  Like:
+  // added range of old change:                  +----------+
+  // removed range of new change: +----------+
   MOZ_ASSERT(newData.mStartOffset < oldData.mStartOffset,
              "new start offset should be less than old one here");
   mStartOffset = newData.mStartOffset;
   MOZ_ASSERT(newData.mRemovedEndOffset < oldData.mRemovedEndOffset,
              "new removed end offset should be less than old one here");
   mRemovedEndOffset = oldData.mRemovedEndOffset;
-  
+  // The end of added text should be adjusted with the new difference.
   uint32_t oldAddedEndOffsetInNewText =
       oldData.mAddedEndOffset + newData.Difference();
   mAddedEndOffset =
@@ -2522,9 +2523,9 @@ void IMENotification::TextChangeDataBase::MergeWith(
 
 #ifdef DEBUG
 
-
-
-
+// Let's test the code of merging multiple text change data in debug build
+// and crash if one of them fails because this feature is very complex but
+// cannot be tested with mochitest.
 void IMENotification::TextChangeDataBase::Test() {
   static bool gTestTextChangeEvent = true;
   if (!gTestTextChangeEvent) {
@@ -2532,29 +2533,29 @@ void IMENotification::TextChangeDataBase::Test() {
   }
   gTestTextChangeEvent = false;
 
-  
+  /****************************************************************************
+   * Case 1
+   ****************************************************************************/
 
-
-
-  
+  // Appending text
   MergeWith(TextChangeData(10, 10, 20, false, false));
   MergeWith(TextChangeData(20, 20, 35, false, false));
   MOZ_ASSERT(mStartOffset == 10,
              "Test 1-1-1: mStartOffset should be the first offset");
   MOZ_ASSERT(
-      mRemovedEndOffset == 10,  
+      mRemovedEndOffset == 10,  // 20 - (20 - 10)
       "Test 1-1-2: mRemovedEndOffset should be the first end of removed text");
   MOZ_ASSERT(
       mAddedEndOffset == 35,
       "Test 1-1-3: mAddedEndOffset should be the last end of added text");
   Clear();
 
-  
+  // Removing text (longer line -> shorter line)
   MergeWith(TextChangeData(10, 20, 10, false, false));
   MergeWith(TextChangeData(10, 30, 10, false, false));
   MOZ_ASSERT(mStartOffset == 10,
              "Test 1-2-1: mStartOffset should be the first offset");
-  MOZ_ASSERT(mRemovedEndOffset == 40,  
+  MOZ_ASSERT(mRemovedEndOffset == 40,  // 30 + (10 - 20)
              "Test 1-2-2: mRemovedEndOffset should be the the last end of "
              "removed text "
              "with already removed length");
@@ -2563,12 +2564,12 @@ void IMENotification::TextChangeDataBase::Test() {
       "Test 1-2-3: mAddedEndOffset should be the last end of added text");
   Clear();
 
-  
+  // Removing text (shorter line -> longer line)
   MergeWith(TextChangeData(10, 20, 10, false, false));
   MergeWith(TextChangeData(10, 15, 10, false, false));
   MOZ_ASSERT(mStartOffset == 10,
              "Test 1-3-1: mStartOffset should be the first offset");
-  MOZ_ASSERT(mRemovedEndOffset == 25,  
+  MOZ_ASSERT(mRemovedEndOffset == 25,  // 15 + (10 - 20)
              "Test 1-3-2: mRemovedEndOffset should be the the last end of "
              "removed text "
              "with already removed length");
@@ -2577,13 +2578,13 @@ void IMENotification::TextChangeDataBase::Test() {
       "Test 1-3-3: mAddedEndOffset should be the last end of added text");
   Clear();
 
-  
+  // Appending text at different point (not sure if actually occurs)
   MergeWith(TextChangeData(10, 10, 20, false, false));
   MergeWith(TextChangeData(55, 55, 60, false, false));
   MOZ_ASSERT(mStartOffset == 10,
              "Test 1-4-1: mStartOffset should be the smallest offset");
   MOZ_ASSERT(
-      mRemovedEndOffset == 45,  
+      mRemovedEndOffset == 45,  // 55 - (10 - 20)
       "Test 1-4-2: mRemovedEndOffset should be the the largest end of removed "
       "text without already added length");
   MOZ_ASSERT(
@@ -2591,13 +2592,13 @@ void IMENotification::TextChangeDataBase::Test() {
       "Test 1-4-3: mAddedEndOffset should be the last end of added text");
   Clear();
 
-  
+  // Removing text at different point (not sure if actually occurs)
   MergeWith(TextChangeData(10, 20, 10, false, false));
   MergeWith(TextChangeData(55, 68, 55, false, false));
   MOZ_ASSERT(mStartOffset == 10,
              "Test 1-5-1: mStartOffset should be the smallest offset");
   MOZ_ASSERT(
-      mRemovedEndOffset == 78,  
+      mRemovedEndOffset == 78,  // 68 - (10 - 20)
       "Test 1-5-2: mRemovedEndOffset should be the the largest end of removed "
       "text with already removed length");
   MOZ_ASSERT(
@@ -2605,13 +2606,13 @@ void IMENotification::TextChangeDataBase::Test() {
       "Test 1-5-3: mAddedEndOffset should be the largest end of added text");
   Clear();
 
-  
+  // Replacing text and append text (becomes longer)
   MergeWith(TextChangeData(30, 35, 32, false, false));
   MergeWith(TextChangeData(32, 32, 40, false, false));
   MOZ_ASSERT(mStartOffset == 30,
              "Test 1-6-1: mStartOffset should be the smallest offset");
   MOZ_ASSERT(
-      mRemovedEndOffset == 35,  
+      mRemovedEndOffset == 35,  // 32 - (32 - 35)
       "Test 1-6-2: mRemovedEndOffset should be the the first end of removed "
       "text");
   MOZ_ASSERT(
@@ -2619,13 +2620,13 @@ void IMENotification::TextChangeDataBase::Test() {
       "Test 1-6-3: mAddedEndOffset should be the last end of added text");
   Clear();
 
-  
+  // Replacing text and append text (becomes shorter)
   MergeWith(TextChangeData(30, 35, 32, false, false));
   MergeWith(TextChangeData(32, 32, 33, false, false));
   MOZ_ASSERT(mStartOffset == 30,
              "Test 1-7-1: mStartOffset should be the smallest offset");
   MOZ_ASSERT(
-      mRemovedEndOffset == 35,  
+      mRemovedEndOffset == 35,  // 32 - (32 - 35)
       "Test 1-7-2: mRemovedEndOffset should be the the first end of removed "
       "text");
   MOZ_ASSERT(
@@ -2633,13 +2634,13 @@ void IMENotification::TextChangeDataBase::Test() {
       "Test 1-7-3: mAddedEndOffset should be the last end of added text");
   Clear();
 
-  
-  
+  // Removing text and replacing text after first range (not sure if actually
+  // occurs)
   MergeWith(TextChangeData(30, 35, 30, false, false));
   MergeWith(TextChangeData(32, 34, 48, false, false));
   MOZ_ASSERT(mStartOffset == 30,
              "Test 1-8-1: mStartOffset should be the smallest offset");
-  MOZ_ASSERT(mRemovedEndOffset == 39,  
+  MOZ_ASSERT(mRemovedEndOffset == 39,  // 34 - (30 - 35)
              "Test 1-8-2: mRemovedEndOffset should be the the first end of "
              "removed text "
              "without already removed text");
@@ -2648,13 +2649,13 @@ void IMENotification::TextChangeDataBase::Test() {
       "Test 1-8-3: mAddedEndOffset should be the last end of added text");
   Clear();
 
-  
-  
+  // Removing text and replacing text after first range (not sure if actually
+  // occurs)
   MergeWith(TextChangeData(30, 35, 30, false, false));
   MergeWith(TextChangeData(32, 38, 36, false, false));
   MOZ_ASSERT(mStartOffset == 30,
              "Test 1-9-1: mStartOffset should be the smallest offset");
-  MOZ_ASSERT(mRemovedEndOffset == 43,  
+  MOZ_ASSERT(mRemovedEndOffset == 43,  // 38 - (30 - 35)
              "Test 1-9-2: mRemovedEndOffset should be the the first end of "
              "removed text "
              "without already removed text");
@@ -2663,17 +2664,17 @@ void IMENotification::TextChangeDataBase::Test() {
       "Test 1-9-3: mAddedEndOffset should be the last end of added text");
   Clear();
 
-  
+  /****************************************************************************
+   * Case 2
+   ****************************************************************************/
 
-
-
-  
-  
+  // Replacing text in around end of added text (becomes shorter) (not sure
+  // if actually occurs)
   MergeWith(TextChangeData(50, 50, 55, false, false));
   MergeWith(TextChangeData(53, 60, 54, false, false));
   MOZ_ASSERT(mStartOffset == 50,
              "Test 2-1-1: mStartOffset should be the smallest offset");
-  MOZ_ASSERT(mRemovedEndOffset == 55,  
+  MOZ_ASSERT(mRemovedEndOffset == 55,  // 60 - (55 - 50)
              "Test 2-1-2: mRemovedEndOffset should be the the last end of "
              "removed text "
              "without already added text length");
@@ -2682,13 +2683,13 @@ void IMENotification::TextChangeDataBase::Test() {
       "Test 2-1-3: mAddedEndOffset should be the last end of added text");
   Clear();
 
-  
-  
+  // Replacing text around end of added text (becomes longer) (not sure
+  // if actually occurs)
   MergeWith(TextChangeData(50, 50, 55, false, false));
   MergeWith(TextChangeData(54, 62, 68, false, false));
   MOZ_ASSERT(mStartOffset == 50,
              "Test 2-2-1: mStartOffset should be the smallest offset");
-  MOZ_ASSERT(mRemovedEndOffset == 57,  
+  MOZ_ASSERT(mRemovedEndOffset == 57,  // 62 - (55 - 50)
              "Test 2-2-2: mRemovedEndOffset should be the the last end of "
              "removed text "
              "without already added text length");
@@ -2697,13 +2698,13 @@ void IMENotification::TextChangeDataBase::Test() {
       "Test 2-2-3: mAddedEndOffset should be the last end of added text");
   Clear();
 
-  
-  
+  // Replacing text around end of replaced text (became shorter) (not sure if
+  // actually occurs)
   MergeWith(TextChangeData(36, 48, 45, false, false));
   MergeWith(TextChangeData(43, 50, 49, false, false));
   MOZ_ASSERT(mStartOffset == 36,
              "Test 2-3-1: mStartOffset should be the smallest offset");
-  MOZ_ASSERT(mRemovedEndOffset == 53,  
+  MOZ_ASSERT(mRemovedEndOffset == 53,  // 50 - (45 - 48)
              "Test 2-3-2: mRemovedEndOffset should be the the last end of "
              "removed text "
              "without already removed text length");
@@ -2712,13 +2713,13 @@ void IMENotification::TextChangeDataBase::Test() {
       "Test 2-3-3: mAddedEndOffset should be the last end of added text");
   Clear();
 
-  
-  
+  // Replacing text around end of replaced text (became longer) (not sure if
+  // actually occurs)
   MergeWith(TextChangeData(36, 52, 53, false, false));
   MergeWith(TextChangeData(43, 68, 61, false, false));
   MOZ_ASSERT(mStartOffset == 36,
              "Test 2-4-1: mStartOffset should be the smallest offset");
-  MOZ_ASSERT(mRemovedEndOffset == 67,  
+  MOZ_ASSERT(mRemovedEndOffset == 67,  // 68 - (53 - 52)
              "Test 2-4-2: mRemovedEndOffset should be the the last end of "
              "removed text "
              "without already added text length");
@@ -2727,11 +2728,11 @@ void IMENotification::TextChangeDataBase::Test() {
       "Test 2-4-3: mAddedEndOffset should be the last end of added text");
   Clear();
 
-  
+  /****************************************************************************
+   * Case 3
+   ****************************************************************************/
 
-
-
-  
+  // Appending text in already added text (not sure if actually occurs)
   MergeWith(TextChangeData(10, 10, 20, false, false));
   MergeWith(TextChangeData(15, 15, 30, false, false));
   MOZ_ASSERT(mStartOffset == 10,
@@ -2740,12 +2741,12 @@ void IMENotification::TextChangeDataBase::Test() {
              "Test 3-1-2: mRemovedEndOffset should be the the first end of "
              "removed text");
   MOZ_ASSERT(
-      mAddedEndOffset == 35,  
+      mAddedEndOffset == 35,  // 20 + (30 - 15)
       "Test 3-1-3: mAddedEndOffset should be the first end of added text with "
       "added text length by the new change");
   Clear();
 
-  
+  // Replacing text in added text (not sure if actually occurs)
   MergeWith(TextChangeData(50, 50, 55, false, false));
   MergeWith(TextChangeData(52, 53, 56, false, false));
   MOZ_ASSERT(mStartOffset == 50,
@@ -2754,13 +2755,13 @@ void IMENotification::TextChangeDataBase::Test() {
              "Test 3-2-2: mRemovedEndOffset should be the the first end of "
              "removed text");
   MOZ_ASSERT(
-      mAddedEndOffset == 58,  
+      mAddedEndOffset == 58,  // 55 + (56 - 53)
       "Test 3-2-3: mAddedEndOffset should be the first end of added text with "
       "added text length by the new change");
   Clear();
 
-  
-  
+  // Replacing text in replaced text (became shorter) (not sure if actually
+  // occurs)
   MergeWith(TextChangeData(36, 48, 45, false, false));
   MergeWith(TextChangeData(37, 38, 50, false, false));
   MOZ_ASSERT(mStartOffset == 36,
@@ -2769,13 +2770,13 @@ void IMENotification::TextChangeDataBase::Test() {
              "Test 3-3-2: mRemovedEndOffset should be the the first end of "
              "removed text");
   MOZ_ASSERT(
-      mAddedEndOffset == 57,  
+      mAddedEndOffset == 57,  // 45 + (50 - 38)
       "Test 3-3-3: mAddedEndOffset should be the first end of added text with "
       "added text length by the new change");
   Clear();
 
-  
-  
+  // Replacing text in replaced text (became longer) (not sure if actually
+  // occurs)
   MergeWith(TextChangeData(32, 48, 53, false, false));
   MergeWith(TextChangeData(43, 50, 52, false, false));
   MOZ_ASSERT(mStartOffset == 32,
@@ -2785,13 +2786,13 @@ void IMENotification::TextChangeDataBase::Test() {
              "removed text "
              "without already added text length");
   MOZ_ASSERT(
-      mAddedEndOffset == 55,  
+      mAddedEndOffset == 55,  // 53 + (52 - 50)
       "Test 3-4-3: mAddedEndOffset should be the first end of added text with "
       "added text length by the new change");
   Clear();
 
-  
-  
+  // Replacing text in replaced text (became shorter) (not sure if actually
+  // occurs)
   MergeWith(TextChangeData(36, 48, 50, false, false));
   MergeWith(TextChangeData(37, 49, 47, false, false));
   MOZ_ASSERT(mStartOffset == 36,
@@ -2800,14 +2801,14 @@ void IMENotification::TextChangeDataBase::Test() {
       mRemovedEndOffset == 48,
       "Test 3-5-2: mRemovedEndOffset should be the the first end of removed "
       "text");
-  MOZ_ASSERT(mAddedEndOffset == 48,  
+  MOZ_ASSERT(mAddedEndOffset == 48,  // 50 + (47 - 49)
              "Test 3-5-3: mAddedEndOffset should be the first end of added "
              "text without "
              "removed text length by the new change");
   Clear();
 
-  
-  
+  // Replacing text in replaced text (became longer) (not sure if actually
+  // occurs)
   MergeWith(TextChangeData(32, 48, 53, false, false));
   MergeWith(TextChangeData(43, 50, 47, false, false));
   MOZ_ASSERT(mStartOffset == 32,
@@ -2816,22 +2817,22 @@ void IMENotification::TextChangeDataBase::Test() {
              "Test 3-6-2: mRemovedEndOffset should be the the last end of "
              "removed text "
              "without already added text length");
-  MOZ_ASSERT(mAddedEndOffset == 50,  
+  MOZ_ASSERT(mAddedEndOffset == 50,  // 53 + (47 - 50)
              "Test 3-6-3: mAddedEndOffset should be the first end of added "
              "text without "
              "removed text length by the new change");
   Clear();
 
-  
+  /****************************************************************************
+   * Case 4
+   ****************************************************************************/
 
-
-
-  
+  // Replacing text all of already append text (not sure if actually occurs)
   MergeWith(TextChangeData(50, 50, 55, false, false));
   MergeWith(TextChangeData(44, 66, 68, false, false));
   MOZ_ASSERT(mStartOffset == 44,
              "Test 4-1-1: mStartOffset should be the smallest offset");
-  MOZ_ASSERT(mRemovedEndOffset == 61,  
+  MOZ_ASSERT(mRemovedEndOffset == 61,  // 66 - (55 - 50)
              "Test 4-1-2: mRemovedEndOffset should be the the last end of "
              "removed text "
              "without already added text length");
@@ -2840,13 +2841,13 @@ void IMENotification::TextChangeDataBase::Test() {
       "Test 4-1-3: mAddedEndOffset should be the last end of added text");
   Clear();
 
-  
-  
+  // Replacing text around a point in which text was removed (not sure if
+  // actually occurs)
   MergeWith(TextChangeData(50, 62, 50, false, false));
   MergeWith(TextChangeData(44, 66, 68, false, false));
   MOZ_ASSERT(mStartOffset == 44,
              "Test 4-2-1: mStartOffset should be the smallest offset");
-  MOZ_ASSERT(mRemovedEndOffset == 78,  
+  MOZ_ASSERT(mRemovedEndOffset == 78,  // 66 - (50 - 62)
              "Test 4-2-2: mRemovedEndOffset should be the the last end of "
              "removed text "
              "without already removed text length");
@@ -2855,13 +2856,13 @@ void IMENotification::TextChangeDataBase::Test() {
       "Test 4-2-3: mAddedEndOffset should be the last end of added text");
   Clear();
 
-  
-  
+  // Replacing text all replaced text (became shorter) (not sure if actually
+  // occurs)
   MergeWith(TextChangeData(50, 62, 60, false, false));
   MergeWith(TextChangeData(49, 128, 130, false, false));
   MOZ_ASSERT(mStartOffset == 49,
              "Test 4-3-1: mStartOffset should be the smallest offset");
-  MOZ_ASSERT(mRemovedEndOffset == 130,  
+  MOZ_ASSERT(mRemovedEndOffset == 130,  // 128 - (60 - 62)
              "Test 4-3-2: mRemovedEndOffset should be the the last end of "
              "removed text "
              "without already removed text length");
@@ -2870,13 +2871,13 @@ void IMENotification::TextChangeDataBase::Test() {
       "Test 4-3-3: mAddedEndOffset should be the last end of added text");
   Clear();
 
-  
-  
+  // Replacing text all replaced text (became longer) (not sure if actually
+  // occurs)
   MergeWith(TextChangeData(50, 61, 73, false, false));
   MergeWith(TextChangeData(44, 100, 50, false, false));
   MOZ_ASSERT(mStartOffset == 44,
              "Test 4-4-1: mStartOffset should be the smallest offset");
-  MOZ_ASSERT(mRemovedEndOffset == 88,  
+  MOZ_ASSERT(mRemovedEndOffset == 88,  // 100 - (73 - 61)
              "Test 4-4-2: mRemovedEndOffset should be the the last end of "
              "removed text "
              "with already added text length");
@@ -2885,11 +2886,11 @@ void IMENotification::TextChangeDataBase::Test() {
       "Test 4-4-3: mAddedEndOffset should be the last end of added text");
   Clear();
 
-  
+  /****************************************************************************
+   * Case 5
+   ****************************************************************************/
 
-
-
-  
+  // Replacing text around start of added text (not sure if actually occurs)
   MergeWith(TextChangeData(50, 50, 55, false, false));
   MergeWith(TextChangeData(48, 52, 49, false, false));
   MOZ_ASSERT(mStartOffset == 48,
@@ -2899,13 +2900,13 @@ void IMENotification::TextChangeDataBase::Test() {
       "Test 5-1-2: mRemovedEndOffset should be the the first end of removed "
       "text");
   MOZ_ASSERT(
-      mAddedEndOffset == 52,  
+      mAddedEndOffset == 52,  // 55 + (52 - 49)
       "Test 5-1-3: mAddedEndOffset should be the first end of added text with "
       "added text length by the new change");
   Clear();
 
-  
-  
+  // Replacing text around start of replaced text (became shorter) (not sure if
+  // actually occurs)
   MergeWith(TextChangeData(50, 60, 58, false, false));
   MergeWith(TextChangeData(43, 50, 48, false, false));
   MOZ_ASSERT(mStartOffset == 43,
@@ -2914,14 +2915,14 @@ void IMENotification::TextChangeDataBase::Test() {
       mRemovedEndOffset == 60,
       "Test 5-2-2: mRemovedEndOffset should be the the first end of removed "
       "text");
-  MOZ_ASSERT(mAddedEndOffset == 56,  
+  MOZ_ASSERT(mAddedEndOffset == 56,  // 58 + (48 - 50)
              "Test 5-2-3: mAddedEndOffset should be the first end of added "
              "text without "
              "removed text length by the new change");
   Clear();
 
-  
-  
+  // Replacing text around start of replaced text (became longer) (not sure if
+  // actually occurs)
   MergeWith(TextChangeData(50, 60, 68, false, false));
   MergeWith(TextChangeData(43, 55, 53, false, false));
   MOZ_ASSERT(mStartOffset == 43,
@@ -2930,14 +2931,14 @@ void IMENotification::TextChangeDataBase::Test() {
       mRemovedEndOffset == 60,
       "Test 5-3-2: mRemovedEndOffset should be the the first end of removed "
       "text");
-  MOZ_ASSERT(mAddedEndOffset == 66,  
+  MOZ_ASSERT(mAddedEndOffset == 66,  // 68 + (53 - 55)
              "Test 5-3-3: mAddedEndOffset should be the first end of added "
              "text without "
              "removed text length by the new change");
   Clear();
 
-  
-  
+  // Replacing text around start of replaced text (became shorter) (not sure if
+  // actually occurs)
   MergeWith(TextChangeData(50, 60, 58, false, false));
   MergeWith(TextChangeData(43, 50, 128, false, false));
   MOZ_ASSERT(mStartOffset == 43,
@@ -2947,13 +2948,13 @@ void IMENotification::TextChangeDataBase::Test() {
       "Test 5-4-2: mRemovedEndOffset should be the the first end of removed "
       "text");
   MOZ_ASSERT(
-      mAddedEndOffset == 136,  
+      mAddedEndOffset == 136,  // 58 + (128 - 50)
       "Test 5-4-3: mAddedEndOffset should be the first end of added text with "
       "added text length by the new change");
   Clear();
 
-  
-  
+  // Replacing text around start of replaced text (became longer) (not sure if
+  // actually occurs)
   MergeWith(TextChangeData(50, 60, 68, false, false));
   MergeWith(TextChangeData(43, 55, 65, false, false));
   MOZ_ASSERT(mStartOffset == 43,
@@ -2963,16 +2964,16 @@ void IMENotification::TextChangeDataBase::Test() {
       "Test 5-5-2: mRemovedEndOffset should be the the first end of removed "
       "text");
   MOZ_ASSERT(
-      mAddedEndOffset == 78,  
+      mAddedEndOffset == 78,  // 68 + (65 - 55)
       "Test 5-5-3: mAddedEndOffset should be the first end of added text with "
       "added text length by the new change");
   Clear();
 
-  
+  /****************************************************************************
+   * Case 6
+   ****************************************************************************/
 
-
-
-  
+  // Appending text before already added text (not sure if actually occurs)
   MergeWith(TextChangeData(30, 30, 45, false, false));
   MergeWith(TextChangeData(10, 10, 20, false, false));
   MOZ_ASSERT(mStartOffset == 10,
@@ -2982,12 +2983,12 @@ void IMENotification::TextChangeDataBase::Test() {
       "Test 6-1-2: mRemovedEndOffset should be the the largest end of removed "
       "text");
   MOZ_ASSERT(
-      mAddedEndOffset == 55,  
+      mAddedEndOffset == 55,  // 45 + (20 - 10)
       "Test 6-1-3: mAddedEndOffset should be the first end of added text with "
       "added text length by the new change");
   Clear();
 
-  
+  // Removing text before already removed text (not sure if actually occurs)
   MergeWith(TextChangeData(30, 35, 30, false, false));
   MergeWith(TextChangeData(10, 25, 10, false, false));
   MOZ_ASSERT(mStartOffset == 10,
@@ -2997,12 +2998,12 @@ void IMENotification::TextChangeDataBase::Test() {
       "Test 6-2-2: mRemovedEndOffset should be the the largest end of removed "
       "text");
   MOZ_ASSERT(
-      mAddedEndOffset == 15,  
+      mAddedEndOffset == 15,  // 30 - (25 - 10)
       "Test 6-2-3: mAddedEndOffset should be the first end of added text with "
       "removed text length by the new change");
   Clear();
 
-  
+  // Replacing text before already replaced text (not sure if actually occurs)
   MergeWith(TextChangeData(50, 65, 70, false, false));
   MergeWith(TextChangeData(13, 24, 15, false, false));
   MOZ_ASSERT(mStartOffset == 13,
@@ -3011,13 +3012,13 @@ void IMENotification::TextChangeDataBase::Test() {
       mRemovedEndOffset == 65,
       "Test 6-3-2: mRemovedEndOffset should be the the largest end of removed "
       "text");
-  MOZ_ASSERT(mAddedEndOffset == 61,  
+  MOZ_ASSERT(mAddedEndOffset == 61,  // 70 + (15 - 24)
              "Test 6-3-3: mAddedEndOffset should be the first end of added "
              "text without "
              "removed text length by the new change");
   Clear();
 
-  
+  // Replacing text before already replaced text (not sure if actually occurs)
   MergeWith(TextChangeData(50, 65, 70, false, false));
   MergeWith(TextChangeData(13, 24, 36, false, false));
   MOZ_ASSERT(mStartOffset == 13,
@@ -3026,30 +3027,30 @@ void IMENotification::TextChangeDataBase::Test() {
       mRemovedEndOffset == 65,
       "Test 6-4-2: mRemovedEndOffset should be the the largest end of removed "
       "text");
-  MOZ_ASSERT(mAddedEndOffset == 82,  
+  MOZ_ASSERT(mAddedEndOffset == 82,  // 70 + (36 - 24)
              "Test 6-4-3: mAddedEndOffset should be the first end of added "
              "text without "
              "removed text length by the new change");
   Clear();
 }
 
-#endif  
+#endif  // #ifdef DEBUG
 
-}  
-}  
+}  // namespace widget
+}  // namespace mozilla
 
 #ifdef DEBUG
-
-
-
-
-
-
-
-
-
-
-
+//////////////////////////////////////////////////////////////
+//
+// Convert a GUI event message code to a string.
+// Makes it a lot easier to debug events.
+//
+// See gtk/nsWidget.cpp and windows/nsWindow.cpp
+// for a DebugPrintEvent() function that uses
+// this.
+//
+//////////////////////////////////////////////////////////////
+/* static */
 nsAutoString nsBaseWidget::debug_GuiEventToString(WidgetGUIEvent* aGuiEvent) {
   NS_ASSERTION(nullptr != aGuiEvent, "cmon, null gui event.");
 
@@ -3107,11 +3108,11 @@ nsAutoString nsBaseWidget::debug_GuiEventToString(WidgetGUIEvent* aGuiEvent) {
 
   return nsAutoString(eventName);
 }
-
-
-
-
-
+//////////////////////////////////////////////////////////////
+//
+// Code to deal with paint and event debug prefs.
+//
+//////////////////////////////////////////////////////////////
 struct PrefPair {
   const char* name;
   bool value;
@@ -3126,7 +3127,7 @@ static PrefPair debug_PrefValues[] = {
     {"nglayout.debug.paint_flashing", false},
     {"nglayout.debug.paint_flashing_chrome", false}};
 
-
+//////////////////////////////////////////////////////////////
 bool nsBaseWidget::debug_GetCachedBoolPref(const char* aPrefName) {
   NS_ASSERTION(nullptr != aPrefName, "cmon, pref name is null.");
 
@@ -3138,7 +3139,7 @@ bool nsBaseWidget::debug_GetCachedBoolPref(const char* aPrefName) {
 
   return false;
 }
-
+//////////////////////////////////////////////////////////////
 static void debug_SetCachedBoolPref(const char* aPrefName, bool aValue) {
   NS_ASSERTION(nullptr != aPrefName, "cmon, pref name is null.");
 
@@ -3153,7 +3154,7 @@ static void debug_SetCachedBoolPref(const char* aPrefName, bool aValue) {
   NS_ASSERTION(false, "cmon, this code is not reached dude.");
 }
 
-
+//////////////////////////////////////////////////////////////
 class Debug_PrefObserver final : public nsIObserver {
   ~Debug_PrefObserver() {}
 
@@ -3174,8 +3175,8 @@ Debug_PrefObserver::Observe(nsISupports* subject, const char* topic,
   return NS_OK;
 }
 
-
- void debug_RegisterPrefCallbacks() {
+//////////////////////////////////////////////////////////////
+/* static */ void debug_RegisterPrefCallbacks() {
   static bool once = true;
 
   if (!once) {
@@ -3186,12 +3187,12 @@ Debug_PrefObserver::Observe(nsISupports* subject, const char* topic,
 
   nsCOMPtr<nsIObserver> obs(new Debug_PrefObserver());
   for (uint32_t i = 0; i < ArrayLength(debug_PrefValues); i++) {
-    
+    // Initialize the pref values
     debug_PrefValues[i].value =
         Preferences::GetBool(debug_PrefValues[i].name, false);
 
     if (obs) {
-      
+      // Register callbacks for when these change
       nsCString name;
       name.AssignLiteral(debug_PrefValues[i].name,
                          strlen(debug_PrefValues[i].name));
@@ -3199,19 +3200,19 @@ Debug_PrefObserver::Observe(nsISupports* subject, const char* topic,
     }
   }
 }
-
+//////////////////////////////////////////////////////////////
 static int32_t _GetPrintCount() {
   static int32_t sCount = 0;
 
   return ++sCount;
 }
-
-
+//////////////////////////////////////////////////////////////
+/* static */
 bool nsBaseWidget::debug_WantPaintFlashing() {
   return debug_GetCachedBoolPref("nglayout.debug.paint_flashing");
 }
-
-
+//////////////////////////////////////////////////////////////
+/* static */
 void nsBaseWidget::debug_DumpEvent(FILE* aFileOut, nsIWidget* aWidget,
                                    WidgetGUIEvent* aGuiEvent,
                                    const char* aWidgetName, int32_t aWindowID) {
@@ -3234,8 +3235,8 @@ void nsBaseWidget::debug_DumpEvent(FILE* aFileOut, nsIWidget* aWidget,
           _GetPrintCount(), tempString.get(), (void*)aWidget, aWidgetName,
           aWindowID, aGuiEvent->mRefPoint.x, aGuiEvent->mRefPoint.y);
 }
-
-
+//////////////////////////////////////////////////////////////
+/* static */
 void nsBaseWidget::debug_DumpPaintEvent(FILE* aFileOut, nsIWidget* aWidget,
                                         const nsIntRegion& aRegion,
                                         const char* aWidgetName,
@@ -3254,8 +3255,8 @@ void nsBaseWidget::debug_DumpPaintEvent(FILE* aFileOut, nsIWidget* aWidget,
 
   fprintf(aFileOut, "\n");
 }
-
-
+//////////////////////////////////////////////////////////////
+/* static */
 void nsBaseWidget::debug_DumpInvalidate(FILE* aFileOut, nsIWidget* aWidget,
                                         const LayoutDeviceIntRect* aRect,
                                         const char* aWidgetName,
@@ -3277,6 +3278,6 @@ void nsBaseWidget::debug_DumpInvalidate(FILE* aFileOut, nsIWidget* aWidget,
 
   fprintf(aFileOut, "\n");
 }
+//////////////////////////////////////////////////////////////
 
-
-#endif  
+#endif  // DEBUG

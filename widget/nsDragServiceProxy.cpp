@@ -1,13 +1,13 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsDragServiceProxy.h"
 #include "mozilla/dom/Document.h"
 #include "nsISupportsPrimitives.h"
-#include "mozilla/dom/TabChild.h"
+#include "mozilla/dom/BrowserChild.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
@@ -16,7 +16,7 @@
 using mozilla::CSSIntRegion;
 using mozilla::LayoutDeviceIntRect;
 using mozilla::Maybe;
-using mozilla::dom::TabChild;
+using mozilla::dom::BrowserChild;
 using mozilla::gfx::DataSourceSurface;
 using mozilla::gfx::SourceSurface;
 using mozilla::gfx::SurfaceFormat;
@@ -30,7 +30,7 @@ nsresult nsDragServiceProxy::InvokeDragSessionImpl(
     nsIArray* aArrayTransferables, const Maybe<CSSIntRegion>& aRegion,
     uint32_t aActionType) {
   NS_ENSURE_STATE(mSourceDocument->GetDocShell());
-  TabChild* child = TabChild::GetFrom(mSourceDocument->GetDocShell());
+  BrowserChild* child = BrowserChild::GetFrom(mSourceDocument->GetDocShell());
   NS_ENSURE_STATE(child);
   nsTArray<mozilla::dom::IPCDataTransfer> dataTransfers;
   nsContentUtils::TransferablesToIPCTransferables(
@@ -60,7 +60,7 @@ nsresult nsDragServiceProxy::InvokeDragSessionImpl(
 
         auto surfaceData = maybeShm.value();
 
-        
+        // Save the surface data to shared memory.
         if (!surfaceData.IsReadable() || !surfaceData.get<char>()) {
           NS_WARNING("Failed to create shared memory for drag session.");
           return NS_ERROR_FAILURE;

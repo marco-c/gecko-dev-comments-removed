@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: c++; c-basic-offset: 2; tab-width: 20; indent-tabs-mode: nil; -*-
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_widget_GeckoEditableSupport_h
 #define mozilla_widget_GeckoEditableSupport_h
@@ -22,7 +22,7 @@ namespace mozilla {
 class TextComposition;
 
 namespace dom {
-class TabChild;
+class BrowserChild;
 }
 
 namespace widget {
@@ -30,16 +30,16 @@ namespace widget {
 class GeckoEditableSupport final
     : public TextEventDispatcherListener,
       public java::GeckoEditableChild::Natives<GeckoEditableSupport> {
-  
+  /*
+      Rules for managing IME between Gecko and Java:
 
-
-
-
-
-
-
-
-
+      * Gecko controls the text content, and Java shadows the Gecko text
+         through text updates
+      * Gecko and Java maintain separate selections, and synchronize when
+         needed through selection updates and set-selection events
+      * Java controls the composition, and Gecko shadows the Java
+         composition through update composition events
+  */
 
   using EditableBase = java::GeckoEditableChild::Natives<GeckoEditableSupport>;
   using EditableClient = java::SessionTextInput::EditableClient;
@@ -66,18 +66,18 @@ class GeckoEditableSupport final
   };
 
   enum FlushChangesFlag {
-    
+    // Not retrying.
     FLUSH_FLAG_NONE,
-    
+    // Retrying due to IME text changes during flush.
     FLUSH_FLAG_RETRY,
-    
+    // Retrying due to IME sync exceptions during flush.
     FLUSH_FLAG_RECOVER
   };
 
   enum RemoveCompositionFlag { CANCEL_IME_COMPOSITION, COMMIT_IME_COMPOSITION };
 
   const bool mIsRemote;
-  nsWindow::WindowPtr<GeckoEditableSupport> mWindow;  
+  nsWindow::WindowPtr<GeckoEditableSupport> mWindow;  // Parent only
   RefPtr<TextEventDispatcher> mDispatcher;
   java::GeckoEditableChild::GlobalRef mEditable;
   bool mEditableAttached;
@@ -85,11 +85,11 @@ class GeckoEditableSupport final
   AutoTArray<UniquePtr<mozilla::WidgetEvent>, 4> mIMEKeyEvents;
   AutoTArray<IMETextChange, 4> mIMETextChanges;
   RefPtr<TextRangeArray> mIMERanges;
-  int32_t mIMEMaskEventsCount;         
-  int32_t mIMEFocusCount;              
-  bool mIMEDelaySynchronizeReply;      
-  int32_t mIMEActiveSynchronizeCount;  
-  int32_t mIMEActiveCompositionCount;  
+  int32_t mIMEMaskEventsCount;         // Mask events when > 0.
+  int32_t mIMEFocusCount;              // We are focused when > 0.
+  bool mIMEDelaySynchronizeReply;      // We reply asynchronously when true.
+  int32_t mIMEActiveSynchronizeCount;  // The number of replies being delayed.
+  int32_t mIMEActiveCompositionCount;  // The number of compositions expected.
   bool mIMESelectionChanged;
   bool mIMETextChangedDuringFlush;
   bool mIMEMonitorCursor;
@@ -146,7 +146,7 @@ class GeckoEditableSupport final
 
       void Run() override {
         if (!this->lambda.GetNativeObject()) {
-          
+          // Ignore stale calls after disposal.
           jni::GetGeckoThreadEnv()->ExceptionClear();
           return;
         }
@@ -156,9 +156,9 @@ class GeckoEditableSupport final
     nsAppShell::PostEvent(mozilla::MakeUnique<IMEEvent>(std::move(aCall)));
   }
 
-  static void SetOnTabChild(dom::TabChild* aTabChild);
+  static void SetOnBrowserChild(dom::BrowserChild* aBrowserChild);
 
-  
+  // Constructor for main process GeckoEditableChild.
   GeckoEditableSupport(nsWindow::NativePtr<GeckoEditableSupport>* aPtr,
                        nsWindow* aWindow,
                        java::GeckoEditableChild::Param aEditableChild)
@@ -167,7 +167,7 @@ class GeckoEditableSupport final
         mEditable(aEditableChild),
         mEditableAttached(!mIsRemote),
         mIMERanges(new TextRangeArray()),
-        mIMEMaskEventsCount(1)  
+        mIMEMaskEventsCount(1)  // Mask IME events since there's no focus yet
         ,
         mIMEFocusCount(0),
         mIMEDelaySynchronizeReply(false),
@@ -178,13 +178,13 @@ class GeckoEditableSupport final
     ObservePrefs();
   }
 
-  
+  // Constructor for content process GeckoEditableChild.
   explicit GeckoEditableSupport(java::GeckoEditableChild::Param aEditableChild)
       : GeckoEditableSupport(nullptr, nullptr, aEditableChild) {}
 
   NS_DECL_ISUPPORTS
 
-  
+  // TextEventDispatcherListener methods
   NS_IMETHOD NotifyIME(TextEventDispatcher* aTextEventDispatcher,
                        const IMENotification& aNotification) override;
 
@@ -203,7 +203,7 @@ class GeckoEditableSupport final
 
   InputContext GetInputContext();
 
-  
+  // GeckoEditableChild methods
   using EditableBase::AttachNative;
   using EditableBase::DisposeNative;
 
@@ -217,23 +217,23 @@ class GeckoEditableSupport final
     });
   }
 
-  
+  // Transfer to a new parent.
   void TransferParent(jni::Object::Param aEditableParent);
 
-  
+  // Handle an Android KeyEvent.
   void OnKeyEvent(int32_t aAction, int32_t aKeyCode, int32_t aScanCode,
                   int32_t aMetaState, int32_t aKeyPressMetaState, int64_t aTime,
                   int32_t aDomPrintableKeyValue, int32_t aRepeatCount,
                   int32_t aFlags, bool aIsSynthesizedImeKey,
                   jni::Object::Param originalEvent);
 
-  
+  // Synchronize Gecko thread with the InputConnection thread.
   void OnImeSynchronize();
 
-  
+  // Replace a range of text with new text.
   void OnImeReplaceText(int32_t aStart, int32_t aEnd, jni::String::Param aText);
 
-  
+  // Add styling for a range within the active composition.
   void OnImeAddCompositionRange(int32_t aStart, int32_t aEnd,
                                 int32_t aRangeType, int32_t aRangeStyle,
                                 int32_t aRangeLineStyle, bool aRangeBoldLine,
@@ -241,14 +241,14 @@ class GeckoEditableSupport final
                                 int32_t aRangeBackColor,
                                 int32_t aRangeLineColor);
 
-  
+  // Update styling for the active composition using previous-added ranges.
   void OnImeUpdateComposition(int32_t aStart, int32_t aEnd, int32_t aFlags);
 
-  
+  // Set cursor mode whether IME requests
   void OnImeRequestCursorUpdates(int aRequestMode);
 };
 
-}  
-}  
+}  // namespace widget
+}  // namespace mozilla
 
-#endif  
+#endif  // mozilla_widget_GeckoEditableSupport_h

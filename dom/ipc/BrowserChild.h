@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_TabChild_h
-#define mozilla_dom_TabChild_h
+#ifndef mozilla_dom_BrowserChild_h
+#define mozilla_dom_BrowserChild_h
 
 #include "mozilla/dom/ContentFrameMessageManager.h"
 #include "mozilla/dom/PBrowserChild.h"
@@ -77,7 +77,7 @@ struct AutoCacheNativeKeyCommands;
 
 namespace dom {
 
-class TabChild;
+class BrowserChild;
 class TabGroup;
 class ClonedMessageData;
 class CoalescedMouseData;
@@ -85,15 +85,15 @@ class CoalescedWheelData;
 class RequestData;
 class WebProgressData;
 
-class TabChildMessageManager : public ContentFrameMessageManager,
-                               public nsIMessageSender,
-                               public DispatcherTrait,
-                               public nsSupportsWeakReference {
+class BrowserChildMessageManager : public ContentFrameMessageManager,
+                                   public nsIMessageSender,
+                                   public DispatcherTrait,
+                                   public nsSupportsWeakReference {
  public:
-  explicit TabChildMessageManager(TabChild* aTabChild);
+  explicit BrowserChildMessageManager(BrowserChild* aBrowserChild);
 
   NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(TabChildMessageManager,
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(BrowserChildMessageManager,
                                            DOMEventTargetHelper)
 
   void MarkForCC();
@@ -123,40 +123,41 @@ class TabChildMessageManager : public ContentFrameMessageManager,
   virtual AbstractThread* AbstractMainThreadFor(
       mozilla::TaskCategory aCategory) override;
 
-  RefPtr<TabChild> mTabChild;
+  RefPtr<BrowserChild> mBrowserChild;
 
  protected:
-  ~TabChildMessageManager();
+  ~BrowserChildMessageManager();
 };
 
 class ContentListener final : public nsIDOMEventListener {
  public:
-  explicit ContentListener(TabChild* aTabChild) : mTabChild(aTabChild) {}
+  explicit ContentListener(BrowserChild* aBrowserChild)
+      : mBrowserChild(aBrowserChild) {}
   NS_DECL_ISUPPORTS
   NS_DECL_NSIDOMEVENTLISTENER
  protected:
   ~ContentListener() {}
-  TabChild* mTabChild;
+  BrowserChild* mBrowserChild;
 };
 
 
 
 
 
-class TabChildBase : public nsISupports,
-                     public nsMessageManagerScriptExecutor,
-                     public ipc::MessageManagerCallback {
+class BrowserChildBase : public nsISupports,
+                         public nsMessageManagerScriptExecutor,
+                         public ipc::MessageManagerCallback {
  protected:
   typedef mozilla::widget::PuppetWidget PuppetWidget;
 
  public:
-  TabChildBase();
+  BrowserChildBase();
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(TabChildBase)
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(BrowserChildBase)
 
   JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
-    return mTabChildMessageManager->WrapObject(aCx, aGivenProto);
+    return mBrowserChildMessageManager->WrapObject(aCx, aGivenProto);
   }
 
   virtual nsIWebNavigation* WebNavigation() const = 0;
@@ -176,7 +177,7 @@ class TabChildBase : public nsISupports,
   PresShell* GetTopLevelPresShell() const;
 
  protected:
-  virtual ~TabChildBase();
+  virtual ~BrowserChildBase();
 
   
   
@@ -191,24 +192,24 @@ class TabChildBase : public nsISupports,
   bool UpdateFrameHandler(const mozilla::layers::RepaintRequest& aRequest);
 
  protected:
-  RefPtr<TabChildMessageManager> mTabChildMessageManager;
+  RefPtr<BrowserChildMessageManager> mBrowserChildMessageManager;
   nsCOMPtr<nsIWebBrowserChrome3> mWebBrowserChrome;
 };
 
-class TabChild final : public TabChildBase,
-                       public PBrowserChild,
-                       public nsIWebBrowserChrome2,
-                       public nsIEmbeddingSiteWindow,
-                       public nsIWebBrowserChromeFocus,
-                       public nsIInterfaceRequestor,
-                       public nsIWindowProvider,
-                       public nsSupportsWeakReference,
-                       public nsIBrowserChild,
-                       public nsIObserver,
-                       public nsIWebProgressListener2,
-                       public TabContext,
-                       public nsITooltipListener,
-                       public mozilla::ipc::IShmemAllocator {
+class BrowserChild final : public BrowserChildBase,
+                           public PBrowserChild,
+                           public nsIWebBrowserChrome2,
+                           public nsIEmbeddingSiteWindow,
+                           public nsIWebBrowserChromeFocus,
+                           public nsIInterfaceRequestor,
+                           public nsIWindowProvider,
+                           public nsSupportsWeakReference,
+                           public nsIBrowserChild,
+                           public nsIObserver,
+                           public nsIWebProgressListener2,
+                           public TabContext,
+                           public nsITooltipListener,
+                           public mozilla::ipc::IShmemAllocator {
   typedef mozilla::dom::ClonedMessageData ClonedMessageData;
   typedef mozilla::dom::CoalescedMouseData CoalescedMouseData;
   typedef mozilla::dom::CoalescedWheelData CoalescedWheelData;
@@ -224,28 +225,26 @@ class TabChild final : public TabChildBase,
 
 
 
-  static already_AddRefed<TabChild> FindTabChild(const TabId& aTabId);
+  static already_AddRefed<BrowserChild> FindBrowserChild(const TabId& aTabId);
 
   
-  static nsTArray<RefPtr<TabChild>> GetAll();
+  static nsTArray<RefPtr<BrowserChild>> GetAll();
 
  public:
   
 
 
-  TabChild(ContentChild* aManager, const TabId& aTabId, TabGroup* aTabGroup,
-           const TabContext& aContext, BrowsingContext* aBrowsingContext,
-           uint32_t aChromeFlags);
+  BrowserChild(ContentChild* aManager, const TabId& aTabId, TabGroup* aTabGroup,
+               const TabContext& aContext, BrowsingContext* aBrowsingContext,
+               uint32_t aChromeFlags);
 
   nsresult Init(mozIDOMWindowProxy* aParent);
 
   
-  static already_AddRefed<TabChild> Create(ContentChild* aManager,
-                                           const TabId& aTabId,
-                                           const TabId& aSameTabGroupAs,
-                                           const TabContext& aContext,
-                                           BrowsingContext* aBrowsingContext,
-                                           uint32_t aChromeFlags);
+  static already_AddRefed<BrowserChild> Create(
+      ContentChild* aManager, const TabId& aTabId, const TabId& aSameTabGroupAs,
+      const TabContext& aContext, BrowsingContext* aBrowsingContext,
+      uint32_t aChromeFlags);
 
   
   bool IsDestroyed() const { return mDestroyed; }
@@ -268,12 +267,13 @@ class TabChild final : public TabChildBase,
   NS_DECL_NSIWEBPROGRESSLISTENER2
   NS_DECL_NSITOOLTIPLISTENER
 
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(TabChild, TabChildBase)
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(BrowserChild,
+                                                         BrowserChildBase)
 
   FORWARD_SHMEM_ALLOCATOR_TO(PBrowserChild)
 
-  TabChildMessageManager* GetMessageManager() {
-    return mTabChildMessageManager;
+  BrowserChildMessageManager* GetMessageManager() {
+    return mBrowserChildMessageManager;
   }
 
   
@@ -477,29 +477,29 @@ class TabChild final : public TabChildBase,
 
   ContentChild* Manager() const { return mManager; }
 
-  static inline TabChild* GetFrom(nsIDocShell* aDocShell) {
+  static inline BrowserChild* GetFrom(nsIDocShell* aDocShell) {
     if (!aDocShell) {
       return nullptr;
     }
 
-    nsCOMPtr<nsIBrowserChild> tc = aDocShell->GetTabChild();
-    return static_cast<TabChild*>(tc.get());
+    nsCOMPtr<nsIBrowserChild> tc = aDocShell->GetBrowserChild();
+    return static_cast<BrowserChild*>(tc.get());
   }
 
-  static inline TabChild* GetFrom(mozIDOMWindow* aWindow) {
+  static inline BrowserChild* GetFrom(mozIDOMWindow* aWindow) {
     nsCOMPtr<nsIWebNavigation> webNav = do_GetInterface(aWindow);
     nsCOMPtr<nsIDocShell> docShell = do_QueryInterface(webNav);
     return GetFrom(docShell);
   }
 
-  static inline TabChild* GetFrom(mozIDOMWindowProxy* aWindow) {
+  static inline BrowserChild* GetFrom(mozIDOMWindowProxy* aWindow) {
     nsCOMPtr<nsIWebNavigation> webNav = do_GetInterface(aWindow);
     nsCOMPtr<nsIDocShell> docShell = do_QueryInterface(webNav);
     return GetFrom(docShell);
   }
 
-  static TabChild* GetFrom(PresShell* aPresShell);
-  static TabChild* GetFrom(layers::LayersId aLayersId);
+  static BrowserChild* GetFrom(PresShell* aPresShell);
+  static BrowserChild* GetFrom(layers::LayersId aLayersId);
 
   layers::LayersId GetLayersId() { return mLayersId; }
   Maybe<bool> IsLayersConnected() { return mLayersConnected; }
@@ -517,7 +517,7 @@ class TabChild final : public TabChildBase,
   void ReinitRendering();
   void ReinitRenderingForDeviceReset();
 
-  static inline TabChild* GetFrom(nsIDOMWindow* aWindow) {
+  static inline BrowserChild* GetFrom(nsIDOMWindow* aWindow) {
     nsCOMPtr<nsIWebNavigation> webNav = do_GetInterface(aWindow);
     nsCOMPtr<nsIDocShell> docShell = do_QueryInterface(webNav);
     return GetFrom(docShell);
@@ -670,13 +670,13 @@ class TabChild final : public TabChildBase,
   
   
   
-  static const nsTHashtable<nsPtrHashKey<TabChild>>& GetVisibleTabs() {
+  static const nsTHashtable<nsPtrHashKey<BrowserChild>>& GetVisibleTabs() {
     MOZ_ASSERT(HasVisibleTabs());
     return *sVisibleTabs;
   }
 
  protected:
-  virtual ~TabChild();
+  virtual ~BrowserChild();
 
   virtual PWindowGlobalChild* AllocPWindowGlobalChild(
       const WindowGlobalInit& aInit) override;
@@ -757,7 +757,7 @@ class TabChild final : public TabChildBase,
 
   void ActorDestroy(ActorDestroyReason why) override;
 
-  bool InitTabChildMessageManager();
+  bool InitBrowserChildMessageManager();
 
   void InitRenderingState(
       const TextureFactoryIdentifier& aTextureFactoryIdentifier,
@@ -923,9 +923,9 @@ class TabChild final : public TabChildBase,
   
   
   
-  static nsTHashtable<nsPtrHashKey<TabChild>>* sVisibleTabs;
+  static nsTHashtable<nsPtrHashKey<BrowserChild>>* sVisibleTabs;
 
-  DISALLOW_EVIL_CONSTRUCTORS(TabChild);
+  DISALLOW_EVIL_CONSTRUCTORS(BrowserChild);
 };
 
 }  

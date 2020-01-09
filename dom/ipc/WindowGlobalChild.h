@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; c-basic-offset: 2; indent-tabs-mode: nil; tab-width: 8 -*- */
+/* vim: set sw=2 ts=8 et tw=80 ft=cpp : */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_dom_WindowGlobalChild_h
 #define mozilla_dom_WindowGlobalChild_h
@@ -22,12 +22,12 @@ class BrowsingContext;
 class WindowGlobalParent;
 class JSWindowActorChild;
 class JSWindowActorMessageMeta;
-class TabChild;
+class BrowserChild;
 
-
-
-
-
+/**
+ * Actor for a single nsGlobalWindowInner. This actor is used to communicate
+ * information to the parent process asynchronously.
+ */
 class WindowGlobalChild : public nsWrapperCache, public PWindowGlobalChild {
   friend class PWindowGlobalChild;
 
@@ -46,36 +46,36 @@ class WindowGlobalChild : public nsWrapperCache, public PWindowGlobalChild {
   dom::BrowsingContext* BrowsingContext() { return mBrowsingContext; }
   nsGlobalWindowInner* WindowGlobal() { return mWindowGlobal; }
 
-  
+  // Has this actor been shut down
   bool IsClosed() { return mIPCClosed; }
   void Destroy();
 
-  
-  
+  // Check if this actor is managed by PInProcess, as-in the document is loaded
+  // in the chrome process.
   bool IsInProcess() { return XRE_IsParentProcess(); }
 
-  
+  // The Window ID for this WindowGlobal
   uint64_t InnerWindowId() { return mInnerWindowId; }
   uint64_t OuterWindowId() { return mOuterWindowId; }
 
   bool IsCurrentGlobal();
 
-  
-  
+  // Get the other side of this actor if it is an in-process actor. Returns
+  // |nullptr| if the actor has been torn down, or is not in-process.
   already_AddRefed<WindowGlobalParent> GetParentActor();
 
-  
-  
-  already_AddRefed<TabChild> GetTabChild();
+  // Get this actor's manager if it is not an in-process actor. Returns
+  // |nullptr| if the actor has been torn down, or is in-process.
+  already_AddRefed<BrowserChild> GetBrowserChild();
 
   void ReceiveRawMessage(const JSWindowActorMessageMeta& aMeta,
                          ipc::StructuredCloneData&& aData);
 
-  
+  // Get a JS actor object by name.
   already_AddRefed<JSWindowActorChild> GetActor(const nsAString& aName,
                                                 ErrorResult& aRv);
 
-  
+  // Create and initialize the WindowGlobalChild object.
   static already_AddRefed<WindowGlobalChild> Create(
       nsGlobalWindowInner* aWindow);
 
@@ -84,7 +84,7 @@ class WindowGlobalChild : public nsWrapperCache, public PWindowGlobalChild {
                        JS::Handle<JSObject*> aGivenProto) override;
 
  protected:
-  
+  // IPC messages
   mozilla::ipc::IPCResult RecvRawMessage(const JSWindowActorMessageMeta& aMeta,
                                          const ClonedMessageData& aData);
 
@@ -106,7 +106,7 @@ class WindowGlobalChild : public nsWrapperCache, public PWindowGlobalChild {
   bool mIPCClosed;
 };
 
-}  
-}  
+}  // namespace dom
+}  // namespace mozilla
 
-#endif  
+#endif  // !defined(mozilla_dom_WindowGlobalChild_h)

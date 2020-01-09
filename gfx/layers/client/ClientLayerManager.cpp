@@ -10,7 +10,7 @@
 #include "gfxPrefs.h"            
 #include "mozilla/Assertions.h"  
 #include "mozilla/Hal.h"
-#include "mozilla/dom/TabChild.h"      
+#include "mozilla/dom/BrowserChild.h"  
 #include "mozilla/dom/TabGroup.h"      
 #include "mozilla/hal_sandbox/PHal.h"  
 #include "mozilla/layers/CompositableClient.h"
@@ -111,8 +111,8 @@ void ClientLayerManager::Destroy() {
 
 TabGroup* ClientLayerManager::GetTabGroup() {
   if (mWidget) {
-    if (TabChild* tabChild = mWidget->GetOwningTabChild()) {
-      return tabChild->TabGroup();
+    if (BrowserChild* browserChild = mWidget->GetOwningBrowserChild()) {
+      return browserChild->TabGroup();
     }
   }
   return nullptr;
@@ -201,7 +201,7 @@ bool ClientLayerManager::BeginTransactionWithTarget(gfxContext* aTarget,
   
   
   hal::ScreenOrientation orientation;
-  if (dom::TabChild* window = mWidget->GetOwningTabChild()) {
+  if (dom::BrowserChild* window = mWidget->GetOwningBrowserChild()) {
     orientation = window->GetOrientation();
   } else {
     hal::ScreenConfiguration currentConfig;
@@ -222,7 +222,7 @@ bool ClientLayerManager::BeginTransactionWithTarget(gfxContext* aTarget,
   
   
 #if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_UIKIT)
-  if (mWidget && mWidget->GetOwningTabChild()) {
+  if (mWidget && mWidget->GetOwningBrowserChild()) {
     mCompositorMightResample = AsyncPanZoomEnabled();
   }
 #endif
@@ -725,7 +725,7 @@ void ClientLayerManager::ForwardTransaction(bool aScheduleComposite) {
   
   mKeepAlive.Clear();
 
-  TabChild* window = mWidget ? mWidget->GetOwningTabChild() : nullptr;
+  BrowserChild* window = mWidget ? mWidget->GetOwningBrowserChild() : nullptr;
   if (window) {
     TimeStamp end = TimeStamp::Now();
     window->DidRequestComposite(start, end);

@@ -3721,6 +3721,7 @@ LayerManager* nsWindow::GetLayerManager(PLayerTransactionChild* aShadowManager,
 
     
     
+    
     NS_ASSERTION(aShadowManager == nullptr,
                  "Async Compositor not supported with e10s");
     CreateCompositor();

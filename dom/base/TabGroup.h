@@ -25,7 +25,7 @@ namespace mozilla {
 class AbstractThread;
 namespace dom {
 class Document;
-class TabChild;
+class BrowserChild;
 
 
 
@@ -43,7 +43,7 @@ class TabChild;
 
 
 class DocGroup;
-class TabChild;
+class BrowserChild;
 
 class TabGroup final : public SchedulerGroup,
                        public LinkedListElement<TabGroup> {
@@ -71,7 +71,7 @@ class TabGroup final : public SchedulerGroup,
   
   
   
-  static TabGroup* GetFromActor(TabChild* aTabChild);
+  static TabGroup* GetFromActor(BrowserChild* aBrowserChild);
 
   static TabGroup* GetFromWindow(mozIDOMWindowProxy* aWindow);
 

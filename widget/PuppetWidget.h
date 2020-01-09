@@ -1,16 +1,16 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: sw=2 ts=8 et :
+ */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * This "puppet widget" isn't really a platform widget.  It's intended
+ * to be used in widgetless rendering contexts, such as sandboxed
+ * content processes.  If any "real" widgetry is needed, the request
+ * is forwarded to and/or data received from elsewhere.
+ */
 
 #ifndef mozilla_widget_PuppetWidget_h__
 #define mozilla_widget_PuppetWidget_h__
@@ -32,8 +32,8 @@
 namespace mozilla {
 
 namespace dom {
-class TabChild;
-}  
+class BrowserChild;
+}  // namespace dom
 
 namespace widget {
 
@@ -43,21 +43,21 @@ class PuppetWidget : public nsBaseWidget,
                      public TextEventDispatcherListener,
                      public layers::MemoryPressureListener {
   typedef mozilla::CSSRect CSSRect;
-  typedef mozilla::dom::TabChild TabChild;
+  typedef mozilla::dom::BrowserChild BrowserChild;
   typedef mozilla::gfx::DrawTarget DrawTarget;
 
-  
+  // Avoiding to make compiler confused between mozilla::widget and nsIWidget.
   typedef mozilla::widget::TextEventDispatcher TextEventDispatcher;
   typedef mozilla::widget::TextEventDispatcherListener
       TextEventDispatcherListener;
 
   typedef nsBaseWidget Base;
 
-  
+  // The width and height of the "widget" are clamped to this.
   static const size_t kMaxDimension;
 
  public:
-  explicit PuppetWidget(TabChild* aTabChild);
+  explicit PuppetWidget(BrowserChild* aBrowserChild);
 
  protected:
   virtual ~PuppetWidget();
@@ -65,9 +65,9 @@ class PuppetWidget : public nsBaseWidget,
  public:
   NS_DECL_ISUPPORTS_INHERITED
 
-  
-  
-  using nsBaseWidget::Create;  
+  // PuppetWidget creation is infallible, hence InfallibleCreate(), which
+  // Create() calls.
+  using nsBaseWidget::Create;  // for Create signature not overridden here
   virtual nsresult Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
                           const LayoutDeviceIntRect& aRect,
                           nsWidgetInitData* aInitData = nullptr) override;
@@ -87,13 +87,13 @@ class PuppetWidget : public nsBaseWidget,
 
   virtual bool IsVisible() const override { return mVisible; }
 
-  virtual void ConstrainPosition(bool , int32_t* aX,
+  virtual void ConstrainPosition(bool /*ignored aAllowSlop*/, int32_t* aX,
                                  int32_t* aY) override {
     *aX = kMaxDimension;
     *aY = kMaxDimension;
   }
 
-  
+  // Widget position is controlled by the parent process via BrowserChild.
   virtual void Move(double aX, double aY) override {}
 
   virtual void Resize(double aWidth, double aHeight, bool aRepaint) override;
@@ -106,8 +106,8 @@ class PuppetWidget : public nsBaseWidget,
     return Resize(aWidth, aHeight, aRepaint);
   }
 
-  
-  
+  // XXX/cjones: copying gtk behavior here; unclear what disabling a
+  // widget is supposed to entail
   virtual void Enable(bool aState) override { mEnabled = aState; }
   virtual bool IsEnabled() const override { return mEnabled; }
 
@@ -118,13 +118,13 @@ class PuppetWidget : public nsBaseWidget,
 
   virtual void Invalidate(const LayoutDeviceIntRect& aRect) override;
 
-  
+  // PuppetWidgets don't have native data, as they're purely nonnative.
   virtual void* GetNativeData(uint32_t aDataType) override;
 #if defined(XP_WIN)
   void SetNativeData(uint32_t aDataType, uintptr_t aVal) override;
 #endif
 
-  
+  // PuppetWidgets don't have any concept of titles.
   virtual nsresult SetTitle(const nsAString& aTitle) override {
     return NS_ERROR_UNEXPECTED;
   }
@@ -162,16 +162,16 @@ class PuppetWidget : public nsBaseWidget,
 
   friend struct AutoCacheNativeKeyCommands;
 
-  
-  
-  
+  //
+  // nsBaseWidget methods we override
+  //
 
-  
-  
-  
-  
-  
-  
+  // Documents loaded in child processes are always subdocuments of
+  // other docs in an ancestor process.  To ensure that the
+  // backgrounds of those documents are painted like those of
+  // same-process subdocuments, we force the widget here to be
+  // transparent, which in turn will cause layout to use a transparent
+  // backstop background color.
   virtual nsTransparencyMode GetTransparencyMode() override {
     return eTransparencyTransparent;
   }
@@ -181,11 +181,11 @@ class PuppetWidget : public nsBaseWidget,
       LayersBackend aBackendHint = mozilla::layers::LayersBackend::LAYERS_NONE,
       LayerManagerPersistence aPersistence = LAYER_MANAGER_CURRENT) override;
 
-  
-  
-  
-  
-  
+  // This is used for creating remote layer managers and for re-creating
+  // them after a compositor reset. The lambda aInitializeFunc is used to
+  // perform any caller-required initialization for the newly created layer
+  // manager; in the event of a failure, return false and it will destroy the
+  // new layer manager without changing the state of the widget.
   bool CreateRemoteLayerManager(
       const std::function<bool(LayerManager*)>& aInitializeFunc);
 
@@ -210,19 +210,21 @@ class PuppetWidget : public nsBaseWidget,
 
   virtual void ClearCachedCursor() override;
 
-  
-  
-  
-  
+  // Gets the DPI of the screen corresponding to this widget.
+  // Contacts the parent process which gets the DPI from the
+  // proper widget there. TODO: Handle DPI changes that happen
+  // later on.
   virtual float GetDPI() override;
   virtual double GetDefaultScaleInternal() override;
 
   virtual bool NeedsPaint() override;
 
-  
+  // Paint the widget immediately if any paints are queued up.
   void PaintNowIfNeeded();
 
-  virtual TabChild* GetOwningTabChild() override { return mTabChild; }
+  virtual BrowserChild* GetOwningBrowserChild() override {
+    return mBrowserChild;
+  }
 
   void UpdateBackingScaleCache(float aDpi, int32_t aRounding, double aScale) {
     mDPI = aDpi;
@@ -232,10 +234,10 @@ class PuppetWidget : public nsBaseWidget,
 
   nsIntSize GetScreenDimensions();
 
-  
+  // Get the offset to the chrome of the window that this tab belongs to.
   LayoutDeviceIntPoint GetChromeOffset();
 
-  
+  // Get the screen position of the application window.
   LayoutDeviceIntPoint GetWindowPosition();
 
   virtual LayoutDeviceIntRect GetScreenBounds() override;
@@ -306,7 +308,7 @@ class PuppetWidget : public nsBaseWidget,
   nsresult SetPrefersReducedMotionOverrideForTest(bool aValue) override;
   nsresult ResetPrefersReducedMotionOverrideForTest() override;
 
-  
+  // TextEventDispatcherListener
   using nsBaseWidget::NotifyIME;
   NS_IMETHOD NotifyIME(TextEventDispatcher* aTextEventDispatcher,
                        const IMENotification& aNotification) override;
@@ -343,8 +345,8 @@ class PuppetWidget : public nsBaseWidget,
 
   nsIWidgetListener* GetCurrentWidgetListener();
 
-  
-  
+  // When this widget caches input context and currently managed by
+  // IMEStateManager, the cache is valid.
   bool HaveValidInputContextCache() const;
 
   class PaintTask : public Runnable {
@@ -358,34 +360,34 @@ class PuppetWidget : public nsBaseWidget,
     PuppetWidget* mWidget;
   };
 
-  
-  
-  
-  
-  
-  
-  TabChild* mTabChild;
-  
-  
+  // BrowserChild normally holds a strong reference to this PuppetWidget
+  // or its root ancestor, but each PuppetWidget also needs a
+  // reference back to BrowserChild (e.g. to delegate nsIWidget IME calls
+  // to chrome) So we hold a weak reference to BrowserChild here.  Since
+  // it's possible for BrowserChild to outlive the PuppetWidget, we clear
+  // this weak reference in Destroy()
+  BrowserChild* mBrowserChild;
+  // The "widget" to which we delegate events if we don't have an
+  // event handler.
   RefPtr<PuppetWidget> mChild;
   LayoutDeviceIntRegion mDirtyRegion;
   nsRevocableEventPtr<PaintTask> mPaintTask;
   RefPtr<layers::MemoryPressureObserver> mMemoryPressureObserver;
-  
-  
+  // XXX/cjones: keeping this around until we teach LayerManager to do
+  // retained-content-only transactions
   RefPtr<DrawTarget> mDrawTarget;
-  
+  // IME
   IMENotificationRequests mIMENotificationRequestsOfParent;
   InputContext mInputContext;
-  
-  
-  
-  
-  
+  // mNativeIMEContext is initialized when this dispatches every composition
+  // event both from parent process's widget and TextEventDispatcher in same
+  // process.  If it hasn't been started composition yet, this isn't necessary
+  // for XP code since there is no TextComposition instance which is caused by
+  // the PuppetWidget instance.
   NativeIMEContext mNativeIMEContext;
   ContentCacheInChild mContentCache;
 
-  
+  // The DPI of the screen corresponding to this widget
   float mDPI;
   int32_t mRounding;
   double mDefaultScale;
@@ -403,13 +405,13 @@ class PuppetWidget : public nsBaseWidget,
 
  private:
   bool mNeedIMEStateInit;
-  
-  
-  
-  
-  
-  
-  
+  // When remote process requests to commit/cancel a composition, the
+  // composition may have already been committed in the main process.  In such
+  // case, this will receive remaining composition events for the old
+  // composition even after requesting to commit/cancel the old composition
+  // but the TextComposition for the old composition has already been destroyed.
+  // So, until this meets new eCompositionStart, following composition events
+  // should be ignored if this is set to true.
   bool mIgnoreCompositionEvents;
 };
 
@@ -439,7 +441,7 @@ class PuppetScreenManager final : public nsIScreenManager {
   nsCOMPtr<nsIScreen> mOneScreen;
 };
 
-}  
-}  
+}  // namespace widget
+}  // namespace mozilla
 
-#endif  
+#endif  // mozilla_widget_PuppetWidget_h__

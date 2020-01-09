@@ -1213,7 +1213,7 @@ static void GetRealmName(JS::Realm* realm, nsCString& name, int* anonymizeID,
       
       
       
-      static const char* ownedByPrefix = "inProcessTabChildGlobal?ownedBy=";
+      static const char* ownedByPrefix = "inProcessBrowserChildGlobal?ownedBy=";
       int ownedByPos = name.Find(ownedByPrefix);
       if (ownedByPos >= 0) {
         const char* chrome = "chrome:";

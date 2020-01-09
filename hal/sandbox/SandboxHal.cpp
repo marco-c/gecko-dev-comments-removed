@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set sw=2 ts=8 et ft=cpp : */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "Hal.h"
 #include "HalLog.h"
@@ -10,7 +10,7 @@
 #include "mozilla/hal_sandbox/PHalChild.h"
 #include "mozilla/hal_sandbox/PHalParent.h"
 #include "mozilla/dom/BrowserParent.h"
-#include "mozilla/dom/TabChild.h"
+#include "mozilla/dom/BrowserChild.h"
 #include "mozilla/fallback/FallbackScreenConfiguration.h"
 #include "mozilla/EnumeratedRange.h"
 #include "mozilla/Observer.h"
@@ -44,7 +44,8 @@ void Vibrate(const nsTArray<uint32_t>& pattern, const WindowIdentifier& id) {
 
   WindowIdentifier newID(id);
   newID.AppendProcessID();
-  Hal()->SendVibrate(p, newID.AsArray(), TabChild::GetFrom(newID.GetWindow()));
+  Hal()->SendVibrate(p, newID.AsArray(),
+                     BrowserChild::GetFrom(newID.GetWindow()));
 }
 
 void CancelVibrate(const WindowIdentifier& id) {
@@ -53,7 +54,7 @@ void CancelVibrate(const WindowIdentifier& id) {
   WindowIdentifier newID(id);
   newID.AppendProcessID();
   Hal()->SendCancelVibrate(newID.AsArray(),
-                           TabChild::GetFrom(newID.GetWindow()));
+                           BrowserChild::GetFrom(newID.GetWindow()));
 }
 
 void EnableBatteryNotifications() { Hal()->SendEnableBatteryNotifications(); }
@@ -91,7 +92,7 @@ bool LockScreenOrientation(const ScreenOrientation& aOrientation) {
 }
 
 void UnlockScreenOrientation() {
-  
+  // Don't send this message from both the middleman and recording processes.
   if (!recordreplay::IsMiddleman()) {
     Hal()->SendUnlockScreenOrientation();
   }
@@ -151,8 +152,8 @@ class HalParent : public PHalParent,
                   public ScreenConfigurationObserver {
  public:
   virtual void ActorDestroy(ActorDestroyReason aWhy) override {
-    
-    
+    // NB: you *must* unconditionally unregister your observer here,
+    // if it *may* be registered below.
     hal::UnregisterBatteryObserver(this);
     hal::UnregisterNetworkObserver(this);
     hal::UnregisterScreenConfigurationObserver(this);
@@ -165,12 +166,12 @@ class HalParent : public PHalParent,
   virtual mozilla::ipc::IPCResult RecvVibrate(
       InfallibleTArray<unsigned int>&& pattern, InfallibleTArray<uint64_t>&& id,
       PBrowserParent* browserParent) override {
-    
-    
-    
-
-
-
+    // We give all content vibration permission.
+    //    BrowserParent *browserParent = BrowserParent::GetFrom(browserParent);
+    /* xxxkhuey wtf
+    nsCOMPtr<nsIDOMWindow> window =
+      do_QueryInterface(browserParent->GetBrowserDOMWindow());
+    */
     WindowIdentifier newID(id, nullptr);
     hal::Vibrate(pattern, newID);
     return IPC_OK();
@@ -178,18 +179,18 @@ class HalParent : public PHalParent,
 
   virtual mozilla::ipc::IPCResult RecvCancelVibrate(
       InfallibleTArray<uint64_t>&& id, PBrowserParent* browserParent) override {
-    
-    
-
-
-
+    // BrowserParent *browserParent = BrowserParent::GetFrom(browserParent);
+    /* XXXkhuey wtf
+    nsCOMPtr<nsIDOMWindow> window =
+      browserParent->GetBrowserDOMWindow();
+    */
     WindowIdentifier newID(id, nullptr);
     hal::CancelVibrate(newID);
     return IPC_OK();
   }
 
   virtual mozilla::ipc::IPCResult RecvEnableBatteryNotifications() override {
-    
+    // We give all content battery-status permission.
     hal::RegisterBatteryObserver(this);
     return IPC_OK();
   }
@@ -201,7 +202,7 @@ class HalParent : public PHalParent,
 
   virtual mozilla::ipc::IPCResult RecvGetCurrentBatteryInformation(
       BatteryInformation* aBatteryInfo) override {
-    
+    // We give all content battery-status permission.
     hal::GetCurrentBatteryInformation(aBatteryInfo);
     return IPC_OK();
   }
@@ -211,7 +212,7 @@ class HalParent : public PHalParent,
   }
 
   virtual mozilla::ipc::IPCResult RecvEnableNetworkNotifications() override {
-    
+    // We give all content access to this network-status information.
     hal::RegisterNetworkObserver(this);
     return IPC_OK();
   }
@@ -233,8 +234,8 @@ class HalParent : public PHalParent,
 
   virtual mozilla::ipc::IPCResult RecvEnableScreenConfigurationNotifications()
       override {
-    
-    
+    // Screen configuration is used to implement CSS and DOM
+    // properties, so all content already has access to this.
     hal::RegisterScreenConfigurationObserver(this);
     return IPC_OK();
   }
@@ -247,10 +248,10 @@ class HalParent : public PHalParent,
 
   virtual mozilla::ipc::IPCResult RecvLockScreenOrientation(
       const ScreenOrientation& aOrientation, bool* aAllowed) override {
-    
-    
-    
-    
+    // FIXME/bug 777980: unprivileged content may only lock
+    // orientation while fullscreen.  We should check whether the
+    // request comes from an actor in a process that might be
+    // fullscreen.  We don't have that information currently.
     *aAllowed = hal::LockScreenOrientation(aOrientation);
     return IPC_OK();
   }
@@ -266,8 +267,8 @@ class HalParent : public PHalParent,
 
   virtual mozilla::ipc::IPCResult RecvEnableSensorNotifications(
       const SensorType& aSensor) override {
-    
-    
+    // We currently allow any content to register device-sensor
+    // listeners.
     hal::RegisterSensorObserver(aSensor, this);
     return IPC_OK();
   }
@@ -288,13 +289,13 @@ class HalParent : public PHalParent,
       const uint64_t& aProcessID) override {
     MOZ_ASSERT(aProcessID != CONTENT_PROCESS_ID_UNKNOWN);
 
-    
+    // We allow arbitrary content to use wake locks.
     hal::ModifyWakeLock(aTopic, aLockAdjust, aHiddenAdjust, aProcessID);
     return IPC_OK();
   }
 
   virtual mozilla::ipc::IPCResult RecvEnableWakeLockNotifications() override {
-    
+    // We allow arbitrary content to use wake locks.
     hal::RegisterWakeLockObserver(this);
     return IPC_OK();
   }
@@ -360,5 +361,5 @@ PHalChild* CreateHalChild() { return new HalChild(); }
 
 PHalParent* CreateHalParent() { return new HalParent(); }
 
-}  
-}  
+}  // namespace hal_sandbox
+}  // namespace mozilla

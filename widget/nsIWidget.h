@@ -52,7 +52,7 @@ class Shmem;
 }
 #endif  
 namespace dom {
-class TabChild;
+class BrowserChild;
 }  
 namespace plugins {
 class PluginWidgetChild;
@@ -333,7 +333,7 @@ struct AutoObserverNotifier {
 
 class nsIWidget : public nsISupports {
  protected:
-  typedef mozilla::dom::TabChild TabChild;
+  typedef mozilla::dom::BrowserChild BrowserChild;
 
  public:
   typedef mozilla::layers::CompositorBridgeChild CompositorBridgeChild;
@@ -1904,7 +1904,8 @@ class nsIWidget : public nsISupports {
 
 
 
-  static already_AddRefed<nsIWidget> CreatePuppetWidget(TabChild* aTabChild);
+  static already_AddRefed<nsIWidget> CreatePuppetWidget(
+      BrowserChild* aBrowserChild);
 
   static already_AddRefed<nsIWidget> CreateHeadlessWidget();
 
@@ -1915,7 +1916,7 @@ class nsIWidget : public nsISupports {
 
 
   static already_AddRefed<nsIWidget> CreatePluginProxyWidget(
-      TabChild* aTabChild, mozilla::plugins::PluginWidgetChild* aActor);
+      BrowserChild* aBrowserChild, mozilla::plugins::PluginWidgetChild* aActor);
 
   
 
@@ -1976,7 +1977,7 @@ class nsIWidget : public nsISupports {
 
 
 
-  virtual TabChild* GetOwningTabChild() { return nullptr; }
+  virtual BrowserChild* GetOwningBrowserChild() { return nullptr; }
 
   
 

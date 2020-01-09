@@ -28,7 +28,7 @@
 namespace mozilla {
 
 namespace dom {
-class TabChild;
+class BrowserChild;
 }  
 
 namespace widget {
@@ -37,7 +37,7 @@ class CompositorWidget;
 
 namespace layers {
 
-using mozilla::dom::TabChild;
+using mozilla::dom::BrowserChild;
 
 class IAPZCTreeManager;
 class APZCTreeManagerChild;
@@ -128,9 +128,9 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
 
 
 
-  void RequestNotifyAfterRemotePaint(TabChild* aTabChild);
+  void RequestNotifyAfterRemotePaint(BrowserChild* aBrowserChild);
 
-  void CancelNotifyAfterRemotePaint(TabChild* aTabChild);
+  void CancelNotifyAfterRemotePaint(BrowserChild* aBrowserChild);
 
   
   
@@ -329,7 +329,7 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
 
   
   
-  nsWeakPtr mWeakTabChild;  
+  nsWeakPtr mWeakBrowserChild;  
 
   DISALLOW_EVIL_CONSTRUCTORS(CompositorBridgeChild);
 

@@ -65,7 +65,7 @@
 #include "nsThreadUtils.h"
 
 #include "nsIDOMChromeWindow.h"
-#include "InProcessTabChildMessageManager.h"
+#include "InProcessBrowserChildMessageManager.h"
 
 #include "Layers.h"
 #include "ClientLayerManager.h"
@@ -1707,15 +1707,15 @@ nsresult nsFrameLoader::SwapWithOtherLoader(nsFrameLoader* aOther,
   RefPtr<nsFrameMessageManager> otherMessageManager = aOther->mMessageManager;
   
   if (mChildMessageManager) {
-    InProcessTabChildMessageManager* tabChild = mChildMessageManager;
-    tabChild->SetOwner(otherContent);
-    tabChild->SetChromeMessageManager(otherMessageManager);
+    InProcessBrowserChildMessageManager* browserChild = mChildMessageManager;
+    browserChild->SetOwner(otherContent);
+    browserChild->SetChromeMessageManager(otherMessageManager);
   }
   if (aOther->mChildMessageManager) {
-    InProcessTabChildMessageManager* otherTabChild =
+    InProcessBrowserChildMessageManager* otherBrowserChild =
         aOther->mChildMessageManager;
-    otherTabChild->SetOwner(ourContent);
-    otherTabChild->SetChromeMessageManager(ourMessageManager);
+    otherBrowserChild->SetOwner(ourContent);
+    otherBrowserChild->SetChromeMessageManager(ourMessageManager);
   }
   
   if (mMessageManager) {
@@ -2879,10 +2879,10 @@ bool nsFrameLoader::DoLoadMessageManagerScript(const nsAString& aURL,
     return browserParent->SendLoadRemoteScript(nsString(aURL),
                                                aRunInGlobalScope);
   }
-  RefPtr<InProcessTabChildMessageManager> tabChild =
-      GetTabChildMessageManager();
-  if (tabChild) {
-    tabChild->LoadFrameScript(aURL, aRunInGlobalScope);
+  RefPtr<InProcessBrowserChildMessageManager> browserChild =
+      GetBrowserChildMessageManager();
+  if (browserChild) {
+    browserChild->LoadFrameScript(aURL, aRunInGlobalScope);
   }
   return true;
 }
@@ -2898,16 +2898,16 @@ class nsAsyncMessageToChild : public nsSameProcessAsyncMessageBase,
         mFrameLoader(aFrameLoader) {}
 
   NS_IMETHOD Run() override {
-    InProcessTabChildMessageManager* tabChild =
+    InProcessBrowserChildMessageManager* browserChild =
         mFrameLoader->mChildMessageManager;
     
     
-    if (tabChild && tabChild->GetInnerManager() &&
+    if (browserChild && browserChild->GetInnerManager() &&
         mFrameLoader->GetExistingDocShell()) {
       JS::Rooted<JSObject*> kungFuDeathGrip(dom::RootingCx(),
-                                            tabChild->GetWrapper());
-      ReceiveMessage(static_cast<EventTarget*>(tabChild), mFrameLoader,
-                     tabChild->GetInnerManager());
+                                            browserChild->GetWrapper());
+      ReceiveMessage(static_cast<EventTarget*>(browserChild), mFrameLoader,
+                     browserChild->GetInnerManager());
     }
     return NS_OK;
   }
@@ -3010,7 +3010,7 @@ nsresult nsFrameLoader::EnsureMessageManager() {
     if (!GetDocShell()) {
       return NS_ERROR_FAILURE;
     }
-    mChildMessageManager = InProcessTabChildMessageManager::Create(
+    mChildMessageManager = InProcessBrowserChildMessageManager::Create(
         GetDocShell(), mOwnerContent, mMessageManager);
     NS_ENSURE_TRUE(mChildMessageManager, NS_ERROR_UNEXPECTED);
   }
