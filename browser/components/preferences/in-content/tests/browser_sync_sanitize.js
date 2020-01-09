@@ -1,7 +1,6 @@
 
 
 
-
 "use strict";
 
 const {UIState} = ChromeUtils.import("resource://services-sync/UIState.jsm");
@@ -14,11 +13,7 @@ var fxAccountsCommon = {};
 ChromeUtils.import("resource://gre/modules/FxAccountsCommon.js", fxAccountsCommon);
 
 
-Services.scriptloader.loadSubScript("resource://testing-common/sinon-2.3.2.js");
-registerCleanupFunction(() => {
-  delete window.sinon; 
-});
-
+const {sinon} = ChromeUtils.import("resource://testing-common/Sinon.jsm");
 
 add_task(async function setup() {
   
@@ -42,7 +37,7 @@ add_task(async function setup() {
 });
 
 add_task(async function testDisconnectUI() {
-  await runTestWithSanitizeDialog(async (win, sinon) => {
+  await runTestWithSanitizeDialog(async (win) => {
     let doc = win.document;
     let butDisconnect = doc.getElementById("butDisconnect");
     let butDeleteSync = doc.getElementById("deleteRemoteSyncData");
@@ -92,7 +87,7 @@ add_task(async function testDisconnectUI() {
 });
 
 add_task(async function testDisconnectNoSanitize() {
-  await runTestWithSanitizeDialog(async (win, sinon) => {
+  await runTestWithSanitizeDialog(async (win) => {
     let doc = win.document;
     let butDisconnect = doc.getElementById("butDisconnect");
 
@@ -130,7 +125,7 @@ add_task(async function testDisconnectNoSanitize() {
 });
 
 add_task(async function testSanitizeSync() {
-  await runTestWithSanitizeDialog(async (win, sinon) => {
+  await runTestWithSanitizeDialog(async (win) => {
     let doc = win.document;
     let butDisconnect = doc.getElementById("butDisconnect");
     let butDeleteSync = doc.getElementById("deleteRemoteSyncData");
@@ -196,7 +191,7 @@ add_task(async function testSanitizeSync() {
 });
 
 add_task(async function testSanitizeBrowser() {
-  await runTestWithSanitizeDialog(async (win, sinon) => {
+  await runTestWithSanitizeDialog(async (win) => {
     let doc = win.document;
 
     
@@ -232,7 +227,7 @@ add_task(async function testDisconnectAlreadyRunning() {
   SyncDisconnectInternal.promiseDisconnectFinished =
     new Promise(resolve => resolveExisting = resolve);
 
-  await runTestWithSanitizeDialog(async (win, sinon) => {
+  await runTestWithSanitizeDialog(async (win) => {
     let doc = win.document;
     
     Assert.equal(doc.getElementById("deleteOptionsContent").hidden, true);
@@ -261,11 +256,9 @@ async function runTestWithSanitizeDialog(test) {
 
   let win = await promiseSubDialogLoaded;
 
-  let ss = sinon.sandbox.create();
+  await test(win);
 
-  await test(win, ss);
-
-  ss.restore();
+  sinon.restore();
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 }

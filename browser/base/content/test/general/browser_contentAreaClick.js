@@ -14,6 +14,8 @@
 
 
 
+const {sinon} = ChromeUtils.import("resource://testing-common/Sinon.jsm");
+
 var gTests = [
 
   {
@@ -181,18 +183,11 @@ var gTestWin = null;
 
 var gCurrentTest = null;
 
-var sandbox;
-
 function test() {
   waitForExplicitFinish();
 
-  
-  Services.scriptloader.loadSubScript("resource://testing-common/sinon-2.3.2.js");
-  sandbox = sinon.sandbox.create();
-
   registerCleanupFunction(function() {
-    sandbox.restore();
-    delete window.sinon;
+    sinon.restore();
   });
 
   gTestWin = openDialog(location, "", "chrome,all,dialog=no", "about:blank");
@@ -250,7 +245,7 @@ function setupTestBrowserWindow() {
   
   gReplacedMethods.forEach(function(methodName) {
     let targetObj = methodName == "getShortcutOrURIAndPostData" ? UrlbarUtils : gTestWin;
-    sandbox.stub(targetObj, methodName).returnsArg(0);
+    sinon.stub(targetObj, methodName).returnsArg(0);
   });
 
   
@@ -286,7 +281,7 @@ function runNextTest() {
   }
 
   
-  sandbox.resetHistory();
+  sinon.resetHistory();
   let target = gCurrentTest.targets.shift();
 
   info(gCurrentTest.desc + ": testing " + target);

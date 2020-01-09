@@ -12,6 +12,7 @@ var {AddonTestUtils, MockAsyncShutdown} = ChromeUtils.import("resource://testing
 var {ExtensionTestUtils} = ChromeUtils.import("resource://testing-common/ExtensionXPCShellUtils.jsm");
 var {FileTestUtils} = ChromeUtils.import("resource://testing-common/FileTestUtils.jsm");
 var {MockDocument} = ChromeUtils.import("resource://testing-common/MockDocument.jsm");
+var {sinon} = ChromeUtils.import("resource://testing-common/Sinon.jsm");
 var {TestUtils} = ChromeUtils.import("resource://testing-common/TestUtils.jsm");
 
 ChromeUtils.defineModuleGetter(this, "AddonManager",
@@ -57,21 +58,6 @@ region-name-tw = Taiwan
 
 
 do_get_profile();
-
-
-
-
-var {
-  clearInterval,
-  clearTimeout,
-  setInterval,
-  setIntervalWithTarget,
-  setTimeout,
-  setTimeoutWithTarget,
-} = ChromeUtils.import("resource://gre/modules/Timer.jsm");
-Services.scriptloader.loadSubScript("resource://testing-common/sinon-2.3.2.js", this);
-
-
 
 const EXTENSION_ID = "formautofill@mozilla.org";
 

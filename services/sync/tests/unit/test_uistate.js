@@ -16,7 +16,7 @@ add_task(async function test_isReady_unconfigured() {
   
   ok(!UIState.isReady());
   ok(!refreshState.called);
-  refreshState.reset();
+  refreshState.resetHistory();
 
   
   ok(UIState.isReady());
@@ -34,7 +34,7 @@ add_task(async function test_isReady_signedin() {
   
   ok(!UIState.isReady());
   ok(refreshState.calledOnce);
-  refreshState.reset();
+  refreshState.resetHistory();
 
   
   ok(UIState.isReady());
@@ -240,7 +240,7 @@ add_task(async function test_observer_refreshState() {
     Services.obs.notifyObservers(null, topic);
     await uiUpdateObserved;
     ok(refreshState.calledOnce);
-    refreshState.reset();
+    refreshState.resetHistory();
   }
 
   refreshState.restore();

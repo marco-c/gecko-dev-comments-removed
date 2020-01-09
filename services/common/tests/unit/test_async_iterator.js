@@ -3,10 +3,7 @@
 
 const {Async} = ChromeUtils.import("resource://services-common/async.js");
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
-const {setTimeout, clearTimeout, setInterval, clearInterval} = ChromeUtils.import("resource://gre/modules/Timer.jsm");
-Services.scriptloader.loadSubScript("resource://testing-common/sinon-2.3.2.js", this);
-
+const {sinon} = ChromeUtils.import("resource://testing-common/Sinon.jsm");
 
 function makeArray(length) {
   
