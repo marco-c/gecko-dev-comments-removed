@@ -376,14 +376,6 @@ class CanvasRenderingContext2D final : public nsICanvasRenderingContextInternal,
                   double aH, const nsAString& aBgColor, uint32_t aFlags,
                   mozilla::ErrorResult& aError);
 
-  enum RenderingMode {
-    SoftwareBackendMode,
-    OpenGLBackendMode,
-    DefaultBackendMode
-  };
-
-  bool SwitchRenderingMode(RenderingMode aRenderingMode);
-
   
   
   void Demote();
@@ -510,9 +502,6 @@ class CanvasRenderingContext2D final : public nsICanvasRenderingContextInternal,
   void OnShutdown();
 
   
-  bool AllowOpenGLCanvas() const;
-
-  
 
 
 
@@ -618,14 +607,9 @@ class CanvasRenderingContext2D final : public nsICanvasRenderingContextInternal,
 
 
 
-  RenderingMode EnsureTarget(
-      const gfx::Rect* aCoveredRect = nullptr,
-      RenderingMode aRenderMode = RenderingMode::DefaultBackendMode);
+  bool EnsureTarget(const gfx::Rect* aCoveredRect = nullptr);
 
   void RestoreClipsAndTransformToTarget();
-
-  bool TrySkiaGLTarget(RefPtr<gfx::DrawTarget>& aOutDT,
-                       RefPtr<layers::PersistentBufferProvider>& aOutProvider);
 
   bool TrySharedTarget(RefPtr<gfx::DrawTarget>& aOutDT,
                        RefPtr<layers::PersistentBufferProvider>& aOutProvider);
@@ -705,19 +689,6 @@ class CanvasRenderingContext2D final : public nsICanvasRenderingContextInternal,
   }
 
   
-  
-  
-  static std::vector<CanvasRenderingContext2D*>& DemotableContexts();
-  static void DemoteOldestContextIfNecessary();
-
-  static void AddDemotableContext(CanvasRenderingContext2D* aContext);
-  static void RemoveDemotableContext(CanvasRenderingContext2D* aContext);
-
-  RenderingMode mRenderingMode;
-
-  layers::LayersBackend mCompositorBackend;
-
-  
   int32_t mWidth, mHeight;
 
   
@@ -742,9 +713,6 @@ class CanvasRenderingContext2D final : public nsICanvasRenderingContextInternal,
   bool mResetLayer;
   
   bool mIPC;
-  
-  
-  bool mIsSkiaGL;
 
   bool mHasPendingStableStateCallback;
 
@@ -759,14 +727,6 @@ class CanvasRenderingContext2D final : public nsICanvasRenderingContextInternal,
   RefPtr<mozilla::gfx::DrawTarget> mTarget;
 
   RefPtr<mozilla::layers::PersistentBufferProvider> mBufferProvider;
-
-  uint32_t SkiaGLTex() const;
-
-  
-  
-  
-  CanvasDrawObserver* mDrawObserver;
-  void RemoveDrawObserver();
 
   RefPtr<CanvasShutdownObserver> mShutdownObserver;
   void RemoveShutdownObserver();
@@ -918,8 +878,6 @@ class CanvasRenderingContext2D final : public nsICanvasRenderingContextInternal,
   nsresult DrawOrMeasureText(const nsAString& aText, float aX, float aY,
                              const Optional<double>& aMaxWidth,
                              TextDrawOperation aOp, float* aWidth);
-
-  bool CheckSizeForSkiaGL(mozilla::gfx::IntSize aSize);
 
   
   struct ClipState {

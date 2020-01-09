@@ -33,15 +33,13 @@ class CanvasImageCache {
 
   static void NotifyDrawImage(dom::Element* aImage,
                               dom::HTMLCanvasElement* aCanvas,
-                              SourceSurface* aSource, const gfx::IntSize& aSize,
-                              bool aIsAccelerated);
+                              SourceSurface* aSource, const gfx::IntSize& aSize);
 
   
 
 
 
-  static SourceSurface* LookupAllCanvas(dom::Element* aImage,
-                                        bool aIsAccelerated);
+  static SourceSurface* LookupAllCanvas(dom::Element* aImage);
 
   
 
@@ -49,8 +47,7 @@ class CanvasImageCache {
 
   static SourceSurface* LookupCanvas(dom::Element* aImage,
                                      dom::HTMLCanvasElement* aCanvas,
-                                     gfx::IntSize* aSizeOut,
-                                     bool aIsAccelerated);
+                                     gfx::IntSize* aSizeOut);
 };
 
 }  
