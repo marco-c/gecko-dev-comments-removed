@@ -7,10 +7,10 @@ import os
 import re
 
 
-def init_geckoview_power_test(raptor):
+def init_android_power_test(raptor):
     upload_dir = os.getenv('MOZ_UPLOAD_DIR')
     if not upload_dir:
-        raptor.log.critical("Geckoview power test ignored because MOZ_UPLOAD_DIR was not set")
+        raptor.log.critical("% power test ignored; MOZ_UPLOAD_DIR unset" % raptor.config['app'])
         return
     
     
@@ -67,10 +67,10 @@ def init_geckoview_power_test(raptor):
 
 
 
-def finish_geckoview_power_test(raptor):
+def finish_android_power_test(raptor, test_name):
     upload_dir = os.getenv('MOZ_UPLOAD_DIR')
     if not upload_dir:
-        raptor.log.critical("Geckoview power test ignored because MOZ_UPLOAD_DIR was not set")
+        raptor.log.critical("% power test ignored because MOZ_UPLOAD_DIR was not set" % test_name)
         return
     
     raptor.device.shell_output(
@@ -158,7 +158,7 @@ def finish_geckoview_power_test(raptor):
     
 
     power_data = {'type': 'power',
-                  'test': 'raptor-speedometer-geckoview',
+                  'test': test_name,
                   'unit': 'mAh',
                   'values': {
                       'cpu': float(cpu),
