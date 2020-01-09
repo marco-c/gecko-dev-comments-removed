@@ -18,6 +18,7 @@ use crate::values::animated::ToAnimatedZero;
     SpecifiedValueInfo,
     ToComputedValue,
     ToCss,
+    ToResolvedValue,
     ToShmem,
 )]
 pub enum VerticalAlign<LengthPercentage> {
@@ -60,7 +61,15 @@ impl<L> ToAnimatedZero for VerticalAlign<L> {
 
 
 #[derive(
-    Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss, ToShmem,
+    Clone,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
 )]
 pub enum AnimationIterationCount<Number> {
     
@@ -84,6 +93,7 @@ pub enum AnimationIterationCount<Number> {
     ToAnimatedZero,
     ToComputedValue,
     ToCss,
+    ToResolvedValue,
     ToShmem,
 )]
 #[repr(C, u8)]
