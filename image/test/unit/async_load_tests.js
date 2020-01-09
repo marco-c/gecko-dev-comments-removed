@@ -123,7 +123,7 @@ function getChannelLoadImageStopCallback(streamlistener, next)
 function checkSecondChannelLoad()
 {
   do_test_pending();
-  var channel = NetUtil.newChannel({uri: uri, loadUsingSystemPrincipal: true});
+  var channel = NetUtil.newChannel({uri, loadUsingSystemPrincipal: true});
   var channellistener = new ChannelListener();
   channel.asyncOpen(channellistener);
 
@@ -148,7 +148,7 @@ function run_loadImageWithChannel_tests()
   gCurrentLoader = Cc["@mozilla.org/image/loader;1"].createInstance(Ci.imgILoader);
 
   do_test_pending();
-  var channel =  NetUtil.newChannel({uri: uri, loadUsingSystemPrincipal: true});
+  var channel =  NetUtil.newChannel({uri, loadUsingSystemPrincipal: true});
   var channellistener = new ChannelListener();
   channel.asyncOpen(channellistener);
 
