@@ -401,11 +401,13 @@ void PluginModuleContentParent::Initialize(
 
   moduleMapping->SetChannelOpened();
 
-  
-  
-  
-  parent->GetIPCChannel()->SetChannelFlags(
-      MessageChannel::REQUIRE_DEFERRED_MESSAGE_PROTECTION);
+  if (XRE_UseNativeEventProcessing()) {
+    
+    
+    
+    parent->GetIPCChannel()->SetChannelFlags(
+        MessageChannel::REQUIRE_DEFERRED_MESSAGE_PROTECTION);
+  }
 
   TimeoutChanged(kContentTimeoutPref, parent);
 
