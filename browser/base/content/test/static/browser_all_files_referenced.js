@@ -170,6 +170,10 @@ var whitelist = [
    isFromDevTools: true},
   {file: "chrome://devtools/skin/images/next.svg", isFromDevTools: true},
   
+  {file: "resource://gre-resources/featuregates/FeatureGate.jsm"},
+  {file: "resource://gre-resources/featuregates/FeatureGateImplementation.jsm"},
+  {file: "resource://gre-resources/featuregates/feature_definitions.json"},
+  
   
   {file: "resource://gre/modules/kvstore.jsm"},
   {file: "chrome://devtools/content/aboutdebugging-new/tmp-locale/en-US/aboutdebugging.ftl",
