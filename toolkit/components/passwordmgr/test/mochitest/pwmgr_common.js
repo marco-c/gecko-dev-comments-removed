@@ -48,8 +48,7 @@ function checkAutoCompleteResults(actualValues, expectedValues, hostname, msg) {
 
     
     let footerResult = actualValues[actualValues.length - 1];
-    ok(footerResult.includes("View Saved Logins"), "the footer text is shown correctly");
-    ok(footerResult.includes(hostname), "the footer has the correct hostname attribute");
+    is(footerResult, "View Saved Logins", "the footer text is shown correctly");
   }
 
   if (hostname === null) {
