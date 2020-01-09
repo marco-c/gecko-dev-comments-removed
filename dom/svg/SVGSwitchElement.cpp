@@ -42,8 +42,6 @@ SVGSwitchElement::SVGSwitchElement(
     already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
     : SVGSwitchElementBase(std::move(aNodeInfo)) {}
 
-SVGSwitchElement::~SVGSwitchElement() {}
-
 void SVGSwitchElement::MaybeInvalidate() {
   
   

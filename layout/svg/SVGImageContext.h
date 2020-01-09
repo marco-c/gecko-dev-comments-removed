@@ -25,7 +25,7 @@ class ComputedStyle;
 
 class SVGImageContext {
  public:
-  SVGImageContext() {}
+  SVGImageContext() = default;
 
   
 
