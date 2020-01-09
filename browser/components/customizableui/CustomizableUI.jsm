@@ -4672,8 +4672,11 @@ OverflowableToolbar.prototype = {
       if (nowOverflowed) {
         
         
-        let prevId = aNode.previousElementSibling.id;
-        let minSize = this._collapsed.get(prevId);
+        
+        
+        
+        let sourceOfMinSize = aNode.previousElementSibling;
+        let minSize = sourceOfMinSize ? this._collapsed.get(sourceOfMinSize.id) : 1;
         this._collapsed.set(aNode.id, minSize);
         aNode.setAttribute("cui-anchorid", this._chevron.id);
         aNode.setAttribute("overflowedItem", true);
