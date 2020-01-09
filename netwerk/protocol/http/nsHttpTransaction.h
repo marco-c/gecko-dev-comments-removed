@@ -111,6 +111,8 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   
   nsHttpHeaderArray *TakeResponseTrailers();
 
+  void SetH2WSConnRefTaken();
+
   
   bool ResponseIsComplete() { return mResponseIsComplete; }
   void SetResponseIsComplete() { mResponseIsComplete = true; }

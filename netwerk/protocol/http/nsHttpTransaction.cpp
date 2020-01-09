@@ -462,6 +462,16 @@ nsAHttpConnection *nsHttpTransaction::Connection() {
   return mConnection.get();
 }
 
+void nsHttpTransaction::SetH2WSConnRefTaken() {
+  if (mH2WSTransaction) {
+    
+    
+    
+    mH2WSTransaction->SetConnRefTaken();
+    mH2WSTransaction = nullptr;
+  }
+}
+
 nsHttpResponseHead *nsHttpTransaction::TakeResponseHead() {
   MOZ_ASSERT(!mResponseHeadTaken, "TakeResponseHead called 2x");
 
