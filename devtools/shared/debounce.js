@@ -16,7 +16,10 @@
 
 
 
-exports.debounce = function(func, wait, scope) {
+
+
+
+exports.debounce = function(func, wait, scope, immediate = false) {
   let timer = null;
 
   return function() {
@@ -29,5 +32,10 @@ exports.debounce = function(func, wait, scope) {
       timer = null;
       func.apply(scope, args);
     }, wait);
+
+    if (immediate) {
+      immediate = false;
+      func.apply(scope, args);
+    }
   };
 };
