@@ -1431,7 +1431,8 @@ bool jit::GenerateBaselineInterpreter(JSContext* cx,
                                       BaselineInterpreter& interpreter) {
   
   if (JitOptions.baselineInterpreter) {
-    MOZ_CRASH("NYI: GenerateBaselineInterpreter");
+    BaselineInterpreterGenerator generator(cx);
+    return generator.generate(interpreter);
   }
 
   return true;
