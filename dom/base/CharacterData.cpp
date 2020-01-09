@@ -492,7 +492,7 @@ nsresult CharacterData::BindToTree(Document* aDocument, nsIContent* aParent,
   return NS_OK;
 }
 
-void CharacterData::UnbindFromTree(bool aDeep, bool aNullParent) {
+void CharacterData::UnbindFromTree(bool aNullParent) {
   
   UnsetFlags(NS_CREATE_FRAME_IF_NON_WHITESPACE | NS_REFRAME_IF_WHITESPACE);
 

@@ -111,7 +111,7 @@ nsresult HTMLAnchorElement::BindToTree(Document* aDocument, nsIContent* aParent,
   return rv;
 }
 
-void HTMLAnchorElement::UnbindFromTree(bool aDeep, bool aNullParent) {
+void HTMLAnchorElement::UnbindFromTree(bool aNullParent) {
   
   
   
@@ -122,7 +122,7 @@ void HTMLAnchorElement::UnbindFromTree(bool aDeep, bool aNullParent) {
   
   Link::ResetLinkState(false, Link::ElementHasHref());
 
-  nsGenericHTMLElement::UnbindFromTree(aDeep, aNullParent);
+  nsGenericHTMLElement::UnbindFromTree(aNullParent);
 }
 
 static bool IsNodeInEditableRegion(nsINode* aNode) {

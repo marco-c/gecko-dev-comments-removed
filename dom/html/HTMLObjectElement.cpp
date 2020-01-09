@@ -220,7 +220,7 @@ nsresult HTMLObjectElement::BindToTree(Document* aDocument, nsIContent* aParent,
   return NS_OK;
 }
 
-void HTMLObjectElement::UnbindFromTree(bool aDeep, bool aNullParent) {
+void HTMLObjectElement::UnbindFromTree(bool aNullParent) {
 #ifdef XP_MACOSX
   
   
@@ -229,8 +229,8 @@ void HTMLObjectElement::UnbindFromTree(bool aDeep, bool aNullParent) {
   
   OnFocusBlurPlugin(this, false);
 #endif
-  nsObjectLoadingContent::UnbindFromTree(aDeep, aNullParent);
-  nsGenericHTMLFormElement::UnbindFromTree(aDeep, aNullParent);
+  nsObjectLoadingContent::UnbindFromTree(aNullParent);
+  nsGenericHTMLFormElement::UnbindFromTree(aNullParent);
 }
 
 nsresult HTMLObjectElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,

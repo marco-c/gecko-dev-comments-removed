@@ -1619,7 +1619,7 @@ void nsImageLoadingContent::BindToTree(Document* aDocument, nsIContent* aParent,
   }
 }
 
-void nsImageLoadingContent::UnbindFromTree(bool aDeep, bool aNullParent) {
+void nsImageLoadingContent::UnbindFromTree(bool aNullParent) {
   
   nsCOMPtr<Document> doc = GetOurCurrentDoc();
   if (!doc) return;

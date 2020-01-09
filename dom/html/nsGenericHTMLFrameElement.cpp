@@ -236,7 +236,7 @@ nsresult nsGenericHTMLFrameElement::BindToTree(Document* aDocument,
   return rv;
 }
 
-void nsGenericHTMLFrameElement::UnbindFromTree(bool aDeep, bool aNullParent) {
+void nsGenericHTMLFrameElement::UnbindFromTree(bool aNullParent) {
   if (mFrameLoader) {
     
     
@@ -248,7 +248,7 @@ void nsGenericHTMLFrameElement::UnbindFromTree(bool aDeep, bool aNullParent) {
     mFrameLoader = nullptr;
   }
 
-  nsGenericHTMLElement::UnbindFromTree(aDeep, aNullParent);
+  nsGenericHTMLElement::UnbindFromTree(aNullParent);
 }
 
 

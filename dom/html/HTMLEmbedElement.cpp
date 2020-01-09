@@ -96,7 +96,7 @@ nsresult HTMLEmbedElement::BindToTree(Document* aDocument, nsIContent* aParent,
   return NS_OK;
 }
 
-void HTMLEmbedElement::UnbindFromTree(bool aDeep, bool aNullParent) {
+void HTMLEmbedElement::UnbindFromTree(bool aNullParent) {
 #ifdef XP_MACOSX
   
   
@@ -105,8 +105,8 @@ void HTMLEmbedElement::UnbindFromTree(bool aDeep, bool aNullParent) {
   
   HTMLObjectElement::OnFocusBlurPlugin(this, false);
 #endif
-  nsObjectLoadingContent::UnbindFromTree(aDeep, aNullParent);
-  nsGenericHTMLElement::UnbindFromTree(aDeep, aNullParent);
+  nsObjectLoadingContent::UnbindFromTree(aNullParent);
+  nsGenericHTMLElement::UnbindFromTree(aNullParent);
 }
 
 nsresult HTMLEmbedElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,

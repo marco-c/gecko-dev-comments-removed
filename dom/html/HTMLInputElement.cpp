@@ -4334,7 +4334,7 @@ nsresult HTMLInputElement::BindToTree(Document* aDocument, nsIContent* aParent,
   return rv;
 }
 
-void HTMLInputElement::UnbindFromTree(bool aDeep, bool aNullParent) {
+void HTMLInputElement::UnbindFromTree(bool aNullParent) {
   
   
   
@@ -4349,8 +4349,8 @@ void HTMLInputElement::UnbindFromTree(bool aDeep, bool aNullParent) {
     NotifyUAWidgetTeardown();
   }
 
-  nsImageLoadingContent::UnbindFromTree(aDeep, aNullParent);
-  nsGenericHTMLFormElementWithState::UnbindFromTree(aDeep, aNullParent);
+  nsImageLoadingContent::UnbindFromTree(aNullParent);
+  nsGenericHTMLFormElementWithState::UnbindFromTree(aNullParent);
 
   
   

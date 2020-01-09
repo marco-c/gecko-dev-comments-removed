@@ -799,8 +799,8 @@ nsresult HTMLTextAreaElement::BindToTree(Document* aDocument,
   return rv;
 }
 
-void HTMLTextAreaElement::UnbindFromTree(bool aDeep, bool aNullParent) {
-  nsGenericHTMLFormElementWithState::UnbindFromTree(aDeep, aNullParent);
+void HTMLTextAreaElement::UnbindFromTree(bool aNullParent) {
+  nsGenericHTMLFormElementWithState::UnbindFromTree(aNullParent);
 
   
   UpdateValueMissingValidityState();

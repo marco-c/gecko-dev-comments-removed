@@ -125,7 +125,7 @@ class nsIContent : public nsINode {
 
 
 
-  virtual void UnbindFromTree(bool aDeep = true, bool aNullParent = true) = 0;
+  virtual void UnbindFromTree(bool aNullParent = true) = 0;
 
   enum {
     
