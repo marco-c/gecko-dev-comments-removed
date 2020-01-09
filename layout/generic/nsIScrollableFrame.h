@@ -118,6 +118,15 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
 
+  virtual nsSize GetLayoutSize() const = 0;
+  
+
+
+
+
+
+
+
 
 
 

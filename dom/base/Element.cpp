@@ -977,7 +977,11 @@ nsRect Element::GetClientAreaRect() {
   nsIScrollableFrame* sf = GetScrollFrame(&frame);
 
   if (sf) {
-    return sf->GetScrollPortRect();
+    nsRect scrollPort = sf->GetScrollPortRect();
+    
+    
+    scrollPort.SizeTo(sf->GetLayoutSize());
+    return scrollPort;
   }
 
   if (frame &&

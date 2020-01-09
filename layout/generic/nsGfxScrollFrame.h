@@ -195,6 +195,12 @@ class ScrollFrameHelper : public nsIReflowCallback {
 
   void UpdateScrollbarPosition();
 
+  nsSize GetLayoutSize() const {
+    if (mIsUsingMinimumScaleSize) {
+      return mICBSize;
+    }
+    return mScrollPort.Size();
+  }
   nsRect GetScrollPortRect() const { return mScrollPort; }
   nsPoint GetScrollPosition() const {
     return mScrollPort.TopLeft() - mScrolledFrame->GetPosition();
@@ -565,6 +571,10 @@ class ScrollFrameHelper : public nsIReflowCallback {
 
   
   
+  nsSize mICBSize;
+
+  
+  
   
   
   nsPoint mDestination;
@@ -887,6 +897,9 @@ class nsHTMLScrollFrame : public nsContainerFrame,
       mozilla::WritingMode aWM) override {
     nsBoxLayoutState bls(aPresContext, aRC, 0);
     return mHelper.GetNondisappearingScrollbarWidth(&bls, aWM);
+  }
+  virtual nsSize GetLayoutSize() const override {
+    return mHelper.GetLayoutSize();
   }
   virtual nsRect GetScrolledRect() const override {
     return mHelper.GetScrolledRect();
@@ -1361,6 +1374,9 @@ class nsXULScrollFrame final : public nsBoxFrame,
       mozilla::WritingMode aWM) override {
     nsBoxLayoutState bls(aPresContext, aRC, 0);
     return mHelper.GetNondisappearingScrollbarWidth(&bls, aWM);
+  }
+  virtual nsSize GetLayoutSize() const override {
+    return mHelper.GetLayoutSize();
   }
   virtual nsRect GetScrolledRect() const override {
     return mHelper.GetScrolledRect();
