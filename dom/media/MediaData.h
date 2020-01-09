@@ -635,6 +635,14 @@ class MediaRawData final : public MediaData {
   RefPtr<TrackInfoSharedPtr> mTrackInfo;
 
   
+  
+  
+  
+  
+  
+  Maybe<media::TimeInterval> mOriginalPresentationWindow;
+
+  
   already_AddRefed<MediaRawData> Clone() const;
   
   

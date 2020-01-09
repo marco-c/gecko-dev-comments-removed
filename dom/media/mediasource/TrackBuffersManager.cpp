@@ -636,7 +636,7 @@ bool TrackBuffersManager::CodedFrameRemoval(TimeInterval aInterval) {
     
     
     TimeIntervals removedInterval{TimeInterval(start, removeEndTimestamp)};
-    RemoveFrames(removedInterval, *track, 0);
+    RemoveFrames(removedInterval, *track, 0, RemovalMode::kRemoveFrame);
 
     
     
@@ -1613,21 +1613,6 @@ void TrackBuffersManager::ProcessFrames(TrackBuffer& aSamples,
   
   auto& trackBuffer = aTrackData;
 
-  
-  
-  
-  
-  
-  
-  TimeInterval targetWindow =
-      (mAppendWindow.mStart != TimeUnit::FromSeconds(0) ||
-       mAppendWindow.mEnd != TimeUnit::FromInfinity())
-          ? mAppendWindow
-          : TimeInterval(mAppendWindow.mStart, mAppendWindow.mEnd,
-                         trackBuffer.mLastFrameDuration.isSome()
-                             ? trackBuffer.mLongestFrameDuration
-                             : aSamples[0]->mDuration);
-
   TimeIntervals samplesRange;
   uint32_t sizeNewSamples = 0;
   TrackBuffer samples;  
@@ -1778,20 +1763,46 @@ void TrackBuffersManager::ProcessFrames(TrackBuffer& aSamples,
     
     
     
-    if (!targetWindow.ContainsWithStrictEnd(sampleInterval)) {
-      if (samples.Length()) {
+    if (!mAppendWindow.ContainsStrict(sampleInterval)) {
+      if (mAppendWindow.IntersectsStrict(sampleInterval)) {
         
         
-        InsertFrames(samples, samplesRange, trackBuffer);
-        samples.Clear();
-        samplesRange = TimeIntervals();
-        trackBuffer.mSizeBuffer += sizeNewSamples;
-        sizeNewSamples = 0;
-        UpdateHighestTimestamp(trackBuffer, highestSampleTime);
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        TimeInterval intersection = mAppendWindow.Intersection(sampleInterval);
+        sample->mOriginalPresentationWindow = Some(sampleInterval);
+        sampleInterval = intersection;
+        sample->mDuration = intersection.Length();
+      } else {
+        if (samples.Length()) {
+          
+          
+          InsertFrames(samples, samplesRange, trackBuffer);
+          samples.Clear();
+          samplesRange = TimeIntervals();
+          trackBuffer.mSizeBuffer += sizeNewSamples;
+          sizeNewSamples = 0;
+          UpdateHighestTimestamp(trackBuffer, highestSampleTime);
+        }
+        trackBuffer.mNeedRandomAccessPoint = true;
+        needDiscontinuityCheck = true;
+        continue;
       }
-      trackBuffer.mNeedRandomAccessPoint = true;
-      needDiscontinuityCheck = true;
-      continue;
     }
 
     samplesRange += sampleInterval;
@@ -1900,7 +1911,6 @@ void TrackBuffersManager::InsertFrames(TrackBuffer& aSamples,
   
   
   
-  
 
   
   
@@ -1945,7 +1955,8 @@ void TrackBuffersManager::InsertFrames(TrackBuffer& aSamples,
       trackBuffer.mNextInsertionIndex.reset();
     }
     uint32_t index = RemoveFrames(aIntervals, trackBuffer,
-                                  trackBuffer.mNextInsertionIndex.refOr(0));
+                                  trackBuffer.mNextInsertionIndex.refOr(0),
+                                  RemovalMode::kTruncateFrame);
     if (index) {
       trackBuffer.mNextInsertionIndex = Some(index);
     }
@@ -2004,7 +2015,8 @@ void TrackBuffersManager::UpdateHighestTimestamp(
 
 uint32_t TrackBuffersManager::RemoveFrames(const TimeIntervals& aIntervals,
                                            TrackData& aTrackData,
-                                           uint32_t aStartIndex) {
+                                           uint32_t aStartIndex,
+                                           RemovalMode aMode) {
   TrackBuffer& data = aTrackData.GetTrackBuffer();
   Maybe<uint32_t> firstRemovedIndex;
   uint32_t lastRemovedIndex = 0;
@@ -2025,14 +2037,35 @@ uint32_t TrackBuffersManager::RemoveFrames(const TimeIntervals& aIntervals,
   
   TimeUnit intervalsEnd = aIntervals.GetEnd();
   for (uint32_t i = aStartIndex; i < data.Length(); i++) {
-    const RefPtr<MediaRawData> sample = data[i];
-    if (aIntervals.ContainsWithStrictEnd(sample->mTime)) {
+    RefPtr<MediaRawData>& sample = data[i];
+    if (aIntervals.ContainsStrict(sample->mTime)) {
+      
+      
       if (firstRemovedIndex.isNothing()) {
         firstRemovedIndex = Some(i);
       }
       lastRemovedIndex = i;
       continue;
     }
+    TimeInterval sampleInterval(sample->mTime, sample->GetEndTime());
+    if (aMode == RemovalMode::kTruncateFrame &&
+        aIntervals.IntersectsStrict(sampleInterval)) {
+      
+      TimeIntervals intersection =
+          Intersection(aIntervals, TimeIntervals(sampleInterval));
+      bool found = false;
+      TimeUnit startTime = intersection.GetStart(&found);
+      MOZ_DIAGNOSTIC_ASSERT(found, "Must intersect with added coded frames");
+      Unused << found;
+      
+      if (!sample->mOriginalPresentationWindow) {
+        sample->mOriginalPresentationWindow = Some(sampleInterval);
+      }
+      MOZ_ASSERT(startTime > sample->mTime);
+      sample->mDuration = startTime - sample->mTime;
+      continue;
+    }
+
     if (sample->mTime >= intervalsEnd) {
       
       

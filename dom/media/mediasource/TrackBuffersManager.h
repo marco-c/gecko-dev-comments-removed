@@ -394,8 +394,13 @@ class TrackBuffersManager
   
   
   
+  enum class RemovalMode {
+    kRemoveFrame,
+    kTruncateFrame,
+  };
   uint32_t RemoveFrames(const media::TimeIntervals& aIntervals,
-                        TrackData& aTrackData, uint32_t aStartIndex);
+                        TrackData& aTrackData, uint32_t aStartIndex,
+                        RemovalMode aMode);
   
   void ResetEvictionIndex(TrackData& aTrackData);
   void UpdateEvictionIndex(TrackData& aTrackData, uint32_t aCurrentIndex);
