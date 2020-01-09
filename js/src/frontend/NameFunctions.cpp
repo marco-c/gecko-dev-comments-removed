@@ -7,6 +7,7 @@
 #include "frontend/NameFunctions.h"
 
 #include "mozilla/MemoryChecking.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/Sprintf.h"
 
 #include "frontend/BytecodeCompiler.h"
@@ -34,7 +35,8 @@ class NameResolver {
   ParseNode* parents_[MaxParents];
 
   
-  StringBuffer* buf_;
+  
+  StringBuffer buf_;
 
   
   bool isCall(ParseNode* pn) {
@@ -53,26 +55,25 @@ class NameResolver {
 
   bool appendPropertyReference(JSAtom* name) {
     if (IsIdentifier(name)) {
-      return buf_->append('.') && buf_->append(name);
+      return buf_.append('.') && buf_.append(name);
     }
 
     
     UniqueChars source = QuoteString(cx, name, '"');
-    return source && buf_->append('[') &&
-           buf_->append(source.get(), strlen(source.get())) &&
-           buf_->append(']');
+    return source && buf_.append('[') &&
+           buf_.append(source.get(), strlen(source.get())) && buf_.append(']');
   }
 
   
   bool appendNumber(double n) {
     char number[30];
     int digits = SprintfLiteral(number, "%g", n);
-    return buf_->append(number, digits);
+    return buf_.append(number, digits);
   }
 
   
   bool appendNumericPropertyReference(double n) {
-    return buf_->append("[") && appendNumber(n) && buf_->append(']');
+    return buf_.append("[") && appendNumber(n) && buf_.append(']');
   }
 
   
@@ -97,11 +98,11 @@ class NameResolver {
       case ParseNodeKind::Name:
       case ParseNodeKind::PrivateName:
         *foundName = true;
-        return buf_->append(n->as<NameNode>().atom());
+        return buf_.append(n->as<NameNode>().atom());
 
       case ParseNodeKind::ThisExpr:
         *foundName = true;
-        return buf_->append("this");
+        return buf_.append("this");
 
       case ParseNodeKind::ElemExpr: {
         PropertyByValue* elem = &n->as<PropertyByValue>();
@@ -111,13 +112,13 @@ class NameResolver {
         if (!*foundName) {
           return true;
         }
-        if (!buf_->append('[') || !nameExpression(elem->right(), foundName)) {
+        if (!buf_.append('[') || !nameExpression(elem->right(), foundName)) {
           return false;
         }
         if (!*foundName) {
           return true;
         }
-        return buf_->append(']');
+        return buf_.append(']');
       }
 
       case ParseNodeKind::NumberExpr:
@@ -215,8 +216,8 @@ class NameResolver {
     MOZ_ASSERT(funNode != nullptr);
     RootedFunction fun(cx, funNode->funbox()->function());
 
-    StringBuffer buf(cx);
-    this->buf_ = &buf;
+    MOZ_ASSERT(buf_.empty());
+    auto resetBuf = mozilla::MakeScopeExit([&] { buf_.clear(); });
 
     retAtom.set(nullptr);
 
@@ -226,16 +227,16 @@ class NameResolver {
         retAtom.set(fun->displayAtom());
         return true;
       }
-      if (!buf.append(prefix) || !buf.append('/') ||
-          !buf.append(fun->displayAtom()))
+      if (!buf_.append(prefix) || !buf_.append('/') ||
+          !buf_.append(fun->displayAtom()))
         return false;
-      retAtom.set(buf.finishAtom());
+      retAtom.set(buf_.finishAtom());
       return !!retAtom;
     }
 
     
     if (prefix != nullptr) {
-      if (!buf.append(prefix) || !buf.append('/')) {
+      if (!buf_.append(prefix) || !buf_.append('/')) {
         return false;
       }
     }
@@ -284,8 +285,8 @@ class NameResolver {
       } else {
         
         
-        if (!buf.empty() && buf.getChar(buf.length() - 1) != '<' &&
-            !buf.append('<')) {
+        if (!buf_.empty() && buf_.getChar(buf_.length() - 1) != '<' &&
+            !buf_.append('<')) {
           return false;
         }
       }
@@ -294,16 +295,16 @@ class NameResolver {
     
     
     
-    if (!buf.empty() && buf.getChar(buf.length() - 1) == '/' &&
-        !buf.append('<')) {
+    if (!buf_.empty() && buf_.getChar(buf_.length() - 1) == '/' &&
+        !buf_.append('<')) {
       return false;
     }
 
-    if (buf.empty()) {
+    if (buf_.empty()) {
       return true;
     }
 
-    retAtom.set(buf.finishAtom());
+    retAtom.set(buf_.finishAtom());
     if (!retAtom) {
       return false;
     }
@@ -387,7 +388,7 @@ class NameResolver {
   }
 
  public:
-  explicit NameResolver(JSContext* cx) : cx(cx), nparents_(0), buf_(nullptr) {}
+  explicit NameResolver(JSContext* cx) : cx(cx), nparents_(0), buf_(cx) {}
 
   
 
