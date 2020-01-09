@@ -2060,6 +2060,38 @@ static bool gDoMigration = false;
 static bool gDoProfileReset = false;
 static nsCOMPtr<nsIToolkitProfile> gResetOldProfile;
 
+static nsresult LockProfile(nsINativeAppSupport* aNative, nsIFile* aRootDir,
+                            nsIFile* aLocalDir, nsIToolkitProfile* aProfile,
+                            nsIProfileLock** aResult) {
+  
+  
+  
+  
+
+  static const int kLockRetrySeconds = 5;
+  static const int kLockRetrySleepMS = 100;
+
+  nsresult rv;
+  nsCOMPtr<nsIProfileUnlocker> unlocker;
+  const TimeStamp start = TimeStamp::Now();
+  do {
+    if (aProfile) {
+      rv = aProfile->Lock(getter_AddRefs(unlocker), aResult);
+    } else {
+      rv = NS_LockProfilePath(aRootDir, aLocalDir, getter_AddRefs(unlocker),
+                              aResult);
+    }
+    if (NS_SUCCEEDED(rv)) {
+      StartupTimeline::Record(StartupTimeline::AFTER_PROFILE_LOCKED);
+      return NS_OK;
+    }
+    PR_Sleep(kLockRetrySleepMS);
+  } while (TimeStamp::Now() - start <
+           TimeDuration::FromSeconds(kLockRetrySeconds));
+
+  return ProfileLockedDialog(aRootDir, aLocalDir, unlocker, aNative, aResult);
+}
+
 
 
 
@@ -2179,32 +2211,7 @@ static nsresult SelectProfile(nsIProfileLock** aResult,
     return NS_ERROR_ABORT;
   }
 
-  
-  
-  
-  
-
-  static const int kLockRetrySeconds = 5;
-  static const int kLockRetrySleepMS = 100;
-
-  nsCOMPtr<nsIProfileUnlocker> unlocker;
-  const TimeStamp start = TimeStamp::Now();
-  do {
-    if (profile) {
-      rv = profile->Lock(getter_AddRefs(unlocker), aResult);
-    } else {
-      rv = NS_LockProfilePath(rootDir, localDir, getter_AddRefs(unlocker),
-                              aResult);
-    }
-    if (NS_SUCCEEDED(rv)) {
-      StartupTimeline::Record(StartupTimeline::AFTER_PROFILE_LOCKED);
-      return NS_OK;
-    }
-    PR_Sleep(kLockRetrySleepMS);
-  } while (TimeStamp::Now() - start <
-           TimeDuration::FromSeconds(kLockRetrySeconds));
-
-  return ProfileLockedDialog(rootDir, localDir, unlocker, aNative, aResult);
+  return LockProfile(aNative, rootDir, localDir, profile, aResult);
 }
 
 #ifdef MOZ_BLOCK_PROFILE_DOWNGRADE
