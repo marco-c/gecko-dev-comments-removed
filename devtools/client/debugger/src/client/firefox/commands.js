@@ -422,7 +422,12 @@ async function fetchWorkers(): Promise<Worker[]> {
     for (const actor of workerNames) {
       if (!workerClients[actor]) {
         const client = newWorkerClients[actor].thread;
-        getSources(client);
+
+        
+        
+        
+        
+        getSources(client).catch(e => console.error(e));
       }
     }
 
