@@ -10,6 +10,7 @@
 #include "BRNameMatchingPolicy.h"
 #include "CTPolicyEnforcer.h"
 #include "CTVerifyResult.h"
+#include "EnterpriseRoots.h"
 #include "OCSPCache.h"
 #include "RootCertificateTelemetryUtils.h"
 #include "ScopedNSSTypes.h"
@@ -207,7 +208,7 @@ class CertVerifier {
                NetscapeStepUpPolicy netscapeStepUpPolicy,
                CertificateTransparencyMode ctMode,
                DistrustedCAPolicy distrustedCAPolicy,
-               const Vector<Vector<uint8_t>>& thirdPartyRoots);
+               const Vector<EnterpriseCert>& thirdPartyCerts);
   ~CertVerifier();
 
   void ClearOCSPCache() { mOCSPCache.Clear(); }
@@ -227,10 +228,12 @@ class CertVerifier {
  private:
   OCSPCache mOCSPCache;
   
-  Vector<Vector<uint8_t>> mThirdPartyRoots;
+  Vector<EnterpriseCert> mThirdPartyCerts;
   
   
   Vector<mozilla::pkix::Input> mThirdPartyRootInputs;
+  
+  Vector<mozilla::pkix::Input> mThirdPartyIntermediateInputs;
 
   
   

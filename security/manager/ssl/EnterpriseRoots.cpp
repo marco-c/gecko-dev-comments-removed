@@ -9,6 +9,7 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Unused.h"
+#include "mozpkix/Result.h"
 
 #ifdef XP_MACOSX
 #  include <Security/Security.h>
@@ -19,8 +20,36 @@ extern LazyLogModule gPIPNSSLog;
 
 using namespace mozilla;
 
+nsresult EnterpriseCert::Init(const uint8_t* data, size_t len, bool isRoot) {
+  mDER.clear();
+  if (!mDER.append(data, len)) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+  mIsRoot = isRoot;
+
+  return NS_OK;
+}
+
+nsresult EnterpriseCert::Init(const EnterpriseCert& orig) {
+  return Init(orig.mDER.begin(), orig.mDER.length(), orig.mIsRoot);
+}
+
+nsresult EnterpriseCert::CopyBytes(nsTArray<uint8_t>& dest) const {
+  dest.Clear();
+  if (!dest.AppendElements(mDER.begin(), mDER.length())) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+  return NS_OK;
+}
+
+pkix::Result EnterpriseCert::GetInput(pkix::Input& input) const {
+  return input.Init(mDER.begin(), mDER.length());
+}
+
+bool EnterpriseCert::GetIsRoot() const { return mIsRoot; }
+
 #ifdef XP_WIN
-const wchar_t* kWindowsDefaultRootStoreName = L"ROOT";
+const wchar_t* kWindowsDefaultRootStoreNames[] = {L"ROOT", L"CA"};
 
 
 
@@ -29,10 +58,13 @@ const wchar_t* kWindowsDefaultRootStoreName = L"ROOT";
 
 
 
-static bool CertIsTrustAnchorForTLSServerAuth(PCCERT_CONTEXT certificate) {
+static void CertIsTrustAnchorForTLSServerAuth(PCCERT_CONTEXT certificate,
+                                              bool& isTrusted, bool& isRoot) {
+  isTrusted = false;
+  isRoot = false;
   MOZ_ASSERT(certificate);
   if (!certificate) {
-    return false;
+    return;
   }
 
   PCCERT_CHAIN_CONTEXT pChainContext = nullptr;
@@ -56,20 +88,19 @@ static bool CertIsTrustAnchorForTLSServerAuth(PCCERT_CONTEXT certificate) {
   if (!CertGetCertificateChain(nullptr, certificate, nullptr, nullptr,
                                &chainPara, 0, nullptr, &pChainContext)) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("CertGetCertificateChain failed"));
-    return false;
+    return;
   }
-  bool trusted =
-      pChainContext->TrustStatus.dwErrorStatus == CERT_TRUST_NO_ERROR;
-  bool isRoot = pChainContext->cChain == 1;
+  isTrusted = pChainContext->TrustStatus.dwErrorStatus == CERT_TRUST_NO_ERROR;
+  if (isTrusted && pChainContext->cChain > 0) {
+    
+    
+    CERT_SIMPLE_CHAIN* finalChain =
+        pChainContext->rgpChain[pChainContext->cChain - 1];
+    
+    
+    isRoot = finalChain->cElement == 1;
+  }
   CertFreeCertificateChain(pChainContext);
-  if (trusted && isRoot) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-            ("certificate is trust anchor for TLS server auth"));
-    return true;
-  }
-  MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-          ("certificate not trust anchor for TLS server auth"));
-  return false;
 }
 
 
@@ -100,8 +131,8 @@ class ScopedCertStore final {
 
 
 
-static void GatherEnterpriseRootsForLocation(DWORD locationFlag,
-                                             Vector<Vector<uint8_t>>& roots) {
+static void GatherEnterpriseCertsForLocation(DWORD locationFlag,
+                                             Vector<EnterpriseCert>& certs) {
   MOZ_ASSERT(locationFlag == CERT_SYSTEM_STORE_LOCAL_MACHINE ||
                  locationFlag == CERT_SYSTEM_STORE_LOCAL_MACHINE_GROUP_POLICY ||
                  locationFlag == CERT_SYSTEM_STORE_LOCAL_MACHINE_ENTERPRISE,
@@ -119,52 +150,55 @@ static void GatherEnterpriseRootsForLocation(DWORD locationFlag,
   
   
   
-  ScopedCertStore enterpriseRootStore(
-      CertOpenStore(CERT_STORE_PROV_SYSTEM_REGISTRY_W, 0, NULL, flags,
-                    kWindowsDefaultRootStoreName));
-  if (!enterpriseRootStore.get()) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-            ("failed to open enterprise root store"));
-    return;
-  }
-  PCCERT_CONTEXT certificate = nullptr;
-  uint32_t numImported = 0;
-  while ((certificate = CertFindCertificateInStore(
-              enterpriseRootStore.get(), X509_ASN_ENCODING, 0, CERT_FIND_ANY,
-              nullptr, certificate))) {
-    if (!CertIsTrustAnchorForTLSServerAuth(certificate)) {
+  for (auto name : kWindowsDefaultRootStoreNames) {
+    ScopedCertStore enterpriseRootStore(
+        CertOpenStore(CERT_STORE_PROV_SYSTEM_REGISTRY_W, 0, NULL, flags, name));
+    if (!enterpriseRootStore.get()) {
       MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-              ("skipping cert not trust anchor for TLS server auth"));
+              ("failed to open enterprise root store"));
       continue;
     }
-    Vector<uint8_t> certBytes;
-    if (!certBytes.append(certificate->pbCertEncoded,
-                          certificate->cbCertEncoded)) {
-      MOZ_LOG(gPIPNSSLog, LogLevel::Verbose,
-              ("couldn't copy cert bytes (out of memory?)"));
-      continue;
+    PCCERT_CONTEXT certificate = nullptr;
+    uint32_t numImported = 0;
+    while ((certificate = CertFindCertificateInStore(
+                enterpriseRootStore.get(), X509_ASN_ENCODING, 0, CERT_FIND_ANY,
+                nullptr, certificate))) {
+      bool isTrusted;
+      bool isRoot;
+      CertIsTrustAnchorForTLSServerAuth(certificate, isTrusted, isRoot);
+      if (!isTrusted) {
+        MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+                ("skipping cert not trusted for TLS server auth"));
+        continue;
+      }
+      EnterpriseCert enterpriseCert;
+      if (NS_FAILED(enterpriseCert.Init(certificate->pbCertEncoded,
+                                        certificate->cbCertEncoded, isRoot))) {
+        
+        continue;
+      }
+      if (!certs.append(std::move(enterpriseCert))) {
+        
+        continue;
+      }
+      numImported++;
     }
-    if (!roots.append(std::move(certBytes))) {
-      MOZ_LOG(gPIPNSSLog, LogLevel::Verbose,
-              ("couldn't append cert bytes to roots list (out of memory?)"));
-      continue;
-    }
-    numImported++;
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+            ("imported %u certs from %S", numImported, name));
   }
-  MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("imported %u roots", numImported));
 }
 
-static void GatherEnterpriseRootsWindows(Vector<Vector<uint8_t>>& roots) {
-  GatherEnterpriseRootsForLocation(CERT_SYSTEM_STORE_LOCAL_MACHINE, roots);
-  GatherEnterpriseRootsForLocation(CERT_SYSTEM_STORE_LOCAL_MACHINE_GROUP_POLICY,
-                                   roots);
-  GatherEnterpriseRootsForLocation(CERT_SYSTEM_STORE_LOCAL_MACHINE_ENTERPRISE,
-                                   roots);
+static void GatherEnterpriseCertsWindows(Vector<EnterpriseCert>& certs) {
+  GatherEnterpriseCertsForLocation(CERT_SYSTEM_STORE_LOCAL_MACHINE, certs);
+  GatherEnterpriseCertsForLocation(CERT_SYSTEM_STORE_LOCAL_MACHINE_GROUP_POLICY,
+                                   certs);
+  GatherEnterpriseCertsForLocation(CERT_SYSTEM_STORE_LOCAL_MACHINE_ENTERPRISE,
+                                   certs);
 }
 #endif  
 
 #ifdef XP_MACOSX
-OSStatus GatherEnterpriseRootsOSX(Vector<Vector<uint8_t>>& roots) {
+OSStatus GatherEnterpriseCertsMacOS(Vector<EnterpriseCert>& certs) {
   
   
   
@@ -204,33 +238,32 @@ OSStatus GatherEnterpriseRootsOSX(Vector<Vector<uint8_t>>& roots) {
     
     const SecCertificateRef s = (const SecCertificateRef)c;
     ScopedCFType<CFDataRef> der(SecCertificateCopyData(s));
-    const unsigned char* ptr = CFDataGetBytePtr(der.get());
-    unsigned int len = CFDataGetLength(der.get());
-    Vector<uint8_t> certBytes;
-    if (!certBytes.append(ptr, len)) {
-      MOZ_LOG(gPIPNSSLog, LogLevel::Verbose,
-              ("couldn't copy cert bytes (out of memory?)"));
+    EnterpriseCert enterpriseCert;
+    
+    
+    if (NS_FAILED(enterpriseCert.Init(CFDataGetBytePtr(der.get()),
+                                      CFDataGetLength(der.get()), true))) {
+      
       continue;
     }
-    if (!roots.append(std::move(certBytes))) {
-      MOZ_LOG(gPIPNSSLog, LogLevel::Verbose,
-              ("couldn't append cert bytes to roots list (out of memory?)"));
+    if (!certs.append(std::move(enterpriseCert))) {
+      
       continue;
     }
     numImported++;
   }
-  MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("imported %u roots", numImported));
+  MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("imported %u certs", numImported));
   return errSecSuccess;
 }
 #endif  
 
-nsresult GatherEnterpriseRoots(Vector<Vector<uint8_t>>& roots) {
-  roots.clear();
+nsresult GatherEnterpriseCerts(Vector<EnterpriseCert>& certs) {
+  certs.clear();
 #ifdef XP_WIN
-  GatherEnterpriseRootsWindows(roots);
+  GatherEnterpriseCertsWindows(certs);
 #endif  
 #ifdef XP_MACOSX
-  OSStatus rv = GatherEnterpriseRootsOSX(roots);
+  OSStatus rv = GatherEnterpriseCertsMacOS(certs);
   if (rv != errSecSuccess) {
     return NS_ERROR_FAILURE;
   }
