@@ -92,6 +92,17 @@ class DecodedStreamGraphListener {
   }
 
   void NotifyOutput(TrackID aTrackID, StreamTime aCurrentTrackTime) {
+    if (aTrackID == mAudioTrackID) {
+      if (aCurrentTrackTime >= mAudioEnd) {
+        mStream->EndTrack(mAudioTrackID);
+      }
+    } else if (aTrackID == mVideoTrackID) {
+      if (aCurrentTrackTime >= mVideoEnd) {
+        mStream->EndTrack(mVideoTrackID);
+      }
+    } else {
+      MOZ_CRASH("Unexpected TrackID");
+    }
     if (aTrackID != mAudioTrackID && mAudioTrackID != TRACK_NONE &&
         !mAudioEnded) {
       
@@ -119,6 +130,36 @@ class DecodedStreamGraphListener {
   TrackID AudioTrackID() const { return mAudioTrackID; }
 
   TrackID VideoTrackID() const { return mVideoTrackID; }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void EndTrackAt(TrackID aTrackID, StreamTime aEnd) {
+    if (aTrackID == mAudioTrackID) {
+      mAudioEnd = aEnd;
+    } else if (aTrackID == mVideoTrackID) {
+      mVideoEnd = aEnd;
+    } else {
+      MOZ_CRASH("Unexpected TrackID");
+    }
+  }
 
   void DoNotifyTrackEnded(TrackID aTrackID) {
     MOZ_ASSERT(NS_IsMainThread());
@@ -172,7 +213,9 @@ class DecodedStreamGraphListener {
   
   const RefPtr<SourceMediaStream> mStream;
   const TrackID mAudioTrackID;
+  Atomic<StreamTime> mAudioEnd{STREAM_TIME_MAX};
   const TrackID mVideoTrackID;
+  Atomic<StreamTime> mVideoEnd{STREAM_TIME_MAX};
   const RefPtr<AbstractThread> mAbstractMainThread;
 };
 
@@ -617,7 +660,7 @@ void DecodedStream::SendAudio(double aVolume, bool aIsSameOrigin,
   }
 
   if (mAudioQueue.IsFinished() && !mData->mHaveSentFinishAudio) {
-    sourceStream->EndTrack(audioTrackId);
+    mData->mListener->EndTrackAt(audioTrackId, mData->mStreamAudioWritten);
     mData->mHaveSentFinishAudio = true;
   }
 }
@@ -810,7 +853,7 @@ void DecodedStream::SendVideo(bool aIsSameOrigin,
       mData->mStreamVideoWritten +=
           sourceStream->AppendToTrack(videoTrackId, &endSegment);
     }
-    sourceStream->EndTrack(videoTrackId);
+    mData->mListener->EndTrackAt(videoTrackId, mData->mStreamVideoWritten);
     mData->mHaveSentFinishVideo = true;
   }
 }
