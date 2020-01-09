@@ -7,6 +7,10 @@ pref("security.tls.version.max", 4);
 pref("security.tls.version.fallback-limit", 4);
 pref("security.tls.insecure_fallback_hosts", "");
 pref("security.tls.enable_0rtt_data", false);
+
+
+
+pref("security.tls.enable_post_handshake_auth", false);
 #ifdef RELEASE_OR_BETA
 pref("security.tls.hello_downgrade_check", false);
 #else
