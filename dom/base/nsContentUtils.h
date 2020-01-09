@@ -2353,11 +2353,6 @@ class nsContentUtils {
   
 
 
-  static bool AnimationsAPICoreEnabled() { return sAnimationsAPICoreEnabled; }
-
-  
-
-
   static bool GetBoxQuadsEnabled() { return sGetBoxQuadsEnabled; }
 
   
@@ -3443,7 +3438,6 @@ class nsContentUtils {
 
   static bool sIsHandlingKeyBoardEvent;
   static bool sAllowXULXBL_for_file;
-  static bool sAnimationsAPICoreEnabled;
   static bool sGetBoxQuadsEnabled;
   static bool sSkipCursorMoveForSameValueSet;
   static bool sRequestIdleCallbackEnabled;

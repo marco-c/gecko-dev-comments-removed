@@ -3227,9 +3227,6 @@ pref("layout.idle_period.required_quiescent_frames", 2);
 pref("layout.idle_period.time_limit", 1);
 
 
-pref("dom.animations-api.core.enabled", true);
-
-
 pref("dom.animations.offscreen-throttling", true);
 
 

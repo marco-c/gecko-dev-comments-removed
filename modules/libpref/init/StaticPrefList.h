@@ -141,6 +141,13 @@ VARCACHE_PREF(
 #undef PREF_VALUE
 
 
+VARCACHE_PREF(
+  "dom.animations-api.core.enabled",
+   dom_animations_api_core_enabled,
+  bool, true
+)
+
+
 
 
 
