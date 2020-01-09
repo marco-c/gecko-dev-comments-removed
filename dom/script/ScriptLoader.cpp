@@ -1108,8 +1108,9 @@ bool ScriptLoader::InstantiateModuleTree(ModuleLoadRequest* aRequest) {
   return true;
 }
 
-nsresult ScriptLoader::AssociateSourceElementsForModuleTree(
+nsresult ScriptLoader::InitDebuggerDataForModuleTree(
     JSContext* aCx, ModuleLoadRequest* aRequest) {
+  
   
   
   
@@ -1117,12 +1118,12 @@ nsresult ScriptLoader::AssociateSourceElementsForModuleTree(
   MOZ_ASSERT(aRequest);
 
   ModuleScript* moduleScript = aRequest->mModuleScript;
-  if (moduleScript->SourceElementAssociated()) {
+  if (moduleScript->DebuggerDataInitialized()) {
     return NS_OK;
   }
 
   for (ModuleLoadRequest* childRequest : aRequest->mImports) {
-    nsresult rv = AssociateSourceElementsForModuleTree(aCx, childRequest);
+    nsresult rv = InitDebuggerDataForModuleTree(aCx, childRequest);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
@@ -1133,13 +1134,13 @@ nsresult ScriptLoader::AssociateSourceElementsForModuleTree(
   if (element) {
     nsresult rv = nsJSUtils::InitModuleSourceElement(aCx, module, element);
     NS_ENSURE_SUCCESS(rv, rv);
-    moduleScript->SetSourceElementAssociated();
   }
 
   
   JS::Rooted<JSScript*> script(aCx, JS::GetModuleScript(module));
   JS::ExposeScriptToDebugger(aCx, script);
 
+  moduleScript->SetDebuggerDataInitialized();
   return NS_OK;
 }
 
@@ -2576,10 +2577,8 @@ nsresult ScriptLoader::EvaluateScript(ScriptLoadRequest* aRequest) {
       JS::Rooted<JSObject*> module(cx, moduleScript->ModuleRecord());
       MOZ_ASSERT(module);
 
-      if (!moduleScript->SourceElementAssociated()) {
-        rv = AssociateSourceElementsForModuleTree(cx, request);
-        NS_ENSURE_SUCCESS(rv, rv);
-      }
+      rv = InitDebuggerDataForModuleTree(cx, request);
+      NS_ENSURE_SUCCESS(rv, rv);
 
       rv = nsJSUtils::ModuleEvaluate(cx, module);
       MOZ_ASSERT(NS_FAILED(rv) == aes.HasException());
