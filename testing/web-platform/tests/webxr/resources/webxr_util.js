@@ -54,7 +54,9 @@ function xr_session_promise_test(
                               
                               
                               session.updateRenderState({
-                                  baseLayer: new XRWebGLLayer(session, gl) });
+                                  baseLayer: new XRWebGLLayer(session, gl),
+                                  outputContext: getOutputContext()
+                              });
                               resolve(func(session, testDeviceController, t));
                             })
                             .catch((err) => {
