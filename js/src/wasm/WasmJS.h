@@ -79,6 +79,14 @@ MOZ_MUST_USE bool Eval(JSContext* cx, Handle<TypedArrayObject*> code,
 
 
 
+struct ImportValues;
+MOZ_MUST_USE bool GetImports(JSContext* cx, const Module& module,
+                             HandleObject importObj, ImportValues* imports);
+
+
+
+
+
 
 
 MOZ_MUST_USE bool CompileAndSerialize(const ShareableBytes& bytecode,

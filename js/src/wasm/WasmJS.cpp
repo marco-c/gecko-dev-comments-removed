@@ -240,7 +240,7 @@ static bool GetProperty(JSContext* cx, HandleObject obj, const char* chars,
   return GetProperty(cx, obj, obj, id, v);
 }
 
-static bool GetImports(JSContext* cx, const Module& module,
+bool js::wasm::GetImports(JSContext* cx, const Module& module,
                        HandleObject importObj, ImportValues* imports) {
   if (!module.imports().empty() && !importObj) {
     return ThrowBadImportArg(cx);
@@ -2778,12 +2778,6 @@ static bool Reject(JSContext* cx, const CompileArgs& args,
   return PromiseObject::reject(cx, promise, rejectionValue);
 }
 
-static void LogAsync(JSContext* cx, const char* funcName,
-                     const Module& module) {
-  Log(cx, "async %s succeeded%s", funcName,
-      module.loggingDeserialized() ? " (loaded from cache)" : "");
-}
-
 enum class Ret { Pair, Instance };
 
 class AsyncInstantiateTask : public OffThreadPromiseTask {
@@ -2846,7 +2840,7 @@ class AsyncInstantiateTask : public OffThreadPromiseTask {
       return RejectWithPendingException(cx, promise);
     }
 
-    LogAsync(cx, "instantiate", *module_);
+    Log(cx, "async instantiate succeeded");
     return true;
   }
 };
@@ -2881,7 +2875,7 @@ static bool ResolveCompile(JSContext* cx, const Module& module,
     return RejectWithPendingException(cx, promise);
   }
 
-  LogAsync(cx, "compile", module);
+  Log(cx, "async compile succeeded");
   return true;
 }
 
