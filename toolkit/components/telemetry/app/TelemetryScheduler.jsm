@@ -19,8 +19,6 @@ XPCOMUtils.defineLazyServiceGetters(this, {
   idleService: ["@mozilla.org/widget/idleservice;1", "nsIIdleService"],
 });
 
-const REASON_ENVIRONMENT_CHANGE = "environment-change";
-
 const MIN_SUBSESSION_LENGTH_MS = Services.prefs.getIntPref("toolkit.telemetry.minSubsessionLength", 5 * 60) * 1000;
 
 const LOGGER_NAME = "Toolkit.Telemetry";
@@ -335,25 +333,27 @@ var TelemetryScheduler = {
 
 
 
-  reschedulePings(reason, competingPayload = null) {
+
+
+
+
+  rescheduleDailyPing(payload) {
     if (this._shuttingDown) {
-      this._log.error("reschedulePings - already shutdown");
+      this._log.error("rescheduleDailyPing - already shutdown");
       return;
     }
 
-    this._log.trace("reschedulePings - reason: " + reason);
+    this._log.trace("rescheduleDailyPing");
     let now = Policy.now();
-    if (reason == REASON_ENVIRONMENT_CHANGE) {
-      
-      
-      this._saveAbortedPing(now.getTime(), competingPayload);
-      
-      let nearestMidnight = TelemetryUtils.getNearestMidnight(now, SCHEDULER_MIDNIGHT_TOLERANCE_MS);
-      if (nearestMidnight) {
-        this._lastDailyPingTime = now.getTime();
-      }
-    }
 
-    this._rescheduleTimeout();
+    
+    
+    this._saveAbortedPing(now.getTime(), payload);
+
+    
+    let nearestMidnight = TelemetryUtils.getNearestMidnight(now, SCHEDULER_MIDNIGHT_TOLERANCE_MS);
+    if (nearestMidnight) {
+      this._lastDailyPingTime = now.getTime();
+    }
   },
 };
