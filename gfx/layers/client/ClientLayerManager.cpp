@@ -244,7 +244,7 @@ bool ClientLayerManager::BeginTransactionWithTarget(gfxContext* aTarget,
     
     
     ++mPaintSequenceNumber;
-    if (StaticPrefs::APZTestLoggingEnabled()) {
+    if (StaticPrefs::apz_test_logging_enabled()) {
       mApzTestData.StartNewPaint(mPaintSequenceNumber);
     }
   }
@@ -545,7 +545,7 @@ float ClientLayerManager::RequestProperty(const nsAString& aProperty) {
 
 void ClientLayerManager::StartNewRepaintRequest(
     SequenceNumber aSequenceNumber) {
-  if (StaticPrefs::APZTestLoggingEnabled()) {
+  if (StaticPrefs::apz_test_logging_enabled()) {
     mApzTestData.StartNewRepaintRequest(aSequenceNumber);
   }
 }

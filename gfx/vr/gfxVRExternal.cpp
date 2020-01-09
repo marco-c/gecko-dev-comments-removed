@@ -635,7 +635,7 @@ already_AddRefed<VRSystemManagerExternal> VRSystemManagerExternal::Create(
     VRExternalShmem* aAPIShmem ) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (!StaticPrefs::VREnabled()) {
+  if (!StaticPrefs::dom_vr_enabled()) {
     return nullptr;
   }
 

@@ -182,7 +182,7 @@ bool WebRenderLayerManager::BeginTransaction(const nsCString& aURL) {
   
   
   ++mPaintSequenceNumber;
-  if (StaticPrefs::APZTestLoggingEnabled()) {
+  if (StaticPrefs::apz_test_logging_enabled()) {
     mApzTestData.StartNewPaint(mPaintSequenceNumber);
   }
   return true;
