@@ -189,6 +189,7 @@ class FontFace final : public nsISupports, public nsWrapperCache {
 
   
   
+  
   bool SetDescriptor(nsCSSFontDesc aFontDesc, const nsAString& aValue,
                      mozilla::ErrorResult& aRv);
 
@@ -196,8 +197,15 @@ class FontFace final : public nsISupports, public nsWrapperCache {
 
 
 
+
   bool SetDescriptors(const nsAString& aFamily,
                       const FontFaceDescriptors& aDescriptors);
+
+  
+
+
+
+  void DescriptorUpdated();
 
   
 

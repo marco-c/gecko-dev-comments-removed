@@ -1030,12 +1030,37 @@ FontFaceSet::FindOrCreateUserFontEntryFromFontFace(
   
   gfxCharacterMap* unicodeRanges = aFontFace->GetUnicodeRangeAsCharacterMap();
 
+  RefPtr<gfxUserFontEntry> existingEntry = aFontFace->GetUserFontEntry();
+  if (existingEntry) {
+    
+    
+    existingEntry->UpdateAttributes(weight, stretch, italicStyle,
+                                    featureSettings, variationSettings,
+                                    languageOverride, unicodeRanges,
+                                    fontDisplay, rangeFlags);
+    
+    
+    
+    if (!existingEntry->mFamilyName.IsEmpty() &&
+        existingEntry->mFamilyName != aFamilyName) {
+      gfxUserFontFamily* family =
+        set->GetUserFontSet()->LookupFamily(existingEntry->mFamilyName);
+      if (family) {
+        family->RemoveFontEntry(existingEntry);
+      }
+      existingEntry->mFamilyName.Truncate(0);
+    }
+    return existingEntry.forget();
+  }
+
   
   nsTArray<gfxFontFaceSrc> srcArray;
 
   if (aFontFace->HasFontData()) {
     gfxFontFaceSrc* face = srcArray.AppendElement();
-    if (!face) return nullptr;
+    if (!face) {
+      return nullptr;
+    }
 
     face->mSourceType = gfxFontFaceSrc::eSourceType_Buffer;
     face->mBuffer = aFontFace->CreateBufferSource();
