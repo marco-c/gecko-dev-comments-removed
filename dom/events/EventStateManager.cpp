@@ -1226,6 +1226,20 @@ void EventStateManager::DispatchCrossProcessEvent(WidgetEvent* aEvent,
     return;
   }
 
+  if (aEvent->mLayersId.IsValid()) {
+    TabParent* preciseRemote =
+        TabParent::GetTabParentFromLayersId(aEvent->mLayersId);
+    if (preciseRemote) {
+      remote = preciseRemote;
+    }
+    
+    
+  }
+  
+  
+  
+  
+
   switch (aEvent->mClass) {
     case eMouseEventClass: {
       remote->SendRealMouseEvent(*aEvent->AsMouseEvent());
