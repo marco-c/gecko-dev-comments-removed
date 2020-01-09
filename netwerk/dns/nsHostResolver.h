@@ -204,8 +204,8 @@ class AddrHostRecord final : public nsHostRecord {
 
   void Cancel() override;
 
-  bool RemoveOrRefresh();  
-                           
+  bool RemoveOrRefresh(bool aTrrToo);  
+                                       
 
   void ResolveComplete();
 
@@ -475,7 +475,7 @@ class nsHostResolver : public nsISupports, public AHostResolver {
   
 
 
-  void FlushCache();
+  void FlushCache(bool aTrrToo);
 
   LookupStatus CompleteLookup(nsHostRecord *, nsresult,
                               mozilla::net::AddrInfo *, bool pb,
