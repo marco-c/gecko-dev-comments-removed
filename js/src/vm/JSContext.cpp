@@ -184,15 +184,19 @@ void js::DestroyContext(JSContext* cx) {
 
   cx->jobQueue = nullptr;
   cx->internalJobQueue = nullptr;
+  SetContextProfilingStack(cx, nullptr);
+
+  JSRuntime* rt = cx->runtime();
 
   
   
-  cx->runtime()->offThreadPromiseState.ref().shutdown(cx);
+  rt->offThreadPromiseState.ref().shutdown(cx);
 
   
-  cx->runtime()->destroyRuntime();
-  js_delete(cx->runtime());
+  js::AutoNoteSingleThreadedRegion nochecks;
+  rt->destroyRuntime();
   js_delete_poison(cx);
+  js_delete_poison(rt);
 }
 
 void JS::RootingContext::checkNoGCRooters() {
