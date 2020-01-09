@@ -388,6 +388,9 @@ class ImportHook(object):
 
     def __call__(self, name, globals=None, locals=None, fromlist=None,
                  level=-1):
+        if sys.version_info[0] >= 3 and level < 0:
+            level = 0
+
         
         
         
