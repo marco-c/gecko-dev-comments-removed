@@ -60,22 +60,41 @@ nsTArray<RefPtr<PerformanceInfoPromise>> CollectPerformanceInfo() {
   return promises;
 }
 
-nsresult GetTabSizes(nsGlobalWindowOuter* aWindow, nsTabSizes* aSizes) {
+void AddWindowTabSizes(nsGlobalWindowOuter* aWindow, nsTabSizes* aSizes) {
+  Document* document = aWindow->GetDocument();
+  if (document && document->GetCachedSizes(aSizes)) {
+    
+    return;
+  }
+  
+  
+  
+  nsTabSizes sizes;
+
   
   SizeOfState state(moz_malloc_size_of);
   nsWindowSizes windowSizes(state);
   aWindow->AddSizeOfIncludingThis(windowSizes);
-
   
   nsGlobalWindowInner* inner = aWindow->GetCurrentInnerWindowInternal();
   if (inner != nullptr) {
     inner->AddSizeOfIncludingThis(windowSizes);
   }
+  windowSizes.addToTabSizes(&sizes);
+  if (document) {
+    document->SetCachedSizes(&sizes);
+  }
+  aSizes->mDom += sizes.mDom;
+  aSizes->mStyle += sizes.mStyle;
+  aSizes->mOther += sizes.mOther;
+}
 
-  windowSizes.addToTabSizes(aSizes);
+nsresult GetTabSizes(nsGlobalWindowOuter* aWindow, nsTabSizes* aSizes) {
+  
+  AddWindowTabSizes(aWindow, aSizes);
+
   nsDOMWindowList* frames = aWindow->GetFrames();
   uint32_t length = frames->GetLength();
-
   
   for (uint32_t i = 0; i < length; i++) {
     nsCOMPtr<nsPIDOMWindowOuter> child = frames->IndexedGetter(i);

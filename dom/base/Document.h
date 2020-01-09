@@ -1490,6 +1490,21 @@ class Document : public nsINode,
   
   bool StorageAccessSandboxed() const;
 
+  
+  inline void Changed() { ++mGeneration; }
+
+  
+  inline int32_t GetGeneration() const { return mGeneration; }
+
+  
+  
+  
+  
+  bool GetCachedSizes(nsTabSizes* aSizes);
+
+  
+  void SetCachedSizes(nsTabSizes* aSizes);
+
  protected:
   friend class nsUnblockOnloadEvent;
 
@@ -4640,6 +4655,13 @@ class Document : public nsINode,
   float mSavedResolution;
 
   bool mPendingInitialTranslation;
+
+  
+  int32_t mGeneration;
+
+  
+  int32_t mCachedTabSizeGeneration;
+  nsTabSizes mCachedTabSizes;
 
  public:
   
