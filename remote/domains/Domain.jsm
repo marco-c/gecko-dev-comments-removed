@@ -39,20 +39,6 @@ class Domain {
 
   
 
-  get content() {
-    return this.session.content;
-  }
-
-  get docShell() {
-    return this.session.docShell;
-  }
-
-  get chromeEventHandler() {
-    return this.docShell.chromeEventHandler;
-  }
-
-  
-
   static implements(methodName) {
     return typeof this.prototype[methodName] == "function";
   }
