@@ -24,6 +24,7 @@ XPCOMUtils.defineLazyGetter(this, "jexl", () => {
     keys,
     length,
     mapToProperty,
+    regExpMatch,
   });
   jexl.addBinaryOp("intersect", 40, operatorIntersect);
   return jexl;
@@ -83,4 +84,17 @@ function operatorIntersect(listA, listB) {
   }
 
   return listA.filter(item => listB.includes(item));
+}
+
+
+
+
+
+
+
+
+
+function regExpMatch(str, pattern, flags) {
+  const re = new RegExp(pattern, flags);
+  return str.match(re);
 }
