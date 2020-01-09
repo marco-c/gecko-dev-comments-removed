@@ -183,10 +183,9 @@ LifoAlloc::UniqueBumpChunk LifoAlloc::newChunkWithCapacity(size_t n,
   
   
   MOZ_ASSERT(curSize_ >= smallAllocsSize_);
-  const size_t chunkSize =
-      (oversize || minSize > defaultChunkSize_)
-          ? MallocGoodSize(minSize)
-          : NextSize(defaultChunkSize_, smallAllocsSize_);
+  const size_t chunkSize = (oversize || minSize > defaultChunkSize_)
+                               ? MallocGoodSize(minSize)
+                               : NextSize(defaultChunkSize_, smallAllocsSize_);
 
   
   UniqueBumpChunk result = detail::BumpChunk::newWithCapacity(chunkSize);
