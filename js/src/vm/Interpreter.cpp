@@ -4126,6 +4126,7 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
       
       
       MOZ_ASSERT_IF(REGS.fp()->script()->isDebuggee(), REGS.fp()->isDebuggee());
+      COUNT_COVERAGE();
     }
     END_CASE(JSOP_AFTERYIELD)
 
