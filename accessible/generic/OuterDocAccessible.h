@@ -28,6 +28,9 @@ class OuterDocAccessible final : public AccessibleWrap {
   NS_INLINE_DECL_REFCOUNTING_INHERITED(OuterDocAccessible, AccessibleWrap)
 
   DocAccessibleParent* RemoteChildDoc() const;
+#if defined(XP_WIN)
+  Accessible* RemoteChildDocAccessible() const;
+#endif
 
   
   virtual void Shutdown() override;

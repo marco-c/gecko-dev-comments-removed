@@ -10,6 +10,9 @@
 #include "DocAccessible-inl.h"
 #include "mozilla/a11y/DocAccessibleChild.h"
 #include "mozilla/a11y/DocAccessibleParent.h"
+#if defined(XP_WIN)
+#  include "mozilla/a11y/ProxyWrappers.h"
+#endif
 #include "mozilla/dom/BrowserBridgeChild.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "Role.h"
@@ -172,13 +175,33 @@ bool OuterDocAccessible::IsAcceptableChild(nsIContent* aEl) const {
 
 #if defined(XP_WIN)
 
+Accessible* OuterDocAccessible::RemoteChildDocAccessible() const {
+  ProxyAccessible* docProxy = RemoteChildDoc();
+  if (docProxy) {
+    
+    return WrapperFor(docProxy);
+  }
+
+  if (IPCAccessibilityActive()) {
+    auto bridge = dom::BrowserBridgeChild::GetFrom(mContent);
+    if (bridge) {
+      
+      
+      
+      return bridge->GetEmbeddedDocAccessible();
+    }
+  }
+
+  return nullptr;
+}
+
 
 
 
 
 uint32_t OuterDocAccessible::ChildCount() const {
   uint32_t result = mChildren.Length();
-  if (!result && RemoteChildDoc()) {
+  if (!result && RemoteChildDocAccessible()) {
     result = 1;
   }
   return result;
@@ -191,11 +214,7 @@ Accessible* OuterDocAccessible::GetChildAt(uint32_t aIndex) const {
   }
   
   
-  ProxyAccessible* remoteChild = RemoteChildDoc();
-  if (!remoteChild) {
-    return nullptr;
-  }
-  return WrapperFor(remoteChild);
+  return RemoteChildDocAccessible();
 }
 
 #endif  
