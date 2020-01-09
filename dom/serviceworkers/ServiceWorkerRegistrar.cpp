@@ -114,7 +114,7 @@ nsresult CreatePrincipalInfo(nsILineInputStream* aStream,
   
   nsTArray<mozilla::ipc::ContentSecurityPolicy> policies;
   aEntry->principal() = mozilla::ipc::ContentPrincipalInfo(
-      attrs, origin, aEntry->scope(), std::move(policies));
+      attrs, origin, aEntry->scope(), Nothing(), std::move(policies));
 
   return NS_OK;
 }
