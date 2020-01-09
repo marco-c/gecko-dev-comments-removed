@@ -52,25 +52,28 @@ var PictureInPicture = {
     }
   },
 
-  focusTabAndClosePip() {
+  async focusTabAndClosePip() {
     let gBrowser = this.browser.ownerGlobal.gBrowser;
     let tab = gBrowser.getTabForBrowser(this.browser);
     gBrowser.selectedTab = tab;
-    this.unload();
-    this.closePipWindow();
+    await this.closePipWindow();
   },
 
   
 
 
-  closePipWindow() {
+  async closePipWindow() {
     
     
     for (let win of Services.wm.getEnumerator(WINDOW_TYPE)) {
       if (win.closed) {
         continue;
       }
+      let closedPromise = new Promise(resolve => {
+        win.addEventListener("unload", resolve, {once: true});
+      });
       win.close();
+      await closedPromise;
     }
   },
 
@@ -95,9 +98,11 @@ var PictureInPicture = {
 
 
   async handlePictureInPictureRequest(browser, videoData) {
-    this.browser = browser;
+    
+    await this.closePipWindow();
+
     let parentWin = browser.ownerGlobal;
-    this.closePipWindow();
+    this.browser = browser;
     let win = await this.openPipWindow(parentWin, videoData);
     let controls = win.document.getElementById("controls");
     this.weakPipControls = Cu.getWeakReference(controls);
