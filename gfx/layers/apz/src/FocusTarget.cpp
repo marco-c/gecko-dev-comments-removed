@@ -139,7 +139,7 @@ FocusTarget::FocusTarget(PresShell* aRootPresShell,
 
   
   
-  if (gfxPrefs::APZKeyboardPassiveListeners()) {
+  if (StaticPrefs::APZKeyboardPassiveListeners()) {
     mFocusHasKeyEventListeners =
         HasListenersForNonPassiveKeyEvents(keyEventTarget.get());
   } else {

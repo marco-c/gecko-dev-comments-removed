@@ -1862,7 +1862,7 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
   
   
   
-  if (gfxPrefs::APZPeekMessages()) {
+  if (StaticPrefs::APZPeekMessages()) {
     nsLayoutUtils::UpdateDisplayPortMarginsFromPendingMessages();
   }
 
@@ -2137,7 +2137,7 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
   NS_ASSERTION(mInRefresh, "Still in refresh");
 
   if (mPresContext->IsRoot() && XRE_IsContentProcess() &&
-      gfxPrefs::AlwaysPaint()) {
+      StaticPrefs::AlwaysPaint()) {
     ScheduleViewManagerFlush();
   }
 

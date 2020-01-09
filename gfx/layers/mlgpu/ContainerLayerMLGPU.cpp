@@ -5,7 +5,7 @@
 
 
 #include "ContainerLayerMLGPU.h"
-#include "gfxPrefs.h"
+#include "mozilla/StaticPrefs.h"
 #include "LayersLogging.h"
 #include "LayerManagerMLGPU.h"
 #include "MLGDevice.h"
@@ -63,7 +63,7 @@ bool ContainerLayerMLGPU::OnPrepareToRender(FrameBuilder* aBuilder) {
   mSurfaceCopyNeeded = surfaceCopyNeeded;
 
   gfx::IntRect viewport(gfx::IntPoint(0, 0), mTargetSize);
-  if (!mRenderTarget || !gfxPrefs::AdvancedLayersUseInvalidation() ||
+  if (!mRenderTarget || !StaticPrefs::AdvancedLayersUseInvalidation() ||
       mInvalidateEntireSurface) {
     
     mInvalidRect = viewport;

@@ -1307,7 +1307,7 @@ void OpenVRSession::UpdateControllerButtons(VRSystemState& aState) {
   
   
   const float yAxisInvert = (mIsWindowsMR) ? -1.0f : 1.0f;
-  const float triggerThreshold = gfxPrefs::VRControllerTriggerThreshold();
+  const float triggerThreshold = StaticPrefs::VRControllerTriggerThreshold();
 
   for (uint32_t stateIndex = 0; stateIndex < kVRControllerMaxCount;
        ++stateIndex) {
@@ -1633,7 +1633,7 @@ void OpenVRSession::UpdateControllerButtonsObsolete(VRSystemState& aState) {
   
   
   const float yAxisInvert = (mIsWindowsMR) ? -1.0f : 1.0f;
-  const float triggerThreshold = gfxPrefs::VRControllerTriggerThreshold();
+  const float triggerThreshold = StaticPrefs::VRControllerTriggerThreshold();
 
   for (uint32_t stateIndex = 0; stateIndex < kVRControllerMaxCount;
        stateIndex++) {

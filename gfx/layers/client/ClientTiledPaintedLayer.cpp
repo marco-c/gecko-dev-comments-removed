@@ -85,7 +85,7 @@ static LayerToParentLayerMatrix4x4 GetTransformToAncestorsParentLayer(
        iter = iter.GetParent()) {
     transform = transform * iter.GetTransform();
 
-    if (gfxPrefs::LayoutUseContainersForRootFrames()) {
+    if (StaticPrefs::LayoutUseContainersForRootFrames()) {
       
       
       
@@ -267,7 +267,7 @@ bool ClientTiledPaintedLayer::IsScrollingOnCompositor(
 }
 
 bool ClientTiledPaintedLayer::UseProgressiveDraw() {
-  if (!gfxPrefs::ProgressivePaint()) {
+  if (!StaticPrefs::ProgressivePaint()) {
     
     return false;
   }
@@ -479,7 +479,7 @@ void ClientTiledPaintedLayer::RenderLayer() {
        isHalfTileWidthOrHeight) &&
       SingleTiledContentClient::ClientSupportsLayerSize(layerSize,
                                                         ClientManager()) &&
-      gfxPrefs::LayersSingleTileEnabled();
+      StaticPrefs::LayersSingleTileEnabled();
 
   if (mContentClient && mHaveSingleTiledContentClient &&
       !wantSingleTiledContentClient) {

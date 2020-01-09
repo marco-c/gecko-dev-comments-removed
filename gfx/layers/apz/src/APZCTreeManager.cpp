@@ -10,7 +10,6 @@
 #include "AsyncPanZoomController.h"
 #include "Compositor.h"                     
 #include "DragTracker.h"                    
-#include "gfxPrefs.h"                       
 #include "GenericFlingAnimation.h"          
 #include "HitTestingTreeNode.h"             
 #include "InputBlockState.h"                
@@ -37,8 +36,9 @@
 #include "mozilla/layers/WebRenderScrollDataWrapper.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/mozalloc.h"  
-#include "mozilla/TouchEvents.h"
 #include "mozilla/Preferences.h"        
+#include "mozilla/StaticPrefs.h"        
+#include "mozilla/TouchEvents.h"
 #include "mozilla/EventStateManager.h"  
 #include "mozilla/webrender/WebRenderAPI.h"
 #include "nsDebug.h"                 
@@ -272,7 +272,7 @@ APZCTreeManager::APZCTreeManager(LayersId aRootLayersId)
       "layers::APZCTreeManager::APZCTreeManager",
       [self] { self->mFlushObserver = new CheckerboardFlushObserver(self); }));
   AsyncPanZoomController::InitializeGlobalState();
-  mApzcTreeLog.ConditionOnPrefFunction(gfxPrefs::APZPrintTree);
+  mApzcTreeLog.ConditionOnPrefFunction(StaticPrefs::APZPrintTree);
 #if defined(MOZ_WIDGET_ANDROID)
   if (jni::IsFennec()) {
     mToolbarAnimator = new AndroidDynamicToolbarAnimator(this);
@@ -369,7 +369,7 @@ APZCTreeManager::UpdateHitTestingTreeImpl(LayersId aRootLayerTreeId,
   
   
   APZTestData* testData = nullptr;
-  if (gfxPrefs::APZTestLoggingEnabled()) {
+  if (StaticPrefs::APZTestLoggingEnabled()) {
     MutexAutoLock lock(mTestDataLock);
     UniquePtr<APZTestData> ptr = MakeUnique<APZTestData>();
     auto result = mTestData.insert(
@@ -1306,7 +1306,7 @@ nsEventStatus APZCTreeManager::ReceiveInputEvent(
       }
 
       if (apzc) {
-        if (gfxPrefs::APZTestLoggingEnabled() &&
+        if (StaticPrefs::APZTestLoggingEnabled() &&
             mouseInput.mType == MouseInput::MOUSE_HITTEST) {
           ScrollableLayerGuid guid = apzc->GetGuid();
 
@@ -1318,7 +1318,7 @@ nsEventStatus APZCTreeManager::ReceiveInputEvent(
         }
 
         TargetConfirmationFlags confFlags{hitResult};
-        bool apzDragEnabled = gfxPrefs::APZDragEnabled();
+        bool apzDragEnabled = StaticPrefs::APZDragEnabled();
         if (apzDragEnabled && hitScrollbar) {
           
           
@@ -1544,7 +1544,7 @@ nsEventStatus APZCTreeManager::ReceiveInputEvent(
       
       
       if (!gfxPrefs::APZKeyboardEnabled() ||
-          gfxPrefs::AccessibilityBrowseWithCaret()) {
+          StaticPrefs::AccessibilityBrowseWithCaret()) {
         APZ_KEY_LOG("Skipping key input from invalid prefs\n");
         return result;
       }
@@ -1740,7 +1740,7 @@ nsEventStatus APZCTreeManager::ProcessTouchInput(
     
     
     mInScrollbarTouchDrag =
-        gfxPrefs::APZDragEnabled() && gfxPrefs::APZTouchDragEnabled() &&
+        StaticPrefs::APZDragEnabled() && StaticPrefs::APZTouchDragEnabled() &&
         hitScrollbarNode && hitScrollbarNode->IsScrollThumbNode() &&
         hitScrollbarNode->GetScrollbarData().mThumbIsAsyncDraggable;
 
@@ -1923,7 +1923,7 @@ void APZCTreeManager::SetupScrollbarDrag(
 
   
   
-  if (gfxPrefs::APZDragInitiationEnabled() &&
+  if (StaticPrefs::APZDragInitiationEnabled() &&
       
       aScrollThumbNode->GetScrollTargetId() == aApzc->GetGuid().mScrollId &&
       !aApzc->IsScrollInfoLayer()) {
@@ -2387,7 +2387,7 @@ ParentLayerPoint APZCTreeManager::DispatchFling(
     AsyncPanZoomController* aPrev, const FlingHandoffState& aHandoffState) {
   
   
-  if (aHandoffState.mIsHandoff && !gfxPrefs::APZAllowImmediateHandoff() &&
+  if (aHandoffState.mIsHandoff && !StaticPrefs::APZAllowImmediateHandoff() &&
       aHandoffState.mScrolledApzc == aPrev) {
     FLING_LOG("APZCTM dropping handoff due to disallowed immediate handoff\n");
     return aHandoffState.mVelocity;
@@ -3294,7 +3294,8 @@ LayerToParentLayerMatrix4x4 APZCTreeManager::ComputeTransformForScrollThumb(
   
   
   bool scrollbarSubjectToResolution =
-      aMetrics.IsRootContent() && gfxPrefs::LayoutUseContainersForRootFrames();
+      aMetrics.IsRootContent() &&
+      StaticPrefs::LayoutUseContainersForRootFrames();
 
   
   

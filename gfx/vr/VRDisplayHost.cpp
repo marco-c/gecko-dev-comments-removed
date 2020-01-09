@@ -5,13 +5,13 @@
 
 
 #include "VRDisplayHost.h"
-#include "gfxPrefs.h"
+#include "VRThread.h"
 #include "gfxVR.h"
 #include "ipc/VRLayerParent.h"
+#include "mozilla/StaticPrefs.h"
+#include "mozilla/dom/GamepadBinding.h"       
 #include "mozilla/layers/CompositorThread.h"  
 #include "mozilla/layers/TextureHost.h"
-#include "mozilla/dom/GamepadBinding.h"  
-#include "VRThread.h"
 
 #if defined(XP_WIN)
 
@@ -268,7 +268,7 @@ void VRDisplayHost::CheckWatchDog() {
     bShouldStartFrame = true;
   } else {
     TimeDuration duration = TimeStamp::Now() - lastFrameStart;
-    if (duration.ToMilliseconds() > gfxPrefs::VRDisplayRafMaxDuration()) {
+    if (duration.ToMilliseconds() > StaticPrefs::VRDisplayRafMaxDuration()) {
       bShouldStartFrame = true;
     }
   }
