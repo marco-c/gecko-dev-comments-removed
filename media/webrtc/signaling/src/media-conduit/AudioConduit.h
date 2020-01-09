@@ -170,11 +170,12 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   void SetPCHandle(const std::string& aPCHandle) override {}
   MediaConduitErrorCode DeliverPacket(const void* data, int len) override;
 
-  void DeleteStreams() override;
+  void DeleteStreams() override {}
 
   WebrtcAudioConduit(RefPtr<WebRtcCallWrapper> aCall,
                      nsCOMPtr<nsIEventTarget> aStsThread)
-      : mTransportMonitor("WebrtcAudioConduit"),
+      : mFakeAudioDevice(new webrtc::FakeAudioDeviceModule()),
+        mTransportMonitor("WebrtcAudioConduit"),
         mTransmitterTransport(nullptr),
         mReceiverTransport(nullptr),
         mCall(aCall),
@@ -191,6 +192,7 @@ class WebrtcAudioConduit : public AudioSessionConduit,
         mSendChannel(-1),
         mDtmfEnabled(false),
         mMutex("WebrtcAudioConduit::mMutex"),
+        mCaptureDelay(150),
         mStsThread(aStsThread) {}
 
   virtual ~WebrtcAudioConduit();
@@ -250,16 +252,7 @@ class WebrtcAudioConduit : public AudioSessionConduit,
 
  protected:
   
-
-  
-  
-  
-  
   std::unique_ptr<webrtc::voe::ChannelProxy> mRecvChannelProxy = nullptr;
-
-  
-  
-  
   std::unique_ptr<webrtc::voe::ChannelProxy> mSendChannelProxy = nullptr;
 
  private:
@@ -288,39 +281,20 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   MediaConduitErrorCode CreateChannels();
   virtual void DeleteChannels();
 
+  UniquePtr<webrtc::FakeAudioDeviceModule> mFakeAudioDevice;
   mozilla::ReentrantMonitor mTransportMonitor;
-
-  
   RefPtr<TransportInterface> mTransmitterTransport;
-
-  
   RefPtr<TransportInterface> mReceiverTransport;
-
-  
-  
-  
   ScopedCustomReleasePtr<webrtc::VoEBase> mPtrVoEBase;
 
-  
-  
   const RefPtr<WebRtcCallWrapper> mCall;
-
-  
   webrtc::AudioReceiveStream::Config mRecvStreamConfig;
-
-  
   webrtc::AudioReceiveStream* mRecvStream;
-
-  
   webrtc::AudioSendStream::Config mSendStreamConfig;
-
-  
   webrtc::AudioSendStream* mSendStream;
 
   
   Atomic<uint32_t> mRecvSSRC;  
-
-  
   RtpPacketQueue mRtpPacketQueue;
 
   
@@ -329,22 +303,28 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   mozilla::Atomic<bool>
       mEngineReceiving;  
                          
-
   
+  
+  
+  
+  struct Processing {
+    TimeStamp mTimeStamp;
+    uint32_t mRTPTimeStamp;  
+  };
+  AutoTArray<Processing, 8> mProcessing;
+
   int mRecvChannel;
-
-  
   int mSendChannel;
-
-  
   bool mDtmfEnabled;
 
   Mutex mMutex;
+  nsAutoPtr<AudioCodecConfig> mCurSendCodecConfig;
 
   
+  int32_t mCaptureDelay;
+
   webrtc::AudioFrame mAudioFrame;  
 
-  
   RtpSourceObserver mRtpSourceObserver;
 
   
