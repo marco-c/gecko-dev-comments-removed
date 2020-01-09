@@ -49,6 +49,7 @@
 #include "nsDebug.h"
 #include "nsFocusManager.h"
 #include "nsFrameLoader.h"
+#include "nsFrameLoaderOwner.h"
 #include "nsFrameManager.h"
 #include "nsIBaseWindow.h"
 #include "nsIBrowser.h"
@@ -76,6 +77,7 @@
 #endif
 #include "nsPIDOMWindow.h"
 #include "nsPrintfCString.h"
+#include "nsQueryObject.h"
 #include "nsServiceManagerUtils.h"
 #include "nsThreadUtils.h"
 #include "PermissionMessageUtils.h"
@@ -455,7 +457,7 @@ void TabParent::ActorDestroy(ActorDestroyReason why) {
     if (why == AbnormalShutdown && os) {
       os->NotifyObservers(ToSupports(frameLoader), "oop-frameloader-crashed",
                           nullptr);
-      nsCOMPtr<nsIFrameLoaderOwner> owner = do_QueryInterface(frameElement);
+      RefPtr<nsFrameLoaderOwner> owner = do_QueryObject(frameElement);
       if (owner) {
         RefPtr<nsFrameLoader> currentFrameLoader = owner->GetFrameLoader();
         
@@ -1741,10 +1743,17 @@ mozilla::ipc::IPCResult TabParent::RecvShowTooltip(const uint32_t& aX,
     return IPC_OK();
   }
 
-  nsCOMPtr<nsIFrameLoaderOwner> frame = do_QueryInterface(mFrameElement);
-  if (!frame) return IPC_OK();
+  
+  
+  
+  
+  RefPtr<nsFrameLoaderOwner> flo  = do_QueryObject(mFrameElement);
+  if (!flo) return IPC_OK();
 
-  xulBrowserWindow->ShowTooltip(aX, aY, aTooltip, aDirection, frame);
+  nsCOMPtr<Element> el = do_QueryInterface(flo);
+  if (!el) return IPC_OK();
+
+  xulBrowserWindow->ShowTooltip(aX, aY, aTooltip, aDirection, el);
   return IPC_OK();
 }
 
@@ -2247,7 +2256,7 @@ bool TabParent::SendPasteTransferable(
 }
 
  TabParent* TabParent::GetFrom(nsIContent* aContent) {
-  nsCOMPtr<nsIFrameLoaderOwner> loaderOwner = do_QueryInterface(aContent);
+  RefPtr<nsFrameLoaderOwner> loaderOwner = do_QueryObject(aContent);
   if (!loaderOwner) {
     return nullptr;
   }
@@ -2459,8 +2468,8 @@ already_AddRefed<nsFrameLoader> TabParent::GetFrameLoader(
     RefPtr<nsFrameLoader> fl = mFrameLoader;
     return fl.forget();
   }
-  nsCOMPtr<nsIFrameLoaderOwner> frameLoaderOwner =
-      do_QueryInterface(mFrameElement);
+  RefPtr<nsFrameLoaderOwner> frameLoaderOwner =
+      do_QueryObject(mFrameElement);
   return frameLoaderOwner ? frameLoaderOwner->GetFrameLoader() : nullptr;
 }
 

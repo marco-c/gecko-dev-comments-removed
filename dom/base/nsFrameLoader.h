@@ -14,7 +14,6 @@
 
 #include "nsDocShell.h"
 #include "nsStringFwd.h"
-#include "nsIFrameLoaderOwner.h"
 #include "nsPoint.h"
 #include "nsSize.h"
 #include "nsWrapperCache.h"
@@ -35,6 +34,7 @@ class nsSubDocumentFrame;
 class nsView;
 class AutoResetInShow;
 class AutoResetInFrameSwap;
+class nsFrameLoaderOwner;
 class nsITabParent;
 class nsIDocShellTreeItem;
 class nsIDocShellTreeOwner;
@@ -249,12 +249,12 @@ class nsFrameLoader final : public nsStubMutationObserver,
   
   
   nsresult SwapWithOtherLoader(nsFrameLoader* aOther,
-                               nsIFrameLoaderOwner* aThisOwner,
-                               nsIFrameLoaderOwner* aOtherOwner);
+                               nsFrameLoaderOwner* aThisOwner,
+                               nsFrameLoaderOwner* aOtherOwner);
 
   nsresult SwapWithOtherRemoteLoader(nsFrameLoader* aOther,
-                                     nsIFrameLoaderOwner* aThisOwner,
-                                     nsIFrameLoaderOwner* aOtherOwner);
+                                     nsFrameLoaderOwner* aThisOwner,
+                                     nsFrameLoaderOwner* aOtherOwner);
 
   
 
