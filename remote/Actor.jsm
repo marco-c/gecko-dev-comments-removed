@@ -32,7 +32,7 @@ class RemoteAgentActorChild extends ActorChild {
     log.trace(`(message ${name})--> ${JSON.stringify(data)}`);
     super.receiveMessage(name, data);
   }
-};
+}
 
 
 
@@ -69,4 +69,4 @@ class MessageChannelActorChild extends RemoteAgentActorChild {
       this.send({id, error});
     }
   }
-};
+}

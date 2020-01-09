@@ -88,7 +88,7 @@ class WindowObserver {
   get QueryInterface() {
     return ChromeUtils.generateQI([Ci.nsIWindowMediatorListener]);
   }
-};
+}
 
 
 
@@ -145,7 +145,7 @@ class TabObserver {
   onWindowClose(window) {
     
   }
-};
+}
 
 
 
@@ -218,7 +218,7 @@ class BrowserObserver {
       Ci.nsIObserver,
     ]);
   }
-};
+}
 
 
 
