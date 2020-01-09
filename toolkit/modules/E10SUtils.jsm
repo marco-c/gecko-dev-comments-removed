@@ -23,8 +23,9 @@ XPCOMUtils.defineLazyServiceGetter(this, "serializationHelper",
                                    "@mozilla.org/network/serialization-helper;1",
                                    "nsISerializationHelper");
 
-ChromeUtils.defineModuleGetter(this, "Utils",
-                               "resource://gre/modules/sessionstore/Utils.jsm");
+function debug(msg) {
+  Cu.reportError(new Error("E10SUtils: " + msg));
+}
 
 function getAboutModule(aURL) {
   
@@ -275,6 +276,73 @@ var E10SUtils = {
                                                currentURI);
   },
 
+  makeInputStream(data) {
+    if (typeof data == "string") {
+      let stream = Cc["@mozilla.org/io/string-input-stream;1"].
+                   createInstance(Ci.nsISupportsCString);
+      stream.data = data;
+      return stream; 
+    }
+
+    let stream = Cc["@mozilla.org/io/string-input-stream;1"].
+                 createInstance(Ci.nsISupportsCString);
+    stream.data = data.content;
+
+    if (data.headers) {
+      let mimeStream = Cc["@mozilla.org/network/mime-input-stream;1"]
+          .createInstance(Ci.nsIMIMEInputStream);
+
+      mimeStream.setData(stream);
+      for (let [name, value] of data.headers) {
+        mimeStream.addHeader(name, value);
+      }
+      return mimeStream;
+    }
+
+    return stream; 
+  },
+
+  
+
+
+
+
+
+  serializePrincipal(principal) {
+    let serializedPrincipal = null;
+
+    try {
+      if (principal) {
+        serializedPrincipal = serializationHelper.serializeToString(principal);
+      }
+    } catch (e) {
+      debug(`Failed to serialize principal '${principal}' ${e}`);
+    }
+
+    return serializedPrincipal;
+  },
+
+  
+
+
+
+
+
+
+  deserializePrincipal(principal_b64) {
+    if (!principal_b64)
+      return null;
+
+    try {
+      let principal = serializationHelper.deserializeObject(principal_b64);
+      principal.QueryInterface(Ci.nsIPrincipal);
+      return principal;
+    } catch (e) {
+      debug(`Failed to deserialize principal_b64 '${principal_b64}' ${e}`);
+    }
+    return null;
+  },
+
   shouldLoadURIInBrowser(browser, uri, multiProcess = true,
                          flags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE) {
     let currentRemoteType = browser.remoteType;
@@ -394,7 +462,7 @@ var E10SUtils = {
         uri: aURI.spec,
         flags: aFlags || Ci.nsIWebNavigation.LOAD_FLAGS_NONE,
         referrer: aReferrer ? aReferrer.spec : null,
-        triggeringPrincipal: Utils.serializePrincipal(aTriggeringPrincipal || Services.scriptSecurityManager.createNullPrincipal({})),
+        triggeringPrincipal: this.serializePrincipal(aTriggeringPrincipal || Services.scriptSecurityManager.createNullPrincipal({})),
         reloadInFreshProcess: !!aFreshProcess,
       },
       historyIndex: sessionHistory.legacySHistory.requestedIndex,
@@ -449,3 +517,7 @@ var E10SUtils = {
     return deserialized;
   },
 };
+
+XPCOMUtils.defineLazyGetter(E10SUtils, "SERIALIZED_SYSTEMPRINCIPAL", function() {
+  return E10SUtils.serializePrincipal(Services.scriptSecurityManager.getSystemPrincipal());
+});

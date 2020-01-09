@@ -11,49 +11,13 @@ ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", this);
 
 ChromeUtils.defineModuleGetter(this, "NetUtil",
                                "resource://gre/modules/NetUtil.jsm");
-XPCOMUtils.defineLazyServiceGetter(this, "serializationHelper",
-                                   "@mozilla.org/network/serialization-helper;1",
-                                   "nsISerializationHelper");
 XPCOMUtils.defineLazyServiceGetter(this, "eTLDService",
                                    "@mozilla.org/network/effective-tld-service;1",
                                    "nsIEffectiveTLDService");
 
-XPCOMUtils.defineLazyGetter(this, "SERIALIZED_SYSTEMPRINCIPAL", function() {
-  return Utils.serializePrincipal(Services.scriptSecurityManager.getSystemPrincipal());
-});
 
-function debug(msg) {
-  Services.console.logStringMessage("Utils: " + msg);
-}
 
 var Utils = Object.freeze({
-  get SERIALIZED_SYSTEMPRINCIPAL() { return SERIALIZED_SYSTEMPRINCIPAL; },
-
-  makeInputStream(data) {
-    if (typeof data == "string") {
-      let stream = Cc["@mozilla.org/io/string-input-stream;1"].
-                   createInstance(Ci.nsISupportsCString);
-      stream.data = data;
-      return stream; 
-    }
-
-    let stream = Cc["@mozilla.org/io/string-input-stream;1"].
-                 createInstance(Ci.nsISupportsCString);
-    stream.data = data.content;
-
-    if (data.headers) {
-      let mimeStream = Cc["@mozilla.org/network/mime-input-stream;1"]
-          .createInstance(Ci.nsIMIMEInputStream);
-
-      mimeStream.setData(stream);
-      for (let [name, value] of data.headers) {
-        mimeStream.addHeader(name, value);
-      }
-      return mimeStream;
-    }
-
-    return stream; 
-  },
 
   serializeInputStream(aStream) {
     let data = {
@@ -97,47 +61,6 @@ var Utils = Object.freeze({
     }
 
     return retval;
-  },
-
-  
-
-
-
-
-
-  serializePrincipal(principal) {
-    let serializedPrincipal = null;
-
-    try {
-      if (principal) {
-        serializedPrincipal = serializationHelper.serializeToString(principal);
-      }
-    } catch (e) {
-      debug(`Failed to serialize principal '${principal}' ${e}`);
-    }
-
-    return serializedPrincipal;
-  },
-
-  
-
-
-
-
-
-
-  deserializePrincipal(principal_b64) {
-    if (!principal_b64)
-      return null;
-
-    try {
-      let principal = serializationHelper.deserializeObject(principal_b64);
-      principal.QueryInterface(Ci.nsIPrincipal);
-      return principal;
-    } catch (e) {
-      debug(`Failed to deserialize principal_b64 '${principal_b64}' ${e}`);
-    }
-    return null;
   },
 
   
