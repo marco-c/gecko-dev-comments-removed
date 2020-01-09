@@ -2839,14 +2839,8 @@ nsresult WebSocketChannel::ApplyForAdmission() {
 
 
 
-nsresult WebSocketChannel::CallStartWebsocketData() {
-  LOG(("WebSocketChannel::CallStartWebsocketData() %p", this));
-  MOZ_ASSERT(NS_IsMainThread(), "not main thread");
-
-  if (mOpenTimer) {
-    mOpenTimer->Cancel();
-    mOpenTimer = nullptr;
-  }
+nsresult WebSocketChannel::StartWebsocketData() {
+  nsresult rv;
 
   if (!IsOnTargetThread()) {
     return mTargetThread->Dispatch(
@@ -2854,12 +2848,6 @@ nsresult WebSocketChannel::CallStartWebsocketData() {
                           &WebSocketChannel::StartWebsocketData),
         NS_DISPATCH_NORMAL);
   }
-
-  return StartWebsocketData();
-}
-
-nsresult WebSocketChannel::StartWebsocketData() {
-  nsresult rv;
 
   {
     MutexAutoLock lock(mMutex);
@@ -3177,6 +3165,7 @@ WebSocketChannel::Notify(nsITimer *timer) {
     LOG(("WebSocketChannel:: Expecting Server Close - Timed Out\n"));
     AbortSession(NS_ERROR_NET_TIMEOUT);
   } else if (timer == mOpenTimer) {
+    MOZ_ASSERT(!mGotUpgradeOK, "Open Timer after open complete");
     MOZ_ASSERT(NS_IsMainThread(), "not main thread");
 
     mOpenTimer = nullptr;
@@ -3608,7 +3597,7 @@ WebSocketChannel::OnTransportAvailable(nsISocketTransport *aTransport,
     
     nsWSAdmissionManager::OnConnected(this);
 
-    return CallStartWebsocketData();
+    return StartWebsocketData();
   }
 
   if (mIsServerSide) {
@@ -3651,7 +3640,7 @@ WebSocketChannel::OnTransportAvailable(nsISocketTransport *aTransport,
       }
     }
 
-    return CallStartWebsocketData();
+    return StartWebsocketData();
   }
 
   return NS_OK;
@@ -3665,6 +3654,11 @@ WebSocketChannel::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext) {
        this, aRequest, mHttpChannel.get(), mRecvdHttpUpgradeTransport));
   MOZ_ASSERT(NS_IsMainThread(), "not main thread");
   MOZ_ASSERT(!mGotUpgradeOK, "OTA duplicated");
+
+  if (mOpenTimer) {
+    mOpenTimer->Cancel();
+    mOpenTimer = nullptr;
+  }
 
   if (mStopped) {
     LOG(("WebSocketChannel::OnStartRequest: Channel Already Done\n"));
@@ -3838,7 +3832,7 @@ WebSocketChannel::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext) {
     
     nsWSAdmissionManager::OnConnected(this);
 
-    return CallStartWebsocketData();
+    return StartWebsocketData();
   }
 
   return NS_OK;
@@ -3850,13 +3844,6 @@ WebSocketChannel::OnStopRequest(nsIRequest *aRequest, nsISupports *aContext,
   LOG(("WebSocketChannel::OnStopRequest() %p [%p %p %" PRIx32 "]\n", this,
        aRequest, mHttpChannel.get(), static_cast<uint32_t>(aStatusCode)));
   MOZ_ASSERT(NS_IsMainThread(), "not main thread");
-
-  
-  
-  if (NS_FAILED(aStatusCode) && !mRecvdHttpUpgradeTransport) {
-    AbortSession(aStatusCode);
-    return NS_OK;
-  }
 
   ReportConnectionTelemetry();
 
