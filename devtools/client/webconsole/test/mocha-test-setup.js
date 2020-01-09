@@ -26,6 +26,7 @@ pref("devtools.webconsole.sidebarToggle", true);
 pref("devtools.webconsole.jsterm.codeMirror", true);
 pref("devtools.webconsole.groupWarningMessages", false);
 pref("devtools.webconsole.input.editor", false);
+pref("devtools.webconsole.input.autocomplete", true);
 
 global.loader = {
   lazyServiceGetter: () => {},
@@ -57,6 +58,12 @@ global.loader = {
 
 global.isWorker = false;
 global.indexedDB = {open: () => ({})};
+
+
+
+if (!global.URLSearchParams) {
+  global.URLSearchParams = require("url").URLSearchParams;
+}
 
 
 const requireHacker = require("require-hacker");
