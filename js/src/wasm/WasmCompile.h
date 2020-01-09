@@ -42,6 +42,10 @@ struct ScriptedCaller {
 
 
 
+struct CompileArgs;
+typedef RefPtr<CompileArgs> MutableCompileArgs;
+typedef RefPtr<const CompileArgs> SharedCompileArgs;
+
 struct CompileArgs : ShareableBase<CompileArgs> {
   ScriptedCaller scriptedCaller;
   UniqueChars sourceMapURL;
@@ -54,6 +58,17 @@ struct CompileArgs : ShareableBase<CompileArgs> {
   bool forceTiering;
   bool gcEnabled;
 
+  
+  
+  
+  
+  
+  
+  
+  
+
+  static SharedCompileArgs build(JSContext* cx, ScriptedCaller&& scriptedCaller);
+
   explicit CompileArgs(ScriptedCaller&& scriptedCaller)
       : scriptedCaller(std::move(scriptedCaller)),
         baselineEnabled(false),
@@ -63,12 +78,7 @@ struct CompileArgs : ShareableBase<CompileArgs> {
         sharedMemoryEnabled(false),
         forceTiering(false),
         gcEnabled(false) {}
-
-  CompileArgs(JSContext* cx, ScriptedCaller&& scriptedCaller);
 };
-
-typedef RefPtr<CompileArgs> MutableCompileArgs;
-typedef RefPtr<const CompileArgs> SharedCompileArgs;
 
 
 
