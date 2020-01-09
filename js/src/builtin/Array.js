@@ -381,23 +381,26 @@ function ArrayReduce(callbackfn) {
         accumulator = arguments[1];
     } else {
         
+        
+        
         if (len === 0)
-            ThrowTypeError(JSMSG_EMPTY_ARRAY_REDUCE);
-        if (IsPackedArray(O)) {
-            accumulator = O[k++];
-        } else {
-            var kPresent = false;
-            for (; k < len; k++) {
-                if (k in O) {
-                    accumulator = O[k];
-                    kPresent = true;
-                    k++;
-                    break;
-                }
+            throw ThrowTypeError(JSMSG_EMPTY_ARRAY_REDUCE);
+
+        
+        
+        
+        var kPresent = false;
+        do {
+            if (k in O) {
+                kPresent = true;
+                break;
             }
-            if (!kPresent)
-              ThrowTypeError(JSMSG_EMPTY_ARRAY_REDUCE);
-        }
+        } while (++k < len);
+        if (!kPresent)
+          throw ThrowTypeError(JSMSG_EMPTY_ARRAY_REDUCE);
+
+        
+        accumulator = O[k++];
     }
 
     
@@ -449,23 +452,26 @@ function ArrayReduceRight(callbackfn) {
         accumulator = arguments[1];
     } else {
         
+        
+        
         if (len === 0)
-            ThrowTypeError(JSMSG_EMPTY_ARRAY_REDUCE);
-        if (IsPackedArray(O)) {
-            accumulator = O[k--];
-        } else {
-            var kPresent = false;
-            for (; k >= 0; k--) {
-                if (k in O) {
-                    accumulator = O[k];
-                    kPresent = true;
-                    k--;
-                    break;
-                }
+            throw ThrowTypeError(JSMSG_EMPTY_ARRAY_REDUCE);
+
+        
+        
+        
+        var kPresent = false;
+        do {
+            if (k in O) {
+                kPresent = true;
+                break;
             }
-            if (!kPresent)
-                ThrowTypeError(JSMSG_EMPTY_ARRAY_REDUCE);
-        }
+        } while (--k >= 0);
+        if (!kPresent)
+            throw ThrowTypeError(JSMSG_EMPTY_ARRAY_REDUCE);
+
+        
+        accumulator = O[k--];
     }
 
     
