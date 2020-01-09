@@ -7,13 +7,68 @@
 
 "use strict";
 
+const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
+
 
 const href = window.location.href.replace("about:", "http://");
 const url = new window.URL(href);
 
 
-if (url.search.length > 1) {
-  const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
+let host = window.windowUtils.containerElement;
+
+
+
+if (!host) {
+  host = {
+    contentWindow: window,
+    contentDocument: document,
+    
+    
+    setAttribute() {},
+    ownerDocument: document,
+    
+    
+    
+    addEventListener() {},
+  };
+}
+
+const onLoad = new Promise(r => {
+  host.contentWindow.addEventListener("DOMContentLoaded", r, { once: true });
+});
+
+async function showErrorPage(doc, errorMessage) {
+  const win = doc.defaultView;
+  const { BrowserLoader } =
+    ChromeUtils.import("resource://devtools/client/shared/browser-loader.js");
+  const browserRequire = BrowserLoader({
+    window: win,
+    useOnlyShared: true,
+  }).require;
+
+  const React = browserRequire("devtools/client/shared/vendor/react");
+  const ReactDOM = browserRequire("devtools/client/shared/vendor/react-dom");
+  const DebugTargetErrorPage = React.createFactory(
+    require("devtools/client/framework/components/DebugTargetErrorPage"));
+  const { LocalizationHelper } = browserRequire("devtools/shared/l10n");
+  const L10N = new LocalizationHelper("devtools/client/locales/toolbox.properties");
+
+  
+  await onLoad;
+  const mountEl = doc.querySelector("#toolbox-error-mount");
+  const element = DebugTargetErrorPage({
+    errorMessage,
+    L10N,
+  });
+  ReactDOM.render(element, mountEl);
+
+  
+  win.addEventListener("unload", () => {
+    ReactDOM.unmountComponentAtNode(mountEl);
+  }, { once: true });
+}
+
+async function initToolbox(url, host) {
   const { gDevTools } = require("devtools/client/framework/devtools");
   const { targetFromURL } = require("devtools/client/framework/target-from-url");
   const { Toolbox } = require("devtools/client/framework/toolbox");
@@ -21,29 +76,9 @@ if (url.search.length > 1) {
   const { DebuggerClient } = require("devtools/shared/client/debugger-client");
 
   
-  let host = window.windowUtils.containerElement;
-
-  
-  
-  if (!host) {
-    host = {
-      contentWindow: window,
-      contentDocument: document,
-      
-      
-      setAttribute() {},
-      ownerDocument: document,
-      
-      
-      
-      addEventListener() {},
-    };
-  }
-
-  
   const tool = url.searchParams.get("tool");
 
-  (async function() {
+  try {
     let target;
     if (url.searchParams.has("target")) {
       
@@ -76,7 +111,16 @@ if (url.search.length > 1) {
     }
     const options = { customIframe: host };
     await gDevTools.showToolbox(target, tool, Toolbox.HostType.PAGE, options);
-  })().catch(error => {
+  } catch (error) {
+    
     console.error("Exception while loading the toolbox", error);
-  });
+    showErrorPage(host.contentDocument, `${error}`);
+  }
 }
+
+
+if (url.search.length > 1) {
+  initToolbox(url, host);
+}
+
+
