@@ -258,6 +258,5 @@ const ProgressTracker = {
   },
 };
 
-
 const {debug, warn} = GeckoViewProgressChild.initLogging("GeckoViewProgress"); 
 const module = GeckoViewProgressChild.create(this);
