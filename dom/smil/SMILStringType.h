@@ -39,7 +39,7 @@ class SMILStringType : public SMILType {
 
  private:
   
-  constexpr SMILStringType() {}
+  constexpr SMILStringType() = default;
 };
 
 }  

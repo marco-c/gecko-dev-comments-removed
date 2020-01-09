@@ -39,7 +39,7 @@ class SMILNullType : public SMILType {
 
  private:
   
-  constexpr SMILNullType() {}
+  constexpr SMILNullType() = default;
 };
 
 }  

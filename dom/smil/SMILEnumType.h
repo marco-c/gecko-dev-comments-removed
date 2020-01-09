@@ -39,7 +39,7 @@ class SMILEnumType : public SMILType {
 
  private:
   
-  constexpr SMILEnumType() {}
+  constexpr SMILEnumType() = default;
 };
 
 }  

@@ -39,7 +39,7 @@ class SMILFloatType : public SMILType {
 
  private:
   
-  constexpr SMILFloatType() {}
+  constexpr SMILFloatType() = default;
 };
 
 }  

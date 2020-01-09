@@ -38,7 +38,6 @@ class SMILCompositor : public PLDHashEntryHdr {
         mKey(std::move(toMove.mKey)),
         mAnimationFunctions(std::move(toMove.mAnimationFunctions)),
         mForceCompositing(false) {}
-  ~SMILCompositor() {}
 
   
   KeyTypeRef GetKey() const { return mKey; }

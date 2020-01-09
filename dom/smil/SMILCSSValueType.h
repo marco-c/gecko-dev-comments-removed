@@ -125,7 +125,7 @@ class SMILCSSValueType : public SMILType {
 
  private:
   
-  constexpr SMILCSSValueType() {}
+  constexpr SMILCSSValueType() = default;
 };
 
 }  
