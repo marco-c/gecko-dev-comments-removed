@@ -167,15 +167,36 @@ bool nsDisplayFieldSetBorder::CreateWebRenderCommands(
   auto frame = static_cast<nsFieldSetFrame*>(mFrame);
   auto offset = ToReferenceFrame();
   nsRect rect;
+  Maybe<wr::SpaceAndClipChainHelper> clipOut;
 
   if (nsIFrame* legend = frame->GetLegend()) {
     rect = frame->VisualBorderRectRelativeToSelf() + offset;
 
-    
-    
     nsRect legendRect = legend->GetNormalRect() + offset;
+
+    
+    nscoord borderTopWidth = frame->GetUsedBorder().top;
+    if (legendRect.height < borderTopWidth) {
+      legendRect.height = borderTopWidth;
+      legendRect.y = offset.y;
+    }
+
     if (!legendRect.IsEmpty()) {
-      return false;
+      
+      auto appUnitsPerDevPixel = frame->PresContext()->AppUnitsPerDevPixel();
+      auto layoutRect = wr::ToRoundedLayoutRect(
+          LayoutDeviceRect::FromAppUnits(rect, appUnitsPerDevPixel));
+
+      wr::ComplexClipRegion region;
+      region.rect = wr::ToRoundedLayoutRect(
+          LayoutDeviceRect::FromAppUnits(legendRect, appUnitsPerDevPixel));
+      region.mode = wr::ClipMode::ClipOut;
+      region.radii = wr::EmptyBorderRadius();
+      nsTArray<mozilla::wr::ComplexClipRegion> array{region};
+
+      auto clip = aBuilder.DefineClip(Nothing(), layoutRect, &array, nullptr);
+      auto clipChain = aBuilder.DefineClipChain({clip});
+      clipOut.emplace(aBuilder, clipChain);
     }
   } else {
     rect = nsRect(offset, frame->GetRect().Size());
