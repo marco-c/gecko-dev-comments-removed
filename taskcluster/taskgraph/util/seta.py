@@ -77,19 +77,7 @@ class SETA(object):
                         low_value_tasks = [self._get_task_string(x) for x in low_value_tasks]
 
             
-            def opt_to_pgo(label):
-                opt = ['test-windows10-64/opt',
-                       'test-windows7-32/opt',
-                       'test-linux64/opt']
-                pgo = ['test-windows10-64-pgo/opt',
-                       'test-windows7-32-pgo/opt',
-                       'test-linux64-pgo/opt']
-                for iter in range(0, len(opt)):
-                    if label.startswith(opt[iter]):
-                        label = label.replace(opt[iter], pgo[iter])
-
-            
-            low_value_tasks = [opt_to_pgo(x) for x in low_value_tasks if 'build' not in x]
+            low_value_tasks = [x for x in low_value_tasks if 'build' not in x.lower()]
 
         
         except exceptions.Timeout:
