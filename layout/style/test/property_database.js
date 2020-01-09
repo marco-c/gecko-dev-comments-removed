@@ -3994,10 +3994,10 @@ var gCSSProperties = {
 
 
 
-
     prerequisites: { "font-size": "19px", "font-size-adjust": "none", "font-family": "serif", "font-weight": "normal", "font-style": "normal", "height": "18px", "display": "block", "writing-mode": "initial" },
+
     initial_values: [ "normal" ],
-    other_values: [ "1.0", "1", "1em", "47px", "-moz-block-height", "calc(2px)", "calc(50%)", "calc(3*25px)", "calc(25px*3)", "calc(3*25px + 50%)", "calc(1 + 2*3/4)" ],
+    other_values: [ "1.0", "1", "1em", "47px", "calc(2px)", "calc(50%)", "calc(3*25px)", "calc(25px*3)", "calc(3*25px + 50%)", "calc(1 + 2*3/4)" ],
     invalid_values: [ "calc(1 + 2px)", "calc(100% + 0.1)" ]
   },
   "list-style": {

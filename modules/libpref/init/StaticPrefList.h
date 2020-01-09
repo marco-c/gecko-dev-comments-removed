@@ -989,6 +989,13 @@ VARCACHE_PREF(
 
 
 VARCACHE_PREF(
+  "layout.css.line-height-moz-block-height.content.enabled",
+   layout_css_line_height_moz_block_height_content_enabled,
+  bool, false
+)
+
+
+VARCACHE_PREF(
   "layout.css.font-variations.enabled",
    layout_css_font_variations_enabled,
   RelaxedAtomicBool, true
