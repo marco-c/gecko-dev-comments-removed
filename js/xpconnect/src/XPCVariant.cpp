@@ -29,7 +29,7 @@ NS_IMPL_CYCLE_COLLECTING_ADDREF(XPCVariant)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(XPCVariant)
 
 XPCVariant::XPCVariant(JSContext* cx, const Value& aJSVal)
-    : mJSVal(aJSVal), mCCGeneration(0) {
+    : mJSVal(aJSVal) {
   if (!mJSVal.isPrimitive()) {
     
     
