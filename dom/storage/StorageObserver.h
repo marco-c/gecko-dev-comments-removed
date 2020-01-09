@@ -20,8 +20,6 @@ class StorageObserver;
 
 
 
-
-
 class StorageObserverSink {
  public:
   virtual ~StorageObserverSink() {}
