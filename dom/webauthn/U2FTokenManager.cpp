@@ -312,6 +312,10 @@ void U2FTokenManager::Register(
 
   
   bool directAttestationRequested = false;
+
+
+
+#ifndef MOZ_WIDGET_ANDROID
   if (aTransactionInfo.Extra().isSome()) {
     const auto& extra = aTransactionInfo.Extra().ref();
 
@@ -321,6 +325,7 @@ void U2FTokenManager::Register(
     directAttestationRequested =
         attestation == AttestationConveyancePreference::Direct;
   }
+#endif  
 
   
   
