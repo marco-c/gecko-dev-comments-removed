@@ -52,6 +52,8 @@ class PrefRow {
   constructor(name) {
     this.name = name;
     this.value = true;
+    this.hidden = false;
+    this.odd = false;
     this.editing = false;
     this.refreshValue();
   }
@@ -263,9 +265,25 @@ class PrefRow {
       delete this.resetButton;
     }
 
-    let className = (this.hasUserValue ? "has-user-value " : "") +
-                    (this.isLocked ? "locked " : "") +
-                    (this.exists ? "" : "deleted ");
+    this.refreshClass();
+  }
+
+  refreshClass() {
+    if (!this._element) {
+      
+      return;
+    }
+
+    let className;
+    if (this.hidden) {
+      className = "hidden";
+    } else {
+      className = (this.hasUserValue ? "has-user-value " : "") +
+                  (this.isLocked ? "locked " : "") +
+                  (this.exists ? "" : "deleted ") +
+                  (this.odd ? "odd " : "");
+    }
+
     if (this._lastClassName !== className) {
       this._element.className = this._lastClassName = className;
     }
@@ -412,20 +430,71 @@ function filterPrefs() {
     gSortedExistingPrefs.sort((a, b) => a.name > b.name);
   }
 
-  let prefArray = gSortedExistingPrefs;
-  if (gFilterString) {
-    prefArray = prefArray.filter(pref => pref.matchesFilter);
-  }
-  if (searchName && !gExistingPrefs.has(searchName)) {
-    prefArray.push(new PrefRow(searchName));
+  
+  
+  
+  
+  
+  let fragment = null;
+  let indexInArray = 0;
+  let elementInTable = gPrefsTable.firstElementChild;
+  let odd = false;
+  while (indexInArray < gSortedExistingPrefs.length || elementInTable) {
+    
+    let prefInArray = gSortedExistingPrefs[indexInArray];
+    if (prefInArray) {
+      if (!prefInArray.matchesFilter) {
+        indexInArray++;
+        continue;
+      }
+      prefInArray.hidden = false;
+      prefInArray.odd = odd;
+    }
+
+    let prefInTable = elementInTable && elementInTable._pref;
+    if (!prefInTable) {
+      
+      
+      
+      if (!fragment) {
+        fragment = document.createDocumentFragment();
+      }
+      fragment.appendChild(prefInArray.getElement());
+    } else if (prefInTable == prefInArray) {
+      
+      elementInTable = elementInTable.nextElementSibling;
+    } else if (prefInArray && prefInArray.name < prefInTable.name) {
+      
+      
+      gPrefsTable.insertBefore(prefInArray.getElement(), elementInTable);
+    } else {
+      
+      
+      let nextElementInTable = elementInTable.nextElementSibling;
+      if (!prefInTable.exists) {
+        
+        elementInTable.remove();
+      } else {
+        
+        prefInTable.hidden = true;
+        prefInTable.refreshClass();
+      }
+      elementInTable = nextElementInTable;
+      continue;
+    }
+
+    prefInArray.refreshClass();
+    odd = !odd;
+    indexInArray++;
   }
 
-  gPrefsTable.textContent = "";
-  let fragment = document.createDocumentFragment();
-  for (let pref of prefArray) {
-    fragment.appendChild(pref.getElement());
+  if (fragment) {
+    gPrefsTable.appendChild(fragment);
   }
-  gPrefsTable.appendChild(fragment);
+
+  if (searchName && !gExistingPrefs.has(searchName)) {
+    gPrefsTable.appendChild((new PrefRow(searchName)).getElement());
+  }
 
   
   

@@ -68,12 +68,16 @@ add_task(async function test_search_delayed() {
 
     
     
+    
     let prefsTableChanged = new Promise(resolve => {
       let observer = new MutationObserver(() => {
         observer.disconnect();
         resolve();
       });
       observer.observe(this.prefsTable, { childList: true });
+      for (let element of this.prefsTable.children) {
+        observer.observe(element, { attributes: true });
+      }
     });
 
     
