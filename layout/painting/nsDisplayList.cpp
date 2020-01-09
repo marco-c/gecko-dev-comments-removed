@@ -4629,12 +4629,9 @@ void nsDisplayBackgroundColor::PaintWithClip(nsDisplayListBuilder* aBuilder,
       pushedClip = true;
     }
 
-    RectCornerRadii pixelRadii;
-    nsCSSRendering::ComputePixelRadii(roundedRect[0].mRadii, A2D, &pixelRadii);
-    dt->FillRoundedRect(
-        RoundedRect(NSRectToSnappedRect(roundedRect[0].mRect, A2D, *dt),
-                    pixelRadii),
-        fill);
+    RefPtr<Path> path =
+        aClip.MakeRoundedRectPath(*aCtx->GetDrawTarget(), A2D, roundedRect[0]);
+    dt->Fill(path, fill);
     if (pushedClip) {
       dt->PopClip();
     }
@@ -7894,9 +7891,9 @@ bool nsDisplayTransform::CreateWebRenderCommands(
   StackingContextHelper sc(
       aSc, GetActiveScrolledRoot(), mFrame, this, aBuilder, filters,
       LayoutDeviceRect(position, LayoutDeviceSize()), &newTransformMatrix,
-      animationsId ? &prop : nullptr, nullptr, transformForSC, 
-      wr::ReferenceFrameKind::Transform, gfx::CompositionOp::OP_OVER, 
-      !BackfaceIsHidden(), preserve3D, deferredTransformItem, 
+      animationsId ? &prop : nullptr, nullptr, transformForSC,
+      wr::ReferenceFrameKind::Transform, gfx::CompositionOp::OP_OVER,
+      !BackfaceIsHidden(), preserve3D, deferredTransformItem,
       wr::WrStackingContextClip::None(), animated);
 
   return mStoredList.CreateWebRenderCommands(aBuilder, aResources, sc, aManager,
@@ -8055,7 +8052,7 @@ bool nsDisplayTransform::ComputeVisibility(nsDisplayListBuilder* aBuilder,
 }
 
 #ifdef DEBUG_HIT
-#  include <time.h>
+#include <time.h>
 #endif
 
 
@@ -9353,19 +9350,25 @@ bool nsDisplayFilters::CreateWebRenderCommands(
     const StackingContextHelper& aSc,
     mozilla::layers::RenderRootStateManager* aManager,
     nsDisplayListBuilder* aDisplayListBuilder) {
-  bool snap;
   float auPerDevPixel = mFrame->PresContext()->AppUnitsPerDevPixel();
-  nsRect displayBounds = GetBounds(aDisplayListBuilder, &snap);
-  auto postFilterBounds = LayoutDeviceIntRect::Round(
-      LayoutDeviceRect::FromAppUnits(displayBounds, auPerDevPixel));
-  auto preFilterBounds = LayoutDeviceIntRect::Round(
-      LayoutDeviceRect::FromAppUnits(mBounds, auPerDevPixel));
 
   nsTArray<mozilla::wr::FilterOp> wrFilters;
+  Maybe<nsRect> filterClip;
   if (!CreateWebRenderCSSFilters(wrFilters) &&
-      !nsSVGIntegrationUtils::BuildWebRenderFilters(
-          mFrame, preFilterBounds, wrFilters, postFilterBounds)) {
+      !nsSVGIntegrationUtils::BuildWebRenderFilters(mFrame, wrFilters,
+                                                    filterClip)) {
     return false;
+  }
+
+  wr::WrStackingContextClip clip;
+  if (filterClip) {
+    auto devPxRect = LayoutDeviceRect::FromAppUnits(
+        filterClip.value() + ToReferenceFrame(), auPerDevPixel);
+    wr::WrClipId clipId =
+        aBuilder.DefineClip(Nothing(), wr::ToRoundedLayoutRect(devPxRect));
+    clip = wr::WrStackingContextClip::ClipId(clipId);
+  } else {
+    clip = wr::WrStackingContextClip::ClipChain(aBuilder.CurrentClipChainId());
   }
 
   float opacity = mFrame->StyleEffects()->mOpacity;
@@ -9374,8 +9377,7 @@ bool nsDisplayFilters::CreateWebRenderCommands(
       LayoutDeviceRect(), nullptr, nullptr,
       opacity != 1.0f && mHandleOpacity ? &opacity : nullptr, nullptr,
       wr::ReferenceFrameKind::Transform, gfx::CompositionOp::OP_OVER, true,
-      false, Nothing(),
-      wr::WrStackingContextClip::ClipChain(aBuilder.CurrentClipChainId()));
+      false, Nothing(), clip);
 
   nsDisplayEffectsBase::CreateWebRenderCommands(aBuilder, aResources, sc,
                                                 aManager, aDisplayListBuilder);
