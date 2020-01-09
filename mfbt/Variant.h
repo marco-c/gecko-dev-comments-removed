@@ -10,10 +10,10 @@
 #include <stdint.h>
 
 #include "mozilla/Assertions.h"
-#include "mozilla/Move.h"
 #include "mozilla/OperatorNewExtensions.h"
 #include "mozilla/TemplateLib.h"
 #include "mozilla/TypeTraits.h"
+#include <utility>
 
 #ifndef mozilla_Variant_h
 #  define mozilla_Variant_h
@@ -174,9 +174,8 @@ struct VariantImplementation<Tag, N, T> {
   }
 
   template <typename Matcher, typename ConcreteVariant>
-  static auto match(Matcher&& aMatcher, ConcreteVariant& aV)
-      -> decltype(aMatcher.match(aV.template as<N>())) {
-    return aMatcher.match(aV.template as<N>());
+  static decltype(auto) match(Matcher&& aMatcher, ConcreteVariant& aV) {
+    return aMatcher(aV.template as<N>());
   }
 };
 
@@ -229,10 +228,9 @@ struct VariantImplementation<Tag, N, T, Ts...> {
   }
 
   template <typename Matcher, typename ConcreteVariant>
-  static auto match(Matcher&& aMatcher, ConcreteVariant& aV)
-      -> decltype(aMatcher.match(aV.template as<N>())) {
+  static decltype(auto) match(Matcher&& aMatcher, ConcreteVariant& aV) {
     if (aV.template is<N>()) {
-      return aMatcher.match(aV.template as<N>());
+      return aMatcher(aV.template as<N>());
     } else {
       
       
@@ -244,7 +242,7 @@ struct VariantImplementation<Tag, N, T, Ts...> {
       
       
       
-      return Next::match(aMatcher, aV);
+      return Next::match(std::forward<Matcher>(aMatcher), aV);
     }
   }
 };
@@ -288,6 +286,12 @@ template <size_t N>
 struct VariantIndex {
   static constexpr size_t index = N;
 };
+
+
+
+
+
+
 
 
 
@@ -684,15 +688,14 @@ class MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS MOZ_NON_PARAM Variant {
 
   
   template <typename Matcher>
-  auto match(Matcher&& aMatcher) const
-      -> decltype(Impl::match(aMatcher, *this)) {
-    return Impl::match(aMatcher, *this);
+  decltype(auto) match(Matcher&& aMatcher) const {
+    return Impl::match(std::forward<Matcher>(aMatcher), *this);
   }
 
   
   template <typename Matcher>
-  auto match(Matcher&& aMatcher) -> decltype(Impl::match(aMatcher, *this)) {
-    return Impl::match(aMatcher, *this);
+  decltype(auto) match(Matcher&& aMatcher) {
+    return Impl::match(std::forward<Matcher>(aMatcher), *this);
   }
 };
 
