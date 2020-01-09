@@ -204,33 +204,6 @@ struct GCPolicy<mozilla::Maybe<T>> {
 template <>
 struct GCPolicy<JS::Realm*>;  
 
-namespace detail {
-
-
-
-struct FallbackOverload {};
-struct PreferredOverload : FallbackOverload {};
-using OverloadSelector = PreferredOverload;
-
-
-template <typename T>
-struct GCPolicyWithIsValid : GCPolicy<T> {
-  template <typename U = T, typename = decltype(GCPolicy<U>::isValid)>
-  static bool isValidPicker(const T& t, detail::PreferredOverload) {
-    return GCPolicy<T>::isValid(t);
-  }
-
-  static bool isValidPicker(const T& t, detail::FallbackOverload) {
-    return true;
-  }
-
-  static bool isValid(const T& t) {
-    return isValidPicker(t, detail::OverloadSelector());
-  }
-};
-
-}  
-
 }  
 
 #endif  
