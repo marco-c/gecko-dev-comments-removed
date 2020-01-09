@@ -17,10 +17,10 @@ from taskgraph.util.schema import (
     resolve_keyed_by,
 )
 from taskgraph.util.taskcluster import get_artifact_prefix
-from taskgraph.util.platforms import archive_format, executable_extension, architecture
+from taskgraph.util.platforms import archive_format, architecture
 from taskgraph.util.workertypes import worker_type_implementation
 from taskgraph.transforms.job import job_description_schema
-from voluptuous import Required, Optional
+from voluptuous import Required, Optional, Extra
 
 
 packaging_description_schema = schema.extend({
@@ -29,6 +29,9 @@ packaging_description_schema = schema.extend({
 
     
     Optional('label'): basestring,
+
+    Optional('worker-type'): basestring,
+    Optional('worker'): object,
 
     
     
@@ -56,6 +59,7 @@ packaging_description_schema = schema.extend({
 
     
     Required('mozharness'): {
+        Extra: object,
         
         Required('config'): optionally_keyed_by('build-platform', [basestring]),
 
@@ -87,7 +91,7 @@ PACKAGE_FORMATS = {
         ],
         'inputs': {
             'input': 'target{archive_format}',
-            'mar': 'mar-tools/mar{executable_extension}',
+            'mar': 'mar-tools/mar',
         },
         'output': "target.complete.mar",
     },
@@ -98,7 +102,7 @@ PACKAGE_FORMATS = {
         ],
         'inputs': {
             'input': 'target{archive_format}',
-            'mar': 'mar{executable_extension}',
+            'mar': 'mar',
         },
         'output': "target.bz2.complete.mar",
     },
@@ -205,10 +209,6 @@ def make_job_description(config, jobs):
             
             raise NotImplementedError(
                 "Can't repackage a signing task with multiple dependencies")
-        signing_dependencies = dep_job.dependencies
-        
-        
-        dependencies.update(signing_dependencies)
 
         attributes = copy_attributes_from_dependent_job(dep_job)
         attributes['repackage_type'] = 'repackage'
@@ -230,7 +230,6 @@ def make_job_description(config, jobs):
         if config.kind == 'repackage-msi':
             treeherder['symbol'] = 'MSI({})'.format(locale or 'N')
 
-        build_task = None
         signing_task = None
         repackage_signing_task = None
         for dependency in dependencies.keys():
@@ -238,21 +237,12 @@ def make_job_description(config, jobs):
                 repackage_signing_task = dependency
             elif 'signing' in dependency:
                 signing_task = dependency
-            else:
-                build_task = dependency
 
         _fetch_subst_locale = 'en-US'
         if locale:
-            
-            
-            
-            
-            dependencies['build'] = "build-{}/opt".format(
-                dependencies[build_task][13:dependencies[build_task].rfind('-')])
-            build_task = 'build'
             _fetch_subst_locale = locale
 
-        level = config.params['level']
+        worker_type = job['worker-type']
         build_platform = attributes['build_platform']
 
         use_stub = attributes.get('stub-installer')
@@ -266,7 +256,6 @@ def make_job_description(config, jobs):
             command = copy.deepcopy(PACKAGE_FORMATS[format])
             substs = {
                 'archive_format': archive_format(build_platform),
-                'executable_extension': executable_extension(build_platform),
                 '_locale': _fetch_subst_locale,
                 'architecture': architecture(build_platform),
                 'version_display': config.params['version'],
@@ -298,31 +287,17 @@ def make_job_description(config, jobs):
             },
         })
 
-        worker = {
+        worker = job.get('worker', {})
+        worker.update({
             'chain-of-trust': True,
             'max-run-time': 7200 if build_platform.startswith('win') else 3600,
             
             'skip-artifacts': True,
-        }
+        })
 
         if locale:
             
             worker.setdefault('env', {}).update(LOCALE=locale)
-
-        if build_platform.startswith('win'):
-            worker_type = 'aws-provisioner-v1/gecko-%s-b-win2012' % level
-            run['use-magic-mh-args'] = False
-            run['use-caches'] = False
-        else:
-            if build_platform.startswith(('linux', 'macosx')):
-                worker_type = 'aws-provisioner-v1/gecko-%s-b-linux' % level
-            else:
-                raise NotImplementedError(
-                    'Unsupported build_platform: "{}"'.format(build_platform)
-                )
-
-            run['tooltool-downloads'] = 'internal'
-            worker['docker-image'] = {"in-tree": "debian7-amd64-build"}
 
         worker['artifacts'] = _generate_task_output_files(
             dep_job, worker_type_implementation(config.graph_config, worker_type),
@@ -351,7 +326,7 @@ def make_job_description(config, jobs):
             'extra': job.get('extra', {}),
             'worker': worker,
             'run': run,
-            'fetches': _generate_download_config(dep_job, build_platform, build_task,
+            'fetches': _generate_download_config(dep_job, build_platform,
                                                  signing_task, repackage_signing_task,
                                                  locale=locale,
                                                  project=config.params["project"],
@@ -368,7 +343,7 @@ def make_job_description(config, jobs):
         yield task
 
 
-def _generate_download_config(task, build_platform, build_task, signing_task,
+def _generate_download_config(task, build_platform, signing_task,
                               repackage_signing_task, locale=None, project=None,
                               existing_fetch=None):
     locale_path = '{}/'.format(locale) if locale else ''
@@ -390,7 +365,6 @@ def _generate_download_config(task, build_platform, build_task, signing_task,
                     'extract': False,
                 },
             ],
-            "toolchain": ["linux64-mar-tools"],
         })
     elif build_platform.startswith('win'):
         fetch.update({
@@ -400,9 +374,6 @@ def _generate_download_config(task, build_platform, build_task, signing_task,
                     'extract': False,
                 },
                 '{}setup.exe'.format(locale_path),
-            ],
-            build_task: [
-                'host/bin/mar.exe',
             ],
         })
 
