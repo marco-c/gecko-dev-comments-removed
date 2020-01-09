@@ -1,6 +1,7 @@
 
 function assert_feature_policy_supported() {
-  assert_not_equals(document.policy, undefined, 'Feature Policy is supported');
+  assert_not_equals(document.featurePolicy, undefined,
+                    'Feature Policy is supported');
 }
 
 
@@ -259,6 +260,7 @@ function run_all_fp_tests_allow_all(
 
 
 
+
 function test_allowlists(expected_policy, policy, message) {
   for (var allowlist of allowlists) {
     test(function() {
@@ -409,7 +411,7 @@ function test_frame_policy(
   document.body.appendChild(frame);
   
   
-  var frame_policy = frame.policy;
+  var frame_policy = frame.featurePolicy;
   if (typeof allow !== 'undefined') {
     frame.setAttribute('allow', allow);
   }
