@@ -87,7 +87,6 @@ module.exports = {
   }, {
     
     "files": [
-      "modules/libmar/tests/unit/head_libmar.js",
       "netwerk/protocol/http/WellKnownOpportunisticUtils.jsm",
       "netwerk/test/httpserver/httpd.js",
       "netwerk/test/httpserver/test/**",
