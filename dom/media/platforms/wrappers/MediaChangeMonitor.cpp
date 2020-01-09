@@ -51,14 +51,17 @@ class H264ChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
                          RESULT_DETAIL("Invalid H264 content"));
     }
 
-    RefPtr<MediaByteBuffer> extra_data =
-        aSample->mKeyframe ? H264::ExtractExtraData(aSample) : nullptr;
+    RefPtr<MediaByteBuffer> extra_data = aSample->mKeyframe || !mGotSPS
+                                             ? H264::ExtractExtraData(aSample)
+                                             : nullptr;
 
     if (!H264::HasSPS(extra_data) && !H264::HasSPS(mCurrentConfig.mExtraData)) {
       
       
       return NS_ERROR_NOT_INITIALIZED;
     }
+
+    mGotSPS = true;
 
     if (!H264::HasSPS(extra_data)) {
       
@@ -131,6 +134,7 @@ class H264ChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
 
   VideoInfo mCurrentConfig;
   uint32_t mStreamID = 0;
+  bool mGotSPS = false;
   RefPtr<TrackInfoSharedPtr> mTrackInfo;
   RefPtr<MediaByteBuffer> mPreviousExtraData;
 };
@@ -272,7 +276,7 @@ RefPtr<MediaDataDecoder::DecodePromise> MediaChangeMonitor::Decode(
     if (rv == NS_ERROR_NOT_INITIALIZED) {
       
       
-      return DecodePromise::CreateAndResolve(DecodedData(), __func__);
+      return DecodePromise::CreateAndReject(rv, __func__);
     }
     if (rv == NS_ERROR_DOM_MEDIA_INITIALIZING_DECODER) {
       
@@ -512,7 +516,10 @@ bool MediaChangeMonitor::CanRecycleDecoder() const {
 void MediaChangeMonitor::DecodeFirstSample(MediaRawData* aSample) {
   AssertOnTaskQueue();
 
-  if (mNeedKeyframe && !aSample->mKeyframe) {
+  
+  
+  if (mNeedKeyframe && !aSample->mKeyframe &&
+      *mConversionRequired != ConversionRequired::kNeedAnnexB) {
     mDecodePromise.Resolve(std::move(mPendingFrames), __func__);
     mPendingFrames = DecodedData();
     return;
@@ -526,7 +533,9 @@ void MediaChangeMonitor::DecodeFirstSample(MediaRawData* aSample) {
     return;
   }
 
-  mNeedKeyframe = false;
+  if (aSample->mKeyframe) {
+    mNeedKeyframe = false;
+  }
 
   RefPtr<MediaChangeMonitor> self = this;
   mDecoder->Decode(aSample)
