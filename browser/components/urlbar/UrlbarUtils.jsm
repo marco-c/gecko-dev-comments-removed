@@ -66,6 +66,8 @@ var UrlbarUtils = {
   },
 
   
+  
+  
   RESULT_TYPE: {
     
     
@@ -87,6 +89,8 @@ var UrlbarUtils = {
     REMOTE_TAB: 6,
   },
 
+  
+  
   
   
   

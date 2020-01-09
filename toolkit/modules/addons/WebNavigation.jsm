@@ -12,6 +12,8 @@ ChromeUtils.defineModuleGetter(this, "BrowserWindowTracker",
                                "resource:///modules/BrowserWindowTracker.jsm");
 ChromeUtils.defineModuleGetter(this, "PrivateBrowsingUtils",
                                "resource://gre/modules/PrivateBrowsingUtils.jsm");
+ChromeUtils.defineModuleGetter(this, "UrlbarUtils",
+                               "resource:///modules/UrlbarUtils.jsm");
 
 
 
@@ -33,6 +35,7 @@ var Manager = {
     this.createdNavigationTargetByOuterWindowId = new Map();
 
     Services.obs.addObserver(this, "autocomplete-did-enter-text", true);
+    Services.obs.addObserver(this, "urlbar-user-start-navigation", true);
 
     Services.obs.addObserver(this, "webNavigation-createdNavigationTarget");
 
@@ -49,6 +52,7 @@ var Manager = {
   uninit() {
     
     Services.obs.removeObserver(this, "autocomplete-did-enter-text");
+    Services.obs.removeObserver(this, "urlbar-user-start-navigation");
     Services.obs.removeObserver(this, "webNavigation-createdNavigationTarget");
 
     Services.mm.removeMessageListener("Content:Click", this);
@@ -108,7 +112,11 @@ var Manager = {
 
 
   observe: function(subject, topic, data) {
-    if (topic == "autocomplete-did-enter-text") {
+    if (topic == "urlbar-user-start-navigation") {
+      this.onURLBarUserStartNavigation(subject.wrappedJSObject);
+    } else if (topic == "autocomplete-did-enter-text") {
+      
+      
       this.onURLBarAutoCompletion(subject);
     } else if (topic == "webNavigation-createdNavigationTarget") {
       
@@ -136,6 +144,65 @@ var Manager = {
 
 
 
+
+
+
+
+
+
+
+  onURLBarUserStartNavigation(acData) {
+    let tabTransitionData = {
+      from_address_bar: true,
+    };
+
+    if (!acData.result) {
+      tabTransitionData.typed = true;
+    } else {
+      switch (acData.result.type) {
+        case UrlbarUtils.RESULT_TYPE.KEYWORD:
+          tabTransitionData.keyword = true;
+          break;
+        case UrlbarUtils.RESULT_TYPE.SEARCH:
+          tabTransitionData.generated = true;
+          break;
+        case UrlbarUtils.RESULT_TYPE.URL:
+          if (acData.result.source == UrlbarUtils.RESULT_SOURCE.BOOKMARKS) {
+            tabTransitionData.auto_bookmark = true;
+          } else {
+            tabTransitionData.typed = true;
+          }
+          break;
+        case UrlbarUtils.RESULT_TYPE.REMOTE_TAB:
+          
+          
+          tabTransitionData.typed = true;
+          break;
+        case UrlbarUtils.RESULT_TYPE.TAB_SWITCH:
+          
+          
+          
+        case UrlbarUtils.RESULT_TYPE.OMNIBOX:
+          
+          
+          throw new Error(`Unexpectedly received notification for ${acData.result.type}`);
+        default:
+          Cu.reportError(`Received unexpected result type ${acData.result.type}, falling back to typed transition.`);
+          
+          tabTransitionData.typed = true;
+      }
+    }
+
+    this.setRecentTabTransitionData(tabTransitionData);
+  },
+
+  
+
+
+
+
+
+
   onURLBarAutoCompletion(input) {
     if (input && input instanceof Ci.nsIAutoCompleteInput) {
       
@@ -146,13 +213,13 @@ var Manager = {
       let controller = input.popup.view.QueryInterface(Ci.nsIAutoCompleteController);
       let idx = input.popup.selectedIndex;
 
-      let tabTransistionData = {
+      let tabTransitionData = {
         from_address_bar: true,
       };
 
       if (idx < 0 || idx >= controller.matchCount) {
         
-        tabTransistionData.typed = true;
+        tabTransitionData.typed = true;
       } else {
         let value = controller.getValueAt(idx);
         let action = input._parseActionUrl(value);
@@ -161,21 +228,21 @@ var Manager = {
           
           switch (action.type) {
             case "keyword":
-              tabTransistionData.keyword = true;
+              tabTransitionData.keyword = true;
               break;
             case "searchengine":
             case "searchsuggestion":
-              tabTransistionData.generated = true;
+              tabTransitionData.generated = true;
               break;
             case "visiturl":
               
               
-              tabTransistionData.typed = true;
+              tabTransitionData.typed = true;
               break;
             case "remotetab":
               
               
-              tabTransistionData.typed = true;
+              tabTransitionData.typed = true;
               break;
             case "switchtab":
               
@@ -183,7 +250,7 @@ var Manager = {
               return;
             default:
               
-              tabTransistionData.typed = true;
+              tabTransitionData.typed = true;
           }
         } else {
           
@@ -191,16 +258,16 @@ var Manager = {
           let styles = new Set(controller.getStyleAt(idx).split(/\s+/));
 
           if (styles.has("bookmark")) {
-            tabTransistionData.auto_bookmark = true;
+            tabTransitionData.auto_bookmark = true;
           } else {
             
             
-            tabTransistionData.typed = true;
+            tabTransitionData.typed = true;
           }
         }
       }
 
-      this.setRecentTabTransitionData(tabTransistionData);
+      this.setRecentTabTransitionData(tabTransitionData);
     }
   },
 

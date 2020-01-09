@@ -345,7 +345,7 @@ class UrlbarInput {
             browser.lastLocationChange == lastLocationChange) {
           openParams.postData = data.postData;
           openParams.allowInheritPrincipal = data.mayInheritPrincipal;
-          this._loadURL(data.url, where, openParams, browser);
+          this._loadURL(data.url, where, openParams, null, browser);
         }
       });
       return;
@@ -445,7 +445,10 @@ class UrlbarInput {
     if (!url) {
       throw new Error(`Invalid url for result ${JSON.stringify(result)}`);
     }
-    this._loadURL(url, where, openParams);
+    this._loadURL(url, where, openParams, {
+      source: result.source,
+      type: result.type,
+    });
   }
 
   
@@ -988,7 +991,13 @@ class UrlbarInput {
 
 
 
-  _loadURL(url, openUILinkWhere, params,
+
+
+
+
+
+
+  _loadURL(url, openUILinkWhere, params, result = {},
            browser = this.window.gBrowser.selectedBrowser) {
     this.value = url;
     browser.userTypedValue = url;
@@ -1031,6 +1040,9 @@ class UrlbarInput {
     if (openUILinkWhere != "current") {
       this.handleRevert();
     }
+
+    
+    this._notifyStartNavigation(result);
 
     try {
       this.window.openTrustedLinkIn(url, openUILinkWhere, params);
@@ -1129,6 +1141,20 @@ class UrlbarInput {
     });
 
     insertLocation.insertAdjacentElement("afterend", pasteAndGo);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  _notifyStartNavigation(result) {
+    Services.obs.notifyObservers({result}, "urlbar-user-start-navigation");
   }
 
   
