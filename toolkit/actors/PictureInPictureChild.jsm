@@ -8,7 +8,11 @@ var EXPORTED_SYMBOLS = ["PictureInPictureChild"];
 
 const {ActorChild} = ChromeUtils.import("resource://gre/modules/ActorChild.jsm");
 
+
+
 var gWeakVideo = null;
+
+
 var gWeakPlayerContent = null;
 
 class PictureInPictureChild extends ActorChild {
@@ -18,6 +22,12 @@ class PictureInPictureChild extends ActorChild {
         if (event.isTrusted) {
           this.togglePictureInPicture(event.target);
         }
+        break;
+      }
+      case "pagehide": {
+        
+        
+        this.closePictureInPicture();
         break;
       }
     }
@@ -37,6 +47,19 @@ class PictureInPictureChild extends ActorChild {
     return null;
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
   async togglePictureInPicture(video) {
     if (this.inPictureInPicture(video)) {
       await this.closePictureInPicture();
@@ -48,15 +71,39 @@ class PictureInPictureChild extends ActorChild {
         await this.closePictureInPicture();
       }
 
-      this.requestPictureInPicture(video);
+      gWeakVideo = Cu.getWeakReference(video);
+      this.mm.sendAsyncMessage("PictureInPicture:Request", {
+        videoHeight: video.videoHeight,
+        videoWidth: video.videoWidth,
+      });
     }
   }
+
+  
+
+
+
+
+
+
 
   inPictureInPicture(video) {
     return this.weakVideo === video;
   }
 
+  
+
+
+
+
+
+
+
+
   async closePictureInPicture() {
+    if (this.weakVideo) {
+      this.untrackOriginatingVideo(this.weakVideo);
+    }
 
     this.mm.sendAsyncMessage("PictureInPicture:Close", {
       browingContextId: this.docShell.browsingContext.id,
@@ -75,14 +122,6 @@ class PictureInPictureChild extends ActorChild {
     }
   }
 
-  requestPictureInPicture(video) {
-    gWeakVideo = Cu.getWeakReference(video);
-    this.mm.sendAsyncMessage("PictureInPicture:Request", {
-      videoHeight: video.videoHeight,
-      videoWidth: video.videoWidth,
-    });
-  }
-
   receiveMessage(message) {
     switch (message.name) {
       case "PictureInPicture:SetupPlayer": {
@@ -91,6 +130,43 @@ class PictureInPictureChild extends ActorChild {
       }
     }
   }
+
+  
+
+
+
+
+  trackOriginatingVideo(originatingVideo) {
+    let originatingWindow = originatingVideo.ownerGlobal;
+    if (originatingWindow) {
+      originatingWindow.addEventListener("pagehide", this);
+    }
+  }
+
+  
+
+
+
+
+
+  untrackOriginatingVideo(originatingVideo) {
+    let originatingWindow = originatingVideo.ownerGlobal;
+    if (originatingWindow) {
+      originatingWindow.removeEventListener("pagehide", this);
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
 
   async setupPlayer() {
     let originatingVideo = this.weakVideo;
@@ -137,15 +213,11 @@ class PictureInPictureChild extends ActorChild {
 
     originatingVideo.cloneElementVisually(playerVideo);
 
-    let originatingWindow = originatingVideo.ownerGlobal;
-    originatingWindow.addEventListener("unload", (e) => {
-      this.closePictureInPicture(originatingVideo);
-    }, { once: true });
+    this.trackOriginatingVideo(originatingVideo);
 
     this.content.addEventListener("unload", () => {
-      let video = gWeakVideo && gWeakVideo.get();
-      if (video) {
-        video.stopCloningElementVisually();
+      if (this.weakVideo) {
+        this.weakVideo.stopCloningElementVisually();
       }
       gWeakVideo = null;
     }, { once: true });
