@@ -304,7 +304,7 @@ let ACTORS = {
 
   
   
-  if (Services.prefs.getCharPref("extensions.activeThemeID", "") !=
+  if (Services.prefs.getCharPref("extensions.activeThemeID", "default-theme@mozilla.org") !=
         "default-theme@mozilla.org")
     return;
 
