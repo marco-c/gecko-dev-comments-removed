@@ -170,6 +170,8 @@ class WorkerPrivate : public RelativeTimeline {
     }
   }
 
+  nsresult SetIsDebuggerReady(bool aReady);
+
   WorkerDebugger* Debugger() const {
     AssertIsOnMainThread();
 
@@ -907,6 +909,12 @@ class WorkerPrivate : public RelativeTimeline {
              data->mHolders.IsEmpty());
   }
 
+  
+  
+  nsresult DispatchLockHeld(already_AddRefed<WorkerRunnable> aRunnable,
+                            nsIEventTarget* aSyncLoopTarget,
+                            const MutexAutoLock& aProofOfLock);
+
   class EventTarget;
   friend class EventTarget;
   friend class mozilla::dom::WorkerHolder;
@@ -1073,6 +1081,13 @@ class WorkerPrivate : public RelativeTimeline {
   const bool mIsSecureContext;
 
   bool mDebuggerRegistered;
+
+  
+  
+  
+  
+  bool mDebuggerReady;
+  nsTArray<RefPtr<WorkerRunnable>> mDelayedDebuggeeRunnables;
 
   
   
