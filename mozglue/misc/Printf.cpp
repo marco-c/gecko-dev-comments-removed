@@ -72,6 +72,9 @@ typedef mozilla::Vector<NumArgState, 20, mozilla::MallocAllocPolicy>
 #define FLAG_ZEROS 0x8
 #define FLAG_NEG 0x10
 
+static const char hex[] = "0123456789abcdef";
+static const char HEX[] = "0123456789ABCDEF";
+
 
 bool mozilla::PrintfTarget::fill2(const char* src, int srclen, int width,
                                   int flags) {
@@ -165,6 +168,55 @@ bool mozilla::PrintfTarget::fill_n(const char* src, int srclen, int width,
     if (!emit(" ", 1)) return false;
   }
   return true;
+}
+
+
+
+
+
+
+
+bool mozilla::PrintfTarget::appendIntDec(int32_t num) {
+  int flags = 0;
+  long n = num;
+  if (n < 0) {
+    n = -n;
+    flags |= FLAG_NEG;
+  }
+  return cvt_l(n, -1, -1, 10, TYPE_INTN, flags, hex);
+}
+
+bool mozilla::PrintfTarget::appendIntDec(uint32_t num) {
+  return cvt_l(num, -1, -1, 10, TYPE_UINTN, 0, hex);
+}
+
+bool mozilla::PrintfTarget::appendIntOct(uint32_t num) {
+  return cvt_l(num, -1, -1, 8, TYPE_UINTN, 0, hex);
+}
+
+bool mozilla::PrintfTarget::appendIntHex(uint32_t num) {
+  return cvt_l(num, -1, -1, 16, TYPE_UINTN, 0, hex);
+}
+
+bool mozilla::PrintfTarget::appendIntDec(int64_t num) {
+  int flags = 0;
+  if (num < 0) {
+    num = -num;
+    flags |= FLAG_NEG;
+  }
+  return cvt_ll(num, -1, -1, 10, TYPE_INTN, flags, hex);
+}
+
+bool mozilla::PrintfTarget::appendIntDec(uint64_t num) {
+  return cvt_ll(num, -1, -1, 10, TYPE_UINTN, 0, hex);
+}
+
+bool mozilla::PrintfTarget::appendIntOct(uint64_t num) {
+  return cvt_ll(num, -1, -1, 8, TYPE_UINTN, 0, hex);
+}
+
+bool mozilla::PrintfTarget::appendIntHex(uint64_t num) {
+  return cvt_ll(num, -1, -1, 16, TYPE_UINTN, 0, hex);
 }
 
 
@@ -562,8 +614,6 @@ bool mozilla::PrintfTarget::vprint(const char* fmt, va_list ap) {
 #endif
   } u;
   const char* fmt0;
-  static const char hex[] = "0123456789abcdef";
-  static const char HEX[] = "0123456789ABCDEF";
   const char* hexp;
   int i;
   char pattern[20];
