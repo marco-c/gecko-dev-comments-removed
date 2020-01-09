@@ -88,9 +88,7 @@ UniquePtr<SurfaceFactory> GLScreenBuffer::CreateFactory(
     factory = MakeUnique<SurfaceFactory_GLTexture>(mGLContext, caps, ipcChannel,
                                                    mFlags);
 #elif defined(MOZ_WIDGET_ANDROID)
-    
-    if (XRE_IsParentProcess() && !gfxPrefs::WebGLSurfaceTextureEnabled() &&
-        backend != layers::LayersBackend::LAYERS_WR) {
+    if (XRE_IsParentProcess() && !gfxPrefs::WebGLSurfaceTextureEnabled()) {
       factory = SurfaceFactory_EGLImage::Create(gl, caps, ipcChannel, flags);
     } else {
       factory =
