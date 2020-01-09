@@ -706,10 +706,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   uint32_t mAsyncResumePending : 1;
 
-  
-  
-  uint32_t mResolvedByTRR : 1;
-
   nsTArray<nsContinueRedirectionFunc> mRedirectFuncStack;
 
   
