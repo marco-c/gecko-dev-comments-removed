@@ -152,10 +152,6 @@ var ensureKnownRegion = async function(ss) {
         });
       }
     }
-
-    
-    
-    Services.telemetry.getHistogramById("SEARCH_SERVICE_COUNTRY_FETCH_CAUSED_SYNC_INIT").add(gInitialized);
   } catch (ex) {
     Cu.reportError(ex);
   } finally {

@@ -13,12 +13,9 @@ add_task(async function test_location() {
   
   checkCountryResultTelemetry(TELEMETRY_RESULT_ENUM.SUCCESS);
   
-  for (let hid of ["SEARCH_SERVICE_COUNTRY_TIMEOUT",
-                   "SEARCH_SERVICE_COUNTRY_FETCH_CAUSED_SYNC_INIT"]) {
-    let histogram = Services.telemetry.getHistogramById(hid);
-    let snapshot = histogram.snapshot();
-    deepEqual(snapshot.values, {0: 1, 1: 0}); 
-  }
+  let histogram = Services.telemetry.getHistogramById("SEARCH_SERVICE_COUNTRY_TIMEOUT");
+  let snapshot = histogram.snapshot();
+  deepEqual(snapshot.values, {0: 1, 1: 0}); 
 
   
   
@@ -54,8 +51,8 @@ add_task(async function test_location() {
       expectedResult = countryCode == "AU" ? {0: 1, 1: 0} : {0: 0, 1: 1, 2: 0};
     }
 
-    let histogram = Services.telemetry.getHistogramById(hid);
-    let snapshot = histogram.snapshot();
+    histogram = Services.telemetry.getHistogramById(hid);
+    snapshot = histogram.snapshot();
     deepEqual(snapshot.values, expectedResult);
   }
 });

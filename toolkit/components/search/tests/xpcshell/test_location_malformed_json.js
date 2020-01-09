@@ -32,10 +32,7 @@ add_task(async function test_location_malformed_json() {
   
   checkCountryResultTelemetry(TELEMETRY_RESULT_ENUM.SUCCESS_WITHOUT_DATA);
   
-  for (let hid of ["SEARCH_SERVICE_COUNTRY_TIMEOUT",
-                   "SEARCH_SERVICE_COUNTRY_FETCH_CAUSED_SYNC_INIT"]) {
-    let histogram = Services.telemetry.getHistogramById(hid);
-    let snapshot = histogram.snapshot();
-    deepEqual(snapshot.values, {0: 1, 1: 0}); 
-  }
+  let histogram = Services.telemetry.getHistogramById("SEARCH_SERVICE_COUNTRY_TIMEOUT");
+  let snapshot = histogram.snapshot();
+  deepEqual(snapshot.values, {0: 1, 1: 0}); 
 });
