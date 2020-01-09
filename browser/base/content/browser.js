@@ -485,6 +485,9 @@ function showFxaToolbarMenu(enable) {
     gSync.maybeUpdateUIState();
 
     
+    Services.telemetry.setEventRecordingEnabled("fxa_avatar_menu", true);
+
+    
     
     if (!gFxaToolbarAccessed) {
       mainWindowEl.setAttribute("fxa_avatar_badged", "badged");
