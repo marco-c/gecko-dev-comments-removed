@@ -145,7 +145,7 @@ try {
     function destroyServer() {
       
       
-      if (DebuggerServer.hasConnection()) {
+      if (DebuggerServer.hasConnection() || DebuggerServer.keepAlive) {
         return;
       }
       DebuggerServer.off("connectionchange", destroyServer);

@@ -67,6 +67,13 @@ var DebuggerServer = {
 
 
 
+  keepAlive: false,
+
+  
+
+
+
+
   get rootlessServer() {
     return !this.createRootActor;
   },
