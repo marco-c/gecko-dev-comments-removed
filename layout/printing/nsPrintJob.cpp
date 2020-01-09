@@ -1291,14 +1291,14 @@ void nsPrintJob::ShowPrintProgress(bool aIsForPrinting, bool& aDoNotify) {
 
 
 bool nsPrintJob::IsThereARangeSelection(nsPIDOMWindowOuter* aDOMWin) {
-  if (mDisallowSelectionPrint) return false;
-
-  nsCOMPtr<nsIPresShell> presShell;
-  if (aDOMWin) {
-    presShell = aDOMWin->GetDocShell()->GetPresShell();
+  if (mDisallowSelectionPrint || !aDOMWin) {
+    return false;
   }
 
-  if (!presShell) return false;
+  PresShell* presShell = aDOMWin->GetDocShell()->GetPresShell();
+  if (!presShell) {
+    return false;
+  }
 
   
   
@@ -2050,12 +2050,12 @@ void nsPrintJob::UpdateZoomRatio(nsPrintObject* aPO, bool aSetPixelScale) {
 
 nsresult nsPrintJob::UpdateSelectionAndShrinkPrintObject(
     nsPrintObject* aPO, bool aDocumentIsTopLevel) {
-  nsCOMPtr<nsIPresShell> displayShell = aPO->mDocShell->GetPresShell();
+  PresShell* displayPresShell = aPO->mDocShell->GetPresShell();
   
   RefPtr<Selection> selection, selectionPS;
   
-  if (displayShell) {
-    selection = displayShell->GetCurrentSelection(SelectionType::eNormal);
+  if (displayPresShell) {
+    selection = displayPresShell->GetCurrentSelection(SelectionType::eNormal);
   }
   selectionPS = aPO->mPresShell->GetCurrentSelection(SelectionType::eNormal);
 

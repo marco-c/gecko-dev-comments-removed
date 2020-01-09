@@ -2437,7 +2437,7 @@ mozilla::ipc::IPCResult TabChild::RecvRenderLayers(
     
     
     
-    if (nsCOMPtr<nsIPresShell> presShell = docShell->GetPresShell()) {
+    if (RefPtr<PresShell> presShell = docShell->GetPresShell()) {
       presShell->SetIsActive(true);
 
       if (nsIFrame* root = presShell->GetRootFrame()) {
@@ -2752,7 +2752,7 @@ void TabChild::MakeHidden() {
     
     
     
-    if (nsCOMPtr<nsIPresShell> presShell = docShell->GetPresShell()) {
+    if (RefPtr<PresShell> presShell = docShell->GetPresShell()) {
       if (nsPresContext* presContext = presShell->GetPresContext()) {
         nsRootPresContext* rootPresContext = presContext->GetRootPresContext();
         nsIFrame* rootFrame = presShell->GetRootFrame();
@@ -2957,7 +2957,7 @@ void TabChild::SchedulePaint() {
   
   
   
-  if (nsCOMPtr<nsIPresShell> presShell = docShell->GetPresShell()) {
+  if (RefPtr<PresShell> presShell = docShell->GetPresShell()) {
     if (nsIFrame* root = presShell->GetRootFrame()) {
       root->SchedulePaint();
     }

@@ -6392,8 +6392,7 @@ nsIPresShell* nsContentUtils::FindPresShellForDocument(const Document* aDoc) {
     
     
     nsCOMPtr<nsIDocShell> docShell = do_QueryInterface(docShellTreeItem);
-    nsIPresShell* presShell = docShell->GetPresShell();
-    if (presShell) {
+    if (PresShell* presShell = docShell->GetPresShell()) {
       return presShell;
     }
     nsCOMPtr<nsIDocShellTreeItem> parent;

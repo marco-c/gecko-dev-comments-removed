@@ -6,6 +6,7 @@
 #include "RootAccessible.h"
 
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/PresShell.h"  
 
 #define CreateEvent CreateEventA
 

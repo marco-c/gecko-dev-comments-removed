@@ -6227,9 +6227,9 @@ already_AddRefed<nsPIDOMWindowOuter> PresShell::GetRootWindow() {
 
   
   
-  nsCOMPtr<nsIPresShell> parent = GetParentPresShellForEventHandling();
-  NS_ENSURE_TRUE(parent, nullptr);
-  return parent->GetRootWindow();
+  RefPtr<PresShell> parentPresShell = GetParentPresShellForEventHandling();
+  NS_ENSURE_TRUE(parentPresShell, nullptr);
+  return parentPresShell->GetRootWindow();
 }
 
 already_AddRefed<nsPIDOMWindowOuter>
@@ -6255,7 +6255,7 @@ already_AddRefed<nsIContent> nsIPresShell::GetFocusedContentInOurWindow()
   return nullptr;
 }
 
-already_AddRefed<nsIPresShell> PresShell::GetParentPresShellForEventHandling() {
+already_AddRefed<PresShell> PresShell::GetParentPresShellForEventHandling() {
   NS_ENSURE_TRUE(mPresContext, nullptr);
 
   
@@ -6272,7 +6272,7 @@ already_AddRefed<nsIPresShell> PresShell::GetParentPresShellForEventHandling() {
   nsCOMPtr<nsIDocShell> parentDocShell = do_QueryInterface(parentTreeItem);
   NS_ENSURE_TRUE(parentDocShell && treeItem != parentTreeItem, nullptr);
 
-  nsCOMPtr<nsIPresShell> parentPresShell = parentDocShell->GetPresShell();
+  RefPtr<PresShell> parentPresShell = parentDocShell->GetPresShell();
   return parentPresShell.forget();
 }
 
@@ -6283,7 +6283,7 @@ nsresult PresShell::EventHandler::RetargetEventToParent(
   
   
 
-  nsCOMPtr<nsIPresShell> parentPresShell = GetParentPresShellForEventHandling();
+  RefPtr<PresShell> parentPresShell = GetParentPresShellForEventHandling();
   NS_ENSURE_TRUE(parentPresShell, NS_ERROR_FAILURE);
 
   
