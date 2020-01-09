@@ -594,6 +594,13 @@ class nsSVGUtils {
     
     return aFrame->GetStateBits() & NS_FRAME_IS_SVG_TEXT;
   }
+
+  
+
+
+
+  static gfxMatrix GetTransformMatrixInUserSpace(const nsIFrame* aFrame,
+                                                 const nsIFrame* aAncestor);
 };
 
 #endif

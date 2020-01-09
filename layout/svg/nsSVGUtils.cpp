@@ -1696,3 +1696,28 @@ gfxMatrix nsSVGUtils::GetCSSPxToDevPxMatrix(nsIFrame* aNonSVGFrame) {
 
   return gfxMatrix(devPxPerCSSPx, 0.0, 0.0, devPxPerCSSPx, 0.0, 0.0);
 }
+
+gfxMatrix nsSVGUtils::GetTransformMatrixInUserSpace(const nsIFrame* aFrame,
+                                                    const nsIFrame* aAncestor) {
+  
+  
+  MOZ_ASSERT(aFrame->GetContent() && aFrame->GetContent()->IsSVGElement(),
+             "Only use this wrapper for SVG elements");
+
+  Matrix mm;
+  auto trans = nsLayoutUtils::GetTransformToAncestor(aFrame, aAncestor);
+  trans.ProjectTo2D();
+  trans.CanDraw2D(&mm);
+  gfxMatrix ret = ThebesMatrix(mm);
+
+  float devPixelPerCSSPixel = float(AppUnitsPerCSSPixel()) /
+                              aFrame->PresContext()->AppUnitsPerDevPixel();
+
+  
+  
+  
+  ret.PreScale(devPixelPerCSSPixel, devPixelPerCSSPixel);
+  ret.PostScale(1.f / devPixelPerCSSPixel, 1.f / devPixelPerCSSPixel);
+
+  return ret;
+}
