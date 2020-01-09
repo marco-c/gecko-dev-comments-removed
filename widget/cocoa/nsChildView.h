@@ -526,9 +526,6 @@ class nsChildView final : public nsBaseWidget {
   void ReportMoveEvent();
   void ReportSizeEvent();
 
-  
-  
-  virtual NSView* CreateCocoaView(NSRect inFrame);
   void TearDownView();
 
   virtual already_AddRefed<nsIWidget> AllocateChildPopupWidget() override {
@@ -567,7 +564,7 @@ class nsChildView final : public nsBaseWidget {
                                uint32_t aAllowedDirections);
 
  protected:
-  NSView<mozView>* mView;  
+  ChildView* mView;  
   RefPtr<mozilla::widget::TextInputHandler> mTextInputHandler;
   InputContext mInputContext;
 
