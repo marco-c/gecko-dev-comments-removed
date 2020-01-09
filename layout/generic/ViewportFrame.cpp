@@ -346,7 +346,7 @@ void ViewportFrame::Reflow(nsPresContext* aPresContext,
 
     nsRect rect = AdjustReflowInputAsContainingBlock(&reflowInput);
     AbsPosReflowFlags flags =
-        AbsPosReflowFlags::eCBWidthAndHeightChanged;  
+        AbsPosReflowFlags::CBWidthAndHeightChanged;  
     GetAbsoluteContainingBlock()->Reflow(this, aPresContext, reflowInput,
                                          aStatus, rect, flags,
                                           nullptr);

@@ -655,14 +655,14 @@ class gfxTextRun : public gfxShapedText {
 
   
   size_t MaybeSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) {
-    if (mFlags2 & nsTextFrameUtils::Flags::TEXT_RUN_SIZE_ACCOUNTED) {
+    if (mFlags2 & nsTextFrameUtils::Flags::RunSizeAccounted) {
       return 0;
     }
-    mFlags2 |= nsTextFrameUtils::Flags::TEXT_RUN_SIZE_ACCOUNTED;
+    mFlags2 |= nsTextFrameUtils::Flags::RunSizeAccounted;
     return SizeOfIncludingThis(aMallocSizeOf);
   }
   void ResetSizeOfAccountingFlags() {
-    mFlags2 &= ~nsTextFrameUtils::Flags::TEXT_RUN_SIZE_ACCOUNTED;
+    mFlags2 &= ~nsTextFrameUtils::Flags::RunSizeAccounted;
   }
 
   

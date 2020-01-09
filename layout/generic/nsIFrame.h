@@ -453,16 +453,16 @@ namespace mozilla {
 
 enum class BaselineSharingGroup {
   
-  eFirst = 0,
-  eLast = 1,
+  First = 0,
+  Last = 1,
 };
 
 
 enum class AlignmentContext {
-  eInline,
-  eTable,
-  eFlexbox,
-  eGrid,
+  Inline,
+  Table,
+  Flexbox,
+  Grid,
 };
 
 
@@ -2623,20 +2623,19 @@ class nsIFrame : public nsQueryFrame {
   };
   enum class TextOffsetType {
     
-    OFFSETS_IN_CONTENT_TEXT,
+    OffsetsInContentText,
     
-    OFFSETS_IN_RENDERED_TEXT
+    OffsetsInRenderedText,
   };
   enum class TrailingWhitespace {
-    TRIM_TRAILING_WHITESPACE,
+    Trim,
     
-    DONT_TRIM_TRAILING_WHITESPACE
+    DontTrim,
   };
   virtual RenderedText GetRenderedText(
       uint32_t aStartOffset = 0, uint32_t aEndOffset = UINT32_MAX,
-      TextOffsetType aOffsetType = TextOffsetType::OFFSETS_IN_CONTENT_TEXT,
-      TrailingWhitespace aTrimTrailingWhitespace =
-          TrailingWhitespace::TRIM_TRAILING_WHITESPACE) {
+      TextOffsetType aOffsetType = TextOffsetType::OffsetsInContentText,
+      TrailingWhitespace aTrimTrailingWhitespace = TrailingWhitespace::Trim) {
     return RenderedText();
   }
 

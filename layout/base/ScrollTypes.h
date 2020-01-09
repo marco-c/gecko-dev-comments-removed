@@ -39,7 +39,7 @@ namespace mozilla {
 
 
 
-enum class ScrollMode { eInstant, eSmooth, eSmoothMsd, eNormal };
+enum class ScrollMode { Instant, Smooth, SmoothMsd, Normal };
 
 }  
 

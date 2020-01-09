@@ -21,16 +21,16 @@ class CSSAlignUtils {
 
 
   enum class AlignJustifyFlags {
-    eNoFlags = 0,
+    NoFlags = 0,
     
-    eOverflowSafe = 1 << 0,
-    
-    
-    eSameSide = 1 << 1,
+    OverflowSafe = 1 << 0,
     
     
+    SameSide = 1 << 1,
     
-    eIgnoreAutoMargins = 1 << 2,
+    
+    
+    IgnoreAutoMargins = 1 << 2,
   };
 
   

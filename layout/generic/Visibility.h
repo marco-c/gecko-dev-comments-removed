@@ -19,25 +19,25 @@ namespace mozilla {
 
 enum class Visibility : uint8_t {
   
-  UNTRACKED,
+  Untracked,
 
   
   
   
   
   
-  APPROXIMATELY_NONVISIBLE,
+  ApproximatelyNonVisible,
 
   
   
   
   
-  APPROXIMATELY_VISIBLE
+  ApproximatelyVisible,
 };
 
 
 enum class OnNonvisible : uint8_t {
-  DISCARD_IMAGES  
+  DiscardImages  
 };
 
 }  

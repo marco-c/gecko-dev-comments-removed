@@ -479,33 +479,30 @@ static void DestroyComplexUserData(ComplexTextRunUserData* aUserData) {
 
 static void DestroyTextRunUserData(gfxTextRun* aTextRun) {
   MOZ_ASSERT(aTextRun->GetUserData());
-  if (aTextRun->GetFlags2() & nsTextFrameUtils::Flags::TEXT_IS_SIMPLE_FLOW) {
+  if (aTextRun->GetFlags2() & nsTextFrameUtils::Flags::IsSimpleFlow) {
     if (aTextRun->GetFlags2() &
-        nsTextFrameUtils::Flags::TEXT_MIGHT_HAVE_GLYPH_CHANGES) {
+        nsTextFrameUtils::Flags::MightHaveGlyphChanges) {
       delete static_cast<SimpleTextRunUserData*>(aTextRun->GetUserData());
     }
   } else {
     if (aTextRun->GetFlags2() &
-        nsTextFrameUtils::Flags::TEXT_MIGHT_HAVE_GLYPH_CHANGES) {
+        nsTextFrameUtils::Flags::MightHaveGlyphChanges) {
       DestroyComplexUserData(
           static_cast<ComplexTextRunUserData*>(aTextRun->GetUserData()));
     } else {
       DestroyUserData(static_cast<TextRunUserData*>(aTextRun->GetUserData()));
     }
   }
-  aTextRun->ClearFlagBits(
-      nsTextFrameUtils::Flags::TEXT_MIGHT_HAVE_GLYPH_CHANGES);
+  aTextRun->ClearFlagBits(nsTextFrameUtils::Flags::MightHaveGlyphChanges);
   aTextRun->SetUserData(nullptr);
 }
 
 static TextRunMappedFlow* GetMappedFlows(const gfxTextRun* aTextRun) {
   MOZ_ASSERT(aTextRun->GetUserData(), "UserData must exist.");
-  MOZ_ASSERT(
-      !(aTextRun->GetFlags2() & nsTextFrameUtils::Flags::TEXT_IS_SIMPLE_FLOW),
-      "The method should not be called for simple flows.");
+  MOZ_ASSERT(!(aTextRun->GetFlags2() & nsTextFrameUtils::Flags::IsSimpleFlow),
+             "The method should not be called for simple flows.");
   TextRunMappedFlow* flows;
-  if (aTextRun->GetFlags2() &
-      nsTextFrameUtils::Flags::TEXT_MIGHT_HAVE_GLYPH_CHANGES) {
+  if (aTextRun->GetFlags2() & nsTextFrameUtils::Flags::MightHaveGlyphChanges) {
     flows = reinterpret_cast<TextRunMappedFlow*>(
         static_cast<ComplexTextRunUserData*>(aTextRun->GetUserData()) + 1);
   } else {
@@ -524,11 +521,9 @@ static TextRunMappedFlow* GetMappedFlows(const gfxTextRun* aTextRun) {
 
 
 static nsTextFrame* GetFrameForSimpleFlow(const gfxTextRun* aTextRun) {
-  MOZ_ASSERT(
-      aTextRun->GetFlags2() & nsTextFrameUtils::Flags::TEXT_IS_SIMPLE_FLOW,
-      "Not so simple flow?");
-  if (aTextRun->GetFlags2() &
-      nsTextFrameUtils::Flags::TEXT_MIGHT_HAVE_GLYPH_CHANGES) {
+  MOZ_ASSERT(aTextRun->GetFlags2() & nsTextFrameUtils::Flags::IsSimpleFlow,
+             "Not so simple flow?");
+  if (aTextRun->GetFlags2() & nsTextFrameUtils::Flags::MightHaveGlyphChanges) {
     return static_cast<SimpleTextRunUserData*>(aTextRun->GetUserData())->mFrame;
   }
 
@@ -592,7 +587,7 @@ static void UnhookTextRunFromFrames(gfxTextRun* aTextRun,
     return;
   }
 
-  if (aTextRun->GetFlags2() & nsTextFrameUtils::Flags::TEXT_IS_SIMPLE_FLOW) {
+  if (aTextRun->GetFlags2() & nsTextFrameUtils::Flags::IsSimpleFlow) {
     nsTextFrame* userDataFrame = GetFrameForSimpleFlow(aTextRun);
     nsFrameState whichTextRunState =
         userDataFrame->GetTextRun(nsTextFrame::eInflated) == aTextRun
@@ -668,7 +663,7 @@ static void InvalidateFrameDueToGlyphsChanged(nsIFrame* aFrame) {
 }
 
 void GlyphObserver::NotifyGlyphsChanged() {
-  if (mTextRun->GetFlags2() & nsTextFrameUtils::Flags::TEXT_IS_SIMPLE_FLOW) {
+  if (mTextRun->GetFlags2() & nsTextFrameUtils::Flags::IsSimpleFlow) {
     InvalidateFrameDueToGlyphsChanged(GetFrameForSimpleFlow(mTextRun));
     return;
   }
@@ -865,11 +860,11 @@ static bool IsAllWhitespace(const nsTextFragment* aFrag, bool aAllowNewline) {
 
 static void ClearObserversFromTextRun(gfxTextRun* aTextRun) {
   if (!(aTextRun->GetFlags2() &
-        nsTextFrameUtils::Flags::TEXT_MIGHT_HAVE_GLYPH_CHANGES)) {
+        nsTextFrameUtils::Flags::MightHaveGlyphChanges)) {
     return;
   }
 
-  if (aTextRun->GetFlags2() & nsTextFrameUtils::Flags::TEXT_IS_SIMPLE_FLOW) {
+  if (aTextRun->GetFlags2() & nsTextFrameUtils::Flags::IsSimpleFlow) {
     static_cast<SimpleTextRunUserData*>(aTextRun->GetUserData())
         ->mGlyphObservers.Clear();
   } else {
@@ -905,11 +900,11 @@ static void CreateObserversForAnimatedGlyphs(gfxTextRun* aTextRun) {
 
   nsTArray<UniquePtr<GlyphObserver>>* observers;
 
-  if (aTextRun->GetFlags2() & nsTextFrameUtils::Flags::TEXT_IS_SIMPLE_FLOW) {
+  if (aTextRun->GetFlags2() & nsTextFrameUtils::Flags::IsSimpleFlow) {
     
     
     if (!(aTextRun->GetFlags2() &
-          nsTextFrameUtils::Flags::TEXT_MIGHT_HAVE_GLYPH_CHANGES)) {
+          nsTextFrameUtils::Flags::MightHaveGlyphChanges)) {
       auto frame = static_cast<nsTextFrame*>(aTextRun->GetUserData());
       aTextRun->SetUserData(new SimpleTextRunUserData(frame));
     }
@@ -918,7 +913,7 @@ static void CreateObserversForAnimatedGlyphs(gfxTextRun* aTextRun) {
     observers = &data->mGlyphObservers;
   } else {
     if (!(aTextRun->GetFlags2() &
-          nsTextFrameUtils::Flags::TEXT_MIGHT_HAVE_GLYPH_CHANGES)) {
+          nsTextFrameUtils::Flags::MightHaveGlyphChanges)) {
       auto oldData = static_cast<TextRunUserData*>(aTextRun->GetUserData());
       TextRunMappedFlow* oldMappedFlows = GetMappedFlows(aTextRun);
       ComplexTextRunUserData* data =
@@ -936,7 +931,7 @@ static void CreateObserversForAnimatedGlyphs(gfxTextRun* aTextRun) {
     observers = &data->mGlyphObservers;
   }
 
-  aTextRun->SetFlagBits(nsTextFrameUtils::Flags::TEXT_MIGHT_HAVE_GLYPH_CHANGES);
+  aTextRun->SetFlagBits(nsTextFrameUtils::Flags::MightHaveGlyphChanges);
 
   for (auto font : fontsWithAnimatedGlyphs) {
     observers->AppendElement(new GlyphObserver(font, aTextRun));
@@ -1071,17 +1066,15 @@ class BuildTextRunsScanner {
                               aOffset + mOffsetIntoTextRun + aLength);
       if (mTextRun->SetPotentialLineBreaks(range, aBreakBefore)) {
         
-        mTextRun->ClearFlagBits(nsTextFrameUtils::Flags::TEXT_NO_BREAKS);
+        mTextRun->ClearFlagBits(nsTextFrameUtils::Flags::NoBreaks);
       }
     }
 
     void SetCapitalization(uint32_t aOffset, uint32_t aLength,
                            bool* aCapitalize) final {
-      MOZ_ASSERT(
-          mTextRun->GetFlags2() & nsTextFrameUtils::Flags::TEXT_IS_TRANSFORMED,
-          "Text run should be transformed!");
-      if (mTextRun->GetFlags2() &
-          nsTextFrameUtils::Flags::TEXT_IS_TRANSFORMED) {
+      MOZ_ASSERT(mTextRun->GetFlags2() & nsTextFrameUtils::Flags::IsTransformed,
+                 "Text run should be transformed!");
+      if (mTextRun->GetFlags2() & nsTextFrameUtils::Flags::IsTransformed) {
         nsTransformedTextRun* transformedTextRun =
             static_cast<nsTransformedTextRun*>(mTextRun.get());
         transformedTextRun->SetCapitalization(aOffset + mOffsetIntoTextRun,
@@ -1091,10 +1084,9 @@ class BuildTextRunsScanner {
 
     void Finish(gfxMissingFontRecorder* aMFR) {
       MOZ_ASSERT(
-          !(mTextRun->GetFlags2() & nsTextFrameUtils::Flags::TEXT_UNUSED_FLAGS),
+          !(mTextRun->GetFlags2() & nsTextFrameUtils::Flags::UnusedFlags),
           "Flag set that should never be set! (memory safety error?)");
-      if (mTextRun->GetFlags2() &
-          nsTextFrameUtils::Flags::TEXT_IS_TRANSFORMED) {
+      if (mTextRun->GetFlags2() & nsTextFrameUtils::Flags::IsTransformed) {
         nsTransformedTextRun* transformedTextRun =
             static_cast<nsTransformedTextRun*>(mTextRun.get());
         transformedTextRun->FinishSettingProperties(mDrawTarget, aMFR);
@@ -1587,7 +1579,7 @@ static char16_t* ExpandBuffer(char16_t* aDest, uint8_t* aSrc, uint32_t aCount) {
 
 bool BuildTextRunsScanner::IsTextRunValidForMappedFlows(
     const gfxTextRun* aTextRun) {
-  if (aTextRun->GetFlags2() & nsTextFrameUtils::Flags::TEXT_IS_SIMPLE_FLOW) {
+  if (aTextRun->GetFlags2() & nsTextFrameUtils::Flags::IsSimpleFlow) {
     return mMappedFlows.Length() == 1 &&
            mMappedFlows[0].mStartFrame == GetFrameForSimpleFlow(aTextRun) &&
            mMappedFlows[0].mEndFrame == nullptr;
@@ -1616,7 +1608,7 @@ void BuildTextRunsScanner::FlushFrames(bool aFlushLineBreaks,
   if (!mMappedFlows.IsEmpty()) {
     if (!mSkipIncompleteTextRuns && mCurrentFramesAllSameTextRun &&
         !!(mCurrentFramesAllSameTextRun->GetFlags2() &
-           nsTextFrameUtils::Flags::TEXT_INCOMING_WHITESPACE) ==
+           nsTextFrameUtils::Flags::IncomingWhitespace) ==
             !!(mCurrentRunContextInfo &
                nsTextFrameUtils::INCOMING_WHITESPACE) &&
         !!(mCurrentFramesAllSameTextRun->GetFlags() &
@@ -1634,8 +1626,7 @@ void BuildTextRunsScanner::FlushFrames(bool aFlushLineBreaks,
 
       
       mNextRunContextInfo = nsTextFrameUtils::INCOMING_NONE;
-      if (textRun->GetFlags2() &
-          nsTextFrameUtils::Flags::TEXT_TRAILING_WHITESPACE) {
+      if (textRun->GetFlags2() & nsTextFrameUtils::Flags::TrailingWhitespace) {
         mNextRunContextInfo |= nsTextFrameUtils::INCOMING_WHITESPACE;
       }
       if (textRun->GetFlags() &
@@ -1668,8 +1659,7 @@ void BuildTextRunsScanner::FlushLineBreaks(gfxTextRun* aTrailingTextRun) {
   
   
   if (NS_SUCCEEDED(rv) && trailingLineBreak && aTrailingTextRun) {
-    aTrailingTextRun->SetFlagBits(
-        nsTextFrameUtils::Flags::TEXT_HAS_TRAILING_BREAK);
+    aTrailingTextRun->SetFlagBits(nsTextFrameUtils::Flags::HasTrailingBreak);
   }
 
   for (uint32_t i = 0; i < mBreakSinks.Length(); ++i) {
@@ -2091,10 +2081,10 @@ already_AddRefed<gfxTextRun> BuildTextRunsScanner::BuildTextRunForFrames(
   uint8_t sstyScriptLevel = 0;
   uint32_t mathFlags = 0;
   gfx::ShapedTextFlags flags = gfx::ShapedTextFlags();
-  nsTextFrameUtils::Flags flags2 = nsTextFrameUtils::Flags::TEXT_NO_BREAKS;
+  nsTextFrameUtils::Flags flags2 = nsTextFrameUtils::Flags::NoBreaks;
 
   if (mCurrentRunContextInfo & nsTextFrameUtils::INCOMING_WHITESPACE) {
-    flags2 |= nsTextFrameUtils::Flags::TEXT_INCOMING_WHITESPACE;
+    flags2 |= nsTextFrameUtils::Flags::IncomingWhitespace;
   }
   if (mCurrentRunContextInfo & nsTextFrameUtils::INCOMING_ARABICCHAR) {
     flags |= gfx::ShapedTextFlags::TEXT_INCOMING_ARABICCHAR;
@@ -2164,7 +2154,7 @@ already_AddRefed<gfxTextRun> BuildTextRunsScanner::BuildTextRunForFrames(
         anyMathMLStyling = true;
       }
     } else if (mLineContainer->GetStateBits() & NS_FRAME_IS_IN_SINGLE_CHAR_MI) {
-      flags2 |= nsTextFrameUtils::Flags::TEXT_IS_SINGLE_CHAR_MI;
+      flags2 |= nsTextFrameUtils::Flags::IsSingleCharMi;
       anyMathMLStyling = true;
       
       
@@ -2292,7 +2282,7 @@ already_AddRefed<gfxTextRun> BuildTextRunsScanner::BuildTextRunForFrames(
 
   void* finalUserData;
   if (userData == &dummyData) {
-    flags2 |= nsTextFrameUtils::Flags::TEXT_IS_SIMPLE_FLOW;
+    flags2 |= nsTextFrameUtils::Flags::IsSimpleFlow;
     userData = nullptr;
     finalUserData = mMappedFlows[0].mStartFrame;
   } else {
@@ -2318,17 +2308,17 @@ already_AddRefed<gfxTextRun> BuildTextRunsScanner::BuildTextRunForFrames(
     return nullptr;
   }
 
-  if (flags2 & nsTextFrameUtils::Flags::TEXT_HAS_TAB) {
+  if (flags2 & nsTextFrameUtils::Flags::HasTab) {
     flags |= gfx::ShapedTextFlags::TEXT_ENABLE_SPACING;
   }
-  if (flags2 & nsTextFrameUtils::Flags::TEXT_HAS_SHY) {
+  if (flags2 & nsTextFrameUtils::Flags::HasShy) {
     flags |= gfx::ShapedTextFlags::TEXT_ENABLE_HYPHEN_BREAKS;
   }
   if (mBidiEnabled && (IS_LEVEL_RTL(firstFrame->GetEmbeddingLevel()))) {
     flags |= gfx::ShapedTextFlags::TEXT_IS_RTL;
   }
   if (mNextRunContextInfo & nsTextFrameUtils::INCOMING_WHITESPACE) {
-    flags2 |= nsTextFrameUtils::Flags::TEXT_TRAILING_WHITESPACE;
+    flags2 |= nsTextFrameUtils::Flags::TrailingWhitespace;
   }
   if (mNextRunContextInfo & nsTextFrameUtils::INCOMING_ARABICCHAR) {
     flags |= gfx::ShapedTextFlags::TEXT_TRAILING_ARABICCHAR;
@@ -2399,7 +2389,7 @@ already_AddRefed<gfxTextRun> BuildTextRunsScanner::BuildTextRunForFrames(
         }
       }
     }
-    flags2 |= nsTextFrameUtils::Flags::TEXT_IS_TRANSFORMED;
+    flags2 |= nsTextFrameUtils::Flags::IsTransformed;
     NS_ASSERTION(iter.GetSkippedOffset() == transformedLength,
                  "We didn't cover all the characters in the text run!");
   }
@@ -2630,7 +2620,7 @@ void BuildTextRunsScanner::SetupBreakSinksForTextRun(gfxTextRun* aTextRun,
     if (!textStyle->WhiteSpaceCanWrap(startFrame)) {
       flags |= nsLineBreaker::BREAK_SUPPRESS_INSIDE;
     }
-    if (aTextRun->GetFlags2() & nsTextFrameUtils::Flags::TEXT_NO_BREAKS) {
+    if (aTextRun->GetFlags2() & nsTextFrameUtils::Flags::NoBreaks) {
       flags |= nsLineBreaker::BREAK_SKIP_SETTING_NO_BREAKS;
     }
     if (textStyle->mTextTransform.case_ == StyleTextTransformCase::Capitalize) {
@@ -2770,8 +2760,7 @@ void BuildTextRunsScanner::AssignTextRun(gfxTextRun* aTextRun,
 #ifdef DEBUG_roc
       if (f->GetTextRun(mWhichTextRun)) {
         gfxTextRun* textRun = f->GetTextRun(mWhichTextRun);
-        if (textRun->GetFlags2() &
-            nsTextFrameUtils::Flags::TEXT_IS_SIMPLE_FLOW) {
+        if (textRun->GetFlags2() & nsTextFrameUtils::Flags::IsSimpleFlow) {
           if (mMappedFlows[0].mStartFrame != GetFrameForSimpleFlow(textRun)) {
             NS_WARNING("REASSIGNING SIMPLE FLOW TEXT RUN!");
           }
@@ -2792,8 +2781,7 @@ void BuildTextRunsScanner::AssignTextRun(gfxTextRun* aTextRun,
       if (oldTextRun) {
         nsTextFrame* firstFrame = nullptr;
         uint32_t startOffset = 0;
-        if (oldTextRun->GetFlags2() &
-            nsTextFrameUtils::Flags::TEXT_IS_SIMPLE_FLOW) {
+        if (oldTextRun->GetFlags2() & nsTextFrameUtils::Flags::IsSimpleFlow) {
           firstFrame = GetFrameForSimpleFlow(oldTextRun);
         } else {
           auto userData =
@@ -2877,7 +2865,7 @@ gfxSkipCharsIterator nsTextFrame::EnsureTextRun(
     }
   }
 
-  if (textRun->GetFlags2() & nsTextFrameUtils::Flags::TEXT_IS_SIMPLE_FLOW) {
+  if (textRun->GetFlags2() & nsTextFrameUtils::Flags::IsSimpleFlow) {
     if (aFlowEndInTextRun) {
       *aFlowEndInTextRun = textRun->GetLength();
     }
@@ -2929,7 +2917,7 @@ static uint32_t GetEndOfTrimmedText(const nsTextFragment* aFrag,
 nsTextFrame::TrimmedOffsets nsTextFrame::GetTrimmedOffsets(
     const nsTextFragment* aFrag, TrimmedOffsetFlags aFlags) const {
   NS_ASSERTION(mTextRun, "Need textrun here");
-  if (!(aFlags & TrimmedOffsetFlags::kNotPostReflow)) {
+  if (!(aFlags & TrimmedOffsetFlags::NotPostReflow)) {
     
     
     
@@ -2947,8 +2935,8 @@ nsTextFrame::TrimmedOffsets nsTextFrame::GetTrimmedOffsets(
   
   if (textStyle->WhiteSpaceIsSignificant()) return offsets;
 
-  if (!(aFlags & TrimmedOffsetFlags::kNoTrimBefore) &&
-      ((aFlags & TrimmedOffsetFlags::kNotPostReflow) ||
+  if (!(aFlags & TrimmedOffsetFlags::NoTrimBefore) &&
+      ((aFlags & TrimmedOffsetFlags::NotPostReflow) ||
        (GetStateBits() & TEXT_START_OF_LINE))) {
     int32_t whitespaceCount =
         GetTrimmableWhitespaceCount(aFrag, offsets.mStart, offsets.mLength, 1);
@@ -2956,8 +2944,8 @@ nsTextFrame::TrimmedOffsets nsTextFrame::GetTrimmedOffsets(
     offsets.mLength -= whitespaceCount;
   }
 
-  if (!(aFlags & TrimmedOffsetFlags::kNoTrimAfter) &&
-      ((aFlags & TrimmedOffsetFlags::kNotPostReflow) ||
+  if (!(aFlags & TrimmedOffsetFlags::NoTrimAfter) &&
+      ((aFlags & TrimmedOffsetFlags::NotPostReflow) ||
        (GetStateBits() & TEXT_END_OF_LINE))) {
     
     
@@ -3413,7 +3401,7 @@ JustificationInfo PropertyProvider::ComputeJustification(
 void PropertyProvider::GetSpacing(Range aRange, Spacing* aSpacing) const {
   GetSpacingInternal(
       aRange, aSpacing,
-      !(mTextRun->GetFlags2() & nsTextFrameUtils::Flags::TEXT_HAS_TAB));
+      !(mTextRun->GetFlags2() & nsTextFrameUtils::Flags::HasTab));
 }
 
 static bool CanAddSpacingAfter(const gfxTextRun* aTextRun, uint32_t aOffset) {
@@ -3697,8 +3685,8 @@ void PropertyProvider::GetHyphenationBreaks(Range aRange,
 
 void PropertyProvider::InitializeForDisplay(bool aTrimAfter) {
   nsTextFrame::TrimmedOffsets trimmed = mFrame->GetTrimmedOffsets(
-      mFrag, (aTrimAfter ? nsTextFrame::TrimmedOffsetFlags::kDefaultTrimFlags
-                         : nsTextFrame::TrimmedOffsetFlags::kNoTrimAfter));
+      mFrag, (aTrimAfter ? nsTextFrame::TrimmedOffsetFlags::Default
+                         : nsTextFrame::TrimmedOffsetFlags::NoTrimAfter));
   mStart.SetOriginalOffset(trimmed.mStart);
   mLength = trimmed.mLength;
   SetupJustificationSpacing(true);
@@ -3706,7 +3694,7 @@ void PropertyProvider::InitializeForDisplay(bool aTrimAfter) {
 
 void PropertyProvider::InitializeForMeasure() {
   nsTextFrame::TrimmedOffsets trimmed = mFrame->GetTrimmedOffsets(
-      mFrag, nsTextFrame::TrimmedOffsetFlags::kNotPostReflow);
+      mFrag, nsTextFrame::TrimmedOffsetFlags::NotPostReflow);
   mStart.SetOriginalOffset(trimmed.mStart);
   mLength = trimmed.mLength;
   SetupJustificationSpacing(false);
@@ -3724,8 +3712,8 @@ void PropertyProvider::SetupJustificationSpacing(bool aPostReflow) {
   
   
   nsTextFrame::TrimmedOffsets trimmed = mFrame->GetTrimmedOffsets(
-      mFrag, (aPostReflow ? nsTextFrame::TrimmedOffsetFlags::kDefaultTrimFlags
-                          : nsTextFrame::TrimmedOffsetFlags::kNotPostReflow));
+      mFrag, (aPostReflow ? nsTextFrame::TrimmedOffsetFlags::Default
+                          : nsTextFrame::TrimmedOffsetFlags::NotPostReflow));
   end.AdvanceOriginal(trimmed.mLength);
   gfxSkipCharsIterator realEnd(end);
 
@@ -4285,8 +4273,8 @@ nscolor nsTextPaintStyle::GetResolvedForeColor(nscolor aColor,
 a11y::AccType nsTextFrame::AccessibleType() {
   if (IsEmpty()) {
     RenderedText text =
-        GetRenderedText(0, UINT32_MAX, TextOffsetType::OFFSETS_IN_CONTENT_TEXT,
-                        TrailingWhitespace::DONT_TRIM_TRAILING_WHITESPACE);
+        GetRenderedText(0, UINT32_MAX, TextOffsetType::OffsetsInContentText,
+                        TrailingWhitespace::DontTrim);
     if (text.mString.IsEmpty()) {
       return a11y::eNoType;
     }
@@ -7577,7 +7565,7 @@ nsIFrame::FrameSearchResult nsTextFrame::PeekOffsetCharacter(
   if (!mTextRun) return CONTINUE_EMPTY;
 
   TrimmedOffsets trimmed =
-      GetTrimmedOffsets(mContent->GetText(), TrimmedOffsetFlags::kNoTrimAfter);
+      GetTrimmedOffsets(mContent->GetText(), TrimmedOffsetFlags::NoTrimAfter);
 
   
   int32_t startOffset =
@@ -7712,9 +7700,9 @@ ClusterIterator::ClusterIterator(nsTextFrame* aTextFrame, int32_t aPosition,
 
   mFrag = aTextFrame->GetContent()->GetText();
   mTrimmed = aTextFrame->GetTrimmedOffsets(
-      mFrag, aTrimSpaces ? nsTextFrame::TrimmedOffsetFlags::kDefaultTrimFlags
-                         : nsTextFrame::TrimmedOffsetFlags::kNoTrimAfter |
-                               nsTextFrame::TrimmedOffsetFlags::kNoTrimBefore);
+      mFrag, aTrimSpaces ? nsTextFrame::TrimmedOffsetFlags::Default
+                         : nsTextFrame::TrimmedOffsetFlags::NoTrimAfter |
+                               nsTextFrame::TrimmedOffsetFlags::NoTrimBefore);
 
   int32_t textOffset = aTextFrame->GetContentOffset();
   int32_t textLen = aTextFrame->GetContentLength();
@@ -8133,7 +8121,7 @@ void nsTextFrame::AddInlineMinISizeForFlow(gfxContext* aRenderingContext,
     } else if (i < flowEndInTextRun ||
                (i == textRun->GetLength() &&
                 (textRun->GetFlags2() &
-                 nsTextFrameUtils::Flags::TEXT_HAS_TRAILING_BREAK))) {
+                 nsTextFrameUtils::Flags::HasTrailingBreak))) {
       if (preformattedNewline) {
         aData->ForceBreak();
       } else if (i < flowEndInTextRun && hyphenating &&
@@ -8432,8 +8420,7 @@ static bool HasSoftHyphenBefore(const nsTextFragment* aFrag,
       aTextRun->CanHyphenateBefore(aIter.GetSkippedOffset())) {
     return true;
   }
-  if (!(aTextRun->GetFlags2() & nsTextFrameUtils::Flags::TEXT_HAS_SHY))
-    return false;
+  if (!(aTextRun->GetFlags2() & nsTextFrameUtils::Flags::HasShy)) return false;
   gfxSkipCharsIterator iter = aIter;
   while (iter.GetOriginalOffset() > aStartOffset) {
     iter.AdvanceOriginal(-1);
@@ -8905,7 +8892,7 @@ void nsTextFrame::ReflowText(nsLineLayout& aLineLayout, nscoord aAvailableWidth,
 
   iter.SetOriginalOffset(offset);
   nscoord xOffsetForTabs =
-      (mTextRun->GetFlags2() & nsTextFrameUtils::Flags::TEXT_HAS_TAB)
+      (mTextRun->GetFlags2() & nsTextFrameUtils::Flags::HasTab)
           ? (aLineLayout.GetCurrentFrameInlineDistanceFromBlock() -
              lineContainer->GetUsedBorderAndPadding().left)
           : -1;
@@ -9200,8 +9187,7 @@ void nsTextFrame::ReflowText(nsLineLayout& aLineLayout, nscoord aAvailableWidth,
     bool emptyTextAtStartOfLine = atStartOfLine && length == 0;
     if (!breakAfter && charsFit == length && !emptyTextAtStartOfLine &&
         transformedOffset + transformedLength == mTextRun->GetLength() &&
-        (mTextRun->GetFlags2() &
-         nsTextFrameUtils::Flags::TEXT_HAS_TRAILING_BREAK)) {
+        (mTextRun->GetFlags2() & nsTextFrameUtils::Flags::HasTrailingBreak)) {
       
       
       
@@ -9442,9 +9428,8 @@ static void TransformChars(nsTextFrame* aFrame, const nsStyleText* aStyle,
   }
 
   if (!aStyle->mTextTransform.IsNone()) {
-    MOZ_ASSERT(aTextRun->GetFlags2() &
-               nsTextFrameUtils::Flags::TEXT_IS_TRANSFORMED);
-    if (aTextRun->GetFlags2() & nsTextFrameUtils::Flags::TEXT_IS_TRANSFORMED) {
+    MOZ_ASSERT(aTextRun->GetFlags2() & nsTextFrameUtils::Flags::IsTransformed);
+    if (aTextRun->GetFlags2() & nsTextFrameUtils::Flags::IsTransformed) {
       
       auto transformedTextRun =
           static_cast<const nsTransformedTextRun*>(aTextRun);
@@ -9479,7 +9464,7 @@ nsIFrame::RenderedText nsTextFrame::GetRenderedText(
     TrailingWhitespace aTrimTrailingWhitespace) {
   MOZ_ASSERT(aStartOffset <= aEndOffset, "bogus offsets");
   MOZ_ASSERT(!GetPrevContinuation() ||
-                 (aOffsetType == TextOffsetType::OFFSETS_IN_CONTENT_TEXT &&
+                 (aOffsetType == TextOffsetType::OffsetsInContentText &&
                   aStartOffset >= (uint32_t)GetContentOffset() &&
                   aEndOffset <= (uint32_t)GetContentEnd()),
              "Must be called on first-in-flow, or content offsets must be "
@@ -9512,8 +9497,7 @@ nsIFrame::RenderedText nsTextFrame::GetRenderedText(
     
     bool trimAfter;
     if (!textFrame->IsAtEndOfLine() ||
-        aTrimTrailingWhitespace !=
-            TrailingWhitespace::TRIM_TRAILING_WHITESPACE) {
+        aTrimTrailingWhitespace != TrailingWhitespace::Trim) {
       trimAfter = false;
     } else if (nsBlockFrame* thisLc =
                    do_QueryFrame(FindLineContainer(textFrame))) {
@@ -9532,8 +9516,8 @@ nsIFrame::RenderedText nsTextFrame::GetRenderedText(
 
     
     TrimmedOffsets trimmedOffsets = textFrame->GetTrimmedOffsets(
-        textFrag, (trimAfter ? TrimmedOffsetFlags::kDefaultTrimFlags
-                             : TrimmedOffsetFlags::kNoTrimAfter));
+        textFrag, (trimAfter ? TrimmedOffsetFlags::Default
+                             : TrimmedOffsetFlags::NoTrimAfter));
     bool trimmedSignificantNewline =
         trimmedOffsets.GetEnd() < GetContentEnd() &&
         HasSignificantTerminalNewline();
@@ -9544,7 +9528,7 @@ nsIFrame::RenderedText nsTextFrame::GetRenderedText(
         tmpIter.ConvertOriginalToSkipped(trimmedOffsets.GetEnd()) +
         (trimmedSignificantNewline ? 1 : 0) + skippedToRenderedStringOffset;
 
-    if (aOffsetType == TextOffsetType::OFFSETS_IN_RENDERED_TEXT) {
+    if (aOffsetType == TextOffsetType::OffsetsInRenderedText) {
       if (nextOffsetInRenderedString <= aStartOffset) {
         offsetInRenderedString = nextOffsetInRenderedString;
         continue;
@@ -9584,7 +9568,7 @@ nsIFrame::RenderedText nsTextFrame::GetRenderedText(
 
     int32_t startOffset;
     int32_t endOffset;
-    if (aOffsetType == TextOffsetType::OFFSETS_IN_RENDERED_TEXT) {
+    if (aOffsetType == TextOffsetType::OffsetsInRenderedText) {
       startOffset = tmpIter.ConvertSkippedToOriginal(
           aStartOffset - skippedToRenderedStringOffset);
       endOffset = tmpIter.ConvertSkippedToOriginal(
@@ -9879,6 +9863,6 @@ bool nsTextFrame::HasNonSuppressedText() {
   }
 
   TrimmedOffsets offsets =
-      GetTrimmedOffsets(mContent->GetText(), TrimmedOffsetFlags::kNoTrimAfter);
+      GetTrimmedOffsets(mContent->GetText(), TrimmedOffsetFlags::NoTrimAfter);
   return offsets.mLength != 0;
 }

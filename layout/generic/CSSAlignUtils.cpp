@@ -30,8 +30,8 @@ nscoord CSSAlignUtils::AlignJustifySelf(uint8_t aAlignment, LogicalAxis aAxis,
       "caller should map that to the corresponding START/END");
 
   
-  const bool isOverflowSafe = !!(aFlags & AlignJustifyFlags::eOverflowSafe);
-  const bool isSameSide = !!(aFlags & AlignJustifyFlags::eSameSide);
+  const bool isOverflowSafe = !!(aFlags & AlignJustifyFlags::OverflowSafe);
+  const bool isSameSide = !!(aFlags & AlignJustifyFlags::SameSide);
 
   
   switch (aAlignment) {
@@ -82,7 +82,7 @@ nscoord CSSAlignUtils::AlignJustifySelf(uint8_t aAlignment, LogicalAxis aAxis,
   const auto& styleMargin = aRI.mStyleMargin->mMargin;
   bool hasAutoMarginStart;
   bool hasAutoMarginEnd;
-  if (aFlags & AlignJustifyFlags::eIgnoreAutoMargins) {
+  if (aFlags & AlignJustifyFlags::IgnoreAutoMargins) {
     
     
     hasAutoMarginStart = hasAutoMarginEnd = false;

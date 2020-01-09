@@ -1795,7 +1795,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   bool mMediaTracksConstructed = false;
 
-  Visibility mVisibilityState = Visibility::UNTRACKED;
+  Visibility mVisibilityState = Visibility::Untracked;
 
   UniquePtr<ErrorSink> mErrorSink;
 

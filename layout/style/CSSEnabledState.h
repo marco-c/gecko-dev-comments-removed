@@ -19,16 +19,16 @@ namespace mozilla {
 enum class CSSEnabledState {
   
   
-  eForAllContent = 0,
+  ForAllContent = 0,
   
-  eInUASheets = 0x01,
+  InUASheets = 0x01,
   
-  eInChrome = 0x02,
-  
-  
+  InChrome = 0x02,
   
   
-  eIgnoreEnabledState = 0xff
+  
+  
+  IgnoreEnabledState = 0xff
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(CSSEnabledState)

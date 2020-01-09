@@ -304,7 +304,7 @@ MediaDecoder::MediaDecoder(MediaDecoderInit& aInit)
       mMinimizePreroll(aInit.mMinimizePreroll),
       mFiredMetadataLoaded(false),
       mIsDocumentVisible(false),
-      mElementVisibility(Visibility::UNTRACKED),
+      mElementVisibility(Visibility::Untracked),
       mIsElementInTree(false),
       mForcedHidden(false),
       mHasSuspendTaint(aInit.mHasSuspendTaint),
@@ -1028,7 +1028,7 @@ void MediaDecoder::UpdateVideoDecodeMode() {
   
   
   
-  if (mIsElementInTree && mElementVisibility == Visibility::UNTRACKED) {
+  if (mIsElementInTree && mElementVisibility == Visibility::Untracked) {
     LOG("UpdateVideoDecodeMode(), set Suspend because element hasn't be "
         "updated visibility state.");
     mDecoderStateMachine->SetVideoDecodeMode(VideoDecodeMode::Suspend);
@@ -1039,7 +1039,7 @@ void MediaDecoder::UpdateVideoDecodeMode() {
   
   
   if (mIsDocumentVisible &&
-      mElementVisibility == Visibility::APPROXIMATELY_VISIBLE) {
+      mElementVisibility == Visibility::ApproximatelyVisible) {
     LOG("UpdateVideoDecodeMode(), set Normal because the element visible.");
     mDecoderStateMachine->SetVideoDecodeMode(VideoDecodeMode::Normal);
   } else {

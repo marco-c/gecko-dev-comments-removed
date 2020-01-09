@@ -540,7 +540,7 @@ void nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   
 
   nsDisplayOwnLayerFlags flags =
-      nsDisplayOwnLayerFlags::eGenerateSubdocInvalidations;
+      nsDisplayOwnLayerFlags::GenerateSubdocInvalidations;
   
   
   
@@ -548,7 +548,7 @@ void nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   if (constructZoomItem) {
     nsDisplayOwnLayerFlags zoomFlags = flags;
     if (ignoreViewportScrolling && !constructResolutionItem) {
-      zoomFlags |= nsDisplayOwnLayerFlags::eGenerateScrollableLayer;
+      zoomFlags |= nsDisplayOwnLayerFlags::GenerateScrollableLayer;
     }
     childItems.AppendNewToTop<nsDisplayZoom>(aBuilder, subdocRootFrame, this,
                                              &childItems, subdocAPD, parentAPD,
@@ -560,7 +560,7 @@ void nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   
   
   if (ignoreViewportScrolling) {
-    flags |= nsDisplayOwnLayerFlags::eGenerateScrollableLayer;
+    flags |= nsDisplayOwnLayerFlags::GenerateScrollableLayer;
   }
   if (constructResolutionItem) {
     childItems.AppendNewToTop<nsDisplayResolution>(aBuilder, subdocRootFrame,

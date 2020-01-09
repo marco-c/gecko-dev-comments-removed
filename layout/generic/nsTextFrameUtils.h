@@ -26,40 +26,40 @@ class nsTextFrameUtils {
     
 
     
-    TEXT_HAS_TAB = 0x01,
+    HasTab = 0x01,
     
-    TEXT_HAS_SHY = 0x02,
-    TEXT_UNUSED_FLAGS = 0x0C,
+    HasShy = 0x02,
+    UnusedFlags = 0x0C,
 
     
 
-    TEXT_IS_SIMPLE_FLOW = 0x10,
-    TEXT_INCOMING_WHITESPACE = 0x20,
-    TEXT_TRAILING_WHITESPACE = 0x40,
-    TEXT_COMPRESSED_LEADING_WHITESPACE = 0x80,
-    TEXT_NO_BREAKS = 0x100,
-    TEXT_IS_TRANSFORMED = 0x200,
+    IsSimpleFlow = 0x10,
+    IncomingWhitespace = 0x20,
+    TrailingWhitespace = 0x40,
+    CompressedLeadingWhitespace = 0x80,
+    NoBreaks = 0x100,
+    IsTransformed = 0x200,
     
     
     
     
-    TEXT_HAS_TRAILING_BREAK = 0x400,
-
-    
-    
-    
-    
-    TEXT_IS_SINGLE_CHAR_MI = 0x800,
-
-    
-    TEXT_MIGHT_HAVE_GLYPH_CHANGES = 0x1000,
+    HasTrailingBreak = 0x400,
 
     
     
     
     
+    IsSingleCharMi = 0x800,
+
     
-    TEXT_RUN_SIZE_ACCOUNTED = 0x2000,
+    MightHaveGlyphChanges = 0x1000,
+
+    
+    
+    
+    
+    
+    RunSizeAccounted = 0x2000,
 
     
     
