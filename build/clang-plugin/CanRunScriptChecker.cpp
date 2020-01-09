@@ -43,6 +43,9 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
           
           unless(declRefExpr(to(parmVarDecl()))),
           
+          
+          unless(cxxDefaultArgExpr(isNullDefaultArg())),
+          
           unless(
             anyOf(
               MozKnownLiveCall,

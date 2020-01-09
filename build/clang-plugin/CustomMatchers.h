@@ -289,6 +289,13 @@ AST_MATCHER(FunctionDecl, isMozMustReturnFromCaller) {
   return Decl && hasCustomAttribute<moz_must_return_from_caller>(Decl);
 }
 
+
+AST_MATCHER(CXXDefaultArgExpr, isNullDefaultArg) {
+  const Expr *Expr = Node.getExpr();
+  return Expr && Expr->isNullPointerConstant(Finder->getASTContext(),
+                                             Expr::NPC_NeverValueDependent);
+}
+
 #if CLANG_VERSION_FULL < 309
 
 
