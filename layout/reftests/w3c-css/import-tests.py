@@ -38,21 +38,16 @@ gSubtrees = [
     os.path.join("selectors"),
 ]
 
+
+
+
+
+
 gPrefixedProperties = [
-    "column-count",
-    "column-fill",
-    "column-gap",
-    "column-rule",
-    "column-rule-color",
-    "column-rule-style",
-    "column-rule-width",
-    "columns",
-    "column-span",
-    "column-width"
 ]
 
-gPrefixRegexp = re.compile(
-    r"([^-#]|^)(" + r"|".join(gPrefixedProperties) + r")\b")
+gPrefixRegexp = (re.compile(r"([^-#]|^)(" + r"|".join(gPrefixedProperties) + r")\b")
+                 if gPrefixedProperties else None)
 
 
 
@@ -271,7 +266,8 @@ def copy_and_prefix(test, aSourceFileName, aDestFileName, isSupportFile=False):
             newFile.write(template.format(to_unix_path_sep(ahemPath)))
             ahemFontAdded = True
 
-        replacementLine = gPrefixRegexp.sub(r"\1-moz-\2", replacementLine)
+        if gPrefixRegexp:
+            replacementLine = gPrefixRegexp.sub(r"\1-moz-\2", replacementLine)
         newFile.write(replacementLine)
 
     newFile.close()
