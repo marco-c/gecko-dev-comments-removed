@@ -1,5 +1,7 @@
+use std::borrow::Cow;
+
 use proc_macro2::TokenStream;
-use quote::{TokenStreamExt, ToTokens};
+use quote::{ToTokens, TokenStreamExt};
 use syn::{Ident, Path, Type};
 
 use codegen::DefaultExpression;
@@ -11,7 +13,7 @@ use usage::{self, IdentRefSet, IdentSet, UsesTypeParams};
 pub struct Field<'a> {
     
     
-    pub name_in_attr: String,
+    pub name_in_attr: Cow<'a, String>,
 
     
     
@@ -20,13 +22,17 @@ pub struct Field<'a> {
     
     pub ty: &'a Type,
     pub default_expression: Option<DefaultExpression<'a>>,
-    pub with_path: Path,
+    pub with_path: Cow<'a, Path>,
     pub map: Option<&'a Path>,
     pub skip: bool,
     pub multiple: bool,
 }
 
 impl<'a> Field<'a> {
+    pub fn as_name(&'a self) -> &'a str {
+        &self.name_in_attr
+    }
+
     pub fn as_declaration(&'a self) -> Declaration<'a> {
         Declaration(self, !self.skip)
     }
@@ -104,7 +110,12 @@ impl<'a> ToTokens for MatchArm<'a> {
                 quote!(#name_str)
             };
 
-            let mut extractor = quote!(#with_path(__inner).map_err(|e| e.at(#location)));
+            
+            
+            
+            
+            let mut extractor =
+                quote!(#with_path(__inner).map_err(|e| e.with_span(&__inner).at(#location)));
             if let Some(ref map) = field.map {
                 extractor = quote!(#extractor.map(#map))
             }
@@ -116,10 +127,10 @@ impl<'a> ToTokens for MatchArm<'a> {
                         // it for error reporting.
                         let __len = #ident.len();
                         match #extractor {
-                            Ok(__val) => {
+                            ::darling::export::Ok(__val) => {
                                 #ident.push(__val)
                             }
-                            Err(__err) => {
+                            ::darling::export::Err(__err) => {
                                 __errors.push(__err)
                             }
                         }
@@ -130,16 +141,16 @@ impl<'a> ToTokens for MatchArm<'a> {
                     #name_str => {
                         if !#ident.0 {
                             match #extractor {
-                                Ok(__val) => {
+                                ::darling::export::Ok(__val) => {
                                     #ident = (true, ::darling::export::Some(__val));
                                 }
-                                Err(__err) => {
+                                ::darling::export::Err(__err) => {
                                     #ident = (true, None);
                                     __errors.push(__err);
                                 }
                             }
                         } else {
-                            __errors.push(::darling::Error::duplicate_field(#name_str));
+                            __errors.push(::darling::Error::duplicate_field(#name_str).with_span(&__inner));
                         }
                     }
                 )
@@ -165,15 +176,13 @@ impl<'a> ToTokens for Initializer<'a> {
             } else {
                 quote!(#ident: #ident)
             }
+        } else if let Some(ref expr) = field.default_expression {
+            quote!(#ident: match #ident.1 {
+                ::darling::export::Some(__val) => __val,
+                ::darling::export::None => #expr,
+            })
         } else {
-            if let Some(ref expr) = field.default_expression {
-                quote!(#ident: match #ident.1 {
-                    ::darling::export::Some(__val) => __val,
-                    ::darling::export::None => #expr,
-                })
-            } else {
-                quote!(#ident: #ident.1.expect("Uninitialized fields without defaults were already checked"))
-            }
+            quote!(#ident: #ident.1.expect("Uninitialized fields without defaults were already checked"))
         });
     }
 }

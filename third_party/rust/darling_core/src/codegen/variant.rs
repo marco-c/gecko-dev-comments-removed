@@ -1,5 +1,7 @@
+use std::borrow::Cow;
+
 use proc_macro2::TokenStream;
-use quote::{TokenStreamExt, ToTokens};
+use quote::{ToTokens, TokenStreamExt};
 use syn::Ident;
 
 use ast::Fields;
@@ -11,7 +13,7 @@ use usage::{self, IdentRefSet, IdentSet, UsesTypeParams};
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Variant<'a> {
     
-    pub name_in_attr: String,
+    pub name_in_attr: Cow<'a, String>,
 
     
     pub variant_ident: &'a Ident,
@@ -23,9 +25,15 @@ pub struct Variant<'a> {
 
     
     pub skip: bool,
+
+    pub allow_unknown_fields: bool,
 }
 
 impl<'a> Variant<'a> {
+    pub fn as_name(&'a self) -> &'a str {
+        &self.name_in_attr
+    }
+
     pub fn as_unit_match_arm(&'a self) -> UnitMatchArm<'a> {
         UnitMatchArm(self)
     }
@@ -44,6 +52,9 @@ impl<'a> UsesTypeParams for Variant<'a> {
         self.data.uses_type_params(options, type_set)
     }
 }
+
+
+
 
 pub struct UnitMatchArm<'a>(&'a Variant<'a>);
 
@@ -72,6 +83,9 @@ impl<'a> ToTokens for UnitMatchArm<'a> {
     }
 }
 
+
+
+
 pub struct DataMatchArm<'a>(&'a Variant<'a>);
 
 impl<'a> ToTokens for DataMatchArm<'a> {
@@ -94,10 +108,10 @@ impl<'a> ToTokens for DataMatchArm<'a> {
             return;
         }
 
-        let vdg = FieldsGen(&val.data);
+        let vdg = FieldsGen::new(&val.data, val.allow_unknown_fields);
 
         if val.data.is_struct() {
-            let declare_errors = ErrorDeclaration::new();
+            let declare_errors = ErrorDeclaration::default();
             let check_errors = ErrorCheck::with_location(&name_in_attr);
             let require_fields = vdg.require_fields();
             let decls = vdg.declarations();
