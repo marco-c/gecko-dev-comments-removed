@@ -106,6 +106,8 @@ function downloadXML(url, allowNonBuiltIn = false, allowedCerts = null) {
     
     request.channel.loadFlags |= Ci.nsIRequest.INHIBIT_CACHING;
     
+    request.channel.loadFlags |= Ci.nsIRequest.LOAD_ANONYMOUS;
+    
     
     if (request.channel instanceof Ci.nsIHttpChannelInternal) {
       request.channel.QueryInterface(Ci.nsIHttpChannelInternal).beConservative = true;
