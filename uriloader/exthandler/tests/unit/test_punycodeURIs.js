@@ -22,8 +22,7 @@ function checkFile() {
     if (gCheckExistsAttempts >= kMaxCheckExistAttempts) {
       do_throw("Expected File " + tempFile.path + " does not exist after " +
                  kMaxCheckExistAttempts + " seconds");
-    }
-    else {
+    } else {
       ++gCheckExistsAttempts;
       
       do_timeout(1000, checkFile);
@@ -64,7 +63,7 @@ function checkFile() {
 
 function run_test() {
   if (mozinfo.os == "mac") {
-    dump("INFO | test_punycodeURIs.js | Skipping test on mac, bug 599475")
+    dump("INFO | test_punycodeURIs.js | Skipping test on mac, bug 599475");
     return;
   }
 
