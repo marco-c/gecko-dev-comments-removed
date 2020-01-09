@@ -80,7 +80,7 @@ nsPrintingPromptService::ShowPrintDialog(mozIDOMWindowProxy* parent,
 }
 
 NS_IMETHODIMP
-nsPrintingPromptService::ShowProgress(
+nsPrintingPromptService::ShowPrintProgressDialog(
     mozIDOMWindowProxy* parent,
     nsIWebBrowserPrint* webBrowserPrint,  
     nsIPrintSettings* printSettings,      
@@ -129,8 +129,8 @@ nsPrintingPromptService::ShowProgress(
 }
 
 NS_IMETHODIMP
-nsPrintingPromptService::ShowPageSetup(mozIDOMWindowProxy* parent,
-                                       nsIPrintSettings* printSettings) {
+nsPrintingPromptService::ShowPageSetupDialog(mozIDOMWindowProxy* parent,
+                                             nsIPrintSettings* printSettings) {
   NS_ENSURE_ARG(printSettings);
 
   nsCOMPtr<nsIPrintDialogService> dlgPrint(

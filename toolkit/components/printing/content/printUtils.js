@@ -87,7 +87,7 @@ var PrintUtils = {
       var printSettings = this.getPrintSettings();
       var PRINTPROMPTSVC = Cc["@mozilla.org/embedcomp/printingprompt-service;1"]
                              .getService(Ci.nsIPrintingPromptService);
-      PRINTPROMPTSVC.showPageSetup(window, printSettings, null);
+      PRINTPROMPTSVC.showPageSetupDialog(window, printSettings, null);
       if (gSavePrintSettings) {
         
         var PSSVC = Cc["@mozilla.org/gfx/printsettings-service;1"]
@@ -217,8 +217,8 @@ var PrintUtils = {
     
     
     try {
-      PPROMPTSVC.showProgress(window, null, printSettings, this._obsPP, false,
-                              this._webProgressPP, ppParams, notifyOnOpen);
+      PPROMPTSVC.showPrintProgressDialog(window, null, printSettings, this._obsPP, false,
+                                         this._webProgressPP, ppParams, notifyOnOpen);
       if (ppParams.value) {
         ppParams.value.docTitle = this._originalTitle;
         ppParams.value.docURL   = this._originalURL;
