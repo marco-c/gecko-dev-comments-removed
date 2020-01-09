@@ -682,7 +682,7 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   
   
-  uint32_t mTrackingProtectionCancellationPending : 1;
+  uint32_t mChannelClassifierCancellationPending : 1;
 
   
   
