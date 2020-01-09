@@ -685,6 +685,14 @@ class WorkerPrivate : public RelativeTimeline {
     return *mLoadInfo.mPrincipalInfo;
   }
 
+  
+  
+  
+  
+  const nsTArray<mozilla::ipc::ContentSecurityPolicy>& GetCSPInfos() const {
+    return mLoadInfo.mCSPInfos;
+  }
+
   const mozilla::ipc::PrincipalInfo& GetEffectiveStoragePrincipalInfo() const {
     return *mLoadInfo.mStoragePrincipalInfo;
   }
