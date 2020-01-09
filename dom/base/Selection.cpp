@@ -459,21 +459,18 @@ bool Selection::GetInterlinePosition(ErrorResult& aRv) {
   return mFrameSelection->GetHint() == CARET_ASSOCIATE_AFTER;
 }
 
-static bool IsEditorNode(const nsINode* aNode) {
-  if (!aNode) {
+bool Selection::IsEditorSelection() const {
+  nsINode* focusNode = GetFocusNode();
+  if (!focusNode) {
     return false;
   }
 
-  if (aNode->IsEditable()) {
+  if (focusNode->IsEditable()) {
     return true;
   }
 
-  auto* element = Element::FromNode(aNode);
+  auto* element = Element::FromNode(focusNode);
   return element && element->State().HasState(NS_EVENT_STATE_MOZ_READWRITE);
-}
-
-bool Selection::IsEditorSelection() const {
-  return IsEditorNode(GetFocusNode());
 }
 
 Nullable<int16_t> Selection::GetCaretBidiLevel(
@@ -916,16 +913,16 @@ nsresult Selection::SubtractRange(RangeData* aRange, nsRange* aSubtract,
 
 void Selection::UserSelectRangesToAdd(nsRange* aItem,
                                       nsTArray<RefPtr<nsRange>>& aRangesToAdd) {
-  
-  
-  
-  if (IsEditorNode(aItem->GetStartContainer()) &&
-      IsEditorNode(aItem->GetEndContainer())) {
-    
-    
-    aRangesToAdd.AppendElement(aItem);
-  } else {
-    aItem->ExcludeNonSelectableNodes(&aRangesToAdd);
+  aItem->ExcludeNonSelectableNodes(&aRangesToAdd);
+  if (aRangesToAdd.IsEmpty()) {
+    ErrorResult err;
+    nsINode* node = aItem->GetStartContainer(err);
+    if (node && node->IsContent() && node->AsContent()->GetEditingHost()) {
+      
+      
+      aItem->Collapse(GetDirection() == eDirPrevious);
+      aRangesToAdd.AppendElement(aItem);
+    }
   }
 }
 

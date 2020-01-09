@@ -3975,20 +3975,8 @@ static bool IsEditingHost(const nsIFrame* aFrame) {
   return element && element->IsEditableRoot();
 }
 
-static bool IsUnselectable(const nsIFrame* aFrame) {
-  
-  if (aFrame->HasAnyStateBits(NS_FRAME_GENERATED_CONTENT)) {
-    return true;
-  }
-
-  
-  auto* content = aFrame->GetContent();
-  return content && !content->IsEditable() &&
-         content->IsInNativeAnonymousSubtree();
-}
-
 static StyleUserSelect UsedUserSelect(const nsIFrame* aFrame) {
-  if (IsUnselectable(aFrame)) {
+  if (aFrame->HasAnyStateBits(NS_FRAME_GENERATED_CONTENT)) {
     return StyleUserSelect::None;
   }
 
@@ -8565,7 +8553,11 @@ nsresult nsIFrame::GetFrameFromDirection(
       frameTraversal->Prev();
 
     traversedFrame = frameTraversal->CurrentItem();
-    if (!traversedFrame) {
+
+    
+    if (!traversedFrame ||
+        (!traversedFrame->IsGeneratedContentFrame() &&
+         traversedFrame->GetContent()->IsRootOfNativeAnonymousSubtree())) {
       return NS_ERROR_FAILURE;
     }
 
