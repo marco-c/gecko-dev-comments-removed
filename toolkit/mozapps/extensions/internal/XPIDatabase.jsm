@@ -2369,11 +2369,6 @@ this.XPIDatabaseReconcile = {
     
     aNewAddon.appDisabled = !XPIDatabase.isUsableAddon(aNewAddon);
 
-    if (aLocation.isSystem) {
-      const pref = `extensions.${aId.split("@")[0]}.enabled`;
-      aNewAddon.userDisabled = !Services.prefs.getBoolPref(pref, true);
-    }
-
     if (isDetectedInstall && aNewAddon.foreignInstall) {
       
       aNewAddon.installTelemetryInfo = {
@@ -2564,6 +2559,19 @@ this.XPIDatabaseReconcile = {
 
 
 
+  isSystemAddonLocation(location) {
+    return location.name === KEY_APP_SYSTEM_DEFAULTS ||
+           location.name === KEY_APP_SYSTEM_ADDONS;
+  },
+
+  
+
+
+
+
+
+
+
 
 
 
@@ -2690,6 +2698,13 @@ this.XPIDatabaseReconcile = {
           addonStates.set(addon, xpiState);
         }
       }
+
+      if (this.isSystemAddonLocation(location)) {
+        for (let [id, addon] of locationAddons.entries()) {
+          const pref = `extensions.${id.split("@")[0]}.enabled`;
+          addon.userDisabled = !Services.prefs.getBoolPref(pref, true);
+        }
+      }
     }
 
     
@@ -2810,6 +2825,10 @@ this.XPIDatabaseReconcile = {
             !previousAddon._sourceBundle.equals(currentAddon._sourceBundle)) {
           promise = XPIInternal.BootstrapScope.get(previousAddon).update(
             currentAddon);
+        } else if (this.isSystemAddonLocation(currentAddon.location) &&
+                   previousAddon.version == currentAddon.version &&
+                   previousAddon.userDisabled != currentAddon.userDisabled) {
+          
         } else {
           let reason = XPIInstall.newVersionReason(previousAddon.version, currentAddon.version);
           XPIInternal.BootstrapScope.get(currentAddon).install(
