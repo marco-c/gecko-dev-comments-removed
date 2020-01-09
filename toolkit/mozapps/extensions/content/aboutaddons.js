@@ -8,6 +8,7 @@
 
 const {XPCOMUtils} = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   AddonManager: "resource://gre/modules/AddonManager.jsm",
@@ -39,6 +40,177 @@ function importTemplate(name) {
   }
   throw new Error(`Unknown template: ${name}`);
 }
+
+class PanelList extends HTMLElement {
+  static get observedAttributes() {
+    return ["open"];
+  }
+
+  constructor() {
+    super();
+    this.attachShadow({mode: "open"});
+    this.shadowRoot.appendChild(importTemplate("panel-list"));
+  }
+
+  attributeChangedCallback(name, oldVal, newVal) {
+    if (name == "open" && newVal != oldVal) {
+      if (this.open) {
+        this.onShow();
+      } else {
+        this.onHide();
+      }
+    }
+  }
+
+  get open() {
+    return this.hasAttribute("open");
+  }
+
+  set open(val) {
+    if (val) {
+      this.setAttribute("open", "true");
+    } else {
+      this.removeAttribute("open");
+    }
+  }
+
+  show(triggeringEvent) {
+    this.open = true;
+    this.triggeringEvent = triggeringEvent;
+  }
+
+  hide(triggeringEvent) {
+    this.open = false;
+    this.triggeringEvent = triggeringEvent;
+  }
+
+  toggle(triggeringEvent) {
+    if (this.open) {
+      this.hide(triggeringEvent);
+    } else {
+      this.show(triggeringEvent);
+    }
+  }
+
+  async setAlign() {
+    
+    this.setAttribute("showing", "true");
+    
+    
+    this.parentNode.style.overflow = "hidden";
+
+    
+    let {height, width, y, left, right, winHeight, winWidth} =
+      await new Promise(resolve => {
+        requestAnimationFrame(() => setTimeout(() => {
+          
+          let {y, left, right} =
+            window.windowUtils.getBoundsWithoutFlushing(this.parentNode);
+          let {height, width} =
+            window.windowUtils.getBoundsWithoutFlushing(this);
+          resolve({
+            height, width, y, left, right,
+            winHeight: innerHeight, winWidth: innerWidth,
+          });
+        }, 0));
+      });
+
+    
+    let align;
+    if (Services.locale.isAppLocaleRTL) {
+      
+      align = right - width + 14 < 0 ? "left" : "right";
+    } else {
+      
+      align = left + width - 14 > winWidth ? "right" : "left";
+    }
+
+    
+    let valign = y + height + 30 > winHeight ? "top" : "bottom";
+
+    
+    this.setAttribute("align", align);
+    this.setAttribute("valign", valign);
+    this.parentNode.style.overflow = "";
+    this.removeAttribute("showing");
+
+    
+    requestAnimationFrame(() => this.sendEvent("shown"));
+  }
+
+  addHideListeners() {
+    
+    this.addEventListener("click", this);
+    
+    document.addEventListener("mousedown", this);
+    
+    document.addEventListener("focusin", this);
+    
+    window.addEventListener("resize", this);
+    window.addEventListener("scroll", this);
+    window.addEventListener("blur", this);
+  }
+
+  removeHideListeners() {
+    this.removeEventListener("click", this);
+    document.removeEventListener("mousedown", this);
+    document.removeEventListener("focusin", this);
+    window.removeEventListener("resize", this);
+    window.removeEventListener("scroll", this);
+    window.removeEventListener("blur", this);
+  }
+
+  handleEvent(e) {
+    
+    if (e == this.triggeringEvent) {
+      return;
+    }
+
+    switch (e.type) {
+      case "resize":
+      case "scroll":
+      case "blur":
+        this.hide();
+        break;
+      case "click":
+        if (e.target.tagName == "PANEL-ITEM") {
+          this.hide();
+        }
+        break;
+      case "mousedown":
+      case "focusin":
+        
+        
+        if (!e.target || e.target.closest("panel-list") != this) {
+          this.hide();
+        }
+        break;
+    }
+  }
+
+  onShow() {
+    this.setAlign();
+    this.addHideListeners();
+  }
+
+  onHide() {
+    this.removeHideListeners();
+  }
+
+  sendEvent(name, detail) {
+    this.dispatchEvent(new CustomEvent(name, {detail}));
+  }
+}
+customElements.define("panel-list", PanelList);
+
+class PanelItem extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({mode: "open"});
+    this.shadowRoot.appendChild(importTemplate("panel-item"));
+  }
+}
+customElements.define("panel-item", PanelItem);
 
 
 
@@ -87,14 +259,18 @@ class AddonCard extends HTMLElement {
     card.querySelector(".addon-icon").src = icon;
     card.querySelector(".addon-name").textContent = addon.name;
     card.querySelector(".addon-description").textContent = addon.description;
-    card.querySelector('[action="remove"]').hidden =
-      !hasPermission(addon, "uninstall");
+    let removeButton = card.querySelector('[action="remove"]');
+    removeButton.hidden = !hasPermission(addon, "uninstall");
 
     let disableButton = card.querySelector('[action="toggle-disabled"]');
     let disableAction = addon.userDisabled ? "enable" : "disable";
     document.l10n.setAttributes(
       disableButton, `${disableAction}-addon-button`);
     disableButton.hidden = !hasPermission(addon, disableAction);
+
+    
+    let separator = card.querySelector("panel-item-separator");
+    separator.hidden = removeButton.hidden && disableButton.hidden;
   }
 
   render() {
@@ -111,13 +287,32 @@ class AddonCard extends HTMLElement {
     
     this.update();
 
-    this.addEventListener("click", async (e) => {
-      switch (e.target.getAttribute("action")) {
+    let panel = this.card.querySelector("panel-list");
+
+    let moreOptionsButton = this.card.querySelector('[action="more-options"]');
+    
+    moreOptionsButton.addEventListener("mousedown", (e) => {
+      panel.toggle(e);
+    });
+    
+    moreOptionsButton.addEventListener("click", (e) => {
+      if (e.mozInputSource == MouseEvent.MOZ_SOURCE_KEYBOARD) {
+        panel.toggle(e);
+      }
+    });
+
+    panel.addEventListener("click", async (e) => {
+      let action = e.target.getAttribute("action");
+      switch (action) {
         case "toggle-disabled":
           if (addon.userDisabled) {
             await addon.enable();
           } else {
             await addon.disable();
+          }
+          if (e.mozInputSource == MouseEvent.MOZ_SOURCE_KEYBOARD) {
+            
+            this.querySelector('[action="more-options"]').focus();
           }
           break;
         case "remove":
