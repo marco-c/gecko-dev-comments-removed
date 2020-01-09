@@ -424,6 +424,13 @@ void gfxWindowsPlatform::InitAcceleration() {
   DeviceManagerDx::Init();
 
   InitializeConfig();
+  
+  
+  
+  
+  if (!BrowserTabsRemoteAutostart()) {
+    EnsureDevicesInitialized();
+  }
   UpdateANGLEConfig();
   UpdateRenderMode();
 
