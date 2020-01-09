@@ -2,6 +2,8 @@
 
 
 
+from __future__ import absolute_import
+
 import os
 import sys
 import tempfile
@@ -10,7 +12,7 @@ import zipfile
 import tarfile
 import subprocess
 import mozpack.path as mozpath
-from application_ini import get_application_ini_value
+from mozbuild.repackaging.application_ini import get_application_ini_value
 from mozbuild.util import ensureParentDir
 
 

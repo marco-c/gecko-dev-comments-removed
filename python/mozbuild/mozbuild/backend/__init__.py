@@ -2,6 +2,8 @@
 
 
 
+from __future__ import absolute_import
+
 backends = {
     'ChromeMap': 'mozbuild.codecoverage.chrome_map',
     'CompileDB': 'mozbuild.compilation.database',
