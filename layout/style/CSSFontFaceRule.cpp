@@ -49,6 +49,9 @@ void CSSFontFaceRuleDecl::GetCssText(nsAString& aCssText) {
 void CSSFontFaceRuleDecl::SetCssText(const nsAString& aCssText,
                                      nsIPrincipal* aSubjectPrincipal,
                                      ErrorResult& aRv) {
+  if (ContainingRule()->IsReadOnly()) {
+    return;
+  }
   aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);  
 }
 
@@ -69,6 +72,10 @@ CSSFontFaceRuleDecl::RemoveProperty(const nsAString& aPropName,
   nsCSSFontDesc descID = nsCSSProps::LookupFontDesc(aPropName);
   NS_ASSERTION(descID >= eCSSFontDesc_UNKNOWN && descID < eCSSFontDesc_COUNT,
                "LookupFontDesc returned value out of range");
+
+  if (ContainingRule()->IsReadOnly()) {
+    return NS_OK;
+  }
 
   aResult.Truncate();
   if (descID != eCSSFontDesc_UNKNOWN) {
@@ -91,6 +98,10 @@ CSSFontFaceRuleDecl::SetProperty(const nsAString& aPropName,
                                  nsIPrincipal* aSubjectPrincipal) {
   
   
+
+  if (ContainingRule()->IsReadOnly()) {
+    return NS_OK;
+  }
 
   return NS_ERROR_NOT_IMPLEMENTED;  
 }

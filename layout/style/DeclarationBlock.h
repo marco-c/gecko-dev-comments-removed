@@ -59,6 +59,7 @@ class DeclarationBlock final {
 
   void AssertMutable() const {
     MOZ_ASSERT(IsMutable(), "someone forgot to call EnsureMutable");
+    MOZ_ASSERT(!OwnerIsReadOnly(), "User Agent sheets shouldn't be modified");
   }
 
   
@@ -85,6 +86,8 @@ class DeclarationBlock final {
 
 
   already_AddRefed<DeclarationBlock> EnsureMutable() {
+    MOZ_ASSERT(!OwnerIsReadOnly());
+
     if (!IsDirty()) {
       
       
@@ -135,6 +138,8 @@ class DeclarationBlock final {
     c.mRaw &= ~uintptr_t(1);
     return c.mHTMLCSSStyleSheet;
   }
+
+  bool IsReadOnly() const;
 
   static already_AddRefed<DeclarationBlock> FromCssText(
       const nsAString& aCssText, URLExtraData* aExtraData,
@@ -202,6 +207,9 @@ class DeclarationBlock final {
 
  private:
   ~DeclarationBlock() = default;
+
+  bool OwnerIsReadOnly() const;
+
   union {
     
     

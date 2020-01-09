@@ -77,6 +77,8 @@ class MediaList final : public nsISupports, public nsWrapperCache {
     MOZ_ASSERT(!mStyleSheet, "Backpointer should have been cleared");
   }
 
+  bool IsReadOnly() const;
+
   
   
   

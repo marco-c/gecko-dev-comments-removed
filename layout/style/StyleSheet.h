@@ -32,7 +32,6 @@ namespace mozilla {
 
 class ServoCSSRuleList;
 class ServoStyleSet;
-enum class OriginFlags : uint8_t;
 
 typedef MozPromise< bool,
                     bool,
@@ -388,6 +387,11 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   
   void SetSharedContents(nsLayoutStylesheetCacheShm* aSharedMemory,
                          const ServoCssRules* aSharedRules);
+
+  
+  
+  
+  bool IsReadOnly() const;
 
  private:
   dom::ShadowRoot* GetContainingShadow() const;

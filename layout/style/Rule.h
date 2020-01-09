@@ -90,6 +90,9 @@ class Rule : public nsISupports, public nsWrapperCache {
   uint32_t GetColumnNumber() const { return mColumnNumber; }
 
   
+  bool IsReadOnly() const;
+
+  
   
   virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
       MOZ_MUST_OVERRIDE = 0;

@@ -71,6 +71,8 @@ class ServoCSSRuleList final : public dom::CSSRuleList {
 
   void DropAllRules();
 
+  bool IsReadOnly() const;
+
   
   StyleSheet* mStyleSheet = nullptr;
   
