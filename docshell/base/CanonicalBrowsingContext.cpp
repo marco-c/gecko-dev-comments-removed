@@ -5,6 +5,8 @@
 
 
 #include "mozilla/dom/CanonicalBrowsingContext.h"
+
+#include "mozilla/dom/BrowsingContextGroup.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 
 namespace mozilla {
@@ -35,12 +37,11 @@ CanonicalBrowsingContext::CanonicalBrowsingContext(BrowsingContext* aParent,
 
  void CanonicalBrowsingContext::CleanupContexts(
     uint64_t aProcessId) {
-  nsTArray<RefPtr<BrowsingContext>> roots;
-  BrowsingContext::GetRootBrowsingContexts(roots);
-
-  for (RefPtr<BrowsingContext> context : roots) {
-    if (Cast(context)->IsOwnedByProcess(aProcessId)) {
-      context->Detach();
+  for (auto& group : *BrowsingContextGroup::sAllGroups) {
+    for (auto& context : group->Toplevels()) {
+      if (Cast(context)->IsOwnedByProcess(aProcessId)) {
+        context->Detach();
+      }
     }
   }
 }

@@ -768,17 +768,6 @@ constexpr auto kSkipSelfHosted = JS::SavedFrameSelfHosted::Exclude;
   return domPromise.forget();
 }
 
- already_AddRefed<BrowsingContext> ChromeUtils::GetBrowsingContext(
-    GlobalObject& aGlobal, uint64_t id) {
-  return BrowsingContext::Get(id);
-}
-
- void ChromeUtils::GetRootBrowsingContexts(
-    GlobalObject& aGlobal,
-    nsTArray<RefPtr<BrowsingContext>>& aBrowsingContexts) {
-  BrowsingContext::GetRootBrowsingContexts(aBrowsingContexts);
-}
-
  bool ChromeUtils::HasReportingHeaderForOrigin(
     GlobalObject& global, const nsAString& aOrigin, ErrorResult& aRv) {
   if (!XRE_IsParentProcess()) {
@@ -828,11 +817,6 @@ constexpr auto kSkipSelfHosted = JS::SavedFrameSelfHosted::Exclude;
 
   TimeDuration duration = TimeStamp::Now() - when;
   return duration.ToMilliseconds();
-}
-
- void ChromeUtils::ResetLastExternalProtocolIframeAllowed(
-    GlobalObject& aGlobal) {
-  PopupBlocker::ResetLastExternalProtocolIframeAllowed();
 }
 
  void ChromeUtils::RegisterWindowActor(

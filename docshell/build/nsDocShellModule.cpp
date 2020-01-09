@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/BrowsingContextGroup.h"
 
 
 #include "nsSHEntryShared.h"
@@ -15,6 +16,7 @@ namespace mozilla {
 
 nsresult InitDocShellModule() {
   mozilla::dom::BrowsingContext::Init();
+  mozilla::dom::BrowsingContextGroup::Init();
   nsresult rv = nsSHistory::Startup();
   NS_ENSURE_SUCCESS(rv, rv);
 
