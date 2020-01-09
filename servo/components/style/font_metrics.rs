@@ -7,9 +7,6 @@
 #![deny(missing_docs)]
 
 use crate::context::SharedStyleContext;
-use crate::logical_geometry::WritingMode;
-use crate::media_queries::Device;
-use crate::properties::style_structs::Font;
 use crate::Atom;
 use app_units::Au;
 
@@ -36,17 +33,10 @@ pub enum FontMetricsQueryResult {
 
 pub trait FontMetricsProvider {
     
-    
-    
-    
-    
     fn query(
         &self,
-        _font: &Font,
-        _font_size: Au,
-        _wm: WritingMode,
-        _in_media_query: bool,
-        _device: &Device,
+        _context: &crate::values::computed::Context,
+        _base_size: crate::values::specified::length::FontBaseSize,
     ) -> FontMetricsQueryResult {
         FontMetricsQueryResult::NotAvailable
     }
