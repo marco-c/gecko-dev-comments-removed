@@ -6938,6 +6938,10 @@ void HTMLInputElement::SetFilePickerFiltersFromAccept(
 
     
     
+    filePicker->AppendRawFilter(token);
+
+    
+    
     nsFilePickerFilter filter;
     if (filterMask) {
       filter = nsFilePickerFilter(filterMask);

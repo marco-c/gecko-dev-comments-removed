@@ -2352,20 +2352,6 @@ public class GeckoSession implements Parcelable {
                     return;
                 }
                 String[] mimeTypes = message.getStringArray("mimeTypes");
-                final String[] extensions = message.getStringArray("extension");
-                if (extensions != null) {
-                    final ArrayList<String> combined =
-                            new ArrayList<>(mimeTypes.length + extensions.length);
-                    combined.addAll(Arrays.asList(mimeTypes));
-                    for (final String extension : extensions) {
-                        final String mimeType =
-                                URLConnection.guessContentTypeFromName(extension);
-                        if (mimeType != null) {
-                            combined.add(mimeType);
-                        }
-                    }
-                    mimeTypes = combined.toArray(new String[combined.size()]);
-                }
                 delegate.onFilePrompt(session, title, intMode, mimeTypes, cb);
                 break;
             }
@@ -3604,6 +3590,7 @@ public class GeckoSession implements Parcelable {
         static final int FILE_TYPE_MULTIPLE = 2;
 
         
+
 
 
 
