@@ -601,9 +601,18 @@ SpecialPowersObserverAPI.prototype = {
 
       case "SPStartupExtension": {
         let id = aMessage.data.id;
+        
         let extension = this._extensions.get(id);
-        extension.on("startup", () => {
-          this._sendReply(aMessage, "SPExtensionMessage", {id, type: "extensionSetId", args: [extension.id, extension.uuid]});
+        extension.on("startup", (eventName, ext) => {
+          if (!ext) {
+            
+            
+            
+            return;
+          }
+          
+          
+          this._sendReply(aMessage, "SPExtensionMessage", {id, type: "extensionSetId", args: [ext.id, ext.uuid]});
         });
 
         

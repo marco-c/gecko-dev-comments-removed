@@ -111,6 +111,15 @@ class MockExtension {
     this._extensionPromise.then(extension => {
       extension.on(...args);
     });
+    
+    
+    
+    
+    if (args[0] === "startup" && !this._extension) {
+      this._extensionPromise.then(extension => {
+        args[1]("startup", extension);
+      });
+    }
   }
 
   off(...args) {
