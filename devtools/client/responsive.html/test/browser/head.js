@@ -154,29 +154,29 @@ function waitForViewportResizeTo(ui, width, height) {
     
     
     
+    
     const browser = ui.getViewportBrowser();
 
-    const onResize = data => {
+    const onResizeViewport = data => {
       if (!isSizeMatching(data)) {
         return;
       }
-      ui.off("viewport-resize", onResize);
-      ui.off("content-resize", onResize);
+      ui.off("viewport-resize", onResizeViewport);
       browser.removeEventListener("mozbrowserloadend", onBrowserLoadEnd);
-      info(`Got content-resize or viewport-resize to ${width} x ${height}`);
+      info(`Got viewport-resize to ${width} x ${height}`);
       resolve();
     };
 
     const onBrowserLoadEnd = async function() {
       const data = ui.getViewportSize(ui);
-      onResize(data);
+      onResizeViewport(data);
     };
 
-    info(`Waiting for content-resize or viewport-resize to ${width} x ${height}`);
+    info(`Waiting for viewport-resize to ${width} x ${height}`);
     
     
-    ui.on("viewport-resize", onResize);
-    ui.on("content-resize", onResize);
+    
+    ui.on("viewport-resize", onResizeViewport);
     browser.addEventListener("mozbrowserloadend",
       onBrowserLoadEnd, { once: true });
   });
