@@ -1,11 +1,3 @@
-
-
-
-
-
-
-
-
 mod macros;
 
 pub mod de;
