@@ -63,6 +63,7 @@ pub struct ImageCacheKey {
 pub struct ImageInstance {
     pub opacity_binding_index: OpacityBindingIndex,
     pub segment_instance_index: SegmentInstanceIndex,
+    pub tight_local_clip_rect: LayoutRect,
     pub visible_tiles: Vec<VisibleImageTile>,
 }
 
@@ -114,6 +115,7 @@ impl AsInstanceKind<ImageDataHandle> for ImageKey {
         let image_instance_index = prim_store.images.push(ImageInstance {
             opacity_binding_index: OpacityBindingIndex::INVALID,
             segment_instance_index: SegmentInstanceIndex::INVALID,
+            tight_local_clip_rect: LayoutRect::zero(),
             visible_tiles: Vec::new(),
         });
 
@@ -309,6 +311,7 @@ impl ImageData {
     }
 
     pub fn write_prim_gpu_blocks(&self, request: &mut GpuDataRequest) {
+        
         
         
         request.push(self.color.premultiplied());
