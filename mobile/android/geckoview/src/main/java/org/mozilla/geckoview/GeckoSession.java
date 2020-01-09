@@ -604,13 +604,14 @@ public class GeckoSession implements Parcelable {
                     final GeckoBundle identity = message.getBundle("identity");
                     delegate.onSecurityChange(GeckoSession.this, new ProgressDelegate.SecurityInformation(identity));
                 } else if ("GeckoView:StateUpdated".equals(event)) {
+                    final HistoryDelegate historyDelegate = getHistoryDelegate();
                     final GeckoBundle update = message.getBundle("data");
                     if (update != null) {
                         mStateCache.updateSessionState(update);
                         final SessionState state = new SessionState(mStateCache);
                         delegate.onSessionStateChange(GeckoSession.this, state);
-                        if (update.getBundle("historychange") != null) {
-                            getHistoryDelegate().onHistoryStateChange(GeckoSession.this, state);
+                        if (historyDelegate != null && update.getBundle("historychange") != null) {
+                            historyDelegate.onHistoryStateChange(GeckoSession.this, state);
                         }
                     }
                 }
