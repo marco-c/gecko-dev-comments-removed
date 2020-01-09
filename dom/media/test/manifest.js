@@ -278,7 +278,7 @@ var gPlayTests = [
   { name:"test-7-6.1.opus", type:"audio/ogg; codecs=opus", duration:11.690 },
   { name:"test-8-7.1.opus", type:"audio/ogg; codecs=opus", duration:13.478 },
 
-  { name:"gizmo-short.mp4", type:"video/mp4", duration:0.27 },
+  { name:"gizmo-short.mp4", type:"video/mp4", duration:0.27, contentDuration:0.267 },
   
   
   { name:"bipbop-lateaudio.mp4", type:"video/mp4" },
