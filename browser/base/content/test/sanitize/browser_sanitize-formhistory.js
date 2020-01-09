@@ -5,6 +5,9 @@
 add_task(async function test() {
   
   
+  
+  
+  gBrowser.selectedTab.focus();
   await new Promise((resolve, reject) => {
     FormHistory.update({ op: "remove" },
                        { handleError(error) {

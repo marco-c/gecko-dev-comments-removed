@@ -19,6 +19,9 @@ function updateTabContextMenu(tab = gBrowser.selectedTab) {
   let menu = document.getElementById("tabContextMenu");
   var evt = new Event("");
   tab.dispatchEvent(evt);
+  
+  
+  gBrowser.selectedTab.focus();
   menu.openPopup(tab, "end_after", 0, 0, true, false, evt);
   is(window.TabContextMenu.contextTab, tab, "TabContextMenu context is the expected tab");
   menu.hidePopup();

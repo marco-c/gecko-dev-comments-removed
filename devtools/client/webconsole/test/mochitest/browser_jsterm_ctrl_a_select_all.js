@@ -19,6 +19,9 @@ add_task(async function() {
 });
 
 async function performTests() {
+  
+  
+  gBrowser.selectedTab.focus();
   const hud = await openNewTabAndConsole(TEST_URI);
   const {jsterm} = hud;
 

@@ -8,6 +8,9 @@ const TEST_PATH = getRootDirectory(gTestPath).replace("chrome://mochitests/conte
 
 add_task(async function() {
   info("Check history button existence and functionality");
+  
+  
+  gBrowser.selectedTab.focus();
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PATH + "dummy_history_item.html");
   BrowserTestUtils.removeTab(tab);
 

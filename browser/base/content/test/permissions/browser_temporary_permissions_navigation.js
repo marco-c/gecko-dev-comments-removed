@@ -50,6 +50,9 @@ add_task(async function testTempPermissionOnReload() {
 
     
     let contextMenu = document.getElementById("tabContextMenu");
+    
+    
+    gBrowser.selectedTab.focus();
     let popupShownPromise = BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
     EventUtils.synthesizeMouseAtCenter(gBrowser.selectedTab, {type: "contextmenu", button: 2});
     await popupShownPromise;
@@ -85,6 +88,9 @@ add_task(async function testTempPermissionOnReloadAllTabs() {
 
     
     let contextMenu = document.getElementById("tabContextMenu");
+    
+    
+    gBrowser.selectedTab.focus();
     let popupShownPromise = BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
     EventUtils.synthesizeMouseAtCenter(gBrowser.selectedTab, {type: "contextmenu", button: 2});
     await popupShownPromise;

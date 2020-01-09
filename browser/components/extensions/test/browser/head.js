@@ -503,6 +503,9 @@ function closeActionContextMenu(itemToSelect, kind, win = window) {
 }
 
 function openTabContextMenu(win = window) {
+  
+  
+  gBrowser.selectedTab.focus();
   return openChromeContextMenu("tabContextMenu", ".tabbrowser-tab[selected]", win);
 }
 

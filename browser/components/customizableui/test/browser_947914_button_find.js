@@ -6,6 +6,9 @@
 
 add_task(async function() {
   info("Check find button existence and functionality");
+  
+  
+  gBrowser.selectedTab.focus();
   CustomizableUI.addWidgetToArea("find-button", CustomizableUI.AREA_FIXED_OVERFLOW_PANEL);
   registerCleanupFunction(() => CustomizableUI.reset());
 

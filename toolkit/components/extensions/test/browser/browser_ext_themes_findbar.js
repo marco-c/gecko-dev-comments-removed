@@ -6,6 +6,9 @@
 add_task(async function test_support_toolbar_properties_on_findbar() {
   const TOOLBAR_COLOR = "#ff00ff";
   const TOOLBAR_TEXT_COLOR = "#9400ff";
+  
+  
+  gBrowser.selectedTab.focus();
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
       "theme": {
@@ -50,6 +53,9 @@ add_task(async function test_support_toolbar_field_properties_on_findbar() {
   const TOOLBAR_FIELD_COLOR = "#ff00ff";
   const TOOLBAR_FIELD_TEXT_COLOR = "#9400ff";
   const TOOLBAR_FIELD_BORDER_COLOR = "#ffffff";
+  
+  
+  gBrowser.selectedTab.focus();
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
       "theme": {
