@@ -312,10 +312,7 @@ impl<'a> DisplayListFlattener<'a> {
         };
 
         
-        let mut old_prim_list = mem::replace(
-            primitives,
-            Vec::new(),
-        );
+        let mut old_prim_list = primitives.take();
 
         
         
@@ -409,6 +406,7 @@ impl<'a> DisplayListFlattener<'a> {
 
         
         
+        primitives.reserve(preceding_prims.len() + trailing_prims.len() + 1);
         primitives.extend(preceding_prims);
         primitives.push(instance);
         primitives.extend(trailing_prims);
