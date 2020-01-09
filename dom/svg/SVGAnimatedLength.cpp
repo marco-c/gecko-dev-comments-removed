@@ -133,8 +133,12 @@ bool SVGElementMetrics::EnsureCtx() const {
   if (!mCtx && mSVGElement) {
     mCtx = mSVGElement->GetCtx();
     if (!mCtx && mSVGElement->IsSVGElement(nsGkAtoms::svg)) {
-      
-      mCtx = static_cast<SVGViewportElement*>(mSVGElement);
+      auto* e = static_cast<SVGViewportElement*>(mSVGElement);
+
+      if (!e->IsInner()) {
+        
+        mCtx = e;
+      }
     }
   }
   return mCtx != nullptr;
