@@ -42,7 +42,6 @@ class ClearSiteData final : public nsIObserver {
     eCache = 0x01,
     eCookies = 0x02,
     eStorage = 0x04,
-    eExecutionContexts = 0x08,
   };
 
   
@@ -59,11 +58,6 @@ class ClearSiteData final : public nsIObserver {
 
   
   void TypeToString(Type aType, nsAString& aStr) const;
-
-  
-  
-  void BrowsingContextsReload(PendingCleanupHolder* aHolder,
-                              nsIPrincipal* aPrincipal) const;
 };
 
 }  
