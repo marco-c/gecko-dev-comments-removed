@@ -288,3 +288,13 @@ async function openProfilerDialog(client, doc) {
   info("Wait for the loadPerformanceProfiler callback to be executed on client-wrapper");
   return onProfilerLoaded;
 }
+
+
+
+
+
+function getThisFirefoxString(aboutDebuggingWindow) {
+  const loader = aboutDebuggingWindow.getBrowserLoaderForWindow();
+  const { l10n } = loader.require("devtools/client/aboutdebugging-new/src/modules/l10n");
+  return l10n.getString("about-debugging-this-firefox-runtime-name");
+}

@@ -24,8 +24,10 @@ add_task(async function() {
   
   const selectedSidebarItem = document.querySelector(".js-sidebar-item-selected");
   ok(selectedSidebarItem, "An item is selected in the sidebar");
-  is(selectedSidebarItem.textContent, "This Firefox",
-    "The selected sidebar item is This Firefox");
+
+  const thisFirefoxString = getThisFirefoxString(window);
+  is(selectedSidebarItem.textContent, thisFirefoxString,
+    "The selected sidebar item is " + thisFirefoxString);
 
   const paneTitlesEls = document.querySelectorAll(".js-debug-target-pane-title");
   is(paneTitlesEls.length, EXPECTED_TARGET_PANES.length,
