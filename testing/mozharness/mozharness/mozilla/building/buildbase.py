@@ -1394,8 +1394,16 @@ or run without that action (ie: --no-{action})"
         with open(stats_file, 'rb') as fh:
             stats = json.load(fh)
 
-        total = stats['stats']['requests_executed']
-        hits = stats['stats']['cache_hits']
+        def get_stat(key):
+            val = stats['stats'][key]
+            
+            
+            if isinstance(val, dict):
+                val = sum(val['counts'].values())
+            return val
+
+        total = get_stat('requests_executed')
+        hits = get_stat('cache_hits')
         if total > 0:
             hits /= float(total)
 
