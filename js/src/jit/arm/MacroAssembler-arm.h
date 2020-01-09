@@ -1060,6 +1060,11 @@ class MacroAssemblerARMCompat : public MacroAssemblerARM {
     loadValue(dest.toAddress(), val);
   }
   void loadValue(const BaseIndex& addr, ValueOperand val);
+
+  
+  
+  void loadUnalignedValue(const Address& src, ValueOperand dest);
+
   void tagValue(JSValueType type, Register payload, ValueOperand dest);
 
   void pushValue(ValueOperand val);
