@@ -1556,9 +1556,40 @@ int32_t nsLayoutUtils::DoCompareTreePosition(
 
   int32_t index1 = parent->ComputeIndexOf(content1Ancestor);
   int32_t index2 = parent->ComputeIndexOf(content2Ancestor);
-  if (index1 < 0 || index2 < 0) {
+
+  
+  
+  
+  if (index1 < 0) {
+    if (content1Ancestor->IsContent() &&
+        content1Ancestor->AsContent()->IsGeneratedContentContainerForAfter()) {
+      
+      MOZ_ASSERT(!content2Ancestor->IsContent() ||
+                 !content2Ancestor->AsContent()
+                      ->IsGeneratedContentContainerForAfter());
+      return 1;
+    }
+    if (index2 >= 0 || (content2Ancestor->IsContent() &&
+                        content2Ancestor->AsContent()
+                            ->IsGeneratedContentContainerForAfter())) {
+      
+      
+      return -1;
+    }
     
     return 0;
+  }
+  if (index2 < 0) {
+    
+    
+    if (content2Ancestor->IsContent() &&
+        content2Ancestor->AsContent()->IsGeneratedContentContainerForAfter()) {
+      MOZ_ASSERT(!content1Ancestor->IsContent() ||
+                 !content1Ancestor->AsContent()
+                      ->IsGeneratedContentContainerForAfter());
+      return -1;
+    }
+    return 1;
   }
 
   return index1 - index2;
