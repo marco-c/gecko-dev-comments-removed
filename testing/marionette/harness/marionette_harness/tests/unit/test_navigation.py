@@ -776,7 +776,6 @@ class TestPageLoadStrategy(BaseNavigationTestCase):
         
         self.marionette.navigate(self.test_page_slow_resource)
 
-    @skip_if_mobile("Disabling due to message passing slowness on Android.")
     def test_eager(self):
         self.marionette.delete_session()
         self.marionette.start_session({"pageLoadStrategy": "eager"})
