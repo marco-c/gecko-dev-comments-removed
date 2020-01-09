@@ -590,6 +590,16 @@ void WebrtcGmpVideoEncoder::Encoded(
         default:
           MOZ_CRASH("GMP_BufferType already handled in switch above");
       }
+
+      
+      
+      
+      
+      
+      if (size == 0x01000000) {
+        return;
+      }
+
       MOZ_ASSERT(size != 0 &&
                  buffer + size <=
                      end);  
