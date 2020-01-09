@@ -750,8 +750,10 @@ WebRenderMemoryReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
 #undef REPORT_DATA_STORE
 
 static const char* const WR_ROLLOUT_PREF = "gfx.webrender.all.qualified";
-static const char* const WR_ROLLOUT_PREF_DEFAULT =
+static const bool WR_ROLLOUT_PREF_DEFAULTVALUE = true;
+static const char* const WR_ROLLOUT_DEFAULT_PREF =
     "gfx.webrender.all.qualified.default";
+static const bool WR_ROLLOUT_DEFAULT_PREF_DEFAULTVALUE = false;
 static const char* const WR_ROLLOUT_PREF_OVERRIDE =
     "gfx.webrender.all.qualified.gfxPref-default-override";
 static const char* const WR_ROLLOUT_HW_QUALIFIED_OVERRIDE =
@@ -819,7 +821,7 @@ class WrRolloutPrefShutdownSaver : public nsIObserver {
 
     bool defaultValue =
         Preferences::GetBool(WR_ROLLOUT_PREF, false, PrefValueKind::Default);
-    Preferences::SetBool(WR_ROLLOUT_PREF_DEFAULT, defaultValue);
+    Preferences::SetBool(WR_ROLLOUT_DEFAULT_PREF, defaultValue);
   }
 };
 
@@ -2520,19 +2522,31 @@ static bool CalculateWrQualifiedPrefValue() {
     
     
     
-    Preferences::ClearUser(WR_ROLLOUT_PREF_DEFAULT);
+    Preferences::ClearUser(WR_ROLLOUT_DEFAULT_PREF);
   });
 
   if (!Preferences::HasUserValue(WR_ROLLOUT_PREF) &&
-      Preferences::HasUserValue(WR_ROLLOUT_PREF_DEFAULT)) {
+      Preferences::HasUserValue(WR_ROLLOUT_DEFAULT_PREF)) {
     
     
     
     
     
-    return StaticPrefs::WebRenderAllQualifiedDefault();
+    
+    
+    
+    
+    
+    
+    
+    return Preferences::GetBool(WR_ROLLOUT_DEFAULT_PREF,
+                                WR_ROLLOUT_DEFAULT_PREF_DEFAULTVALUE);
   }
 
+  
+  
+  
+  
   
   
   
@@ -2542,7 +2556,7 @@ static bool CalculateWrQualifiedPrefValue() {
   if (Preferences::HasUserValue(WR_ROLLOUT_PREF_OVERRIDE)) {
     return Preferences::GetBool(WR_ROLLOUT_PREF_OVERRIDE);
   }
-  return StaticPrefs::WebRenderAllQualified();
+  return Preferences::GetBool(WR_ROLLOUT_PREF, WR_ROLLOUT_PREF_DEFAULTVALUE);
 }
 
 static FeatureState& WebRenderHardwareQualificationStatus(
