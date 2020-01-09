@@ -1549,11 +1549,15 @@ void nsHttpChannelAuthProvider::SetAuthorizationHeader(
     continuationState = &mProxyAuthContinuationState;
 
     if (mProxyInfo) {
-      
-      auto const& pa = mProxyInfo->ProxyAuthorizationHeader();
-      if (!pa.IsEmpty()) {
-        rv = mAuthChannel->SetProxyCredentials(pa);
-        MOZ_ASSERT(NS_SUCCEEDED(rv));
+      nsAutoCString type;
+      mProxyInfo->GetType(type);
+      if (type.EqualsLiteral("https")) {
+        
+        auto const& pa = mProxyInfo->ProxyAuthorizationHeader();
+        if (!pa.IsEmpty()) {
+          rv = mAuthChannel->SetProxyCredentials(pa);
+          MOZ_ASSERT(NS_SUCCEEDED(rv));
+        }
       }
     }
   } else {
