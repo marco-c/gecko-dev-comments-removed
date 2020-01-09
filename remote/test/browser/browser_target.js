@@ -42,8 +42,14 @@ async function testCDP() {
   const {Target} = client;
   ok("Target" in client, "Target domain is available");
 
+  const targetCreatedForAlreadyOpenedTab = Target.targetCreated();
+
   
   Target.setDiscoverTargets({ discover: true });
+
+  
+  
+  await targetCreatedForAlreadyOpenedTab;
 
   
   const targetCreated = Target.targetCreated();
