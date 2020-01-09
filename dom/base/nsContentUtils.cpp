@@ -5058,12 +5058,8 @@ void nsContentUtils::TriggerLink(nsIContent* aContent,
       fileName.SetIsVoid(true);  
     }
 
-    
-    
-    
     nsCOMPtr<nsIPrincipal> triggeringPrincipal = aContent->NodePrincipal();
-    nsCOMPtr<nsIContentSecurityPolicy> csp;
-    triggeringPrincipal->GetCsp(getter_AddRefs(csp));
+    nsCOMPtr<nsIContentSecurityPolicy> csp = aContent->GetCsp();
 
     handler->OnLinkClick(
         aContent, aLinkURI, fileName.IsVoid() ? aTargetSpec : EmptyString(),
@@ -9795,15 +9791,7 @@ bool nsContentUtils::AttemptLargeAllocationLoad(nsIHttpChannel* aChannel) {
 
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
   nsCOMPtr<nsIPrincipal> triggeringPrincipal = loadInfo->TriggeringPrincipal();
-
-  
-  
-  
-  nsCOMPtr<nsIContentSecurityPolicy> csp;
-  if (triggeringPrincipal) {
-    rv = triggeringPrincipal->GetCsp(getter_AddRefs(csp));
-    NS_ENSURE_SUCCESS(rv, false);
-  }
+  nsCOMPtr<nsIContentSecurityPolicy> csp = loadInfo->GetCsp();
 
   
   

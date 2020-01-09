@@ -231,14 +231,7 @@ RefPtr<ClientOpPromise> ClientNavigateOpChild::DoNavigate(
       new ReferrerInfo(doc->GetDocumentURI(), doc->GetReferrerPolicy());
   loadState->SetTriggeringPrincipal(principal);
 
-  
-  
-  
-  if (principal) {
-    nsCOMPtr<nsIContentSecurityPolicy> csp;
-    principal->GetCsp(getter_AddRefs(csp));
-    loadState->SetCsp(csp);
-  }
+  loadState->SetCsp(doc->GetCsp());
 
   loadState->SetReferrerInfo(referrerInfo);
   loadState->SetLoadType(LOAD_STOP_CONTENT);

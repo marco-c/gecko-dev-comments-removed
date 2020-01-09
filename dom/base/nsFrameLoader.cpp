@@ -73,6 +73,7 @@
 #include "BrowserParent.h"
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/BasePrincipal.h"
+#include "mozilla/ExpandedPrincipal.h"
 #include "mozilla/GuardObjects.h"
 #include "mozilla/HTMLEditor.h"
 #include "mozilla/NullPrincipal.h"
@@ -405,10 +406,7 @@ void nsFrameLoader::LoadFrame(bool aOriginalSrc) {
   if (isSrcdoc) {
     src.AssignLiteral("about:srcdoc");
     principal = mOwnerContent->NodePrincipal();
-    
-    
-    
-    mOwnerContent->NodePrincipal()->GetCsp(getter_AddRefs(csp));
+    csp = mOwnerContent->GetCsp();
   } else {
     GetURL(src, getter_AddRefs(principal), getter_AddRefs(csp));
 
@@ -425,10 +423,7 @@ void nsFrameLoader::LoadFrame(bool aOriginalSrc) {
       }
       src.AssignLiteral("about:blank");
       principal = mOwnerContent->NodePrincipal();
-      
-      
-      
-      mOwnerContent->NodePrincipal()->GetCsp(getter_AddRefs(csp));
+      csp = mOwnerContent->GetCsp();
     }
   }
 
@@ -520,8 +515,7 @@ void nsFrameLoader::ResumeLoad(uint64_t aPendingSwitchID) {
   mURIToLoad = nullptr;
   mPendingSwitchID = aPendingSwitchID;
   mTriggeringPrincipal = mOwnerContent->NodePrincipal();
-  
-  mOwnerContent->NodePrincipal()->GetCsp(getter_AddRefs(mCsp));
+  mCsp = mOwnerContent->GetCsp();
 
   nsresult rv = doc->InitializeFrameLoader(this);
   if (NS_FAILED(rv)) {
@@ -634,11 +628,7 @@ nsresult nsFrameLoader::ReallyStartLoadingInternal() {
   if (mCsp) {
     loadState->SetCsp(mCsp);
   } else if (!mTriggeringPrincipal) {
-    
-    
-    
-    nsCOMPtr<nsIContentSecurityPolicy> csp;
-    mOwnerContent->NodePrincipal()->GetCsp(getter_AddRefs(csp));
+    nsCOMPtr<nsIContentSecurityPolicy> csp = mOwnerContent->GetCsp();
     loadState->SetCsp(csp);
   }
 
@@ -2347,12 +2337,8 @@ void nsFrameLoader::GetURL(nsString& aURI, nsIPrincipal** aTriggeringPrincipal,
   
   
   
-  
-  
-  
   nsCOMPtr<nsIPrincipal> triggeringPrincipal = mOwnerContent->NodePrincipal();
-  nsCOMPtr<nsIContentSecurityPolicy> csp;
-  mOwnerContent->NodePrincipal()->GetCsp(getter_AddRefs(csp));
+  nsCOMPtr<nsIContentSecurityPolicy> csp = mOwnerContent->GetCsp();
 
   if (mOwnerContent->IsHTMLElement(nsGkAtoms::object)) {
     mOwnerContent->GetAttr(kNameSpaceID_None, nsGkAtoms::data, aURI);
@@ -2363,7 +2349,11 @@ void nsFrameLoader::GetURL(nsString& aURI, nsIPrincipal** aTriggeringPrincipal,
       nsCOMPtr<nsIPrincipal> srcPrincipal = frame->GetSrcTriggeringPrincipal();
       if (srcPrincipal) {
         triggeringPrincipal = srcPrincipal;
-        triggeringPrincipal->GetCsp(getter_AddRefs(csp));
+        nsCOMPtr<nsIExpandedPrincipal> ep =
+            do_QueryInterface(triggeringPrincipal);
+        if (ep) {
+          csp = ep->GetCsp();
+        }
       }
     }
   }

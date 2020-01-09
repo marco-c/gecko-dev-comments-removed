@@ -2492,9 +2492,6 @@ nsresult ReadResponse(mozIStorageConnection* aConn, EntryId aEntryId,
     nsCString origin;
     url->Origin(origin);
 
-    
-    nsTArray<mozilla::ipc::ContentSecurityPolicy> policies;
-
     nsCString baseDomain;
     rv = url->BaseDomain(baseDomain);
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -2503,8 +2500,7 @@ nsresult ReadResponse(mozIStorageConnection* aConn, EntryId aEntryId,
 
     aSavedResponseOut->mValue.principalInfo() =
         Some(mozilla::ipc::ContentPrincipalInfo(attrs, origin, specNoSuffix,
-                                                Nothing(), std::move(policies),
-                                                baseDomain));
+                                                Nothing(), baseDomain));
   }
 
   bool nullPadding = false;

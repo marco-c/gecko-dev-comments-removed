@@ -162,19 +162,12 @@ bool FramingChecker::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
 
 
 static bool ShouldIgnoreFrameOptions(nsIChannel* aChannel,
-                                     nsIPrincipal* aPrincipal) {
+                                     nsIContentSecurityPolicy* aCSP) {
   NS_ENSURE_TRUE(aChannel, false);
-  NS_ENSURE_TRUE(aPrincipal, false);
-
-  nsCOMPtr<nsIContentSecurityPolicy> csp;
-  aPrincipal->GetCsp(getter_AddRefs(csp));
-  if (!csp) {
-    
-    return false;
-  }
+  NS_ENSURE_TRUE(aCSP, false);
 
   bool enforcesFrameAncestors = false;
-  csp->GetEnforcesFrameAncestors(&enforcesFrameAncestors);
+  aCSP->GetEnforcesFrameAncestors(&enforcesFrameAncestors);
   if (!enforcesFrameAncestors) {
     
     
@@ -205,12 +198,12 @@ static bool ShouldIgnoreFrameOptions(nsIChannel* aChannel,
 
 bool FramingChecker::CheckFrameOptions(nsIChannel* aChannel,
                                        nsIDocShell* aDocShell,
-                                       nsIPrincipal* aPrincipal) {
+                                       nsIContentSecurityPolicy* aCsp) {
   if (!aChannel || !aDocShell) {
     return true;
   }
 
-  if (ShouldIgnoreFrameOptions(aChannel, aPrincipal)) {
+  if (ShouldIgnoreFrameOptions(aChannel, aCsp)) {
     return true;
   }
 

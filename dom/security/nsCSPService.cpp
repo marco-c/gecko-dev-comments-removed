@@ -123,7 +123,6 @@ CSPService::ShouldLoad(nsIURI* aContentLocation, nsILoadInfo* aLoadInfo,
 
   uint32_t contentType = aLoadInfo->InternalContentPolicyType();
   nsCOMPtr<nsISupports> requestContext = aLoadInfo->GetLoadingContext();
-  nsCOMPtr<nsIPrincipal> requestPrincipal = aLoadInfo->TriggeringPrincipal();
   nsCOMPtr<nsIURI> requestOrigin;
   nsCOMPtr<nsIPrincipal> loadingPrincipal = aLoadInfo->LoadingPrincipal();
   if (loadingPrincipal) {
@@ -154,24 +153,6 @@ CSPService::ShouldLoad(nsIURI* aContentLocation, nsILoadInfo* aLoadInfo,
     return NS_OK;
   }
 
-  
-  
-  
-  
-  nsCOMPtr<nsINode> node(do_QueryInterface(requestContext));
-  nsCOMPtr<nsIPrincipal> principal;
-  if (!node ||
-      (requestPrincipal && BasePrincipal::Cast(requestPrincipal)
-                               ->OverridesCSP(node->NodePrincipal()))) {
-    principal = requestPrincipal;
-  } else {
-    principal = node->NodePrincipal();
-  }
-  if (!principal) {
-    
-    return NS_OK;
-  }
-
   nsAutoString cspNonce;
   rv = aLoadInfo->GetCspNonce(cspNonce);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -180,10 +161,7 @@ CSPService::ShouldLoad(nsIURI* aContentLocation, nsILoadInfo* aLoadInfo,
   bool isPreload = nsContentUtils::IsPreloadType(contentType);
 
   if (isPreload) {
-    nsCOMPtr<nsIContentSecurityPolicy> preloadCsp;
-    rv = principal->GetPreloadCsp(getter_AddRefs(preloadCsp));
-    NS_ENSURE_SUCCESS(rv, rv);
-
+    nsCOMPtr<nsIContentSecurityPolicy> preloadCsp = aLoadInfo->GetPreloadCsp();
     if (preloadCsp) {
       
       rv = preloadCsp->ShouldLoad(
@@ -205,9 +183,10 @@ CSPService::ShouldLoad(nsIURI* aContentLocation, nsILoadInfo* aLoadInfo,
   }
 
   
-  nsCOMPtr<nsIContentSecurityPolicy> csp;
-  rv = principal->GetCsp(getter_AddRefs(csp));
-  NS_ENSURE_SUCCESS(rv, rv);
+  
+  
+  
+  nsCOMPtr<nsIContentSecurityPolicy> csp = aLoadInfo->GetCsp();
 
   if (csp) {
     
@@ -265,6 +244,17 @@ CSPService::AsyncOnChannelRedirect(nsIChannel* oldChannel,
                                    nsIAsyncVerifyRedirectCallback* callback) {
   net::nsAsyncRedirectAutoCallback autoCallback(callback);
 
+  if (XRE_IsE10sParentProcess()) {
+    nsCOMPtr<nsIParentChannel> parentChannel;
+    NS_QueryNotificationCallbacks(oldChannel, parentChannel);
+    
+    
+    
+    if (parentChannel) {
+      return NS_OK;
+    }
+  }
+
   nsCOMPtr<nsIURI> newUri;
   nsresult rv = newChannel->GetURI(getter_AddRefs(newUri));
   NS_ENSURE_SUCCESS(rv, rv);
@@ -317,9 +307,7 @@ CSPService::AsyncOnChannelRedirect(nsIChannel* oldChannel,
   nsCOMPtr<nsISupports> requestContext = loadInfo->GetLoadingContext();
   
   if (isPreload) {
-    nsCOMPtr<nsIContentSecurityPolicy> preloadCsp;
-    loadInfo->LoadingPrincipal()->GetPreloadCsp(getter_AddRefs(preloadCsp));
-
+    nsCOMPtr<nsIContentSecurityPolicy> preloadCsp = loadInfo->GetPreloadCsp();
     if (preloadCsp) {
       
       preloadCsp->ShouldLoad(
@@ -345,9 +333,7 @@ CSPService::AsyncOnChannelRedirect(nsIChannel* oldChannel,
   }
 
   
-  nsCOMPtr<nsIContentSecurityPolicy> csp;
-  loadInfo->LoadingPrincipal()->GetCsp(getter_AddRefs(csp));
-
+  nsCOMPtr<nsIContentSecurityPolicy> csp = loadInfo->GetCsp();
   if (csp) {
     
     csp->ShouldLoad(policyType,  

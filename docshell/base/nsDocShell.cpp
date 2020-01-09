@@ -4628,12 +4628,7 @@ nsDocShell::Reload(uint32_t aReloadFlags) {
     bool loadReplace = false;
 
     nsIPrincipal* triggeringPrincipal = doc->NodePrincipal();
-    
-    
-    
-    nsCOMPtr<nsIContentSecurityPolicy> csp;
-    rv = doc->NodePrincipal()->GetCsp(getter_AddRefs(csp));
-    NS_ENSURE_SUCCESS(rv, rv);
+    nsCOMPtr<nsIContentSecurityPolicy> csp = doc->GetCsp();
 
     nsAutoString contentTypeHint;
     doc->GetContentType(contentTypeHint);
@@ -5885,21 +5880,17 @@ nsDocShell::ForceRefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal,
   
   
   nsCOMPtr<nsIPrincipal> principal = aPrincipal;
+  RefPtr<Document> doc = GetDocument();
   if (!principal) {
-    RefPtr<Document> doc = GetDocument();
     if (!doc) {
       return NS_ERROR_FAILURE;
     }
     principal = doc->NodePrincipal();
   }
   loadState->SetTriggeringPrincipal(principal);
-  
-  
-  
-  nsCOMPtr<nsIContentSecurityPolicy> csp;
-  nsresult rv = principal->GetCsp(getter_AddRefs(csp));
-  NS_ENSURE_SUCCESS(rv, rv);
-  loadState->SetCsp(csp);
+  if (doc) {
+    loadState->SetCsp(doc->GetCsp());
+  }
 
   loadState->SetPrincipalIsExplicit(true);
 
@@ -5907,7 +5898,7 @@ nsDocShell::ForceRefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal,
 
 
   bool equalUri = false;
-  rv = aURI->Equals(mCurrentURI, &equalUri);
+  nsresult rv = aURI->Equals(mCurrentURI, &equalUri);
   if (NS_SUCCEEDED(rv) && (!equalUri) && aMetaRefresh &&
       aDelay <= REFRESH_REDIRECT_TIMER) {
     
@@ -6905,13 +6896,7 @@ nsresult nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
 
           LoadURIOptions loadURIOptions;
           loadURIOptions.mTriggeringPrincipal = triggeringPrincipal;
-          
-          
-          
-          nsCOMPtr<nsIContentSecurityPolicy> csp;
-          nsresult rv = triggeringPrincipal->GetCsp(getter_AddRefs(csp));
-          NS_ENSURE_SUCCESS(rv, rv);
-          loadURIOptions.mCsp = csp;
+          loadURIOptions.mCsp = loadInfo->GetCsp();
           loadURIOptions.mPostData = newPostData;
           return LoadURI(newSpecW, loadURIOptions);
         }
@@ -6976,6 +6961,7 @@ nsresult nsDocShell::EnsureContentViewer() {
     return NS_ERROR_FAILURE;
   }
 
+  nsCOMPtr<nsIContentSecurityPolicy> cspToInheritForAboutBlank;
   nsCOMPtr<nsIURI> baseURI;
   nsIPrincipal* principal = GetInheritedPrincipal(false);
   nsCOMPtr<nsIDocShellTreeItem> parentItem;
@@ -6985,11 +6971,13 @@ nsresult nsDocShell::EnsureContentViewer() {
       nsCOMPtr<Element> parentElement = domWin->GetFrameElementInternal();
       if (parentElement) {
         baseURI = parentElement->GetBaseURI();
+        cspToInheritForAboutBlank = parentElement->GetCsp();
       }
     }
   }
 
-  nsresult rv = CreateAboutBlankContentViewer(principal, baseURI);
+  nsresult rv = CreateAboutBlankContentViewer(
+      principal, cspToInheritForAboutBlank, baseURI);
 
   NS_ENSURE_STATE(mContentViewer);
 
@@ -7015,8 +7003,8 @@ nsresult nsDocShell::EnsureContentViewer() {
 }
 
 nsresult nsDocShell::CreateAboutBlankContentViewer(
-    nsIPrincipal* aPrincipal, nsIURI* aBaseURI, bool aTryToSaveOldPresentation,
-    bool aCheckPermitUnload) {
+    nsIPrincipal* aPrincipal, nsIContentSecurityPolicy* aCSP, nsIURI* aBaseURI,
+    bool aTryToSaveOldPresentation, bool aCheckPermitUnload) {
   RefPtr<Document> blankDoc;
   nsCOMPtr<nsIContentViewer> viewer;
   nsresult rv = NS_ERROR_FAILURE;
@@ -7122,6 +7110,16 @@ nsresult nsDocShell::CreateAboutBlankContentViewer(
     if (blankDoc) {
       
       
+      
+      
+      if (aCSP) {
+        RefPtr<nsCSPContext> cspToInherit = new nsCSPContext();
+        cspToInherit->InitFromOther(static_cast<nsCSPContext*>(aCSP));
+        blankDoc->SetCsp(cspToInherit);
+      }
+
+      
+      
       blankDoc->SetBaseURI(aBaseURI);
 
       
@@ -7159,8 +7157,9 @@ nsresult nsDocShell::CreateAboutBlankContentViewer(
 }
 
 NS_IMETHODIMP
-nsDocShell::CreateAboutBlankContentViewer(nsIPrincipal* aPrincipal) {
-  return CreateAboutBlankContentViewer(aPrincipal, nullptr);
+nsDocShell::CreateAboutBlankContentViewer(nsIPrincipal* aPrincipal,
+                                          nsIContentSecurityPolicy* aCSP) {
+  return CreateAboutBlankContentViewer(aPrincipal, aCSP, nullptr);
 }
 
 bool nsDocShell::CanSavePresentation(uint32_t aLoadType,
@@ -9050,13 +9049,7 @@ nsresult nsDocShell::MaybeHandleSameDocumentNavigation(
   } else {
     newURITriggeringPrincipal = aLoadState->TriggeringPrincipal();
     newURIPrincipalToInherit = doc->NodePrincipal();
-    
-    
-    
-    
-    
-    nsresult rv = doc->NodePrincipal()->GetCsp(getter_AddRefs(newCsp));
-    NS_ENSURE_SUCCESS(rv, rv);
+    newCsp = doc->GetCsp();
   }
   
   
@@ -9354,7 +9347,7 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
     }
 
     
-    rv = CreateAboutBlankContentViewer(nullptr, nullptr);
+    rv = CreateAboutBlankContentViewer(nullptr, nullptr, nullptr);
     if (NS_FAILED(rv)) {
       return NS_ERROR_FAILURE;
     }
@@ -10010,23 +10003,10 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
     isc->SetBaseURI(baseURI);
   }
 
-  
-  
-  
-  
-  nsCOMPtr<nsIContentSecurityPolicy> csp;
-  aLoadState->TriggeringPrincipal()->GetCsp(getter_AddRefs(csp));
-#ifdef DEBUG
-  
-  
-  
-  if (aLoadState->TriggeringPrincipal()->GetIsCodebasePrincipal()) {
-    nsCOMPtr<nsIContentSecurityPolicy> argsCSP = aLoadState->Csp();
-    MOZ_ASSERT(nsCSPContext::Equals(csp, argsCSP));
-  }
-#endif
-
+  nsCOMPtr<nsIContentSecurityPolicy> csp = aLoadState->Csp();
   if (csp) {
+    
+    
     bool upgradeInsecureRequests = false;
     csp->GetUpgradeInsecureRequests(&upgradeInsecureRequests);
     if (upgradeInsecureRequests) {
@@ -10039,6 +10019,17 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
                                        resultPrincipal)) {
         loadInfo->SetUpgradeInsecureRequests();
       }
+    }
+
+    if (CSP_ShouldResponseInheritCSP(channel)) {
+      
+      
+      
+      
+      
+      RefPtr<nsCSPContext> cspToInherit = new nsCSPContext();
+      cspToInherit->InitFromOther(static_cast<nsCSPContext*>(csp.get()));
+      loadInfo->SetCSPToInherit(cspToInherit);
     }
   }
 
@@ -11140,12 +11131,7 @@ nsresult nsDocShell::UpdateURLAndHistory(Document* aDocument, nsIURI* aNewURI,
     mOSHE->SetScrollPosition(scrollPos.x, scrollPos.y);
 
     bool scrollRestorationIsManual = mOSHE->GetScrollRestorationIsManual();
-
-    
-    
-    
-    nsCOMPtr<nsIContentSecurityPolicy> csp;
-    aDocument->NodePrincipal()->GetCsp(getter_AddRefs(csp));
+    nsCOMPtr<nsIContentSecurityPolicy> csp = aDocument->GetCsp();
 
     
     
@@ -11186,17 +11172,11 @@ nsresult nsDocShell::UpdateURLAndHistory(Document* aDocument, nsIURI* aNewURI,
     newSHEntry = mOSHE;
 
     
-    
-    
-    nsCOMPtr<nsIContentSecurityPolicy> csp;
-    aDocument->NodePrincipal()->GetCsp(getter_AddRefs(csp));
-
-    
     if (!newSHEntry) {
       nsresult rv = AddToSessionHistory(
           aNewURI, nullptr,
           aDocument->NodePrincipal(),  
-          nullptr, csp, true, getter_AddRefs(newSHEntry));
+          nullptr, aDocument->GetCsp(), true, getter_AddRefs(newSHEntry));
       NS_ENSURE_SUCCESS(rv, rv);
       mOSHE = newSHEntry;
     }
@@ -11448,13 +11428,8 @@ nsresult nsDocShell::AddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel,
     if (!triggeringPrincipal) {
       triggeringPrincipal = loadInfo->TriggeringPrincipal();
     }
-    if (!csp && triggeringPrincipal) {
-      
-      
-      
-      
-      
-      triggeringPrincipal->GetCsp(getter_AddRefs(csp));
+    if (!csp) {
+      csp = static_cast<net::LoadInfo*>(loadInfo.get())->GetCSPToInherit();
     }
 
     loadInfo->GetResultPrincipalURI(getter_AddRefs(resultPrincipalURI));
@@ -11619,7 +11594,7 @@ nsresult nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType) {
     
     
     
-    rv = CreateAboutBlankContentViewer(principalToInherit, nullptr,
+    rv = CreateAboutBlankContentViewer(principalToInherit, nullptr, nullptr,
                                        aEntry != mOSHE);
 
     if (NS_FAILED(rv)) {
@@ -12660,8 +12635,7 @@ nsDocShell::OnLinkClickSync(
   if (!csp) {
     
     
-    
-    aContent->NodePrincipal()->GetCsp(getter_AddRefs(csp));
+    csp = aContent->GetCsp();
   }
 
   uint32_t flags = INTERNAL_LOAD_FLAGS_NONE;
@@ -12930,7 +12904,8 @@ nsDocShell::InitOrReusePrintPreviewViewer(nsIWebBrowserPrint** aPrintPreview) {
         NullPrincipal::CreateWithInheritedAttributes(this);
     nsCOMPtr<nsIURI> uri;
     NS_NewURI(getter_AddRefs(uri), NS_LITERAL_CSTRING("about:printpreview"));
-    nsresult rv = CreateAboutBlankContentViewer(principal, uri);
+    nsresult rv =
+        CreateAboutBlankContentViewer(principal,  nullptr, uri);
     NS_ENSURE_SUCCESS(rv, rv);
     
     

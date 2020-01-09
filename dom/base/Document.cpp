@@ -24,6 +24,7 @@
 #include "mozilla/IntegerRange.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Likely.h"
+#include "mozilla/LoadInfo.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellInlines.h"
 #include "mozilla/RestyleManager.h"
@@ -69,6 +70,7 @@
 #include "mozilla/dom/Attr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/CSPDictionariesBinding.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/FeaturePolicy.h"
@@ -2697,7 +2699,8 @@ nsresult Document::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
 
   
   
-  if (!FramingChecker::CheckFrameOptions(aChannel, docShell, NodePrincipal())) {
+  nsCOMPtr<nsIContentSecurityPolicy> cspForFA = mCSP;
+  if (!FramingChecker::CheckFrameOptions(aChannel, docShell, cspForFA)) {
     MOZ_LOG(gCspPRLog, LogLevel::Debug,
             ("XFO doesn't like frame's ancestry, not loading."));
     
@@ -2719,6 +2722,29 @@ nsresult Document::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
   return NS_OK;
 }
 
+nsIContentSecurityPolicy* Document::GetCsp() const { return mCSP; }
+
+void Document::SetCsp(nsIContentSecurityPolicy* aCSP) { mCSP = aCSP; }
+
+nsIContentSecurityPolicy* Document::GetPreloadCsp() const {
+  return mPreloadCSP;
+}
+
+void Document::SetPreloadCsp(nsIContentSecurityPolicy* aPreloadCSP) {
+  mPreloadCSP = aPreloadCSP;
+}
+
+void Document::GetCspJSON(nsString& aJSON) {
+  aJSON.Truncate();
+
+  if (!mCSP) {
+    dom::CSPPolicies jsonPolicies;
+    jsonPolicies.ToJSON(aJSON);
+    return;
+  }
+  mCSP->ToJSON(aJSON);
+}
+
 void Document::SendToConsole(nsCOMArray<nsISecurityConsoleMessage>& aMessages) {
   for (uint32_t i = 0; i < aMessages.Length(); ++i) {
     nsAutoString messageTag;
@@ -2738,14 +2764,11 @@ void Document::ApplySettingsFromCSP(bool aSpeculative) {
   nsresult rv = NS_OK;
   if (!aSpeculative) {
     
-    nsCOMPtr<nsIContentSecurityPolicy> csp;
-    rv = NodePrincipal()->GetCsp(getter_AddRefs(csp));
-    NS_ENSURE_SUCCESS_VOID(rv);
-    if (csp) {
+    if (mCSP) {
       
       
       if (!mBlockAllMixedContent) {
-        rv = csp->GetBlockAllMixedContent(&mBlockAllMixedContent);
+        rv = mCSP->GetBlockAllMixedContent(&mBlockAllMixedContent);
         NS_ENSURE_SUCCESS_VOID(rv);
       }
       if (!mBlockAllMixedContentPreloads) {
@@ -2755,7 +2778,7 @@ void Document::ApplySettingsFromCSP(bool aSpeculative) {
       
       
       if (!mUpgradeInsecureRequests) {
-        rv = csp->GetUpgradeInsecureRequests(&mUpgradeInsecureRequests);
+        rv = mCSP->GetUpgradeInsecureRequests(&mUpgradeInsecureRequests);
         NS_ENSURE_SUCCESS_VOID(rv);
       }
       if (!mUpgradeInsecurePreloads) {
@@ -2766,16 +2789,13 @@ void Document::ApplySettingsFromCSP(bool aSpeculative) {
   }
 
   
-  nsCOMPtr<nsIContentSecurityPolicy> preloadCsp;
-  rv = NodePrincipal()->GetPreloadCsp(getter_AddRefs(preloadCsp));
-  NS_ENSURE_SUCCESS_VOID(rv);
-  if (preloadCsp) {
+  if (mPreloadCSP) {
     if (!mBlockAllMixedContentPreloads) {
-      rv = preloadCsp->GetBlockAllMixedContent(&mBlockAllMixedContentPreloads);
+      rv = mPreloadCSP->GetBlockAllMixedContent(&mBlockAllMixedContentPreloads);
       NS_ENSURE_SUCCESS_VOID(rv);
     }
     if (!mUpgradeInsecurePreloads) {
-      rv = preloadCsp->GetUpgradeInsecureRequests(&mUpgradeInsecurePreloads);
+      rv = mPreloadCSP->GetUpgradeInsecureRequests(&mUpgradeInsecurePreloads);
       NS_ENSURE_SUCCESS_VOID(rv);
     }
   }
@@ -2795,10 +2815,41 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
     return NS_OK;
   }
 
+  
+  
+  
+  if (nsContentUtils::IsSystemPrincipal(NodePrincipal())) {
+    return NS_OK;
+  }
+
+  MOZ_ASSERT(!mCSP, "where did mCSP get set if not here?");
+
+  
+  
+  
+  
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+  mCSP = static_cast<net::LoadInfo*>(loadInfo.get())->GetCSPToInherit();
+
+  
+  
+  
+  
+  if (!mCSP) {
+    mCSP = new nsCSPContext();
+  }
+
+  
+  
+  nsresult rv = mCSP->SetRequestContextWithDocument(this);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
   nsAutoCString tCspHeaderValue, tCspROHeaderValue;
 
   nsCOMPtr<nsIHttpChannel> httpChannel;
-  nsresult rv = GetHttpChannelHelper(aChannel, getter_AddRefs(httpChannel));
+  rv = GetHttpChannelHelper(aChannel, getter_AddRefs(httpChannel));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -2817,20 +2868,6 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
   
   nsCOMPtr<nsIPrincipal> principal = NodePrincipal();
   auto addonPolicy = BasePrincipal::Cast(principal)->AddonPolicy();
-
-  
-  
-  
-  
-  
-  
-  
-  if (principal->IsSystemPrincipal()) {
-    return NS_OK;
-  }
-  nsCOMPtr<nsIContentSecurityPolicy> csp;
-  rv = principal->EnsureCSP(this, getter_AddRefs(csp));
-  NS_ENSURE_SUCCESS(rv, rv);
 
   
   if (!addonPolicy && cspHeaderValue.IsEmpty() && cspROHeaderValue.IsEmpty()) {
@@ -2853,20 +2890,28 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
   if (addonPolicy) {
     nsAutoString addonCSP;
     Unused << ExtensionPolicyService::GetSingleton().GetBaseCSP(addonCSP);
-    csp->AppendPolicy(addonCSP, false, false);
+    mCSP->AppendPolicy(addonCSP, false, false);
 
-    csp->AppendPolicy(addonPolicy->ContentSecurityPolicy(), false, false);
+    mCSP->AppendPolicy(addonPolicy->ContentSecurityPolicy(), false, false);
+    
+    
+    
+    
+    auto* basePrin = BasePrincipal::Cast(principal);
+    if (basePrin->Is<ExpandedPrincipal>()) {
+      basePrin->As<ExpandedPrincipal>()->SetCsp(mCSP);
+    }
   }
 
   
   if (!cspHeaderValue.IsEmpty()) {
-    rv = CSP_AppendCSPFromHeader(csp, cspHeaderValue, false);
+    rv = CSP_AppendCSPFromHeader(mCSP, cspHeaderValue, false);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
   
   if (!cspROHeaderValue.IsEmpty()) {
-    rv = CSP_AppendCSPFromHeader(csp, cspROHeaderValue, true);
+    rv = CSP_AppendCSPFromHeader(mCSP, cspROHeaderValue, true);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
@@ -2876,7 +2921,7 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
   
   
   uint32_t cspSandboxFlags = SANDBOXED_NONE;
-  rv = csp->GetCSPSandboxFlags(&cspSandboxFlags);
+  rv = mCSP->GetCSPSandboxFlags(&cspSandboxFlags);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -2889,7 +2934,6 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
 
   if (needNewNullPrincipal) {
     principal = NullPrincipal::CreateWithInheritedAttributes(principal);
-    principal->SetCsp(csp);
     SetPrincipals(principal, principal);
   }
 
@@ -2899,7 +2943,7 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
     bool safeAncestry = false;
 
     
-    rv = csp->PermitsAncestry(docShell, &safeAncestry);
+    rv = mCSP->PermitsAncestry(docShell, &safeAncestry);
 
     if (NS_FAILED(rv) || !safeAncestry) {
       MOZ_LOG(gCspPRLog, LogLevel::Debug,
@@ -4733,10 +4777,8 @@ void Document::SetScriptGlobalObject(
   
   
   
-  nsCOMPtr<nsIContentSecurityPolicy> csp;
-  NodePrincipal()->GetCsp(getter_AddRefs(csp));
-  if (csp) {
-    static_cast<nsCSPContext*>(csp.get())->flushConsoleMessages();
+  if (mCSP) {
+    static_cast<nsCSPContext*>(mCSP.get())->flushConsoleMessages();
   }
 
   nsCOMPtr<nsIHttpChannelInternal> internalChannel =
@@ -5112,12 +5154,11 @@ void Document::DispatchContentLoadedEvents() {
 
 
 
-static void AssertAboutPageHasCSP(nsIURI* aDocumentURI,
-                                  nsIPrincipal* aPrincipal) {
+static void AssertAboutPageHasCSP(Document* aDocument) {
   
+  nsCOMPtr<nsIURI> documentURI = aDocument->GetDocumentURI();
   bool isAboutURI =
-      (NS_SUCCEEDED(aDocumentURI->SchemeIs("about", &isAboutURI)) &&
-       isAboutURI);
+      (NS_SUCCEEDED(documentURI->SchemeIs("about", &isAboutURI)) && isAboutURI);
 
   if (!isAboutURI ||
       Preferences::GetBool("csp.skip_about_page_has_csp_assert")) {
@@ -5145,7 +5186,7 @@ static void AssertAboutPageHasCSP(nsIURI* aDocumentURI,
 
   
   nsAutoCString aboutSpec;
-  aDocumentURI->GetSpec(aboutSpec);
+  documentURI->GetSpec(aboutSpec);
   ToLowerCase(aboutSpec);
   for (auto& legacyPageEntry : *sLegacyAboutPagesWithNoCSP) {
     
@@ -5156,8 +5197,7 @@ static void AssertAboutPageHasCSP(nsIURI* aDocumentURI,
     }
   }
 
-  nsCOMPtr<nsIContentSecurityPolicy> csp;
-  aPrincipal->GetCsp(getter_AddRefs(csp));
+  nsCOMPtr<nsIContentSecurityPolicy> csp = aDocument->GetCsp();
   bool foundDefaultSrc = false;
   if (csp) {
     uint32_t policyCount = 0;
@@ -5185,7 +5225,7 @@ void Document::EndLoad() {
   
   
   if (!mParserAborted && !IsXULDocument()) {
-    AssertAboutPageHasCSP(mDocumentURI, NodePrincipal());
+    AssertAboutPageHasCSP(this);
   }
 #endif
 
@@ -11687,12 +11727,9 @@ bool Document::HasScriptsBlockedBySandbox() {
 bool Document::InlineScriptAllowedByCSP() {
   
   
-  nsCOMPtr<nsIContentSecurityPolicy> csp;
-  nsresult rv = NodePrincipal()->GetCsp(getter_AddRefs(csp));
-  NS_ENSURE_SUCCESS(rv, true);
   bool allowsInlineScript = true;
-  if (csp) {
-    nsresult rv = csp->GetAllowsInline(
+  if (mCSP) {
+    nsresult rv = mCSP->GetAllowsInline(
         nsIContentPolicy::TYPE_SCRIPT,
         EmptyString(),  
         true,           

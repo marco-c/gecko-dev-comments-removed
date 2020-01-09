@@ -810,10 +810,7 @@ static nsresult GetCreateWindowParams(mozIDOMWindowProxy* aParent,
   nsCOMPtr<Document> doc = opener->GetDoc();
   NS_ADDREF(*aTriggeringPrincipal = doc->NodePrincipal());
 
-  
-  
-  nsCOMPtr<nsIContentSecurityPolicy> csp;
-  doc->NodePrincipal()->GetCsp(getter_AddRefs(csp));
+  nsCOMPtr<nsIContentSecurityPolicy> csp = doc->GetCsp();
   if (csp) {
     csp.forget(aCsp);
   }

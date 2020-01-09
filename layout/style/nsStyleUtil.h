@@ -27,6 +27,7 @@ struct nsCSSValueList;
 namespace mozilla {
 class FontSlantStyle;
 namespace dom {
+class Document;
 class Element;
 }
 }  
@@ -154,15 +155,10 @@ class nsStyleUtil {
 
 
 
-
-
-
-
   static bool CSPAllowsInlineStyle(mozilla::dom::Element* aContent,
-                                   nsIPrincipal* aPrincipal,
+                                   mozilla::dom::Document* aDocument,
                                    nsIPrincipal* aTriggeringPrincipal,
-                                   nsIURI* aSourceURI, uint32_t aLineNumber,
-                                   uint32_t aColumnNumber,
+                                   uint32_t aLineNumber, uint32_t aColumnNumber,
                                    const nsAString& aStyleText, nsresult* aRv);
 
   template <size_t N>

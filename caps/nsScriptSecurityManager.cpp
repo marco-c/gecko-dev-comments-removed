@@ -274,97 +274,6 @@ nsScriptSecurityManager::GetChannelResultPrincipals(
                                         aStoragePrincipal);
 }
 
-static void InheritAndSetCSPOnPrincipalIfNeeded(nsIChannel* aChannel,
-                                                nsIPrincipal* aPrincipal) {
-  
-  
-  MOZ_ASSERT(aChannel && aPrincipal, "need a valid channel and principal");
-  if (!aChannel) {
-    return;
-  }
-
-  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
-  if (loadInfo->GetExternalContentPolicyType() !=
-      nsIContentPolicy::TYPE_SUBDOCUMENT) {
-    return;
-  }
-
-  nsCOMPtr<nsIURI> uri;
-  nsresult rv = aChannel->GetURI(getter_AddRefs(uri));
-  NS_ENSURE_SUCCESS_VOID(rv);
-  nsAutoCString URISpec;
-  rv = uri->GetSpec(URISpec);
-  NS_ENSURE_SUCCESS_VOID(rv);
-
-  bool isSrcDoc = URISpec.EqualsLiteral("about:srcdoc");
-  bool isData = (NS_SUCCEEDED(uri->SchemeIs("data", &isData)) && isData);
-
-  if (!isSrcDoc && !isData) {
-    return;
-  }
-
-  nsCOMPtr<nsIPrincipal> principalToInherit =
-      loadInfo->FindPrincipalToInherit(aChannel);
-
-  nsCOMPtr<nsIContentSecurityPolicy> originalCSP;
-  principalToInherit->GetCsp(getter_AddRefs(originalCSP));
-  if (!originalCSP) {
-    return;
-  }
-
-  
-  
-  MOZ_ASSERT(aPrincipal->GetIsNullPrincipal(),
-             "inheriting the CSP only valid for NullPrincipal");
-  nsCOMPtr<nsIContentSecurityPolicy> nullPrincipalCSP;
-  aPrincipal->GetCsp(getter_AddRefs(nullPrincipalCSP));
-  if (nullPrincipalCSP) {
-    MOZ_ASSERT(nsCSPContext::Equals(originalCSP, nullPrincipalCSP));
-    
-    return;
-  }
-
-  
-  
-  
-  uint32_t count = 0;
-  rv = originalCSP->GetPolicyCount(&count);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
-  }
-
-  if (count == 0) {
-    
-    return;
-  }
-
-  RefPtr<nsCSPContext> newCSP = new nsCSPContext();
-  nsWeakPtr loadingContext =
-      static_cast<nsCSPContext*>(originalCSP.get())->GetLoadingContext();
-  nsCOMPtr<Document> doc = do_QueryReferent(loadingContext);
-
-  rv = doc ? newCSP->SetRequestContext(doc, nullptr)
-           : newCSP->SetRequestContext(nullptr, aPrincipal);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
-  }
-
-  for (uint32_t i = 0; i < count; ++i) {
-    const nsCSPPolicy* policy = originalCSP->GetPolicy(i);
-    MOZ_ASSERT(policy);
-
-    nsAutoString policyString;
-    policy->toString(policyString);
-
-    rv = newCSP->AppendPolicy(policyString, policy->getReportOnlyFlag(),
-                              policy->getDeliveredViaMetaTagFlag());
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return;
-    }
-  }
-  aPrincipal->SetCsp(newCSP);
-}
-
 nsresult nsScriptSecurityManager::GetChannelResultPrincipal(
     nsIChannel* aChannel, nsIPrincipal** aPrincipal, bool aIgnoreSandboxing) {
   MOZ_ASSERT(aChannel, "Must have channel!");
@@ -391,7 +300,6 @@ nsresult nsScriptSecurityManager::GetChannelResultPrincipal(
     nsCOMPtr<nsIPrincipal> sandboxedLoadingPrincipal =
         loadInfo->GetSandboxedLoadingPrincipal();
     MOZ_ASSERT(sandboxedLoadingPrincipal);
-    InheritAndSetCSPOnPrincipalIfNeeded(aChannel, sandboxedLoadingPrincipal);
     sandboxedLoadingPrincipal.forget(aPrincipal);
     return NS_OK;
   }
@@ -433,10 +341,7 @@ nsresult nsScriptSecurityManager::GetChannelResultPrincipal(
       return NS_OK;
     }
   }
-  nsresult rv = GetChannelURIPrincipal(aChannel, aPrincipal);
-  NS_ENSURE_SUCCESS(rv, rv);
-  InheritAndSetCSPOnPrincipalIfNeeded(aChannel, *aPrincipal);
-  return NS_OK;
+  return GetChannelURIPrincipal(aChannel, aPrincipal);
 }
 
 
@@ -494,16 +399,18 @@ NS_IMPL_ISUPPORTS(nsScriptSecurityManager, nsIScriptSecurityManager)
 bool nsScriptSecurityManager::ContentSecurityPolicyPermitsJSAction(
     JSContext* cx, JS::HandleValue aValue) {
   MOZ_ASSERT(cx == nsContentUtils::GetCurrentJSContext());
-  nsCOMPtr<nsIPrincipal> subjectPrincipal = nsContentUtils::SubjectPrincipal();
 
 #if defined(DEBUG) && !defined(ANDROID)
+  nsCOMPtr<nsIPrincipal> subjectPrincipal = nsContentUtils::SubjectPrincipal();
   nsContentSecurityManager::AssertEvalNotUsingSystemPrincipal(subjectPrincipal,
                                                               cx);
 #endif
 
+  
   nsCOMPtr<nsIContentSecurityPolicy> csp;
-  nsresult rv = subjectPrincipal->GetCsp(getter_AddRefs(csp));
-  NS_ASSERTION(NS_SUCCEEDED(rv), "CSP: Failed to get CSP from principal.");
+  if (nsGlobalWindowInner* win = xpc::CurrentWindowOrNull(cx)) {
+    csp = win->GetCsp();
+  }
 
   
   if (!csp) return true;
@@ -519,7 +426,7 @@ bool nsScriptSecurityManager::ContentSecurityPolicyPermitsJSAction(
 
   bool evalOK = true;
   bool reportViolation = false;
-  rv = csp->GetAllowsEval(&reportViolation, &evalOK);
+  nsresult rv = csp->GetAllowsEval(&reportViolation, &evalOK);
 
   if (NS_FAILED(rv)) {
     NS_WARNING("CSP: failed to get allowsEval");

@@ -148,14 +148,8 @@ static void SetBaseURIUsingFirstBaseWithHref(Document* aDocument,
           aDocument->GetFallbackBaseURI());
 
       
-      nsCOMPtr<nsIContentSecurityPolicy> csp;
-      nsresult rv = aDocument->NodePrincipal()->GetCsp(getter_AddRefs(csp));
-      NS_ASSERTION(NS_SUCCEEDED(rv), "Getting CSP Failed");
-      
-      
-      if (NS_FAILED(rv)) {
-        newBaseURI = nullptr;
-      }
+      nsresult rv = NS_OK;
+      nsCOMPtr<nsIContentSecurityPolicy> csp = aDocument->GetCsp();
       if (csp && newBaseURI) {
         
         

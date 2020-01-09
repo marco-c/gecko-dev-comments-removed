@@ -13,6 +13,7 @@
 #include "nsCOMPtr.h"
 #include "nscore.h"
 
+class nsIContentSecurityPolicy;
 class nsILoadInfo;
 class nsIPrincipal;
 class nsIRedirectHistoryEntry;
@@ -56,6 +57,7 @@ class RedirectHistoryEntryInfo;
 namespace ipc {
 
 class ContentSecurityPolicy;
+class CSPInfo;
 class PrincipalInfo;
 
 
@@ -71,17 +73,30 @@ already_AddRefed<nsIPrincipal> PrincipalInfoToPrincipal(
 
 
 
-nsresult PopulateContentSecurityPolicies(
-    nsIContentSecurityPolicy* aCSP, nsTArray<ContentSecurityPolicy>& aPolicies);
-
-
-
-
-
-
 nsresult PrincipalToPrincipalInfo(nsIPrincipal* aPrincipal,
                                   PrincipalInfo* aPrincipalInfo,
                                   bool aSkipBaseDomain = false);
+
+
+
+
+
+
+
+
+
+
+
+already_AddRefed<nsIContentSecurityPolicy> CSPInfoToCSP(
+    const CSPInfo& aCSPInfo, mozilla::dom::Document* aRequestingDoc,
+    nsresult* aOptionalResult = nullptr);
+
+
+
+
+
+
+nsresult CSPToCSPInfo(nsIContentSecurityPolicy* aCSP, CSPInfo* aCSPInfo);
 
 
 

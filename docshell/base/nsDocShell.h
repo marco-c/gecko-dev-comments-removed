@@ -486,7 +486,9 @@ class nsDocShell final : public nsDocLoader,
 
   
   
+  
   nsresult CreateAboutBlankContentViewer(nsIPrincipal* aPrincipal,
+                                         nsIContentSecurityPolicy* aCSP,
                                          nsIURI* aBaseURI,
                                          bool aTryToSaveOldPresentation = true,
                                          bool aCheckPermitUnload = true);

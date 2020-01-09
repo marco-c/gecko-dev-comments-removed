@@ -445,10 +445,7 @@ NS_IMETHODIMP nsPluginInstanceOwner::GetURL(
         NullPrincipal::CreateWithInheritedAttributes(content->NodePrincipal());
   }
 
-  
-  
-  nsCOMPtr<nsIContentSecurityPolicy> csp;
-  content->NodePrincipal()->GetCsp(getter_AddRefs(csp));
+  nsCOMPtr<nsIContentSecurityPolicy> csp = content->GetCsp();
 
   rv = lh->OnLinkClick(content, uri, unitarget, VoidString(), aPostStream,
                        headersDataStream,

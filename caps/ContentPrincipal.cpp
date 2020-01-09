@@ -30,7 +30,6 @@
 #include "js/Wrapper.h"
 
 #include "mozilla/dom/BlobURLProtocolHandler.h"
-#include "mozilla/dom/nsCSPContext.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ExtensionPolicyService.h"
@@ -51,10 +50,6 @@ NS_IMPL_CI_INTERFACE_GETTER(ContentPrincipal, nsIPrincipal, nsISerializable)
 ContentPrincipal::ContentPrincipal() : BasePrincipal(eCodebasePrincipal) {}
 
 ContentPrincipal::~ContentPrincipal() {
-  
-  if (mCSP) {
-    static_cast<nsCSPContext*>(mCSP.get())->clearLoadingPrincipal();
-  }
 }
 
 nsresult ContentPrincipal::Init(nsIURI* aCodebase,
@@ -581,8 +576,18 @@ ContentPrincipal::Read(nsIObjectInputStream* aStream) {
   bool ok = attrs.PopulateFromSuffix(suffix);
   NS_ENSURE_TRUE(ok, NS_ERROR_FAILURE);
 
-  rv = NS_ReadOptionalObject(aStream, true, getter_AddRefs(supports));
-  NS_ENSURE_SUCCESS(rv, rv);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Unused << NS_ReadOptionalObject(aStream, true, getter_AddRefs(supports));
 
   nsAutoCString originNoSuffix;
   rv = GenerateOriginNoSuffixFromURI(codebase, originNoSuffix);
@@ -590,13 +595,6 @@ ContentPrincipal::Read(nsIObjectInputStream* aStream) {
 
   rv = Init(codebase, attrs, originNoSuffix);
   NS_ENSURE_SUCCESS(rv, rv);
-
-  mCSP = do_QueryInterface(supports, &rv);
-  
-  
-  if (mCSP) {
-    mCSP->SetRequestContext(nullptr, this);
-  }
 
   
   
@@ -629,8 +627,14 @@ ContentPrincipal::Write(nsIObjectOutputStream* aStream) {
   rv = aStream->WriteStringZ(suffix.get());
   NS_ENSURE_SUCCESS(rv, rv);
 
+  
+  
+  
+  
+  
+  
   rv = NS_WriteOptionalCompoundObject(
-      aStream, mCSP, NS_GET_IID(nsIContentSecurityPolicy), true);
+      aStream, nullptr, NS_GET_IID(nsIContentSecurityPolicy), true);
   if (NS_FAILED(rv)) {
     return rv;
   }

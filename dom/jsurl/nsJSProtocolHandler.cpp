@@ -145,8 +145,8 @@ nsresult nsJSThunk::EvaluateScript(
   nsCOMPtr<nsISupports> owner;
   aChannel->GetOwner(getter_AddRefs(owner));
   nsCOMPtr<nsIPrincipal> principal = do_QueryInterface(owner);
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
   if (!principal) {
-    nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
     if (loadInfo->GetForceInheritPrincipal()) {
       principal = loadInfo->FindPrincipalToInherit(aChannel);
     } else {
@@ -161,9 +161,7 @@ nsresult nsJSThunk::EvaluateScript(
 
   
   
-  nsCOMPtr<nsIContentSecurityPolicy> csp;
-  rv = principal->GetCsp(getter_AddRefs(csp));
-  NS_ENSURE_SUCCESS(rv, rv);
+  nsCOMPtr<nsIContentSecurityPolicy> csp = loadInfo->GetCsp();
   if (csp) {
     bool allowsInlineScript = true;
     rv = csp->GetAllowsInline(nsIContentPolicy::TYPE_SCRIPT,
@@ -176,6 +174,29 @@ nsresult nsJSThunk::EvaluateScript(
                               0,              
                               &allowsInlineScript);
 
+    
+    if (!allowsInlineScript) {
+      return NS_ERROR_DOM_RETVAL_UNDEFINED;
+    }
+  }
+
+  
+  csp = nullptr;
+  mozilla::dom::Document* prevDoc = aOriginalInnerWindow->GetExtantDoc();
+  if (prevDoc) {
+    csp = prevDoc->GetCsp();
+  }
+  if (csp) {
+    bool allowsInlineScript = true;
+    rv = csp->GetAllowsInline(nsIContentPolicy::TYPE_SCRIPT,
+                              EmptyString(),  
+                              true,           
+                              nullptr,        
+                              nullptr,        
+                              EmptyString(),  
+                              0,              
+                              0,              
+                              &allowsInlineScript);
     
     if (!allowsInlineScript) {
       return NS_ERROR_DOM_RETVAL_UNDEFINED;

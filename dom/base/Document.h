@@ -98,6 +98,7 @@ class nsAtom;
 class nsIBFCacheEntry;
 class nsIChannel;
 class nsIContent;
+class nsIContentSecurityPolicy;
 class nsIContentSink;
 class nsIDocShell;
 class nsIDocShellTreeItem;
@@ -695,6 +696,24 @@ class Document : public nsINode,
 
 
   void SetChromeXHRDocBaseURI(nsIURI* aURI) { mChromeXHRDocBaseURI = aURI; }
+
+  
+
+
+
+
+
+
+
+
+
+  nsIContentSecurityPolicy* GetCsp() const;
+  void SetCsp(nsIContentSecurityPolicy* aCSP);
+
+  nsIContentSecurityPolicy* GetPreloadCsp() const;
+  void SetPreloadCsp(nsIContentSecurityPolicy* aPreloadCSP);
+
+  void GetCspJSON(nsString& aJSON);
 
   
 
@@ -4414,6 +4433,12 @@ class Document : public nsINode,
 
   
   nsCOMPtr<nsIChannel> mChannel;
+
+  
+  
+  
+  nsCOMPtr<nsIContentSecurityPolicy> mCSP;
+  nsCOMPtr<nsIContentSecurityPolicy> mPreloadCSP;
 
  private:
   nsCString mContentType;

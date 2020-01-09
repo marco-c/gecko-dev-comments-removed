@@ -846,7 +846,7 @@ nsAppShellService::RegisterTopLevelWindow(nsIXULWindow* aWindow) {
 
   nsCOMPtr<nsPIDOMWindowOuter> domWindow(docShell->GetWindow());
   NS_ENSURE_TRUE(domWindow, NS_ERROR_FAILURE);
-  domWindow->SetInitialPrincipalToSubject();
+  domWindow->SetInitialPrincipalToSubject(nullptr);
 
   
   nsCOMPtr<nsIWindowMediator> mediator(

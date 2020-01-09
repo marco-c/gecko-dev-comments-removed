@@ -18,6 +18,7 @@
 #include "nsPrintfCString.h"
 #include "nsReadableUtils.h"
 #include "nsUnicharUtils.h"
+#include "nsIContentSecurityPolicy.h"
 #include "nsGlobalWindowInner.h"
 #include "nsIDocumentLoader.h"
 #include "nsIHTMLContentSink.h"
@@ -102,6 +103,7 @@
 #include "nsIImageDocument.h"
 #include "mozilla/dom/HTMLBodyElement.h"
 #include "mozilla/dom/HTMLDocumentBinding.h"
+#include "mozilla/dom/nsCSPContext.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/ShadowIncludingTreeIterator.h"
 #include "nsCharsetSource.h"
@@ -1041,6 +1043,17 @@ Document* nsHTMLDocument::Open(const Optional<nsAString>& ,
     if (inUnload) {
       return this;
     }
+  }
+
+  
+  
+  
+  
+  nsCOMPtr<nsIContentSecurityPolicy> csp = callerDoc->GetCsp();
+  if (csp) {
+    RefPtr<nsCSPContext> cspToInherit = new nsCSPContext();
+    cspToInherit->InitFromOther(static_cast<nsCSPContext*>(csp.get()));
+    mCSP = cspToInherit;
   }
 
   

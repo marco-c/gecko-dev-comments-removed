@@ -1028,7 +1028,16 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     
     
     if (newWindow) {
-      newWindow->SetInitialPrincipalToSubject();
+      nsCOMPtr<nsIContentSecurityPolicy> cspToInheritForAboutBlank;
+      nsCOMPtr<mozIDOMWindowProxy> targetOpener = newWindow->GetOpener();
+      nsCOMPtr<nsIDocShell> openerDocShell(do_GetInterface(targetOpener));
+      if (openerDocShell) {
+        RefPtr<Document> openerDoc =
+            static_cast<nsDocShell*>(openerDocShell.get())->GetDocument();
+        cspToInheritForAboutBlank = openerDoc ? openerDoc->GetCsp() : nullptr;
+      }
+      newWindow->SetInitialPrincipalToSubject(cspToInheritForAboutBlank);
+
       if (aIsPopupSpam) {
         nsGlobalWindowOuter* globalWin = nsGlobalWindowOuter::Cast(newWindow);
         MOZ_ASSERT(!globalWin->IsPopupSpamWindow(),
@@ -1102,21 +1111,11 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     }
   }
 
-  
-  
-  
-  
-  
   if (loadState && cx) {
     nsGlobalWindowInner* win = xpc::CurrentWindowOrNull(cx);
     if (win) {
-      nsCOMPtr<nsIPrincipal> principal = win->GetPrincipal();
-      if (principal) {
-        nsCOMPtr<nsIContentSecurityPolicy> csp;
-        rv = principal->GetCsp(getter_AddRefs(csp));
-        NS_ENSURE_SUCCESS(rv, rv);
-        loadState->SetCsp(csp);
-      }
+      nsCOMPtr<nsIContentSecurityPolicy> csp = win->GetCsp();
+      loadState->SetCsp(csp);
     }
   }
 

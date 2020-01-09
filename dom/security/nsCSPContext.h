@@ -57,14 +57,13 @@ class nsCSPContext : public nsIContentSecurityPolicy {
   static bool Equals(nsIContentSecurityPolicy* aCSP,
                      nsIContentSecurityPolicy* aOtherCSP);
 
-  nsresult InitFromOther(nsCSPContext* otherContext,
-                         mozilla::dom::Document* aDoc,
-                         nsIPrincipal* aPrincipal);
-
-  void SetIPCPolicies(
-      const nsTArray<mozilla::ipc::ContentSecurityPolicy>& policies);
+  
+  nsresult InitFromOther(nsCSPContext* otherContext);
 
   
+
+
+
 
 
 
@@ -174,10 +173,7 @@ class nsCSPContext : public nsIContentSecurityPolicy {
   nsCOMPtr<nsIURI> mSelfURI;
   nsCOMPtr<nsILoadGroup> mCallingChannelLoadGroup;
   nsWeakPtr mLoadingContext;
-  
-  
-  
-  nsIPrincipal* mLoadingPrincipal;
+  nsCOMPtr<nsIPrincipal> mLoadingPrincipal;
 
   
   
