@@ -36,6 +36,7 @@ function handlePrompt(state, action) {
 }
 
 function checkPromptState(promptState, expectedState) {
+    info(`checkPromptState: ${expectedState.msg}`);
     
     is(promptState.msg, expectedState.msg, "Checking expected message");
     if (isOSX && !isTabModal)
