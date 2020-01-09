@@ -34,15 +34,15 @@ def display_branch_point():
 
 def branch_point():
     git = get_git_cmd(wpt_root)
-    if (os.environ.get("TRAVIS_PULL_REQUEST", "false") == "false" and
-        os.environ.get("TRAVIS_BRANCH") == "master"):
+    if (os.environ.get("GITHUB_PULL_REQUEST", "false") == "false" and
+        os.environ.get("GITHUB_BRANCH") == "master"):
         
         return git("rev-parse", "HEAD")
-    elif os.environ.get("TRAVIS_PULL_REQUEST", "false") != "false":
+    elif os.environ.get("GITHUB_PULL_REQUEST", "false") != "false":
         
-        travis_branch = os.environ.get("TRAVIS_BRANCH")
-        assert travis_branch, "TRAVIS_BRANCH environment variable is defined"
-        branch_point = git("merge-base", "HEAD", travis_branch)
+        base_branch = os.environ.get("GITHUB_BRANCH")
+        assert base_branch, "GITHUB_BRANCH environment variable is defined"
+        branch_point = git("merge-base", "HEAD", base_branch)
     else:
         
         
