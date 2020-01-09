@@ -147,6 +147,8 @@ pub enum TextureCacheAllocationKind {
     
     Realloc(TextureCacheAllocInfo),
     
+    Reset(TextureCacheAllocInfo),
+    
     Free,
 }
 
@@ -242,15 +244,40 @@ impl TextureUpdateList {
             match cur.kind {
                 TextureCacheAllocationKind::Alloc(ref mut i) => *i = info,
                 TextureCacheAllocationKind::Realloc(ref mut i) => *i = info,
+                TextureCacheAllocationKind::Reset(ref mut i) => *i = info,
                 TextureCacheAllocationKind::Free => panic!("Reallocating freed texture"),
             }
-
-            return;
+            return
         }
 
         self.allocations.push(TextureCacheAllocation {
             id,
             kind: TextureCacheAllocationKind::Realloc(info),
+        });
+    }
+
+    
+    
+    pub fn push_reset(&mut self, id: CacheTextureId, info: TextureCacheAllocInfo) {
+        self.debug_assert_coalesced(id);
+
+        
+        if let Some(cur) = self.allocations.iter_mut().find(|x| x.id == id) {
+            match cur.kind {
+                TextureCacheAllocationKind::Alloc(ref mut i) => *i = info,
+                TextureCacheAllocationKind::Reset(ref mut i) => *i = info,
+                TextureCacheAllocationKind::Free => panic!("Resetting freed texture"),
+                TextureCacheAllocationKind::Realloc(_) => {
+                    
+                    cur.kind = TextureCacheAllocationKind::Reset(info);
+                }
+            }
+            return
+        }
+
+        self.allocations.push(TextureCacheAllocation {
+            id,
+            kind: TextureCacheAllocationKind::Reset(info),
         });
     }
 
@@ -269,7 +296,9 @@ impl TextureUpdateList {
         match removed_kind {
             Some(TextureCacheAllocationKind::Alloc(..)) => {  },
             Some(TextureCacheAllocationKind::Free) => panic!("Double free"),
-            Some(TextureCacheAllocationKind::Realloc(..)) | None => {
+            Some(TextureCacheAllocationKind::Realloc(..)) |
+            Some(TextureCacheAllocationKind::Reset(..)) |
+            None => {
                 self.allocations.push(TextureCacheAllocation {
                     id,
                     kind: TextureCacheAllocationKind::Free,
