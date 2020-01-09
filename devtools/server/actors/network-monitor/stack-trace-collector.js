@@ -25,6 +25,7 @@ function StackTraceCollector(filters, netmonitors) {
 StackTraceCollector.prototype = {
   init() {
     Services.obs.addObserver(this, "http-on-opening-request");
+    Services.obs.addObserver(this, "network-monitor-alternate-stack");
     ChannelEventSinkFactory.getService().registerCollector(this);
     this.onGetStack = this.onGetStack.bind(this);
     for (const { messageManager } of this.netmonitors) {
@@ -34,6 +35,7 @@ StackTraceCollector.prototype = {
 
   destroy() {
     Services.obs.removeObserver(this, "http-on-opening-request");
+    Services.obs.removeObserver(this, "network-monitor-alternate-stack");
     ChannelEventSinkFactory.getService().unregisterCollector(this);
     for (const { messageManager } of this.netmonitors) {
       messageManager.removeMessageListener("debug:request-stack:request",
@@ -42,6 +44,12 @@ StackTraceCollector.prototype = {
   },
 
   _saveStackTrace(channel, stacktrace) {
+    if (this.stacktracesById.has(channel.channelId)) {
+      
+      
+      
+      return;
+    }
     for (const { messageManager } of this.netmonitors) {
       messageManager.sendAsyncMessage("debug:request-stack-available", {
         channelId: channel.channelId,
@@ -51,29 +59,66 @@ StackTraceCollector.prototype = {
     this.stacktracesById.set(channel.channelId, stacktrace);
   },
 
-  observe(subject) {
+  observe(subject, topic, data) {
     const channel = subject.QueryInterface(Ci.nsIHttpChannel);
 
     if (!matchRequest(channel, this.filters)) {
       return;
     }
 
-    
-    
-    let frame = components.stack;
     const stacktrace = [];
-    if (frame && frame.caller) {
-      frame = frame.caller;
-      while (frame) {
-        stacktrace.push({
-          filename: frame.filename,
-          lineNumber: frame.lineNumber,
-          columnNumber: frame.columnNumber,
-          functionName: frame.name,
-          asyncCause: frame.asyncCause,
-        });
-        frame = frame.caller || frame.asyncCaller;
+    switch (topic) {
+      case "http-on-opening-request": {
+        
+        
+        
+        
+        
+        let frame = components.stack;
+        if (frame && frame.caller) {
+          frame = frame.caller;
+          while (frame) {
+            stacktrace.push({
+              filename: frame.filename,
+              lineNumber: frame.lineNumber,
+              columnNumber: frame.columnNumber,
+              functionName: frame.name,
+              asyncCause: frame.asyncCause,
+            });
+            frame = frame.caller || frame.asyncCaller;
+          }
+        }
+        break;
       }
+      case "network-monitor-alternate-stack": {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let frame = JSON.parse(data);
+        while (frame) {
+          stacktrace.push({
+            filename: frame.source,
+            lineNumber: frame.line,
+            columnNumber: frame.column,
+            functionName: frame.functionDisplayName,
+            asyncCause: frame.asyncCause,
+          });
+          frame = frame.parent || frame.asyncParent;
+        }
+        break;
+      }
+      default:
+        throw new Error("Unexpected observe() topic");
     }
 
     this._saveStackTrace(channel, stacktrace);
