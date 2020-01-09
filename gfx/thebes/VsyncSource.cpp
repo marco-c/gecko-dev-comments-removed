@@ -59,6 +59,14 @@ void VsyncSource::Display::NotifyVsync(TimeStamp aVsyncTimestamp) {
   
   MutexAutoLock lock(mDispatcherLock);
 
+  
+  
+  
+  
+  if (!mRefreshTimerVsyncDispatcher) {
+    return;
+  }
+
   mVsyncId = mVsyncId.Next();
   VsyncEvent event(mVsyncId, aVsyncTimestamp);
 
