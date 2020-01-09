@@ -39,7 +39,7 @@ add_task(async function() {
   is(breakpoint.location.line, 6);
 
   info("Reload with a new version of the file");
-  let syncBp = waitForDispatch(dbg, "SYNC_BREAKPOINT");
+  let syncBp = waitForDispatch(dbg, "SET_BREAKPOINT");
   await navigate(dbg, "doc-sourcemaps-reload2.html", "v1.js");
 
   await syncBp;
@@ -55,10 +55,12 @@ add_task(async function() {
   
   
   info("Reload and observe no breakpoints");
-  syncBp = waitForDispatch(dbg, "SYNC_BREAKPOINT", 2);
   await navigate(dbg, "doc-sourcemaps-reload3.html", "v1.js");
   await waitForSource(dbg, "v1");
-  await syncBp;
+
+  
+  
+  await waitForTime(1000);
 
   is(getBreakpointCount(dbg), 0, "No breakpoints");
 });
