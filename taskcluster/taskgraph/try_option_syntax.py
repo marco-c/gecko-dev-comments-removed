@@ -581,6 +581,10 @@ class TryOptionSyntax(object):
         if 'android-hw' in task.label:
             return False
 
+        
+        if attr('unittest_variant') == 'fission':
+            return False
+
         def match_test(try_spec, attr_name):
             run_by_default = True
             if attr('build_type') not in self.build_types:
