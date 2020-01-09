@@ -156,34 +156,13 @@ void WrapperFactory::PrepareForWrapping(JSContext* cx, HandleObject scope,
                                         HandleObject objArg,
                                         HandleObject objectPassedToWrap,
                                         MutableHandleObject retObj) {
+  
+  MOZ_ASSERT(!js::IsWindow(objArg));
+  MOZ_ASSERT(!JS_IsDeadWrapper(objArg));
+
   bool waive = ShouldWaiveXray(cx, objectPassedToWrap);
   RootedObject obj(cx, objArg);
   retObj.set(nullptr);
-  
-  
-  if (js::IsWindow(obj)) {
-    obj = js::ToWindowProxyIfWindow(obj);
-    MOZ_ASSERT(obj);
-    
-    
-    obj = js::UncheckedUnwrap(obj);
-    if (JS_IsDeadWrapper(obj)) {
-      retObj.set(JS_NewDeadWrapper(cx, obj));
-      return;
-    }
-    MOZ_ASSERT(js::IsWindowProxy(obj));
-    
-    
-    
-    ExposeObjectToActiveJS(obj);
-  }
-
-  
-  
-  if (JS_IsDeadWrapper(obj)) {
-    retObj.set(JS_NewDeadWrapper(cx, obj));
-    return;
-  }
 
   
   

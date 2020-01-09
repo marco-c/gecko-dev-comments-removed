@@ -217,13 +217,37 @@ bool Compartment::getNonWrapperObjectForCurrentCompartment(
   
   
   if (!AllowNewWrapper(this, obj)) {
-    JSObject* res = NewDeadProxyObject(cx, IsCallableFlag(obj->isCallable()),
-                                       IsConstructorFlag(obj->isConstructor()));
-    if (!res) {
-      return false;
+    obj.set(NewDeadProxyObject(cx, IsCallableFlag(obj->isCallable()),
+                               IsConstructorFlag(obj->isConstructor())));
+    return !!obj;
+  }
+
+  
+  
+  if (IsWindow(obj)) {
+    obj.set(ToWindowProxyIfWindow(obj));
+
+    
+    
+    obj.set(UncheckedUnwrap(obj));
+
+    if (JS_IsDeadWrapper(obj)) {
+      obj.set(NewDeadProxyObject(cx, obj));
+      return !!obj;
     }
-    obj.set(res);
-    return true;
+
+    MOZ_ASSERT(IsWindowProxy(obj));
+
+    
+    
+    ExposeObjectToActiveJS(obj);
+  }
+
+  
+  
+  if (JS_IsDeadWrapper(obj)) {
+    obj.set(NewDeadProxyObject(cx, obj));
+    return !!obj;
   }
 
   
