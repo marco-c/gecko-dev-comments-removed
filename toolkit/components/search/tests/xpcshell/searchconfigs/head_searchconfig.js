@@ -231,8 +231,14 @@ class SearchConfigTest {
 
 
 
+
+
+
   _findEngine(engines, identifier) {
-    return engines.find(engine => engine.identifier.startsWith(identifier));
+    if (identifier == "amazon") {
+      return engines.find(engine => engine.identifier.startsWith(identifier));
+    }
+    return engines.find(engine => engine.identifier == identifier);
   }
 
   
