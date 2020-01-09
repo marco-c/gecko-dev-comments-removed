@@ -447,11 +447,11 @@ public class ContentBlocking {
         return builder.substring(0, builder.length() - 1);
     }
 
-     static boolean catToCmPref(@Category int cat) {
+     static boolean catToCmPref(@Category final int cat) {
         return (cat & AT_CRYPTOMINING) != 0;
     }
 
-     static String catToCmListPref(@Category int cat) {
+     static String catToCmListPref(@Category final int cat) {
         StringBuilder builder = new StringBuilder();
 
         if ((cat & AT_CRYPTOMINING) != 0) {
