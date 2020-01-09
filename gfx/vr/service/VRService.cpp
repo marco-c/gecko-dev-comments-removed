@@ -103,6 +103,27 @@ void VRService::Refresh() {
 }
 
 void VRService::Start() {
+#if defined(XP_WIN)
+  
+  
+  
+  if (!mMutex && !XRE_IsParentProcess()) {
+     mMutex = OpenMutex(
+        MUTEX_ALL_ACCESS,       
+        false,                  
+        TEXT("mozilla::vr::ShmemMutex"));  
+
+    if (mMutex == NULL) {
+      nsAutoCString msg;
+      msg.AppendPrintf("VRService OpenMutex error \"%lu\".",
+                       GetLastError());
+      NS_WARNING(msg.get());
+      MOZ_ASSERT(false);
+    }
+    MOZ_ASSERT(GetLastError() == 0);
+  }
+#endif
+
   if (!mServiceThread) {
     
 
@@ -166,23 +187,6 @@ void VRService::Stop() {
 }
 
 bool VRService::InitShmem() {
-#if defined(XP_WIN)
-  if (!mMutex) {
-     mMutex = OpenMutex(
-        MUTEX_ALL_ACCESS,       
-        false,                  
-        TEXT("mozilla::vr::ShmemMutex"));  
-
-    if (mMutex == NULL) {
-      nsAutoCString msg("VRService OpenMutex error \"%lu\".",
-                        GetLastError());
-      NS_WARNING(msg.get());
-      MOZ_ASSERT(false);
-      return false;
-    }
-  }
-#endif
-
   if (!mVRProcessEnabled) {
     return true;
   }
@@ -458,8 +462,10 @@ void VRService::PushState(const mozilla::gfx::VRSystemState& aState) {
 #else
   bool state = true;
 #if defined(XP_WIN)
-  WaitForMutex lock(mMutex);
-  state = lock.GetStatus();
+  if (!XRE_IsParentProcess()) {
+    WaitForMutex lock(mMutex);
+    state = lock.GetStatus();
+  }
 #endif  
   if (state) {
     mAPIShmem->generationA++;
@@ -491,8 +497,10 @@ void VRService::PullState(mozilla::gfx::VRBrowserState& aState) {
 #else
   bool status = true;
 #if defined(XP_WIN)
-  WaitForMutex lock(mMutex);
-  status = lock.GetStatus();
+  if (!XRE_IsParentProcess()) {
+    WaitForMutex lock(mMutex);
+    status = lock.GetStatus();
+  }
 #endif  
   if (status) {
     VRExternalShmem tmp;
