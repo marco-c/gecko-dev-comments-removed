@@ -102,14 +102,14 @@ already_AddRefed<SharedWorker> SharedWorker::Constructor(
       do_QueryInterface(aGlobal.GetAsSupports());
   MOZ_ASSERT(window);
 
-  
-  
-  
-  
-  
   auto storageAllowed = nsContentUtils::StorageAllowedForWindow(window);
-  if (storageAllowed != nsContentUtils::StorageAccess::eAllow &&
-      storageAllowed != nsContentUtils::StorageAccess::ePrivateBrowsing) {
+  if (storageAllowed == nsContentUtils::StorageAccess::eDeny) {
+    aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
+    return nullptr;
+  }
+
+  if (storageAllowed == nsContentUtils::StorageAccess::ePartitionedOrDeny &&
+      !StaticPrefs::privacy_storagePrincipal_enabledForTrackers()) {
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return nullptr;
   }
@@ -174,6 +174,37 @@ already_AddRefed<SharedWorker> SharedWorker::Constructor(
                                            loadingPrincipalPreloadCSP);
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
+  }
+
+  
+  
+  
+  if (storageAllowed == nsContentUtils::StorageAccess::ePartitionedOrDeny) {
+    nsCOMPtr<nsIScriptObjectPrincipal> sop = do_QueryInterface(window);
+    if (!sop) {
+      aRv.Throw(NS_ERROR_FAILURE);
+      return nullptr;
+    }
+
+    nsIPrincipal* windowPrincipal = sop->GetPrincipal();
+    if (!windowPrincipal) {
+      aRv.Throw(NS_ERROR_UNEXPECTED);
+      return nullptr;
+    }
+
+    nsIPrincipal* windowStoragePrincipal = sop->GetEffectiveStoragePrincipal();
+    if (!windowStoragePrincipal) {
+      aRv.Throw(NS_ERROR_UNEXPECTED);
+      return nullptr;
+    }
+
+    if (!windowPrincipal->Equals(windowStoragePrincipal)) {
+      loadInfo.mStoragePrincipal =
+          BasePrincipal::Cast(loadInfo.mPrincipal)
+              ->CloneForcingOriginAttributes(
+                  BasePrincipal::Cast(windowStoragePrincipal)
+                      ->OriginAttributesRef());
+    }
   }
 
   PrincipalInfo storagePrincipalInfo;
