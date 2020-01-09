@@ -1912,9 +1912,14 @@ this.DownloadCopySaver.prototype = {
         
         
         
-        channel.setReferrerWithPolicy(
-          NetUtil.newURI(download.source.referrer),
-          Ci.nsIHttpChannel.REFERRER_POLICY_UNSAFE_URL);
+        let ReferrerInfo = Components.Constructor(
+          "@mozilla.org/referrer-info;1",
+          "nsIReferrerInfo",
+          "init");
+        channel.referrerInfo = new ReferrerInfo(
+          Ci.nsIHttpChannel.REFERRER_POLICY_UNSAFE_URL,
+          true,
+          NetUtil.newURI(download.source.referrer));
       }
 
       
@@ -2354,8 +2359,11 @@ this.DownloadLegacySaver.prototype = {
     }
 
     
-    if (aRequest instanceof Ci.nsIHttpChannel && aRequest.referrer) {
-      this.download.source.referrer = aRequest.referrer.spec;
+    if (aRequest instanceof Ci.nsIHttpChannel) {
+      let referrerInfo = aRequest.referrerInfo;
+      if (referrerInfo && referrerInfo.originalReferrer) {
+        this.download.source.referrer = referrerInfo.originalReferrer.spec;
+      }
     }
 
     this.addToHistory();
