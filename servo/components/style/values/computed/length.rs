@@ -73,11 +73,12 @@ impl ToComputedValue for specified::Length {
 
 #[allow(missing_docs)]
 #[derive(Clone, Copy, Debug, MallocSizeOf, ToAnimatedZero)]
+#[repr(C)]
 pub struct LengthPercentage {
-    #[animation(constant)]
-    pub clamping_mode: AllowedNumericType,
     length: Length,
     percentage: Percentage,
+    #[animation(constant)]
+    pub clamping_mode: AllowedNumericType,
     
     #[animation(constant)]
     pub has_percentage: bool,
@@ -678,6 +679,7 @@ impl NonNegativeLengthPercentage {
     ToAnimatedValue,
     ToAnimatedZero,
 )]
+#[repr(C)]
 pub struct CSSPixelLength(CSSFloat);
 
 impl CSSPixelLength {
