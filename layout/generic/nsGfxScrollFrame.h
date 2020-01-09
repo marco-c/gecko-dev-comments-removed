@@ -414,6 +414,9 @@ class ScrollFrameHelper : public nsIReflowCallback {
                                             
                                             
 
+  
+  ScrollSnapInfo ComputeOldScrollSnapInfo() const;
+  
   ScrollSnapInfo ComputeScrollSnapInfo(
       const Maybe<nsPoint>& aDestination) const;
 
