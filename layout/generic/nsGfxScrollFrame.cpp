@@ -6736,16 +6736,21 @@ bool ScrollFrameHelper::SmoothScrollVisual(
   }
 
   
-  nsPoint destination =
-      GetScrollRangeForClamping().ClampPoint(aVisualViewportOffset);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mDestination = GetScrollRangeForClamping().ClampPoint(aVisualViewportOffset);
 
   
-  
-  mDestination = GetScrollRange().ClampPoint(destination);
-
-  
-  ApzSmoothScrollTo(destination, aUpdateType == FrameMetrics::eRestore
-                                     ? nsGkAtoms::restore
-                                     : nsGkAtoms::other);
+  ApzSmoothScrollTo(mDestination, aUpdateType == FrameMetrics::eRestore
+                                      ? nsGkAtoms::restore
+                                      : nsGkAtoms::other);
   return true;
 }
