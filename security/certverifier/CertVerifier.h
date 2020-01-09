@@ -206,7 +206,8 @@ class CertVerifier {
                SHA1Mode sha1Mode, BRNameMatchingPolicy::Mode nameMatchingMode,
                NetscapeStepUpPolicy netscapeStepUpPolicy,
                CertificateTransparencyMode ctMode,
-               DistrustedCAPolicy distrustedCAPolicy);
+               DistrustedCAPolicy distrustedCAPolicy,
+               const Vector<Vector<uint8_t>>& thirdPartyRoots);
   ~CertVerifier();
 
   void ClearOCSPCache() { mOCSPCache.Clear(); }
@@ -225,6 +226,11 @@ class CertVerifier {
 
  private:
   OCSPCache mOCSPCache;
+  
+  Vector<Vector<uint8_t>> mThirdPartyRoots;
+  
+  
+  Vector<mozilla::pkix::Input> mThirdPartyRootInputs;
 
   
   

@@ -481,48 +481,9 @@ void nsNSSComponent::UnloadEnterpriseRoots() {
     return;
   }
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("UnloadEnterpriseRoots"));
-
-  
-  
-  
-  
-  
-  UniqueCERTCertList enterpriseRoots;
-  {
-    MutexAutoLock lock(mMutex);
-    if (!mEnterpriseRoots) {
-      MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-              ("no enterprise roots were present"));
-      return;
-    }
-    enterpriseRoots = std::move(mEnterpriseRoots);
-    MOZ_ASSERT(!mEnterpriseRoots);
-  }
-  MOZ_ASSERT(enterpriseRoots);
-  
-  
-  
-  
-  
-  
-  
-  CERTCertTrust trust = {CERTDB_USER, 0, 0};
-  for (CERTCertListNode* n = CERT_LIST_HEAD(enterpriseRoots.get());
-       !CERT_LIST_END(n, enterpriseRoots.get()); n = CERT_LIST_NEXT(n)) {
-    if (!n) {
-      break;
-    }
-    if (!n->cert) {
-      continue;
-    }
-    UniqueCERTCertificate cert(CERT_DupCertificate(n->cert));
-    if (ChangeCertTrustWithPossibleAuthentication(cert, trust, nullptr) !=
-        SECSuccess) {
-      MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-              ("couldn't untrust certificate for TLS server auth"));
-    }
-  }
-  MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("unloaded enterprise roots"));
+  MutexAutoLock lock(mMutex);
+  mEnterpriseRoots.clear();
+  setValidationOptions(false, lock);
 }
 
 static const char* kEnterpriseRootModePref =
@@ -548,80 +509,32 @@ void nsNSSComponent::MaybeImportEnterpriseRoots() {
 }
 
 void nsNSSComponent::ImportEnterpriseRoots() {
-  UniqueCERTCertList roots;
-  nsresult rv = GatherEnterpriseRoots(roots);
+  MutexAutoLock lock(mMutex);
+  nsresult rv = GatherEnterpriseRoots(mEnterpriseRoots);
   if (NS_FAILED(rv)) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("failed gathering enterprise roots"));
-    return;
   }
-
-  {
-    MutexAutoLock lock(mMutex);
-    mEnterpriseRoots = std::move(roots);
-  }
-}
-
-nsresult nsNSSComponent::TrustLoaded3rdPartyRoots() {
-  
-  
-  
-  UniqueCERTCertList enterpriseRoots;
-  {
-    MutexAutoLock lock(mMutex);
-    if (mEnterpriseRoots) {
-      enterpriseRoots = nsNSSCertList::DupCertList(mEnterpriseRoots);
-      if (!enterpriseRoots) {
-        return NS_ERROR_OUT_OF_MEMORY;
-      }
-    }
-  }
-
-  CERTCertTrust trust = {CERTDB_TRUSTED_CA | CERTDB_VALID_CA | CERTDB_USER, 0,
-                         0};
-  if (enterpriseRoots) {
-    for (CERTCertListNode* n = CERT_LIST_HEAD(enterpriseRoots.get());
-         !CERT_LIST_END(n, enterpriseRoots.get()); n = CERT_LIST_NEXT(n)) {
-      if (!n) {
-        break;
-      }
-      if (!n->cert) {
-        continue;
-      }
-      UniqueCERTCertificate cert(CERT_DupCertificate(n->cert));
-      if (ChangeCertTrustWithPossibleAuthentication(cert, trust, nullptr) !=
-          SECSuccess) {
-        MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-                ("couldn't trust enterprise certificate for TLS server auth"));
-      }
-    }
-  }
-  return NS_OK;
 }
 
 NS_IMETHODIMP
-nsNSSComponent::GetEnterpriseRoots(nsIX509CertList** enterpriseRoots) {
+nsNSSComponent::GetEnterpriseRoots(
+    nsTArray<nsTArray<uint8_t>>& enterpriseRoots) {
   MutexAutoLock nsNSSComponentLock(mMutex);
   MOZ_ASSERT(NS_IsMainThread());
   if (!NS_IsMainThread()) {
     return NS_ERROR_NOT_SAME_THREAD;
   }
-  NS_ENSURE_ARG_POINTER(enterpriseRoots);
 
-  if (!mEnterpriseRoots) {
-    *enterpriseRoots = nullptr;
-    return NS_OK;
+  enterpriseRoots.Clear();
+  for (const auto& root : mEnterpriseRoots) {
+    nsTArray<uint8_t> rootCopy;
+    if (!rootCopy.AppendElements(root.begin(), root.length())) {
+      return NS_ERROR_OUT_OF_MEMORY;
+    }
+    if (!enterpriseRoots.AppendElement(std::move(rootCopy))) {
+      return NS_ERROR_OUT_OF_MEMORY;
+    }
   }
-  UniqueCERTCertList enterpriseRootsCopy(
-      nsNSSCertList::DupCertList(mEnterpriseRoots));
-  if (!enterpriseRootsCopy) {
-    return NS_ERROR_FAILURE;
-  }
-  nsCOMPtr<nsIX509CertList> enterpriseRootsCertList(
-      new nsNSSCertList(std::move(enterpriseRootsCopy)));
-  if (!enterpriseRootsCertList) {
-    return NS_ERROR_FAILURE;
-  }
-  enterpriseRootsCertList.forget(enterpriseRoots);
   return NS_OK;
 }
 
@@ -712,19 +625,14 @@ LoadLoadableRootsTask::Run() {
   if (mImportEnterpriseRoots) {
     mNSSComponent->ImportEnterpriseRoots();
   }
-  nsresult rv = mNSSComponent->TrustLoaded3rdPartyRoots();
-  if (NS_FAILED(rv)) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Error,
-            ("failed to trust loaded 3rd party roots"));
-  }
-
+  mNSSComponent->UpdateCertVerifierWithEnterpriseRoots();
   {
     MonitorAutoLock rootsLoadedLock(mNSSComponent->mLoadableRootsLoadedMonitor);
     mNSSComponent->mLoadableRootsLoaded = true;
     
     
     mNSSComponent->mLoadableRootsLoadedResult = loadLoadableRootsResult;
-    rv = mNSSComponent->mLoadableRootsLoadedMonitor.NotifyAll();
+    nsresult rv = mNSSComponent->mLoadableRootsLoadedMonitor.NotifyAll();
     if (NS_WARN_IF(NS_FAILED(rv))) {
       MOZ_LOG(gPIPNSSLog, LogLevel::Error,
               ("failed to notify loadable roots loaded monitor"));
@@ -1159,6 +1067,12 @@ nsresult CipherSuiteChangeObserver::Observe(nsISupports* ,
 void nsNSSComponent::setValidationOptions(
     bool isInitialSetting, const mozilla::MutexAutoLock& proofOfLock) {
   
+  MOZ_ASSERT(NS_IsMainThread());
+  if (NS_WARN_IF(!NS_IsMainThread())) {
+    return;
+  }
+
+  
   
   
   int32_t ocspEnabled =
@@ -1281,10 +1195,30 @@ void nsNSSComponent::setValidationOptions(
 
   GetRevocationBehaviorFromPrefs(&odc, &osc, &certShortLifetimeInDays,
                                  softTimeout, hardTimeout, proofOfLock);
+
   mDefaultCertVerifier = new SharedCertVerifier(
       odc, osc, softTimeout, hardTimeout, certShortLifetimeInDays, pinningMode,
       sha1Mode, nameMatchingMode, netscapeStepUpPolicy, ctMode,
-      distrustedCAPolicy);
+      distrustedCAPolicy, mEnterpriseRoots);
+}
+
+void nsNSSComponent::UpdateCertVerifierWithEnterpriseRoots() {
+  MutexAutoLock lock(mMutex);
+  MOZ_ASSERT(mDefaultCertVerifier);
+  if (NS_WARN_IF(!mDefaultCertVerifier)) {
+    return;
+  }
+
+  RefPtr<SharedCertVerifier> oldCertVerifier = mDefaultCertVerifier;
+  mDefaultCertVerifier = new SharedCertVerifier(
+      oldCertVerifier->mOCSPDownloadConfig,
+      oldCertVerifier->mOCSPStrict ? CertVerifier::ocspStrict
+                                   : CertVerifier::ocspRelaxed,
+      oldCertVerifier->mOCSPTimeoutSoft, oldCertVerifier->mOCSPTimeoutHard,
+      oldCertVerifier->mCertShortLifetimeInDays, oldCertVerifier->mPinningMode,
+      oldCertVerifier->mSHA1Mode, oldCertVerifier->mNameMatchingMode,
+      oldCertVerifier->mNetscapeStepUpPolicy, oldCertVerifier->mCTMode,
+      oldCertVerifier->mDistrustedCAPolicy, mEnterpriseRoots);
 }
 
 
@@ -1825,7 +1759,6 @@ nsresult nsNSSComponent::InitializeNSS() {
         Preferences::GetBool("security.pki.mitm_canary_issuer.enabled", true);
 
     
-    
     setValidationOptions(true, lock);
 
     bool importEnterpriseRoots =
@@ -1871,15 +1804,13 @@ void nsNSSComponent::ShutdownNSS() {
 
   ::mozilla::psm::UnloadLoadableRoots();
 
-  MutexAutoLock lock(mMutex);
-  mEnterpriseRoots = nullptr;
-
   PK11_SetPasswordFunc((PK11PasswordFunc) nullptr);
 
   Preferences::RemoveObserver(this, "security.");
 
   
   
+  MutexAutoLock lock(mMutex);
   mDefaultCertVerifier = nullptr;
   
   
@@ -2001,7 +1932,8 @@ nsNSSComponent::Observe(nsISupports* aSubject, const char* aTopic,
       
       UnloadEnterpriseRoots();
       MaybeImportEnterpriseRoots();
-      TrustLoaded3rdPartyRoots();
+      MutexAutoLock lock(mMutex);
+      setValidationOptions(false, lock);
     } else if (prefName.EqualsLiteral("security.pki.mitm_canary_issuer")) {
       MutexAutoLock lock(mMutex);
       mMitmCanaryIssuer.Truncate();

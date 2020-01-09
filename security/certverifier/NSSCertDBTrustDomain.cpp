@@ -59,7 +59,9 @@ NSSCertDBTrustDomain::NSSCertDBTrustDomain(
     ValidityCheckingMode validityCheckingMode, CertVerifier::SHA1Mode sha1Mode,
     NetscapeStepUpPolicy netscapeStepUpPolicy,
     DistrustedCAPolicy distrustedCAPolicy,
-    const OriginAttributes& originAttributes, UniqueCERTCertList& builtChain,
+    const OriginAttributes& originAttributes,
+    const Vector<Input>& thirdPartyRootInputs,
+     UniqueCERTCertList& builtChain,
      PinningTelemetryInfo* pinningTelemetryInfo,
      const char* hostname)
     : mCertDBTrustType(certDBTrustType),
@@ -77,6 +79,7 @@ NSSCertDBTrustDomain::NSSCertDBTrustDomain(
       mDistrustedCAPolicy(distrustedCAPolicy),
       mSawDistrustedCAByPolicyError(false),
       mOriginAttributes(originAttributes),
+      mThirdPartyRootInputs(thirdPartyRootInputs),
       mBuiltChain(builtChain),
       mPinningTelemetryInfo(pinningTelemetryInfo),
       mHostname(hostname),
@@ -114,6 +117,12 @@ Result NSSCertDBTrustDomain::FindIssuer(Input encodedIssuerName,
       if (!intermediateCandidates.append(certDER)) {
         return Result::FATAL_ERROR_NO_MEMORY;
       }
+    }
+  }
+
+  for (const auto& thirdPartyRootInput : mThirdPartyRootInputs) {
+    if (!rootCandidates.append(thirdPartyRootInput)) {
+      return Result::FATAL_ERROR_NO_MEMORY;
     }
   }
 
@@ -201,6 +210,14 @@ Result NSSCertDBTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
       MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
               ("NSSCertDBTrustDomain: certificate is in blocklist"));
       return Result::ERROR_REVOKED_CERTIFICATE;
+    }
+  }
+
+  
+  for (const auto& thirdPartyRootInput : mThirdPartyRootInputs) {
+    if (InputsAreEqual(candidateCertDER, thirdPartyRootInput)) {
+      trustLevel = TrustLevel::TrustAnchor;
+      return Success;
     }
   }
 
