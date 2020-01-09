@@ -60,7 +60,6 @@ class EffectSet {
 
   static EffectSet* GetEffectSet(const dom::Element* aElement,
                                  PseudoStyleType aPseudoType);
-  static EffectSet* GetEffectSet(const nsIFrame* aFrame);
   static EffectSet* GetOrCreateEffectSet(dom::Element* aElement,
                                          PseudoStyleType aPseudoType);
 
@@ -68,6 +67,27 @@ class EffectSet {
                                          const nsCSSPropertyIDSet& aProperties);
   static EffectSet* GetEffectSetForFrame(const nsIFrame* aFrame,
                                          DisplayItemType aDisplayItemType);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static EffectSet* GetEffectSetForStyleFrame(const nsIFrame* aStyleFrame);
 
   static void DestroyEffectSet(dom::Element* aElement,
                                PseudoStyleType aPseudoType);

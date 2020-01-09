@@ -46,18 +46,6 @@ EffectSet* EffectSet::GetEffectSet(const dom::Element* aElement,
 }
 
 
-EffectSet* EffectSet::GetEffectSet(const nsIFrame* aFrame) {
-  Maybe<NonOwningAnimationTarget> target =
-      EffectCompositor::GetAnimationElementAndPseudoForFrame(aFrame);
-
-  if (!target) {
-    return nullptr;
-  }
-
-  return GetEffectSet(target->mElement, target->mPseudoType);
-}
-
-
 EffectSet* EffectSet::GetOrCreateEffectSet(dom::Element* aElement,
                                            PseudoStyleType aPseudoType) {
   EffectSet* effectSet = GetEffectSet(aElement, aPseudoType);
@@ -121,6 +109,18 @@ EffectSet* EffectSet::GetEffectSetForFrame(const nsIFrame* aFrame,
                                            DisplayItemType aDisplayItemType) {
   return EffectSet::GetEffectSetForFrame(
       aFrame, LayerAnimationInfo::GetCSSPropertiesFor(aDisplayItemType));
+}
+
+
+EffectSet* EffectSet::GetEffectSetForStyleFrame(const nsIFrame* aStyleFrame) {
+  Maybe<NonOwningAnimationTarget> target =
+      EffectCompositor::GetAnimationElementAndPseudoForFrame(aStyleFrame);
+
+  if (!target) {
+    return nullptr;
+  }
+
+  return GetEffectSet(target->mElement, target->mPseudoType);
 }
 
 

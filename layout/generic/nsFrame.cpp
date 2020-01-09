@@ -639,7 +639,10 @@ void nsFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
     mMayHaveOpacityAnimation = aPrevInFlow->MayHaveOpacityAnimation();
     mMayHaveTransformAnimation = aPrevInFlow->MayHaveTransformAnimation();
   } else if (mContent) {
-    EffectSet* effectSet = EffectSet::GetEffectSet(this);
+    
+    
+    
+    EffectSet* effectSet = EffectSet::GetEffectSetForStyleFrame(this);
     if (effectSet) {
       mMayHaveOpacityAnimation = effectSet->MayHaveOpacityAnimation();
       mMayHaveTransformAnimation = effectSet->MayHaveTransformAnimation();
@@ -769,7 +772,10 @@ void nsFrame::DestroyFrom(nsIFrame* aDestructRoot,
   }
 
   if (HasCSSAnimations() || HasCSSTransitions() ||
-      EffectSet::GetEffectSet(this)) {
+      
+      
+      
+      EffectSet::GetEffectSetForStyleFrame(this)) {
     
     
     RestyleManager::AnimationsWithDestroyedFrame* adf =

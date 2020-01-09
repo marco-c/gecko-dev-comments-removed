@@ -2330,8 +2330,11 @@ class nsLayoutUtils {
 
 
 
+
+
+
   static nsCSSPropertyIDSet GetAnimationPropertiesForCompositor(
-      const nsIFrame* aFrame);
+      const nsIFrame* aStyleFrame);
 
   
 

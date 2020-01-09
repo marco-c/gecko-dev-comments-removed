@@ -369,7 +369,9 @@ class RestyleManager {
   
   uint64_t GetAnimationGeneration() const { return mAnimationGeneration; }
 
-  static uint64_t GetAnimationGenerationForFrame(nsIFrame* aFrame);
+  
+  
+  static uint64_t GetAnimationGenerationForFrame(nsIFrame* aStyleFrame);
 
   
   
