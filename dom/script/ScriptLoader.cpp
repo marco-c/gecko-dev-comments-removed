@@ -30,6 +30,7 @@
 #include "mozilla/dom/SRILogHelper.h"
 #include "mozilla/net/UrlClassifierFeatureFactory.h"
 #include "mozilla/StaticPrefs.h"
+#include "nsAboutProtocolUtils.h"
 #include "nsGkAtoms.h"
 #include "nsNetUtil.h"
 #include "nsGlobalWindowInner.h"
@@ -336,6 +337,50 @@ nsresult ScriptLoader::CheckContentPolicy(Document* aDocument,
   }
 
   return NS_OK;
+}
+
+
+bool ScriptLoader::IsAboutPageLoadingChromeURI(ScriptLoadRequest* aRequest) {
+  
+  
+  if (!aRequest->TriggeringPrincipal()->GetIsCodebasePrincipal()) {
+    return false;
+  }
+
+  
+  nsCOMPtr<nsIURI> triggeringURI;
+  nsresult rv =
+      aRequest->TriggeringPrincipal()->GetURI(getter_AddRefs(triggeringURI));
+  NS_ENSURE_SUCCESS(rv, false);
+
+  bool isAbout =
+      (NS_SUCCEEDED(triggeringURI->SchemeIs("about", &isAbout)) && isAbout);
+  if (!isAbout) {
+    return false;
+  }
+
+  
+  nsCOMPtr<nsIAboutModule> aboutMod;
+  rv = NS_GetAboutModule(triggeringURI, getter_AddRefs(aboutMod));
+  NS_ENSURE_SUCCESS(rv, false);
+
+  uint32_t aboutModuleFlags = 0;
+  rv = aboutMod->GetURIFlags(triggeringURI, &aboutModuleFlags);
+  NS_ENSURE_SUCCESS(rv, false);
+
+  if (aboutModuleFlags & nsIAboutModule::MAKE_LINKABLE) {
+    return false;
+  }
+
+  
+  bool isChrome =
+      (NS_SUCCEEDED(aRequest->mURI->SchemeIs("chrome", &isChrome)) && isChrome);
+  if (!isChrome) {
+    return false;
+  }
+
+  
+  return true;
 }
 
 bool ScriptLoader::ModuleMapContainsURL(nsIURI* aURL) const {
@@ -1241,13 +1286,18 @@ nsresult ScriptLoader::StartLoad(ScriptLoadRequest* aRequest) {
   if (aRequest->IsModuleRequest()) {
     
     
-    securityFlags = nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS;
-    if (aRequest->CORSMode() == CORS_NONE ||
-        aRequest->CORSMode() == CORS_ANONYMOUS) {
-      securityFlags |= nsILoadInfo::SEC_COOKIES_SAME_ORIGIN;
+    
+    if (IsAboutPageLoadingChromeURI(aRequest)) {
+      securityFlags = nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL;
     } else {
-      MOZ_ASSERT(aRequest->CORSMode() == CORS_USE_CREDENTIALS);
-      securityFlags |= nsILoadInfo::SEC_COOKIES_INCLUDE;
+      securityFlags = nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS;
+      if (aRequest->CORSMode() == CORS_NONE ||
+          aRequest->CORSMode() == CORS_ANONYMOUS) {
+        securityFlags |= nsILoadInfo::SEC_COOKIES_SAME_ORIGIN;
+      } else {
+        MOZ_ASSERT(aRequest->CORSMode() == CORS_USE_CREDENTIALS);
+        securityFlags |= nsILoadInfo::SEC_COOKIES_INCLUDE;
+      }
     }
   } else {
     securityFlags = aRequest->CORSMode() == CORS_NONE

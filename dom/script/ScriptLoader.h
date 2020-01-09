@@ -390,6 +390,15 @@ class ScriptLoader final : public nsISupports {
   
 
 
+
+
+
+
+  static bool IsAboutPageLoadingChromeURI(ScriptLoadRequest* aRequest);
+
+  
+
+
   nsresult StartLoad(ScriptLoadRequest* aRequest);
 
   
