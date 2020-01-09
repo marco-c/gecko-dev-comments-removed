@@ -1666,17 +1666,6 @@ class Document : public nsINode,
 
 
 
-
-
-  void UpdateStyleSheets(nsTArray<RefPtr<StyleSheet>>& aOldSheets,
-                         nsTArray<RefPtr<StyleSheet>>& aNewSheets);
-
-  
-
-
-
-
-
   void AddStyleSheet(StyleSheet* aSheet) {
     MOZ_ASSERT(aSheet);
     InsertSheetAt(SheetCount(), *aSheet);
@@ -2415,10 +2404,6 @@ class Document : public nsINode,
                                           nsAtom* aAttrName,
                                           const nsAString& aAttrValue) const;
 
-  
-
-
-  void FlushSkinBindings();
 
   
 

@@ -27,7 +27,6 @@ add_task(async function() {
   
   
   Services.obs.notifyObservers(null, "startupcache-invalidate");
-  Services.obs.notifyObservers(null, "chrome-flush-skin-caches");
   Services.obs.notifyObservers(null, "chrome-flush-caches");
 
   let win = window.openDialog(AppConstants.BROWSER_CHROME_URL, "_blank",
