@@ -1729,6 +1729,14 @@ VARCACHE_PREF(
   bool, true
 )
 
+
+
+VARCACHE_PREF(
+  "network.cookieSettings.unblocked_for_testing",
+   network_cookieSettings_unblocked_for_testing,
+  bool, false
+)
+
 VARCACHE_PREF(
   "network.predictor.enable-hover-on-ssl",
    network_predictor_enable_hover_on_ssl,
