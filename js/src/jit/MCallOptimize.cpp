@@ -4346,11 +4346,8 @@ IonBuilder::InliningResult IonBuilder::inlineWasmCall(CallInfo& callInfo,
   
   
   
-  if (sig.hasI64ArgOrRet() || sig.temporarilyUnsupportedAnyRef()
-#ifdef WASM_CODEGEN_DEBUG
-      || !JitOptions.enableWasmIonFastCalls
-#endif
-  ) {
+  if (sig.hasI64ArgOrRet() || sig.temporarilyUnsupportedAnyRef() ||
+      !JitOptions.enableWasmIonFastCalls) {
     return InliningStatus_NotInlined;
   }
 

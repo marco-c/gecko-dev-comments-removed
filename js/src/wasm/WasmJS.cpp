@@ -1502,11 +1502,8 @@ bool WasmInstanceObject::getExportedFunction(
     }
 
     
-    bool disableJitEntry = funcType.temporarilyUnsupportedAnyRef()
-#ifdef WASM_CODEGEN_DEBUG
-                           || !JitOptions.enableWasmJitEntry;
-#endif
-    ;
+    bool disableJitEntry = funcType.temporarilyUnsupportedAnyRef() ||
+                           !JitOptions.enableWasmJitEntry;
 
     fun.set(NewNativeFunction(cx, WasmCall, numArgs, name,
                               gc::AllocKind::FUNCTION_EXTENDED, SingletonObject,
