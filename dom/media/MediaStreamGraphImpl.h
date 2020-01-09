@@ -111,7 +111,8 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
 
   explicit MediaStreamGraphImpl(GraphDriverType aGraphDriverRequested,
                                 GraphRunType aRunTypeRequested,
-                                TrackRate aSampleRate, AbstractThread* aWindow);
+                                TrackRate aSampleRate, uint32_t aChannelCount,
+                                AbstractThread* aWindow);
 
   
   
