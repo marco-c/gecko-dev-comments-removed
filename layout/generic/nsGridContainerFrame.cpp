@@ -427,6 +427,8 @@ struct nsGridContainerFrame::LineRange {
     mEnd += aStart;
     
     
+    
+    
     if (MOZ_UNLIKELY(mStart >= aClampMaxLine)) {
       mEnd = aClampMaxLine;
       mStart = mEnd - 1;
@@ -768,9 +770,14 @@ class MOZ_STACK_CLASS nsGridContainerFrame::LineNameMap {
 
 
 
+
+
   LineNameMap(const nsStyleGridTemplate& aGridTemplate,
-              uint32_t aNumRepeatTracks)
-      : mLineNameLists(aGridTemplate.mLineNameLists),
+              uint32_t aNumRepeatTracks, int32_t aClampMinLine,
+              int32_t aClampMaxLine)
+      : mClampMinLine(aClampMinLine),
+        mClampMaxLine(aClampMaxLine),
+        mLineNameLists(aGridTemplate.mLineNameLists),
         mRepeatAutoLineNameListBefore(
             aGridTemplate.mRepeatAutoLineNameListBefore),
         mRepeatAutoLineNameListAfter(
@@ -814,6 +821,10 @@ class MOZ_STACK_CLASS nsGridContainerFrame::LineNameMap {
     *aNth = -nth;
     return line;
   }
+
+  
+  const int32_t mClampMinLine;
+  const int32_t mClampMaxLine;
 
  private:
   
@@ -2169,6 +2180,7 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::Grid {
 
 
 
+
   int32_t ResolveLine(const nsStyleGridLine& aLine, int32_t aNth,
                       uint32_t aFromIndex, const LineNameMap& aNameMap,
                       LogicalSide aSide, uint32_t aExplicitGridEnd,
@@ -2713,7 +2725,7 @@ int32_t nsGridContainerFrame::Grid::ResolveLine(
       line = edgeLine + aNth;
     }
   }
-  return clamped(line, nsStyleGridLine::kMinLine, nsStyleGridLine::kMaxLine);
+  return clamped(line, aNameMap.mClampMinLine, aNameMap.mClampMaxLine);
 }
 
 nsGridContainerFrame::Grid::LinePair
@@ -2745,7 +2757,7 @@ nsGridContainerFrame::Grid::ResolveLineRangeHelper(
     if (end <= 1) {
       
       
-      int32_t start = std::max(end - span, nsStyleGridLine::kMinLine);
+      int32_t start = std::max(end - span, aNameMap.mClampMinLine);
       return LinePair(start, end);
     }
     auto start = ResolveLine(aStart, -span, end, aNameMap,
@@ -2795,8 +2807,7 @@ nsGridContainerFrame::Grid::ResolveLineRangeHelper(
       if (start >= int32_t(aExplicitGridEnd)) {
         
         
-        return LinePair(start,
-                        std::min(start + nth, nsStyleGridLine::kMaxLine));
+        return LinePair(start, std::min(start + nth, aNameMap.mClampMaxLine));
       }
       from = start;
     }
@@ -2808,7 +2819,7 @@ nsGridContainerFrame::Grid::ResolveLineRangeHelper(
                          aExplicitGridEnd, aStyle);
   if (start == int32_t(kAutoLine)) {
     
-    start = std::max(nsStyleGridLine::kMinLine, end - 1);
+    start = std::max(aNameMap.mClampMinLine, end - 1);
   }
   return LinePair(start, end);
 }
@@ -2825,14 +2836,14 @@ nsGridContainerFrame::LineRange nsGridContainerFrame::Grid::ResolveLineRange(
     
     
     
-    r.second = std::min(r.second, nsStyleGridLine::kMaxLine - 1);
+    r.second = std::min(r.second, aNameMap.mClampMaxLine - 1);
   } else {
     
     if (r.first > r.second) {
       Swap(r.first, r.second);
     } else if (r.first == r.second) {
-      if (MOZ_UNLIKELY(r.first == nsStyleGridLine::kMaxLine)) {
-        r.first = nsStyleGridLine::kMaxLine - 1;
+      if (MOZ_UNLIKELY(r.first == aNameMap.mClampMaxLine)) {
+        r.first = aNameMap.mClampMaxLine - 1;
       }
       r.second = r.first + 1;  
     }
@@ -3136,6 +3147,7 @@ void nsGridContainerFrame::Grid::PlaceGridItems(
   
   
   auto areas = gridStyle->mGridTemplateAreas.get();
+  int32_t clampMinColLine = nsStyleGridLine::kMinLine;
   int32_t clampMaxColLine = nsStyleGridLine::kMaxLine;
   uint32_t numRepeatCols;
   if (!aState.mFrame->IsColSubgrid()) {
@@ -3148,6 +3160,8 @@ void nsGridContainerFrame::Grid::PlaceGridItems(
     const auto* subgrid = aState.mFrame->GetProperty(Subgrid::Prop());
     uint32_t extent = subgrid->SubgridCols().Extent();
     mExplicitGridColEnd = extent + 1;  
+    clampMinColLine = 1;
+    clampMaxColLine = mExplicitGridColEnd;
     const auto& cols = gridStyle->GridTemplateColumns();
     numRepeatCols =
         cols.HasRepeatAuto()
@@ -3155,7 +3169,10 @@ void nsGridContainerFrame::Grid::PlaceGridItems(
             : 0;
   }
   mGridColEnd = mExplicitGridColEnd;
-  LineNameMap colLineNameMap(gridStyle->GridTemplateColumns(), numRepeatCols);
+  LineNameMap colLineNameMap(gridStyle->GridTemplateColumns(), numRepeatCols,
+                             clampMinColLine, clampMaxColLine);
+
+  int32_t clampMinRowLine = nsStyleGridLine::kMinLine;
 
   int32_t clampMaxRowLine = nsStyleGridLine::kMaxLine;
   uint32_t numRepeatRows;
@@ -3169,6 +3186,8 @@ void nsGridContainerFrame::Grid::PlaceGridItems(
     const auto* subgrid = aState.mFrame->GetProperty(Subgrid::Prop());
     uint32_t extent = subgrid->SubgridRows().Extent();
     mExplicitGridRowEnd = extent + 1;  
+    clampMinRowLine = 1;
+    clampMaxRowLine = mExplicitGridRowEnd;
     const auto& rows = gridStyle->GridTemplateRows();
     numRepeatRows =
         rows.HasRepeatAuto()
@@ -3176,7 +3195,8 @@ void nsGridContainerFrame::Grid::PlaceGridItems(
             : 0;
   }
   mGridRowEnd = mExplicitGridRowEnd;
-  LineNameMap rowLineNameMap(gridStyle->GridTemplateRows(), numRepeatRows);
+  LineNameMap rowLineNameMap(gridStyle->GridTemplateRows(), numRepeatRows,
+                             clampMinRowLine, clampMaxRowLine);
 
   
   
