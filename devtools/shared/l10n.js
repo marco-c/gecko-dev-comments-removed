@@ -91,8 +91,11 @@ function getProperties(url) {
 
 
 
-function LocalizationHelper(stringBundleName) {
+
+
+function LocalizationHelper(stringBundleName, strict = false) {
   this.stringBundleName = stringBundleName;
+  this.strict = strict;
 }
 
 LocalizationHelper.prototype = {
@@ -108,7 +111,12 @@ LocalizationHelper.prototype = {
       return properties[name];
     }
 
-    throw new Error("No localization found for [" + name + "]");
+    if (this.strict) {
+      throw new Error("No localization found for [" + name + "]");
+    }
+
+    console.error("No localization found for [" + name + "]");
+    return name;
   },
 
   
@@ -241,7 +249,9 @@ const sharedL10N = new LocalizationHelper("devtools/shared/locales/shared.proper
 
 function MultiLocalizationHelper(...stringBundleNames) {
   const instances = stringBundleNames.map(bundle => {
-    return new LocalizationHelper(bundle);
+    
+    
+    return new LocalizationHelper(bundle, true);
   });
 
   
