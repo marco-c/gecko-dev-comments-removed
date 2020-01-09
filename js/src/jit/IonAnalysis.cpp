@@ -3871,13 +3871,6 @@ static inline MDefinition* PassthroughOperand(MDefinition* def) {
   if (def->isMaybeCopyElementsForWrite()) {
     return def->toMaybeCopyElementsForWrite()->object();
   }
-  if (!JitOptions.spectreObjectMitigationsMisc) {
-    
-    
-    if (def->isConvertUnboxedObjectToNative()) {
-      return def->toConvertUnboxedObjectToNative()->object();
-    }
-  }
   return nullptr;
 }
 
