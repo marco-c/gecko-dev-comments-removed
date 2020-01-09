@@ -41,7 +41,6 @@
 #include "nsIComponentManager.h"
 #include "nsIServiceManager.h"
 
-#include "nsDocElementCreatedNotificationRunner.h"
 #include "nsGkAtoms.h"
 #include "nsContentUtils.h"
 #include "nsIChannel.h"
@@ -906,9 +905,6 @@ void HTMLContentSink::NotifyRootInsertion() {
   
   
   UpdateChildCounts();
-
-  nsContentUtils::AddScriptRunner(
-      new nsDocElementCreatedNotificationRunner(mDocument));
 }
 
 void HTMLContentSink::UpdateChildCounts() {

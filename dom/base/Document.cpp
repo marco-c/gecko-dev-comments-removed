@@ -9367,7 +9367,6 @@ class UnblockParsingPromiseHandler final : public PromiseNativeHandler {
       mParser = do_GetWeakReference(parser);
       mDocument = aDocument;
       mDocument->BlockOnload();
-      mDocument->BlockDOMContentLoaded();
     }
   }
 
@@ -9401,16 +9400,8 @@ class UnblockParsingPromiseHandler final : public PromiseNativeHandler {
       if (parser == docParser) {
         parser->UnblockParser();
         parser->ContinueInterruptedParsingAsync();
+        mDocument->UnblockOnload(false);
       }
-    }
-    if (mDocument) {
-      
-      
-      
-      
-      
-      mDocument->UnblockDOMContentLoaded();
-      mDocument->UnblockOnload(false);
     }
     mParser = nullptr;
     mDocument = nullptr;

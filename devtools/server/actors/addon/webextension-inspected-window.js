@@ -138,7 +138,7 @@ CustomizedReload.prototype = {
           if (this.injectedScript) {
             
             
-            Services.obs.addObserver(this, "initial-document-element-inserted");
+            Services.obs.addObserver(this, "document-element-inserted");
           }
 
           
@@ -159,7 +159,7 @@ CustomizedReload.prototype = {
   },
 
   observe(subject, topic, data) {
-    if (topic !== "initial-document-element-inserted") {
+    if (topic !== "document-element-inserted") {
       return;
     }
 
@@ -232,7 +232,7 @@ CustomizedReload.prototype = {
     this.docShell.removeProgressListener(this);
 
     if (this.injectedScript) {
-      Services.obs.removeObserver(this, "initial-document-element-inserted");
+      Services.obs.removeObserver(this, "document-element-inserted");
     }
 
     
