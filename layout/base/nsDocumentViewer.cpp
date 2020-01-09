@@ -1117,7 +1117,13 @@ nsDocumentViewer::LoadComplete(nsresult aStatus) {
   
   
   
-  if (mDocument) {
+  
+  
+  
+  
+  
+  
+  if (mDocument && mDocument->IsCurrentActiveDocument()) {
     
     window = mDocument->GetWindow();
     if (window) {
