@@ -1,0 +1,21 @@
+
+
+
+
+
+function simulateUserClicksResetButton(inputElement) {
+  var inputRectangle = inputElement.getBoundingClientRect();
+  const offsetX = inputRectangle.width - 15;
+  const offsetY = inputRectangle.height / 2;
+
+  synthesizeMouse(inputElement, offsetX, offsetY, {});
+}
+
+
+
+
+
+function isDesktopUserAgent(navigator) {
+  return !/Mobile|Tablet/.test(navigator.userAgent);
+}
+

@@ -414,6 +414,8 @@ class HTMLInputElement final : public nsGenericHTMLFormElementWithState,
   
 
 
+
+
   void FireChangeEventIfNeeded();
 
   
@@ -1461,6 +1463,7 @@ class HTMLInputElement final : public nsGenericHTMLFormElementWithState,
   UniquePtr<FileData> mFileData;
 
   
+
 
 
 

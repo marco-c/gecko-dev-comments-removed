@@ -5662,6 +5662,7 @@ nsresult HTMLInputElement::SetDefaultValueAsValue() {
   GetDefaultValue(resetVal);
 
   
+  
   return SetValueInternal(resetVal, nsTextEditorState::eSetValue_Internal);
 }
 
@@ -5673,6 +5674,14 @@ void HTMLInputElement::SetDirectionFromValue(bool aNotify) {
   }
 }
 
+namespace {
+
+bool IsDateOrTime(uint8_t aType) {
+  return (aType == NS_FORM_INPUT_DATE) || (aType == NS_FORM_INPUT_TIME);
+}
+
+}  
+
 NS_IMETHODIMP
 HTMLInputElement::Reset() {
   
@@ -5681,8 +5690,15 @@ HTMLInputElement::Reset() {
   mLastValueChangeWasInteractive = false;
 
   switch (GetValueMode()) {
-    case VALUE_MODE_VALUE:
-      return SetDefaultValueAsValue();
+    case VALUE_MODE_VALUE: {
+      nsresult result = SetDefaultValueAsValue();
+      if (IsDateOrTime(mType)) {
+        
+        
+        GetValue(mFocusedValue, CallerType::System);
+      }
+      return result;
+    }
     case VALUE_MODE_DEFAULT_ON:
       DoSetChecked(DefaultChecked(), true, false);
       return NS_OK;
@@ -5925,6 +5941,12 @@ void HTMLInputElement::DoneCreatingElement() {
     
     
     SetValueInternal(aValue, nsTextEditorState::eSetValue_Internal);
+
+    if (IsDateOrTime(mType)) {
+      
+      
+      mFocusedValue = aValue;
+    }
   }
 
   mShouldInitChecked = false;
