@@ -431,7 +431,7 @@ class MitmproxyAndroid(Mitmproxy):
 
             
             self.certutil = glob.glob(
-                os.path.join(self.mozproxy_dir, "host-utils*[!z]")
+                os.path.join(self.mozproxy_dir, "host-utils*[!z|checksum]")
             )[0]
 
             
