@@ -56,6 +56,9 @@ add_task(async function test_setup() {
   fakeIntlReady();
 
   
+  await Services.search.init();
+
+  
   await setEmptyPrefWatchlist();
 
   
