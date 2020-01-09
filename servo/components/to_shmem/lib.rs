@@ -311,7 +311,7 @@ where
 
 
 
-unsafe fn to_shmem_slice<'a, T, I>(src: I, builder: &mut SharedMemoryBuilder) -> *mut [T]
+pub unsafe fn to_shmem_slice<'a, T, I>(src: I, builder: &mut SharedMemoryBuilder) -> *mut [T]
 where
     T: 'a + ToShmem,
     I: ExactSizeIterator<Item = &'a T>,
