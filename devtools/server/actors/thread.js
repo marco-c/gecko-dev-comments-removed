@@ -1296,13 +1296,13 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       return undefined;
     }
 
+    this._state = "paused";
+
     
     this.dbg.onEnterFrame = undefined;
     this.dbg.replayingOnPopFrame = undefined;
     this.dbg.onExceptionUnwind = undefined;
     this._clearSteppingHooks();
-
-    this._state = "paused";
 
     
     
