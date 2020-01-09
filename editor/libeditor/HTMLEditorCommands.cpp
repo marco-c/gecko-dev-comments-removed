@@ -1405,25 +1405,28 @@ InsertTagCommand::DoCommandParams(const char* aCommandName,
   }
 
   
-  nsAutoCString asciiAttribute;
+  
+  
+  
+  
+  nsCString asciiValue;
+  
   nsresult rv =
-      aParams->AsCommandParams()->GetCString(STATE_ATTRIBUTE, asciiAttribute);
+      aParams->AsCommandParams()->GetCString(STATE_ATTRIBUTE, asciiValue);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
-  nsAutoString attribute;
-  CopyASCIItoUTF16(asciiAttribute, attribute);
-
-  if (attribute.IsEmpty()) {
+  NS_ConvertASCIItoUTF16 value(asciiValue);
+  if (NS_WARN_IF(value.IsEmpty())) {
     return NS_ERROR_INVALID_ARG;
   }
 
   
-  nsAutoString attributeType;
+  nsAtom* attribute = nullptr;
   if (mTagName == nsGkAtoms::a) {
-    attributeType.AssignLiteral("href");
+    attribute = nsGkAtoms::href;
   } else if (mTagName == nsGkAtoms::img) {
-    attributeType.AssignLiteral("src");
+    attribute = nsGkAtoms::src;
   } else {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
@@ -1434,7 +1437,7 @@ InsertTagCommand::DoCommandParams(const char* aCommandName,
   }
 
   ErrorResult err;
-  newElement->SetAttribute(attributeType, attribute, err);
+  newElement->SetAttr(attribute, value, err);
   if (NS_WARN_IF(err.Failed())) {
     return err.StealNSResult();
   }
