@@ -38,6 +38,9 @@ const windowTracker = {
 
 function androidStartup() {
   
+  
+  Services.obs.notifyObservers(null, "startupcache-invalidate");
+  
   let testRoot = Services.prefs.getStringPref("mochitest.testRoot", "");
   if (testRoot.endsWith("/chrome")) {
     

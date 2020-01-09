@@ -1914,7 +1914,6 @@ class BootstrapScope {
     if (this.file) {
       XPIInstall.flushJarCache(this.file);
     }
-    XPIInstall.flushChromeCaches();
   }
 
   
@@ -2222,11 +2221,7 @@ var XPIProvider = {
       Services.obs.addObserver(this, NOTIFICATION_FLUSH_PERMISSIONS);
 
 
-      let flushCaches = this.checkForChanges(aAppChanged, aOldAppVersion,
-                                             aOldPlatformVersion);
-      if (flushCaches) {
-        Services.obs.notifyObservers(null, "startupcache-invalidate");
-      }
+      this.checkForChanges(aAppChanged, aOldAppVersion, aOldPlatformVersion);
 
       AddonManagerPrivate.markProviderSafe(this);
 
@@ -2581,8 +2576,6 @@ var XPIProvider = {
 
 
 
-
-
   checkForChanges(aAppChanged, aOldAppVersion, aOldPlatformVersion) {
     logger.debug("checkForChanges");
 
@@ -2658,15 +2651,13 @@ var XPIProvider = {
       
       if (extensionListChanged || hasPendingChanges) {
         XPIDatabase.updateActiveAddons();
-        return true;
+        return;
       }
 
       logger.debug("No changes found");
     } catch (e) {
       logger.error("Error during startup file checks", e);
     }
-
-    return false;
   },
 
   
