@@ -1147,7 +1147,8 @@
       this._editingRow = -1;
       this._editingColumn = null;
 
-      if (accept) {
+      
+      if (accept && this.view) {
         var value = input.value;
         this.view.setCellText(editingRow, editingColumn, value);
       }
