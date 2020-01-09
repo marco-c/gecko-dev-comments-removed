@@ -523,10 +523,12 @@ class PictureInPictureChild extends ActorChild {
     });
 
     if (this.weakPlayerContent) {
-      await new Promise(resolve => {
-        this.weakPlayerContent.addEventListener("unload", resolve,
-                                                { once: true });
-      });
+      if (!this.weakPlayerContent.closed) {
+        await new Promise(resolve => {
+          this.weakPlayerContent.addEventListener("unload", resolve,
+                                                  { once: true });
+        });
+      }
       
       
       
