@@ -11,6 +11,7 @@
 #include "base/win/windows_version.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/ImportDir.h"
 #include "mozilla/Logging.h"
 #include "mozilla/NSPRLogModulesParser.h"
 #include "mozilla/Preferences.h"
@@ -271,6 +272,51 @@ bool SandboxBroker::LaunchApp(const wchar_t* aPath, const wchar_t* aArguments,
     
     LOG_W("Warning on SpawnTarget with last_error=%d, last_warning=%d",
           last_error, last_warning);
+  }
+
+  
+  
+  
+  
+  nsModuleHandle moduleHandle;
+  HMODULE realBase = nullptr;
+  if (XRE_GetChildProcBinPathType(aProcessType) == BinPathType::Self) {
+    
+    HMODULE ourExe;
+    if (::GetModuleHandleExW(0, nullptr, &ourExe)) {
+      moduleHandle.own(ourExe);
+      
+      
+      realBase = ourExe;
+    }
+  } else {
+    
+    
+    moduleHandle.own(::LoadLibraryExW(aPath, nullptr, LOAD_LIBRARY_AS_DATAFILE));
+    LauncherResult<HMODULE> procExeModule =
+      nt::GetProcessExeModule(targetInfo.hProcess);
+    if (procExeModule.isOk()) {
+      realBase = procExeModule.unwrap();
+    } else {
+      LOG_E("nt::GetProcessExeModule failed with HRESULT 0x%08lX",
+            procExeModule.unwrapErr().AsHResult());
+    }
+  }
+
+  if (moduleHandle && realBase) {
+    nt::PEHeaders exeImage(moduleHandle.get());
+    if (!!exeImage) {
+      LauncherVoidResult importsRestored =
+        RestoreImportDirectory(aPath, exeImage, targetInfo.hProcess, realBase);
+      if (importsRestored.isErr()) {
+        LOG_E("Failed to restore import directory with HRESULT 0x%08lX",
+              importsRestored.unwrapErr().AsHResult());
+        TerminateProcess(targetInfo.hProcess, 1);
+        CloseHandle(targetInfo.hThread);
+        CloseHandle(targetInfo.hProcess);
+        return false;
+      }
+    }
   }
 
   
