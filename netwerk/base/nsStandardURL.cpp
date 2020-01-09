@@ -63,13 +63,17 @@ bool nsStandardURL::gPunycodeHost = true;
 
 
 
+
+
+
+
 constexpr bool TestForInvalidHostCharacters(char c) {
   
   
   return (c > 0 && c < 32) ||  
          c == ' ' || c == '#' || c == '/' || c == ':' || c == '?' || c == '@' ||
          c == '[' || c == '\\' || c == ']' || c == '*' || c == '<' ||
-         c == '>' || c == '|' || c == '"' || c == '%';
+         c == '>' || c == '|' || c == '"';
 }
 constexpr ASCIIMaskArray sInvalidHostChars =
     CreateASCIIMask(TestForInvalidHostCharacters);
