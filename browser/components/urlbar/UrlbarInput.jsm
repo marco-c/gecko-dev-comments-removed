@@ -114,6 +114,7 @@ class UrlbarInput {
     const inputFieldEvents = [
       "focus", "input", "keyup", "mouseover", "paste", "scrollend", "select",
       "overflow", "underflow", "dragstart", "dragover", "drop",
+      "compositionstart", "compositionend",
     ];
     for (let name of inputFieldEvents) {
       this.inputField.addEventListener(name, this);
@@ -125,6 +126,9 @@ class UrlbarInput {
 
     this.inputField.controllers.insertControllerAt(0, new CopyCutController(this));
     this._initPasteAndGo();
+
+    
+    this._compositionState == UrlbarUtils.COMPOSITION.NONE;
   }
 
   
@@ -990,6 +994,26 @@ class UrlbarInput {
     }
 
     
+    
+    
+    
+    
+
+    
+    if (this._compositionState == UrlbarUtils.COMPOSITION.COMPOSING) {
+      return;
+    }
+
+    if (this._compositionState == UrlbarUtils.COMPOSITION.COMMIT) {
+      this._compositionState = UrlbarUtils.COMPOSITION.NONE;
+    }
+
+    
+    
+    
+    
+
+    
     this.startQuery({
       lastKey: null,
     });
@@ -1085,6 +1109,26 @@ class UrlbarInput {
 
   _on_keyup(event) {
     this._toggleActionOverride(event);
+  }
+
+  _on_compositionstart(event) {
+    if (this._compositionState == UrlbarUtils.COMPOSITION.COMPOSING) {
+      throw new Error("Trying to start a nested composition?");
+    }
+    this._compositionState = UrlbarUtils.COMPOSITION.COMPOSING;
+
+    
+    this.closePopup();
+  }
+
+  _on_compositionend(event) {
+    if (this._compositionState != UrlbarUtils.COMPOSITION.COMPOSING) {
+      throw new Error("Trying to stop a non existing composition?");
+    }
+
+    
+    
+    this._compositionState = UrlbarUtils.COMPOSITION.COMMIT;
   }
 
   _on_popupshowing() {
