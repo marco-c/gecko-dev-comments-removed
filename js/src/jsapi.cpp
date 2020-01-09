@@ -685,6 +685,7 @@ JS_PUBLIC_API JSObject* JS_TransplantObject(JSContext* cx, HandleObject origobj,
   MOZ_ASSERT(!target->is<CrossCompartmentWrapperObject>());
   MOZ_ASSERT(origobj->getClass() == target->getClass());
   ReleaseAssertObjectHasNoWrappers(cx, target);
+  JS::AssertCellIsNotGray(origobj);
   JS::AssertCellIsNotGray(target);
 
   RootedValue origv(cx, ObjectValue(*origobj));
@@ -702,13 +703,9 @@ JS_PUBLIC_API JSObject* JS_TransplantObject(JSContext* cx, HandleObject origobj,
     
     
     
-    AutoRealmUnchecked ar(cx, origobj->nonCCWRealm());
+    AutoRealm ar(cx, origobj);
     JSObject::swap(cx, origobj, target);
     newIdentity = origobj;
-
-    
-    
-    JS::ExposeObjectToActiveJS(newIdentity);
   } else if (WrapperMap::Ptr p = destination->lookupWrapper(origv)) {
     
     
@@ -739,7 +736,7 @@ JS_PUBLIC_API JSObject* JS_TransplantObject(JSContext* cx, HandleObject origobj,
   
   if (origobj->compartment() != destination) {
     RootedObject newIdentityWrapper(cx, newIdentity);
-    AutoRealmUnchecked ar(cx, origobj->nonCCWRealm());
+    AutoRealm ar(cx, origobj);
     if (!JS_WrapObject(cx, &newIdentityWrapper)) {
       MOZ_CRASH();
     }
