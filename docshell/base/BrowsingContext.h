@@ -180,15 +180,15 @@ class BrowsingContext : public nsWrapperCache,
   
   
   
-  void Attach();
+  void Attach(bool aFromIPC = false);
 
   
   
-  void Detach();
+  void Detach(bool aFromIPC = false);
 
   
   
-  void CacheChildren();
+  void CacheChildren(bool aFromIPC = false);
 
   
   
