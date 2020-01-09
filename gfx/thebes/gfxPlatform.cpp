@@ -685,12 +685,12 @@ static void FinishAsyncMemoryReport() {
 
 
 #define REPORT_INTERNER(id)                      \
-  helper.Report(aReport.interning.interners.id, \
+  helper.Report(aReport.interning.id##_interner, \
                 "interning/" #id "/interners");
 
 
 #define REPORT_DATA_STORE(id)                      \
-  helper.Report(aReport.interning.data_stores.id, \
+  helper.Report(aReport.interning.id##_data_store, \
                 "interning/" #id "/data-stores");
 
 NS_IMPL_ISUPPORTS(WebRenderMemoryReporter, nsIMemoryReporter)
