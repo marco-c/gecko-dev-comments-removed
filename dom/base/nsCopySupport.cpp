@@ -184,7 +184,7 @@ struct EncodedDocumentWithContext {
   
   
   
-  bool mUnicodeEncodingIsTextHTML;
+  bool mUnicodeEncodingIsTextHTML = false;
 
   
   
