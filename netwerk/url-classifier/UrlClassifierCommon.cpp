@@ -456,9 +456,7 @@ bool UrlClassifierCommon::IsAllowListed(
 
 
 bool UrlClassifierCommon::IsTrackingClassificationFlag(uint32_t aFlag) {
-  return (aFlag & nsIHttpChannel::ClassificationFlags::CLASSIFIED_TRACKING) ||
-         (aFlag &
-          nsIHttpChannel::ClassificationFlags::CLASSIFIED_FINGERPRINTING);
+  return (aFlag & nsIHttpChannel::ClassificationFlags::CLASSIFIED_ANY_TRACKING);
 }
 
 }  
