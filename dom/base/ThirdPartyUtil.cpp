@@ -157,13 +157,11 @@ ThirdPartyUtil::IsThirdPartyWindow(mozIDOMWindowProxy* aWindow, nsIURI* aURI,
     }
   }
 
-  nsCOMPtr<nsPIDOMWindowOuter> current = nsPIDOMWindowOuter::From(aWindow),
-                               parent;
-  nsCOMPtr<nsIURI> parentURI;
+  nsPIDOMWindowOuter* current = nsPIDOMWindowOuter::From(aWindow);
   do {
     
     
-    parent = current->GetScriptableParent();
+    nsPIDOMWindowOuter* parent = current->GetScriptableParent();
     
     
     
@@ -175,6 +173,7 @@ ThirdPartyUtil::IsThirdPartyWindow(mozIDOMWindowProxy* aWindow, nsIURI* aURI,
       return NS_OK;
     }
 
+    nsCOMPtr<nsIURI> parentURI;
     rv = GetURIFromWindow(parent, getter_AddRefs(parentURI));
     NS_ENSURE_SUCCESS(rv, rv);
 
@@ -187,7 +186,6 @@ ThirdPartyUtil::IsThirdPartyWindow(mozIDOMWindowProxy* aWindow, nsIURI* aURI,
     }
 
     current = parent;
-    currentURI = parentURI;
   } while (1);
 
   MOZ_ASSERT_UNREACHABLE("should've returned");
