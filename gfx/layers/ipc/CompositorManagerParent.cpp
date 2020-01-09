@@ -49,13 +49,17 @@ CompositorManagerParent::CreateSameProcess() {
 }
 
 
-void CompositorManagerParent::Create(
+bool CompositorManagerParent::Create(
     Endpoint<PCompositorManagerParent>&& aEndpoint) {
   MOZ_ASSERT(NS_IsMainThread());
 
   
   
   MOZ_ASSERT(aEndpoint.OtherPid() != base::GetCurrentProcId());
+
+  if (!CompositorThreadHolder::IsActive()) {
+    return false;
+  }
 
   RefPtr<CompositorManagerParent> bridge = new CompositorManagerParent();
 
@@ -64,6 +68,7 @@ void CompositorManagerParent::Create(
           "CompositorManagerParent::Bind", bridge,
           &CompositorManagerParent::Bind, std::move(aEndpoint));
   CompositorThreadHolder::Loop()->PostTask(runnable.forget());
+  return true;
 }
 
 
