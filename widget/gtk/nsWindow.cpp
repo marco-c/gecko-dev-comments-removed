@@ -3289,26 +3289,29 @@ nsresult nsWindow::Create(nsIWidget *aParent, nsNativeWidget aNativeParent,
 
         
         
-        
-        
-        
-        needsAlphaVisual = TopLevelWindowUseARGBVisual();
-        if (needsAlphaVisual && mIsX11Display && !shouldAccelerate) {
+        GdkScreen *screen = gdk_screen_get_default();
+        if (gdk_screen_is_composited(screen)) {
           
           
           
           
-          mTransparencyBitmapForTitlebar = true;
-        }
-
-        
-        if (mTransparencyBitmapForTitlebar &&
-            Preferences::GetBool("mozilla.widget.use-argb-visuals", false)) {
-          mTransparencyBitmapForTitlebar = false;
-        }
-
-        if (mTransparencyBitmapForTitlebar) {
-          mCSDSupportLevel = CSD_SUPPORT_CLIENT;
+          
+          if (Preferences::HasUserValue("mozilla.widget.use-argb-visuals")) {
+            
+            needsAlphaVisual =
+                Preferences::GetBool("mozilla.widget.use-argb-visuals");
+          } else if (!mIsX11Display) {
+            
+            needsAlphaVisual = true;
+          } else if (mCSDSupportLevel != CSD_SUPPORT_NONE) {
+            if (shouldAccelerate) {
+              needsAlphaVisual = true;
+            } else {
+              
+              
+              mTransparencyBitmapForTitlebar = true;
+            }
+          }
         }
       }
 
@@ -3356,7 +3359,8 @@ nsresult nsWindow::Create(nsIWidget *aParent, nsNativeWidget aNativeParent,
       
       
       
-      if (mWindowType == eWindowType_toplevel && mHasAlphaVisual) {
+      if (mWindowType == eWindowType_toplevel &&
+          (mHasAlphaVisual || mTransparencyBitmapForTitlebar)) {
         mIsTransparent = true;
       }
 
@@ -6523,35 +6527,6 @@ bool nsWindow::HideTitlebarByDefault() {
   return hideTitlebar;
 }
 
-bool nsWindow::TopLevelWindowUseARGBVisual() {
-  static int useARGBVisual = -1;
-  if (useARGBVisual != -1) {
-    return useARGBVisual;
-  }
-
-  GdkScreen *screen = gdk_screen_get_default();
-  if (!gdk_screen_is_composited(screen)) {
-    useARGBVisual = false;
-  }
-
-  if (Preferences::HasUserValue("mozilla.widget.use-argb-visuals")) {
-    useARGBVisual =
-        Preferences::GetBool("mozilla.widget.use-argb-visuals", false);
-  } else {
-    const char *currentDesktop = getenv("XDG_CURRENT_DESKTOP");
-    useARGBVisual =
-        (currentDesktop && GetSystemCSDSupportLevel() != CSD_SUPPORT_NONE);
-
-    if (useARGBVisual) {
-      useARGBVisual =
-          (strstr(currentDesktop, "GNOME-Flashback:GNOME") != nullptr ||
-           strstr(currentDesktop, "GNOME") != nullptr);
-    }
-  }
-
-  return useARGBVisual;
-}
-
 int32_t nsWindow::RoundsWidgetCoordinatesTo() { return GdkScaleFactor(); }
 
 void nsWindow::GetCompositorWidgetInitData(
@@ -6565,7 +6540,8 @@ void nsWindow::GetCompositorWidgetInitData(
   *aInitData = mozilla::widget::GtkCompositorWidgetInitData(
       (mXWindow != X11None) ? mXWindow : (uintptr_t) nullptr,
       mXDisplay ? nsCString(XDisplayString(mXDisplay)) : nsCString(),
-      mIsTransparent && !mHasAlphaVisual, GetClientSize());
+      mIsTransparent && !mHasAlphaVisual && !mTransparencyBitmapForTitlebar,
+      GetClientSize());
 }
 
 #ifdef MOZ_WAYLAND
