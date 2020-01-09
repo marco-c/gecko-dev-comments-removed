@@ -44,9 +44,16 @@ class ShapedObject : public JSObject {
   
   
   
-  void initShape(Shape* shape) { shapeRef().init(shape); }
-
-  void setShape(Shape* shape) { shapeRef() = shape; }
+  void initShape(Shape* shape) {
+    
+    
+    MOZ_ASSERT(zone() == shape->zone());
+    shapeRef().init(shape);
+  }
+  void setShape(Shape* shape) {
+    MOZ_ASSERT(zone() == shape->zone());
+    shapeRef() = shape;
+  }
   Shape* shape() const { return shapeRef(); }
 
   void traceShape(JSTracer* trc) { TraceEdge(trc, shapePtr(), "shape"); }
