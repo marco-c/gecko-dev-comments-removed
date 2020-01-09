@@ -129,6 +129,8 @@ class HTMLEditor;
 class PresShell;
 class TextEditor;
 
+enum class StorageAccess;
+
 namespace dom {
 class ContentFrameMessageManager;
 struct CustomElementDefinition;
@@ -2888,101 +2890,6 @@ class nsContentUtils {
 
   static bool IsNonSubresourceInternalPolicyType(nsContentPolicyType aType);
 
-  
-  
-  
-  enum class StorageAccess {
-    
-    
-    ePartitionForeignOrDeny = -2,
-    
-    
-    ePartitionTrackersOrDeny = -1,
-    
-    eDeny = 0,
-    
-    
-    ePrivateBrowsing = 1,
-    
-    eSessionScoped = 2,
-    
-    eAllow = 3,
-    
-    eNumValues = 4,
-  };
-
-  
-
-
-
-
-
-
-
-  static StorageAccess StorageAllowedForWindow(
-      nsPIDOMWindowInner* aWindow, uint32_t* aRejectedReason = nullptr);
-
-  
-
-
-
-
-
-
-
-
-  static StorageAccess StorageAllowedForDocument(const Document* aDoc);
-
-  
-
-
-
-  static StorageAccess StorageAllowedForNewWindow(nsIPrincipal* aPrincipal,
-                                                  nsIURI* aURI,
-                                                  nsPIDOMWindowInner* aParent);
-
-  
-
-
-
-
-  static StorageAccess StorageAllowedForChannel(nsIChannel* aChannel);
-
-  
-
-
-
-  static StorageAccess StorageAllowedForServiceWorker(
-      nsIPrincipal* aPrincipal, nsICookieSettings* aCookieSettings);
-
-  
-
-
-
-  static bool StorageDisabledByAntiTracking(Document* aDocument, nsIURI* aURI) {
-    uint32_t rejectedReason = 0;
-    
-    
-    
-    return StorageDisabledByAntiTracking(
-        aDocument->GetInnerWindow(), aDocument->GetChannel(),
-        aDocument->NodePrincipal(), aURI, rejectedReason);
-  }
-
- private:
-  
-
-
-
-
-
-
-  static bool StorageDisabledByAntiTracking(nsPIDOMWindowInner* aWindow,
-                                            nsIChannel* aChannel,
-                                            nsIPrincipal* aPrincipal,
-                                            nsIURI* aURI,
-                                            uint32_t& aRejectedReason);
-
  public:
   
 
@@ -3314,33 +3221,6 @@ class nsContentUtils {
   static bool CallOnAllRemoteChildren(
       mozilla::dom::MessageBroadcaster* aManager,
       CallOnRemoteChildFunction aCallback, void* aArg);
-
-  
-
-
-
-
-
-  static void GetCookieLifetimePolicyFromCookieSettings(
-      nsICookieSettings* aCookieSettings, nsIPrincipal* aPrincipal,
-      uint32_t* aLifetimePolicy);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  static StorageAccess InternalStorageAllowedCheck(
-      nsIPrincipal* aPrincipal, nsPIDOMWindowInner* aWindow, nsIURI* aURI,
-      nsIChannel* aChannel, nsICookieSettings* aCookieSettings,
-      uint32_t& aRejectedReason);
 
   static nsINode* GetCommonAncestorHelper(nsINode* aNode1, nsINode* aNode2);
   static nsIContent* GetCommonFlattenedTreeAncestorHelper(

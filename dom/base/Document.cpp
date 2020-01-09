@@ -3518,9 +3518,8 @@ void Document::GetCookie(nsAString& aCookie, ErrorResult& rv) {
     return;
   }
 
-  nsContentUtils::StorageAccess storageAccess =
-      nsContentUtils::StorageAllowedForDocument(this);
-  if (storageAccess == nsContentUtils::StorageAccess::eDeny) {
+  StorageAccess storageAccess = StorageAllowedForDocument(this);
+  if (storageAccess == StorageAccess::eDeny) {
     return;
   }
 
@@ -3578,9 +3577,8 @@ void Document::SetCookie(const nsAString& aCookie, ErrorResult& rv) {
     return;
   }
 
-  nsContentUtils::StorageAccess storageAccess =
-      nsContentUtils::StorageAllowedForDocument(this);
-  if (storageAccess == nsContentUtils::StorageAccess::eDeny) {
+  StorageAccess storageAccess = StorageAllowedForDocument(this);
+  if (storageAccess == StorageAccess::eDeny) {
     return;
   }
 
@@ -13022,7 +13020,7 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
 
   if (CookieSettings()->GetRejectThirdPartyTrackers() && inner) {
     
-    if (nsContentUtils::StorageDisabledByAntiTracking(this, nullptr)) {
+    if (StorageDisabledByAntiTracking(this, nullptr)) {
       
       
       DebugOnly<bool> isOnAllowList = false;

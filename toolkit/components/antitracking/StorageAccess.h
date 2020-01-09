@@ -7,17 +7,114 @@
 #ifndef mozilla_StorageAccess_h
 #define mozilla_StorageAccess_h
 
-#include "nsContentUtils.h"
+#include "mozilla/dom/Document.h"
 
+class nsIChannel;
 class nsICookieSettings;
+class nsIPrincipal;
+class nsIURI;
+class nsPIDOMWindowInner;
 
 namespace mozilla {
 
-bool ShouldPartitionStorage(nsContentUtils::StorageAccess aAccess);
+
+
+
+enum class StorageAccess {
+  
+  
+  ePartitionForeignOrDeny = -2,
+  
+  
+  ePartitionTrackersOrDeny = -1,
+  
+  eDeny = 0,
+  
+  
+  ePrivateBrowsing = 1,
+  
+  eSessionScoped = 2,
+  
+  eAllow = 3,
+  
+  eNumValues = 4,
+};
+
+
+
+
+
+
+
+
+
+StorageAccess StorageAllowedForWindow(nsPIDOMWindowInner* aWindow,
+                                      uint32_t* aRejectedReason = nullptr);
+
+
+
+
+
+
+
+
+
+
+StorageAccess StorageAllowedForDocument(const dom::Document* aDoc);
+
+
+
+
+
+StorageAccess StorageAllowedForNewWindow(nsIPrincipal* aPrincipal, nsIURI* aURI,
+                                         nsPIDOMWindowInner* aParent);
+
+
+
+
+
+
+StorageAccess StorageAllowedForChannel(nsIChannel* aChannel);
+
+
+
+
+
+StorageAccess StorageAllowedForServiceWorker(
+    nsIPrincipal* aPrincipal, nsICookieSettings* aCookieSettings);
+
+
+
+
+
+
+
+
+bool StorageDisabledByAntiTracking(nsPIDOMWindowInner* aWindow,
+                                   nsIChannel* aChannel,
+                                   nsIPrincipal* aPrincipal, nsIURI* aURI,
+                                   uint32_t& aRejectedReason);
+
+
+
+
+
+inline bool StorageDisabledByAntiTracking(dom::Document* aDocument,
+                                          nsIURI* aURI) {
+  uint32_t rejectedReason = 0;
+  
+  
+  
+  return StorageDisabledByAntiTracking(
+      aDocument->GetInnerWindow(), aDocument->GetChannel(),
+      aDocument->NodePrincipal(), aURI, rejectedReason);
+}
+
+bool ShouldPartitionStorage(StorageAccess aAccess);
 
 bool ShouldPartitionStorage(uint32_t aRejectedReason);
 
-bool StoragePartitioningEnabled(nsContentUtils::StorageAccess aAccess,
+bool StoragePartitioningEnabled(StorageAccess aAccess,
                                 nsICookieSettings* aCookieSettings);
 
 bool StoragePartitioningEnabled(uint32_t aRejectedReason,

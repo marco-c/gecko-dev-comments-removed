@@ -4347,8 +4347,7 @@ Storage* nsGlobalWindowInner::GetSessionStorage(ErrorResult& aError) {
     }
 
     uint32_t rejectedReason = 0;
-    nsContentUtils::StorageAccess access =
-        nsContentUtils::StorageAllowedForWindow(this, &rejectedReason);
+    StorageAccess access = StorageAllowedForWindow(this, &rejectedReason);
 
     
     
@@ -4381,7 +4380,7 @@ Storage* nsGlobalWindowInner::GetSessionStorage(ErrorResult& aError) {
     
     
     
-    if (access == nsContentUtils::StorageAccess::eDeny &&
+    if (access == StorageAccess::eDeny &&
         rejectedReason !=
             nsIWebProgressListener::STATE_COOKIES_BLOCKED_FOREIGN) {
       aError.Throw(NS_ERROR_DOM_SECURITY_ERR);
@@ -4444,25 +4443,24 @@ Storage* nsGlobalWindowInner::GetLocalStorage(ErrorResult& aError) {
   
   
 
-  nsContentUtils::StorageAccess access =
-      nsContentUtils::StorageAllowedForWindow(this);
+  StorageAccess access = StorageAllowedForWindow(this);
 
   
   if (ShouldPartitionStorage(access)) {
     if (!mDoc) {
-      access = nsContentUtils::StorageAccess::eDeny;
+      access = StorageAccess::eDeny;
     } else if (!StaticPrefs::privacy_storagePrincipal_enabledForTrackers()) {
       nsCOMPtr<nsIURI> uri;
       Unused << mDoc->NodePrincipal()->GetURI(getter_AddRefs(uri));
       static const char* kPrefName =
           "privacy.restrict3rdpartystorage.partitionedHosts";
       if (!uri || !nsContentUtils::IsURIInPrefList(uri, kPrefName)) {
-        access = nsContentUtils::StorageAccess::eDeny;
+        access = StorageAccess::eDeny;
       }
     }
   }
 
-  if (access == nsContentUtils::StorageAccess::eDeny) {
+  if (access == StorageAccess::eDeny) {
     if (mDoc && (mDoc->GetSandboxFlags() & SANDBOXED_ORIGIN) != 0) {
       
       

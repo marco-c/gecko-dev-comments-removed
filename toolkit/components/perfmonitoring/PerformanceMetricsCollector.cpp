@@ -4,6 +4,7 @@
 
 
 
+#include "nsContentUtils.h"
 #include "nsThreadUtils.h"
 #include "mozilla/AbstractThread.h"
 #include "mozilla/Logging.h"

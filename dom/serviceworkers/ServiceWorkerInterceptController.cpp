@@ -7,6 +7,7 @@
 #include "ServiceWorkerInterceptController.h"
 
 #include "mozilla/BasePrincipal.h"
+#include "mozilla/StorageAccess.h"
 #include "nsContentUtils.h"
 #include "nsIChannel.h"
 #include "ServiceWorkerManager.h"
@@ -48,8 +49,7 @@ ServiceWorkerInterceptController::ShouldPrepareForIntercept(
   
   
   
-  if (nsContentUtils::StorageAllowedForChannel(aChannel) !=
-      nsContentUtils::StorageAccess::eAllow) {
+  if (StorageAllowedForChannel(aChannel) != StorageAccess::eAllow) {
     return NS_OK;
   }
 
