@@ -25,6 +25,8 @@ const STYLE_INSPECTOR_L10N = new LocalizationHelper(STYLE_INSPECTOR_PROPERTIES);
 
 
 
+class Rule {
+  
 
 
 
@@ -36,37 +38,30 @@ const STYLE_INSPECTOR_L10N = new LocalizationHelper(STYLE_INSPECTOR_PROPERTIES);
 
 
 
-function Rule(elementStyle, options) {
-  this.elementStyle = elementStyle;
-  this.domRule = options.rule;
-  this.matchedSelectors = options.matchedSelectors || [];
-  this.pseudoElement = options.pseudoElement || "";
+  constructor(elementStyle, options) {
+    this.elementStyle = elementStyle;
+    this.domRule = options.rule;
+    this.matchedSelectors = options.matchedSelectors || [];
+    this.pseudoElement = options.pseudoElement || "";
+    this.isSystem = options.isSystem;
+    this.isUnmatched = options.isUnmatched || false;
+    this.inherited = options.inherited || null;
+    this.keyframes = options.keyframes || null;
 
-  this.isSystem = options.isSystem;
-  this.isUnmatched = options.isUnmatched || false;
-  this.inherited = options.inherited || null;
-  this.keyframes = options.keyframes || null;
+    this.mediaText = this.domRule && this.domRule.mediaText ? this.domRule.mediaText : "";
+    this.cssProperties = this.elementStyle.ruleView.cssProperties;
 
-  if (this.domRule && this.domRule.mediaText) {
-    this.mediaText = this.domRule.mediaText;
+    
+    
+    this.textProps = this._getTextProperties();
+    this.textProps = this.textProps.concat(this._getDisabledProperties());
+
+    this.getUniqueSelector = this.getUniqueSelector.bind(this);
   }
-
-  this.cssProperties = this.elementStyle.ruleView.cssProperties;
-
-  
-  
-  this.textProps = this._getTextProperties();
-  this.textProps = this.textProps.concat(this._getDisabledProperties());
-
-  this.getUniqueSelector = this.getUniqueSelector.bind(this);
-}
-
-Rule.prototype = {
-  mediaText: "",
 
   get declarations() {
     return this.textProps;
-  },
+  }
 
   get inheritance() {
     if (!this.inherited) {
@@ -77,7 +72,7 @@ Rule.prototype = {
       inherited: this.inherited,
       inheritedSource: this.inheritedSource,
     };
-  },
+  }
 
   get selector() {
     return {
@@ -86,7 +81,7 @@ Rule.prototype = {
       selectors: this.domRule.selectors,
       selectorText: this.keyframes ? this.domRule.keyText : this.selectorText,
     };
-  },
+  }
 
   get sourceLink() {
     return {
@@ -95,7 +90,7 @@ Rule.prototype = {
       mediaText: this.mediaText,
       title: this.title,
     };
-  },
+  }
 
   get title() {
     let title = CssLogic.shortSource(this.sheet);
@@ -104,7 +99,7 @@ Rule.prototype = {
     }
 
     return title + (this.mediaText ? " @media " + this.mediaText : "");
-  },
+  }
 
   get inheritedSource() {
     if (this._inheritedSource) {
@@ -120,7 +115,7 @@ Rule.prototype = {
         STYLE_INSPECTOR_L10N.getFormatStr("rule.inheritedFrom", eltText);
     }
     return this._inheritedSource;
-  },
+  }
 
   get keyframesName() {
     if (this._keyframesName) {
@@ -132,7 +127,7 @@ Rule.prototype = {
         STYLE_INSPECTOR_L10N.getFormatStr("rule.keyframe", this.keyframes.name);
     }
     return this._keyframesName;
-  },
+  }
 
   get keyframesRule() {
     if (!this.keyframes) {
@@ -143,33 +138,33 @@ Rule.prototype = {
       id: this.keyframes.actorID,
       keyframesName: this.keyframesName,
     };
-  },
+  }
 
   get selectorText() {
     return this.domRule.selectors ? this.domRule.selectors.join(", ") :
       CssLogic.l10n("rule.sourceElement");
-  },
+  }
 
   
 
 
   get sheet() {
     return this.domRule ? this.domRule.parentStyleSheet : null;
-  },
+  }
 
   
 
 
   get ruleLine() {
     return this.domRule ? this.domRule.line : -1;
-  },
+  }
 
   
 
 
   get ruleColumn() {
     return this.domRule ? this.domRule.column : null;
-  },
+  }
 
   
 
@@ -179,9 +174,9 @@ Rule.prototype = {
 
 
 
-  getDeclaration: function(id) {
+  getDeclaration(id) {
     return this.textProps.find(textProp => textProp.id === id);
-  },
+  }
 
   
 
@@ -202,7 +197,7 @@ Rule.prototype = {
     }
 
     return selector;
-  },
+  }
 
   
 
@@ -211,9 +206,9 @@ Rule.prototype = {
 
 
 
-  matches: function(options) {
+  matches(options) {
     return this.domRule === options.rule;
-  },
+  }
 
   
 
@@ -229,7 +224,7 @@ Rule.prototype = {
 
 
 
-  createProperty: function(name, value, priority, enabled, siblingProp) {
+  createProperty(name, value, priority, enabled, siblingProp) {
     const prop = new TextProperty(this, name, value, priority, enabled);
 
     let ind;
@@ -249,14 +244,14 @@ Rule.prototype = {
     });
 
     return prop;
-  },
+  }
 
   
 
 
 
 
-  _applyPropertiesNoAuthored: function(modifications) {
+  _applyPropertiesNoAuthored(modifications) {
     this.elementStyle.markOverriddenAll();
 
     const disabledProps = [];
@@ -317,14 +312,14 @@ Rule.prototype = {
         textProp.priority = cssProp.priority;
       }
     });
-  },
+  }
 
   
 
 
 
 
-  _applyPropertiesAuthored: function(modifications) {
+  _applyPropertiesAuthored(modifications) {
     return modifications.apply().then(() => {
       
       
@@ -341,7 +336,7 @@ Rule.prototype = {
         }
       }
     });
-  },
+  }
 
   
 
@@ -355,7 +350,7 @@ Rule.prototype = {
 
 
 
-  applyProperties: function(modifier) {
+  applyProperties(modifier) {
     
     
     const resultPromise =
@@ -378,7 +373,7 @@ Rule.prototype = {
 
     this._applyingModifications = resultPromise;
     return resultPromise;
-  },
+  }
 
   
 
@@ -389,7 +384,7 @@ Rule.prototype = {
 
 
 
-  setPropertyName: function(property, name) {
+  setPropertyName(property, name) {
     if (name === property.name) {
       return Promise.resolve();
     }
@@ -400,7 +395,7 @@ Rule.prototype = {
     return this.applyProperties(modifications => {
       modifications.renameProperty(index, oldName, name);
     });
-  },
+  }
 
   
 
@@ -413,7 +408,7 @@ Rule.prototype = {
 
 
 
-  setPropertyValue: function(property, value, priority) {
+  setPropertyValue(property, value, priority) {
     if (value === property.value && priority === property.priority) {
       return Promise.resolve();
     }
@@ -425,7 +420,7 @@ Rule.prototype = {
     return this.applyProperties(modifications => {
       modifications.setProperty(index, property.name, value, priority);
     });
-  },
+  }
 
   
 
@@ -439,7 +434,7 @@ Rule.prototype = {
 
 
 
-  previewPropertyValue: function(property, value, priority) {
+  previewPropertyValue(property, value, priority) {
     const modifications = this.domRule.startModifyingProperties(this.cssProperties);
     modifications.setProperty(this.textProps.indexOf(property),
                               property.name, value, priority);
@@ -448,7 +443,7 @@ Rule.prototype = {
       
       this.elementStyle._changed();
     });
-  },
+  }
 
   
 
@@ -457,7 +452,7 @@ Rule.prototype = {
 
 
 
-  setPropertyEnabled: function(property, value) {
+  setPropertyEnabled(property, value) {
     if (property.enabled === !!value) {
       return;
     }
@@ -466,7 +461,7 @@ Rule.prototype = {
     this.applyProperties((modifications) => {
       modifications.setPropertyEnabled(index, property.name, property.enabled);
     });
-  },
+  }
 
   
 
@@ -475,7 +470,7 @@ Rule.prototype = {
 
 
 
-  removeProperty: function(property) {
+  removeProperty(property) {
     const index = this.textProps.indexOf(property);
     this.textProps.splice(index, 1);
     
@@ -483,13 +478,13 @@ Rule.prototype = {
     this.applyProperties((modifications) => {
       modifications.removeProperty(index, property.name);
     });
-  },
+  }
 
   
 
 
 
-  _getTextProperties: function() {
+  _getTextProperties() {
     const textProps = [];
     const store = this.elementStyle.store;
 
@@ -519,12 +514,12 @@ Rule.prototype = {
     }
 
     return textProps;
-  },
+  }
 
   
 
 
-  _getDisabledProperties: function() {
+  _getDisabledProperties() {
     const store = this.elementStyle.store;
 
     
@@ -544,13 +539,13 @@ Rule.prototype = {
     }
 
     return textProps;
-  },
+  }
 
   
 
 
 
-  refresh: function(options) {
+  refresh(options) {
     this.matchedSelectors = options.matchedSelectors || [];
     const newTextProps = this._getTextProperties();
 
@@ -602,7 +597,7 @@ Rule.prototype = {
     if (this.editor) {
       this.editor.populate();
     }
-  },
+  }
 
   
 
@@ -626,7 +621,7 @@ Rule.prototype = {
 
 
 
-  _updateTextProperty: function(newProp) {
+  _updateTextProperty(newProp) {
     const match = { rank: 0, prop: null };
 
     for (const prop of this.textProps) {
@@ -677,7 +672,7 @@ Rule.prototype = {
     }
 
     return false;
-  },
+  }
 
   
 
@@ -691,7 +686,7 @@ Rule.prototype = {
 
 
 
-  editClosestTextProperty: function(textProperty, direction) {
+  editClosestTextProperty(textProperty, direction) {
     let index = this.textProps.indexOf(textProperty);
 
     if (direction === Services.focus.MOVEFOCUS_FORWARD) {
@@ -717,12 +712,12 @@ Rule.prototype = {
         this.textProps[index].editor.valueSpan.click();
       }
     }
-  },
+  }
 
   
 
 
-  stringifyRule: function() {
+  stringifyRule() {
     const selectorText = this.selectorText;
     let cssText = "";
     const terminator = Services.appinfo.OS === "WINNT" ? "\r\n" : "\n";
@@ -734,21 +729,21 @@ Rule.prototype = {
     }
 
     return selectorText + " {" + terminator + cssText + "}";
-  },
+  }
 
   
 
 
 
 
-  hasAnyVisibleProperties: function() {
+  hasAnyVisibleProperties() {
     for (const prop of this.textProps) {
       if (!prop.invisible) {
         return true;
       }
     }
     return false;
-  },
-};
+  }
+}
 
 module.exports = Rule;

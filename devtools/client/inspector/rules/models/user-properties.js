@@ -8,11 +8,11 @@
 
 
 
-function UserProperties() {
-  this.map = new Map();
-}
+class UserProperties {
+  constructor() {
+    this.map = new Map();
+  }
 
-UserProperties.prototype = {
   
 
 
@@ -26,7 +26,7 @@ UserProperties.prototype = {
 
 
 
-  getProperty: function(style, name, value) {
+  getProperty(style, name, value) {
     const key = this.getKey(style);
     const entry = this.map.get(key, null);
 
@@ -34,7 +34,7 @@ UserProperties.prototype = {
       return entry[name];
     }
     return value;
-  },
+  }
 
   
 
@@ -46,7 +46,7 @@ UserProperties.prototype = {
 
 
 
-  setProperty: function(style, name, userValue) {
+  setProperty(style, name, userValue) {
     const key = this.getKey(style, name);
     const entry = this.map.get(key, null);
 
@@ -57,7 +57,7 @@ UserProperties.prototype = {
       props[name] = userValue;
       this.map.set(key, props);
     }
-  },
+  }
 
   
 
@@ -67,19 +67,19 @@ UserProperties.prototype = {
 
 
 
-  contains: function(style, name) {
+  contains(style, name) {
     const key = this.getKey(style, name);
     const entry = this.map.get(key, null);
     return !!entry && name in entry;
-  },
+  }
 
-  getKey: function(style, name) {
+  getKey(style, name) {
     return style.actorID + ":" + name;
-  },
+  }
 
-  clear: function() {
+  clear() {
     this.map.clear();
-  },
-};
+  }
+}
 
 module.exports = UserProperties;
