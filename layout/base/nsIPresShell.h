@@ -45,7 +45,12 @@
 #include "nsCOMArray.h"
 #include "Units.h"
 
+#ifdef MOZ_REFLOW_PERF
+class ReflowCountMgr;
+#endif
+
 class gfxContext;
+struct nsCallbackEventRequest;
 class nsDocShell;
 class nsIFrame;
 class nsPresContext;
@@ -57,6 +62,7 @@ class nsCanvasFrame;
 class nsCaret;
 namespace mozilla {
 class AccessibleCaretEventHub;
+class OverflowChangedTracker;
 class StyleSheet;
 }  
 class nsFrameSelection;
@@ -78,6 +84,7 @@ class nsINode;
 struct nsRect;
 class nsRegion;
 class nsRefreshDriver;
+class nsAutoCauseReflowNotifier;
 class nsARefreshObserver;
 class nsAPostRefreshObserver;
 #ifdef ACCESSIBILITY
@@ -302,7 +309,7 @@ class nsIPresShell : public nsStubDocumentObserver {
 
 
 
-  virtual void UpdatePreferenceStyles() = 0;
+  void UpdatePreferenceStyles();
 
   
 
@@ -452,19 +459,19 @@ class nsIPresShell : public nsStubDocumentObserver {
 
 
 
-  virtual nsIPageSequenceFrame* GetPageSequenceFrame() const = 0;
+  nsIPageSequenceFrame* GetPageSequenceFrame() const;
 
   
 
 
 
-  virtual nsCanvasFrame* GetCanvasFrame() const = 0;
+  nsCanvasFrame* GetCanvasFrame() const;
 
-  virtual void PostPendingScrollAnchorSelection(
-      mozilla::layout::ScrollAnchorContainer* aContainer) = 0;
-  virtual void FlushPendingScrollAnchorSelections() = 0;
-  virtual void PostPendingScrollAnchorAdjustment(
-      mozilla::layout::ScrollAnchorContainer* aContainer) = 0;
+  void PostPendingScrollAnchorSelection(
+      mozilla::layout::ScrollAnchorContainer* aContainer);
+  void FlushPendingScrollAnchorSelections();
+  void PostPendingScrollAnchorAdjustment(
+      mozilla::layout::ScrollAnchorContainer* aContainer);
 
   
 
@@ -491,9 +498,9 @@ class nsIPresShell : public nsStubDocumentObserver {
     
     
   };
-  virtual void FrameNeedsReflow(
-      nsIFrame* aFrame, IntrinsicDirty aIntrinsicDirty, nsFrameState aBitToAdd,
-      ReflowRootHandling aRootHandling = eInferFromBitToAdd) = 0;
+  void FrameNeedsReflow(nsIFrame* aFrame, IntrinsicDirty aIntrinsicDirty,
+                        nsFrameState aBitToAdd,
+                        ReflowRootHandling aRootHandling = eInferFromBitToAdd);
 
   
 
@@ -511,11 +518,11 @@ class nsIPresShell : public nsStubDocumentObserver {
 
 
 
-  virtual void FrameNeedsToContinueReflow(nsIFrame* aFrame) = 0;
+  void FrameNeedsToContinueReflow(nsIFrame* aFrame);
 
-  virtual void CancelAllPendingReflows() = 0;
+  void CancelAllPendingReflows();
 
-  virtual void NotifyCounterStylesAreDirty() = 0;
+  void NotifyCounterStylesAreDirty();
 
   bool FrameIsAncestorOfDirtyRoot(nsIFrame* aFrame) const;
 
@@ -658,29 +665,22 @@ class nsIPresShell : public nsStubDocumentObserver {
 
 
 
-  virtual nsresult PostReflowCallback(nsIReflowCallback* aCallback) = 0;
-  virtual void CancelReflowCallback(nsIReflowCallback* aCallback) = 0;
+  nsresult PostReflowCallback(nsIReflowCallback* aCallback);
+  void CancelReflowCallback(nsIReflowCallback* aCallback);
 
-  virtual void ClearFrameRefs(nsIFrame* aFrame) = 0;
+  void HandlePostedReflowCallbacks(bool aInterruptible);
 
-  
+  void ScheduleBeforeFirstPaint();
+  void UnsuppressAndInvalidate();
 
-
-
-
-  virtual already_AddRefed<gfxContext> CreateReferenceRenderingContext() = 0;
+  void ClearFrameRefs(nsIFrame* aFrame);
 
   
 
 
 
 
-
-
-
-
-  virtual nsresult GoToAnchor(const nsAString& aAnchorName, bool aScroll,
-                              uint32_t aAdditionalScrollFlags = 0) = 0;
+  already_AddRefed<gfxContext> CreateReferenceRenderingContext();
 
   
 
@@ -690,7 +690,19 @@ class nsIPresShell : public nsStubDocumentObserver {
 
 
 
-  virtual nsresult ScrollToAnchor() = 0;
+
+  nsresult GoToAnchor(const nsAString& aAnchorName, bool aScroll,
+                      uint32_t aAdditionalScrollFlags = 0);
+
+  
+
+
+
+
+
+
+
+  nsresult ScrollToAnchor();
 
   enum {
     SCROLL_TOP = 0,
@@ -782,10 +794,8 @@ class nsIPresShell : public nsStubDocumentObserver {
 
 
 
-  virtual nsresult ScrollContentIntoView(nsIContent* aContent,
-                                         ScrollAxis aVertical,
-                                         ScrollAxis aHorizontal,
-                                         uint32_t aFlags) = 0;
+  nsresult ScrollContentIntoView(nsIContent* aContent, ScrollAxis aVertical,
+                                 ScrollAxis aHorizontal, uint32_t aFlags);
 
   enum {
     SCROLL_FIRST_ANCESTOR_ONLY = 0x01,
@@ -813,10 +823,9 @@ class nsIPresShell : public nsStubDocumentObserver {
 
 
 
-  virtual bool ScrollFrameRectIntoView(nsIFrame* aFrame, const nsRect& aRect,
-                                       ScrollAxis aVertical,
-                                       ScrollAxis aHorizontal,
-                                       uint32_t aFlags) = 0;
+  bool ScrollFrameRectIntoView(nsIFrame* aFrame, const nsRect& aRect,
+                               ScrollAxis aVertical, ScrollAxis aHorizontal,
+                               uint32_t aFlags);
 
   
 
@@ -846,36 +855,36 @@ class nsIPresShell : public nsStubDocumentObserver {
 
 
 
-  virtual void SetIgnoreFrameDestruction(bool aIgnore) = 0;
+  void SetIgnoreFrameDestruction(bool aIgnore);
 
   
 
 
 
 
-  virtual void NotifyDestroyingFrame(nsIFrame* aFrame) = 0;
+  void NotifyDestroyingFrame(nsIFrame* aFrame);
 
   
 
 
-  virtual already_AddRefed<mozilla::AccessibleCaretEventHub>
-  GetAccessibleCaretEventHub() const = 0;
+  already_AddRefed<mozilla::AccessibleCaretEventHub>
+  GetAccessibleCaretEventHub() const;
 
   
 
 
-  virtual already_AddRefed<nsCaret> GetCaret() const = 0;
+  already_AddRefed<nsCaret> GetCaret() const;
 
   
 
 
-  virtual void SetCaret(nsCaret* aNewCaret) = 0;
+  void SetCaret(nsCaret* aNewCaret);
 
   
 
 
 
-  virtual void RestoreCaret() = 0;
+  void RestoreCaret();
 
   
 
@@ -1731,13 +1740,92 @@ class nsIPresShell : public nsStubDocumentObserver {
   virtual Document* GetPrimaryContentDocument() = 0;
 
   
-  virtual void NotifyStyleSheetServiceSheetAdded(mozilla::StyleSheet* aSheet,
-                                                 uint32_t aSheetType) = 0;
-  virtual void NotifyStyleSheetServiceSheetRemoved(mozilla::StyleSheet* aSheet,
-                                                   uint32_t aSheetType) = 0;
+  void NotifyStyleSheetServiceSheetAdded(mozilla::StyleSheet* aSheet,
+                                         uint32_t aSheetType);
+  void NotifyStyleSheetServiceSheetRemoved(mozilla::StyleSheet* aSheet,
+                                           uint32_t aSheetType);
 
  protected:
   friend class nsRefreshDriver;
+  friend class ::nsAutoCauseReflowNotifier;
+
+  void WillCauseReflow();
+  void DidCauseReflow();
+
+  void CancelPostedReflowCallbacks();
+  void FlushPendingScrollAnchorAdjustments();
+
+#ifdef DEBUG
+  mozilla::UniquePtr<mozilla::ServoStyleSet> CloneStyleSet(
+      mozilla::ServoStyleSet*);
+  bool VerifyIncrementalReflow();
+  void DoVerifyReflow();
+  void VerifyHasDirtyRootAncestor(nsIFrame* aFrame);
+  void ShowEventTargetDebug();
+
+  bool mInVerifyReflow = false;
+  
+  
+  nsIFrame* mCurrentReflowRoot = nullptr;
+#endif
+
+#ifdef MOZ_REFLOW_PERF
+  mozilla::UniquePtr<ReflowCountMgr> mReflowCountMgr;
+#endif
+
+  
+  void DoScrollContentIntoView();
+
+  
+
+
+
+  void AddUserSheet(mozilla::StyleSheet*);
+  void AddAgentSheet(mozilla::StyleSheet*);
+  void AddAuthorSheet(mozilla::StyleSheet*);
+  void RemoveSheet(mozilla::SheetType, mozilla::StyleSheet*);
+  void RemovePreferenceStyles();
+
+  void WillDoReflow();
+
+  
+  
+  struct ScrollIntoViewData {
+    ScrollAxis mContentScrollVAxis;
+    ScrollAxis mContentScrollHAxis;
+    uint32_t mContentToScrollToFlags;
+  };
+
+  static mozilla::LazyLogModule gLog;
+
+  DOMHighResTimeStamp GetPerformanceNowUnclamped();
+
+  
+
+
+
+
+  void DidDoReflow(bool aInterruptible);
+  
+  
+  bool ProcessReflowCommands(bool aInterruptible);
+  
+  static void sReflowContinueCallback(nsITimer* aTimer, void* aPresShell);
+  bool ScheduleReflowOffTimer();
+  
+  
+  
+  void MaybeScheduleReflow();
+  
+  
+  
+  void ScheduleReflow();
+
+  
+  
+  
+  bool DoReflow(nsIFrame* aFrame, bool aInterruptible,
+                mozilla::OverflowChangedTracker* aOverflowTracker);
 
   
   
@@ -1747,11 +1835,16 @@ class nsIPresShell : public nsStubDocumentObserver {
   
   RefPtr<Document> mDocument;
   RefPtr<nsPresContext> mPresContext;
+  
+  RefPtr<mozilla::StyleSheet> mPrefStyleSheet;
   mozilla::UniquePtr<mozilla::ServoStyleSet> mStyleSet;
   mozilla::UniquePtr<nsCSSFrameConstructor> mFrameConstructor;
   nsViewManager* mViewManager;  
   nsPresArena<8192> mFrameArena;
   RefPtr<nsFrameSelection> mSelection;
+  RefPtr<nsCaret> mCaret;
+  RefPtr<nsCaret> mOriginalCaret;
+  RefPtr<mozilla::AccessibleCaretEventHub> mAccessibleCaretEventHub;
   
   
   nsFrameManager* mFrameManager;
@@ -1761,13 +1854,16 @@ class nsIPresShell : public nsStubDocumentObserver {
 #endif
 
   
+  DOMHighResTimeStamp mLastReflowStart{0.0};
+
+  
   
   
   
   nsCOMPtr<nsITimer> mReflowContinueTimer;
 
 #ifdef DEBUG
-  nsIFrame* mDrawEventTargetFrame;
+  nsIFrame* mDrawEventTargetFrame = nullptr;
 #endif
 
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
@@ -1775,6 +1871,15 @@ class nsIPresShell : public nsStubDocumentObserver {
   
   nsTHashtable<nsPtrHashKey<void>> mAllocatedPointers;
 #endif
+
+  nsCOMPtr<nsIContent> mLastAnchorScrolledTo;
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIContent> mContentToScrollTo;
+  nscoord mLastAnchorScrollPositionY = 0;
 
   
   uint64_t mPaintCount;
@@ -1876,9 +1981,18 @@ class nsIPresShell : public nsStubDocumentObserver {
   
   
   bool mIsDocumentGone : 1;
+  bool mHaveShutDown : 1;
 
   
   bool mPaintingSuppressed : 1;
+
+  bool mLastRootReflowHadUnconstrainedBSize : 1;
+
+  
+  
+  bool mShouldUnsuppressPainting : 1;
+
+  bool mIgnoreFrameDestruction : 1;
 
   bool mIsActive : 1;
   bool mFrozen : 1;
@@ -1945,6 +2059,14 @@ class nsIPresShell : public nsStubDocumentObserver {
   nsCOMPtr<nsIContent> mCurrentEventContent;
   nsTArray<nsIFrame*> mCurrentEventFrameStack;
   nsCOMArray<nsIContent> mCurrentEventContentStack;
+  
+  
+  nsTHashtable<nsPtrHashKey<nsIFrame>> mFramesToDirty;
+  nsTHashtable<nsPtrHashKey<nsIScrollableFrame>> mPendingScrollAnchorSelection;
+  nsTHashtable<nsPtrHashKey<nsIScrollableFrame>> mPendingScrollAnchorAdjustment;
+
+  nsCallbackEventRequest* mFirstCallbackEventRequest = nullptr;
+  nsCallbackEventRequest* mLastCallbackEventRequest = nullptr;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIPresShell, NS_IPRESSHELL_IID)
