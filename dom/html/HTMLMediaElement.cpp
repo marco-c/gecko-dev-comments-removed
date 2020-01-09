@@ -2710,6 +2710,10 @@ already_AddRefed<Promise> HTMLMediaElement::Seek(double aTime,
   
   MOZ_ASSERT(!mozilla::IsNaN(aTime));
 
+  
+  
+  mShowPoster = false;
+
   RefPtr<Promise> promise = CreateDOMPromise(aRv);
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
@@ -3503,7 +3507,8 @@ HTMLMediaElement::HTMLMediaElement(
       mPaused(true, "HTMLMediaElement::mPaused"),
       mErrorSink(new ErrorSink(this)),
       mAudioChannelWrapper(new AudioChannelAgentCallback(this)),
-      mSink(MakePair(nsString(), RefPtr<AudioDeviceInfo>())) {
+      mSink(MakePair(nsString(), RefPtr<AudioDeviceInfo>())),
+      mShowPoster(IsVideo()) {
   MOZ_ASSERT(mMainThreadEventTarget);
   MOZ_ASSERT(mAbstractMainThread);
   
@@ -3808,6 +3813,12 @@ void HTMLMediaElement::PlayInternal(bool aHandlingUserInput) {
 
     
     
+    if (mShowPoster) {
+      mShowPoster = false;
+      if (mTextTrackManager) {
+        mTextTrackManager->TimeMarchesOn();
+      }
+    }
 
     
     DispatchAsyncEvent(NS_LITERAL_STRING("play"));
@@ -5584,6 +5595,13 @@ void HTMLMediaElement::ChangeNetworkState(nsMediaNetworkState aState) {
   }
 
   
+  
+  
+  if (mNetworkState == NETWORK_NO_SOURCE || mNetworkState == NETWORK_EMPTY) {
+    mShowPoster = true;
+  }
+
+  
   AddRemoveSelfReference();
 }
 
@@ -5666,6 +5684,14 @@ void HTMLMediaElement::CheckAutoplayDataReady() {
     mDecoder->Play();
   } else if (mSrcStream) {
     SetPlayedOrSeeked(true);
+  }
+
+  
+  if (mShowPoster) {
+    mShowPoster = false;
+    if (mTextTrackManager) {
+      mTextTrackManager->TimeMarchesOn();
+    }
   }
 
   
@@ -7388,6 +7414,10 @@ void HTMLMediaElement::NotifyTextTrackModeChanged() {
                                  return;
                                }
                                GetTextTracks()->CreateAndDispatchChangeEvent();
+                               
+                               if (!mShowPoster) {
+                                 mTextTrackManager->TimeMarchesOn();
+                               }
                              }));
 }
 
