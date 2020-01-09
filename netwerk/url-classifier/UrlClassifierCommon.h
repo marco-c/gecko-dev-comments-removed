@@ -53,11 +53,32 @@ class UrlClassifierCommon final {
 
   static bool IsTrackingClassificationFlag(uint32_t aFlag);
 
+  static bool IsCryptominingClassificationFlag(uint32_t aFlag);
+
+  
+  static void TablesToString(const nsTArray<nsCString>& aList,
+                             nsACString& aString);
+
+  struct ClassificationData {
+    nsCString mPrefix;
+    uint32_t mFlag;
+  };
+
+  
+  
+  
+  static uint32_t TablesToClassificationFlags(
+      const nsTArray<nsCString>& aList,
+      const std::vector<ClassificationData>& aData, uint32_t aDefaultFlag);
+
  private:
   
   static void NotifyChannelBlocked(nsIChannel* aChannel,
                                    nsIURI* aURIBeingLoaded,
                                    unsigned aBlockedReason);
+
+  static uint32_t TableToClassificationFlag(
+      const nsACString& aTable, const std::vector<ClassificationData>& aData);
 };
 
 }  
