@@ -602,10 +602,6 @@ class HTMLFormElement final : public nsGenericHTMLElement,
 
   bool mEverTriedInvalidSubmit;
 
- protected:
-  
-  static bool gFirstFormSubmitted;
-
  private:
   ~HTMLFormElement();
 };
