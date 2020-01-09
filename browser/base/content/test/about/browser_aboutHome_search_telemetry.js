@@ -39,7 +39,7 @@ add_task(async function() {
 
     let expectedURL = Services.search.defaultEngine
       .getSubmission(searchStr, null, "homepage").uri.spec;
-    let promise = waitForDocLoadAndStopIt(expectedURL, browser);
+    let promise = BrowserTestUtils.waitForDocLoadAndStopIt(expectedURL, browser);
 
     
     await ContentTask.spawn(browser, { searchStr }, async function(args) {
