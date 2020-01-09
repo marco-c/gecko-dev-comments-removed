@@ -221,12 +221,7 @@ function CanonicalizeTimeZoneName(timeZone) {
 
     
     if (ianaTimeZone === "Etc/UTC" || ianaTimeZone === "Etc/GMT") {
-        
-        
-        if (timeZone === "Etc/UCT" || timeZone === "UCT")
-            ianaTimeZone = "Etc/UCT";
-        else
-            ianaTimeZone = "UTC";
+        ianaTimeZone = "UTC";
     }
 
     

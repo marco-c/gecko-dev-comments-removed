@@ -51,7 +51,7 @@ const timeZones = [
     
     
     
-    { id: "UCT", normalized: "Etc/UCT" },
+    { id: "UCT", normalized: "UTC" },
     { id: "UTC", normalized: "UTC" },
     { id: "GMT", normalized: "UTC" },
 ];
