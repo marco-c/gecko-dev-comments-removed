@@ -229,6 +229,25 @@ macro_rules! xpcom_method {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[doc(hidden)]
 #[macro_export]
 macro_rules! ensure_param {
@@ -256,6 +275,16 @@ impl<'a, T: 'a> Ensure<*const T> for Result<&'a T, nsresult> {
         } else {
             Ok(&*ptr)
         }
+    }
+}
+
+impl<'a, T: 'a> Ensure<*const T> for Result<Option<&'a T>, nsresult> {
+    unsafe fn ensure(ptr: *const T) -> Result<Option<&'a T>, nsresult> {
+        Ok(if ptr.is_null() {
+            None
+        } else {
+            Some(&*ptr)
+        })
     }
 }
 
