@@ -1893,22 +1893,26 @@ static const webgl::FormatUsageInfo* ValidateCopyDestUsage(
   return dstUsage;
 }
 
-bool WebGLTexture::ValidateCopyTexImageForFeedback(uint32_t level,
-                                                   GLint layer) const {
-  const auto& fb = mContext->mBoundReadFramebuffer;
+static bool ValidateCopyTexImageForFeedback(const WebGLContext& webgl,
+                                            const WebGLTexture& tex,
+                                            const uint8_t mipLevel,
+                                            const uint32_t zLayer) {
+  const auto& fb = webgl.BoundReadFb();
   if (fb) {
-    const auto& attach = fb->ColorReadBuffer();
-    MOZ_ASSERT(attach);
+    MOZ_ASSERT(fb->ColorReadBuffer());
+    const auto& attach = *fb->ColorReadBuffer();
+    MOZ_ASSERT(attach.ZLayerCount() ==
+               1);  
 
-    if (attach->Texture() == this && attach->Layer() == layer &&
-        uint32_t(attach->MipLevel()) == level) {
+    if (attach.Texture() == &tex && attach.Layer() == zLayer &&
+        attach.MipLevel() == mipLevel) {
       
       
-      mContext->ErrorInvalidOperation(
+      webgl.ErrorInvalidOperation(
           "Feedback loop detected, as this texture"
           " is already attached to READ_FRAMEBUFFER's"
           " READ_BUFFER-selected COLOR_ATTACHMENT%u.",
-          attach->mAttachmentPoint);
+          attach.mAttachmentPoint);
       return false;
     }
   }
@@ -2052,7 +2056,10 @@ void WebGLTexture::CopyTexImage2D(TexImageTarget target, GLint level,
     return;
   }
 
-  if (!ValidateCopyTexImageForFeedback(level)) return;
+  const uint32_t zOffset = 0;
+  if (!ValidateCopyTexImageForFeedback(*mContext, *this,
+                                       AssertedCast<uint8_t>(level), zOffset))
+    return;
 
   
   
@@ -2138,7 +2145,10 @@ void WebGLTexture::CopyTexSubImage(TexImageTarget target, GLint level,
     return;
   }
 
-  if (!ValidateCopyTexImageForFeedback(level, zOffset)) return;
+  if (!ValidateCopyTexImageForFeedback(*mContext, *this,
+                                       AssertedCast<uint8_t>(level),
+                                       AssertedCast<uint32_t>(zOffset)))
+    return;
 
   
   
