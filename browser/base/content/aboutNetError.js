@@ -11,6 +11,8 @@
 
 
 
+
+
 let searchParams = new URLSearchParams(document.documentURI.split("?")[1]);
 
 
@@ -313,8 +315,7 @@ function initPageCaptivePortal() {
   document.body.className = "captiveportal";
   document.getElementById("openPortalLoginPageButton")
           .addEventListener("click", () => {
-    let event = new CustomEvent("AboutNetErrorOpenCaptivePortal", {bubbles: true});
-    document.dispatchEvent(event);
+    RPMSendAsyncMessage("Browser:OpenCaptivePortalPage");
   });
 
   addAutofocus("openPortalLoginPageButton");
@@ -322,7 +323,7 @@ function initPageCaptivePortal() {
 
   
   
-  window.addEventListener("AboutNetErrorCaptivePortalFreed", () => {
+  RPMAddMessageListener("AboutNetErrorCaptivePortalFreed", () => {
     document.location.reload();
   });
 }
