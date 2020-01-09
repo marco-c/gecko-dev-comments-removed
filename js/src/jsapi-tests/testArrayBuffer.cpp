@@ -214,7 +214,8 @@ BEGIN_TEST(testArrayBuffer_staticContents) {
 END_TEST(testArrayBuffer_staticContents)
 
 BEGIN_TEST(testArrayBuffer_stealDetachExternal) {
-  ExternalData data("One two three four");
+  static const char dataBytes[] = "One two three four";
+  ExternalData data(dataBytes);
   JS::RootedObject buffer(
       cx, JS_NewExternalArrayBuffer(cx, data.len(), data.contents(),
                                     &ExternalData::freeCallback, &data));
@@ -222,21 +223,16 @@ BEGIN_TEST(testArrayBuffer_stealDetachExternal) {
   CHECK(!data.wasFreed());
 
   void* stolenContents = JS_StealArrayBufferContents(cx, buffer);
+
   
   
   
   CHECK(stolenContents != data.contents());
-  CHECK(strcmp(reinterpret_cast<char*>(stolenContents), data.asString()) == 0);
-  
-  
-  CHECK(JS_IsDetachedArrayBufferObject(buffer));
-  CHECK(!data.wasFreed());
-
-  buffer = nullptr;
-  JS_GC(cx);
-  JS_GC(cx);
+  CHECK(strcmp(reinterpret_cast<char*>(stolenContents), dataBytes) == 0);
   CHECK(data.wasFreed());
+  CHECK(JS_IsDetachedArrayBufferObject(buffer));
 
+  JS_free(cx, stolenContents);
   return true;
 }
 END_TEST(testArrayBuffer_stealDetachExternal)
