@@ -102,12 +102,16 @@ var SiteDataTestUtils = {
         
         let r = await content.navigator.serviceWorker.register(p);
         return new Promise(resolve => {
-          let worker = r.installing;
-          worker.addEventListener("statechange", () => {
-            if (worker.state === "installed") {
-              resolve();
-            }
-          });
+          let worker = r.installing || r.waiting || r.active;
+          if (worker.state == "activated") {
+            resolve();
+          } else {
+            worker.addEventListener("statechange", () => {
+              if (worker.state == "activated") {
+                resolve();
+              }
+            });
+          }
         });
       });
     });
@@ -164,6 +168,60 @@ var SiteDataTestUtils = {
       }
     }
     return false;
+  },
+
+  
+
+
+
+
+
+
+
+  promiseServiceWorkerRegistered(url) {
+    if (!(url instanceof Ci.nsIURI)) {
+      url = Services.io.newURI(url);
+    }
+
+    return new Promise(resolve => {
+      let listener = {
+        onRegister: registration => {
+          if (registration.principal.URI.host != url.host) {
+            return;
+          }
+          swm.removeListener(listener);
+          resolve(registration);
+        },
+      };
+      swm.addListener(listener);
+    });
+  },
+
+  
+
+
+
+
+
+
+
+  promiseServiceWorkerUnregistered(url) {
+    if (!(url instanceof Ci.nsIURI)) {
+      url = Services.io.newURI(url);
+    }
+
+    return new Promise(resolve => {
+      let listener = {
+        onUnregister: registration => {
+          if (registration.principal.URI.host != url.host) {
+            return;
+          }
+          swm.removeListener(listener);
+          resolve(registration);
+        },
+      };
+      swm.addListener(listener);
+    });
   },
 
   
