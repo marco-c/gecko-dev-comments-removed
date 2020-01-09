@@ -845,28 +845,33 @@ static JSObject* CreateGlobalForOffThreadParse(JSContext* cx,
                             JS::DontFireOnNewGlobalHook, realmOptions);
 }
 
-static bool QueueOffThreadParseTask(JSContext* cx, ParseTask* task) {
+static bool QueueOffThreadParseTask(JSContext* cx, UniquePtr<ParseTask> task) {
   AutoLockHelperThreadState lock;
 
   bool mustWait = OffThreadParsingMustWaitForGC(cx->runtime());
 
+  
+  
+  
   auto& queue = mustWait ? HelperThreadState().parseWaitingOnGC(lock)
                          : HelperThreadState().parseWorklist(lock);
-  if (!queue.append(task)) {
+  if (!queue.append(nullptr)) {
     ReportOutOfMemory(cx);
     return false;
   }
 
+  queue.back() = task.release();
+
   if (!mustWait) {
-    task->activate(cx->runtime());
+    queue.back()->activate(cx->runtime());
     HelperThreadState().notifyOne(GlobalHelperThreadState::PRODUCER, lock);
   }
 
   return true;
 }
 
-bool StartOffThreadParseTask(JSContext* cx, ParseTask* task,
-                             const ReadOnlyCompileOptions& options) {
+static bool StartOffThreadParseTask(JSContext* cx, UniquePtr<ParseTask> task,
+                                    const ReadOnlyCompileOptions& options) {
   
   
   gc::AutoSuppressGC nogc(cx);
@@ -888,7 +893,7 @@ bool StartOffThreadParseTask(JSContext* cx, ParseTask* task,
     return false;
   }
 
-  if (!QueueOffThreadParseTask(cx, task)) {
+  if (!QueueOffThreadParseTask(cx, std::move(task))) {
     return false;
   }
 
@@ -903,12 +908,11 @@ bool js::StartOffThreadParseScript(JSContext* cx,
                                    void* callbackData) {
   auto task = cx->make_unique<ScriptParseTask<char16_t>>(cx, srcBuf, callback,
                                                          callbackData);
-  if (!task || !StartOffThreadParseTask(cx, task.get(), options)) {
+  if (!task) {
     return false;
   }
 
-  Unused << task.release();
-  return true;
+  return StartOffThreadParseTask(cx, std::move(task), options);
 }
 
 bool js::StartOffThreadParseModule(JSContext* cx,
@@ -918,12 +922,11 @@ bool js::StartOffThreadParseModule(JSContext* cx,
                                    void* callbackData) {
   auto task = cx->make_unique<ModuleParseTask<char16_t>>(cx, srcBuf, callback,
                                                          callbackData);
-  if (!task || !StartOffThreadParseTask(cx, task.get(), options)) {
+  if (!task) {
     return false;
   }
 
-  Unused << task.release();
-  return true;
+  return StartOffThreadParseTask(cx, std::move(task), options);
 }
 
 bool js::StartOffThreadDecodeScript(JSContext* cx,
@@ -933,12 +936,11 @@ bool js::StartOffThreadDecodeScript(JSContext* cx,
                                     void* callbackData) {
   auto task =
       cx->make_unique<ScriptDecodeTask>(cx, range, callback, callbackData);
-  if (!task || !StartOffThreadParseTask(cx, task.get(), options)) {
+  if (!task) {
     return false;
   }
 
-  Unused << task.release();
-  return true;
+  return StartOffThreadParseTask(cx, std::move(task), options);
 }
 
 bool js::StartOffThreadDecodeMultiScripts(JSContext* cx,
@@ -948,12 +950,11 @@ bool js::StartOffThreadDecodeMultiScripts(JSContext* cx,
                                           void* callbackData) {
   auto task = cx->make_unique<MultiScriptsDecodeTask>(cx, sources, callback,
                                                       callbackData);
-  if (!task || !StartOffThreadParseTask(cx, task.get(), options)) {
+  if (!task) {
     return false;
   }
 
-  Unused << task.release();
-  return true;
+  return StartOffThreadParseTask(cx, std::move(task), options);
 }
 
 #if defined(JS_BUILD_BINAST)
@@ -969,12 +970,11 @@ bool js::StartOffThreadDecodeBinAST(JSContext* cx,
 
   auto task = cx->make_unique<BinASTDecodeTask>(cx, buf, length, callback,
                                                 callbackData);
-  if (!task || !StartOffThreadParseTask(cx, task.get(), options)) {
+  if (!task) {
     return false;
   }
 
-  Unused << task.release();
-  return true;
+  return StartOffThreadParseTask(cx, std::move(task), options);
 }
 
 #endif 
