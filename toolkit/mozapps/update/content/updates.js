@@ -677,12 +677,6 @@ var gDownloadingPage = {
 
   _downloadStatus: null,
   _downloadProgress: null,
-  _pauseButton: null,
-
-  
-
-
-  _paused: false,
 
   
 
@@ -694,7 +688,6 @@ var gDownloadingPage = {
 
   _lastSec: Infinity,
   _startTime: null,
-  _pausedStatus: "",
 
   _hiding: false,
 
@@ -709,15 +702,7 @@ var gDownloadingPage = {
   onPageShow() {
     this._downloadStatus = document.getElementById("downloadStatus");
     this._downloadProgress = document.getElementById("downloadProgress");
-    this._pauseButton = document.getElementById("pauseButton");
     this._label_downloadStatus = this._downloadStatus.textContent;
-
-    this._pauseButton.setAttribute("tooltiptext",
-                                   gUpdates.getAUSString("pauseButtonPause"));
-
-    
-    this._pauseButton.focus();
-    this._pauseButton.disabled = true;
 
     var um = Cc["@mozilla.org/updates/update-manager;1"].
              getService(Ci.nsIUpdateManager);
@@ -770,8 +755,10 @@ var gDownloadingPage = {
       
       gAUS.addDownloadListener(this);
 
-      if (activeUpdate)
-        this._setUIState(!gAUS.isDownloading);
+      if (activeUpdate) {
+        this._downloadProgress.removeAttribute("value");
+        this._setStatus(this._label_downloadStatus);
+      }
     } catch (e) {
       LOG("gDownloadingPage", "onPageShow - error: " + e);
     }
@@ -811,38 +798,7 @@ var gDownloadingPage = {
     [status, this._lastSec] =
       DownloadUtils.getDownloadStatus(aCurr, aMax, rate, this._lastSec);
 
-    
-    this._pausedStatus = DownloadUtils.getTransferTotal(aCurr, aMax);
-
     return status;
-  },
-
-  
-
-
-
-
-  _setUIState(paused) {
-    var u = gUpdates.update;
-    if (paused) {
-      if (!this._downloadProgress.hasAttribute("value"))
-        this._downloadProgress.setAttribute("value", "0");
-      this._pauseButton.setAttribute("tooltiptext",
-                                     gUpdates.getAUSString("pauseButtonResume"));
-      this._pauseButton.setAttribute("paused", "true");
-      var p = u.selectedPatch.QueryInterface(Ci.nsIWritablePropertyBag);
-      var status = p.getProperty("status");
-      if (status) {
-        let pausedStatus = gUpdates.getAUSString("downloadPausedStatus", [status]);
-        this._setStatus(pausedStatus);
-      }
-    } else {
-      this._downloadProgress.removeAttribute("value");
-      this._pauseButton.setAttribute("paused", "false");
-      this._pauseButton.setAttribute("tooltiptext",
-                                     gUpdates.getAUSString("pauseButtonPause"));
-      this._setStatus(this._label_downloadStatus);
-    }
   },
 
   
@@ -850,7 +806,6 @@ var gDownloadingPage = {
 
   _setUpdateApplying() {
     this._downloadProgress.removeAttribute("value");
-    this._pauseButton.hidden = true;
     let applyingStatus = gUpdates.getAUSString("applyingUpdate");
     this._setStatus(applyingStatus);
 
@@ -868,24 +823,6 @@ var gDownloadingPage = {
       Services.obs.removeObserver(this, "update-staged");
       this._updateApplyingObserver = false;
     }
-  },
-
-  
-
-
-  onPause() {
-    if (this._paused) {
-      gAUS.downloadUpdate(gUpdates.update, false);
-    } else {
-      var patch = gUpdates.update.selectedPatch;
-      patch.QueryInterface(Ci.nsIWritablePropertyBag);
-      patch.setProperty("status", this._pausedStatus);
-      gAUS.stopDownload();
-    }
-    this._paused = !this._paused;
-
-    
-    this._setUIState(this._paused);
   },
 
   
@@ -917,30 +854,9 @@ var gDownloadingPage = {
     um.activeUpdate = gUpdates.update;
 
     
-    
-    var downloadInBackground = true;
-    if (this._paused) {
-      var title = gUpdates.getAUSString("resumePausedAfterCloseTitle");
-      var message = gUpdates.getAUSString("resumePausedAfterCloseMsg",
-                                          [gUpdates.brandName]);
-      var ps = Services.prompt;
-      var flags = ps.STD_YES_NO_BUTTONS;
-      
-      
-      
-      
-      window.focus();
-      var rv = ps.confirmEx(window, title, message, flags, null, null, null,
-                            null, { });
-      if (rv == Ci.nsIPromptService.BUTTON_POS_0)
-        downloadInBackground = false;
-    }
-    if (downloadInBackground) {
-      
-      LOG("gDownloadingPage", "onHide - continuing download in background " +
-          "at full speed");
-      gAUS.downloadUpdate(gUpdates.update, false);
-    }
+    LOG("gDownloadingPage", "onHide - continuing download in background " +
+        "at full speed");
+    gAUS.downloadUpdate(gUpdates.update, false);
     gUpdates.wiz.cancel();
   },
 
@@ -952,11 +868,6 @@ var gDownloadingPage = {
 
 
   onStartRequest(request) {
-    
-    
-    if (this._paused)
-      return;
-
     this._downloadProgress.removeAttribute("value");
     this._setStatus(this._label_downloadStatus);
   },
@@ -981,14 +892,7 @@ var gDownloadingPage = {
     p.setProperty("progress", currentProgress);
     p.setProperty("status", status);
 
-    
-    
-    if (this._paused)
-      return;
-
     this._downloadProgress.setAttribute("value", currentProgress);
-    if (this._pauseButton.disabled)
-      this._pauseButton.disabled = false;
 
     
     
