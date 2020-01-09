@@ -1254,6 +1254,24 @@ BrowserGlue.prototype = {
     } catch (ex) {}
   },
 
+  _collectStartupConditionsTelemetry() {
+    let nowSeconds = Math.round(Date.now() / 1000);
+    
+    
+    
+    
+    
+    let lastCheckSeconds = Services.prefs.getIntPref("browser.startup.lastColdStartupCheck", nowSeconds);
+    Services.prefs.setIntPref("browser.startup.lastColdStartupCheck", nowSeconds);
+    try {
+      let secondsSinceLastOSRestart = Services.startup.secondsSinceLastOSRestart;
+      let isColdStartup = nowSeconds - secondsSinceLastOSRestart > lastCheckSeconds;
+      Services.telemetry.scalarSet("startup.is_cold", isColdStartup);
+    } catch (ex) {
+      Cu.reportError(ex);
+    }
+  },
+
   
   _onFirstWindowLoaded: function BG__onFirstWindowLoaded(aWindow) {
     TabCrashHandler.init();
@@ -1328,6 +1346,8 @@ BrowserGlue.prototype = {
 
     this._firstWindowTelemetry(aWindow);
     this._firstWindowLoaded();
+
+    this._collectStartupConditionsTelemetry();
 
     
     PlacesUtils.favicons.setDefaultIconURIPreferredSize(16 * aWindow.devicePixelRatio);
