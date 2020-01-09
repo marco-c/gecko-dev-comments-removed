@@ -42,7 +42,7 @@ add_task(async function() {
   
   
   
-  let dispatched = waitForDispatch(dbg, "DISABLE_BREAKPOINT",  1);
+  let dispatched = waitForDispatch(dbg, "SET_BREAKPOINT",  1);
   selectContextMenuItem(dbg, selectors.breakpointContextMenu.disableOthers);
   await waitForState(dbg, state =>
     dbg.selectors
@@ -54,7 +54,7 @@ add_task(async function() {
 
   openFirstBreakpointContextMenu(dbg);
   
-  dispatched = waitForDispatch(dbg, "DISABLE_ALL_BREAKPOINTS");
+  dispatched = waitForDispatch(dbg, "SET_BREAKPOINT");
   selectContextMenuItem(dbg, selectors.breakpointContextMenu.disableAll);
   await waitForState(dbg, state =>
     dbg.selectors.getBreakpointsList(state).every(bp => bp.disabled)
@@ -64,7 +64,7 @@ add_task(async function() {
 
   openFirstBreakpointContextMenu(dbg);
   
-  dispatched = waitForDispatch(dbg, "ENABLE_BREAKPOINT", 2);
+  dispatched = waitForDispatch(dbg, "SET_BREAKPOINT", 2);
   selectContextMenuItem(dbg, selectors.breakpointContextMenu.enableOthers);
   await waitForState(dbg, state =>
     dbg.selectors
