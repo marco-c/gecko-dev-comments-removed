@@ -4651,6 +4651,12 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
     assert not isDefinitelyObject or not isNullOrUndefined
 
     
+    isClamp = isClamp or type.clamp
+    isEnforceRange = isEnforceRange or type.enforceRange
+    if type.treatNullAsEmpty:
+        treatNullAs = "EmptyString"
+
+    
     
     
     
