@@ -7,7 +7,7 @@
 #ifndef mozilla_dom_DocumentL10n_h
 #define mozilla_dom_DocumentL10n_h
 
-#include "mozIDOMLocalization.h"
+#include "mozILocalization.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIContentSink.h"
 #include "nsINode.h"
@@ -82,10 +82,10 @@ class DocumentL10n final : public nsIObserver,
   RefPtr<Document> mDocument;
   RefPtr<Promise> mReady;
   DocumentL10nState mState;
-  nsCOMPtr<mozIDOMLocalization> mDOMLocalization;
+  nsCOMPtr<mozILocalization> mLocalization;
   nsCOMPtr<nsIContentSink> mContentSink;
   RefPtr<l10n::Mutations> mMutations;
-  nsTHashtable<nsRefPtrHashKey<nsINode>> mRoots;
+  nsTHashtable<nsRefPtrHashKey<Element>> mRoots;
 
   already_AddRefed<Promise> MaybeWrapPromise(Promise* aPromise);
   void RegisterObservers();
@@ -147,13 +147,13 @@ class DocumentL10n final : public nsIObserver,
 
 
 
-  void ConnectRoot(nsINode* aNode);
+  void ConnectRoot(Element* aNode);
 
   
 
 
 
-  void DisconnectRoot(nsINode* aNode);
+  void DisconnectRoot(Element* aNode);
 
   void TriggerInitialDocumentTranslation();
 
@@ -162,8 +162,11 @@ class DocumentL10n final : public nsIObserver,
   Document* GetDocument() { return mDocument; };
 
   void OnChange();
+  static void SetRootInfo(Element* aElement);
+
  protected:
   void DisconnectRoots();
+  void TranslateRoots();
 };
 
 }  

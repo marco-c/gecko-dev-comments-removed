@@ -582,6 +582,12 @@ function keysFromBundle(method, bundle, keys, translations) {
   return missingIds;
 }
 
+
+
+
+
+var getLocalization = () => new Localization();
+
 this.Localization = Localization;
 this.LocalizationSync = LocalizationSync;
-var EXPORTED_SYMBOLS = ["Localization", "LocalizationSync"];
+var EXPORTED_SYMBOLS = ["Localization", "LocalizationSync", "getLocalization"];
