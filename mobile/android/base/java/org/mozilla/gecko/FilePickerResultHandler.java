@@ -34,6 +34,7 @@ import android.util.Log;
 class FilePickerResultHandler implements ActivityResultHandler {
     private static final String LOGTAG = "GeckoFilePickerResultHandler";
     private static final String UPLOADS_DIR = "uploads";
+    private static final String ACTION_INLINE_DATA = "inline-data";
 
     private final FilePicker.ResultHandler handler;
     private final int tabId;
@@ -77,7 +78,10 @@ class FilePickerResultHandler implements ActivityResultHandler {
 
         
         
-        if (intent == null || (intent.getAction() == null && intent.getData() == null)) {
+        final boolean emptyResult = intent == null || (intent.getAction() == null && intent.getData() == null);
+        
+        final boolean haveThumbnail = intent != null && intent.getAction() != null && intent.getAction().equals(ACTION_INLINE_DATA);
+        if (emptyResult || haveThumbnail) {
             if (mImageName != null) {
                 File file = new File(Environment.getExternalStorageDirectory(), mImageName);
                 sendResult(file.getAbsolutePath());
