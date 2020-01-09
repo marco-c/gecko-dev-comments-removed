@@ -3,8 +3,9 @@
 
 
 
+#include "mozilla/EditorCommands.h"
+
 #include "mozilla/HTMLEditor.h"          
-#include "mozilla/HTMLEditorCommands.h"  
 #include "mozilla/TextEditor.h"          
 #include "nsCommandParams.h"             
 #include "nsCOMPtr.h"                    

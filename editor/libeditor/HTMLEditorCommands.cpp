@@ -3,13 +3,12 @@
 
 
 
-#include <stdio.h>  
+#include "mozilla/EditorCommands.h"
 
 #include "mozilla/Assertions.h"  
 #include "mozilla/EditorBase.h"  
 #include "mozilla/ErrorResult.h"
 #include "mozilla/HTMLEditor.h"  
-#include "mozilla/HTMLEditorCommands.h"
 #include "mozilla/dom/Element.h"
 #include "nsAString.h"
 #include "nsCommandParams.h"          
@@ -602,13 +601,8 @@ MultiStateCommandBase::IsCommandEnabled(const char* aCommandName,
 NS_IMETHODIMP
 MultiStateCommandBase::DoCommand(const char* aCommandName,
                                  nsISupports* refCon) {
-#ifdef DEBUG
-  printf(
-      "who is calling MultiStateCommandBase::DoCommand \
-          (no implementation)? %s\n",
-      aCommandName);
-#endif
-
+  NS_WARNING(
+      "who is calling MultiStateCommandBase::DoCommand (no implementation)?");
   return NS_OK;
 }
 

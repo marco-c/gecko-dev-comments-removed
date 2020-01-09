@@ -5,7 +5,7 @@
 
 #include "mozilla/HTMLEditorController.h"
 
-#include "mozilla/HTMLEditorCommands.h"  
+#include "mozilla/EditorCommands.h"      
 #include "mozilla/mozalloc.h"            
 #include "nsControllerCommandTable.h"    
 #include "nsError.h"                     
