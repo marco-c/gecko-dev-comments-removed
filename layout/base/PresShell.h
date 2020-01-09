@@ -639,6 +639,15 @@ class PresShell final : public nsIPresShell,
 
       bool ComputeElementFromFrame(WidgetGUIEvent* aGUIEvent);
 
+      
+
+
+
+
+
+
+      void UpdateTouchEventTarget(WidgetGUIEvent* aGUIEvent);
+
       RefPtr<PresShell> mPresShell;
       nsIFrame* mFrame;
       nsCOMPtr<nsIContent> mContent;

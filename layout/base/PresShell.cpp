@@ -6659,22 +6659,10 @@ nsresult PresShell::EventHandler::HandleEvent(nsIFrame* aFrame,
     }
 
     
-    if (aGUIEvent->mClass == eTouchEventClass) {
-      if (aGUIEvent->mMessage == eTouchStart) {
-        WidgetTouchEvent* touchEvent = aGUIEvent->AsTouchEvent();
-        if (nsIFrame* newFrame =
-                TouchManager::SuppressInvalidPointsAndGetTargetedFrame(
-                    touchEvent)) {
-          eventTargetData.SetFrameAndComputePresShellAndContent(newFrame,
-                                                                aGUIEvent);
-        }
-      } else if (PresShell* newShell =
-                     PresShell::GetShellForTouchEvent(aGUIEvent)) {
-        
-        
-        eventTargetData.mPresShell = newShell;
-      }
-    }
+    
+    
+    
+    eventTargetData.UpdateTouchEventTarget(aGUIEvent);
 
     
     
@@ -10864,4 +10852,33 @@ bool PresShell::EventHandler::EventTargetData::ComputeElementFromFrame(
 
   
   return !!mContent;
+}
+
+void PresShell::EventHandler::EventTargetData::UpdateTouchEventTarget(
+    WidgetGUIEvent* aGUIEvent) {
+  MOZ_ASSERT(aGUIEvent);
+
+  if (aGUIEvent->mClass != eTouchEventClass) {
+    return;
+  }
+
+  if (aGUIEvent->mMessage == eTouchStart) {
+    WidgetTouchEvent* touchEvent = aGUIEvent->AsTouchEvent();
+    nsIFrame* newFrame =
+        TouchManager::SuppressInvalidPointsAndGetTargetedFrame(touchEvent);
+    if (!newFrame) {
+      return;  
+    }
+    SetFrameAndComputePresShellAndContent(newFrame, aGUIEvent);
+    return;
+  }
+
+  PresShell* newPresShell = PresShell::GetShellForTouchEvent(aGUIEvent);
+  if (!newPresShell) {
+    return;  
+  }
+
+  
+  
+  mPresShell = newPresShell;
 }
