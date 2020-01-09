@@ -664,24 +664,6 @@ bool XPCJSContext::InterruptCallback(JSContext* cx) {
   }
 
   
-  if (sTabIdToCancelContentJS) {
-    if (nsIBrowserChild* browserChild = win->GetBrowserChild()) {
-      uint64_t tabId;
-      browserChild->GetTabId(&tabId);
-      if (sTabIdToCancelContentJS == tabId) {
-        
-        if (Document* doc = win->GetExtantDoc()) {
-          if (Document* topLevelDoc = doc->GetTopLevelContentDocument()) {
-            topLevelDoc->DisallowBFCaching();
-          }
-        }
-        sTabIdToCancelContentJS = 0;
-        return false;
-      }
-    }
-  }
-
-  
   if (limit == 0 || duration.ToSeconds() < limit / 2.0) {
     return true;
   }
@@ -1236,11 +1218,6 @@ nsresult XPCJSContext::Initialize(XPCJSContext* aPrimaryContext) {
 }
 
 
-void XPCJSContext::SetTabIdToCancelContentJS(uint64_t aTabId) {
-  sTabIdToCancelContentJS = aTabId;
-}
-
-
 uint32_t XPCJSContext::sInstanceCount;
 
 
@@ -1256,9 +1233,6 @@ WatchdogManager* XPCJSContext::GetWatchdogManager() {
   sWatchdogInstance = new WatchdogManager();
   return sWatchdogInstance;
 }
-
-
-mozilla::Atomic<uint64_t> XPCJSContext::sTabIdToCancelContentJS(0);
 
 
 void XPCJSContext::InitTLS() { MOZ_RELEASE_ASSERT(gTlsContext.init()); }
