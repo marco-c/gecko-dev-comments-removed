@@ -110,40 +110,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef mozilla_ServoBindingTypes_h
 #define mozilla_ServoBindingTypes_h
 
@@ -194,46 +160,19 @@ class Element;
 }  
 }  
 
-#define DECL_BORROWED_REF_TYPE_FOR(type_) typedef type_ const* type_##Borrowed;
-#define DECL_NULLABLE_BORROWED_REF_TYPE_FOR(type_) \
-  typedef type_ const* type_##BorrowedOrNull;
-#define DECL_BORROWED_MUT_REF_TYPE_FOR(type_) typedef type_* type_##BorrowedMut;
-#define DECL_NULLABLE_BORROWED_MUT_REF_TYPE_FOR(type_) \
-  typedef type_* type_##BorrowedMutOrNull;
-
-#define DECL_OWNED_REF_TYPE_FOR(type_) \
-  typedef type_* type_##Owned;         \
-  DECL_BORROWED_REF_TYPE_FOR(type_)    \
-  DECL_BORROWED_MUT_REF_TYPE_FOR(type_)
+#define DECL_OWNED_REF_TYPE_FOR(type_) typedef type_* type_##Owned;
 
 #define DECL_NULLABLE_OWNED_REF_TYPE_FOR(type_) \
-  typedef type_* type_##OwnedOrNull;            \
-  DECL_NULLABLE_BORROWED_REF_TYPE_FOR(type_)    \
-  DECL_NULLABLE_BORROWED_MUT_REF_TYPE_FOR(type_)
-
-#define GECKO_BORROWED_TYPE(geckotype_, ffitype_) \
-  using ffitype_ = geckotype_;                    \
-  using ffitype_##Borrowed = const ffitype_*;     \
-  using ffitype_##BorrowedOrNull = const ffitype_*;
-#define GECKO_BORROWED_TYPE_MUT(geckotype_, ffitype_) \
-  GECKO_BORROWED_TYPE(geckotype_, ffitype_)           \
-  using ffitype_##BorrowedMut = ffitype_*;            \
-  using ffitype_##BorrowedMutOrNull = ffitype_*;
-#include "mozilla/BorrowedTypeList.h"
-#undef GECKO_BORROWED_TYPE_MUT
-#undef GECKO_BORROWED_TYPE
+  typedef type_* type_##OwnedOrNull;
 
 #define SERVO_ARC_TYPE(name_, type_)                                    \
-  DECL_NULLABLE_BORROWED_REF_TYPE_FOR(type_)                            \
-  DECL_BORROWED_REF_TYPE_FOR(type_)                                     \
-  DECL_BORROWED_MUT_REF_TYPE_FOR(type_)                                 \
   struct MOZ_MUST_USE_TYPE type_##Strong {                              \
     type_* mPtr;                                                        \
     already_AddRefed<type_> Consume();                                  \
   };                                                                    \
   extern "C" {                                                          \
-  void Servo_##name_##_AddRef(type_##Borrowed ptr);                     \
-  void Servo_##name_##_Release(type_##Borrowed ptr);                    \
+  void Servo_##name_##_AddRef(const type_*);                            \
+  void Servo_##name_##_Release(const type_*);                           \
   }                                                                     \
   namespace mozilla {                                                   \
   template <>                                                           \
@@ -259,44 +198,19 @@ class Element;
 #include "mozilla/ServoBoxedTypeList.h"
 #undef SERVO_BOXED_TYPE
 
-#define DEFINE_ARRAY_TYPE_FOR(type_)                               \
-  struct nsTArrayBorrowed_##type_ {                                \
-    nsTArray<type_>* mArray;                                       \
-    MOZ_IMPLICIT nsTArrayBorrowed_##type_(nsTArray<type_>* aArray) \
-        : mArray(aArray) {}                                        \
-  }
-DEFINE_ARRAY_TYPE_FOR(uintptr_t);
-#undef DEFINE_ARRAY_TYPE_FOR
 
 
 
-typedef void* RawServoAnimationValueTableBorrowed;
-
-
+struct RawServoAnimationValueTable;
 struct RawServoAnimationValueMap;
-DECL_NULLABLE_BORROWED_REF_TYPE_FOR(RawServoAnimationValueMap)
-DECL_BORROWED_REF_TYPE_FOR(RawServoAnimationValueMap)
-DECL_BORROWED_MUT_REF_TYPE_FOR(RawServoAnimationValueMap)
-
-typedef mozilla::ComputedStyle const* ComputedStyleBorrowed;
-typedef mozilla::ComputedStyle const* ComputedStyleBorrowedOrNull;
-typedef ServoComputedData const* ServoComputedDataBorrowed;
 
 struct MOZ_MUST_USE_TYPE ComputedStyleStrong {
   mozilla::ComputedStyle* mPtr;
   already_AddRefed<mozilla::ComputedStyle> Consume();
 };
 
-
-
-DECL_NULLABLE_BORROWED_REF_TYPE_FOR(RawServoDeclarationBlockStrong)
-
 #undef DECL_ARC_REF_TYPE_FOR
 #undef DECL_OWNED_REF_TYPE_FOR
 #undef DECL_NULLABLE_OWNED_REF_TYPE_FOR
-#undef DECL_BORROWED_REF_TYPE_FOR
-#undef DECL_NULLABLE_BORROWED_REF_TYPE_FOR
-#undef DECL_BORROWED_MUT_REF_TYPE_FOR
-#undef DECL_NULLABLE_BORROWED_MUT_REF_TYPE_FOR
 
 #endif  

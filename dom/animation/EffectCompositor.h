@@ -25,7 +25,6 @@ class nsIFrame;
 class nsPresContext;
 enum class DisplayItemType : uint32_t;
 struct RawServoAnimationValueMap;
-typedef RawServoAnimationValueMap* RawServoAnimationValueMapBorrowedMut;
 
 namespace mozilla {
 
@@ -121,10 +120,10 @@ class EffectCompositor {
   
   
   
-  bool GetServoAnimationRule(
-      const dom::Element* aElement, PseudoStyleType aPseudoType,
-      CascadeLevel aCascadeLevel,
-      RawServoAnimationValueMapBorrowedMut aAnimationValues);
+  bool GetServoAnimationRule(const dom::Element* aElement,
+                             PseudoStyleType aPseudoType,
+                             CascadeLevel aCascadeLevel,
+                             RawServoAnimationValueMap* aAnimationValues);
 
   bool HasPendingStyleUpdates() const;
 
