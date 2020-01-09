@@ -1,15 +1,21 @@
 
 
 
-"use strict";
 
 const { Task } = require("devtools/shared/task");
 const { LocalizationHelper } = require("devtools/shared/l10n");
 const { gDevTools } = require("devtools/client/framework/devtools");
-const { gDevToolsBrowser } = require("devtools/client/framework/devtools-browser");
+const {
+  gDevToolsBrowser
+} = require("devtools/client/framework/devtools-browser");
 const { TargetFactory } = require("devtools/client/framework/target");
 const { Toolbox } = require("devtools/client/framework/toolbox");
-loader.lazyRequireGetter(this, "openContentLink", "devtools/client/shared/link", true);
+loader.lazyRequireGetter(
+  this,
+  "openContentLink",
+  "devtools/client/shared/link",
+  true
+);
 
 const DBG_STRINGS_URI = "devtools/client/locales/debugger.properties";
 const L10N = new LocalizationHelper(DBG_STRINGS_URI);
@@ -40,14 +46,15 @@ DebuggerPanel.prototype = {
           await this.toolbox.initInspector();
           const onSelectInspector = this.toolbox.selectTool("inspector");
           const onGripNodeToFront = this.toolbox.walker.gripToNodeFront(grip);
-          const [
-            front,
-            inspector,
-          ] = await Promise.all([onGripNodeToFront, onSelectInspector]);
+          const [front, inspector] = await Promise.all([
+            onGripNodeToFront,
+            onSelectInspector
+          ]);
 
           const onInspectorUpdated = inspector.once("inspector-updated");
-          const onNodeFrontSet = this.toolbox.selection
-            .setNodeFront(front, { reason: "debugger" });
+          const onNodeFrontSet = this.toolbox.selection.setNodeFront(front, {
+            reason: "debugger"
+          });
 
           return Promise.all([onNodeFrontSet, onInspectorUpdated]);
         }.bind(this),
@@ -66,8 +73,14 @@ DebuggerPanel.prototype = {
     this._client = client;
     this.isReady = true;
 
-    this.panelWin.document.addEventListener("drag:start", this.toolbox.toggleDragging);
-    this.panelWin.document.addEventListener("drag:end", this.toolbox.toggleDragging);
+    this.panelWin.document.addEventListener(
+      "drag:start",
+      this.toolbox.toggleDragging
+    );
+    this.panelWin.document.addEventListener(
+      "drag:end",
+      this.toolbox.toggleDragging
+    );
 
     return this;
   },
@@ -94,7 +107,7 @@ DebuggerPanel.prototype = {
   },
 
   getFrames: function() {
-    let frames = this._selectors.getFrames(this._getState());
+    const frames = this._selectors.getFrames(this._getState());
 
     
     if (!frames) {
