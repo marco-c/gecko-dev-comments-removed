@@ -1765,16 +1765,24 @@ void KeyframeEffect::UpdateEffectSet(EffectSet* aEffectSet) const {
     return;
   }
 
-  nsIFrame* frame = GetStyleFrame();
+  nsIFrame* styleFrame = GetStyleFrame();
   if (HasAnimationOfPropertySet(nsCSSPropertyIDSet::OpacityProperties())) {
     effectSet->SetMayHaveOpacityAnimation();
-    EnumerateContinuationsOrIBSplitSiblings(
-        frame, [](nsIFrame* aFrame) { aFrame->SetMayHaveOpacityAnimation(); });
+    EnumerateContinuationsOrIBSplitSiblings(styleFrame, [](nsIFrame* aFrame) {
+      aFrame->SetMayHaveOpacityAnimation();
+    });
   }
+
+  nsIFrame* primaryFrame = GetPrimaryFrame();
   if (HasAnimationOfPropertySet(
           nsCSSPropertyIDSet::TransformLikeProperties())) {
     effectSet->SetMayHaveTransformAnimation();
-    EnumerateContinuationsOrIBSplitSiblings(frame, [](nsIFrame* aFrame) {
+    
+    
+    
+    
+    
+    EnumerateContinuationsOrIBSplitSiblings(primaryFrame, [](nsIFrame* aFrame) {
       aFrame->SetMayHaveTransformAnimation();
     });
   }

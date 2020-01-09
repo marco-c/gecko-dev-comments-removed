@@ -645,7 +645,26 @@ void nsFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
     EffectSet* effectSet = EffectSet::GetEffectSetForStyleFrame(this);
     if (effectSet) {
       mMayHaveOpacityAnimation = effectSet->MayHaveOpacityAnimation();
-      mMayHaveTransformAnimation = effectSet->MayHaveTransformAnimation();
+
+      if (effectSet->MayHaveTransformAnimation()) {
+        
+        
+        
+        
+        
+        
+        
+        
+        if (IsFrameOfType(eSupportsCSSTransforms)) {
+          mMayHaveTransformAnimation = true;
+        } else if (aParent && nsLayoutUtils::GetStyleFrame(aParent) == this) {
+          MOZ_ASSERT(
+              aParent->IsFrameOfType(eSupportsCSSTransforms),
+              "Style frames that don't support transforms should have parents"
+              " that do");
+          aParent->mMayHaveTransformAnimation = true;
+        }
+      }
     }
   }
 

@@ -240,21 +240,9 @@ static bool HasMatchingAnimations(const nsIFrame* aFrame,
     return false;
   }
 
-  
-  
-  if (aPropertySet.IsSubsetOf(nsCSSPropertyIDSet::TransformLikeProperties())) {
-    
-    
-    
-    
-    if (!aFrame->IsFrameOfType(nsIFrame::eSupportsCSSTransforms)) {
-      return false;
-    }
-
-    const nsIFrame* styleFrame = nsLayoutUtils::GetStyleFrame(aFrame);
-    if (!styleFrame || !styleFrame->MayHaveTransformAnimation()) {
-      return false;
-    }
+  if (aPropertySet.IsSubsetOf(nsCSSPropertyIDSet::TransformLikeProperties()) &&
+      !aFrame->MayHaveTransformAnimation()) {
+    return false;
   }
 
   EffectSet* effectSet = EffectSet::GetEffectSetForFrame(aFrame, aPropertySet);
