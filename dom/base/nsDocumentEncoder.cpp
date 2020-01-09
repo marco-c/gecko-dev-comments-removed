@@ -623,7 +623,7 @@ nsresult nsDocumentEncoder::SerializeRangeNodes(nsRange* aRange, nsINode* aNode,
         }
       }
 
-      if (endOffset) {
+      if (startOffset < endOffset) {
         
         nsIContent* childAsNode = content->GetFirstChild();
         int32_t j = 0;
