@@ -784,6 +784,7 @@ add_task(async function() {
     const dataCol = profile.markers.schema.data;
 
     let markersForCurrentPhase = [];
+    let foundIOMarkers = false;
 
     for (let m of profile.markers.data) {
       let markerName = profile.stringTable[m[nameCol]];
@@ -807,6 +808,18 @@ add_task(async function() {
                                    filename: markerData.filename,
                                    source: markerData.source,
                                    stackId: stack});
+      foundIOMarkers = true;
+    }
+
+    
+    
+    
+    is(foundIOMarkers, !AppConstants.RELEASE_OR_BETA,
+       "The IO interposer should be enabled in builds that are not RELEASE_OR_BETA");
+    if (!foundIOMarkers) {
+      
+      
+      return;
     }
   }
 
@@ -899,6 +912,7 @@ add_task(async function() {
       }
       if (!("_used" in entry) && !entry.ignoreIfUnused) {
         ok(false, `unused whitelist entry ${phase}: ${entry.path}`);
+        shouldPass = false;
       }
     }
   }
@@ -915,7 +929,7 @@ add_task(async function() {
     await OS.File.writeAtomic(profilePath,
                               encoder.encode(JSON.stringify(startupRecorder.data.profile)));
     ok(false,
-       "Found some unexpected main thread I/O during startup; profile uploaded in " +
+       "Unexpected main thread I/O behavior during startup; profile uploaded in " +
        filename);
   }
 });
