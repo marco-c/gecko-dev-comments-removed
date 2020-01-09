@@ -47,13 +47,13 @@ function getSourceHash(source) {
 
 
 function getRuleHash(ruleData) {
-  const { selector = "", ancestors = [], ruleIndex } = ruleData;
+  const { selectors = [], ancestors = [], ruleIndex } = ruleData;
   const atRules = ancestors.reduce((acc, rule) => {
     acc += `${rule.typeName} ${(rule.conditionText || rule.name || rule.keyText)}`;
     return acc;
   }, "");
 
-  return `${atRules}${selector}${ruleIndex}`;
+  return `${atRules}${selectors}${ruleIndex}`;
 }
 
 

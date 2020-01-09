@@ -1641,33 +1641,19 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
 
 
-
   logSelectorChange(oldSelector, newSelector) {
-    
-    const declarations = this._declarations.reduce((acc, decl, index) => {
-      acc.push({
-        property: decl.name,
-        value: decl.priority ? decl.value + " !important" : decl.value,
-        index,
-      });
-      return acc;
-    }, []);
-
-    
-    
-    
     TrackChangeEmitter.trackChange({
       ...this.metadata,
-      type: "rule-remove",
+      type: "selector-remove",
       add: null,
-      remove: declarations,
+      remove: null,
       selector: oldSelector,
     });
 
     TrackChangeEmitter.trackChange({
       ...this.metadata,
-      type: "rule-add",
-      add: declarations,
+      type: "selector-add",
+      add: null,
       remove: null,
       selector: newSelector,
     });

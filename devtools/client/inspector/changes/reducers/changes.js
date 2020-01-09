@@ -24,6 +24,7 @@ function cloneState(state = {}) {
       rules: Object.entries(source.rules).reduce((rules, [ruleId, rule]) => {
         rules[ruleId] = {
           ...rule,
+          selectors: rule.selectors.slice(0),
           children: rule.children.slice(0),
           add: rule.add.slice(0),
           remove: rule.remove.slice(0),
@@ -73,9 +74,9 @@ function createRule(ruleData, rules) {
       rule.ancestors = ruleAncestry.slice(0, index);
       
       
-      if (!rule.selector) {
-        rule.selector =
-          `${rule.typeName} ${(rule.conditionText || rule.name || rule.keyText)}`;
+      if (!rule.selectors || !rule.selectors.length) {
+        rule.selectors =
+          [`${rule.typeName} ${(rule.conditionText || rule.name || rule.keyText)}`];
       }
 
       
@@ -84,13 +85,21 @@ function createRule(ruleData, rules) {
     })
     
     .map((ruleId, index, array) => {
-      const { selector } = ruleAncestry[index];
+      const { selectors } = ruleAncestry[index];
       const prevRuleId = array[index - 1];
       const nextRuleId = array[index + 1];
 
       
-      const defaults = { selector, ruleId, add: [], remove: [], children: [] };
-      rules[ruleId] = Object.assign(defaults, rules[ruleId]);
+      if (!rules[ruleId]) {
+        rules[ruleId] = {
+          ruleId,
+          selectors,
+          add: [],
+          remove: [],
+          children: [],
+          parent: null,
+        };
+      }
 
       
       if (nextRuleId && !rules[ruleId].children.includes(nextRuleId)) {
@@ -125,6 +134,9 @@ function removeRule(ruleId, rules) {
 
   delete rules[ruleId];
 }
+
+
+
 
 
 
@@ -201,19 +213,28 @@ const reducers = {
     
     
     const sourceId = change.source.id || getSourceHash(change.source);
-    const ruleId = change.id || getRuleHash({ selector, ancestors, ruleIndex });
+    const ruleId =
+      change.id || getRuleHash({ selectors: [selector], ancestors, ruleIndex });
 
     
     const source = Object.assign({}, state[sourceId], change.source);
     
     const rules = Object.assign({}, source.rules);
     
-    let rule = rules[ruleId];
-    if (!rule) {
-      rule = createRule(change, rules);
-      if (changeType.startsWith("rule-")) {
-        rule.changeType = changeType;
-      }
+    const rule = rules[ruleId]
+      ? rules[ruleId]
+      : createRule({id: change.id, selectors: [selector], ancestors, ruleIndex}, rules);
+
+    
+    
+    
+    
+    
+    
+    if (rule.selectors[0] === selector) {
+      rule.selectors = [selector];
+    } else {
+      rule.selectors.push(selector);
     }
 
     if (change.remove && change.remove.length) {
@@ -301,7 +322,10 @@ const reducers = {
     }
 
     
-    if (!rule.add.length && !rule.remove.length) {
+    
+    
+    if (!rule.add.length && !rule.remove.length && rule.selectors.length === 1 &&
+        !changeType.startsWith("selector-")) {
       removeRule(ruleId, rules);
       source.rules = { ...rules };
     } else {
