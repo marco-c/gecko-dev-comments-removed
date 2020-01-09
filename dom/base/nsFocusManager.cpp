@@ -3169,20 +3169,23 @@ nsIContent* nsFocusManager::GetNextTabbableContentInAncestorScopes(
   return nullptr;
 }
 
-static nsIContent* GetTopLevelHost(nsIContent* aContent) {
-  nsIContent* topLevelhost = nullptr;
+static nsIContent* GetTopLevelScopeOwner(nsIContent* aContent) {
+  nsIContent* topLevelScopeOwner = nullptr;
   while (aContent) {
     if (HTMLSlotElement* slot = aContent->GetAssignedSlot()) {
       aContent = slot;
     } else if (ShadowRoot* shadowRoot = aContent->GetContainingShadow()) {
       aContent = shadowRoot->Host();
-      topLevelhost = aContent;
+      topLevelScopeOwner = aContent;
     } else {
+      if (HTMLSlotElement::FromNode(aContent)) {
+        topLevelScopeOwner = aContent;
+      }
       aContent = aContent->GetParent();
     }
   }
 
-  return topLevelhost;
+  return topLevelScopeOwner;
 }
 
 nsresult nsFocusManager::GetNextTabbableContent(
@@ -3195,7 +3198,7 @@ nsresult nsFocusManager::GetNextTabbableContent(
   nsCOMPtr<nsIContent> startContent = aStartContent;
   if (!startContent) return NS_OK;
 
-  nsIContent* currentTopLevelHost = GetTopLevelHost(aStartContent);
+  nsIContent* currentTopLevelScopeOwner = GetTopLevelScopeOwner(aStartContent);
 
   LOGCONTENTNAVIGATION("GetNextTabbable: %s", aStartContent);
   LOGFOCUSNAVIGATION(("  tabindex: %d", aCurrentTabIndex));
@@ -3319,14 +3322,14 @@ nsresult nsFocusManager::GetNextTabbableContent(
       
       
       nsIContent* currentContent = frame->GetContent();
-      nsIContent* oldTopLevelHost = currentTopLevelHost;
-      if (oldTopLevelHost != currentContent) {
-        currentTopLevelHost = GetTopLevelHost(currentContent);
+      nsIContent* oldTopLevelScopeOwner = currentTopLevelScopeOwner;
+      if (oldTopLevelScopeOwner != currentContent) {
+        currentTopLevelScopeOwner = GetTopLevelScopeOwner(currentContent);
       } else {
-        currentTopLevelHost = currentContent;
+        currentTopLevelScopeOwner = currentContent;
       }
-      if (currentTopLevelHost) {
-        if (currentTopLevelHost == oldTopLevelHost) {
+      if (currentTopLevelScopeOwner) {
+        if (currentTopLevelScopeOwner == oldTopLevelScopeOwner) {
           
           do {
             if (aForward) {
@@ -3340,7 +3343,7 @@ nsresult nsFocusManager::GetNextTabbableContent(
           } while (frame && frame->GetPrevContinuation());
           continue;
         }
-        currentContent = currentTopLevelHost;
+        currentContent = currentTopLevelScopeOwner;
       }
 
       
