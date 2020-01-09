@@ -100,8 +100,7 @@ void ImageResource::SetCurrentImage(ImageContainer* aContainer,
   
   
   
-  if (gfxPrefs::ImageAnimatedGenerateFullFrames() &&
-      mProgressTracker->GetProgress() & FLAG_IS_ANIMATED) {
+  if (mProgressTracker->GetProgress() & FLAG_IS_ANIMATED) {
     if (aDirtyRect) {
       layers::SharedSurfacesChild::UpdateAnimation(aContainer, aSurface,
                                                    aDirtyRect.ref());

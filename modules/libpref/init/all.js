@@ -4802,10 +4802,6 @@ pref("image.animated.decode-on-demand.recycle", true);
 
 
 
-pref("image.animated.generate-full-frames", true);
-
-
-
 pref("image.animated.resume-from-last-displayed", true);
 
 

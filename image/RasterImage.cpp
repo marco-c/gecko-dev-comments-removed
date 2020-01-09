@@ -372,14 +372,6 @@ LookupResult RasterImage::LookupFrame(const IntSize& aSize, uint32_t aFlags,
     return result;
   }
 
-  if (result.Surface()->GetCompositingFailed()) {
-    DrawableSurface tmp = std::move(result.Surface());
-    return result;
-  }
-
-  MOZ_ASSERT(!result.Surface()->GetIsPaletted(),
-             "Should not have a paletted frame");
-
   
   
   
@@ -682,9 +674,6 @@ void RasterImage::CollectSizeOfSurfaces(
     nsTArray<SurfaceMemoryCounter>& aCounters,
     MallocSizeOf aMallocSizeOf) const {
   SurfaceCache::CollectSizeOfSurfaces(ImageKey(this), aCounters, aMallocSizeOf);
-  if (mFrameAnimator) {
-    mFrameAnimator->CollectSizeOfCompositingSurfaces(aCounters, aMallocSizeOf);
-  }
 }
 
 bool RasterImage::SetMetadata(const ImageMetadata& aMetadata,
@@ -1207,9 +1196,7 @@ bool RasterImage::Decode(const IntSize& aSize, uint32_t aFlags,
   nsresult rv;
   bool animated = mAnimationState && aPlaybackType == PlaybackType::eAnimated;
   if (animated) {
-    if (gfxPrefs::ImageAnimatedGenerateFullFrames()) {
-      decoderFlags |= DecoderFlags::BLEND_ANIMATION;
-    }
+    decoderFlags |= DecoderFlags::BLEND_ANIMATION;
 
     size_t currentFrame = mAnimationState->GetCurrentAnimationFrameIndex();
     rv = DecoderFactory::CreateAnimationDecoder(

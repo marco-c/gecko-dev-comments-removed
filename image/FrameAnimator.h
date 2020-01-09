@@ -8,7 +8,6 @@
 #define mozilla_image_FrameAnimator_h
 
 #include "mozilla/Maybe.h"
-#include "mozilla/MemoryReporting.h"
 #include "mozilla/TimeStamp.h"
 #include "gfxTypes.h"
 #include "imgFrame.h"
@@ -279,7 +278,7 @@ struct RefreshResult {
 class FrameAnimator {
  public:
   FrameAnimator(RasterImage* aImage, const gfx::IntSize& aSize)
-      : mImage(aImage), mSize(aSize), mLastCompositedFrameIndex(-1) {
+      : mImage(aImage), mSize(aSize) {
     MOZ_COUNT_CTOR(FrameAnimator);
   }
 
@@ -307,15 +306,6 @@ class FrameAnimator {
 
 
   LookupResult GetCompositedFrame(AnimationState& aState, bool aMarkUsed);
-
-  
-
-
-
-
-  void CollectSizeOfCompositingSurfaces(
-      nsTArray<SurfaceMemoryCounter>& aCounters,
-      MallocSizeOf aMallocSizeOf) const;
 
  private:  
   
@@ -346,78 +336,12 @@ class FrameAnimator {
   TimeStamp GetCurrentImgFrameEndTime(AnimationState& aState,
                                       FrameTimeout aCurrentTimeout) const;
 
-  bool DoBlend(const RawAccessFrameRef& aPrevFrame,
-               const RawAccessFrameRef& aNextFrame, uint32_t aNextFrameIndex,
-               gfx::IntRect* aDirtyRect);
-
-  
-
-
-
-
-
-
-  static void ClearFrame(uint8_t* aFrameData, const gfx::IntRect& aFrameRect);
-
-  
-  static void ClearFrame(uint8_t* aFrameData, const gfx::IntRect& aFrameRect,
-                         const gfx::IntRect& aRectToClear);
-
-  
-  static bool CopyFrameImage(const uint8_t* aDataSrc,
-                             const gfx::IntRect& aRectSrc, uint8_t* aDataDest,
-                             const gfx::IntRect& aRectDest);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static nsresult DrawFrameTo(const uint8_t* aSrcData,
-                              const gfx::IntRect& aSrcRect,
-                              uint32_t aSrcPaletteLength, bool aSrcHasAlpha,
-                              uint8_t* aDstPixels, const gfx::IntRect& aDstRect,
-                              BlendMethod aBlendMethod,
-                              const gfx::IntRect& aBlendRect);
-
  private:  
   
   RasterImage* mImage;
 
   
   gfx::IntSize mSize;
-
-  
-
-
-
-
-
-
-
-  RawAccessFrameRef mCompositingFrame;
-
-  
-
-
-
-
-
-  RawAccessFrameRef mCompositingPrevFrame;
-
-  
-  int32_t mLastCompositedFrameIndex;
 };
 
 }  

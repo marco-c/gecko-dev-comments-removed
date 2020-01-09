@@ -56,19 +56,6 @@ class imgFrame {
                           const Maybe<AnimationParams>& aAnimParams,
                           bool aIsFullFrame, bool aShouldRecycle);
 
-  nsresult InitForAnimator(const nsIntSize& aSize, SurfaceFormat aFormat) {
-    nsIntRect frameRect(0, 0, aSize.width, aSize.height);
-    AnimationParams animParams{frameRect, FrameTimeout::Forever(),
-                                1, BlendMethod::OVER,
-                               DisposalMethod::NOT_SPECIFIED};
-    
-    
-    
-    return InitForDecoder(aSize, frameRect, aFormat,  0,
-                           false, Some(animParams),
-                           false,  false);
-  }
-
   
 
 
@@ -199,9 +186,6 @@ class imgFrame {
   void SetDirtyRect(const IntRect& aDirtyRect) { mDirtyRect = aDirtyRect; }
 
   bool IsFullFrame() const { return mIsFullFrame; }
-
-  bool GetCompositingFailed() const;
-  void SetCompositingFailed(bool val);
 
   void SetOptimizable();
 
@@ -378,12 +362,6 @@ class imgFrame {
   
   
   bool mIsFullFrame;
-
-  
-  
-  
-
-  bool mCompositingFailed;
 };
 
 
