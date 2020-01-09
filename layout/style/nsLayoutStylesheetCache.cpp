@@ -169,16 +169,9 @@ void nsLayoutStylesheetCache::Shutdown() {
   sSharedMemory = nullptr;
 }
 
-
 void nsLayoutStylesheetCache::SetUserContentCSSURL(nsIURI* aURI) {
   MOZ_ASSERT(XRE_IsContentProcess(), "Only used in content processes.");
   gUserContentSheetURL = aURI;
-}
-
-
-nsIURI* nsLayoutStylesheetCache::GetUserContentCSSURL() {
-  MOZ_ASSERT(XRE_IsParentProcess(), "Only used in parent processes.");
-  return gUserContentSheetURL;
 }
 
 MOZ_DEFINE_MALLOC_SIZE_OF(LayoutStylesheetCacheMallocSizeOf)
@@ -242,7 +235,8 @@ nsLayoutStylesheetCache::nsLayoutStylesheetCache() : mUsedSharedMemory(0) {
     XULSheet();
   }
 
-  if (gUserContentSheetURL && XRE_IsContentProcess()) {
+  if (gUserContentSheetURL) {
+    MOZ_ASSERT(XRE_IsContentProcess(), "Only used in content processes.");
     LoadSheet(gUserContentSheetURL, &mUserContentSheet, eUserSheetFeatures,
               eLogToConsole);
     gUserContentSheetURL = nullptr;
@@ -429,32 +423,24 @@ void nsLayoutStylesheetCache::InitFromProfile() {
   nsCOMPtr<nsIFile> contentFile;
   nsCOMPtr<nsIFile> chromeFile;
 
-  NS_GetSpecialDirectory(NS_APP_USER_CHROME_DIR, getter_AddRefs(chromeFile));
-  if (!chromeFile) {
+  NS_GetSpecialDirectory(NS_APP_USER_CHROME_DIR, getter_AddRefs(contentFile));
+  if (!contentFile) {
     
     return;
   }
 
-  chromeFile->Clone(getter_AddRefs(contentFile));
-  if (!contentFile) return;
+  contentFile->Clone(getter_AddRefs(chromeFile));
+  if (!chromeFile) return;
 
   contentFile->Append(NS_LITERAL_STRING("userContent.css"));
   chromeFile->Append(NS_LITERAL_STRING("userChrome.css"));
 
+  LoadSheetFile(contentFile, &mUserContentSheet, eUserSheetFeatures,
+                eLogToConsole);
   LoadSheetFile(chromeFile, &mUserChromeSheet, eUserSheetFeatures,
                 eLogToConsole);
 
   if (XRE_IsParentProcess()) {
-    bool exists = false;
-    contentFile->Exists(&exists);
-    if (exists) {
-      
-      
-      nsCOMPtr<nsIURI> uri;
-      NS_NewFileURI(getter_AddRefs(uri), contentFile);
-      gUserContentSheetURL = uri;
-    }
-
     
     
     Telemetry::Accumulate(Telemetry::USER_CHROME_CSS_LOADED,
