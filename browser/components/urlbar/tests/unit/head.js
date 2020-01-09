@@ -40,8 +40,9 @@ Services.scriptloader.loadSubScript("resource://testing-common/sinon-2.3.2.js", 
 
 
 
+
 function createContext(searchString = "foo", properties = {}) {
-  let context = new QueryContext({
+  let context = new UrlbarQueryContext({
     enableAutofill: UrlbarPrefs.get("autoFill"),
     isPrivate: true,
     lastKey: searchString ? searchString[searchString.length - 1] : "",

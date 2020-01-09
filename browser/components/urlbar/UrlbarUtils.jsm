@@ -10,9 +10,9 @@
 
 
 var EXPORTED_SYMBOLS = [
-  "QueryContext",
   "UrlbarMuxer",
   "UrlbarProvider",
+  "UrlbarQueryContext",
   "UrlbarUtils",
 ];
 
@@ -236,7 +236,7 @@ var UrlbarUtils = {
 
 
 
-class QueryContext {
+class UrlbarQueryContext {
   
 
 
@@ -265,7 +265,7 @@ class QueryContext {
     ]);
 
     if (isNaN(parseInt(options.maxResults))) {
-      throw new Error(`Invalid maxResults property provided to QueryContext`);
+      throw new Error(`Invalid maxResults property provided to UrlbarQueryContext`);
     }
 
     if (options.providers &&
@@ -289,7 +289,7 @@ class QueryContext {
   _checkRequiredOptions(options, optionNames) {
     for (let optionName of optionNames) {
       if (!(optionName in options)) {
-        throw new Error(`Missing or empty ${optionName} provided to QueryContext`);
+        throw new Error(`Missing or empty ${optionName} provided to UrlbarQueryContext`);
       }
       this[optionName] = options[optionName];
     }
@@ -360,6 +360,7 @@ class UrlbarProvider {
     throw new Error("Trying to access the base class, must be overridden");
   }
   
+
 
 
 

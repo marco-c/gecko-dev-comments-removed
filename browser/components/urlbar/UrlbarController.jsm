@@ -4,7 +4,9 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["QueryContext", "UrlbarController"];
+var EXPORTED_SYMBOLS = [
+  "UrlbarController",
+];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyModuleGetters(this, {

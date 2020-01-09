@@ -20,12 +20,12 @@ let inputOptions;
 
 
 function assertContextMatches(context, expectedValues) {
-  Assert.ok(context instanceof QueryContext,
-    "Should be a QueryContext");
+  Assert.ok(context instanceof UrlbarQueryContext,
+    "Should be a UrlbarQueryContext");
 
   for (let [key, value] of Object.entries(expectedValues)) {
     Assert.equal(context[key], value,
-      `Should have the expected value for ${key} in the QueryContext`);
+      `Should have the expected value for ${key} in the UrlbarQueryContext`);
   }
 }
 
@@ -47,8 +47,8 @@ function checkStartQueryCall(stub, expectedQueryContextProps) {
     "Should have called startQuery with one argument");
 
   let queryContext = args[0];
-  Assert.ok(queryContext instanceof QueryContext,
-    "Should have been passed a QueryContext");
+  Assert.ok(queryContext instanceof UrlbarQueryContext,
+    "Should have been passed a UrlbarQueryContext");
 
   for (let [name, value] of Object.entries(expectedQueryContextProps)) {
     Assert.deepEqual(queryContext[name],
