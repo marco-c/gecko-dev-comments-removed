@@ -51,6 +51,9 @@ bool ServoStyleSet::IsCurrentThreadInServoTraversal() {
 #endif
 
 namespace mozilla {
+
+constexpr const StyleOrigin ServoStyleSet::kOrigins[];
+
 ServoStyleSet* sInServoTraversal = nullptr;
 
 
@@ -117,13 +120,22 @@ void EnumerateShadowRoots(const Document& aDoc, const Functor& aCb) {
 }
 
 void ServoStyleSet::ShellDetachedFromDocument() {
-  
-  
-  
-  
-  
   ClearNonInheritingComputedStyles();
   mStyleRuleMap = nullptr;
+
+  
+  for (const Origin origin : kOrigins) {
+    for (size_t count = SheetCount(origin); count--;) {
+      RemoveStyleSheet(origin, SheetAt(origin, count));
+    }
+  }
+
+  
+  UpdateStylistIfNeeded();
+
+  
+  
+  MaybeGCRuleTree();
 }
 
 void ServoStyleSet::RecordShadowStyleChange(ShadowRoot& aShadowRoot) {
@@ -600,24 +612,17 @@ void ServoStyleSet::ReplaceSheets(
 
   SetStylistStyleSheetsDirty();
 
+  mStyleRuleMap = nullptr;
+
   
   for (size_t count = SheetCount(aOrigin); count--;) {
-    StyleSheet* sheet = SheetAt(aOrigin, count);
-    sheet->DropStyleSet(this);
-    Servo_StyleSet_RemoveStyleSheet(mRawSet.get(), sheet);
+    RemoveStyleSheet(aOrigin, SheetAt(aOrigin, count));
   }
 
   
   for (auto& sheet : aNewSheets) {
-    sheet->AddStyleSet(this);
-    MOZ_ASSERT(sheet->RawContents(),
-               "Raw sheet should be in place before replacement.");
-    Servo_StyleSet_AppendStyleSheet(mRawSet.get(), sheet);
+    AppendStyleSheet(aOrigin, sheet);
   }
-
-  
-  
-  mStyleRuleMap = nullptr;
 }
 
 void ServoStyleSet::InsertStyleSheetBefore(Origin aOrigin,

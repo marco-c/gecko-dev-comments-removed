@@ -3987,8 +3987,6 @@ void Document::DeletePresShell() {
     presContext->RefreshDriver()->CancelPendingFullscreenEvents(this);
   }
 
-  mStyleSet->ShellDetachedFromDocument();
-
   
   
   
@@ -4006,6 +4004,10 @@ void Document::DeletePresShell() {
 
   ClearStaleServoData();
   AssertNoStaleServoDataIn(*this);
+
+  mStyleSet->ShellDetachedFromDocument();
+  mStyleSetFilled = false;
+  mQuirkSheetAdded = false;
 }
 
 void Document::SetBFCacheEntry(nsIBFCacheEntry* aEntry) {
