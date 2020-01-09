@@ -386,11 +386,6 @@ nsresult MediaEngineRemoteVideoSource::Stop(
   {
     MutexAutoLock lock(mMutex);
     mState = kStopped;
-
-    
-    
-    
-    mImage = nullptr;
   }
 
   return NS_OK;
@@ -492,37 +487,7 @@ void MediaEngineRemoteVideoSource::Pull(
     const RefPtr<const AllocationHandle>& aHandle,
     const RefPtr<SourceMediaStream>& aStream, TrackID aTrackID,
     StreamTime aEndOfAppendedData, StreamTime aDesiredTime,
-    const PrincipalHandle& aPrincipalHandle) {
-  TRACE_AUDIO_CALLBACK_COMMENT("SourceMediaStream %p track %i", aStream.get(),
-                               aTrackID);
-  MutexAutoLock lock(mMutex);
-  if (mState == kReleased) {
-    
-    return;
-  }
-
-  MOZ_ASSERT(mState == kStarted || mState == kStopped);
-
-  StreamTime delta = aDesiredTime - aEndOfAppendedData;
-  MOZ_ASSERT(delta > 0);
-
-  VideoSegment segment;
-  RefPtr<layers::Image> image = mImage;
-  if (mState == kStarted) {
-    MOZ_ASSERT(!image || mImageSize == image->GetSize());
-    segment.AppendFrame(image.forget(), delta, mImageSize, aPrincipalHandle);
-  } else {
-    
-    segment.AppendFrame(image.forget(), delta, mImageSize, aPrincipalHandle,
-                        true);
-  }
-
-  
-  
-  
-  
-  aStream->AppendToTrack(aTrackID, &segment);
-}
+    const PrincipalHandle& aPrincipalHandle) {}
 
 int MediaEngineRemoteVideoSource::DeliverFrame(
     uint8_t* aBuffer, const camera::VideoFrameProperties& aProps) {
@@ -670,14 +635,12 @@ int MediaEngineRemoteVideoSource::DeliverFrame(
 
   {
     MutexAutoLock lock(mMutex);
-    
-    mImage = image.forget();
-    mImageSize = mImage->GetSize();
+    MOZ_ASSERT(mState == kStarted);
+    VideoSegment segment;
+    mImageSize = image->GetSize();
+    segment.AppendFrame(image.forget(), 1, mImageSize, mPrincipal);
+    mStream->AppendToTrack(mTrackID, &segment);
   }
-
-  
-  
-  
 
   return 0;
 }

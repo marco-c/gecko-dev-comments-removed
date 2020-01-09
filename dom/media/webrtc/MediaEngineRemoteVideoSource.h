@@ -211,10 +211,6 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
 
   
   
-  RefPtr<layers::Image> mImage;
-
-  
-  
   webrtc::I420BufferPool mRescalingBufferPool;
 
   
