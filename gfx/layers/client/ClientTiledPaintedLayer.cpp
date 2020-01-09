@@ -457,6 +457,11 @@ void ClientTiledPaintedLayer::EndPaint() {
 }
 
 void ClientTiledPaintedLayer::RenderLayer() {
+  if (!ClientManager()->IsRepeatTransaction()) {
+    
+    RenderMaskLayers(this);
+  }
+
   LayerManager::DrawPaintedLayerCallback callback =
       ClientManager()->GetPaintedLayerCallback();
   void* data = ClientManager()->GetPaintedLayerCallbackData();
@@ -540,9 +545,6 @@ void ClientTiledPaintedLayer::RenderLayer() {
   }
 
   if (!ClientManager()->IsRepeatTransaction()) {
-    
-    RenderMaskLayers(this);
-
     
     
     BeginPaint();
