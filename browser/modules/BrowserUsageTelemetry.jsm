@@ -96,7 +96,6 @@ const URLBAR_SELECTED_RESULT_METHODS = {
   rightClickEnter: 5,
 };
 
-
 const MINIMUM_TAB_COUNT_INTERVAL_MS = 5 * 60 * 1000; 
 
 function getOpenTabsAndWinsCounts() {
@@ -586,7 +585,8 @@ let BrowserUsageTelemetry = {
 
 
 
-  recordUrlbarSelectedResultMethod(event, userSelectionBehavior = "none") {
+
+  recordLegacyUrlbarSelectedResultMethod(event, userSelectionBehavior = "none") {
     
     
     
@@ -596,6 +596,34 @@ let BrowserUsageTelemetry = {
 
     this._recordUrlOrSearchbarSelectedResultMethod(
       event, urlbarListener.selectedIndex,
+      "FX_URLBAR_SELECTED_RESULT_METHOD",
+      userSelectionBehavior
+    );
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  recordUrlbarSelectedResultMethod(event, index, userSelectionBehavior = "none") {
+    
+    
+    
+    
+    
+    
+
+    this._recordUrlOrSearchbarSelectedResultMethod(
+      event, index,
       "FX_URLBAR_SELECTED_RESULT_METHOD",
       userSelectionBehavior
     );

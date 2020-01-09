@@ -268,10 +268,7 @@ class UrlbarInput {
 
     openParams.allowInheritPrincipal = false;
 
-    
-    
-    
-    
+    this.controller.recordSelectedResult(event, index);
 
     url = this._maybeCanonizeURL(event, url) || url.trim();
 
@@ -315,11 +312,7 @@ class UrlbarInput {
 
     this.view.close();
 
-    
-    
-    
-    
-    this.controller.recordSelectedResult(event, result, resultIndex);
+    this.controller.recordSelectedResult(event, resultIndex);
 
     let where = this._whereToOpen(event);
     let {url, postData} = UrlbarUtils.getUrlFromResult(result);

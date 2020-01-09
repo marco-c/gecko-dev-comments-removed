@@ -12,7 +12,7 @@ const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm")
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
-  
+  BrowserUsageTelemetry: "resource:///modules/BrowserUsageTelemetry.jsm",
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarProvidersManager: "resource:///modules/UrlbarProvidersManager.jsm",
@@ -62,6 +62,7 @@ class UrlbarController {
     this.browserWindow = options.browserWindow;
 
     this._listeners = new Set();
+    this._userSelectionBehavior = "none";
   }
 
   
@@ -231,6 +232,7 @@ class UrlbarController {
       case KeyEvent.DOM_VK_TAB:
         if (this.view.isOpen) {
           this.view.selectNextItem({ reverse: event.shiftKey });
+          this.userSelectionBehavior = "tab";
           event.preventDefault();
         }
         break;
@@ -238,6 +240,7 @@ class UrlbarController {
       case KeyEvent.DOM_VK_UP:
         if (!event.ctrlKey && !event.altKey) {
           if (this.view.isOpen) {
+            this.userSelectionBehavior = "arrow";
             this.view.selectNextItem({
               reverse: event.keyCode == KeyEvent.DOM_VK_UP });
           } else {
@@ -321,8 +324,42 @@ class UrlbarController {
 
 
 
+  set userSelectionBehavior(behavior) {
+    
+    
+    if (behavior == "arrow" && this._userSelectionBehavior == "tab") {
+      return;
+    }
+    this._userSelectionBehavior = behavior;
+  }
 
-  recordSelectedResult(event, result, index) {
+  
+
+
+
+
+
+
+
+
+  recordSelectedResult(event, resultIndex) {
+    let result;
+    let selectedResult = -1;
+
+    if (resultIndex >= 0) {
+      result = this.view.getResult(resultIndex);
+      
+      
+      
+      selectedResult = resultIndex > 0 || !result.heuristic ? resultIndex : -1;
+    }
+    BrowserUsageTelemetry.recordUrlbarSelectedResultMethod(
+      event, selectedResult, this._userSelectionBehavior);
+
+    if (!result) {
+      return;
+    }
+
     let telemetryType;
     switch (result.type) {
       case UrlbarUtils.RESULT_TYPE.TAB_SWITCH:
@@ -357,7 +394,7 @@ class UrlbarController {
 
     Services.telemetry
             .getHistogramById("FX_URLBAR_SELECTED_RESULT_INDEX")
-            .add(index);
+            .add(resultIndex);
     
     
     if (telemetryType in URLBAR_SELECTED_RESULT_TYPES) {
@@ -366,7 +403,7 @@ class UrlbarController {
               .add(URLBAR_SELECTED_RESULT_TYPES[telemetryType]);
       Services.telemetry
               .getKeyedHistogramById("FX_URLBAR_SELECTED_RESULT_INDEX_BY_TYPE")
-              .add(telemetryType, index);
+              .add(telemetryType, resultIndex);
     } else {
       Cu.reportError("Unknown FX_URLBAR_SELECTED_RESULT_TYPE type: " +
                      telemetryType);
