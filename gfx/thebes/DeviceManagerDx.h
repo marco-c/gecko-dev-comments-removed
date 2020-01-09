@@ -20,6 +20,7 @@
 #include <objbase.h>
 
 #include <dxgi.h>
+#include <dxgi1_6.h>
 
 
 #include <d3dcommon.h>
@@ -80,6 +81,9 @@ class DeviceManagerDx final {
   
   
   bool HasCrashyInitData();
+
+  
+  nsTArray<DXGI_OUTPUT_DESC1> EnumerateOutputs();
 
   bool CreateCompositorDevices();
   void CreateContentDevices();
