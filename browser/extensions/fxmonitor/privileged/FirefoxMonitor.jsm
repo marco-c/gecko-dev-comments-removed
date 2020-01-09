@@ -73,7 +73,7 @@ this.FirefoxMonitor = {
     this.extension = aExtension;
 
     XPCOMUtils.defineLazyPreferenceGetter(
-      this, "enabled", this.kEnabledPref, true,
+      this, "enabled", this.kEnabledPref, false,
       (pref, oldVal, newVal) => {
         if (newVal) {
           this.startObserving();
@@ -103,6 +103,10 @@ this.FirefoxMonitor = {
     
     Services.scriptloader.loadSubScript(
       this.getURL("privileged/subscripts/EveryWindow.jsm"));
+
+    
+    Services.scriptloader.loadSubScript(
+      this.getURL("privileged/subscripts/PanelUI.jsm"));
 
     
     
@@ -228,9 +232,6 @@ this.FirefoxMonitor = {
     this.warnIfNeeded(aBrowser, host);
   },
 
-  notificationsByWindow: new WeakMap(),
-  panelUIsByWindow: new WeakMap(),
-
   async startObserving() {
     if (this.observerAdded) {
       return;
@@ -241,21 +242,31 @@ this.FirefoxMonitor = {
     EveryWindow.registerCallback(
       this.kNotificationID,
       (win) => {
-        if (this.notificationsByWindow.has(win)) {
+        
+        let DOMWindowUtils = win.windowUtils;
+        DOMWindowUtils.loadSheetUsingURIString(this.getURL("privileged/FirefoxMonitor.css"),
+                                               DOMWindowUtils.AUTHOR_SHEET);
+
+        
+        
+        win.FirefoxMonitorUtils = {
           
-          return;
-        }
-
-        this.notificationsByWindow.set(win, new Set());
-
-        
-        
-        
-        Services.tm.dispatchToMainThread(() => {
-          let DOMWindowUtils = win.windowUtils;
-          DOMWindowUtils.loadSheetUsingURIString(this.getURL("privileged/FirefoxMonitor.css"),
-                                                 DOMWindowUtils.AUTHOR_SHEET);
-        });
+          
+          
+          notifications: new Set(),
+          disable: () => {
+            this.disable();
+          },
+          getString: (aKey) => {
+            return this.getString(aKey);
+          },
+          getFormattedString: (aKey, args) => {
+            return this.getFormattedString(aKey, args);
+          },
+          getFirefoxMonitorURL: (aSiteName) => {
+            return `${this.FirefoxMonitorURL}/?breach=${encodeURIComponent(aSiteName)}&utm_source=firefox&utm_medium=popup`;
+          },
+        };
 
         
         let doc = win.document;
@@ -287,7 +298,7 @@ this.FirefoxMonitor = {
         pn.setAttribute("id", `${this.kNotificationID}-notification`);
         pn.setAttribute("hidden", "true");
         parentElt.appendChild(pn);
-        this.panelUIsByWindow.set(win, panelUI);
+        win.FirefoxMonitorPanelUI = panelUI;
 
         
         win.gBrowser.addTabsProgressListener(this);
@@ -299,21 +310,24 @@ this.FirefoxMonitor = {
           return;
         }
 
-        Services.tm.dispatchToMainThread(() => {
-          let DOMWindowUtils = win.windowUtils;
-          DOMWindowUtils.removeSheetUsingURIString(this.getURL("privileged/FirefoxMonitor.css"),
-                                                   DOMWindowUtils.AUTHOR_SHEET);
-        });
+        let DOMWindowUtils = win.windowUtils;
+        if (!DOMWindowUtils) {
+          
+          DOMWindowUtils = win.QueryInterface(Ci.nsIInterfaceRequestor)
+                              .getInterface(Ci.nsIDOMWindowUtils);
+        }
+        DOMWindowUtils.removeSheetUsingURIString(this.getURL("privileged/FirefoxMonitor.css"),
+                                                 DOMWindowUtils.AUTHOR_SHEET);
 
-        this.notificationsByWindow.get(win).forEach(n => {
+        win.FirefoxMonitorUtils.notifications.forEach(n => {
           n.remove();
         });
-        this.notificationsByWindow.delete(win);
+        delete win.FirefoxMonitorUtils;
 
         let doc = win.document;
         doc.getElementById(`${this.kNotificationID}-notification-anchor`).remove();
         doc.getElementById(`${this.kNotificationID}-notification`).remove();
-        this.panelUIsByWindow.delete(win);
+        delete win.FirefoxMonitorPanelUI;
 
         win.gBrowser.removeTabsProgressListener(this);
       },
@@ -360,7 +374,7 @@ this.FirefoxMonitor = {
 
     let doc = browser.ownerDocument;
     let win = doc.defaultView;
-    let panelUI = this.panelUIsByWindow.get(win);
+    let panelUI = doc.defaultView.FirefoxMonitorPanelUI;
 
     let animatedOnce = false;
     let populatePanel = (event) => {
@@ -386,7 +400,7 @@ this.FirefoxMonitor = {
           animatedOnce = true;
           break;
         case "removed":
-          this.notificationsByWindow.get(win).delete(
+          win.FirefoxMonitorUtils.notifications.delete(
             win.PopupNotifications.getNotification(this.kNotificationID, browser));
           Services.telemetry.recordEvent("fxmonitor", "interaction", "doorhanger_removed");
           break;
@@ -406,118 +420,6 @@ this.FirefoxMonitor = {
 
     Services.telemetry.recordEvent("fxmonitor", "interaction", "doorhanger_shown");
 
-    this.notificationsByWindow.get(win).add(n);
-  },
-};
-
-
-
-function PanelUI(doc) {
-  this.site = null;
-  this.doc = doc;
-
-  let box = doc.createElementNS(XUL_NS, "vbox");
-
-  let elt = doc.createElementNS(XUL_NS, "description");
-  elt.textContent = this.getString("fxmonitor.popupHeader");
-  elt.classList.add("headerText");
-  box.appendChild(elt);
-
-  elt = doc.createElementNS(XUL_NS, "description");
-  elt.classList.add("popupText");
-  box.appendChild(elt);
-
-  this.box = box;
-}
-
-PanelUI.prototype = {
-  getString(aKey) {
-    return FirefoxMonitor.getString(aKey);
-  },
-
-  getFormattedString(aKey, args) {
-    return FirefoxMonitor.getFormattedString(aKey, args);
-  },
-
-  get brandString() {
-    if (this._brandString) {
-      return this._brandString;
-    }
-    return this._brandString = this.getString("fxmonitor.brandName");
-  },
-
-  getFirefoxMonitorURL: (aSiteName) => {
-    return `${FirefoxMonitor.FirefoxMonitorURL}/?breach=${encodeURIComponent(aSiteName)}&utm_source=firefox&utm_medium=popup`;
-  },
-
-  get primaryAction() {
-    if (this._primaryAction) {
-      return this._primaryAction;
-    }
-    return this._primaryAction = {
-      label: this.getFormattedString("fxmonitor.checkButton.label", [this.brandString]),
-      accessKey: this.getString("fxmonitor.checkButton.accessKey"),
-      callback: () => {
-        let win = this.doc.defaultView;
-        win.openTrustedLinkIn(
-          this.getFirefoxMonitorURL(this.site.Name), "tab", { });
-
-        Services.telemetry.recordEvent("fxmonitor", "interaction", "check_btn");
-      },
-    };
-  },
-
-  get secondaryActions() {
-    if (this._secondaryActions) {
-      return this._secondaryActions;
-    }
-    return this._secondaryActions = [
-      {
-        label: this.getString("fxmonitor.dismissButton.label"),
-        accessKey: this.getString("fxmonitor.dismissButton.accessKey"),
-        callback: () => {
-          Services.telemetry.recordEvent("fxmonitor", "interaction", "dismiss_btn");
-        },
-      }, {
-        label: this.getFormattedString("fxmonitor.neverShowButton.label", [this.brandString]),
-        accessKey: this.getString("fxmonitor.neverShowButton.accessKey"),
-        callback: () => {
-          FirefoxMonitor.disable();
-          Services.telemetry.recordEvent("fxmonitor", "interaction", "never_show_btn");
-        },
-      },
-    ];
-  },
-
-  refresh(site) {
-    this.site = site;
-
-    let elt = this.box.querySelector(".popupText");
-
-    
-    
-    
-    
-    
-    
-    let k100k = 100000;
-    let pwnCount = site.PwnCount;
-    let stringName = "fxmonitor.popupText";
-    if (pwnCount > k100k) {
-      let multiplier = 1;
-      while (pwnCount >= 10) {
-        pwnCount /= 10;
-        multiplier *= 10;
-      }
-      pwnCount = Math.floor(pwnCount) * multiplier;
-      stringName = "fxmonitor.popupTextRounded";
-    }
-
-    elt.textContent =
-      PluralForm.get(pwnCount, this.getString(stringName))
-                .replace("#1", pwnCount.toLocaleString())
-                .replace("#2", site.Name)
-                .replace("#3", site.Year)
-                .replace("#4", this.brandString);
+    win.FirefoxMonitorUtils.notifications.add(n);
   },
 };
