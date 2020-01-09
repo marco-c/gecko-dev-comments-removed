@@ -122,6 +122,19 @@ try {
       }
       connections.clear();
     });
+
+    
+    
+    function destroyServer() {
+      
+      
+      if (DebuggerServer.hasConnection()) {
+        return;
+      }
+      DebuggerServer.off("connectionchange", destroyServer);
+      DebuggerServer.destroy();
+    }
+    DebuggerServer.on("connectionchange", destroyServer);
   })();
 } catch (e) {
   dump(`Exception in DevTools frame startup: ${e}\n`);

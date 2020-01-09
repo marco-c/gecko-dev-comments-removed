@@ -66,6 +66,11 @@
     await client.connect();
 
     
+    
+    
+    await client.mainRoot.getTab({tab});
+
+    
     await exports.registerTestActor(client);
 
     return getTestActor(client, tab);
