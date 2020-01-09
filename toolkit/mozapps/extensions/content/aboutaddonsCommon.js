@@ -64,3 +64,15 @@ function attachUpdateHandler(install) {
     });
   };
 }
+
+function openOptionsInTab(optionsURL) {
+  let mainWindow = window.windowRoot.ownerGlobal;
+  if ("switchToTabHavingURI" in mainWindow) {
+    mainWindow.switchToTabHavingURI(optionsURL, true, {
+      relatedToCurrent: true,
+      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+    });
+    return true;
+  }
+  return false;
+}

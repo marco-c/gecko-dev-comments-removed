@@ -125,6 +125,21 @@ function isPending(addon, action) {
 }
 
 
+const INLINE_OPTIONS_ENABLED = Services.prefs.getBoolPref(
+  "extensions.htmlaboutaddons.inline-options.enabled");
+const OPTIONS_TYPE_MAP = {
+  [AddonManager.OPTIONS_TYPE_TAB]: "tab",
+  [AddonManager.OPTIONS_TYPE_INLINE_BROWSER]:
+    INLINE_OPTIONS_ENABLED ? "inline" : "tab",
+};
+
+
+
+function getOptionsType(addon, type) {
+  return OPTIONS_TYPE_MAP[addon.optionsType];
+}
+
+
 
 
 
@@ -567,6 +582,10 @@ class AddonOptions extends HTMLElement {
     this.querySelector('[action="expand"]').hidden = card.expanded;
 
     
+    this.querySelector('[action="preferences"]').hidden =
+      getOptionsType(addon) != "tab";
+
+    
     
     this.updateSeparatorsVisibility();
   }
@@ -931,6 +950,11 @@ class AddonCard extends HTMLElement {
             triggeringPrincipal:
               Services.scriptSecurityManager.createNullPrincipal({}),
           });
+          break;
+        case "preferences":
+          if (getOptionsType(addon) == "tab") {
+            openOptionsInTab(addon.optionsURL);
+          }
           break;
         case "remove":
           {
