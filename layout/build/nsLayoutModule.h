@@ -8,8 +8,11 @@
 #define nsLayoutModule_h
 
 #include "nscore.h"
+#include "nsID.h"
+#include "mozilla/AlreadyAddRefed.h"
 
 class nsIPresentationService;
+class nsISupports;
 
 
 

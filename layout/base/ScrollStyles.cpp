@@ -5,6 +5,7 @@
 
 
 #include "mozilla/ScrollStyles.h"
+#include "mozilla/WritingModes.h"
 #include "nsStyleStruct.h"  
 
 namespace mozilla {
