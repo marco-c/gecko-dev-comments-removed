@@ -97,6 +97,21 @@ class MappedDeclarations final {
   }
 
   
+  void SetCounterResetListItem(int32_t aValue) {
+    Servo_DeclarationBlock_SetCounterResetListItem(mDecl, aValue);
+  }
+
+  
+  void SetCounterSetListItem(int32_t aValue) {
+    Servo_DeclarationBlock_SetCounterSetListItem(mDecl, aValue);
+  }
+
+  
+  void SetCounterIncrementListItem(int32_t aValue) {
+    Servo_DeclarationBlock_SetCounterIncrementListItem(mDecl, aValue);
+  }
+
+  
   void SetPixelValue(nsCSSPropertyID aId, float aValue) {
     Servo_DeclarationBlock_SetPixelValue(mDecl, aId, aValue);
   }
