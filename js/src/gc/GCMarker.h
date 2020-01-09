@@ -7,8 +7,6 @@
 #ifndef gc_GCMarker_h
 #define gc_GCMarker_h
 
-#include "mozilla/Maybe.h"
-
 #include "ds/OrderedHashTable.h"
 #include "js/SliceBudget.h"
 #include "js/TracingAPI.h"
@@ -27,28 +25,27 @@ namespace gc {
 struct Cell;
 
 struct WeakKeyTableHashPolicy {
-  using Lookup = Cell*;
-  static HashNumber hash(const Lookup& v,
-                         const mozilla::HashCodeScrambler& hcs) {
-    return hcs.scramble(mozilla::HashGeneric(v));
+  typedef JS::GCCellPtr Lookup;
+  static HashNumber hash(const Lookup& v, const mozilla::HashCodeScrambler&) {
+    return mozilla::HashGeneric(v.asCell());
   }
-  static bool match(Cell* const& k, const Lookup& l) { return k == l; }
-  static bool isEmpty(Cell* const& v) { return !v; }
-  static void makeEmpty(Cell** vp) { *vp = nullptr; }
+  static bool match(const JS::GCCellPtr& k, const Lookup& l) { return k == l; }
+  static bool isEmpty(const JS::GCCellPtr& v) { return !v; }
+  static void makeEmpty(JS::GCCellPtr* vp) { *vp = nullptr; }
 };
 
 struct WeakMarkable {
   WeakMapBase* weakmap;
-  Cell* key;
+  JS::GCCellPtr key;
 
-  WeakMarkable(WeakMapBase* weakmapArg, Cell* keyArg)
+  WeakMarkable(WeakMapBase* weakmapArg, JS::GCCellPtr keyArg)
       : weakmap(weakmapArg), key(keyArg) {}
 };
 
 using WeakEntryVector = Vector<WeakMarkable, 2, js::SystemAllocPolicy>;
 
 using WeakKeyTable =
-    OrderedHashMap<Cell*, WeakEntryVector, WeakKeyTableHashPolicy,
+    OrderedHashMap<JS::GCCellPtr, WeakEntryVector, WeakKeyTableHashPolicy,
                    js::SystemAllocPolicy>;
 
 
@@ -230,11 +227,8 @@ class GCMarker : public JSTracer {
   explicit GCMarker(JSRuntime* rt);
   MOZ_MUST_USE bool init(JSGCMode gcMode);
 
-  void setMaxCapacity(size_t maxCap) {
-    blackStack.setMaxCapacity(maxCap);
-    grayStack.setMaxCapacity(maxCap);
-  }
-  size_t maxCapacity() const { return blackStack.maxCapacity(); }
+  void setMaxCapacity(size_t maxCap) { stack.setMaxCapacity(maxCap); }
+  size_t maxCapacity() const { return stack.maxCapacity(); }
 
   void start();
   void stop();
@@ -299,26 +293,9 @@ class GCMarker : public JSTracer {
 
   bool isDrained() { return isMarkStackEmpty() && !delayedMarkingList; }
 
-  enum MarkQueueProgress {
-    QueueYielded,   
-    QueueComplete,  
-    QueueSuspended  
-  };
-  MarkQueueProgress processMarkQueue();
-
-  void startQueue() {
-#ifdef DEBUG
-    queuePos = 0;
-    queueMarkColor.reset();
-#endif
-  }
-
   MOZ_MUST_USE bool markUntilBudgetExhausted(SliceBudget& budget);
 
-  void setGCMode(JSGCMode mode) {
-    blackStack.setGCMode(mode);
-    grayStack.setGCMode(mode);
-  }
+  void setGCMode(JSGCMode mode) { stack.setGCMode(mode); }
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
@@ -380,13 +357,11 @@ class GCMarker : public JSTracer {
 
   inline void pushValueArray(JSObject* obj, HeapSlot* start, HeapSlot* end);
 
-  bool isMarkStackEmpty() {
-    return blackStack.isEmpty() && grayStack.isEmpty();
-  }
+  bool isMarkStackEmpty() { return stack.isEmpty(); }
 
-  bool hasBlackEntries() const { return !blackStack.isEmpty(); }
+  bool hasBlackEntries() const { return stack.position() > grayPosition; }
 
-  bool hasGrayEntries() const { return !grayStack.isEmpty(); }
+  bool hasGrayEntries() const { return grayPosition > 0 && !stack.isEmpty(); }
 
   MOZ_MUST_USE bool restoreValueArray(
       const gc::MarkStack::SavedValueArray& array, HeapSlot** vpp,
@@ -411,16 +386,13 @@ class GCMarker : public JSTracer {
   void forEachDelayedMarkingArena(F&& f);
 
   
-  gc::MarkStack blackStack;
+  gc::MarkStack stack;
+
   
-  gc::MarkStack grayStack;
+  MainThreadData<size_t> grayPosition;
 
   
   MainThreadData<gc::MarkColor> color;
-
-  gc::MarkStack& currentStack() {
-    return color == gc::MarkColor::Black ? blackStack : grayStack;
-  }
 
   
   MainThreadData<js::gc::Arena*> delayedMarkingList;
@@ -445,35 +417,10 @@ class GCMarker : public JSTracer {
   MainThreadData<bool> started;
 
   
-  mozilla::Maybe<js::gc::MarkColor> queueMarkColor;
-
-  
 
 
 
   MainThreadData<bool> strictCompartmentChecking;
-
- public:
-  
-
-
-
-
-
-
-
-
-
-
-  JS::WeakCache<GCVector<JS::Heap<JS::Value>, 0, SystemAllocPolicy>> markQueue;
-
-  
-  size_t queuePos;
-
-  
-
-
-  MainThreadData<bool> isShutdownGC;
 #endif  
 };
 

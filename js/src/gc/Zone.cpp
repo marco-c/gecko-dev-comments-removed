@@ -6,8 +6,6 @@
 
 #include "gc/Zone-inl.h"
 
-#include "jsutil.h"
-
 #include "gc/FreeOp.h"
 #include "gc/Policy.h"
 #include "gc/PublicIterators.h"
@@ -21,8 +19,6 @@
 
 #include "gc/GC-inl.h"
 #include "gc/Marking-inl.h"
-#include "gc/Nursery-inl.h"
-#include "gc/WeakMap-inl.h"
 #include "vm/JSScript-inl.h"
 #include "vm/Realm-inl.h"
 
@@ -48,8 +44,6 @@ JS::Zone::Zone(JSRuntime* rt)
       gcGrayRoots_(this),
       weakCaches_(this),
       gcWeakKeys_(this, SystemAllocPolicy(), rt->randomHashCodeScrambler()),
-      gcNurseryWeakKeys_(this, SystemAllocPolicy(),
-                         rt->randomHashCodeScrambler()),
       typeDescrObjects_(this, this),
       markedAtoms_(this),
       atomCache_(this),
@@ -69,7 +63,7 @@ JS::Zone::Zone(JSRuntime* rt)
       data(this, nullptr),
       isSystem(this, false),
 #ifdef DEBUG
-      gcSweepGroupIndex(0),
+      gcLastSweepGroupIndex(0),
 #endif
       jitZone_(this, nullptr),
       gcScheduled_(false),
@@ -112,7 +106,7 @@ Zone::~Zone() {
 bool Zone::init(bool isSystemArg) {
   isSystem = isSystemArg;
   regExps_.ref() = make_unique<RegExpZone>(this);
-  return regExps_.ref() && gcWeakKeys().init() && gcNurseryWeakKeys().init();
+  return regExps_.ref() && gcWeakKeys().init();
 }
 
 void Zone::setNeedsIncrementalBarrier(bool needs) {
@@ -192,82 +186,6 @@ void Zone::sweepBreakpoints(FreeOp* fop) {
       }
       instance->debug().clearAllBreakpoints(fop, instance->objectUnbarriered());
     }
-  }
-}
-
-static void SweepWeakEntryVectorWhileMinorSweeping(
-    js::gc::WeakEntryVector& entries) {
-  EraseIf(entries, [](js::gc::WeakMarkable& markable) -> bool {
-    return IsAboutToBeFinalizedDuringMinorSweep(&markable.key);
-  });
-}
-
-void Zone::sweepAfterMinorGC() {
-  for (WeakKeyTable::Range r = gcNurseryWeakKeys().all(); !r.empty();
-       r.popFront()) {
-    
-    
-    
-    
-    
-
-    
-    
-    
-    
-    gc::Cell* key = r.front().key;
-    MOZ_ASSERT(!key->isTenured());
-    if (!Nursery::getForwardedPointer(&key)) {
-      
-      continue;
-    }
-
-    
-    
-    WeakEntryVector& entries = r.front().value;
-    SweepWeakEntryVectorWhileMinorSweeping(entries);
-
-    
-    auto entry = gcWeakKeys().get(key);
-    if (!entry) {
-      if (!gcWeakKeys().put(key, gc::WeakEntryVector())) {
-        AutoEnterOOMUnsafeRegion oomUnsafe;
-        oomUnsafe.crash("Failed to tenure weak keys entry");
-      }
-      entry = gcWeakKeys().get(key);
-    }
-
-    for (auto& markable : entries) {
-      if (!entry->value.append(markable)) {
-        AutoEnterOOMUnsafeRegion oomUnsafe;
-        oomUnsafe.crash("Failed to tenure weak keys entry");
-      }
-    }
-
-    
-    
-
-    JSObject* delegate = WeakMapBase::getDelegate(key->as<JSObject>());
-    if (!delegate) {
-      continue;
-    }
-    MOZ_ASSERT(delegate->isTenured());
-
-    
-    
-    
-    
-    
-    
-    auto p = delegate->zone()->gcWeakKeys().get(delegate);
-    if (p) {
-      SweepWeakEntryVectorWhileMinorSweeping(p->value);
-    }
-  }
-
-  if (!gcNurseryWeakKeys().clear()) {
-    AutoEnterOOMUnsafeRegion oomUnsafe;
-    oomUnsafe.crash("OOM while clearing gcNurseryWeakKeys.");
   }
 }
 
@@ -691,13 +609,13 @@ void MemoryTracker::swapTrackedMemory(Cell* a, Cell* b, MemoryUse use) {
 
   AutoEnterOOMUnsafeRegion oomUnsafe;
 
-  if ((sa && !map.put(kb, sa)) || (sb && !map.put(ka, sb))) {
+  if ((sa && !map.put(kb, sa)) ||
+      (sb && !map.put(ka, sb))) {
     oomUnsafe.crash("MemoryTracker::swapTrackedMemory");
   }
 }
 
-size_t MemoryTracker::getAndRemoveEntry(const Key& key,
-                                        LockGuard<Mutex>& lock) {
+size_t MemoryTracker::getAndRemoveEntry(const Key& key, LockGuard<Mutex>& lock) {
   auto ptr = map.lookup(key);
   if (!ptr) {
     return 0;
