@@ -302,7 +302,6 @@ class AwsyTestCase(MarionetteTestCase):
         """
         page_to_load = self.urls()[self._pages_loaded % len(self.urls())]
         tabs_loaded = len(self._tabs)
-        is_new_tab = False
         open_tab_script = r"""
             gBrowser.loadOneTab("about:blank", {
                 inBackground: false,
@@ -326,8 +325,6 @@ class AwsyTestCase(MarionetteTestCase):
             self._tabs.append(new_tabs[0])
             tabs_loaded += 1
 
-            is_new_tab = True
-
         tab_idx = self._pages_loaded % self._maxTabs
 
         tab = self._tabs[tab_idx]
@@ -346,15 +343,15 @@ class AwsyTestCase(MarionetteTestCase):
             self.logger.info("loaded!")
 
         
-        if is_new_tab:
-            
-            old_tabs = set(self._tabs)
-            old_tabs.remove(tab)
-            
-            [new_tab] = set(self.marionette.window_handles) - old_tabs
-            
-            
-            self._tabs[tab_idx] = new_tab
+        
+        old_tabs = set(self._tabs)
+        old_tabs.remove(tab)
+        
+        new_tabs = set(self.marionette.window_handles) - old_tabs
+        
+        
+        if new_tabs:
+            self._tabs[tab_idx] = list(new_tabs)[0]
 
         
         time.sleep(self._perTabPause)
