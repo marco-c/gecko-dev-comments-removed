@@ -1098,8 +1098,6 @@ class XPCShellTests(object):
         
         
         nodeBin = os.getenv('MOZ_NODE_PATH', None)
-        if not nodeBin and build:
-            nodeBin = build.substs.get('NODEJS')
         if not nodeBin:
             self.log.warning('MOZ_NODE_PATH environment variable not set. '
                              'Tests requiring http/2 will fail.')
