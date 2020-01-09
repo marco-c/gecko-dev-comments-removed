@@ -555,6 +555,7 @@ class BrowserChild final : public BrowserChildBase,
   mozilla::ipc::IPCResult RecvUpdateNativeWindowHandle(
       const uintptr_t& aNewHandle);
 
+  virtual mozilla::ipc::IPCResult RecvSkipBrowsingContextDetach() override;
   
 
 

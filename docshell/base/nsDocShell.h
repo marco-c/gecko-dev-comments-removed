@@ -405,6 +405,10 @@ class nsDocShell final : public nsDocLoader,
   
   void MaybeClearStorageAccessFlag();
 
+  void SkipBrowsingContextDetach() {
+    mSkipBrowsingContextDetachOnDestroy = true;
+  }
+
  private:  
   friend class nsDSURIContentListener;
   friend class FramingChecker;
@@ -1205,6 +1209,11 @@ class nsDocShell final : public nsDocLoader,
   bool mTitleValidForCurrentURI : 1;
 
   bool mIsFrame : 1;
+
+  
+  
+  
+  bool mSkipBrowsingContextDetachOnDestroy : 1;
 };
 
 #endif 
