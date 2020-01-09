@@ -813,6 +813,8 @@ static bool GenerateAndPushTextMask(nsIFrame* aFrame, gfxContext* aContext,
     return false;
   }
 
+  SVGObserverUtils::GetAndObserveBackgroundClip(aFrame);
+
   
   
   

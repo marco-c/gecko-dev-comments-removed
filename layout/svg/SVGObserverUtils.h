@@ -396,6 +396,12 @@ class SVGObserverUtils {
   
 
 
+
+  static Element* GetAndObserveBackgroundClip(nsIFrame* aFrame);
+
+  
+
+
   static already_AddRefed<URLAndReferrerInfo> GetFilterURI(
       nsIFrame* aFrame, const nsStyleFilter& aFilter);
 
