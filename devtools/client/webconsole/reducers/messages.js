@@ -959,7 +959,15 @@ function passCssFilters(message, filters) {
 
 
 function passSearchFilters(message, filters) {
-  const text = (filters.text || "").trim();
+  const text = (filters.text || "").trim().toLocaleLowerCase();
+  let regex;
+  if (text.startsWith("/") && text.endsWith("/") && text.length > 2) {
+    try {
+      regex = new RegExp(text.slice(1, -1), "im");
+    } catch (e) {
+
+    }
+  }
 
   
   if (!text) {
@@ -968,26 +976,26 @@ function passSearchFilters(message, filters) {
 
   return (
     
-    isTextInParameters(text, message.parameters)
+    isTextInParameters(text, regex, message.parameters)
     
-    || isTextInFrame(text, message.frame)
+    || isTextInFrame(text, regex, message.frame)
     
-    || isTextInNetEvent(text, message.request)
+    || isTextInNetEvent(text, regex, message.request)
     
-    || isTextInStackTrace(text, message.stacktrace)
+    || isTextInStackTrace(text, regex, message.stacktrace)
     
-    || isTextInMessageText(text, message.messageText)
+    || isTextInMessageText(text, regex, message.messageText)
     
-    || isTextInNotes(text, message.notes)
+    || isTextInNotes(text, regex, message.notes)
     
-    || isTextInPrefix(text, message.prefix)
+    || isTextInPrefix(text, regex, message.prefix)
   );
 }
 
 
 
 
-function isTextInFrame(text, frame) {
+function isTextInFrame(text, regex, frame) {
   if (!frame) {
     return false;
   }
@@ -1001,53 +1009,50 @@ function isTextInFrame(text, frame) {
   const { short } = getSourceNames(source);
   const unicodeShort = getUnicodeUrlPath(short);
 
-  const includes =
-    `${functionName ? functionName + " " : ""}${unicodeShort}:${line}:${column}`
-    .toLocaleLowerCase()
-    .includes(text.toLocaleLowerCase());
-  return includes;
+  const str =
+    `${functionName ? functionName + " " : ""}${unicodeShort}:${line}:${column}`;
+  return regex ? regex.test(str) : str.toLocaleLowerCase().includes(text);
 }
 
 
 
 
-function isTextInParameters(text, parameters) {
+function isTextInParameters(text, regex, parameters) {
   if (!parameters) {
     return false;
   }
 
-  text = text.toLocaleLowerCase();
-  return getAllProps(parameters).some(prop =>
-    (prop + "").toLocaleLowerCase().includes(text)
-  );
+  return getAllProps(parameters).some(prop => {
+    const str = (prop + "");
+    return regex ? regex.test(str) : str.toLocaleLowerCase().includes(text);
+  });
 }
 
 
 
 
-function isTextInNetEvent(text, request) {
+function isTextInNetEvent(text, regex, request) {
   if (!request) {
     return false;
   }
 
-  text = text.toLocaleLowerCase();
-
-  const method = request.method.toLocaleLowerCase();
-  const url = request.url.toLocaleLowerCase();
-  return method.includes(text) || url.includes(text);
+  const method = request.method;
+  const url = request.url;
+  return regex ? regex.test(method) || regex.test(url) :
+    method.toLocaleLowerCase().includes(text) || url.toLocaleLowerCase().includes(text);
 }
 
 
 
 
-function isTextInStackTrace(text, stacktrace) {
+function isTextInStackTrace(text, regex, stacktrace) {
   if (!Array.isArray(stacktrace)) {
     return false;
   }
 
   
   
-  return stacktrace.some(frame => isTextInFrame(text, {
+  return stacktrace.some(frame => isTextInFrame(text, regex, {
     functionName: frame.functionName || l10n.getStr("stacktrace.anonymousFunction"),
     source: frame.filename,
     lineNumber: frame.lineNumber,
@@ -1058,17 +1063,19 @@ function isTextInStackTrace(text, stacktrace) {
 
 
 
-function isTextInMessageText(text, messageText) {
+function isTextInMessageText(text, regex, messageText) {
   if (!messageText) {
     return false;
   }
 
   if (typeof messageText === "string") {
-    return messageText.toLocaleLowerCase().includes(text.toLocaleLowerCase());
+    return regex ? regex.test(messageText) :
+      messageText.toLocaleLowerCase().includes(text);
   }
 
   if (messageText.type === "longString") {
-    return messageText.initial.toLocaleLowerCase().includes(text.toLocaleLowerCase());
+    return regex ? regex.test(messageText.initial) :
+      messageText.initial.toLocaleLowerCase().includes(text);
   }
 
   return true;
@@ -1077,18 +1084,21 @@ function isTextInMessageText(text, messageText) {
 
 
 
-function isTextInNotes(text, notes) {
+function isTextInNotes(text, regex, notes) {
   if (!Array.isArray(notes)) {
     return false;
   }
 
   return notes.some(note =>
     
-    isTextInFrame(text, note.frame) ||
+    isTextInFrame(text, regex, note.frame) ||
     
     (
       note.messageBody &&
-      note.messageBody.toLocaleLowerCase().includes(text.toLocaleLowerCase())
+      (
+        regex ? regex.test(note.messageBody) :
+          note.messageBody.toLocaleLowerCase().includes(text)
+      )
     )
   );
 }
@@ -1096,12 +1106,14 @@ function isTextInNotes(text, notes) {
 
 
 
-function isTextInPrefix(text, prefix) {
+function isTextInPrefix(text, regex, prefix) {
   if (!prefix) {
     return false;
   }
 
-  return `${prefix}: `.toLocaleLowerCase().includes(text.toLocaleLowerCase());
+  const str = `${prefix}: `;
+
+  return regex ? regex.test(str) : str.toLocaleLowerCase().includes(text);
 }
 
 
