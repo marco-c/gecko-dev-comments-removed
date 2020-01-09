@@ -2351,7 +2351,9 @@ DisplayItemData* FrameLayerBuilder::GetOldLayerForFrame(
     LayerManager* aOldLayerManager ) {
   
   
-  if (!mRetainingManager || mInvalidateAllLayers) return nullptr;
+  if (!mRetainingManager || mInvalidateAllLayers) {
+    return nullptr;
+  }
 
   MOZ_ASSERT(!aOldData || aOldLayerManager,
              "You must provide aOldLayerManager to check aOldData's validity.");
@@ -2423,7 +2425,9 @@ already_AddRefed<ColorLayer> ContainerState::CreateOrRecycleColorLayer(
   } else {
     
     layer = mManager->CreateColorLayer();
-    if (!layer) return nullptr;
+    if (!layer) {
+      return nullptr;
+    }
     
     data->mColorLayer = layer;
     layer->SetUserData(&gColorLayerUserData, nullptr);
@@ -2446,7 +2450,9 @@ already_AddRefed<ImageLayer> ContainerState::CreateOrRecycleImageLayer(
   } else {
     
     layer = mManager->CreateImageLayer();
-    if (!layer) return nullptr;
+    if (!layer) {
+      return nullptr;
+    }
     
     data->mImageLayer = layer;
     layer->SetUserData(&gImageLayerUserData, nullptr);
@@ -6346,7 +6352,9 @@ already_AddRefed<ContainerLayer> FrameLayerBuilder::BuildContainerLayerFor(
 Layer* FrameLayerBuilder::GetLeafLayerFor(nsDisplayListBuilder* aBuilder,
                                           nsDisplayItem* aItem) {
   Layer* layer = GetOldLayerFor(aItem);
-  if (!layer) return nullptr;
+  if (!layer) {
+    return nullptr;
+  }
   if (layer->HasUserData(&gPaintedDisplayItemLayerUserData)) {
     
     

@@ -202,7 +202,6 @@ struct InlineBackgroundData {
     } else {
       
       mPIStartBorderData.SetCoord(saved.mCoord);
-
     }
     if (mVertical) {
       if (joinedBorderArea.y > mPIStartBorderData.mCoord) {
@@ -358,7 +357,8 @@ struct InlineBackgroundData {
       }
       nsRect rect = inlineFrame->GetRect();
       mContinuationPoint += mVertical ? rect.height : rect.width;
-      if (mBidiEnabled && (changedLines || !AreOnSameLine(aFrame, inlineFrame))) {
+      if (mBidiEnabled &&
+          (changedLines || !AreOnSameLine(aFrame, inlineFrame))) {
         mLineContinuationPoint += mVertical ? rect.height : rect.width;
         changedLines = true;
       }
@@ -1183,10 +1183,14 @@ nsIFrame* nsCSSRendering::FindNonTransparentBackgroundFrame(
       break;
     }
 
-    if (frame->IsThemed()) break;
+    if (frame->IsThemed()) {
+      break;
+    }
 
     nsIFrame* parent = nsLayoutUtils::GetParentOrPlaceholderFor(frame);
-    if (!parent) break;
+    if (!parent) {
+      break;
+    }
 
     frame = parent;
   }
@@ -1306,7 +1310,9 @@ inline bool FindElementBackground(nsIFrame* aForFrame,
   
   
   
-  if (!aRootElementFrame) return true;
+  if (!aRootElementFrame) {
+    return true;
+  }
 
   const nsStyleBackground* htmlBG = aRootElementFrame->StyleBackground();
   return !htmlBG->IsTransparent(aRootElementFrame);
@@ -1973,7 +1979,9 @@ static bool IsOpaqueBorderEdge(const nsStyleBorder& aBorder,
 
 static bool IsOpaqueBorder(const nsStyleBorder& aBorder) {
   NS_FOR_CSS_SIDES(i) {
-    if (!IsOpaqueBorderEdge(aBorder, i)) return false;
+    if (!IsOpaqueBorderEdge(aBorder, i)) {
+      return false;
+    }
   }
   return true;
 }
@@ -2485,8 +2493,9 @@ ImgDrawResult nsCSSRendering::PaintStyleImageLayerWithSC(
   
   
   
-  if (!drawBackgroundImage && !drawBackgroundColor)
+  if (!drawBackgroundImage && !drawBackgroundColor) {
     return ImgDrawResult::SUCCESS;
+  }
 
   
   
@@ -3185,11 +3194,12 @@ nsRect nsCSSRendering::GetBackgroundLayerRect(
 
 static nscoord RoundIntToPixel(nscoord aValue, nscoord aOneDevPixel,
                                bool aRoundDown = false) {
-  if (aOneDevPixel <= 0)
+  if (aOneDevPixel <= 0) {
     
     
     
     return aValue;
+  }
 
   nscoord halfPixel = NSToCoordRound(aOneDevPixel / 2.0f);
   nscoord extra = aValue % aOneDevPixel;
