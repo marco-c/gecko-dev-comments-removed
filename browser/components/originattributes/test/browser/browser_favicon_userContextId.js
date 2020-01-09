@@ -128,8 +128,8 @@ function waitOnFaviconLoaded(aFaviconURL) {
 async function generateCookies(aHost) {
   
   let cookies = [];
-  cookies.push(Math.random().toString());
-  cookies.push(Math.random().toString());
+  cookies.push(Math.random().toString() + "=1");
+  cookies.push(Math.random().toString() + "=1");
 
   
   let tabInfoA = await openTabInUserContext(aHost, USER_CONTEXT_ID_PERSONAL);
