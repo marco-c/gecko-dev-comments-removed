@@ -31,18 +31,18 @@ add_task(async function() {
     "#security-panel .security-info-value"));
 
   const tabpanel = document.querySelector("#security-panel");
-  const textboxes = tabpanel.querySelectorAll(".textbox-input");
+  const textboxes = tabpanel.querySelectorAll(".security-info-value");
 
   
   
   
-  const protocol = textboxes[0].value;
+  const protocol = textboxes[0].textContent;
   ok(protocol.startsWith("TLS"), "The protocol " + protocol + " seems valid.");
 
   
   
   
-  const suite = textboxes[1].value;
+  const suite = textboxes[1].textContent;
   ok(suite.startsWith("TLS_"), "The suite " + suite + " seems valid.");
 
   
@@ -50,36 +50,37 @@ add_task(async function() {
      "Host example.com:",
      "Label has the expected value.");
   
-  ok(textboxes[2].value !== "", "Label value is not empty.");
-  ok(textboxes[3].value !== "", "Label value is not empty.");
-  is(textboxes[4].value, "Disabled", "Label has the expected value.");
-  is(textboxes[5].value, "Disabled", "Label has the expected value.");
+  ok(textboxes[2].textContent !== "", "Label value is not empty.");
+  ok(textboxes[3].textContent !== "", "Label value is not empty.");
+  is(textboxes[4].textContent, "Disabled", "Label has the expected value.");
+  is(textboxes[5].textContent, "Disabled", "Label has the expected value.");
 
   
-  is(textboxes[6].value, "example.com", "Label has the expected value.");
-  is(textboxes[7].value, "<Not Available>", "Label has the expected value.");
-  is(textboxes[8].value, "<Not Available>", "Label has the expected value.");
+  is(textboxes[6].textContent, "example.com", "Label has the expected value.");
+  is(textboxes[7].textContent, "<Not Available>", "Label has the expected value.");
+  is(textboxes[8].textContent, "<Not Available>", "Label has the expected value.");
 
-  is(textboxes[9].value, "Temporary Certificate Authority",
+  is(textboxes[9].textContent, "Temporary Certificate Authority",
      "Label has the expected value.");
-  is(textboxes[10].value, "Mozilla Testing", "Label has the expected value.");
-  is(textboxes[11].value, "Profile Guided Optimization", "Label has the expected value.");
+  is(textboxes[10].textContent, "Mozilla Testing", "Label has the expected value.");
+  is(textboxes[11].textContent, "Profile Guided Optimization",
+    "Label has the expected value.");
 
   
   
 
   
-  isnot(textboxes[12].value, "", "Label was not empty.");
+  isnot(textboxes[12].textContent, "", "Label was not empty.");
   
-  isnot(textboxes[13].value, "", "Label was not empty.");
+  isnot(textboxes[13].textContent, "", "Label was not empty.");
 
   
-  isnot(textboxes[14].value, "", "Label was not empty.");
+  isnot(textboxes[14].textContent, "", "Label was not empty.");
   
-  isnot(textboxes[15].value, "", "Label was not empty.");
+  isnot(textboxes[15].textContent, "", "Label was not empty.");
 
   
-  isnot(textboxes[16].value, "", "Label was not empty.");
+  isnot(textboxes[16].textContent, "", "Label was not empty.");
 
   await teardown(monitor);
 });

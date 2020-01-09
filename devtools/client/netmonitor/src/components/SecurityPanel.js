@@ -20,7 +20,14 @@ const {
 const TreeViewClass = require("devtools/client/shared/components/tree/TreeView");
 const PropertiesView = createFactory(require("./PropertiesView"));
 
-const { div, input, span } = dom;
+loader.lazyGetter(this, "Rep", function() {
+  return require("devtools/client/shared/components/reps/reps").REPS.Rep;
+});
+loader.lazyGetter(this, "MODE", function() {
+  return require("devtools/client/shared/components/reps/reps").MODE;
+});
+
+const { div, span } = dom;
 const NOT_AVAILABLE = L10N.getStr("netmonitor.security.notAvailable");
 const ERROR_LABEL = L10N.getStr("netmonitor.security.error");
 const CIPHER_SUITE_LABEL = L10N.getStr("netmonitor.security.cipherSuite");
@@ -97,15 +104,14 @@ class SecurityPanel extends Component {
     return span({ className: "security-info-value" },
       member.name === ERROR_LABEL ?
         
-        value
-        :
-        
-        input({
-          className: "textbox-input",
-          readOnly: "true",
-          value,
-        })
-      ,
+        value : Rep(Object.assign(props, {
+          
+          
+          member: Object.assign({}, member, { open: false }),
+          mode: MODE.TINY,
+          cropLimit: 60,
+          noGrip: true,
+        })),
       weaknessReasons.includes("cipher") &&
       member.name === CIPHER_SUITE_LABEL ?
         
