@@ -528,7 +528,7 @@ void AutoJSAPI::ReportException() {
       
       
       
-      JS_SetPendingException(cx(), exn);
+      JS::SetPendingExceptionAndStack(cx(), exn, exnStack);
       worker->ReportError(cx(), jsReport.toStringResult(), jsReport.report());
       ClearException();
     }

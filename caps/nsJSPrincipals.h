@@ -24,6 +24,17 @@ class nsJSPrincipals : public nsIPrincipal, public JSPrincipals {
                                      uint32_t aTag,
                                      JSPrincipals** aOutPrincipals);
 
+  
+  
+  
+  
+  
+  
+  struct MOZ_RAII AutoSetActiveWorkerPrincipal {
+    explicit AutoSetActiveWorkerPrincipal(nsIPrincipal* aPrincipal);
+    ~AutoSetActiveWorkerPrincipal();
+  };
+
   bool write(JSContext* aCx, JSStructuredCloneWriter* aWriter) final;
 
   
