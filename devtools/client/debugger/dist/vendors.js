@@ -2720,11 +2720,6 @@ function inToolbox() {
 }
 
 
-function getTopWindow(win) {
-  return win.windowRoot ? win.windowRoot.ownerGlobal : win.top;
-}
-
-
 
 
 
@@ -2767,6 +2762,11 @@ Menu.prototype.insert = function (pos, menuItem) {
 };
 
 
+function getTopWindow(win) {
+  return win.windowRoot ? win.windowRoot.ownerGlobal : win.top;
+}
+
+
 
 
 
@@ -2779,12 +2779,8 @@ Menu.prototype.insert = function (pos, menuItem) {
 
 
 Menu.prototype.popup = function (screenX, screenY, doc) {
-  
-  
-  
   const win = doc.defaultView;
   doc = getTopWindow(doc.defaultView).document;
-
   let popupset = doc.querySelector("popupset");
   if (!popupset) {
     popupset = doc.createXULElement("popupset");
@@ -2806,7 +2802,6 @@ Menu.prototype.popup = function (screenX, screenY, doc) {
     popup.id = this.id;
   }
   this._createMenuItems(popup);
-
   
   
   const onWindowUnload = () => popup.hidePopup();
