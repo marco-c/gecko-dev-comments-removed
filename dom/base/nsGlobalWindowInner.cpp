@@ -82,6 +82,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/Likely.h"
 #include "mozilla/Sprintf.h"
+#include "mozilla/StorageAccess.h"
 #include "mozilla/Unused.h"
 
 
@@ -4403,7 +4404,7 @@ Storage* nsGlobalWindowInner::GetLocalStorage(ErrorResult& aError) {
       nsContentUtils::StorageAllowedForWindow(this);
 
   
-  if (access == nsContentUtils::StorageAccess::ePartitionTrackersOrDeny) {
+  if (ShouldPartitionStorage(access)) {
     if (!mDoc) {
       access = nsContentUtils::StorageAccess::eDeny;
     } else {
@@ -4432,7 +4433,7 @@ Storage* nsGlobalWindowInner::GetLocalStorage(ErrorResult& aError) {
   
   
   
-  if (access != nsContentUtils::StorageAccess::ePartitionTrackersOrDeny &&
+  if (!ShouldPartitionStorage(access) &&
       (!mLocalStorage ||
        mLocalStorage->Type() == Storage::ePartitionedLocalStorage)) {
     RefPtr<Storage> storage;
@@ -4475,8 +4476,7 @@ Storage* nsGlobalWindowInner::GetLocalStorage(ErrorResult& aError) {
     MOZ_ASSERT(mLocalStorage);
   }
 
-  if (access == nsContentUtils::StorageAccess::ePartitionTrackersOrDeny &&
-      !mLocalStorage) {
+  if (ShouldPartitionStorage(access) && !mLocalStorage) {
     nsIPrincipal* principal = GetPrincipal();
     if (!principal) {
       aError.Throw(NS_ERROR_DOM_SECURITY_ERR);
@@ -4486,9 +4486,8 @@ Storage* nsGlobalWindowInner::GetLocalStorage(ErrorResult& aError) {
     mLocalStorage = new PartitionedLocalStorage(this, principal);
   }
 
-  MOZ_ASSERT(
-      (access == nsContentUtils::StorageAccess::ePartitionTrackersOrDeny) ==
-      (mLocalStorage->Type() == Storage::ePartitionedLocalStorage));
+  MOZ_ASSERT(ShouldPartitionStorage(access) ==
+             (mLocalStorage->Type() == Storage::ePartitionedLocalStorage));
 
   return mLocalStorage;
 }

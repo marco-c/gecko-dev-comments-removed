@@ -6,7 +6,9 @@
 
 #include "StoragePrincipalHelper.h"
 
+#include "mozilla/AntiTrackingCommon.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/StorageAccess.h"
 #include "mozilla/StaticPrefs.h"
 #include "nsContentUtils.h"
 #include "nsIHttpChannel.h"
@@ -18,15 +20,15 @@ namespace {
 already_AddRefed<nsIURI> MaybeGetFirstPartyURI(nsIChannel* aChannel) {
   MOZ_ASSERT(aChannel);
 
-  if (!StaticPrefs::privacy_storagePrincipal_enabledForTrackers()) {
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+  nsCOMPtr<nsICookieSettings> cs;
+  if (NS_FAILED(loadInfo->GetCookieSettings(getter_AddRefs(cs)))) {
     return nullptr;
   }
 
-  
-  
-  nsContentUtils::StorageAccess access =
-      nsContentUtils::StorageAllowedForChannel(aChannel);
-  if (access != nsContentUtils::StorageAccess::ePartitionTrackersOrDeny) {
+  nsCOMPtr<nsIURI> uri;
+  nsresult rv = aChannel->GetURI(getter_AddRefs(uri));
+  if (NS_FAILED(rv)) {
     return nullptr;
   }
 
@@ -35,16 +37,27 @@ already_AddRefed<nsIURI> MaybeGetFirstPartyURI(nsIChannel* aChannel) {
     return nullptr;
   }
 
-  MOZ_ASSERT(httpChannel->IsThirdPartyTrackingResource());
+  uint32_t rejectedReason = 0;
+  if (AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(
+          httpChannel, uri, &rejectedReason)) {
+    return nullptr;
+  }
 
-  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+  
+  
+  
+  if (!ShouldPartitionStorage(rejectedReason) ||
+      !StoragePartitioningEnabled(rejectedReason, cs)) {
+    return nullptr;
+  }
+
   nsCOMPtr<nsIPrincipal> toplevelPrincipal = loadInfo->GetTopLevelPrincipal();
   if (!toplevelPrincipal) {
     return nullptr;
   }
 
   nsCOMPtr<nsIURI> principalURI;
-  nsresult rv = toplevelPrincipal->GetURI(getter_AddRefs(principalURI));
+  rv = toplevelPrincipal->GetURI(getter_AddRefs(principalURI));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return nullptr;
   }

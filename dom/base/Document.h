@@ -3177,6 +3177,7 @@ class Document : public nsINode,
   };
 
   Document* GetTopLevelContentDocument();
+  const Document* GetTopLevelContentDocument() const;
 
   
   
