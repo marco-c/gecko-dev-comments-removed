@@ -30,7 +30,11 @@ bool AgnosticDecoderModule::SupportsMimeType(
     supports |= VorbisDataDecoder::IsVorbis(aMimeType);
   }
 #ifdef MOZ_AV1
-  if (StaticPrefs::MediaAv1Enabled()) {
+  
+  
+  
+  if (StaticPrefs::MediaAv1Enabled() &&
+      !StaticPrefs::MediaRddProcessEnabled()) {
     supports |= AOMDecoder::IsAV1(aMimeType);
   }
 #endif
@@ -48,7 +52,9 @@ already_AddRefed<MediaDataDecoder> AgnosticDecoderModule::CreateVideoDecoder(
     m = new VPXDecoder(aParams);
   }
 #ifdef MOZ_AV1
+  
   else if (AOMDecoder::IsAV1(aParams.mConfig.mMimeType) &&
+           !StaticPrefs::MediaRddProcessEnabled() &&
            StaticPrefs::MediaAv1Enabled()) {
     if (StaticPrefs::MediaAv1UseDav1d()) {
       m = new DAV1DDecoder(aParams);
