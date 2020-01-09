@@ -123,7 +123,7 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(disableCacheIR, false);
 
   
-  SET_DEFAULT(disableCacheIRCalls, true);
+  SET_DEFAULT(disableCacheIRCalls, false);
 
 
 
