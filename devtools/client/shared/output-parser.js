@@ -1340,8 +1340,15 @@ OutputParser.prototype = {
       
       
       
-      const [, leader, , body, trailer] =
-        /^(url\([ \t\r\n\f]*(["']?))(.*?)(\2[ \t\r\n\f]*\))$/i.exec(match);
+      const urlParts = /^(url\([ \t\r\n\f]*(["']?))(.*?)(\2[ \t\r\n\f]*\))$/i.exec(match);
+
+      
+      if (!urlParts) {
+        this._appendTextNode(match);
+        return;
+      }
+
+      const [, leader, , body, trailer] = urlParts;
 
       this._appendTextNode(leader);
 
