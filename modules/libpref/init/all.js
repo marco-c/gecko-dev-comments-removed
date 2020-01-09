@@ -2327,7 +2327,6 @@ pref("network.proxy.no_proxies_on",         "");
 pref("network.proxy.allow_hijacking_localhost", false);
 pref("network.proxy.failover_timeout",      1800); 
 pref("network.online",                      true); 
-pref("network.cookie.thirdparty.nonsecureSessionOnly", false);
 
 
 
