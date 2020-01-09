@@ -57,7 +57,7 @@ void DriverCrashGuard::InitializeIfNeeded() {
   Initialize();
 }
 
-static inline bool AreCrashGuardsEnabled() {
+static inline bool AreCrashGuardsEnabled(CrashGuardType aType) {
   
   
   if (XRE_IsGPUProcess()) {
@@ -68,18 +68,18 @@ static inline bool AreCrashGuardsEnabled() {
   
   
   
-  return gfxEnv::ForceCrashGuardNightly();
-#else
   
-  if (gfxEnv::DisableCrashGuard()) {
-    return false;
+  
+  if (aType != CrashGuardType::WMFVPXVideo) {
+    return gfxEnv::ForceCrashGuardNightly();
   }
-  return true;
 #endif
+  
+  return !gfxEnv::DisableCrashGuard();
 }
 
 void DriverCrashGuard::Initialize() {
-  if (!AreCrashGuardsEnabled()) {
+  if (!AreCrashGuardsEnabled(mType)) {
     return;
   }
 
@@ -353,14 +353,14 @@ void DriverCrashGuard::FlushPreferences() {
 
 void DriverCrashGuard::ForEachActiveCrashGuard(
     const CrashGuardCallback& aCallback) {
-  if (!AreCrashGuardsEnabled()) {
-    
-    
-    return;
-  }
-
   for (size_t i = 0; i < NUM_CRASH_GUARD_TYPES; i++) {
     CrashGuardType type = static_cast<CrashGuardType>(i);
+
+    if (!AreCrashGuardsEnabled(type)) {
+      
+      
+      continue;
+    }
 
     nsCString prefName;
     BuildCrashGuardPrefName(type, prefName);
