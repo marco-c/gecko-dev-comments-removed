@@ -241,6 +241,7 @@ class MOZ_STACK_CLASS ComponentLoaderInfo {
                          nullptr,  
                          nullptr,  
                          nullptr,  
+                         nullptr,  
                          nsIRequest::LOAD_NORMAL, mIOService);
   }
 

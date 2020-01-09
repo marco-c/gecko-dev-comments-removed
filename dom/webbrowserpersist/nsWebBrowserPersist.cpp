@@ -62,6 +62,7 @@
 #include "nsIMIMEInfo.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/HTMLSharedElement.h"
+#include "mozilla/net/CookieSettings.h"
 #include "mozilla/Printf.h"
 
 using namespace mozilla;
@@ -1235,10 +1236,15 @@ nsresult nsWebBrowserPersist::SaveURIInternal(
   }
 
   
+  
+  nsCOMPtr<nsICookieSettings> cookieSettings =
+      mozilla::net::CookieSettings::Create();
+
+  
   nsCOMPtr<nsIChannel> inputChannel;
   rv = NS_NewChannel(getter_AddRefs(inputChannel), aURI, aTriggeringPrincipal,
                      nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
-                     nsIContentPolicy::TYPE_SAVEAS_DOWNLOAD,
+                     nsIContentPolicy::TYPE_SAVEAS_DOWNLOAD, cookieSettings,
                      nullptr,  
                      nullptr,  
                      static_cast<nsIInterfaceRequestor *>(this), loadFlags);

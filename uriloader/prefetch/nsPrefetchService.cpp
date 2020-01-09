@@ -127,7 +127,7 @@ nsresult nsPrefetchNode::OpenChannel() {
       getter_AddRefs(mChannel), mURI, source, source->NodePrincipal(),
       nullptr,  
       Maybe<ClientInfo>(), Maybe<ServiceWorkerDescriptor>(), securityFlags,
-      mPolicyType,
+      mPolicyType, source->OwnerDoc()->CookieSettings(),
       nullptr,    
       loadGroup,  
       this,       

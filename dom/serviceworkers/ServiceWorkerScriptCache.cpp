@@ -16,6 +16,7 @@
 #include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
+#include "mozilla/net/CookieSettings.h"
 #include "nsICacheInfoChannel.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsIStreamLoader.h"
@@ -658,11 +659,16 @@ nsresult CompareNetwork::Initialize(nsIPrincipal* aPrincipal,
                     : nsIContentPolicy::TYPE_INTERNAL_WORKER_IMPORT_SCRIPTS;
 
   
+  nsCOMPtr<nsICookieSettings> cookieSettings =
+      mozilla::net::CookieSettings::Create();
+
+  
   
   
   rv = NS_NewChannel(getter_AddRefs(mChannel), uri, aPrincipal, secFlags,
-                     contentPolicyType, nullptr, 
-                     loadGroup, nullptr , mLoadFlags);
+                     contentPolicyType, cookieSettings,
+                     nullptr , loadGroup,
+                     nullptr , mLoadFlags);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }

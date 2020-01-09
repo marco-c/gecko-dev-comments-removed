@@ -420,6 +420,7 @@ nsresult mozJSSubScriptLoader::ReadScriptAsync(nsIURI* uri,
                      nullptr,  
                      nullptr,  
                      nullptr,  
+                     nullptr,  
                      nsIRequest::LOAD_NORMAL, serv);
 
   if (!NS_SUCCEEDED(rv)) {
@@ -456,6 +457,7 @@ bool mozJSSubScriptLoader::ReadScript(nsIURI* uri, JSContext* cx,
                      nsContentUtils::GetSystemPrincipal(),
                      nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
                      nsIContentPolicy::TYPE_OTHER,
+                     nullptr,  
                      nullptr,  
                      nullptr,  
                      nullptr,  
