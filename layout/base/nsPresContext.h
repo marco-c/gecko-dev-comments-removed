@@ -87,10 +87,10 @@ class Element;
 }  
 
 
-enum nsPresContext_CachedBoolPrefType {
-  kPresContext_UseDocumentFonts = 1,
-  kPresContext_UnderlineLinks
-};
+
+
+
+enum nsPresContext_CachedBoolPrefType { kPresContext_UnderlineLinks = 1 };
 
 
 enum nsPresContext_CachedIntPrefType {
@@ -365,8 +365,6 @@ class nsPresContext : public nsISupports,
     
     
     switch (aPrefType) {
-      case kPresContext_UseDocumentFonts:
-        return mUseDocumentFonts;
       case kPresContext_UnderlineLinks:
         return mUnderlineLinks;
       default:
@@ -1283,7 +1281,6 @@ class nsPresContext : public nsISupports,
   unsigned mHasPendingInterrupt : 1;
   unsigned mPendingInterruptFromTest : 1;
   unsigned mInterruptsEnabled : 1;
-  unsigned mUseDocumentFonts : 1;
   unsigned mUseDocumentColors : 1;
   unsigned mUnderlineLinks : 1;
   unsigned mSendAfterPaintToContent : 1;
