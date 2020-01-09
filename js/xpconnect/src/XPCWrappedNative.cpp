@@ -1520,6 +1520,12 @@ bool CallMethodHelper::ConvertIndependentParam(uint8_t i) {
       dp->ext.nsid.Clear();
       return true;
     }
+
+    if (type.Tag() == nsXPTType::T_ARRAY) {
+      
+      dp->ext.array.Clear();
+      return true;
+    }
   }
 
   
