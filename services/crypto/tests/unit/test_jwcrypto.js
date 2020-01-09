@@ -11,6 +11,8 @@ XPCOMUtils.defineLazyServiceGetter(this,
                                    "@mozilla.org/identity/crypto-service;1",
                                    "nsIIdentityCryptoService");
 
+Cu.importGlobalProperties(["crypto"]);
+
 const RP_ORIGIN = "http://123done.org";
 const INTERNAL_ORIGIN = "browserid://";
 
@@ -21,89 +23,57 @@ const HOUR_MS = MINUTE_MS * 60;
 
 Services.prefs.setCharPref("services.crypto.jwcrypto.log.level", "Debug");
 
-function test_sanity() {
-  do_test_pending();
-
-  jwcrypto.generateKeyPair("DS160", function(err, kp) {
-    Assert.equal(null, err);
-
-    do_test_finished();
-    run_next_test();
-  });
-}
-
-function test_generate() {
-  do_test_pending();
-  jwcrypto.generateKeyPair("DS160", function(err, kp) {
-    Assert.equal(null, err);
-    Assert.notEqual(kp, null);
-
-    do_test_finished();
-    run_next_test();
-  });
-}
-
-function test_get_assertion() {
-  do_test_pending();
-
-  jwcrypto.generateKeyPair(
-    "DS160",
-    function(err, kp) {
-      jwcrypto.generateAssertion("fake-cert", kp, RP_ORIGIN, (err2, backedAssertion) => {
-        Assert.equal(null, err2);
-
-        Assert.equal(backedAssertion.split("~").length, 2);
-        Assert.equal(backedAssertion.split(".").length, 3);
-
-        do_test_finished();
-        run_next_test();
+function promisify(fn) {
+  return (...args) => {
+    return new Promise((res, rej) => {
+      fn(...args, (err, result) => {
+        err ? rej(err) : res(result);
       });
     });
+  };
 }
+const generateKeyPair = promisify(jwcrypto.generateKeyPair);
+const generateAssertion = promisify(jwcrypto.generateAssertion);
 
-function test_rsa() {
-  do_test_pending();
-  function checkRSA(err, kpo) {
-    Assert.notEqual(kpo, undefined);
-    info(kpo.serializedPublicKey);
-    let pk = JSON.parse(kpo.serializedPublicKey);
-    Assert.equal(pk.algorithm, "RS");
+add_task(async function test_jwe_roundtrip_ecdh_es_encryption() {
+  const data = crypto.getRandomValues(new Uint8Array(123));
+  const localEpk = await crypto.subtle.generateKey({
+    name: "ECDH",
+    namedCurve: "P-256",
+  }, true, ["deriveKey"]);
+  const remoteEpk = await crypto.subtle.generateKey({
+    name: "ECDH",
+    namedCurve: "P-256",
+  }, true, ["deriveKey"]);
+  const jwe = await jwcrypto._generateJWE(localEpk, remoteEpk.publicKey, data);
+  const decryptedJWE = await jwcrypto.decryptJWE(jwe, remoteEpk.privateKey);
+  Assert.deepEqual(data, decryptedJWE);
+});
 
+add_task(async function test_sanity() {
+  
+  await generateKeyPair("DS160");
+});
 
+add_task(async function test_generate() {
+  let kp = await generateKeyPair("DS160");
+  Assert.notEqual(kp, null);
+});
 
+add_task(async function test_get_assertion() {
+  let kp = await generateKeyPair("DS160");
+  let backedAssertion = await generateAssertion("fake-cert", kp, RP_ORIGIN);
+  Assert.equal(backedAssertion.split("~").length, 2);
+  Assert.equal(backedAssertion.split(".").length, 3);
+});
 
-
-
-
-
-
-
-
-
-
-
-
-
-    do_test_finished();
-    run_next_test();
-  }
-
-  jwcrypto.generateKeyPair("RS256", checkRSA);
-}
-
-function test_dsa() {
-  do_test_pending();
-  function checkDSA(err, kpo) {
-    Assert.notEqual(kpo, undefined);
-    info(kpo.serializedPublicKey);
-    let pk = JSON.parse(kpo.serializedPublicKey);
-    Assert.equal(pk.algorithm, "DS");
-
-
-
-
-
-
+add_task(async function test_rsa() {
+  let kpo = await generateKeyPair("RS256");
+  Assert.notEqual(kpo, undefined);
+  info(kpo.serializedPublicKey);
+  let pk = JSON.parse(kpo.serializedPublicKey);
+  Assert.equal(pk.algorithm, "RS");
+  
 
 
 
@@ -115,17 +85,37 @@ function test_dsa() {
 
 
 
-    do_test_finished();
-    run_next_test();
-  }
-
-  jwcrypto.generateKeyPair("DS160", checkDSA);
-}
-
-function test_get_assertion_with_offset() {
-  do_test_pending();
 
 
+
+
+});
+
+add_task(async function test_dsa() {
+  let kpo = await generateKeyPair("DS160");
+  info(kpo.serializedPublicKey);
+  let pk = JSON.parse(kpo.serializedPublicKey);
+  Assert.equal(pk.algorithm, "DS");
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+});
+
+add_task(async function test_get_assertion_with_offset() {
   
   
   let serverMsec = Date.parse("Tue Oct 31 2000 00:00:00 GMT-0800");
@@ -135,97 +125,56 @@ function test_get_assertion_with_offset() {
   let localtimeOffsetMsec = -1 * 12 * HOUR_MS;
   let localMsec = serverMsec - localtimeOffsetMsec;
 
-  jwcrypto.generateKeyPair(
-    "DS160",
-    function(err, kp) {
-      jwcrypto.generateAssertion("fake-cert", kp, RP_ORIGIN,
-        { duration: MINUTE_MS,
-          localtimeOffsetMsec,
-          now: localMsec},
-          function(err2, backedAssertion) {
-            Assert.equal(null, err2);
-
-            
-            let cert;
-            let assertion;
-            [cert, assertion] = backedAssertion.split("~");
-
-            Assert.equal(cert, "fake-cert");
-            Assert.equal(assertion.split(".").length, 3);
-
-            let components = extractComponents(assertion);
-
-            
-            let exp = parseInt(components.payload.exp, 10);
-            Assert.ok(exp - serverMsec === MINUTE_MS);
-
-            do_test_finished();
-            run_next_test();
-          }
-      );
+  let kp = await generateKeyPair("DS160");
+  let backedAssertion = await generateAssertion("fake-cert", kp, RP_ORIGIN,
+    {
+      duration: MINUTE_MS,
+      localtimeOffsetMsec,
+      now: localMsec,
     }
   );
-}
+  
+  let cert;
+  let assertion;
+  [cert, assertion] = backedAssertion.split("~");
 
-function test_assertion_lifetime() {
-  do_test_pending();
+  Assert.equal(cert, "fake-cert");
+  Assert.equal(assertion.split(".").length, 3);
 
-  jwcrypto.generateKeyPair(
-    "DS160",
-    function(err, kp) {
-      jwcrypto.generateAssertion("fake-cert", kp, RP_ORIGIN,
-        {duration: MINUTE_MS},
-        function(err2, backedAssertion) {
-          Assert.equal(null, err2);
+  let components = extractComponents(assertion);
 
-          
-          let cert;
-          let assertion;
-          [cert, assertion] = backedAssertion.split("~");
+  
+  let exp = parseInt(components.payload.exp, 10);
+  Assert.ok(exp - serverMsec === MINUTE_MS);
+});
 
-          Assert.equal(cert, "fake-cert");
-          Assert.equal(assertion.split(".").length, 3);
+add_task(async function test_assertion_lifetime() {
+  let kp = await generateKeyPair("DS160");
+  let backedAssertion = await generateAssertion("fake-cert", kp, RP_ORIGIN, {duration: MINUTE_MS});
+  
+  let cert;
+  let assertion;
+  [cert, assertion] = backedAssertion.split("~");
 
-          let components = extractComponents(assertion);
+  Assert.equal(cert, "fake-cert");
+  Assert.equal(assertion.split(".").length, 3);
 
-          
-          let exp = parseInt(components.payload.exp, 10);
-          Assert.ok(Math.abs(Date.now() - exp) > 50 * SECOND_MS);
-          Assert.ok(Math.abs(Date.now() - exp) <= MINUTE_MS);
+  let components = extractComponents(assertion);
 
-          do_test_finished();
-          run_next_test();
-        }
-      );
-    }
-  );
-}
+  
+  let exp = parseInt(components.payload.exp, 10);
+  Assert.ok(Math.abs(Date.now() - exp) > 50 * SECOND_MS);
+  Assert.ok(Math.abs(Date.now() - exp) <= MINUTE_MS);
+});
 
-function test_audience_encoding_bug972582() {
+add_task(async function test_audience_encoding_bug972582() {
   let audience = "i-like-pie.com";
-
-  jwcrypto.generateKeyPair(
-    "DS160",
-    function(err, kp) {
-      Assert.equal(null, err);
-      jwcrypto.generateAssertion("fake-cert", kp, audience,
-        function(err2, backedAssertion) {
-          Assert.equal(null, err2);
-
-          let [, assertion] = backedAssertion.split("~");
-          let components = extractComponents(assertion);
-          Assert.equal(components.payload.aud, audience);
-
-          do_test_finished();
-          run_next_test();
-        }
-      );
-    }
-  );
-}
-
-
-
+  let kp = await generateKeyPair("DS160");
+  let backedAssertion = await generateAssertion("fake-cert", kp, audience);
+  let [, assertion] = backedAssertion.split("~");
+  let components = extractComponents(assertion);
+  Assert.equal(components.payload.aud, audience);
+});
 
 function extractComponents(signedObject) {
   if (typeof(signedObject) != "string") {
@@ -259,16 +208,3 @@ function extractComponents(signedObject) {
           payloadSegment,
           cryptoSegment};
 }
-
-var TESTS = [
-  test_sanity,
-  test_generate,
-  test_get_assertion,
-  test_get_assertion_with_offset,
-  test_assertion_lifetime,
-  test_audience_encoding_bug972582,
-];
-
-TESTS = TESTS.concat([test_rsa, test_dsa]);
-
-TESTS.forEach(f => add_test(f));

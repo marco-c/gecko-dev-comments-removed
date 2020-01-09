@@ -197,6 +197,28 @@ var CommonUtils = {
     return Array.prototype.slice.call(bytesString).map(c => c.charCodeAt(0));
   },
 
+  
+  
+  
+  byteStringToArrayBuffer(byteString) {
+    if (byteString === undefined) {
+      return new Uint8Array();
+    }
+    const bytes = new Uint8Array(byteString.length);
+    for (let i = 0; i < byteString.length; ++i) {
+      bytes[i] = byteString.charCodeAt(i) & 0xff;
+    }
+    return bytes;
+  },
+
+  arrayBufferToByteString(buffer) {
+    return CommonUtils.byteArrayToString([...buffer]);
+  },
+
+  bufferToHex(buffer) {
+    return Array.prototype.map.call(buffer, (x) => ("00" + x.toString(16)).slice(-2)).join("");
+  },
+
   bytesAsHex: function bytesAsHex(bytes) {
     let s = "";
     for (let i = 0, len = bytes.length; i < len; i++) {
@@ -223,6 +245,11 @@ var CommonUtils = {
       bytes.push(parseInt(str.substr(i, 2), 16));
     }
     return String.fromCharCode.apply(String, bytes);
+  },
+
+  hexToArrayBuffer(str) {
+    const octString = CommonUtils.hexToBytes(str);
+    return CommonUtils.byteStringToArrayBuffer(octString);
   },
 
   hexAsString: function hexAsString(hex) {

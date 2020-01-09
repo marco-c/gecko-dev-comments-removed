@@ -79,7 +79,7 @@ HAWKAuthenticatedRESTRequest.prototype = {
         payload: data && JSON.stringify(data) || "",
         contentType,
       };
-      let header = CryptoUtils.computeHAWK(this.uri, method, options);
+      let header = await CryptoUtils.computeHAWK(this.uri, method, options);
       this.setHeader("Authorization", header.field);
     }
 
@@ -118,17 +118,12 @@ HAWKAuthenticatedRESTRequest.prototype = {
 
 
 
-
-function deriveHawkCredentials(tokenHex,
-                                                            context,
-                                                            size = 96,
-                                                            hexKey = false) {
+async function deriveHawkCredentials(tokenHex, context, size = 96) {
   let token = CommonUtils.hexToBytes(tokenHex);
-  let out = CryptoUtils.hkdf(token, undefined, Credentials.keyWord(context), size);
+  let out = await CryptoUtils.hkdfLegacy(token, undefined, Credentials.keyWord(context), size);
 
   let result = {
-    algorithm: "sha256",
-    key: hexKey ? CommonUtils.bytesAsHex(out.slice(32, 64)) : out.slice(32, 64),
+    key: out.slice(32, 64),
     id: CommonUtils.bytesAsHex(out.slice(0, 32)),
   };
   if (size > 64) {
