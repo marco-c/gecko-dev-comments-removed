@@ -162,8 +162,7 @@ nsBrowserStatusFilter::OnStateChange(nsIWebProgress *aWebProgress,
   }
 
   
-  if (aStateFlags & STATE_IS_NETWORK ||
-      aStateFlags & STATE_IS_REDIRECTED_DOCUMENT) {
+  if (aStateFlags & STATE_IS_NETWORK) {
     return mListener->OnStateChange(aWebProgress, aRequest, aStateFlags,
                                     aStatus);
   }
