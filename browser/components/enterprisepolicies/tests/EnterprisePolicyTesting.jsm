@@ -98,7 +98,7 @@ var PoliciesPrefTracker = {
     this._originalFunc = null;
   },
 
-  hoistedSetDefaultPref(prefName, prefValue) {
+  hoistedSetDefaultPref(prefName, prefValue, locked = false) {
     
     
     if (!this._originalValues.has(prefName)) {
@@ -125,7 +125,7 @@ var PoliciesPrefTracker = {
 
     
     
-    this._originalFunc(prefName, prefValue);
+    this._originalFunc(prefName, prefValue, locked);
   },
 
   restoreDefaultValues() {
