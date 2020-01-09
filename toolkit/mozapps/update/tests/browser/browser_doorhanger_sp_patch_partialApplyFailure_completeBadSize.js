@@ -1,9 +1,11 @@
 add_task(async function testPartialPatchApplyFailureWithCompleteValidationFailure() {
   
   
-  SpecialPowers.pushPrefEnv({set: [
-    [PREF_APP_UPDATE_DOWNLOADPROMPT_MAXATTEMPTS, 0],
-  ]});
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [PREF_APP_UPDATE_DOWNLOAD_MAXATTEMPTS, 0],
+    ],
+  });
 
   let patchProps = {type: "partial",
                     state: STATE_PENDING};

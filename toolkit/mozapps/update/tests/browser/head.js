@@ -46,12 +46,16 @@ requestLongerTimeout(10);
 add_task(async function setupTestCommon() {
   await SpecialPowers.pushPrefEnv({
     set: [
+      [PREF_APP_UPDATE_DOWNLOAD_ATTEMPTS, 0],
+      [PREF_APP_UPDATE_DOWNLOAD_MAXATTEMPTS, 2],
       [PREF_APP_UPDATE_LOG, gDebugTest],
+      [PREF_APP_UPDATE_SERVICE_ENABLED, false],
     ],
   });
 
   setUpdateTimerPrefs();
   removeUpdateFiles(true);
+  AppMenuNotifications.removeNotification(/.*/);
   
   
   await setAppUpdateAutoEnabledHelper(true);
@@ -61,6 +65,7 @@ add_task(async function setupTestCommon() {
 
 
 registerCleanupFunction(async () => {
+  AppMenuNotifications.removeNotification(/.*/);
   gEnv.set("MOZ_TEST_SKIP_UPDATE_STAGE", "");
   gEnv.set("MOZ_TEST_SLOW_SKIP_UPDATE_STAGE", "");
   UpdateListener.reset();
@@ -120,8 +125,9 @@ async function continueFileHandler(leafName) {
     }
   }
   if (continueFile.exists()) {
-    throw new Error("The continue file should not exist, path: " +
-                    continueFile.path);
+    logTestInfo("The continue file should not exist, path: " +
+                continueFile.path);
+    continueFile.remove(false);
   }
   debugDump("Creating continue file, path: " + continueFile.path);
   continueFile.create(Ci.nsIFile.NORMAL_FILE_TYPE, PERMS_FILE);
@@ -258,7 +264,6 @@ function runUpdateTest(updateParams, checkAttempts, steps) {
     gEnv.set("MOZ_TEST_SKIP_UPDATE_STAGE", "1");
     await SpecialPowers.pushPrefEnv({
       set: [
-        [PREF_APP_UPDATE_DOWNLOADPROMPTATTEMPTS, 0],
         [PREF_APP_UPDATE_DISABLEDFORTESTING, false],
         [PREF_APP_UPDATE_IDLETIME, 0],
         [PREF_APP_UPDATE_URL_MANUAL, URL_MANUAL_UPDATE],
@@ -305,7 +310,6 @@ function runUpdateProcessingTest(updates, steps) {
     gEnv.set("MOZ_TEST_SKIP_UPDATE_STAGE", "1");
     await SpecialPowers.pushPrefEnv({
       set: [
-        [PREF_APP_UPDATE_DOWNLOADPROMPTATTEMPTS, 0],
         [PREF_APP_UPDATE_DISABLEDFORTESTING, false],
         [PREF_APP_UPDATE_IDLETIME, 0],
         [PREF_APP_UPDATE_URL_MANUAL, URL_MANUAL_UPDATE],
@@ -676,7 +680,6 @@ function runAboutDialogUpdateTest(updateParams, backgroundUpdate, steps) {
     gEnv.set("MOZ_TEST_SLOW_SKIP_UPDATE_STAGE", "1");
     await SpecialPowers.pushPrefEnv({
       set: [
-        [PREF_APP_UPDATE_SERVICE_ENABLED, false],
         [PREF_APP_UPDATE_DISABLEDFORTESTING, false],
         [PREF_APP_UPDATE_URL_MANUAL, detailsURL],
       ],
@@ -805,7 +808,6 @@ function runAboutPrefsUpdateTest(updateParams, backgroundUpdate, steps) {
     gEnv.set("MOZ_TEST_SLOW_SKIP_UPDATE_STAGE", "1");
     await SpecialPowers.pushPrefEnv({
       set: [
-        [PREF_APP_UPDATE_SERVICE_ENABLED, false],
         [PREF_APP_UPDATE_DISABLEDFORTESTING, false],
         [PREF_APP_UPDATE_URL_MANUAL, detailsURL],
       ],
@@ -840,4 +842,275 @@ function runAboutPrefsUpdateTest(updateParams, backgroundUpdate, steps) {
       await processAboutPrefsStep(step);
     }
   })();
+}
+
+
+
+
+
+
+function removeUpdateSettingsIni() {
+  if (Services.prefs.getBoolPref(PREF_APP_UPDATE_STAGING_ENABLED)) {
+    let greDir = getGREDir();
+    let updateSettingsIniBak = greDir.clone();
+    updateSettingsIniBak.append(FILE_UPDATE_SETTINGS_INI_BAK);
+    if (updateSettingsIniBak.exists()) {
+      let updateSettingsIni = greDir.clone();
+      updateSettingsIni.append(FILE_UPDATE_SETTINGS_INI);
+      updateSettingsIni.remove(false);
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function runTelemetryUpdateTest(updateParams, event, stageFailure = false) {
+  
+  
+  let detailsURL = URL_HOST + "/";
+  return (async function() {
+    Services.telemetry.clearScalars();
+    gEnv.set("MOZ_TEST_SLOW_SKIP_UPDATE_STAGE", "1");
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        [PREF_APP_UPDATE_DISABLEDFORTESTING, false],
+      ],
+    });
+
+    await setupTestUpdater();
+
+    if (stageFailure) {
+      removeUpdateSettingsIni();
+    }
+
+    let updateURL = URL_HTTP_UPDATE_SJS + "?detailsURL=" + detailsURL +
+                    updateParams + getVersionParams();
+    setUpdateURL(updateURL);
+    if (Services.prefs.getBoolPref(PREF_APP_UPDATE_STAGING_ENABLED)) {
+      
+      
+      
+      gEnv.set("MOZ_TEST_SKIP_UPDATE_STAGE", "1");
+    }
+    gAUS.checkForBackgroundUpdates();
+    await waitForEvent(event);
+  })();
+}
+
+
+
+
+
+
+
+
+
+
+function getTelemetryUpdatePhaseValues(overrides) {
+  
+  
+  
+  if (overrides.noPartialPatch) {
+    if (!overrides.noInternalPartial) {
+      overrides.noInternalPartial = true;
+    }
+  }
+
+  if (overrides.noCompletePatch) {
+    if (!overrides.noInternalComplete) {
+      overrides.noInternalComplete = true;
+    }
+  }
+
+  if (overrides.noPartialPatch || overrides.partialBadSize ||
+      overrides.noInternalPartial) {
+    if (!overrides.noStagePartial) {
+      overrides.noStagePartial = true;
+    }
+    if (!overrides.noApplyPartial) {
+      overrides.noApplyPartial = true;
+    }
+  }
+
+  if (overrides.noCompletePatch || overrides.completeBadSize ||
+      overrides.noInternalComplete) {
+    if (!overrides.noStageComplete) {
+      overrides.noStageComplete = true;
+    }
+    if (!overrides.noApplyComplete) {
+      overrides.noApplyComplete = true;
+    }
+  }
+
+  if (!Services.prefs.getBoolPref(PREF_APP_UPDATE_STAGING_ENABLED)) {
+    if (!overrides.noStagePartial) {
+      overrides.noStagePartial = true;
+    }
+    if (!overrides.noStageComplete) {
+      overrides.noStageComplete = true;
+    }
+  }
+
+  let marSize = parseInt(SIZE_SIMPLE_MAR);
+  let partialSize =
+    overrides.partialBadSize ? parseInt(SIZE_SIMPLE_MAR + "1") : marSize;
+  let completeSize =
+    overrides.completeBadSize ? parseInt(SIZE_SIMPLE_MAR + "1") : marSize;
+
+  let partialDownloadBytes = overrides.partialBadSize ? 1 : marSize;
+  let completeDownloadBytes = overrides.completeBadSize ? 1 : marSize;
+
+  let obj = {};
+  obj.basePrefix =
+    overrides.forSession ? "update.session." : "update.startup.";
+  obj.from_app_version = Services.appinfo.version;
+
+  obj.mars = {};
+  obj.mars.mar_partial_size_bytes =
+    overrides.noPartialPatch ? null : partialSize;
+  obj.mars.mar_complete_size_bytes =
+    overrides.noCompletePatch ? null : completeSize;
+
+  obj.intervals = {};
+  obj.intervals.check = 1;
+  obj.intervals.download_bits_partial = null;
+  obj.intervals.download_bits_complete = null;
+  obj.intervals.download_internal_partial =
+    overrides.noInternalPartial ? null : 1;
+  obj.intervals.download_internal_complete =
+    overrides.noInternalComplete ? null : 1;
+  obj.intervals.stage_partial = overrides.noStagePartial ? null : 1;
+  obj.intervals.stage_complete = overrides.noStageComplete ? null : 1;
+  obj.intervals.apply_partial = overrides.noApplyPartial ? null : 1;
+  obj.intervals.apply_complete = overrides.noApplyComplete ? null : 1;
+
+  obj.downloads = {};
+  obj.downloads.bits_partial_ = {};
+  obj.downloads.bits_partial_.bytes = null;
+  obj.downloads.bits_partial_.seconds = null;
+  obj.downloads.bits_complete_ = {};
+  obj.downloads.bits_complete_.bytes = null;
+  obj.downloads.bits_complete_.seconds = null;
+  obj.downloads.internal_partial_ = {};
+  obj.downloads.internal_partial_.bytes =
+    overrides.noInternalPartial ? null : partialDownloadBytes;
+  obj.downloads.internal_partial_.seconds =
+    overrides.noInternalPartial ? null : 1;
+  obj.downloads.internal_complete_ = {};
+  obj.downloads.internal_complete_.bytes =
+    overrides.noInternalComplete ? null : completeDownloadBytes;
+  obj.downloads.internal_complete_.seconds =
+    overrides.noInternalComplete ? null : 1;
+
+  return obj;
+}
+
+
+
+
+
+
+
+
+
+function checkTelemetryUpdatePhases(expected) {
+  let scalars = TelemetryTestUtils.getProcessScalars("parent");
+  let basePrefix = expected.basePrefix;
+  let namePrefix = basePrefix;
+  {
+    let name = namePrefix + "from_app_version";
+    if (expected.from_app_version) {
+      Assert.ok(!!scalars[name],
+                "The " + name + " value should exist.");
+      Assert.equal(scalars[name],
+                   expected.from_app_version,
+                   "The " + name + " value should equal the expected value.");
+    } else {
+      Assert.ok(!scalars[name],
+                "The " + name + " value should not exist.");
+    }
+  }
+
+  for (let [nameSuffix, value] of Object.entries(expected.mars)) {
+    let name = namePrefix + nameSuffix;
+    if (value) {
+      Assert.ok(!!scalars[name],
+                "The " + name + " value should exist.");
+      Assert.equal(scalars[name], value,
+                   "The " + name + " value should equal the expected value.");
+    } else {
+      Assert.ok(!scalars[name],
+                "The " + name + " value should not exist.");
+    }
+  }
+
+  namePrefix = basePrefix + "intervals.";
+  for (let [suffix, value] of Object.entries(expected.intervals)) {
+    let name = namePrefix + suffix;
+    if (value) {
+      Assert.ok(!!scalars[name],
+                "The " + name + " value should exist.");
+      Assert.greaterOrEqual(scalars[name], value,
+                           "The " + name + " value should be equal to or " +
+                           "greater than " + value + ".");
+    } else {
+      Assert.ok(!scalars[name],
+                "The " + name + " value should not exist.");
+    }
+  }
+
+  namePrefix = basePrefix + "downloads.";
+  for (let [nameMid, values] of Object.entries(expected.downloads)) {
+    let name = namePrefix + nameMid + "bytes";
+    if (values.bytes) {
+      Assert.ok(!!scalars[name],
+                "The " + name + " value should exist.");
+      Assert.greaterOrEqual(scalars[name], values.bytes,
+                           "The " + name + " value should be equal to or " +
+                           "greater than " + values.bytes + ".");
+    } else {
+      Assert.ok(!scalars[name],
+                "The " + name + " value should not exist.");
+    }
+
+    name = namePrefix + nameMid + "seconds";
+    if (values.seconds) {
+      Assert.ok(!!scalars[name],
+              "The " + name + " value should exist.");
+      Assert.greaterOrEqual(scalars[name], values.seconds,
+                           "The " + name + " value should be equal to or " +
+                           "greater than " + values.seconds + ".");
+    } else {
+      Assert.ok(!scalars[name],
+              "The " + name + " value should not exist.");
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+function checkTelemetryUpdatePhaseEmpty(isStartup) {
+  let scalars = TelemetryTestUtils.getProcessScalars("parent");
+  let name =
+    "update." + (isStartup ? "startup" : "session") + ".from_app_version";
+  Assert.ok(!scalars[name],
+            "The " + name + " value should not exist.");
 }
