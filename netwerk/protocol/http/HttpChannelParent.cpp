@@ -810,7 +810,20 @@ mozilla::ipc::IPCResult HttpChannelParent::RecvCancel(const nsresult& status) {
   
   if (mChannel) {
     mChannel->Cancel(status);
+
+    
+    
+    if (mSuspendedForFlowControl) {
+      LOG(("  resume the channel due to e10s backpressure relief by cancel"));
+      Unused << mChannel->Resume();
+      mSuspendedForFlowControl = false;
+    }
   }
+
+  
+  
+  mCacheNeedFlowControlInitialized = true;
+  mNeedFlowControl = false;
   return IPC_OK();
 }
 
@@ -2129,6 +2142,7 @@ nsresult HttpChannelParent::SuspendForDiversion() {
   
   
   if (mSuspendedForFlowControl) {
+    LOG(("  resume the channel due to e10s backpressure relief by diversion"));
     Unused << mChannel->Resume();
     mSuspendedForFlowControl = false;
   }
