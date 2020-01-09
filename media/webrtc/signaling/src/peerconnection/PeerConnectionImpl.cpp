@@ -1559,8 +1559,10 @@ class RTCStatsReportInternalConstruct : public RTCStatsReportInternal {
                                   DOMHighResTimeStamp now) {
     mPcid = pcid;
     mRtpContributingSourceStats.Construct();
-    mInboundRTPStreamStats.Construct();
-    mOutboundRTPStreamStats.Construct();
+    mInboundRtpStreamStats.Construct();
+    mOutboundRtpStreamStats.Construct();
+    mRemoteInboundRtpStreamStats.Construct();
+    mRemoteOutboundRtpStreamStats.Construct();
     mMediaStreamTrackStats.Construct();
     mMediaStreamStats.Construct();
     mTransportStats.Construct();
@@ -2834,7 +2836,7 @@ RefPtr<RTCStatsQueryPromise> PeerConnectionImpl::ExecuteStatsQuery_s(
                                                   &bytesReceived, &packetsLost,
                                                   &rtt)) {
             remoteId = NS_LITERAL_STRING("outbound_rtcp_") + idstr;
-            RTCInboundRTPStreamStats s;
+            RTCRemoteInboundRtpStreamStats s;
             
             s.mTimestamp.Construct(query->now);
             s.mId.Construct(remoteId);
@@ -2851,13 +2853,13 @@ RefPtr<RTCStatsQueryPromise> PeerConnectionImpl::ExecuteStatsQuery_s(
             if (rtt > 0) {  
               s.mRoundTripTime.Construct(static_cast<double>(rtt) / 1000);
             }
-            query->report->mInboundRTPStreamStats.Value().AppendElement(
+            query->report->mRemoteInboundRtpStreamStats.Value().AppendElement(
                 s, fallible);
           }
         }
         
         {
-          RTCOutboundRTPStreamStats s;
+          RTCOutboundRtpStreamStats s;
           
           s.mTimestamp.Construct(query->now);
           s.mId.Construct(localId);
@@ -2874,7 +2876,7 @@ RefPtr<RTCStatsQueryPromise> PeerConnectionImpl::ExecuteStatsQuery_s(
           if (mp.Conduit()->GetSendPacketTypeStats(&counters)) {
             s.mNackCount.Construct(counters.nack_packets);
             
-            if(asVideo) {
+            if (asVideo) {
               s.mFirCount.Construct(counters.fir_packets);
               s.mPliCount.Construct(counters.pli_packets);
             }
@@ -2901,7 +2903,7 @@ RefPtr<RTCStatsQueryPromise> PeerConnectionImpl::ExecuteStatsQuery_s(
               qpSum.apply([&s](uint64_t aQp) { s.mQpSum.Construct(aQp); });
             }
           });
-          query->report->mOutboundRTPStreamStats.Value().AppendElement(
+          query->report->mOutboundRtpStreamStats.Value().AppendElement(
               s, fallible);
         }
         break;
@@ -2920,7 +2922,7 @@ RefPtr<RTCStatsQueryPromise> PeerConnectionImpl::ExecuteStatsQuery_s(
           uint64_t bytesSent;
           if (mp.Conduit()->GetRTCPSenderReport(&packetsSent, &bytesSent)) {
             remoteId = NS_LITERAL_STRING("inbound_rtcp_") + idstr;
-            RTCOutboundRTPStreamStats s;
+            RTCRemoteOutboundRtpStreamStats s;
             
             s.mTimestamp.Construct(query->now);
             s.mId.Construct(remoteId);
@@ -2932,12 +2934,12 @@ RefPtr<RTCStatsQueryPromise> PeerConnectionImpl::ExecuteStatsQuery_s(
             s.mLocalId.Construct(localId);
             s.mPacketsSent.Construct(packetsSent);
             s.mBytesSent.Construct(bytesSent);
-            query->report->mOutboundRTPStreamStats.Value().AppendElement(
+            query->report->mRemoteOutboundRtpStreamStats.Value().AppendElement(
                 s, fallible);
           }
         }
         
-        RTCInboundRTPStreamStats s;
+        RTCInboundRtpStreamStats s;
         s.mTimestamp.Construct(query->now);
         s.mId.Construct(localId);
         s.mType.Construct(RTCStatsType::Inbound_rtp);
@@ -2984,7 +2986,7 @@ RefPtr<RTCStatsQueryPromise> PeerConnectionImpl::ExecuteStatsQuery_s(
             s.mFramesDecoded.Construct(framesDecoded);
           }
         });
-        query->report->mInboundRTPStreamStats.Value().AppendElement(s,
+        query->report->mInboundRtpStreamStats.Value().AppendElement(s,
                                                                     fallible);
         
         mp.GetContributingSourceStats(
