@@ -313,7 +313,7 @@ static inline MOZ_COLD MOZ_NORETURN void MOZ_Crash(const char* aFilename,
   MOZ_CRASH_ANNOTATE(aReason);
   MOZ_REALLY_CRASH(aLine);
 }
-#define MOZ_CRASH_UNSAFE_OOL(reason) MOZ_Crash(__FILE__, __LINE__, reason)
+#define MOZ_CRASH_UNSAFE(reason) MOZ_Crash(__FILE__, __LINE__, reason)
 
 static const size_t sPrintfMaxArgs = 4;
 static const size_t sPrintfCrashReasonSize = 1024;

@@ -1819,7 +1819,7 @@ void RuntimeService::CrashIfHanging() {
   }
 
   
-  MOZ_CRASH_UNSAFE_OOL(strdup(msg.BeginReading()));
+  MOZ_CRASH_UNSAFE(strdup(msg.BeginReading()));
 }
 
 

@@ -54,7 +54,6 @@ class nsAutoOwningThread {
   
   
   
-  
   template <int N>
   void AssertOwnership(const char (&aMsg)[N]) const {
     AssertCurrentThreadOwnsMe(aMsg);

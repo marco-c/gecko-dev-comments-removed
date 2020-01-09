@@ -193,7 +193,7 @@ void GLBlitTextureImageHelper::SetBlitFramebufferForDestTexture(
     
     
     
-    MOZ_CRASH_UNSAFE_OOL(msg.get());
+    MOZ_CRASH_UNSAFE(msg.get());
   }
 }
 

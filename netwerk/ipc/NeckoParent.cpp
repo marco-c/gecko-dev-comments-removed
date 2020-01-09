@@ -148,7 +148,7 @@ static already_AddRefed<nsIPrincipal> GetRequestingPrincipal(
 
 static MOZ_COLD void CrashWithReason(const char* reason) {
 #ifndef RELEASE_OR_BETA
-  MOZ_CRASH_UNSAFE_OOL(reason);
+  MOZ_CRASH_UNSAFE(reason);
 #endif
 }
 

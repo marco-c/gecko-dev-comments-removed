@@ -194,7 +194,7 @@ void RunWatchdog(void* arg) {
             "Something is blocking the main-thread.",
             lastStep);
         
-        MOZ_CRASH_UNSAFE_OOL(strdup(msg.BeginReading()));
+        MOZ_CRASH_UNSAFE(strdup(msg.BeginReading()));
       }
 
       MOZ_CRASH("Shutdown hanging before starting.");

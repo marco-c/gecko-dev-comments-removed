@@ -37,7 +37,7 @@ nsAutoOwningThread::nsAutoOwningThread() : mThread(GetCurrentVirtualThread()) {}
 void nsAutoOwningThread::AssertCurrentThreadOwnsMe(const char* msg) const {
   if (MOZ_UNLIKELY(!IsCurrentThread())) {
     
-    MOZ_CRASH_UNSAFE_OOL(msg);
+    MOZ_CRASH_UNSAFE(msg);
   }
 }
 
