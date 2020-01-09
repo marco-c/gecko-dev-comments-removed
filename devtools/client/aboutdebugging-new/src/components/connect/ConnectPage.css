@@ -3,7 +3,7 @@
 
 
 .connect-page__usb__toggle-button {
-  margin-top: calc(var(--base-distance) * 4);
+  margin-top: calc(var(--base-unit) * 4);
 }
 
 .connect-page__disabled-section {

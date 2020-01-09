@@ -3,6 +3,6 @@
 
 
 .connection-prompt-setting {
-  margin-block-end: var(--base-distance);
+  margin-block-end: var(--base-unit);
   text-align: right;
 }
