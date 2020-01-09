@@ -858,17 +858,16 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
     
     
     
-    
-    overlapsOppositeAxis(container, axis) {
+    isOutsideTheAxisBoundary(container, axis) {
       switch (axis) {
       case "+x":
-        return this.left < container.left;
-      case "-x":
         return this.right > container.right;
+      case "-x":
+        return this.left < container.left;
       case "+y":
-        return this.top < container.top;
-      case "-y":
         return this.bottom > container.bottom;
+      case "-y":
+        return this.top < container.top;
       }
     }
 
@@ -1005,7 +1004,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
       const axis = ["-y", "-x", "+x", "+y"];
       const toMove = styleBox.getFirstLineBoxSize();
       for (let i = 0; i < axis.length && !hasFoundBestPosition; i++) {
-        while (box.overlapsOppositeAxis(containerBox, axis[i]) ||
+        while (!box.isOutsideTheAxisBoundary(containerBox, axis[i]) &&
                (!box.within(containerBox) || box.overlapsAny(outputBoxes))) {
           box.move(axis[i], toMove);
         }
