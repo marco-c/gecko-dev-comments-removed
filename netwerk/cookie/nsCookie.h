@@ -139,6 +139,8 @@ class nsCookie final : public nsICookie2 {
   bool mIsHttpOnly;
   mozilla::OriginAttributes mOriginAttributes;
   int32_t mSameSite;
+
+  
   int32_t mRawSameSite;
 };
 
