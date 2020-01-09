@@ -443,7 +443,7 @@ AbstractTreeItem.prototype = {
 
     const document = this.document;
 
-    const arrowNode = this._arrowNode = document.createElement("hbox");
+    const arrowNode = this._arrowNode = document.createXULElement("hbox");
     arrowNode.className = "arrow theme-twisty";
     arrowNode.addEventListener("mousedown", this._onArrowClick);
 

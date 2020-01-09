@@ -43,7 +43,7 @@ var test = function (isContent) {
         
         
         
-        let div = document.createElement("div");
+        let div = document.createElementNS("http://www.w3.org/1999/xhtml", "div");
         div.style.width = "10px";
         div.style.height = "10px";
         div.style.backgroundColor = "red";

@@ -314,9 +314,11 @@ already_AddRefed<Element> DOMOverlays::CreateSanitizedElement(
   
   
 
+  nsAutoString nameSpaceURI;
+  aElement->NodeInfo()->GetNamespaceURI(nameSpaceURI);
   ElementCreationOptionsOrString options;
-  RefPtr<Element> clone = aElement->OwnerDoc()->CreateElement(
-      aElement->NodeInfo()->LocalName(), options, aRv);
+  RefPtr<Element> clone = aElement->OwnerDoc()->CreateElementNS(
+      nameSpaceURI, aElement->NodeInfo()->LocalName(), options, aRv);
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
   }
