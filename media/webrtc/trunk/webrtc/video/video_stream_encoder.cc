@@ -679,10 +679,8 @@ void VideoStreamEncoder::OnFrame(const VideoFrame& video_frame) {
   
   
 
-  
-  
-  
-  incoming_frame.set_timestamp_us(current_time_us);
+  if (incoming_frame.timestamp_us() > current_time_us)
+    incoming_frame.set_timestamp_us(current_time_us);
 
   
   int64_t capture_ntp_time_ms;
