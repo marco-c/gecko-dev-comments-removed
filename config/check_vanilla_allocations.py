@@ -150,6 +150,14 @@ def main():
         if "ProfilingStack" in filename:
             continue
 
+        
+        
+        
+        
+        
+        if filename == 'umutex.o':
+            continue
+
         fn = m.group(2)
         if filename == 'jsutil.o':
             jsutil_cpp.add(fn)
