@@ -135,6 +135,11 @@ class WindowsDllDetourPatcher final : public WindowsDllPatcherBase<VMPolicy> {
         if (!Clear10BytePatch(origBytes)) {
           continue;
         }
+      } else if (opcode1 == 0x48) {
+        
+        if (!ClearTrampolinePatch(origBytes, tramp.GetCurrentRemoteAddress())) {
+          continue;
+        }
       } else {
         MOZ_ASSERT_UNREACHABLE("Unrecognized patch!");
         continue;
@@ -191,6 +196,30 @@ class WindowsDllDetourPatcher final : public WindowsDllPatcherBase<VMPolicy> {
     }
 
     aOrigBytes.WritePointer(aResetToAddress);
+    if (!aOrigBytes) {
+      return false;
+    }
+
+    return aOrigBytes.Commit();
+  }
+
+  bool ClearTrampolinePatch(WritableTargetFunction<MMPolicyT>& aOrigBytes,
+                            const uintptr_t aPtrToResetToAddress) {
+    
+    
+    Maybe<uint8_t> maybeOpcode2 = aOrigBytes.ReadByte();
+    if (!maybeOpcode2) {
+      return false;
+    }
+
+    uint8_t opcode2 = maybeOpcode2.value();
+    if (opcode2 != 0xB8) {
+      return false;
+    }
+
+    auto oldPtr = *(reinterpret_cast<const uintptr_t*>(aPtrToResetToAddress));
+
+    aOrigBytes.WritePointer(oldPtr);
     if (!aOrigBytes) {
       return false;
     }
@@ -493,6 +522,46 @@ class WindowsDllDetourPatcher final : public WindowsDllPatcherBase<VMPolicy> {
 
 #endif  
 
+  
+  
+  bool PatchIfTargetIsRecognizedTrampoline(
+      Trampoline<MMPolicyT>& aTramp,
+      ReadOnlyTargetFunction<MMPolicyT>& aOriginalFn, intptr_t aDest,
+      void** aOutTramp) {
+#if defined(_M_X64)
+    
+    
+    if ((aOriginalFn[0] == 0x48) && (aOriginalFn[1] == 0xB8) &&
+        (aOriginalFn[10] == 0xFF) && (aOriginalFn[11] == 0xE0)) {
+      uintptr_t originalTarget =
+          (aOriginalFn + 2).template ChasePointer<uintptr_t>();
+
+      
+      WritableTargetFunction<MMPolicyT> target(aOriginalFn.Promote(8, 2));
+      if (!target) {
+        return false;
+      }
+
+      
+      target.WritePointer(aDest);
+      if (!target.Commit()) {
+        return false;
+      }
+
+      
+      aTramp.WritePointer(originalTarget);
+      if (!aTramp) {
+        return false;
+      }
+
+      *aOutTramp = reinterpret_cast<void*>(originalTarget);
+      return true;
+    }
+#endif  
+
+    return false;
+  }
+
   void CreateTrampoline(ReadOnlyTargetFunction<MMPolicyT>& origBytes,
                         intptr_t aDest, void** aOutTramp) {
     *aOutTramp = nullptr;
@@ -502,6 +571,8 @@ class WindowsDllDetourPatcher final : public WindowsDllPatcherBase<VMPolicy> {
       return;
     }
 
+    
+    
     
     
     
@@ -523,6 +594,11 @@ class WindowsDllDetourPatcher final : public WindowsDllPatcherBase<VMPolicy> {
       tramp.Rewind();
       tramp.WriteEncodedPointer(nullptr);
     });
+
+    if (PatchIfTargetIsRecognizedTrampoline(tramp, origBytes, aDest,
+                                            aOutTramp)) {
+      return;
+    }
 
     tramp.WritePointer(origBytes.AsEncodedPtr());
     if (!tramp) {
