@@ -8483,12 +8483,25 @@ bool nsDisplayPerspective::CreateWebRenderCommands(
   nsIFrame* perspectiveFrame =
       mFrame->GetContainingBlock(nsIFrame::SKIP_SCROLLED_FRAME);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool preserve3D =
+      mFrame->Extend3DContext() || perspectiveFrame->Extend3DContext();
+
   nsTArray<mozilla::wr::FilterOp> filters;
   StackingContextHelper sc(
       aSc, GetActiveScrolledRoot(), mFrame, this, aBuilder, filters,
       LayoutDeviceRect(), nullptr, nullptr, nullptr, &perspectiveMatrix,
       wr::ReferenceFrameKind::Perspective, gfx::CompositionOp::OP_OVER,
-      !BackfaceIsHidden(), perspectiveFrame->Extend3DContext());
+      !BackfaceIsHidden(), preserve3D);
 
   return mList.CreateWebRenderCommands(aBuilder, aResources, sc, aManager,
                                        aDisplayListBuilder);
