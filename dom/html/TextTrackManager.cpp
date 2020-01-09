@@ -661,12 +661,7 @@ void TextTrackManager::TimeMarchesOn() {
     TextTrack* ttrack = mTextTracks->IndexedGetter(index, dummy);
     if (ttrack && dummy) {
       
-      TextTrackCueList* activeCueList = ttrack->GetActiveCues();
-      if (activeCueList) {
-        for (uint32_t i = 0; i < activeCueList->Length(); ++i) {
-          currentCues->AddCue(*((*activeCueList)[i]));
-        }
-      }
+      ttrack->GetCurrentCueList(currentCues);
     }
   }
   WEBVTT_LOGV("TimeMarchesOn currentCues %d", currentCues->Length());

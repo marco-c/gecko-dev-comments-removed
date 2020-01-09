@@ -102,6 +102,11 @@ class TextTrack final : public DOMEventTargetHelper {
   
   void NotifyCueActiveStateChanged(TextTrackCue* aCue);
 
+  
+  
+  
+  void GetCurrentCueList(RefPtr<TextTrackCueList>& aCueList) const;
+
  private:
   ~TextTrack();
 
