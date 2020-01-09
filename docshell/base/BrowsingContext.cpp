@@ -630,6 +630,10 @@ void BrowsingContext::Blur(ErrorResult& aError) {
 }
 
 Nullable<WindowProxyHolder> BrowsingContext::GetTop(ErrorResult& aError) {
+  if (mClosed) {
+    return nullptr;
+  }
+
   
   
   return WindowProxyHolder(Top());
