@@ -91,7 +91,7 @@ module.exports = function(config) {
               options: {
                 plugins: [
                   
-                  ["jsm-to-commonjs", {basePath: PATHS.resourcePathRegEx, replace: true}], 
+                  ["jsm-to-commonjs", {basePath: PATHS.resourcePathRegEx, removeOtherImports: true, replace: true}], 
                   ["transform-async-to-module-method", {module: "co-task", method: "async"}], 
                   "transform-es2015-modules-commonjs", 
                   ["transform-object-rest-spread", {"useBuiltIns": true}], 

@@ -303,8 +303,7 @@ describe("MessageLoaderUtils", () => {
 
       
       
-      assert.calledWithExactly(getInstallStub, "foo.com", "application/x-xpinstall", null,
-                               null, null, null, null, {source: "activitystream"});
+      assert.calledWithExactly(getInstallStub, "foo.com", {telemetryInfo: {source: "amo"}});
     });
     it("should not call the Addons API on invalid URLs", async () => {
       sandbox.stub(global.Services.scriptSecurityManager, "getSystemPrincipal").throws();

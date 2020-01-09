@@ -247,8 +247,7 @@ const MessageLoaderUtils = {
       const systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
 
       
-      
-      const telemetryInfo = {source: "activitystream"};
+      const telemetryInfo = {source: "amo"};
       const install = await AddonManager.getInstallForURL(aUri.spec, {telemetryInfo});
       await AddonManager.installAddonFromWebpage("application/x-xpinstall", browser,
         systemPrincipal, install);

@@ -5,7 +5,6 @@
 
 const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const {actionTypes: at, actionCreators: ac} = ChromeUtils.import("resource://activity-stream/common/Actions.jsm");
 const {PersistentCache} = ChromeUtils.import("resource://activity-stream/lib/PersistentCache.jsm");
@@ -14,7 +13,11 @@ const CACHE_KEY = "discovery_stream";
 const LAYOUT_UPDATE_TIME = 30 * 60 * 1000; 
 const COMPONENT_FEEDS_UPDATE_TIME = 30 * 60 * 1000; 
 const SPOCS_FEEDS_UPDATE_TIME = 30 * 60 * 1000; 
-const CONFIG_PREF_NAME = "browser.newtabpage.activity-stream.discoverystream.config";
+const MAX_LIFETIME_CAP = 500; 
+const PREF_CONFIG = "discoverystream.config";
+const PREF_OPT_OUT = "discoverystream.optOut.0";
+const PREF_SHOW_SPONSORED = "showSponsored";
+const PREF_SPOC_IMPRESSIONS = "discoverystream.spoc.impressions";
 
 this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
   constructor() {
@@ -32,39 +35,33 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
       return this._prefCache.config;
     }
     try {
-      this._prefCache.config = JSON.parse(Services.prefs.getStringPref(CONFIG_PREF_NAME, ""));
+      this._prefCache.config = JSON.parse(this.store.getState().Prefs.values[PREF_CONFIG]);
+
+      
+      this._prefCache.config.enabled = this._prefCache.config.enabled &&
+        !this.store.getState().Prefs.values[PREF_OPT_OUT];
     } catch (e) {
       
       this._prefCache.config = {};
       
-      Cu.reportError(`Could not parse preference. Try resetting ${CONFIG_PREF_NAME} in about:config.`);
+      Cu.reportError(`Could not parse preference. Try resetting ${PREF_CONFIG} in about:config.`);
     }
     return this._prefCache.config;
   }
 
   get showSpocs() {
     
-    
-    return this.store.getState().Prefs.values.showSponsored && this.config.show_spocs;
+    return this.store.getState().Prefs.values[PREF_SHOW_SPONSORED] && this.config.show_spocs;
   }
 
   setupPrefs() {
-    Services.prefs.addObserver(CONFIG_PREF_NAME, this);
     
     this.store.dispatch(ac.BroadcastToContent({type: at.DISCOVERY_STREAM_CONFIG_SETUP, data: this.config}));
   }
 
   uninitPrefs() {
-    Services.prefs.removeObserver(CONFIG_PREF_NAME, this);
     
     this._prefCache = {};
-  }
-
-  observe(aSubject, aTopic, aPrefName) {
-    if (aPrefName === CONFIG_PREF_NAME) {
-      this._prefCache.config = null;
-      this.store.dispatch(ac.BroadcastToContent({type: at.DISCOVERY_STREAM_CONFIG_CHANGE, data: this.config}));
-    }
   }
 
   async fetchFromEndpoint(endpoint) {
@@ -183,6 +180,8 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
             lastUpdated: Date.now(),
             data: spocsResponse,
           };
+
+          this.cleanUpCampaignImpressionPref(spocs.data);
           await this.cache.set("spocs", spocs);
         } else {
           Cu.reportError("No response for spocs_endpoint prop");
@@ -203,9 +202,60 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
       type: at.DISCOVERY_STREAM_SPOCS_UPDATE,
       data: {
         lastUpdated: spocs.lastUpdated,
-        spocs: spocs.data,
+        spocs: this.filterSpocs(spocs.data),
       },
     });
+  }
+
+  
+  filterSpocs(data) {
+    if (data && data.spocs && data.spocs.length) {
+      const {spocs} = data;
+      const impressions = this.readImpressionsPref(PREF_SPOC_IMPRESSIONS);
+      return {
+        ...data,
+        spocs: spocs.filter(s => this.isBelowFrequencyCap(impressions, s)),
+      };
+    }
+    return data;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  isBelowFrequencyCap(impressions, spoc) {
+    const campaignImpressions = impressions[spoc.campaign_id];
+    if (!campaignImpressions) {
+      return true;
+    }
+
+    const lifetime = spoc.caps && spoc.caps.lifetime;
+
+    const lifeTimeCap = Math.min(lifetime || MAX_LIFETIME_CAP, MAX_LIFETIME_CAP);
+    const lifeTimeCapExceeded = campaignImpressions.length >= lifeTimeCap;
+    if (lifeTimeCapExceeded) {
+      return false;
+    }
+
+    const campaignCap = spoc.caps && spoc.caps.campaign;
+    if (campaignCap) {
+      const campaignCapExceeded = campaignImpressions
+        .filter(i => (Date.now() - i) < (campaignCap.period * 1000)).length >= campaignCap.count;
+      return !campaignCapExceeded;
+    }
+    return true;
   }
 
   async getComponentFeed(feedUrl) {
@@ -277,6 +327,50 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
     }
   }
 
+  recordCampaignImpression(campaignId) {
+    let impressions = this.readImpressionsPref(PREF_SPOC_IMPRESSIONS);
+
+    const timeStamps = impressions[campaignId] || [];
+    timeStamps.push(Date.now());
+    impressions = {...impressions, [campaignId]: timeStamps};
+
+    this.writeImpressionsPref(PREF_SPOC_IMPRESSIONS, impressions);
+  }
+
+  cleanUpCampaignImpressionPref(data) {
+    if (data.spocs && data.spocs.length) {
+      const campaignIds = data.spocs.map(s => `${s.campaign_id}`);
+      this.cleanUpImpressionPref(id => !campaignIds.includes(id), PREF_SPOC_IMPRESSIONS);
+    }
+  }
+
+  writeImpressionsPref(pref, impressions) {
+    this.store.dispatch(ac.SetPref(pref, JSON.stringify(impressions)));
+  }
+
+  readImpressionsPref(pref) {
+    const prefVal = this.store.getState().Prefs.values[pref];
+    return prefVal ? JSON.parse(prefVal) : {};
+  }
+
+  cleanUpImpressionPref(isExpired, pref) {
+    const impressions = this.readImpressionsPref(pref);
+    let changed = false;
+
+    Object
+      .keys(impressions)
+      .forEach(id => {
+        if (isExpired(id)) {
+          changed = true;
+          delete impressions[id];
+        }
+      });
+
+    if (changed) {
+      this.writeImpressionsPref(pref, impressions);
+    }
+  }
+
   async onAction(action) {
     switch (action.type) {
       case at.INIT:
@@ -295,20 +389,60 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
         }
         break;
       case at.DISCOVERY_STREAM_CONFIG_SET_VALUE:
-        Services.prefs.setStringPref(CONFIG_PREF_NAME, JSON.stringify({...this.config, [action.data.name]: action.data.value}));
+        
+        if (action.data.name === "enabled" && action.data.value) {
+          this.store.dispatch(ac.SetPref(PREF_OPT_OUT, false));
+        }
+
+        
+        
+        this.store.dispatch(ac.SetPref(PREF_CONFIG, JSON.stringify({
+          ...JSON.parse(this.store.getState().Prefs.values[PREF_CONFIG]),
+          [action.data.name]: action.data.value,
+        })));
         break;
       case at.DISCOVERY_STREAM_CONFIG_CHANGE:
         
         await this.onPrefChange();
+        break;
+      case at.DISCOVERY_STREAM_OPT_OUT:
+        this.store.dispatch(ac.SetPref(PREF_OPT_OUT, true));
+        break;
+      case at.DISCOVERY_STREAM_SPOC_IMPRESSION:
+        if (this.showSpocs) {
+          this.recordCampaignImpression(action.data.campaignId);
+
+          const cachedData = await this.cache.get() || {};
+          const {spocs} = cachedData;
+
+          this.store.dispatch(ac.AlsoToPreloaded({
+            type: at.DISCOVERY_STREAM_SPOCS_UPDATE,
+            data: {
+              lastUpdated: spocs.lastUpdated,
+              spocs: this.filterSpocs(spocs.data),
+            },
+          }));
+        }
         break;
       case at.UNINIT:
         
         this.uninitPrefs();
         break;
       case at.PREF_CHANGED:
-        
-        if (action.data.name === "showSponsored") {
-          await this.loadSpocs();
+        switch (action.data.name) {
+          case PREF_CONFIG:
+          case PREF_OPT_OUT:
+            
+            this._prefCache.config = null;
+            this.store.dispatch(ac.BroadcastToContent({
+              type: at.DISCOVERY_STREAM_CONFIG_CHANGE,
+              data: this.config,
+            }));
+            break;
+          
+          case PREF_SHOW_SPONSORED:
+            await this.loadSpocs();
+            break;
         }
         break;
     }
