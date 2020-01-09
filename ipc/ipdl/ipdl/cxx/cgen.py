@@ -256,8 +256,8 @@ class CxxCodeGen(CodePrinter, Visitor):
             self.write(' = 0')
 
     def visitMethodDefn(self, md):
-        if md.decl.methodspec == MethodSpec.PURE:
-            return
+        
+        assert md.decl.methodspec == MethodSpec.NONE
 
         self.printdent()
         md.decl.accept(self)
