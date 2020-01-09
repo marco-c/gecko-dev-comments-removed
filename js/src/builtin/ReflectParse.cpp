@@ -2530,9 +2530,9 @@ bool ASTSerializer::classMethod(ClassMethod* classMethod,
 bool ASTSerializer::classField(ClassField* classField, MutableHandleValue dst) {
   RootedValue key(cx), val(cx);
   
-  if (classField->hasInitializer()) {
+  if (classField->initializer()) {
     ParseNode* value = classField->initializer()
-                           .body()
+                           ->body()
                            ->head()
                            ->as<LexicalScopeNode>()
                            .scopeBody()
