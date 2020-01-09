@@ -469,9 +469,6 @@ void Gecko_EnsureImageLayersLength(nsStyleImageLayers* layers, size_t len,
 
 void Gecko_EnsureStyleAnimationArrayLength(void* array, size_t len);
 void Gecko_EnsureStyleTransitionArrayLength(void* array, size_t len);
-void Gecko_ClearWillChange(nsStyleDisplay* display, size_t length);
-void Gecko_AppendWillChange(nsStyleDisplay* display, nsAtom* atom);
-void Gecko_CopyWillChangeFrom(nsStyleDisplay* dest, const nsStyleDisplay* src);
 
 
 
