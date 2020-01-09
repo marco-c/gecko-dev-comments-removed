@@ -42,6 +42,12 @@ WEBP_EXTERN int WebPGetDecoderVersion(void);
 
 
 
+
+
+
+
+
+
 WEBP_EXTERN int WebPGetInfo(const uint8_t* data, size_t data_size,
                             int* width, int* height);
 
@@ -419,6 +425,12 @@ struct WebPBitstreamFeatures {
 
 WEBP_EXTERN VP8StatusCode WebPGetFeaturesInternal(
     const uint8_t*, size_t, WebPBitstreamFeatures*, int);
+
+
+
+
+
+
 
 
 

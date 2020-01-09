@@ -109,19 +109,6 @@ static WEBP_INLINE void PutLE32(uint8_t* const data, uint32_t val) {
 
 
 
-#define WEBP_NEED_LOG_TABLE_8BIT
-extern const uint8_t WebPLogTable8bit[256];
-static WEBP_INLINE int WebPLog2FloorC(uint32_t n) {
-  int log_value = 0;
-  while (n >= 256) {
-    log_value += 8;
-    n >>= 8;
-  }
-  return log_value + WebPLogTable8bit[n];
-}
-
-
-
 #if defined(__GNUC__) && \
     ((__GNUC__ == 3 && __GNUC_MINOR__ >= 4) || __GNUC__ >= 4)
 static WEBP_INLINE int BitsLog2Floor(uint32_t n) {
@@ -138,6 +125,19 @@ static WEBP_INLINE int BitsLog2Floor(uint32_t n) {
   return first_set_bit;
 }
 #else   
+
+
+#define WEBP_NEED_LOG_TABLE_8BIT
+extern const uint8_t WebPLogTable8bit[256];
+static WEBP_INLINE int WebPLog2FloorC(uint32_t n) {
+  int log_value = 0;
+  while (n >= 256) {
+    log_value += 8;
+    n >>= 8;
+  }
+  return log_value + WebPLogTable8bit[n];
+}
+
 static WEBP_INLINE int BitsLog2Floor(uint32_t n) { return WebPLog2FloorC(n); }
 #endif
 
