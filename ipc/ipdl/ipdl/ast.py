@@ -327,6 +327,7 @@ class TypeSpec(Node):
         Node.__init__(self, loc)
         self.spec = spec                
         self.array = False              
+        self.maybe = False              
         self.nullable = False           
         self.uniqueptr = False          
 
