@@ -790,7 +790,7 @@ var LoginManagerContent = {
 
   _getPasswordFields(form, {
     fieldOverrideRecipe = null,
-    skipEmptyFields = false,
+    minPasswordLength = 0,
   } = {}) {
     
     let pwFields = [];
@@ -810,8 +810,13 @@ var LoginManagerContent = {
         continue;
       }
 
-      if (skipEmptyFields && !element.value.trim()) {
-        continue;
+      
+      
+      
+      if (minPasswordLength && element.value.trim().length < minPasswordLength) {
+        log("skipping password field (id/name is", element.id, " / ",
+            element.name + ") as value is too short:", element.value.trim().length);
+        continue; 
       }
 
       pwFields[pwFields.length] = {
@@ -883,9 +888,10 @@ var LoginManagerContent = {
     if (!pwFields) {
       
       
+      const minSubmitPasswordLength = 2;
       pwFields = this._getPasswordFields(form, {
         fieldOverrideRecipe,
-        skipEmptyFields: isSubmission,
+        minPasswordLength: isSubmission ? minSubmitPasswordLength : 0,
       });
     }
 
