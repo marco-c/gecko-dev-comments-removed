@@ -177,10 +177,6 @@ var whitelist = [
    platforms: ["linux", "win"]},
   
   {file: "resource://gre/localization/en-US/toolkit/about/aboutCompat.ftl"},
-  
-  
-  {file: "resource://app/modules/themes/dark/experiment.css"},
-  {file: "resource://app/modules/themes/light/experiment.css"},
 ];
 
 whitelist = new Set(whitelist.filter(item =>
@@ -341,6 +337,11 @@ async function parseJsonManifest(uri) {
         gReferencesFromCode.set(script, null);
       }
     }
+  }
+
+  if (data.theme_experiment && data.theme_experiment.stylesheet) {
+    let stylesheet = uri.resolve(data.theme_experiment.stylesheet);
+    gReferencesFromCode.set(stylesheet, null);
   }
 
   return null;
