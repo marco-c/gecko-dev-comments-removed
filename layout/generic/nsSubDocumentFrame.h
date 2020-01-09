@@ -118,15 +118,13 @@ class nsSubDocumentFrame final : public nsAtomicContainerFrame,
     }
   }
 
-  mozilla::layout::RenderFrame* GetRenderFrame() const;
+  nsFrameLoader* FrameLoader() const;
 
  protected:
   friend class AsyncFrameInit;
 
   
   mozilla::CSSIntSize GetMarginAttributes();
-
-  nsFrameLoader* FrameLoader() const;
 
   bool IsInline() { return mIsInline; }
 
