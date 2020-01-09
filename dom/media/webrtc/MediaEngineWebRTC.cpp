@@ -62,6 +62,25 @@ void MediaEngineWebRTC::EnumerateVideoDevices(
 
 
   int num;
+#if defined(_ARM64_) && defined(XP_WIN)
+  
+  
+  if (aCapEngine == camera::CameraEngine) {
+    typedef ULONG (*RtlGetVersionFn)(LPOSVERSIONINFOEXW);
+    RtlGetVersionFn RtlGetVersion;
+    RtlGetVersion = (RtlGetVersionFn)GetProcAddress(GetModuleHandleA("ntdll"),
+                                                    "RtlGetVersion");
+    if (RtlGetVersion) {
+      OSVERSIONINFOEXW info;
+      info.dwOSVersionInfoSize = sizeof(info);
+      RtlGetVersion(&info);
+      
+      if (info.dwBuildNumber < 18346) {
+        return;
+      }
+    }
+  }
+#endif
   num = mozilla::camera::GetChildAndCall(
       &mozilla::camera::CamerasChild::NumberOfCaptureDevices, aCapEngine);
 
