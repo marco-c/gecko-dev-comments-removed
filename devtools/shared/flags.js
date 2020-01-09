@@ -62,11 +62,4 @@ makePrefTrackedFlag(exports, "wantVerbose", "devtools.debugger.log.verbose");
 
 
 
-makePrefTrackedFlag(exports, "quiet", "devtools.debugger.quiet");
-
-
-
-
-
-
 makePrefTrackedFlag(exports, "testing", "devtools.testing");
