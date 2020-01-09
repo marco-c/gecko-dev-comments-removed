@@ -88,6 +88,10 @@ already_AddRefed<DrawTarget> gfxAlphaBoxBlur::InitDrawTarget(
     mDrawTarget = aReferenceDT->CreateShadowDrawTarget(
         mBlur.GetSize(), SurfaceFormat::A8,
         AlphaBoxBlur::CalculateBlurSigma(aBlurRadius.width));
+    if (mDrawTarget) {
+      
+      mDrawTarget->ClearRect(gfx::Rect());
+    }
   } else {
     
     
