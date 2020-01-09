@@ -2481,12 +2481,22 @@ Engine.prototype = {
     let principal = Services.scriptSecurityManager
                             .createCodebasePrincipal(searchURI, attrs);
 
-    connector.speculativeConnect(searchURI, principal, callbacks);
+    try {
+      connector.speculativeConnect(searchURI, principal, callbacks);
+    } catch (e) {
+      
+      Cu.reportError(e);
+    }
 
     if (this.supportsResponseType(URLTYPE_SUGGEST_JSON)) {
       let suggestURI = this.getSubmission("dummy", URLTYPE_SUGGEST_JSON).uri;
       if (suggestURI.prePath != searchURI.prePath)
-        connector.speculativeConnect(suggestURI, principal, callbacks);
+        try {
+          connector.speculativeConnect(suggestURI, principal, callbacks);
+        } catch (e) {
+          
+          Cu.reportError(e);
+        }
     }
   },
 };

@@ -3818,8 +3818,14 @@ var SessionStoreInternal = {
       });
       let sc = Services.io.QueryInterface(Ci.nsISpeculativeConnect);
       let uri = Services.io.newURI(url);
-      sc.speculativeConnect(uri, principal, null);
-      return true;
+      try {
+        sc.speculativeConnect(uri, principal, null);
+        return true;
+      } catch (error) {
+         
+         Cu.reportError(error);
+        return false;
+      }
     }
     return false;
   },

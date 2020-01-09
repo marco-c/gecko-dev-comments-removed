@@ -1766,11 +1766,7 @@ nsresult nsIOService::SpeculativeConnectInternal(
   MOZ_ASSERT(aPrincipal, "We expect passing a principal here.");
 
   if (!aPrincipal) {
-    
-    
-    
-    
-    return NS_OK;
+    return NS_ERROR_INVALID_ARG;
   }
 
   
