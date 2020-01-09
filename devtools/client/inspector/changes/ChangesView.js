@@ -154,6 +154,22 @@ class ChangesView {
 
 
 
+  copyDeclaration(element) {
+    const name = element.querySelector(".changes__declaration-name").textContent;
+    const value = element.querySelector(".changes__declaration-value").textContent;
+    const isRemoved = element.classList.contains("diff-remove");
+    const text = isRemoved ? `/* ${name}: ${value}; */` : `${name}: ${value};`;
+    clipboardHelper.copyString(text);
+  }
+
+  
+
+
+
+
+
+
+
   async copyRule(ruleId) {
     const rule = await this.inspector.pageStyle.getRule(ruleId);
     const text = await rule.getRuleText();
