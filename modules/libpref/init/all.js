@@ -5185,7 +5185,7 @@ pref("device.sensors.ambientLight.enabled", false);
 pref("device.storage.enabled", false);
 
 
-pref("browser.history.maxStateObjectSize", 655360);
+pref("browser.history.maxStateObjectSize", 2097152);
 
 pref("browser.meta_refresh_when_inactive.disabled", false);
 
