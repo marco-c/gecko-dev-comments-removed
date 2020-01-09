@@ -44,7 +44,7 @@
         evalAsync(code);
         break;
       case 1:
-        ok(jsFuns.isAsmJSModuleLoadedFromCache(module), "module loaded from cache");
+        ok(jsFuns.isAsmJSModule(module), "module");
         SimpleTest.finish();
         break;
       default:

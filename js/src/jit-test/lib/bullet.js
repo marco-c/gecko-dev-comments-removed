@@ -56007,6 +56007,5 @@ function runBullet() {
   
   return {
     asmJSValidated: isAsmJSModule(asmModule) && isAsmJSFunction(asm._main),
-    loadedFromCache: isAsmJSModule(asmModule) && isAsmJSModuleLoadedFromCache(asmModule)
   }
 }

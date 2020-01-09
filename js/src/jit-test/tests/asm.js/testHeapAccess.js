@@ -15,8 +15,6 @@ var code = asmCompile('glob', 'imp', 'b', USE_ASM + HEAP_IMPORTS + 'function f(i
 var f = asmLink(code, this, null, new ArrayBuffer(BUF_MIN));
 assertEq(f(0), 0);
 
-setCachingEnabled(true);
-
 
 
 
@@ -48,8 +46,6 @@ assertEq(f(0x100),0);
       
       assertEq(asmLink(asmCompile('stdlib', 'foreign', 'heap', USE_ASM + 'var i32=new stdlib.Int32Array(heap); function f(i) {i=i|0;var j=0x10000;return (i32[j>>2] = i)|0 } return f'), this, null, buf)(1), 1);
 }
-
-setCachingEnabled(false);
 
 var code = asmCompile('glob', 'imp', 'b', USE_ASM + HEAP_IMPORTS + 'function f(i) {i=i|0; i32[0] = i; return u8[' + lsb + ']|0}; return f');
 var f = asmLink(code, this, null, new ArrayBuffer(BUF_MIN));
