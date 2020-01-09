@@ -1292,6 +1292,9 @@ void nsTableFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   DisplayBorderBackgroundOutline(aBuilder, aLists);
 
+  nsDisplayTableBackgroundSet tableBGs(aBuilder);
+  nsDisplayListCollection lists(aBuilder);
+
   
   
   
@@ -1302,12 +1305,15 @@ void nsTableFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   
   
   for (nsIFrame* kid : GetChildList(kColGroupList)) {
-    BuildDisplayListForChild(aBuilder, kid, aLists);
+    BuildDisplayListForChild(aBuilder, kid, lists);
   }
 
   for (nsIFrame* kid : PrincipalChildList()) {
-    BuildDisplayListForChild(aBuilder, kid, aLists);
+    BuildDisplayListForChild(aBuilder, kid, lists);
   }
+
+  tableBGs.MoveTo(aLists);
+  lists.MoveTo(aLists);
 
   if (IsVisibleForPainting()) {
     
