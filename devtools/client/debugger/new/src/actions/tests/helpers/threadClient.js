@@ -2,7 +2,7 @@
 
 
 
-import { makeLocationId } from "../../../utils/breakpoint";
+import { makeBreakpointId } from "../../../utils/breakpoint";
 
 function createSource(name) {
   name = name.replace(/\..*$/, "");
@@ -58,7 +58,7 @@ function generateCorrectingThreadClient(offset = 0) {
       const actualLocation = { ...location, line: location.line + offset };
 
       return Promise.resolve({
-        id: makeLocationId(location),
+        id: makeBreakpointId(location),
         actualLocation,
         condition
       });

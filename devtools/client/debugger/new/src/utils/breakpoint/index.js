@@ -48,8 +48,7 @@ export function locationMoved(
 }
 
 
-
-export function makeLocationId(location: SourceLocation) {
+export function makeBreakpointId(location: SourceLocation) {
   const { sourceId, line, column } = location;
   const columnString = column || "";
   return `${sourceId}:${line}:${columnString}`;
@@ -164,7 +163,7 @@ export function createBreakpoint(
     index: 0
   };
   const properties = {
-    id: makeLocationId(location),
+    id: makeBreakpointId(location),
     options: {
       condition: condition || null,
       logValue: logValue || null,
