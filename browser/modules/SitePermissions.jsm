@@ -192,6 +192,15 @@ const GloballyBlockedPermissions = {
     }
     return permissions;
   },
+
+  
+  
+  copy(browser, newBrowser) {
+    let entry = this._stateByBrowser.get(browser);
+    if (entry) {
+      this._stateByBrowser.set(newBrowser, entry);
+    }
+  },
 };
 
 
@@ -594,6 +603,7 @@ var SitePermissions = {
 
   copyTemporaryPermissions(browser, newBrowser) {
     TemporaryPermissions.copy(browser, newBrowser);
+    GloballyBlockedPermissions.copy(browser, newBrowser);
   },
 
   
