@@ -363,8 +363,6 @@ nsresult SVGMotionSMILType::Interpolate(const SMILValue& aStartVal,
   const MotionSegmentArray& endArr = ExtractMotionSegmentArray(aEndVal);
   MotionSegmentArray& resultArr = ExtractMotionSegmentArray(aResult);
 
-  MOZ_ASSERT(startArr.Length() <= 1,
-             "Invalid start-point for animateMotion interpolation");
   MOZ_ASSERT(endArr.Length() == 1,
              "Invalid end-point for animateMotion interpolation");
   MOZ_ASSERT(resultArr.IsEmpty(),
@@ -378,14 +376,26 @@ nsresult SVGMotionSMILType::Interpolate(const SMILValue& aStartVal,
   
   
   
+  
+  
   Path* path = endParams.mPath;
   RotateType rotateType = endSeg.mRotateType;
   float rotateAngle = endSeg.mRotateAngle;
 
   float startDist;
-  if (startArr.IsEmpty()) {
+  if (startArr.IsEmpty() ||
+      startArr[0].mU.mPathPointParams.mPath != endParams.mPath) {
+    
+    
+    
+    
+    
+    
+    
     startDist = 0.0f;
   } else {
+    MOZ_ASSERT(startArr.Length() <= 1,
+               "Invalid start-point for animateMotion interpolation");
     const MotionSegment& startSeg = startArr[0];
     MOZ_ASSERT(startSeg.mSegmentType == eSegmentType_PathPoint,
                "Expecting to be interpolating along a path");
@@ -393,8 +403,6 @@ nsresult SVGMotionSMILType::Interpolate(const SMILValue& aStartVal,
     MOZ_ASSERT(startSeg.mRotateType == endSeg.mRotateType &&
                    startSeg.mRotateAngle == endSeg.mRotateAngle,
                "unexpected angle mismatch");
-    MOZ_ASSERT(startParams.mPath == endParams.mPath,
-               "unexpected path mismatch");
     startDist = startParams.mDistToPoint;
   }
 
