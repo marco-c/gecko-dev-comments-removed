@@ -661,7 +661,13 @@ nsresult nsHttpChannelAuthProvider::GetCredentialsForChallenge(
   rv = mAuthChannel->GetLoadFlags(&loadFlags);
   if (NS_FAILED(rv)) return rv;
 
+  
+  nsAutoCString suffix;
+
   if (!proxyAuth) {
+    nsCOMPtr<nsIChannel> chan = do_QueryInterface(mAuthChannel);
+    GetOriginAttributesSuffix(chan, suffix);
+
     
     
     if (mIdent.IsEmpty()) {
@@ -680,10 +686,6 @@ nsresult nsHttpChannelAuthProvider::GetCredentialsForChallenge(
     LOG(("Skipping authentication for anonymous non-proxy request\n"));
     return NS_ERROR_NOT_AVAILABLE;
   }
-
-  nsCOMPtr<nsIChannel> chan = do_QueryInterface(mAuthChannel);
-  nsAutoCString suffix;
-  GetOriginAttributesSuffix(chan, suffix);
 
   
   
@@ -1244,7 +1246,10 @@ NS_IMETHODIMP nsHttpChannelAuthProvider::OnAuthAvailable(
 
   nsCOMPtr<nsIChannel> chan = do_QueryInterface(mAuthChannel);
   nsAutoCString suffix;
-  GetOriginAttributesSuffix(chan, suffix);
+  if (!mProxyAuth) {
+    
+    GetOriginAttributesSuffix(chan, suffix);
+  }
 
   nsHttpAuthCache *authCache = gHttpHandler->AuthCache(mIsPrivate);
   nsHttpAuthEntry *entry = nullptr;
