@@ -5,7 +5,6 @@
 #ifndef GLLIBRARYLOADER_H_
 #define GLLIBRARYLOADER_H_
 
-#include <array>
 #include <stdio.h>
 
 #include "GLDefs.h"
@@ -15,40 +14,45 @@
 namespace mozilla {
 namespace gl {
 
-struct SymLoadStruct final {
-  PRFuncPtr* symPointer;
-  std::array<const char*, 6> symNames;
-};
+class GLLibraryLoader {
+ public:
+  bool OpenLibrary(const char* library);
 
-void ClearSymbols(const SymLoadStruct* firstStruct);
+  typedef PRFuncPtr(GLAPIENTRY* PlatformLookupFunction)(const char*);
 
-class SymbolLoader final {
-public:
-  typedef PRFuncPtr (GLAPIENTRY * GetProcAddressT)(const char*);
+  enum { MAX_SYMBOL_NAMES = 6, MAX_SYMBOL_LENGTH = 128 };
 
-  GetProcAddressT mPfn = nullptr; 
-  PRLibrary* mLib = nullptr;
+  typedef struct {
+    PRFuncPtr* symPointer;
+    const char* symNames[MAX_SYMBOL_NAMES];
+  } SymLoadStruct;
 
-  explicit SymbolLoader(void* (GLAPIENTRY * pfn)(const char*))
-    : mPfn(GetProcAddressT(pfn))
-  {
-    MOZ_ASSERT(mPfn);
+  bool LoadSymbols(const SymLoadStruct* firstStruct, bool tryplatform = false,
+                   const char* prefix = nullptr, bool warnOnFailure = true);
+
+  static void ClearSymbols(const SymLoadStruct* firstStruct);
+
+  PRFuncPtr LookupSymbol(const char* symname);
+
+  
+
+
+  static PRFuncPtr LookupSymbol(
+      PRLibrary* lib, const char* symname,
+      PlatformLookupFunction lookupFunction = nullptr);
+  static bool LoadSymbols(PRLibrary* lib, const SymLoadStruct* firstStruct,
+                          PlatformLookupFunction lookupFunction = nullptr,
+                          const char* prefix = nullptr,
+                          bool warnOnFailure = true);
+
+ protected:
+  GLLibraryLoader() {
+    mLibrary = nullptr;
+    mLookupFunc = nullptr;
   }
 
-  explicit SymbolLoader(const GetProcAddressT pfn)
-    : mPfn(pfn)
-  {
-    MOZ_ASSERT(mPfn);
-  }
-
-  explicit SymbolLoader(PRLibrary& lib)
-    : mLib(&lib)
-  {
-    MOZ_ASSERT(mLib);
-  }
-
-  PRFuncPtr GetProcAddress(const char*) const;
-  bool LoadSymbols(const SymLoadStruct* firstStruct, bool warnOnFailures = true) const;
+  PRLibrary* mLibrary;
+  PlatformLookupFunction mLookupFunc;
 };
 
 } 
