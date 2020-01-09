@@ -1189,7 +1189,7 @@ void Assembler::WriteInstStatic(uint32_t x, uint32_t* dest) {
 
 void Assembler::haltingAlign(int alignment) {
   
-  nopAlign(alignment);
+  m_buffer.align(alignment, 0xE1000070 | (0xBAA << 8) | 0xD);
 }
 
 void Assembler::nopAlign(int alignment) { m_buffer.align(alignment); }
