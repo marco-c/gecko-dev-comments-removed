@@ -94,7 +94,8 @@ class MOZ_RAII AutoChangePointListNotifier {
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
- already_AddRefed<DOMSVGPointList> DOMSVGPointList::GetDOMWrapper(
+
+already_AddRefed<DOMSVGPointList> DOMSVGPointList::GetDOMWrapper(
     void* aList, SVGElement* aElement, bool aIsAnimValList) {
   RefPtr<DOMSVGPointList> wrapper =
       SVGPointListTearoffTable().GetTearoff(aList);
@@ -105,8 +106,8 @@ class MOZ_RAII AutoChangePointListNotifier {
   return wrapper.forget();
 }
 
- DOMSVGPointList* DOMSVGPointList::GetDOMWrapperIfExists(
-    void* aList) {
+
+DOMSVGPointList* DOMSVGPointList::GetDOMWrapperIfExists(void* aList) {
   return SVGPointListTearoffTable().GetTearoff(aList);
 }
 

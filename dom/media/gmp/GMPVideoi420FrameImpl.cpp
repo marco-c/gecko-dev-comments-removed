@@ -52,7 +52,8 @@ GMPVideoFrameFormat GMPVideoi420FrameImpl::GetFrameFormat() {
 
 void GMPVideoi420FrameImpl::Destroy() { delete this; }
 
- bool GMPVideoi420FrameImpl::CheckFrameData(
+
+bool GMPVideoi420FrameImpl::CheckFrameData(
     const GMPVideoi420FrameData& aFrameData) {
   
   

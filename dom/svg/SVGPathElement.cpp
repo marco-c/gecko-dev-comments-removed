@@ -216,7 +216,8 @@ already_AddRefed<DOMSVGPathSegList> SVGPathElement::AnimatedPathSegList() {
 
 
 
- bool SVGPathElement::HasValidDimensions() const {
+
+bool SVGPathElement::HasValidDimensions() const {
   return !mD.GetAnimValue().IsEmpty();
 }
 

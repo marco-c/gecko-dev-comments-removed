@@ -69,9 +69,9 @@ already_AddRefed<Animation> CSSPseudoElement::Animate(
   return Element::Animate(target, aContext, aKeyframes, aOptions, aError);
 }
 
- already_AddRefed<CSSPseudoElement>
-CSSPseudoElement::GetCSSPseudoElement(dom::Element* aElement,
-                                      PseudoStyleType aType) {
+
+already_AddRefed<CSSPseudoElement> CSSPseudoElement::GetCSSPseudoElement(
+    dom::Element* aElement, PseudoStyleType aType) {
   if (!aElement) {
     return nullptr;
   }
@@ -96,7 +96,8 @@ CSSPseudoElement::GetCSSPseudoElement(dom::Element* aElement,
   return pseudo.forget();
 }
 
- nsAtom* CSSPseudoElement::GetCSSPseudoElementPropertyAtom(
+
+nsAtom* CSSPseudoElement::GetCSSPseudoElementPropertyAtom(
     PseudoStyleType aType) {
   switch (aType) {
     case PseudoStyleType::before:

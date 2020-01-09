@@ -64,11 +64,10 @@ PresentationConnection::PresentationConnection(
 
  PresentationConnection::~PresentationConnection() {}
 
- already_AddRefed<PresentationConnection>
-PresentationConnection::Create(nsPIDOMWindowInner* aWindow,
-                               const nsAString& aId, const nsAString& aUrl,
-                               const uint8_t aRole,
-                               PresentationConnectionList* aList) {
+
+already_AddRefed<PresentationConnection> PresentationConnection::Create(
+    nsPIDOMWindowInner* aWindow, const nsAString& aId, const nsAString& aUrl,
+    const uint8_t aRole, PresentationConnectionList* aList) {
   MOZ_ASSERT(aRole == nsIPresentationService::ROLE_CONTROLLER ||
              aRole == nsIPresentationService::ROLE_RECEIVER);
   RefPtr<PresentationConnection> connection =
@@ -131,12 +130,14 @@ void PresentationConnection::Shutdown() {
   }
 }
 
- void PresentationConnection::DisconnectFromOwner() {
+
+void PresentationConnection::DisconnectFromOwner() {
   Unused << NS_WARN_IF(NS_FAILED(ProcessConnectionWentAway()));
   DOMEventTargetHelper::DisconnectFromOwner();
 }
 
- JSObject* PresentationConnection::WrapObject(
+
+JSObject* PresentationConnection::WrapObject(
     JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
   return PresentationConnection_Binding::Wrap(aCx, this, aGivenProto);
 }

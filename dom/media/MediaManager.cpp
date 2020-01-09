@@ -867,13 +867,15 @@ MediaDevice::MediaDevice(const RefPtr<MediaDevice>& aOther, const nsString& aID,
 
 
 
- bool MediaDevice::StringsContain(
-    const OwningStringOrStringSequence& aStrings, nsString aN) {
+
+bool MediaDevice::StringsContain(const OwningStringOrStringSequence& aStrings,
+                                 nsString aN) {
   return aStrings.IsString() ? aStrings.GetAsString() == aN
                              : aStrings.GetAsStringSequence().Contains(aN);
 }
 
- uint32_t MediaDevice::FitnessDistance(
+
+uint32_t MediaDevice::FitnessDistance(
     nsString aN, const ConstrainDOMStringParameters& aParams) {
   if (aParams.mExact.WasPassed() &&
       !StringsContain(aParams.mExact.Value(), aN)) {
@@ -888,7 +890,8 @@ MediaDevice::MediaDevice(const RefPtr<MediaDevice>& aOther, const nsString& aID,
 
 
 
- uint32_t MediaDevice::FitnessDistance(
+
+uint32_t MediaDevice::FitnessDistance(
     nsString aN,
     const OwningStringOrStringSequenceOrConstrainDOMStringParameters&
         aConstraint) {
@@ -1948,10 +1951,12 @@ MediaManager::MediaManager() : mMediaThread(nullptr), mBackend(nullptr) {
 
 NS_IMPL_ISUPPORTS(MediaManager, nsIMediaManagerService, nsIObserver)
 
- StaticRefPtr<MediaManager> MediaManager::sSingleton;
+
+StaticRefPtr<MediaManager> MediaManager::sSingleton;
 
 #ifdef DEBUG
- bool MediaManager::IsInMediaThread() {
+
+bool MediaManager::IsInMediaThread() {
   return sSingleton ? (sSingleton->mMediaThread->thread_id() ==
                        PlatformThread::CurrentId())
                     : false;
@@ -1985,7 +1990,8 @@ class MTAThread : public base::Thread {
 
 
 
- MediaManager* MediaManager::Get() {
+
+MediaManager* MediaManager::Get() {
   if (!sSingleton) {
     MOZ_ASSERT(NS_IsMainThread());
 
@@ -2076,9 +2082,11 @@ class MTAThread : public base::Thread {
   return sSingleton;
 }
 
- MediaManager* MediaManager::GetIfExists() { return sSingleton; }
 
- already_AddRefed<MediaManager> MediaManager::GetInstance() {
+MediaManager* MediaManager::GetIfExists() { return sSingleton; }
+
+
+already_AddRefed<MediaManager> MediaManager::GetInstance() {
   
   RefPtr<MediaManager> service = MediaManager::Get();
   return service.forget();
@@ -2091,7 +2099,8 @@ media::Parent<media::NonE10s>* MediaManager::GetNonE10sParent() {
   return mNonE10sParent;
 }
 
- void MediaManager::StartupInit() {
+
+void MediaManager::StartupInit() {
 #ifdef WIN32
   if (!IsWin8OrLater()) {
     
@@ -2127,8 +2136,9 @@ void MediaManager::PostTask(already_AddRefed<Runnable> task) {
 }
 
 template <typename MozPromiseType, typename FunctionType>
- RefPtr<MozPromiseType> MediaManager::PostTask(
-    const char* aName, FunctionType&& aFunction) {
+
+RefPtr<MozPromiseType> MediaManager::PostTask(const char* aName,
+                                              FunctionType&& aFunction) {
   MozPromiseHolder<MozPromiseType> holder;
   RefPtr<MozPromiseType> promise = holder.Ensure(aName);
   MediaManager::PostTask(NS_NewRunnableFunction(
@@ -2137,7 +2147,8 @@ template <typename MozPromiseType, typename FunctionType>
   return promise;
 }
 
- nsresult MediaManager::NotifyRecordingStatusChange(
+
+nsresult MediaManager::NotifyRecordingStatusChange(
     nsPIDOMWindowInner* aWindow) {
   NS_ENSURE_ARG(aWindow);
 
@@ -2991,8 +3002,9 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetDisplayMedia(
   return MediaManager::GetUserMedia(aWindow, c, aCallerType);
 }
 
- void MediaManager::AnonymizeDevices(MediaDeviceSet& aDevices,
-                                                 const nsACString& aOriginKey) {
+
+void MediaManager::AnonymizeDevices(MediaDeviceSet& aDevices,
+                                    const nsACString& aOriginKey) {
   if (!aOriginKey.IsEmpty()) {
     for (RefPtr<MediaDevice>& device : aDevices) {
       nsString id;
@@ -3004,8 +3016,9 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetDisplayMedia(
   }
 }
 
- nsresult MediaManager::AnonymizeId(nsAString& aId,
-                                                const nsACString& aOriginKey) {
+
+nsresult MediaManager::AnonymizeId(nsAString& aId,
+                                   const nsACString& aOriginKey) {
   MOZ_ASSERT(NS_IsMainThread());
 
   nsresult rv;

@@ -546,8 +546,8 @@ void XMLDocument::EndLoad() {
   }
 }
 
- void XMLDocument::DocAddSizeOfExcludingThis(
-    nsWindowSizes& aWindowSizes) const {
+
+void XMLDocument::DocAddSizeOfExcludingThis(nsWindowSizes& aWindowSizes) const {
   Document::DocAddSizeOfExcludingThis(aWindowSizes);
 }
 

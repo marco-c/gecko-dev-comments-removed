@@ -32,7 +32,8 @@ NS_IMPL_ISUPPORTS(nsContentSecurityManager, nsIContentSecurityManager,
 
 static mozilla::LazyLogModule sCSMLog("CSMLog");
 
- bool nsContentSecurityManager::AllowTopLevelNavigationToDataURI(
+
+bool nsContentSecurityManager::AllowTopLevelNavigationToDataURI(
     nsIChannel* aChannel) {
   
   
@@ -110,7 +111,8 @@ static mozilla::LazyLogModule sCSMLog("CSMLog");
   return false;
 }
 
- bool nsContentSecurityManager::AllowInsecureRedirectToDataURI(
+
+bool nsContentSecurityManager::AllowInsecureRedirectToDataURI(
     nsIChannel* aNewChannel) {
   nsCOMPtr<nsILoadInfo> loadInfo = aNewChannel->LoadInfo();
   if (loadInfo->GetExternalContentPolicyType() !=
@@ -155,7 +157,8 @@ static mozilla::LazyLogModule sCSMLog("CSMLog");
   return false;
 }
 
- nsresult nsContentSecurityManager::CheckFTPSubresourceLoad(
+
+nsresult nsContentSecurityManager::CheckFTPSubresourceLoad(
     nsIChannel* aChannel) {
   
   

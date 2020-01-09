@@ -240,7 +240,8 @@ float SVGViewportElement::GetLength(uint8_t aCtxType) {
 
 
 
- gfxMatrix SVGViewportElement::PrependLocalTransformsTo(
+
+gfxMatrix SVGViewportElement::PrependLocalTransformsTo(
     const gfxMatrix& aMatrix, SVGTransformTypes aWhich) const {
   
   gfxMatrix userToParent;
@@ -288,7 +289,8 @@ float SVGViewportElement::GetLength(uint8_t aCtxType) {
   return childToUser * aMatrix;
 }
 
- bool SVGViewportElement::HasValidDimensions() const {
+
+bool SVGViewportElement::HasValidDimensions() const {
   return !IsInner() ||
          ((!mLengthAttributes[ATTR_WIDTH].IsExplicitlySet() ||
            mLengthAttributes[ATTR_WIDTH].GetAnimValInSpecifiedUnits() > 0) &&

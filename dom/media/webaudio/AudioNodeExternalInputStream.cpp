@@ -24,7 +24,8 @@ AudioNodeExternalInputStream::~AudioNodeExternalInputStream() {
   MOZ_COUNT_DTOR(AudioNodeExternalInputStream);
 }
 
- already_AddRefed<AudioNodeExternalInputStream>
+
+already_AddRefed<AudioNodeExternalInputStream>
 AudioNodeExternalInputStream::Create(MediaStreamGraph* aGraph,
                                      AudioNodeEngine* aEngine) {
   AudioContext* ctx = aEngine->NodeMainThread()->Context();

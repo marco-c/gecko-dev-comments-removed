@@ -72,12 +72,14 @@ class PreallocatedProcessManagerImpl final : public nsIObserver {
   bool IsEmpty() const { return !mPreallocatedProcess && !mLaunchInProgress; }
 };
 
- StaticRefPtr<PreallocatedProcessManagerImpl>
-    PreallocatedProcessManagerImpl::sSingleton;
- uint32_t PreallocatedProcessManagerImpl::sPrelaunchDelayMS = 0;
 
- PreallocatedProcessManagerImpl*
-PreallocatedProcessManagerImpl::Singleton() {
+StaticRefPtr<PreallocatedProcessManagerImpl>
+    PreallocatedProcessManagerImpl::sSingleton;
+
+uint32_t PreallocatedProcessManagerImpl::sPrelaunchDelayMS = 0;
+
+
+PreallocatedProcessManagerImpl* PreallocatedProcessManagerImpl::Singleton() {
   MOZ_ASSERT(NS_IsMainThread());
   if (!sSingleton) {
     sSingleton = new PreallocatedProcessManagerImpl();
@@ -316,22 +318,23 @@ inline PreallocatedProcessManagerImpl* GetPPMImpl() {
   return PreallocatedProcessManagerImpl::Singleton();
 }
 
- void PreallocatedProcessManager::AddBlocker(
-    ContentParent* aParent) {
+
+void PreallocatedProcessManager::AddBlocker(ContentParent* aParent) {
   GetPPMImpl()->AddBlocker(aParent);
 }
 
- void PreallocatedProcessManager::RemoveBlocker(
-    ContentParent* aParent) {
+
+void PreallocatedProcessManager::RemoveBlocker(ContentParent* aParent) {
   GetPPMImpl()->RemoveBlocker(aParent);
 }
 
- already_AddRefed<ContentParent>
-PreallocatedProcessManager::Take() {
+
+already_AddRefed<ContentParent> PreallocatedProcessManager::Take() {
   return GetPPMImpl()->Take();
 }
 
- bool PreallocatedProcessManager::Provide(ContentParent* aParent) {
+
+bool PreallocatedProcessManager::Provide(ContentParent* aParent) {
   return GetPPMImpl()->Provide(aParent);
 }
 

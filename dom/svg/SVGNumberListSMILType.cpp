@@ -33,7 +33,8 @@
 
 namespace mozilla {
 
- SVGNumberListSMILType SVGNumberListSMILType::sSingleton;
+
+SVGNumberListSMILType SVGNumberListSMILType::sSingleton;
 
 
 

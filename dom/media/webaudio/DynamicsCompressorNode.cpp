@@ -180,10 +180,10 @@ DynamicsCompressorNode::DynamicsCompressorNode(AudioContext* aContext)
       aContext, engine, AudioNodeStream::NO_STREAM_FLAGS, aContext->Graph());
 }
 
- already_AddRefed<DynamicsCompressorNode>
-DynamicsCompressorNode::Create(AudioContext& aAudioContext,
-                               const DynamicsCompressorOptions& aOptions,
-                               ErrorResult& aRv) {
+
+already_AddRefed<DynamicsCompressorNode> DynamicsCompressorNode::Create(
+    AudioContext& aAudioContext, const DynamicsCompressorOptions& aOptions,
+    ErrorResult& aRv) {
   if (aAudioContext.CheckClosed(aRv)) {
     return nullptr;
   }

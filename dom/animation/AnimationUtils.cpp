@@ -21,8 +21,9 @@ using namespace mozilla::dom;
 
 namespace mozilla {
 
- void AnimationUtils::LogAsyncAnimationFailure(
-    nsCString& aMessage, const nsIContent* aContent) {
+
+void AnimationUtils::LogAsyncAnimationFailure(nsCString& aMessage,
+                                              const nsIContent* aContent) {
   if (aContent) {
     aMessage.AppendLiteral(" [");
     aMessage.Append(nsAtomCString(aContent->NodeInfo()->NameAtom()));
@@ -39,7 +40,8 @@ namespace mozilla {
   printf_stderr("%s", aMessage.get());
 }
 
- Document* AnimationUtils::GetCurrentRealmDocument(JSContext* aCx) {
+
+Document* AnimationUtils::GetCurrentRealmDocument(JSContext* aCx) {
   nsGlobalWindowInner* win = xpc::CurrentWindowOrNull(aCx);
   if (!win) {
     return nullptr;
@@ -47,8 +49,8 @@ namespace mozilla {
   return win->GetDoc();
 }
 
- Document* AnimationUtils::GetDocumentFromGlobal(
-    JSObject* aGlobalObject) {
+
+Document* AnimationUtils::GetDocumentFromGlobal(JSObject* aGlobalObject) {
   nsGlobalWindowInner* win = xpc::WindowOrNull(aGlobalObject);
   if (!win) {
     return nullptr;
@@ -56,7 +58,8 @@ namespace mozilla {
   return win->GetDoc();
 }
 
- bool AnimationUtils::IsOffscreenThrottlingEnabled() {
+
+bool AnimationUtils::IsOffscreenThrottlingEnabled() {
   static bool sOffscreenThrottlingEnabled;
   static bool sPrefCached = false;
 
@@ -69,8 +72,9 @@ namespace mozilla {
   return sOffscreenThrottlingEnabled;
 }
 
- bool AnimationUtils::EffectSetContainsAnimatedScale(
-    EffectSet& aEffects, const nsIFrame* aFrame) {
+
+bool AnimationUtils::EffectSetContainsAnimatedScale(EffectSet& aEffects,
+                                                    const nsIFrame* aFrame) {
   for (const dom::KeyframeEffect* effect : aEffects) {
     if (effect->ContainsAnimatedScale(aFrame)) {
       return true;

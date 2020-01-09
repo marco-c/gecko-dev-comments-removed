@@ -27,7 +27,8 @@ bool MP3Decoder::IsSupportedType(const MediaContainerType& aContainerType) {
   return false;
 }
 
- nsTArray<UniquePtr<TrackInfo>> MP3Decoder::GetTracksInfo(
+
+nsTArray<UniquePtr<TrackInfo>> MP3Decoder::GetTracksInfo(
     const MediaContainerType& aType) {
   nsTArray<UniquePtr<TrackInfo>> tracks;
   if (!IsSupportedType(aType)) {

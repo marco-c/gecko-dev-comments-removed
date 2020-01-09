@@ -62,7 +62,8 @@ void AudioNodeStream::DestroyImpl() {
   ProcessedMediaStream::DestroyImpl();
 }
 
- already_AddRefed<AudioNodeStream> AudioNodeStream::Create(
+
+already_AddRefed<AudioNodeStream> AudioNodeStream::Create(
     AudioContext* aCtx, AudioNodeEngine* aEngine, Flags aFlags,
     MediaStreamGraph* aGraph) {
   MOZ_ASSERT(NS_IsMainThread());

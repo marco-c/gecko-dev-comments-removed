@@ -229,8 +229,9 @@ HTMLCanvasPrintState::HTMLCanvasPrintState(
 
 HTMLCanvasPrintState::~HTMLCanvasPrintState() {}
 
- JSObject* HTMLCanvasPrintState::WrapObject(
-    JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
+
+JSObject* HTMLCanvasPrintState::WrapObject(JSContext* aCx,
+                                           JS::Handle<JSObject*> aGivenProto) {
   return MozCanvasPrintState_Binding::Wrap(aCx, this, aGivenProto);
 }
 
@@ -386,8 +387,9 @@ NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(HTMLCanvasElement,
 
 NS_IMPL_ELEMENT_CLONE(HTMLCanvasElement)
 
- JSObject* HTMLCanvasElement::WrapNode(
-    JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
+
+JSObject* HTMLCanvasElement::WrapNode(JSContext* aCx,
+                                      JS::Handle<JSObject*> aGivenProto) {
   return HTMLCanvasElement_Binding::Wrap(aCx, this, aGivenProto);
 }
 
@@ -1376,7 +1378,8 @@ void HTMLCanvasElement::OnMemoryPressure() {
   }
 }
 
- void HTMLCanvasElement::SetAttrFromAsyncCanvasRenderer(
+
+void HTMLCanvasElement::SetAttrFromAsyncCanvasRenderer(
     AsyncCanvasRenderer* aRenderer) {
   HTMLCanvasElement* element = aRenderer->mHTMLCanvasElement;
   if (!element) {
@@ -1407,7 +1410,8 @@ void HTMLCanvasElement::OnMemoryPressure() {
   element->mResetLayer = true;
 }
 
- void HTMLCanvasElement::InvalidateFromAsyncCanvasRenderer(
+
+void HTMLCanvasElement::InvalidateFromAsyncCanvasRenderer(
     AsyncCanvasRenderer* aRenderer) {
   HTMLCanvasElement* element = aRenderer->mHTMLCanvasElement;
   if (!element) {

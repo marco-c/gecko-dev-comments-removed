@@ -41,8 +41,8 @@ MediaStreamAudioSourceNode::MediaStreamAudioSourceNode(AudioContext* aContext)
     : AudioNode(aContext, 2, ChannelCountMode::Max,
                 ChannelInterpretation::Speakers) {}
 
- already_AddRefed<MediaStreamAudioSourceNode>
-MediaStreamAudioSourceNode::Create(
+
+already_AddRefed<MediaStreamAudioSourceNode> MediaStreamAudioSourceNode::Create(
     AudioContext& aAudioContext, const MediaStreamAudioSourceOptions& aOptions,
     ErrorResult& aRv) {
   if (aAudioContext.IsOffline()) {

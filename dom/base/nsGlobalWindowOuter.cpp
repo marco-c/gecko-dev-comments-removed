@@ -4455,8 +4455,8 @@ bool nsGlobalWindowOuter::SetWidgetFullscreen(FullscreenReason aReason,
   return NS_SUCCEEDED(rv);
 }
 
- void nsGlobalWindowOuter::FullscreenWillChange(
-    bool aIsFullscreen) {
+
+void nsGlobalWindowOuter::FullscreenWillChange(bool aIsFullscreen) {
   if (aIsFullscreen) {
     DispatchCustomEvent(NS_LITERAL_STRING("willenterfullscreen"));
   } else {
@@ -4464,8 +4464,8 @@ bool nsGlobalWindowOuter::SetWidgetFullscreen(FullscreenReason aReason,
   }
 }
 
- void nsGlobalWindowOuter::FinishFullscreenChange(
-    bool aIsFullscreen) {
+
+void nsGlobalWindowOuter::FinishFullscreenChange(bool aIsFullscreen) {
   if (aIsFullscreen != mFullscreen) {
     NS_WARNING("Failed to toggle fullscreen state of the widget");
     
@@ -5743,9 +5743,11 @@ nsresult nsGlobalWindowOuter::OpenDialog(const nsAString& aUrl,
 }
 
 
- nsresult nsGlobalWindowOuter::OpenNoNavigate(
-    const nsAString& aUrl, const nsAString& aName, const nsAString& aOptions,
-    nsPIDOMWindowOuter** _retval) {
+
+nsresult nsGlobalWindowOuter::OpenNoNavigate(const nsAString& aUrl,
+                                             const nsAString& aName,
+                                             const nsAString& aOptions,
+                                             nsPIDOMWindowOuter** _retval) {
   return OpenInternal(aUrl, aName, aOptions,
                       false,             
                       false,             
@@ -7775,7 +7777,8 @@ mozilla::dom::TabGroup* nsPIDOMWindowOuter::TabGroup() {
   return nsGlobalWindowOuter::Cast(this)->TabGroupOuter();
 }
 
- already_AddRefed<nsGlobalWindowOuter> nsGlobalWindowOuter::Create(
+
+already_AddRefed<nsGlobalWindowOuter> nsGlobalWindowOuter::Create(
     nsDocShell* aDocShell, bool aIsChrome) {
   uint64_t outerWindowID = aDocShell->GetOuterWindowID();
   RefPtr<nsGlobalWindowOuter> window = new nsGlobalWindowOuter(outerWindowID);

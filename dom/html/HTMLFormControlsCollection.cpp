@@ -20,7 +20,8 @@
 namespace mozilla {
 namespace dom {
 
- bool HTMLFormControlsCollection::ShouldBeInElements(
+
+bool HTMLFormControlsCollection::ShouldBeInElements(
     nsIFormControl* aFormControl) {
   
   
@@ -261,11 +262,11 @@ Element* HTMLFormControlsCollection::GetElementAt(uint32_t aIndex) {
   return mElements.SafeElementAt(aIndex, nullptr);
 }
 
- nsINode* HTMLFormControlsCollection::GetParentObject() {
-  return mForm;
-}
 
- Element* HTMLFormControlsCollection::GetFirstNamedElement(
+nsINode* HTMLFormControlsCollection::GetParentObject() { return mForm; }
+
+
+Element* HTMLFormControlsCollection::GetFirstNamedElement(
     const nsAString& aName, bool& aFound) {
   Nullable<OwningRadioNodeListOrElement> maybeResult;
   NamedGetter(aName, aFound, maybeResult);
@@ -315,7 +316,8 @@ void HTMLFormControlsCollection::GetSupportedNames(nsTArray<nsString>& aNames) {
   }
 }
 
- JSObject* HTMLFormControlsCollection::WrapObject(
+
+JSObject* HTMLFormControlsCollection::WrapObject(
     JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
   return HTMLFormControlsCollection_Binding::Wrap(aCx, this, aGivenProto);
 }

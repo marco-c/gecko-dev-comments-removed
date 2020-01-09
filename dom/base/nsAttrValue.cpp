@@ -34,7 +34,8 @@ using namespace mozilla;
 #define MISC_STR_PTR(_cont) \
   reinterpret_cast<void*>((_cont)->mStringBits & NS_ATTRVALUE_POINTERVALUE_MASK)
 
- MiscContainer* nsAttrValue::AllocMiscContainer() {
+
+MiscContainer* nsAttrValue::AllocMiscContainer() {
   MOZ_ASSERT(NS_IsMainThread());
   MiscContainer* cont = nullptr;
   Swap(cont, sMiscContainerCache);
@@ -46,7 +47,8 @@ using namespace mozilla;
   return new MiscContainer;
 }
 
- void nsAttrValue::DeallocMiscContainer(MiscContainer* aCont) {
+
+void nsAttrValue::DeallocMiscContainer(MiscContainer* aCont) {
   MOZ_ASSERT(NS_IsMainThread());
   if (!aCont) {
     return;

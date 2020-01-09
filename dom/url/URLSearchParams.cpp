@@ -86,15 +86,15 @@ void URLParams::Delete(const nsAString& aName) {
   }
 }
 
- void URLParams::ConvertString(const nsACString& aInput,
-                                           nsAString& aOutput) {
+
+void URLParams::ConvertString(const nsACString& aInput, nsAString& aOutput) {
   if (NS_FAILED(UTF_8_ENCODING->DecodeWithoutBOMHandling(aInput, aOutput))) {
     MOZ_CRASH("Out of memory when converting URL params.");
   }
 }
 
- void URLParams::DecodeString(const nsACString& aInput,
-                                          nsAString& aOutput) {
+
+void URLParams::DecodeString(const nsACString& aInput, nsAString& aOutput) {
   nsACString::const_iterator start, end;
   aInput.BeginReading(start);
   aInput.EndReading(end);
@@ -146,8 +146,8 @@ void URLParams::Delete(const nsAString& aName) {
   ConvertString(unescaped, aOutput);
 }
 
- bool URLParams::Parse(const nsACString& aInput,
-                                   ForEachIterator& aIterator) {
+
+bool URLParams::Parse(const nsACString& aInput, ForEachIterator& aIterator) {
   nsACString::const_iterator start, end;
   aInput.BeginReading(start);
   aInput.EndReading(end);
@@ -225,9 +225,9 @@ class MOZ_STACK_CLASS ExtractURLParam final
 
 
 
- bool URLParams::Extract(const nsACString& aInput,
-                                     const nsAString& aName,
-                                     nsAString& aValue) {
+
+bool URLParams::Extract(const nsACString& aInput, const nsAString& aName,
+                        nsAString& aValue) {
   aValue.SetIsVoid(true);
   ExtractURLParam iterator(aName, aValue);
   return !URLParams::Parse(aInput, iterator);
@@ -320,7 +320,8 @@ JSObject* URLSearchParams::WrapObject(JSContext* aCx,
   return URLSearchParams_Binding::Wrap(aCx, this, aGivenProto);
 }
 
- already_AddRefed<URLSearchParams> URLSearchParams::Constructor(
+
+already_AddRefed<URLSearchParams> URLSearchParams::Constructor(
     const GlobalObject& aGlobal,
     const USVStringSequenceSequenceOrUSVStringUSVStringRecordOrUSVString& aInit,
     ErrorResult& aRv) {

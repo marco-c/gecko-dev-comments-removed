@@ -155,7 +155,8 @@ IIRFilterNode::IIRFilterNode(AudioContext* aContext,
       aContext, engine, AudioNodeStream::NO_STREAM_FLAGS, aContext->Graph());
 }
 
- already_AddRefed<IIRFilterNode> IIRFilterNode::Create(
+
+already_AddRefed<IIRFilterNode> IIRFilterNode::Create(
     AudioContext& aAudioContext, const IIRFilterOptions& aOptions,
     ErrorResult& aRv) {
   if (aAudioContext.CheckClosed(aRv)) {

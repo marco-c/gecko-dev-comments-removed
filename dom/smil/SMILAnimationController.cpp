@@ -538,7 +538,8 @@ void SMILAnimationController::DoMilestoneSamples() {
   }
 }
 
- void SMILAnimationController::SampleTimedElement(
+
+void SMILAnimationController::SampleTimedElement(
     SVGAnimationElement* aElement, TimeContainerHashtable* aActiveContainers) {
   SMILTimeContainer* timeContainer = aElement->GetTimeContainer();
   if (!timeContainer) return;
@@ -561,7 +562,8 @@ void SMILAnimationController::DoMilestoneSamples() {
   aElement->TimedElement().SampleAt(containerTime);
 }
 
- void SMILAnimationController::AddAnimationToCompositorTable(
+
+void SMILAnimationController::AddAnimationToCompositorTable(
     SVGAnimationElement* aElement, SMILCompositorTable* aCompositorTable,
     bool& aStyleFlushNeeded) {
   
@@ -609,7 +611,8 @@ static inline bool IsTransformAttribute(int32_t aNamespaceID,
 
 
 
- bool SMILAnimationController::GetTargetIdentifierForAnimation(
+
+bool SMILAnimationController::GetTargetIdentifierForAnimation(
     SVGAnimationElement* aAnimElem, SMILTargetIdentifier& aResult) {
   
   Element* targetElem = aAnimElem->GetTargetElementContent();

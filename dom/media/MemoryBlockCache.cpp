@@ -56,17 +56,19 @@ class MemoryBlockCacheTelemetry final : public nsIObserver,
 };
 
 
- StaticRefPtr<MemoryBlockCacheTelemetry>
+
+StaticRefPtr<MemoryBlockCacheTelemetry>
     MemoryBlockCacheTelemetry::gMemoryBlockCacheTelemetry;
 
 
- Atomic<size_t> MemoryBlockCacheTelemetry::gCombinedSizesWatermark;
+
+Atomic<size_t> MemoryBlockCacheTelemetry::gCombinedSizesWatermark;
 
 NS_IMPL_ISUPPORTS(MemoryBlockCacheTelemetry, nsIObserver,
                   nsISupportsWeakReference)
 
- size_t MemoryBlockCacheTelemetry::NotifyCombinedSizeGrown(
-    size_t aNewSize) {
+
+size_t MemoryBlockCacheTelemetry::NotifyCombinedSizeGrown(size_t aNewSize) {
   
   if (!gMemoryBlockCacheTelemetry) {
     MOZ_ASSERT(NS_IsMainThread());

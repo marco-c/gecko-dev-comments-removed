@@ -1280,7 +1280,8 @@ nsJSURI::Mutate(nsIURIMutator** aMutator) {
   return NS_OK;
 }
 
- nsresult nsJSURI::EqualsInternal(
+
+nsresult nsJSURI::EqualsInternal(
     nsIURI* aOther, mozilla::net::nsSimpleURI::RefHandlingEnum aRefHandlingMode,
     bool* aResult) {
   NS_ENSURE_ARG_POINTER(aOther);

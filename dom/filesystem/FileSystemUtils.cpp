@@ -15,8 +15,9 @@ bool TokenizerIgnoreNothing(char16_t ) { return false; }
 
 }  
 
- bool FileSystemUtils::IsDescendantPath(
-    const nsAString& aPath, const nsAString& aDescendantPath) {
+
+bool FileSystemUtils::IsDescendantPath(const nsAString& aPath,
+                                       const nsAString& aDescendantPath) {
   
   if (!aDescendantPath.Equals(aPath) &&
       !StringBeginsWith(aDescendantPath, aPath)) {
@@ -26,8 +27,9 @@ bool TokenizerIgnoreNothing(char16_t ) { return false; }
   return true;
 }
 
- bool FileSystemUtils::IsValidRelativeDOMPath(
-    const nsAString& aPath, nsTArray<nsString>& aParts) {
+
+bool FileSystemUtils::IsValidRelativeDOMPath(const nsAString& aPath,
+                                             nsTArray<nsString>& aParts) {
   
   if (aPath.IsEmpty()) {
     return false;
@@ -62,7 +64,8 @@ bool TokenizerIgnoreNothing(char16_t ) { return false; }
   return true;
 }
 
- nsresult FileSystemUtils::DispatchRunnable(
+
+nsresult FileSystemUtils::DispatchRunnable(
     nsIGlobalObject* aGlobal, already_AddRefed<nsIRunnable>&& aRunnable) {
   nsCOMPtr<nsIRunnable> runnable = aRunnable;
 

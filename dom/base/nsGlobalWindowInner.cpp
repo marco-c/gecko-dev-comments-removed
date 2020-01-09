@@ -2850,8 +2850,9 @@ void nsGlobalWindowInner::GetOwnPropertyNames(JSContext* aCx,
   }
 }
 
- bool nsGlobalWindowInner::IsPrivilegedChromeWindow(
-    JSContext* aCx, JSObject* aObj) {
+
+bool nsGlobalWindowInner::IsPrivilegedChromeWindow(JSContext* aCx,
+                                                   JSObject* aObj) {
   
   nsGlobalWindowInner* win = xpc::WindowOrNull(aObj);
   return win && win->IsChromeWindow() &&
@@ -2859,27 +2860,30 @@ void nsGlobalWindowInner::GetOwnPropertyNames(JSContext* aCx,
              nsContentUtils::GetSystemPrincipal();
 }
 
- bool nsGlobalWindowInner::OfflineCacheAllowedForContext(
-    JSContext* aCx, JSObject* aObj) {
+
+bool nsGlobalWindowInner::OfflineCacheAllowedForContext(JSContext* aCx,
+                                                        JSObject* aObj) {
   return IsSecureContextOrObjectIsFromSecureContext(aCx, aObj) ||
          Preferences::GetBool("browser.cache.offline.insecure.enable");
 }
 
- bool nsGlobalWindowInner::IsRequestIdleCallbackEnabled(
-    JSContext* aCx, JSObject* aObj) {
+
+bool nsGlobalWindowInner::IsRequestIdleCallbackEnabled(JSContext* aCx,
+                                                       JSObject* aObj) {
   
   return nsContentUtils::RequestIdleCallbackEnabled() ||
          nsContentUtils::IsSystemCaller(aCx);
 }
 
- bool nsGlobalWindowInner::RegisterProtocolHandlerAllowedForContext(
+
+bool nsGlobalWindowInner::RegisterProtocolHandlerAllowedForContext(
     JSContext* aCx, JSObject* aObj) {
   return IsSecureContextOrObjectIsFromSecureContext(aCx, aObj) ||
          Preferences::GetBool("dom.registerProtocolHandler.insecure.enabled");
 }
 
- bool nsGlobalWindowInner::DeviceSensorsEnabled(JSContext* aCx,
-                                                            JSObject* aObj) {
+
+bool nsGlobalWindowInner::DeviceSensorsEnabled(JSContext* aCx, JSObject* aObj) {
   return Preferences::GetBool("device.sensors.enabled");
 }
 
@@ -7214,7 +7218,8 @@ mozilla::dom::TabGroup* nsPIDOMWindowInner::TabGroup() {
   return nsGlobalWindowInner::Cast(this)->TabGroupInner();
 }
 
- already_AddRefed<nsGlobalWindowInner> nsGlobalWindowInner::Create(
+
+already_AddRefed<nsGlobalWindowInner> nsGlobalWindowInner::Create(
     nsGlobalWindowOuter* aOuterWindow, bool aIsChrome) {
   RefPtr<nsGlobalWindowInner> window = new nsGlobalWindowInner(aOuterWindow);
   if (aIsChrome) {

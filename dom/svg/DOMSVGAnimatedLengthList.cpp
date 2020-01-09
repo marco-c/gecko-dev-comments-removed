@@ -53,7 +53,8 @@ already_AddRefed<DOMSVGLengthList> DOMSVGAnimatedLengthList::AnimVal() {
   return animVal.forget();
 }
 
- already_AddRefed<DOMSVGAnimatedLengthList>
+
+already_AddRefed<DOMSVGAnimatedLengthList>
 DOMSVGAnimatedLengthList::GetDOMWrapper(SVGAnimatedLengthList* aList,
                                         dom::SVGElement* aElement,
                                         uint8_t aAttrEnum, uint8_t aAxis) {
@@ -66,8 +67,9 @@ DOMSVGAnimatedLengthList::GetDOMWrapper(SVGAnimatedLengthList* aList,
   return wrapper.forget();
 }
 
- DOMSVGAnimatedLengthList*
-DOMSVGAnimatedLengthList::GetDOMWrapperIfExists(SVGAnimatedLengthList* aList) {
+
+DOMSVGAnimatedLengthList* DOMSVGAnimatedLengthList::GetDOMWrapperIfExists(
+    SVGAnimatedLengthList* aList) {
   return SVGAnimatedLengthListTearoffTable().GetTearoff(aList);
 }
 

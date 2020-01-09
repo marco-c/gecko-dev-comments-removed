@@ -84,7 +84,8 @@ already_AddRefed<SVGAnimatedLength> SVGMaskElement::Height() {
 
 
 
- bool SVGMaskElement::HasValidDimensions() const {
+
+bool SVGMaskElement::HasValidDimensions() const {
   return (!mLengthAttributes[ATTR_WIDTH].IsExplicitlySet() ||
           mLengthAttributes[ATTR_WIDTH].GetAnimValInSpecifiedUnits() > 0) &&
          (!mLengthAttributes[ATTR_HEIGHT].IsExplicitlySet() ||

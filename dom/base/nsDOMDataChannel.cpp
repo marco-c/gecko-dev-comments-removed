@@ -48,8 +48,9 @@ nsDOMDataChannel::~nsDOMDataChannel() {
   mDataChannel->Close();
 }
 
- JSObject* nsDOMDataChannel::WrapObject(
-    JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
+
+JSObject* nsDOMDataChannel::WrapObject(JSContext* aCx,
+                                       JS::Handle<JSObject*> aGivenProto) {
   return RTCDataChannel_Binding::Wrap(aCx, this, aGivenProto);
 }
 

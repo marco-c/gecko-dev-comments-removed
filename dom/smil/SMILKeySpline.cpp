@@ -46,12 +46,14 @@ void SMILKeySpline::CalcSampleValues() {
   }
 }
 
- double SMILKeySpline::CalcBezier(double aT, double aA1, double aA2) {
+
+double SMILKeySpline::CalcBezier(double aT, double aA1, double aA2) {
   
   return ((A(aA1, aA2) * aT + B(aA1, aA2)) * aT + C(aA1)) * aT;
 }
 
- double SMILKeySpline::GetSlope(double aT, double aA1, double aA2) {
+
+double SMILKeySpline::GetSlope(double aT, double aA1, double aA2) {
   return 3.0 * A(aA1, aA2) * aT * aT + 2.0 * B(aA1, aA2) * aT + C(aA1);
 }
 

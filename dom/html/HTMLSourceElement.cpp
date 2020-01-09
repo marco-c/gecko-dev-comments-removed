@@ -47,8 +47,9 @@ bool HTMLSourceElement::MatchesCurrentMedia() {
   return true;
 }
 
- bool HTMLSourceElement::WouldMatchMediaForDocument(
-    const nsAString& aMedia, const Document* aDocument) {
+
+bool HTMLSourceElement::WouldMatchMediaForDocument(const nsAString& aMedia,
+                                                   const Document* aDocument) {
   if (aMedia.IsEmpty()) {
     return true;
   }

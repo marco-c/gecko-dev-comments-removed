@@ -17,10 +17,11 @@ namespace mozilla {
 using namespace mozilla::ipc;
 using namespace mozilla::layers;
 
- StaticRefPtr<MediaSystemResourceManager>
-    MediaSystemResourceManager::sSingleton;
 
- MediaSystemResourceManager* MediaSystemResourceManager::Get() {
+StaticRefPtr<MediaSystemResourceManager> MediaSystemResourceManager::sSingleton;
+
+
+MediaSystemResourceManager* MediaSystemResourceManager::Get() {
   if (sSingleton) {
     return sSingleton;
   }
@@ -28,7 +29,8 @@ using namespace mozilla::layers;
   return sSingleton;
 }
 
- void MediaSystemResourceManager::Shutdown() {
+
+void MediaSystemResourceManager::Shutdown() {
   MOZ_ASSERT(InImageBridgeChildThread());
   if (sSingleton) {
     sSingleton->CloseIPC();
@@ -36,7 +38,8 @@ using namespace mozilla::layers;
   }
 }
 
- void MediaSystemResourceManager::Init() {
+
+void MediaSystemResourceManager::Init() {
   RefPtr<ImageBridgeChild> imageBridge = ImageBridgeChild::GetSingleton();
   if (!imageBridge) {
     NS_WARNING("ImageBridge does not exist");

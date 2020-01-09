@@ -66,7 +66,8 @@ already_AddRefed<SVGAnimatedLength> SVGForeignObjectElement::Height() {
 
 
 
- gfxMatrix SVGForeignObjectElement::PrependLocalTransformsTo(
+
+gfxMatrix SVGForeignObjectElement::PrependLocalTransformsTo(
     const gfxMatrix& aMatrix, SVGTransformTypes aWhich) const {
   
   gfxMatrix fromUserSpace =
@@ -86,7 +87,8 @@ already_AddRefed<SVGAnimatedLength> SVGForeignObjectElement::Height() {
   return toUserSpace * fromUserSpace;
 }
 
- bool SVGForeignObjectElement::HasValidDimensions() const {
+
+bool SVGForeignObjectElement::HasValidDimensions() const {
   return mLengthAttributes[ATTR_WIDTH].IsExplicitlySet() &&
          mLengthAttributes[ATTR_WIDTH].GetAnimValInSpecifiedUnits() > 0 &&
          mLengthAttributes[ATTR_HEIGHT].IsExplicitlySet() &&

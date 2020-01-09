@@ -243,7 +243,8 @@ void GetEntryHelper::Error(nsresult aError) {
 
 NS_IMPL_ISUPPORTS0(GetEntryHelper);
 
- void FileSystemEntryCallbackHelper::Call(
+
+void FileSystemEntryCallbackHelper::Call(
     nsIGlobalObject* aGlobalObject,
     const Optional<OwningNonNull<FileSystemEntryCallback>>& aEntryCallback,
     FileSystemEntry* aEntry) {
@@ -258,7 +259,8 @@ NS_IMPL_ISUPPORTS0(GetEntryHelper);
   }
 }
 
- void ErrorCallbackHelper::Call(
+
+void ErrorCallbackHelper::Call(
     nsIGlobalObject* aGlobal,
     const Optional<OwningNonNull<ErrorCallback>>& aErrorCallback,
     nsresult aError) {

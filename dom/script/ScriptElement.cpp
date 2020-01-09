@@ -36,7 +36,8 @@ ScriptElement::ScriptAvailable(nsresult aResult, nsIScriptElement* aElement,
   return NS_OK;
 }
 
- nsresult ScriptElement::FireErrorEvent() {
+
+nsresult ScriptElement::FireErrorEvent() {
   nsCOMPtr<nsIContent> cont = do_QueryInterface((nsIScriptElement*)this);
 
   return nsContentUtils::DispatchTrustedEvent(cont->OwnerDoc(), cont,

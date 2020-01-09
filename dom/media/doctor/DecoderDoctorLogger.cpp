@@ -21,7 +21,8 @@ namespace mozilla {
 
 static DDMediaLogs* sMediaLogs;
 
- void DecoderDoctorLogger::Init() {
+
+void DecoderDoctorLogger::Init() {
   MOZ_ASSERT(static_cast<LogState>(sLogState) == scDisabled);
   if (MOZ_LOG_TEST(sDecoderDoctorLoggerLog, LogLevel::Error) ||
       MOZ_LOG_TEST(sDecoderDoctorLoggerEndLog, LogLevel::Error)) {
@@ -53,8 +54,8 @@ struct DDLogDeleter {
 };
 static UniquePtr<DDLogDeleter> sDDLogDeleter;
 
- void DecoderDoctorLogger::PanicInternal(const char* aReason,
-                                                     bool aDontBlock) {
+
+void DecoderDoctorLogger::PanicInternal(const char* aReason, bool aDontBlock) {
   for (;;) {
     const LogState state = static_cast<LogState>(sLogState);
     if (state == scEnabling && !aDontBlock) {
@@ -86,7 +87,8 @@ static UniquePtr<DDLogDeleter> sDDLogDeleter;
   }
 }
 
- bool DecoderDoctorLogger::EnsureLogIsEnabled() {
+
+bool DecoderDoctorLogger::EnsureLogIsEnabled() {
   for (;;) {
     LogState state = static_cast<LogState>(sLogState);
     switch (state) {
@@ -137,9 +139,8 @@ static UniquePtr<DDLogDeleter> sDDLogDeleter;
   }
 }
 
- void DecoderDoctorLogger::EnableLogging() {
-  Unused << EnsureLogIsEnabled();
-}
+
+void DecoderDoctorLogger::EnableLogging() { Unused << EnsureLogIsEnabled(); }
 
  RefPtr<DecoderDoctorLogger::LogMessagesPromise>
 DecoderDoctorLogger::RetrieveMessages(
@@ -152,11 +153,11 @@ DecoderDoctorLogger::RetrieveMessages(
   return sMediaLogs->RetrieveMessages(aMediaElement);
 }
 
- void DecoderDoctorLogger::Log(const char* aSubjectTypeName,
-                                           const void* aSubjectPointer,
-                                           DDLogCategory aCategory,
-                                           const char* aLabel,
-                                           DDLogValue&& aValue) {
+
+void DecoderDoctorLogger::Log(const char* aSubjectTypeName,
+                              const void* aSubjectPointer,
+                              DDLogCategory aCategory, const char* aLabel,
+                              DDLogValue&& aValue) {
   if (IsDDLoggingEnabled()) {
     MOZ_ASSERT(sMediaLogs);
     sMediaLogs->Log(aSubjectTypeName, aSubjectPointer, aCategory, aLabel,

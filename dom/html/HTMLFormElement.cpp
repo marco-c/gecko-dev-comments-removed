@@ -919,8 +919,10 @@ HTMLFormElement::GetElementAt(int32_t aIndex) const {
 
 
 
- int32_t HTMLFormElement::CompareFormControlPosition(
-    Element* aElement1, Element* aElement2, const nsIContent* aForm) {
+
+int32_t HTMLFormElement::CompareFormControlPosition(Element* aElement1,
+                                                    Element* aElement2,
+                                                    const nsIContent* aForm) {
   NS_ASSERTION(aElement1 != aElement2, "Comparing a form control to itself");
 
   
@@ -955,7 +957,8 @@ HTMLFormElement::GetElementAt(int32_t aIndex) const {
 
 
 
- void HTMLFormElement::AssertDocumentOrder(
+
+void HTMLFormElement::AssertDocumentOrder(
     const nsTArray<nsGenericHTMLFormElement*>& aControls, nsIContent* aForm) {
   
   
@@ -979,7 +982,8 @@ HTMLFormElement::GetElementAt(int32_t aIndex) const {
 
 
 
- void HTMLFormElement::AssertDocumentOrder(
+
+void HTMLFormElement::AssertDocumentOrder(
     const nsTArray<RefPtr<nsGenericHTMLFormElement>>& aControls,
     nsIContent* aForm) {
   

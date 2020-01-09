@@ -184,8 +184,8 @@ void InternalRequest::OverrideContentPolicyType(
   mContentPolicyTypeOverridden = true;
 }
 
- RequestDestination
-InternalRequest::MapContentPolicyTypeToRequestDestination(
+
+RequestDestination InternalRequest::MapContentPolicyTypeToRequestDestination(
     nsContentPolicyType aContentPolicyType) {
   RequestDestination destination = RequestDestination::_empty;
   switch (aContentPolicyType) {

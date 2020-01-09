@@ -18,7 +18,8 @@ bool SMILCompositor::KeyEquals(KeyTypePointer aKey) const {
   return aKey && aKey->Equals(mKey);
 }
 
- PLDHashNumber SMILCompositor::HashKey(KeyTypePointer aKey) {
+
+PLDHashNumber SMILCompositor::HashKey(KeyTypePointer aKey) {
   
   
   

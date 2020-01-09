@@ -31,10 +31,11 @@ using namespace hal;
 
 NS_IMPL_ISUPPORTS(PowerManagerService, nsIPowerManagerService)
 
- StaticRefPtr<PowerManagerService> PowerManagerService::sSingleton;
 
- already_AddRefed<PowerManagerService>
-PowerManagerService::GetInstance() {
+StaticRefPtr<PowerManagerService> PowerManagerService::sSingleton;
+
+
+already_AddRefed<PowerManagerService> PowerManagerService::GetInstance() {
   if (!sSingleton) {
     sSingleton = new PowerManagerService();
     sSingleton->Init();

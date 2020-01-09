@@ -17,8 +17,9 @@ BufferStream::BufferStream(mozilla::MediaByteBuffer* aBuffer)
 
 BufferStream::~BufferStream() {}
 
- bool BufferStream::ReadAt(int64_t aOffset, void* aData,
-                                      size_t aLength, size_t* aBytesRead) {
+
+bool BufferStream::ReadAt(int64_t aOffset, void* aData, size_t aLength,
+                          size_t* aBytesRead) {
   if (aOffset < mStartOffset || aOffset > mStartOffset + mData->Length()) {
     return false;
   }
@@ -28,18 +29,20 @@ BufferStream::~BufferStream() {}
   return true;
 }
 
- bool BufferStream::CachedReadAt(int64_t aOffset, void* aData,
-                                            size_t aLength,
-                                            size_t* aBytesRead) {
+
+bool BufferStream::CachedReadAt(int64_t aOffset, void* aData, size_t aLength,
+                                size_t* aBytesRead) {
   return ReadAt(aOffset, aData, aLength, aBytesRead);
 }
 
- bool BufferStream::Length(int64_t* aLength) {
+
+bool BufferStream::Length(int64_t* aLength) {
   *aLength = mStartOffset + mData->Length();
   return true;
 }
 
- void BufferStream::DiscardBefore(int64_t aOffset) {
+
+void BufferStream::DiscardBefore(int64_t aOffset) {
   if (aOffset > mStartOffset) {
     mData->RemoveElementsAt(0, aOffset - mStartOffset);
     mStartOffset = aOffset;

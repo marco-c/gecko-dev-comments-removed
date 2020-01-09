@@ -29,7 +29,8 @@ namespace dom {
 
 StaticAutoPtr<ContentProcessManager> ContentProcessManager::sSingleton;
 
- ContentProcessManager* ContentProcessManager::GetSingleton() {
+
+ContentProcessManager* ContentProcessManager::GetSingleton() {
   MOZ_ASSERT(XRE_IsParentProcess());
 
   if (!sSingleton) {

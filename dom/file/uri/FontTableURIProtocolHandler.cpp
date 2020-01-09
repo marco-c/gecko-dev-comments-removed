@@ -13,8 +13,8 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
- nsresult FontTableURIProtocolHandler::GenerateURIString(
-    nsACString &aUri) {
+
+nsresult FontTableURIProtocolHandler::GenerateURIString(nsACString &aUri) {
   nsresult rv;
   nsCOMPtr<nsIUUIDGenerator> uuidgen =
       do_GetService("@mozilla.org/uuid-generator;1", &rv);

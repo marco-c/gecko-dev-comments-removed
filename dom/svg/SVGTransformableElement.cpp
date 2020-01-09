@@ -240,7 +240,8 @@ already_AddRefed<SVGMatrix> SVGTransformableElement::GetTransformToElement(
   return mat.forget();
 }
 
- gfxMatrix SVGTransformableElement::GetUserToParentTransform(
+
+gfxMatrix SVGTransformableElement::GetUserToParentTransform(
     const gfx::Matrix* aAnimateMotionTransform,
     const SVGAnimatedTransformList* aTransforms) {
   gfxMatrix result;

@@ -21,7 +21,8 @@ using namespace mozilla::gfx;
 
 namespace mozilla {
 
- SVGMotionSMILType SVGMotionSMILType::sSingleton;
+
+SVGMotionSMILType SVGMotionSMILType::sSingleton;
 
 
 enum SegmentType { eSegmentType_Translation, eSegmentType_PathPoint };
@@ -436,8 +437,10 @@ nsresult SVGMotionSMILType::Interpolate(const SMILValue& aStartVal,
   return matrix;
 }
 
- SMILValue SVGMotionSMILType::ConstructSMILValue(
-    Path* aPath, float aDist, RotateType aRotateType, float aRotateAngle) {
+
+SMILValue SVGMotionSMILType::ConstructSMILValue(Path* aPath, float aDist,
+                                                RotateType aRotateType,
+                                                float aRotateAngle) {
   SMILValue smilVal(&SVGMotionSMILType::sSingleton);
   MotionSegmentArray& arr = ExtractMotionSegmentArray(smilVal);
 

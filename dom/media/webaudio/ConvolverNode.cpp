@@ -392,7 +392,8 @@ ConvolverNode::ConvolverNode(AudioContext* aContext)
       aContext, engine, AudioNodeStream::NO_STREAM_FLAGS, aContext->Graph());
 }
 
- already_AddRefed<ConvolverNode> ConvolverNode::Create(
+
+already_AddRefed<ConvolverNode> ConvolverNode::Create(
     JSContext* aCx, AudioContext& aAudioContext,
     const ConvolverOptions& aOptions, ErrorResult& aRv) {
   if (aAudioContext.CheckClosed(aRv)) {

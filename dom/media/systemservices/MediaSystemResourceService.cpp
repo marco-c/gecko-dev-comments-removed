@@ -14,10 +14,11 @@ using namespace mozilla::layers;
 
 namespace mozilla {
 
- StaticRefPtr<MediaSystemResourceService>
-    MediaSystemResourceService::sSingleton;
 
- MediaSystemResourceService* MediaSystemResourceService::Get() {
+StaticRefPtr<MediaSystemResourceService> MediaSystemResourceService::sSingleton;
+
+
+MediaSystemResourceService* MediaSystemResourceService::Get() {
   if (sSingleton) {
     return sSingleton;
   }
@@ -25,13 +26,15 @@ namespace mozilla {
   return sSingleton;
 }
 
- void MediaSystemResourceService::Init() {
+
+void MediaSystemResourceService::Init() {
   if (!sSingleton) {
     sSingleton = new MediaSystemResourceService();
   }
 }
 
- void MediaSystemResourceService::Shutdown() {
+
+void MediaSystemResourceService::Shutdown() {
   if (sSingleton) {
     sSingleton->Destroy();
     sSingleton = nullptr;

@@ -3255,8 +3255,8 @@ static const nsAttrValue::EnumTable kCORSAttributeTable[] = {
     {"use-credentials", CORS_USE_CREDENTIALS},
     {nullptr, 0}};
 
- void Element::ParseCORSValue(const nsAString& aValue,
-                                          nsAttrValue& aResult) {
+
+void Element::ParseCORSValue(const nsAString& aValue, nsAttrValue& aResult) {
   DebugOnly<bool> success =
       aResult.ParseEnumValue(aValue, kCORSAttributeTable, false,
                              
@@ -3265,7 +3265,8 @@ static const nsAttrValue::EnumTable kCORSAttributeTable[] = {
   MOZ_ASSERT(success);
 }
 
- CORSMode Element::StringToCORSMode(const nsAString& aValue) {
+
+CORSMode Element::StringToCORSMode(const nsAString& aValue) {
   if (aValue.IsVoid()) {
     return CORS_NONE;
   }
@@ -3275,7 +3276,8 @@ static const nsAttrValue::EnumTable kCORSAttributeTable[] = {
   return CORSMode(val.GetEnumValue());
 }
 
- CORSMode Element::AttrValueToCORSMode(const nsAttrValue* aValue) {
+
+CORSMode Element::AttrValueToCORSMode(const nsAttrValue* aValue) {
   if (!aValue) {
     return CORS_NONE;
   }
@@ -3409,7 +3411,8 @@ already_AddRefed<Animation> Element::Animate(
   return Animate(target, aContext, aKeyframes, aOptions, aError);
 }
 
- already_AddRefed<Animation> Element::Animate(
+
+already_AddRefed<Animation> Element::Animate(
     const Nullable<ElementOrCSSPseudoElement>& aTarget, JSContext* aContext,
     JS::Handle<JSObject*> aKeyframes,
     const UnrestrictedDoubleOrKeyframeAnimationOptions& aOptions,
@@ -3518,9 +3521,10 @@ void Element::GetAnimations(const AnimationFilter& filter,
   aAnimations.Sort(AnimationPtrComparator<RefPtr<Animation>>());
 }
 
- void Element::GetAnimationsUnsorted(
-    Element* aElement, PseudoStyleType aPseudoType,
-    nsTArray<RefPtr<Animation>>& aAnimations) {
+
+void Element::GetAnimationsUnsorted(Element* aElement,
+                                    PseudoStyleType aPseudoType,
+                                    nsTArray<RefPtr<Animation>>& aAnimations) {
   MOZ_ASSERT(aPseudoType == PseudoStyleType::NotPseudo ||
                  aPseudoType == PseudoStyleType::after ||
                  aPseudoType == PseudoStyleType::before,

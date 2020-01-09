@@ -20,22 +20,26 @@ static const dom::EffectTiming& GetTimingProperties(
     const OptionsType& aOptions);
 
 template <>
- const dom::EffectTiming& GetTimingProperties(
+
+const dom::EffectTiming& GetTimingProperties(
     const dom::UnrestrictedDoubleOrKeyframeEffectOptions& aOptions) {
   MOZ_ASSERT(aOptions.IsKeyframeEffectOptions());
   return aOptions.GetAsKeyframeEffectOptions();
 }
 
 template <>
- const dom::EffectTiming& GetTimingProperties(
+
+const dom::EffectTiming& GetTimingProperties(
     const dom::UnrestrictedDoubleOrKeyframeAnimationOptions& aOptions) {
   MOZ_ASSERT(aOptions.IsKeyframeAnimationOptions());
   return aOptions.GetAsKeyframeAnimationOptions();
 }
 
 template <class OptionsType>
- TimingParams TimingParams::FromOptionsType(
-    const OptionsType& aOptions, dom::Document* aDocument, ErrorResult& aRv) {
+
+TimingParams TimingParams::FromOptionsType(const OptionsType& aOptions,
+                                           dom::Document* aDocument,
+                                           ErrorResult& aRv) {
   TimingParams result;
 
   if (aOptions.IsUnrestrictedDouble()) {
@@ -56,19 +60,22 @@ template <class OptionsType>
   return result;
 }
 
- TimingParams TimingParams::FromOptionsUnion(
+
+TimingParams TimingParams::FromOptionsUnion(
     const dom::UnrestrictedDoubleOrKeyframeEffectOptions& aOptions,
     dom::Document* aDocument, ErrorResult& aRv) {
   return FromOptionsType(aOptions, aDocument, aRv);
 }
 
- TimingParams TimingParams::FromOptionsUnion(
+
+TimingParams TimingParams::FromOptionsUnion(
     const dom::UnrestrictedDoubleOrKeyframeAnimationOptions& aOptions,
     dom::Document* aDocument, ErrorResult& aRv) {
   return FromOptionsType(aOptions, aDocument, aRv);
 }
 
- TimingParams TimingParams::FromEffectTiming(
+
+TimingParams TimingParams::FromEffectTiming(
     const dom::EffectTiming& aEffectTiming, dom::Document* aDocument,
     ErrorResult& aRv) {
   TimingParams result;
@@ -106,7 +113,8 @@ template <class OptionsType>
   return result;
 }
 
- TimingParams TimingParams::MergeOptionalEffectTiming(
+
+TimingParams TimingParams::MergeOptionalEffectTiming(
     const TimingParams& aSource, const dom::OptionalEffectTiming& aEffectTiming,
     dom::Document* aDocument, ErrorResult& aRv) {
   MOZ_ASSERT(!aRv.Failed(), "Initially return value should be ok");
@@ -182,7 +190,8 @@ template <class OptionsType>
   return result;
 }
 
- Maybe<ComputedTimingFunction> TimingParams::ParseEasing(
+
+Maybe<ComputedTimingFunction> TimingParams::ParseEasing(
     const nsAString& aEasing, dom::Document* aDocument, ErrorResult& aRv) {
   MOZ_ASSERT(aDocument);
 

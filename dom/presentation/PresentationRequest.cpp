@@ -63,18 +63,18 @@ static nsresult GetAbsoluteURL(const nsAString& aUrl, nsIURI* aBaseUri,
   return NS_OK;
 }
 
- already_AddRefed<PresentationRequest>
-PresentationRequest::Constructor(const GlobalObject& aGlobal,
-                                 const nsAString& aUrl, ErrorResult& aRv) {
+
+already_AddRefed<PresentationRequest> PresentationRequest::Constructor(
+    const GlobalObject& aGlobal, const nsAString& aUrl, ErrorResult& aRv) {
   Sequence<nsString> urls;
   urls.AppendElement(aUrl, fallible);
   return Constructor(aGlobal, urls, aRv);
 }
 
- already_AddRefed<PresentationRequest>
-PresentationRequest::Constructor(const GlobalObject& aGlobal,
-                                 const Sequence<nsString>& aUrls,
-                                 ErrorResult& aRv) {
+
+already_AddRefed<PresentationRequest> PresentationRequest::Constructor(
+    const GlobalObject& aGlobal, const Sequence<nsString>& aUrls,
+    ErrorResult& aRv) {
   nsCOMPtr<nsPIDOMWindowInner> window =
       do_QueryInterface(aGlobal.GetAsSupports());
   if (!window) {
@@ -115,8 +115,9 @@ PresentationRequest::~PresentationRequest() {}
 
 bool PresentationRequest::Init() { return true; }
 
- JSObject* PresentationRequest::WrapObject(
-    JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
+
+JSObject* PresentationRequest::WrapObject(JSContext* aCx,
+                                          JS::Handle<JSObject*> aGivenProto) {
   return PresentationRequest_Binding::Wrap(aCx, this, aGivenProto);
 }
 

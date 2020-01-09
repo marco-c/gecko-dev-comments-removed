@@ -207,8 +207,8 @@ void PluginModuleChild::EnableFlashSandbox(int aLevel,
 #endif
 
 #if defined(OS_WIN) && defined(MOZ_SANDBOX)
- void PluginModuleChild::SetFlashRoamingPath(
-    const std::wstring& aRoamingPath) {
+
+void PluginModuleChild::SetFlashRoamingPath(const std::wstring& aRoamingPath) {
   MOZ_ASSERT(sRoamingPath.empty());
   sRoamingPath = aRoamingPath;
 }

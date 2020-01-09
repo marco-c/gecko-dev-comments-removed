@@ -21,7 +21,8 @@ StaticRefPtr<StorageNotifierService> gStorageNotifierService;
 
 }  
 
- StorageNotifierService* StorageNotifierService::GetOrCreate() {
+
+StorageNotifierService* StorageNotifierService::GetOrCreate() {
   MOZ_ASSERT(NS_IsMainThread());
   if (!gStorageNotifierService && !gStorageShuttingDown) {
     gStorageNotifierService = new StorageNotifierService();
@@ -42,9 +43,11 @@ StorageNotifierService::~StorageNotifierService() {
   gStorageShuttingDown = true;
 }
 
- void StorageNotifierService::Broadcast(
-    StorageEvent* aEvent, const char16_t* aStorageType, bool aPrivateBrowsing,
-    bool aImmediateDispatch) {
+
+void StorageNotifierService::Broadcast(StorageEvent* aEvent,
+                                       const char16_t* aStorageType,
+                                       bool aPrivateBrowsing,
+                                       bool aImmediateDispatch) {
   MOZ_ASSERT(NS_IsMainThread());
 
   RefPtr<StorageNotifierService> service = gStorageNotifierService;

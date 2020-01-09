@@ -14,7 +14,8 @@
 
 namespace mozilla {
 
- SVGPointListSMILType SVGPointListSMILType::sSingleton;
+
+SVGPointListSMILType SVGPointListSMILType::sSingleton;
 
 
 

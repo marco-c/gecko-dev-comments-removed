@@ -575,7 +575,8 @@ NotificationTelemetryService::NotificationTelemetryService()
 
 NotificationTelemetryService::~NotificationTelemetryService() {}
 
- already_AddRefed<NotificationTelemetryService>
+
+already_AddRefed<NotificationTelemetryService>
 NotificationTelemetryService::GetInstance() {
   nsCOMPtr<nsISupports> telemetrySupports =
       do_GetService(NOTIFICATIONTELEMETRYSERVICE_CONTRACTID);
@@ -1516,8 +1517,9 @@ void Notification::ShowInternal() {
   }
 }
 
- bool Notification::RequestPermissionEnabledForScope(
-    JSContext* aCx, JSObject* ) {
+
+bool Notification::RequestPermissionEnabledForScope(JSContext* aCx,
+                                                    JSObject* ) {
   
   
   
@@ -1584,8 +1586,9 @@ NotificationPermission Notification::GetPermission(nsIGlobalObject* aGlobal,
   }
 }
 
- NotificationPermission Notification::GetPermissionInternal(
-    nsISupports* aGlobal, ErrorResult& aRv) {
+
+NotificationPermission Notification::GetPermissionInternal(nsISupports* aGlobal,
+                                                           ErrorResult& aRv) {
   
   nsCOMPtr<nsIScriptObjectPrincipal> sop = do_QueryInterface(aGlobal);
   if (!sop) {
@@ -1597,7 +1600,8 @@ NotificationPermission Notification::GetPermission(nsIGlobalObject* aGlobal,
   return GetPermissionInternal(principal, aRv);
 }
 
- NotificationPermission Notification::GetPermissionInternal(
+
+NotificationPermission Notification::GetPermissionInternal(
     nsIPrincipal* aPrincipal, ErrorResult& aRv) {
   AssertIsOnMainThread();
   MOZ_ASSERT(aPrincipal);
@@ -1629,8 +1633,8 @@ NotificationPermission Notification::GetPermission(nsIGlobalObject* aGlobal,
   return TestPermission(aPrincipal);
 }
 
- NotificationPermission Notification::TestPermission(
-    nsIPrincipal* aPrincipal) {
+
+NotificationPermission Notification::TestPermission(nsIPrincipal* aPrincipal) {
   AssertIsOnMainThread();
 
   uint32_t permission = nsIPermissionManager::UNKNOWN_ACTION;
@@ -2296,7 +2300,8 @@ already_AddRefed<Promise> Notification::ShowPersistentNotification(
   return p.forget();
 }
 
- already_AddRefed<Notification> Notification::CreateAndShow(
+
+already_AddRefed<Notification> Notification::CreateAndShow(
     JSContext* aCx, nsIGlobalObject* aGlobal, const nsAString& aTitle,
     const NotificationOptions& aOptions, const nsAString& aScope,
     ErrorResult& aRv) {
@@ -2334,7 +2339,8 @@ already_AddRefed<Promise> Notification::ShowPersistentNotification(
   return notification.forget();
 }
 
- nsresult Notification::RemovePermission(nsIPrincipal* aPrincipal) {
+
+nsresult Notification::RemovePermission(nsIPrincipal* aPrincipal) {
   MOZ_ASSERT(XRE_IsParentProcess());
   nsCOMPtr<nsIPermissionManager> permissionManager =
       mozilla::services::GetPermissionManager();
@@ -2346,7 +2352,8 @@ already_AddRefed<Promise> Notification::ShowPersistentNotification(
   return NS_OK;
 }
 
- nsresult Notification::OpenSettings(nsIPrincipal* aPrincipal) {
+
+nsresult Notification::OpenSettings(nsIPrincipal* aPrincipal) {
   MOZ_ASSERT(XRE_IsParentProcess());
   nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
   if (!obs) {

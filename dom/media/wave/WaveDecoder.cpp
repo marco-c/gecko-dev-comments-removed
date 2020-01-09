@@ -10,8 +10,8 @@
 
 namespace mozilla {
 
- bool WaveDecoder::IsSupportedType(
-    const MediaContainerType& aContainerType) {
+
+bool WaveDecoder::IsSupportedType(const MediaContainerType& aContainerType) {
   if (!MediaDecoder::IsWaveEnabled()) {
     return false;
   }
@@ -28,7 +28,8 @@ namespace mozilla {
   return false;
 }
 
- nsTArray<UniquePtr<TrackInfo>> WaveDecoder::GetTracksInfo(
+
+nsTArray<UniquePtr<TrackInfo>> WaveDecoder::GetTracksInfo(
     const MediaContainerType& aType) {
   nsTArray<UniquePtr<TrackInfo>> tracks;
   if (!IsSupportedType(aType)) {

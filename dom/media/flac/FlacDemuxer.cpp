@@ -981,8 +981,8 @@ TimeUnit FlacTrackDemuxer::TimeAtEnd() {
   return mParsedFramesDuration;
 }
 
- bool FlacDemuxer::FlacSniffer(const uint8_t* aData,
-                                           const uint32_t aLength) {
+
+bool FlacDemuxer::FlacSniffer(const uint8_t* aData, const uint32_t aLength) {
   if (aLength < FLAC_MIN_FRAME_SIZE) {
     return false;
   }

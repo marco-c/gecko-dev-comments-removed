@@ -69,9 +69,11 @@ class FlushRejections : public CancelableRunnable {
 
  MOZ_THREAD_LOCAL(bool) FlushRejections::sDispatched;
 
- void PromiseDebugging::GetState(
-    GlobalObject& aGlobal, JS::Handle<JSObject*> aPromise,
-    PromiseDebuggingStateHolder& aState, ErrorResult& aRv) {
+
+void PromiseDebugging::GetState(GlobalObject& aGlobal,
+                                JS::Handle<JSObject*> aPromise,
+                                PromiseDebuggingStateHolder& aState,
+                                ErrorResult& aRv) {
   JSContext* cx = aGlobal.Context();
   
   JS::Rooted<JSObject*> obj(cx, js::CheckedUnwrapStatic(aPromise));
@@ -95,10 +97,10 @@ class FlushRejections : public CancelableRunnable {
   }
 }
 
- void PromiseDebugging::GetPromiseID(GlobalObject& aGlobal,
-                                                 JS::Handle<JSObject*> aPromise,
-                                                 nsString& aID,
-                                                 ErrorResult& aRv) {
+
+void PromiseDebugging::GetPromiseID(GlobalObject& aGlobal,
+                                    JS::Handle<JSObject*> aPromise,
+                                    nsString& aID, ErrorResult& aRv) {
   JSContext* cx = aGlobal.Context();
   
   JS::Rooted<JSObject*> obj(cx, js::CheckedUnwrapStatic(aPromise));
@@ -112,9 +114,11 @@ class FlushRejections : public CancelableRunnable {
   aID.AppendInt(promiseID);
 }
 
- void PromiseDebugging::GetAllocationStack(
-    GlobalObject& aGlobal, JS::Handle<JSObject*> aPromise,
-    JS::MutableHandle<JSObject*> aStack, ErrorResult& aRv) {
+
+void PromiseDebugging::GetAllocationStack(GlobalObject& aGlobal,
+                                          JS::Handle<JSObject*> aPromise,
+                                          JS::MutableHandle<JSObject*> aStack,
+                                          ErrorResult& aRv) {
   JSContext* cx = aGlobal.Context();
   
   JS::Rooted<JSObject*> obj(cx, js::CheckedUnwrapStatic(aPromise));
@@ -126,9 +130,11 @@ class FlushRejections : public CancelableRunnable {
   aStack.set(JS::GetPromiseAllocationSite(obj));
 }
 
- void PromiseDebugging::GetRejectionStack(
-    GlobalObject& aGlobal, JS::Handle<JSObject*> aPromise,
-    JS::MutableHandle<JSObject*> aStack, ErrorResult& aRv) {
+
+void PromiseDebugging::GetRejectionStack(GlobalObject& aGlobal,
+                                         JS::Handle<JSObject*> aPromise,
+                                         JS::MutableHandle<JSObject*> aStack,
+                                         ErrorResult& aRv) {
   JSContext* cx = aGlobal.Context();
   
   JS::Rooted<JSObject*> obj(cx, js::CheckedUnwrapStatic(aPromise));
@@ -140,9 +146,11 @@ class FlushRejections : public CancelableRunnable {
   aStack.set(JS::GetPromiseResolutionSite(obj));
 }
 
- void PromiseDebugging::GetFullfillmentStack(
-    GlobalObject& aGlobal, JS::Handle<JSObject*> aPromise,
-    JS::MutableHandle<JSObject*> aStack, ErrorResult& aRv) {
+
+void PromiseDebugging::GetFullfillmentStack(GlobalObject& aGlobal,
+                                            JS::Handle<JSObject*> aPromise,
+                                            JS::MutableHandle<JSObject*> aStack,
+                                            ErrorResult& aRv) {
   JSContext* cx = aGlobal.Context();
   
   JS::Rooted<JSObject*> obj(cx, js::CheckedUnwrapStatic(aPromise));
@@ -154,9 +162,11 @@ class FlushRejections : public CancelableRunnable {
   aStack.set(JS::GetPromiseResolutionSite(obj));
 }
 
- nsString PromiseDebugging::sIDPrefix;
 
- void PromiseDebugging::Init() {
+nsString PromiseDebugging::sIDPrefix;
+
+
+void PromiseDebugging::Init() {
   FlushRejections::Init();
 
   
@@ -169,14 +179,17 @@ class FlushRejections : public CancelableRunnable {
   }
 }
 
- void PromiseDebugging::Shutdown() { sIDPrefix.SetIsVoid(true); }
 
- void PromiseDebugging::FlushUncaughtRejections() {
+void PromiseDebugging::Shutdown() { sIDPrefix.SetIsVoid(true); }
+
+
+void PromiseDebugging::FlushUncaughtRejections() {
   MOZ_ASSERT(!NS_IsMainThread());
   FlushRejections::FlushSync();
 }
 
- void PromiseDebugging::AddUncaughtRejectionObserver(
+
+void PromiseDebugging::AddUncaughtRejectionObserver(
     GlobalObject&, UncaughtRejectionObserver& aObserver) {
   CycleCollectedJSContext* storage = CycleCollectedJSContext::Get();
   nsTArray<nsCOMPtr<nsISupports>>& observers =
@@ -184,7 +197,8 @@ class FlushRejections : public CancelableRunnable {
   observers.AppendElement(&aObserver);
 }
 
- bool PromiseDebugging::RemoveUncaughtRejectionObserver(
+
+bool PromiseDebugging::RemoveUncaughtRejectionObserver(
     GlobalObject&, UncaughtRejectionObserver& aObserver) {
   CycleCollectedJSContext* storage = CycleCollectedJSContext::Get();
   nsTArray<nsCOMPtr<nsISupports>>& observers =
@@ -200,16 +214,16 @@ class FlushRejections : public CancelableRunnable {
   return false;
 }
 
- void PromiseDebugging::AddUncaughtRejection(
-    JS::HandleObject aPromise) {
+
+void PromiseDebugging::AddUncaughtRejection(JS::HandleObject aPromise) {
   
   if (CycleCollectedJSContext::Get()->mUncaughtRejections.append(aPromise)) {
     FlushRejections::DispatchNeeded();
   }
 }
 
- void PromiseDebugging::AddConsumedRejection(
-    JS::HandleObject aPromise) {
+
+void PromiseDebugging::AddConsumedRejection(JS::HandleObject aPromise) {
   
   
   
@@ -229,7 +243,8 @@ class FlushRejections : public CancelableRunnable {
   }
 }
 
- void PromiseDebugging::FlushUncaughtRejectionsInternal() {
+
+void PromiseDebugging::FlushUncaughtRejectionsInternal() {
   CycleCollectedJSContext* storage = CycleCollectedJSContext::Get();
 
   auto& uncaught = storage->mUncaughtRejections;

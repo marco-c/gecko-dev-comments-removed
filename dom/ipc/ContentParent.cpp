@@ -629,7 +629,8 @@ ContentParent::PreallocateProcess() {
   return process->LaunchSubprocessAsync(PROCESS_PRIORITY_PREALLOC);
 }
 
- void ContentParent::StartUp() {
+
+void ContentParent::StartUp() {
   
   
   
@@ -656,7 +657,8 @@ ContentParent::PreallocateProcess() {
 #endif
 }
 
- void ContentParent::ShutDown() {
+
+void ContentParent::ShutDown() {
   
   
   sCanLaunchSubprocesses = false;
@@ -670,8 +672,8 @@ ContentParent::PreallocateProcess() {
 #endif
 }
 
- uint32_t ContentParent::GetPoolSize(
-    const nsAString& aContentProcessType) {
+
+uint32_t ContentParent::GetPoolSize(const nsAString& aContentProcessType) {
   if (!sBrowserContentParents) {
     return 0;
   }
@@ -692,7 +694,8 @@ ContentParent::PreallocateProcess() {
   return *sBrowserContentParents->LookupOrAdd(aContentProcessType);
 }
 
- uint32_t ContentParent::GetMaxProcessCount(
+
+uint32_t ContentParent::GetMaxProcessCount(
     const nsAString& aContentProcessType) {
   if (aContentProcessType.EqualsLiteral("web")) {
     return GetMaxWebProcessCount();
@@ -714,13 +717,15 @@ ContentParent::PreallocateProcess() {
   return static_cast<uint32_t>(maxContentParents);
 }
 
- bool ContentParent::IsMaxProcessCountReached(
+
+bool ContentParent::IsMaxProcessCountReached(
     const nsAString& aContentProcessType) {
   return GetPoolSize(aContentProcessType) >=
          GetMaxProcessCount(aContentProcessType);
 }
 
- void ContentParent::ReleaseCachedProcesses() {
+
+void ContentParent::ReleaseCachedProcesses() {
   if (!GetPoolSize(NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE))) {
     return;
   }
@@ -752,7 +757,8 @@ ContentParent::PreallocateProcess() {
   }
 }
 
- already_AddRefed<ContentParent> ContentParent::MinTabSelect(
+
+already_AddRefed<ContentParent> ContentParent::MinTabSelect(
     const nsTArray<ContentParent*>& aContentParents, ContentParent* aOpener,
     int32_t aMaxContentParents) {
   uint32_t maxSelectable =
@@ -789,12 +795,10 @@ static bool CreateTemporaryRecordingFile(nsAString& aResult) {
          !NS_FAILED(file->GetPath(aResult));
 }
 
- already_AddRefed<ContentParent>
-ContentParent::GetNewOrUsedBrowserProcess(Element* aFrameElement,
-                                          const nsAString& aRemoteType,
-                                          ProcessPriority aPriority,
-                                          ContentParent* aOpener,
-                                          bool aPreferUsed) {
+
+already_AddRefed<ContentParent> ContentParent::GetNewOrUsedBrowserProcess(
+    Element* aFrameElement, const nsAString& aRemoteType,
+    ProcessPriority aPriority, ContentParent* aOpener, bool aPreferUsed) {
   
   
   RecordReplayState recordReplayState = eNotRecordingOrReplaying;
@@ -904,8 +908,8 @@ ContentParent::GetNewOrUsedBrowserProcess(Element* aFrameElement,
   return p.forget();
 }
 
- already_AddRefed<ContentParent>
-ContentParent::GetNewOrUsedJSPluginProcess(
+
+already_AddRefed<ContentParent> ContentParent::GetNewOrUsedJSPluginProcess(
     uint32_t aPluginID, const hal::ProcessPriority& aPriority) {
   RefPtr<ContentParent> p;
   if (sJSPluginContentParents) {
@@ -930,7 +934,8 @@ ContentParent::GetNewOrUsedJSPluginProcess(
   return p.forget();
 }
 
- ProcessPriority ContentParent::GetInitialProcessPriority(
+
+ProcessPriority ContentParent::GetInitialProcessPriority(
     Element* aFrameElement) {
   
   
@@ -950,7 +955,8 @@ ContentParent::GetNewOrUsedJSPluginProcess(
 #if defined(XP_WIN)
 extern const wchar_t* kPluginWidgetContentParentProperty;
 
- void ContentParent::SendAsyncUpdate(nsIWidget* aWidget) {
+
+void ContentParent::SendAsyncUpdate(nsIWidget* aWidget) {
   if (!aWidget || aWidget->Destroyed()) {
     return;
   }
@@ -1074,10 +1080,12 @@ mozilla::ipc::IPCResult ContentParent::RecvLaunchRDDProcess(
   return IPC_OK();
 }
 
- TabParent* ContentParent::CreateBrowser(
-    const TabContext& aContext, Element* aFrameElement,
-    ContentParent* aOpenerContentParent, TabParent* aSameTabGroupAs,
-    uint64_t aNextTabParentId) {
+
+TabParent* ContentParent::CreateBrowser(const TabContext& aContext,
+                                        Element* aFrameElement,
+                                        ContentParent* aOpenerContentParent,
+                                        TabParent* aSameTabGroupAs,
+                                        uint64_t aNextTabParentId) {
   AUTO_PROFILER_LABEL("ContentParent::CreateBrowser", OTHER);
 
   if (!sCanLaunchSubprocesses) {
@@ -2212,7 +2220,8 @@ void ContentParent::LaunchSubprocessInternal(
   }
 }
 
- bool ContentParent::LaunchSubprocessSync(
+
+bool ContentParent::LaunchSubprocessSync(
     hal::ProcessPriority aInitialPriority) {
   bool retval;
   LaunchSubprocessInternal(aInitialPriority, mozilla::AsVariant(&retval));
@@ -2559,7 +2568,7 @@ void ContentParent::InitInternal(ProcessPriority aInitialPriority) {
 
 #ifdef MOZ_CONTENT_SANDBOX
   bool shouldSandbox = true;
-  Maybe<FileDescriptor> brokerFd;
+  MaybeFileDesc brokerFd = void_t();
   
   
   
@@ -2574,14 +2583,14 @@ void ContentParent::InitInternal(ProcessPriority aInitialPriority) {
     UniquePtr<SandboxBroker::Policy> policy =
         sSandboxBrokerPolicyFactory->GetContentPolicy(Pid(), isFileProcess);
     if (policy) {
-      brokerFd = Some(FileDescriptor());
+      brokerFd = FileDescriptor();
       mSandboxBroker =
-          SandboxBroker::Create(std::move(policy), Pid(), brokerFd.ref());
+          SandboxBroker::Create(std::move(policy), Pid(), brokerFd);
       if (!mSandboxBroker) {
         KillHard("SandboxBroker::Create failed");
         return;
       }
-      MOZ_ASSERT(brokerFd.ref().IsValid());
+      MOZ_ASSERT(static_cast<const FileDescriptor&>(brokerFd).IsValid());
     }
   }
 #  endif
@@ -2717,7 +2726,8 @@ void ContentParent::SetInputPriorityEventEnabled(bool aEnabled) {
   Unused << SendResumeInputEventQueue();
 }
 
- bool ContentParent::IsInputEventQueueSupported() {
+
+bool ContentParent::IsInputEventQueueSupported() {
   static bool sSupported = false;
   static bool sInitialized = false;
   if (!sInitialized) {
@@ -3326,8 +3336,8 @@ bool ContentParent::DeallocPRemoteSpellcheckEngineParent(
   return true;
 }
 
- void ContentParent::ForceKillTimerCallback(nsITimer* aTimer,
-                                                        void* aClosure) {
+
+void ContentParent::ForceKillTimerCallback(nsITimer* aTimer, void* aClosure) {
   
   
   if (PR_GetEnv("XPCSHELL_TEST_PROFILE_DIR")) {
@@ -3445,9 +3455,10 @@ bool ContentParent::DeallocPHeapSnapshotTempFileHelperParent(
   return true;
 }
 
-bool ContentParent::SendRequestMemoryReport(
-    const uint32_t& aGeneration, const bool& aAnonymize,
-    const bool& aMinimizeMemoryUsage, const Maybe<FileDescriptor>& aDMDFile) {
+bool ContentParent::SendRequestMemoryReport(const uint32_t& aGeneration,
+                                            const bool& aAnonymize,
+                                            const bool& aMinimizeMemoryUsage,
+                                            const MaybeFileDesc& aDMDFile) {
   
   mMemoryReportRequest = MakeUnique<MemoryReportRequestHost>(aGeneration);
   Unused << PContentParent::SendRequestMemoryReport(
@@ -4464,8 +4475,10 @@ void ContentParent::NotifyUpdatedFonts() {
   }
 }
 
- void ContentParent::UnregisterRemoteFrame(
-    const TabId& aTabId, const ContentParentId& aCpId, bool aMarkedDestroying) {
+
+void ContentParent::UnregisterRemoteFrame(const TabId& aTabId,
+                                          const ContentParentId& aCpId,
+                                          bool aMarkedDestroying) {
   if (XRE_IsParentProcess()) {
     ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
     ContentParent* cp = cpm->GetContentProcessById(aCpId);
@@ -5087,9 +5100,11 @@ ContentParent::RecvNotifyPushSubscriptionModifiedObservers(
   return IPC_OK();
 }
 
- void ContentParent::BroadcastBlobURLRegistration(
-    const nsACString& aURI, BlobImpl* aBlobImpl, nsIPrincipal* aPrincipal,
-    ContentParent* aIgnoreThisCP) {
+
+void ContentParent::BroadcastBlobURLRegistration(const nsACString& aURI,
+                                                 BlobImpl* aBlobImpl,
+                                                 nsIPrincipal* aPrincipal,
+                                                 ContentParent* aIgnoreThisCP) {
   nsCString uri(aURI);
   IPC::Principal principal(aPrincipal);
 
@@ -5111,7 +5126,8 @@ ContentParent::RecvNotifyPushSubscriptionModifiedObservers(
   }
 }
 
- void ContentParent::BroadcastBlobURLUnregistration(
+
+void ContentParent::BroadcastBlobURLUnregistration(
     const nsACString& aURI, ContentParent* aIgnoreThisCP) {
   nsCString uri(aURI);
 

@@ -189,7 +189,8 @@ static void DistributeRange(const Range<Keyframe>& aRange);
 
 
 
- nsTArray<Keyframe> KeyframeUtils::GetKeyframesFromObject(
+
+nsTArray<Keyframe> KeyframeUtils::GetKeyframesFromObject(
     JSContext* aCx, dom::Document* aDocument, JS::Handle<JSObject*> aFrames,
     ErrorResult& aRv) {
   MOZ_ASSERT(!aRv.Failed());
@@ -233,8 +234,8 @@ static void DistributeRange(const Range<Keyframe>& aRange);
   return keyframes;
 }
 
- void KeyframeUtils::DistributeKeyframes(
-    nsTArray<Keyframe>& aKeyframes) {
+
+void KeyframeUtils::DistributeKeyframes(nsTArray<Keyframe>& aKeyframes) {
   if (aKeyframes.IsEmpty()) {
     return;
   }
@@ -268,8 +269,8 @@ static void DistributeRange(const Range<Keyframe>& aRange);
   }
 }
 
- nsTArray<AnimationProperty>
-KeyframeUtils::GetAnimationPropertiesFromKeyframes(
+
+nsTArray<AnimationProperty> KeyframeUtils::GetAnimationPropertiesFromKeyframes(
     const nsTArray<Keyframe>& aKeyframes, dom::Element* aElement,
     const ComputedStyle* aStyle, dom::CompositeOperation aEffectComposite) {
   nsTArray<AnimationProperty> result;
@@ -311,8 +312,8 @@ KeyframeUtils::GetAnimationPropertiesFromKeyframes(
   return result;
 }
 
- bool KeyframeUtils::IsAnimatableProperty(
-    nsCSSPropertyID aProperty) {
+
+bool KeyframeUtils::IsAnimatableProperty(nsCSSPropertyID aProperty) {
   
   
   

@@ -124,7 +124,8 @@ int64_t WebGLMemoryTracker::GetShaderSize() {
   return result;
 }
 
- int64_t WebGLMemoryTracker::GetTextureMemoryUsed() {
+
+int64_t WebGLMemoryTracker::GetTextureMemoryUsed() {
   const ContextsArrayType& contexts = Contexts();
   int64_t result = 0;
   for (size_t i = 0; i < contexts.Length(); ++i) {
@@ -136,7 +137,8 @@ int64_t WebGLMemoryTracker::GetShaderSize() {
   return result;
 }
 
- int64_t WebGLMemoryTracker::GetTextureCount() {
+
+int64_t WebGLMemoryTracker::GetTextureCount() {
   const ContextsArrayType& contexts = Contexts();
   int64_t result = 0;
   for (size_t i = 0; i < contexts.Length(); ++i) {
@@ -148,7 +150,8 @@ int64_t WebGLMemoryTracker::GetShaderSize() {
   return result;
 }
 
- int64_t WebGLMemoryTracker::GetBufferMemoryUsed() {
+
+int64_t WebGLMemoryTracker::GetBufferMemoryUsed() {
   const ContextsArrayType& contexts = Contexts();
   int64_t result = 0;
   for (size_t i = 0; i < contexts.Length(); ++i) {
@@ -160,7 +163,8 @@ int64_t WebGLMemoryTracker::GetShaderSize() {
   return result;
 }
 
- int64_t WebGLMemoryTracker::GetBufferCount() {
+
+int64_t WebGLMemoryTracker::GetBufferCount() {
   const ContextsArrayType& contexts = Contexts();
   int64_t result = 0;
   for (size_t i = 0; i < contexts.Length(); ++i) {
@@ -172,7 +176,8 @@ int64_t WebGLMemoryTracker::GetShaderSize() {
   return result;
 }
 
- int64_t WebGLMemoryTracker::GetRenderbufferMemoryUsed() {
+
+int64_t WebGLMemoryTracker::GetRenderbufferMemoryUsed() {
   const ContextsArrayType& contexts = Contexts();
   int64_t result = 0;
   for (size_t i = 0; i < contexts.Length(); ++i) {
@@ -184,7 +189,8 @@ int64_t WebGLMemoryTracker::GetShaderSize() {
   return result;
 }
 
- int64_t WebGLMemoryTracker::GetRenderbufferCount() {
+
+int64_t WebGLMemoryTracker::GetRenderbufferCount() {
   const ContextsArrayType& contexts = Contexts();
   int64_t result = 0;
   for (size_t i = 0; i < contexts.Length(); ++i) {
@@ -196,7 +202,8 @@ int64_t WebGLMemoryTracker::GetShaderSize() {
   return result;
 }
 
- int64_t WebGLMemoryTracker::GetShaderCount() {
+
+int64_t WebGLMemoryTracker::GetShaderCount() {
   const ContextsArrayType& contexts = Contexts();
   int64_t result = 0;
   for (size_t i = 0; i < contexts.Length(); ++i) {

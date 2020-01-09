@@ -40,8 +40,8 @@ WebGLExtensionEXTColorBufferFloat::WebGLExtensionEXTColorBufferFloat(
 #undef FOO
 }
 
- bool WebGLExtensionEXTColorBufferFloat::IsSupported(
-    const WebGLContext* webgl) {
+
+bool WebGLExtensionEXTColorBufferFloat::IsSupported(const WebGLContext* webgl) {
   if (!webgl->IsWebGL2()) return false;
 
   const gl::GLContext* gl = webgl->GL();

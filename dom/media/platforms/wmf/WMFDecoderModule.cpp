@@ -156,11 +156,13 @@ static bool CanCreateWMFDecoder() {
   return result.value();
 }
 
- bool WMFDecoderModule::HasH264() {
+
+bool WMFDecoderModule::HasH264() {
   return CanCreateWMFDecoder<CLSID_CMSH264DecoderMFT>();
 }
 
- bool WMFDecoderModule::HasAAC() {
+
+bool WMFDecoderModule::HasAAC() {
   return CanCreateWMFDecoder<CLSID_CMSAACDecMFT>();
 }
 

@@ -181,9 +181,10 @@ DelayNode::DelayNode(AudioContext* aContext, double aMaxDelay)
       aContext, engine, AudioNodeStream::NO_STREAM_FLAGS, aContext->Graph());
 }
 
- already_AddRefed<DelayNode> DelayNode::Create(
-    AudioContext& aAudioContext, const DelayOptions& aOptions,
-    ErrorResult& aRv) {
+
+already_AddRefed<DelayNode> DelayNode::Create(AudioContext& aAudioContext,
+                                              const DelayOptions& aOptions,
+                                              ErrorResult& aRv) {
   if (aAudioContext.CheckClosed(aRv)) {
     return nullptr;
   }

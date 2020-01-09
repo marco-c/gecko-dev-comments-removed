@@ -90,7 +90,8 @@ MediaStreamAudioDestinationNode::MediaStreamAudioDestinationNode(
       outputStream->AllocateInputPort(mStream, AudioNodeStream::AUDIO_TRACK);
 }
 
- already_AddRefed<MediaStreamAudioDestinationNode>
+
+already_AddRefed<MediaStreamAudioDestinationNode>
 MediaStreamAudioDestinationNode::Create(AudioContext& aAudioContext,
                                         const AudioNodeOptions& aOptions,
                                         ErrorResult& aRv) {

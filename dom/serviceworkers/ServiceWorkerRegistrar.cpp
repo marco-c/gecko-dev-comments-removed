@@ -114,7 +114,7 @@ nsresult CreatePrincipalInfo(nsILineInputStream* aStream,
   
   nsTArray<mozilla::ipc::ContentSecurityPolicy> policies;
   aEntry->principal() = mozilla::ipc::ContentPrincipalInfo(
-      attrs, origin, aEntry->scope(), Nothing(), std::move(policies));
+      attrs, origin, aEntry->scope(), std::move(policies));
 
   return NS_OK;
 }
@@ -141,8 +141,8 @@ void ServiceWorkerRegistrar::Initialize() {
   }
 }
 
- already_AddRefed<ServiceWorkerRegistrar>
-ServiceWorkerRegistrar::Get() {
+
+already_AddRefed<ServiceWorkerRegistrar> ServiceWorkerRegistrar::Get() {
   MOZ_ASSERT(XRE_IsParentProcess());
 
   MOZ_ASSERT(gServiceWorkerRegistrar);

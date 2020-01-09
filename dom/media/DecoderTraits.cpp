@@ -41,8 +41,8 @@
 
 namespace mozilla {
 
- bool DecoderTraits::IsHttpLiveStreamingType(
-    const MediaContainerType& aType) {
+
+bool DecoderTraits::IsHttpLiveStreamingType(const MediaContainerType& aType) {
   const auto& mimeType = aType.Type();
   return  
           
@@ -53,16 +53,17 @@ namespace mozilla {
       mimeType == MEDIAMIMETYPE("audio/x-mpegurl");
 }
 
- bool DecoderTraits::IsMatroskaType(
-    const MediaContainerType& aType) {
+
+bool DecoderTraits::IsMatroskaType(const MediaContainerType& aType) {
   const auto& mimeType = aType.Type();
   
   return mimeType == MEDIAMIMETYPE("audio/x-matroska") ||
          mimeType == MEDIAMIMETYPE("video/x-matroska");
 }
 
- bool DecoderTraits::IsMP4SupportedType(
-    const MediaContainerType& aType, DecoderDoctorDiagnostics* aDiagnostics) {
+
+bool DecoderTraits::IsMP4SupportedType(const MediaContainerType& aType,
+                                       DecoderDoctorDiagnostics* aDiagnostics) {
 #ifdef MOZ_FMP4
   return MP4Decoder::IsSupportedType(aType, aDiagnostics);
 #else
@@ -314,7 +315,8 @@ bool DecoderTraits::IsSupportedInVideoDocument(const nsACString& aType) {
          false;
 }
 
- nsTArray<UniquePtr<TrackInfo>> DecoderTraits::GetTracksInfo(
+
+nsTArray<UniquePtr<TrackInfo>> DecoderTraits::GetTracksInfo(
     const MediaContainerType& aType) {
   
   const MediaContainerType mimeType(aType.Type());

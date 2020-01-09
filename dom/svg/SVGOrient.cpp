@@ -115,9 +115,9 @@ static void GetAngleValueString(nsAString& aValueAsString, float aValue,
   aValueAsString.Append(unitString);
 }
 
- bool SVGOrient::GetValueFromString(const nsAString& aString,
-                                                float& aValue,
-                                                uint16_t* aUnitType) {
+
+bool SVGOrient::GetValueFromString(const nsAString& aString, float& aValue,
+                                   uint16_t* aUnitType) {
   RangedPtr<const char16_t> iter = SVGContentUtils::GetStartRangedPtr(aString);
   const RangedPtr<const char16_t> end =
       SVGContentUtils::GetEndRangedPtr(aString);
@@ -131,7 +131,8 @@ static void GetAngleValueString(nsAString& aValueAsString, float aValue,
   return IsValidAngleUnitType(*aUnitType);
 }
 
- float SVGOrient::GetDegreesPerUnit(uint8_t aUnit) {
+
+float SVGOrient::GetDegreesPerUnit(uint8_t aUnit) {
   switch (aUnit) {
     case SVG_ANGLETYPE_UNSPECIFIED:
     case SVG_ANGLETYPE_DEG:

@@ -27,8 +27,9 @@ bool SVGViewBoxRect::operator==(const SVGViewBoxRect& aOther) const {
           width == aOther.width && height == aOther.height);
 }
 
- nsresult SVGViewBoxRect::FromString(const nsAString& aStr,
-                                                 SVGViewBoxRect* aViewBox) {
+
+nsresult SVGViewBoxRect::FromString(const nsAString& aStr,
+                                    SVGViewBoxRect* aViewBox) {
   if (aStr.EqualsLiteral("none")) {
     aViewBox->none = true;
     return NS_OK;

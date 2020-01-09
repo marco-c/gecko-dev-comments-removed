@@ -18,8 +18,8 @@ using namespace mozilla::gfx;
 static const float PATH_SEG_LENGTH_TOLERANCE = 0.0000001f;
 static const uint32_t MAX_RECURSION = 10;
 
- void SVGPathSegUtils::GetValueAsString(const float* aSeg,
-                                                    nsAString& aValue) {
+
+void SVGPathSegUtils::GetValueAsString(const float* aSeg, nsAString& aValue) {
   
   static_assert(
       NS_SVG_PATH_SEG_LAST_VALID_TYPE == PATHSEG_CURVETO_QUADRATIC_SMOOTH_REL,
@@ -397,8 +397,9 @@ static TraverseFunc gTraverseFuncTable[NS_SVG_PATH_SEG_TYPE_COUNT] = {
     TraverseCurvetoQuadraticSmoothAbs,
     TraverseCurvetoQuadraticSmoothRel};
 
- void SVGPathSegUtils::TraversePathSegment(
-    const float* aData, SVGPathTraversalState& aState) {
+
+void SVGPathSegUtils::TraversePathSegment(const float* aData,
+                                          SVGPathTraversalState& aState) {
   static_assert(
       MOZ_ARRAY_LENGTH(gTraverseFuncTable) == NS_SVG_PATH_SEG_TYPE_COUNT,
       "gTraverseFuncTable is out of date");

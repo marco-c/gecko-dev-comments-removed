@@ -240,7 +240,8 @@ ContentPermissionType::GetOptions(nsIArray** aOptions) {
 
 
 
- uint32_t nsContentPermissionUtils::ConvertPermissionRequestToArray(
+
+uint32_t nsContentPermissionUtils::ConvertPermissionRequestToArray(
     nsTArray<PermissionRequest>& aSrcArray, nsIMutableArray* aDesArray) {
   uint32_t len = aSrcArray.Length();
   for (uint32_t i = 0; i < len; i++) {
@@ -251,7 +252,8 @@ ContentPermissionType::GetOptions(nsIArray** aOptions) {
   return len;
 }
 
- uint32_t nsContentPermissionUtils::ConvertArrayToPermissionRequest(
+
+uint32_t nsContentPermissionUtils::ConvertArrayToPermissionRequest(
     nsIArray* aSrcArray, nsTArray<PermissionRequest>& aDesArray) {
   uint32_t len = 0;
   aSrcArray->GetLength(&len);
@@ -298,7 +300,8 @@ ContentPermissionRequestChildMap() {
   return sPermissionRequestChildMap;
 }
 
- nsresult nsContentPermissionUtils::CreatePermissionArray(
+
+nsresult nsContentPermissionUtils::CreatePermissionArray(
     const nsACString& aType, const nsTArray<nsString>& aOptions,
     nsIArray** aTypesArray) {
   nsCOMPtr<nsIMutableArray> types = do_CreateInstance(NS_ARRAY_CONTRACTID);
@@ -310,7 +313,8 @@ ContentPermissionRequestChildMap() {
   return NS_OK;
 }
 
- PContentPermissionRequestParent*
+
+PContentPermissionRequestParent*
 nsContentPermissionUtils::CreateContentPermissionRequestParent(
     const nsTArray<PermissionRequest>& aRequests, Element* aElement,
     const IPC::Principal& aPrincipal, const IPC::Principal& aTopLevelPrincipal,
@@ -323,7 +327,8 @@ nsContentPermissionUtils::CreateContentPermissionRequestParent(
   return parent;
 }
 
- nsresult nsContentPermissionUtils::AskPermission(
+
+nsresult nsContentPermissionUtils::AskPermission(
     nsIContentPermissionRequest* aRequest, nsPIDOMWindowInner* aWindow) {
   NS_ENSURE_STATE(aWindow && aWindow->IsCurrentInnerWindow());
 
@@ -381,7 +386,8 @@ nsContentPermissionUtils::CreateContentPermissionRequestParent(
   return NS_OK;
 }
 
- nsTArray<PContentPermissionRequestParent*>
+
+nsTArray<PContentPermissionRequestParent*>
 nsContentPermissionUtils::GetContentPermissionRequestParentById(
     const TabId& aTabId) {
   nsTArray<PContentPermissionRequestParent*> parentArray;
@@ -394,8 +400,8 @@ nsContentPermissionUtils::GetContentPermissionRequestParentById(
   return parentArray;
 }
 
- void
-nsContentPermissionUtils::NotifyRemoveContentPermissionRequestParent(
+
+void nsContentPermissionUtils::NotifyRemoveContentPermissionRequestParent(
     PContentPermissionRequestParent* aParent) {
   auto it = ContentPermissionRequestParentMap().find(aParent);
   MOZ_ASSERT(it != ContentPermissionRequestParentMap().end());
@@ -403,7 +409,8 @@ nsContentPermissionUtils::NotifyRemoveContentPermissionRequestParent(
   ContentPermissionRequestParentMap().erase(it);
 }
 
- nsTArray<PContentPermissionRequestChild*>
+
+nsTArray<PContentPermissionRequestChild*>
 nsContentPermissionUtils::GetContentPermissionRequestChildById(
     const TabId& aTabId) {
   nsTArray<PContentPermissionRequestChild*> childArray;
@@ -416,8 +423,8 @@ nsContentPermissionUtils::GetContentPermissionRequestChildById(
   return childArray;
 }
 
- void
-nsContentPermissionUtils::NotifyRemoveContentPermissionRequestChild(
+
+void nsContentPermissionUtils::NotifyRemoveContentPermissionRequestChild(
     PContentPermissionRequestChild* aChild) {
   auto it = ContentPermissionRequestChildMap().find(aChild);
   MOZ_ASSERT(it != ContentPermissionRequestChildMap().end());

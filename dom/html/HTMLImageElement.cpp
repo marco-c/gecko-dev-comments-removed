@@ -1041,8 +1041,8 @@ bool HTMLImageElement::UpdateResponsiveSource() {
   return hadSelector || mResponsiveSelector;
 }
 
- bool HTMLImageElement::SupportedPictureSourceType(
-    const nsAString& aType) {
+
+bool HTMLImageElement::SupportedPictureSourceType(const nsAString& aType) {
   nsAutoString type;
   nsAutoString params;
 
@@ -1130,7 +1130,8 @@ bool HTMLImageElement::TryCreateResponsiveSelector(Element* aSourceElement) {
   return true;
 }
 
- bool HTMLImageElement::SelectSourceForTagWithAttrs(
+
+bool HTMLImageElement::SelectSourceForTagWithAttrs(
     Document* aDocument, bool aIsSourceTag, const nsAString& aSrcAttr,
     const nsAString& aSrcsetAttr, const nsAString& aSizesAttr,
     const nsAString& aTypeAttr, const nsAString& aMediaAttr,

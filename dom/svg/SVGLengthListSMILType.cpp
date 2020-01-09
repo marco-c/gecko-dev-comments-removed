@@ -15,7 +15,8 @@
 
 namespace mozilla {
 
- SVGLengthListSMILType SVGLengthListSMILType::sSingleton;
+
+SVGLengthListSMILType SVGLengthListSMILType::sSingleton;
 
 
 

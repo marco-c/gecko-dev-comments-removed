@@ -124,7 +124,8 @@ nsresult BaseBlobImpl::SetMutable(bool aMutable) {
   return rv;
 }
 
- uint64_t BaseBlobImpl::NextSerialNumber() {
+
+uint64_t BaseBlobImpl::NextSerialNumber() {
   static Atomic<uint64_t> nextSerialNumber;
   return nextSerialNumber++;
 }

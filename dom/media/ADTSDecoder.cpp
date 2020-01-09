@@ -10,14 +10,15 @@
 
 namespace mozilla {
 
- bool ADTSDecoder::IsEnabled() {
+
+bool ADTSDecoder::IsEnabled() {
   RefPtr<PDMFactory> platform = new PDMFactory();
   return platform->SupportsMimeType(NS_LITERAL_CSTRING("audio/mp4a-latm"),
                                      nullptr);
 }
 
- bool ADTSDecoder::IsSupportedType(
-    const MediaContainerType& aContainerType) {
+
+bool ADTSDecoder::IsSupportedType(const MediaContainerType& aContainerType) {
   if (aContainerType.Type() == MEDIAMIMETYPE("audio/aac") ||
       aContainerType.Type() == MEDIAMIMETYPE("audio/aacp") ||
       aContainerType.Type() == MEDIAMIMETYPE("audio/x-aac")) {
@@ -28,7 +29,8 @@ namespace mozilla {
   return false;
 }
 
- nsTArray<UniquePtr<TrackInfo>> ADTSDecoder::GetTracksInfo(
+
+nsTArray<UniquePtr<TrackInfo>> ADTSDecoder::GetTracksInfo(
     const MediaContainerType& aType) {
   nsTArray<UniquePtr<TrackInfo>> tracks;
   if (!IsSupportedType(aType)) {

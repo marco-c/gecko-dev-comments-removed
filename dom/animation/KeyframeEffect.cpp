@@ -622,7 +622,8 @@ static KeyframeEffectParams KeyframeEffectParamsFromUnion(
   return result;
 }
 
- Maybe<OwningAnimationTarget> KeyframeEffect::ConvertTarget(
+
+Maybe<OwningAnimationTarget> KeyframeEffect::ConvertTarget(
     const Nullable<ElementOrCSSPseudoElement>& aTarget) {
   
   Maybe<OwningAnimationTarget> result;
@@ -645,8 +646,8 @@ static KeyframeEffectParams KeyframeEffectParamsFromUnion(
 }
 
 template <class OptionsType>
- already_AddRefed<KeyframeEffect>
-KeyframeEffect::ConstructKeyframeEffect(
+
+already_AddRefed<KeyframeEffect> KeyframeEffect::ConstructKeyframeEffect(
     const GlobalObject& aGlobal,
     const Nullable<ElementOrCSSPseudoElement>& aTarget,
     JS::Handle<JSObject*> aKeyframes, const OptionsType& aOptions,
@@ -832,7 +833,8 @@ void DumpAnimationProperties(
 }
 #endif
 
- already_AddRefed<KeyframeEffect> KeyframeEffect::Constructor(
+
+already_AddRefed<KeyframeEffect> KeyframeEffect::Constructor(
     const GlobalObject& aGlobal,
     const Nullable<ElementOrCSSPseudoElement>& aTarget,
     JS::Handle<JSObject*> aKeyframes,
@@ -841,7 +843,8 @@ void DumpAnimationProperties(
   return ConstructKeyframeEffect(aGlobal, aTarget, aKeyframes, aOptions, aRv);
 }
 
- already_AddRefed<KeyframeEffect> KeyframeEffect::Constructor(
+
+already_AddRefed<KeyframeEffect> KeyframeEffect::Constructor(
     const GlobalObject& aGlobal,
     const Nullable<ElementOrCSSPseudoElement>& aTarget,
     JS::Handle<JSObject*> aKeyframes,
@@ -850,7 +853,8 @@ void DumpAnimationProperties(
   return ConstructKeyframeEffect(aGlobal, aTarget, aKeyframes, aOptions, aRv);
 }
 
- already_AddRefed<KeyframeEffect> KeyframeEffect::Constructor(
+
+already_AddRefed<KeyframeEffect> KeyframeEffect::Constructor(
     const GlobalObject& aGlobal, KeyframeEffect& aSource, ErrorResult& aRv) {
   Document* doc = AnimationUtils::GetCurrentRealmDocument(aGlobal.Context());
   if (!doc) {
@@ -1362,8 +1366,8 @@ nsIPresShell* KeyframeEffect::GetPresShell() const {
   return doc->GetShell();
 }
 
- bool KeyframeEffect::IsGeometricProperty(
-    const nsCSSPropertyID aProperty) {
+
+bool KeyframeEffect::IsGeometricProperty(const nsCSSPropertyID aProperty) {
   MOZ_ASSERT(!nsCSSProps::IsShorthand(aProperty),
              "Property should be a longhand property");
 
@@ -1388,7 +1392,8 @@ nsIPresShell* KeyframeEffect::GetPresShell() const {
   }
 }
 
- bool KeyframeEffect::CanAnimateTransformOnCompositor(
+
+bool KeyframeEffect::CanAnimateTransformOnCompositor(
     const nsIFrame* aFrame,
     AnimationPerformanceWarning::Type& aPerformanceWarning ) {
   
@@ -1652,7 +1657,8 @@ void KeyframeEffect::MarkCascadeNeedsUpdate() {
   effectSet->MarkCascadeNeedsUpdate();
 }
 
- bool KeyframeEffect::HasComputedTimingChanged(
+
+bool KeyframeEffect::HasComputedTimingChanged(
     const ComputedTiming& aComputedTiming,
     IterationCompositeOperation aIterationComposite,
     const Nullable<double>& aProgressOnLastCompose,

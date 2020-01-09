@@ -42,7 +42,8 @@ void WindowOrientationObserver::Notify(
   }
 }
 
- int16_t WindowOrientationObserver::OrientationAngle() {
+
+int16_t WindowOrientationObserver::OrientationAngle() {
   hal::ScreenConfiguration config;
   hal::GetCurrentScreenConfiguration(&config);
   int16_t angle = static_cast<int16_t>(config.angle());

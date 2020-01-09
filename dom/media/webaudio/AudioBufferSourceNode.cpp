@@ -604,10 +604,10 @@ AudioBufferSourceNode::AudioBufferSourceNode(AudioContext* aContext)
   mStream->AddMainThreadListener(this);
 }
 
- already_AddRefed<AudioBufferSourceNode>
-AudioBufferSourceNode::Create(JSContext* aCx, AudioContext& aAudioContext,
-                              const AudioBufferSourceOptions& aOptions,
-                              ErrorResult& aRv) {
+
+already_AddRefed<AudioBufferSourceNode> AudioBufferSourceNode::Create(
+    JSContext* aCx, AudioContext& aAudioContext,
+    const AudioBufferSourceOptions& aOptions, ErrorResult& aRv) {
   if (aAudioContext.CheckClosed(aRv)) {
     return nullptr;
   }

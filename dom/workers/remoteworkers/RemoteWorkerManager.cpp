@@ -27,8 +27,8 @@ RemoteWorkerManager* sRemoteWorkerManager;
 
 }  
 
- already_AddRefed<RemoteWorkerManager>
-RemoteWorkerManager::GetOrCreate() {
+
+already_AddRefed<RemoteWorkerManager> RemoteWorkerManager::GetOrCreate() {
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(XRE_IsParentProcess());
 

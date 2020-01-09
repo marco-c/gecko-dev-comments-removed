@@ -531,8 +531,10 @@ BlobURLProtocolHandler::BlobURLProtocolHandler() { Init(); }
 
 BlobURLProtocolHandler::~BlobURLProtocolHandler() = default;
 
- nsresult BlobURLProtocolHandler::AddDataEntry(
-    BlobImpl* aBlobImpl, nsIPrincipal* aPrincipal, nsACString& aUri) {
+
+nsresult BlobURLProtocolHandler::AddDataEntry(BlobImpl* aBlobImpl,
+                                              nsIPrincipal* aPrincipal,
+                                              nsACString& aUri) {
   MOZ_ASSERT(aBlobImpl);
   MOZ_ASSERT(aPrincipal);
 
@@ -548,8 +550,10 @@ BlobURLProtocolHandler::~BlobURLProtocolHandler() = default;
   return NS_OK;
 }
 
- nsresult BlobURLProtocolHandler::AddDataEntry(
-    MediaSource* aMediaSource, nsIPrincipal* aPrincipal, nsACString& aUri) {
+
+nsresult BlobURLProtocolHandler::AddDataEntry(MediaSource* aMediaSource,
+                                              nsIPrincipal* aPrincipal,
+                                              nsACString& aUri) {
   MOZ_ASSERT(aMediaSource);
   MOZ_ASSERT(aPrincipal);
 
@@ -564,15 +568,18 @@ BlobURLProtocolHandler::~BlobURLProtocolHandler() = default;
   return NS_OK;
 }
 
- nsresult BlobURLProtocolHandler::AddDataEntry(
-    const nsACString& aURI, nsIPrincipal* aPrincipal, BlobImpl* aBlobImpl) {
+
+nsresult BlobURLProtocolHandler::AddDataEntry(const nsACString& aURI,
+                                              nsIPrincipal* aPrincipal,
+                                              BlobImpl* aBlobImpl) {
   MOZ_ASSERT(aPrincipal);
   MOZ_ASSERT(aBlobImpl);
 
   return AddDataEntryInternal(aURI, aBlobImpl, aPrincipal);
 }
 
- bool BlobURLProtocolHandler::GetAllBlobURLEntries(
+
+bool BlobURLProtocolHandler::GetAllBlobURLEntries(
     nsTArray<BlobURLRegistrationData>& aRegistrations, ContentParent* aCP) {
   MOZ_ASSERT(aCP);
 
@@ -604,8 +611,9 @@ BlobURLProtocolHandler::~BlobURLProtocolHandler() = default;
   return true;
 }
 
- void BlobURLProtocolHandler::RemoveDataEntry(
-    const nsACString& aUri, bool aBroadcastToOtherProcesses) {
+
+void BlobURLProtocolHandler::RemoveDataEntry(const nsACString& aUri,
+                                             bool aBroadcastToOtherProcesses) {
   if (!gDataTable) {
     return;
   }
@@ -627,7 +635,8 @@ BlobURLProtocolHandler::~BlobURLProtocolHandler() = default;
   ReleasingTimerHolder::Create(aUri);
 }
 
- void BlobURLProtocolHandler::RemoveDataEntries() {
+
+void BlobURLProtocolHandler::RemoveDataEntries() {
   if (!gDataTable) {
     return;
   }
@@ -637,12 +646,14 @@ BlobURLProtocolHandler::~BlobURLProtocolHandler() = default;
   gDataTable = nullptr;
 }
 
- bool BlobURLProtocolHandler::HasDataEntry(const nsACString& aUri) {
+
+bool BlobURLProtocolHandler::HasDataEntry(const nsACString& aUri) {
   return !!GetDataInfo(aUri);
 }
 
- nsresult BlobURLProtocolHandler::GenerateURIString(
-    nsIPrincipal* aPrincipal, nsACString& aUri) {
+
+nsresult BlobURLProtocolHandler::GenerateURIString(nsIPrincipal* aPrincipal,
+                                                   nsACString& aUri) {
   nsresult rv;
   nsCOMPtr<nsIUUIDGenerator> uuidgen =
       do_GetService("@mozilla.org/uuid-generator;1", &rv);
@@ -674,7 +685,8 @@ BlobURLProtocolHandler::~BlobURLProtocolHandler() = default;
   return NS_OK;
 }
 
- nsIPrincipal* BlobURLProtocolHandler::GetDataEntryPrincipal(
+
+nsIPrincipal* BlobURLProtocolHandler::GetDataEntryPrincipal(
     const nsACString& aUri) {
   if (!gDataTable) {
     return nullptr;
@@ -689,7 +701,8 @@ BlobURLProtocolHandler::~BlobURLProtocolHandler() = default;
   return res->mPrincipal;
 }
 
- void BlobURLProtocolHandler::Traverse(
+
+void BlobURLProtocolHandler::Traverse(
     const nsACString& aUri, nsCycleCollectionTraversalCallback& aCallback) {
   if (!gDataTable) {
     return;
@@ -827,8 +840,9 @@ BlobURLProtocolHandler::GetScheme(nsACString& result) {
   return NS_OK;
 }
 
- bool BlobURLProtocolHandler::GetBlobURLPrincipal(
-    nsIURI* aURI, nsIPrincipal** aPrincipal) {
+
+bool BlobURLProtocolHandler::GetBlobURLPrincipal(nsIURI* aURI,
+                                                 nsIPrincipal** aPrincipal) {
   MOZ_ASSERT(aURI);
   MOZ_ASSERT(aPrincipal);
 

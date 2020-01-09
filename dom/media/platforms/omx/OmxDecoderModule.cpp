@@ -15,7 +15,8 @@
 
 namespace mozilla {
 
- bool OmxDecoderModule::Init() {
+
+bool OmxDecoderModule::Init() {
 #ifdef MOZ_OMX
   return PureOmxPlatformLayer::Init();
 #endif

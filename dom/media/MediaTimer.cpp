@@ -168,7 +168,8 @@ void MediaTimer::Reject() {
 
 
 
- void MediaTimer::TimerCallback(nsITimer* aTimer, void* aClosure) {
+
+void MediaTimer::TimerCallback(nsITimer* aTimer, void* aClosure) {
   static_cast<MediaTimer*>(aClosure)->TimerFired();
 }
 

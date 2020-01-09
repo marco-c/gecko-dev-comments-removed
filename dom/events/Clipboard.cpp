@@ -178,16 +178,18 @@ JSObject* Clipboard::WrapObject(JSContext* aCx,
   return Clipboard_Binding::Wrap(aCx, this, aGivenProto);
 }
 
- LogModule* Clipboard::GetClipboardLog() { return gClipboardLog; }
 
- bool Clipboard::ReadTextEnabled(JSContext* aCx,
-                                             JSObject* aGlobal) {
+LogModule* Clipboard::GetClipboardLog() { return gClipboardLog; }
+
+
+bool Clipboard::ReadTextEnabled(JSContext* aCx, JSObject* aGlobal) {
   nsIPrincipal* prin = nsContentUtils::SubjectPrincipal(aCx);
   return IsTestingPrefEnabled() || prin->GetIsAddonOrExpandedAddonPrincipal() ||
          prin->IsSystemPrincipal();
 }
 
- bool Clipboard::IsTestingPrefEnabled() {
+
+bool Clipboard::IsTestingPrefEnabled() {
   static bool sPrefCached = false;
   static bool sPrefCacheValue = false;
 

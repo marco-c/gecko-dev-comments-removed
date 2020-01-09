@@ -18,7 +18,8 @@ using dom::MediaTrackSettings;
 const unsigned int MediaEngineSource::kMaxDeviceNameLength;
 const unsigned int MediaEngineSource::kMaxUniqueIdLength;
 
- bool MediaEngineSource::IsVideo(MediaSourceEnum aSource) {
+
+bool MediaEngineSource::IsVideo(MediaSourceEnum aSource) {
   switch (aSource) {
     case MediaSourceEnum::Camera:
     case MediaSourceEnum::Screen:

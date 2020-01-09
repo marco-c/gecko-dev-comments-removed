@@ -29,7 +29,8 @@ StaticRefPtr<AbstractThread> sVideoDecoderChildAbstractThread;
 static StaticRefPtr<VideoDecoderManagerChild> sDecoderManager;
 static UniquePtr<nsTArray<RefPtr<Runnable>>> sRecreateTasks;
 
- void VideoDecoderManagerChild::InitializeThread() {
+
+void VideoDecoderManagerChild::InitializeThread() {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (!sVideoDecoderChildThread) {
@@ -45,7 +46,8 @@ static UniquePtr<nsTArray<RefPtr<Runnable>>> sRecreateTasks;
   }
 }
 
- void VideoDecoderManagerChild::InitForContent(
+
+void VideoDecoderManagerChild::InitForContent(
     Endpoint<PVideoDecoderManagerChild>&& aVideoManager) {
   InitializeThread();
   sVideoDecoderChildThread->Dispatch(
@@ -54,7 +56,8 @@ static UniquePtr<nsTArray<RefPtr<Runnable>>> sRecreateTasks;
       NS_DISPATCH_NORMAL);
 }
 
- void VideoDecoderManagerChild::Shutdown() {
+
+void VideoDecoderManagerChild::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (sVideoDecoderChildThread) {
@@ -91,18 +94,19 @@ void VideoDecoderManagerChild::RunWhenRecreated(
   }
 }
 
- VideoDecoderManagerChild*
-VideoDecoderManagerChild::GetSingleton() {
+
+VideoDecoderManagerChild* VideoDecoderManagerChild::GetSingleton() {
   MOZ_ASSERT(NS_GetCurrentThread() == GetManagerThread());
   return sDecoderManager;
 }
 
- nsIThread* VideoDecoderManagerChild::GetManagerThread() {
+
+nsIThread* VideoDecoderManagerChild::GetManagerThread() {
   return sVideoDecoderChildThread;
 }
 
- AbstractThread*
-VideoDecoderManagerChild::GetManagerAbstractThread() {
+
+AbstractThread* VideoDecoderManagerChild::GetManagerAbstractThread() {
   return sVideoDecoderChildAbstractThread;
 }
 

@@ -288,23 +288,30 @@ class ParticularProcessPriorityManager final : public WakeLockObserver,
   nsTHashtable<nsUint64HashKey> mActiveTabParents;
 };
 
- bool ProcessPriorityManagerImpl::sInitialized = false;
- bool ProcessPriorityManagerImpl::sPrefsEnabled = false;
- bool ProcessPriorityManagerImpl::sRemoteTabsDisabled = true;
- bool ProcessPriorityManagerImpl::sTestMode = false;
- bool ProcessPriorityManagerImpl::sPrefListenersRegistered = false;
- StaticRefPtr<ProcessPriorityManagerImpl>
-    ProcessPriorityManagerImpl::sSingleton;
- uint32_t
-    ParticularProcessPriorityManager::sBackgroundPerceivableGracePeriodMS = 0;
- uint32_t
-    ParticularProcessPriorityManager::sBackgroundGracePeriodMS = 0;
+
+bool ProcessPriorityManagerImpl::sInitialized = false;
+
+bool ProcessPriorityManagerImpl::sPrefsEnabled = false;
+
+bool ProcessPriorityManagerImpl::sRemoteTabsDisabled = true;
+
+bool ProcessPriorityManagerImpl::sTestMode = false;
+
+bool ProcessPriorityManagerImpl::sPrefListenersRegistered = false;
+
+StaticRefPtr<ProcessPriorityManagerImpl> ProcessPriorityManagerImpl::sSingleton;
+
+uint32_t ParticularProcessPriorityManager::sBackgroundPerceivableGracePeriodMS =
+    0;
+
+uint32_t ParticularProcessPriorityManager::sBackgroundGracePeriodMS = 0;
 
 NS_IMPL_ISUPPORTS(ProcessPriorityManagerImpl, nsIObserver,
                   nsISupportsWeakReference);
 
- void ProcessPriorityManagerImpl::PrefChangedCallback(
-    const char* aPref, void* aClosure) {
+
+void ProcessPriorityManagerImpl::PrefChangedCallback(const char* aPref,
+                                                     void* aClosure) {
   StaticInit();
   if (!PrefsEnabled() && sSingleton) {
     sSingleton = nullptr;
@@ -312,14 +319,17 @@ NS_IMPL_ISUPPORTS(ProcessPriorityManagerImpl, nsIObserver,
   }
 }
 
- bool ProcessPriorityManagerImpl::PrefsEnabled() {
+
+bool ProcessPriorityManagerImpl::PrefsEnabled() {
   return sPrefsEnabled && hal::SetProcessPrioritySupported() &&
          !sRemoteTabsDisabled;
 }
 
- bool ProcessPriorityManagerImpl::TestMode() { return sTestMode; }
 
- void ProcessPriorityManagerImpl::StaticInit() {
+bool ProcessPriorityManagerImpl::TestMode() { return sTestMode; }
+
+
+void ProcessPriorityManagerImpl::StaticInit() {
   if (sInitialized) {
     return;
   }
@@ -361,8 +371,8 @@ NS_IMPL_ISUPPORTS(ProcessPriorityManagerImpl, nsIObserver,
   ClearOnShutdown(&sSingleton);
 }
 
- ProcessPriorityManagerImpl*
-ProcessPriorityManagerImpl::GetSingleton() {
+
+ProcessPriorityManagerImpl* ProcessPriorityManagerImpl::GetSingleton() {
   if (!sSingleton) {
     StaticInit();
   }
@@ -558,7 +568,8 @@ ParticularProcessPriorityManager::~ParticularProcessPriorityManager() {
   }
 }
 
- void ParticularProcessPriorityManager::Notify(
+
+void ParticularProcessPriorityManager::Notify(
     const WakeLockInformation& aInfo) {
   if (!mContentParent) {
     
@@ -876,7 +887,8 @@ void ParticularProcessPriorityManager::FireTestOnlyObserverNotification(
 StaticRefPtr<ProcessPriorityManagerChild>
     ProcessPriorityManagerChild::sSingleton;
 
- void ProcessPriorityManagerChild::StaticInit() {
+
+void ProcessPriorityManagerChild::StaticInit() {
   if (!sSingleton) {
     sSingleton = new ProcessPriorityManagerChild();
     sSingleton->Init();
@@ -884,8 +896,8 @@ StaticRefPtr<ProcessPriorityManagerChild>
   }
 }
 
- ProcessPriorityManagerChild*
-ProcessPriorityManagerChild::Singleton() {
+
+ProcessPriorityManagerChild* ProcessPriorityManagerChild::Singleton() {
   StaticInit();
   return sSingleton;
 }
@@ -936,14 +948,16 @@ bool ProcessPriorityManagerChild::CurrentProcessIsForeground() {
 
 namespace mozilla {
 
- void ProcessPriorityManager::Init() {
+
+void ProcessPriorityManager::Init() {
   ProcessPriorityManagerImpl::StaticInit();
   ProcessPriorityManagerChild::StaticInit();
   ParticularProcessPriorityManager::StaticInit();
 }
 
- void ProcessPriorityManager::SetProcessPriority(
-    ContentParent* aContentParent, ProcessPriority aPriority) {
+
+void ProcessPriorityManager::SetProcessPriority(ContentParent* aContentParent,
+                                                ProcessPriority aPriority) {
   MOZ_ASSERT(aContentParent);
 
   ProcessPriorityManagerImpl* singleton =
@@ -953,12 +967,14 @@ namespace mozilla {
   }
 }
 
- bool ProcessPriorityManager::CurrentProcessIsForeground() {
+
+bool ProcessPriorityManager::CurrentProcessIsForeground() {
   return ProcessPriorityManagerChild::Singleton()->CurrentProcessIsForeground();
 }
 
- void ProcessPriorityManager::TabActivityChanged(
-    TabParent* aTabParent, bool aIsActive) {
+
+void ProcessPriorityManager::TabActivityChanged(TabParent* aTabParent,
+                                                bool aIsActive) {
   MOZ_ASSERT(aTabParent);
 
   ProcessPriorityManagerImpl* singleton =

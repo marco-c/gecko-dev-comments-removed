@@ -23,7 +23,8 @@ namespace dom {
 
 
 
- already_AddRefed<GetFileOrDirectoryTaskChild>
+
+already_AddRefed<GetFileOrDirectoryTaskChild>
 GetFileOrDirectoryTaskChild::Create(FileSystemBase* aFileSystem,
                                     nsIFile* aTargetPath, ErrorResult& aRv) {
   MOZ_ASSERT(NS_IsMainThread(), "Only call on main thread!");
@@ -145,7 +146,8 @@ void GetFileOrDirectoryTaskChild::HandlerCallback() {
 
 
 
- already_AddRefed<GetFileOrDirectoryTaskParent>
+
+already_AddRefed<GetFileOrDirectoryTaskParent>
 GetFileOrDirectoryTaskParent::Create(
     FileSystemBase* aFileSystem,
     const FileSystemGetFileOrDirectoryParams& aParam,

@@ -83,14 +83,16 @@ void MessageEvent::GetSource(
   }
 }
 
- already_AddRefed<MessageEvent> MessageEvent::Constructor(
+
+already_AddRefed<MessageEvent> MessageEvent::Constructor(
     const GlobalObject& aGlobal, const nsAString& aType,
     const MessageEventInit& aParam, ErrorResult& aRv) {
   nsCOMPtr<EventTarget> t = do_QueryInterface(aGlobal.GetAsSupports());
   return Constructor(t, aType, aParam);
 }
 
- already_AddRefed<MessageEvent> MessageEvent::Constructor(
+
+already_AddRefed<MessageEvent> MessageEvent::Constructor(
     EventTarget* aEventTarget, const nsAString& aType,
     const MessageEventInit& aParam) {
   RefPtr<MessageEvent> event = new MessageEvent(aEventTarget, nullptr, nullptr);

@@ -19,8 +19,8 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
- already_AddRefed<nsScreen> nsScreen::Create(
-    nsPIDOMWindowInner* aWindow) {
+
+already_AddRefed<nsScreen> nsScreen::Create(nsPIDOMWindowInner* aWindow) {
   MOZ_ASSERT(aWindow);
 
   if (!aWindow->GetDocShell()) {

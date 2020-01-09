@@ -144,27 +144,28 @@ void nsStyleLinkElement::GetCharset(nsAString& aCharset) {
   aCharset.Truncate();
 }
 
- void nsStyleLinkElement::OverrideBaseURI(nsIURI* aNewBaseURI) {
+
+void nsStyleLinkElement::OverrideBaseURI(nsIURI* aNewBaseURI) {
   MOZ_ASSERT_UNREACHABLE(
       "Base URI can't be overriden in this implementation "
       "of nsIStyleSheetLinkingElement.");
 }
 
- void nsStyleLinkElement::SetLineNumber(uint32_t aLineNumber) {
+
+void nsStyleLinkElement::SetLineNumber(uint32_t aLineNumber) {
   mLineNumber = aLineNumber;
 }
 
- uint32_t nsStyleLinkElement::GetLineNumber() {
-  return mLineNumber;
-}
 
- void nsStyleLinkElement::SetColumnNumber(uint32_t aColumnNumber) {
+uint32_t nsStyleLinkElement::GetLineNumber() { return mLineNumber; }
+
+
+void nsStyleLinkElement::SetColumnNumber(uint32_t aColumnNumber) {
   mColumnNumber = aColumnNumber;
 }
 
- uint32_t nsStyleLinkElement::GetColumnNumber() {
-  return mColumnNumber;
-}
+
+uint32_t nsStyleLinkElement::GetColumnNumber() { return mColumnNumber; }
 
 static uint32_t ToLinkMask(const nsAString& aLink) {
   

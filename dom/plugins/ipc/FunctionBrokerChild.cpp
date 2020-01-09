@@ -19,7 +19,8 @@ void FunctionBrokerChild::PostToDispatchThread(
   mThread->Dispatch(std::move(runnable));
 }
 
- bool FunctionBrokerChild::Initialize(
+
+bool FunctionBrokerChild::Initialize(
     Endpoint<PFunctionBrokerChild>&& aBrokerEndpoint) {
   MOZ_RELEASE_ASSERT(
       XRE_IsPluginProcess(),
@@ -34,7 +35,8 @@ void FunctionBrokerChild::PostToDispatchThread(
   return true;
 }
 
- FunctionBrokerChild* FunctionBrokerChild::GetInstance() {
+
+FunctionBrokerChild* FunctionBrokerChild::GetInstance() {
   MOZ_RELEASE_ASSERT(
       XRE_IsPluginProcess(),
       "FunctionBrokerChild can only be used in plugin processes");

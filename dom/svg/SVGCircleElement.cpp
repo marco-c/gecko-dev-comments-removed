@@ -59,7 +59,8 @@ already_AddRefed<SVGAnimatedLength> SVGCircleElement::R() {
 
 
 
- bool SVGCircleElement::HasValidDimensions() const {
+
+bool SVGCircleElement::HasValidDimensions() const {
   return mLengthAttributes[ATTR_R].IsExplicitlySet() &&
          mLengthAttributes[ATTR_R].GetAnimValInSpecifiedUnits() > 0;
 }

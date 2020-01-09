@@ -24,7 +24,8 @@ namespace dom {
 
 
 
- already_AddRefed<GetFilesTaskChild> GetFilesTaskChild::Create(
+
+already_AddRefed<GetFilesTaskChild> GetFilesTaskChild::Create(
     FileSystemBase* aFileSystem, Directory* aDirectory, nsIFile* aTargetPath,
     bool aRecursiveFlag, ErrorResult& aRv) {
   MOZ_ASSERT(aFileSystem);
@@ -136,7 +137,8 @@ void GetFilesTaskChild::HandlerCallback() {
 
 
 
- already_AddRefed<GetFilesTaskParent> GetFilesTaskParent::Create(
+
+already_AddRefed<GetFilesTaskParent> GetFilesTaskParent::Create(
     FileSystemBase* aFileSystem, const FileSystemGetFilesParams& aParam,
     FileSystemRequestParent* aParent, ErrorResult& aRv) {
   MOZ_ASSERT(XRE_IsParentProcess(), "Only call from parent process!");

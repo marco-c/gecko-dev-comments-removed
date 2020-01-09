@@ -13,7 +13,8 @@
 namespace mozilla {
 namespace webgpu {
 
- RefPtr<Instance> Instance::Create(nsIGlobalObject* parent) {
+
+RefPtr<Instance> Instance::Create(nsIGlobalObject* parent) {
   return new Instance(parent);
 }
 

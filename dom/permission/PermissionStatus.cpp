@@ -15,7 +15,8 @@
 namespace mozilla {
 namespace dom {
 
- already_AddRefed<PermissionStatus> PermissionStatus::Create(
+
+already_AddRefed<PermissionStatus> PermissionStatus::Create(
     nsPIDOMWindowInner* aWindow, PermissionName aName, ErrorResult& aRv) {
   RefPtr<PermissionStatus> status = new PermissionStatus(aWindow, aName);
   aRv = status->Init();

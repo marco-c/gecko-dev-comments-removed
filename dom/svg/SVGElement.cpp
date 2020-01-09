@@ -885,24 +885,26 @@ SVGElement::IsAttributeMapped(const nsAtom* name) const {
 }
 
 
- const Element::MappedAttributeEntry SVGElement::sFillStrokeMap[] =
-    {{nsGkAtoms::fill},
-     {nsGkAtoms::fill_opacity},
-     {nsGkAtoms::fill_rule},
-     {nsGkAtoms::paint_order},
-     {nsGkAtoms::stroke},
-     {nsGkAtoms::stroke_dasharray},
-     {nsGkAtoms::stroke_dashoffset},
-     {nsGkAtoms::stroke_linecap},
-     {nsGkAtoms::stroke_linejoin},
-     {nsGkAtoms::stroke_miterlimit},
-     {nsGkAtoms::stroke_opacity},
-     {nsGkAtoms::stroke_width},
-     {nsGkAtoms::vector_effect},
-     {nullptr}};
+
+const Element::MappedAttributeEntry SVGElement::sFillStrokeMap[] = {
+    {nsGkAtoms::fill},
+    {nsGkAtoms::fill_opacity},
+    {nsGkAtoms::fill_rule},
+    {nsGkAtoms::paint_order},
+    {nsGkAtoms::stroke},
+    {nsGkAtoms::stroke_dasharray},
+    {nsGkAtoms::stroke_dashoffset},
+    {nsGkAtoms::stroke_linecap},
+    {nsGkAtoms::stroke_linejoin},
+    {nsGkAtoms::stroke_miterlimit},
+    {nsGkAtoms::stroke_opacity},
+    {nsGkAtoms::stroke_width},
+    {nsGkAtoms::vector_effect},
+    {nullptr}};
 
 
- const Element::MappedAttributeEntry SVGElement::sGraphicsMap[] = {
+
+const Element::MappedAttributeEntry SVGElement::sGraphicsMap[] = {
     {nsGkAtoms::clip_path},
     {nsGkAtoms::clip_rule},
     {nsGkAtoms::colorInterpolation},
@@ -919,64 +921,70 @@ SVGElement::IsAttributeMapped(const nsAtom* name) const {
     {nullptr}};
 
 
- const Element::MappedAttributeEntry
-    SVGElement::sTextContentElementsMap[] = {
-        
-        
-        
-        {nsGkAtoms::direction},
-        {nsGkAtoms::dominant_baseline},
-        {nsGkAtoms::letter_spacing},
-        {nsGkAtoms::text_anchor},
-        {nsGkAtoms::text_decoration},
-        {nsGkAtoms::unicode_bidi},
-        {nsGkAtoms::word_spacing},
-        {nsGkAtoms::writing_mode},
-        {nullptr}};
+
+const Element::MappedAttributeEntry SVGElement::sTextContentElementsMap[] = {
+    
+    
+    
+    {nsGkAtoms::direction},
+    {nsGkAtoms::dominant_baseline},
+    {nsGkAtoms::letter_spacing},
+    {nsGkAtoms::text_anchor},
+    {nsGkAtoms::text_decoration},
+    {nsGkAtoms::unicode_bidi},
+    {nsGkAtoms::word_spacing},
+    {nsGkAtoms::writing_mode},
+    {nullptr}};
 
 
- const Element::MappedAttributeEntry
-    SVGElement::sFontSpecificationMap[] = {
-        {nsGkAtoms::font_family},      {nsGkAtoms::font_size},
-        {nsGkAtoms::font_size_adjust}, {nsGkAtoms::font_stretch},
-        {nsGkAtoms::font_style},       {nsGkAtoms::font_variant},
-        {nsGkAtoms::fontWeight},       {nullptr}};
+
+const Element::MappedAttributeEntry SVGElement::sFontSpecificationMap[] = {
+    {nsGkAtoms::font_family},      {nsGkAtoms::font_size},
+    {nsGkAtoms::font_size_adjust}, {nsGkAtoms::font_stretch},
+    {nsGkAtoms::font_style},       {nsGkAtoms::font_variant},
+    {nsGkAtoms::fontWeight},       {nullptr}};
 
 
- const Element::MappedAttributeEntry
-    SVGElement::sGradientStopMap[] = {
-        {nsGkAtoms::stop_color}, {nsGkAtoms::stop_opacity}, {nullptr}};
+
+const Element::MappedAttributeEntry SVGElement::sGradientStopMap[] = {
+    {nsGkAtoms::stop_color}, {nsGkAtoms::stop_opacity}, {nullptr}};
 
 
- const Element::MappedAttributeEntry SVGElement::sViewportsMap[] = {
+
+const Element::MappedAttributeEntry SVGElement::sViewportsMap[] = {
     {nsGkAtoms::overflow}, {nsGkAtoms::clip}, {nullptr}};
 
 
- const Element::MappedAttributeEntry SVGElement::sMarkersMap[] = {
+
+const Element::MappedAttributeEntry SVGElement::sMarkersMap[] = {
     {nsGkAtoms::marker_end},
     {nsGkAtoms::marker_mid},
     {nsGkAtoms::marker_start},
     {nullptr}};
 
 
- const Element::MappedAttributeEntry SVGElement::sColorMap[] = {
+
+const Element::MappedAttributeEntry SVGElement::sColorMap[] = {
     {nsGkAtoms::color}, {nullptr}};
 
 
- const Element::MappedAttributeEntry SVGElement::sFiltersMap[] = {
+
+const Element::MappedAttributeEntry SVGElement::sFiltersMap[] = {
     {nsGkAtoms::colorInterpolationFilters}, {nullptr}};
 
 
- const Element::MappedAttributeEntry SVGElement::sFEFloodMap[] = {
+
+const Element::MappedAttributeEntry SVGElement::sFEFloodMap[] = {
     {nsGkAtoms::flood_color}, {nsGkAtoms::flood_opacity}, {nullptr}};
 
 
- const Element::MappedAttributeEntry
-    SVGElement::sLightingEffectsMap[] = {{nsGkAtoms::lighting_color},
-                                         {nullptr}};
+
+const Element::MappedAttributeEntry SVGElement::sLightingEffectsMap[] = {
+    {nsGkAtoms::lighting_color}, {nullptr}};
 
 
- const Element::MappedAttributeEntry SVGElement::sMaskMap[] = {
+
+const Element::MappedAttributeEntry SVGElement::sMaskMap[] = {
     {nsGkAtoms::mask_type}, {nullptr}};
 
 
@@ -1334,8 +1342,9 @@ SVGViewportElement* SVGElement::GetCtx() const {
   return SVGContentUtils::GetNearestViewportElement(this);
 }
 
- gfxMatrix SVGElement::PrependLocalTransformsTo(
-    const gfxMatrix& aMatrix, SVGTransformTypes aWhich) const {
+
+gfxMatrix SVGElement::PrependLocalTransformsTo(const gfxMatrix& aMatrix,
+                                               SVGTransformTypes aWhich) const {
   return aMatrix;
 }
 

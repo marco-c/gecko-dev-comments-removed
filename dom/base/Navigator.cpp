@@ -294,8 +294,8 @@ void Navigator::GetAppName(nsAString& aAppName, CallerType aCallerType) const {
 
 
 
- void Navigator::GetAcceptLanguages(
-    nsTArray<nsString>& aLanguages) {
+
+void Navigator::GetAcceptLanguages(nsTArray<nsString>& aLanguages) {
   MOZ_ASSERT(NS_IsMainThread());
 
   aLanguages.Clear();
@@ -1594,8 +1594,9 @@ nsresult Navigator::GetPlatform(nsAString& aPlatform,
   return rv;
 }
 
- nsresult Navigator::GetAppVersion(nsAString& aAppVersion,
-                                               bool aUsePrefOverriddenValue) {
+
+nsresult Navigator::GetAppVersion(nsAString& aAppVersion,
+                                  bool aUsePrefOverriddenValue) {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (aUsePrefOverriddenValue) {
@@ -1637,8 +1638,8 @@ nsresult Navigator::GetPlatform(nsAString& aPlatform,
   return rv;
 }
 
- void Navigator::AppName(nsAString& aAppName,
-                                     bool aUsePrefOverriddenValue) {
+
+void Navigator::AppName(nsAString& aAppName, bool aUsePrefOverriddenValue) {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (aUsePrefOverriddenValue) {

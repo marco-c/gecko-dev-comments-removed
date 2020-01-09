@@ -572,8 +572,10 @@ static uint32_t CountNewlinesInNativeLength(nsIContent* aContent,
 }
 #endif
 
- uint32_t ContentEventHandler::GetNativeTextLength(
-    nsIContent* aContent, uint32_t aStartOffset, uint32_t aEndOffset) {
+
+uint32_t ContentEventHandler::GetNativeTextLength(nsIContent* aContent,
+                                                  uint32_t aStartOffset,
+                                                  uint32_t aEndOffset) {
   MOZ_ASSERT(aEndOffset >= aStartOffset,
              "aEndOffset must be equals or larger than aStartOffset");
   if (NS_WARN_IF(!aContent->IsText())) {
@@ -586,16 +588,18 @@ static uint32_t CountNewlinesInNativeLength(nsIContent* aContent,
          GetTextLength(aContent, LINE_BREAK_TYPE_NATIVE, aStartOffset);
 }
 
- uint32_t ContentEventHandler::GetNativeTextLength(
-    nsIContent* aContent, uint32_t aMaxLength) {
+
+uint32_t ContentEventHandler::GetNativeTextLength(nsIContent* aContent,
+                                                  uint32_t aMaxLength) {
   if (NS_WARN_IF(!aContent->IsText())) {
     return 0;
   }
   return GetTextLength(aContent, LINE_BREAK_TYPE_NATIVE, aMaxLength);
 }
 
- uint32_t ContentEventHandler::GetNativeTextLengthBefore(
-    nsIContent* aContent, nsINode* aRootNode) {
+
+uint32_t ContentEventHandler::GetNativeTextLengthBefore(nsIContent* aContent,
+                                                        nsINode* aRootNode) {
   if (NS_WARN_IF(aContent->IsText())) {
     return 0;
   }
@@ -604,8 +608,8 @@ static uint32_t CountNewlinesInNativeLength(nsIContent* aContent,
              : 0;
 }
 
- uint32_t ContentEventHandler::GetBRLength(
-    LineBreakType aLineBreakType) {
+
+uint32_t ContentEventHandler::GetBRLength(LineBreakType aLineBreakType) {
 #if defined(XP_WIN)
   
   return (aLineBreakType == LINE_BREAK_TYPE_NATIVE) ? 2 : 1;
@@ -614,8 +618,10 @@ static uint32_t CountNewlinesInNativeLength(nsIContent* aContent,
 #endif
 }
 
- uint32_t ContentEventHandler::GetTextLength(
-    nsIContent* aContent, LineBreakType aLineBreakType, uint32_t aMaxLength) {
+
+uint32_t ContentEventHandler::GetTextLength(nsIContent* aContent,
+                                            LineBreakType aLineBreakType,
+                                            uint32_t aMaxLength) {
   MOZ_ASSERT(aContent->IsText());
 
   uint32_t textLengthDifference =
@@ -652,8 +658,9 @@ static uint32_t ConvertToXPOffset(nsIContent* aContent,
 #endif
 }
 
- bool ContentEventHandler::ShouldBreakLineBefore(
-    nsIContent* aContent, nsINode* aRootNode) {
+
+bool ContentEventHandler::ShouldBreakLineBefore(nsIContent* aContent,
+                                                nsINode* aRootNode) {
   
   if (aContent == aRootNode) {
     return false;
@@ -773,7 +780,8 @@ static FontRange* AppendFontRange(nsTArray<FontRange>& aFontRanges,
   return fontRange;
 }
 
- uint32_t ContentEventHandler::GetTextLengthInRange(
+
+uint32_t ContentEventHandler::GetTextLengthInRange(
     nsIContent* aContent, uint32_t aXPStartOffset, uint32_t aXPEndOffset,
     LineBreakType aLineBreakType) {
   MOZ_ASSERT(aContent->IsText());
@@ -783,10 +791,13 @@ static FontRange* AppendFontRange(nsTArray<FontRange>& aFontRanges,
              : aXPEndOffset - aXPStartOffset;
 }
 
- void ContentEventHandler::AppendFontRanges(
-    FontRangeArray& aFontRanges, nsIContent* aContent, uint32_t aBaseOffset,
-    uint32_t aXPStartOffset, uint32_t aXPEndOffset,
-    LineBreakType aLineBreakType) {
+
+void ContentEventHandler::AppendFontRanges(FontRangeArray& aFontRanges,
+                                           nsIContent* aContent,
+                                           uint32_t aBaseOffset,
+                                           uint32_t aXPStartOffset,
+                                           uint32_t aXPEndOffset,
+                                           LineBreakType aLineBreakType) {
   MOZ_ASSERT(aContent->IsText());
 
   nsIFrame* frame = aContent->GetPrimaryFrame();
@@ -1239,18 +1250,20 @@ nsresult ContentEventHandler::SetRawRangeFromFlatTextOffset(
   return NS_OK;
 }
 
- LineBreakType ContentEventHandler::GetLineBreakType(
+
+LineBreakType ContentEventHandler::GetLineBreakType(
     WidgetQueryContentEvent* aEvent) {
   return GetLineBreakType(aEvent->mUseNativeLineBreak);
 }
 
- LineBreakType ContentEventHandler::GetLineBreakType(
+
+LineBreakType ContentEventHandler::GetLineBreakType(
     WidgetSelectionEvent* aEvent) {
   return GetLineBreakType(aEvent->mUseNativeLineBreak);
 }
 
- LineBreakType ContentEventHandler::GetLineBreakType(
-    bool aUseNativeLineBreak) {
+
+LineBreakType ContentEventHandler::GetLineBreakType(bool aUseNativeLineBreak) {
   return aUseNativeLineBreak ? LINE_BREAK_TYPE_NATIVE : LINE_BREAK_TYPE_XP;
 }
 
@@ -2644,7 +2657,8 @@ nsresult ContentEventHandler::OnQueryDOMWidgetHittest(
   return NS_OK;
 }
 
- nsresult ContentEventHandler::GetFlatTextLengthInRange(
+
+nsresult ContentEventHandler::GetFlatTextLengthInRange(
     const NodePosition& aStartPosition, const NodePosition& aEndPosition,
     nsIContent* aRootContent, uint32_t* aLength, LineBreakType aLineBreakType,
     bool aIsRemovingNode ) {

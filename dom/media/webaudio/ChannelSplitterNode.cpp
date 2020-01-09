@@ -54,7 +54,8 @@ ChannelSplitterNode::ChannelSplitterNode(AudioContext* aContext,
       AudioNodeStream::NO_STREAM_FLAGS, aContext->Graph());
 }
 
- already_AddRefed<ChannelSplitterNode> ChannelSplitterNode::Create(
+
+already_AddRefed<ChannelSplitterNode> ChannelSplitterNode::Create(
     AudioContext& aAudioContext, const ChannelSplitterOptions& aOptions,
     ErrorResult& aRv) {
   if (aAudioContext.CheckClosed(aRv)) {

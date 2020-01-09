@@ -1164,7 +1164,8 @@ void ContentChild::GetProcessName(nsACString& aName) const {
   aName.Assign(NS_ConvertUTF16toUTF8(mProcessName));
 }
 
- void ContentChild::AppendProcessId(nsACString& aName) {
+
+void ContentChild::AppendProcessId(nsACString& aName) {
   if (!aName.IsEmpty()) {
     aName.Append(' ');
   }
@@ -1272,8 +1273,7 @@ void ContentChild::InitXPCOM(
 
 mozilla::ipc::IPCResult ContentChild::RecvRequestMemoryReport(
     const uint32_t& aGeneration, const bool& aAnonymize,
-    const bool& aMinimizeMemoryUsage,
-    const Maybe<mozilla::ipc::FileDescriptor>& aDMDFile) {
+    const bool& aMinimizeMemoryUsage, const MaybeFileDesc& aDMDFile) {
   nsCString process;
   GetProcessName(process);
   AppendProcessId(process);
@@ -1611,7 +1611,7 @@ static bool StartMacOSContentSandbox() {
 #endif
 
 mozilla::ipc::IPCResult ContentChild::RecvSetProcessSandbox(
-    const Maybe<mozilla::ipc::FileDescriptor>& aBroker) {
+    const MaybeFileDesc& aBroker) {
   
   
 #if defined(MOZ_CONTENT_SANDBOX)
@@ -2827,8 +2827,8 @@ void ContentChild::StartForceKillTimer() {
   }
 }
 
- void ContentChild::ForceKillTimerCallback(nsITimer* aTimer,
-                                                       void* aClosure) {
+
+void ContentChild::ForceKillTimerCallback(nsITimer* aTimer, void* aClosure) {
   ProcessChild::QuickExit();
 }
 
@@ -3251,8 +3251,9 @@ mozilla::ipc::IPCResult ContentChild::RecvGetFilesResponse(
   return IPC_OK();
 }
 
- void ContentChild::FatalErrorIfNotUsingGPUProcess(
-    const char* const aErrorMsg, base::ProcessId aOtherPid) {
+
+void ContentChild::FatalErrorIfNotUsingGPUProcess(const char* const aErrorMsg,
+                                                  base::ProcessId aOtherPid) {
   
   
   

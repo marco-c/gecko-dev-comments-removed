@@ -191,7 +191,8 @@ bool OpusParser::DecodeTags(unsigned char* aData, size_t aLength) {
   return true;
 }
 
- bool OpusParser::IsValidMapping2ChannelsCount(uint8_t aChannels) {
+
+bool OpusParser::IsValidMapping2ChannelsCount(uint8_t aChannels) {
   
   
   

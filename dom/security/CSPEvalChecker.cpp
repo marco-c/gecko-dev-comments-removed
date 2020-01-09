@@ -90,9 +90,11 @@ class WorkerCSPCheckRunnable final : public WorkerMainThreadRunnable {
 
 }  
 
- nsresult CSPEvalChecker::CheckForWindow(
-    JSContext* aCx, nsGlobalWindowInner* aWindow, const nsAString& aExpression,
-    bool* aAllowEval) {
+
+nsresult CSPEvalChecker::CheckForWindow(JSContext* aCx,
+                                        nsGlobalWindowInner* aWindow,
+                                        const nsAString& aExpression,
+                                        bool* aAllowEval) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aWindow);
   MOZ_ASSERT(aAllowEval);
@@ -136,9 +138,11 @@ class WorkerCSPCheckRunnable final : public WorkerMainThreadRunnable {
   return NS_OK;
 }
 
- nsresult CSPEvalChecker::CheckForWorker(
-    JSContext* aCx, WorkerPrivate* aWorkerPrivate, const nsAString& aExpression,
-    bool* aAllowEval) {
+
+nsresult CSPEvalChecker::CheckForWorker(JSContext* aCx,
+                                        WorkerPrivate* aWorkerPrivate,
+                                        const nsAString& aExpression,
+                                        bool* aAllowEval) {
   MOZ_ASSERT(aWorkerPrivate);
   aWorkerPrivate->AssertIsOnWorkerThread();
   MOZ_ASSERT(aAllowEval);

@@ -47,7 +47,8 @@ static const char* sLibs[] = {
     
 };
 
- bool FFmpegRuntimeLinker::Init() {
+
+bool FFmpegRuntimeLinker::Init() {
   if (sLinkStatus != LinkStatus_INIT) {
     return sLinkStatus == LinkStatus_SUCCEEDED;
   }
@@ -124,7 +125,8 @@ static const char* sLibs[] = {
   return false;
 }
 
- already_AddRefed<PlatformDecoderModule>
+
+already_AddRefed<PlatformDecoderModule>
 FFmpegRuntimeLinker::CreateDecoderModule() {
   if (!Init()) {
     return nullptr;

@@ -723,7 +723,8 @@ UniquePtr<ImageBitmapCloneData> ImageBitmap::ToCloneData() const {
   return result;
 }
 
- already_AddRefed<ImageBitmap> ImageBitmap::CreateFromSourceSurface(
+
+already_AddRefed<ImageBitmap> ImageBitmap::CreateFromSourceSurface(
     nsIGlobalObject* aGlobal, gfx::SourceSurface* aSource, ErrorResult& aRv) {
   RefPtr<layers::Image> data = CreateImageFromSurface(aSource);
   RefPtr<ImageBitmap> ret =
@@ -732,7 +733,8 @@ UniquePtr<ImageBitmapCloneData> ImageBitmap::ToCloneData() const {
   return ret.forget();
 }
 
- already_AddRefed<ImageBitmap> ImageBitmap::CreateFromCloneData(
+
+already_AddRefed<ImageBitmap> ImageBitmap::CreateFromCloneData(
     nsIGlobalObject* aGlobal, ImageBitmapCloneData* aData) {
   RefPtr<layers::Image> data = CreateImageFromSurface(aData->mSurface);
 
@@ -746,10 +748,10 @@ UniquePtr<ImageBitmapCloneData> ImageBitmap::ToCloneData() const {
   return ret.forget();
 }
 
- already_AddRefed<ImageBitmap>
-ImageBitmap::CreateFromOffscreenCanvas(nsIGlobalObject* aGlobal,
-                                       OffscreenCanvas& aOffscreenCanvas,
-                                       ErrorResult& aRv) {
+
+already_AddRefed<ImageBitmap> ImageBitmap::CreateFromOffscreenCanvas(
+    nsIGlobalObject* aGlobal, OffscreenCanvas& aOffscreenCanvas,
+    ErrorResult& aRv) {
   
   bool writeOnly = aOffscreenCanvas.IsWriteOnly();
 
@@ -773,7 +775,8 @@ ImageBitmap::CreateFromOffscreenCanvas(nsIGlobalObject* aGlobal,
   return ret.forget();
 }
 
- already_AddRefed<ImageBitmap> ImageBitmap::CreateInternal(
+
+already_AddRefed<ImageBitmap> ImageBitmap::CreateInternal(
     nsIGlobalObject* aGlobal, HTMLImageElement& aImageEl,
     const Maybe<IntRect>& aCropRect, ErrorResult& aRv) {
   
@@ -811,7 +814,8 @@ ImageBitmap::CreateFromOffscreenCanvas(nsIGlobalObject* aGlobal,
   return ret.forget();
 }
 
- already_AddRefed<ImageBitmap> ImageBitmap::CreateInternal(
+
+already_AddRefed<ImageBitmap> ImageBitmap::CreateInternal(
     nsIGlobalObject* aGlobal, SVGImageElement& aImageEl,
     const Maybe<IntRect>& aCropRect, ErrorResult& aRv) {
   bool writeOnly = true;
@@ -843,7 +847,8 @@ ImageBitmap::CreateFromOffscreenCanvas(nsIGlobalObject* aGlobal,
   return ret.forget();
 }
 
- already_AddRefed<ImageBitmap> ImageBitmap::CreateInternal(
+
+already_AddRefed<ImageBitmap> ImageBitmap::CreateInternal(
     nsIGlobalObject* aGlobal, HTMLVideoElement& aVideoEl,
     const Maybe<IntRect>& aCropRect, ErrorResult& aRv) {
   aVideoEl.MarkAsContentSource(
@@ -884,7 +889,8 @@ ImageBitmap::CreateFromOffscreenCanvas(nsIGlobalObject* aGlobal,
   return ret.forget();
 }
 
- already_AddRefed<ImageBitmap> ImageBitmap::CreateInternal(
+
+already_AddRefed<ImageBitmap> ImageBitmap::CreateInternal(
     nsIGlobalObject* aGlobal, HTMLCanvasElement& aCanvasEl,
     const Maybe<IntRect>& aCropRect, ErrorResult& aRv) {
   if (aCanvasEl.Width() == 0 || aCanvasEl.Height() == 0) {
@@ -950,7 +956,8 @@ ImageBitmap::CreateFromOffscreenCanvas(nsIGlobalObject* aGlobal,
   return ret.forget();
 }
 
- already_AddRefed<ImageBitmap> ImageBitmap::CreateInternal(
+
+already_AddRefed<ImageBitmap> ImageBitmap::CreateInternal(
     nsIGlobalObject* aGlobal, ImageData& aImageData,
     const Maybe<IntRect>& aCropRect, ErrorResult& aRv) {
   
@@ -1006,7 +1013,8 @@ ImageBitmap::CreateFromOffscreenCanvas(nsIGlobalObject* aGlobal,
   return ret.forget();
 }
 
- already_AddRefed<ImageBitmap> ImageBitmap::CreateInternal(
+
+already_AddRefed<ImageBitmap> ImageBitmap::CreateInternal(
     nsIGlobalObject* aGlobal, CanvasRenderingContext2D& aCanvasCtx,
     const Maybe<IntRect>& aCropRect, ErrorResult& aRv) {
   nsCOMPtr<nsPIDOMWindowInner> win = do_QueryInterface(aGlobal);
@@ -1055,7 +1063,8 @@ ImageBitmap::CreateFromOffscreenCanvas(nsIGlobalObject* aGlobal,
   return ret.forget();
 }
 
- already_AddRefed<ImageBitmap> ImageBitmap::CreateInternal(
+
+already_AddRefed<ImageBitmap> ImageBitmap::CreateInternal(
     nsIGlobalObject* aGlobal, ImageBitmap& aImageBitmap,
     const Maybe<IntRect>& aCropRect, ErrorResult& aRv) {
   if (!aImageBitmap.mData) {
@@ -1274,7 +1283,8 @@ static void AsyncCreateImageBitmapFromBlob(Promise* aPromise,
   NS_DispatchToCurrentThread(task);
 }
 
- already_AddRefed<Promise> ImageBitmap::Create(
+
+already_AddRefed<Promise> ImageBitmap::Create(
     nsIGlobalObject* aGlobal, const ImageBitmapSource& aSrc,
     const Maybe<gfx::IntRect>& aCropRect, ErrorResult& aRv) {
   MOZ_ASSERT(aGlobal);
@@ -1345,7 +1355,8 @@ static void AsyncCreateImageBitmapFromBlob(Promise* aPromise,
   return promise.forget();
 }
 
- JSObject* ImageBitmap::ReadStructuredClone(
+
+JSObject* ImageBitmap::ReadStructuredClone(
     JSContext* aCx, JSStructuredCloneReader* aReader, nsIGlobalObject* aParent,
     const nsTArray<RefPtr<DataSourceSurface>>& aClonedSurfaces,
     uint32_t aIndex) {
@@ -1410,7 +1421,8 @@ static void AsyncCreateImageBitmapFromBlob(Promise* aPromise,
   return &(value.toObject());
 }
 
- bool ImageBitmap::WriteStructuredClone(
+
+bool ImageBitmap::WriteStructuredClone(
     JSStructuredCloneWriter* aWriter,
     nsTArray<RefPtr<DataSourceSurface>>& aClonedSurfaces,
     ImageBitmap* aImageBitmap) {
@@ -1478,10 +1490,10 @@ size_t BindingJSObjectMallocBytes(ImageBitmap* aBitmap) {
   return aBitmap->GetAllocatedSize();
 }
 
- already_AddRefed<CreateImageBitmapFromBlob>
-CreateImageBitmapFromBlob::Create(Promise* aPromise, nsIGlobalObject* aGlobal,
-                                  Blob& aBlob, const Maybe<IntRect>& aCropRect,
-                                  nsIEventTarget* aMainThreadEventTarget) {
+
+already_AddRefed<CreateImageBitmapFromBlob> CreateImageBitmapFromBlob::Create(
+    Promise* aPromise, nsIGlobalObject* aGlobal, Blob& aBlob,
+    const Maybe<IntRect>& aCropRect, nsIEventTarget* aMainThreadEventTarget) {
   
   nsCOMPtr<nsIInputStream> stream;
   ErrorResult error;

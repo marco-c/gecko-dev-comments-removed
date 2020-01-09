@@ -26,7 +26,8 @@ namespace dom {
 
 
 
- already_AddRefed<GetDirectoryListingTaskChild>
+
+already_AddRefed<GetDirectoryListingTaskChild>
 GetDirectoryListingTaskChild::Create(FileSystemBase* aFileSystem,
                                      Directory* aDirectory,
                                      nsIFile* aTargetPath,
@@ -171,7 +172,8 @@ void GetDirectoryListingTaskChild::HandlerCallback() {
 
 
 
- already_AddRefed<GetDirectoryListingTaskParent>
+
+already_AddRefed<GetDirectoryListingTaskParent>
 GetDirectoryListingTaskParent::Create(
     FileSystemBase* aFileSystem,
     const FileSystemGetDirectoryListingParams& aParam,

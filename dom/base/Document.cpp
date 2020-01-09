@@ -9805,7 +9805,8 @@ class PendingFullscreenChangeList {
   static LinkedList<FullscreenChange> sList;
 };
 
- LinkedList<FullscreenChange> PendingFullscreenChangeList::sList;
+
+LinkedList<FullscreenChange> PendingFullscreenChangeList::sList;
 
 Document* Document::GetFullscreenRoot() {
   nsCOMPtr<Document> root = do_QueryReferent(mFullscreenRoot);
@@ -9853,7 +9854,8 @@ class nsCallExitFullscreen : public Runnable {
   nsCOMPtr<Document> mDoc;
 };
 
- void Document::AsyncExitFullscreen(Document* aDoc) {
+
+void Document::AsyncExitFullscreen(Document* aDoc) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   nsCOMPtr<nsIRunnable> exit = new nsCallExitFullscreen(aDoc);
   if (aDoc) {
@@ -9958,8 +9960,8 @@ class ExitFullscreenScriptRunnable : public Runnable {
   nsCOMPtr<Document> mLeaf;
 };
 
- void Document::ExitFullscreenInDocTree(
-    Document* aMaybeNotARootDoc) {
+
+void Document::ExitFullscreenInDocTree(Document* aMaybeNotARootDoc) {
   MOZ_ASSERT(aMaybeNotARootDoc);
 
   
@@ -10291,8 +10293,9 @@ nsresult Document::RemoteFrameFullscreenReverted() {
   return NS_OK;
 }
 
- bool Document::IsUnprefixedFullscreenEnabled(JSContext* aCx,
-                                                          JSObject* aObject) {
+
+bool Document::IsUnprefixedFullscreenEnabled(JSContext* aCx,
+                                             JSObject* aObject) {
   MOZ_ASSERT(NS_IsMainThread());
   return nsContentUtils::IsSystemCaller(aCx) ||
          nsContentUtils::IsUnprefixedFullscreenApiEnabled();
@@ -10475,7 +10478,8 @@ void Document::RequestFullscreen(UniquePtr<FullscreenRequest> aRequest) {
   }
 }
 
- bool Document::HandlePendingFullscreenRequests(Document* aDoc) {
+
+bool Document::HandlePendingFullscreenRequests(Document* aDoc) {
   bool handled = false;
   PendingFullscreenChangeList::Iterator<FullscreenRequest> iter(
       aDoc, PendingFullscreenChangeList::eDocumentsWithSameRoot);
@@ -11014,8 +11018,8 @@ void Document::AddSizeOfExcludingThis(nsWindowSizes& aSizes,
   MOZ_CRASH();
 }
 
- void Document::AddSizeOfNodeTree(nsINode& aNode,
-                                              nsWindowSizes& aWindowSizes) {
+
+void Document::AddSizeOfNodeTree(nsINode& aNode, nsWindowSizes& aWindowSizes) {
   size_t nodeSize = 0;
   aNode.AddSizeOfIncludingThis(aWindowSizes, &nodeSize);
 

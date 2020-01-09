@@ -21,64 +21,76 @@
 
 namespace mozilla {
 
- void SVGAttrValueWrapper::ToString(const SVGOrient* aOrient,
-                                              nsAString& aResult) {
+
+void SVGAttrValueWrapper::ToString(const SVGOrient* aOrient,
+                                   nsAString& aResult) {
   aOrient->GetBaseValueString(aResult);
 }
 
- void SVGAttrValueWrapper::ToString(
-    const SVGIntegerPair* aIntegerPair, nsAString& aResult) {
+
+void SVGAttrValueWrapper::ToString(const SVGIntegerPair* aIntegerPair,
+                                   nsAString& aResult) {
   aIntegerPair->GetBaseValueString(aResult);
 }
 
- void SVGAttrValueWrapper::ToString(const nsSVGLength2* aLength,
-                                              nsAString& aResult) {
+
+void SVGAttrValueWrapper::ToString(const nsSVGLength2* aLength,
+                                   nsAString& aResult) {
   aLength->GetBaseValueString(aResult);
 }
 
- void SVGAttrValueWrapper::ToString(const SVGLengthList* aLengthList,
-                                              nsAString& aResult) {
+
+void SVGAttrValueWrapper::ToString(const SVGLengthList* aLengthList,
+                                   nsAString& aResult) {
   aLengthList->GetValueAsString(aResult);
 }
 
- void SVGAttrValueWrapper::ToString(const SVGNumberList* aNumberList,
-                                              nsAString& aResult) {
+
+void SVGAttrValueWrapper::ToString(const SVGNumberList* aNumberList,
+                                   nsAString& aResult) {
   aNumberList->GetValueAsString(aResult);
 }
 
- void SVGAttrValueWrapper::ToString(const SVGNumberPair* aNumberPair,
-                                              nsAString& aResult) {
+
+void SVGAttrValueWrapper::ToString(const SVGNumberPair* aNumberPair,
+                                   nsAString& aResult) {
   aNumberPair->GetBaseValueString(aResult);
 }
 
- void SVGAttrValueWrapper::ToString(const SVGPathData* aPathData,
-                                              nsAString& aResult) {
+
+void SVGAttrValueWrapper::ToString(const SVGPathData* aPathData,
+                                   nsAString& aResult) {
   aPathData->GetValueAsString(aResult);
 }
 
- void SVGAttrValueWrapper::ToString(const SVGPointList* aPointList,
-                                              nsAString& aResult) {
+
+void SVGAttrValueWrapper::ToString(const SVGPointList* aPointList,
+                                   nsAString& aResult) {
   aPointList->GetValueAsString(aResult);
 }
 
- void SVGAttrValueWrapper::ToString(
+
+void SVGAttrValueWrapper::ToString(
     const SVGAnimatedPreserveAspectRatio* aPreserveAspectRatio,
     nsAString& aResult) {
   aPreserveAspectRatio->GetBaseValueString(aResult);
 }
 
- void SVGAttrValueWrapper::ToString(const SVGStringList* aStringList,
-                                              nsAString& aResult) {
+
+void SVGAttrValueWrapper::ToString(const SVGStringList* aStringList,
+                                   nsAString& aResult) {
   aStringList->GetValue(aResult);
 }
 
- void SVGAttrValueWrapper::ToString(
-    const SVGTransformList* aTransformList, nsAString& aResult) {
+
+void SVGAttrValueWrapper::ToString(const SVGTransformList* aTransformList,
+                                   nsAString& aResult) {
   aTransformList->GetValueAsString(aResult);
 }
 
- void SVGAttrValueWrapper::ToString(const SVGViewBox* aViewBox,
-                                              nsAString& aResult) {
+
+void SVGAttrValueWrapper::ToString(const SVGViewBox* aViewBox,
+                                   nsAString& aResult) {
   aViewBox->GetBaseValueString(aResult);
 }
 

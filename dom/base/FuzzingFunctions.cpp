@@ -21,18 +21,21 @@
 namespace mozilla {
 namespace dom {
 
- void FuzzingFunctions::GarbageCollect(const GlobalObject&) {
+
+void FuzzingFunctions::GarbageCollect(const GlobalObject&) {
   nsJSContext::GarbageCollectNow(JS::GCReason::COMPONENT_UTILS,
                                  nsJSContext::NonIncrementalGC,
                                  nsJSContext::NonShrinkingGC);
 }
 
- void FuzzingFunctions::CycleCollect(const GlobalObject&) {
+
+void FuzzingFunctions::CycleCollect(const GlobalObject&) {
   nsJSContext::CycleCollectNow();
 }
 
- void FuzzingFunctions::EnableAccessibility(const GlobalObject&,
-                                                        ErrorResult& aRv) {
+
+void FuzzingFunctions::EnableAccessibility(const GlobalObject&,
+                                           ErrorResult& aRv) {
   RefPtr<nsIAccessibilityService> a11y;
   nsresult rv;
 
@@ -69,7 +72,8 @@ static const ModifierKey kModifierKeys[] = {
     ModifierKey(MODIFIER_SYMBOLLOCK, KEY_NAME_INDEX_SymbolLock, true),
 };
 
- Modifiers FuzzingFunctions::ActivateModifiers(
+
+Modifiers FuzzingFunctions::ActivateModifiers(
     TextInputProcessor* aTextInputProcessor, Modifiers aModifiers,
     nsIWidget* aWidget, ErrorResult& aRv) {
   MOZ_ASSERT(aTextInputProcessor);
@@ -114,7 +118,8 @@ static const ModifierKey kModifierKeys[] = {
   return activatedModifiers;
 }
 
- Modifiers FuzzingFunctions::InactivateModifiers(
+
+Modifiers FuzzingFunctions::InactivateModifiers(
     TextInputProcessor* aTextInputProcessor, Modifiers aModifiers,
     nsIWidget* aWidget, ErrorResult& aRv) {
   MOZ_ASSERT(aTextInputProcessor);
@@ -159,9 +164,11 @@ static const ModifierKey kModifierKeys[] = {
   return inactivatedModifiers;
 }
 
- void FuzzingFunctions::SynthesizeKeyboardEvents(
-    const GlobalObject&, const nsAString& aKeyValue,
-    const KeyboardEventInit& aDict, ErrorResult& aRv) {
+
+void FuzzingFunctions::SynthesizeKeyboardEvents(const GlobalObject&,
+                                                const nsAString& aKeyValue,
+                                                const KeyboardEventInit& aDict,
+                                                ErrorResult& aRv) {
   
   uint32_t flags = 0;
   

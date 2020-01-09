@@ -43,8 +43,8 @@ WorkerNavigator::WorkerNavigator(const NavigatorProperties& aProperties,
 
 WorkerNavigator::~WorkerNavigator() {}
 
- already_AddRefed<WorkerNavigator> WorkerNavigator::Create(
-    bool aOnLine) {
+
+already_AddRefed<WorkerNavigator> WorkerNavigator::Create(bool aOnLine) {
   RuntimeService* rts = RuntimeService::GetService();
   MOZ_ASSERT(rts);
 

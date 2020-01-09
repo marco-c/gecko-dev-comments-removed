@@ -193,7 +193,8 @@ void ComputedTimingFunction::AppendToString(nsAString& aResult) const {
   Servo_SerializeEasing(&timing, &aResult);
 }
 
- int32_t ComputedTimingFunction::Compare(
+
+int32_t ComputedTimingFunction::Compare(
     const Maybe<ComputedTimingFunction>& aLhs,
     const Maybe<ComputedTimingFunction>& aRhs) {
   

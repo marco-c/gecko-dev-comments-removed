@@ -25,7 +25,8 @@
 namespace mozilla {
 namespace dom {
 
- already_AddRefed<Promise> FileCreatorHelper::CreateFile(
+
+already_AddRefed<Promise> FileCreatorHelper::CreateFile(
     nsIGlobalObject* aGlobalObject, nsIFile* aFile,
     const ChromeFilePropertyBag& aBag, bool aIsFromNsIFile, ErrorResult& aRv) {
   MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
@@ -77,7 +78,8 @@ namespace dom {
   return promise.forget();
 }
 
- already_AddRefed<File> FileCreatorHelper::CreateFileInternal(
+
+already_AddRefed<File> FileCreatorHelper::CreateFileInternal(
     nsPIDOMWindowInner* aWindow, nsIFile* aFile,
     const ChromeFilePropertyBag& aBag, bool aIsFromNsIFile, ErrorResult& aRv) {
   bool lastModifiedPassed = false;
@@ -145,7 +147,8 @@ void FileCreatorHelper::ResponseReceived(BlobImpl* aBlobImpl, nsresult aRv) {
   mPromise->MaybeResolve(file);
 }
 
- nsresult FileCreatorHelper::CreateBlobImplForIPC(
+
+nsresult FileCreatorHelper::CreateBlobImplForIPC(
     const nsAString& aPath, const nsAString& aType, const nsAString& aName,
     bool aLastModifiedPassed, int64_t aLastModified, bool aExistenceCheck,
     bool aIsFromNsIFile, BlobImpl** aBlobImpl) {
@@ -159,7 +162,8 @@ void FileCreatorHelper::ResponseReceived(BlobImpl* aBlobImpl, nsresult aRv) {
                         aExistenceCheck, aIsFromNsIFile, aBlobImpl);
 }
 
- nsresult FileCreatorHelper::CreateBlobImpl(
+
+nsresult FileCreatorHelper::CreateBlobImpl(
     nsIFile* aFile, const nsAString& aType, const nsAString& aName,
     bool aLastModifiedPassed, int64_t aLastModified, bool aExistenceCheck,
     bool aIsFromNsIFile, BlobImpl** aBlobImpl) {

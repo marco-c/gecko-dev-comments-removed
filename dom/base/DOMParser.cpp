@@ -221,8 +221,9 @@ already_AddRefed<Document> DOMParser::ParseFromStream(nsIInputStream* aStream,
   return document.forget();
 }
 
- already_AddRefed<DOMParser> DOMParser::Constructor(
-    const GlobalObject& aOwner, ErrorResult& rv) {
+
+already_AddRefed<DOMParser> DOMParser::Constructor(const GlobalObject& aOwner,
+                                                   ErrorResult& rv) {
   MOZ_ASSERT(NS_IsMainThread());
   nsCOMPtr<nsIPrincipal> docPrincipal = aOwner.GetSubjectPrincipal();
   nsCOMPtr<nsIURI> documentURI;

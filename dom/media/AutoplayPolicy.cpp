@@ -157,13 +157,15 @@ static bool IsEnableBlockingWebAudioByUserGesturePolicy() {
                               false);
 }
 
- bool AutoplayPolicy::WouldBeAllowedToPlayIfAutoplayDisabled(
+
+bool AutoplayPolicy::WouldBeAllowedToPlayIfAutoplayDisabled(
     const HTMLMediaElement& aElement) {
   return IsMediaElementAllowedToPlay(aElement) ||
          IsWindowAllowedToPlay(aElement.OwnerDoc()->GetInnerWindow());
 }
 
- bool AutoplayPolicy::WouldBeAllowedToPlayIfAutoplayDisabled(
+
+bool AutoplayPolicy::WouldBeAllowedToPlayIfAutoplayDisabled(
     const AudioContext& aContext) {
   return IsAudioContextAllowedToPlay(aContext);
 }
@@ -206,16 +208,16 @@ static bool IsAllowedToPlayInternal(const HTMLMediaElement& aElement) {
   return IsWindowAllowedToPlay(aElement.OwnerDoc()->GetInnerWindow());
 }
 
- bool AutoplayPolicy::IsAllowedToPlay(
-    const HTMLMediaElement& aElement) {
+
+bool AutoplayPolicy::IsAllowedToPlay(const HTMLMediaElement& aElement) {
   const bool result = IsAllowedToPlayInternal(aElement);
   AUTOPLAY_LOG("IsAllowedToPlay, mediaElement=%p, isAllowToPlay=%s", &aElement,
                result ? "allowed" : "blocked");
   return result;
 }
 
- bool AutoplayPolicy::IsAllowedToPlay(
-    const AudioContext& aContext) {
+
+bool AutoplayPolicy::IsAllowedToPlay(const AudioContext& aContext) {
   
 
 
@@ -253,7 +255,8 @@ static bool IsAllowedToPlayInternal(const HTMLMediaElement& aElement) {
   return IsWindowAllowedToPlay(window);
 }
 
- DocumentAutoplayPolicy AutoplayPolicy::IsAllowedToPlay(
+
+DocumentAutoplayPolicy AutoplayPolicy::IsAllowedToPlay(
     const Document& aDocument) {
   if (DefaultAutoplayBehaviour() == nsIAutoplay::ALLOWED ||
       IsWindowAllowedToPlay(aDocument.GetInnerWindow())) {

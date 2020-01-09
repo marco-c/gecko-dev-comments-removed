@@ -209,9 +209,10 @@ nsMapRuleToAttributesFunc nsMathMLElement::GetAttributeMappingFunction() const {
   return &MapMathMLAttributesInto;
 }
 
- bool nsMathMLElement::ParseNamedSpaceValue(const nsString& aString,
-                                                        nsCSSValue& aCSSValue,
-                                                        uint32_t aFlags) {
+
+bool nsMathMLElement::ParseNamedSpaceValue(const nsString& aString,
+                                           nsCSSValue& aCSSValue,
+                                           uint32_t aFlags) {
   int32_t i = 0;
   
   if (aString.EqualsLiteral("veryverythinmathspace")) {
@@ -289,10 +290,10 @@ nsMapRuleToAttributesFunc nsMathMLElement::GetAttributeMappingFunction() const {
 
 
 
- bool nsMathMLElement::ParseNumericValue(const nsString& aString,
-                                                     nsCSSValue& aCSSValue,
-                                                     uint32_t aFlags,
-                                                     Document* aDocument) {
+
+bool nsMathMLElement::ParseNumericValue(const nsString& aString,
+                                        nsCSSValue& aCSSValue, uint32_t aFlags,
+                                        Document* aDocument) {
   nsAutoString str(aString);
   str.CompressWhitespace();  
 

@@ -5,11 +5,11 @@ namespace mozilla {
 
 using namespace CubebUtils;
 
- StaticRefPtr<CubebDeviceEnumerator>
-    CubebDeviceEnumerator::sInstance;
 
- already_AddRefed<CubebDeviceEnumerator>
-CubebDeviceEnumerator::GetInstance() {
+StaticRefPtr<CubebDeviceEnumerator> CubebDeviceEnumerator::sInstance;
+
+
+already_AddRefed<CubebDeviceEnumerator> CubebDeviceEnumerator::GetInstance() {
   if (!sInstance) {
     sInstance = new CubebDeviceEnumerator();
   }
@@ -41,7 +41,8 @@ CubebDeviceEnumerator::CubebDeviceEnumerator()
   }
 }
 
- void CubebDeviceEnumerator::Shutdown() {
+
+void CubebDeviceEnumerator::Shutdown() {
   if (sInstance) {
     sInstance = nullptr;
   }

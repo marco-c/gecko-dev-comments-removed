@@ -160,8 +160,8 @@ void U2F::Init(ErrorResult& aRv) {
   }
 }
 
- JSObject* U2F::WrapObject(JSContext* aCx,
-                                        JS::Handle<JSObject*> aGivenProto) {
+
+JSObject* U2F::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
   return U2F_Binding::Wrap(aCx, this, aGivenProto);
 }
 

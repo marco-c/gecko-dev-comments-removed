@@ -23,7 +23,8 @@ StaticRefPtr<WebCryptoThreadPool> gInstance;
 
 NS_IMPL_ISUPPORTS(WebCryptoThreadPool, nsIObserver)
 
- void WebCryptoThreadPool::Initialize() {
+
+void WebCryptoThreadPool::Initialize() {
   MOZ_ASSERT(NS_IsMainThread(), "Wrong thread!");
   MOZ_ASSERT(!gInstance, "More than one instance!");
 
@@ -36,7 +37,8 @@ NS_IMPL_ISUPPORTS(WebCryptoThreadPool, nsIObserver)
   }
 }
 
- nsresult WebCryptoThreadPool::Dispatch(nsIRunnable* aRunnable) {
+
+nsresult WebCryptoThreadPool::Dispatch(nsIRunnable* aRunnable) {
   if (gInstance) {
     return gInstance->DispatchInternal(aRunnable);
   }

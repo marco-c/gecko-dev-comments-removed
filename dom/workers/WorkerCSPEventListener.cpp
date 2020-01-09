@@ -43,8 +43,9 @@ class WorkerCSPEventRunnable final : public MainThreadWorkerRunnable {
 
 NS_IMPL_ISUPPORTS(WorkerCSPEventListener, nsICSPEventListener)
 
- already_AddRefed<WorkerCSPEventListener>
-WorkerCSPEventListener::Create(WorkerPrivate* aWorkerPrivate) {
+
+already_AddRefed<WorkerCSPEventListener> WorkerCSPEventListener::Create(
+    WorkerPrivate* aWorkerPrivate) {
   MOZ_ASSERT(aWorkerPrivate);
   aWorkerPrivate->AssertIsOnWorkerThread();
 

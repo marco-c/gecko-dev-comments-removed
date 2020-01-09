@@ -279,9 +279,10 @@ IMPL_FLOAT_PROP(CurvetoQuadraticSmoothRel, X, 0)
 IMPL_FLOAT_PROP(CurvetoQuadraticSmoothRel, Y, 1)
 
 
- DOMSVGPathSeg* DOMSVGPathSeg::CreateFor(DOMSVGPathSegList* aList,
-                                                     uint32_t aListIndex,
-                                                     bool aIsAnimValItem) {
+
+DOMSVGPathSeg* DOMSVGPathSeg::CreateFor(DOMSVGPathSegList* aList,
+                                        uint32_t aListIndex,
+                                        bool aIsAnimValItem) {
   uint32_t dataIndex = aList->mItems[aListIndex].mInternalDataIndex;
   float* data = &aList->InternalList().mData[dataIndex];
   uint32_t type = SVGPathSegUtils::DecodeType(data[0]);

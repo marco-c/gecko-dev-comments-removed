@@ -63,7 +63,8 @@ JSObject* ServiceWorkerRegistration::WrapObject(
   return ServiceWorkerRegistration_Binding::Wrap(aCx, this, aGivenProto);
 }
 
- already_AddRefed<ServiceWorkerRegistration>
+
+already_AddRefed<ServiceWorkerRegistration>
 ServiceWorkerRegistration::CreateForMainThread(
     nsPIDOMWindowInner* aWindow,
     const ServiceWorkerRegistrationDescriptor& aDescriptor) {
@@ -84,7 +85,8 @@ ServiceWorkerRegistration::CreateForMainThread(
   return registration.forget();
 }
 
- already_AddRefed<ServiceWorkerRegistration>
+
+already_AddRefed<ServiceWorkerRegistration>
 ServiceWorkerRegistration::CreateForWorker(
     WorkerPrivate* aWorkerPrivate, nsIGlobalObject* aGlobal,
     const ServiceWorkerRegistrationDescriptor& aDescriptor) {

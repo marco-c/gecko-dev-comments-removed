@@ -86,7 +86,8 @@ void TabGroup::EnsureThrottledEventQueues() {
   }
 }
 
- TabGroup* TabGroup::GetChromeTabGroup() {
+
+TabGroup* TabGroup::GetChromeTabGroup() {
   if (!sChromeTabGroup) {
     sChromeTabGroup = new TabGroup(true );
     ClearOnShutdown(&sChromeTabGroup);
@@ -94,7 +95,8 @@ void TabGroup::EnsureThrottledEventQueues() {
   return sChromeTabGroup;
 }
 
- TabGroup* TabGroup::GetFromWindow(mozIDOMWindowProxy* aWindow) {
+
+TabGroup* TabGroup::GetFromWindow(mozIDOMWindowProxy* aWindow) {
   if (TabChild* tabChild = TabChild::GetFrom(aWindow)) {
     return tabChild->TabGroup();
   }
@@ -102,7 +104,8 @@ void TabGroup::EnsureThrottledEventQueues() {
   return nullptr;
 }
 
- TabGroup* TabGroup::GetFromActor(TabChild* aTabChild) {
+
+TabGroup* TabGroup::GetFromActor(TabChild* aTabChild) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   
@@ -155,8 +158,9 @@ already_AddRefed<DocGroup> TabGroup::AddDocument(const nsACString& aKey,
   return docGroup.forget();
 }
 
- already_AddRefed<TabGroup> TabGroup::Join(
-    nsPIDOMWindowOuter* aWindow, TabGroup* aTabGroup) {
+
+already_AddRefed<TabGroup> TabGroup::Join(nsPIDOMWindowOuter* aWindow,
+                                          TabGroup* aTabGroup) {
   MOZ_ASSERT(NS_IsMainThread());
   RefPtr<TabGroup> tabGroup = aTabGroup;
   if (!tabGroup) {
@@ -309,7 +313,8 @@ uint32_t TabGroup::Count(bool aActiveOnly) const {
   return count;
 }
 
- bool TabGroup::HasOnlyThrottableTabs() {
+
+bool TabGroup::HasOnlyThrottableTabs() {
   if (!sTabGroups) {
     return false;
   }

@@ -33,8 +33,9 @@ Crypto::Crypto(nsIGlobalObject* aParent) : mParent(aParent) {}
 
 Crypto::~Crypto() {}
 
- JSObject* Crypto::WrapObject(JSContext* aCx,
-                                           JS::Handle<JSObject*> aGivenProto) {
+
+JSObject* Crypto::WrapObject(JSContext* aCx,
+                             JS::Handle<JSObject*> aGivenProto) {
   return Crypto_Binding::Wrap(aCx, this, aGivenProto);
 }
 

@@ -1124,7 +1124,8 @@ nsresult nsWindowCommandRegistration::RegisterWindowCommands(
   return rv;
 }
 
- bool nsGlobalWindowCommands::FindScrollCommand(
+
+bool nsGlobalWindowCommands::FindScrollCommand(
     const char *aCommandName, KeyboardScrollAction *aOutAction) {
   
   

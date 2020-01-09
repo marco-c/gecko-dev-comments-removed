@@ -25,8 +25,9 @@ GamepadPose::GamepadPose(nsISupports* aParent) : Pose(aParent) {
 
 GamepadPose::~GamepadPose() { mozilla::DropJSObjects(this); }
 
- JSObject* GamepadPose::WrapObject(
-    JSContext* aJSContext, JS::Handle<JSObject*> aGivenProto) {
+
+JSObject* GamepadPose::WrapObject(JSContext* aJSContext,
+                                  JS::Handle<JSObject*> aGivenProto) {
   return GamepadPose_Binding::Wrap(aJSContext, this, aGivenProto);
 }
 

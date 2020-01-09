@@ -266,8 +266,8 @@ WorkletThread::DelayedDispatch(already_AddRefed<nsIRunnable>, uint32_t aFlags) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
- void WorkletThread::EnsureCycleCollectedJSContext(
-    JSRuntime* aParentRuntime) {
+
+void WorkletThread::EnsureCycleCollectedJSContext(JSRuntime* aParentRuntime) {
   CycleCollectedJSContext* ccjscx = CycleCollectedJSContext::Get();
   if (ccjscx) {
     MOZ_ASSERT(ccjscx->GetAsWorkletJSContext());
@@ -335,7 +335,8 @@ void WorkletThread::TerminateInternal() {
   NS_DispatchToMainThread(runnable);
 }
 
- void WorkletThread::DeleteCycleCollectedJSContext() {
+
+void WorkletThread::DeleteCycleCollectedJSContext() {
   CycleCollectedJSContext* ccjscx = CycleCollectedJSContext::Get();
   if (!ccjscx) {
     return;
@@ -346,12 +347,14 @@ void WorkletThread::TerminateInternal() {
   delete workletjscx;
 }
 
- bool WorkletThread::IsOnWorkletThread() {
+
+bool WorkletThread::IsOnWorkletThread() {
   CycleCollectedJSContext* ccjscx = CycleCollectedJSContext::Get();
   return ccjscx && ccjscx->GetAsWorkletJSContext();
 }
 
- void WorkletThread::AssertIsOnWorkletThread() {
+
+void WorkletThread::AssertIsOnWorkletThread() {
   MOZ_ASSERT(IsOnWorkletThread());
 }
 

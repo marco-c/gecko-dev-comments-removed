@@ -447,7 +447,8 @@ void CustomElementRegistry::UnregisterUnresolvedElement(Element* aElement,
   }
 }
 
- UniquePtr<CustomElementCallback>
+
+UniquePtr<CustomElementCallback>
 CustomElementRegistry::CreateCustomElementCallback(
     Document::ElementCallbackType aType, Element* aCustomElement,
     LifecycleCallbackArgs* aArgs,
@@ -508,7 +509,8 @@ CustomElementRegistry::CreateCustomElementCallback(
   return callback;
 }
 
- void CustomElementRegistry::EnqueueLifecycleCallback(
+
+void CustomElementRegistry::EnqueueLifecycleCallback(
     Document::ElementCallbackType aType, Element* aCustomElement,
     LifecycleCallbackArgs* aArgs,
     LifecycleAdoptedCallbackArgs* aAdoptedCallbackArgs,
@@ -1078,8 +1080,10 @@ static void DoUpgrade(Element* aElement, CustomElementConstructor* aConstructor,
 }  
 
 
- void CustomElementRegistry::Upgrade(
-    Element* aElement, CustomElementDefinition* aDefinition, ErrorResult& aRv) {
+
+void CustomElementRegistry::Upgrade(Element* aElement,
+                                    CustomElementDefinition* aDefinition,
+                                    ErrorResult& aRv) {
   RefPtr<CustomElementData> data = aElement->GetCustomElementData();
   MOZ_ASSERT(data, "CustomElementData should exist");
 

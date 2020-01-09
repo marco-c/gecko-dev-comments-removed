@@ -136,7 +136,8 @@ bool SVGFE::StyleIsSetToSRGB() {
          NS_STYLE_COLOR_INTERPOLATION_SRGB;
 }
 
- bool SVGFE::HasValidDimensions() const {
+
+bool SVGFE::HasValidDimensions() const {
   return (!mLengthAttributes[ATTR_WIDTH].IsExplicitlySet() ||
           mLengthAttributes[ATTR_WIDTH].GetAnimValInSpecifiedUnits() > 0) &&
          (!mLengthAttributes[ATTR_HEIGHT].IsExplicitlySet() ||
@@ -306,8 +307,9 @@ SVGComponentTransferFunctionElement::GetNumberInfo() {
                               ArrayLength(sNumberInfo));
 }
 
- JSObject* SVGFEFuncRElement::WrapNode(
-    JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
+
+JSObject* SVGFEFuncRElement::WrapNode(JSContext* aCx,
+                                      JS::Handle<JSObject*> aGivenProto) {
   return SVGFEFuncRElement_Binding::Wrap(aCx, this, aGivenProto);
 }
 
@@ -321,8 +323,9 @@ namespace dom {
 
 NS_IMPL_ELEMENT_CLONE_WITH_INIT(SVGFEFuncRElement)
 
- JSObject* SVGFEFuncGElement::WrapNode(
-    JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
+
+JSObject* SVGFEFuncGElement::WrapNode(JSContext* aCx,
+                                      JS::Handle<JSObject*> aGivenProto) {
   return SVGFEFuncGElement_Binding::Wrap(aCx, this, aGivenProto);
 }
 
@@ -336,8 +339,9 @@ namespace dom {
 
 NS_IMPL_ELEMENT_CLONE_WITH_INIT(SVGFEFuncGElement)
 
- JSObject* SVGFEFuncBElement::WrapNode(
-    JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
+
+JSObject* SVGFEFuncBElement::WrapNode(JSContext* aCx,
+                                      JS::Handle<JSObject*> aGivenProto) {
   return SVGFEFuncBElement_Binding::Wrap(aCx, this, aGivenProto);
 }
 
@@ -351,8 +355,9 @@ namespace dom {
 
 NS_IMPL_ELEMENT_CLONE_WITH_INIT(SVGFEFuncBElement)
 
- JSObject* SVGFEFuncAElement::WrapNode(
-    JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
+
+JSObject* SVGFEFuncAElement::WrapNode(JSContext* aCx,
+                                      JS::Handle<JSObject*> aGivenProto) {
   return SVGFEFuncAElement_Binding::Wrap(aCx, this, aGivenProto);
 }
 

@@ -47,7 +47,8 @@ EmptyBody::EmptyBody(nsIGlobalObject* aGlobal,
 
 EmptyBody::~EmptyBody() = default;
 
- already_AddRefed<EmptyBody> EmptyBody::Create(
+
+already_AddRefed<EmptyBody> EmptyBody::Create(
     nsIGlobalObject* aGlobal, mozilla::ipc::PrincipalInfo* aPrincipalInfo,
     AbortSignalImpl* aAbortSignalImpl, const nsACString& aMimeType,
     ErrorResult& aRv) {

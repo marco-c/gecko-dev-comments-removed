@@ -72,7 +72,8 @@ void PublicKeyCredential::SetResponse(RefPtr<AuthenticatorResponse> aResponse) {
   mResponse = aResponse;
 }
 
- already_AddRefed<Promise>
+
+already_AddRefed<Promise>
 PublicKeyCredential::IsUserVerifyingPlatformAuthenticatorAvailable(
     GlobalObject& aGlobal) {
   nsIGlobalObject* globalObject = xpc::CurrentNativeGlobal(aGlobal.Context());
@@ -112,7 +113,8 @@ PublicKeyCredential::IsUserVerifyingPlatformAuthenticatorAvailable(
   return promise.forget();
 }
 
- already_AddRefed<Promise>
+
+already_AddRefed<Promise>
 PublicKeyCredential::IsExternalCTAP2SecurityKeySupported(
     GlobalObject& aGlobal) {
   nsIGlobalObject* globalObject = xpc::CurrentNativeGlobal(aGlobal.Context());

@@ -16,7 +16,8 @@ namespace dom {
 static StaticRefPtr<PerformanceService> gPerformanceService;
 static StaticMutex gPerformanceServiceMutex;
 
- PerformanceService* PerformanceService::GetOrCreate() {
+
+PerformanceService* PerformanceService::GetOrCreate() {
   StaticMutexAutoLock al(gPerformanceServiceMutex);
 
   if (!gPerformanceService) {

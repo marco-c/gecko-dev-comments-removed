@@ -13,7 +13,8 @@
 namespace mozilla {
 namespace dom {
 
- already_AddRefed<ChromeWorker> ChromeWorker::Constructor(
+
+already_AddRefed<ChromeWorker> ChromeWorker::Constructor(
     const GlobalObject& aGlobal, const nsAString& aScriptURL,
     ErrorResult& aRv) {
   JSContext* cx = aGlobal.Context();
@@ -33,8 +34,8 @@ namespace dom {
   return worker.forget();
 }
 
- bool ChromeWorker::WorkerAvailable(JSContext* aCx,
-                                                JSObject* ) {
+
+bool ChromeWorker::WorkerAvailable(JSContext* aCx, JSObject* ) {
   
   
   

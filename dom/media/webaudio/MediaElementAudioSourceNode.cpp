@@ -16,7 +16,8 @@ namespace dom {
 MediaElementAudioSourceNode::MediaElementAudioSourceNode(AudioContext* aContext)
     : MediaStreamAudioSourceNode(aContext) {}
 
- already_AddRefed<MediaElementAudioSourceNode>
+
+already_AddRefed<MediaElementAudioSourceNode>
 MediaElementAudioSourceNode::Create(
     AudioContext& aAudioContext, const MediaElementAudioSourceOptions& aOptions,
     ErrorResult& aRv) {

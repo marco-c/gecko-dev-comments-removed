@@ -393,7 +393,8 @@ nsScriptErrorBase::GetNotes(nsIArray** aNotes) {
   return NS_OK;
 }
 
- bool nsScriptErrorBase::ComputeIsFromPrivateWindow(
+
+bool nsScriptErrorBase::ComputeIsFromPrivateWindow(
     nsGlobalWindowInner* aWindow) {
   
   

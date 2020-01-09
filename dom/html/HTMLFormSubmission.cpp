@@ -809,7 +809,8 @@ void GetEnumAttr(nsGenericHTMLElement* aContent, nsAtom* atom,
 
 }  
 
- nsresult HTMLFormSubmission::GetFromForm(
+
+nsresult HTMLFormSubmission::GetFromForm(
     HTMLFormElement* aForm, nsGenericHTMLElement* aOriginatingElement,
     HTMLFormSubmission** aFormSubmission) {
   

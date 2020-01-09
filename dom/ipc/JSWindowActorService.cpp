@@ -279,8 +279,8 @@ JSWindowActorService::JSWindowActorService() { MOZ_ASSERT(NS_IsMainThread()); }
 
 JSWindowActorService::~JSWindowActorService() { MOZ_ASSERT(NS_IsMainThread()); }
 
- already_AddRefed<JSWindowActorService>
-JSWindowActorService::GetSingleton() {
+
+already_AddRefed<JSWindowActorService> JSWindowActorService::GetSingleton() {
   MOZ_ASSERT(NS_IsMainThread());
   if (!gJSWindowActorService) {
     gJSWindowActorService = new JSWindowActorService();

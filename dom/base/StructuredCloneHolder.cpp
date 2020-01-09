@@ -317,7 +317,8 @@ void StructuredCloneHolder::ReadFromBuffer(nsISupports* aParent, JSContext* aCx,
   }
 }
 
- JSObject* StructuredCloneHolder::ReadFullySerializableObjects(
+
+JSObject* StructuredCloneHolder::ReadFullySerializableObjects(
     JSContext* aCx, JSStructuredCloneReader* aReader, uint32_t aTag) {
   if (aTag == SCTAG_DOM_IMAGEDATA) {
     return ReadStructuredCloneImageData(aCx, aReader);
@@ -409,7 +410,8 @@ void StructuredCloneHolder::ReadFromBuffer(nsISupports* aParent, JSContext* aCx,
   return nullptr;
 }
 
- bool StructuredCloneHolder::WriteFullySerializableObjects(
+
+bool StructuredCloneHolder::WriteFullySerializableObjects(
     JSContext* aCx, JSStructuredCloneWriter* aWriter,
     JS::Handle<JSObject*> aObj) {
   JS::Rooted<JSObject*> obj(aCx, aObj);

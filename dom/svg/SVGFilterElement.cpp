@@ -110,7 +110,8 @@ SVGFilterElement::IsAttributeMapped(const nsAtom* name) const {
 
 
 
- bool SVGFilterElement::HasValidDimensions() const {
+
+bool SVGFilterElement::HasValidDimensions() const {
   return (!mLengthAttributes[ATTR_WIDTH].IsExplicitlySet() ||
           mLengthAttributes[ATTR_WIDTH].GetAnimValInSpecifiedUnits() > 0) &&
          (!mLengthAttributes[ATTR_HEIGHT].IsExplicitlySet() ||

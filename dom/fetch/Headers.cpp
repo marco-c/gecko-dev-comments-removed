@@ -60,7 +60,8 @@ already_AddRefed<Headers> Headers::Constructor(
   return Create(global, aInit, aRv);
 }
 
- already_AddRefed<Headers> Headers::Create(
+
+already_AddRefed<Headers> Headers::Create(
     nsIGlobalObject* aGlobal,
     const OwningHeadersOrByteStringSequenceSequenceOrByteStringByteStringRecord&
         aInit,

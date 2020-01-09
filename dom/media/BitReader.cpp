@@ -130,8 +130,8 @@ void BitReader::FillReservoir() {
   mReservoir <<= 32 - mNumBitsLeft;
 }
 
- uint32_t BitReader::GetBitLength(
-    const mozilla::MediaByteBuffer* aNAL) {
+
+uint32_t BitReader::GetBitLength(const mozilla::MediaByteBuffer* aNAL) {
   size_t size = aNAL->Length();
 
   while (size > 0 && aNAL->ElementAt(size - 1) == 0) {

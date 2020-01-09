@@ -37,7 +37,8 @@ StaticRefPtr<ReportingHeader> gReporting;
 
 }  
 
- void ReportingHeader::Initialize() {
+
+void ReportingHeader::Initialize() {
   MOZ_ASSERT(!gReporting);
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -61,7 +62,8 @@ StaticRefPtr<ReportingHeader> gReporting;
   gReporting = service;
 }
 
- void ReportingHeader::Shutdown() {
+
+void ReportingHeader::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (!gReporting) {
@@ -371,37 +373,45 @@ bool ReportingHeader::IsSecureURI(nsIURI* aURI) const {
   return prioriAuthenticated;
 }
 
- void ReportingHeader::LogToConsoleInvalidJSON(
-    nsIHttpChannel* aChannel, nsIURI* aURI) {
+
+void ReportingHeader::LogToConsoleInvalidJSON(nsIHttpChannel* aChannel,
+                                              nsIURI* aURI) {
   nsTArray<nsString> params;
   LogToConsoleInternal(aChannel, aURI, "ReportingHeaderInvalidJSON", params);
 }
 
- void ReportingHeader::LogToConsoleDuplicateGroup(
-    nsIHttpChannel* aChannel, nsIURI* aURI, const nsAString& aName) {
+
+void ReportingHeader::LogToConsoleDuplicateGroup(nsIHttpChannel* aChannel,
+                                                 nsIURI* aURI,
+                                                 const nsAString& aName) {
   nsTArray<nsString> params;
   params.AppendElement(aName);
 
   LogToConsoleInternal(aChannel, aURI, "ReportingHeaderDuplicateGroup", params);
 }
 
- void ReportingHeader::LogToConsoleInvalidNameItem(
-    nsIHttpChannel* aChannel, nsIURI* aURI) {
+
+void ReportingHeader::LogToConsoleInvalidNameItem(nsIHttpChannel* aChannel,
+                                                  nsIURI* aURI) {
   nsTArray<nsString> params;
   LogToConsoleInternal(aChannel, aURI, "ReportingHeaderInvalidNameItem",
                        params);
 }
 
- void ReportingHeader::LogToConsoleIncompleteItem(
-    nsIHttpChannel* aChannel, nsIURI* aURI, const nsAString& aName) {
+
+void ReportingHeader::LogToConsoleIncompleteItem(nsIHttpChannel* aChannel,
+                                                 nsIURI* aURI,
+                                                 const nsAString& aName) {
   nsTArray<nsString> params;
   params.AppendElement(aName);
 
   LogToConsoleInternal(aChannel, aURI, "ReportingHeaderInvalidItem", params);
 }
 
- void ReportingHeader::LogToConsoleIncompleteEndpoint(
-    nsIHttpChannel* aChannel, nsIURI* aURI, const nsAString& aName) {
+
+void ReportingHeader::LogToConsoleIncompleteEndpoint(nsIHttpChannel* aChannel,
+                                                     nsIURI* aURI,
+                                                     const nsAString& aName) {
   nsTArray<nsString> params;
   params.AppendElement(aName);
 
@@ -409,9 +419,11 @@ bool ReportingHeader::IsSecureURI(nsIURI* aURI) const {
                        params);
 }
 
- void ReportingHeader::LogToConsoleInvalidURLEndpoint(
-    nsIHttpChannel* aChannel, nsIURI* aURI, const nsAString& aName,
-    const nsAString& aURL) {
+
+void ReportingHeader::LogToConsoleInvalidURLEndpoint(nsIHttpChannel* aChannel,
+                                                     nsIURI* aURI,
+                                                     const nsAString& aName,
+                                                     const nsAString& aURL) {
   nsTArray<nsString> params;
   params.AppendElement(aURL);
   params.AppendElement(aName);
@@ -420,9 +432,10 @@ bool ReportingHeader::IsSecureURI(nsIURI* aURI) const {
                        params);
 }
 
- void ReportingHeader::LogToConsoleInternal(
-    nsIHttpChannel* aChannel, nsIURI* aURI, const char* aMsg,
-    const nsTArray<nsString>& aParams) {
+
+void ReportingHeader::LogToConsoleInternal(nsIHttpChannel* aChannel,
+                                           nsIURI* aURI, const char* aMsg,
+                                           const nsTArray<nsString>& aParams) {
   MOZ_ASSERT(aURI);
 
   if (!aChannel) {
@@ -462,7 +475,8 @@ bool ReportingHeader::IsSecureURI(nsIURI* aURI) const {
   Unused << NS_WARN_IF(NS_FAILED(rv));
 }
 
- void ReportingHeader::GetEndpointForReport(
+
+void ReportingHeader::GetEndpointForReport(
     const nsAString& aGroupName,
     const mozilla::ipc::PrincipalInfo& aPrincipalInfo,
     nsACString& aEndpointURI) {
@@ -499,7 +513,8 @@ bool ReportingHeader::IsSecureURI(nsIURI* aURI) const {
   }
 }
 
- void ReportingHeader::GetEndpointForReportInternal(
+
+void ReportingHeader::GetEndpointForReportInternal(
     const ReportingHeader::Group& aGroup, nsACString& aEndpointURI) {
   TimeDuration diff = TimeStamp::Now() - aGroup.mCreationTime;
   if (diff.ToSeconds() > aGroup.mTTL) {
@@ -557,7 +572,8 @@ bool ReportingHeader::IsSecureURI(nsIURI* aURI) const {
   }
 }
 
- void ReportingHeader::RemoveEndpoint(
+
+void ReportingHeader::RemoveEndpoint(
     const nsAString& aGroupName, const nsACString& aEndpointURL,
     const mozilla::ipc::PrincipalInfo& aPrincipalInfo) {
   if (!gReporting) {
@@ -698,8 +714,8 @@ void ReportingHeader::RemoveOriginsForTTL() {
   }
 }
 
- bool ReportingHeader::HasReportingHeaderForOrigin(
-    const nsACString& aOrigin) {
+
+bool ReportingHeader::HasReportingHeaderForOrigin(const nsACString& aOrigin) {
   if (!gReporting) {
     return false;
   }

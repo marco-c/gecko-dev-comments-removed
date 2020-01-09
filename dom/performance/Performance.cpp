@@ -46,7 +46,8 @@ NS_IMPL_CYCLE_COLLECTION_INHERITED(Performance, DOMEventTargetHelper,
 NS_IMPL_ADDREF_INHERITED(Performance, DOMEventTargetHelper)
 NS_IMPL_RELEASE_INHERITED(Performance, DOMEventTargetHelper)
 
- already_AddRefed<Performance> Performance::CreateForMainThread(
+
+already_AddRefed<Performance> Performance::CreateForMainThread(
     nsPIDOMWindowInner* aWindow, nsIPrincipal* aPrincipal,
     nsDOMNavigationTiming* aDOMTiming, nsITimedChannel* aChannel) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -57,7 +58,8 @@ NS_IMPL_RELEASE_INHERITED(Performance, DOMEventTargetHelper)
   return performance.forget();
 }
 
- already_AddRefed<Performance> Performance::CreateForWorker(
+
+already_AddRefed<Performance> Performance::CreateForWorker(
     WorkerPrivate* aWorkerPrivate) {
   MOZ_ASSERT(aWorkerPrivate);
   aWorkerPrivate->AssertIsOnWorkerThread();
