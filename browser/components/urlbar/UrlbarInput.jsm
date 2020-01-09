@@ -1339,8 +1339,20 @@ class UrlbarInput {
       return;
     }
 
+    let sameSearchStrings = value == this._lastSearchString;
     let deletedAutofilledSubstring =
-      deletedEndOfAutofillPlaceholder && value == this._lastSearchString;
+      deletedEndOfAutofillPlaceholder && sameSearchStrings;
+
+    
+    
+    
+    if (sameSearchStrings &&
+        !deletedAutofilledSubstring &&
+        compositionState == UrlbarUtils.COMPOSITION.NONE &&
+        value.length > 0) {
+      return;
+    }
+
     let allowAutofill = !valueIsPasted &&
       this._maybeAutofillOnInput(value, deletedAutofilledSubstring);
 
