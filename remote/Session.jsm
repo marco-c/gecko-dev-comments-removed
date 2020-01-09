@@ -10,6 +10,14 @@ const {ParentProcessDomains} = ChromeUtils.import("chrome://remote/content/domai
 const {Domains} = ChromeUtils.import("chrome://remote/content/domains/Domains.jsm");
 const {formatError} = ChromeUtils.import("chrome://remote/content/Error.jsm");
 
+
+
+
+
+
+
+
+
 class Session {
   constructor(connection, target) {
     this.connection = connection;
