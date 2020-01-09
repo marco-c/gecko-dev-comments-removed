@@ -1450,13 +1450,12 @@ bool ValidateBlitFramebufferParameters(Context *context,
     
     
     
-    
     if (readFramebuffer->readDisallowedByMultiview())
     {
         context->validationError(GL_INVALID_FRAMEBUFFER_OPERATION, kBlitFromMultiview);
         return false;
     }
-    if (drawFramebuffer->getMultiviewLayout() != GL_NONE)
+    if (drawFramebuffer->isMultiview())
     {
         context->validationError(GL_INVALID_FRAMEBUFFER_OPERATION, kBlitToMultiview);
         return false;
@@ -2678,7 +2677,7 @@ const char *ValidateDrawStates(Context *context)
             return kTextureTypeConflict;
         }
 
-        if (extensions.multiview)
+        if (extensions.multiview2)
         {
             const int programNumViews     = program->usesMultiview() ? program->getNumViews() : 1;
             const int framebufferNumViews = framebuffer->getNumViews();
@@ -3826,11 +3825,9 @@ bool ValidateGetFramebufferAttachmentParameterivBase(Context *context,
         case GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_CUBE_MAP_FACE:
             break;
 
-        case GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_NUM_VIEWS_ANGLE:
-        case GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_MULTIVIEW_LAYOUT_ANGLE:
-        case GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_BASE_VIEW_INDEX_ANGLE:
-        case GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_VIEWPORT_OFFSETS_ANGLE:
-            if (clientVersion < 3 || !context->getExtensions().multiview)
+        case GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_NUM_VIEWS_OVR:
+        case GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_BASE_VIEW_INDEX_OVR:
+            if (clientVersion < 3 || !context->getExtensions().multiview2)
             {
                 context->validationError(GL_INVALID_ENUM, kEnumNotSupported);
                 return false;
@@ -4057,18 +4054,7 @@ bool ValidateGetFramebufferAttachmentParameterivBase(Context *context,
 
     if (numParams)
     {
-        if (pname == GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_VIEWPORT_OFFSETS_ANGLE)
-        {
-            
-            
-            const int numViews = attachmentObject ? attachmentObject->getNumViews() : 1;
-            *numParams         = numViews * 2;
-        }
-        else
-        {
-            
-            *numParams = 1;
-        }
+        *numParams = 1;
     }
 
     return true;
@@ -5372,7 +5358,6 @@ bool ValidateReadPixelsBase(Context *context,
         return false;
     }
 
-    
     
     
     

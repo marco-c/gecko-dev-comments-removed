@@ -303,7 +303,7 @@ struct Extensions
     bool fragDepth;
 
     
-    bool multiview;
+    bool multiview2;
     GLuint maxViews;
 
     

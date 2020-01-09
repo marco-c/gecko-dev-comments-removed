@@ -453,17 +453,6 @@ bool ValidateDrawIndirectBase(Context *context, PrimitiveMode mode, const void *
         return false;
     }
 
-    
-    
-    
-    const Framebuffer *drawFramebuffer = context->getState().getDrawFramebuffer();
-    ASSERT(drawFramebuffer != nullptr);
-    if (drawFramebuffer->getNumViews() > 1)
-    {
-        context->validationError(GL_INVALID_OPERATION, kMultiviewActive);
-        return false;
-    }
-
     return true;
 }
 

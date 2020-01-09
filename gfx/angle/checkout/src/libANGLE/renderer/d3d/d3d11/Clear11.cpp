@@ -105,18 +105,6 @@ bool UpdateDataCache(RtvDsvClearInfo<T> *dataCache,
     return cacheDirty;
 }
 
-bool AllOffsetsAreNonNegative(const std::vector<gl::Offset> &viewportOffsets)
-{
-    for (size_t i = 0u; i < viewportOffsets.size(); ++i)
-    {
-        const auto &offset = viewportOffsets[i];
-        if (offset.x < 0 || offset.y < 0)
-        {
-            return false;
-        }
-    }
-    return true;
-}
 }  
 
 #define CLEARPS(Index)                                                                    \
@@ -431,16 +419,10 @@ angle::Result Clear11::clearFramebuffer(const gl::Context *context,
         framebufferSize = colorAttachment->getSize();
     }
 
-    const bool isSideBySideFBO =
-        (fboData.getMultiviewLayout() == GL_FRAMEBUFFER_MULTIVIEW_SIDE_BY_SIDE_ANGLE);
     bool needScissoredClear = false;
-    std::vector<D3D11_RECT> scissorRects;
+    D3D11_RECT scissorRect;
     if (clearParams.scissorEnabled)
     {
-        const std::vector<gl::Offset> *viewportOffsets = fboData.getViewportOffsets();
-        ASSERT(viewportOffsets != nullptr);
-        ASSERT(AllOffsetsAreNonNegative(*fboData.getViewportOffsets()));
-
         if (clearParams.scissor.x >= framebufferSize.width ||
             clearParams.scissor.y >= framebufferSize.height || clearParams.scissor.width == 0 ||
             clearParams.scissor.height == 0)
@@ -451,45 +433,25 @@ angle::Result Clear11::clearFramebuffer(const gl::Context *context,
             return angle::Result::Continue;
         }
 
-        if (isSideBySideFBO)
+        if (clearParams.scissor.x + clearParams.scissor.width <= 0 ||
+            clearParams.scissor.y + clearParams.scissor.height <= 0)
         {
             
-            needScissoredClear = true;
+            return angle::Result::Continue;
         }
-        else
-        {
-            
-            
-            if (clearParams.scissor.x + clearParams.scissor.width <= 0 ||
-                clearParams.scissor.y + clearParams.scissor.height <= 0)
-            {
-                
-                return angle::Result::Continue;
-            }
-            needScissoredClear =
-                clearParams.scissor.x > 0 || clearParams.scissor.y > 0 ||
-                clearParams.scissor.x + clearParams.scissor.width < framebufferSize.width ||
-                clearParams.scissor.y + clearParams.scissor.height < framebufferSize.height;
-        }
+        needScissoredClear =
+            clearParams.scissor.x > 0 || clearParams.scissor.y > 0 ||
+            clearParams.scissor.x + clearParams.scissor.width < framebufferSize.width ||
+            clearParams.scissor.y + clearParams.scissor.height < framebufferSize.height;
 
         if (needScissoredClear)
         {
             
             
-            const size_t numViews = viewportOffsets->size();
-            scissorRects.reserve(numViews);
-            for (size_t i = 0u; i < numViews; ++i)
-            {
-                const gl::Offset &offset = (*viewportOffsets)[i];
-                D3D11_RECT rect;
-                int x       = clearParams.scissor.x + offset.x;
-                int y       = clearParams.scissor.y + offset.y;
-                rect.left   = x;
-                rect.right  = x + clearParams.scissor.width;
-                rect.top    = y;
-                rect.bottom = y + clearParams.scissor.height;
-                scissorRects.emplace_back(rect);
-            }
+            scissorRect.left   = clearParams.scissor.x;
+            scissorRect.right  = scissorRect.left + clearParams.scissor.width;
+            scissorRect.top    = clearParams.scissor.y;
+            scissorRect.bottom = scissorRect.top + clearParams.scissor.height;
         }
     }
 
@@ -588,15 +550,10 @@ angle::Result Clear11::clearFramebuffer(const gl::Context *context,
             {
                 
                 ASSERT(deviceContext1);
-                
-                ASSERT(!scissorRects.empty());
-                deviceContext1->ClearView(framebufferRTV.get(), clearValues, scissorRects.data(),
-                                          static_cast<UINT>(scissorRects.size()));
+                deviceContext1->ClearView(framebufferRTV.get(), clearValues, &scissorRect, 1);
                 if (mRenderer->getWorkarounds().callClearTwice)
                 {
-                    deviceContext1->ClearView(framebufferRTV.get(), clearValues,
-                                              scissorRects.data(),
-                                              static_cast<UINT>(scissorRects.size()));
+                    deviceContext1->ClearView(framebufferRTV.get(), clearValues, &scissorRect, 1);
                 }
             }
             else
@@ -770,8 +727,7 @@ angle::Result Clear11::clearFramebuffer(const gl::Context *context,
     const d3d11::GeometryShader *gs = nullptr;
     const d3d11::InputLayout *il    = nullptr;
     const d3d11::PixelShader *ps    = nullptr;
-    const bool hasLayeredLayout =
-        (fboData.getMultiviewLayout() == GL_FRAMEBUFFER_MULTIVIEW_LAYERED_ANGLE);
+    const bool hasLayeredLayout     = (fboData.isMultiview());
     ANGLE_TRY(mShaderManager.getShadersAndLayout(context, mRenderer, clearParams.colorType, numRtvs,
                                                  hasLayeredLayout, &il, &vs, &gs, &ps));
 
@@ -798,26 +754,19 @@ angle::Result Clear11::clearFramebuffer(const gl::Context *context,
     
     stateManager->setRenderTargets(&rtvs[0], numRtvs, dsv);
 
-    
-    
-    size_t necessaryNumClears = needScissoredClear ? scissorRects.size() : 1u;
-    for (size_t i = 0u; i < necessaryNumClears; ++i)
+    if (needScissoredClear)
     {
-        if (needScissoredClear)
-        {
-            ASSERT(i < scissorRects.size());
-            stateManager->setScissorRectD3D(scissorRects[i]);
-        }
-        
-        if (!hasLayeredLayout || isSideBySideFBO)
-        {
-            deviceContext->Draw(6, 0);
-        }
-        else
-        {
-            ASSERT(hasLayeredLayout);
-            deviceContext->DrawInstanced(6, static_cast<UINT>(fboData.getNumViews()), 0, 0);
-        }
+        stateManager->setScissorRectD3D(scissorRect);
+    }
+    
+    if (!hasLayeredLayout)
+    {
+        deviceContext->Draw(6, 0);
+    }
+    else
+    {
+        ASSERT(hasLayeredLayout);
+        deviceContext->DrawInstanced(6, static_cast<UINT>(fboData.getNumViews()), 0, 0);
     }
 
     return angle::Result::Continue;

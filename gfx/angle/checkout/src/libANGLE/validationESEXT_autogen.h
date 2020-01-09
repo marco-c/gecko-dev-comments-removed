@@ -110,22 +110,6 @@ bool ValidateMultiDrawElementsInstancedANGLE(Context *context,
                                              GLsizei drawcount);
 
 
-bool ValidateFramebufferTextureMultiviewLayeredANGLE(Context *context,
-                                                     GLenum target,
-                                                     GLenum attachment,
-                                                     GLuint texture,
-                                                     GLint level,
-                                                     GLint baseViewIndex,
-                                                     GLsizei numViews);
-bool ValidateFramebufferTextureMultiviewSideBySideANGLE(Context *context,
-                                                        GLenum target,
-                                                        GLenum attachment,
-                                                        GLuint texture,
-                                                        GLint level,
-                                                        GLsizei numViews,
-                                                        const GLint *viewportOffsets);
-
-
 bool ValidateProvokingVertexANGLE(Context *context, ProvokingVertex modePacked);
 
 
@@ -1094,6 +1078,17 @@ bool ValidateBindVertexArrayOES(Context *context, GLuint array);
 bool ValidateDeleteVertexArraysOES(Context *context, GLsizei n, const GLuint *arrays);
 bool ValidateGenVertexArraysOES(Context *context, GLsizei n, GLuint *arrays);
 bool ValidateIsVertexArrayOES(Context *context, GLuint array);
+
+
+bool ValidateFramebufferTextureMultiviewOVR(Context *context,
+                                            GLenum target,
+                                            GLenum attachment,
+                                            GLuint texture,
+                                            GLint level,
+                                            GLint baseViewIndex,
+                                            GLsizei numViews);
+
+
 }  
 
 #endif  

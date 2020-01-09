@@ -330,59 +330,6 @@ void GL_APIENTRY MultiDrawElementsInstancedANGLE(GLenum mode,
 }
 
 
-void GL_APIENTRY FramebufferTextureMultiviewLayeredANGLE(GLenum target,
-                                                         GLenum attachment,
-                                                         GLuint texture,
-                                                         GLint level,
-                                                         GLint baseViewIndex,
-                                                         GLsizei numViews)
-{
-    ANGLE_SCOPED_GLOBAL_LOCK();
-    EVENT(
-        "(GLenum target = 0x%X, GLenum attachment = 0x%X, GLuint texture = %u, GLint level = %d, "
-        "GLint baseViewIndex = %d, GLsizei numViews = %d)",
-        target, attachment, texture, level, baseViewIndex, numViews);
-
-    Context *context = GetValidGlobalContext();
-    if (context)
-    {
-        if (context->skipValidation() ||
-            ValidateFramebufferTextureMultiviewLayeredANGLE(context, target, attachment, texture,
-                                                            level, baseViewIndex, numViews))
-        {
-            context->framebufferTextureMultiviewLayered(target, attachment, texture, level,
-                                                        baseViewIndex, numViews);
-        }
-    }
-}
-
-void GL_APIENTRY FramebufferTextureMultiviewSideBySideANGLE(GLenum target,
-                                                            GLenum attachment,
-                                                            GLuint texture,
-                                                            GLint level,
-                                                            GLsizei numViews,
-                                                            const GLint *viewportOffsets)
-{
-    ANGLE_SCOPED_GLOBAL_LOCK();
-    EVENT(
-        "(GLenum target = 0x%X, GLenum attachment = 0x%X, GLuint texture = %u, GLint level = %d, "
-        "GLsizei numViews = %d, const GLint * viewportOffsets = 0x%016" PRIxPTR ")",
-        target, attachment, texture, level, numViews, (uintptr_t)viewportOffsets);
-
-    Context *context = GetValidGlobalContext();
-    if (context)
-    {
-        if (context->skipValidation() ||
-            ValidateFramebufferTextureMultiviewSideBySideANGLE(context, target, attachment, texture,
-                                                               level, numViews, viewportOffsets))
-        {
-            context->framebufferTextureMultiviewSideBySide(target, attachment, texture, level,
-                                                           numViews, viewportOffsets);
-        }
-    }
-}
-
-
 void GL_APIENTRY ProvokingVertexANGLE(GLenum mode)
 {
     ANGLE_SCOPED_GLOBAL_LOCK();
@@ -4780,6 +4727,35 @@ GLboolean GL_APIENTRY IsVertexArrayOES(GLuint array)
 }
 
 
+void GL_APIENTRY FramebufferTextureMultiviewOVR(GLenum target,
+                                                GLenum attachment,
+                                                GLuint texture,
+                                                GLint level,
+                                                GLint baseViewIndex,
+                                                GLsizei numViews)
+{
+    ANGLE_SCOPED_GLOBAL_LOCK();
+    EVENT(
+        "(GLenum target = 0x%X, GLenum attachment = 0x%X, GLuint texture = %u, GLint level = %d, "
+        "GLint baseViewIndex = %d, GLsizei numViews = %d)",
+        target, attachment, texture, level, baseViewIndex, numViews);
+
+    Context *context = GetValidGlobalContext();
+    if (context)
+    {
+        if (context->skipValidation() ||
+            ValidateFramebufferTextureMultiviewOVR(context, target, attachment, texture, level,
+                                                   baseViewIndex, numViews))
+        {
+            context->framebufferTextureMultiview(target, attachment, texture, level, baseViewIndex,
+                                                 numViews);
+        }
+    }
+}
+
+
+
+
 void GL_APIENTRY ActiveShaderProgramContextANGLE(GLeglContext ctx, GLuint pipeline, GLuint program)
 {
     ANGLE_SCOPED_GLOBAL_LOCK();
@@ -7710,6 +7686,34 @@ void GL_APIENTRY FramebufferTextureLayerContextANGLE(GLeglContext ctx,
             ValidateFramebufferTextureLayer(context, target, attachment, texture, level, layer))
         {
             context->framebufferTextureLayer(target, attachment, texture, level, layer);
+        }
+    }
+}
+
+void GL_APIENTRY FramebufferTextureMultiviewOVRContextANGLE(GLeglContext ctx,
+                                                            GLenum target,
+                                                            GLenum attachment,
+                                                            GLuint texture,
+                                                            GLint level,
+                                                            GLint baseViewIndex,
+                                                            GLsizei numViews)
+{
+    ANGLE_SCOPED_GLOBAL_LOCK();
+    EVENT(
+        "(GLenum target = 0x%X, GLenum attachment = 0x%X, GLuint texture = %u, GLint level = %d, "
+        "GLint baseViewIndex = %d, GLsizei numViews = %d)",
+        target, attachment, texture, level, baseViewIndex, numViews);
+
+    Context *context = static_cast<gl::Context *>(ctx);
+    if (context)
+    {
+        ASSERT(context == GetValidGlobalContext());
+        if (context->skipValidation() ||
+            ValidateFramebufferTextureMultiviewOVR(context, target, attachment, texture, level,
+                                                   baseViewIndex, numViews))
+        {
+            context->framebufferTextureMultiview(target, attachment, texture, level, baseViewIndex,
+                                                 numViews);
         }
     }
 }
@@ -17751,63 +17755,6 @@ void GL_APIENTRY GetQueryObjectui64vRobustANGLEContextANGLE(GLeglContext ctx,
             ValidateGetQueryObjectui64vRobustANGLE(context, id, pname, bufSize, length, params))
         {
             context->getQueryObjectui64vRobust(id, pname, bufSize, length, params);
-        }
-    }
-}
-
-void GL_APIENTRY FramebufferTextureMultiviewLayeredANGLEContextANGLE(GLeglContext ctx,
-                                                                     GLenum target,
-                                                                     GLenum attachment,
-                                                                     GLuint texture,
-                                                                     GLint level,
-                                                                     GLint baseViewIndex,
-                                                                     GLsizei numViews)
-{
-    ANGLE_SCOPED_GLOBAL_LOCK();
-    EVENT(
-        "(GLenum target = 0x%X, GLenum attachment = 0x%X, GLuint texture = %u, GLint level = %d, "
-        "GLint baseViewIndex = %d, GLsizei numViews = %d)",
-        target, attachment, texture, level, baseViewIndex, numViews);
-
-    Context *context = static_cast<gl::Context *>(ctx);
-    if (context)
-    {
-        ASSERT(context == GetValidGlobalContext());
-        if (context->skipValidation() ||
-            ValidateFramebufferTextureMultiviewLayeredANGLE(context, target, attachment, texture,
-                                                            level, baseViewIndex, numViews))
-        {
-            context->framebufferTextureMultiviewLayered(target, attachment, texture, level,
-                                                        baseViewIndex, numViews);
-        }
-    }
-}
-
-void GL_APIENTRY
-FramebufferTextureMultiviewSideBySideANGLEContextANGLE(GLeglContext ctx,
-                                                       GLenum target,
-                                                       GLenum attachment,
-                                                       GLuint texture,
-                                                       GLint level,
-                                                       GLsizei numViews,
-                                                       const GLint *viewportOffsets)
-{
-    ANGLE_SCOPED_GLOBAL_LOCK();
-    EVENT(
-        "(GLenum target = 0x%X, GLenum attachment = 0x%X, GLuint texture = %u, GLint level = %d, "
-        "GLsizei numViews = %d, const GLint * viewportOffsets = 0x%016" PRIxPTR ")",
-        target, attachment, texture, level, numViews, (uintptr_t)viewportOffsets);
-
-    Context *context = static_cast<gl::Context *>(ctx);
-    if (context)
-    {
-        ASSERT(context == GetValidGlobalContext());
-        if (context->skipValidation() ||
-            ValidateFramebufferTextureMultiviewSideBySideANGLE(context, target, attachment, texture,
-                                                               level, numViews, viewportOffsets))
-        {
-            context->framebufferTextureMultiviewSideBySide(target, attachment, texture, level,
-                                                           numViews, viewportOffsets);
         }
     }
 }

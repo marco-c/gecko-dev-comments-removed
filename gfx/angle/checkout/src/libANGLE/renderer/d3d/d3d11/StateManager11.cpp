@@ -1174,37 +1174,12 @@ void StateManager11::handleMultiviewDrawFramebufferChange(const gl::Context *con
     const gl::Framebuffer *drawFramebuffer = glState.getDrawFramebuffer();
     ASSERT(drawFramebuffer != nullptr);
 
-    
-    const std::vector<gl::Offset> *attachmentViewportOffsets =
-        drawFramebuffer->getViewportOffsets();
-    const std::vector<gl::Offset> &viewportOffsets =
-        attachmentViewportOffsets != nullptr
-            ? *attachmentViewportOffsets
-            : gl::FramebufferAttachment::GetDefaultViewportOffsetVector();
-    if (mViewportOffsets != viewportOffsets)
+    if (drawFramebuffer->isMultiview())
     {
-        mViewportOffsets = viewportOffsets;
-
         
         
-        invalidateViewport(context);
-        mInternalDirtyBits.set(DIRTY_BIT_SCISSOR_STATE);
-    }
-    switch (drawFramebuffer->getMultiviewLayout())
-    {
-        case GL_FRAMEBUFFER_MULTIVIEW_SIDE_BY_SIDE_ANGLE:
-            mShaderConstants.setMultiviewWriteToViewportIndex(1.0f);
-            break;
-        case GL_FRAMEBUFFER_MULTIVIEW_LAYERED_ANGLE:
-            
-            
-            
-            mShaderConstants.setMultiviewWriteToViewportIndex(0.0f);
-            break;
-        default:
-            
-            
-            break;
+        
+        mShaderConstants.setMultiviewWriteToViewportIndex(0.0f);
     }
 }
 
@@ -1368,19 +1343,14 @@ void StateManager11::syncScissorRectangle(const gl::Rectangle &scissor, bool ena
 
     if (enabled)
     {
-        std::array<D3D11_RECT, gl::IMPLEMENTATION_ANGLE_MULTIVIEW_MAX_VIEWS> rectangles;
-        const UINT numRectangles = static_cast<UINT>(mViewportOffsets.size());
-        for (UINT i = 0u; i < numRectangles; ++i)
-        {
-            D3D11_RECT &rect = rectangles[i];
-            int x            = scissor.x + mViewportOffsets[i].x;
-            int y            = modifiedScissorY + mViewportOffsets[i].y;
-            rect.left        = std::max(0, x);
-            rect.top         = std::max(0, y);
-            rect.right       = x + std::max(0, scissor.width);
-            rect.bottom      = y + std::max(0, scissor.height);
-        }
-        mRenderer->getDeviceContext()->RSSetScissorRects(numRectangles, rectangles.data());
+        D3D11_RECT rect;
+        int x       = scissor.x;
+        int y       = modifiedScissorY;
+        rect.left   = std::max(0, x);
+        rect.top    = std::max(0, y);
+        rect.right  = x + std::max(0, scissor.width);
+        rect.bottom = y + std::max(0, scissor.height);
+        mRenderer->getDeviceContext()->RSSetScissorRects(1, &rect);
     }
 
     mCurScissorRect    = scissor;
@@ -1412,65 +1382,58 @@ void StateManager11::syncViewport(const gl::Context *context)
     }
 
     const auto &viewport = glState.getViewport();
-    std::array<D3D11_VIEWPORT, gl::IMPLEMENTATION_ANGLE_MULTIVIEW_MAX_VIEWS> dxViewports;
-    const UINT numRectangles = static_cast<UINT>(mViewportOffsets.size());
 
     int dxViewportTopLeftX = 0;
     int dxViewportTopLeftY = 0;
     int dxViewportWidth    = 0;
     int dxViewportHeight   = 0;
 
-    for (UINT i = 0u; i < numRectangles; ++i)
+    dxViewportTopLeftX = gl::clamp(viewport.x, dxMinViewportBoundsX, dxMaxViewportBoundsX);
+    dxViewportTopLeftY = gl::clamp(viewport.y, dxMinViewportBoundsY, dxMaxViewportBoundsY);
+    dxViewportWidth    = gl::clamp(viewport.width, 0, dxMaxViewportBoundsX - dxViewportTopLeftX);
+    dxViewportHeight   = gl::clamp(viewport.height, 0, dxMaxViewportBoundsY - dxViewportTopLeftY);
+
+    D3D11_VIEWPORT dxViewport;
+    dxViewport.TopLeftX = static_cast<float>(dxViewportTopLeftX);
+    if (mCurPresentPathFastEnabled)
     {
-        dxViewportTopLeftX = gl::clamp(viewport.x + mViewportOffsets[i].x, dxMinViewportBoundsX,
-                                       dxMaxViewportBoundsX);
-        dxViewportTopLeftY = gl::clamp(viewport.y + mViewportOffsets[i].y, dxMinViewportBoundsY,
-                                       dxMaxViewportBoundsY);
-        dxViewportWidth  = gl::clamp(viewport.width, 0, dxMaxViewportBoundsX - dxViewportTopLeftX);
-        dxViewportHeight = gl::clamp(viewport.height, 0, dxMaxViewportBoundsY - dxViewportTopLeftY);
-
-        D3D11_VIEWPORT &dxViewport = dxViewports[i];
-        dxViewport.TopLeftX        = static_cast<float>(dxViewportTopLeftX);
-        if (mCurPresentPathFastEnabled)
-        {
-            
-            
-            
-            
-            
-            dxViewport.TopLeftY = static_cast<float>(mCurPresentPathFastColorBufferHeight -
-                                                     dxViewportTopLeftY - dxViewportHeight);
-        }
-        else
-        {
-            dxViewport.TopLeftY = static_cast<float>(dxViewportTopLeftY);
-        }
-
         
         
         
         
         
-        
-        
-        if (!framebuffer->getFirstNonNullAttachment() &&
-            (framebuffer->getDefaultWidth() || framebuffer->getDefaultHeight()))
-        {
-            dxViewport.Width =
-                static_cast<GLfloat>(std::min(viewport.width, framebuffer->getDefaultWidth()));
-            dxViewport.Height =
-                static_cast<GLfloat>(std::min(viewport.height, framebuffer->getDefaultHeight()));
-        }
-        else
-        {
-            dxViewport.Width  = static_cast<float>(dxViewportWidth);
-            dxViewport.Height = static_cast<float>(dxViewportHeight);
-        }
-        dxViewport.MinDepth = actualZNear;
-        dxViewport.MaxDepth = actualZFar;
+        dxViewport.TopLeftY = static_cast<float>(mCurPresentPathFastColorBufferHeight -
+                                                 dxViewportTopLeftY - dxViewportHeight);
+    }
+    else
+    {
+        dxViewport.TopLeftY = static_cast<float>(dxViewportTopLeftY);
     }
 
-    mRenderer->getDeviceContext()->RSSetViewports(numRectangles, dxViewports.data());
+    
+    
+    
+    
+    
+    
+    
+    if (!framebuffer->getFirstNonNullAttachment() &&
+        (framebuffer->getDefaultWidth() || framebuffer->getDefaultHeight()))
+    {
+        dxViewport.Width =
+            static_cast<GLfloat>(std::min(viewport.width, framebuffer->getDefaultWidth()));
+        dxViewport.Height =
+            static_cast<GLfloat>(std::min(viewport.height, framebuffer->getDefaultHeight()));
+    }
+    else
+    {
+        dxViewport.Width  = static_cast<float>(dxViewportWidth);
+        dxViewport.Height = static_cast<float>(dxViewportHeight);
+    }
+    dxViewport.MinDepth = actualZNear;
+    dxViewport.MaxDepth = actualZFar;
+
+    mRenderer->getDeviceContext()->RSSetViewports(1, &dxViewport);
 
     mCurViewport = viewport;
     mCurNear     = actualZNear;
@@ -1884,8 +1847,7 @@ angle::Result StateManager11::ensureInitialized(const gl::Context *context)
 
     mShaderConstants.init(caps);
 
-    mIsMultiviewEnabled = extensions.multiview;
-    mViewportOffsets.resize(1u);
+    mIsMultiviewEnabled = extensions.multiview2;
 
     ANGLE_TRY(mVertexDataManager.initialize(context));
 

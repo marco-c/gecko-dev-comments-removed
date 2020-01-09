@@ -17,9 +17,7 @@
 
 
 
-#if defined(ANGLE_PLATFORM_APPLE)
 extern char **environ;
-#endif
 
 namespace angle
 {

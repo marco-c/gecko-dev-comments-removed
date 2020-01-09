@@ -474,11 +474,6 @@ class StateManager11 final : angle::NonCopyable
     float mCurFar;
 
     
-    
-    
-    std::vector<gl::Offset> mViewportOffsets;
-
-    
     ShaderConstants11 mShaderConstants;
 
     

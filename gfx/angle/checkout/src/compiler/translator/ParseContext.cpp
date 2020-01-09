@@ -1347,7 +1347,7 @@ void TParseContext::declarationQualifierErrorCheck(const sh::TQualifier qualifie
 
     
     
-    if (isExtensionEnabled(TExtension::OVR_multiview) && mShaderVersion < 300 &&
+    if (isExtensionEnabled(TExtension::OVR_multiview2) && mShaderVersion < 300 &&
         qualifier == EvqVertexIn)
     {
         error(location, "storage qualifier supported in GLSL ES 3.00 and above only", "in");
@@ -3106,7 +3106,7 @@ void TParseContext::parseGlobalLayoutQualifier(const TTypeQualifierBuilder &type
             return;
         }
     }
-    else if (isExtensionEnabled(TExtension::OVR_multiview) &&
+    else if (isExtensionEnabled(TExtension::OVR_multiview2) &&
              typeQualifier.qualifier == EvqVertexIn)
     {
         
@@ -4535,7 +4535,7 @@ TLayoutQualifier TParseContext::parseLayoutQualifier(const ImmutableString &qual
     }
     else if (qualifierType == "num_views" && mShaderType == GL_VERTEX_SHADER)
     {
-        if (checkCanUseExtension(qualifierTypeLine, TExtension::OVR_multiview))
+        if (checkCanUseExtension(qualifierTypeLine, TExtension::OVR_multiview2))
         {
             parseNumViews(intValue, intValueLine, intValueString, &qualifier.numViews);
         }
@@ -4597,7 +4597,7 @@ TStorageQualifierWrapper *TParseContext::parseInQualifier(const TSourceLoc &loc)
     {
         case GL_VERTEX_SHADER:
         {
-            if (mShaderVersion < 300 && !isExtensionEnabled(TExtension::OVR_multiview))
+            if (mShaderVersion < 300 && !isExtensionEnabled(TExtension::OVR_multiview2))
             {
                 error(loc, "storage qualifier supported in GLSL ES 3.00 and above only", "in");
             }

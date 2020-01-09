@@ -103,21 +103,6 @@ ANGLE_EXPORT void GL_APIENTRY MultiDrawElementsInstancedANGLE(GLenum mode,
                                                               GLsizei drawcount);
 
 
-ANGLE_EXPORT void GL_APIENTRY FramebufferTextureMultiviewLayeredANGLE(GLenum target,
-                                                                      GLenum attachment,
-                                                                      GLuint texture,
-                                                                      GLint level,
-                                                                      GLint baseViewIndex,
-                                                                      GLsizei numViews);
-ANGLE_EXPORT void GL_APIENTRY
-FramebufferTextureMultiviewSideBySideANGLE(GLenum target,
-                                           GLenum attachment,
-                                           GLuint texture,
-                                           GLint level,
-                                           GLsizei numViews,
-                                           const GLint *viewportOffsets);
-
-
 ANGLE_EXPORT void GL_APIENTRY ProvokingVertexANGLE(GLenum mode);
 
 
@@ -930,6 +915,16 @@ ANGLE_EXPORT void GL_APIENTRY GenVertexArraysOES(GLsizei n, GLuint *arrays);
 ANGLE_EXPORT GLboolean GL_APIENTRY IsVertexArrayOES(GLuint array);
 
 
+ANGLE_EXPORT void GL_APIENTRY FramebufferTextureMultiviewOVR(GLenum target,
+                                                             GLenum attachment,
+                                                             GLuint texture,
+                                                             GLint level,
+                                                             GLint baseViewIndex,
+                                                             GLsizei numViews);
+
+
+
+
 ANGLE_EXPORT void GL_APIENTRY ActiveShaderProgramContextANGLE(GLeglContext ctx,
                                                               GLuint pipeline,
                                                               GLuint program);
@@ -1431,6 +1426,13 @@ ANGLE_EXPORT void GL_APIENTRY FramebufferTextureLayerContextANGLE(GLeglContext c
                                                                   GLuint texture,
                                                                   GLint level,
                                                                   GLint layer);
+ANGLE_EXPORT void GL_APIENTRY FramebufferTextureMultiviewOVRContextANGLE(GLeglContext ctx,
+                                                                         GLenum target,
+                                                                         GLenum attachment,
+                                                                         GLuint texture,
+                                                                         GLint level,
+                                                                         GLint baseViewIndex,
+                                                                         GLsizei numViews);
 ANGLE_EXPORT void GL_APIENTRY FrontFaceContextANGLE(GLeglContext ctx, GLenum mode);
 ANGLE_EXPORT void GL_APIENTRY FrustumfContextANGLE(GLeglContext ctx,
                                                    GLfloat l,
@@ -3454,22 +3456,6 @@ ANGLE_EXPORT void GL_APIENTRY GetQueryObjectui64vRobustANGLEContextANGLE(GLeglCo
                                                                          GLsizei bufSize,
                                                                          GLsizei *length,
                                                                          GLuint64 *params);
-ANGLE_EXPORT void GL_APIENTRY
-FramebufferTextureMultiviewLayeredANGLEContextANGLE(GLeglContext ctx,
-                                                    GLenum target,
-                                                    GLenum attachment,
-                                                    GLuint texture,
-                                                    GLint level,
-                                                    GLint baseViewIndex,
-                                                    GLsizei numViews);
-ANGLE_EXPORT void GL_APIENTRY
-FramebufferTextureMultiviewSideBySideANGLEContextANGLE(GLeglContext ctx,
-                                                       GLenum target,
-                                                       GLenum attachment,
-                                                       GLuint texture,
-                                                       GLint level,
-                                                       GLsizei numViews,
-                                                       const GLint *viewportOffsets);
 ANGLE_EXPORT void GL_APIENTRY CopyTexture3DANGLEContextANGLE(GLeglContext ctx,
                                                              GLuint sourceId,
                                                              GLint sourceLevel,

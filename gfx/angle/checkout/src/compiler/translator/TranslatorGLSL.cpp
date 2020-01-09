@@ -277,7 +277,7 @@ void TranslatorGLSL::writeExtensionBehavior(TIntermNode *root, ShCompileOptions 
             }
         }
 
-        const bool isMultiview = (iter.first == TExtension::OVR_multiview);
+        const bool isMultiview = (iter.first == TExtension::OVR_multiview2);
         if (isMultiview && getShaderType() == GL_VERTEX_SHADER &&
             (compileOptions & SH_SELECT_VIEW_IN_NV_GLSL_VERTEX_SHADER) != 0u)
         {

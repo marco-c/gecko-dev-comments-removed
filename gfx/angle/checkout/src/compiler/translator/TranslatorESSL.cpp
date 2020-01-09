@@ -132,7 +132,7 @@ void TranslatorESSL::writeExtensionBehavior(ShCompileOptions compileOptions)
     {
         if (iter->second != EBhUndefined)
         {
-            const bool isMultiview = (iter->first == TExtension::OVR_multiview);
+            const bool isMultiview = (iter->first == TExtension::OVR_multiview2);
             if (getResources().NV_shader_framebuffer_fetch &&
                 iter->first == TExtension::EXT_shader_framebuffer_fetch)
             {

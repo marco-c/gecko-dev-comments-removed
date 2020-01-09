@@ -93,8 +93,8 @@ Compiler::Compiler(rx::GLImplFactory *implFactory, const State &state)
     mResources.EXT_frag_depth        = extensions.fragDepth;
 
     
-    mResources.OVR_multiview = extensions.multiview;
-    mResources.MaxViewsOVR   = extensions.maxViews;
+    mResources.OVR_multiview2 = extensions.multiview2;
+    mResources.MaxViewsOVR    = extensions.maxViews;
 
     
     mResources.MaxVertexOutputVectors  = caps.maxVertexOutputComponents / 4;
