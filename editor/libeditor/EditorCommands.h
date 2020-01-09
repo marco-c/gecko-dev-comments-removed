@@ -6,6 +6,7 @@
 #ifndef EditorCommands_h_
 #define EditorCommands_h_
 
+#include "mozilla/StaticPtr.h"
 #include "nsIControllerCommand.h"
 #include "nsISupportsImpl.h"
 #include "nscore.h"
@@ -21,11 +22,8 @@ namespace mozilla {
 
 
 
-
 class EditorCommandBase : public nsIControllerCommand {
  public:
-  EditorCommandBase();
-
   NS_DECL_ISUPPORTS
 
   NS_IMETHOD IsCommandEnabled(const char* aCommandName,
@@ -36,6 +34,7 @@ class EditorCommandBase : public nsIControllerCommand {
                        nsISupports* aCommandRefCon) override = 0;
 
  protected:
+  EditorCommandBase();
   virtual ~EditorCommandBase() {}
 };
 
@@ -55,6 +54,21 @@ class EditorCommandBase : public nsIControllerCommand {
     NS_IMETHOD GetCommandStateParams(const char* aCommandName,              \
                                      nsICommandParams* aParams,             \
                                      nsISupports* aCommandRefCon) override; \
+    static _cmd* GetInstance() {                                            \
+      if (!sInstance) {                                                     \
+        sInstance = new _cmd();                                             \
+      }                                                                     \
+      return sInstance;                                                     \
+    }                                                                       \
+                                                                            \
+    static void Shutdown() { sInstance = nullptr; }                         \
+                                                                            \
+   protected:                                                               \
+    _cmd() = default;                                                       \
+    virtual ~_cmd() = default;                                              \
+                                                                            \
+   private:                                                                 \
+    static StaticRefPtr<_cmd> sInstance;                                    \
   };
 
 
