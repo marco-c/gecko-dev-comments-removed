@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
-
-
-
-
+// @flow
 
 import {
   breakpointExists,
@@ -16,7 +16,7 @@ import {
 import { PROMISE } from "../utils/middleware/promise";
 import {
   getSymbols,
-  getFirstVisibleBreakpointPosition,
+  getFirstBreakpointPosition,
   getBreakpointPositionsForSource,
   getSourceFromId
 } from "../../selectors";
@@ -84,7 +84,7 @@ export function enableBreakpoint(breakpoint: Breakpoint) {
       return;
     }
 
-    
+    // To instantly reflect in the UI, we optimistically enable the breakpoint
     const enabledBreakpoint = { ...breakpoint, disabled: false };
 
     return dispatch({
@@ -105,7 +105,7 @@ export function addBreakpoint(
     const { sourceId, column } = location;
 
     if (column === undefined) {
-      position = getFirstVisibleBreakpointPosition(getState(), location);
+      position = getFirstBreakpointPosition(getState(), location);
     } else {
       const positions = getBreakpointPositionsForSource(getState(), sourceId);
       position = findPosition(positions, location);
