@@ -939,11 +939,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     }
 
     return resumeLimitHandled.then(() => {
-      if (request) {
-        this._options.pauseOnExceptions = request.pauseOnExceptions;
-        this._options.ignoreCaughtExceptions = request.ignoreCaughtExceptions;
-        this.maybePauseOnExceptions();
-      }
+      this.maybePauseOnExceptions();
 
       
       
@@ -1543,6 +1539,12 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     return { skip };
   },
 
+  onPauseOnExceptions: function({pauseOnExceptions, ignoreCaughtExceptions}) {
+    Object.assign(this._options, { pauseOnExceptions, ignoreCaughtExceptions });
+    this.maybePauseOnExceptions();
+    return {};
+  },
+
   
 
 
@@ -1747,6 +1749,7 @@ Object.assign(ThreadActor.prototype.requestTypes, {
   "sources": ThreadActor.prototype.onSources,
   "threadGrips": ThreadActor.prototype.onThreadGrips,
   "skipBreakpoints": ThreadActor.prototype.onSkipBreakpoints,
+  "pauseOnExceptions": ThreadActor.prototype.onPauseOnExceptions,
   "dumpThread": ThreadActor.prototype.onDump,
 });
 
