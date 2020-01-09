@@ -2473,13 +2473,14 @@ static void UpdateThreadFunc(void *param) {
         NS_tchar continueFilePath[MAXPATHLEN] = {NS_T('\0')};
         NS_tsnprintf(continueFilePath,
                      sizeof(continueFilePath) / sizeof(continueFilePath[0]),
-                     NS_T("%s/continueStaging"), gPatchDirPath);
+                     NS_T("%s/continueStaging"), gInstallDirPath);
         
         
         
         
-        const int max_retries = 100;
-        int retries = 1;
+        
+        const int max_retries = 50;
+        int retries = 0;
         while (retries++ < max_retries) {
 #  ifdef XP_WIN
           Sleep(100);
@@ -2487,9 +2488,9 @@ static void UpdateThreadFunc(void *param) {
           usleep(100000);
 #  endif
           
-          
-          if (!NS_taccess(continueFilePath, F_OK) &&
-              !NS_tremove(continueFilePath)) {
+          if (!NS_taccess(continueFilePath, F_OK)) {
+            
+            NS_tremove(continueFilePath);
             break;
           }
         }

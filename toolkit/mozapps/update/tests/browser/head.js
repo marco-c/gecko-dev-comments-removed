@@ -38,6 +38,9 @@ let gOriginalUpdateAutoValue = null;
 gDebugTest = true;
 
 
+requestLongerTimeout(10);
+
+
 
 
 add_task(async function setupTestCommon() {
@@ -92,23 +95,23 @@ registerCleanupFunction(async () => {
 
 
 
+
+
+
 async function continueFileHandler(leafName) {
   
   
-  
-  let retries = undefined;
+  let interval = 100;
+  let retries = 200;
   let continueFile;
   if (leafName == CONTINUE_STAGING) {
-    debugDump("creating " + leafName + " file for slow update staging");
     
     
-    
-    
-    retries = 100;
-    continueFile = getUpdateDirFile(DIR_PATCH);
+    interval = 200;
+    retries = 600;
+    continueFile = getGREBinDir();
     continueFile.append(leafName);
   } else {
-    debugDump("creating " + leafName + " file for slow http server requests");
     continueFile = Services.dirsvc.get("CurWorkD", Ci.nsIFile);
     let continuePath = REL_PATH_DATA + leafName;
     let continuePathParts = continuePath.split("/");
@@ -120,6 +123,7 @@ async function continueFileHandler(leafName) {
     throw new Error("The continue file should not exist, path: " +
                     continueFile.path);
   }
+  debugDump("Creating continue file, path: " + continueFile.path);
   continueFile.create(Ci.nsIFile.NORMAL_FILE_TYPE, PERMS_FILE);
   
   
@@ -131,10 +135,14 @@ async function continueFileHandler(leafName) {
       continueFile.remove(false);
     }
   });
-  return BrowserTestUtils.waitForCondition(() =>
-    (!continueFile.exists()),
+  return BrowserTestUtils.waitForCondition(() => (
+    !continueFile.exists()),
     "Waiting for file to be deleted, path: " + continueFile.path,
-    undefined, retries);
+    interval, retries
+  ).catch(e => {
+    logTestInfo("Continue file was not removed after checking " +
+                retries + " times, path: " + continueFile.path);
+  });
 }
 
 
@@ -640,7 +648,8 @@ function runAboutDialogUpdateTest(updateParams, backgroundUpdate, steps) {
       await BrowserTestUtils.waitForCondition(() =>
         (updateDeck.selectedPanel && updateDeck.selectedPanel.id == panelId),
         "Waiting for expected panel ID - got: \"" +
-        updateDeck.selectedPanel.id + "\", expected \"" + panelId + "\"");
+        updateDeck.selectedPanel.id + "\", expected \"" + panelId + "\"",
+        undefined, 200);
       let selectedPanel = updateDeck.selectedPanel;
       is(selectedPanel.id, panelId, "The panel ID should equal " + panelId);
 
@@ -755,7 +764,8 @@ function runAboutPrefsUpdateTest(updateParams, backgroundUpdate, steps) {
         await ContentTaskUtils.waitForCondition(() =>
           (updateDeck.selectedPanel && updateDeck.selectedPanel.id == panelId),
           "Waiting for expected panel ID - got: \"" +
-          updateDeck.selectedPanel.id + "\", expected \"" + panelId + "\"");
+          updateDeck.selectedPanel.id + "\", expected \"" + panelId + "\"",
+          undefined, 200);
         is(updateDeck.selectedPanel.id, panelId,
            "The panel ID should equal " + panelId);
       });
