@@ -2051,7 +2051,9 @@ class MachineStackTracker {
   
   bool isGCPointer(size_t offsetFromSP) {
     MOZ_ASSERT(offsetFromSP < vec_.length());
-    return vec_[offsetFromSP];
+
+    size_t offsetFromTop = vec_.length() - 1 - offsetFromSP;
+    return vec_[offsetFromTop];
   }
 
   
@@ -2358,7 +2360,7 @@ struct StackMapGenerator {
     
     for (uint32_t i = 0; i < augmentedMstWords; i++) {
       if (augmentedMst.isGCPointer(i)) {
-        stackMap->setBit(numMappedWords - 1 - i);
+        stackMap->setBit(extraWords + i);
       }
     }
 
