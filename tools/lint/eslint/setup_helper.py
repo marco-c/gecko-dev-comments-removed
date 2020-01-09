@@ -178,7 +178,9 @@ def expected_eslint_modules():
     
     expected_modules_path = os.path.join(get_project_root(), "package.json")
     with open(expected_modules_path, "r") as f:
-        expected_modules = json.load(f)["dependencies"]
+        sections = json.load(f)
+        expected_modules = sections["dependencies"]
+        expected_modules.update(sections["devDependencies"])
 
     
     
