@@ -13,7 +13,7 @@ const TEST_ENGINE_BASENAME = "searchSuggestionEngineSlow.xml";
 
 
 
-const TEST_ENGINE_SUGGESTIONS_TIMEOUT = 3000;
+const TEST_ENGINE_SUGGESTIONS_TIMEOUT = 1000;
 
 
 const TEST_ENGINE_NUM_EXPECTED_RESULTS = 2;
@@ -37,67 +37,47 @@ add_task(async function init() {
 
 add_task(async function mainTest() {
   
+  await promiseAutocompleteResultPopup(`${UrlbarTokenizer.RESTRICT.SEARCH} test`, window);
+  await promiseSuggestionsPresent("Waiting for initial suggestions");
+
+  
+  
+  
+  await new Promise(r => EventUtils.synthesizeKey("x", {}, window, r));
+
   
   
   
   
   
   
-  await BrowserTestUtils.withNewTab("http://example.com/", async () => {
-    await BrowserTestUtils.withNewTab("about:blank", async () => {
-      
-      
-      await promiseAutocompleteResultPopup("amp");
-      await TestUtils.waitForCondition(() => {
-        return UrlbarTestUtils.getResultCount(window) ==
-               2 + TEST_ENGINE_NUM_EXPECTED_RESULTS;
-      });
+  
+  
+  
+  await waitForAutocompleteResultAt(TEST_ENGINE_NUM_EXPECTED_RESULTS);
 
-      
-      
-      EventUtils.synthesizeKey("l");
+  
+  await new Promise(r => EventUtils.synthesizeKey("VK_DOWN", {}, window, r));
 
-      
-      
-      
-      await TestUtils.waitForCondition(() => {
-        return UrlbarTestUtils.getResultCount(window) >= 2;
-      });
+  
+  
+  await new Promise(r => setTimeout(r, 2 * TEST_ENGINE_SUGGESTIONS_TIMEOUT));
 
-      
-      
-      
-      
-      
-      EventUtils.synthesizeKey("KEY_ArrowDown");
-      EventUtils.synthesizeKey("KEY_ArrowUp");
+  
+  
 
-      
-      
-      await promiseSearchComplete();
+  
+  let numExpectedResults = TEST_ENGINE_NUM_EXPECTED_RESULTS + 1;
+  Assert.equal(UrlbarTestUtils.getResultCount(window), numExpectedResults,
+    "Should have the correct number of results displayed");
 
-      
-      
-      await new Promise(r => setTimeout(r, 1 + TEST_ENGINE_SUGGESTIONS_TIMEOUT));
-
-      
-      let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
-      Assert.equal(result.type, UrlbarUtils.RESULT_TYPE.SEARCH,
-        "Should have the correct result type");
-      Assert.equal(result.searchParams.query, "ampl",
-        "Should have the correct query");
-
-      
-      
-      let count = UrlbarTestUtils.getResultCount(window);
-      for (let i = 1; i < count; i++) {
-        result = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
-        Assert.ok(
-          result.type != UrlbarUtils.RESULT_TYPE.SEARCH ||
-          !["amplfoo", "amplbar"].includes(result.searchParams.suggestion),
-          "Suggestions should not contain the typed l char"
-        );
-      }
-    });
-  });
+  let expectedSuggestions = ["testfoo", "testbar"];
+  for (let i = 0; i < TEST_ENGINE_NUM_EXPECTED_RESULTS; i++) {
+    
+    let result = await UrlbarTestUtils.getDetailsOfResultAt(window, i + 1);
+    Assert.equal(result.type, UrlbarUtils.RESULT_TYPE.SEARCH,
+      "Should have the correct result type");
+    Assert.equal(result.searchParams.suggestion, expectedSuggestions[i],
+      "Should have the correct suggestion");
+  }
 });
