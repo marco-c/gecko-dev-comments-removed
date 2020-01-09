@@ -982,7 +982,7 @@ Maybe<nsCSSBorderRenderer> nsCSSRendering::CreateBorderRendererForOutline(
     innerRect = GetOutlineInnerRect(aForFrame) + aBorderArea.TopLeft();
   }
   nscoord offset = ourOutline->mOutlineOffset;
-  innerRect.Inflate(offset, offset);
+  innerRect.Inflate(offset);
   
   
   
@@ -993,7 +993,7 @@ Maybe<nsCSSBorderRenderer> nsCSSRendering::CreateBorderRendererForOutline(
   nscoord width = ourOutline->GetOutlineWidth();
 
   nsRect outerRect = innerRect;
-  outerRect.Inflate(width, width);
+  outerRect.Inflate(width);
 
   
   nsIFrame::ComputeBorderRadii(ourOutline->mOutlineRadius, aBorderArea.Size(),
@@ -1456,7 +1456,7 @@ void nsCSSRendering::PaintBoxShadowOuter(nsPresContext* aPresContext,
     nsRect shadowRect = frameRect;
     shadowRect.MoveBy(shadowItem->mXOffset, shadowItem->mYOffset);
     if (!nativeTheme) {
-      shadowRect.Inflate(shadowItem->mSpread, shadowItem->mSpread);
+      shadowRect.Inflate(shadowItem->mSpread);
     }
 
     
