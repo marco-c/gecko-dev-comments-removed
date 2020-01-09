@@ -3100,6 +3100,15 @@ var ContentBlockingCategoriesPrefs = {
     } else {
       Services.prefs.setStringPref(this.PREF_CB_CATEGORY, "custom");
     }
+
+    
+    
+    
+    let policy = Services.policies.getActivePolicies();
+    if (policy && (policy.EnableTrackingProtection ||
+        policy.Cookies)) {
+      Services.prefs.setStringPref(this.PREF_CB_CATEGORY, "custom");
+    }
   },
 
   updateCBCategory() {
