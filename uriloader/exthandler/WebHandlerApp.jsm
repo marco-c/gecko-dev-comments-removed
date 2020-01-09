@@ -2,31 +2,22 @@
 
 
 
-
-
-
 const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 const {NetUtil} = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
-const {Services} = ChromeUtils.import('resource://gre/modules/Services.jsm');
-
-
-
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 function nsWebHandlerApp() {}
 
 nsWebHandlerApp.prototype = {
-  
-  
-
   classDescription: "A web handler for protocols and content",
   classID: Components.ID("8b1ae382-51a9-4972-b930-56977a57919d"),
   contractID: "@mozilla.org/uriloader/web-handler-app;1",
+  QueryInterface: ChromeUtils.generateQI([Ci.nsIWebHandlerApp, Ci.nsIHandlerApp]),
 
   _name: null,
   _detailedDescription: null,
   _uriTemplate: null,
 
-  
   
 
   get name() {
@@ -45,21 +36,21 @@ nsWebHandlerApp.prototype = {
     this._detailedDescription = aDesc;
   },
 
-  equals: function(aHandlerApp) {
-    if (!aHandlerApp)
+  equals(aHandlerApp) {
+    if (!aHandlerApp) {
       throw Cr.NS_ERROR_NULL_POINTER;
+    }
 
     if (aHandlerApp instanceof Ci.nsIWebHandlerApp &&
         aHandlerApp.uriTemplate &&
         this.uriTemplate &&
-        aHandlerApp.uriTemplate == this.uriTemplate)
+        aHandlerApp.uriTemplate == this.uriTemplate) {
       return true;
-
+    }
     return false;
   },
 
-  launchWithURI: function nWHA__launchWithURI(aURI, aWindowContext) {
-
+  launchWithURI(aURI, aWindowContext) {
     
     
     
@@ -70,10 +61,8 @@ nsWebHandlerApp.prototype = {
 
     
     var uriSpecToSend = this.uriTemplate.replace("%s", escapedUriSpecToHandle);
-    var ioService = Cc["@mozilla.org/network/io-service;1"].
-                    getService(Ci.nsIIOService);
-    var uriToSend = ioService.newURI(uriSpecToSend);
-    
+    var uriToSend = Services.io.newURI(uriSpecToSend);
+
     
     if (aWindowContext) {
       try {
@@ -93,13 +82,13 @@ nsWebHandlerApp.prototype = {
       
       var channel = NetUtil.newChannel({
         uri: uriToSend,
-        loadUsingSystemPrincipal: true
+        loadUsingSystemPrincipal: true,
       });
       channel.loadFlags = Ci.nsIChannel.LOAD_DOCUMENT_URI;
 
       
-      var uriLoader = Cc["@mozilla.org/uriloader;1"].
-                      getService(Ci.nsIURILoader);
+      var uriLoader = Cc["@mozilla.org/uriloader;1"].getService(Ci.nsIURILoader);
+
       
       
       
@@ -108,16 +97,12 @@ nsWebHandlerApp.prototype = {
       uriLoader.openURI(channel, Ci.nsIURILoader.IS_CONTENT_PREFERRED,
                         aWindowContext);
       return;
-    } 
+    }
 
     
-    var windowMediator = Cc["@mozilla.org/appshell/window-mediator;1"].
-      getService(Ci.nsIWindowMediator);
-
-    
-    var browserDOMWin = windowMediator.getMostRecentWindow("navigator:browser")
-                        .QueryInterface(Ci.nsIDOMChromeWindow)
-                        .browserDOMWindow;
+    var browserDOMWin = Services.wm.getMostRecentWindow("navigator:browser")
+                                   .QueryInterface(Ci.nsIDOMChromeWindow)
+                                   .browserDOMWindow;
 
     
     
@@ -141,11 +126,8 @@ nsWebHandlerApp.prototype = {
                           Ci.nsIBrowserDOMWindow.OPEN_DEFAULTWINDOW,
                           Ci.nsIBrowserDOMWindow.OPEN_NEW,
                           Services.scriptSecurityManager.getSystemPrincipal());
-      
-    return;
   },
 
-  
   
 
   get uriTemplate() {
@@ -155,11 +137,6 @@ nsWebHandlerApp.prototype = {
   set uriTemplate(aURITemplate) {
     this._uriTemplate = aURITemplate;
   },
-
-  
-  
-
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIWebHandlerApp, Ci.nsIHandlerApp])
 };
 
 var EXPORTED_SYMBOLS = ["nsWebHandlerApp"];
