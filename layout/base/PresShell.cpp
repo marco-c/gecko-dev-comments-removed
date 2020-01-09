@@ -947,6 +947,11 @@ void PresShell::Init(Document* aDocument, nsPresContext* aPresContext,
   mPresContext->DeviceContext()->InitFontCache();
 
   
+  
+  
+  EnsureStyleFlush();
+
+  
   UpdatePreferenceStyles();
 
   bool accessibleCaretEnabled =
