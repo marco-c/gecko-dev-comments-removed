@@ -3421,6 +3421,15 @@ struct nsDisplayListCollection : public nsDisplayListSet {
     }
   }
 
+  
+
+
+
+
+
+  void SerializeWithCorrectZOrder(nsDisplayList* aOutResultList,
+                                  nsIContent* aContent);
+
  private:
   
   

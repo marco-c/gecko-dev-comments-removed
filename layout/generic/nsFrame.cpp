@@ -3096,53 +3096,17 @@ void nsIFrame::BuildDisplayListForStackingContext(
     set.PositionedDescendants()->AppendToTop(color);
   }
 
-  
-  
-  
-  
-  
-  
-  
-  set.PositionedDescendants()->SortByZOrder();
-
-  nsDisplayList resultList;
-  
-  
-  resultList.AppendToTop(set.BorderBackground());
-  
-  for (;;) {
-    nsDisplayItem* item = set.PositionedDescendants()->GetBottom();
-    if (item && item->ZIndex() < 0) {
-      set.PositionedDescendants()->RemoveBottom();
-      resultList.AppendToTop(item);
-      continue;
-    }
-    break;
-  }
-  
-  resultList.AppendToTop(set.BlockBorderBackgrounds());
-  
-  resultList.AppendToTop(set.Floats());
-  
-  resultList.AppendToTop(set.Content());
-  
-  
-  
-  
-  
   nsIContent* content = GetContent();
   if (!content) {
     content = PresContext()->Document()->GetRootElement();
   }
-  if (content) {
-    set.Outlines()->SortByContentOrder(content);
-  }
+
+  nsDisplayList resultList;
+  set.SerializeWithCorrectZOrder(&resultList, content);
+
 #ifdef DEBUG
   DisplayDebugBorders(aBuilder, this, set);
 #endif
-  resultList.AppendToTop(set.Outlines());
-  
-  resultList.AppendToTop(set.PositionedDescendants());
 
   
   const ActiveScrolledRoot* containerItemASR = contASRTracker.GetContainerASR();
