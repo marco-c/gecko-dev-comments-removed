@@ -80,6 +80,8 @@ void RemoteFrameChild::NavigateByKey(bool aForward,
   Unused << SendNavigateByKey(aForward, aForDocumentNavigation);
 }
 
+void RemoteFrameChild::Activate() { Unused << SendActivate(); }
+
 
 RemoteFrameChild* RemoteFrameChild::GetFrom(nsFrameLoader* aFrameLoader) {
   if (!aFrameLoader) {
