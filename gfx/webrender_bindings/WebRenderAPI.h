@@ -591,6 +591,10 @@ class DisplayListBuilder final {
     return aClip;
   }
 
+  
+  void SuspendClipLeafMerging();
+  void ResumeClipLeafMerging();
+
   wr::WrState* mWrState;
 
   
@@ -605,6 +609,11 @@ class DisplayListBuilder final {
   
   
   Maybe<wr::LayoutRect> mClipChainLeaf;
+
+  
+  
+  Maybe<wr::WrSpaceAndClipChain> mSuspendedSpaceAndClipChain;
+  Maybe<wr::LayoutRect> mSuspendedClipChainLeaf;
 
   RefPtr<layout::TextDrawTarget> mCachedTextDT;
   RefPtr<gfxContext> mCachedContext;

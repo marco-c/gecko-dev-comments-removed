@@ -155,16 +155,10 @@ wr::WrSpaceAndClipChain ClipManager::SwitchItem(nsDisplayItem* aItem) {
   
   bool separateLeaf = false;
   if (clip && clip->mASR == asr && clip->mClip.GetRoundedRectCount() == 0) {
-    if (type == DisplayItemType::TYPE_TEXT) {
-      
-      
-      separateLeaf = !aItem->Frame()->StyleText()->HasTextShadow();
-    } else {
-      
-      
-      
-      separateLeaf = aItem->GetChildren() == nullptr;
-    }
+    
+    
+    
+    separateLeaf = aItem->GetChildren() == nullptr;
   }
 
   ItemClips clips(asr, clip, separateLeaf);
