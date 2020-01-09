@@ -871,18 +871,23 @@ nsXULAppInfo::GetRestartedByOS(bool* aResult) {
   return NS_OK;
 }
 
+#if defined(XP_WIN) && defined(MOZ_LAUNCHER_PROCESS)
+
+void SetupLauncherProcessPref();
+
+static Maybe<LauncherRegistryInfo::EnabledState> gLauncherProcessState;
+#endif  
+
 NS_IMETHODIMP
 nsXULAppInfo::GetLauncherProcessState(uint32_t* aResult) {
 #if defined(XP_WIN) && defined(MOZ_LAUNCHER_PROCESS)
-  LauncherRegistryInfo launcherInfo;
+  SetupLauncherProcessPref();
 
-  LauncherResult<LauncherRegistryInfo::EnabledState> state =
-      launcherInfo.IsEnabled();
-  if (state.isErr()) {
+  if (!gLauncherProcessState) {
     return NS_ERROR_UNEXPECTED;
   }
 
-  *aResult = static_cast<uint32_t>(state.unwrap());
+  *aResult = static_cast<uint32_t>(gLauncherProcessState.value());
   return NS_OK;
 #else
   return NS_ERROR_NOT_AVAILABLE;
@@ -1528,8 +1533,16 @@ static void RegisterApplicationRestartChanged(const char* aPref, void* aData) {
 static const char kShieldPrefName[] = "app.shield.optoutstudies.enabled";
 
 static void OnLauncherPrefChanged(const char* aPref, void* aData) {
+  const bool kLauncherPrefDefaultValue =
+#    if defined(NIGHTLY_BUILD) || (MOZ_UPDATE_CHANNEL == beta)
+    true
+#    else
+    false
+#    endif  
+    ;
   bool prefVal = Preferences::GetBool(kShieldPrefName, false) &&
-                 Preferences::GetBool(PREF_WIN_LAUNCHER_PROCESS_ENABLED, false);
+                 Preferences::GetBool(PREF_WIN_LAUNCHER_PROCESS_ENABLED,
+                                      kLauncherPrefDefaultValue);
 
   mozilla::LauncherRegistryInfo launcherRegInfo;
   mozilla::LauncherVoidResult reflectResult =
@@ -1541,12 +1554,10 @@ static void SetupLauncherProcessPref() {
   
   
 
-#    if defined(NIGHTLY_BUILD)
-  
-  
-  
-  Preferences::RegisterCallbackAndCall(&OnLauncherPrefChanged, kShieldPrefName);
-#    endif  
+  if (gLauncherProcessState) {
+    
+    return;
+  }
 
   mozilla::LauncherRegistryInfo launcherRegInfo;
 
@@ -1554,23 +1565,34 @@ static void SetupLauncherProcessPref() {
       enabledState = launcherRegInfo.IsEnabled();
 
   if (enabledState.isOk()) {
-    Preferences::SetBool(
-        PREF_WIN_LAUNCHER_PROCESS_ENABLED,
-        enabledState.unwrap() !=
-            mozilla::LauncherRegistryInfo::EnabledState::ForceDisabled);
+    gLauncherProcessState = Some(enabledState.unwrap());
 
     CrashReporter::AnnotateCrashReport(
         CrashReporter::Annotation::LauncherProcessState,
         static_cast<uint32_t>(enabledState.unwrap()));
+
+#    if defined(NIGHTLY_BUILD) || (MOZ_UPDATE_CHANNEL == beta)
+    
+    
+    OnLauncherPrefChanged(PREF_WIN_LAUNCHER_PROCESS_ENABLED, nullptr);
+
+    
+    
+    enabledState = launcherRegInfo.IsEnabled();
+#    endif  
   }
 
+  if (enabledState.isOk()) {
+    
+    Preferences::SetBool(
+        PREF_WIN_LAUNCHER_PROCESS_ENABLED,
+        enabledState.unwrap() !=
+            mozilla::LauncherRegistryInfo::EnabledState::ForceDisabled);
+  }
+
+  Preferences::RegisterCallback(&OnLauncherPrefChanged, kShieldPrefName);
   Preferences::RegisterCallback(&OnLauncherPrefChanged,
                                 PREF_WIN_LAUNCHER_PROCESS_ENABLED);
-#    if !defined(NIGHTLY_BUILD)
-  
-  
-  Preferences::RegisterCallback(&OnLauncherPrefChanged, kShieldPrefName);
-#    endif  
 }
 
 #  endif  

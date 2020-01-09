@@ -56,9 +56,17 @@ LauncherResult<LauncherRegistryInfo::Disposition> LauncherRegistryInfo::Open() {
 
 LauncherVoidResult LauncherRegistryInfo::ReflectPrefToRegistry(
     const bool aEnable) {
-  LauncherResult<Disposition> disposition = Open();
-  if (disposition.isErr()) {
-    return LAUNCHER_ERROR_FROM_RESULT(disposition);
+  LauncherResult<EnabledState> curEnabledState = IsEnabled();
+  if (curEnabledState.isErr()) {
+    return LAUNCHER_ERROR_FROM_RESULT(curEnabledState);
+  }
+
+  bool isCurrentlyEnabled = curEnabledState.unwrap() !=
+    EnabledState::ForceDisabled;
+  if (isCurrentlyEnabled == aEnable) {
+    
+    
+    return Ok();
   }
 
   

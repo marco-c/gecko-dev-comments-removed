@@ -564,7 +564,7 @@ static VoidResult TestPrefReflection() {
 
   
   mozilla::LauncherRegistryInfo info;
-  mozilla::LauncherVoidResult reflectOk = info.ReflectPrefToRegistry(true);
+  mozilla::LauncherVoidResult reflectOk = info.ReflectPrefToRegistry(false);
   if (reflectOk.isErr()) {
     return mozilla::Err(reflectOk.unwrapErr().mError);
   }
@@ -580,14 +580,14 @@ static VoidResult TestPrefReflection() {
     return mozilla::Err(launcherTs.unwrapErr());
   }
 
+  
   QWordResult browserTs = GetBrowserTimestamp();
-  if (browserTs.isOk()) {
-    return mozilla::Err(mozilla::WindowsError::FromHResult(E_UNEXPECTED));
+  if (browserTs.isErr()) {
+    return mozilla::Err(browserTs.unwrapErr());
   }
 
-  if (browserTs.unwrapErr() !=
-      mozilla::WindowsError::FromWin32Error(ERROR_FILE_NOT_FOUND)) {
-    return mozilla::Err(browserTs.unwrapErr());
+  if (browserTs.unwrap() != 0ULL) {
+    return mozilla::Err(mozilla::WindowsError::FromHResult(E_FAIL));
   }
 
   
@@ -598,18 +598,12 @@ static VoidResult TestPrefReflection() {
   }
 
   if (enabled.unwrap() !=
-      mozilla::LauncherRegistryInfo::EnabledState::Enabled) {
+      mozilla::LauncherRegistryInfo::EnabledState::ForceDisabled) {
     return mozilla::Err(mozilla::WindowsError::FromHResult(E_FAIL));
   }
 
   
-  
-  vr = SetupEnabledScenario();
-  if (vr.isErr()) {
-    return vr;
-  }
-
-  reflectOk = info.ReflectPrefToRegistry(false);
+  reflectOk = info.ReflectPrefToRegistry(true);
   if (reflectOk.isErr()) {
     return mozilla::Err(reflectOk.unwrapErr().mError);
   }
@@ -625,14 +619,14 @@ static VoidResult TestPrefReflection() {
     return mozilla::Err(launcherTs.unwrapErr());
   }
 
-  
   browserTs = GetBrowserTimestamp();
-  if (browserTs.isErr()) {
-    return mozilla::Err(browserTs.unwrapErr());
+  if (browserTs.isOk()) {
+    return mozilla::Err(mozilla::WindowsError::FromHResult(E_UNEXPECTED));
   }
 
-  if (browserTs.unwrap() != 0ULL) {
-    return mozilla::Err(mozilla::WindowsError::FromHResult(E_FAIL));
+  if (browserTs.unwrapErr() !=
+      mozilla::WindowsError::FromWin32Error(ERROR_FILE_NOT_FOUND)) {
+    return mozilla::Err(browserTs.unwrapErr());
   }
 
   
@@ -642,7 +636,7 @@ static VoidResult TestPrefReflection() {
   }
 
   if (enabled.unwrap() !=
-      mozilla::LauncherRegistryInfo::EnabledState::ForceDisabled) {
+      mozilla::LauncherRegistryInfo::EnabledState::Enabled) {
     return mozilla::Err(mozilla::WindowsError::FromHResult(E_FAIL));
   }
 
