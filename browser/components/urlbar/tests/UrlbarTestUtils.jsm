@@ -41,7 +41,7 @@ var UrlbarTestUtils = {
 
 
 
-  async promiseAutocompleteResultPopup(inputText, win, waitForFocus, fireInputEvent = false) {
+  async promiseAutocompleteResultPopup(win, inputText, waitForFocus, fireInputEvent = false) {
     let urlbar = getUrlbarAbstraction(win);
     let restoreAnimationsFn = urlbar.disableAnimations();
     await new Promise(resolve => waitForFocus(resolve, win));
@@ -96,6 +96,16 @@ var UrlbarTestUtils = {
 
 
 
+  getSelectedIndex(win) {
+    let urlbar = getUrlbarAbstraction(win);
+    return urlbar.getSelectedIndex();
+  },
+
+  
+
+
+
+
 
   getResultCount(win) {
     let urlbar = getUrlbarAbstraction(win);
@@ -126,6 +136,18 @@ var UrlbarTestUtils = {
       () => httpserver.connectionNumber == count,
       "Waiting for speculative connection setup"
     );
+  },
+
+  
+
+
+
+
+
+
+  promisePopupClose(win, closeFn = null) {
+    let urlbar = getUrlbarAbstraction(win);
+    return urlbar.promisePopupClose(closeFn);
   },
 };
 
@@ -252,13 +274,21 @@ class UrlbarAbstraction {
       this.panel.richlistbox.itemChildren[this.panel.selectedIndex] : null;
   }
 
+  getSelectedIndex() {
+    if (!this.quantumbar) {
+      return this.panel.selectedIndex;
+    }
+
+    return parseInt(this.urlbar.view._selected.getAttribute("resultIndex"));
+  }
+
   getResultCount() {
     return this.quantumbar ? this.urlbar.view._rows.children.length
                            : this.urlbar.controller.matchCount;
   }
 
   async getDetailsOfResultAt(index) {
-    await this.promiseResultAt(index);
+    let element = await this.promiseResultAt(index);
     function getType(style, action) {
       if (style.includes("searchengine") || style.includes("suggestions")) {
         return UrlbarUtils.RESULT_TYPE.SEARCH;
@@ -279,12 +309,30 @@ class UrlbarAbstraction {
       details.url = (UrlbarUtils.getUrlFromResult(context.results[index])).url;
       details.type = context.results[index].type;
       details.autofill = index == 0 && context.autofillValue;
+      details.image = element.getElementsByClassName("urlbarView-favicon")[0].src;
+      if (details.type == UrlbarUtils.RESULT_TYPE.SEARCH) {
+        details.searchParams = {
+          engine: context.results[index].payload.engine,
+          query: context.results[index].payload.query,
+          suggestion: context.results[index].payload.suggestion,
+        };
+      }
     } else {
       details.url = this.urlbar.controller.getFinalCompleteValueAt(index);
       let style = this.urlbar.controller.getStyleAt(index);
       let action = PlacesUtils.parseActionUrl(this.urlbar.controller.getValueAt(index));
       details.type = getType(style, action);
       details.autofill = style.includes("autofill");
+      details.image = element.getAttribute("image");
+      if (details.type == UrlbarUtils.RESULT_TYPE.SEARCH) {
+        details.searchParams = {
+          engine: action.params.engineName,
+          query: action.params.input,
+          suggestion: action.params.input == action.params.searchQuery ?
+                      undefined :
+                      action.params.searchQuery,
+        };
+      }
     }
     return details;
   }
@@ -316,5 +364,25 @@ class UrlbarAbstraction {
         throw new Error("Cannot find a search suggestion");
       }
     });
+  }
+
+  closePopup() {
+    if (this.quantumbar) {
+      this.urlbar.view.close();
+    } else {
+      this.urlbar.popup.hidePopup();
+    }
+  }
+
+  promisePopupClose(closeFn) {
+    if (closeFn) {
+      closeFn();
+    } else {
+      this.closePopup();
+    }
+    if (!this.quantumbar) {
+      return BrowserTestUtils.waitForPopupEvent(this.urlbar.popup, "hidden");
+    }
+    return BrowserTestUtils.waitForPopupEvent(this.urlbar.view.panel, "hidden");
   }
 }
