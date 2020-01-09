@@ -17,11 +17,6 @@ async function demo() {
     });
 
     
-    Network.requestWillBeSent((params) => {
-      console.log(params.request.url);
-    });
-
-    
     await Page.enable();
 
     await Page.navigate({url: "data:text/html,test-page<script>console.log('foo');</script><script>'</script>"});
