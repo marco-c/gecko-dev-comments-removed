@@ -130,7 +130,31 @@ struct ActorHandle {
 
 enum RacyInterruptPolicy { RIPError, RIPChildWins, RIPParentWins };
 
+enum class LinkStatus : uint8_t {
+  
+  
+  
+  
+  
+  
+  
+  
+  Inactive,
+
+  
+  Connected,
+
+  
+  
+  Doomed,
+
+  
+  
+  Destroyed,
+};
+
 class IToplevelProtocol;
+class ActorLifecycleProxy;
 
 class IProtocol : public HasResultCodes {
 #ifdef FUZZING
@@ -255,6 +279,7 @@ class IProtocol : public HasResultCodes {
   void Unregister(int32_t aId) { return mState->Unregister(aId); }
 
   virtual void RemoveManagee(int32_t, IProtocol*) = 0;
+  virtual void DeallocManagee(int32_t, IProtocol*) = 0;
 
   Shmem::SharedMemory* CreateSharedMemory(size_t aSize,
                                           SharedMemory::SharedMemoryType aType,
@@ -285,6 +310,12 @@ class IProtocol : public HasResultCodes {
   
   virtual ProcessId OtherPid() const;
   Side GetSide() const { return mSide; }
+
+  bool CanSend() const { return mLinkStatus == LinkStatus::Connected; }
+  bool CanRecv() const {
+    return mLinkStatus == LinkStatus::Connected ||
+           mLinkStatus == LinkStatus::Doomed;
+  }
 
   void FatalError(const char* const aErrorMsg) const;
   virtual void HandleFatalError(const char* aErrorMsg) const;
@@ -330,14 +361,24 @@ class IProtocol : public HasResultCodes {
   nsIEventTarget* GetActorEventTarget();
   already_AddRefed<nsIEventTarget> GetActorEventTarget(IProtocol* aActor);
 
+  ActorLifecycleProxy* GetLifecycleProxy() { return mLifecycleProxy; }
+
  protected:
   IProtocol(Side aSide, UniquePtr<ProtocolState> aState)
-      : mId(0), mSide(aSide), mManager(nullptr), mState(std::move(aState)) {}
+      : mId(0),
+        mSide(aSide),
+        mLinkStatus(LinkStatus::Inactive),
+        mLifecycleProxy(nullptr),
+        mManager(nullptr),
+        mState(std::move(aState)) {}
+
+  virtual ~IProtocol();
 
   friend class IToplevelProtocol;
+  friend class ActorLifecycleProxy;
 
-  void SetId(int32_t aId) { mId = aId; }
-  void ResetManager() { mManager = nullptr; }
+  void SetId(int32_t aId);
+
   
   
   void SetManager(IProtocol* aManager);
@@ -348,12 +389,45 @@ class IProtocol : public HasResultCodes {
   void SetManagerAndRegister(IProtocol* aManager);
   void SetManagerAndRegister(IProtocol* aManager, int32_t aId);
 
+  
+  
+  
+  virtual void AllManagedActors(
+      nsTArray<RefPtr<ActorLifecycleProxy>>& aActors) const = 0;
+
+  
+  void ActorConnected();
+
+  
+  
+  
+  
+  virtual void ActorDoom() {}
+  void DoomSubtree();
+
+  
+  
+  virtual void ActorDestroy(ActorDestroyReason aWhy) {}
+  void DestroySubtree(ActorDestroyReason aWhy);
+
+  
+  
+  
+  
+  virtual void ActorDealloc() {
+    if (Manager()) {
+      Manager()->DeallocManagee(GetProtocolTypeId(), this);
+    }
+  }
+
   static const int32_t kNullActorId = 0;
   static const int32_t kFreedActorId = 1;
 
  private:
   int32_t mId;
   Side mSide;
+  LinkStatus mLinkStatus;
+  ActorLifecycleProxy* mLifecycleProxy;
   IProtocol* mManager;
   UniquePtr<ProtocolState> mState;
 };
@@ -562,7 +636,10 @@ class IToplevelProtocol : public IProtocol {
   virtual void OnChannelReceivedMessage(const Message& aMsg) {}
 
   bool IsMainThreadProtocol() const { return mIsMainThreadProtocol; }
-  void SetIsMainThreadProtocol() { mIsMainThreadProtocol = NS_IsMainThread(); }
+  void OnIPCChannelOpened() {
+    mIsMainThreadProtocol = NS_IsMainThread();
+    ActorConnected();
+  }
 
   already_AddRefed<nsIEventTarget> GetMessageEventTarget(const Message& aMsg) {
     return DowncastState()->GetMessageEventTarget(aMsg);
@@ -930,6 +1007,46 @@ class ManagedEndpoint {
 
   
   
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ActorLifecycleProxy {
+ public:
+  NS_INLINE_DECL_REFCOUNTING(ActorLifecycleProxy)
+
+  IProtocol* Get() { return mActor; }
+
+ private:
+  friend class IProtocol;
+
+  explicit ActorLifecycleProxy(IProtocol* aActor);
+  ~ActorLifecycleProxy();
+
+  ActorLifecycleProxy(const ActorLifecycleProxy&) = delete;
+  ActorLifecycleProxy& operator=(const ActorLifecycleProxy&) = delete;
+
+  IProtocol* MOZ_NON_OWNING_REF mActor;
+
+  
+  
+  RefPtr<ActorLifecycleProxy> mManager;
 };
 
 void TableToArray(const nsTHashtable<nsPtrHashKey<void>>& aTable,

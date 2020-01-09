@@ -348,6 +348,75 @@ void TableToArray(const nsTHashtable<nsPtrHashKey<void>>& aTable,
   }
 }
 
+ActorLifecycleProxy::ActorLifecycleProxy(IProtocol* aActor) : mActor(aActor) {
+  MOZ_ASSERT(mActor);
+  MOZ_ASSERT(mActor->CanSend(),
+             "Cannot create LifecycleProxy for non-connected actor!");
+
+  
+  
+  if (mActor->mManager) {
+    mManager = mActor->mManager->mLifecycleProxy;
+  }
+}
+
+ActorLifecycleProxy::~ActorLifecycleProxy() {
+  
+  
+  
+  
+  
+  
+  
+  if (!mActor) {
+    return;
+  }
+
+  
+  MOZ_ASSERT(mActor->mLinkStatus == LinkStatus::Destroyed,
+             "Deallocating non-destroyed actor!");
+  mActor->mLifecycleProxy = nullptr;
+  mActor->mLinkStatus = LinkStatus::Inactive;
+  mActor->ActorDealloc();
+  mActor = nullptr;
+}
+
+IProtocol::~IProtocol() {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mLifecycleProxy) {
+    
+    
+    NS_WARNING(
+        "Actor destructor called before IPC lifecycle complete!\n"
+        "References to this actor may unexpectedly dangle!");
+
+    mLifecycleProxy->mActor = nullptr;
+
+    
+    
+    
+    
+    MOZ_ASSERT(mLinkStatus != LinkStatus::Inactive);
+    if (mLinkStatus != LinkStatus::Destroyed) {
+      NS_IF_RELEASE(mLifecycleProxy);
+    }
+    mLifecycleProxy = nullptr;
+  }
+}
+
+void IProtocol::SetId(int32_t aId) {
+  MOZ_ASSERT(mId == aId || mLinkStatus == LinkStatus::Inactive);
+  mId = aId;
+}
+
 Maybe<IProtocol*> IProtocol::ReadActor(const IPC::Message* aMessage,
                                        PickleIterator* aIter, bool aNullable,
                                        const char* aActorDescription,
@@ -566,6 +635,77 @@ already_AddRefed<nsIEventTarget> IProtocol::ManagedState::GetActorEventTarget(
   return mProtocol->Manager()->GetActorEventTarget(aActor);
 }
 
+void IProtocol::ActorConnected() {
+  if (mLinkStatus != LinkStatus::Inactive) {
+    return;
+  }
+
+  mLinkStatus = LinkStatus::Connected;
+
+  MOZ_ASSERT(!mLifecycleProxy, "double-connecting live actor");
+  mLifecycleProxy = new ActorLifecycleProxy(this);
+  NS_ADDREF(mLifecycleProxy);  
+}
+
+void IProtocol::DoomSubtree() {
+  MOZ_ASSERT(CanSend(), "dooming non-connected actor");
+  MOZ_ASSERT(mLifecycleProxy, "dooming zombie actor");
+
+  nsTArray<RefPtr<ActorLifecycleProxy>> managed;
+  AllManagedActors(managed);
+  for (ActorLifecycleProxy* proxy : managed) {
+    
+    IProtocol* actor = proxy->Get();
+    if (actor && actor->CanSend()) {
+      actor->DoomSubtree();
+    }
+  }
+
+  
+  
+  
+  ActorDoom();
+  mLinkStatus = LinkStatus::Doomed;
+}
+
+void IProtocol::DestroySubtree(ActorDestroyReason aWhy) {
+  MOZ_ASSERT(CanRecv(), "destroying non-connected actor");
+  MOZ_ASSERT(mLifecycleProxy, "destroying zombie actor");
+
+  
+  if (Manager()) {
+    Unregister(Id());
+  }
+
+  
+  ActorDestroyReason subtreeWhy = aWhy;
+  if (aWhy == Deletion || aWhy == FailedConstructor) {
+    subtreeWhy = AncestorDeletion;
+  }
+
+  nsTArray<RefPtr<ActorLifecycleProxy>> managed;
+  AllManagedActors(managed);
+  for (ActorLifecycleProxy* proxy : managed) {
+    
+    
+    IProtocol* actor = proxy->Get();
+    if (actor && actor->CanRecv()) {
+      actor->DestroySubtree(subtreeWhy);
+    }
+  }
+
+  
+  
+  mLinkStatus = LinkStatus::Doomed;
+
+  
+  
+  
+  GetIPCChannel()->RejectPendingResponsesForActor(this);
+  ActorDestroy(aWhy);
+  mLinkStatus = LinkStatus::Destroyed;
+}
+
 IToplevelProtocol::IToplevelProtocol(const char* aName, ProtocolId aProtoId,
                                      Side aSide)
     : IProtocol(aSide, MakeUnique<ToplevelState>(aName, this, aSide)),
@@ -672,9 +812,7 @@ int32_t IToplevelProtocol::ToplevelState::Register(IProtocol* aRouted) {
     
     return aRouted->Id();
   }
-  int32_t id = NextId();
-  mActorMap.AddWithID(aRouted, id);
-  aRouted->SetId(id);
+  int32_t id = RegisterID(aRouted, NextId());
 
   
   if (IProtocol* manager = aRouted->Manager()) {
@@ -690,8 +828,9 @@ int32_t IToplevelProtocol::ToplevelState::Register(IProtocol* aRouted) {
 
 int32_t IToplevelProtocol::ToplevelState::RegisterID(IProtocol* aRouted,
                                                      int32_t aId) {
-  mActorMap.AddWithID(aRouted, aId);
   aRouted->SetId(aId);
+  aRouted->ActorConnected();
+  mActorMap.AddWithID(aRouted, aId);
   return aId;
 }
 
