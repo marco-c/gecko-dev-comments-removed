@@ -1583,6 +1583,18 @@ class TestCEReactionsInterface : public nsISupports, public nsWrapperCache {
   void GetSupportedNames(nsTArray<nsString>&);
 };
 
+class TestAttributesOnTypes : public nsISupports, public nsWrapperCache {
+ public:
+  NS_DECL_ISUPPORTS
+
+  
+  virtual nsISupports* GetParentObject();
+
+  void Foo(uint8_t arg);
+  void Bar(uint8_t arg);
+  void Baz(const nsAString& arg);
+};
+
 }  
 }  
 
