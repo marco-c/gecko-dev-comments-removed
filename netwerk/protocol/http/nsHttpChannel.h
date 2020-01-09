@@ -548,7 +548,7 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   bool IsIsolated();
 
-  const nsCString &GetTopWindowOrigin();
+  const nsCString& GetTopWindowOrigin();
 
   already_AddRefed<nsChannelClassifier> GetOrCreateChannelClassifier();
 
@@ -721,6 +721,10 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   
   uint32_t mAsyncResumePending : 1;
+
+  
+  
+  uint32_t mResolvedByTRR : 1;
 
   
   
