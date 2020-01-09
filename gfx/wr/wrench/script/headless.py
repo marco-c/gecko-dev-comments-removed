@@ -65,17 +65,13 @@ def set_osmesa_env(bin_path):
         os.environ["GALLIUM_DRIVER"] = "softpipe"
 
 
-target_folder = os.getenv('WRENCH_HEADLESS_TARGET', None)
-if not target_folder:
-    extra_flags = os.getenv('CARGOFLAGS', None)
-    extra_flags = extra_flags.split(' ') if extra_flags else []
-    subprocess.check_call(['cargo', 'build'] + extra_flags + ['--release', '--verbose', '--features', 'headless'])
-    target_folder = '../target/'
-
-set_osmesa_env(target_folder + 'release/')
+extra_flags = os.getenv('CARGOFLAGS', None)
+extra_flags = extra_flags.split(' ') if extra_flags else []
+subprocess.check_call(['cargo', 'build'] + extra_flags + ['--release', '--verbose', '--features', 'headless'])
+set_osmesa_env('../target/release/')
 
 
 
 
 
-subprocess.check_call([target_folder + 'release/wrench', '--no-scissor', '-h'] + sys.argv[1:])
+subprocess.check_call(['../target/release/wrench', '--no-scissor', '-h'] + sys.argv[1:])
