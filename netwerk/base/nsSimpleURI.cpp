@@ -21,6 +21,7 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/ipc/URIUtils.h"
 #include "nsIURIMutator.h"
+#include "mozilla/net/MozURL.h"
 
 using namespace mozilla::ipc;
 
@@ -581,7 +582,41 @@ nsresult nsSimpleURI::CloneInternal(
 
 NS_IMETHODIMP
 nsSimpleURI::Resolve(const nsACString& relativePath, nsACString& result) {
-  result = relativePath;
+  nsAutoCString scheme;
+  nsresult rv = net_ExtractURLScheme(relativePath, scheme);
+  if (NS_SUCCEEDED(rv)) {
+    result = relativePath;
+    return NS_OK;
+  }
+
+  nsAutoCString spec;
+  rv = GetAsciiSpec(spec);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    
+    
+    result = relativePath;
+    return NS_OK;
+  }
+
+  RefPtr<MozURL> url;
+  rv = MozURL::Init(getter_AddRefs(url), spec);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    
+    
+    result = relativePath;
+    return NS_OK;
+  }
+
+  RefPtr<MozURL> url2;
+  rv = MozURL::Init(getter_AddRefs(url2), relativePath, url);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    
+    
+    result = relativePath;
+    return NS_OK;
+  }
+
+  result = url2->Spec();
   return NS_OK;
 }
 
