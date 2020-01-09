@@ -160,7 +160,13 @@ class nsPrintJob final : public nsIObserver,
   void SuppressPrintPreviewUserEvents();
 
   
-  bool HasPrintCallbackCanvas();
+
+  
+
+
+
+
+  bool HasPrintCallbackCanvas() { return mHasMozPrintCallback; }
   bool PrePrintPage();
   bool PrintPage(nsPrintObject* aPOect, bool& aInRange);
   bool DonePrintingPages(nsPrintObject* aPO, nsresult aResult);
@@ -309,6 +315,8 @@ class nsPrintJob final : public nsIObserver,
   bool mDidLoadDataForPrinting = false;
   bool mIsDestroying = false;
   bool mDisallowSelectionPrint = false;
+  bool mIsForModalWindow = false;
+  bool mHasMozPrintCallback = false;
 };
 
 #endif  
