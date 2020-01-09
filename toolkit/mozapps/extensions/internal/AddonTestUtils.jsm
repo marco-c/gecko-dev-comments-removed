@@ -274,7 +274,7 @@ var AddonTestUtils = {
     }
   },
 
-  init(testScope) {
+  init(testScope, enableLogging = true) {
     if (this.testScope === testScope) {
       return;
     }
@@ -303,7 +303,9 @@ var AddonTestUtils = {
 
 
     
-    Services.prefs.setBoolPref("extensions.logging.enabled", true);
+    if (enableLogging) {
+      Services.prefs.setBoolPref("extensions.logging.enabled", true);
+    }
 
     
     Services.prefs.setIntPref("extensions.enabledScopes", AddonManager.SCOPE_PROFILE);

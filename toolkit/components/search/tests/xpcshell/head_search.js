@@ -43,7 +43,7 @@ Services.prefs.setCharPref("browser.search.geoip.url", "");
 
 Services.prefs.getDefaultBranch(BROWSER_SEARCH_PREF).setCharPref("geoSpecificDefaults.url", "");
 
-AddonTestUtils.init(this);
+AddonTestUtils.init(this, false);
 AddonTestUtils.createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "42", "42");
 
 

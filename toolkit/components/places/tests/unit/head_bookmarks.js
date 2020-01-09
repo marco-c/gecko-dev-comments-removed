@@ -16,7 +16,7 @@ var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const {AddonTestUtils} = ChromeUtils.import("resource://testing-common/AddonTestUtils.jsm");
 
-AddonTestUtils.init(this);
+AddonTestUtils.init(this, false);
 AddonTestUtils.overrideCertDB();
 AddonTestUtils.createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "42");
 
