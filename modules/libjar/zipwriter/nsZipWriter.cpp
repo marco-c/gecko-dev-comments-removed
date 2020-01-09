@@ -540,7 +540,7 @@ NS_IMETHODIMP nsZipWriter::ProcessQueue(nsIRequestObserver *aObserver,
   mInQueue = true;
 
   if (mProcessObserver)
-    mProcessObserver->OnStartRequest(nullptr, mProcessContext);
+    mProcessObserver->OnStartRequest(nullptr);
 
   BeginProcessingNextItem();
 
@@ -620,8 +620,7 @@ NS_IMETHODIMP nsZipWriter::Close() {
 }
 
 
-NS_IMETHODIMP nsZipWriter::OnStartRequest(nsIRequest *aRequest,
-                                          nsISupports *aContext) {
+NS_IMETHODIMP nsZipWriter::OnStartRequest(nsIRequest *aRequest) {
   return NS_OK;
 }
 

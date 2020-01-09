@@ -77,7 +77,7 @@ DataChannelParent::Delete() {
 void DataChannelParent::ActorDestroy(ActorDestroyReason why) {}
 
 NS_IMETHODIMP
-DataChannelParent::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext) {
+DataChannelParent::OnStartRequest(nsIRequest *aRequest) {
   
   
   

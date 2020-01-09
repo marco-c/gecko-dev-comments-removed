@@ -1502,8 +1502,7 @@ void nsExternalAppHandler::MaybeApplyDecodingForExtension(
   encChannel->SetApplyConversion(applyConversion);
 }
 
-NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request,
-                                                   nsISupports* aCtxt) {
+NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
   MOZ_ASSERT(request, "OnStartRequest without request?");
 
   
