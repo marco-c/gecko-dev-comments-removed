@@ -282,7 +282,7 @@ class RemoteSettingsClient extends EventEmitter {
 
 
   async maybeSync(expectedTimestamp, options = { loadDump: true }) {
-    const { loadDump } = options;
+    const { loadDump, trigger } = options;
 
     let reportStatus = null;
     try {
@@ -399,7 +399,7 @@ class RemoteSettingsClient extends EventEmitter {
         reportStatus = UptakeTelemetry.STATUS.SUCCESS;
       }
       
-      UptakeTelemetry.report(TELEMETRY_COMPONENT, reportStatus, { source: this.identifier });
+      UptakeTelemetry.report(TELEMETRY_COMPONENT, reportStatus, { source: this.identifier, trigger });
     }
   }
 

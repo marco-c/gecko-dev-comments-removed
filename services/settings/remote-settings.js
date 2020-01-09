@@ -156,15 +156,19 @@ function remoteSettingsFunction() {
 
 
   remoteSettings.pollChanges = async ({ expectedTimestamp } = {}) => {
+    const trigger = expectedTimestamp ? "broadcast" : "timer";
+    const telemetryArgs = {
+      source: TELEMETRY_SOURCE,
+      trigger,
+    };
+
     
     if (gPrefs.prefHasUserValue(PREF_SETTINGS_SERVER_BACKOFF)) {
       const backoffReleaseTime = gPrefs.getCharPref(PREF_SETTINGS_SERVER_BACKOFF);
       const remainingMilliseconds = parseInt(backoffReleaseTime, 10) - Date.now();
       if (remainingMilliseconds > 0) {
         
-        UptakeTelemetry.report(TELEMETRY_COMPONENT,
-                               UptakeTelemetry.STATUS.BACKOFF,
-                               { source: TELEMETRY_SOURCE });
+        UptakeTelemetry.report(TELEMETRY_COMPONENT, UptakeTelemetry.STATUS.BACKOFF, telemetryArgs);
         throw new Error(`Server is asking clients to back off; retry in ${Math.ceil(remainingMilliseconds / 1000)}s.`);
       } else {
         gPrefs.clearUserPref(PREF_SETTINGS_SERVER_BACKOFF);
@@ -194,7 +198,7 @@ function remoteSettingsFunction() {
       } else {
         reportStatus = UptakeTelemetry.STATUS.UNKNOWN_ERROR;
       }
-      UptakeTelemetry.report(TELEMETRY_COMPONENT, reportStatus, { source: TELEMETRY_SOURCE });
+      UptakeTelemetry.report(TELEMETRY_COMPONENT, reportStatus, telemetryArgs);
       
       throw new Error(`Polling for changes failed: ${e.message}.`);
     }
@@ -204,7 +208,7 @@ function remoteSettingsFunction() {
     
     const reportStatus = changes.length === 0 ? UptakeTelemetry.STATUS.UP_TO_DATE
                                               : UptakeTelemetry.STATUS.SUCCESS;
-    UptakeTelemetry.report(TELEMETRY_COMPONENT, reportStatus, { source: TELEMETRY_SOURCE });
+    UptakeTelemetry.report(TELEMETRY_COMPONENT, reportStatus, telemetryArgs);
 
     
     if (backoffSeconds) {
@@ -236,7 +240,7 @@ function remoteSettingsFunction() {
       
       
       try {
-        await client.maybeSync(last_modified, { loadDump });
+        await client.maybeSync(last_modified, { loadDump, trigger });
 
         
         Services.prefs.setIntPref(client.lastCheckTimePref, checkedServerTimeInSeconds);
