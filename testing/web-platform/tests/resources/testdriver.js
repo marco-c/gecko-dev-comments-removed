@@ -194,20 +194,6 @@
 
         action_sequence: function(actions) {
             return window.test_driver_internal.action_sequence(actions);
-        },
-
-        
-
-
-
-
-
-
-
-
-
-        generate_test_report: function(message) {
-            return window.test_driver_internal.generate_test_report(message);
         }
     };
 
@@ -218,23 +204,9 @@
 
 
 
-        in_automation: false,
-
-        
-
-
-
-
-
 
         click: function(element, coords) {
-            if (this.in_automation) {
-                return Promise.reject(new Error('Not implemented'));
-            }
-
-            return new Promise(function(resolve, reject) {
-                element.addEventListener("click", resolve);
-            });
+            return Promise.reject(new Error("unimplemented"));
         },
 
         
@@ -244,37 +216,8 @@
 
 
 
-
         send_keys: function(element, keys) {
-            if (this.in_automation) {
-                return Promise.reject(new Error('Not implemented'));
-            }
-
-            return new Promise(function(resolve, reject) {
-                var seen = "";
-
-                function remove() {
-                    element.removeEventListener("keydown", onKeyDown);
-                }
-
-                function onKeyDown(event) {
-                    if (event.key.length > 1) {
-                        return;
-                    }
-
-                    seen += event.key;
-
-                    if (keys.indexOf(seen) !== 0) {
-                        reject(new Error("Unexpected key sequence: " + seen));
-                        remove();
-                    } else if (seen === keys) {
-                        resolve();
-                        remove();
-                    }
-                }
-
-                element.addEventListener("keydown", onKeyDown);
-            });
+            return Promise.reject(new Error("unimplemented"));
         },
 
         
@@ -294,17 +237,6 @@
 
 
         action_sequence: function(actions) {
-            return Promise.reject(new Error("unimplemented"));
-        },
-
-        
-
-
-
-
-
-
-        generate_test_report: function(message) {
             return Promise.reject(new Error("unimplemented"));
         }
     };

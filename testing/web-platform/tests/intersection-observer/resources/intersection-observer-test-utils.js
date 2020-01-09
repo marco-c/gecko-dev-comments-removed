@@ -72,15 +72,7 @@
 
 function waitForNotification(t, f) {
   requestAnimationFrame(function() {
-    requestAnimationFrame(function() { t.step_timeout(f, 0); });
-  });
-}
-
-
-
-function waitForFrame(t, f) {
-  requestAnimationFrame(function() {
-    t.step_timeout(f, 0);
+    requestAnimationFrame(function() { t.step_timeout(f); });
   });
 }
 
@@ -93,19 +85,9 @@ function waitForFrame(t, f) {
 
 
 
-
-
-
-
-function runTestCycle(f, description, delay) {
+function runTestCycle(f, description) {
   async_test(function(t) {
-    if (delay) {
-      step_timeout(() => {
-        waitForNotification(t, t.step_func_done(f));
-      }, delay);
-    } else {
-      waitForNotification(t, t.step_func_done(f));
-    }
+    waitForNotification(t, t.step_func_done(f));
   }, description);
 }
 

@@ -28,6 +28,8 @@
 
 
 
+
+
 """Memorizing file.
 
 A memorizing file wraps a file and memorizes lines read by readline.

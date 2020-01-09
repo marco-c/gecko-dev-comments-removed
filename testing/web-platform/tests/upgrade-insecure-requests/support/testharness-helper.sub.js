@@ -1,9 +1,3 @@
-
-function wrapResult(server_data) {
-  
-  return null;
-}
-
 const Host = {
   SAME_ORIGIN: "same-origin",
   CROSS_ORIGIN: "cross-origin",

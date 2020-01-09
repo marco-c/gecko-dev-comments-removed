@@ -1,27 +1,3 @@
-function wrapResult(server_data) {
-  return {
-    referrer: server_data.headers.referer,
-    headers: server_data.headers
-  }
-}
-
-
-
-
-
-
-function stripUrlForUseAsReferrer(url) {
-  return url.replace(/#.*$/, "");
-}
-
-function normalizePort(targetPort) {
-  var defaultPorts = [80, 443];
-  var isDefaultPortForProtocol = (defaultPorts.indexOf(targetPort) >= 0);
-
-  return (targetPort == "" || isDefaultPortForProtocol) ?
-          "" : ":" + targetPort;
-}
-
 function ReferrerPolicyTestCase(scenario, testDescription, sanityChecker) {
   
   if (scenario.subresource == "fetch-request" && !window.fetch) {
@@ -38,16 +14,16 @@ function ReferrerPolicyTestCase(scenario, testDescription, sanityChecker) {
   sanityChecker.checkScenario(scenario);
 
   var subresourceInvoker = {
-    "a-tag": requestViaAnchor,
-    "area-tag": requestViaArea,
-    "fetch-request": requestViaFetch,
-    "iframe-tag": requestViaIframe,
-    "img-tag":  requestViaImageForReferrerPolicy,
-    "script-tag": requestViaScript,
-    "worker-request": url => requestViaDedicatedWorker(url, {}),
-    "module-worker": url => requestViaDedicatedWorker(url, {type: "module"}),
-    "shared-worker": requestViaSharedWorker,
-    "xhr-request": requestViaXhr
+    "a-tag": queryLink,
+    "area-tag": queryAreaLink,
+    "fetch-request": queryFetch,
+    "iframe-tag": queryIframe,
+    "img-tag":  queryImage,
+    "script-tag": queryScript,
+    "worker-request": queryWorker,
+    "module-worker": queryModuleWorkerTopLevel,
+    "shared-worker": querySharedWorker,
+    "xhr-request": queryXhr
   };
 
   var referrerUrlResolver = {
@@ -65,6 +41,8 @@ function ReferrerPolicyTestCase(scenario, testDescription, sanityChecker) {
   var t = {
     _scenario: scenario,
     _testDescription: testDescription,
+    _subresourceUrl: null,
+    _expectedReferrerUrl: null,
     _constructSubresourceUrl: function() {
       
       
@@ -82,20 +60,19 @@ function ReferrerPolicyTestCase(scenario, testDescription, sanityChecker) {
 
       var targetPort = portForProtocol[t._scenario.target_protocol];
 
-      return t._scenario.target_protocol + "://" +
-             domainForOrigin[t._scenario.origin] +
-             normalizePort(targetPort) +
-             t._scenario["subresource_path"] +
-             "?redirection=" + t._scenario["redirection"] +
-             "&cache_destroyer=" + (new Date()).getTime();
+      t._subresourceUrl = t._scenario.target_protocol + "://" +
+                          domainForOrigin[t._scenario.origin] +
+                          normalizePort(targetPort) +
+                          t._scenario["subresource_path"] +
+                          "?redirection=" + t._scenario["redirection"] +
+                          "&cache_destroyer=" + (new Date()).getTime();
     },
 
     _constructExpectedReferrerUrl: function() {
-      return referrerUrlResolver[t._scenario.referrer_url]();
+      t._expectedReferrerUrl = referrerUrlResolver[t._scenario.referrer_url]();
     },
 
-    
-    _invokeSubresource: function(resourceRequestUrl) {
+    _invokeSubresource: function(callback, test) {
       var invoker = subresourceInvoker[t._scenario.subresource];
       
       
@@ -107,35 +84,43 @@ function ReferrerPolicyTestCase(scenario, testDescription, sanityChecker) {
       var delivery_method = t._scenario.delivery_method;
 
       if (delivery_method in elementAttributesForDeliveryMethod) {
-        return invoker(resourceRequestUrl,
-                       elementAttributesForDeliveryMethod[delivery_method],
-                       t._scenario.referrer_policy);
+        invoker(t._subresourceUrl,
+                callback,
+                elementAttributesForDeliveryMethod[delivery_method],
+                t._scenario.referrer_policy,
+                test);
       } else {
-        return invoker(resourceRequestUrl, {}, t._scenario.referrer_policy);
+        invoker(t._subresourceUrl, callback, null, t._scenario.referrer_policy, test);
       }
+
     },
 
     start: function() {
-      promise_test(test => {
-          const resourceRequestUrl = t._constructSubresourceUrl();
-          const expectedReferrerUrl = t._constructExpectedReferrerUrl();
-          return t._invokeSubresource(resourceRequestUrl)
-            .then(result => {
-                
-                sanityChecker.checkSubresourceResult(
-                    test, t._scenario, resourceRequestUrl, result);
+      async_test(function(test) {
 
-                
-                assert_equals(result.referrer,
-                              expectedReferrerUrl,
-                              "Reported Referrer URL is '" +
-                              t._scenario.referrer_url + "'.");
-                assert_equals(result.headers.referer,
-                              expectedReferrerUrl,
-                              "Reported Referrer URL from HTTP header is '" +
-                              expectedReferrerUrl + "'");
-              });
-        }, t._testDescription);
+        t._constructSubresourceUrl();
+        t._constructExpectedReferrerUrl();
+
+        t._invokeSubresource(test.step_func(function(result) {
+          
+          sanityChecker.checkSubresourceResult(
+              test, t._scenario, t._subresourceUrl, result);
+
+          
+          test.step(function() {
+            assert_equals(result.referrer,
+                          t._expectedReferrerUrl,
+                          "Reported Referrer URL is '" +
+                          t._scenario.referrer_url + "'.");
+            assert_equals(result.headers.referer,
+                          t._expectedReferrerUrl,
+                          "Reported Referrer URL from HTTP header is '" +
+                          t._expectedReferrerUrl + "'");
+          }, "Reported Referrer URL is as expected: " + t._scenario.referrer_url);
+
+          test.done();
+        }), test);
+      }, t._testDescription);
     }
   }
 
