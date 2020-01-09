@@ -602,7 +602,7 @@ HistoryMenu.prototype = {
 
 
   populateUndoSubmenu: function PHM_populateUndoSubmenu() {
-    var undoPopup = this.undoTabMenu.firstChild;
+    var undoPopup = this.undoTabMenu.menupopup;
 
     
     while (undoPopup.hasChildNodes())
@@ -635,7 +635,7 @@ HistoryMenu.prototype = {
 
 
   populateUndoWindowSubmenu: function PHM_populateUndoWindowSubmenu() {
-    let undoPopup = this.undoWindowMenu.firstChild;
+    let undoPopup = this.undoWindowMenu.menupopup;
 
     
     while (undoPopup.hasChildNodes())
