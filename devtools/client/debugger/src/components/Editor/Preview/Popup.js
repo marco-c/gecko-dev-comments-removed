@@ -6,6 +6,7 @@
 
 import React, { Component } from "react";
 import { connect } from "../../../utils/connect";
+import { isTesting } from "devtools-environment";
 
 import Reps from "devtools-reps";
 const {
@@ -83,8 +84,10 @@ export class Popup extends Component<Props, State> {
 
     
     
+    
     const currentTarget = preview.target;
     if (
+      isTesting() ||
       currentTarget.matches(":hover") ||
       (this.popup && this.popup.matches(":hover"))
     ) {
