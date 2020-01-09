@@ -263,8 +263,9 @@ function requestDeviceWithTrustedClick() {
 
 
 function requestLEScanWithTrustedClick() {
+  let args = arguments;
   return callWithTrustedClick(
-      () => navigator.bluetooth.requestLEScan.apply(navigator.bluetooth));
+      () => navigator.bluetooth.requestLEScan.apply(navigator.bluetooth, args));
 }
 
 
