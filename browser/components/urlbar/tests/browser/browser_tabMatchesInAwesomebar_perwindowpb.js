@@ -66,7 +66,9 @@ async function runTest(aSourceWindow, aDestWindow, aExpectSwitch, aCallback) {
      "The test tab doesn't have the busy attribute");
 
   
-  await promiseAutocompleteResultPopup(TEST_URL, aDestWindow);
+  
+  let searchString = UrlbarPrefs.get("quantumbar") ? TEST_URL : TEST_URL.slice(1);
+  await promiseAutocompleteResultPopup(searchString, aDestWindow);
 
   info(`awesomebar popup appeared. aExpectSwitch: ${aExpectSwitch}`);
   
