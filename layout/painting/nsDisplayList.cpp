@@ -2198,7 +2198,7 @@ void nsDisplayListBuilder::WeakFrameRegion::RemoveModifiedFramesAndRects() {
     auto& wrapper = mFrames[i];
 
     if (!wrapper.mWeakFrame->IsAlive() ||
-        wrapper.mWeakFrame->GetFrame()->IsFrameModified()) {
+        AnyContentAncestorModified(wrapper.mWeakFrame->GetFrame())) {
       
       
       mFrameSet.RemoveEntry(wrapper.mFrame);
