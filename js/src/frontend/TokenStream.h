@@ -326,7 +326,7 @@ class SourceUnits;
 
 
 
-#define JS_COLUMN_DIMENSION_IS_CODE_POINTS() 0
+#define JS_COLUMN_DIMENSION_IS_CODE_POINTS() 1
 
 class TokenStreamAnyChars : public TokenStreamShared {
  public:
