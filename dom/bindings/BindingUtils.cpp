@@ -2196,6 +2196,12 @@ void UpdateReflectorGlobal(JSContext* aCx, JS::Handle<JSObject*> aObjArg,
     return;
   }
 
+  
+  
+  MOZ_ASSERT_IF(
+      js::GetObjectCompartment(aObj) != js::GetObjectCompartment(newobj),
+      js::AllowNewWrapper(js::GetObjectCompartment(aObj), newobj));
+
   JS::Rooted<JSObject*> propertyHolder(aCx);
   JS::Rooted<JSObject*> copyFrom(aCx, isProxy ? expandoObject : aObj);
   if (copyFrom) {

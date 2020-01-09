@@ -8149,6 +8149,8 @@ static bool TransplantObject(JSContext* cx, unsigned argc, Value* vp) {
   
   
   
+  
+  
 
   if (!CheckRecursionLimitConservative(cx)) {
     return false;
@@ -8175,6 +8177,12 @@ static bool TransplantObject(JSContext* cx, unsigned argc, Value* vp) {
 
   RootedObject target(cx, JS_CloneObject(cx, source, proto));
   if (!target) {
+    return false;
+  }
+
+  if (GetObjectCompartment(source) != GetObjectCompartment(target) &&
+      !AllowNewWrapper(GetObjectCompartment(source), target)) {
+    JS_ReportErrorASCII(cx, "Cannot transplant into nuked compartment");
     return false;
   }
 
