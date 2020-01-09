@@ -53,9 +53,6 @@ function createStore(client: any, initialState: any = {}, sourceMapsMock: any) {
     panel: {}
   });
 
-  
-  store.cx = selectors.getThreadContext(store.getState());
-
   return store;
 }
 
