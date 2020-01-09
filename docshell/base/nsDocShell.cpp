@@ -260,7 +260,7 @@ static uint32_t gValidateOrigin = 0xffffffff;
 static mozilla::LazyLogModule gDocShellLog("nsDocShell");
 #endif
 static mozilla::LazyLogModule gDocShellLeakLog("nsDocShellLeak");
-extern mozilla::LazyLogModule gPageCacheLog;
+;
 
 const char kBrandBundleURL[] = "chrome://branding/locale/brand.properties";
 const char kAppstringsBundleURL[] =
@@ -385,7 +385,8 @@ nsDocShell::nsDocShell(BrowsingContext* aBrowsingContext)
       mHasLoadedNonBlankURI(false),
       mBlankTiming(false),
       mTitleValidForCurrentURI(false),
-      mIsFrame(false) {
+      mIsFrame(false),
+      mIsNavigating(false) {
   mHistoryID.m0 = 0;
   mHistoryID.m1 = 0;
   mHistoryID.m2 = 0;
@@ -3592,12 +3593,10 @@ nsresult nsDocShell::AddChildSHEntryToParent(nsISHEntry* aNewEntry,
 
   if (rootSH) {
     mLoadedEntryIndex = rootSH->Index();
-
-    if (MOZ_UNLIKELY(MOZ_LOG_TEST(gPageCacheLog, LogLevel::Verbose))) {
-      MOZ_LOG(gPageCacheLog, LogLevel::Verbose,
-              ("Previous index: %d, Loaded index: %d", mPreviousEntryIndex,
-               mLoadedEntryIndex));
-    }
+#ifdef DEBUG_PAGE_CACHE
+    printf("Previous index: %d, Loaded index: %d\n\n", mPreviousEntryIndex,
+           mLoadedEntryIndex);
+#endif
   }
 
   return rv;
@@ -3726,6 +3725,12 @@ nsDocShell::GetContentBlockingLog(Promise** aPromise) {
 }
 
 NS_IMETHODIMP
+nsDocShell::GetIsNavigating(bool* aOut) {
+  *aOut = mIsNavigating;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 nsDocShell::SetDeviceSizeIsPageSize(bool aValue) {
   if (mDeviceSizeIsPageSize != aValue) {
     mDeviceSizeIsPageSize = aValue;
@@ -3826,6 +3831,10 @@ nsDocShell::GoBack() {
   if (!IsNavigationAllowed()) {
     return NS_OK;  
   }
+
+  auto cleanupIsNavigating = MakeScopeExit([&]() { mIsNavigating = false; });
+  mIsNavigating = true;
+
   RefPtr<ChildSHistory> rootSH = GetRootSessionHistory();
   NS_ENSURE_TRUE(rootSH, NS_ERROR_FAILURE);
   ErrorResult rv;
@@ -3838,6 +3847,10 @@ nsDocShell::GoForward() {
   if (!IsNavigationAllowed()) {
     return NS_OK;  
   }
+
+  auto cleanupIsNavigating = MakeScopeExit([&]() { mIsNavigating = false; });
+  mIsNavigating = true;
+
   RefPtr<ChildSHistory> rootSH = GetRootSessionHistory();
   NS_ENSURE_TRUE(rootSH, NS_ERROR_FAILURE);
   ErrorResult rv;
@@ -3852,6 +3865,10 @@ nsDocShell::GotoIndex(int32_t aIndex) {
   if (!IsNavigationAllowed()) {
     return NS_OK;  
   }
+
+  auto cleanupIsNavigating = MakeScopeExit([&]() { mIsNavigating = false; });
+  mIsNavigating = true;
+
   RefPtr<ChildSHistory> rootSH = GetRootSessionHistory();
   NS_ENSURE_TRUE(rootSH, NS_ERROR_FAILURE);
   return rootSH->LegacySHistory()->GotoIndex(aIndex);
@@ -3867,6 +3884,10 @@ nsresult nsDocShell::LoadURI(const nsAString& aURI,
   if (!IsNavigationAllowed()) {
     return NS_OK;  
   }
+
+  auto cleanupIsNavigating = MakeScopeExit([&]() { mIsNavigating = false; });
+  mIsNavigating = true;
+
   nsCOMPtr<nsIURI> uri;
   nsCOMPtr<nsIInputStream> postData(aLoadURIOptions.mPostData);
   nsresult rv = NS_OK;
@@ -7188,8 +7209,6 @@ bool nsDocShell::CanSavePresentation(uint32_t aLoadType,
 
   
   if (!mScriptGlobal || mScriptGlobal->IsLoading()) {
-    MOZ_LOG(gPageCacheLog, mozilla::LogLevel::Verbose,
-            ("Blocked due to document still loading"));
     return false;
   }
 
@@ -7285,15 +7304,15 @@ nsresult nsDocShell::CaptureState() {
   nsCOMPtr<nsISupports> windowState = mScriptGlobal->SaveWindowState();
   NS_ENSURE_TRUE(windowState, NS_ERROR_FAILURE);
 
-  if (MOZ_UNLIKELY(MOZ_LOG_TEST(gPageCacheLog, LogLevel::Debug))) {
-    nsCOMPtr<nsIURI> uri = mOSHE->GetURI();
-    nsAutoCString spec;
-    if (uri) {
-      uri->GetSpec(spec);
-    }
-    MOZ_LOG(gPageCacheLog, LogLevel::Debug,
-            ("Saving presentation into session history, URI: %s", spec.get()));
+#ifdef DEBUG_PAGE_CACHE
+  nsCOMPtr<nsIURI> uri = mOSHE->GetURI();
+  nsAutoCString spec;
+  if (uri) {
+    uri->GetSpec(spec);
   }
+  printf("Saving presentation into session history\n");
+  printf("  SH URI: %s\n", spec.get());
+#endif
 
   mOSHE->SetWindowState(windowState);
 
@@ -7436,19 +7455,21 @@ nsresult nsDocShell::RestorePresentation(nsISHEntry* aSHEntry,
 
   nsCOMPtr<nsIContentViewer> viewer = aSHEntry->GetContentViewer();
 
+#ifdef DEBUG_PAGE_CACHE
+  nsCOMPtr<nsIURI> uri = aSHEntry->GetURI();
+
   nsAutoCString spec;
-  if (MOZ_UNLIKELY(MOZ_LOG_TEST(gPageCacheLog, LogLevel::Debug))) {
-    nsCOMPtr<nsIURI> uri = aSHEntry->GetURI();
-    if (uri) {
-      uri->GetSpec(spec);
-    }
+  if (uri) {
+    uri->GetSpec(spec);
   }
+#endif
 
   *aRestoring = false;
 
   if (!viewer) {
-    MOZ_LOG(gPageCacheLog, LogLevel::Debug,
-            ("no saved presentation for uri: %s", spec.get()));
+#ifdef DEBUG_PAGE_CACHE
+    printf("no saved presentation for uri: %s\n", spec.get());
+#endif
     return NS_OK;
   }
 
@@ -7461,16 +7482,18 @@ nsresult nsDocShell::RestorePresentation(nsISHEntry* aSHEntry,
   nsCOMPtr<nsIDocShell> container;
   viewer->GetContainer(getter_AddRefs(container));
   if (!::SameCOMIdentity(container, GetAsSupports(this))) {
-    MOZ_LOG(gPageCacheLog, LogLevel::Debug,
-            ("No valid container, clearing presentation"));
+#ifdef DEBUG_PAGE_CACHE
+    printf("No valid container, clearing presentation\n");
+#endif
     aSHEntry->SetContentViewer(nullptr);
     return NS_ERROR_FAILURE;
   }
 
   NS_ASSERTION(mContentViewer != viewer, "Restoring existing presentation");
 
-  MOZ_LOG(gPageCacheLog, LogLevel::Debug,
-          ("restoring presentation from session history: %s", spec.get()));
+#ifdef DEBUG_PAGE_CACHE
+  printf("restoring presentation from session history: %s\n", spec.get());
+#endif
 
   SetHistoryEntry(&mLSHE, aSHEntry);
 
@@ -7616,9 +7639,10 @@ nsresult nsDocShell::RestoreFromHistory() {
     mPreviousEntryIndex = rootSH->Index();
     rootSH->LegacySHistory()->UpdateIndex();
     mLoadedEntryIndex = rootSH->Index();
-    MOZ_LOG(gPageCacheLog, LogLevel::Verbose,
-            ("Previous index: %d, Loaded index: %d", mPreviousEntryIndex,
-             mLoadedEntryIndex));
+#ifdef DEBUG_PAGE_CACHE
+    printf("Previous index: %d, Loaded index: %d\n\n", mPreviousEntryIndex,
+           mLoadedEntryIndex);
+#endif
   }
 
   
@@ -7986,9 +8010,10 @@ nsresult nsDocShell::RestoreFromHistory() {
 
   if (newRootView) {
     if (!newBounds.IsEmpty() && !newBounds.IsEqualEdges(oldBounds)) {
-      MOZ_LOG(gPageCacheLog, LogLevel::Debug,
-              ("resize widget(%d, %d, %d, %d)", newBounds.x, newBounds.y,
-               newBounds.width, newBounds.height));
+#ifdef DEBUG_PAGE_CACHE
+      printf("resize widget(%d, %d, %d, %d)\n", newBounds.x, newBounds.y,
+             newBounds.width, newBounds.height);
+#endif
       mContentViewer->SetBounds(newBounds);
     } else {
       nsIScrollableFrame* rootScrollFrame =
@@ -10816,9 +10841,10 @@ bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
     mPreviousEntryIndex = rootSH->Index();
     rootSH->LegacySHistory()->UpdateIndex();
     mLoadedEntryIndex = rootSH->Index();
-    MOZ_LOG(gPageCacheLog, LogLevel::Verbose,
-            ("Previous index: %d, Loaded index: %d", mPreviousEntryIndex,
-             mLoadedEntryIndex));
+#ifdef DEBUG_PAGE_CACHE
+    printf("Previous index: %d, Loaded index: %d\n\n", mPreviousEntryIndex,
+           mLoadedEntryIndex);
+#endif
   }
 
   
@@ -11500,9 +11526,10 @@ nsresult nsDocShell::AddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel,
       bool shouldPersist = ShouldAddToSessionHistory(aURI, aChannel);
       rv = mSessionHistory->LegacySHistory()->AddEntry(entry, shouldPersist);
       mLoadedEntryIndex = mSessionHistory->Index();
-      MOZ_LOG(gPageCacheLog, LogLevel::Verbose,
-              ("Previous index: %d, Loaded index: %d", mPreviousEntryIndex,
-               mLoadedEntryIndex));
+#ifdef DEBUG_PAGE_CACHE
+      printf("Previous index: %d, Loaded index: %d\n\n", mPreviousEntryIndex,
+             mLoadedEntryIndex);
+#endif
     }
   } else {
     
