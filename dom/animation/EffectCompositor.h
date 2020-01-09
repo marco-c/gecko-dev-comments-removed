@@ -196,9 +196,6 @@ class EffectCompositor {
   bool PreTraverse(ServoTraversalFlags aFlags);
 
   
-  bool PreTraverse(dom::Element* aElement, PseudoStyleType aPseudoType);
-
-  
   
   bool PreTraverseInSubtree(ServoTraversalFlags aFlags, dom::Element* aRoot);
 
