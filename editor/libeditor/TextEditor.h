@@ -409,23 +409,6 @@ class TextEditor : public EditorBase, public nsIPlaintextEditor {
 
 
 
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  virtual nsresult InsertFromDataTransfer(dom::DataTransfer* aDataTransfer,
-                                          int32_t aIndex, Document* aSourceDoc,
-                                          const EditorDOMPoint& aDroppedAt,
-                                          bool aDoDeleteSelection);
-
-  
-
-
-
-
-
-
   nsresult InsertWithQuotationsAsSubAction(const nsAString& aQuotedText);
 
   
