@@ -1,0 +1,19 @@
+
+
+
+
+
+
+#include "LSValue.h"
+
+namespace mozilla {
+namespace dom {
+
+const LSValue& VoidLSValue() {
+  static const LSValue sVoidLSValue(VoidString());
+
+  return sVoidLSValue;
+}
+
+}  
+}  
