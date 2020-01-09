@@ -646,9 +646,6 @@ class BrowserParent final : public PBrowserParent,
 
   virtual void ActorDestroy(ActorDestroyReason why) override;
 
-  nsCOMPtr<Element> mFrameElement;
-  nsCOMPtr<nsIBrowserDOMWindow> mBrowserDOMWindow;
-
   mozilla::ipc::IPCResult RecvRemotePaintIsReady();
 
   mozilla::ipc::IPCResult RecvNotifyCompositorTransaction();
@@ -727,7 +724,32 @@ class BrowserParent final : public PBrowserParent,
 
   static void PopFocus(BrowserParent* aBrowserParent);
 
+  TabId mTabId;
+
+  RefPtr<ContentParent> mManager;
+  
+  RefPtr<CanonicalBrowsingContext> mBrowsingContext;
+  nsCOMPtr<nsILoadContext> mLoadContext;
+  nsCOMPtr<Element> mFrameElement;
+  nsCOMPtr<nsIBrowserDOMWindow> mBrowserDOMWindow;
+  
+  
+  
+  RefPtr<nsFrameLoader> mFrameLoader;
+  uint32_t mChromeFlags;
+
+  
+  
+  
+  
+  BrowserBridgeParent* mBrowserBridgeParent;
+
   ContentCacheInParent mContentCache;
+
+  layout::RenderFrame mRenderFrame;
+  LayersObserverEpoch mLayerTreeEpoch;
+
+  Maybe<LayoutDeviceToLayoutDeviceMatrix4x4> mChildToParentConversionMatrix;
 
   nsIntRect mRect;
   ScreenIntSize mDimensions;
@@ -740,44 +762,12 @@ class BrowserParent final : public PBrowserParent,
   LayoutDeviceIntPoint mClientOffset;
   LayoutDeviceIntPoint mChromeOffset;
 
-  RefPtr<ContentParent> mManager;
-
-  
-  bool mDocShellIsActive;
-
-  
-  
-  bool mMarkedDestroying;
-  
-  
-  bool mIsDestroyed;
-
-  uint32_t mChromeFlags;
-
   nsTArray<nsTArray<IPCDataTransferItem>> mInitialDataTransferItems;
 
   RefPtr<gfx::DataSourceSurface> mDnDVisualization;
   bool mDragValid;
   LayoutDeviceIntRect mDragRect;
   nsCOMPtr<nsIPrincipal> mDragPrincipal;
-
-  nsCOMPtr<nsILoadContext> mLoadContext;
-
-  
-  
-  
-  RefPtr<nsFrameLoader> mFrameLoader;
-
-  
-  RefPtr<CanonicalBrowsingContext> mBrowsingContext;
-
-  
-  
-  
-  
-  BrowserBridgeParent* mBrowserBridgeParent;
-
-  TabId mTabId;
 
   
   
@@ -813,22 +803,26 @@ class BrowserParent final : public PBrowserParent,
   nsCOMPtr<imgIContainer> mCustomCursor;
   uint32_t mCustomCursorHotspotX, mCustomCursorHotspotY;
 
+  nsTArray<nsString> mVerifyDropLinks;
+
+#ifdef DEBUG
+  int32_t mActiveSupressDisplayportCount = 0;
+#endif
+
+  
+  bool mDocShellIsActive;
+
+  
+  
+  bool mMarkedDestroying;
+  
+  
+  bool mIsDestroyed;
   
   
   bool mTabSetsCursor;
 
   bool mHasContentOpener;
-
-  nsTArray<nsString> mVerifyDropLinks;
-
-#ifdef DEBUG
-  int32_t mActiveSupressDisplayportCount;
-#endif
-
-  layout::RenderFrame mRenderFrame;
-  LayersObserverEpoch mLayerTreeEpoch;
-
-  Maybe<LayoutDeviceToLayoutDeviceMatrix4x4> mChildToParentConversionMatrix;
 
   
   
