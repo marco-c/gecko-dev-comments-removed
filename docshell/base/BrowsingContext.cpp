@@ -177,12 +177,15 @@ BrowsingContext::BrowsingContext(BrowsingContext* aParent,
       mParent(aParent),
       mOpener(aOpener),
       mIsActivatedByUserGesture(false) {
+  mCrossOriginPolicy = nsILoadInfo::CROSS_ORIGIN_POLICY_NULL;
   
   
   if (mParent) {
     mGroup = mParent->Group();
+    mCrossOriginPolicy = mParent->CrossOriginPolicy();
   } else if (mOpener) {
     mGroup = mOpener->Group();
+    mCrossOriginPolicy = mOpener->CrossOriginPolicy();
   } else {
     
     
