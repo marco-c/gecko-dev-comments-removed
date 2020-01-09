@@ -369,11 +369,17 @@ nsresult WSRunObject::InsertText(Document& aDocument,
   }
 
   
+  
+  
+  
+  
   nsresult rv =
       MOZ_KnownLive(mHTMLEditor)
           ->InsertTextWithTransaction(aDocument, theString, pointToInsert,
                                       aPointAfterInsertedString);
   if (NS_WARN_IF(NS_FAILED(rv))) {
+    
+    *aPointAfterInsertedString = pointToInsert;
     return NS_OK;
   }
   return NS_OK;
