@@ -136,7 +136,7 @@ void CookieServiceParent::TrackCookieLoad(nsIChannel *aChannel) {
   bool storageAccessGranted = false;
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
   if (httpChannel) {
-    isTrackingResource = httpChannel->GetIsTrackingResource();
+    isTrackingResource = httpChannel->IsTrackingResource();
     
     
     

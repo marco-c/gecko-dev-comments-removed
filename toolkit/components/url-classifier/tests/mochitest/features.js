@@ -130,7 +130,7 @@ function runTests(flag, prefs, trackingResource) {
       
       sendAsyncMessage("last-channel-flags", {
         classificationFlags: channel.classificationFlags,
-        isTrackingResource: channel.isTrackingResource,
+        isTrackingResource: channel.isTrackingResource(),
       });
     }
 

@@ -1977,7 +1977,7 @@ nsresult nsCookieService::GetCookieStringCommon(nsIURI *aHostURI,
   bool firstPartyStorageAccessGranted = false;
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
   if (httpChannel) {
-    isTrackingResource = httpChannel->GetIsTrackingResource();
+    isTrackingResource = httpChannel->IsTrackingResource();
 
     
     
@@ -2096,7 +2096,7 @@ nsresult nsCookieService::SetCookieStringCommon(nsIURI *aHostURI,
   bool firstPartyStorageAccessGranted = false;
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
   if (httpChannel) {
-    isTrackingResource = httpChannel->GetIsTrackingResource();
+    isTrackingResource = httpChannel->IsTrackingResource();
 
     
     

@@ -1000,7 +1000,7 @@ already_AddRefed<nsIChannel> nsHTMLDocument::CreateDummyChannelForCookies(
 
   nsCOMPtr<nsIHttpChannel> docHTTPChannel = do_QueryInterface(GetChannel());
   if (docHTTPChannel) {
-    bool isTracking = docHTTPChannel->GetIsTrackingResource();
+    bool isTracking = docHTTPChannel->IsTrackingResource();
     if (isTracking) {
       
       

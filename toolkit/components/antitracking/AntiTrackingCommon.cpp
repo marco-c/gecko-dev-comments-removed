@@ -1412,7 +1412,7 @@ bool AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(
   MOZ_ASSERT(behavior == nsICookieService::BEHAVIOR_REJECT_TRACKER);
 
   
-  if (!aChannel->GetIsThirdPartyTrackingResource()) {
+  if (!aChannel->IsThirdPartyTrackingResource()) {
     LOG(("Our channel isn't a third-party tracking channel"));
     return true;
   }
