@@ -227,10 +227,10 @@ var PrintUtils = {
       
       
       if (!notifyOnOpen.value.valueOf() || this._webProgressPP.value == null) {
-        this.enterPrintPreview();
+        this._enterPrintPreview();
       }
     } catch (e) {
-      this.enterPrintPreview();
+      this._enterPrintPreview();
     }
   },
 
@@ -396,7 +396,7 @@ var PrintUtils = {
       }
 
       
-      setTimeout(function() { PrintUtils.enterPrintPreview(); }, 0);
+      setTimeout(function() { PrintUtils._enterPrintPreview(); }, 0);
     },
 
     QueryInterface: ChromeUtils.generateQI(["nsIObserver",
@@ -425,7 +425,7 @@ var PrintUtils = {
   _ppBrowsers: new Set(),
   _currentPPBrowser: null,
 
-  enterPrintPreview() {
+  _enterPrintPreview() {
     
     
     
