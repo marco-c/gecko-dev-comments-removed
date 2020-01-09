@@ -12,6 +12,7 @@ const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm")
 XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
 
 var Utils = {
+  CHANGES_PATH: "/buckets/monitor/collections/changes/records",
 
   
 
@@ -51,8 +52,9 @@ var Utils = {
 
 
 
-  async fetchLatestChanges(url, options = {}) {
+  async fetchLatestChanges(serverUrl, options = {}) {
     const { expectedTimestamp, lastEtag = "", filters = {} } = options;
+
     
     
     
@@ -62,6 +64,8 @@ var Utils = {
     
     
     
+
+    let url = serverUrl + Utils.CHANGES_PATH;
 
     
     

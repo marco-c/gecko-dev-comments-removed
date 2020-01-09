@@ -2725,9 +2725,7 @@ pref("security.strict_security_checks.enabled", false);
 
 pref("services.settings.poll_interval", 86400); 
 pref("services.settings.server", "https://firefox.settings.services.mozilla.com/v1");
-pref("services.settings.changes.path", "/buckets/monitor/collections/changes/records");
 pref("services.settings.default_bucket", "main");
-pref("services.settings.default_signer", "remote-settings.content-signature.mozilla.org");
 
 
 
@@ -6042,10 +6040,6 @@ pref("dom.sidebar.enabled", true);
 
 
 pref("fission.rebuild_frameloaders_on_remoteness_change", true);
-
-
-
-pref("fission.preserve_browsing_contexts", false);
 
 
 

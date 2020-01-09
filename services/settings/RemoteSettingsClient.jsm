@@ -35,8 +35,6 @@ const TELEMETRY_COMPONENT = "remotesettings";
 
 XPCOMUtils.defineLazyPreferenceGetter(this, "gServerURL",
                                       "services.settings.server");
-XPCOMUtils.defineLazyPreferenceGetter(this, "gChangesPath",
-                                      "services.settings.changes.path");
 
 
 
@@ -255,7 +253,7 @@ class RemoteSettingsClient extends EventEmitter {
   async sync(options) {
     
     
-    const { changes } = await Utils.fetchLatestChanges(gServerURL + gChangesPath, {
+    const { changes } = await Utils.fetchLatestChanges(gServerURL, {
       filters: {
         collection: this.collectionName,
         bucket: this.bucketName,
