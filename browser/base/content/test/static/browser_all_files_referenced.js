@@ -199,6 +199,9 @@ const ignorableWhitelist = new Set([
 
   
   "resource://gre/res/test.properties",
+
+  
+  "resource://app/localization/en-US/browser/aboutConfig.ftl",
 ]);
 for (let entry of ignorableWhitelist) {
   whitelist.add(entry);
