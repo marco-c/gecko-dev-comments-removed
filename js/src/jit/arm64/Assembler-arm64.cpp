@@ -634,16 +634,12 @@ void Assembler::TraceDataRelocations(JSTracer* trc, JitCode* code,
         
         *literalAddr = v.asRawBits();
       }
-
-      
       continue;
     }
 
     
     TraceManuallyBarrieredGenericPointerEdge(
         trc, reinterpret_cast<gc::Cell**>(literalAddr), "ion-masm-ptr");
-
-    
   }
 }
 
