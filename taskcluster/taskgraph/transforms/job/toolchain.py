@@ -197,6 +197,10 @@ def windows_toolchain(config, job, taskdesc):
     }]
     worker['chain-of-trust'] = True
 
+    
+    
+    
+    run['use-caches'] = False
     support_vcs_checkout(config, job, taskdesc)
 
     env = worker['env']
