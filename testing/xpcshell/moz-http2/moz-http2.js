@@ -196,7 +196,6 @@ var didRst = false;
 var rstConnection = null;
 var illegalheader_conn = null;
 
-var ns_confirm = 0;
 var cname_confirm = 0;
 
 function handleRequest(req, res) {
@@ -553,7 +552,6 @@ function handleRequest(req, res) {
 
   }
   else if (u.pathname == "/doh") {
-    ns_confirm = 0; 
     cname_confirm = 0; 
 
     let responseIP = u.query["responseIP"];
@@ -604,18 +602,54 @@ function handleRequest(req, res) {
     function emitResponse(response, requestPayload) {
       let packet = dnsPacket.decode(requestPayload);
 
+      function responseType() {
+        if (packet.questions.length > 0 &&
+          packet.questions[0].name == "confirm.example.com" &&
+          packet.questions[0].type == "NS") {
+          return "NS";
+        }
+
+        return ip.isV4Format(responseIP) ? "A" : "AAAA";
+      }
+
+      function responseData() {
+        if (packet.questions.length > 0 &&
+          packet.questions[0].name == "confirm.example.com" &&
+          packet.questions[0].type == "NS") {
+          return "ns.example.com";
+        }
+
+        return responseIP;
+      }
+
+      let answers = [];
+      if (responseIP != "none" && responseType() == packet.questions[0].type) {
+        answers.push({
+          name: u.query["hostname"] ? u.query["hostname"] : packet.questions[0].name,
+          ttl: 55,
+          type: responseType(),
+          flush: false,
+          data: responseData(),
+        });
+      }
+
+      if (u.query["cnameloop"]) {
+        answers.push({
+          name: "cname.example.com",
+          type: "CNAME",
+          ttl: 55,
+          class: "IN",
+          flush: false,
+          data: "pointing-elsewhere.example.com",
+        });
+      }
+
       let buf = dnsPacket.encode({
-        type: 'query',
+        type: 'response',
         id: packet.id,
         flags: dnsPacket.RECURSION_DESIRED,
         questions: packet.questions,
-        answers: [{
-          name: packet.questions[0].name,
-          ttl: 55,
-          type: ip.isV4Format(responseIP) ? "A" : "AAAA",
-          flush: false,
-          data: responseIP,
-        }],
+        answers: answers,
       });
 
       response.setHeader('Content-Length', buf.length);
@@ -683,56 +717,8 @@ function handleRequest(req, res) {
     return;
 
   }
-  else if (u.pathname === "/dns-cname-loop") {
-    
-    var content;
-    
-    content = new Buffer("00000100000100010000000005636E616D65076578616D706C6503636F6D0000050001C00C0005000100000037002012706F696E74696E672D656C73657768657265076578616D706C65C01A00", "hex");
-    res.setHeader('Content-Type', 'application/dns-message');
-    res.setHeader('Content-Length', content.length);
-    res.writeHead(200);
-    res.write(content);
-    res.end("");
-    return;
-
-  }
-  else if (u.pathname === "/dns-ns") {
-    
-    var content= new Buffer("00000100000100010000000007636F6E6669726D076578616D706C6503636F6D0000020001C00C00020001000000370012026E73076578616D706C6503636F6D010A00", "hex");
-    res.setHeader('Content-Type', 'application/dns-message');
-    res.setHeader('Content-Length', content.length);
-    res.writeHead(200);
-    res.write(content);
-    res.end("");
-    return;
-  }
   else if (u.pathname === '/dns-750ms') {
     
-    return;
-  }
-  
-  else if (u.pathname === "/dns-confirm") {
-    if (0 == ns_confirm) {
-      
-      var content= new Buffer("00000100000100010000000007636F6E6669726D076578616D706C6503636F6D0000020001C00C00020001000000370012026E73076578616D706C6503636F6D010A00", "hex");
-      ns_confirm++;
-    } else if (2 >= ns_confirm) {
-      
-
-      
-      
-      var content= new Buffer("000001000001000100000000" + "073130622d313030" +
-                              "076578616D706C6503636F6D00001C0001C00C001C00010000003700100001000000000000000000000000FFFF", "hex");
-      ns_confirm++;
-    } else {
-      
-      return;
-    }
-    res.setHeader('Content-Type', 'application/dns-message');
-    res.setHeader('Content-Length', content.length);
-    res.writeHead(200);
-    res.write(content);
-    res.end("");
     return;
   }
   
