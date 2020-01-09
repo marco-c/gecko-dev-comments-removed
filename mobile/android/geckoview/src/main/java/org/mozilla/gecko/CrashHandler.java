@@ -56,11 +56,11 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
 
 
 
-    public static Throwable getRootException(Throwable exc) {
-        for (Throwable cause = exc; cause != null; cause = cause.getCause()) {
-            exc = cause;
-        }
-        return exc;
+    public static Throwable getRootException(final Throwable exc) {
+        Throwable cause;
+        for (cause = exc; cause != null; cause = cause.getCause()) {}
+
+        return cause;
     }
 
     
@@ -453,20 +453,22 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
             return;
         }
 
-        if (thread == null) {
+        Thread resolvedThread = thread;
+        if (resolvedThread == null) {
             
-            thread = Thread.currentThread();
+            resolvedThread = Thread.currentThread();
         }
 
         try {
+            Throwable rootException = exc;
             if (!this.unregistered) {
                 
 
                 this.crashing = true;
-                exc = getRootException(exc);
-                logException(thread, exc);
+                rootException = getRootException(exc);
+                logException(resolvedThread, rootException);
 
-                if (reportException(thread, exc)) {
+                if (reportException(resolvedThread, rootException)) {
                     
                     return;
                 }
@@ -474,7 +476,7 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
 
             if (systemUncaughtHandler != null) {
                 
-                systemUncaughtHandler.uncaughtException(thread, exc);
+                systemUncaughtHandler.uncaughtException(resolvedThread, rootException);
             }
         } finally {
             terminateProcess();

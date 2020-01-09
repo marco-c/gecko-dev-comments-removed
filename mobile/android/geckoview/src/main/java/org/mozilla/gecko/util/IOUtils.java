@@ -77,8 +77,8 @@ public class IOUtils {
 
                 
                 if (bPointer == buffer.length) {
-                    bufferSize *= 2;
-                    byte[] newBuffer = new byte[bufferSize];
+                    int newBufferSize = bufferSize * 2;
+                    byte[] newBuffer = new byte[newBufferSize];
 
                     
                     System.arraycopy(buffer, 0, newBuffer, 0, buffer.length);
