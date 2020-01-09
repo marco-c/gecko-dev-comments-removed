@@ -394,8 +394,7 @@ var LoginManagerParent = {
         
         
 
-        prompter.promptToChangePasswordWithUsernames(
-          logins, logins.length, formLogin);
+        prompter.promptToChangePasswordWithUsernames(logins, formLogin);
       }
 
       return;
