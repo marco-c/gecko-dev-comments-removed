@@ -2610,12 +2610,12 @@ function showMenu(evt, items) {
   });
 
   if (inToolbox()) {
-    menu.popup(evt.screenX, evt.screenY, { doc: window.parent.document });
+    menu.popup(evt.screenX, evt.screenY, window.parent.document);
     return;
   }
 
   menu.on("open", (_, popup) => onShown(menu, popup));
-  menu.popup(evt.clientX, evt.clientY, { doc: document });
+  menu.popup(evt.clientX, evt.clientY, document);
 }
 
 function createSubMenu(subItems) {
@@ -2713,6 +2713,11 @@ function inToolbox() {
 }
 
 
+function getTopWindow(win) {
+  return win.windowRoot ? win.windowRoot.ownerGlobal : win.top;
+}
+
+
 
 
 
@@ -2766,8 +2771,13 @@ Menu.prototype.insert = function (pos, menuItem) {
 
 
 
-Menu.prototype.popup = function (screenX, screenY, toolbox) {
-  let doc = toolbox.doc;
+Menu.prototype.popup = function (screenX, screenY, doc) {
+  
+  
+  
+  const win = doc.defaultView;
+  doc = getTopWindow(doc.defaultView).document;
+
   let popupset = doc.querySelector("popupset");
   if (!popupset) {
     popupset = doc.createXULElement("popupset");
@@ -2791,8 +2801,14 @@ Menu.prototype.popup = function (screenX, screenY, toolbox) {
   this._createMenuItems(popup);
 
   
+  
+  const onWindowUnload = () => popup.hidePopup();
+  win.addEventListener("unload", onWindowUnload);
+
+  
   popup.addEventListener("popuphidden", e => {
     if (e.target === popup) {
+      win.removeEventListener("unload", onWindowUnload);
       popup.remove();
       this.emit("close", popup);
     }
