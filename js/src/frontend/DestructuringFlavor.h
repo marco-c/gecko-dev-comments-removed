@@ -1,0 +1,31 @@
+
+
+
+
+
+
+#ifndef frontend_DestructuringFlavor_h
+#define frontend_DestructuringFlavor_h
+
+namespace js {
+namespace frontend {
+
+enum class DestructuringFlavor {
+  
+  Declaration,
+
+  
+  
+  
+  
+  
+  FormalParameterInVarScope,
+
+  
+  Assignment
+};
+
+} 
+} 
+
+#endif 

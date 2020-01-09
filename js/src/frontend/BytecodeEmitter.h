@@ -14,6 +14,7 @@
 
 #include "ds/InlineTable.h"
 #include "frontend/BCEParserHandle.h"
+#include "frontend/DestructuringFlavor.h"
 #include "frontend/EitherParser.h"
 #include "frontend/JumpList.h"
 #include "frontend/NameFunctions.h"
@@ -692,21 +693,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   MOZ_NEVER_INLINE MOZ_MUST_USE bool emitTry(TryNode* tryNode);
 
   MOZ_MUST_USE bool emitGoSub(JumpList* jump);
-
-  enum DestructuringFlavor {
-    
-    DestructuringDeclaration,
-
-    
-    
-    
-    
-    
-    DestructuringFormalParameterInVarScope,
-
-    
-    DestructuringAssignment
-  };
 
   
   
