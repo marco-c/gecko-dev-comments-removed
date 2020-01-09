@@ -1193,6 +1193,7 @@ var LoginManagerContent = {
 
 
 
+
   
   _fillForm(form, foundLogins, recipes, {
     inputElement = null,
@@ -1224,6 +1225,7 @@ var LoginManagerContent = {
     };
 
     try {
+      
       
       
       if (foundLogins.length == 0 &&
@@ -1279,6 +1281,19 @@ var LoginManagerContent = {
       if (usernameField) {
         this._formFillService.markAsLoginManagerField(usernameField);
         usernameField.addEventListener("keydown", observer);
+      }
+
+      if (!userTriggered) {
+        
+        
+        foundLogins = foundLogins.filter(l => {
+          return LoginHelper.isOriginMatching(l.formSubmitURL,
+                                              LoginHelper.getFormActionOrigin(form),
+                                              {
+                                                schemeUpgrades: LoginHelper.schemeUpgrades,
+                                                acceptWildcardMatch: true,
+                                              });
+        });
       }
 
       
