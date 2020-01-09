@@ -61,7 +61,11 @@ AntiTracking.runTest("ServiceWorkers and Storage Access API",
     ]});
 
     
-    await noStorageAccessInitially();
+    if (allowListed) {
+      await hasStorageAccessInitially();
+    } else {
+      await noStorageAccessInitially();
+    }
 
     await navigator.serviceWorker.register("empty.js").then(
       reg => { ok(true, "ServiceWorker can be used!"); return reg; },
