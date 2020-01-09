@@ -449,18 +449,26 @@ class UrlbarInput {
 
 
 
-  setValueFromResult(result, event = null) {
-    
-    
-    let canonizedUrl = this._maybeCanonizeURL(event, result.autofill ?
-                         this._lastSearchString : this.textValue);
-    if (canonizedUrl) {
-      this.value = canonizedUrl;
+
+
+  setValueFromResult(result = null, event = null) {
+    let canonizedUrl;
+
+    if (!result) {
+      this.value = this._lastSearchString;
     } else {
-      this.value = this._getValueFromResult(result);
-      if (result.autofill) {
-        this.selectionStart = result.autofill.selectionStart;
-        this.selectionEnd = result.autofill.selectionEnd;
+      
+      
+      canonizedUrl = this._maybeCanonizeURL(event, result.autofill ?
+                       this._lastSearchString : this.textValue);
+      if (canonizedUrl) {
+        this.value = canonizedUrl;
+      } else {
+        this.value = this._getValueFromResult(result);
+        if (result.autofill) {
+          this.selectionStart = result.autofill.selectionStart;
+          this.selectionEnd = result.autofill.selectionEnd;
+        }
       }
     }
     this._resultForCurrentValue = result;
@@ -469,13 +477,15 @@ class UrlbarInput {
     this.window.gBrowser.userTypedValue = this.value;
 
     
-    switch (result.type) {
-      case UrlbarUtils.RESULT_TYPE.TAB_SWITCH:
-        this.setAttribute("actiontype", "switchtab");
-        break;
-      case UrlbarUtils.RESULT_TYPE.OMNIBOX:
-        this.setAttribute("actiontype", "extension");
-        break;
+    if (result) {
+      switch (result.type) {
+        case UrlbarUtils.RESULT_TYPE.TAB_SWITCH:
+          this.setAttribute("actiontype", "switchtab");
+          break;
+        case UrlbarUtils.RESULT_TYPE.OMNIBOX:
+          this.setAttribute("actiontype", "extension");
+          break;
+      }
     }
 
     return !!canonizedUrl;
