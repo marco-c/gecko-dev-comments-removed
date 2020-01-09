@@ -732,7 +732,14 @@ toolbarbutton[constrain-size="true"][cui-areatype="menu-panel"] > .toolbarbutton
 }
 
 .PanelUI-fxa-signin-instruction-label {
+  
+
+
+%if defined(XP_MACOSX) || defined(XP_WIN)
   font-weight: lighter;
+%else
+  font-weight: 300;
+%endif
 }
 
 .fxa-avatar-subpanel {
