@@ -1,5 +1,5 @@
 
-var newBrowser
+var newBrowser;
 
 function task() {
   let resolve;

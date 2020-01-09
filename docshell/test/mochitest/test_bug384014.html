@@ -23,11 +23,11 @@
 SimpleTest.waitForExplicitFinish();
 
 function runTest() {
-  $("f").onload = function () {
+  $("f").onload = function() {
     is($("f").contentDocument.documentElement.textContent, "PASS",
       "We fail");
     SimpleTest.finish();
-  }
+  };
 
   $("f").contentWindow.location.reload();
 }

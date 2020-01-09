@@ -11,7 +11,7 @@
 function test() {
   const testDir = "http://mochi.test:8888/browser/docshell/test/browser/";
   const origURL = testDir + "file_bug655270.html";
-  const newURL  = origURL + '?new_page';
+  const newURL  = origURL + "?new_page";
 
   const faviconURL = testDir + "favicon_bug655270.ico";
 
@@ -25,34 +25,34 @@ function test() {
   
 
   let observer = {
-    onPageChanged: function(aURI, aWhat, aValue) {
+    onPageChanged(aURI, aWhat, aValue) {
       if (aWhat != Ci.nsINavHistoryObserver.ATTRIBUTE_FAVICON)
         return;
 
       if (aURI.spec == origURL) {
-        is(aValue, faviconURL, 'FaviconURL for original URI');
+        is(aValue, faviconURL, "FaviconURL for original URI");
         
         
         ContentTask.spawn(tab.linkedBrowser, null, function() {
-          content.history.pushState('', '', '?new_page');
+          content.history.pushState("", "", "?new_page");
         });
       }
 
       if (aURI.spec == newURL) {
-        is(aValue, faviconURL, 'FaviconURL for new URI');
+        is(aValue, faviconURL, "FaviconURL for new URI");
         gBrowser.removeTab(tab);
         PlacesUtils.history.removeObserver(this);
         finish();
       }
     },
 
-    onBeginUpdateBatch: function() { },
-    onEndUpdateBatch: function() { },
-    onTitleChanged: function() { },
-    onDeleteURI: function() { },
-    onClearHistory: function() { },
-    onDeleteVisits: function() { },
-    QueryInterface: ChromeUtils.generateQI([Ci.nsINavHistoryObserver])
+    onBeginUpdateBatch() { },
+    onEndUpdateBatch() { },
+    onTitleChanged() { },
+    onDeleteURI() { },
+    onClearHistory() { },
+    onDeleteVisits() { },
+    QueryInterface: ChromeUtils.generateQI([Ci.nsINavHistoryObserver]),
   };
 
   PlacesUtils.history.addObserver(observer);

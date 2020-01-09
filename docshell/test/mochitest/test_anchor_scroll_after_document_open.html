@@ -27,7 +27,7 @@
       frames[0].onscroll = function() {
         ok(true, "Got a scroll event");
         SimpleTest.finish();
-      }
+      };
       frames[0].location.hash = "#target";
       return;
     }
@@ -37,7 +37,7 @@
       ok(false, "Unexpected message");
     }
     SimpleTest.finish();
-  }
+  };
 
   </script>
 </head>
