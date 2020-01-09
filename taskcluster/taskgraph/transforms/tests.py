@@ -298,7 +298,12 @@ test_description_schema = Schema({
         Optional('build-artifact-name'): basestring,
 
         
-        Required('tooltool-downloads'): bool,
+        
+        Required('tooltool-downloads'): Any(
+            False,
+            'public',
+            'internal',
+        ),
 
         
         Optional('include-blob-upload-branch'): bool,
@@ -427,7 +432,7 @@ def set_defaults(config, tests):
         build_platform = test['build-platform']
         if build_platform.startswith('android'):
             
-            test['mozharness']['tooltool-downloads'] = True
+            test['mozharness']['tooltool-downloads'] = 'internal'
             test['mozharness']['actions'] = ['get-secrets']
             
             test['e10s'] = False
@@ -473,7 +478,7 @@ def set_defaults(config, tests):
 
         test['mozharness'].setdefault('extra-options', [])
         test['mozharness'].setdefault('requires-signed-builds', False)
-        test['mozharness'].setdefault('tooltool-downloads', False)
+        test['mozharness'].setdefault('tooltool-downloads', 'public')
         test['mozharness'].setdefault('set-moz-node-path', False)
         test['mozharness'].setdefault('chunked', False)
         test['mozharness'].setdefault('chunking-args', 'this-chunk')
