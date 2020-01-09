@@ -38,8 +38,8 @@ this.RemoteAgentActorChild = class extends ActorChild {
 
 
 this.MessageChannelActorChild = class extends RemoteAgentActorChild {
-  constructor(despatcher) {
-    super(despatcher);
+  constructor(dispatcher) {
+    super(dispatcher);
     this.name = `RemoteAgent:${this.constructor.name}`;
   }
 
