@@ -490,7 +490,21 @@ class UrlbarProvider {
 
 
 
-  get sources() {
+
+
+
+  isActive(queryContext) {
+    throw new Error("Trying to access the base class, must be overridden");
+  }
+  
+
+
+
+
+
+
+
+  isRestricting(queryContext) {
     throw new Error("Trying to access the base class, must be overridden");
   }
   

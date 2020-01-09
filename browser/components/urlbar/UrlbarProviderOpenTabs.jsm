@@ -98,10 +98,24 @@ class ProviderOpenTabs extends UrlbarProvider {
 
 
 
-  get sources() {
-    return [
-      UrlbarUtils.RESULT_SOURCE.TABS,
-    ];
+
+
+
+  isActive(queryContext) {
+    
+    
+    return false;
+  }
+
+  
+
+
+
+
+
+
+  isRestricting(queryContext) {
+    return false;
   }
 
   

@@ -66,15 +66,22 @@ class ProviderUnifiedComplete extends UrlbarProvider {
 
 
 
-  get sources() {
-    return [
-      UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
-      UrlbarUtils.RESULT_SOURCE.HISTORY,
-      UrlbarUtils.RESULT_SOURCE.SEARCH,
-      UrlbarUtils.RESULT_SOURCE.TABS,
-      UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
-      UrlbarUtils.RESULT_SOURCE.OTHER_NETWORK,
-    ];
+
+
+
+  isActive(queryContext) {
+    return true;
+  }
+
+  
+
+
+
+
+
+
+  isRestricting(queryContext) {
+    return false;
   }
 
   
