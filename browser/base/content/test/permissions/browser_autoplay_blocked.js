@@ -129,6 +129,30 @@ add_task(async function testBFCache() {
   await BrowserTestUtils.withNewTab("about:home", async function(browser) {
     await BrowserTestUtils.loadURI(browser, AUTOPLAY_PAGE);
     await blockedIconShown(browser);
+
+    gBrowser.goBack();
+    await TestUtils.waitForCondition(() => {
+      return BrowserTestUtils.is_hidden(autoplayBlockedIcon());
+    });
+
+    
+    
+    
+    await ContentTask.spawn(browser, null, () => {
+      content.history.forward();
+    });
+    await blockedIconShown(browser);
+  });
+
+  Services.perms.removeAll();
+});
+
+add_task(async function testChangingBlockingSettingDuringNavigation() {
+  Services.prefs.setIntPref(AUTOPLAY_PREF, Ci.nsIAutoplay.BLOCKED);
+
+  await BrowserTestUtils.withNewTab("about:home", async function(browser) {
+    await BrowserTestUtils.loadURI(browser, AUTOPLAY_PAGE);
+    await blockedIconShown(browser);
     Services.prefs.setIntPref(AUTOPLAY_PREF, Ci.nsIAutoplay.ALLOWED);
 
     gBrowser.goBack();
