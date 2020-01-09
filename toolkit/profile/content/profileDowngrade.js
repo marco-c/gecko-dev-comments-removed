@@ -4,6 +4,8 @@
 
 let gParams;
 
+const { AppConstants } = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
+
 function init() {
   
 
@@ -13,10 +15,12 @@ function init() {
 
 
   gParams = window.arguments[0].QueryInterface(Ci.nsIDialogParamBlock);
-  let hasSync = gParams.GetInt(0) & Ci.nsIToolkitProfileService.hasSync;
+  if (AppConstants.MOZ_SERVICES_SYNC) {
+    let hasSync = gParams.GetInt(0) & Ci.nsIToolkitProfileService.hasSync;
 
-  document.getElementById("sync").hidden = !hasSync;
-  document.getElementById("nosync").hidden = hasSync;
+    document.getElementById("sync").hidden = !hasSync;
+    document.getElementById("nosync").hidden = hasSync;
+  }
 }
 
 function quit() {
