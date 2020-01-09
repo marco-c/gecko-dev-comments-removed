@@ -16,7 +16,7 @@
 
 
 const FILE_SIMPLE_MAR = "simple.mar";
-const SIZE_SIMPLE_MAR = "1404";
+const SIZE_SIMPLE_MAR = "1419";
 
 const STATE_NONE            = "null";
 const STATE_DOWNLOADING     = "downloading";
