@@ -1466,20 +1466,20 @@ guint32 nsWindow::GetLastUserInputTime() {
   return timestamp;
 }
 
-void nsWindow::SetFocus(Raise aRaise) {
+nsresult nsWindow::SetFocus(bool aRaise) {
   
   
 
-  LOGFOCUS(("  SetFocus %d [%p]\n", aRaise == Raise::Yes, (void*)this));
+  LOGFOCUS(("  SetFocus %d [%p]\n", aRaise, (void*)this));
 
   GtkWidget* owningWidget = GetMozContainerWidget();
-  if (!owningWidget) return;
+  if (!owningWidget) return NS_ERROR_FAILURE;
 
   
   
   GtkWidget* toplevelWidget = gtk_widget_get_toplevel(owningWidget);
 
-  if (gRaiseWindows && aRaise == Raise::Yes && toplevelWidget &&
+  if (gRaiseWindows && aRaise && toplevelWidget &&
       !gtk_widget_has_focus(owningWidget) &&
       !gtk_widget_has_focus(toplevelWidget)) {
     GtkWidget* top_window = GetToplevelWidget();
@@ -1491,9 +1491,9 @@ void nsWindow::SetFocus(Raise aRaise) {
   }
 
   RefPtr<nsWindow> owningWindow = get_window_for_gtk_widget(owningWidget);
-  if (!owningWindow) return;
+  if (!owningWindow) return NS_ERROR_FAILURE;
 
-  if (aRaise == Raise::Yes) {
+  if (aRaise) {
     
 
     
@@ -1513,7 +1513,8 @@ void nsWindow::SetFocus(Raise aRaise) {
 
       if (GTKToolkit) GTKToolkit->SetFocusTimestamp(0);
     }
-    return;
+
+    return NS_OK;
   }
 
   
@@ -1536,7 +1537,7 @@ void nsWindow::SetFocus(Raise aRaise) {
   
   if (gFocusWindow == this) {
     LOGFOCUS(("  already have focus [%p]\n", (void*)this));
-    return;
+    return NS_OK;
   }
 
   
@@ -1547,6 +1548,8 @@ void nsWindow::SetFocus(Raise aRaise) {
   }
 
   LOGFOCUS(("  widget now has focus in SetFocus() [%p]\n", (void*)this));
+
+  return NS_OK;
 }
 
 LayoutDeviceIntRect nsWindow::GetScreenBounds() {

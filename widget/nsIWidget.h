@@ -856,15 +856,13 @@ class nsIWidget : public nsISupports {
   
 
 
-  enum class Raise {
-    No,
-    Yes,
-  };
-
-  
 
 
-  virtual void SetFocus(Raise) = 0;
+
+
+
+
+  virtual nsresult SetFocus(bool aRaise = false) = 0;
 
   
 
