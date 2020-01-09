@@ -1441,17 +1441,17 @@ void MediaStreamGraphImpl::ForceShutDown(
         nsITimer::TYPE_ONE_SHOT);
   }
   mForceShutdownTicket = aShutdownTicket;
-  MonitorAutoLock lock(mMonitor);
-  mForceShutDown = true;
-  if (LifecycleStateRef() == LIFECYCLE_THREAD_NOT_STARTED) {
+
+  class Message final : public ControlMessage {
+   public:
+    explicit Message(MediaStreamGraphImpl* aGraph)
+        : ControlMessage(nullptr), mGraph(aGraph) {}
+    void Run() override { mGraph->mForceShutDown = true; }
     
-    
-    
-    RefPtr<GraphDriver> driver = CurrentDriver();
-    MonitorAutoUnlock unlock(mMonitor);
-    driver->Start();
-  }
-  EnsureNextIterationLocked();
+    MediaStreamGraphImpl* MOZ_NON_OWNING_REF mGraph;
+  };
+
+  AppendMessage(MakeUnique<Message>(this));
 }
 
 NS_IMETHODIMP
@@ -1729,8 +1729,8 @@ void MediaStreamGraphImpl::RunInStableState(bool aSourceIsMSG) {
       }
     }
 
-    if (mForceShutDown &&
-        LifecycleStateRef() == LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP) {
+    if (LifecycleStateRef() == LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP &&
+        mForceShutDown) {
       
       
       for (uint32_t i = 0; i < mBackMessageQueue.Length(); ++i) {
