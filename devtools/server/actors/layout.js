@@ -12,7 +12,6 @@ const {
   gridSpec,
   layoutSpec,
 } = require("devtools/shared/specs/layout");
-const { SHOW_ELEMENT } = require("devtools/shared/dom-node-filter-constants");
 const { getStringifiableFragments } =
   require("devtools/server/actors/utils/css-grid-utils");
 
@@ -375,7 +374,7 @@ const LayoutActor = ActorClassWithSpec(layoutSpec, {
     if (parentFlexElement && flexType) {
       return new FlexboxActor(this, parentFlexElement);
     }
-    const container = findGridParentContainerForNode(node, this.walker);
+    const container = findGridParentContainerForNode(node);
     if (container && gridType) {
       return new GridActor(this, container);
     }
@@ -464,22 +463,14 @@ function isNodeDead(node) {
 
 
 
-
-
-function findGridParentContainerForNode(node, walker) {
-  const treeWalker = walker.getDocumentWalker(node, SHOW_ELEMENT);
-  let currentNode = treeWalker.currentNode;
-
+function findGridParentContainerForNode(node) {
   try {
-    while ((currentNode = treeWalker.parentNode())) {
-      const displayType = walker.getNode(currentNode).displayType;
-      if (!displayType) {
-        break;
-      }
+    while ((node = node.parentNode)) {
+      const display = node.ownerGlobal.getComputedStyle(node).display;
 
-      if (displayType.includes("grid")) {
-        return currentNode;
-      } else if (displayType === "contents") {
+      if (display.includes("grid")) {
+        return node;
+      } else if (display === "contents") {
         
         continue;
       }
