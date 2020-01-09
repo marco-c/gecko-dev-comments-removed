@@ -8,6 +8,7 @@
 
 
 
+
 "use strict";
 
 
@@ -390,6 +391,22 @@ async function toggleBadge(doc, rowNumber, badgeIndex) {
   EventUtils.synthesizeMouseAtCenter(badge, {}, win);
   await BrowserTestUtils.waitForCondition(() =>
     expected === badge.classList.contains("checked"), "Badge updated.");
+}
+
+
+
+
+
+
+async function toggleFilter(doc, filterIndex) {
+  const win = doc.defaultView;
+  const filter = doc.querySelectorAll(
+    ".devtools-toolbar .badge.toggle-button")[filterIndex];
+  const expected = !filter.classList.contains("checked");
+
+  EventUtils.synthesizeMouseAtCenter(filter, {}, win);
+  await BrowserTestUtils.waitForCondition(() =>
+    expected === filter.classList.contains("checked"), "Filter updated.");
 }
 
 

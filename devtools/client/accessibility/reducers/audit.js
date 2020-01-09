@@ -3,7 +3,13 @@
 
 "use strict";
 
-const { FILTER_TOGGLE, FILTERS, RESET } = require("../constants");
+const {
+  AUDIT,
+  AUDITING,
+  FILTER_TOGGLE,
+  FILTERS,
+  RESET,
+} = require("../constants");
 
 
 
@@ -13,6 +19,7 @@ function getInitialState() {
     filters: {
       [FILTERS.CONTRAST]: false,
     },
+    auditing: null,
   };
 }
 
@@ -30,6 +37,18 @@ function audit(state = getInitialState(), action) {
       return {
         ...state,
         filters,
+      };
+    case AUDITING:
+      const { auditing } = action;
+
+      return {
+        ...state,
+        auditing,
+      };
+    case AUDIT:
+      return {
+        ...state,
+        auditing: null,
       };
     case RESET:
       return getInitialState();

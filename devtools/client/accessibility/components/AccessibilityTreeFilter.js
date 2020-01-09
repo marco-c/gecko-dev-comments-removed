@@ -1,0 +1,93 @@
+
+
+
+"use strict";
+
+
+const { createFactory, Component } = require("devtools/client/shared/vendor/react");
+const { div } = require("devtools/client/shared/vendor/react-dom-factories");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+const { L10N } = require("../utils/l10n");
+const ToggleButton = createFactory(require("./Button").ToggleButton);
+
+const actions = require("../actions/audit");
+
+const { connect } = require("devtools/client/shared/vendor/react-redux");
+const { FILTERS } = require("../constants");
+
+const FILTER_LABELS = {
+  [FILTERS.CONTRAST]: "accessibility.badge.contrast",
+};
+
+class AccessibilityTreeFilter extends Component {
+  static get propTypes() {
+    return {
+      auditing: PropTypes.string.isRequired,
+      filters: PropTypes.object.isRequired,
+      dispatch: PropTypes.func.isRequired,
+      walker: PropTypes.object.isRequired,
+    };
+  }
+
+  async toggleFilter(filterKey) {
+    const { dispatch, filters, walker } = this.props;
+
+    if (!filters[filterKey]) {
+      dispatch(actions.auditing(filterKey));
+      await dispatch(actions.audit(walker, filterKey));
+    }
+
+    
+    
+    
+    dispatch(actions.filterToggle(filterKey));
+  }
+
+  onClick(filterKey, e) {
+    const { mozInputSource, MOZ_SOURCE_KEYBOARD } = e.nativeEvent;
+    if (e.isTrusted && mozInputSource === MOZ_SOURCE_KEYBOARD) {
+      
+      return;
+    }
+
+    this.toggleFilter(filterKey);
+  }
+
+  onKeyDown(filterKey, e) {
+    
+    
+    
+    if (![" ", "Enter"].includes(e.key)) {
+      return;
+    }
+
+    this.toggleFilter(filterKey);
+  }
+
+  render() {
+    const { auditing, filters } = this.props;
+    const filterButtons = Object.entries(filters).map(([filterKey, active]) =>
+      ToggleButton({
+        className: "audit-badge badge",
+        key: filterKey,
+        active,
+        label: L10N.getStr(FILTER_LABELS[filterKey]),
+        onClick: this.onClick.bind(this, filterKey),
+        onKeyDown: this.onKeyDown.bind(this, filterKey),
+        busy: auditing === filterKey,
+      }));
+
+    return div({
+      role: "toolbar",
+    },
+      L10N.getStr("accessibility.tree.filters"),
+      ...filterButtons);
+  }
+}
+
+const mapStateToProps = ({ audit: { filters, auditing } }) => {
+  return { filters, auditing };
+};
+
+
+module.exports = connect(mapStateToProps)(AccessibilityTreeFilter);
