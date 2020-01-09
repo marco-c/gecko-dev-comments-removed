@@ -1423,6 +1423,10 @@ pref("privacy.popups.maxReported", 100);
 
 pref("privacy.donottrackheader.enabled",    false);
 
+
+
+pref("privacy.permissionPrompts.showCloseButton", false);
+
 pref("privacy.trackingprotection.enabled",  false);
 
 pref("privacy.trackingprotection.pbmode.enabled",  true);
