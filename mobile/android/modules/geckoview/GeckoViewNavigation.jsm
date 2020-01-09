@@ -87,12 +87,12 @@ class GeckoViewNavigation extends GeckoViewModule {
         let parsedUri;
         let triggeringPrincipal;
         try {
-            parsedUri = Services.io.newURI(uri);
-            if (parsedUri.schemeIs("about") || parsedUri.schemeIs("data") ||
-                parsedUri.schemeIs("file") || parsedUri.schemeIs("resource")) {
-              
-              triggeringPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
-            }
+          parsedUri = Services.io.newURI(uri);
+          if (parsedUri.schemeIs("about") || parsedUri.schemeIs("data") ||
+              parsedUri.schemeIs("file") || parsedUri.schemeIs("resource")) {
+            
+            triggeringPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
+          }
         } catch (ignored) {
         }
         if (!triggeringPrincipal) {
@@ -195,7 +195,7 @@ class GeckoViewNavigation extends GeckoViewModule {
 
     
     Services.tm.spinEventLoopUntil(() =>
-        this.window.closed || browser !== undefined);
+      this.window.closed || browser !== undefined);
     return browser || null;
   }
 
