@@ -21,31 +21,6 @@ void ClearSymbols(const SymLoadStruct* const firstStruct) {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 bool SymbolLoader::LoadSymbols(const SymLoadStruct* const firstStruct,
                                const bool warnOnFailures) const {
   bool ok = true;
@@ -85,11 +60,11 @@ PRFuncPtr SymbolLoader::GetProcAddress(const char* const name) const {
 #endif
 
   PRFuncPtr ret = nullptr;
-  if (!ret && mPfn) {
-    ret = mPfn(name);
-  }
   if (!ret && mLib) {
     ret = PR_FindFunctionSymbol(mLib, name);
+  }
+  if (!ret && mPfn) {
+    ret = mPfn(name);
   }
   return ret;
 }
