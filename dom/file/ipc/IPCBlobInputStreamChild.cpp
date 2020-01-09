@@ -10,6 +10,7 @@
 #include "mozilla/ipc/IPCStreamUtils.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/dom/WorkerRef.h"
+#include "mozilla/ipc/PBackgroundChild.h"
 
 namespace mozilla {
 namespace dom {
@@ -182,7 +183,6 @@ void IPCBlobInputStreamChild::ActorDestroy(
         IPCBlobInputStreamThread::GetOrCreate();
     MOZ_ASSERT(thread, "We cannot continue without DOMFile thread.");
 
-    ResetManager();
     thread->MigrateActor(this);
     return;
   }
@@ -386,14 +386,41 @@ mozilla::ipc::IPCResult IPCBlobInputStreamChild::RecvLengthReady(
 
   return IPC_OK();
 }
-void IPCBlobInputStreamChild::Migrated() {
+
+void IPCBlobInputStreamChild::MigrateTo(PBackgroundChild* aManager) {
   MutexAutoLock lock(mMutex);
   MOZ_ASSERT(mState == eInactiveMigrating);
 
-  mWorkerRef = nullptr;
+  
+  
+  RefPtr<IPCBlobInputStreamChild> actor =
+      new IPCBlobInputStreamChild(mID, mSize);
+  if (!aManager->SendPIPCBlobInputStreamConstructor(do_AddRef(actor).take(),
+                                                    mID, mSize)) {
+    return;
+  }
 
-  mOwningEventTarget = GetCurrentThreadSerialEventTarget();
+  actor->MigratedFrom(this);
+
+  
+  MOZ_ASSERT(mStreams.IsEmpty() && mPendingOperations.IsEmpty());
+  mWorkerRef = nullptr;
+  mState = eInactive;
+}
+
+void IPCBlobInputStreamChild::MigratedFrom(IPCBlobInputStreamChild* aOldActor) {
+  MutexAutoLock lock(mMutex);
+  aOldActor->mMutex.AssertCurrentThreadOwns();
+
   MOZ_ASSERT(IPCBlobInputStreamThread::IsOnFileEventTarget(mOwningEventTarget));
+  MOZ_ASSERT(mState == eActive);
+
+  
+  mStreams.SwapElements(aOldActor->mStreams);
+  mPendingOperations.SwapElements(aOldActor->mPendingOperations);
+  for (auto* stream : mStreams) {
+    stream->ActorMigrated(this);
+  }
 
   
   if (mStreams.IsEmpty()) {
@@ -401,8 +428,6 @@ void IPCBlobInputStreamChild::Migrated() {
     SendClose();
     return;
   }
-
-  mState = eActive;
 
   
   

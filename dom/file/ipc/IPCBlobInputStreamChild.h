@@ -64,10 +64,12 @@ class IPCBlobInputStreamChild final
 
   void Shutdown();
 
-  void Migrated();
+  void MigrateTo(PBackgroundChild* aManager);
 
  private:
   ~IPCBlobInputStreamChild();
+
+  void MigratedFrom(IPCBlobInputStreamChild* aOldActor);
 
   
   
