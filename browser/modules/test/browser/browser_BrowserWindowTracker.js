@@ -110,16 +110,5 @@ add_task(async function test_orderedWindows() {
     let expected = [1, 6, 4, 9, 8, 7, 5, 3, 2, 0];
     Assert.deepEqual(expected, ordered2.map(w => windows.indexOf(w)),
       "After shuffle of focused windows, the order should've changed.");
-
-    
-    let promise = BrowserTestUtils.waitForEvent(windows[9], "sizemodechange");
-    windows[9].minimize();
-    await promise;
-
-    let ordered3 = BrowserWindowTracker.orderedWindows.filter(w => w != TEST_WINDOW);
-    
-    
-    Assert.deepEqual([8, 7, 5, 3, 2, 0, 9], ordered3.map(w => windows.indexOf(w)).slice(3),
-      "When a window is minimized, the order should've changed.");
   });
 });

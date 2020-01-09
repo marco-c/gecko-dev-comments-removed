@@ -1591,7 +1591,7 @@ var SessionStoreInternal = {
   onQuitApplicationGranted: function ssi_onQuitApplicationGranted(syncShutdown = false) {
     
     let index = 0;
-    for (let window of this._browserWindows) {
+    for (let window of this._orderedBrowserWindows) {
       this._collectWindowData(window);
       this._windows[window.__SSi].zIndex = ++index;
     }
@@ -3416,7 +3416,7 @@ var SessionStoreInternal = {
     if (RunState.isRunning) {
       
       let index = 0;
-      for (let window of this._browserWindows) {
+      for (let window of this._orderedBrowserWindows) {
         if (!this._isWindowLoaded(window)) 
           continue;
         if (aUpdateAll || DirtyWindows.has(window) || window == activeWindow) {
@@ -4530,9 +4530,35 @@ var SessionStoreInternal = {
 
 
 
+
+
   _browserWindows: {
     * [Symbol.iterator]() {
       for (let window of BrowserWindowTracker.orderedWindows) {
+        if (window.__SSi && !window.closed)
+          yield window;
+      }
+    },
+  },
+
+  
+
+
+
+
+  _orderedBrowserWindows: {
+    * [Symbol.iterator]() {
+      let windows = BrowserWindowTracker.orderedWindows;
+      windows.sort((a, b) => {
+        if (a.windowState == a.STATE_MINIMIZED && b.windowState != b.STATE_MINIMIZED) {
+          return 1;
+        }
+        if (a.windowState != a.STATE_MINIMIZED && b.windowState == b.STATE_MINIMIZED) {
+          return -1;
+        }
+        return 0;
+      });
+      for (let window of windows) {
         if (window.__SSi && !window.closed)
           yield window;
       }
