@@ -337,7 +337,12 @@ pref("browser.urlbar.usepreloadedtopurls.enabled", false);
 pref("browser.urlbar.usepreloadedtopurls.expire_days", 14);
 
 
+
+#ifdef EARLY_BETA_OR_EARLIER
+pref("browser.urlbar.quantumbar", true);
+#else
 pref("browser.urlbar.quantumbar", false);
+#endif
 
 pref("browser.altClickSave", false);
 
