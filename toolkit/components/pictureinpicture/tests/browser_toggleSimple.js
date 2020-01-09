@@ -1,0 +1,18 @@
+
+
+
+"use strict";
+
+
+
+
+
+
+
+
+add_task(async () => {
+  await testToggle(TEST_PAGE, {
+    "with-controls": { canToggle: true },
+    "no-controls": { canToggle: true },
+  });
+});

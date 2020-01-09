@@ -482,6 +482,16 @@
   transform: translateY(-50%) translateX(0);
 }
 
+@supports -moz-bool-pref("media.videocontrols.picture-in-picture.video-toggle.testing") {
+  
+
+
+
+  .pictureInPictureToggleButton {
+    transition-duration: 10ms;
+  }
+}
+
 
 .clickToPlay {
   min-width: var(--clickToPlay-size);
