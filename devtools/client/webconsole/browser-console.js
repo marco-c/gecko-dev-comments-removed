@@ -5,9 +5,9 @@
 "use strict";
 
 var Services = require("Services");
-loader.lazyRequireGetter(this, "extend", "devtools/shared/extend", true);
+var WebConsole = require("devtools/client/webconsole/webconsole");
+
 loader.lazyRequireGetter(this, "Telemetry", "devtools/client/shared/telemetry");
-loader.lazyRequireGetter(this, "WebConsole", "devtools/client/webconsole/webconsole");
 
 
 
@@ -20,6 +20,8 @@ loader.lazyRequireGetter(this, "WebConsole", "devtools/client/webconsole/webcons
 
 
 
+class BrowserConsole extends WebConsole {
+  
 
 
 
@@ -30,17 +32,13 @@ loader.lazyRequireGetter(this, "WebConsole", "devtools/client/webconsole/webcons
 
 
 
-function BrowserConsole(target, iframeWindow, chromeWindow, hudService) {
-  WebConsole.call(this, target, iframeWindow, chromeWindow, hudService);
-  this._telemetry = new Telemetry();
-}
+  constructor(target, iframeWindow, chromeWindow, hudService) {
+    super(target, iframeWindow, chromeWindow, hudService, true);
 
-BrowserConsole.prototype = extend(WebConsole.prototype, {
-  _browserConsole: true,
-  _bcInit: null,
-  _bcDestroyer: null,
-
-  $init: WebConsole.prototype.init,
+    this._telemetry = new Telemetry();
+    this._bcInitializer = null;
+    this._bcDestroyer = null;
+  }
 
   
 
@@ -49,8 +47,8 @@ BrowserConsole.prototype = extend(WebConsole.prototype, {
 
 
   init() {
-    if (this._bcInit) {
-      return this._bcInit;
+    if (this._bcInitializer) {
+      return this._bcInitializer;
     }
 
     
@@ -68,11 +66,9 @@ BrowserConsole.prototype = extend(WebConsole.prototype, {
     
     this._telemetry.toolOpened("browserconsole", -1, this);
 
-    this._bcInit = this.$init();
-    return this._bcInit;
-  },
-
-  $destroy: WebConsole.prototype.destroy,
+    this._bcInitializer = super.init();
+    return this._bcInitializer;
+  }
 
   
 
@@ -90,15 +86,15 @@ BrowserConsole.prototype = extend(WebConsole.prototype, {
       
       this._telemetry.toolClosed("browserconsole", -1, this);
 
-      await this.$destroy();
+      await super.destroy();
       await this.target.destroy();
       this.hudService._browserConsoleID = null;
       this.chromeWindow.close();
     })();
 
     return this._bcDestroyer;
-  },
-});
+  }
+}
 
 
 
