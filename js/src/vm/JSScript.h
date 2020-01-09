@@ -619,7 +619,9 @@ class ScriptSource {
   uint32_t id_;
 
   
-  static mozilla::Atomic<uint32_t> idCount_;
+  static mozilla::Atomic<uint32_t, mozilla::SequentiallyConsistent,
+                         mozilla::recordreplay::Behavior::DontPreserve>
+      idCount_;
 
   
   
