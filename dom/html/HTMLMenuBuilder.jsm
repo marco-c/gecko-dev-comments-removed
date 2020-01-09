@@ -4,8 +4,6 @@
 
 
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-
 
 
 var gGeneratedId = 1;
@@ -131,4 +129,4 @@ HTMLMenuBuilder.prototype =
   }
 };
 
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory([HTMLMenuBuilder]);
+var EXPORTED_SYMBOLS = ["HTMLMenuBuilder"];
