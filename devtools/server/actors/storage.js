@@ -835,6 +835,7 @@ var cookieHelpers = {
 
 
 
+  
   editCookie(data) {
     let {field, oldValue, newValue} = data;
     const origName = field === "name" ? oldValue : data.items.name;
@@ -920,6 +921,7 @@ var cookieHelpers = {
       cookie.sameSite
     );
   },
+  
 
   _removeCookies(host, opts = {}) {
     
@@ -2775,6 +2777,7 @@ const StorageActor = protocol.ActorClassWithSpec(specs.storageSpec, {
 
 
 
+  
   update(action, storeType, data) {
     if (action == "cleared") {
       this.emit("stores-cleared", { [storeType]: data });
@@ -2839,6 +2842,7 @@ const StorageActor = protocol.ActorClassWithSpec(specs.storageSpec, {
 
     return null;
   },
+  
 
   
 

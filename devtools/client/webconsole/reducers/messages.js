@@ -105,6 +105,7 @@ function cloneState(state) {
 
 
 
+
 function addMessage(newMessage, state, filtersState, prefsState, uiState) {
   const {
     messagesById,
@@ -274,6 +275,8 @@ function addMessage(newMessage, state, filtersState, prefsState, uiState) {
 
   return state;
 }
+
+
 
 function messages(state = MessageState(), action, filtersState, prefsState, uiState) {
   const {
@@ -551,6 +554,7 @@ function messages(state = MessageState(), action, filtersState, prefsState, uiSt
 
 
 
+
 function getNewCurrentGroup(currentGroup, groupsById, ignoredIds = []) {
   if (!currentGroup) {
     return null;
@@ -784,6 +788,7 @@ function getToplevelMessageCount(state) {
 
 
 
+
 function getMessageVisibility(message, {
     messagesState,
     filtersState,
@@ -954,6 +959,7 @@ function getMessageVisibility(message, {
     visible: true,
   };
 }
+
 
 function isUnfilterable(message) {
   return [

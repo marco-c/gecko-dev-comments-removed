@@ -728,6 +728,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
 
 
+  
   _getChildren: function(node, options = {}) {
     if (isNodeDead(node)) {
       return { hasFirst: true, hasLast: true, nodes: [] };
@@ -901,6 +902,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
     return { hasFirst, hasLast, nodes };
   },
+  
 
   getNativeAnonymousChildren: function(rawNode) {
     
@@ -1093,6 +1095,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
 
 
+  
   getSuggestionsForQuery: function(query, completing, selectorState) {
     const sugs = {
       classes: new Map(),
@@ -1235,6 +1238,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       suggestions: result,
     };
   },
+  
 
   
 

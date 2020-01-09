@@ -258,6 +258,7 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
 
 
   getMutations(options = {}) {
+    
     return super.getMutations(options).then(mutations => {
       const emitMutations = [];
       for (const change of mutations) {
@@ -401,6 +402,7 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
 
       this.emit("mutations", emitMutations);
     });
+    
   }
 
   

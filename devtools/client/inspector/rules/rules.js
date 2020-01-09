@@ -371,6 +371,7 @@ CssRuleView.prototype = {
 
 
 
+  
   getNodeInfo: function(node) {
     if (!node) {
       return null;
@@ -486,6 +487,7 @@ CssRuleView.prototype = {
       value,
     };
   },
+  
 
   
 
@@ -1142,6 +1144,7 @@ CssRuleView.prototype = {
   
 
 
+  
   _createEditors: function() {
     
     
@@ -1222,6 +1225,7 @@ CssRuleView.prototype = {
 
     return promise.all(editorReadyPromises);
   },
+  
 
   
 

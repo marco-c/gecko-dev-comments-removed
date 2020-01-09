@@ -389,6 +389,7 @@ TextPropertyEditor.prototype = {
   
 
 
+  
   update: function() {
     if (this.ruleView.isDestroyed) {
       return;
@@ -610,6 +611,7 @@ TextPropertyEditor.prototype = {
     
     this.ruleView._updatePropertyHighlight(this);
   },
+  
 
   _onStartEditing: function() {
     this.element.classList.remove("ruleview-overridden");

@@ -25,6 +25,7 @@ class RequestListContextMenu {
     this.props = props;
   }
 
+  
   open(event, clickedRequest, requests) {
     const {
       id,
@@ -284,6 +285,7 @@ class RequestListContextMenu {
       screenY: event.screenY,
     });
   }
+  
 
   
 

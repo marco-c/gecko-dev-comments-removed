@@ -75,6 +75,7 @@ global.ChromeUtils = {
 
 
 const requireHacker = require("require-hacker");
+
 requireHacker.global_hook("default", (path, module) => {
   switch (path) {
     
@@ -138,6 +139,7 @@ requireHacker.global_hook("default", (path, module) => {
 
   return undefined;
 });
+
 
 
 

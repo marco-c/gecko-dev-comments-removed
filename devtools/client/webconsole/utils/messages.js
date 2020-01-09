@@ -67,6 +67,7 @@ function transformPacket(packet) {
   }
 }
 
+
 function transformConsoleAPICallPacket(packet) {
   const { message } = packet;
 
@@ -198,6 +199,7 @@ function transformConsoleAPICallPacket(packet) {
     chromeContext: message.chromeContext,
   });
 }
+
 
 function transformNavigationMessagePacket(packet) {
   const { url } = packet;

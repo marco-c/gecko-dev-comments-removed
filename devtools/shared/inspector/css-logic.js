@@ -180,6 +180,7 @@ function getLineCountInComments(text) {
 
 
 
+
 function prettifyCSS(text, ruleCount) {
   if (prettifyCSS.LINE_SEPARATOR == null) {
     const os = Services.appinfo.OS;
@@ -405,6 +406,7 @@ function prettifyCSS(text, ruleCount) {
 
   return result;
 }
+
 
 exports.prettifyCSS = prettifyCSS;
 

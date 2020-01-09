@@ -157,6 +157,7 @@ class Message extends Component {
     });
   }
 
+  
   render() {
     const {
       open,
@@ -346,6 +347,7 @@ class Message extends Component {
       attachment ? null : dom.br(),
     );
   }
+  
 }
 
 module.exports = Message;

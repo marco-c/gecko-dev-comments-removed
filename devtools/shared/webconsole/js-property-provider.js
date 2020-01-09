@@ -60,6 +60,7 @@ function hasArrayIndex(str) {
 
 
 
+
 function analyzeInputString(str) {
   const bodyStack = [];
 
@@ -195,6 +196,7 @@ function analyzeInputString(str) {
 
   return buildReturnObject();
 }
+
 
 
 

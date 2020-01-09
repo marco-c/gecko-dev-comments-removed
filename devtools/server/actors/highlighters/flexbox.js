@@ -550,6 +550,7 @@ class FlexboxHighlighter extends AutoRefreshHighlighter {
   
 
 
+  
   renderJustifyContent() {
     if (!this.flexData || !this.currentQuads.content || !this.currentQuads.content[0]) {
       return;
@@ -630,6 +631,7 @@ class FlexboxHighlighter extends AutoRefreshHighlighter {
 
     this.ctx.restore();
   }
+  
 
   
 
@@ -824,6 +826,7 @@ function getRectFromFlexItemValues(item, container) {
 
 
 
+
 function compareFlexData(oldFlexData, newFlexData) {
   if (!oldFlexData || !newFlexData) {
     return true;
@@ -884,5 +887,6 @@ function compareFlexData(oldFlexData, newFlexData) {
 
   return false;
 }
+
 
 exports.FlexboxHighlighter = FlexboxHighlighter;

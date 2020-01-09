@@ -671,6 +671,7 @@ class Telemetry {
 
 
 
+
 function getChartsFromToolId(id) {
   if (!id) {
     return null;
@@ -750,6 +751,7 @@ function getChartsFromToolId(id) {
     countScalar: countScalar,
   };
 }
+
 
 
 
