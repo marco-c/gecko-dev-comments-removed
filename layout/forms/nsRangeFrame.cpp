@@ -270,8 +270,7 @@ void nsRangeFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     return;  
   }
 
-  aLists.Content()->AppendToTop(
-      MakeDisplayItem<nsDisplayRangeFocusRing>(aBuilder, this));
+  aLists.Content()->AppendNewToTop<nsDisplayRangeFocusRing>(aBuilder, this);
 }
 
 void nsRangeFrame::Reflow(nsPresContext* aPresContext,

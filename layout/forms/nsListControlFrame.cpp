@@ -173,10 +173,9 @@ void nsListControlFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     
     
     
-    aLists.BorderBackground()->AppendToBottom(
-        MakeDisplayItem<nsDisplaySolidColor>(
-            aBuilder, this, nsRect(aBuilder->ToReferenceFrame(this), GetSize()),
-            mLastDropdownBackstopColor));
+    aLists.BorderBackground()->AppendNewToBottom<nsDisplaySolidColor>(
+        aBuilder, this, nsRect(aBuilder->ToReferenceFrame(this), GetSize()),
+        mLastDropdownBackstopColor);
   }
 
   nsHTMLScrollFrame::BuildDisplayList(aBuilder, aLists);

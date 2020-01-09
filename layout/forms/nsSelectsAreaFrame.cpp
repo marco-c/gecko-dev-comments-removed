@@ -150,8 +150,7 @@ void nsSelectsAreaFrame::BuildDisplayListInternal(
     
     
     
-    aLists.Outlines()->AppendToTop(
-        MakeDisplayItem<nsDisplayListFocus>(aBuilder, this));
+    aLists.Outlines()->AppendNewToTop<nsDisplayListFocus>(aBuilder, this);
   }
 }
 
