@@ -1289,6 +1289,7 @@ nsresult nsHttpConnection::OnHeadersAvailable(nsAHttpTransaction *trans,
   
   
   
+  bool itWasProxyConnect = !!mProxyConnectStream;
   if (mProxyConnectStream) {
     MOZ_ASSERT(mUsingSpdyVersion == SpdyVersion::NONE,
                "SPDY NPN Complete while using proxy connect stream");
@@ -1347,8 +1348,8 @@ nsresult nsHttpConnection::OnHeadersAvailable(nsAHttpTransaction *trans,
   
   
   
-  if (hasUpgradeReq && responseStatus != 401 && responseStatus != 407 &&
-      !mSpdySession) {
+  if (!itWasProxyConnect && hasUpgradeReq && responseStatus != 401 &&
+      responseStatus != 407 && !mSpdySession) {
     LOG(("HTTP Upgrade in play - disable keepalive for http/1.x\n"));
     DontReuse();
   }
