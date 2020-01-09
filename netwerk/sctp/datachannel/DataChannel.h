@@ -135,12 +135,12 @@ class DataChannelConnection final : public net::NeckoTargetHolder
     virtual void NotifyDataChannel(already_AddRefed<DataChannel> channel) = 0;
   };
 
-  DataChannelConnection(DataConnectionListener* listener,
-                        nsIEventTarget* aTarget,
-                        MediaTransportHandler* aTransportHandler);
-
-  bool Init(unsigned short aPort, uint16_t aNumStreams, bool aMaxMessageSizeSet,
-            uint64_t aMaxMessageSize);
+  
+  
+  static Maybe<RefPtr<DataChannelConnection>> Create(
+      DataConnectionListener* aListener, nsIEventTarget* aTarget,
+      MediaTransportHandler* aHandler, const uint16_t aLocalPort,
+      const uint16_t aNumStreams, const Maybe<uint64_t>& aMaxMessageSize);
 
   void Destroy();  
   
@@ -229,6 +229,13 @@ class DataChannelConnection final : public net::NeckoTargetHolder
  private:
   friend class DataChannelConnectRunnable;
 
+  DataChannelConnection(DataConnectionListener* aListener,
+                        nsIEventTarget* aTarget,
+                        MediaTransportHandler* aHandler);
+
+  bool Init(const uint16_t aLocalPort, const uint16_t aNumStreams,
+            const Maybe<uint64_t>& aMaxMessageSize);
+
 #ifdef SCTP_DTLS_SUPPORTED
   static void DTLSConnectThread(void* data);
   void SendPacket(std::unique_ptr<MediaPacket>&& packet);
@@ -303,18 +310,18 @@ class DataChannelConnection final : public net::NeckoTargetHolder
   }
 #endif
 
-  bool mSendInterleaved;
-  bool mPpidFragmentation;
-  bool mMaxMessageSizeSet;
-  uint64_t mMaxMessageSize;
-
+  bool mSendInterleaved = false;
+  bool mPpidFragmentation = false;
+  bool mMaxMessageSizeSet = false;
+  uint64_t mMaxMessageSize = 0;
+  bool mAllocateEven = false;
   
   
   
-  bool mAllocateEven;
   AutoTArray<RefPtr<DataChannel>, 16> mStreams;
-  uint32_t mCurrentStream;
+  uint32_t mCurrentStream = 0;
   nsDeque mPending;  
+  uint8_t mPendingType = PENDING_NONE;
   
   nsTArray<nsAutoPtr<QueuedDataMessage>> mQueuedData;
   
@@ -323,27 +330,26 @@ class DataChannelConnection final : public net::NeckoTargetHolder
 
   
   AutoTArray<uint16_t, 4> mStreamsResetting;
-
-  struct socket* mMasterSocket;  
-  struct socket*
-      mSocket;  
-  uint16_t mState;  
+  
+  struct socket* mMasterSocket = nullptr;
+  
+  struct socket* mSocket = nullptr;
+  uint16_t mState = CLOSED;  
 
 #ifdef SCTP_DTLS_SUPPORTED
   std::string mTransportId;
   RefPtr<MediaTransportHandler> mTransportHandler;
   nsCOMPtr<nsIEventTarget> mSTS;
 #endif
-  uint16_t mLocalPort;  
-  uint16_t mRemotePort;
+  uint16_t mLocalPort = 0;  
+  uint16_t mRemotePort = 0;
 
-  nsCOMPtr<nsIThread> mInternalIOThread;
-  uint8_t mPendingType;
+  nsCOMPtr<nsIThread> mInternalIOThread = nullptr;
   nsCString mRecvBuffer;
 
   
   
-  bool mDeferSend;
+  bool mDeferSend = false;
   std::vector<std::unique_ptr<MediaPacket>> mDeferredSend;
 
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
@@ -384,7 +390,6 @@ class DataChannel {
         mStream(stream),
         mPrPolicy(policy),
         mPrValue(value),
-        mNegotiated(negotiated),
         mOrdered(ordered),
         mFlags(0),
         mId(0),
@@ -440,8 +445,6 @@ class DataChannel {
 
   dom::Nullable<uint16_t> GetMaxRetransmits() const;
 
-  bool GetNegotiated() { return mNegotiated; }
-
   bool GetOrdered() { return mOrdered; }
 
   void IncrementBufferedAmount(uint32_t aSize, ErrorResult& aRv);
@@ -496,7 +499,6 @@ class DataChannel {
   uint16_t mStream;
   uint16_t mPrPolicy;
   uint32_t mPrValue;
-  const bool mNegotiated;
   const bool mOrdered;
   uint32_t mFlags;
   uint32_t mId;
