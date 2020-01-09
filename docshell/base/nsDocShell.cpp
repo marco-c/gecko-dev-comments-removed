@@ -9525,8 +9525,10 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
     bool restoring;
     rv = RestorePresentation(aLoadState->SHEntry(), &restoring);
     if (restoring) {
+      Telemetry::Accumulate(Telemetry::BFCACHE_PAGE_RESTORED, true);
       return rv;
     }
+    Telemetry::Accumulate(Telemetry::BFCACHE_PAGE_RESTORED, false);
 
     
     
