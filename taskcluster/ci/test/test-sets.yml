@@ -374,12 +374,11 @@ android-x86_64-opt-tests:
     # crashtests failing on debug; bug 1524493
     - crashtest
     # geckoview-junit perma-fail on opt and debug; bug 1521195
-    # - geckoview-junit
+    - geckoview-junit
 
 android-x86_64-tests:
     - jsreftest
-    # various mochitest (plain) failures; bug 1460411
-    # - mochitest
+    - mochitest
     - mochitest-clipboard
     - mochitest-gpu
     # various reftest (plain) failures; bug 1501582
