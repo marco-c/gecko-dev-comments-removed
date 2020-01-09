@@ -456,11 +456,6 @@ class RestyleManager {
   void MaybeRestyleForEdgeChildChange(Element* aContainer,
                                       nsIContent* aChangedChild);
 
-  
-  
-  void ContentStateChangedInternal(const Element&, EventStates aStateMask,
-                                   nsChangeHint* aOutChangeHint);
-
   bool IsDisconnected() const { return !mPresContext; }
 
   void IncrementRestyleGeneration() {
