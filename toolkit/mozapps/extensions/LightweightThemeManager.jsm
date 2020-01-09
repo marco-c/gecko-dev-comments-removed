@@ -21,7 +21,6 @@ var LightweightThemeManager = {
     } else {
       _fallbackThemeData = null;
     }
-    return _fallbackThemeData;
   },
 
   
@@ -32,21 +31,10 @@ var LightweightThemeManager = {
 
 
   get currentThemeWithFallback() {
-    return _fallbackThemeData;
+    return _fallbackThemeData && _fallbackThemeData.theme;
   },
 
-  systemThemeChanged() {
-  },
-
-  
-
-
-
-
-
-  handleEvent(aEvent) {
-    if (aEvent.media == "(-moz-system-dark-theme)") {
-      
-    }
+  get themeData() {
+    return _fallbackThemeData || {theme: null};
   },
 };
