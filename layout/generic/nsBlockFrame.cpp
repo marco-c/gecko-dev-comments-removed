@@ -3338,9 +3338,8 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
     }
 
     
-    
-    Maybe<ReflowInput> blockHtmlRI;
-    blockHtmlRI.emplace(
+    Maybe<ReflowInput> blockReflowInput;
+    blockReflowInput.emplace(
         aState.mPresContext, aState.mReflowInput, frame,
         availSpace.Size(wm).ConvertTo(frame->GetWritingMode(), wm));
 
@@ -3367,16 +3366,16 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
       }
 
       if (mayNeedRetry) {
-        blockHtmlRI->mDiscoveredClearance = &clearanceFrame;
+        blockReflowInput->mDiscoveredClearance = &clearanceFrame;
       } else if (!applyBStartMargin) {
-        blockHtmlRI->mDiscoveredClearance =
+        blockReflowInput->mDiscoveredClearance =
             aState.mReflowInput.mDiscoveredClearance;
       }
 
       frameReflowStatus.Reset();
       brc.ReflowBlock(availSpace, applyBStartMargin, aState.mPrevBEndMargin,
                       clearance, aState.IsAdjacentWithTop(), aLine.get(),
-                      *blockHtmlRI, frameReflowStatus, aState);
+                      *blockReflowInput, frameReflowStatus, aState);
 
       
       
@@ -3461,8 +3460,8 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
         clearance = 0;
       }
 
-      blockHtmlRI.reset();
-      blockHtmlRI.emplace(
+      blockReflowInput.reset();
+      blockReflowInput.emplace(
           aState.mPresContext, aState.mReflowInput, frame,
           availSpace.Size(wm).ConvertTo(frame->GetWritingMode(), wm));
     } while (true);
@@ -3476,7 +3475,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
 
     aState.mPrevChild = frame;
 
-    if (blockHtmlRI->WillReflowAgainForClearance()) {
+    if (blockReflowInput->WillReflowAgainForClearance()) {
       
       
       
@@ -3514,7 +3513,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
       nsCollapsingMargin collapsedBEndMargin;
       nsOverflowAreas overflowAreas;
       *aKeepReflowGoing =
-          brc.PlaceBlock(*blockHtmlRI, forceFit, aLine.get(),
+          brc.PlaceBlock(*blockReflowInput, forceFit, aLine.get(),
                          collapsedBEndMargin, overflowAreas, frameReflowStatus);
       if (!frameReflowStatus.IsFullyComplete() &&
           ShouldAvoidBreakInside(aState.mReflowInput)) {
