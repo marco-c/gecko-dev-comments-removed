@@ -77,6 +77,9 @@ class MOZ_RAII BaselineCacheIRCompiler : public CacheIRCompiler {
   void pushSpreadCallArguments(Register argcReg, Register scratch,
                                Register scratch2, bool isJitCall,
                                bool isConstructing);
+  void pushFunCallArguments(Register argcReg, Register calleeReg,
+                            Register scratch, Register scratch2,
+                            bool isJitCall);
   void createThis(Register argcReg, Register calleeReg, Register scratch,
                   CallFlags flags);
   void updateReturnValue();
@@ -2430,12 +2433,19 @@ bool BaselineCacheIRCompiler::emitCallStringObjectConcatResult() {
 
 
 
-
 bool BaselineCacheIRCompiler::updateArgc(CallFlags flags, Register argcReg,
                                          Register scratch) {
-  
-  if (flags.getArgFormat() == CallFlags::Standard) {
-    return true;
+  CallFlags::ArgFormat format = flags.getArgFormat();
+  switch (format) {
+    case CallFlags::Standard:
+      
+      return true;
+    case CallFlags::FunCall:
+      
+      
+      return true;
+    default:
+      break;
   }
 
   FailurePath* failure;
@@ -2563,6 +2573,60 @@ void BaselineCacheIRCompiler::pushSpreadCallArguments(Register argcReg,
   masm.pushValue(
       Address(BaselineFrameReg,
               STUB_FRAME_SIZE + (2 + isConstructing) * sizeof(Value)));
+}
+
+void BaselineCacheIRCompiler::pushFunCallArguments(Register argcReg,
+                                                   Register calleeReg,
+                                                   Register scratch,
+                                                   Register scratch2,
+                                                   bool isJitCall) {
+  Label zeroArgs, done;
+  masm.branchTest32(Assembler::Zero, argcReg, argcReg, &zeroArgs);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  masm.sub32(Imm32(1), argcReg);
+
+  pushCallArguments(argcReg, scratch, scratch2, isJitCall,
+                    false);
+
+  masm.jump(&done);
+  masm.bind(&zeroArgs);
+
+  
+  
+  
+  
+  
+  
+  
+  
+
+  if (isJitCall) {
+    
+    masm.alignJitStackBasedOnNArgs(0);
+  }
+
+  
+  masm.pushValue(UndefinedValue());
+
+  
+  masm.Push(TypedOrValueRegister(MIRType::Object, AnyRegister(calleeReg)));
+
+  masm.bind(&done);
 }
 
 bool BaselineCacheIRCompiler::emitCallNativeShared(NativeCallType callType) {
@@ -2853,6 +2917,10 @@ bool BaselineCacheIRCompiler::emitCallScriptedFunction() {
     case CallFlags::Spread:
       pushSpreadCallArguments(argcReg, scratch, scratch2,  true,
                               isConstructing);
+      break;
+    case CallFlags::FunCall:
+      pushFunCallArguments(argcReg, calleeReg, scratch, scratch2,
+                            true);
       break;
     default:
       MOZ_CRASH("Invalid arg format");
