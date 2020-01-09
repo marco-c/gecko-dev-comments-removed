@@ -294,6 +294,7 @@ ElementEditor.prototype = {
     this._eventBadge.title = INSPECTOR_L10N.getStr("markupView.event.tooltiptext");
     
     this.elt.insertBefore(this._eventBadge, this._displayBadge || this._customBadge);
+    this.markup.emit("badge-added-event");
   },
 
   updateScrollableBadge: function() {

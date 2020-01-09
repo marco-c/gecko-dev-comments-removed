@@ -3,24 +3,50 @@
 
 
 
+
 "use strict";
 
 
 
 
-
 const TEST_URL = URL_ROOT + "doc_markup_events_chrome_listeners.html";
+const FRAMESCRIPT_URL = `data:,(${frameScript.toString()})()`;
 
 loadHelperScript("helper_events_test_runner.js");
 
 const TEST_DATA = [
   {
-    selector: "video",
-    expected: [ ],
+    selector: "div",
+    expected: [],
   },
 ];
 
 add_task(async function() {
+  waitForExplicitFinish();
   await pushPref("devtools.chrome.enabled", false);
-  await runEventPopupTests(TEST_URL, TEST_DATA);
+
+  const {tab, inspector, testActor} = await openInspectorForURL(TEST_URL);
+  const browser = tab.linkedBrowser;
+  const mm = browser.messageManager;
+
+  const badgeEventAdded = inspector.markup.once("badge-added-event");
+
+  info("Loading frame script");
+  mm.loadFrameScript(`${FRAMESCRIPT_URL}`, false);
+
+  
+  
+  const result = await awaitWithTimeout(badgeEventAdded, 3000);
+  is(result, "timeout", "Ensure that no event badges were added");
+
+  for (const test of TEST_DATA) {
+    await checkEventsForNode(test, inspector, testActor);
+  }
 });
+
+function frameScript() {
+  const div = content.document.querySelector("div");
+  div.addEventListener("click", () => {
+   
+  });
+}

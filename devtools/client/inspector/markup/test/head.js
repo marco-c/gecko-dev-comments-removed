@@ -357,6 +357,36 @@ function promiseNextTick() {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+async function awaitWithTimeout(promise, ms) {
+  const timeout = new Promise(resolve => {
+    
+    const wait = setTimeout(() => {
+      clearTimeout(wait);
+      resolve("timeout");
+    }, ms);
+  });
+
+  return Promise.race([
+    promise,
+    timeout,
+  ]);
+}
+
+
+
+
+
 function collapseSelectionAndTab(inspector) {
   
   EventUtils.sendKey("tab", inspector.panelWin);
