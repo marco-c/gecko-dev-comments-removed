@@ -1,9 +1,9 @@
 
-/* vim: set sw=2 ts=8 et tw=80 : */
 
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "necko-config.h"
 #include "nsHttp.h"
@@ -48,10 +48,10 @@ namespace net {
 
 PNeckoChild* gNeckoChild = nullptr;
 
-// C++ file contents
+
 
 NeckoChild::~NeckoChild() {
-  // Send__delete__(gNeckoChild);
+  
   gNeckoChild = nullptr;
 }
 
@@ -74,8 +74,8 @@ void NeckoChild::InitNeckoChild() {
 PHttpChannelChild* NeckoChild::AllocPHttpChannelChild(
     const PBrowserOrId& browser, const SerializedLoadContext& loadContext,
     const HttpChannelCreationArgs& aOpenArgs) {
-  // We don't allocate here: instead we always use IPDL constructor that takes
-  // an existing HttpChildChannel
+  
+  
   MOZ_ASSERT_UNREACHABLE(
       "AllocPHttpChannelChild should not be called on "
       "child");
@@ -91,8 +91,8 @@ bool NeckoChild::DeallocPHttpChannelChild(PHttpChannelChild* channel) {
 }
 
 PStunAddrsRequestChild* NeckoChild::AllocPStunAddrsRequestChild() {
-  // We don't allocate here: instead we always use IPDL constructor that takes
-  // an existing object
+  
+  
   MOZ_ASSERT_UNREACHABLE(
       "AllocPStunAddrsRequestChild should not be called "
       "on child");
@@ -109,8 +109,8 @@ bool NeckoChild::DeallocPStunAddrsRequestChild(PStunAddrsRequestChild* aActor) {
 
 PWebrtcProxyChannelChild* NeckoChild::AllocPWebrtcProxyChannelChild(
     const PBrowserOrId& browser) {
-  // We don't allocate here: instead we always use IPDL constructor that takes
-  // an existing object
+  
+  
   MOZ_ASSERT_UNREACHABLE(
       "AllocPWebrtcProxyChannelChild should not be called on"
       " child");
@@ -130,7 +130,7 @@ bool NeckoChild::DeallocPWebrtcProxyChannelChild(
 PAltDataOutputStreamChild* NeckoChild::AllocPAltDataOutputStreamChild(
     const nsCString& type, const int64_t& predictedSize,
     PHttpChannelChild* channel) {
-  // We don't allocate here: see HttpChannelChild::OpenAlternativeOutputStream()
+  
   MOZ_ASSERT_UNREACHABLE("AllocPAltDataOutputStreamChild should not be called");
   return nullptr;
 }
@@ -146,7 +146,7 @@ bool NeckoChild::DeallocPAltDataOutputStreamChild(
 PFTPChannelChild* NeckoChild::AllocPFTPChannelChild(
     const PBrowserOrId& aBrowser, const SerializedLoadContext& aSerialized,
     const FTPChannelCreationArgs& aOpenArgs) {
-  // We don't allocate here: see FTPChannelChild::AsyncOpen()
+  
   MOZ_CRASH("AllocPFTPChannelChild should not be called");
   return nullptr;
 }
@@ -160,7 +160,7 @@ bool NeckoChild::DeallocPFTPChannelChild(PFTPChannelChild* channel) {
 }
 
 PCookieServiceChild* NeckoChild::AllocPCookieServiceChild() {
-  // We don't allocate here: see nsCookieService::GetSingleton()
+  
   MOZ_ASSERT_UNREACHABLE("AllocPCookieServiceChild should not be called");
   return nullptr;
 }
@@ -220,7 +220,7 @@ PDataChannelChild* NeckoChild::AllocPDataChannelChild(
 }
 
 bool NeckoChild::DeallocPDataChannelChild(PDataChannelChild* child) {
-  // NB: See DataChannelChild::ActorDestroy.
+  
   return true;
 }
 
@@ -231,7 +231,7 @@ PFileChannelChild* NeckoChild::AllocPFileChannelChild(
 }
 
 bool NeckoChild::DeallocPFileChannelChild(PFileChannelChild* child) {
-  // NB: See FileChannelChild::ActorDestroy.
+  
   return true;
 }
 
@@ -242,7 +242,7 @@ PSimpleChannelChild* NeckoChild::AllocPSimpleChannelChild(
 }
 
 bool NeckoChild::DeallocPSimpleChannelChild(PSimpleChannelChild* child) {
-  // NB: See SimpleChannelChild::ActorDestroy.
+  
   return true;
 }
 
@@ -272,7 +272,7 @@ bool NeckoChild::DeallocPTCPServerSocketChild(PTCPServerSocketChild* child) {
   return true;
 }
 
-PUDPSocketChild* NeckoChild::AllocPUDPSocketChild(const Principal& aPrincipal,
+PUDPSocketChild* NeckoChild::AllocPUDPSocketChild(nsIPrincipal* aPrincipal,
                                                   const nsCString& aFilter) {
   MOZ_ASSERT_UNREACHABLE("AllocPUDPSocket should not be called");
   return nullptr;
@@ -287,8 +287,8 @@ bool NeckoChild::DeallocPUDPSocketChild(PUDPSocketChild* child) {
 PDNSRequestChild* NeckoChild::AllocPDNSRequestChild(
     const nsCString& aHost, const OriginAttributes& aOriginAttributes,
     const uint32_t& aFlags) {
-  // We don't allocate here: instead we always use IPDL constructor that takes
-  // an existing object
+  
+  
   MOZ_ASSERT_UNREACHABLE("AllocPDNSRequestChild should not be called on child");
   return nullptr;
 }
@@ -311,8 +311,8 @@ bool NeckoChild::DeallocPChannelDiverterChild(PChannelDiverterChild* child) {
 }
 
 PTransportProviderChild* NeckoChild::AllocPTransportProviderChild() {
-  // This refcount is transferred to the receiver of the message that
-  // includes the PTransportProviderChild actor.
+  
+  
   RefPtr<TransportProviderChild> res = new TransportProviderChild();
 
   return res.forget().take();
@@ -336,7 +336,7 @@ mozilla::ipc::IPCResult NeckoChild::RecvAsyncAuthPromptForNestedFrame(
   return IPC_OK();
 }
 
-/* Predictor Messages */
+
 mozilla::ipc::IPCResult NeckoChild::RecvPredOnPredictPrefetch(
     const URIParams& aURI, const uint32_t& aHttpStatus) {
   MOZ_ASSERT(NS_IsMainThread(),
@@ -345,7 +345,7 @@ mozilla::ipc::IPCResult NeckoChild::RecvPredOnPredictPrefetch(
 
   nsCOMPtr<nsIURI> uri = DeserializeURI(aURI);
 
-  // Get the current predictor
+  
   nsresult rv = NS_OK;
   nsCOMPtr<nsINetworkPredictorVerifier> predictor =
       do_GetService("@mozilla.org/network/predictor;1", &rv);
@@ -363,7 +363,7 @@ mozilla::ipc::IPCResult NeckoChild::RecvPredOnPredictPreconnect(
 
   nsCOMPtr<nsIURI> uri = DeserializeURI(aURI);
 
-  // Get the current predictor
+  
   nsresult rv = NS_OK;
   nsCOMPtr<nsINetworkPredictorVerifier> predictor =
       do_GetService("@mozilla.org/network/predictor;1", &rv);
@@ -381,7 +381,7 @@ mozilla::ipc::IPCResult NeckoChild::RecvPredOnPredictDNS(
 
   nsCOMPtr<nsIURI> uri = DeserializeURI(aURI);
 
-  // Get the current predictor
+  
   nsresult rv = NS_OK;
   nsCOMPtr<nsINetworkPredictorVerifier> predictor =
       do_GetService("@mozilla.org/network/predictor;1", &rv);
@@ -422,5 +422,5 @@ bool NeckoChild::DeallocPClassifierDummyChannelChild(
   return true;
 }
 
-}  // namespace net
-}  // namespace mozilla
+}  
+}  
