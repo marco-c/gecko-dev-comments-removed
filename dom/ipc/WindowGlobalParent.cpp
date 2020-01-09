@@ -76,12 +76,6 @@ void WindowGlobalParent::Init(const WindowGlobalInit& aInit) {
 
   
   
-  if (!mBrowsingContext->GetCurrentWindowGlobal()) {
-    mBrowsingContext->SetCurrentWindowGlobal(this);
-  }
-
-  
-  
   RefPtr<Element> frameElement;
   if (mInProcess) {
     
@@ -243,13 +237,6 @@ already_AddRefed<JSWindowActorParent> WindowGlobalParent::GetActor(
 
 bool WindowGlobalParent::IsCurrentGlobal() {
   return !mIPCClosed && mBrowsingContext->GetCurrentWindowGlobal() == this;
-}
-
-IPCResult WindowGlobalParent::RecvDidEmbedBrowsingContext(
-    dom::BrowsingContext* aContext) {
-  MOZ_ASSERT(aContext);
-  aContext->Canonical()->SetEmbedderWindowGlobal(this);
-  return IPC_OK();
 }
 
 void WindowGlobalParent::ActorDestroy(ActorDestroyReason aWhy) {

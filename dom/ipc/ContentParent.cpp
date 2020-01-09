@@ -1160,7 +1160,6 @@ TabParent* ContentParent::CreateBrowser(const TabContext& aContext,
       BrowsingContext::Create(nullptr, nullptr, EmptyString(),
                               BrowsingContext::Type::Content)
           .downcast<CanonicalBrowsingContext>();
-  browsingContext->SetEmbedderElement(aFrameElement);
 
   
   
