@@ -89,18 +89,6 @@ add_task(async function() {
   info("Test pausing in both workers");
   await addBreakpoint(dbg, "simple-worker", 10);
   invokeInTab("sayHello");
-
-  
-  
-  const {
-    selectors: { getIsPaused },
-    getState
-  } = dbg;
-  await waitFor(() => {
-    const state = getState();
-    return getIsPaused(state, worker1Thread) && getIsPaused(state, worker2Thread);
-  });
-
   dbg.actions.selectThread(worker1Thread);
 
   await waitForPaused(dbg);

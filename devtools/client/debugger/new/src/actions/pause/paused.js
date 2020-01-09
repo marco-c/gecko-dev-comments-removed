@@ -47,23 +47,23 @@ export function paused(pauseInfo: Pause) {
       dispatch(removeBreakpoint(hiddenBreakpoint));
     }
 
-    await dispatch(mapFrames(thread));
+    await dispatch(mapFrames());
 
-    const selectedFrame = getSelectedFrame(getState(), thread);
+    const selectedFrame = getSelectedFrame(getState());
     if (selectedFrame) {
       await dispatch(selectLocation(selectedFrame.location));
     }
 
-    if (!wasStepping(getState(), thread)) {
+    if (!wasStepping(getState())) {
       dispatch(togglePaneCollapse("end", false));
     }
 
-    await dispatch(fetchScopes(thread));
+    await dispatch(fetchScopes());
 
     
     
     const atException = why.type == "exception";
-    if (!atException || !isEvaluatingExpression(getState(), thread)) {
+    if (!atException || !isEvaluatingExpression(getState())) {
       await dispatch(evaluateExpressions());
     }
   };
