@@ -75,6 +75,16 @@ class MediaStreamTrackListener {
 
 
 
+
+
+
+
+  virtual void NotifyEnabledStateChanged(bool aEnabled) {}
+
+  
+
+
+
   virtual void NotifyOutput(MediaStreamGraph* aGraph,
                             StreamTime aCurrentTrackTime) {}
 
