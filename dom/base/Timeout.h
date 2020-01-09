@@ -13,7 +13,6 @@
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsITimeoutHandler.h"
-#include "GeckoProfiler.h"
 
 class nsIEventTarget;
 class nsIPrincipal;
@@ -51,10 +50,6 @@ class Timeout final : public LinkedListElement<RefPtr<Timeout>> {
   
   const TimeDuration& TimeRemaining() const;
 
-#ifdef MOZ_GECKO_PROFILER
-  UniqueProfilerBacktrace TakeProfilerBacktrace() { return std::move(mCause); }
-#endif
-
  private:
   
   
@@ -86,10 +81,6 @@ class Timeout final : public LinkedListElement<RefPtr<Timeout>> {
 
   
   TimeDuration mInterval;
-
-#ifdef MOZ_GECKO_PROFILER
-  UniqueProfilerBacktrace mCause;
-#endif
 
   
   uint32_t mTimeoutId;
