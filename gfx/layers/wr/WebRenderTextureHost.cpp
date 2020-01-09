@@ -169,5 +169,18 @@ bool WebRenderTextureHost::SupportsWrNativeTexture() {
   return mWrappedTextureHost->SupportsWrNativeTexture();
 }
 
+bool WebRenderTextureHost::NeedsYFlip() const {
+  bool yFlip = TextureHost::NeedsYFlip();
+  if (mWrappedTextureHost->AsSurfaceTextureHost()) {
+    MOZ_ASSERT(yFlip);
+    
+    
+    
+    
+    yFlip = false;
+  }
+  return yFlip;
+}
+
 }  
 }  
