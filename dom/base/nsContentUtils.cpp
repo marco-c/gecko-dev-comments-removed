@@ -8229,30 +8229,31 @@ nsContentUtils::StorageAccess nsContentUtils::StorageAllowedForServiceWorker(
 }
 
 
-void nsContentUtils::GetCookieLifetimePolicyFromCookieSettings(
-    nsICookieSettings* aCookieSettings, nsIPrincipal* aPrincipal,
-    uint32_t* aLifetimePolicy) {
+void nsContentUtils::GetCookieLifetimePolicyForPrincipal(
+    nsIPrincipal* aPrincipal, uint32_t* aLifetimePolicy) {
   *aLifetimePolicy = sCookiesLifetimePolicy;
 
-  if (aCookieSettings) {
-    uint32_t cookiePermission = 0;
-    nsresult rv =
-        aCookieSettings->CookiePermission(aPrincipal, &cookiePermission);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return;
-    }
+  
+  
+  nsCOMPtr<nsIPermissionManager> permissionManager =
+      services::GetPermissionManager();
+  if (!permissionManager) {
+    return;
+  }
 
-    switch (cookiePermission) {
-      case nsICookiePermission::ACCESS_ALLOW:
-        *aLifetimePolicy = nsICookieService::ACCEPT_NORMALLY;
-        break;
-      case nsICookiePermission::ACCESS_DENY:
-        *aLifetimePolicy = nsICookieService::ACCEPT_NORMALLY;
-        break;
-      case nsICookiePermission::ACCESS_SESSION:
-        *aLifetimePolicy = nsICookieService::ACCEPT_SESSION;
-        break;
-    }
+  uint32_t perm;
+  permissionManager->TestPermissionFromPrincipal(
+      aPrincipal, NS_LITERAL_CSTRING("cookie"), &perm);
+  switch (perm) {
+    case nsICookiePermission::ACCESS_ALLOW:
+      *aLifetimePolicy = nsICookieService::ACCEPT_NORMALLY;
+      break;
+    case nsICookiePermission::ACCESS_DENY:
+      *aLifetimePolicy = nsICookieService::ACCEPT_NORMALLY;
+      break;
+    case nsICookiePermission::ACCESS_SESSION:
+      *aLifetimePolicy = nsICookieService::ACCEPT_SESSION;
+      break;
   }
 }
 
@@ -8423,7 +8424,6 @@ nsContentUtils::StorageAccess nsContentUtils::InternalStorageAllowedCheck(
   aRejectedReason = 0;
 
   StorageAccess access = StorageAccess::eAllow;
-  nsCOMPtr<nsICookieSettings> cookieSettings;
 
   
   
@@ -8442,15 +8442,6 @@ nsContentUtils::StorageAccess nsContentUtils::InternalStorageAllowedCheck(
     if (IsInPrivateBrowsing(document)) {
       access = StorageAccess::ePrivateBrowsing;
     }
-
-    if (document) {
-      cookieSettings = document->CookieSettings();
-    }
-  }
-
-  if (aChannel) {
-    nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
-    loadInfo->GetCookieSettings(getter_AddRefs(cookieSettings));
   }
 
   uint32_t lifetimePolicy;
@@ -8462,8 +8453,7 @@ nsContentUtils::StorageAccess nsContentUtils::InternalStorageAllowedCheck(
   if (policy) {
     lifetimePolicy = nsICookieService::ACCEPT_NORMALLY;
   } else {
-    GetCookieLifetimePolicyFromCookieSettings(cookieSettings, aPrincipal,
-                                              &lifetimePolicy);
+    GetCookieLifetimePolicyForPrincipal(aPrincipal, &lifetimePolicy);
   }
 
   
