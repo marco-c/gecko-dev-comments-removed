@@ -1238,8 +1238,8 @@ Document::Document(const char* aContentType)
       mMaybeServiceWorkerControlled(false),
       mAllowZoom(false),
       mValidScaleFloat(false),
+      mValidMinScale(false),
       mValidMaxScale(false),
-      mScaleStrEmpty(false),
       mWidthStrEmpty(false),
       mParserAborted(false),
       mReportedUseCounters(false),
@@ -6843,9 +6843,73 @@ nsINode* Document::AdoptNode(nsINode& aAdoptedNode, ErrorResult& rv) {
 
 bool Document::UseWidthDeviceWidthFallbackViewport() const { return false; }
 
-void Document::ParseWidthAndHeightInMetaViewport(
-    const nsAString& aWidthString, const nsAString& aHeightString,
-    const nsAString& aScaleString) {
+static Maybe<LayoutDeviceToScreenScale> ParseScaleString(
+    const nsString& aScaleString) {
+  
+  if (aScaleString.EqualsLiteral("device-width") ||
+      aScaleString.EqualsLiteral("device-height")) {
+    return Some(LayoutDeviceToScreenScale(10.0f));
+  } else if (aScaleString.EqualsLiteral("yes")) {
+    return Some(LayoutDeviceToScreenScale(1.0f));
+  } else if (aScaleString.EqualsLiteral("no")) {
+    return Some(LayoutDeviceToScreenScale(kViewportMinScale));
+  } else if (aScaleString.IsEmpty()) {
+    return Nothing();
+  }
+
+  nsresult scaleErrorCode;
+  float scale = aScaleString.ToFloat(&scaleErrorCode);
+  if (NS_FAILED(scaleErrorCode)) {
+    return Some(LayoutDeviceToScreenScale(kViewportMinScale));
+  }
+
+  if (scale < 0) {
+    return Nothing();
+  }
+  return Some(clamped(LayoutDeviceToScreenScale(scale), kViewportMinScale,
+                      kViewportMaxScale));
+}
+
+Maybe<LayoutDeviceToScreenScale> Document::ParseScaleInHeader(
+  nsAtom* aHeaderField) {
+  MOZ_ASSERT(aHeaderField == nsGkAtoms::viewport_initial_scale ||
+             aHeaderField == nsGkAtoms::viewport_maximum_scale ||
+             aHeaderField == nsGkAtoms::viewport_minimum_scale);
+
+  nsAutoString scaleStr;
+  GetHeaderData(aHeaderField, scaleStr);
+
+  return ParseScaleString(scaleStr);
+}
+
+void Document::ParseScalesInMetaViewport() {
+  Maybe<LayoutDeviceToScreenScale> scale;
+
+  scale = ParseScaleInHeader(nsGkAtoms::viewport_initial_scale);
+  mScaleFloat = scale.valueOr(LayoutDeviceToScreenScale(0.0f));
+  mValidScaleFloat = scale.isSome();
+
+  scale = ParseScaleInHeader(nsGkAtoms::viewport_maximum_scale);
+  
+  
+  
+  mScaleMaxFloat = scale.valueOr(kViewportMaxScale);
+  mValidMaxScale = scale.isSome();
+
+  scale = ParseScaleInHeader(nsGkAtoms::viewport_minimum_scale);
+  mScaleMinFloat = scale.valueOr(kViewportMinScale);
+  mValidMinScale = scale.isSome();
+
+  
+  
+  if (mValidMaxScale && mValidMinScale) {
+    mScaleMaxFloat = std::max(mScaleMinFloat, mScaleMaxFloat);
+  }
+}
+
+void Document::ParseWidthAndHeightInMetaViewport(const nsAString& aWidthString,
+                                                 const nsAString& aHeightString,
+                                                 bool aHasValidScale) {
   
   
   
@@ -6876,8 +6940,7 @@ void Document::ParseWidthAndHeightInMetaViewport(
         mMaxWidth = nsViewportInfo::Auto;
       }
     }
-    
-  } else if (!aScaleString.IsEmpty()) {
+  } else if (aHasValidScale) {
     if (aHeightString.IsEmpty()) {
       mMinWidth = nsViewportInfo::ExtendToZoom;
       mMaxWidth = nsViewportInfo::ExtendToZoom;
@@ -6985,48 +7048,8 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
         }
       }
 
-      nsAutoString minScaleStr;
-      GetHeaderData(nsGkAtoms::viewport_minimum_scale, minScaleStr);
-
-      nsresult scaleMinErrorCode;
-      mScaleMinFloat =
-          LayoutDeviceToScreenScale(minScaleStr.ToFloat(&scaleMinErrorCode));
-
-      if (NS_FAILED(scaleMinErrorCode)) {
-        mScaleMinFloat = kViewportMinScale;
-      }
-
-      mScaleMinFloat = mozilla::clamped(mScaleMinFloat, kViewportMinScale,
-                                        kViewportMaxScale);
-
-      nsAutoString maxScaleStr;
-      GetHeaderData(nsGkAtoms::viewport_maximum_scale, maxScaleStr);
-
       
-      
-      nsresult scaleMaxErrorCode;
-      mScaleMaxFloat =
-          LayoutDeviceToScreenScale(maxScaleStr.ToFloat(&scaleMaxErrorCode));
-
-      if (NS_FAILED(scaleMaxErrorCode)) {
-        mScaleMaxFloat = kViewportMaxScale;
-      }
-
-      
-      
-      if (NS_SUCCEEDED(scaleMaxErrorCode) && NS_SUCCEEDED(scaleMinErrorCode)) {
-        mScaleMaxFloat = std::max(mScaleMinFloat, mScaleMaxFloat);
-      }
-
-      mScaleMaxFloat = mozilla::clamped(mScaleMaxFloat, kViewportMinScale,
-                                        kViewportMaxScale);
-
-      nsAutoString scaleStr;
-      GetHeaderData(nsGkAtoms::viewport_initial_scale, scaleStr);
-
-      nsresult scaleErrorCode;
-      mScaleFloat =
-          LayoutDeviceToScreenScale(scaleStr.ToFloat(&scaleErrorCode));
+      ParseScalesInMetaViewport();
 
       nsAutoString widthStr, heightStr;
 
@@ -7035,7 +7058,7 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
 
       
       
-      ParseWidthAndHeightInMetaViewport(widthStr, heightStr, scaleStr);
+      ParseWidthAndHeightInMetaViewport(widthStr, heightStr, mValidScaleFloat);
 
       mAllowZoom = true;
       nsAutoString userScalable;
@@ -7047,11 +7070,7 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
         mAllowZoom = false;
       }
 
-      mScaleStrEmpty = scaleStr.IsEmpty();
       mWidthStrEmpty = widthStr.IsEmpty();
-      mValidScaleFloat = !scaleStr.IsEmpty() && NS_SUCCEEDED(scaleErrorCode);
-      mValidMaxScale =
-          !maxScaleStr.IsEmpty() && NS_SUCCEEDED(scaleMaxErrorCode);
 
       mViewportType = viewportIsEmpty ? Empty : Specified;
       MOZ_FALLTHROUGH;
@@ -7235,7 +7254,7 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
 
       
       
-      if (mScaleStrEmpty && !mWidthStrEmpty) {
+      if (!mValidScaleFloat && !mWidthStrEmpty) {
         CSSToScreenScale bestFitScale(float(aDisplaySize.width) / size.width);
         scaleFloat = (scaleFloat > bestFitScale) ? scaleFloat : bestFitScale;
       }

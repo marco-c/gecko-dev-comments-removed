@@ -3687,7 +3687,15 @@ class Document : public nsINode,
 
   void ParseWidthAndHeightInMetaViewport(const nsAString& aWidthString,
                                          const nsAString& aHeightString,
-                                         const nsAString& aScaleString);
+                                         bool aIsAutoScale);
+
+  
+  
+  Maybe<LayoutDeviceToScreenScale> ParseScaleInHeader(nsAtom* aHeaderField);
+
+  
+  
+  void ParseScalesInMetaViewport();
 
   FlashClassification DocumentFlashClassificationInternal();
 
@@ -4321,8 +4329,8 @@ class Document : public nsINode,
   
   bool mAllowZoom : 1;
   bool mValidScaleFloat : 1;
+  bool mValidMinScale : 1;
   bool mValidMaxScale : 1;
-  bool mScaleStrEmpty : 1;
   bool mWidthStrEmpty : 1;
 
   
