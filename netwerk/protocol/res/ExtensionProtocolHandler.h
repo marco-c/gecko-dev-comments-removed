@@ -153,11 +153,8 @@ class ExtensionProtocolHandler final
 
 
 
-
-
-  Result<Ok, nsresult> AllowExternalResource(nsIFile* aExtensionDir,
-                                             nsIFile* aRequestedFile,
-                                             bool* aResult);
+  Result<bool, nsresult> AllowExternalResource(nsIFile* aExtensionDir,
+                                               nsIFile* aRequestedFile);
 
 #if defined(XP_MACOSX)
   
@@ -172,9 +169,7 @@ class ExtensionProtocolHandler final
 
 
 
-
-
-  Result<Ok, nsresult> DevRepoContains(nsIFile* aRequestedFile, bool* aResult);
+  Result<bool, nsresult> DevRepoContains(nsIFile* aRequestedFile);
 
   
   nsCOMPtr<nsIFile> mDevRepo;
@@ -199,9 +194,7 @@ class ExtensionProtocolHandler final
 
 
 
-
-
-  Result<Ok, nsresult> AppDirContains(nsIFile* aExtensionDir, bool* aResult);
+  Result<bool, nsresult> AppDirContains(nsIFile* aExtensionDir);
 
   
   nsCOMPtr<nsIFile> mAppDir;
