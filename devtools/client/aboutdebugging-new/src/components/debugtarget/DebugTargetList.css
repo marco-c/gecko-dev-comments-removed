@@ -3,10 +3,5 @@
 
 
 .debug-target-list {
-  overflow: hidden;
   margin-block-start: calc(var(--base-unit) * 4);
-}
-
-.debug-target-list--collapsed {
-  max-height: 0;
 }
