@@ -8286,11 +8286,9 @@ nsresult nsDocShell::SetupNewViewer(nsIContentViewer* aNewViewer) {
 
     
     
-    nsCOMPtr<nsIPresShell> shell = contentViewer->GetPresShell();
-
-    if (shell) {
-      bgcolor = shell->GetCanvasBackground();
-      isActive = shell->IsActive();
+    if (PresShell* presShell = contentViewer->GetPresShell()) {
+      bgcolor = presShell->GetCanvasBackground();
+      isActive = presShell->IsActive();
     }
 
     contentViewer->Close(mSavingOldViewer ? mOSHE.get() : nullptr);
@@ -8339,12 +8337,10 @@ nsresult nsDocShell::SetupNewViewer(nsIContentViewer* aNewViewer) {
 
   
   
-  nsCOMPtr<nsIPresShell> shell = mContentViewer->GetPresShell();
-
-  if (shell) {
-    shell->SetCanvasBackground(bgcolor);
+  if (RefPtr<PresShell> presShell = mContentViewer->GetPresShell()) {
+    presShell->SetCanvasBackground(bgcolor);
     if (isActive) {
-      shell->SetIsActive(isActive);
+      presShell->SetIsActive(isActive);
     }
   }
 
