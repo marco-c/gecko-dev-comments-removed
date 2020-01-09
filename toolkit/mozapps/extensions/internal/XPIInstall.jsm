@@ -347,6 +347,36 @@ XPIPackage = class XPIPackage extends Package {
 
 
 
+function builtinPackage(baseURL) {
+  return {
+    rootURI: baseURL,
+    filePath: baseURL.spec,
+    file: null,
+    verifySignedState() {
+      return {
+        signedState: AddonManager.SIGNEDSTATE_NOT_REQUIRED,
+        cert: null,
+      };
+    },
+    async hasResource(path) {
+      try {
+        let response = await fetch(this.rootURI.resolve(path));
+        return response.ok;
+      } catch (e) {
+        return false;
+      }
+    },
+  };
+}
+
+
+
+
+
+
+
+
+
 
 
 function newVersionReason(oldVersion, newVersion) {
@@ -610,8 +640,23 @@ var loadManifestFromFile = async function(aFile, aLocation, aOldAddon) {
 
 
 
-function syncLoadManifestFromFile(aFile, aLocation, aOldAddon) {
-  return XPIInternal.awaitPromise(loadManifestFromFile(aFile, aLocation, aOldAddon));
+function syncLoadManifest(state, location, oldAddon) {
+  if (location.name == "app-builtin") {
+    let pkg = builtinPackage(Services.io.newURI(oldAddon.rootURI));
+    return XPIInternal.awaitPromise(loadManifest(pkg, location, oldAddon));
+  }
+
+  let file = new nsIFile(state.path);
+  let pkg = Package.get(file);
+  return XPIInternal.awaitPromise((async () => {
+    try {
+      let addon = await loadManifest(pkg, location, oldAddon);
+      addon.rootURI = getURIForResourceInFile(file, "").spec;
+      return addon;
+    } finally {
+      pkg.close();
+    }
+  })());
 }
 
 
@@ -3226,7 +3271,7 @@ var XPIInstall = {
   flushJarCache,
   newVersionReason,
   recursiveRemove,
-  syncLoadManifestFromFile,
+  syncLoadManifest,
 
   
   _inProgress: [],
@@ -3695,27 +3740,7 @@ var XPIInstall = {
       throw new Error("Built-in addons must use resource: URLS");
     }
 
-    
-    let pkg = {
-      rootURI: baseURL,
-      filePath: baseURL.spec,
-      file: null,
-      verifySignedState() {
-        return {
-          signedState: AddonManager.SIGNEDSTATE_NOT_REQUIRED,
-          cert: null,
-        };
-      },
-      async hasResource(path) {
-        try {
-          let response = await fetch(this.rootURI.resolve(path));
-          return response.ok;
-        } catch (e) {
-          return false;
-        }
-      },
-    };
-
+    let pkg = builtinPackage(baseURL);
     let addon = await loadManifest(pkg, XPIInternal.BuiltInLocation);
     addon.rootURI = base;
 
