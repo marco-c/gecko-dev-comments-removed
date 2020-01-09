@@ -1830,11 +1830,14 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  bool Extend3DContext(const nsStyleDisplay* aStyleDisplay,
-                       const nsStyleEffects* aStyleEffects,
-                       mozilla::EffectSet* aEffectSet = nullptr) const;
-  bool Extend3DContext(mozilla::EffectSet* aEffectSet = nullptr) const {
-    return Extend3DContext(StyleDisplay(), StyleEffects(), aEffectSet);
+
+  bool Extend3DContext(
+      const nsStyleDisplay* aStyleDisplay, const nsStyleEffects* aStyleEffects,
+      mozilla::EffectSet* aEffectSetForOpacity = nullptr) const;
+  bool Extend3DContext(
+      mozilla::EffectSet* aEffectSetForOpacity = nullptr) const {
+    return Extend3DContext(StyleDisplay(), StyleEffects(),
+                           aEffectSetForOpacity);
   }
 
   
