@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "mozilla/net/CookieServiceParent.h"
 #include "mozilla/dom/PContentParent.h"
@@ -26,43 +26,32 @@ using mozilla::net::NeckoParent;
 
 namespace {
 
-// Ignore failures from this function, as they only affect whether we do or
-// don't show a dialog box in private browsing mode if the user sets a pref.
-void CreateDummyChannel(nsIURI *aHostURI, nsIURI *aChannelURI,
-                        OriginAttributes &aAttrs, nsIChannel **aChannel) {
-  nsCOMPtr<nsIPrincipal> principal =
-      BasePrincipal::CreateCodebasePrincipal(aHostURI, aAttrs);
-  if (!principal) {
-    return;
-  }
 
-  // The following channel is never openend, so it does not matter what
-  // securityFlags we pass; let's follow the principle of least privilege.
+
+nsresult CreateDummyChannel(nsIURI *aHostURI, nsILoadInfo *aLoadInfo,
+                            nsIChannel **aChannel) {
   nsCOMPtr<nsIChannel> dummyChannel;
-  NS_NewChannel(getter_AddRefs(dummyChannel), aChannelURI, principal,
-                nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED,
-                nsIContentPolicy::TYPE_INVALID);
-  nsCOMPtr<nsIPrivateBrowsingChannel> pbChannel =
-      do_QueryInterface(dummyChannel);
-  if (!pbChannel) {
-    return;
+  nsresult rv =
+      NS_NewChannelInternal(getter_AddRefs(dummyChannel), aHostURI, aLoadInfo);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
   }
 
-  pbChannel->SetPrivate(aAttrs.mPrivateBrowsingId > 0);
   dummyChannel.forget(aChannel);
+  return NS_OK;
 }
 
-}  // namespace
+}  
 
 namespace mozilla {
 namespace net {
 
 CookieServiceParent::CookieServiceParent() {
-  // Instantiate the cookieservice via the service manager, so it sticks around
-  // until shutdown.
+  
+  
   nsCOMPtr<nsICookieService> cs = do_GetService(NS_COOKIESERVICE_CONTRACTID);
 
-  // Get the nsCookieService instance directly, so we can call internal methods.
+  
   mCookieService = nsCookieService::GetSingleton();
   NS_ASSERTION(mCookieService, "couldn't get nsICookieService");
   mProcessingCookie = false;
@@ -95,7 +84,7 @@ void CookieServiceParent::RemoveBatchDeletedCookies(nsIArray *aCookieList) {
     attrs = cookie->OriginAttributesRef();
     GetInfoFromCookie(cookie, cookieStruct);
     if (cookie->IsHttpOnly()) {
-      // Child only needs to exist if an HttpOnly cookie exists, not its value
+      
       cookieStruct.value() = "";
     }
     cookieStructList.AppendElement(cookieStruct);
@@ -137,7 +126,7 @@ void CookieServiceParent::TrackCookieLoad(nsIChannel *aChannel) {
   bool isSafeTopLevelNav = NS_IsSafeTopLevelNav(aChannel);
   bool aIsSameSiteForeign = NS_IsSameSiteForeign(aChannel, uri);
 
-  // Send matching cookies to Child.
+  
   nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil;
   thirdPartyUtil = do_GetService(THIRDPARTYUTIL_CONTRACTID);
   bool isForeign = true;
@@ -148,9 +137,9 @@ void CookieServiceParent::TrackCookieLoad(nsIChannel *aChannel) {
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
   if (httpChannel) {
     isTrackingResource = httpChannel->GetIsTrackingResource();
-    // Check first-party storage access even for non-tracking resources, since
-    // we will need the result when computing the access rights for the reject
-    // foreign cookie behavior mode.
+    
+    
+    
     if (isForeign && AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(
                          httpChannel, uri, nullptr)) {
       storageAccessGranted = true;
@@ -194,11 +183,11 @@ mozilla::ipc::IPCResult CookieServiceParent::RecvPrepareCookieList(
     const bool &aIsSameSiteForeign, const OriginAttributes &aAttrs) {
   nsCOMPtr<nsIURI> hostURI = DeserializeURI(aHost);
 
-  // Send matching cookies to Child.
+  
   nsTArray<nsCookie *> foundCookieList;
-  // Note: passing nullptr as aChannel to GetCookiesForURI() here is fine since
-  // this argument is only used for proper reporting of cookie loads, but the
-  // child process already does the necessary reporting in this case for us.
+  
+  
+  
   mCookieService->GetCookiesForURI(
       hostURI, nullptr, aIsForeign, aIsTrackingResource,
       aFirstPartyStorageAccessGranted, aIsSafeTopLevelNav, aIsSameSiteForeign,
@@ -210,49 +199,61 @@ mozilla::ipc::IPCResult CookieServiceParent::RecvPrepareCookieList(
 }
 
 void CookieServiceParent::ActorDestroy(ActorDestroyReason aWhy) {
-  // Nothing needed here. Called right before destructor since this is a
-  // non-refcounted class.
+  
+  
 }
 
 mozilla::ipc::IPCResult CookieServiceParent::RecvSetCookieString(
     const URIParams &aHost, const Maybe<URIParams> &aChannelURI,
-    const bool &aIsForeign, const bool &aIsTrackingResource,
+    const Maybe<LoadInfoArgs> &aLoadInfoArgs, const bool &aIsForeign,
+    const bool &aIsTrackingResource,
     const bool &aFirstPartyStorageAccessGranted, const nsCString &aCookieString,
-    const nsCString &aServerTime, const OriginAttributes &aAttrs,
-    const bool &aFromHttp) {
+    const nsCString &aServerTime, const bool &aFromHttp) {
   if (!mCookieService) return IPC_OK();
 
-  // Deserialize URI. Having a host URI is mandatory and should always be
-  // provided by the child; thus we consider failure fatal.
+  
+  
   nsCOMPtr<nsIURI> hostURI = DeserializeURI(aHost);
   if (!hostURI) return IPC_FAIL_NO_REASON(this);
 
   nsCOMPtr<nsIURI> channelURI = DeserializeURI(aChannelURI);
 
-  // This is a gross hack. We've already computed everything we need to know
-  // for whether to set this cookie or not, but we need to communicate all of
-  // this information through to nsICookiePermission, which indirectly
-  // computes the information from the channel. We only care about the
-  // aIsPrivate argument as nsCookieService::SetCookieStringInternal deals
-  // with aIsForeign before we have to worry about nsCookiePermission trying
-  // to use the channel to inspect it.
-  nsCOMPtr<nsIChannel> dummyChannel;
-  CreateDummyChannel(hostURI, channelURI,
-                     const_cast<OriginAttributes &>(aAttrs),
-                     getter_AddRefs(dummyChannel));
+  nsCOMPtr<nsILoadInfo> loadInfo;
+  Unused << NS_WARN_IF(NS_FAILED(
+      LoadInfoArgsToLoadInfo(aLoadInfoArgs, getter_AddRefs(loadInfo))));
 
-  // NB: dummyChannel could be null if something failed in CreateDummyChannel.
+  
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIChannel> dummyChannel;
+  nsresult rv =
+      CreateDummyChannel(channelURI, loadInfo, getter_AddRefs(dummyChannel));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    
+    return IPC_OK();
+  }
+
+  
   nsDependentCString cookieString(aCookieString, 0);
 
-  // We set this to true while processing this cookie update, to make sure
-  // we don't send it back to the same content process.
+  OriginAttributes attrs;
+  if (loadInfo) {
+    attrs = loadInfo->GetOriginAttributes();
+  }
+
+  
+  
   mProcessingCookie = true;
   mCookieService->SetCookieStringInternal(
       hostURI, aIsForeign, aIsTrackingResource, aFirstPartyStorageAccessGranted,
-      cookieString, aServerTime, aFromHttp, aAttrs, dummyChannel);
+      cookieString, aServerTime, aFromHttp, attrs, dummyChannel);
   mProcessingCookie = false;
   return IPC_OK();
 }
 
-}  // namespace net
-}  // namespace mozilla
+}  
+}  
