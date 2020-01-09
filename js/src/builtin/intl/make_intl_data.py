@@ -90,22 +90,14 @@ def readRegistry(registry):
         - regionMappings: mappings from region subtags to preferred subtags
         - variantMappings: mappings from complete language tags to preferred
           complete language tags
-        - extlangMappings: mappings from extlang subtags to preferred subtags,
-          with prefix to be removed
-        Returns these six mappings as dictionaries, along with the registry's
+        Returns these five mappings as dictionaries, along with the registry's
         file date.
-
-        We also check that extlang mappings don't generate preferred values
-        which in turn are subject to language subtag mappings, so that
-        CanonicalizeLanguageTag can process subtags sequentially.
     """
     grandfatheredMappings = {}
     redundantMappings = {}
     languageMappings = {}
     regionMappings = {}
     variantMappings = {}
-    extlangMappings = {}
-    extlangSubtags = []
 
     
     SpecialCase = namedtuple("SpecialCase", ["Type", "Subtag", "Prefix", "Preferred_Value"])
@@ -186,26 +178,11 @@ def readRegistry(registry):
         elif record["Type"] == "extlang":
             
             
-            
-            subtag = record["Subtag"]
-            extlangSubtags.append(subtag)
-            if "Preferred-Value" in record:
-                preferred = record["Preferred-Value"]
-                
-                
-                assert preferred == subtag, "{0} = {1}".format(preferred, subtag)
-                prefix = record["Prefix"]
-                extlangMappings[subtag] = {"preferred": preferred, "prefix": prefix}
+            pass
         else:
             
             
             assert False, "Unrecognized Type: {0}".format(record["Type"])
-
-    
-    
-    for extlang in extlangSubtags:
-        if extlang in languageMappings:
-            raise Exception("Conflict: extlang with lang mapping: " + extlang)
 
     
     for elem in knownSpecialCases:
@@ -224,8 +201,7 @@ def readRegistry(registry):
             "redundantMappings": redundantMappings,
             "languageMappings": languageMappings,
             "regionMappings": regionMappings,
-            "variantMappings": variantMappings,
-            "extlangMappings": extlangMappings}
+            "variantMappings": variantMappings}
 
 
 def writeMappingHeader(println, description, fileDate, url):
@@ -261,8 +237,8 @@ def writeMappingsVar(println, mapping, name, description, fileDate, url):
     println(u"};")
 
 
-def writeMappingsFunction(println, variantMappings, redundantMappings, extlangMappings,
-                          description, fileDate, url):
+def writeMappingsFunction(println, variantMappings, redundantMappings, description,
+                          fileDate, url):
     """ Writes a function definition which performs language tag mapping.
 
         Processes the contents of dictionaries |variantMappings| and
@@ -328,18 +304,12 @@ def writeMappingsFunction(println, variantMappings, redundantMappings, extlangMa
 
         
         cond = []
-        extlangIndex = 1
         lastVariant = None
         for (kind, subtag) in splitSubtags(tag):
             if kind == Subtag.Language:
                 continue
 
-            if kind == Subtag.ExtLang:
-                assert extlangIndex in [1, 2, 3], \
-                    "Language-Tag permits no more than three extlang subtags"
-                cond.append('tag.extlang{} === "{}"'.format(extlangIndex, subtag))
-                extlangIndex += 1
-            elif kind == Subtag.Script:
+            if kind == Subtag.Script:
                 cond.append('tag.script === "{}"'.format(subtag))
             elif kind == Subtag.Region:
                 cond.append('tag.region === "{}"'.format(subtag))
@@ -363,9 +333,7 @@ def writeMappingsFunction(println, variantMappings, redundantMappings, extlangMa
             assert tag_kind == Subtag.Language
             (tag_kind, _) = tag_next()
 
-            subtags = ([(Subtag.ExtLang, "extlang{}".format(i)) for i in range(1, 3+1)] +
-                       [(Subtag.Script, "script"), (Subtag.Region, "region")])
-            for kind, prop_name in subtags:
+            for kind, prop_name in ((Subtag.Script, "script"), (Subtag.Region, "region")):
                 if tag_kind == kind:
                     (tag_kind, _) = tag_next()
                 else:
@@ -422,19 +390,7 @@ def writeMappingsFunction(println, variantMappings, redundantMappings, extlangMa
         (preferred_kind, preferred_subtag) = preferred_next()
 
         
-        
-        
-        assert preferred_kind != Subtag.ExtLang
-        extlangIndex = 1
-        while tag_kind == Subtag.ExtLang:
-            assert extlangIndex in [1, 2, 3], \
-                "Language-Tag permits no more than three extlang subtags"
-            println3(u"tag.extlang{} = undefined;".format(extlangIndex))
-            extlangIndex += 1
-            (tag_kind, tag_subtag) = tag_next()
-
-        
-        for kind, prop_name in [(Subtag.Script, "script"), (Subtag.Region, "region")]:
+        for kind, prop_name in ((Subtag.Script, "script"), (Subtag.Region, "region")):
             if tag_kind == kind and preferred_kind == kind:
                 if tag_subtag != preferred_subtag:
                     println3(u'tag.{} = "{}";'.format(prop_name, preferred_subtag))
@@ -491,35 +447,20 @@ def writeMappingsFunction(println, variantMappings, redundantMappings, extlangMa
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    def hasExtlangMapping(tag, preferred):
+    def hasExtlangSubtag(tag):
         tag_it = splitSubtags(tag)
-        (_, tag_lang) = next(tag_it)
-        (tag_kind, tag_extlang) = next(tag_it)
-
-        preferred_it = splitSubtags(preferred)
-        (_, preferred_lang) = next(preferred_it)
+        (_, _) = next(tag_it)
+        (tag_kind, _) = next(tag_it)
 
         
-        
-        
-        return (tag_kind == Subtag.ExtLang and
-                (tag_extlang, {"preferred": preferred_lang, "prefix": tag_lang}) in
-                extlangMappings.items() and
-                list(tag_it) == list(preferred_it))
+        return tag_kind == Subtag.ExtLang
 
     
     
     langTagMappings = {tag: preferred
                        for mapping in [variantMappings, redundantMappings]
                        for (tag, preferred) in mapping.items()
-                       if not hasExtlangMapping(tag, preferred)}
+                       if not hasExtlangSubtag(tag)}
 
     println(u"")
     println(u"/* eslint-disable complexity */")
@@ -555,9 +496,8 @@ def writeLanguageTagData(println, data, url):
     languageMappings = data["languageMappings"]
     regionMappings = data["regionMappings"]
     variantMappings = data["variantMappings"]
-    extlangMappings = data["extlangMappings"]
 
-    writeMappingsFunction(println, variantMappings, redundantMappings, extlangMappings,
+    writeMappingsFunction(println, variantMappings, redundantMappings,
                           "Mappings from complete tags to preferred values.", fileDate, url)
     writeMappingsVar(println, grandfatheredMappings, "grandfatheredMappings",
                      "Mappings from grandfathered tags to preferred values.", fileDate, url)
@@ -565,12 +505,6 @@ def writeLanguageTagData(println, data, url):
                      "Mappings from language subtags to preferred values.", fileDate, url)
     writeMappingsVar(println, regionMappings, "regionMappings",
                      "Mappings from region subtags to preferred values.", fileDate, url)
-    writeMappingsVar(println, extlangMappings, "extlangMappings",
-                     ["Mappings from extlang subtags to preferred values.",
-                      "All current deprecated extlang subtags have the form `<prefix>-<extlang>`",
-                      "and their preferred value is exactly equal to `<extlang>`. So each key in",
-                      "extlangMappings acts both as the extlang subtag and its preferred value."],
-                     fileDate, url)
 
 
 def updateLangTags(args):

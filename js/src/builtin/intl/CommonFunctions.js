@@ -167,6 +167,14 @@ function getUnicodeExtensions(locale) {
 
 
 
+
+
+
+
+
+
+
+
 function parseLanguageTag(locale) {
     assert(typeof locale === "string", "locale is a string");
 
@@ -269,7 +277,7 @@ function parseLanguageTag(locale) {
 
     assert(tokenLength > 0, "token length is not zero if type is ALPHA");
 
-    var language, extlang1, extlang2, extlang3, script, region, privateuse;
+    var language, script, region, privateuse;
     var variants = [];
     var extensions = [];
 
@@ -283,30 +291,10 @@ function parseLanguageTag(locale) {
         
         
         
-        
-        
         if (tokenLength <= 3) {
             language = tokenStringLower();
             if (!nextToken())
                 return null;
-
-            
-            
-            if (token === ALPHA && tokenLength === 3) {
-                extlang1 = tokenStringLower();
-                if (!nextToken())
-                    return null;
-                if (token === ALPHA && tokenLength === 3) {
-                    extlang2 = tokenStringLower();
-                    if (!nextToken())
-                        return null;
-                    if (token === ALPHA && tokenLength === 3) {
-                        extlang3 = tokenStringLower();
-                        if (!nextToken())
-                            return null;
-                    }
-                }
-            }
         } else {
             assert(4 <= tokenLength && tokenLength <= 8, "reserved/registered language subtags");
             language = tokenStringLower();
@@ -443,9 +431,6 @@ function parseLanguageTag(locale) {
     if (token === NONE && !hasOwn(localeLowercase, grandfatheredMappings)) {
         return {
             language,
-            extlang1,
-            extlang2,
-            extlang3,
             script,
             region,
             variants,
@@ -547,7 +532,6 @@ function IsStructurallyValidLanguageTag(locale) {
 
 
 
-
 function CanonicalizeLanguageTagFromObject(localeObj) {
     assert(IsObject(localeObj), "CanonicalizeLanguageTagFromObject");
 
@@ -560,9 +544,6 @@ function CanonicalizeLanguageTagFromObject(localeObj) {
 
     var {
         language,
-        extlang1,
-        extlang2,
-        extlang3,
         script,
         region,
         variants,
@@ -582,40 +563,6 @@ function CanonicalizeLanguageTagFromObject(localeObj) {
         language = languageMappings[language];
 
     var canonical = language;
-
-    if (extlang1) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if (hasOwn(extlang1, extlangMappings) && extlangMappings[extlang1] === language)
-            canonical = extlang1;
-        else
-            canonical += "-" + extlang1;
-    }
-
-    
-    
-    if (extlang2)
-        canonical += "-" + extlang2;
-
-    
-    
-    if (extlang3)
-        canonical += "-" + extlang3;
 
     
     if (script) {
@@ -829,7 +776,6 @@ function CanonicalizeUnicodeExtension(attributes, keywords) {
 
     return extension;
 }
-
 
 
 
