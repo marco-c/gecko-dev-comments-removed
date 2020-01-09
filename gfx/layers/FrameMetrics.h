@@ -719,7 +719,9 @@ struct ScrollSnapInfo {
            mScrollSnapIntervalX == aOther.mScrollSnapIntervalX &&
            mScrollSnapIntervalY == aOther.mScrollSnapIntervalY &&
            mScrollSnapDestination == aOther.mScrollSnapDestination &&
-           mScrollSnapCoordinates == aOther.mScrollSnapCoordinates;
+           mScrollSnapCoordinates == aOther.mScrollSnapCoordinates &&
+           mSnapPositionX == aOther.mSnapPositionX &&
+           mSnapPositionY == aOther.mSnapPositionY;
   }
 
   bool HasScrollSnapping() const {
@@ -744,6 +746,10 @@ struct ScrollSnapInfo {
   
   
   nsTArray<nsPoint> mScrollSnapCoordinates;
+
+  
+  nsTArray<nscoord> mSnapPositionX;
+  nsTArray<nscoord> mSnapPositionY;
 };
 
 

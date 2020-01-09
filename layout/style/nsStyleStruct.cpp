@@ -3165,6 +3165,11 @@ nsChangeHint nsStyleDisplay::CalcDifference(
     return nsChangeHint_ReconstructFrame;
   }
 
+  if (mScrollSnapAlign != aNewData.mScrollSnapAlign) {
+    
+    hint |= nsChangeHint_NeutralChange;
+  }
+
   if (mOverflowX != aNewData.mOverflowX || mOverflowY != aNewData.mOverflowY) {
     hint |= nsChangeHint_ScrollbarChange;
   }
