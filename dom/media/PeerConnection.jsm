@@ -1337,28 +1337,51 @@ class RTCPeerConnection {
   }
 
   _processTrackAdditionsAndRemovals() {
-    let postProcessing = {
-      updateStreamFunctions: [],
-      muteTracks: [],
-      trackEvents: [],
-    };
+    const removeList = [];
+    const addList = [];
+    const muteTracks = [];
+    const trackEventInits = [];
 
-    for (let transceiver of this._transceivers) {
+    for (const transceiver of this._transceivers) {
       transceiver.receiver.processTrackAdditionsAndRemovals(transceiver,
-                                                            postProcessing);
+        {removeList, addList, muteTracks, trackEventInits});
     }
 
-    for (let f of postProcessing.updateStreamFunctions) {
-      f();
+    muteTracks.forEach(track => {
+      
+      if (!track.muted) {
+        track.mutedChanged(true);
+      }
+    });
+
+    for (const {stream, track} of removeList) {
+      
+      if (stream.getTracks().includes(track)) {
+        stream.removeTrack(track);
+        
+        
+        stream.dispatchEvent(
+            new this._win.MediaStreamTrackEvent("removetrack", { track }));
+      }
     }
 
-    for (let t of postProcessing.muteTracks) {
-      t.mutedChanged(true);
+    for (const {stream, track} of addList) {
+      
+      if (!stream.getTracks().includes(track)) {
+        stream.addTrack(track);
+        
+        
+        stream.dispatchEvent(
+            new this._win.MediaStreamTrackEvent("addtrack", { track }));
+      }
     }
 
-    for (let ev of postProcessing.trackEvents) {
-      this.dispatchEvent(ev);
-    }
+    trackEventInits.forEach(init => {
+      this.dispatchEvent(new this._win.RTCTrackEvent("track", init));
+      
+      this.dispatchEvent(new this._win.MediaStreamTrackEvent("addtrack",
+          { track: init.track }));
+    });
   }
 
   
@@ -2090,15 +2113,15 @@ setupPrototype(RTCRtpSender, {
 
 class RTCRtpReceiver {
   constructor(pc, transceiverImpl) {
-    
     Object.assign(this,
         {
           _pc: pc,
           _transceiverImpl: transceiverImpl,
           track: transceiverImpl.getReceiveTrack(),
-          _remoteSetSendBit: false,
-          _ontrackFired: false,
-          streamIds: [],
+          _recvBit: false,
+          _oldRecvBit: false,
+          _streams: [],
+          _oldstreams: [],
           
           
           
@@ -2191,64 +2214,39 @@ class RTCRtpReceiver {
   }
 
   setStreamIds(streamIds) {
-    this.streamIds = streamIds;
+    this._streams = streamIds.map(id => this._pc._getOrCreateStream(id));
   }
 
-  setRemoteSendBit(sendBit) {
-    this._remoteSetSendBit = sendBit;
+  setRecvBit(recvBit) {
+    this._recvBit = recvBit;
   }
 
   processTrackAdditionsAndRemovals(transceiver,
-                                   {updateStreamFunctions, muteTracks, trackEvents}) {
-    let streamsWithTrack = this.streamIds
-      .map(id => this._pc._getOrCreateStream(id));
+      {removeList, addList, muteTracks, trackEventInits}) {
+    const receiver = this.__DOM_IMPL__;
+    const track = this.track;
+    const streams = this._streams;
+    const streamsAdded = streams.filter(s => !this._oldstreams.includes(s));
+    const streamsRemoved = this._oldstreams.filter(s => !streams.includes(s));
 
-    let streamsWithoutTrack = this._pc.getRemoteStreams()
-      .filter(s => !this.streamIds.includes(s.id));
+    addList.push(...streamsAdded.map(stream => ({stream, track})));
+    removeList.push(...streamsRemoved.map(stream => ({stream, track})));
+    this._oldstreams = this._streams;
 
-    updateStreamFunctions.push(...streamsWithTrack.map(stream => () => {
-      if (!stream.getTracks().includes(this.track)) {
-        stream.addTrack(this.track);
+    let needsTrackEvent = (streamsAdded.length != 0);
+
+    if (this._recvBit != this._oldRecvBit) {
+      this._oldRecvBit = this._recvBit;
+      if (this._recvBit) {
         
-        
-        stream.dispatchEvent(
-            new this._pc._win.MediaStreamTrackEvent(
-              "addtrack", { track: this.track }));
+        needsTrackEvent = true;
+      } else {
+        muteTracks.push(track);
       }
-    }));
+    }
 
-    updateStreamFunctions.push(...streamsWithoutTrack.map(stream => () => {
-      
-      if (stream.getTracks().includes(this.track)) {
-        stream.removeTrack(this.track);
-        
-        
-        stream.dispatchEvent(
-            new this._pc._win.MediaStreamTrackEvent(
-              "removetrack", { track: this.track }));
-      }
-    }));
-
-    if (!this._remoteSetSendBit) {
-      
-      this._ontrackFired = false;
-      if (!this.track.muted) {
-        muteTracks.push(this.track);
-      }
-    } else if (!this._ontrackFired) {
-      
-      let ev = new this._pc._win.RTCTrackEvent("track", {
-        receiver: this.__DOM_IMPL__,
-        track: this.track,
-        streams: streamsWithTrack,
-        transceiver });
-      trackEvents.push(ev);
-      this._ontrackFired = true;
-
-      
-      ev = new this._pc._win.MediaStreamTrackEvent("addtrack",
-          { track: this.track });
-      trackEvents.push(ev);
+    if (needsTrackEvent) {
+      trackEventInits.push({track, streams, receiver, transceiver});
     }
   }
 }
@@ -2261,7 +2259,7 @@ setupPrototype(RTCRtpReceiver, {
 class RTCRtpTransceiver {
   constructor(pc, transceiverImpl, init, kind, sendTrack) {
     let receiver = pc._win.RTCRtpReceiver._create(
-        pc._win, new RTCRtpReceiver(pc, transceiverImpl, kind));
+        pc._win, new RTCRtpReceiver(pc, transceiverImpl));
     let streams = (init && init.streams) || [];
     let sender = pc._win.RTCRtpSender._create(
         pc._win, new RTCRtpSender(pc, transceiverImpl, this, sendTrack, kind, streams));
