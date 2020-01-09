@@ -3600,13 +3600,6 @@ class Document : public nsINode,
  protected:
   RefPtr<mozilla::dom::DocumentL10n> mDocumentL10n;
 
-  
-
-
-
-
-  virtual bool UseWidthDeviceWidthFallbackViewport() const;
-
  private:
   void InitializeLocalization(nsTArray<nsString>& aResourceIds);
 

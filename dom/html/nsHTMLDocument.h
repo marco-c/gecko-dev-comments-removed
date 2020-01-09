@@ -68,10 +68,6 @@ class nsHTMLDocument : public mozilla::dom::Document, public nsIHTMLDocument {
   virtual void BeginLoad() override;
   virtual void EndLoad() override;
 
- protected:
-  virtual bool UseWidthDeviceWidthFallbackViewport() const override;
-
- public:
   
   virtual void SetCompatibilityMode(nsCompatibility aMode) override;
 
@@ -342,11 +338,6 @@ class nsHTMLDocument : public mozilla::dom::Document, public nsIHTMLDocument {
   
   
   bool mHasBeenEditable;
-
-  
-
-
-  bool mIsPlainText;
 };
 
 namespace mozilla {
