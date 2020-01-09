@@ -80,8 +80,10 @@ nsresult nsXMLPrettyPrinter::PrettyPrint(Document* aDocument,
   NS_ENSURE_TRUE(rootElement, NS_ERROR_UNEXPECTED);
 
   
-  RefPtr<ShadowRoot> shadowRoot =
-      rootElement->AttachShadowWithoutNameChecks(ShadowRootMode::Closed);
+  rootElement->AttachAndSetUAShadowRoot();
+  RefPtr<ShadowRoot> shadowRoot = rootElement->GetShadowRoot();
+  MOZ_RELEASE_ASSERT(shadowRoot && shadowRoot->IsUAWidget(),
+                     "There should be a UA Shadow Root here.");
 
   
   shadowRoot->AppendChild(*resultFragment, err);
