@@ -3700,7 +3700,7 @@ Downloader.prototype = {
 
 
 
-  _downloaderName: "bits",
+  _downloaderName: null,
 
   
 
@@ -3948,9 +3948,8 @@ Downloader.prototype = {
     if (this._update.getProperty("disableBITS") != null) {
       canUseBits = false;
     }
-    if (!canUseBits) {
-      this._downloaderName = "internal";
-    }
+
+    this._downloaderName = canUseBits ? "bits" : "internal";
     if (!this._patch.getProperty(this._downloaderName + "DownloadStart")) {
       this._patch.setProperty(this._downloaderName + "DownloadStart", Math.floor(Date.now() / 1000));
     }
