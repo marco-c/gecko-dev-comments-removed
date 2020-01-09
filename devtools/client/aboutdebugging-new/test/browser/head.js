@@ -90,7 +90,7 @@ async function openAboutDevtoolsToolbox(doc, tab, win) {
   };
 }
 
-async function closeAboutDevtoolsToolbox(devtoolsTab, win) {
+async function closeAboutDevtoolsToolbox(aboutDebuggingDocument, devtoolsTab, win) {
   info("Close about:devtools-toolbox page");
   const onToolboxDestroyed = gDevTools.once("toolbox-destroyed");
   await removeTab(devtoolsTab);
@@ -98,6 +98,11 @@ async function closeAboutDevtoolsToolbox(devtoolsTab, win) {
   
   
   await waitUntil(() => gBrowser.selectedTab !== devtoolsTab);
+
+  
+  await waitUntil(() =>
+    !findDebugTargetByText("about:devtools-toolbox?", aboutDebuggingDocument));
+
   await waitForRequestsToSettle(win.AboutDebugging.store);
 }
 
