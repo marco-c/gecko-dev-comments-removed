@@ -198,7 +198,9 @@ class AudioNode : public DOMEventTargetHelper, public nsSupportsWeakReference {
   
   virtual const char* NodeType() const = 0;
 
-  AbstractThread* AbstractMainThread() const { return mAbstractMainThread; }
+  
+  
+  AbstractThread* GetAbstractMainThread() const { return mAbstractMainThread; }
 
  private:
   

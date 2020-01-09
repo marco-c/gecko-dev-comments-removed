@@ -53,7 +53,7 @@ void MediaElementAudioSourceNode::ListenForAllowedToPlay(
     const MediaElementAudioSourceOptions& aOptions) {
   aOptions.mMediaElement->GetAllowedToPlayPromise()
       ->Then(
-          AbstractMainThread(), __func__,
+          GetAbstractMainThread(), __func__,
           
           
           
