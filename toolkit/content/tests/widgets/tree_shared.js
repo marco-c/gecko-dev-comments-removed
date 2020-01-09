@@ -1013,7 +1013,7 @@ function synthesizeColumnDrag(aTree, aMouseDownColumnNumber, aMouseUpColumnNumbe
 
   
   
-  var columnWidth = down.boxObject.width;
+  var columnWidth = down.getBoundingClientRect().width;
   var splitterHitWidth = columnWidth / 2;
   synthesizeMouse(down, splitterHitWidth, 3, { type: "mousedown"});
 

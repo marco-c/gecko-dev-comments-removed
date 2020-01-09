@@ -982,23 +982,29 @@ PopupNotifications.prototype = {
 
     this._refreshPanel(notificationsToShow);
 
+    function isNullOrHidden(elem) {
+      if (!elem) {
+        return true;
+      }
+
+      let anchorRect = elem.getBoundingClientRect();
+      return (anchorRect.width == 0 && anchorRect.height == 0);
+    }
+
     
-    if (!anchorElement || (anchorElement.boxObject.height == 0 &&
-                           anchorElement.boxObject.width == 0)) {
+    if (isNullOrHidden(anchorElement)) {
       anchorElement = this.window.document.getElementById("identity-icon");
 
       
       
       
       
-      if (!anchorElement || (anchorElement.boxObject.height == 0 &&
-                             anchorElement.boxObject.width == 0)) {
+      if (isNullOrHidden(anchorElement)) {
         anchorElement = this.tabbrowser.selectedTab;
 
         
         
-        if (!anchorElement || (anchorElement.boxObject.height == 0 &&
-                               anchorElement.boxObject.width == 0)) {
+        if (isNullOrHidden(anchorElement)) {
           anchorElement = null;
         }
       }

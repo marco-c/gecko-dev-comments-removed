@@ -967,8 +967,8 @@ function isElementVisible(aElement) {
 
   
   
-  var bo = aElement.boxObject;
-  return (bo.height > 0 && bo.width > 0);
+  var rect = aElement.getBoundingClientRect();
+  return (rect.height > 0 && rect.width > 0);
 }
 
 function makeURLAbsolute(aBase, aUrl) {

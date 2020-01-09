@@ -81,7 +81,7 @@
         
         
         let rowHeight = this.rowHeight;
-        let eventY = event.clientY - this.treeBody.boxObject.y -
+        let eventY = event.clientY - this.treeBody.getBoundingClientRect().y -
           rowHeight * (cell.row - this.getFirstVisibleRow());
 
         let orientation = Ci.nsITreeView.DROP_BEFORE;

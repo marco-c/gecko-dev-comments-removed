@@ -549,7 +549,7 @@ class ViewPopup extends BasePopup {
 
       
       
-      this.viewHeight = viewNode.boxObject.height;
+      this.viewHeight = viewNode.getBoundingClientRect().height;
 
       this.extraHeight = {
         bottom: Math.max(0, screenBottom - popupBottom),

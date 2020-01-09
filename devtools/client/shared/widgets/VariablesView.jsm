@@ -972,14 +972,6 @@ VariablesView.prototype = {
 
 
 
-  get boxObject() {
-    return this._list.boxObject;
-  },
-
-  
-
-
-
   get parentNode() {
     return this._parent;
   },

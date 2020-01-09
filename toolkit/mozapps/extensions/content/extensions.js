@@ -3305,13 +3305,13 @@ var gDetailView = {
     
     let firstRow = gDetailView.node.querySelector('setting[first-row="true"]');
     if (firstRow) {
-      let top = firstRow.boxObject.y;
+      let top = firstRow.getBoundingClientRect().y;
       top -= parseInt(window.getComputedStyle(firstRow).getPropertyValue("margin-top"));
 
-      let detailViewBoxObject = gDetailView.node.boxObject;
-      top -= detailViewBoxObject.y;
+      let detailView = gDetailView.node;
+      top -= detailView.getBoundingClientRect().y;
 
-      detailViewBoxObject.scrollTo(0, top);
+      detailView.scrollTo(0, top);
     }
   },
 

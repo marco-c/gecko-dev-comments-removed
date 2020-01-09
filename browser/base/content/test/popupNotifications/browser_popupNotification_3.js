@@ -48,10 +48,10 @@ var tests = [
       checkPopup(popup, this.notifyObj2);
 
       
-      isnot(document.getElementById("default-notification-icon").boxObject.width, 0,
+      isnot(document.getElementById("default-notification-icon").getBoundingClientRect().width, 0,
             "default anchor should be visible");
       
-      isnot(document.getElementById("geo-notification-icon").boxObject.width, 0,
+      isnot(document.getElementById("geo-notification-icon").getBoundingClientRect().width, 0,
             "geo anchor should be visible");
 
       dismissNotification(popup);
@@ -85,10 +85,10 @@ var tests = [
       checkPopup(popup, this.notifyObjNew);
 
       
-      is(document.getElementById("default-notification-icon").boxObject.width, 0,
+      is(document.getElementById("default-notification-icon").getBoundingClientRect().width, 0,
          "default anchor shouldn't be visible");
       
-      isnot(document.getElementById("geo-notification-icon").boxObject.width, 0,
+      isnot(document.getElementById("geo-notification-icon").getBoundingClientRect().width, 0,
             "geo anchor should be visible");
 
       dismissNotification(popup);

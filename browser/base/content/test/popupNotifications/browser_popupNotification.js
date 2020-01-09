@@ -262,7 +262,7 @@ var tests = [
     onShown(popup) {
       
       checkPopup(popup, this.notifyObj2);
-      is(document.getElementById("geo-notification-icon").boxObject.width, 0,
+      is(document.getElementById("geo-notification-icon").getBoundingClientRect().width, 0,
          "geo anchor shouldn't be visible");
       dismissNotification(popup);
     },
