@@ -5,6 +5,24 @@
 
 const {Arg, RetVal, generateActorSpec, types} = require("devtools/shared/protocol");
 
+const longstringType = types.getType("longstring");
+
+
+types.addType("sourcedata", {
+  write: (value, context, detail) => {
+    if (value.type === "arrayBuffer") {
+      return value;
+    }
+    return longstringType.write(value, context, detail);
+  },
+  read: (value, context, detail) => {
+    if (value.type === "arrayBuffer") {
+      return value;
+    }
+    return longstringType.read(value, context, detail);
+  },
+});
+
 types.addDictType("sourceposition", {
   line: "number",
   column: "number",
@@ -16,6 +34,11 @@ types.addDictType("nullablesourceposition", {
 types.addDictType("breakpointquery", {
   start: "nullable:nullablesourceposition",
   end: "nullable:nullablesourceposition",
+});
+
+types.addDictType("source.onsource", {
+  contentType: "nullable:string",
+  source: "nullable:sourcedata",
 });
 
 const sourceSpec = generateActorSpec({
@@ -42,7 +65,7 @@ const sourceSpec = generateActorSpec({
       
       
       request: { type: "source" },
-      response: RetVal("json"),
+      response: RetVal("source.onsource"),
     },
     setPausePoints: {
       request: {
