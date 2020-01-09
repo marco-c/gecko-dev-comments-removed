@@ -398,7 +398,9 @@ nsresult SdpHelper::GetIdsFromMsid(const Sdp& sdp,
   streamIds->clear();
   for (const auto& msid : allMsids) {
     
-    if (msid.identifier != "-") {
+    
+    if (msid.identifier != "-" &&
+        !std::count(streamIds->begin(), streamIds->end(), msid.identifier)) {
       streamIds->push_back(msid.identifier);
     }
   }
