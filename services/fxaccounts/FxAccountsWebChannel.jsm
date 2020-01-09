@@ -185,7 +185,8 @@ this.FxAccountsWebChannel.prototype = {
         log.debug("fxa_status received");
 
         const service = data && data.service;
-        this._helpers.getFxaStatus(service, sendingContext)
+        const isPairing = data && data.isPairing;
+        this._helpers.getFxaStatus(service, sendingContext, isPairing)
           .then(fxaStatus => {
             let response = {
               command,
@@ -381,7 +382,8 @@ this.FxAccountsWebChannelHelpers.prototype = {
   
 
 
-  shouldAllowFxaStatus(service, sendingContext) {
+  shouldAllowFxaStatus(service, sendingContext, isPairing) {
+    
     
     
     
@@ -398,7 +400,7 @@ this.FxAccountsWebChannelHelpers.prototype = {
     
     
     log.debug("service", service);
-    return !this.isPrivateBrowsingMode(sendingContext) || service === "sync";
+    return !this.isPrivateBrowsingMode(sendingContext) || service === "sync" || isPairing;
   },
 
   
@@ -406,10 +408,10 @@ this.FxAccountsWebChannelHelpers.prototype = {
 
 
 
-  async getFxaStatus(service, sendingContext) {
+  async getFxaStatus(service, sendingContext, isPairing) {
     let signedInUser = null;
 
-    if (this.shouldAllowFxaStatus(service, sendingContext)) {
+    if (this.shouldAllowFxaStatus(service, sendingContext, isPairing)) {
       const userData = await this._fxAccounts.getSignedInUser();
       if (userData) {
         signedInUser = {
