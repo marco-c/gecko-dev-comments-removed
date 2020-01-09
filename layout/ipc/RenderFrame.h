@@ -21,19 +21,11 @@ class nsSubDocumentFrame;
 
 namespace mozilla {
 
-namespace dom {
-class TabParent;
-}  
-
 namespace layers {
 struct TextureFactoryIdentifier;
 }  
 
 namespace layout {
-
-
-
-
 
 class RenderFrame final {
   typedef mozilla::layers::CompositorOptions CompositorOptions;
@@ -45,13 +37,14 @@ class RenderFrame final {
   RenderFrame();
   virtual ~RenderFrame();
 
-  bool Initialize(dom::TabParent* aTabParent);
+  bool Initialize(nsFrameLoader* aFrameLoader);
   void Destroy();
 
   void EnsureLayersConnected(CompositorOptions* aCompositorOptions);
   LayerManager* AttachLayerManager();
-  void OwnerContentChanged();
+  void OwnerContentChanged(nsIContent* aContent);
 
+  nsFrameLoader* GetFrameLoader() const { return mFrameLoader; }
   LayersId GetLayersId() const { return mLayersId; }
   CompositorOptions GetCompositorOptions() const { return mCompositorOptions; }
 
@@ -62,9 +55,9 @@ class RenderFrame final {
   bool IsLayersConnected() const { return mLayersConnected; }
 
  private:
-  
-  
   base::ProcessId mTabProcessId;
+  
+  
   
   LayersId mLayersId;
   
@@ -72,7 +65,7 @@ class RenderFrame final {
   
   CompositorOptions mCompositorOptions;
 
-  dom::TabParent* mTabParent;
+  RefPtr<nsFrameLoader> mFrameLoader;
   RefPtr<LayerManager> mLayerManager;
 
   bool mInitialized;
@@ -84,6 +77,7 @@ class RenderFrame final {
 
 }  
 }  
+
 
 
 
@@ -129,7 +123,7 @@ class nsDisplayRemote final : public nsDisplayItem {
 
  private:
   LayersId GetRemoteLayersId() const;
-  nsFrameLoader* GetFrameLoader() const;
+  RenderFrame* GetRenderFrame() const;
 
   TabId mTabId;
   LayoutDeviceIntPoint mOffset;

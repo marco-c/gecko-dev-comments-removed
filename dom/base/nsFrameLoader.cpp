@@ -101,8 +101,6 @@
 #include "mozilla/dom/ParentSHistory.h"
 #include "mozilla/dom/ChildSHistory.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
-#include "mozilla/dom/ContentChild.h"
-#include "mozilla/dom/RemoteFrameChild.h"
 
 #include "mozilla/dom/HTMLBodyElement.h"
 
@@ -351,19 +349,13 @@ nsresult nsFrameLoader::ReallyStartLoadingInternal() {
   AUTO_PROFILER_LABEL("nsFrameLoader::ReallyStartLoadingInternal", OTHER);
 
   if (IsRemoteFrame()) {
-    if (!mRemoteBrowser && !mRemoteFrameChild && !TryRemoteBrowser()) {
+    if (!mRemoteBrowser && !TryRemoteBrowser()) {
       NS_WARNING("Couldn't create child process for iframe.");
       return NS_ERROR_FAILURE;
     }
 
-    if (mRemoteFrameChild) {
-      nsAutoCString spec;
-      mURIToLoad->GetSpec(spec);
-      Unused << mRemoteFrameChild->SendLoadURL(spec);
-    } else {
-      
-      mRemoteBrowser->LoadURL(mURIToLoad);
-    }
+    
+    mRemoteBrowser->LoadURL(mURIToLoad);
 
     if (!mRemoteBrowserShown) {
       
@@ -798,7 +790,7 @@ bool nsFrameLoader::ShowRemoteFrame(const ScreenIntSize& size,
   NS_ASSERTION(IsRemoteFrame(),
                "ShowRemote only makes sense on remote frames.");
 
-  if (!mRemoteBrowser && !mRemoteFrameChild && !TryRemoteBrowser()) {
+  if (!mRemoteBrowser && !TryRemoteBrowser()) {
     NS_ERROR("Couldn't create child process.");
     return false;
   }
@@ -817,25 +809,12 @@ bool nsFrameLoader::ShowRemoteFrame(const ScreenIntSize& size,
       return false;
     }
 
-    if (mRemoteFrameChild) {
-      nsCOMPtr<nsISupports> container =
-          mOwnerContent->OwnerDoc()->GetContainer();
-      nsCOMPtr<nsIBaseWindow> baseWindow = do_QueryInterface(container);
-      nsCOMPtr<nsIWidget> mainWidget;
-      baseWindow->GetMainWidget(getter_AddRefs(mainWidget));
-      nsSizeMode sizeMode =
-          mainWidget ? mainWidget->SizeMode() : nsSizeMode_Normal;
-
-      Unused << mRemoteFrameChild->SendShow(
-          size, ParentWindowIsActive(mOwnerContent->OwnerDoc()), sizeMode);
-      mRemoteBrowserShown = true;
-      return true;
+    RenderFrame* rf = GetCurrentRenderFrame();
+    if (!rf) {
+      return false;
     }
 
-    RenderFrame* rf =
-        mRemoteBrowser ? mRemoteBrowser->GetRenderFrame() : nullptr;
-
-    if (!rf || !rf->AttachLayerManager()) {
+    if (!rf->AttachLayerManager()) {
       
       return false;
     }
@@ -853,11 +832,7 @@ bool nsFrameLoader::ShowRemoteFrame(const ScreenIntSize& size,
 
     
     if (!aFrame || !(aFrame->GetStateBits() & NS_FRAME_FIRST_REFLOW)) {
-      if (mRemoteBrowser) {
-        mRemoteBrowser->UpdateDimensions(dimensions, size);
-      } else if (mRemoteFrameChild) {
-        mRemoteFrameChild->UpdateDimensions(dimensions, size);
-      }
+      mRemoteBrowser->UpdateDimensions(dimensions, size);
     }
   }
 
@@ -943,11 +918,6 @@ nsresult nsFrameLoader::SwapWithOtherRemoteLoader(
   nsIPresShell* ourShell = ourDoc->GetShell();
   nsIPresShell* otherShell = otherDoc->GetShell();
   if (!ourShell || !otherShell) {
-    return NS_ERROR_NOT_IMPLEMENTED;
-  }
-
-  
-  if (mRemoteFrameChild) {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -1694,11 +1664,6 @@ void nsFrameLoader::DestroyDocShell() {
     mRemoteBrowser->Destroy();
   }
 
-  if (mRemoteFrameChild) {
-    Unused << mRemoteFrameChild->Send__delete__(mRemoteFrameChild);
-    mRemoteFrameChild = nullptr;
-  }
-
   
   if (mChildMessageManager) {
     mChildMessageManager->FireUnloadEvent();
@@ -1740,11 +1705,6 @@ void nsFrameLoader::DestroyComplete() {
     mRemoteBrowser = nullptr;
   }
 
-  if (mRemoteFrameChild) {
-    Unused << mRemoteFrameChild->Send__delete__(mRemoteFrameChild);
-    mRemoteFrameChild = nullptr;
-  }
-
   if (mMessageManager) {
     mMessageManager->Disconnect();
   }
@@ -1773,6 +1733,10 @@ void nsFrameLoader::SetOwnerContent(Element* aContent) {
     IgnoredErrorResult rv;
     UpdateReflectorGlobal(jsapi.cx(), wrapper, rv);
     Unused << NS_WARN_IF(rv.Failed());
+  }
+
+  if (RenderFrame* rfp = GetCurrentRenderFrame()) {
+    rfp->OwnerContentChanged(aContent);
   }
 }
 
@@ -1816,13 +1780,6 @@ bool nsFrameLoader::ShouldUseRemoteProcess() {
     return false;
   }
 
-  
-  if (XRE_IsContentProcess() &&
-      Preferences::GetBool("browser.fission.oopif.attribute", false) &&
-      mOwnerContent->HasAttr(kNameSpaceID_None, nsGkAtoms::fission)) {
-    return true;
-  }
-
   if (XRE_IsContentProcess() &&
       !(PR_GetEnv("MOZ_NESTED_OOP_TABS") ||
         Preferences::GetBool("dom.ipc.tabs.nested.enabled", false))) {
@@ -1842,6 +1799,14 @@ bool nsFrameLoader::ShouldUseRemoteProcess() {
           mOwnerContent->GetNameSpaceID() == kNameSpaceID_XUL) &&
          mOwnerContent->AttrValueIs(kNameSpaceID_None, nsGkAtoms::remote,
                                     nsGkAtoms::_true, eCaseMatters);
+}
+
+bool nsFrameLoader::IsRemoteFrame() {
+  if (mRemoteFrame) {
+    MOZ_ASSERT(!mDocShell, "Found a remote frame with a DocShell");
+    return true;
+  }
+  return false;
 }
 
 static already_AddRefed<BrowsingContext> CreateBrowsingContext(
@@ -2310,7 +2275,7 @@ nsresult nsFrameLoader::GetWindowDimensions(nsIntRect& aRect) {
 
 nsresult nsFrameLoader::UpdatePositionAndSize(nsSubDocumentFrame* aIFrame) {
   if (IsRemoteFrame()) {
-    if (mRemoteBrowser || mRemoteFrameChild) {
+    if (mRemoteBrowser) {
       ScreenIntSize size = aIFrame->GetSubdocumentSize();
       
       
@@ -2320,11 +2285,7 @@ nsresult nsFrameLoader::UpdatePositionAndSize(nsSubDocumentFrame* aIFrame) {
       nsIntRect dimensions;
       NS_ENSURE_SUCCESS(GetWindowDimensions(dimensions), NS_ERROR_FAILURE);
       mLazySize = size;
-      if (mRemoteBrowser) {
-        mRemoteBrowser->UpdateDimensions(dimensions, size);
-      } else if (mRemoteFrameChild) {
-        mRemoteFrameChild->UpdateDimensions(dimensions, size);
-      }
+      mRemoteBrowser->UpdateDimensions(dimensions, size);
     }
     return NS_OK;
   }
@@ -2426,7 +2387,7 @@ static Tuple<ContentParent*, TabParent*> GetContentParent(Element* aBrowser) {
 }
 
 bool nsFrameLoader::TryRemoteBrowser() {
-  NS_ASSERTION(!mRemoteBrowser && !mRemoteFrameChild,
+  NS_ASSERTION(!mRemoteBrowser,
                "TryRemoteBrowser called with a remote browser already?");
 
   if (!mOwnerContent) {
@@ -2472,9 +2433,7 @@ bool nsFrameLoader::TryRemoteBrowser() {
   
   
   
-  
-  if (!OwnerIsMozBrowserFrame() && !IsForJSPlugin() &&
-      !XRE_IsContentProcess()) {
+  if (!OwnerIsMozBrowserFrame() && !IsForJSPlugin()) {
     if (parentDocShell->ItemType() != nsIDocShellTreeItem::typeChrome) {
       
       
@@ -2544,14 +2503,6 @@ bool nsFrameLoader::TryRemoteBrowser() {
   }
 
   nsCOMPtr<Element> ownerElement = mOwnerContent;
-
-  
-  if (XRE_IsContentProcess()) {
-    mRemoteFrameChild = RemoteFrameChild::Create(
-        this, context, NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE));
-    return !!mRemoteFrameChild;
-  }
-
   mRemoteBrowser =
       ContentParent::CreateBrowser(context, ownerElement, openerContentParent,
                                    sameTabGroupAs, nextTabParentId);
@@ -2611,24 +2562,15 @@ bool nsFrameLoader::TryRemoteBrowser() {
   return true;
 }
 
-bool nsFrameLoader::IsRemoteFrame() {
-  if (mRemoteFrame) {
-    MOZ_ASSERT(!mDocShell, "Found a remote frame with a DocShell");
-    return true;
-  }
-  return false;
-}
-
 mozilla::dom::PBrowserParent* nsFrameLoader::GetRemoteBrowser() const {
   return mRemoteBrowser;
 }
 
-mozilla::layers::LayersId nsFrameLoader::GetLayersId() const {
-  MOZ_ASSERT(mRemoteFrame);
+RenderFrame* nsFrameLoader::GetCurrentRenderFrame() const {
   if (mRemoteBrowser) {
-    return mRemoteBrowser->GetRenderFrame()->GetLayersId();
+    return mRemoteBrowser->GetRenderFrame();
   }
-  return mRemoteFrameChild->GetLayersId();
+  return nullptr;
 }
 
 void nsFrameLoader::ActivateRemoteFrame(ErrorResult& aRv) {
