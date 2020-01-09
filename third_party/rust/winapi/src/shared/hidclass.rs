@@ -3,7 +3,6 @@
 
 
 
-
 use shared::guiddef::GUID;
 use shared::minwindef::{DWORD, PUCHAR, UCHAR, ULONG, USHORT};
 use um::winioctl::{

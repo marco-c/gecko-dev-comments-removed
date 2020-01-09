@@ -3,7 +3,6 @@
 
 
 
-
 use shared::minwindef::WORD;
 use shared::wtypes::VARTYPE;
 STRUCT!{struct PROPVARIANT {

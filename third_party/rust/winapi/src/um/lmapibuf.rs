@@ -4,7 +4,6 @@
 
 
 
-
 use shared::lmcons::NET_API_STATUS;
 use shared::minwindef::{DWORD, LPDWORD, LPVOID};
 extern "system" {

@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::c_double;
 use shared::basetsd::DWORD_PTR;
 use shared::guiddef::GUID;

@@ -4,7 +4,6 @@
 
 
 
-
 use shared::minwindef::{BYTE, DWORD, ULONG, WORD};
 use um::winioctl::{FILE_ANY_ACCESS, FILE_DEVICE_SMARTCARD, METHOD_BUFFERED};
 pub type UWORD = WORD;

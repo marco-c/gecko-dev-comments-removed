@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::{c_double, c_float, c_int, c_uint, c_void};
 use shared::basetsd::{LONG64, ULONG64};
 use shared::minwindef::{BYTE, DWORD, FLOAT, UINT, ULONG, USHORT, WORD};
@@ -73,6 +72,19 @@ extern "system" {
         lLbound: LONG,
         cElements: ULONG,
     ) -> *mut SAFEARRAY;
+    pub fn SafeArrayGetLBound(
+        psa: *mut SAFEARRAY,
+        nDim: UINT,
+        plLbound: *mut LONG
+    ) -> HRESULT;
+    pub fn SafeArrayGetUBound(
+        psa: *mut SAFEARRAY,
+        nDim: UINT,
+        plUbound: *mut LONG
+    ) -> HRESULT;
+    pub fn SafeArrayDestroy(
+        psa: *mut SAFEARRAY
+    ) -> HRESULT;
     pub fn VariantInit(
         pvarg: *mut VARIANTARG,
     );

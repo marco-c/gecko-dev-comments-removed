@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::c_void;
 use shared::basetsd::{SIZE_T, UINT64};
 use shared::dxgiformat::DXGI_FORMAT;

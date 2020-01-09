@@ -3,7 +3,6 @@
 
 
 
-
 use shared::minwindef::{BOOL, DWORD};
 use um::winnt::{PFLS_CALLBACK_FUNCTION, PVOID};
 extern "system" {

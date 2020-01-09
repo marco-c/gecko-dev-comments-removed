@@ -4,7 +4,6 @@
 
 
 
-
 use shared::lmcons::NET_API_STATUS;
 use shared::minwindef::{DWORD, LPBYTE, LPDWORD};
 use um::winnt::{CHAR, LONG, LPCWSTR, LPSTR};

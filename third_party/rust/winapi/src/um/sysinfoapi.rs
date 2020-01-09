@@ -4,7 +4,6 @@
 
 
 
-
 use shared::basetsd::DWORD_PTR;
 use shared::minwindef::{
     BOOL, BYTE, DWORD, LPDWORD, LPFILETIME, LPVOID, PBOOL, PDWORD, UINT, USHORT, WORD,

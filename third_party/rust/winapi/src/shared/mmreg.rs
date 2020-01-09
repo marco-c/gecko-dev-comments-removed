@@ -3,7 +3,6 @@
 
 
 
-
 use shared::guiddef::GUID;
 use shared::minwindef::{DWORD, WORD};
 pub const WAVE_FORMAT_UNKNOWN: WORD = 0x0000;

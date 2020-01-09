@@ -3,7 +3,6 @@
 
 
 
-
 use shared::guiddef::GUID;
 use shared::minwindef::{DWORD, ULONG};
 use um::winbase::LocalFree;

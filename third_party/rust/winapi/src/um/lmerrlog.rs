@@ -3,7 +3,6 @@
 
 
 
-
 use shared::minwindef::{DWORD, LPBYTE};
 use um::winnt::LPWSTR;
 STRUCT!{struct ERROR_LOG {

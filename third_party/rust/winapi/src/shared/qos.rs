@@ -4,7 +4,6 @@
 
 
 
-
 use shared::minwindef::ULONG;
 pub type SERVICETYPE = ULONG;
 STRUCT!{struct FLOWSPEC {

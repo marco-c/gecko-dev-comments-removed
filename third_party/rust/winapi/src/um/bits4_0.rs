@@ -3,7 +3,6 @@
 
 
 
-
 use shared::basetsd::PUINT64;
 use shared::minwindef::DWORD;
 use um::bits3_0::{IBackgroundCopyFile3, IBackgroundCopyFile3Vtbl};

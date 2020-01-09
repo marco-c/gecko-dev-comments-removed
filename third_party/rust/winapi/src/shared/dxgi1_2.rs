@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::c_void;
 use shared::basetsd::SIZE_T;
 use shared::dxgi::{

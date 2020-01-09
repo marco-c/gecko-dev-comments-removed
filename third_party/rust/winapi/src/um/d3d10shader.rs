@@ -3,7 +3,6 @@
 
 
 
-
 use shared::minwindef::{BYTE, LPVOID, UINT};
 use um::d3d10::{D3D10_PRIMITIVE_TOPOLOGY, D3D10_SRV_DIMENSION};
 use um::d3dcommon::{

@@ -3,7 +3,6 @@
 
 
 
-
 use ctypes::c_uint;
 use shared::minwindef::{BOOL, DWORD, UINT};
 use shared::windef::{HWND, POINT, RECT};

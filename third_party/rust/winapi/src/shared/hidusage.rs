@@ -3,7 +3,6 @@
 
 
 
-
 use shared::minwindef::USHORT;
 pub type USAGE = USHORT;
 pub type PUSAGE = *mut USAGE;

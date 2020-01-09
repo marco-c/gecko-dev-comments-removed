@@ -3,7 +3,6 @@
 
 
 
-
 use shared::minwindef::{BOOL, PBOOL, UINT};
 use um::winnt::{HANDLE, LPSTR, LPWSTR, PVOID};
 extern "system" {

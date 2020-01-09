@@ -4,7 +4,6 @@
 
 
 
-
 use shared::guiddef::GUID;
 use shared::minwindef::{BYTE, DWORD, PBYTE, WORD};
 use shared::windef::HWND;

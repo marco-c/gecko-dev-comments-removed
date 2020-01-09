@@ -3,7 +3,6 @@
 
 
 
-
 use shared::minwindef::DWORD;
 ENUM!{enum AUDCLNT_SHAREMODE {
     AUDCLNT_SHAREMODE_SHARED,

@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::c_void;
 use shared::basetsd::UINT64;
 use shared::guiddef::{CLSID, IID, REFCLSID, REFIID};

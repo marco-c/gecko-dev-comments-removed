@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::c_void;
 use shared::guiddef::{GUID, REFIID};
 use shared::minwindef::{DWORD, LPARAM, LPVOID, UINT};

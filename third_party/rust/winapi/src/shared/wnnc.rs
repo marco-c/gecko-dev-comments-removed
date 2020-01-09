@@ -4,7 +4,6 @@
 
 
 
-
 use shared::minwindef::DWORD;
 pub const WNNC_NET_MSNET: DWORD = 0x00010000;
 pub const WNNC_NET_SMB: DWORD = 0x00020000;

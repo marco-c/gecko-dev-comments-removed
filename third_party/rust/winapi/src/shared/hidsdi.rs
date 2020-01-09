@@ -3,7 +3,6 @@
 
 
 
-
 use shared::guiddef::LPGUID;
 use shared::hidpi::PHIDP_PREPARSED_DATA;
 use shared::minwindef::{PULONG, ULONG, USHORT};

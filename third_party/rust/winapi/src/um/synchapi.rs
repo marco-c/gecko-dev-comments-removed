@@ -4,7 +4,6 @@
 
 
 
-
 use shared::basetsd::SIZE_T;
 use shared::minwindef::{BOOL, DWORD, LPLONG, LPVOID, PBOOL, ULONG};
 use um::minwinbase::{
@@ -239,7 +238,7 @@ extern "system" {
         fResume: BOOL,
     ) -> BOOL;
     pub fn CancelWaitableTimer(
-        hTimer: HANDLE
+        hTimer: HANDLE,
     ) -> BOOL;
 }
 pub const CREATE_MUTEX_INITIAL_OWNER: DWORD = 0x00000001;

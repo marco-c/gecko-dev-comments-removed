@@ -3,7 +3,6 @@
 
 
 
-
 use ctypes::{c_float, c_void};
 use shared::basetsd::UINT64;
 use shared::d3d9::{IDirect3DDevice9, IDirect3DSurface9};

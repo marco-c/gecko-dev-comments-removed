@@ -3,7 +3,6 @@
 
 
 
-
 use ctypes::c_void;
 use shared::basetsd::{UINT16, UINT64, UINT8};
 use shared::dxgiformat::DXGI_FORMAT;

@@ -4,7 +4,6 @@
 
 
 
-
 use shared::minwindef::{PUCHAR, ULONG, USHORT};
 use um::winnt::{BOOLEAN, CHAR, LARGE_INTEGER, LONG, PCHAR, PVOID, PWSTR};
 STRUCT!{struct UNICODE_STRING {

@@ -4,7 +4,6 @@
 
 
 
-
 use shared::basetsd::{ULONG32, ULONG_PTR};
 use shared::minwindef::{UCHAR, ULONG, USHORT};
 use shared::ntdef::{LARGE_INTEGER, LONG, LONGLONG, PVOID, ULONGLONG, VOID, WCHAR};

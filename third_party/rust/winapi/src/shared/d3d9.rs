@@ -4,7 +4,6 @@
 
 
 
-
 use shared::basetsd::UINT32;
 use shared::d3d9caps::{D3DCAPS9, D3DCONTENTPROTECTIONCAPS, D3DOVERLAYCAPS};
 use shared::d3d9types::{

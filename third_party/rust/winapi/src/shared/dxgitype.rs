@@ -4,7 +4,6 @@
 
 
 
-
 use shared::d3d9types::D3DCOLORVALUE;
 use shared::dxgiformat::DXGI_FORMAT;
 use shared::minwindef::{BOOL, BYTE, DWORD, UINT};

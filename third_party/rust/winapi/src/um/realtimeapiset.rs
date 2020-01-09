@@ -3,7 +3,6 @@
 
 
 
-
 use shared::basetsd::PULONG64;
 use shared::minwindef::{BOOL, PULONG, USHORT};
 use um::winnt::{HANDLE, PULONGLONG};

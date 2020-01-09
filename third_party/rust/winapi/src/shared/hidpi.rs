@@ -3,7 +3,6 @@
 
 
 
-
 use shared::hidusage::{PUSAGE, USAGE};
 use shared::minwindef::{PUCHAR, PULONG, PUSHORT, UCHAR, ULONG, USHORT};
 use shared::ntdef::NTSTATUS;

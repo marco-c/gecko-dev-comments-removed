@@ -4,7 +4,6 @@
 
 
 
-
 use shared::minwindef::{
     BOOL, DWORD, FILETIME, LPBYTE, LPCVOID, LPDWORD, LPVOID, PBOOL, PBYTE, UCHAR, ULONG
 };

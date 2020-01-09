@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::c_void;
 use shared::basetsd::{UINT16, UINT32, UINT64};
 use shared::minwindef::{BOOL, FILETIME, FLOAT};

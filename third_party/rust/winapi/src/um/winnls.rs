@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::c_int;
 use shared::basetsd::LONG_PTR;
 use shared::guiddef::GUID;

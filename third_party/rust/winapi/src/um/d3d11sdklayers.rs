@@ -3,7 +3,6 @@
 
 
 
-
 use ctypes::c_char;
 use shared::basetsd::{SIZE_T, UINT64};
 use shared::dxgi::IDXGISwapChain;

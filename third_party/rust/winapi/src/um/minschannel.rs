@@ -4,7 +4,6 @@
 
 
 
-
 use shared::guiddef::GUID;
 use shared::minwindef::{BOOL, DWORD};
 use um::wincrypt::ALG_ID;

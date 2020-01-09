@@ -6,7 +6,6 @@
 
 
 
-
 use shared::basetsd::ULONG_PTR;
 use shared::guiddef::{LPCGUID, LPGUID};
 use shared::minwindef::{BOOL, BYTE, DWORD, LPBYTE, LPCVOID, LPDWORD, LPVOID, PBYTE};

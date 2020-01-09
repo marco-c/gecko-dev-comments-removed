@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::c_void;
 use shared::guiddef::IID;
 use shared::minwindef::{BOOL, BYTE, DWORD, UINT};

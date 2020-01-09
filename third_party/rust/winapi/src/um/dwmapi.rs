@@ -4,7 +4,6 @@
 
 
 
-
 use shared::basetsd::UINT32;
 use shared::minwindef::{
     BOOL, BYTE, DWORD, HRGN, INT, LPARAM, LPCVOID, LPVOID, LRESULT, UINT, WPARAM

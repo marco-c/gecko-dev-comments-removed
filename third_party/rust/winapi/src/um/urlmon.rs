@@ -4,7 +4,6 @@
 
 
 
-
 use shared::minwindef::DWORD;
 use um::unknwnbase::{IUnknown, IUnknownVtbl};
 use um::winnt::{HRESULT, LPCWSTR};

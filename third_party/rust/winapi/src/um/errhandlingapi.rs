@@ -4,7 +4,6 @@
 
 
 
-
 use shared::basetsd::ULONG_PTR;
 use shared::minwindef::{BOOL, DWORD, LPDWORD, UINT, ULONG};
 use um::winnt::{

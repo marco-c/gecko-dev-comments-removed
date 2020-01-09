@@ -4,7 +4,6 @@
 
 
 
-
 use shared::guiddef::GUID;
 use shared::minwindef::{
     BOOL, BYTE, DWORD, LPBOOL, LPDWORD, LPVOID, PBOOL, PDWORD, PUCHAR, PULONG, UCHAR, ULONG
@@ -385,7 +384,7 @@ extern "system" {
         pAce: *mut LPVOID,
     ) -> BOOL;
     pub fn FreeSid(
-        pSid: PSID
+        pSid: PSID,
     ) -> PVOID;
     pub fn GetAce(
         pAcl: PACL,
@@ -439,7 +438,7 @@ extern "system" {
         lpbGroupDefaulted: LPBOOL,
     ) -> BOOL;
     pub fn GetSecurityDescriptorLength(
-        pSecurityDescriptor: PSECURITY_DESCRIPTOR
+        pSecurityDescriptor: PSECURITY_DESCRIPTOR,
     ) -> DWORD;
     pub fn GetSecurityDescriptorOwner(
         pSecurityDescriptor: PSECURITY_DESCRIPTOR,

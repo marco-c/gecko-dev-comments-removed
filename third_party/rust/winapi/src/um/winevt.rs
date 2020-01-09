@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::{c_double, c_float};
 use shared::basetsd::{INT16, INT32, INT64, INT8, UINT16, UINT32, UINT64, UINT8};
 use shared::guiddef::GUID;

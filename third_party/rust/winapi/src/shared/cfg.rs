@@ -4,7 +4,6 @@
 
 
 
-
 use shared::minwindef::{DWORD, ULONG};
 ENUM!{enum PNP_VETO_TYPE {
     PNP_VetoTypeUnknown,

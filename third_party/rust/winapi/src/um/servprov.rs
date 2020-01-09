@@ -3,7 +3,6 @@
 
 
 
-
 use ctypes::c_void;
 use shared::guiddef::{REFGUID, REFIID};
 use um::unknwnbase::{IUnknown, IUnknownVtbl};

@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::c_char;
 use um::winnt::PVOID;
 DECLARE_HANDLE!{HSTRING, HSTRING__}

@@ -3,7 +3,6 @@
 
 
 
-
 use ctypes::c_void;
 use shared::d3d9::{IDirect3DDevice9Ex, IDirect3DSurface9};
 use shared::d3d9types::{D3DCOLOR, D3DFORMAT, D3DPOOL};

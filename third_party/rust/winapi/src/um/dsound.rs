@@ -4,7 +4,6 @@
 
 
 
-
 use shared::guiddef::{GUID, LPCGUID, LPGUID};
 use shared::minwindef::{DWORD, LPDWORD, LPLONG, LPVOID};
 use shared::windef::HWND;

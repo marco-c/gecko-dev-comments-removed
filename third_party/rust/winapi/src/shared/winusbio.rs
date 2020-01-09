@@ -4,7 +4,6 @@
 
 
 
-
 use shared::minwindef::{UCHAR, ULONG, USHORT};
 use shared::usb::USBD_PIPE_TYPE;
 pub const SHORT_PACKET_TERMINATE: ULONG = 0x01;

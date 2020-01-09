@@ -3,7 +3,6 @@
 
 
 
-
 use ctypes::{c_float, c_int, c_long, c_void};
 use shared::basetsd::{SIZE_T, UINT64, UINT8};
 use shared::dxgi::{DXGI_SWAP_CHAIN_DESC, IDXGIAdapter, IDXGISwapChain};
@@ -12,7 +11,9 @@ use shared::dxgitype::{DXGI_RATIONAL, DXGI_SAMPLE_DESC};
 use shared::guiddef::{GUID, REFGUID, REFIID};
 use shared::minwindef::{BOOL, BYTE, DWORD, FLOAT, HMODULE, INT, UINT, USHORT};
 use shared::windef::{RECT, SIZE};
-use um::d3dcommon::{D3D_DRIVER_TYPE, D3D_FEATURE_LEVEL, D3D_PRIMITIVE, D3D_PRIMITIVE_TOPOLOGY, D3D_SRV_DIMENSION};
+use um::d3dcommon::{
+    D3D_DRIVER_TYPE, D3D_FEATURE_LEVEL, D3D_PRIMITIVE, D3D_PRIMITIVE_TOPOLOGY, D3D_SRV_DIMENSION,
+};
 use um::unknwnbase::{IUnknown, IUnknownVtbl};
 use um::winnt::{HANDLE, HRESULT, LPCSTR, LPSTR, ULONGLONG};
 pub const D3D11_16BIT_INDEX_STRIP_CUT_VALUE: DWORD = 0xffff;

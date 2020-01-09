@@ -4,7 +4,6 @@
 
 
 
-
 use shared::lmcons::NET_API_STATUS;
 use shared::minwindef::{BYTE, DWORD, PBYTE, PDWORD, ULONG};
 use um::wincrypt::PCCERT_CONTEXT;

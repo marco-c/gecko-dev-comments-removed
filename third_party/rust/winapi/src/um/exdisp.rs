@@ -4,7 +4,6 @@
 
 
 
-
 use shared::basetsd::SHANDLE_PTR;
 use shared::wtypes::{BSTR, VARIANT_BOOL};
 use um::docobj::{OLECMDEXECOPT, OLECMDF, OLECMDID};

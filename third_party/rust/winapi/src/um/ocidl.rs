@@ -4,7 +4,6 @@
 
 
 
-
 use shared::guiddef::CLSID;
 use shared::minwindef::{DWORD, ULONG};
 use shared::ntdef::HRESULT;

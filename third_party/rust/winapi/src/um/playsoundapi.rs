@@ -4,7 +4,6 @@
 
 
 
-
 use shared::minwindef::{BOOL, DWORD, HMODULE, UINT};
 use um::winnt::{LPCSTR, LPCWSTR};
 extern "system" {

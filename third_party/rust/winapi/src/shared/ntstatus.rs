@@ -4,7 +4,6 @@
 
 
 
-
 use shared::ntdef::NTSTATUS;
 pub const STATUS_WAIT_0: NTSTATUS = 0x00000000;
 pub const FACILITY_VSM: NTSTATUS = 0x45;

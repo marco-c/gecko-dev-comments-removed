@@ -4,7 +4,6 @@
 
 
 
-
 use shared::basetsd::ULONG_PTR;
 use shared::minwindef::{BOOL, DWORD, HMODULE, PFILETIME, ULONG};
 use um::minwinbase::PCRITICAL_SECTION;

@@ -4,7 +4,6 @@
 
 
 
-
 use shared::guiddef::GUID;
 use shared::minwindef::DWORD;
 use um::mssip::SIP_INDIRECT_DATA;

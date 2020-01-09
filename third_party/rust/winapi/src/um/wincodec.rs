@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::c_double;
 use shared::basetsd::{UINT32, ULONG_PTR};
 use shared::dxgiformat::DXGI_FORMAT;
@@ -698,7 +697,7 @@ interface IWICBitmapSource(IWICBitmapSourceVtbl): IUnknown(IUnknownVtbl) {
         pDpiY: *mut c_double,
     ) -> HRESULT,
     fn CopyPalette(
-        pIPalette: *const IWICPalette,
+        pIPalette: *mut IWICPalette,
     ) -> HRESULT,
     fn CopyPixels(
         prc: *const WICRect,
@@ -833,8 +832,7 @@ interface IWICColorTransform(IWICColorTransformVtbl): IWICBitmapSource(IWICBitma
 }}
 RIDL!{#[uuid(0xb84e2c09, 0x78c9, 0x4ac4, 0x8b, 0xd3, 0x52, 0x4a, 0xe1, 0x66, 0x3a, 0x2f)]
 interface IWICFastMetadataEncoder(IWICFastMetadataEncoderVtbl): IUnknown(IUnknownVtbl) {
-    fn Commit(
-    ) -> HRESULT,
+    fn Commit() -> HRESULT,
     fn GetMetadataQueryWriter(
         ppIMetadataQueryWriter: *mut *mut IWICMetadataQueryWriter,
     ) -> HRESULT,
@@ -933,8 +931,7 @@ interface IWICBitmapEncoder(IWICBitmapEncoderVtbl): IUnknown(IUnknownVtbl) {
         ppIFrameEncode: *mut *mut IWICBitmapFrameEncode,
         ppIEncoderOptions: *mut *mut IPropertyBag2,
     ) -> HRESULT,
-    fn Commit(
-    ) -> HRESULT,
+    fn Commit() -> HRESULT,
     fn GetMetadataQueryWriter(
         ppIMetadataQueryWriter: *mut *mut IWICMetadataQueryWriter,
     ) -> HRESULT,
@@ -975,8 +972,7 @@ interface IWICBitmapFrameEncode(IWICBitmapFrameEncodeVtbl): IUnknown(IUnknownVtb
         pIBitmapSource: *const IWICBitmapSource,
         prc: *const WICRect,
     ) -> HRESULT,
-    fn Commit(
-    ) -> HRESULT,
+    fn Commit() -> HRESULT,
     fn GetMetadataQueryWriter(
         ppIMetadataQueryWriter: *mut *mut IWICMetadataQueryWriter,
     ) -> HRESULT,

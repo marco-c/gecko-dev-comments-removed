@@ -3,7 +3,6 @@
 
 
 
-
 use shared::minwindef::{BOOL, PBOOL};
 use um::winnt::HANDLE;
 extern "system" {

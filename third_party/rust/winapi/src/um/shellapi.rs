@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::{__int64, c_int, c_void};
 use shared::basetsd::{DWORD_PTR, UINT_PTR};
 use shared::guiddef::{GUID, REFIID};

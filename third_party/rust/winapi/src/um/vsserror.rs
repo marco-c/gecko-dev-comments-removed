@@ -4,7 +4,6 @@
 
 
 
-
 use um::winnt::HRESULT;
 pub const VSS_E_BAD_STATE: HRESULT = 0x80042301;
 pub const VSS_E_UNEXPECTED: HRESULT = 0x80042302;

@@ -3,7 +3,6 @@
 
 
 
-
 use shared::basetsd::LONG64;
 use shared::minwindef::{BOOL, DWORD, LPDWORD, LPVOID, UINT, ULONG};
 use shared::ntdef::{HANDLE, LPCWSTR, PCWSTR, VOID};

@@ -4,7 +4,6 @@
 
 
 
-
 use shared::basetsd::SIZE_T;
 use shared::minwindef::{LPCVOID, LPVOID, UINT};
 use um::unknwnbase::{IUnknown, IUnknownVtbl};

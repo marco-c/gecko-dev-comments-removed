@@ -3,7 +3,6 @@
 
 
 
-
 use ctypes::{c_char, c_int, c_long, c_short, c_void};
 use shared::basetsd::{DWORD_PTR, INT_PTR, LONG_PTR, UINT_PTR};
 #[cfg(target_pointer_width = "64")] use shared::basetsd::PINT_PTR;

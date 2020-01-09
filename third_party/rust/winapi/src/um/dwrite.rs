@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::c_void;
 use shared::basetsd::{INT16, INT32, UINT16, UINT32, UINT64, UINT8};
 use shared::guiddef::REFIID;

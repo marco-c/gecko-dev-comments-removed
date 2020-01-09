@@ -4,7 +4,6 @@
 
 
 
-
 use shared::minwindef::DWORD;
 pub const CDERR_DIALOGFAILURE: DWORD = 0xFFFF;
 pub const CDERR_GENERALCODES: DWORD = 0x0000;

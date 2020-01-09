@@ -4,7 +4,6 @@
 
 
 
-
 use shared::basetsd::{ULONG64, ULONG_PTR};
 use shared::guiddef::GUID;
 use shared::minwindef::{PUCHAR, PULONG, UCHAR, ULONG, USHORT};
@@ -1624,7 +1623,7 @@ extern "system" {
         ppAuditPolicy: *mut PAUDIT_POLICY_INFORMATION,
     ) -> BOOLEAN;
     pub fn AuditEnumeratePerUserPolicy(
-        ppAuditSidArray: *mut PPOLICY_AUDIT_SID_ARRAY
+        ppAuditSidArray: *mut PPOLICY_AUDIT_SID_ARRAY,
     ) -> BOOLEAN;
     pub fn AuditComputeEffectivePolicyBySid(
         pSid: *const SID,
@@ -1694,7 +1693,7 @@ extern "system" {
     ) -> BOOLEAN;
     pub fn AuditQueryGlobalSaclA(
         ObjectTypeName: PCSTR,
-        Acl: *mut PACL
+        Acl: *mut PACL,
     ) -> BOOLEAN;
     pub fn AuditFree(
         Buffer: PVOID,

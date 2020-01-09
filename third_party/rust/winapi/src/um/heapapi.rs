@@ -4,7 +4,6 @@
 
 
 
-
 use shared::basetsd::{PSIZE_T, SIZE_T};
 use shared::minwindef::{BOOL, DWORD, LPCVOID, LPVOID};
 use um::minwinbase::LPPROCESS_HEAP_ENTRY;

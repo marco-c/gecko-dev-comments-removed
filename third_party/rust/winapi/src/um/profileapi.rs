@@ -3,7 +3,6 @@
 
 
 
-
 use shared::minwindef::BOOL;
 use um::winnt::LARGE_INTEGER;
 extern "system" {

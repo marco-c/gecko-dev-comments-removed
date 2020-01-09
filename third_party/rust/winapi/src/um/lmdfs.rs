@@ -4,7 +4,6 @@
 
 
 
-
 use shared::guiddef::GUID;
 use shared::lmcons::NET_API_STATUS;
 use shared::minwindef::{DWORD, LPBYTE, LPDWORD, ULONG, USHORT};

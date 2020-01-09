@@ -3,7 +3,6 @@
 
 
 
-
 use ctypes::{c_int, c_void};
 use shared::guiddef::REFIID;
 use shared::minwindef::{BOOL, DWORD, UINT};

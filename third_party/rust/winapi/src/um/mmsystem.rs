@@ -4,7 +4,6 @@
 
 
 
-
 use shared::basetsd::DWORD_PTR;
 use shared::minwindef::{BYTE, DWORD, UINT, WORD};
 use shared::mmreg::WAVEFORMATEX;

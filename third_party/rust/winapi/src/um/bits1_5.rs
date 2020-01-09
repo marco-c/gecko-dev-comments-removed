@@ -3,7 +3,6 @@
 
 
 
-
 use shared::basetsd::UINT64;
 use shared::rpcndr::byte;
 use um::bits::{IBackgroundCopyJob, IBackgroundCopyJobVtbl};

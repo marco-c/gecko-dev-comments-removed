@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::c_void;
 use shared::dxgi::{IDXGIOutput, IDXGIResource};
 use shared::dxgi1_2::{

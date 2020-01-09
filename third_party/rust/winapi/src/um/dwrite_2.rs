@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::{c_void, wchar_t};
 use shared::basetsd::{UINT16, UINT32, UINT8};
 use shared::d3d9types::D3DCOLORVALUE;

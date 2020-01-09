@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::c_float;
 use shared::basetsd::{UINT32, UINT64};
 use shared::guiddef::{LPCGUID, REFIID};

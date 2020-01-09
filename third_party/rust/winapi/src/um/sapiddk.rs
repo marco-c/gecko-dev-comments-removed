@@ -3,7 +3,6 @@
 
 
 
-
 use ctypes::{c_float, c_int, c_void};
 use shared::guiddef::CLSID;
 use shared::minwindef::{BOOL, DWORD, ULONG};

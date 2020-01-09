@@ -4,7 +4,6 @@
 
 
 
-
 use shared::minwindef::{BOOL, DWORD, LPDWORD, PBYTE, PULONG, ULONG};
 use um::winnt::{HANDLE, LPCWSTR, LPWSTR, PVOID, PWSTR};
 pub type OPAQUE_HANDLE = DWORD;

@@ -3,7 +3,6 @@
 
 
 
-
 use ctypes::{__int64, __uint64, c_char, c_uchar, c_ulong};
 pub const NDR_CHAR_REP_MASK: c_ulong = 0x0000000F;
 pub const NDR_INT_REP_MASK: c_ulong = 0x000000F0;

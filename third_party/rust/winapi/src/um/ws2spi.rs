@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::{c_char, c_int, c_long, c_uint};
 use shared::basetsd::{DWORD_PTR, PDWORD_PTR, ULONG_PTR};
 use shared::guiddef::{GUID, LPGUID};

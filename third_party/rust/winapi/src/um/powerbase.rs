@@ -3,7 +3,6 @@
 
 
 
-
 use shared::minwindef::{DWORD, ULONG};
 use um::winnt::{
     BOOLEAN, HANDLE, LONG, POWER_INFORMATION_LEVEL, POWER_PLATFORM_ROLE,

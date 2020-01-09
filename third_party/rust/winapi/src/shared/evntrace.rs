@@ -3,7 +3,6 @@
 
 
 
-
 use shared::basetsd::{SIZE_T, ULONG32, ULONG64};
 use shared::evntprov::PEVENT_FILTER_DESCRIPTOR;
 use shared::guiddef::{GUID, LPCGUID, LPGUID};

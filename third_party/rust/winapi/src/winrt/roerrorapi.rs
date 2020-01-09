@@ -3,7 +3,6 @@
 
 
 
-
 use shared::basetsd::{UINT32, UINT_PTR};
 use shared::minwindef::{BOOL, BYTE, UINT, USHORT};
 use um::restrictederrorinfo::IRestrictedErrorInfo;

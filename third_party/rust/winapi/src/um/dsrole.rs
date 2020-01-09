@@ -4,7 +4,6 @@
 
 
 
-
 use shared::guiddef::GUID;
 use shared::minwindef::{DWORD, PBYTE, ULONG};
 use um::winnt::{LPCWSTR, LPWSTR, PVOID};

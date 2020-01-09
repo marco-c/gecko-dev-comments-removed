@@ -4,7 +4,6 @@
 
 
 
-
 use shared::minwindef::{BOOL, DWORD, LPDWORD, LPHANDLE};
 use um::winnt::HANDLE;
 pub const INVALID_HANDLE_VALUE: HANDLE = -1isize as HANDLE;

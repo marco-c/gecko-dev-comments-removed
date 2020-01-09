@@ -3,7 +3,6 @@
 
 
 
-
 use shared::basetsd::SIZE_T;
 use shared::minwindef::{DWORD, UCHAR};
 use um::winnt::{BOOLEAN, CHAR, PWSTR};

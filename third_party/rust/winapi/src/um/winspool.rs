@@ -4,7 +4,6 @@
 
 
 
-
 use shared::guiddef::GUID;
 use shared::minwindef::{
     BOOL, BYTE, DWORD, FILETIME, FLOAT, LPBYTE, LPDWORD, LPHANDLE, LPVOID, MAX_PATH, PBYTE, PDWORD,

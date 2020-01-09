@@ -4,7 +4,6 @@
 
 
 
-
 use shared::minwindef::{UCHAR, ULONG, USHORT};
 use shared::usbspec::{
     PUSB_CONFIGURATION_DESCRIPTOR, USB_DEVICE_DESCRIPTOR, USB_ENDPOINT_DIRECTION_MASK,

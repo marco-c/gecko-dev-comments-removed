@@ -3,7 +3,6 @@
 
 
 
-
 use shared::basetsd::{INT32, UINT32, UINT_PTR};
 use shared::minwindef::{BOOL, BYTE, UCHAR, ULONG, USHORT};
 use um::winnt::{HRESULT, PCWSTR, VOID, WCHAR};
@@ -66,7 +65,7 @@ extern "system" {
         string: HSTRING,
         stringReplaced: HSTRING,
         stringReplaceWith: HSTRING,
-        newString: *mut HSTRING
+        newString: *mut HSTRING,
     ) -> HRESULT;
     pub fn WindowsTrimStringStart(
         string: HSTRING,

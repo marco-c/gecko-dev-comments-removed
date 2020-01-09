@@ -3,7 +3,6 @@
 
 
 
-
 use shared::basetsd::{DWORD_PTR, UINT_PTR};
 use shared::minwindef::{DWORD, LPBYTE, LPDWORD, LPWORD, PDWORD, UINT};
 use um::imm::LPUINT;

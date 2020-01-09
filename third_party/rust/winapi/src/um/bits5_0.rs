@@ -3,7 +3,6 @@
 
 
 
-
 use shared::basetsd::UINT64;
 use shared::guiddef::GUID;
 use shared::minwindef::{BOOL, DWORD};

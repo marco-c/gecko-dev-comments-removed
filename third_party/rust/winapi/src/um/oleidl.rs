@@ -3,7 +3,6 @@
 
 
 
-
 use shared::minwindef::DWORD;
 use shared::ntdef::HRESULT;
 use shared::windef::POINTL;

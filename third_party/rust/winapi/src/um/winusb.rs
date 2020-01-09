@@ -4,7 +4,6 @@
 
 
 
-
 use shared::minwindef::{BOOL, LPDWORD, PUCHAR, PULONG, UCHAR, ULONG, USHORT};
 use shared::usb::PUSBD_ISO_PACKET_DESCRIPTOR;
 use shared::usbspec::PUSB_CONFIGURATION_DESCRIPTOR;

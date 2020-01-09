@@ -4,7 +4,6 @@
 
 
 
-
 use shared::minwindef::DWORD;
 pub const BG_E_NOT_FOUND: DWORD = 0x80200001;
 pub const BG_E_INVALID_STATE: DWORD = 0x80200002;

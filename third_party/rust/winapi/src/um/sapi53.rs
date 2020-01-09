@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::{c_float, c_int, c_long};
 use shared::guiddef::{CLSID, GUID};
 use shared::minwindef::{BOOL, BYTE, DWORD, LPARAM, UINT, ULONG, WORD, WPARAM};

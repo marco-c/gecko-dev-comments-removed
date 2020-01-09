@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::{c_int, c_uchar, c_uint, c_void};
 use shared::basetsd::ULONG_PTR;
 use shared::bcrypt::BCRYPT_KEY_HANDLE;
@@ -6434,20 +6433,20 @@ pub const CRYPTNET_PRE_FETCH_AFTER_PUBLISH_PRE_FETCH_DIVISOR_DEFAULT: DWORD = 10
 pub const CRYPTNET_PRE_FETCH_BEFORE_NEXT_UPDATE_PRE_FETCH_DIVISOR_VALUE_NAME: &'static str
     = "CryptnetPreFetchBeforeNextUpdatePreFetchDivisor";
 pub const CRYPTNET_PRE_FETCH_BEFORE_NEXT_UPDATE_PRE_FETCH_DIVISOR_DEFAULT: DWORD = 20;
-pub const CRYPTNET_PRE_FETCH_MIN_BEFORE_NEXT_UPDATE_PRE_FETCH_PERIOD_SECONDS_VALUE_NAME: &'static str
-    = "CryptnetPreFetchMinBeforeNextUpdatePreFetchSeconds";
+pub const CRYPTNET_PRE_FETCH_MIN_BEFORE_NEXT_UPDATE_PRE_FETCH_PERIOD_SECONDS_VALUE_NAME:
+    &'static str = "CryptnetPreFetchMinBeforeNextUpdatePreFetchSeconds";
 pub const CRYPTNET_PRE_FETCH_MIN_BEFORE_NEXT_UPDATE_PRE_FETCH_PERIOD_SECONDS_DEFAULT: DWORD
     = 1 * 60 * 60;
-pub const CRYPTNET_PRE_FETCH_VALIDITY_PERIOD_AFTER_NEXT_UPDATE_PRE_FETCH_DIVISOR_VALUE_NAME: &'static str
-    = "CryptnetPreFetchValidityPeriodAfterNextUpdatePreFetchDivisor";
+pub const CRYPTNET_PRE_FETCH_VALIDITY_PERIOD_AFTER_NEXT_UPDATE_PRE_FETCH_DIVISOR_VALUE_NAME:
+    &'static str = "CryptnetPreFetchValidityPeriodAfterNextUpdatePreFetchDivisor";
 pub const CRYPTNET_PRE_FETCH_VALIDITY_PERIOD_AFTER_NEXT_UPDATE_PRE_FETCH_DIVISOR_DEFAULT: DWORD
     = 10;
-pub const CRYPTNET_PRE_FETCH_MAX_AFTER_NEXT_UPDATE_PRE_FETCH_PERIOD_SECONDS_VALUE_NAME: &'static str
-    = "CryptnetPreFetchMaxAfterNextUpdatePreFetchPeriodSeconds";
+pub const CRYPTNET_PRE_FETCH_MAX_AFTER_NEXT_UPDATE_PRE_FETCH_PERIOD_SECONDS_VALUE_NAME:
+    &'static str = "CryptnetPreFetchMaxAfterNextUpdatePreFetchPeriodSeconds";
 pub const CRYPTNET_PRE_FETCH_MAX_AFTER_NEXT_UPDATE_PRE_FETCH_PERIOD_SECONDS_DEFAULT: DWORD
     = 4 * 60 * 60;
-pub const CRYPTNET_PRE_FETCH_MIN_AFTER_NEXT_UPDATE_PRE_FETCH_PERIOD_SECONDS_VALUE_NAME: &'static str
-    = "CryptnetPreFetchMinAfterNextUpdatePreFetchPeriodSeconds";
+pub const CRYPTNET_PRE_FETCH_MIN_AFTER_NEXT_UPDATE_PRE_FETCH_PERIOD_SECONDS_VALUE_NAME:
+    &'static str = "CryptnetPreFetchMinAfterNextUpdatePreFetchPeriodSeconds";
 pub const CRYPTNET_PRE_FETCH_MIN_AFTER_NEXT_UPDATE_PRE_FETCH_PERIOD_SECONDS_DEFAULT: DWORD
     = 30 * 60;
 pub const CRYPTNET_PRE_FETCH_AFTER_CURRENT_TIME_PRE_FETCH_PERIOD_SECONDS_VALUE_NAME: &'static str

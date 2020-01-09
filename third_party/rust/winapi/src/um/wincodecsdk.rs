@@ -3,7 +3,6 @@
 
 
 
-
 use ctypes::{c_uchar, c_ulong};
 use shared::guiddef::{GUID, REFGUID};
 use shared::minwindef::{BOOL, BYTE, DWORD, UINT, ULONG};

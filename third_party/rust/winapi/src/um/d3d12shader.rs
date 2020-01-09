@@ -3,7 +3,6 @@
 
 
 
-
 use shared::basetsd::UINT64;
 use shared::minwindef::{BOOL, BYTE, INT, LPVOID, UINT};
 use um::d3dcommon::{

@@ -4,7 +4,6 @@
 
 
 
-
 use shared::guiddef::GUID;
 use shared::minwindef::{BOOL, BYTE, DWORD, LPVOID};
 use um::mscat::{CRYPTCATMEMBER, CRYPTCATSTORE};

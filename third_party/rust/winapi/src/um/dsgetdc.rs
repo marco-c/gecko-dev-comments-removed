@@ -4,7 +4,6 @@
 
 
 
-
 use shared::guiddef::GUID;
 use shared::minwindef::{DWORD, PULONG, ULONG};
 use shared::ws2def::{LPSOCKET_ADDRESS, PSOCKET_ADDRESS};

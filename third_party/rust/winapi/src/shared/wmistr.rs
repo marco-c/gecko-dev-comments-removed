@@ -3,7 +3,6 @@
 
 
 
-
 use shared::basetsd::{ULONG64, ULONG_PTR};
 use shared::guiddef::GUID;
 use shared::minwindef::{UCHAR, ULONG};

@@ -3,7 +3,6 @@
 
 
 
-
 use shared::minwindef::{BOOL, DWORD, ULONG};
 use um::minwinbase::LPTHREAD_START_ROUTINE;
 use um::winnt::{HANDLE, PHANDLE, PVOID, WAITORTIMERCALLBACK};

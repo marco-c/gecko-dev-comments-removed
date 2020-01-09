@@ -7,7 +7,6 @@
 
 
 
-
 use shared::guiddef::GUID;
 use shared::minwindef::ULONG;
 use um::winioctl::{FILE_ANY_ACCESS, FILE_DEVICE_UNKNOWN, METHOD_BUFFERED, METHOD_NEITHER};

@@ -5,7 +5,6 @@
 
 
 
-
 ENUM!{enum EXCEPTION_DISPOSITION {
     ExceptionContinueExecution,
     ExceptionContinueSearch,

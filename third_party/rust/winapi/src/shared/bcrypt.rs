@@ -4,7 +4,6 @@
 
 
 
-
 use shared::minwindef::{PUCHAR, UCHAR, ULONG, USHORT};
 use um::winnt::{BOOLEAN, HANDLE, LONG, LPCWSTR, LPWSTR, PVOID, PWSTR, ULONGLONG, VOID};
 pub type NTSTATUS = LONG;

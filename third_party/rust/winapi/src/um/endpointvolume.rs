@@ -3,7 +3,6 @@
 
 
 
-
 use ctypes::c_float;
 use shared::basetsd::UINT32;
 use shared::guiddef::{GUID, LPCGUID};

@@ -3,7 +3,6 @@
 
 
 
-
 use ctypes::{c_double, c_short, c_uchar, c_ushort};
 use shared::minwindef::{BYTE, DWORD};
 use shared::rpcndr::{boolean, byte, hyper};

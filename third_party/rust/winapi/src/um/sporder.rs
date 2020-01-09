@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::c_int;
 use shared::guiddef::LPGUID;
 use shared::minwindef::{DWORD, LPDWORD};

@@ -3,7 +3,6 @@
 
 
 
-
 use shared::d3d9::IDirect3DDevice9;
 use shared::minwindef::{BOOL, DWORD, LPDWORD};
 use shared::windef::HMONITOR;

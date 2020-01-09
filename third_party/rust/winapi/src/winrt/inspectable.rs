@@ -3,7 +3,6 @@
 
 
 
-
 use shared::guiddef::IID;
 use shared::minwindef::ULONG;
 use um::unknwnbase::{IUnknown, IUnknownVtbl};

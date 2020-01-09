@@ -4,7 +4,6 @@
 
 
 
-
 use shared::basetsd::DWORD64;
 use shared::devpropdef::DEVPROPKEY;
 use shared::guiddef::GUID;

@@ -3,7 +3,6 @@
 
 
 
-
 use shared::basetsd::SIZE_T;
 use shared::guiddef::{GUID, LPCGUID, LPGUID};
 use shared::minwindef::{DWORD, LPBYTE, LPDWORD, LPVOID, ULONG};

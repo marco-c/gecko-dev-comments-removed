@@ -4,7 +4,6 @@
 
 
 
-
 use shared::dxgitype::DXGI_RATIONAL;
 use shared::minwindef::DWORD;
 use um::winnt::LARGE_INTEGER;

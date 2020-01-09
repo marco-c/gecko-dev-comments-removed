@@ -3,7 +3,6 @@
 
 
 
-
 use ctypes::{c_uchar, c_ulong};
 use shared::guiddef::REFIID;
 use shared::wtypes::BSTR;

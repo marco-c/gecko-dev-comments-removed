@@ -4,7 +4,6 @@
 
 
 
-
 use shared::minwindef::{UCHAR, ULONG, USHORT};
 STRUCT!{struct in_addr_S_un_b {
     s_b1: UCHAR,

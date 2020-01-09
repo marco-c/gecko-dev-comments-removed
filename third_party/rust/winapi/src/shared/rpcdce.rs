@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::{c_int, c_uchar, c_uint, c_ulong, c_ushort, c_void, wchar_t};
 use shared::guiddef::GUID;
 use shared::minwindef::DWORD;

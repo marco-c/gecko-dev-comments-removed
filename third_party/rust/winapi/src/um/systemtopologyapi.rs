@@ -3,7 +3,6 @@
 
 
 
-
 use shared::minwindef::{BOOL, PULONG, PUSHORT, ULONG, USHORT};
 use um::winnt::PGROUP_AFFINITY;
 extern "system" {
@@ -12,7 +11,7 @@ extern "system" {
     ) -> BOOL;
     pub fn GetNumaNodeProcessorMaskEx(
         Node: USHORT,
-        ProcessorMask: PGROUP_AFFINITY
+        ProcessorMask: PGROUP_AFFINITY,
     ) -> BOOL;
     pub fn GetNumaProximityNodeEx(
         ProximityId: ULONG,

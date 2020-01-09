@@ -4,7 +4,6 @@
 
 
 
-
 use shared::basetsd::PDWORD_PTR;
 use shared::guiddef::GUID;
 use shared::lmcons::{LMSTR, NET_API_STATUS, PARMNUM_BASE_INFOLEVEL};

@@ -4,7 +4,6 @@
 
 
 
-
 use shared::minwindef::{BOOL, DWORD, FILETIME, LPDWORD, PBYTE, UINT, ULONG};
 use um::winnt::{LPCWSTR, LPWSTR, WCHAR};
 pub const RM_SESSION_KEY_LEN: usize = 16; 

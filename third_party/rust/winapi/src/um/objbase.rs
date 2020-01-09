@@ -4,7 +4,6 @@
 
 
 
-
 use shared::minwindef::LPVOID;
 use um::combaseapi::COINITBASE_MULTITHREADED;
 use um::winnt::HRESULT;

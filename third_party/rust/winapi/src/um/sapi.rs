@@ -4,7 +4,6 @@
 
 
 
-
 use shared::guiddef::GUID;
 use shared::minwindef::{BYTE, ULONG, WORD};
 use um::unknwnbase::{IUnknown, IUnknownVtbl};

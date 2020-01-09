@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::c_void;
 use shared::guiddef::IID;
 use shared::minwindef::UINT;
@@ -36,7 +35,7 @@ extern "system" {
         NodeMask: UINT,
         ppDevice: *mut *mut ID3D11Device,
         ppImmediateContext: *mut *mut ID3D11DeviceContext,
-        pChosenFeatureLevel: *mut D3D_FEATURE_LEVEL
+        pChosenFeatureLevel: *mut D3D_FEATURE_LEVEL,
     ) -> HRESULT;
 }
 STRUCT!{struct D3D11_RESOURCE_FLAGS {

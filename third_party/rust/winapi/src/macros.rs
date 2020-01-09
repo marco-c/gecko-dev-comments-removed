@@ -4,7 +4,6 @@
 
 
 
-
 macro_rules! DECLARE_HANDLE {
     ($name:ident, $inner:ident) => {
         pub enum $inner {}
@@ -162,8 +161,7 @@ macro_rules! RIDL {
         RIDL!{@uuid $interface $($uuid),+}
     );
     (#[uuid($($uuid:expr),+)]
-    interface $interface:ident ($vtbl:ident) : $pinterface:ident ($pvtbl:ident) {
-    }) => (
+    interface $interface:ident ($vtbl:ident) : $pinterface:ident ($pvtbl:ident) {}) => (
         RIDL!{@vtbl $interface $vtbl (pub parent: $pvtbl,)}
         #[repr(C)]
         pub struct $interface {
@@ -367,7 +365,7 @@ macro_rules! ENUM {
 #[macro_export]
 macro_rules! STRUCT {
     (#[debug] $($rest:tt)*) => (
-        STRUCT!{#[cfg_attr(feature = "debug", derive(Debug))] $($rest)*}
+        STRUCT!{#[cfg_attr(feature = "impl-debug", derive(Debug))] $($rest)*}
     );
     ($(#[$attrs:meta])* struct $name:ident {
         $($field:ident: $ftype:ty,)+
@@ -403,4 +401,24 @@ macro_rules! FN {
     (cdecl $func:ident($($p:ident: $t:ty,)*) -> $ret:ty) => (
         pub type $func = Option<unsafe extern "C" fn($($p: $t,)*) -> $ret>;
     );
+}
+macro_rules! _WSAIO {
+    ($x:expr, $y:expr) => {
+        $crate::shared::ws2def::IOC_VOID | $x | $y
+    }
+}
+macro_rules! _WSAIOR {
+    ($x:expr, $y:expr) => {
+        $crate::shared::ws2def::IOC_OUT | $x | $y
+    }
+}
+macro_rules! _WSAIOW {
+    ($x:expr, $y:expr) => {
+        $crate::shared::ws2def::IOC_IN | $x | $y
+    }
+}
+macro_rules! _WSAIORW {
+    ($x:expr, $y:expr) => {
+        $crate::shared::ws2def::IOC_INOUT | $x | $y
+    }
 }

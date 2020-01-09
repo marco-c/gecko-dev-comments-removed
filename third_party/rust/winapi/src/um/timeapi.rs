@@ -3,7 +3,6 @@
 
 
 
-
 use shared::minwindef::{DWORD, UINT};
 use um::mmsystem::{LPTIMECAPS, MMRESULT};
 extern "system" {

@@ -4,7 +4,6 @@
 
 
 
-
 use shared::minwindef::DWORD;
 use um::winnt::{LPCWSTR, LPWSTR};
 pub const CNLEN: DWORD = 15;

@@ -3,7 +3,6 @@
 
 
 
-
 use ctypes::c_int;
 use shared::minwindef::{BOOL, DWORD, LPARAM, LPBOOL, LPVOID, LPWORD, UINT};
 use um::winnls::LPNLSVERSIONINFO;

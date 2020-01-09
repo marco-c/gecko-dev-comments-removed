@@ -3,7 +3,6 @@
 
 
 
-
 use shared::minwindef::BOOL;
 extern "system" {
     pub fn CeipIsOptedIn() -> BOOL;

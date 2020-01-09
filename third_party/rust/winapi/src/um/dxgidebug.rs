@@ -3,7 +3,6 @@
 
 
 
-
 use ctypes::{c_char, c_int, c_void};
 use shared::basetsd::{SIZE_T, UINT64};
 use shared::guiddef::{GUID, REFIID};

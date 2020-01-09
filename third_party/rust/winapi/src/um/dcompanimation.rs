@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::{c_double, c_float};
 use shared::ntdef::{HRESULT, LARGE_INTEGER};
 use um::unknwnbase::{IUnknown, IUnknownVtbl};

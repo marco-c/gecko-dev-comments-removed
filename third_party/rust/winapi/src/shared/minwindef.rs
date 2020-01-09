@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::{c_char, c_float, c_int, c_long, c_uchar, c_uint, c_ulong, c_ushort, c_void};
 use shared::basetsd::{LONG_PTR, UINT_PTR};
 use shared::ntdef::{HANDLE, LONG};

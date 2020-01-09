@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::{c_long, c_void};
 pub type I_RPC_HANDLE = *mut c_void;
 pub type RPC_STATUS = c_long;

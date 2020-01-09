@@ -3,7 +3,6 @@
 
 
 
-
 use shared::minwindef::{BOOL, LPVOID, ULONG};
 use shared::ntdef::{BOOLEAN, HANDLE, LPCWSTR};
 use um::minwinbase::LPSECURITY_ATTRIBUTES;

@@ -3,7 +3,6 @@
 
 
 
-
 use shared::minwindef::{BOOL, DWORD};
 use shared::ntdef::PVOID;
 extern "system" {

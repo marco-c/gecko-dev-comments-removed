@@ -4,7 +4,6 @@
 
 
 
-
 use shared::basetsd::ULONG32;
 use um::objidlbase::IStream;
 use um::unknwnbase::{IUnknown, IUnknownVtbl};

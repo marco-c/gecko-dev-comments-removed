@@ -4,7 +4,6 @@
 
 
 
-
 use shared::guiddef::LPGUID;
 use shared::minwindef::{BOOL, DWORD};
 use um::minwinbase::LPSECURITY_ATTRIBUTES;

@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::c_int;
 use shared::basetsd::{DWORD_PTR, UINT_PTR, ULONG_PTR};
 use shared::devpropdef::{DEVPROPKEY, DEVPROPTYPE};
@@ -1627,8 +1626,7 @@ pub const SP_BACKUP_DEMANDPASS: DWORD = 0x00000002;
 pub const SP_BACKUP_SPECIAL: DWORD = 0x00000004;
 pub const SP_BACKUP_BOOTFILE: DWORD = 0x00000008;
 extern "system" {
-    pub fn SetupOpenFileQueue(
-    ) -> HSPFILEQ;
+    pub fn SetupOpenFileQueue() -> HSPFILEQ;
     pub fn SetupCloseFileQueue(
         QueueHandle: HSPFILEQ,
     ) -> BOOL;

@@ -4,7 +4,6 @@
 
 
 
-
 use shared::minwindef::DWORD;
 use um::winnt::DWORDLONG;
 pub type SP_LOG_TOKEN = DWORDLONG;

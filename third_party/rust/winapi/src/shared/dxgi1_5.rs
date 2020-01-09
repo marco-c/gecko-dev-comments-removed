@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::c_void;
 use shared::basetsd::UINT16;
 use shared::dxgi::IDXGIResource;

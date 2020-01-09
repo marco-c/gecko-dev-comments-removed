@@ -3,7 +3,6 @@
 
 
 
-
 use shared::minwindef::UINT;
 use shared::windef::HMONITOR;
 use um::winnt::{HANDLE, HRESULT};

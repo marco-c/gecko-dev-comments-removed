@@ -3,7 +3,6 @@
 
 
 
-
 use shared::wtypes::BSTR;
 use um::unknwnbase::{IUnknown, IUnknownVtbl};
 use um::winnt::HRESULT;

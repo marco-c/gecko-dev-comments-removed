@@ -3,7 +3,6 @@
 
 
 
-
 use shared::basetsd::{PUINT_PTR, UINT_PTR};
 use shared::minwindef::{BOOL, LPARAM, UINT};
 extern "system" {

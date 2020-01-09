@@ -4,7 +4,6 @@
 
 
 
-
 use shared::minwindef::{BOOL, BYTE, DWORD, FILETIME, UINT};
 use shared::wtypes::BSTR;
 use um::unknwnbase::{IUnknown, IUnknownVtbl};

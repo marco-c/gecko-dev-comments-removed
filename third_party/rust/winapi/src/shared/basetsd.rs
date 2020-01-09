@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::{__int64, __uint64, c_int, c_schar, c_short, c_uchar, c_uint, c_ushort};
 pub type POINTER_64_INT = usize;
 pub type INT8 = c_schar;

@@ -3,7 +3,6 @@
 
 
 
-
 use shared::guiddef::GUID;
 STRUCT!{struct TRANSPORT_SETTING_ID {
     Guid: GUID,

@@ -4,7 +4,6 @@
 
 
 
-
 use shared::minwindef::{BOOL, BYTE, DWORD, LPVOID};
 use shared::windef::HWND;
 use um::wincrypt::DATA_BLOB;

@@ -3,7 +3,6 @@
 
 
 
-
 use shared::minwindef::{BOOL, PUSHORT};
 use um::winnt::{GROUP_AFFINITY, HANDLE, PGROUP_AFFINITY};
 extern "system" {

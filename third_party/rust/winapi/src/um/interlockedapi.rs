@@ -3,7 +3,6 @@
 
 
 
-
 use shared::minwindef::{ULONG, USHORT};
 use um::winnt::{PSLIST_ENTRY, PSLIST_HEADER};
 extern "system" {

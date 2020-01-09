@@ -3,7 +3,6 @@
 
 
 
-
 use shared::basetsd::UINT64;
 use shared::d3d9::IDirect3DDevice9;
 use shared::d3d9types::D3DFORMAT;

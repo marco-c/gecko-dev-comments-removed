@@ -4,7 +4,6 @@
 
 
 
-
 use shared::lmcons::{EVLEN, NET_API_STATUS, SNLEN};
 use shared::minwindef::{DWORD, LPVOID};
 use um::winnt::{LPCWSTR, WCHAR};

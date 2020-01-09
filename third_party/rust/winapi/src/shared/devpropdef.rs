@@ -4,7 +4,6 @@
 
 
 
-
 use shared::guiddef::{GUID, IsEqualGUID};
 use shared::minwindef::ULONG;
 use um::winnt::{CHAR, PCWSTR, PVOID};

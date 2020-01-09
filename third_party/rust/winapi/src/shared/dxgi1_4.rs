@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::c_void;
 use shared::basetsd::UINT64;
 use shared::dxgi1_2::{IDXGIAdapter2, IDXGIAdapter2Vtbl};

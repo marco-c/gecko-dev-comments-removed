@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::{c_float, c_int, c_void};
 use shared::minwindef::{BOOL, BYTE, DWORD, HINSTANCE, HRGN, LPARAM, UINT, ULONG, WORD};
 use shared::windef::{COLORREF, HBITMAP, HBRUSH, HDC, HWND, LPCRECT, LPRECT, POINT, RECT, SIZE};

@@ -4,7 +4,6 @@
 
 
 
-
 use shared::minwindef::{DWORD, PUCHAR, UCHAR, ULONG, USHORT, WORD};
 use um::winnt::HANDLE;
 pub const NCBNAMSZ: usize = 16;

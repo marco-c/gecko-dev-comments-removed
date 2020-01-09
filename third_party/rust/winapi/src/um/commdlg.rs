@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::{c_short, c_void};
 use shared::basetsd::UINT_PTR;
 use shared::minwindef::{

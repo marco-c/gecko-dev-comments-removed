@@ -4,7 +4,6 @@
 
 
 
-
 use shared::basetsd::ULONG64;
 use shared::guiddef::GUID;
 use shared::minwindef::{UCHAR, ULONG, USHORT};

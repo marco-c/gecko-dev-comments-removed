@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::c_int;
 use shared::basetsd::DWORD_PTR;
 use shared::minwindef::{BOOL, DWORD, LPCVOID, LPDWORD, LPVOID, USHORT, WORD};
@@ -435,7 +434,7 @@ extern "system" {
     ) -> BOOL;
     pub fn WinHttpTimeToSystemTime(
         pwszTime: LPCWSTR,
-        pst: *mut SYSTEMTIME
+        pst: *mut SYSTEMTIME,
     ) -> BOOL;
     pub fn WinHttpCrackUrl(
         pwszUrl: LPCWSTR,

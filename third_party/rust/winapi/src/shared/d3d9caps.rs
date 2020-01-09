@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::c_float;
 use shared::d3d9types::D3DDEVTYPE;
 use shared::guiddef::GUID;

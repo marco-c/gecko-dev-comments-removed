@@ -4,7 +4,6 @@
 
 
 
-
 use shared::basetsd::{INT16, INT32, UINT16, UINT32, UINT8};
 use shared::minwindef::{BOOL, FLOAT};
 use um::dcommon::DWRITE_MEASURING_MODE;

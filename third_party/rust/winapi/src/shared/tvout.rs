@@ -3,7 +3,6 @@
 
 
 
-
 use shared::guiddef::GUID;
 use shared::minwindef::{UCHAR, ULONG};
 STRUCT!{struct VIDEOPARAMETERS {

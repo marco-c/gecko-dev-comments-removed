@@ -3,7 +3,6 @@
 
 
 
-
 use ctypes::{c_char, wchar_t};
 use shared::basetsd::{ULONG32, ULONG64};
 use shared::guiddef::GUID;
@@ -138,7 +137,7 @@ STRUCT!{struct DEV_BROADCAST_DEVICEINTERFACE_A {
     dbcc_devicetype: DWORD,
     dbcc_reserved: DWORD,
     dbcc_classguid: GUID,
-    dbcc_name: [c_char; 1], 
+    dbcc_name: [c_char; 1],
 }}
 pub type PDEV_BROADCAST_DEVICEINTERFACE_A = *mut DEV_BROADCAST_DEVICEINTERFACE_A;
 STRUCT!{struct DEV_BROADCAST_DEVICEINTERFACE_W {

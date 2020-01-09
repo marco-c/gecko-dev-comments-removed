@@ -4,7 +4,6 @@
 
 
 
-
 use ctypes::{c_uchar, c_ulong, c_ushort};
 STRUCT!{#[debug] struct GUID {
     Data1: c_ulong,

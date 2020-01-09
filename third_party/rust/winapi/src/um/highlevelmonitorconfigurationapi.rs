@@ -3,7 +3,6 @@
 
 
 
-
 use shared::minwindef::{DWORD, LPDWORD};
 use um::physicalmonitorenumerationapi::_BOOL;
 use um::winnt::HANDLE;
