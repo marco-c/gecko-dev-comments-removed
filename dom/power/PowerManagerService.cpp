@@ -173,7 +173,7 @@ static const mozilla::Module::ContractIDEntry kPowerManagerContracts[] = {
 
 
 
-static const mozilla::Module kPowerManagerModule = {
+extern const mozilla::Module kPowerManagerModule = {
     mozilla::Module::kVersion,
     kPowerManagerCIDs,
     kPowerManagerContracts,
@@ -182,5 +182,3 @@ static const mozilla::Module kPowerManagerModule = {
     nullptr,
     nullptr,
     mozilla::Module::ALLOW_IN_GPU_AND_SOCKET_PROCESS};
-
-NSMODULE_DEFN(nsPowerManagerModule) = &kPowerManagerModule;
