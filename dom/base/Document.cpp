@@ -216,7 +216,6 @@
 #include "nsXULAppAPI.h"
 #include "mozilla/dom/Touch.h"
 #include "mozilla/dom/TouchEvent.h"
-#include "ReferrerInfo.h"
 
 #include "mozilla/Preferences.h"
 
@@ -317,6 +316,8 @@
 #define XML_DECLARATION_BITS_STANDALONE_YES (1 << 3)
 
 extern bool sDisablePrefetchHTTPSPref;
+
+mozilla::LazyLogModule gPageCacheLog("PageCache");
 
 namespace mozilla {
 namespace dom {
@@ -996,9 +997,7 @@ nsresult ExternalResourceMap::PendingLoad::StartLoad(nsIURI* aURI,
 
   nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(channel));
   if (httpChannel) {
-    nsCOMPtr<nsIReferrerInfo> referrerInfo =
-        new ReferrerInfo(aReferrer, aReferrerPolicy);
-    rv = httpChannel->SetReferrerInfoWithoutClone(referrerInfo);
+    rv = httpChannel->SetReferrerWithPolicy(aReferrer, aReferrerPolicy);
     Unused << NS_WARN_IF(NS_FAILED(rv));
   }
 
@@ -3353,14 +3352,14 @@ bool Document::IsWebAnimationsEnabled(JSContext* aCx, JSObject* ) {
   MOZ_ASSERT(NS_IsMainThread());
 
   return nsContentUtils::IsSystemCaller(aCx) ||
-         StaticPrefs::dom_animations_api_core_enabled();
+         nsContentUtils::AnimationsAPICoreEnabled();
 }
 
 bool Document::IsWebAnimationsEnabled(CallerType aCallerType) {
   MOZ_ASSERT(NS_IsMainThread());
 
   return aCallerType == dom::CallerType::System ||
-         StaticPrefs::dom_animations_api_core_enabled();
+         nsContentUtils::AnimationsAPICoreEnabled();
 }
 
 bool Document::IsWebAnimationsGetAnimationsEnabled(JSContext* aCx,
@@ -7639,16 +7638,21 @@ void Document::CollectDescendantDocuments(
   }
 }
 
-#ifdef DEBUG_bryner
-#  define DEBUG_PAGE_CACHE
-#endif
-
 bool Document::CanSavePresentation(nsIRequest* aNewRequest) {
   if (!IsBFCachingAllowed()) {
     return false;
   }
 
+  nsAutoCString uri;
+  if (MOZ_UNLIKELY(MOZ_LOG_TEST(gPageCacheLog, LogLevel::Verbose))) {
+    if (mDocumentURI) {
+      mDocumentURI->GetSpec(uri);
+    }
+  }
+
   if (EventHandlingSuppressed()) {
+    MOZ_LOG(gPageCacheLog, mozilla::LogLevel::Verbose,
+            ("Save of %s blocked on event handling suppression", uri.get()));
     return false;
   }
 
@@ -7659,6 +7663,8 @@ bool Document::CanSavePresentation(nsIRequest* aNewRequest) {
   
   nsPIDOMWindowInner* win = GetInnerWindow();
   if (win && win->IsSuspended() && !win->IsFrozen()) {
+    MOZ_LOG(gPageCacheLog, mozilla::LogLevel::Verbose,
+            ("Save of %s blocked on suspended Window", uri.get()));
     return false;
   }
 
@@ -7667,6 +7673,8 @@ bool Document::CanSavePresentation(nsIRequest* aNewRequest) {
   if (piTarget) {
     EventListenerManager* manager = piTarget->GetExistingListenerManager();
     if (manager && manager->HasUnloadListeners()) {
+      MOZ_LOG(gPageCacheLog, mozilla::LogLevel::Verbose,
+              ("Save of %s blocked due to unload handlers", uri.get()));
       return false;
     }
   }
@@ -7703,14 +7711,15 @@ bool Document::CanSavePresentation(nsIRequest* aNewRequest) {
             continue;
           }
         }
-#ifdef DEBUG_PAGE_CACHE
-        nsAutoCString requestName, docSpec;
-        request->GetName(requestName);
-        if (mDocumentURI) mDocumentURI->GetSpec(docSpec);
 
-        printf("document %s has request %s\n", docSpec.get(),
-               requestName.get());
-#endif
+        if (MOZ_UNLIKELY(MOZ_LOG_TEST(gPageCacheLog, LogLevel::Verbose))) {
+          nsAutoCString requestName;
+          request->GetName(requestName);
+          MOZ_LOG(gPageCacheLog, LogLevel::Verbose,
+                  ("Save of %s blocked because document has request %s",
+                   uri.get(), requestName.get()));
+        }
+
         return false;
       }
     }
@@ -7719,12 +7728,16 @@ bool Document::CanSavePresentation(nsIRequest* aNewRequest) {
   
   if (MediaManager::Exists() && win &&
       MediaManager::Get()->IsWindowStillActive(win->WindowID())) {
+    MOZ_LOG(gPageCacheLog, mozilla::LogLevel::Verbose,
+            ("Save of %s blocked due to GetUserMedia", uri.get()));
     return false;
   }
 
 #ifdef MOZ_WEBRTC
   
   if (win && win->HasActivePeerConnections()) {
+    MOZ_LOG(gPageCacheLog, mozilla::LogLevel::Verbose,
+            ("Save of %s blocked due to PeerConnection", uri.get()));
     return false;
   }
 #endif  
@@ -7738,6 +7751,8 @@ bool Document::CanSavePresentation(nsIRequest* aNewRequest) {
   
   
   if (ContainsMSEContent()) {
+    MOZ_LOG(gPageCacheLog, mozilla::LogLevel::Verbose,
+            ("Save of %s blocked due to MSE use", uri.get()));
     return false;
   }
 
@@ -7749,6 +7764,8 @@ bool Document::CanSavePresentation(nsIRequest* aNewRequest) {
       
       bool canCache = subdoc ? subdoc->CanSavePresentation(nullptr) : false;
       if (!canCache) {
+        MOZ_LOG(gPageCacheLog, mozilla::LogLevel::Verbose,
+                ("Save of %s blocked due to subdocument blocked", uri.get()));
         return false;
       }
     }
@@ -7758,10 +7775,14 @@ bool Document::CanSavePresentation(nsIRequest* aNewRequest) {
     auto* globalWindow = nsGlobalWindowInner::Cast(win);
 #ifdef MOZ_WEBSPEECH
     if (globalWindow->HasActiveSpeechSynthesis()) {
+      MOZ_LOG(gPageCacheLog, mozilla::LogLevel::Verbose,
+              ("Save of %s blocked due to Speech use", uri.get()));
       return false;
     }
 #endif
     if (globalWindow->HasUsedVR()) {
+      MOZ_LOG(gPageCacheLog, mozilla::LogLevel::Verbose,
+              ("Save of %s blocked due to having used VR", uri.get()));
       return false;
     }
   }
@@ -10667,7 +10688,7 @@ bool Document::IsUnprefixedFullscreenEnabled(JSContext* aCx,
                                              JSObject* aObject) {
   MOZ_ASSERT(NS_IsMainThread());
   return nsContentUtils::IsSystemCaller(aCx) ||
-         StaticPrefs::full_screen_api_unprefix_enabled();
+         nsContentUtils::IsUnprefixedFullscreenApiEnabled();
 }
 
 static bool HasFullscreenSubDocument(Document* aDoc) {
@@ -10681,7 +10702,7 @@ static bool HasFullscreenSubDocument(Document* aDoc) {
 
 
 static const char* GetFullscreenError(Document* aDoc, CallerType aCallerType) {
-  bool apiEnabled = StaticPrefs::full_screen_api_enabled();
+  bool apiEnabled = nsContentUtils::IsFullscreenApiEnabled();
   if (apiEnabled && aCallerType == CallerType::System) {
     
     
