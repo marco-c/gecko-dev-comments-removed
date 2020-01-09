@@ -1606,7 +1606,11 @@ pref("javascript.options.streams", true);
 pref("javascript.options.bigint", false);
 
 
+#ifdef NIGHTLY_BUILD
+pref("javascript.options.dynamicImport", true);
+#else
 pref("javascript.options.dynamicImport", false);
+#endif
 
 
 pref("advanced.mailftp",                    false);
