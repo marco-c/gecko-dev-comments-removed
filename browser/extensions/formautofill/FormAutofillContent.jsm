@@ -243,6 +243,8 @@ let ProfileAutocomplete = {
     this._registered = true;
 
     Services.obs.addObserver(this, "autocomplete-will-enter-text");
+
+    this.debug("ensureRegistered. Finished with _registered:", this._registered);
   },
 
   ensureUnregistered() {
@@ -336,7 +338,6 @@ let ProfileAutocomplete = {
 
 
 var FormAutofillContent = {
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIFormSubmitObserver]),
   
 
 
@@ -357,10 +358,10 @@ var FormAutofillContent = {
 
   init() {
     FormAutofill.defineLazyLogGetter(this, "FormAutofillContent");
+    this.debug("init");
 
     
     Services.cpmm.sharedData.addEventListener("change", this);
-    Services.obs.addObserver(this, "earlyformsubmit");
 
     let autofillEnabled = Services.cpmm.sharedData.get("FormAutofill:enabled");
     
@@ -396,37 +397,32 @@ var FormAutofillContent = {
 
 
 
+  formSubmitted(formElement, domWin = formElement.ownerGlobal) {
+    this.debug("Handling form submission");
 
-  notify(formElement, domWin) {
-    try {
-      this.debug("Notifying form early submission");
-
-      if (!FormAutofill.isAutofillEnabled) {
-        this.debug("Form Autofill is disabled");
-        return true;
-      }
-
-      if (domWin && PrivateBrowsingUtils.isContentWindowPrivate(domWin)) {
-        this.debug("Ignoring submission in a private window");
-        return true;
-      }
-
-      let handler = this._formsDetails.get(formElement);
-      if (!handler) {
-        this.debug("Form element could not map to an existing handler");
-        return true;
-      }
-
-      let records = handler.createRecords();
-      if (!Object.values(records).some(typeRecords => typeRecords.length)) {
-        return true;
-      }
-
-      this._onFormSubmit(records, domWin, handler.timeStartedFillingMS);
-    } catch (ex) {
-      Cu.reportError(ex);
+    if (!FormAutofill.isAutofillEnabled) {
+      this.debug("Form Autofill is disabled");
+      return;
     }
-    return true;
+
+    
+    if (domWin && PrivateBrowsingUtils.isContentWindowPrivate(domWin)) {
+      this.debug("Ignoring submission in a private window");
+      return;
+    }
+
+    let handler = this._formsDetails.get(formElement);
+    if (!handler) {
+      this.debug("Form element could not map to an existing handler");
+      return;
+    }
+
+    let records = handler.createRecords();
+    if (!Object.values(records).some(typeRecords => typeRecords.length)) {
+      return;
+    }
+
+    this._onFormSubmit(records, domWin, handler.timeStartedFillingMS);
   },
 
   handleEvent(evt) {
