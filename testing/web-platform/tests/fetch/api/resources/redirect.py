@@ -38,16 +38,17 @@ def main(request, response):
 
     if "location" in request.GET:
         url = request.GET['location']
-        scheme = urlparse(url).scheme
-        if scheme == "" or scheme == "http" or scheme == "https":
-            url += "&" if '?' in url else "?"
-            
-            url_parameters = {}
-            for item in request.GET.items():
-                url_parameters[item[0]] = item[1][0]
-            url += urlencode(url_parameters)
-            
-            url += "&count=" + str(stashed_data['count'])
+        if "simple" not in request.GET:
+            scheme = urlparse(url).scheme
+            if scheme == "" or scheme == "http" or scheme == "https":
+                url += "&" if '?' in url else "?"
+                
+                url_parameters = {}
+                for item in request.GET.items():
+                    url_parameters[item[0]] = item[1][0]
+                url += urlencode(url_parameters)
+                
+                url += "&count=" + str(stashed_data['count'])
         headers.append(("Location", url))
 
     if "redirect_referrerpolicy" in request.GET:
