@@ -11,7 +11,6 @@
 
 
 
-
 #include "../pngpriv.h"
 
 #ifdef PNG_READ_SUPPORTED

@@ -1129,16 +1129,16 @@ png_read_push_finish_row(png_structrp png_ptr)
    
 
    
-   static PNG_CONST png_byte png_pass_start[] = {0, 4, 0, 2, 0, 1, 0};
+   static const png_byte png_pass_start[] = {0, 4, 0, 2, 0, 1, 0};
 
    
-   static PNG_CONST png_byte png_pass_inc[] = {8, 8, 4, 4, 2, 2, 1};
+   static const png_byte png_pass_inc[] = {8, 8, 4, 4, 2, 2, 1};
 
    
-   static PNG_CONST png_byte png_pass_ystart[] = {0, 0, 4, 0, 2, 0, 1};
+   static const png_byte png_pass_ystart[] = {0, 0, 4, 0, 2, 0, 1};
 
    
-   static PNG_CONST png_byte png_pass_yinc[] = {8, 8, 8, 4, 4, 2, 2};
+   static const png_byte png_pass_yinc[] = {8, 8, 8, 4, 4, 2, 2};
 
    
 

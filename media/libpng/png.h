@@ -263,43 +263,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef PNG_H
 #define PNG_H
 
@@ -315,9 +278,8 @@
 
 
 
-#define PNG_LIBPNG_VER_STRING "1.6.35+apng"
-#define PNG_HEADER_VERSION_STRING \
-     " libpng version 1.6.35+apng - July 15, 2018\n"
+#define PNG_LIBPNG_VER_STRING "1.6.37"
+#define PNG_HEADER_VERSION_STRING " libpng version 1.6.37 - April 14, 2019\n"
 
 #define PNG_LIBPNG_VER_SONUM   16
 #define PNG_LIBPNG_VER_DLLNUM  16
@@ -325,13 +287,12 @@
 
 #define PNG_LIBPNG_VER_MAJOR   1
 #define PNG_LIBPNG_VER_MINOR   6
-#define PNG_LIBPNG_VER_RELEASE 35
+#define PNG_LIBPNG_VER_RELEASE 37
 
 
 
 
-
-#define PNG_LIBPNG_VER_BUILD  02
+#define PNG_LIBPNG_VER_BUILD  0
 
 
 #define PNG_LIBPNG_BUILD_ALPHA    1
@@ -348,7 +309,7 @@
 #define PNG_LIBPNG_BUILD_SPECIAL 32 /* Cannot be OR'ed with
                                        PNG_LIBPNG_BUILD_PRIVATE */
 
-#define PNG_LIBPNG_BUILD_BASE_TYPE PNG_LIBPNG_BUILD_BETA
+#define PNG_LIBPNG_BUILD_BASE_TYPE PNG_LIBPNG_BUILD_STABLE
 
 
 
@@ -356,7 +317,8 @@
 
 
 
-#define PNG_LIBPNG_VER 10635 /* 1.6.35 */
+
+#define PNG_LIBPNG_VER 10637 /* 1.6.37 */
 
 
 
@@ -481,7 +443,7 @@ extern "C" {
 
 
 
-typedef char* png_libpng_version_1_6_35;
+typedef char* png_libpng_version_1_6_37;
 
 
 
@@ -2043,12 +2005,12 @@ PNG_FIXED_EXPORT(233, void, png_set_cHRM_XYZ_fixed, (png_const_structrp png_ptr,
 PNG_EXPORT(246, png_uint_32, png_get_eXIf, (png_const_structrp png_ptr,
     png_inforp info_ptr, png_bytep *exif));
 PNG_EXPORT(247, void, png_set_eXIf, (png_const_structrp png_ptr,
-    png_inforp info_ptr, const png_bytep exif));
+    png_inforp info_ptr, png_bytep exif));
 
 PNG_EXPORT(248, png_uint_32, png_get_eXIf_1, (png_const_structrp png_ptr,
     png_const_inforp info_ptr, png_uint_32 *num_exif, png_bytep *exif));
 PNG_EXPORT(249, void, png_set_eXIf_1, (png_const_structrp png_ptr,
-    png_inforp info_ptr, const png_uint_32 num_exif, const png_bytep exif));
+    png_inforp info_ptr, png_uint_32 num_exif, png_bytep exif));
 #endif
 
 #ifdef PNG_gAMA_SUPPORTED

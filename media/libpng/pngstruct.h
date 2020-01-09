@@ -393,6 +393,12 @@ struct png_struct_def
 #endif
 
 
+#if defined(PNG_READ_EXPAND_SUPPORTED) && \
+    defined(PNG_ARM_NEON_IMPLEMENTATION)
+   png_bytep riffled_palette; 
+#endif
+
+
 #if defined(PNG_MNG_FEATURES_SUPPORTED)
 
    png_uint_32 mng_features_permitted;

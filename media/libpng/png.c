@@ -14,7 +14,7 @@
 #include "pngpriv.h"
 
 
-typedef png_libpng_version_1_6_35 Your_png_h_is_not_version_1_6_35;
+typedef png_libpng_version_1_6_37 Your_png_h_is_not_version_1_6_37;
 
 #ifdef __GNUC__
 
@@ -736,7 +736,7 @@ png_save_int_32(png_bytep buf, png_int_32 i)
 int PNGAPI
 png_convert_to_rfc1123_buffer(char out[29], png_const_timep ptime)
 {
-   static PNG_CONST char short_months[12][4] =
+   static const char short_months[12][4] =
         {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
          "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
@@ -814,24 +814,14 @@ png_get_copyright(png_const_structrp png_ptr)
 #ifdef PNG_STRING_COPYRIGHT
    return PNG_STRING_COPYRIGHT
 #else
-#  ifdef __STDC__
    return PNG_STRING_NEWLINE \
-      "libpng version 1.6.35+apng - July 15, 2018" PNG_STRING_NEWLINE \
+      "libpng version 1.6.37" PNG_STRING_NEWLINE \
+      "Copyright (c) 2018-2019 Cosmin Truta" PNG_STRING_NEWLINE \
       "Copyright (c) 1998-2002,2004,2006-2018 Glenn Randers-Pehrson" \
       PNG_STRING_NEWLINE \
       "Copyright (c) 1996-1997 Andreas Dilger" PNG_STRING_NEWLINE \
       "Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc." \
-      PNG_STRING_NEWLINE \
-      "Portions Copyright (c) 2006-2007 Andrew Smith" PNG_STRING_NEWLINE \
-      "Portions Copyright (c) 2008-2018 Max Stepin" PNG_STRING_NEWLINE ;
-#  else
-   return "libpng version 1.6.35+apng - July 15, 2018\
-      Copyright (c) 1998-2002,2004,2006-2018 Glenn Randers-Pehrson\
-      Copyright (c) 1996-1997 Andreas Dilger\
-      Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc.\
-      Portions Copyright (c) 2006-2007 Andrew Smith\
-      Portions Copyright (c) 2008-2018 Max Stepin";
-#  endif
+      PNG_STRING_NEWLINE;
 #endif
 }
 
@@ -3980,18 +3970,18 @@ png_gamma_correct(png_structrp png_ptr, unsigned int value,
 
 static void
 png_build_16bit_table(png_structrp png_ptr, png_uint_16pp *ptable,
-    PNG_CONST unsigned int shift, PNG_CONST png_fixed_point gamma_val)
+    unsigned int shift, png_fixed_point gamma_val)
 {
    
-   PNG_CONST unsigned int num = 1U << (8U - shift);
+   unsigned int num = 1U << (8U - shift);
 #ifdef PNG_FLOATING_ARITHMETIC_SUPPORTED
    
 
 
-   PNG_CONST double fmax = 1./(((png_int_32)1 << (16U - shift))-1);
+   double fmax = 1.0 / (((png_int_32)1 << (16U - shift)) - 1);
 #endif
-   PNG_CONST unsigned int max = (1U << (16U - shift))-1U;
-   PNG_CONST unsigned int max_by_2 = 1U << (15U-shift);
+   unsigned int max = (1U << (16U - shift)) - 1U;
+   unsigned int max_by_2 = 1U << (15U - shift);
    unsigned int i;
 
    png_uint_16pp table = *ptable =
@@ -4057,10 +4047,10 @@ png_build_16bit_table(png_structrp png_ptr, png_uint_16pp *ptable,
 
 static void
 png_build_16to8_table(png_structrp png_ptr, png_uint_16pp *ptable,
-    PNG_CONST unsigned int shift, PNG_CONST png_fixed_point gamma_val)
+    unsigned int shift, png_fixed_point gamma_val)
 {
-   PNG_CONST unsigned int num = 1U << (8U - shift);
-   PNG_CONST unsigned int max = (1U << (16U - shift))-1U;
+   unsigned int num = 1U << (8U - shift);
+   unsigned int max = (1U << (16U - shift))-1U;
    unsigned int i;
    png_uint_32 last;
 
@@ -4125,7 +4115,7 @@ png_build_16to8_table(png_structrp png_ptr, png_uint_16pp *ptable,
 
 static void
 png_build_8bit_table(png_structrp png_ptr, png_bytepp ptable,
-    PNG_CONST png_fixed_point gamma_val)
+    png_fixed_point gamma_val)
 {
    unsigned int i;
    png_bytep table = *ptable = (png_bytep)png_malloc(png_ptr, 256);

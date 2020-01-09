@@ -1466,8 +1466,7 @@ png_handle_iCCP(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
                {
                   
 
-                  const png_uint_32 profile_length =
-                     png_get_uint_32(profile_header);
+                  png_uint_32 profile_length = png_get_uint_32(profile_header);
 
                   if (png_icc_check_length(png_ptr, &png_ptr->colorspace,
                       keyword, profile_length) != 0)
@@ -1484,8 +1483,8 @@ png_handle_iCCP(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 
 
 
-                        const png_uint_32 tag_count = png_get_uint_32(
-                            profile_header+128);
+                        png_uint_32 tag_count =
+                           png_get_uint_32(profile_header + 128);
                         png_bytep profile = png_read_buffer(png_ptr,
                             profile_length, 2);
 
@@ -3311,7 +3310,7 @@ png_handle_unknown(png_structrp png_ptr, png_inforp info_ptr,
 
 
 void 
-png_check_chunk_name(png_const_structrp png_ptr, const png_uint_32 chunk_name)
+png_check_chunk_name(png_const_structrp png_ptr, png_uint_32 chunk_name)
 {
    int i;
    png_uint_32 cn=chunk_name;
@@ -3330,7 +3329,7 @@ png_check_chunk_name(png_const_structrp png_ptr, const png_uint_32 chunk_name)
 }
 
 void 
-png_check_chunk_length(png_const_structrp png_ptr, const png_uint_32 length)
+png_check_chunk_length(png_const_structrp png_ptr, png_uint_32 length)
 {
    png_alloc_size_t limit = PNG_UINT_31_MAX;
 
@@ -3546,7 +3545,7 @@ png_combine_row(png_const_structrp png_ptr, png_bytep dp, int display)
          
 
 
-         static PNG_CONST png_uint_32 row_mask[2][3][6] =
+         static const png_uint_32 row_mask[2][3][6] =
          {
             
             { S_MASKS(1,0), S_MASKS(2,0), S_MASKS(4,0) },
@@ -3557,7 +3556,7 @@ png_combine_row(png_const_structrp png_ptr, png_bytep dp, int display)
          
 
 
-         static PNG_CONST png_uint_32 display_mask[2][3][3] =
+         static const png_uint_32 display_mask[2][3][3] =
          {
             
             { B_MASKS(1,0), B_MASKS(2,0), B_MASKS(4,0) },
@@ -3870,7 +3869,7 @@ png_do_read_interlace(png_row_infop row_info, png_bytep row, int pass,
 {
    
    
-   static PNG_CONST unsigned int png_pass_inc[7] = {8, 8, 4, 4, 2, 2, 1};
+   static const unsigned int png_pass_inc[7] = {8, 8, 4, 4, 2, 2, 1};
 
    png_debug(1, "in png_do_read_interlace");
    if (row != NULL && row_info != NULL)
@@ -4548,16 +4547,16 @@ png_read_finish_row(png_structrp png_ptr)
    
 
    
-   static PNG_CONST png_byte png_pass_start[7] = {0, 4, 0, 2, 0, 1, 0};
+   static const png_byte png_pass_start[7] = {0, 4, 0, 2, 0, 1, 0};
 
    
-   static PNG_CONST png_byte png_pass_inc[7] = {8, 8, 4, 4, 2, 2, 1};
+   static const png_byte png_pass_inc[7] = {8, 8, 4, 4, 2, 2, 1};
 
    
-   static PNG_CONST png_byte png_pass_ystart[7] = {0, 0, 4, 0, 2, 0, 1};
+   static const png_byte png_pass_ystart[7] = {0, 0, 4, 0, 2, 0, 1};
 
    
-   static PNG_CONST png_byte png_pass_yinc[7] = {8, 8, 8, 4, 4, 2, 2};
+   static const png_byte png_pass_yinc[7] = {8, 8, 8, 4, 4, 2, 2};
 
    png_debug(1, "in png_read_finish_row");
    png_ptr->row_number++;
@@ -4613,16 +4612,16 @@ png_read_start_row(png_structrp png_ptr)
    
 
    
-   static PNG_CONST png_byte png_pass_start[7] = {0, 4, 0, 2, 0, 1, 0};
+   static const png_byte png_pass_start[7] = {0, 4, 0, 2, 0, 1, 0};
 
    
-   static PNG_CONST png_byte png_pass_inc[7] = {8, 8, 4, 4, 2, 2, 1};
+   static const png_byte png_pass_inc[7] = {8, 8, 4, 4, 2, 2, 1};
 
    
-   static PNG_CONST png_byte png_pass_ystart[7] = {0, 0, 4, 0, 2, 0, 1};
+   static const png_byte png_pass_ystart[7] = {0, 0, 4, 0, 2, 0, 1};
 
    
-   static PNG_CONST png_byte png_pass_yinc[7] = {8, 8, 8, 4, 4, 2, 2};
+   static const png_byte png_pass_yinc[7] = {8, 8, 8, 4, 4, 2, 2};
 
    unsigned int max_pixel_depth;
    size_t row_bytes;

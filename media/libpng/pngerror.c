@@ -425,7 +425,7 @@ png_app_error(png_const_structrp png_ptr, png_const_charp error_message)
 
 
 #define isnonalpha(c) ((c) < 65 || (c) > 122 || ((c) > 90 && (c) < 97))
-static PNG_CONST char png_digit[16] = {
+static const char png_digit[16] = {
    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
    'A', 'B', 'C', 'D', 'E', 'F'
 };
@@ -885,7 +885,7 @@ PNG_FUNCTION(void , (PNGCBAPI
 png_safe_error),(png_structp png_nonconst_ptr, png_const_charp error_message),
     PNG_NORETURN)
 {
-   const png_const_structrp png_ptr = png_nonconst_ptr;
+   png_const_structrp png_ptr = png_nonconst_ptr;
    png_imagep image = png_voidcast(png_imagep, png_ptr->error_ptr);
 
    
@@ -920,7 +920,7 @@ png_safe_error),(png_structp png_nonconst_ptr, png_const_charp error_message),
 void  PNGCBAPI
 png_safe_warning(png_structp png_nonconst_ptr, png_const_charp warning_message)
 {
-   const png_const_structrp png_ptr = png_nonconst_ptr;
+   png_const_structrp png_ptr = png_nonconst_ptr;
    png_imagep image = png_voidcast(png_imagep, png_ptr->error_ptr);
 
    

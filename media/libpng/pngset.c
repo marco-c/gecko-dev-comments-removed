@@ -137,7 +137,7 @@ png_set_cHRM_XYZ(png_const_structrp png_ptr, png_inforp info_ptr, double red_X,
 #ifdef PNG_eXIf_SUPPORTED
 void PNGAPI
 png_set_eXIf(png_const_structrp png_ptr, png_inforp info_ptr,
-    const png_bytep eXIf_buf)
+    png_bytep eXIf_buf)
 {
   png_warning(png_ptr, "png_set_eXIf does not work; use png_set_eXIf_1");
   PNG_UNUSED(info_ptr)
@@ -146,7 +146,7 @@ png_set_eXIf(png_const_structrp png_ptr, png_inforp info_ptr,
 
 void PNGAPI
 png_set_eXIf_1(png_const_structrp png_ptr, png_inforp info_ptr,
-    const png_uint_32 num_exif, const png_bytep eXIf_buf)
+    png_uint_32 num_exif, png_bytep eXIf_buf)
 {
    int i;
 
@@ -1544,7 +1544,7 @@ png_set_keep_unknown_chunks(png_structrp png_ptr, int keep,
       
 
 
-      static PNG_CONST png_byte chunks_to_ignore[] = {
+      static const png_byte chunks_to_ignore[] = {
          98,  75,  71,  68, '\0',  
          99,  72,  82,  77, '\0',  
         101,  88,  73, 102, '\0',  
