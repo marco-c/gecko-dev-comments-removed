@@ -348,12 +348,8 @@ already_AddRefed<Promise> WebAuthnManager::MakeCredential(
   }
 
   
-  uint8_t userVerificationRequirement =
-      static_cast<uint8_t>(selection.mUserVerification);
-
-  
   WebAuthnAuthenticatorSelection authSelection(selection.mRequireResidentKey,
-                                               userVerificationRequirement,
+                                               selection.mUserVerification,
                                                authenticatorAttachment);
 
   
@@ -523,10 +519,6 @@ already_AddRefed<Promise> WebAuthnManager::GetAssertion(
   }
 
   
-  uint8_t userVerificationRequirement =
-      static_cast<uint8_t>(aOptions.mUserVerification);
-
-  
   
   
   
@@ -560,7 +552,7 @@ already_AddRefed<Promise> WebAuthnManager::GetAssertion(
     extensions.AppendElement(WebAuthnExtensionAppId(appIdHash, appId));
   }
 
-  WebAuthnGetAssertionExtraInfo extra(extensions, userVerificationRequirement);
+  WebAuthnGetAssertionExtraInfo extra(extensions, aOptions.mUserVerification);
 
   WebAuthnGetAssertionInfo info(origin, NS_ConvertUTF8toUTF16(rpId), challenge,
                                 clientDataJSON, adjustedTimeout, allowList,
