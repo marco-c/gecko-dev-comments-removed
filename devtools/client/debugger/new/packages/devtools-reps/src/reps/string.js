@@ -7,15 +7,15 @@ const PropTypes = require("prop-types");
 
 const {
   containsURL,
-  isURL,
   escapeString,
   getGripType,
   rawCropString,
   sanitizeString,
   wrapRender,
   isGrip,
-  tokenSplitRegex,
-  ELLIPSIS
+  ELLIPSIS,
+  uneatLastUrlCharsRegex,
+  urlRegex
 } = require("./rep-utils");
 
 const dom = require("react-dom-factories");
@@ -184,75 +184,75 @@ function getLinkifiedElements(text, cropLimit, openLink, isInContentPage) {
   const startCropIndex = cropLimit ? halfLimit : null;
   const endCropIndex = cropLimit ? text.length - halfLimit : null;
 
-  
-  
-  let currentIndex = 0;
   const items = [];
-  for (const token of text.split(tokenSplitRegex)) {
-    if (isURL(token)) {
-      
-      const tokenStart = text.indexOf(token, currentIndex);
-      let nonUrlText = text.slice(currentIndex, tokenStart);
-      nonUrlText = getCroppedString(
-        nonUrlText,
-        currentIndex,
-        startCropIndex,
-        endCropIndex
-      );
-      if (nonUrlText) {
-        items.push(nonUrlText);
-      }
-
-      
-      currentIndex = tokenStart;
-
-      const linkText = getCroppedString(
-        token,
-        currentIndex,
-        startCropIndex,
-        endCropIndex
-      );
-      if (linkText) {
-        items.push(
-          a(
-            {
-              className: "url",
-              title: token,
-              draggable: false,
-              
-              
-              
-              
-              href: openLink || isInContentPage ? token : null,
-              onClick: openLink
-                ? e => {
-                    e.preventDefault();
-                    openLink(token, e);
-                  }
-                : null
-            },
-            linkText
-          )
-        );
-      }
-
-      currentIndex = tokenStart + token.length;
+  let currentIndex = 0;
+  let contentStart;
+  while (true) {
+    const url = urlRegex.exec(text);
+    
+    if (!url) {
+      break;
     }
+    contentStart = url.index + url[1].length;
+    if (contentStart > 0) {
+      const nonUrlText = text.substring(0, contentStart);
+      items.push(
+        getCroppedString(nonUrlText, currentIndex, startCropIndex, endCropIndex)
+      );
+    }
+
+    
+    
+    
+    let useUrl = url[2];
+    const uneat = uneatLastUrlCharsRegex.exec(useUrl);
+    if (uneat) {
+      useUrl = useUrl.substring(0, uneat.index);
+    }
+
+    currentIndex = currentIndex + contentStart;
+    const linkText = getCroppedString(
+      useUrl,
+      currentIndex,
+      startCropIndex,
+      endCropIndex
+    );
+
+    if (linkText) {
+      items.push(
+        a(
+          {
+            className: "url",
+            title: useUrl,
+            draggable: false,
+            
+            
+            
+            
+            href: openLink || isInContentPage ? useUrl : null,
+            onClick: openLink
+              ? e => {
+                  e.preventDefault();
+                  openLink(useUrl, e);
+                }
+              : null
+          },
+          linkText
+        )
+      );
+    }
+
+    currentIndex = currentIndex + useUrl.length;
+    text = text.substring(url.index + url[1].length + useUrl.length);
   }
 
   
   
-  if (currentIndex !== text.length) {
-    let nonUrlText = text.slice(currentIndex, text.length);
+  if (text.length > 0) {
     if (currentIndex < endCropIndex) {
-      nonUrlText = getCroppedString(
-        nonUrlText,
-        currentIndex,
-        startCropIndex,
-        endCropIndex
-      );
+      text = getCroppedString(text, currentIndex, startCropIndex, endCropIndex);
     }
-    items.push(nonUrlText);
+    items.push(text);
   }
 
   return items;
