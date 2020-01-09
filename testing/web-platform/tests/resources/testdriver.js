@@ -194,6 +194,20 @@
 
         action_sequence: function(actions) {
             return window.test_driver_internal.action_sequence(actions);
+        },
+
+        
+
+
+
+
+
+
+
+
+
+        generate_test_report: function(message) {
+            return window.test_driver_internal.generate_test_report(message);
         }
     };
 
@@ -280,6 +294,17 @@
 
 
         action_sequence: function(actions) {
+            return Promise.reject(new Error("unimplemented"));
+        },
+
+        
+
+
+
+
+
+
+        generate_test_report: function(message) {
             return Promise.reject(new Error("unimplemented"));
         }
     };
