@@ -53,8 +53,6 @@ def apply_patches(base):
         
         'add_H444ToARGB.patch',
         
-        'aarch64-windows-noneon.patch',
-        
         'bug_1491848.patch',
     ]
 
