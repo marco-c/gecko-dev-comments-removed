@@ -857,6 +857,23 @@ const proto = {
   
 
 
+  proxySlots: function() {
+    
+    
+    
+    if (!DevToolsUtils.unwrap(this.obj).isProxy) {
+      return this.throwError("objectNotProxy",
+        "'proxySlots' request is only valid for grips with a 'Proxy' class.");
+    }
+    return {
+      proxyTarget: this.hooks.createValueGrip(this.obj.proxyTarget),
+      proxyHandler: this.hooks.createValueGrip(this.obj.proxyHandler),
+    };
+  },
+
+  
+
+
 
   release: function() {},
 };
