@@ -135,12 +135,12 @@ class UrlbarController {
       TelemetryStopwatch.finish(TELEMETRY_6_FIRST_RESULTS, queryContext);
     }
 
+    if (queryContext.lastResultCount == 0 && queryContext.autofillValue) {
+      this.input.autofill(queryContext.autofillValue);
+    }
+
+    
     if (queryContext.lastResultCount == 0) {
-      if (queryContext.autofillValue) {
-        this.input.autofill(queryContext.autofillValue);
-      }
-      
-      
       this.speculativeConnect(queryContext, 0, "resultsadded");
     }
 
