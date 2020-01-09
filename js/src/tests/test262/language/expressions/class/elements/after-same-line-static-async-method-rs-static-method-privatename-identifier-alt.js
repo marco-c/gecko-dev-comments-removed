@@ -57,6 +57,7 @@
 
 
 
+
 var C = class {
   static async m() { return 42; } static #$(value) {
     return value;

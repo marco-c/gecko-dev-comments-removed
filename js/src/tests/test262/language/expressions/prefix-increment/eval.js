@@ -1,5 +1,5 @@
 
-'use strict';
+
 
 
 
@@ -25,4 +25,6 @@
 
 $DONOTEVALUATE();
 
-arguments--;
+++eval;
+
+reportCompare(0, 0);

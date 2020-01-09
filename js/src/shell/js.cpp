@@ -841,6 +841,18 @@ static MOZ_MUST_USE bool RunFile(JSContext* cx, const char* filename,
                                  bool compileOnly) {
   SkipUTF8BOM(file);
 
+  
+  
+  int ch = fgetc(file);
+  if (ch == '#') {
+    while ((ch = fgetc(file)) != EOF) {
+      if (ch == '\n' || ch == '\r') {
+        break;
+      }
+    }
+  }
+  ungetc(ch, file);
+
   int64_t t1 = PRMJ_Now();
   RootedScript script(cx);
 

@@ -10,6 +10,7 @@
 
 
 
+
 var result;
 
 result = delete	0;

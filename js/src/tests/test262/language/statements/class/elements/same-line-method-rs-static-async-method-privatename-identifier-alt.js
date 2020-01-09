@@ -60,6 +60,7 @@
 
 
 
+
 class C {
   static async #$(value) {
     return await value;

@@ -56,6 +56,7 @@
 
 
 
+
 class C {
   async m() { return 42; } #$; #_; #\u{6F}; #℘; #ZW_‌_NJ; #ZW_‍_J;
   $(value) {

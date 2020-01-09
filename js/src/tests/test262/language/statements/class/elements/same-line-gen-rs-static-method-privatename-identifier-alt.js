@@ -57,6 +57,7 @@
 
 
 
+
 class C {
   static #$(value) {
     return value;

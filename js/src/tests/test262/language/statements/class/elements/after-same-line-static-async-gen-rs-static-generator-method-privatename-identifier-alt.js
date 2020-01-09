@@ -60,6 +60,7 @@
 
 
 
+
 class C {
   static async *m() { return 42; } static * #$(value) {
     yield * value;

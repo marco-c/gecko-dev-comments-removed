@@ -56,6 +56,7 @@
 
 
 
+
 class C {
   foo = "foobar";
   m() { return 42 }

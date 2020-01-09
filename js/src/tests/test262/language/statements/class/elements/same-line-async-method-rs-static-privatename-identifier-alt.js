@@ -57,6 +57,7 @@
 
 
 
+
 class C {
   async m() { return 42; } static #$; static #_; static #\u{6F}; static #℘; static #ZW_‌_NJ; static #ZW_‍_J;
   static $(value) {

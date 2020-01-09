@@ -60,6 +60,7 @@
 
 
 
+
 var C = class {
   *m() { return 42; } static * #$(value) {
     yield * value;
