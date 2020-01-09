@@ -1257,6 +1257,7 @@ class gfxFontGroup final : public gfxTextRunFactory {
 
   
   void AddPlatformFont(const nsACString& aName,
+                       bool aQuotedName,
                        nsTArray<FamilyAndGeneric>& aFamilyList);
 
   

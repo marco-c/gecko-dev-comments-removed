@@ -154,7 +154,11 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
 
     
     
-    eNoAddToNamesMissedWhenSearching = 1 << 2
+    eNoAddToNamesMissedWhenSearching = 1 << 2,
+
+    
+    
+    eQuotedFamilyName = 1 << 3
   };
 
   
