@@ -400,7 +400,7 @@ class ProxyScriptContext extends BaseContext {
       return false;
     }
 
-    ProxyService.registerFilter(
+    ProxyService.registerChannelFilter(
       this ,
       0 
     );
@@ -428,12 +428,17 @@ class ProxyScriptContext extends BaseContext {
 
 
 
-  applyFilter(service, uri, defaultProxyInfo, callback) {
+  applyFilter(service, channel, defaultProxyInfo, proxyFilter) {
+    let proxyInfo;
     try {
-      
-      let ret = this.FindProxyForURL(uri.prePath, uri.host, this.contextInfo);
-      ret = ProxyInfoData.proxyInfoFromProxyData(this, ret, defaultProxyInfo);
-      callback.onProxyFilterResult(ret);
+      let wrapper = ChannelWrapper.get(channel);
+      if (this.extension.policy.privateBrowsingAllowed ||
+          wrapper.loadInfo.originAttributes.privateBrowsingId == 0) {
+        let uri = wrapper.finalURI;
+        
+        let ret = this.FindProxyForURL(uri.prePath, uri.host, this.contextInfo);
+        proxyInfo = ProxyInfoData.proxyInfoFromProxyData(this, ret, defaultProxyInfo);
+      }
     } catch (e) {
       let error = this.normalizeError(e);
       this.extension.emit("proxy-error", {
@@ -442,7 +447,9 @@ class ProxyScriptContext extends BaseContext {
         lineNumber: error.lineNumber,
         stack: error.stack,
       });
-      callback.onProxyFilterResult(defaultProxyInfo);
+    } finally {
+      
+      proxyFilter.onProxyFilterResult(proxyInfo !== undefined ? proxyInfo : defaultProxyInfo);
     }
   }
 
