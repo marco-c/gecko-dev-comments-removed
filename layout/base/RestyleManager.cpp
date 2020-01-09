@@ -476,6 +476,8 @@ static nsChangeHint ChangeForContentStateChange(const Element& aElement,
         aStateMask.HasAtLeastOneOfStates(
             NS_EVENT_STATE_BROKEN | NS_EVENT_STATE_USERDISABLED |
             NS_EVENT_STATE_SUPPRESSED | NS_EVENT_STATE_LOADING)) {
+      
+      
       return nsChangeHint_ReconstructFrame;
     }
 
