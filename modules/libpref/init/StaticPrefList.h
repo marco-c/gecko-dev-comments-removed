@@ -429,6 +429,13 @@ VARCACHE_PREF(
 
 
 VARCACHE_PREF(
+  "browser.measurement.render_anims_and_video_solid",
+  browser_measurement_render_anims_and_video_solid,
+  RelaxedAtomicBool, false
+)
+
+
+VARCACHE_PREF(
   "dom.indexedDB.storageOption.enabled",
    dom_indexedDB_storageOption_enabled,
   RelaxedAtomicBool, false

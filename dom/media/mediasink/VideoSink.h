@@ -162,6 +162,9 @@ class VideoSink : public MediaSink {
   
   bool mHiResTimersRequested;
 #endif
+
+  RefPtr<layers::Image> mBlankImage;
+  bool InitializeBlankImage();
 };
 
 }  
