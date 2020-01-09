@@ -84,7 +84,7 @@ UDPSocketChild::Bind(nsIUDPSocketInternal* aSocket, nsIPrincipal* aPrincipal,
     
     
     MOZ_ASSERT(!aPrincipal);
-    mBackgroundManager->SendPUDPSocketConstructor(this, void_t(), mFilterName);
+    mBackgroundManager->SendPUDPSocketConstructor(this, Nothing(), mFilterName);
   } else {
     if (aMainThreadEventTarget) {
       gNeckoChild->SetEventTargetForActor(this, aMainThreadEventTarget);

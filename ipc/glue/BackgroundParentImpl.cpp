@@ -679,7 +679,7 @@ bool BackgroundParentImpl::DeallocPCamerasParent(
 }
 
 auto BackgroundParentImpl::AllocPUDPSocketParent(
-    const OptionalPrincipalInfo& , const nsCString & )
+    const Maybe<PrincipalInfo>& , const nsCString & )
     -> PUDPSocketParent* {
   RefPtr<UDPSocketParent> p = new UDPSocketParent(this);
 
@@ -687,12 +687,12 @@ auto BackgroundParentImpl::AllocPUDPSocketParent(
 }
 
 mozilla::ipc::IPCResult BackgroundParentImpl::RecvPUDPSocketConstructor(
-    PUDPSocketParent* aActor, const OptionalPrincipalInfo& aOptionalPrincipal,
+    PUDPSocketParent* aActor, const Maybe<PrincipalInfo>& aOptionalPrincipal,
     const nsCString& aFilter) {
   AssertIsInMainOrSocketProcess();
   AssertIsOnBackgroundThread();
 
-  if (aOptionalPrincipal.type() == OptionalPrincipalInfo::TPrincipalInfo) {
+  if (aOptionalPrincipal.isSome()) {
     
     
     return IPC_FAIL_NO_REASON(this);
