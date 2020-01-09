@@ -15,6 +15,17 @@ function _getSupportsFile(path) {
   return fileurl.QueryInterface(Ci.nsIFileURL);
 }
 
+async function enableExtensionDebugging() {
+  
+  await pushPref("devtools.chrome.enabled", true);
+  await pushPref("devtools.debugger.remote-enabled", true);
+  
+  await pushPref("devtools.debugger.prompt-connection", false);
+  
+  await pushPref("devtools.browser-toolbox.allow-unsafe-script", true);
+}
+
+
 
 
 
@@ -39,6 +50,26 @@ async function installTemporaryExtension(path, name, document) {
 
   info("Wait for addon to be installed");
   await onAddonInstalled;
+}
+
+
+
+
+
+
+async function installTemporaryExtensionFromManifest(manifest, document) {
+  const addonId = manifest.applications.gecko.id;
+  const temporaryExtension = new TemporaryExtension(addonId);
+  temporaryExtension.writeManifest(manifest);
+  registerCleanupFunction(() => temporaryExtension.remove(false));
+
+  info("Install a temporary extension");
+  await AddonManager.installTemporaryAddon(temporaryExtension.sourceDir);
+
+  info("Wait until the corresponding debug target item appears");
+  await waitUntil(() => findDebugTargetByText(manifest.name, document));
+
+  return temporaryExtension;
 }
 
 
