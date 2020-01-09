@@ -28,13 +28,29 @@ def filter_app(tests, values):
             yield test
 
 
-def get_browser_test_list(browser_app):
+def filter_live_sites(tests, values):
+    
+    
+    for test in tests:
+        if test.get("use_live_sites", "false") == "true":
+            
+            if values["run_local"] is True:
+                yield test
+            
+            if "hg.mozilla.org/try" in os.environ.get('GECKO_HEAD_REPOSITORY', 'n/a'):
+                yield test
+        else:
+            
+            yield test
+
+
+def get_browser_test_list(browser_app, run_local):
     LOG.info(raptor_ini)
     test_manifest = TestManifest([raptor_ini], strict=False)
-    info = {"app": browser_app}
+    info = {"app": browser_app, "run_local": run_local}
     return test_manifest.active_tests(exists=False,
                                       disabled=False,
-                                      filters=[filter_app],
+                                      filters=[filter_app, filter_live_sites],
                                       **info)
 
 
@@ -96,7 +112,9 @@ def write_test_settings_json(args, test_details, oskey):
     if test_details['type'] == "pageload":
         test_settings['raptor-options']['measure'] = {}
 
-        for m in [m.strip() for m in test_details['measure'].split(',')]:
+        
+        
+        for m in test_details['measure']:
             test_settings['raptor-options']['measure'][m] = True
             if m == 'hero':
                 test_settings['raptor-options']['measure'][m] = [h.strip() for h in
@@ -182,7 +200,7 @@ def get_raptor_test_list(args, oskey):
     '''
     tests_to_run = []
     
-    available_tests = get_browser_test_list(args.app)
+    available_tests = get_browser_test_list(args.app, args.run_local)
 
     
     for next_test in available_tests:
@@ -225,6 +243,31 @@ def get_raptor_test_list(args, oskey):
         if args.page_timeout is not None:
             LOG.info("setting page-timeout to %d as specified on cmd line" % args.page_timeout)
             next_test['page_timeout'] = args.page_timeout
+
+        if next_test.get('use_live_sites', "false") == "true":
+            
+            LOG.info("using live sites so turning playback off!")
+            next_test['playback'] = None
+            LOG.info("using live sites so appending '-live' to the test name")
+            next_test['name'] = next_test['name'] + "-live"
+            
+            next_test['page_timeout'] = 180000
+
+        
+        if next_test.get('measure') is not None:
+            _measures = []
+            for m in [m.strip() for m in next_test['measure'].split(',')]:
+                
+                _measures.append(m)
+            next_test['measure'] = _measures
+
+            
+            if 'hero' in next_test['measure'] and \
+               next_test.get('use_live_sites', "false") == "true":
+                
+                next_test['measure'].remove('hero')
+                
+                del next_test['hero']
 
     
     if len(tests_to_run) != 0:
