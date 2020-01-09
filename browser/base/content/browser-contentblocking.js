@@ -745,7 +745,7 @@ var ThirdPartyCookies = {
 
 var ContentBlocking = {
   
-  MAX_INTROS: 20,
+  MAX_INTROS: Services.prefs.getIntPref("browser.contentblocking.maxIntroCount"),
   PREF_ANIMATIONS_ENABLED: "toolkit.cosmeticAnimations.enabled",
   PREF_REPORT_BREAKAGE_ENABLED: "browser.contentblocking.reportBreakage.enabled",
   PREF_REPORT_BREAKAGE_URL: "browser.contentblocking.reportBreakage.url",
