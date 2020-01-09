@@ -883,6 +883,9 @@ DebuggerClient.prototype = {
 
 
   onClosed: function() {
+    if (this._closed) {
+      return;
+    }
     this._closed = true;
     this.emit("closed");
 
