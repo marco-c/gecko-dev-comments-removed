@@ -51,12 +51,13 @@ def dependentlibs_readelf(lib):
     proc.wait()
     return deps
 
-def dependentlibs_otool(lib):
+def dependentlibs_mac_objdump(lib):
     '''Returns the list of dependencies declared in the given MACH-O dylib'''
-    proc = subprocess.Popen([substs['OTOOL'], '-l', lib], stdout = subprocess.PIPE)
-    deps= []
+    proc = subprocess.Popen([substs['LLVM_OBJDUMP'], '--private-headers', lib], stdout = subprocess.PIPE)
+    deps = []
     cmd = None
     for line in proc.stdout:
+        
         
         
         
@@ -100,7 +101,7 @@ def gen_list(output, lib):
     if binary_type == ELF:
         func = dependentlibs_readelf
     elif binary_type == MACHO:
-        func = dependentlibs_otool
+        func = dependentlibs_mac_objdump
     else:
         ext = os.path.splitext(lib)[1]
         assert(ext == '.dll')
