@@ -529,18 +529,7 @@ pref("media.getusermedia.noise", 1);
 pref("media.getusermedia.agc_enabled", true);
 pref("media.getusermedia.agc", 1); 
 
-
-
 pref("media.navigator.audio.full_duplex", true);
-#if defined(XP_MACOSX)
-pref("media.peerconnection.capture_delay", 50);
-#elif defined(XP_WIN)
-pref("media.peerconnection.capture_delay", 50);
-#elif defined(ANDROID)
-pref("media.peerconnection.capture_delay", 100);
-#else
-pref("media.peerconnection.capture_delay", 70);
-#endif
 #endif
 
 pref("dom.webaudio.enabled", true);

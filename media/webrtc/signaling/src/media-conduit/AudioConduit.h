@@ -191,7 +191,6 @@ class WebrtcAudioConduit : public AudioSessionConduit,
         mSendChannel(-1),
         mDtmfEnabled(false),
         mMutex("WebrtcAudioConduit::mMutex"),
-        mCaptureDelay(150),
         mStsThread(aStsThread) {}
 
   virtual ~WebrtcAudioConduit();
@@ -341,10 +340,6 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   bool mDtmfEnabled;
 
   Mutex mMutex;
-
-  
-  
-  int32_t mCaptureDelay;
 
   
   webrtc::AudioFrame mAudioFrame;  
