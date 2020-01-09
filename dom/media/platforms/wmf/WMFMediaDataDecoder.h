@@ -35,12 +35,12 @@ class MFTManager {
   
   virtual HRESULT Output(int64_t aStreamOffset, RefPtr<MediaData>& aOutput) = 0;
 
-  virtual void Flush() {
+  void Flush() {
     mDecoder->Flush();
     mSeekTargetThreshold.reset();
   }
 
-  virtual void Drain() {
+  void Drain() {
     if (FAILED(mDecoder->SendMFTMessage(MFT_MESSAGE_COMMAND_DRAIN, 0))) {
       NS_WARNING("Failed to send DRAIN command to MFT");
     }
@@ -142,6 +142,9 @@ class WMFMediaDataDecoder
   
   
   int64_t mLastStreamOffset;
+  Maybe<media::TimeUnit> mLastTime;
+  media::TimeUnit mLastDuration;
+  int64_t mSamplesCount = 0;
 
   bool mIsShutDown = false;
 

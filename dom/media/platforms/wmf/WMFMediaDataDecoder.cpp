@@ -125,6 +125,11 @@ RefPtr<MediaDataDecoder::DecodePromise> WMFMediaDataDecoder::ProcessDecode(
     return ProcessError(hr, "MFTManager::Input");
   }
 
+  if (!mLastTime || aSample->mTime > *mLastTime) {
+    mLastTime = Some(aSample->mTime);
+    mLastDuration = aSample->mDuration;
+  }
+  mSamplesCount++;
   mDrainStatus = DrainStatus::DRAINABLE;
   mLastStreamOffset = aSample->mOffset;
 
@@ -155,6 +160,8 @@ RefPtr<MediaDataDecoder::FlushPromise> WMFMediaDataDecoder::ProcessFlush() {
     mMFTManager->Flush();
   }
   mDrainStatus = DrainStatus::DRAINED;
+  mSamplesCount = 0;
+  mLastTime.reset();
   return FlushPromise::CreateAndResolve(true, __func__);
 }
 
@@ -183,6 +190,25 @@ RefPtr<MediaDataDecoder::DecodePromise> WMFMediaDataDecoder::ProcessDrain() {
     mDrainStatus = DrainStatus::DRAINED;
   }
   if (SUCCEEDED(hr) || hr == MF_E_TRANSFORM_NEED_MORE_INPUT) {
+    if (results.Length() > 0 &&
+        results.LastElement()->mType == MediaData::Type::VIDEO_DATA) {
+      const RefPtr<MediaData>& data = results.LastElement();
+      if (mSamplesCount == 1 && data->mTime == media::TimeUnit::Zero()) {
+        
+        
+        
+        
+        
+        data->mTime = *mLastTime;
+      }
+      if (data->mTime == *mLastTime) {
+        
+        
+        
+        
+        data->mDuration = mLastDuration;
+      }
+    }
     return DecodePromise::CreateAndResolve(std::move(results), __func__);
   }
   return ProcessError(hr, "MFTManager::Output");
