@@ -16,10 +16,6 @@ let whitelist = [
   {sourceName: /devtools\/client\/debugger\/src\/components\/([A-z\/]+).css/i,
   isFromDevTools: true},
   
-  {sourceName: /web\/viewer\.css$/i,
-   errorMessage: /Unknown property.*(appearance|user-select)/i,
-   isFromDevTools: false},
-  
   {sourceName: /highlighters\.css$/i,
    errorMessage: /Unknown pseudo-class.*moz-native-anonymous/i,
    isFromDevTools: true},

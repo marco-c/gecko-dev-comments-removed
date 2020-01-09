@@ -153,8 +153,6 @@ pub enum StyleParseErrorKind<'i> {
     
     UnknownProperty(CowRcStr<'i>),
     
-    UnknownVendorProperty,
-    
     ExperimentalProperty,
     
     InvalidColor(CowRcStr<'i>, Token<'i>),
