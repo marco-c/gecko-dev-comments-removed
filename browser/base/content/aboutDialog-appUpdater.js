@@ -50,7 +50,7 @@ function appUpdater(options = {}) {
   
   
   if (Services.wm.getMostRecentWindow("Update:Wizard") &&
-      !this.isReadyForRestart) {
+      !this.isApplied) {
     this.updateDeck.hidden = true;
     return;
   }
@@ -69,7 +69,7 @@ function appUpdater(options = {}) {
     return;
   }
 
-  if (this.isReadyForRestart) {
+  if (this.isPending || this.isApplied) {
     this.selectPanel("apply");
     return;
   }
@@ -81,12 +81,6 @@ function appUpdater(options = {}) {
 
   if (this.isDownloading) {
     this.startDownload();
-    
-    return;
-  }
-
-  if (this.isStaging) {
-    this.waitForUpdateToStage();
     
     return;
   }
@@ -130,38 +124,6 @@ appUpdater.prototype =
             this.um.activeUpdate.state == "applied-service");
   },
 
-  get isStaging() {
-    if (!this.updateStagingEnabled) {
-      return false;
-    }
-    let errorCode;
-    if (this.update) {
-      errorCode = this.update.errorCode;
-    } else {
-      errorCode = this.um.activeUpdate.errorCode;
-    }
-    
-    
-    return this.isPending && errorCode == 0;
-  },
-
-  
-  get isReadyForRestart() {
-    if (this.updateStagingEnabled) {
-      let errorCode;
-      if (this.update) {
-        errorCode = this.update.errorCode;
-      } else {
-        errorCode = this.um.activeUpdate.errorCode;
-      }
-      
-      
-      
-      return this.isApplied || (this.isPending && errorCode != 0);
-    }
-    return this.isPending;
-  },
-
   
   get isDownloading() {
     if (this.update)
@@ -176,9 +138,9 @@ appUpdater.prototype =
   },
 
   
-  get updateStagingEnabled() {
+  get backgroundUpdateEnabled() {
     return !this.updateDisabledByPolicy &&
-           this.aus.canStageUpdates;
+           gAppUpdater.aus.canStageUpdates;
   },
 
   
@@ -238,7 +200,7 @@ appUpdater.prototype =
 
 
   buttonRestartAfterDownload() {
-    if (!this.isReadyForRestart) {
+    if (!this.isPending && !this.isApplied) {
       return;
     }
 
@@ -329,18 +291,6 @@ appUpdater.prototype =
   
 
 
-  waitForUpdateToStage() {
-    if (!this.update)
-      this.update = this.um.activeUpdate;
-    this.update.QueryInterface(Ci.nsIWritablePropertyBag);
-    this.update.setProperty("foregroundDownload", "true");
-    this.selectPanel("applying");
-    this.updateUIWhenStagingComplete();
-  },
-
-  
-
-
   startDownload() {
     if (!this.update)
       this.update = this.um.activeUpdate;
@@ -401,9 +351,32 @@ appUpdater.prototype =
       break;
     case Cr.NS_OK:
       this.removeDownloadListener();
-      if (this.updateStagingEnabled) {
+      if (this.backgroundUpdateEnabled) {
         this.selectPanel("applying");
-        this.updateUIWhenStagingComplete();
+        let self = this;
+        Services.obs.addObserver(function observer(aSubject, aTopic, aData) {
+          
+          let status = aData;
+          if (status == "applied" || status == "applied-service" ||
+              status == "pending" || status == "pending-service" ||
+              status == "pending-elevate") {
+            
+            
+            
+            self.selectPanel("apply");
+          } else if (status == "failed") {
+            
+            
+            self.selectPanel("downloadFailed");
+          } else if (status == "downloading") {
+            
+            
+            
+            self.setupDownloadingUI();
+            return;
+          }
+          Services.obs.removeObserver(observer, "update-staged");
+        }, "update-staged");
       } else {
         this.selectPanel("apply");
       }
@@ -427,40 +400,6 @@ appUpdater.prototype =
   onProgress(aRequest, aContext, aProgress, aProgressMax) {
     this.downloadStatus.textContent =
       DownloadUtils.getTransferTotal(aProgress, aProgressMax);
-  },
-
-  
-
-
-
-
-
-
-  updateUIWhenStagingComplete() {
-    let observer = (aSubject, aTopic, aData) => {
-      
-      let status = aData;
-      if (status == "applied" || status == "applied-service" ||
-          status == "pending" || status == "pending-service" ||
-          status == "pending-elevate") {
-        
-        
-        
-        this.selectPanel("apply");
-      } else if (status == "failed") {
-        
-        
-        this.selectPanel("downloadFailed");
-      } else if (status == "downloading") {
-        
-        
-        
-        this.setupDownloadingUI();
-        return;
-      }
-      Services.obs.removeObserver(observer, "update-staged");
-    };
-    Services.obs.addObserver(observer, "update-staged");
   },
 
   
