@@ -1,0 +1,60 @@
+
+
+
+
+
+#ifndef include_dom_media_ipc_RemoteDecoderParent_h
+#define include_dom_media_ipc_RemoteDecoderParent_h
+#include "mozilla/PRemoteDecoderParent.h"
+
+namespace mozilla {
+
+class RemoteDecoderManagerParent;
+using mozilla::ipc::IPCResult;
+
+class RemoteDecoderParent : public PRemoteDecoderParent {
+  friend class PRemoteDecoderParent;
+
+ public:
+  
+  
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RemoteDecoderParent)
+
+  RemoteDecoderParent(RemoteDecoderManagerParent* aParent,
+                      TaskQueue* aManagerTaskQueue,
+                      TaskQueue* aDecodeTaskQueue);
+
+  void Destroy();
+
+  
+  IPCResult RecvInit();
+  IPCResult RecvInput(const MediaRawDataIPDL& aData);
+  IPCResult RecvFlush();
+  IPCResult RecvDrain();
+  IPCResult RecvShutdown();
+  IPCResult RecvSetSeekThreshold(const int64_t& aTime);
+
+  void ActorDestroy(ActorDestroyReason aWhy) override;
+
+ protected:
+  virtual ~RemoteDecoderParent();
+
+  bool OnManagerThread();
+  void Error(const MediaResult& aError);
+
+  virtual void ProcessDecodedData(
+      const MediaDataDecoder::DecodedData& aData) = 0;
+
+  RefPtr<RemoteDecoderManagerParent> mParent;
+  RefPtr<RemoteDecoderParent> mIPDLSelfRef;
+  RefPtr<TaskQueue> mManagerTaskQueue;
+  RefPtr<TaskQueue> mDecodeTaskQueue;
+  RefPtr<MediaDataDecoder> mDecoder;
+
+  
+  bool mDestroyed = false;
+};
+
+}  
+
+#endif  

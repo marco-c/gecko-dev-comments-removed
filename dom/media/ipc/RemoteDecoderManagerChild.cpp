@@ -7,7 +7,7 @@
 
 #include "base/task.h"
 
-#include "RemoteVideoDecoderChild.h"
+#include "RemoteDecoderChild.h"
 
 namespace mozilla {
 
@@ -77,17 +77,21 @@ RemoteDecoderManagerChild::GetManagerAbstractThread() {
   return sRemoteDecoderManagerChildAbstractThread;
 }
 
-PRemoteVideoDecoderChild*
-RemoteDecoderManagerChild::AllocPRemoteVideoDecoderChild(
-    const VideoInfo& , const float& ,
+PRemoteDecoderChild*
+RemoteDecoderManagerChild::AllocPRemoteDecoderChild(
+    const RemoteDecoderInfoIPDL& ,
     const CreateDecoderParams::OptionSet& , bool* ,
     nsCString* ) {
-  return new RemoteVideoDecoderChild();
+  
+  
+  MOZ_ASSERT(false, "RemoteDecoderManagerChild cannot create "
+                    "RemoteDecoderChild classes");
+  return nullptr;
 }
 
-bool RemoteDecoderManagerChild::DeallocPRemoteVideoDecoderChild(
-    PRemoteVideoDecoderChild* actor) {
-  RemoteVideoDecoderChild* child = static_cast<RemoteVideoDecoderChild*>(actor);
+bool RemoteDecoderManagerChild::DeallocPRemoteDecoderChild(
+    PRemoteDecoderChild* actor) {
+  RemoteDecoderChild* child = static_cast<RemoteDecoderChild*>(actor);
   child->IPDLActorDestroyed();
   return true;
 }
