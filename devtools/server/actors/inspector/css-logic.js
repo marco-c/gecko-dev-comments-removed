@@ -49,13 +49,7 @@ const COMPAREMODE = {
   "INTEGER": "int",
 };
 
-
-
-
-
-function CssLogic(isInherited) {
-  
-  this._isInherited = isInherited;
+function CssLogic() {
   this._propertyInfos = {};
 }
 
@@ -216,7 +210,7 @@ CssLogic.prototype = {
 
     let info = this._propertyInfos[property];
     if (!info) {
-      info = new CssPropertyInfo(this, property, this._isInherited);
+      info = new CssPropertyInfo(this, property);
       this._propertyInfos[property] = info;
     }
 
@@ -509,7 +503,7 @@ CssLogic.prototype = {
         if (rule.getPropertyValue(property) &&
             (status == STATUS.MATCHED ||
              (status == STATUS.PARENT_MATCH &&
-              this._isInherited(property)))) {
+              InspectorUtils.isInheritedProperty(property)))) {
           result[property] = true;
           return false;
         }
@@ -1215,13 +1209,10 @@ CssSelector.prototype = {
 
 
 
-
-
-function CssPropertyInfo(cssLogic, property, isInherited) {
+function CssPropertyInfo(cssLogic, property) {
   this._cssLogic = cssLogic;
   this.property = property;
   this._value = "";
-  this._isInherited = isInherited;
 
   
   
@@ -1307,7 +1298,7 @@ CssPropertyInfo.prototype = {
     if (value &&
         (status == STATUS.MATCHED ||
          (status == STATUS.PARENT_MATCH &&
-          this._isInherited(this.property)))) {
+          InspectorUtils.isInheritedProperty(this.property)))) {
       const selectorInfo = new CssSelectorInfo(selector, this.property, value,
           status, distance);
       this._matchedSelectors.push(selectorInfo);

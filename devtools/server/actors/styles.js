@@ -73,7 +73,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
                    "creating a PageStyleActor.");
     }
     this.walker = inspector.walker;
-    this.cssLogic = new CssLogic(InspectorUtils.isInheritedProperty);
+    this.cssLogic = new CssLogic();
 
     
     this.refMap = new Map();
