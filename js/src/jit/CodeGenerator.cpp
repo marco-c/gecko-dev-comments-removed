@@ -1458,15 +1458,18 @@ void CodeGenerator::visitObjectGroupDispatch(LObjectGroupDispatch* lir) {
     LBlock* target = skipTrivialBlocks(mir->getCaseBlock(i))->lir();
 
     DebugOnly<bool> found = false;
+    
     for (size_t j = 0; j < propTable->numEntries(); j++) {
       if (propTable->getFunction(j) != func) {
         continue;
       }
 
+      
       if (lastBranch.isInitialized()) {
         lastBranch.emit(masm);
       }
 
+      
       ObjectGroup* group = propTable->getObjectGroup(j);
       lastBranch = MacroAssembler::BranchGCPtr(
           Assembler::Equal, temp, ImmGCPtr(group), target->label());
@@ -1477,17 +1480,21 @@ void CodeGenerator::visitObjectGroupDispatch(LObjectGroupDispatch* lir) {
   }
 
   
-  
 
+  
+  
   if (!mir->hasFallback()) {
     MOZ_ASSERT(lastBranch.isInitialized());
 
     Label ok;
+    
     lastBranch.relink(&ok);
     lastBranch.emit(masm);
     masm.assumeUnreachable("Unexpected ObjectGroup");
     masm.bind(&ok);
 
+    
+    
     if (!isNextBlock(lastBlock)) {
       masm.jump(lastBlock->label());
     }
@@ -1495,6 +1502,7 @@ void CodeGenerator::visitObjectGroupDispatch(LObjectGroupDispatch* lir) {
   }
 
   LBlock* fallback = skipTrivialBlocks(mir->getFallback())->lir();
+  
   if (!lastBranch.isInitialized()) {
     if (!isNextBlock(fallback)) {
       masm.jump(fallback->label());
@@ -1502,6 +1510,8 @@ void CodeGenerator::visitObjectGroupDispatch(LObjectGroupDispatch* lir) {
     return;
   }
 
+  
+  
   lastBranch.invertCondition();
   lastBranch.relink(fallback->label());
   lastBranch.emit(masm);
