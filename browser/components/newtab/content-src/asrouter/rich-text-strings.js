@@ -1,4 +1,4 @@
-import {MessageContext} from "fluent";
+import {FluentBundle} from "fluent";
 
 
 
@@ -23,8 +23,8 @@ export const RICH_TEXT_KEYS = Object.keys(RICH_TEXT_CONFIG);
 
 
 
-export function generateMessages(content) {
-  const cx = new MessageContext("en-US");
+export function generateBundles(content) {
+  const bundle = new FluentBundle("en-US");
 
   RICH_TEXT_KEYS.forEach(key => {
     const attrs = RICH_TEXT_CONFIG[key];
@@ -34,7 +34,7 @@ export function generateMessages(content) {
       const attr = attrsToTry.pop();
       string = content[attr];
     }
-    cx.addMessages(`${key} = ${string}`);
+    bundle.addMessages(`${key} = ${string}`);
   });
-  return [cx];
+  return [bundle];
 }

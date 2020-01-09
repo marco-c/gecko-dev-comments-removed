@@ -316,7 +316,6 @@ this.TelemetryFeed = class TelemetryFeed {
       perf: {
         load_trigger_type,
         is_preloaded: false,
-        is_prerendered: false,
       },
     };
 
@@ -407,22 +406,6 @@ this.TelemetryFeed = class TelemetryFeed {
       this.sendEvent(payload);
       this.sendStructuredIngestionEvent(payload, "impression-stats", "1");
     });
-  }
-
-  
-
-
-
-
-  handlePagePrerendered(portID) {
-    const session = this.sessions.get(portID);
-
-    if (!session) {
-      
-      return;
-    }
-
-    session.perf.is_prerendered = true;
   }
 
   
@@ -741,9 +724,6 @@ this.TelemetryFeed = class TelemetryFeed {
         break;
       case at.NEW_TAB_UNLOAD:
         this.endSession(au.getPortIdOfSender(action));
-        break;
-      case at.PAGE_PRERENDERED:
-        this.handlePagePrerendered(au.getPortIdOfSender(action));
         break;
       case at.SAVE_SESSION_PERF_DATA:
         this.saveSessionPerfData(au.getPortIdOfSender(action), action.data);

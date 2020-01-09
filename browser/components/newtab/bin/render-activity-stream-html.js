@@ -3,9 +3,6 @@ const fs = require("fs");
 const {mkdir} = require("shelljs");
 const path = require("path");
 
-
-const {prerender} = require("./prerender");
-
 const {CENTRAL_LOCALES, DEFAULT_LOCALE} = require("./locales");
 
 
@@ -66,9 +63,7 @@ function getTextDirection(locale) {
 
 
 
-
-function templateHTML(options, html) {
-  const isPrerendered = !!html;
+function templateHTML(options) {
   const debugString = options.debug ? "-dev" : "";
   const scripts = [
     "chrome://browser/content/contentSearchUI.js",
@@ -82,9 +77,6 @@ function templateHTML(options, html) {
     `${options.baseUrl}prerendered/${options.locale}/activity-stream-strings.js`,
     `${options.baseUrl}data/content/activity-stream.bundle.js`,
   ];
-  if (isPrerendered) {
-    scripts.unshift(`${options.baseUrl}prerendered/static/activity-stream-initial-state.js`);
-  }
 
   
   const scriptRender = `\n${scripts.map(script => `    <script src="${script}"></script>`).join("\n")}`;
@@ -101,7 +93,7 @@ function templateHTML(options, html) {
   </head>
   <body class="activity-stream">
     <div id="header-asrouter-container" role="presentation"></div>
-    <div id="root">${isPrerendered ? html : "<!-- Regular React Rendering -->"}</div>
+    <div id="root"></div>
     <div id="footer-asrouter-container" role="presentation"></div>${options.noscripts ? "" : scriptRender}
   </body>
 </html>
@@ -137,23 +129,18 @@ window.${name} = ${JSON.stringify(state, null, 2)};
 
 
 
-
-function writeFiles(name, destPath, filesMap, {html, state}, options) {
+function writeFiles(name, destPath, filesMap, options) {
   for (const [file, templater] of filesMap) {
-    fs.writeFileSync(path.join(destPath, file), templater({html, options, state}));
+    fs.writeFileSync(path.join(destPath, file), templater({options}));
   }
   console.log("\x1b[32m", `✓ ${name}`, "\x1b[0m");
 }
 
 const STATIC_FILES = new Map([
   ["activity-stream-debug.html", ({options}) => templateHTML(options)],
-  ["activity-stream-initial-state.js", ({state}) => templateJs("gActivityStreamPrerenderedState", "static", state)],
-  ["activity-stream-prerendered-debug.html", ({html, options}) => templateHTML(options, html)],
 ]);
 
 const LOCALIZED_FILES = new Map([
-  ["activity-stream-prerendered.html", ({html, options}) => templateHTML(options, html)],
-  ["activity-stream-prerendered-noscripts.html", ({html, options}) => templateHTML(Object.assign({}, options, {noscripts: true}), html)],
   ["activity-stream-strings.js", ({options: {locale, strings}}) => templateJs("gActivityStreamStrings", locale, strings)],
   ["activity-stream.html", ({options}) => templateHTML(options)],
   ["activity-stream-noscripts.html", ({options}) => templateHTML(Object.assign({}, options, {noscripts: true}))],
@@ -200,7 +187,6 @@ function main() {
       continue;
     }
 
-    const prerenderData  = prerender(locale, strings);
     const options = Object.assign({}, baseOptions, {
       direction: getTextDirection(locale),
       locale,
@@ -210,13 +196,13 @@ function main() {
     
     const localePath = path.join(prerenderedPath, "locales", locale);
     mkdir("-p", localePath);
-    writeFiles(locale, localePath, LOCALIZED_FILES, prerenderData, options);
+    writeFiles(locale, localePath, LOCALIZED_FILES, options);
 
     
     if (locale === DEFAULT_LOCALE) {
       const staticPath = path.join(prerenderedPath, "static");
       mkdir("-p", staticPath);
-      writeFiles(`${locale} (static)`, staticPath, STATIC_FILES, prerenderData,
+      writeFiles(`${locale} (static)`, staticPath, STATIC_FILES,
         Object.assign({}, options, {debug: true}));
 
       

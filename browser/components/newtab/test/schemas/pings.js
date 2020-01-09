@@ -222,9 +222,6 @@ export const SessionPing = Joi.object().keys(Object.assign({}, baseKeys, {
 
     
     is_preloaded: Joi.bool().required(),
-
-    
-    is_prerendered: Joi.bool().required(),
   }).required(),
 }));
 

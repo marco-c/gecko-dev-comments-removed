@@ -15,17 +15,10 @@ if (typeof Services !== "undefined") {
   
   
   usablePerfObj = Services.appShell.hiddenDOMWindow.performance;
-} else if (typeof performance !== "undefined") {
-  
-  
-  usablePerfObj = performance;
 } else {
   
   
-  usablePerfObj = {
-    now() {},
-    mark() {},
-  };
+  usablePerfObj = performance;
 }
 
 function _PerfService(options) {
