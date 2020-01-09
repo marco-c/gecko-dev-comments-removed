@@ -209,7 +209,7 @@ function openBrowserWindow(cmdLine, triggeringPrincipal, urlOrUrlList, postData 
   let args;
   if (!urlOrUrlList) {
     
-    args = [gBrowserContentHandler.defaultArgs];
+    args = [gBrowserContentHandler.getDefaultArgs(forcePrivate)];
   } else {
     let pService = Cc["@mozilla.org/toolkit/profile-service;1"].
                   getService(Ci.nsIToolkitProfileService);
@@ -518,7 +518,7 @@ nsBrowserContentHandler.prototype = {
 
   
 
-  get defaultArgs() {
+  getDefaultArgs(forcePrivate = false) {
     var prefb = Services.prefs;
 
     if (!gFirstWindow) {
@@ -603,7 +603,7 @@ nsBrowserContentHandler.prototype = {
     try {
       var choice = prefb.getIntPref("browser.startup.page");
       if (choice == 1 || choice == 3)
-        startPage = HomePage.get();
+        startPage = forcePrivate ? HomePage.getPrivate() : HomePage.get();
     } catch (e) {
       Cu.reportError(e);
     }
@@ -619,6 +619,10 @@ nsBrowserContentHandler.prototype = {
       return overridePage + "|" + startPage;
 
     return overridePage || startPage || "about:blank";
+  },
+
+  get defaultArgs() {
+    return this.getDefaultArgs(PrivateBrowsingUtils.permanentPrivateBrowsing);
   },
 
   mFeatures: null,

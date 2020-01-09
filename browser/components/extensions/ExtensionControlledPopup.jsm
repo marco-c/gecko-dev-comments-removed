@@ -31,6 +31,8 @@ ChromeUtils.defineModuleGetter(this, "CustomizableUI",
                                "resource:///modules/CustomizableUI.jsm");
 ChromeUtils.defineModuleGetter(this, "ExtensionSettingsStore",
                                "resource://gre/modules/ExtensionSettingsStore.jsm");
+ChromeUtils.defineModuleGetter(this, "PrivateBrowsingUtils",
+                               "resource://gre/modules/PrivateBrowsingUtils.jsm");
 
 let {
   makeWidgetId,
@@ -195,6 +197,12 @@ class ExtensionControlledPopup {
       extensionId = item && item.id;
     }
 
+    let win = targetWindow || this.topWindow;
+    let isPrivate = PrivateBrowsingUtils.isWindowPrivate(win);
+    if (isPrivate && extensionId && !WebExtensionPolicy.getByID(extensionId).privateBrowsingAllowed) {
+      return;
+    }
+
     
     
     
@@ -203,7 +211,6 @@ class ExtensionControlledPopup {
       return;
     }
 
-    let win = targetWindow || this.topWindow;
     
     
     try {
