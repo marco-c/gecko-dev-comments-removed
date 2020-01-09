@@ -3,6 +3,7 @@
 
 
 #include "MediaTransportHandlerIPC.h"
+#include "mozilla/dom/MediaTransportChild.h"
 #include "nsThreadUtils.h"
 #include "mozilla/net/SocketProcessBridgeChild.h"
 #include "mozilla/RefPtr.h"
@@ -15,29 +16,6 @@ static const char* mthipcLogTag = "MediaTransportHandler";
 #endif
 #define LOGTAG mthipcLogTag
 
-class MediaTransportHandlerChild : public dom::PMediaTransportChild {
- public:
-  explicit MediaTransportHandlerChild(MediaTransportHandlerIPC* aUser);
-  virtual ~MediaTransportHandlerChild();
-  mozilla::ipc::IPCResult RecvOnCandidate(
-      const string& transportId, const CandidateInfo& candidateInfo) override;
-  mozilla::ipc::IPCResult RecvOnAlpnNegotiated(const string& alpn) override;
-  mozilla::ipc::IPCResult RecvOnGatheringStateChange(const int& state) override;
-  mozilla::ipc::IPCResult RecvOnConnectionStateChange(
-      const int& state) override;
-  mozilla::ipc::IPCResult RecvOnPacketReceived(
-      const string& transportId, const MediaPacket& packet) override;
-  mozilla::ipc::IPCResult RecvOnEncryptedSending(
-      const string& transportId, const MediaPacket& packet) override;
-  mozilla::ipc::IPCResult RecvOnStateChange(const string& transportId,
-                                            const int& state) override;
-  mozilla::ipc::IPCResult RecvOnRtcpStateChange(const string& transportId,
-                                                const int& state) override;
-
- private:
-  RefPtr<MediaTransportHandlerIPC> mUser;
-};
-
 MediaTransportHandlerIPC::MediaTransportHandlerIPC(
     nsISerialEventTarget* aCallbackThread)
     : MediaTransportHandler(aCallbackThread) {
@@ -45,7 +23,7 @@ MediaTransportHandlerIPC::MediaTransportHandlerIPC(
       GetMainThreadSerialEventTarget(), __func__,
       [this, self = RefPtr<MediaTransportHandlerIPC>(this)](
           const RefPtr<net::SocketProcessBridgeChild>& aBridge) {
-        mChild = new MediaTransportHandlerChild(this);
+        mChild = new MediaTransportChild(this);
         
         
         aBridge->SetEventTargetForActor(mChild, GetMainThreadEventTarget());
@@ -158,7 +136,7 @@ void MediaTransportHandlerIPC::Destroy() {
       GetMainThreadSerialEventTarget(), __func__,
       [=, self = RefPtr<MediaTransportHandlerIPC>(this)](bool ) {
         if (mChild) {
-          MediaTransportHandlerChild::Send__delete__(mChild);
+          MediaTransportChild::Send__delete__(mChild);
           mChild = nullptr;
         }
       },
@@ -327,30 +305,29 @@ MediaTransportHandlerIPC::GetIceStats(
       });
 }
 
-MediaTransportHandlerChild::MediaTransportHandlerChild(
-    MediaTransportHandlerIPC* aUser)
+MediaTransportChild::MediaTransportChild(MediaTransportHandlerIPC* aUser)
     : mUser(aUser) {}
 
-MediaTransportHandlerChild::~MediaTransportHandlerChild() {
+MediaTransportChild::~MediaTransportChild() {
   MOZ_ASSERT(GetMainThreadEventTarget()->IsOnCurrentThread());
   mUser->mChild = nullptr;
 }
 
-mozilla::ipc::IPCResult MediaTransportHandlerChild::RecvOnCandidate(
+mozilla::ipc::IPCResult MediaTransportChild::RecvOnCandidate(
     const string& transportId, const CandidateInfo& candidateInfo) {
   MOZ_ASSERT(GetMainThreadEventTarget()->IsOnCurrentThread());
   mUser->OnCandidate(transportId, candidateInfo);
   return ipc::IPCResult::Ok();
 }
 
-mozilla::ipc::IPCResult MediaTransportHandlerChild::RecvOnAlpnNegotiated(
+mozilla::ipc::IPCResult MediaTransportChild::RecvOnAlpnNegotiated(
     const string& alpn) {
   MOZ_ASSERT(GetMainThreadEventTarget()->IsOnCurrentThread());
   mUser->OnAlpnNegotiated(alpn);
   return ipc::IPCResult::Ok();
 }
 
-mozilla::ipc::IPCResult MediaTransportHandlerChild::RecvOnGatheringStateChange(
+mozilla::ipc::IPCResult MediaTransportChild::RecvOnGatheringStateChange(
     const int& state) {
   MOZ_ASSERT(GetMainThreadEventTarget()->IsOnCurrentThread());
   mUser->OnGatheringStateChange(
@@ -358,7 +335,7 @@ mozilla::ipc::IPCResult MediaTransportHandlerChild::RecvOnGatheringStateChange(
   return ipc::IPCResult::Ok();
 }
 
-mozilla::ipc::IPCResult MediaTransportHandlerChild::RecvOnConnectionStateChange(
+mozilla::ipc::IPCResult MediaTransportChild::RecvOnConnectionStateChange(
     const int& state) {
   MOZ_ASSERT(GetMainThreadEventTarget()->IsOnCurrentThread());
   mUser->OnConnectionStateChange(
@@ -366,7 +343,7 @@ mozilla::ipc::IPCResult MediaTransportHandlerChild::RecvOnConnectionStateChange(
   return ipc::IPCResult::Ok();
 }
 
-mozilla::ipc::IPCResult MediaTransportHandlerChild::RecvOnPacketReceived(
+mozilla::ipc::IPCResult MediaTransportChild::RecvOnPacketReceived(
     const string& transportId, const MediaPacket& packet) {
   MOZ_ASSERT(GetMainThreadEventTarget()->IsOnCurrentThread());
   MediaPacket copy(packet);  
@@ -374,7 +351,7 @@ mozilla::ipc::IPCResult MediaTransportHandlerChild::RecvOnPacketReceived(
   return ipc::IPCResult::Ok();
 }
 
-mozilla::ipc::IPCResult MediaTransportHandlerChild::RecvOnEncryptedSending(
+mozilla::ipc::IPCResult MediaTransportChild::RecvOnEncryptedSending(
     const string& transportId, const MediaPacket& packet) {
   MOZ_ASSERT(GetMainThreadEventTarget()->IsOnCurrentThread());
   MediaPacket copy(packet);  
@@ -382,14 +359,14 @@ mozilla::ipc::IPCResult MediaTransportHandlerChild::RecvOnEncryptedSending(
   return ipc::IPCResult::Ok();
 }
 
-mozilla::ipc::IPCResult MediaTransportHandlerChild::RecvOnStateChange(
+mozilla::ipc::IPCResult MediaTransportChild::RecvOnStateChange(
     const string& transportId, const int& state) {
   MOZ_ASSERT(GetMainThreadEventTarget()->IsOnCurrentThread());
   mUser->OnStateChange(transportId, static_cast<TransportLayer::State>(state));
   return ipc::IPCResult::Ok();
 }
 
-mozilla::ipc::IPCResult MediaTransportHandlerChild::RecvOnRtcpStateChange(
+mozilla::ipc::IPCResult MediaTransportChild::RecvOnRtcpStateChange(
     const string& transportId, const int& state) {
   MOZ_ASSERT(GetMainThreadEventTarget()->IsOnCurrentThread());
   mUser->OnRtcpStateChange(transportId,
