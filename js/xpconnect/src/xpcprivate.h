@@ -1593,58 +1593,6 @@ class XPCWrappedNative final : public nsIXPConnectWrappedNative {
 
 
 
-class nsXPCWrappedJSClass final {
- public:
-  static const nsXPTInterfaceInfo* GetInterfaceInfo(REFNSIID aIID);
-
-  static void DebugDump(const nsXPTInterfaceInfo* aInfo, int16_t depth);
-
-  static nsresult DelegatedQueryInterface(nsXPCWrappedJS* self, REFNSIID aIID,
-                                          void** aInstancePtr);
-
-  static JSObject* GetRootJSObject(JSContext* cx, JSObject* aJSObj);
-
-  static nsresult CallMethod(nsXPCWrappedJS* wrapper, uint16_t methodIndex,
-                             const nsXPTMethodInfo* info,
-                             nsXPTCMiniVariant* params);
-
-  static JSObject* CallQueryInterfaceOnJSObject(JSContext* cx, JSObject* jsobj,
-                                                JS::HandleObject scope,
-                                                REFNSIID aIID);
-
- private:
-  
-  
-  
-  
-  
-  static nsresult CheckForException(
-      XPCCallContext& ccx, mozilla::dom::AutoEntryScript& aes,
-      JS::HandleObject aObj, const char* aPropertyName,
-      const char* anInterfaceName,
-      mozilla::dom::Exception* aSyntheticException = nullptr);
-  nsXPCWrappedJSClass() = delete;
-  ~nsXPCWrappedJSClass() = delete;
-
-  static bool GetArraySizeFromParam(const nsXPTMethodInfo* method,
-                                    const nsXPTType& type,
-                                    nsXPTCMiniVariant* params,
-                                    uint32_t* result);
-
-  static bool GetInterfaceTypeFromParam(const nsXPTMethodInfo* method,
-                                        const nsXPTType& type,
-                                        nsXPTCMiniVariant* params,
-                                        nsID* result);
-
-  static void CleanupOutparams(const nsXPTMethodInfo* info,
-                               nsXPTCMiniVariant* nativeParams, bool inOutOnly,
-                               uint8_t count);
-};
-
-
-
-
-
 
 class nsXPCWrappedJS final : protected nsAutoXPTCStub,
                              public nsIXPConnectWrappedJSUnmarkGray,
@@ -1660,8 +1608,9 @@ class nsXPCWrappedJS final : protected nsAutoXPTCStub,
   NS_DECL_CYCLE_COLLECTION_SKIPPABLE_CLASS_AMBIGUOUS(nsXPCWrappedJS,
                                                      nsIXPConnectWrappedJS)
 
+  
   NS_IMETHOD CallMethod(uint16_t methodIndex, const nsXPTMethodInfo* info,
-                        nsXPTCMiniVariant* params) override;
+                        nsXPTCMiniVariant* nativeParams) override;
 
   
 
@@ -1735,14 +1684,19 @@ class nsXPCWrappedJS final : protected nsAutoXPTCStub,
 
   void TraceJS(JSTracer* trc);
 
+  
+  static void DebugDumpInterfaceInfo(const nsXPTInterfaceInfo* aInfo,
+                                     int16_t depth);
+
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
   virtual ~nsXPCWrappedJS();
 
  protected:
   nsXPCWrappedJS() = delete;
-  nsXPCWrappedJS(JSContext* cx, JSObject* aJSObj, const nsXPTInterfaceInfo* aInfo,
-                 nsXPCWrappedJS* root, nsresult* rv);
+  nsXPCWrappedJS(JSContext* cx, JSObject* aJSObj,
+                 const nsXPTInterfaceInfo* aInfo, nsXPCWrappedJS* root,
+                 nsresult* rv);
 
   bool CanSkip();
   void Destroy();
@@ -1752,6 +1706,42 @@ class nsXPCWrappedJS final : protected nsAutoXPTCStub,
   JS::Compartment* Compartment() const {
     return js::GetObjectCompartment(mJSObj.unbarrieredGet());
   }
+
+  
+  static const nsXPTInterfaceInfo* GetInterfaceInfo(REFNSIID aIID);
+
+  nsresult DelegatedQueryInterface(REFNSIID aIID, void** aInstancePtr);
+
+  static JSObject* GetRootJSObject(JSContext* cx, JSObject* aJSObj);
+
+  static JSObject* CallQueryInterfaceOnJSObject(JSContext* cx, JSObject* jsobj,
+                                                JS::HandleObject scope,
+                                                REFNSIID aIID);
+
+  
+  
+  
+  
+  
+  static nsresult CheckForException(
+      XPCCallContext& ccx, mozilla::dom::AutoEntryScript& aes,
+      JS::HandleObject aObj, const char* aPropertyName,
+      const char* anInterfaceName,
+      mozilla::dom::Exception* aSyntheticException = nullptr);
+
+  static bool GetArraySizeFromParam(const nsXPTMethodInfo* method,
+                                    const nsXPTType& type,
+                                    nsXPTCMiniVariant* params,
+                                    uint32_t* result);
+
+  static bool GetInterfaceTypeFromParam(const nsXPTMethodInfo* method,
+                                        const nsXPTType& type,
+                                        nsXPTCMiniVariant* params,
+                                        nsID* result);
+
+  static void CleanupOutparams(const nsXPTMethodInfo* info,
+                               nsXPTCMiniVariant* nativeParams, bool inOutOnly,
+                               uint8_t count);
 
   JS::Heap<JSObject*> mJSObj;
   const nsXPTInterfaceInfo* const mInfo;
