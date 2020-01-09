@@ -422,6 +422,16 @@ impl<'i: 't, 't> Parser<'i, 't> {
     }
 
     
+    #[inline]
+    pub fn new_error_for_next_token<E>(&mut self) -> ParseError<'i, E> {
+        let token = match self.next() {
+            Ok(token) => token.clone(),
+            Err(e) => return e.into()
+        };
+        self.new_error(BasicParseErrorKind::UnexpectedToken(token))
+    }
+
+    
     
     
     #[inline]

@@ -12,6 +12,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 
 #[derive(Clone, Copy, PartialEq, Debug)]
+#[repr(C)]
 pub struct RGBA {
     
     pub red: u8,
