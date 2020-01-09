@@ -49,7 +49,7 @@ enum class TypeCode {
   F64 = 0x7c,  
 
   
-  AnyFunc = 0x70,  
+  FuncRef = 0x70,  
 
   
   AnyRef = 0x6f,
