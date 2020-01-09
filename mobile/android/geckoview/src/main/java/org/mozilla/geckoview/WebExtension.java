@@ -11,6 +11,8 @@ import org.json.JSONObject;
 import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.util.GeckoBundle;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
@@ -41,7 +43,7 @@ public class WebExtension {
     
 
 
-    public final boolean allowContentMessaging;
+    public final @WebExtensionFlags long flags;
     
 
 
@@ -49,33 +51,52 @@ public class WebExtension {
 
     private final static String LOGTAG = "WebExtension";
 
-    
+    public static class Flags {
+        
+
+
+        public static final long NONE = 0;
+        
 
 
 
 
+        public static final long ALLOW_CONTENT_MESSAGING = 1 << 0;
 
+        
+        protected Flags() {}
+    }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef(flag = true,
+            value = { Flags.NONE, Flags.ALLOW_CONTENT_MESSAGING })
+     @interface WebExtensionFlags {}
 
     
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
 
 
 
@@ -100,10 +121,10 @@ public class WebExtension {
 
 
     public WebExtension(final @NonNull String location, final @NonNull String id,
-                        final boolean allowContentMessaging) {
+                        final @WebExtensionFlags long flags) {
         this.location = location;
         this.id = id;
-        this.allowContentMessaging = allowContentMessaging;
+        this.flags = flags;
         this.messageDelegates = new HashMap<>();
     }
 
@@ -120,7 +141,7 @@ public class WebExtension {
 
 
     public WebExtension(final @NonNull String location) {
-        this(location, "{" + UUID.randomUUID().toString() + "}", false);
+        this(location, "{" + UUID.randomUUID().toString() + "}", Flags.NONE);
     }
 
     
