@@ -3208,15 +3208,6 @@ CodeOffset MacroAssembler::callWithABI(wasm::BytecodeOffset bytecode,
   return raOffset;
 }
 
-void MacroAssembler::callDebugWithABI(wasm::SymbolicAddress imm,
-                                      MoveOp::Type result) {
-  MOZ_ASSERT(!wasm::NeedsBuiltinThunk(imm));
-  uint32_t stackAdjust;
-  callWithABIPre(&stackAdjust,  false);
-  call(imm);
-  callWithABIPost(stackAdjust, result,  false);
-}
-
 
 
 
