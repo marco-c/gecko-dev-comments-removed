@@ -1803,6 +1803,9 @@ ScriptLoadRequest* ScriptLoader::LookupPreloadRequest(
     return nullptr;
   }
 
+  
+  ReportPreloadErrorsToConsole(request);
+
   return request;
 }
 
@@ -3196,6 +3199,9 @@ void ScriptLoader::ReportErrorToConsole(ScriptLoadRequest* aRequest,
   MOZ_ASSERT(aRequest);
 
   if (aRequest->IsPreload()) {
+    
+    
+    aRequest->mUnreportedPreloadError = aResult;
     return;
   }
 
@@ -3223,6 +3229,19 @@ void ScriptLoader::ReportErrorToConsole(ScriptLoadRequest* aRequest,
       nsIScriptError::warningFlag, NS_LITERAL_CSTRING("Script Loader"),
       mDocument, nsContentUtils::eDOM_PROPERTIES, message, params,
       ArrayLength(params), nullptr, EmptyString(), lineNo, columnNo);
+}
+
+void ScriptLoader::ReportPreloadErrorsToConsole(ScriptLoadRequest* aRequest) {
+  if (NS_FAILED(aRequest->mUnreportedPreloadError)) {
+    ReportErrorToConsole(aRequest, aRequest->mUnreportedPreloadError);
+    aRequest->mUnreportedPreloadError = NS_OK;
+  }
+
+  if (aRequest->IsModuleRequest()) {
+    for (auto childRequest : aRequest->AsModuleRequest()->mImports) {
+      ReportPreloadErrorsToConsole(childRequest);
+    }
+  }
 }
 
 void ScriptLoader::HandleLoadError(ScriptLoadRequest* aRequest,

@@ -239,8 +239,8 @@ class ScriptLoadRequest
   using super::getNext;
   using super::isInList;
 
-  const ScriptKind
-      mKind;  
+  const ScriptKind mKind;  
+                           
   ScriptMode mScriptMode;  
   Progress mProgress;      
   DataType mDataType;      
@@ -255,10 +255,10 @@ class ScriptLoadRequest
                                    
   bool mIsXSLT;                    
   bool mIsCanceled;                
-  bool
-      mWasCompiledOMT;  
-  bool mIsTracking;  
-                     
+  bool mWasCompiledOMT;    
+                           
+  bool mIsTracking;        
+                           
 
   RefPtr<ScriptFetchOptions> mFetchOptions;
 
@@ -297,6 +297,10 @@ class ScriptLoadRequest
 
   
   nsCOMPtr<nsIURI> mBaseURL;
+
+  
+  
+  nsresult mUnreportedPreloadError;
 };
 
 class ScriptLoadRequestList : private mozilla::LinkedList<ScriptLoadRequest> {
