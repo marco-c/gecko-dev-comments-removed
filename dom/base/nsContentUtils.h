@@ -3156,17 +3156,6 @@ class nsContentUtils {
 
 
 
-
-
-
-
-
-  static bool IsUAWidgetEnabled() { return sIsUAWidgetEnabled; }
-
-  
-
-
-
   static bool ShouldBlockReservedKeys(mozilla::WidgetKeyboardEvent* aKeyEvent);
 
   
@@ -3446,7 +3435,6 @@ class nsContentUtils {
   static bool sIsUpgradableDisplayContentPrefEnabled;
   static bool sIsFrameTimingPrefEnabled;
   static bool sIsFormAutofillAutocompleteEnabled;
-  static bool sIsUAWidgetEnabled;
   static bool sSendPerformanceTimingNotifications;
   static bool sUseActivityCursor;
   static bool sAnimationsAPICoreEnabled;
