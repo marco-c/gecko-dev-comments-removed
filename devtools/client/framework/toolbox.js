@@ -1103,7 +1103,8 @@ Toolbox.prototype = {
       this.toggleSplitConsole();
       
       
-      if (this._threadClient.state == "paused") {
+      if (this._threadClient.state == "paused" ||
+          this.hostType === Toolbox.HostType.PAGE) {
         e.preventDefault();
       }
     }
