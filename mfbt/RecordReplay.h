@@ -260,10 +260,6 @@ static inline size_t ThingIndex(void* aThing);
 
 
 
-static inline void RecordReplayDirective(long aDirective);
-
-
-
 static inline const char* VirtualThingName(void* aThing);
 
 
@@ -440,8 +436,6 @@ MOZ_MAKE_RECORD_REPLAY_WRAPPER_VOID(UnregisterThing, (void* aThing), (aThing))
 MOZ_MAKE_RECORD_REPLAY_WRAPPER(ThingIndex, size_t, 0, (void* aThing), (aThing))
 MOZ_MAKE_RECORD_REPLAY_WRAPPER(VirtualThingName, const char*, nullptr,
                                (void* aThing), (aThing))
-MOZ_MAKE_RECORD_REPLAY_WRAPPER_VOID(RecordReplayDirective, (long aDirective),
-                                    (aDirective))
 
 #undef MOZ_MAKE_RECORD_REPLAY_WRAPPER_VOID
 #undef MOZ_MAKERECORDREPLAYWRAPPER
