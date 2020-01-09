@@ -89,6 +89,17 @@ static inline bool DependsOnIntrinsicSize(const nsIFrame* aEmbeddingFrame) {
   return !width.ConvertsToLength() || !height.ConvertsToLength();
 }
 
+
+
+
+
+
+
+static inline bool IsReplacedAndContainSize(const nsSVGOuterSVGFrame* aFrame) {
+  return aFrame->GetContent()->GetParent() &&
+         aFrame->StyleDisplay()->IsContainSize();
+}
+
 void nsSVGOuterSVGFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
                               nsIFrame* aPrevInFlow) {
   NS_ASSERTION(aContent->IsSVGElement(nsGkAtoms::svg),
@@ -168,7 +179,7 @@ nscoord nsSVGOuterSVGFrame::GetPrefISize(gfxContext* aRenderingContext) {
       wm.IsVertical() ? svg->mLengthAttributes[SVGSVGElement::ATTR_HEIGHT]
                       : svg->mLengthAttributes[SVGSVGElement::ATTR_WIDTH];
 
-  if (StyleDisplay()->IsContainSize()) {
+  if (IsReplacedAndContainSize(this)) {
     result = nscoord(0);
   } else if (isize.IsPercentage()) {
     
@@ -205,7 +216,7 @@ IntrinsicSize nsSVGOuterSVGFrame::GetIntrinsicSize() {
   
   
 
-  if (StyleDisplay()->IsContainSize()) {
+  if (IsReplacedAndContainSize(this)) {
     
     return IntrinsicSize(0, 0);
   }
@@ -235,7 +246,7 @@ IntrinsicSize nsSVGOuterSVGFrame::GetIntrinsicSize() {
 
 
 AspectRatio nsSVGOuterSVGFrame::GetIntrinsicRatio() {
-  if (StyleDisplay()->IsContainSize()) {
+  if (IsReplacedAndContainSize(this)) {
     return AspectRatio();
   }
 
