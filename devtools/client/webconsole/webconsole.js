@@ -12,6 +12,7 @@ loader.lazyRequireGetter(this, "viewSource", "devtools/client/shared/view-source
 loader.lazyRequireGetter(this, "openDocLink", "devtools/client/shared/link", true);
 
 var gHudId = 0;
+const isMacOS = Services.appinfo.OS === "Darwin";
 
 
 
@@ -148,8 +149,11 @@ class WebConsole {
 
 
 
-  openLink(link, e) {
-    openDocLink(link);
+  openLink(link, e = {}) {
+    openDocLink(link, {
+      relatedToCurrent: true,
+      inBackground: isMacOS ? e.metaKey : e.ctrlKey,
+    });
   }
 
   
