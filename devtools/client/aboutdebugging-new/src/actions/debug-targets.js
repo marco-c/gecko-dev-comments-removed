@@ -6,7 +6,6 @@
 
 const { AddonManager } = require("resource://gre/modules/AddonManager.jsm");
 const { gDevTools } = require("devtools/client/framework/devtools");
-const { gDevToolsBrowser } = require("devtools/client/framework/devtools-browser");
 const { Toolbox } = require("devtools/client/framework/toolbox");
 const { remoteClientManager } =
   require("devtools/client/shared/remote-debugging/remote-client-manager");
@@ -92,9 +91,10 @@ function inspectDebugTarget(type, id) {
       }
       case DEBUG_TARGETS.WORKER: {
         
-        const devtoolsClient = runtimeDetails.clientWrapper.client;
-        const front = devtoolsClient.getActor(id);
-        gDevToolsBrowser.openWorkerToolbox(front);
+        
+        const remoteId = remoteClientManager.getRemoteId(runtime.id, runtime.type);
+        window.open(
+          `about:devtools-toolbox?type=worker&id=${id}&remoteId=${remoteId}`);
         break;
       }
       default: {
