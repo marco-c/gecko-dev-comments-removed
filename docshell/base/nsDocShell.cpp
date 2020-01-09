@@ -3071,9 +3071,9 @@ nsresult nsDocShell::DoFindItemWithName(const nsAString& aName,
     
     
     if (!GetIsMozBrowser() && parentAsTreeItem->ItemType() == mItemType) {
-      return parentAsTreeItem->FindItemWithName(
-          aName, static_cast<nsIDocShellTreeItem*>(this), aOriginalRequestor,
-           false, aResult);
+      return parentAsTreeItem->FindItemWithName(aName, this, aOriginalRequestor,
+                                                 false,
+                                                aResult);
     }
   }
 
@@ -3082,7 +3082,7 @@ nsresult nsDocShell::DoFindItemWithName(const nsAString& aName,
   nsCOMPtr<nsPIDOMWindowOuter> window = GetWindow();
   if (window && !aSkipTabGroup) {
     RefPtr<mozilla::dom::TabGroup> tabGroup = window->TabGroup();
-    tabGroup->FindItemWithName(aName, aRequestor, aOriginalRequestor, aResult);
+    tabGroup->FindItemWithName(aName, this, aOriginalRequestor, aResult);
   }
 
   return NS_OK;
