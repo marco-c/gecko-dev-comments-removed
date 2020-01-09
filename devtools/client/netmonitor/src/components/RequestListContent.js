@@ -129,6 +129,16 @@ class RequestListContent extends Component {
     
     this.tooltip.stopTogglingOnHover();
     window.removeEventListener("resize", this.onResize);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    this.refs.rowGroupEl.innerHTML = "";
   }
 
   
