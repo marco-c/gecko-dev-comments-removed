@@ -6,6 +6,8 @@ add_task(async () => {
   let service = getProfileService();
 
   let { profile, didCreate } = selectStartupProfile([], true);
+  
+  checkStartupReason("unknown");
   checkProfileService();
 
   Assert.ok(!didCreate, "Should not have created a new profile.");
