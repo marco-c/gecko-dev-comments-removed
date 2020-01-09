@@ -287,6 +287,9 @@ struct ScopedPackState : public ScopedGLWrapper<ScopedPackState> {
  public:
   explicit ScopedPackState(GLContext* gl);
 
+  
+  bool SetForWidthAndStrideRGBA(GLsizei aWidth, GLsizei aStride);
+
  protected:
   void UnwrapImpl();
 };
