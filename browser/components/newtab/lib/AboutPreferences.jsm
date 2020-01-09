@@ -243,7 +243,10 @@ this.AboutPreferences = class AboutPreferences {
           detailHbox.appendChild(label);
 
           
-          const menulist = createAppend("menulist", detailHbox);
+          const tooltipBox = createAppend("hbox", detailHbox);
+
+          
+          const menulist = createAppend("menulist", tooltipBox);
           menulist.setAttribute("crop", "none");
           const menupopup = createAppend("menupopup", menulist);
           for (let num = 1; num <= maxRows; num++) {
