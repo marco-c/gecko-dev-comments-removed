@@ -832,11 +832,13 @@ class Target extends EventEmitter {
 
 
 
+
   logErrorInPage(text, category) {
     if (this.activeTab && this.activeTab.traits.logInPage) {
       const errorFlag = 0;
-      this.activeTab.logInPage({ text, category, flags: errorFlag });
+      return this.activeTab.logInPage({ text, category, flags: errorFlag });
     }
+    return Promise.resolve();
   }
 
   
@@ -847,11 +849,13 @@ class Target extends EventEmitter {
 
 
 
+
   logWarningInPage(text, category) {
     if (this.activeTab && this.activeTab.traits.logInPage) {
       const warningFlag = 1;
-      this.activeTab.logInPage({ text, category, flags: warningFlag });
+      return this.activeTab.logInPage({ text, category, flags: warningFlag });
     }
+    return Promise.resolve();
   }
 }
 exports.Target = Target;

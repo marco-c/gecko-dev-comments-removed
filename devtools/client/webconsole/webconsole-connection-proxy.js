@@ -82,6 +82,12 @@ WebConsoleConnectionProxy.prototype = {
 
 
 
+  isAttached: null,
+
+  
+
+
+
 
   _connectTimer: null,
 
@@ -128,7 +134,7 @@ WebConsoleConnectionProxy.prototype = {
     if (this.target.isBrowsingContext) {
       this.webConsoleFrame.onLocationChange(this.target.url, this.target.title);
     }
-    this._attachConsole();
+    this.isAttached = this._attachConsole();
 
     return connPromise;
   },
@@ -150,6 +156,7 @@ WebConsoleConnectionProxy.prototype = {
 
 
 
+
   _attachConsole: function() {
     const listeners = ["PageError", "ConsoleAPI", "NetworkActivity"];
     
@@ -157,7 +164,7 @@ WebConsoleConnectionProxy.prototype = {
     if (this.target.chrome && !this.target.isAddon) {
       listeners.push("ContentProcessMessages");
     }
-    this.webConsoleClient.startListeners(listeners)
+    return this.webConsoleClient.startListeners(listeners)
       .then(this._onAttachConsole, error => {
         console.error("attachConsole failed: " + error);
         this._connectDefer.reject(error);
@@ -228,7 +235,7 @@ WebConsoleConnectionProxy.prototype = {
 
 
 
-  _onCachedMessages: function(response) {
+  _onCachedMessages: async function(response) {
     if (response.error) {
       console.error("Web Console getCachedMessages error: " + response.error +
                     " " + response.message);
@@ -248,7 +255,7 @@ WebConsoleConnectionProxy.prototype = {
 
     this.dispatchMessagesAdd(messages);
     if (!this.webConsoleClient.hasNativeConsoleAPI) {
-      this.webConsoleFrame.logWarningAboutReplacedAPI();
+      await this.webConsoleFrame.logWarningAboutReplacedAPI();
     }
 
     this.connected = true;
@@ -395,13 +402,17 @@ WebConsoleConnectionProxy.prototype = {
 
 
 
-  disconnect: function() {
+  disconnect: async function() {
     if (this._disconnecter) {
       return this._disconnecter.promise;
     }
 
     this._disconnecter = defer();
 
+    
+    if (this.isAttached) {
+      await this.isAttached;
+    }
     if (!this.client) {
       this._disconnecter.resolve(null);
       return this._disconnecter.promise;
