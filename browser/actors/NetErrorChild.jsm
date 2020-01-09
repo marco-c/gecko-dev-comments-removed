@@ -359,9 +359,23 @@ class NetErrorChild extends ActorChild {
   onCertErrorDetails(msg, docShell) {
     let doc = docShell.document;
 
+    
+    
+    
+    
     function updateContainerPosition() {
       let textContainer = doc.getElementById("text-container");
-      textContainer.style.marginTop = `calc(50vh - ${textContainer.clientHeight / 2}px)`;
+      
+      
+      
+      if (doc.ownerGlobal.parent == doc.ownerGlobal) {
+        textContainer.style.marginTop = `calc(50vh - ${textContainer.clientHeight / 2}px)`;
+      } else {
+        let offset = (doc.documentElement.clientHeight / 2) - (textContainer.clientHeight / 2);
+        if (offset > 0) {
+          textContainer.style.marginTop = `${offset}px`;
+        }
+      }
     }
 
     let div = doc.getElementById("certificateErrorText");

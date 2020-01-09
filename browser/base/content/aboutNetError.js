@@ -304,9 +304,23 @@ function initPage() {
   }
 }
 
+
+
+
+
 function updateContainerPosition() {
   let textContainer = document.getElementById("text-container");
-  textContainer.style.marginTop = `calc(50vh - ${textContainer.clientHeight / 2}px)`;
+  
+  
+  
+  if (window.parent == window) {
+    textContainer.style.marginTop = `calc(50vh - ${textContainer.clientHeight / 2}px)`;
+  } else {
+    let offset = (document.documentElement.clientHeight / 2) - (textContainer.clientHeight / 2);
+    if (offset > 0) {
+      textContainer.style.marginTop = `${offset}px`;
+    }
+  }
 }
 
 function initPageCaptivePortal() {
