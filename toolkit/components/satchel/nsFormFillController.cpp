@@ -33,7 +33,7 @@
 #include "nsIContentViewer.h"
 #include "nsIContent.h"
 #include "nsRect.h"
-#include "nsILoginAutoCompleteSearch.h"
+#include "nsILoginManager.h"
 #include "nsToolkitCompsCID.h"
 #include "nsEmbedCID.h"
 #include "nsContentUtils.h"
@@ -65,7 +65,7 @@ static nsIFormAutoComplete* GetFormAutoComplete() {
   return sInstance;
 }
 
-NS_IMPL_CYCLE_COLLECTION(nsFormFillController, mController, mLoginManagerAC,
+NS_IMPL_CYCLE_COLLECTION(nsFormFillController, mController, mLoginManager,
                          mLoginReputationService, mFocusedPopup, mDocShells,
                          mPopups, mLastListener, mLastFormAutoComplete)
 
@@ -298,8 +298,8 @@ nsFormFillController::MarkAsLoginManagerField(HTMLInputElement* aInput) {
     }
   }
 
-  if (!mLoginManagerAC) {
-    mLoginManagerAC = do_GetService("@mozilla.org/passwordmanager/autocompletesearch;1");
+  if (!mLoginManager) {
+    mLoginManager = do_GetService("@mozilla.org/login-manager;1");
   }
 
   return NS_OK;
@@ -707,18 +707,19 @@ nsFormFillController::StartSearch(const nsAString& aSearchString,
     
     
     
-    if (!mLoginManagerAC) {
-      mLoginManagerAC = do_GetService("@mozilla.org/passwordmanger/autocompletesearch;1");
+    if (!mLoginManager) {
+      mLoginManager = do_GetService("@mozilla.org/login-manager;1");
     }
 
-    if (NS_WARN_IF(!mLoginManagerAC)) {
+    if (NS_WARN_IF(!mLoginManager)) {
       return NS_ERROR_FAILURE;
     }
 
     
     
     mLastListener = aListener;
-    rv = mLoginManagerAC->StartSearch(aSearchString, aPreviousResult, mFocusedInput, this);
+    rv = mLoginManager->AutoCompleteSearchAsync(aSearchString, aPreviousResult,
+                                                mFocusedInput, this);
     NS_ENSURE_SUCCESS(rv, rv);
   } else {
     MOZ_LOG(sLogger, LogLevel::Debug, ("StartSearch: non-login field"));
@@ -799,8 +800,8 @@ nsFormFillController::StopSearch() {
   if (mLastFormAutoComplete) {
     mLastFormAutoComplete->StopAutoCompleteSearch();
     mLastFormAutoComplete = nullptr;
-  } else if (mLoginManagerAC) {
-    mLoginManagerAC->StopSearch();
+  } else if (mLoginManager) {
+    mLoginManager->StopSearch();
   }
   return NS_OK;
 }

@@ -9,12 +9,16 @@ const PERMISSION_SAVE_LOGINS = "login-saving";
 const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
+ChromeUtils.defineModuleGetter(this, "BrowserUtils",
+                               "resource://gre/modules/BrowserUtils.jsm");
 ChromeUtils.defineModuleGetter(this, "LoginHelper",
                                "resource://gre/modules/LoginHelper.jsm");
 ChromeUtils.defineModuleGetter(this, "LoginFormFactory",
                                "resource://gre/modules/LoginFormFactory.jsm");
 ChromeUtils.defineModuleGetter(this, "LoginManagerContent",
                                "resource://gre/modules/LoginManagerContent.jsm");
+ChromeUtils.defineModuleGetter(this, "LoginAutoCompleteResult",
+                               "resource://gre/modules/LoginAutoCompleteResult.jsm");
 ChromeUtils.defineModuleGetter(this, "InsecurePasswordUtils",
                                "resource://gre/modules/InsecurePasswordUtils.jsm");
 
@@ -24,11 +28,6 @@ XPCOMUtils.defineLazyGetter(this, "log", () => {
 });
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
-if (Services.appinfo.processType !== Services.appinfo.PROCESS_TYPE_DEFAULT) {
-  throw new Error("LoginManager.jsm should only run in the parent process");
-}
-
 
 function LoginManager() {
   this.init();
@@ -57,6 +56,8 @@ LoginManager.prototype = {
 
   
 
+
+
   _storage: null, 
 
 
@@ -66,15 +67,22 @@ LoginManager.prototype = {
 
 
 
+
   init() {
     
     this._observer._pwmgr            = this;
-
-    Services.obs.addObserver(this._observer, "xpcom-shutdown");
-    Services.obs.addObserver(this._observer, "passwordmgr-storage-replace");
+    this._autoCompleteLookupPromise = null;
 
     
-    this._initStorage();
+    Services.obs.addObserver(this._observer, "xpcom-shutdown");
+
+    if (Services.appinfo.processType ===
+        Services.appinfo.PROCESS_TYPE_DEFAULT) {
+      Services.obs.addObserver(this._observer, "passwordmgr-storage-replace");
+
+      
+      this._initStorage();
+    }
 
     Services.obs.addObserver(this._observer, "gather-telemetry");
   },
@@ -455,6 +463,101 @@ LoginManager.prototype = {
 
     log.debug("Login saving for", origin, "now enabled?", enabled);
     LoginHelper.notifyStorageChanged(enabled ? "hostSavingEnabled" : "hostSavingDisabled", origin);
+  },
+
+  
+
+
+
+
+
+
+
+  autoCompleteSearchAsync(aSearchString, aPreviousResult,
+                          aElement, aCallback) {
+    
+    
+
+    let {isNullPrincipal} = aElement.nodePrincipal;
+    
+    let isSecure = !isNullPrincipal;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (isSecure) {
+      let form = LoginFormFactory.createFromField(aElement);
+      isSecure = InsecurePasswordUtils.isFormSecure(form);
+    }
+    let isPasswordField = aElement.type == "password";
+    let hostname = aElement.ownerDocument.documentURIObject.host;
+
+    let completeSearch = (autoCompleteLookupPromise, { logins, messageManager }) => {
+      
+      
+      if (this._autoCompleteLookupPromise !== autoCompleteLookupPromise) {
+        return;
+      }
+
+      this._autoCompleteLookupPromise = null;
+      let results = new LoginAutoCompleteResult(aSearchString, logins, {
+        messageManager,
+        isSecure,
+        isPasswordField,
+        hostname,
+      });
+      aCallback.onSearchCompletion(results);
+    };
+
+    if (isNullPrincipal) {
+      
+      
+      let acLookupPromise = this._autoCompleteLookupPromise = Promise.resolve({ logins: [] });
+      acLookupPromise.then(completeSearch.bind(this, acLookupPromise));
+      return;
+    }
+
+    if (isPasswordField && aSearchString) {
+      
+      let acLookupPromise = this._autoCompleteLookupPromise = Promise.resolve({ logins: [] });
+      acLookupPromise.then(completeSearch.bind(this, acLookupPromise));
+      return;
+    }
+
+    if (!LoginHelper.enabled) {
+      let acLookupPromise = this._autoCompleteLookupPromise = Promise.resolve({ logins: [] });
+      acLookupPromise.then(completeSearch.bind(this, acLookupPromise));
+      return;
+    }
+
+    log.debug("AutoCompleteSearch invoked. Search is:", aSearchString);
+
+    let previousResult;
+    if (aPreviousResult) {
+      previousResult = { searchString: aPreviousResult.searchString,
+                         logins: aPreviousResult.wrappedJSObject.logins };
+    } else {
+      previousResult = null;
+    }
+
+    let rect = BrowserUtils.getElementBoundingScreenRect(aElement);
+    let acLookupPromise = this._autoCompleteLookupPromise =
+      LoginManagerContent._autoCompleteSearchAsync(aSearchString, previousResult,
+                                                   aElement, rect);
+    acLookupPromise.then(completeSearch.bind(this, acLookupPromise))
+                             .catch(Cu.reportError);
+  },
+
+  stopSearch() {
+    this._autoCompleteLookupPromise = null;
   },
 }; 
 
