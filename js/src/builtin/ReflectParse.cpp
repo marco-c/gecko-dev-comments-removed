@@ -2538,7 +2538,7 @@ bool ASTSerializer::classField(ClassField* classField, MutableHandleValue dst) {
                            .head()
                            ->as<UnaryNode>()
                            .kid()
-                           ->as<AssignmentNode>()
+                           ->as<BinaryNode>()
                            .right();
     
     
