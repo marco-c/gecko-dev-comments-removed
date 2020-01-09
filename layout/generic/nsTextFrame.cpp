@@ -5249,7 +5249,8 @@ void nsTextFrame::UnionAdditionalOverflow(nsPresContext* aPresContext,
                                           nsIFrame* aBlock,
                                           PropertyProvider& aProvider,
                                           nsRect* aVisualOverflowRect,
-                                          bool aIncludeTextDecorations) {
+                                          bool aIncludeTextDecorations,
+                                          bool aIncludeShadows) {
   const WritingMode wm = GetWritingMode();
   bool verticalRun = mTextRun->IsVertical();
   const gfxFloat appUnitsPerDevUnit = aPresContext->AppUnitsPerDevPixel();
@@ -5409,9 +5410,11 @@ void nsTextFrame::UnionAdditionalOverflow(nsPresContext* aPresContext,
   }
 
   
-  nsRect shadowRect =
-      nsLayoutUtils::GetTextShadowRectsUnion(*aVisualOverflowRect, this);
-  aVisualOverflowRect->UnionRect(*aVisualOverflowRect, shadowRect);
+  if (aIncludeShadows) {
+    nsRect shadowRect =
+        nsLayoutUtils::GetTextShadowRectsUnion(*aVisualOverflowRect, this);
+    aVisualOverflowRect->UnionRect(*aVisualOverflowRect, shadowRect);
+  }
 
   
   
@@ -5859,7 +5862,7 @@ void nsTextFrame::PaintOneShadow(const PaintShadowParams& aParams,
 
     
     
-    wrShadow.should_inflate = false;
+    wrShadow.should_inflate = true;
 
     wrShadow.offset = {
         PresContext()->AppUnitsToFloatDevPixels(aShadowDetails->mXOffset),
@@ -6931,6 +6934,20 @@ void nsTextFrame::DrawText(Range aRange, const gfx::Point& aTextBaselinePt,
   if (auto* textDrawer = aParams.context->GetTextDrawer()) {
     textDrawer->TerminateShadows();
   }
+}
+
+NS_DECLARE_FRAME_PROPERTY_DELETABLE(WebRenderTextBounds, nsRect)
+
+nsRect nsTextFrame::WebRenderBounds() {
+  nsRect* cachedBounds = GetProperty(WebRenderTextBounds());
+  if (!cachedBounds) {
+    nsOverflowAreas overflowAreas;
+    ComputeCustomOverflowInternal(overflowAreas, false);
+    cachedBounds = new nsRect();
+    *cachedBounds = overflowAreas.VisualOverflow();
+    SetProperty(WebRenderTextBounds(), cachedBounds);
+  }
+  return *cachedBounds;
 }
 
 int16_t nsTextFrame::GetSelectionStatus(int16_t* aSelectionFlags) {
@@ -8702,7 +8719,7 @@ void nsTextFrame::ReflowText(nsLineLayout& aLineLayout, nscoord aAvailableWidth,
   
   RemoveStateBits(TEXT_REFLOW_FLAGS | TEXT_WHITESPACE_FLAGS);
   mReflowRequestedForCharDataChange = false;
-
+  DeleteProperty(WebRenderTextBounds());
   
   
   
@@ -9153,7 +9170,7 @@ void nsTextFrame::ReflowText(nsLineLayout& aLineLayout, nscoord aAvailableWidth,
   
   
   UnionAdditionalOverflow(presContext, aLineLayout.LineContainerRI()->mFrame,
-                          provider, &aMetrics.VisualOverflow(), false);
+                          provider, &aMetrics.VisualOverflow(), false, true);
 
   
   
@@ -9364,7 +9381,10 @@ nsTextFrame::TrimOutput nsTextFrame::TrimTrailingWhiteSpace(
   return result;
 }
 
-nsOverflowAreas nsTextFrame::RecomputeOverflow(nsIFrame* aBlockFrame) {
+nsOverflowAreas nsTextFrame::RecomputeOverflow(nsIFrame* aBlockFrame,
+                                               bool aIncludeShadows) {
+  DeleteProperty(WebRenderTextBounds());
+
   nsRect bounds(nsPoint(0, 0), GetSize());
   nsOverflowAreas result(bounds, bounds);
 
@@ -9390,7 +9410,8 @@ nsOverflowAreas nsTextFrame::RecomputeOverflow(nsIFrame* aBlockFrame) {
   }
   nsRect& vis = result.VisualOverflow();
   vis.UnionRect(vis, boundingBox);
-  UnionAdditionalOverflow(PresContext(), aBlockFrame, provider, &vis, true);
+  UnionAdditionalOverflow(PresContext(), aBlockFrame, provider, &vis, true,
+      aIncludeShadows);
   return result;
 }
 
@@ -9784,6 +9805,11 @@ bool nsTextFrame::HasAnyNoncollapsedCharacters() {
 }
 
 bool nsTextFrame::ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas) {
+  return ComputeCustomOverflowInternal(aOverflowAreas, true);
+}
+
+bool nsTextFrame::ComputeCustomOverflowInternal(nsOverflowAreas& aOverflowAreas,
+                                                bool aIncludeShadows) {
   if (GetStateBits() & NS_FRAME_FIRST_REFLOW) {
     return true;
   }
@@ -9808,7 +9834,7 @@ bool nsTextFrame::ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas) {
     }
   }
 
-  aOverflowAreas = RecomputeOverflow(decorationsBlock);
+  aOverflowAreas = RecomputeOverflow(decorationsBlock, aIncludeShadows);
   return nsFrame::ComputeCustomOverflow(aOverflowAreas);
 }
 
