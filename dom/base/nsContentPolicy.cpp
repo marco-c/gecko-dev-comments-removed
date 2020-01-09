@@ -99,7 +99,7 @@ inline nsresult nsContentPolicy::CheckPolicy(CPMethod policyMethod,
 
 
   if (!requestingLocation) {
-    nsCOMPtr<Document> doc;
+    nsCOMPtr<mozilla::dom::Document> doc;
     nsCOMPtr<nsIContent> node = do_QueryInterface(requestingContext);
     if (node) {
       doc = node->OwnerDoc();
