@@ -231,7 +231,7 @@ class NotificationPermissionRequest : public ContentPermissionRequestBase,
  protected:
   ~NotificationPermissionRequest() = default;
 
-  MOZ_CAN_RUN_SCRIPT nsresult ResolvePromise();
+  nsresult ResolvePromise();
   nsresult DispatchResolvePromise();
   NotificationPermission mPermission;
   RefPtr<Promise> mPromise;
@@ -554,15 +554,28 @@ inline nsresult NotificationPermissionRequest::DispatchResolvePromise() {
 
 nsresult NotificationPermissionRequest::ResolvePromise() {
   nsresult rv = NS_OK;
+  
+  
   if (mPermission == NotificationPermission::Default) {
     
     
+    
+    
+    if (!mIsHandlingUserInput &&
+        StaticPrefs::dom_webnotifications_requireuserinteraction()) {
+      nsCOMPtr<Document> doc = mWindow->GetExtantDoc();
+      if (doc) {
+        nsContentUtils::ReportToConsole(
+            nsIScriptError::errorFlag, NS_LITERAL_CSTRING("DOM"), doc,
+            nsContentUtils::eDOM_PROPERTIES, "NotificationsRequireUserGesture");
+      }
+    }
+
     mPermission = Notification::TestPermission(mPrincipal);
   }
   if (mCallback) {
     ErrorResult error;
-    RefPtr<NotificationPermissionCallback> callback(mCallback);
-    callback->Call(mPermission, error);
+    mCallback->Call(mPermission, error);
     rv = error.StealNSResult();
   }
   mPromise->MaybeResolve(mPermission);
@@ -1540,7 +1553,7 @@ already_AddRefed<Promise> Notification::RequestPermission(
       do_QueryInterface(aGlobal.GetAsSupports());
   nsCOMPtr<nsIScriptObjectPrincipal> sop =
       do_QueryInterface(aGlobal.GetAsSupports());
-  if (!sop) {
+  if (!sop || !window) {
     aRv.Throw(NS_ERROR_UNEXPECTED);
     return nullptr;
   }

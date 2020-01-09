@@ -170,6 +170,14 @@ var PermissionPromptPrototype = {
 
 
 
+  get requiresUserInput() {
+    return false;
+  },
+
+  
+
+
+
 
 
 
@@ -330,6 +338,11 @@ var PermissionPromptPrototype = {
         this.cancel();
         return;
       }
+    }
+
+    if (this.requiresUserInput && !this.request.isHandlingUserInput) {
+      this.cancel();
+      return;
     }
 
     let chromeWin = this.browser.ownerGlobal;
@@ -570,6 +583,9 @@ PermissionUI.GeolocationPermissionPrompt = GeolocationPermissionPrompt;
 
 function DesktopNotificationPermissionPrompt(request) {
   this.request = request;
+
+  XPCOMUtils.defineLazyPreferenceGetter(this, "requiresUserInput",
+                                        "dom.webnotifications.requireuserinteraction");
 }
 
 DesktopNotificationPermissionPrompt.prototype = {
