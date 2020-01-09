@@ -62,6 +62,8 @@ loader.lazyRequireGetter(this, "sortPanelDefinitions",
   "devtools/client/framework/toolbox-tabs-order-manager", true);
 loader.lazyRequireGetter(this, "createEditContextMenu",
   "devtools/client/framework/toolbox-context-menu", true);
+loader.lazyRequireGetter(this, "remoteClientManager",
+  "devtools/client/shared/remote-debugging/remote-client-manager.js", true);
 
 loader.lazyGetter(this, "domNodeConstants", () => {
   return require("devtools/shared/dom-node-constants");
@@ -433,6 +435,12 @@ Toolbox.prototype = {
       if (isToolboxURL) {
         
         this._URL = this.win.location.href;
+
+        
+        
+        
+        this._showDebugTargetInfo = true;
+        this._deviceDescription = await this._getDeviceDescription();
       }
 
       const domHelper = new DOMHelpers(this.win);
@@ -447,15 +455,6 @@ Toolbox.prototype = {
 
       
       await this._target.attach();
-
-      
-      
-      if (isToolboxURL) {
-        this._showDebugTargetInfo = true;
-        const deviceFront = await this.target.client.mainRoot.getFront("device");
-        
-        this._deviceDescription = await deviceFront.getDescription();
-      }
 
       
       
@@ -579,6 +578,14 @@ Toolbox.prototype = {
       
       dump(e.stack + "\n");
     });
+  },
+
+  _getDeviceDescription: async function() {
+    const deviceFront = await this.target.client.mainRoot.getFront("device");
+    const description = await deviceFront.getDescription();
+    const remoteId = new this.win.URLSearchParams(this.win.location.href).get("remoteId");
+    const connectionType = remoteClientManager.getConnectionTypeByRemoteId(remoteId);
+    return Object.assign({}, description, { connectionType });
   },
 
   
