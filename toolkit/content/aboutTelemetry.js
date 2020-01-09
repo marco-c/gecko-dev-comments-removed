@@ -1859,7 +1859,13 @@ var Events = {
       let evts = aPayload.processes[value].events;
       return evts && Object.keys(evts).length > 0;
     });
-    setHasData("events-section", hasData);
+
+    
+    
+    if (hasData) {
+      setHasData("events-section", true);
+    }
+
     if (Object.keys(events).length > 0) {
       const headings = [
         "timestampHeader",
