@@ -262,6 +262,9 @@ class PictureInPictureToggleChild extends ActorChild {
           bubbles: true,
         });
       video.dispatchEvent(pipEvent);
+      
+      
+      this.onMouseLeaveVideo(video);
     }
   }
 
