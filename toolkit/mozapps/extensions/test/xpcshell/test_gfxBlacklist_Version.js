@@ -29,6 +29,7 @@ async function run_test() {
   }
 
   gfxInfo.QueryInterface(Ci.nsIGfxInfoDebug);
+  gfxInfo.fireTestProcess();
 
   
   switch (Services.appinfo.OS) {
