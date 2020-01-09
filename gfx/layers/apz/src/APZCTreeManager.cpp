@@ -11,6 +11,7 @@
 #include "Compositor.h"                     
 #include "DragTracker.h"                    
 #include "gfxPrefs.h"                       
+#include "GenericFlingAnimation.h"          
 #include "HitTestingTreeNode.h"             
 #include "InputBlockState.h"                
 #include "InputData.h"                      
@@ -2374,6 +2375,7 @@ ParentLayerPoint APZCTreeManager::DispatchFling(
   
   if (aHandoffState.mIsHandoff && !gfxPrefs::APZAllowImmediateHandoff() &&
       aHandoffState.mScrolledApzc == aPrev) {
+    FLING_LOG("APZCTM dropping handoff due to disallowed immediate handoff\n");
     return aHandoffState.mVelocity;
   }
 
