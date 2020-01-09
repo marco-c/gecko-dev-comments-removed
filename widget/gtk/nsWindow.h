@@ -308,6 +308,7 @@ class nsWindow final : public nsBaseWidget {
   nsresult UpdateTranslucentWindowAlphaInternal(const nsIntRect& aRect,
                                                 uint8_t* aAlphas,
                                                 int32_t aStride);
+  void UpdateTitlebarTransparencyBitmap();
 
   virtual void ReparentNativeWidget(nsIWidget* aNewParent) override;
 
@@ -474,9 +475,6 @@ class nsWindow final : public nsBaseWidget {
   uint32_t mHasMappedToplevel : 1, mIsFullyObscured : 1, mRetryPointerGrab : 1;
   nsSizeMode mSizeState;
 
-  int32_t mTransparencyBitmapWidth;
-  int32_t mTransparencyBitmapHeight;
-
   nsIntPoint mClientOffset;
 
 #if GTK_CHECK_VERSION(3, 4, 0)
@@ -565,6 +563,12 @@ class nsWindow final : public nsBaseWidget {
   
   
   gchar* mTransparencyBitmap;
+  int32_t mTransparencyBitmapWidth;
+  int32_t mTransparencyBitmapHeight;
+  
+  
+  bool mTransparencyBitmapForTitlebar;
+
   
   
   bool mHasAlphaVisual;

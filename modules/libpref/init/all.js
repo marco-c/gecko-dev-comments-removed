@@ -5995,3 +5995,7 @@ pref("prio.enabled", false);
 
 
 pref("dom.sidebar.enabled", true);
+
+#if defined(MOZ_WIDGET_GTK)
+pref("widget.default-hidden-titlebar", true);
+#endif
