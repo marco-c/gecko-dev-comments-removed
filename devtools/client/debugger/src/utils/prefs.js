@@ -12,7 +12,7 @@ import { asyncStoreHelper } from "./asyncStoreHelper";
 
 
 
-const prefsSchemaVersion = "1.0.10";
+const prefsSchemaVersion = "1.0.9";
 const pref = Services.pref;
 
 if (isDevelopment()) {
@@ -134,7 +134,7 @@ export const asyncStore = asyncStoreHelper("debugger", {
   pendingBreakpoints: ["pending-breakpoints", {}],
   tabs: ["tabs", []],
   xhrBreakpoints: ["xhr-breakpoints", []],
-  eventListenerBreakpoints: ["event-listener-breakpoints", undefined],
+  eventListenerBreakpoints: ["event-listener-breakpoints", []],
 });
 
 export function verifyPrefSchema() {
@@ -143,7 +143,6 @@ export function verifyPrefSchema() {
     asyncStore.pendingBreakpoints = {};
     asyncStore.tabs = [];
     asyncStore.xhrBreakpoints = [];
-    asyncStore.eventListenerBreakpoints = undefined;
     prefs.debuggerPrefsSchemaVersion = prefsSchemaVersion;
   }
 }
