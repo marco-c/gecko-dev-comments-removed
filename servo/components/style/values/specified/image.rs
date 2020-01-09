@@ -8,6 +8,8 @@
 
 
 use crate::custom_properties::SpecifiedValue;
+#[cfg(feature = "gecko")]
+use crate::gecko_bindings::structs;
 use crate::parser::{Parse, ParserContext};
 #[cfg(feature = "gecko")]
 use crate::values::computed::{Context, Position as ComputedPosition, ToComputedValue};
@@ -265,16 +267,6 @@ impl Parse for Gradient {
                 return Err(input.new_custom_error(StyleParseErrorKind::UnexpectedFunction(func)));
             },
         };
-
-        #[cfg(feature = "gecko")]
-        {
-            use crate::gecko_bindings::structs;
-            if compat_mode == CompatMode::Moz &&
-                !unsafe { structs::StaticPrefs_sVarCache_layout_css_prefixes_gradients }
-            {
-                return Err(input.new_custom_error(StyleParseErrorKind::UnexpectedFunction(func)));
-            }
-        }
 
         let (kind, items) = input.parse_nested_block(|i| {
             let shape = match shape {
@@ -548,6 +540,16 @@ impl Gradient {
     }
 }
 
+#[inline]
+fn simple_moz_gradient() -> bool {
+    #[cfg(feature = "gecko")]
+    unsafe {
+        return structs::StaticPrefs_sVarCache_layout_css_simple_moz_gradient_enabled;
+    }
+    #[cfg(not(feature = "gecko"))]
+    return false;
+}
+
 impl GradientKind {
     
     
@@ -583,16 +585,6 @@ impl GradientKind {
                 });
                 (shape, position.ok(), None, None)
             },
-            CompatMode::WebKit => {
-                let position = input.try(|i| Position::parse(context, i));
-                let shape = input.try(|i| {
-                    if position.is_ok() {
-                        i.expect_comma()?;
-                    }
-                    EndingShape::parse(context, i, *compat_mode)
-                });
-                (shape, position.ok(), None, None)
-            },
             
             
             
@@ -603,7 +595,7 @@ impl GradientKind {
             
             
             
-            CompatMode::Moz => {
+            CompatMode::Moz if !simple_moz_gradient() => {
                 let mut position = input.try(|i| LegacyPosition::parse(context, i));
                 let angle = input.try(|i| Angle::parse(context, i)).ok();
                 if position.is_err() {
@@ -619,6 +611,16 @@ impl GradientKind {
 
                 (shape, None, angle, position.ok())
             },
+            _ => {
+                let position = input.try(|i| Position::parse(context, i));
+                let shape = input.try(|i| {
+                    if position.is_ok() {
+                        i.expect_comma()?;
+                    }
+                    EndingShape::parse(context, i, *compat_mode)
+                });
+                (shape, position.ok(), None, None)
+            },
         };
 
         if shape.is_ok() || position.is_some() || angle.is_some() || moz_position.is_some() {
@@ -631,7 +633,7 @@ impl GradientKind {
 
         #[cfg(feature = "gecko")]
         {
-            if *compat_mode == CompatMode::Moz {
+            if *compat_mode == CompatMode::Moz && !simple_moz_gradient() {
                 
                 if angle.is_none() {
                     *compat_mode = CompatMode::Modern;
@@ -751,7 +753,7 @@ impl LineDirection {
         input: &mut Parser<'i, 't>,
         compat_mode: &mut CompatMode,
     ) -> Result<Self, ParseError<'i>> {
-        let mut _angle = if *compat_mode == CompatMode::Moz {
+        let mut _angle = if *compat_mode == CompatMode::Moz && !simple_moz_gradient() {
             input.try(|i| Angle::parse(context, i)).ok()
         } else {
             
@@ -784,7 +786,7 @@ impl LineDirection {
             #[cfg(feature = "gecko")]
             {
                 
-                if *compat_mode == CompatMode::Moz {
+                if *compat_mode == CompatMode::Moz && !simple_moz_gradient(){
                     let position = i.try(|i| LegacyPosition::parse(context, i)).ok();
                     if _angle.is_none() {
                         _angle = i.try(|i| Angle::parse(context, i)).ok();
@@ -874,7 +876,7 @@ impl EndingShape {
         }
         
         
-        if compat_mode != CompatMode::Moz {
+        if compat_mode != CompatMode::Moz || simple_moz_gradient() {
             if let Ok(length) = input.try(|i| Length::parse(context, i)) {
                 if let Ok(y) = input.try(|i| LengthPercentage::parse(context, i)) {
                     if compat_mode == CompatMode::Modern {

@@ -942,9 +942,10 @@ VARCACHE_PREF(
 )
 
 
+
 VARCACHE_PREF(
-  "layout.css.prefixes.gradients",
-   layout_css_prefixes_gradients,
+  "layout.css.simple-moz-gradient.enabled",
+   layout_css_simple_moz_gradient_enabled,
   bool, true
 )
 
