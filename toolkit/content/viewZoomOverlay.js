@@ -33,7 +33,7 @@ var ZoomManager = {
   },
 
   get zoom() {
-    return this.getZoomForBrowser(getBrowser());
+    return this.getZoomForBrowser(gBrowser);
   },
 
   getZoomForBrowser: function ZoomManager_getZoomForBrowser(aBrowser) {
@@ -44,7 +44,7 @@ var ZoomManager = {
   },
 
   set zoom(aVal) {
-    this.setZoomForBrowser(getBrowser(), aVal);
+    this.setZoomForBrowser(gBrowser, aVal);
     return aVal;
   },
 
