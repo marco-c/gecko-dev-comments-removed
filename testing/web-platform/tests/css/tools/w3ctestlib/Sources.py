@@ -3,6 +3,7 @@
 
 
 
+from __future__ import print_function
 from os.path import basename, exists, join
 import os
 import filecmp
@@ -969,7 +970,7 @@ class XMLSource(FileSource):
       if ((not self.metadata) and self.tree and (not self.errors)):
         self.extractMetadata(self.tree)
     except etree.ParseError as e:
-      print "PARSE ERROR: " + self.sourcepath
+      print("PARSE ERROR: " + self.sourcepath)
       self.cacheAsParseError(self.sourcepath, e)
       e.W3CTestLibErrorLocation = self.sourcepath
       self.errors = [str(e)]
@@ -1386,7 +1387,7 @@ class HTMLSource(XMLSource):
       if ((not self.metadata) and self.tree and (not self.errors)):
         self.extractMetadata(self.tree)
     except Exception as e:
-      print "PARSE ERROR: " + self.sourcepath
+      print("PARSE ERROR: " + self.sourcepath)
       e.W3CTestLibErrorLocation = self.sourcepath
       self.errors = [str(e)]
       self.encoding = 'utf-8'
