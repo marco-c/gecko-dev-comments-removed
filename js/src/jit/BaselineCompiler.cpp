@@ -416,7 +416,7 @@ static void LoadInlineValueOperand(MacroAssembler& masm, Register pc,
   
   
   
-  masm.loadValue(Address(pc, sizeof(jsbytecode)), dest);
+  masm.loadUnalignedValue(Address(pc, sizeof(jsbytecode)), dest);
 }
 
 template <>
@@ -6798,6 +6798,10 @@ JitCode* JitRuntime::generateDebugTrapHandler(JSContext* cx,
   regs.takeUnchecked(BaselineFrameReg);
   regs.takeUnchecked(ICStubReg);
   regs.takeUnchecked(PCRegAtStart);
+#ifdef JS_CODEGEN_ARM
+  regs.takeUnchecked(BaselineSecondScratchReg);
+  masm.setSecondScratchReg(BaselineSecondScratchReg);
+#endif
   Register scratch1 = regs.takeAny();
   Register scratch2 = regs.takeAny();
   Register scratch3 = regs.takeAny();
