@@ -630,6 +630,12 @@ public class CustomTabsActivity extends AppCompatActivity
         throw new IllegalStateException("Unexpected new session");
     }
 
+    @Override
+    public GeckoResult<String> onLoadError(final GeckoSession session, final String urlStr,
+                                           final WebRequestError error) {
+        return null;
+    }
+
     
     @Override
     public void onPageStart(GeckoSession session, String url) {
@@ -675,6 +681,11 @@ public class CustomTabsActivity extends AppCompatActivity
     }
 
     @Override
+    public void onCloseRequest(GeckoSession session) {
+        
+    }
+
+    @Override
     public void onFullScreen(GeckoSession session, boolean fullScreen) {
         ActivityUtils.setFullScreen(this, fullScreen);
         if (fullScreen) {
@@ -702,6 +713,20 @@ public class CustomTabsActivity extends AppCompatActivity
                 WebApps.openInFennec(validUri, CustomTabsActivity.this);
             }
         });
+    }
+
+    @Override
+    public void onExternalResponse(final GeckoSession session, final GeckoSession.WebResponseInfo request) {
+        
+    }
+
+    @Override
+    public void onCrash(final GeckoSession session) {
+        
+    }
+
+    @Override
+    public void onFirstComposite(final GeckoSession session) {
     }
 
     @Override 
