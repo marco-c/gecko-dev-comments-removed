@@ -13,8 +13,6 @@ const STRINGS_URI = "devtools/shared/locales/accessibility.properties";
 loader.lazyRequireGetter(this, "LocalizationHelper", "devtools/shared/l10n", true);
 DevToolsUtils.defineLazyGetter(this, "L10N", () => new LocalizationHelper(STRINGS_URI));
 
-const { accessibility: { AUDIT_TYPE } } = require("devtools/shared/constants");
-
 
 const MAX_STRING_LENGTH = 50;
 
@@ -544,7 +542,7 @@ class ContrastRatio extends AuditReport {
 
 
 
-  update({ [AUDIT_TYPE.CONTRAST]: contrastRatio }) {
+  update({ contrastRatio }) {
     const els = {};
     for (const key of ["label", "min", "max", "error", "separator"]) {
       const el = els[key] = this.getElement(`contrast-ratio-${key}`);
