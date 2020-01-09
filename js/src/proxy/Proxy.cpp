@@ -73,31 +73,6 @@ JS_FRIEND_API void js::assertEnteredPolicy(JSContext* cx, JSObject* proxy,
 }
 #endif
 
-bool Proxy::getPropertyDescriptor(JSContext* cx, HandleObject proxy,
-                                  HandleId id,
-                                  MutableHandle<PropertyDescriptor> desc) {
-  if (!CheckRecursionLimit(cx)) {
-    return false;
-  }
-
-  const BaseProxyHandler* handler = proxy->as<ProxyObject>().handler();
-  desc.object().set(
-      nullptr);  
-  AutoEnterPolicy policy(cx, handler, proxy, id,
-                         BaseProxyHandler::GET_PROPERTY_DESCRIPTOR, true);
-  if (!policy.allowed()) {
-    return policy.returnValue();
-  }
-
-  
-  if (handler->hasPrototype()) {
-    return handler->BaseProxyHandler::getPropertyDescriptor(cx, proxy, id,
-                                                            desc);
-  }
-
-  return handler->getPropertyDescriptor(cx, proxy, id, desc);
-}
-
 bool Proxy::getOwnPropertyDescriptor(JSContext* cx, HandleObject proxy,
                                      HandleId id,
                                      MutableHandle<PropertyDescriptor> desc) {

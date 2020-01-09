@@ -50,8 +50,6 @@ class DeadObjectProxy : public BaseProxyHandler {
 
   
   
-  
-  
   virtual bool nativeCall(JSContext* cx, IsAcceptableThis test, NativeImpl impl,
                           const CallArgs& args) const override;
   virtual bool hasInstance(JSContext* cx, HandleObject proxy,

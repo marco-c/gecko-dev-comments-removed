@@ -196,7 +196,6 @@ class JS_FRIEND_API BaseProxyHandler {
 
 
 
-
   bool mHasPrototype;
 
   
@@ -310,6 +309,8 @@ class JS_FRIEND_API BaseProxyHandler {
 
 
 
+
+
   virtual bool has(JSContext* cx, HandleObject proxy, HandleId id,
                    bool* bp) const;
   virtual bool get(JSContext* cx, HandleObject proxy, HandleValue receiver,
@@ -337,9 +338,6 @@ class JS_FRIEND_API BaseProxyHandler {
 
   
   virtual JSObject* enumerate(JSContext* cx, HandleObject proxy) const;
-  virtual bool getPropertyDescriptor(
-      JSContext* cx, HandleObject proxy, HandleId id,
-      MutableHandle<PropertyDescriptor> desc) const;
   virtual bool hasOwn(JSContext* cx, HandleObject proxy, HandleId id,
                       bool* bp) const;
   virtual bool getOwnEnumerablePropertyKeys(JSContext* cx, HandleObject proxy,
