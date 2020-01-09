@@ -258,6 +258,7 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
   
   void ResumeIPCAfterAsyncPaint();
 
+  void PrepareFinalDestroy();
   void AfterDestroy();
 
   PLayerTransactionChild* AllocPLayerTransactionChild(
