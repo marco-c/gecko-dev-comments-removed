@@ -6,44 +6,49 @@ export const selectLayoutRender = (state, prefs, rickRollCache) => {
   let chosenSpocs = new Set();
   let unchosenSpocs = new Set();
 
-  
-  
-  const isFirstRun = !rickRollCache.length;
-
-  function maybeInjectSpocs(data, spocsConfig) {
-    if (data &&
-        spocsConfig && spocsConfig.positions && spocsConfig.positions.length &&
-        spocs.data.spocs && spocs.data.spocs.length) {
-      const recommendations = [...data.recommendations];
-      for (let position of spocsConfig.positions) {
-        const spoc = spocs.data.spocs[spocIndex];
-        if (!spoc) {
-          break;
-        }
-
-        
-        let rickRoll;
-        if (isFirstRun) {
-          rickRoll = Math.random();
-          rickRollCache.push(rickRoll);
-        } else {
-          rickRoll = rickRollCache.shift();
-          bufferRollCache.push(rickRoll);
-        }
-
-        if (rickRoll <= spocsConfig.probability) {
-          spocIndex++;
-          recommendations.splice(position.index, 0, spoc);
-          chosenSpocs.add(spoc);
-        } else {
-          unchosenSpocs.add(spoc);
-        }
+  function rollForSpocs(data, spocsConfig) {
+    const recommendations = [...data.recommendations];
+    for (let position of spocsConfig.positions) {
+      const spoc = spocs.data.spocs[spocIndex];
+      if (!spoc) {
+        break;
       }
 
-      return {
-        ...data,
-        recommendations,
-      };
+      
+      let rickRoll;
+      if (!rickRollCache.length) {
+        rickRoll = Math.random();
+        bufferRollCache.push(rickRoll);
+      } else {
+        rickRoll = rickRollCache.shift();
+        bufferRollCache.push(rickRoll);
+      }
+
+      if (rickRoll <= spocsConfig.probability) {
+        spocIndex++;
+        recommendations.splice(position.index, 0, spoc);
+        chosenSpocs.add(spoc);
+      } else {
+        unchosenSpocs.add(spoc);
+      }
+    }
+
+    return {
+      ...data,
+      recommendations,
+    };
+  }
+
+  function maybeInjectSpocs(data, spocsConfig) {
+    
+    if (data && spocsConfig && spocsConfig.positions && spocsConfig.positions.length) {
+      
+      if (!spocs.data.spocs || !spocs.data.spocs.length) {
+        return data;
+      }
+
+      
+      return rollForSpocs(data, spocsConfig);
     }
 
     return data;
@@ -63,56 +68,73 @@ export const selectLayoutRender = (state, prefs, rickRollCache) => {
     filterArray.push(...DS_COMPONENTS);
   }
 
-  const layoutRender = layout.map(row => ({
-    ...row,
+  const handleComponent = component => {
+    positions[component.type] = positions[component.type] || 0;
+
+    let {data} = feeds.data[component.feed.url];
+
+    if (component && component.properties && component.properties.offset) {
+      data = {
+        ...data,
+        recommendations: data.recommendations.slice(component.properties.offset),
+      };
+    }
+
+    data = maybeInjectSpocs(data, component.spocs);
+
+    let items = 0;
+    if (component.properties && component.properties.items) {
+      items = Math.min(component.properties.items, data.recommendations.length);
+    }
 
     
     
-    components: row.components.filter(c => !filterArray.includes(c.type)).map(component => {
-      if (!component.feed || !feeds.data[component.feed.url]) {
-        return component;
+    
+    for (let i = 0; i < items; i++) {
+      data.recommendations[i].pos = positions[component.type]++;
+    }
+
+    return {...component, data};
+  };
+
+  const renderLayout = () => {
+    const renderedLayoutArray = [];
+    for (const row of layout.filter(r => r.components.length)) {
+      let components = [];
+      renderedLayoutArray.push({
+        ...row,
+        components,
+      });
+      for (const component of row.components.filter(c => !filterArray.includes(c.type))) {
+        if (component.feed) {
+          const spocsConfig = component.spocs;
+          
+          if (!feeds.data[component.feed.url] ||
+            (spocsConfig && spocsConfig.positions && spocsConfig.positions.length && !spocs.loaded)) {
+            return renderedLayoutArray;
+          }
+          components.push(handleComponent(component));
+        } else {
+          components.push(component);
+        }
       }
+    }
+    return renderedLayoutArray;
+  };
 
-      positions[component.type] = positions[component.type] || 0;
+  const layoutRender = renderLayout(layout);
 
-      let {data} = feeds.data[component.feed.url];
-
-      if (component && component.properties && component.properties.offset) {
-        data = {
-          ...data,
-          recommendations: data.recommendations.slice(component.properties.offset),
-        };
-      }
-
-      data = maybeInjectSpocs(data, component.spocs);
-
-      
-      if (!rickRollCache.length) {
-        rickRollCache.push(...bufferRollCache);
-      }
-
-      let items = 0;
-      if (component.properties && component.properties.items) {
-        items = Math.min(component.properties.items, data.recommendations.length);
-      }
-
-      
-      
-      
-      for (let i = 0; i < items; i++) {
-        data.recommendations[i].pos = positions[component.type]++;
-      }
-
-      return {...component, data};
-    }),
-  })).filter(row => row.components.length);
+  
+  if (!rickRollCache.length) {
+    rickRollCache.push(...bufferRollCache);
+  }
 
   
   
   
   
   let spocsFill = [];
-  if (spocs.data.spocs) {
+  if (spocs.loaded && feeds.loaded && spocs.data.spocs) {
     const chosenSpocsFill = [...chosenSpocs]
       .map(spoc => ({id: spoc.id, reason: "n/a", displayed: 1, full_recalc: 0}));
     const unchosenSpocsFill = [...unchosenSpocs]

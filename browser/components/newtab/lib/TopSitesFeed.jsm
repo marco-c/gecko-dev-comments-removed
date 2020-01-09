@@ -42,7 +42,7 @@ const SECTION_ID = "topsites";
 const ROWS_PREF = "topSitesRows";
 
 
-const NO_DEFAULT_SEARCH_TILE_EXP_PREF = "improvesearch.noDefaultSearchTile";
+const FILTER_DEFAULT_SEARCH_PREF = "improvesearch.noDefaultSearchTile";
 const SEARCH_FILTERS = [
   "google",
   "search.yahoo",
@@ -87,7 +87,7 @@ this.TopSitesFeed = class TopSitesFeed {
   observe(subj, topic, data) {
     
     
-    if (topic === "browser-search-engine-modified" && data === "engine-default" && this.store.getState().Prefs.values[NO_DEFAULT_SEARCH_TILE_EXP_PREF]) {
+    if (topic === "browser-search-engine-modified" && data === "engine-default" && this.store.getState().Prefs.values[FILTER_DEFAULT_SEARCH_PREF]) {
       delete this._currentSearchHostname;
       this._currentSearchHostname = getShortURLForCurrentSearch();
       this.refresh({broadcast: true});
@@ -132,15 +132,9 @@ this.TopSitesFeed = class TopSitesFeed {
 
 
 
-  isExperimentOnAndLinkFilteredSearch(hostname) {
-    if (!this.store.getState().Prefs.values[NO_DEFAULT_SEARCH_TILE_EXP_PREF]) {
-      return false;
-    }
-    
-    if (this.store.getState().Prefs.values[SEARCH_SHORTCUTS_EXPERIMENT] && getSearchProvider(hostname)) {
-      return false;
-    }
-    if (SEARCH_FILTERS.includes(hostname) || hostname === this._currentSearchHostname) {
+  shouldFilterSearchTile(hostname) {
+    if (this.store.getState().Prefs.values[FILTER_DEFAULT_SEARCH_PREF] &&
+      (SEARCH_FILTERS.includes(hostname) || hostname === this._currentSearchHostname)) {
       return true;
     }
     return false;
@@ -227,7 +221,7 @@ this.TopSitesFeed = class TopSitesFeed {
     });
     for (let link of cache) {
       const hostname = shortURL(link);
-      if (!this.isExperimentOnAndLinkFilteredSearch(hostname)) {
+      if (!this.shouldFilterSearchTile(hostname)) {
         frecent.push({
           ...(searchShortcutsExperiment ? await this.topSiteToSearchTopSite(link) : link),
           hostname,
@@ -241,7 +235,7 @@ this.TopSitesFeed = class TopSitesFeed {
       const searchProvider = getSearchProvider(shortURL(link));
       if (NewTabUtils.blockedLinks.isBlocked({url: link.url})) {
         continue;
-      } else if (this.isExperimentOnAndLinkFilteredSearch(link.hostname)) {
+      } else if (this.shouldFilterSearchTile(link.hostname)) {
         continue;
         
         
@@ -670,7 +664,7 @@ this.TopSitesFeed = class TopSitesFeed {
             this.refreshDefaults(action.data.value);
             break;
           case ROWS_PREF:
-          case NO_DEFAULT_SEARCH_TILE_EXP_PREF:
+          case FILTER_DEFAULT_SEARCH_PREF:
           case SEARCH_SHORTCUTS_SEARCH_ENGINES_PREF:
             this.refresh({broadcast: true});
             break;

@@ -41,6 +41,7 @@ ChromeUtils.defineModuleGetter(this, "Sampling",
 const TRAILHEAD_CONFIG = {
   OVERRIDE_PREF: "trailhead.firstrun.branches",
   DID_SEE_ABOUT_WELCOME_PREF: "trailhead.firstrun.didSeeAboutWelcome",
+  INTERRUPTS_EXPERIMENT_PREF: "trailhead.firstrun.interruptsExperiment",
   BRANCHES: {
     interrupts: [
       ["control"],
@@ -569,7 +570,7 @@ class _ASRouter {
 
     ASRouterPreferences.init();
     ASRouterPreferences.addListener(this.onPrefChange);
-    BookmarkPanelHub.init(this.handleMessageRequest, this.addImpression);
+    BookmarkPanelHub.init(this.handleMessageRequest, this.addImpression, this.dispatch);
 
     this._loadLocalProviders();
 
@@ -747,6 +748,13 @@ class _ASRouter {
         experiment === "interrupts" ? interrupt : triplet,
         {type: "as-firstrun"}
       );
+
+      
+      
+      if (experiment === "interrupts" &&
+          !Services.prefs.prefHasUserValue(TRAILHEAD_CONFIG.INTERRUPTS_EXPERIMENT_PREF)) {
+        Services.prefs.setStringPref(TRAILHEAD_CONFIG.INTERRUPTS_EXPERIMENT_PREF, interrupt);
+      }
     }
   }
 
