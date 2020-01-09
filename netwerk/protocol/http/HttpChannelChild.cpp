@@ -23,6 +23,7 @@
 #include "mozilla/net/NeckoChild.h"
 #include "mozilla/net/HttpChannelChild.h"
 #include "mozilla/net/UrlClassifierCommon.h"
+#include "mozilla/net/UrlClassifierFeatureFactory.h"
 
 #include "AltDataOutputStreamChild.h"
 #include "CookieServiceChild.h"
@@ -1190,7 +1191,8 @@ void HttpChannelChild::DoOnStopRequest(nsIRequest* aRequest,
   
   
   
-  if (aChannelStatus == NS_ERROR_TRACKING_URI ||
+  if (UrlClassifierFeatureFactory::IsClassifierBlockingErrorCode(
+          aChannelStatus) ||
       aChannelStatus == NS_ERROR_MALWARE_URI ||
       aChannelStatus == NS_ERROR_UNWANTED_URI ||
       aChannelStatus == NS_ERROR_BLOCKED_URI ||
