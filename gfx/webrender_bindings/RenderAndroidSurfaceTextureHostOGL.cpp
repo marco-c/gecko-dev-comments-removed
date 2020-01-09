@@ -18,6 +18,7 @@ RenderAndroidSurfaceTextureHostOGL::RenderAndroidSurfaceTextureHostOGL(
     gfx::SurfaceFormat aFormat, bool aContinuousUpdate)
     : mSurfTex(aSurfTex),
       mSize(aSize),
+      mContinuousUpdate(aContinuousUpdate),
       mIsPrepared(false),
       mAttachedToGLContext(false) {
   MOZ_COUNT_CTOR_INHERITED(RenderAndroidSurfaceTextureHostOGL,
@@ -83,8 +84,12 @@ wr::WrExternalImage RenderAndroidSurfaceTextureHostOGL::Lock(
                                  mSurfTex->GetTexName(), aRendering);
   }
 
-  
-  if (mSurfTex && !mSurfTex->IsSingleBuffer()) {
+  if (mContinuousUpdate) {
+    MOZ_ASSERT(!mSurfTex->IsSingleBuffer());
+    mSurfTex->UpdateTexImage();
+  } else if (!mSurfTex->IsSingleBuffer()) {
+    
+    
     mSurfTex->UpdateTexImage();
   }
 
