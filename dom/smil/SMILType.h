@@ -10,9 +10,9 @@
 #include "mozilla/Attributes.h"
 #include "nscore.h"
 
-class nsSMILValue;
-
 namespace mozilla {
+
+class SMILValue;
 
 
 
@@ -51,7 +51,7 @@ class SMILType {
   
 
 
-  friend class ::nsSMILValue;
+  friend class SMILValue;
 
  protected:
   
@@ -61,7 +61,7 @@ class SMILType {
 
 
 
-  virtual void Init(nsSMILValue& aValue) const = 0;
+  virtual void Init(SMILValue& aValue) const = 0;
 
   
 
@@ -69,21 +69,7 @@ class SMILType {
 
 
 
-  virtual void Destroy(nsSMILValue& aValue) const = 0;
-
-  
-
-
-
-
-
-
-
-
-
-
-  virtual nsresult Assign(nsSMILValue& aDest,
-                          const nsSMILValue& aSrc) const = 0;
+  virtual void Destroy(SMILValue& aValue) const = 0;
 
   
 
@@ -96,17 +82,7 @@ class SMILType {
 
 
 
-
-
-
-
-
-
-
-
-
-  virtual bool IsEqual(const nsSMILValue& aLeft,
-                       const nsSMILValue& aRight) const = 0;
+  virtual nsresult Assign(SMILValue& aDest, const SMILValue& aSrc) const = 0;
 
   
 
@@ -128,6 +104,10 @@ class SMILType {
 
 
 
+  virtual bool IsEqual(const SMILValue& aLeft,
+                       const SMILValue& aRight) const = 0;
+
+  
 
 
 
@@ -141,7 +121,26 @@ class SMILType {
 
 
 
-  virtual nsresult Add(nsSMILValue& aDest, const nsSMILValue& aValueToAdd,
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  virtual nsresult Add(SMILValue& aDest, const SMILValue& aValueToAdd,
                        uint32_t aCount) const = 0;
 
   
@@ -162,8 +161,8 @@ class SMILType {
 
 
 
-  virtual nsresult SandwichAdd(nsSMILValue& aDest,
-                               const nsSMILValue& aValueToAdd) const {
+  virtual nsresult SandwichAdd(SMILValue& aDest,
+                               const SMILValue& aValueToAdd) const {
     return Add(aDest, aValueToAdd, 1);
   }
 
@@ -182,8 +181,7 @@ class SMILType {
 
 
 
-  virtual nsresult ComputeDistance(const nsSMILValue& aFrom,
-                                   const nsSMILValue& aTo,
+  virtual nsresult ComputeDistance(const SMILValue& aFrom, const SMILValue& aTo,
                                    double& aDistance) const = 0;
 
   
@@ -204,9 +202,9 @@ class SMILType {
 
 
 
-  virtual nsresult Interpolate(const nsSMILValue& aStartVal,
-                               const nsSMILValue& aEndVal, double aUnitDistance,
-                               nsSMILValue& aResult) const = 0;
+  virtual nsresult Interpolate(const SMILValue& aStartVal,
+                               const SMILValue& aEndVal, double aUnitDistance,
+                               SMILValue& aResult) const = 0;
 };
 
 }  

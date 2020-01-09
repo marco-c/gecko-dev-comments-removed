@@ -99,7 +99,7 @@ class SMILCompositor : public PLDHashEntryHdr {
 
   
   
-  void UpdateCachedBaseValue(const nsSMILValue& aBaseValue);
+  void UpdateCachedBaseValue(const SMILValue& aBaseValue);
 
   
   KeyType mKey;
@@ -117,7 +117,7 @@ class SMILCompositor : public PLDHashEntryHdr {
   
   
   
-  nsSMILValue mCachedBaseValue;
+  SMILValue mCachedBaseValue;
 };
 
 }  

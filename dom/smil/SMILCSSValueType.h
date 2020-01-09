@@ -35,20 +35,18 @@ class SMILCSSValueType : public SMILType {
  protected:
   
   
-  void Init(nsSMILValue& aValue) const override;
-  void Destroy(nsSMILValue&) const override;
-  nsresult Assign(nsSMILValue& aDest, const nsSMILValue& aSrc) const override;
-  bool IsEqual(const nsSMILValue& aLeft,
-               const nsSMILValue& aRight) const override;
-  nsresult Add(nsSMILValue& aDest, const nsSMILValue& aValueToAdd,
+  void Init(SMILValue& aValue) const override;
+  void Destroy(SMILValue&) const override;
+  nsresult Assign(SMILValue& aDest, const SMILValue& aSrc) const override;
+  bool IsEqual(const SMILValue& aLeft, const SMILValue& aRight) const override;
+  nsresult Add(SMILValue& aDest, const SMILValue& aValueToAdd,
                uint32_t aCount) const override;
-  nsresult SandwichAdd(nsSMILValue& aDest,
-                       const nsSMILValue& aValueToAdd) const override;
-  nsresult ComputeDistance(const nsSMILValue& aFrom, const nsSMILValue& aTo,
+  nsresult SandwichAdd(SMILValue& aDest,
+                       const SMILValue& aValueToAdd) const override;
+  nsresult ComputeDistance(const SMILValue& aFrom, const SMILValue& aTo,
                            double& aDistance) const override;
-  nsresult Interpolate(const nsSMILValue& aStartVal, const nsSMILValue& aEndVal,
-                       double aUnitDistance,
-                       nsSMILValue& aResult) const override;
+  nsresult Interpolate(const SMILValue& aStartVal, const SMILValue& aEndVal,
+                       double aUnitDistance, SMILValue& aResult) const override;
 
  public:
   
@@ -77,7 +75,7 @@ class SMILCSSValueType : public SMILType {
 
 
   static void ValueFromString(nsCSSPropertyID aPropID, Element* aTargetElement,
-                              const nsAString& aString, nsSMILValue& aValue,
+                              const nsAString& aString, SMILValue& aValue,
                               bool* aIsContextSensitive);
 
   
@@ -91,26 +89,16 @@ class SMILCSSValueType : public SMILType {
 
 
 
-  static nsSMILValue ValueFromAnimationValue(nsCSSPropertyID aPropID,
-                                             Element* aTargetElement,
-                                             const AnimationValue& aValue);
+  static SMILValue ValueFromAnimationValue(nsCSSPropertyID aPropID,
+                                           Element* aTargetElement,
+                                           const AnimationValue& aValue);
 
   
 
 
 
 
-  static bool SetPropertyValues(const nsSMILValue&, mozilla::DeclarationBlock&);
-
-  
-
-
-
-
-
-
-
-  static nsCSSPropertyID PropertyFromValue(const nsSMILValue& aValue);
+  static bool SetPropertyValues(const SMILValue&, mozilla::DeclarationBlock&);
 
   
 
@@ -120,13 +108,22 @@ class SMILCSSValueType : public SMILType {
 
 
 
+  static nsCSSPropertyID PropertyFromValue(const SMILValue& aValue);
+
+  
 
 
 
 
 
-  static void FinalizeValue(nsSMILValue& aValue,
-                            const nsSMILValue& aValueToMatch);
+
+
+
+
+
+
+
+  static void FinalizeValue(SMILValue& aValue, const SMILValue& aValueToMatch);
 
  private:
   

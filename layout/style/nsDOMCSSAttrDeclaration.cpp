@@ -133,7 +133,7 @@ nsDOMCSSAttributeDeclaration::GetParsingEnvironment(
 }
 
 nsresult nsDOMCSSAttributeDeclaration::SetSMILValue(
-    const nsCSSPropertyID aPropID, const nsSMILValue& aValue) {
+    const nsCSSPropertyID aPropID, const SMILValue& aValue) {
   MOZ_ASSERT(mIsSMILOverride);
   
   

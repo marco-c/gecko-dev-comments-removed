@@ -7,16 +7,16 @@
 #include "SVGMotionSMILAnimationFunction.h"
 
 #include "mozilla/dom/SVGAnimationElement.h"
-#include "mozilla/dom/SVGPathElement.h"  
+#include "mozilla/dom/SVGPathElement.h"
 #include "mozilla/dom/SVGMPathElement.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/SMILParserUtils.h"
 #include "nsAttrValue.h"
 #include "nsAttrValueInlines.h"
 #include "SVGAngle.h"
-#include "SVGPathDataParser.h"
-#include "SVGMotionSMILType.h"
 #include "SVGMotionSMILPathUtils.h"
+#include "SVGMotionSMILType.h"
+#include "SVGPathDataParser.h"
 
 using namespace mozilla::dom;
 using namespace mozilla::dom::SVGAngle_Binding;
@@ -274,7 +274,7 @@ void SVGMotionSMILAnimationFunction::RebuildPathAndVertices(
 
 bool SVGMotionSMILAnimationFunction::GenerateValuesForPathAndPoints(
     Path* aPath, bool aIsKeyPoints, FallibleTArray<double>& aPointDistances,
-    nsSMILValueArray& aResult) {
+    SMILValueArray& aResult) {
   MOZ_ASSERT(aResult.IsEmpty(), "outparam is non-empty");
 
   
@@ -293,7 +293,7 @@ bool SVGMotionSMILAnimationFunction::GenerateValuesForPathAndPoints(
 }
 
 nsresult SVGMotionSMILAnimationFunction::GetValues(const nsISMILAttr& aSMILAttr,
-                                                   nsSMILValueArray& aResult) {
+                                                   SMILValueArray& aResult) {
   if (mIsPathStale) {
     RebuildPathAndVertices(aSMILAttr.GetTargetNode());
   }

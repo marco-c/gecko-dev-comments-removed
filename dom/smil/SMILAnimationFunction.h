@@ -10,11 +10,11 @@
 #include "mozilla/SMILKeySpline.h"
 #include "mozilla/SMILTargetIdentifier.h"
 #include "mozilla/SMILTimeValue.h"
+#include "mozilla/SMILTypes.h"
+#include "mozilla/SMILValue.h"
 #include "nsAttrValue.h"
 #include "nsGkAtoms.h"
 #include "nsISMILAttr.h"
-#include "nsSMILTypes.h"
-#include "nsSMILValue.h"
 #include "nsString.h"
 #include "nsTArray.h"
 
@@ -124,7 +124,7 @@ class SMILAnimationFunction {
 
 
 
-  void ComposeResult(const nsISMILAttr& aSMILAttr, nsSMILValue& aResult);
+  void ComposeResult(const nsISMILAttr& aSMILAttr, SMILValue& aResult);
 
   
 
@@ -258,7 +258,7 @@ class SMILAnimationFunction {
 
  protected:
   
-  typedef FallibleTArray<nsSMILValue> nsSMILValueArray;
+  typedef FallibleTArray<SMILValue> SMILValueArray;
 
   
   enum nsSMILCalcMode : uint8_t {
@@ -291,18 +291,15 @@ class SMILAnimationFunction {
   void UnsetKeySplines();
 
   
-  virtual nsresult InterpolateResult(const nsSMILValueArray& aValues,
-                                     nsSMILValue& aResult,
-                                     nsSMILValue& aBaseValue);
-  nsresult AccumulateResult(const nsSMILValueArray& aValues,
-                            nsSMILValue& aResult);
+  virtual nsresult InterpolateResult(const SMILValueArray& aValues,
+                                     SMILValue& aResult, SMILValue& aBaseValue);
+  nsresult AccumulateResult(const SMILValueArray& aValues, SMILValue& aResult);
 
-  nsresult ComputePacedPosition(const nsSMILValueArray& aValues,
+  nsresult ComputePacedPosition(const SMILValueArray& aValues,
                                 double aSimpleProgress,
                                 double& aIntervalProgress,
-                                const nsSMILValue*& aFrom,
-                                const nsSMILValue*& aTo);
-  double ComputePacedTotalDistance(const nsSMILValueArray& aValues) const;
+                                const SMILValue*& aFrom, const SMILValue*& aTo);
+  double ComputePacedTotalDistance(const SMILValueArray& aValues) const;
 
   
 
@@ -322,10 +319,10 @@ class SMILAnimationFunction {
   virtual bool GetAttr(nsAtom* aAttName, nsAString& aResult) const;
 
   bool ParseAttr(nsAtom* aAttName, const nsISMILAttr& aSMILAttr,
-                 nsSMILValue& aResult, bool& aPreventCachingOfSandwich) const;
+                 SMILValue& aResult, bool& aPreventCachingOfSandwich) const;
 
   virtual nsresult GetValues(const nsISMILAttr& aSMILAttr,
-                             nsSMILValueArray& aResult);
+                             SMILValueArray& aResult);
 
   virtual void CheckValueListDependentAttrs(uint32_t aNumValues);
   void CheckKeyTimes(uint32_t aNumValues);

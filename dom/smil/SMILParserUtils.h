@@ -11,13 +11,15 @@
 #include "nsStringFwd.h"
 
 class nsISMILAttr;
-class nsSMILValue;
 
 namespace mozilla {
+
 class SMILKeySpline;
 class SMILRepeatCount;
 class SMILTimeValue;
 class SMILTimeValueSpecParams;
+class SMILValue;
+
 namespace dom {
 class SVGAnimationElement;
 }  
@@ -48,7 +50,7 @@ class SMILParserUtils {
   static bool ParseValues(const nsAString& aSpec,
                           const mozilla::dom::SVGAnimationElement* aSrcElement,
                           const nsISMILAttr& aAttribute,
-                          FallibleTArray<nsSMILValue>& aValuesArray,
+                          FallibleTArray<SMILValue>& aValuesArray,
                           bool& aPreventCachingOfSandwich);
 
   

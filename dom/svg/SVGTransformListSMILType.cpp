@@ -5,10 +5,11 @@
 
 
 #include "SVGTransformListSMILType.h"
+
+#include "mozilla/SMILValue.h"
+#include "nsCRT.h"
 #include "SVGTransformList.h"
 #include "SVGTransform.h"
-#include "nsSMILValue.h"
-#include "nsCRT.h"
 #include <math.h>
 
 using namespace mozilla;
@@ -19,7 +20,7 @@ typedef FallibleTArray<SVGTransformSMILData> TransformArray;
 
 
 
-void SVGTransformListSMILType::Init(nsSMILValue& aValue) const {
+void SVGTransformListSMILType::Init(SMILValue& aValue) const {
   MOZ_ASSERT(aValue.IsNull(), "Unexpected value type");
 
   TransformArray* transforms = new TransformArray(1);
@@ -27,7 +28,7 @@ void SVGTransformListSMILType::Init(nsSMILValue& aValue) const {
   aValue.mType = this;
 }
 
-void SVGTransformListSMILType::Destroy(nsSMILValue& aValue) const {
+void SVGTransformListSMILType::Destroy(SMILValue& aValue) const {
   MOZ_ASSERT(aValue.mType == this, "Unexpected SMIL value type");
   TransformArray* params = static_cast<TransformArray*>(aValue.mU.mPtr);
   delete params;
@@ -35,8 +36,8 @@ void SVGTransformListSMILType::Destroy(nsSMILValue& aValue) const {
   aValue.mType = SMILNullType::Singleton();
 }
 
-nsresult SVGTransformListSMILType::Assign(nsSMILValue& aDest,
-                                          const nsSMILValue& aSrc) const {
+nsresult SVGTransformListSMILType::Assign(SMILValue& aDest,
+                                          const SMILValue& aSrc) const {
   MOZ_ASSERT(aDest.mType == aSrc.mType, "Incompatible SMIL types");
   MOZ_ASSERT(aDest.mType == this, "Unexpected SMIL value");
 
@@ -50,8 +51,8 @@ nsresult SVGTransformListSMILType::Assign(nsSMILValue& aDest,
   return NS_OK;
 }
 
-bool SVGTransformListSMILType::IsEqual(const nsSMILValue& aLeft,
-                                       const nsSMILValue& aRight) const {
+bool SVGTransformListSMILType::IsEqual(const SMILValue& aLeft,
+                                       const SMILValue& aRight) const {
   MOZ_ASSERT(aLeft.mType == aRight.mType, "Incompatible SMIL types");
   MOZ_ASSERT(aLeft.mType == this, "Unexpected SMIL type");
 
@@ -77,8 +78,8 @@ bool SVGTransformListSMILType::IsEqual(const nsSMILValue& aLeft,
   return true;
 }
 
-nsresult SVGTransformListSMILType::Add(nsSMILValue& aDest,
-                                       const nsSMILValue& aValueToAdd,
+nsresult SVGTransformListSMILType::Add(SMILValue& aDest,
+                                       const SMILValue& aValueToAdd,
                                        uint32_t aCount) const {
   MOZ_ASSERT(aDest.mType == this, "Unexpected SMIL type");
   MOZ_ASSERT(aDest.mType == aValueToAdd.mType, "Incompatible SMIL types");
@@ -128,7 +129,7 @@ nsresult SVGTransformListSMILType::Add(nsSMILValue& aDest,
 }
 
 nsresult SVGTransformListSMILType::SandwichAdd(
-    nsSMILValue& aDest, const nsSMILValue& aValueToAdd) const {
+    SMILValue& aDest, const SMILValue& aValueToAdd) const {
   MOZ_ASSERT(aDest.mType == this, "Unexpected SMIL type");
   MOZ_ASSERT(aDest.mType == aValueToAdd.mType, "Incompatible SMIL types");
 
@@ -161,8 +162,8 @@ nsresult SVGTransformListSMILType::SandwichAdd(
   return NS_OK;
 }
 
-nsresult SVGTransformListSMILType::ComputeDistance(const nsSMILValue& aFrom,
-                                                   const nsSMILValue& aTo,
+nsresult SVGTransformListSMILType::ComputeDistance(const SMILValue& aFrom,
+                                                   const SMILValue& aTo,
                                                    double& aDistance) const {
   MOZ_ASSERT(aFrom.mType == aTo.mType,
              "Can't compute difference between different SMIL types");
@@ -218,10 +219,10 @@ nsresult SVGTransformListSMILType::ComputeDistance(const nsSMILValue& aFrom,
   return NS_OK;
 }
 
-nsresult SVGTransformListSMILType::Interpolate(const nsSMILValue& aStartVal,
-                                               const nsSMILValue& aEndVal,
+nsresult SVGTransformListSMILType::Interpolate(const SMILValue& aStartVal,
+                                               const SMILValue& aEndVal,
                                                double aUnitDistance,
-                                               nsSMILValue& aResult) const {
+                                               SMILValue& aResult) const {
   MOZ_ASSERT(aStartVal.mType == aEndVal.mType,
              "Can't interpolate between different SMIL types");
   MOZ_ASSERT(aStartVal.mType == this, "Unexpected type for interpolation");
@@ -290,7 +291,7 @@ nsresult SVGTransformListSMILType::Interpolate(const nsSMILValue& aStartVal,
 
 
 nsresult SVGTransformListSMILType::AppendTransform(
-    const SVGTransformSMILData& aTransform, nsSMILValue& aValue) {
+    const SVGTransformSMILData& aTransform, SMILValue& aValue) {
   MOZ_ASSERT(aValue.mType == Singleton(), "Unexpected SMIL value type");
 
   TransformArray& transforms = *static_cast<TransformArray*>(aValue.mU.mPtr);
@@ -301,7 +302,7 @@ nsresult SVGTransformListSMILType::AppendTransform(
 
 
 bool SVGTransformListSMILType::AppendTransforms(const SVGTransformList& aList,
-                                                nsSMILValue& aValue) {
+                                                SMILValue& aValue) {
   MOZ_ASSERT(aValue.mType == Singleton(), "Unexpected SMIL value type");
 
   TransformArray& transforms = *static_cast<TransformArray*>(aValue.mU.mPtr);
@@ -320,7 +321,7 @@ bool SVGTransformListSMILType::AppendTransforms(const SVGTransformList& aList,
 
 
 bool SVGTransformListSMILType::GetTransforms(
-    const nsSMILValue& aValue, FallibleTArray<SVGTransform>& aTransforms) {
+    const SMILValue& aValue, FallibleTArray<SVGTransform>& aTransforms) {
   MOZ_ASSERT(aValue.mType == Singleton(), "Unexpected SMIL value type");
 
   const TransformArray& smilTransforms =

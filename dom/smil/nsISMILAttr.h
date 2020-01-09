@@ -10,10 +10,12 @@
 #include "nscore.h"
 #include "nsStringFwd.h"
 
-class nsSMILValue;
 class nsIContent;
 
 namespace mozilla {
+
+class SMILValue;
+
 namespace dom {
 class SVGAnimationElement;
 }  
@@ -30,6 +32,7 @@ class SVGAnimationElement;
 
 class nsISMILAttr {
  public:
+  typedef mozilla::SMILValue SMILValue;
   
 
 
@@ -51,7 +54,7 @@ class nsISMILAttr {
 
   virtual nsresult ValueFromString(
       const nsAString& aStr,
-      const mozilla::dom::SVGAnimationElement* aSrcElement, nsSMILValue& aValue,
+      const mozilla::dom::SVGAnimationElement* aSrcElement, SMILValue& aValue,
       bool& aPreventCachingOfSandwich) const = 0;
 
   
@@ -60,7 +63,7 @@ class nsISMILAttr {
 
 
 
-  virtual nsSMILValue GetBaseValue() const = 0;
+  virtual SMILValue GetBaseValue() const = 0;
 
   
 
@@ -76,7 +79,7 @@ class nsISMILAttr {
 
 
 
-  virtual nsresult SetAnimValue(const nsSMILValue& aValue) = 0;
+  virtual nsresult SetAnimValue(const SMILValue& aValue) = 0;
 
   
 

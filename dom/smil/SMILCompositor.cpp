@@ -78,7 +78,7 @@ void SMILCompositor::ComposeAttribute(bool& aMightHavePendingStyleUpdates) {
   uint32_t firstFuncToCompose = GetFirstFuncToAffectSandwich();
 
   
-  nsSMILValue sandwichResultValue;
+  SMILValue sandwichResultValue;
   if (!mAnimationFunctions[firstFuncToCompose]->WillReplace()) {
     sandwichResultValue = smilAttr->GetBaseValue();
   }
@@ -224,7 +224,7 @@ uint32_t SMILCompositor::GetFirstFuncToAffectSandwich() {
   return i;
 }
 
-void SMILCompositor::UpdateCachedBaseValue(const nsSMILValue& aBaseValue) {
+void SMILCompositor::UpdateCachedBaseValue(const SMILValue& aBaseValue) {
   if (mCachedBaseValue != aBaseValue) {
     
     mCachedBaseValue = aBaseValue;
