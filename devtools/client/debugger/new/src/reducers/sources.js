@@ -307,6 +307,12 @@ function updateForNewSourceActor(
   sourceActor: SourceActor
 ) {
   const existing = state.sourceActors[sourceActor.source] || [];
+
+  
+  if (existing.some(({ actor }) => actor == sourceActor.actor)) {
+    return;
+  }
+
   state.sourceActors[sourceActor.source] = [...existing, sourceActor];
 
   updateRelativeSource(state, state.sources[sourceActor.source], sourceActor);
