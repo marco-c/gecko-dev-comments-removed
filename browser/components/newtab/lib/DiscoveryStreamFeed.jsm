@@ -67,54 +67,62 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
     }
   }
 
-  async fetchLayout() {
-    const endpoint = this.config.layout_endpoint;
+  async fetchFromEndpoint(endpoint) {
     if (!endpoint) {
-      Cu.reportError("No endpoint configured for pocket, so could not fetch layout");
+      Cu.reportError("Tried to fetch endpoint but none was configured.");
       return null;
     }
     try {
       const response = await fetch(endpoint, {credentials: "omit"});
       if (!response.ok) {
         
-        throw new Error(`Layout endpoint returned unexpected status: ${response.status}`);
+        throw new Error(`${endpoint} returned unexpected status: ${response.status}`);
       }
       return response.json();
     } catch (error) {
       
-      Cu.reportError(`Failed to fetch layout: ${error.message}`);
+      Cu.reportError(`Failed to fetch ${endpoint}: ${error.message}`);
     }
     
     return null;
   }
 
-  async fetchSpocs() {
-    const {DiscoveryStream} = this.store.getState();
-    const endpoint = DiscoveryStream.spocs.spocs_endpoint;
-    if (!endpoint) {
-      Cu.reportError("No endpoint configured for pocket, so could not fetch spocs");
-      return null;
+  
+
+
+
+
+
+  isExpired(cacheData, key, url) {
+    const {layout, spocs, feeds} = cacheData;
+    switch (key) {
+      case "layout":
+        return (!layout || !(Date.now() - layout._timestamp < LAYOUT_UPDATE_TIME));
+      case "spocs":
+        return (!spocs || !(Date.now() - spocs.lastUpdated < SPOCS_FEEDS_UPDATE_TIME));
+      case "feed":
+        return (!feeds || !feeds[url] || !(Date.now() - feeds[url].lastUpdated < COMPONENT_FEEDS_UPDATE_TIME));
+      default:
+        throw new Error(`${key} is not a valid key`);
     }
-    try {
-      const response = await fetch(endpoint, {credentials: "omit"});
-      if (!response.ok) {
-        
-        throw new Error(`Spocs endpoint returned unexpected status: ${response.status}`);
-      }
-      return response.json();
-    } catch (error) {
-      
-      Cu.reportError(`Failed to fetch spocs: ${error.message}`);
-    }
-    
-    return null;
   }
 
-  async loadLayout() {
+  
+
+
+  async checkIfAnyCacheExpired() {
+    const cachedData = await this.cache.get() || {};
+    const {feeds} = cachedData;
+    return this.isExpired(cachedData, "layout") ||
+      this.isExpired(cachedData, "spocs") ||
+      !feeds || Object.keys(feeds).some(url => this.isExpired(cachedData, "feed", url));
+  }
+
+  async loadLayout(sendUpdate) {
     const cachedData = await this.cache.get() || {};
     let {layout: layoutResponse} = cachedData;
-    if (!layoutResponse || !(Date.now() - layoutResponse._timestamp < LAYOUT_UPDATE_TIME)) {
-      layoutResponse = await this.fetchLayout();
+    if (this.isExpired(cachedData, "layout")) {
+      layoutResponse = await this.fetchFromEndpoint(this.config.layout_endpoint);
       if (layoutResponse && layoutResponse.layout) {
         layoutResponse._timestamp = Date.now();
         await this.cache.set("layout", layoutResponse);
@@ -124,23 +132,23 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
     }
 
     if (layoutResponse && layoutResponse.layout) {
-      this.store.dispatch(ac.BroadcastToContent({
+      sendUpdate({
         type: at.DISCOVERY_STREAM_LAYOUT_UPDATE,
         data: {
           layout: layoutResponse.layout,
           lastUpdated: layoutResponse._timestamp,
         },
-      }));
+      });
     }
     if (layoutResponse && layoutResponse.spocs && layoutResponse.spocs.url) {
-      this.store.dispatch(ac.BroadcastToContent({
+      sendUpdate({
         type: at.DISCOVERY_STREAM_SPOCS_ENDPOINT,
         data: layoutResponse.spocs.url,
-      }));
+      });
     }
   }
 
-  async loadComponentFeeds() {
+  async loadComponentFeeds(sendUpdate) {
     const {DiscoveryStream} = this.store.getState();
     const newFeeds = {};
     if (DiscoveryStream && DiscoveryStream.layout) {
@@ -157,18 +165,19 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
       }
 
       await this.cache.set("feeds", newFeeds);
-      this.store.dispatch(ac.BroadcastToContent({type: at.DISCOVERY_STREAM_FEEDS_UPDATE, data: newFeeds}));
+      sendUpdate({type: at.DISCOVERY_STREAM_FEEDS_UPDATE, data: newFeeds});
     }
   }
 
-  async loadSpocs() {
+  async loadSpocs(sendUpdate) {
     const cachedData = await this.cache.get() || {};
     let spocs;
 
     if (this.showSpocs) {
       spocs = cachedData.spocs;
-      if (!spocs || !(Date.now() - spocs.lastUpdated < SPOCS_FEEDS_UPDATE_TIME)) {
-        const spocsResponse = await this.fetchSpocs();
+      if (this.isExpired(cachedData, "spocs")) {
+        const endpoint = this.store.getState().DiscoveryStream.spocs.spocs_endpoint;
+        const spocsResponse = await this.fetchFromEndpoint(endpoint);
         if (spocsResponse) {
           spocs = {
             lastUpdated: Date.now(),
@@ -190,21 +199,21 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
       data: {},
     };
 
-    this.store.dispatch(ac.BroadcastToContent({
+    sendUpdate({
       type: at.DISCOVERY_STREAM_SPOCS_UPDATE,
       data: {
         lastUpdated: spocs.lastUpdated,
         spocs: spocs.data,
       },
-    }));
+    });
   }
 
   async getComponentFeed(feedUrl) {
     const cachedData = await this.cache.get() || {};
     const {feeds} = cachedData;
-    let feed = feeds && feeds[feedUrl];
-    if (!feed || !(Date.now() - feed.lastUpdated < COMPONENT_FEEDS_UPDATE_TIME)) {
-      const feedResponse = await this.fetchComponentFeed(feedUrl);
+    let feed = feeds ? feeds[feedUrl] : null;
+    if (this.isExpired(cachedData, "feed", feedUrl)) {
+      const feedResponse = await this.fetchFromEndpoint(feedUrl);
       if (feedResponse) {
         feed = {
           lastUpdated: Date.now(),
@@ -218,27 +227,27 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
     return feed;
   }
 
-  async fetchComponentFeed(feedUrl) {
-    try {
-      const response = await fetch(feedUrl, {credentials: "omit"});
-      if (!response.ok) {
-        
-        throw new Error(`Component feed endpoint returned unexpected status: ${response.status}`);
-      }
-      return response.json();
-    } catch (error) {
-      
-      Cu.reportError(`Failed to fetch Component feed: ${error.message}`);
-    }
-    
-    return null;
+  
+
+
+
+
+
+
+
+  async refreshAll(options = {}) {
+    const dispatch = options.updateOpenTabs ?
+      action => this.store.dispatch(ac.BroadcastToContent(action)) :
+      this.store.dispatch;
+
+    await this.loadLayout(dispatch);
+    await this.loadComponentFeeds(dispatch);
+    await this.loadSpocs(dispatch);
+    this.loaded = true;
   }
 
   async enable() {
-    await this.loadLayout();
-    await this.loadComponentFeeds();
-    await this.loadSpocs();
-    this.loaded = true;
+    await this.refreshAll({updateOpenTabs: true});
   }
 
   async disable() {
@@ -277,6 +286,12 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
         
         if (this.config.enabled) {
           await this.enable();
+        }
+        break;
+      case at.SYSTEM_TICK:
+        
+        if (this.config.enabled && this.loaded && await this.checkIfAnyCacheExpired()) {
+          await this.refreshAll({updateOpenTabs: false});
         }
         break;
       case at.DISCOVERY_STREAM_CONFIG_SET_VALUE:
