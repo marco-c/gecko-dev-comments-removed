@@ -53,7 +53,7 @@ namespace storage {
 
 
 #ifdef MOZ_DMD
-static mozilla::Atomic<size_t> gSqliteMemoryUsed;
+mozilla::Atomic<size_t> gSqliteMemoryUsed;
 #endif
 
 static int64_t StorageSQLiteDistinguishedAmount() {
