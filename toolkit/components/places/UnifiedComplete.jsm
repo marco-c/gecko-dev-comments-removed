@@ -782,6 +782,11 @@ Search.prototype = {
           this.setBehavior("restrict");
         }
         this.setBehavior(behavior);
+        
+        
+        if (behavior == "tag") {
+          this.setBehavior("bookmark");
+        }
       }
     }
     

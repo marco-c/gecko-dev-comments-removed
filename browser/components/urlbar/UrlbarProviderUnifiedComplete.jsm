@@ -359,7 +359,8 @@ function makeUrlbarResult(tokens, info) {
       
       
       tags = tags.split(",").map(t => t.trim()).filter(tag => {
-        return tokens.some(token => tag.includes(token.value));
+        let lowerCaseTag = tag.toLocaleLowerCase();
+        return tokens.some(token => lowerCaseTag.includes(token.lowerCaseValue));
       }).sort();
     }
   } else if (info.style.includes("preloaded-top-sites")) {
