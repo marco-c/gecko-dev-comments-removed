@@ -12,6 +12,8 @@
 
 
 
+assert.sameValue(typeof Intl.RelativeTimeFormat, "function");
+
 assert.throws(TypeError, function() {
   Intl.RelativeTimeFormat();
 });

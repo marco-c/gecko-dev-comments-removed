@@ -43,6 +43,8 @@
 
 
 
+assert.sameValue(typeof String.prototype.trimEnd, "function");
+
 var thisVal = {
   [Symbol.toPrimitive]: undefined,
   toString: undefined,

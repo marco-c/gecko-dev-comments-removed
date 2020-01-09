@@ -7,22 +7,81 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function CustomError() {}
 
-const options = [
-  "localeMatcher",
-  "style",
-  "numeric",
-];
+const o1 = {
+  get localeMatcher() {
+    throw new CustomError();
+  },
+  get style() {
+    throw "should not get the style option before localeMatcher";
+  },
+  get numeric() {
+    throw "should not get the numeric option before localeMatcher";
+  }
+};
 
-for (const option of options) {
-  assert.throws(CustomError, () => {
-    new Intl.RelativeTimeFormat("en", {
-      get [option]() {
-        throw new CustomError();
-      }
-    });
-  }, `Exception from ${option} getter should be propagated`);
-}
+const o2captures = [];
+const o2 = {
+  get localeMatcher() {
+    o2captures.push('localeMatcher');
+  },
+  get style() {
+    throw new CustomError();
+  },
+  get numeric() {
+    throw "should not get the numeric option before style";
+  }
+};
+
+const o3captures = [];
+const o3 = {
+  get localeMatcher() {
+    o3captures.push('localeMatcher');
+  },
+  get style() {
+    o3captures.push('style');
+  },
+  get numeric() {
+    throw new CustomError();
+  }
+};
+
+assert.throws(CustomError, () => {
+  new Intl.RelativeTimeFormat("en", o1);
+}, `Exception from localeMatcher getter should be propagated`);
+
+assert.throws(CustomError, () => {
+  new Intl.RelativeTimeFormat("en", o2);
+}, `Exception from style getter should be propagated`);
+assert.compareArray(o2captures, ['localeMatcher']);
+
+assert.throws(CustomError, () => {
+  new Intl.RelativeTimeFormat("en", o3);
+}, `Exception from numeric getter should be propagated`);
+assert.compareArray(o3captures, ['localeMatcher', 'style']);
 
 reportCompare(0, 0);

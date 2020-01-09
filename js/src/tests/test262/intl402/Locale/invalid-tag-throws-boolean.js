@@ -13,6 +13,8 @@
 
 
 
+assert.sameValue(typeof Intl.Locale, "function");
+
 assert.throws(TypeError, function() {
   new Intl.Locale(true);
 }, "true is an invalid tag value");

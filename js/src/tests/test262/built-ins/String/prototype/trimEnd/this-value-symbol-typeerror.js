@@ -14,6 +14,8 @@
 
 
 
+assert.sameValue(typeof String.prototype.trimEnd, "function");
+
 var trimEnd = String.prototype.trimEnd;
 var symbol = Symbol();
 

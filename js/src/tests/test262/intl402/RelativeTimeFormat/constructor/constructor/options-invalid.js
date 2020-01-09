@@ -11,6 +11,8 @@
 
 
 
+assert.sameValue(typeof Intl.RelativeTimeFormat, "function");
+
 assert.throws(TypeError, function() { new Intl.RelativeTimeFormat([], null) })
 
 reportCompare(0, 0);
