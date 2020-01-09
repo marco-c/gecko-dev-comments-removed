@@ -8,7 +8,6 @@
 
 
 
-const { XPCOMUtils } = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const { nsIAboutModule } = Ci;
@@ -40,6 +39,4 @@ AboutDebugging.prototype = {
   },
 };
 
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory([
-  AboutDebugging,
-]);
+var EXPORTED_SYMBOLS = ["AboutDebugging"];
