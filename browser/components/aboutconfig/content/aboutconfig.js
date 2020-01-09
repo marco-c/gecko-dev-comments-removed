@@ -8,6 +8,12 @@ ChromeUtils.import("resource://gre/modules/Preferences.jsm");
 
 const SEARCH_TIMEOUT_MS = 500;
 
+const GETTERS_BY_PREF_TYPE = {
+  [Ci.nsIPrefBranch.PREF_BOOL]: "getBoolPref",
+  [Ci.nsIPrefBranch.PREF_INT]: "getIntPref",
+  [Ci.nsIPrefBranch.PREF_STRING]: "getStringPref",
+};
+
 let gDefaultBranch = Services.prefs.getDefaultBranch("");
 let gFilterPrefsTask = new DeferredTask(() => filterPrefs(), SEARCH_TIMEOUT_MS);
 
@@ -43,26 +49,37 @@ class PrefRow {
   }
 
   refreshValue() {
-    this.hasDefaultValue = prefHasDefaultValue(this.name);
-    this.hasUserValue = Services.prefs.prefHasUserValue(this.name);
-    this.isLocked = Services.prefs.prefIsLocked(this.name);
+    let prefType = Services.prefs.getPrefType(this.name);
 
     
-    if (!this.exists) {
+    if (prefType == Ci.nsIPrefBranch.PREF_INVALID) {
+      this.hasDefaultValue = false;
+      this.hasUserValue = false;
+      this.isLocked = false;
       gExistingPrefs.delete(this.name);
       gDeletedPrefs.set(this.name, this);
       return;
     }
+
     gExistingPrefs.set(this.name, this);
     gDeletedPrefs.delete(this.name);
 
     try {
-      
-      this.value = Preferences.get(this.name);
-      
-      
-      if (!this.hasUserValue &&
-          /^chrome:\/\/.+\/locale\/.+\.properties/.test(this.value)) {
+      this.value = gDefaultBranch[GETTERS_BY_PREF_TYPE[prefType]](this.name);
+      this.hasDefaultValue = true;
+    } catch (ex) {
+      this.hasDefaultValue = false;
+    }
+    this.hasUserValue = Services.prefs.prefHasUserValue(this.name);
+    this.isLocked = Services.prefs.prefIsLocked(this.name);
+
+    try {
+      if (this.hasUserValue) {
+        
+        this.value = Services.prefs[GETTERS_BY_PREF_TYPE[prefType]](this.name);
+      } else if (/^chrome:\/\/.+\/locale\/.+\.properties/.test(this.value)) {
+        
+        
         
         this.value = Services.prefs.getComplexValue(this.name,
           Ci.nsIPrefLocalizedString).data;
@@ -403,21 +420,4 @@ function filterPrefs() {
 
   document.body.classList.toggle("config-warning",
     location.href.split(":").every(l => gFilterString.includes(l)));
-}
-
-function prefHasDefaultValue(name) {
-  try {
-    switch (Services.prefs.getPrefType(name)) {
-      case Ci.nsIPrefBranch.PREF_STRING:
-        gDefaultBranch.getStringPref(name);
-        return true;
-      case Ci.nsIPrefBranch.PREF_INT:
-        gDefaultBranch.getIntPref(name);
-        return true;
-      case Ci.nsIPrefBranch.PREF_BOOL:
-        gDefaultBranch.getBoolPref(name);
-        return true;
-    }
-  } catch (ex) {}
-  return false;
 }
