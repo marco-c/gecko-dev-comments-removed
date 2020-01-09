@@ -197,6 +197,8 @@ class imgRequest final : public nsIStreamListener,
 
   bool HasConsumers() const;
 
+  bool ImageAvailable() const;
+
  private:
   friend class FinishPreparingForNewPartRunnable;
 
@@ -269,6 +271,9 @@ class imgRequest final : public nsIStreamListener,
 
   
   uint32_t mBoostCategoriesRequested = 0;
+
+  
+  bool mImageAvailable;
 
   mutable mozilla::Mutex mMutex;
 
