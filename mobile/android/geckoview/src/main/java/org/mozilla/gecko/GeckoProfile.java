@@ -348,8 +348,32 @@ public final class GeckoProfile {
         mMozillaDir = GeckoProfileDirectories.getMozillaDirectory(context);
 
         mProfileDir = profileDir;
-        if (profileDir != null && !profileDir.isDirectory()) {
-            throw new IllegalArgumentException("Profile directory must exist if specified.");
+        if (profileDir != null) {
+            if (!profileDir.isDirectory()) {
+                throw new IllegalArgumentException("Profile directory must exist if specified: " +
+                        profileDir.getPath());
+            }
+
+            
+            
+            
+            
+            FileWriter fileWriter = null;
+            try {
+                fileWriter = new FileWriter(new File(profileDir, ".can-write-sentinel"), false);
+                fileWriter.write(0);
+            } catch (IOException e) {
+                throw new IllegalArgumentException("Profile directory must be writable if specified: " +
+                        profileDir.getPath(), e);
+            } finally {
+                try {
+                    if (fileWriter != null) {
+                        fileWriter.close();
+                    }
+                } catch (IOException e) {
+                    Log.e(LOGTAG, "Error closing .can-write-sentinel; ignoring", e);
+                }
+            }
         }
     }
 
