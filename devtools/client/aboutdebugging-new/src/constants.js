@@ -96,6 +96,8 @@ const PAGE_TYPES = {
 
 const PREFERENCES = {
   
+  LOCAL_TAB_DEBUGGING_ENABLED: "devtools.aboutdebugging.local-tab-debugging",
+  
   PROCESS_DEBUGGING_ENABLED: "devtools.aboutdebugging.process-debugging",
   
   SHOW_SYSTEM_ADDONS: "devtools.aboutdebugging.showSystemAddons",

@@ -13,6 +13,11 @@ function isProcessDebuggingSupported() {
   return Services.prefs.getBoolPref(PREFERENCES.PROCESS_DEBUGGING_ENABLED, false);
 }
 
+
+function isLocalTabDebuggingSupported() {
+  return Services.prefs.getBoolPref(PREFERENCES.LOCAL_TAB_DEBUGGING_ENABLED, false);
+}
+
 const ALL_DEBUG_TARGET_PANES = [
   DEBUG_TARGET_PANE.INSTALLED_EXTENSION,
   ...(isProcessDebuggingSupported() ? [DEBUG_TARGET_PANE.PROCESSES] : []),
@@ -27,11 +32,13 @@ const ALL_DEBUG_TARGET_PANES = [
 const REMOTE_DEBUG_TARGET_PANES = ALL_DEBUG_TARGET_PANES.filter(p =>
   p !== DEBUG_TARGET_PANE.TEMPORARY_EXTENSION);
 
-
-
-
-const THIS_FIREFOX_DEBUG_TARGET_PANES = ALL_DEBUG_TARGET_PANES.filter(p =>
-  p !== DEBUG_TARGET_PANE.PROCESSES);
+const THIS_FIREFOX_DEBUG_TARGET_PANES = ALL_DEBUG_TARGET_PANES
+  
+  
+  
+  .filter(p => p !== DEBUG_TARGET_PANE.PROCESSES)
+  
+  .filter(p => p !== DEBUG_TARGET_PANE.TAB || isLocalTabDebuggingSupported());
 
 const SUPPORTED_TARGET_PANE_BY_RUNTIME = {
   [RUNTIMES.THIS_FIREFOX]: THIS_FIREFOX_DEBUG_TARGET_PANES,

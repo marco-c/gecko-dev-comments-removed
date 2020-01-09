@@ -342,6 +342,14 @@ pref("devtools.responsive.showUserAgentInput", false);
 
 pref("devtools.aboutdebugging.new-enabled", false);
 
+
+#ifdef MOZILLA_OFFICIAL
+  pref("devtools.aboutdebugging.local-tab-debugging", false);
+#else
+  pref("devtools.aboutdebugging.local-tab-debugging", true);
+#endif
+
+
 pref("devtools.aboutdebugging.process-debugging", false);
 
 pref("devtools.aboutdebugging.network-locations", "[]");
