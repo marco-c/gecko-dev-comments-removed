@@ -8,7 +8,6 @@ const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const {EventDispatcher} = ChromeUtils.import("resource://gre/modules/Messaging.jsm");
 const {Point} = ChromeUtils.import("resource://gre/modules/Geometry.jsm");
 
-const ACCESSIBLECARET_PREF = "layout.accessiblecaret.enabled";
 const BASE_TEST_URL = "http://mochi.test:8888/tests/robocop/testAccessibleCarets.html";
 const DESIGNMODE_TEST_URL = "http://mochi.test:8888/tests/robocop/testAccessibleCarets2.html";
 
@@ -154,16 +153,12 @@ add_task(async function testAccessibleCarets() {
   await do_promiseTabChangeEvent(BrowserApp.selectedTab.id, TAB_STOP_EVENT);
 
   
-  Services.prefs.setBoolPref(ACCESSIBLECARET_PREF, true);
-
-  
   let browser = BrowserApp.addTab(BASE_TEST_URL).browser;
   let tab = BrowserApp.getTabForBrowser(browser);
   await do_promiseTabChangeEvent(tab.id, TAB_STOP_EVENT);
 
   do_register_cleanup(function cleanup() {
     BrowserApp.closeTab(tab);
-    Services.prefs.clearUserPref(ACCESSIBLECARET_PREF);
   });
 
   
