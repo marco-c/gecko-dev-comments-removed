@@ -1,0 +1,335 @@
+
+
+
+
+
+const MASTER_PASSWORD = "omgsecret!";
+const TESTS_DIR = "/tests/toolkit/components/passwordmgr/test/";
+
+
+
+
+function $_(formNum, name) {
+  var form = document.getElementById("form" + formNum);
+  if (!form) {
+    logWarning("$_ couldn't find requested form " + formNum);
+    return null;
+  }
+
+  var element = form.children.namedItem(name);
+  if (!element) {
+    logWarning("$_ couldn't find requested element " + name);
+    return null;
+  }
+
+  
+  
+  
+  
+  
+
+  if (element.getAttribute("name") != name) {
+    logWarning("$_ got confused.");
+    return null;
+  }
+
+  return element;
+}
+
+
+
+
+
+
+
+
+function checkForm(formNum, val1, val2, val3) {
+  var e, form = document.getElementById("form" + formNum);
+  ok(form, "Locating form " + formNum);
+
+  var numToCheck = arguments.length - 1;
+
+  if (!numToCheck--) {
+    return;
+  }
+  e = form.elements[0];
+  if (val1 == null) {
+    is(e.value, e.defaultValue, "Test default value of field " + e.name +
+       " in form " + formNum);
+  } else {
+    is(e.value, val1, "Test value of field " + e.name +
+       " in form " + formNum);
+  }
+
+
+  if (!numToCheck--) {
+    return;
+  }
+  e = form.elements[1];
+  if (val2 == null) {
+    is(e.value, e.defaultValue, "Test default value of field " + e.name +
+       " in form " + formNum);
+  } else {
+    is(e.value, val2, "Test value of field " + e.name +
+       " in form " + formNum);
+  }
+
+
+  if (!numToCheck--) {
+    return;
+  }
+  e = form.elements[2];
+  if (val3 == null) {
+    is(e.value, e.defaultValue, "Test default value of field " + e.name +
+       " in form " + formNum);
+  } else {
+    is(e.value, val3, "Test value of field " + e.name +
+       " in form " + formNum);
+  }
+}
+
+
+
+
+
+
+
+function checkUnmodifiedForm(formNum) {
+  var form = document.getElementById("form" + formNum);
+  ok(form, "Locating form " + formNum);
+
+  for (var i = 0; i < form.elements.length; i++) {
+    var ele = form.elements[i];
+
+    
+    if (ele.type == "submit" || ele.type == "reset") {
+      continue;
+    }
+
+    is(ele.value, ele.defaultValue, "Test to default value of field " +
+       ele.name + " in form " + formNum);
+  }
+}
+
+function registerRunTests() {
+  return new Promise(resolve => {
+    
+    
+    
+    
+    window.addEventListener("DOMContentLoaded", (event) => {
+      var form = document.createElement("form");
+      form.id = "observerforcer";
+      var username = document.createElement("input");
+      username.name = "testuser";
+      form.appendChild(username);
+      var password = document.createElement("input");
+      password.name = "testpass";
+      password.type = "password";
+      form.appendChild(password);
+
+      var observer = SpecialPowers.wrapCallback(function(subject, topic, data) {
+        var formLikeRoot = subject;
+        if (formLikeRoot.id !== "observerforcer") {
+          return;
+        }
+        SpecialPowers.removeObserver(observer, "passwordmgr-processed-form");
+        formLikeRoot.remove();
+        SimpleTest.executeSoon(() => {
+          var runTestEvent = new Event("runTests");
+          window.dispatchEvent(runTestEvent);
+          resolve();
+        });
+      });
+      SpecialPowers.addObserver(observer, "passwordmgr-processed-form");
+
+      document.body.appendChild(form);
+    });
+  });
+}
+
+function enableMasterPassword() {
+  setMasterPassword(true);
+}
+
+function disableMasterPassword() {
+  setMasterPassword(false);
+}
+
+function setMasterPassword(enable) {
+  PWMGR_COMMON_PARENT.sendSyncMessage("setMasterPassword", { enable });
+}
+
+function isLoggedIn() {
+  return PWMGR_COMMON_PARENT.sendSyncMessage("isLoggedIn")[0][0];
+}
+
+function logoutMasterPassword() {
+  runInParent(function parent_logoutMasterPassword() {
+    const { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
+    var sdr = Cc["@mozilla.org/security/sdr;1"].getService(Ci.nsISecretDecoderRing);
+    sdr.logoutAndTeardown();
+  });
+}
+
+
+
+
+function promiseFormsProcessed(expectedCount = 1) {
+  var processedCount = 0;
+  return new Promise((resolve, reject) => {
+    function onProcessedForm(subject, topic, data) {
+      processedCount++;
+      if (processedCount == expectedCount) {
+        SpecialPowers.removeObserver(onProcessedForm, "passwordmgr-processed-form");
+        resolve(SpecialPowers.Cu.waiveXrays(subject), data);
+      }
+    }
+    SpecialPowers.addObserver(onProcessedForm, "passwordmgr-processed-form");
+  });
+}
+
+function loadRecipes(recipes) {
+  info("Loading recipes");
+  return new Promise(resolve => {
+    PWMGR_COMMON_PARENT.addMessageListener("loadedRecipes", function loaded() {
+      PWMGR_COMMON_PARENT.removeMessageListener("loadedRecipes", loaded);
+      resolve(recipes);
+    });
+    PWMGR_COMMON_PARENT.sendAsyncMessage("loadRecipes", recipes);
+  });
+}
+
+function resetRecipes() {
+  info("Resetting recipes");
+  return new Promise(resolve => {
+    PWMGR_COMMON_PARENT.addMessageListener("recipesReset", function reset() {
+      PWMGR_COMMON_PARENT.removeMessageListener("recipesReset", reset);
+      resolve();
+    });
+    PWMGR_COMMON_PARENT.sendAsyncMessage("resetRecipes");
+  });
+}
+
+function promiseStorageChanged(expectedChangeTypes) {
+  return new Promise((resolve, reject) => {
+    function onStorageChanged({ topic, data }) {
+      let changeType = expectedChangeTypes.shift();
+      is(data, changeType, "Check expected passwordmgr-storage-changed type");
+      if (expectedChangeTypes.length === 0) {
+        PWMGR_COMMON_PARENT.removeMessageListener("storageChanged", onStorageChanged);
+        resolve();
+      }
+    }
+    PWMGR_COMMON_PARENT.addMessageListener("storageChanged", onStorageChanged);
+  });
+}
+
+function promisePromptShown(expectedTopic) {
+  return new Promise((resolve, reject) => {
+    function onPromptShown({ topic, data }) {
+      is(topic, expectedTopic, "Check expected prompt topic");
+      PWMGR_COMMON_PARENT.removeMessageListener("promptShown", onPromptShown);
+      resolve();
+    }
+    PWMGR_COMMON_PARENT.addMessageListener("promptShown", onPromptShown);
+  });
+}
+
+
+
+
+
+
+
+
+function runInParent(aFunctionOrURL) {
+  let chromeScript = SpecialPowers.loadChromeScript(aFunctionOrURL);
+  SimpleTest.registerCleanupFunction(() => {
+    chromeScript.destroy();
+  });
+  return chromeScript;
+}
+
+
+
+
+
+
+function runChecksAfterCommonInit(aFunction = null) {
+  SimpleTest.waitForExplicitFinish();
+  if (aFunction) {
+    window.addEventListener("runTests", aFunction);
+    PWMGR_COMMON_PARENT.addMessageListener("registerRunTests", () => registerRunTests());
+  }
+  PWMGR_COMMON_PARENT.sendSyncMessage("setupParent");
+  return PWMGR_COMMON_PARENT;
+}
+
+
+
+const PWMGR_COMMON_PARENT = runInParent(SimpleTest.getTestFileURL("pwmgr_common_parent.js"));
+
+SimpleTest.registerCleanupFunction(() => {
+  SpecialPowers.popPrefEnv();
+  runInParent(function cleanupParent() {
+    
+    const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+    
+    const {LoginManagerParent} = ChromeUtils.import("resource://gre/modules/LoginManagerParent.jsm");
+
+    
+    Services.logins.removeAllLogins();
+
+    let disabledHosts = Services.logins.getAllDisabledHosts();
+    disabledHosts.forEach(host => Services.logins.setLoginSavingEnabled(host, true));
+
+    let authMgr = Cc["@mozilla.org/network/http-auth-manager;1"].
+                  getService(Ci.nsIHttpAuthManager);
+    authMgr.clearAll();
+
+    if (LoginManagerParent._recipeManager) {
+      LoginManagerParent._recipeManager.reset();
+    }
+
+    
+    let chromeWin = Services.wm.getMostRecentWindow("navigator:browser");
+    if (chromeWin && chromeWin.PopupNotifications) {
+      let notes = chromeWin.PopupNotifications._currentNotifications;
+      if (notes.length > 0) {
+        dump("Removing " + notes.length + " popup notifications.\n");
+      }
+      for (let note of notes) {
+        note.remove();
+      }
+    }
+  });
+});
+
+let { LoginHelper } = SpecialPowers.Cu.import("resource://gre/modules/LoginHelper.jsm", {});
+
+
+
+
+
+this.LoginManager = new Proxy({}, {
+  get(target, prop, receiver) {
+    return (...args) => {
+      let loginInfoIndices = [];
+      let cloneableArgs = args.map((val, index) => {
+        if (SpecialPowers.call_Instanceof(val, SpecialPowers.Ci.nsILoginInfo)) {
+          loginInfoIndices.push(index);
+          return LoginHelper.loginToVanillaObject(val);
+        }
+
+        return val;
+      });
+
+      return PWMGR_COMMON_PARENT.sendSyncMessage("proxyLoginManager", {
+        args: cloneableArgs,
+        loginInfoIndices,
+        methodName: prop,
+      })[0][0];
+    };
+  },
+});
