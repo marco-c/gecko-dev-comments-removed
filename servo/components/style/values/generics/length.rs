@@ -4,7 +4,75 @@
 
 
 
+use crate::parser::{Parse, ParserContext};
 use crate::values::computed::ExtremumLength;
+use cssparser::Parser;
+use style_traits::ParseError;
+
+
+#[allow(missing_docs)]
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToCss,
+)]
+#[repr(C, u8)]
+pub enum GenericLengthPercentageOrAuto<LengthPercent> {
+    LengthPercentage(LengthPercent),
+    Auto,
+}
+
+pub use self::GenericLengthPercentageOrAuto as LengthPercentageOrAuto;
+
+impl<LengthPercentage> LengthPercentageOrAuto<LengthPercentage> {
+    
+    #[inline]
+    pub fn auto() -> Self {
+        LengthPercentageOrAuto::Auto
+    }
+
+    
+    #[inline]
+    pub fn is_auto(&self) -> bool {
+        matches!(*self, LengthPercentageOrAuto::Auto)
+    }
+
+    
+    pub fn parse_with<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+        parser: impl FnOnce(
+            &ParserContext,
+            &mut Parser<'i, 't>,
+        ) -> Result<LengthPercentage, ParseError<'i>>,
+    ) -> Result<Self, ParseError<'i>> {
+        if input.try(|i| i.expect_ident_matching("auto")).is_ok() {
+            return Ok(LengthPercentageOrAuto::Auto);
+        }
+
+        Ok(LengthPercentageOrAuto::LengthPercentage(parser(
+            context, input,
+        )?))
+    }
+}
+
+impl<LengthPercentage: Parse> Parse for LengthPercentageOrAuto<LengthPercentage> {
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        Self::parse_with(context, input, LengthPercentage::parse)
+    }
+}
 
 
 
@@ -13,23 +81,33 @@ use crate::values::computed::ExtremumLength;
 
 
 #[allow(missing_docs)]
-#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 #[derive(
     Animate,
     Clone,
     ComputeSquaredDistance,
     Copy,
     Debug,
+    MallocSizeOf,
     PartialEq,
     SpecifiedValueInfo,
+    ToAnimatedValue,
     ToAnimatedZero,
     ToComputedValue,
     ToCss,
 )]
-pub enum MozLength<LengthPercentageOrAuto> {
-    LengthPercentageOrAuto(LengthPercentageOrAuto),
+pub enum MozLength<LengthPercentage> {
+    LengthPercentage(LengthPercentage),
+    Auto,
     #[animation(error)]
     ExtremumLength(ExtremumLength),
+}
+
+impl<LengthPercentage> MozLength<LengthPercentage> {
+    
+    #[inline]
+    pub fn auto() -> Self {
+        MozLength::Auto
+    }
 }
 
 
@@ -43,12 +121,23 @@ pub enum MozLength<LengthPercentageOrAuto> {
     Debug,
     PartialEq,
     SpecifiedValueInfo,
+    ToAnimatedValue,
     ToAnimatedZero,
     ToComputedValue,
     ToCss,
 )]
-pub enum MaxLength<LengthPercentageOrNone> {
-    LengthPercentageOrNone(LengthPercentageOrNone),
+pub enum MaxLength<LengthPercentage> {
+    LengthPercentage(LengthPercentage),
+    None,
+    #[cfg(feature = "gecko")]
     #[animation(error)]
     ExtremumLength(ExtremumLength),
+}
+
+impl<LengthPercentage> MaxLength<LengthPercentage> {
+    
+    #[inline]
+    pub fn none() -> Self {
+        MaxLength::None
+    }
 }

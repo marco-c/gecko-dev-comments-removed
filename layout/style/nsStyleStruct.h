@@ -2041,7 +2041,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
   float mShapeImageThreshold = 0.0f;
 
   
-  mozilla::LengthPercentage mShapeMargin;
+  mozilla::NonNegativeLengthPercentage mShapeMargin;
 
   mozilla::StyleShapeSource mShapeOutside;
 

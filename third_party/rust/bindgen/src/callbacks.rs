@@ -55,4 +55,9 @@ pub trait ParseCallbacks: fmt::Debug + UnwindSafe {
     ) -> Option<String> {
         None
     }
+
+    
+    fn item_name(&self, _original_item_name: &str) -> Option<String> {
+        None
+    }
 }

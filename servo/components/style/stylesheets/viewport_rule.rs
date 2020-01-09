@@ -1,26 +1,27 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-//! The [`@viewport`][at] at-rule and [`meta`][meta] element.
-//!
-//! [at]: https://drafts.csswg.org/css-device-adapt/#atviewport-rule
-//! [meta]: https://drafts.csswg.org/css-device-adapt/#viewport-meta
+
+
+
+
+
+
+
 
 use crate::context::QuirksMode;
 use crate::error_reporting::ContextualParseError;
 use crate::font_metrics::get_metrics_provider_for_product;
 use crate::media_queries::Device;
-use crate::parser::ParserContext;
+use crate::parser::{Parse, ParserContext};
 use crate::properties::StyleBuilder;
 use crate::rule_cache::RuleCacheConditions;
 use crate::shared_lock::{SharedRwLockReadGuard, StylesheetGuards, ToCssWithGuard};
 use crate::str::CssStringWriter;
 use crate::stylesheets::{Origin, StylesheetInDocument};
 use crate::values::computed::{Context, ToComputedValue};
-use crate::values::specified::{
-    self, LengthPercentageOrAuto, NoCalcLength, ViewportPercentageLength,
-};
+use crate::values::generics::length::LengthPercentageOrAuto;
+use crate::values::generics::NonNegative;
+use crate::values::specified::{self, NoCalcLength};
+use crate::values::specified::{NonNegativeLengthPercentageOrAuto, ViewportPercentageLength};
 use app_units::Au;
 use cssparser::CowRcStr;
 use cssparser::{parse_important, AtRuleParser, DeclarationListParser, DeclarationParser, Parser};
@@ -34,7 +35,7 @@ use std::str::Chars;
 use style_traits::viewport::{Orientation, UserZoom, ViewportConstraints, Zoom};
 use style_traits::{CssWriter, ParseError, PinchZoomFactor, StyleParseErrorKind, ToCss};
 
-/// Whether parsing and processing of `@viewport` rules is enabled.
+
 #[cfg(feature = "servo")]
 pub fn enabled() -> bool {
     use servo_config::prefs::PREFS;
@@ -44,10 +45,10 @@ pub fn enabled() -> bool {
         .unwrap_or(false)
 }
 
-/// Whether parsing and processing of `@viewport` rules is enabled.
+
 #[cfg(not(feature = "servo"))]
 pub fn enabled() -> bool {
-    false // Gecko doesn't support @viewport.
+    false 
 }
 
 macro_rules! declare_viewport_descriptor {
@@ -143,15 +144,15 @@ trait FromMeta: Sized {
     fn from_meta(value: &str) -> Option<Self>;
 }
 
-/// ViewportLength is a length | percentage | auto | extend-to-zoom
-/// See:
-/// * http://dev.w3.org/csswg/css-device-adapt/#min-max-width-desc
-/// * http://dev.w3.org/csswg/css-device-adapt/#extend-to-zoom
+
+
+
+
 #[allow(missing_docs)]
 #[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 #[derive(Clone, Debug, PartialEq, ToCss)]
 pub enum ViewportLength {
-    Specified(LengthPercentageOrAuto),
+    Specified(NonNegativeLengthPercentageOrAuto),
     ExtendToZoom,
 }
 
@@ -159,9 +160,9 @@ impl FromMeta for ViewportLength {
     fn from_meta(value: &str) -> Option<ViewportLength> {
         macro_rules! specified {
             ($value:expr) => {
-                ViewportLength::Specified(LengthPercentageOrAuto::LengthPercentage(
+                ViewportLength::Specified(LengthPercentageOrAuto::LengthPercentage(NonNegative(
                     specified::LengthPercentage::Length($value),
-                ))
+                )))
             };
         }
 
@@ -186,9 +187,9 @@ impl ViewportLength {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        // we explicitly do not accept 'extend-to-zoom', since it is a UA
-        // internal value for <META> viewport translation
-        LengthPercentageOrAuto::parse_non_negative(context, input).map(ViewportLength::Specified)
+        
+        
+        NonNegativeLengthPercentageOrAuto::parse(context, input).map(ViewportLength::Specified)
     }
 }
 
@@ -336,20 +337,20 @@ impl<'a, 'b, 'i> DeclarationParser<'i> for ViewportRuleParser<'a, 'b> {
     }
 }
 
-/// A `@viewport` rule.
+
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 pub struct ViewportRule {
-    /// The declarations contained in this @viewport rule.
+    
     pub declarations: Vec<ViewportDescriptorDeclaration>,
 }
 
-/// Whitespace as defined by DEVICE-ADAPT § 9.2
-// TODO: should we just use whitespace as defined by HTML5?
+
+
 const WHITESPACE: &'static [char] = &['\t', '\n', '\r', ' '];
 
-/// Separators as defined by DEVICE-ADAPT § 9.2
-// need to use \x2c instead of ',' due to test-tidy
+
+
 const SEPARATOR: &'static [char] = &['\x2c', ';'];
 
 #[inline]
@@ -358,9 +359,9 @@ fn is_whitespace_separator_or_equals(c: &char) -> bool {
 }
 
 impl ViewportRule {
-    /// Parse a single @viewport rule.
-    ///
-    /// TODO(emilio): This could use the `Parse` trait now.
+    
+    
+    
     pub fn parse<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -465,8 +466,8 @@ impl ViewportRule {
             }
         }
 
-        // DEVICE-ADAPT § 9.4 - The 'width' and 'height' properties
-        // http://dev.w3.org/csswg/css-device-adapt/#width-and-height-properties
+        
+        
         if !has_width && has_zoom {
             if has_height {
                 push_descriptor!(MinWidth(ViewportLength::Specified(
@@ -508,7 +509,7 @@ impl ViewportRule {
                 .next()
         }
 
-        // <name> <whitespace>* '='
+        
         let end = match end_of_token(iter) {
             Some((end, c)) if WHITESPACE.contains(&c) => match skip_whitespace(iter) {
                 Some((_, c)) if c == '=' => end,
@@ -519,7 +520,7 @@ impl ViewportRule {
         };
         let name = &content[start..end];
 
-        // <whitespace>* <value>
+        
         let start = match skip_whitespace(iter) {
             Some((start, c)) if !SEPARATOR.contains(&c) => start,
             _ => return None,
@@ -534,7 +535,7 @@ impl ViewportRule {
 }
 
 impl ToCssWithGuard for ViewportRule {
-    // Serialization of ViewportRule is not specced.
+    
     fn to_css(&self, _guard: &SharedRwLockReadGuard, dest: &mut CssStringWriter) -> fmt::Result {
         dest.write_str("@viewport { ")?;
         let mut iter = self.declarations.iter();
@@ -547,8 +548,8 @@ impl ToCssWithGuard for ViewportRule {
     }
 }
 
-/// Computes the cascade precedence as according to
-/// <http://dev.w3.org/csswg/css-cascade/#cascade-origin>
+
+
 fn cascade_precendence(origin: Origin, important: bool) -> u8 {
     match (origin, important) {
         (Origin::UserAgent, true) => 1,
@@ -622,7 +623,7 @@ impl Cascade {
     }
 
     pub fn finish(mut self) -> Vec<ViewportDescriptorDeclaration> {
-        // sort the descriptors by order of appearance
+        
         self.declarations
             .sort_by_key(|entry| entry.as_ref().map(|&(index, _)| index));
         self.declarations
@@ -632,10 +633,10 @@ impl Cascade {
     }
 }
 
-/// Just a helper trait to be able to implement methods on ViewportConstraints.
+
 pub trait MaybeNew {
-    /// Create a ViewportConstraints from a viewport size and a `@viewport`
-    /// rule.
+    
+    
     fn maybe_new(
         device: &Device,
         rule: &ViewportRule,
@@ -668,7 +669,7 @@ impl MaybeNew for ViewportConstraints {
         let mut user_zoom = UserZoom::Zoom;
         let mut orientation = Orientation::Auto;
 
-        // collapse the list of declarations into descriptor values
+        
         for declaration in &rule.declarations {
             match declaration.descriptor {
                 ViewportDescriptor::MinWidth(ref value) => min_width = Some(value),
@@ -686,7 +687,7 @@ impl MaybeNew for ViewportConstraints {
             }
         }
 
-        // TODO: return `None` if all descriptors are either absent or initial value
+        
 
         macro_rules! choose {
             ($op:ident, $opta:expr, $optb:expr) => {
@@ -709,17 +710,17 @@ impl MaybeNew for ViewportConstraints {
             };
         }
 
-        // DEVICE-ADAPT § 6.2.1 Resolve min-zoom and max-zoom values
+        
         if min_zoom.is_some() && max_zoom.is_some() {
             max_zoom = Some(min_zoom.unwrap().max(max_zoom.unwrap()))
         }
 
-        // DEVICE-ADAPT § 6.2.2 Constrain zoom value to the [min-zoom, max-zoom] range
+        
         if initial_zoom.is_some() {
             initial_zoom = max!(min_zoom, min!(max_zoom, initial_zoom));
         }
 
-        // DEVICE-ADAPT § 6.2.3 Resolve non-auto lengths to pixel lengths
+        
         let initial_viewport = device.au_viewport_size();
 
         let provider = get_metrics_provider_for_product();
@@ -727,8 +728,8 @@ impl MaybeNew for ViewportConstraints {
         let mut conditions = RuleCacheConditions::default();
         let context = Context {
             is_root_element: false,
-            // Note: DEVICE-ADAPT § 5. states that relative length values are
-            // resolved against initial values
+            
+            
             builder: StyleBuilder::for_inheritance(device, None, None),
             font_metrics_provider: &provider,
             cached_system_font: None,
@@ -739,7 +740,7 @@ impl MaybeNew for ViewportConstraints {
             rule_cache_conditions: RefCell::new(&mut conditions),
         };
 
-        // DEVICE-ADAPT § 9.3 Resolving 'extend-to-zoom'
+        
         let extend_width;
         let extend_height;
         if let Some(extend_zoom) = max!(initial_zoom, max_zoom) {
@@ -778,16 +779,16 @@ impl MaybeNew for ViewportConstraints {
             };
         }
 
-        // DEVICE-ADAPT § 9.3 states that max-descriptors need to be resolved
-        // before min-descriptors.
-        // http://dev.w3.org/csswg/css-device-adapt/#resolve-extend-to-zoom
+        
+        
+        
         let max_width = to_pixel_length!(max_width, width, extend_width => None);
         let max_height = to_pixel_length!(max_height, height, extend_height => None);
 
         let min_width = to_pixel_length!(min_width, width, extend_width => max_width);
         let min_height = to_pixel_length!(min_height, height, extend_height => max_height);
 
-        // DEVICE-ADAPT § 6.2.4 Resolve initial width and height from min/max descriptors
+        
         macro_rules! resolve {
             ($min:ident, $max:ident, $initial:expr) => {
                 if $min.is_some() || $max.is_some() {
@@ -809,7 +810,7 @@ impl MaybeNew for ViewportConstraints {
         let width = resolve!(min_width, max_width, initial_viewport.width);
         let height = resolve!(min_height, max_height, initial_viewport.height);
 
-        // DEVICE-ADAPT § 6.2.5 Resolve width value
+        
         let width = if width.is_none() && height.is_none() {
             Some(initial_viewport.width)
         } else {
@@ -824,7 +825,7 @@ impl MaybeNew for ViewportConstraints {
             },
         });
 
-        // DEVICE-ADAPT § 6.2.6 Resolve height value
+        
         let height = height.unwrap_or_else(|| match initial_viewport.width {
             Au(0) => initial_viewport.height,
             initial_width => {
@@ -836,7 +837,7 @@ impl MaybeNew for ViewportConstraints {
         Some(ViewportConstraints {
             size: TypedSize2D::new(width.to_f32_px(), height.to_f32_px()),
 
-            // TODO: compute a zoom factor for 'auto' as suggested by DEVICE-ADAPT § 10.
+            
             initial_zoom: PinchZoomFactor::new(initial_zoom.unwrap_or(1.)),
             min_zoom: min_zoom.map(PinchZoomFactor::new),
             max_zoom: max_zoom.map(PinchZoomFactor::new),
