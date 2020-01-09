@@ -628,6 +628,7 @@ class BaselineCompiler final : private BaselineCompilerCodeGen {
 
 class BaselineInterpreterHandler {
   InterpreterFrameInfo frame_;
+  Label interpretOp_;
 
  public:
   using FrameInfoT = InterpreterFrameInfo;
@@ -635,6 +636,8 @@ class BaselineInterpreterHandler {
   explicit BaselineInterpreterHandler(JSContext* cx, MacroAssembler& masm);
 
   InterpreterFrameInfo& frame() { return frame_; }
+
+  Label* interpretOpLabel() { return &interpretOp_; }
 
   
   jsbytecode* maybePC() const { return nullptr; }
