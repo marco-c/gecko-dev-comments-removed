@@ -318,7 +318,15 @@ var UI = {
   },
 
   showDeprecationMessage: function() {
-    const text = Strings.GetStringFromName("error_webIDEDeprecated");
+    let text;
+    try {
+      text = Strings.GetStringFromName("error_webIDEDeprecated2");
+    } catch (e) {
+      
+      
+      
+      text = Strings.GetStringFromName("error_webIDEDeprecated");
+    }
     const buttons = [{
       label: Strings.GetStringFromName("notification_openAboutDebugging.label"),
       accessKey: Strings.GetStringFromName("notification_openAboutDebugging.accesskey"),
