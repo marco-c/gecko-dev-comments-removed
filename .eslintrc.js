@@ -55,8 +55,6 @@ module.exports = {
   }, {
     
     "files": [
-      "mobile/android/components/**",
-      "mobile/android/modules/**",
       "modules/libmar/tests/unit/head_libmar.js",
       "netwerk/protocol/http/WellKnownOpportunisticUtils.jsm",
       "netwerk/test/httpserver/httpd.js",
