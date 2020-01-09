@@ -10,6 +10,7 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/Components.h"
 #include "mozilla/FilePreferences.h"
 #include "mozilla/ChaosMode.h"
 #include "mozilla/CmdLineAndEnvUtils.h"
@@ -150,7 +151,6 @@
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsXULAppAPI.h"
 #include "nsXREDirProvider.h"
-#include "nsToolkitCompsCID.h"
 
 #include "nsINIParser.h"
 #include "mozilla/Omnijar.h"
@@ -1298,7 +1298,7 @@ ScopedXPCOMStartup::~ScopedXPCOMStartup() {
     mozilla::MacAutoreleasePool pool;
 #endif
 
-    nsCOMPtr<nsIAppStartup> appStartup(do_GetService(NS_APPSTARTUP_CONTRACTID));
+    nsCOMPtr<nsIAppStartup> appStartup(components::AppStartup::Service());
     if (appStartup) appStartup->DestroyHiddenWindow();
 
     gDirServiceProvider->DoShutdown();
@@ -1422,7 +1422,7 @@ nsresult ScopedXPCOMStartup::SetWindowCreator(nsINativeAppSupport* native) {
 
   if (cr) cr->CheckForOSAccessibility();
 
-  nsCOMPtr<nsIWindowCreator> creator(do_GetService(NS_APPSTARTUP_CONTRACTID));
+  nsCOMPtr<nsIWindowCreator> creator(components::AppStartup::Service());
   if (!creator) return NS_ERROR_UNEXPECTED;
 
   nsCOMPtr<nsIWindowWatcher> wwatch(
@@ -1998,8 +1998,7 @@ static ReturnAbortOnError ShowProfileManager(
 
       ioParamBlock->SetObjects(dlgArray);
 
-      nsCOMPtr<nsIAppStartup> appStartup(
-          do_GetService(NS_APPSTARTUP_CONTRACTID));
+      nsCOMPtr<nsIAppStartup> appStartup(components::AppStartup::Service());
       NS_ENSURE_TRUE(appStartup, NS_ERROR_FAILURE);
 
       nsCOMPtr<mozIDOMWindowProxy> newWindow;
@@ -3624,13 +3623,10 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
 #  if defined(MOZ_WAYLAND)
     
     
-    disableWayland = (gtk_check_version(3, 22, 0) != nullptr);
-    if (!disableWayland) {
-      
-      
-      disableWayland = (PR_GetEnv("GDK_BACKEND") == nullptr) &&
-                       (PR_GetEnv("MOZ_ENABLE_WAYLAND") == nullptr);
-    }
+    
+    
+    disableWayland = (PR_GetEnv("GDK_BACKEND") == nullptr) ||
+                     (gtk_check_version(3, 22, 0) != nullptr);
 #  endif
     
     
@@ -4220,7 +4216,7 @@ nsresult XREMain::XRE_mainRun() {
 
   nsAppStartupNotifier::NotifyObservers(APPSTARTUP_TOPIC);
 
-  nsCOMPtr<nsIAppStartup> appStartup(do_GetService(NS_APPSTARTUP_CONTRACTID));
+  nsCOMPtr<nsIAppStartup> appStartup(components::AppStartup::Service());
   NS_ENSURE_TRUE(appStartup, NS_ERROR_FAILURE);
 
   mDirProvider.DoStartup();

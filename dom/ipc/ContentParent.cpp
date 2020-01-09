@@ -33,6 +33,7 @@
 #include "mozilla/AntiTrackingCommon.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/Components.h"
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/DataStorage.h"
 #include "mozilla/devtools/HeapSnapshotTempFileHelperParent.h"
@@ -50,7 +51,6 @@
 #include "mozilla/dom/ExternalHelperAppParent.h"
 #include "mozilla/dom/GetFilesHelper.h"
 #include "mozilla/dom/GeolocationBinding.h"
-#include "mozilla/dom/JSWindowActorService.h"
 #include "mozilla/dom/LocalStorageCommon.h"
 #include "mozilla/dom/MemoryReportRequest.h"
 #include "mozilla/dom/Notification.h"
@@ -180,7 +180,6 @@
 #include "nsServiceManagerUtils.h"
 #include "nsStyleSheetService.h"
 #include "nsThreadUtils.h"
-#include "nsToolkitCompsCID.h"
 #include "nsWidgetsCID.h"
 #include "PreallocatedProcessManager.h"
 #include "ProcessPriorityManager.h"
@@ -2720,14 +2719,6 @@ void ContentParent::InitInternal(ProcessPriority aInitialPriority) {
   }
 
   
-  RefPtr<JSWindowActorService> actorSvc = JSWindowActorService::GetSingleton();
-  if (actorSvc) {
-    nsTArray<JSWindowActorInfo> infos;
-    actorSvc->GetJSWindowActorInfos(infos);
-    Unused << SendInitJSWindowActorInfos(infos);
-  }
-
-  
   
   RefPtr<nsPluginHost> pluginHost = nsPluginHost::GetInst();
   pluginHost->SendPluginsToContent();
@@ -3803,8 +3794,7 @@ mozilla::ipc::IPCResult ContentParent::RecvShowAlert(
     return IPC_OK();
   }
 
-  nsCOMPtr<nsIAlertsService> sysAlerts(
-      do_GetService(NS_ALERTSERVICE_CONTRACTID));
+  nsCOMPtr<nsIAlertsService> sysAlerts(components::Alerts::Service());
   if (sysAlerts) {
     sysAlerts->ShowAlert(aAlert, this);
   }
@@ -3817,8 +3807,7 @@ mozilla::ipc::IPCResult ContentParent::RecvCloseAlert(
     return IPC_OK();
   }
 
-  nsCOMPtr<nsIAlertsService> sysAlerts(
-      do_GetService(NS_ALERTSERVICE_CONTRACTID));
+  nsCOMPtr<nsIAlertsService> sysAlerts(components::Alerts::Service());
   if (sysAlerts) {
     sysAlerts->CloseAlert(aName, aPrincipal);
   }
