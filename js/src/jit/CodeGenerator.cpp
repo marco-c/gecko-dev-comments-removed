@@ -612,8 +612,9 @@ void CodeGenerator::visitValueToFloat32(LValueToFloat32* lir) {
   
   
 #if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS32)
-  masm.unboxDouble(operand, ScratchDoubleReg);
-  masm.convertDoubleToFloat32(ScratchDoubleReg, output);
+  ScratchDoubleScope fpscratch(masm);
+  masm.unboxDouble(operand, fpscratch);
+  masm.convertDoubleToFloat32(fpscratch, output);
 #else
   masm.unboxDouble(operand, output);
   masm.convertDoubleToFloat32(output, output);
