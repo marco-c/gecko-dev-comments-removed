@@ -382,6 +382,11 @@ var ReaderMode = {
       pathBase: Services.io.newURI(".", null, doc.baseURIObject).spec,
     };
 
+    
+    if (this._isDocumentPlainText(doc)) {
+      doc = this._convertPlainTextDocument(doc);
+    }
+
     let serializer = new XMLSerializer();
     let serializedDoc = serializer.serializeToString(doc);
 
@@ -539,6 +544,41 @@ var ReaderMode = {
     ]);
 
     return readingSpeed.get(lang) || readingSpeed.get("en");
+  },
+  
+
+
+
+
+
+
+  _isDocumentPlainText(doc) {
+    return doc.contentType == "text/plain";
+  },
+  
+
+
+
+
+
+
+  _convertPlainTextDocument(doc) {
+    let preTag = doc.querySelector("pre");
+    let docFrag = doc.createDocumentFragment();
+    let content = preTag.textContent;
+    let paragraphs = content.split(/\r?\n\r?\n/);
+    for (let para of paragraphs) {
+      let pElem = doc.createElement("p");
+      let lines = para.split(/\n/);
+      for (let line of lines) {
+        pElem.append(line);
+        let brElem = doc.createElement("br");
+        pElem.append(brElem);
+      }
+      docFrag.append(pElem);
+    }
+    preTag.parentNode.replaceChild(docFrag, preTag);
+    return doc;
   },
 };
 
