@@ -18,7 +18,6 @@
 #include "gfxFontMissingGlyphs.h"
 #include "gfxScriptItemizer.h"
 #include "nsUnicodeProperties.h"
-#include "nsUnicodeRange.h"
 #include "nsStyleConsts.h"
 #include "nsStyleUtil.h"
 #include "mozilla/Likely.h"
@@ -3155,8 +3154,7 @@ gfxFont* gfxFontGroup::WhichPrefFontSupportsChar(uint32_t aCh,
     charLang = eFontPrefLang_Emoji;
   } else {
     
-    uint32_t unicodeRange = FindCharUnicodeRange(aCh);
-    charLang = pfl->GetFontPrefLangFor(unicodeRange);
+    charLang = pfl->GetFontPrefLangFor(aCh);
   }
 
   

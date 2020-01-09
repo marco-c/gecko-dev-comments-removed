@@ -285,7 +285,7 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   static const char* GetPrefLangName(eFontPrefLang aLang);
 
   
-  static eFontPrefLang GetFontPrefLangFor(uint8_t aUnicodeRange);
+  static eFontPrefLang GetFontPrefLangFor(uint32_t aCh);
 
   
   static bool IsLangCJK(eFontPrefLang aLang);
