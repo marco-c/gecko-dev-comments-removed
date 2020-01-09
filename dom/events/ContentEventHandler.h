@@ -123,6 +123,7 @@ class MOZ_STACK_CLASS ContentEventHandler {
   nsresult OnQueryDOMWidgetHittest(WidgetQueryContentEvent* aEvent);
 
   
+  MOZ_CAN_RUN_SCRIPT
   nsresult OnSelectionEvent(WidgetSelectionEvent* aEvent);
 
  protected:

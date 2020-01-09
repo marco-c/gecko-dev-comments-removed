@@ -141,6 +141,7 @@ class HTMLEditor final : public TextEditor,
 
   NS_IMETHOD InsertLineBreak() override;
 
+  MOZ_CAN_RUN_SCRIPT
   virtual nsresult HandleKeyPressEvent(
       WidgetKeyboardEvent* aKeyboardEvent) override;
   virtual nsIContent* GetFocusedContent() override;
@@ -423,6 +424,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult DoInlineTableEditingAction(const Element& aUIAnonymousElement);
 
   
@@ -641,6 +643,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult DeleteTableCellContentsWithTransaction();
 
   void IsNextCharInNodeWhitespace(nsIContent* aContent, int32_t aOffset,
@@ -964,6 +967,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult SelectContentInternal(nsIContent& aContentToSelect);
 
   
@@ -1665,6 +1669,7 @@ class HTMLEditor final : public TextEditor,
 
   bool SetCaretInTableCell(dom::Element* aElement);
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult TabInTable(bool inIsShift, bool* outHandled);
 
   
@@ -1696,6 +1701,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult InsertTableCellsWithTransaction(int32_t aNumberOfCellsToInsert,
                                            InsertPosition aInsertPosition);
 
@@ -1711,6 +1717,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult InsertTableColumnsWithTransaction(int32_t aNumberOfColumnsToInsert,
                                              InsertPosition aInsertPosition);
 
@@ -1726,6 +1733,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult InsertTableRowsWithTransaction(int32_t aNumberOfRowsToInsert,
                                           InsertPosition aInsertPosition);
 
@@ -1755,6 +1763,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult DeleteSelectedTableColumnsWithTransaction(
       int32_t aNumberOfColumnsToDelete);
 
@@ -1770,6 +1779,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult DeleteTableColumnWithTransaction(Element& aTableElement,
                                             int32_t aColumnIndex);
 
@@ -1788,6 +1798,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult DeleteSelectedTableRowsWithTransaction(
       int32_t aNumberOfRowsToDelete);
 
@@ -1802,6 +1813,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult DeleteTableRowWithTransaction(Element& aTableElement,
                                          int32_t aRowIndex);
 
@@ -1819,6 +1831,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult DeleteTableCellWithTransaction(int32_t aNumberOfCellsToDelete);
 
   
@@ -2122,6 +2135,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   void SetSelectionAfterTableEdit(Element* aTable, int32_t aRow, int32_t aCol,
                                   int32_t aDirection, bool aSelected);
 

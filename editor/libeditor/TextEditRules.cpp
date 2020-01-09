@@ -1705,20 +1705,14 @@ nsresult TextEditRules::HideLastPasswordInputInternal() {
   if (NS_WARN_IF(!CanHandleEditAction())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
-  
-  
-  DebugOnly<nsresult> rv = SelectionRefPtr()->Collapse(selNode, start);
+  IgnoredErrorResult ignoredError;
+  MOZ_KnownLive(SelectionRefPtr())
+      ->SetStartAndEndInLimiter(RawRangeBoundary(selNode, start),
+                                RawRangeBoundary(selNode, end), ignoredError);
   if (NS_WARN_IF(!CanHandleEditAction())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to collapse selection");
-  if (start != end) {
-    rv = SelectionRefPtr()->Extend(selNode, end);
-    if (NS_WARN_IF(!CanHandleEditAction())) {
-      return NS_ERROR_EDITOR_DESTROYED;
-    }
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to extend selection");
-  }
+  NS_WARNING_ASSERTION(!ignoredError.Failed(), "Failed to set selection");
   return NS_OK;
 }
 
