@@ -1,6 +1,13 @@
 
 
 
+
+
+
+
+ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm", this);
+PromiseTestUtils.whitelistRejectionsGlobally(/Too many characters in placeable/);
+
 add_task(async function setup() {
   await SpecialPowers.pushPrefEnv({
     set: [

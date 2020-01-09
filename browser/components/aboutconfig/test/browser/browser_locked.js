@@ -1,6 +1,13 @@
 
 
 
+
+
+
+
+ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm", this);
+PromiseTestUtils.whitelistRejectionsGlobally(/Too many characters in placeable/);
+
 const PREF_STRING_NO_DEFAULT = "test.aboutconfig.a";
 
 add_task(async function setup() {
