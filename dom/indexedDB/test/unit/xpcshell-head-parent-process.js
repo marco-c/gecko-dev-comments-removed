@@ -10,7 +10,7 @@
 
 var { "classes": Cc, "interfaces": Ci, "utils": Cu } = Components;
 
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 if (!("self" in this)) {
   this.self = this;
@@ -586,6 +586,36 @@ function expectingUpgrade(request) {
       reject(event);
     };
   });
+}
+
+function initChromeOrigin(persistence)
+{
+    let principal = Cc["@mozilla.org/systemprincipal;1"]
+                      .createInstance(Ci.nsIPrincipal);
+    return new Promise(function(resolve) {
+      let request =
+        Services.qms.initStoragesForPrincipal(principal, persistence);
+      request.callback = function() {
+        return resolve(request);
+      };
+    });
+}
+
+
+
+
+
+
+function getRelativeFile(relativePath)
+{
+    let profileDir = Services.dirsvc.get("ProfD", Ci.nsIFile);
+
+    let file = profileDir.clone();
+    relativePath.split("/").forEach(function(component) {
+      file.append(component);
+    });
+
+    return file;
 }
 
 var SpecialPowers = {
