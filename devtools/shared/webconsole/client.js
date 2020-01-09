@@ -450,8 +450,12 @@ class WebConsoleClient extends FrontClassWithSpec(webconsoleSpec) {
 
 
 
-  startListeners(listeners) {
-    return super.startListeners(listeners);
+
+  async startListeners(listeners) {
+    const response = await super.startListeners(listeners);
+    this.hasNativeConsoleAPI = response.nativeConsoleAPI;
+    this.traits = response.traits;
+    return response;
   }
 
   
