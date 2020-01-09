@@ -28,15 +28,11 @@
 
 namespace mozilla {
 class CycleCollectedJSContext;
-class EventQueue;
-template <typename>
-class ThreadEventQueue;
 class ThreadEventTarget;
 }  
 
 using mozilla::NotNull;
 
-class nsLocalExecutionRecord;
 class nsThreadEnumerator;
 
 
@@ -145,21 +141,6 @@ class nsThread : public nsIThreadInternal,
     return mLastLongNonIdleTaskEnd;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  nsLocalExecutionRecord EnterLocalExecution();
-
  private:
   void DoMainThreadSpecificProcessing(bool aReallyWait);
 
@@ -246,52 +227,6 @@ class nsThread : public nsIThreadInternal,
   mozilla::TimeStamp mNextIdleDeadline;
 
   RefPtr<mozilla::PerformanceCounter> mCurrentPerformanceCounter;
-
-  bool mIsInLocalExecutionMode = false;
-};
-
-class nsLocalExecutionRecord;
-
-
-
-
-
-class MOZ_RAII nsLocalExecutionGuard final {
- public:
-  MOZ_IMPLICIT nsLocalExecutionGuard(
-      nsLocalExecutionRecord&& aLocalExecutionRecord);
-  nsLocalExecutionGuard(const nsLocalExecutionGuard&) = delete;
-  nsLocalExecutionGuard(nsLocalExecutionGuard&&) = delete;
-  ~nsLocalExecutionGuard();
-
-  nsCOMPtr<nsISerialEventTarget> GetEventTarget() const {
-    return mLocalEventTarget;
-  }
-
- private:
-  mozilla::SynchronizedEventQueue& mEventQueueStack;
-  nsCOMPtr<nsISerialEventTarget> mLocalEventTarget;
-  bool& mLocalExecutionFlag;
-};
-
-class MOZ_TEMPORARY_CLASS nsLocalExecutionRecord final {
- private:
-  friend class nsThread;
-  friend class nsLocalExecutionGuard;
-
-  nsLocalExecutionRecord(mozilla::SynchronizedEventQueue& aEventQueueStack,
-                         bool& aLocalExecutionFlag)
-      : mEventQueueStack(aEventQueueStack),
-        mLocalExecutionFlag(aLocalExecutionFlag) {}
-
-  nsLocalExecutionRecord(nsLocalExecutionRecord&&) = default;
-
- public:
-  nsLocalExecutionRecord(const nsLocalExecutionRecord&) = delete;
-
- private:
-  mozilla::SynchronizedEventQueue& mEventQueueStack;
-  bool& mLocalExecutionFlag;
 };
 
 class MOZ_STACK_CLASS nsThreadEnumerator final {

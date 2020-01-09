@@ -53,8 +53,27 @@ class ThreadEventQueue final : public SynchronizedEventQueue {
   void SuspendInputEventPrioritization() final;
   void ResumeInputEventPrioritization() final;
 
-  already_AddRefed<nsISerialEventTarget> PushEventQueue() final;
-  void PopEventQueue(nsIEventTarget* aTarget) final;
+  
+
+
+
+
+
+
+
+
+
+
+  already_AddRefed<nsISerialEventTarget> PushEventQueue();
+
+  
+
+
+
+
+
+
+  void PopEventQueue(nsIEventTarget* aTarget);
 
   already_AddRefed<nsIThreadObserver> GetObserver() final;
   already_AddRefed<nsIThreadObserver> GetObserverOnThread() final;
