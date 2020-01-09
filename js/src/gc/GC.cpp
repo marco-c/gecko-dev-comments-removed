@@ -937,7 +937,7 @@ bool Chunk::decommitOneFreeArena(JSRuntime* rt, AutoLockGC& lock) {
   return ok;
 }
 
-void Chunk::decommitAllArenasWithoutUnlocking(const AutoLockGC& lock) {
+void Chunk::decommitFreeArenasWithoutUnlocking(const AutoLockGC& lock) {
   for (size_t i = 0; i < ArenasPerChunk; ++i) {
     if (decommittedArenas.get(i) || arenas[i].allocated()) {
       continue;
@@ -3541,11 +3541,11 @@ void GCRuntime::triggerFullGCForAtoms(JSContext* cx) {
 
 
 
-void GCRuntime::decommitAllWithoutUnlocking(const AutoLockGC& lock) {
+void GCRuntime::decommitFreeArenasWithoutUnlocking(const AutoLockGC& lock) {
   MOZ_ASSERT(emptyChunks(lock).count() == 0);
   for (ChunkPool::Iter chunk(availableChunks(lock)); !chunk.done();
        chunk.next()) {
-    chunk->decommitAllArenasWithoutUnlocking(lock);
+    chunk->decommitFreeArenasWithoutUnlocking(lock);
   }
   MOZ_ASSERT(availableChunks(lock).verify());
 }
@@ -7973,7 +7973,7 @@ void GCRuntime::onOutOfMallocMemory(const AutoLockGC& lock) {
   
   
   
-  decommitAllWithoutUnlocking(lock);
+  decommitFreeArenasWithoutUnlocking(lock);
 }
 
 void GCRuntime::minorGC(JS::GCReason reason, gcstats::PhaseKind phase) {

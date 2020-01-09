@@ -789,7 +789,10 @@ struct Chunk {
   void recycleArena(Arena* arena, SortedArenaList& dest, size_t thingsPerArena);
 
   MOZ_MUST_USE bool decommitOneFreeArena(JSRuntime* rt, AutoLockGC& lock);
-  void decommitAllArenasWithoutUnlocking(const AutoLockGC& lock);
+
+  
+  
+  void decommitFreeArenasWithoutUnlocking(const AutoLockGC& lock);
 
   static Chunk* allocate(JSRuntime* rt);
   void init(JSRuntime* rt);
