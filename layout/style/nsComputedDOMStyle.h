@@ -375,20 +375,6 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
   void SetCssTextToCoord(nsAString& aCssText, const nsStyleCoord& aCoord,
                          bool aClampNegativeCalc);
 
-  template <typename ReferenceBox>
-  already_AddRefed<CSSValue> CreatePrimitiveValueForShapeSource(
-      const mozilla::UniquePtr<mozilla::StyleBasicShape>& aStyleBasicShape,
-      ReferenceBox aReferenceBox, const KTableEntry aBoxKeywordTable[]);
-
-  
-  already_AddRefed<CSSValue> CreatePrimitiveValueForBasicShape(
-      const mozilla::UniquePtr<mozilla::StyleBasicShape>& aStyleBasicShape);
-  void BoxValuesToString(nsAString& aString,
-                         const nsTArray<nsStyleCoord>& aBoxValues,
-                         bool aClampNegativeCalc);
-  void BasicShapeRadiiToString(nsAString& aCssText,
-                               const mozilla::BorderRadius&);
-
   
   
   bool NeedsToFlush() const;

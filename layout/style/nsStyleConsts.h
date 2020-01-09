@@ -169,12 +169,6 @@ enum class StyleScrollbarWidth : uint8_t {
 };
 
 
-enum class StyleShapeRadius : uint8_t {
-  ClosestSide,
-  FarthestSide,
-};
-
-
 enum class StyleShapeSourceType : uint8_t {
   None,
   URL,    

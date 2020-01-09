@@ -10,14 +10,13 @@
 #include "nsCoord.h"
 #include "nsSize.h"
 #include "nsStyleConsts.h"
+#include "nsStyleCoord.h"
 #include "nsTArray.h"
 
 struct nsPoint;
 struct nsRect;
 
 namespace mozilla {
-class StyleBasicShape;
-
 
 
 
@@ -28,7 +27,7 @@ struct ShapeUtils final {
   
   
   
-  static nscoord ComputeShapeRadius(const StyleShapeRadius aType,
+  static nscoord ComputeShapeRadius(const StyleShapeRadius& aType,
                                     const nscoord aCenter,
                                     const nscoord aPosMin,
                                     const nscoord aPosMax);

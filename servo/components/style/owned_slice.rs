@@ -20,6 +20,9 @@ use to_shmem::{SharedMemoryBuilder, ToShmem};
 
 
 
+
+/// cbindgen:derive-eq=false
+/// cbindgen:derive-neq=false
 #[repr(C)]
 pub struct OwnedSlice<T: Sized> {
     ptr: NonNull<T>,

@@ -23,7 +23,7 @@ pub type ClippingShape = generic::ClippingShape<BasicShape, ComputedUrl>;
 pub type FloatAreaShape = generic::FloatAreaShape<BasicShape, Image>;
 
 
-pub type BasicShape = generic::BasicShape<
+pub type BasicShape = generic::GenericBasicShape<
     LengthPercentage,
     LengthPercentage,
     LengthPercentage,
@@ -41,7 +41,7 @@ pub type Ellipse =
     generic::Ellipse<LengthPercentage, LengthPercentage, NonNegativeLengthPercentage>;
 
 
-pub type ShapeRadius = generic::ShapeRadius<NonNegativeLengthPercentage>;
+pub type ShapeRadius = generic::GenericShapeRadius<NonNegativeLengthPercentage>;
 
 impl ToCss for Circle {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
