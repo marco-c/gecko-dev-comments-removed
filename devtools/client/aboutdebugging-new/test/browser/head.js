@@ -18,9 +18,6 @@ Services.scriptloader.loadSubScript(
   this);
 
 
-Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "helper-mocks.js", this);
-
-
 registerCleanupFunction(async function() {
   try {
     const { adbAddon } = require("devtools/shared/adb/adb-addon");
@@ -44,16 +41,12 @@ async function enableNewAboutDebugging() {
   await pushPref("devtools.aboutdebugging.network", true);
 }
 
-async function openAboutDebugging({ enableWorkerUpdates } = {}) {
-  if (!enableWorkerUpdates) {
-    silenceWorkerUpdates();
-  }
-
+async function openAboutDebugging(page, win) {
   await enableNewAboutDebugging();
 
   info("opening about:debugging");
 
-  const tab = await addTab("about:debugging");
+  const tab = await addTab("about:debugging", { window: win });
   const browser = tab.linkedBrowser;
   const document = browser.contentDocument;
   const window = browser.contentWindow;

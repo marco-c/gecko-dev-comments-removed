@@ -35,7 +35,7 @@ async function testDebuggingSW(enableMultiE10sFn, disableMultiE10sFn) {
   
   await pushPref("dom.serviceWorkers.testing.enabled", true);
 
-  const { document, tab } = await openAboutDebugging({ enableWorkerUpdates: true });
+  const { document, tab } = await openAboutDebugging();
 
   
   info("Disabling multi e10s");

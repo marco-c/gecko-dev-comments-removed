@@ -3,6 +3,9 @@
 
 "use strict";
 
+
+Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "helper-mocks.js", this);
+
 const RUNTIME_DEVICE_ID = "1234";
 const RUNTIME_DEVICE_NAME = "A device";
 

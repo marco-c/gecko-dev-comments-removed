@@ -4,6 +4,9 @@
 "use strict";
 
 
+Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "helper-mocks.js", this);
+
+
 
 
 const TEST_DATA = [
@@ -44,7 +47,7 @@ add_task(async function testLocalRuntime() {
     await pushPref("dom.serviceWorkers.enabled", serviceWorkersEnabled);
     await pushPref("browser.privatebrowsing.autostart", privateBrowsingEnabled);
 
-    const { document, tab } = await openAboutDebugging({ enableWorkerUpdates: true });
+    const { document, tab } = await openAboutDebugging();
     assertWarningMessage(document, expectedMessage);
     await removeTab(tab);
   }
@@ -71,7 +74,7 @@ add_task(async function testRemoteRuntime() {
     client.setPreference("dom.serviceWorkers.enabled", serviceWorkersEnabled);
     client.setPreference("browser.privatebrowsing.autostart", privateBrowsingEnabled);
 
-    const { document, tab } = await openAboutDebugging({ enableWorkerUpdates: true });
+    const { document, tab } = await openAboutDebugging();
 
     info("Checking a USB runtime");
     mocks.emitUSBUpdate();

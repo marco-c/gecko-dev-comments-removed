@@ -4,6 +4,10 @@
 "use strict";
 
 
+Services.scriptloader.loadSubScript(
+  CHROME_URL_ROOT + "helper-mocks.js", this);
+
+
 
 
 add_task(async function() {

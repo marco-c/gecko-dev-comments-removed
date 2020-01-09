@@ -19,7 +19,7 @@ add_task(async function() {
   info("Mock the push service");
   mockPushService(FAKE_ENDPOINT);
 
-  const { document, tab } = await openAboutDebugging({ enableWorkerUpdates: true });
+  const { document, tab } = await openAboutDebugging();
 
   
   const swTab = await addTab(TAB_URL);
