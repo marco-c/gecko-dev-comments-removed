@@ -156,21 +156,19 @@ JS_FOR_EACH_TRACEKIND(JS_EXPAND_DEF)
 
 
 
-
-
-
-template <typename T, typename = void>
+template <typename T>
 struct MapTypeToRootKind {
   static const JS::RootKind kind = JS::RootKind::Traceable;
 };
-
-
-
-
 template <typename T>
-struct MapTypeToRootKind<T*, JS::MapTypeToTraceKind<T>> {
+struct MapTypeToRootKind<T*> {
   static const JS::RootKind kind =
       JS::MapTraceKindToRootKind<JS::MapTypeToTraceKind<T>::kind>::kind;
+};
+template <>
+struct MapTypeToRootKind<JS::Realm*> {
+  
+  static const JS::RootKind kind = JS::RootKind::Traceable;
 };
 template <typename T>
 struct MapTypeToRootKind<mozilla::UniquePtr<T>> {
