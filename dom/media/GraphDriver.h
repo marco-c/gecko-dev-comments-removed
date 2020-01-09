@@ -323,6 +323,7 @@ struct StreamAndPromiseForOperation {
 };
 
 enum AsyncCubebOperation { INIT, SHUTDOWN };
+enum class AudioInputType { Unknown, Voice };
 
 
 
@@ -354,7 +355,8 @@ class AudioCallbackDriver : public GraphDriver,
  public:
   
   AudioCallbackDriver(MediaStreamGraphImpl* aGraphImpl,
-                      uint32_t aInputChannelCount);
+                      uint32_t aInputChannelCount,
+                      AudioInputType aAudioInputType);
   virtual ~AudioCallbackDriver();
 
   void Start() override;
@@ -401,6 +403,13 @@ class AudioCallbackDriver : public GraphDriver,
   }
 
   uint32_t InputChannelCount() { return mInputChannelCount; }
+
+  AudioInputType InputDevicePreference() {
+    if (mInputDevicePreference == CUBEB_DEVICE_PREF_VOICE) {
+      return AudioInputType::Voice;
+    }
+    return AudioInputType::Unknown;
+  }
 
   
 
@@ -503,12 +512,12 @@ class AudioCallbackDriver : public GraphDriver,
   const RefPtr<SharedThreadPool> mInitShutdownThread;
   
   AutoTArray<StreamAndPromiseForOperation, 1> mPromisesForOperation;
+  cubeb_device_pref mInputDevicePreference;
   
 
 
 
   Atomic<bool> mAddedMixer;
-
   
 
   std::atomic<std::thread::id> mAudioThreadId;
