@@ -8,15 +8,11 @@ const {PromiseUtils} = ChromeUtils.import("resource://gre/modules/PromiseUtils.j
 const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  AsyncShutdown: "resource://gre/modules/AsyncShutdown.jsm",
   DeferredTask: "resource://gre/modules/DeferredTask.jsm",
   OS: "resource://gre/modules/osfile.jsm",
-  Deprecated: "resource://gre/modules/Deprecated.jsm",
   SearchStaticData: "resource://gre/modules/SearchStaticData.jsm",
   setTimeout: "resource://gre/modules/Timer.jsm",
   clearTimeout: "resource://gre/modules/Timer.jsm",
-  Lz4: "resource://gre/modules/lz4.js",
-  NetUtil: "resource://gre/modules/NetUtil.jsm",
   ExtensionParent: "resource://gre/modules/ExtensionParent.jsm",
 });
 
@@ -51,21 +47,12 @@ XPCOMUtils.defineLazyGetter(this, "gEncoder",
                             });
 
 
-const MODE_RDONLY   = 0x01;
-const MODE_WRONLY   = 0x02;
-const MODE_CREATE   = 0x08;
-const MODE_APPEND   = 0x10;
-const MODE_TRUNCATE = 0x20;
-const PERMS_FILE    = 0o644;
-
 
 const NS_APP_DISTRIBUTION_SEARCH_DIR_LIST = "SrchPluginsDistDL";
-const NS_APP_USER_PROFILE_50_DIR = "ProfD";
 
 
 
 const APP_SEARCH_PREFIX = "resource://search-plugins/";
-const EXT_SEARCH_PREFIX = "resource://search-extensions/";
 
 
 const SEARCH_ENGINE_TOPIC        = "browser-search-engine-modified";
@@ -93,9 +80,6 @@ const SEARCH_SERVICE_TOPIC       = "browser-search-service";
 const SEARCH_SERVICE_CACHE_WRITTEN  = "write-cache-to-disk-complete";
 
 
-const LAZY_SERIALIZE_DELAY = 100;
-
-
 const CACHE_INVALIDATION_DELAY = 1000;
 
 
@@ -103,8 +87,6 @@ const CACHE_INVALIDATION_DELAY = 1000;
 const CACHE_VERSION = 1;
 
 const CACHE_FILENAME = "search.json.mozlz4";
-
-const NEW_LINES = /(\r\n|\r|\n)/;
 
 
 
@@ -148,7 +130,6 @@ const MOZ_PARAM_OFFICIAL       = "moz:official";
 
 
 
-const OS_PARAM_USER_DEFINED    = "searchTerms";
 const OS_PARAM_INPUT_ENCODING  = "inputEncoding";
 const OS_PARAM_LANGUAGE        = "language";
 const OS_PARAM_OUTPUT_ENCODING = "outputEncoding";
@@ -189,7 +170,6 @@ const SEARCH_DEFAULT_UPDATE_INTERVAL = 7;
 
 const SEARCH_GEO_DEFAULT_UPDATE_INTERVAL = 2592000; 
 
-const SEARCH_COUNTS_HISTOGRAM_KEY = "SEARCH_COUNTS";
 
 
 
@@ -737,21 +717,6 @@ function getVerificationHash(aName) {
 
 
 
-function closeSafeOutputStream(aFOS) {
-  if (aFOS instanceof Ci.nsISafeOutputStream) {
-    try {
-      aFOS.finish();
-      return;
-    } catch (e) { }
-  }
-  aFOS.close();
-}
-
-
-
-
-
-
 
 function makeURI(aURLSpec, aCharset) {
   try {
@@ -866,11 +831,6 @@ function notifyAction(aEngine, aVerb) {
     LOG("NOTIFY: Engine: \"" + aEngine.name + "\"; Verb: \"" + aVerb + "\"");
     Services.obs.notifyObservers(aEngine, SEARCH_ENGINE_TOPIC, aVerb);
   }
-}
-
-function parseJsonFromStream(aInputStream) {
-  let bytes = NetUtil.readInputStream(aInputStream, aInputStream.available());
-  return JSON.parse(new TextDecoder().decode(bytes));
 }
 
 
@@ -4532,4 +4492,4 @@ var engineUpdateService = {
   },
 };
 
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory([SearchService]);
+var EXPORTED_SYMBOLS = ["SearchService"];

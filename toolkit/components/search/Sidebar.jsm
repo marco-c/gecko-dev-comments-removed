@@ -3,7 +3,6 @@
 
 
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 function nsSidebar() {
@@ -43,4 +42,4 @@ nsSidebar.prototype = {
   QueryInterface: ChromeUtils.generateQI([Ci.nsIDOMGlobalPropertyInitializer]),
 };
 
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory([nsSidebar]);
+var EXPORTED_SYMBOLS = ["nsSidebar"];
