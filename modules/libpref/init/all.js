@@ -2754,6 +2754,11 @@ pref("services.settings.default_bucket", "main");
 pref("services.settings.default_signer", "remote-settings.content-signature.mozilla.org");
 
 
+
+
+pref("services.common.uptake.sampleRate", 1);   
+
+
 pref("extensions.blocklist.enabled", true);
 
 

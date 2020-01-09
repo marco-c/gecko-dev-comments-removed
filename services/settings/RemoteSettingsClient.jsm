@@ -398,7 +398,7 @@ class RemoteSettingsClient extends EventEmitter {
         reportStatus = UptakeTelemetry.STATUS.SUCCESS;
       }
       
-      UptakeTelemetry.report(TELEMETRY_COMPONENT, reportStatus, { source: this.identifier, trigger });
+      await UptakeTelemetry.report(TELEMETRY_COMPONENT, reportStatus, { source: this.identifier, trigger });
     }
   }
 

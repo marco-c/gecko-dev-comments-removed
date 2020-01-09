@@ -7,8 +7,19 @@
 
 var EXPORTED_SYMBOLS = ["UptakeTelemetry"];
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.defineModuleGetter(this, "AppConstants",
+                               "resource://gre/modules/AppConstants.jsm");
+ChromeUtils.defineModuleGetter(this, "ClientID",
+                               "resource://gre/modules/ClientID.jsm");
+ChromeUtils.defineModuleGetter(this, "Services",
+                               "resource://gre/modules/Services.jsm");
 
+XPCOMUtils.defineLazyGetter(this, "CryptoHash", () => {
+  return Components.Constructor("@mozilla.org/security/hash;1", "nsICryptoHash", "initWithString");
+});
+
+XPCOMUtils.defineLazyPreferenceGetter(this, "gSampleRate", "services.common.uptake.sampleRate");
 
 
 const TELEMETRY_HISTOGRAM_ID = "UPTAKE_REMOTE_CONTENT_RESULT_1";
@@ -16,6 +27,47 @@ const TELEMETRY_HISTOGRAM_ID = "UPTAKE_REMOTE_CONTENT_RESULT_1";
 
 const TELEMETRY_EVENTS_ID = "uptake.remotecontent.result";
 
+
+
+
+var Policy = {
+  _clientIDHash: null,
+
+  getClientID() {
+    return ClientID.getClientID();
+  },
+
+  
+
+
+
+
+
+
+  async getClientIDHash() {
+    if (this._clientIDHash === null) {
+      this._clientIDHash = this._doComputeClientIDHash();
+    }
+    return this._clientIDHash;
+  },
+
+  async _doComputeClientIDHash() {
+    const clientID = await this.getClientID();
+    let byteArr = new TextEncoder().encode(clientID);
+    let hash = new CryptoHash("sha256");
+    hash.update(byteArr, byteArr.length);
+    const bytes = hash.finish(false);
+    let rem = 0;
+    for (let i = 0, len = bytes.length; i < len; i++) {
+      rem = ((rem << 8) + (bytes[i].charCodeAt(0) & 0xff)) % 100;
+    }
+    return rem;
+  },
+
+  getChannel() {
+    return AppConstants.MOZ_UPDATE_CHANNEL;
+  },
+};
 
 
 
@@ -90,7 +142,7 @@ class UptakeTelemetry {
 
 
 
-  static report(component, status, extra = {}) {
+  static async report(component, status, extra = {}) {
     const { source } = extra;
 
     if (!source) {
@@ -104,8 +156,14 @@ class UptakeTelemetry {
       Services.telemetry.setEventRecordingEnabled(TELEMETRY_EVENTS_ID, true);
       this._eventsEnabled = true;
     }
-    Services.telemetry
-      .recordEvent(TELEMETRY_EVENTS_ID, "uptake", component, status, extra);
+
+    const hash = await Policy.getClientIDHash();
+    const channel = Policy.getChannel();
+    const shouldSendEvent = !["release", "esr"].includes(channel) || hash < gSampleRate;
+    if (shouldSendEvent) {
+      Services.telemetry
+        .recordEvent(TELEMETRY_EVENTS_ID, "uptake", component, status, extra);
+    }
 
     
     
