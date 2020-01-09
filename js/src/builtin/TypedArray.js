@@ -1519,6 +1519,27 @@ function TypedArrayStaticFrom(source, mapfn = undefined, thisArg = undefined) {
         
         if (!mapping && IsTypedArrayConstructor(C) && IsObject(source)) {
             
+            if (usingIterator === TypedArrayValues && IsTypedArray(source) &&
+                ArrayIteratorPrototypeOptimizable())
+            {
+                
+                
+                GetAttachedArrayBuffer(source);
+
+                
+                var len = TypedArrayLength(source);
+
+                
+                var targetObj = new C(len);
+
+                
+                for (var k = 0; k < len; k++) {
+                    targetObj[k] = source[k];
+                }
+
+                
+                return targetObj;
+            }
 
             
             if (usingIterator === ArrayValues && IsPackedArray(source) &&

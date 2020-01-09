@@ -1,0 +1,10 @@
+
+
+
+var ta = new Int32Array(4);
+detachArrayBuffer(ta.buffer);
+
+assertThrowsInstanceOf(() => Int32Array.from(ta), TypeError);
+
+if (typeof reportCompare === "function")
+    reportCompare(true, true);
