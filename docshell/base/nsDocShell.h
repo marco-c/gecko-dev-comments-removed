@@ -885,6 +885,24 @@ class nsDocShell final : public nsDocLoader,
   
   void MaybeHandleSubframeHistory(nsDocShellLoadState* aLoadState);
 
+  
+  
+  nsresult PerformRetargeting(nsDocShellLoadState* aLoadState,
+                              nsIDocShell** aDocShell, nsIRequest** aRequest);
+
+  
+  
+  
+  
+  uint32_t DetermineContentType();
+
+  
+  
+  
+  
+  nsresult MaybeHandleLoadDelegate(nsDocShellLoadState* aLoadState,
+                                   uint32_t aWindowType, bool* aDidHandleLoad);
+
  private:  
   static nsIURIFixup* sURIFixup;
 

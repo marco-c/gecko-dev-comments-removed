@@ -8542,130 +8542,102 @@ bool nsDocShell::JustStartedNetworkLoad() {
   return mDocumentRequest && mDocumentRequest != GetCurrentDocChannel();
 }
 
-nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
-                                  nsIDocShell** aDocShell,
-                                  nsIRequest** aRequest) {
+nsresult nsDocShell::MaybeHandleLoadDelegate(nsDocShellLoadState* aLoadState,
+                                             uint32_t aWindowType,
+                                             bool* aDidHandleLoad) {
+  MOZ_ASSERT(aLoadState);
+  MOZ_ASSERT(aDidHandleLoad);
+  MOZ_ASSERT(aWindowType == nsIBrowserDOMWindow::OPEN_NEWWINDOW ||
+             aWindowType == nsIBrowserDOMWindow::OPEN_CURRENTWINDOW);
+
+  *aDidHandleLoad = false;
+  
+  
+  if (!mLoadURIDelegate || aLoadState->LoadType() == LOAD_ERROR_PAGE) {
+    return NS_OK;
+  }
+
+  
+  
+  
+  Document* doc = mContentViewer ? mContentViewer->GetDocument() : nullptr;
+  const bool isDocumentAuxSandboxed =
+      doc && (doc->GetSandboxFlags() & SANDBOXED_AUXILIARY_NAVIGATION);
+
+  if (aWindowType == nsIBrowserDOMWindow::OPEN_NEWWINDOW &&
+      isDocumentAuxSandboxed) {
+    
+    
+    *aDidHandleLoad = true;
+    return NS_ERROR_DOM_INVALID_ACCESS_ERR;
+  }
+
+  return mLoadURIDelegate->LoadURI(
+      aLoadState->URI(), aWindowType, aLoadState->LoadFlags(),
+      aLoadState->TriggeringPrincipal(), aDidHandleLoad);
+}
+
+
+
+
+
+
+
+uint32_t nsDocShell::DetermineContentType() {
+  if (!IsFrame()) {
+    return nsIContentPolicy::TYPE_DOCUMENT;
+  }
+
+  nsCOMPtr<Element> requestingElement =
+      mScriptGlobal->AsOuter()->GetFrameElementInternal();
+  if (requestingElement) {
+    return requestingElement->IsHTMLElement(nsGkAtoms::iframe)
+               ? nsIContentPolicy::TYPE_INTERNAL_IFRAME
+               : nsIContentPolicy::TYPE_INTERNAL_FRAME;
+  }
+  
+  
+  return nsIContentPolicy::TYPE_INTERNAL_IFRAME;
+}
+
+nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState,
+                                        nsIDocShell** aDocShell,
+                                        nsIRequest** aRequest) {
   MOZ_ASSERT(aLoadState, "need a load state!");
-  MOZ_ASSERT(aLoadState->TriggeringPrincipal(),
-             "need a valid TriggeringPrincipal");
+  MOZ_ASSERT(!aLoadState->Target().IsEmpty(), "should have a target here!");
 
-  if (mUseStrictSecurityChecks && !aLoadState->TriggeringPrincipal()) {
-    return NS_ERROR_FAILURE;
-  }
-
-  nsresult rv = NS_OK;
-  mOriginalUriString.Truncate();
-
-  MOZ_LOG(gDocShellLeakLog, LogLevel::Debug,
-          ("DOCSHELL %p InternalLoad %s\n", this,
-           aLoadState->URI()->GetSpecOrDefault().get()));
-
-  
-  if (aDocShell) {
-    *aDocShell = nullptr;
-  }
-  if (aRequest) {
-    *aRequest = nullptr;
-  }
-
-  NS_ENSURE_TRUE(IsValidLoadType(aLoadState->LoadType()), NS_ERROR_INVALID_ARG);
-
-  NS_ENSURE_TRUE(!mIsBeingDestroyed, NS_ERROR_NOT_AVAILABLE);
-
-  rv = EnsureScriptEnvironment();
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  
-  
-  if ((aLoadState->LoadType() & LOAD_CMD_NORMAL) &&
-      SchemeIsWYCIWYG(aLoadState->URI())) {
-    return NS_ERROR_FAILURE;
-  }
-
-  bool isJavaScript = SchemeIsJavascript(aLoadState->URI());
-
-  bool isTargetTopLevelDocShell = false;
+  nsresult rv;
   nsCOMPtr<nsIDocShell> targetDocShell;
-  if (!aLoadState->Target().IsEmpty()) {
-    
-    nsCOMPtr<nsIDocShellTreeItem> targetItem;
-    
-    
-    
-    bool allowNamedTarget =
-        !aLoadState->HasLoadFlags(INTERNAL_LOAD_FLAGS_NO_OPENER) ||
-        aLoadState->HasLoadFlags(INTERNAL_LOAD_FLAGS_DONT_SEND_REFERRER);
-    if (allowNamedTarget ||
-        aLoadState->Target().LowerCaseEqualsLiteral("_self") ||
-        aLoadState->Target().LowerCaseEqualsLiteral("_parent") ||
-        aLoadState->Target().LowerCaseEqualsLiteral("_top")) {
-      rv = FindItemWithName(aLoadState->Target(), nullptr, this, false,
-                            getter_AddRefs(targetItem));
-      NS_ENSURE_SUCCESS(rv, rv);
-    }
 
-    targetDocShell = do_QueryInterface(targetItem);
-    if (targetDocShell) {
-      
-      
-      
-      
-      
-      
-      
-      
-      nsCOMPtr<nsIDocShellTreeItem> sameTypeRoot;
-      targetDocShell->GetSameTypeRootTreeItem(getter_AddRefs(sameTypeRoot));
-      NS_ASSERTION(sameTypeRoot,
-                   "No document shell root tree item from targetDocShell!");
-      nsCOMPtr<nsIDocShell> rootShell = do_QueryInterface(sameTypeRoot);
-      NS_ASSERTION(rootShell,
-                   "No root docshell from document shell root tree item.");
-      isTargetTopLevelDocShell = targetDocShell == rootShell;
-    } else {
-      
-      
-      
-      
-      isTargetTopLevelDocShell = true;
-    }
+  
+  nsCOMPtr<nsIDocShellTreeItem> targetItem;
+  
+  
+  
+  bool allowNamedTarget =
+      !aLoadState->HasLoadFlags(INTERNAL_LOAD_FLAGS_NO_OPENER) ||
+      aLoadState->HasLoadFlags(INTERNAL_LOAD_FLAGS_DONT_SEND_REFERRER);
+  if (allowNamedTarget ||
+      aLoadState->Target().LowerCaseEqualsLiteral("_self") ||
+      aLoadState->Target().LowerCaseEqualsLiteral("_parent") ||
+      aLoadState->Target().LowerCaseEqualsLiteral("_top")) {
+    rv = FindItemWithName(aLoadState->Target(), nullptr, this, false,
+                          getter_AddRefs(targetItem));
+    NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  
-  
-  
-  
-  
-  
-  uint32_t contentType;
-  if (IsFrame() && !isTargetTopLevelDocShell) {
-    nsCOMPtr<Element> requestingElement =
-        mScriptGlobal->AsOuter()->GetFrameElementInternal();
-    if (requestingElement) {
-      contentType = requestingElement->IsHTMLElement(nsGkAtoms::iframe)
-                        ? nsIContentPolicy::TYPE_INTERNAL_IFRAME
-                        : nsIContentPolicy::TYPE_INTERNAL_FRAME;
-    } else {
-      
-      
-      contentType = nsIContentPolicy::TYPE_INTERNAL_IFRAME;
-    }
-  } else {
-    contentType = nsIContentPolicy::TYPE_DOCUMENT;
-    isTargetTopLevelDocShell = true;
-  }
+  targetDocShell = do_QueryInterface(targetItem);
+  if (!targetDocShell) {
+    
+    
+    
+    
 
-  
-  
-  
-  
-  
-  if (!targetDocShell && !aLoadState->Target().IsEmpty()) {
-    MOZ_ASSERT(contentType == nsIContentPolicy::TYPE_DOCUMENT,
-               "opening a new window requires type to be TYPE_DOCUMENT");
-
+    
+    
+    
+    
+    
     nsISupports* requestingContext = nullptr;
     if (XRE_IsContentProcess()) {
       
@@ -8707,31 +8679,17 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
     }
   }
 
-  Document* doc = mContentViewer ? mContentViewer->GetDocument() : nullptr;
-
-  const bool isDocumentAuxSandboxed =
-      doc && (doc->GetSandboxFlags() & SANDBOXED_AUXILIARY_NAVIGATION);
-
-  if (mLoadURIDelegate && aLoadState->LoadType() != LOAD_ERROR_PAGE &&
-      (!targetDocShell || targetDocShell == static_cast<nsIDocShell*>(this))) {
-    
-    
-    
-    const int where = (aLoadState->Target().IsEmpty() || targetDocShell)
-                          ? nsIBrowserDOMWindow::OPEN_CURRENTWINDOW
-                          : nsIBrowserDOMWindow::OPEN_NEWWINDOW;
-
-    if (where == nsIBrowserDOMWindow::OPEN_NEWWINDOW &&
-        isDocumentAuxSandboxed) {
-      return NS_ERROR_DOM_INVALID_ACCESS_ERR;
+  if ((!targetDocShell || targetDocShell == static_cast<nsIDocShell*>(this))) {
+    bool handled;
+    rv = MaybeHandleLoadDelegate(aLoadState,
+                                 targetDocShell ?
+                                 nsIBrowserDOMWindow::OPEN_CURRENTWINDOW :
+                                 nsIBrowserDOMWindow::OPEN_NEWWINDOW,
+                                 &handled);
+    if (NS_FAILED(rv)) {
+      return rv;
     }
-
-    bool loadURIHandled = false;
-    rv = mLoadURIDelegate->LoadURI(
-        aLoadState->URI(), where, aLoadState->LoadFlags(),
-        aLoadState->TriggeringPrincipal(), &loadURIHandled);
-    if (NS_SUCCEEDED(rv) && loadURIHandled) {
-      
+    if (handled) {
       return NS_OK;
     }
   }
@@ -8741,178 +8699,210 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   
   
   
-  if (!aLoadState->Target().IsEmpty()) {
+
+  
+  
+  
+  aLoadState->UnsetLoadFlag(INTERNAL_LOAD_FLAGS_INHERIT_PRINCIPAL);
+
+  if (!targetDocShell) {
     
     
     
-    aLoadState->UnsetLoadFlag(INTERNAL_LOAD_FLAGS_INHERIT_PRINCIPAL);
+    NS_ENSURE_TRUE(mContentViewer, NS_ERROR_FAILURE);
+    Document* doc = mContentViewer->GetDocument();
 
-    bool isNewWindow = false;
-    if (!targetDocShell) {
-      
-      
-      
-      NS_ENSURE_TRUE(mContentViewer, NS_ERROR_FAILURE);
-      if (isDocumentAuxSandboxed) {
-        return NS_ERROR_DOM_INVALID_ACCESS_ERR;
-      }
+    const bool isDocumentAuxSandboxed =
+      doc && (doc->GetSandboxFlags() & SANDBOXED_AUXILIARY_NAVIGATION);
 
-      nsCOMPtr<nsPIDOMWindowOuter> win = GetWindow();
-      NS_ENSURE_TRUE(win, NS_ERROR_NOT_AVAILABLE);
-
-      nsCOMPtr<nsPIDOMWindowOuter> newWin;
-      nsAutoCString spec;
-      aLoadState->URI()->GetSpec(spec);
-
-      
-      
-      if (aLoadState->HasLoadFlags(INTERNAL_LOAD_FLAGS_NO_OPENER)) {
-        
-        
-        MOZ_ASSERT(!aLoadState->LoadReplace());
-        MOZ_ASSERT(aLoadState->PrincipalToInherit() ==
-                   aLoadState->TriggeringPrincipal());
-        MOZ_ASSERT((aLoadState->LoadFlags() &
-                    ~INTERNAL_LOAD_FLAGS_IS_USER_TRIGGERED) ==
-                       INTERNAL_LOAD_FLAGS_NO_OPENER ||
-                   (aLoadState->LoadFlags() &
-                    ~INTERNAL_LOAD_FLAGS_IS_USER_TRIGGERED) ==
-                       (INTERNAL_LOAD_FLAGS_NO_OPENER |
-                        INTERNAL_LOAD_FLAGS_DONT_SEND_REFERRER));
-        MOZ_ASSERT(!aLoadState->PostDataStream());
-        MOZ_ASSERT(!aLoadState->HeadersStream());
-        
-        
-        
-        MOZ_ASSERT(aLoadState->LoadType() == LOAD_LINK ||
-                   aLoadState->LoadType() == LOAD_NORMAL_REPLACE);
-        MOZ_ASSERT(!aLoadState->SHEntry());
-        MOZ_ASSERT(
-            aLoadState->FirstParty());  
-
-        RefPtr<nsDocShellLoadState> loadState =
-            new nsDocShellLoadState(aLoadState->URI());
-
-        
-        
-        loadState->SetReferrer(aLoadState->Referrer());
-        loadState->SetReferrerPolicy(
-            (mozilla::net::ReferrerPolicy)aLoadState->ReferrerPolicy());
-        loadState->SetSendReferrer(!(
-            aLoadState->HasLoadFlags(INTERNAL_LOAD_FLAGS_DONT_SEND_REFERRER)));
-        loadState->SetOriginalURI(aLoadState->OriginalURI());
-
-        Maybe<nsCOMPtr<nsIURI>> resultPrincipalURI;
-        aLoadState->GetMaybeResultPrincipalURI(resultPrincipalURI);
-
-        loadState->SetMaybeResultPrincipalURI(resultPrincipalURI);
-        loadState->SetKeepResultPrincipalURIIfSet(
-            aLoadState->KeepResultPrincipalURIIfSet());
-        
-        
-        loadState->SetTriggeringPrincipal(aLoadState->TriggeringPrincipal());
-        loadState->SetInheritPrincipal(
-            aLoadState->HasLoadFlags(INTERNAL_LOAD_FLAGS_INHERIT_PRINCIPAL));
-        
-        
-        loadState->SetPrincipalIsExplicit(true);
-        loadState->SetLoadType(LOAD_LINK);
-        loadState->SetForceAllowDataURI(
-            aLoadState->HasLoadFlags(INTERNAL_LOAD_FLAGS_FORCE_ALLOW_DATA_URI));
-
-        rv = win->Open(NS_ConvertUTF8toUTF16(spec),
-                       aLoadState->Target(),  
-                       EmptyString(),         
-                       loadState,
-                       true,  
-                       getter_AddRefs(newWin));
-        MOZ_ASSERT(!newWin);
-        return rv;
-      }
-
-      rv = win->OpenNoNavigate(NS_ConvertUTF8toUTF16(spec),
-                               aLoadState->Target(),  
-                               EmptyString(),         
-                               getter_AddRefs(newWin));
-
-      
-      
-      
-      nsCOMPtr<nsPIDOMWindowOuter> piNewWin = newWin;
-      if (piNewWin) {
-        RefPtr<Document> newDoc = piNewWin->GetExtantDoc();
-        if (!newDoc || newDoc->IsInitialDocument()) {
-          isNewWindow = true;
-          aLoadState->SetLoadFlag(INTERNAL_LOAD_FLAGS_FIRST_LOAD);
-        }
-      }
-
-      nsCOMPtr<nsIWebNavigation> webNav = do_GetInterface(newWin);
-      targetDocShell = do_QueryInterface(webNav);
+    if (isDocumentAuxSandboxed) {
+      return NS_ERROR_DOM_INVALID_ACCESS_ERR;
     }
 
-    
-    
-    
-    
-    if (NS_SUCCEEDED(rv) && targetDocShell) {
-      nsDocShell* docShell = nsDocShell::Cast(targetDocShell);
-      
-      aLoadState->SetTarget(EmptyString());
-      
-      aLoadState->SetFileName(VoidString());
-      rv = docShell->InternalLoad(aLoadState, aDocShell, aRequest);
+    nsCOMPtr<nsPIDOMWindowOuter> win = GetWindow();
+    NS_ENSURE_TRUE(win, NS_ERROR_NOT_AVAILABLE);
 
-      if (rv == NS_ERROR_NO_CONTENT) {
-        
-        if (isNewWindow) {
-          
-          
-          
-          
-          
-          
-          
-          if (nsCOMPtr<nsPIDOMWindowOuter> domWin =
-                  targetDocShell->GetWindow()) {
-            domWin->Close();
-          }
-        }
-        
-        
-        
-        
-        
-        
-        rv = NS_OK;
-      } else if (isNewWindow) {
-        
-        
-        
-      }
+    nsCOMPtr<nsPIDOMWindowOuter> newWin;
+    nsAutoCString spec;
+    aLoadState->URI()->GetSpec(spec);
 
-      if (NS_SUCCEEDED(rv)) {
-        
-        
-        
-        bool isTargetActive = false;
-        targetDocShell->GetIsActive(&isTargetActive);
-        nsCOMPtr<nsPIDOMWindowOuter> domWin = targetDocShell->GetWindow();
-        if (mIsActive && !isTargetActive && domWin &&
-            !Preferences::GetBool("browser.tabs.loadDivertedInBackground",
-                                  false)) {
-          if (NS_FAILED(nsContentUtils::DispatchFocusChromeEvent(domWin))) {
-            return NS_ERROR_FAILURE;
-          }
-        }
+    
+    
+    if (aLoadState->HasLoadFlags(INTERNAL_LOAD_FLAGS_NO_OPENER)) {
+      
+      
+      MOZ_ASSERT(!aLoadState->LoadReplace());
+      MOZ_ASSERT(aLoadState->PrincipalToInherit() ==
+                 aLoadState->TriggeringPrincipal());
+      MOZ_ASSERT(
+          (aLoadState->LoadFlags() & ~INTERNAL_LOAD_FLAGS_IS_USER_TRIGGERED) ==
+              INTERNAL_LOAD_FLAGS_NO_OPENER ||
+          (aLoadState->LoadFlags() & ~INTERNAL_LOAD_FLAGS_IS_USER_TRIGGERED) ==
+              (INTERNAL_LOAD_FLAGS_NO_OPENER |
+               INTERNAL_LOAD_FLAGS_DONT_SEND_REFERRER));
+      MOZ_ASSERT(!aLoadState->PostDataStream());
+      MOZ_ASSERT(!aLoadState->HeadersStream());
+      
+      
+      
+      MOZ_ASSERT(aLoadState->LoadType() == LOAD_LINK ||
+                 aLoadState->LoadType() == LOAD_NORMAL_REPLACE);
+      MOZ_ASSERT(!aLoadState->SHEntry());
+      MOZ_ASSERT(aLoadState->FirstParty());  
+
+      RefPtr<nsDocShellLoadState> loadState =
+          new nsDocShellLoadState(aLoadState->URI());
+
+      
+      
+      loadState->SetReferrer(aLoadState->Referrer());
+      loadState->SetReferrerPolicy(
+          (mozilla::net::ReferrerPolicy)aLoadState->ReferrerPolicy());
+      loadState->SetSendReferrer(
+          !(aLoadState->HasLoadFlags(INTERNAL_LOAD_FLAGS_DONT_SEND_REFERRER)));
+      loadState->SetOriginalURI(aLoadState->OriginalURI());
+
+      Maybe<nsCOMPtr<nsIURI>> resultPrincipalURI;
+      aLoadState->GetMaybeResultPrincipalURI(resultPrincipalURI);
+
+      loadState->SetMaybeResultPrincipalURI(resultPrincipalURI);
+      loadState->SetKeepResultPrincipalURIIfSet(
+          aLoadState->KeepResultPrincipalURIIfSet());
+      
+      
+      loadState->SetTriggeringPrincipal(aLoadState->TriggeringPrincipal());
+      loadState->SetInheritPrincipal(
+          aLoadState->HasLoadFlags(INTERNAL_LOAD_FLAGS_INHERIT_PRINCIPAL));
+      
+      
+      loadState->SetPrincipalIsExplicit(true);
+      loadState->SetLoadType(LOAD_LINK);
+      loadState->SetForceAllowDataURI(
+          aLoadState->HasLoadFlags(INTERNAL_LOAD_FLAGS_FORCE_ALLOW_DATA_URI));
+
+      rv = win->Open(NS_ConvertUTF8toUTF16(spec),
+                     aLoadState->Target(),  
+                     EmptyString(),         
+                     loadState,
+                     true,  
+                     getter_AddRefs(newWin));
+      MOZ_ASSERT(!newWin);
+      return rv;
+    }
+
+    rv = win->OpenNoNavigate(NS_ConvertUTF8toUTF16(spec),
+                             aLoadState->Target(),  
+                             EmptyString(),         
+                             getter_AddRefs(newWin));
+
+    
+    
+    
+    nsCOMPtr<nsPIDOMWindowOuter> piNewWin = newWin;
+    if (piNewWin) {
+      RefPtr<Document> newDoc = piNewWin->GetExtantDoc();
+      if (!newDoc || newDoc->IsInitialDocument()) {
+        aLoadState->SetLoadFlag(INTERNAL_LOAD_FLAGS_FIRST_LOAD);
       }
     }
 
-    
-    
+    nsCOMPtr<nsIWebNavigation> webNav = do_GetInterface(newWin);
+    targetDocShell = do_QueryInterface(webNav);
+  }
 
+  
+  
+  
+  
+  if (NS_SUCCEEDED(rv) && targetDocShell) {
+    nsDocShell* docShell = nsDocShell::Cast(targetDocShell);
+    
+    aLoadState->SetTarget(EmptyString());
+    
+    aLoadState->SetFileName(VoidString());
+    rv = docShell->InternalLoad(aLoadState, aDocShell, aRequest);
+
+    if (NS_SUCCEEDED(rv)) {
+      
+      
+      
+      bool isTargetActive = false;
+      targetDocShell->GetIsActive(&isTargetActive);
+      nsCOMPtr<nsPIDOMWindowOuter> domWin = targetDocShell->GetWindow();
+      if (mIsActive && !isTargetActive && domWin &&
+          !Preferences::GetBool("browser.tabs.loadDivertedInBackground",
+                                false)) {
+        if (NS_FAILED(nsContentUtils::DispatchFocusChromeEvent(domWin))) {
+          return NS_ERROR_FAILURE;
+        }
+      }
+    }
+  }
+
+  
+  
+
+  return rv;
+}
+
+nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
+                                  nsIDocShell** aDocShell,
+                                  nsIRequest** aRequest) {
+  MOZ_ASSERT(aLoadState, "need a load state!");
+  MOZ_ASSERT(aLoadState->TriggeringPrincipal(),
+             "need a valid TriggeringPrincipal");
+
+  if (mUseStrictSecurityChecks && !aLoadState->TriggeringPrincipal()) {
+    return NS_ERROR_FAILURE;
+  }
+
+  mOriginalUriString.Truncate();
+
+  MOZ_LOG(gDocShellLeakLog, LogLevel::Debug,
+          ("DOCSHELL %p InternalLoad %s\n", this,
+           aLoadState->URI()->GetSpecOrDefault().get()));
+
+  
+  if (aDocShell) {
+    *aDocShell = nullptr;
+  }
+  if (aRequest) {
+    *aRequest = nullptr;
+  }
+
+  NS_ENSURE_TRUE(IsValidLoadType(aLoadState->LoadType()), NS_ERROR_INVALID_ARG);
+
+  NS_ENSURE_TRUE(!mIsBeingDestroyed, NS_ERROR_NOT_AVAILABLE);
+
+  nsresult rv = EnsureScriptEnvironment();
+  if (NS_FAILED(rv)) {
     return rv;
   }
+
+  
+  
+  if ((aLoadState->LoadType() & LOAD_CMD_NORMAL) &&
+      SchemeIsWYCIWYG(aLoadState->URI())) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  if (!aLoadState->Target().IsEmpty()) {
+    return PerformRetargeting(aLoadState, aDocShell, aRequest);
+  }
+
+  
+  
+  bool handled;
+  rv = MaybeHandleLoadDelegate(
+      aLoadState, nsIBrowserDOMWindow::OPEN_CURRENTWINDOW, &handled);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  if (handled) {
+    return NS_OK;
+  }
+
 
   
   
@@ -9323,6 +9313,8 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   
   
   bool toBeReset = false;
+  bool isJavaScript = SchemeIsJavascript(aLoadState->URI());
+
   if (!isJavaScript) {
     toBeReset = MaybeInitTiming();
   }
@@ -9480,8 +9472,8 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
     srcdoc = VoidString();
   }
 
-  bool isTopLevelDoc = mItemType == typeContent &&
-                       (isTargetTopLevelDocShell || GetIsMozBrowser());
+  bool isTopLevelDoc =
+      mItemType == typeContent && (!IsFrame() || GetIsMozBrowser());
 
   OriginAttributes attrs = GetOriginAttributes();
   attrs.SetFirstPartyDomain(isTopLevelDoc, aLoadState->URI());
