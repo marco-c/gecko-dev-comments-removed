@@ -12,7 +12,6 @@ import android.widget.Toast;
 
 import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.R;
-import org.mozilla.gecko.util.PackageUtil;
 
 public class DefaultBrowserPreference extends LinkPreference {
 
@@ -27,21 +26,15 @@ public class DefaultBrowserPreference extends LinkPreference {
     @Override
     protected void onClick() {
         if (GeckoPreferences.PREFS_DEFAULT_BROWSER.equals(getKey()) && AppConstants.Versions.feature24Plus) {
-            if (PackageUtil.isNoDefaultBrowserSet(this.getContext())) {
-                
-                PackageUtil.showInstalledBrowsers(this.getContext());
+            Toast.makeText(this.getContext(),
+                    this.getContext().getString(R.string.default_browser_system_settings_toast),
+                    Toast.LENGTH_LONG).show();
 
-            } else if (!PackageUtil.isDefaultBrowser(this.getContext())) {
-                Toast.makeText(this.getContext(),
-                        this.getContext().getString(R.string.default_browser_system_settings_toast),
-                        Toast.LENGTH_LONG).show();
-
-                
-                
-                
-                Intent changeDefaultApps = new Intent("android.settings.MANAGE_DEFAULT_APPS_SETTINGS");
-                getContext().startActivity(changeDefaultApps);
-            }
+            
+            
+            
+            Intent changeDefaultApps = new Intent("android.settings.MANAGE_DEFAULT_APPS_SETTINGS");
+            getContext().startActivity(changeDefaultApps);
         } else {
             super.onClick();
         }
