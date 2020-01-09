@@ -1784,6 +1784,70 @@ class GetUserMediaRunnableWrapper : public Runnable {
 
 
 
+
+
+
+void MediaManager::GuessVideoDeviceGroupIDs(MediaDeviceSet& aDevices) {
+  
+  auto updateGroupIdIfNeeded = [&](RefPtr<MediaDevice>& aVideo,
+                                   const dom::MediaDeviceKind aKind) -> bool {
+    MOZ_ASSERT(aVideo->mKind == dom::MediaDeviceKind::Videoinput);
+    MOZ_ASSERT(aKind == dom::MediaDeviceKind::Audioinput ||
+               aKind == dom::MediaDeviceKind::Audiooutput);
+    
+    nsString newVideoGroupID;
+    
+    
+    
+    
+    
+    bool updateGroupId = false;
+    for (const RefPtr<MediaDevice>& dev : aDevices) {
+      if (dev->mKind != aKind) {
+        continue;
+      }
+      if (!FindInReadable(aVideo->mName, dev->mName)) {
+        continue;
+      }
+      if (newVideoGroupID.IsEmpty()) {
+        
+        
+        updateGroupId = true;
+        newVideoGroupID = dev->mGroupID;
+      } else {
+        
+        
+        updateGroupId = false;
+        newVideoGroupID = NS_LITERAL_STRING("");
+        break;
+      }
+    }
+    if (updateGroupId) {
+      aVideo =
+          new MediaDevice(aVideo, aVideo->mID, newVideoGroupID, aVideo->mRawID);
+      return true;
+    }
+    return false;
+  };
+
+  for (RefPtr<MediaDevice>& video : aDevices) {
+    if (video->mKind != dom::MediaDeviceKind::Videoinput) {
+      continue;
+    }
+    if (updateGroupIdIfNeeded(video, dom::MediaDeviceKind::Audioinput)) {
+      
+      continue;
+    }
+    
+    updateGroupIdIfNeeded(video, dom::MediaDeviceKind::Audiooutput);
+  }
+}
+
+
+
+
+
+
 RefPtr<MediaManager::MgrPromise> MediaManager::EnumerateRawDevices(
     uint64_t aWindowId, MediaSourceEnum aVideoInputType,
     MediaSourceEnum aAudioInputType, MediaSinkEnum aAudioOutputType,
@@ -1890,6 +1954,9 @@ RefPtr<MediaManager::MgrPromise> MediaManager::EnumerateRawDevices(
       realBackend->EnumerateDevices(aWindowId, MediaSourceEnum::Other,
                                     MediaSinkEnum::Speaker, &outputs);
       aOutDevices->AppendElements(outputs);
+    }
+    if (hasVideo) {
+      GuessVideoDeviceGroupIDs(*aOutDevices);
     }
 
     holder->Resolve(false, __func__);
