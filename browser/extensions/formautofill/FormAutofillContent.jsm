@@ -183,6 +183,10 @@ AutofillProfileAutoCompleteSearch.prototype = {
         
         
         autocompleteController.resetInternalState();
+      } else {
+        
+        
+        ProfileAutocomplete.lastProfileAutoCompleteResult = null;
       }
     });
   },
