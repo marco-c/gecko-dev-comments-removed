@@ -103,10 +103,12 @@ class nsCaseTransformTextRunFactory : public nsTransformingTextRunFactory {
   
   
   
+  
+  
   static bool TransformString(
       const nsAString& aString, nsString& aConvertedString, bool aAllUppercase,
-      const nsAtom* aLanguage, nsTArray<bool>& aCharsToMergeArray,
-      nsTArray<bool>& aDeletedCharsArray,
+      bool aCaseTransformsOnly, const nsAtom* aLanguage,
+      nsTArray<bool>& aCharsToMergeArray, nsTArray<bool>& aDeletedCharsArray,
       const nsTransformedTextRun* aTextRun = nullptr,
       uint32_t aOffsetInTextRun = 0,
       nsTArray<uint8_t>* aCanBreakBeforeArray = nullptr,
