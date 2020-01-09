@@ -123,7 +123,8 @@ MozElements.RichListBox = class RichListBox extends MozElements.BaseControl {
 
     this.addEventListener("click", event => {
       
-      if (event.originalTarget == this) {
+      if (event.originalTarget == this &&
+          this.selType == "multiple") {
         this.clearSelection();
         this.currentItem = null;
       }
