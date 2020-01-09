@@ -287,7 +287,23 @@ void SessionStoreUtils::RestoreScrollPosition(const GlobalObject& aGlobal,
   int pos_X = atoi(token.get());
   token = tokenizer.nextToken();
   int pos_Y = atoi(token.get());
-  aWindow.ScrollTo(pos_X, pos_Y);
+
+  
+  
+  
+  CSSCoord layoutPosX = pos_X;
+  CSSCoord layoutPosY = pos_Y;
+  ErrorResult rv;
+  CSSCoord layoutPosMaxX = aWindow.GetScrollMaxX(rv);
+  CSSCoord layoutPosMaxY = aWindow.GetScrollMaxY(rv);
+  if (layoutPosX > layoutPosMaxX) {
+    layoutPosX = layoutPosMaxX;
+  }
+  if (layoutPosY > layoutPosMaxY) {
+    layoutPosY = layoutPosMaxY;
+  }
+
+  aWindow.ScrollTo(layoutPosX, layoutPosY);
 
   if (nsCOMPtr<Document> doc = aWindow.GetExtantDoc()) {
     if (nsPresContext* presContext = doc->GetPresContext()) {
