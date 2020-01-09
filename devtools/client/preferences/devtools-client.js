@@ -175,6 +175,7 @@ pref("devtools.netmonitor.filters", "[\"all\"]");
 pref("devtools.netmonitor.visibleColumns",
   "[\"status\",\"method\",\"domain\",\"file\",\"cause\",\"type\",\"transferred\",\"contentSize\",\"waterfall\"]"
 );
+pref("devtools.netmonitor.response.ui.limit", 10240);
 
 
 pref("devtools.netmonitor.saveRequestAndResponseBodies", true);
