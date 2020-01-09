@@ -131,7 +131,7 @@ this.ContentControl.prototype = {
     if (moved) {
       if (origin === "child") {
         
-        Utils.getMessageManager(aMessage.target).sendAsyncMessage(
+        Utils.getMessageManagerForFrame(aMessage.target).sendAsyncMessage(
           "AccessFu:ClearCursor", {});
       } else {
         
@@ -378,7 +378,7 @@ this.ContentControl.prototype = {
       let domNode = acc.DOMNode;
       let mm = this._childMessageSenders.get(domNode, null);
       if (!mm) {
-        mm = Utils.getMessageManager(domNode);
+        mm = Utils.getMessageManagerForFrame(domNode);
         mm.addWeakMessageListener("AccessFu:MoveCursor", this);
         this._childMessageSenders.set(domNode, mm);
       }
