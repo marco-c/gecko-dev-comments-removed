@@ -1,0 +1,69 @@
+
+
+
+
+
+"use strict";
+
+
+
+
+
+
+
+
+
+const TEST_URL = "data:text/html;charset=UTF-8,<div>Webconsole modules load test</div>";
+
+add_task(async function() {
+  const toolbox = await openNewTabAndToolbox(TEST_URL, "webconsole");
+  const hud = toolbox.getCurrentPanel().hud;
+
+  
+  const webconsoleLoader = hud.ui.browserLoader;
+  const loaders = [loader.provider.loader, webconsoleLoader.loader];
+
+  const allModules = getFilteredModules("", loaders);
+  const webconsoleModules = getFilteredModules("devtools/client/webconsole", loaders);
+
+  const allModulesCount = allModules.length;
+  const webconsoleModulesCount = webconsoleModules.length;
+
+  const allModulesChars = countCharsInModules(allModules);
+  const webconsoleModulesChars = countCharsInModules(webconsoleModules);
+
+  const PERFHERDER_DATA = {
+    framework: {
+      name: "devtools",
+    },
+    suites: [{
+      name: "webconsole-metrics",
+      value: allModulesChars,
+      subtests: [
+        {
+          name: "webconsole-modules",
+          value: webconsoleModulesCount,
+        },
+        {
+          name: "webconsole-chars",
+          value: webconsoleModulesChars,
+        },
+        {
+          name: "all-modules",
+          value: allModulesCount,
+        },
+        {
+          name: "all-chars",
+          value: allModulesChars,
+        },
+      ],
+    }],
+  };
+  info("PERFHERDER_DATA: " + JSON.stringify(PERFHERDER_DATA));
+
+  
+  ok(allModulesCount > webconsoleModulesCount &&
+     webconsoleModulesCount > 0, "Successfully recorded module count for WebConsole");
+  ok(allModulesChars > webconsoleModulesChars &&
+     webconsoleModulesChars > 0, "Successfully recorded char count for WebConsole");
+});

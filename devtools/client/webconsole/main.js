@@ -12,10 +12,14 @@ this.WebConsoleWrapper = function(parentNode, hud, toolbox, owner, document) {
   
   
   
-  const WebConsoleWrapper = BrowserLoader({
+  const browserLoader = BrowserLoader({
     baseURI: "resource://devtools/client/webconsole/",
     window,
-  }).require("./webconsole-wrapper");
+  });
 
+  
+  hud.browserLoader = browserLoader;
+
+  const WebConsoleWrapper = browserLoader.require("./webconsole-wrapper");
   return new WebConsoleWrapper(parentNode, hud, toolbox, owner, document);
 };
