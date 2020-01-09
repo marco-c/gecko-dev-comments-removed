@@ -1,4 +1,5 @@
 
 
-assertErrorMessage(() => wasmEvalText(`(module (func (param (ref 0)) (unreachable)))`),
-                   WebAssembly.CompileError, /reference types not enabled/);
+wasmCompilationShouldFail(
+    wasmTextToBinary(`(module (func (param (ref 0)) (unreachable)))`),
+    /reference types not enabled/);

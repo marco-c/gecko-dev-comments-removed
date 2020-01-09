@@ -30,6 +30,30 @@ function wasmFailValidateText(str, pattern) {
     assertErrorMessage(() => new WebAssembly.Module(binary), WebAssembly.CompileError, pattern);
 }
 
+
+
+
+
+
+
+
+
+
+
+function wasmCompilationShouldFail(bin, compile_error_regex) {
+    try {
+        new WebAssembly.Module(bin);
+    } catch (e) {
+        if (e instanceof WebAssembly.CompileError) {
+            assertEq(compile_error_regex.test(e), true);
+        } else if (e instanceof Error) {
+            assertEq(/can't use wasm debug\/gc without baseline/.test(e), true);
+        } else {
+            throw new Error("Unexpected exception value:\n" + e);
+        }
+    }
+}
+
 function mismatchError(actual, expect) {
     var str = `type mismatch: expression has type ${actual} but expected ${expect}`;
     return RegExp(str);

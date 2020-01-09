@@ -4,10 +4,6 @@ const { CompileError, validate } = WebAssembly;
 
 const UNRECOGNIZED_OPCODE_OR_BAD_TYPE = /unrecognized opcode|(Structure|reference) types not enabled|invalid inline block type/;
 
-function assertValidateError(text) {
-    assertEq(validate(wasmTextToBinary(text)), false);
-}
-
 let simpleTests = [
     "(module (gc_feature_opt_in 3) (func (drop (ref.null))))",
     "(module (gc_feature_opt_in 3) (func $test (local anyref)))",
@@ -33,15 +29,18 @@ let simpleTests = [
 var fail_syntax = 0;
 var fail_compile = 0;
 for (let src of simpleTests) {
+    let bin = null;
     try {
-        wasmTextToBinary(src);
+        bin = wasmTextToBinary(src);
     } catch (e) {
         assertEq(e instanceof SyntaxError, true);
         fail_syntax++;
         continue;
     }
-    assertErrorMessage(() => wasmEvalText(src), CompileError, UNRECOGNIZED_OPCODE_OR_BAD_TYPE);
-    assertValidateError(src);
+
+    assertEq(validate(bin), false);
+    wasmCompilationShouldFail(bin, UNRECOGNIZED_OPCODE_OR_BAD_TYPE);
+
     fail_compile++;
 }
 assertEq((fail_syntax == 0) != (fail_compile == 0), true);
