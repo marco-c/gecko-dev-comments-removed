@@ -13,6 +13,22 @@ if (commonFile) {
   Services.scriptloader.loadSubScript(uri.spec, this);
 }
 
+const {AddonTestUtils} = ChromeUtils.import("resource://testing-common/AddonTestUtils.jsm");
+const { PromiseTestUtils } = ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm");
+
+AddonTestUtils.init(this);
+AddonTestUtils.createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "42", "42");
+
+add_task(async function setup() {
+  await AddonTestUtils.promiseStartupManager();
+});
+
+
+
+
+
+PromiseTestUtils.whitelistRejectionsGlobally(/Component returned failure code/);
+
 const TOPICDATA_DISTRIBUTION_CUSTOMIZATION = "force-distribution-customization";
 const TOPIC_BROWSERGLUE_TEST = "browser-glue-test";
 

@@ -1,6 +1,10 @@
 
 
 
+add_task(async function setup() {
+  await AddonTestUtils.promiseStartupManager();
+});
+
 add_task(async function test_fallbacks() {
   Assert.ok((await Services.search.getVisibleEngines()).length > 1);
   Assert.ok(Services.search.isInitialized);

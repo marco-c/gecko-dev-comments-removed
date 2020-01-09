@@ -7,8 +7,18 @@
 
 
 
+const {AddonTestUtils} = ChromeUtils.import("resource://testing-common/AddonTestUtils.jsm");
+
 const SUGGEST_PREF = "browser.urlbar.suggest.searches";
 const SUGGEST_ENABLED_PREF = "browser.search.suggest.enabled";
+
+AddonTestUtils.init(this);
+AddonTestUtils.overrideCertDB();
+AddonTestUtils.createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "42");
+
+add_task(async function setup() {
+  await AddonTestUtils.promiseStartupManager();
+});
 
 add_task(async function test_unifiedComplete() {
   Services.prefs.setBoolPref(SUGGEST_PREF, true);

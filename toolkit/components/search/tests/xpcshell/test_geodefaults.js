@@ -14,7 +14,10 @@ add_task(async function no_request_if_prefed_off() {
   await withGeoServer(async function cont(requests) {
     
     Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", false);
-    await Promise.all([asyncInit(), promiseAfterCache()]);
+    await AddonTestUtils.promiseStartupManager();
+    await Services.search.init();
+    await promiseAfterCache();
+
     checkNoRequest(requests);
 
     
@@ -199,8 +202,9 @@ add_task(async function should_honor_retry_after_header() {
     
     await forceExpiration();
     let date = Date.now();
+    let commitPromise = promiseAfterCache();
     await asyncReInit({ waitForRegionFetch: true });
-    await promiseAfterCache();
+    await commitPromise;
     checkRequest(requests);
 
     

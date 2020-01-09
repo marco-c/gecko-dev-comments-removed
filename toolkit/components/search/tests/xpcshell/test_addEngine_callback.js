@@ -25,9 +25,9 @@ MockRegistrar.register("@mozilla.org/embedcomp/prompt-service;1", promptService)
 MockRegistrar.register("@mozilla.org/prompter;1", prompt);
 
 
-
 add_task(async function init_search_service() {
   useHttpServer();
+  await AddonTestUtils.promiseStartupManager();
 });
 
 

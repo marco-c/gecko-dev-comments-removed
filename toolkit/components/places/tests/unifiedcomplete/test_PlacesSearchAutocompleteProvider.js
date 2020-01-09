@@ -3,8 +3,6 @@
 
 
 const {PlacesSearchAutocompleteProvider} = ChromeUtils.import("resource://gre/modules/PlacesSearchAutocompleteProvider.jsm");
-const {updateAppInfo} = ChromeUtils.import("resource://testing-common/AppInfo.jsm");
-updateAppInfo();
 
 add_task(async function() {
   await Services.search.init();

@@ -44,7 +44,7 @@ var gExceptionPaths = [
   "resource://formautofill/addressmetadata/",
 
   
-  "resource://search-plugins/",
+  "resource://search-extensions/",
 ];
 
 

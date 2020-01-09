@@ -2,12 +2,14 @@
 
 
 
+
 const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const {PromiseUtils} = ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
 const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  AddonManager: "resource://gre/modules/AddonManager.jsm",
   DeferredTask: "resource://gre/modules/DeferredTask.jsm",
   OS: "resource://gre/modules/osfile.jsm",
   SearchStaticData: "resource://gre/modules/SearchStaticData.jsm",
@@ -48,7 +50,11 @@ const NS_APP_DISTRIBUTION_SEARCH_DIR_LIST = "SrchPluginsDistDL";
 
 
 
+const EXT_SEARCH_PREFIX = "resource://search-extensions/";
 const APP_SEARCH_PREFIX = "resource://search-plugins/";
+
+
+const EXT_SIGNING_ADDRESS = "search.mozilla.org";
 
 
 const SEARCH_ENGINE_TOPIC        = "browser-search-engine-modified";
@@ -165,6 +171,17 @@ const SEARCH_DEFAULT_UPDATE_INTERVAL = 7;
 
 
 const SEARCH_GEO_DEFAULT_UPDATE_INTERVAL = 2592000; 
+
+
+
+
+const MULTI_LOCALE_ENGINES = [
+  "amazon", "amazondotcom", "bolcom", "ebay", "google", "markplaats",
+  "mercadolibre", "twitter", "wikipedia", "wiktionary", "multilocale",
+];
+
+
+const DEFAULT_TAG = "default";
 
 
 
@@ -1249,8 +1266,7 @@ Engine.prototype = {
   
   _extensionID: null,
   
-  
-  _isBuiltinExtension: false,
+  _isBuiltin: false,
 
   
 
@@ -1705,6 +1721,13 @@ Engine.prototype = {
       }
     }
 
+    if (aParams.getParams) {
+      let queries = new URLSearchParams(aParams.getParams);
+      for (let [name, value] of queries) {
+        url.addParam(name, value);
+      }
+    }
+
     if (aParams.mozParams) {
       for (let p of aParams.mozParams) {
         if ((p.condition || p.purpose) && !this._isDefault) {
@@ -1730,16 +1753,13 @@ Engine.prototype = {
 
 
   _initFromMetadata: function SRCH_ENG_initMetaData(aName, aParams) {
-    ENSURE_WARN(!this._readOnly,
-                "Can't call _initFromMetaData on a readonly engine!",
-                Cr.NS_ERROR_FAILURE);
-
     this._extensionID = aParams.extensionID;
-    this._isBuiltinExtension = !!aParams.isBuiltIn;
+    this._isBuiltin = !!aParams.isBuiltin;
 
     this._initEngineURLFromMetaData(URLTYPE_SEARCH_HTML, {
       method: (aParams.searchPostParams && "POST") || aParams.method || "GET",
       template: aParams.template,
+      getParams: aParams.searchGetParams,
       postParams: aParams.searchPostParams,
       mozParams: aParams.mozParams,
     });
@@ -1748,6 +1768,7 @@ Engine.prototype = {
       this._initEngineURLFromMetaData(URLTYPE_SUGGEST_JSON, {
         method: (aParams.suggestPostParams && "POST") || aParams.method || "GET",
         template: aParams.suggestURL,
+        getParams: aParams.suggestGetParams,
         postParams: aParams.suggestPostParams,
       });
     }
@@ -1763,8 +1784,12 @@ Engine.prototype = {
     }
 
     this._name = aName;
+    if (aParams.shortName) {
+      this._shortName = aParams.shortName;
+    }
     this.alias = aParams.alias;
     this._description = aParams.description;
+    this.__searchForm = aParams.searchForm;
     if (aParams.iconURL) {
       this._setIcon(aParams.iconURL, true);
     }
@@ -1963,6 +1988,7 @@ Engine.prototype = {
     this._iconURI = makeURI(aJson._iconURL);
     this._iconMapObj = aJson._iconMapObj;
     this._metaData = aJson._metaData || {};
+    this._isBuiltin = aJson._isBuiltin;
     if (aJson.filePath) {
       this._filePath = aJson.filePath;
     }
@@ -1994,6 +2020,7 @@ Engine.prototype = {
       _iconMapObj: this._iconMapObj,
       _metaData: this._metaData,
       _urls: this._urls,
+      _isBuiltin: this._isBuiltin,
     };
 
     if (this._updateInterval)
@@ -2190,9 +2217,13 @@ Engine.prototype = {
     return prefix + id + suffix;
   },
 
+  get _isDistribution() {
+    return !!(this._extensionID && Services.prefs.getCharPref(`extensions.installedDistroAddon.${this._extensionID}`, ""));
+  },
+
   get _isDefault() {
     if (this._extensionID) {
-      return this._isBuiltinExtension;
+      return this._isBuiltin || this._isDistribution;
     }
 
     
@@ -2204,13 +2235,6 @@ Engine.prototype = {
     
     if (/^(?:jar:)?(?:\[app\]|\[distribution\])/.test(this._loadPath))
       return true;
-
-    let uri = makeURI(APP_SEARCH_PREFIX + this._shortName + ".xml");
-    if (this.getAnonymizedLoadPath(null, uri) == this._loadPath) {
-      
-      LOG("_isDefault, pretending " + this._loadPath + " is a default engine");
-      return true;
-    }
 
     return false;
   },
@@ -2622,7 +2646,7 @@ SearchService.prototype = {
       await this._loadEngines(cache);
     } catch (ex) {
       this._initRV = Cr.NS_ERROR_FAILURE;
-      LOG("_init: failure loading engines: " + ex);
+      LOG("_init: failure loading engines: " + ex + "\n" + ex.stack);
     }
     
     this._buildCache();
@@ -2667,6 +2691,10 @@ SearchService.prototype = {
   _visibleDefaultEngines: [],
   _searchDefault: null,
   _searchOrder: [],
+  
+  
+  _extensions: new Map(),
+
   get _sortedEngines() {
     if (!this.__sortedEngines)
       return this._buildSortedEngineList();
@@ -2770,7 +2798,7 @@ SearchService.prototype = {
   async _loadEngines(cache, isReload) {
     LOG("_loadEngines: start");
     Services.obs.notifyObservers(null, SEARCH_SERVICE_TOPIC, "find-jar-engines");
-    let chromeURIs = await this._findJAREngines();
+    let engines = await this._findEngines();
 
     
     let distDirs = [];
@@ -2801,6 +2829,26 @@ SearchService.prototype = {
       return !cache.visibleDefaultEngines.includes(aEngineName);
     }
 
+    
+    
+    
+    function parseEngineName(engineName) {
+      let [name, locale] = engineName.split(/-(.+)/);
+
+      if (!MULTI_LOCALE_ENGINES.includes(name)) {
+        return [engineName, DEFAULT_TAG];
+      }
+
+      if (!locale) {
+        locale = DEFAULT_TAG;
+      }
+      return [name, locale];
+    }
+
+    function extensionId(name) {
+      return name + "@" + EXT_SIGNING_ADDRESS;
+    }
+
     let buildID = Services.appinfo.platformBuildID;
     let rebuildCache = !cache.engines ||
                        cache.version != CACHE_VERSION ||
@@ -2808,6 +2856,29 @@ SearchService.prototype = {
                        cache.buildID != buildID ||
                        cache.visibleDefaultEngines.length != this._visibleDefaultEngines.length ||
                        this._visibleDefaultEngines.some(notInCacheVisibleEngines);
+
+    
+    
+    for (let id of this._extensions.keys()) {
+      let {extension} = WebExtensionPolicy.getByID(id);
+      if (extension.addonData.builtIn && !engines.some(name => extensionId(name) === id)) {
+        this._extensions.delete(id);
+      }
+    }
+
+    
+    
+    for (let engine of engines) {
+      let [extensionName, locale] = parseEngineName(engine);
+      let id = extensionId(extensionName);
+      let localeMap = this._extensions.get(id) || new Map();
+      let params = localeMap.get(locale);
+
+      if (!params) {
+        localeMap.set(locale, !rebuildCache);
+        this._extensions.set(id, localeMap);
+      }
+    }
 
     if (!rebuildCache) {
       LOG("_loadEngines: loading from cache directories");
@@ -2824,8 +2895,34 @@ SearchService.prototype = {
       let enginesFromDir = await this._loadEnginesFromDir(loadDir);
       enginesFromDir.forEach(this._addEngineToStore, this);
     }
-    let enginesFromURLs = await this._loadFromChromeURLs(chromeURIs, isReload);
-    enginesFromURLs.forEach(this._addEngineToStore, this);
+    if (AppConstants.platform == "android") {
+      let enginesFromURLs = await this._loadFromChromeURLs(engines, isReload);
+      enginesFromURLs.forEach(this._addEngineToStore, this);
+    } else {
+      for (let [id, localeMap] of this._extensions) {
+        let policy = WebExtensionPolicy.getByID(id);
+        if (policy) {
+          LOG("_loadEngines: Found previously installed extension");
+          await this.addEnginesFromExtension(policy.extension);
+        } else {
+          LOG("_loadEngines: Installing " + id);
+          
+          
+          for (let [locale, installed] of localeMap) {
+            if (installed === true) {
+              localeMap.set(locale, null);
+            }
+          }
+          this._extensions.set(id, localeMap);
+          let path = EXT_SEARCH_PREFIX + id.split("@")[0] + "/";
+          await AddonManager.installBuiltinAddon(path);
+          
+          
+          await ExtensionParent.apiManager.global.pendingSearchSetupTasks.get(id);
+          LOG("_loadEngines: " + id + " installed");
+        }
+      }
+    }
 
     LOG("_loadEngines: loading user-installed engines from the obsolete cache");
     this._loadEnginesFromCache(cache, true);
@@ -2871,7 +2968,7 @@ SearchService.prototype = {
     Services.obs.notifyObservers(null, SEARCH_SERVICE_TOPIC, "engines-reloaded");
   },
 
-  _reInit(origin) {
+  _reInit(origin, skipRegionCheck = true) {
     LOG("_reInit");
     
     if (gReinitializing) {
@@ -2920,6 +3017,11 @@ SearchService.prototype = {
         this._ensureKnownRegionPromise = ensureKnownRegion(this)
           .catch(ex => LOG("_reInit: failure determining region: " + ex))
           .finally(() => this._ensureKnownRegionPromise = null);
+
+        if (!skipRegionCheck) {
+          await this._ensureKnownRegionPromise;
+        }
+
         await this._loadEngines(cache);
         
         await this._buildCache();
@@ -2931,12 +3033,22 @@ SearchService.prototype = {
         Services.obs.notifyObservers(null, SEARCH_SERVICE_TOPIC, "init-complete");
       } catch (err) {
         LOG("Reinit failed: " + err);
+        LOG(err.stack);
         Services.obs.notifyObservers(null, SEARCH_SERVICE_TOPIC, "reinit-failed");
       } finally {
         gReinitializing = false;
         Services.obs.notifyObservers(null, SEARCH_SERVICE_TOPIC, "reinit-complete");
       }
     })();
+  },
+
+  
+
+
+  reset() {
+    gInitialized = false;
+    this._extensions = new Map();
+    this._startupExtensions = new Map();
   },
 
   
@@ -3173,7 +3285,7 @@ SearchService.prototype = {
     for (let url of aURLs) {
       try {
         LOG("_loadFromChromeURLs: loading engine from chrome url: " + url);
-        let uri = Services.io.newURI(url);
+        let uri = Services.io.newURI(APP_SEARCH_PREFIX + url + ".xml");
         let engine = new Engine(uri, true);
         await engine._initFromURI(uri);
         
@@ -3196,13 +3308,14 @@ SearchService.prototype = {
 
 
 
-  async _findJAREngines() {
-    LOG("_findJAREngines: looking for engines in JARs");
+  async _findEngines() {
+    LOG("_findEngines: looking for engines in JARs");
 
-    let listURL = APP_SEARCH_PREFIX + "list.json";
+    let prefix = AppConstants.platform == "android" ? APP_SEARCH_PREFIX : EXT_SEARCH_PREFIX;
+    let listURL = prefix + "list.json";
     let chan = makeChannel(listURL);
     if (!chan) {
-      LOG("_findJAREngines: " + APP_SEARCH_PREFIX + " isn't registered");
+      LOG("_findEngines: " + prefix + " isn't registered");
       return [];
     }
 
@@ -3216,7 +3329,7 @@ SearchService.prototype = {
         resolve(aEvent.target.responseText);
       };
       request.onerror = function(aEvent) {
-        LOG("_findJAREngines: failed to read " + listURL);
+        LOG("_findEngines: failed to read " + listURL);
         resolve();
       };
       request.open("GET", Services.io.newURI(listURL).spec, true);
@@ -3350,7 +3463,7 @@ SearchService.prototype = {
     }
 
     for (let name of engineNames) {
-      uris.push(APP_SEARCH_PREFIX + name + ".xml");
+      uris.push(name);
     }
 
     
@@ -3558,6 +3671,11 @@ SearchService.prototype = {
     return gInitialized;
   },
 
+  
+  async reInit(skipRegionCheck) {
+    return this._reInit("test", skipRegionCheck);
+  },
+
   async getEngines() {
     await this.init(true);
     LOG("getEngines: getting all engines");
@@ -3679,7 +3797,14 @@ SearchService.prototype = {
       };
     }
 
-    await this.init(true);
+    let isBuiltin = !!params.isBuiltin;
+    
+    
+    
+    if (!gInitialized && !this._extensions.has(params.extensionID)) {
+      LOG("addEngineWithDetails: Not expecting " + params.extensionID);
+      await this.init(true);
+    }
     if (!name)
       FAIL("Invalid name passed to addEngineWithDetails!");
     if (!params.template)
@@ -3696,21 +3821,62 @@ SearchService.prototype = {
       }
     }
 
-    let newEngine = new Engine(sanitizeName(name), false);
+    let newEngine = new Engine(sanitizeName(name), isBuiltin);
     newEngine._initFromMetadata(name, params);
     newEngine._loadPath = "[other]addEngineWithDetails";
     if (params.extensionID) {
       newEngine._loadPath += ":" + params.extensionID;
     }
+
     this._addEngineToStore(newEngine);
     if (isCurrent) {
       this.defaultEngine = newEngine;
     }
+    return newEngine;
   },
 
   async addEnginesFromExtension(extension) {
+    LOG("addEnginesFromExtension: " + extension.id);
+    try {
+      
+      
+      
+      if (!gInitialized && extension.addonData.builtIn &&
+          !this._extensions.has(extension.id)) {
+        return [];
+      }
+
+      if (!this._extensions.has(extension.id)) {
+        LOG("addEnginesFromExtension: User installed extension " + extension.id);
+        this._extensions.set(extension.id, new Map([[DEFAULT_TAG, null]]));
+      }
+
+      let installLocale = async (locale) => {
+        let manifest = (locale === DEFAULT_TAG) ? extension.manifest :
+            (await extension.getLocalizedManifest(locale));
+        return this._addEngineForManifest(extension, manifest, locale);
+      };
+
+      let engines = [];
+      for (let [locale, installed] of this._extensions.get(extension.id)) {
+        
+        
+        if (installed !== true) {
+          LOG("addEnginesFromExtension: installing locale: " +
+              extension.id + ":" + locale);
+          engines.push(await installLocale(locale));
+        }
+      }
+      return engines;
+    } catch (err) {
+      LOG("addEnginesFromExtension: Failed to install " + extension.id + ": \"" +
+          err.message + "\"\n" + err.stack);
+      return [];
+    }
+  },
+
+  async _addEngineForManifest(extension, manifest, locale = DEFAULT_TAG) {
     let {IconDetails} = ExtensionParent;
-    let {manifest} = extension;
 
     
     let icons = extension.manifest.icons;
@@ -3722,22 +3888,42 @@ SearchService.prototype = {
       });
     }
     let preferredIconUrl = icons && extension.baseURI.resolve(IconDetails.getPreferredIcon(icons).icon);
-
     let searchProvider = manifest.chrome_settings_overrides.search_provider;
+
+    
+    
+    
+    if (searchProvider.params) {
+      searchProvider.params = searchProvider.params.filter(param => {
+        return !(param.value && param.value.startsWith("__MSG_"));
+      });
+    }
+
     let params = {
+      name: searchProvider.name.trim(),
+      shortName: extension.id.split("@")[0],
+      description: extension.manifest.description,
+      searchForm: searchProvider.search_form,
       template: searchProvider.search_url,
+      searchGetParams: searchProvider.search_url_get_params,
       searchPostParams: searchProvider.search_url_post_params,
       iconURL: searchProvider.favicon_url || preferredIconUrl,
       icons: iconList,
       alias: searchProvider.keyword,
       extensionID: extension.id,
-      isBuiltIn: extension.isPrivileged,
+      isBuiltin: extension.addonData.builtIn,
       suggestURL: searchProvider.suggest_url,
       suggestPostParams: searchProvider.suggest_url_post_params,
+      suggestGetParams: searchProvider.suggest_url_get_params,
       queryCharset: searchProvider.encoding || "UTF-8",
       mozParams: searchProvider.params,
     };
-    return this.addEngineWithDetails(searchProvider.name.trim(), params);
+
+    let localeMap = this._extensions.get(extension.id);
+    localeMap.set(locale, params);
+    this._extensions.set(extension.id, localeMap);
+
+    return this.addEngineWithDetails(params.name, params);
   },
 
   async addEngine(engineURL, iconURL, confirm, extensionID) {
@@ -3772,6 +3958,20 @@ SearchService.prototype = {
     return engine;
   },
 
+  async removeWebExtensionEngine(id) {
+    LOG("removeWebExtensionEngine: " + id);
+    let localeMap = this._extensions.get(id);
+    if (!localeMap) {
+      Cu.reportError("Cannot find extension (" + id + ") to remove");
+      return;
+    }
+    for (let params of localeMap.values()) {
+      let engine = await this.getEngineByName(params.name);
+      await this.removeEngine(engine);
+    }
+    this._extensions.delete(id);
+  },
+
   async removeEngine(engine) {
     await this.init(true);
     if (!engine)
@@ -3790,7 +3990,7 @@ SearchService.prototype = {
       this._currentEngine = null;
     }
 
-    if (engineToRemove._readOnly) {
+    if (engineToRemove._readOnly || engineToRemove.isBuiltin) {
       
       
       engineToRemove.hidden = true;

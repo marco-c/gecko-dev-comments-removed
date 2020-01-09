@@ -14,9 +14,10 @@ add_task(async function setup() {
   let url = "resource://test/data/";
   let resProt = Services.io.getProtocolHandler("resource")
                         .QueryInterface(Ci.nsIResProtocolHandler);
-  resProt.setSubstitution("search-plugins",
+  resProt.setSubstitution("search-extensions",
                           Services.io.newURI(url));
 
+  await AddonTestUtils.promiseStartupManager();
   await Services.search.init();
 });
 
@@ -44,18 +45,7 @@ add_task(async function test_purpose() {
   check_submission("", "foo", "text/html", "invalid");
 
   
-  check_submission("ffsb", "foo", "application/x-moz-default-purpose");
-  check_submission("ffsb", "foo", "application/x-moz-default-purpose", null);
-  check_submission("ffsb", "foo", "application/x-moz-default-purpose", "");
-  check_submission("rcs", "foo", "application/x-moz-default-purpose", "contextmenu");
-  check_submission("fflb", "foo", "application/x-moz-default-purpose", "keyword");
-  check_submission("ffsb", "foo", "application/x-moz-default-purpose", "searchbar");
-  check_submission("ffsb", "foo", "application/x-moz-default-purpose", "invalid");
-
-  
   engine = Services.search.getEngineByName("engine-rel-searchform-purpose");
-  check_submission("sb", "", null, "searchbar");
-  check_submission("sb", "", "text/html", "searchbar");
 
   
   Assert.ok(!engine.searchForm.includes("?&"));
@@ -63,10 +53,6 @@ add_task(async function test_purpose() {
   
   check_submission("sb", "foo", "text/html", "system");
   check_submission("sb", "foo", "text/html", "searchbar");
-  
-  engine = Services.search.getEngineByName("engine-system-purpose");
-  
-  check_submission("sys", "foo", "text/html", "system");
 });
 
 add_task(async function test_purpose() {
@@ -93,27 +79,5 @@ add_task(async function test_purpose() {
   check_submission("", "foo", "text/html", "invalid");
 
   
-  check_submission("ffsb", "foo", "application/x-moz-default-purpose");
-  check_submission("ffsb", "foo", "application/x-moz-default-purpose", null);
-  check_submission("ffsb", "foo", "application/x-moz-default-purpose", "");
-  check_submission("rcs", "foo", "application/x-moz-default-purpose", "contextmenu");
-  check_submission("fflb", "foo", "application/x-moz-default-purpose", "keyword");
-  check_submission("ffsb", "foo", "application/x-moz-default-purpose", "searchbar");
-  check_submission("ffsb", "foo", "application/x-moz-default-purpose", "invalid");
-
-  
-  engine = Services.search.getEngineByName("engine-rel-searchform-purpose");
-  check_submission("sb", "", null, "searchbar");
-  check_submission("sb", "", "text/html", "searchbar");
-
-  
   Assert.ok(!engine.searchForm.includes("?&"));
-
-  
-  check_submission("sb", "foo", "text/html", "system");
-  check_submission("sb", "foo", "text/html", "searchbar");
-  
-  engine = Services.search.getEngineByName("engine-system-purpose");
-  
-  check_submission("sys", "foo", "text/html", "system");
 });

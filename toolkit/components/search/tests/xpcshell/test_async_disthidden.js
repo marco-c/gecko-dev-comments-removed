@@ -15,7 +15,7 @@ function run_test() {
   let url = "resource://test/data/";
   let resProt = Services.io.getProtocolHandler("resource")
                         .QueryInterface(Ci.nsIResProtocolHandler);
-  resProt.setSubstitution("search-plugins", Services.io.newURI(url));
+  resProt.setSubstitution("search-extensions", Services.io.newURI(url));
 
   Assert.ok(!Services.search.isInitialized);
 
@@ -23,14 +23,15 @@ function run_test() {
 }
 
 add_task(async function test_disthidden() {
-  await asyncInit();
+  await AddonTestUtils.promiseStartupManager();
+  await Services.search.init();
 
   Assert.ok(Services.search.isInitialized);
 
   let engines = await Services.search.getEngines();
   
   
-  Assert.equal(engines.length, 6);
+  Assert.equal(engines.length, 5);
 
   
   let engine = Services.search.getEngineByName("Test search engine");

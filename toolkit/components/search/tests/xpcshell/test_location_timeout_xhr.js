@@ -29,7 +29,11 @@ function verifyProbeSum(probe, sum) {
   equal(snapshot.sum, sum, probe);
 }
 
-function run_test() {
+add_task(async function setup() {
+  await AddonTestUtils.promiseStartupManager();
+});
+
+add_task(async function test_location_timeout_xhr() {
   let resolveContinuePromise;
   let continuePromise = new Promise(resolve => {
     resolveContinuePromise = resolve;
@@ -41,41 +45,40 @@ function run_test() {
   
   Services.prefs.setIntPref("browser.search.geoip.timeout", 10);
   let promiseXHRStarted = SearchTestUtils.promiseSearchNotification("geoip-lookup-xhr-starting");
-  Services.search.init().then(() => {
-    ok(!Services.prefs.prefHasUserValue("browser.search.region"), "should be no region pref");
-    
-    checkCountryResultTelemetry(null);
+  await Services.search.init();
+  ok(!Services.prefs.prefHasUserValue("browser.search.region"), "should be no region pref");
+  
+  checkCountryResultTelemetry(null);
 
-    
-    let histogram = Services.telemetry.getHistogramById("SEARCH_SERVICE_COUNTRY_TIMEOUT");
-    let snapshot = histogram.snapshot();
-    deepEqual(snapshot.values, {0: 0, 1: 1, 2: 0});
+  
+  let histogram = Services.telemetry.getHistogramById("SEARCH_SERVICE_COUNTRY_TIMEOUT");
+  let snapshot = histogram.snapshot();
+  deepEqual(snapshot.values, {0: 0, 1: 1, 2: 0});
 
-    
-    
-    verifyProbeSum("SEARCH_SERVICE_COUNTRY_FETCH_TIME_MS", 0);
+  
+  
+  verifyProbeSum("SEARCH_SERVICE_COUNTRY_FETCH_TIME_MS", 0);
 
-    promiseXHRStarted.then(xhr => {
+  promiseXHRStarted.then(xhr => {
+    
+    
+    xhr.timeout = 10;
+    
+    SearchTestUtils.promiseSearchNotification("geoip-lookup-xhr-complete").then(() => {
+      
+      checkCountryResultTelemetry(TELEMETRY_RESULT_ENUM.XHRTIMEOUT);
       
       
-      xhr.timeout = 10;
+      verifyProbeSum("SEARCH_SERVICE_COUNTRY_FETCH_TIME_MS", 0);
       
-      SearchTestUtils.promiseSearchNotification("geoip-lookup-xhr-complete").then(() => {
-        
-        checkCountryResultTelemetry(TELEMETRY_RESULT_ENUM.XHRTIMEOUT);
-        
-        
-        verifyProbeSum("SEARCH_SERVICE_COUNTRY_FETCH_TIME_MS", 0);
-        
-        ok(!Services.prefs.prefHasUserValue("browser.search.region"), "should be no region pref");
+      ok(!Services.prefs.prefHasUserValue("browser.search.region"), "should be no region pref");
 
-        
-        resolveContinuePromise();
+      
+      resolveContinuePromise();
 
-        do_test_finished();
-        server.stop(run_next_test);
+      return new Promise(resolve => {
+        server.stop(resolve);
       });
     });
   });
-  do_test_pending();
-}
+});

@@ -27,7 +27,11 @@ function getProbeSum(probe, sum) {
   return histogram.snapshot().sum;
 }
 
-function run_test() {
+add_task(async function setup() {
+  await AddonTestUtils.promiseStartupManager();
+});
+
+add_task(async function test_location_timeout() {
   let resolveContinuePromise;
   let continuePromise = new Promise(resolve => {
     resolveContinuePromise = resolve;
@@ -37,37 +41,37 @@ function run_test() {
   let url = "http://localhost:" + server.identity.primaryPort + "/lookup_country";
   Services.prefs.setCharPref("browser.search.geoip.url", url);
   Services.prefs.setIntPref("browser.search.geoip.timeout", 50);
-  Services.search.init().then(() => {
-    ok(!Services.prefs.prefHasUserValue("browser.search.region"), "should be no region pref");
-    
-    checkCountryResultTelemetry(null);
+  await Services.search.init();
+  ok(!Services.prefs.prefHasUserValue("browser.search.region"), "should be no region pref");
+  
+  checkCountryResultTelemetry(null);
 
-    
-    let histogram = Services.telemetry.getHistogramById("SEARCH_SERVICE_COUNTRY_TIMEOUT");
-    let snapshot = histogram.snapshot();
-    deepEqual(snapshot.values, {0: 0, 1: 1, 2: 0});
-    
-    
-    equal(getProbeSum("SEARCH_SERVICE_COUNTRY_FETCH_TIME_MS"), 0);
+  
+  let histogram = Services.telemetry.getHistogramById("SEARCH_SERVICE_COUNTRY_TIMEOUT");
+  let snapshot = histogram.snapshot();
+  deepEqual(snapshot.values, {0: 0, 1: 1, 2: 0});
+  
+  
+  equal(getProbeSum("SEARCH_SERVICE_COUNTRY_FETCH_TIME_MS"), 0);
 
-    SearchTestUtils.promiseSearchNotification("geoip-lookup-xhr-complete").then(() => {
-      
-      
-      
-      ok(getProbeSum("SEARCH_SERVICE_COUNTRY_FETCH_TIME_MS") != 0);
-      
-      checkCountryResultTelemetry(TELEMETRY_RESULT_ENUM.SUCCESS);
+  let notification = SearchTestUtils.promiseSearchNotification("geoip-lookup-xhr-complete");
+  
+  
+  resolveContinuePromise();
+  await notification;
 
-      
-      
-      equal(Services.prefs.getCharPref("browser.search.region"), "AU");
+  
+  
+  
+  ok(getProbeSum("SEARCH_SERVICE_COUNTRY_FETCH_TIME_MS") != 0);
+  
+  checkCountryResultTelemetry(TELEMETRY_RESULT_ENUM.SUCCESS);
 
-      do_test_finished();
-      server.stop(run_next_test);
-    });
-    
-    
-    resolveContinuePromise();
-  });
-  do_test_pending();
-}
+  
+  
+  equal(Services.prefs.getCharPref("browser.search.region"), "AU");
+
+  await (() => {
+    return new Promise(resolve => { server.stop(resolve); });
+  })();
+});

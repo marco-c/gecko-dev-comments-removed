@@ -35,8 +35,8 @@ add_task(async function test_hasEngineWithURL() {
   useHttpServer();
 
   info("Test starting");
-  
-  await asyncInit();
+  await AddonTestUtils.promiseStartupManager();
+  await Services.search.init();
 
   
   let UNSORTED_ENGINE = {

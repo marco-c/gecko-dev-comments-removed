@@ -1,60 +1,61 @@
 
 
 
-function run_test() {
+
+add_task(async function setup() {
+  await AddonTestUtils.promiseStartupManager();
+});
+
+add_task(async function test_location() {
   Services.prefs.setCharPref("browser.search.geoip.url", 'data:application/json,{"country_code": "AU"}');
-  Services.search.init().then(() => {
-    equal(Services.prefs.getCharPref("browser.search.region"), "AU", "got the correct region.");
-    
-    checkCountryResultTelemetry(TELEMETRY_RESULT_ENUM.SUCCESS);
-    
-    for (let hid of ["SEARCH_SERVICE_COUNTRY_TIMEOUT",
-                     "SEARCH_SERVICE_COUNTRY_FETCH_CAUSED_SYNC_INIT"]) {
-      let histogram = Services.telemetry.getHistogramById(hid);
-      let snapshot = histogram.snapshot();
-      deepEqual(snapshot.values, {0: 1, 1: 0}); 
-    }
+  await Services.search.init();
+  equal(Services.prefs.getCharPref("browser.search.region"), "AU", "got the correct region.");
+  
+  checkCountryResultTelemetry(TELEMETRY_RESULT_ENUM.SUCCESS);
+  
+  for (let hid of ["SEARCH_SERVICE_COUNTRY_TIMEOUT",
+                   "SEARCH_SERVICE_COUNTRY_FETCH_CAUSED_SYNC_INIT"]) {
+    let histogram = Services.telemetry.getHistogramById(hid);
+    let snapshot = histogram.snapshot();
+    deepEqual(snapshot.values, {0: 1, 1: 0}); 
+  }
 
-    
-    
-    
-    let probeUSMismatched, probeNonUSMismatched;
-    switch (Services.appinfo.OS) {
-      case "Darwin":
-        probeUSMismatched = "SEARCH_SERVICE_US_COUNTRY_MISMATCHED_PLATFORM_OSX";
-        probeNonUSMismatched = "SEARCH_SERVICE_NONUS_COUNTRY_MISMATCHED_PLATFORM_OSX";
-        break;
-      case "WINNT":
-        probeUSMismatched = "SEARCH_SERVICE_US_COUNTRY_MISMATCHED_PLATFORM_WIN";
-        probeNonUSMismatched = "SEARCH_SERVICE_NONUS_COUNTRY_MISMATCHED_PLATFORM_WIN";
-        break;
-      default:
-        break;
-    }
+  
+  
+  
+  let probeUSMismatched, probeNonUSMismatched;
+  switch (Services.appinfo.OS) {
+  case "Darwin":
+    probeUSMismatched = "SEARCH_SERVICE_US_COUNTRY_MISMATCHED_PLATFORM_OSX";
+    probeNonUSMismatched = "SEARCH_SERVICE_NONUS_COUNTRY_MISMATCHED_PLATFORM_OSX";
+    break;
+  case "WINNT":
+    probeUSMismatched = "SEARCH_SERVICE_US_COUNTRY_MISMATCHED_PLATFORM_WIN";
+    probeNonUSMismatched = "SEARCH_SERVICE_NONUS_COUNTRY_MISMATCHED_PLATFORM_WIN";
+    break;
+  default:
+    break;
+  }
 
-    if (probeUSMismatched && probeNonUSMismatched) {
-      let countryCode = Services.sysinfo.get("countryCode");
-      print("Platform says the country-code is", countryCode);
-      let expectedResult;
-      let hid;
+  if (probeUSMismatched && probeNonUSMismatched) {
+    let countryCode = Services.sysinfo.get("countryCode");
+    print("Platform says the country-code is", countryCode);
+    let expectedResult;
+    let hid;
+    
+    
+    if (countryCode == "US") {
+      hid = probeUSMismatched;
+      expectedResult = {0: 0, 1: 1, 2: 0}; 
+    } else {
       
       
-      if (countryCode == "US") {
-        hid = probeUSMismatched;
-        expectedResult = {0: 0, 1: 1, 2: 0}; 
-      } else {
-        
-        
-        hid = probeNonUSMismatched;
-        expectedResult = countryCode == "AU" ? {0: 1, 1: 0} : {0: 0, 1: 1, 2: 0};
-      }
-
-      let histogram = Services.telemetry.getHistogramById(hid);
-      let snapshot = histogram.snapshot();
-      deepEqual(snapshot.values, expectedResult);
+      hid = probeNonUSMismatched;
+      expectedResult = countryCode == "AU" ? {0: 1, 1: 0} : {0: 0, 1: 1, 2: 0};
     }
-    do_test_finished();
-    run_next_test();
-  });
-  do_test_pending();
-}
+
+    let histogram = Services.telemetry.getHistogramById(hid);
+    let snapshot = histogram.snapshot();
+    deepEqual(snapshot.values, expectedResult);
+  }
+});
