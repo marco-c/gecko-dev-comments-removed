@@ -549,7 +549,7 @@ public:
 
 
 
-    void incReserve(unsigned extraPtCount);
+    void incReserve(int extraPtCount);
 
     
 
