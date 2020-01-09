@@ -494,6 +494,34 @@ class TabParent final : public PBrowserParent,
   const TabId GetTabId() const { return mTabId; }
 
   
+  LayoutDeviceIntPoint TransformPoint(
+      const LayoutDeviceIntPoint& aPoint,
+      const LayoutDeviceToLayoutDeviceMatrix4x4& aMatrix);
+  LayoutDevicePoint TransformPoint(
+      const LayoutDevicePoint& aPoint,
+      const LayoutDeviceToLayoutDeviceMatrix4x4& aMatrix);
+
+  
+  
+  LayoutDeviceIntPoint TransformParentToChild(
+      const LayoutDeviceIntPoint& aPoint);
+  LayoutDevicePoint TransformParentToChild(const LayoutDevicePoint& aPoint);
+
+  
+  
+  LayoutDeviceIntPoint TransformChildToParent(
+      const LayoutDeviceIntPoint& aPoint);
+  LayoutDevicePoint TransformChildToParent(const LayoutDevicePoint& aPoint);
+  LayoutDeviceIntRect TransformChildToParent(const LayoutDeviceIntRect& aRect);
+
+  
+  
+  LayoutDeviceToLayoutDeviceMatrix4x4 GetChildToParentConversionMatrix();
+
+  
+  
+  
+  
   
   
   LayoutDeviceIntPoint GetChildProcessOffset();

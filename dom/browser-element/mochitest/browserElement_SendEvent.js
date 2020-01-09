@@ -15,18 +15,12 @@ function runTest() {
   var y = 10;
   
   
-  iframe.getBoundingClientRect();
   
   
-  var tabParent = SpecialPowers.wrap(iframe)
-                  .frameLoader.tabParent;
-  if (tabParent) {
-    let offsetX = {};
-    let offsetY = {};
-    tabParent.getChildProcessOffset(offsetX, offsetY);
-    x -= offsetX.value;
-    y -= offsetY.value;
-  }
+  
+  
+  
+  
 
   iframe.addEventListener("mozbrowserloadend", function onloadend(e) {
     iframe.sendMouseEvent("mousedown", x, y, 0, 1, 0);

@@ -17,18 +17,12 @@ function runTest() {
   let y = 2;
   
   
-  iframe.getBoundingClientRect();
   
   
-  let tabParent = SpecialPowers.wrap(iframe)
-                  .frameLoader.tabParent;
-  if (tabParent) {
-    let offsetX = {};
-    let offsetY = {};
-    tabParent.getChildProcessOffset(offsetX, offsetY);
-    x -= offsetX.value;
-    y -= offsetY.value;
-  }
+  
+  
+  
+  
 
   let sendCtrlClick = () => {
     let nsIDOMWindowUtils = SpecialPowers.Ci.nsIDOMWindowUtils;
