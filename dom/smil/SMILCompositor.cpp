@@ -6,7 +6,6 @@
 
 #include "SMILCompositor.h"
 
-#include "mozilla/dom/SVGSVGElement.h"
 #include "nsComputedDOMStyle.h"
 #include "nsCSSProps.h"
 #include "nsHashKeys.h"
@@ -149,20 +148,18 @@ nsCSSPropertyID SMILCompositor::GetCSSPropertyToAnimate() const {
   
   
   
+  
+  
+  
+  
+  
+  
+  
   if ((mKey.mAttributeName == nsGkAtoms::width ||
        mKey.mAttributeName == nsGkAtoms::height) &&
-      mKey.mElement->GetNameSpaceID() == kNameSpaceID_SVG) {
-    
-    if (!mKey.mElement->IsSVGElement(nsGkAtoms::svg)) {
-      return eCSSProperty_UNKNOWN;
-    }
-
-    
-    if (static_cast<dom::SVGSVGElement const&>(*mKey.mElement).IsInner()) {
-      return eCSSProperty_UNKNOWN;
-    }
-
-    
+      mKey.mElement->GetNameSpaceID() == kNameSpaceID_SVG &&
+      !mKey.mElement->IsAttributeMapped(mKey.mAttributeName)) {
+    return eCSSProperty_UNKNOWN;
   }
 
   return propID;

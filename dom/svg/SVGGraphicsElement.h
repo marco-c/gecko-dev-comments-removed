@@ -32,16 +32,6 @@ class SVGGraphicsElement : public SVGGraphicsElementBase, public SVGTests {
   
   
   bool IsSVGFocusable(bool* aIsFocusable, int32_t* aTabIndex);
-
-  template <typename T>
-  bool IsInLengthInfo(const nsAtom* aAttribute, const T& aLengthInfos) const {
-    for (auto const& e : aLengthInfos) {
-      if (e.mName == aAttribute) {
-        return true;
-      }
-    }
-    return false;
-  }
 };
 
 }  

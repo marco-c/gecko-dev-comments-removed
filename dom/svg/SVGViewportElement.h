@@ -125,17 +125,6 @@ class SVGViewportElement : public SVGGraphicsElement {
   }
 
   
-
-
-
-
-  bool IsInner() const {
-    const nsIContent* parent = GetFlattenedTreeParent();
-    return parent && parent->IsSVGElement() &&
-           !parent->IsSVGElement(nsGkAtoms::foreignObject);
-  }
-
-  
   already_AddRefed<SVGAnimatedRect> ViewBox();
   already_AddRefed<DOMSVGAnimatedPreserveAspectRatio> PreserveAspectRatio();
   virtual SVGAnimatedViewBox* GetAnimatedViewBox() override;
@@ -148,6 +137,17 @@ class SVGViewportElement : public SVGGraphicsElement {
                      (OwnerDoc()->GetRootElement() == this),
                  "Can't determine if we're root");
     return IsInUncomposedDoc() && !GetParent();
+  }
+
+  
+
+
+
+
+  bool IsInner() const {
+    const nsIContent* parent = GetFlattenedTreeParent();
+    return parent && parent->IsSVGElement() &&
+           !parent->IsSVGElement(nsGkAtoms::foreignObject);
   }
 
   

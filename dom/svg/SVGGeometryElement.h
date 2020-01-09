@@ -195,13 +195,6 @@ class SVGGeometryElement : public SVGGeometryElementBase {
 
 
 
-  bool IsGeometryChangedViaCSS(ComputedStyle const& aNewStyle,
-                               ComputedStyle const& aOldStyle) const;
-
-  
-
-
-
   FillRule GetFillRule();
 
   enum PathLengthScaleForType { eForTextPath, eForStroking };

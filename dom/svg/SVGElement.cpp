@@ -30,7 +30,6 @@
 #include "nsAttrValueOrString.h"
 #include "nsCSSProps.h"
 #include "nsContentUtils.h"
-#include "nsDOMCSSAttrDeclaration.h"
 #include "nsICSSDeclaration.h"
 #include "nsIContentInlines.h"
 #include "mozilla/dom/Document.h"
@@ -54,7 +53,6 @@
 #include "SVGAnimatedOrient.h"
 #include "SVGAnimatedString.h"
 #include "SVGAnimatedViewBox.h"
-#include "SVGGeometryProperty.h"
 #include "SVGMotionSMILAttr.h"
 #include <stdarg.h>
 
@@ -1023,41 +1021,6 @@ already_AddRefed<DOMSVGAnimatedString> SVGElement::ClassName() {
 }
 
 
-bool SVGElement::UpdateDeclarationBlockFromLength(
-    DeclarationBlock& aBlock, nsCSSPropertyID aPropId,
-    const SVGAnimatedLength& aLength, ValToUse aValToUse) {
-  aBlock.AssertMutable();
-
-  float value;
-  if (aValToUse == ValToUse::Anim) {
-    value = aLength.GetAnimValInSpecifiedUnits();
-  } else {
-    MOZ_ASSERT(aValToUse == ValToUse::Base);
-    value = aLength.GetBaseValInSpecifiedUnits();
-  }
-
-  
-  
-  if (value < 0 &&
-      SVGGeometryProperty::IsNonNegativeGeometryProperty(aPropId)) {
-    return false;
-  }
-
-  nsCSSUnit cssUnit = SVGGeometryProperty::SpecifiedUnitTypeToCSSUnit(
-      aLength.GetSpecifiedUnitType());
-
-  if (cssUnit == eCSSUnit_Percent) {
-    Servo_DeclarationBlock_SetPercentValue(aBlock.Raw(), aPropId,
-                                           value / 100.f);
-  } else {
-    Servo_DeclarationBlock_SetLengthValue(aBlock.Raw(), aPropId, value,
-                                          cssUnit);
-  }
-
-  return true;
-}
-
-
 
 
 namespace {
@@ -1071,9 +1034,6 @@ class MOZ_STACK_CLASS MappedAttrParser {
   
   void ParseMappedAttrValue(nsAtom* aMappedAttrName,
                             const nsAString& aMappedAttrValue);
-
-  void TellStyleAlreadyParsedResult(nsAtom const* aAtom,
-                                    SVGAnimatedLength const& aLength);
 
   
   
@@ -1162,18 +1122,6 @@ void MappedAttrParser::ParseMappedAttrValue(nsAtom* aMappedAttrName,
   }
 }
 
-void MappedAttrParser::TellStyleAlreadyParsedResult(
-    nsAtom const* aAtom, SVGAnimatedLength const& aLength) {
-  if (!mDecl) {
-    mDecl = new DeclarationBlock();
-  }
-  nsCSSPropertyID propertyID =
-      nsCSSProps::LookupProperty(nsDependentAtomString(aAtom));
-
-  SVGElement::UpdateDeclarationBlockFromLength(*mDecl, propertyID, aLength,
-                                               SVGElement::ValToUse::Base);
-}
-
 already_AddRefed<DeclarationBlock> MappedAttrParser::GetDeclarationBlock() {
   return mDecl.forget();
 }
@@ -1196,9 +1144,6 @@ void SVGElement::UpdateContentDeclarationBlock() {
   Document* doc = OwnerDoc();
   MappedAttrParser mappedAttrParser(doc->CSSLoader(), doc->GetDocumentURI(),
                                     GetBaseURI(), this);
-
-  bool lengthAffectsStyle =
-      SVGGeometryProperty::ElementMapsLengthsToStyle(this);
 
   for (uint32_t i = 0; i < attrCount; ++i) {
     const nsAttrName* attrName = mAttrs.AttrNameAt(i);
@@ -1228,20 +1173,6 @@ void SVGElement::UpdateContentDeclarationBlock() {
       }
       if (attrName->Atom() == nsGkAtoms::height &&
           !GetAnimatedLength(nsGkAtoms::height)->HasBaseVal()) {
-        continue;
-      }
-    }
-
-    if (lengthAffectsStyle) {
-      auto const* length = GetAnimatedLength(attrName->Atom());
-
-      if (length && length->HasBaseVal()) {
-        
-        
-        
-        
-        mappedAttrParser.TellStyleAlreadyParsedResult(attrName->Atom(),
-                                                      *length);
         continue;
       }
     }
@@ -1460,15 +1391,6 @@ void SVGElement::DidChangeLength(uint8_t aAttrEnum,
 }
 
 void SVGElement::DidAnimateLength(uint8_t aAttrEnum) {
-  if (SVGGeometryProperty::ElementMapsLengthsToStyle(this)) {
-    nsCSSPropertyID propId =
-        SVGGeometryProperty::AttrEnumToCSSPropId(this, aAttrEnum);
-
-    SMILOverrideStyle()->SetSMILValue(propId,
-                                      GetLengthInfo().mLengths[aAttrEnum]);
-    return;
-  }
-
   ClearAnyCachedPath();
 
   nsIFrame* frame = GetPrimaryFrame();
@@ -1489,6 +1411,7 @@ SVGAnimatedLength* SVGElement::GetAnimatedLength(const nsAtom* aAttrName) {
       return &lengthInfo.mLengths[i];
     }
   }
+  MOZ_ASSERT(false, "no matching length found");
   return nullptr;
 }
 

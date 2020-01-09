@@ -10,12 +10,10 @@
 
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
-#include "mozilla/dom/SVGElement.h"
 #include "mozilla/dom/MutationEventBinding.h"
 #include "mozilla/DeclarationBlock.h"
 #include "mozilla/InternalMutationEvent.h"
 #include "mozilla/SMILCSSValueType.h"
-#include "mozilla/SMILValue.h"
 #include "mozAutoDocUpdate.h"
 #include "nsIURI.h"
 #include "nsNodeUtils.h"
@@ -135,10 +133,9 @@ nsDOMCSSAttributeDeclaration::GetParsingEnvironment(
   };
 }
 
-template <typename SetterFunc>
-nsresult nsDOMCSSAttributeDeclaration::SetSMILValueHelper(SetterFunc aFunc) {
+nsresult nsDOMCSSAttributeDeclaration::SetSMILValue(
+    const nsCSSPropertyID aPropID, const SMILValue& aValue) {
   MOZ_ASSERT(mIsSMILOverride);
-
   
   
   
@@ -150,32 +147,13 @@ nsresult nsDOMCSSAttributeDeclaration::SetSMILValueHelper(SetterFunc aFunc) {
   }
   mozAutoDocUpdate autoUpdate(DocToUpdate(), true);
   RefPtr<DeclarationBlock> decl = olddecl->EnsureMutable();
-
-  bool changed = aFunc(*decl);
-
+  bool changed = SMILCSSValueType::SetPropertyValues(aValue, *decl);
   if (changed) {
     
     
     SetCSSDeclaration(decl, nullptr);
   }
   return NS_OK;
-}
-
-nsresult nsDOMCSSAttributeDeclaration::SetSMILValue(
-    const nsCSSPropertyID , const SMILValue& aValue) {
-  MOZ_ASSERT(aValue.mType == &SMILCSSValueType::sSingleton,
-             "We should only try setting a CSS value type");
-  return SetSMILValueHelper([&aValue](DeclarationBlock& aDecl) {
-    return SMILCSSValueType::SetPropertyValues(aValue, aDecl);
-  });
-}
-
-nsresult nsDOMCSSAttributeDeclaration::SetSMILValue(
-    const nsCSSPropertyID aPropID, const SVGAnimatedLength& aLength) {
-  return SetSMILValueHelper([aPropID, &aLength](DeclarationBlock& aDecl) {
-    return SVGElement::UpdateDeclarationBlockFromLength(
-        aDecl, aPropID, aLength, SVGElement::ValToUse::Anim);
-  });
 }
 
 nsresult nsDOMCSSAttributeDeclaration::SetPropertyValue(
