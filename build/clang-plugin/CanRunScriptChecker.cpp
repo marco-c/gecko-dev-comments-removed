@@ -133,6 +133,18 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
               
               ignoreTrivials(KnownLiveBase))));
 
+  auto KnownLive = anyOf(
+      
+      KnownLiveSimple,
+      
+      conditionalOperator(
+          hasFalseExpression(ignoreTrivials(KnownLiveSimple)),
+          hasTrueExpression(ignoreTrivials(KnownLiveSimple)))
+      
+      
+      
+      );
+
   auto InvalidArg =
       ignoreTrivialsConditional(
         
@@ -146,7 +158,7 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
         
         expr(
           
-          unless(KnownLiveSimple),
+          unless(KnownLive),
           
           
           unless(cxxDefaultArgExpr(isNullDefaultArg())),
