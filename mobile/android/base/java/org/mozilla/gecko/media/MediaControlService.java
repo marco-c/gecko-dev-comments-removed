@@ -39,7 +39,10 @@ public class MediaControlService extends Service {
         Log.d(LOGTAG, "onStartCommand");
 
         if (intent.hasExtra(GeckoMediaControlAgent.EXTRA_NOTIFICATION_DATA)) {
-            if (GeckoMediaControlAgent.getInstance().isAttachedToContext()) {
+            if (GeckoMediaControlAgent.getInstance().isAttachedToContext() ||
+                    
+
+                    !AppConstants.RELEASE_OR_BETA) {
                     currentNotification = GeckoMediaControlAgent.getInstance().createNotification(
                             (MediaNotification) intent.getParcelableExtra(GeckoMediaControlAgent.EXTRA_NOTIFICATION_DATA));
             } else {
