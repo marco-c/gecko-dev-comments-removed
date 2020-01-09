@@ -205,10 +205,6 @@ class Package {
 
   close() {}
 
-  getURI(...path) {
-    return Services.io.newURI(path.join("/"), null, this.rootURI);
-  }
-
   async readString(...path) {
     let buffer = await this.readBinary(...path);
     return new TextDecoder().decode(buffer);
@@ -378,14 +374,8 @@ function waitForAllPromises(promises) {
 
 
 
-
-
-async function loadManifestFromWebManifest(aUri, aPackage) {
-  
-  
-  let uri = Services.io.newURI("./", null, aUri);
-
-  let extension = new ExtensionData(uri);
+async function loadManifestFromWebManifest(aPackage) {
+  let extension = new ExtensionData(aPackage.rootURI);
 
   let manifest = await extension.loadManifest();
 
@@ -537,7 +527,7 @@ function generateTemporaryInstallID(aFile) {
 var loadManifest = async function(aPackage, aLocation, aOldAddon) {
   let addon;
   if (await aPackage.hasResource("manifest.json")) {
-    addon = await loadManifestFromWebManifest(aPackage.rootURI, aPackage);
+    addon = await loadManifestFromWebManifest(aPackage);
   } else {
     for (let loader of AddonManagerPrivate.externalExtensionLoaders.values()) {
       if (await aPackage.hasResource(loader.manifestFile)) {
@@ -553,6 +543,7 @@ var loadManifest = async function(aPackage, aLocation, aOldAddon) {
   }
 
   addon._sourceBundle = aPackage.file;
+  addon.rootURI = aPackage.rootURI.spec;
   addon.location = aLocation;
 
   let {signedState, cert} = await aPackage.verifySignedState(addon);
@@ -1957,7 +1948,7 @@ var DownloadAddonInstall = class extends AddonInstall {
 
 
 
-  onDataAvailable(aRequest, aInputstream, aOffset, aCount) {
+  onDataAvailable(aRequest, aContext, aInputstream, aOffset, aCount) {
     this.crypto.updateFromStream(aInputstream, aCount);
     this.progress += aCount;
     if (!this._callInstallListeners("onDownloadProgress")) {
@@ -2000,7 +1991,7 @@ var DownloadAddonInstall = class extends AddonInstall {
 
 
 
-  onStartRequest(aRequest) {
+  onStartRequest(aRequest, aContext) {
     if (this.hash) {
       try {
         this.crypto = CryptoHash(this.hash.algorithm);
@@ -2035,7 +2026,7 @@ var DownloadAddonInstall = class extends AddonInstall {
 
 
 
-  onStopRequest(aRequest, aStatus) {
+  onStopRequest(aRequest, aContext, aStatus) {
     this.stream.close();
     this.channel = null;
     this.badCerthandler = null;
@@ -3314,7 +3305,8 @@ var XPIInstall = {
           let newVersion = existingAddon.version;
           let reason = newVersionReason(existingAddon.version, newVersion);
 
-          XPIInternal.get(existingAddon).uninstall(reason, {newVersion});
+          XPIInternal.BootstrapScope.get(existingAddon)
+                     .uninstall(reason, {newVersion});
         }
       } catch (e) {
         Cu.reportError(e);
@@ -3669,7 +3661,7 @@ var XPIInstall = {
 
     
     let pkg = {
-      rootURI: Services.io.newURI("manifest.json", null, rootURI),
+      rootURI,
       filePath: baseURL,
       file: null,
       verifySignedState() {
