@@ -55,8 +55,6 @@ MISSING_CFG_KEY_MSG = "The key '%s' could not be determined \
 Please add this to your config."
 
 ERROR_MSGS = {
-    'undetermined_repo_path': 'The repo could not be determined. \
-Please make sure that "repo" is in your config.',
     'comments_undetermined': '"comments" could not be determined. This may be \
 because it was a forced build.',
     'tooltool_manifest_undetermined': '"tooltool_manifest_src" not set, \
@@ -638,7 +636,6 @@ class BuildScript(AutomationMixin,
             if not self.stage_platform:
                 self.error("'stage_platform' not determined and is required")
             self.fatal("Please add missing items to your config")
-        self.repo_path = None
         self.buildid = None
         self.query_buildid()  
         self.generated_build_props = False
@@ -798,24 +795,6 @@ or run without that action (ie: --no-{action})"
         self.objdir = self.config['objdir']
         return self.objdir
 
-    def _query_repo(self):
-        if self.repo_path:
-            return self.repo_path
-        c = self.config
-
-        
-        
-        
-        if not c.get('repo_path'):
-            repo_path = 'projects/%s' % (self.branch,)
-            self.info(
-                "repo_path not in config. Using '%s' instead" % (repo_path,)
-            )
-        else:
-            repo_path = c['repo_path']
-        self.repo_path = '%s/%s' % (c['repo_base'], repo_path,)
-        return self.repo_path
-
     def query_is_nightly_promotion(self):
         platform_enabled = self.config.get('enable_nightly_promotion')
         branch_enabled = self.branch in self.config.get('nightly_promotion_branches')
@@ -832,13 +811,6 @@ or run without that action (ie: --no-{action})"
 
         
         env['MOZ_BUILD_DATE'] = self.query_buildid()
-
-        
-        
-        
-        repo_path = self._query_repo()
-        assert repo_path
-        env['MOZ_SOURCE_REPO'] = repo_path
 
         if self.query_is_nightly() or self.query_is_nightly_promotion():
             
