@@ -17,8 +17,12 @@ public class INISection {
 
     
     private String mName;
-    public String getName() { return mName; }
-    public void setName(final String name) { mName = name; }
+    public String getName() {
+        return mName;
+    }
+    public void setName(final String name) {
+        mName = name;
+    }
 
     
     private  boolean mDebug;

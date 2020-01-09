@@ -48,8 +48,7 @@ public class GeckoMediaDrmBridgeV23 extends GeckoMediaDrmBridgeV21 {
     }
 
     @Override
-    protected void HandleKeyStatusChangeByDummyKey(final String sessionId)
-    {
+    protected void HandleKeyStatusChangeByDummyKey(final String sessionId) {
         
         
     }
