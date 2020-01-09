@@ -1,6 +1,6 @@
 
 
-StoragePrincipalHelper.runTest("IndexedDB",
+PartitionedStorageHelper.runTest("IndexedDB",
   async (win3rdParty, win1stParty, allowed) => {
     await new Promise(resolve => {
       let a = win1stParty.indexedDB.open("test", 1);
