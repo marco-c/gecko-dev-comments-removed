@@ -5,6 +5,20 @@
 
 
 
+
+
+
+
+const MozButton = customElements.get("button");
+class HighlightableButton extends MozButton {
+  static get inheritedAttributes() {
+    return Object.assign({}, super.inheritedAttributes, {
+      ".button-text": "text=label,accesskey,crop",
+    });
+  }
+}
+customElements.define("highlightable-button", HighlightableButton, {extends: "button"});
+
 var gSearchResultsPane = {
   listSearchTooltips: new Set(),
   listSearchMenuitemIndicators: new Set(),
@@ -405,8 +419,7 @@ var gSearchResultsPane = {
         this.listSearchMenuitemIndicators.add(menulist);
       }
 
-      if ((nodeObject.tagName == "button" ||
-           nodeObject.tagName == "menulist" ||
+      if ((nodeObject.tagName == "menulist" ||
            nodeObject.tagName == "menuitem") &&
            (labelResult || valueResult || keywordsResult)) {
         nodeObject.setAttribute("highlightable", "true");
