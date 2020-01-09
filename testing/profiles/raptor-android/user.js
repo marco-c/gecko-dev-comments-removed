@@ -1,5 +1,0 @@
-
-
-
-
-user_pref("browser.cache.disk.smart_size.enabled", true);
