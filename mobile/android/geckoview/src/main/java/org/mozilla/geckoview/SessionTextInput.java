@@ -114,6 +114,7 @@ public final class SessionTextInput {
                               String actionHint, int flag);
         void onSelectionChange();
         void onTextChange();
+        void onDiscardComposition();
         void onDefaultKeyEvent(KeyEvent event);
         void updateCompositionRects(final RectF[] aRects);
     }
@@ -210,15 +211,6 @@ public final class SessionTextInput {
                 
                 
                 
-                if (compositionStart < 0 && compositionEnd < 0 &&
-                    InputMethods.needsRestartInput(
-                        InputMethods.getCurrentInputMethod(view.getContext()))) {
-                    try {
-                        imm.restartInput(view);
-                    } catch (RuntimeException e) {
-                        Log.e(LOGTAG, "Error restarting input", e);
-                    }
-                }
                 imm.updateSelection(view, selStart, selEnd, compositionStart, compositionEnd);
             }
         }

@@ -342,6 +342,28 @@ import java.lang.reflect.Proxy;
         });
     }
 
+    @Override 
+    public void onDiscardComposition() {
+        final View view = getView();
+        if (view == null) {
+            return;
+        }
+
+        
+        
+        
+        if (!InputMethods.needsRestartInput(InputMethods.getCurrentInputMethod(view.getContext()))) {
+            return;
+        }
+
+        view.post(new Runnable() {
+            @Override
+            public void run() {
+                getInputDelegate().restartInput(mSession, GeckoSession.TextInputDelegate.RESTART_REASON_CONTENT_CHANGE);
+            }
+        });
+    }
+
     @TargetApi(21)
     @Override 
     public void updateCompositionRects(final RectF[] rects) {
