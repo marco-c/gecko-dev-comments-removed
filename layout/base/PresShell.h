@@ -696,6 +696,33 @@ class PresShell final : public nsIPresShell,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+    MOZ_CAN_RUN_SCRIPT
+    bool DispatchPrecedingPointerEvent(nsIFrame* aFrameForPresShell,
+                                       WidgetGUIEvent* aGUIEvent,
+                                       nsIContent* aPointerCapturingContent,
+                                       bool aDontRetargetEvents,
+                                       EventTargetData* aEventTargetData,
+                                       nsEventStatus* aEventStatus);
+
+    
+
+
+
+
+
+
+
     bool MaybeDiscardEvent(WidgetGUIEvent* aGUIEvent);
 
     
