@@ -72,7 +72,15 @@
 
 function waitForNotification(t, f) {
   requestAnimationFrame(function() {
-    requestAnimationFrame(function() { t.step_timeout(f); });
+    requestAnimationFrame(function() { t.step_timeout(f, 0); });
+  });
+}
+
+
+
+function waitForFrame(t, f) {
+  requestAnimationFrame(function() {
+    t.step_timeout(f, 0);
   });
 }
 
@@ -85,9 +93,19 @@ function waitForNotification(t, f) {
 
 
 
-function runTestCycle(f, description) {
+
+
+
+
+function runTestCycle(f, description, delay) {
   async_test(function(t) {
-    waitForNotification(t, t.step_func_done(f));
+    if (delay) {
+      step_timeout(() => {
+        waitForNotification(t, t.step_func_done(f));
+      }, delay);
+    } else {
+      waitForNotification(t, t.step_func_done(f));
+    }
   }, description);
 }
 
