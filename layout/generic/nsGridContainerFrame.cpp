@@ -7388,6 +7388,14 @@ void nsGridContainerFrame::UpdateSubgridFrameState() {
 
 nsFrameState nsGridContainerFrame::ComputeSelfSubgridBits() const {
   
+  
+  
+  auto* display = StyleDisplay();
+  if (display->IsContainLayout() || display->IsContainPaint()) {
+    return nsFrameState(0);
+  }
+
+  
   auto* parent = GetParent();
   while (parent && parent->GetContent() == GetContent()) {
     parent = parent->GetParent();

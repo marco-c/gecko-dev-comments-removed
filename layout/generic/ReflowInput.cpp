@@ -861,7 +861,8 @@ void ReflowInput::InitDynamicReflowRoot() {
   
   if (canBeDynamicReflowRoot &&
       (mStylePosition->GridTemplateColumns().mIsSubgrid ||
-       mStylePosition->GridTemplateRows().mIsSubgrid)) {
+       mStylePosition->GridTemplateRows().mIsSubgrid) &&
+      !(mStyleDisplay->IsContainLayout() || mStyleDisplay->IsContainPaint())) {
     
     
     canBeDynamicReflowRoot = false;
