@@ -1641,19 +1641,6 @@ class RTCPeerConnection {
     if (maxRetransmitTime !== undefined) {
       this.logWarning("Use maxPacketLifeTime instead of deprecated maxRetransmitTime which will stop working soon in createDataChannel!");
     }
-
-    if (protocol.length > 32767) {
-      
-      
-      
-      const byteCounter = new TextEncoder("utf-8");
-
-      if (byteCounter.encode(protocol).length > 65535) {
-        throw new this._win.DOMException(
-            "protocol cannot be longer than 65535 bytes", "TypeError");
-      }
-    }
-
     if (!negotiated) {
       id = null;
     } else if (id === null) {
