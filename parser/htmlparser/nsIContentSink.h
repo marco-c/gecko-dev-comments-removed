@@ -130,6 +130,8 @@ class nsIContentSink : public nsISupports {
 
 
   virtual void ContinueInterruptedParsingAsync() {}
+
+  virtual void InitialDocumentTranslationCompleted() {}
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIContentSink, NS_ICONTENT_SINK_IID)

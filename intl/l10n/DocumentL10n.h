@@ -11,10 +11,10 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/BindingDeclarations.h"
-#include "nsIDOMEventListener.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsWrapperCache.h"
 #include "mozilla/dom/Document.h"
+#include "nsIContentSink.h"
 #include "nsINode.h"
 #include "mozIDOMLocalization.h"
 #include "mozilla/dom/Promise.h"
@@ -41,7 +41,11 @@ class PromiseResolver final : public PromiseNativeHandler {
   RefPtr<Promise> mPromise;
 };
 
-enum class DocumentL10nState { Initialized = 0, InitialTranslationTriggered };
+enum class DocumentL10nState {
+  Initialized = 0,
+  InitialTranslationTriggered,
+  InitialTranslationCompleted
+};
 
 
 
@@ -53,11 +57,10 @@ enum class DocumentL10nState { Initialized = 0, InitialTranslationTriggered };
 
 
 
-class DocumentL10n final : public nsIDOMEventListener, public nsWrapperCache {
+class DocumentL10n final : public nsWrapperCache {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(DocumentL10n)
-  NS_DECL_NSIDOMEVENTLISTENER
+  NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(DocumentL10n)
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(DocumentL10n)
 
  public:
   explicit DocumentL10n(Document* aDocument);
@@ -70,6 +73,7 @@ class DocumentL10n final : public nsIDOMEventListener, public nsWrapperCache {
   RefPtr<Promise> mReady;
   DocumentL10nState mState;
   nsCOMPtr<mozIDOMLocalization> mDOMLocalization;
+  nsCOMPtr<nsIContentSink> mContentSink;
 
   already_AddRefed<Promise> MaybeWrapPromise(Promise* aPromise);
 
@@ -116,6 +120,8 @@ class DocumentL10n final : public nsIDOMEventListener, public nsWrapperCache {
   Promise* Ready();
 
   void TriggerInitialDocumentTranslation();
+
+  void InitialDocumentTranslationCompleted();
 };
 
 }  
