@@ -341,6 +341,58 @@ function edgeKillsVariable(edge, variable)
     return false;
 }
 
+function edgeMovesVariable(edge, variable)
+{
+    if (edge.Kind != 'Call')
+        return false;
+    const callee = edge.Exp[0];
+    if (callee.Kind == 'Var' &&
+        callee.Variable.Kind == 'Func')
+    {
+        const { Variable: { Name: [ fullname, shortname ] } } = callee;
+        const [ mangled, unmangled ] = splitFunction(fullname);
+        
+        if (unmangled.match(/::UniquePtr<[^>]*>::UniquePtr\((\w+::)*UniquePtr<[^>]*>&&/))
+            return true;
+    }
+
+    return false;
+}
+
+
+
+
+function bodyEatsVariable(variable, body, startpoint)
+{
+    const successors = getSuccessors(body);
+    const work = [startpoint];
+    while (work.length > 0) {
+        const point = work.shift();
+        if (!(point in successors))
+            continue;
+        for (const edge of successors[point]) {
+            if (edgeMovesVariable(edge, variable))
+                return true;
+            
+            
+            
+            
+            
+            if (!edgeKillsVariable(edge, variable))
+                work.push(edge.Index[1]);
+        }
+    }
+    return false;
+}
+
+
+
+
+
+
+
+
+
 
 
 
@@ -374,6 +426,27 @@ function edgeInvalidatesVariable(edge, variable, body)
     var callee = edge.Exp[0];
 
     if (edge.Type.Kind == 'Function' &&
+        edge.Exp[0].Kind == 'Var' &&
+        edge.Exp[0].Variable.Kind == 'Func' &&
+        edge.Exp[0].Variable.Name[1] == 'move' &&
+        edge.Exp[0].Variable.Name[0].includes('std::move(') &&
+        expressionIsVariable(edge.PEdgeCallArguments.Exp[0], variable) &&
+        edge.Exp[1].Kind == 'Var' &&
+        edge.Exp[1].Variable.Kind == 'Temp')
+    {
+        
+        
+        
+        
+        
+        
+        
+        const lhs = edge.Exp[1].Variable;
+        if (bodyEatsVariable(lhs, body, edge.Index[1]))
+            return true;
+    }
+
+    if (edge.Type.Kind == 'Function' &&
         edge.Type.TypeFunctionCSU &&
         edge.PEdgeCallInstance &&
         edge.PEdgeCallInstance.Exp.Kind == 'Var' &&
@@ -401,6 +474,24 @@ function edgeInvalidatesVariable(edge, variable, body)
             return true;
         }
     } while(0);
+
+    
+    if (edge.Type.Kind == 'Function' &&
+        edge.Type.TypeFunctionArgument &&
+        edge.PEdgeCallArguments)
+    {
+        for (const i in edge.Type.TypeFunctionArgument) {
+            const param = edge.Type.TypeFunctionArgument[i];
+            if (param.Type.Kind != 'CSU')
+                continue;
+            if (!param.Type.Name.startsWith("mozilla::UniquePtr<"))
+                continue;
+            const arg = edge.PEdgeCallArguments.Exp[i];
+            if (expressionIsVariable(arg, variable)) {
+                return true;
+            }
+        }
+    }
 
     return false;
 }
@@ -554,7 +645,7 @@ function findGCBeforeValueUse(start_body, start_point, suppressed, variable)
         for (var edge of predecessors[ppoint]) {
             var source = edge.Index[0];
 
-            if (edgeInvalidatesVariable(edge, variable)) {
+            if (edgeInvalidatesVariable(edge, variable, body)) {
                 
                 
                 
@@ -693,7 +784,7 @@ function variableLiveAcrossGC(suppressed, variable)
             
 
             
-            if (edgeInvalidatesVariable(edge, variable))
+            if (edgeInvalidatesVariable(edge, variable, body))
                 continue;
 
             var usePoint = edgeUsesVariable(edge, variable, body);
