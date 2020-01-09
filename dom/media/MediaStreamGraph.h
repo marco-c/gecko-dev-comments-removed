@@ -176,7 +176,6 @@ class DirectMediaStreamTrackListener;
 class MediaInputPort;
 class MediaStreamGraphImpl;
 class MediaStreamTrackListener;
-class MediaStreamVideoSink;
 class ProcessedMediaStream;
 class SourceMediaStream;
 class TrackUnionStream;
@@ -189,7 +188,6 @@ struct TrackBound {
   RefPtr<Listener> mListener;
   TrackID mTrackID;
 };
-
 
 
 
@@ -298,13 +296,6 @@ class MediaStream : public mozilla::LinkedListElement<MediaStream> {
   virtual void AddAudioOutput(void* aKey);
   virtual void SetAudioOutputVolume(void* aKey, float aVolume);
   virtual void RemoveAudioOutput(void* aKey);
-  
-  
-  
-  virtual void AddVideoOutput(MediaStreamVideoSink* aSink,
-                              TrackID aID = TRACK_ANY);
-  virtual void RemoveVideoOutput(MediaStreamVideoSink* aSink,
-                                 TrackID aID = TRACK_ANY);
   
   
   
@@ -421,9 +412,6 @@ class MediaStream : public mozilla::LinkedListElement<MediaStream> {
   void SetAudioOutputVolumeImpl(void* aKey, float aVolume);
   void AddAudioOutputImpl(void* aKey);
   void RemoveAudioOutputImpl(void* aKey);
-  void AddVideoOutputImpl(already_AddRefed<MediaStreamVideoSink> aSink,
-                          TrackID aID);
-  void RemoveVideoOutputImpl(MediaStreamVideoSink* aSink, TrackID aID);
 
   
 
@@ -566,7 +554,6 @@ class MediaStream : public mozilla::LinkedListElement<MediaStream> {
     float mVolume;
   };
   nsTArray<AudioOutput> mAudioOutputs;
-  nsTArray<TrackBound<MediaStreamVideoSink>> mVideoOutputs;
   
   
   VideoFrame mLastPlayedVideoFrame;

@@ -21,11 +21,7 @@ class CaptureTask::MediaStreamEventListener : public MediaStreamTrackListener {
       : mCaptureTask(aCaptureTask){};
 
   
-  void NotifyEnded() override {
-    if (!mCaptureTask->mImageGrabbedOrTrackEnd) {
-      mCaptureTask->PostTrackEndEvent();
-    }
-  }
+  void NotifyEnded() override { mCaptureTask->PostTrackEndEvent(); }
 
  private:
   CaptureTask* mCaptureTask;
@@ -94,10 +90,11 @@ void CaptureTask::PrincipalChanged(dom::MediaStreamTrack* aMediaStreamTrack) {
   mPrincipalChanged = true;
 }
 
-void CaptureTask::SetCurrentFrames(const VideoSegment& aSegment) {
-  if (mImageGrabbedOrTrackEnd) {
-    return;
-  }
+void CaptureTask::NotifyRealtimeTrackData(MediaStreamGraph* aGraph,
+                                          StreamTime aTrackOffset,
+                                          const MediaSegment& aMedia) {
+  MOZ_ASSERT(aMedia.GetType() == MediaSegment::VIDEO);
+  const VideoSegment& video = static_cast<const VideoSegment&>(aMedia);
 
   
   class EncodeComplete : public dom::EncodeCompleteCallback {
@@ -115,42 +112,50 @@ void CaptureTask::SetCurrentFrames(const VideoSegment& aSegment) {
     RefPtr<CaptureTask> mTask;
   };
 
-  for (VideoSegment::ConstChunkIterator iter(aSegment); !iter.IsEnded();
+  for (VideoSegment::ConstChunkIterator iter(video); !iter.IsEnded();
        iter.Next()) {
     VideoChunk chunk = *iter;
 
     
     VideoFrame frame;
-    if (!chunk.IsNull()) {
-      RefPtr<layers::Image> image;
-      if (chunk.mFrame.GetForceBlack()) {
-        
-        image = VideoFrame::CreateBlackImage(chunk.mFrame.GetIntrinsicSize());
-      } else {
-        image = chunk.mFrame.GetImage();
-      }
-      if (!image) {
-        MOZ_ASSERT(image);
-        continue;
-      }
-      mImageGrabbedOrTrackEnd = true;
+    if (chunk.IsNull()) {
+      continue;
+    }
 
+    RefPtr<layers::Image> image;
+    if (chunk.mFrame.GetForceBlack()) {
       
-      nsresult rv;
-      nsAutoString type(NS_LITERAL_STRING("image/jpeg"));
-      nsAutoString options;
-      rv = dom::ImageEncoder::ExtractDataFromLayersImageAsync(
-          type, options, false, image, false, new EncodeComplete(this));
-      if (NS_FAILED(rv)) {
-        PostTrackEndEvent();
-      }
+      image = VideoFrame::CreateBlackImage(chunk.mFrame.GetIntrinsicSize());
+    } else {
+      image = chunk.mFrame.GetImage();
+    }
+    if (!image) {
+      MOZ_ASSERT(image);
+      continue;
+    }
+
+    bool wasGrabbed = mImageGrabbedOrTrackEnd.exchange(true);
+    if (wasGrabbed) {
       return;
+    }
+
+    
+    nsresult rv;
+    nsAutoString type(NS_LITERAL_STRING("image/jpeg"));
+    nsAutoString options;
+    rv = dom::ImageEncoder::ExtractDataFromLayersImageAsync(
+        type, options, false, image, false, new EncodeComplete(this));
+    if (NS_FAILED(rv)) {
+      PostTrackEndEvent();
     }
   }
 }
 
 void CaptureTask::PostTrackEndEvent() {
-  mImageGrabbedOrTrackEnd = true;
+  bool wasGrabbed = mImageGrabbedOrTrackEnd.exchange(true);
+  if (wasGrabbed) {
+    return;
+  }
 
   
   class TrackEndRunnable : public Runnable {

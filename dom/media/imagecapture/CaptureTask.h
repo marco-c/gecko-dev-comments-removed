@@ -10,7 +10,6 @@
 #include "MediaStreamGraph.h"
 #include "MediaStreamListener.h"
 #include "PrincipalChangeObserver.h"
-#include "MediaStreamVideoSink.h"
 
 namespace mozilla {
 
@@ -30,14 +29,15 @@ class MediaStreamTrack;
 
 
 
-class CaptureTask : public MediaStreamVideoSink,
+class CaptureTask : public DirectMediaStreamTrackListener,
                     public dom::PrincipalChangeObserver<dom::MediaStreamTrack> {
  public:
   class MediaStreamEventListener;
 
   
-  void SetCurrentFrames(const VideoSegment& aSegment) override;
-  void ClearFrames() override {}
+  void NotifyRealtimeTrackData(MediaStreamGraph* aGraph,
+                               StreamTime aTrackOffset,
+                               const MediaSegment& aMedia) override;
 
   
   void PrincipalChanged(dom::MediaStreamTrack* aMediaStreamTrack) override;
@@ -78,7 +78,7 @@ class CaptureTask : public MediaStreamVideoSink,
 
   
   
-  bool mImageGrabbedOrTrackEnd;
+  Atomic<bool> mImageGrabbedOrTrackEnd;
 
   
   
