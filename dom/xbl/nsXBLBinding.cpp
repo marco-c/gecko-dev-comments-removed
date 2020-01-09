@@ -219,15 +219,7 @@ void nsXBLBinding::SetBoundElement(Element* aElement) {
   }
 
   
-  
-  
-  
-  
-  
-  nsCOMPtr<nsIGlobalObject> go = mBoundElement->OwnerDoc()->GetScopeObject();
-  NS_ENSURE_TRUE_VOID(go && go->GetGlobalJSObject());
-  mUsingContentXBLScope = xpc::UseContentXBLScope(
-      JS::GetObjectRealmOrNull(go->GetGlobalJSObject()));
+  mUsingContentXBLScope = false;
 }
 
 bool nsXBLBinding::HasStyleSheets() const {

@@ -79,15 +79,11 @@ XPCWrappedNativeScope::XPCWrappedNativeScope(JS::Compartment* aCompartment,
   
   
   
-  mAllowContentXBLScope = !RemoteXULForbidsXBLScope(aFirstGlobal);
-
   
-  mUseContentXBLScope = mAllowContentXBLScope;
-  if (mUseContentXBLScope) {
-    const js::Class* clasp = js::GetObjectClass(aFirstGlobal);
-    mUseContentXBLScope =
-        !AccessCheck::isChrome(mCompartment) && !strcmp(clasp->name, "Window");
-  }
+  
+  
+  
+  mAllowContentXBLScope = !RemoteXULForbidsXBLScope(aFirstGlobal);
 }
 
 
@@ -207,57 +203,9 @@ JSObject* XPCWrappedNativeScope::EnsureContentXBLScope(JSContext* cx) {
                     "nsXBLPrototypeScript compilation scope"));
 
   
-  if (!mUseContentXBLScope) {
-    return global;
-  }
-
   
   
-  
-  js::AssertCompartmentHasSingleRealm(Compartment());
-
-  
-  if (mContentXBLScope) {
-    return mContentXBLScope;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  SandboxOptions options;
-  options.wantXrays = false;
-  options.wantComponents = false;
-  options.proto = global;
-  options.sameZoneAs = global;
-  options.isContentXBLScope = true;
-
-  
-  nsIPrincipal* principal = xpc::GetObjectPrincipal(global);
-  MOZ_ASSERT(!nsContentUtils::IsExpandedPrincipal(principal));
-  nsTArray<nsCOMPtr<nsIPrincipal>> principalAsArray(1);
-  principalAsArray.AppendElement(principal);
-  RefPtr<ExpandedPrincipal> ep = ExpandedPrincipal::Create(
-      principalAsArray, principal->OriginAttributesRef());
-
-  
-  RootedValue v(cx);
-  nsresult rv = CreateSandboxObject(
-      cx, &v, static_cast<nsIExpandedPrincipal*>(ep), options);
-  NS_ENSURE_SUCCESS(rv, nullptr);
-  mContentXBLScope = &v.toObject();
-
-  MOZ_ASSERT(xpc::IsInContentXBLScope(js::UncheckedUnwrap(mContentXBLScope)));
-
-  
-  return mContentXBLScope;
+  return global;
 }
 
 bool XPCWrappedNativeScope::AllowContentXBLScope(Realm* aRealm) {
@@ -307,16 +255,6 @@ bool AllowContentXBLScope(JS::Realm* realm) {
   JS::Compartment* comp = GetCompartmentForRealm(realm);
   XPCWrappedNativeScope* scope = CompartmentPrivate::Get(comp)->scope;
   return scope && scope->AllowContentXBLScope(realm);
-}
-
-bool UseContentXBLScope(JS::Realm* realm) {
-  JS::Compartment* comp = GetCompartmentForRealm(realm);
-  XPCWrappedNativeScope* scope = CompartmentPrivate::Get(comp)->scope;
-  return scope && scope->UseContentXBLScope();
-}
-
-void ClearContentXBLScope(JSObject* global) {
-  CompartmentPrivate::Get(global)->scope->ClearContentXBLScope();
 }
 
 } 
@@ -414,22 +352,10 @@ void XPCWrappedNativeScope::UpdateWeakPointersAfterGC() {
   
   if (js::gc::AllRealmsNeedSweep(mCompartment)) {
     mCompartment = nullptr;
-    JSContext* cx = dom::danger::GetJSContext();
-    mContentXBLScope.finalize(cx);
     GetWrappedNativeMap()->Clear();
     mWrappedNativeProtoMap->Clear();
     return;
   }
-
-#ifdef DEBUG
-  
-  if (mContentXBLScope) {
-    JSObject* prev = mContentXBLScope.unbarrieredGet();
-    mContentXBLScope.updateWeakPointerAfterGC();
-    MOZ_ASSERT(prev == mContentXBLScope.unbarrieredGet());
-    MOZ_ASSERT_IF(prev, js::GetObjectCompartment(prev) == mCompartment);
-  }
-#endif
 
   
   

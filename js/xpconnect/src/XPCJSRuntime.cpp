@@ -637,6 +637,17 @@ JSObject* UnprivilegedJunkScope() {
   return XPCJSRuntime::Get()->UnprivilegedJunkScope();
 }
 
+JSObject* NACScope(JSObject* global) {
+  
+  if (AccessCheck::isChrome(global)) {
+    return global;
+  }
+
+  JSObject* scope = UnprivilegedJunkScope();
+  JS::ExposeObjectToActiveJS(scope);
+  return scope;
+}
+
 JSObject* PrivilegedJunkScope() { return XPCJSRuntime::Get()->LoaderGlobal(); }
 
 JSObject* CompilationScope() { return XPCJSRuntime::Get()->LoaderGlobal(); }

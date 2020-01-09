@@ -4759,22 +4759,11 @@ inline mozilla::dom::Document* nsINode::GetOwnerDocument() const {
 
 inline nsINode* nsINode::OwnerDocAsNode() const { return OwnerDoc(); }
 
-
-
-
-
-
-
-
-
-
-template <typename T>
-inline bool ShouldUseXBLScope(const T* aNode) {
-  return aNode->IsInAnonymousSubtree();
+inline bool ShouldUseNACScope(const nsINode* aNode) {
+  return aNode->IsInNativeAnonymousSubtree();
 }
 
-template <typename T>
-inline bool ShouldUseUAWidgetScope(const T* aNode) {
+inline bool ShouldUseUAWidgetScope(const nsINode* aNode) {
   return aNode->IsInUAWidget();
 }
 
@@ -4782,8 +4771,8 @@ inline mozilla::dom::ParentObject nsINode::GetParentObject() const {
   mozilla::dom::ParentObject p(OwnerDoc());
   
   
-  if (ShouldUseXBLScope(this)) {
-    p.mReflectionScope = mozilla::dom::ReflectionScope::XBL;
+  if (ShouldUseNACScope(this)) {
+    p.mReflectionScope = mozilla::dom::ReflectionScope::NAC;
   } else if (ShouldUseUAWidgetScope(this)) {
     p.mReflectionScope = mozilla::dom::ReflectionScope::UAWidget;
   }

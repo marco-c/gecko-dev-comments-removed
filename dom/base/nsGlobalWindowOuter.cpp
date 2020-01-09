@@ -1994,9 +1994,6 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
     if (aDocument != oldDoc) {
       JS::SetRealmPrincipals(realm,
                              nsJSPrincipals::get(aDocument->NodePrincipal()));
-      
-      
-      xpc::ClearContentXBLScope(newInnerGlobal);
     }
   } else {
     if (aState) {

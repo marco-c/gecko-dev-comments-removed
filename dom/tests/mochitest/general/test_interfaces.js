@@ -25,7 +25,6 @@
 
 
 
-
 const version = SpecialPowers.Cc["@mozilla.org/xre/app-info;1"].getService(SpecialPowers.Ci.nsIXULAppInfo).version;
 const isNightly = version.endsWith("a1");
 const isEarlyBetaOrEarlier = SpecialPowers.EARLY_BETA_OR_EARLIER;
@@ -176,8 +175,6 @@ var interfaceNamesInGlobalScope =
 
     {name: "BlobEvent", insecureContext: true},
 
-    {name: "BoxObject", insecureContext: true, xbl: true},
-
     {name: "BroadcastChannel", insecureContext: true},
 
     {name: "Cache", insecureContext: true},
@@ -202,15 +199,11 @@ var interfaceNamesInGlobalScope =
 
     {name: "CharacterData", insecureContext: true},
 
-    {name: "ChromeNodeList", insecureContext: true, xbl: true},
-
     {name: "Clipboard"},
 
     {name: "ClipboardEvent", insecureContext: true},
 
     {name: "CloseEvent", insecureContext: true},
-
-    {name: "CommandEvent", insecureContext: true, xbl: true},
 
     {name: "Comment", insecureContext: true},
 
@@ -892,9 +885,7 @@ var interfaceNamesInGlobalScope =
 
     {name: "SharedWorker", insecureContext: true},
 
-    {name: "SimpleGestureEvent", insecureContext: true, xbl: true},
-
-    {name: "SimpleTest", insecureContext: true, xbl: false},
+    {name: "SimpleTest", insecureContext: true},
 
     {name: "SourceBuffer", insecureContext: true},
 
@@ -910,7 +901,7 @@ var interfaceNamesInGlobalScope =
 
     {name: "SpeechSynthesisVoice", insecureContext: true},
 
-    {name: "SpecialPowers", insecureContext: true, xbl: false},
+    {name: "SpecialPowers", insecureContext: true},
 
     {name: "StereoPannerNode", insecureContext: true},
 
@@ -1154,12 +1145,6 @@ var interfaceNamesInGlobalScope =
 
     {name: "TransitionEvent", insecureContext: true},
 
-    {name: "TreeColumn", insecureContext: true, xbl: true},
-
-    {name: "TreeColumns", insecureContext: true, xbl: true},
-
-    {name: "TreeContentView", insecureContext: true, xbl: true},
-
     {name: "TreeWalker", insecureContext: true},
 
     {name: "U2F", insecureContext: true, disabled: true},
@@ -1268,26 +1253,10 @@ var interfaceNamesInGlobalScope =
 
     {name: "XSLTProcessor", insecureContext: true},
 
-    {name: "XULCommandEvent", insecureContext: true, xbl: true},
-
-    {name: "XULDocument", insecureContext: true, xbl: true},
-
-    {name: "XULElement", insecureContext: true, xbl: true},
-
-    {name: "XULFrameElement", insecureContext: true, xbl: true},
-
-    {name: "XULMenuElement", insecureContext: true, xbl: true},
-
-    {name: "XULPopupElement", insecureContext: true, xbl: true},
-
-    {name: "XULTextElement", insecureContext: true, xbl: true},
-
-    {name: "XULTreeElement", insecureContext: true, xbl: true},
-
   ];
 
 
-function createInterfaceMap(isXBLScope) {
+function createInterfaceMap() {
   var interfaceMap = {};
 
   function addInterfaces(interfaces)
@@ -1299,7 +1268,6 @@ function createInterfaceMap(isXBLScope) {
         ok(!("pref" in entry), "Bogus pref annotation for " + entry.name);
         if ((entry.nightly === !isNightly) ||
             (entry.nightlyAndroid === !(isAndroid && isNightly) && isAndroid) ||
-            (entry.xbl === !isXBLScope) ||
             (entry.desktop === !isDesktop) ||
             (entry.windows === !isWindows) ||
             (entry.mac === !isMac) ||
@@ -1330,8 +1298,8 @@ function createInterfaceMap(isXBLScope) {
   return interfaceMap;
 }
 
-function runTest(isXBLScope) {
-  var interfaceMap = createInterfaceMap(isXBLScope);
+function runTest() {
+  var interfaceMap = createInterfaceMap();
   for (var name of Object.getOwnPropertyNames(window)) {
     
     
@@ -1341,19 +1309,19 @@ function runTest(isXBLScope) {
     }
     ok(interfaceMap[name],
        "If this is failing: DANGER, are you sure you want to expose the new interface " + name +
-       " to all webpages as a property on the window (XBL: " + isXBLScope + ")? Do not make a change to this file without a " +
+       " to all webpages as a property on the window? Do not make a change to this file without a " +
        " review from a DOM peer for that specific change!!! (or a JS peer for changes to ecmaGlobals)");
 
     ok(name in window,
-       `${name} is exposed as an own property on the window but tests false for "in" in the ${isXBLScope ? "XBL" : "global"} scope`);
+       `${name} is exposed as an own property on the window but tests false for "in" in the global scope`);
     ok(Object.getOwnPropertyDescriptor(window, name),
-       `${name} is exposed as an own property on the window but has no property descriptor in the ${isXBLScope ? "XBL" : "global"} scope`);
+       `${name} is exposed as an own property on the window but has no property descriptor in the global scope`);
 
     delete interfaceMap[name];
   }
   for (var name of Object.keys(interfaceMap)) {
     ok(name in window === interfaceMap[name],
-       name + " should " + (interfaceMap[name] ? "" : " NOT") + " be defined on the " + (isXBLScope ? "XBL" : "global") +" scope");
+       name + " should " + (interfaceMap[name] ? "" : " NOT") + " be defined on the global scope");
     if (!interfaceMap[name]) {
       delete interfaceMap[name];
     }
@@ -1362,5 +1330,4 @@ function runTest(isXBLScope) {
      "The following interface(s) are not enumerated: " + Object.keys(interfaceMap).join(", "));
 }
 
-runTest(false);
-SimpleTest.waitForExplicitFinish();
+runTest();

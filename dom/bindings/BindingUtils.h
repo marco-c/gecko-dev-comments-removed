@@ -1621,18 +1621,8 @@ static inline JSObject* FindAssociatedGlobal(
   obj = JS::GetNonCCWObjectGlobal(obj);
 
   switch (scope) {
-    case mozilla::dom::ReflectionScope::XBL: {
-      
-      
-      
-      if (xpc::IsInContentXBLScope(obj)) {
-        return obj;
-      }
-      JS::Rooted<JSObject*> rootedObj(cx, obj);
-      JSObject* xblScope = xpc::GetXBLScope(cx, rootedObj);
-      MOZ_ASSERT_IF(xblScope, JS_IsGlobalObject(xblScope));
-      JS::AssertObjectIsNotGray(xblScope);
-      return xblScope;
+    case mozilla::dom::ReflectionScope::NAC: {
+      return xpc::NACScope(obj);
     }
 
     case mozilla::dom::ReflectionScope::UAWidget: {

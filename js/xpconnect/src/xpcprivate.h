@@ -842,9 +842,6 @@ class XPCWrappedNativeScope final {
   static void TraceWrappedNativesInAllScopes(JSTracer* trc);
 
   void TraceInside(JSTracer* trc) {
-    if (mContentXBLScope) {
-      mContentXBLScope.trace(trc, "XPCWrappedNativeScope::mXBLScope");
-    }
     if (mXrayExpandos.initialized()) {
       mXrayExpandos.trace(trc);
     }
@@ -915,8 +912,6 @@ class XPCWrappedNativeScope final {
     return xpc::IsContentXBLCompartment(Compartment());
   }
   bool AllowContentXBLScope(JS::Realm* aRealm);
-  bool UseContentXBLScope() { return mUseContentXBLScope; }
-  void ClearContentXBLScope() { mContentXBLScope = nullptr; }
 
   
   JS::ObjectPtr mIDProto;
@@ -938,26 +933,12 @@ class XPCWrappedNativeScope final {
   XPCWrappedNativeScope* mNext;
   JS::Compartment* mCompartment;
 
-  
-  
-  
-  JS::ObjectPtr mContentXBLScope;
-
   JS::WeakMapPtr<JSObject*, JSObject*> mXrayExpandos;
 
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
   bool mAllowContentXBLScope;
-  bool mUseContentXBLScope;
 };
 
 

@@ -131,13 +131,7 @@ bool AllowContentXBLScope(JS::Realm* realm);
 
 
 
-
-
-bool UseContentXBLScope(JS::Realm* realm);
-
-
-
-void ClearContentXBLScope(JSObject* global);
+JSObject* NACScope(JSObject* global);
 
 bool IsSandboxPrototypeProxy(JSObject* obj);
 
