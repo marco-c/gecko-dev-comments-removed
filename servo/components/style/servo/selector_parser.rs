@@ -345,7 +345,6 @@ impl NonTSPseudoClass {
     
     pub fn state_flag(&self) -> ElementState {
         use self::NonTSPseudoClass::*;
-        use crate::element_state::ElementState;
         match *self {
             Active => ElementState::IN_ACTIVE_STATE,
             Focus => ElementState::IN_FOCUS_STATE,
