@@ -1277,6 +1277,18 @@ void Accessible::ApplyARIAState(uint64_t* aState) const {
         break;
       }
     }
+  } else {
+    
+    
+    
+    
+    
+    
+    
+    
+    if (FocusMgr()->IsActiveItem(this)) {
+      *aState |= states::FOCUSABLE;
+    }
   }
 
   
