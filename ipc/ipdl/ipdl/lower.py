@@ -763,6 +763,16 @@ class _CompoundTypeComponent(_HybridDecl):
 
 
 class StructDecl(ipdl.ast.StructDecl, HasFQName):
+    def fields_ipdl_order(self):
+        for f in self.fields:
+            yield f
+
+    def fields_member_order(self):
+        assert len(self.packed_field_order) == len(self.fields)
+
+        for i in self.packed_field_order:
+            yield self.fields[i]
+
     @staticmethod
     def upgrade(structDecl):
         assert isinstance(structDecl, ipdl.ast.StructDecl)
@@ -2054,7 +2064,9 @@ class _ParamTraits():
         write = []
         read = []
 
-        for f in sd.fields:
+        
+        
+        for f in sd.fields_member_order():
             writefield = cls.checkedWrite(f.ipdltype,
                                           get('.', f),
                                           cls.msgvar,
@@ -2290,12 +2302,14 @@ def _generateCxxStruct(sd):
     constreftype = Type(sd.name, const=True, ref=True)
 
     def fieldsAsParamList():
-        return [Decl(f.inType(), f.argVar().name) for f in sd.fields]
+        return [Decl(f.inType(), f.argVar().name) for f in sd.fields_ipdl_order()]
 
     
     
     
     if len(sd.fields):
+        assert len(sd.fields) == len(sd.packed_field_order)
+
         
         defctor = ConstructorDefn(ConstructorDecl(sd.name, force_inline=True))
 
@@ -2304,7 +2318,8 @@ def _generateCxxStruct(sd):
         
         
         
-        defctor.memberinits = [ExprMemberInit(f.memberVar()) for f in sd.fields]
+        defctor.memberinits = [ExprMemberInit(f.memberVar())
+                               for f in sd.fields_member_order()]
         struct.addstmts([defctor, Whitespace.NL])
 
     
@@ -2313,7 +2328,7 @@ def _generateCxxStruct(sd):
                                               force_inline=True))
     valctor.memberinits = [ExprMemberInit(f.memberVar(),
                                           args=[f.argVar()])
-                           for f in sd.fields]
+                           for f in sd.fields_member_order()]
     struct.addstmts([valctor, Whitespace.NL])
 
     
@@ -2326,7 +2341,7 @@ def _generateCxxStruct(sd):
         params=[Decl(constreftype, ovar.name)],
         ret=Type.BOOL,
         const=True))
-    for f in sd.fields:
+    for f in sd.fields_ipdl_order():
         ifneq = StmtIf(ExprNot(
             ExprBinary(ExprCall(f.getMethod()), '==',
                        ExprCall(f.getMethod(ovar)))))
@@ -2347,7 +2362,7 @@ def _generateCxxStruct(sd):
 
     
     
-    for f in sd.fields:
+    for f in sd.fields_ipdl_order():
         get = MethodDefn(MethodDecl(f.getMethod().name,
                                     params=[],
                                     ret=f.refType(),
@@ -2367,7 +2382,7 @@ def _generateCxxStruct(sd):
 
     
     struct.addstmts([StmtDecl(Decl(f.bareType(), f.memberVar().name))
-                     for f in sd.fields])
+                     for f in sd.fields_member_order()])
 
     return forwarddeclstmts, fulldecltypes, struct
 
