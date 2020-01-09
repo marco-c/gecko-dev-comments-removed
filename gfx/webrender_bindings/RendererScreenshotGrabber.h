@@ -45,7 +45,10 @@ class RendererScreenshotGrabber final {
   
 
 
-  void Destroy();
+
+
+
+  void Destroy(Renderer* aRenderer);
 
   
 
