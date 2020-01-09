@@ -79,7 +79,7 @@ void SelectionManager::SetControlSelectionListener(dom::Element* aFocusedElm) {
   mCurrCtrlSpellSel = spellSel;
 }
 
-void SelectionManager::AddDocSelectionListener(nsIPresShell* aPresShell) {
+void SelectionManager::AddDocSelectionListener(PresShell* aPresShell) {
   const nsFrameSelection* frameSel = aPresShell->ConstFrameSelection();
 
   
@@ -91,7 +91,7 @@ void SelectionManager::AddDocSelectionListener(nsIPresShell* aPresShell) {
   spellSel->AddSelectionListener(this);
 }
 
-void SelectionManager::RemoveDocSelectionListener(nsIPresShell* aPresShell) {
+void SelectionManager::RemoveDocSelectionListener(PresShell* aPresShell) {
   const nsFrameSelection* frameSel = aPresShell->ConstFrameSelection();
 
   

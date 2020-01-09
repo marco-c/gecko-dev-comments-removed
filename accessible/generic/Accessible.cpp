@@ -1829,7 +1829,7 @@ void Accessible::DispatchClickEvent(nsIContent* aContent,
                                     uint32_t aActionIndex) const {
   if (IsDefunct()) return;
 
-  nsCOMPtr<nsIPresShell> presShell = mDoc->PresShell();
+  RefPtr<PresShell> presShell = mDoc->PresShellPtr();
 
   
   presShell->ScrollContentIntoView(aContent, nsIPresShell::ScrollAxis(),

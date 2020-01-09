@@ -20,6 +20,9 @@
 #endif
 
 namespace mozilla {
+
+class PresShell;
+
 namespace a11y {
 
 class DocAccessible;
@@ -89,7 +92,7 @@ class TNotification : public Notification {
 class NotificationController final : public EventQueue,
                                      public nsARefreshObserver {
  public:
-  NotificationController(DocAccessible* aDocument, nsIPresShell* aPresShell);
+  NotificationController(DocAccessible* aDocument, PresShell* aPresShell);
 
   NS_IMETHOD_(MozExternalRefCountType) AddRef(void) override;
   NS_IMETHOD_(MozExternalRefCountType) Release(void) override;
@@ -334,7 +337,7 @@ class NotificationController final : public EventQueue,
   
 
 
-  nsIPresShell* mPresShell;
+  PresShell* mPresShell;
 
   
 

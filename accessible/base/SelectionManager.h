@@ -10,9 +10,9 @@
 #include "nsISelectionListener.h"
 #include "mozilla/WeakPtr.h"
 
-class nsIPresShell;
-
 namespace mozilla {
+
+class PresShell;
 
 namespace dom {
 class Element;
@@ -70,12 +70,12 @@ class SelectionManager : public nsISelectionListener {
   
 
 
-  void AddDocSelectionListener(nsIPresShell* aPresShell);
+  void AddDocSelectionListener(PresShell* aPresShell);
 
   
 
 
-  void RemoveDocSelectionListener(nsIPresShell* aShell);
+  void RemoveDocSelectionListener(PresShell* aPresShell);
 
   
 

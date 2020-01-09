@@ -59,7 +59,7 @@ NS_IMPL_ISUPPORTS_INHERITED(RootAccessible, DocAccessible, nsIDOMEventListener)
 
 
 
-RootAccessible::RootAccessible(Document* aDocument, nsIPresShell* aPresShell)
+RootAccessible::RootAccessible(Document* aDocument, PresShell* aPresShell)
     : DocAccessibleWrap(aDocument, aPresShell) {
   mType = eRootType;
 }
@@ -444,8 +444,9 @@ void RootAccessible::ProcessDOMEvent(Event* aDOMEvent, nsINode* aTarget) {
 
 void RootAccessible::Shutdown() {
   
-  if (!PresShell()) return;  
-
+  if (HasShutdown()) {
+    return;
+  }
   DocAccessibleWrap::Shutdown();
 }
 

@@ -158,38 +158,38 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
 
 
 
-  void DeckPanelSwitched(nsIPresShell* aPresShell, nsIContent* aDeckNode,
+  void DeckPanelSwitched(mozilla::PresShell* aPresShell, nsIContent* aDeckNode,
                          nsIFrame* aPrevBoxFrame, nsIFrame* aCurrentBoxFrame);
 
   
 
 
 
-  void ContentRangeInserted(nsIPresShell* aPresShell, nsIContent* aStartChild,
-                            nsIContent* aEndChild);
+  void ContentRangeInserted(mozilla::PresShell* aPresShell,
+                            nsIContent* aStartChild, nsIContent* aEndChild);
 
   
 
 
-  void ContentRemoved(nsIPresShell* aPresShell, nsIContent* aChild);
+  void ContentRemoved(mozilla::PresShell* aPresShell, nsIContent* aChild);
 
-  void UpdateText(nsIPresShell* aPresShell, nsIContent* aContent);
+  void UpdateText(mozilla::PresShell* aPresShell, nsIContent* aContent);
 
   
 
 
-  void TreeViewChanged(nsIPresShell* aPresShell, nsIContent* aContent,
+  void TreeViewChanged(mozilla::PresShell* aPresShell, nsIContent* aContent,
                        nsITreeView* aView);
 
   
 
 
-  void RangeValueChanged(nsIPresShell* aPresShell, nsIContent* aContent);
+  void RangeValueChanged(mozilla::PresShell* aPresShell, nsIContent* aContent);
 
   
 
 
-  void UpdateListBullet(nsIPresShell* aPresShell,
+  void UpdateListBullet(mozilla::PresShell* aPresShell,
                         nsIContent* aHTMLListItemContent, bool aHasBullet);
 
   
@@ -200,7 +200,7 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
   
 
 
-  void UpdateLabelValue(nsIPresShell* aPresShell, nsIContent* aLabelElm,
+  void UpdateLabelValue(mozilla::PresShell* aPresShell, nsIContent* aLabelElm,
                         const nsString& aNewValue);
 
   
@@ -212,12 +212,12 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
   
 
 
-  void PresShellActivated(nsIPresShell* aPresShell);
+  void PresShellActivated(mozilla::PresShell* aPresShell);
 
   
 
 
-  void RecreateAccessible(nsIPresShell* aPresShell, nsIContent* aContent);
+  void RecreateAccessible(mozilla::PresShell* aPresShell, nsIContent* aContent);
 
   void FireAccessibleEvent(uint32_t aEvent, Accessible* aTarget);
 

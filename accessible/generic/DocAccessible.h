@@ -27,6 +27,7 @@ const uint32_t kDefaultCacheLength = 128;
 
 namespace mozilla {
 
+class PresShell;
 class TextEditor;
 
 namespace dom {
@@ -58,7 +59,7 @@ class DocAccessible : public HyperTextAccessibleWrap,
   typedef mozilla::dom::Document Document;
 
  public:
-  DocAccessible(Document* aDocument, nsIPresShell* aPresShell);
+  DocAccessible(Document* aDocument, PresShell* aPresShell);
 
   
   virtual void ScrollPositionWillChange(nscoord aX, nscoord aY) override {}
@@ -127,7 +128,15 @@ class DocAccessible : public HyperTextAccessibleWrap,
   
 
 
-  nsIPresShell* PresShell() const { return mPresShell; }
+  bool HasShutdown() const { return !mPresShell; }
+
+  
+
+
+  PresShell* PresShellPtr() const {
+    MOZ_DIAGNOSTIC_ASSERT(!HasShutdown());
+    return mPresShell;
+  }
 
   
 
@@ -710,7 +719,7 @@ class DocAccessible : public HyperTextAccessibleWrap,
   friend class NotificationController;
 
  private:
-  nsIPresShell* mPresShell;
+  PresShell* mPresShell;
 
   
   DocAccessibleChild* mIPCDoc;
