@@ -2724,8 +2724,8 @@ SearchService.prototype = {
   
   
   get originalDefaultEngine() {
-    let defaultEngine = this.getVerifiedGlobalAttr("searchDefault");
-    if (!defaultEngine) {
+    let defaultEngineName = this.getVerifiedGlobalAttr("searchDefault");
+    if (!defaultEngineName) {
       
       
       
@@ -2734,21 +2734,28 @@ SearchService.prototype = {
         let nsIPLS = Ci.nsIPrefLocalizedString;
 
         try {
-          defaultEngine = defaultPrefB.getComplexValue("defaultenginename", nsIPLS).data;
+          defaultEngineName = defaultPrefB.getComplexValue("defaultenginename", nsIPLS).data;
         } catch (ex) {
           
           
           
           
           
-          defaultEngine = this._searchDefault;
+          defaultEngineName = this._searchDefault;
         }
       } else {
-        defaultEngine = this._searchDefault;
+        defaultEngineName = this._searchDefault;
       }
     }
 
-    return this.getEngineByName(defaultEngine);
+    let defaultEngine = this.getEngineByName(defaultEngineName);
+    if (!defaultEngine) {
+      
+      
+      return this._getSortedEngines(false)[0];
+    }
+
+    return defaultEngine;
   },
 
   resetToOriginalDefaultEngine: function SRCH_SVC__resetToOriginalDefaultEngine() {
