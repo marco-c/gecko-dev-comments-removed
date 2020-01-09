@@ -145,6 +145,16 @@ uint64_t WindowGlobalChild::ContentParentId() {
   return ContentChild::GetSingleton()->GetID();
 }
 
+
+
+bool WindowGlobalChild::IsProcessRoot() {
+  if (!BrowsingContext()->GetParent()) {
+    return true;
+  }
+
+  return !BrowsingContext()->GetEmbedderElement();
+}
+
 void WindowGlobalChild::Destroy() {
   
   

@@ -156,6 +156,18 @@ uint64_t WindowGlobalParent::ContentParentId() {
   return browserParent ? browserParent->Manager()->ChildID() : 0;
 }
 
+
+
+bool WindowGlobalParent::IsProcessRoot() {
+  if (!BrowsingContext()->GetParent()) {
+    return true;
+  }
+
+  auto* embedder = BrowsingContext()->GetEmbedderWindowGlobal();
+  MOZ_ASSERT(embedder, "This should be set before we were created");
+  return ContentParentId() != embedder->ContentParentId();
+}
+
 IPCResult WindowGlobalParent::RecvUpdateDocumentURI(nsIURI* aURI) {
   
   

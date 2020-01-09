@@ -65,6 +65,8 @@ class WindowGlobalChild final : public WindowGlobalActor,
 
   bool IsCurrentGlobal();
 
+  bool IsProcessRoot();
+
   
   
   already_AddRefed<WindowGlobalParent> GetParentActor();
