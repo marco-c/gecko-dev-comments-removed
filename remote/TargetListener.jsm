@@ -53,8 +53,15 @@ class TargetListener {
     this.sessions.clear();
   }
 
+  
+
+
+
+
+
+
   onConnectionAccepted(transport, listener) {
-    const conn = new Connection(this.nextConnID++, transport, listener);
+    const conn = new Connection(this.nextConnID++, transport);
     transport.ready();
     this.sessions.set(conn, new Session(conn, this.target));
   }
