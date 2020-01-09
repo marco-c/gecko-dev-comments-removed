@@ -113,11 +113,17 @@ ToolbarKeyboardNavigator = {
     
     
     
+    
     aButton.addEventListener("blur", this);
   },
 
   _onButtonBlur(aEvent) {
     if (document.activeElement == aEvent.target) {
+      
+      
+      return;
+    }
+    if (aEvent.target.getAttribute("open") == "true") {
       
       
       return;
