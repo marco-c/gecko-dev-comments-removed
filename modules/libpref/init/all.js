@@ -285,6 +285,10 @@ pref("ui.menu.incremental_search.timeout", 1000);
 
 pref("ui.popup.disable_autohide", false);
 
+#ifdef XP_MACOSX
+pref("ui.touchbar.layout", "Back,Reload,OpenOrFocus,AddBookmark,NewTab,Share");
+#endif
+
 pref("browser.display.use_document_fonts",  1);  
 
 

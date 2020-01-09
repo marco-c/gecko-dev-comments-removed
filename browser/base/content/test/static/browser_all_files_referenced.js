@@ -48,8 +48,10 @@ var gExceptionPaths = [
 
 
 
-if (AppConstants.platform == "macosx")
+if (AppConstants.platform == "macosx") {
   gExceptionPaths.push("resource://gre/res/cursors/");
+  gExceptionPaths.push("resource://gre/res/touchbar/");
+}
 
 var whitelist = [
   
