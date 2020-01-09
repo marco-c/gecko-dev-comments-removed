@@ -27,13 +27,13 @@ const startupPhases = {
   
   "before profile selection": {whitelist: {
     components: new Set([
-      "nsBrowserGlue.js",
       "MainProcessSingleton.js",
 
       
       "PushComponents.js", 
     ]),
     modules: new Set([
+      "resource:///modules/BrowserGlue.jsm",
       "resource://gre/modules/AppConstants.jsm",
       "resource://gre/modules/ActorManagerParent.jsm",
       "resource://gre/modules/CustomElementsListener.jsm",
