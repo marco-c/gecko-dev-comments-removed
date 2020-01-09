@@ -2662,8 +2662,14 @@ void TypeZone::addPendingRecompile(JSContext* cx, const RecompileInfo& info) {
             info.script()->filename(), info.script()->lineno());
 
   AutoEnterOOMUnsafeRegion oomUnsafe;
-  if (!cx->zone()->types.activeAnalysis->pendingRecompiles.append(info)) {
-    oomUnsafe.crash("Could not update pendingRecompiles");
+  RecompileInfoVector& vector =
+      cx->zone()->types.activeAnalysis->pendingRecompiles;
+  if (!vector.append(info)) {
+    
+    
+    
+    size_t allocSize = 2 * sizeof(RecompileInfo) * vector.capacity();
+    oomUnsafe.crash(allocSize, "Could not update pendingRecompiles");
   }
 }
 
