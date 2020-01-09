@@ -1214,24 +1214,6 @@ void SVGElement::UpdateContentDeclarationBlock() {
       continue;  
     }
 
-    if (IsSVGElement(nsGkAtoms::svg)) {
-      
-      
-      
-      
-      
-      
-      
-      if (attrName->Atom() == nsGkAtoms::width &&
-          !GetAnimatedLength(nsGkAtoms::width)->HasBaseVal()) {
-        continue;
-      }
-      if (attrName->Atom() == nsGkAtoms::height &&
-          !GetAnimatedLength(nsGkAtoms::height)->HasBaseVal()) {
-        continue;
-      }
-    }
-
     if (lengthAffectsStyle) {
       auto const* length = GetAnimatedLength(attrName->Atom());
 
