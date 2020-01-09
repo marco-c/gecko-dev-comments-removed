@@ -830,7 +830,6 @@ var LoginManagerContent = {
       
       
       
-
       for (var i = pwFields[0].index - 1; i >= 0; i--) {
         var element = form.elements[i];
         if (!LoginHelper.isUsernameFieldType(element)) {
@@ -850,10 +849,10 @@ var LoginManagerContent = {
     if (!usernameField) {
       log("(form -- no username field found)");
     } else {
-      let acFieldName = usernameField.getAutocompleteInfo().fieldName;
-      log("Username field ", usernameField, "has name/value/autocomplete:",
-          usernameField.name, "/", usernameField.value, "/", acFieldName);
+      log("Username field ", usernameField, "has name/value:",
+          usernameField.name, "/", usernameField.value);
     }
+
     
     
     
