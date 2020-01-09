@@ -3,6 +3,8 @@
 
 
 
+
+import { setBreakpointPositions } from "./breakpointPositions";
 import {
   locationMoved,
   createBreakpoint,
@@ -16,6 +18,8 @@ import { getGeneratedLocation } from "../../utils/source-maps";
 import { getTextAtPosition } from "../../utils/source";
 import { originalToGeneratedId, isOriginalId } from "devtools-source-map";
 import { getSource, getSourceActors } from "../../selectors";
+import { features } from "../../utils/prefs";
+
 import type { ThunkArgs, Action } from "../types";
 
 import type {
@@ -75,6 +79,7 @@ export async function syncBreakpointPromise(
   getState: Function,
   client: Object,
   sourceMaps: Object,
+  dispatch: Function,
   sourceId: SourceId,
   pendingBreakpoint: PendingBreakpoint
 ): Promise<BreakpointSyncData | null> {
@@ -121,10 +126,19 @@ export async function syncBreakpointPromise(
   );
 
   const sourceActors = getSourceActors(getState(), sourceId);
+  let possiblePosition = true;
+  if (features.columnBreakpoints && generatedLocation.column != undefined) {
+    const { positions } = await dispatch(
+      setBreakpointPositions(generatedLocation)
+    );
+    if (!positions.includes(generatedLocation.column)) {
+      possiblePosition = false;
+    }
+  }
 
   
   
-  if (pendingBreakpoint.disabled || isSameLocation) {
+  if (possiblePosition && (pendingBreakpoint.disabled || isSameLocation)) {
     
     if (!pendingBreakpoint.disabled) {
       for (const sourceActor of sourceActors) {
@@ -166,13 +180,13 @@ export async function syncBreakpointPromise(
     }
   }
 
-  
-  
-  
-
-  if (!scopedGeneratedLocation.line) {
+  if (!possiblePosition || !scopedGeneratedLocation.line) {
     return { previousLocation, breakpoint: null };
   }
+
+  
+  
+  
 
   const newGeneratedLocation = { ...scopedGeneratedLocation };
   for (const sourceActor of sourceActors) {
@@ -226,6 +240,7 @@ export function syncBreakpoint(
       getState,
       client,
       sourceMaps,
+      dispatch,
       sourceId,
       pendingBreakpoint
     );
