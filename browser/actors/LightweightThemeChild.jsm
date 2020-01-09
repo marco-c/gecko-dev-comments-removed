@@ -53,8 +53,6 @@ class LightweightThemeChild extends ActorChild {
 
 
   cleanup() {
-    super.cleanup();
-
     Services.cpmm.sharedData.removeEventListener("change", this);
   }
 
