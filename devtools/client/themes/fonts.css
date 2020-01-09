@@ -251,10 +251,10 @@
 }
 
 .font-value-input {
-  margin-left: 10px;
   text-align: right;
   width: 60px;
   padding: 2px 3px;
+  padding-inline-end: 5px;
 }
 
 .font-value-input,
@@ -288,24 +288,23 @@
 }
 
 
-.font-value-input[name=line-height],
-.font-value-input[name=font-size] {
-  -moz-appearance: textfield;
-  padding-right: 5px;
-  border-right: none;
+.font-value-input:dir(rtl) {
+  order: 3;
 }
 
 .font-value-label {
   
   width: calc(60px + 3.8em);
-  margin-left: 10px;
   padding-top: 2px;
   padding-bottom: 4px;
 }
 
 
-.theme-dark .font-value-input + .font-value-select {
-  margin-left: 2px;
+.theme-dark .font-value-input + .font-value-select:dir(ltr) {
+  margin-inline-start: 2px;
+}
+.theme-dark .font-value-input + .font-value-select:dir(rtl) {
+  margin-inline-end: 2px;
 }
 
 
@@ -319,6 +318,17 @@
   box-shadow: none;
   padding: 1px 10px 1px 2px;
   min-width: 3.8em;
+}
+
+.font-value-input + .font-value-select:dir(ltr){
+  border-inline-start: none;
+}
+
+
+.font-value-input + .font-value-select:dir(rtl){
+  border-inline-end: none;
+  order: 2;
+  text-align: left;
 }
 
 .font-value-select:-moz-focusring {
@@ -336,6 +346,7 @@
   flex: 1;
   min-width: 50px;
   position: relative;
+  margin-inline-end: 10px;
 }
 
 
