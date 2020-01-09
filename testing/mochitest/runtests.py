@@ -104,7 +104,6 @@ list of valid flavors.
 
 
 
-
 MOZ_LOG = ""
 
 
@@ -2929,6 +2928,15 @@ toolbar#nav-bar {
             self.killAndGetStack(browser_pid, utilityPath, debuggerInfo,
                                  dump_screen=not debuggerInfo)
 
+    def archiveMozLogs(self):
+        if self.mozLogs:
+            with zipfile.ZipFile("{}/mozLogs.zip".format(os.environ["MOZ_UPLOAD_DIR"]),
+                                 "w", zipfile.ZIP_DEFLATED) as logzip:
+                for logfile in glob.glob("{}/moz*.log*".format(os.environ["MOZ_UPLOAD_DIR"])):
+                    logzip.write(logfile, os.path.basename(logfile))
+                    os.remove(logfile)
+                logzip.close()
+
     class OutputHandler(object):
 
         """line output handler for mozrunner"""
@@ -3115,13 +3123,7 @@ def run_test_harness(parser, options):
     else:
         result = runner.runTests(options)
 
-    if runner.mozLogs:
-        with zipfile.ZipFile("{}/mozLogs.zip".format(runner.browserEnv["MOZ_UPLOAD_DIR"]),
-                             "w", zipfile.ZIP_DEFLATED) as logzip:
-            for logfile in glob.glob("{}/moz*.log*".format(runner.browserEnv["MOZ_UPLOAD_DIR"])):
-                logzip.write(logfile)
-                os.remove(logfile)
-            logzip.close()
+    runner.archiveMozLogs()
     runner.message_logger.finish()
     return result
 
