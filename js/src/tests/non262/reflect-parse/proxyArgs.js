@@ -4,7 +4,7 @@
 
 
 var opts = new Proxy({loc: false}, {});
-assertEq(Reflect.parse("0;", opts).loc === null, true);
+assertEq("loc" in Reflect.parse("0;", opts), false);
 opts.loc = true;
 assertEq(Reflect.parse("0;", opts).loc !== null, true);
 delete opts.loc;
