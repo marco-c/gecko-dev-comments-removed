@@ -1615,7 +1615,7 @@ static void AdjustGeneratorResumptionValue(JSContext* cx,
     if (genObj) {
       
       
-      if (!genObj->isBeforeInitialYield()) {
+      if (!frame.callee()->isAsync() && !genObj->isBeforeInitialYield()) {
         JSObject* pair = CreateIterResultObject(cx, vp, true);
         if (!pair) {
           getAndClearExceptionThenThrow();
