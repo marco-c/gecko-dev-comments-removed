@@ -122,8 +122,6 @@ class nsSubDocumentFrame final : public nsAtomicContainerFrame,
   void PropagateIsUnderHiddenEmbedderElementToSubView(
       bool aIsUnderHiddenEmbedderElement);
 
-  void ClearDisplayItems();
-
  protected:
   friend class AsyncFrameInit;
 
@@ -139,6 +137,8 @@ class nsSubDocumentFrame final : public nsAtomicContainerFrame,
   
   
   void ShowViewer();
+
+  void ClearDisplayItems();
 
   
 
