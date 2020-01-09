@@ -96,9 +96,6 @@ int32_t nsStyleSheetService::FindSheetByURI(uint32_t aSheetType,
 
 nsresult nsStyleSheetService::Init() {
   
-  
-
-  
   if (XRE_IsContentProcess()) {
     return NS_OK;
   }
