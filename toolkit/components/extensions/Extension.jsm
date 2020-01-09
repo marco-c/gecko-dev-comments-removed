@@ -110,6 +110,8 @@ XPCOMUtils.defineLazyGetter(this, "LocaleData", () => ExtensionCommon.LocaleData
 
 const {sharedData} = Services.ppmm;
 
+const PRIVATE_ALLOWED_PERMISSION = "internal:privateBrowsingAllowed";
+
 
 
 
@@ -1842,6 +1844,13 @@ class Extension extends ExtensionData {
     }
   }
 
+  static async migratePrivateBrowsing(addonData) {
+    if (addonData.incognito !== "not_allowed") {
+      ExtensionPermissions.add(addonData.id, {permissions: [PRIVATE_ALLOWED_PERMISSION], origins: []});
+      await StartupCache.clearAddonData(addonData.id);
+    }
+  }
+
   async startup() {
     this.state = "Startup";
 
@@ -1890,13 +1899,13 @@ class Extension extends ExtensionData {
       
       
       if (!allowPrivateBrowsingByDefault && this.manifest.incognito !== "not_allowed" &&
-          !this.permissions.has("internal:privateBrowsingAllowed")) {
-        if ((PrivateBrowsingUtils.permanentPrivateBrowsing && this.startupReason == "ADDON_INSTALL") ||
-            (this.isPrivileged && !this.addonData.temporarilyInstalled)) {
+          !this.permissions.has(PRIVATE_ALLOWED_PERMISSION)) {
+        if ((this.isPrivileged && !this.addonData.temporarilyInstalled) ||
+            (PrivateBrowsingUtils.permanentPrivateBrowsing && this.startupReason == "ADDON_INSTALL")) {
           
           
-          ExtensionPermissions.add(this.id, {permissions: ["internal:privateBrowsingAllowed"], origins: []});
-          this.permissions.add("internal:privateBrowsingAllowed");
+          ExtensionPermissions.add(this.id, {permissions: [PRIVATE_ALLOWED_PERMISSION], origins: []});
+          this.permissions.add(PRIVATE_ALLOWED_PERMISSION);
         }
       }
 
