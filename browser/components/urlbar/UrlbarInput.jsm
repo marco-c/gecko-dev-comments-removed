@@ -242,7 +242,7 @@ class UrlbarInput {
     
     
 
-    url = url.trim();
+    url = this._maybeCanonizeURL(event, url) || url.trim();
 
     try {
       new URL(url);
@@ -294,6 +294,9 @@ class UrlbarInput {
       allowInheritPrincipal: false,
     };
 
+    
+    
+
     let url = result.payload.url;
 
     switch (result.type) {
@@ -316,6 +319,12 @@ class UrlbarInput {
         return;
       }
       case UrlbarUtils.MATCH_TYPE.SEARCH: {
+        url = this._maybeCanonizeURL(event,
+                result.payload.suggestion || result.payload.query);
+        if (url) {
+          break;
+        }
+
         const actionDetails = {
           isSuggestion: !!result.payload.suggestion,
           alias: result.payload.keyword,
@@ -607,6 +616,50 @@ class UrlbarInput {
 
 
 
+  _maybeCanonizeURL(event, value) {
+    
+    
+    if (!(event instanceof KeyboardEvent) ||
+        !event.ctrlKey ||
+        !UrlbarPrefs.get("ctrlCanonizesURLs") ||
+        !/^\s*[^.:\/\s]+(?:\/.*|\s*)$/i.test(value)) {
+      return null;
+    }
+
+    let suffix = Services.prefs.getCharPref("browser.fixup.alternate.suffix");
+    if (!suffix.endsWith("/")) {
+      suffix += "/";
+    }
+
+    
+    value = value.trim();
+
+    
+    
+    let firstSlash = value.indexOf("/");
+    if (firstSlash >= 0) {
+      value = value.substring(0, firstSlash) + suffix +
+              value.substring(firstSlash + 1);
+    } else {
+      value = value + suffix;
+    }
+    value = "http://www." + value;
+
+    this.value = value;
+    return value;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -681,7 +734,8 @@ class UrlbarInput {
       
       
       where = event.shiftKey ? "tabshifted" : "tab";
-    } else if (!isMouseEvent && this._ctrlCanonizesURLs && event && event.ctrlKey) {
+    } else if (!isMouseEvent && event && event.ctrlKey &&
+               UrlbarPrefs.get("ctrlCanonizesURLs")) {
       
       
       where = "current";

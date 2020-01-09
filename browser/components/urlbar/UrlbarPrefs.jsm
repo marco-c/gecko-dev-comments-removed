@@ -46,6 +46,12 @@ const PREF_URLBAR_DEFAULTS = new Map([
 
   
   
+  
+  
+  ["ctrlCanonizesURLs", true],
+
+  
+  
   ["decodeURLsOnCopy", false],
 
   
