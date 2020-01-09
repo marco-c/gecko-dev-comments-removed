@@ -86,15 +86,19 @@ var TrackingProtection = {
   },
 
   
+  
   isBlocking(state) {
     return (state & Ci.nsIWebProgressListener.STATE_BLOCKED_TRACKING_CONTENT) != 0 ||
-           (state & Ci.nsIWebProgressListener.STATE_BLOCKED_FINGERPRINTING_CONTENT) != 0;
+           (state & Ci.nsIWebProgressListener.STATE_BLOCKED_FINGERPRINTING_CONTENT) != 0 ||
+           (state & Ci.nsIWebProgressListener.STATE_BLOCKED_CRYPTOMINING_CONTENT) != 0;
   },
 
   
+  
   isAllowing(state) {
     return (state & Ci.nsIWebProgressListener.STATE_LOADED_TRACKING_CONTENT) != 0 ||
-           (state & Ci.nsIWebProgressListener.STATE_LOADED_FINGERPRINTING_CONTENT) != 0;
+           (state & Ci.nsIWebProgressListener.STATE_LOADED_FINGERPRINTING_CONTENT) != 0 ||
+           (state & Ci.nsIWebProgressListener.STATE_LOADED_CRYPTOMINING_CONTENT) != 0;
   },
 
   isDetected(state) {

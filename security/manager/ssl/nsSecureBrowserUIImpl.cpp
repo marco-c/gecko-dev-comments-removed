@@ -188,6 +188,15 @@ void nsSecureBrowserUIImpl::CheckForContentBlockingEvents() {
   }
 
   
+  if (doc->GetHasCryptominingContentBlocked()) {
+    mEvent |= STATE_BLOCKED_CRYPTOMINING_CONTENT;
+  }
+
+  if (doc->GetHasCryptominingContentLoaded()) {
+    mEvent |= STATE_LOADED_CRYPTOMINING_CONTENT;
+  }
+
+  
   if (doc->GetHasCookiesBlockedByPermission()) {
     mEvent |= STATE_COOKIES_BLOCKED_BY_PERMISSION;
   }

@@ -1013,6 +1013,14 @@ class Document : public nsINode,
   
 
 
+  bool GetHasCryptominingContentBlocked() {
+    return mContentBlockingLog.HasBlockedAnyOfType(
+        nsIWebProgressListener::STATE_BLOCKED_CRYPTOMINING_CONTENT);
+  }
+
+  
+
+
   bool GetHasAllCookiesBlocked() {
     return mContentBlockingLog.HasBlockedAnyOfType(
         nsIWebProgressListener::STATE_COOKIES_BLOCKED_ALL);
@@ -1061,6 +1069,17 @@ class Document : public nsINode,
         aOriginBlocked,
         nsIWebProgressListener::STATE_BLOCKED_FINGERPRINTING_CONTENT,
         aHasFingerprintingContentBlocked);
+  }
+
+  
+
+
+  void SetHasCryptominingContentBlocked(bool aHasCryptominingContentBlocked,
+                                        const nsACString& aOriginBlocked) {
+    RecordContentBlockingLog(
+        aOriginBlocked,
+        nsIWebProgressListener::STATE_BLOCKED_CRYPTOMINING_CONTENT,
+        aHasCryptominingContentBlocked);
   }
 
   
@@ -1157,6 +1176,25 @@ class Document : public nsINode,
         aOriginBlocked,
         nsIWebProgressListener::STATE_LOADED_FINGERPRINTING_CONTENT,
         aHasFingerprintingContentLoaded);
+  }
+
+  
+
+
+  bool GetHasCryptominingContentLoaded() {
+    return mContentBlockingLog.HasBlockedAnyOfType(
+        nsIWebProgressListener::STATE_LOADED_CRYPTOMINING_CONTENT);
+  }
+
+  
+
+
+  void SetHasCryptominingContentLoaded(bool aHasCryptominingContentLoaded,
+                                       const nsACString& aOriginBlocked) {
+    RecordContentBlockingLog(
+        aOriginBlocked,
+        nsIWebProgressListener::STATE_LOADED_CRYPTOMINING_CONTENT,
+        aHasCryptominingContentLoaded);
   }
 
   
