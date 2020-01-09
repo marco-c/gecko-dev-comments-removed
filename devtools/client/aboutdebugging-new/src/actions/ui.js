@@ -41,11 +41,13 @@ function selectPage(page, runtimeId) {
         return newPage === oldPage;
       };
 
+      if (!page) {
+        throw new Error("No page provided.");
+      }
+
       const currentPage = getState().ui.selectedPage;
       
-      
-      
-      if (!page || isSamePage(currentPage, page)) {
+      if (isSamePage(currentPage, page)) {
         return;
       }
 
