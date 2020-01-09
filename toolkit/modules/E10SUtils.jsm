@@ -323,6 +323,20 @@ var E10SUtils = {
       return true;
     }
 
+    let webNav = aDocShell.QueryInterface(Ci.nsIWebNavigation);
+    let sessionHistory = webNav.sessionHistory;
+    if (!aHasPostData &&
+        Services.appinfo.remoteType == WEB_REMOTE_TYPE &&
+        sessionHistory.count == 1 &&
+        webNav.currentURI.spec == "about:newtab") {
+      
+      
+      
+      
+      
+      return false;
+    }
+
     
     
     
@@ -347,8 +361,6 @@ var E10SUtils = {
     }
 
     
-    let webNav = aDocShell.QueryInterface(Ci.nsIWebNavigation);
-    let sessionHistory = webNav.sessionHistory;
     let requestedIndex = sessionHistory.legacySHistory.requestedIndex;
     if (requestedIndex >= 0) {
       if (sessionHistory.legacySHistory.getEntryAtIndex(requestedIndex).loadedInThisProcess) {
@@ -360,18 +372,6 @@ var E10SUtils = {
       let remoteType = Services.appinfo.remoteType;
       return remoteType ==
         this.getRemoteTypeForURIObject(aURI, true, remoteType, webNav.currentURI);
-    }
-
-    if (!aHasPostData &&
-        Services.appinfo.remoteType == WEB_REMOTE_TYPE &&
-        sessionHistory.count == 1 &&
-        webNav.currentURI.spec == "about:newtab") {
-      
-      
-      
-      
-      
-      return false;
     }
 
     
