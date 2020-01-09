@@ -14,6 +14,7 @@
 #include "GeckoProfiler.h"
 
 #include "nsLocalFile.h"
+#include "nsLocalFileCommon.h"
 #include "nsIDirectoryEnumerator.h"
 #include "nsNativeCharsetUtils.h"
 
@@ -2740,89 +2741,9 @@ nsLocalFile::IsExecutable(bool* aResult) {
       *p += (*p >= L'A' && *p <= L'Z') ? 'a' - 'A' : 0;
     }
 
-    
-    static const char* const executableExts[] = {
-        
-      "ad",
-      "ade",         
-      "adp",
-      "air",         
-      "app",         
-      "application", 
-      "asp",
-      "bas",
-      "bat",
-      "chm",
-      "cmd",
-      "com",
-      "cpl",
-      "crt",
-      "exe",
-      "fxp",         
-      "hlp",
-      "hta",
-      "inf",
-      "ins",
-      "isp",
-      "jar",         
-      "js",
-      "jse",
-      "lnk",
-      "mad",         
-      "maf",         
-      "mag",         
-      "mam",         
-      "maq",         
-      "mar",         
-      "mas",         
-      "mat",         
-      "mau",         
-      "mav",         
-      "maw",         
-      "mda",         
-      "mdb",
-      "mde",
-      "mdt",         
-      "mdw",         
-      "mdz",         
-      "msc",
-      "msh",         
-      "mshxml",      
-      "msi",
-      "msp",
-      "mst",
-      "ops",         
-      "pcd",
-      "pif",
-      "plg",         
-      "prf",         
-      "prg",
-      "pst",
-      "reg",
-      "scf",         
-      "scr",
-      "sct",
-      "settingcontent-ms",
-      "shb",
-      "shs",
-      "url",
-      "vb",
-      "vbe",
-      "vbs",
-      "vsd",
-      "vsmacros",    
-      "vss",
-      "vst",
-      "vsw",
-      "ws",
-      "wsc",
-      "wsf",
-      "wsh"
-        
-    };
-    nsDependentSubstring ext = Substring(path, dotIdx + 1);
-    for (size_t i = 0; i < ArrayLength(executableExts); ++i) {
-      if (ext.EqualsASCII(executableExts[i])) {
+    nsDependentSubstring ext = Substring(path, dotIdx);
+    for (size_t i = 0; i < ArrayLength(sExecutableExts); ++i) {
+      if (ext.EqualsASCII(sExecutableExts[i])) {
         
         *aResult = true;
         break;

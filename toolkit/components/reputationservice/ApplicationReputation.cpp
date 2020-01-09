@@ -43,6 +43,7 @@
 #include "nsDebug.h"
 #include "nsDependentSubstring.h"
 #include "nsError.h"
+#include "nsLocalFileCommon.h"
 #include "nsNetCID.h"
 #include "nsReadableUtils.h"
 #include "nsServiceManagerUtils.h"
@@ -100,6 +101,416 @@ mozilla::LazyLogModule ApplicationReputationService::prlog(
   MOZ_LOG(ApplicationReputationService::prlog, mozilla::LogLevel::Debug, args)
 #define LOG_ENABLED() \
   MOZ_LOG_TEST(ApplicationReputationService::prlog, mozilla::LogLevel::Debug)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const char* const ApplicationReputationService::kNonBinaryExecutables[] = {
+    ".ad",
+    ".air",
+};
+
+
+
+
+
+
+const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    ".apk",  
+    
+    ".applescript",
+    
+    ".appref-ms",    
+    
+    
+    ".as",   
+    
+    ".asx",  
+    
+    
+    
+    ".bash",  
+    
+    
+    ".bin",
+    ".btapp",      
+    ".btinstall",  
+    ".btkey",      
+    ".btsearch",   
+    ".btskin",     
+    ".bz",         
+    ".bz2",        
+    ".bzip2",      
+    ".cab",        
+    ".cdr",        
+    ".cfg",        
+    ".chi",        
+    
+    ".class",      
+    
+    
+    ".command",    
+    ".cpgz",       
+    ".cpi",        
+                   
+    
+    
+    
+    ".crx",  
+    ".csh",  
+    
+    ".dart",        
+    ".dc42",        
+    ".deb",         
+    ".desktop",     
+    ".dex",         
+    ".dht",         
+    ".dhtm",        
+    ".dhtml",       
+    ".diskcopy42",  
+    ".dll",         
+    ".dmg",         
+    ".dmgpart",     
+    ".doc",         
+    ".docb",        
+    ".docm",        
+    ".docx",        
+    ".dot",         
+    ".dotm",        
+    ".dott",        
+    ".dotx",        
+    ".drv",         
+    ".dvdr",        
+    ".efi",         
+    ".eml",         
+    
+    
+    ".fon",     
+    
+    ".gadget",  
+    
+    ".grp",   
+    ".gz",    
+    ".gzip",  
+    ".hfs",   
+    
+    ".hqx",   
+    
+    ".htm", ".html",
+    ".htt",  
+    
+    ".img",      
+    ".imgpart",  
+    
+    ".ini",      
+    
+    
+    ".iso",  
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    ".ksh",  
+    
+    
+    ".local",  
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    ".manifest",  
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    ".mht",       
+    ".mhtml",     
+    ".mim",       
+    
+    ".mmc",  
+    ".mof",  
+    
+    
+    
+    ".mpkg",     
+    
+    ".msg",      
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    ".ndif",     
+    
+    ".ocx",   
+    
+    ".osas",  
+    ".osax",  
+    
+    ".oxt",  
+    
+    
+    
+    
+    
+    
+    ".partial",  
+    ".pax",      
+    
+    ".pdf",      
+    
+    ".pet",  
+    
+    ".pkg",  
+    ".pl",   
+    
+    
+    ".pot",     
+    ".potm",    
+    ".potx",    
+    ".ppam",    
+    ".pps",     
+    ".ppsm",    
+    ".ppsx",    
+    ".ppt",     
+    ".pptm",    
+    ".pptx",    
+    
+    
+    ".ps1",     
+    ".ps1xml",  
+    ".ps2",     
+    ".ps2xml",  
+    ".psc1",    
+    ".psc2",    
+    
+    ".pup",     
+    ".py",      
+    ".pyc",     
+    ".pyd",     
+    ".pyo",     
+    ".pyw",     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    ".rb",    
+    
+    ".rels",  
+    
+    ".rpm",  
+    ".rtf",  
+    
+    
+    ".scpt",               
+    ".scptd",              
+    
+    
+    ".search-ms",          
+    ".seplugin",           
+    
+    ".sh",                 
+    ".shar",               
+    
+    
+    ".sht",                
+    ".shtm",               
+    ".shtml",              
+    ".sldm",               
+    ".sldx",               
+    ".slk",                
+    ".slp",                
+    ".smi",                
+    ".sparsebundle",       
+    ".sparseimage",        
+    ".spl",                
+    
+    ".svg",
+    ".swf",   
+    ".swm",   
+    ".sys",   
+    ".tar",   
+    ".taz",   
+    ".tbz",   
+    ".tbz2",  
+    ".tcsh",  
+    
+    ".tgz",  
+    
+    ".torrent",  
+    ".tpz",      
+    
+    ".txz",  
+    ".tz",   
+    
+    ".udf",   
+    ".udif",  
+    
+    
+    
+    
+    
+    
+    
+    
+    ".vhd",       
+    ".vhdx",      
+    ".vmdk",      
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    ".website",  
+    ".wim",      
+    
+    
+    
+    
+    
+    
+    ".xar",   
+    ".xbap",  
+    ".xht", ".xhtm", ".xhtml",
+    ".xip",     
+    ".xla",     
+    ".xlam",    
+    ".xldm",    
+    ".xll",     
+    ".xlm",     
+    ".xls",     
+    ".xlsb",    
+    ".xlsm",    
+    ".xlsx",    
+    ".xlt",     
+    ".xltm",    
+    ".xltx",    
+    ".xlw",     
+    ".xml",     
+    ".xnk",     
+    ".xrm-ms",  
+    ".xsl",     
+    
+    ".xz",     
+    ".z",      
+#ifdef XP_WIN  
+    ".zip",    
+#endif
+    ".zipx",  
+              
+};
 
 enum class LookupType { AllowlistOnly, BlocklistOnly, BothLists };
 
@@ -440,360 +851,6 @@ PendingLookup::~PendingLookup() {
   LOG(("Destroying pending lookup [this = %p]", this));
 }
 
-static const char* const kBinaryFileExtensions[] = {
-    
-    
-    
-    
-    
-    
-    ".ade",  
-    ".adp",  
-    ".apk",  
-    ".app",  
-    ".applescript",
-    ".application",  
-    ".appref-ms",    
-    
-    
-    ".as",   
-    ".asp",  
-    ".asx",  
-    
-    
-    ".bas",   
-    ".bash",  
-    ".bat",   
-    
-    ".bin",
-    ".btapp",      
-    ".btinstall",  
-    ".btkey",      
-    ".btsearch",   
-    ".btskin",     
-    ".bz",         
-    ".bz2",        
-    ".bzip2",      
-    ".cab",        
-    ".cdr",        
-    ".cfg",        
-    ".chi",        
-    ".chm",        
-    ".class",      
-    ".cmd",        
-    ".com",        
-    ".command",    
-    ".cpgz",       
-    ".cpi",        
-                   
-    
-    ".cpl",  
-    ".crt",  
-    ".crx",  
-    ".csh",  
-    
-    ".dart",        
-    ".dc42",        
-    ".deb",         
-    ".desktop",     
-    ".dex",         
-    ".dhtml",       
-    ".dhtm",        
-    ".dht",         
-    ".diskcopy42",  
-    ".dll",         
-    ".dmg",         
-    ".dmgpart",     
-    ".doc",         
-    ".docb",        
-    ".docm",        
-    ".docx",        
-    ".dot",         
-    ".dotm",        
-    ".dott",        
-    ".dotx",        
-    ".drv",         
-    ".dvdr",        
-    ".efi",         
-    ".eml",         
-    ".exe",         
-    
-    ".fon",     
-    ".fxp",     
-    ".gadget",  
-    
-    ".grp",   
-    ".gz",    
-    ".gzip",  
-    ".hfs",   
-    ".hlp",   
-    ".hqx",   
-    ".hta",   
-    ".htm", ".html",
-    ".htt",  
-    
-    ".img",      
-    ".imgpart",  
-    ".inf",      
-    ".ini",      
-    ".ins",      
-    
-    ".iso",  
-    ".isp",  
-    
-    ".jar",   
-    ".jnlp",  
-    
-    
-    
-    ".js",   
-    ".jse",  
-    ".ksh",  
-    
-    ".lnk",    
-    ".local",  
-    
-    
-    
-    
-    
-    ".mad",       
-    ".maf",       
-    ".mag",       
-    ".mam",       
-    ".manifest",  
-    ".maq",       
-    ".mar",       
-    ".mas",       
-    ".mat",       
-    ".mau",       
-    ".mav",       
-    ".maw",       
-    ".mda",       
-    ".mdb",       
-    ".mde",       
-    ".mdt",       
-    ".mdw",       
-    ".mdz",       
-    ".mht",       
-    ".mhtml",     
-    ".mim",       
-    
-    ".mmc",  
-    ".mof",  
-    
-    
-    
-    ".mpkg",     
-    ".msc",      
-    ".msg",      
-    ".msh",      
-    ".msh1",     
-    ".msh1xml",  
-    ".msh2",     
-    ".msh2xml",  
-    ".mshxml",   
-    ".msi",      
-    ".msp",      
-    ".mst",      
-    ".ndif",     
-    
-    ".ocx",   
-    ".ops",   
-    ".osas",  
-    ".osax",  
-    
-    ".oxt",  
-    
-    
-    
-    
-    
-    
-    ".partial",  
-    ".pax",      
-    ".pcd",      
-    ".pdf",      
-    
-    ".pet",  
-    ".pif",  
-    ".pkg",  
-    ".pl",   
-    ".plg",  
-    
-    ".pot",     
-    ".potm",    
-    ".potx",    
-    ".ppam",    
-    ".pps",     
-    ".ppsm",    
-    ".ppsx",    
-    ".ppt",     
-    ".pptm",    
-    ".pptx",    
-    ".prf",     
-    ".prg",     
-    ".ps1",     
-    ".ps1xml",  
-    ".ps2",     
-    ".ps2xml",  
-    ".psc1",    
-    ".psc2",    
-    ".pst",     
-    ".pup",     
-    ".py",      
-    ".pyc",     
-    ".pyd",     
-    ".pyo",     
-    ".pyw",     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    ".rb",    
-    ".reg",   
-    ".rels",  
-    
-    ".rpm",  
-    ".rtf",  
-    
-    ".scf",                
-    ".scpt",               
-    ".scptd",              
-    ".scr",                
-    ".sct",                
-    ".search-ms",          
-    ".seplugin",           
-    ".settingcontent-ms",  
-    ".sh",                 
-    ".shar",               
-    ".shb",                
-    ".shs",                
-    ".shtml",              
-    ".shtm",               
-    ".sht",                
-    ".sldm",               
-    ".sldx",               
-    ".slk",                
-    ".slp",                
-    ".smi",                
-    ".sparsebundle",       
-    ".sparseimage",        
-    ".spl",                
-    
-    ".svg",
-    ".swf",   
-    ".swm",   
-    ".sys",   
-    ".tar",   
-    ".taz",   
-    ".tbz",   
-    ".tbz2",  
-    ".tcsh",  
-    
-    ".tgz",  
-    
-    ".torrent",  
-    ".tpz",      
-    
-    ".txz",  
-    ".tz",   
-    
-    ".udf",   
-    ".udif",  
-    ".url",   
-    
-    
-    ".vb",   
-    ".vbe",  
-    ".vbs",  
-    
-    ".vdx",       
-    ".vhd",       
-    ".vhdx",      
-    ".vmdk",      
-    ".vsd",       
-    ".vsdm",      
-    ".vsdx",      
-    ".vsmacros",  
-    ".vss",       
-    ".vssm",      
-    ".vssx",      
-    ".vst",       
-    ".vstm",      
-    ".vstx",      
-    ".vsw",       
-    ".vsx",       
-    ".vtx",       
-    
-    
-    ".website",  
-    ".wim",      
-    
-    
-    ".ws",    
-    ".wsc",   
-    ".wsf",   
-    ".wsh",   
-    ".xar",   
-    ".xbap",  
-    ".xhtml", ".xhtm", ".xht",
-    ".xip",     
-    ".xla",     
-    ".xlam",    
-    ".xldm",    
-    ".xll",     
-    ".xlm",     
-    ".xls",     
-    ".xlsb",    
-    ".xlsm",    
-    ".xlsx",    
-    ".xlt",     
-    ".xltm",    
-    ".xltx",    
-    ".xlw",     
-    ".xml",     
-    ".xnk",     
-    ".xrm-ms",  
-    ".xsl",     
-    
-    ".xz",     
-    ".z",      
-#ifdef XP_WIN  
-    ".zip",    
-#endif
-    ".zipx",  
-              
-};
-
 static const char* const kDmgFileExtensions[] = {
     ".cdr",          ".dart",        ".dc42",  ".diskcopy42",
     ".dmg",          ".dmgpart",     ".dvdr",  ".img",
@@ -824,6 +881,18 @@ static const char* GetFileExt(const nsACString& aFilename,
   return nullptr;
 }
 
+static const char* GetFileExt(const nsACString& aFilename) {
+#define _GetFileExt(_f, _l) GetFileExt(_f, _l, ArrayLength(_l))
+  const char* ext = _GetFileExt(
+      aFilename, ApplicationReputationService::kBinaryFileExtensions);
+  if (ext == nullptr &&
+      !_GetFileExt(aFilename,
+                   ApplicationReputationService::kNonBinaryExecutables)) {
+    ext = _GetFileExt(aFilename, sExecutableExts);
+  }
+  return ext;
+}
+
 
 static bool IsFileType(const nsACString& aFilename,
                        const char* const aFileExtensions[],
@@ -831,10 +900,21 @@ static bool IsFileType(const nsACString& aFilename,
   return GetFileExt(aFilename, aFileExtensions, aLength) != nullptr;
 }
 
+static bool IsBinary(const nsACString& aFilename) {
+  return IsFileType(aFilename,
+                    ApplicationReputationService::kBinaryFileExtensions,
+                    ArrayLength(
+                        ApplicationReputationService::kBinaryFileExtensions)) ||
+         (!IsFileType(
+              aFilename, ApplicationReputationService::kNonBinaryExecutables,
+              ArrayLength(
+                  ApplicationReputationService::kNonBinaryExecutables)) &&
+          IsFileType(aFilename, sExecutableExts, ArrayLength(sExecutableExts)));
+}
+
 ClientDownloadRequest::DownloadType PendingLookup::GetDownloadType(
     const nsACString& aFilename) {
-  MOZ_ASSERT(IsFileType(aFilename, kBinaryFileExtensions,
-                        ArrayLength(kBinaryFileExtensions)));
+  MOZ_ASSERT(IsBinary(aFilename));
 
   
   
@@ -1290,8 +1370,7 @@ nsresult PendingLookup::DoLookupInternal() {
 
   rv = mQuery->GetSuggestedFileName(mFileName);
   if (NS_SUCCEEDED(rv) && !mFileName.IsEmpty()) {
-    mIsBinaryFile = IsFileType(mFileName, kBinaryFileExtensions,
-                               ArrayLength(kBinaryFileExtensions));
+    mIsBinaryFile = IsBinary(mFileName);
     LOG(("Suggested filename: %s [binary = %d, this = %p]", mFileName.get(),
          mIsBinaryFile, this));
   } else {
@@ -1448,6 +1527,9 @@ nsresult PendingLookup::ParseCertificates(nsIArray* aSigArray) {
 }
 
 nsresult PendingLookup::SendRemoteQuery() {
+  MOZ_ASSERT(!IsFileType(
+      mFileName, ApplicationReputationService::kNonBinaryExecutables,
+      ArrayLength(ApplicationReputationService::kNonBinaryExecutables)));
   Reason reason = Reason::NotSet;
   nsresult rv = SendRemoteQueryInternal(reason);
   if (NS_FAILED(rv)) {
@@ -1770,9 +1852,9 @@ nsresult PendingLookup::OnStopRequestInternal(nsIRequest* aRequest,
   
   Accumulate(mozilla::Telemetry::APPLICATION_REPUTATION_SERVER_VERDICT,
              std::min<uint32_t>(response.verdict(), 7));
+  const char* ext = GetFileExt(mFileName);
   AccumulateCategoricalKeyed(
-      nsCString(GetFileExt(mFileName, kBinaryFileExtensions,
-                           ArrayLength(kBinaryFileExtensions))),
+      nsCString(ext),
       VerdictToLabel(std::min<uint32_t>(response.verdict(), 7)));
   switch (response.verdict()) {
     case safe_browsing::ClientDownloadResponse::DANGEROUS:
