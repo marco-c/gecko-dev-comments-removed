@@ -43,7 +43,7 @@ class CrashReporterHost {
 
   
   
-  bool AdoptMinidump(nsIFile* aFile);
+  bool AdoptMinidump(nsIFile* aFile, const AnnotationTable& aAnnotations);
 
   
   
@@ -70,9 +70,9 @@ class CrashReporterHost {
 #endif
 
     nsCOMPtr<nsIFile> targetDump;
-    if (!CrashReporter::CreateMinidumpsAndPair(childHandle, mThreadId,
-                                               aPairName, aMinidumpToPair,
-                                               getter_AddRefs(targetDump))) {
+    if (!CrashReporter::CreateMinidumpsAndPair(
+            childHandle, mThreadId, aPairName, aMinidumpToPair,
+            mExtraAnnotations, getter_AddRefs(targetDump))) {
       return false;
     }
 
@@ -95,7 +95,7 @@ class CrashReporterHost {
                             const nsString& aChildDumpID);
 
   
-  int32_t GetCrashType(const CrashReporter::AnnotationTable& aAnnotations);
+  int32_t GetCrashType();
 
   
   

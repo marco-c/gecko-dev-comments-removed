@@ -119,14 +119,18 @@ void SetIncludeContextHeap(bool aValue);
 
 typedef mozilla::EnumeratedArray<Annotation, Annotation::Count, nsCString>
     AnnotationTable;
-
 void DeleteMinidumpFilesForID(const nsAString& id);
 bool GetMinidumpForID(const nsAString& id, nsIFile** minidump);
 bool GetIDFromMinidump(nsIFile* minidump, nsAString& id);
 bool GetExtraFileForID(const nsAString& id, nsIFile** extraFile);
 bool GetExtraFileForMinidump(nsIFile* minidump, nsIFile** extraFile);
-bool AppendExtraData(const nsAString& id, const AnnotationTable& data);
-bool AppendExtraData(nsIFile* extraFile, const AnnotationTable& data);
+bool WriteExtraFile(const nsAString& id, const AnnotationTable& annotations);
+
+
+
+
+
+void MergeCrashAnnotations(AnnotationTable& aDst, const AnnotationTable& aSrc);
 
 #ifdef XP_WIN
 nsresult WriteMinidumpForException(EXCEPTION_POINTERS* aExceptionInfo);
@@ -163,7 +167,9 @@ bool TakeMinidump(nsIFile** aResult, bool aMoveToPending = false);
 
 
 
+
 bool TakeMinidumpForChild(uint32_t childPid, nsIFile** dump,
+                          AnnotationTable& aAnnotations,
                           uint32_t* aSequence = nullptr);
 
 #if defined(XP_WIN)
@@ -218,10 +224,12 @@ ThreadId CurrentThreadId();
 
 
 
+
 bool CreateMinidumpsAndPair(ProcessHandle aTargetPid,
                             ThreadId aTargetBlamedThread,
                             const nsACString& aIncomingPairName,
                             nsIFile* aIncomingDumpToPair,
+                            AnnotationTable& aTargetAnnotations,
                             nsIFile** aTargetDumpOut);
 
 
