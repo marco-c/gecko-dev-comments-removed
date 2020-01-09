@@ -7,8 +7,11 @@
 #ifndef mozilla_dom_localstorage_LSValue_h
 #define mozilla_dom_localstorage_LSValue_h
 
+#include "SnappyUtils.h"
+
 namespace mozilla {
 namespace dom {
+
 
 
 
@@ -23,18 +26,27 @@ class LSValue final {
 
   nsCString mBuffer;
   uint32_t mUTF16Length;
+  bool mCompressed;
 
  public:
-  LSValue() : mUTF16Length(0) {}
+  LSValue() : mUTF16Length(0), mCompressed(false) {}
 
-  explicit LSValue(const nsACString& aBuffer, uint32_t aUTF16Length)
-      : mBuffer(aBuffer), mUTF16Length(aUTF16Length) {}
+  explicit LSValue(const nsACString& aBuffer, uint32_t aUTF16Length,
+                   bool aCompressed)
+      : mBuffer(aBuffer),
+        mUTF16Length(aUTF16Length),
+        mCompressed(aCompressed) {}
 
   explicit LSValue(const nsAString& aBuffer) : mUTF16Length(aBuffer.Length()) {
     if (aBuffer.IsVoid()) {
       mBuffer.SetIsVoid(true);
+      mCompressed = false;
     } else {
       CopyUTF16toUTF8(aBuffer, mBuffer);
+      nsCString buffer;
+      if ((mCompressed = SnappyCompress(mBuffer, buffer))) {
+        mBuffer = buffer;
+      }
     }
   }
 
@@ -56,10 +68,13 @@ class LSValue final {
 
   uint32_t UTF16Length() const { return mUTF16Length; }
 
+  bool IsCompressed() const { return mCompressed; }
+
   bool Equals(const LSValue& aOther) const {
     return mBuffer == aOther.mBuffer &&
            mBuffer.IsVoid() == aOther.mBuffer.IsVoid() &&
-           mUTF16Length == aOther.mUTF16Length;
+           mUTF16Length == aOther.mUTF16Length &&
+           mCompressed == aOther.mCompressed;
   }
 
   bool operator==(const LSValue& aOther) const { return Equals(aOther); }
@@ -77,6 +92,10 @@ class LSValue final {
     explicit Converter(const LSValue& aValue) {
       if (aValue.mBuffer.IsVoid()) {
         mBuffer.SetIsVoid(true);
+      } else if (aValue.mCompressed) {
+        nsCString buffer;
+        MOZ_ALWAYS_TRUE(SnappyUncompress(aValue.mBuffer, buffer));
+        CopyUTF8toUTF16(buffer, mBuffer);
       } else {
         CopyUTF8toUTF16(aValue.mBuffer, mBuffer);
       }
