@@ -221,7 +221,9 @@ var UrlbarUtils = {
   getTokenMatches(tokens, str) {
     return tokens.reduce((matches, token) => {
       let index = 0;
-      while (index >= 0) {
+      
+      
+      while (index >= 0 && token.value) {
         index = str.indexOf(token.value, index);
         if (index >= 0) {
           let match = [index, token.value.length];
