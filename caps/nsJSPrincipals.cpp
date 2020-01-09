@@ -46,15 +46,16 @@ nsJSPrincipals::Release() {
   return count;
 }
 
- bool nsJSPrincipals::Subsume(JSPrincipals* jsprin,
-                                          JSPrincipals* other) {
+
+bool nsJSPrincipals::Subsume(JSPrincipals* jsprin, JSPrincipals* other) {
   bool result;
   nsresult rv = nsJSPrincipals::get(jsprin)->Subsumes(
       nsJSPrincipals::get(other), &result);
   return NS_SUCCEEDED(rv) && result;
 }
 
- void nsJSPrincipals::Destroy(JSPrincipals* jsprin) {
+
+void nsJSPrincipals::Destroy(JSPrincipals* jsprin) {
   
   
   
@@ -101,9 +102,10 @@ JS_PUBLIC_API void JSPrincipals::dump() {
 
 #endif
 
- bool nsJSPrincipals::ReadPrincipals(
-    JSContext* aCx, JSStructuredCloneReader* aReader,
-    JSPrincipals** aOutPrincipals) {
+
+bool nsJSPrincipals::ReadPrincipals(JSContext* aCx,
+                                    JSStructuredCloneReader* aReader,
+                                    JSPrincipals** aOutPrincipals) {
   uint32_t tag;
   uint32_t unused;
   if (!JS_ReadUint32Pair(aReader, &tag, &unused)) {
@@ -245,9 +247,8 @@ static bool ReadPrincipalInfo(JSStructuredCloneReader* aReader, uint32_t aTag,
 
     MOZ_DIAGNOSTIC_ASSERT(!originNoSuffix.IsEmpty());
 
-    
-    aInfo = ContentPrincipalInfo(attrs, originNoSuffix, spec, Nothing(),
-                                 std::move(policies));
+    aInfo =
+        ContentPrincipalInfo(attrs, originNoSuffix, spec, std::move(policies));
   } else {
 #ifdef FUZZING
     return false;
@@ -259,9 +260,11 @@ static bool ReadPrincipalInfo(JSStructuredCloneReader* aReader, uint32_t aTag,
   return true;
 }
 
- bool nsJSPrincipals::ReadKnownPrincipalType(
-    JSContext* aCx, JSStructuredCloneReader* aReader, uint32_t aTag,
-    JSPrincipals** aOutPrincipals) {
+
+bool nsJSPrincipals::ReadKnownPrincipalType(JSContext* aCx,
+                                            JSStructuredCloneReader* aReader,
+                                            uint32_t aTag,
+                                            JSPrincipals** aOutPrincipals) {
   MOZ_ASSERT(aTag == SCTAG_DOM_NULL_PRINCIPAL ||
              aTag == SCTAG_DOM_SYSTEM_PRINCIPAL ||
              aTag == SCTAG_DOM_CONTENT_PRINCIPAL ||

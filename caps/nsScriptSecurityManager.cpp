@@ -566,7 +566,8 @@ nsScriptSecurityManager::CheckSameOriginURI(nsIURI* aSourceURI,
   return NS_OK;
 }
 
- uint32_t nsScriptSecurityManager::HashPrincipalByOrigin(
+
+uint32_t nsScriptSecurityManager::HashPrincipalByOrigin(
     nsIPrincipal* aPrincipal) {
   nsCOMPtr<nsIURI> uri;
   aPrincipal->GetDomain(getter_AddRefs(uri));
@@ -1452,7 +1453,8 @@ nsScriptSecurityManager* nsScriptSecurityManager::GetScriptSecurityManager() {
   return gScriptSecMan;
 }
 
- void nsScriptSecurityManager::InitStatics() {
+
+void nsScriptSecurityManager::InitStatics() {
   RefPtr<nsScriptSecurityManager> ssManager = new nsScriptSecurityManager();
   nsresult rv = ssManager->Init();
   if (NS_FAILED(rv)) {
