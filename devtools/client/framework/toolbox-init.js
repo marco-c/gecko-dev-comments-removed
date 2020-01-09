@@ -120,7 +120,14 @@ async function initToolbox(url, host) {
 
 
 if (url.search.length > 1) {
-  initToolbox(url, host);
+  
+  if (url.searchParams.has("disconnected")) {
+    const error = new Error("Debug target was disconnected");
+    showErrorPage(host.contentDocument, `${error}`);
+  
+  } else {
+    initToolbox(url, host);
+  }
 }
 
 
