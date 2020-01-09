@@ -52,6 +52,7 @@
 #include "mozilla/dom/ContentBlockingLog.h"
 #include "mozilla/dom/DispatcherTrait.h"
 #include "mozilla/dom/DocumentOrShadowRoot.h"
+#include "mozilla/HashTable.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/SegmentedVector.h"
@@ -2942,6 +2943,13 @@ class Document : public nsINode,
 
 
 
+
+  bool IsCanceledFrameRequestCallback(int32_t aHandle) const;
+
+  
+
+
+
   void TakeFrameRequestCallbacks(nsTArray<FrameRequest>& aCallbacks);
 
   
@@ -4392,6 +4400,10 @@ class Document : public nsINode,
   nsCOMPtr<nsIDocumentEncoder> mCachedEncoder;
 
   nsTArray<FrameRequest> mFrameRequestCallbacks;
+
+  
+  
+  HashSet<int32_t> mCanceledFrameRequestCallbacks;
 
   
   
