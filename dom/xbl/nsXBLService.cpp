@@ -477,18 +477,12 @@ nsresult nsXBLService::LoadBindings(Element* aElement, nsIURI* aURL,
   
   
   
-  
   if (XRE_IsContentProcess() &&
       IsSystemOrChromeURLPrincipal(aOriginPrincipal) && aElement->OwnerDoc() &&
       !aElement->OwnerDoc()->AllowXULXBL() &&
       !aURL->GetSpecOrDefault().EqualsLiteral(
           "chrome://global/content/xml/XMLPrettyPrint.xml#prettyprint")) {
-    nsAtom* tag = aElement->NodeInfo()->NameAtom();
-    MOZ_ASSERT(
-        
-        tag == nsGkAtoms::embed || tag == nsGkAtoms::applet ||
-            tag == nsGkAtoms::object,
-        "Unexpected XBL binding used in the content process");
+    MOZ_ASSERT(false, "Unexpected XBL binding used in the content process");
   }
 #endif
 
