@@ -618,26 +618,27 @@ MozElements.RichListBox = class RichListBox extends MozElements.BaseControl {
     
     
     
+    let height = this.getBoundingClientRect().height;
     if (this._isItemVisible(this.currentItem)) {
-      this.scrollBy(0, this.clientHeight * aDirection);
+      this.scrollBy(0, height * aDirection);
     }
 
     
     
     
-    var height = this.clientHeight;
-    var startBorder = this.currentItem.boxObject.y;
+    let currentItemRect = this.currentItem.getBoundingClientRect();
+    var startBorder = currentItemRect.y;
     if (aDirection == -1) {
-      startBorder += this.currentItem.clientHeight;
+      startBorder += currentItemRect.height;
     }
 
     var index = this.currentIndex;
     for (var ix = index; 0 <= ix && ix < children.length; ix += aDirection) {
-      var boxObject = children[ix].boxObject;
-      if (boxObject.height == 0) {
+      let childRect = children[ix].getBoundingClientRect();
+      if (childRect.height == 0) {
         continue; 
       }
-      var endBorder = boxObject.y + (aDirection == -1 ? boxObject.height : 0);
+      var endBorder = childRect.y + (aDirection == -1 ? childRect.height : 0);
       if ((endBorder - startBorder) * aDirection > height) {
         break; 
       }
@@ -678,7 +679,7 @@ MozElements.RichListBox = class RichListBox extends MozElements.BaseControl {
           this.selectedItem = currentItem;
         }
 
-        if (this.clientHeight) {
+        if (this.getBoundingClientRect().height) {
           this.ensureElementIsVisible(currentItem);
         } else {
           
@@ -740,11 +741,12 @@ MozElements.RichListBox = class RichListBox extends MozElements.BaseControl {
       return false;
     }
 
-    var y = this.scrollTop + this.boxObject.y;
+    var y = this.getBoundingClientRect().y;
 
     
-    return (aItem.boxObject.y + aItem.clientHeight > y) &&
-      (aItem.boxObject.y < y + this.clientHeight);
+    let itemRect = aItem.getBoundingClientRect();
+    return (itemRect.y + itemRect.height > y) &&
+           (itemRect.y < y + this.clientHeight);
   }
 
   moveByOffset(aOffset, aIsSelecting, aIsSelectingRange) {
