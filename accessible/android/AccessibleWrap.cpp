@@ -13,8 +13,10 @@
 #include "SessionAccessibility.h"
 #include "nsAccessibilityService.h"
 #include "nsPersistentProperties.h"
+#include "nsIAccessibleAnnouncementEvent.h"
 #include "nsIStringBundle.h"
 #include "nsAccUtils.h"
+#include "nsTextEquivUtils.h"
 
 #include "mozilla/a11y/PDocAccessibleChild.h"
 
@@ -83,6 +85,8 @@ nsresult AccessibleWrap::HandleAccEvent(AccEvent* aEvent) {
 
   nsresult rv = Accessible::HandleAccEvent(aEvent);
   NS_ENSURE_SUCCESS(rv, rv);
+
+  accessible->HandleLiveRegionEvent(aEvent);
 
   if (IPCAccessibilityActive()) {
     return NS_OK;
@@ -618,4 +622,78 @@ mozilla::java::GeckoBundle::LocalRef AccessibleWrap::ToBundle(
   GECKOBUNDLE_FINISH(nodeInfo);
 
   return nodeInfo;
+}
+
+void AccessibleWrap::GetTextEquiv(nsString& aText) {
+  if (nsTextEquivUtils::HasNameRule(this, eNameFromSubtreeIfReqRule)) {
+    
+    
+    nsTextEquivUtils::GetTextEquivFromSubtree(this, aText);
+  } else {
+    Name(aText);
+  }
+}
+
+bool AccessibleWrap::HandleLiveRegionEvent(AccEvent* aEvent) {
+  auto eventType = aEvent->GetEventType();
+  if (eventType != nsIAccessibleEvent::EVENT_TEXT_INSERTED &&
+      eventType != nsIAccessibleEvent::EVENT_NAME_CHANGE) {
+    
+    
+    
+    
+    
+    return false;
+  }
+
+  if (aEvent->IsFromUserInput()) {
+    return false;
+  }
+
+  nsCOMPtr<nsIPersistentProperties> attributes = Attributes();
+  nsString live;
+  nsresult rv =
+      attributes->GetStringProperty(NS_LITERAL_CSTRING("container-live"), live);
+  if (!NS_SUCCEEDED(rv)) {
+    return false;
+  }
+
+  uint16_t priority = live.EqualsIgnoreCase("assertive")
+                          ? nsIAccessibleAnnouncementEvent::ASSERTIVE
+                          : nsIAccessibleAnnouncementEvent::POLITE;
+
+  nsString atomic;
+  rv = attributes->GetStringProperty(NS_LITERAL_CSTRING("container-atomic"),
+                                     atomic);
+
+  Accessible* announcementTarget = this;
+  nsAutoString announcement;
+  if (atomic.EqualsIgnoreCase("true")) {
+    Accessible* atomicAncestor = nullptr;
+    for (Accessible* parent = announcementTarget; parent;
+         parent = parent->Parent()) {
+      Element* element = parent->Elm();
+      if (element &&
+          element->AttrValueIs(kNameSpaceID_None, nsGkAtoms::aria_atomic,
+                               nsGkAtoms::_true, eCaseMatters)) {
+        atomicAncestor = parent;
+        break;
+      }
+    }
+
+    if (atomicAncestor) {
+      announcementTarget = atomicAncestor;
+      static_cast<AccessibleWrap*>(atomicAncestor)->GetTextEquiv(announcement);
+    }
+  } else {
+    GetTextEquiv(announcement);
+  }
+
+  announcement.CompressWhitespace();
+  if (announcement.IsEmpty()) {
+    return false;
+  }
+
+  announcementTarget->Announce(announcement, priority);
+  return true;
 }
