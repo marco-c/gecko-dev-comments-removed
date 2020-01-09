@@ -97,41 +97,41 @@ class SETA(object):
             high_value_android_tasks = list(filter(only_android_raptor, high_value_tasks))
             low_value_tasks.extend(high_value_android_tasks)
 
-            opt = ['test-windows10-64/opt',
-                   'test-windows7-32/opt',
-                   'test-linux64/opt',
-                   'test-windows10-64-qr/opt',
-                   'test-windows7-32-qr/opt',
-                   'test-linux64-qr/opt']
-            pgo = ['test-windows10-64-pgo/opt',
-                   'test-windows7-32-pgo/opt',
-                   'test-linux64-pgo/opt',
-                   'test-windows10-64-pgo-qr/opt',
-                   'test-windows7-32-pgo-qr/opt',
-                   'test-linux64-pgo-qr/opt']
+            seta_conversions = {
+                
+                'test-linux64/opt': 'test-linux64-pgo/opt',
+                'test-linux64-qr/opt': 'test-linux64-pgo-qr/opt',
+                'test-windows7-32/opt': 'test-windows7-32-pgo/opt',
+                'test-windows7-32-qr/opt': 'test-windows7-32-pgo-qr/opt',
+                'test-windows10-64/opt': 'test-windows10-64-pgo/opt',
+                'test-windows10-64-qr/opt': 'test-windows10-64-pgo-qr/opt',
+                }
+
             
-            for iter in range(0, len(opt)):
-                if any(t.startswith(opt[iter]) for t in low_value_tasks):
+            for old, new in seta_conversions.iteritems():
+                if any(t.startswith(old) for t in low_value_tasks):
                     low_value_tasks.extend(
-                        [t.replace(opt[iter], pgo[iter]) for t in low_value_tasks]
+                        [t.replace(old, new) for t in low_value_tasks]
                     )
             
-            for iter in range(0, len(opt)):
-                if any(t.startswith(opt[iter]) for t in high_value_tasks):
+            for old, new in seta_conversions.iteritems():
+                if any(t.startswith(old) for t in high_value_tasks):
                     high_value_tasks.extend(
-                        [t.replace(opt[iter], pgo[iter]) for t in high_value_tasks]
+                        [t.replace(old, new) for t in high_value_tasks]
                     )
 
-            def pgo_as_opt_is_high_value(label):
-                for iter in range(0, len(opt)):
-                    if label.startswith(pgo[iter]):
-                        opt_label = label.replace(pgo[iter], opt[iter])
-                        if opt_label in high_value_tasks:
+            def new_as_old_is_high_value(label):
+                
+                
+                for old, new in seta_conversions.iteritems():
+                    if label.startswith(new):
+                        old_label = label.replace(new, old)
+                        if old_label in high_value_tasks:
                             return True
                 return False
 
             
-            low_value_tasks = [x for x in low_value_tasks if not pgo_as_opt_is_high_value(x)]
+            low_value_tasks = [x for x in low_value_tasks if not new_as_old_is_high_value(x)]
 
             
             low_value_tasks = [x for x in low_value_tasks if 'build' not in x]
