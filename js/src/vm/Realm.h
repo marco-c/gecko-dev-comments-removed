@@ -890,6 +890,19 @@ class MOZ_RAII AutoAllocInAtomsZone {
 
 
 
+class MOZ_RAII AutoMaybeLeaveAtomsZone {
+  JSContext* const cx_;
+  bool wasInAtomsZone_;
+  AutoMaybeLeaveAtomsZone(const AutoMaybeLeaveAtomsZone&) = delete;
+  AutoMaybeLeaveAtomsZone& operator=(const AutoMaybeLeaveAtomsZone&) = delete;
+
+ public:
+  inline explicit AutoMaybeLeaveAtomsZone(JSContext* cx);
+  inline ~AutoMaybeLeaveAtomsZone();
+};
+
+
+
 
 class AutoRealmUnchecked : protected AutoRealm {
  public:
