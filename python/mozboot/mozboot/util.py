@@ -6,7 +6,6 @@ from __future__ import absolute_import, print_function
 
 import hashlib
 import os
-from mozbuild.base import MozbuildObject
 
 here = os.path.join(os.path.dirname(__file__))
 
@@ -24,6 +23,11 @@ def get_state_dir(srcdir=False):
     state_dir = os.environ.get('MOZBUILD_STATE_PATH', os.path.expanduser('~/.mozbuild'))
     if not srcdir:
         return state_dir
+
+    
+    
+    
+    from mozbuild.base import MozbuildObject
 
     srcdir = os.path.abspath(MozbuildObject.from_environment(cwd=here).topsrcdir)
     
