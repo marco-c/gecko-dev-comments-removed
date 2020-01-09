@@ -1012,6 +1012,9 @@ var ContentBlocking = {
     }).then(function(response) {
       if (!response.ok) {
         Cu.reportError(`Content Blocking report to ${reportEndpoint} failed with status ${response.status}`);
+      } else {
+        
+        comments.value = "";
       }
     }).catch(Cu.reportError);
   },
