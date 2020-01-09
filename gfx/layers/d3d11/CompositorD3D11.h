@@ -139,6 +139,10 @@ class CompositorD3D11 : public Compositor {
 
   ID3D11DeviceContext* GetDC() { return mContext; }
 
+  virtual void RequestAllowFrameRecording(bool aWillRecord) override {
+    mAllowFrameRecording = aWillRecord;
+  }
+
  private:
   enum Severity {
     Recoverable,
@@ -209,6 +213,19 @@ class CompositorD3D11 : public Compositor {
   template <typename VertexType>
   void SetVertexBuffer(ID3D11Buffer* aBuffer);
 
+  
+
+
+
+
+
+
+
+
+
+
+  bool ShouldAllowFrameRecording() const;
+
   RefPtr<ID3D11DeviceContext> mContext;
   RefPtr<ID3D11Device> mDevice;
   RefPtr<IDXGISwapChain> mSwapChain;
@@ -240,6 +257,7 @@ class CompositorD3D11 : public Compositor {
 
   bool mVerifyBuffersFailed;
   bool mUseMutexOnPresent;
+  bool mAllowFrameRecording;
 };
 
 namespace TexSlot {
