@@ -453,12 +453,10 @@ Scope* Scope::clone(JSContext* cx, HandleScope scope, HandleScope enclosing) {
 
 void Scope::finalize(FreeOp* fop) {
   MOZ_ASSERT(CurrentThreadIsGCSweeping());
-  if (data_) {
-    
-    
-    fop->free_(data_);
-    data_ = nullptr;
-  }
+  applyScopeDataTyped([fop](auto data) {
+                        fop->delete_(data);
+                      });
+  data_ = nullptr;
 }
 
 size_t Scope::sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
