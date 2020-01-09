@@ -114,6 +114,24 @@ public class GeckoDisplay {
 
 
 
+    @UiThread
+    public void setVerticalClipping(final int clippingHeight) {
+        ThreadUtils.assertOnUiThread();
+
+        if (mSession != null) {
+            mSession.mCompositor.setFixedBottomOffset(clippingHeight);
+        }
+    }
+
+    
+
+
+
+
+
+
+
+
 
     @UiThread
     public boolean shouldPinOnScreen() {

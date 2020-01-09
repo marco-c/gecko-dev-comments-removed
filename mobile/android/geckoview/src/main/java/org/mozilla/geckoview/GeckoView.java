@@ -102,12 +102,16 @@ public class GeckoView extends FrameLayout {
         private GeckoDisplay mDisplay;
         private boolean mValid;
 
+        private int mClippingHeight;
+
         public void acquire(final GeckoDisplay display) {
             mDisplay = display;
 
             if (!mValid) {
                 return;
             }
+
+            setVerticalClipping(mClippingHeight);
 
             
             onGlobalLayout();
@@ -167,6 +171,14 @@ public class GeckoView extends FrameLayout {
 
         public boolean shouldPinOnScreen() {
             return mDisplay != null ? mDisplay.shouldPinOnScreen() : false;
+        }
+
+        public void setVerticalClipping(final int clippingHeight) {
+            mClippingHeight = clippingHeight;
+
+            if (mDisplay != null) {
+                mDisplay.setVerticalClipping(clippingHeight);
+            }
         }
 
         
@@ -252,6 +264,21 @@ public class GeckoView extends FrameLayout {
         ThreadUtils.assertOnUiThread();
 
         return mDisplay.shouldPinOnScreen();
+    }
+
+    
+
+
+
+
+
+
+
+
+    public void setVerticalClipping(final int clippingHeight) {
+        ThreadUtils.assertOnUiThread();
+
+        mDisplay.setVerticalClipping(clippingHeight);
     }
 
      void setActive(final boolean active) {
