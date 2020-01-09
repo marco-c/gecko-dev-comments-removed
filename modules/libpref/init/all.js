@@ -6029,3 +6029,10 @@ pref("dom.sidebar.enabled", true);
 
 
 pref("fission.rebuild_frameloaders_on_remoteness_change", true);
+
+
+
+
+
+pref("toolkit.legacyUserProfileCustomizations.stylesheets", false);
+

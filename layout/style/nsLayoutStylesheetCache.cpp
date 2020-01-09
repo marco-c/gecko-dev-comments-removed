@@ -102,6 +102,9 @@
 using namespace mozilla;
 using namespace mozilla::css;
 
+#define PREF_LEGACY_STYLESHEET_CUSTOMIZATION \
+  "toolkit.legacyUserProfileCustomizations.stylesheets"
+
 NS_IMPL_ISUPPORTS(nsLayoutStylesheetCache, nsIObserver, nsIMemoryReporter)
 
 nsresult nsLayoutStylesheetCache::Observe(nsISupports* aSubject,
@@ -441,6 +444,21 @@ void nsLayoutStylesheetCache::InitFromProfile() {
                 eLogToConsole);
 
   if (XRE_IsParentProcess()) {
+    if (mUserChromeSheet || mUserContentSheet) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      Preferences::SetBool(PREF_LEGACY_STYLESHEET_CUSTOMIZATION, true);
+    }
+
     
     
     Telemetry::Accumulate(Telemetry::USER_CHROME_CSS_LOADED,
