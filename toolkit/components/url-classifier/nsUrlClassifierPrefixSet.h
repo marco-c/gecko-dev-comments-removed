@@ -76,9 +76,8 @@ class nsUrlClassifierPrefixSet final : public nsIUrlClassifierPrefixSet,
   
   
   
-  
-  
   nsTArray<nsTArray<uint16_t> > mIndexDeltas;
+  uint32_t mIndexDeltasChecksum;
 
   
   uint32_t mTotalPrefixes;

@@ -9,15 +9,12 @@
 #include "VariableLengthPrefixSet.h"
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsIFile.h"
-#include "mozilla/Preferences.h"
 #include "gtest/gtest.h"
 
 using namespace mozilla::safebrowsing;
 
-namespace {
 
-
-nsCString CreateFullHash(const nsACString& in) {
+static nsCString CreateFullHash(const nsACString& in) {
   nsCString out(in);
   out.SetLength(32);
   for (size_t i = in.Length(); i < 32; i++) {
@@ -29,8 +26,8 @@ nsCString CreateFullHash(const nsACString& in) {
 
 
 
-void RandomPrefixes(uint32_t N, uint32_t MIN, uint32_t MAX,
-                    _PrefixArray& array) {
+static void RandomPrefixes(uint32_t N, uint32_t MIN, uint32_t MAX,
+                           _PrefixArray& array) {
   array.SetCapacity(array.Length() + N);
 
   uint32_t range = (MAX - MIN + 1);
@@ -58,7 +55,7 @@ void RandomPrefixes(uint32_t N, uint32_t MIN, uint32_t MAX,
 
 
 
-void DoExpectedLookup(LookupCacheV4* cache, _PrefixArray& array) {
+static void DoExpectedLookup(LookupCacheV4* cache, _PrefixArray& array) {
   uint32_t matchLength = 0;
   for (uint32_t i = 0; i < array.Length(); i++) {
     const nsCString& prefix = array[i];
@@ -91,7 +88,8 @@ void DoExpectedLookup(LookupCacheV4* cache, _PrefixArray& array) {
   }
 }
 
-void DoRandomLookup(LookupCacheV4* cache, uint32_t N, _PrefixArray& array) {
+static void DoRandomLookup(LookupCacheV4* cache, uint32_t N,
+                           _PrefixArray& array) {
   for (uint32_t i = 0; i < N; i++) {
     
     char buf[32];
@@ -119,7 +117,8 @@ void DoRandomLookup(LookupCacheV4* cache, uint32_t N, _PrefixArray& array) {
   }
 }
 
-already_AddRefed<LookupCacheV4> SetupLookupCache(const nsACString& aName) {
+static already_AddRefed<LookupCacheV4> SetupLookupCache(
+    const nsACString& aName) {
   nsCOMPtr<nsIFile> rootDir;
   NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR, getter_AddRefs(rootDir));
 
@@ -130,205 +129,262 @@ already_AddRefed<LookupCacheV4> SetupLookupCache(const nsACString& aName) {
   return lookup.forget();
 }
 
-};  
 
-class UrlClassifierPrefixSetTest : public ::testing::TestWithParam<uint32_t> {
- protected:
-  void SetUp() override {
-    
-    static const char prefKey[] =
-        "browser.safebrowsing.prefixset.max_array_size";
-    Preferences::SetUint(prefKey, GetParam());
+TEST(UrlClassifierVLPrefixSet, FixedLengthSet)
+{
+  srand(time(nullptr));
 
-    mCache = SetupLookupCache(NS_LITERAL_CSTRING("test"));
-  }
+  RefPtr<LookupCacheV4> cache = SetupLookupCache(NS_LITERAL_CSTRING("test"));
 
-  void TearDown() override {
-    mCache = nullptr;
-    mArray.Clear();
-    mMap.Clear();
-  }
+  PrefixStringMap map;
+  _PrefixArray array = {
+      _Prefix("alph"), _Prefix("brav"), _Prefix("char"),
+      _Prefix("delt"), _Prefix("echo"), _Prefix("foxt"),
+  };
 
-  nsresult SetupPrefixes(_PrefixArray&& aArray) {
-    mArray = std::move(aArray);
-    SetupPrefixMap(mArray, mMap);
-    return mCache->Build(mMap);
-  }
+  SetupPrefixMap(array, map);
+  cache->Build(map);
 
-  void SetupPrefixesAndVerify(_PrefixArray& aArray) {
-    mArray = aArray;
-    SetupPrefixMap(mArray, mMap);
+  DoExpectedLookup(cache, array);
+  DoRandomLookup(cache, 1000, array);
+  CheckContent(cache, array);
 
-    ASSERT_TRUE(NS_SUCCEEDED(mCache->Build(mMap)));
-    Verify();
-  }
-
-  void SetupPrefixesAndVerify(_PrefixArray&& aArray) {
-    nsresult rv = SetupPrefixes(std::move(aArray));
-    ASSERT_TRUE(NS_SUCCEEDED(rv));
-    Verify();
-  }
-
-  void SetupRandomPrefixesAndVerify(uint32_t N, uint32_t MIN, uint32_t MAX) {
-    srand(time(nullptr));
-    RandomPrefixes(N, MIN, MAX, mArray);
-    SetupPrefixMap(mArray, mMap);
-
-    ASSERT_TRUE(NS_SUCCEEDED(mCache->Build(mMap)));
-    Verify();
-  }
-
-  void Verify() {
-    DoExpectedLookup(mCache, mArray);
-    DoRandomLookup(mCache, 1000, mArray);
-    CheckContent(mCache, mArray);
-  }
-
-  RefPtr<LookupCacheV4> mCache;
-  _PrefixArray mArray;
-  PrefixStringMap mMap;
-};
-
-
-TEST_P(UrlClassifierPrefixSetTest, FixedLengthSet) {
-  SetupPrefixesAndVerify({
-      _Prefix("alph"),
-      _Prefix("brav"),
-      _Prefix("char"),
-      _Prefix("delt"),
-      _Prefix("echo"),
-      _Prefix("foxt"),
-  });
-}
-
-TEST_P(UrlClassifierPrefixSetTest, FixedLengthRandomSet) {
-  SetupRandomPrefixesAndVerify(1500, 4, 4);
-}
-
-TEST_P(UrlClassifierPrefixSetTest, FixedLengthRandomLargeSet) {
-  SetupRandomPrefixesAndVerify(15000, 4, 4);
-}
-
-TEST_P(UrlClassifierPrefixSetTest, FixedLengthTinySet) {
-  SetupPrefixesAndVerify({
-      _Prefix("tiny"),
-  });
-}
-
-
-TEST_P(UrlClassifierPrefixSetTest, VariableLengthSet) {
-  SetupPrefixesAndVerify(
-      {_Prefix("bravo"), _Prefix("charlie"), _Prefix("delta"),
-       _Prefix("EchoEchoEchoEchoEcho"), _Prefix("foxtrot"),
-       _Prefix("GolfGolfGolfGolfGolfGolfGolfGolf"), _Prefix("hotel"),
-       _Prefix("november"), _Prefix("oscar"), _Prefix("quebec"),
-       _Prefix("romeo"), _Prefix("sierrasierrasierrasierrasierra"),
-       _Prefix("Tango"), _Prefix("whiskey"), _Prefix("yankee"),
-       _Prefix("ZuluZuluZuluZulu")});
-}
-
-TEST_P(UrlClassifierPrefixSetTest, VariableLengthRandomSet) {
-  SetupRandomPrefixesAndVerify(1500, 5, 32);
-}
-
-
-TEST_P(UrlClassifierPrefixSetTest, MixedPrefixSet) {
-  SetupPrefixesAndVerify(
-      {_Prefix("enus"), _Prefix("apollo"), _Prefix("mars"),
-       _Prefix("Hecatonchires cyclopes"), _Prefix("vesta"), _Prefix("neptunus"),
-       _Prefix("jupiter"), _Prefix("diana"), _Prefix("minerva"),
-       _Prefix("ceres"), _Prefix("Aidos,Adephagia,Adikia,Aletheia"),
-       _Prefix("hecatonchires"), _Prefix("alcyoneus"), _Prefix("hades"),
-       _Prefix("vulcanus"), _Prefix("juno"), _Prefix("mercury"),
-       _Prefix("Stheno, Euryale and Medusa")});
-}
-
-TEST_P(UrlClassifierPrefixSetTest, MixedRandomPrefixSet) {
-  SetupRandomPrefixesAndVerify(1500, 4, 32);
-}
-
-
-TEST_P(UrlClassifierPrefixSetTest, ResetPrefix) {
   
-  _PrefixArray oldArray = {
+  array.Clear();
+  map.Clear();
+
+  RandomPrefixes(1500, 4, 4, array);
+
+  SetupPrefixMap(array, map);
+  cache->Build(map);
+
+  DoExpectedLookup(cache, array);
+  DoRandomLookup(cache, 1000, array);
+  CheckContent(cache, array);
+}
+
+
+TEST(UrlClassifierVLPrefixSet, VariableLengthSet)
+{
+  RefPtr<LookupCacheV4> cache = SetupLookupCache(NS_LITERAL_CSTRING("test"));
+
+  PrefixStringMap map;
+  _PrefixArray array = {
+      _Prefix("bravo"),   _Prefix("charlie"),
+      _Prefix("delta"),   _Prefix("EchoEchoEchoEchoEcho"),
+      _Prefix("foxtrot"), _Prefix("GolfGolfGolfGolfGolfGolfGolfGolf"),
+      _Prefix("hotel"),   _Prefix("november"),
+      _Prefix("oscar"),   _Prefix("quebec"),
+      _Prefix("romeo"),   _Prefix("sierrasierrasierrasierrasierra"),
+      _Prefix("Tango"),   _Prefix("whiskey"),
+      _Prefix("yankee"),  _Prefix("ZuluZuluZuluZulu")};
+
+  SetupPrefixMap(array, map);
+  cache->Build(map);
+
+  DoExpectedLookup(cache, array);
+  DoRandomLookup(cache, 1000, array);
+  CheckContent(cache, array);
+
+  
+  array.Clear();
+  map.Clear();
+
+  RandomPrefixes(1500, 5, 32, array);
+
+  SetupPrefixMap(array, map);
+  cache->Build(map);
+
+  DoExpectedLookup(cache, array);
+  DoRandomLookup(cache, 1000, array);
+  CheckContent(cache, array);
+}
+
+
+TEST(UrlClassifierVLPrefixSet, MixedPrefixSet)
+{
+  RefPtr<LookupCacheV4> cache = SetupLookupCache(NS_LITERAL_CSTRING("test"));
+
+  PrefixStringMap map;
+  _PrefixArray array = {_Prefix("enus"),
+                        _Prefix("apollo"),
+                        _Prefix("mars"),
+                        _Prefix("Hecatonchires cyclopes"),
+                        _Prefix("vesta"),
+                        _Prefix("neptunus"),
+                        _Prefix("jupiter"),
+                        _Prefix("diana"),
+                        _Prefix("minerva"),
+                        _Prefix("ceres"),
+                        _Prefix("Aidos,Adephagia,Adikia,Aletheia"),
+                        _Prefix("hecatonchires"),
+                        _Prefix("alcyoneus"),
+                        _Prefix("hades"),
+                        _Prefix("vulcanus"),
+                        _Prefix("juno"),
+                        _Prefix("mercury"),
+                        _Prefix("Stheno, Euryale and Medusa")};
+
+  SetupPrefixMap(array, map);
+  cache->Build(map);
+
+  DoExpectedLookup(cache, array);
+  DoRandomLookup(cache, 1000, array);
+  CheckContent(cache, array);
+
+  
+  array.Clear();
+  map.Clear();
+
+  RandomPrefixes(1500, 4, 32, array);
+
+  SetupPrefixMap(array, map);
+  cache->Build(map);
+
+  DoExpectedLookup(cache, array);
+  DoRandomLookup(cache, 1000, array);
+  CheckContent(cache, array);
+}
+
+
+TEST(UrlClassifierVLPrefixSet, ResetPrefix)
+{
+  RefPtr<LookupCacheV4> cache = SetupLookupCache(NS_LITERAL_CSTRING("test"));
+
+  
+  _PrefixArray array1 = {
       _Prefix("Iceland"),   _Prefix("Peru"),    _Prefix("Mexico"),
       _Prefix("Australia"), _Prefix("Japan"),   _Prefix("Egypt"),
       _Prefix("America"),   _Prefix("Finland"), _Prefix("Germany"),
       _Prefix("Italy"),     _Prefix("France"),  _Prefix("Taiwan"),
   };
-  SetupPrefixesAndVerify(oldArray);
+  {
+    PrefixStringMap map;
+
+    SetupPrefixMap(array1, map);
+    cache->Build(map);
+
+    DoExpectedLookup(cache, array1);
+  }
 
   
-  _PrefixArray newArray = {
+  _PrefixArray array2 = {
       _Prefix("Pikachu"),    _Prefix("Bulbasaur"), _Prefix("Charmander"),
       _Prefix("Blastoise"),  _Prefix("Pidgey"),    _Prefix("Mewtwo"),
       _Prefix("Jigglypuff"), _Prefix("Persian"),   _Prefix("Tentacool"),
       _Prefix("Onix"),       _Prefix("Eevee"),     _Prefix("Jynx"),
   };
-  SetupPrefixesAndVerify(newArray);
+  {
+    PrefixStringMap map;
+
+    SetupPrefixMap(array2, map);
+    cache->Build(map);
+
+    DoExpectedLookup(cache, array2);
+  }
 
   
   uint32_t matchLength = 0;
-  for (uint32_t i = 0; i < oldArray.Length(); i++) {
+  for (uint32_t i = 0; i < array1.Length(); i++) {
     Completion complete;
-    complete.Assign(CreateFullHash(oldArray[i]));
+    complete.Assign(CreateFullHash(array1[i]));
 
     
     bool has, confirmed;
-    mCache->Has(complete, &has, &matchLength, &confirmed);
+    cache->Has(complete, &has, &matchLength, &confirmed);
 
     ASSERT_TRUE(matchLength == 0);
   }
 }
 
 
-TEST_P(UrlClassifierPrefixSetTest, TinyPrefixSet) {
-  SetupPrefixesAndVerify({
+TEST(UrlClassifierVLPrefixSet, TinyPrefixSet)
+{
+  RefPtr<LookupCacheV4> cache = SetupLookupCache(NS_LITERAL_CSTRING("test"));
+
+  PrefixStringMap map;
+  _PrefixArray array = {
       _Prefix("AAAA"),
       _Prefix("11112222333344445555666677778888"),
-  });
+  };
+
+  SetupPrefixMap(array, map);
+  cache->Build(map);
+
+  DoExpectedLookup(cache, array);
+  DoRandomLookup(cache, 1000, array);
+  CheckContent(cache, array);
 }
 
 
-TEST_P(UrlClassifierPrefixSetTest, EmptyFixedPrefixSet) {
-  ASSERT_TRUE(mCache->IsEmpty());
+TEST(UrlClassifierVLPrefixSet, EmptyPrefixSet)
+{
+  RefPtr<LookupCacheV4> cache = SetupLookupCache(NS_LITERAL_CSTRING("test"));
 
-  SetupPrefixesAndVerify({});
+  bool empty = cache->IsEmpty();
+  ASSERT_TRUE(empty);
 
-  
-  SetupPrefixesAndVerify({_Prefix("test")});
-
-  ASSERT_TRUE(!mCache->IsEmpty());
-}
-
-TEST_P(UrlClassifierPrefixSetTest, EmptyVariableLengthPrefixSet) {
-  ASSERT_TRUE(mCache->IsEmpty());
-
-  SetupPrefixesAndVerify({});
+  PrefixStringMap map;
+  _PrefixArray array1;
 
   
-  SetupPrefixesAndVerify({_Prefix("test variable length")});
-
-  ASSERT_TRUE(!mCache->IsEmpty());
-}
-
-
-TEST_P(UrlClassifierPrefixSetTest, MinMaxPrefixSet) {
-  
-  SetupPrefixesAndVerify({_Prefix("1234"), _Prefix("ABCDEFGHIJKKMNOP"),
-                          _Prefix("1aaa2bbb3ccc4ddd5eee6fff7ggg8hhh")});
+  DoRandomLookup(cache, 100, array1);
 
   
-  nsresult rv = SetupPrefixes({_Prefix("123")});
-  ASSERT_TRUE(NS_FAILED(rv));
+  _PrefixArray array2 = {_Prefix("test")};
+  SetupPrefixMap(array2, map);
+  cache->Build(map);
+
+  empty = cache->IsEmpty();
+  ASSERT_TRUE(!empty);
+
+  _PrefixArray array3 = {_Prefix("test variable length")};
 
   
-  rv = SetupPrefixes({_Prefix("1aaa2bbb3ccc4ddd5eee6fff7ggg8hhh9")});
-  ASSERT_TRUE(NS_FAILED(rv));
+  SetupPrefixMap(array3, map);
+  cache->Build(map);
+
+  empty = cache->IsEmpty();
+  ASSERT_TRUE(!empty);
 }
 
 
-TEST_P(UrlClassifierPrefixSetTest, LoadSaveFixedLengthPrefixSet) {
+TEST(UrlClassifierVLPrefixSet, MinMaxPrefixSet)
+{
+  RefPtr<LookupCacheV4> cache = SetupLookupCache(NS_LITERAL_CSTRING("test"));
+
+  PrefixStringMap map;
+  {
+    _PrefixArray array = {_Prefix("1234"), _Prefix("ABCDEFGHIJKKMNOP"),
+                          _Prefix("1aaa2bbb3ccc4ddd5eee6fff7ggg8hhh")};
+
+    SetupPrefixMap(array, map);
+    nsresult rv = cache->Build(map);
+    ASSERT_TRUE(rv == NS_OK);
+  }
+
+  
+  {
+    _PrefixArray array = {_Prefix("123")};
+
+    SetupPrefixMap(array, map);
+    nsresult rv = cache->Build(map);
+    ASSERT_TRUE(NS_FAILED(rv));
+  }
+
+  
+  {
+    _PrefixArray array = {_Prefix("1aaa2bbb3ccc4ddd5eee6fff7ggg8hhh9")};
+
+    SetupPrefixMap(array, map);
+    nsresult rv = cache->Build(map);
+    ASSERT_TRUE(NS_FAILED(rv));
+  }
+}
+
+
+TEST(UrlClassifierVLPrefixSet, LoadSaveFixedLengthPrefixSet)
+{
   nsCOMPtr<nsIFile> file;
   _PrefixArray array;
   PrefixStringMap map;
@@ -367,7 +423,8 @@ TEST_P(UrlClassifierPrefixSetTest, LoadSaveFixedLengthPrefixSet) {
 }
 
 
-TEST_P(UrlClassifierPrefixSetTest, LoadSaveVariableLengthPrefixSet) {
+TEST(UrlClassifierVLPrefixSet, LoadSaveVariableLengthPrefixSet)
+{
   nsCOMPtr<nsIFile> file;
   _PrefixArray array;
   PrefixStringMap map;
@@ -406,7 +463,8 @@ TEST_P(UrlClassifierPrefixSetTest, LoadSaveVariableLengthPrefixSet) {
 }
 
 
-TEST_P(UrlClassifierPrefixSetTest, LoadSavePrefixSet) {
+TEST(UrlClassifierVLPrefixSet, LoadSavePrefixSet)
+{
   nsCOMPtr<nsIFile> file;
   _PrefixArray array;
   PrefixStringMap map;
@@ -447,7 +505,8 @@ TEST_P(UrlClassifierPrefixSetTest, LoadSavePrefixSet) {
 }
 
 
-TEST_P(UrlClassifierPrefixSetTest, LoadSaveNoDelta) {
+TEST(UrlClassifierVLPrefixSet, LoadSaveNoDelta)
+{
   nsCOMPtr<nsIFile> file;
   _PrefixArray array;
   PrefixStringMap map;
@@ -490,6 +549,3 @@ TEST_P(UrlClassifierPrefixSetTest, LoadSaveNoDelta) {
 
   file->Remove(false);
 }
-
-
-INSTANTIATE_TEST_CASE_P(UrlClassifierPrefixSetTest, UrlClassifierPrefixSetTest, ::testing::Values(0, UINT32_MAX));
