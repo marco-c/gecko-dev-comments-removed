@@ -142,7 +142,7 @@ class CSSTransition final : public Animation {
     MOZ_ASSERT(!rv.Failed(), "Unexpected exception playing transition");
   }
 
-  void CancelFromStyle() override {
+  void CancelFromStyle() {
     
     
     
@@ -152,7 +152,7 @@ class CSSTransition final : public Animation {
     mAnimationIndex = sNextAnimationIndex++;
     mNeedsNewAnimationIndexWhenRun = true;
 
-    Animation::CancelFromStyle();
+    Animation::Cancel();
 
     
     
