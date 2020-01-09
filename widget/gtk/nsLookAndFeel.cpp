@@ -706,18 +706,6 @@ nsresult nsLookAndFeel::GetIntImpl(IntID aID, int32_t& aResult) {
       aResult = enableAnimations ? 0 : 1;
       break;
     }
-    case eIntID_SystemUsesDarkTheme: {
-      
-      
-      
-      nscolor fg, bg;
-      if (NS_SUCCEEDED(NativeGetColor(eColorID_windowtext, fg)) &&
-          NS_SUCCEEDED(NativeGetColor(eColorID_window, bg))) {
-        aResult = NS_GetLuminosity(bg) < NS_GetLuminosity(fg) ? 1 : 0;
-        break;
-      }
-      MOZ_FALLTHROUGH;
-    }
     default:
       aResult = 0;
       res = NS_ERROR_FAILURE;
