@@ -19,7 +19,8 @@ namespace js {
 namespace gc {
 
 
-enum class MarkColor : uint32_t { Black = 0, Gray };
+
+enum class MarkColor : uint8_t { Gray = 1, Black = 2 };
 
 
 #define GCSTATES(D) \

@@ -209,14 +209,14 @@ void Zone::discardJitCode(FreeOp* fop,
 #ifdef DEBUG
     
     for (auto script = cellIter<JSScript>(); !script.done(); script.next()) {
-      if (TypeScript* types = script.unbarrieredGet()->types()) {
-        MOZ_ASSERT(!types->active());
+      if (JitScript* jitScript = script.unbarrieredGet()->jitScript()) {
+        MOZ_ASSERT(!jitScript->active());
       }
     }
 #endif
 
     
-    jit::MarkActiveTypeScripts(this);
+    jit::MarkActiveJitScripts(this);
   }
 
   
@@ -228,7 +228,7 @@ void Zone::discardJitCode(FreeOp* fop,
 
     
     if (discardBaselineCode && script->hasBaselineScript()) {
-      if (script->types()->active()) {
+      if (script->jitScript()->active()) {
         
         
         script->baselineScript()->clearIonCompiledOrInlined();
@@ -252,20 +252,18 @@ void Zone::discardJitCode(FreeOp* fop,
     
     
     if (releaseTypes) {
-      script->maybeReleaseTypes();
+      script->maybeReleaseJitScript();
     }
 
-    
-    
-    
-    
-    if (discardBaselineCode && script->hasICScript()) {
-      script->icScript()->purgeOptimizedStubs(script);
-    }
+    if (JitScript* jitScript = script->jitScript()) {
+      
+      
+      if (discardBaselineCode) {
+        jitScript->purgeOptimizedStubs(script);
+      }
 
-    
-    if (TypeScript* types = script->types()) {
-      types->resetActive();
+      
+      jitScript->resetActive();
     }
   }
 
@@ -527,10 +525,11 @@ void MemoryTracker::adopt(MemoryTracker& other) {
 
 static const char* MemoryUseName(MemoryUse use) {
   switch (use) {
-#define DEFINE_CASE(Name) \
-    case MemoryUse::Name: return #Name;
-JS_FOR_EACH_MEMORY_USE(DEFINE_CASE)
-#undef DEFINE_CASE
+#  define DEFINE_CASE(Name) \
+    case MemoryUse::Name:   \
+      return #Name;
+    JS_FOR_EACH_MEMORY_USE(DEFINE_CASE)
+#  undef DEFINE_CASE
   }
 
   MOZ_CRASH("Unknown memory use");
