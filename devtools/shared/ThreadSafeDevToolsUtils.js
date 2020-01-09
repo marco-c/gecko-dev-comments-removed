@@ -9,6 +9,8 @@
 
 
 
+var flags = require("./flags");
+
 
 
 
@@ -112,7 +114,9 @@ exports.makeInfallible = function(handler, name = handler.name) {
       if (name) {
         who += " " + name;
       }
-      exports.reportException(who, ex);
+      if (!flags.quiet) {
+        exports.reportException(who, ex);
+      }
       return undefined;
     }
   };
