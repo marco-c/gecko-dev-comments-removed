@@ -5,16 +5,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 function timeoutPromise(t, ms) {
   return new Promise(resolve => { t.step_timeout(resolve, ms); });
 }
