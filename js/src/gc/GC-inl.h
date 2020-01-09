@@ -325,6 +325,7 @@ class ZoneCellIter<TenuredCell> {
 
 
 
+
 template <typename GCType>
 class ZoneCellIter : public ZoneCellIter<TenuredCell> {
  public:
@@ -361,6 +362,47 @@ class ZoneCellIter : public ZoneCellIter<TenuredCell> {
   GCType* get() const { return ZoneCellIter<TenuredCell>::get<GCType>(); }
   operator GCType*() const { return get(); }
   GCType* operator->() const { return get(); }
+};
+
+
+template <typename T>
+class SafeZoneCellIter : public ZoneCellIter<T> {
+ public:
+  
+
+
+  explicit SafeZoneCellIter(JS::Zone* zone) : ZoneCellIter<T>(zone) {
+    skipDying();
+  }
+  SafeZoneCellIter(JS::Zone* zone, const js::gc::AutoAssertEmptyNursery& empty)
+      : ZoneCellIter<T>(zone, empty) {
+    skipDying();
+  }
+  SafeZoneCellIter(JS::Zone* zone, AllocKind kind)
+      : ZoneCellIter<T>(zone, kind) {
+    skipDying();
+  }
+  SafeZoneCellIter(JS::Zone* zone, AllocKind kind,
+                   const js::gc::AutoAssertEmptyNursery& empty)
+      : ZoneCellIter<T>(zone, kind, empty) {
+    skipDying();
+  }
+
+  void next() {
+    ZoneCellIter<T>::next();
+    skipDying();
+  }
+
+ private:
+  void skipDying() {
+    while (!ZoneCellIter<T>::done()) {
+      T* current = ZoneCellIter<T>::get();
+      if (!IsAboutToBeFinalizedUnbarriered(&current)) {
+        return;
+      }
+      ZoneCellIter<T>::next();
+    }
+  }
 };
 
 } 

@@ -43,6 +43,9 @@ extern uint64_t NextCellUniqueId(JSRuntime* rt);
 template <typename T>
 class ZoneCellIter;
 
+template <typename T>
+class SafeZoneCellIter;
+
 }  
 
 class MOZ_NON_TEMPORARY_CLASS ExternalStringCache {
@@ -204,7 +207,14 @@ class Zone : public JS::shadow::Zone,
   
   
   template <typename T, typename... Args>
-  js::gc::ZoneCellIter<T> cellIter(Args&&... args) {
+  js::gc::SafeZoneCellIter<T> cellIter(Args&&... args) {
+    return js::gc::SafeZoneCellIter<T>(const_cast<Zone*>(this),
+                                       std::forward<Args>(args)...);
+  }
+
+  
+  template <typename T, typename... Args>
+  js::gc::ZoneCellIter<T> cellIterUnsafe(Args&&... args) {
     return js::gc::ZoneCellIter<T>(const_cast<Zone*>(this),
                                    std::forward<Args>(args)...);
   }
