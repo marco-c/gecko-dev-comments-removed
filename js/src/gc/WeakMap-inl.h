@@ -41,6 +41,9 @@ WeakMap<K, V>::WeakMap(JSContext* cx, JSObject* memOf)
     : Base(cx->zone()), WeakMapBase(memOf, cx->zone()) {
   using ElemType = typename K::ElementType;
   using NonPtrType = typename mozilla::RemovePointer<ElemType>::Type;
+
+  
+  
   
   
   static_assert(JS::IsCCTraceKind(NonPtrType::TraceKind),
