@@ -135,12 +135,12 @@ pub unsafe trait HasArcFFI: HasFFI {
     }
 }
 
-
-
-
-
-
 #[repr(C)]
+
+
+
+
+
 pub struct Strong<GeckoType> {
     ptr: *const GeckoType,
     _marker: PhantomData<GeckoType>,
@@ -318,6 +318,27 @@ impl<GeckoType> OwnedOrNull<GeckoType> {
     #[inline]
     pub fn is_null(&self) -> bool {
         self.ptr.is_null()
+    }
+
+    
+    pub fn into_box_opt<ServoType>(self) -> Option<Box<ServoType>>
+    where
+        ServoType: HasBoxFFI<FFIType = GeckoType>,
+    {
+        if self.is_null() {
+            None
+        } else {
+            Some(unsafe { transmute(self) })
+        }
+    }
+
+    
+    pub fn into_owned_opt(self) -> Option<Owned<GeckoType>> {
+        if self.is_null() {
+            None
+        } else {
+            Some(unsafe { transmute(self) })
+        }
     }
 
     

@@ -95,6 +95,21 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef mozilla_ServoBindingTypes_h
 #define mozilla_ServoBindingTypes_h
 
@@ -105,10 +120,13 @@
 #include "mozilla/gfx/Types.h"
 #include "nsCSSPropertyID.h"
 #include "nsStyleAutoArray.h"
-#include "nsStyleConsts.h"
 #include "nsTArray.h"
 
 
+
+#define SERVO_BOXED_TYPE(name_, type_) struct type_;
+#include "mozilla/ServoBoxedTypeList.h"
+#undef SERVO_BOXED_TYPE
 
 #define SERVO_ARC_TYPE(name_, type_) struct type_;
 #include "mozilla/ServoArcTypeList.h"
@@ -140,10 +158,18 @@ class StyleChildrenIterator;
 class Document;
 class Element;
 }  
-
 }  
 
+#define DECL_OWNED_REF_TYPE_FOR(type_) typedef type_* type_##Owned;
+
+#define DECL_NULLABLE_OWNED_REF_TYPE_FOR(type_) \
+  typedef type_* type_##OwnedOrNull;
+
 #define SERVO_ARC_TYPE(name_, type_)                                    \
+  struct MOZ_MUST_USE_TYPE type_##Strong {                              \
+    type_* mPtr;                                                        \
+    already_AddRefed<type_> Consume();                                  \
+  };                                                                    \
   extern "C" {                                                          \
   void Servo_##name_##_AddRef(const type_*);                            \
   void Servo_##name_##_Release(const type_*);                           \
@@ -156,38 +182,35 @@ class Element;
   };                                                                    \
   }
 #include "mozilla/ServoArcTypeList.h"
-SERVO_ARC_TYPE(ComputedStyle, mozilla::ComputedStyle)
 #undef SERVO_ARC_TYPE
 
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wreturn-type-c-linkage"
-
-#define SERVO_BOXED_TYPE(name_, type_)                              \
-  struct type_;                                                     \
-  extern "C" void Servo_##name_##_Drop(mozilla::StyleOwned<type_>); \
-  namespace mozilla {                                               \
-  template <>                                                       \
-  class DefaultDelete<type_> {                                      \
-   public:                                                          \
-    void operator()(type_* aPtr) const {                            \
-      Servo_##name_##_Drop(mozilla::StyleOwned<type_>{aPtr});       \
-    }                                                               \
-  };                                                                \
+#define SERVO_BOXED_TYPE(name_, type_)                                 \
+  DECL_OWNED_REF_TYPE_FOR(type_)                                       \
+  DECL_NULLABLE_OWNED_REF_TYPE_FOR(type_)                              \
+  extern "C" void Servo_##name_##_Drop(type_##Owned ptr);              \
+  namespace mozilla {                                                  \
+  template <>                                                          \
+  class DefaultDelete<type_> {                                         \
+   public:                                                             \
+    void operator()(type_* aPtr) const { Servo_##name_##_Drop(aPtr); } \
+  };                                                                   \
   }
-SERVO_BOXED_TYPE(StyleSet, RawServoStyleSet)
-SERVO_BOXED_TYPE(AuthorStyles, RawServoAuthorStyles)
-SERVO_BOXED_TYPE(SelectorList, RawServoSelectorList)
-SERVO_BOXED_TYPE(SourceSizeList, RawServoSourceSizeList)
-SERVO_BOXED_TYPE(UseCounters, StyleUseCounters)
+#include "mozilla/ServoBoxedTypeList.h"
 #undef SERVO_BOXED_TYPE
-
-#pragma GCC diagnostic pop
 
 
 
 
 struct RawServoAnimationValueTable;
 struct RawServoAnimationValueMap;
+
+struct MOZ_MUST_USE_TYPE ComputedStyleStrong {
+  mozilla::ComputedStyle* mPtr;
+  already_AddRefed<mozilla::ComputedStyle> Consume();
+};
+
+#undef DECL_ARC_REF_TYPE_FOR
+#undef DECL_OWNED_REF_TYPE_FOR
+#undef DECL_NULLABLE_OWNED_REF_TYPE_FOR
 
 #endif  
