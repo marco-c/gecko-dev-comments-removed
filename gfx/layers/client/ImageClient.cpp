@@ -34,6 +34,11 @@
 #include "nsISupportsImpl.h"                  
 #include "nsRect.h"                           
 
+#ifdef XP_WIN
+#  include "mozilla/WindowsVersion.h"
+#  include "mozilla/layers/D3D11YCbCrImage.h"
+#endif
+
 namespace mozilla {
 namespace layers {
 
@@ -91,7 +96,7 @@ void ImageClientSingle::FlushAllImages() {
 
 
 already_AddRefed<TextureClient> ImageClient::CreateTextureClientForImage(
-    Image* aImage, KnowsCompositor* aForwarder) {
+    Image* aImage, KnowsCompositor* aForwarder, ImageContainer* aContainer) {
   RefPtr<TextureClient> texture;
   if (aImage->GetFormat() == ImageFormat::PLANAR_YCBCR) {
     PlanarYCbCrImage* ycbcr = static_cast<PlanarYCbCrImage*>(aImage);
@@ -99,6 +104,24 @@ already_AddRefed<TextureClient> ImageClient::CreateTextureClientForImage(
     if (!data) {
       return nullptr;
     }
+
+#if XP_WIN
+    
+    
+    
+    
+    
+    if (IsWin8OrLater() && XRE_IsContentProcess() && aForwarder &&
+        aForwarder->SupportsD3D11() && aForwarder->GetTextureForwarder() &&
+        aForwarder->GetTextureForwarder()->UsesImageBridge() && aContainer &&
+        data->mYSkip == 0 && data->mCbSkip == 0 && data->mCrSkip == 0) {
+      texture = D3D11YCbCrImage::CreateAndCopyDataToDXGIYCbCrTextureData(
+          aForwarder, aContainer, *data);
+      if (texture) {
+        return texture.forget();
+      }
+    }
+#endif
     texture = TextureClient::CreateForYCbCr(
         aForwarder, data->mYSize, data->mYStride, data->mCbCrSize,
         data->mCbCrStride, data->mStereoMode, data->mColorDepth,
@@ -220,7 +243,7 @@ bool ImageClientSingle::UpdateImage(ImageContainer* aContainer,
       
       
       
-      texture = CreateTextureClientForImage(image, GetForwarder());
+      texture = CreateTextureClientForImage(image, GetForwarder(), aContainer);
     }
 
     if (!texture) {
