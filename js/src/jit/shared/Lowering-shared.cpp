@@ -274,6 +274,13 @@ void LIRGeneratorShared::assignSafepoint(LInstruction* ins, MInstruction* mir,
 
   MResumePoint* mrp =
       mir->resumePoint() ? mir->resumePoint() : lastResumePoint_;
+  
+  
+  
+  
+  MOZ_ASSERT_IF(mir->isEffectful() && !mir->isMovable(), mir->resumePoint());
+  MOZ_ASSERT_IF(mir->isEffectful() && !mir->isMovable(),
+                mrp->mode() == MResumePoint::ResumeAfter);
   LSnapshot* postSnapshot = buildSnapshot(ins, mrp, kind);
   if (!postSnapshot) {
     abort(AbortReason::Alloc, "buildSnapshot failed");
