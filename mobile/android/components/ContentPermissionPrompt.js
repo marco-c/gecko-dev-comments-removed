@@ -57,8 +57,6 @@ ContentPermissionPrompt.prototype = {
   },
 
   prompt: function(request) {
-    let isApp = request.principal.appId !== Ci.nsIScriptSecurityManager.NO_APP_ID && request.principal.appId !== Ci.nsIScriptSecurityManager.UNKNOWN_APP_ID;
-
     
     let types = request.types.QueryInterface(Ci.nsIArray);
     if (types.length != 1) {
@@ -121,7 +119,7 @@ ContentPermissionPrompt.prototype = {
           Services.perms.addFromPrincipal(request.principal, perm.type, Ci.nsIPermissionManager.ALLOW_ACTION);
         
         
-        } else if (isApp || (isPrivate && isPermanent)) {
+        } else if (isPrivate && isPermanent) {
           
           
           Services.perms.addFromPrincipal(request.principal, perm.type, Ci.nsIPermissionManager.ALLOW_ACTION, Ci.nsIPermissionManager.EXPIRE_SESSION);
