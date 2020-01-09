@@ -282,7 +282,6 @@ class RemoteSettingsClient extends EventEmitter {
   async maybeSync(expectedTimestamp, options = {}) {
     const { loadDump = true, trigger = "manual" } = options;
 
-    let importedFromDump = [];
     const startedAt = new Date();
     let reportStatus = null;
     try {
@@ -296,11 +295,7 @@ class RemoteSettingsClient extends EventEmitter {
       
       if (!collectionLastModified && loadDump) {
         try {
-          const imported = await RemoteSettingsWorker.importJSONDump(this.bucketName, this.collectionName);
-          
-          if (imported > 0) {
-            ({ data: importedFromDump } = await kintoCollection.list());
-          }
+          await RemoteSettingsWorker.importJSONDump(this.bucketName, this.collectionName);
           collectionLastModified = await kintoCollection.db.getLastModified();
         } catch (e) {
           
@@ -342,9 +337,6 @@ class RemoteSettingsClient extends EventEmitter {
           
           throw new Error("Synced failed");
         }
-        
-        
-        syncResult.created = importedFromDump.concat(syncResult.created);
       } catch (e) {
         if (e instanceof RemoteSettingsClient.InvalidSignatureError) {
           
