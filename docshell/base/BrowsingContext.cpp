@@ -237,6 +237,10 @@ void BrowsingContext::Detach(bool aFromIPC) {
 
   Group()->Unregister(this);
 
+  
+  
+  mDocShell = nullptr;
+
   if (!aFromIPC && XRE_IsContentProcess()) {
     auto cc = ContentChild::GetSingleton();
     MOZ_DIAGNOSTIC_ASSERT(cc);
