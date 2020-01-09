@@ -833,10 +833,14 @@ var gPrivacyPane = {
 
 
   initAutoStartPrivateBrowsingReverter() {
+    
+    
     let mode = document.getElementById("historyMode");
-    let autoStart = document.getElementById("privateBrowsingAutoStart");
     this._lastMode = mode.selectedIndex;
-    this._lastCheckState = autoStart.hasAttribute("checked");
+    
+    
+    
+    this._lastCheckState = Preferences.get("browser.privatebrowsing.autostart").value;
   },
 
   _lastMode: null,
