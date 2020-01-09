@@ -1424,6 +1424,12 @@ EnvironmentCache.prototype = {
       sandbox: this._getSandboxData(),
     };
 
+    
+    
+    try {
+      this._currentEnvironment.settings.launcherProcessState = Services.appinfo.launcherProcessState;
+    } catch (e) {}
+
     this._currentEnvironment.settings.addonCompatibilityCheckEnabled =
       AddonManager.checkCompatibility;
 

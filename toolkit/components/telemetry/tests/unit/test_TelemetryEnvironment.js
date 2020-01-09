@@ -421,6 +421,11 @@ function checkSettingsSection(data) {
   }
 
   
+  if ("launcherProcessState" in data.settings) {
+    Assert.equal(typeof data.settings.launcherProcessState, "number");
+  }
+
+  
   Assert.equal(data.settings.addonCompatibilityCheckEnabled, AddonManager.checkCompatibility);
 
   
