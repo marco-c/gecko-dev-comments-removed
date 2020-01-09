@@ -282,33 +282,31 @@ export function newGeneratedSources(sourceInfo: Array<GeneratedSourceData>) {
     const supportsWasm = client.hasWasmSupport();
 
     const resultIds = [];
-    const newSources: Array<Source> = [];
+    const newSourcesObj = {};
     const newSourceActors: Array<SourceActor> = [];
 
     for (const { thread, source, id } of sourceInfo) {
       const newId = id || makeSourceId(source);
 
-      if (!getSource(getState(), newId)) {
-        newSources.push(
-          ({
-            id: newId,
-            url: source.url,
-            relativeUrl: source.url,
-            isPrettyPrinted: false,
-            sourceMapURL: source.sourceMapURL,
-            introductionUrl: source.introductionUrl,
-            introductionType: source.introductionType,
-            isBlackBoxed: false,
-            isWasm: !!supportsWasm && source.introductionType === "wasm",
-            isExtension: (source.url && isUrlExtension(source.url)) || false
-          }: any)
-        );
+      if (!getSource(getState(), newId) && !newSourcesObj[newId]) {
+        newSourcesObj[newId] = ({
+          id: newId,
+          url: source.url,
+          relativeUrl: source.url,
+          isPrettyPrinted: false,
+          sourceMapURL: source.sourceMapURL,
+          introductionUrl: source.introductionUrl,
+          introductionType: source.introductionType,
+          isBlackBoxed: false,
+          isWasm: !!supportsWasm && source.introductionType === "wasm",
+          isExtension: (source.url && isUrlExtension(source.url)) || false
+        }: any);
       }
 
       const actorId = stringToSourceActorId(source.actor);
 
-      // We are sometimes notified about a new source multiple times if we
-      // request a new source list and also get a source event from the server.
+      
+      
       if (!hasSourceActor(getState(), actorId)) {
         newSourceActors.push({
           id: actorId,
@@ -326,6 +324,10 @@ export function newGeneratedSources(sourceInfo: Array<GeneratedSourceData>) {
 
       resultIds.push(newId);
     }
+
+    const newSources: Array<Source> = (Object.values(newSourcesObj): Array<
+      any
+    >);
 
     const cx = getContext(getState());
     dispatch(addSources(cx, newSources));
