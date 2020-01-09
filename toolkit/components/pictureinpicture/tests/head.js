@@ -68,6 +68,43 @@ async function assertShowingMessage(browser, videoID, expected) {
                "Video should be showing the expected state.");
 }
 
+
+
+
+
+
+
+
+
+
+async function ensureVideosReady(browser) {
+  
+  
+  
+  info(`Waiting for videos to be ready`);
+  await ContentTask.spawn(browser, null, async () => {
+    let videos = this.content.document.querySelectorAll("video");
+    for (let video of videos) {
+      if (video.readyState < content.HTMLMediaElement.HAVE_ENOUGH_DATA) {
+        await ContentTaskUtils.waitForEvent(video, "canplay");
+      }
+    }
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 async function toggleOpacityReachesThreshold(browser, videoID, opacityThreshold) {
   let args = { videoID, TOGGLE_ID, opacityThreshold };
   await ContentTask.spawn(browser, args, async args => {
@@ -84,6 +121,21 @@ async function toggleOpacityReachesThreshold(browser, videoID, opacityThreshold)
     ok(true, "Toggle reached target opacity.");
   });
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 async function assertSawMouseEvents(browser, isExpectingEvents) {
   const MOUSE_BUTTON_EVENTS = [
@@ -123,63 +175,78 @@ async function assertSawMouseEvents(browser, isExpectingEvents) {
 
 
 
+
+
+
+
+
+async function prepareForToggleClick(browser, videoID) {
+  
+  
+  let args = { videoID, TOGGLE_ID };
+  return ContentTask.spawn(browser, args, async args => {
+    let { videoID, TOGGLE_ID } = args;
+    let video = content.document.getElementById(videoID);
+    video.scrollIntoView({ behaviour: "instant" });
+    let shadowRoot = video.openOrClosedShadowRoot;
+    let toggle = shadowRoot.getElementById(TOGGLE_ID);
+
+    if (!video.controls) {
+      
+      
+      
+      
+      
+      let {PictureInPictureToggleChild} =
+        ChromeUtils.import("resource://gre/actors/PictureInPictureChild.jsm");
+      await ContentTaskUtils.waitForCondition(() => {
+        return PictureInPictureToggleChild.isTracking(video);
+      }, "Waiting for PictureInPictureToggleChild to be tracking the video.", 100, 100);
+    }
+    let rect = toggle.getBoundingClientRect();
+    return {
+      toggleClientRect: {
+        top: rect.top,
+        right: rect.right,
+        left: rect.left,
+        bottom: rect.bottom,
+      },
+      controls: video.controls,
+    };
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 async function testToggle(testURL, expectations) {
   await BrowserTestUtils.withNewTab({
     gBrowser,
     url: testURL,
   }, async browser => {
-    let videoIDs = Object.keys(expectations);
+    await ensureVideosReady(browser);
 
-    
-    
-    
-    info(`Waiting for videos to be ready`);
-    await ContentTask.spawn(browser, videoIDs, async videoIDs => {
-      for (let videoID of videoIDs) {
-        let video = content.document.getElementById(videoID);
-        if (video.readyState < content.HTMLMediaElement.HAVE_ENOUGH_DATA) {
-          await ContentTaskUtils.waitForEvent(video, "canplay");
-        }
-      }
-    });
-
-    for (let videoID of videoIDs) {
+    for (let [videoID, canToggle] of Object.entries(expectations)) {
       await SimpleTest.promiseFocus(browser);
       info(`Testing video with id: ${videoID}`);
 
-      
-      
-      let args = { videoID, TOGGLE_ID };
-      let { toggleClientRect, controls } = await ContentTask.spawn(browser, args, async args => {
-        let { videoID, TOGGLE_ID } = args;
-        let video = content.document.getElementById(videoID);
-        video.scrollIntoView({ behaviour: "instant" });
-        let shadowRoot = video.openOrClosedShadowRoot;
-        let toggle = shadowRoot.getElementById(TOGGLE_ID);
-
-        if (!video.controls) {
-          
-          
-          
-          
-          
-          let {PictureInPictureToggleChild} =
-            ChromeUtils.import("resource://gre/actors/PictureInPictureChild.jsm");
-          await ContentTaskUtils.waitForCondition(() => {
-            return PictureInPictureToggleChild.isTracking(video);
-          }, "Waiting for PictureInPictureToggleChild to be tracking the video.", 100, 100);
-        }
-        let rect = toggle.getBoundingClientRect();
-        return {
-          toggleClientRect: {
-            top: rect.top,
-            right: rect.right,
-            left: rect.left,
-            bottom: rect.bottom,
-          },
-          controls: video.controls,
-        };
-      });
+      let { toggleClientRect, controls } = await prepareForToggleClick(browser, videoID);
 
       
       await BrowserTestUtils.synthesizeMouseAtCenter(`#${videoID}`, {
@@ -193,6 +260,9 @@ async function testToggle(testURL, expectations) {
       await toggleOpacityReachesThreshold(browser, videoID, HOVER_VIDEO_OPACITY);
 
       info("Hovering the toggle rect now.");
+      
+      
+      
       let toggleLeft = toggleClientRect.left + 2;
       let toggleTop = toggleClientRect.top + 2;
       await BrowserTestUtils.synthesizeMouseAtPoint(toggleLeft, toggleTop, {
@@ -204,7 +274,7 @@ async function testToggle(testURL, expectations) {
 
       await toggleOpacityReachesThreshold(browser, videoID, HOVER_TOGGLE_OPACITY);
 
-      if (expectations[videoID].canToggle) {
+      if (canToggle) {
         info("Clicking on toggle, and expecting a Picture-in-Picture window to open");
         let domWindowOpened = BrowserTestUtils.domWindowOpened(null);
         await BrowserTestUtils.synthesizeMouseAtPoint(toggleLeft, toggleTop, {}, browser);
