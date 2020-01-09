@@ -519,6 +519,12 @@ static void NoteViewBufferWasDetached(
 void ArrayBufferObject::setNewData(FreeOp* fop, BufferContents newContents,
                                    OwnsState ownsState) {
   if (ownsData()) {
+    
+    
+    
+    
+    
+    
     MOZ_ASSERT(newContents.data() != dataPointer());
     releaseData(fop);
   }
@@ -964,6 +970,9 @@ bool js::CreateWasmBuffer(JSContext* cx, const wasm::Limits& memory,
     return true;
   }
 
+  
+  
+  
   if (!buffer->ownsData()) {
     uint8_t* data = AllocateArrayBufferContents(cx, buffer->byteLength());
     if (!data) {
@@ -1006,16 +1015,17 @@ void ArrayBufferObject::releaseData(FreeOp* fop) {
 
   switch (bufferKind()) {
     case INLINE_DATA:
-      MOZ_ASSERT_UNREACHABLE("inline data should never be owned");
+      
       break;
     case MALLOCED:
       fop->free_(dataPointer());
       break;
     case NO_DATA:
+      
       MOZ_ASSERT(dataPointer() == nullptr);
       break;
     case USER_OWNED:
-      MOZ_ASSERT_UNREACHABLE("user-owned data should never be owned by this");
+      
       break;
     case MAPPED:
       gc::DeallocateMappedContent(dataPointer(), byteLength());
@@ -1221,7 +1231,9 @@ ArrayBufferObject* ArrayBufferObject::createForContents(
 
   size_t nslots = reservedSlots;
   if (ownsState == OwnsData) {
-    if (contents.kind() == EXTERNAL) {
+    if (contents.kind() == USER_OWNED) {
+      
+    } else if (contents.kind() == EXTERNAL) {
       
       
       size_t freeInfoSlots = JS_HOWMANY(sizeof(FreeInfo), sizeof(Value));
@@ -1362,7 +1374,7 @@ ArrayBufferObject* ArrayBufferObject::createFromNewRawBuffer(
 #ifdef DEBUG
   if (hasStealableContents) {
     MOZ_ASSERT(!buffer->isInlineData(),
-               "inline data is DoesntOwnData and isn't malloc-allocated");
+               "inline data is OwnsData, but it isn't malloc-allocated");
     MOZ_ASSERT(!buffer->isNoData(),
                "null |dataPointer()| for the no-data case isn't stealable "
                "because it would be confused with failure");
@@ -1414,8 +1426,8 @@ ArrayBufferObject* ArrayBufferObject::createFromNewRawBuffer(
 
   switch (buffer.bufferKind()) {
     case INLINE_DATA:
-      MOZ_ASSERT_UNREACHABLE("inline data should never be owned and should be "
-                             "accounted for in |this|'s memory");
+      
+      
       break;
     case MALLOCED:
       if (buffer.isPreparedForAsmJS()) {
@@ -1427,12 +1439,11 @@ ArrayBufferObject* ArrayBufferObject::createFromNewRawBuffer(
       }
       break;
     case NO_DATA:
+      
       MOZ_ASSERT(buffer.dataPointer() == nullptr);
       break;
     case USER_OWNED:
-      MOZ_ASSERT_UNREACHABLE(
-          "user-owned data should never be owned by this, and such memory "
-          "should be accounted for by the code that provided it");
+      
       break;
     case MAPPED:
       info->objectsNonHeapElementsNormal += buffer.byteLength();
@@ -1682,6 +1693,37 @@ JS_FRIEND_API bool JS_DetachArrayBuffer(JSContext* cx, HandleObject obj) {
 
   using BufferContents = ArrayBufferObject::BufferContents;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   BufferContents newContents =
       buffer->ownsData()
           ? BufferContents::createNoData()
@@ -1756,7 +1798,7 @@ JS_PUBLIC_API JSObject* JS_NewArrayBufferWithUserOwnedContents(JSContext* cx,
 
   BufferContents contents = BufferContents::createUserOwned(data);
   return ArrayBufferObject::createForContents(cx, nbytes, contents,
-                                              ArrayBufferObject::DoesntOwnData);
+                                              ArrayBufferObject::OwnsData);
 }
 
 JS_FRIEND_API bool JS_IsArrayBufferObject(JSObject* obj) {
@@ -1806,6 +1848,9 @@ JS_PUBLIC_API void* JS_StealArrayBufferContents(JSContext* cx,
     return nullptr;
   }
 
+  
+  
+  
   
   
   

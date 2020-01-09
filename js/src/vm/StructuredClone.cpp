@@ -1884,8 +1884,13 @@ bool JSStructuredCloneWriter::transferOwnership() {
         
         
         
+        
+        
         bool hasStealableContents =
-          arrayBuffer->ownsData() && !arrayBuffer->isNoData();
+          arrayBuffer->ownsData() &&
+          !arrayBuffer->isInlineData() &&
+          !arrayBuffer->isNoData() &&
+          !arrayBuffer->hasUserOwnedData();
 
         ArrayBufferObject::BufferContents bufContents =
             ArrayBufferObject::stealContents(cx, arrayBuffer,
