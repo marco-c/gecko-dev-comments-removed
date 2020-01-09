@@ -9,10 +9,10 @@
 
 
 const ThreadStateTypes = {
-  "paused": "paused",
-  "resumed": "attached",
-  "detached": "detached",
-  "running": "attached",
+  paused: "paused",
+  resumed: "attached",
+  detached: "detached",
+  running: "attached",
 };
 
 
@@ -20,19 +20,18 @@ const ThreadStateTypes = {
 
 
 const UnsolicitedNotifications = {
-  "networkEventUpdate": "networkEventUpdate",
-  "tabDetached": "tabDetached",
-  "tabListChanged": "tabListChanged",
-  "addonListChanged": "addonListChanged",
-  "workerListChanged": "workerListChanged",
-  "serviceWorkerRegistrationListChanged": "serviceWorkerRegistrationList",
-  "updatedSource": "updatedSource",
+  networkEventUpdate: "networkEventUpdate",
+  tabDetached: "tabDetached",
+  tabListChanged: "tabListChanged",
+  addonListChanged: "addonListChanged",
+  workerListChanged: "workerListChanged",
+  serviceWorkerRegistrationListChanged: "serviceWorkerRegistrationList",
 
   
   
   
   
-  "newSource": "newSource",
+  newSource: "newSource",
 };
 
 
@@ -40,13 +39,13 @@ const UnsolicitedNotifications = {
 
 
 const UnsolicitedPauses = {
-  "resumeLimit": "resumeLimit",
-  "debuggerStatement": "debuggerStatement",
-  "breakpoint": "breakpoint",
-  "DOMEvent": "DOMEvent",
-  "watchpoint": "watchpoint",
-  "exception": "exception",
-  "replayForcedPause": "replayForcedPause",
+  resumeLimit: "resumeLimit",
+  debuggerStatement: "debuggerStatement",
+  breakpoint: "breakpoint",
+  DOMEvent: "DOMEvent",
+  watchpoint: "watchpoint",
+  exception: "exception",
+  replayForcedPause: "replayForcedPause",
 };
 
 module.exports = {
