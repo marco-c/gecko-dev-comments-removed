@@ -1,7 +1,6 @@
 
 
 
-
 "use strict";
 
 const {Session} = ChromeUtils.import("chrome://remote/content/Session.jsm");
