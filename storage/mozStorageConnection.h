@@ -47,6 +47,15 @@ class Connection final : public mozIStorageConnection,
   
 
 
+
+
+
+
+  enum ConnectionOperation { ASYNCHRONOUS, SYNCHRONOUS };
+
+  
+
+
   struct FunctionInfo {
     enum FunctionType { SIMPLE, AGGREGATE };
 
@@ -74,7 +83,8 @@ class Connection final : public mozIStorageConnection,
 
 
 
-  Connection(Service *aService, int aFlags, bool aAsyncOnly,
+  Connection(Service *aService, int aFlags,
+             ConnectionOperation aSupportedOperations,
              bool aIgnoreLockingMode = false);
 
   
@@ -225,7 +235,17 @@ class Connection final : public mozIStorageConnection,
   nsresult commitTransactionInternal(sqlite3 *aNativeConnection);
   nsresult rollbackTransactionInternal(sqlite3 *aNativeConnection);
 
-  bool connectionReady();
+  
+
+
+
+
+
+
+
+
+
+  nsresult connectionReady(ConnectionOperation aOperationType);
 
   
 
@@ -420,8 +440,9 @@ class Connection final : public mozIStorageConnection,
   
 
 
+  const ConnectionOperation mSupportedOperations;
 
-  const bool mAsyncOnly;
+  nsresult synchronousClose();
 };
 
 

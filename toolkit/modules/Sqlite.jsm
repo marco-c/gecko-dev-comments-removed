@@ -1042,7 +1042,7 @@ function cloneStorageConnection(options) {
   }
 
   if (isClosed) {
-    throw new Error("Sqlite.jsm has been shutdown. Cannot clone connection to: " + source.database.path);
+    throw new Error("Sqlite.jsm has been shutdown. Cannot clone connection to: " + source.databaseFile.path);
   }
 
   let openedOptions = {};
@@ -1107,7 +1107,7 @@ function wrapStorageConnection(options) {
   }
 
   if (isClosed) {
-    throw new Error("Sqlite.jsm has been shutdown. Cannot wrap connection to: " + connection.database.path);
+    throw new Error("Sqlite.jsm has been shutdown. Cannot wrap connection to: " + connection.databaseFile.path);
   }
 
   let identifier = getIdentifierByFileName(connection.databaseFile.leafName);
@@ -1212,6 +1212,28 @@ OpenedConnection.prototype = Object.freeze({
   TRANSACTION_DEFERRED: "DEFERRED",
   TRANSACTION_IMMEDIATE: "IMMEDIATE",
   TRANSACTION_EXCLUSIVE: "EXCLUSIVE",
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  get unsafeRawConnection() {
+    return this._connectionData._dbConn;
+  },
 
   
 
