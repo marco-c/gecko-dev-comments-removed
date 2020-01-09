@@ -7357,9 +7357,13 @@ void nsGlobalWindowOuter::EnsureSizeAndPositionUpToDate() {
   
   
   
-  nsGlobalWindowOuter* parent = nsGlobalWindowOuter::Cast(GetPrivateParent());
-  if (parent) {
-    parent->FlushPendingNotifications(FlushType::Layout);
+  
+  
+  
+  if (mDoc) {
+    if (RefPtr<Document> parent = mDoc->GetParentDocument()) {
+      parent->FlushPendingNotifications(FlushType::Layout);
+    }
   }
 }
 
