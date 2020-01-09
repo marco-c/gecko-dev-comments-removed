@@ -410,7 +410,7 @@ NS_IMPL_ISUPPORTS(SRGBOverrideObserver, nsIObserver, nsISupportsWeakReference)
 
 #define GFX_PREF_GRAPHITE_SHAPING "gfx.font_rendering.graphite.enabled"
 #if defined(XP_MACOSX)
-#define GFX_PREF_CORETEXT_SHAPING "gfx.font_rendering.coretext.enabled"
+#  define GFX_PREF_CORETEXT_SHAPING "gfx.font_rendering.coretext.enabled"
 #endif
 
 #define BIDI_NUMERAL_PREF "bidi.numeral"
@@ -2577,8 +2577,8 @@ static FeatureState& WebRenderHardwareQualificationStatus(
         const int32_t kMaxPixelsBattery = 1920 * 1200;  
         const int32_t screenPixels = aScreenSize.width * aScreenSize.height;
         bool disableForBattery = aHasBattery;
-        if (adapterVendorID == u"0x8086" && screenPixels > 0 &&
-            screenPixels <= kMaxPixelsBattery) {
+        if ((adapterVendorID == u"0x8086" || adapterVendorID == u"0x1002") &&
+            screenPixels > 0 && screenPixels <= kMaxPixelsBattery) {
           disableForBattery = false;
         }
 #else
