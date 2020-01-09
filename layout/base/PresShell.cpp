@@ -7114,32 +7114,46 @@ bool PresShell::EventHandler::MaybeHandleEventWithAccessibleCaret(
   MOZ_ASSERT(aGUIEvent);
   MOZ_ASSERT(aEventStatus);
 
-  if (AccessibleCaretEnabled(GetDocument()->GetDocShell())) {
-    
-    
-    nsCOMPtr<nsPIDOMWindowOuter> window = GetFocusedDOMWindowInOurWindow();
-    RefPtr<Document> retargetEventDoc =
-        window ? window->GetExtantDoc() : nullptr;
-    nsCOMPtr<nsIPresShell> presShell =
-        retargetEventDoc ? retargetEventDoc->GetShell() : nullptr;
-
-    RefPtr<AccessibleCaretEventHub> eventHub =
-        presShell ? presShell->GetAccessibleCaretEventHub() : nullptr;
-    if (eventHub && *aEventStatus != nsEventStatus_eConsumeNoDefault) {
-      
-      
-      
-      
-      *aEventStatus = eventHub->HandleEvent(aGUIEvent);
-      if (*aEventStatus == nsEventStatus_eConsumeNoDefault) {
-        
-        
-        aGUIEvent->mFlags.mMultipleActionsPrevented = true;
-        return true;
-      }
-    }
+  
+  
+  
+  
+  if (*aEventStatus == nsEventStatus_eConsumeNoDefault) {
+    return false;
   }
-  return false;
+
+  if (!AccessibleCaretEnabled(GetDocument()->GetDocShell())) {
+    return false;
+  }
+
+  
+  
+  nsCOMPtr<nsPIDOMWindowOuter> window = GetFocusedDOMWindowInOurWindow();
+  if (!window) {
+    return false;
+  }
+  RefPtr<Document> retargetEventDoc = window->GetExtantDoc();
+  if (!retargetEventDoc) {
+    return false;
+  }
+  nsCOMPtr<nsIPresShell> presShell = retargetEventDoc->GetShell();
+  if (!presShell) {
+    return false;
+  }
+
+  RefPtr<AccessibleCaretEventHub> eventHub =
+      presShell->GetAccessibleCaretEventHub();
+  if (!eventHub) {
+    return false;
+  }
+  *aEventStatus = eventHub->HandleEvent(aGUIEvent);
+  if (*aEventStatus != nsEventStatus_eConsumeNoDefault) {
+    return false;
+  }
+  
+  
+  aGUIEvent->mFlags.mMultipleActionsPrevented = true;
+  return true;
 }
 
 Document* PresShell::GetPrimaryContentDocument() {
