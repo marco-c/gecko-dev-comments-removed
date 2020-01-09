@@ -22,11 +22,6 @@ namespace dom {
 
 
 
-
-
-
-
-
 class RemoteOuterWindowProxy
     : public RemoteObjectProxy<BrowsingContext,
                                Window_Binding::sCrossOriginAttributes,
