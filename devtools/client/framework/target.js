@@ -87,10 +87,6 @@ exports.TargetFactory = {
     return client.mainRoot.getTab({ tab });
   },
 
-  forWorker: function(workerTargetFront) {
-    return workerTargetFront;
-  },
-
   
 
 
