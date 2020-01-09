@@ -2998,10 +2998,6 @@ nsStyleDisplay::nsStyleDisplay(const Document& aDocument)
       mScrollSnapType(
           {StyleScrollSnapAxis::Both, StyleScrollSnapStrictness::None}),
       mLineClamp(0),
-      mScrollSnapPointsX(eStyleUnit_None),
-      mScrollSnapPointsY(eStyleUnit_None),
-      mScrollSnapDestination(
-          {LengthPercentage::Zero(), LengthPercentage::Zero()}),
       mBackfaceVisibility(NS_STYLE_BACKFACE_VISIBILITY_VISIBLE),
       mTransformStyle(NS_STYLE_TRANSFORM_STYLE_FLAT),
       mTransformBox(StyleGeometryBox::BorderBox),
@@ -3063,10 +3059,6 @@ nsStyleDisplay::nsStyleDisplay(const nsStyleDisplay& aSource)
       mOverscrollBehaviorY(aSource.mOverscrollBehaviorY),
       mScrollSnapType(aSource.mScrollSnapType),
       mLineClamp(aSource.mLineClamp),
-      mScrollSnapPointsX(aSource.mScrollSnapPointsX),
-      mScrollSnapPointsY(aSource.mScrollSnapPointsY),
-      mScrollSnapDestination(aSource.mScrollSnapDestination),
-      mScrollSnapCoordinate(aSource.mScrollSnapCoordinate),
       mTransform(aSource.mTransform),
       mRotate(aSource.mRotate),
       mTranslate(aSource.mTranslate),
@@ -3152,9 +3144,6 @@ nsChangeHint nsStyleDisplay::CalcDifference(
       (mFloat == StyleFloat::None) != (aNewData.mFloat == StyleFloat::None) ||
       mScrollBehavior != aNewData.mScrollBehavior ||
       mScrollSnapType != aNewData.mScrollSnapType ||
-      mScrollSnapPointsX != aNewData.mScrollSnapPointsX ||
-      mScrollSnapPointsY != aNewData.mScrollSnapPointsY ||
-      mScrollSnapDestination != aNewData.mScrollSnapDestination ||
       mTopLayer != aNewData.mTopLayer || mResize != aNewData.mResize) {
     return nsChangeHint_ReconstructFrame;
   }
@@ -3182,6 +3171,7 @@ nsChangeHint nsStyleDisplay::CalcDifference(
   }
 
   
+
 
 
 
@@ -3371,7 +3361,6 @@ nsChangeHint nsStyleDisplay::CalcDifference(
                 mAnimationPlayStateCount != aNewData.mAnimationPlayStateCount ||
                 mAnimationIterationCountCount !=
                     aNewData.mAnimationIterationCountCount ||
-                mScrollSnapCoordinate != aNewData.mScrollSnapCoordinate ||
                 mWillChange != aNewData.mWillChange ||
                 mOverflowAnchor != aNewData.mOverflowAnchor)) {
     hint |= nsChangeHint_NeutralChange;
