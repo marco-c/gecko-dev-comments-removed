@@ -50,7 +50,6 @@
 #include "frontend/TryEmitter.h"
 #include "frontend/WhileEmitter.h"
 #include "js/CompileOptions.h"
-#include "vm/AsyncFunction.h"
 #include "vm/BytecodeUtil.h"
 #include "vm/Debugger.h"
 #include "vm/GeneratorObject.h"
@@ -2212,9 +2211,9 @@ bool BytecodeEmitter::allocateResumeIndex(ptrdiff_t offset,
   static constexpr uint32_t MaxResumeIndex = JS_BITMASK(24);
 
   static_assert(
-      MaxResumeIndex < uint32_t(AbstractGeneratorObject::RESUME_INDEX_CLOSING),
-      "resumeIndex should not include magic AbstractGeneratorObject "
-      "resumeIndex values");
+      MaxResumeIndex < uint32_t(GeneratorObject::RESUME_INDEX_CLOSING),
+      "resumeIndex should not include magic GeneratorObject resumeIndex "
+      "values");
   static_assert(
       MaxResumeIndex <= INT32_MAX / sizeof(uintptr_t),
       "resumeIndex * sizeof(uintptr_t) must fit in an int32. JIT code relies "
@@ -3200,13 +3199,28 @@ bool BytecodeEmitter::emitAnonymousFunctionWithComputedName(
   if (node->is<FunctionNode>()) {
     if (!emitTree(node)) {
       
+      
+      
+      
       return false;
     }
-    if (!emitDupAt(1)) {
+    unsigned depth = 1;
+    FunctionNode* funNode = &node->as<FunctionNode>();
+    FunctionBox* funbox = funNode->funbox();
+    if (funbox->isAsync() && funbox->needsHomeObject()) {
+      depth = 2;
+    }
+    if (!emitDupAt(depth)) {
+      
+      
+      
       
       return false;
     }
     if (!emit2(JSOP_SETFUNNAME, uint8_t(prefixKind))) {
+      
+      
+      
       
       return false;
     }
@@ -4025,34 +4039,47 @@ bool BytecodeEmitter::emitDeclarationList(ListNode* declList) {
   MOZ_ASSERT(declList->isOp(JSOP_NOP));
 
   for (ParseNode* decl : declList->contents()) {
-    if (decl->isKind(ParseNodeKind::AssignExpr)) {
+    ParseNode* pattern;
+    ParseNode* initializer;
+    if (decl->isKind(ParseNodeKind::Name)) {
+      pattern = decl;
+      initializer = nullptr;
+    } else {
       MOZ_ASSERT(decl->isOp(JSOP_NOP));
 
       AssignmentNode* assignNode = &decl->as<AssignmentNode>();
-      ListNode* pattern = &assignNode->left()->as<ListNode>();
+      pattern = assignNode->left();
+      initializer = assignNode->right();
+    }
+
+    if (pattern->isKind(ParseNodeKind::Name)) {
+      
+      if (!emitSingleDeclaration(declList, &pattern->as<NameNode>(),
+                                 initializer)) {
+        return false;
+      }
+    } else {
+      MOZ_ASSERT(decl->isOp(JSOP_NOP));
       MOZ_ASSERT(pattern->isKind(ParseNodeKind::ArrayExpr) ||
                  pattern->isKind(ParseNodeKind::ObjectExpr));
+      MOZ_ASSERT(initializer != nullptr);
 
-      if (!updateSourceCoordNotes(assignNode->right()->pn_pos.begin)) {
+      if (!updateSourceCoordNotes(initializer->pn_pos.begin)) {
         return false;
       }
       if (!markStepBreakpoint()) {
         return false;
       }
-      if (!emitTree(assignNode->right())) {
+      if (!emitTree(initializer)) {
         return false;
       }
 
-      if (!emitDestructuringOps(pattern, DestructuringDeclaration)) {
+      if (!emitDestructuringOps(&pattern->as<ListNode>(),
+                                DestructuringDeclaration)) {
         return false;
       }
 
       if (!emit1(JSOP_POP)) {
-        return false;
-      }
-    } else {
-      NameNode* name = &decl->as<NameNode>();
-      if (!emitSingleDeclaration(declList, name, name->initializer())) {
         return false;
       }
     }
@@ -5306,8 +5333,17 @@ bool BytecodeEmitter::emitInitializeForInOrOfTarget(TernaryNode* forHead) {
   target = parser->astGenerator().singleBindingFromDeclaration(
       &target->as<ListNode>());
 
+  NameNode* nameNode = nullptr;
   if (target->isKind(ParseNodeKind::Name)) {
-    NameNode* nameNode = &target->as<NameNode>();
+    nameNode = &target->as<NameNode>();
+  } else if (target->isKind(ParseNodeKind::AssignExpr)) {
+    AssignmentNode* assignNode = &target->as<AssignmentNode>();
+    if (assignNode->left()->is<NameNode>()) {
+      nameNode = &assignNode->left()->as<NameNode>();
+    }
+  }
+
+  if (nameNode) {
     NameOpEmitter noe(this, nameNode->name(), NameOpEmitter::Kind::Initialize);
     if (!noe.prepareForRhs()) {
       return false;
@@ -5440,8 +5476,11 @@ bool BytecodeEmitter::emitForIn(ForNode* forInLoop,
   if (parser->astGenerator().isDeclarationList(forInTarget)) {
     ParseNode* decl = parser->astGenerator().singleBindingFromDeclaration(
         &forInTarget->as<ListNode>());
-    if (decl->isKind(ParseNodeKind::Name)) {
-      if (ParseNode* initializer = decl->as<NameNode>().initializer()) {
+    if (decl->isKind(ParseNodeKind::AssignExpr)) {
+      AssignmentNode* assignNode = &decl->as<AssignmentNode>();
+      if (assignNode->left()->is<NameNode>()) {
+        NameNode* nameNode = &assignNode->left()->as<NameNode>();
+        ParseNode* initializer = assignNode->right();
         MOZ_ASSERT(
             forInTarget->isKind(ParseNodeKind::VarStmt),
             "for-in initializers are only permitted for |var| declarations");
@@ -5450,13 +5489,12 @@ bool BytecodeEmitter::emitForIn(ForNode* forInLoop,
           return false;
         }
 
-        NameNode* nameNode = &decl->as<NameNode>();
         NameOpEmitter noe(this, nameNode->name(),
                           NameOpEmitter::Kind::Initialize);
         if (!noe.prepareForRhs()) {
           return false;
         }
-        if (!emitInitializer(initializer, decl)) {
+        if (!emitInitializer(initializer, nameNode)) {
           return false;
         }
         if (!noe.emitAssignment()) {
@@ -5793,6 +5831,11 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitFunction(FunctionNode* funNode,
     
     MOZ_ASSERT(fun->isArrow() ==
                (funNode->syntaxKind() == FunctionSyntaxKind::Arrow));
+    if (funbox->isAsync()) {
+      MOZ_ASSERT(!needsProto);
+      return emitAsyncWrapper(index, funbox->needsHomeObject(), fun->isArrow(),
+                              fun->isGenerator());
+    }
 
     if (fun->isArrow()) {
       if (sc->allowNewTarget()) {
@@ -5848,8 +5891,15 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitFunction(FunctionNode* funNode,
       MOZ_ASSERT(sc->isGlobalContext() || sc->isEvalContext());
       MOZ_ASSERT(funNode->syntaxKind() == FunctionSyntaxKind::Statement);
       MOZ_ASSERT(inPrologue());
-      if (!emitIndex32(JSOP_LAMBDA, index)) {
-        return false;
+      if (funbox->isAsync()) {
+        if (!emitAsyncWrapper(index, fun->isMethod(), fun->isArrow(),
+                              fun->isGenerator())) {
+          return false;
+        }
+      } else {
+        if (!emitIndex32(JSOP_LAMBDA, index)) {
+          return false;
+        }
       }
       if (!emit1(JSOP_DEFFUN)) {
         return false;
@@ -5863,8 +5913,15 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitFunction(FunctionNode* funNode,
     if (!noe.prepareForRhs()) {
       return false;
     }
-    if (!emitIndexOp(JSOP_LAMBDA, index)) {
-      return false;
+    if (funbox->isAsync()) {
+      if (!emitAsyncWrapper(index,  false,
+                             false, funbox->isGenerator())) {
+        return false;
+      }
+    } else {
+      if (!emitIndexOp(JSOP_LAMBDA, index)) {
+        return false;
+      }
     }
     if (!noe.emitAssignment()) {
       return false;
@@ -5874,6 +5931,77 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitFunction(FunctionNode* funNode,
     }
   }
 
+  return true;
+}
+
+bool BytecodeEmitter::emitAsyncWrapperLambda(unsigned index, bool isArrow) {
+  if (isArrow) {
+    if (sc->allowNewTarget()) {
+      if (!emit1(JSOP_NEWTARGET)) {
+        return false;
+      }
+    } else {
+      if (!emit1(JSOP_NULL)) {
+        return false;
+      }
+    }
+    if (!emitIndex32(JSOP_LAMBDA_ARROW, index)) {
+      return false;
+    }
+  } else {
+    if (!emitIndex32(JSOP_LAMBDA, index)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool BytecodeEmitter::emitAsyncWrapper(unsigned index, bool needsHomeObject,
+                                       bool isArrow, bool isGenerator) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!emitAsyncWrapperLambda(index, isArrow)) {
+    return false;
+  }
+  if (needsHomeObject) {
+    if (!emit1(JSOP_DUP)) {
+      return false;
+    }
+  }
+  if (isGenerator) {
+    if (!emit1(JSOP_TOASYNCGEN)) {
+      return false;
+    }
+  } else {
+    if (!emit1(JSOP_TOASYNC)) {
+      return false;
+    }
+  }
   return true;
 }
 
@@ -6077,7 +6205,9 @@ bool BytecodeEmitter::emitReturn(UnaryNode* returnNode) {
       return false;
     }
 
-    if (sc->asFunctionBox()->isAsync() && sc->asFunctionBox()->isGenerator()) {
+    bool isAsyncGenerator =
+        sc->asFunctionBox()->isAsync() && sc->asFunctionBox()->isGenerator();
+    if (isAsyncGenerator) {
       if (!emitAwaitInInnermostScope()) {
         return false;
       }
@@ -6145,28 +6275,6 @@ bool BytecodeEmitter::emitReturn(UnaryNode* returnNode) {
     
     NameLocation loc = *locationOfNameBoundInFunctionScope(
         cx->names().dotGenerator, varEmitterScope);
-
-    
-    if (sc->asFunctionBox()->needsPromiseResult()) {
-      if (!emit1(JSOP_GETRVAL)) {
-        
-        return false;
-      }
-      if (!emitGetNameAtLocation(cx->names().dotGenerator, loc)) {
-        
-        return false;
-      }
-      if (!emit2(JSOP_ASYNCRESOLVE,
-                 uint8_t(AsyncFunctionResolveKind::Fulfill))) {
-        
-        return false;
-      }
-      if (!emit1(JSOP_SETRVAL)) {
-        
-        return false;
-      }
-    }
-
     if (!emitGetNameAtLocation(cx->names().dotGenerator, loc)) {
       return false;
     }
@@ -6234,7 +6342,8 @@ bool BytecodeEmitter::emitYield(UnaryNode* yieldNode) {
   }
 
   
-  if (sc->asFunctionBox()->isAsync()) {
+  bool isAsyncGenerator = sc->asFunctionBox()->isAsync();
+  if (isAsyncGenerator) {
     if (!emitAwaitInInnermostScope()) {
       
       return false;
@@ -6286,17 +6395,6 @@ bool BytecodeEmitter::emitAwaitInScope(EmitterScope& currentScope) {
   if (!ifCanSkip.emitThen()) {
     
     return false;
-  }
-
-  if (sc->asFunctionBox()->needsPromiseResult()) {
-    if (!emitGetDotGeneratorInScope(currentScope)) {
-      
-      return false;
-    }
-    if (!emit1(JSOP_ASYNCAWAIT)) {
-      
-      return false;
-    }
   }
 
   if (!emitGetDotGeneratorInScope(currentScope)) {
@@ -7098,8 +7196,8 @@ bool BytecodeEmitter::emitSelfHostedResumeGenerator(BinaryNode* callNode) {
 
   ParseNode* kindNode = valNode->pn_next;
   MOZ_ASSERT(kindNode->isKind(ParseNodeKind::StringExpr));
-  uint16_t operand = AbstractGeneratorObject::getResumeKind(
-      cx, kindNode->as<NameNode>().atom());
+  uint16_t operand =
+      GeneratorObject::getResumeKind(cx, kindNode->as<NameNode>().atom());
   MOZ_ASSERT(!kindNode->pn_next);
 
   if (!emitCall(JSOP_RESUME, operand)) {
@@ -7825,12 +7923,10 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
 
       if (propVal->is<FunctionNode>() &&
           propVal->as<FunctionNode>().funbox()->needsHomeObject()) {
-        MOZ_ASSERT(propVal->as<FunctionNode>()
-                       .funbox()
-                       ->function()
-                       ->allowSuperProperty());
+        FunctionBox* funbox = propVal->as<FunctionNode>().funbox();
+        MOZ_ASSERT(funbox->function()->allowSuperProperty());
 
-        if (!pe.emitInitHomeObject()) {
+        if (!pe.emitInitHomeObject(funbox->asyncKind())) {
           
           return false;
         }
@@ -8405,18 +8501,6 @@ bool BytecodeEmitter::emitFunctionFormalParameters(ListNode* paramsBody) {
   bool hasParameterExprs = funbox->hasParameterExprs;
   bool hasRest = funbox->hasRest();
 
-  
-  
-  
-  
-  
-  Maybe<TryEmitter> rejectTryCatch;
-  if (hasParameterExprs && funbox->needsPromiseResult()) {
-    if (!emitAsyncFunctionRejectPrologue(rejectTryCatch)) {
-      return false;
-    }
-  }
-
   uint16_t argSlot = 0;
   for (ParseNode* arg = paramsBody->head(); arg != funBody;
        arg = arg->pn_next, argSlot++) {
@@ -8528,12 +8612,6 @@ bool BytecodeEmitter::emitFunctionFormalParameters(ListNode* paramsBody) {
     }
   }
 
-  if (rejectTryCatch) {
-    if (!emitAsyncFunctionRejectEpilogue(*rejectTryCatch)) {
-      return false;
-    }
-  }
-
   return true;
 }
 
@@ -8581,26 +8659,11 @@ bool BytecodeEmitter::emitInitializeFunctionSpecialNames() {
     }
   }
 
-  
-  if (funbox->needsPromiseResult()) {
-    if (!emitInitializeFunctionSpecialName(this, cx->names().dotGenerator,
-                                           JSOP_GENERATOR)) {
-      return false;
-    }
-  }
-
   return true;
 }
 
 bool BytecodeEmitter::emitFunctionBody(ParseNode* funBody) {
   FunctionBox* funbox = sc->asFunctionBox();
-
-  Maybe<TryEmitter> rejectTryCatch;
-  if (funbox->needsPromiseResult()) {
-    if (!emitAsyncFunctionRejectPrologue(rejectTryCatch)) {
-      return false;
-    }
-  }
 
   if (funbox->function()->kind() ==
       JSFunction::FunctionKind::ClassConstructor) {
@@ -8628,19 +8691,6 @@ bool BytecodeEmitter::emitFunctionBody(ParseNode* funBody) {
 
     if (needsIteratorResult) {
       if (!emitFinishIteratorResult(true)) {
-        return false;
-      }
-    }
-
-    if (funbox->needsPromiseResult()) {
-      if (!emitGetDotGeneratorInInnermostScope()) {
-        
-        return false;
-      }
-
-      if (!emit2(JSOP_ASYNCRESOLVE,
-                 uint8_t(AsyncFunctionResolveKind::Fulfill))) {
-        
         return false;
       }
     }
@@ -8679,12 +8729,6 @@ bool BytecodeEmitter::emitFunctionBody(ParseNode* funBody) {
     }
   }
 
-  if (rejectTryCatch) {
-    if (!emitAsyncFunctionRejectEpilogue(*rejectTryCatch)) {
-      return false;
-    }
-  }
-
   return true;
 }
 
@@ -8708,46 +8752,6 @@ bool BytecodeEmitter::emitLexicalInitialization(JSAtom* name) {
   }
 
   return true;
-}
-
-bool BytecodeEmitter::emitAsyncFunctionRejectPrologue(
-    Maybe<TryEmitter>& tryCatch) {
-  tryCatch.emplace(this, TryEmitter::Kind::TryCatch,
-                   TryEmitter::ControlKind::NonSyntactic);
-  return tryCatch->emitTry();
-}
-
-bool BytecodeEmitter::emitAsyncFunctionRejectEpilogue(TryEmitter& tryCatch) {
-  if (!tryCatch.emitCatch()) {
-    return false;
-  }
-
-  if (!emit1(JSOP_EXCEPTION)) {
-    
-    return false;
-  }
-  if (!emitGetDotGeneratorInInnermostScope()) {
-    
-    return false;
-  }
-  if (!emit2(JSOP_ASYNCRESOLVE, uint8_t(AsyncFunctionResolveKind::Reject))) {
-    
-    return false;
-  }
-  if (!emit1(JSOP_SETRVAL)) {
-    
-    return false;
-  }
-  if (!emitGetDotGeneratorInInnermostScope()) {
-    
-    return false;
-  }
-  if (!emit1(JSOP_FINALYIELDRVAL)) {
-    
-    return false;
-  }
-
-  return tryCatch.emitEnd();
 }
 
 static MOZ_ALWAYS_INLINE FunctionNode* FindConstructor(JSContext* cx,
