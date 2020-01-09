@@ -46,6 +46,7 @@
 #include "mozilla/dom/MediaList.h"
 #include "mozilla/dom/ShadowRoot.h"
 #include "mozilla/dom/URL.h"
+#include "mozilla/net/UrlClassifierFeatureFactory.h"
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/StyleSheet.h"
@@ -601,14 +602,16 @@ nsresult SheetLoadData::VerifySheetReadyToParse(nsresult aStatus,
     
     
     
-    if (aStatus == NS_ERROR_TRACKING_URI) {
+    
+    if (net::UrlClassifierFeatureFactory::IsClassifierBlockingErrorCode(
+            aStatus)) {
       Document* doc = mLoader->GetDocument();
       if (doc) {
         for (SheetLoadData* data = this; data; data = data->mNext) {
           
           nsCOMPtr<nsIContent> content =
               do_QueryInterface(data->mOwningElement);
-          doc->AddBlockedTrackingNode(content);
+          doc->AddBlockedNodeByClassifier(content);
         }
       }
     }

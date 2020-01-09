@@ -1385,8 +1385,8 @@ class Document : public nsINode,
   
   
   
-  long BlockedTrackingNodeCount() const {
-    return mBlockedTrackingNodes.Length();
+  long BlockedNodeByClassifierCount() const {
+    return mBlockedNodesByClassifier.Length();
   }
 
   
@@ -1396,7 +1396,7 @@ class Document : public nsINode,
   
   
   
-  already_AddRefed<nsSimpleContentList> BlockedTrackingNodes() const;
+  already_AddRefed<nsSimpleContentList> BlockedNodesByClassifier() const;
 
   
   
@@ -3251,7 +3251,7 @@ class Document : public nsINode,
 
 
 
-  void AddBlockedTrackingNode(nsINode* node) {
+  void AddBlockedNodeByClassifier(nsINode* node) {
     if (!node) {
       return;
     }
@@ -3259,7 +3259,7 @@ class Document : public nsINode,
     nsWeakPtr weakNode = do_GetWeakReference(node);
 
     if (weakNode) {
-      mBlockedTrackingNodes.AppendElement(weakNode);
+      mBlockedNodesByClassifier.AppendElement(weakNode);
     }
   }
 
@@ -4248,7 +4248,7 @@ class Document : public nsINode,
   
   
   
-  nsTArray<nsWeakPtr> mBlockedTrackingNodes;
+  nsTArray<nsWeakPtr> mBlockedNodesByClassifier;
 
   
   
