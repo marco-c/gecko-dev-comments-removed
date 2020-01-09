@@ -33,6 +33,7 @@ public abstract class TabsLayout extends RecyclerView
     private TabsPanel tabsPanel;
     private final TabsLayoutAdapter tabsAdapter;
     private View emptyView;
+    protected TabsTouchHelperCallback tabTouchCallback;
 
     public TabsLayout(Context context, AttributeSet attrs, int itemViewLayoutResId) {
         super(context, attrs);
@@ -48,8 +49,12 @@ public abstract class TabsLayout extends RecyclerView
                     public void onClick(View v) {
                         
                         
-                        TabsLayoutItemView itemView = (TabsLayoutItemView) v.getTag();
-                        closeTab(itemView);
+                        if (tabTouchCallback == null || !tabTouchCallback.isInteractionInProgress()) {
+                            
+                            
+                            TabsLayoutItemView itemView = (TabsLayoutItemView) v.getTag();
+                            closeTab(itemView);
+                        }
                     }
                 });
         setAdapter(tabsAdapter);
