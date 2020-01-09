@@ -153,10 +153,15 @@ struct Message {
   MessageType mType;
 
   
+  
+  uint32_t mReceiveTime;
+
+  
   uint32_t mSize;
 
  protected:
-  Message(MessageType aType, uint32_t aSize) : mType(aType), mSize(aSize) {
+  Message(MessageType aType, uint32_t aSize)
+    : mType(aType), mReceiveTime(0), mSize(aSize) {
     MOZ_RELEASE_ASSERT(mSize >= sizeof(*this));
   }
 
@@ -468,6 +473,16 @@ class Channel {
   size_t mMessageBytes;
 
   
+  bool mSimulateDelays;
+
+  
+  TimeStamp mStartTime;
+
+  
+  
+  TimeStamp mAvailableTime;
+
+  
   void PrintMessage(const char* aPrefix, const Message& aMsg);
 
   
@@ -486,7 +501,7 @@ class Channel {
 
   
   
-  void SendMessage(const Message& aMsg);
+  void SendMessage(Message&& aMsg);
 };
 
 

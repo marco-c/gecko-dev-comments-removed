@@ -53,6 +53,8 @@ void OpenChannel(base::ProcessId aMiddlemanPid, uint32_t aChannelId,
 
 }  
 
+static void InitializeSimulatedDelayState();
+
 struct HelloMessage {
   int32_t mMagic;
 };
@@ -65,7 +67,8 @@ Channel::Channel(size_t aId, bool aMiddlemanRecording,
       mConnectionFd(0),
       mFd(0),
       mMessageBuffer(nullptr),
-      mMessageBytes(0) {
+      mMessageBytes(0),
+      mSimulateDelays(false) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   if (IsRecordingOrReplaying()) {
@@ -101,6 +104,12 @@ Channel::Channel(size_t aId, bool aMiddlemanRecording,
     MOZ_RELEASE_ASSERT(rv >= 0);
   }
 
+  
+  
+  mSimulateDelays = IsMiddleman() ? !aMiddlemanRecording : IsReplaying();
+
+  InitializeSimulatedDelayState();
+
   Thread::SpawnNonRecordedThread(ThreadMain, this);
 }
 
@@ -129,6 +138,8 @@ void Channel::ThreadMain(void* aChannelArg) {
     MOZ_RELEASE_ASSERT(rv == sizeof(msg));
   }
 
+  channel->mStartTime = channel->mAvailableTime = TimeStamp::Now();
+
   {
     MonitorAutoLock lock(channel->mMonitor);
     channel->mInitialized = true;
@@ -144,7 +155,60 @@ void Channel::ThreadMain(void* aChannelArg) {
   }
 }
 
-void Channel::SendMessage(const Message& aMsg) {
+
+static size_t gSimulatedLatency;
+
+
+
+static size_t gSimulatedBandwidth;
+
+static size_t LoadEnvValue(const char* aEnv) {
+  const char* value = getenv(aEnv);
+  if (value && value[0]) {
+    int n = atoi(value);
+    return n >= 0 ? n : 0;
+  }
+  return 0;
+}
+
+static void InitializeSimulatedDelayState() {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  gSimulatedLatency = LoadEnvValue("MOZ_RECORD_REPLAY_SIMULATED_LATENCY");
+  gSimulatedBandwidth = LoadEnvValue("MOZ_RECORD_REPLAY_SIMULATED_BANDWIDTH");
+}
+
+static bool MessageSubjectToSimulatedDelay(MessageType aType) {
+  switch (aType) {
+    
+    
+    
+    case MessageType::MiddlemanCallResponse:
+    case MessageType::MiddlemanCallRequest:
+    case MessageType::ResetMiddlemanCalls:
+    
+    case MessageType::BeginFatalError:
+    case MessageType::FatalError:
+      return false;
+    default:
+      return true;
+  }
+}
+
+void Channel::SendMessage(Message&& aMsg) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread() ||
                      aMsg.mType == MessageType::BeginFatalError ||
                      aMsg.mType == MessageType::FatalError ||
@@ -159,6 +223,30 @@ void Channel::SendMessage(const Message& aMsg) {
   }
 
   PrintMessage("SendMsg", aMsg);
+
+  if (gSimulatedLatency &&
+      gSimulatedBandwidth &&
+      mSimulateDelays &&
+      MessageSubjectToSimulatedDelay(aMsg.mType)) {
+    AutoEnsurePassThroughThreadEvents pt;
+
+    
+    TimeStamp sendTime = TimeStamp::Now();
+    if (sendTime < mAvailableTime) {
+      sendTime = mAvailableTime;
+    }
+
+    
+    size_t sendDurationMs = aMsg.mSize / gSimulatedBandwidth;
+    mAvailableTime = sendTime + TimeDuration::FromMilliseconds(sendDurationMs);
+
+    
+    
+    TimeStamp receiveTime =
+      mAvailableTime + TimeDuration::FromMilliseconds(gSimulatedLatency);
+
+    aMsg.mReceiveTime = (receiveTime - mStartTime).ToMilliseconds();
+  }
 
   const char* ptr = (const char*)&aMsg;
   size_t nbytes = aMsg.mSize;
@@ -227,6 +315,16 @@ Message::UniquePtr Channel::WaitForMessage() {
   }
   mMessageBytes = remaining;
 
+  
+  if (res->mReceiveTime) {
+    TimeStamp receiveTime =
+      mStartTime + TimeDuration::FromMilliseconds(res->mReceiveTime);
+    while (receiveTime > TimeStamp::Now()) {
+      MonitorAutoLock lock(mMonitor);
+      mMonitor.WaitUntil(receiveTime);
+    }
+  }
+
   PrintMessage("RecvMsg", *res);
   return res;
 }
@@ -269,14 +367,14 @@ void Channel::PrintMessage(const char* aPrefix, const Message& aMsg) {
     case MessageType::DebuggerRequest: {
       const DebuggerRequestMessage& nmsg = (const DebuggerRequestMessage&)aMsg;
       data = NS_ConvertUTF16toUTF8(
-          nsDependentString(nmsg.Buffer(), nmsg.BufferSize()));
+          nsDependentSubstring(nmsg.Buffer(), nmsg.BufferSize()));
       break;
     }
     case MessageType::DebuggerResponse: {
       const DebuggerResponseMessage& nmsg =
           (const DebuggerResponseMessage&)aMsg;
       data = NS_ConvertUTF16toUTF8(
-          nsDependentString(nmsg.Buffer(), nmsg.BufferSize()));
+          nsDependentSubstring(nmsg.Buffer(), nmsg.BufferSize()));
       break;
     }
     case MessageType::SetIsActive: {

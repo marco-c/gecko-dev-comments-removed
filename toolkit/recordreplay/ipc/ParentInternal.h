@@ -159,13 +159,8 @@ class ChildProcessInfo {
   bool IsRecording() { return mRecording; }
   bool IsPaused() { return mPaused; }
 
-  void SendMessage(const Message& aMessage);
-
   
-  void Recover(ChildProcessInfo* aTargetProcess);
-
-  
-  void RecoverToCheckpoint(size_t aCheckpoint);
+  void SendMessage(Message&& aMessage);
 
   
   
