@@ -5044,6 +5044,7 @@ bool CallIRGenerator::tryAttachFunApply() {
 }
 
 bool CallIRGenerator::tryAttachSpecialCaseCallNative(HandleFunction callee) {
+  MOZ_ASSERT(mode_ == ICState::Mode::Specialized);
   MOZ_ASSERT(callee->isNative());
 
   if (op_ == JSOP_FUNCALL && callee->native() == fun_call) {
@@ -5161,9 +5162,11 @@ bool CallIRGenerator::tryAttachCallScripted(HandleFunction calleeFunc) {
     return false;
   }
 
+  bool isSpecialized = mode_ == ICState::Mode::Specialized;
+
   bool isConstructing = IsConstructorCallPC(pc_);
   bool isSpread = IsSpreadCallPC(pc_);
-  bool isSameRealm = cx_->realm() == calleeFunc->realm();
+  bool isSameRealm = isSpecialized && cx_->realm() == calleeFunc->realm();
   CallFlags flags(isConstructing, isSpread, isSameRealm);
 
   
@@ -5200,7 +5203,7 @@ bool CallIRGenerator::tryAttachCallScripted(HandleFunction calleeFunc) {
 
   RootedObject templateObj(cx_);
   bool skipAttach = false;
-  if (isConstructing &&
+  if (isConstructing && isSpecialized &&
       !getTemplateObjectForScripted(calleeFunc, &templateObj, &skipAttach)) {
     return false;
   }
@@ -5217,22 +5220,40 @@ bool CallIRGenerator::tryAttachCallScripted(HandleFunction calleeFunc) {
       writer.loadArgumentDynamicSlot(ArgumentKind::Callee, argcId, flags);
   ObjOperandId calleeObjId = writer.guardIsObject(calleeValId);
 
-  
-  FieldOffset calleeOffset =
-      writer.guardSpecificObject(calleeObjId, calleeFunc);
+  FieldOffset calleeOffset = 0;
+  if (isSpecialized) {
+    
+    calleeOffset = writer.guardSpecificObject(calleeObjId, calleeFunc);
+    
+    writer.guardFunctionHasJitEntry(calleeObjId, isConstructing);
+  } else {
+    
+    writer.guardClass(calleeObjId, GuardClassKind::JSFunction);
+    writer.guardFunctionHasJitEntry(calleeObjId, isConstructing);
 
-  
-  writer.guardFunctionHasJitEntry(calleeObjId, isConstructing);
+    if (isConstructing) {
+      
+      writer.guardFunctionIsConstructor(calleeObjId);
+    } else {
+      
+      writer.guardNotClassConstructor(calleeObjId);
+    }
+  }
 
   writer.callScriptedFunction(calleeObjId, argcId, flags);
   writer.typeMonitorResult();
 
   if (templateObj) {
+    MOZ_ASSERT(isSpecialized);
     writer.metaScriptedTemplateObject(templateObj, calleeOffset);
   }
 
   cacheIRStubKind_ = BaselineCacheIRStubKind::Monitored;
-  trackAttached("Call scripted func");
+  if (isSpecialized) {
+    trackAttached("Call scripted func");
+  } else {
+    trackAttached("Call any scripted func");
+  }
 
   return true;
 }
@@ -5326,8 +5347,12 @@ bool CallIRGenerator::getTemplateObjectForNative(HandleFunction calleeFunc,
 }
 
 bool CallIRGenerator::tryAttachCallNative(HandleFunction calleeFunc) {
-  MOZ_ASSERT(mode_ == ICState::Mode::Specialized);
   MOZ_ASSERT(calleeFunc->isNative());
+
+  bool isSpecialized = mode_ == ICState::Mode::Specialized;
+  if (!isSpecialized) {
+    return false;
+  }
 
   bool isSpread = IsSpreadCallPC(pc_);
   bool isSameRealm = cx_->realm() == calleeFunc->realm();
@@ -5406,6 +5431,13 @@ bool CallIRGenerator::tryAttachCallHook(HandleObject calleeObj) {
     return false;
   }
 
+  if (mode_ != ICState::Mode::Specialized) {
+    
+    
+    
+    return false;
+  }
+
   bool isSpread = IsSpreadCallPC(pc_);
   bool isConstructing = IsConstructorCallPC(pc_);
   CallFlags flags(isConstructing, isSpread);
@@ -5463,10 +5495,7 @@ bool CallIRGenerator::tryAttachStub() {
       return false;
   }
 
-  
-  if (mode_ != ICState::Mode::Specialized) {
-    return false;
-  }
+  MOZ_ASSERT(mode_ != ICState::Mode::Generic);
 
   
   if (!callee_.isObject()) {
