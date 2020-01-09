@@ -4403,7 +4403,7 @@ Storage* nsGlobalWindowInner::GetLocalStorage(ErrorResult& aError) {
       nsContentUtils::StorageAllowedForWindow(this);
 
   
-  if (access == nsContentUtils::StorageAccess::ePartitionedOrDeny) {
+  if (access == nsContentUtils::StorageAccess::ePartitionTrackersOrDeny) {
     if (!mDoc) {
       access = nsContentUtils::StorageAccess::eDeny;
     } else {
@@ -4432,7 +4432,7 @@ Storage* nsGlobalWindowInner::GetLocalStorage(ErrorResult& aError) {
   
   
   
-  if (access != nsContentUtils::StorageAccess::ePartitionedOrDeny &&
+  if (access != nsContentUtils::StorageAccess::ePartitionTrackersOrDeny &&
       (!mLocalStorage ||
        mLocalStorage->Type() == Storage::ePartitionedLocalStorage)) {
     RefPtr<Storage> storage;
@@ -4475,7 +4475,7 @@ Storage* nsGlobalWindowInner::GetLocalStorage(ErrorResult& aError) {
     MOZ_ASSERT(mLocalStorage);
   }
 
-  if (access == nsContentUtils::StorageAccess::ePartitionedOrDeny &&
+  if (access == nsContentUtils::StorageAccess::ePartitionTrackersOrDeny &&
       !mLocalStorage) {
     nsIPrincipal* principal = GetPrincipal();
     if (!principal) {
@@ -4486,8 +4486,9 @@ Storage* nsGlobalWindowInner::GetLocalStorage(ErrorResult& aError) {
     mLocalStorage = new PartitionedLocalStorage(this, principal);
   }
 
-  MOZ_ASSERT((access == nsContentUtils::StorageAccess::ePartitionedOrDeny) ==
-             (mLocalStorage->Type() == Storage::ePartitionedLocalStorage));
+  MOZ_ASSERT(
+      (access == nsContentUtils::StorageAccess::ePartitionTrackersOrDeny) ==
+      (mLocalStorage->Type() == Storage::ePartitionedLocalStorage));
 
   return mLocalStorage;
 }

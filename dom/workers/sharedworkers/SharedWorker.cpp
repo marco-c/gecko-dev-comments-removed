@@ -108,7 +108,8 @@ already_AddRefed<SharedWorker> SharedWorker::Constructor(
     return nullptr;
   }
 
-  if (storageAllowed == nsContentUtils::StorageAccess::ePartitionedOrDeny &&
+  if (storageAllowed ==
+          nsContentUtils::StorageAccess::ePartitionTrackersOrDeny &&
       !StaticPrefs::privacy_storagePrincipal_enabledForTrackers()) {
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return nullptr;
@@ -179,7 +180,8 @@ already_AddRefed<SharedWorker> SharedWorker::Constructor(
   
   
   
-  if (storageAllowed == nsContentUtils::StorageAccess::ePartitionedOrDeny) {
+  if (storageAllowed ==
+      nsContentUtils::StorageAccess::ePartitionTrackersOrDeny) {
     nsCOMPtr<nsIScriptObjectPrincipal> sop = do_QueryInterface(window);
     if (!sop) {
       aRv.Throw(NS_ERROR_FAILURE);
