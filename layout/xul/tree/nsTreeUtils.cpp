@@ -55,6 +55,13 @@ nsIContent* nsTreeUtils::GetImmediateChild(nsIContent* aContainer,
     if (child->IsXULElement(aTag)) {
       return child;
     }
+    
+    
+    if (child->IsHTMLElement(nsGkAtoms::slot)) {
+      if (nsIContent* c = GetImmediateChild(child, aTag)) {
+        return c;
+      }
+    }
   }
 
   return nullptr;
