@@ -1356,17 +1356,6 @@ class Document : public nsINode,
 
   nsViewportInfo GetViewportInfo(const ScreenIntSize& aDisplaySize);
 
-  
-
-
-
-
-
-
-
-  void UpdateViewportOverflowType(nscoord aScrolledWidth,
-                                  nscoord aScrollportWidth);
-
   void UpdateForScrollAnchorAdjustment(nscoord aLength);
 
   
@@ -4550,30 +4539,6 @@ class Document : public nsINode,
   enum ViewportType : uint8_t { DisplayWidthHeight, Specified, Unknown, Empty };
 
   ViewportType mViewportType;
-
-  
-  
-  
-  
-  enum class ViewportOverflowType : uint8_t {
-    
-    
-    
-    NoOverflow,
-
-    
-    
-
-    
-    Desktop,
-    
-    
-    
-    ButNotMinScaleSize,
-    
-    MinScaleSize,
-  };
-  ViewportOverflowType mViewportOverflowType;
 
   PLDHashTable* mSubDocuments;
 
