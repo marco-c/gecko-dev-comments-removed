@@ -349,6 +349,13 @@ HangMonitorChild::~HangMonitorChild() {
 void HangMonitorChild::InterruptCallback() {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
+  
+  
+  
+  if (recordreplay::IsRecordingOrReplaying()) {
+    return;
+  }
+
   bool paintWhileInterruptingJS;
   bool paintWhileInterruptingJSForce;
   TabId paintWhileInterruptingJSTab;
@@ -379,9 +386,7 @@ void HangMonitorChild::InterruptCallback() {
     mCancelContentJS = false;
   }
 
-  
-  
-  if (paintWhileInterruptingJS && !recordreplay::IsRecordingOrReplaying()) {
+  if (paintWhileInterruptingJS) {
     RefPtr<BrowserChild> browserChild =
         BrowserChild::FindBrowserChild(paintWhileInterruptingJSTab);
     if (browserChild) {
