@@ -83,7 +83,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
       return (h | 0) * 3600 + (m | 0) * 60 + (s | 0) + (f | 0) / 1000;
     }
 
-    let timestamp = input.match(/^(\d+:)?(\d{2}):(\d{2})\.(\d+)/);
+    var timestamp = input.match(/^(\d+:)?(\d{2}):(\d{2})\.(\d+)/);
     if (!timestamp || timestamp.length !== 5) {
       return null;
     }
@@ -125,7 +125,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
     },
     
     alt: function(k, v, a) {
-      for (let n = 0; n < a.length; ++n) {
+      for (var n = 0; n < a.length; ++n) {
         if (v === a[n]) {
           this.set(k, v);
           return true;
@@ -143,7 +143,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
     },
     
     percent: function(k, v) {
-      let m;
+      var m;
       if ((m = v.match(/^([\d]{1,3})(\.[\d]*)?%$/))) {
         v = parseFloat(v);
         if (v >= 0 && v <= 100) {
@@ -164,27 +164,27 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
   
   
   function parseOptions(input, callback, keyValueDelim, groupDelim) {
-    let groups = groupDelim ? input.split(groupDelim) : [input];
-    for (let i in groups) {
+    var groups = groupDelim ? input.split(groupDelim) : [input];
+    for (var i in groups) {
       if (typeof groups[i] !== "string") {
         continue;
       }
-      let kv = groups[i].split(keyValueDelim);
+      var kv = groups[i].split(keyValueDelim);
       if (kv.length !== 2) {
         continue;
       }
-      let k = kv[0];
-      let v = kv[1];
+      var k = kv[0];
+      var v = kv[1];
       callback(k, v);
     }
   }
 
   function parseCue(input, cue, regionList) {
     
-    let oInput = input;
+    var oInput = input;
     
     function consumeTimeStamp() {
-      let ts = collectTimeStamp(input);
+      var ts = collectTimeStamp(input);
       if (ts === null) {
         throw new ParsingError(ParsingError.Errors.BadTimeStamp,
                               "Malformed timestamp: " + oInput);
@@ -196,12 +196,12 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
 
     
     function consumeCueSettings(input, cue) {
-      let settings = new Settings();
+      var settings = new Settings();
       parseOptions(input, function (k, v) {
         switch (k) {
         case "region":
           
-          for (let i = regionList.length - 1; i >= 0; i--) {
+          for (var i = regionList.length - 1; i >= 0; i--) {
             if (regionList[i].id === v) {
               settings.set(k, regionList[i].region);
               break;
@@ -211,9 +211,9 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
         case "vertical":
           settings.alt(k, v, ["rl", "lr"]);
           break;
-        case "line": {
-          let vals = v.split(",");
-          let vals0 = vals[0];
+        case "line":
+          var vals = v.split(","),
+              vals0 = vals[0];
           settings.digitsValue(k, vals0);
           settings.percent(k, vals0) ? settings.set("snapToLines", false) : null;
           settings.alt(k, vals0, ["auto"]);
@@ -221,9 +221,8 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
             settings.alt("lineAlign", vals[1], ["start", "center", "end"]);
           }
           break;
-        }
-        case "position": {
-          let vals = v.split(",");
+        case "position":
+          vals = v.split(",");
           if (settings.percent(k, vals[0])) {
             if (vals.length === 2) {
               if (!settings.alt("positionAlign", vals[1], ["line-left", "center", "line-right"])) {
@@ -234,7 +233,6 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
             }
           }
           break;
-        }
         case "size":
           settings.percent(k, v);
           break;
@@ -340,7 +338,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
         return result;
       }
 
-      let m = input.match(/^([^<]*)(<[^>]+>?)?/);
+      var m = input.match(/^([^<]*)(<[^>]+>?)?/);
       
       if (!m[0]) {
         return null;
@@ -355,7 +353,6 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
       return ESCAPE[e];
     }
     function unescape(s) {
-      let m;
       while ((m = s.match(/&(amp|lt|gt|lrm|rlm|nbsp);/))) {
         s = s.replace(m[0], unescape1);
       }
@@ -369,12 +366,12 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
 
     
     function createElement(type, annotation) {
-      let tagName = TAG_NAME[type];
+      var tagName = TAG_NAME[type];
       if (!tagName) {
         return null;
       }
-      let element = window.document.createElement(tagName);
-      let name = TAG_ANNOTATION[type];
+      var element = window.document.createElement(tagName);
+      var name = TAG_ANNOTATION[type];
       if (name) {
         element[name] = annotation ? annotation.trim() : "";
       }
@@ -384,10 +381,10 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
     
     
     function normalizedTimeStamp(secondsWithFrag) {
-      let totalsec = parseInt(secondsWithFrag, 10);
-      let hours = Math.floor(totalsec / 3600);
-      let minutes = Math.floor(totalsec % 3600 / 60);
-      let seconds = Math.floor(totalsec % 60);
+      var totalsec = parseInt(secondsWithFrag, 10);
+      var hours = Math.floor(totalsec / 3600);
+      var minutes = Math.floor(totalsec % 3600 / 60);
+      var seconds = Math.floor(totalsec % 60);
       if (hours < 10) {
         hours = "0" + hours;
       }
@@ -397,7 +394,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
       if (seconds < 10) {
         seconds = "0" + seconds;
       }
-      let f = secondsWithFrag.toString().split(".");
+      var f = secondsWithFrag.toString().split(".");
       if (f[1]) {
         f = f[1].slice(0, 3).padEnd(3, "0");
       } else {
@@ -406,7 +403,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
       return hours + ':' + minutes + ':' + seconds + '.' + f;
     }
 
-    let root;
+    var root;
     switch (mode) {
       case PARSE_CONTENT_MODE.PSUEDO_CUE:
         root = window.document.createElement("div", {pseudo: "::cue"});
@@ -420,7 +417,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
         break;
     }
 
-    let current = root,
+    var current = root,
         t,
         tagStack = [];
 
@@ -436,15 +433,15 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
           
           continue;
         }
-        let ts = collectTimeStamp(t.substr(1, t.length - 1));
-        let node;
+        var ts = collectTimeStamp(t.substr(1, t.length - 1));
+        var node;
         if (ts) {
           
           node = window.document.createProcessingInstruction("timestamp", normalizedTimeStamp(ts));
           current.appendChild(node);
           continue;
         }
-        let m = t.match(/^<([^.\s/0-9>]+)(\.[^\s\\>]+)?([^>\\]+)?(\\?)>?$/);
+        var m = t.match(/^<([^.\s/0-9>]+)(\.[^\s\\>]+)?([^>\\]+)?(\\?)>?$/);
         
         if (!m) {
           continue;
@@ -485,7 +482,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
   
   StyleBox.prototype.applyStyles = function(styles, div) {
     div = div || this.div;
-    for (let prop in styles) {
+    for (var prop in styles) {
       if (styles.hasOwnProperty(prop)) {
         div.style[prop] = styles[prop];
       }
@@ -522,11 +519,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
         PARSE_CONTENT_MODE.PSUEDO_CUE : PARSE_CONTENT_MODE.NORMAL_CUE);
       this.div.appendChild(this.cueDiv);
 
-      this.containerHeight = containerBox.height;
-      this.containerWidth = containerBox.width;
-      this.fontSize = this._getFontSize(containerBox);
-      this.isCueStyleBox = true;
-
+      this.fontSize = this._getFontSize(containerBox.height);
       
       
       if (supportPseudo) {
@@ -537,39 +530,28 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
       this.applyStyles(this._getNodeDefaultStyles(cue));
     }
 
-    getCueBoxPositionAndSize() {
-      
-      
-      
-      const isWritingDirectionHorizontal = this.cue.vertical == "";
-      let top =
-            this.containerHeight * this._tranferPercentageToFloat(this.div.style.top),
-          left =
-            this.containerWidth * this._tranferPercentageToFloat(this.div.style.left),
-          width = isWritingDirectionHorizontal ?
-            this.containerWidth * this._tranferPercentageToFloat(this.div.style.width) :
-            this.div.offsetWidth,
-          height = isWritingDirectionHorizontal ?
-            this.div.offsetHeight :
-            this.containerHeight * this._tranferPercentageToFloat(this.div.style.height);
-      return { top, left, width, height };
+    move(box) {
+      this.applyStyles({
+        top: this.formatStyle(box.top, "px"),
+        bottom: this.formatStyle(box.bottom, "px"),
+        left: this.formatStyle(box.left, "px"),
+        right: this.formatStyle(box.right, "px"),
+        height: this.formatStyle(box.height, "px"),
+        width: this.formatStyle(box.width, "px")
+      });
     }
 
     
 
 
 
-    _tranferPercentageToFloat(input) {
-      return input.replace("%", "") / 100.0;
-    }
-
-    _getFontSize(containerBox) {
+    _getFontSize(renderingAreaHeight) {
       
       
       
       
       
-      return containerBox.height * 0.05 + "px";
+      return renderingAreaHeight * 0.05 + "px";
     }
 
     _applyNonPseudoCueStyles() {
@@ -609,9 +591,12 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
       styles["writing-mode"] = this._getCueWritingMode(cue);
 
       
-      const {width, height, left, top} = this._getCueSizeAndPosition(cue);
+      const {width, height} = this._getCueWidthAndHeight(cue);
       styles["width"] = width;
       styles["height"] = height;
+
+      
+      const {left, top} = this._getCueLeftAndTop(cue);
       styles["left"] = left;
       styles["top"] = top;
     }
@@ -623,7 +608,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
       return cue.vertical == "lr" ? "vertical-lr" : "vertical-rl";
     }
 
-    _getCueSizeAndPosition(cue) {
+    _getCueWidthAndHeight(cue) {
       
       
       let maximumSize;
@@ -641,7 +626,16 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
           break;
       }
       const size = Math.min(cue.size, maximumSize);
+      return cue.vertical == "" ? {
+        width: size + "%",
+        height: "auto",
+      } : {
+        width: "auto",
+        height: size + "%",
+      };
+    }
 
+    _getCueLeftAndTop(cue) {
       
       
       let xPosition = 0.0, yPosition = 0.0;
@@ -656,16 +650,16 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
           break;
         case "center":
           if (isWritingDirectionHorizontal) {
-            xPosition = cue.computedPosition - (size / 2);
+            xPosition = cue.computedPosition - (cue.size / 2);
           } else {
-            yPosition = cue.computedPosition - (size / 2);
+            yPosition = cue.computedPosition - (cue.size / 2);
           }
           break;
         case "line-right":
           if (isWritingDirectionHorizontal) {
-            xPosition = cue.computedPosition - size;
+            xPosition = cue.computedPosition - cue.size;
           } else {
-            yPosition = cue.computedPosition - size;
+            yPosition = cue.computedPosition - cue.size;
           }
           break;
       }
@@ -686,23 +680,18 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
           xPosition = 0;
         }
       }
-      return {
-        left: xPosition + "%",
-        top: yPosition + "%",
-        width: isWritingDirectionHorizontal ? size + "%" : "auto",
-        height: isWritingDirectionHorizontal ? "auto" : size + "%",
-      };
+      return { left: xPosition + "%", top: yPosition + "%"};
     }
   }
 
   function RegionNodeBox(window, region, container) {
     StyleBox.call(this);
 
-    let boxLineHeight = container.height * 0.0533 
-    let boxHeight = boxLineHeight * region.lines;
-    let boxWidth = container.width * region.width / 100; 
+    var boxLineHeight = container.height * 0.0533 
+    var boxHeight = boxLineHeight * region.lines;
+    var boxWidth = container.width * region.width / 100; 
 
-    let regionNodeStyles = {
+    var regionNodeStyles = {
       position: "absolute",
       height: boxHeight + "px",
       width: boxWidth + "px",
@@ -734,7 +723,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
     StyleBox.call(this);
     this.cueDiv = parseContent(window, cue.text, PARSE_CONTENT_MODE.REGION_CUE);
 
-    let regionCueStyles = {
+    var regionCueStyles = {
       position: "relative",
       writingMode: "horizontal-tb",
       unicodeBidi: "plaintext",
@@ -744,7 +733,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
     };
     
     
-    let offset = cue.computedPosition * cue.region.width / 100;
+    var offset = cue.computedPosition * cue.region.width / 100;
     
     switch (cue.align) {
       case "start":
@@ -770,269 +759,282 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
 
   
   
-  class BoxPosition {
-    constructor(obj) {
+  
+  function BoxPosition(obj) {
+    
+    
+    
+    
+    var lh, height, width, top;
+    if (obj.div) {
+      height = obj.div.offsetHeight;
+      width = obj.div.offsetWidth;
+      top = obj.div.offsetTop;
+
+      var rects = (rects = obj.div.childNodes) && (rects = rects[0]) &&
+                  rects.getClientRects && rects.getClientRects();
+      obj = obj.div.getBoundingClientRect();
       
       
       
       
-      const isHTMLElement = !obj.isCueStyleBox && (obj.div || obj.tagName);
-      obj = obj.isCueStyleBox ? obj.getCueBoxPositionAndSize() : obj.div || obj;
-      this.top = isHTMLElement ? obj.offsetTop : obj.top;
-      this.left = isHTMLElement ? obj.offsetLeft : obj.left;
-      this.width = isHTMLElement ? obj.offsetWidth : obj.width;
-      this.height = isHTMLElement ? obj.offsetHeight : obj.height;
-    }
+      lh = rects ? Math.max((rects[0] && rects[0].height) || 0, obj.height / rects.length)
+                 : 0;
 
-    get bottom() {
-      return this.top + this.height;
     }
-
-    get right() {
-      return this.left + this.width;
-    }
-
-    
-    
-    
-    move(axis, toMove) {
-      switch (axis) {
-      case "+x":
-        this.left += toMove;
-        break;
-      case "-x":
-        this.left -= toMove;
-        break;
-      case "+y":
-        this.top += toMove;
-        break;
-      case "-y":
-        this.top -= toMove;
-        break;
-      }
-    }
-
-    
-    overlaps(b2) {
-      return this.left < b2.right &&
-             this.right > b2.left &&
-             this.top < b2.bottom &&
-             this.bottom > b2.top;
-    }
-
-    
-    overlapsAny(boxes) {
-      for (let i = 0; i < boxes.length; i++) {
-        if (this.overlaps(boxes[i])) {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    
-    overlapsAny(boxes) {
-      for (let i = 0; i < boxes.length; i++) {
-        if (this.overlaps(boxes[i])) {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    
-    within(container) {
-      return this.top >= container.top &&
-             this.bottom <= container.bottom &&
-             this.left >= container.left &&
-             this.right <= container.right;
-    }
-
-    
-    
-    
-    
-    overlapsOppositeAxis(container, axis) {
-      switch (axis) {
-      case "+x":
-        return this.left < container.left;
-      case "-x":
-        return this.right > container.right;
-      case "+y":
-        return this.top < container.top;
-      case "-y":
-        return this.bottom > container.bottom;
-      }
-    }
-
-    
-    
-    intersectPercentage(b2) {
-      let x = Math.max(0, Math.min(this.right, b2.right) - Math.max(this.left, b2.left)),
-          y = Math.max(0, Math.min(this.bottom, b2.bottom) - Math.max(this.top, b2.top)),
-          intersectArea = x * y;
-      return intersectArea / (this.height * this.width);
-    }
+    this.left = obj.left;
+    this.right = obj.right;
+    this.top = obj.top || top;
+    this.height = obj.height || height;
+    this.bottom = obj.bottom || (top + (obj.height || height));
+    this.width = obj.width || width;
+    this.lineHeight = lh !== undefined ? lh : obj.lineHeight;
   }
 
-  BoxPosition.prototype.clone = function(){
-    return new BoxPosition(this);
+  
+  
+  
+  BoxPosition.prototype.move = function(axis, toMove) {
+    toMove = toMove !== undefined ? toMove : this.lineHeight;
+    switch (axis) {
+    case "+x":
+      this.left += toMove;
+      this.right += toMove;
+      break;
+    case "-x":
+      this.left -= toMove;
+      this.right -= toMove;
+      break;
+    case "+y":
+      this.top += toMove;
+      this.bottom += toMove;
+      break;
+    case "-y":
+      this.top -= toMove;
+      this.bottom -= toMove;
+      break;
+    }
   };
 
-  function adjustBoxPosition(styleBox, containerBox, controlBarBox, outputBoxes) {
-    const cue = styleBox.cue;
-    const isWritingDirectionHorizontal = cue.vertical == "";
-    let box = new BoxPosition(styleBox);
+  
+  BoxPosition.prototype.overlaps = function(b2) {
+    return this.left < b2.right &&
+           this.right > b2.left &&
+           this.top < b2.bottom &&
+           this.bottom > b2.top;
+  };
+
+  
+  BoxPosition.prototype.overlapsAny = function(boxes) {
+    for (var i = 0; i < boxes.length; i++) {
+      if (this.overlaps(boxes[i])) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  
+  BoxPosition.prototype.within = function(container) {
+    return this.top >= container.top &&
+           this.bottom <= container.bottom &&
+           this.left >= container.left &&
+           this.right <= container.right;
+  };
+
+  
+  
+  
+  
+  BoxPosition.prototype.overlapsOppositeAxis = function(container, axis) {
+    switch (axis) {
+    case "+x":
+      return this.left < container.left;
+    case "-x":
+      return this.right > container.right;
+    case "+y":
+      return this.top < container.top;
+    case "-y":
+      return this.bottom > container.bottom;
+    }
+  };
+
+  
+  
+  BoxPosition.prototype.intersectPercentage = function(b2) {
+    var x = Math.max(0, Math.min(this.right, b2.right) - Math.max(this.left, b2.left)),
+        y = Math.max(0, Math.min(this.bottom, b2.bottom) - Math.max(this.top, b2.top)),
+        intersectArea = x * y;
+    return intersectArea / (this.height * this.width);
+  };
+
+  
+  
+  
+  
+  BoxPosition.prototype.toCSSCompatValues = function(reference) {
+    return {
+      top: this.top - reference.top,
+      bottom: reference.bottom - this.bottom,
+      left: this.left - reference.left,
+      right: reference.right - this.right,
+      height: this.height,
+      width: this.width
+    };
+  };
+
+  
+  
+  BoxPosition.getSimpleBoxPosition = function(obj) {
+    var height = obj.div ? obj.div.offsetHeight : obj.tagName ? obj.offsetHeight : 0;
+    var width = obj.div ? obj.div.offsetWidth : obj.tagName ? obj.offsetWidth : 0;
+    var top = obj.div ? obj.div.offsetTop : obj.tagName ? obj.offsetTop : 0;
+
+    obj = obj.div ? obj.div.getBoundingClientRect() :
+                  obj.tagName ? obj.getBoundingClientRect() : obj;
+    var ret = {
+      left: obj.left,
+      right: obj.right,
+      top: obj.top || top,
+      height: obj.height || height,
+      bottom: obj.bottom || (top + (obj.height || height)),
+      width: obj.width || width
+    };
+    return ret;
+  };
+
+  
+  
+  
+  function moveBoxToLinePosition(window, styleBox, containerBox, boxPositions) {
 
     
     
     
     
-    const fullDimension = isWritingDirectionHorizontal ?
-      containerBox.height : containerBox.width;
+    
+    function findBestPosition(b, axis) {
+      var bestPosition,
+          specifiedPosition = new BoxPosition(b),
+          percentage = 1; 
+
+      for (var i = 0; i < axis.length; i++) {
+        while (b.overlapsOppositeAxis(containerBox, axis[i]) ||
+               (b.within(containerBox) && b.overlapsAny(boxPositions))) {
+          b.move(axis[i]);
+        }
+        
+        
+        if (b.within(containerBox)) {
+          return b;
+        }
+        var p = b.intersectPercentage(containerBox);
+        
+        
+        if (percentage > p) {
+          bestPosition = new BoxPosition(b);
+          percentage = p;
+        }
+        
+        b = new BoxPosition(specifiedPosition);
+      }
+      return bestPosition || specifiedPosition;
+    }
+
+    var boxPosition = new BoxPosition(styleBox),
+        cue = styleBox.cue,
+        linePos = cue.computedLine,
+        axis = [];
+
+    
     if (cue.snapToLines) {
-      
-      
-      
-      
-      
-      let step = parseFloat(styleBox.fontSize.replace("px", ""));
+      var size;
+      switch (cue.vertical) {
+      case "":
+        axis = [ "+y", "-y" ];
+        size = "height";
+        break;
+      case "rl":
+        axis = [ "+x", "-x" ];
+        size = "width";
+        break;
+      case "lr":
+        axis = [ "-x", "+x" ];
+        size = "width";
+        break;
+      }
+
+      var step = boxPosition.lineHeight,
+          position = step * Math.round(linePos),
+          maxPosition = containerBox[size] + step,
+          initialAxis = axis[0];
+
       if (step == 0) {
         return;
       }
 
       
-      let line = Math.floor(cue.computedLine + 0.5);
-      if (cue.vertical == "rl") {
-        line = -1 * (line + 1);
-      }
-
-      
-      let position = step * line;
-      if (cue.vertical == "rl") {
-        position = position - box.width + step;
-      }
-
-      
-      if (line < 0) {
-        position += fullDimension;
-        step = -1 * step;
-      }
-
-      
-      const movingDirection = isWritingDirectionHorizontal ? "+y" : "+x";
-      box.move(movingDirection, position);
-
-      
-      let specifiedPosition = box.clone();
-
       
       
-      const titleAreaBox = containerBox.clone();
-      if (controlBarBox) {
-        titleAreaBox.height -= controlBarBox.height;
-      }
-
-      function isBoxOutsideTheRenderingArea() {
-        if (isWritingDirectionHorizontal) {
-          
-          
-          return step < 0 && box.top < 0 ||
-                 step > 0 && box.bottom > fullDimension;
-        }
-        
-        
-        
-        return step < 0 && box.left < 0 ||
-               step > 0 && box.right > fullDimension;
+      if (Math.abs(position) > maxPosition) {
+        position = position < 0 ? -1 : 1;
+        position *= Math.ceil(maxPosition / step) * step;
       }
 
       
       
       
-      let switched = false;
-      while (!box.within(titleAreaBox) || box.overlapsAny(outputBoxes)) {
-        
-        if (isBoxOutsideTheRenderingArea()) {
-          
-          
-          
-          if (switched) {
-            return null;
-          }
-          
-          switched = true;
-          box = specifiedPosition.clone();
-          step = -1 * step;
-        }
-        
-        box.move(movingDirection, step);
+      
+      if (linePos < 0) {
+        position += cue.vertical === "" ? containerBox.height : containerBox.width;
+        axis = axis.reverse();
       }
 
-      if (isWritingDirectionHorizontal) {
-        styleBox.applyStyles({
-          top: getPercentagePosition(box.top, fullDimension),
-        });
-      } else {
-        styleBox.applyStyles({
-          left: getPercentagePosition(box.left, fullDimension),
-        });
-      }
+      
+      
+      boxPosition.move(initialAxis, position);
+
     } else {
       
-      if (cue.lineAlign != "start") {
-        const isCenterAlign = cue.lineAlign == "center";
-        const movingDirection = isWritingDirectionHorizontal ? "-y" : "-x";
-        if (isWritingDirectionHorizontal) {
-          box.move(movingDirection, isCenterAlign ? box.height : box.height / 2);
-        } else {
-          box.move(movingDirection, isCenterAlign ? box.width : box.width / 2);
-        }
+      var calculatedPercentage = (boxPosition.lineHeight / containerBox.height) * 100;
+
+      switch (cue.lineAlign) {
+      case "center":
+        linePos -= (calculatedPercentage / 2);
+        break;
+      case "end":
+        linePos -= calculatedPercentage;
+        break;
       }
 
       
-      let bestPosition = {},
-          specifiedPosition = box.clone(),
-          outsideAreaPercentage = 1; 
-      let hasFoundBestPosition = false;
-      const axis = ["-y", "-x", "+x", "+y"];
-      const toMove = parseFloat(styleBox.fontSize.replace("px", ""));
-      for (let i = 0; i < axis.length && !hasFoundBestPosition; i++) {
-        while (box.overlapsOppositeAxis(containerBox, axis[i]) ||
-               (!box.within(containerBox) || box.overlapsAny(outputBoxes))) {
-          box.move(axis[i], toMove);
-        }
-        
-        
-        if (box.within(containerBox)) {
-          bestPosition = box.clone();
-          hasFoundBestPosition = true;
-          break;
-        }
-        let p = box.intersectPercentage(containerBox);
-        
-        
-        if (outsideAreaPercentage > p) {
-          bestPosition = box.clone();
-          outsideAreaPercentage = p;
-        }
-        
-        box = specifiedPosition.clone();
+      switch (cue.vertical) {
+      case "":
+        styleBox.applyStyles({
+          top: styleBox.formatStyle(linePos, "%")
+        });
+        break;
+      case "rl":
+        styleBox.applyStyles({
+          left: styleBox.formatStyle(linePos, "%")
+        });
+        break;
+      case "lr":
+        styleBox.applyStyles({
+          right: styleBox.formatStyle(linePos, "%")
+        });
+        break;
       }
 
-      styleBox.applyStyles({
-        top: getPercentagePosition(box.top, fullDimension),
-        left: getPercentagePosition(box.left, fullDimension),
-      });
+      axis = [ "+y", "-x", "+x", "-y" ];
+
+      
+      
+      boxPosition = new BoxPosition(styleBox);
     }
 
-    
-    
-    function getPercentagePosition(position, fullDimension) {
-      return (position / fullDimension) * 100 + "%";
-    }
-
-    return box;
+    var bestPosition = findBestPosition(boxPosition, axis);
+    styleBox.move(bestPosition.toCSSCompatValues(containerBox));
   }
 
   function WebVTT() {
@@ -1071,7 +1073,8 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
       return null;
     }
 
-    let controlBar, controlBarShown;
+    var controlBar;
+    var controlBarShown;
     if (controls) {
       
       controlBar = controls.parentNode.getElementById("controlBar");
@@ -1090,7 +1093,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
         return true;
       }
 
-      for (let i = 0; i < cues.length; i++) {
+      for (var i = 0; i < cues.length; i++) {
         if (cues[i].hasBeenReset || !cues[i].displayState) {
           return true;
         }
@@ -1108,7 +1111,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
     while (overlay.firstChild) {
       overlay.firstChild.remove();
     }
-    let rootOfCues = window.document.createElement("div");
+    var rootOfCues = window.document.createElement("div");
     rootOfCues.style.position = "absolute";
     rootOfCues.style.left = "0";
     rootOfCues.style.right = "0";
@@ -1116,70 +1119,71 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
     rootOfCues.style.bottom = "0";
     overlay.appendChild(rootOfCues);
 
-    let boxPositions = [],
-        containerBox = new BoxPosition(rootOfCues);
+    var boxPositions = [],
+        containerBox = BoxPosition.getSimpleBoxPosition(rootOfCues);
 
-    let styleBox, cue, controlBarBox;
-    if (controlBarShown) {
-      controlBarBox = new BoxPosition(controlBar);
+    (function() {
+      var styleBox, cue, controlBarBox;
+
+      if (controlBarShown) {
+        controlBarBox = BoxPosition.getSimpleBoxPosition(controlBar);
+        
+        boxPositions.push(controlBarBox);
+      }
+
       
-      boxPositions.push(controlBarBox);
-    }
+      
+      var regionNodeBoxes = {};
+      var regionNodeBox;
 
-    
-    
-    let regionNodeBoxes = {};
-    let regionNodeBox;
+      for (var i = 0; i < cues.length; i++) {
+        cue = cues[i];
+        if (cue.region != null) {
+         
+          styleBox = new RegionCueStyleBox(window, cue);
 
-    for (let i = 0; i < cues.length; i++) {
-      cue = cues[i];
-      if (cue.region != null) {
-       
-        styleBox = new RegionCueStyleBox(window, cue);
-
-        if (!regionNodeBoxes[cue.region.id]) {
-          
-          
-          let adjustContainerBox = new BoxPosition(rootOfCues);
-          if (controlBarShown) {
-            adjustContainerBox.height -= controlBarBox.height;
-            adjustContainerBox.bottom += controlBarBox.height;
+          if (!regionNodeBoxes[cue.region.id]) {
+            
+            
+            var adjustContainerBox = BoxPosition.getSimpleBoxPosition(rootOfCues);
+            if (controlBarShown) {
+              adjustContainerBox.height -= controlBarBox.height;
+              adjustContainerBox.bottom += controlBarBox.height;
+            }
+            regionNodeBox = new RegionNodeBox(window, cue.region, adjustContainerBox);
+            regionNodeBoxes[cue.region.id] = regionNodeBox;
           }
-          regionNodeBox = new RegionNodeBox(window, cue.region, adjustContainerBox);
-          regionNodeBoxes[cue.region.id] = regionNodeBox;
-        }
-        
-        let currentRegionBox = regionNodeBoxes[cue.region.id];
-        let currentRegionNodeDiv = currentRegionBox.div;
-        
-        
-        
-        if (cue.region.scroll == "up" && currentRegionNodeDiv.childElementCount > 0) {
-          styleBox.div.style.transitionProperty = "top";
-          styleBox.div.style.transitionDuration = "0.433s";
-        }
+          
+          var currentRegionBox = regionNodeBoxes[cue.region.id];
+          var currentRegionNodeDiv = currentRegionBox.div;
+          
+          
+          
+          if (cue.region.scroll == "up" && currentRegionNodeDiv.childElementCount > 0) {
+            styleBox.div.style.transitionProperty = "top";
+            styleBox.div.style.transitionDuration = "0.433s";
+          }
 
-        currentRegionNodeDiv.appendChild(styleBox.div);
-        rootOfCues.appendChild(currentRegionNodeDiv);
-        cue.displayState = styleBox.div;
-        boxPositions.push(new BoxPosition(currentRegionBox));
-      } else {
-        
-        styleBox = new CueStyleBox(window, cue, containerBox);
-        rootOfCues.appendChild(styleBox.div);
+          currentRegionNodeDiv.appendChild(styleBox.div);
+          rootOfCues.appendChild(currentRegionNodeDiv);
+          cue.displayState = styleBox.div;
+          boxPositions.push(BoxPosition.getSimpleBoxPosition(currentRegionBox));
+        } else {
+          
+          styleBox = new CueStyleBox(window, cue, containerBox);
+          rootOfCues.appendChild(styleBox.div);
 
-        
-        
-        
-        let cueBox = adjustBoxPosition(styleBox, containerBox, controlBarBox, boxPositions);
-        if (cueBox) {
+          
+          moveBoxToLinePosition(window, styleBox, containerBox, boxPositions);
+
           
           
           cue.displayState = styleBox.div;
-          boxPositions.push(cueBox);
+
+          boxPositions.push(BoxPosition.getSimpleBoxPosition(styleBox));
         }
       }
-    }
+    })();
   };
 
   WebVTT.Parser = function(window, decoder) {
@@ -1213,12 +1217,12 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
 
       
       while (/\r\n|\n|\r/.test(this.buffer)) {
-        let buffer = this.buffer;
-        let pos = 0;
+        var buffer = this.buffer;
+        var pos = 0;
         while (buffer[pos] !== '\r' && buffer[pos] !== '\n') {
           ++pos;
         }
-        let line = buffer.substr(0, pos);
+        var line = buffer.substr(0, pos);
         
         if (buffer[pos] === '\r') {
           ++pos;
@@ -1239,7 +1243,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
       return this;
     },
     parseLine: function(line) {
-      let self = this;
+      var self = this;
 
       function createCueIfNeeded() {
         if (!self.cue) {
@@ -1279,7 +1283,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
 
       
       function parseRegion(input) {
-        let settings = new Settings();
+        var settings = new Settings();
         parseOptions(input, function (k, v) {
           switch (k) {
           case "id":
@@ -1292,14 +1296,14 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
             settings.digitsValue(k, v);
             break;
           case "regionanchor":
-          case "viewportanchor": {
-            let xy = v.split(',');
+          case "viewportanchor":
+            var xy = v.split(',');
             if (xy.length !== 2) {
               break;
             }
             
             
-            let anchor = new Settings();
+            var anchor = new Settings();
             anchor.percent("x", xy[0]);
             anchor.percent("y", xy[1]);
             if (!anchor.has("x") || !anchor.has("y")) {
@@ -1308,7 +1312,6 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
             settings.set(k + "X", anchor.get("x"));
             settings.set(k + "Y", anchor.get("y"));
             break;
-          }
           case "scroll":
             settings.alt(k, v, ["up"]);
             break;
@@ -1320,7 +1323,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
         
         if (settings.has("id")) {
           try {
-            let region = new self.window.VTTRegion();
+            var region = new self.window.VTTRegion();
             region.id = settings.get("id", "");
             region.width = settings.get("width", 100);
             region.lines = settings.get("lines", 3);
@@ -1339,7 +1342,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
             });
           } catch(e) {
             dump("VTTRegion Error " + e + "\n");
-            let regionPref = Services.prefs.getBoolPref("media.webvtt.regions.enabled");
+            var regionPref = Services.prefs.getBoolPref("media.webvtt.regions.enabled");
             dump("regionPref " + regionPref + "\n");
           }
         }
@@ -1501,7 +1504,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
       return this;
     },
     flush: function () {
-      let self = this;
+      var self = this;
       try {
         
         self.buffer += self.decoder.decode();
