@@ -12,20 +12,7 @@
 namespace base {
 
 
-uint64_t RandUint64();
-
-
 int RandInt(int min, int max);
-
-
-double RandDouble();
-
-
-
-
-
-
-void RandBytes(void* output, size_t output_length);
 
 }  
 
