@@ -68,7 +68,7 @@ nsresult nsViewSourceChannel::Init(nsIURI *uri) {
   nsCOMPtr<nsIPrincipal> nullPrincipal =
       mozilla::NullPrincipal::CreateWithoutOriginAttributes();
 
-  rv = pService->NewChannel2(
+  rv = pService->NewChannel(
       path,
       nullptr,  
       nullptr,  

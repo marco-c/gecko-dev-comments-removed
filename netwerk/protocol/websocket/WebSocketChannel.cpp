@@ -3387,7 +3387,7 @@ WebSocketChannel::AsyncOpen(nsIURI *aURI, const nsACString &aOrigin,
 
   
   
-  rv = ioService->NewChannelFromURIWithProxyFlags2(
+  rv = ioService->NewChannelFromURIWithProxyFlags(
       localURI, mURI,
       nsIProtocolProxyService::RESOLVE_PREFER_HTTPS_PROXY |
           nsIProtocolProxyService::RESOLVE_ALWAYS_TUNNEL,

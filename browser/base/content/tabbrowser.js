@@ -778,7 +778,7 @@ window._gBrowser = {
 
     try {
       
-      const resolvedURI = aResolvedURI || Services.io.newChannelFromURI2(
+      const resolvedURI = aResolvedURI || Services.io.newChannelFromURI(
         aURI,
         null, 
         Services.scriptSecurityManager.getSystemPrincipal(), 

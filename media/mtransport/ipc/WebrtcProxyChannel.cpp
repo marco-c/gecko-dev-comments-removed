@@ -169,7 +169,7 @@ nsresult WebrtcProxyChannel::Open(const nsCString& aHost, const int& aPort,
   
   
   nsCOMPtr<nsIChannel> localChannel;
-  rv = ioService->NewChannelFromURIWithProxyFlags2(
+  rv = ioService->NewChannelFromURIWithProxyFlags(
       uri, nullptr,
       
       0, aLoadInfo->LoadingNode(), aLoadInfo->LoadingPrincipal(),

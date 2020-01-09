@@ -513,14 +513,14 @@ function test_newChannel_with_string()
   
   
   let ios = Services.io
-  let iosChannel = ios.newChannel2(TEST_SPEC,
-                                   null,
-                                   null,
-                                   null,      
-                                   Services.scriptSecurityManager.getSystemPrincipal(),
-                                   null,      
-                                   Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
-                                   Ci.nsIContentPolicy.TYPE_OTHER);
+  let iosChannel = ios.newChannel(TEST_SPEC,
+                                  null,
+                                  null,
+                                  null,      
+                                  Services.scriptSecurityManager.getSystemPrincipal(),
+                                  null,      
+                                  Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
+                                  Ci.nsIContentPolicy.TYPE_OTHER);
   let NetUtilChannel = NetUtil.newChannel({
     uri: TEST_SPEC,
     loadUsingSystemPrincipal: true
@@ -537,12 +537,12 @@ function test_newChannel_with_nsIURI()
   
   
   let uri = NetUtil.newURI(TEST_SPEC);
-  let iosChannel = Services.io.newChannelFromURI2(uri,
-                                                  null,      
-                                                  Services.scriptSecurityManager.getSystemPrincipal(),
-                                                  null,      
-                                                  Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
-                                                  Ci.nsIContentPolicy.TYPE_OTHER);
+  let iosChannel = Services.io.newChannelFromURI(uri,
+                                                 null,      
+                                                 Services.scriptSecurityManager.getSystemPrincipal(),
+                                                 null,      
+                                                 Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
+                                                 Ci.nsIContentPolicy.TYPE_OTHER);
   let NetUtilChannel = NetUtil.newChannel({
     uri: uri,
     loadUsingSystemPrincipal: true
@@ -556,12 +556,12 @@ function test_newChannel_with_options()
 {
   let uri = "data:text/plain,";
 
-  let iosChannel = Services.io.newChannelFromURI2(NetUtil.newURI(uri),
-                                                  null,      
-                                                  Services.scriptSecurityManager.getSystemPrincipal(),
-                                                  null,      
-                                                  Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
-                                                  Ci.nsIContentPolicy.TYPE_OTHER);
+  let iosChannel = Services.io.newChannelFromURI(NetUtil.newURI(uri),
+                                                 null,      
+                                                 Services.scriptSecurityManager.getSystemPrincipal(),
+                                                 null,      
+                                                 Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
+                                                 Ci.nsIContentPolicy.TYPE_OTHER);
 
   function checkEqualToIOSChannel(channel) {
     Assert.ok(iosChannel.URI.equals(channel.URI));  
