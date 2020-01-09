@@ -128,9 +128,6 @@ enum MaybeTailCall : bool { TailCall, NonTailCall };
 
 
 struct VMFunctionData {
-  
-  void* wrapped;
-
 #if defined(JS_JITSPEW) || defined(JS_TRACE_LOGGING)
   
   
@@ -293,14 +290,14 @@ struct VMFunctionData {
     return count;
   }
 
-  constexpr VMFunctionData(void* wrapped, const char* name,
-                           uint32_t explicitArgs, uint32_t argumentProperties,
+  constexpr VMFunctionData(const char* name, uint32_t explicitArgs,
+                           uint32_t argumentProperties,
                            uint32_t argumentPassedInFloatRegs,
                            uint64_t argRootTypes, DataType outParam,
                            RootType outParamRootType, DataType returnType,
                            uint8_t extraValuesToPop = 0,
                            MaybeTailCall expectTailCall = NonTailCall)
-      : wrapped(wrapped),
+      :
 #if defined(JS_JITSPEW) || defined(JS_TRACE_LOGGING)
         name_(name),
 #endif
@@ -324,7 +321,7 @@ struct VMFunctionData {
   
   
   constexpr VMFunctionData(const VMFunctionData& o)
-      : wrapped(o.wrapped),
+      :
 #if defined(JS_JITSPEW) || defined(JS_TRACE_LOGGING)
         name_(o.name_),
 #endif
@@ -344,6 +341,9 @@ struct VMFunctionData {
 
 struct VMFunction : public VMFunctionData {
   
+  void* wrapped;
+
+  
   static VMFunction* functions;
   VMFunction* next;
 
@@ -354,13 +354,15 @@ struct VMFunction : public VMFunctionData {
                        RootType outParamRootType, DataType returnType,
                        uint8_t extraValuesToPop = 0,
                        MaybeTailCall expectTailCall = NonTailCall)
-      : VMFunctionData(wrapped, name, explicitArgs, argumentProperties,
+      : VMFunctionData(name, explicitArgs, argumentProperties,
                        argumentPassedInFloatRegs, argRootTypes, outParam,
                        outParamRootType, returnType, extraValuesToPop,
                        expectTailCall),
+        wrapped(wrapped),
         next(nullptr) {}
 
-  VMFunction(const VMFunction& o) : VMFunctionData(o), next(functions) {
+  VMFunction(const VMFunction& o)
+      : VMFunctionData(o), wrapped(o.wrapped), next(functions) {
     
     functions = this;
   }
