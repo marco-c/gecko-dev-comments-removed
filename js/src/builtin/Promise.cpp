@@ -3516,14 +3516,10 @@ bool js::IsPromiseForAsync(JSObject* promise) {
 
 
 
-MOZ_MUST_USE bool js::AsyncFunctionThrown(
-    JSContext* cx, Handle<PromiseObject*> resultPromise) {
-  RootedValue exc(cx);
-  if (!MaybeGetAndClearException(cx, &exc)) {
-    return false;
-  }
-
-  return RejectPromiseInternal(cx, resultPromise, exc);
+MOZ_MUST_USE bool js::AsyncFunctionThrown(JSContext* cx,
+                                          Handle<PromiseObject*> resultPromise,
+                                          HandleValue reason) {
+  return RejectPromiseInternal(cx, resultPromise, reason);
 }
 
 

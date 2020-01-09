@@ -50,6 +50,7 @@
 #include "frontend/TryEmitter.h"
 #include "frontend/WhileEmitter.h"
 #include "js/CompileOptions.h"
+#include "vm/AsyncFunction.h"
 #include "vm/BytecodeUtil.h"
 #include "vm/Debugger.h"
 #include "vm/GeneratorObject.h"
@@ -6244,6 +6245,28 @@ bool BytecodeEmitter::emitReturn(UnaryNode* returnNode) {
     
     NameLocation loc = *locationOfNameBoundInFunctionScope(
         cx->names().dotGenerator, varEmitterScope);
+
+    
+    if (sc->asFunctionBox()->needsPromiseResult()) {
+      if (!emit1(JSOP_GETRVAL)) {
+        
+        return false;
+      }
+      if (!emitGetNameAtLocation(cx->names().dotGenerator, loc)) {
+        
+        return false;
+      }
+      if (!emit2(JSOP_ASYNCRESOLVE,
+                 uint8_t(AsyncFunctionResolveKind::Fulfill))) {
+        
+        return false;
+      }
+      if (!emit1(JSOP_SETRVAL)) {
+        
+        return false;
+      }
+    }
+
     if (!emitGetNameAtLocation(cx->names().dotGenerator, loc)) {
       return false;
     }
@@ -8635,6 +8658,13 @@ bool BytecodeEmitter::emitInitializeFunctionSpecialNames() {
 bool BytecodeEmitter::emitFunctionBody(ParseNode* funBody) {
   FunctionBox* funbox = sc->asFunctionBox();
 
+  Maybe<TryEmitter> rejectTryCatch;
+  if (funbox->needsPromiseResult()) {
+    if (!emitAsyncFunctionRejectPrologue(rejectTryCatch)) {
+      return false;
+    }
+  }
+
   if (funbox->function()->kind() ==
       JSFunction::FunctionKind::ClassConstructor) {
     if (!emitInitializeInstanceFields()) {
@@ -8661,6 +8691,19 @@ bool BytecodeEmitter::emitFunctionBody(ParseNode* funBody) {
 
     if (needsIteratorResult) {
       if (!emitFinishIteratorResult(true)) {
+        return false;
+      }
+    }
+
+    if (funbox->needsPromiseResult()) {
+      if (!emitGetDotGeneratorInInnermostScope()) {
+        
+        return false;
+      }
+
+      if (!emit2(JSOP_ASYNCRESOLVE,
+                 uint8_t(AsyncFunctionResolveKind::Fulfill))) {
+        
         return false;
       }
     }
@@ -8699,6 +8742,12 @@ bool BytecodeEmitter::emitFunctionBody(ParseNode* funBody) {
     }
   }
 
+  if (rejectTryCatch) {
+    if (!emitAsyncFunctionRejectEpilogue(*rejectTryCatch)) {
+      return false;
+    }
+  }
+
   return true;
 }
 
@@ -8722,6 +8771,83 @@ bool BytecodeEmitter::emitLexicalInitialization(JSAtom* name) {
   }
 
   return true;
+}
+
+bool BytecodeEmitter::emitAsyncFunctionRejectPrologue(
+    Maybe<TryEmitter>& tryCatch) {
+  tryCatch.emplace(this, TryEmitter::Kind::TryCatch,
+                   TryEmitter::ControlKind::NonSyntactic);
+  return tryCatch->emitTry();
+}
+
+bool BytecodeEmitter::emitAsyncFunctionRejectEpilogue(TryEmitter& tryCatch) {
+  if (!tryCatch.emitCatch()) {
+    return false;
+  }
+
+  if (!emit1(JSOP_EXCEPTION)) {
+    
+    return false;
+  }
+  if (!emitGetDotGeneratorInInnermostScope()) {
+    
+    return false;
+  }
+
+  
+  if (!emit1(JSOP_DUP)) {
+    
+    return false;
+  }
+  if (!emit1(JSOP_UNDEFINED)) {
+    
+    return false;
+  }
+  if (!emit1(JSOP_STRICTEQ)) {
+    
+    return false;
+  }
+
+  InternalIfEmitter ifGeneratorIsUndef(this);
+  if (!ifGeneratorIsUndef.emitThen()) {
+    
+    return false;
+  }
+
+  if (!emit1(JSOP_POP)) {
+    
+    return false;
+  }
+  if (!emit1(JSOP_THROW)) {
+    
+    return false;
+  }
+
+  this->stackDepth += 2;  
+
+  if (!ifGeneratorIsUndef.emitEnd()) {
+    
+    return false;
+  }
+
+  if (!emit2(JSOP_ASYNCRESOLVE, uint8_t(AsyncFunctionResolveKind::Reject))) {
+    
+    return false;
+  }
+  if (!emit1(JSOP_SETRVAL)) {
+    
+    return false;
+  }
+  if (!emitGetDotGeneratorInInnermostScope()) {
+    
+    return false;
+  }
+  if (!emit1(JSOP_FINALYIELDRVAL)) {
+    
+    return false;
+  }
+
+  return tryCatch.emitEnd();
 }
 
 static MOZ_ALWAYS_INLINE FunctionNode* FindConstructor(JSContext* cx,

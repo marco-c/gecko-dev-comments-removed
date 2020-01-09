@@ -2067,8 +2067,17 @@
  \
     MACRO(JSOP_CHECKTHISREINIT, 191, "checkthisreinit", NULL, 1, 1, 1, JOF_BYTE) \
     
+
+
+
+
+
+
+
+
+
  \
-    MACRO(JSOP_UNUSED192, 192, "unused192", NULL, 1, 0, 0, JOF_BYTE) \
+    MACRO(JSOP_ASYNCRESOLVE, 192, "async-resolve", NULL, 2, 2, 1, JOF_UINT8) \
     
 
 

@@ -68,7 +68,9 @@ dbg.onEnterFrame = frame => {
         
         
         
-        if (typeof completion.return === "string") {
+        
+        
+        if (!completion.await) {
             
             assertEq(asyncStack.pop(), frame);
             log += ")";

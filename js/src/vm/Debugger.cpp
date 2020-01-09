@@ -1086,9 +1086,9 @@ class MOZ_RAII AutoSetGeneratorRunning {
           AutoSetGeneratorRunning asgr(cx, genObj);
           success = handler->onPop(cx, frameobj, nextResumeMode, &nextValue);
         }
-        adjqi.runJobs();
         nextResumeMode = dbg->processParsedHandlerResult(
             ar, frame, pc, success, nextResumeMode, &nextValue);
+        adjqi.runJobs();
 
         
         
@@ -1598,13 +1598,23 @@ static void AdjustGeneratorResumptionValue(JSContext* cx,
                                            AbstractFramePtr frame,
                                            ResumeMode& resumeMode,
                                            MutableHandleValue vp) {
-  if (resumeMode == ResumeMode::Return && frame && frame.isFunctionFrame() &&
-      frame.callee()->isGenerator()) {
-    
-    
-    
-    
-    
+  if (resumeMode != ResumeMode::Return || !frame || !frame.isFunctionFrame()) {
+    return;
+  }
+
+  
+  auto getAndClearExceptionThenThrow = [&]() {
+    MOZ_ALWAYS_TRUE(cx->getPendingException(vp));
+    cx->clearPendingException();
+    resumeMode = ResumeMode::Throw;
+  };
+
+  
+  
+  
+  
+  
+  if (frame.callee()->isGenerator()) {
     
     Rooted<AbstractGeneratorObject*> genObj(
         cx, GetGeneratorObjectForFrame(cx, frame));
@@ -1614,10 +1624,7 @@ static void AdjustGeneratorResumptionValue(JSContext* cx,
       if (!genObj->isBeforeInitialYield()) {
         JSObject* pair = CreateIterResultObject(cx, vp, true);
         if (!pair) {
-          
-          MOZ_ALWAYS_TRUE(cx->getPendingException(vp));
-          cx->clearPendingException();
-          resumeMode = ResumeMode::Throw;
+          getAndClearExceptionThenThrow();
           return;
         }
         vp.setObject(*pair);
@@ -1625,6 +1632,31 @@ static void AdjustGeneratorResumptionValue(JSContext* cx,
 
       
       genObj->setClosed();
+    } else {
+      
+      
+      
+    }
+  } else if (frame.callee()->isAsync()) {
+    
+    if (AbstractGeneratorObject* genObj =
+            GetGeneratorObjectForFrame(cx, frame)) {
+      Rooted<AsyncFunctionGeneratorObject*> asyncGenObj(
+          cx, &genObj->as<AsyncFunctionGeneratorObject>());
+
+      
+      if (!asyncGenObj->isBeforeInitialYield()) {
+        JSObject* promise = AsyncFunctionResolve(
+            cx, asyncGenObj, vp, AsyncFunctionResolveKind::Fulfill);
+        if (!promise) {
+          getAndClearExceptionThenThrow();
+          return;
+        }
+        vp.setObject(*promise);
+      }
+
+      
+      asyncGenObj->setClosed();
     } else {
       
       
@@ -2211,9 +2243,10 @@ void Debugger::slowPathOnNewWasmInstance(
         Rooted<JSObject*> handler(cx, bp->handler);
         bool ok = CallMethodIfPresent(cx, handler, "hit", 1,
                                       scriptFrame.address(), &rv);
-        adjqi.runJobs();
         ResumeMode resumeMode = dbg->processHandlerResult(
             ar, ok, rv, iter.abstractFramePtr(), iter.pc(), vp);
+        adjqi.runJobs();
+
         if (resumeMode != ResumeMode::Continue) {
           savedExc.drop();
           return resumeMode;
@@ -2314,9 +2347,10 @@ void Debugger::slowPathOnNewWasmInstance(
 
       ResumeMode resumeMode = ResumeMode::Continue;
       bool success = handler->onStep(cx, frame, resumeMode, vp);
-      adjqi.runJobs();
       resumeMode = dbg->processParsedHandlerResult(
           ar, iter.abstractFramePtr(), iter.pc(), success, resumeMode, vp);
+      adjqi.runJobs();
+
       if (resumeMode != ResumeMode::Continue) {
         savedExc.drop();
         return resumeMode;
@@ -8673,9 +8707,29 @@ bool ScriptedOnPopHandler::onPop(JSContext* cx, HandleDebuggerFrame frame,
                                  MutableHandleValue vp) {
   Debugger* dbg = frame->owner();
 
+  
+  
+  bool isAfterAwait = false;
+  AbstractFramePtr referent = DebuggerFrame::getReferent(frame);
+  if (resumeMode == ResumeMode::Return && referent &&
+      referent.isFunctionFrame() && referent.callee()->isAsync() &&
+      !referent.callee()->isGenerator()) {
+    AutoRealm ar(cx, referent.callee());
+    if (auto* genObj = GetGeneratorObjectForFrame(cx, referent)) {
+      isAfterAwait = !genObj->isClosed() && genObj->isRunning();
+    }
+  }
+
   RootedValue completion(cx);
   if (!dbg->newCompletionValue(cx, resumeMode, vp, &completion)) {
     return false;
+  }
+
+  if (isAfterAwait) {
+    RootedObject obj(cx, &completion.toObject());
+    if (!DefineDataProperty(cx, obj, cx->names().await, TrueHandleValue)) {
+      return false;
+    }
   }
 
   RootedValue fval(cx, ObjectValue(*object_));
