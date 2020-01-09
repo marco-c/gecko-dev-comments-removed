@@ -27,6 +27,7 @@
 
 #include "prerror.h"
 #include "nsAutoPtr.h"
+#include "ssl.h"
 
 class nsICancelable;
 class nsIDNSRecord;
@@ -176,6 +177,10 @@ class nsSocketTransport final : public nsASocketHandler,
   void CleanupTypes();
 
  private:
+  static SECStatus StoreResumptionToken(PRFileDesc* fd,
+                                        const PRUint8* resumptionToken,
+                                        unsigned int len, void* ctx);
+
   
   enum {
     MSG_ENSURE_CONNECT,
@@ -473,6 +478,11 @@ class nsSocketTransport final : public nsASocketHandler,
   nsresult mFirstRetryError;
 
   bool mDoNotRetryToConnect;
+
+  
+  
+  
+  bool mSSLCallbackSet;
 };
 
 }  
