@@ -613,6 +613,17 @@ class ScriptSource {
   
   
   
+  
+  
+  
+  uint32_t id_;
+
+  
+  static mozilla::Atomic<uint32_t> idCount_;
+
+  
+  
+  
   bool sourceRetrievable_ : 1;
   bool hasIntroductionOffset_ : 1;
   bool containsAsmJS_ : 1;
@@ -654,6 +665,7 @@ class ScriptSource {
         introducerFilename_(nullptr),
         introductionType_(nullptr),
         xdrEncoder_(nullptr),
+        id_(++idCount_),
         sourceRetrievable_(false),
         hasIntroductionOffset_(false),
         containsAsmJS_(false) {}
@@ -1034,6 +1046,8 @@ class ScriptSource {
     return introductionType_;
   }
   const char* filename() const { return filename_.get(); }
+
+  uint32_t id() const { return id_; }
 
   
   MOZ_MUST_USE bool setDisplayURL(JSContext* cx, const char16_t* displayURL);

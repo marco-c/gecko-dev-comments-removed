@@ -2848,6 +2848,8 @@ bool ScriptSource::setSourceMapURL(JSContext* cx,
   return sourceMapURL_ != nullptr;
 }
 
+ mozilla::Atomic<uint32_t> ScriptSource::idCount_;
+
 
 
 
