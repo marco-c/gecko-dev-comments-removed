@@ -16,9 +16,14 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   NetUtil: "resource://gre/modules/NetUtil.jsm",
   Schemas: "resource://gre/modules/Schemas.jsm",
   TestUtils: "resource://testing-common/TestUtils.jsm",
+  setTimeout: "resource://gre/modules/Timer.jsm",
 });
 
 Services.prefs.setBoolPref("extensions.webextensions.remote", false);
+
+function delay(ms = 0) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 ExtensionTestUtils.init(this);
 

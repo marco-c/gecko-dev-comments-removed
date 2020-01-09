@@ -190,12 +190,14 @@ this.ExtensionPreferencesManager = {
 
 
 
-  async setSetting(id, name, value) {
+
+
+  async setSetting(id, name, value, setPref = true) {
     let setting = settingsMap.get(name);
     await ExtensionSettingsStore.initialize();
     let item = await ExtensionSettingsStore.addSetting(
       id, STORE_TYPE, name, value, initialValueCallback.bind(setting));
-    if (item) {
+    if (item && setPref) {
       setPrefs(setting, item);
       return true;
     }
