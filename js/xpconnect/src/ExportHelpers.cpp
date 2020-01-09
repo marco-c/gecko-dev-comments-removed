@@ -24,8 +24,8 @@ using namespace JS;
 
 namespace xpc {
 
-bool IsReflector(JSObject* obj) {
-  obj = js::CheckedUnwrap(obj,  false);
+bool IsReflector(JSObject* obj, JSContext* cx) {
+  obj = js::CheckedUnwrapDynamic(obj, cx,  false);
   if (!obj) {
     return false;
   }
@@ -70,7 +70,8 @@ class MOZ_STACK_CLASS StackScopedCloneData : public StructuredCloneHolderBase {
 
       RootedObject reflector(aCx, mReflectors[idx]);
       MOZ_ASSERT(reflector, "No object pointer?");
-      MOZ_ASSERT(IsReflector(reflector), "Object pointer must be a reflector!");
+      MOZ_ASSERT(IsReflector(reflector, aCx),
+                 "Object pointer must be a reflector!");
 
       if (!JS_WrapObject(aCx, &reflector)) {
         return nullptr;
@@ -146,7 +147,8 @@ class MOZ_STACK_CLASS StackScopedCloneData : public StructuredCloneHolderBase {
       }
     }
 
-    if ((mOptions->wrapReflectors && IsReflector(aObj)) || IsFileList(aObj)) {
+    if ((mOptions->wrapReflectors && IsReflector(aObj, aCx)) ||
+        IsFileList(aObj)) {
       if (!mReflectors.append(aObj)) {
         return false;
       }
@@ -394,8 +396,10 @@ bool ExportFunction(JSContext* cx, HandleValue vfunction, HandleValue vscope,
   
   
   
-  targetScope = js::CheckedUnwrap(targetScope);
-  funObj = js::CheckedUnwrap(funObj);
+  targetScope = js::CheckedUnwrapDynamic(targetScope, cx);
+  
+  
+  funObj = js::CheckedUnwrapStatic(funObj);
   if (!targetScope || !funObj) {
     JS_ReportErrorASCII(cx, "Permission denied to export function into scope");
     return false;
@@ -480,7 +484,8 @@ bool CreateObjectIn(JSContext* cx, HandleValue vobj,
     return false;
   }
 
-  RootedObject scope(cx, js::CheckedUnwrap(&vobj.toObject()));
+  
+  RootedObject scope(cx, js::CheckedUnwrapDynamic(&vobj.toObject(), cx));
   if (!scope) {
     JS_ReportErrorASCII(
         cx, "Permission denied to create object in the target scope");
