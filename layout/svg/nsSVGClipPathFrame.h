@@ -145,7 +145,7 @@ class nsSVGClipPathFrame final : public nsSVGContainerFrame {
                                               mozilla::gfx::IntPoint& aOffset);
 
   void PaintFrameIntoMask(nsIFrame* aFrame, nsIFrame* aClippedFrame,
-                          gfxContext& aTarget, const gfxMatrix& aMatrix);
+                          gfxContext& aTarget);
 
   
   
