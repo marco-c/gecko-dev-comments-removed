@@ -2295,7 +2295,6 @@ function initialState() {
 
 
 
-
 function reducer(state = initialState(), action = {}) {
   const { type, data } = action;
 
