@@ -80,25 +80,6 @@ class TrackEncoder {
 
 
 
-  virtual void SetStartOffset(StreamTime aStartOffset) = 0;
-
-  
-
-
-
-
-  virtual void AdvanceBlockedInput(StreamTime aDuration) = 0;
-
-  
-
-
-
-  virtual void AdvanceCurrentTime(StreamTime aDuration) = 0;
-
-  
-
-
-
   virtual already_AddRefed<TrackMetadataBase> GetMetadata() = 0;
 
   
@@ -189,11 +170,6 @@ class TrackEncoder {
   bool mCanceled;
 
   
-
-
-  StreamTime mCurrentTime;
-
-  
   uint32_t mInitCounter;
   StreamTime mNotInitDuration;
 
@@ -218,8 +194,7 @@ class AudioTrackEncoder : public TrackEncoder {
       : TrackEncoder(aTrackRate),
         mChannels(0),
         mSamplingRate(0),
-        mAudioBitrate(0),
-        mDirectConnected(false) {}
+        mAudioBitrate(0) {}
 
   
 
@@ -228,6 +203,7 @@ class AudioTrackEncoder : public TrackEncoder {
   void Suspend(TimeStamp aTime) override;
 
   
+
 
 
   void Resume(TimeStamp aTime) override;
@@ -311,25 +287,6 @@ class AudioTrackEncoder : public TrackEncoder {
 
   void NotifyEndOfStream() override;
 
-  void SetStartOffset(StreamTime aStartOffset) override;
-
-  
-
-
-
-
-
-
-
-
-  void AdvanceBlockedInput(StreamTime aDuration) override;
-
-  
-
-
-
-  void AdvanceCurrentTime(StreamTime aDuration) override;
-
  protected:
   
 
@@ -362,22 +319,10 @@ class AudioTrackEncoder : public TrackEncoder {
 
 
 
-  AudioSegment mIncomingBuffer;
-
-  
-
-
-
-
-
   AudioSegment mOutgoingBuffer;
 
   uint32_t mAudioBitrate;
 
-  
-  
-  
-  bool mDirectConnected;
 };
 
 enum class FrameDroppingMode {
@@ -441,6 +386,8 @@ class VideoTrackEncoder : public TrackEncoder {
     return mTrackRate * aS;
   }
 
+  void SetStartOffset(StreamTime aStartOffset);
+
   void Cancel() override;
 
   
@@ -449,8 +396,6 @@ class VideoTrackEncoder : public TrackEncoder {
 
   void NotifyEndOfStream() override;
 
-  void SetStartOffset(StreamTime aStartOffset) override;
-
   
 
 
@@ -460,13 +405,13 @@ class VideoTrackEncoder : public TrackEncoder {
 
 
 
-  void AdvanceBlockedInput(StreamTime aDuration) override;
+  void AdvanceBlockedInput(StreamTime aDuration);
 
   
 
 
 
-  void AdvanceCurrentTime(StreamTime aDuration) override;
+  void AdvanceCurrentTime(StreamTime aDuration);
 
   
 
@@ -536,6 +481,11 @@ class VideoTrackEncoder : public TrackEncoder {
 
 
   StreamTime mEncodedTicks;
+
+  
+
+
+  StreamTime mCurrentTime;
 
   
 
