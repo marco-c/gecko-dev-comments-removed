@@ -1939,22 +1939,6 @@ static ReturnAbortOnError ProfileLockedDialog(nsIFile* aProfileDir,
   }
 }
 
-static nsresult ProfileLockedDialog(nsIToolkitProfile* aProfile,
-                                    nsIProfileUnlocker* aUnlocker,
-                                    nsINativeAppSupport* aNative,
-                                    nsIProfileLock** aResult) {
-  nsCOMPtr<nsIFile> profileDir;
-  nsresult rv = aProfile->GetRootDir(getter_AddRefs(profileDir));
-  if (NS_FAILED(rv)) return rv;
-
-  nsCOMPtr<nsIFile> profileLocalDir;
-  rv = aProfile->GetLocalDir(getter_AddRefs(profileLocalDir));
-  if (NS_FAILED(rv)) return rv;
-
-  return ProfileLockedDialog(profileDir, profileLocalDir, aUnlocker, aNative,
-                             aResult);
-}
-
 static const char kProfileManagerURL[] =
     "chrome://mozapps/content/profile/profileSelection.xul";
 
@@ -2170,23 +2154,27 @@ static nsresult SelectProfile(nsIProfileLock** aResult,
     gDoMigration = false;
   }
 
-  if (gDoProfileReset) {
-    if (!profile) {
-      NS_WARNING("Profile reset is only supported for named profiles.");
-      return NS_ERROR_ABORT;
-    }
+  if (gDoProfileReset && !profile) {
+    NS_WARNING("Profile reset is only supported for named profiles.");
+    return NS_ERROR_ABORT;
+  }
 
-    {
-      
-      
-      nsIProfileLock* tempProfileLock;
-      nsCOMPtr<nsIProfileUnlocker> unlocker;
-      rv = profile->Lock(getter_AddRefs(unlocker), &tempProfileLock);
-      if (NS_FAILED(rv)) {
-        return ProfileLockedDialog(profile, unlocker, aNative,
-                                   &tempProfileLock);
-      }
-    }
+  
+  
+  
+  if (!rootDir) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
+  nsCOMPtr<nsIProfileLock> tempLock;
+  rv = LockProfile(aNative, rootDir, localDir, profile, getter_AddRefs(tempLock));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (gDoProfileReset) {
+    
+    tempLock->Unlock();
 
     
     gResetOldProfile = profile;
@@ -2199,21 +2187,17 @@ static nsresult SelectProfile(nsIProfileLock** aResult,
       rv = profile->GetLocalDir(getter_AddRefs(localDir));
       NS_ENSURE_SUCCESS(rv, rv);
       SaveFileToEnv("XRE_PROFILE_LOCAL_PATH", localDir);
+
+      
+      rv = LockProfile(aNative, rootDir, localDir, profile, aResult);
+      NS_ENSURE_SUCCESS(rv, rv);
     } else {
       NS_WARNING("Profile reset failed.");
       return NS_ERROR_ABORT;
     }
+  } else {
+    tempLock.forget(aResult);
   }
-
-  
-  
-  
-  if (!rootDir) {
-    return NS_ERROR_ABORT;
-  }
-
-  rv = LockProfile(aNative, rootDir, localDir, profile, aResult);
-  NS_ENSURE_SUCCESS(rv, rv);
 
   if (aProfileName && profile) {
     rv = profile->GetName(*aProfileName);
