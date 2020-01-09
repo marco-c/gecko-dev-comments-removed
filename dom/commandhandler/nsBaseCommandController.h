@@ -11,17 +11,24 @@
 #include "nsIControllerContext.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsIWeakReferenceUtils.h"
-
-class nsControllerCommandTable;
-
+#include "nsControllerCommandTable.h"
 
 
-class nsBaseCommandController : public nsIController,
-                                public nsIControllerContext,
-                                public nsIInterfaceRequestor,
-                                public nsICommandController {
+
+class nsBaseCommandController final : public nsIController,
+                                      public nsIControllerContext,
+                                      public nsIInterfaceRequestor,
+                                      public nsICommandController {
  public:
-  nsBaseCommandController();
+  
+
+
+
+
+  nsBaseCommandController() = delete;
+  explicit nsBaseCommandController(
+      nsControllerCommandTable* aControllerCommandTable =
+          new nsControllerCommandTable());
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSICONTROLLER
