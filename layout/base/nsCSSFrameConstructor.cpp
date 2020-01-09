@@ -6871,6 +6871,14 @@ void nsCSSFrameConstructor::ContentAppended(nsIContent* aFirstNewContent,
     AppendFrames(outerTable, nsIFrame::kCaptionList, captionItems);
   }
 
+  LAYOUT_PHASE_TEMP_EXIT();
+  if (StaticPrefs::layout_css_column_span_enabled() &&
+      MaybeRecreateForColumnSpan(state, parentFrame, frameItems, prevSibling)) {
+    LAYOUT_PHASE_TEMP_REENTER();
+    return;
+  }
+  LAYOUT_PHASE_TEMP_REENTER();
+
   if (frameItems.NotEmpty()) {  
     AppendFramesToParent(state, parentFrame, frameItems, prevSibling);
   }
@@ -7325,6 +7333,15 @@ void nsCSSFrameConstructor::ContentRangeInserted(
       }
     }
   }
+
+  LAYOUT_PHASE_TEMP_EXIT();
+  if (StaticPrefs::layout_css_column_span_enabled() &&
+      MaybeRecreateForColumnSpan(state, insertion.mParentFrame, frameItems,
+                                 prevSibling)) {
+    LAYOUT_PHASE_TEMP_REENTER();
+    return;
+  }
+  LAYOUT_PHASE_TEMP_REENTER();
 
   if (frameItems.NotEmpty()) {
     
@@ -10855,6 +10872,61 @@ nsFrameItems nsCSSFrameConstructor::CreateColumnSpanSiblings(
   } while (aChildList.NotEmpty());
 
   return siblings;
+}
+
+bool nsCSSFrameConstructor::MaybeRecreateForColumnSpan(
+    nsFrameConstructorState& aState, nsContainerFrame* aParentFrame,
+    nsFrameList& aFrameList, nsIFrame* aPrevSibling) {
+  MOZ_ASSERT(StaticPrefs::layout_css_column_span_enabled(),
+             "Call this only when layout.css.column-span.enabled is true!");
+
+  if (!aParentFrame->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR)) {
+    return false;
+  }
+
+  MOZ_ASSERT(!IsFramePartOfIBSplit(aParentFrame),
+             "We should have wiped aParentFrame in WipeContainingBlock if it's "
+             "part of IB split!");
+
+  nsIFrame* nextSibling = ::GetInsertNextSibling(aParentFrame, aPrevSibling);
+  if (!nextSibling && IsLastContinuationForColumnContent(aParentFrame)) {
+    
+    
+    
+    
+    return false;
+  }
+
+  auto HasColumnSpan = [](const nsFrameList& aList) {
+    for (nsIFrame* f : aList) {
+      if (f->IsColumnSpan()) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  if (HasColumnSpan(aFrameList)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    PROFILER_TRACING("Layout",
+                     "Reframe multi-column after constructing frame list",
+                     LAYOUT, TRACING_EVENT);
+    aFrameList.DestroyFrames();
+    RecreateFramesForContent(
+        GetMultiColumnContainingBlockFor(aParentFrame)->GetContent(),
+        InsertionKind::Async);
+    return true;
+  }
+
+  return false;
 }
 
 nsIFrame* nsCSSFrameConstructor::ConstructInline(

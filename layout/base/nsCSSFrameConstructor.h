@@ -1891,6 +1891,23 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                                         nsFrameList& aChildList,
                                         nsIFrame* aPositionedFrame);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool MaybeRecreateForColumnSpan(nsFrameConstructorState& aState,
+                                  nsContainerFrame* aParentFrame,
+                                  nsFrameList& aFrameList,
+                                  nsIFrame* aPrevSibling);
+
   nsIFrame* ConstructInline(nsFrameConstructorState& aState,
                             FrameConstructionItem& aItem,
                             nsContainerFrame* aParentFrame,
