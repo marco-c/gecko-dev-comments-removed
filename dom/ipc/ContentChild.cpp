@@ -960,10 +960,24 @@ nsresult ContentChild::ProvideWindowCommon(
       tabGroup->EventTargetFor(TaskCategory::Other);
   SetEventTargetForActor(newChild, target);
 
-  Unused << SendPBrowserConstructor(
-      
-      RefPtr<TabChild>(newChild).forget().take(), tabId, TabId(0), *ipcContext,
-      aChromeFlags, GetID(), browsingContext, IsForBrowser());
+  if (IsShuttingDown()) {
+    return NS_ERROR_ABORT;
+  }
+
+  
+  
+  ManagedEndpoint<PBrowserParent> parentEp =
+      OpenPBrowserEndpoint(do_AddRef(newChild).take());
+  if (NS_WARN_IF(!parentEp.IsValid())) {
+    return NS_ERROR_ABORT;
+  }
+
+  
+  if (NS_WARN_IF(!SendConstructPopupBrowser(std::move(parentEp), tabId,
+                                            *ipcContext, browsingContext,
+                                            aChromeFlags))) {
+    return NS_ERROR_ABORT;
+  }
 
   
   
@@ -1764,51 +1778,11 @@ bool ContentChild::DeallocPJavaScriptChild(PJavaScriptChild* aChild) {
   return true;
 }
 
-PBrowserChild* ContentChild::AllocPBrowserChild(
-    const TabId& aTabId, const TabId& aSameTabGroupAs,
-    const IPCTabContext& aContext, const uint32_t& aChromeFlags,
-    const ContentParentId& aCpID, BrowsingContext* aBrowsingContext,
-    const bool& aIsForBrowser) {
-  
-  
-  
-
-  MaybeInvalidTabContext tc(aContext);
-  if (!tc.IsValid()) {
-    NS_ERROR(nsPrintfCString("Received an invalid TabContext from "
-                             "the parent process. (%s)  Crashing...",
-                             tc.GetInvalidReason())
-                 .get());
-    MOZ_CRASH("Invalid TabContext received from the parent process.");
-  }
-
-  RefPtr<TabChild> child = TabChild::Create(
-      static_cast<ContentChild*>(this), aTabId, aSameTabGroupAs,
-      tc.GetTabContext(), aBrowsingContext, aChromeFlags);
-
-  
-  return child.forget().take();
-}
-
-bool ContentChild::SendPBrowserConstructor(
-    PBrowserChild* aActor, const TabId& aTabId, const TabId& aSameTabGroupAs,
-    const IPCTabContext& aContext, const uint32_t& aChromeFlags,
-    const ContentParentId& aCpID, BrowsingContext* aBrowsingContext,
-    const bool& aIsForBrowser) {
-  if (IsShuttingDown()) {
-    return false;
-  }
-
-  return PContentChild::SendPBrowserConstructor(
-      aActor, aTabId, aSameTabGroupAs, aContext, aChromeFlags, aCpID,
-      aBrowsingContext, aIsForBrowser);
-}
-
-mozilla::ipc::IPCResult ContentChild::RecvPBrowserConstructor(
-    PBrowserChild* aActor, const TabId& aTabId, const TabId& aSameTabGroupAs,
-    const IPCTabContext& aContext, const uint32_t& aChromeFlags,
-    const ContentParentId& aCpID, BrowsingContext* aBrowsingContext,
-    const bool& aIsForBrowser) {
+mozilla::ipc::IPCResult ContentChild::RecvConstructBrowser(
+    ManagedEndpoint<PBrowserChild>&& aBrowserEp, const TabId& aTabId,
+    const TabId& aSameTabGroupAs, const IPCTabContext& aContext,
+    BrowsingContext* aBrowsingContext, const uint32_t& aChromeFlags,
+    const ContentParentId& aCpID, const bool& aIsForBrowser) {
   MOZ_ASSERT(!IsShuttingDown());
 
   static bool hasRunOnce = false;
@@ -1825,7 +1799,29 @@ mozilla::ipc::IPCResult ContentChild::RecvPBrowserConstructor(
     }
   }
 
-  auto tabChild = static_cast<TabChild*>(aActor);
+  
+  
+  
+  MaybeInvalidTabContext tc(aContext);
+  if (!tc.IsValid()) {
+    NS_ERROR(nsPrintfCString("Received an invalid TabContext from "
+                             "the parent process. (%s)  Crashing...",
+                             tc.GetInvalidReason())
+                 .get());
+    MOZ_CRASH("Invalid TabContext received from the parent process.");
+  }
+
+  RefPtr<TabChild> tabChild =
+      TabChild::Create(this, aTabId, aSameTabGroupAs, tc.GetTabContext(),
+                       aBrowsingContext, aChromeFlags);
+
+  
+  
+  if (NS_WARN_IF(!BindPBrowserEndpoint(std::move(aBrowserEp),
+                                       do_AddRef(tabChild).take()))) {
+    return IPC_FAIL(this, "BindPBrowserEndpoint failed");
+  }
+
   if (!tabChild->mTabGroup) {
     tabChild->mTabGroup = TabGroup::GetFromActor(tabChild);
 
@@ -3395,49 +3391,6 @@ bool ContentChild::DeallocPSessionStorageObserverChild(
   return true;
 }
 
-
-
-already_AddRefed<nsIEventTarget> ContentChild::GetConstructedEventTarget(
-    const Message& aMsg) {
-  
-  if (aMsg.type() != PContent::Msg_PBrowserConstructor__ID) {
-    return nullptr;
-  }
-
-  ActorHandle handle;
-  TabId tabId, sameTabGroupAs;
-  PickleIterator iter(aMsg);
-  if (!IPC::ReadParam(&aMsg, &iter, &handle)) {
-    return nullptr;
-  }
-  aMsg.IgnoreSentinel(&iter);
-  if (!IPC::ReadParam(&aMsg, &iter, &tabId)) {
-    return nullptr;
-  }
-  aMsg.IgnoreSentinel(&iter);
-  if (!IPC::ReadParam(&aMsg, &iter, &sameTabGroupAs)) {
-    return nullptr;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  if (sameTabGroupAs) {
-    return nullptr;
-  }
-
-  
-  
-  RefPtr<TabGroup> tabGroup = new TabGroup();
-  nsCOMPtr<nsIEventTarget> target =
-      tabGroup->EventTargetFor(TaskCategory::Other);
-  return target.forget();
-}
-
 void ContentChild::FileCreationRequest(nsID& aUUID, FileCreatorHelper* aHelper,
                                        const nsAString& aFullPath,
                                        const nsAString& aType,
@@ -3720,6 +3673,55 @@ already_AddRefed<nsIEventTarget> ContentChild::GetSpecificMessageEventTarget(
     case PContent::Msg_StoreAndBroadcastBlobURLRegistration__ID:
 
       return do_AddRef(SystemGroup::EventTargetFor(TaskCategory::Other));
+
+    
+    case PContent::Msg_ConstructBrowser__ID: {
+      
+      
+      
+      
+      ManagedEndpoint<PBrowserChild> endpoint;
+      TabId tabId, sameTabGroupAs;
+      PickleIterator iter(aMsg);
+      if (NS_WARN_IF(!IPC::ReadParam(&aMsg, &iter, &endpoint))) {
+        return nullptr;
+      }
+      aMsg.IgnoreSentinel(&iter);
+      if (NS_WARN_IF(!IPC::ReadParam(&aMsg, &iter, &tabId))) {
+        return nullptr;
+      }
+      aMsg.IgnoreSentinel(&iter);
+      if (NS_WARN_IF(!IPC::ReadParam(&aMsg, &iter, &sameTabGroupAs))) {
+        return nullptr;
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      if (sameTabGroupAs) {
+        return nullptr;
+      }
+
+      if (NS_WARN_IF(!endpoint.IsValid())) {
+        return nullptr;
+      }
+
+      
+      
+      RefPtr<TabGroup> tabGroup = new TabGroup();
+      nsCOMPtr<nsIEventTarget> target =
+          tabGroup->EventTargetFor(TaskCategory::Other);
+
+      
+      
+      SetEventTargetForRoute(*endpoint.ActorId(), target);
+
+      return target.forget();
+    }
 
     default:
       return nullptr;

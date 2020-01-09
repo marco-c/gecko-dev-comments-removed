@@ -35,7 +35,7 @@ static bool HandleMessageInMiddleman(ipc::Side aSide,
   
   
   if (  
-      type == dom::PContent::Msg_PBrowserConstructor__ID ||
+      type == dom::PContent::Msg_ConstructBrowser__ID ||
       type == dom::PContent::Msg_RegisterBrowsingContextGroup__ID ||
       type == dom::PContent::Msg_RegisterChrome__ID ||
       type == dom::PContent::Msg_SetXPCOMProcessAttributes__ID ||
