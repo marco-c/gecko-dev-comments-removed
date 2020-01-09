@@ -51,6 +51,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use storage;
 use util::{ScaleOffset, MatrixHelpers, MaxRect, Recycler};
 use util::{pack_as_float, project_rect, raster_rect_to_device_pixels};
+use util::{scale_factors, clamp_to_scale_factor};
 use smallvec::SmallVec;
 
 pub mod borders;
@@ -2562,7 +2563,21 @@ impl PrimitiveStore {
                 
                 
                 
-                let world_scale = LayoutToWorldScale::new(1.0);
+                let transform = prim_context.spatial_node.world_content_transform.to_transform();
+
+                
+                
+                let scale = scale_factors(&transform);
+                
+                
+                
+                
+                
+                
+                let scale_width = clamp_to_scale_factor(scale.0, false);
+                let scale_height = clamp_to_scale_factor(scale.1, false);
+                
+                let world_scale = LayoutToWorldScale::new(scale_width.max(scale_height));
                 let mut scale = world_scale * frame_context.device_pixel_scale;
                 let max_scale = get_max_scale_for_border(&border_data.border.radius,
                                                          &border_data.widths);
