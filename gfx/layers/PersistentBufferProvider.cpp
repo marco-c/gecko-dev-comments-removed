@@ -304,7 +304,7 @@ PersistentBufferProviderShared::BorrowDrawTarget(
       }
 
       if (!tex) {
-        gfxCriticalError() << "Unexpected BufferProvider over-production.";
+        gfxCriticalNote() << "Unexpected BufferProvider over-production.";
         
         
         NotifyInactive();
