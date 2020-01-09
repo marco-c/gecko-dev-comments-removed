@@ -1138,16 +1138,8 @@ void jit::JitSpewBaselineICStats(JSScript* script, const char* dumpReason) {
 #endif
 
 void jit::FinishDiscardBaselineScript(FreeOp* fop, JSScript* script) {
-  if (!script->hasBaselineScript()) {
-    return;
-  }
-
-  if (script->types()->active()) {
-    
-    
-    script->baselineScript()->clearIonCompiledOrInlined();
-    return;
-  }
+  MOZ_ASSERT(script->hasBaselineScript());
+  MOZ_ASSERT(!script->types()->active());
 
   BaselineScript* baseline = script->baselineScript();
   script->setBaselineScript(fop->runtime(), nullptr);

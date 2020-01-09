@@ -227,24 +227,23 @@ void Zone::discardJitCode(FreeOp* fop,
     jit::FinishInvalidation(fop, script);
 
     
-
-
-
-    if (discardBaselineCode) {
-      jit::FinishDiscardBaselineScript(fop, script);
+    if (discardBaselineCode && script->hasBaselineScript()) {
+      if (script->types()->active()) {
+        
+        
+        script->baselineScript()->clearIonCompiledOrInlined();
+      } else {
+        jit::FinishDiscardBaselineScript(fop, script);
+      }
     }
 
     
-
-
-
-
+    
+    
     script->resetWarmUpCounter();
 
     
-
-
-
+    
     if (script->hasBaselineScript()) {
       script->baselineScript()->setControlFlowGraph(nullptr);
     }

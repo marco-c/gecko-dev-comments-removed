@@ -221,18 +221,21 @@ class TypeScript {
 
   
   
-  uint32_t bytecodeTypeMapHint_;
+  uint32_t bytecodeTypeMapHint_ = 0;
 
-  
-  
-  bool active_ : 1;
+  struct Flags {
+    
+    
+    bool active : 1;
 
-  
-  
-  bool typesGeneration_ : 1;
+    
+    
+    bool typesGeneration : 1;
 
-  
-  bool hasFreezeConstraints_ : 1;
+    
+    bool hasFreezeConstraints : 1;
+  };
+  Flags flags_ = {};  
 
   
   StackTypeSet typeArray_[1];
@@ -245,10 +248,10 @@ class TypeScript {
     return const_cast<StackTypeSet*>(typeArray_);
   }
 
-  uint32_t typesGeneration() const { return uint32_t(typesGeneration_); }
+  uint32_t typesGeneration() const { return uint32_t(flags_.typesGeneration); }
   void setTypesGeneration(uint32_t generation) {
     MOZ_ASSERT(generation <= 1);
-    typesGeneration_ = generation;
+    flags_.typesGeneration = generation;
   }
 
  public:
@@ -256,11 +259,11 @@ class TypeScript {
 
   bool hasFreezeConstraints(const js::AutoSweepTypeScript& sweep) const {
     MOZ_ASSERT(sweep.typeScript() == this);
-    return hasFreezeConstraints_;
+    return flags_.hasFreezeConstraints;
   }
   void setHasFreezeConstraints(const js::AutoSweepTypeScript& sweep) {
     MOZ_ASSERT(sweep.typeScript() == this);
-    hasFreezeConstraints_ = true;
+    flags_.hasFreezeConstraints = true;
   }
 
   inline bool typesNeedsSweep(Zone* zone) const;
@@ -284,9 +287,9 @@ class TypeScript {
 
   uint32_t* bytecodeTypeMapHint() { return &bytecodeTypeMapHint_; }
 
-  bool active() const { return active_; }
-  void setActive() { active_ = true; }
-  void resetActive() { active_ = false; }
+  bool active() const { return flags_.active; }
+  void setActive() { flags_.active = true; }
+  void resetActive() { flags_.active = false; }
 
   jit::ICScript* icScript() const {
     MOZ_ASSERT(icScript_);
