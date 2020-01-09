@@ -405,6 +405,10 @@ class nsDocShell final : public nsDocLoader,
   
   void MaybeClearStorageAccessFlag();
 
+  void SkipBrowsingContextDetach() {
+    mSkipBrowsingContextDetachOnDestroy = true;
+  }
+
  private:  
   friend class nsDSURIContentListener;
   friend class FramingChecker;
@@ -750,37 +754,6 @@ class nsDocShell final : public nsDocLoader,
   
   bool CanSavePresentation(uint32_t aLoadType, nsIRequest* aNewRequest,
                            mozilla::dom::Document* aNewDocument);
-
-  
-  
-  
-  
-  
-  enum BFCacheStatusCombo : uint16_t {
-    BFCACHE_SUCCESS,
-    UNLOAD = mozilla::dom::BFCacheStatus::UNLOAD_LISTENER,
-    UNLOAD_REQUEST = mozilla::dom::BFCacheStatus::UNLOAD_LISTENER |
-                              mozilla::dom::BFCacheStatus::REQUEST,
-    REQUEST = mozilla::dom::BFCacheStatus::REQUEST,
-    UNLOAD_REQUEST_PEER = mozilla::dom::BFCacheStatus::UNLOAD_LISTENER |
-                          mozilla::dom::BFCacheStatus::REQUEST |
-                          mozilla::dom::BFCacheStatus::ACTIVE_PEER_CONNECTION,
-    UNLOAD_REQUEST_PEER_MSE =
-      mozilla::dom::BFCacheStatus::UNLOAD_LISTENER |
-      mozilla::dom::BFCacheStatus::REQUEST |
-      mozilla::dom::BFCacheStatus::ACTIVE_PEER_CONNECTION |
-      mozilla::dom::BFCacheStatus::CONTAINS_MSE_CONTENT,
-    UNLOAD_REQUEST_MSE = mozilla::dom::BFCacheStatus::UNLOAD_LISTENER |
-                         mozilla::dom::BFCacheStatus::REQUEST |
-                         mozilla::dom::BFCacheStatus::CONTAINS_MSE_CONTENT,
-    SUSPENDED_UNLOAD_REQUEST_PEER =
-      mozilla::dom::BFCacheStatus::SUSPENDED |
-      mozilla::dom::BFCacheStatus::UNLOAD_LISTENER |
-      mozilla::dom::BFCacheStatus::REQUEST |
-      mozilla::dom::BFCacheStatus::ACTIVE_PEER_CONNECTION,
-  };
-
-  void ReportBFCacheComboTelemetry(uint16_t aCombo);
 
   
   
@@ -1236,6 +1209,11 @@ class nsDocShell final : public nsDocLoader,
   bool mTitleValidForCurrentURI : 1;
 
   bool mIsFrame : 1;
+
+  
+  
+  
+  bool mSkipBrowsingContextDetachOnDestroy : 1;
 };
 
 #endif 
