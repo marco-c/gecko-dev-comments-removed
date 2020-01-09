@@ -1391,9 +1391,7 @@ pref("privacy.restrict3rdpartystorage.userInteractionRequiredForHosts", "");
 pref("privacy.popups.maxReported", 100);
 
 
-
 pref("privacy.trackingprotection.enabled",  false);
-
 
 pref("privacy.trackingprotection.pbmode.enabled",  true);
 
