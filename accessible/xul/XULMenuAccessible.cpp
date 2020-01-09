@@ -260,9 +260,7 @@ uint8_t XULMenuitemAccessible::ActionCount() const { return 1; }
 
 bool XULMenuitemAccessible::IsActiveWidget() const {
   
-  
-  
-  nsIContent* menuPopupContent = mContent->GetLastChild();
+  nsIContent* menuPopupContent = mContent->GetFirstChild();
   if (menuPopupContent) {
     nsMenuPopupFrame* menuPopupFrame =
         do_QueryFrame(menuPopupContent->GetPrimaryFrame());
@@ -274,7 +272,7 @@ bool XULMenuitemAccessible::IsActiveWidget() const {
 bool XULMenuitemAccessible::AreItemsOperable() const {
   
   
-  nsIContent* menuPopupContent = mContent->GetLastChild();
+  nsIContent* menuPopupContent = mContent->GetFirstChild();
   if (menuPopupContent) {
     nsMenuPopupFrame* menuPopupFrame =
         do_QueryFrame(menuPopupContent->GetPrimaryFrame());

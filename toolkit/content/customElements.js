@@ -234,40 +234,23 @@ MozElements.MozElementMixin = Base => {
     return null;
   }
 
-  static get flippedInheritedAttributes() {
-    let {inheritedAttributes} = this;
-    if (!inheritedAttributes) {
-      return null;
-    }
-    if (!this._flippedInheritedAttributes) {
-      this._flippedInheritedAttributes = {};
-      for (let selector in inheritedAttributes) {
-        let attrRules = inheritedAttributes[selector].split(",");
-        for (let attrRule of attrRules) {
-          let attrName = attrRule;
-          let attrNewName = attrRule;
-          let split = attrName.split("=");
-          if (split.length == 2) {
-            attrName = split[1];
-            attrNewName = split[0];
-          }
-
-          if (!this._flippedInheritedAttributes[attrName]) {
-            this._flippedInheritedAttributes[attrName] = [];
-          }
-          this._flippedInheritedAttributes[attrName].push([selector, attrNewName]);
-        }
-      }
-    }
-
-    return this._flippedInheritedAttributes;
-  }
   
 
 
 
   static get observedAttributes() {
-    return Object.keys(this.flippedInheritedAttributes || {});
+    let {inheritedAttributes} = this;
+    if (!inheritedAttributes) {
+      return [];
+    }
+
+    let allAttributes = new Set();
+    for (let sel in inheritedAttributes) {
+      for (let attrName of inheritedAttributes[sel].split(",")) {
+        allAttributes.add(attrName.split("=").pop());
+      }
+    }
+    return [...allAttributes];
   }
 
   
@@ -275,14 +258,11 @@ MozElements.MozElementMixin = Base => {
 
 
   attributeChangedCallback(name, oldValue, newValue) {
-    if (oldValue === newValue || !this.initializedAttributeInheritance) {
+    if (oldValue === newValue || !this.inheritedAttributesCache) {
       return;
     }
 
-    let list = this.constructor.flippedInheritedAttributes[name];
-    if (list) {
-      this.inheritAttribute(list, newValue);
-    }
+    this.inheritAttributes();
   }
 
   
@@ -299,16 +279,48 @@ MozElements.MozElementMixin = Base => {
 
 
   initializeAttributeInheritance() {
-    let {flippedInheritedAttributes} = this.constructor;
-    if (!flippedInheritedAttributes) {
+    let {inheritedAttributes} = this.constructor;
+    if (!inheritedAttributes) {
+      return;
+    }
+    this._inheritedAttributesValuesCache = null;
+    this.inheritedAttributesCache = new Map();
+    for (let selector in inheritedAttributes) {
+      let parent = this.shadowRoot || this;
+      let el = parent.querySelector(selector);
+      
+      if (!el) {
+        continue;
+      }
+      if (this.inheritedAttributesCache.has(el)) {
+        console.error(`Error: duplicate element encountered with ${selector}`);
+      }
+
+      this.inheritedAttributesCache.set(el, inheritedAttributes[selector]);
+    }
+    this.inheritAttributes();
+  }
+
+  
+
+
+
+
+
+  inheritAttributes() {
+    let {inheritedAttributes} = this.constructor;
+    if (!inheritedAttributes) {
       return;
     }
 
-    this.initializedAttributeInheritance = true;
-    for (let attr in flippedInheritedAttributes) {
-      let value = this.getAttribute(attr);
-      if (value) {
-        this.inheritAttribute(flippedInheritedAttributes[attr], value);
+    if (!this.inheritedAttributesCache) {
+     console.error(`You must call this.initializeAttributeInheritance() for ${this.tagName}`);
+     return;
+    }
+
+    for (let [ el, attrs ] of this.inheritedAttributesCache.entries()) {
+      for (let attr of attrs.split(",")) {
+        this.inheritAttribute(el, attr);
       }
     }
   }
@@ -321,30 +333,59 @@ MozElements.MozElementMixin = Base => {
 
 
 
-  inheritAttribute(list, value) {
-    if (!this._inheritedElements) {
-      this._inheritedElements = {};
+
+
+
+
+
+
+
+  inheritAttribute(child, attr) {
+    let attrName = attr;
+    let attrNewName = attr;
+    let split = attrName.split("=");
+    if (split.length == 2) {
+      attrName = split[1];
+      attrNewName = split[0];
+    }
+    let hasAttr = this.hasAttribute(attrName);
+    let attrValue = this.getAttribute(attrName);
+
+    
+    
+    
+    if (!this._inheritedAttributesValuesCache) {
+      this._inheritedAttributesValuesCache = new WeakMap();
+    }
+    if (!this._inheritedAttributesValuesCache.has(child)) {
+      this._inheritedAttributesValuesCache.set(child, {});
+    }
+    let lastInheritedAttributes = this._inheritedAttributesValuesCache.get(child);
+
+    if ((hasAttr && attrValue === lastInheritedAttributes[attrName]) ||
+        (!hasAttr && !lastInheritedAttributes.hasOwnProperty(attrName))) {
+      
+      return;
     }
 
-    for (let [selector, attr] of list) {
-      if (!(selector in this._inheritedElements)) {
-        let parent = this.shadowRoot || this;
-        this._inheritedElements[selector] = parent.querySelector(selector);
-      }
-      let el = this._inheritedElements[selector];
-      if (el) {
-        if (attr == "text") {
-          el.textContent = value;
-        } else if (value) {
-          el.setAttribute(attr, value);
-        } else {
-          el.removeAttribute(attr);
-        }
+    
+    if (hasAttr) {
+      lastInheritedAttributes[attrName] = attrValue;
+    } else {
+      delete lastInheritedAttributes[attrName];
+    }
 
-        if (attr == "accesskey" && el.formatAccessKey) {
-          el.formatAccessKey(false);
-        }
-      }
+    
+    if (attrNewName === "text") {
+      child.textContent = hasAttr ? attrValue : "";
+    } else if (hasAttr) {
+      child.setAttribute(attrNewName, attrValue);
+    } else {
+      child.removeAttribute(attrNewName);
+    }
+
+    if (attrNewName == "accesskey" && child.formatAccessKey) {
+      child.formatAccessKey(false);
     }
   }
 
@@ -564,8 +605,8 @@ MozElements.BaseControlMixin = Base => {
     }
   }
 
-  MozXULElement.implementCustomInterface(BaseControl,
-                                         [Ci.nsIDOMXULControlElement]);
+  Base.implementCustomInterface(BaseControl,
+                                [Ci.nsIDOMXULControlElement]);
   return BaseControl;
 };
 MozElements.BaseControl = MozElements.BaseControlMixin(MozXULElement);
@@ -622,7 +663,6 @@ const BaseTextMixin = Base => class BaseText extends MozElements.BaseControlMixi
     return this.labelElement ? this.labelElement.accessKey : this.getAttribute("accesskey");
   }
 };
-MozElements.BaseTextMixin = BaseTextMixin;
 MozElements.BaseText = BaseTextMixin(MozXULElement);
 
 
