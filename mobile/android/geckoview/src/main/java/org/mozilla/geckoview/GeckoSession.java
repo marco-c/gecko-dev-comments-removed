@@ -3813,6 +3813,11 @@ public class GeckoSession implements Parcelable {
 
 
 
+
+
+
+
+
     public interface PermissionDelegate {
         @Retention(RetentionPolicy.SOURCE)
         @IntDef({PERMISSION_GEOLOCATION, PERMISSION_DESKTOP_NOTIFICATION})
@@ -3822,13 +3827,13 @@ public class GeckoSession implements Parcelable {
 
 
 
-        public static final int PERMISSION_GEOLOCATION = 0;
+        int PERMISSION_GEOLOCATION = 0;
 
         
 
 
 
-        public static final int PERMISSION_DESKTOP_NOTIFICATION = 1;
+        int PERMISSION_DESKTOP_NOTIFICATION = 1;
 
         
 
