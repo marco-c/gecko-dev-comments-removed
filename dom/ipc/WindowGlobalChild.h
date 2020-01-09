@@ -42,6 +42,10 @@ class WindowGlobalChild : public nsWrapperCache, public PWindowGlobalChild {
 
   
   bool IsClosed() { return mIPCClosed; }
+  void Destroy() {
+    mIPCClosed = true;
+    SendDestroy();
+  }
 
   
   
