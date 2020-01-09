@@ -40,7 +40,8 @@ class ServiceInitializer : public mozilla::Runnable {
 
 
 
-TEST(storage_service_init_background_thread_DeathTest, Test) {
+TEST(storage_service_init_background_thread_DeathTest, Test)
+{
   nsCOMPtr<nsIRunnable> event = new ServiceInitializer();
   do_check_true(event);
 

@@ -47,7 +47,8 @@ Atomic<uint32_t, Relaxed> nsThreadSafeAutoRefCntRunner::sDecToZero(0);
 
 
 
-TEST(AutoRefCnt, ThreadSafeAutoRefCntBalance) {
+TEST(AutoRefCnt, ThreadSafeAutoRefCntBalance)
+{
   static const size_t kThreadCount = 4;
   nsCOMPtr<nsIThread> threads[kThreadCount];
   for (size_t i = 0; i < kThreadCount; i++) {

@@ -84,7 +84,8 @@ void CheckIterativeWrite(Decoder* aDecoder, SurfaceSink* aSink,
                         [&] { CheckGeneratedImage(aDecoder, aOutputRect); });
 }
 
-TEST(ImageSurfaceSink, SurfaceSinkInitialization) {
+TEST(ImageSurfaceSink, SurfaceSinkInitialization)
+{
   WithSurfaceSink<Orient::NORMAL>([](Decoder* aDecoder, SurfaceSink* aSink) {
     
     EXPECT_FALSE(aSink->IsSurfaceFinished());
@@ -100,13 +101,15 @@ TEST(ImageSurfaceSink, SurfaceSinkInitialization) {
   });
 }
 
-TEST(ImageSurfaceSink, SurfaceSinkWritePixels) {
+TEST(ImageSurfaceSink, SurfaceSinkWritePixels)
+{
   WithSurfaceSink<Orient::NORMAL>([](Decoder* aDecoder, SurfaceSink* aSink) {
     CheckWritePixels(aDecoder, aSink);
   });
 }
 
-TEST(ImageSurfaceSink, SurfaceSinkWritePixelsFinish) {
+TEST(ImageSurfaceSink, SurfaceSinkWritePixelsFinish)
+{
   WithSurfaceSink<Orient::NORMAL>([](Decoder* aDecoder, SurfaceSink* aSink) {
     
     uint32_t count = 0;
@@ -137,7 +140,8 @@ TEST(ImageSurfaceSink, SurfaceSinkWritePixelsFinish) {
   });
 }
 
-TEST(ImageSurfaceSink, SurfaceSinkWritePixelsEarlyExit) {
+TEST(ImageSurfaceSink, SurfaceSinkWritePixelsEarlyExit)
+{
   auto checkEarlyExit = [](Decoder* aDecoder, SurfaceSink* aSink,
                            WriteState aState) {
     
@@ -210,7 +214,8 @@ TEST(ImageSurfaceSink, SurfaceSinkWritePixelsEarlyExit) {
   });
 }
 
-TEST(ImageSurfaceSink, SurfaceSinkWritePixelsToRow) {
+TEST(ImageSurfaceSink, SurfaceSinkWritePixelsToRow)
+{
   WithSurfaceSink<Orient::NORMAL>([](Decoder* aDecoder, SurfaceSink* aSink) {
     
     
@@ -268,7 +273,8 @@ TEST(ImageSurfaceSink, SurfaceSinkWritePixelsToRow) {
   });
 }
 
-TEST(ImageSurfaceSink, SurfaceSinkWritePixelsToRowEarlyExit) {
+TEST(ImageSurfaceSink, SurfaceSinkWritePixelsToRowEarlyExit)
+{
   auto checkEarlyExit = [](Decoder* aDecoder, SurfaceSink* aSink,
                            WriteState aState) {
     
@@ -339,7 +345,8 @@ TEST(ImageSurfaceSink, SurfaceSinkWritePixelsToRowEarlyExit) {
   });
 }
 
-TEST(ImageSurfaceSink, SurfaceSinkWriteBuffer) {
+TEST(ImageSurfaceSink, SurfaceSinkWriteBuffer)
+{
   WithSurfaceSink<Orient::NORMAL>([](Decoder* aDecoder, SurfaceSink* aSink) {
     
     
@@ -354,7 +361,8 @@ TEST(ImageSurfaceSink, SurfaceSinkWriteBuffer) {
   });
 }
 
-TEST(ImageSurfaceSink, SurfaceSinkWriteBufferPartialRow) {
+TEST(ImageSurfaceSink, SurfaceSinkWriteBufferPartialRow)
+{
   WithSurfaceSink<Orient::NORMAL>([](Decoder* aDecoder, SurfaceSink* aSink) {
     
     
@@ -370,7 +378,8 @@ TEST(ImageSurfaceSink, SurfaceSinkWriteBufferPartialRow) {
   });
 }
 
-TEST(ImageSurfaceSink, SurfaceSinkWriteBufferPartialRowStartColOverflow) {
+TEST(ImageSurfaceSink, SurfaceSinkWriteBufferPartialRowStartColOverflow)
+{
   WithSurfaceSink<Orient::NORMAL>([](Decoder* aDecoder, SurfaceSink* aSink) {
     
     
@@ -402,7 +411,8 @@ TEST(ImageSurfaceSink, SurfaceSinkWriteBufferPartialRowStartColOverflow) {
   });
 }
 
-TEST(ImageSurfaceSink, SurfaceSinkWriteBufferPartialRowBufferOverflow) {
+TEST(ImageSurfaceSink, SurfaceSinkWriteBufferPartialRowBufferOverflow)
+{
   WithSurfaceSink<Orient::NORMAL>([](Decoder* aDecoder, SurfaceSink* aSink) {
     
     
@@ -438,7 +448,8 @@ TEST(ImageSurfaceSink, SurfaceSinkWriteBufferPartialRowBufferOverflow) {
   });
 }
 
-TEST(ImageSurfaceSink, SurfaceSinkWriteBufferFromNullSource) {
+TEST(ImageSurfaceSink, SurfaceSinkWriteBufferFromNullSource)
+{
   WithSurfaceSink<Orient::NORMAL>([](Decoder* aDecoder, SurfaceSink* aSink) {
     
     
@@ -455,7 +466,8 @@ TEST(ImageSurfaceSink, SurfaceSinkWriteBufferFromNullSource) {
   });
 }
 
-TEST(ImageSurfaceSink, SurfaceSinkWriteEmptyRow) {
+TEST(ImageSurfaceSink, SurfaceSinkWriteEmptyRow)
+{
   WithSurfaceSink<Orient::NORMAL>([](Decoder* aDecoder, SurfaceSink* aSink) {
     {
       
@@ -525,7 +537,8 @@ TEST(ImageSurfaceSink, SurfaceSinkWriteEmptyRow) {
   });
 }
 
-TEST(ImageSurfaceSink, SurfaceSinkWriteUnsafeComputedRow) {
+TEST(ImageSurfaceSink, SurfaceSinkWriteUnsafeComputedRow)
+{
   WithSurfaceSink<Orient::NORMAL>([](Decoder* aDecoder, SurfaceSink* aSink) {
     
     uint32_t buffer[100];
@@ -547,7 +560,8 @@ TEST(ImageSurfaceSink, SurfaceSinkWriteUnsafeComputedRow) {
   });
 }
 
-TEST(ImageSurfaceSink, SurfaceSinkWritePixelBlocks) {
+TEST(ImageSurfaceSink, SurfaceSinkWritePixelBlocks)
+{
   WithSurfaceSink<Orient::NORMAL>([](Decoder* aDecoder, SurfaceSink* aSink) {
     
     
@@ -593,7 +607,8 @@ TEST(ImageSurfaceSink, SurfaceSinkWritePixelBlocks) {
   });
 }
 
-TEST(ImageSurfaceSink, SurfaceSinkWritePixelBlocksPartialRow) {
+TEST(ImageSurfaceSink, SurfaceSinkWritePixelBlocksPartialRow)
+{
   WithSurfaceSink<Orient::NORMAL>([](Decoder* aDecoder, SurfaceSink* aSink) {
     
     
@@ -685,7 +700,8 @@ TEST(ImageSurfaceSink, SurfaceSinkWritePixelBlocksPartialRow) {
   });
 }
 
-TEST(ImageSurfaceSink, SurfaceSinkProgressivePasses) {
+TEST(ImageSurfaceSink, SurfaceSinkProgressivePasses)
+{
   WithSurfaceSink<Orient::NORMAL>([](Decoder* aDecoder, SurfaceSink* aSink) {
     {
       
@@ -736,7 +752,8 @@ TEST(ImageSurfaceSink, SurfaceSinkProgressivePasses) {
   });
 }
 
-TEST(ImageSurfaceSink, SurfaceSinkInvalidRect) {
+TEST(ImageSurfaceSink, SurfaceSinkInvalidRect)
+{
   WithSurfaceSink<Orient::NORMAL>([](Decoder* aDecoder, SurfaceSink* aSink) {
     {
       
@@ -859,7 +876,8 @@ TEST(ImageSurfaceSink, SurfaceSinkInvalidRect) {
   });
 }
 
-TEST(ImageSurfaceSink, SurfaceSinkFlipVertically) {
+TEST(ImageSurfaceSink, SurfaceSinkFlipVertically)
+{
   WithSurfaceSink<Orient::FLIP_VERTICALLY>([](Decoder* aDecoder,
                                               SurfaceSink* aSink) {
     {

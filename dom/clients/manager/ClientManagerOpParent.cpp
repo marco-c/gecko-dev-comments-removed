@@ -24,15 +24,16 @@ void ClientManagerOpParent::DoServiceOp(Method aMethod, Args&&... aArgs) {
   
   
   
-  p->Then(GetCurrentThreadSerialEventTarget(), __func__,
-          [this](const mozilla::dom::ClientOpResult& aResult) {
-            mPromiseRequestHolder.Complete();
-            Unused << PClientManagerOpParent::Send__delete__(this, aResult);
-          },
-          [this](nsresult aRv) {
-            mPromiseRequestHolder.Complete();
-            Unused << PClientManagerOpParent::Send__delete__(this, aRv);
-          })
+  p->Then(
+       GetCurrentThreadSerialEventTarget(), __func__,
+       [this](const mozilla::dom::ClientOpResult& aResult) {
+         mPromiseRequestHolder.Complete();
+         Unused << PClientManagerOpParent::Send__delete__(this, aResult);
+       },
+       [this](nsresult aRv) {
+         mPromiseRequestHolder.Complete();
+         Unused << PClientManagerOpParent::Send__delete__(this, aRv);
+       })
       ->Track(mPromiseRequestHolder);
 }
 

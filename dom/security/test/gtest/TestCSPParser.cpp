@@ -176,7 +176,8 @@ nsresult runTestSuite(const PolicyTest* aPolicies, uint32_t aPolicyCount,
 
 
 
-TEST(CSPParser, Directives) {
+TEST(CSPParser, Directives)
+{
   static const PolicyTest policies[] = {
       
     { "connect-src xn--mnchen-3ya.de",
@@ -228,7 +229,8 @@ TEST(CSPParser, Directives) {
 
 
 
-TEST(CSPParser, Keywords) {
+TEST(CSPParser, Keywords)
+{
   static const PolicyTest policies[] = {
       
     { "script-src 'self'",
@@ -252,7 +254,8 @@ TEST(CSPParser, Keywords) {
 
 
 
-TEST(CSPParser, IgnoreUpperLowerCasePolicies) {
+TEST(CSPParser, IgnoreUpperLowerCasePolicies)
+{
   static const PolicyTest policies[] = {
       
     { "script-src 'SELF'",
@@ -294,7 +297,8 @@ TEST(CSPParser, IgnoreUpperLowerCasePolicies) {
 
 
 
-TEST(CSPParser, Paths) {
+TEST(CSPParser, Paths)
+{
   static const PolicyTest policies[] = {
       
     { "script-src http://www.example.com",
@@ -392,7 +396,8 @@ TEST(CSPParser, Paths) {
 
 
 
-TEST(CSPParser, SimplePolicies) {
+TEST(CSPParser, SimplePolicies)
+{
   static const PolicyTest policies[] = {
       
     { "default-src *",
@@ -468,7 +473,8 @@ TEST(CSPParser, SimplePolicies) {
 
 
 
-TEST(CSPParser, PoliciesWithInvalidSrc) {
+TEST(CSPParser, PoliciesWithInvalidSrc)
+{
   static const PolicyTest policies[] = {
       
     { "script-src 'self'; SCRIPT-SRC http://www.example.com",
@@ -561,7 +567,8 @@ TEST(CSPParser, PoliciesWithInvalidSrc) {
 
 
 
-TEST(CSPParser, BadPolicies) {
+TEST(CSPParser, BadPolicies)
+{
   static const PolicyTest policies[] = {
       
     { "script-sr 'self", "" },
@@ -583,7 +590,8 @@ TEST(CSPParser, BadPolicies) {
 
 
 
-TEST(CSPParser, GoodGeneratedPolicies) {
+TEST(CSPParser, GoodGeneratedPolicies)
+{
   static const PolicyTest policies[] = {
       
     { "default-src 'self'; img-src *",
@@ -811,7 +819,8 @@ TEST(CSPParser, GoodGeneratedPolicies) {
 
 
 
-TEST(CSPParser, BadGeneratedPolicies) {
+TEST(CSPParser, BadGeneratedPolicies)
+{
   static const PolicyTest policies[] = {
       
     { "foo.*.bar", ""},
@@ -837,7 +846,8 @@ TEST(CSPParser, BadGeneratedPolicies) {
 
 
 
-TEST(CSPParser, GoodGeneratedPoliciesForPathHandling) {
+TEST(CSPParser, GoodGeneratedPoliciesForPathHandling)
+{
   
   
 
@@ -960,7 +970,8 @@ TEST(CSPParser, GoodGeneratedPoliciesForPathHandling) {
 
 
 
-TEST(CSPParser, BadGeneratedPoliciesForPathHandling) {
+TEST(CSPParser, BadGeneratedPoliciesForPathHandling)
+{
   static const PolicyTest policies[] = {
       
     { "img-src test1.example.com:88path-1/",
@@ -989,7 +1000,8 @@ TEST(CSPParser, BadGeneratedPoliciesForPathHandling) {
 
 
 
-TEST(CSPParser, ShorteningPolicies) {
+TEST(CSPParser, ShorteningPolicies)
+{
   char pol[] =
       "default-src http://www.sub1.sub2.example.com:88/path1/path2/ "
       "'unsafe-inline' 'none'";
@@ -1016,7 +1028,8 @@ TEST(CSPParser, ShorteningPolicies) {
 
 #if RUN_OFFLINE_TESTS
 
-TEST(CSPParser, FuzzyPolicies) {
+TEST(CSPParser, FuzzyPolicies)
+{
   
   srand(0);
 
@@ -1048,7 +1061,8 @@ TEST(CSPParser, FuzzyPolicies) {
 
 #if RUN_OFFLINE_TESTS
 
-TEST(CSPParser, FuzzyPoliciesIncDir) {
+TEST(CSPParser, FuzzyPoliciesIncDir)
+{
   
   srand(0);
 
@@ -1086,7 +1100,8 @@ TEST(CSPParser, FuzzyPoliciesIncDir) {
 
 #if RUN_OFFLINE_TESTS
 
-TEST(CSPParser, FuzzyPoliciesIncDirLimASCII) {
+TEST(CSPParser, FuzzyPoliciesIncDirLimASCII)
+{
   char input[] =
       "1234567890"
       "abcdefghijklmnopqrstuvwxyz"

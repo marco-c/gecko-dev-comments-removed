@@ -27,7 +27,8 @@ void CheckOriginScopeMatchesOrigin(const OriginScope& aOriginScope,
 
 }  
 
-TEST(QuotaManager, OriginScope) {
+TEST(QuotaManager, OriginScope)
+{
   OriginScope originScope;
 
   

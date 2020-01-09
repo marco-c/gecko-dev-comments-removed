@@ -271,7 +271,7 @@ BigInt::Digit BigInt::digitDiv(Digit high, Digit low, Digit divisor,
           : "=a"(quotient), "=d"(rem)
           
           
-          : "d"(high), "a"(low), [divisor] "rm"(divisor));
+          : "d"(high), "a"(low), [ divisor ] "rm"(divisor));
   *remainder = rem;
   return quotient;
 #elif defined(__i386__)
@@ -282,7 +282,7 @@ BigInt::Digit BigInt::digitDiv(Digit high, Digit low, Digit divisor,
           : "=a"(quotient), "=d"(rem)
           
           
-          : "d"(high), "a"(low), [divisor] "rm"(divisor));
+          : "d"(high), "a"(low), [ divisor ] "rm"(divisor));
   *remainder = rem;
   return quotient;
 #else

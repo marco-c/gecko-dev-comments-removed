@@ -59,7 +59,8 @@ static bool TestOpusInit(int aChannels, int aSamplingRate) {
   return encoder.TestOpusRawCreation(aChannels, aSamplingRate);
 }
 
-TEST(OpusAudioTrackEncoder, InitRaw) {
+TEST(OpusAudioTrackEncoder, InitRaw)
+{
   
   EXPECT_FALSE(TestOpusInit(0, 16000));
   EXPECT_FALSE(TestOpusInit(-1, 16000));
@@ -89,7 +90,8 @@ TEST(OpusAudioTrackEncoder, InitRaw) {
   EXPECT_FALSE(TestOpusInit(2, 200000));
 }
 
-TEST(OpusAudioTrackEncoder, Init) {
+TEST(OpusAudioTrackEncoder, Init)
+{
   {
     
     
@@ -175,7 +177,8 @@ static int TestOpusResampler(int aChannels, int aSamplingRate) {
   return encoder.TestGetOutputSampleRate();
 }
 
-TEST(OpusAudioTrackEncoder, Resample) {
+TEST(OpusAudioTrackEncoder, Resample)
+{
   
   
   
@@ -190,7 +193,8 @@ TEST(OpusAudioTrackEncoder, Resample) {
   EXPECT_TRUE(TestOpusResampler(1, 44100) == 48000);
 }
 
-TEST(OpusAudioTrackEncoder, FetchMetadata) {
+TEST(OpusAudioTrackEncoder, FetchMetadata)
+{
   const int32_t channels = 1;
   const int32_t sampleRate = 44100;
   TestOpusTrackEncoder encoder;
@@ -204,7 +208,8 @@ TEST(OpusAudioTrackEncoder, FetchMetadata) {
   EXPECT_EQ(sampleRate, opusMeta->mSamplingFrequency);
 }
 
-TEST(OpusAudioTrackEncoder, FrameEncode) {
+TEST(OpusAudioTrackEncoder, FrameEncode)
+{
   const int32_t channels = 1;
   const int32_t sampleRate = 44100;
   TestOpusTrackEncoder encoder;

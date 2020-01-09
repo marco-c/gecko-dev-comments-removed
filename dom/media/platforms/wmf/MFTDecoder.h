@@ -36,9 +36,10 @@ class MFTDecoder final {
   
   
   
-  HRESULT SetMediaTypes(IMFMediaType* aInputType, IMFMediaType* aOutputType,
-                        std::function<HRESULT(IMFMediaType*)>&& aCallback =
-                            [](IMFMediaType* aOutput) { return S_OK; });
+  HRESULT SetMediaTypes(
+      IMFMediaType* aInputType, IMFMediaType* aOutputType,
+      std::function<HRESULT(IMFMediaType*)>&& aCallback =
+          [](IMFMediaType* aOutput) { return S_OK; });
 
   
   already_AddRefed<IMFAttributes> GetAttributes();

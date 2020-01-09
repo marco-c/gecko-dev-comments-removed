@@ -56,15 +56,16 @@ void ClientSourceOpChild::DoSourceOp(Method aMethod, const Args& aArgs) {
   
   
   promise
-      ->Then(target, __func__,
-             [this, promise](const mozilla::dom::ClientOpResult& aResult) {
-               mPromiseRequestHolder.Complete();
-               Unused << PClientSourceOpChild::Send__delete__(this, aResult);
-             },
-             [this, promise](nsresult aRv) {
-               mPromiseRequestHolder.Complete();
-               Unused << PClientSourceOpChild::Send__delete__(this, aRv);
-             })
+      ->Then(
+          target, __func__,
+          [this, promise](const mozilla::dom::ClientOpResult& aResult) {
+            mPromiseRequestHolder.Complete();
+            Unused << PClientSourceOpChild::Send__delete__(this, aResult);
+          },
+          [this, promise](nsresult aRv) {
+            mPromiseRequestHolder.Complete();
+            Unused << PClientSourceOpChild::Send__delete__(this, aRv);
+          })
       ->Track(mPromiseRequestHolder);
 }
 
