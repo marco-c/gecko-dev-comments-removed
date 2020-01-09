@@ -865,8 +865,9 @@ class InternalRefTestImplementation(object):
         self.executor.protocol.marionette._send_message("reftest:setup", data)
 
     def reset(self, screenshot=None):
-        self.teardown()
-        self.setup(screenshot)
+        
+        
+        pass
 
     def run_test(self, test):
         references = self.get_references(test)
