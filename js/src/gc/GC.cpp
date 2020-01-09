@@ -366,29 +366,29 @@ static const float PretenureGroupThreshold = 3000;
 
 
 
-static const float MinAllocationThresholdFactor = 0.9f;
+static constexpr float MinAllocationThresholdFactor = 0.9f;
 
 
 
 
 
 
-static const float HighFrequencyEagerAllocTriggerFactor = 0.85f;
-static const float LowFrequencyEagerAllocTriggerFactor = 0.9f;
+static constexpr float HighFrequencyEagerAllocTriggerFactor = 0.85f;
+static constexpr float LowFrequencyEagerAllocTriggerFactor = 0.9f;
 
 
 
 
 
-static const float MinHighFrequencyHeapGrowthFactor =
+static constexpr float MinHighFrequencyHeapGrowthFactor =
     1.0f /
     Min(HighFrequencyEagerAllocTriggerFactor, MinAllocationThresholdFactor);
-static const float MinLowFrequencyHeapGrowthFactor =
+static constexpr float MinLowFrequencyHeapGrowthFactor =
     1.0f /
     Min(LowFrequencyEagerAllocTriggerFactor, MinAllocationThresholdFactor);
 
 
-static const int IGC_MARK_SLICE_MULTIPLIER = 2;
+static constexpr int IGC_MARK_SLICE_MULTIPLIER = 2;
 
 const AllocKind gc::slotsToThingKind[] = {
     
@@ -475,7 +475,7 @@ struct js::gc::FinalizePhase {
 
 
 
-static const FinalizePhase ForegroundObjectFinalizePhase = {
+static constexpr FinalizePhase ForegroundObjectFinalizePhase = {
     gcstats::PhaseKind::SWEEP_OBJECT,
     {AllocKind::OBJECT0, AllocKind::OBJECT2, AllocKind::OBJECT4,
      AllocKind::OBJECT8, AllocKind::OBJECT12, AllocKind::OBJECT16}};
@@ -483,13 +483,13 @@ static const FinalizePhase ForegroundObjectFinalizePhase = {
 
 
 
-static const FinalizePhase ForegroundNonObjectFinalizePhase = {
+static constexpr FinalizePhase ForegroundNonObjectFinalizePhase = {
     gcstats::PhaseKind::SWEEP_SCRIPT, {AllocKind::SCRIPT, AllocKind::JITCODE}};
 
 
 
 
-static const FinalizePhase BackgroundFinalizePhases[] = {
+static constexpr FinalizePhase BackgroundFinalizePhases[] = {
     {gcstats::PhaseKind::SWEEP_SCRIPT, {AllocKind::LAZY_SCRIPT}},
     {gcstats::PhaseKind::SWEEP_OBJECT,
      {AllocKind::FUNCTION, AllocKind::FUNCTION_EXTENDED,
@@ -2802,14 +2802,14 @@ void GCRuntime::updateCellPointers(Zone* zone, AllocKinds kinds,
 
 
 
-static const AllocKinds UpdatePhaseOne{
+static constexpr AllocKinds UpdatePhaseOne{
     AllocKind::SCRIPT,         AllocKind::BASE_SHAPE,   AllocKind::SHAPE,
     AllocKind::ACCESSOR_SHAPE, AllocKind::OBJECT_GROUP, AllocKind::STRING,
     AllocKind::JITCODE};
 
 
 
-static const AllocKinds UpdatePhaseThree{
+static constexpr AllocKinds UpdatePhaseThree{
     AllocKind::LAZY_SCRIPT, AllocKind::SCOPE,
     AllocKind::FUNCTION,    AllocKind::FUNCTION_EXTENDED,
     AllocKind::OBJECT0,     AllocKind::OBJECT0_BACKGROUND,
