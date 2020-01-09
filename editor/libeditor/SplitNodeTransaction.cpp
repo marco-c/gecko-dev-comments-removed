@@ -82,17 +82,14 @@ SplitNodeTransaction::DoTransaction() {
   
   mEditorBase->DoSplitNode(EditorDOMPoint(mStartOfRightNode), *mNewLeftNode,
                            error);
+  if (NS_WARN_IF(error.Failed())) {
+    return error.StealNSResult();
+  }
 
   if (!mEditorBase->AllowsTransactionsToChangeSelection()) {
-    if (NS_WARN_IF(error.Failed())) {
-      return error.StealNSResult();
-    }
     return NS_OK;
   }
 
-  
-  
-  
   NS_WARNING_ASSERTION(
       !mEditorBase->Destroyed(),
       "The editor has gone but SplitNodeTransaction keeps trying to modify "
