@@ -140,24 +140,21 @@ impl WrenchThing for BinaryFrameReader {
                     
                     
                     match msg {
-                        ApiMsg::UpdateDocuments(_, ref txns) => {
-                            for txn in txns {
-                                if txn.generate_frame {
-                                    
-                                    found_frame_marker = true;
-                                }
-                                for doc_msg in &txn.scene_ops {
-                                    match *doc_msg {
-                                        SceneMsg::SetDisplayList { .. } => {
-                                            found_frame_marker = false;
-                                            found_display_list = true;
-                                        }
-                                        SceneMsg::SetRootPipeline(..) => {
-                                            found_frame_marker = false;
-                                            found_pipeline = true;
-                                        }
-                                        _ => {}
+                        ApiMsg::UpdateDocument(_, ref txn) => {
+                            if txn.generate_frame {
+                                found_frame_marker = true;
+                            }
+                            for doc_msg in &txn.scene_ops {
+                                match *doc_msg {
+                                    SceneMsg::SetDisplayList { .. } => {
+                                        found_frame_marker = false;
+                                        found_display_list = true;
                                     }
+                                    SceneMsg::SetRootPipeline(..) => {
+                                        found_frame_marker = false;
+                                        found_pipeline = true;
+                                    }
+                                    _ => {}
                                 }
                             }
                         }

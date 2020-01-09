@@ -36,10 +36,6 @@ const TEXTURE_REGION_PIXELS: usize =
 
 
 
-const RECLAIM_THRESHOLD_BYTES: usize = 5 * 1024 * 1024;
-
-
-
 #[derive(Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -516,10 +512,6 @@ pub struct TextureCache {
     
     
     doc_data: PerDocumentData,
-
-    
-    
-    require_frame_build: bool,
 }
 
 impl TextureCache {
@@ -589,7 +581,6 @@ impl TextureCache {
             now: FrameStamp::INVALID,
             per_doc_data: FastHashMap::default(),
             doc_data: PerDocumentData::new(),
-            require_frame_build: false,
         }
     }
 
@@ -611,6 +602,13 @@ impl TextureCache {
 
     
     fn clear_kind(&mut self, kind: EntryKind) {
+        
+        
+        
+        if self.debug_flags.contains(DebugFlags::TEXTURE_CACHE_DBG_DISABLE_SHRINK) {
+            return;
+        }
+
         let mut per_doc_data = mem::replace(&mut self.per_doc_data, FastHashMap::default());
         for (&_, doc_data) in per_doc_data.iter_mut() {
             let entry_handles = mem::replace(
@@ -625,7 +623,6 @@ impl TextureCache {
             }
         }
         self.per_doc_data = per_doc_data;
-        self.require_frame_build = true;
     }
 
     fn clear_standalone(&mut self) {
@@ -643,6 +640,9 @@ impl TextureCache {
     }
 
     fn clear_shared(&mut self) {
+        if self.debug_flags.contains(DebugFlags::TEXTURE_CACHE_DBG_DISABLE_SHRINK) {
+            return;
+        }
         self.unset_doc_data();
         self.clear_kind(EntryKind::Shared);
         self.shared_textures.clear(&mut self.pending_updates);
@@ -669,58 +669,21 @@ impl TextureCache {
                                  mem::replace(&mut self.doc_data, PerDocumentData::new()));
     }
 
-    pub fn before_frames(&mut self, time: SystemTime) {
-        self.maybe_reclaim_shared_memory(time);
-    }
-
-    pub fn after_frames(&mut self) {
-        self.require_frame_build = false;
-    }
-
-    pub fn requires_frame_build(&self) -> bool {
-        return self.require_frame_build;
-    }
-
     
     pub fn begin_frame(&mut self, stamp: FrameStamp) {
         debug_assert!(!self.now.is_valid());
         self.now = stamp;
         self.set_doc_data();
-        self.maybe_do_periodic_gc();
-    }
-
-    fn maybe_reclaim_shared_memory(&mut self, time: SystemTime) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        debug_assert!(!self.now.is_valid());
-        if self.shared_textures.empty_region_bytes() >= RECLAIM_THRESHOLD_BYTES {
-            self.reached_reclaim_threshold.get_or_insert(time);
-        } else {
-            self.reached_reclaim_threshold = None;
-        }
-        if let Some(t) = self.reached_reclaim_threshold {
-            let dur = time.duration_since(t).unwrap_or(Duration::default());
-            if dur >= Duration::from_secs(5) {
-                self.clear_shared();
-                self.reached_reclaim_threshold = None;
-            }
-        }
+        self.maybe_reclaim_shared_cache_memory();
     }
 
     
     
-    
-    
-    fn maybe_do_periodic_gc(&mut self) {
+    fn maybe_reclaim_shared_cache_memory(&mut self) {
         debug_assert!(self.now.is_valid());
+        
+        
+        const RECLAIM_THRESHOLD_BYTES: usize = 5 * 1024 * 1024;
 
         
         
@@ -737,6 +700,28 @@ impl TextureCache {
                 .max_time_s(10)
                 .build();
             self.maybe_expire_old_shared_entries(threshold);
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if self.shared_textures.empty_region_bytes() >= RECLAIM_THRESHOLD_BYTES {
+            self.reached_reclaim_threshold.get_or_insert(self.now.time());
+        } else {
+            self.reached_reclaim_threshold = None;
+        }
+        if let Some(t) = self.reached_reclaim_threshold {
+            let dur = self.now.time().duration_since(t).unwrap_or(Duration::default());
+            if dur >= Duration::from_secs(5) {
+                self.clear_shared();
+                self.reached_reclaim_threshold = None;
+            }
         }
     }
 
