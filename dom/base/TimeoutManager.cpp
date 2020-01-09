@@ -454,6 +454,10 @@ TimeoutManager::TimeoutManager(nsGlobalWindowInner& aWindow,
       mTimeouts(*this),
       mTimeoutIdCounter(1),
       mNextFiringId(InvalidFiringId + 1),
+#ifdef DEBUG
+      mFiringIndex(0),
+      mLastFiringIndex(-1),
+#endif
       mRunningTimeout(nullptr),
       mIdleTimeouts(*this),
       mIdleCallbackTimeoutCounter(1),
@@ -764,6 +768,7 @@ void TimeoutManager::RunTimeout(const TimeStamp& aNow,
   
   
   
+
   for (Timeout* timeout = timeouts.GetFirst(); timeout != nullptr;
        timeout = timeout->getNext()) {
     if (totalTimeLimit.IsZero() || timeout->When() > deadline) {
@@ -879,6 +884,22 @@ void TimeoutManager::RunTimeout(const TimeStamp& aNow,
       
       
 
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+#ifdef DEBUG
+      if (timeout->mFiringIndex == -1) {
+        timeout->mFiringIndex = mFiringIndex++;
+      }
+#endif
+
       if (mIsLoading && !aProcessIdle) {
         
         
@@ -913,6 +934,10 @@ void TimeoutManager::RunTimeout(const TimeStamp& aNow,
           continue;
         }
 
+#ifdef DEBUG
+        MOZ_ASSERT(timeout->mFiringIndex > mLastFiringIndex);
+        mLastFiringIndex = timeout->mFiringIndex;
+#endif
         
         bool timeout_was_cleared = mWindow.RunTimeoutHandler(timeout, scx);
 #if MOZ_GECKO_PROFILER
@@ -927,7 +952,7 @@ void TimeoutManager::RunTimeout(const TimeStamp& aNow,
               aProcessIdle ? "Deferred " : "",
               timeout->mIsInterval ? "Interval" : "Timeout",
               int(elapsed.ToMilliseconds()), int(target.ToMilliseconds()),
-              int(delta.ToMilliseconds()), int(runtime.ToMilliseconds()));
+              int(delta.ToMilliseconds()),  int(runtime.ToMilliseconds()));
           
           profiler_add_marker(
               "setTimeout", js::ProfilingStackFrame::Category::DOM,
@@ -1038,6 +1063,9 @@ bool TimeoutManager::RescheduleTimeout(Timeout* aTimeout,
   TimeStamp firingTime = aLastCallbackTime + nextInterval;
   TimeDuration delay = firingTime - aCurrentNow;
 
+#ifdef DEBUG
+  aTimeout->mFiringIndex = -1;
+#endif
   
   
   
