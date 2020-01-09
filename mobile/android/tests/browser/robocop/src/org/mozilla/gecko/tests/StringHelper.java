@@ -35,6 +35,9 @@ public class StringHelper {
     public final String ABOUT_HOME_TITLE = "";
 
     
+    public final String ABOUT_ADDONS_AMO_TITLE = "Browse Firefox’s Recommended Extensions";
+
+    
     public final String CONTEXT_MENU_BOOKMARK_LINK = "Bookmark Link";
     public final String CONTEXT_MENU_OPEN_LINK_IN_NEW_TAB = "Open Link in New Tab";
     public final String CONTEXT_MENU_OPEN_IN_NEW_TAB;

@@ -6,6 +6,7 @@ package org.mozilla.gecko.tests;
 
 import org.json.JSONObject;
 import org.mozilla.gecko.Actions;
+import org.mozilla.gecko.util.GeckoBundle;
 
 import android.util.DisplayMetrics;
 
@@ -21,7 +22,9 @@ public class testAddonManager extends PixelTest  {
     public void testAddonManager() {
         Actions.EventExpecter tabEventExpecter;
         Actions.EventExpecter contentEventExpecter;
+        Actions.EventExpecter amoTitleExpecter;
         final String aboutAddonsURL = mStringHelper.ABOUT_ADDONS_URL;
+        final String amoTitle = mStringHelper.ABOUT_ADDONS_AMO_TITLE;
 
         blockForGeckoReady();
 
@@ -31,13 +34,20 @@ public class testAddonManager extends PixelTest  {
         
         tabEventExpecter = mActions.expectGlobalEvent(Actions.EventType.UI, "Tab:Added");
         contentEventExpecter = mActions.expectGlobalEvent(Actions.EventType.UI, "Content:DOMContentLoaded");
+        amoTitleExpecter = mActions.expectGlobalEvent(Actions.EventType.UI, "about:addons");
 
         
         tabEventExpecter.blockForEvent();
         contentEventExpecter.blockForEvent();
+        GeckoBundle addonsPageBundle = amoTitleExpecter.blockForBundle();
 
         tabEventExpecter.unregisterListener();
         contentEventExpecter.unregisterListener();
+        amoTitleExpecter.unregisterListener();
+
+        
+        final String actualAmoTitle = addonsPageBundle.getString("amoTitle");
+        mAsserter.is(actualAmoTitle, amoTitle, "Incorrect AMO title");
 
         
         verifyUrlBarTitle(aboutAddonsURL);
