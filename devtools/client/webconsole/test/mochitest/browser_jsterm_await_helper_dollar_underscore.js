@@ -4,6 +4,7 @@
 
 
 "use strict";
+requestLongerTimeout(2);
 
 const TEST_URI = "data:text/html;charset=utf-8,top-level await + $_";
 
