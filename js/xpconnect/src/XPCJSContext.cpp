@@ -71,6 +71,8 @@
 #endif
 
 #ifdef XP_WIN
+
+#  include <algorithm>
 #  include <windows.h>
 #endif
 
@@ -1139,11 +1141,15 @@ nsresult XPCJSContext::Initialize(XPCJSContext* aPrimaryContext) {
   
   
   
-  const size_t kStackQuota = GetWindowsStackSize();
+  
 #  if defined(MOZ_ASAN)
   
+  const size_t kStackQuota =
+      std::min(GetWindowsStackSize(), size_t(6 * 1024 * 1024));
   const size_t kTrustedScriptBuffer = 450 * 1024;
 #  else
+  const size_t kStackQuota =
+      std::min(GetWindowsStackSize(), size_t(2 * 1024 * 1024));
   const size_t kTrustedScriptBuffer = (sizeof(size_t) == 8)
                                           ? 180 * 1024   
                                           : 120 * 1024;  
