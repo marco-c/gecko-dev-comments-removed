@@ -166,7 +166,9 @@ class UrlbarInput {
     this.view.panel.addEventListener("popupshowing", this);
     this.view.panel.addEventListener("popuphidden", this);
 
-    this.inputField.controllers.insertControllerAt(0, new CopyCutController(this));
+    this._copyCutController = new CopyCutController(this);
+    this.inputField.controllers.insertControllerAt(0, this._copyCutController);
+
     this._initPasteAndGo();
 
     
@@ -187,7 +189,20 @@ class UrlbarInput {
 
     this.view.panel.remove();
 
-    this.inputField.controllers.removeControllerAt(0);
+    
+    
+    
+    
+    
+    try {
+      
+      
+      
+      
+      this.removeCopyCutController();
+    } catch (ex) {
+      Cu.reportError("Leaking UrlbarInput._copyCutController! You should have called removeCopyCutController!");
+    }
 
     if (Object.getOwnPropertyDescriptor(this, "valueFormatter").get) {
       this.valueFormatter.uninit();
@@ -201,6 +216,17 @@ class UrlbarInput {
     delete this.view;
     delete this.controller;
     delete this.textbox;
+  }
+
+  
+
+
+
+  removeCopyCutController() {
+    if (this._copyCutController) {
+      this.inputField.controllers.removeController(this._copyCutController);
+      delete this._copyCutController;
+    }
   }
 
   

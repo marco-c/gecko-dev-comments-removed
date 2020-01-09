@@ -242,6 +242,15 @@ var gURLBarHandler = {
   
 
 
+  customizeStart() {
+    if (this._urlbar && this._urlbar.constructor.name == "UrlbarInput") {
+      this._urlbar.removeCopyCutController();
+    }
+  },
+
+  
+
+
   customizeEnd() {
     this._reset();
   },
