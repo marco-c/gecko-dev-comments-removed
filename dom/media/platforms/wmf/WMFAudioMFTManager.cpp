@@ -18,6 +18,8 @@
 
 namespace mozilla {
 
+using media::TimeUnit;
+
 static void AACAudioSpecificConfigToUserData(uint8_t aAACProfileLevelIndication,
                                              const uint8_t* aAudioSpecConfig,
                                              uint32_t aConfigLength,
@@ -254,6 +256,9 @@ WMFAudioMFTManager::Output(int64_t aStreamOffset, RefPtr<MediaData>& aOutData) {
     return E_FAIL;
   }
 
+  TimeUnit pts = GetSampleTime(sample);
+  NS_ENSURE_TRUE(pts.IsValid(), E_FAIL);
+
   RefPtr<IMFMediaBuffer> buffer;
   hr = sample->ConvertToContiguousBuffer(getter_AddRefs(buffer));
   NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
@@ -264,40 +269,6 @@ WMFAudioMFTManager::Output(int64_t aStreamOffset, RefPtr<MediaData>& aOutData) {
   hr = buffer->Lock(&data, &maxLength, &currentLength);
   NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-
-  
-  
-  
-  UINT32 discontinuity = false;
-  sample->GetUINT32(MFSampleExtension_Discontinuity, &discontinuity);
-  if (mMustRecaptureAudioPosition || discontinuity) {
-    
-    
-    
-    
-    hr = UpdateOutputType();
-    NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
-
-    mAudioFrameSum = 0;
-    LONGLONG timestampHns = 0;
-    hr = sample->GetSampleTime(&timestampHns);
-    NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
-    mAudioTimeOffset = media::TimeUnit::FromMicroseconds(timestampHns / 10);
-    mMustRecaptureAudioPosition = false;
-  }
   
   int32_t numSamples = currentLength / sizeof(float);
   int32_t numFrames = numSamples / mAudioChannels;
@@ -318,22 +289,16 @@ WMFAudioMFTManager::Output(int64_t aStreamOffset, RefPtr<MediaData>& aOutData) {
 
   buffer->Unlock();
 
-  media::TimeUnit timestamp =
-      mAudioTimeOffset + FramesToTimeUnit(mAudioFrameSum, mAudioRate);
-  NS_ENSURE_TRUE(timestamp.IsValid(), E_FAIL);
-
-  mAudioFrameSum += numFrames;
-
-  media::TimeUnit duration = FramesToTimeUnit(numFrames, mAudioRate);
+  TimeUnit duration = FramesToTimeUnit(numFrames, mAudioRate);
   NS_ENSURE_TRUE(duration.IsValid(), E_FAIL);
 
-  aOutData = new AudioData(aStreamOffset, timestamp, std::move(audioData),
+  aOutData = new AudioData(aStreamOffset, pts, std::move(audioData),
                            mAudioChannels, mAudioRate, mChannelsMap);
   MOZ_DIAGNOSTIC_ASSERT(duration == aOutData->mDuration, "must be equal");
 
 #ifdef LOG_SAMPLE_DECODE
   LOG("Decoded audio sample! timestamp=%lld duration=%lld currentLength=%u",
-      timestamp.ToMicroseconds(), duration.ToMicroseconds(), currentLength);
+      pts.ToMicroseconds(), duration.ToMicroseconds(), currentLength);
 #endif
 
   return S_OK;

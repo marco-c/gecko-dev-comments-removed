@@ -44,23 +44,11 @@ class WMFAudioMFTManager : public MFTManager {
   uint32_t mAudioRate;
   nsTArray<BYTE> mUserData;
 
-  
-  
-  media::TimeUnit mAudioTimeOffset;
-  
-  
-  int64_t mAudioFrameSum = 0;
-
   enum StreamType { Unknown, AAC, MP3 };
   StreamType mStreamType;
 
   const GUID& GetMFTGUID();
   const GUID& GetMediaSubtypeGUID();
-
-  
-  
-  
-  bool mMustRecaptureAudioPosition = true;
 };
 
 }  
