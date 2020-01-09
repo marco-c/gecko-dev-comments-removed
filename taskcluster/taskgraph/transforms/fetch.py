@@ -7,9 +7,12 @@
 
 from __future__ import absolute_import, unicode_literals
 
+from mozbuild.shellutil import quote as shell_quote
+
 import os
 
 from voluptuous import (
+    Any,
     Optional,
     Required,
 )
@@ -43,35 +46,51 @@ FETCH_SCHEMA = Schema({
     
     Required('description'): basestring,
 
-    Required('fetch'): {
-        'type': 'static-url',
+    Required('fetch'): Any(
+        {
+            'type': 'static-url',
 
-        
-        Required('url'): basestring,
+            
+            Required('url'): basestring,
 
-        
-        Required('sha256'): basestring,
+            
+            Required('sha256'): basestring,
 
-        
-        Required('size'): int,
+            
+            Required('size'): int,
 
-        
-        Optional('gpg-signature'): {
+            
+            Optional('gpg-signature'): {
+                
+                
+                
+                Required('sig-url'): basestring,
+                
+                
+                Required('key-path'): basestring,
+            },
+
+            
+            Optional('artifact-name'): basestring,
+
             
             
-            
-            Required('sig-url'): basestring,
-            
-            
-            Required('key-path'): basestring,
         },
+        {
+            'type': 'chromium-fetch',
 
-        
-        Optional('artifact-name'): basestring,
+            Required('script'): basestring,
 
-        
-        
-    },
+            
+            Required('platform'): basestring,
+
+            
+            Optional('revision'): basestring,
+
+            
+            Required('artifact-name'): basestring
+        }
+    ),
 })
 
 transforms = TransformSequence()
@@ -89,6 +108,8 @@ def process_fetch_job(config, jobs):
 
         if typ == 'static-url':
             yield create_fetch_url_task(config, job)
+        elif typ == 'chromium-fetch':
+            yield create_chromium_fetch_task(config, job)
         else:
             
             assert False
@@ -186,6 +207,58 @@ def create_fetch_url_task(config, job):
             
             
             digest_data=[fetch['sha256'], '%d' % fetch['size'], artifact_name],
+        )
+
+    return task
+
+
+def create_chromium_fetch_task(config, job):
+    name = job['name']
+    fetch = job['fetch']
+    artifact_name = fetch.get('artifact-name')
+
+    workdir = '/builds/worker'
+
+    platform = fetch.get('platform')
+    revision = fetch.get('revision')
+
+    args = '--platform ' + shell_quote(platform)
+    if revision:
+        args += ' --revision ' + shell_quote(revision)
+
+    cmd = [
+        'bash',
+        '-c',
+        'cd {} && '
+        '/usr/bin/python3 {} {}'.format(
+            workdir, fetch['script'], args
+        )
+    ]
+
+    env = {
+        'UPLOAD_DIR': '/builds/worker/artifacts'
+    }
+
+    task = make_base_task(config, name, job['description'], cmd)
+    task['treeherder']['symbol'] = join_symbol('Fetch-URL', name)
+    task['worker']['artifacts'] = [{
+        'type': 'directory',
+        'name': 'public',
+        'path': '/builds/worker/artifacts',
+    }]
+    task['worker']['env'] = env
+    task['attributes']['fetch-artifact'] = 'public/%s' % artifact_name
+
+    if not taskgraph.fast:
+        cache_name = task['label'].replace('{}-'.format(config.kind), '', 1)
+
+        
+        add_optimization(
+            config,
+            task,
+            cache_type=CACHE_TYPE,
+            cache_name=cache_name,
+            digest_data=["revision={}".format(revision), "platform={}".format(platform)],
         )
 
     return task

@@ -11,7 +11,6 @@ import os
 import re
 import sys
 import subprocess
-import time
 
 from shutil import copyfile
 
@@ -251,7 +250,8 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
         return self.abs_dirs
 
     def install_chrome(self):
-        
+        '''install google chrome in production; installation
+        requirements depend on the platform'''
         if self.app != "chrome":
             self.info("Google Chrome is not required")
             return
@@ -260,74 +260,21 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
             self.info("expecting Google Chrome to be pre-installed locally")
             return
 
-        
-        self.chrome_dest = os.path.join(here, 'chrome')
-
-        
-        
-
-        base_url = "http://commondatastorage.googleapis.com/chromium-browser-snapshots"
-
-        
-        
+        self.info("Getting fetched chromium build")
+        self.chrome_dest = os.path.normpath(os.path.abspath(os.environ['MOZ_FETCHES_DIR']))
 
         if 'mac' in self.platform_name():
-            
-            
-
-            
-            
-            
-            chromium_rev = "634618"
-            chrome_archive_file = "chrome-mac.zip"
-            chrome_url = "%s/Mac/%s/%s" % (base_url, chromium_rev, chrome_archive_file)
             self.chrome_path = os.path.join(self.chrome_dest, 'chrome-mac', 'Chromium.app',
                                             'Contents', 'MacOS', 'Chromium')
 
         elif 'linux' in self.platform_name():
-            
-            
-            chromium_rev = "634637"
-            chrome_archive_file = "chrome-linux.zip"
-            chrome_url = "%s/Linux_x64/%s/%s" % (base_url, chromium_rev, chrome_archive_file)
             self.chrome_path = os.path.join(self.chrome_dest, 'chrome-linux', 'chrome')
 
         else:
-            
-            
-            
-            chromium_rev = "634634"
-            chrome_archive_file = "chrome-win.zip"  
-
-            
-            chrome_url = "%s/Win_x64/%s/%s" % (base_url, chromium_rev, chrome_archive_file)
-
             self.chrome_path = os.path.join(self.chrome_dest, 'chrome-win', 'Chrome.exe')
 
-        chrome_archive = os.path.join(self.chrome_dest, chrome_archive_file)
-
-        self.info("installing google chrome - temporary install hack")
-        self.info("chrome archive is: %s" % chrome_archive)
         self.info("chrome dest is: %s" % self.chrome_dest)
-
-        if os.path.exists(self.chrome_path):
-            self.info("google chrome binary already exists at: %s" % self.chrome_path)
-            return
-
-        if not os.path.exists(chrome_archive):
-            
-            self.download_file(chrome_url, parent_dir=self.chrome_dest)
-
-        commands = []
-        commands.append(['unzip', '-q', '-o', chrome_archive_file, '-d', self.chrome_dest])
-
-        
-        for next_command in commands:
-            return_code = self.run_command(next_command, cwd=self.chrome_dest)
-            time.sleep(30)
-            if return_code not in [0]:
-                self.info("abort: failed to install %s to %s with command: %s"
-                          % (chrome_archive_file, self.chrome_dest, next_command))
+        self.info("chrome path is: %s" % self.chrome_path)
 
         
         if os.path.exists(self.chrome_path):
