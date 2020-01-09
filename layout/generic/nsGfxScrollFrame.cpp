@@ -784,7 +784,8 @@ void nsHTMLScrollFrame::PlaceScrollArea(ScrollReflowInput& aState,
 
   nsRect scrolledArea;
   
-  nsSize portSize = mHelper.mScrollPort.Size();
+  nsSize portSize =
+    nsSize(mHelper.mScrollPort.XMost(), mHelper.mScrollPort.YMost());
   nsRect scrolledRect = mHelper.GetUnsnappedScrolledRectInternal(
       aState.mContentsOverflowAreas.ScrollableOverflow(), portSize);
   scrolledArea.UnionRectEdges(scrolledRect, nsRect(nsPoint(0, 0), portSize));
@@ -5574,6 +5575,10 @@ void ScrollFrameHelper::UpdateMinimumScaleSize(
   }
 
   nsViewportInfo viewportInfo = doc->GetViewportInfo(displaySize);
+  if (!viewportInfo.IsZoomAllowed()) {
+    
+    return;
+  }
 
   
   
