@@ -510,8 +510,7 @@ void nsPageFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
     nsRect visibleRect = child->GetVisualOverflowRectRelativeToSelf();
     nsDisplayListBuilder::AutoBuildingDisplayList buildingForChild(
-        aBuilder, child, visibleRect, visibleRect,
-        aBuilder->IsAtRootOfPseudoStackingContext());
+        aBuilder, child, visibleRect, visibleRect);
     child->BuildDisplayListForStackingContext(aBuilder, &content);
 
     
@@ -526,8 +525,7 @@ void nsPageFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       nsRect childVisible = visibleRect + child->GetOffsetTo(page);
 
       nsDisplayListBuilder::AutoBuildingDisplayList buildingForChild(
-          aBuilder, page, childVisible, childVisible,
-          aBuilder->IsAtRootOfPseudoStackingContext());
+          aBuilder, page, childVisible, childVisible);
       BuildDisplayListForExtraPage(aBuilder, this, page, &content);
     }
 
@@ -535,7 +533,7 @@ void nsPageFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     
     
     nsDisplayListBuilder::AutoBuildingDisplayList building(
-        aBuilder, child, visibleRect, visibleRect, true);
+        aBuilder, child, visibleRect, visibleRect);
 
     
     

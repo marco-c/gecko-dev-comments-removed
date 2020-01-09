@@ -325,7 +325,7 @@ void nsSliderFrame::BuildDisplayListForChildren(
           aBuilder->GetVisibleRect(), overflow, refSize);
 
       nsDisplayListBuilder::AutoBuildingDisplayList buildingDisplayList(
-          aBuilder, this, dirty, dirty, false);
+          aBuilder, this, dirty, dirty);
 
       
       

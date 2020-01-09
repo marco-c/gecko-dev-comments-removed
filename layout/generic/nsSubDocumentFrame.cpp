@@ -468,8 +468,8 @@ void nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     
     
     nsIFrame* frame = subdocRootFrame ? subdocRootFrame : this;
-    nsDisplayListBuilder::AutoBuildingDisplayList building(
-        aBuilder, frame, visible, dirty, true);
+    nsDisplayListBuilder::AutoBuildingDisplayList building(aBuilder, frame,
+                                                           visible, dirty);
 
     if (subdocRootFrame) {
       nsIFrame* rootScrollFrame = presShell->GetRootScrollFrame();
@@ -583,8 +583,8 @@ void nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     
     
     
-    nsDisplayListBuilder::AutoBuildingDisplayList building(
-        aBuilder, this, visible, dirty, true);
+    nsDisplayListBuilder::AutoBuildingDisplayList building(aBuilder, this,
+                                                           visible, dirty);
     
     
     
