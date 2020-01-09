@@ -14,12 +14,13 @@ import {
   assertLocation
 } from "../../utils/breakpoint";
 import { PROMISE } from "../utils/middleware/promise";
-import { getSource, getSymbols, getBreakpoint } from "../../selectors";
+import { getSource, getSymbols } from "../../selectors";
+
 import { getGeneratedLocation } from "../../utils/source-maps";
 import { getTextAtPosition } from "../../utils/source";
 import { recordEvent } from "../../utils/telemetry";
 
-import type { SourceLocation } from "../../types";
+import type { SourceLocation, Breakpoint } from "../../types";
 import type { ThunkArgs } from "../types";
 import type { addBreakpointOptions } from "./";
 
@@ -98,39 +99,20 @@ async function addBreakpointPromise(getState, client, sourceMaps, breakpoint) {
   };
 }
 
-
-
-
-
-
-
-
 export function addHiddenBreakpoint(location: SourceLocation) {
   return ({ dispatch }: ThunkArgs) => {
     return dispatch(addBreakpoint(location, { hidden: true }));
   };
 }
 
-
-
-
-
-
-
-
-
-export function enableBreakpoint(location: SourceLocation) {
+export function enableBreakpoint(breakpoint: Breakpoint) {
   return async ({ dispatch, getState, client, sourceMaps }: ThunkArgs) => {
-    const breakpoint = getBreakpoint(getState(), location);
-    if (!breakpoint || breakpoint.loading) {
+    if (breakpoint.loading) {
       return;
     }
 
     
-    const enabledBreakpoint = {
-      ...breakpoint,
-      disabled: false
-    };
+    const enabledBreakpoint = { ...breakpoint, disabled: false };
 
     return dispatch({
       type: "ENABLE_BREAKPOINT",
@@ -139,15 +121,6 @@ export function enableBreakpoint(location: SourceLocation) {
     });
   };
 }
-
-
-
-
-
-
-
-
-
 
 export function addBreakpoint(
   location: SourceLocation,

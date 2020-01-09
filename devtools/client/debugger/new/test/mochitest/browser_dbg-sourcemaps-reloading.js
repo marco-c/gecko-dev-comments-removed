@@ -1,5 +1,6 @@
 
 
+
 requestLongerTimeout(2);
 
 async function waitForBreakpointCount(dbg, count) {
@@ -41,8 +42,8 @@ add_task(async function() {
 
   await addBreakpoint(dbg, entrySrc, 5);
 
-  await addBreakpoint(dbg, entrySrc, 15);
-  await disableBreakpoint(dbg, entrySrc, 15);
+  await addBreakpoint(dbg, entrySrc, 15, 0);
+  await disableBreakpoint(dbg, entrySrc, 15, 0);
 
   
   await reload(dbg, "opts.js");
