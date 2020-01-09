@@ -380,11 +380,18 @@ async function GetWindowsPasswordsResource(aProfileFolder) {
 
           switch (row.getResultByName("scheme")) {
             case AUTH_TYPE.SCHEME_HTML:
-              let action_url = NetUtil.newURI(row.getResultByName("action_url"));
-              if (!kValidSchemes.has(action_url.scheme)) {
+              let action_url = row.getResultByName("action_url");
+              if (!action_url) {
+                
+                
+                loginInfo.formSubmitURL = "";
+                break;
+              }
+              let action_uri = NetUtil.newURI(action_url);
+              if (!kValidSchemes.has(action_uri.scheme)) {
                 continue; 
               }
-              loginInfo.formSubmitURL = action_url.prePath;
+              loginInfo.formSubmitURL = action_uri.prePath;
               break;
             case AUTH_TYPE.SCHEME_BASIC:
             case AUTH_TYPE.SCHEME_DIGEST:
