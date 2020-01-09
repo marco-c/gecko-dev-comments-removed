@@ -10,6 +10,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Result.h"
 #include "mozilla/Types.h"
+#include "mozilla/TypeTraits.h"
 
 namespace mozilla {
 namespace interceptor {
@@ -35,6 +36,41 @@ enum class PCRelCheckError {
 
 MFBT_API Result<LoadInfo, PCRelCheckError> CheckForPCRel(const uintptr_t aPC,
                                                          const uint32_t aInst);
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename ResultT>
+inline ResultT SignExtend(const uint32_t aValue, const uint8_t aNumValidBits) {
+  static_assert(IsIntegral<ResultT>::value && IsSigned<ResultT>::value,
+                "ResultT must be a signed integral type");
+  MOZ_ASSERT(aNumValidBits < 32U && aNumValidBits > 1);
+
+  using UnsignedResultT =
+      typename Decay<typename MakeUnsigned<ResultT>::Type>::Type;
+
+  const uint8_t kResultWidthBits = sizeof(ResultT) * 8;
+
+  
+  const uint8_t shiftAmt = kResultWidthBits - aNumValidBits;
+  UnsignedResultT shiftedLeft = static_cast<UnsignedResultT>(aValue)
+                                << shiftAmt;
+
+  
+  auto result = static_cast<ResultT>(shiftedLeft);
+  result >>= shiftAmt;
+
+  return result;
+}
 
 inline static uint32_t BuildUnconditionalBranchToRegister(const uint32_t aReg) {
   MOZ_ASSERT(aReg < 32);
