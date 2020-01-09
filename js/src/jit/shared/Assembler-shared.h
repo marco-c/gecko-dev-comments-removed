@@ -138,8 +138,7 @@ struct Imm64 {
 
 #ifdef DEBUG
 static inline bool IsCompilingWasm() {
-  
-  return GetJitContext()->zone == nullptr;
+  return GetJitContext()->isCompilingWasm();
 }
 #endif
 
