@@ -75,6 +75,11 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   
   
+  
+  void NotifyMediaMutedChanged(bool aMuted);
+
+  
+  
   bool ValidateTransaction(const Transaction& aTransaction,
                            ContentParent* aSource);
 
