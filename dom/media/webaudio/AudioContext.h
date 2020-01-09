@@ -315,6 +315,10 @@ class AudioContext final : public DOMEventTargetHelper,
   
   void SetParamMapForWorkletName(const nsAString& aName,
                                  AudioParamDescriptorMap* aParamMap);
+  const AudioParamDescriptorMap* GetParamMapForWorkletName(
+      const nsAString& aName) {
+    return mWorkletParamDescriptors.GetValue(aName);
+  }
 
   void Dispatch(already_AddRefed<nsIRunnable>&& aRunnable);
 
