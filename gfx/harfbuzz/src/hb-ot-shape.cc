@@ -428,6 +428,20 @@ hb_set_unicode_props (hb_buffer_t *buffer)
 	_hb_glyph_info_set_continuation (&info[i]);
       }
     }
+    
+
+
+
+
+
+
+
+
+
+
+
+    else if (unlikely (hb_in_range<hb_codepoint_t> (info[i].codepoint, 0xE0020u, 0xE007Fu)))
+      _hb_glyph_info_set_continuation (&info[i]);
   }
 }
 
@@ -891,7 +905,8 @@ hb_ot_position_complex (const hb_ot_shape_context_t *c)
 					&pos[i].y_offset);
 
   if (c->plan->fallback_mark_positioning)
-    _hb_ot_shape_fallback_mark_position (c->plan, c->font, c->buffer);
+    _hb_ot_shape_fallback_mark_position (c->plan, c->font, c->buffer,
+					 adjust_offsets_when_zeroing);
 }
 
 static inline void

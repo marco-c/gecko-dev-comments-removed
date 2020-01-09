@@ -29,6 +29,102 @@
 #ifndef HB_HH
 #define HB_HH
 
+#ifndef HB_NO_PRAGMA_GCC_DIAGNOSTIC
+#if defined(_MSC_VER)
+#pragma warning( disable: 4068 ) /* Unknown pragma */
+#endif
+#if defined(__GNUC__) || defined(__clang__)
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef HB_NO_PRAGMA_GCC_DIAGNOSTIC_WARNING
+#pragma GCC diagnostic warning "-Wall"
+#pragma GCC diagnostic warning "-Wextra"
+#endif
+#ifndef HB_NO_PRAGMA_GCC_DIAGNOSTIC_IGNORED
+#pragma GCC diagnostic ignored "-Wpragmas"
+#pragma GCC diagnostic ignored "-Wunknown-pragmas"
+#pragma GCC diagnostic ignored "-Wunknown-warning-option"
+#endif
+#ifndef HB_NO_PRAGMA_GCC_DIAGNOSTIC_WARNING
+
+#endif
+
+
+#ifndef HB_NO_PRAGMA_GCC_DIAGNOSTIC_ERROR
+#pragma GCC diagnostic error   "-Wc++11-narrowing"
+#pragma GCC diagnostic error   "-Wcast-align"
+#pragma GCC diagnostic error   "-Wcast-function-type"
+#pragma GCC diagnostic error   "-Wdelete-non-virtual-dtor"
+#pragma GCC diagnostic error   "-Wformat-security"
+#pragma GCC diagnostic error   "-Wimplicit-function-declaration"
+#pragma GCC diagnostic error   "-Winit-self"
+#pragma GCC diagnostic error   "-Wmissing-braces"
+#pragma GCC diagnostic error   "-Wmissing-declarations"
+#pragma GCC diagnostic error   "-Wmissing-prototypes"
+#pragma GCC diagnostic error   "-Wnested-externs"
+#pragma GCC diagnostic error   "-Wold-style-definition"
+#pragma GCC diagnostic error   "-Wpointer-arith"
+#pragma GCC diagnostic error   "-Wredundant-decls"
+#pragma GCC diagnostic error   "-Wreorder"
+#pragma GCC diagnostic error   "-Wsign-compare"
+#pragma GCC diagnostic error   "-Wstrict-prototypes"
+#pragma GCC diagnostic error   "-Wstring-conversion"
+#pragma GCC diagnostic error   "-Wswitch-enum"
+#pragma GCC diagnostic error   "-Wtautological-overlap-compare"
+#pragma GCC diagnostic error   "-Wunneeded-internal-declaration"
+#pragma GCC diagnostic error   "-Wunused"
+#pragma GCC diagnostic error   "-Wunused-local-typedefs"
+#pragma GCC diagnostic error   "-Wunused-value"
+#pragma GCC diagnostic error   "-Wunused-variable"
+#pragma GCC diagnostic error   "-Wvla"
+#pragma GCC diagnostic error   "-Wwrite-strings"
+#endif
+
+
+#ifndef HB_NO_PRAGMA_GCC_DIAGNOSTIC_WARNING
+#pragma GCC diagnostic warning "-Wbuiltin-macro-redefined"
+#pragma GCC diagnostic warning "-Wdisabled-optimization"
+#pragma GCC diagnostic warning "-Wformat=2"
+#pragma GCC diagnostic warning "-Wignored-pragma-optimize"
+#pragma GCC diagnostic warning "-Wlogical-op"
+#pragma GCC diagnostic warning "-Wmaybe-uninitialized"
+#pragma GCC diagnostic warning "-Wmissing-format-attribute"
+#pragma GCC diagnostic warning "-Wundef"
+#endif
+
+
+#ifndef HB_NO_PRAGMA_GCC_DIAGNOSTIC_IGNORED
+#pragma GCC diagnostic ignored "-Wconversion"			// TODO fix
+#pragma GCC diagnostic ignored "-Wformat-signedness"		// TODO fix
+#pragma GCC diagnostic ignored "-Wshadow"			// TODO fix
+#pragma GCC diagnostic ignored "-Wunsafe-loop-optimizations"	// TODO fix
+#pragma GCC diagnostic ignored "-Wunused-parameter"		// TODO fix
+#endif
+
+
+#ifndef HB_NO_PRAGMA_GCC_DIAGNOSTIC_IGNORED
+#pragma GCC diagnostic ignored "-Wclass-memaccess"
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#pragma GCC diagnostic ignored "-Wformat-zero-length"
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+#pragma GCC diagnostic ignored "-Wpacked" // Erratic impl in clang
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
+#pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+
+#endif
+#endif
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -57,10 +153,6 @@
 
 #ifndef __EXTENSIONS__
 # define __EXTENSIONS__ 1
-#endif
-
-#ifndef _POSIX_C_SOURCE
-#define _POSIX_C_SOURCE 200809L
 #endif
 
 #if defined (_MSC_VER) && defined (HB_DLL_EXPORT)
@@ -137,7 +229,7 @@ extern "C" int hb_memalign_impl(void **memptr, size_t alignment, size_t size);
 	HB_UNUSED typedef int HB_PASTE(static_assertion_failed_at_line_, __LINE__) [(e) ? 1 : -1]
 #endif 
 
-#ifdef __GNUC__
+#if defined(__GNUC__)
 #if (__GNUC__ < 4 || (__GNUC__ == 4 && __GNUC_MINOR__ < 8))
 #define thread_local __thread
 #endif
@@ -187,7 +279,7 @@ struct _hb_alignof
 #define __attribute__(x)
 #endif
 
-#if __GNUC__ >= 3
+#if defined(__GNUC__) && (__GNUC__ >= 3)
 #define HB_PURE_FUNC	__attribute__((pure))
 #define HB_CONST_FUNC	__attribute__((const))
 #define HB_PRINTF_FUNC(format_idx, arg_idx) __attribute__((__format__ (__printf__, format_idx, arg_idx)))
@@ -196,7 +288,7 @@ struct _hb_alignof
 #define HB_CONST_FUNC
 #define HB_PRINTF_FUNC(format_idx, arg_idx)
 #endif
-#if __GNUC__ >= 4
+#if defined(__GNUC__) && (__GNUC__ >= 4)
 #define HB_UNUSED	__attribute__((unused))
 #elif defined(_MSC_VER) 
 #define HB_UNUSED __pragma(warning(suppress: 4100 4101))
@@ -219,7 +311,7 @@ struct _hb_alignof
 # endif
 #endif
 
-#if __GNUC__ >= 3
+#if defined(__GNUC__) && (__GNUC__ >= 3)
 #define HB_FUNC __PRETTY_FUNCTION__
 #elif defined(_MSC_VER)
 #define HB_FUNC __FUNCSIG__
@@ -251,7 +343,7 @@ struct _hb_alignof
 #if defined(__clang__) && __cplusplus >= 201103L
    
 #  define HB_FALLTHROUGH [[clang::fallthrough]]
-#elif __GNUC__ >= 7
+#elif defined(__GNUC__) && (__GNUC__ >= 7)
    
 #  define HB_FALLTHROUGH __attribute__((fallthrough))
 #elif defined(_MSC_VER)
@@ -377,6 +469,9 @@ static_assert ((sizeof (hb_var_int_t) == 4), "");
 #define HB_NO_COPY_ASSIGN(TypeName) \
   TypeName(const TypeName&); \
   void operator=(const TypeName&)
+#define HB_NO_COPY_ASSIGN_TEMPLATE(TypeName, T) \
+  TypeName(const TypeName<T>&); \
+  void operator=(const TypeName<T>&)
 #define HB_NO_COPY_ASSIGN_TEMPLATE2(TypeName, T1, T2) \
   TypeName(const TypeName<T1, T2>&); \
   void operator=(const TypeName<T1, T2>&)
@@ -396,6 +491,7 @@ static_assert ((sizeof (hb_var_int_t) == 4), "");
 #else 
 
 #define HB_NO_COPY_ASSIGN(TypeName) static_assert (true, "")
+#define HB_NO_COPY_ASSIGN_TEMPLATE(TypeName, T) static_assert (true, "")
 #define HB_NO_COPY_ASSIGN_TEMPLATE2(TypeName, T1, T2) static_assert (true, "")
 #define HB_NO_CREATE_COPY_ASSIGN(TypeName) static_assert (true, "")
 #define HB_NO_CREATE_COPY_ASSIGN_TEMPLATE(TypeName, T) static_assert (true, "")
@@ -468,7 +564,8 @@ typedef uint64_t hb_vector_size_impl_t;
 	  static inline T& operator |= (T &l, T r) { l = l | r; return l; } \
 	  static inline T& operator &= (T& l, T r) { l = l & r; return l; } \
 	  static inline T& operator ^= (T& l, T r) { l = l ^ r; return l; } \
-	}
+	} \
+	static_assert (true, "")
 
 
 
@@ -547,11 +644,15 @@ template <typename T> struct hb_remove_pointer<T *> { typedef T value; };
 
 
 
+
 #include "hb-atomic.hh"
-#include "hb-debug.hh"
-#include "hb-dsalgs.hh"
 #include "hb-mutex.hh"
 #include "hb-null.hh"
-#include "hb-object.hh"
+#include "hb-dsalgs.hh"	
+#include "hb-iter.hh"	
+#include "hb-debug.hh"	
+#include "hb-array.hh"	
+#include "hb-vector.hh"	
+#include "hb-object.hh"	
 
 #endif 

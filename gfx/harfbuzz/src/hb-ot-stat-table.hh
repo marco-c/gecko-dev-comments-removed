@@ -225,7 +225,7 @@ struct StatAxisRecord
 
 struct STAT
 {
-  enum { tableTag = HB_OT_TAG_STAT };
+  static constexpr hb_tag_t tableTag = HB_OT_TAG_STAT;
 
   bool sanitize (hb_sanitize_context_t *c) const
   {
@@ -249,7 +249,7 @@ struct STAT
 
 
 
-  LOffsetTo<UnsizedArrayOf<StatAxisRecord>, false>
+  LNNOffsetTo<UnsizedArrayOf<StatAxisRecord> >
 		designAxesOffset;
 				
 
@@ -257,7 +257,7 @@ struct STAT
 
 
   HBUINT16	axisValueCount;	
-  LOffsetTo<UnsizedArrayOf<OffsetTo<AxisValue> >, false>
+  LNNOffsetTo<UnsizedArrayOf<OffsetTo<AxisValue> > >
 		offsetToAxisValueOffsets;
 				
 

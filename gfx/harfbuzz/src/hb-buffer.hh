@@ -119,7 +119,7 @@ struct hb_buffer_t
   
 
 
-  enum { CONTEXT_LENGTH = 5 };
+  static constexpr unsigned CONTEXT_LENGTH = 5u;
   hb_codepoint_t context[2][CONTEXT_LENGTH];
   unsigned int context_len[2];
 

@@ -87,15 +87,15 @@ struct CPALV1Tail
   }
 
   protected:
-  LOffsetTo<UnsizedArrayOf<HBUINT32>, false>
+  LNNOffsetTo<UnsizedArrayOf<HBUINT32> >
 		paletteFlagsZ;		
 
 
-  LOffsetTo<UnsizedArrayOf<NameID>, false>
+  LNNOffsetTo<UnsizedArrayOf<NameID> >
 		paletteLabelsZ;		
 
 
-  LOffsetTo<UnsizedArrayOf<NameID>, false>
+  LNNOffsetTo<UnsizedArrayOf<NameID> >
 		colorLabelsZ;		
 
 
@@ -107,7 +107,7 @@ typedef HBUINT32 BGRAColor;
 
 struct CPAL
 {
-  enum { tableTag = HB_OT_TAG_CPAL };
+  static constexpr hb_tag_t tableTag = HB_OT_TAG_CPAL;
 
   bool has_data () const { return numPalettes; }
 
@@ -176,7 +176,7 @@ struct CPAL
   HBUINT16	numPalettes;		
   HBUINT16	numColorRecords;	
 
-  LOffsetTo<UnsizedArrayOf<BGRAColor>, false>
+  LNNOffsetTo<UnsizedArrayOf<BGRAColor> >
 		colorRecordsZ;		
 
   UnsizedArrayOf<HBUINT16>

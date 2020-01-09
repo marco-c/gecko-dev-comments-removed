@@ -130,7 +130,7 @@ typedef struct OffsetTable
     sfnt_version.set (sfnt_tag);
     
 
-    if (unlikely (!tables.serialize (c, items.len))) return_trace (false);
+    if (unlikely (!tables.serialize (c, items.length))) return_trace (false);
 
     const char *dir_end = (const char *) c->head;
     HBUINT32 *checksum_adjustment = nullptr;
@@ -154,7 +154,8 @@ typedef struct OffsetTable
       c->align (4);
       const char *end = (const char *) c->head;
 
-      if (items[i].tag == HB_OT_TAG_head && end - start >= head::static_size)
+      if (items[i].tag == HB_OT_TAG_head &&
+	  (unsigned) (end - start) >= head::static_size)
       {
 	head *h = (head *) start;
 	checksum_adjustment = &h->checkSumAdjustment;
@@ -173,7 +174,7 @@ typedef struct OffsetTable
       
       
       checksum.set_for_data (this, dir_end - (const char *) this);
-      for (unsigned int i = 0; i < items.len; i++)
+      for (unsigned int i = 0; i < items.length; i++)
       {
 	TableRecord &rec = tables.arrayZ[i];
 	checksum.set (checksum + rec.checkSum);
@@ -298,7 +299,7 @@ struct ResourceRecord
   HBINT16	nameOffset;	
 
   HBUINT8	attrs;		
-  OffsetTo<LArrayOf<HBUINT8>, HBUINT24, false>
+  NNOffsetTo<LArrayOf<HBUINT8>, HBUINT24>
 		offset;		
 
   HBUINT32	reserved;	
@@ -333,7 +334,7 @@ struct ResourceTypeRecord
   protected:
   Tag		tag;		
   HBUINT16	resCountM1;	
-  OffsetTo<UnsizedArrayOf<ResourceRecord>, HBUINT16, false>
+  NNOffsetTo<UnsizedArrayOf<ResourceRecord> >
 		resourcesZ;	
 
   public:
@@ -389,7 +390,7 @@ struct ResourceMap
   HBUINT32	reserved1;	
   HBUINT16	resreved2;	
   HBUINT16	attrs;		
-  OffsetTo<ArrayOfM1<ResourceTypeRecord>, HBUINT16, false>
+  NNOffsetTo<ArrayOfM1<ResourceTypeRecord> >
 		typeList;	
 
   Offset16	nameList;	
@@ -421,10 +422,10 @@ struct ResourceForkHeader
   }
 
   protected:
-  LOffsetTo<UnsizedArrayOf<HBUINT8>, false>
+  LNNOffsetTo<UnsizedArrayOf<HBUINT8> >
 		data;		
 
-  LOffsetTo<ResourceMap, false>
+  LNNOffsetTo<ResourceMap >
 		map;		
 
   HBUINT32	dataLen;	

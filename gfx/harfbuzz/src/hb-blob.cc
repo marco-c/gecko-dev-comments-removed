@@ -25,6 +25,18 @@
 
 
 
+
+
+
+
+
+#ifndef _POSIX_C_SOURCE
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-macros"
+#define _POSIX_C_SOURCE 200809L
+#pragma GCC diagnostic pop
+#endif
+
 #include "hb.hh"
 #include "hb-blob.hh"
 
