@@ -527,7 +527,7 @@ class Compositor : public TextureSourceProvider {
 
 
 
-  virtual void RequestRecordFrames(bool aWillRecord) {}
+  virtual void RequestAllowFrameRecording(bool aWillRecord) {}
 
   
 
