@@ -151,8 +151,10 @@ function addMessage(newMessage, state, filtersState, prefsState) {
 
   
   const parentGroups = getParentGroups(currentGroup, groupsById);
-  newMessage.groupId = currentGroup;
-  newMessage.indent = parentGroups.length;
+  if (!isWarningGroup(newMessage)) {
+    newMessage.groupId = currentGroup;
+    newMessage.indent = parentGroups.length;
+  }
 
   ensureExecutionPoint(state, newMessage);
 
@@ -190,10 +192,25 @@ function addMessage(newMessage, state, filtersState, prefsState) {
       
       
       
-      const index = state
-        .visibleMessages
-        .indexOf(state.warningGroupsById.get(warningGroupMessageId)[0]);
-      state.visibleMessages.splice(index, 1, warningGroupMessageId);
+      const firstWarningMessageId = state.warningGroupsById.get(warningGroupMessageId)[0];
+      const firstWarningMessage = state.messagesById.get(firstWarningMessageId);
+      const outermostGroupId = getOutermostGroup(firstWarningMessage, groupsById);
+      const groupIndex = state.visibleMessages.indexOf(outermostGroupId);
+      const warningMessageIndex = state.visibleMessages.indexOf(firstWarningMessageId);
+
+      if (groupIndex > -1) {
+        
+        if (warningMessageIndex > -1) {
+          state.visibleMessages.splice(warningMessageIndex, 1);
+        }
+
+        
+        state.visibleMessages.splice(groupIndex, 0, warningGroupMessageId);
+      } else {
+        
+        
+        state.visibleMessages.splice(warningMessageIndex, 1, warningGroupMessageId);
+      }
     }
   }
 
@@ -416,10 +433,19 @@ function messages(state = MessageState(), action, filtersState, prefsState) {
       
       if (isGroupType(messagesById.get(messageId).type)) {
         
-        closeState.visibleMessages = visibleMessages.filter(id =>
-          getParentGroups(messagesById.get(id).groupId, groupsById)
-            .includes(messageId) === false
-        );
+        closeState.visibleMessages = visibleMessages.filter((id, i, arr) => {
+          const message = messagesById.get(id);
+          const warningGroupMessage =
+            messagesById.get(getParentWarningGroupMessageId(message));
+
+          
+          if (shouldGroupWarningMessages(warningGroupMessage, closeState, prefsState)) {
+            return arr.includes(id);
+          }
+
+          const parentGroups = getParentGroups(message.groupId, groupsById);
+          return parentGroups.includes(messageId) === false;
+        });
       } else if (isWarningGroup(messagesById.get(messageId))) {
         
         const groupMessages = closeState.warningGroupsById.get(messageId);
@@ -549,6 +575,14 @@ function getParentGroups(currentGroup, groupsById) {
   }
 
   return groups;
+}
+
+function getOutermostGroup(message, groupsById) {
+  const groups = getParentGroups(message.groupId, groupsById);
+  if (groups.length === 0) {
+    return null;
+  }
+  return groups[groups.length - 1];
 }
 
 
@@ -734,10 +768,14 @@ function getMessageVisibility(message, {
     prefsState,
     checkGroup = true,
 }) {
+  const warningGroupMessage =
+    messagesState.messagesById.get(getParentWarningGroupMessageId(message));
+
   
   if (
     checkGroup
     && !isInOpenedGroup(message, messagesState.groupsById, messagesState.messagesUiById)
+    && !shouldGroupWarningMessages(warningGroupMessage, messagesState, prefsState)
   ) {
     return {
       visible: false,
@@ -1183,6 +1221,10 @@ function getLastMessageId(state) {
 
 
 function shouldGroupWarningMessages(warningGroupMessage, messagesState, prefsState) {
+  if (!warningGroupMessage) {
+    return false;
+  }
+
   
   if (!prefsState.groupWarnings) {
     return false;
@@ -1190,7 +1232,11 @@ function shouldGroupWarningMessages(warningGroupMessage, messagesState, prefsSta
 
   
   const warningGroup = messagesState.warningGroupsById.get(warningGroupMessage.id);
-  return warningGroup && warningGroup.length > 1;
+  if (!warningGroup || !Array.isArray(warningGroup)) {
+    return false;
+  }
+
+  return warningGroup.length > 1;
 }
 
 exports.messages = messages;
