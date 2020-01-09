@@ -1102,7 +1102,7 @@ void Grouper::ConstructGroups(nsDisplayListBuilder* aDisplayListBuilder,
                              item);
 
       {
-        auto spaceAndClipChain = mClipManager.SwitchItem(item, aSc);
+        auto spaceAndClipChain = mClipManager.SwitchItem(item);
         wr::SpaceAndClipChainHelper saccHelper(aBuilder, spaceAndClipChain);
 
         sIndent++;
@@ -1603,7 +1603,7 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
 
     
     
-    auto spaceAndClipChain = mClipManager.SwitchItem(item, aSc);
+    auto spaceAndClipChain = mClipManager.SwitchItem(item);
     wr::SpaceAndClipChainHelper saccHelper(aBuilder, spaceAndClipChain);
 
     {  

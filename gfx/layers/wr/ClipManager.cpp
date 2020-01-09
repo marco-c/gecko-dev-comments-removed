@@ -134,8 +134,7 @@ wr::WrSpatialId ClipManager::SpatialIdAfterOverride(
   return it->second.top();
 }
 
-wr::WrSpaceAndClipChain ClipManager::SwitchItem(
-    nsDisplayItem* aItem, const StackingContextHelper& aStackingContext) {
+wr::WrSpaceAndClipChain ClipManager::SwitchItem(nsDisplayItem* aItem) {
   const DisplayItemClipChain* clip = aItem->GetClipChain();
   const ActiveScrolledRoot* asr = aItem->GetActiveScrolledRoot();
   CLIP_LOG("processing item %p (%s) asr %p\n", aItem,
@@ -214,12 +213,11 @@ wr::WrSpaceAndClipChain ClipManager::SwitchItem(
   if (clip) {
     leafmostASR = ActiveScrolledRoot::PickDescendant(leafmostASR, clip->mASR);
   }
-  Maybe<wr::WrSpaceAndClip> leafmostId =
-      DefineScrollLayers(leafmostASR, aItem, aStackingContext);
+  Maybe<wr::WrSpaceAndClip> leafmostId = DefineScrollLayers(leafmostASR, aItem);
 
   
   
-  clips.mClipChainId = DefineClipChain(clip, auPerDevPixel, aStackingContext);
+  clips.mClipChainId = DefineClipChain(clip, auPerDevPixel);
 
   Maybe<wr::WrSpaceAndClip> spaceAndClip = GetScrollLayer(asr);
   MOZ_ASSERT(spaceAndClip.isSome());
@@ -259,8 +257,7 @@ Maybe<wr::WrSpaceAndClip> ClipManager::GetScrollLayer(
 }
 
 Maybe<wr::WrSpaceAndClip> ClipManager::DefineScrollLayers(
-    const ActiveScrolledRoot* aASR, nsDisplayItem* aItem,
-    const StackingContextHelper& aSc) {
+    const ActiveScrolledRoot* aASR, nsDisplayItem* aItem) {
   if (!aASR) {
     
     return Nothing();
@@ -274,7 +271,7 @@ Maybe<wr::WrSpaceAndClip> ClipManager::DefineScrollLayers(
   }
   
   Maybe<wr::WrSpaceAndClip> ancestorSpaceAndClip =
-      DefineScrollLayers(aASR->mParent, aItem, aSc);
+      DefineScrollLayers(aASR->mParent, aItem);
 
   Maybe<ScrollMetadata> metadata =
       aASR->mScrollableFrame->ComputeScrollMetadata(
@@ -317,8 +314,7 @@ Maybe<wr::WrSpaceAndClip> ClipManager::DefineScrollLayers(
 }
 
 Maybe<wr::WrClipChainId> ClipManager::DefineClipChain(
-    const DisplayItemClipChain* aChain, int32_t aAppUnitsPerDevPixel,
-    const StackingContextHelper& aSc) {
+    const DisplayItemClipChain* aChain, int32_t aAppUnitsPerDevPixel) {
   AutoTArray<wr::WrClipId, 6> clipIds;
   
   
@@ -341,8 +337,7 @@ Maybe<wr::WrClipChainId> ClipManager::DefineClipChain(
     LayoutDeviceRect clip = LayoutDeviceRect::FromAppUnits(
         chain->mClip.GetClipRect(), aAppUnitsPerDevPixel);
     nsTArray<wr::ComplexClipRegion> wrRoundedRects;
-    chain->mClip.ToComplexClipRegions(aAppUnitsPerDevPixel, aSc,
-                                      wrRoundedRects);
+    chain->mClip.ToComplexClipRegions(aAppUnitsPerDevPixel, wrRoundedRects);
 
     Maybe<wr::WrSpaceAndClip> spaceAndClip = GetScrollLayer(chain->mASR);
     
