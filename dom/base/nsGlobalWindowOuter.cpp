@@ -5780,8 +5780,12 @@ nsGlobalWindowInner* nsGlobalWindowOuter::CallerInnerWindow(JSContext* aCx) {
     bool ok = JS_GetPrototype(aCx, scope, &scopeProto);
     NS_ENSURE_TRUE(ok, nullptr);
     if (scopeProto && xpc::IsSandboxPrototypeProxy(scopeProto) &&
-        (scopeProto =
-             js::CheckedUnwrap(scopeProto,  false))) {
+        
+        
+        
+        
+        (scopeProto = js::CheckedUnwrapDynamic(
+             scopeProto, aCx,  false))) {
       global = xpc::NativeGlobal(scopeProto);
       NS_ENSURE_TRUE(global, nullptr);
     }

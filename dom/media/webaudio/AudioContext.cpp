@@ -545,7 +545,8 @@ already_AddRefed<Promise> AudioContext::DecodeAudioData(
   jsapi.Init();
   JSContext* cx = jsapi.cx();
 
-  JS::Rooted<JSObject*> obj(cx, js::CheckedUnwrap(aBuffer.Obj()));
+  
+  JS::Rooted<JSObject*> obj(cx, js::CheckedUnwrapStatic(aBuffer.Obj()));
   if (!obj) {
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return nullptr;

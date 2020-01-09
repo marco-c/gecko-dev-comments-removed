@@ -221,7 +221,10 @@ namespace dom {
   JS::AutoIdVector valuesIds(cx);
 
   {
-    JS::RootedObject obj(cx, js::CheckedUnwrap(aObj));
+    
+    
+    
+    JS::RootedObject obj(cx, js::CheckedUnwrapDynamic(aObj, cx));
     if (!obj) {
       js::ReportAccessDenied(cx);
       return;
@@ -258,7 +261,10 @@ namespace dom {
   {
     Maybe<JSAutoRealm> ar;
     if (aTarget) {
-      JS::RootedObject target(cx, js::CheckedUnwrap(aTarget));
+      
+      
+      
+      JS::RootedObject target(cx, js::CheckedUnwrapDynamic(aTarget, cx));
       if (!target) {
         js::ReportAccessDenied(cx);
         return;

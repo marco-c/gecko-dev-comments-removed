@@ -74,8 +74,9 @@ void AudioWorkletGlobalScope::RegisterProcessor(JSContext* aCx,
     return;
   }
 
+  
   JS::Rooted<JSObject*> constructorUnwrapped(
-      aCx, js::CheckedUnwrap(processorConstructor));
+      aCx, js::CheckedUnwrapStatic(processorConstructor));
   if (!constructorUnwrapped) {
     
     
