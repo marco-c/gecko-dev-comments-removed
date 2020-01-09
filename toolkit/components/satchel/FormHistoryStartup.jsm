@@ -2,7 +2,6 @@
 
 
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 ChromeUtils.defineModuleGetter(this, "FormHistory",
@@ -134,4 +133,4 @@ FormHistoryStartup.prototype = {
   },
 };
 
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory([FormHistoryStartup]);
+var EXPORTED_SYMBOLS = ["FormHistoryStartup"];

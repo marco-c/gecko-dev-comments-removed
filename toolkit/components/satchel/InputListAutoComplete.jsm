@@ -2,7 +2,6 @@
 
 
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 const {FormAutoCompleteResult} =
     ChromeUtils.import("resource://gre/modules/nsFormAutoCompleteResult.jsm");
 
@@ -62,5 +61,4 @@ InputListAutoComplete.prototype = {
   },
 };
 
-var component = [InputListAutoComplete];
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory(component);
+var EXPORTED_SYMBOLS = ["InputListAutoComplete"];
