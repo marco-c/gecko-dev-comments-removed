@@ -161,6 +161,24 @@ nsresult TextStreamer::EncodeAndWriteAndTruncate(nsAString& aString) {
   return rv;
 }
 
+
+
+
+class EncodingScope {
+ public:
+  
+
+
+  bool IsLimited() const;
+
+  RefPtr<Selection> mSelection;
+  RefPtr<nsRange> mRange;
+  nsCOMPtr<nsINode> mNode;
+  bool mNodeIsContainer = false;
+};
+
+bool EncodingScope::IsLimited() const { return mSelection || mRange || mNode; }
+
 class nsDocumentEncoder : public nsIDocumentEncoder {
  public:
   nsDocumentEncoder();
@@ -173,6 +191,13 @@ class nsDocumentEncoder : public nsIDocumentEncoder {
   virtual ~nsDocumentEncoder();
 
   void Initialize(bool aClearCachedSerializer = true);
+
+  
+
+
+
+  nsresult SerializeDependingOnScope(nsAString& aOutput, uint32_t aMaxLength);
+
   nsresult SerializeNodeStart(nsINode& aOriginalNode, int32_t aStartOffset,
                               int32_t aEndOffset, nsAString& aStr,
                               nsINode* aFixupNode = nullptr);
@@ -256,9 +281,7 @@ class nsDocumentEncoder : public nsIDocumentEncoder {
   };
 
   nsCOMPtr<Document> mDocument;
-  RefPtr<Selection> mSelection;
-  RefPtr<nsRange> mRange;
-  nsCOMPtr<nsINode> mNode;
+  EncodingScope mEncodingScope;
   nsCOMPtr<nsIContentSerializer> mSerializer;
   Maybe<TextStreamer> mTextStreamer;
   nsCOMPtr<nsINode> mCommonParent;
@@ -287,7 +310,6 @@ class nsDocumentEncoder : public nsIDocumentEncoder {
   
   bool mDisableContextSerialize;
   bool mIsCopying;  
-  bool mNodeIsContainer;
   nsStringBuffer* mCachedBuffer;
 };
 
@@ -299,8 +321,9 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsDocumentEncoder)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-NS_IMPL_CYCLE_COLLECTION(nsDocumentEncoder, mDocument, mSelection, mRange,
-                         mNode, mSerializer, mCommonParent)
+NS_IMPL_CYCLE_COLLECTION(nsDocumentEncoder, mDocument,
+                         mEncodingScope.mSelection, mEncodingScope.mRange,
+                         mEncodingScope.mNode, mSerializer, mCommonParent)
 
 nsDocumentEncoder::nsDocumentEncoder()
     : mEncoding(nullptr), mIsCopying(false), mCachedBuffer(nullptr) {
@@ -318,10 +341,110 @@ void nsDocumentEncoder::Initialize(bool aClearCachedSerializer) {
   mNeedsPreformatScanning = false;
   mHaltRangeHint = false;
   mDisableContextSerialize = false;
-  mNodeIsContainer = false;
+  mEncodingScope = {};
   if (aClearCachedSerializer) {
     mSerializer = nullptr;
   }
+}
+
+static bool ParentIsTR(nsIContent* aContent) {
+  mozilla::dom::Element* parent = aContent->GetParentElement();
+  if (!parent) {
+    return false;
+  }
+  return parent->IsHTMLElement(nsGkAtoms::tr);
+}
+
+nsresult nsDocumentEncoder::SerializeDependingOnScope(nsAString& aOutput,
+                                                      uint32_t aMaxLength) {
+  nsresult rv = NS_OK;
+  if (Selection* selection = mEncodingScope.mSelection) {
+    uint32_t count = selection->RangeCount();
+
+    nsCOMPtr<nsINode> node, prevNode;
+    uint32_t firstRangeStartDepth = 0;
+    for (uint32_t i = 0; i < count; ++i) {
+      RefPtr<nsRange> range = selection->GetRangeAt(i);
+
+      
+      
+      
+      
+      
+      
+      
+      node = range->GetStartContainer();
+      NS_ENSURE_TRUE(node, NS_ERROR_FAILURE);
+      if (node != prevNode) {
+        if (prevNode) {
+          rv = SerializeNodeEnd(*prevNode, aOutput);
+          NS_ENSURE_SUCCESS(rv, rv);
+        }
+        nsCOMPtr<nsIContent> content = do_QueryInterface(node);
+        if (content && content->IsHTMLElement(nsGkAtoms::tr) &&
+            !ParentIsTR(content)) {
+          if (!prevNode) {
+            
+            mCommonAncestors.Clear();
+            nsContentUtils::GetAncestors(node->GetParentNode(),
+                                         mCommonAncestors);
+            rv = SerializeRangeContextStart(mCommonAncestors, aOutput);
+            NS_ENSURE_SUCCESS(rv, rv);
+            
+            mDisableContextSerialize = true;
+          }
+
+          rv = SerializeNodeStart(*node, 0, -1, aOutput);
+          NS_ENSURE_SUCCESS(rv, rv);
+          prevNode = node;
+        } else if (prevNode) {
+          
+          mDisableContextSerialize = false;
+          rv = SerializeRangeContextEnd(aOutput);
+          NS_ENSURE_SUCCESS(rv, rv);
+          prevNode = nullptr;
+        }
+      }
+
+      rv = SerializeRangeToString(range, aOutput);
+      NS_ENSURE_SUCCESS(rv, rv);
+      if (i == 0) {
+        firstRangeStartDepth = mStartDepth;
+      }
+    }
+    mStartDepth = firstRangeStartDepth;
+
+    if (prevNode) {
+      rv = SerializeNodeEnd(*prevNode, aOutput);
+      NS_ENSURE_SUCCESS(rv, rv);
+      mDisableContextSerialize = false;
+      rv = SerializeRangeContextEnd(aOutput);
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+
+    
+    mDisableContextSerialize = false;
+  } else if (nsRange* range = mEncodingScope.mRange) {
+    rv = SerializeRangeToString(range, aOutput);
+  } else if (nsINode* node = mEncodingScope.mNode) {
+    const bool nodeIsContainer = mEncodingScope.mNodeIsContainer;
+    if (!mNodeFixup && !(mFlags & SkipInvisibleContent) && !mTextStreamer &&
+        nodeIsContainer) {
+      rv = SerializeToStringIterative(node, aOutput);
+    } else {
+      rv = SerializeToStringRecursive(node, aOutput, nodeIsContainer);
+    }
+  } else {
+    rv = mSerializer->AppendDocumentStart(mDocument, aOutput);
+
+    if (NS_SUCCEEDED(rv)) {
+      rv = SerializeToStringRecursive(mDocument, aOutput, false, aMaxLength);
+    }
+  }
+
+  mEncodingScope = {};
+
+  return rv;
 }
 
 nsDocumentEncoder::~nsDocumentEncoder() {
@@ -361,27 +484,27 @@ nsDocumentEncoder::SetWrapColumn(uint32_t aWC) {
 
 NS_IMETHODIMP
 nsDocumentEncoder::SetSelection(Selection* aSelection) {
-  mSelection = aSelection;
+  mEncodingScope.mSelection = aSelection;
   return NS_OK;
 }
 
 NS_IMETHODIMP
 nsDocumentEncoder::SetRange(nsRange* aRange) {
-  mRange = aRange;
+  mEncodingScope.mRange = aRange;
   return NS_OK;
 }
 
 NS_IMETHODIMP
 nsDocumentEncoder::SetNode(nsINode* aNode) {
-  mNodeIsContainer = false;
-  mNode = aNode;
+  mEncodingScope.mNodeIsContainer = false;
+  mEncodingScope.mNode = aNode;
   return NS_OK;
 }
 
 NS_IMETHODIMP
 nsDocumentEncoder::SetContainerNode(nsINode* aContainer) {
-  mNodeIsContainer = true;
-  mNode = aContainer;
+  mEncodingScope.mNodeIsContainer = true;
+  mEncodingScope.mNode = aContainer;
   return NS_OK;
 }
 
@@ -870,9 +993,6 @@ nsresult nsDocumentEncoder::SerializeRangeToString(nsRange* aRange,
 
 void nsDocumentEncoder::Clear() {
   mDocument = nullptr;
-  mSelection = nullptr;
-  mRange = nullptr;
-  mNode = nullptr;
   mCommonParent = nullptr;
   mNodeFixup = nullptr;
 
@@ -882,14 +1002,6 @@ void nsDocumentEncoder::Clear() {
 NS_IMETHODIMP
 nsDocumentEncoder::EncodeToString(nsAString& aOutputString) {
   return EncodeToStringWithMaxLength(0, aOutputString);
-}
-
-static bool ParentIsTR(nsIContent* aContent) {
-  mozilla::dom::Element* parent = aContent->GetParentElement();
-  if (!parent) {
-    return false;
-  }
-  return parent->IsHTMLElement(nsGkAtoms::tr);
 }
 
 NS_IMETHODIMP
@@ -931,100 +1043,14 @@ nsDocumentEncoder::EncodeToStringWithMaxLength(uint32_t aMaxLength,
   nsresult rv = NS_OK;
 
   bool rewriteEncodingDeclaration =
-      !(mSelection || mRange || mNode) &&
+      !mEncodingScope.IsLimited() &&
       !(mFlags & OutputDontRewriteEncodingDeclaration);
   mSerializer->Init(mFlags, mWrapColumn, mEncoding, mIsCopying,
                     rewriteEncodingDeclaration, &mNeedsPreformatScanning);
 
-  if (mSelection) {
-    uint32_t count = mSelection->RangeCount();
-
-    nsCOMPtr<nsINode> node, prevNode;
-    uint32_t firstRangeStartDepth = 0;
-    for (uint32_t i = 0; i < count; ++i) {
-      RefPtr<nsRange> range = mSelection->GetRangeAt(i);
-
-      
-      
-      
-      
-      
-      
-      
-      node = range->GetStartContainer();
-      NS_ENSURE_TRUE(node, NS_ERROR_FAILURE);
-      if (node != prevNode) {
-        if (prevNode) {
-          rv = SerializeNodeEnd(*prevNode, output);
-          NS_ENSURE_SUCCESS(rv, rv);
-        }
-        nsCOMPtr<nsIContent> content = do_QueryInterface(node);
-        if (content && content->IsHTMLElement(nsGkAtoms::tr) &&
-            !ParentIsTR(content)) {
-          if (!prevNode) {
-            
-            mCommonAncestors.Clear();
-            nsContentUtils::GetAncestors(node->GetParentNode(),
-                                         mCommonAncestors);
-            rv = SerializeRangeContextStart(mCommonAncestors, output);
-            NS_ENSURE_SUCCESS(rv, rv);
-            
-            mDisableContextSerialize = true;
-          }
-
-          rv = SerializeNodeStart(*node, 0, -1, output);
-          NS_ENSURE_SUCCESS(rv, rv);
-          prevNode = node;
-        } else if (prevNode) {
-          
-          mDisableContextSerialize = false;
-          rv = SerializeRangeContextEnd(output);
-          NS_ENSURE_SUCCESS(rv, rv);
-          prevNode = nullptr;
-        }
-      }
-
-      rv = SerializeRangeToString(range, output);
-      NS_ENSURE_SUCCESS(rv, rv);
-      if (i == 0) {
-        firstRangeStartDepth = mStartDepth;
-      }
-    }
-    mStartDepth = firstRangeStartDepth;
-
-    if (prevNode) {
-      rv = SerializeNodeEnd(*prevNode, output);
-      NS_ENSURE_SUCCESS(rv, rv);
-      mDisableContextSerialize = false;
-      rv = SerializeRangeContextEnd(output);
-      NS_ENSURE_SUCCESS(rv, rv);
-    }
-
-    
-    mDisableContextSerialize = false;
-
-    mSelection = nullptr;
-  } else if (mRange) {
-    rv = SerializeRangeToString(mRange, output);
-
-    mRange = nullptr;
-  } else if (mNode) {
-    if (!mNodeFixup && !(mFlags & SkipInvisibleContent) && !mTextStreamer &&
-        mNodeIsContainer) {
-      rv = SerializeToStringIterative(mNode, output);
-    } else {
-      rv = SerializeToStringRecursive(mNode, output, mNodeIsContainer);
-    }
-    mNode = nullptr;
-  } else {
-    rv = mSerializer->AppendDocumentStart(mDocument, output);
-
-    if (NS_SUCCEEDED(rv)) {
-      rv = SerializeToStringRecursive(mDocument, output, false, aMaxLength);
-    }
-  }
-
+  rv = SerializeDependingOnScope(output, aMaxLength);
   NS_ENSURE_SUCCESS(rv, rv);
+
   rv = mSerializer->Flush(output);
 
   mCachedBuffer = nsStringBuffer::FromString(output);
@@ -1228,7 +1254,7 @@ nsHTMLCopyEncoder::SetSelection(Selection* aSelection) {
 
   
   if (mIsTextWidget) {
-    mSelection = aSelection;
+    mEncodingScope.mSelection = aSelection;
     mMimeType.AssignLiteral("text/plain");
     return NS_OK;
   }
@@ -1240,7 +1266,7 @@ nsHTMLCopyEncoder::SetSelection(Selection* aSelection) {
   nsCOMPtr<nsIHTMLDocument> htmlDoc = do_QueryInterface(mDocument);
   if (!(htmlDoc && mDocument->IsHTMLDocument())) {
     mIsTextWidget = true;
-    mSelection = aSelection;
+    mEncodingScope.mSelection = aSelection;
     
     return NS_OK;
   }
@@ -1248,7 +1274,7 @@ nsHTMLCopyEncoder::SetSelection(Selection* aSelection) {
   
   
   
-  mSelection = new Selection();
+  mEncodingScope.mSelection = new Selection();
 
   
   for (uint32_t rangeIdx = 0; rangeIdx < rangeCount; ++rangeIdx) {
@@ -1263,7 +1289,7 @@ nsHTMLCopyEncoder::SetSelection(Selection* aSelection) {
     NS_ENSURE_SUCCESS(rv, rv);
 
     ErrorResult result;
-    RefPtr<Selection> selection(mSelection);
+    RefPtr<Selection> selection(mEncodingScope.mSelection);
     RefPtr<Document> document(mDocument);
     selection->AddRangeInternal(*myRange, document, result);
     rv = result.StealNSResult();
