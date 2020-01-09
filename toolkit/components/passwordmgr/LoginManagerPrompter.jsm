@@ -7,6 +7,8 @@ const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const {PrivateBrowsingUtils} = ChromeUtils.import("resource://gre/modules/PrivateBrowsingUtils.jsm");
 const { PromptUtils } = ChromeUtils.import("resource://gre/modules/SharedPromptUtils.jsm");
 
+
+
 ChromeUtils.defineModuleGetter(this, "LoginHelper",
                                "resource://gre/modules/LoginHelper.jsm");
 
@@ -359,6 +361,7 @@ LoginManagerPrompter.prototype = {
                                      Cr.NS_ERROR_NOT_IMPLEMENTED);
     }
 
+    let foundLogins = null;
     var selectedLogin = null;
     var checkBox = { value: false };
     var checkBoxLabel = null;
@@ -379,7 +382,7 @@ LoginManagerPrompter.prototype = {
       }
 
       
-      var foundLogins = Services.logins.findLogins(hostname, null, realm);
+      foundLogins = Services.logins.findLogins(hostname, null, realm);
 
       
       

@@ -2,6 +2,7 @@
 
 module.exports = {
   "rules": {
+    "block-scoped-var": "error",
     "brace-style": ["error", "1tbs", {"allowSingleLine": false}],
 
     

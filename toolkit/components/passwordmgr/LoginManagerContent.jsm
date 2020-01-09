@@ -1255,6 +1255,7 @@ var LoginManagerContent = {
     }
 
     log("_fillForm", form.elements);
+    let usernameField;
     
     let autofillResult = -1;
     const AUTOFILL_RESULT = {
@@ -1288,8 +1289,8 @@ var LoginManagerContent = {
       
       
       
-      var [usernameField, passwordField, ignored] =
-            this._getFormFields(form, false, recipes);
+      let passwordField;
+      [usernameField, passwordField] = this._getFormFields(form, false, recipes);
 
       
       
