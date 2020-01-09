@@ -5128,6 +5128,8 @@ AttachDecision CallIRGenerator::tryAttachCallScripted(
 
 bool CallIRGenerator::getTemplateObjectForNative(HandleFunction calleeFunc,
                                                  MutableHandleObject res) {
+  AutoRealm ar(cx_, calleeFunc);
+
   
   
   
