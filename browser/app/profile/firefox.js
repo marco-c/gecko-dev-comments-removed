@@ -1611,7 +1611,6 @@ pref("browser.contentblocking.fingerprinting.preferences.ui.enabled", true);
 
 
 
-
 pref("browser.contentblocking.features.strict", "tp,tpPrivate,cookieBehavior4,cm,fp");
 
 

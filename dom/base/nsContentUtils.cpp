@@ -8470,13 +8470,7 @@ nsContentUtils::StorageAccess nsContentUtils::InternalStorageAllowedCheck(
   
   if (aRejectedReason ==
       nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER) {
-    return StorageAccess::ePartitionTrackersOrDeny;
-  }
-
-  
-  if (aRejectedReason ==
-      nsIWebProgressListener::STATE_COOKIES_PARTITIONED_FOREIGN) {
-    return StorageAccess::ePartitionForeignOrDeny;
+    return StorageAccess::ePartitionedOrDeny;
   }
 
   return StorageAccess::eDeny;

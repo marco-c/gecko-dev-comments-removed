@@ -28,7 +28,6 @@
 #include "mozilla/PresShellInlines.h"
 #include "mozilla/RestyleManager.h"
 #include "mozilla/StaticPrefs.h"
-#include "mozilla/StorageAccess.h"
 #include "mozilla/URLExtraData.h"
 #include <algorithm>
 
@@ -3480,8 +3479,8 @@ void Document::GetCookie(nsAString& aCookie, ErrorResult& rv) {
     return;
   }
 
-  if (ShouldPartitionStorage(storageAccess) &&
-      !StoragePartitioningEnabled(storageAccess, CookieSettings())) {
+  if (storageAccess == nsContentUtils::StorageAccess::ePartitionedOrDeny &&
+      !StaticPrefs::privacy_storagePrincipal_enabledForTrackers()) {
     return;
   }
 
@@ -3540,8 +3539,8 @@ void Document::SetCookie(const nsAString& aCookie, ErrorResult& rv) {
     return;
   }
 
-  if (ShouldPartitionStorage(storageAccess) &&
-      !StoragePartitioningEnabled(storageAccess, CookieSettings())) {
+  if (storageAccess == nsContentUtils::StorageAccess::ePartitionedOrDeny &&
+      !StaticPrefs::privacy_storagePrincipal_enabledForTrackers()) {
     return;
   }
 
@@ -11582,40 +11581,6 @@ Document* Document::GetTopLevelContentDocument() {
   return parent;
 }
 
-const Document* Document::GetTopLevelContentDocument() const {
-  const Document* parent;
-
-  if (!mLoadedAsData) {
-    parent = this;
-  } else {
-    nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(GetScopeObject());
-    if (!window) {
-      return nullptr;
-    }
-
-    parent = window->GetExtantDoc();
-    if (!parent) {
-      return nullptr;
-    }
-  }
-
-  do {
-    if (parent->IsTopLevelContentDocument()) {
-      break;
-    }
-
-    
-    
-    if (!parent->IsContentDocument()) {
-      return nullptr;
-    }
-
-    parent = parent->GetParentDocument();
-  } while (parent);
-
-  return parent;
-}
-
 static bool MightBeChromeScheme(nsIURI* aURI) {
   MOZ_ASSERT(aURI);
   bool isChrome = true;
@@ -12196,7 +12161,8 @@ DocumentAutoplayPolicy Document::AutoplayPolicy() const {
 }
 
 void Document::MaybeAllowStorageForOpenerAfterUserInteraction() {
-  if (!CookieSettings()->GetRejectThirdPartyTrackers()) {
+  if (CookieSettings()->GetCookieBehavior() !=
+      nsICookieService::BEHAVIOR_REJECT_TRACKER) {
     return;
   }
 
@@ -12733,7 +12699,8 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
   }
 
   
-  if (!CookieSettings()->GetRejectThirdPartyTrackers()) {
+  if (CookieSettings()->GetCookieBehavior() !=
+      nsICookieService::BEHAVIOR_REJECT_TRACKER) {
     
     if (IsTopLevelContentDocument()) {
       promise->MaybeResolveWithUndefined();
@@ -12785,7 +12752,9 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
     return promise.forget();
   }
 
-  if (CookieSettings()->GetRejectThirdPartyTrackers() && inner) {
+  if (CookieSettings()->GetCookieBehavior() ==
+          nsICookieService::BEHAVIOR_REJECT_TRACKER &&
+      inner) {
     
     if (nsContentUtils::StorageDisabledByAntiTracking(this, nullptr)) {
       
@@ -13053,26 +13022,17 @@ nsICookieSettings* Document::CookieSettings() {
 }
 
 nsIPrincipal* Document::EffectiveStoragePrincipal() const {
-  const Document* toplevel = GetTopLevelContentDocument();
-  nsPIDOMWindowInner* inner = GetInnerWindow();
-  if (!toplevel || !inner) {
+  if (!StaticPrefs::privacy_storagePrincipal_enabledForTrackers()) {
     return NodePrincipal();
   }
 
-  
-  
-  uint32_t rejectedReason = 0;
-  if (AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(
-          inner, toplevel->GetDocumentURI(), &rejectedReason)) {
-    return NodePrincipal();
-  }
+  nsContentUtils::StorageAccess access =
+      nsContentUtils::StorageAllowedForDocument(this);
 
   
   
   
-  if (!ShouldPartitionStorage(rejectedReason) ||
-      !StoragePartitioningEnabled(
-          rejectedReason, const_cast<Document*>(this)->CookieSettings())) {
+  if (access != nsContentUtils::StorageAccess::ePartitionedOrDeny) {
     return NodePrincipal();
   }
 

@@ -24,7 +24,6 @@
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/PBackgroundChild.h"
 #include "mozilla/ipc/URIUtils.h"
-#include "mozilla/StorageAccess.h"
 #include "nsContentUtils.h"
 #include "nsGlobalWindowInner.h"
 #include "nsPIDOMWindow.h"
@@ -109,9 +108,8 @@ already_AddRefed<SharedWorker> SharedWorker::Constructor(
     return nullptr;
   }
 
-  if (ShouldPartitionStorage(storageAllowed) &&
-      !StoragePartitioningEnabled(storageAllowed,
-                                  window->GetExtantDoc()->CookieSettings())) {
+  if (storageAllowed == nsContentUtils::StorageAccess::ePartitionedOrDeny &&
+      !StaticPrefs::privacy_storagePrincipal_enabledForTrackers()) {
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return nullptr;
   }
@@ -181,7 +179,7 @@ already_AddRefed<SharedWorker> SharedWorker::Constructor(
   
   
   
-  if (ShouldPartitionStorage(storageAllowed)) {
+  if (storageAllowed == nsContentUtils::StorageAccess::ePartitionedOrDeny) {
     nsCOMPtr<nsIScriptObjectPrincipal> sop = do_QueryInterface(window);
     if (!sop) {
       aRv.Throw(NS_ERROR_FAILURE);
