@@ -651,8 +651,7 @@ nsresult nsZipArchive::BuildFileList(PRFileDesc *aFd) {
       xtolong(startp + centralOffset) == CENTRALSIG) {
     
     uint32_t readaheadLength = xtolong(startp);
-    mozilla::MaybePrefetchMemory(const_cast<uint8_t *>(startp),
-                                 readaheadLength);
+    mozilla::PrefetchMemory(const_cast<uint8_t *>(startp), readaheadLength);
   } else {
     for (buf = endp - ZIPEND_SIZE; buf > startp; buf--) {
       if (xtolong(buf) == ENDSIG) {
