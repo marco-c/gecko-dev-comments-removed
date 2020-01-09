@@ -484,8 +484,6 @@ class XDRState : public XDRCoderBase {
   XDRResult codeChars(JS::Latin1Char* chars, size_t nchars);
   XDRResult codeChars(mozilla::Utf8Unit* units, size_t nchars);
 
-  
-  
   XDRResult codeChars(char16_t* chars, size_t nchars);
 
   XDRResult codeFunction(JS::MutableHandleFunction objp,

@@ -407,6 +407,8 @@ class Endian : private EndianUtils {
 
 
 
+
+
   template <typename T>
   static void copyAndSwapToLittleEndian(void* aDest, const T* aSrc,
                                         size_t aCount) {
@@ -430,6 +432,8 @@ class Endian : private EndianUtils {
   }
 
   
+
+
 
 
 
@@ -482,6 +486,8 @@ class Endian : private EndianUtils {
 
 
 
+
+
   template <typename T>
   static void copyAndSwapFromLittleEndian(T* aDest, const void* aSrc,
                                           size_t aCount) {
@@ -505,6 +511,8 @@ class Endian : private EndianUtils {
   }
 
   
+
+
 
 
 
