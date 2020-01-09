@@ -339,41 +339,9 @@ nsresult nsChromeRegistry::RefreshWindow(nsPIDOMWindowOuter* aWindow) {
     RefreshWindow(piWindow);
   }
 
-  nsresult rv;
   
   RefPtr<Document> document = aWindow->GetDoc();
   if (!document) return NS_OK;
-
-  
-  RefPtr<PresShell> presShell = document->GetPresShell();
-  if (presShell) {
-    
-    nsTArray<RefPtr<StyleSheet>> agentSheets;
-    rv = presShell->GetAgentStyleSheets(agentSheets);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    nsTArray<RefPtr<StyleSheet>> newAgentSheets;
-    for (StyleSheet* sheet : agentSheets) {
-      nsIURI* uri = sheet->GetSheetURI();
-
-      if (IsChromeURI(uri)) {
-        
-        RefPtr<StyleSheet> newSheet;
-        rv = document->LoadChromeSheetSync(uri, true, &newSheet);
-        if (NS_FAILED(rv)) return rv;
-        if (newSheet) {
-          newAgentSheets.AppendElement(newSheet);
-          return NS_OK;
-        }
-      } else {  
-        rv = newAgentSheets.AppendElement(sheet) ? NS_OK : NS_ERROR_FAILURE;
-        if (NS_FAILED(rv)) return rv;
-      }
-    }
-
-    rv = presShell->SetAgentStyleSheets(newAgentSheets);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
 
   size_t count = document->SheetCount();
 
@@ -389,6 +357,9 @@ nsresult nsChromeRegistry::RefreshWindow(nsPIDOMWindowOuter* aWindow) {
 
   
   
+  
+  
+  
   for (StyleSheet* sheet : oldSheets) {
     MOZ_ASSERT(sheet,
                "SheetAt shouldn't return nullptr for "
@@ -397,12 +368,11 @@ nsresult nsChromeRegistry::RefreshWindow(nsPIDOMWindowOuter* aWindow) {
 
     if (!sheet->IsInline() && IsChromeURI(uri)) {
       
-      RefPtr<StyleSheet> newSheet;
       
       
-      document->LoadChromeSheetSync(uri, false, &newSheet);
-      
-      newSheets.AppendElement(newSheet);
+      if (RefPtr<StyleSheet> newSheet = document->LoadChromeSheetSync(uri)) {
+        newSheets.AppendElement(newSheet);
+      }
     } else {
       
       newSheets.AppendElement(sheet);

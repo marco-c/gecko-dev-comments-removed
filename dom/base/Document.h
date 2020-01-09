@@ -2856,7 +2856,6 @@ class Document : public nsINode,
 
 
 
-
   void PreloadStyle(nsIURI* aURI, const Encoding* aEncoding,
                     const nsAString& aCrossOriginAttr,
                     ReferrerPolicyEnum aReferrerPolicy,
@@ -2867,11 +2866,7 @@ class Document : public nsINode,
 
 
 
-
-
-
-  nsresult LoadChromeSheetSync(nsIURI* aURI, bool aIsAgentSheet,
-                               RefPtr<StyleSheet>* aSheet);
+  RefPtr<StyleSheet> LoadChromeSheetSync(nsIURI* aURI);
 
   
 
