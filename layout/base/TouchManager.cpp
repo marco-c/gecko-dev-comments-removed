@@ -439,7 +439,7 @@ TouchManager::GetAnyCapturedTouchTarget() {
     
     return aEvent->mMessage == eTouchStart;
   }
-  return info.mConvertToPointer;
+  return info.mConvertToPointer && aEvent->mMessage != eTouchStart;
 }
 
 }  
