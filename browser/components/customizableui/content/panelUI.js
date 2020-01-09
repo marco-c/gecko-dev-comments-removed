@@ -737,6 +737,17 @@ const PanelUI = {
     let anchor = this._getPanelAnchor(this.menuButton);
 
     this.notificationPanel.hidden = false;
+
+    
+    MozXULElement.insertFTLIfNeeded("branding/brand.ftl");
+    MozXULElement.insertFTLIfNeeded("browser/appMenuNotifications.ftl");
+
+    
+    document.getElementById("appMenu-notification-popup").querySelectorAll("[data-lazy-l10n-id]").forEach(el => {
+      el.setAttribute("data-l10n-id", el.getAttribute("data-lazy-l10n-id"));
+      el.removeAttribute("data-lazy-l10n-id");
+    });
+
     this.notificationPanel.openPopup(anchor, "bottomcenter topright");
   },
 
