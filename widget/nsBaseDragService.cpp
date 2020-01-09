@@ -620,7 +620,7 @@ nsresult nsBaseDragService::DrawDrag(nsINode* aDOMNode,
     LayoutDeviceIntPoint pnt(aScreenDragRect->TopLeft());
     *aSurface = presShell->RenderSelection(
         mSelection, pnt, aScreenDragRect,
-        mImage ? 0 : nsIPresShell::RENDER_AUTO_SCALE);
+        mImage ? RenderImageFlags::None : RenderImageFlags::AutoScale);
     return NS_OK;
   }
 
@@ -655,11 +655,12 @@ nsresult nsBaseDragService::DrawDrag(nsINode* aDOMNode,
 
   if (!mDragPopup) {
     
-    uint32_t renderFlags = mImage ? 0 : nsIPresShell::RENDER_AUTO_SCALE;
-    if (renderFlags) {
+    RenderImageFlags renderFlags =
+        mImage ? RenderImageFlags::None : RenderImageFlags::AutoScale;
+    if (renderFlags != RenderImageFlags::None) {
       
       if (dragNode->NodeName().LowerCaseEqualsLiteral("img")) {
-        renderFlags = renderFlags | nsIPresShell::RENDER_IS_IMAGE;
+        renderFlags = renderFlags | RenderImageFlags::IsImage;
       } else {
         nsINodeList* childList = dragNode->ChildNodes();
         uint32_t length = childList->Length();
@@ -669,7 +670,8 @@ nsresult nsBaseDragService::DrawDrag(nsINode* aDOMNode,
           if (childList->Item(count)->NodeName().LowerCaseEqualsLiteral(
                   "img")) {
             
-            renderFlags = renderFlags | nsIPresShell::RENDER_IS_IMAGE;
+            
+            renderFlags = renderFlags | RenderImageFlags::IsImage;
             break;
           }
         }

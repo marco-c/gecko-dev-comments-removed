@@ -140,7 +140,7 @@ class PresShell final : public nsIPresShell,
   void Thaw() override;
   void FireOrClearDelayedEvents(bool aFireEvents) override;
 
-  nsresult RenderDocument(const nsRect& aRect, uint32_t aFlags,
+  nsresult RenderDocument(const nsRect& aRect, RenderDocumentFlags aFlags,
                           nscolor aBackgroundColor,
                           gfxContext* aThebesContext) override;
 
@@ -148,11 +148,11 @@ class PresShell final : public nsIPresShell,
                                              const Maybe<CSSIntRegion>& aRegion,
                                              const LayoutDeviceIntPoint aPoint,
                                              LayoutDeviceIntRect* aScreenRect,
-                                             uint32_t aFlags) override;
+                                             RenderImageFlags aFlags) override;
 
   already_AddRefed<SourceSurface> RenderSelection(
       dom::Selection* aSelection, const LayoutDeviceIntPoint aPoint,
-      LayoutDeviceIntRect* aScreenRect, uint32_t aFlags) override;
+      LayoutDeviceIntRect* aScreenRect, RenderImageFlags aFlags) override;
 
   already_AddRefed<nsPIDOMWindowOuter> GetRootWindow() override;
 
@@ -165,8 +165,26 @@ class PresShell final : public nsIPresShell,
 
   void SetIgnoreViewportScrolling(bool aIgnore) override;
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   nsresult SetResolutionAndScaleTo(float aResolution,
-                                   ChangeOrigin aOrigin) override;
+                                   ResolutionChangeOrigin aOrigin);
+
   float GetCumulativeResolution() override;
   float GetCumulativeNonRootScaleResolution() override;
   void SetRestoreResolution(float aResolution,
@@ -190,7 +208,8 @@ class PresShell final : public nsIPresShell,
   
 
   void Paint(nsView* aViewToPaint, const nsRegion& aDirtyRegion,
-             uint32_t aFlags) override;
+             PaintFlags aFlags);
+
   MOZ_CAN_RUN_SCRIPT nsresult HandleEvent(nsIFrame* aFrameForPresShell,
                                           WidgetGUIEvent* aEvent,
                                           bool aDontRetargetEvents,
@@ -212,7 +231,17 @@ class PresShell final : public nsIPresShell,
   MOZ_CAN_RUN_SCRIPT void WillPaint();
   void WillPaintWindow() override;
   void DidPaintWindow() override;
-  void ScheduleViewManagerFlush(PaintType aType = PAINT_DEFAULT) override;
+
+  
+
+
+
+
+
+
+
+  void ScheduleViewManagerFlush(PaintType aType = PaintType::Default);
+
   void ClearMouseCaptureOnView(nsView* aView) override;
   bool IsVisible() override;
   void SuppressDisplayport(bool aEnabled) override;
@@ -293,10 +322,32 @@ class PresShell final : public nsIPresShell,
 
   void UpdateCanvasBackground() override;
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   void AddCanvasBackgroundColorItem(
       nsDisplayListBuilder& aBuilder, nsDisplayList& aList, nsIFrame* aFrame,
       const nsRect& aBounds, nscolor aBackstopColor = NS_RGBA(0, 0, 0, 0),
-      uint32_t aFlags = 0) override;
+      AddCanvasBackgroundColorFlags aFlags =
+          AddCanvasBackgroundColorFlags::None);
 
   void AddPrintPreviewBackgroundItem(nsDisplayListBuilder& aBuilder,
                                      nsDisplayList& aList, nsIFrame* aFrame,
@@ -545,7 +596,7 @@ class PresShell final : public nsIPresShell,
       const nsTArray<UniquePtr<RangePaintInfo>>& aItems,
       dom::Selection* aSelection, const Maybe<CSSIntRegion>& aRegion,
       nsRect aArea, const LayoutDeviceIntPoint aPoint,
-      LayoutDeviceIntRect* aScreenRect, uint32_t aFlags);
+      LayoutDeviceIntRect* aScreenRect, RenderImageFlags aFlags);
 
   
   void HideViewIfPopup(nsView* aView);
