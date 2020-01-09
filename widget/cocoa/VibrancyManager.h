@@ -78,14 +78,6 @@ class VibrancyManager {
 
 
 
-  void ClearVibrantAreas() const;
-
-  
-
-
-
-
-
   NSColor* VibrancyFillColorForType(VibrancyType aType);
 
   
@@ -108,8 +100,6 @@ class VibrancyManager {
   static NSView* CreateEffectView(VibrancyType aType, BOOL aIsContainer = NO);
 
  protected:
-  void ClearVibrantRegion(const LayoutDeviceIntRegion& aVibrantRegion) const;
-
   const nsChildView& mCoordinateConverter;
   NSView* mContainerView;
   nsClassHashtable<nsUint32HashKey, ViewRegion> mVibrantRegions;
