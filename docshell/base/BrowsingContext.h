@@ -46,6 +46,7 @@ class BrowsingContent;
 class BrowsingContextGroup;
 class CanonicalBrowsingContext;
 class ContentParent;
+class Element;
 template <typename>
 struct Nullable;
 template <typename T>
@@ -121,6 +122,11 @@ class BrowsingContext : public nsWrapperCache,
   
   nsIDocShell* GetDocShell() { return mDocShell; }
   void SetDocShell(nsIDocShell* aDocShell);
+
+  
+  
+  Element* GetEmbedderElement() const { return mEmbedderElement; }
+  void SetEmbedderElement(Element* aEmbedder);
 
   
   
@@ -435,6 +441,8 @@ class BrowsingContext : public nsWrapperCache,
   RefPtr<BrowsingContext> mParent;
   Children mChildren;
   nsCOMPtr<nsIDocShell> mDocShell;
+
+  RefPtr<Element> mEmbedderElement;
 
   
   
