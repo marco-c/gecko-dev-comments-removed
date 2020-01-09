@@ -110,6 +110,7 @@ ImageOps::CreateImageBuffer(already_AddRefed<nsIInputStream> aInputStream) {
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return nullptr;
     }
+    inputStream = std::move(bufStream);
   }
 
   
