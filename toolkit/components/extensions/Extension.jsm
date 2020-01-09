@@ -53,6 +53,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   NetUtil: "resource://gre/modules/NetUtil.jsm",
   OS: "resource://gre/modules/osfile.jsm",
   PluralForm: "resource://gre/modules/PluralForm.jsm",
+  PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   Schemas: "resource://gre/modules/Schemas.jsm",
   XPIProvider: "resource://gre/modules/addons/XPIProvider.jsm",
 });
@@ -711,13 +712,6 @@ class ExtensionData {
         permissions.add(perm);
       }
 
-      
-      
-      if (!allowPrivateBrowsingByDefault &&
-          manifest.incognito !== "not_allowed" &&
-          this.isPrivileged && !this.addonData.temporarilyInstalled) {
-        permissions.add("internal:privateBrowsingAllowed");
-      }
 
       if (this.id) {
         
@@ -1888,6 +1882,22 @@ class Extension extends ExtensionData {
 
       if (this.hasShutdown) {
         return;
+      }
+
+      
+      
+      
+      
+      
+      if (!allowPrivateBrowsingByDefault && this.manifest.incognito !== "not_allowed" &&
+          !this.permissions.has("internal:privateBrowsingAllowed")) {
+        if ((PrivateBrowsingUtils.permanentPrivateBrowsing && this.startupReason == "ADDON_INSTALL") ||
+            (this.isPrivileged && !this.addonData.temporarilyInstalled)) {
+          
+          
+          ExtensionPermissions.add(this.id, {permissions: ["internal:privateBrowsingAllowed"], origins: []});
+          this.permissions.add("internal:privateBrowsingAllowed");
+        }
       }
 
       GlobalManager.init(this);
