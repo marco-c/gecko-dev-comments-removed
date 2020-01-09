@@ -125,11 +125,8 @@ function assertOneOffButtonsVisible(visible) {
   if (UrlbarPrefs.get("quantumbar")) {
     return;
   }
-  Assert.equal(gURLBar.popup.oneOffSearchesEnabled, visible);
-  Assert.equal(
-    window.getComputedStyle(gURLBar.popup.oneOffSearchButtons.container).display,
-    visible ? "-moz-box" : "none"
-  );
+  Assert.equal(UrlbarTestUtils.getOneOffSearchButtonsVisible(window), visible,
+    "Should show or not the one-off search buttons");
 }
 
 
