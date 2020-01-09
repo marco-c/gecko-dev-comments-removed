@@ -1847,15 +1847,6 @@ function insertBookmarkTree(items, source, parent, urls, lastAddedForParent) {
 
 
 async function handleBookmarkItemSpecialData(itemId, item) {
-  if (item.annos && item.annos.length) {
-    
-    
-    try {
-      PlacesUtils.setAnnotationsForItem(itemId, item.annos, item.source, true);
-    } catch (ex) {
-      Cu.reportError(`Failed to insert annotations for item: ${ex}`);
-    }
-  }
   if ("keyword" in item && item.keyword) {
     try {
       await PlacesUtils.keywords.insert({

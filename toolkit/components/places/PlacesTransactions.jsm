@@ -164,10 +164,6 @@ var EXPORTED_SYMBOLS = ["PlacesTransactions"];
 
 
 
-
-
-
-
 const TRANSACTIONS_QUEUE_TIMEOUT_MS = 240000; 
 
 const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -885,8 +881,7 @@ DefineTransaction.defineInputProps(["guid", "parentGuid", "newParentGuid"],
                                    DefineTransaction.guidValidate);
 DefineTransaction.defineInputProps(["title", "postData"],
                                    DefineTransaction.strOrNullValidate, null);
-DefineTransaction.defineInputProps(["keyword", "oldKeyword", "oldTag", "tag",
-                                    "excludingAnnotation"],
+DefineTransaction.defineInputProps(["keyword", "oldKeyword", "oldTag", "tag"],
                                    DefineTransaction.strValidate, "");
 DefineTransaction.defineInputProps(["index", "newIndex"],
                                    DefineTransaction.indexValidate,
@@ -897,8 +892,6 @@ DefineTransaction.defineArrayInputProp("guids", "guid");
 DefineTransaction.defineArrayInputProp("urls", "url");
 DefineTransaction.defineArrayInputProp("tags", "tag");
 DefineTransaction.defineArrayInputProp("children", "child");
-DefineTransaction.defineArrayInputProp("excludingAnnotations",
-                                       "excludingAnnotation");
 
 
 
@@ -917,11 +910,7 @@ DefineTransaction.defineArrayInputProp("excludingAnnotations",
 
 
 
-
-
-
-function createItemsFromBookmarksTree(tree, restoring = false,
-                                      excludingAnnotations = []) {
+function createItemsFromBookmarksTree(tree, restoring = false) {
   async function createItem(item,
                             parentGuid,
                             index = PlacesUtils.bookmarks.DEFAULT_INDEX) {
@@ -932,7 +921,6 @@ function createItemsFromBookmarksTree(tree, restoring = false,
       info.dateAdded = PlacesUtils.toDate(item.dateAdded);
       info.lastModified = PlacesUtils.toDate(item.lastModified);
     }
-    let annos = item.annos ? [...item.annos] : [];
     let shouldResetLastModified = false;
     switch (item.type) {
       case PlacesUtils.TYPE_X_MOZ_PLACE: {
@@ -970,17 +958,6 @@ function createItemsFromBookmarksTree(tree, restoring = false,
         info.type = PlacesUtils.bookmarks.TYPE_SEPARATOR;
         guid = (await PlacesUtils.bookmarks.insert(info)).guid;
         break;
-      }
-    }
-    if (annos.length > 0) {
-      if (!restoring && excludingAnnotations.length > 0) {
-        annos = annos.filter(a => !excludingAnnotations.includes(a.name));
-      }
-
-      if (annos.length > 0) {
-        let itemId = await PlacesUtils.promiseItemId(guid);
-        PlacesUtils.setAnnotationsForItem(itemId, annos,
-          Ci.nsINavBookmarksService.SOURCE_DEFAULT, true);
       }
     }
 
@@ -1570,9 +1547,9 @@ PT.RenameTag.prototype = {
 
 
 PT.Copy = DefineTransaction(["guid", "newParentGuid"],
-                            ["newIndex", "excludingAnnotations"]);
+                            ["newIndex"]);
 PT.Copy.prototype = {
-  async execute({ guid, newParentGuid, newIndex, excludingAnnotations }) {
+  async execute({ guid, newParentGuid, newIndex }) {
     let creationInfo = null;
     try {
       creationInfo = await PlacesUtils.promiseBookmarksTree(guid);
@@ -1583,8 +1560,7 @@ PT.Copy.prototype = {
     creationInfo.parentGuid = newParentGuid;
     creationInfo.index = newIndex;
 
-    let newItemGuid = await createItemsFromBookmarksTree(creationInfo, false,
-                                                         excludingAnnotations);
+    let newItemGuid = await createItemsFromBookmarksTree(creationInfo, false);
     let newItemInfo = null;
     this.undo = async function() {
       if (!newItemInfo) {
