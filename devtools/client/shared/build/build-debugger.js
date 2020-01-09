@@ -2,16 +2,16 @@
 
 
 
+
 const Babel = require("./babel");
 const fs = require("fs");
 const _path = require("path");
-const { execFileSync } = require("child_process");
 
 const EXCLUDED_FILES = {
   "../assets/panel/debugger.properties": "devtools/shared/flags",
   "devtools-connection": "devtools/shared/flags",
   "chrome-remote-interface": "devtools/shared/flags",
-  "devtools-launchpad": "devtools/shared/flags"
+  "devtools-launchpad": "devtools/shared/flags",
 };
 
 const mappings =  Object.assign(
@@ -44,10 +44,6 @@ mappings["devtools-source-map"] = "devtools/client/shared/source-map/index.js";
 
 function isRequire(t, node) {
   return node && t.isCallExpression(node) && node.callee.name == "require";
-}
-
-function isImport(t, node) {
-  return node && t.isImportDeclaration(node);
 }
 
 
@@ -86,7 +82,7 @@ function updateDevtoolsModulesImport(path, t) {
   const specifiers = path.node.specifiers;
 
   for (let i = 0; i < specifiers.length; i++) {
-    let specifier = specifiers[i];
+    const specifier = specifiers[i];
     const localName = specifier.local.name;
     if (localName in moduleMapping) {
       const newImport = t.importDeclaration(
@@ -195,45 +191,22 @@ function transformMC({ types: t }) {
           !(value.startsWith("devtools") || mappingValues.includes(value))
         ) {
           path.replaceWith(t.stringLiteral(`${value}/index`));
-          return;
         }
-      }
-    }
+      },
+    },
   };
 };
 
 Babel.registerPlugin("transform-mc", transformMC);
 
-function transform(filePath) {
-  const doc = fs.readFileSync(filePath, "utf8");
-  const out = Babel.transform(doc, {
-    plugins: [
-			"transform-flow-strip-types",
-			"syntax-trailing-function-commas",
-			"transform-class-properties",
-			"transform-es2015-modules-commonjs",
-			"transform-react-jsx",
-      			"syntax-object-rest-spread",
-      ["transform-mc", { mappings, vendors: VENDORS, filePath }]
-    ]
-  });
-
-  return out.code;
+module.exports = function(filePath) {
+  return [
+    "transform-flow-strip-types",
+    "syntax-trailing-function-commas",
+    "transform-class-properties",
+    "transform-es2015-modules-commonjs",
+    "transform-react-jsx",
+    "syntax-object-rest-spread",
+    ["transform-mc", { mappings, vendors: VENDORS, filePath }],
+  ];
 }
-
-const deps = [
-  __filename,
-  _path.resolve(__dirname, "babel.js")
-];
-
-for (let i = 2; i < process.argv.length; i++) {
-  const srcPath = process.argv[i];
-  const code = transform(srcPath);
-  const filePath = _path.basename(srcPath);
-  fs.writeFileSync(filePath, code);
-  deps.push(srcPath);
-}
-
-
-
-console.log(deps.map(file => "dep:" + file).join("\n"));
