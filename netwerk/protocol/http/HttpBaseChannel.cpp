@@ -2223,6 +2223,11 @@ HttpBaseChannel::SwitchProcessTo(mozilla::dom::Promise* aTabParent,
 }
 
 NS_IMETHODIMP
+HttpBaseChannel::HasCrossOriginOpenerPolicyMismatch(bool* aMismatch) {
+  return NS_ERROR_NOT_AVAILABLE;
+}
+
+NS_IMETHODIMP
 HttpBaseChannel::UpgradeToSecure() {
   
   
