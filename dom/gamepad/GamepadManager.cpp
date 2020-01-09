@@ -312,7 +312,7 @@ void GamepadManager::NewConnectionEvent(uint32_t aIndex, bool aConnected) {
       }
 
       
-      if (!listeners[i]->AsInner()->IsCurrentInnerWindow() ||
+      if (!listeners[i]->IsCurrentInnerWindow() ||
           listeners[i]->GetOuterWindow()->IsBackground()) {
         continue;
       }
@@ -489,7 +489,7 @@ void GamepadManager::Update(const GamepadChangeEvent& aEvent) {
 
   for (uint32_t i = 0; i < listeners.Length(); i++) {
     
-    if (!listeners[i]->AsInner()->IsCurrentInnerWindow() ||
+    if (!listeners[i]->IsCurrentInnerWindow() ||
         listeners[i]->GetOuterWindow()->IsBackground()) {
       continue;
     }

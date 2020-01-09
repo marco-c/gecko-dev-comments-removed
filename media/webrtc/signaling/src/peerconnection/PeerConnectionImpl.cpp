@@ -426,7 +426,7 @@ nsresult PeerConnectionImpl::Initialize(PeerConnectionObserver& aObserver,
   
   
   MOZ_ASSERT(aWindow);
-  mWindow = aWindow->AsInner();
+  mWindow = aWindow;
   NS_ENSURE_STATE(mWindow);
 
   PRTime timestamp = PR_Now();

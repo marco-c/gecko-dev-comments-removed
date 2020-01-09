@@ -386,8 +386,7 @@ nsresult nsXBLPrototypeHandler::EnsureEventHandler(
 
   
   JS::Rooted<JSObject*> globalObject(cx, JS::CurrentGlobalOrNull(cx));
-  nsCOMPtr<nsPIDOMWindowInner> pWindow =
-      xpc::WindowOrNull(globalObject)->AsInner();
+  nsCOMPtr<nsPIDOMWindowInner> pWindow = xpc::WindowOrNull(globalObject);
   if (pWindow) {
     JS::Rooted<JSObject*> cachedHandler(
         cx, pWindow->GetCachedXBLPrototypeHandler(this));
