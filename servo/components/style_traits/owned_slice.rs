@@ -6,11 +6,11 @@
 
 
 
+use malloc_size_of::{MallocShallowSizeOf, MallocSizeOf, MallocSizeOfOps};
 use std::marker::PhantomData;
-use std::{fmt, mem, slice};
-use std::ptr::NonNull;
 use std::ops::{Deref, DerefMut};
-use malloc_size_of::{MallocSizeOf, MallocShallowSizeOf, MallocSizeOfOps};
+use std::ptr::NonNull;
+use std::{fmt, mem, slice};
 use to_shmem::{SharedMemoryBuilder, ToShmem};
 
 
@@ -86,9 +86,7 @@ impl<T: Sized> OwnedSlice<T> {
     
     #[inline]
     pub fn into_vec(self) -> Vec<T> {
-        let ret = unsafe {
-            Vec::from_raw_parts(self.ptr.as_ptr(), self.len, self.len)
-        };
+        let ret = unsafe { Vec::from_raw_parts(self.ptr.as_ptr(), self.len, self.len) };
         mem::forget(self);
         ret
     }
