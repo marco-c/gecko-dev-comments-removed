@@ -1326,6 +1326,9 @@ Search.prototype = {
       if (matched) {
         
         
+        this._prohibitSearchSuggestions = true;
+        
+        
         
         try {
           new URL(this._originalSearchString);
