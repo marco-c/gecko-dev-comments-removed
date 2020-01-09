@@ -3291,6 +3291,12 @@ class nsContentUtils {
 
 
 
+  static bool IsSpecialName(const nsAString& aName);
+
+  
+
+
+
 
   static bool IsOverridingWindowName(const nsAString& aName);
 
