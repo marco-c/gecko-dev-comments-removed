@@ -9705,9 +9705,7 @@ AbortReasonOr<Ok> IonBuilder::initOrSetElemTryDense(bool* emitted,
   MOZ_ASSERT(*emitted == false);
 
   if (value->type() == MIRType::MagicHole) {
-    {
-      trackOptimizationOutcome(TrackedOutcome::InitHole);
-    }
+    trackOptimizationOutcome(TrackedOutcome::InitHole);
     return Ok();
   }
 
@@ -9784,9 +9782,7 @@ AbortReasonOr<Ok> IonBuilder::initOrSetElemTryCache(bool* emitted,
   }
 
   if (value->type() == MIRType::MagicHole) {
-    {
-      trackOptimizationOutcome(TrackedOutcome::InitHole);
-    }
+    trackOptimizationOutcome(TrackedOutcome::InitHole);
     return Ok();
   }
 
