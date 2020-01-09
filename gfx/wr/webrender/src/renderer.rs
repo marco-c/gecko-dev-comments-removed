@@ -4638,6 +4638,25 @@ impl Renderer {
             return;
         }
 
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if let Some(framebuffer_size) = framebuffer_size {
+            frame.framebuffer_rect = FramebufferIntRect::new(
+                FramebufferIntPoint::zero(),
+                framebuffer_size,
+            );
+            frame.content_origin = DeviceIntPoint::zero();
+        }
+
         self.device.disable_depth_write();
         self.set_blend(false, FramebufferKind::Other);
         self.device.disable_stencil();
