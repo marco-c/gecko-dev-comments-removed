@@ -1510,18 +1510,28 @@ static MOZ_MUST_USE bool AsyncGeneratorPromiseReactionJob(
     
     
     case PromiseHandlerAsyncGeneratorAwaitedFulfilled: {
+      MOZ_ASSERT(asyncGenObj->isExecuting(),
+                 "Await fulfilled when not in 'Executing' state");
+
       return AsyncGeneratorAwaitedFulfilled(cx, asyncGenObj, argument);
     }
 
     
     
     case PromiseHandlerAsyncGeneratorAwaitedRejected: {
+      MOZ_ASSERT(asyncGenObj->isExecuting(),
+                 "Await rejected when not in 'Executing' state");
+
       return AsyncGeneratorAwaitedRejected(cx, asyncGenObj, argument);
     }
 
     
     
     case PromiseHandlerAsyncGeneratorResumeNextReturnFulfilled: {
+      MOZ_ASSERT(asyncGenObj->isAwaitingReturn(),
+                 "AsyncGeneratorResumeNext-Return fulfilled when not in "
+                 "'AwaitingReturn' state");
+
       
       asyncGenObj->setCompleted();
 
@@ -1532,6 +1542,10 @@ static MOZ_MUST_USE bool AsyncGeneratorPromiseReactionJob(
     
     
     case PromiseHandlerAsyncGeneratorResumeNextReturnRejected: {
+      MOZ_ASSERT(asyncGenObj->isAwaitingReturn(),
+                 "AsyncGeneratorResumeNext-Return rejected when not in "
+                 "'AwaitingReturn' state");
+
       
       asyncGenObj->setCompleted();
 
@@ -1542,6 +1556,14 @@ static MOZ_MUST_USE bool AsyncGeneratorPromiseReactionJob(
     
     
     case PromiseHandlerAsyncGeneratorYieldReturnAwaitedFulfilled: {
+      MOZ_ASSERT(asyncGenObj->isAwaitingYieldReturn(),
+                 "YieldReturn-Await fulfilled when not in "
+                 "'AwaitingYieldReturn' state");
+
+      
+      
+      
+      
       asyncGenObj->setExecuting();
 
       
@@ -1552,6 +1574,14 @@ static MOZ_MUST_USE bool AsyncGeneratorPromiseReactionJob(
     
     
     case PromiseHandlerAsyncGeneratorYieldReturnAwaitedRejected: {
+      MOZ_ASSERT(
+          asyncGenObj->isAwaitingYieldReturn(),
+          "YieldReturn-Await rejected when not in 'AwaitingYieldReturn' state");
+
+      
+      
+      
+      
       asyncGenObj->setExecuting();
 
       
@@ -3960,9 +3990,10 @@ static MOZ_MUST_USE bool AsyncGeneratorResumeNext(
     
     
     MOZ_ASSERT(!generator->isExecuting());
+    MOZ_ASSERT(!generator->isAwaitingYieldReturn());
 
     
-    if (generator->isAwaitingYieldReturn() || generator->isAwaitingReturn()) {
+    if (generator->isAwaitingReturn()) {
       return true;
     }
 
@@ -4061,10 +4092,6 @@ static MOZ_MUST_USE bool AsyncGeneratorResumeNext(
     
     MOZ_ASSERT(generator->isSuspendedStart() || generator->isSuspendedYield());
 
-    
-    
-    generator->setExecuting();
-
     RootedValue argument(cx, request->completionValue());
 
     if (completionKind == CompletionKind::Return) {
@@ -4088,6 +4115,10 @@ static MOZ_MUST_USE bool AsyncGeneratorResumeNext(
       return InternalAwait(cx, argument, nullptr, onFulfilled, onRejected,
                            extra);
     }
+
+    
+    
+    generator->setExecuting();
 
     
     return AsyncGeneratorResume(cx, generator, completionKind, argument);
@@ -4145,7 +4176,7 @@ MOZ_MUST_USE bool js::AsyncGeneratorEnqueue(JSContext* cx,
   }
 
   
-  if (!asyncGenObj->isExecuting()) {
+  if (!asyncGenObj->isExecuting() && !asyncGenObj->isAwaitingYieldReturn()) {
     
     if (!AsyncGeneratorResumeNext(cx, asyncGenObj, ResumeNextKind::Enqueue)) {
       return false;
