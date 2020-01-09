@@ -454,9 +454,7 @@ bool ShouldUsePrototypeDocument(nsIChannel* aChannel, nsIDocShell* aDocShell) {
   }
   nsCOMPtr<nsIURI> originalURI;
   aChannel->GetOriginalURI(getter_AddRefs(originalURI));
-  return IsChromeURI(originalURI) &&
-         originalURI->GetSpecOrDefault().EqualsLiteral(
-             BROWSER_CHROME_URL_QUOTED);
+  return IsChromeURI(originalURI);
 }
 
 nsresult nsHTMLDocument::StartDocumentLoad(const char* aCommand,
@@ -560,7 +558,7 @@ nsresult nsHTMLDocument::StartDocumentLoad(const char* aCommand,
     } else {
       mParser->MarkAsNotScriptCreated(aCommand);
     }
-  } else if (ShouldUsePrototypeDocument(aChannel, docShell)) {
+  } else if (xhtml && ShouldUsePrototypeDocument(aChannel, docShell)) {
     loadWithPrototype = true;
     nsCOMPtr<nsIURI> originalURI;
     aChannel->GetOriginalURI(getter_AddRefs(originalURI));
