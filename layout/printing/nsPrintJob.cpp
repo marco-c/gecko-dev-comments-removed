@@ -458,6 +458,49 @@ static void MapContentToWebShells(const UniquePtr<nsPrintObject>& aRootPO,
 
 
 
+
+
+
+
+
+
+static nsresult EnsureSettingsHasPrinterNameSet(
+    nsIPrintSettings* aPrintSettings) {
+#if defined(XP_MACOSX) || defined(ANDROID)
+  
+  return NS_OK;
+#else
+#  if defined(MOZ_X11)
+  
+  
+  if (!XRE_IsParentProcess()) {
+    return NS_OK;
+  }
+#  endif
+  NS_ENSURE_ARG_POINTER(aPrintSettings);
+
+  
+  nsString printerName;
+  nsresult rv = aPrintSettings->GetPrinterName(printerName);
+  if (NS_SUCCEEDED(rv) && !printerName.IsEmpty()) {
+    return NS_OK;
+  }
+
+  
+  nsCOMPtr<nsIPrintSettingsService> printSettingsService =
+      do_GetService(sPrintSettingsServiceContractID, &rv);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = printSettingsService->GetDefaultPrinterName(printerName);
+  if (NS_SUCCEEDED(rv) && !printerName.IsEmpty()) {
+    rv = aPrintSettings->SetPrinterName(printerName);
+  }
+  return rv;
+#endif
+}
+
+
+
 NS_IMPL_ISUPPORTS(nsPrintJob, nsIWebProgressListener, nsISupportsWeakReference,
                   nsIObserver)
 
@@ -642,7 +685,7 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  rv = CheckForPrinters(printData->mPrintSettings);
+  rv = EnsureSettingsHasPrinterNameSet(printData->mPrintSettings);
   NS_ENSURE_SUCCESS(rv, rv);
 
   printData->mPrintSettings->SetIsCancelled(false);
@@ -1138,44 +1181,6 @@ already_AddRefed<nsIPrintSettings> nsPrintJob::GetCurrentPrintSettings() {
 
 
 
-
-
-
-
-
-nsresult nsPrintJob::CheckForPrinters(nsIPrintSettings* aPrintSettings) {
-#if defined(XP_MACOSX) || defined(ANDROID)
-  
-  return NS_OK;
-#else
-#  if defined(MOZ_X11)
-  
-  
-  if (!XRE_IsParentProcess()) {
-    return NS_OK;
-  }
-#  endif
-  NS_ENSURE_ARG_POINTER(aPrintSettings);
-
-  
-  nsString printerName;
-  nsresult rv = aPrintSettings->GetPrinterName(printerName);
-  if (NS_SUCCEEDED(rv) && !printerName.IsEmpty()) {
-    return NS_OK;
-  }
-
-  
-  nsCOMPtr<nsIPrintSettingsService> printSettingsService =
-      do_GetService(sPrintSettingsServiceContractID, &rv);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  rv = printSettingsService->GetDefaultPrinterName(printerName);
-  if (NS_SUCCEEDED(rv) && !printerName.IsEmpty()) {
-    rv = aPrintSettings->SetPrinterName(printerName);
-  }
-  return rv;
-#endif
-}
 
 
 
