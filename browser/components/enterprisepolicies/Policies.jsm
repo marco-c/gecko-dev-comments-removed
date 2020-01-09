@@ -66,6 +66,12 @@ var EXPORTED_SYMBOLS = ["Policies"];
 
 
 var Policies = {
+  "3rdparty": {
+    onBeforeAddons(manager, param) {
+      manager.setExtensionPolicies(param.Extensions);
+    },
+  },
+
   "AppUpdateURL": {
     onBeforeAddons(manager, param) {
       setDefaultPref("app.update.url", param.href);
