@@ -298,7 +298,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   
-  void UpdateMediaSize(const nsIntSize& aSize);
+  virtual void UpdateMediaSize(const nsIntSize& aSize);
   
   
   void UpdateInitialMediaSize(const nsIntSize& aSize);
@@ -1719,6 +1719,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   already_AddRefed<PlayPromise> CreatePlayPromise(ErrorResult& aRv) const;
 
   void UpdateHadAudibleAutoplayState();
+
+  virtual void MaybeBeginCloningVisually(){};
 
   
 
