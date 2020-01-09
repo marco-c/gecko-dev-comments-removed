@@ -25,6 +25,10 @@ static nsresult ParseNumberOptionalNumber(const nsAString& aValue,
                                           float aValues[2]) {
   nsCharSeparatedTokenizerTemplate<nsContentUtils::IsHTMLWhitespace> tokenizer(
       aValue, ',', nsCharSeparatedTokenizer::SEPARATOR_OPTIONAL);
+  if (tokenizer.whitespaceBeforeFirstToken()) {
+    return NS_ERROR_DOM_SYNTAX_ERR;
+  }
+
   uint32_t i;
   for (i = 0; i < 2 && tokenizer.hasMoreTokens(); ++i) {
     if (!SVGContentUtils::ParseNumber(tokenizer.nextToken(), aValues[i])) {
@@ -35,9 +39,10 @@ static nsresult ParseNumberOptionalNumber(const nsAString& aValue,
     aValues[1] = aValues[0];
   }
 
-  if (i == 0 ||                                  
-      tokenizer.hasMoreTokens() ||               
-      tokenizer.separatorAfterCurrentToken()) {  
+  if (i == 0 ||                                   
+      tokenizer.hasMoreTokens() ||                
+      tokenizer.whitespaceAfterCurrentToken() ||  
+      tokenizer.separatorAfterCurrentToken()) {   
     return NS_ERROR_DOM_SYNTAX_ERR;
   }
 
