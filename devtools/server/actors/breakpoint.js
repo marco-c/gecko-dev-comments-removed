@@ -114,6 +114,20 @@ BreakpointActor.prototype = {
   },
 
   
+  getThrownMessage(completion) {
+    try {
+      if (completion.throw.getOwnPropertyDescriptor) {
+        return completion.throw.getOwnPropertyDescriptor("message").value;
+      } else if (completion.toString) {
+        return completion.toString();
+      }
+    } catch (ex) {
+      
+    }
+    return "Unknown exception";
+  },
+
+  
 
 
 
@@ -132,20 +146,9 @@ BreakpointActor.prototype = {
     if (completion) {
       if (completion.throw) {
         
-        let message = "Unknown exception";
-        try {
-          if (completion.throw.getOwnPropertyDescriptor) {
-            message = completion.throw.getOwnPropertyDescriptor("message")
-                      .value;
-          } else if (completion.toString) {
-            message = completion.toString();
-          }
-        } catch (ex) {
-          
-        }
         return {
           result: true,
-          message: message,
+          message: this.getThrownMessage(completion),
         };
       } else if (completion.yield) {
         assert(false, "Shouldn't ever get yield completions from an eval");
@@ -188,41 +191,55 @@ BreakpointActor.prototype = {
       return undefined;
     }
 
-    const reason = {};
+    const reason = { type: "breakpoint", actors: [ this.actorID ] };
     const { condition, logValue } = this.options || {};
 
-    if (!condition && !logValue) {
-      reason.type = "breakpoint";
-      
-      reason.actors = [ this.actorID ];
-    } else {
-      
-      if (logValue && this.threadActor.dbg.replaying) {
-        return undefined;
-      }
+    
+    
+    if (logValue && this.threadActor.dbg.replaying) {
+      return undefined;
+    }
 
-      let condstr = condition;
-      if (logValue) {
-        
-        
-        condstr = condition
-          ? `(${condition}) && console.log(${logValue})`
-          : `console.log(${logValue})`;
-      }
-      const { result, message } = this.checkCondition(frame, condstr);
+    if (condition) {
+      const { result, message } = this.checkCondition(frame, condition);
 
       if (result) {
-        if (!message) {
-          reason.type = "breakpoint";
-        } else {
+        if (message) {
           reason.type = "breakpointConditionThrown";
           reason.message = message;
         }
-        reason.actors = [ this.actorID ];
       } else {
         return undefined;
       }
     }
+
+    if (logValue) {
+      const completion = frame.eval(logValue);
+      let value;
+      if (!completion) {
+        
+        value = "Log value evaluation incomplete";
+      } else if ("return" in completion) {
+        value = completion.return;
+      } else {
+        value = this.getThrownMessage(completion);
+      }
+      if (value && typeof value.unsafeDereference === "function") {
+        value = value.unsafeDereference();
+      }
+
+      const message = {
+        filename: url,
+        lineNumber: generatedLine,
+        columnNumber: generatedColumn,
+        "arguments": [value],
+      };
+      this.threadActor._parent._consoleActor.onConsoleAPICall(message);
+
+      
+      return undefined;
+    }
+
     return this.threadActor._pauseAndRespond(frame, reason);
   },
 
