@@ -188,7 +188,10 @@ var Provider = {
     let branch = Services.prefs.getBranch("browser.safebrowsing.provider.");
     let children = branch.getChildList("", {});
     for (let child of children) {
-      this.providers.add(child.split(".")[0]);
+      let provider = child.split(".")[0];
+      if (this.isActiveProvider(provider)) {
+        this.providers.add(provider);
+      }
     }
 
     this.register();
@@ -327,6 +330,25 @@ var Provider = {
     }
   },
 
+  
+  
+  
+  isActiveProvider(provider) {
+    let listmanager = Cc["@mozilla.org/url-classifier/listmanager;1"]
+                      .getService(Ci.nsIUrlListManager);
+
+    let pref = "browser.safebrowsing.provider." + provider + ".lists";
+    let tables = Services.prefs.getCharPref(pref, "").split(",");
+
+    for (let i = 0; i < tables.length; i++) {
+      let updateUrl = listmanager.getUpdateUrl(tables[i]);
+      if (updateUrl) {
+        return true;
+      }
+    }
+
+    return false;
+  },
 };
 
 
