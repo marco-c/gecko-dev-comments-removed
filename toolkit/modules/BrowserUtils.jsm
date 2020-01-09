@@ -687,4 +687,28 @@ var BrowserUtils = {
     }
     return fragment;
   },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  promiseObserved(topic, test = () => true) {
+    return new Promise(resolve => {
+      let observer = (subject, topic, data) => {
+        if (test(subject, data)) {
+          Services.obs.removeObserver(observer, topic);
+          resolve({subject, data});
+        }
+      };
+      Services.obs.addObserver(observer, topic);
+    });
+  },
 };
