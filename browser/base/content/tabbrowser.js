@@ -2307,6 +2307,7 @@ window._gBrowser = {
     sameProcessAsFrameLoader,
     skipAnimation,
     skipBackgroundNotify,
+    title,
     triggeringPrincipal,
     userContextId,
     recordExecution,
@@ -2551,6 +2552,13 @@ window._gBrowser = {
                                                       userContextId);
           b.registeredOpenURI = lazyBrowserURI;
         }
+        SessionStore.setTabState(t, {
+          entries: [{
+            url: lazyBrowserURI ? lazyBrowserURI.spec : "about:blank",
+            title,
+            triggeringPrincipal_base64: Utils.serializePrincipal(triggeringPrincipal),
+          }],
+        });
       } else {
         this._insertBrowser(t, true);
       }
@@ -3805,12 +3813,15 @@ window._gBrowser = {
     
     
     let linkedBrowser = aTab.linkedBrowser;
+    let createLazyBrowser = !aTab.linkedPanel;
     let params = {
       eventDetail: { adoptedTab: aTab },
       preferredRemoteType: linkedBrowser.remoteType,
       sameProcessAsFrameLoader: linkedBrowser.frameLoader,
       skipAnimation: true,
       index: aIndex,
+      createLazyBrowser,
+      allowInheritPrincipal: createLazyBrowser,
     };
 
     let numPinned = this._numPinnedTabs;
@@ -3827,10 +3838,12 @@ window._gBrowser = {
 
     aTab.parentNode._finishAnimateTabMove();
 
-    
-    newBrowser.stop();
-    
-    newBrowser.docShell;
+    if (!createLazyBrowser) {
+      
+      newBrowser.stop();
+      
+      newBrowser.docShell;
+    }
 
     if (!this.swapBrowsersAndCloseOther(newTab, aTab)) {
       
@@ -5196,7 +5209,7 @@ class TabProgressListener {
       }
     }
 
-    if (!this.mBlank || this.mBrowser.hasContentOpener) {
+    if (!this.mBlank) {
       this._callProgressListeners("onLocationChange",
                                   [aWebProgress, aRequest, aLocation, aFlags]);
       if (topLevel && !isSameDocument) {
