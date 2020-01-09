@@ -3737,6 +3737,7 @@ void HTMLMediaElement::DispatchEventsWhenPlayWasNotAllowed() {
   OwnerDoc()->MaybeNotifyAutoplayBlocked();
   ReportToConsole(nsIScriptError::warningFlag, "BlockAutoplayError");
   mHasPlayEverBeenBlocked = true;
+  mHasEverBeenBlockedForAutoplay = true;
 }
 
 void HTMLMediaElement::PlayInternal(bool aHandlingUserInput) {
@@ -5984,6 +5985,14 @@ void HTMLMediaElement::SuspendOrResumeElement(bool aPauseElement,
       if (mEventDeliveryPaused) {
         mEventDeliveryPaused = false;
         DispatchPendingMediaEvents();
+      }
+      
+      
+      
+      
+      if (mHasEverBeenBlockedForAutoplay &&
+          !AutoplayPolicy::IsAllowedToPlay(*this)) {
+        OwnerDoc()->MaybeNotifyAutoplayBlocked();
       }
     }
   }

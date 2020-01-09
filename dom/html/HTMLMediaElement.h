@@ -1669,6 +1669,11 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   MozPromiseHolder<GenericNonExclusivePromise> mAllowedToPlayPromise;
 
+  
+  
+  
+  bool mHasEverBeenBlockedForAutoplay = false;
+
  public:
   
   class TimeDurationAccumulator {
