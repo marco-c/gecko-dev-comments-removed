@@ -2798,10 +2798,37 @@ static_assert(
 
 namespace js {
 
+struct FieldInitializers {
+#ifdef DEBUG
+  bool valid;
+#endif
+  
+  
+  size_t numFieldInitializers;
+
+  explicit FieldInitializers(size_t numFieldInitializers)
+      :
+#ifdef DEBUG
+        valid(true),
+#endif
+        numFieldInitializers(numFieldInitializers) {
+  }
+
+  static FieldInitializers Invalid() { return FieldInitializers(); }
+
+ private:
+  FieldInitializers()
+      :
+#ifdef DEBUG
+        valid(false),
+#endif
+        numFieldInitializers(0) {
+  }
+};
+
 
 
 class LazyScript : public gc::TenuredCell {
- private:
   
   
   
@@ -2894,7 +2921,6 @@ class LazyScript : public gc::TenuredCell {
   
   void* table_;
 
- private:
   static const uint32_t NumClosedOverBindingsBits = 20;
   static const uint32_t NumInnerFunctionsBits = 20;
 
@@ -2931,6 +2957,8 @@ class LazyScript : public gc::TenuredCell {
     PackedView p_;
     uint64_t packedFields_;
   };
+
+  FieldInitializers fieldInitializers_;
 
   
   
@@ -3120,6 +3148,12 @@ class LazyScript : public gc::TenuredCell {
 
   bool hasThisBinding() const { return p_.hasThisBinding; }
   void setHasThisBinding() { p_.hasThisBinding = true; }
+
+  void setFieldInitializers(FieldInitializers fieldInitializers) {
+    fieldInitializers_ = fieldInitializers;
+  }
+
+  FieldInitializers getFieldInitializers() const { return fieldInitializers_; }
 
   const char* filename() const { return scriptSource()->filename(); }
   uint32_t sourceStart() const { return sourceStart_; }
