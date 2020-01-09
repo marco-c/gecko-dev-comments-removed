@@ -715,20 +715,17 @@ class UrlbarInput {
     
     
     
+    
     if (!allowAutofill ||
         this._autofillPlaceholder.length <= value.length ||
-        !this._autofillPlaceholder.startsWith(value)) {
-      this._autofillPlaceholder = "";
-    }
-
-    
-    
-    if (this._autofillPlaceholder &&
-        this.selectionEnd == this.value.length &&
-        this._autofillPlaceholder.toLocaleLowerCase()
+        !this._autofillPlaceholder.toLocaleLowerCase()
           .startsWith(value.toLocaleLowerCase())) {
-      this._autofillValue(this._autofillPlaceholder, value.length,
-                          this._autofillPlaceholder.length);
+      this._autofillPlaceholder = "";
+    } else if (this._autofillPlaceholder &&
+               this.selectionEnd == this.value.length) {
+      let autofillValue =
+        value + this._autofillPlaceholder.substring(value.length);
+      this._autofillValue(autofillValue, value.length, autofillValue.length);
     }
 
     return allowAutofill;

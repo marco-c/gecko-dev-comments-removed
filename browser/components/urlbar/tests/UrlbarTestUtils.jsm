@@ -237,6 +237,14 @@ var UrlbarTestUtils = {
     let urlbar = getUrlbarAbstraction(win);
     return urlbar.promiseUserContextId();
   },
+
+  
+
+
+
+  fireInputEvent(win) {
+    getUrlbarAbstraction(win).fireInputEvent();
+  },
 };
 
 
