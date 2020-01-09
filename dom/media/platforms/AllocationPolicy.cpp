@@ -191,7 +191,8 @@ RefPtr<ShutdownPromise> AllocationWrapper::Shutdown() {
       [token]() { return ShutdownPromise::CreateAndResolve(true, __func__); });
 }
  RefPtr<AllocationWrapper::AllocateDecoderPromise>
-AllocationWrapper::CreateDecoder(const CreateDecoderParams& aParams) {
+AllocationWrapper::CreateDecoder(const CreateDecoderParams& aParams,
+                                 AllocPolicy* aPolicy) {
   
   
   const TrackInfo* config = &aParams.mConfig;
@@ -209,7 +210,7 @@ AllocationWrapper::CreateDecoder(const CreateDecoderParams& aParams) {
   CreateDecoderParams::VideoFrameRate rate = aParams.mRate;
 
   RefPtr<AllocateDecoderPromise> p =
-      GlobalAllocPolicy::Instance(aParams.mType)
+      (aPolicy ? aPolicy : GlobalAllocPolicy::Instance(aParams.mType))
           ->Alloc()
           ->Then(AbstractThread::GetCurrent(), __func__,
                  [=](RefPtr<Token> aToken) {

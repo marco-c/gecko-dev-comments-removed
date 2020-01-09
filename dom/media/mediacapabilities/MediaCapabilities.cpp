@@ -13,6 +13,7 @@
 #include "MediaRecorder.h"
 #include "PDMFactory.h"
 #include "VPXDecoder.h"
+#include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Move.h"
 #include "mozilla/StaticPrefs.h"
 #include "mozilla/TaskQueue.h"
@@ -243,81 +244,98 @@ already_AddRefed<Promise> MediaCapabilities::DecodingInfo(
               *config, taskQueue, compositor,
               CreateDecoderParams::VideoFrameRate(frameRate),
               TrackInfo::kVideoTrack};
-          return AllocationWrapper::CreateDecoder(params)->Then(
-              taskQueue, __func__,
-              [taskQueue, frameRate, config = std::move(config)](
-                  AllocationWrapper::AllocateDecoderPromise::
-                      ResolveOrRejectValue&& aValue) mutable {
-                if (aValue.IsReject()) {
-                  return CapabilitiesPromise::CreateAndReject(
-                      std::move(aValue.RejectValue()), __func__);
-                }
-                RefPtr<MediaDataDecoder> decoder =
-                    std::move(aValue.ResolveValue());
-                
-                
-                RefPtr<CapabilitiesPromise> p = decoder->Init()->Then(
-                    taskQueue, __func__,
-                    [taskQueue, decoder, frameRate, config = std::move(config)](
-                        MediaDataDecoder::InitPromise::ResolveOrRejectValue&&
-                            aValue) mutable {
-                      RefPtr<CapabilitiesPromise> p;
-                      if (aValue.IsReject()) {
-                        p = CapabilitiesPromise::CreateAndReject(
-                            std::move(aValue.RejectValue()), __func__);
-                      } else {
-                        MOZ_ASSERT(config->IsVideo());
-                        nsAutoCString reason;
-                        bool powerEfficient = true;
-                        bool smooth = true;
-                        if (config->GetAsVideoInfo()->mImage.height > 480) {
-                          
-                          
-                          
-                          
-                          
-                          
-                          powerEfficient =
-                              decoder->IsHardwareAccelerated(reason);
-                          if (!powerEfficient &&
-                              VPXDecoder::IsVP9(config->mMimeType)) {
-                            smooth = VP9Benchmark::IsVP9DecodeFast(
-                                true );
-                            uint32_t fps = VP9Benchmark::MediaBenchmarkVp9Fps();
-                            if (!smooth && fps > 0) {
+          
+          
+          
+          static RefPtr<AllocPolicy> sVideoAllocPolicy = [&taskQueue]() {
+            SystemGroup::Dispatch(
+                TaskCategory::Other,
+                NS_NewRunnableFunction(
+                    "MediaCapabilities::AllocPolicy:Video", []() {
+                      ClearOnShutdown(&sVideoAllocPolicy,
+                                      ShutdownPhase::ShutdownThreads);
+                    }));
+            return new SingleAllocPolicy(TrackInfo::TrackType::kVideoTrack,
+                                         taskQueue);
+          }();
+          return AllocationWrapper::CreateDecoder(params, sVideoAllocPolicy)
+              ->Then(
+                  taskQueue, __func__,
+                  [taskQueue, frameRate, config = std::move(config)](
+                      AllocationWrapper::AllocateDecoderPromise::
+                          ResolveOrRejectValue&& aValue) mutable {
+                    if (aValue.IsReject()) {
+                      return CapabilitiesPromise::CreateAndReject(
+                          std::move(aValue.RejectValue()), __func__);
+                    }
+                    RefPtr<MediaDataDecoder> decoder =
+                        std::move(aValue.ResolveValue());
+                    
+                    
+                    RefPtr<CapabilitiesPromise> p = decoder->Init()->Then(
+                        taskQueue, __func__,
+                        [taskQueue, decoder, frameRate,
+                         config = std::move(config)](
+                            MediaDataDecoder::InitPromise::
+                                ResolveOrRejectValue&& aValue) mutable {
+                          RefPtr<CapabilitiesPromise> p;
+                          if (aValue.IsReject()) {
+                            p = CapabilitiesPromise::CreateAndReject(
+                                std::move(aValue.RejectValue()), __func__);
+                          } else {
+                            MOZ_ASSERT(config->IsVideo());
+                            nsAutoCString reason;
+                            bool powerEfficient = true;
+                            bool smooth = true;
+                            if (config->GetAsVideoInfo()->mImage.height > 480) {
                               
                               
                               
                               
                               
-                              const auto& videoConfig =
-                                  *config->GetAsVideoInfo();
-                              double needed = ((1280.0 * 720.0) /
-                                               (videoConfig.mImage.width *
-                                                videoConfig.mImage.height) *
-                                               fps) /
-                                              frameRate;
-                              smooth = needed > 2;
+                              
+                              powerEfficient =
+                                  decoder->IsHardwareAccelerated(reason);
+                              if (!powerEfficient &&
+                                  VPXDecoder::IsVP9(config->mMimeType)) {
+                                smooth = VP9Benchmark::IsVP9DecodeFast(
+                                    true );
+                                uint32_t fps =
+                                    VP9Benchmark::MediaBenchmarkVp9Fps();
+                                if (!smooth && fps > 0) {
+                                  
+                                  
+                                  
+                                  
+                                  
+                                  const auto& videoConfig =
+                                      *config->GetAsVideoInfo();
+                                  double needed = ((1280.0 * 720.0) /
+                                                   (videoConfig.mImage.width *
+                                                    videoConfig.mImage.height) *
+                                                   fps) /
+                                                  frameRate;
+                                  smooth = needed > 2;
+                                }
+                              }
                             }
+                            p = CapabilitiesPromise::CreateAndResolve(
+                                MediaCapabilitiesInfo(true ,
+                                                      smooth, powerEfficient),
+                                __func__);
                           }
-                        }
-                        p = CapabilitiesPromise::CreateAndResolve(
-                            MediaCapabilitiesInfo(true , smooth,
-                                                  powerEfficient),
-                            __func__);
-                      }
-                      MOZ_ASSERT(p.get(), "the promise has been created");
-                      
-                      
-                      decoder->Shutdown()->Then(
-                          taskQueue, __func__,
-                          [taskQueue, decoder, config = std::move(config)](
-                              const ShutdownPromise::ResolveOrRejectValue&
-                                  aValue) {});
-                      return p;
-                    });
-                return p;
-              });
+                          MOZ_ASSERT(p.get(), "the promise has been created");
+                          
+                          
+                          decoder->Shutdown()->Then(
+                              taskQueue, __func__,
+                              [taskQueue, decoder, config = std::move(config)](
+                                  const ShutdownPromise::ResolveOrRejectValue&
+                                      aValue) {});
+                          return p;
+                        });
+                    return p;
+                  });
         }));
   }
 

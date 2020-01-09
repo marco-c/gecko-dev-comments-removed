@@ -155,7 +155,7 @@ class AllocationWrapper : public MediaDataDecoder {
   
   
   static RefPtr<AllocateDecoderPromise> CreateDecoder(
-      const CreateDecoderParams& aParams);
+      const CreateDecoderParams& aParams, AllocPolicy* aPolicy = nullptr);
 
  private:
   RefPtr<MediaDataDecoder> mDecoder;
