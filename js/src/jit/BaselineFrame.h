@@ -226,6 +226,15 @@ class BaselineFrame {
     return UndefinedValue();
   }
 
+  void prepareForBaselineInterpreterToJitOSR() {
+    
+    
+    flags_ &= ~RUNNING_IN_INTERPRETER;
+    interpreterScript_ = nullptr;
+    interpreterPC_ = nullptr;
+    interpreterICEntry_ = nullptr;
+  }
+
   bool runningInInterpreter() const { return flags_ & RUNNING_IN_INTERPRETER; }
 
   JSScript* interpreterScript() const {

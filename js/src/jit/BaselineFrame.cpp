@@ -133,6 +133,22 @@ bool BaselineFrame::initForOsr(InterpreterFrame* fp, uint32_t numStackValues) {
     setReturnValue(fp->returnValue());
   }
 
+  JSContext* cx =
+      fp->script()->runtimeFromMainThread()->mainContextFromOwnThread();
+
+  if (!fp->script()->hasBaselineScript()) {
+    
+    
+    
+    
+    Activation* interpActivation = cx->activation()->prev();
+    jsbytecode* pc = interpActivation->asInterpreter()->regs().pc;
+    MOZ_ASSERT(fp->script()->containsPC(pc));
+    flags_ |= BaselineFrame::RUNNING_IN_INTERPRETER;
+    interpreterScript_ = fp->script();
+    setInterpreterPC(pc);
+  }
+
   frameSize_ = BaselineFrame::FramePointerOffset + BaselineFrame::Size() +
                numStackValues * sizeof(Value);
 
@@ -143,8 +159,6 @@ bool BaselineFrame::initForOsr(InterpreterFrame* fp, uint32_t numStackValues) {
   }
 
   if (fp->isDebuggee()) {
-    JSContext* cx = TlsContext.get();
-
     
     
 
