@@ -74,8 +74,7 @@ class nsIconChannel final : public nsIChannel, public nsIStreamListener {
 
   
  protected:
-  nsresult GetStockHIcon(nsIMozIconURI* aIconURI, bool aNonBlocking,
-                         HICON* hIcon);
+  nsresult GetStockHIcon(nsIMozIconURI* aIconURI, HICON* hIcon);
 };
 
 #endif  
