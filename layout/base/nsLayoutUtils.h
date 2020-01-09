@@ -2707,6 +2707,12 @@ class nsLayoutUtils {
 
 
 
+  static bool AllowZoomingForDocument(const mozilla::dom::Document* aDocument);
+
+  
+
+
+
 
 
   static bool ShouldDisableApzForElement(nsIContent* aContent);
@@ -2995,7 +3001,7 @@ class nsLayoutUtils {
 
 
 
-  static bool ShouldHandleMetaViewport(mozilla::dom::Document*);
+  static bool ShouldHandleMetaViewport(const mozilla::dom::Document*);
 
   
 
