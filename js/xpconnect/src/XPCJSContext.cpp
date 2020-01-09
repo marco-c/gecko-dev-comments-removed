@@ -670,7 +670,11 @@ bool XPCJSContext::InterruptCallback(JSContext* cx) {
       browserChild->GetTabId(&tabId);
       if (sTabIdToCancelContentJS == tabId) {
         
-        win->GetExtantDoc()->GetTopLevelContentDocument()->DisallowBFCaching();
+        if (Document* doc = win->GetExtantDoc()) {
+          if (Document* topLevelDoc = doc->GetTopLevelContentDocument()) {
+            topLevelDoc->DisallowBFCaching();
+          }
+        }
         sTabIdToCancelContentJS = 0;
         return false;
       }
