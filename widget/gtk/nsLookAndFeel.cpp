@@ -834,6 +834,83 @@ bool nsLookAndFeel::GetFontImpl(FontID aID, nsString& aFontName,
   return true;
 }
 
+const gchar* dark_theme_setting = "gtk-application-prefer-dark-theme";
+static bool SystemPrefersDarkVariant(GtkSettings* aSettings) {
+  gboolean darkThemeDefault;
+  g_object_get(aSettings, dark_theme_setting, &darkThemeDefault, nullptr);
+  return darkThemeDefault;
+}
+
+
+
+static bool HasGoodContrastVisibility(GdkRGBA& aColor1, GdkRGBA& aColor2) {
+  int32_t luminosityDifference = NS_LUMINOSITY_DIFFERENCE(
+      GDK_RGBA_TO_NS_RGBA(aColor1), GDK_RGBA_TO_NS_RGBA(aColor2));
+  if (luminosityDifference < NS_SUFFICIENT_LUMINOSITY_DIFFERENCE) {
+    return false;
+  }
+
+  double colorDifference = std::abs(aColor1.red - aColor2.red) +
+                           std::abs(aColor1.green - aColor2.green) +
+                           std::abs(aColor1.blue - aColor2.blue);
+  return (colorDifference * 255.0 > 500.0);
+}
+
+
+
+static bool IsGtkThemeCompatibleWithHTMLColors() {
+  GdkRGBA white = {1.0, 1.0, 1.0};
+  GdkRGBA black = {0.0, 0.0, 0.0};
+
+  GtkStyleContext* style = GetStyleContext(MOZ_GTK_WINDOW);
+
+  GdkRGBA textColor;
+  gtk_style_context_get_color(style, GTK_STATE_FLAG_NORMAL, &textColor);
+
+  
+  if (!HasGoodContrastVisibility(textColor, white)) {
+    return false;
+  }
+
+  GdkRGBA backgroundColor;
+  gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL,
+                                         &backgroundColor);
+
+  
+  if (HasGoodContrastVisibility(backgroundColor, white)) {
+    return false;
+  }
+
+  
+  return HasGoodContrastVisibility(backgroundColor, black);
+}
+
+static void ConfigureContentGtkTheme() {
+  GtkSettings* settings = gtk_settings_get_for_screen(gdk_screen_get_default());
+  nsAutoCString contentThemeName;
+  mozilla::Preferences::GetCString("widget.content.gtk-theme-override",
+                                   contentThemeName);
+  if (!contentThemeName.IsEmpty()) {
+    g_object_set(settings, "gtk-theme-name", contentThemeName.get(), nullptr);
+  }
+
+  
+  if (mozilla::Preferences::GetBool("widget.content.allow-gtk-dark-theme",
+                                    false)) {
+    return;
+  }
+
+  
+  if (SystemPrefersDarkVariant(settings)) {
+    g_object_set(settings, dark_theme_setting, FALSE, nullptr);
+  }
+
+  
+  if (contentThemeName.IsEmpty() && !IsGtkThemeCompatibleWithHTMLColors()) {
+    g_object_set(settings, "gtk-theme-name", "Adwaita", nullptr);
+  }
+}
+
 void nsLookAndFeel::EnsureInit() {
   GdkColor colorValue;
   GdkColor* colorValuePtr;
@@ -857,38 +934,24 @@ void nsLookAndFeel::EnsureInit() {
     return;
   }
 
-  
-  
-  
-  const gchar* dark_setting = "gtk-application-prefer-dark-theme";
-  gboolean darkThemeDefault;
-  g_object_get(settings, dark_setting, &darkThemeDefault, nullptr);
-
-  
-  
-  if (darkThemeDefault) {
-    bool allowDarkTheme;
-    if (XRE_IsContentProcess()) {
-      allowDarkTheme = mozilla::Preferences::GetBool(
-          "widget.content.allow-gtk-dark-theme", false);
-    } else {
-      allowDarkTheme = (PR_GetEnv("MOZ_ALLOW_GTK_DARK_THEME") != nullptr) ||
-                       mozilla::Preferences::GetBool(
-                           "widget.chrome.allow-gtk-dark-theme", false);
-    }
-    if (!allowDarkTheme) {
-      g_object_set(settings, dark_setting, FALSE, nullptr);
-    }
-  }
-
-  
-  
   if (XRE_IsContentProcess()) {
-    nsAutoCString contentThemeName;
-    mozilla::Preferences::GetCString("widget.content.gtk-theme-override",
-                                     contentThemeName);
-    if (!contentThemeName.IsEmpty()) {
-      g_object_set(settings, "gtk-theme-name", contentThemeName.get(), nullptr);
+    
+    
+    
+    ConfigureContentGtkTheme();
+  } else {
+    
+    
+    GtkSettings* settings =
+        gtk_settings_get_for_screen(gdk_screen_get_default());
+    if (SystemPrefersDarkVariant(settings)) {
+      bool allowDarkTheme =
+          (PR_GetEnv("MOZ_ALLOW_GTK_DARK_THEME") != nullptr) ||
+          mozilla::Preferences::GetBool("widget.chrome.allow-gtk-dark-theme",
+                                        false);
+      if (!allowDarkTheme) {
+        g_object_set(settings, dark_theme_setting, FALSE, nullptr);
+      }
     }
   }
 
