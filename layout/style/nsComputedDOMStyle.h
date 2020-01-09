@@ -530,7 +530,10 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
 
 
 
-  uint64_t mComputedStyleGeneration;
+
+  uint64_t mComputedStyleGeneration = 0;
+
+  uint32_t mPresShellId = 0;
 
   bool mExposeVisitedStyle;
 
