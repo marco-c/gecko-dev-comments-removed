@@ -152,8 +152,7 @@ const SERVER_INVOLVED_TEST_CASE_LIST = [
     
     
     let requestV4 = gUrlUtils.makeUpdateRequestV4([TEST_TABLE_DATA_V4.tableName],
-                                                  [""],
-                                                  1);
+                                                  [""]);
     gExpectedQueryV4 = "&$req=" + requestV4;
 
     forceTableUpdate();
@@ -172,8 +171,7 @@ add_test(function test_partialUpdateV4() {
   
   
   let requestV4 = gUrlUtils.makeUpdateRequestV4([TEST_TABLE_DATA_V4.tableName],
-                                                [btoa(NEW_CLIENT_STATE)],
-                                                1);
+                                                [btoa(NEW_CLIENT_STATE)]);
   gExpectedQueryV4 = "&$req=" + requestV4;
 
   forceTableUpdate();

@@ -491,8 +491,7 @@ PROT_ListManager.prototype.makeUpdateRequest_ = function(updateUrl, tableData) {
                      .getService(Ci.nsIUrlClassifierUtils);
 
     streamerMap.requestPayload = urlUtils.makeUpdateRequestV4(tableArray,
-                                                              stateArray,
-                                                              tableArray.length);
+                                                              stateArray);
     streamerMap.isPostRequest = false;
   } else {
     

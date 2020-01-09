@@ -3,20 +3,20 @@ function run_test() {
                    .getService(Ci.nsIUrlClassifierUtils);
 
   
-  let requestNoList = urlUtils.makeUpdateRequestV4([], [], 0);
+  let requestNoList = urlUtils.makeUpdateRequestV4([], []);
 
   
   let requestOneValid =
-    urlUtils.makeUpdateRequestV4(["goog-phish-proto"], ["AAAAAA"], 1);
+    urlUtils.makeUpdateRequestV4(["goog-phish-proto"], ["AAAAAA"]);
 
   
   let requestOneInvalid =
-    urlUtils.makeUpdateRequestV4(["bad-list-name"], ["AAAAAA"], 1);
+    urlUtils.makeUpdateRequestV4(["bad-list-name"], ["AAAAAA"]);
 
   
   let requestOneInvalidOneValid =
     urlUtils.makeUpdateRequestV4(["goog-phish-proto", "bad-list-name"],
-                                 ["AAAAAA", "AAAAAA"], 2);
+                                 ["AAAAAA", "AAAAAA"]);
 
   equal(requestNoList, requestOneInvalid);
   equal(requestOneValid, requestOneInvalidOneValid);
