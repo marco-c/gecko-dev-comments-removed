@@ -93,7 +93,6 @@ RESTRequest.prototype = {
   _logName: "Services.Common.RESTRequest",
 
   QueryInterface: ChromeUtils.generateQI([
-    Ci.nsIBadCertListener2,
     Ci.nsIInterfaceRequestor,
     Ci.nsIChannelEventSink,
   ]),
@@ -482,15 +481,6 @@ RESTRequest.prototype = {
 
   getInterface(aIID) {
     return this.QueryInterface(aIID);
-  },
-
-  
-
-  notifyCertProblem(socketInfo, secInfo, targetHost) {
-    this._log.warn("Invalid HTTPS certificate encountered!");
-    
-    
-    return true;
   },
 
   
