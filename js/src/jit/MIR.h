@@ -6291,8 +6291,6 @@ class MGlobalNameConflictsCheck : public MNullaryInstruction {
  public:
   INSTRUCTION_HEADER(GlobalNameConflictsCheck)
   TRIVIAL_NEW_WRAPPERS
-
-  AliasSet getAliasSet() const override { return AliasSet::None(); }
 };
 
 
