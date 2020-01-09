@@ -86,6 +86,7 @@ function doGetProtocolFlags(aURI) {
 
 function openUILink(url, event, aIgnoreButton, aIgnoreAlt, aAllowThirdPartyFixup,
                     aPostData, aReferrerURI) {
+  event = getRootEvent(event);
   let params;
 
   if (aIgnoreButton && typeof aIgnoreButton == "object") {
@@ -114,6 +115,26 @@ function openUILink(url, event, aIgnoreButton, aIgnoreAlt, aAllowThirdPartyFixup
   openUILinkIn(url, where, params);
 }
 
+
+
+
+function getRootEvent(aEvent) {
+  
+  
+  
+  if (!aEvent) {
+    return aEvent;
+  }
+  let tempEvent = aEvent;
+  while (tempEvent.sourceEvent) {
+    if (tempEvent.sourceEvent.button == 1) {
+      aEvent = tempEvent.sourceEvent;
+      break;
+    }
+    tempEvent = tempEvent.sourceEvent;
+  }
+  return aEvent;
+}
 
 
 
@@ -146,6 +167,8 @@ function whereToOpenLink(e, ignoreButton, ignoreAlt) {
   
   if (!e)
     return "current";
+
+  e = getRootEvent(e);
 
   var shift = e.shiftKey;
   var ctrl =  e.ctrlKey;
@@ -594,11 +617,11 @@ function checkForMiddleClick(node, event) {
     
 
 
-
-    var target = node.hasAttribute("oncommand") ? node :
-                 node.ownerDocument.getElementById(node.getAttribute("command"));
-    var fn = new Function("event", target.getAttribute("oncommand"));
-    fn.call(target, event);
+    let cmdEvent = document.createEvent("xulcommandevent");
+    cmdEvent.initCommandEvent("command", true, true, window, 0,
+                         event.ctrlKey, event.altKey, event.shiftKey,
+                         event.metaKey, event, event.mozInputSource);
+    node.dispatchEvent(cmdEvent);
 
     
     

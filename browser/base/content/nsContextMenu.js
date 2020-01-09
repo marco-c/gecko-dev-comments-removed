@@ -880,10 +880,6 @@ nsContextMenu.prototype = {
     });
   },
 
-  reload(event) {
-    BrowserReloadOrDuplicate(event);
-  },
-
   
   viewPartialSource() {
     let {browser} = this;
