@@ -1048,7 +1048,7 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest) {
     
     MOZ_DIAGNOSTIC_ASSERT(mResponse->Type() == ResponseType::Opaque);
     FailWithNetworkError(NS_ERROR_UNEXPECTED);
-    return rv;
+    return NS_ERROR_UNEXPECTED;
   }
 
   
