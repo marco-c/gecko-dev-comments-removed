@@ -437,7 +437,8 @@ class Document : public nsINode,
                  public nsIScriptObjectPrincipal,
                  public nsIApplicationCacheContainer,
                  public nsStubMutationObserver,
-                 public DispatcherTrait {
+                 public DispatcherTrait,
+                 public SupportsWeakPtr<Document> {
  protected:
   explicit Document(const char* aContentType);
   virtual ~Document();
@@ -449,6 +450,8 @@ class Document : public nsINode,
   typedef mozilla::dom::ExternalResourceMap::ExternalResourceLoad
       ExternalResourceLoad;
   typedef net::ReferrerPolicy ReferrerPolicyEnum;
+
+  MOZ_DECLARE_WEAKREFERENCE_TYPENAME(Document)
 
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_IDOCUMENT_IID)
 
@@ -609,6 +612,8 @@ class Document : public nsINode,
     return NS_ERROR_NOT_IMPLEMENTED;
   }
   nsresult CloneDocHelper(Document* clone) const;
+
+  Document* GetLatestStaticClone() const { return mLatestStaticClone; }
 
   
 
@@ -4325,6 +4330,11 @@ class Document : public nsINode,
 
   
   uint32_t mStaticCloneCount;
+
+  
+  
+  
+  WeakPtr<Document> mLatestStaticClone;
 
   
   
