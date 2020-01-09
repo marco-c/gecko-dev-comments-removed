@@ -128,17 +128,6 @@ extern JS_PUBLIC_API SavedFrameResult GetSavedFrameParent(
     MutableHandle<JSObject*> parentp,
     SavedFrameSelfHosted selfHosted = SavedFrameSelfHosted::Include);
 
-
-
-
-
-
-
-
-JS_PUBLIC_API JSObject* ConvertSavedFrameToPlainObject(
-    JSContext* cx, JS::HandleObject savedFrame,
-    JS::SavedFrameSelfHosted selfHosted);
-
 }  
 
 namespace js {

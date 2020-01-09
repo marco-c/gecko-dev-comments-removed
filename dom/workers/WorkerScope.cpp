@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "WorkerScope.h"
 
@@ -78,11 +78,11 @@ WorkerGlobalScope::WorkerGlobalScope(WorkerPrivate* aWorkerPrivate)
       mWorkerPrivate(aWorkerPrivate) {
   mWorkerPrivate->AssertIsOnWorkerThread();
 
-  // We should always have an event target when the global is created.
+  
   MOZ_DIAGNOSTIC_ASSERT(mSerialEventTarget);
 
-  // In workers, each DETH must have an owner. Because the global scope doesn't
-  // have one, let's set it as owner of itself.
+  
+  
   BindToOwner(static_cast<nsIGlobalObject*>(this));
 }
 
@@ -235,15 +235,10 @@ void WorkerGlobalScope::SetOnerror(OnErrorEventHandlerNonNull* aHandler) {
   }
 }
 
-void WorkerGlobalScope::ImportScripts(JSContext* aCx,
-                                      const Sequence<nsString>& aScriptURLs,
+void WorkerGlobalScope::ImportScripts(const Sequence<nsString>& aScriptURLs,
                                       ErrorResult& aRv) {
   mWorkerPrivate->AssertIsOnWorkerThread();
-
-  UniquePtr<SerializedStackHolder> stack = GetCurrentStackForNetMonitor(aCx);
-
-  workerinternals::Load(mWorkerPrivate, std::move(stack), aScriptURLs,
-                        WorkerScript, aRv);
+  workerinternals::Load(mWorkerPrivate, aScriptURLs, WorkerScript, aRv);
 }
 
 int32_t WorkerGlobalScope::SetTimeout(JSContext* aCx, Function& aHandler,
@@ -263,7 +258,7 @@ int32_t WorkerGlobalScope::SetTimeout(JSContext* aCx, Function& aHandler,
 
 int32_t WorkerGlobalScope::SetTimeout(JSContext* aCx, const nsAString& aHandler,
                                       const int32_t aTimeout,
-                                      const Sequence<JS::Value>& /* unused */,
+                                      const Sequence<JS::Value>& ,
                                       ErrorResult& aRv) {
   mWorkerPrivate->AssertIsOnWorkerThread();
 
@@ -299,7 +294,7 @@ int32_t WorkerGlobalScope::SetInterval(JSContext* aCx, Function& aHandler,
 int32_t WorkerGlobalScope::SetInterval(JSContext* aCx,
                                        const nsAString& aHandler,
                                        const int32_t aTimeout,
-                                       const Sequence<JS::Value>& /* unused */,
+                                       const Sequence<JS::Value>& ,
                                        ErrorResult& aRv) {
   mWorkerPrivate->AssertIsOnWorkerThread();
 
@@ -370,7 +365,7 @@ Performance* WorkerGlobalScope::GetPerformance() {
   return mPerformance;
 }
 
-bool WorkerGlobalScope::IsInAutomation(JSContext* aCx, JSObject* /* unused */) {
+bool WorkerGlobalScope::IsInAutomation(JSContext* aCx, JSObject* ) {
   return GetWorkerPrivateFromContext(aCx)->IsInAutomation();
 }
 
@@ -520,9 +515,9 @@ bool DedicatedWorkerGlobalScope::WrapGlobalObject(
 
   const bool usesSystemPrincipal = mWorkerPrivate->UsesSystemPrincipal();
 
-  // Note that xpc::ShouldDiscardSystemSource() and
-  // xpc::ExtraWarningsForSystemJS() read prefs that are cached on the main
-  // thread. This is benignly racey.
+  
+  
+  
   const bool discardSource =
       usesSystemPrincipal && xpc::ShouldDiscardSystemSource();
   const bool extraWarnings =
@@ -594,9 +589,9 @@ ServiceWorkerGlobalScope::ServiceWorkerGlobalScope(
     : WorkerGlobalScope(aWorkerPrivate),
       mScope(NS_ConvertUTF8toUTF16(aRegistrationDescriptor.Scope()))
 
-      // Eagerly create the registration because we will need to receive updates
-      // about the state of the registration.  We can't wait until first access
-      // to start receiving these.
+      
+      
+      
       ,
       mRegistration(
           GetOrCreateServiceWorkerRegistration(aRegistrationDescriptor)) {}
@@ -668,7 +663,7 @@ class ReportFetchListenerWarningRunnable final : public Runnable {
   }
 };
 
-}  // anonymous namespace
+}  
 
 void ServiceWorkerGlobalScope::SetOnfetch(
     mozilla::dom::EventHandlerNonNull* aCallback) {
@@ -721,7 +716,7 @@ class SkipWaitingResultRunnable final : public WorkerRunnable {
     RefPtr<Promise> promise = mPromiseProxy->WorkerPromise();
     promise->MaybeResolveWithUndefined();
 
-    // Release the reference on the worker thread.
+    
     mPromiseProxy->CleanUp();
 
     return true;
@@ -769,7 +764,7 @@ class WorkerScopeSkipWaitingRunnable final : public Runnable {
   }
 };
 
-}  // namespace
+}  
 
 already_AddRefed<Promise> ServiceWorkerGlobalScope::SkipWaiting(
     ErrorResult& aRv) {
@@ -802,11 +797,11 @@ WorkerDebuggerGlobalScope::WorkerDebuggerGlobalScope(
       mSerialEventTarget(aWorkerPrivate->HybridEventTarget()) {
   mWorkerPrivate->AssertIsOnWorkerThread();
 
-  // We should always have an event target when the global is created.
+  
   MOZ_DIAGNOSTIC_ASSERT(mSerialEventTarget);
 
-  // In workers, each DETH must have an owner. Because the global scope doesn't
-  // have an owner, let's set it as owner of itself.
+  
+  
   BindToOwner(static_cast<nsIGlobalObject*>(this));
 }
 
@@ -897,8 +892,8 @@ void WorkerDebuggerGlobalScope::LoadSubScript(
 
   Maybe<JSAutoRealm> ar;
   if (aSandbox.WasPassed()) {
-    // We only care about worker debugger sandbox objects here, so
-    // CheckedUnwrapStatic is fine.
+    
+    
     JS::Rooted<JSObject*> sandbox(aCx,
                                   js::CheckedUnwrapStatic(aSandbox.Value()));
     if (!sandbox || !IsWorkerDebuggerSandbox(sandbox)) {
@@ -911,14 +906,14 @@ void WorkerDebuggerGlobalScope::LoadSubScript(
 
   nsTArray<nsString> urls;
   urls.AppendElement(aURL);
-  workerinternals::Load(mWorkerPrivate, nullptr, urls, DebuggerScript, aRv);
+  workerinternals::Load(mWorkerPrivate, urls, DebuggerScript, aRv);
 }
 
 void WorkerDebuggerGlobalScope::EnterEventLoop() {
-  // We're on the worker thread here, and WorkerPrivate's refcounting is
-  // non-threadsafe: you can only do it on the parent thread.  What that
-  // means in practice is that we're relying on it being kept alive while
-  // we run.  Hopefully.
+  
+  
+  
+  
   MOZ_KnownLive(mWorkerPrivate)->EnterDebuggerEventLoop();
 }
 
@@ -981,7 +976,7 @@ already_AddRefed<Console> WorkerDebuggerGlobalScope::GetConsole(
     ErrorResult& aRv) {
   mWorkerPrivate->AssertIsOnWorkerThread();
 
-  // Debugger console has its own console object.
+  
   if (!mConsole) {
     mConsole = Console::Create(mWorkerPrivate->GetJSContext(), nullptr, aRv);
     if (NS_WARN_IF(aRv.Failed())) {
@@ -1042,5 +1037,5 @@ bool IsWorkerDebuggerSandbox(JSObject* object) {
          SimpleGlobalObject::GlobalType::WorkerDebuggerSandbox;
 }
 
-}  // namespace dom
-}  // namespace mozilla
+}  
+}  
