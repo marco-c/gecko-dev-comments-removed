@@ -487,7 +487,8 @@ void Animation::Cancel() {
   mHoldTime.SetNull();
   mStartTime.SetNull();
 
-  UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);
+  
+  UpdateEffect();
 
   if (mTimeline) {
     mTimeline->RemoveAnimation(this);
