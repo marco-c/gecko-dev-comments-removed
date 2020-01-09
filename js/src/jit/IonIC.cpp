@@ -228,7 +228,7 @@ bool IonGetPropertyIC::update(JSContext* cx, HandleScript outerScript,
   if (!ic->idempotent()) {
     
     if (!ic->monitoredResult()) {
-      TypeScript::MonitorBytecodeType(cx, ic->script(), ic->pc(), res);
+      JitScript::MonitorBytecodeType(cx, ic->script(), ic->pc(), res);
     }
   }
 
@@ -263,7 +263,7 @@ bool IonGetPropSuperIC::update(JSContext* cx, HandleScript outerScript,
   }
 
   
-  TypeScript::MonitorBytecodeType(cx, ic->script(), ic->pc(), res);
+  JitScript::MonitorBytecodeType(cx, ic->script(), ic->pc(), res);
   return true;
 }
 

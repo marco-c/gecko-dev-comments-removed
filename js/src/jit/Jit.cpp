@@ -141,7 +141,7 @@ EnterJitStatus js::jit::MaybeEnterJit(JSContext* cx, RunState& state) {
     
     
     if (JitOptions.baselineInterpreter) {
-      if (script->types()) {
+      if (script->jitScript()) {
         break;
       }
     } else {

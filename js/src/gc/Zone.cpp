@@ -209,14 +209,14 @@ void Zone::discardJitCode(FreeOp* fop,
 #ifdef DEBUG
     
     for (auto script = cellIter<JSScript>(); !script.done(); script.next()) {
-      if (TypeScript* types = script.unbarrieredGet()->types()) {
-        MOZ_ASSERT(!types->active());
+      if (JitScript* jitScript = script.unbarrieredGet()->jitScript()) {
+        MOZ_ASSERT(!jitScript->active());
       }
     }
 #endif
 
     
-    jit::MarkActiveTypeScripts(this);
+    jit::MarkActiveJitScripts(this);
   }
 
   
@@ -228,7 +228,7 @@ void Zone::discardJitCode(FreeOp* fop,
 
     
     if (discardBaselineCode && script->hasBaselineScript()) {
-      if (script->types()->active()) {
+      if (script->jitScript()->active()) {
         
         
         script->baselineScript()->clearIonCompiledOrInlined();
@@ -252,7 +252,7 @@ void Zone::discardJitCode(FreeOp* fop,
     
     
     if (releaseTypes) {
-      script->maybeReleaseTypes();
+      script->maybeReleaseJitScript();
     }
 
     
@@ -264,8 +264,8 @@ void Zone::discardJitCode(FreeOp* fop,
     }
 
     
-    if (TypeScript* types = script->types()) {
-      types->resetActive();
+    if (JitScript* jitScript = script->jitScript()) {
+      jitScript->resetActive();
     }
   }
 

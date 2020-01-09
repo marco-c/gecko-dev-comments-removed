@@ -31,7 +31,7 @@
 namespace js {
 
 class TypeConstraint;
-class TypeScript;
+class JitScript;
 class TypeZone;
 class CompilerConstraintList;
 class HeapTypeSetKey;
@@ -86,18 +86,18 @@ class MOZ_RAII AutoSweepObjectGroup : public AutoSweepBase {
 
 
 
-class MOZ_RAII AutoSweepTypeScript : public AutoSweepBase {
+class MOZ_RAII AutoSweepJitScript : public AutoSweepBase {
 #ifdef DEBUG
   Zone* zone_;
-  TypeScript* typeScript_;
+  JitScript* jitScript_;
 #endif
 
  public:
-  inline explicit AutoSweepTypeScript(JSScript* script);
+  inline explicit AutoSweepJitScript(JSScript* script);
 #ifdef DEBUG
-  inline ~AutoSweepTypeScript();
+  inline ~AutoSweepJitScript();
 
-  TypeScript* typeScript() const { return typeScript_; }
+  JitScript* jitScript() const { return jitScript_; }
   Zone* zone() const { return zone_; }
 #endif
 };
@@ -202,7 +202,8 @@ class RecompileInfo {
 typedef Vector<RecompileInfo, 1, SystemAllocPolicy> RecompileInfoVector;
 
 
-class TypeScript {
+
+class JitScript {
   friend class ::JSScript;
 
   
@@ -242,9 +243,9 @@ class TypeScript {
 
   StackTypeSet* typeArrayDontCheckGeneration() {
     
-    static_assert(sizeof(TypeScript) ==
-                      sizeof(typeArray_) + offsetof(TypeScript, typeArray_),
-                  "typeArray_ must be the last member of TypeScript");
+    static_assert(sizeof(JitScript) ==
+                      sizeof(typeArray_) + offsetof(JitScript, typeArray_),
+                  "typeArray_ must be the last member of JitScript");
     return const_cast<StackTypeSet*>(typeArray_);
   }
 
@@ -255,28 +256,28 @@ class TypeScript {
   }
 
  public:
-  TypeScript(JSScript* script, ICScriptPtr&& icScript, uint32_t numTypeSets);
+  JitScript(JSScript* script, ICScriptPtr&& icScript, uint32_t numTypeSets);
 
-  bool hasFreezeConstraints(const js::AutoSweepTypeScript& sweep) const {
-    MOZ_ASSERT(sweep.typeScript() == this);
+  bool hasFreezeConstraints(const js::AutoSweepJitScript& sweep) const {
+    MOZ_ASSERT(sweep.jitScript() == this);
     return flags_.hasFreezeConstraints;
   }
-  void setHasFreezeConstraints(const js::AutoSweepTypeScript& sweep) {
-    MOZ_ASSERT(sweep.typeScript() == this);
+  void setHasFreezeConstraints(const js::AutoSweepJitScript& sweep) {
+    MOZ_ASSERT(sweep.jitScript() == this);
     flags_.hasFreezeConstraints = true;
   }
 
   inline bool typesNeedsSweep(Zone* zone) const;
-  void sweepTypes(const js::AutoSweepTypeScript& sweep, Zone* zone);
+  void sweepTypes(const js::AutoSweepJitScript& sweep, Zone* zone);
 
   RecompileInfoVector& inlinedCompilations(
-      const js::AutoSweepTypeScript& sweep) {
-    MOZ_ASSERT(sweep.typeScript() == this);
+      const js::AutoSweepJitScript& sweep) {
+    MOZ_ASSERT(sweep.jitScript() == this);
     return inlinedCompilations_;
   }
-  MOZ_MUST_USE bool addInlinedCompilation(const js::AutoSweepTypeScript& sweep,
+  MOZ_MUST_USE bool addInlinedCompilation(const js::AutoSweepJitScript& sweep,
                                           RecompileInfo info) {
-    MOZ_ASSERT(sweep.typeScript() == this);
+    MOZ_ASSERT(sweep.jitScript() == this);
     if (!inlinedCompilations_.empty() && inlinedCompilations_.back() == info) {
       return true;
     }
@@ -297,8 +298,8 @@ class TypeScript {
   }
 
   
-  StackTypeSet* typeArray(const js::AutoSweepTypeScript& sweep) {
-    MOZ_ASSERT(sweep.typeScript() == this);
+  StackTypeSet* typeArray(const js::AutoSweepJitScript& sweep) {
+    MOZ_ASSERT(sweep.jitScript() == this);
     return typeArrayDontCheckGeneration();
   }
 
@@ -307,13 +308,13 @@ class TypeScript {
     return reinterpret_cast<uint32_t*>(typeArray_ + numTypeSets_);
   }
 
-  inline StackTypeSet* thisTypes(const AutoSweepTypeScript& sweep,
+  inline StackTypeSet* thisTypes(const AutoSweepJitScript& sweep,
                                  JSScript* script);
-  inline StackTypeSet* argTypes(const AutoSweepTypeScript& sweep,
+  inline StackTypeSet* argTypes(const AutoSweepJitScript& sweep,
                                 JSScript* script, unsigned i);
 
   
-  inline StackTypeSet* bytecodeTypes(const AutoSweepTypeScript& sweep,
+  inline StackTypeSet* bytecodeTypes(const AutoSweepJitScript& sweep,
                                      JSScript* script, jsbytecode* pc);
 
   template <typename TYPESET>
@@ -378,7 +379,7 @@ class TypeScript {
     
     static_assert(sizeof(icScript_) == sizeof(uintptr_t),
                   "JIT code assumes icScript_ is pointer-sized");
-    return offsetof(TypeScript, icScript_);
+    return offsetof(JitScript, icScript_);
   }
 
 #ifdef DEBUG
@@ -387,16 +388,16 @@ class TypeScript {
 };
 
 
-class MOZ_RAII AutoKeepTypeScripts {
+class MOZ_RAII AutoKeepJitScripts {
   TypeZone& zone_;
   bool prev_;
 
-  AutoKeepTypeScripts(const AutoKeepTypeScripts&) = delete;
-  void operator=(const AutoKeepTypeScripts&) = delete;
+  AutoKeepJitScripts(const AutoKeepJitScripts&) = delete;
+  void operator=(const AutoKeepJitScripts&) = delete;
 
  public:
-  explicit inline AutoKeepTypeScripts(JSContext* cx);
-  inline ~AutoKeepTypeScripts();
+  explicit inline AutoKeepJitScripts(JSContext* cx);
+  inline ~AutoKeepJitScripts();
 };
 
 class RecompileInfo;
@@ -438,7 +439,7 @@ class TypeZone {
   ZoneData<bool> sweepingTypes;
   ZoneData<bool> oomSweepingTypes;
 
-  ZoneData<bool> keepTypeScripts;
+  ZoneData<bool> keepJitScripts;
 
   
   ZoneData<AutoEnterAnalysis*> activeAnalysis;

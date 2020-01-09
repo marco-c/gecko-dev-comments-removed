@@ -640,7 +640,7 @@ MOZ_MUST_USE bool BailoutIonToBaseline(
 
 
 
-void MarkActiveTypeScripts(Zone* zone);
+void MarkActiveJitScripts(Zone* zone);
 
 MethodStatus BaselineCompile(JSContext* cx, JSScript* script,
                              bool forceDebugInstrumentation = false);

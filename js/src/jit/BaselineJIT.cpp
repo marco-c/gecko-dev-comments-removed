@@ -320,7 +320,7 @@ static MethodStatus CanEnterBaselineInterpreter(JSContext* cx,
   MOZ_ASSERT(jit::IsBaselineEnabled(cx));
   MOZ_ASSERT(JitOptions.baselineInterpreter);
 
-  if (script->types()) {
+  if (script->jitScript()) {
     return Method_Compiled;
   }
 
@@ -338,8 +338,8 @@ static MethodStatus CanEnterBaselineInterpreter(JSContext* cx,
     return Method_Error;
   }
 
-  AutoKeepTypeScripts keepTypes(cx);
-  if (!script->ensureHasTypes(cx, keepTypes)) {
+  AutoKeepJitScripts keepJitScript(cx);
+  if (!script->ensureHasJitScript(cx, keepJitScript)) {
     return Method_Error;
   }
 
@@ -1343,7 +1343,7 @@ void jit::JitSpewBaselineICStats(JSScript* script, const char* dumpReason) {
 
 void jit::FinishDiscardBaselineScript(FreeOp* fop, JSScript* script) {
   MOZ_ASSERT(script->hasBaselineScript());
-  MOZ_ASSERT(!script->types()->active());
+  MOZ_ASSERT(!script->jitScript()->active());
 
   BaselineScript* baseline = script->baselineScript();
   script->setBaselineScript(fop->runtime(), nullptr);
@@ -1416,13 +1416,13 @@ void jit::ToggleBaselineTraceLoggerEngine(JSRuntime* runtime, bool enable) {
 }
 #endif
 
-static void MarkActiveTypeScripts(JSContext* cx,
-                                  const JitActivationIterator& activation) {
+static void MarkActiveJitScripts(JSContext* cx,
+                                 const JitActivationIterator& activation) {
   for (OnlyJSJitFrameIter iter(activation); !iter.done(); ++iter) {
     const JSJitFrameIter& frame = iter.frame();
     switch (frame.type()) {
       case FrameType::BaselineJS:
-        frame.script()->types()->setActive();
+        frame.script()->jitScript()->setActive();
         break;
       case FrameType::Exit:
         if (frame.exitFrame()->is<LazyLinkExitFrameLayout>()) {
@@ -1430,17 +1430,17 @@ static void MarkActiveTypeScripts(JSContext* cx,
               frame.exitFrame()->as<LazyLinkExitFrameLayout>();
           JSScript* script =
               ScriptFromCalleeToken(ll->jsFrame()->calleeToken());
-          script->types()->setActive();
+          script->jitScript()->setActive();
         }
         break;
       case FrameType::Bailout:
       case FrameType::IonJS: {
         
         
-        frame.script()->types()->setActive();
+        frame.script()->jitScript()->setActive();
         for (InlineFrameIterator inlineIter(cx, &frame); inlineIter.more();
              ++inlineIter) {
-          inlineIter.script()->types()->setActive();
+          inlineIter.script()->jitScript()->setActive();
         }
         break;
       }
@@ -1449,14 +1449,14 @@ static void MarkActiveTypeScripts(JSContext* cx,
   }
 }
 
-void jit::MarkActiveTypeScripts(Zone* zone) {
+void jit::MarkActiveJitScripts(Zone* zone) {
   if (zone->isAtomsZone()) {
     return;
   }
   JSContext* cx = TlsContext.get();
   for (JitActivationIterator iter(cx); !iter.done(); ++iter) {
     if (iter->compartment()->zone() == zone) {
-      MarkActiveTypeScripts(cx, iter);
+      MarkActiveJitScripts(cx, iter);
     }
   }
 }
