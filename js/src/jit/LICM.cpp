@@ -62,10 +62,6 @@ static bool IsInLoop(MDefinition* ins) { return ins->block()->isMarked(); }
 
 
 static bool RequiresHoistedUse(const MDefinition* ins, bool hasCalls) {
-  if (ins->isConstantElements()) {
-    return true;
-  }
-
   if (ins->isBox()) {
     MOZ_ASSERT(!ins->toBox()->input()->isBox(),
                "Box of a box could lead to unbounded recursion");
