@@ -3193,8 +3193,8 @@ Toolbox.prototype = {
 
 
 
-  viewSourceInStyleEditor: function(sourceURL, sourceLine) {
-    return viewSource.viewSourceInStyleEditor(this, sourceURL, sourceLine);
+  viewSourceInStyleEditor: function(sourceURL, sourceLine, sourceColumn) {
+    return viewSource.viewSourceInStyleEditor(this, sourceURL, sourceLine, sourceColumn);
   },
 
   
