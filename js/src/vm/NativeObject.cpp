@@ -1525,7 +1525,8 @@ static bool GetExistingPropertyValue(JSContext* cx, HandleNativeObject obj,
                                      HandleId id, Handle<PropertyResult> prop,
                                      MutableHandleValue vp) {
   if (prop.isDenseOrTypedArrayElement()) {
-    return obj->getDenseOrTypedArrayElement<CanGC>(cx, JSID_TO_INT(id), vp);
+    vp.set(obj->getDenseOrTypedArrayElement(JSID_TO_INT(id)));
+    return true;
   }
   MOZ_ASSERT(!cx->helperThread());
 
@@ -1980,7 +1981,8 @@ static bool DefineNonexistentProperty(JSContext* cx, HandleNativeObject obj,
       
       
       
-      if (!obj->as<TypedArrayObject>().convertForSideEffect(cx, v)) {
+      double d;
+      if (!ToNumber(cx, v, &d)) {
         return false;
       }
 
@@ -2187,10 +2189,7 @@ bool js::NativeGetOwnPropertyDescriptor(
     desc.setSetter(nullptr);
 
     if (prop.isDenseOrTypedArrayElement()) {
-      if (!obj->getDenseOrTypedArrayElement<CanGC>(cx, JSID_TO_INT(id),
-                                                   desc.value())) {
-        return false;
-      }
+      desc.value().set(obj->getDenseOrTypedArrayElement(JSID_TO_INT(id)));
     } else {
       RootedShape shape(cx, prop.shape());
       if (!NativeGetExistingProperty(cx, obj, obj, shape, desc.value())) {
@@ -2509,8 +2508,8 @@ static MOZ_ALWAYS_INLINE bool NativeGetPropertyInline(
       
       
       if (prop.isDenseOrTypedArrayElement()) {
-        return pobj->template getDenseOrTypedArrayElement<allowGC>(
-            cx, JSID_TO_INT(id), vp);
+        vp.set(pobj->getDenseOrTypedArrayElement(JSID_TO_INT(id)));
+        return true;
       }
 
       typename MaybeRooted<Shape*, allowGC>::RootType shape(cx, prop.shape());
@@ -2793,6 +2792,42 @@ static bool SetNonexistentProperty(JSContext* cx, HandleNativeObject obj,
   }
 
   return SetPropertyByDefining(cx, id, v, receiver, result);
+}
+
+
+
+static bool SetTypedArrayElement(JSContext* cx, Handle<TypedArrayObject*> obj,
+                                 uint64_t index, HandleValue v,
+                                 ObjectOpResult& result) {
+  
+
+  
+  double d;
+  if (!ToNumber(cx, v, &d)) {
+    return false;
+  }
+
+  
+  if (obj->hasDetachedBuffer()) {
+    return result.failSoft(JSMSG_TYPED_ARRAY_DETACHED);
+  }
+
+  
+  
+
+  
+  uint32_t length = obj->length();
+
+  
+  if (index >= length) {
+    return result.failSoft(JSMSG_BAD_INDEX);
+  }
+
+  
+  TypedArrayObject::setElement(*obj, index, d);
+
+  
+  return result.succeed();
 }
 
 

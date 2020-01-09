@@ -2560,15 +2560,15 @@ bool js::LookupOwnPropertyPure(JSContext* cx, JSObject* obj, jsid id,
 }
 
 static inline bool NativeGetPureInline(NativeObject* pobj, jsid id,
-                                       PropertyResult prop, Value* vp,
-                                       JSContext* cx) {
+                                       PropertyResult prop, Value* vp) {
   if (prop.isDenseOrTypedArrayElement()) {
     
     if (!JSID_IS_INT(id)) {
       return false;
     }
 
-    return pobj->getDenseOrTypedArrayElement<NoGC>(cx, JSID_TO_INT(id), vp);
+    *vp = pobj->getDenseOrTypedArrayElement(JSID_TO_INT(id));
+    return true;
   }
 
   
@@ -2594,7 +2594,7 @@ bool js::GetPropertyPure(JSContext* cx, JSObject* obj, jsid id, Value* vp) {
     return true;
   }
 
-  return NativeGetPureInline(&pobj->as<NativeObject>(), id, prop, vp, cx);
+  return NativeGetPureInline(&pobj->as<NativeObject>(), id, prop, vp);
 }
 
 bool js::GetOwnPropertyPure(JSContext* cx, JSObject* obj, jsid id, Value* vp,
@@ -2611,7 +2611,7 @@ bool js::GetOwnPropertyPure(JSContext* cx, JSObject* obj, jsid id, Value* vp,
   }
 
   *found = true;
-  return NativeGetPureInline(&obj->as<NativeObject>(), id, prop, vp, cx);
+  return NativeGetPureInline(&obj->as<NativeObject>(), id, prop, vp);
 }
 
 static inline bool NativeGetGetterPureInline(PropertyResult prop,

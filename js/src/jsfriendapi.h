@@ -1420,9 +1420,6 @@ namespace Scalar {
 
 
 
-
-
-
 enum Type {
   Int8 = 0,
   Uint8,
@@ -1438,9 +1435,6 @@ enum Type {
 
 
   Uint8Clamped,
-
-  BigInt64,
-  BigUint64,
 
   
 
@@ -1465,13 +1459,10 @@ static inline size_t byteSize(Type atype) {
       return 4;
     case Int64:
     case Float64:
-    case BigInt64:
-    case BigUint64:
       return 8;
-    case MaxTypedArrayViewType:
-      break;
+    default:
+      MOZ_CRASH("invalid scalar type");
   }
-  MOZ_CRASH("invalid scalar type");
 }
 
 static inline bool isSignedIntType(Type atype) {
@@ -1480,7 +1471,6 @@ static inline bool isSignedIntType(Type atype) {
     case Int16:
     case Int32:
     case Int64:
-    case BigInt64:
       return true;
     case Uint8:
     case Uint8Clamped:
@@ -1488,34 +1478,10 @@ static inline bool isSignedIntType(Type atype) {
     case Uint32:
     case Float32:
     case Float64:
-    case BigUint64:
       return false;
-    case MaxTypedArrayViewType:
-      break;
+    default:
+      MOZ_CRASH("invalid scalar type");
   }
-  MOZ_CRASH("invalid scalar type");
-}
-
-static inline bool isBigIntType(Type atype) {
-  switch (atype) {
-    case BigInt64:
-    case BigUint64:
-      return true;
-    case Int8:
-    case Int16:
-    case Int32:
-    case Int64:
-    case Uint8:
-    case Uint8Clamped:
-    case Uint16:
-    case Uint32:
-    case Float32:
-    case Float64:
-      return false;
-    case MaxTypedArrayViewType:
-      break;
-  }
-  MOZ_CRASH("invalid scalar type");
 }
 
 } 
@@ -1602,12 +1568,6 @@ extern JS_FRIEND_API JSObject* JS_NewInt32ArrayWithBuffer(
 extern JS_FRIEND_API JSObject* JS_NewUint32ArrayWithBuffer(
     JSContext* cx, JS::HandleObject arrayBuffer, uint32_t byteOffset,
     int32_t length);
-extern JS_FRIEND_API JSObject* JS_NewBigInt64ArrayWithBuffer(
-    JSContext* cx, JS::HandleObject arrayBuffer, uint32_t byteOffset,
-    int32_t length);
-extern JS_FRIEND_API JSObject* JS_NewBigUint64ArrayWithBuffer(
-    JSContext* cx, JS::HandleObject arrayBuffer, uint32_t byteOffset,
-    int32_t length);
 extern JS_FRIEND_API JSObject* JS_NewFloat32ArrayWithBuffer(
     JSContext* cx, JS::HandleObject arrayBuffer, uint32_t byteOffset,
     int32_t length);
@@ -1670,8 +1630,6 @@ extern JS_FRIEND_API JSObject* UnwrapInt16Array(JSObject* obj);
 extern JS_FRIEND_API JSObject* UnwrapUint16Array(JSObject* obj);
 extern JS_FRIEND_API JSObject* UnwrapInt32Array(JSObject* obj);
 extern JS_FRIEND_API JSObject* UnwrapUint32Array(JSObject* obj);
-extern JS_FRIEND_API JSObject* UnwrapBigInt64Array(JSObject* obj);
-extern JS_FRIEND_API JSObject* UnwrapBigUint64Array(JSObject* obj);
 extern JS_FRIEND_API JSObject* UnwrapFloat32Array(JSObject* obj);
 extern JS_FRIEND_API JSObject* UnwrapFloat64Array(JSObject* obj);
 
@@ -1688,8 +1646,6 @@ extern JS_FRIEND_DATA const Class* const Int16ArrayClassPtr;
 extern JS_FRIEND_DATA const Class* const Uint16ArrayClassPtr;
 extern JS_FRIEND_DATA const Class* const Int32ArrayClassPtr;
 extern JS_FRIEND_DATA const Class* const Uint32ArrayClassPtr;
-extern JS_FRIEND_DATA const Class* const BigInt64ArrayClassPtr;
-extern JS_FRIEND_DATA const Class* const BigUint64ArrayClassPtr;
 extern JS_FRIEND_DATA const Class* const Float32ArrayClassPtr;
 extern JS_FRIEND_DATA const Class* const Float64ArrayClassPtr;
 
