@@ -482,6 +482,11 @@ nsFind::Find(const nsAString& aPatText, nsRange* aSearchRange,
   int32_t patLen = patAutoStr.Length() - 1;
 
   
+  if (patLen < 0) {
+    return NS_OK;
+  }
+
+  
   int32_t pindex = (mFindBackward ? patLen : 0);
 
   
