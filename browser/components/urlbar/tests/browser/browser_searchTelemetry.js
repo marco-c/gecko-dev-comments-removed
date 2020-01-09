@@ -21,8 +21,7 @@ add_task(async function prepare() {
     await PlacesUtils.history.clear();
 
     
-    gURLBar.blur();
-    Assert.ok(!gURLBar.popup.popupOpen, "popup should be closed");
+    await UrlbarTestUtils.promisePopupClose(window);
   });
 
   
@@ -38,11 +37,12 @@ add_task(async function heuristicResultMouse() {
     let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
     gURLBar.focus();
     await promiseAutocompleteResultPopup("heuristicResult");
-    let action = getActionAtIndex(0);
-    Assert.ok(!!action, "there should be an action at index 0");
-    Assert.equal(action.type, "searchengine", "type should be searchengine");
+    let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
+    Assert.equal(result.type, UrlbarUtils.RESULT_TYPE.SEARCH,
+      "Should be of type search");
     let loadPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-    gURLBar.popup.richlistbox.getItemAtIndex(0).click();
+    let element = await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
+    EventUtils.synthesizeMouseAtCenter(element, {});
     await loadPromise;
     BrowserTestUtils.removeTab(tab);
   });
@@ -53,9 +53,9 @@ add_task(async function heuristicResultKeyboard() {
     let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
     gURLBar.focus();
     await promiseAutocompleteResultPopup("heuristicResult");
-    let action = getActionAtIndex(0);
-    Assert.ok(!!action, "there should be an action at index 0");
-    Assert.equal(action.type, "searchengine", "type should be searchengine");
+    let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
+    Assert.equal(result.type, UrlbarUtils.RESULT_TYPE.SEARCH,
+      "Should be of type search");
     let loadPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
     EventUtils.sendKey("return");
     await loadPromise;
@@ -68,10 +68,11 @@ add_task(async function searchSuggestionMouse() {
     let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
     gURLBar.focus();
     await promiseAutocompleteResultPopup("searchSuggestion");
-    let idx = getFirstSuggestionIndex();
-    Assert.ok(idx >= 0, "there should be a first suggestion");
+    let idx = await getFirstSuggestionIndex();
+    Assert.greaterOrEqual(idx, 0, "there should be a first suggestion");
     let loadPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-    gURLBar.popup.richlistbox.getItemAtIndex(idx).click();
+    let element = await UrlbarTestUtils.waitForAutocompleteResultAt(window, idx);
+    EventUtils.synthesizeMouseAtCenter(element, {});
     await loadPromise;
     BrowserTestUtils.removeTab(tab);
   });
@@ -82,8 +83,8 @@ add_task(async function searchSuggestionKeyboard() {
     let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
     gURLBar.focus();
     await promiseAutocompleteResultPopup("searchSuggestion");
-    let idx = getFirstSuggestionIndex();
-    Assert.ok(idx >= 0, "there should be a first suggestion");
+    let idx = await getFirstSuggestionIndex();
+    Assert.greaterOrEqual(idx, 0, "there should be a first suggestion");
     let loadPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
     while (idx--) {
       EventUtils.sendKey("down");
@@ -111,23 +112,9 @@ async function compareCounts(clickCallback) {
   let engine = await Services.search.getDefault();
   let engineID = "org.mozilla.testsearchsuggestions";
 
-  
-
-  
-  let histogramCount = 0;
   let histogramKey = engineID + ".urlbar";
-  let histogram;
-  try {
-    histogram = Services.telemetry.getKeyedHistogramById("SEARCH_COUNTS");
-  } catch (ex) {
-    
-  }
-  if (histogram) {
-    let snapshot = histogram.snapshot();
-    if (histogramKey in snapshot) {
-      histogramCount = snapshot[histogramKey].sum;
-    }
-  }
+  let histogram = Services.telemetry.getKeyedHistogramById("SEARCH_COUNTS");
+  histogram.clear();
 
   
   Object.defineProperty(engine.wrappedJSObject, "identifier",
@@ -136,14 +123,7 @@ async function compareCounts(clickCallback) {
   gURLBar.focus();
   await clickCallback();
 
-  
-
-  
-  histogram = Services.telemetry.getKeyedHistogramById("SEARCH_COUNTS");
-  let snapshot = histogram.snapshot();
-  Assert.ok(histogramKey in snapshot, "histogram with key should be recorded");
-  Assert.equal(snapshot[histogramKey].sum, histogramCount + 1,
-               "histogram sum should be incremented");
+  TelemetryTestUtils.assertKeyedHistogramSum(histogram, histogramKey, 1);
 }
 
 
@@ -151,44 +131,13 @@ async function compareCounts(clickCallback) {
 
 
 
-
-
-function getActionAtIndex(index) {
-  let controller = gURLBar.popup.input.controller;
-  if (controller.matchCount <= index) {
-    return null;
-  }
-  let url = controller.getValueAt(index);
-  let mozActionMatch = url.match(/^moz-action:([^,]+),(.*)$/);
-  if (!mozActionMatch) {
-    let msg = "result at index " + index + " is not a moz-action: " + url;
-    Assert.ok(false, msg);
-    throw new Error(msg);
-  }
-  let [, type, paramStr] = mozActionMatch;
-  return {
-    type,
-    params: JSON.parse(paramStr),
-  };
-}
-
-
-
-
-
-
-function getFirstSuggestionIndex() {
-  let controller = gURLBar.popup.input.controller;
-  let matchCount = controller.matchCount;
+async function getFirstSuggestionIndex() {
+  const matchCount = UrlbarTestUtils.getResultCount(window);
   for (let i = 0; i < matchCount; i++) {
-    let url = controller.getValueAt(i);
-    let mozActionMatch = url.match(/^moz-action:([^,]+),(.*)$/);
-    if (mozActionMatch) {
-      let [, type, paramStr] = mozActionMatch;
-      let params = JSON.parse(paramStr);
-      if (type == "searchengine" && "searchSuggestion" in params) {
-        return i;
-      }
+    let result = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
+    if (result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
+        result.searchParams.suggestion) {
+      return i;
     }
   }
   return -1;

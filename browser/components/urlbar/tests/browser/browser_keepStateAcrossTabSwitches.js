@@ -1,3 +1,6 @@
+
+
+
 "use strict";
 
 
@@ -56,4 +59,3 @@ add_task(async function() {
   is(tab.linkedBrowser.userTypedValue, input, "Text still stored on browser");
   BrowserTestUtils.removeTab(tab);
 });
-

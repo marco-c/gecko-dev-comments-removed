@@ -1,4 +1,7 @@
 
+
+
+
 "use strict";
 
 const SLOW_PAGE = getRootDirectory(gTestPath)
@@ -25,7 +28,7 @@ add_task(async function() {
 
   let obs = new MutationObserver(handler);
 
-  obs.observe(gURLBar, {attributes: true});
+  obs.observe(gURLBar.textbox, {attributes: true});
   gURLBar.value = SLOW_PAGE;
   gURLBar.handleCommand();
 
