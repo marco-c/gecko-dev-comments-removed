@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "mozilla/CheckedInt.h"
+#include "mozilla/EndianUtils.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Move.h"
 #include "mozilla/SyncRunnable.h"
@@ -512,6 +513,12 @@ void WebrtcGmpVideoEncoder::Encoded(
     
     
     uint8_t* buffer = aEncodedFrame->Buffer();
+
+    if (!buffer) {
+      LOG(LogLevel::Error, ("GMP plugin returned null buffer"));
+      return;
+    }
+
     uint8_t* end = aEncodedFrame->Buffer() + aEncodedFrame->Size();
     size_t size_bytes;
     switch (aEncodedFrame->BufferType()) {
@@ -555,8 +562,12 @@ void WebrtcGmpVideoEncoder::Encoded(
           size = *buffer++;
           break;
         case GMP_BufferLength16:
-          
-          size = *(reinterpret_cast<uint16_t*>(buffer));
+
+#ifdef MOZ_LITTLE_ENDIAN
+          size = LittleEndian::readUint16(buffer);
+#else
+          size = BigEndian::readUint16(buffer);
+#endif
           buffer += 2;
           break;
         case GMP_BufferLength24:
@@ -568,8 +579,12 @@ void WebrtcGmpVideoEncoder::Encoded(
           buffer += 3;
           break;
         case GMP_BufferLength32:
-          
-          size = *(reinterpret_cast<uint32_t*>(buffer));
+
+#ifdef MOZ_LITTLE_ENDIAN
+          size = LittleEndian::readUint32(buffer);
+#else
+          size = BigEndian::readUint32(buffer);
+#endif
           buffer += 4;
           break;
         default:
