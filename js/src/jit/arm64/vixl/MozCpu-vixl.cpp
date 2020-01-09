@@ -104,7 +104,9 @@ void CPU::EnsureIAndDCacheCoherency(void *address, size_t length) {
       
       
       
-      "   dc    cvau, %[dline]\n"
+      
+      
+      "   dc    civac, %[dline]\n"
       :
       : [dline] "r" (dline)
       
