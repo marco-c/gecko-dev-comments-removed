@@ -314,14 +314,6 @@ class Raptor(object):
                     raise
             else:
                 
-
-                
-                
-                
-                
-                if not self.config['run_local'] and self.config['is_release_build']:
-                    self.config['binary'] = 'org.mozilla.fennec'
-
                 try:
                     
                     self.device.stop_application(self.config['binary'])

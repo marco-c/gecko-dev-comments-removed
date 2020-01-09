@@ -337,6 +337,11 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
             if not binary_path:
                 self.fatal("Raptor requires a path to the binary.")
             kw_options['binary'] = binary_path
+            if self.app in["geckoview", "fennec"]:
+                
+                
+                kw_options['binary'] = self.query_package_name()
+                self.info("set binary to %s instead of %s" % (kw_options['binary'], binary_path))
         else:  
             if not self.run_local:
                 
