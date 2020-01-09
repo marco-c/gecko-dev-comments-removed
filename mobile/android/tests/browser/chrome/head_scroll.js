@@ -16,12 +16,21 @@ function getFrame(browser, { frame = null }) {
 }
 
 function setScrollPosition(browser,
-                           { x = 0, y = 0, zoom = 0, frame }) {
+                           { x = 0, y = 0, zoom = 0, frame = null }) {
   let window = getFrame(browser, {frame});
+  let topLevelUtils = browser.contentWindow.windowUtils;
   if (zoom) {
-    browser.contentWindow.windowUtils.setResolutionAndScaleTo(zoom);
+    topLevelUtils.setResolutionAndScaleTo(zoom);
   }
-  window.scrollTo(x, y);
+  
+  
+  
+  
+  if (frame !== null) {
+    window.scrollTo(x, y);
+  } else {
+    topLevelUtils.scrollToVisual(x, y, topLevelUtils.UPDATE_TYPE_MAIN_THREAD);
+  }
 }
 
 function checkScroll(browser, data) {
