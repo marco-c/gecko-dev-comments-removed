@@ -349,10 +349,10 @@ pref("devtools.responsive.showUserAgentInput", false);
 
 
 
-#if defined(RELEASE_OR_BETA)
-pref("devtools.aboutdebugging.new-enabled", false);
-#else
+#if defined(MOZ_DEV_EDITION) || defined(NIGHTLY_BUILD)
 pref("devtools.aboutdebugging.new-enabled", true);
+#else
+pref("devtools.aboutdebugging.new-enabled", false);
 #endif
 
 
