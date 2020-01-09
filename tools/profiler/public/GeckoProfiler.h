@@ -237,10 +237,20 @@ bool IsThreadBeingProfiled();
 
 
 
+static constexpr uint32_t PROFILER_DEFAULT_ENTRIES =
 #  if !defined(ARCH_ARMV6)
-#    define PROFILER_DEFAULT_ENTRIES 1000000
+    1000000;
 #  else
-#    define PROFILER_DEFAULT_ENTRIES 100000
+    100000;
+#  endif
+
+
+
+static constexpr uint32_t PROFILER_DEFAULT_STARTUP_ENTRIES =
+#  if !defined(ARCH_ARMV6)
+    10000000;
+#  else
+    100000;
 #  endif
 
 #  define PROFILER_DEFAULT_DURATION 20
@@ -1001,6 +1011,6 @@ void GetProfilerEnvVarsForChildProcess(
 
 }  
 
-#endif  
+#endif
 
-#endif  
+#endif
