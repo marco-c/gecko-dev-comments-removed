@@ -616,7 +616,12 @@ SpecialPowersObserverAPI.prototype = {
             
             
           }
-        ).then(() => {
+        ).then(async () => {
+          
+          
+          if (extension.id) {
+            await ExtensionTestCommon.setIncognitoOverride(extension);
+          }
           return extension.startup();
         }).then(() => {
           this._sendReply(aMessage, "SPExtensionMessage", {id, type: "extensionStarted", args: []});

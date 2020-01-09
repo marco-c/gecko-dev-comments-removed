@@ -608,6 +608,7 @@ function prompt(aBrowser, aRequest) {
         
         
         menupopup.parentNode.removeAttribute("value");
+        menupopup.parentNode.selectedItem = null;
 
         for (let device of devices)
           addDeviceToList(menupopup, device.name, device.deviceIndex);
@@ -628,6 +629,14 @@ function prompt(aBrowser, aRequest) {
         while (menupopup.lastChild) {
           menupopup.removeChild(menupopup.lastChild);
         }
+
+        
+        
+        
+        
+        menupopup.parentNode.removeAttribute("value");
+        menupopup.parentNode.selectedItem = null;
+
         let label = doc.getElementById("webRTC-selectWindow-label");
         const gumStringId = "getUserMedia.selectWindowOrScreen";
         label.setAttribute("value",

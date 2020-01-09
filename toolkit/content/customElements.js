@@ -70,12 +70,38 @@ const MozElementMixin = Base => class MozElement extends Base {
       attrName = split[1];
       attrNewName = split[0];
     }
+    let hasAttr = this.hasAttribute(attrName);
+    let attrValue = this.getAttribute(attrName);
 
+    
+    
+    
+    if (!this._inheritedAttributesMap) {
+      this._inheritedAttributesMap = new WeakMap();
+    }
+    if (!this._inheritedAttributesMap.has(child)) {
+      this._inheritedAttributesMap.set(child, {});
+    }
+    let lastInheritedAttributes = this._inheritedAttributesMap.get(child);
+
+    if ((hasAttr && attrValue === lastInheritedAttributes[attrName]) ||
+        (!hasAttr && !lastInheritedAttributes.hasOwnProperty(attrName))) {
+      
+      return;
+    }
+
+    
+    if (hasAttr) {
+      lastInheritedAttributes[attrName] = attrValue;
+    } else {
+      delete lastInheritedAttributes[attrName];
+    }
+
+    
     if (attrNewName === "text") {
-      child.textContent =
-        this.hasAttribute(attrName) ? this.getAttribute(attrName) : "";
-    } else if (this.hasAttribute(attrName)) {
-      child.setAttribute(attrNewName, this.getAttribute(attrName));
+      child.textContent = hasAttr ? attrValue : "";
+    } else if (hasAttr) {
+      child.setAttribute(attrNewName, attrValue);
     } else {
       child.removeAttribute(attrNewName);
     }
@@ -256,36 +282,41 @@ function getInterfaceProxy(obj) {
   return obj._customInterfaceProxy;
 }
 
-MozElements.BaseControl = class BaseControl extends MozXULElement {
-  get disabled() {
-    return this.getAttribute("disabled") == "true";
-  }
+const BaseControlMixin = Base => {
+  class BaseControl extends Base {
+    get disabled() {
+      return this.getAttribute("disabled") == "true";
+    }
 
-  set disabled(val) {
-    if (val) {
-      this.setAttribute("disabled", "true");
-    } else {
-      this.removeAttribute("disabled");
+    set disabled(val) {
+      if (val) {
+        this.setAttribute("disabled", "true");
+      } else {
+        this.removeAttribute("disabled");
+      }
+    }
+
+    get tabIndex() {
+      return parseInt(this.getAttribute("tabindex")) || 0;
+    }
+
+    set tabIndex(val) {
+      if (val) {
+        this.setAttribute("tabindex", val);
+      } else {
+        this.removeAttribute("tabindex");
+      }
     }
   }
 
-  get tabIndex() {
-    return parseInt(this.getAttribute("tabindex")) || 0;
-  }
-
-  set tabIndex(val) {
-    if (val) {
-      this.setAttribute("tabindex", val);
-    } else {
-      this.removeAttribute("tabindex");
-    }
-  }
+  Base.implementCustomInterface(BaseControl,
+                                [Ci.nsIDOMXULControlElement]);
+  return BaseControl;
 };
-
-MozXULElement.implementCustomInterface(MozElements.BaseControl,
-                                       [Ci.nsIDOMXULControlElement]);
+MozElements.BaseControl = BaseControlMixin(MozXULElement);
 
 
+window.BaseControlMixin = BaseControlMixin;
 window.MozElementMixin = MozElementMixin;
 window.MozXULElement = MozXULElement;
 window.MozElements = MozElements;
@@ -311,6 +342,7 @@ if (!isDummyDocument) {
 
   for (let [tag, script] of [
     ["findbar", "chrome://global/content/elements/findbar.js"],
+    ["menulist", "chrome://global/content/elements/menulist.js"],
     ["richlistbox", "chrome://global/content/elements/richlistbox.js"],
     ["stringbundle", "chrome://global/content/elements/stringbundle.js"],
     ["printpreview-toolbar", "chrome://global/content/printPreviewToolbar.js"],

@@ -2,7 +2,7 @@
 
 "use strict";
 
-const {ExtensionPermissions} = ChromeUtils.import("resource://gre/modules/ExtensionPermissions.jsm", {});
+const {ExtensionPermissions} = ChromeUtils.import("resource://gre/modules/ExtensionPermissions.jsm");
 
 var gManagerWindow;
 

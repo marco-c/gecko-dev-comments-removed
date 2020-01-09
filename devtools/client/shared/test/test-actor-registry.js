@@ -88,6 +88,11 @@
 
     const { TestActorFront } = await loadFront();
 
-    return new TestActorFront(client, form, toolbox);
+    const front = new TestActorFront(client, toolbox);
+    
+    
+    front.actorID = form.testActor;
+    front.manage(front);
+    return front;
   };
 })(this);

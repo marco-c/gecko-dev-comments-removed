@@ -1,8 +1,8 @@
 
 
 "use strict";
-ChromeUtils.import("resource://gre/modules/AddonManager.jsm");
-ChromeUtils.import("resource://gre/modules/Extension.jsm");
+const {AddonManager, AddonManagerPrivate} = ChromeUtils.import("resource://gre/modules/AddonManager.jsm");
+const {Extension, ExtensionData} = ChromeUtils.import("resource://gre/modules/Extension.jsm");
 
 AddonTestUtils.init(this);
 AddonTestUtils.overrideCertDB();

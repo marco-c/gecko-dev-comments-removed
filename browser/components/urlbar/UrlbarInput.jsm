@@ -724,7 +724,7 @@ class UrlbarInput {
     
     
     if (this.window.gInitialPages.includes(url)) {
-      browser.initialPageLoadedFromURLBar = url;
+      browser.initialPageLoadedFromUserAction = url;
     }
     try {
       UrlbarUtils.addToUrlbarHistory(url, this.window);
