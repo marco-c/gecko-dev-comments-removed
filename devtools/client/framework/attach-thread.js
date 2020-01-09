@@ -39,16 +39,20 @@ async function attachThread(toolbox) {
   const threadOptions = {
     autoBlackBox: false,
     ignoreFrameEnvironment: true,
-    pauseOnExceptions:
-      Services.prefs.getBoolPref("devtools.debugger.pause-on-exceptions"),
-    ignoreCaughtExceptions:
-      Services.prefs.getBoolPref("devtools.debugger.ignore-caught-exceptions"),
   };
-
   const [, threadClient] = await target.attachThread(threadOptions);
   if (!threadClient.paused) {
     throw new Error("Thread in wrong state when starting up, should be paused.");
   }
+
+  
+  
+  
+  
+  threadClient.pauseOnExceptions(
+    Services.prefs.getBoolPref("devtools.debugger.pause-on-exceptions"),
+    Services.prefs.getBoolPref("devtools.debugger.ignore-caught-exceptions")
+  );
 
   try {
     await threadClient.resume();
