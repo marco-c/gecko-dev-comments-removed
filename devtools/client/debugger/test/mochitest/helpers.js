@@ -1380,13 +1380,13 @@ async function clickGutter(dbg, line) {
 
 function selectContextMenuItem(dbg, selector) {
   
-  const doc = dbg.toolbox.win.document;
+  const doc = dbg.toolbox.topDoc;
 
   
   const popup = doc.querySelector('menupopup[menu-api="true"]');
 
   const item = popup.querySelector(selector);
-  return EventUtils.synthesizeMouseAtCenter(item, {}, dbg.toolbox.win);
+  return EventUtils.synthesizeMouseAtCenter(item, {}, dbg.toolbox.topWindow);
 }
 
 async function typeInPanel(dbg, text) {
