@@ -1641,7 +1641,9 @@ void nsTextEditorState::SetSelectionRange(
     if (aRv.Failed() || !self.get()) {
       return;
     }
-    rv = mBoundFrame->ScrollSelectionIntoView();
+    if (mBoundFrame) {
+      rv = mBoundFrame->ScrollSelectionIntoView();
+    }
     
     
     
