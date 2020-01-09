@@ -31,7 +31,11 @@ class Worklet final : public nsISupports, public nsWrapperCache {
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(Worklet)
 
-  Worklet(nsPIDOMWindowInner* aWindow, RefPtr<WorkletImpl> aImpl);
+  
+  
+  
+  Worklet(nsPIDOMWindowInner* aWindow, RefPtr<WorkletImpl> aImpl,
+          nsISupports* aOwnedObject = nullptr);
 
   nsPIDOMWindowInner* GetParentObject() const { return mWindow; }
 
@@ -51,6 +55,7 @@ class Worklet final : public nsISupports, public nsWrapperCache {
                              WorkletFetchHandler* aHandler);
 
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
+  nsCOMPtr<nsISupports> mOwnedObject;
 
   nsRefPtrHashtable<nsCStringHashKey, WorkletFetchHandler> mImportHandlers;
 
