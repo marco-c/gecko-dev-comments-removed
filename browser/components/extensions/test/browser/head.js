@@ -317,6 +317,10 @@ async function toggleBookmarksToolbar(visible = true) {
 async function openContextMenuInPopup(extension, selector = "body") {
   let contentAreaContextMenu = document.getElementById("contentAreaContextMenu");
   let browser = await awaitExtensionPanel(extension);
+
+  
+  
+  await browser.ownerGlobal.promiseDocumentFlushed(() => {});
   let popupShownPromise = BrowserTestUtils.waitForEvent(contentAreaContextMenu, "popupshown");
   await BrowserTestUtils.synthesizeMouseAtCenter(selector, {type: "mousedown", button: 2}, browser);
   await BrowserTestUtils.synthesizeMouseAtCenter(selector, {type: "contextmenu"}, browser);
