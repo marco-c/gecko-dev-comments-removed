@@ -104,13 +104,6 @@ body {
 
 
 
-.devtools-searchbox {
-  margin-inline-start: auto; 
-  flex: none; 
-}
-
-
-
 
 .theme-dark .treeTable > tbody > tr > td {
   border-bottom: none;
