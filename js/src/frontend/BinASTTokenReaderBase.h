@@ -7,6 +7,8 @@
 #ifndef frontend_BinASTTokenReaderBase_h
 #define frontend_BinASTTokenReaderBase_h
 
+#include "mozilla/Variant.h"
+
 #include <string.h>
 
 #include "frontend/BinASTToken.h"
@@ -28,52 +30,28 @@ class MOZ_STACK_CLASS BinASTTokenReaderBase {
   using ErrorResult = mozilla::GenericErrorResult<T>;
 
   
-  struct Context {
-    
-    constexpr static Context topLevel() {
-      return Context(BinASTKind::_Null, 0, ElementOf::TaggedTuple);
-    }
+  
+  struct RootContext {};
 
-    Context arrayElement() const {
-      return Context(kind, fieldIndex, ElementOf::Array);
-    }
-
-    
-    constexpr static Context firstField(BinASTKind kind) {
-      return Context(kind, 0, ElementOf::TaggedTuple);
-    }
-
-    const Context operator++(int) {
-      MOZ_ASSERT(elementOf == ElementOf::TaggedTuple);
-      Context result = *this;
-      fieldIndex++;
-      return result;
-    }
-
-    
-    
-    
-    BinASTKind kind;
-
-    
-    uint8_t fieldIndex;
-
-    enum class ElementOf {
-      
-      Array,
-
-      
-      TaggedTuple,
-    };
-    ElementOf elementOf;
-
-    Context() = delete;
-
-   private:
-    constexpr Context(BinASTKind kind_, uint8_t fieldIndex_,
-                      ElementOf elementOf_)
-        : kind(kind_), fieldIndex(fieldIndex_), elementOf(elementOf_) {}
+  
+  
+  struct ListContext {
+    const BinASTInterfaceAndField position;
+    const BinASTList content;
+    ListContext(const BinASTInterfaceAndField position,
+                const BinASTList content)
+        : position(position), content(content) {}
   };
+
+  
+  
+  struct FieldContext {
+    const BinASTInterfaceAndField position;
+    FieldContext(const BinASTInterfaceAndField position) : position(position) {}
+  };
+
+  
+  typedef mozilla::Variant<RootContext, ListContext, FieldContext> Context;
 
   
   class SkippableSubTree {
