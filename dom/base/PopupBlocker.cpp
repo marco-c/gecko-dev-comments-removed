@@ -404,6 +404,10 @@ PopupBlocker::PopupControlState PopupBlocker::GetEventPopupControlState(
   return sLastAllowedExternalProtocolIFrameTimeStamp;
 }
 
+ void PopupBlocker::ResetLastExternalProtocolIframeAllowed() {
+  sLastAllowedExternalProtocolIFrameTimeStamp = TimeStamp();
+}
+
 }  
 }  
 

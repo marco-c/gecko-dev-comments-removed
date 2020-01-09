@@ -59,6 +59,9 @@ class PopupBlocker final {
   
   static TimeStamp WhenLastExternalProtocolIframeAllowed();
 
+  
+  static void ResetLastExternalProtocolIframeAllowed();
+
   static void Initialize();
   static void Shutdown();
 };
