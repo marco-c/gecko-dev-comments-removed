@@ -360,6 +360,11 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   }
 
   
+  void OnBackgroundRevalidation(nsIHttpChannel *chan) {
+    NotifyObservers(chan, NS_HTTP_ON_BACKGROUND_REVALIDATION);
+  }
+
+  
   
   MOZ_MUST_USE nsresult AsyncOnChannelRedirect(
       nsIChannel *oldChan, nsIChannel *newChan, uint32_t flags,

@@ -587,6 +587,14 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   void ReEvaluateReferrerAfterTrackingStatusIsKnown();
 
+  
+  
+  
+  
+  void PerformBackgroundCacheRevalidation();
+  
+  void PerformBackgroundCacheRevalidationNow();
+
  private:
   nsCOMPtr<nsICancelable> mProxyRequest;
 
