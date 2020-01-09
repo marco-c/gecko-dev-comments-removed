@@ -488,8 +488,7 @@ static bool MinorGC(JSContext* cx, unsigned argc, Value* vp) {
   _("allocationThreshold", JSGC_ALLOCATION_THRESHOLD, true)                  \
   _("minEmptyChunkCount", JSGC_MIN_EMPTY_CHUNK_COUNT, true)                  \
   _("maxEmptyChunkCount", JSGC_MAX_EMPTY_CHUNK_COUNT, true)                  \
-  _("compactingEnabled", JSGC_COMPACTING_ENABLED, true)                      \
-  _("minLastDitchGCPeriod", JSGC_MIN_LAST_DITCH_GC_PERIOD, true)
+  _("compactingEnabled", JSGC_COMPACTING_ENABLED, true)
 
 static const struct ParamInfo {
   const char* name;
@@ -2665,6 +2664,11 @@ static bool testingFunc_bailAfter(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+static constexpr unsigned JitWarmupResetLimit = 20;
+static_assert(JitWarmupResetLimit <=
+                  unsigned(JSScript::MutableFlags::WarmupResets_MASK),
+              "JitWarmupResetLimit exceeds max value");
+
 static bool testingFunc_inJit(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
@@ -2681,7 +2685,7 @@ static bool testingFunc_inJit(JSContext* cx, unsigned argc, Value* vp) {
     
     if (iter.isJSJit()) {
       iter.script()->resetWarmUpResetCounter();
-    } else if (iter.script()->getWarmUpResetCount() >= 20) {
+    } else if (iter.script()->getWarmUpResetCount() >= JitWarmupResetLimit) {
       return ReturnStringCopy(
           cx, args, "Compilation is being repeatedly prevented. Giving up.");
     }
@@ -2709,7 +2713,7 @@ static bool testingFunc_inIon(JSContext* cx, unsigned argc, Value* vp) {
     
     if (iter.isIon()) {
       iter.script()->resetWarmUpResetCounter();
-    } else if (iter.script()->getWarmUpResetCount() >= 20) {
+    } else if (iter.script()->getWarmUpResetCount() >= JitWarmupResetLimit) {
       return ReturnStringCopy(
           cx, args, "Compilation is being repeatedly prevented. Giving up.");
     }

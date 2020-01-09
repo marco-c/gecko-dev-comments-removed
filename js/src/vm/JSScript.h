@@ -1823,65 +1823,65 @@ class JSScript : public js::gc::TenuredCell {
  public:
   enum class MutableFlags : uint32_t {
     
-    WarnedAboutUndefinedProp = 1 << 0,
+    
+    WarmupResets_MASK = 0xFF,
 
     
-    HasRunOnce = 1 << 1,
+    WarnedAboutUndefinedProp = 1 << 8,
 
     
-    HasBeenCloned = 1 << 2,
+    HasRunOnce = 1 << 9,
 
     
-    
-    TrackRecordReplayProgress = 1 << 3,
-
-    
-
-    
-    HasScriptCounts = 1 << 5,
-
-    
-    HasDebugScript = 1 << 6,
-
-    
+    HasBeenCloned = 1 << 10,
 
     
     
+    TrackRecordReplayProgress = 1 << 11,
+
+    
+    HasScriptCounts = 1 << 12,
+
+    
+    HasDebugScript = 1 << 13,
+
     
     
     
     
-    DoNotRelazify = 1 << 9,
+    
+    
+    DoNotRelazify = 1 << 14,
 
     
 
     
-    FailedBoundsCheck = 1 << 10,
+    FailedBoundsCheck = 1 << 15,
 
     
-    FailedShapeGuard = 1 << 11,
+    FailedShapeGuard = 1 << 16,
 
-    HadFrequentBailouts = 1 << 12,
-    HadOverflowBailout = 1 << 13,
-
-    
-    Uninlineable = 1 << 14,
+    HadFrequentBailouts = 1 << 17,
+    HadOverflowBailout = 1 << 18,
 
     
-    InvalidatedIdempotentCache = 1 << 15,
+    Uninlineable = 1 << 19,
 
     
-    FailedLexicalCheck = 1 << 16,
+    InvalidatedIdempotentCache = 1 << 20,
 
     
-    NeedsArgsAnalysis = 1 << 17,
-    NeedsArgsObj = 1 << 18,
+    FailedLexicalCheck = 1 << 21,
 
     
-    HideScriptFromDebugger = 1 << 19,
+    NeedsArgsAnalysis = 1 << 22,
+    NeedsArgsObj = 1 << 23,
 
     
-    SpewEnabled = 1 << 20,
+    HideScriptFromDebugger = 1 << 24,
+
+    
+    SpewEnabled = 1 << 25,
   };
 
  private:
@@ -1890,12 +1890,6 @@ class JSScript : public js::gc::TenuredCell {
   uint32_t mutableFlags_ = 0;
 
   
-
-  
-
-
-
-  uint16_t warmUpResetCount = 0;
 
   
   uint16_t funLength_ = 0;
@@ -2611,11 +2605,22 @@ class JSScript : public js::gc::TenuredCell {
     warmUpCount = 0;
   }
 
-  uint16_t getWarmUpResetCount() const { return warmUpResetCount; }
-  uint16_t incWarmUpResetCounter(uint16_t amount = 1) {
-    return warmUpResetCount += amount;
+  unsigned getWarmUpResetCount() const {
+    constexpr uint32_t MASK = uint32_t(MutableFlags::WarmupResets_MASK);
+    return mutableFlags_ & MASK;
   }
-  void resetWarmUpResetCounter() { warmUpResetCount = 0; }
+  void incWarmUpResetCounter() {
+    constexpr uint32_t MASK = uint32_t(MutableFlags::WarmupResets_MASK);
+    uint32_t newCount = getWarmUpResetCount() + 1;
+    if (newCount <= MASK) {
+      mutableFlags_ &= ~MASK;
+      mutableFlags_ |= newCount;
+    }
+  }
+  void resetWarmUpResetCounter() {
+    constexpr uint32_t MASK = uint32_t(MutableFlags::WarmupResets_MASK);
+    mutableFlags_ &= ~MASK;
+  }
 
  public:
   bool initScriptCounts(JSContext* cx);
