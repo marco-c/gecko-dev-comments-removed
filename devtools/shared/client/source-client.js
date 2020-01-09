@@ -4,7 +4,8 @@
 
 "use strict";
 
-const {arg, DebuggerClient} = require("devtools/shared/client/debugger-client");
+const { sourceSpec } = require("devtools/shared/specs/source");
+const { FrontClassWithSpec, registerFront } = require("devtools/shared/protocol");
 
 
 
@@ -14,78 +15,47 @@ const {arg, DebuggerClient} = require("devtools/shared/client/debugger-client");
 
 
 
-function SourceClient(client, form) {
-  this._form = form;
-  this._activeThread = client;
-  this._client = client.client;
-}
 
-SourceClient.prototype = {
+
+
+class SourceClient extends FrontClassWithSpec(sourceSpec) {
+  constructor(client, form, activeThread) {
+    super(client);
+    this._url = form.url;
+    this._activeThread = activeThread;
+    
+    
+    this.actorID = form.actor;
+    this.manage(this);
+  }
+
   get actor() {
-    return this._form.actor;
-  },
+    return this.actorID;
+  }
+
   get url() {
-    return this._form.url;
-  },
+    return this._url;
+  }
+
+  
+  blackBox(range) {
+    return this.blackbox(range);
+  }
+
+  
+  unblackBox() {
+    return this.unblackbox();
+  }
 
   
 
 
-  blackBox: DebuggerClient.requester(
-    {
-      type: "blackbox",
-      range: arg(0),
-    },
-    {
-      telemetry: "BLACKBOX",
-    },
-  ),
+  async source() {
+    const response = await this.onSource();
+    return this._onSourceResponse(response);
+  }
 
-  
-
-
-  unblackBox: DebuggerClient.requester(
-    {
-      type: "unblackbox",
-      range: arg(0),
-    },
-    {
-      telemetry: "UNBLACKBOX",
-    },
-  ),
-
-  getBreakpointPositions: function(query) {
-    const packet = {
-      to: this._form.actor,
-      type: "getBreakpointPositions",
-      query,
-    };
-    return this._client.request(packet);
-  },
-
-  getBreakpointPositionsCompressed: function(query) {
-    const packet = {
-      to: this._form.actor,
-      type: "getBreakpointPositionsCompressed",
-      query,
-    };
-    return this._client.request(packet);
-  },
-
-  
-
-
-  source: function() {
-    const packet = {
-      to: this._form.actor,
-      type: "source",
-    };
-    return this._client.request(packet).then(response => {
-      return this._onSourceResponse(response);
-    });
-  },
-
-  _onSourceResponse: function(response) {
+  _onSourceResponse(response) {
     if (typeof response.source === "string") {
       return response;
     }
@@ -123,16 +93,8 @@ SourceClient.prototype = {
       };
       return newResponse;
     });
-  },
+  }
+}
 
-  setPausePoints: function(pausePoints) {
-    const packet = {
-      to: this._form.actor,
-      type: "setPausePoints",
-      pausePoints,
-    };
-    return this._client.request(packet);
-  },
-};
-
-module.exports = SourceClient;
+exports.SourceClient = SourceClient;
+registerFront(SourceClient);
