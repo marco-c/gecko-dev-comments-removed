@@ -7,12 +7,8 @@
 
 
 define(function(require, exports, module) {
-  const {
-    cloneElement,
-    Component,
-    createFactory,
-    createRef,
-  } = require("devtools/client/shared/vendor/react");
+  const { cloneElement, Component, createFactory } =
+    require("devtools/client/shared/vendor/react");
   const { findDOMNode } = require("devtools/client/shared/vendor/react-dom");
   const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
   const dom = require("devtools/client/shared/vendor/react-dom-factories");
@@ -29,9 +25,6 @@ define(function(require, exports, module) {
     "ArrowRight",
     "End",
     "Home",
-    "Enter",
-    " ",
-    "Escape",
   ];
 
   const defaultProps = {
@@ -40,7 +33,6 @@ define(function(require, exports, module) {
     provider: ObjectProvider,
     expandedNodes: new Set(),
     selected: null,
-    active: null,
     expandableStrings: true,
     columns: [],
   };
@@ -120,8 +112,6 @@ define(function(require, exports, module) {
         
         selected: PropTypes.string,
         
-        active: PropTypes.string,
-        
         onFilter: PropTypes.func,
         
         onSort: PropTypes.func,
@@ -200,11 +190,8 @@ define(function(require, exports, module) {
         expandedNodes: props.expandedNodes,
         columns: ensureDefaultColumn(props.columns),
         selected: props.selected,
-        active: props.active,
         lastSelectedIndex: 0,
       };
-
-      this.treeRef = createRef();
 
       this.toggle = this.toggle.bind(this);
       this.isExpanded = this.isExpanded.bind(this);
@@ -212,7 +199,6 @@ define(function(require, exports, module) {
       this.onClickRow = this.onClickRow.bind(this);
       this.getSelectedRow = this.getSelectedRow.bind(this);
       this.selectRow = this.selectRow.bind(this);
-      this.activateRow = this.activateRow.bind(this);
       this.isSelected = this.isSelected.bind(this);
       this.onFilter = this.onFilter.bind(this);
       this.onSort = this.onSort.bind(this);
@@ -324,31 +310,10 @@ define(function(require, exports, module) {
             this.selectRow(lastRow);
           }
           break;
-
-        case "Enter":
-        case " ":
-          
-          
-          if (this.treeRef.current === document.activeElement) {
-            event.stopPropagation();
-            event.preventDefault();
-            if (this.state.active !== this.state.selected) {
-              this.activateRow(this.state.selected);
-            }
-
-            return;
-          }
-          break;
-        case "Escape":
-          event.stopPropagation();
-          if (this.state.active != null) {
-            this.activateRow(null);
-          }
-          break;
       }
 
       
-      this.treeRef.current.focus();
+      this.tree.focus();
       event.preventDefault();
     }
 
@@ -393,34 +358,15 @@ define(function(require, exports, module) {
         return;
       }
 
-      if (this.state.active != null) {
-        if (this.treeRef.current !== document.activeElement) {
-          this.treeRef.current.focus();
-        }
-      }
-
-      this.setState({
-        ...this.state,
+      this.setState(Object.assign({}, this.state, {
         selected: row.id,
-        active: null,
-      });
+      }));
 
       row.scrollIntoView(scrollOptions);
     }
 
-    activateRow(active) {
-      this.setState({
-        ...this.state,
-        active,
-      });
-    }
-
     isSelected(nodePath) {
       return nodePath === this.state.selected;
-    }
-
-    isActive(nodePath) {
-      return nodePath === this.state.active;
     }
 
     
@@ -504,8 +450,6 @@ define(function(require, exports, module) {
           hidden: !this.onFilter(child),
           
           selected: this.isSelected(nodePath),
-          
-          active: this.isActive(nodePath),
         };
       });
     }
@@ -533,7 +477,7 @@ define(function(require, exports, module) {
         }
 
         const props = Object.assign({}, this.props, {
-          key: `${member.path}-${member.active ? "active" : "inactive"}`,
+          key: member.path,
           member: member,
           columns: this.state.columns,
           id: member.path,
@@ -594,22 +538,12 @@ define(function(require, exports, module) {
         dom.table({
           className: classNames.join(" "),
           role: "tree",
-          ref: this.treeRef,
+          ref: tree => {
+            this.tree = tree;
+          },
           tabIndex: 0,
           onKeyDown: this.onKeyDown,
           onContextMenu: onContextMenuTree && onContextMenuTree.bind(this),
-          onClick: () => {
-            
-            this.treeRef.current.focus();
-          },
-          onBlur: event => {
-            if (this.state.active != null) {
-              const { relatedTarget } = event;
-              if (!this.treeRef.current.contains(relatedTarget)) {
-                this.activateRow(null);
-              }
-            }
-          },
           "aria-label": this.props.label || "",
           "aria-activedescendant": this.state.selected,
           cellPadding: 0,
