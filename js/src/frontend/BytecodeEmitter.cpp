@@ -728,6 +728,12 @@ bool NonLocalExitControl::prepareForNonLocalJump(NestableControl* target) {
   };
 
   
+  
+  
+  
+  Vector<ptrdiff_t, 4> forOfIterCloseScopeStarts(bce_->cx);
+
+  
   for (NestableControl* control = bce_->innermostNestableControl;
        control != target; control = control->enclosing()) {
     
@@ -765,12 +771,15 @@ bool NonLocalExitControl::prepareForNonLocalJump(NestableControl* target) {
           if (!flushPops(bce_)) {
             return false;
           }
-
+          ptrdiff_t tryNoteStart = 0;
           ForOfLoopControl& loopinfo = control->as<ForOfLoopControl>();
           if (!loopinfo.emitPrepareForNonLocalJumpFromScope(
                   bce_, *es,
-                   false)) {
+                   false, &tryNoteStart)) {
             
+            return false;
+          }
+          if (!forOfIterCloseScopeStarts.append(tryNoteStart)) {
             return false;
           }
         } else {
@@ -806,10 +815,15 @@ bool NonLocalExitControl::prepareForNonLocalJump(NestableControl* target) {
   }
 
   if (target && emitIteratorCloseAtTarget && target->is<ForOfLoopControl>()) {
+    ptrdiff_t tryNoteStart = 0;
     ForOfLoopControl& loopinfo = target->as<ForOfLoopControl>();
     if (!loopinfo.emitPrepareForNonLocalJumpFromScope(bce_, *es,
-                                                       true)) {
+                                                       true,
+                                                      &tryNoteStart)) {
       
+      return false;
+    }
+    if (!forOfIterCloseScopeStarts.append(tryNoteStart)) {
       return false;
     }
   }
@@ -818,6 +832,14 @@ bool NonLocalExitControl::prepareForNonLocalJump(NestableControl* target) {
       target ? target->emitterScope() : bce_->varEmitterScope;
   for (; es != targetEmitterScope; es = es->enclosingInFrame()) {
     if (!leaveScope(es)) {
+      return false;
+    }
+  }
+
+  
+  ptrdiff_t end = bce_->offset();
+  for (ptrdiff_t start : forOfIterCloseScopeStarts) {
+    if (!bce_->addTryNote(JSTRY_FOR_OF_ITERCLOSE, 0, start, end)) {
       return false;
     }
   }

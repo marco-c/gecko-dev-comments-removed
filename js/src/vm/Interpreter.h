@@ -349,12 +349,52 @@ class MOZ_STACK_CLASS TryNoteIter {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
       if (tn_->kind == JSTRY_FOR_OF_ITERCLOSE) {
+        uint32_t iterCloseDepth = 1;
         do {
           ++tn_;
           MOZ_ASSERT(tn_ != tnEnd_);
-          MOZ_ASSERT_IF(pcInRange(), tn_->kind != JSTRY_FOR_OF_ITERCLOSE);
-        } while (!(pcInRange() && tn_->kind == JSTRY_FOR_OF));
+          if (pcInRange()) {
+            if (tn_->kind == JSTRY_FOR_OF_ITERCLOSE) {
+              iterCloseDepth++;
+            } else if (tn_->kind == JSTRY_FOR_OF) {
+              iterCloseDepth--;
+            }
+          }
+        } while (iterCloseDepth > 0);
 
         
         continue;
