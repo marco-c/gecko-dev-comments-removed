@@ -12,6 +12,7 @@
 #define js_OffThreadScriptCompilation_h
 
 #include "mozilla/Range.h"   
+#include "mozilla/Utf8.h"    
 #include "mozilla/Vector.h"  
 
 #include <stddef.h>  
@@ -67,6 +68,15 @@ extern JS_PUBLIC_API bool CompileOffThread(
     SourceText<char16_t>& srcBuf, OffThreadCompileCallback callback,
     void* callbackData);
 
+
+
+
+
+extern JS_PUBLIC_API bool CompileOffThread(
+    JSContext* cx, const ReadOnlyCompileOptions& options,
+    SourceText<mozilla::Utf8Unit>& srcBuf, OffThreadCompileCallback callback,
+    void* callbackData);
+
 extern JS_PUBLIC_API JSScript* FinishOffThreadScript(JSContext* cx,
                                                      OffThreadToken* token);
 
@@ -76,6 +86,15 @@ extern JS_PUBLIC_API void CancelOffThreadScript(JSContext* cx,
 extern JS_PUBLIC_API bool CompileOffThreadModule(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     SourceText<char16_t>& srcBuf, OffThreadCompileCallback callback,
+    void* callbackData);
+
+
+
+
+
+extern JS_PUBLIC_API bool CompileOffThreadModule(
+    JSContext* cx, const ReadOnlyCompileOptions& options,
+    SourceText<mozilla::Utf8Unit>& srcBuf, OffThreadCompileCallback callback,
     void* callbackData);
 
 extern JS_PUBLIC_API JSObject* FinishOffThreadModule(JSContext* cx,
