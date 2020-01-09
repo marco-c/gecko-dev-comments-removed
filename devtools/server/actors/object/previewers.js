@@ -290,11 +290,13 @@ const previewers = {
   Proxy: [function({obj, hooks}, grip, rawObj) {
     
     
-    const hasTargetAndHandler = obj.isProxy;
-    if (hasTargetAndHandler) {
-      grip.proxyTarget = hooks.createValueGrip(obj.proxyTarget);
-      grip.proxyHandler = hooks.createValueGrip(obj.proxyHandler);
+    if (hooks.getGripDepth() > 1) {
+      return true;
     }
+
+    
+    
+    const hasTargetAndHandler = obj.isProxy;
 
     grip.preview = {
       kind: "Object",
@@ -302,13 +304,11 @@ const previewers = {
       ownPropertiesLength: 2 * hasTargetAndHandler,
     };
 
-    if (hooks.getGripDepth() > 1) {
-      return true;
-    }
-
     if (hasTargetAndHandler) {
-      grip.preview.ownProperties["<target>"] = {value: grip.proxyTarget};
-      grip.preview.ownProperties["<handler>"] = {value: grip.proxyHandler};
+      Object.assign(grip.preview.ownProperties, {
+        "<target>": {value: hooks.createValueGrip(obj.proxyTarget)},
+        "<handler>": {value: hooks.createValueGrip(obj.proxyHandler)},
+      });
     }
 
     return true;
