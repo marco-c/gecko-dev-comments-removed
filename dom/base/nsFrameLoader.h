@@ -467,7 +467,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
   
   nsCOMPtr<nsPIDOMWindowOuter> mOpener;
 
-  TabParent* mRemoteBrowser;
+  RefPtr<TabParent> mRemoteBrowser;
   uint64_t mChildID;
 
   
