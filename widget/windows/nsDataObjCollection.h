@@ -34,61 +34,58 @@ class nsDataObjCollection final : public nsIDataObjCollection,
                                   public nsDataObj {
  public:
   nsDataObjCollection();
-  ~nsDataObjCollection();
+
+ private:
+  ~nsDataObjCollection() final;
 
  public:  
-  STDMETHODIMP_(ULONG) AddRef();
-  STDMETHODIMP QueryInterface(REFIID, void**);
-  STDMETHODIMP_(ULONG) Release();
+  STDMETHODIMP_(ULONG) AddRef() final;
+  STDMETHODIMP QueryInterface(REFIID, void**) final;
+  STDMETHODIMP_(ULONG) Release() final;
 
- public:  
-  virtual HRESULT GetFile(LPFORMATETC pFE, LPSTGMEDIUM pSTM);
-  virtual HRESULT GetText(LPFORMATETC pFE, LPSTGMEDIUM pSTM);
-  virtual HRESULT GetFileDescriptors(LPFORMATETC pFE, LPSTGMEDIUM pSTM);
-  virtual HRESULT GetFileContents(LPFORMATETC pFE, LPSTGMEDIUM pSTM);
-  virtual HRESULT GetFirstSupporting(LPFORMATETC pFE, LPSTGMEDIUM pSTM);
+ private:  
+  HRESULT GetFile(LPFORMATETC pFE, LPSTGMEDIUM pSTM);
+  HRESULT GetText(LPFORMATETC pFE, LPSTGMEDIUM pSTM);
+  HRESULT GetFileDescriptors(LPFORMATETC pFE, LPSTGMEDIUM pSTM);
+  HRESULT GetFileContents(LPFORMATETC pFE, LPSTGMEDIUM pSTM);
+  HRESULT GetFirstSupporting(LPFORMATETC pFE, LPSTGMEDIUM pSTM);
 
   using nsDataObj::GetFile;
   using nsDataObj::GetFileContents;
   using nsDataObj::GetText;
 
   
-  void AddDataFlavor(const char* aDataFlavor, LPFORMATETC aFE);
+  void AddDataFlavor(const char* aDataFlavor, LPFORMATETC aFE) final;
 
-  
+ public:  
   void AddDataObject(IDataObject* aDataObj);
   int32_t GetNumDataObjects() { return mDataObjects.Length(); }
   nsDataObj* GetDataObjectAt(uint32_t aItem) {
     return mDataObjects.SafeElementAt(aItem, RefPtr<nsDataObj>());
   }
 
-  
-  CLSID GetClassID() const;
-
  public:
   
   
   
   
-  STDMETHODIMP GetData(LPFORMATETC pFE, LPSTGMEDIUM pSTM);
+  STDMETHODIMP GetData(LPFORMATETC pFE, LPSTGMEDIUM pSTM) final;
 
   
   
-  STDMETHODIMP GetDataHere(LPFORMATETC pFE, LPSTGMEDIUM pSTM);
+  STDMETHODIMP GetDataHere(LPFORMATETC pFE, LPSTGMEDIUM pSTM) final;
 
   
   
-  STDMETHODIMP QueryGetData(LPFORMATETC pFE);
+  STDMETHODIMP QueryGetData(LPFORMATETC pFE) final;
 
   
   
   
   
-  STDMETHODIMP SetData(LPFORMATETC pFE, LPSTGMEDIUM pSTM, BOOL release);
+  STDMETHODIMP SetData(LPFORMATETC pFE, LPSTGMEDIUM pSTM, BOOL release) final;
 
- protected:
-  ULONG m_cRef;  
-
+ private:
   nsTArray<RefPtr<nsDataObj> > mDataObjects;
 };
 

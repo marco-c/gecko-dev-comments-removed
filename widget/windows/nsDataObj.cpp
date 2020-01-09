@@ -313,9 +313,6 @@ HRESULT nsDataObj::CreateStream(IStream** outStream) {
   return S_OK;
 }
 
-static GUID CLSID_nsDataObj = {
-    0x1bba7640, 0xdf52, 0x11cf, {0x82, 0x7b, 0, 0xa0, 0x24, 0x3a, 0xe5, 0x05}};
-
 
 
 
@@ -376,8 +373,8 @@ STDMETHODIMP nsDataObj::QueryInterface(REFIID riid, void** ppv) {
     *ppv = this;
     AddRef();
     return S_OK;
-  } else if (IID_IAsyncOperation == riid) {
-    *ppv = static_cast<IAsyncOperation*>(this);
+  } else if (IID_IDataObjectAsyncCapability == riid) {
+    *ppv = static_cast<IDataObjectAsyncCapability*>(this);
     AddRef();
     return S_OK;
   }
@@ -792,14 +789,6 @@ STDMETHODIMP nsDataObj::StartOperation(IBindCtx* pbcReserved) {
   mIsInOperation = TRUE;
   return S_OK;
 }
-
-
-
-
-HRESULT nsDataObj::AddSetFormat(FORMATETC& aFE) { return S_OK; }
-
-
-HRESULT nsDataObj::AddGetFormat(FORMATETC& aFE) { return S_OK; }
 
 
 
@@ -1647,25 +1636,6 @@ HRESULT nsDataObj::DropTempFile(FORMATETC& aFE, STGMEDIUM& aSTG) {
 
   return S_OK;
 }
-
-
-HRESULT nsDataObj::GetMetafilePict(FORMATETC&, STGMEDIUM&) { return E_NOTIMPL; }
-
-
-HRESULT nsDataObj::SetBitmap(FORMATETC&, STGMEDIUM&) { return E_NOTIMPL; }
-
-
-HRESULT nsDataObj::SetDib(FORMATETC&, STGMEDIUM&) { return E_FAIL; }
-
-
-HRESULT nsDataObj::SetText(FORMATETC& aFE, STGMEDIUM& aSTG) { return E_FAIL; }
-
-
-HRESULT nsDataObj::SetMetafilePict(FORMATETC&, STGMEDIUM&) { return E_FAIL; }
-
-
-
-CLSID nsDataObj::GetClassID() const { return CLSID_nsDataObj; }
 
 
 

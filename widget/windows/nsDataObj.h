@@ -21,62 +21,6 @@
 
 class nsIThread;
 class nsIPrincipal;
-
-
-
-
-#ifdef __IDataObjectAsyncCapability_INTERFACE_DEFINED__
-#  define IAsyncOperation IDataObjectAsyncCapability
-#  define IID_IAsyncOperation IID_IDataObjectAsyncCapability
-#else
-
-
-#  ifndef __IAsyncOperation_INTERFACE_DEFINED__
-
-EXTERN_C const IID IID_IAsyncOperation;
-
-MIDL_INTERFACE("3D8B0590-F691-11d2-8EA9-006097DF5BD4")
-IAsyncOperation : public IUnknown {
-  virtual HRESULT STDMETHODCALLTYPE SetAsyncMode(BOOL fDoOpAsync) = 0;
-  virtual HRESULT STDMETHODCALLTYPE GetAsyncMode(BOOL * pfIsOpAsync) = 0;
-  virtual HRESULT STDMETHODCALLTYPE StartOperation(IBindCtx * pbcReserved) = 0;
-  virtual HRESULT STDMETHODCALLTYPE InOperation(BOOL * pfInAsyncOp) = 0;
-  virtual HRESULT STDMETHODCALLTYPE EndOperation(
-      HRESULT hResult, IBindCtx * pbcReserved, DWORD dwEffects) = 0;
-};
-
-#    ifndef FD_PROGRESSUI
-#      define FD_PROGRESSUI 0x4000
-#    endif
-
-#  endif  
-#endif    
-
-
-
-
-
-
-
-#ifndef CFSTR_INETURLA
-#  define CFSTR_INETURLA L"UniformResourceLocator"
-#endif
-#ifndef CFSTR_INETURLW
-#  define CFSTR_INETURLW L"UniformResourceLocatorW"
-#endif
-
-
-
-
-
-
-#ifndef CFSTR_FILEDESCRIPTORA
-#  define CFSTR_FILEDESCRIPTORA L"FileGroupDescriptor"
-#endif
-#ifndef CFSTR_FILEDESCRIPTORW
-#  define CFSTR_FILEDESCRIPTORW L"FileGroupDescriptorW"
-#endif
-
 class CEnumFormatEtc;
 class nsITransferable;
 
@@ -85,25 +29,23 @@ class nsITransferable;
 
 
 
-class nsDataObj : public IDataObject, public IAsyncOperation {
- protected:
+class nsDataObj : public IDataObject, public IDataObjectAsyncCapability {
   nsCOMPtr<nsIThread> mIOThread;
 
  public:  
   explicit nsDataObj(nsIURI* uri = nullptr);
+
+ protected:
   virtual ~nsDataObj();
 
  public:  
-  STDMETHODIMP_(ULONG) AddRef();
-  STDMETHODIMP QueryInterface(REFIID, void**);
-  STDMETHODIMP_(ULONG) Release();
+  STDMETHODIMP_(ULONG) AddRef() override;
+  STDMETHODIMP QueryInterface(REFIID, void**) override;
+  STDMETHODIMP_(ULONG) Release() override;
 
   
   virtual void AddDataFlavor(const char* aDataFlavor, LPFORMATETC aFE);
   void SetTransferable(nsITransferable* aTransferable);
-
-  
-  CLSID GetClassID() const;
 
  public:  
           
@@ -111,104 +53,95 @@ class nsDataObj : public IDataObject, public IAsyncOperation {
   
   
   
-  STDMETHODIMP GetData(LPFORMATETC pFE, LPSTGMEDIUM pSTM);
+  STDMETHODIMP GetData(LPFORMATETC pFE, LPSTGMEDIUM pSTM) override;
 
   
   
-  STDMETHODIMP GetDataHere(LPFORMATETC pFE, LPSTGMEDIUM pSTM);
+  STDMETHODIMP GetDataHere(LPFORMATETC pFE, LPSTGMEDIUM pSTM) override;
 
   
   
-  STDMETHODIMP QueryGetData(LPFORMATETC pFE);
-
-  
-  
-  
-  STDMETHODIMP GetCanonicalFormatEtc(LPFORMATETC pFE, LPFORMATETC pCanonFE);
+  STDMETHODIMP QueryGetData(LPFORMATETC pFE) override;
 
   
   
   
-  
-  STDMETHODIMP SetData(LPFORMATETC pFE, LPSTGMEDIUM pSTM, BOOL release);
+  STDMETHODIMP GetCanonicalFormatEtc(LPFORMATETC pFE,
+                                     LPFORMATETC pCanonFE) final;
 
   
   
   
-  STDMETHODIMP EnumFormatEtc(DWORD direction, LPENUMFORMATETC* ppEnum);
+  
+  STDMETHODIMP SetData(LPFORMATETC pFE, LPSTGMEDIUM pSTM,
+                       BOOL release) override;
+
+  
+  
+  
+  STDMETHODIMP EnumFormatEtc(DWORD direction, LPENUMFORMATETC* ppEnum) final;
 
   
   
   
   STDMETHODIMP DAdvise(LPFORMATETC pFE, DWORD flags, LPADVISESINK pAdvise,
-                       DWORD* pConn);
+                       DWORD* pConn) final;
 
   
-  STDMETHODIMP DUnadvise(DWORD pConn);
+  STDMETHODIMP DUnadvise(DWORD pConn) final;
 
   
   
   
-  STDMETHODIMP EnumDAdvise(LPENUMSTATDATA* ppEnum);
+  STDMETHODIMP EnumDAdvise(LPENUMSTATDATA* ppEnum) final;
 
   
-  STDMETHOD(EndOperation)
-  (HRESULT hResult, IBindCtx* pbcReserved, DWORD dwEffects);
-  STDMETHOD(GetAsyncMode)(BOOL* pfIsOpAsync);
-  STDMETHOD(InOperation)(BOOL* pfInAsyncOp);
-  STDMETHOD(SetAsyncMode)(BOOL fDoOpAsync);
-  STDMETHOD(StartOperation)(IBindCtx* pbcReserved);
+  STDMETHODIMP EndOperation(HRESULT hResult, IBindCtx* pbcReserved,
+                            DWORD dwEffects) final;
+  STDMETHODIMP GetAsyncMode(BOOL* pfIsOpAsync) final;
+  STDMETHODIMP InOperation(BOOL* pfInAsyncOp) final;
+  STDMETHODIMP SetAsyncMode(BOOL fDoOpAsync) final;
+  STDMETHODIMP StartOperation(IBindCtx* pbcReserved) final;
 
- public:  
+ private:  
   
   HRESULT GetDownloadDetails(nsIURI** aSourceURI, nsAString& aFilename);
 
- protected:
   
   bool IsFlavourPresent(const char* inFlavour);
 
-  virtual HRESULT AddSetFormat(FORMATETC& FE);
-  virtual HRESULT AddGetFormat(FORMATETC& FE);
+ protected:
+  HRESULT GetFile(FORMATETC& aFE, STGMEDIUM& aSTG);
+  HRESULT GetText(const nsACString& aDF, FORMATETC& aFE, STGMEDIUM& aSTG);
 
-  virtual HRESULT GetFile(FORMATETC& aFE, STGMEDIUM& aSTG);
-  virtual HRESULT GetText(const nsACString& aDF, FORMATETC& aFE,
-                          STGMEDIUM& aSTG);
-  virtual HRESULT GetDib(const nsACString& inFlavor, FORMATETC&,
-                         STGMEDIUM& aSTG);
-  virtual HRESULT GetMetafilePict(FORMATETC& FE, STGMEDIUM& STM);
+ private:
+  HRESULT GetDib(const nsACString& inFlavor, FORMATETC&, STGMEDIUM& aSTG);
 
-  virtual HRESULT DropImage(FORMATETC& aFE, STGMEDIUM& aSTG);
-  virtual HRESULT DropFile(FORMATETC& aFE, STGMEDIUM& aSTG);
-  virtual HRESULT DropTempFile(FORMATETC& aFE, STGMEDIUM& aSTG);
+  HRESULT DropImage(FORMATETC& aFE, STGMEDIUM& aSTG);
+  HRESULT DropFile(FORMATETC& aFE, STGMEDIUM& aSTG);
+  HRESULT DropTempFile(FORMATETC& aFE, STGMEDIUM& aSTG);
 
-  virtual HRESULT GetUniformResourceLocator(FORMATETC& aFE, STGMEDIUM& aSTG,
-                                            bool aIsUnicode);
-  virtual HRESULT ExtractUniformResourceLocatorA(FORMATETC& aFE,
-                                                 STGMEDIUM& aSTG);
-  virtual HRESULT ExtractUniformResourceLocatorW(FORMATETC& aFE,
-                                                 STGMEDIUM& aSTG);
-  virtual HRESULT GetFileDescriptor(FORMATETC& aFE, STGMEDIUM& aSTG,
+  HRESULT GetUniformResourceLocator(FORMATETC& aFE, STGMEDIUM& aSTG,
                                     bool aIsUnicode);
-  virtual HRESULT GetFileContents(FORMATETC& aFE, STGMEDIUM& aSTG);
-  virtual HRESULT GetPreferredDropEffect(FORMATETC& aFE, STGMEDIUM& aSTG);
+  HRESULT ExtractUniformResourceLocatorA(FORMATETC& aFE, STGMEDIUM& aSTG);
+  HRESULT ExtractUniformResourceLocatorW(FORMATETC& aFE, STGMEDIUM& aSTG);
+  HRESULT GetFileDescriptor(FORMATETC& aFE, STGMEDIUM& aSTG, bool aIsUnicode);
 
-  virtual HRESULT SetBitmap(FORMATETC& FE, STGMEDIUM& STM);
-  virtual HRESULT SetDib(FORMATETC& FE, STGMEDIUM& STM);
-  virtual HRESULT SetText(FORMATETC& FE, STGMEDIUM& STM);
-  virtual HRESULT SetMetafilePict(FORMATETC& FE, STGMEDIUM& STM);
+ protected:
+  HRESULT GetFileContents(FORMATETC& aFE, STGMEDIUM& aSTG);
 
-  
-  virtual HRESULT GetFileDescriptorInternetShortcutA(FORMATETC& aFE,
-                                                     STGMEDIUM& aSTG);
-  virtual HRESULT GetFileDescriptorInternetShortcutW(FORMATETC& aFE,
-                                                     STGMEDIUM& aSTG);
-  virtual HRESULT GetFileContentsInternetShortcut(FORMATETC& aFE,
-                                                  STGMEDIUM& aSTG);
+ private:
+  HRESULT GetPreferredDropEffect(FORMATETC& aFE, STGMEDIUM& aSTG);
 
   
-  virtual HRESULT GetFileDescriptor_IStreamA(FORMATETC& aFE, STGMEDIUM& aSTG);
-  virtual HRESULT GetFileDescriptor_IStreamW(FORMATETC& aFE, STGMEDIUM& aSTG);
-  virtual HRESULT GetFileContents_IStream(FORMATETC& aFE, STGMEDIUM& aSTG);
+  HRESULT GetFileDescriptorInternetShortcutA(FORMATETC& aFE, STGMEDIUM& aSTG);
+  HRESULT GetFileDescriptorInternetShortcutW(FORMATETC& aFE, STGMEDIUM& aSTG);
+  HRESULT GetFileContentsInternetShortcut(FORMATETC& aFE, STGMEDIUM& aSTG);
+
+  
+  HRESULT GetFileDescriptor_IStreamA(FORMATETC& aFE, STGMEDIUM& aSTG);
+  HRESULT GetFileDescriptor_IStreamW(FORMATETC& aFE, STGMEDIUM& aSTG);
+  HRESULT GetFileContents_IStream(FORMATETC& aFE, STGMEDIUM& aSTG);
 
   nsresult ExtractShortcutURL(nsString& outURL);
   nsresult ExtractShortcutTitle(nsString& outTitle);
@@ -219,19 +152,23 @@ class nsDataObj : public IDataObject, public IAsyncOperation {
   
   nsCString mSourceURL;
 
+ protected:
   BOOL FormatsMatch(const FORMATETC& source, const FORMATETC& target) const;
 
   ULONG m_cRef;  
 
+ private:
   nsTArray<nsCString> mDataFlavors;
 
   nsITransferable* mTransferable;  
                                    
                                    
 
+ protected:
   CEnumFormatEtc* m_enumFE;  
                              
 
+ private:
   nsCOMPtr<nsIFile> mCachedTempFile;
 
   BOOL mIsAsyncMode;
@@ -240,14 +177,13 @@ class nsDataObj : public IDataObject, public IAsyncOperation {
   
   
   
-  class CStream : public IStream, public nsIStreamListener {
+  class CStream final : public IStream, public nsIStreamListener {
     nsCOMPtr<nsIChannel> mChannel;
     FallibleTArray<uint8_t> mChannelData;
     bool mChannelRead;
     nsresult mChannelResult;
     uint32_t mStreamRead;
 
-   protected:
     virtual ~CStream();
     nsresult WaitForCompletion();
 
@@ -261,26 +197,27 @@ class nsDataObj : public IDataObject, public IAsyncOperation {
     NS_DECL_NSISTREAMLISTENER
 
     
-    STDMETHOD(QueryInterface)(REFIID refiid, void** ppvResult);
+    STDMETHOD(QueryInterface)(REFIID refiid, void** ppvResult) override;
 
     
-    STDMETHOD(Clone)(IStream** ppStream);
-    STDMETHOD(Commit)(DWORD dwFrags);
-    STDMETHOD(CopyTo)
-    (IStream* pDestStream, ULARGE_INTEGER nBytesToCopy,
-     ULARGE_INTEGER* nBytesRead, ULARGE_INTEGER* nBytesWritten);
-    STDMETHOD(LockRegion)
-    (ULARGE_INTEGER nStart, ULARGE_INTEGER nBytes, DWORD dwFlags);
-    STDMETHOD(Read)(void* pvBuffer, ULONG nBytesToRead, ULONG* nBytesRead);
-    STDMETHOD(Revert)(void);
-    STDMETHOD(Seek)
-    (LARGE_INTEGER nMove, DWORD dwOrigin, ULARGE_INTEGER* nNewPos);
-    STDMETHOD(SetSize)(ULARGE_INTEGER nNewSize);
-    STDMETHOD(Stat)(STATSTG* statstg, DWORD dwFlags);
-    STDMETHOD(UnlockRegion)
-    (ULARGE_INTEGER nStart, ULARGE_INTEGER nBytes, DWORD dwFlags);
-    STDMETHOD(Write)
-    (const void* pvBuffer, ULONG nBytesToRead, ULONG* nBytesRead);
+    STDMETHODIMP Clone(IStream** ppStream) final;
+    STDMETHODIMP Commit(DWORD dwFrags) final;
+    STDMETHODIMP CopyTo(IStream* pDestStream, ULARGE_INTEGER nBytesToCopy,
+                        ULARGE_INTEGER* nBytesRead,
+                        ULARGE_INTEGER* nBytesWritten) final;
+    STDMETHODIMP LockRegion(ULARGE_INTEGER nStart, ULARGE_INTEGER nBytes,
+                            DWORD dwFlags) final;
+    STDMETHODIMP Read(void* pvBuffer, ULONG nBytesToRead,
+                      ULONG* nBytesRead) final;
+    STDMETHODIMP Revert(void) final;
+    STDMETHODIMP Seek(LARGE_INTEGER nMove, DWORD dwOrigin,
+                      ULARGE_INTEGER* nNewPos) final;
+    STDMETHODIMP SetSize(ULARGE_INTEGER nNewSize) final;
+    STDMETHODIMP Stat(STATSTG* statstg, DWORD dwFlags) final;
+    STDMETHODIMP UnlockRegion(ULARGE_INTEGER nStart, ULARGE_INTEGER nBytes,
+                              DWORD dwFlags) final;
+    STDMETHODIMP Write(const void* pvBuffer, ULONG nBytesToRead,
+                       ULONG* nBytesRead) final;
   };
 
   HRESULT CreateStream(IStream** outStream);
