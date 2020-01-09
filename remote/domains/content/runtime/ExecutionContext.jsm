@@ -62,7 +62,7 @@ class ExecutionContext {
       return this._returnError(rv.throw);
     }
     return {
-      result: this._createRemoteObject(rv.return),
+      result: this._toRemoteObject(rv.return),
     };
   }
 
@@ -90,6 +90,34 @@ class ExecutionContext {
     };
   }
 
+  async callFunctionOn(functionDeclaration, callArguments = []) {
+    
+    const fun = this._debuggee.executeInGlobal("(" + functionDeclaration + ")");
+    if (!fun) {
+      return {
+        exceptionDetails: {
+          text: "Evaluation terminated!",
+        },
+      };
+    }
+    if (fun.throw) {
+      return this._returnError(fun.throw);
+    }
+
+    
+    
+    const args = callArguments.map(arg => this._fromCallArgument(arg));
+
+    
+    const rv = fun.return.apply(null, args);
+    if (rv.throw) {
+      return this._returnError(rv.throw);
+    }
+    return {
+      result: this._toRemoteObject(rv.return),
+    };
+  }
+
   
 
 
@@ -110,12 +138,49 @@ class ExecutionContext {
 
 
 
+  _fromCallArgument(arg) {
+    if (arg.objectId) {
+      if (!this._remoteObjects.has(arg.objectId)) {
+        throw new Error(`Cannot find object with ID: ${arg.objectId}`);
+      }
+      return this._remoteObjects.get(arg.objectId);
+    }
+    if (arg.unserializableValue) {
+      switch (arg.unserializableValue) {
+        case "Infinity": return Infinity;
+        case "-Infinity": return -Infinity;
+        case "-0": return -0;
+        case "NaN": return NaN;
+      }
+    }
+    return this._deserialize(arg.value);
+  }
+
+  
+
+
+  _deserialize(obj) {
+    if (typeof obj !== "object") {
+      return obj;
+    }
+    const result = this._debuggee.executeInGlobalWithBindings("JSON.parse(obj)",
+      {obj: JSON.stringify(obj)});
+    if (result.throw) {
+      throw new Error("Unable to deserialize object");
+    }
+    return result.return;
+  }
+
+  
 
 
 
 
 
-  _createRemoteObject(debuggerObj) {
+
+
+
+  _toRemoteObject(debuggerObj) {
     
     
     if (debuggerObj instanceof Debugger.Object) {
