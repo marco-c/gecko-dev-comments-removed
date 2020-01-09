@@ -87,11 +87,11 @@ bool nsScrollbarButtonFrame::HandleButtonPress(nsPresContext* aPresContext,
   
   LookAndFeel::IntID tmpAction;
   uint16_t button = aEvent->AsMouseEvent()->mButton;
-  if (button == WidgetMouseEvent::eLeftButton) {
+  if (button == MouseButton::eLeft) {
     tmpAction = LookAndFeel::eIntID_ScrollButtonLeftMouseButtonAction;
-  } else if (button == WidgetMouseEvent::eMiddleButton) {
+  } else if (button == MouseButton::eMiddle) {
     tmpAction = LookAndFeel::eIntID_ScrollButtonMiddleMouseButtonAction;
-  } else if (button == WidgetMouseEvent::eRightButton) {
+  } else if (button == MouseButton::eRight) {
     tmpAction = LookAndFeel::eIntID_ScrollButtonRightMouseButtonAction;
   } else {
     return false;

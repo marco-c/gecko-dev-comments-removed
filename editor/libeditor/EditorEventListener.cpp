@@ -403,7 +403,7 @@ EditorEventListener::HandleEvent(Event* aEvent) {
     case eMouseClick: {
       WidgetMouseEvent* widgetMouseEvent = internalEvent->AsMouseEvent();
       
-      if (widgetMouseEvent->mButton != WidgetMouseEventBase::eLeftButton) {
+      if (widgetMouseEvent->mButton != MouseButton::eLeft) {
         return NS_OK;
       }
       MOZ_FALLTHROUGH;
@@ -642,7 +642,7 @@ nsresult EditorEventListener::MouseClick(WidgetMouseEvent* aMouseClickEvent) {
   
   
 
-  if (aMouseClickEvent->mButton != WidgetMouseEventBase::eMiddleButton ||
+  if (aMouseClickEvent->mButton != MouseButton::eMiddle ||
       !WidgetMouseEvent::IsMiddleClickPasteEnabled()) {
     return NS_OK;
   }

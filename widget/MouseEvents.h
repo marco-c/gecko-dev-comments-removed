@@ -127,28 +127,9 @@ class WidgetMouseEventBase : public WidgetInputEvent {
   
   float mPressure;
 
-  enum buttonType {
-    eNoButton = -1,
-    eLeftButton = 0,
-    eMiddleButton = 1,
-    eRightButton = 2
-  };
   
   
   int16_t mButton;
-
-  enum buttonsFlag {
-    eNoButtonFlag = 0x00,
-    eLeftButtonFlag = 0x01,
-    eRightButtonFlag = 0x02,
-    eMiddleButtonFlag = 0x04,
-    
-    
-    e4thButtonFlag = 0x08,
-    
-    
-    e5thButtonFlag = 0x10
-  };
 
   
   
@@ -160,13 +141,21 @@ class WidgetMouseEventBase : public WidgetInputEvent {
   
   bool mHitCluster;
 
-  bool IsLeftButtonPressed() const { return !!(mButtons & eLeftButtonFlag); }
-  bool IsRightButtonPressed() const { return !!(mButtons & eRightButtonFlag); }
-  bool IsMiddleButtonPressed() const {
-    return !!(mButtons & eMiddleButtonFlag);
+  bool IsLeftButtonPressed() const {
+    return !!(mButtons & MouseButtonsFlag::eLeftFlag);
   }
-  bool Is4thButtonPressed() const { return !!(mButtons & e4thButtonFlag); }
-  bool Is5thButtonPressed() const { return !!(mButtons & e5thButtonFlag); }
+  bool IsRightButtonPressed() const {
+    return !!(mButtons & MouseButtonsFlag::eRightFlag);
+  }
+  bool IsMiddleButtonPressed() const {
+    return !!(mButtons & MouseButtonsFlag::eMiddleFlag);
+  }
+  bool Is4thButtonPressed() const {
+    return !!(mButtons & MouseButtonsFlag::e4thFlag);
+  }
+  bool Is5thButtonPressed() const {
+    return !!(mButtons & MouseButtonsFlag::e5thFlag);
+  }
 
   void AssignMouseEventBaseData(const WidgetMouseEventBase& aEvent,
                                 bool aCopyTargets) {
@@ -183,7 +172,7 @@ class WidgetMouseEventBase : public WidgetInputEvent {
 
 
   bool IsLeftClickEvent() const {
-    return mMessage == eMouseClick && mButton == eLeftButton;
+    return mMessage == eMouseClick && mButton == MouseButton::eLeft;
   }
 };
 
@@ -240,7 +229,8 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
         mClickCount(0),
         mUseLegacyNonPrimaryDispatch(false) {
     if (aMessage == eContextMenu) {
-      mButton = (mContextMenuTrigger == eNormal) ? eRightButton : eLeftButton;
+      mButton = (mContextMenuTrigger == eNormal) ? MouseButton::eRight
+                                                 : MouseButton::eLeft;
     }
   }
 
@@ -248,8 +238,8 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
   virtual ~WidgetMouseEvent() {
     NS_WARNING_ASSERTION(
         mMessage != eContextMenu ||
-            mButton ==
-                ((mContextMenuTrigger == eNormal) ? eRightButton : eLeftButton),
+            mButton == ((mContextMenuTrigger == eNormal) ? MouseButton::eRight
+                                                         : MouseButton::eLeft),
         "Wrong button set to eContextMenu event?");
   }
 #endif
