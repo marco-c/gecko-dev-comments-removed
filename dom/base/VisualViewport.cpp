@@ -13,6 +13,7 @@
 #include "nsIDocShell.h"
 #include "nsPresContext.h"
 #include "nsRefreshDriver.h"
+#include "DocumentInlines.h"
 
 #define VVP_LOG(...)
 
@@ -60,6 +61,14 @@ void VisualViewport::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
 CSSSize VisualViewport::VisualViewportSize() const {
   CSSSize size = CSSSize(0, 0);
 
+  
+  
+  RefPtr<const VisualViewport> kungFuDeathGrip(this);
+  if (Document* doc = GetDocument()) {
+    doc->FlushPendingNotifications(FlushType::Layout);
+  }
+
+  
   if (PresShell* presShell = GetPresShell()) {
     if (presShell->IsVisualViewportSizeSet()) {
       size = CSSRect::FromAppUnits(presShell->GetVisualViewportSize());
@@ -121,7 +130,7 @@ double VisualViewport::OffsetTop() const {
   return PageTop() - LayoutViewportOffset().Y();
 }
 
-PresShell* VisualViewport::GetPresShell() const {
+Document* VisualViewport::GetDocument() const {
   nsCOMPtr<nsPIDOMWindowInner> window = GetOwner();
   if (!window) {
     return nullptr;
@@ -132,16 +141,17 @@ PresShell* VisualViewport::GetPresShell() const {
     return nullptr;
   }
 
-  return docShell->GetPresShell();
+  return docShell->GetDocument();
+}
+
+PresShell* VisualViewport::GetPresShell() const {
+  RefPtr<Document> document = GetDocument();
+  return document ? document->GetPresShell() : nullptr;
 }
 
 nsPresContext* VisualViewport::GetPresContext() const {
-  PresShell* presShell = GetPresShell();
-  if (!presShell) {
-    return nullptr;
-  }
-
-  return presShell->GetPresContext();
+  RefPtr<Document> document = GetDocument();
+  return document ? document->GetPresContext() : nullptr;
 }
 
 
