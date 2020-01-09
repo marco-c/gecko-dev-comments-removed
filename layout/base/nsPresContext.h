@@ -28,7 +28,6 @@
 #include "nsITimer.h"
 #include "nsCRT.h"
 #include "nsIWidgetListener.h"
-#include "nsLanguageAtomService.h"
 #include "nsGkAtoms.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsChangeHint.h"
@@ -136,7 +135,6 @@ class nsPresContext : public nsISupports,
   using Encoding = mozilla::Encoding;
   template <typename T>
   using NotNull = mozilla::NotNull<T>;
-  typedef mozilla::LangGroupFontPrefs LangGroupFontPrefs;
   typedef mozilla::ScrollStyles ScrollStyles;
   typedef mozilla::StaticPresData StaticPresData;
   using TransactionId = mozilla::layers::TransactionId;
@@ -362,25 +360,6 @@ class nsPresContext : public nsISupports,
   void StopEmulatingMedium();
 
   
-
-
-
-
-
-  const nsFont* GetDefaultFont(uint8_t aFontID, nsAtom* aLanguage,
-                               bool* aNeedsToCache = nullptr) const {
-    nsAtom* lang = aLanguage ? aLanguage : mLanguage.get();
-    const LangGroupFontPrefs* prefs = GetFontPrefsForLang(lang, aNeedsToCache);
-    if (aNeedsToCache && *aNeedsToCache) {
-      return nullptr;
-    }
-    return StaticPresData::Get()->GetDefaultFontHelper(aFontID, lang, prefs);
-  }
-
-  void ForceCacheLang(nsAtom* aLanguage);
-  void CacheAllLangs();
-
-  
   
   bool GetCachedBoolPref(nsPresContext_CachedBoolPrefType aPrefType) const {
     
@@ -532,8 +511,6 @@ class nsPresContext : public nsISupports,
 
   nsDeviceContext* DeviceContext() const { return mDeviceContext; }
   mozilla::EventStateManager* EventStateManager() { return mEventManager; }
-  nsAtom* GetLanguageFromCharset() const { return mLanguage; }
-  already_AddRefed<nsAtom> GetContentLanguage() const;
 
   
 
@@ -589,8 +566,8 @@ class nsPresContext : public nsISupports,
 
 
   int32_t MinFontSize(nsAtom* aLanguage, bool* aNeedsToCache = nullptr) const {
-    const LangGroupFontPrefs* prefs =
-        GetFontPrefsForLang(aLanguage, aNeedsToCache);
+    const auto* prefs =
+        Document()->GetFontPrefsForLang(aLanguage, aNeedsToCache);
     if (aNeedsToCache && *aNeedsToCache) {
       return 0;
     }
@@ -1171,17 +1148,6 @@ class nsPresContext : public nsISupports,
 
   void GetUserPreferences();
 
-  
-
-
-
-  const LangGroupFontPrefs* GetFontPrefsForLang(
-      nsAtom* aLanguage, bool* aNeedsToCache = nullptr) const {
-    nsAtom* lang = aLanguage ? aLanguage : mLanguage.get();
-    return StaticPresData::Get()->GetFontPrefsForLangHelper(
-        lang, &mLangGroupFontPrefs, aNeedsToCache);
-  }
-
   void UpdateCharSet(NotNull<const Encoding*> aCharSet);
 
   static bool NotifyDidPaintSubdocumentCallback(
@@ -1261,13 +1227,6 @@ class nsPresContext : public nsISupports,
   
   nsILinkHandler* MOZ_NON_OWNING_REF mLinkHandler;
 
-  
-  
-  
-  
-  
-  RefPtr<nsAtom> mLanguage;
-
  public:
   
   
@@ -1293,7 +1252,6 @@ class nsPresContext : public nsISupports,
   int32_t mAutoQualityMinFontSizePixelsPref;
 
   nsCOMPtr<nsITheme> mTheme;
-  nsLanguageAtomService* mLangService;
   nsCOMPtr<nsIPrintSettings> mPrintSettings;
 
   mozilla::UniquePtr<nsBidi> mBidiEngine;
@@ -1338,16 +1296,6 @@ class nsPresContext : public nsISupports,
 
   uint16_t mImageAnimationMode;
   uint16_t mImageAnimationModePref;
-
-  
-  
-  
-  
-  
-  LangGroupFontPrefs mLangGroupFontPrefs;
-
-  bool mFontGroupCacheDirty;
-  nsTHashtable<nsRefPtrHashKey<nsAtom>> mLanguagesUsed;
 
   uint32_t mInterruptChecksToSkip;
 

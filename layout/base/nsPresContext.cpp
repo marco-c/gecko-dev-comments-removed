@@ -175,7 +175,6 @@ nsPresContext::nsPresContext(dom::Document* aDocument, nsPresContextType aType)
       mLastFontInflationScreenSize(gfxSize(-1.0, -1.0)),
       mCurAppUnitsPerDevPixel(0),
       mAutoQualityMinFontSizePixelsPref(0),
-      mLangService(nsLanguageAtomService::GetService()),
       mPageSize(-1, -1),
       mPageScale(0.0),
       mPPScale(1.0f),
@@ -193,7 +192,6 @@ nsPresContext::nsPresContext(dom::Document* aDocument, nsPresContextType aType)
       mExistThrottledUpdates(false),
       
       mImageAnimationModePref(imgIContainer::kNormalAnimMode),
-      mFontGroupCacheDirty(true),
       mInterruptChecksToSkip(0),
       mElementsRestyled(0),
       mFramesConstructed(0),
@@ -339,7 +337,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(nsPresContext)
   
 
   
-  
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPrintSettings);
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
@@ -348,7 +345,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsPresContext)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocument);
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDeviceContext);  
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mEffectCompositor);
-  
   
   
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPrintSettings);
@@ -540,9 +536,7 @@ void nsPresContext::GetUserPreferences() {
 
   mPrefScrollbarSide = Preferences::GetInt("layout.scrollbar.side");
 
-  mLangGroupFontPrefs.Reset();
-  mFontGroupCacheDirty = true;
-  StaticPresData::Get()->ResetCachedFontPrefs();
+  Document()->ResetLangPrefs();
 
   
   nsAutoCString animatePref;
@@ -921,17 +915,6 @@ void nsPresContext::DoChangeCharSet(NotNull<const Encoding*> aCharSet) {
 }
 
 void nsPresContext::UpdateCharSet(NotNull<const Encoding*> aCharSet) {
-  mLanguage = mLangService->LookupCharSet(aCharSet);
-  
-  
-
-  
-  if (mLanguage == nsGkAtoms::Unicode) {
-    mLanguage = mLangService->GetLocaleLanguage();
-  }
-  mLangGroupFontPrefs.Reset();
-  mFontGroupCacheDirty = true;
-
   switch (GET_BIDI_OPTION_TEXTTYPE(GetBidi())) {
     case IBMBIDI_TEXTTYPE_LOGICAL:
       SetVisualMode(false);
@@ -1128,21 +1111,6 @@ void nsPresContext::SetImageAnimationMode(uint16_t aMode) {
   }
 
   mImageAnimationMode = aMode;
-}
-
-already_AddRefed<nsAtom> nsPresContext::GetContentLanguage() const {
-  nsAutoString language;
-  Document()->GetContentLanguage(language);
-  language.StripWhitespace();
-
-  
-  
-  if (!language.IsEmpty() && !language.Contains(char16_t(','))) {
-    return NS_Atomize(language);
-    
-    
-  }
-  return nullptr;
 }
 
 void nsPresContext::UpdateEffectiveTextZoom() {
@@ -1694,28 +1662,7 @@ void nsPresContext::StopEmulatingMedium() {
   }
 }
 
-void nsPresContext::ForceCacheLang(nsAtom* aLanguage) {
-  
-  GetDefaultFont(kPresContext_DefaultVariableFont_ID, aLanguage);
-  mLanguagesUsed.PutEntry(aLanguage);
-}
-
-void nsPresContext::CacheAllLangs() {
-  if (mFontGroupCacheDirty) {
-    RefPtr<nsAtom> thisLang = nsStyleFont::GetLanguage(this);
-    GetDefaultFont(kPresContext_DefaultVariableFont_ID, thisLang.get());
-    GetDefaultFont(kPresContext_DefaultVariableFont_ID, nsGkAtoms::x_math);
-    
-    GetDefaultFont(kPresContext_DefaultVariableFont_ID, nsGkAtoms::Unicode);
-    for (auto iter = mLanguagesUsed.Iter(); !iter.Done(); iter.Next()) {
-      GetDefaultFont(kPresContext_DefaultVariableFont_ID, iter.Get()->GetKey());
-    }
-  }
-  mFontGroupCacheDirty = false;
-}
-
 void nsPresContext::ContentLanguageChanged() {
-  mFontGroupCacheDirty = true;
   PostRebuildAllStyleDataEvent(nsChangeHint(0), eRestyle_ForceDescendants);
 }
 
@@ -2561,10 +2508,8 @@ nsIFrame* nsPresContext::GetPrimaryFrameFor(nsIContent* aContent) {
 }
 
 size_t nsPresContext::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
-  return mLangGroupFontPrefs.SizeOfExcludingThis(aMallocSizeOf);
-
   
-  
+  return 0;
 }
 
 bool nsPresContext::IsRootContentDocument() const {

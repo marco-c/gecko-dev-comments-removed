@@ -61,6 +61,50 @@ struct LangGroupFontPrefs {
   
   void Initialize(nsAtom* aLangGroupAtom);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  const nsFont* GetDefaultFont(uint8_t aFontID) const {
+    switch (aFontID) {
+      
+      case kGenericFont_moz_variable:
+        return &mDefaultVariableFont;
+      case kGenericFont_moz_fixed:
+        return &mDefaultFixedFont;
+      
+      case kGenericFont_serif:
+        return &mDefaultSerifFont;
+      case kGenericFont_sans_serif:
+        return &mDefaultSansSerifFont;
+      case kGenericFont_monospace:
+        return &mDefaultMonospaceFont;
+      case kGenericFont_cursive:
+        return &mDefaultCursiveFont;
+      case kGenericFont_fantasy:
+        return &mDefaultFantasyFont;
+        break;
+      default:
+        MOZ_ASSERT_UNREACHABLE("invalid font id");
+        return nullptr;
+    }
+  }
+
   RefPtr<nsAtom> mLangGroup;
   nscoord mMinimumFontSize;
   nsFont mDefaultVariableFont;
@@ -134,52 +178,14 @@ class StaticPresData {
   const LangGroupFontPrefs* GetFontPrefsForLangHelper(
       nsAtom* aLanguage, const LangGroupFontPrefs* aPrefs,
       bool* aNeedsToCache = nullptr) const;
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   const nsFont* GetDefaultFontHelper(uint8_t aFontID, nsAtom* aLanguage,
                                      const LangGroupFontPrefs* aPrefs) const;
-
-  
-
-
-
-  const nsFont* GetDefaultFont(uint8_t aFontID, nsAtom* aLanguage) const {
-    MOZ_ASSERT(aLanguage);
-    return GetDefaultFontHelper(aFontID, aLanguage,
-                                GetFontPrefsForLang(aLanguage));
-  }
-  const LangGroupFontPrefs* GetFontPrefsForLang(
-      nsAtom* aLanguage, bool* aNeedsToCache = nullptr) const {
-    MOZ_ASSERT(aLanguage);
-    return GetFontPrefsForLangHelper(aLanguage, &mStaticLangGroupFontPrefs,
-                                     aNeedsToCache);
-  }
-
-  void ResetCachedFontPrefs() { mStaticLangGroupFontPrefs.Reset(); }
 
  private:
   StaticPresData();
   ~StaticPresData() {}
 
   nsLanguageAtomService* mLangService;
-  LangGroupFontPrefs mStaticLangGroupFontPrefs;
 };
 
 }  

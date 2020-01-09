@@ -23,9 +23,7 @@ void MappedDeclarations::SetIdentAtomValue(nsCSSPropertyID aId,
     
     
     
-    if (nsPresContext* pc = mDocument->GetPresContext()) {
-      pc->ForceCacheLang(aValue);
-    }
+    mDocument->ForceCacheLang(aValue);
   }
 }
 

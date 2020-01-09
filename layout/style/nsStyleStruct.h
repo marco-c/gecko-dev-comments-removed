@@ -99,8 +99,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleFont {
 
 
   static nscoord ZoomText(const nsPresContext* aPresContext, nscoord aSize);
-  static already_AddRefed<nsAtom> GetLanguage(
-      const nsPresContext* aPresContext);
 
   nsFont mFont;
   nscoord mSize;  
