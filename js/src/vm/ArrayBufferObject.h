@@ -358,8 +358,6 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
 
   bool addView(JSContext* cx, JSObject* view);
 
-  void setNewData(FreeOp* fop, BufferContents newContents);
-
   
   
   static void detach(JSContext* cx, Handle<ArrayBufferObject*> buffer);

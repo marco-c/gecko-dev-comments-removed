@@ -517,23 +517,12 @@ static uint8_t* NewCopiedBufferContents(JSContext* cx,
   }
 
   if (buffer->dataPointer()) {
-    buffer->setNewData(cx->runtime()->defaultFreeOp(),
-                       BufferContents::createNoData());
+    buffer->releaseData(cx->runtime()->defaultFreeOp());
+    buffer->setDataPointer(BufferContents::createNoData());
   }
 
   buffer->setByteLength(0);
   buffer->setIsDetached();
-}
-
-void ArrayBufferObject::setNewData(FreeOp* fop, BufferContents newContents) {
-  
-  
-  
-  
-  MOZ_ASSERT(newContents.data() != dataPointer());
-  releaseData(fop);
-
-  setDataPointer(newContents);
 }
 
 
