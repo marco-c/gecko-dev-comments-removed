@@ -480,16 +480,6 @@ enum class ThreadOp {
   Limit
 };
 
-
-
-
-enum class CopyOrFillOp {
-  Copy = 0x01,
-  Fill = 0x02,
-
-  Limit
-};
-
 enum class MozOp {
   
   
@@ -537,7 +527,8 @@ struct OpBytes {
   
   
   uint16_t b0;
-  uint16_t b1;
+  
+  uint32_t b1;
 
   explicit OpBytes(Op x) {
     b0 = uint16_t(x);
