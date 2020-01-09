@@ -833,8 +833,6 @@ void nsImageFrame::NotifyNewCurrentRequest(imgIRequest* aRequest,
     }
     
     InvalidateFrame();
-    
-    mMayHaveRoundedCorners = true;
   }
 }
 
