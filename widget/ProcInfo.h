@@ -66,6 +66,12 @@ struct ProcInfo {
 
 typedef MozPromise<ProcInfo, nsresult, true> ProcInfoPromise;
 
+
+
+
+
+
+
 RefPtr<ProcInfoPromise> GetProcInfo(base::ProcessId pid, int32_t childId,
                                     const ProcType& type);
 
