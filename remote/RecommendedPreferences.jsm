@@ -9,4 +9,10 @@ var EXPORTED_SYMBOLS = ["RecommendedPreferences"];
 const RecommendedPreferences = {
   
   "focusmanager.testmode": true,
+
+  
+  
+  
+  
+  "toolkit.startup.max_resumed_crashes": -1,
 };
