@@ -37,3 +37,11 @@ pref("layout.scroll.root-frame-containers", 2);
 
 
 pref("intl.locale.requested", "");
+
+
+pref("browser.safebrowsing.features.phishing.update", true);
+pref("browser.safebrowsing.features.malware.update", true);
+
+
+pref("browser.safebrowsing.features.trackingAnnotation.update", true);
+pref("browser.safebrowsing.features.trackingProtection.update", true);
