@@ -30,7 +30,7 @@ add_task(async function checkSwitchPageToOnlineMode() {
     
     await ContentTask.spawn(browser, null, async function() {
       ok(content.document.documentURI.startsWith("about:neterror?e=netOffline"), "Should be showing error page");
-      content.document.getElementById("errorTryAgain").click();
+      content.document.querySelector("#netErrorButtonContainer > .try-again").click();
     });
 
     await changeObserved;
