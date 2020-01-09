@@ -12,39 +12,17 @@ ChromeUtils.import("resource://testing-common/TelemetryArchiveTesting.jsm", this
 
 
 
-add_task(async function testUpdatePingReady() {
-  SpecialPowers.pushPrefEnv({set: [
-    [PREF_APP_UPDATE_STAGING_ENABLED, false],
-  ]});
-  await UpdateUtils.setAppUpdateAutoEnabled(false);
-
-  let updateParams = "promptWaitTime=0";
-
+add_task(async function telemetry_updatePing_ready() {
   let archiveChecker = new TelemetryArchiveTesting.Checker();
   await archiveChecker.promiseInit();
 
-  
-  await runUpdateTest(updateParams, 1, [
-    {
-      notificationId: "update-available",
-      button: "button",
-      beforeClick() {
-        checkWhatsNewLink(window, "update-available-whats-new");
-      },
-    },
-    {
-      notificationId: "update-restart",
-      button: "secondaryButton",
-      cleanup() {
-        AppMenuNotifications.removeNotification(/.*/);
-      },
-    },
-  ]);
+  let updateParams = "";
+  await runTelemetryUpdateTest(updateParams, "update-downloaded");
 
   
   
   let updatePing;
-  await BrowserTestUtils.waitForCondition(async function() {
+  await TestUtils.waitForCondition(async function() {
     
     
     updatePing = await archiveChecker.promiseFindPing("update", [
