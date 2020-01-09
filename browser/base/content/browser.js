@@ -1440,6 +1440,10 @@ var gBrowserInit = {
       }
     }
 
+    if (Services.prefs.getBoolPref("toolkit.legacyUserProfileCustomizations.windowIcon", false)) {
+      document.documentElement.setAttribute("icon", "main-window");
+    }
+
     
     
     ToolbarIconColor.init();
