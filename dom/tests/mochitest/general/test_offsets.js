@@ -13,6 +13,13 @@ function testElements(baseid, callback)
       continue;
     }
 
+    
+    
+    let buttonParent = element.closest("button");
+    if (buttonParent && buttonParent !== element) {
+      continue;
+    }
+
     testElement(element);
   }
 

@@ -15,8 +15,7 @@ add_task(async function() {
      "Reset button should start out disabled");
 
   let themesButton = document.getElementById("customization-lwtheme-button");
-  let themesButtonIcon = document.getAnonymousElementByAttribute(themesButton,
-      "class", "button-icon");
+  let themesButtonIcon = themesButton.icon;
   let iconURL = themesButtonIcon.style.backgroundImage;
   
   
