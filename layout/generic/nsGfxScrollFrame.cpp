@@ -4450,7 +4450,7 @@ void ScrollFrameHelper::ScrollToRestoredPosition() {
   
   
   
-  nsPoint layoutRestorePos = GetScrollRange().ClampPoint(mRestorePos);
+  nsPoint layoutRestorePos = GetLayoutScrollRange().ClampPoint(mRestorePos);
 
   
   
