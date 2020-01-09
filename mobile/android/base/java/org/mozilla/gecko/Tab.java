@@ -49,6 +49,7 @@ public class Tab {
     private long mLastUsed;
     private String mUrl;
     private String mBaseDomain;
+    private String mHighlightDomain;
     private String mUserRequested; 
     private String mTitle;
     private Bitmap mFavicon;
@@ -134,6 +135,7 @@ public class Tab {
         mId = id;
         mUrl = url;
         mBaseDomain = "";
+        mHighlightDomain = "";
         mUserRequested = "";
         mExternal = external;
         mParentId = parentId;
@@ -212,6 +214,13 @@ public class Tab {
 
     public String getBaseDomain() {
         return mBaseDomain;
+    }
+
+    
+
+
+    public String getHighlightDomain() {
+        return mHighlightDomain;
     }
 
     public Bitmap getFavicon() {
@@ -656,6 +665,7 @@ public class Tab {
         setContentType(message.getString("contentType"));
         updateUserRequested(message.getString("userRequested"));
         mBaseDomain = message.getString("baseDomain", "");
+        mHighlightDomain = message.getString("highlightDomain", "");
 
         setHasFeeds(false);
         setManifestUrl(null);
