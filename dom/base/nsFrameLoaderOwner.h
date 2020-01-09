@@ -11,8 +11,9 @@ class nsFrameLoader;
 namespace mozilla {
 class ErrorResult;
 namespace dom {
+class BrowsingContext;
 struct RemotenessOptions;
-}
+}  
 }  
 
 
@@ -37,6 +38,8 @@ class nsFrameLoaderOwner : public nsISupports {
   nsFrameLoaderOwner() = default;
   already_AddRefed<nsFrameLoader> GetFrameLoader();
   void SetFrameLoader(nsFrameLoader* aNewFrameLoader);
+
+  already_AddRefed<mozilla::dom::BrowsingContext> GetBrowsingContext();
 
   
   
