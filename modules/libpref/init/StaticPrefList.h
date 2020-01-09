@@ -1441,17 +1441,18 @@ VARCACHE_PREF(
 
 
 
-#ifdef ANDROID
-# define PREF_VALUE  32768  // Measured in KiB
-#else
-# define PREF_VALUE 512000  // Measured in KiB
-#endif
 VARCACHE_PREF(
   "media.cache_size",
    MediaCacheSize,
-  RelaxedAtomicUint32, PREF_VALUE
+  uint32_t, 512000 
 )
-#undef PREF_VALUE
+
+
+VARCACHE_PREF(
+  "media.cache_size.cellular",
+   MediaCacheCellularSize,
+  uint32_t, 32768 
+)
 
 
 
@@ -1480,32 +1481,30 @@ VARCACHE_PREF(
 
 
 
-#ifdef ANDROID
-# define PREF_VALUE 10  // Use a smaller limit to save battery.
-#else
-# define PREF_VALUE 30
-#endif
 VARCACHE_PREF(
   "media.cache_resume_threshold",
    MediaCacheResumeThreshold,
-  RelaxedAtomicInt32, PREF_VALUE
+  uint32_t, 30
 )
-#undef PREF_VALUE
+VARCACHE_PREF(
+  "media.cache_resume_threshold.cellular",
+   MediaCacheCellularResumeThreshold,
+  uint32_t, 10
+)
 
 
 
 
-#ifdef ANDROID
-# define PREF_VALUE 30  // Use a smaller limit to save battery.
-#else
-# define PREF_VALUE 60
-#endif
 VARCACHE_PREF(
   "media.cache_readahead_limit",
    MediaCacheReadaheadLimit,
-  RelaxedAtomicInt32, PREF_VALUE
+  uint32_t, 60
 )
-#undef PREF_VALUE
+VARCACHE_PREF(
+  "media.cache_readahead_limit.cellular",
+   MediaCacheCellularReadaheadLimit,
+  uint32_t, 30
+)
 
 
 VARCACHE_PREF(

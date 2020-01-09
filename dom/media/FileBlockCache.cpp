@@ -125,11 +125,9 @@ void FileBlockCache::Flush() {
   }));
 }
 
-int32_t FileBlockCache::GetMaxBlocks() const {
+size_t FileBlockCache::GetMaxBlocks(size_t aCacheSizeInKB) const {
   
   
-  const uint32_t cacheSizeKb =
-      std::min(StaticPrefs::MediaCacheSize(), uint32_t(INT32_MAX) * 2);
   
   static_assert(MediaCacheStream::BLOCK_SIZE % 1024 == 0,
                 "BLOCK_SIZE should be a multiple of 1024");
@@ -144,10 +142,9 @@ int32_t FileBlockCache::GetMaxBlocks() const {
   
   
   
-  constexpr uint32_t blockSizeKb =
-      uint32_t(MediaCacheStream::BLOCK_SIZE / 1024);
-  const int32_t maxBlocks = int32_t(cacheSizeKb / blockSizeKb);
-  return std::max(maxBlocks, int32_t(1));
+  constexpr size_t blockSizeKb = size_t(MediaCacheStream::BLOCK_SIZE / 1024);
+  const size_t maxBlocks = aCacheSizeInKB / blockSizeKb;
+  return std::max(maxBlocks, size_t(1));
 }
 
 FileBlockCache::FileBlockCache()

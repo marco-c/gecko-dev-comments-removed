@@ -45,7 +45,7 @@ class MemoryBlockCache : public MediaBlockCacheBase {
 
   
   
-  int32_t GetMaxBlocks() const override { return mMaxBlocks; }
+  size_t GetMaxBlocks(size_t) const override { return mMaxBlocks; }
 
   
   virtual nsresult WriteBlock(uint32_t aBlockIndex, Span<const uint8_t> aData1,
@@ -73,7 +73,7 @@ class MemoryBlockCache : public MediaBlockCacheBase {
   const size_t mInitialContentLength;
 
   
-  const int32_t mMaxBlocks;
+  const size_t mMaxBlocks;
 
   
   Mutex mMutex;
