@@ -11,6 +11,14 @@
 #include "nsString.h"
 #include "mozilla/RecursiveMutex.h"
 
+#ifdef Status
+
+
+typedef Status __StatusTmp;
+#undef Status
+typedef __StatusTmp Status;
+#endif
+
 class nsIHttpHeaderVisitor;
 
 
@@ -49,8 +57,6 @@ class nsHttpResponseHead {
   void Exit() { mRecursiveMutex.Unlock(); }
 
   HttpVersion Version();
-
-#undef Status
   uint16_t Status();
   void StatusText(nsACString &aStatusText);
   int64_t ContentLength();

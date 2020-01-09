@@ -53,7 +53,9 @@
 #ifdef Status
 
 
+typedef Status __StatusTmp;
 #  undef Status
+typedef __StatusTmp Status;
 #endif
 
 class nsIJARChannel;
