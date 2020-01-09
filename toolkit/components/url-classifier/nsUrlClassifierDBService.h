@@ -70,9 +70,7 @@ class nsUrlClassifierDBServiceWorker;
 class nsIThread;
 class nsIURI;
 class UrlClassifierDBServiceWorkerProxy;
-
 namespace mozilla {
-
 namespace safebrowsing {
 class Classifier;
 class ProtocolParser;
@@ -80,11 +78,6 @@ class ProtocolParser;
 nsresult TablesToResponse(const nsACString& tables);
 
 }  
-
-namespace net {
-class AsyncUrlChannelClassifier;
-}
-
 }  
 
 
@@ -93,8 +86,6 @@ class nsUrlClassifierDBService final : public nsIUrlClassifierDBService,
                                        public nsIURIClassifier,
                                        public nsIUrlClassifierInfo,
                                        public nsIObserver {
-  friend class mozilla::net::AsyncUrlChannelClassifier;
-
  public:
   
   nsUrlClassifierDBService();
@@ -122,10 +113,6 @@ class nsUrlClassifierDBService final : public nsIUrlClassifierDBService,
   static bool ShutdownHasStarted();
 
  private:
-  
-  
-  static nsUrlClassifierDBServiceWorker* GetWorker();
-
   const nsTArray<nsCString> kObservedPrefs = {
       NS_LITERAL_CSTRING(CHECK_MALWARE_PREF),
       NS_LITERAL_CSTRING(CHECK_PHISHING_PREF),
