@@ -83,6 +83,13 @@ class AnimationUtils {
 
   static bool EffectSetContainsAnimatedScale(EffectSet& aEffects,
                                              const nsIFrame* aFrame);
+
+  
+
+
+
+  static bool HasCurrentTransitions(const dom::Element* aElement,
+                                    PseudoStyleType aPseudoType);
 };
 
 }  

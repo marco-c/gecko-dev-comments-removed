@@ -2289,13 +2289,6 @@ class nsLayoutUtils {
 
 
 
-  static bool HasCurrentTransitions(const nsIFrame* aFrame);
-
-  
-
-
-
-
   static bool HasAnimationOfPropertySet(const nsIFrame* aFrame,
                                         const nsCSSPropertyIDSet& aPropertySet);
 

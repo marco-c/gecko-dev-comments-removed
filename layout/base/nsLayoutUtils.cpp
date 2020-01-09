@@ -239,14 +239,6 @@ static bool HasMatchingAnimations(const nsIFrame* aFrame, TestType&& aTest) {
   return HasMatchingAnimations(effects, aTest);
 }
 
-bool nsLayoutUtils::HasCurrentTransitions(const nsIFrame* aFrame) {
-  return HasMatchingAnimations(aFrame, [](KeyframeEffect& aEffect) {
-    
-    
-    return aEffect.IsCurrent() && aEffect.GetAnimation()->AsCSSTransition();
-  });
-}
-
 template <typename EffectSetOrFrame>
 static bool MayHaveAnimationOfPropertySet(
     const EffectSetOrFrame* aTarget, const nsCSSPropertyIDSet& aPropertySet) {
