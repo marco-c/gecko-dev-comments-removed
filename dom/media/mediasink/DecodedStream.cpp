@@ -743,6 +743,18 @@ void DecodedStream::SendVideo(bool aIsSameOrigin,
   }
 
   if (mVideoQueue.IsFinished() && !mData->mHaveSentFinishVideo) {
+    if (!mData->mLastVideoImage) {
+      
+      
+      
+
+      
+      compensateEOS = true;
+      
+      aIsSameOrigin = false;
+      
+      mData->mLastVideoImageDisplaySize = mInfo.mVideo.mDisplay;
+    }
     if (compensateEOS) {
       VideoSegment endSegment;
       
