@@ -8,6 +8,8 @@
 
 #include "shell/OSObject.h"
 
+#include "mozilla/TextUtils.h"
+
 #include <errno.h>
 #include <stdlib.h>
 #ifdef XP_WIN
@@ -77,8 +79,8 @@ static bool IsAbsolutePath(const UniqueChars& filename) {
   
   
 
-  if ((strlen(pathname) > 3 && isalpha(pathname[0]) && pathname[1] == ':' &&
-       pathname[2] == '\\')) {
+  if ((strlen(pathname) > 3 && mozilla::IsAsciiAlpha(pathname[0]) &&
+       pathname[1] == ':' && pathname[2] == '\\')) {
     return true;
   }
 #endif
