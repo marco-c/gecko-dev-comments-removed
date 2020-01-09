@@ -1034,13 +1034,13 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-  void WillPaintWindow();
+  MOZ_CAN_RUN_SCRIPT void WillPaintWindow();
   
 
 
 
 
-  void DidPaintWindow();
+  MOZ_CAN_RUN_SCRIPT void DidPaintWindow();
 
   bool IsVisible();
   MOZ_CAN_RUN_SCRIPT
