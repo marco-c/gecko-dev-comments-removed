@@ -1013,6 +1013,13 @@ VARCACHE_PREF(
 
 
 VARCACHE_PREF(
+  "layout.css.contain.enabled",
+   layout_css_contain_enabled,
+  bool, false
+)
+
+
+VARCACHE_PREF(
   "layout.css.step-position-jump.enabled",
    layout_css_step_position_jump_enabled,
   bool, true
