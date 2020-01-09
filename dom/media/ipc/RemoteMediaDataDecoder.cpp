@@ -22,22 +22,7 @@ RemoteMediaDataDecoder::RemoteMediaDataDecoder(
 
 RemoteMediaDataDecoder::~RemoteMediaDataDecoder() {
   
-  
-  
-  
-  RefPtr<IRemoteDecoderChild> child = mChild.forget();
-
-  RefPtr<Runnable> task = NS_NewRunnableFunction(
-      "dom::RemoteMediaDataDecoder::~RemoteMediaDataDecoder", [child]() {
-        MOZ_ASSERT(child);
-        child->DestroyIPDL();
-      });
-
-  
-  
-  child = nullptr;
-
-  mManagerThread->Dispatch(task.forget(), NS_DISPATCH_NORMAL);
+  MOZ_ASSERT(!mChild);
 }
 
 RefPtr<MediaDataDecoder::InitPromise> RemoteMediaDataDecoder::Init() {
@@ -81,10 +66,15 @@ RefPtr<MediaDataDecoder::DecodePromise> RemoteMediaDataDecoder::Drain() {
 
 RefPtr<ShutdownPromise> RemoteMediaDataDecoder::Shutdown() {
   RefPtr<RemoteMediaDataDecoder> self = this;
-  return InvokeAsync(mAbstractManagerThread, __func__, [self]() {
-    self->mChild->Shutdown();
-    return ShutdownPromise::CreateAndResolve(true, __func__);
-  });
+  return InvokeAsync(mAbstractManagerThread, __func__,
+                     [self]() { return self->mChild->Shutdown(); })
+      ->Then(mAbstractManagerThread, __func__,
+             [self](const ShutdownPromise::ResolveOrRejectValue& aValue) {
+               self->mChild->DestroyIPDL();
+               self->mChild = nullptr;
+               return ShutdownPromise::CreateAndResolveOrReject(aValue,
+                                                                __func__);
+             });
 }
 
 bool RemoteMediaDataDecoder::IsHardwareAccelerated(
