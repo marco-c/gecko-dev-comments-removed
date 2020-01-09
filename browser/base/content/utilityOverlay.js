@@ -30,23 +30,12 @@ Object.defineProperty(this, "BROWSER_NEW_TAB_URL", {
       }
       
       
-      let extensionInfo;
-      try {
-        extensionInfo = ExtensionSettingsStore.getSetting("url_overrides", "newTabURL");
-      } catch (e) {
-        
-        
-        
-        if (aboutNewTabService.newTabURL.startsWith("moz-extension://")) {
-          return "about:privatebrowsing";
-        }
-      }
-
-      if (extensionInfo) {
-        let policy = WebExtensionPolicy.getByID(extensionInfo.id);
-        if (!policy || !policy.privateBrowsingAllowed) {
-          return "about:privatebrowsing";
-        }
+      let extensionControlled = Services.prefs.getBoolPref("browser.newtab.extensionControlled", false);
+      let privateAllowed = Services.prefs.getBoolPref("browser.newtab.privateAllowed", false);
+      
+      
+      if (!privateAllowed && (extensionControlled || aboutNewTabService.newTabURL.startsWith("moz-extension://"))) {
+        return "about:privatebrowsing";
       }
     }
     return aboutNewTabService.newTabURL;
