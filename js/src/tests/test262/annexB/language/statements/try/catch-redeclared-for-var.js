@@ -10,7 +10,6 @@
 
 
 
-
 var before, during, after;
 
 try {

@@ -16,14 +16,14 @@ try {
   throw 'exception';
 } catch (err) {
   before = err;
-  for (var err in { propertyName: null }) {
+  for (var err of [2]) {
     during = err;
   }
   after = err;
 }
 
 assert.sameValue(before, 'exception');
-assert.sameValue(during, 'propertyName', 'during loop body evaluation');
-assert.sameValue(after, 'propertyName', 'after loop body evaluation');
+assert.sameValue(during, 2, 'during loop body evaluation');
+assert.sameValue(after, 2, 'after loop body evaluation');
 
 reportCompare(0, 0);

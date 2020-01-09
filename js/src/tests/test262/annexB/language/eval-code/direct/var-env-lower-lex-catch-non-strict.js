@@ -17,18 +17,18 @@
 
 
 
-
-
-
-
-
 try {
   throw null;
 } catch (err) {
   eval('function err() {}');
+  eval('function* err() {}');
+  eval('async function err() {}');
+  eval('async function* err() {}');
+
   eval('var err;');
   eval('for (var err; false; ) {}');
   eval('for (var err in []) {}');
+  eval('for (var err of []) {}');
 }
 
 reportCompare(0, 0);

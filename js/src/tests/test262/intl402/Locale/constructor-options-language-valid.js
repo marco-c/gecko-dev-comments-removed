@@ -28,10 +28,10 @@
 
 
 
+
+
+
 const validLanguageOptions = [
-  [null, 'null'],
-  ['zh-cmn', 'cmn'],
-  ['ZH-CMN', 'cmn'],
   [{ toString() { return 'de' } }, 'de'],
 ];
 for (const [language, expected] of validLanguageOptions) {
@@ -55,6 +55,9 @@ for (const [language, expected] of validLanguageOptions) {
 }
 
 const invalidLanguageOptions = [
+    null,
+    'zh-cmn',
+    'ZH-CMN',
     'abcd',
 ];
 for (const language of invalidLanguageOptions) {

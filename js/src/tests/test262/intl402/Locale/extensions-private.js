@@ -17,33 +17,11 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const loc = new Intl.Locale("x-default", {
+assert.throws(RangeError, () => new Intl.Locale("x-default", {
   language: "fr",
   script: "Cyrl",
   region: "DE",
   numberingSystem: "latn",
-});
-assert.sameValue(loc.toString(), "fr-Cyrl-DE-u-nu-latn");
-assert.sameValue(loc.language, "fr");
-assert.sameValue(loc.script, "Cyrl");
-assert.sameValue(loc.region, "DE");
-assert.sameValue(loc.numberingSystem, "latn");
+}));
 
 reportCompare(0, 0);

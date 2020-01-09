@@ -38,9 +38,6 @@ const testDataMaximal = {
     "und-419": "es-Latn-419",
     "und-150": "ru-Cyrl-RU",
     "und-AT": "de-Latn-AT",
-
-    
-    "x-private": "x-private",
 };
 
 const testDataMinimal = {
@@ -66,9 +63,6 @@ const testDataMinimal = {
     "es-Latn-419": "es-419",
     "ru-Cyrl-RU": "ru",
     "de-Latn-AT": "de-AT",
-
-    
-    "x-private": "x-private",
 };
 
 
@@ -106,5 +100,10 @@ for (const [tag, minimal] of Object.entries(testDataMinimal)) {
                          `"${input}".minimize() should be "${output}"`);
     }
 }
+
+
+
+
+assert.throws(RangeError, () => new Intl.Locale("x-private"));
 
 reportCompare(0, 0);
