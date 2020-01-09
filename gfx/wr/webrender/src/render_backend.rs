@@ -1415,9 +1415,12 @@ impl RenderBackend {
         }
 
         
-        let build_frame = (render_frame && !doc.frame_is_valid) ||
-            self.resource_cache.requires_frame_build() &&
-            doc.frame_builder.is_some();
+        
+        
+        
+        
+        let build_frame = (render_frame && !doc.frame_is_valid && doc.has_pixels()) ||
+            (self.resource_cache.requires_frame_build() && doc.can_render());
 
         
         
@@ -1427,7 +1430,7 @@ impl RenderBackend {
         }
 
         let mut frame_build_time = None;
-        if build_frame && doc.has_pixels() {
+        if build_frame {
             profile_scope!("generate frame");
 
             *frame_counter += 1;
