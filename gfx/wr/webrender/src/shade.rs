@@ -2,11 +2,11 @@
 
 
 
-use batch::{BatchKey, BatchKind, BrushBatchKind};
-use device::{Device, Program, ShaderError};
+use crate::batch::{BatchKey, BatchKind, BrushBatchKind};
+use crate::device::{Device, Program, ShaderError};
 use euclid::{Transform3D};
-use glyph_rasterizer::GlyphFormat;
-use renderer::{
+use crate::glyph_rasterizer::GlyphFormat;
+use crate::renderer::{
     desc,
     MAX_VERTEX_TEXTURE_WIDTH,
     BlendMode, DebugFlags, ImageBufferKind, RendererError, RendererOptions,

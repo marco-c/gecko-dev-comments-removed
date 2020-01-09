@@ -17,7 +17,7 @@ use euclid::{Length, TypedRect, TypedScale, TypedSize2D, TypedTransform3D, Typed
 use euclid::{TypedPoint2D, TypedPoint3D, TypedVector2D, TypedVector3D, TypedSideOffsets2D};
 use euclid::HomogeneousVector;
 
-use image::DirtyRect;
+use crate::image::DirtyRect;
 
 
 

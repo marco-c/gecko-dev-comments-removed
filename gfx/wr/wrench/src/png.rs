@@ -2,15 +2,15 @@
 
 
 
-use {WindowWrapper, NotifierEvent};
+use crate::{WindowWrapper, NotifierEvent};
 use image::png::PNGEncoder;
 use image::{self, ColorType, GenericImageView};
 use std::fs::File;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::Receiver;
 use webrender::api::units::*;
-use wrench::{Wrench, WrenchThing};
-use yaml_frame_reader::YamlFrameReader;
+use crate::wrench::{Wrench, WrenchThing};
+use crate::yaml_frame_reader::YamlFrameReader;
 
 pub enum ReadSurface {
     Screen,

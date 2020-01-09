@@ -8,9 +8,9 @@ use euclid::{size2, TypedRect, num::Zero};
 use std::ops::{Add, Sub};
 use std::sync::Arc;
 
-use api::{IdNamespace, TileSize};
-use font::{FontInstanceKey, FontInstanceData, FontKey, FontTemplate};
-use units::*;
+use crate::api::{IdNamespace, TileSize};
+use crate::font::{FontInstanceKey, FontInstanceData, FontKey, FontTemplate};
+use crate::units::*;
 
 
 
@@ -398,7 +398,7 @@ where
     pub fn map<F>(self, func: F) -> Self
         where F: FnOnce(TypedRect<T, U>) -> TypedRect<T, U>,
     {
-        use DirtyRect::*;
+        use crate::DirtyRect::*;
 
         match self {
             All        => All,
@@ -408,7 +408,7 @@ where
 
     
     pub fn union(&self, other: &Self) -> Self {
-        use DirtyRect::*;
+        use crate::DirtyRect::*;
 
         match (*self, *other) {
             (All, _) | (_, All)        => All,
@@ -418,7 +418,7 @@ where
 
     
     pub fn intersection(&self, other: &Self) -> Self {
-        use DirtyRect::*;
+        use crate::DirtyRect::*;
 
         match (*self, *other) {
             (All, rect) | (rect, All)  => rect,
@@ -429,7 +429,7 @@ where
 
     
     pub fn to_subrect_of(&self, rect: &TypedRect<T, U>) -> TypedRect<T, U> {
-        use DirtyRect::*;
+        use crate::DirtyRect::*;
 
         match *self {
             All              => *rect,

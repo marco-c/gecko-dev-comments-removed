@@ -2,15 +2,15 @@
 
 
 
-use {WindowWrapper, NotifierEvent};
-use blob;
+use crate::{WindowWrapper, NotifierEvent};
+use crate::blob;
 use euclid::{point2, size2, rect};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicIsize, Ordering};
 use std::sync::mpsc::Receiver;
 use webrender::api::*;
 use webrender::api::units::*;
-use wrench::Wrench;
+use crate::wrench::Wrench;
 
 pub struct RawtestHarness<'a> {
     wrench: &'a mut Wrench,

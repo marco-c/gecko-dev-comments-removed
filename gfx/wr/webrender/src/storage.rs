@@ -3,7 +3,7 @@
 
 
 use std::{iter::Extend, ops, marker::PhantomData, u32};
-use util::Recycler;
+use crate::util::Recycler;
 
 #[derive(Debug, Hash)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
