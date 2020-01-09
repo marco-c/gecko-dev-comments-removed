@@ -7,6 +7,8 @@
 
 #include "mozilla/dom/JSWindowActorService.h"
 #include "mozilla/dom/ChromeUtilsBinding.h"
+#include "mozilla/dom/EventTargetBinding.h"
+#include "mozilla/dom/EventTarget.h"
 #include "mozilla/dom/PContent.h"
 #include "mozilla/StaticPtr.h"
 #include "mozJSComponentLoader.h"
@@ -85,9 +87,10 @@ nsresult CallJSActorMethod(nsWrapperCache* aActor, const char* aName,
 
 
 
-class JSWindowActorProtocol final : public nsISupports {
+class JSWindowActorProtocol final : public nsIDOMEventListener {
  public:
   NS_DECL_ISUPPORTS
+  NS_DECL_NSIDOMEVENTLISTENER
 
   static already_AddRefed<JSWindowActorProtocol> FromIPC(
       const JSWindowActorInfo& aInfo);
@@ -103,7 +106,15 @@ class JSWindowActorProtocol final : public nsISupports {
 
   struct ParentSide : public Sided {};
 
-  struct ChildSide : public Sided {};
+  struct EventDecl {
+    nsString mName;
+    EventListenerFlags mFlags;
+    Optional<bool> mPassive;
+  };
+
+  struct ChildSide : public Sided {
+    nsTArray<EventDecl> mEvents;
+  };
 
   const nsAString& Name() const { return mName; }
   const ParentSide& Parent() const { return mParent; }
@@ -122,7 +133,7 @@ class JSWindowActorProtocol final : public nsISupports {
   ChildSide mChild;
 };
 
-NS_IMPL_ISUPPORTS0(JSWindowActorProtocol);
+NS_IMPL_ISUPPORTS(JSWindowActorProtocol, nsIDOMEventListener);
 
  already_AddRefed<JSWindowActorProtocol>
 JSWindowActorProtocol::FromIPC(const JSWindowActorInfo& aInfo) {
@@ -130,6 +141,18 @@ JSWindowActorProtocol::FromIPC(const JSWindowActorInfo& aInfo) {
 
   RefPtr<JSWindowActorProtocol> proto = new JSWindowActorProtocol(aInfo.name());
   proto->mChild.mModuleURI.Assign(aInfo.url());
+
+  proto->mChild.mEvents.SetCapacity(aInfo.events().Length());
+  for (auto& ipc : aInfo.events()) {
+    auto* event = proto->mChild.mEvents.AppendElement();
+    event->mName.Assign(ipc.name());
+    event->mFlags.mCapture = ipc.capture();
+    event->mFlags.mInSystemGroup = ipc.systemGroup();
+    event->mFlags.mAllowUntrustedEvents = ipc.allowUntrusted();
+    if (ipc.hasPassive()) {
+      event->mPassive.Construct(ipc.passive());
+    }
+  }
 
   return proto.forget();
 }
@@ -140,6 +163,19 @@ JSWindowActorInfo JSWindowActorProtocol::ToIPC() {
   JSWindowActorInfo info;
   info.name() = mName;
   info.url() = mChild.mModuleURI;
+
+  info.events().SetCapacity(mChild.mEvents.Length());
+  for (auto& event : mChild.mEvents) {
+    auto* ipc = info.events().AppendElement();
+    ipc->name().Assign(event.mName);
+    ipc->capture() = event.mFlags.mCapture;
+    ipc->systemGroup() = event.mFlags.mInSystemGroup;
+    ipc->allowUntrusted() = event.mFlags.mAllowUntrustedEvents;
+    ipc->hasPassive() = event.mPassive.WasPassed();
+    if (event.mPassive.WasPassed()) {
+      ipc->passive() = event.mPassive.Value();
+    }
+  }
 
   return info;
 }
@@ -154,7 +190,89 @@ JSWindowActorProtocol::FromWebIDLOptions(const nsAString& aName,
   proto->mParent.mModuleURI = aOptions.mParent.mModuleURI;
   proto->mChild.mModuleURI = aOptions.mChild.mModuleURI;
 
+  
+  
+  if (aOptions.mChild.mEvents.WasPassed()) {
+    auto& entries = aOptions.mChild.mEvents.Value().Entries();
+    proto->mChild.mEvents.SetCapacity(entries.Length());
+
+    for (auto& entry : entries) {
+      
+      
+      if (entry.mValue.mOnce) {
+        aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+        return nullptr;
+      }
+
+      
+      EventDecl* evt = proto->mChild.mEvents.AppendElement();
+      evt->mName = entry.mKey;
+      evt->mFlags.mCapture = entry.mValue.mCapture;
+      evt->mFlags.mInSystemGroup = entry.mValue.mMozSystemGroup;
+      evt->mFlags.mAllowUntrustedEvents =
+          entry.mValue.mWantUntrusted.WasPassed()
+              ? entry.mValue.mWantUntrusted.Value()
+              : false;
+      if (entry.mValue.mPassive.WasPassed()) {
+        evt->mPassive.Construct(entry.mValue.mPassive.Value());
+      }
+    }
+  }
+
   return proto.forget();
+}
+
+
+
+
+
+NS_IMETHODIMP JSWindowActorProtocol::HandleEvent(Event* aEvent) {
+  
+  
+  EventTarget* target = aEvent->GetOriginalTarget();
+  if (NS_WARN_IF(!target)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  nsCOMPtr<nsPIDOMWindowInner> inner =
+      do_QueryInterface(target->GetOwnerGlobal());
+  if (NS_WARN_IF(!inner)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  RefPtr<WindowGlobalChild> wgc = inner->GetWindowGlobalChild();
+  if (NS_WARN_IF(!wgc)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  ErrorResult error;
+  RefPtr<JSWindowActorChild> actor = wgc->GetActor(mName, error);
+  if (NS_WARN_IF(error.Failed())) {
+    return error.StealNSResult();
+  }
+
+  
+  JS::Rooted<JS::Value> dummy(RootingCx());
+  return CallJSActorMethod(actor, "handleEvent", aEvent, &dummy);
+}
+
+void JSWindowActorProtocol::RegisterListenersFor(EventTarget* aRoot) {
+  EventListenerManager* elm = aRoot->GetOrCreateListenerManager();
+
+  for (auto& event : mChild.mEvents) {
+    elm->AddEventListenerByType(EventListenerHolder(this), event.mName,
+                                event.mFlags, event.mPassive);
+  }
+}
+
+void JSWindowActorProtocol::UnregisterListenersFor(EventTarget* aRoot) {
+  EventListenerManager* elm = aRoot->GetOrCreateListenerManager();
+
+  for (auto& event : mChild.mEvents) {
+    elm->RemoveEventListenerByType(EventListenerHolder(this), event.mName,
+                                   event.mFlags);
+  }
 }
 
 JSWindowActorService::JSWindowActorService() { MOZ_ASSERT(NS_IsMainThread()); }
@@ -200,10 +318,29 @@ void JSWindowActorService::RegisterWindowActor(
   for (auto* cp : ContentParent::AllProcesses(ContentParent::eLive)) {
     Unused << cp->SendInitJSWindowActorInfos(ipcInfos);
   }
+
+  
+  for (EventTarget* root : mRoots) {
+    proto->RegisterListenersFor(root);
+  }
 }
 
 void JSWindowActorService::UnregisterWindowActor(const nsAString& aName) {
-  mDescriptors.Remove(aName);
+  RefPtr<JSWindowActorProtocol> proto;
+  if (mDescriptors.Remove(aName, getter_AddRefs(proto))) {
+    
+    
+    
+    
+    
+    
+    
+
+    
+    for (EventTarget* root : mRoots) {
+      proto->UnregisterListenersFor(root);
+    }
+  }
 }
 
 void JSWindowActorService::LoadJSWindowActorInfos(
@@ -216,6 +353,11 @@ void JSWindowActorService::LoadJSWindowActorInfos(
     RefPtr<JSWindowActorProtocol> proto =
         JSWindowActorProtocol::FromIPC(aInfos[i]);
     mDescriptors.Put(aInfos[i].name(), proto);
+
+    
+    for (EventTarget* root : mRoots) {
+      proto->RegisterListenersFor(root);
+    }
   }
 }
 
@@ -321,6 +463,24 @@ void JSWindowActorService::ReceiveMessage(JS::RootedObject& aObj,
                                       JS::HandleValueArray(argv), &dummy))) {
     JS_ClearPendingException(cx);
     return;
+  }
+}
+
+void JSWindowActorService::RegisterWindowRoot(EventTarget* aRoot) {
+  MOZ_ASSERT(!mRoots.Contains(aRoot));
+  mRoots.AppendElement(aRoot);
+
+  
+  for (auto iter = mDescriptors.Iter(); !iter.Done(); iter.Next()) {
+    iter.Data()->RegisterListenersFor(aRoot);
+  }
+}
+
+ void JSWindowActorService::UnregisterWindowRoot(
+    EventTarget* aRoot) {
+  if (gJSWindowActorService) {
+    
+    gJSWindowActorService->mRoots.RemoveElement(aRoot);
   }
 }
 
