@@ -9,14 +9,54 @@ loader.lazyRequireGetter(this, "adb", "devtools/shared/adb/adb", true);
 
 
 
+class UsbRuntime {
+  constructor(adbRuntime) {
+    this.id = adbRuntime.id;
+    this.deviceId = adbRuntime.deviceId;
+    this.deviceName = adbRuntime.deviceName;
+    this.shortName = adbRuntime.shortName;
+    this.socketPath = adbRuntime.socketPath;
+    this.isUnknown = false;
+    this.isUnplugged = false;
+  }
+}
+
+
+
+
+
+class UnknownUsbRuntime {
+  constructor(adbDevice) {
+    this.id = adbDevice.id + "|unknown";
+    this.deviceId = adbDevice.id;
+    this.deviceName = adbDevice.name;
+    this.shortName = "Unknown runtime";
+    this.socketPath = null;
+    this.isUnknown = true;
+    this.isUnplugged = false;
+  }
+}
+
+
+
+
 
 function addUSBRuntimesObserver(listener) {
   adb.registerListener(listener);
 }
 exports.addUSBRuntimesObserver = addUSBRuntimesObserver;
 
-function getUSBRuntimes() {
-  return adb.getRuntimes();
+async function getUSBRuntimes() {
+  
+  const runtimes = adb.getRuntimes().map(r => new UsbRuntime(r));
+
+  
+  const runtimeDevices = runtimes.map(r => r.deviceId);
+  const unknownRuntimes = adb.getDevices()
+    .filter(d => !runtimeDevices.includes(d.id))
+    .map(d => new UnknownUsbRuntime(d));
+
+  return runtimes.concat(unknownRuntimes);
 }
 exports.getUSBRuntimes = getUSBRuntimes;
 

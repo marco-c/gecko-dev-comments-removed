@@ -16,7 +16,9 @@ add_task(async function() {
   info("Create a mocked unknown runtime");
   let isUnknown = true;
   mocks.createUSBRuntime("test_device_id", {
-    isUnknown: () => isUnknown,
+    get isUnknown() {
+      return isUnknown;
+    },
     
     
     shortName: RUNTIME_NAME,
