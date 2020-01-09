@@ -23,6 +23,7 @@ this.FirefoxMonitor = {
   observerAdded: false,
 
   
+  
   strings: null,
 
   
@@ -82,7 +83,6 @@ this.FirefoxMonitor = {
       this.startObserving();
     }
   },
-
 
   
   
@@ -145,27 +145,27 @@ this.FirefoxMonitor = {
     this._delayedInited = true;
   },
 
-  async loadStrings() {
-    
-    
-    
-    let response;
-    let locale = Services.locale.defaultLocale;
-    try {
-      response = await fetch(this.getURL(`locale/${locale}/strings.properties`));
-    } catch (e) {
-      Cu.reportError(`Firefox Monitor: no strings available for ${locale}. Falling back to en-US.`);
-      response = await fetch(this.getURL(`locale/en-US/strings.properties`));
+  loadStrings() {
+    let l10nManifest;
+    if (this.extension.rootURI instanceof Ci.nsIJARURI) {
+      l10nManifest = this.extension.rootURI.JARFile
+                            .QueryInterface(Ci.nsIFileURL).file;
+    } else if (this.extension.rootURI instanceof Ci.nsIFileURL) {
+      l10nManifest = this.extension.rootURI.file;
     }
-    let buffer = await response.arrayBuffer();
-    let binary = "";
-    let bytes = new Uint8Array(buffer);
-    let len = bytes.byteLength;
-    for (let i = 0; i < len; i++) {
-      binary += String.fromCharCode(bytes[i]);
+
+    if (l10nManifest) {
+      Components.manager.addBootstrappedManifestLocation(l10nManifest);
+
+      XPCOMUtils.defineLazyGetter(this, "strings", () => {
+        return Services.strings.createBundle(
+          "chrome://fxmonitor/locale/fxmonitor.properties");
+      });
+    } else {
+      
+      
+      throw "Cannot find fxmonitor chrome.manifest for registering translated strings";
     }
-    let b64 = btoa(binary);
-    this.strings = Services.strings.createBundle(`data:text/plain;base64,${b64}`);
   },
 
   kRemoteSettingsKey: "fxmonitor-breaches",

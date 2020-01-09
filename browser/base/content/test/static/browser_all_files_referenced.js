@@ -280,8 +280,11 @@ function parseManifest(manifestUri) {
         
         
         
+        
         if (chromeUri === "chrome://webcompat-reporter/locale/") {
           gChromeMap.set("chrome://webcompat-reporter/locale/", true);
+        } else if (chromeUri === "chrome://fxmonitor/locale/") {
+          gChromeMap.set("chrome://fxmonitor/locale/", true);
         } else {
           trackChromeUri(chromeUri);
         }
