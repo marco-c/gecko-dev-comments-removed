@@ -27,7 +27,7 @@ use std::ptr;
 use std::rc::Rc;
 use std::slice;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicUsize, ATOMIC_USIZE_INIT, Ordering};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::thread;
 use webrender_build::shader::ProgramSourceDigest;
 use webrender_build::shader::{parse_shader_source, shader_source_from_file};
@@ -44,7 +44,7 @@ pub struct GpuFrameId(usize);
 
 
 
-static GPU_BYTES_ALLOCATED: AtomicUsize = ATOMIC_USIZE_INIT;
+static GPU_BYTES_ALLOCATED: AtomicUsize = AtomicUsize::new(0);
 
 
 pub fn total_gpu_bytes_allocated() -> usize {
