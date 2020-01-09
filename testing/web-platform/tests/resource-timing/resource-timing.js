@@ -251,9 +251,10 @@ window.onload =
                             
                             
                             
-                            assert_less_than(
-                                entry.responseStart - entry.requestStart,
-                                serverStepDelay,
+                            
+                            assert_greater_than_equal(
+                                entry.responseEnd,
+                                entry.responseStart + serverStepDelay,
                                 "Delay after HTTP/1.1 status should not affect 'responseStart'.");
 
                             test.done();
@@ -292,9 +293,9 @@ window.onload =
                                         + "&mime:" + template.mime
                                         + "&send:" + encodeURIComponent(template.response)),
                         function (initiator, entry) {
-                            assert_less_than(
-                                entry.responseStart - entry.requestStart,
-                                serverStepDelay,
+                            assert_greater_than_equal(
+                                entry.responseEnd,
+                                entry.responseStart + serverStepDelay,
                                 "HTTP/1.1 1XX (first) response should determine 'responseStart' timing.");
 
                             test.done();
