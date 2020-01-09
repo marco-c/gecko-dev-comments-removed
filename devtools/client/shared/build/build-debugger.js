@@ -165,7 +165,7 @@ function transformMC({ types: t }) {
 
           
           path.replaceWith(
-            t.stringLiteral("devtools/client/debugger/new/dist/vendors")
+            t.stringLiteral("devtools/client/debugger/dist/vendors")
           );
 
           
