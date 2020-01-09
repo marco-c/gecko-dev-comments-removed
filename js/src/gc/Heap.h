@@ -275,7 +275,11 @@ class Arena {
   
   void setAsNotAllocated() {
     firstFreeSpan.initAsEmpty();
-    zone = nullptr;
+
+    
+    AlwaysPoison(&zone, JS_FREED_ARENA_PATTERN, sizeof(zone),
+                 MemCheckKind::MakeUndefined);
+
     allocKind = size_t(AllocKind::LIMIT);
     onDelayedMarkingList_ = 0;
     hasDelayedBlackMarking_ = 0;
