@@ -156,7 +156,7 @@ SourceClient.prototype = {
 
 
 
-  setBreakpoint: function({ line, column, options }) {
+  setBreakpoint: function({ line, column, options, noSliding }) {
     
     const doSetBreakpoint = callback => {
       const location = {
@@ -169,6 +169,7 @@ SourceClient.prototype = {
         type: "setBreakpoint",
         location,
         options,
+        noSliding,
       };
 
       

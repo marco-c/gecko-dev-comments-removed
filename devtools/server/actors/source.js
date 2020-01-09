@@ -475,17 +475,27 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
 
 
 
-  setBreakpoint: function(line, column, options) {
+
+
+  setBreakpoint: function(line, column, options, noSliding) {
     const location = new GeneratedLocation(this, line, column);
     const actor = this._getOrCreateBreakpointActor(
       location,
-      options
+      options,
+      noSliding
     );
 
-    return {
+    const response = {
       actor: actor.actorID,
       isPending: actor.isPending,
     };
+
+    const actualLocation = actor.generatedLocation;
+    if (!actualLocation.equals(location)) {
+      response.actualLocation = actualLocation.toJSON();
+    }
+
+    return response;
   },
 
   
@@ -502,7 +512,9 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
 
 
 
-  _getOrCreateBreakpointActor: function(generatedLocation, options) {
+
+
+  _getOrCreateBreakpointActor: function(generatedLocation, options, noSliding) {
     let actor = this.breakpointActorMap.getActor(generatedLocation);
     if (!actor) {
       actor = new BreakpointActor(this.threadActor, generatedLocation);
@@ -512,8 +524,7 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
 
     actor.setOptions(options);
 
-    this._setBreakpoint(actor);
-    return actor;
+    return this._setBreakpoint(actor, noSliding);
   },
 
   
@@ -525,9 +536,129 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
 
 
 
-  _setBreakpoint: function(actor) {
-    const { generatedLocation } = actor;
 
+
+
+
+
+
+
+
+
+
+
+
+
+  _setBreakpoint: function(actor, noSliding) {
+    const { generatedLocation } = actor;
+    const { generatedLine, generatedSourceActor } = generatedLocation;
+
+    const isWasm = this.source && this.source.introductionType === "wasm";
+    if (!this._setBreakpointAtGeneratedLocation(actor, generatedLocation) &&
+        !noSliding &&
+        !isWasm) {
+      const scripts = this._findDebuggeeScripts({ line: generatedLine });
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (generatedLocation.generatedColumn || scripts.length === 0) {
+        return actor;
+      }
+
+      
+      
+      const largestScript = scripts.reduce((largestScr, script) => {
+        if (script.lineCount > largestScr.lineCount) {
+          return script;
+        }
+        return largestScr;
+      });
+      const maxLine = largestScript.startLine + largestScript.lineCount - 1;
+
+      let actualLine = generatedLine;
+      for (; actualLine <= maxLine; actualLine++) {
+        const loc = new GeneratedLocation(this, actualLine);
+        if (this._setBreakpointAtGeneratedLocation(actor, loc)) {
+          break;
+        }
+      }
+
+      
+      
+      
+      
+      if (actualLine > maxLine) {
+        
+        throw {
+          error: "noCodeAtLineColumn",
+          message:
+            "Could not find any entry points to set a breakpoint on, " +
+            "even though I was told a script existed on the line I started " +
+            "the search with.",
+        };
+      }
+
+      
+      
+      const actualLocation = new GeneratedLocation(generatedSourceActor, actualLine);
+      const existingActor = this.breakpointActorMap.getActor(actualLocation);
+      this.breakpointActorMap.deleteActor(generatedLocation);
+      if (existingActor) {
+        actor.delete();
+        actor = existingActor;
+      } else {
+        actor.generatedLocation = actualLocation;
+        this.breakpointActorMap.setActor(actualLocation, actor);
+      }
+    }
+
+    return actor;
+  },
+
+  _setBreakpointAtAllGeneratedLocations: function(actor, generatedLocations) {
+    let success = false;
+    for (const generatedLocation of generatedLocations) {
+      if (this._setBreakpointAtGeneratedLocation(
+        actor,
+        generatedLocation
+      )) {
+        success = true;
+      }
+    }
+    return success;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _setBreakpointAtGeneratedLocation: function(actor, generatedLocation) {
     const {
       generatedSourceActor,
       generatedLine,
@@ -608,7 +739,12 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
       }
     }
 
+    if (entryPoints.length === 0) {
+      return false;
+    }
+
     setBreakpointAtEntryPoints(actor, entryPoints);
+    return true;
   },
 });
 
