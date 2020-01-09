@@ -30,7 +30,7 @@ struct nsCounterNode : public nsGenConNode {
   Type mType;
 
   
-  int32_t mValueAfter;
+  int32_t mValueAfter = 0;
 
   
   
@@ -41,7 +41,7 @@ struct nsCounterNode : public nsGenConNode {
   
   
   
-  nsCounterNode* mScopeStart;
+  nsCounterNode* mScopeStart = nullptr;
 
   
   
@@ -52,7 +52,7 @@ struct nsCounterNode : public nsGenConNode {
   
   
   
-  nsCounterNode* mScopePrev;
+  nsCounterNode* mScopePrev = nullptr;
 
   inline nsCounterUseNode* UseNode();
   inline nsCounterChangeNode* ChangeNode();
@@ -64,14 +64,10 @@ struct nsCounterNode : public nsGenConNode {
   
   
   nsCounterNode(int32_t aContentIndex, Type aType)
-      : nsGenConNode(aContentIndex),
-        mType(aType),
-        mValueAfter(0),
-        mScopeStart(nullptr),
-        mScopePrev(nullptr) {}
+      : nsGenConNode(aContentIndex), mType(aType) {}
 
   
-  inline void Calc(nsCounterList* aList);
+  inline void Calc(nsCounterList* aList, bool aNotify);
 
   
   inline bool IsContentBasedReset();
@@ -82,7 +78,15 @@ struct nsCounterUseNode : public nsCounterNode {
   nsString mSeparator;
 
   
-  bool mAllCounters;
+  bool mAllCounters = false;
+
+  bool mForLegacyBullet = false;
+
+  enum ForLegacyBullet { ForLegacyBullet };
+  explicit nsCounterUseNode(enum ForLegacyBullet)
+      : nsCounterNode(0, USE), mForLegacyBullet(true) {
+    mCounterStyle = nsGkAtoms::list_item;
+  }
 
   
   nsCounterUseNode(nsStyleContentData::CounterFunction* aCounterFunction,
@@ -97,9 +101,12 @@ struct nsCounterUseNode : public nsCounterNode {
   virtual bool InitTextFrame(nsGenConList* aList, nsIFrame* aPseudoFrame,
                              nsIFrame* aTextFrame) override;
 
+  bool InitBullet(nsGenConList* aList, nsIFrame* aBulletFrame);
+
   
   
-  void Calc(nsCounterList* aList);
+  
+  void Calc(nsCounterList* aList, bool aNotify);
 
   
   void GetText(nsString& aResult);
@@ -114,8 +121,7 @@ struct nsCounterChangeNode : public nsCounterNode {
   
   
   nsCounterChangeNode(nsIFrame* aPseudoFrame, nsCounterNode::Type aChangeType,
-                      int32_t aChangeValue,
-                      int32_t aPropIndex)
+                      int32_t aChangeValue, int32_t aPropIndex)
       : nsCounterNode(  
                         
                         
@@ -149,9 +155,9 @@ inline nsCounterChangeNode* nsCounterNode::ChangeNode() {
   return static_cast<nsCounterChangeNode*>(this);
 }
 
-inline void nsCounterNode::Calc(nsCounterList* aList) {
+inline void nsCounterNode::Calc(nsCounterList* aList, bool aNotify) {
   if (mType == USE)
-    UseNode()->Calc(aList);
+    UseNode()->Calc(aList, aNotify);
   else
     ChangeNode()->Calc(aList);
 }

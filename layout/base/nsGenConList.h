@@ -33,6 +33,8 @@ struct nsGenConNode : public mozilla::LinkedListElement<nsGenConNode> {
 
   
   
+  
+  
   RefPtr<nsTextNode> mText;
 
   explicit nsGenConNode(int32_t aContentIndex)
@@ -62,7 +64,13 @@ struct nsGenConNode : public mozilla::LinkedListElement<nsGenConNode> {
  protected:
   void CheckFrameAssertions() {
     NS_ASSERTION(
-        mContentIndex < int32_t(mPseudoFrame->StyleContent()->ContentCount()),
+        mContentIndex < int32_t(mPseudoFrame->StyleContent()->ContentCount()) ||
+            
+            
+            (mPseudoFrame->IsBulletFrame() && mContentIndex == 0 &&
+             mPseudoFrame->Style()->GetPseudoType() ==
+                 mozilla::PseudoStyleType::marker &&
+             !mPseudoFrame->StyleContent()->ContentCount()),
         "index out of range");
     
     
