@@ -6079,6 +6079,3 @@ pref("toolkit.telemetry.prioping.enabled", false);
 
 
 pref("dom.sidebar.enabled", true);
-
-
-pref("fission.rebuild_frameloaders_on_remoteness_change", true);
