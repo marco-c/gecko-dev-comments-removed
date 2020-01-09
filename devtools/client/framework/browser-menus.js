@@ -81,7 +81,7 @@ function createToolMenuElements(toolDefinition, doc) {
   const oncommand = (async function(id, event) {
     try {
       const window = event.target.ownerDocument.defaultView;
-      await gDevToolsBrowser.selectToolCommand(window.gBrowser, id, Cu.now());
+      await gDevToolsBrowser.selectToolCommand(window, id, Cu.now());
       sendEntryPointTelemetry(window);
     } catch (e) {
       console.error(`Exception while opening ${id}: ${e}\n${e.stack}`);
@@ -298,52 +298,4 @@ exports.removeMenus = function(doc) {
   
   
   removeTopLevelItems(doc);
-};
-
-
-
-
-
-
-
-
-
-function setDevtoolsMenuItemsEnabled(doc, isEnabled) {
-  setMenuItemEnabled(doc, "menu_devToolbox", isEnabled);
-
-  for (const toolDefinition of gDevTools.getToolDefinitionArray()) {
-    if (!toolDefinition.inMenu) {
-      continue;
-    }
-    setMenuItemEnabled(doc, "menuitem_" + toolDefinition.id, isEnabled);
-  }
-}
-
-function setMenuItemEnabled(doc, menuItemId, isEnabled) {
-  const menuItem = doc.getElementById(menuItemId);
-  if (menuItem) {
-    if (isEnabled) {
-      menuItem.removeAttribute("hidden");
-    } else {
-      menuItem.setAttribute("hidden", true);
-    }
-  }
-}
-
-
-
-
-
-
-exports.enableDevtoolsMenuItems = function(doc) {
-  setDevtoolsMenuItemsEnabled(doc, true);
-};
-
-
-
-
-
-
-exports.disableDevtoolsMenuItems = function(doc) {
-  setDevtoolsMenuItemsEnabled(doc, false);
 };

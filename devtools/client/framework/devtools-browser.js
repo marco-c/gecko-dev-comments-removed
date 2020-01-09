@@ -198,10 +198,19 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
 
 
-  
-  
-  async selectToolCommand(gBrowser, toolId, startTime) {
-    const target = await TargetFactory.forTab(gBrowser.selectedTab);
+
+
+
+
+
+  async selectToolCommand(win, toolId, startTime) {
+    if (gDevToolsBrowser._isAboutDevtoolsToolbox(win)) {
+      const toolbox = gDevToolsBrowser._getAboutDevtoolsToolbox(win);
+      toolbox.selectTool(toolId, "key_shortcut");
+      return;
+    }
+
+    const target = await TargetFactory.forTab(win.gBrowser.selectedTab);
     const toolbox = gDevTools.getToolbox(target);
     const toolDefinition = gDevTools.getToolDefinition(toolId);
 
@@ -245,16 +254,14 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
     
     
     if (gDevToolsBrowser._isAboutDevtoolsToolbox(window) &&
-        (key.toolId ||
-         key.id === "toggleToolbox" ||
-         key.id === "toggleToolboxF12" ||
-         key.id === "inspectorMac")) {
+        (key.id === "toggleToolbox" ||
+         key.id === "toggleToolboxF12")) {
       return;
     }
 
     
     if (key.toolId) {
-      await gDevToolsBrowser.selectToolCommand(window.gBrowser, key.toolId, startTime);
+      await gDevToolsBrowser.selectToolCommand(window, key.toolId, startTime);
       return;
     }
     
@@ -282,7 +289,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
         ScratchpadManager.openScratchpad();
         break;
       case "inspectorMac":
-        await gDevToolsBrowser.selectToolCommand(window.gBrowser, "inspector", startTime);
+        await gDevToolsBrowser.selectToolCommand(window, "inspector", startTime);
         break;
     }
   },
@@ -628,16 +635,18 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
 
   _updateMenuItems(win) {
-    if (gDevToolsBrowser._isAboutDevtoolsToolbox(win)) {
-      BrowserMenus.disableDevtoolsMenuItems(win.document);
-      return;
+    const menu = win.document.getElementById("menu_devToolbox");
+
+    
+    const isAboutDevtoolsToolbox = gDevToolsBrowser._isAboutDevtoolsToolbox(win);
+    if (isAboutDevtoolsToolbox) {
+      menu.setAttribute("hidden", "true");
+    } else {
+      menu.removeAttribute("hidden");
     }
 
-    BrowserMenus.enableDevtoolsMenuItems(win.document);
-
+    
     const hasToolbox = gDevToolsBrowser.hasToolboxOpened(win);
-
-    const menu = win.document.getElementById("menu_devToolbox");
     if (hasToolbox) {
       menu.setAttribute("checked", "true");
     } else {
@@ -655,6 +664,23 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
   _isAboutDevtoolsToolbox(win) {
     const currentURI = win.gBrowser.currentURI;
     return currentURI.scheme === "about" && currentURI.filePath === "devtools-toolbox";
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  _getAboutDevtoolsToolbox(win) {
+    if (!gDevToolsBrowser._isAboutDevtoolsToolbox(win)) {
+      return null;
+    }
+    return gDevTools.getToolboxes().find(toolbox => toolbox.topWindow === win);
   },
 
   
