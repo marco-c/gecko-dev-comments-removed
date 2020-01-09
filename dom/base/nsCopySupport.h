@@ -33,9 +33,9 @@ class nsCopySupport {
   
 
 
-  static nsresult HTMLCopy(mozilla::dom::Selection* aSel,
-                           mozilla::dom::Document* aDoc, int16_t aClipboardID,
-                           bool aWithRubyAnnotation);
+  static nsresult EncodeDocumentWithContextAndPutToClipboard(
+      mozilla::dom::Selection* aSel, mozilla::dom::Document* aDoc,
+      int16_t aClipboardID, bool aWithRubyAnnotation);
 
   
   
@@ -47,7 +47,6 @@ class nsCopySupport {
   static nsresult ImageCopy(nsIImageLoadingContent* aImageElement,
                             nsILoadContext* aLoadContext, int32_t aCopyFlags);
 
-  
   
   
   

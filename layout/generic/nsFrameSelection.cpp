@@ -2747,8 +2747,8 @@ nsresult nsFrameSelection::UpdateSelectionCacheOnRepaintSelection(
   nsCOMPtr<Document> aDoc = presShell->GetDocument();
 
   if (aDoc && aSel && !aSel->IsCollapsed()) {
-    return nsCopySupport::HTMLCopy(aSel, aDoc, nsIClipboard::kSelectionCache,
-                                   false);
+    return nsCopySupport::EncodeDocumentWithContextAndPutToClipboard(
+        aSel, aDoc, nsIClipboard::kSelectionCache, false);
   }
 
   return NS_OK;
@@ -2757,6 +2757,7 @@ nsresult nsFrameSelection::UpdateSelectionCacheOnRepaintSelection(
 
 
 int16_t AutoCopyListener::sClipboardID = -1;
+
 
 
 
@@ -2830,8 +2831,10 @@ void AutoCopyListener::OnSelectionChange(Document* aDocument,
     return;
   }
 
-  
   DebugOnly<nsresult> rv =
-      nsCopySupport::HTMLCopy(&aSelection, aDocument, sClipboardID, false);
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "nsCopySupport::HTMLCopy() failed");
+      nsCopySupport::EncodeDocumentWithContextAndPutToClipboard(
+          &aSelection, aDocument, sClipboardID, false);
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rv),
+      "nsCopySupport::EncodeDocumentWithContextAndPutToClipboard() failed");
 }
