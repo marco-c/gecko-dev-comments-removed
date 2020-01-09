@@ -98,7 +98,7 @@ class AboutConfigTest {
     await this.document.l10n.ready;
     if (!options.dontBypassWarning) {
       this.bypassWarningButton.click();
-      this.search();
+      this.showAll();
     }
   }
 
@@ -137,8 +137,16 @@ class AboutConfigTest {
   
 
 
+  showAll() {
+    this.search("");
+    this.document.getElementById("show-all").click();
+  }
 
-  search(value = "") {
+  
+
+
+
+  search(value) {
     this.searchInput.value = value;
     this.searchInput.focus();
     EventUtils.sendKey("return");

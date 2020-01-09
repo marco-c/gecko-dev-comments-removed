@@ -58,7 +58,7 @@ add_task(async function test_observe_add_user_pref() {
 
       
       Preferences.reset(PREF_NEW);
-      this.search();
+      this.showAll();
       Assert.ok(!this.getRow(PREF_NEW));
 
       
@@ -79,12 +79,12 @@ add_task(async function test_observe_add_user_pref() {
       Assert.ok(!this.getRow(PREF_NEW));
 
       
-      this.search("");
+      this.showAll();
       Assert.equal(this.getRow(PREF_NEW).value, "" + value);
 
       
       Preferences.reset(PREF_NEW);
-      this.search("");
+      this.showAll();
     }
   });
 });
@@ -99,7 +99,7 @@ add_task(async function test_observe_delete_user_pref() {
       Assert.ok(row.hasClass("deleted"));
 
       
-      this.search();
+      this.showAll();
       Assert.ok(!this.getRow(PREF_NEW));
     });
   }

@@ -35,7 +35,8 @@ add_task(async function test_search() {
     Assert.equal(this.rows.length, filteredPrefArray.length + 1);
 
     
-    this.search();
+    this.showAll();
+    Assert.equal(this.searchInput.value, "");
 
     
     
@@ -45,9 +46,18 @@ add_task(async function test_search() {
     Assert.greater(this.rows.length, prefArray.length - 50);
 
     
+    EventUtils.sendKey("escape");
+    Assert.equal(this.rows.length, 0);
+
+    
     
     this.search("aJunkValueasdf");
     Assert.equal(this.rows.length, 1);
+
+    
+    EventUtils.sendKey("escape");
+    Assert.equal(this.searchInput.value, "");
+    Assert.equal(this.rows.length, 0);
 
     
     this.search("test.aboutconfig.a");
@@ -57,6 +67,10 @@ add_task(async function test_search() {
     
     this.search("TEST.aboutconfig.a");
     Assert.equal(this.rows.length, 3);
+
+    
+    this.search("");
+    Assert.equal(this.rows.length, 0);
   });
 });
 

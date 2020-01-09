@@ -31,7 +31,7 @@ add_task(async function test_showWarningNextTime() {
       Assert.equal(this.document.activeElement, this.searchInput);
 
       
-      EventUtils.sendKey("escape");
+      this.showAll();
       Assert.ok(this.prefsTable.firstElementChild);
     }, { dontBypassWarning: true });
   }
