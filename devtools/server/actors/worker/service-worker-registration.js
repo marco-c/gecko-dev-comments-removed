@@ -65,7 +65,9 @@ protocol.ActorClassWithSpec(serviceWorkerRegistrationSpec, {
 
     const newestWorker = (activeWorker || waitingWorker || installingWorker);
 
-    const isE10s = Services.appinfo.browserTabsRemoteAutostart;
+    const isNewE10sImplementation = swm.isParentInterceptEnabled();
+    const isMultiE10sWithOldImplementation =
+      Services.appinfo.browserTabsRemoteAutostart && !isNewE10sImplementation;
     return {
       actor: this.actorID,
       scope: registration.scope,
@@ -76,8 +78,7 @@ protocol.ActorClassWithSpec(serviceWorkerRegistrationSpec, {
       fetch: newestWorker && newestWorker.fetch,
       
       
-      
-      active: isE10s ? true : !!activeWorker,
+      active: isMultiE10sWithOldImplementation ? true : !!activeWorker,
       lastUpdateTime: registration.lastUpdateTime,
     };
   },
