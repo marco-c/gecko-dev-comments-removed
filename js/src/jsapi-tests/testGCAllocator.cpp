@@ -37,7 +37,7 @@ BEGIN_TEST(testGCAllocator) {
   
   js::gc::FinishGC(cx);
 
-  bool growUp;
+  bool growUp = false;
   CHECK(addressesGrowUp(&growUp));
 
   if (growUp) {
