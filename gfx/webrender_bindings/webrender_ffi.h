@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef WR_h
 #define WR_h
@@ -12,9 +12,9 @@
 
 extern "C" {
 
-// ----
-// Functions invoked from Rust code
-// ----
+
+
+
 
 bool is_in_compositor_thread();
 bool is_in_main_thread();
@@ -34,8 +34,8 @@ void gecko_profiler_unregister_thread();
 void gecko_profiler_start_marker(const char* name);
 void gecko_profiler_end_marker(const char* name);
 
-// IMPORTANT: Keep this synchronized with enumerate_interners in
-// gfx/wr/webrender_api
+
+
 #define WEBRENDER_FOR_EACH_INTERNER(macro) \
   macro(clip);                             \
   macro(prim);                             \
@@ -47,14 +47,16 @@ void gecko_profiler_end_marker(const char* name);
   macro(linear_grad);                      \
   macro(radial_grad);                      \
   macro(picture);                          \
-  macro(text_run);
+  macro(text_run);                         \
+  macro(filterdata);
 
-// Prelude of types necessary before including webrender_ffi_generated.h
+
+
 namespace mozilla {
 namespace wr {
 
-// Because this struct is macro-generated on the Rust side, cbindgen can't see
-// it. Work around that by re-declaring it here.
+
+
 #define DECLARE_MEMBER(id) uintptr_t id;
 struct InternerSubReport {
   WEBRENDER_FOR_EACH_INTERNER(DECLARE_MEMBER)
@@ -122,8 +124,8 @@ struct WrPipelineInfo;
 
 const uint64_t ROOT_CLIP_CHAIN = ~0;
 
-}  // namespace wr
-}  // namespace mozilla
+}  
+}  
 
 void apz_register_updater(mozilla::wr::WrWindowId aWindowId);
 void apz_pre_scene_swap(mozilla::wr::WrWindowId aWindowId);
@@ -136,15 +138,15 @@ void apz_register_sampler(mozilla::wr::WrWindowId aWindowId);
 void apz_sample_transforms(mozilla::wr::WrWindowId aWindowId,
                            mozilla::wr::Transaction* aTransaction);
 void apz_deregister_sampler(mozilla::wr::WrWindowId aWindowId);
-}  // extern "C"
+}  
 
-// Some useful defines to stub out webrender binding functions for when we
-// build gecko without webrender. We try to tell the compiler these functions
-// are unreachable in that case, but VC++ emits a warning if it finds any
-// unreachable functions invoked from destructors. That warning gets turned into
-// an error and causes the build to fail. So for wr_* functions called by
-// destructors in C++ classes, use WR_DESTRUCTOR_SAFE_FUNC instead, which omits
-// the unreachable annotation.
+
+
+
+
+
+
+
 #ifdef MOZ_BUILD_WEBRENDER
 #  define WR_INLINE
 #  define WR_FUNC
@@ -162,8 +164,8 @@ void apz_deregister_sampler(mozilla::wr::WrWindowId aWindowId);
 #undef WR_FUNC
 #undef WR_DESTRUCTOR_SAFE_FUNC
 
-// More functions invoked from Rust code. These are down here because they
-// refer to data structures from webrender_ffi_generated.h
+
+
 extern "C" {
 void record_telemetry_time(mozilla::wr::TelemetryProbe aProbe,
                            uint64_t aTimeNs);
@@ -172,11 +174,11 @@ void record_telemetry_time(mozilla::wr::TelemetryProbe aProbe,
 namespace mozilla {
 namespace wr {
 
-// Cast a blob image key into a regular image for use in
-// a display item.
+
+
 inline ImageKey AsImageKey(BlobImageKey aKey) { return aKey._0; }
 
-}  // namespace wr
-}  // namespace mozilla
+}  
+}  
 
-#endif  // WR_h
+#endif
