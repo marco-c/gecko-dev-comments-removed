@@ -3,7 +3,7 @@
 
 
 use api::{
-    ColorF, ColorU,
+    ColorF, ColorU, LayoutPrimitiveInfo,
     LineOrientation, LineStyle, PremultipliedColorF, Shadow,
 };
 use api::units::{Au, LayoutSizeAu, LayoutVector2D};
@@ -11,7 +11,6 @@ use display_list_flattener::{CreateShadow, IsVisible};
 use frame_builder::{FrameBuildingState};
 use gpu_cache::GpuDataRequest;
 use intern;
-use internal_types::LayoutPrimitiveInfo;
 use prim_store::{
     PrimKey, PrimKeyCommonData, PrimTemplate, PrimTemplateCommonData,
     InternablePrimitive, PrimitiveSceneData, PrimitiveStore,

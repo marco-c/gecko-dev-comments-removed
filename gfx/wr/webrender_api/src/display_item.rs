@@ -2,7 +2,7 @@
 
 
 
-use euclid::SideOffsets2D;
+use euclid::{SideOffsets2D, TypedRect};
 use std::ops::Not;
 
 use font;
@@ -27,43 +27,55 @@ pub const MAX_BLUR_RADIUS: f32 = 300.;
 
 
 
-
-
-
 pub type ItemTag = (u64, u16);
 
 
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
-pub struct CommonItemProperties {
-    
-    
-    
-    pub clip_rect: LayoutRect,
-    
-    pub clip_id: ClipId,
-    
-    pub spatial_id: SpatialId,
-    
-    
-    
-    pub hit_info: Option<ItemTag>,
-    
-    pub is_backface_visible: bool,
+pub struct GenericDisplayItem<T> {
+    pub item: T,
+    pub layout: LayoutPrimitiveInfo,
+    pub space_and_clip: SpaceAndClipInfo,
 }
 
-impl CommonItemProperties {
-    
-    pub fn new(clip_rect: LayoutRect, space_and_clip: SpaceAndClipInfo) -> Self {
-        Self {
+pub type DisplayItem = GenericDisplayItem<SpecificDisplayItem>;
+
+
+
+#[derive(Serialize)]
+pub struct SerializedDisplayItem<'a> {
+    pub item: &'a SpecificDisplayItem,
+    pub layout: &'a LayoutPrimitiveInfo,
+    pub space_and_clip: &'a SpaceAndClipInfo,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
+pub struct PrimitiveInfo<T> {
+    pub rect: TypedRect<f32, T>,
+    pub clip_rect: TypedRect<f32, T>,
+    pub is_backface_visible: bool,
+    pub tag: Option<ItemTag>,
+}
+
+impl LayoutPrimitiveInfo {
+    pub fn new(rect: TypedRect<f32, LayoutPixel>) -> Self {
+        Self::with_clip_rect(rect, rect)
+    }
+
+    pub fn with_clip_rect(
+        rect: TypedRect<f32, LayoutPixel>,
+        clip_rect: TypedRect<f32, LayoutPixel>,
+    ) -> Self {
+        PrimitiveInfo {
+            rect,
             clip_rect,
-            spatial_id: space_and_clip.spatial_id,
-            clip_id: space_and_clip.clip_id,
-            hit_info: None,
             is_backface_visible: true,
+            tag: None,
         }
     }
 }
+
+pub type LayoutPrimitiveInfo = PrimitiveInfo<LayoutPixel>;
 
 
 
@@ -88,90 +100,77 @@ impl SpaceAndClipInfo {
     }
 }
 
-#[repr(u8)]
+#[repr(u64)]
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
-pub enum DisplayItem {
-    
-    Rectangle(RectangleDisplayItem),
-    ClearRectangle(ClearRectangleDisplayItem),
-    HitTest(HitTestDisplayItem),
-    Text(TextDisplayItem),
-    Line(LineDisplayItem),
-    Border(BorderDisplayItem),
-    BoxShadow(BoxShadowDisplayItem),
-    PushShadow(PushShadowDisplayItem),
-    Gradient(GradientDisplayItem),
-    RadialGradient(RadialGradientDisplayItem),
-    Image(ImageDisplayItem),
-    YuvImage(YuvImageDisplayItem),
-
-    
+pub enum SpecificDisplayItem {
     Clip(ClipDisplayItem),
-    ClipChain(ClipChainItem),
-
-    
     ScrollFrame(ScrollFrameDisplayItem),
     StickyFrame(StickyFrameDisplayItem),
+    Rectangle(RectangleDisplayItem),
+    ClearRectangle,
+    Line(LineDisplayItem),
+    Text(TextDisplayItem),
+    Image(ImageDisplayItem),
+    YuvImage(YuvImageDisplayItem),
+    Border(BorderDisplayItem),
+    BoxShadow(BoxShadowDisplayItem),
+    Gradient(GradientDisplayItem),
+    RadialGradient(RadialGradientDisplayItem),
+    ClipChain(ClipChainItem),
     Iframe(IframeDisplayItem),
     PushReferenceFrame(ReferenceFrameDisplayListItem),
+    PopReferenceFrame,
     PushStackingContext(PushStackingContextDisplayItem),
-
-    
-    
+    PopStackingContext,
     SetGradientStops,
+    PushShadow(Shadow),
+    PopAllShadows,
+    PushCacheMarker(CacheMarkerDisplayItem),
+    PopCacheMarker,
     SetFilterOps,
     SetFilterData,
-
-    
-    PopReferenceFrame,
-    PopStackingContext,
-    PopAllShadows,
 }
+
 
 
 
 #[cfg(any(feature = "serialize", feature = "deserialize"))]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
-pub enum DebugDisplayItem {
-    Rectangle(RectangleDisplayItem),
-    ClearRectangle(ClearRectangleDisplayItem),
-    HitTest(HitTestDisplayItem),
-    Text(TextDisplayItem, Vec<font::GlyphInstance>),
-    Line(LineDisplayItem),
-    Border(BorderDisplayItem),
-    BoxShadow(BoxShadowDisplayItem),
-    PushShadow(PushShadowDisplayItem),
-    Gradient(GradientDisplayItem),
-    RadialGradient(RadialGradientDisplayItem),
-    Image(ImageDisplayItem),
-    YuvImage(YuvImageDisplayItem),
-
+pub enum CompletelySpecificDisplayItem {
     Clip(ClipDisplayItem, Vec<ComplexClipRegion>),
     ClipChain(ClipChainItem, Vec<ClipId>),
-
     ScrollFrame(ScrollFrameDisplayItem, Vec<ComplexClipRegion>),
     StickyFrame(StickyFrameDisplayItem),
+    Rectangle(RectangleDisplayItem),
+    ClearRectangle,
+    Line(LineDisplayItem),
+    Text(TextDisplayItem, Vec<font::GlyphInstance>),
+    Image(ImageDisplayItem),
+    YuvImage(YuvImageDisplayItem),
+    Border(BorderDisplayItem),
+    BoxShadow(BoxShadowDisplayItem),
+    Gradient(GradientDisplayItem),
+    RadialGradient(RadialGradientDisplayItem),
     Iframe(IframeDisplayItem),
     PushReferenceFrame(ReferenceFrameDisplayListItem),
+    PopReferenceFrame,
     PushStackingContext(PushStackingContextDisplayItem),
-
+    PopStackingContext,
     SetGradientStops(Vec<GradientStop>),
+    PushShadow(Shadow),
+    PopAllShadows,
+    PushCacheMarker(CacheMarkerDisplayItem),
+    PopCacheMarker,
     SetFilterOps(Vec<FilterOp>),
     SetFilterData(FilterData),
-
-    PopReferenceFrame,
-    PopStackingContext,
-    PopAllShadows,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct ClipDisplayItem {
     pub id: ClipId,
-    pub parent_space_and_clip: SpaceAndClipInfo,
-    pub clip_rect: LayoutRect,
     pub image_mask: Option<ImageMask>,
-} 
+}
 
 
 #[repr(C)]
@@ -197,8 +196,6 @@ impl StickyOffsetBounds {
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct StickyFrameDisplayItem {
     pub id: SpatialId,
-    pub parent_spatial_id: SpatialId,
-    pub bounds: LayoutRect,
 
     
     
@@ -233,15 +230,8 @@ pub enum ScrollSensitivity {
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct ScrollFrameDisplayItem {
-    
     pub clip_id: ClipId,
-    
     pub scroll_frame_id: SpatialId,
-    
-    
-    pub content_rect: LayoutRect,
-    pub clip_rect: LayoutRect,
-    pub parent_space_and_clip: SpaceAndClipInfo,
     pub external_id: Option<ExternalScrollId>,
     pub image_mask: Option<ImageMask>,
     pub scroll_sensitivity: ScrollSensitivity,
@@ -253,44 +243,14 @@ pub struct ScrollFrameDisplayItem {
     pub external_scroll_offset: LayoutVector2D,
 }
 
-
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct RectangleDisplayItem {
-    pub common: CommonItemProperties,
     pub color: ColorF,
-}
-
-
-
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
-pub struct ClearRectangleDisplayItem {
-    pub common: CommonItemProperties,
-}
-
-
-
-
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
-pub struct HitTestDisplayItem {
-    pub common: CommonItemProperties,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct LineDisplayItem {
-    pub common: CommonItemProperties,
-    
-    
-    
-    
-    
-    pub area: LayoutRect,
-    
-    pub orientation: LineOrientation,
-    
-    
-    
-    
-    
+    pub orientation: LineOrientation, 
     pub wavy_line_thickness: f32,
     pub color: ColorF,
     pub style: LineStyle,
@@ -314,15 +274,6 @@ pub enum LineStyle {
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct TextDisplayItem {
-    pub common: CommonItemProperties,
-    
-    
-    
-    
-    
-    
-    
-    pub bounds: LayoutRect,
     pub font_key: font::FontInstanceKey,
     pub color: ColorF,
     pub glyph_options: Option<font::GlyphOptions>,
@@ -386,7 +337,7 @@ impl NormalBorder {
     }
 }
 
-#[repr(u8)]
+#[repr(u32)]
 #[derive(Debug, Copy, Clone, MallocSizeOf, PartialEq, Serialize, Deserialize, Eq, Hash)]
 pub enum RepeatMode {
     Stretch,
@@ -448,8 +399,6 @@ pub enum BorderDetails {
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct BorderDisplayItem {
-    pub common: CommonItemProperties,
-    pub bounds: LayoutRect,
     pub widths: LayoutSideOffsets,
     pub details: BorderDetails,
 }
@@ -498,7 +447,7 @@ impl BorderStyle {
     }
 }
 
-#[repr(u8)]
+#[repr(u32)]
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, MallocSizeOf, PartialEq, Serialize)]
 pub enum BoxShadowClipMode {
     Outset = 0,
@@ -507,7 +456,6 @@ pub enum BoxShadowClipMode {
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct BoxShadowDisplayItem {
-    pub common: CommonItemProperties,
     pub box_bounds: LayoutRect,
     pub offset: LayoutVector2D,
     pub color: ColorF,
@@ -515,12 +463,6 @@ pub struct BoxShadowDisplayItem {
     pub spread_radius: f32,
     pub border_radius: BorderRadius,
     pub clip_mode: BoxShadowClipMode,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
-pub struct PushShadowDisplayItem {
-    pub space_and_clip: SpaceAndClipInfo,
-    pub shadow: Shadow,
 }
 
 #[repr(C)]
@@ -546,20 +488,11 @@ pub struct Gradient {
     pub extend_mode: ExtendMode,
 } 
 
-
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct GradientDisplayItem {
-    
-    pub common: CommonItemProperties,
-    
-    
-    
-    pub bounds: LayoutRect,
-    
-    pub tile_size: LayoutSize,
-    
-    pub tile_spacing: LayoutSize,
     pub gradient: Gradient,
+    pub tile_size: LayoutSize,
+    pub tile_spacing: LayoutSize,
 }
 
 #[repr(C)]
@@ -578,7 +511,6 @@ pub struct RadialGradient {
     pub extend_mode: ExtendMode,
 } 
 
-
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct ClipChainItem {
     pub id: ClipChainId,
@@ -587,11 +519,6 @@ pub struct ClipChainItem {
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct RadialGradientDisplayItem {
-    pub common: CommonItemProperties,
-    
-    
-    
-    pub bounds: LayoutRect,
     pub gradient: RadialGradient,
     pub tile_size: LayoutSize,
     pub tile_spacing: LayoutSize,
@@ -599,9 +526,13 @@ pub struct RadialGradientDisplayItem {
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct ReferenceFrameDisplayListItem {
-    pub origin: LayoutPoint,
-    pub parent_spatial_id: SpatialId,
     pub reference_frame: ReferenceFrame,
+}
+
+
+
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
+pub struct CacheMarkerDisplayItem {
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
@@ -624,9 +555,6 @@ pub struct ReferenceFrame {
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct PushStackingContextDisplayItem {
-    pub origin: LayoutPoint,
-    pub spatial_id: SpatialId,
-    pub is_backface_visible: bool,
     pub stacking_context: StackingContext,
 }
 
@@ -640,7 +568,7 @@ pub struct StackingContext {
     pub cache_tiles: bool,
 } 
 
-#[repr(u8)]
+#[repr(u32)]
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub enum TransformStyle {
     Flat = 0,
@@ -654,7 +582,7 @@ pub enum TransformStyle {
 
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
-#[repr(u8)]
+#[repr(u32)]
 pub enum RasterSpace {
     
     
@@ -676,7 +604,7 @@ impl RasterSpace {
     }
 }
 
-#[repr(u8)]
+#[repr(u32)]
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub enum MixBlendMode {
     Normal = 0,
@@ -836,34 +764,21 @@ impl FilterData {
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct IframeDisplayItem {
-    pub bounds: LayoutRect,
-    pub clip_rect: LayoutRect,
-    pub space_and_clip: SpaceAndClipInfo,
     pub pipeline_id: PipelineId,
     pub ignore_missing_pipeline: bool,
 }
 
-
-
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct ImageDisplayItem {
-    pub common: CommonItemProperties,
-    
-    
-    
-    pub bounds: LayoutRect,
-    
-    pub stretch_size: LayoutSize,
-    
-    pub tile_spacing: LayoutSize,
     pub image_key: ImageKey,
+    pub stretch_size: LayoutSize,
+    pub tile_spacing: LayoutSize,
     pub image_rendering: ImageRendering,
     pub alpha_type: AlphaType,
-    
     pub color: ColorF,
 }
 
-#[repr(u8)]
+#[repr(u32)]
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, MallocSizeOf, PartialEq, Serialize)]
 pub enum ImageRendering {
     Auto = 0,
@@ -879,15 +794,13 @@ pub enum AlphaType {
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct YuvImageDisplayItem {
-    pub common: CommonItemProperties,
-    pub bounds: LayoutRect,
     pub yuv_data: YuvData,
     pub color_depth: ColorDepth,
     pub color_space: YuvColorSpace,
     pub image_rendering: ImageRendering,
 }
 
-#[repr(u8)]
+#[repr(u32)]
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, MallocSizeOf, PartialEq, Serialize)]
 pub enum YuvColorSpace {
     Rec601 = 0,
@@ -1155,37 +1068,5 @@ impl ExternalScrollId {
 
     pub fn is_root(&self) -> bool {
         self.0 == 0
-    }
-}
-
-impl DisplayItem {
-    pub fn debug_name(&self) -> &'static str {
-        match *self {
-            DisplayItem::Border(..) => "border",
-            DisplayItem::BoxShadow(..) => "box_shadow",
-            DisplayItem::ClearRectangle(..) => "clear_rectangle",
-            DisplayItem::HitTest(..) => "hit_test",
-            DisplayItem::Clip(..) => "clip",
-            DisplayItem::ClipChain(..) => "clip_chain",
-            DisplayItem::Gradient(..) => "gradient",
-            DisplayItem::Iframe(..) => "iframe",
-            DisplayItem::Image(..) => "image",
-            DisplayItem::Line(..) => "line",
-            DisplayItem::PopAllShadows => "pop_all_shadows",
-            DisplayItem::PopReferenceFrame => "pop_reference_frame",
-            DisplayItem::PopStackingContext => "pop_stacking_context",
-            DisplayItem::PushShadow(..) => "push_shadow",
-            DisplayItem::PushReferenceFrame(..) => "push_reference_frame",
-            DisplayItem::PushStackingContext(..) => "push_stacking_context",
-            DisplayItem::SetFilterOps => "set_filter_ops",
-            DisplayItem::SetFilterData => "set_filter_data",
-            DisplayItem::RadialGradient(..) => "radial_gradient",
-            DisplayItem::Rectangle(..) => "rectangle",
-            DisplayItem::ScrollFrame(..) => "scroll_frame",
-            DisplayItem::SetGradientStops => "set_gradient_stops",
-            DisplayItem::StickyFrame(..) => "sticky_frame",
-            DisplayItem::Text(..) => "text",
-            DisplayItem::YuvImage(..) => "yuv_image",
-        }
     }
 }

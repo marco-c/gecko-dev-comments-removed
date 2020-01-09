@@ -3,7 +3,7 @@
 
 
 use api::{DebugCommand, DocumentId, ExternalImageData, ExternalImageId};
-use api::{ImageFormat, ItemTag, NotificationRequest};
+use api::{ImageFormat, NotificationRequest};
 use api::units::*;
 use device::TextureFilter;
 use renderer::PipelineInfo;
@@ -320,28 +320,6 @@ impl ResourceCacheError {
     pub fn new(description: String) -> ResourceCacheError {
         ResourceCacheError {
             description,
-        }
-    }
-}
-
-
-#[derive(Copy, Clone, Debug)]
-pub struct LayoutPrimitiveInfo {
-    
-    
-    pub rect: LayoutRect,
-    pub clip_rect: LayoutRect,
-    pub is_backface_visible: bool,
-    pub hit_info: Option<ItemTag>,
-}
-
-impl LayoutPrimitiveInfo {
-    pub fn with_clip_rect(rect: LayoutRect, clip_rect: LayoutRect) -> Self {
-        Self {
-            rect,
-            clip_rect,
-            is_backface_visible: true,
-            hit_info: None,
         }
     }
 }
