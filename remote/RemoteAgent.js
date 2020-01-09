@@ -18,6 +18,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   RecommendedPreferences: "chrome://remote/content/Prefs.jsm",
   TabObserver: "chrome://remote/content/WindowManager.jsm",
   Target: "chrome://remote/content/Target.jsm",
+  Targets: "chrome://remote/content/Targets.jsm",
   TargetListHandler: "chrome://remote/content/Handler.jsm",
 });
 XPCOMUtils.defineLazyGetter(this, "log", Log.get);
@@ -191,72 +192,6 @@ class ParentRemoteAgent {
 
   get QueryInterface() {
     return ChromeUtils.generateQI([Ci.nsICommandLineHandler]);
-  }
-}
-
-class Targets {
-  constructor() {
-    
-    this._targets = new Map();
-  }
-
-  
-  async connect(browser) {
-    
-    
-    
-    
-    if (!browser.browsingContext) {
-      await new Promise(resolve => {
-        const onInit = () => {
-          browser.messageManager.removeMessageListener("Browser:Init", onInit);
-          resolve();
-        };
-        browser.messageManager.addMessageListener("Browser:Init", onInit);
-      });
-    }
-    const target = new Target(browser);
-
-    target.connect();
-    this._targets.set(target.id, target);
-  }
-
-  
-  disconnect(browser) {
-    
-    if (!browser.browsingContext) {
-      return;
-    }
-    let target = this._targets.get(browser.browsingContext.id);
-
-    if (target) {
-      target.disconnect();
-      this._targets.delete(target.id);
-    }
-  }
-
-  clear() {
-    for (const target of this) {
-      this.disconnect(target.browser);
-    }
-  }
-
-  get size() {
-    return this._targets.size;
-  }
-
-  * [Symbol.iterator]() {
-    for (const target of this._targets.values()) {
-      yield target;
-    }
-  }
-
-  toJSON() {
-    return [...this];
-  }
-
-  toString() {
-    return `[object Targets ${this.size}]`;
   }
 }
 
