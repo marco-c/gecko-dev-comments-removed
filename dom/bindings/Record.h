@@ -35,6 +35,21 @@ class RecordEntry {
   ValueType mValue;
 };
 
+
+
+template <typename KeyType>
+class RecordEntry<KeyType, JSObject*> {
+ public:
+  RecordEntry() : mValue(nullptr) {}
+
+  
+  RecordEntry(RecordEntry<KeyType, JSObject*>&& aOther)
+      : mKey(std::move(aOther.mKey)), mValue(std::move(aOther.mValue)) {}
+
+  KeyType mKey;
+  JSObject* mValue;
+};
+
 }  
 
 template <typename KeyType, typename ValueType>
