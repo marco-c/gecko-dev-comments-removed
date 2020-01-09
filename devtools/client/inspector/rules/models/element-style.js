@@ -288,54 +288,9 @@ class ElementStyle {
 
 
 
-  
   updateDeclarations(pseudo = "") {
     
-    
-    
-    
-    
-    const textProps = [];
-
-    for (const rule of this.rules) {
-      
-      if (rule.keyframes) {
-        continue;
-      }
-
-      
-      
-      
-      
-      const isStyleRule = rule.pseudoElement === "" && rule.matchedSelectors.length > 0;
-
-      
-      
-      
-      
-      
-      
-      
-      const isPseudoElementRule = rule.pseudoElement !== "" &&
-                                  rule.pseudoElement === pseudo;
-
-      const isElementStyle = rule.domRule.type === ELEMENT_STYLE;
-
-      const filterCondition = pseudo === ""
-        ? (isStyleRule || isElementStyle)
-        : isPseudoElementRule;
-
-      
-      if (filterCondition) {
-        for (const textProp of rule.textProps.slice(0).reverse()) {
-          if (textProp.enabled) {
-            textProps.push(textProp);
-          }
-        }
-      }
-    }
-
-    
+    const textProps = this._getDeclarations(pseudo);
     
     let computedProps = [];
     for (const textProp of textProps) {
@@ -418,7 +373,71 @@ class ElementStyle {
       }
     }
   }
+
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _getDeclarations(pseudo = "") {
+    const textProps = [];
+
+    for (const rule of this.rules) {
+      
+      if (rule.keyframes) {
+        continue;
+      }
+
+      
+      
+      
+      
+      const isStyleRule = rule.pseudoElement === "" && rule.matchedSelectors.length > 0;
+
+      
+      
+      
+      
+      
+      
+      
+      const isPseudoElementRule = rule.pseudoElement !== "" &&
+                                  rule.pseudoElement === pseudo;
+
+      const isElementStyle = rule.domRule.type === ELEMENT_STYLE;
+
+      const filterCondition = pseudo === ""
+        ? (isStyleRule || isElementStyle)
+        : isPseudoElementRule;
+
+      
+      if (filterCondition) {
+        for (const textProp of rule.textProps.slice(0).reverse()) {
+          if (textProp.enabled) {
+            textProps.push(textProp);
+          }
+        }
+      }
+    }
+
+    return textProps;
+  }
 
   
 
