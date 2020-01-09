@@ -27,18 +27,20 @@ class GLContext;
 
 
 
-template<typename DestT>
-class ForbidNarrowing final
-{
+
+template <typename DestT>
+class ForbidNarrowing final {
   DestT mVal;
 
-public:
-  template<typename SrcT>
+ public:
+  template <typename SrcT>
   MOZ_IMPLICIT ForbidNarrowing(SrcT val) : mVal(val) {
-    static_assert(std::numeric_limits<SrcT>::min() >= std::numeric_limits<DestT>::min(),
-                  "SrcT must be narrower than DestT.");
-    static_assert(std::numeric_limits<SrcT>::max() <= std::numeric_limits<DestT>::max(),
-                  "SrcT must be narrower than DestT.");
+    static_assert(
+        std::numeric_limits<SrcT>::min() >= std::numeric_limits<DestT>::min(),
+        "SrcT must be narrower than DestT.");
+    static_assert(
+        std::numeric_limits<SrcT>::max() <= std::numeric_limits<DestT>::max(),
+        "SrcT must be narrower than DestT.");
   }
 
   explicit operator DestT() const { return mVal; }
@@ -48,7 +50,8 @@ inline void* malloc(const ForbidNarrowing<size_t> s) {
   return ::malloc(size_t(s));
 }
 
-inline void* calloc(const ForbidNarrowing<size_t> n, const ForbidNarrowing<size_t> size) {
+inline void* calloc(const ForbidNarrowing<size_t> n,
+                    const ForbidNarrowing<size_t> size) {
   return ::calloc(size_t(n), size_t(size));
 }
 
