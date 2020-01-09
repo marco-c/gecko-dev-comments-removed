@@ -2363,6 +2363,7 @@ static bool PrimitiveToObject(JSContext* cx, MutableHandleValue vp) {
 
 bool JSStructuredCloneReader::startRead(MutableHandleValue vp) {
   uint32_t tag, data;
+  bool alreadAppended = false;
 
   if (!in.readPair(&tag, &data)) {
     return false;
@@ -2589,15 +2590,27 @@ bool JSStructuredCloneReader::startRead(MutableHandleValue vp) {
                                   "unsupported type");
         return false;
       }
+
+      
+      
+      
+      
+      uint32_t placeholderIndex = allObjs.length();
+      Value dummy = UndefinedValue();
+      if (!allObjs.append(dummy)) {
+        return false;
+      }
       JSObject* obj = callbacks->read(context(), this, tag, data, closure);
       if (!obj) {
         return false;
       }
       vp.setObject(*obj);
+      allObjs[placeholderIndex].set(vp);
+      alreadAppended = true;
     }
   }
 
-  if (vp.isObject() && !allObjs.append(vp)) {
+  if (!alreadAppended && vp.isObject() && !allObjs.append(vp)) {
     return false;
   }
 
@@ -3213,14 +3226,15 @@ JS_PUBLIC_API bool JS_WriteTypedArray(JSStructuredCloneWriter* w,
 
   
   
-  
-  obj = obj->maybeUnwrapAs<TypedArrayObject>();
-  if (!obj) {
+  if (!obj->canUnwrapAs<TypedArrayObject>()) {
     ReportAccessDenied(w->context());
     return false;
   }
 
-  return w->writeTypedArray(obj);
+  
+  
+  
+  return w->startWrite(v);
 }
 
 JS_PUBLIC_API bool JS_ObjectNotWritten(JSStructuredCloneWriter* w,
