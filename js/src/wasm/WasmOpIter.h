@@ -2009,42 +2009,30 @@ inline bool OpIter<Policy>::readMemOrTableInit(bool isMem, uint32_t* segIndex,
     return false;
   }
 
-  *dstTableIndex = 0;
-
-  uint32_t memOrTableFlags;
-  if (!readVarU32(&memOrTableFlags)) {
-    return fail(isMem ? "unable to read memory flags"
-                      : "unable to read table flags");
-  }
-  if (!isMem && (memOrTableFlags & uint32_t(MemoryTableFlags::HasTableIndex))) {
-    if (!readVarU32(dstTableIndex)) {
-      return false;
-    }
-    memOrTableFlags ^= uint32_t(MemoryTableFlags::HasTableIndex);
-  }
-  if (memOrTableFlags != uint32_t(MemoryTableFlags::Default)) {
-    return fail(isMem ? "unrecognized memory flags"
-                      : "unrecognized table flags");
-  }
-
-  if (isMem) {
-    if (!env_.usesMemory()) {
-      return fail("can't touch memory without memory");
-    }
-  } else {
-    if (*dstTableIndex >= env_.tables.length()) {
-      return fail("table index out of range for table.init");
-    }
-  }
-
   if (!readVarU32(segIndex)) {
     return false;
   }
 
+  uint32_t memOrTableIndex = 0;
+  if (!readVarU32(&memOrTableIndex)) {
+    return false;
+  }
   if (isMem) {
+    if (!env_.usesMemory()) {
+      return fail("can't touch memory without memory");
+    }
+    if (memOrTableIndex != 0) {
+      return fail("memory index must be zero");
+    }
+
     
     dvs_.lock()->notifyDataSegmentIndex(*segIndex, d_.currentOffset());
   } else {
+    if (memOrTableIndex >= env_.tables.length()) {
+      return fail("table index out of range for table.init");
+    }
+    *dstTableIndex = memOrTableIndex;
+
     
     
     if (env_.tables[*dstTableIndex].kind != TableKind::AnyFunction) {
