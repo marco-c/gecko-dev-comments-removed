@@ -27,7 +27,6 @@
 #include "nsIAnonymousContentCreator.h"
 #include "nsFrameManager.h"
 
-using nsFrameItems = nsFrameList;
 struct nsStyleDisplay;
 struct nsGenConInitializer;
 
@@ -468,7 +467,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   
   void AppendFramesToParent(nsFrameConstructorState& aState,
                             nsContainerFrame* aParentFrame,
-                            nsFrameItems& aFrameList, nsIFrame* aPrevSibling,
+                            nsFrameList& aFrameList, nsIFrame* aPrevSibling,
                             bool aIsRecursiveCall = false);
 
   
@@ -480,7 +479,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                            FrameConstructionItem& aItem,
                            nsContainerFrame* aParentFrame,
                            const nsStyleDisplay* aDisplay,
-                           nsFrameItems& aFrameItems);
+                           nsFrameList& aFrameList);
 
   
 
@@ -489,7 +488,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                                         FrameConstructionItem& aItem,
                                         nsContainerFrame* aParentFrame,
                                         const nsStyleDisplay* aStyleDisplay,
-                                        nsFrameItems& aFrameItems);
+                                        nsFrameList& aFrameList);
 
   
 
@@ -498,7 +497,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                               FrameConstructionItem& aItem,
                               nsContainerFrame* aParentFrame,
                               const nsStyleDisplay* aStyleDisplay,
-                              nsFrameItems& aFrameItems);
+                              nsFrameList& aFrameList);
 
   
 
@@ -507,7 +506,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                                FrameConstructionItem& aItem,
                                nsContainerFrame* aParentFrame,
                                const nsStyleDisplay* aStyleDisplay,
-                               nsFrameItems& aFrameItems);
+                               nsFrameList& aFrameList);
 
  private:
   
@@ -602,7 +601,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   typedef nsIFrame* (nsCSSFrameConstructor::*FrameFullConstructor)(
       nsFrameConstructorState& aState, FrameConstructionItem& aItem,
       nsContainerFrame* aParentFrame, const nsStyleDisplay* aStyleDisplay,
-      nsFrameItems& aFrameItems);
+      nsFrameList& aFrameList);
 
   
 
@@ -1351,7 +1350,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                                  FrameConstructionItem& aItem,
                                  nsContainerFrame* aParentFrame,
                                  const nsStyleDisplay* aStyleDisplay,
-                                 nsFrameItems& aFrameItems);
+                                 nsFrameList& aFrameList);
 
   
   
@@ -1359,7 +1358,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                                    FrameConstructionItem& aItem,
                                    nsContainerFrame* aParentFrame,
                                    const nsStyleDisplay* aStyleDisplay,
-                                   nsFrameItems& aFrameItems);
+                                   nsFrameList& aFrameList);
 
   
   
@@ -1367,13 +1366,13 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                                   FrameConstructionItem& aItem,
                                   nsContainerFrame* aParentFrame,
                                   const nsStyleDisplay* aStyleDisplay,
-                                  nsFrameItems& aFrameItems);
+                                  nsFrameList& aFrameList);
 
   void ConstructTextFrame(const FrameConstructionData* aData,
                           nsFrameConstructorState& aState, nsIContent* aContent,
                           nsContainerFrame* aParentFrame,
                           ComputedStyle* aComputedStyle,
-                          nsFrameItems& aFrameItems);
+                          nsFrameList& aFrameList);
 
   
   
@@ -1424,7 +1423,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   void ConstructFrameFromItemInternal(FrameConstructionItem& aItem,
                                       nsFrameConstructorState& aState,
                                       nsContainerFrame* aParentFrame,
-                                      nsFrameItems& aFrameItems);
+                                      nsFrameList& aFrameList);
 
   
   
@@ -1459,11 +1458,11 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                                    FrameConstructionItemList& aItems,
                                    nsContainerFrame* aParentFrame,
                                    bool aParentIsWrapperAnonBox,
-                                   nsFrameItems& aFrameItems);
+                                   nsFrameList& aFrameList);
   void ConstructFramesFromItem(nsFrameConstructorState& aState,
                                FCItemIterator& aItem,
                                nsContainerFrame* aParentFrame,
-                               nsFrameItems& aFrameItems);
+                               nsFrameList& aFrameList);
   static bool AtLineBoundary(FCItemIterator& aIter);
 
   nsresult GetAnonymousContent(
@@ -1479,8 +1478,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   void FlushAccumulatedBlock(nsFrameConstructorState& aState,
                              nsIContent* aContent,
                              nsContainerFrame* aParentFrame,
-                             nsFrameItems& aBlockItems,
-                             nsFrameItems& aNewItems);
+                             nsFrameList& aBlockList, nsFrameList& aNewList);
 
   
   
@@ -1528,7 +1526,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
   nsContainerFrame* ConstructFrameWithAnonymousChild(
       nsFrameConstructorState& aState, FrameConstructionItem& aItem,
-      nsContainerFrame* aParentFrame, nsFrameItems& aFrameItems,
+      nsContainerFrame* aParentFrame, nsFrameList& aFrameList,
       ContainerFrameCreationFunc aConstructor,
       ContainerFrameCreationFunc aInnerConstructor,
       mozilla::PseudoStyleType aInnerPseudo, bool aCandidateRootFrame);
@@ -1540,7 +1538,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                               FrameConstructionItem& aItem,
                               nsContainerFrame* aParentFrame,
                               const nsStyleDisplay* aDisplay,
-                              nsFrameItems& aFrameItems);
+                              nsFrameList& aFrameList);
 
   
 
@@ -1549,7 +1547,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                             FrameConstructionItem& aItem,
                             nsContainerFrame* aParentFrame,
                             const nsStyleDisplay* aDisplay,
-                            nsFrameItems& aFrameItems);
+                            nsFrameList& aFrameList);
 
   static const FrameConstructionData* FindSVGData(const Element&,
                                                   nsIFrame* aParentFrame,
@@ -1569,7 +1567,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                                      FrameConstructionItem& aItem,
                                      nsContainerFrame* aParentFrame,
                                      const nsStyleDisplay* aDisplay,
-                                     nsFrameItems& aFrameItems);
+                                     nsFrameList& aFrameList);
 
   
 
@@ -1578,7 +1576,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   nsIFrame* ConstructScrollableBlockWithConstructor(
       nsFrameConstructorState& aState, FrameConstructionItem& aItem,
       nsContainerFrame* aParentFrame, const nsStyleDisplay* aDisplay,
-      nsFrameItems& aFrameItems, BlockFrameCreationFunc aConstructor);
+      nsFrameList& aFrameList, BlockFrameCreationFunc aConstructor);
 
   
 
@@ -1587,7 +1585,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                                         FrameConstructionItem& aItem,
                                         nsContainerFrame* aParentFrame,
                                         const nsStyleDisplay* aDisplay,
-                                        nsFrameItems& aFrameItems);
+                                        nsFrameList& aFrameList);
 
   
 
@@ -1596,7 +1594,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   nsIFrame* ConstructNonScrollableBlockWithConstructor(
       nsFrameConstructorState& aState, FrameConstructionItem& aItem,
       nsContainerFrame* aParentFrame, const nsStyleDisplay* aDisplay,
-      nsFrameItems& aFrameItems, BlockFrameCreationFunc aConstructor);
+      nsFrameList& aFrameList, BlockFrameCreationFunc aConstructor);
 
   
 
@@ -1643,7 +1641,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                        ComputedStyle* aComputedStyle,
                        nsContainerFrame* aParentFrame,
                        const bool aCanHaveGeneratedContent,
-                       nsFrameItems& aFrameItems, const bool aAllowBlockStyles,
+                       nsFrameList& aFrameList, const bool aAllowBlockStyles,
                        PendingBinding* aPendingBinding,
                        nsIFrame* aPossiblyLeafFrame = nullptr);
 
@@ -1695,7 +1693,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                              nsContainerFrame* aParentFrame,
                              ComputedStyle* aComputedStyle, bool aBuildCombobox,
                              PendingBinding* aPendingBinding,
-                             nsFrameItems& aFrameItems);
+                             nsFrameList& aFrameList);
 
   
 
@@ -1776,7 +1774,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                       nsContainerFrame* aParentFrame,
                       nsContainerFrame* aContentParentFrame,
                       ComputedStyle* aComputedStyle,
-                      nsContainerFrame** aNewFrame, nsFrameItems& aFrameItems,
+                      nsContainerFrame** aNewFrame, nsFrameList& aFrameList,
                       nsIFrame* aPositionedFrameForAbsPosContainer,
                       PendingBinding* aPendingBinding);
 
@@ -1848,10 +1846,10 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   
   
   
-  nsFrameItems CreateColumnSpanSiblings(nsFrameConstructorState& aState,
-                                        nsContainerFrame* aInitialBlock,
-                                        nsFrameList& aChildList,
-                                        nsIFrame* aPositionedFrame);
+  nsFrameList CreateColumnSpanSiblings(nsFrameConstructorState& aState,
+                                       nsContainerFrame* aInitialBlock,
+                                       nsFrameList& aChildList,
+                                       nsIFrame* aPositionedFrame);
 
   
   
@@ -1878,7 +1876,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                             FrameConstructionItem& aItem,
                             nsContainerFrame* aParentFrame,
                             const nsStyleDisplay* aDisplay,
-                            nsFrameItems& aFrameItems);
+                            nsFrameList& aFrameList);
 
   
 
@@ -1900,7 +1898,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
   void CreateIBSiblings(nsFrameConstructorState& aState,
                         nsContainerFrame* aInitialInline, bool aIsPositioned,
-                        nsFrameItems& aChildItems, nsFrameItems& aSiblings);
+                        nsFrameList& aChildList, nsFrameList& aSiblings);
 
   
 
@@ -1936,15 +1934,15 @@ class nsCSSFrameConstructor final : public nsFrameManager {
       nsFrameConstructorState& aState, nsIContent* aTextContent,
       nsIFrame* aTextFrame, nsContainerFrame* aParentFrame,
       ComputedStyle* aParentComputedStyle, ComputedStyle* aComputedStyle,
-      nsFrameItems& aResult);
+      nsFrameList& aResult);
 
   void CreateLetterFrame(nsContainerFrame* aBlockFrame,
                          nsContainerFrame* aBlockContinuation,
                          nsIContent* aTextContent,
-                         nsContainerFrame* aParentFrame, nsFrameItems& aResult);
+                         nsContainerFrame* aParentFrame, nsFrameList& aResult);
 
   void WrapFramesInFirstLetterFrame(nsContainerFrame* aBlockFrame,
-                                    nsFrameItems& aBlockFrames);
+                                    nsFrameList& aBlockFrames);
 
   
 
@@ -1969,7 +1967,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
       nsContainerFrame* aBlockFrame, nsContainerFrame* aBlockContinuation,
       nsContainerFrame* aParentFrame, nsIFrame* aParentFrameList,
       nsContainerFrame** aModifiedParent, nsIFrame** aTextFrame,
-      nsIFrame** aPrevFrame, nsFrameItems& aLetterFrames, bool* aStopLooking);
+      nsIFrame** aPrevFrame, nsFrameList& aLetterFrames, bool* aStopLooking);
 
   void RecoverLetterFrames(nsContainerFrame* aBlockFrame);
 
@@ -2006,14 +2004,14 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                                   nsIContent* aBlockContent,
                                   nsContainerFrame* aBlockFrame,
                                   nsFirstLineFrame* aLineFrame,
-                                  nsFrameItems& aFrameItems);
+                                  nsFrameList& aFrameList);
 
   
   
   void AppendFirstLineFrames(nsFrameConstructorState& aState,
                              nsIContent* aContent,
                              nsContainerFrame* aBlockFrame,
-                             nsFrameItems& aFrameItems);
+                             nsFrameList& aFrameList);
 
   
 
@@ -2025,7 +2023,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
 
   void CheckForFirstLineInsertion(nsIFrame* aParentFrame,
-                                  nsFrameItems& aFrameItems);
+                                  nsFrameList& aFrameList);
 
   
 
