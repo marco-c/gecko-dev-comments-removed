@@ -2,6 +2,8 @@
 
 
 
+#![allow(unsafe_code)]
+
 
 
 use std::marker::PhantomData;
