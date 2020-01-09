@@ -94,8 +94,8 @@ __webpack_require__.r(__webpack_exports__);
  var content_src_lib_snippets__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(3);
  var content_src_asrouter_asrouter_content__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(4);
  var content_src_components_Base_Base__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(25);
- var content_src_lib_detect_user_session_start__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(54);
- var content_src_lib_asroutercontent__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(55);
+ var content_src_lib_detect_user_session_start__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(53);
+ var content_src_lib_asroutercontent__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(54);
  var content_src_lib_init_store__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(6);
  var react_redux__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(24);
  var react_redux__WEBPACK_IMPORTED_MODULE_7___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_7__);
@@ -103,7 +103,7 @@ __webpack_require__.r(__webpack_exports__);
  var react__WEBPACK_IMPORTED_MODULE_8___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_8__);
  var react_dom__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(14);
  var react_dom__WEBPACK_IMPORTED_MODULE_9___default = __webpack_require__.n(react_dom__WEBPACK_IMPORTED_MODULE_9__);
- var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(60);
+ var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(59);
 
 
 
@@ -211,7 +211,7 @@ const globalImportContext = typeof Window === "undefined" ? BACKGROUND_PROCESS :
 
 const actionTypes = {};
 
-for (const type of ["ADDONS_INFO_REQUEST", "ADDONS_INFO_RESPONSE", "ARCHIVE_FROM_POCKET", "AS_ROUTER_INITIALIZED", "AS_ROUTER_PREF_CHANGED", "AS_ROUTER_TELEMETRY_USER_EVENT", "BLOCK_URL", "BOOKMARK_URL", "COPY_DOWNLOAD_LINK", "DELETE_BOOKMARK_BY_ID", "DELETE_FROM_POCKET", "DELETE_HISTORY_URL", "DIALOG_CANCEL", "DIALOG_OPEN", "DISCOVERY_STREAM_CONFIG_CHANGE", "DISCOVERY_STREAM_CONFIG_SETUP", "DISCOVERY_STREAM_CONFIG_SET_VALUE", "DISCOVERY_STREAM_FEEDS_UPDATE", "DISCOVERY_STREAM_LAYOUT_RESET", "DISCOVERY_STREAM_LAYOUT_UPDATE", "DISCOVERY_STREAM_OPT_OUT", "DISCOVERY_STREAM_SPOCS_ENDPOINT", "DISCOVERY_STREAM_SPOCS_UPDATE", "DISCOVERY_STREAM_SPOC_IMPRESSION", "DOWNLOAD_CHANGED", "FAKE_FOCUS_SEARCH", "FILL_SEARCH_TERM", "HANDOFF_SEARCH_TO_AWESOMEBAR", "HIDE_SEARCH", "INIT", "MIGRATION_CANCEL", "MIGRATION_COMPLETED", "MIGRATION_START", "NEW_TAB_INIT", "NEW_TAB_INITIAL_STATE", "NEW_TAB_LOAD", "NEW_TAB_REHYDRATED", "NEW_TAB_STATE_REQUEST", "NEW_TAB_UNLOAD", "OPEN_DOWNLOAD_FILE", "OPEN_LINK", "OPEN_NEW_WINDOW", "OPEN_PRIVATE_WINDOW", "OPEN_WEBEXT_SETTINGS", "PAGE_PRERENDERED", "PLACES_BOOKMARK_ADDED", "PLACES_BOOKMARK_REMOVED", "PLACES_HISTORY_CLEARED", "PLACES_LINKS_CHANGED", "PLACES_LINK_BLOCKED", "PLACES_LINK_DELETED", "PLACES_SAVED_TO_POCKET", "POCKET_CTA", "POCKET_LOGGED_IN", "POCKET_WAITING_FOR_SPOC", "PREFS_INITIAL_VALUES", "PREF_CHANGED", "PREVIEW_REQUEST", "PREVIEW_REQUEST_CANCEL", "PREVIEW_RESPONSE", "REMOVE_DOWNLOAD_FILE", "RICH_ICON_MISSING", "SAVE_SESSION_PERF_DATA", "SAVE_TO_POCKET", "SCREENSHOT_UPDATED", "SECTION_DEREGISTER", "SECTION_DISABLE", "SECTION_ENABLE", "SECTION_MOVE", "SECTION_OPTIONS_CHANGED", "SECTION_REGISTER", "SECTION_UPDATE", "SECTION_UPDATE_CARD", "SETTINGS_CLOSE", "SETTINGS_OPEN", "SET_PREF", "SHOW_DOWNLOAD_FILE", "SHOW_FIREFOX_ACCOUNTS", "SHOW_SEARCH", "SKIPPED_SIGNIN", "SNIPPETS_BLOCKLIST_CLEARED", "SNIPPETS_BLOCKLIST_UPDATED", "SNIPPETS_DATA", "SNIPPETS_PREVIEW_MODE", "SNIPPETS_RESET", "SNIPPET_BLOCKED", "SUBMIT_EMAIL", "SYSTEM_TICK", "TELEMETRY_IMPRESSION_STATS", "TELEMETRY_PERFORMANCE_EVENT", "TELEMETRY_UNDESIRED_EVENT", "TELEMETRY_USER_EVENT", "TOP_SITES_CANCEL_EDIT", "TOP_SITES_CLOSE_SEARCH_SHORTCUTS_MODAL", "TOP_SITES_EDIT", "TOP_SITES_INSERT", "TOP_SITES_OPEN_SEARCH_SHORTCUTS_MODAL", "TOP_SITES_PIN", "TOP_SITES_PREFS_UPDATED", "TOP_SITES_UNPIN", "TOP_SITES_UPDATED", "TOTAL_BOOKMARKS_REQUEST", "TOTAL_BOOKMARKS_RESPONSE", "UNINIT", "UPDATE_PINNED_SEARCH_SHORTCUTS", "UPDATE_SEARCH_SHORTCUTS", "UPDATE_SECTION_PREFS", "WEBEXT_CLICK", "WEBEXT_DISMISS"]) {
+for (const type of ["ADDONS_INFO_REQUEST", "ADDONS_INFO_RESPONSE", "ARCHIVE_FROM_POCKET", "AS_ROUTER_INITIALIZED", "AS_ROUTER_PREF_CHANGED", "AS_ROUTER_TELEMETRY_USER_EVENT", "BLOCK_URL", "BOOKMARK_URL", "COPY_DOWNLOAD_LINK", "DELETE_BOOKMARK_BY_ID", "DELETE_FROM_POCKET", "DELETE_HISTORY_URL", "DIALOG_CANCEL", "DIALOG_OPEN", "DISCOVERY_STREAM_CONFIG_CHANGE", "DISCOVERY_STREAM_CONFIG_SETUP", "DISCOVERY_STREAM_CONFIG_SET_VALUE", "DISCOVERY_STREAM_FEEDS_UPDATE", "DISCOVERY_STREAM_IMPRESSION_STATS", "DISCOVERY_STREAM_LAYOUT_RESET", "DISCOVERY_STREAM_LAYOUT_UPDATE", "DISCOVERY_STREAM_OPT_OUT", "DISCOVERY_STREAM_REC_IMPRESSION", "DISCOVERY_STREAM_SPOCS_ENDPOINT", "DISCOVERY_STREAM_SPOCS_UPDATE", "DISCOVERY_STREAM_SPOC_IMPRESSION", "DOWNLOAD_CHANGED", "FAKE_FOCUS_SEARCH", "FILL_SEARCH_TERM", "HANDOFF_SEARCH_TO_AWESOMEBAR", "HIDE_SEARCH", "INIT", "MIGRATION_CANCEL", "MIGRATION_COMPLETED", "MIGRATION_START", "NEW_TAB_INIT", "NEW_TAB_INITIAL_STATE", "NEW_TAB_LOAD", "NEW_TAB_REHYDRATED", "NEW_TAB_STATE_REQUEST", "NEW_TAB_UNLOAD", "OPEN_DOWNLOAD_FILE", "OPEN_LINK", "OPEN_NEW_WINDOW", "OPEN_PRIVATE_WINDOW", "OPEN_WEBEXT_SETTINGS", "PAGE_PRERENDERED", "PLACES_BOOKMARK_ADDED", "PLACES_BOOKMARK_REMOVED", "PLACES_HISTORY_CLEARED", "PLACES_LINKS_CHANGED", "PLACES_LINK_BLOCKED", "PLACES_LINK_DELETED", "PLACES_SAVED_TO_POCKET", "POCKET_CTA", "POCKET_LOGGED_IN", "POCKET_WAITING_FOR_SPOC", "PREFS_INITIAL_VALUES", "PREF_CHANGED", "PREVIEW_REQUEST", "PREVIEW_REQUEST_CANCEL", "PREVIEW_RESPONSE", "REMOVE_DOWNLOAD_FILE", "RICH_ICON_MISSING", "SAVE_SESSION_PERF_DATA", "SAVE_TO_POCKET", "SCREENSHOT_UPDATED", "SECTION_DEREGISTER", "SECTION_DISABLE", "SECTION_ENABLE", "SECTION_MOVE", "SECTION_OPTIONS_CHANGED", "SECTION_REGISTER", "SECTION_UPDATE", "SECTION_UPDATE_CARD", "SETTINGS_CLOSE", "SETTINGS_OPEN", "SET_PREF", "SHOW_DOWNLOAD_FILE", "SHOW_FIREFOX_ACCOUNTS", "SHOW_SEARCH", "SKIPPED_SIGNIN", "SNIPPETS_BLOCKLIST_CLEARED", "SNIPPETS_BLOCKLIST_UPDATED", "SNIPPETS_DATA", "SNIPPETS_PREVIEW_MODE", "SNIPPETS_RESET", "SNIPPET_BLOCKED", "SUBMIT_EMAIL", "SYSTEM_TICK", "TELEMETRY_IMPRESSION_STATS", "TELEMETRY_PERFORMANCE_EVENT", "TELEMETRY_UNDESIRED_EVENT", "TELEMETRY_USER_EVENT", "TOP_SITES_CANCEL_EDIT", "TOP_SITES_CLOSE_SEARCH_SHORTCUTS_MODAL", "TOP_SITES_EDIT", "TOP_SITES_INSERT", "TOP_SITES_OPEN_SEARCH_SHORTCUTS_MODAL", "TOP_SITES_PIN", "TOP_SITES_PREFS_UPDATED", "TOP_SITES_UNPIN", "TOP_SITES_UPDATED", "TOTAL_BOOKMARKS_REQUEST", "TOTAL_BOOKMARKS_RESPONSE", "UNINIT", "UPDATE_PINNED_SEARCH_SHORTCUTS", "UPDATE_SEARCH_SHORTCUTS", "UPDATE_SECTION_PREFS", "WEBEXT_CLICK", "WEBEXT_DISMISS"]) {
   actionTypes[type] = type;
 }
 
@@ -404,6 +404,21 @@ function ImpressionStats(data, importContext = globalImportContext) {
   return importContext === UI_CODE ? AlsoToMain(action) : action;
 }
 
+
+
+
+
+
+
+
+function DiscoveryStreamImpressionStats(data, importContext = globalImportContext) {
+  const action = {
+    type: actionTypes.DISCOVERY_STREAM_IMPRESSION_STATS,
+    data
+  };
+  return importContext === UI_CODE ? AlsoToMain(action) : action;
+}
+
 function SetPref(name, value, importContext = globalImportContext) {
   const action = { type: actionTypes.SET_PREF, data: { name, value } };
   return importContext === UI_CODE ? AlsoToMain(action) : action;
@@ -430,7 +445,8 @@ var actionCreators = {
   OnlyToMain,
   AlsoToPreloaded,
   SetPref,
-  WebExtEvent
+  WebExtEvent,
+  DiscoveryStreamImpressionStats
 };
 
 
@@ -936,14 +952,14 @@ __webpack_require__.r(__webpack_exports__);
  var content_src_lib_init_store__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(6);
  var _rich_text_strings__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(8);
  var _components_ImpressionsWrapper_ImpressionsWrapper__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(9);
- var fluent_react__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(59);
+ var fluent_react__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(58);
  var _templates_OnboardingMessage_OnboardingMessage__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(12);
  var react__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(10);
  var react__WEBPACK_IMPORTED_MODULE_7___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_7__);
  var react_dom__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(14);
  var react_dom__WEBPACK_IMPORTED_MODULE_8___default = __webpack_require__.n(react_dom__WEBPACK_IMPORTED_MODULE_8__);
  var _templates_ReturnToAMO_ReturnToAMO__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(15);
- var _templates_template_manifest__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(57);
+ var _templates_template_manifest__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(56);
  var _templates_StartupOverlay_StartupOverlay__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(23);
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
@@ -1458,7 +1474,7 @@ module.exports = Redux;
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "RICH_TEXT_KEYS", function() { return RICH_TEXT_KEYS; });
  __webpack_require__.d(__webpack_exports__, "generateMessages", function() { return generateMessages; });
- var fluent__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(58);
+ var fluent__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(57);
 
 
 
@@ -1854,7 +1870,7 @@ class ReturnToAMO extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureCompo
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "convertLinks", function() { return convertLinks; });
  __webpack_require__.d(__webpack_exports__, "RichText", function() { return RichText; });
- var fluent_react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(59);
+ var fluent_react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(58);
  var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(10);
  var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
  var _rich_text_strings__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(8);
@@ -2221,14 +2237,14 @@ __webpack_require__.r(__webpack_exports__);
  var react_redux__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(24);
  var react_redux__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_4__);
  var content_src_components_DarkModeMessage_DarkModeMessage__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(29);
- var content_src_components_DiscoveryStreamBase_DiscoveryStreamBase__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(56);
- var content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(35);
- var content_src_components_ManualMigration_ManualMigration__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(46);
- var common_PrerenderData_jsm__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(47);
+ var content_src_components_DiscoveryStreamBase_DiscoveryStreamBase__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(55);
+ var content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(34);
+ var content_src_components_ManualMigration_ManualMigration__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(45);
+ var common_PrerenderData_jsm__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(46);
  var react__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(10);
  var react__WEBPACK_IMPORTED_MODULE_10___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_10__);
- var content_src_components_Search_Search__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(48);
- var content_src_components_Sections_Sections__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(50);
+ var content_src_components_Search_Search__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(47);
+ var content_src_components_Sections_Sections__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(49);
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 
@@ -3860,99 +3876,38 @@ const DarkModeMessage = Object(react_redux__WEBPACK_IMPORTED_MODULE_1__["connect
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-(function(global) { __webpack_require__.d(__webpack_exports__, "SpocIntersectionObserver", function() { return SpocIntersectionObserver; });
+(function(global) { __webpack_require__.d(__webpack_exports__, "INTERSECTION_RATIO", function() { return INTERSECTION_RATIO; });
+ __webpack_require__.d(__webpack_exports__, "ImpressionStats", function() { return ImpressionStats; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
  var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(10);
  var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
 
 
+
 const VISIBLE = "visible";
 const VISIBILITY_CHANGE_EVENT = "visibilitychange";
+
+
+
+
+
+
 const INTERSECTION_RATIO = 0.5;
 
-class SpocIntersectionObserver extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureComponent {
-  constructor(props) {
-    super(props);
-
-    this.spocElementRef = this.spocElementRef.bind(this);
-  }
-
-  componentDidMount() {
-    if (this.props.document.visibilityState === VISIBLE) {
-      this.setupIntersectionObserver();
-    } else {
-      this._onVisibilityChange = () => {
-        if (this.props.document.visibilityState === VISIBLE) {
-          this.setupIntersectionObserver();
-          this.props.document.removeEventListener(VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
-        }
-      };
-      this.props.document.addEventListener(VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
-    }
-  }
-
-  componentWillUnmount() {
-    if (this._onVisibilityChange) {
-      this.props.document.removeEventListener(VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
-    }
-    if (this._intersectionObserver) {
-      this._intersectionObserver.unobserve(this.spocElement);
-    }
-  }
-
-  setupIntersectionObserver() {
-    const options = { threshold: INTERSECTION_RATIO };
-    this._intersectionObserver = new IntersectionObserver(entries => {
-      for (let entry of entries) {
-        if (entry.isIntersecting && entry.intersectionRatio >= INTERSECTION_RATIO) {
-          this.dispatchSpocImpression();
-          break;
-        }
-      }
-    }, options);
-    this._intersectionObserver.observe(this.spocElement);
-  }
-
-  dispatchSpocImpression() {
-    if (this.props.campaignId) {
-      this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({ type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].DISCOVERY_STREAM_SPOC_IMPRESSION, data: { campaignId: this.props.campaignId } }));
-    }
-    this._intersectionObserver.unobserve(this.spocElement);
-  }
-
-  spocElementRef(element) {
-    this.spocElement = element;
-  }
-
-  render() {
-    return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(
-      "div",
-      { ref: this.spocElementRef },
-      this.props.children
-    );
-  }
-}
-
-SpocIntersectionObserver.defaultProps = {
-  document: global.document
-};
-}.call(this, __webpack_require__(1)))
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-(function(global) { __webpack_require__.d(__webpack_exports__, "ImpressionStats", function() { return ImpressionStats; });
- var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(10);
- var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
 
 
 
-const VISIBLE = "visible";
-const VISIBILITY_CHANGE_EVENT = "visibilitychange";
+
+
+
+
+
+
+
+
+
+
+
 
 class ImpressionStats extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureComponent {
   
@@ -3975,8 +3930,12 @@ class ImpressionStats extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureC
     const { props } = this;
     const cards = props.rows;
 
+    if (this.props.campaignId) {
+      this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({ type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].DISCOVERY_STREAM_SPOC_IMPRESSION, data: { campaignId: this.props.campaignId } }));
+    }
+
     if (this._needsImpressionStats(cards)) {
-      props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].ImpressionStats({
+      props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].DiscoveryStreamImpressionStats({
         source: props.source.toUpperCase(),
         tiles: cards.map(link => ({ id: link.id }))
       }));
@@ -3984,10 +3943,7 @@ class ImpressionStats extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureC
     }
   }
 
-  
-  
-  
-  sendImpressionStatsOrAddListener() {
+  setImpressionObserverOrAddListener() {
     const { props } = this;
 
     if (!props.dispatch) {
@@ -3995,7 +3951,7 @@ class ImpressionStats extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureC
     }
 
     if (props.document.visibilityState === VISIBLE) {
-      this._dispatchImpressionStats();
+      this.setImpressionObserver();
     } else {
       
       
@@ -4005,7 +3961,7 @@ class ImpressionStats extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureC
 
       this._onVisibilityChange = () => {
         if (props.document.visibilityState === VISIBLE) {
-          this._dispatchImpressionStats();
+          this.setImpressionObserver();
           props.document.removeEventListener(VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
         }
       };
@@ -4013,30 +3969,65 @@ class ImpressionStats extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureC
     }
   }
 
+  
+
+
+
+
+
+
+
+  setImpressionObserver() {
+    const { props } = this;
+
+    if (!props.rows.length) {
+      return;
+    }
+
+    this._handleIntersect = entries => {
+      if (entries.some(entry => entry.isIntersecting && entry.intersectionRatio >= INTERSECTION_RATIO)) {
+        this._dispatchImpressionStats();
+        this.impressionObserver.unobserve(this.refs.impression);
+      }
+    };
+
+    const options = { threshold: INTERSECTION_RATIO };
+    this.impressionObserver = new props.IntersectionObserver(this._handleIntersect, options);
+    this.impressionObserver.observe(this.refs.impression);
+  }
+
   componentDidMount() {
     if (this.props.rows.length) {
-      this.sendImpressionStatsOrAddListener();
+      this.setImpressionObserverOrAddListener();
     }
   }
 
   componentDidUpdate(prevProps) {
     if (this.props.rows.length && this.props.rows !== prevProps.rows) {
-      this.sendImpressionStatsOrAddListener();
+      this.setImpressionObserverOrAddListener();
     }
   }
 
   componentWillUnmount() {
+    if (this._handleIntersect && this.impressionObserver) {
+      this.impressionObserver.unobserve(this.refs.impression);
+    }
     if (this._onVisibilityChange) {
       this.props.document.removeEventListener(VISIBILITY_CHANGE_EVENT, this._onVisibilityChange);
     }
   }
 
   render() {
-    return this.props.children;
+    return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(
+      "div",
+      { ref: "impression", className: "impression-observer" },
+      this.props.children
+    );
   }
 }
 
 ImpressionStats.defaultProps = {
+  IntersectionObserver: global.IntersectionObserver,
   document: global.document,
   rows: [],
   source: ""
@@ -4052,19 +4043,19 @@ __webpack_require__.r(__webpack_exports__);
 (function(global) { __webpack_require__.d(__webpack_exports__, "_TopSites", function() { return _TopSites; });
  __webpack_require__.d(__webpack_exports__, "TopSites", function() { return TopSites; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(33);
- var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(34);
- var content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(39);
+ var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(32);
+ var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(33);
+ var content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(38);
  var react_redux__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(24);
  var react_redux__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_4__);
  var react_intl__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(5);
  var react_intl__WEBPACK_IMPORTED_MODULE_5___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_5__);
  var react__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(10);
  var react__WEBPACK_IMPORTED_MODULE_6___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_6__);
- var _SearchShortcutsForm__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(41);
- var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(60);
- var _TopSiteForm__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(62);
- var _TopSite__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(42);
+ var _SearchShortcutsForm__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(40);
+ var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(59);
+ var _TopSiteForm__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(61);
+ var _TopSite__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(41);
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 
@@ -4283,11 +4274,11 @@ __webpack_require__.r(__webpack_exports__);
  var react_intl__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5);
  var react_intl__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_0__);
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2);
- var content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(35);
+ var content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(34);
  var react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(10);
  var react__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_3__);
- var content_src_components_SectionMenu_SectionMenu__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(36);
- var content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(38);
+ var content_src_components_SectionMenu_SectionMenu__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(35);
+ var content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(37);
 
 
 
@@ -4635,12 +4626,12 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "_SectionMenu", function() { return _SectionMenu; });
  __webpack_require__.d(__webpack_exports__, "SectionMenu", function() { return SectionMenu; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var content_src_components_ContextMenu_ContextMenu__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(37);
+ var content_src_components_ContextMenu_ContextMenu__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(36);
  var react_intl__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5);
  var react_intl__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_2__);
  var react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(10);
  var react__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_3__);
- var content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(38);
+ var content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(37);
 
 
 
@@ -4894,7 +4885,7 @@ const SectionMenuOptions = {
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "ComponentPerfTimer", function() { return ComponentPerfTimer; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var common_PerfService_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(40);
+ var common_PerfService_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(39);
  var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(10);
  var react__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
 
@@ -5208,7 +5199,7 @@ __webpack_require__.r(__webpack_exports__);
  var react_intl__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_1__);
  var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(10);
  var react__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
- var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(33);
+ var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(32);
 
 
 
@@ -5390,12 +5381,12 @@ __webpack_require__.r(__webpack_exports__);
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
  var react_intl__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
  var react_intl__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_1__);
- var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(33);
- var content_src_components_LinkMenu_LinkMenu__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(43);
+ var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(32);
+ var content_src_components_LinkMenu_LinkMenu__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(42);
  var react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(10);
  var react__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_4__);
- var content_src_lib_screenshot_utils__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(45);
- var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(60);
+ var content_src_lib_screenshot_utils__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(44);
+ var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(59);
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 
@@ -5930,10 +5921,10 @@ __webpack_require__.r(__webpack_exports__);
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
  var react_redux__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(24);
  var react_redux__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_1__);
- var content_src_components_ContextMenu_ContextMenu__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(37);
+ var content_src_components_ContextMenu_ContextMenu__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(36);
  var react_intl__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(5);
  var react_intl__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_3__);
- var content_src_lib_link_menu_options__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(44);
+ var content_src_lib_link_menu_options__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(43);
  var react__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(10);
  var react__WEBPACK_IMPORTED_MODULE_5___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_5__);
 
@@ -6488,7 +6479,7 @@ __webpack_require__.r(__webpack_exports__);
  var react_intl__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_1__);
  var react_redux__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(24);
  var react_redux__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_2__);
- var content_src_lib_constants__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(49);
+ var content_src_lib_constants__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(48);
  var react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(10);
  var react__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_4__);
 
@@ -6690,19 +6681,19 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "_Sections", function() { return _Sections; });
  __webpack_require__.d(__webpack_exports__, "Sections", function() { return Sections; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var content_src_components_Card_Card__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(61);
+ var content_src_components_Card_Card__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(60);
  var react_intl__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5);
  var react_intl__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_2__);
- var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(34);
- var content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(39);
+ var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(33);
+ var content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(38);
  var react_redux__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(24);
  var react_redux__WEBPACK_IMPORTED_MODULE_5___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_5__);
- var content_src_components_MoreRecommendations_MoreRecommendations__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(51);
- var content_src_components_PocketLoggedInCta_PocketLoggedInCta__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(52);
+ var content_src_components_MoreRecommendations_MoreRecommendations__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(50);
+ var content_src_components_PocketLoggedInCta_PocketLoggedInCta__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(51);
  var react__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(10);
  var react__WEBPACK_IMPORTED_MODULE_8___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_8__);
- var content_src_components_Topics_Topics__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(53);
- var content_src_components_TopSites_TopSites__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(32);
+ var content_src_components_Topics_Topics__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(52);
+ var content_src_components_TopSites_TopSites__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(31);
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 
@@ -7155,7 +7146,7 @@ class Topics extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureComponent 
 __webpack_require__.r(__webpack_exports__);
 (function(global) { __webpack_require__.d(__webpack_exports__, "DetectUserSessionStart", function() { return DetectUserSessionStart; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var common_PerfService_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(40);
+ var common_PerfService_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(39);
 
 
 
@@ -7255,6 +7246,9 @@ function enableASRouterContent(store, asrouterContent) {
 var Actions = __webpack_require__(2);
 
 
+var ImpressionStats = __webpack_require__(30);
+
+
 var external_React_ = __webpack_require__(10);
 var external_React_default = __webpack_require__.n(external_React_);
 
@@ -7287,9 +7281,6 @@ class SafeAnchor_SafeAnchor extends external_React_default.a.PureComponent {
     );
   }
 }
-
-var SpocIntersectionObserver = __webpack_require__(30);
-
 
 
 
@@ -7324,51 +7315,52 @@ class DSCard_DSCard extends external_React_default.a.PureComponent {
       SafeAnchor_SafeAnchor,
       { url: this.props.url, className: "ds-card", onLinkClick: this.onLinkClick },
       external_React_default.a.createElement(
-        SpocIntersectionObserver["SpocIntersectionObserver"],
-        { campaignId: this.props.campaignId, dispatch: this.props.dispatch },
+        "div",
+        { className: "img-wrapper" },
+        external_React_default.a.createElement("div", { className: "img", style: { backgroundImage: `url(${this.props.image_src}` } })
+      ),
+      external_React_default.a.createElement(
+        "div",
+        { className: "meta" },
         external_React_default.a.createElement(
           "div",
-          { className: "img-wrapper" },
-          external_React_default.a.createElement("div", { className: "img", style: { backgroundImage: `url(${this.props.image_src}` } })
+          { className: "info-wrap" },
+          external_React_default.a.createElement(
+            "header",
+            { className: "title" },
+            this.props.title
+          ),
+          this.props.excerpt && external_React_default.a.createElement(
+            "p",
+            { className: "excerpt" },
+            this.props.excerpt
+          )
         ),
         external_React_default.a.createElement(
-          "div",
-          { className: "meta" },
-          external_React_default.a.createElement(
-            "div",
-            { className: "info-wrap" },
+          "p",
+          null,
+          this.props.context && external_React_default.a.createElement(
+            "span",
+            null,
             external_React_default.a.createElement(
-              "header",
-              { className: "title" },
-              this.props.title
+              "span",
+              { className: "context" },
+              this.props.context
             ),
-            this.props.excerpt && external_React_default.a.createElement(
-              "p",
-              { className: "excerpt" },
-              this.props.excerpt
-            )
+            external_React_default.a.createElement("br", null)
           ),
           external_React_default.a.createElement(
-            "p",
-            null,
-            this.props.context && external_React_default.a.createElement(
-              "span",
-              null,
-              external_React_default.a.createElement(
-                "span",
-                { className: "context" },
-                this.props.context
-              ),
-              external_React_default.a.createElement("br", null)
-            ),
-            external_React_default.a.createElement(
-              "span",
-              { className: "source" },
-              this.props.source
-            )
+            "span",
+            { className: "source" },
+            this.props.source
           )
         )
-      )
+      ),
+      external_React_default.a.createElement(ImpressionStats["ImpressionStats"], {
+        campaignId: this.props.campaignId,
+        rows: [{ id: this.props.id }],
+        dispatch: this.props.dispatch,
+        source: this.props.type })
     );
   }
 }
@@ -7386,8 +7378,8 @@ class CardGrid_CardGrid extends external_React_default.a.PureComponent {
     }
 
     let cards = data.recommendations.slice(0, this.props.items).map((rec, index) => external_React_default.a.createElement(DSCard_DSCard, {
-      campaignId: rec.campaign_id,
       key: `dscard-${index}`,
+      campaignId: rec.campaign_id,
       image_src: rec.image_src,
       title: rec.title,
       excerpt: rec.excerpt,
@@ -7497,14 +7489,14 @@ class List_ListItem extends external_React_default.a.PureComponent {
       "li",
       { className: "ds-list-item" },
       external_React_default.a.createElement(
-        SpocIntersectionObserver["SpocIntersectionObserver"],
-        { campaignId: this.props.campaignId, dispatch: this.props.dispatch },
+        SafeAnchor_SafeAnchor,
+        { url: this.props.url, className: "ds-list-item-link", onLinkClick: this.onLinkClick },
         external_React_default.a.createElement(
-          SafeAnchor_SafeAnchor,
-          { url: this.props.url, className: "ds-list-item-link", onLinkClick: this.onLinkClick },
+          "div",
+          { className: "ds-list-item-text" },
           external_React_default.a.createElement(
             "div",
-            { className: "ds-list-item-text" },
+            null,
             external_React_default.a.createElement(
               "div",
               { className: "ds-list-item-title" },
@@ -7514,29 +7506,34 @@ class List_ListItem extends external_React_default.a.PureComponent {
               "div",
               { className: "ds-list-item-excerpt" },
               this.props.excerpt
-            ),
-            external_React_default.a.createElement(
-              "p",
-              null,
-              this.props.context && external_React_default.a.createElement(
-                "span",
-                null,
-                external_React_default.a.createElement(
-                  "span",
-                  { className: "ds-list-item-context" },
-                  this.props.context
-                ),
-                external_React_default.a.createElement("br", null)
-              ),
-              external_React_default.a.createElement(
-                "span",
-                { className: "ds-list-item-info" },
-                this.props.domain
-              )
             )
           ),
-          external_React_default.a.createElement("div", { className: "ds-list-image", style: { backgroundImage: `url(${this.props.image_src})` } })
-        )
+          external_React_default.a.createElement(
+            "p",
+            null,
+            this.props.context && external_React_default.a.createElement(
+              "span",
+              null,
+              external_React_default.a.createElement(
+                "span",
+                { className: "ds-list-item-context" },
+                this.props.context
+              ),
+              external_React_default.a.createElement("br", null)
+            ),
+            external_React_default.a.createElement(
+              "span",
+              { className: "ds-list-item-info" },
+              this.props.domain
+            )
+          )
+        ),
+        external_React_default.a.createElement("div", { className: "ds-list-image", style: { backgroundImage: `url(${this.props.image_src})` } }),
+        external_React_default.a.createElement(ImpressionStats["ImpressionStats"], {
+          campaignId: this.props.campaignId,
+          rows: [{ id: this.props.id }],
+          dispatch: this.props.dispatch,
+          source: this.props.type })
       )
     );
   }
@@ -7552,8 +7549,8 @@ function _List(props) {
   }
   const recs = feed.recommendations;
   let recMarkup = recs.slice(props.recStartingPoint, props.recStartingPoint + props.items).map((rec, index) => external_React_default.a.createElement(List_ListItem, { key: `ds-list-item-${index}`,
-    campaignId: rec.campaign_id,
     dispatch: props.dispatch,
+    campaignId: rec.campaign_id,
     domain: rec.domain,
     excerpt: rec.excerpt,
     id: rec.id,
@@ -7597,6 +7594,7 @@ const List = Object(external_ReactRedux_["connect"])(state => ({ DiscoveryStream
 
 
 
+
 class Hero_Hero extends external_React_default.a.PureComponent {
   constructor(props) {
     super(props);
@@ -7632,7 +7630,6 @@ class Hero_Hero extends external_React_default.a.PureComponent {
 
     
     let cards = otherRecs.map((rec, index) => external_React_default.a.createElement(DSCard_DSCard, {
-      campaignId: rec.campaign_id,
       key: `dscard-${index}`,
       image_src: rec.image_src,
       title: rec.title,
@@ -7697,7 +7694,12 @@ class Hero_Hero extends external_React_default.a.PureComponent {
               { className: "source" },
               heroRec.domain
             )
-          )
+          ),
+          external_React_default.a.createElement(ImpressionStats["ImpressionStats"], {
+            campaignId: heroRec.campaignId,
+            rows: [{ id: heroRec.id }],
+            dispatch: this.props.dispatch,
+            source: this.props.type })
         ),
         external_React_default.a.createElement(
           "div",
@@ -7722,9 +7724,6 @@ class HorizontalRule_HorizontalRule extends external_React_default.a.PureCompone
     return external_React_default.a.createElement("hr", { className: "ds-hr" });
   }
 }
-
-var ImpressionStats = __webpack_require__(31);
-
 
 
 
@@ -7965,7 +7964,7 @@ function layoutRender(layout, feeds, spocs) {
   }));
 });
 
-var TopSites = __webpack_require__(32);
+var TopSites = __webpack_require__(31);
 
 
 
@@ -8010,17 +8009,6 @@ const TopSites_TopSites_TopSites = Object(external_ReactRedux_["connect"])(state
 
 
 
-
-
-
-
-
-
-
-const MAX_ROWS_HERO = 5;
-const MAX_ROWS_LIST = 12;
-const MAX_ROWS_CARDGRID = 16;
-
 const ALLOWED_CSS_URL_PREFIXES = ["chrome://", "resource://", "https://img-getpocket.cdn.mozilla.net/"];
 const DUMMY_CSS_SELECTOR = "DUMMY#CSS.SELECTOR";
 
@@ -8044,25 +8032,6 @@ class DiscoveryStreamBase_DiscoveryStreamBase extends external_React_default.a.P
   constructor(props) {
     super(props);
     this.onStyleMount = this.onStyleMount.bind(this);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  extractRows(component, limit) {
-    if (component.data && component.data.recommendations) {
-      const items = Math.min(limit, component.properties.items || component.data.recommendations.length);
-      return component.data.recommendations.slice(0, items);
-    }
-
-    return [];
   }
 
   onStyleMount(style) {
@@ -8114,8 +8083,6 @@ class DiscoveryStreamBase_DiscoveryStreamBase extends external_React_default.a.P
   }
 
   renderComponent(component, embedWidth) {
-    let rows;
-
     switch (component.type) {
       case "TopSites":
         return external_React_default.a.createElement(TopSites_TopSites_TopSites, { header: component.header });
@@ -8135,51 +8102,36 @@ class DiscoveryStreamBase_DiscoveryStreamBase extends external_React_default.a.P
           alignment: component.properties.alignment,
           header: component.header });
       case "CardGrid":
-        rows = this.extractRows(component, MAX_ROWS_CARDGRID);
-        return external_React_default.a.createElement(
-          ImpressionStats["ImpressionStats"],
-          { rows: rows, dispatch: this.props.dispatch, source: component.type },
-          external_React_default.a.createElement(CardGrid_CardGrid, {
-            title: component.header && component.header.title,
-            data: component.data,
-            feed: component.feed,
-            border: component.properties.border,
-            type: component.type,
-            dispatch: this.props.dispatch,
-            items: component.properties.items })
-        );
+        return external_React_default.a.createElement(CardGrid_CardGrid, {
+          title: component.header && component.header.title,
+          data: component.data,
+          feed: component.feed,
+          border: component.properties.border,
+          type: component.type,
+          dispatch: this.props.dispatch,
+          items: component.properties.items });
       case "Hero":
-        rows = this.extractRows(component, MAX_ROWS_HERO);
-        return external_React_default.a.createElement(
-          ImpressionStats["ImpressionStats"],
-          { rows: rows, dispatch: this.props.dispatch, source: component.type },
-          external_React_default.a.createElement(Hero_Hero, {
-            subComponentType: embedWidth >= 9 ? `cards` : `list`,
-            feed: component.feed,
-            title: component.header && component.header.title,
-            data: component.data,
-            border: component.properties.border,
-            type: component.type,
-            dispatch: this.props.dispatch,
-            items: component.properties.items })
-        );
+        return external_React_default.a.createElement(Hero_Hero, {
+          subComponentType: embedWidth >= 9 ? `cards` : `list`,
+          feed: component.feed,
+          title: component.header && component.header.title,
+          data: component.data,
+          border: component.properties.border,
+          type: component.type,
+          dispatch: this.props.dispatch,
+          items: component.properties.items });
       case "HorizontalRule":
         return external_React_default.a.createElement(HorizontalRule_HorizontalRule, null);
       case "List":
-        rows = this.extractRows(component, MAX_ROWS_LIST);
-        return external_React_default.a.createElement(
-          ImpressionStats["ImpressionStats"],
-          { rows: rows, dispatch: this.props.dispatch, source: component.type },
-          external_React_default.a.createElement(List, {
-            data: component.data,
-            fullWidth: component.properties.full_width,
-            hasBorders: component.properties.border === "border",
-            hasImages: component.properties.has_images,
-            hasNumbers: component.properties.has_numbers,
-            items: component.properties.items,
-            type: component.type,
-            header: component.header })
-        );
+        return external_React_default.a.createElement(List, {
+          data: component.data,
+          fullWidth: component.properties.full_width,
+          hasBorders: component.properties.border === "border",
+          hasImages: component.properties.has_images,
+          hasNumbers: component.properties.has_numbers,
+          items: component.properties.items,
+          type: component.type,
+          header: component.header });
       default:
         return external_React_default.a.createElement(
           "div",
@@ -11196,7 +11148,7 @@ var external_PropTypes_ = __webpack_require__(11);
 var external_PropTypes_default = __webpack_require__.n(external_PropTypes_);
 
 
-var src = __webpack_require__(58);
+var src = __webpack_require__(57);
 
 
 
@@ -12313,17 +12265,17 @@ const cardContextTypes = {
 var external_ReactRedux_ = __webpack_require__(24);
 
 
-var link_menu_options = __webpack_require__(44);
+var link_menu_options = __webpack_require__(43);
 
 
-var LinkMenu = __webpack_require__(43);
+var LinkMenu = __webpack_require__(42);
 
 
 var external_React_ = __webpack_require__(10);
 var external_React_default = __webpack_require__.n(external_React_);
 
 
-var screenshot_utils = __webpack_require__(45);
+var screenshot_utils = __webpack_require__(44);
 
 
  __webpack_require__.d(__webpack_exports__, "_Card", function() { return Card_Card; });
@@ -12651,7 +12603,7 @@ var external_React_ = __webpack_require__(10);
 var external_React_default = __webpack_require__.n(external_React_);
 
 
-var TopSitesConstants = __webpack_require__(33);
+var TopSitesConstants = __webpack_require__(32);
 
 
 
@@ -12729,7 +12681,7 @@ TopSiteFormInput_TopSiteFormInput.defaultProps = {
   validationError: false
 };
 
-var TopSite = __webpack_require__(42);
+var TopSite = __webpack_require__(41);
 
 
  __webpack_require__.d(__webpack_exports__, "TopSiteForm", function() { return TopSiteForm_TopSiteForm; });

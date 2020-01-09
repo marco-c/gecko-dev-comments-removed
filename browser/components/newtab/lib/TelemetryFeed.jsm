@@ -267,6 +267,8 @@ this.TelemetryFeed = class TelemetryFeed {
       return;
     }
 
+    this.sendDiscoveryStreamImpressions(portID, session);
+
     if (session.perf.visibility_event_rcvd_ts) {
       session.session_duration = Math.round(perfService.absNow() - session.perf.visibility_event_rcvd_ts);
     }
@@ -275,6 +277,27 @@ this.TelemetryFeed = class TelemetryFeed {
     this.sendEvent(sessionEndEvent);
     this.sendUTEvent(sessionEndEvent, this.utEvents.sendSessionEndEvent);
     this.sessions.delete(portID);
+  }
+
+  
+
+
+
+
+
+
+
+
+  sendDiscoveryStreamImpressions(port, session) {
+    const {impressionSets} = session;
+
+    if (!impressionSets) {
+      return;
+    }
+
+    Object.keys(impressionSets).forEach(source => {
+      this.sendEvent(this.createImpressionStats(port, {source, tiles: impressionSets[source]}));
+    });
   }
 
   
@@ -336,10 +359,10 @@ this.TelemetryFeed = class TelemetryFeed {
 
 
 
-  createImpressionStats(action) {
+  createImpressionStats(portID, data) {
     return Object.assign(
-      this.createPing(au.getPortIdOfSender(action)),
-      action.data,
+      this.createPing(portID),
+      data,
       {
         action: "activity_stream_impression_stats",
         impression_id: this._impressionId,
@@ -473,7 +496,7 @@ this.TelemetryFeed = class TelemetryFeed {
   }
 
   handleImpressionStats(action) {
-    this.sendEvent(this.createImpressionStats(action));
+    this.sendEvent(this.createImpressionStats(au.getPortIdOfSender(action), action.data));
   }
 
   handleUserEvent(action) {
@@ -571,6 +594,9 @@ this.TelemetryFeed = class TelemetryFeed {
       case at.TELEMETRY_IMPRESSION_STATS:
         this.handleImpressionStats(action);
         break;
+      case at.DISCOVERY_STREAM_IMPRESSION_STATS:
+        this.handleDiscoveryStreamImpressionStats(au.getPortIdOfSender(action), action.data);
+        break;
       case at.TELEMETRY_UNDESIRED_EVENT:
         this.handleUndesiredEvent(action);
         break;
@@ -587,6 +613,33 @@ this.TelemetryFeed = class TelemetryFeed {
         this.uninit();
         break;
     }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  handleDiscoveryStreamImpressionStats(port, data) {
+    let session = this.sessions.get(port);
+
+    if (!session) {
+      throw new Error("Session does not exist.");
+    }
+
+    const impressionSets = session.impressionSets || {};
+    const impressions = impressionSets[data.source] || [];
+    
+    data.tiles.forEach(tile => impressions.push({id: tile.id}));
+    impressionSets[data.source] = impressions;
+    session.impressionSets = impressionSets;
   }
 
   

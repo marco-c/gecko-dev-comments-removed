@@ -16,11 +16,13 @@ const LAYOUT_UPDATE_TIME = 30 * 60 * 1000;
 const STARTUP_CACHE_EXPIRE_TIME = 7 * 24 * 60 * 60 * 1000; 
 const COMPONENT_FEEDS_UPDATE_TIME = 30 * 60 * 1000; 
 const SPOCS_FEEDS_UPDATE_TIME = 30 * 60 * 1000; 
+const DEFAULT_RECS_EXPIRE_TIME = 60 * 60 * 1000; 
 const MAX_LIFETIME_CAP = 500; 
 const PREF_CONFIG = "discoverystream.config";
 const PREF_OPT_OUT = "discoverystream.optOut.0";
 const PREF_SHOW_SPONSORED = "showSponsored";
 const PREF_SPOC_IMPRESSIONS = "discoverystream.spoc.impressions";
+const PREF_REC_IMPRESSIONS = "discoverystream.rec.impressions";
 
 this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
   constructor() {
@@ -262,6 +264,7 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
     
     await Promise.all(newFeedsPromises);
     if (this.componentFeedFetched) {
+      this.cleanUpTopRecImpressionPref(newFeeds);
       this.componentFeedRequestTime = Math.round(perfService.absNow() - start);
     }
     await this.cache.set("feeds", newFeeds);
@@ -372,7 +375,7 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
         this.componentFeedFetched = true;
         feed = {
           lastUpdated: Date.now(),
-          data: feedResponse,
+          data: this.rotate(feedResponse),
         };
       } else {
         Cu.reportError("No response for feed");
@@ -424,6 +427,26 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
     }
 
     this.loaded = true;
+  }
+
+  
+  
+  
+  rotate(feedResponse) {
+    const {recommendations} = feedResponse;
+
+    const maxImpressionAge = Math.max(feedResponse.settings.recsExpireTime * 1000 || DEFAULT_RECS_EXPIRE_TIME, DEFAULT_RECS_EXPIRE_TIME);
+    const impressions = this.readImpressionsPref(PREF_REC_IMPRESSIONS);
+    const expired = [];
+    const active = [];
+    for (const item of recommendations) {
+      if (impressions[item.id] && Date.now() - impressions[item.id] >= maxImpressionAge) {
+        expired.push(item);
+      } else {
+        active.push(item);
+      }
+    }
+    return {...feedResponse, recommendations: active.concat(expired)};
   }
 
   
@@ -527,7 +550,13 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
     await this.cache.set("spocs", {});
   }
 
+  clearImpressionPrefs() {
+    this.writeImpressionsPref(PREF_SPOC_IMPRESSIONS, {});
+    this.writeImpressionsPref(PREF_REC_IMPRESSIONS, {});
+  }
+
   async onPrefChange() {
+    this.clearImpressionPrefs();
     if (this.config.enabled) {
       
       await this.clearCache();
@@ -551,11 +580,30 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
     this.writeImpressionsPref(PREF_SPOC_IMPRESSIONS, impressions);
   }
 
+  recordTopRecImpressions(recId) {
+    let impressions = this.readImpressionsPref(PREF_REC_IMPRESSIONS);
+    if (!impressions[recId]) {
+      impressions = {...impressions, [recId]: Date.now()};
+      this.writeImpressionsPref(PREF_REC_IMPRESSIONS, impressions);
+    }
+  }
+
   cleanUpCampaignImpressionPref(data) {
     if (data.spocs && data.spocs.length) {
       const campaignIds = data.spocs.map(s => `${s.campaign_id}`);
       this.cleanUpImpressionPref(id => !campaignIds.includes(id), PREF_SPOC_IMPRESSIONS);
     }
+  }
+
+  
+  
+  cleanUpTopRecImpressionPref(newFeeds) {
+    
+    const activeStories = Object.keys(newFeeds).reduce((accumulator, currentValue) => {
+      const {recommendations} = newFeeds[currentValue].data;
+      return accumulator.concat(recommendations.map(i => `${i.id}`));
+    }, []);
+    this.cleanUpImpressionPref(id => !activeStories.includes(id), PREF_REC_IMPRESSIONS);
   }
 
   writeImpressionsPref(pref, impressions) {
@@ -621,6 +669,11 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
         break;
       case at.DISCOVERY_STREAM_OPT_OUT:
         this.store.dispatch(ac.SetPref(PREF_OPT_OUT, true));
+        break;
+      case at.DISCOVERY_STREAM_IMPRESSION_STATS:
+        if (action.data.tiles && action.data.tiles[0] && action.data.tiles[0].id) {
+          this.recordTopRecImpressions(action.data.tiles[0].id);
+        }
         break;
       case at.DISCOVERY_STREAM_SPOC_IMPRESSION:
         if (this.showSpocs) {
