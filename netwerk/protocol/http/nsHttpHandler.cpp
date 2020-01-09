@@ -498,12 +498,7 @@ nsresult nsHttpHandler::Init() {
   }
 
   
-  rv = nsRFPService::GetSpoofedUserAgent(mSpoofedUserAgent, true);
-  if (NS_FAILED(rv)) {
-    
-    
-    mSpoofedUserAgent.Truncate();
-  }
+  nsRFPService::GetSpoofedUserAgent(mSpoofedUserAgent, true);
 
   mSessionStartTime = NowInSeconds();
   mHandlerActive = true;

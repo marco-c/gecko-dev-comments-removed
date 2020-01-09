@@ -652,30 +652,24 @@ uint32_t nsRFPService::GetSpoofedPresentedFrames(double aTime, uint32_t aWidth,
                       ((100 - boundedDroppedRatio) / 100.0));
 }
 
-
-nsresult nsRFPService::GetSpoofedUserAgent(nsACString& userAgent,
-                                           bool isForHTTPHeader) {
+static uint32_t GetSpoofedVersion() {
   
-  
-  
-  
-  
-  
+  const uint32_t kKnownEsrVersion = 60;
 
   nsresult rv;
   nsCOMPtr<nsIXULAppInfo> appInfo =
       do_GetService("@mozilla.org/xre/app-info;1", &rv);
-  NS_ENSURE_SUCCESS(rv, rv);
+  NS_ENSURE_SUCCESS(rv, kKnownEsrVersion);
 
   nsAutoCString appVersion;
   rv = appInfo->GetVersion(appVersion);
-  NS_ENSURE_SUCCESS(rv, rv);
+  NS_ENSURE_SUCCESS(rv, kKnownEsrVersion);
 
   
   
   
   uint32_t firefoxVersion = appVersion.ToInteger(&rv);
-  NS_ENSURE_SUCCESS(rv, rv);
+  NS_ENSURE_SUCCESS(rv, kKnownEsrVersion);
 
 #ifdef DEBUG
   
@@ -690,13 +684,24 @@ nsresult nsRFPService::GetSpoofedUserAgent(nsACString& userAgent,
   
   
   
-  uint32_t spoofedVersion = firefoxVersion - ((firefoxVersion - 4) % 8);
+  return firefoxVersion - ((firefoxVersion - 4) % 8);
+}
+
+
+void nsRFPService::GetSpoofedUserAgent(nsACString& userAgent,
+                                       bool isForHTTPHeader) {
+  
+  
+  
+  
+  
+  
+
+  uint32_t spoofedVersion = GetSpoofedVersion();
   const char* spoofedOS = isForHTTPHeader ? SPOOFED_HTTP_UA_OS : SPOOFED_UA_OS;
   userAgent.Assign(nsPrintfCString(
       "Mozilla/5.0 (%s; rv:%d.0) Gecko/%s Firefox/%d.0", spoofedOS,
       spoofedVersion, LEGACY_UA_GECKO_TRAIL, spoofedVersion));
-
-  return rv;
 }
 
 static const char* gCallbackPrefs[] = {

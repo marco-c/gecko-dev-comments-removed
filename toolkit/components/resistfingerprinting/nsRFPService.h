@@ -185,8 +185,7 @@ class nsRFPService final : public nsIObserver {
                                             uint32_t aHeight);
 
   
-  static nsresult GetSpoofedUserAgent(nsACString& userAgent,
-                                      bool isForHTTPHeader);
+  static void GetSpoofedUserAgent(nsACString& userAgent, bool isForHTTPHeader);
 
   
 
