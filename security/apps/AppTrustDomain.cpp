@@ -24,6 +24,7 @@
 #include "xpcshell.inc"
 
 #include "addons-public.inc"
+#include "addons-public-intermediate.inc"
 #include "addons-stage.inc"
 
 #include "privileged-package-root.inc"
@@ -123,6 +124,23 @@ nsresult AppTrustDomain::SetTrustedRoot(AppTrustedRoot trustedRoot) {
       CERT_GetDefaultCertDB(), &trustedDER, nullptr, false, true));
   if (!mTrustedRoot) {
     return mozilla::psm::GetXPCOMFromNSSError(PR_GetError());
+  }
+
+  
+  
+  
+  
+  if (trustedRoot == nsIX509CertDB::AddonsPublicRoot) {
+    SECItem intermediateDER = {
+        siBuffer,
+        const_cast<uint8_t*>(addonsPublicIntermediate),
+        mozilla::ArrayLength(addonsPublicIntermediate),
+    };
+    mAddonsIntermediate.reset(CERT_NewTempCertificate(
+        CERT_GetDefaultCertDB(), &intermediateDER, nullptr, false, true));
+    if (!mAddonsIntermediate) {
+      return mozilla::psm::GetXPCOMFromNSSError(PR_GetError());
+    }
   }
 
   return NS_OK;

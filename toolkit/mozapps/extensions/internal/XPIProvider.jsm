@@ -1987,18 +1987,6 @@ class BootstrapScope {
   }
 }
 
-function addMissingIntermediateCertificate() {
-  const PREF_SIGNER_HOTFIXED = "extensions.signer.hotfixed";
-  if (!Services.prefs.getBoolPref(PREF_SIGNER_HOTFIXED, false)) {
-    try {
-      XPIInstall.addMissingIntermediateCertificate();
-      Services.prefs.setBoolPref(PREF_SIGNER_HOTFIXED, true);
-    } catch (e) {
-      logger.error("failed to add new intermediate certificate:", e);
-    }
-  }
-}
-
 let resolveDBReady;
 let dbReadyPromise = new Promise(resolve => {
   resolveDBReady = resolve;
@@ -2244,11 +2232,6 @@ var XPIProvider = {
 
 
   startup(aAppChanged, aOldAppVersion, aOldPlatformVersion) {
-    
-    
-    
-    addMissingIntermediateCertificate();
-
     try {
       AddonManagerPrivate.recordTimestamp("XPI_startup_begin");
 
