@@ -15,6 +15,7 @@
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/EffectCompositor.h"  
 #include "mozilla/LinkedList.h"
+#include "mozilla/PostRestyleMode.h"
 #include "mozilla/TimeStamp.h"             
 #include "mozilla/dom/AnimationBinding.h"  
 #include "mozilla/dom/AnimationEffect.h"
@@ -126,7 +127,7 @@ class Animation : public DOMEventTargetHelper,
   IMPL_EVENT_HANDLER(finish);
   IMPL_EVENT_HANDLER(cancel);
 
-  void Cancel();
+  void Cancel(PostRestyleMode aPostRestyle = PostRestyleMode::IfNeeded);
 
   void Finish(ErrorResult& aRv);
 
@@ -427,7 +428,7 @@ class Animation : public DOMEventTargetHelper,
 
   virtual void UpdateTiming(SeekFlag aSeekFlag, SyncNotifyFlag aSyncNotifyFlag);
   void UpdateFinishedState(SeekFlag aSeekFlag, SyncNotifyFlag aSyncNotifyFlag);
-  void UpdateEffect();
+  void UpdateEffect(PostRestyleMode aPostRestyle);
   
 
 

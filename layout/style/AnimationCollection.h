@@ -36,13 +36,7 @@ class AnimationCollection
   typedef AnimationTypeTraits<AnimationType> TraitsType;
 
   AnimationCollection(dom::Element* aElement, nsAtom* aElementProperty)
-      : mElement(aElement),
-        mElementProperty(aElementProperty)
-#ifdef DEBUG
-        ,
-        mCalledPropertyDtor(false)
-#endif
-  {
+      : mElement(aElement), mElementProperty(aElementProperty) {
     MOZ_COUNT_CTOR(AnimationCollection);
   }
 
@@ -55,6 +49,8 @@ class AnimationCollection
   }
 
   void Destroy() {
+    mCalledDestroy = true;
+
     
     mElement->DeleteProperty(mElementProperty);
   }
@@ -95,8 +91,18 @@ class AnimationCollection
  private:
   static nsAtom* GetPropertyAtomForPseudoType(PseudoStyleType aPseudoType);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  bool mCalledDestroy = false;
+
 #ifdef DEBUG
-  bool mCalledPropertyDtor;
+  bool mCalledPropertyDtor = false;
 #endif
 };
 

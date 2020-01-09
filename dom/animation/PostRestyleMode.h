@@ -1,0 +1,16 @@
+
+
+
+
+
+
+#ifndef mozilla_PostRestyleMode_h
+#define mozilla_PostRestyleMode_h
+
+namespace mozilla {
+
+enum class PostRestyleMode { IfNeeded, Never };
+
+}  
+
+#endif  

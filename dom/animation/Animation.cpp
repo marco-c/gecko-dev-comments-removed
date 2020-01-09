@@ -468,8 +468,12 @@ Promise* Animation::GetFinished(ErrorResult& aRv) {
 }
 
 
-void Animation::Cancel() {
+void Animation::Cancel(PostRestyleMode aPostRestyle) {
+  bool newlyIdle = false;
+
   if (PlayState() != AnimationPlayState::Idle) {
+    newlyIdle = true;
+
     ResetPendingTasks();
 
     if (mFinished) {
@@ -488,14 +492,16 @@ void Animation::Cancel() {
   mStartTime.SetNull();
 
   
-  UpdateEffect();
+  UpdateEffect(aPostRestyle);
 
   if (mTimeline) {
     mTimeline->RemoveAnimation(this);
   }
   MaybeQueueCancelEvent(activeTime);
 
-  PostUpdate();
+  if (newlyIdle && aPostRestyle == PostRestyleMode::IfNeeded) {
+    PostUpdate();
+  }
 }
 
 
@@ -1210,7 +1216,7 @@ void Animation::UpdateTiming(SeekFlag aSeekFlag,
   
   
   UpdateFinishedState(aSeekFlag, aSyncNotifyFlag);
-  UpdateEffect();
+  UpdateEffect(PostRestyleMode::IfNeeded);
 
   if (mTimeline) {
     mTimeline->NotifyAnimationUpdated(*this);
@@ -1265,13 +1271,13 @@ void Animation::UpdateFinishedState(SeekFlag aSeekFlag,
   mPreviousCurrentTime = GetCurrentTimeAsDuration();
 }
 
-void Animation::UpdateEffect() {
+void Animation::UpdateEffect(PostRestyleMode aPostRestyle) {
   if (mEffect) {
     UpdateRelevance();
 
     KeyframeEffect* keyframeEffect = mEffect->AsKeyframeEffect();
     if (keyframeEffect) {
-      keyframeEffect->NotifyAnimationTimingUpdated();
+      keyframeEffect->NotifyAnimationTimingUpdated(aPostRestyle);
     }
   }
 }

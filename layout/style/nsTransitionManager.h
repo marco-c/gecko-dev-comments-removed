@@ -142,7 +142,7 @@ class CSSTransition final : public Animation {
     MOZ_ASSERT(!rv.Failed(), "Unexpected exception playing transition");
   }
 
-  void CancelFromStyle() {
+  void CancelFromStyle(PostRestyleMode aPostRestyle) {
     
     
     
@@ -152,7 +152,7 @@ class CSSTransition final : public Animation {
     mAnimationIndex = sNextAnimationIndex++;
     mNeedsNewAnimationIndexWhenRun = true;
 
-    Animation::Cancel();
+    Animation::Cancel(aPostRestyle);
 
     
     

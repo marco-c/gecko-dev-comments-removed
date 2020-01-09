@@ -154,7 +154,8 @@ void KeyframeEffect::NotifySpecifiedTimingUpdated() {
   }
 }
 
-void KeyframeEffect::NotifyAnimationTimingUpdated() {
+void KeyframeEffect::NotifyAnimationTimingUpdated(
+    PostRestyleMode aPostRestyle) {
   UpdateTargetRegistration();
 
   
@@ -169,7 +170,8 @@ void KeyframeEffect::NotifyAnimationTimingUpdated() {
   }
 
   
-  if (mAnimation && !mProperties.IsEmpty() && HasComputedTimingChanged()) {
+  if (aPostRestyle == PostRestyleMode::IfNeeded && mAnimation &&
+      !mProperties.IsEmpty() && HasComputedTimingChanged()) {
     EffectCompositor::RestyleType restyleType =
         CanThrottle() ? EffectCompositor::RestyleType::Throttled
                       : EffectCompositor::RestyleType::Standard;
@@ -1662,7 +1664,7 @@ void KeyframeEffect::SetAnimation(Animation* aAnimation) {
   if (mAnimation) {
     mAnimation->UpdateRelevance();
   }
-  NotifyAnimationTimingUpdated();
+  NotifyAnimationTimingUpdated(PostRestyleMode::IfNeeded);
   if (mAnimation) {
     MarkCascadeNeedsUpdate();
   }
