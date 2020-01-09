@@ -21,6 +21,8 @@ class ChangesApp extends PureComponent {
       changesTree: PropTypes.object.isRequired,
       
       onContextMenu: PropTypes.func.isRequired,
+      
+      onCopy: PropTypes.func.isRequired,
     };
   }
 
@@ -149,6 +151,7 @@ class ChangesApp extends PureComponent {
         className: "theme-sidebar inspector-tabpanel",
         id: "sidebar-panel-changes",
         onContextMenu: this.props.onContextMenu,
+        onCopy: this.props.onCopy,
       },
       !hasChanges && this.renderEmptyState(),
       hasChanges && this.renderDiff(this.props.changesTree)

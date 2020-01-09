@@ -14,6 +14,12 @@ loader.lazyRequireGetter(this, "ChangesContextMenu", "devtools/client/inspector/
 const ChangesApp = createFactory(require("./components/ChangesApp"));
 
 const {
+  TELEMETRY_SCALAR_CONTEXTMENU,
+  TELEMETRY_SCALAR_CONTEXTMENU_COPY,
+  TELEMETRY_SCALAR_COPY,
+} = require("./constants");
+
+const {
   resetChanges,
   trackChange,
 } = require("./actions/changes");
@@ -23,11 +29,13 @@ class ChangesView {
     this.document = window.document;
     this.inspector = inspector;
     this.store = this.inspector.store;
+    this.telemetry = this.inspector.telemetry;
 
     this.onAddChange = this.onAddChange.bind(this);
     this.onClearChanges = this.onClearChanges.bind(this);
     this.onChangesFront = this.onChangesFront.bind(this);
     this.onContextMenu = this.onContextMenu.bind(this);
+    this.onCopy = this.onCopy.bind(this);
     this.destroy = this.destroy.bind(this);
 
     this.init();
@@ -44,6 +52,7 @@ class ChangesView {
   init() {
     const changesApp = ChangesApp({
       onContextMenu: this.onContextMenu,
+      onCopy: this.onCopy,
     });
 
     
@@ -100,8 +109,29 @@ class ChangesView {
     this.store.dispatch(resetChanges());
   }
 
+  
+
+
+
   onContextMenu(e) {
     this.contextMenu.show(e);
+    this.telemetry.scalarAdd(TELEMETRY_SCALAR_CONTEXTMENU, 1);
+  }
+
+  
+
+
+
+  onContextMenuCopy() {
+    this.telemetry.scalarAdd(TELEMETRY_SCALAR_CONTEXTMENU_COPY, 1);
+  }
+
+  
+
+
+
+  onCopy() {
+    this.telemetry.scalarAdd(TELEMETRY_SCALAR_COPY, 1);
   }
 
   
