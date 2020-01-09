@@ -119,8 +119,13 @@ pref("security.pki.netscape_step_up_policy", 2);
 pref("security.pki.certificate_transparency.mode", 0);
 
 
-pref("security.webauth.u2f", true);
 pref("security.webauth.webauthn", true);
+#ifdef MOZ_WIDGET_ANDROID
+
+pref("security.webauth.u2f", false);
+#else
+pref("security.webauth.u2f", true);
+#endif
 
 
 
