@@ -5,6 +5,11 @@
 
 
 
+
+
+
+
+
 const PREF_GETADDONS_CACHE_ENABLED = "extensions.getAddons.cache.enabled";
 
 

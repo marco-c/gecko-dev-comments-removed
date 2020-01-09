@@ -6,6 +6,11 @@
 
 
 
+
+
+
+
+
 Services.prefs.setBoolPref("extensions.checkUpdateSecurity", false);
 
 Services.prefs.setIntPref("extensions.enabledScopes",

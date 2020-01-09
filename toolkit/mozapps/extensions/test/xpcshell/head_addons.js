@@ -63,9 +63,7 @@ XPCOMUtils.defineLazyServiceGetter(this, "aomStartup",
 const {
   createAppInfo,
   createHttpServer,
-  createInstallRDF,
   createTempWebExtensionFile,
-  createUpdateRDF,
   getFileForAddon,
   manuallyInstall,
   manuallyUninstall,
@@ -163,203 +161,8 @@ const promiseAddonByID = AddonManager.getAddonByID;
 const promiseAddonsByIDs = AddonManager.getAddonsByIDs;
 
 var gPort = null;
-var gUrlToFileMap = {};
 
-
-var resHandler = Services.io.getProtocolHandler("resource")
-                         .QueryInterface(Ci.nsISubstitutingProtocolHandler);
-
-var dataURI = NetUtil.newURI(do_get_file("data", true));
-resHandler.setSubstitution("xpcshell-data", dataURI);
-
-function isManifestRegistered(file) {
-  let manifests = Components.manager.getManifestLocations();
-  for (let i = 0; i < manifests.length; i++) {
-    let manifest = manifests.queryElementAt(i, Ci.nsIURI);
-
-    
-    
-    if (manifest instanceof Ci.nsIJARURI) {
-      manifest = manifest.JARFile.QueryInterface(Ci.nsIFileURL).file;
-    } else if (manifest instanceof Ci.nsIFileURL) {
-      manifest = manifest.file.parent;
-    } else {
-      continue;
-    }
-
-    if (manifest.equals(file))
-      return true;
-  }
-  return false;
-}
-
-const BOOTSTRAP_MONITOR_BOOTSTRAP_JS = `
-  ChromeUtils.import("resource://xpcshell-data/BootstrapMonitor.jsm").monitor(this);
-`;
-
-
-
-
-this.BootstrapMonitor = {
-  inited: false,
-
-  
-  installed: new Map(),
-  started: new Map(),
-
-  
-  stopped: new Map(),
-  uninstalled: new Map(),
-
-  startupPromises: [],
-  installPromises: [],
-
-  restartfulIds: new Set(),
-
-  init() {
-    this.inited = true;
-    Services.obs.addObserver(this, "bootstrapmonitor-event");
-  },
-
-  shutdownCheck() {
-    if (!this.inited)
-      return;
-
-    Assert.equal(this.started.size, 0);
-  },
-
-  clear(id) {
-    this.installed.delete(id);
-    this.started.delete(id);
-    this.stopped.delete(id);
-    this.uninstalled.delete(id);
-  },
-
-  promiseAddonStartup(id) {
-    return new Promise(resolve => {
-      this.startupPromises.push(resolve);
-    });
-  },
-
-  promiseAddonInstall(id) {
-    return new Promise(resolve => {
-      this.installPromises.push(resolve);
-    });
-  },
-
-  checkMatches(cached, current) {
-    Assert.notEqual(cached, undefined);
-    Assert.equal(current.data.version, cached.data.version);
-    Assert.equal(current.data.installPath, cached.data.installPath);
-    Assert.ok(Services.io.newURI(current.data.resourceURI).equals(Services.io.newURI(cached.data.resourceURI)),
-              `Resource URIs match: "${current.data.resourceURI}" == "${cached.data.resourceURI}"`);
-  },
-
-  checkAddonStarted(id, version = undefined) {
-    let started = this.started.get(id);
-    Assert.notEqual(started, undefined);
-    if (version != undefined)
-      Assert.equal(started.data.version, version);
-
-    
-    let installPath = new FileUtils.File(started.data.installPath);
-    let isRegistered = isManifestRegistered(installPath);
-    Assert.ok(isRegistered);
-  },
-
-  checkAddonNotStarted(id) {
-    Assert.ok(!this.started.has(id));
-  },
-
-  checkAddonInstalled(id, version = undefined) {
-    const installed = this.installed.get(id);
-    notEqual(installed, undefined);
-    if (version !== undefined) {
-      equal(installed.data.version, version);
-    }
-    return installed;
-  },
-
-  checkAddonNotInstalled(id) {
-    Assert.ok(!this.installed.has(id));
-  },
-
-  observe(subject, topic, data) {
-    let info = JSON.parse(data);
-    let id = info.data.id;
-    let installPath = new FileUtils.File(info.data.installPath);
-
-    if (subject && subject.wrappedJSObject) {
-      
-      
-      
-      info.data = Object.assign({}, subject.wrappedJSObject.data, {
-        installPath: info.data.installPath,
-        resourceURI: info.data.resourceURI,
-      });
-    }
-
-    
-    if (info.event == "install") {
-      this.checkAddonNotInstalled(id);
-
-      this.installed.set(id, info);
-
-      for (let resolve of this.installPromises)
-        resolve();
-      this.installPromises = [];
-    } else {
-      this.checkMatches(this.installed.get(id), info);
-    }
-
-    
-    if (info.event == "shutdown") {
-      this.checkMatches(this.started.get(id), info);
-
-      this.started.delete(id);
-      this.stopped.set(id, info);
-
-      
-      let isRegistered = isManifestRegistered(installPath);
-      Assert.ok(isRegistered);
-
-      
-      
-      
-      if (info.reason == 2 )
-        Components.manager.removeBootstrappedManifestLocation(installPath);
-    } else {
-      this.checkAddonNotStarted(id);
-    }
-
-    if (info.event == "uninstall") {
-      
-      
-      if (!this.restartfulIds.has(id)) {
-        
-        let isRegistered = isManifestRegistered(installPath);
-        Assert.ok(!isRegistered);
-      }
-
-      this.installed.delete(id);
-      this.uninstalled.set(id, info);
-    } else if (info.event == "startup") {
-      this.started.set(id, info);
-
-      
-      let isRegistered = isManifestRegistered(installPath);
-      Assert.ok(isRegistered);
-
-      for (let resolve of this.startupPromises)
-        resolve();
-      this.startupPromises = [];
-    }
-  },
-};
-
-AddonTestUtils.on("addon-manager-shutdown", () => BootstrapMonitor.shutdownCheck());
-
-var SlightlyLessDodgyBootstrapMonitor = {
+var BootstrapMonitor = {
   started: new Map(),
   stopped: new Map(),
   installed: new Map(),
@@ -805,130 +608,11 @@ function isExtensionInBootstrappedList(aDir, aId) {
 
 
 
-
-
-
-
-
-async function promiseWriteInstallRDFToDir(aData, aDir, aId = aData.id, aExtraFile = null) {
-  let files = {
-    "install.rdf": AddonTestUtils.createInstallRDF(aData),
-  };
-  if (typeof aExtraFile === "object")
-    Object.assign(files, aExtraFile);
-  else
-    files[aExtraFile] = "";
-
-  let dir = aDir.clone();
-  dir.append(aId);
-
-  await AddonTestUtils.promiseWriteFilesToDir(dir.path, files);
-  return dir;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-async function promiseWriteInstallRDFToXPI(aData, aDir, aId = aData.id, aExtraFile = null) {
-  let files = {
-    "install.rdf": AddonTestUtils.createInstallRDF(aData),
-  };
-  if (typeof aExtraFile === "object")
-    Object.assign(files, aExtraFile);
-  else
-  if (aExtraFile)
-    files[aExtraFile] = "";
-
-  if (!aDir.exists())
-    aDir.create(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
-
-  var file = aDir.clone();
-  file.append(`${aId}.xpi`);
-
-  AddonTestUtils.writeFilesToZip(file.path, files);
-
-  return file;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function promiseWriteInstallRDFForExtension(aData, aDir, aId, aExtraFile) {
-  if (TEST_UNPACKED) {
-    return promiseWriteInstallRDFToDir(aData, aDir, aId, aExtraFile);
-  }
-  return promiseWriteInstallRDFToXPI(aData, aDir, aId, aExtraFile);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
 function promiseWriteWebManifestForExtension(aData, aDir, aId = aData.applications.gecko.id) {
   let files = {
     "manifest.json": JSON.stringify(aData),
   };
   return AddonTestUtils.promiseWriteFilesToExtension(aDir.path, aId, files);
-}
-
-
-
-
-
-
-
-
-
-function createTempXPIFile(aData, aExtraFile) {
-  let files = {
-    "install.rdf": aData,
-  };
-  if (typeof aExtraFile == "object")
-    Object.assign(files, aExtraFile);
-  else if (aExtraFile)
-    files[aExtraFile] = "";
-
-  return AddonTestUtils.createTempXPIFile(files);
-}
-
-function promiseInstallXPI(installRDF) {
-  return AddonTestUtils.promiseInstallXPI({"install.rdf": installRDF});
 }
 
 var gExpectedEvents = {};
@@ -1190,35 +874,6 @@ function ensure_test_completed() {
     Assert.equal(gExpectedInstalls.length, 0);
 }
 
-
-
-
-
-
-
-
-
-
-function completeAllInstalls(aInstalls, aCallback) {
-  promiseCompleteAllInstalls(aInstalls).then(aCallback);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-function installAllFiles(aFiles, aCallback, aIgnoreIncompatible) {
-  promiseInstallAllFiles(aFiles, aIgnoreIncompatible).then(aCallback);
-}
-
 const EXTENSIONS_DB = "extensions.json";
 var gExtensionsJSON = gProfD.clone();
 gExtensionsJSON.append(EXTENSIONS_DB);
@@ -1247,24 +902,6 @@ function copyBlocklistToProfile(blocklistFile) {
     dest.remove(false);
   blocklistFile.copyTo(gProfD, "blocklist.xml");
   dest.lastModifiedTime = Date.now();
-}
-
-
-function pathShouldntExist(file) {
-  if (file.exists()) {
-    do_throw(`Test cleanup: path ${file.path} exists when it should not`);
-  }
-}
-
-
-function do_exception_wrap(func) {
-  return function() {
-    try {
-      func.apply(null, arguments);
-    } catch (e) {
-      do_report_unexpected_exception(e);
-    }
-  };
 }
 
 
@@ -1300,17 +937,6 @@ async function saveJSON(aData, aFile) {
   info("Starting to save JSON file " + aFile);
   await OS.File.writeAtomic(aFile, new TextEncoder().encode(JSON.stringify(aData, null, 2)));
   info("Done saving JSON file " + aFile.path);
-}
-
-
-
-
-function callback_soon(aFunction) {
-  return function(...args) {
-    executeSoon(function() {
-      aFunction.apply(null, args);
-    }, aFunction.name ? "delayed callback " + aFunction.name : "delayed callback");
-  };
 }
 
 XPCOMUtils.defineLazyServiceGetter(this, "pluginHost",
