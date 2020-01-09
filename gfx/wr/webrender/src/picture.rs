@@ -2677,130 +2677,45 @@ impl PicturePrimitive {
                 
                 
                 
-                
-                
-                
+                let device_rect = clipped
+                    .inflate(blur_range, blur_range)
+                    .intersection(&unclipped.to_i32())
+                    .unwrap();
 
-                let too_big_to_cache = unclipped.size.width > MAX_CACHE_SIZE ||
-                                       unclipped.size.height > MAX_CACHE_SIZE;
+                let uv_rect_kind = calculate_uv_rect_kind(
+                    &pic_rect,
+                    &transform,
+                    &device_rect,
+                    frame_context.device_pixel_scale,
+                    true,
+                );
 
-                
-                
-                
-                let has_valid_cache_key = self.surface_desc.is_some();
+                let picture_task = RenderTask::new_picture(
+                    RenderTaskLocation::Dynamic(None, device_rect.size),
+                    unclipped.size,
+                    pic_index,
+                    device_rect.origin,
+                    child_tasks,
+                    uv_rect_kind,
+                    pic_context.raster_spatial_node_index,
+                    None,
+                );
 
-                if !has_valid_cache_key ||
-                   too_big_to_cache ||
-                   !pic_state_for_children.is_cacheable {
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    let device_rect = clipped
-                        .inflate(blur_range, blur_range)
-                        .intersection(&unclipped.to_i32())
-                        .unwrap();
+                let picture_task_id = frame_state.render_tasks.add(picture_task);
 
-                    let uv_rect_kind = calculate_uv_rect_kind(
-                        &pic_rect,
-                        &transform,
-                        &device_rect,
-                        frame_context.device_pixel_scale,
-                        true,
-                    );
+                let blur_render_task = RenderTask::new_blur(
+                    blur_std_deviation,
+                    picture_task_id,
+                    frame_state.render_tasks,
+                    RenderTargetKind::Color,
+                    ClearMode::Transparent,
+                );
 
-                    let picture_task = RenderTask::new_picture(
-                        RenderTaskLocation::Dynamic(None, device_rect.size),
-                        unclipped.size,
-                        pic_index,
-                        device_rect.origin,
-                        child_tasks,
-                        uv_rect_kind,
-                        pic_context.raster_spatial_node_index,
-                        None,
-                    );
+                let render_task_id = frame_state.render_tasks.add(blur_render_task);
 
-                    let picture_task_id = frame_state.render_tasks.add(picture_task);
+                surfaces[surface_index.0].tasks.push(render_task_id);
 
-                    let blur_render_task = RenderTask::new_blur(
-                        blur_std_deviation,
-                        picture_task_id,
-                        frame_state.render_tasks,
-                        RenderTargetKind::Color,
-                        ClearMode::Transparent,
-                    );
-
-                    let render_task_id = frame_state.render_tasks.add(blur_render_task);
-
-                    surfaces[surface_index.0].tasks.push(render_task_id);
-
-                    PictureSurface::RenderTask(render_task_id)
-                } else {
-                    
-                    
-                    let device_rect = unclipped.to_i32();
-
-                    let uv_rect_kind = calculate_uv_rect_kind(
-                        &pic_rect,
-                        &transform,
-                        &device_rect,
-                        frame_context.device_pixel_scale,
-                        true,
-                    );
-
-                    
-                    
-                    let cache_key = self.surface_desc
-                        .as_ref()
-                        .expect("bug: no cache key for surface")
-                        .cache_key
-                        .clone();
-
-                    let cache_item = frame_state.resource_cache.request_render_task(
-                        RenderTaskCacheKey {
-                            size: device_rect.size,
-                            kind: RenderTaskCacheKeyKind::Picture(cache_key),
-                        },
-                        frame_state.gpu_cache,
-                        frame_state.render_tasks,
-                        None,
-                        false,
-                        |render_tasks| {
-                            let picture_task = RenderTask::new_picture(
-                                RenderTaskLocation::Dynamic(None, device_rect.size),
-                                unclipped.size,
-                                pic_index,
-                                device_rect.origin,
-                                child_tasks,
-                                uv_rect_kind,
-                                pic_context.raster_spatial_node_index,
-                                None,
-                            );
-
-                            let picture_task_id = render_tasks.add(picture_task);
-
-                            let blur_render_task = RenderTask::new_blur(
-                                blur_std_deviation,
-                                picture_task_id,
-                                render_tasks,
-                                RenderTargetKind::Color,
-                                ClearMode::Transparent,
-                            );
-
-                            let render_task_id = render_tasks.add(blur_render_task);
-
-                            surfaces[surface_index.0].tasks.push(render_task_id);
-
-                            render_task_id
-                        }
-                    );
-
-                    PictureSurface::TextureCache(cache_item)
-                }
+                PictureSurface::RenderTask(render_task_id)
             }
             PictureCompositeMode::Filter(FilterOp::DropShadow(offset, blur_radius, color)) => {
                 let blur_std_deviation = blur_radius * frame_context.device_pixel_scale.0;
