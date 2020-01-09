@@ -84,7 +84,7 @@ namespace css {
 struct URLValue;
 }  
 namespace dom {
-struct AnimationFilter;
+struct GetAnimationsOptions;
 struct ScrollIntoViewOptions;
 struct ScrollToOptions;
 class DOMIntersectionObserver;
@@ -1339,7 +1339,7 @@ class Element : public FragmentOrElement {
   
   
   
-  void GetAnimations(const AnimationFilter& filter,
+  void GetAnimations(const GetAnimationsOptions& aOptions,
                      nsTArray<RefPtr<Animation>>& aAnimations);
   static void GetAnimationsUnsorted(Element* aElement,
                                     PseudoStyleType aPseudoType,
