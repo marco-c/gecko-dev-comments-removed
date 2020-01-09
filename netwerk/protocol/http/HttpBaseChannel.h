@@ -451,6 +451,8 @@ class HttpBaseChannel : public nsHashPropertyBag,
   }
 
  protected:
+  nsresult GetTopWindowURI(nsIURI *aURIBeingLoaded, nsIURI **aTopWindowURI);
+
   
   void DoNotifyListener();
   virtual void DoNotifyListenerCleanup() = 0;

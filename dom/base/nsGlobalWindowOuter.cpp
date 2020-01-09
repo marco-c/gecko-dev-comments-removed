@@ -3003,9 +3003,12 @@ already_AddRefed<nsPIDOMWindowOuter> nsGlobalWindowOuter::GetParent() {
   return win.forget();
 }
 
-static nsresult GetTopImpl(nsGlobalWindowOuter* aWin, nsPIDOMWindowOuter** aTop,
-                           bool aScriptable) {
+static nsresult GetTopImpl(nsGlobalWindowOuter* aWin, nsIURI* aURIBeingLoaded,
+                           nsPIDOMWindowOuter** aTop, bool aScriptable,
+                           bool aExcludingExtensionAccessibleContentFrames) {
   *aTop = nullptr;
+
+  MOZ_ASSERT_IF(aExcludingExtensionAccessibleContentFrames, !aScriptable);
 
   
 
@@ -3022,6 +3025,43 @@ static nsresult GetTopImpl(nsGlobalWindowOuter* aWin, nsPIDOMWindowOuter** aTop,
       parent = parent->GetScriptableParent();
     } else {
       parent = parent->GetParent();
+    }
+
+    if (aExcludingExtensionAccessibleContentFrames) {
+      if (auto* p = nsGlobalWindowOuter::Cast(parent)) {
+        nsGlobalWindowInner* currentInner = p->GetCurrentInnerWindowInternal();
+        nsIURI* uri = prevParent->GetDocumentURI();
+        if (!uri) {
+          
+          
+          
+          
+          uri = aURIBeingLoaded;
+        }
+
+        if (currentInner && uri) {
+          
+          
+          
+          MOZ_DIAGNOSTIC_ASSERT(uri);
+
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          if (BasePrincipal::Cast(p->GetPrincipal())
+                  ->AddonAllowsLoad(uri, true)) {
+            parent = prevParent;
+            break;
+          }
+        }
+      }
     }
 
   } while (parent != prevParent);
@@ -3042,13 +3082,27 @@ static nsresult GetTopImpl(nsGlobalWindowOuter* aWin, nsPIDOMWindowOuter** aTop,
 
 nsPIDOMWindowOuter* nsGlobalWindowOuter::GetScriptableTop() {
   nsCOMPtr<nsPIDOMWindowOuter> window;
-  GetTopImpl(this, getter_AddRefs(window),  true);
+  GetTopImpl(this,  nullptr, getter_AddRefs(window),
+              true,
+              false);
   return window.get();
 }
 
 already_AddRefed<nsPIDOMWindowOuter> nsGlobalWindowOuter::GetTop() {
   nsCOMPtr<nsPIDOMWindowOuter> window;
-  GetTopImpl(this, getter_AddRefs(window),  false);
+  GetTopImpl(this,  nullptr, getter_AddRefs(window),
+              false,
+              false);
+  return window.forget();
+}
+
+already_AddRefed<nsPIDOMWindowOuter>
+nsGlobalWindowOuter::GetTopExcludingExtensionAccessibleContentFrames(
+    nsIURI* aURIBeingLoaded) {
+  nsCOMPtr<nsPIDOMWindowOuter> window;
+  GetTopImpl(this, aURIBeingLoaded, getter_AddRefs(window),
+              false,
+              true);
   return window.forget();
 }
 

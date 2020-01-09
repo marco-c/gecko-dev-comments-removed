@@ -360,6 +360,12 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   already_AddRefed<nsPIDOMWindowOuter> IndexedGetterOuter(uint32_t aIndex);
 
   already_AddRefed<nsPIDOMWindowOuter> GetTop() override;
+  
+  
+  
+  
+  already_AddRefed<nsPIDOMWindowOuter>
+  GetTopExcludingExtensionAccessibleContentFrames(nsIURI* aURIBeingLoaded);
   nsPIDOMWindowOuter* GetScriptableTop() override;
   inline nsGlobalWindowOuter* GetTopInternal();
 

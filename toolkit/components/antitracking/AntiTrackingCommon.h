@@ -153,6 +153,10 @@ class AntiTrackingCommon final {
   static void NotifyBlockingDecision(nsPIDOMWindowInner* aWindow,
                                      BlockingDecision aDecision,
                                      uint32_t aRejectedReason);
+
+  
+  static already_AddRefed<nsIURI> MaybeGetDocumentURIBeingLoaded(
+      nsIChannel* aChannel);
 };
 
 }  

@@ -29,10 +29,6 @@ class UrlClassifierCommon final {
 
   static void NotifyTrackingProtectionDisabled(nsIChannel* aChannel);
 
-  
-  static void NotifyChannelBlocked(nsIChannel* aChannel,
-                                   unsigned aBlockedReason);
-
   static bool ShouldEnableClassifier(
       nsIChannel* aChannel,
       AntiTrackingCommon::ContentBlockingAllowListPurpose aBlockingPurpose);
@@ -46,6 +42,12 @@ class UrlClassifierCommon final {
   
   static nsresult CreatePairwiseWhiteListURI(nsIChannel* aChannel,
                                              nsIURI** aURI);
+
+ private:
+  
+  static void NotifyChannelBlocked(nsIChannel* aChannel,
+                                   nsIURI* aURIBeingLoaded,
+                                   unsigned aBlockedReason);
 };
 
 }  

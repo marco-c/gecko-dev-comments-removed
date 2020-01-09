@@ -2692,7 +2692,7 @@ nsresult HttpChannelChild::ContinueAsyncOpen() {
 
   
   nsCOMPtr<nsIURI> uri;
-  GetTopWindowURI(getter_AddRefs(uri));
+  GetTopWindowURI(mURI, getter_AddRefs(uri));
 
   SerializeURI(mTopWindowURI, openArgs.topWindowURI());
 
