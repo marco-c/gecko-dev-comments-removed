@@ -68,6 +68,14 @@ function loadSourceMaps(sources: Source[]) {
     );
 
     await sourceQueue.flush();
+
+    
+    
+    
+    for (const source of sources) {
+      dispatch(checkPendingBreakpoints(source.id));
+    }
+
     return flatten(sourceList);
   };
 }
@@ -211,23 +219,18 @@ export function newSource(source: Source) {
 
 export function newSources(sources: Source[]) {
   return async ({ dispatch, getState }: ThunkArgs) => {
+
+    const newSources = sources.filter(
+      source => !getSource(getState(), source.id)
+    );
+
     dispatch({ type: "ADD_SOURCES", sources });
 
-    for (const source of sources) {
+    for (const source of newSources) {
       dispatch(checkSelectedSource(source.id));
     }
 
-    
-    
-    dispatch(restoreBlackBoxedSources(sources));
-
-    dispatch(loadSourceMaps(sources)).then(() => {
-      
-      
-      
-      for (const source of sources) {
-        dispatch(checkPendingBreakpoints(source.id));
-      }
-    });
+    dispatch(restoreBlackBoxedSources(newSources));
+    dispatch(loadSourceMaps(newSources));
   };
 }
