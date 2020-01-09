@@ -82,6 +82,10 @@ var Utils = {
     let changes = [];
     
     if (response.status != 304) {
+      const ct = response.headers.get("Content-Type");
+      if (!ct || !ct.includes("application/json")) {
+        throw new Error(`Unexpected content-type "${ct}"`);
+      }
       let payload;
       try {
         payload = await response.json();

@@ -333,8 +333,7 @@ class RemoteSettingsClient extends EventEmitter {
         const { ok } = syncResult;
         if (!ok) {
           
-          reportStatus = UptakeTelemetry.STATUS.CONFLICT_ERROR;
-          throw new Error("Sync failed");
+          throw new Error("Synced failed");
         }
       } catch (e) {
         if (e.message.includes(INVALID_SIGNATURE)) {
@@ -357,8 +356,14 @@ class RemoteSettingsClient extends EventEmitter {
           if (e.message == MISSING_SIGNATURE) {
             
             reportStatus = UptakeTelemetry.STATUS.SIGNATURE_ERROR;
+          } else if (/unparseable/.test(e.message)) {
+            reportStatus = UptakeTelemetry.STATUS.PARSE_ERROR;
           } else if (/NetworkError/.test(e.message)) {
             reportStatus = UptakeTelemetry.STATUS.NETWORK_ERROR;
+          } else if (/Timeout/.test(e.message)) {
+            reportStatus = UptakeTelemetry.STATUS.TIMEOUT_ERROR;
+          } else if (/HTTP 5??/.test(e.message)) {
+            reportStatus = UptakeTelemetry.STATUS.SERVER_ERROR;
           } else if (/Backoff/.test(e.message)) {
             reportStatus = UptakeTelemetry.STATUS.BACKOFF;
           } else {
@@ -379,6 +384,10 @@ class RemoteSettingsClient extends EventEmitter {
         }
       }
     } catch (e) {
+      
+      if (/(AbortError|ConstraintError|QuotaExceededError|VersionError)/.test(e.message)) {
+        reportStatus = UptakeTelemetry.STATUS.CUSTOM_1_ERROR;
+      }
       
       if (reportStatus === null) {
         reportStatus = UptakeTelemetry.STATUS.UNKNOWN_ERROR;
