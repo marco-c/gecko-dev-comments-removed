@@ -515,7 +515,8 @@ impl From<LengthPercentage> for FontSize {
 }
 
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq, ToCss, ToShmem)]
+#[derive(Clone, Debug, Eq, PartialEq, ToCss, ToShmem)]
+#[cfg_attr(feature = "servo", derive(Hash))]
 pub enum FontFamily {
     
     #[css(comma)]

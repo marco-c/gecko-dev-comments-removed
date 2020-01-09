@@ -266,10 +266,11 @@ void Gecko_ReleaseAtom(nsAtom* aAtom);
 void Gecko_CopyFontFamilyFrom(nsFont* dst, const nsFont* src);
 
 void Gecko_nsTArray_FontFamilyName_AppendNamed(
-    nsTArray<mozilla::FontFamilyName>* aNames, nsAtom* aName, bool aQuoted);
+    nsTArray<mozilla::FontFamilyName>* aNames, nsAtom* aName,
+    mozilla::StyleFontFamilyNameSyntax);
 
 void Gecko_nsTArray_FontFamilyName_AppendGeneric(
-    nsTArray<mozilla::FontFamilyName>* aNames, mozilla::FontFamilyType aType);
+    nsTArray<mozilla::FontFamilyName>* aNames, mozilla::StyleGenericFontFamily);
 
 
 mozilla::SharedFontList* Gecko_SharedFontList_Create();
@@ -678,18 +679,15 @@ void Gecko_nsStyleFont_CopyLangFrom(nsStyleFont* aFont,
 
 
 void Gecko_nsStyleFont_PrioritizeUserFonts(
-    nsStyleFont* font, mozilla::FontFamilyType aDefaultGeneric);
-
-void Gecko_nsStyleFont_PrefillDefaultForGeneric(nsStyleFont* font,
-                                                const mozilla::dom::Document*,
-                                                uint8_t generic_id);
+    nsStyleFont* font, mozilla::StyleGenericFontFamily aDefaultGeneric);
 
 nscoord Gecko_nsStyleFont_ComputeMinSize(const nsStyleFont*,
                                          const mozilla::dom::Document*);
 
 
-mozilla::FontFamilyType Gecko_nsStyleFont_ComputeDefaultFontType(
-    const mozilla::dom::Document*, uint8_t generic_family, nsAtom* language);
+mozilla::StyleGenericFontFamily Gecko_nsStyleFont_ComputeDefaultFontType(
+    const mozilla::dom::Document*,
+    mozilla::StyleGenericFontFamily generic_family, nsAtom* language);
 
 mozilla::FontSizePrefs Gecko_GetBaseSize(nsAtom* lang);
 
