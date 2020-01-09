@@ -2323,12 +2323,16 @@ var SessionStoreInternal = {
       return; 
     }
 
-    let browsingContext = aChannel.loadInfo.browsingContext;
-    if (!browsingContext) {
+    let cpType = aChannel.loadInfo.externalContentPolicyType;
+    let toplevel = cpType == Ci.nsIContentPolicy.TYPE_DOCUMENT;
+    if (!toplevel) {
       return; 
     }
 
-    if (browsingContext.parent) {
+    let browsingContext = toplevel
+        ? aChannel.loadInfo.browsingContext
+        : aChannel.loadInfo.frameBrowsingContext;
+    if (!browsingContext) {
       return; 
     }
 
