@@ -2592,31 +2592,7 @@ XDRResult ScriptSource::xdrUncompressedSource<XDR_ENCODE>(
 
 template <XDRMode mode>
 
-XDRResult ScriptSource::XDR(XDRState<mode>* xdr,
-                            const mozilla::Maybe<JS::CompileOptions>& options,
-                            MutableHandle<ScriptSourceHolder> holder) {
-  JSContext* cx = xdr->cx();
-  ScriptSource* ss = nullptr;
-
-  if (mode == XDR_ENCODE) {
-    ss = holder.get().get();
-  } else {
-    
-    ss = cx->new_<ScriptSource>();
-    if (!ss) {
-      return xdr->fail(JS::TranscodeResult_Throw);
-    }
-    holder.get().reset(ss);
-
-    
-    
-    
-    
-    if (!ss->initFromOptions(cx, *options)) {
-      return xdr->fail(JS::TranscodeResult_Throw);
-    }
-  }
-
+XDRResult ScriptSource::xdrDataMember(XDRState<mode>* xdr, ScriptSource* ss) {
   uint8_t hasSource = ss->hasSourceText();
   MOZ_TRY(xdr->codeUint8(&hasSource));
 
@@ -2784,6 +2760,38 @@ XDRResult ScriptSource::XDR(XDRState<mode>* xdr,
 #endif  
     }
   }
+
+  return Ok();
+}
+
+template <XDRMode mode>
+
+XDRResult ScriptSource::XDR(XDRState<mode>* xdr,
+                            const mozilla::Maybe<JS::CompileOptions>& options,
+                            MutableHandle<ScriptSourceHolder> holder) {
+  JSContext* cx = xdr->cx();
+  ScriptSource* ss = nullptr;
+
+  if (mode == XDR_ENCODE) {
+    ss = holder.get().get();
+  } else {
+    
+    ss = cx->new_<ScriptSource>();
+    if (!ss) {
+      return xdr->fail(JS::TranscodeResult_Throw);
+    }
+    holder.get().reset(ss);
+
+    
+    
+    
+    
+    if (!ss->initFromOptions(cx, *options)) {
+      return xdr->fail(JS::TranscodeResult_Throw);
+    }
+  }
+
+  MOZ_TRY(xdrDataMember(xdr, ss));
 
   uint8_t haveSourceMap = ss->hasSourceMapURL();
   MOZ_TRY(xdr->codeUint8(&haveSourceMap));
