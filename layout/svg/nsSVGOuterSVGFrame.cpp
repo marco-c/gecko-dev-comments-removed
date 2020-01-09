@@ -609,9 +609,7 @@ void nsDisplayOuterSVG::Paint(nsDisplayListBuilder* aBuilder,
       viewportRect.TopLeft(), appUnitsPerDevPixel);
 
   aContext->Save();
-  imgDrawingParams imgParams(aBuilder->ShouldSyncDecodeImages()
-                                 ? imgIContainer::FLAG_SYNC_DECODE
-                                 : imgIContainer::FLAG_SYNC_DECODE_IF_FAST);
+  imgDrawingParams imgParams(aBuilder->GetImageDecodeFlags());
   
   
   gfxMatrix tm = nsSVGUtils::GetCSSPxToDevPxMatrix(mFrame) *

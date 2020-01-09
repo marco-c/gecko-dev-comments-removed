@@ -899,6 +899,12 @@ class nsDisplayListBuilder {
 
 
 
+  uint32_t GetImageDecodeFlags() const;
+
+  
+
+
+
   void SubtractFromVisibleRegion(nsRegion* aVisibleRegion,
                                  const nsRegion& aRegion);
 
