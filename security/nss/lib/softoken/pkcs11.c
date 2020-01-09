@@ -3157,7 +3157,7 @@ nsc_CommonFinalize(CK_VOID_PTR pReserved, PRBool isFIPS)
 
     BL_SetForkState(PR_FALSE);
 
-#ifndef NSS_TEST_BUILD
+#ifndef NSS_STATIC_SOFTOKEN
     
 
     BL_Unload();
