@@ -53,8 +53,6 @@ const REGISTERED_AXES_TO_FONT_PROPERTIES = {
 };
 const REGISTERED_AXES = Object.keys(REGISTERED_AXES_TO_FONT_PROPERTIES);
 
-const HISTOGRAM_N_FONT_AXES = "DEVTOOLS_FONTEDITOR_N_FONT_AXES";
-const HISTOGRAM_N_FONTS_RENDERED = "DEVTOOLS_FONTEDITOR_N_FONTS_RENDERED";
 const HISTOGRAM_FONT_TYPE_DISPLAYED = "DEVTOOLS_FONTEDITOR_FONT_TYPE_DISPLAYED";
 
 class FontInspector {
@@ -563,12 +561,6 @@ class FontInspector {
     const { telemetry } = this.inspector;
 
     
-    const nbOfFontsRendered = fontEditor.fonts.length;
-    if (nbOfFontsRendered) {
-      telemetry.getHistogramById(HISTOGRAM_N_FONTS_RENDERED).add(nbOfFontsRendered);
-    }
-
-    
     
     const editedFont = fontEditor.fonts[0];
     if (!editedFont) {
@@ -578,9 +570,6 @@ class FontInspector {
     const nbOfAxes = editedFont.variationAxes ? editedFont.variationAxes.length : 0;
     telemetry.getHistogramById(HISTOGRAM_FONT_TYPE_DISPLAYED).add(
       !nbOfAxes ? "nonvariable" : "variable");
-    if (nbOfAxes) {
-      telemetry.getHistogramById(HISTOGRAM_N_FONT_AXES).add(nbOfAxes);
-    }
   }
 
   
