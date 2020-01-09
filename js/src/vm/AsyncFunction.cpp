@@ -61,7 +61,7 @@ using mozilla::Maybe;
 
 static MOZ_MUST_USE bool AsyncFunctionStart(
     JSContext* cx, Handle<PromiseObject*> resultPromise,
-    HandleValue generatorVal);
+    Handle<GeneratorObject*> generator);
 
 #define UNWRAPPED_ASYNC_WRAPPED_SLOT 1
 #define WRAPPED_ASYNC_UNWRAPPED_SLOT 0
@@ -84,14 +84,15 @@ static bool WrappedAsyncFunction(JSContext* cx, unsigned argc, Value* vp) {
   RootedValue generatorVal(cx);
   if (Call(cx, unwrappedVal, args.thisv(), args2, &generatorVal)) {
     
-    Rooted<PromiseObject*> resultPromise(
-        cx, CreatePromiseObjectForAsync(cx, generatorVal));
+    Rooted<PromiseObject*> resultPromise(cx, CreatePromiseObjectForAsync(cx));
     if (!resultPromise) {
       return false;
     }
 
     
-    if (!AsyncFunctionStart(cx, resultPromise, generatorVal)) {
+    Rooted<GeneratorObject*> generator(
+        cx, &generatorVal.toObject().as<GeneratorObject>());
+    if (!AsyncFunctionStart(cx, resultPromise, generator)) {
       return false;
     }
 
@@ -182,8 +183,8 @@ enum class ResumeKind { Normal, Throw };
 
 static bool AsyncFunctionResume(JSContext* cx,
                                 Handle<PromiseObject*> resultPromise,
-                                HandleValue generatorVal, ResumeKind kind,
-                                HandleValue valueOrReason) {
+                                Handle<GeneratorObject*> generator,
+                                ResumeKind kind, HandleValue valueOrReason) {
   RootedObject stack(cx, resultPromise->allocationSite());
   Maybe<JS::AutoSetAsyncStackForNewCalls> asyncStack;
   if (stack) {
@@ -198,24 +199,25 @@ static bool AsyncFunctionResume(JSContext* cx,
                                    : cx->names().GeneratorThrow;
   FixedInvokeArgs<1> args(cx);
   args[0].set(valueOrReason);
-  RootedValue value(cx);
-  if (!CallSelfHostedFunction(cx, funName, generatorVal, args, &value)) {
+  RootedValue generatorOrValue(cx, ObjectValue(*generator));
+  if (!CallSelfHostedFunction(cx, funName, generatorOrValue, args,
+                              &generatorOrValue)) {
     return AsyncFunctionThrown(cx, resultPromise);
   }
 
-  if (generatorVal.toObject().as<GeneratorObject>().isAfterAwait()) {
-    return AsyncFunctionAwait(cx, resultPromise, value);
+  if (generator->isAfterAwait()) {
+    return AsyncFunctionAwait(cx, generator, resultPromise, generatorOrValue);
   }
 
-  return AsyncFunctionReturned(cx, resultPromise, value);
+  return AsyncFunctionReturned(cx, resultPromise, generatorOrValue);
 }
 
 
 static MOZ_MUST_USE bool AsyncFunctionStart(
     JSContext* cx, Handle<PromiseObject*> resultPromise,
-    HandleValue generatorVal) {
-  return AsyncFunctionResume(cx, resultPromise, generatorVal,
-                             ResumeKind::Normal, UndefinedHandleValue);
+    Handle<GeneratorObject*> generator) {
+  return AsyncFunctionResume(cx, resultPromise, generator, ResumeKind::Normal,
+                             UndefinedHandleValue);
 }
 
 
@@ -224,22 +226,22 @@ static MOZ_MUST_USE bool AsyncFunctionStart(
 
 MOZ_MUST_USE bool js::AsyncFunctionAwaitedFulfilled(
     JSContext* cx, Handle<PromiseObject*> resultPromise,
-    HandleValue generatorVal, HandleValue value) {
+    Handle<GeneratorObject*> generator, HandleValue value) {
   
 
   
-  return AsyncFunctionResume(cx, resultPromise, generatorVal,
-                             ResumeKind::Normal, value);
+  return AsyncFunctionResume(cx, resultPromise, generator, ResumeKind::Normal,
+                             value);
 }
 
 
 MOZ_MUST_USE bool js::AsyncFunctionAwaitedRejected(
     JSContext* cx, Handle<PromiseObject*> resultPromise,
-    HandleValue generatorVal, HandleValue reason) {
+    Handle<GeneratorObject*> generator, HandleValue reason) {
   
 
   
-  return AsyncFunctionResume(cx, resultPromise, generatorVal, ResumeKind::Throw,
+  return AsyncFunctionResume(cx, resultPromise, generator, ResumeKind::Throw,
                              reason);
 }
 

@@ -33,10 +33,7 @@ enum PromiseSlots {
   
   
   
-  
-  
   PromiseSlot_RejectFunction,
-  PromiseSlot_AwaitGenerator = PromiseSlot_RejectFunction,
 
   
   
@@ -238,14 +235,15 @@ MOZ_MUST_USE bool RejectPromiseWithPendingError(JSContext* cx,
 
 
 
-MOZ_MUST_USE PromiseObject* CreatePromiseObjectForAsync(
-    JSContext* cx, HandleValue generatorVal);
+MOZ_MUST_USE PromiseObject* CreatePromiseObjectForAsync(JSContext* cx);
 
 
 
 
 
 MOZ_MUST_USE bool IsPromiseForAsync(JSObject* promise);
+
+class GeneratorObject;
 
 MOZ_MUST_USE bool AsyncFunctionReturned(JSContext* cx,
                                         Handle<PromiseObject*> resultPromise,
@@ -255,6 +253,7 @@ MOZ_MUST_USE bool AsyncFunctionThrown(JSContext* cx,
                                       Handle<PromiseObject*> resultPromise);
 
 MOZ_MUST_USE bool AsyncFunctionAwait(JSContext* cx,
+                                     Handle<GeneratorObject*> genObj,
                                      Handle<PromiseObject*> resultPromise,
                                      HandleValue value);
 

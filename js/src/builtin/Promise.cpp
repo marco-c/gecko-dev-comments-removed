@@ -21,6 +21,7 @@
 #include "vm/AsyncFunction.h"
 #include "vm/AsyncIteration.h"
 #include "vm/Debugger.h"
+#include "vm/GeneratorObject.h"
 #include "vm/Iteration.h"
 #include "vm/JSContext.h"
 #include "vm/JSObject.h"
@@ -540,6 +541,8 @@ enum ReactionRecordSlots {
   
   
   
+  
+  
   ReactionRecordSlot_GeneratorOrPromiseToResolve,
 
   ReactionRecordSlots,
@@ -619,12 +622,20 @@ class PromiseReactionRecord : public NativeObject {
         getFixedSlot(ReactionRecordSlot_GeneratorOrPromiseToResolve);
     return &promiseToResolve.toObject().as<PromiseObject>();
   }
-  void setIsAsyncFunction() {
+  void setIsAsyncFunction(GeneratorObject* genObj) {
     setFlagOnInitialState(REACTION_FLAG_ASYNC_FUNCTION);
+    setFixedSlot(ReactionRecordSlot_GeneratorOrPromiseToResolve,
+                 ObjectValue(*genObj));
   }
   bool isAsyncFunction() {
     int32_t flags = this->flags();
     return flags & REACTION_FLAG_ASYNC_FUNCTION;
+  }
+  GeneratorObject* asyncFunctionGenerator() {
+    MOZ_ASSERT(isAsyncFunction());
+    const Value& generator =
+        getFixedSlot(ReactionRecordSlot_GeneratorOrPromiseToResolve);
+    return &generator.toObject().as<GeneratorObject>();
   }
   void setIsAsyncGenerator(AsyncGeneratorObject* asyncGenObj) {
     setFlagOnInitialState(REACTION_FLAG_ASYNC_GENERATOR);
@@ -1471,22 +1482,20 @@ static MOZ_MUST_USE bool AsyncFunctionPromiseReactionJob(
   RootedValue argument(cx, reaction->handlerArg());
   Rooted<PromiseObject*> resultPromise(
       cx, &reaction->promise()->as<PromiseObject>());
-  RootedValue generatorVal(
-      cx, resultPromise->getFixedSlot(PromiseSlot_AwaitGenerator));
+  Rooted<GeneratorObject*> generator(cx, reaction->asyncFunctionGenerator());
 
   int32_t handlerNum = handlerVal.toInt32();
 
   
   
   if (handlerNum == PromiseHandlerAsyncFunctionAwaitedFulfilled) {
-    if (!AsyncFunctionAwaitedFulfilled(cx, resultPromise, generatorVal,
+    if (!AsyncFunctionAwaitedFulfilled(cx, resultPromise, generator,
                                        argument)) {
       return false;
     }
   } else {
     MOZ_ASSERT(handlerNum == PromiseHandlerAsyncFunctionAwaitedRejected);
-    if (!AsyncFunctionAwaitedRejected(cx, resultPromise, generatorVal,
-                                      argument)) {
+    if (!AsyncFunctionAwaitedRejected(cx, resultPromise, generator, argument)) {
       return false;
     }
   }
@@ -3490,8 +3499,7 @@ static MOZ_MUST_USE bool PerformPromiseThenWithReaction(
 
 
 
-MOZ_MUST_USE PromiseObject* js::CreatePromiseObjectForAsync(
-    JSContext* cx, HandleValue generatorVal) {
+MOZ_MUST_USE PromiseObject* js::CreatePromiseObjectForAsync(JSContext* cx) {
   
   PromiseObject* promise = CreatePromiseObjectWithoutResolutionFunctions(cx);
   if (!promise) {
@@ -3499,7 +3507,6 @@ MOZ_MUST_USE PromiseObject* js::CreatePromiseObjectForAsync(
   }
 
   AddPromiseFlags(*promise, PROMISE_FLAG_ASYNC);
-  promise->setFixedSlot(PromiseSlot_AwaitGenerator, generatorVal);
   return promise;
 }
 
@@ -3578,6 +3585,7 @@ static MOZ_MUST_USE bool InternalAwait(JSContext* cx, HandleValue value,
 
 
 MOZ_MUST_USE bool js::AsyncFunctionAwait(JSContext* cx,
+                                         Handle<GeneratorObject*> genObj,
                                          Handle<PromiseObject*> resultPromise,
                                          HandleValue value) {
   
@@ -3587,8 +3595,8 @@ MOZ_MUST_USE bool js::AsyncFunctionAwait(JSContext* cx,
       cx, Int32Value(PromiseHandlerAsyncFunctionAwaitedRejected));
 
   
-  auto extra = [](Handle<PromiseReactionRecord*> reaction) {
-    reaction->setIsAsyncFunction();
+  auto extra = [&](Handle<PromiseReactionRecord*> reaction) {
+    reaction->setIsAsyncFunction(genObj);
   };
   return InternalAwait(cx, value, resultPromise, onFulfilled, onRejected,
                        extra);
