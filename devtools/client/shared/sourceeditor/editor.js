@@ -265,6 +265,13 @@ Editor.prototype = {
   
 
 
+  get hasCodeMirror() {
+    return editors.has(this);
+  },
+
+  
+
+
 
 
 
