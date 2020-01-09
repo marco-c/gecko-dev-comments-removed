@@ -133,39 +133,81 @@ bool RenderAndroidSurfaceTextureHostOGL::EnsureAttachedToGLContext() {
   return true;
 }
 
+bool RenderAndroidSurfaceTextureHostOGL::CheckIfAttachedToGLContext() {
+  if (mAttachedToGLContext) {
+    return true;
+  }
+
+  if (!mGL) {
+    mGL = RenderThread::Get()->SharedGL();
+  }
+
+  if (!mSurfTex || !mGL || !mGL->MakeCurrent()) {
+    return false;
+  }
+
+  if (!mSurfTex->IsAttachedToGLContext((int64_t)mGL.get())) {
+    return false;
+  }
+
+  mAttachedToGLContext = true;
+  return true;
+}
+
 void RenderAndroidSurfaceTextureHostOGL::PrepareForUse() {
   
   
   
   
   
-
   MOZ_ASSERT(RenderThread::IsInRenderThread());
   MOZ_ASSERT(mPrepareStatus == STATUS_NONE);
-
-  EnsureAttachedToGLContext();
 
   if (mContinuousUpdate) {
     return;
   }
 
-  mPrepareStatus = STATUS_PREPARE_NEEDED;
+  mPrepareStatus = STATUS_MIGHT_BE_USED;
 
   if (mSurfTex && mSurfTex->IsSingleBuffer()) {
     
     
+    EnsureAttachedToGLContext();
     mSurfTex->UpdateTexImage();
     mPrepareStatus = STATUS_PREPARED;
+  } else {
+    
+    
+    
+    
+    
+    if (CheckIfAttachedToGLContext()) {
+      mPrepareStatus = STATUS_PREPARE_NEEDED;
+    }
+  }
+}
+
+void RenderAndroidSurfaceTextureHostOGL::NofityForUse() {
+  MOZ_ASSERT(RenderThread::IsInRenderThread());
+
+  if (mPrepareStatus == STATUS_MIGHT_BE_USED) {
+    
+    
+    
+    
+    
+    MOZ_ASSERT(!mSurfTex || !mSurfTex->IsSingleBuffer());
+    EnsureAttachedToGLContext();
+    mPrepareStatus = STATUS_PREPARE_NEEDED;
   }
 }
 
 void RenderAndroidSurfaceTextureHostOGL::NotifyNotUsed() {
   MOZ_ASSERT(RenderThread::IsInRenderThread());
 
-  EnsureAttachedToGLContext();
-
   if (mSurfTex && mSurfTex->IsSingleBuffer() &&
       mPrepareStatus == STATUS_PREPARED) {
+    EnsureAttachedToGLContext();
     
     mGL->MakeCurrent();
     mSurfTex->ReleaseTexImage();
@@ -173,6 +215,7 @@ void RenderAndroidSurfaceTextureHostOGL::NotifyNotUsed() {
     
     
     MOZ_ASSERT(!mSurfTex->IsSingleBuffer());
+    EnsureAttachedToGLContext();
     mSurfTex->UpdateTexImage();
   }
 

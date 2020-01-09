@@ -198,6 +198,9 @@ class RenderThread final {
                                uint64_t aWrappedExternalImageId);
 
   
+  void NofityForUse(uint64_t aExternalImageId);
+
+  
   void UnregisterExternalImageDuringShutdown(uint64_t aExternalImageId);
 
   
