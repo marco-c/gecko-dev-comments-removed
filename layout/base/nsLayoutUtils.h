@@ -1400,6 +1400,15 @@ class nsLayoutUtils {
 
 
 
+
+
+
+  static nsIFrame* GetDisplayListParent(nsIFrame* aFrame);
+
+  
+
+
+
   static nsIFrame* GetNextContinuationOrIBSplitSibling(nsIFrame* aFrame);
 
   
