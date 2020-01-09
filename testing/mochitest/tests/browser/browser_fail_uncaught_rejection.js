@@ -7,13 +7,13 @@ function test() {
   Promise.reject(new Error("Promise rejection."));
   JSMPromise.reject(new Error("Promise.jsm rejection."));
   (async () => {
-    throw "Synchronous rejection from async function.";
+    throw new Error("Synchronous rejection from async function.");
   })();
 
   
   Promise.reject(new Error("Promise rejection.")).catch(() => {});
   JSMPromise.reject(new Error("Promise.jsm rejection.")).catch(() => {});
   (async () => {
-    throw "Synchronous rejection from async function.";
+    throw new Error("Synchronous rejection from async function.");
   })().catch(() => {});
 }

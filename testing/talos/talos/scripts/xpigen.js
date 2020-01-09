@@ -22,7 +22,7 @@ function createXpiDataUri(base, files, callbacks) {
     
     
     if (!(r.readyState == 4 && (r.status == 0 || r.status == 200)))
-      throw ("FileNotRetrieved: " + url + " - " + r.status + " " + r.statusText);
+      throw new Error("FileNotRetrieved: " + url + " - " + r.status + " " + r.statusText);
 
     return r.response;
   }

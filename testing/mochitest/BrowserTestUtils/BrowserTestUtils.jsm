@@ -325,7 +325,7 @@ var BrowserTestUtils = {
                 maybeErrorPage = false) {
     
     if (includeSubFrames && typeof includeSubFrames != "boolean") {
-      throw ("The second argument to browserLoaded should be a boolean.");
+      throw new Error("The second argument to browserLoaded should be a boolean.");
     }
 
     
