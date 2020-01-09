@@ -8,7 +8,7 @@
 """output raptor test results"""
 from __future__ import absolute_import
 
-import filters
+import filter
 
 import json
 import os
@@ -61,10 +61,6 @@ class Output(object):
             }
 
             
-            if hasattr(test, "alert_change_type"):
-                suite['alertChangeType'] = test.alert_change_type
-
-            
             
             if test.cold is True:
                 suite['cold'] = True
@@ -101,7 +97,7 @@ class Output(object):
                         
                         LOG.info("ignoring the first %s value due to initial pageload noise"
                                  % measurement_name)
-                        filtered_values = filters.ignore_first(new_subtest['replicates'], 1)
+                        filtered_values = filter.ignore_first(new_subtest['replicates'], 1)
                     else:
                         
                         filtered_values = new_subtest['replicates']
@@ -111,7 +107,7 @@ class Output(object):
                     
                     
                     if measurement_name == "ttfi":
-                        filtered_values = filters.ignore_negative(filtered_values)
+                        filtered_values = filter.ignore_negative(filtered_values)
                         
                         
                         if len(filtered_values) < 1:
@@ -125,30 +121,28 @@ class Output(object):
                                      % measurement_name)
                             new_subtest['shouldAlert'] = True
 
-                    new_subtest['value'] = filters.median(filtered_values)
+                    new_subtest['value'] = filter.median(filtered_values)
 
                     vals.append([new_subtest['value'], new_subtest['name']])
                     subtests.append(new_subtest)
 
             elif test.type == "benchmark":
-                if 'assorted-dom' in test.measurements:
-                    subtests, vals = self.parseAssortedDomOutput(test)
+                if 'speedometer' in test.measurements:
+                    subtests, vals = self.parseSpeedometerOutput(test)
                 elif 'motionmark' in test.measurements:
                     subtests, vals = self.parseMotionmarkOutput(test)
-                elif 'speedometer' in test.measurements:
-                    subtests, vals = self.parseSpeedometerOutput(test)
                 elif 'sunspider' in test.measurements:
                     subtests, vals = self.parseSunspiderOutput(test)
-                elif 'unity-webgl' in test.measurements:
-                    subtests, vals = self.parseUnityWebGLOutput(test)
-                elif 'wasm-godot' in test.measurements:
-                    subtests, vals = self.parseWASMGodotOutput(test)
-                elif 'wasm-misc' in test.measurements:
-                    subtests, vals = self.parseWASMMiscOutput(test)
                 elif 'webaudio' in test.measurements:
                     subtests, vals = self.parseWebaudioOutput(test)
-                elif 'youtube-playbackperf-test' in test.measurements:
-                    subtests, vals = self.parseYoutubePlaybackPerformanceOutput(test)
+                elif 'unity-webgl' in test.measurements:
+                    subtests, vals = self.parseUnityWebGLOutput(test)
+                elif 'assorted-dom' in test.measurements:
+                    subtests, vals = self.parseAssortedDomOutput(test)
+                elif 'wasm-misc' in test.measurements:
+                    subtests, vals = self.parseWASMMiscOutput(test)
+                elif 'wasm-godot' in test.measurements:
+                    subtests, vals = self.parseWASMGodotOutput(test)
                 suite['subtests'] = subtests
 
             else:
@@ -274,7 +268,7 @@ class Output(object):
             vals = []
             for next_sub in combined_suites[name]['subtests']:
                 
-                next_sub['value'] = filters.median(next_sub['replicates'])
+                next_sub['value'] = filter.median(next_sub['replicates'])
                 
                 
                 vals.append([next_sub['value'], next_sub['name']])
@@ -406,7 +400,7 @@ class Output(object):
         names = _subtests.keys()
         names.sort(reverse=True)
         for name in names:
-            _subtests[name]['value'] = filters.median(_subtests[name]['replicates'])
+            _subtests[name]['value'] = filter.median(_subtests[name]['replicates'])
             subtests.append(_subtests[name])
             vals.append([_subtests[name]['value'], name])
 
@@ -443,7 +437,7 @@ class Output(object):
         names = _subtests.keys()
         names.sort(reverse=True)
         for name in names:
-            _subtests[name]['value'] = filters.median(_subtests[name]['replicates'])
+            _subtests[name]['value'] = filter.median(_subtests[name]['replicates'])
             subtests.append(_subtests[name])
             vals.append([_subtests[name]['value'], name])
 
@@ -482,7 +476,7 @@ class Output(object):
         names = _subtests.keys()
         names.sort(reverse=True)
         for name in names:
-            _subtests[name]['value'] = filters.median(_subtests[name]['replicates'])
+            _subtests[name]['value'] = filter.median(_subtests[name]['replicates'])
             subtests.append(_subtests[name])
             vals.append([_subtests[name]['value'], name])
 
@@ -529,7 +523,7 @@ class Output(object):
         names = _subtests.keys()
         names.sort(reverse=True)
         for name in names:
-            _subtests[name]['value'] = filters.median(_subtests[name]['replicates'])
+            _subtests[name]['value'] = filter.median(_subtests[name]['replicates'])
             subtests.append(_subtests[name])
             vals.append([_subtests[name]['value'], name])
 
@@ -584,7 +578,7 @@ class Output(object):
         names = _subtests.keys()
         names.sort(reverse=True)
         for name in names:
-            _subtests[name]['value'] = filters.median(_subtests[name]['replicates'])
+            _subtests[name]['value'] = filter.median(_subtests[name]['replicates'])
             subtests.append(_subtests[name])
             vals.append([_subtests[name]['value'], name])
 
@@ -611,7 +605,7 @@ class Output(object):
         names = _subtests.keys()
         names.sort(reverse=True)
         for name in names:
-            _subtests[name]['value'] = filters.mean(_subtests[name]['replicates'])
+            _subtests[name]['value'] = filter.mean(_subtests[name]['replicates'])
             subtests.append(_subtests[name])
 
             vals.append([_subtests[name]['value'], name])
@@ -656,7 +650,7 @@ class Output(object):
         names = _subtests.keys()
         names.sort(reverse=True)
         for name in names:
-            _subtests[name]['value'] = filters.median(_subtests[name]['replicates'])
+            _subtests[name]['value'] = filter.median(_subtests[name]['replicates'])
             subtests.append(_subtests[name])
             vals.append([_subtests[name]['value'], name])
 
@@ -695,76 +689,10 @@ class Output(object):
         names = _subtests.keys()
         names.sort(reverse=True)
         for name in names:
-            _subtests[name]['value'] = round(filters.median(_subtests[name]['replicates']), 2)
+            _subtests[name]['value'] = round(filter.median(_subtests[name]['replicates']), 2)
             subtests.append(_subtests[name])
             
             if name == 'total':
-                vals.append([_subtests[name]['value'], name])
-
-        return subtests, vals
-
-    def parseYoutubePlaybackPerformanceOutput(self, test):
-        """Parse the metrics for the Youtube playback performance test.
-
-        For each video measured values for dropped and decoded frames will be
-        available from the benchmark site.
-
-        {u'PlaybackPerf.VP9.2160p60@2X': {u'droppedFrames': 1, u'decodedFrames': 796}
-
-        With each page cycle / iteration of the test multiple values can be present.
-
-        Raptor will calculate the percentage of dropped frames to decoded frames.
-        All those three values will then be emitted as separate sub tests.
-        """
-        _subtests = {}
-        data = test.measurements['youtube-playbackperf-test']
-
-        def create_subtest_entry(name, value,
-                                 unit=test.subtest_unit,
-                                 lower_is_better=test.subtest_lower_is_better):
-            
-            if name not in _subtests.keys():
-                
-                _subtests[name] = {
-                    'name': name,
-                    'unit': unit,
-                    'lowerIsBetter': lower_is_better,
-                    'replicates': [],
-                }
-
-            _subtests[name]['replicates'].append(value)
-
-        for pagecycle in data:
-            for _sub, _value in pagecycle[0].iteritems():
-                try:
-                    percent_dropped = float(_value['droppedFrames']) / _value['decodedFrames']
-                except ZeroDivisionError:
-                    
-                    percent_dropped = 1
-
-                
-                _sub = _sub.split('PlaybackPerf.', 1)[-1]
-
-                
-                create_subtest_entry("{}_decoded_frames".format(_sub),
-                                     _value['decodedFrames'],
-                                     lower_is_better=False,
-                                     )
-                create_subtest_entry("{}_dropped_frames".format(_sub),
-                                     _value['droppedFrames'],
-                                     )
-                create_subtest_entry("{}_%_dropped_frames".format(_sub),
-                                     percent_dropped,
-                                     )
-
-        vals = []
-        subtests = []
-        names = _subtests.keys()
-        names.sort(reverse=True)
-        for name in names:
-            _subtests[name]['value'] = round(filters.median(_subtests[name]['replicates']), 2)
-            subtests.append(_subtests[name])
-            if name.endswith("dropped_frames"):
                 vals.append([_subtests[name]['value'], name])
 
         return subtests, vals
@@ -898,7 +826,7 @@ class Output(object):
     @classmethod
     def v8_Metric(cls, val_list):
         results = [i for i, j in val_list]
-        score = 100 * filters.geometric_mean(results)
+        score = 100 * filter.geometric_mean(results)
         return score
 
     @classmethod
@@ -921,7 +849,7 @@ class Output(object):
             raise Exception("Speedometer has 160 subtests, found: %s instead" % len(results))
 
         results = results[9::10]
-        score = 60 * 1000 / filters.geometric_mean(results) / correctionFactor
+        score = 60 * 1000 / filter.geometric_mean(results) / correctionFactor
         return score
 
     @classmethod
@@ -930,7 +858,7 @@ class Output(object):
         benchmark_score: ares6/jetstream self reported as 'geomean'
         """
         results = [i for i, j in val_list if j == 'geomean']
-        return filters.mean(results)
+        return filter.mean(results)
 
     @classmethod
     def webaudio_score(cls, val_list):
@@ -938,7 +866,7 @@ class Output(object):
         webaudio_score: self reported as 'Geometric Mean'
         """
         results = [i for i, j in val_list if j == 'Geometric Mean']
-        return filters.mean(results)
+        return filter.mean(results)
 
     @classmethod
     def unity_webgl_score(cls, val_list):
@@ -946,7 +874,7 @@ class Output(object):
         unity_webgl_score: self reported as 'Geometric Mean'
         """
         results = [i for i, j in val_list if j == 'Geometric Mean']
-        return filters.mean(results)
+        return filter.mean(results)
 
     @classmethod
     def wasm_misc_score(cls, val_list):
@@ -954,7 +882,7 @@ class Output(object):
         wasm_misc_score: self reported as '__total__'
         """
         results = [i for i, j in val_list if j == '__total__']
-        return filters.mean(results)
+        return filter.mean(results)
 
     @classmethod
     def wasm_godot_score(cls, val_list):
@@ -962,7 +890,7 @@ class Output(object):
         wasm_godot_score: first-interactive mean
         """
         results = [i for i, j in val_list if j == 'first-interactive']
-        return filters.mean(results)
+        return filter.mean(results)
 
     @classmethod
     def stylebench_score(cls, val_list):
@@ -1008,7 +936,7 @@ class Output(object):
             raise Exception("StyleBench has 380 entries, found: %s instead" % len(results))
 
         results = results[75::76]
-        score = 60 * 1000 / filters.geometric_mean(results) / correctionFactor
+        score = 60 * 1000 / filter.geometric_mean(results) / correctionFactor
         return score
 
     @classmethod
@@ -1019,13 +947,7 @@ class Output(object):
     @classmethod
     def assorted_dom_score(cls, val_list):
         results = [i for i, j in val_list]
-        return round(filters.geometric_mean(results), 2)
-
-    @classmethod
-    def youtube_playback_performance_score(cls, val_list):
-        """Calculate percentage of failed tests."""
-        results = [i for i, j in val_list]
-        return round(filters.mean(results), 2)
+        return round(filter.geometric_mean(results), 2)
 
     @classmethod
     def supporting_data_total(cls, val_list):
@@ -1055,11 +977,9 @@ class Output(object):
             return self.wasm_misc_score(vals)
         elif testname.startswith('raptor-wasm-godot'):
             return self.wasm_godot_score(vals)
-        elif testname.startswith('raptor-youtube-playback'):
-            return self.youtube_playback_performance_score(vals)
         elif testname.startswith('supporting_data'):
             return self.supporting_data_total(vals)
         elif len(vals) > 1:
-            return round(filters.geometric_mean([i for i, j in vals]), 2)
+            return round(filter.geometric_mean([i for i, j in vals]), 2)
         else:
-            return round(filters.mean([i for i, j in vals]), 2)
+            return round(filter.mean([i for i, j in vals]), 2)
