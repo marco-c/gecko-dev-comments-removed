@@ -711,7 +711,8 @@ class JS::Realm : public JS::shadow::Realm {
   
   
   bool isDebuggee() const { return !!(debugModeBits_ & IsDebuggee); }
-  void setIsDebuggee() { debugModeBits_ |= IsDebuggee; }
+
+  void setIsDebuggee();
   void unsetIsDebuggee();
 
   
