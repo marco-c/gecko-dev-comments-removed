@@ -150,10 +150,6 @@ this.AutoCompletePopup = {
     }
   },
 
-  
-  
-  
-  
   showPopupWithResults({ browser, rect, dir, results }) {
     if (!results.length || this.openedPopup) {
       

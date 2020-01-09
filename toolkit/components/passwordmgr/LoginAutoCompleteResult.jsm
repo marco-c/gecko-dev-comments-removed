@@ -8,13 +8,24 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["LoginAutoCompleteResult"];
+var EXPORTED_SYMBOLS = [
+  "LoginAutoComplete",
+  "LoginAutoCompleteResult",
+];
 
 const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
+ChromeUtils.defineModuleGetter(this, "BrowserUtils",
+                               "resource://gre/modules/BrowserUtils.jsm");
+ChromeUtils.defineModuleGetter(this, "InsecurePasswordUtils",
+                               "resource://gre/modules/InsecurePasswordUtils.jsm");
+ChromeUtils.defineModuleGetter(this, "LoginFormFactory",
+                               "resource://gre/modules/LoginFormFactory.jsm");
 ChromeUtils.defineModuleGetter(this, "LoginHelper",
                                "resource://gre/modules/LoginHelper.jsm");
+ChromeUtils.defineModuleGetter(this, "LoginManagerContent",
+                               "resource://gre/modules/LoginManagerContent.jsm");
 
 XPCOMUtils.defineLazyServiceGetter(this, "formFillController",
                                    "@mozilla.org/satchel/form-fill-controller;1",
@@ -23,6 +34,7 @@ XPCOMUtils.defineLazyServiceGetter(this, "formFillController",
 XPCOMUtils.defineLazyGetter(this, "log", () => {
   return LoginHelper.createLogger("LoginAutoCompleteResult");
 });
+
 
 
 function LoginAutoCompleteResult(aSearchString, matchingLogins, {isSecure, messageManager, isPasswordField, hostname}) {
@@ -234,5 +246,110 @@ LoginAutoCompleteResult.prototype = {
         Services.logins.removeLogin(removedLogin);
       }
     }
+  },
+};
+
+function LoginAutoComplete() {}
+LoginAutoComplete.prototype = {
+  classID: Components.ID("{2bdac17c-53f1-4896-a521-682ccdeef3a8}"),
+  QueryInterface: ChromeUtils.generateQI([Ci.nsILoginAutoCompleteSearch]),
+
+  _autoCompleteLookupPromise: null,
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  startSearch(aSearchString, aPreviousResult, aElement, aCallback) {
+    let {isNullPrincipal} = aElement.nodePrincipal;
+    
+    let isSecure = !isNullPrincipal;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (isSecure) {
+      let form = LoginFormFactory.createFromField(aElement);
+      isSecure = InsecurePasswordUtils.isFormSecure(form);
+    }
+    let isPasswordField = aElement.type == "password";
+    let hostname = aElement.ownerDocument.documentURIObject.host;
+
+    let completeSearch = (autoCompleteLookupPromise, { logins, messageManager }) => {
+      
+      
+      if (this._autoCompleteLookupPromise !== autoCompleteLookupPromise) {
+        return;
+      }
+
+      this._autoCompleteLookupPromise = null;
+      let results = new LoginAutoCompleteResult(aSearchString, logins, {
+        messageManager,
+        isSecure,
+        isPasswordField,
+        hostname,
+      });
+      aCallback.onSearchCompletion(results);
+    };
+
+    if (isNullPrincipal) {
+      
+      
+      let acLookupPromise = this._autoCompleteLookupPromise = Promise.resolve({ logins: [] });
+      acLookupPromise.then(completeSearch.bind(this, acLookupPromise));
+      return;
+    }
+
+    if (isPasswordField && aSearchString) {
+      
+      let acLookupPromise = this._autoCompleteLookupPromise = Promise.resolve({ logins: [] });
+      acLookupPromise.then(completeSearch.bind(this, acLookupPromise));
+      return;
+    }
+
+    if (!LoginHelper.enabled) {
+      let acLookupPromise = this._autoCompleteLookupPromise = Promise.resolve({ logins: [] });
+      acLookupPromise.then(completeSearch.bind(this, acLookupPromise));
+      return;
+    }
+
+    log.debug("AutoCompleteSearch invoked. Search is:", aSearchString);
+
+    let previousResult;
+    if (aPreviousResult) {
+      previousResult = {
+        searchString: aPreviousResult.searchString,
+        logins: aPreviousResult.wrappedJSObject.logins,
+      };
+    } else {
+      previousResult = null;
+    }
+
+    let rect = BrowserUtils.getElementBoundingScreenRect(aElement);
+    let acLookupPromise = this._autoCompleteLookupPromise =
+      LoginManagerContent._autoCompleteSearchAsync(aSearchString, previousResult,
+                                                   aElement, rect);
+    acLookupPromise.then(completeSearch.bind(this, acLookupPromise)).catch(log.error);
+  },
+
+  stopSearch() {
+    this._autoCompleteLookupPromise = null;
   },
 };
