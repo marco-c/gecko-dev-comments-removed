@@ -1,7 +1,10 @@
-add_task(async function() {
-  await pushPref("devtools.debugger.features.map-scopes", true);
 
+
+
+
+add_task(async function() {
   const dbg = await initDebugger("ember/quickstart/dist/");
+  dbg.actions.toggleMapScopes();
 
   await invokeWithBreakpoint(
     dbg,

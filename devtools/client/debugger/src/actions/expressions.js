@@ -14,7 +14,8 @@ import {
   getSelectedScopeMappings,
   getSelectedFrameBindings,
   getCurrentThread,
-  getIsPaused
+  getIsPaused,
+  isMapScopesEnabled
 } from "../selectors";
 import { PROMISE } from "./utils/middleware/promise";
 import { wrapExpression } from "../utils/expressions";
@@ -177,10 +178,9 @@ function evaluateExpression(cx: ThreadContext, expression: Expression) {
 
 export function getMappedExpression(expression: string) {
   return async function({ dispatch, getState, client, sourceMaps }: ThunkArgs) {
-    const state = getState();
     const thread = getCurrentThread(getState());
-    const mappings = getSelectedScopeMappings(state, thread);
-    const bindings = getSelectedFrameBindings(state, thread);
+    const mappings = getSelectedScopeMappings(getState(), thread);
+    const bindings = getSelectedFrameBindings(getState(), thread);
 
     
     
@@ -189,7 +189,8 @@ export function getMappedExpression(expression: string) {
     
     
     
-    if (!mappings && !expression.match(/(await|=)/)) {
+    const shouldMapScopes = isMapScopesEnabled(getState()) && mappings;
+    if (!shouldMapScopes && !expression.match(/(await|=)/)) {
       return null;
     }
 
@@ -197,7 +198,7 @@ export function getMappedExpression(expression: string) {
       expression,
       mappings,
       bindings || [],
-      features.mapExpressionBindings && getIsPaused(state, thread),
+      features.mapExpressionBindings && getIsPaused(getState(), thread),
       features.mapAwaitExpression
     );
   };

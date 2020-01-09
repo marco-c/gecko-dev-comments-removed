@@ -4,9 +4,9 @@
 
 add_task(async function() {
   
-  await pushPref("devtools.debugger.features.map-scopes", true);
-
   const dbg = await initDebugger("doc-sourcemaps3.html");
+  dbg.actions.toggleMapScopes();
+
   const {
     selectors: { getBreakpoint, getBreakpointCount },
     getState
@@ -28,7 +28,6 @@ add_task(async function() {
   
   is(isPaused(dbg), false);
 
-
   
   await clickElement(dbg, "blackbox");
   await waitForDispatch(dbg, "BLACKBOX");
@@ -38,5 +37,5 @@ add_task(async function() {
   
   await waitForPaused(dbg);
 
-  ok(true, "blackbox works")
+  ok(true, "blackbox works");
 });
