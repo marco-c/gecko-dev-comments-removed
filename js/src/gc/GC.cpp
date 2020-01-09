@@ -3407,7 +3407,9 @@ void GCRuntime::startDecommit() {
 
   
   
-  if (schedulingState.inHighFrequencyGCMode()) {
+  
+  
+  if (schedulingState.inHighFrequencyGCMode() && !cleanUpEverything) {
     return;
   }
 
