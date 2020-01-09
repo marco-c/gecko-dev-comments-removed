@@ -47,7 +47,7 @@ var getLoadTime = false;
 
 var startMeasure = "fetchStart";
 
-function contentHandler() {
+function raptorContentHandler() {
   
   if (typeof(browser) !== "undefined") {
     
@@ -316,4 +316,13 @@ function sendResult(_type, _value) {
   });
 }
 
-window.onload = contentHandler();
+
+var existing_onload = window.onload;
+if (existing_onload && typeof(existing_onload) == "function") {
+  window.onload = function() {
+    existing_onload();
+    raptorContentHandler();
+  };
+} else {
+  window.onload = raptorContentHandler();
+}
