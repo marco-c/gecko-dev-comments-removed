@@ -1234,7 +1234,7 @@ void EventStateManager::DispatchCrossProcessEvent(WidgetEvent* aEvent,
     }
     
     
-  } else {
+  } else if (aEvent->mClass == eKeyboardEventClass) {
     
     
     TabParent* preciseRemote = TabParent::GetFocused();
