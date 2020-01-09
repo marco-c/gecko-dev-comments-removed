@@ -304,6 +304,7 @@ class nsContentUtils {
   
   static bool ShouldResistFingerprinting();
   static bool ShouldResistFingerprinting(nsIDocShell* aDocShell);
+  static bool ShouldResistFingerprinting(nsIPrincipal* aPrincipal);
   static bool ShouldResistFingerprinting(const Document* aDoc);
 
   
