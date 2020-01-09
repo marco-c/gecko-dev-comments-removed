@@ -5511,13 +5511,6 @@ void ScrollFrameHelper::UpdateMinimumScaleSize(
   }
 
   nsViewportInfo viewportInfo = doc->GetViewportInfo(displaySize);
-  
-  
-  if (viewportInfo.GetMinZoom() >=
-      pc->CSSToDevPixelScale() * LayoutDeviceToScreenScale(1.0f)) {
-    return;
-  }
-
   nsSize maximumPossibleSize =
       CSSSize::ToAppUnits(ScreenSize(displaySize) / viewportInfo.GetMinZoom());
 
