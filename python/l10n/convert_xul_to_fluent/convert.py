@@ -8,10 +8,10 @@ from lib.fluent import build_ftl
 import json
 import argparse
 import sys
+# import re
 
 
-
-
+# default migration directions
 data = {
     'migration': 'python/l10n/fluent_migrations',
     'description': 'Migrate l10n strings',
@@ -61,8 +61,6 @@ def main():
     dtds = get_dtds(data['dtd'], data['mozilla-central'])
 
     print('======== DTDs ========')
-    
-    
     print(json.dumps(dtds, sort_keys=True, indent=2))
 
     s = read_file(data['xul'], data['mozilla-central'])

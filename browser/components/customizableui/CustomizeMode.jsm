@@ -100,6 +100,12 @@ function CustomizeMode(aWindow) {
   this.browser = aWindow.gBrowser;
   this.areas = new Set();
 
+  let content = this.$("customization-content-container");
+  if (!content) {
+    this.window.MozXULElement.insertFTLIfNeeded("browser/customizeMode.ftl");
+    let container = this.$("customization-container");
+    container.replaceChild(this.window.MozXULElement.parseXULToFragment(container.firstChild.data), container.lastChild);
+  }
   
   
   
