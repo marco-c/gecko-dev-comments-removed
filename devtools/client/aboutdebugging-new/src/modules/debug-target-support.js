@@ -18,6 +18,14 @@ function isLocalTabDebuggingSupported() {
   return Services.prefs.getBoolPref(PREFERENCES.LOCAL_TAB_DEBUGGING_ENABLED, false);
 }
 
+
+
+
+
+function isTemporaryExtensionSupported() {
+  return Services.prefs.getBoolPref(PREFERENCES.XPINSTALL_ENABLED, true);
+}
+
 const ALL_DEBUG_TARGET_PANES = [
   DEBUG_TARGET_PANE.INSTALLED_EXTENSION,
   ...(isProcessDebuggingSupported() ? [DEBUG_TARGET_PANE.PROCESSES] : []),
@@ -25,7 +33,7 @@ const ALL_DEBUG_TARGET_PANES = [
   DEBUG_TARGET_PANE.SERVICE_WORKER,
   DEBUG_TARGET_PANE.SHARED_WORKER,
   DEBUG_TARGET_PANE.TAB,
-  DEBUG_TARGET_PANE.TEMPORARY_EXTENSION,
+  ...(isTemporaryExtensionSupported() ? [DEBUG_TARGET_PANE.TEMPORARY_EXTENSION] : []),
 ];
 
 

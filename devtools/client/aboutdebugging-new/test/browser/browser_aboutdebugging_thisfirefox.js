@@ -41,6 +41,23 @@ add_task(async function testThisFirefoxWithoutLocalTab() {
   await removeTab(tab);
 });
 
+
+
+
+add_task(async function testThisFirefoxWithXpinstallDisabled() {
+  await pushPref("xpinstall.enabled", false);
+
+  const { document, tab, window } = await openAboutDebugging();
+  await selectThisFirefoxPage(document, window.AboutDebugging.store);
+
+  
+  const expectedTargetPanesWithXpinstallDisabled =
+    EXPECTED_TARGET_PANES.filter(p => p !== "Temporary Extensions");
+  await checkThisFirefoxTargetPanes(document, expectedTargetPanesWithXpinstallDisabled);
+
+  await removeTab(tab);
+});
+
 async function checkThisFirefoxTargetPanes(doc, expectedTargetPanes) {
   const win = doc.ownerGlobal;
   

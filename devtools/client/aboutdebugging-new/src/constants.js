@@ -109,6 +109,8 @@ const PREFERENCES = {
   PROCESS_DEBUGGING_ENABLED: "devtools.aboutdebugging.process-debugging",
   
   SHOW_HIDDEN_ADDONS: "devtools.aboutdebugging.showHiddenAddons",
+  
+  XPINSTALL_ENABLED: "xpinstall.enabled",
 };
 
 const RUNTIME_PREFERENCE = {
