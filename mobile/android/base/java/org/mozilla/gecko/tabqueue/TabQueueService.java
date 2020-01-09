@@ -67,6 +67,7 @@ import java.util.concurrent.Executors;
 
 
 
+
 public class TabQueueService extends Service {
     private static final String LOGTAG = "Gecko" + TabQueueService.class.getSimpleName();
 
@@ -126,6 +127,10 @@ public class TabQueueService extends Service {
 
     @Override
     public int onStartCommand(final Intent intent, final int flags, final int startId) {
+        if (!AppConstants.Versions.preO) {
+            startForeground(TabQueueHelper.TAB_QUEUE_NOTIFICATION_ID, TabQueueHelper.getStartupNotification(TabQueueService.this));
+        }
+
         
         
         if (flags != START_FLAG_REDELIVERY) {
@@ -149,6 +154,7 @@ public class TabQueueService extends Service {
                     
                     if (stopServiceRunnable != null) {
                         tabQueueHandler.removeCallbacks(stopServiceRunnable);
+                        stopForeground(false);
                         stopSelfResult(stopServiceRunnable.getStartId());
                         stopServiceRunnable = null;
                         removeView();
@@ -212,6 +218,7 @@ public class TabQueueService extends Service {
         forwardIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(forwardIntent);
 
+        stopForeground(false);
         TabQueueHelper.removeNotification(getApplicationContext());
 
         GeckoSharedPrefs.forApp(getApplicationContext()).edit().remove(GeckoPreferences.PREFS_TAB_QUEUE_LAST_SITE)
@@ -327,6 +334,7 @@ public class TabQueueService extends Service {
                 removeView();
             }
 
+            stopForeground(false);
             stopSelfResult(startId);
         }
 
