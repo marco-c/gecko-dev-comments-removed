@@ -169,6 +169,7 @@ nsFrameLoader::nsFrameLoader(Element* aOwner, BrowsingContext* aBrowsingContext,
     : mBrowsingContext(aBrowsingContext),
       mOwnerContent(aOwner),
       mDetachedSubdocFrame(nullptr),
+      mPendingSwitchID(0),
       mRemoteBrowser(nullptr),
       mChildID(0),
       mDepthTooGreat(false),
@@ -193,6 +194,7 @@ nsFrameLoader::nsFrameLoader(Element* aOwner, BrowsingContext* aBrowsingContext,
     : mBrowsingContext(aBrowsingContext),
       mOwnerContent(aOwner),
       mDetachedSubdocFrame(nullptr),
+      mPendingSwitchID(0),
       mRemoteBrowser(nullptr),
       mChildID(0),
       mDepthTooGreat(false),
@@ -498,6 +500,35 @@ nsresult nsFrameLoader::LoadURI(nsIURI* aURI,
   return rv;
 }
 
+void nsFrameLoader::ResumeLoad(uint64_t aPendingSwitchID) {
+  Document* doc = mOwnerContent->OwnerDoc();
+  if (doc->IsStaticDocument() || doc->IsLoadedAsInteractiveData()) {
+    
+    return;
+  }
+
+  if (NS_WARN_IF(mDestroyCalled || !mOwnerContent)) {
+    FireErrorEvent();
+    return;
+  }
+
+  mLoadingOriginalSrc = false;
+  mURIToLoad = nullptr;
+  mPendingSwitchID = aPendingSwitchID;
+  mTriggeringPrincipal = mOwnerContent->NodePrincipal();
+  
+  mOwnerContent->NodePrincipal()->GetCsp(getter_AddRefs(mCsp));
+
+  nsresult rv = doc->InitializeFrameLoader(this);
+  if (NS_FAILED(rv)) {
+    mPendingSwitchID = 0;
+    mTriggeringPrincipal = nullptr;
+    mCsp = nullptr;
+
+    FireErrorEvent();
+  }
+}
+
 nsresult nsFrameLoader::ReallyStartLoading() {
   nsresult rv = ReallyStartLoadingInternal();
   if (NS_FAILED(rv)) {
@@ -508,7 +539,7 @@ nsresult nsFrameLoader::ReallyStartLoading() {
 }
 
 nsresult nsFrameLoader::ReallyStartLoadingInternal() {
-  NS_ENSURE_STATE(mURIToLoad && mOwnerContent &&
+  NS_ENSURE_STATE((mURIToLoad || mPendingSwitchID) && mOwnerContent &&
                   mOwnerContent->IsInComposedDoc());
 
   AUTO_PROFILER_LABEL("nsFrameLoader::ReallyStartLoadingInternal", OTHER);
@@ -519,13 +550,23 @@ nsresult nsFrameLoader::ReallyStartLoadingInternal() {
       return NS_ERROR_FAILURE;
     }
 
-    if (mBrowserBridgeChild) {
-      nsAutoCString spec;
-      mURIToLoad->GetSpec(spec);
-      Unused << mBrowserBridgeChild->SendLoadURL(spec);
+    if (mPendingSwitchID) {
+      if (mBrowserBridgeChild) {
+        Unused << mBrowserBridgeChild->SendResumeLoad(mPendingSwitchID);
+      } else {
+        mRemoteBrowser->ResumeLoad(mPendingSwitchID);
+      }
+
+      mPendingSwitchID = 0;
     } else {
-      
-      mRemoteBrowser->LoadURL(mURIToLoad);
+      if (mBrowserBridgeChild) {
+        nsAutoCString spec;
+        mURIToLoad->GetSpec(spec);
+        Unused << mBrowserBridgeChild->SendLoadURL(spec);
+      } else {
+        
+        mRemoteBrowser->LoadURL(mURIToLoad);
+      }
     }
 
     if (!mRemoteBrowserShown) {
@@ -542,6 +583,16 @@ nsresult nsFrameLoader::ReallyStartLoadingInternal() {
   }
   MOZ_ASSERT(GetDocShell(),
              "MaybeCreateDocShell succeeded with a null docShell");
+
+  
+  if (mPendingSwitchID) {
+    bool tmpState = mNeedsAsyncDestroy;
+    mNeedsAsyncDestroy = true;
+    rv = GetDocShell()->ResumeRedirectedLoad(mPendingSwitchID, -1);
+    mNeedsAsyncDestroy = tmpState;
+    mPendingSwitchID = 0;
+    return rv;
+  }
 
   
   rv = CheckURILoad(mURIToLoad, mTriggeringPrincipal);

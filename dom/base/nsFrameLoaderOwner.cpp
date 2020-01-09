@@ -39,11 +39,15 @@ void nsFrameLoaderOwner::ChangeRemoteness(
   RefPtr<Element> owner = do_QueryObject(this);
   MOZ_ASSERT(owner);
   mFrameLoader = nsFrameLoader::Create(owner, aOptions);
-
   if (NS_WARN_IF(!mFrameLoader)) {
     return;
   }
-  mFrameLoader->LoadFrame(false);
+
+  if (aOptions.mPendingSwitchID.WasPassed()) {
+    mFrameLoader->ResumeLoad(aOptions.mPendingSwitchID.Value());
+  } else {
+    mFrameLoader->LoadFrame(false);
+  }
 
   
   

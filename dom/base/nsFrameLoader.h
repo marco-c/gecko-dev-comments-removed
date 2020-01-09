@@ -164,6 +164,14 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
 
 
+
+
+  void ResumeLoad(uint64_t aPendingSwitchID);
+
+  
+
+
+
   void Destroy();
 
   void ActivateRemoteFrame(mozilla::ErrorResult& aRv);
@@ -466,6 +474,11 @@ class nsFrameLoader final : public nsStubMutationObserver,
   
   
   RefPtr<Document> mContainerDocWhileDetached;
+
+  
+  
+  
+  uint64_t mPendingSwitchID;
 
   RefPtr<TabParent> mRemoteBrowser;
   uint64_t mChildID;
