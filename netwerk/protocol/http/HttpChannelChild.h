@@ -415,6 +415,10 @@ class HttpChannelChild final : public PHttpChannelChild,
 
   
   
+  uint8_t mIPCActorDeleted : 1;
+
+  
+  
   uint8_t mSuspendSent : 1;
 
   
