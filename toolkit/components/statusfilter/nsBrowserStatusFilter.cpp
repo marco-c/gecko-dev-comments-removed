@@ -153,7 +153,14 @@ nsBrowserStatusFilter::OnStateChange(nsIWebProgress* aWebProgress,
 
       if (mTimer) {
         mTimer->Cancel();
-        ProcessTimeout();
+        CallDelayedProgressListeners();
+
+        
+        
+        
+        if (!mListener) {
+          return NS_OK;
+        }
       }
     }
   } else {
@@ -326,7 +333,7 @@ nsresult nsBrowserStatusFilter::StartDelayTimer() {
                                      mTarget);
 }
 
-void nsBrowserStatusFilter::ProcessTimeout() {
+void nsBrowserStatusFilter::CallDelayedProgressListeners() {
   mTimer = nullptr;
 
   if (!mListener) return;
@@ -350,5 +357,5 @@ void nsBrowserStatusFilter::TimeoutHandler(nsITimer* aTimer, void* aClosure) {
     return;
   }
 
-  self->ProcessTimeout();
+  self->CallDelayedProgressListeners();
 }
