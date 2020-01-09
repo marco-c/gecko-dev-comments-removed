@@ -67,7 +67,11 @@ class SharedMemory {
   
   
   
-  bool Map(size_t bytes);
+  
+  
+  
+  
+  bool Map(size_t bytes, void* fixed_address = nullptr);
 
   
   
@@ -93,6 +97,15 @@ class SharedMemory {
   
   
   void Close(bool unmap_view = true);
+
+  
+  
+  
+  
+  
+  
+  
+  static void* FindFreeAddressSpace(size_t size);
 
   
   
