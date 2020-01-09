@@ -674,6 +674,8 @@ class ContentChild final : public PContentChild,
   mozilla::ipc::IPCResult RecvStartDelayedAutoplayMediaComponents(
       BrowsingContext* aContext);
 
+  void HoldBrowsingContextGroup(BrowsingContextGroup* aBCG);
+
 #ifdef NIGHTLY_BUILD
   
   
@@ -813,6 +815,8 @@ class ContentChild final : public PContentChild,
 #endif
 
   uint32_t mNetworkLinkType = 0;
+
+  nsTArray<RefPtr<BrowsingContextGroup>> mBrowsingContextGroupHolder;
 
   DISALLOW_EVIL_CONSTRUCTORS(ContentChild);
 };
