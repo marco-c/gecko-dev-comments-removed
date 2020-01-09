@@ -123,11 +123,11 @@ enum MaybeTailCall : bool { TailCall, NonTailCall };
 
 
 
-struct VMFunction {
-  
-  static VMFunction* functions;
-  VMFunction* next;
 
+
+
+
+struct VMFunctionData {
   
   void* wrapped;
 
@@ -293,15 +293,14 @@ struct VMFunction {
     return count;
   }
 
-  constexpr VMFunction(void* wrapped, const char* name, uint32_t explicitArgs,
-                       uint32_t argumentProperties,
-                       uint32_t argumentPassedInFloatRegs,
-                       uint64_t argRootTypes, DataType outParam,
-                       RootType outParamRootType, DataType returnType,
-                       uint8_t extraValuesToPop = 0,
-                       MaybeTailCall expectTailCall = NonTailCall)
-      : next(nullptr),
-        wrapped(wrapped),
+  constexpr VMFunctionData(void* wrapped, const char* name,
+                           uint32_t explicitArgs, uint32_t argumentProperties,
+                           uint32_t argumentPassedInFloatRegs,
+                           uint64_t argRootTypes, DataType outParam,
+                           RootType outParamRootType, DataType returnType,
+                           uint8_t extraValuesToPop = 0,
+                           MaybeTailCall expectTailCall = NonTailCall)
+      : wrapped(wrapped),
 #if defined(JS_JITSPEW) || defined(JS_TRACE_LOGGING)
         name_(name),
 #endif
@@ -314,11 +313,18 @@ struct VMFunction {
         returnType(returnType),
         extraValuesToPop(extraValuesToPop),
         expectTailCall(expectTailCall) {
+    
+    MOZ_ASSERT_IF(outParam != Type_Void,
+                  returnType == Type_Void || returnType == Type_Bool);
+    MOZ_ASSERT(returnType == Type_Void || returnType == Type_Bool ||
+               returnType == Type_Object);
   }
 
-  VMFunction(const VMFunction& o)
-      : next(functions),
-        wrapped(o.wrapped),
+  
+  
+  
+  constexpr VMFunctionData(const VMFunctionData& o)
+      : wrapped(o.wrapped),
 #if defined(JS_JITSPEW) || defined(JS_TRACE_LOGGING)
         name_(o.name_),
 #endif
@@ -331,14 +337,32 @@ struct VMFunction {
         returnType(o.returnType),
         extraValuesToPop(o.extraValuesToPop),
         expectTailCall(o.expectTailCall) {
+  }
+};
+
+
+
+struct VMFunction : public VMFunctionData {
+  
+  static VMFunction* functions;
+  VMFunction* next;
+
+  constexpr VMFunction(void* wrapped, const char* name, uint32_t explicitArgs,
+                       uint32_t argumentProperties,
+                       uint32_t argumentPassedInFloatRegs,
+                       uint64_t argRootTypes, DataType outParam,
+                       RootType outParamRootType, DataType returnType,
+                       uint8_t extraValuesToPop = 0,
+                       MaybeTailCall expectTailCall = NonTailCall)
+      : VMFunctionData(wrapped, name, explicitArgs, argumentProperties,
+                       argumentPassedInFloatRegs, argRootTypes, outParam,
+                       outParamRootType, returnType, extraValuesToPop,
+                       expectTailCall),
+        next(nullptr) {}
+
+  VMFunction(const VMFunction& o) : VMFunctionData(o), next(functions) {
     
     functions = this;
-
-    
-    MOZ_ASSERT_IF(outParam != Type_Void,
-                  returnType == Type_Void || returnType == Type_Bool);
-    MOZ_ASSERT(returnType == Type_Void || returnType == Type_Bool ||
-               returnType == Type_Object);
   }
 
   typedef const VMFunction* Lookup;
@@ -1214,6 +1238,10 @@ extern const VMFunction ToNumericInfo;
 
 
 extern const VMFunction DoConcatStringObjectInfo;
+
+enum class VMFunctionId;
+
+extern const VMFunctionData& GetVMFunction(VMFunctionId id);
 
 }  
 }  

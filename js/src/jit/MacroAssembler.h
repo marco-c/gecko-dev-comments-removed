@@ -716,7 +716,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   
   inline void enterExitFrame(Register cxreg, Register scratch,
-                             const VMFunction* f);
+                             const VMFunctionData* f);
 
   
   
