@@ -85,6 +85,8 @@ void Delay() {
   
 #ifdef _WIN32
   Sleep(0);
+#elif defined(ANDROID)
+  std::this_thread::sleep_for(std::chrono::microseconds(0));
 #else
   std::this_thread::sleep_for(std::chrono::microseconds(10));
 #endif
