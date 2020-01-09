@@ -2655,6 +2655,7 @@ this.XPIDatabaseReconcile = {
 
 
 
+
   processFileChanges(aManifests, aUpdateCompatibility, aOldAppVersion, aOldPlatformVersion,
                      aSchemaChange) {
     let findManifest = (loc, id) => {
@@ -2776,6 +2777,9 @@ this.XPIDatabaseReconcile = {
       }
 
       AddonManagerPrivate.addStartupChange(AddonManager.STARTUP_CHANGE_UNINSTALLED, id);
+    }
+    if (previousVisible.size) {
+      XPIInstall.flushChromeCaches();
     }
 
     

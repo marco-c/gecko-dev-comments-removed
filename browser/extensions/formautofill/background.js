@@ -5,7 +5,4 @@
 browser.runtime.onUpdateAvailable.addListener(details => {
   
   
-  
-  
-  
 });
