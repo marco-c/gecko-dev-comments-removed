@@ -8,12 +8,14 @@
 
 namespace mozilla {
 
- WebrtcVideoEncoder* MediaDataDecoderCodec::CreateEncoder(
+
+WebrtcVideoEncoder* MediaDataDecoderCodec::CreateEncoder(
     webrtc::VideoCodecType aCodecType) {
   return nullptr;
 }
 
- WebrtcVideoDecoder* MediaDataDecoderCodec::CreateDecoder(
+
+WebrtcVideoDecoder* MediaDataDecoderCodec::CreateDecoder(
     webrtc::VideoCodecType aCodecType) {
   switch (aCodecType) {
     case webrtc::VideoCodecType::kVideoCodecVP8:

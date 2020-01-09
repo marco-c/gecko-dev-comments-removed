@@ -12,9 +12,8 @@
 
 
 
- void
-PlatformThread:: YieldCurrentThread()
-{
+
+void PlatformThread::YieldCurrentThread() {
 #ifdef WEBRTC_WIN
   Sleep(1);
 #else

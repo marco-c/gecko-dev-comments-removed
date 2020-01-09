@@ -1167,9 +1167,11 @@ static SSLHandshakeType SrtpXtnServerMessage(PRFileDesc *fd) {
              : ssl_hs_server_hello;
 }
 
- PRBool TransportLayerDtls::WriteSrtpXtn(
-    PRFileDesc *fd, SSLHandshakeType message, uint8_t *data, unsigned int *len,
-    unsigned int max_len, void *arg) {
+
+PRBool TransportLayerDtls::WriteSrtpXtn(PRFileDesc *fd,
+                                        SSLHandshakeType message, uint8_t *data,
+                                        unsigned int *len, unsigned int max_len,
+                                        void *arg) {
   auto self = reinterpret_cast<TransportLayerDtls *>(arg);
 
   
@@ -1282,7 +1284,8 @@ class TlsParser {
   bool error_ = false;
 };
 
- SECStatus TransportLayerDtls::HandleSrtpXtn(
+
+SECStatus TransportLayerDtls::HandleSrtpXtn(
     PRFileDesc *fd, SSLHandshakeType message, const uint8_t *data,
     unsigned int len, SSLAlertDescription *alert, void *arg) {
   static const uint8_t kTlsAlertHandshakeFailure = 40;
