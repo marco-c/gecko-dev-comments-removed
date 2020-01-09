@@ -145,12 +145,14 @@ var SessionStorageInternal = {
       }
 
       let storageManager = aDocShell.QueryInterface(Ci.nsIDOMStorageManager);
-      let window = aDocShell.domWindow;
 
       
       
       
-      let storage = storageManager.createStorage(window, principal, "", aDocShell.usePrivateBrowsing);
+      
+      
+      
+      let storage = storageManager.createStorage(null, principal, "", aDocShell.usePrivateBrowsing);
 
       for (let key of Object.keys(data)) {
         try {
