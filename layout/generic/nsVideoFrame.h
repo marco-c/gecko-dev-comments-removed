@@ -70,8 +70,6 @@ class nsVideoFrame final : public nsContainerFrame,
               const ReflowInput& aReflowInput,
               nsReflowStatus& aStatus) override;
 
-  bool IsLeafDynamic() const override;
-
 #ifdef ACCESSIBILITY
   mozilla::a11y::AccType AccessibleType() override;
 #endif
@@ -122,9 +120,6 @@ class nsVideoFrame final : public nsContainerFrame,
   void UpdateTextTrack();
 
   virtual ~nsVideoFrame();
-
-  
-  RefPtr<mozilla::dom::Element> mVideoControls;
 
   
   RefPtr<mozilla::dom::Element> mPosterImage;

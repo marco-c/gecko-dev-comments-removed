@@ -2,11 +2,8 @@
 
 
 
-@namespace xul url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
 @namespace url("http://www.w3.org/1999/xhtml");
 
-video > xul|videocontrols,
-audio > xul|videocontrols,
 .videocontrols {
   writing-mode: horizontal-tb;
   width: 100%;

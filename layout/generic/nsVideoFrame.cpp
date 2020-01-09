@@ -129,18 +129,6 @@ nsresult nsVideoFrame::CreateAnonymousContent(
     UpdateTextTrack();
   }
 
-  
-  
-  nodeInfo =
-      nodeInfoManager->GetNodeInfo(nsGkAtoms::videocontrols, nullptr,
-                                   kNameSpaceID_XUL, nsINode::ELEMENT_NODE);
-  NS_ENSURE_TRUE(nodeInfo, NS_ERROR_OUT_OF_MEMORY);
-
-  if (!nsContentUtils::IsUAWidgetEnabled()) {
-    NS_TrustedNewXULElement(getter_AddRefs(mVideoControls), nodeInfo.forget());
-    if (!aElements.AppendElement(mVideoControls)) return NS_ERROR_OUT_OF_MEMORY;
-  }
-
   return NS_OK;
 }
 
@@ -150,34 +138,27 @@ void nsVideoFrame::AppendAnonymousContentTo(nsTArray<nsIContent*>& aElements,
     aElements.AppendElement(mPosterImage);
   }
 
-  if (mVideoControls) {
-    aElements.AppendElement(mVideoControls);
-  }
-
   if (mCaptionDiv) {
     aElements.AppendElement(mCaptionDiv);
   }
 }
 
 nsIContent* nsVideoFrame::GetVideoControls() {
-  if (mVideoControls) {
-    return mVideoControls;
+  if (!mContent->GetShadowRoot()) {
+    return nullptr;
   }
-  if (mContent->GetShadowRoot()) {
-    
-    
-    
-    MOZ_ASSERT(mContent->GetShadowRoot()->IsUAWidget());
-    MOZ_ASSERT(1 >= mContent->GetShadowRoot()->GetChildCount());
-    return mContent->GetShadowRoot()->GetFirstChild();
-  }
-  return nullptr;
+
+  
+  
+  
+  MOZ_ASSERT(mContent->GetShadowRoot()->IsUAWidget());
+  MOZ_ASSERT(1 >= mContent->GetShadowRoot()->GetChildCount());
+  return mContent->GetShadowRoot()->GetFirstChild();
 }
 
 void nsVideoFrame::DestroyFrom(nsIFrame* aDestructRoot,
                                PostDestroyData& aPostDestroyData) {
   aPostDestroyData.AddAnonymousContent(mCaptionDiv.forget());
-  aPostDestroyData.AddAnonymousContent(mVideoControls.forget());
   aPostDestroyData.AddAnonymousContent(mPosterImage.forget());
   nsContainerFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
 }
@@ -403,21 +384,6 @@ void nsVideoFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
 
   MOZ_ASSERT(aStatus.IsEmpty(), "This type of frame can't be split.");
   NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aMetrics);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-bool nsVideoFrame::IsLeafDynamic() const {
-  return !nsContentUtils::IsUAWidgetEnabled();
 }
 
 class nsDisplayVideo : public nsDisplayItem {

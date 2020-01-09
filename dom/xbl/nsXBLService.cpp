@@ -488,8 +488,6 @@ nsresult nsXBLService::LoadBindings(Element* aElement, nsIURI* aURL,
         
         tag == nsGkAtoms::datetimebox ||
             
-            tag == nsGkAtoms::videocontrols ||
-            
             tag == nsGkAtoms::embed || tag == nsGkAtoms::applet ||
             tag == nsGkAtoms::object ||
             
