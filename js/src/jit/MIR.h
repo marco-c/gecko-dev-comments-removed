@@ -2478,17 +2478,6 @@ class MNewDerivedTypedObject
 
 
 
-
-struct OperandIndexMap : public TempObject {
-  
-  
-  FixedList<uint8_t> map;
-
-  MOZ_MUST_USE bool init(TempAllocator& alloc, JSObject* templateObject);
-};
-
-
-
 class MObjectState : public MVariadicInstruction,
                      public NoFloatPolicyAfter<1>::Data {
  private:
