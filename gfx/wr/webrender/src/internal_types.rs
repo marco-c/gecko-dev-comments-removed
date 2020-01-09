@@ -169,6 +169,9 @@ pub struct TextureCacheUpdate {
 #[derive(Default)]
 pub struct TextureUpdateList {
     
+    
+    pub clears_shared_cache: bool,
+    
     pub allocations: Vec<TextureCacheAllocation>,
     
     pub updates: Vec<TextureCacheUpdate>,
@@ -178,9 +181,16 @@ impl TextureUpdateList {
     
     pub fn new() -> Self {
         TextureUpdateList {
+            clears_shared_cache: false,
             allocations: Vec::new(),
             updates: Vec::new(),
         }
+    }
+
+    
+    #[inline]
+    pub fn note_clear(&mut self) {
+        self.clears_shared_cache = true;
     }
 
     
