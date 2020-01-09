@@ -308,28 +308,58 @@ void MacroAssembler::lshift32(Register shift, Register srcDest) {
   shll_cl(srcDest);
 }
 
-inline void FlexibleShift32(MacroAssembler& masm, Register shift, Register dest,
-                            bool left, bool arithmetic = false) {
-  if (shift != ecx) {
-    if (dest != ecx) {
-      masm.push(ecx);
-    }
-    masm.mov(shift, ecx);
+
+
+
+
+
+
+
+
+
+
+inline void FlexibleShift32(MacroAssembler& masm, Register shift,
+                            Register srcDest, bool left,
+                            bool arithmetic = false) {
+  
+  Register internalSrcDest = (srcDest != ecx) ? srcDest : ebx;
+  MOZ_ASSERT(internalSrcDest != ecx);
+
+  
+  
+  LiveRegisterSet preserve;
+  preserve.add(ecx);
+  preserve.add(internalSrcDest);
+
+  preserve.takeUnchecked(srcDest);
+
+  
+  masm.PushRegsInMask(preserve);
+
+  
+  masm.moveRegPair(shift, srcDest, ecx, internalSrcDest);
+  if (masm.oom()) {
+    return;
   }
 
+  
   if (left) {
-    masm.lshift32(ecx, dest);
+    masm.lshift32(ecx, internalSrcDest);
   } else {
     if (arithmetic) {
-      masm.rshift32Arithmetic(ecx, dest);
+      masm.rshift32Arithmetic(ecx, internalSrcDest);
     } else {
-      masm.rshift32(ecx, dest);
+      masm.rshift32(ecx, internalSrcDest);
     }
   }
 
-  if (shift != ecx && dest != ecx) {
-    masm.pop(ecx);
+  
+  if (internalSrcDest != srcDest) {
+    masm.mov(internalSrcDest, srcDest);
   }
+
+  
+  masm.PopRegsInMask(preserve);
 }
 
 void MacroAssembler::flexibleLshift32(Register shift, Register srcDest) {
