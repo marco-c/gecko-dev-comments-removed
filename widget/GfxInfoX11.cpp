@@ -14,8 +14,6 @@
 #include "nsExceptionHandler.h"
 #include "nsICrashReporter.h"
 #include "prenv.h"
-#include "nsPrintfCString.h"
-#include "nsWhitespaceTokenizer.h"
 
 #include "GfxInfoX11.h"
 
@@ -32,20 +30,27 @@ pid_t glxtest_pid = 0;
 
 nsresult GfxInfo::Init() {
   mGLMajorVersion = 0;
-  mGLMinorVersion = 0;
-  mHasTextureFromPixmap = false;
+  mMajorVersion = 0;
+  mMinorVersion = 0;
+  mRevisionVersion = 0;
   mIsMesa = false;
-  mIsAccelerated = true;
+  mIsNVIDIA = false;
+  mIsFGLRX = false;
+  mIsNouveau = false;
+  mIsIntel = false;
+  mIsOldSwrast = false;
+  mIsLlvmpipe = false;
+  mHasTextureFromPixmap = false;
   return GfxInfoBase::Init();
 }
 
 void GfxInfo::AddCrashReportAnnotations() {
   CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::AdapterVendorID,
-                                     mVendorId);
+                                     mVendor);
   CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::AdapterDeviceID,
-                                     mDeviceId);
+                                     mRenderer);
   CrashReporter::AnnotateCrashReport(
-      CrashReporter::Annotation::AdapterDriverVersion, mDriverVersion);
+      CrashReporter::Annotation::AdapterDriverVersion, mVersion);
 }
 
 void GfxInfo::GetData() {
@@ -103,18 +108,7 @@ void GfxInfo::GetData() {
   bool error = waiting_for_glxtest_process_failed || exited_with_error_code ||
                received_signal;
 
-  nsCString glVendor;
-  nsCString glRenderer;
-  nsCString glVersion;
   nsCString textureFromPixmap;
-
-  
-  nsCString mesaVendor;
-  nsCString mesaDevice;
-  nsCString mesaAccelerated;
-  
-  nsCString driDriver;
-
   nsCString *stringToFill = nullptr;
   char *bufptr = buf;
   if (!error) {
@@ -125,23 +119,13 @@ void GfxInfo::GetData() {
         stringToFill->Assign(line);
         stringToFill = nullptr;
       } else if (!strcmp(line, "VENDOR"))
-        stringToFill = &glVendor;
+        stringToFill = &mVendor;
       else if (!strcmp(line, "RENDERER"))
-        stringToFill = &glRenderer;
+        stringToFill = &mRenderer;
       else if (!strcmp(line, "VERSION"))
-        stringToFill = &glVersion;
+        stringToFill = &mVersion;
       else if (!strcmp(line, "TFP"))
         stringToFill = &textureFromPixmap;
-      else if (!strcmp(line, "MESA_VENDOR_ID"))
-        stringToFill = &mesaVendor;
-      else if (!strcmp(line, "MESA_DEVICE_ID"))
-        stringToFill = &mesaDevice;
-      else if (!strcmp(line, "MESA_ACCELERATED"))
-        stringToFill = &mesaAccelerated;
-      else if (!strcmp(line, "MESA_VRAM"))
-        stringToFill = &mAdapterRAM;
-      else if (!strcmp(line, "DRI_DRIVER"))
-        stringToFill = &driDriver;
     }
   }
 
@@ -156,18 +140,18 @@ void GfxInfo::GetData() {
   }
 
   const char *spoofedVendor = PR_GetEnv("MOZ_GFX_SPOOF_GL_VENDOR");
-  if (spoofedVendor) glVendor.Assign(spoofedVendor);
+  if (spoofedVendor) mVendor.Assign(spoofedVendor);
   const char *spoofedRenderer = PR_GetEnv("MOZ_GFX_SPOOF_GL_RENDERER");
-  if (spoofedRenderer) glRenderer.Assign(spoofedRenderer);
+  if (spoofedRenderer) mRenderer.Assign(spoofedRenderer);
   const char *spoofedVersion = PR_GetEnv("MOZ_GFX_SPOOF_GL_VERSION");
-  if (spoofedVersion) glVersion.Assign(spoofedVersion);
+  if (spoofedVersion) mVersion.Assign(spoofedVersion);
   const char *spoofedOS = PR_GetEnv("MOZ_GFX_SPOOF_OS");
   if (spoofedOS) mOS.Assign(spoofedOS);
   const char *spoofedOSRelease = PR_GetEnv("MOZ_GFX_SPOOF_OS_RELEASE");
   if (spoofedOSRelease) mOSRelease.Assign(spoofedOSRelease);
 
-  if (error || glVendor.IsEmpty() || glRenderer.IsEmpty() ||
-      glVersion.IsEmpty() || mOS.IsEmpty() || mOSRelease.IsEmpty()) {
+  if (error || mVendor.IsEmpty() || mRenderer.IsEmpty() || mVersion.IsEmpty() ||
+      mOS.IsEmpty() || mOSRelease.IsEmpty()) {
     mAdapterDescription.AppendLiteral("GLXtest process failed");
     if (waiting_for_glxtest_process_failed)
       mAdapterDescription.AppendPrintf(
@@ -189,128 +173,81 @@ void GfxInfo::GetData() {
     return;
   }
 
+  mAdapterDescription.Append(mVendor);
+  mAdapterDescription.AppendLiteral(" -- ");
+  mAdapterDescription.Append(mRenderer);
+
+  AddCrashReportAnnotations();
+
   
-  nsCWhitespaceTokenizer tokenizer(glVersion);
-  while (tokenizer.hasMoreTokens()) {
-    nsCString token(tokenizer.nextToken());
-    unsigned int major = 0, minor = 0, revision = 0, patch = 0;
-    if (sscanf(token.get(), "%u.%u.%u.%u", &major, &minor, &revision, &patch) >=
-        2) {
-      
-      
-      if (mGLMajorVersion == 0) {
-        mGLMajorVersion = major;
-        mGLMinorVersion = minor;
-      } else {
-        mDriverVersion =
-            nsPrintfCString("%u.%u.%u.%u", major, minor, revision, patch);
+  
+  mGLMajorVersion = strtol(mVersion.get(), 0, 10);
+
+  
+  
+  
+  const char *whereToReadVersionNumbers = nullptr;
+  const char *Mesa_in_version_string = strstr(mVersion.get(), "Mesa");
+  if (Mesa_in_version_string) {
+    mIsMesa = true;
+    
+    
+    whereToReadVersionNumbers = Mesa_in_version_string + strlen("Mesa");
+    if (strcasestr(mVendor.get(), "nouveau")) mIsNouveau = true;
+    if (strcasestr(mRenderer.get(),
+                   "intel"))  
+      mIsIntel = true;
+    if (strcasestr(mRenderer.get(), "llvmpipe")) mIsLlvmpipe = true;
+    if (strcasestr(mRenderer.get(), "software rasterizer")) mIsOldSwrast = true;
+  } else if (strstr(mVendor.get(), "NVIDIA Corporation")) {
+    mIsNVIDIA = true;
+    
+    
+    
+    const char *NVIDIA_in_version_string = strstr(mVersion.get(), "NVIDIA");
+    if (NVIDIA_in_version_string)
+      whereToReadVersionNumbers = NVIDIA_in_version_string + strlen("NVIDIA");
+  } else if (strstr(mVendor.get(), "ATI Technologies Inc")) {
+    mIsFGLRX = true;
+    
+    
+    
+    whereToReadVersionNumbers = mVersion.get();
+  }
+
+  
+  
+  if (whereToReadVersionNumbers) {
+    
+    strncpy(buf, whereToReadVersionNumbers, buf_size);
+    bufptr = buf;
+
+    
+    
+    char *token = NS_strtok(".", &bufptr);
+    if (token) {
+      mMajorVersion = strtol(token, 0, 10);
+      token = NS_strtok(".", &bufptr);
+      if (token) {
+        mMinorVersion = strtol(token, 0, 10);
+        token = NS_strtok(".", &bufptr);
+        if (token) mRevisionVersion = strtol(token, 0, 10);
       }
     }
   }
+}
 
-  if (mGLMajorVersion == 0) {
-    NS_WARNING("Failed to parse GL version!");
-    return;
-  }
-
-  
-  
-  mIsMesa = glVersion.Find("Mesa") != -1;
-
-  
-  
-  if (mIsMesa) {
-    mIsAccelerated = !mesaAccelerated.Equals("FALSE");
-    
-    
-    
-    if (strcasestr(glRenderer.get(), "llvmpipe")) {
-      CopyUTF16toUTF8(GfxDriverInfo::GetDeviceVendor(VendorMesaLLVMPipe),
-                      mVendorId);
-      mIsAccelerated = false;
-    } else if (strcasestr(glRenderer.get(), "softpipe")) {
-      CopyUTF16toUTF8(GfxDriverInfo::GetDeviceVendor(VendorMesaSoftPipe),
-                      mVendorId);
-      mIsAccelerated = false;
-    } else if (strcasestr(glRenderer.get(), "software rasterizer") ||
-               !mIsAccelerated) {
-      
-      
-      CopyUTF16toUTF8(GfxDriverInfo::GetDeviceVendor(VendorMesaSWRast),
-                      mVendorId);
-      mIsAccelerated = false;
-    } else if (!driDriver.IsEmpty()) {
-      mVendorId = nsPrintfCString("mesa/%s", driDriver.get());
-    } else {
-      
-      NS_WARNING("Failed to detect Mesa driver being used!");
-      CopyUTF16toUTF8(GfxDriverInfo::GetDeviceVendor(VendorMesaUnknown),
-                      mVendorId);
-    }
-
-    if (!mesaDevice.IsEmpty()) {
-      mDeviceId = mesaDevice;
-    } else {
-      NS_WARNING(
-          "Failed to get Mesa device ID! GLX_MESA_query_renderer unsupported?");
-    }
-  } else if (glVendor.EqualsLiteral("NVIDIA Corporation")) {
-    CopyUTF16toUTF8(GfxDriverInfo::GetDeviceVendor(VendorNVIDIA), mVendorId);
-    
-  } else if (glVendor.EqualsLiteral("ATI Technologies Inc.")) {
-    CopyUTF16toUTF8(GfxDriverInfo::GetDeviceVendor(VendorATI), mVendorId);
-    
-  } else {
-    NS_WARNING("Failed to detect GL vendor!");
-  }
-
-  
-  if (mVendorId.IsEmpty()) mVendorId.Assign(glVendor.get());
-  if (mDeviceId.IsEmpty()) mDeviceId.Assign(glRenderer.get());
-
-  mAdapterDescription.Assign(glRenderer);
-
-  AddCrashReportAnnotations();
+static inline uint64_t version(uint32_t major, uint32_t minor,
+                               uint32_t revision = 0) {
+  return (uint64_t(major) << 32) + (uint64_t(minor) << 16) + uint64_t(revision);
 }
 
 const nsTArray<GfxDriverInfo> &GfxInfo::GetGfxDriverInfo() {
-  if (!sDriverInfo->Length()) {
-    
-    
-    APPEND_TO_DRIVER_BLOCKLIST(
-        OperatingSystem::Linux,
-        (nsAString &)GfxDriverInfo::GetDeviceVendor(VendorMesaAll),
-        GfxDriverInfo::allDevices, GfxDriverInfo::allFeatures,
-        nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION, DRIVER_LESS_THAN,
-        V(10, 0, 0, 0), "FEATURE_FAILURE_OLD_MESA", "Mesa 10.0");
-
-    
-    APPEND_TO_DRIVER_BLOCKLIST(
-        OperatingSystem::Linux,
-        (nsAString &)GfxDriverInfo::GetDeviceVendor(VendorNVIDIA),
-        GfxDriverInfo::allDevices, GfxDriverInfo::allFeatures,
-        nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION, DRIVER_LESS_THAN,
-        V(257, 21, 0, 0), "FEATURE_FAILURE_OLD_NVIDIA", "NVIDIA 257.21");
-
-    
-    APPEND_TO_DRIVER_BLOCKLIST(
-        OperatingSystem::Linux,
-        (nsAString &)GfxDriverInfo::GetDeviceVendor(VendorATI),
-        GfxDriverInfo::allDevices, GfxDriverInfo::allFeatures,
-        nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION, DRIVER_LESS_THAN,
-        V(13, 15, 100, 1), "FEATURE_FAILURE_OLD_FGLRX", "fglrx 13.15.100.1");
-  }
+  
+  
+  
+  
   return *sDriverInfo;
-}
-
-bool GfxInfo::DoesVendorMatch(const nsAString &aBlocklistVendor,
-                              const nsAString &aAdapterVendor) {
-  if (mIsMesa &&
-      aBlocklistVendor.Equals(GfxDriverInfo::GetDeviceVendor(VendorMesaAll),
-                              nsCaseInsensitiveStringComparator())) {
-    return true;
-  }
-  return GfxInfoBase::DoesVendorMatch(aBlocklistVendor, aAdapterVendor);
 }
 
 nsresult GfxInfo::GetFeatureStatusImpl(
@@ -331,13 +268,6 @@ nsresult GfxInfo::GetFeatureStatusImpl(
 
   GetData();
 
-  if (mGLMajorVersion == 0) {
-    
-    *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
-    aFailureId = "FEATURE_FAILURE_GLXTEST_FAILED";
-    return NS_OK;
-  }
-
   if (mGLMajorVersion == 1) {
     
     
@@ -349,11 +279,101 @@ nsresult GfxInfo::GetFeatureStatusImpl(
 
   
   
-  if (aFeature == nsIGfxInfo::FEATURE_OPENGL_LAYERS && !mIsAccelerated &&
-      !PR_GetEnv("MOZ_LAYERS_ALLOW_SOFTWARE_GL")) {
-    *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
-    aFailureId = "FEATURE_FAILURE_SOFTWARE_GL";
-    return NS_OK;
+  if (!aDriverInfo.Length()) {
+    
+    
+    if (aFeature == nsIGfxInfo::FEATURE_OPENGL_LAYERS &&
+        (mIsLlvmpipe || mIsOldSwrast) &&
+        !PR_GetEnv("MOZ_LAYERS_ALLOW_SOFTWARE_GL")) {
+      *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
+      aFailureId = "FEATURE_FAILURE_SOFTWARE_GL";
+      return NS_OK;
+    }
+
+    if (aFeature == nsIGfxInfo::FEATURE_WEBRENDER) {
+      *aStatus = nsIGfxInfo::FEATURE_BLOCKED_OS_VERSION;
+      aFailureId = "FEATURE_UNQUALIFIED_WEBRENDER_LINUX";
+      return NS_OK;
+    }
+
+    
+    if (aFeature == nsIGfxInfo::FEATURE_OPENGL_LAYERS ||
+        aFeature == nsIGfxInfo::FEATURE_WEBGL_OPENGL ||
+        aFeature == nsIGfxInfo::FEATURE_WEBGL2 ||
+        aFeature == nsIGfxInfo::FEATURE_WEBGL_MSAA) {
+      
+      
+      
+      
+      
+      
+      if (mIsNVIDIA && !strcmp(mRenderer.get(), "GeForce 9400/PCI/SSE2") &&
+          !strcmp(mVersion.get(), "3.2.0 NVIDIA 190.42")) {
+        *aStatus = nsIGfxInfo::FEATURE_STATUS_OK;
+        return NS_OK;
+      }
+
+      if (mIsMesa) {
+        if (mIsNouveau &&
+            version(mMajorVersion, mMinorVersion) < version(8, 0)) {
+          *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION;
+          aFailureId = "FEATURE_FAILURE_MESA_1";
+          aSuggestedDriverVersion.AssignLiteral("Mesa 8.0");
+        } else if (version(mMajorVersion, mMinorVersion, mRevisionVersion) <
+                   version(7, 10, 3)) {
+          *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION;
+          aFailureId = "FEATURE_FAILURE_MESA_2";
+          aSuggestedDriverVersion.AssignLiteral("Mesa 7.10.3");
+        } else if (mIsOldSwrast) {
+          *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION;
+          aFailureId = "FEATURE_FAILURE_SW_RAST";
+        } else if (mIsLlvmpipe &&
+                   version(mMajorVersion, mMinorVersion) < version(9, 1)) {
+          
+          
+          *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION;
+          aFailureId = "FEATURE_FAILURE_MESA_3";
+        } else if (aFeature == nsIGfxInfo::FEATURE_WEBGL_MSAA) {
+          if (mIsIntel &&
+              version(mMajorVersion, mMinorVersion) < version(8, 1)) {
+            *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION;
+            aFailureId = "FEATURE_FAILURE_MESA_4";
+            aSuggestedDriverVersion.AssignLiteral("Mesa 8.1");
+          }
+        }
+
+      } else if (mIsNVIDIA) {
+        if (version(mMajorVersion, mMinorVersion, mRevisionVersion) <
+            version(257, 21)) {
+          *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION;
+          aFailureId = "FEATURE_FAILURE_OLD_NV";
+          aSuggestedDriverVersion.AssignLiteral("NVIDIA 257.21");
+        }
+      } else if (mIsFGLRX) {
+        
+        
+        
+        if (version(mMajorVersion, mMinorVersion, mRevisionVersion) <
+            version(3, 0)) {
+          *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION;
+          aFailureId = "FEATURE_FAILURE_OLD_FGLRX";
+          aSuggestedDriverVersion.AssignLiteral("<Something recent>");
+        }
+        
+        bool unknownOS = mOS.IsEmpty() || mOSRelease.IsEmpty();
+        bool badOS =
+            mOS.Find("Linux", true) != -1 && mOSRelease.Find("2.6.32") != -1;
+        if (unknownOS || badOS) {
+          *aStatus = nsIGfxInfo::FEATURE_BLOCKED_OS_VERSION;
+          aFailureId = "FEATURE_FAILURE_OLD_OS";
+        }
+      } else {
+        
+        
+        
+        *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
+      }
+    }
   }
 
   return GfxInfoBase::GetFeatureStatusImpl(
@@ -390,8 +410,7 @@ GfxInfo::GetAdapterDescription2(nsAString &aAdapterDescription) {
 
 NS_IMETHODIMP
 GfxInfo::GetAdapterRAM(nsAString &aAdapterRAM) {
-  GetData();
-  CopyUTF8toUTF16(mAdapterRAM, aAdapterRAM);
+  aAdapterRAM.Truncate();
   return NS_OK;
 }
 
@@ -412,7 +431,7 @@ GfxInfo::GetAdapterDriver2(nsAString &aAdapterDriver) {
 NS_IMETHODIMP
 GfxInfo::GetAdapterDriverVersion(nsAString &aAdapterDriverVersion) {
   GetData();
-  CopyASCIItoUTF16(mDriverVersion, aAdapterDriverVersion);
+  CopyASCIItoUTF16(mVersion, aAdapterDriverVersion);
   return NS_OK;
 }
 
@@ -435,7 +454,7 @@ GfxInfo::GetAdapterDriverDate2(nsAString &aAdapterDriverDate) {
 NS_IMETHODIMP
 GfxInfo::GetAdapterVendorID(nsAString &aAdapterVendorID) {
   GetData();
-  CopyUTF8toUTF16(mVendorId, aAdapterVendorID);
+  CopyUTF8toUTF16(mVendor, aAdapterVendorID);
   return NS_OK;
 }
 
@@ -447,7 +466,7 @@ GfxInfo::GetAdapterVendorID2(nsAString &aAdapterVendorID) {
 NS_IMETHODIMP
 GfxInfo::GetAdapterDeviceID(nsAString &aAdapterDeviceID) {
   GetData();
-  CopyUTF8toUTF16(mDeviceId, aAdapterDeviceID);
+  CopyUTF8toUTF16(mRenderer, aAdapterDeviceID);
   return NS_OK;
 }
 
@@ -475,17 +494,17 @@ GfxInfo::GetIsGPU2Active(bool *aIsGPU2Active) { return NS_ERROR_FAILURE; }
 
 
 NS_IMETHODIMP GfxInfo::SpoofVendorID(const nsAString &aVendorID) {
-  CopyUTF16toUTF8(aVendorID, mVendorId);
+  CopyUTF16toUTF8(aVendorID, mVendor);
   return NS_OK;
 }
 
 NS_IMETHODIMP GfxInfo::SpoofDeviceID(const nsAString &aDeviceID) {
-  CopyUTF16toUTF8(aDeviceID, mDeviceId);
+  CopyUTF16toUTF8(aDeviceID, mRenderer);
   return NS_OK;
 }
 
 NS_IMETHODIMP GfxInfo::SpoofDriverVersion(const nsAString &aDriverVersion) {
-  CopyUTF16toUTF8(aDriverVersion, mDriverVersion);
+  CopyUTF16toUTF8(aDriverVersion, mVersion);
   return NS_OK;
 }
 
