@@ -227,7 +227,7 @@ already_AddRefed<LineBreaker> LineBreaker::Create() {
 #define MAX_CLASSES 12
 
 static const uint16_t gPair[MAX_CLASSES] = {0x0FFF, 0x0C02, 0x0806, 0x0842,
-                                            0x0802, 0x0C02, 0x0ED2, 0x0EC2,
+                                            0x0802, 0x0C06, 0x0ED2, 0x0EC2,
                                             0x0902, 0x0FFF, 0x0CC2, 0x0FFF};
 
 
@@ -273,7 +273,7 @@ static const uint16_t gPair[MAX_CLASSES] = {0x0FFF, 0x0C02, 0x0806, 0x0842,
 
 
 static const uint16_t gPairConservative[MAX_CLASSES] = {
-    0x0FFF, 0x0EC2, 0x0EC6, 0x0EC2, 0x0EC2, 0x0C02,
+    0x0FFF, 0x0EC2, 0x0EC6, 0x0EC2, 0x0EC2, 0x0C06,
     0x0FDF, 0x0FDF, 0x0FC2, 0x0FFF, 0x0FDF, 0x0FFF};
 
 
@@ -370,104 +370,7 @@ static inline bool IS_HYPHEN(char16_t u) {
           u == 0x2013);                    
 }
 
-static int8_t GetClass(uint32_t u) {
-  if (u < 0x10000) {
-    uint16_t h = u & 0xFF00;
-    uint16_t l = u & 0x00ff;
-
-    
-    if (0x0000 == h) {
-      return GETCLASSFROMTABLE(gLBClass00, l);
-    }
-    if (0x1700 == h) {
-      return GETCLASSFROMTABLE(gLBClass17, l);
-    }
-    if (NS_NeedsPlatformNativeHandling(u)) {
-      return CLASS_COMPLEX;
-    }
-    if (0x0E00 == h) {
-      return GETCLASSFROMTABLE(gLBClass0E, l);
-    }
-    if (0x2000 == h) {
-      return GETCLASSFROMTABLE(gLBClass20, l);
-    }
-    if (0x2100 == h) {
-      return GETCLASSFROMTABLE(gLBClass21, l);
-    }
-    if (0x3000 == h) {
-      return GETCLASSFROMTABLE(gLBClass30, l);
-    }
-    if (0xff00 == h) {
-      if (l < 0x0060) {  
-        return GETCLASSFROMTABLE(gLBClass00, (l + 0x20));
-      }
-      if (l < 0x00a0) {  
-        switch (l) {
-          case 0x61:
-            return GetClass(0x3002);
-          case 0x62:
-            return GetClass(0x300c);
-          case 0x63:
-            return GetClass(0x300d);
-          case 0x64:
-            return GetClass(0x3001);
-          case 0x65:
-            return GetClass(0x30fb);
-          case 0x9e:
-            return GetClass(0x309b);
-          case 0x9f:
-            return GetClass(0x309c);
-          default:
-            if (IS_HALFWIDTH_IN_JISx4051_CLASS3(u)) {
-              return CLASS_CLOSE;  
-            }
-            return CLASS_BREAKABLE;  
-        }
-      }
-      if (l < 0x00e0) {
-        return CLASS_CHARACTER;  
-      }
-      if (l < 0x00f0) {
-        static char16_t NarrowFFEx[16] = {
-            0x00A2, 0x00A3, 0x00AC, 0x00AF, 0x00A6, 0x00A5, 0x20A9, 0x0000,
-            0x2502, 0x2190, 0x2191, 0x2192, 0x2193, 0x25A0, 0x25CB, 0x0000};
-        return GetClass(NarrowFFEx[l - 0x00e0]);
-      }
-    } else if (0x3100 == h) {
-      if (l <= 0xbf) {  
-                        
-                        
-        return CLASS_BREAKABLE;
-      }
-      if (l >= 0xf0) {  
-        return CLASS_CLOSE;
-      }
-    } else if (0x0300 == h) {
-      if (0x4F == l || (0x5C <= l && l <= 0x62)) {
-        return CLASS_NON_BREAKABLE;
-      }
-    } else if (0x0500 == h) {
-      
-      if (l == 0x8A) {
-        return GETCLASSFROMTABLE(gLBClass00, uint16_t(U_HYPHEN));
-      }
-    } else if (0x0F00 == h) {
-      if (0x08 == l || 0x0C == l || 0x12 == l) {
-        return CLASS_NON_BREAKABLE;
-      }
-    } else if (0x1800 == h) {
-      if (0x0E == l) {
-        return CLASS_NON_BREAKABLE;
-      }
-    } else if (0x1600 == h) {
-      if (0x80 == l) {  
-        return CLASS_BREAKABLE;
-      }
-    } else if (u == 0xfeff) {
-      return CLASS_NON_BREAKABLE;
-    }
-  }
-
+static int8_t GetClass(uint32_t u, LineBreaker::Strictness aLevel) {
   
   
   
@@ -528,6 +431,186 @@ static int8_t GetClass(uint32_t u) {
 
   auto cls = GetLineBreakClass(u);
   MOZ_ASSERT(cls < mozilla::ArrayLength(sUnicodeLineBreakToClass));
+
+  
+  
+  switch (aLevel) {
+    case LineBreaker::Strictness::Auto:
+      
+      
+      
+      break;
+    case LineBreaker::Strictness::Strict:
+      if (cls == U_LB_CONDITIONAL_JAPANESE_STARTER ||
+          (u == 0x3095 || u == 0x3096 || u == 0x30f5 || u == 0x30f6)) {
+        return CLASS_CLOSE;
+      }
+      if (cls == U_LB_INSEPARABLE) {
+        return CLASS_NON_BREAKABLE_BETWEEN_SAME_CLASS;
+      }
+      if (u == 0x3005 || u == 0x303B || u == 0x309D || u == 0x309E ||
+          u == 0x30FD || u == 0x30FE) {
+        return CLASS_CLOSE_LIKE_CHARACTER;
+      }
+      if (cls == U_LB_POSTFIX_NUMERIC && IsEastAsianWidthAFW(u)) {
+        return CLASS_CLOSE_LIKE_CHARACTER;
+      }
+      if (cls == U_LB_PREFIX_NUMERIC && IsEastAsianWidthAFW(u)) {
+        return CLASS_OPEN_LIKE_CHARACTER;
+      }
+      if (u == 0x2010 || u == 0x2013 || u == 0x301C || u == 0x30A0) {
+        return CLASS_CLOSE_LIKE_CHARACTER;
+      }
+      break;
+    case LineBreaker::Strictness::Normal:
+      if (cls == U_LB_CONDITIONAL_JAPANESE_STARTER) {
+        return CLASS_BREAKABLE;
+      }
+      if (cls == U_LB_INSEPARABLE) {
+        return CLASS_NON_BREAKABLE_BETWEEN_SAME_CLASS;
+      }
+      if (u == 0x3005 || u == 0x303B || u == 0x309D || u == 0x309E ||
+          u == 0x30FD || u == 0x30FE) {
+        return CLASS_CLOSE_LIKE_CHARACTER;
+      }
+      if (cls == U_LB_POSTFIX_NUMERIC && IsEastAsianWidthAFW(u)) {
+        return CLASS_CLOSE_LIKE_CHARACTER;
+      }
+      if (cls == U_LB_PREFIX_NUMERIC && IsEastAsianWidthAFW(u)) {
+        return CLASS_OPEN_LIKE_CHARACTER;
+      }
+      if (u == 0x2010 || u == 0x2013 || u == 0x301C || u == 0x30A0) {
+        return CLASS_BREAKABLE;
+      }
+      break;
+    case LineBreaker::Strictness::Loose:
+      if (cls == U_LB_CONDITIONAL_JAPANESE_STARTER) {
+        return CLASS_BREAKABLE;
+      }
+      if (u == 0x3005 || u == 0x303B || u == 0x309D || u == 0x309E ||
+          u == 0x30FD || u == 0x30FE) {
+        return CLASS_BREAKABLE;
+      }
+      if (cls == U_LB_INSEPARABLE) {
+        return CLASS_BREAKABLE;
+      }
+      if (u == 0x30FB || u == 0xFF1A || u == 0xFF1B || u == 0xFF65 ||
+          u == 0x203C || u == 0x2047 || u == 0x2048 || u == 0x2049 ||
+          u == 0xFF01 || u == 0xFF1F) {
+        return CLASS_BREAKABLE;
+      }
+      if (cls == U_LB_POSTFIX_NUMERIC && IsEastAsianWidthAFW(u)) {
+        return CLASS_BREAKABLE;
+      }
+      if (cls == U_LB_PREFIX_NUMERIC && IsEastAsianWidthAFW(u)) {
+        return CLASS_BREAKABLE;
+      }
+      if (u == 0x2010 || u == 0x2013 || u == 0x301C || u == 0x30A0) {
+        return CLASS_BREAKABLE;
+      }
+      break;
+    case LineBreaker::Strictness::Anywhere:
+      MOZ_ASSERT_UNREACHABLE("should have been handled already");
+      break;
+  }
+
+  if (u < 0x10000) {
+    uint16_t h = u & 0xFF00;
+    uint16_t l = u & 0x00ff;
+
+    
+    if (0x0000 == h) {
+      return GETCLASSFROMTABLE(gLBClass00, l);
+    }
+    if (0x1700 == h) {
+      return GETCLASSFROMTABLE(gLBClass17, l);
+    }
+    if (NS_NeedsPlatformNativeHandling(u)) {
+      return CLASS_COMPLEX;
+    }
+    if (0x0E00 == h) {
+      return GETCLASSFROMTABLE(gLBClass0E, l);
+    }
+    if (0x2000 == h) {
+      return GETCLASSFROMTABLE(gLBClass20, l);
+    }
+    if (0x2100 == h) {
+      return GETCLASSFROMTABLE(gLBClass21, l);
+    }
+    if (0x3000 == h) {
+      return GETCLASSFROMTABLE(gLBClass30, l);
+    }
+    if (0xff00 == h) {
+      if (l < 0x0060) {  
+        return GETCLASSFROMTABLE(gLBClass00, (l + 0x20));
+      }
+      if (l < 0x00a0) {  
+        switch (l) {
+          case 0x61:
+            return GetClass(0x3002, aLevel);
+          case 0x62:
+            return GetClass(0x300c, aLevel);
+          case 0x63:
+            return GetClass(0x300d, aLevel);
+          case 0x64:
+            return GetClass(0x3001, aLevel);
+          case 0x65:
+            return GetClass(0x30fb, aLevel);
+          case 0x9e:
+            return GetClass(0x309b, aLevel);
+          case 0x9f:
+            return GetClass(0x309c, aLevel);
+          default:
+            if (IS_HALFWIDTH_IN_JISx4051_CLASS3(u)) {
+              return CLASS_CLOSE;  
+            }
+            return CLASS_BREAKABLE;  
+        }
+      }
+      if (l < 0x00e0) {
+        return CLASS_CHARACTER;  
+      }
+      if (l < 0x00f0) {
+        static char16_t NarrowFFEx[16] = {
+            0x00A2, 0x00A3, 0x00AC, 0x00AF, 0x00A6, 0x00A5, 0x20A9, 0x0000,
+            0x2502, 0x2190, 0x2191, 0x2192, 0x2193, 0x25A0, 0x25CB, 0x0000};
+        return GetClass(NarrowFFEx[l - 0x00e0], aLevel);
+      }
+    } else if (0x3100 == h) {
+      if (l <= 0xbf) {  
+                        
+                        
+        return CLASS_BREAKABLE;
+      }
+      if (l >= 0xf0) {  
+        return CLASS_CLOSE;
+      }
+    } else if (0x0300 == h) {
+      if (0x4F == l || (0x5C <= l && l <= 0x62)) {
+        return CLASS_NON_BREAKABLE;
+      }
+    } else if (0x0500 == h) {
+      
+      if (l == 0x8A) {
+        return GETCLASSFROMTABLE(gLBClass00, uint16_t(U_HYPHEN));
+      }
+    } else if (0x0F00 == h) {
+      if (0x08 == l || 0x0C == l || 0x12 == l) {
+        return CLASS_NON_BREAKABLE;
+      }
+    } else if (0x1800 == h) {
+      if (0x0E == l) {
+        return CLASS_NON_BREAKABLE;
+      }
+    } else if (0x1600 == h) {
+      if (0x80 == l) {  
+        return CLASS_BREAKABLE;
+      }
+    } else if (u == 0xfeff) {
+      return CLASS_NON_BREAKABLE;
+    }
+  }
+
   return sUnicodeLineBreakToClass[cls];
 }
 
@@ -714,7 +797,8 @@ class ContextState {
 };
 
 static int8_t ContextualAnalysis(char32_t prev, char32_t cur, char32_t next,
-                                 ContextState& aState) {
+                                 ContextState& aState,
+                                 LineBreaker::Strictness aLevel) {
   
 
   if (IS_HYPHEN(cur)) {
@@ -730,8 +814,8 @@ static int8_t ContextualAnalysis(char32_t prev, char32_t cur, char32_t next,
     if (!aState.UseConservativeBreaking(1)) {
       char32_t prevOfHyphen = aState.GetPreviousNonHyphenCharacter();
       if (prevOfHyphen && next) {
-        int8_t prevClass = GetClass(prevOfHyphen);
-        int8_t nextClass = GetClass(next);
+        int8_t prevClass = GetClass(prevOfHyphen, aLevel);
+        int8_t nextClass = GetClass(next, aLevel);
         bool prevIsNumOrCharOrClose =
             prevIsNum ||
             (prevClass == CLASS_CHARACTER &&
@@ -792,7 +876,7 @@ static int8_t ContextualAnalysis(char32_t prev, char32_t cur, char32_t next,
       NS_ERROR("Forgot to handle the current character!");
     }
   }
-  return GetClass(cur);
+  return GetClass(cur, aLevel);
 }
 
 int32_t LineBreaker::WordMove(const char16_t* aText, uint32_t aLen,
@@ -884,11 +968,11 @@ void LineBreaker::GetJISx4051Breaks(const char16_t* aChars, uint32_t aLength,
       } else {
         next = 0;
       }
-      cl = ContextualAnalysis(prev, ch, next, state);
+      cl = ContextualAnalysis(prev, ch, next, state, aLevel);
     } else {
       if (ch == U_EQUAL) state.NotifySeenEqualsSign();
       state.NotifyNonHyphenCharacter(ch);
-      cl = GetClass(ch);
+      cl = GetClass(ch, aLevel);
     }
 
     
@@ -930,7 +1014,7 @@ void LineBreaker::GetJISx4051Breaks(const char16_t* aChars, uint32_t aLength,
 
       while (end < aLength) {
         char32_t c = state.GetUnicodeCharAt(end);
-        if (CLASS_COMPLEX != GetClass(c)) {
+        if (CLASS_COMPLEX != GetClass(c, aLevel)) {
           break;
         }
         ++end;
@@ -981,11 +1065,11 @@ void LineBreaker::GetJISx4051Breaks(const uint8_t* aChars, uint32_t aLength,
     if (NEED_CONTEXTUAL_ANALYSIS(ch)) {
       cl = ContextualAnalysis(cur > 0 ? aChars[cur - 1] : U_NULL, ch,
                               cur + 1 < aLength ? aChars[cur + 1] : U_NULL,
-                              state);
+                              state, aLevel);
     } else {
       if (ch == U_EQUAL) state.NotifySeenEqualsSign();
       state.NotifyNonHyphenCharacter(ch);
-      cl = GetClass(ch);
+      cl = GetClass(ch, aLevel);
     }
     if (aWordBreak == WordBreak::BreakAll &&
         (cl == CLASS_CHARACTER || cl == CLASS_CLOSE)) {
