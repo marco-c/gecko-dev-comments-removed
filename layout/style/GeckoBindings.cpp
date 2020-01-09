@@ -1761,6 +1761,10 @@ nsCSSValueSharedList* Gecko_NewNoneTransform() {
   return list.forget().take();
 }
 
+void Gecko_StyleDisplay_GenerateCombinedTransform(nsStyleDisplay* aDisplay) {
+  aDisplay->GenerateCombinedIndividualTransform();
+}
+
 void Gecko_CSSValue_SetNumber(nsCSSValueBorrowedMut aCSSValue, float aNumber) {
   aCSSValue->SetFloatValue(aNumber, eCSSUnit_Number);
 }
@@ -2048,7 +2052,8 @@ GeckoFontMetrics Gecko_GetFontMetrics(RawGeckoPresContextBorrowed aPresContext,
   nsPresContext* presContext = const_cast<nsPresContext*>(aPresContext);
   presContext->SetUsesExChUnits(true);
   RefPtr<nsFontMetrics> fm = nsLayoutUtils::GetMetricsFor(
-      presContext, aIsVertical, aFont, aFontSize, aUseUserFontSet);
+      presContext, aIsVertical, aFont, aFontSize, aUseUserFontSet,
+      nsLayoutUtils::FlushUserFontSet::No);
 
   ret.mXSize = fm->XHeight();
   gfxFloat zeroWidth = fm->GetThebesFontGroup()

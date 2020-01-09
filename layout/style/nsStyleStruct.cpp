@@ -3066,7 +3066,9 @@ nsStyleDisplay::nsStyleDisplay(const nsStyleDisplay& aSource)
       mSpecifiedRotate(aSource.mSpecifiedRotate),
       mSpecifiedTranslate(aSource.mSpecifiedTranslate),
       mSpecifiedScale(aSource.mSpecifiedScale),
-      mIndividualTransform(aSource.mIndividualTransform),
+      
+      
+      
       mMotion(aSource.mMotion ? MakeUnique<StyleMotion>(*aSource.mMotion)
                               : nullptr),
       mTransformOrigin{aSource.mTransformOrigin[0], aSource.mTransformOrigin[1],
@@ -3138,7 +3140,6 @@ void nsStyleDisplay::FinishStyle(Document& aDocument,
 
   mShapeOutside.FinishStyle(aDocument,
                             aOldStyle ? &aOldStyle->mShapeOutside : nullptr);
-  GenerateCombinedIndividualTransform();
 }
 
 static inline bool TransformListChanged(
@@ -3431,11 +3432,7 @@ bool nsStyleDisplay::TransformChanged(const nsStyleDisplay& aNewData) const {
 }
 
 void nsStyleDisplay::GenerateCombinedIndividualTransform() {
-  
-  
-  
-  
-  mIndividualTransform = nullptr;
+  MOZ_ASSERT(!mIndividualTransform);
 
   
   

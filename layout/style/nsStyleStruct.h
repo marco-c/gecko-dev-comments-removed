@@ -2306,9 +2306,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
     return mIndividualTransform ? do_AddRef(mIndividualTransform) : nullptr;
   }
 
- private:
-  
-  
   void GenerateCombinedIndividualTransform();
 };
 
