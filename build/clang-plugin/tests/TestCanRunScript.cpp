@@ -245,11 +245,11 @@ MOZ_CAN_RUN_SCRIPT void test_defaults_3() {
   test_defaults_helper_1(t);
 }
 
-MOZ_CAN_RUN_SCRIPT void test_defaults_helper_2(RefCountedBase* arg = new RefCountedBase()) {
+MOZ_CAN_RUN_SCRIPT void test_defaults_helper_2(RefCountedBase* arg = new RefCountedBase()) { 
 }
 
 MOZ_CAN_RUN_SCRIPT void test_defaults_4() {
-  test_defaults_helper_2(); 
+  test_defaults_helper_2();
 }
 
 MOZ_CAN_RUN_SCRIPT void test_defaults_5() {
