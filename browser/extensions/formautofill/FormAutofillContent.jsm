@@ -358,10 +358,11 @@ var FormAutofillContent = {
   init() {
     FormAutofill.defineLazyLogGetter(this, "FormAutofillContent");
 
-    Services.cpmm.addMessageListener("FormAutofill:enabledStatus", this);
+    
+    Services.cpmm.sharedData.addEventListener("change", this);
     Services.obs.addObserver(this, "earlyformsubmit");
 
-    let autofillEnabled = Services.cpmm.initialProcessData.autofillEnabled;
+    let autofillEnabled = Services.cpmm.sharedData.get("FormAutofill:enabled");
     
     
     
@@ -428,10 +429,13 @@ var FormAutofillContent = {
     return true;
   },
 
-  receiveMessage({name, data}) {
-    switch (name) {
-      case "FormAutofill:enabledStatus": {
-        if (data) {
+  handleEvent(evt) {
+    switch (evt.type) {
+      case "change": {
+        if (!evt.changedKeys.includes("FormAutofill:enabled")) {
+          return;
+        }
+        if (Services.cpmm.sharedData.get("FormAutofill:enabled")) {
           ProfileAutocomplete.ensureRegistered();
         } else {
           ProfileAutocomplete.ensureUnregistered();

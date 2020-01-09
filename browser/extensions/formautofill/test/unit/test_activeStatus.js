@@ -16,19 +16,19 @@ add_task(async function test_activeStatus_init() {
 
   
   Assert.equal(formAutofillParent._active, null);
-  Assert.equal(Services.ppmm.initialProcessData.autofillEnabled, undefined);
+  Assert.equal(Services.ppmm.sharedData.get("FormAutofill:enabled"), undefined);
 
   await formAutofillParent.init();
   
   
   Assert.equal(formAutofillParent._updateStatus.called, false);
-  Assert.equal(Services.ppmm.initialProcessData.autofillEnabled, undefined);
+  Assert.equal(Services.ppmm.sharedData.get("FormAutofill:enabled"), undefined);
 
   
   await formAutofillParent.formAutofillStorage.initialize();
   
   Assert.equal(formAutofillParent._updateStatus.called, true);
-  Assert.equal(Services.ppmm.initialProcessData.autofillEnabled, false);
+  Assert.equal(Services.ppmm.sharedData.get("FormAutofill:enabled"), false);
 
   formAutofillParent._uninit();
 });
