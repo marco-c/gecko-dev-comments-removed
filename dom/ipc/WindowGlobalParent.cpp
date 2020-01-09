@@ -11,7 +11,7 @@
 #include "mozilla/dom/BrowserBridgeParent.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/ContentParent.h"
-#include "mozilla/dom/TabParent.h"
+#include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/WindowGlobalActorsBinding.h"
 #include "mozilla/dom/WindowGlobalChild.h"
 #include "mozilla/dom/ChromeUtils.h"
@@ -114,7 +114,7 @@ void WindowGlobalParent::Init(const WindowGlobalInit& aInit) {
   } else {
     
     MOZ_ASSERT(Manager()->GetProtocolTypeId() == PBrowserMsgStart);
-    frameElement = static_cast<TabParent*>(Manager())->GetOwnerElement();
+    frameElement = static_cast<BrowserParent*>(Manager())->GetOwnerElement();
   }
 
   
@@ -147,11 +147,11 @@ already_AddRefed<WindowGlobalChild> WindowGlobalParent::GetChildActor() {
   return do_AddRef(static_cast<WindowGlobalChild*>(otherSide));
 }
 
-already_AddRefed<TabParent> WindowGlobalParent::GetRemoteTab() {
+already_AddRefed<BrowserParent> WindowGlobalParent::GetRemoteTab() {
   if (IsInProcess() || mIPCClosed) {
     return nullptr;
   }
-  return do_AddRef(static_cast<TabParent*>(Manager()));
+  return do_AddRef(static_cast<BrowserParent*>(Manager()));
 }
 
 IPCResult WindowGlobalParent::RecvUpdateDocumentURI(nsIURI* aURI) {
@@ -168,8 +168,8 @@ IPCResult WindowGlobalParent::RecvBecomeCurrentWindowGlobal() {
 
 IPCResult WindowGlobalParent::RecvDestroy() {
   if (!mIPCClosed) {
-    RefPtr<TabParent> tabParent = GetRemoteTab();
-    if (!tabParent || !tabParent->IsDestroyed()) {
+    RefPtr<BrowserParent> browserParent = GetRemoteTab();
+    if (!browserParent || !browserParent->IsDestroyed()) {
       Unused << Send__delete__(this);
     }
   }
@@ -213,8 +213,8 @@ already_AddRefed<JSWindowActorParent> WindowGlobalParent::GetActor(
   }
 
   nsAutoString remoteType;
-  if (RefPtr<TabParent> tabParent = GetRemoteTab()) {
-    remoteType = tabParent->Manager()->GetRemoteType();
+  if (RefPtr<BrowserParent> browserParent = GetRemoteTab()) {
+    remoteType = browserParent->Manager()->GetRemoteType();
   } else {
     remoteType = VoidString();
   }
@@ -280,9 +280,9 @@ already_AddRefed<Promise> WindowGlobalParent::ChangeFrameRemoteness(
         
         
         if (bridge) {
-          promise->MaybeResolve(bridge->GetTabParent());
+          promise->MaybeResolve(bridge->GetBrowserParent());
         } else {
-          promise->MaybeResolve(tabParent);
+          promise->MaybeResolve(browserParent);
         }
       };
 

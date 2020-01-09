@@ -48,7 +48,7 @@
 #include "mozilla/dom/DataTransfer.h"
 #include "nsIMIMEInfo.h"
 #include "nsRange.h"
-#include "TabParent.h"
+#include "BrowserParent.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLAreaElement.h"
 #include "mozilla/dom/HTMLAnchorElement.h"
@@ -552,7 +552,7 @@ nsresult DragDataProducer::Produce(DataTransfer* aDataTransfer, bool* aCanDrag,
     if (flo) {
       RefPtr<nsFrameLoader> fl = flo->GetFrameLoader();
       if (fl) {
-        TabParent* tp = static_cast<TabParent*>(fl->GetRemoteBrowser());
+        BrowserParent* tp = static_cast<BrowserParent*>(fl->GetRemoteBrowser());
         if (tp) {
           
           

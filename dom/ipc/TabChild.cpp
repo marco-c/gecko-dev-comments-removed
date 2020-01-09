@@ -14,7 +14,7 @@
 #endif
 #include "Layers.h"
 #include "ContentChild.h"
-#include "TabParent.h"
+#include "BrowserParent.h"
 #include "js/JSON.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/BrowserElementParent.h"

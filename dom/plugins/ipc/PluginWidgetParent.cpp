@@ -3,7 +3,7 @@
 
 
 #include "PluginWidgetParent.h"
-#include "mozilla/dom/TabParent.h"
+#include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/ContentParent.h"
 #include "nsComponentManagerUtils.h"
 #include "nsWidgetsCID.h"
@@ -53,8 +53,8 @@ PluginWidgetParent::~PluginWidgetParent() {
   KillWidget();
 }
 
-mozilla::dom::TabParent* PluginWidgetParent::GetTabParent() {
-  return static_cast<mozilla::dom::TabParent*>(Manager());
+mozilla::dom::BrowserParent* PluginWidgetParent::GetBrowserParent() {
+  return static_cast<mozilla::dom::BrowserParent*>(Manager());
 }
 
 void PluginWidgetParent::SetParent(nsIWidget* aParent) {
@@ -83,7 +83,7 @@ mozilla::ipc::IPCResult PluginWidgetParent::RecvCreate(
   *aResult = mWidget ? NS_OK : NS_ERROR_FAILURE;
 
   
-  nsCOMPtr<nsIWidget> parentWidget = GetTabParent()->GetWidget();
+  nsCOMPtr<nsIWidget> parentWidget = GetBrowserParent()->GetWidget();
   
   if (!parentWidget) {
     *aResult = NS_ERROR_NOT_AVAILABLE;

@@ -42,7 +42,7 @@ class CompositorWidget;
 }  
 namespace dom {
 class ContentParent;
-class TabParent;
+class BrowserParent;
 }  
 namespace ipc {
 class GeckoChildProcessHost;

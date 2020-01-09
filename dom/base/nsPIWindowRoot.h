@@ -17,7 +17,7 @@ class nsINode;
 
 namespace mozilla {
 namespace dom {
-class TabParent;
+class BrowserParent;
 }  
 }  
 
@@ -61,10 +61,11 @@ class nsPIWindowRoot : public mozilla::dom::EventTarget {
   virtual mozilla::dom::EventTarget* GetParentTarget() = 0;
 
   
-  virtual void AddBrowser(mozilla::dom::TabParent* aBrowser) = 0;
-  virtual void RemoveBrowser(mozilla::dom::TabParent* aBrowser) = 0;
+  virtual void AddBrowser(mozilla::dom::BrowserParent* aBrowser) = 0;
+  virtual void RemoveBrowser(mozilla::dom::BrowserParent* aBrowser) = 0;
 
-  typedef void (*BrowserEnumerator)(mozilla::dom::TabParent* aTab, void* aArg);
+  typedef void (*BrowserEnumerator)(mozilla::dom::BrowserParent* aTab,
+                                    void* aArg);
 
   
   virtual void EnumerateBrowsers(BrowserEnumerator aEnumFunc, void* aArg) = 0;

@@ -39,7 +39,7 @@
 #include "nsXULAppAPI.h"      
 #include "FrameLayerBuilder.h"
 #include "mozilla/dom/TabChild.h"
-#include "mozilla/dom/TabParent.h"
+#include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/Unused.h"
 #include "mozilla/DebugOnly.h"
@@ -802,8 +802,8 @@ mozilla::ipc::IPCResult CompositorBridgeChild::RecvObserveLayersUpdate(
   MOZ_ASSERT(aLayersId.IsValid());
   MOZ_ASSERT(XRE_IsParentProcess());
 
-  if (RefPtr<dom::TabParent> tab =
-          dom::TabParent::GetTabParentFromLayersId(aLayersId)) {
+  if (RefPtr<dom::BrowserParent> tab =
+          dom::BrowserParent::GetBrowserParentFromLayersId(aLayersId)) {
     tab->LayerTreeUpdate(aEpoch, aActive);
   }
   return IPC_OK();

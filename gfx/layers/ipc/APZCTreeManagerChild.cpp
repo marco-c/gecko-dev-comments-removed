@@ -7,7 +7,7 @@
 #include "mozilla/layers/APZCTreeManagerChild.h"
 
 #include "InputData.h"                               
-#include "mozilla/dom/TabParent.h"                   
+#include "mozilla/dom/BrowserParent.h"               
 #include "mozilla/layers/APZCCallbackHelper.h"       
 #include "mozilla/layers/APZInputBridgeChild.h"      
 #include "mozilla/layers/RemoteCompositorSession.h"  
@@ -132,8 +132,8 @@ mozilla::ipc::IPCResult APZCTreeManagerChild::RecvHandleTap(
     controller->HandleTap(aType, aPoint, aModifiers, aGuid, aInputBlockId);
     return IPC_OK();
   }
-  dom::TabParent* tab =
-      dom::TabParent::GetTabParentFromLayersId(aGuid.mLayersId);
+  dom::BrowserParent* tab =
+      dom::BrowserParent::GetBrowserParentFromLayersId(aGuid.mLayersId);
   if (tab) {
     tab->SendHandleTap(aType, aPoint, aModifiers, aGuid, aInputBlockId);
   }

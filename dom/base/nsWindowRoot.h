@@ -70,8 +70,8 @@ class nsWindowRoot final : public nsPIWindowRoot {
 
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(nsWindowRoot)
 
-  virtual void AddBrowser(mozilla::dom::TabParent* aBrowser) override;
-  virtual void RemoveBrowser(mozilla::dom::TabParent* aBrowser) override;
+  virtual void AddBrowser(mozilla::dom::BrowserParent* aBrowser) override;
+  virtual void RemoveBrowser(mozilla::dom::BrowserParent* aBrowser) override;
   virtual void EnumerateBrowsers(BrowserEnumerator aEnumFunc,
                                  void* aArg) override;
 
@@ -109,6 +109,7 @@ class nsWindowRoot final : public nsPIWindowRoot {
 
   nsCOMPtr<mozilla::dom::EventTarget> mParent;
 
+  
   
   typedef nsTHashtable<nsRefPtrHashKey<nsIWeakReference>> WeakBrowserTable;
   WeakBrowserTable mWeakBrowsers;

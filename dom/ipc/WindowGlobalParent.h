@@ -9,7 +9,7 @@
 
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/PWindowGlobalParent.h"
-#include "mozilla/dom/TabParent.h"
+#include "mozilla/dom/BrowserParent.h"
 #include "nsRefPtrHashtable.h"
 #include "nsWrapperCache.h"
 #include "nsISupports.h"
@@ -63,7 +63,7 @@ class WindowGlobalParent final : public nsISupports,
 
   
   
-  already_AddRefed<TabParent> GetRemoteTab();
+  already_AddRefed<BrowserParent> GetRemoteTab();
 
   void ReceiveRawMessage(const JSWindowActorMessageMeta& aMeta,
                          ipc::StructuredCloneData&& aData);

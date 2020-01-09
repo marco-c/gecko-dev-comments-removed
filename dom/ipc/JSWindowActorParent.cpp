@@ -70,8 +70,8 @@ void JSWindowActorParent::SendRawMessage(const JSWindowActorMessageMeta& aMeta,
 
   
   ClonedMessageData msgData;
-  RefPtr<TabParent> tabParent = mManager->GetTabParent();
-  ContentParent* cp = tabParent->Manager();
+  RefPtr<BrowserParent> browserParent = mManager->GetBrowserParent();
+  ContentParent* cp = browserParent->Manager();
   if (NS_WARN_IF(!aData.BuildClonedMessageDataForParent(cp, msgData))) {
     aRv.Throw(NS_ERROR_DOM_DATA_CLONE_ERR);
     return;

@@ -17,7 +17,7 @@
 #include "InputData.h"                      
 #include "Layers.h"                         
 #include "mozilla/dom/MouseEventBinding.h"  
-#include "mozilla/dom/TabParent.h"          
+#include "mozilla/dom/BrowserParent.h"      
 #include "mozilla/dom/Touch.h"              
 #include "mozilla/gfx/gfxVars.h"            
 #include "mozilla/gfx/GPUParent.h"          
@@ -1220,7 +1220,7 @@ nsEventStatus APZCTreeManager::ReceiveInputEvent(
   
   
   
-  if (dom::TabParent::AreRecordReplayTabsActive()) {
+  if (dom::BrowserParent::AreRecordReplayTabsActive()) {
     return nsEventStatus_eIgnore;
   }
 
@@ -1787,10 +1787,12 @@ nsEventStatus APZCTreeManager::ProcessTouchInput(
       uint64_t inputBlockId = 0;
       result = mInputQueue->ReceiveInputEvent(
           mApzcForInputBlock, TargetConfirmationFlags{mHitResultForInputBlock},
-          aInput, &inputBlockId,
-          touchBehaviors.IsEmpty() ? Nothing() : Some(touchBehaviors));
+          aInput, &inputBlockId);
       if (aOutInputBlockId) {
         *aOutInputBlockId = inputBlockId;
+      }
+      if (!touchBehaviors.IsEmpty()) {
+        mInputQueue->SetAllowedTouchBehavior(inputBlockId, touchBehaviors);
       }
 
       

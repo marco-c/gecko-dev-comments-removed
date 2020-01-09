@@ -8,7 +8,7 @@
 
 #include "mozilla/dom/BrowserBridgeChild.h"  
 #include "mozilla/dom/EventTarget.h"         
-#include "mozilla/dom/TabParent.h"           
+#include "mozilla/dom/BrowserParent.h"       
 #include "mozilla/EventDispatcher.h"         
 #include "mozilla/layout/RenderFrame.h"      
 #include "mozilla/PresShell.h"               
@@ -157,7 +157,7 @@ FocusTarget::FocusTarget(PresShell* aRootPresShell,
   }
 
   
-  if (TabParent* browserParent = TabParent::GetFrom(keyEventTarget)) {
+  if (BrowserParent* browserParent = BrowserParent::GetFrom(keyEventTarget)) {
     RenderFrame* rf = browserParent->GetRenderFrame();
 
     

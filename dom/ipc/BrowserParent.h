@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_tabs_TabParent_h
-#define mozilla_tabs_TabParent_h
+#ifndef mozilla_tabs_BrowserParent_h
+#define mozilla_tabs_BrowserParent_h
 
 #include "js/TypeDecls.h"
 #include "LiveResizeListener.h"
@@ -78,20 +78,20 @@ namespace ipc {
 class StructuredCloneData;
 }  
 
-class TabParent final : public PBrowserParent,
-                        public nsIDOMEventListener,
-                        public nsIRemoteTab,
-                        public nsIAuthPromptProvider,
-                        public nsIKeyEventInPluginCallback,
-                        public nsSupportsWeakReference,
-                        public TabContext,
-                        public LiveResizeListener {
+class BrowserParent final : public PBrowserParent,
+                            public nsIDOMEventListener,
+                            public nsIRemoteTab,
+                            public nsIAuthPromptProvider,
+                            public nsIKeyEventInPluginCallback,
+                            public nsSupportsWeakReference,
+                            public TabContext,
+                            public LiveResizeListener {
   typedef mozilla::dom::ClonedMessageData ClonedMessageData;
 
   friend class PBrowserParent;
   friend class BrowserBridgeParent;  
 
-  virtual ~TabParent();
+  virtual ~BrowserParent();
 
  public:
   
@@ -104,12 +104,13 @@ class TabParent final : public PBrowserParent,
   
   NS_DECL_NSIDOMEVENTLISTENER
 
-  NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(TabParent, nsIRemoteTab)
+  NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(BrowserParent, nsIRemoteTab)
 
-  TabParent(ContentParent* aManager, const TabId& aTabId,
-            const TabContext& aContext,
-            CanonicalBrowsingContext* aBrowsingContext, uint32_t aChromeFlags,
-            BrowserBridgeParent* aBrowserBridgeParent = nullptr);
+  BrowserParent(ContentParent* aManager, const TabId& aTabId,
+                const TabContext& aContext,
+                CanonicalBrowsingContext* aBrowsingContext,
+                uint32_t aChromeFlags,
+                BrowserBridgeParent* aBrowserBridgeParent = nullptr);
 
   Element* GetOwnerElement() const { return mFrameElement; }
   already_AddRefed<nsPIDOMWindowOuter> GetParentWindowOuter();
@@ -494,15 +495,15 @@ class TabParent final : public PBrowserParent,
 
 
 
-  static TabParent* GetFocused();
+  static BrowserParent* GetFocused();
 
-  static TabParent* GetFrom(nsFrameLoader* aFrameLoader);
+  static BrowserParent* GetFrom(nsFrameLoader* aFrameLoader);
 
-  static TabParent* GetFrom(nsIRemoteTab* aTabParent);
+  static BrowserParent* GetFrom(nsIRemoteTab* aBrowserParent);
 
-  static TabParent* GetFrom(PBrowserParent* aTabParent);
+  static BrowserParent* GetFrom(PBrowserParent* aBrowserParent);
 
-  static TabParent* GetFrom(nsIContent* aContent);
+  static BrowserParent* GetFrom(nsIContent* aContent);
 
   static TabId GetTabIdFrom(nsIDocShell* docshell);
 
@@ -796,20 +797,21 @@ class TabParent final : public PBrowserParent,
  private:
   
   
-  typedef nsDataHashtable<nsUint64HashKey, TabParent*> LayerToTabParentTable;
-  static LayerToTabParentTable* sLayerToTabParentTable;
+  typedef nsDataHashtable<nsUint64HashKey, BrowserParent*>
+      LayerToBrowserParentTable;
+  static LayerToBrowserParentTable* sLayerToBrowserParentTable;
 
-  static void AddTabParentToTable(layers::LayersId aLayersId,
-                                  TabParent* aTabParent);
+  static void AddBrowserParentToTable(layers::LayersId aLayersId,
+                                      BrowserParent* aBrowserParent);
 
-  static void RemoveTabParentFromTable(layers::LayersId aLayersId);
+  static void RemoveBrowserParentFromTable(layers::LayersId aLayersId);
 
   
-  static StaticAutoPtr<nsTArray<TabParent*>> sFocusStack;
+  static StaticAutoPtr<nsTArray<BrowserParent*>> sFocusStack;
 
-  static void PushFocus(TabParent* aTabParent);
+  static void PushFocus(BrowserParent* aBrowserParent);
 
-  static void PopFocus(TabParent* aTabParent);
+  static void PopFocus(BrowserParent* aBrowserParent);
 
   layout::RenderFrame mRenderFrame;
   LayersObserverEpoch mLayerTreeEpoch;
@@ -858,12 +860,13 @@ class TabParent final : public PBrowserParent,
   void SetIsActiveRecordReplayTab(bool aIsActive);
 
  public:
-  static TabParent* GetTabParentFromLayersId(layers::LayersId aLayersId);
+  static BrowserParent* GetBrowserParentFromLayersId(
+      layers::LayersId aLayersId);
 };
 
-struct MOZ_STACK_CLASS TabParent::AutoUseNewTab final {
+struct MOZ_STACK_CLASS BrowserParent::AutoUseNewTab final {
  public:
-  AutoUseNewTab(TabParent* aNewTab, nsCString* aURLToLoad)
+  AutoUseNewTab(BrowserParent* aNewTab, nsCString* aURLToLoad)
       : mNewTab(aNewTab), mURLToLoad(aURLToLoad) {
     MOZ_ASSERT(!aNewTab->mCreatingWindow);
 
@@ -877,7 +880,7 @@ struct MOZ_STACK_CLASS TabParent::AutoUseNewTab final {
   }
 
  private:
-  TabParent* mNewTab;
+  BrowserParent* mNewTab;
   nsCString* mURLToLoad;
 };
 

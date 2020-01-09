@@ -9,7 +9,7 @@
 
 #include "mozilla/EventForwards.h"
 #include "mozilla/StaticPtr.h"
-#include "mozilla/dom/TabParent.h"
+#include "mozilla/dom/BrowserParent.h"
 #include "nsIWidget.h"
 
 class nsIContent;
@@ -35,7 +35,7 @@ class Selection;
 
 
 class IMEStateManager {
-  typedef dom::TabParent TabParent;
+  typedef dom::BrowserParent BrowserParent;
   typedef widget::IMEMessage IMEMessage;
   typedef widget::IMENotification IMENotification;
   typedef widget::IMEState IMEState;
@@ -51,12 +51,12 @@ class IMEStateManager {
 
 
 
-  static TabParent* GetActiveTabParent() {
+  static BrowserParent* GetActiveBrowserParent() {
     
     if (sInstalledMenuKeyboardListener) {
       return nullptr;
     }
-    return TabParent::GetFocused();
+    return BrowserParent::GetFocused();
   }
 
   
@@ -67,21 +67,24 @@ class IMEStateManager {
 
 
 
-  static bool DoesTabParentHaveIMEFocus(const TabParent* aTabParent) {
-    MOZ_ASSERT(aTabParent);
-    return sFocusedIMETabParent == aTabParent;
+  static bool DoesBrowserParentHaveIMEFocus(
+      const BrowserParent* aBrowserParent) {
+    MOZ_ASSERT(aBrowserParent);
+    return sFocusedIMEBrowserParent == aBrowserParent;
   }
 
   
 
 
-  static void OnTabParentDestroying(TabParent* aTabParent);
+
+  static void OnBrowserParentDestroying(BrowserParent* aBrowserParent);
 
   
 
 
 
-  static void OnFocusMovedBetweenBrowsers(TabParent* aBlur, TabParent* aFocus);
+  static void OnFocusMovedBetweenBrowsers(BrowserParent* aBlur,
+                                          BrowserParent* aFocus);
 
   
 
@@ -105,7 +108,7 @@ class IMEStateManager {
 
 
 
-  static void SetInputContextForChildProcess(TabParent* aTabParent,
+  static void SetInputContextForChildProcess(BrowserParent* aBrowserParent,
                                              const InputContext& aInputContext,
                                              const InputContextAction& aAction);
 
@@ -203,7 +206,7 @@ class IMEStateManager {
 
   static void DispatchCompositionEvent(
       nsINode* aEventTargetNode, nsPresContext* aPresContext,
-      TabParent* aTabParent, WidgetCompositionEvent* aCompositionEvent,
+      BrowserParent* aBrowserParent, WidgetCompositionEvent* aCompositionEvent,
       nsEventStatus* aStatus, EventDispatchingCallback* aCallBack,
       bool aIsSynthesized = false);
 
@@ -250,11 +253,11 @@ class IMEStateManager {
 
   static nsresult NotifyIME(const IMENotification& aNotification,
                             nsIWidget* aWidget,
-                            TabParent* aTabParent = nullptr);
+                            BrowserParent* aBrowserParent = nullptr);
   static nsresult NotifyIME(IMEMessage aMessage, nsIWidget* aWidget,
-                            TabParent* aTabParent = nullptr);
+                            BrowserParent* aBrowserParent = nullptr);
   static nsresult NotifyIME(IMEMessage aMessage, nsPresContext* aPresContext,
-                            TabParent* aTabParent = nullptr);
+                            BrowserParent* aBrowserParent = nullptr);
 
   static nsINode* GetRootEditableNode(nsPresContext* aPresContext,
                                       nsIContent* aContent);
@@ -319,7 +322,7 @@ class IMEStateManager {
   
   
   static nsIWidget* sFocusedIMEWidget;
-  static StaticRefPtr<TabParent> sFocusedIMETabParent;
+  static StaticRefPtr<BrowserParent> sFocusedIMEBrowserParent;
   
   
   

@@ -20,7 +20,7 @@ namespace mozilla {
 
 namespace dom {
 class BrowsingContext;
-class TabParent;
+class BrowserParent;
 }  
 
 
@@ -86,11 +86,11 @@ class BrowserElementParent {
 
 
 
-  static OpenWindowResult OpenWindowOOP(dom::TabParent* aOpenerTabParent,
-                                        dom::TabParent* aPopupTabParent,
-                                        const nsAString& aURL,
-                                        const nsAString& aName,
-                                        const nsAString& aFeatures);
+
+  static OpenWindowResult OpenWindowOOP(
+      dom::BrowserParent* aOpenerBrowserParent,
+      dom::BrowserParent* aPopupBrowserParent, const nsAString& aURL,
+      const nsAString& aName, const nsAString& aFeatures);
 
   
 

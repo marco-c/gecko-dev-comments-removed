@@ -9,7 +9,7 @@
 #include "base/message_loop.h"
 #include "base/task.h"
 #include "MainThreadUtils.h"
-#include "mozilla/dom/TabParent.h"
+#include "mozilla/dom/BrowserParent.h"
 #include "mozilla/layers/APZCCallbackHelper.h"
 #include "mozilla/layers/APZCTreeManagerParent.h"  
 #include "mozilla/layers/APZThreadUtils.h"
@@ -59,8 +59,8 @@ void RemoteContentController::HandleTapOnMainThread(TapType aTapType,
                                                     uint64_t aInputBlockId) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  dom::TabParent* tab =
-      dom::TabParent::GetTabParentFromLayersId(aGuid.mLayersId);
+  dom::BrowserParent* tab =
+      dom::BrowserParent::GetBrowserParentFromLayersId(aGuid.mLayersId);
   if (tab) {
     tab->SendHandleTap(aTapType, aPoint, aModifiers, aGuid, aInputBlockId);
   }

@@ -28,7 +28,7 @@
 #include "mozilla/AutoRestore.h"      
 #include "mozilla/ClearOnShutdown.h"  
 #include "mozilla/DebugOnly.h"        
-#include "mozilla/dom/TabParent.h"
+#include "mozilla/dom/BrowserParent.h"
 #include "mozilla/gfx/2D.h"         
 #include "mozilla/gfx/GPUChild.h"   
 #include "mozilla/gfx/Point.h"      

@@ -6,7 +6,7 @@
 
 #include "DocAccessibleParent.h"
 #include "mozilla/a11y/Platform.h"
-#include "mozilla/dom/TabParent.h"
+#include "mozilla/dom/BrowserParent.h"
 #include "xpcAccessibleDocument.h"
 #include "xpcAccEvents.h"
 #include "nsAccUtils.h"
@@ -541,7 +541,7 @@ ipc::IPCResult DocAccessibleParent::AddChildDoc(DocAccessibleParent* aChildDoc,
 mozilla::ipc::IPCResult DocAccessibleParent::RecvShutdown() {
   Destroy();
 
-  auto mgr = static_cast<dom::TabParent*>(Manager());
+  auto mgr = static_cast<dom::BrowserParent*>(Manager());
   if (!mgr->IsDestroyed()) {
     if (!PDocAccessibleParent::Send__delete__(this)) {
       return IPC_FAIL_NO_REASON(mgr);
@@ -672,7 +672,7 @@ void DocAccessibleParent::MaybeInitWindowEmulation() {
     rect.MoveToX(rootRect.X() - rect.X());
     rect.MoveToY(rect.Y() - rootRect.Y());
 
-    auto tab = static_cast<dom::TabParent*>(Manager());
+    auto tab = static_cast<dom::BrowserParent*>(Manager());
     tab->GetDocShellIsActive(&isActive);
   }
 
@@ -708,7 +708,7 @@ void DocAccessibleParent::MaybeInitWindowEmulation() {
 
 void DocAccessibleParent::SendParentCOMProxy() {
   
-  auto tab = static_cast<dom::TabParent*>(Manager());
+  auto tab = static_cast<dom::BrowserParent*>(Manager());
   MOZ_ASSERT(tab);
   if (tab->IsDestroyed()) {
     return;

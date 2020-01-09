@@ -24,7 +24,7 @@ namespace mozilla {
 class ContentCacheInParent;
 
 namespace dom {
-class TabParent;
+class BrowserParent;
 }  
 
 
@@ -265,7 +265,7 @@ class ContentCacheInChild final : public ContentCache {
 
 class ContentCacheInParent final : public ContentCache {
  public:
-  explicit ContentCacheInParent(dom::TabParent& aTabParent);
+  explicit ContentCacheInParent(dom::BrowserParent& aBrowserParent);
 
   
 
@@ -358,7 +358,7 @@ class ContentCacheInParent final : public ContentCache {
   enum class RequestIMEToCommitCompositionResult : uint8_t {
     eToOldCompositionReceived,
     eToCommittedCompositionReceived,
-    eReceivedAfterTabParentBlur,
+    eReceivedAfterBrowserParentBlur,
     eReceivedButNoTextComposition,
     eHandledAsynchronously,
     eHandledSynchronously,
@@ -370,11 +370,12 @@ class ContentCacheInParent final : public ContentCache {
         return "Commit request is not handled because it's for "
                "older composition";
       case RequestIMEToCommitCompositionResult::eToCommittedCompositionReceived:
-        return "Commit request is not handled because TabParent has already "
+        return "Commit request is not handled because BrowserParent has "
+               "already "
                "sent commit event for the composition";
-      case RequestIMEToCommitCompositionResult::eReceivedAfterTabParentBlur:
+      case RequestIMEToCommitCompositionResult::eReceivedAfterBrowserParentBlur:
         return "Commit request is handled with stored composition string "
-               "because TabParent has already lost focus";
+               "because BrowserParent has already lost focus";
       case RequestIMEToCommitCompositionResult::eReceivedButNoTextComposition:
         return "Commit request is not handled because there is no "
                "TextCompsition instance";
@@ -392,7 +393,7 @@ class ContentCacheInParent final : public ContentCache {
 #endif  
 
   
-  dom::TabParent& MOZ_NON_OWNING_REF mTabParent;
+  dom::BrowserParent& MOZ_NON_OWNING_REF mBrowserParent;
   
   
   nsString mCompositionString;

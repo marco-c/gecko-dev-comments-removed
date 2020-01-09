@@ -11,7 +11,7 @@
 
 #include "ContentParent.h"
 #include "ProcessUtils.h"
-#include "TabParent.h"
+#include "BrowserParent.h"
 
 #if defined(ANDROID) || defined(LINUX)
 #  include <sys/time.h>
@@ -195,7 +195,7 @@
 #include "ProcessPriorityManager.h"
 #include "SandboxHal.h"
 #include "SourceSurfaceRawData.h"
-#include "TabParent.h"
+#include "BrowserParent.h"
 #include "URIUtils.h"
 #include "nsIWebBrowserChrome.h"
 #include "nsIDocShell.h"
@@ -537,7 +537,7 @@ ScriptableCPInfo::GetTabCount(int32_t* aTabCount) {
   }
 
   ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
-  *aTabCount = cpm->GetTabParentCountByProcessId(mContentParent->ChildID());
+  *aTabCount = cpm->GetBrowserParentCountByProcessId(mContentParent->ChildID());
 
   return NS_OK;
 }
@@ -574,7 +574,8 @@ UniquePtr<SandboxBrokerPolicyFactory>
     ContentParent::sSandboxBrokerPolicyFactory;
 #endif
 uint64_t ContentParent::sNextRemoteTabId = 0;
-nsDataHashtable<nsUint64HashKey, TabParent*> ContentParent::sNextTabParents;
+nsDataHashtable<nsUint64HashKey, BrowserParent*>
+    ContentParent::sNextBrowserParents;
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
 StaticAutoPtr<std::vector<std::string>> ContentParent::sMacSandboxParams;
 #endif
@@ -744,7 +745,7 @@ void ContentParent::ReleaseCachedProcesses() {
   
   
   for (auto* cp : contentParents) {
-    nsTArray<TabId> tabIds = cpm->GetTabParentsByProcessId(cp->mChildID);
+    nsTArray<TabId> tabIds = cpm->GetBrowserParentsByProcessId(cp->mChildID);
     if (!tabIds.Length()) {
       toRelease.AppendElement(cp);
     }
@@ -777,7 +778,7 @@ already_AddRefed<ContentParent> ContentParent::MinTabSelect(
     NS_ASSERTION(p->IsAlive(),
                  "Non-alive contentparent in sBrowserContentParents?");
     if (p->mOpener == aOpener) {
-      uint32_t tabCount = cpm->GetTabParentCountByProcessId(p->ChildID());
+      uint32_t tabCount = cpm->GetBrowserParentCountByProcessId(p->ChildID());
       if (tabCount < min) {
         candidate = p;
         min = tabCount;
@@ -1084,12 +1085,12 @@ mozilla::ipc::IPCResult ContentParent::RecvLaunchRDDProcess(
 }
 
 
-TabParent* ContentParent::CreateBrowser(const TabContext& aContext,
-                                        Element* aFrameElement,
-                                        BrowsingContext* aBrowsingContext,
-                                        ContentParent* aOpenerContentParent,
-                                        TabParent* aSameTabGroupAs,
-                                        uint64_t aNextRemoteTabId) {
+BrowserParent* ContentParent::CreateBrowser(const TabContext& aContext,
+                                            Element* aFrameElement,
+                                            BrowsingContext* aBrowsingContext,
+                                            ContentParent* aOpenerContentParent,
+                                            BrowserParent* aSameTabGroupAs,
+                                            uint64_t aNextRemoteTabId) {
   AUTO_PROFILER_LABEL("ContentParent::CreateBrowser", OTHER);
 
   if (!sCanLaunchSubprocesses) {
@@ -1103,8 +1104,9 @@ TabParent* ContentParent::CreateBrowser(const TabContext& aContext,
   }
 
   if (aNextRemoteTabId) {
-    if (TabParent* parent =
-            sNextTabParents.GetAndRemove(aNextRemoteTabId).valueOr(nullptr)) {
+    if (BrowserParent* parent =
+            sNextBrowserParents.GetAndRemove(aNextRemoteTabId)
+                .valueOr(nullptr)) {
       MOZ_ASSERT(!parent->GetOwnerElement(),
                  "Shouldn't have an owner elemnt before");
       parent->SetOwnerElement(aFrameElement);
@@ -1118,7 +1120,7 @@ TabParent* ContentParent::CreateBrowser(const TabContext& aContext,
   nsIDocShell* docShell = GetOpenerDocShellHelper(aFrameElement);
   TabId openerTabId;
   if (docShell) {
-    openerTabId = TabParent::GetTabIdFrom(docShell);
+    openerTabId = BrowserParent::GetTabIdFrom(docShell);
   }
 
   bool isPreloadBrowser = false;
@@ -1130,7 +1132,7 @@ TabParent* ContentParent::CreateBrowser(const TabContext& aContext,
 
   RefPtr<ContentParent> constructorSender;
   MOZ_RELEASE_ASSERT(XRE_IsParentProcess(),
-                     "Cannot allocate TabParent in content process");
+                     "Cannot allocate BrowserParent in content process");
   if (aOpenerContentParent) {
     constructorSender = aOpenerContentParent;
   } else {
@@ -1187,14 +1189,15 @@ TabParent* ContentParent::CreateBrowser(const TabContext& aContext,
     aBrowsingContext->Canonical()->SetOwnerProcessId(
         constructorSender->ChildID());
 
-    RefPtr<TabParent> tabParent =
-        new TabParent(constructorSender, tabId, aContext,
+    RefPtr<BrowserParent> browserParent =
+        new BrowserParent(constructorSender, tabId, aContext,
                       aBrowsingContext->Canonical(), chromeFlags);
 
     
     
     ManagedEndpoint<PBrowserChild> childEp =
-        constructorSender->OpenPBrowserEndpoint(do_AddRef(tabParent).take());
+        constructorSender->OpenPBrowserEndpoint(
+            do_AddRef(browserParent).take());
     if (NS_WARN_IF(!childEp.IsValid())) {
       return nullptr;
     }
@@ -1212,11 +1215,11 @@ TabParent* ContentParent::CreateBrowser(const TabContext& aContext,
     if (remoteType.EqualsLiteral(LARGE_ALLOCATION_REMOTE_TYPE)) {
       
       
-      Unused << tabParent->SendAwaitLargeAlloc();
+      Unused << browserParent->SendAwaitLargeAlloc();
     }
 
-    tabParent->SetOwnerElement(aFrameElement);
-    return tabParent;
+    browserParent->SetOwnerElement(aFrameElement);
+    return browserParent;
   }
   return nullptr;
 }
@@ -1309,8 +1312,8 @@ namespace {
 class RemoteWindowContext final : public nsIRemoteWindowContext,
                                   public nsIInterfaceRequestor {
  public:
-  explicit RemoteWindowContext(TabParent* aTabParent)
-      : mTabParent(aTabParent) {}
+  explicit RemoteWindowContext(BrowserParent* aBrowserParent)
+      : mBrowserParent(aBrowserParent) {}
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIINTERFACEREQUESTOR
@@ -1318,7 +1321,7 @@ class RemoteWindowContext final : public nsIRemoteWindowContext,
 
  private:
   ~RemoteWindowContext();
-  RefPtr<TabParent> mTabParent;
+  RefPtr<BrowserParent> mBrowserParent;
 };
 
 NS_IMPL_ISUPPORTS(RemoteWindowContext, nsIRemoteWindowContext,
@@ -1333,13 +1336,13 @@ RemoteWindowContext::GetInterface(const nsIID& aIID, void** aSink) {
 
 NS_IMETHODIMP
 RemoteWindowContext::OpenURI(nsIURI* aURI) {
-  mTabParent->LoadURL(aURI);
+  mBrowserParent->LoadURL(aURI);
   return NS_OK;
 }
 
 NS_IMETHODIMP
 RemoteWindowContext::GetUsePrivateBrowsing(bool* aUsePrivateBrowsing) {
-  nsCOMPtr<nsILoadContext> loadContext = mTabParent->GetLoadContext();
+  nsCOMPtr<nsILoadContext> loadContext = mBrowserParent->GetLoadContext();
   *aUsePrivateBrowsing = loadContext && loadContext->UsePrivateBrowsing();
   return NS_OK;
 }
@@ -1767,7 +1770,7 @@ void ContentParent::NotifyTabDestroying(const TabId& aTabId,
       return;
     }
     ++cp->mNumDestroyingTabs;
-    nsTArray<TabId> tabIds = cpm->GetTabParentsByProcessId(aCpId);
+    nsTArray<TabId> tabIds = cpm->GetBrowserParentsByProcessId(aCpId);
     if (static_cast<size_t>(cp->mNumDestroyingTabs) != tabIds.Length()) {
       return;
     }
@@ -1824,7 +1827,7 @@ void ContentParent::NotifyTabDestroyed(const TabId& aTabId,
   
   
   ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
-  nsTArray<TabId> tabIds = cpm->GetTabParentsByProcessId(this->ChildID());
+  nsTArray<TabId> tabIds = cpm->GetBrowserParentsByProcessId(this->ChildID());
 
   if (tabIds.Length() == 1 && !ShouldKeepProcessAlive() && !TryToRecycle()) {
     
@@ -3174,7 +3177,7 @@ bool ContentParent::CanOpenBrowser(const IPCTabContext& aContext) {
     }
 
     auto opener =
-        TabParent::GetFrom(popupContext.opener().get_PBrowserParent());
+        BrowserParent::GetFrom(popupContext.opener().get_PBrowserParent());
     if (!opener) {
       ASSERT_UNLESS_FUZZING(
           "Got null opener from child; aborting AllocPBrowserParent.");
@@ -3206,7 +3209,7 @@ bool ContentParent::CanOpenBrowser(const IPCTabContext& aContext) {
 }
 
 bool ContentParent::DeallocPBrowserParent(PBrowserParent* frame) {
-  TabParent* parent = TabParent::GetFrom(frame);
+  BrowserParent* parent = BrowserParent::GetFrom(frame);
   NS_RELEASE(parent);
   return true;
 }
@@ -3228,7 +3231,7 @@ mozilla::ipc::IPCResult ContentParent::RecvConstructPopupBrowser(
     
     const PopupIPCTabContext& popupContext = aContext.get_PopupIPCTabContext();
     auto opener =
-        TabParent::GetFrom(popupContext.opener().get_PBrowserParent());
+        BrowserParent::GetFrom(popupContext.opener().get_PBrowserParent());
     openerTabId = opener->GetTabId();
     openerCpId = opener->Manager()->ChildID();
 
@@ -3275,8 +3278,8 @@ mozilla::ipc::IPCResult ContentParent::RecvConstructPopupBrowser(
 
   MaybeInvalidTabContext tc(aContext);
   MOZ_ASSERT(tc.IsValid());
-  RefPtr<TabParent> parent = new TabParent(this, aTabId, tc.GetTabContext(),
-                                           browsingContext, chromeFlags);
+  RefPtr<BrowserParent> parent = new BrowserParent(
+      this, aTabId, tc.GetTabContext(), browsingContext, chromeFlags);
 
   
   
@@ -3285,6 +3288,7 @@ mozilla::ipc::IPCResult ContentParent::RecvConstructPopupBrowser(
     return IPC_FAIL(this, "BindPBrowserEndpoint failed");
   }
 
+  
   
   
   
@@ -3791,7 +3795,7 @@ mozilla::ipc::IPCResult ContentParent::RecvLoadURIExternal(
   }
 
   RefPtr<RemoteWindowContext> context =
-      new RemoteWindowContext(static_cast<TabParent*>(windowContext));
+      new RemoteWindowContext(static_cast<BrowserParent*>(windowContext));
   extProtService->LoadURI(ourURI, context);
   return IPC_OK();
 }
@@ -4563,7 +4567,7 @@ mozilla::ipc::IPCResult ContentParent::RecvSetOfflinePermission(
   return IPC_OK();
 }
 
-void ContentParent::MaybeInvokeDragSession(TabParent* aParent) {
+void ContentParent::MaybeInvokeDragSession(BrowserParent* aParent) {
   
   
   
@@ -4624,8 +4628,8 @@ ContentParent::AllocPContentPermissionRequestParent(
     const bool& aIsHandlingUserInput, const bool& aDocumentHasUserInput,
     const DOMTimeStamp& aPageLoadTimestamp, const TabId& aTabId) {
   ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
-  RefPtr<TabParent> tp =
-      cpm->GetTopLevelTabParentByProcessAndTabId(this->ChildID(), aTabId);
+  RefPtr<BrowserParent> tp =
+      cpm->GetTopLevelBrowserParentByProcessAndTabId(this->ChildID(), aTabId);
   if (!tp) {
     return nullptr;
   }
@@ -4659,7 +4663,7 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
     const bool& aCalledFromJS, const bool& aPositionSpecified,
     const bool& aSizeSpecified, nsIURI* aURIToLoad, const nsCString& aFeatures,
     const float& aFullZoom, uint64_t aNextRemoteTabId, const nsString& aName,
-    nsresult& aResult, nsCOMPtr<nsIRemoteTab>& aNewTabParent,
+    nsresult& aResult, nsCOMPtr<nsIRemoteTab>& aNewBrowserParent,
     bool* aWindowIsNew, int32_t& aOpenLocation,
     nsIPrincipal* aTriggeringPrincipal, nsIReferrerInfo* aReferrerInfo,
     bool aLoadURI, nsIContentSecurityPolicy* aCsp)
@@ -4675,12 +4679,12 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
     return IPC_FAIL(this, "Forbidden aChromeFlags passed");
   }
 
-  TabParent* thisTabParent = TabParent::GetFrom(aThisTab);
+  BrowserParent* thisBrowserParent = BrowserParent::GetFrom(aThisTab);
   nsCOMPtr<nsIContent> frame;
-  if (thisTabParent) {
-    frame = thisTabParent->GetOwnerElement();
+  if (thisBrowserParent) {
+    frame = thisBrowserParent->GetOwnerElement();
 
-    if (NS_WARN_IF(thisTabParent->IsMozBrowser())) {
+    if (NS_WARN_IF(thisBrowserParent->IsMozBrowser())) {
       return IPC_FAIL(this, "aThisTab is not a MozBrowser");
     }
   }
@@ -4697,8 +4701,8 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
   }
 
   nsCOMPtr<nsIBrowserDOMWindow> browserDOMWin;
-  if (thisTabParent) {
-    browserDOMWin = thisTabParent->GetBrowserDOMWindow();
+  if (thisBrowserParent) {
+    browserDOMWin = thisBrowserParent->GetBrowserDOMWindow();
   }
 
   
@@ -4725,8 +4729,8 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
 
   
   OriginAttributes openerOriginAttributes;
-  if (thisTabParent) {
-    nsCOMPtr<nsILoadContext> loadContext = thisTabParent->GetLoadContext();
+  if (thisBrowserParent) {
+    nsCOMPtr<nsILoadContext> loadContext = thisBrowserParent->GetLoadContext();
     loadContext->GetOriginAttributes(openerOriginAttributes);
   } else if (Preferences::GetBool("browser.privatebrowsing.autostart")) {
     openerOriginAttributes.mPrivateBrowsingId = 1;
@@ -4762,7 +4766,7 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
     if (NS_SUCCEEDED(aResult) && frameLoaderOwner) {
       RefPtr<nsFrameLoader> frameLoader = frameLoaderOwner->GetFrameLoader();
       if (frameLoader) {
-        aNewTabParent = frameLoader->GetRemoteTab();
+        aNewBrowserParent = frameLoader->GetRemoteTab();
         
         
         
@@ -4792,13 +4796,13 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
   }
 
   aResult = pwwatch->OpenWindowWithRemoteTab(
-      thisTabParent, aFeatures, aCalledFromJS, aFullZoom, aNextRemoteTabId,
-      !aSetOpener, getter_AddRefs(aNewTabParent));
+      thisBrowserParent, aFeatures, aCalledFromJS, aFullZoom, aNextRemoteTabId,
+      !aSetOpener, getter_AddRefs(aNewBrowserParent));
   if (NS_WARN_IF(NS_FAILED(aResult))) {
     return IPC_OK();
   }
 
-  MOZ_ASSERT(aNewTabParent);
+  MOZ_ASSERT(aNewBrowserParent);
 
   
   
@@ -4810,7 +4814,7 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
   
   {
     nsCOMPtr<Element> frameElement =
-        TabParent::GetFrom(aNewTabParent)->GetOwnerElement();
+        BrowserParent::GetFrom(aNewBrowserParent)->GetOwnerElement();
     MOZ_ASSERT(frameElement);
     RefPtr<nsFrameLoaderOwner> frameLoaderOwner = do_QueryObject(frameElement);
     MOZ_ASSERT(frameLoaderOwner);
@@ -4822,7 +4826,8 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
   
   
   if (nsContentUtils::IsOverridingWindowName(aName)) {
-    Unused << TabParent::GetFrom(aNewTabParent)->SendSetWindowName(aName);
+    Unused
+        << BrowserParent::GetFrom(aNewBrowserParent)->SendSetWindowName(aName);
   }
 
   
@@ -4831,17 +4836,17 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
   
   
   if (!aSetOpener) {
-    Unused << TabParent::GetFrom(aNewTabParent)
+    Unused << BrowserParent::GetFrom(aNewBrowserParent)
                   ->SendSetOriginAttributes(openerOriginAttributes);
   }
 
   if (aURIToLoad && aLoadURI) {
     nsCOMPtr<mozIDOMWindowProxy> openerWindow;
-    if (aSetOpener && thisTabParent) {
-      openerWindow = thisTabParent->GetParentWindowOuter();
+    if (aSetOpener && thisBrowserParent) {
+      openerWindow = thisBrowserParent->GetParentWindowOuter();
     }
     nsCOMPtr<nsIBrowserDOMWindow> newBrowserDOMWin =
-        TabParent::GetFrom(aNewTabParent)->GetBrowserDOMWindow();
+        BrowserParent::GetFrom(aNewBrowserParent)->GetBrowserDOMWindow();
     if (NS_WARN_IF(!newBrowserDOMWin)) {
       aResult = NS_ERROR_ABORT;
       return IPC_OK();
@@ -4880,7 +4885,7 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateWindow(
     aResolve(cwi);
   });
 
-  TabParent* newTab = TabParent::GetFrom(aNewTab);
+  BrowserParent* newTab = BrowserParent::GetFrom(aNewTab);
   MOZ_ASSERT(newTab);
 
   auto destroyNewTabOnError = MakeScopeExit([&] {
@@ -4896,9 +4901,9 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateWindow(
   
   newTab->SetHasContentOpener(true);
 
-  TabParent::AutoUseNewTab aunt(newTab, &cwi.urlToLoad());
+  BrowserParent::AutoUseNewTab aunt(newTab, &cwi.urlToLoad());
   const uint64_t nextRemoteTabId = ++sNextRemoteTabId;
-  sNextTabParents.Put(nextRemoteTabId, newTab);
+  sNextBrowserParents.Put(nextRemoteTabId, newTab);
 
   const nsCOMPtr<nsIURI> uriToLoad = DeserializeURI(aURIToLoad);
 
@@ -4918,10 +4923,10 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateWindow(
     return IPC_OK();
   }
 
-  if (sNextTabParents.GetAndRemove(nextRemoteTabId).valueOr(nullptr)) {
+  if (sNextBrowserParents.GetAndRemove(nextRemoteTabId).valueOr(nullptr)) {
     cwi.windowOpened() = false;
   }
-  MOZ_ASSERT(TabParent::GetFrom(newRemoteTab) == newTab);
+  MOZ_ASSERT(BrowserParent::GetFrom(newRemoteTab) == newTab);
 
   newTab->SwapFrameScriptsFrom(cwi.frameScripts());
   newTab->MaybeShowFrame();
@@ -5240,13 +5245,13 @@ void ContentParent::SendGetFilesResponseAndForget(
 }
 
 void ContentParent::PaintTabWhileInterruptingJS(
-    TabParent* aTabParent, bool aForceRepaint,
+    BrowserParent* aBrowserParent, bool aForceRepaint,
     const layers::LayersObserverEpoch& aEpoch) {
   if (!mHangMonitorActor) {
     return;
   }
-  ProcessHangMonitor::PaintWhileInterruptingJS(mHangMonitorActor, aTabParent,
-                                               aForceRepaint, aEpoch);
+  ProcessHangMonitor::PaintWhileInterruptingJS(
+      mHangMonitorActor, aBrowserParent, aForceRepaint, aEpoch);
 }
 
 void ContentParent::UpdateCookieStatus(nsIChannel* aChannel) {
@@ -5757,7 +5762,7 @@ void ContentParent::UnregisterRemoveWorkerActor() {
   }
 
   ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
-  if (!cpm->GetTabParentCountByProcessId(ChildID()) &&
+  if (!cpm->GetBrowserParentCountByProcessId(ChildID()) &&
       !ShouldKeepProcessAlive() && !TryToRecycle()) {
     
     

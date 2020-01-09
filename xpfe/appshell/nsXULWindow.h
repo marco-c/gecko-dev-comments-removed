@@ -184,7 +184,7 @@ class nsXULWindow : public nsIBaseWindow,
   nsString mTitle;
   nsIntRect mOpenerScreenRect;  
 
-  nsCOMPtr<nsIRemoteTab> mPrimaryTabParent;
+  nsCOMPtr<nsIRemoteTab> mPrimaryBrowserParent;
 
  private:
   

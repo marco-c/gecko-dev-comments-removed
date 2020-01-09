@@ -21,7 +21,7 @@ class nsILoadContext;
 namespace mozilla {
 
 namespace dom {
-class TabParent;
+class BrowserParent;
 class PBrowserOrId;
 }  
 
@@ -132,7 +132,7 @@ class FTPChannelParent final : public PFTPChannelParent,
   
   
   bool mSuspendedForDiversion;
-  RefPtr<mozilla::dom::TabParent> mTabParent;
+  RefPtr<mozilla::dom::BrowserParent> mBrowserParent;
 
   RefPtr<ChannelEventQueue> mEventQ;
 

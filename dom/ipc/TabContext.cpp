@@ -6,7 +6,7 @@
 
 #include "mozilla/dom/TabContext.h"
 #include "mozilla/dom/PTabContext.h"
-#include "mozilla/dom/TabParent.h"
+#include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/TabChild.h"
 #include "mozilla/StaticPrefs.h"
 #include "nsIScriptSecurityManager.h"
@@ -142,7 +142,8 @@ MaybeInvalidTabContext::MaybeInvalidTabContext(const IPCTabContext& aParams)
 
       TabContext* context;
       if (ipcContext.opener().type() == PBrowserOrId::TPBrowserParent) {
-        context = TabParent::GetFrom(ipcContext.opener().get_PBrowserParent());
+        context =
+            BrowserParent::GetFrom(ipcContext.opener().get_PBrowserParent());
         if (!context) {
           mInvalidReason =
               "Child is-browser process tried to "

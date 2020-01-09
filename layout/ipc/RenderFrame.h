@@ -22,7 +22,7 @@ class nsSubDocumentFrame;
 namespace mozilla {
 
 namespace dom {
-class TabParent;
+class BrowserParent;
 }  
 
 namespace layers {
@@ -45,7 +45,7 @@ class RenderFrame final {
   RenderFrame();
   virtual ~RenderFrame();
 
-  bool Initialize(dom::TabParent* aTabParent);
+  bool Initialize(dom::BrowserParent* aBrowserParent);
   void Destroy();
 
   void EnsureLayersConnected(CompositorOptions* aCompositorOptions);
@@ -72,7 +72,7 @@ class RenderFrame final {
   
   CompositorOptions mCompositorOptions;
 
-  dom::TabParent* mTabParent;
+  dom::BrowserParent* mBrowserParent;
   RefPtr<LayerManager> mLayerManager;
 
   bool mInitialized;

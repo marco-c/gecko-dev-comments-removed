@@ -6,7 +6,7 @@
 
 #include "ContentProcessManager.h"
 #include "ContentParent.h"
-#include "mozilla/dom/TabParent.h"
+#include "mozilla/dom/BrowserParent.h"
 
 #include "mozilla/StaticPtr.h"
 #include "mozilla/ClearOnShutdown.h"
@@ -254,8 +254,8 @@ ContentParentId ContentProcessManager::GetTabProcessId(const TabId& aTabId) {
   return tabProcessIter->second;
 }
 
-already_AddRefed<TabParent>
-ContentProcessManager::GetTabParentByProcessAndTabId(
+already_AddRefed<BrowserParent>
+ContentProcessManager::GetBrowserParentByProcessAndTabId(
     const ContentParentId& aChildCpId, const TabId& aChildTabId) {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -268,7 +268,7 @@ ContentProcessManager::GetTabParentByProcessAndTabId(
   const ManagedContainer<PBrowserParent>& browsers =
       iter->second.mCp->ManagedPBrowserParent();
   for (auto iter = browsers.ConstIter(); !iter.Done(); iter.Next()) {
-    RefPtr<TabParent> tab = TabParent::GetFrom(iter.Get()->GetKey());
+    RefPtr<BrowserParent> tab = BrowserParent::GetFrom(iter.Get()->GetKey());
     if (tab->GetTabId() == aChildTabId) {
       return tab.forget();
     }
@@ -277,8 +277,8 @@ ContentProcessManager::GetTabParentByProcessAndTabId(
   return nullptr;
 }
 
-already_AddRefed<TabParent>
-ContentProcessManager::GetTopLevelTabParentByProcessAndTabId(
+already_AddRefed<BrowserParent>
+ContentProcessManager::GetTopLevelBrowserParentByProcessAndTabId(
     const ContentParentId& aChildCpId, const TabId& aChildTabId) {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -306,10 +306,10 @@ ContentProcessManager::GetTopLevelTabParentByProcessAndTabId(
   } while (parentCpId);
 
   
-  return GetTabParentByProcessAndTabId(currentCpId, currentTabId);
+  return GetBrowserParentByProcessAndTabId(currentCpId, currentTabId);
 }
 
-nsTArray<TabId> ContentProcessManager::GetTabParentsByProcessId(
+nsTArray<TabId> ContentProcessManager::GetBrowserParentsByProcessId(
     const ContentParentId& aChildCpId) {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -328,7 +328,7 @@ nsTArray<TabId> ContentProcessManager::GetTabParentsByProcessId(
   return tabIdList;
 }
 
-uint32_t ContentProcessManager::GetTabParentCountByProcessId(
+uint32_t ContentProcessManager::GetBrowserParentCountByProcessId(
     const ContentParentId& aChildCpId) {
   MOZ_ASSERT(NS_IsMainThread());
 

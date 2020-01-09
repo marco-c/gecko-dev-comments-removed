@@ -874,7 +874,7 @@ bool nsPluginInstanceOwner::RequestCommitOrCancel(bool aCommitted) {
   
   IMEStateManager::NotifyIME(aCommitted ? widget::REQUEST_TO_COMMIT_COMPOSITION
                                         : widget::REQUEST_TO_CANCEL_COMPOSITION,
-                             widget, composition->GetTabParent());
+                             widget, composition->GetBrowserParent());
   
   
   return true;

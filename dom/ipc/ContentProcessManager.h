@@ -114,13 +114,14 @@ class ContentProcessManager final {
 
 
 
-  nsTArray<TabId> GetTabParentsByProcessId(const ContentParentId& aChildCpId);
+  nsTArray<TabId> GetBrowserParentsByProcessId(
+      const ContentParentId& aChildCpId);
 
   
 
 
 
-  uint32_t GetTabParentCountByProcessId(const ContentParentId& aChildCpId);
+  uint32_t GetBrowserParentCountByProcessId(const ContentParentId& aChildCpId);
 
   
 
@@ -128,7 +129,7 @@ class ContentProcessManager final {
 
 
 
-  already_AddRefed<TabParent> GetTabParentByProcessAndTabId(
+  already_AddRefed<BrowserParent> GetBrowserParentByProcessAndTabId(
       const ContentParentId& aChildCpId, const TabId& aChildTabId);
 
   
@@ -142,7 +143,7 @@ class ContentProcessManager final {
 
 
 
-  already_AddRefed<TabParent> GetTopLevelTabParentByProcessAndTabId(
+  already_AddRefed<BrowserParent> GetTopLevelBrowserParentByProcessAndTabId(
       const ContentParentId& aChildCpId, const TabId& aChildTabId);
 
  private:

@@ -149,7 +149,7 @@ class ContentChild;
 class ContentParent;
 class TabChild;
 class Selection;
-class TabParent;
+class BrowserParent;
 }  
 
 namespace ipc {
@@ -202,8 +202,8 @@ struct EventNameMapping {
   bool mMaybeSpecialSVGorSMILEvent;
 };
 
-typedef bool (*CallOnRemoteChildFunction)(mozilla::dom::TabParent* aTabParent,
-                                          void* aArg);
+typedef bool (*CallOnRemoteChildFunction)(
+    mozilla::dom::BrowserParent* aBrowserParent, void* aArg);
 
 class nsContentUtils {
   friend class nsAutoScriptBlockerSuppressNodeRemoved;

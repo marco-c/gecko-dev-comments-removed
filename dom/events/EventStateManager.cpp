@@ -25,7 +25,7 @@
 #include "mozilla/dom/FrameLoaderBinding.h"
 #include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/dom/TabChild.h"
-#include "mozilla/dom/TabParent.h"
+#include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/UIEvent.h"
 #include "mozilla/dom/UIEventBinding.h"
 #include "mozilla/dom/WheelEventBinding.h"
@@ -1091,12 +1091,13 @@ struct MOZ_STACK_CLASS AccessKeyInfo {
       : event(aEvent), charCodes(aCharCodes) {}
 };
 
-static bool HandleAccessKeyInRemoteChild(TabParent* aTabParent, void* aArg) {
+static bool HandleAccessKeyInRemoteChild(BrowserParent* aBrowserParent,
+                                         void* aArg) {
   AccessKeyInfo* accessKeyInfo = static_cast<AccessKeyInfo*>(aArg);
 
   
   bool active;
-  aTabParent->GetDocShellIsActive(&active);
+  aBrowserParent->GetDocShellIsActive(&active);
   if (active) {
     
     
@@ -1105,8 +1106,8 @@ static bool HandleAccessKeyInRemoteChild(TabParent* aTabParent, void* aArg) {
     
     accessKeyInfo->event->StopPropagation();
     accessKeyInfo->event->MarkAsWaitingReplyFromRemoteProcess();
-    aTabParent->HandleAccessKey(*accessKeyInfo->event,
-                                accessKeyInfo->charCodes);
+    aBrowserParent->HandleAccessKey(*accessKeyInfo->event,
+                                    accessKeyInfo->charCodes);
     return true;
   }
 
@@ -1208,7 +1209,7 @@ bool EventStateManager::WalkESMTreeToHandleAccessKey(
     
     
     
-    if (TabParent::GetFrom(GetFocusedContent())) {
+    if (BrowserParent::GetFrom(GetFocusedContent())) {
       
       
       
@@ -1233,23 +1234,24 @@ bool EventStateManager::WalkESMTreeToHandleAccessKey(
 void EventStateManager::DispatchCrossProcessEvent(WidgetEvent* aEvent,
                                                   nsFrameLoader* aFrameLoader,
                                                   nsEventStatus* aStatus) {
-  TabParent* remote = TabParent::GetFrom(aFrameLoader);
+  BrowserParent* remote = BrowserParent::GetFrom(aFrameLoader);
   if (!remote) {
     return;
   }
 
   if (aEvent->mLayersId.IsValid()) {
-    TabParent* preciseRemote =
-        TabParent::GetTabParentFromLayersId(aEvent->mLayersId);
+    BrowserParent* preciseRemote =
+        BrowserParent::GetBrowserParentFromLayersId(aEvent->mLayersId);
     if (preciseRemote) {
       remote = preciseRemote;
     }
     
     
+    
   } else if (aEvent->mClass == eKeyboardEventClass) {
     
     
-    TabParent* preciseRemote = TabParent::GetFocused();
+    BrowserParent* preciseRemote = BrowserParent::GetFocused();
     if (preciseRemote) {
       remote = preciseRemote;
     }
@@ -1278,8 +1280,8 @@ void EventStateManager::DispatchCrossProcessEvent(WidgetEvent* aEvent,
       return;
     }
     case eDragEventClass: {
-      RefPtr<TabParent> tabParent = remote;
-      tabParent->Manager()->MaybeInvokeDragSession(tabParent);
+      RefPtr<BrowserParent> browserParent = remote;
+      browserParent->Manager()->MaybeInvokeDragSession(browserParent);
 
       nsCOMPtr<nsIDragSession> dragSession = nsContentUtils::GetDragSession();
       uint32_t dropEffect = nsIDragService::DRAGDROP_ACTION_NONE;
@@ -1296,8 +1298,8 @@ void EventStateManager::DispatchCrossProcessEvent(WidgetEvent* aEvent,
         }
       }
 
-      tabParent->SendRealDragEvent(*aEvent->AsDragEvent(), action, dropEffect,
-                                   IPC::Principal(principal));
+      browserParent->SendRealDragEvent(*aEvent->AsDragEvent(), action,
+                                       dropEffect, IPC::Principal(principal));
       return;
     }
     case ePluginEventClass: {
@@ -1312,7 +1314,7 @@ void EventStateManager::DispatchCrossProcessEvent(WidgetEvent* aEvent,
 }
 
 bool EventStateManager::IsRemoteTarget(nsIContent* target) {
-  return !!TabParent::GetFrom(target);
+  return !!BrowserParent::GetFrom(target);
 }
 
 bool EventStateManager::HandleCrossProcessEvent(WidgetEvent* aEvent,
@@ -2887,8 +2889,8 @@ void EventStateManager::PostHandleKeyboardEvent(
 
   if (!aKeyboardEvent->HasBeenPostedToRemoteProcess()) {
     if (aKeyboardEvent->IsWaitingReplyFromRemoteProcess()) {
-      RefPtr<TabParent> remote =
-          aTargetFrame ? TabParent::GetFrom(aTargetFrame->GetContent())
+      RefPtr<BrowserParent> remote =
+          aTargetFrame ? BrowserParent::GetFrom(aTargetFrame->GetContent())
                        : nullptr;
       if (remote) {
         
@@ -2897,7 +2899,7 @@ void EventStateManager::PostHandleKeyboardEvent(
         
         
         
-        TabParent* preciseRemote = TabParent::GetFocused();
+        BrowserParent* preciseRemote = BrowserParent::GetFocused();
         if (preciseRemote) {
           remote = preciseRemote;
         }
@@ -3619,8 +3621,8 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
   return ret;
 }
 
-TabParent* EventStateManager::GetCrossProcessTarget() {
-  return IMEStateManager::GetActiveTabParent();
+BrowserParent* EventStateManager::GetCrossProcessTarget() {
+  return IMEStateManager::GetActiveBrowserParent();
 }
 
 bool EventStateManager::IsTargetCrossProcess(WidgetGUIEvent* aEvent) {
@@ -3628,7 +3630,7 @@ bool EventStateManager::IsTargetCrossProcess(WidgetGUIEvent* aEvent) {
   
   nsIContent* focusedContent = GetFocusedContent();
   if (focusedContent && focusedContent->IsEditable()) return false;
-  return IMEStateManager::GetActiveTabParent() != nullptr;
+  return IMEStateManager::GetActiveBrowserParent() != nullptr;
 }
 
 void EventStateManager::NotifyDestroyPresContext(nsPresContext* aPresContext) {
@@ -5596,7 +5598,7 @@ nsresult EventStateManager::DoContentCommandEvent(
     if (canDoIt && !aEvent->mOnlyEnabledCheck) {
       switch (aEvent->mMessage) {
         case eContentCommandPasteTransferable: {
-          TabParent* remote = TabParent::GetFocused();
+          BrowserParent* remote = BrowserParent::GetFocused();
           if (remote) {
             nsCOMPtr<nsITransferable> transferable = aEvent->mTransferable;
             IPCDataTransfer ipcDataTransfer;
