@@ -5,7 +5,7 @@
 use api::{
     AlphaType, ColorDepth, ColorF, ColorU, DeviceIntRect, DeviceIntSideOffsets,
     DeviceIntSize, ImageRendering, LayoutRect, LayoutSize, LayoutPrimitiveInfo,
-    PremultipliedColorF, Shadow, TileOffset, YuvColorSpace, YuvFormat
+    PremultipliedColorF, Shadow, TileOffset, YuvColorSpace, YuvFormat, LayoutVector2D,
 };
 use api::ImageKey as ApiImageKey;
 use display_list_flattener::{AsInstanceKind, CreateShadow, IsVisible};
@@ -107,6 +107,7 @@ impl AsInstanceKind<ImageDataHandle> for ImageKey {
         &self,
         data_handle: ImageDataHandle,
         prim_store: &mut PrimitiveStore,
+        _reference_frame_relative_offset: LayoutVector2D,
     ) -> PrimitiveInstanceKind {
         
         
@@ -416,6 +417,7 @@ impl AsInstanceKind<YuvImageDataHandle> for YuvImageKey {
         &self,
         data_handle: YuvImageDataHandle,
         _prim_store: &mut PrimitiveStore,
+        _reference_frame_relative_offset: LayoutVector2D,
     ) -> PrimitiveInstanceKind {
         PrimitiveInstanceKind::YuvImage {
             data_handle,
