@@ -1,0 +1,16 @@
+
+
+
+
+"use strict";
+
+var EXPORTED_SYMBOLS = ["Emulation"];
+
+const {ContentProcessDomain} = ChromeUtils.import("chrome://remote/content/domains/ContentProcessDomain.jsm");
+
+class Emulation extends ContentProcessDomain {
+  
+
+  setDeviceMetricsOverride() {}
+  setTouchEmulationEnabled() {}
+}
