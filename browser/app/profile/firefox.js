@@ -1043,6 +1043,7 @@ pref("security.sandbox.gpu.level", 0);
 
 
 
+pref("security.sandbox.rdd.win32k-disable", true);
 
 
 pref("security.sandbox.gmp.win32k-disable", false);
