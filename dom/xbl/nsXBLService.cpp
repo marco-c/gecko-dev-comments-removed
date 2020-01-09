@@ -1048,7 +1048,6 @@ nsresult nsXBLService::FetchBindingDocument(
                        nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_INHERITS,
                        nsIContentPolicy::TYPE_XBL,
                        nullptr,  
-                       nullptr,  
                        loadGroup);
   }
   NS_ENSURE_SUCCESS(rv, rv);

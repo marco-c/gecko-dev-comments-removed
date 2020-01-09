@@ -841,7 +841,6 @@ static nsresult NewImageChannel(
                        securityFlags, aPolicyType,
                        nullptr,  
                        nullptr,  
-                       nullptr,  
                        callbacks, aLoadFlags);
 
     if (NS_FAILED(rv)) {

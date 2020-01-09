@@ -640,7 +640,6 @@ void nsPACMan::ContinueLoadingAfterPACUriKnown() {
                       nullptr,  
                       nullptr,  
                       nullptr,  
-                      nullptr,  
                       nsIRequest::LOAD_NORMAL, ios);
       } else {
         LOG(("nsPACMan::StartLoading Failed pacspec uri conversion %s\n",

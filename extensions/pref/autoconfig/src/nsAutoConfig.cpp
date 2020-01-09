@@ -252,7 +252,6 @@ nsresult nsAutoConfig::downloadAutoConfig() {
       nullptr,  
       nullptr,  
       nullptr,  
-      nullptr,  
       nsIRequest::INHIBIT_PERSISTENT_CACHING | nsIRequest::LOAD_BYPASS_CACHE);
 
   if (NS_FAILED(rv)) return rv;

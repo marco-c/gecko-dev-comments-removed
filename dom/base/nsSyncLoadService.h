@@ -15,7 +15,6 @@
 #include "nscore.h"
 #include "mozilla/net/ReferrerPolicy.h"
 
-class nsICookieSettings;
 class nsIInputStream;
 class nsILoadGroup;
 class nsIStreamListener;
@@ -45,12 +44,13 @@ class nsSyncLoadService {
 
 
 
-  static nsresult LoadDocument(
-      nsIURI* aURI, nsContentPolicyType aContentPolicyType,
-      nsIPrincipal* aLoaderPrincipal, nsSecurityFlags aSecurityFlags,
-      nsILoadGroup* aLoadGroup, nsICookieSettings* aCookieSettings,
-      bool aForceToXML, mozilla::net::ReferrerPolicy aReferrerPolicy,
-      mozilla::dom::Document** aResult);
+  static nsresult LoadDocument(nsIURI* aURI,
+                               nsContentPolicyType aContentPolicyType,
+                               nsIPrincipal* aLoaderPrincipal,
+                               nsSecurityFlags aSecurityFlags,
+                               nsILoadGroup* aLoadGroup, bool aForceToXML,
+                               mozilla::net::ReferrerPolicy aReferrerPolicy,
+                               mozilla::dom::Document** aResult);
 
   
 

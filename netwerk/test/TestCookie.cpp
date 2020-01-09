@@ -21,7 +21,6 @@
 #include "nsIPrefBranch.h"
 #include "nsIPrefService.h"
 #include "mozilla/Unused.h"
-#include "mozilla/net/CookieSettings.h"
 #include "nsIURI.h"
 
 using mozilla::Unused;
@@ -81,7 +80,7 @@ void SetACookie(nsICookieService *aCookieService, const char *aSpec1,
 
 void SetASameSiteCookie(nsICookieService *aCookieService, const char *aSpec1,
                         const char *aSpec2, const char *aCookieString,
-                        const char *aServerTime, bool aAllowed) {
+                        const char *aServerTime) {
   nsCOMPtr<nsIURI> uri1, uri2;
   NS_NewURI(getter_AddRefs(uri1), aSpec1);
   if (aSpec2) NS_NewURI(getter_AddRefs(uri2), aSpec2);
@@ -100,13 +99,6 @@ void SetASameSiteCookie(nsICookieService *aCookieService, const char *aSpec1,
   NS_NewChannel(getter_AddRefs(dummyChannel), uri1, spec1Principal,
                 nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK,
                 nsIContentPolicy::TYPE_OTHER);
-
-  nsCOMPtr<nsICookieSettings> cookieSettings =
-      aAllowed ? CookieSettings::Create() : CookieSettings::CreateBlockingAll();
-  MOZ_ASSERT(cookieSettings);
-
-  nsCOMPtr<nsILoadInfo> loadInfo = dummyChannel->LoadInfo();
-  loadInfo->SetCookieSettings(cookieSettings);
 
   nsresult rv = aCookieService->SetCookieStringFromHttp(
       uri1, uri2, nullptr, (char *)aCookieString, aServerTime, dummyChannel);
@@ -1015,50 +1007,22 @@ TEST(TestCookie, TestCookieMain) {
   
   
   SetASameSiteCookie(cookieService, "http://samesite.test", nullptr,
-                     "unset=yes", nullptr, false);
-  SetASameSiteCookie(cookieService, "http://samesite.test", nullptr,
-                     "unspecified=yes; samesite", nullptr, false);
-  SetASameSiteCookie(cookieService, "http://samesite.test", nullptr,
-                     "empty=yes; samesite=", nullptr, false);
-  SetASameSiteCookie(cookieService, "http://samesite.test", nullptr,
-                     "bogus=yes; samesite=bogus", nullptr, false);
-  SetASameSiteCookie(cookieService, "http://samesite.test", nullptr,
-                     "strict=yes; samesite=strict", nullptr, false);
-  SetASameSiteCookie(cookieService, "http://samesite.test", nullptr,
-                     "lax=yes; samesite=lax", nullptr, false);
-
-  EXPECT_TRUE(
-      NS_SUCCEEDED(cookieMgr->GetEnumerator(getter_AddRefs(enumerator))));
-  i = 0;
-
-  
-  while (NS_SUCCEEDED(enumerator->HasMoreElements(&more)) && more) {
-    nsCOMPtr<nsISupports> cookie;
-    if (NS_FAILED(enumerator->GetNext(getter_AddRefs(cookie)))) break;
-    ++i;
-  }
-
-  EXPECT_TRUE(i == 0);
-
-  
+                     "unset=yes", nullptr);
   
   SetASameSiteCookie(cookieService, "http://samesite.test", nullptr,
-                     "unset=yes", nullptr, true);
+                     "unspecified=yes; samesite", nullptr);
   
   SetASameSiteCookie(cookieService, "http://samesite.test", nullptr,
-                     "unspecified=yes; samesite", nullptr, true);
+                     "empty=yes; samesite=", nullptr);
   
   SetASameSiteCookie(cookieService, "http://samesite.test", nullptr,
-                     "empty=yes; samesite=", nullptr, true);
+                     "bogus=yes; samesite=bogus", nullptr);
   
   SetASameSiteCookie(cookieService, "http://samesite.test", nullptr,
-                     "bogus=yes; samesite=bogus", nullptr, true);
+                     "strict=yes; samesite=strict", nullptr);
   
   SetASameSiteCookie(cookieService, "http://samesite.test", nullptr,
-                     "strict=yes; samesite=strict", nullptr, true);
-  
-  SetASameSiteCookie(cookieService, "http://samesite.test", nullptr,
-                     "lax=yes; samesite=lax", nullptr, true);
+                     "lax=yes; samesite=lax", nullptr);
 
   EXPECT_TRUE(
       NS_SUCCEEDED(cookieMgr->GetEnumerator(getter_AddRefs(enumerator))));

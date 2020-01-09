@@ -26,9 +26,6 @@ function* do_run_test() {
   let profile = do_get_profile();
 
   
-  Services.prefs.setBoolPref("network.cookieSettings.unblocked_for_testing", true);
-
-  
   
   var spec1 = "http://foo.com/foo.html";
   var spec2 = "https://bar.com/bar.html";
