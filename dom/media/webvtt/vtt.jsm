@@ -30,6 +30,9 @@ var EXPORTED_SYMBOLS = ["WebVTT"];
 const {Services} = ChromeUtils.import('resource://gre/modules/Services.jsm');
 const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
+XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
+                                      "media.webvtt.pseudo.enabled", false);
+
 (function(global) {
 
   var _objCreate = Object.create || (function() {
@@ -494,98 +497,112 @@ const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm")
                                         "media.webvtt.pseudo.enabled", false);
 
   
+  class StyleBoxBase {
+    applyStyles(styles, div) {
+      div = div || this.div;
+      Object.assign(div.style, styles);
+    }
+
+    formatStyle(val, unit) {
+      return val === 0 ? 0 : val + unit;
+    }
+  }
+
   
-  function CueStyleBox(window, cue, styleOptions) {
-    var color = "rgba(255, 255, 255, 1)";
-    var backgroundColor = "rgba(0, 0, 0, 0.8)";
+  
+  class CueStyleBox extends StyleBoxBase {
+    constructor(window, cue, styleOptions) {
+      super();
+      var color = "rgba(255, 255, 255, 1)";
+      var backgroundColor = "rgba(0, 0, 0, 0.8)";
 
-    StyleBox.call(this);
-    this.cue = cue;
+      this.cue = cue;
 
-    
-    
-    if (this.supportPseudo) {
-      this.cueDiv = parseContent(window, cue.text, PARSE_CONTENT_MODE.PSUEDO_CUE);
-    } else {
-      this.cueDiv = parseContent(window, cue.text, PARSE_CONTENT_MODE.NORMAL_CUE);
-    }
-    var styles = {
-      color: color,
-      backgroundColor: backgroundColor,
-      display: "inline",
-      font: styleOptions.font,
-      whiteSpace: "pre-line",
-    };
-    if (this.supportPseudo) {
-      delete styles.color;
-      delete styles.backgroundColor;
-      delete styles.font;
-      delete styles.whiteSpace;
-    }
-
-    styles.writingMode = cue.vertical === "" ? "horizontal-tb"
-                                             : cue.vertical === "lr" ? "vertical-lr"
-                                                                     : "vertical-rl";
-    styles.unicodeBidi = "plaintext";
-
-    this.applyStyles(styles, this.cueDiv);
-
-    
-    
-    styles = {
-      position: "absolute",
-      textAlign: cue.align,
-      font: styleOptions.font,
-    };
-
-    this.div = window.document.createElement("div");
-    this.applyStyles(styles);
-
-    this.div.appendChild(this.cueDiv);
-
-    
-    
-    
-    function convertCuePostionToPercentage(cuePosition) {
-      if (cuePosition === "auto") {
-        return 50;
-      }
-      return cuePosition;
-    }
-    var textPos = 0;
-    let postionPercentage = convertCuePostionToPercentage(cue.position);
-    switch (cue.computedPositionAlign) {
       
-      case "line-left":
-        textPos = postionPercentage;
-        break;
-      case "center":
-        textPos = postionPercentage - (cue.size / 2);
-        break;
-      case "line-right":
-        textPos = postionPercentage - cue.size;
-        break;
+      
+      if (supportPseudo) {
+        this.cueDiv = parseContent(window, cue.text, PARSE_CONTENT_MODE.PSUEDO_CUE);
+      } else {
+        this.cueDiv = parseContent(window, cue.text, PARSE_CONTENT_MODE.NORMAL_CUE);
+      }
+      var styles = {
+        color: color,
+        backgroundColor: backgroundColor,
+        display: "inline",
+        font: styleOptions.font,
+        whiteSpace: "pre-line",
+      };
+      if (supportPseudo) {
+        delete styles.color;
+        delete styles.backgroundColor;
+        delete styles.font;
+        delete styles.whiteSpace;
+      }
+
+      styles.writingMode = cue.vertical === "" ? "horizontal-tb"
+                                               : cue.vertical === "lr" ? "vertical-lr"
+                                                                       : "vertical-rl";
+      styles.unicodeBidi = "plaintext";
+
+      this.applyStyles(styles, this.cueDiv);
+
+      
+      
+      styles = {
+        position: "absolute",
+        textAlign: cue.align,
+        font: styleOptions.font,
+      };
+
+      this.div = window.document.createElement("div");
+      this.applyStyles(styles);
+
+      this.div.appendChild(this.cueDiv);
+
+      
+      
+      
+      function convertCuePostionToPercentage(cuePosition) {
+        if (cuePosition === "auto") {
+          return 50;
+        }
+        return cuePosition;
+      }
+      var textPos = 0;
+      let postionPercentage = convertCuePostionToPercentage(cue.position);
+      switch (cue.computedPositionAlign) {
+        
+        case "line-left":
+          textPos = postionPercentage;
+          break;
+        case "center":
+          textPos = postionPercentage - (cue.size / 2);
+          break;
+        case "line-right":
+          textPos = postionPercentage - cue.size;
+          break;
+      }
+
+      
+      
+      
+      if (cue.vertical === "") {
+        this.applyStyles({
+          left:  this.formatStyle(textPos, "%"),
+          width: this.formatStyle(cue.size, "%")
+        });
+      
+      
+      
+      } else {
+        this.applyStyles({
+          top: this.formatStyle(textPos, "%"),
+          height: this.formatStyle(cue.size, "%")
+        });
+      }
     }
 
-    
-    
-    
-    if (cue.vertical === "") {
-      this.applyStyles({
-        left:  this.formatStyle(textPos, "%"),
-        width: this.formatStyle(cue.size, "%")
-      });
-    
-    
-    
-    } else {
-      this.applyStyles({
-        top: this.formatStyle(textPos, "%"),
-        height: this.formatStyle(cue.size, "%")
-      });
-    }
-
-    this.move = function(box) {
+    move(box) {
       this.applyStyles({
         top: this.formatStyle(box.top, "px"),
         bottom: this.formatStyle(box.bottom, "px"),
@@ -594,10 +611,8 @@ const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm")
         height: this.formatStyle(box.height, "px"),
         width: this.formatStyle(box.width, "px")
       });
-    };
+    }
   }
-  CueStyleBox.prototype = _objCreate(StyleBox.prototype);
-  CueStyleBox.prototype.constructor = CueStyleBox;
 
   function RegionNodeBox(window, region, container) {
     StyleBox.call(this);
