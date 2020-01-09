@@ -796,7 +796,7 @@ const PanelUI = {
     }
 
     popupnotification.notification = notification;
-    popupnotification.hidden = false;
+    popupnotification.show();
   },
 
   _showBadge(notification) {
@@ -899,15 +899,9 @@ function getLocale() {
   return Services.locale.appLocaleAsLangTag;
 }
 
+
+
+
 function getNotificationFromElement(aElement) {
-  
-  
-  
-  
-  let notificationEl;
-  let parent = aElement;
-  while (parent && (parent = aElement.ownerDocument.getBindingParent(parent))) {
-    notificationEl = parent;
-  }
-  return notificationEl;
+  return aElement.closest("popupnotification");
 }

@@ -65,8 +65,7 @@ add_task(function test_doorhanger_keep() {
     
     let popupnotification = document.getElementById("extension-tab-hide-notification");
     let popupHidden = promisePopupHidden(panel);
-    document.getAnonymousElementByAttribute(
-      popupnotification, "anonid", "button").click();
+    popupnotification.button.click();
     await popupHidden;
 
     
@@ -97,7 +96,7 @@ add_task(function test_doorhanger_disable() {
 
     
     let popupnotification = document.getElementById("extension-tab-hide-notification");
-    let description = popupnotification.querySelector("description");
+    let description = popupnotification.querySelector("#extension-tab-hide-notification-description");
     let addon = await AddonManager.getAddonByID(extension.id);
     ok(description.textContent.includes(addon.name),
        "The extension name is in the description");
@@ -110,8 +109,7 @@ add_task(function test_doorhanger_disable() {
 
     
     let popupHidden = promisePopupHidden(panel);
-    document.getAnonymousElementByAttribute(
-      popupnotification, "anonid", "secondarybutton").click();
+    popupnotification.secondaryButton.click();
     await popupHidden;
     await new Promise(executeSoon);
 

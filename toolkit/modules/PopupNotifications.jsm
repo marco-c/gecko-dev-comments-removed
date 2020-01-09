@@ -52,16 +52,11 @@ function getAnchorFromBrowser(aBrowser, aAnchorID) {
   return null;
 }
 
+
+
+
 function getNotificationFromElement(aElement) {
-  
-  
-  
-  
-  let notificationEl;
-  let parent = aElement;
-  while (parent && (parent = aElement.ownerDocument.getBindingParent(parent)))
-    notificationEl = parent;
-  return notificationEl;
+  return aElement.closest("popupnotification");
 }
 
 
@@ -251,7 +246,6 @@ function PopupNotifications(tabbrowser, panel,
         focusedElement == doc.body ||
         focusedElement == this.tabbrowser.selectedBrowser ||
         
-        getNotificationFromElement(focusedElement) == notification ||
         notification.contains(focusedElement)) {
       let escAction = notification.notification.options.escAction;
       this._onButtonEvent(aEvent, escAction, "esc-press", notification);
@@ -759,17 +753,6 @@ PopupNotifications.prototype = {
 
         
         
-        let contentNode = popupnotification.lastElementChild;
-        while (contentNode) {
-          let previousSibling = contentNode.previousElementSibling;
-          if (contentNode.nodeName == "menuitem" ||
-              contentNode.nodeName == "menuseparator")
-            popupnotification.removeChild(contentNode);
-          contentNode = previousSibling;
-        }
-
-        
-        
         popupnotification.hidden = true;
 
         originalParent.appendChild(popupnotification);
@@ -903,6 +886,7 @@ PopupNotifications.prototype = {
         popupnotification.setAttribute("closebuttonhidden", "true");
 
       popupnotification.notification = n;
+      let menuitems = [];
 
       if (n.mainAction && n.secondaryActions && n.secondaryActions.length > 0) {
         let telemetryStatId = TELEMETRY_STAT_ACTION_2;
@@ -920,7 +904,7 @@ PopupNotifications.prototype = {
           item.notification = n;
           item.action = action;
 
-          popupnotification.appendChild(item);
+          menuitems.push(item);
 
           
           
@@ -941,12 +925,10 @@ PopupNotifications.prototype = {
       let checkbox = n.options.checkbox;
       if (checkbox && checkbox.label) {
         let checked = n._checkboxChecked != null ? n._checkboxChecked : !!checkbox.checked;
-
-        popupnotification.setAttribute("checkboxhidden", "false");
-        popupnotification.setAttribute("checkboxchecked", checked);
-        popupnotification.setAttribute("checkboxlabel", checkbox.label);
-
-        popupnotification.setAttribute("checkboxcommand", "PopupNotifications._onCheckboxCommand(event);");
+        popupnotification.checkboxState = {
+          checked,
+          label: checkbox.label,
+        };
 
         if (checked) {
           this._setNotificationUIState(popupnotification, checkbox.checkedState);
@@ -954,7 +936,7 @@ PopupNotifications.prototype = {
           this._setNotificationUIState(popupnotification, checkbox.uncheckedState);
         }
       } else {
-        popupnotification.setAttribute("checkboxhidden", "true");
+        popupnotification.checkboxState = null;
         popupnotification.setAttribute("warninghidden", "true");
       }
 
@@ -962,7 +944,10 @@ PopupNotifications.prototype = {
 
       
       
-      popupnotification.hidden = false;
+      popupnotification.show();
+
+      popupnotification.menupopup.textContent = "";
+      popupnotification.menupopup.append(...menuitems);
     }, this);
   },
 
@@ -1055,9 +1040,6 @@ PopupNotifications.prototype = {
         this.panel.removeAttribute("noautohide");
       }
 
-      
-      
-      this.panel.setAttribute("popupid", this.panel.firstElementChild.getAttribute("popupid"));
       notificationsToShow.forEach(function(n) {
         
         
@@ -1499,15 +1481,7 @@ PopupNotifications.prototype = {
     if (event.originalTarget.localName == "button") {
       return;
     }
-    let notificationEl = event.target;
-    
-    while (notificationEl) {
-      if (notificationEl.localName == "popupnotification") {
-        break;
-      }
-      notificationEl =
-        notificationEl.ownerDocument.getBindingParent(notificationEl) || notificationEl.parentNode;
-    }
+    let notificationEl = getNotificationFromElement(event.target);
 
     let notification = notificationEl.notification;
     if (notification.options.checkbox) {
@@ -1605,7 +1579,7 @@ PopupNotifications.prototype = {
     if (!target.action || !target.notification)
       throw "menucommand target has no associated action/notification";
 
-    let notificationEl = target.parentElement;
+    let notificationEl = getNotificationFromElement(target);
     event.stopPropagation();
 
     target.notification._recordTelemetryStat(target.action.telemetryStatId);

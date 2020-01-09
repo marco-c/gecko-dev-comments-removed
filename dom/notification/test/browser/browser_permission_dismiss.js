@@ -26,10 +26,7 @@ function clickDoorhangerButton(aButtonIndex) {
     notification.button.doCommand();
   } else if (aButtonIndex == PROMPT_NEVER_BUTTON) {
     ok(true, "Triggering secondary action (deny the permission permanently)");
-    
-    
-    
-    notification.querySelector("menuitem").doCommand();
+    notification.menupopup.querySelector("menuitem").doCommand();
   } else {
     ok(true, "Triggering secondary action (deny the permission temporarily)");
     notification.secondaryButton.doCommand();
