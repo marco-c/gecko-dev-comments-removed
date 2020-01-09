@@ -69,6 +69,12 @@ def attributeReturnType(a, getter, macro):
 
     if a.must_use:
         ret = "MOZ_MUST_USE " + ret
+    
+    
+    
+    
+    if a.explicit_can_run_script:
+        ret = "MOZ_CAN_RUN_SCRIPT " + ret
     return ret
 
 
@@ -115,6 +121,12 @@ def methodReturnType(m, macro):
 
     if m.must_use:
         ret = "MOZ_MUST_USE " + ret
+    
+    
+    
+    
+    if m.explicit_can_run_script:
+        ret = "MOZ_CAN_RUN_SCRIPT " + ret
     return ret
 
 
