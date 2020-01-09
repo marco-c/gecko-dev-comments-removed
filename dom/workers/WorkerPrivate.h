@@ -925,6 +925,13 @@ class WorkerPrivate : public RelativeTimeline {
                             nsIEventTarget* aSyncLoopTarget,
                             const MutexAutoLock& aProofOfLock);
 
+  
+  
+  
+  
+  
+  void DispatchCancelingRunnable();
+
   class EventTarget;
   friend class EventTarget;
   friend class mozilla::dom::WorkerHolder;
@@ -1073,9 +1080,16 @@ class WorkerPrivate : public RelativeTimeline {
   };
   ThreadBound<WorkerThreadAccessible> mWorkerThreadAccessible;
 
+  uint32_t mPostSyncLoopOperations;
+
+  
+  enum {
+    ePendingEventQueueClearing = 0x01,
+    eDispatchCancelingRunnable = 0x02,
+  };
+
   bool mParentWindowPaused;
 
-  bool mPendingEventQueueClearing;
   bool mCancelAllPendingRunnables;
   bool mWorkerScriptExecutedSuccessfully;
   bool mFetchHandlerWasAdded;

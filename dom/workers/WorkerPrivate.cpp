@@ -2063,8 +2063,8 @@ WorkerPrivate::WorkerPrivate(WorkerPrivate* aParent,
       mCreationTimeStamp(TimeStamp::Now()),
       mCreationTimeHighRes((double)PR_Now() / PR_USEC_PER_MSEC),
       mWorkerThreadAccessible(aParent),
+      mPostSyncLoopOperations(0),
       mParentWindowPaused(false),
-      mPendingEventQueueClearing(false),
       mCancelAllPendingRunnables(false),
       mWorkerScriptExecutedSuccessfully(false),
       mFetchHandlerWasAdded(false),
@@ -3160,7 +3160,7 @@ void WorkerPrivate::ScheduleDeletion(WorkerRanOrNot aRanOrNot) {
     MOZ_ASSERT(data->mChildWorkers.IsEmpty());
   }
   MOZ_ASSERT(mSyncLoopStack.IsEmpty());
-  MOZ_ASSERT(!mPendingEventQueueClearing);
+  MOZ_ASSERT(mPostSyncLoopOperations == 0);
 
   ClearMainEventQueue(aRanOrNot);
 #ifdef DEBUG
@@ -3679,12 +3679,35 @@ bool WorkerPrivate::DestroySyncLoop(uint32_t aLoopIndex) {
       static_cast<ThreadEventQueue<EventQueue>*>(mThread->EventQueue());
   queue->PopEventQueue(nestedEventTarget);
 
-  if (mSyncLoopStack.IsEmpty() && mPendingEventQueueClearing) {
-    mPendingEventQueueClearing = false;
-    ClearMainEventQueue(WorkerRan);
+  if (mSyncLoopStack.IsEmpty()) {
+    if ((mPostSyncLoopOperations & ePendingEventQueueClearing)) {
+      ClearMainEventQueue(WorkerRan);
+    }
+
+    if ((mPostSyncLoopOperations & eDispatchCancelingRunnable)) {
+      DispatchCancelingRunnable();
+    }
+
+    mPostSyncLoopOperations = 0;
   }
 
   return result;
+}
+
+void WorkerPrivate::DispatchCancelingRunnable() {
+  
+  
+  
+  
+  RefPtr<CancelingRunnable> r = new CancelingRunnable();
+  mThread->nsThread::Dispatch(r.forget(), NS_DISPATCH_NORMAL);
+
+  
+  
+  
+  RefPtr<CancelingWithTimeoutOnParentRunnable> rr =
+      new CancelingWithTimeoutOnParentRunnable(this);
+  rr->Dispatch();
 }
 
 void WorkerPrivate::StopSyncLoop(nsIEventTarget* aSyncLoopTarget,
@@ -3971,7 +3994,7 @@ bool WorkerPrivate::NotifyInternal(WorkerStatus aStatus) {
     
     
     if (!mSyncLoopStack.IsEmpty()) {
-      mPendingEventQueueClearing = true;
+      mPostSyncLoopOperations |= ePendingEventQueueClearing;
     } else {
       ClearMainEventQueue(WorkerRan);
     }
@@ -3986,20 +4009,10 @@ bool WorkerPrivate::NotifyInternal(WorkerStatus aStatus) {
   
   
   if (aStatus == Closing) {
-    if (mSyncLoopStack.IsEmpty()) {
-      
-      
-      
-      
-      RefPtr<CancelingRunnable> r = new CancelingRunnable();
-      mThread->nsThread::Dispatch(r.forget(), NS_DISPATCH_NORMAL);
-
-      
-      
-      
-      RefPtr<CancelingWithTimeoutOnParentRunnable> rr =
-          new CancelingWithTimeoutOnParentRunnable(this);
-      rr->Dispatch();
+    if (!mSyncLoopStack.IsEmpty()) {
+      mPostSyncLoopOperations |= eDispatchCancelingRunnable;
+    } else {
+      DispatchCancelingRunnable();
     }
     return true;
   }
