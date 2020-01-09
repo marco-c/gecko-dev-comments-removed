@@ -51,6 +51,12 @@ pref("devtools.inspector.showAllAnonymousContent", false);
 
 pref("devtools.inspector.showUserAgentShadowRoots", false);
 
+#if defined(NIGHTLY_BUILD)
+pref("devtools.inspector.inactive.css.enabled", true);
+#else
+pref("devtools.inspector.inactive.css.enabled", false);
+#endif
+
 pref("devtools.inspector.new-rulesview.enabled", false);
 
 
