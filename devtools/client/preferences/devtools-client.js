@@ -348,7 +348,12 @@ pref("devtools.responsive.showUserAgentInput", false);
 #endif
 
 
+
+#if defined(RELEASE_OR_BETA)
+pref("devtools.aboutdebugging.new-enabled", false);
+#else
 pref("devtools.aboutdebugging.new-enabled", true);
+#endif
 
 
 #ifdef MOZILLA_OFFICIAL
