@@ -691,6 +691,10 @@ class ScriptSource {
 
   static constexpr size_t MinimumCompressibleLength = 256;
 
+ private:
+  class LoadSourceMatcher;
+
+ public:
   
   
   
