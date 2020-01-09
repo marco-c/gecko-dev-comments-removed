@@ -263,11 +263,6 @@ pref("devtools.browserconsole.filter.net", false);
 pref("devtools.browserconsole.filter.netxhr", false);
 
 
-pref("devtools.webconsole.ui.filterbar", false);
-
-pref("devtools.browserconsole.ui.filterbar", false);
-
-
 pref("devtools.webconsole.inputHistoryCount", 300);
 
 

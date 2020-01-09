@@ -15,7 +15,6 @@ const actionTypes = {
   BATCH_ACTIONS: "BATCH_ACTIONS",
   CLEAR_HISTORY: "CLEAR_HISTORY",
   DEFAULT_FILTERS_RESET: "DEFAULT_FILTERS_RESET",
-  FILTER_BAR_TOGGLE: "FILTER_BAR_TOGGLE",
   FILTER_TEXT_SET: "FILTER_TEXT_SET",
   FILTER_TOGGLE: "FILTER_TOGGLE",
   FILTERS_CLEAR: "FILTERS_CLEAR",
@@ -61,9 +60,6 @@ const prefs = {
       NETXHR: "filter.netxhr",
     },
     UI: {
-      
-      
-      FILTER_BAR: "ui.filterbar",
       
       PERSIST: "devtools.webconsole.persistlog",
       
