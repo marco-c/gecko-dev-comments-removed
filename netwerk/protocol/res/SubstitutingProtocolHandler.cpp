@@ -298,6 +298,15 @@ nsresult SubstitutingProtocolHandler::NewURI(const nsACString& aSpec,
                                              const char* aCharset,
                                              nsIURI* aBaseURI,
                                              nsIURI** aResult) {
+  return SubstitutingProtocolHandler::CreateNewURI(aSpec, aCharset, aBaseURI,
+                                                   aResult);
+}
+
+
+nsresult SubstitutingProtocolHandler::CreateNewURI(const nsACString& aSpec,
+                                                   const char* aCharset,
+                                                   nsIURI* aBaseURI,
+                                                   nsIURI** aResult) {
   
   
   
