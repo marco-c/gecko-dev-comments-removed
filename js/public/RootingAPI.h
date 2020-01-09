@@ -911,7 +911,7 @@ class JS_PUBLIC_API AutoGCRooter {
     ValueArray, 
     Parser,     
 #if defined(JS_BUILD_BINAST)
-    BinParser,     
+    BinASTParser,  
 #endif             
     WrapperVector, 
     Wrapper,       

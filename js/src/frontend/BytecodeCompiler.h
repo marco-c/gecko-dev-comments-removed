@@ -198,7 +198,7 @@ void TraceParser(JSTracer* trc, JS::AutoGCRooter* parser);
 
 
 
-void TraceBinParser(JSTracer* trc, JS::AutoGCRooter* parser);
+void TraceBinASTParser(JSTracer* trc, JS::AutoGCRooter* parser);
 
 #endif  
 
