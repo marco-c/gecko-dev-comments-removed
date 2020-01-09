@@ -127,13 +127,6 @@ add_task(async function test_simplePing() {
   await sendPing(false, false);
   let request = await PingServer.promiseNextRequest();
 
-  
-  Assert.notEqual(request.queryString, "");
-
-  
-  let params = request.queryString.split("&");
-  Assert.ok(params.find(p => p == ("v=" + PING_FORMAT_VERSION)));
-
   let ping = decodeRequestPayload(request);
   checkPingFormat(ping, TEST_PING_TYPE, false, false);
 });
