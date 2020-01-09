@@ -514,7 +514,7 @@ function promiseAddonsByIDs(aIDs) {
 
 function install_addon(path, cb, pathPrefix = TESTROOT) {
   let p = new Promise(async (resolve, reject) => {
-    let install = await AddonManager.getInstallForURL(pathPrefix + path, "application/x-xpinstall");
+    let install = await AddonManager.getInstallForURL(pathPrefix + path);
     install.addListener({
       onInstallEnded: () => resolve(install.addon),
     });
@@ -947,16 +947,7 @@ MockProvider.prototype = {
 
 
 
-
-
-
-
-
-
-
-
-  getInstallForURL: function MP_getInstallForURL(aUrl, aHash, aName, aIconURL,
-                                                  aVersion, aLoadGroup) {
+  getInstallForURL: function MP_getInstallForURL(aUrl, aOptions) {
     
   },
 

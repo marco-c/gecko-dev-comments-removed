@@ -1107,8 +1107,8 @@ class AddonInstall {
     this.isUserRequestedUpdate = options.isUserRequestedUpdate;
     this.installTelemetryInfo = null;
 
-    if (options.installTelemetryInfo) {
-      this.installTelemetryInfo = options.installTelemetryInfo;
+    if (options.telemetryInfo) {
+      this.installTelemetryInfo = options.telemetryInfo;
     } else if (this.existingAddon) {
       
       
@@ -2543,9 +2543,7 @@ function createLocalInstall(file, location, telemetryInfo) {
   let url = Services.io.newFileURI(file);
 
   try {
-    let install = new LocalAddonInstall(location, url, {
-      installTelemetryInfo: telemetryInfo,
-    });
+    let install = new LocalAddonInstall(location, url, {telemetryInfo});
     return install.init().then(() => install);
   } catch (e) {
     logger.error("Error creating install", e);
@@ -3565,26 +3563,19 @@ var XPIInstall = {
 
 
 
-  async getInstallForURL(aUrl, aHash, aName, aIcons, aVersion, aBrowser, aInstallTelemetryInfo) {
+
+
+  async getInstallForURL(aUrl, aOptions) {
     let location = XPIStates.getLocation(KEY_APP_PROFILE);
     let url = Services.io.newURI(aUrl);
 
-    let options = {
-      hash: aHash,
-      browser: aBrowser,
-      name: aName,
-      icons: aIcons,
-      version: aVersion,
-      installTelemetryInfo: aInstallTelemetryInfo,
-    };
-
     if (url instanceof Ci.nsIFileURL) {
-      let install = new LocalAddonInstall(location, url, options);
+      let install = new LocalAddonInstall(location, url, aOptions);
       await install.init();
       return install.wrapper;
     }
 
-    let install = new DownloadAddonInstall(location, url, options);
+    let install = new DownloadAddonInstall(location, url, aOptions);
     return install.wrapper;
   },
 

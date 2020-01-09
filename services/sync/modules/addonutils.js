@@ -37,10 +37,12 @@ AddonUtilsInternal.prototype = {
     
     
     
-    return AddonManager.getInstallForURL(
-      addon.sourceURI.spec, "application/x-xpinstall", undefined, addon.name, addon.iconURL, addon.version,
-      null, {source: "sync"}
-    );
+    return AddonManager.getInstallForURL(addon.sourceURI.spec, {
+      name: addon.name,
+      icons: addon.iconURL,
+      version: addon.version,
+      telemetryInfo: {source: "sync"},
+    });
   },
 
   
