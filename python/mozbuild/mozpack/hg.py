@@ -27,7 +27,7 @@
 
 
 
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import mercurial.error as error
 import mercurial.hg as hg
