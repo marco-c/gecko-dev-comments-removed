@@ -4863,6 +4863,7 @@ nsresult EventStateManager::InitAndDispatchClickEvent(
   event.buttons = aMouseUpEvent->buttons;
   event.mTime = aMouseUpEvent->mTime;
   event.mTimeStamp = aMouseUpEvent->mTimeStamp;
+  event.mFlags.mOnlyChromeDispatch = aNoContentDispatch;
   event.mFlags.mNoContentDispatch = aNoContentDispatch;
   event.button = aMouseUpEvent->button;
   event.pointerId = aMouseUpEvent->pointerId;
@@ -4991,7 +4992,15 @@ nsresult EventStateManager::DispatchClickEvents(
   }
 
   
-  if (aMouseUpEvent->mClickCount == 2 && aClickTarget &&
+  if (fireAuxClick && aClickTarget && aClickTarget->IsInComposedDoc()) {
+    rv = InitAndDispatchClickEvent(aMouseUpEvent, aStatus, eMouseAuxClick,
+                                   aPresShell, aClickTarget, currentTarget,
+                                   false, aOverrideClickTarget);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to dispatch eMouseAuxClick");
+  }
+
+  
+  if (aMouseUpEvent->mClickCount == 2 && !fireAuxClick && aClickTarget &&
       aClickTarget->IsInComposedDoc()) {
     rv = InitAndDispatchClickEvent(aMouseUpEvent, aStatus, eMouseDoubleClick,
                                    aPresShell, aClickTarget, currentTarget,
@@ -4999,14 +5008,6 @@ nsresult EventStateManager::DispatchClickEvents(
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
-  }
-
-  
-  if (fireAuxClick && aClickTarget && aClickTarget->IsInComposedDoc()) {
-    rv = InitAndDispatchClickEvent(aMouseUpEvent, aStatus, eMouseAuxClick,
-                                   aPresShell, aClickTarget, currentTarget,
-                                   false, aOverrideClickTarget);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to dispatch eMouseAuxClick");
   }
 
   return rv;
