@@ -94,11 +94,6 @@ RefPtr<SourceSurface> SourceSurfaceCapture::Resolve(BackendType aBackendType) {
   
   
   
-  MOZ_RELEASE_ASSERT(NS_IsMainThread() || !mOwner);
-
-  
-  
-  
   mResolved = ResolveImpl(backendType);
 
   return mResolved;
