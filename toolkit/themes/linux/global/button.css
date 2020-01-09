@@ -39,6 +39,12 @@ button:hover:not(:-moz-any(:active,[disabled="true"],[open="true"],[checked="tru
 
 
 
+button:not([disabled="true"]):-moz-any(:hover:active,[open="true"]) {
+  color: -moz-gtk-buttonactivetext;
+}
+
+
+
 button[disabled="true"] {
   color: GrayText;
 }

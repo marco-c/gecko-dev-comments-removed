@@ -244,6 +244,14 @@ select {
   overflow-clip-box: padding-box !important; 
 }
 
+%ifdef MOZ_WIDGET_GTK
+
+
+select:active:hover {
+  color: -moz-gtk-buttonactivetext;
+}
+%endif
+
 
 
 
@@ -696,8 +704,13 @@ button:active:hover,
 input[type="reset"]:active:hover,
 input[type="button"]:active:hover,
 input[type="submit"]:active:hover {
+%ifdef MOZ_WIDGET_GTK
+  color: -moz-gtk-buttonactivetext;
+%else
   color: ButtonText;
+%endif
 }
+
 
 button::-moz-focus-inner,
 input[type="color"]::-moz-focus-inner,

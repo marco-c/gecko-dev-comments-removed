@@ -137,6 +137,11 @@ class LookAndFeel {
     
 
     
+    eColorID__moz_gtk_buttonactivetext,
+
+    
+
+    
     eColorID__moz_mac_buttonactivetext,
     
     eColorID__moz_mac_chrome_active,
