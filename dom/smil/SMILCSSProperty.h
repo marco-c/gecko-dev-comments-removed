@@ -56,9 +56,6 @@ class SMILCSSProperty : public SMILAttr {
 
 
 
-
-
-
   static bool IsPropertyAnimatable(nsCSSPropertyID aPropID);
 
  protected:

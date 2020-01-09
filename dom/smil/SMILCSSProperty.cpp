@@ -108,11 +108,6 @@ void SMILCSSProperty::ClearAnimValue() {
 
 bool SMILCSSProperty::IsPropertyAnimatable(nsCSSPropertyID aPropID) {
   
-  if (!Servo_Property_IsAnimatable(aPropID)) {
-    return false;
-  }
-
-  
   
   
   
