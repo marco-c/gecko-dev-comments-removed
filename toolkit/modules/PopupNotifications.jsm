@@ -26,9 +26,9 @@ const TELEMETRY_STAT_ACTION_1 = 1;
 const TELEMETRY_STAT_ACTION_2 = 2;
 
 const TELEMETRY_STAT_ACTION_LAST = 4;
-const TELEMETRY_STAT_DISMISSAL_CLICK_ELSEWHERE = 5;
-const TELEMETRY_STAT_DISMISSAL_LEAVE_PAGE = 6;
-const TELEMETRY_STAT_DISMISSAL_CLOSE_BUTTON = 7;
+
+const TELEMETRY_STAT_REMOVAL_LEAVE_PAGE = 6;
+
 const TELEMETRY_STAT_OPEN_SUBMENU = 10;
 const TELEMETRY_STAT_LEARN_MORE = 11;
 
@@ -270,8 +270,21 @@ function PopupNotifications(tabbrowser, panel,
   }, true);
 
   this.window.addEventListener("activate", this, true);
-  if (this.tabbrowser.tabContainer)
+  if (this.tabbrowser.tabContainer) {
     this.tabbrowser.tabContainer.addEventListener("TabSelect", this, true);
+
+    this.tabbrowser.tabContainer.addEventListener("TabClose", aEvent => {
+      
+      
+      
+      this.nextRemovalReason = TELEMETRY_STAT_REMOVAL_LEAVE_PAGE;
+      let notifications = this._getNotificationsForBrowser(aEvent.target.linkedBrowser);
+      for (let notification of notifications) {
+        this._fireCallback(notification, NOTIFICATION_EVENT_REMOVED, this.nextRemovalReason);
+        notification._recordTelemetryStat(this.nextRemovalReason);
+      }
+    });
+  }
 }
 
 PopupNotifications.prototype = {
@@ -556,6 +569,8 @@ PopupNotifications.prototype = {
 
     let notifications = this._getNotificationsForBrowser(aBrowser);
 
+    this.nextRemovalReason = TELEMETRY_STAT_REMOVAL_LEAVE_PAGE;
+
     notifications = notifications.filter(function(notification) {
       
       
@@ -581,7 +596,8 @@ PopupNotifications.prototype = {
         return true;
       }
 
-      this._fireCallback(notification, NOTIFICATION_EVENT_REMOVED);
+      notification._recordTelemetryStat(this.nextRemovalReason);
+      this._fireCallback(notification, NOTIFICATION_EVENT_REMOVED, this.nextRemovalReason);
       return false;
     }, this);
 
@@ -649,12 +665,6 @@ PopupNotifications.prototype = {
         let self = this;
         
         
-        
-        
-        
-        this.nextDismissReason = TELEMETRY_STAT_DISMISSAL_LEAVE_PAGE;
-        
-        
         this.window.setTimeout(function() {
           self._update();
         }, 0);
@@ -694,20 +704,20 @@ PopupNotifications.prototype = {
 
     
     notifications.splice(index, 1);
-    this._fireCallback(notification, NOTIFICATION_EVENT_REMOVED);
+    this._fireCallback(notification, NOTIFICATION_EVENT_REMOVED, this.nextRemovalReason);
   },
 
   
 
 
-  _dismiss: function PopupNotifications_dismiss(event, telemetryReason) {
-    if (telemetryReason) {
-      this.nextDismissReason = telemetryReason;
-    }
 
-    
-    
-    if (event && telemetryReason == TELEMETRY_STAT_DISMISSAL_CLOSE_BUTTON) {
+
+
+
+
+
+  _dismiss: function PopupNotifications_dismiss(event, disablePersistent = false) {
+    if (disablePersistent) {
       let notificationEl = getNotificationFromElement(event.target);
       if (notificationEl) {
         notificationEl.notification.options.persistent = false;
@@ -826,7 +836,7 @@ PopupNotifications.prototype = {
       popupnotification.setAttribute("id", popupnotificationID);
       popupnotification.setAttribute("popupid", n.id);
       popupnotification.setAttribute("oncommand", "PopupNotifications._onCommand(event);");
-      popupnotification.setAttribute("closebuttoncommand", `PopupNotifications._dismiss(event, ${TELEMETRY_STAT_DISMISSAL_CLOSE_BUTTON});`);
+      popupnotification.setAttribute("closebuttoncommand", `PopupNotifications._dismiss(event, true);`);
       if (n.mainAction) {
         popupnotification.setAttribute("buttonlabel", n.mainAction.label);
         popupnotification.setAttribute("buttonaccesskey", n.mainAction.accessKey);
@@ -1051,10 +1061,6 @@ PopupNotifications.prototype = {
         
         n.timeShown = this.window.performance.now();
       }, this);
-
-      
-      
-      this.nextDismissReason = TELEMETRY_STAT_DISMISSAL_CLICK_ELSEWHERE;
 
       let target = this.panel;
       if (target.parentNode) {
@@ -1370,7 +1376,7 @@ PopupNotifications.prototype = {
         n.owner = this;
         return true;
       }
-      other._fireCallback(n, NOTIFICATION_EVENT_REMOVED);
+      other._fireCallback(n, NOTIFICATION_EVENT_REMOVED, this.nextRemovalReason);
       return false;
     });
 
@@ -1380,7 +1386,7 @@ PopupNotifications.prototype = {
         n.owner = other;
         return true;
       }
-      this._fireCallback(n, NOTIFICATION_EVENT_REMOVED);
+      this._fireCallback(n, NOTIFICATION_EVENT_REMOVED, this.nextRemovalReason);
       return false;
     });
 
@@ -1450,11 +1456,11 @@ PopupNotifications.prototype = {
         notificationObj._recordTelemetry("POPUP_NOTIFICATION_DISMISSAL_MS",
                                          timeSinceShown);
       }
-      notificationObj._recordTelemetryStat(this.nextDismissReason);
 
       
       
       if (notificationObj.options.removeOnDismissal) {
+        notificationObj._recordTelemetryStat(this.nextRemovalReason);
         this._remove(notificationObj);
       } else {
         notificationObj.dismissed = true;
