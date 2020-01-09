@@ -2156,6 +2156,25 @@ nsPermissionManager::RemoveByType(const nsACString& aType) {
       });
 }
 
+NS_IMETHODIMP
+nsPermissionManager::RemoveByTypeSince(const nsACString& aType,
+                                       int64_t aModificationTime) {
+  ENSURE_NOT_CHILD_PROCESS;
+
+  int32_t typeIndex = GetTypeIndex(aType, false);
+  
+  
+  if (typeIndex == -1) {
+    return NS_OK;
+  }
+
+  return RemovePermissionEntries(
+      [typeIndex, aModificationTime](const PermissionEntry& aPermEntry) {
+        return uint32_t(typeIndex) == aPermEntry.mType &&
+               aModificationTime <= aPermEntry.mModificationTime;
+      });
+}
+
 void nsPermissionManager::CloseDB(bool aRebuildOnSuccess) {
   
   mStmtInsert = nullptr;
