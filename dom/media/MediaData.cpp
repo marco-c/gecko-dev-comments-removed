@@ -186,8 +186,7 @@ static bool ValidateBufferAndPicture(const VideoData::YCbCrBuffer& aBuffer,
 
   
   if (aPicture.width <= 0 || aPicture.height <= 0) {
-    
-    MOZ_ASSERT(false, "Empty picture rect");
+    NS_WARNING("Empty picture rect");
     return false;
   }
   if (!ValidatePlane(aBuffer.mPlanes[0]) ||
