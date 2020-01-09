@@ -491,6 +491,7 @@ static const char* const kBinaryFileExtensions[] = {
     ".crt",         
     ".crx",         
     ".csh",         
+    
     ".dart",        
     ".dc42",        
     ".deb",         
@@ -508,6 +509,7 @@ static const char* const kBinaryFileExtensions[] = {
     
     
     
+    
     ".drv",   
     ".dvdr",  
     ".efi",   
@@ -517,6 +519,7 @@ static const char* const kBinaryFileExtensions[] = {
     ".fon",     
     ".fxp",     
     ".gadget",  
+    
     ".grp",     
     ".gz",      
     ".gzip",    
@@ -526,6 +529,7 @@ static const char* const kBinaryFileExtensions[] = {
     ".hta",     
     ".htm", ".html",
     ".htt",      
+    
     ".img",      
     ".imgpart",  
     ".inf",      
@@ -537,6 +541,8 @@ static const char* const kBinaryFileExtensions[] = {
     
     ".jar",   
     ".jnlp",  
+    
+    
     
     ".js",   
     ".jse",  
@@ -570,8 +576,12 @@ static const char* const kBinaryFileExtensions[] = {
     ".mht",       
     ".mhtml",     
     ".mim",       
+    
     ".mmc",       
     ".mof",       
+    
+    
+    
     ".mpkg",      
     ".msc",       
     ".msg",       
@@ -597,6 +607,7 @@ static const char* const kBinaryFileExtensions[] = {
     
     
     
+    
     ".partial",  
     ".pax",      
     ".pcd",      
@@ -607,6 +618,8 @@ static const char* const kBinaryFileExtensions[] = {
     ".pkg",  
     ".pl",   
     ".plg",  
+    
+    
     
     
     
@@ -699,10 +712,12 @@ static const char* const kBinaryFileExtensions[] = {
     ".tbz",   
     ".tbz2",  
     ".tcsh",  
+    
     ".tgz",   
     
     ".torrent",  
     ".tpz",      
+    
     ".txz",      
     ".tz",       
     
@@ -732,6 +747,8 @@ static const char* const kBinaryFileExtensions[] = {
     ".vsw",       
     ".vsx",       
     ".vtx",       
+    
+    
     ".website",   
     ".wim",       
     
@@ -744,6 +761,7 @@ static const char* const kBinaryFileExtensions[] = {
     ".xbap",  
     ".xhtml", ".xhtm", ".xht",
     ".xip",  
+    
     
     
     
