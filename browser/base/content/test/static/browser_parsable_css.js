@@ -35,6 +35,10 @@ let whitelist = [
    errorMessage: /Unknown property.*overflow-clip-box/i,
    isFromDevTools: false},
   
+  {sourceName: /(?:res|gre-resources)\/forms\.css$/i,
+   errorMessage: /Expected color but found \u2018-moz.*/i,
+   platforms: ["linux"], isFromDevTools: false},
+  
   
   
   {sourceName: /(?:res|gre-resources)\/forms\.css$/i,
