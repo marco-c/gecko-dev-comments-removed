@@ -129,7 +129,7 @@ class PCUuidGenerator : public mozilla::JsepUuidGenerator {
 
 class RTCStatsQuery {
  public:
-  explicit RTCStatsQuery(bool internalStats);
+  explicit RTCStatsQuery(bool aInternalStats, bool aRecordTelemetry);
   RTCStatsQuery(RTCStatsQuery&& aOrig) = default;
   ~RTCStatsQuery();
 
@@ -138,6 +138,7 @@ class RTCStatsQuery {
   mozilla::TimeStamp iceStartTime;
 
   bool internalStats;
+  bool recordTelemetry;
   std::string transportId;
   bool grabAllLevels;
   DOMHighResTimeStamp now;
@@ -487,7 +488,8 @@ class PeerConnectionImpl final
   void startCallTelem();
 
   RefPtr<RTCStatsQueryPromise> GetStats(dom::MediaStreamTrack* aSelector,
-                                        bool aInternalStats);
+                                        bool aInternalStats,
+                                        bool aRecordTelemetry);
 
   
   
