@@ -370,11 +370,8 @@ const QuotaCleaner = {
         if (Services.lsm.nextGenLocalStorageEnabled) {
           
           
-          
-          
-          
           promises.push(new Promise((aResolve, aReject) => {
-            Services.qms.getUsage(aRequest => {
+            Services.qms.listInitializedOrigins(aRequest => {
               if (aRequest.resultCode != Cr.NS_OK) {
                 aReject({message: "Delete by host failed"});
                 return;

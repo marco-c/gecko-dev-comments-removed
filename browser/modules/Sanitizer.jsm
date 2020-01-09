@@ -687,8 +687,8 @@ class PrincipalsCollector {
   async getAllPrincipalsInternal(progress) {
     progress.step = "principals-quota-manager";
     let principals = await new Promise(resolve => {
-      quotaManagerService.getUsage(request => {
-        progress.step = "principals-quota-manager-getUsage";
+      quotaManagerService.listInitializedOrigins(request => {
+        progress.step = "principals-quota-manager-listInitializedOrigins";
         if (request.resultCode != Cr.NS_OK) {
           
           
