@@ -27,6 +27,10 @@ struct TextureFactoryIdentifier;
 
 namespace layout {
 
+
+
+
+
 class RenderFrame final {
   typedef mozilla::layers::CompositorOptions CompositorOptions;
   typedef mozilla::layers::LayerManager LayerManager;
@@ -55,9 +59,9 @@ class RenderFrame final {
   bool IsLayersConnected() const { return mLayersConnected; }
 
  private:
+  
+  
   base::ProcessId mTabProcessId;
-  
-  
   
   LayersId mLayersId;
   
@@ -77,7 +81,6 @@ class RenderFrame final {
 
 }  
 }  
-
 
 
 
