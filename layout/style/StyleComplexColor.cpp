@@ -46,42 +46,47 @@ static nscolor LinearBlendColors(nscolor aBg, float aBgRatio, nscolor aFg,
   return NS_RGBA(r, g, b, NSToIntRound(a * 255));
 }
 
+template<>
 bool StyleComplexColor::MaybeTransparent() const {
   
   
   
   
-  return mTag != eNumeric || NS_GET_A(mColor) != 255;
+  return !IsNumeric() || AsNumeric().alpha != 255;
 }
 
+static nscolor RGBAToNSColor(const StyleRGBA& aRGBA) {
+  return NS_RGBA(aRGBA.red, aRGBA.green, aRGBA.blue, aRGBA.alpha);
+}
+
+template<>
 nscolor StyleComplexColor::CalcColor(nscolor aForegroundColor) const {
-  switch (mTag) {
-    case eNumeric:
-      return mColor;
-    case eForeground:
-    case eAuto:
-      return aForegroundColor;
-    case eComplex:
-      return LinearBlendColors(mColor, mBgRatio, aForegroundColor, mFgRatio);
-    default:
-      MOZ_ASSERT_UNREACHABLE("StyleComplexColor has invalid mTag");
-      return mColor;
+  if (IsNumeric()) {
+    return RGBAToNSColor(AsNumeric());
   }
+  if (IsCurrentColor()) {
+    return aForegroundColor;
+  }
+  MOZ_ASSERT(IsComplex());
+  const auto& complex = AsComplex();
+  return LinearBlendColors(RGBAToNSColor(complex.color), complex.ratios.bg,
+                           aForegroundColor, complex.ratios.fg);
 }
 
-nscolor StyleComplexColor::CalcColor(mozilla::ComputedStyle* aStyle) const {
+template<>
+nscolor StyleComplexColor::CalcColor(const ComputedStyle& aStyle) const {
   
   
   
-  if (mTag == eNumeric) {
-    return mColor;
+  if (IsNumeric()) {
+    return RGBAToNSColor(AsNumeric());
   }
 
-  MOZ_ASSERT(aStyle);
-  auto fgColor = aStyle->StyleColor()->mColor;
+  auto fgColor = aStyle.StyleColor()->mColor;
   return CalcColor(fgColor);
 }
 
+template<>
 nscolor StyleComplexColor::CalcColor(const nsIFrame* aFrame) const {
-  return CalcColor(aFrame->Style());
+  return CalcColor(*aFrame->Style());
 }
