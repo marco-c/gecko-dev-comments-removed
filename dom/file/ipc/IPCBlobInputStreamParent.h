@@ -4,10 +4,10 @@
 
 
 
-#ifndef mozilla_dom_IPCBlobInputStreamParent_h
-#define mozilla_dom_IPCBlobInputStreamParent_h
+#ifndef mozilla_dom_ipc_IPCBlobInputStreamParent_h
+#define mozilla_dom_ipc_IPCBlobInputStreamParent_h
 
-#include "mozilla/dom/PIPCBlobInputStreamParent.h"
+#include "mozilla/ipc/PIPCBlobInputStreamParent.h"
 
 class nsIInputStream;
 
@@ -24,7 +24,8 @@ class NS_NO_VTABLE IPCBlobInputStreamParentCallback {
   virtual ~IPCBlobInputStreamParentCallback() {}
 };
 
-class IPCBlobInputStreamParent final : public PIPCBlobInputStreamParent {
+class IPCBlobInputStreamParent final
+    : public mozilla::ipc::PIPCBlobInputStreamParent {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(IPCBlobInputStreamParent)
 

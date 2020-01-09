@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_IPCBlobInputStream_h
-#define mozilla_dom_IPCBlobInputStream_h
+#ifndef mozilla_dom_ipc_IPCBlobInputStream_h
+#define mozilla_dom_ipc_IPCBlobInputStream_h
 
 #include "mozilla/Mutex.h"
 #include "nsIAsyncInputStream.h"

@@ -4,10 +4,10 @@
 
 
 
-#ifndef mozilla_dom_IPCBlobInputStreamChild_h
-#define mozilla_dom_IPCBlobInputStreamChild_h
+#ifndef mozilla_dom_ipc_IPCBlobInputStreamChild_h
+#define mozilla_dom_ipc_IPCBlobInputStreamChild_h
 
-#include "mozilla/dom/PIPCBlobInputStreamChild.h"
+#include "mozilla/ipc/PIPCBlobInputStreamChild.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/UniquePtr.h"
 #include "nsIThread.h"
@@ -19,7 +19,8 @@ namespace dom {
 class IPCBlobInputStream;
 class ThreadSafeWorkerRef;
 
-class IPCBlobInputStreamChild final : public PIPCBlobInputStreamChild {
+class IPCBlobInputStreamChild final
+    : public mozilla::ipc::PIPCBlobInputStreamChild {
  public:
   enum ActorState {
     
