@@ -27,9 +27,6 @@ function run_test() {
   
   Services.prefs.setCharPref("services.settings.server",
                              `http://localhost:${server.identity.primaryPort}/v1`);
-  
-  
-  Services.prefs.setBoolPref("services.settings.verify_signature", false);
 
   
   
@@ -42,12 +39,15 @@ function run_test() {
   BlocklistGlobal.PluginBlocklistRS._ensureInitialized();
   BlocklistGlobal.GfxBlocklistRS._ensureInitialized();
 
-
   gBlocklistClients = [
     {client: BlocklistGlobal.ExtensionBlocklistRS._client, testData: ["i808", "i720", "i539"]},
     {client: BlocklistGlobal.PluginBlocklistRS._client, testData: ["p1044", "p32", "p28"]},
     {client: BlocklistGlobal.GfxBlocklistRS._client, testData: ["g204", "g200", "g36"]},
   ];
+  
+  for (const c of gBlocklistClients) {
+    c.verifySignature = false;
+  }
 
   
   function handleResponse(request, response) {

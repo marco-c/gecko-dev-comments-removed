@@ -35,8 +35,6 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "gServerURL",
                                       "services.settings.server");
 XPCOMUtils.defineLazyPreferenceGetter(this, "gChangesPath",
                                       "services.settings.changes.path");
-XPCOMUtils.defineLazyPreferenceGetter(this, "gVerifySignature",
-                                      "services.settings.verify_signature", true);
 
 
 
@@ -191,6 +189,10 @@ class RemoteSettingsClient extends EventEmitter {
 
     
     
+    this.verifySignature = true;
+
+    
+    
     this.bucketNamePref = bucketNamePref;
     XPCOMUtils.defineLazyPreferenceGetter(this, "bucketName", this.bucketNamePref);
 
@@ -328,7 +330,7 @@ class RemoteSettingsClient extends EventEmitter {
 
       
       
-      if (this.signerName && gVerifySignature) {
+      if (this.verifySignature) {
         kintoCollection.hooks["incoming-changes"] = [async (payload, collection) => {
           await this._validateCollectionSignature(payload.changes,
                                                   payload.lastModified,

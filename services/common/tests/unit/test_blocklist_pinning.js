@@ -27,7 +27,9 @@ let server;
 
 
 add_task(async function test_something() {
-  const PinningPreloadClient = BlocklistClients.initialize().PinningBlocklistClient;
+  const {
+    PinningBlocklistClient: PinningPreloadClient,
+  } = BlocklistClients.initialize({ verifySignature: false });
 
   const configPath = "/v1/";
   const recordsPath = "/v1/buckets/pinning/collections/pins/records";
@@ -138,10 +140,6 @@ add_task(async function test_something() {
 });
 
 function run_test() {
-  
-  
-  Services.prefs.setBoolPref("services.settings.verify_signature", false);
-
   
   server = new HttpServer();
   server.start(-1);

@@ -44,12 +44,12 @@ function run_test() {
   
   Services.prefs.setCharPref("services.settings.server",
                              `http://localhost:${server.identity.primaryPort}/v1`);
-  
-  
-  Services.prefs.setBoolPref("services.settings.verify_signature", false);
 
   client = RemoteSettings("password-fields");
+  client.verifySignature = false;
+
   clientWithDump = RemoteSettings("language-dictionaries");
+  clientWithDump.verifySignature = false;
 
   
   function handleResponse(request, response) {
