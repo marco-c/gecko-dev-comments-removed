@@ -130,6 +130,27 @@ function isStale(accessible) {
 
 
 
+function getAudit(acc, report) {
+  if (acc.isDefunct) {
+    return;
+  }
+
+  
+  report.set(acc, acc.audit().then(result => report.set(acc, result)));
+
+  for (const child of acc.children()) {
+    getAudit(child, report);
+  }
+}
+
+
+
+
+
+
+
+
+
 const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
   initialize(conn, targetActor) {
     Actor.prototype.initialize.call(this, conn);
@@ -365,6 +386,30 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
 
     return ancestry.map(parent => (
       { accessible: parent, children: parent.children() }));
+  },
+
+  
+
+
+
+
+
+
+
+  async audit() {
+    const doc = await this.getDocument();
+    const report = new Map();
+    getAudit(doc, report);
+    await Promise.all(report.values());
+
+    const ancestries = [];
+    for (const [acc, audit] of report.entries()) {
+      if (audit && Object.values(audit).filter(check => check != null).length > 0) {
+        ancestries.push(this.getAncestry(acc));
+      }
+    }
+
+    return Promise.all(ancestries);
   },
 
   onHighlighterEvent: function(data) {
