@@ -188,8 +188,7 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
 
   already_AddRefed<CSSValue> GetMarginWidthFor(mozilla::Side aSide);
 
-  already_AddRefed<CSSValue> GetTransformValue(
-      nsCSSValueSharedList* aSpecifiedTransform);
+  already_AddRefed<CSSValue> GetTransformValue(const mozilla::StyleTransform&);
 
   
   void AppendGridLineNames(nsString& aResult,

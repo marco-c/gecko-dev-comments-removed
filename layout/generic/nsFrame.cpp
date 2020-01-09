@@ -1214,8 +1214,10 @@ void nsFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
         needAnchorSuppression = true;
       }
 
+      
+      
       if (oldDisp->mPosition != StyleDisplay()->mPosition ||
-          oldDisp->TransformChanged(*StyleDisplay())) {
+          oldDisp->mTransform != StyleDisplay()->mTransform) {
         needAnchorSuppression = true;
       }
     }
@@ -10667,7 +10669,7 @@ bool nsIFrame::IsScrolledOutOfView() const {
 
 gfx::Matrix nsIFrame::ComputeWidgetTransform() {
   const nsStyleUIReset* uiReset = StyleUIReset();
-  if (!uiReset->mSpecifiedWindowTransform) {
+  if (uiReset->mMozWindowTransform.IsNone()) {
     return gfx::Matrix();
   }
 
@@ -10677,8 +10679,7 @@ gfx::Matrix nsIFrame::ComputeWidgetTransform() {
   nsPresContext* presContext = PresContext();
   int32_t appUnitsPerDevPixel = presContext->AppUnitsPerDevPixel();
   gfx::Matrix4x4 matrix = nsStyleTransformMatrix::ReadTransforms(
-      uiReset->mSpecifiedWindowTransform->mHead, refBox,
-      float(appUnitsPerDevPixel));
+      uiReset->mMozWindowTransform, refBox, float(appUnitsPerDevPixel));
 
   
   const StyleTransformOrigin& origin = uiReset->mWindowTransformOrigin;

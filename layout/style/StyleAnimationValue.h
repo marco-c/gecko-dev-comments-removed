@@ -78,7 +78,10 @@ struct AnimationValue {
   nscolor GetColor(nscolor aForegroundColor) const;
 
   
-  already_AddRefed<const nsCSSValueSharedList> GetTransformList() const;
+  const mozilla::StyleTransform& GetTransformProperty() const;
+  const mozilla::StyleScale& GetScaleProperty() const;
+  const mozilla::StyleTranslate& GetTranslateProperty() const;
+  const mozilla::StyleRotate& GetRotateProperty() const;
 
   
   mozilla::gfx::Size GetScaleValue(const nsIFrame* aFrame) const;

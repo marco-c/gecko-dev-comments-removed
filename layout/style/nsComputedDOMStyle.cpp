@@ -1099,7 +1099,7 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetPerspectiveOrigin() {
 
 already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetTransform() {
   const nsStyleDisplay* display = StyleDisplay();
-  return GetTransformValue(display->mSpecifiedTransform);
+  return GetTransformValue(display->mTransform);
 }
 
 
@@ -2502,14 +2502,12 @@ bool nsComputedDOMStyle::GetFrameBorderRectHeight(nscoord& aHeight) {
 
 
 already_AddRefed<CSSValue> nsComputedDOMStyle::GetTransformValue(
-    nsCSSValueSharedList* aSpecifiedTransform) {
+    const StyleTransform& aTransform) {
   
 
 
-  if (!aSpecifiedTransform) {
+  if (aTransform.IsNone()) {
     RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
-
-    
     val->SetIdent(eCSSKeyword_none);
     return val.forget();
   }
@@ -2533,8 +2531,7 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::GetTransformValue(
                                                        nsSize(0, 0));
 
   gfx::Matrix4x4 matrix = nsStyleTransformMatrix::ReadTransforms(
-      aSpecifiedTransform->mHead, refBox,
-      float(mozilla::AppUnitsPerCSSPixel()));
+      aTransform, refBox, float(mozilla::AppUnitsPerCSSPixel()));
 
   return MatrixToCSSValue(matrix);
 }
