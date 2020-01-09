@@ -1859,7 +1859,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
                                            
                                            
                                            
-  uint8_t mContain;                        
+  mozilla::StyleContain mContain;
   mozilla::StyleAppearance mAppearance;
   uint8_t mPosition;  
 
@@ -2116,7 +2116,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
   }
 
   bool IsContainPaint() const {
-    return (NS_STYLE_CONTAIN_PAINT & mContain) &&
+    return (mContain & mozilla::StyleContain_PAINT) &&
            !IsInternalRubyDisplayType() && !IsInternalTableStyleExceptCell();
   }
 
@@ -2128,7 +2128,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
     
     
     
-    return (NS_STYLE_CONTAIN_LAYOUT & mContain) &&
+    return (mContain & mozilla::StyleContain_LAYOUT) &&
            !IsInternalRubyDisplayType() && !IsInternalTableStyleExceptCell();
   }
 
@@ -2140,7 +2140,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
     
     
     
-    return (NS_STYLE_CONTAIN_SIZE & mContain) && !IsInternalRubyDisplayType() &&
+    return (mContain & mozilla::StyleContain_SIZE) &&
+           !IsInternalRubyDisplayType() &&
            (mozilla::StyleDisplay::Table != mDisplay) && !IsInnerTableStyle();
   }
 
