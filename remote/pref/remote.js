@@ -1,6 +1,6 @@
 
 
-pref("remote.enabled", false);
+pref("remote.enabled", true);
 
 
 
