@@ -262,7 +262,7 @@ var interfaceNamesInGlobalScope =
   ];
 
 
-function createInterfaceMap({ version, isNightly, isRelease, isDesktop, isAndroid, isInsecureContext, isFennec }) {
+function createInterfaceMap({ isNightly, isRelease, isDesktop, isAndroid, isInsecureContext, isFennec }) {
   var interfaceMap = {};
 
   function addInterfaces(interfaces)
