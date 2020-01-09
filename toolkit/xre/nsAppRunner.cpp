@@ -1528,13 +1528,9 @@ static void DumpHelp() {
 }
 
 static inline void DumpVersion() {
-  if (gAppData->vendor) {
-    printf("%s ", (const char*)gAppData->vendor);
-  }
+  if (gAppData->vendor) printf("%s ", (const char*)gAppData->vendor);
   printf("%s %s", (const char*)gAppData->name, (const char*)gAppData->version);
-  if (gAppData->copyright) {
-    printf(", %s", (const char*)gAppData->copyright);
-  }
+  if (gAppData->copyright) printf(", %s", (const char*)gAppData->copyright);
   printf("\n");
 }
 
@@ -2073,7 +2069,7 @@ static nsCOMPtr<nsIToolkitProfile> gResetOldProfile;
 
 
 static nsresult SelectProfile(nsIProfileLock** aResult,
-                              nsIToolkitProfileService* aProfileSvc,
+                              nsToolkitProfileService* aProfileSvc,
                               nsINativeAppSupport* aNative, bool* aStartOffline,
                               nsACString* aProfileName) {
   StartupTimeline::Record(StartupTimeline::SELECT_PROFILE);
@@ -2137,10 +2133,8 @@ static nsresult SelectProfile(nsIProfileLock** aResult,
   nsCOMPtr<nsIFile> localDir;
   nsCOMPtr<nsIToolkitProfile> profile;
   
-  nsToolkitProfileService* service =
-      static_cast<nsToolkitProfileService*>(aProfileSvc);
   bool didCreate = false;
-  rv = service->SelectStartupProfile(
+  rv = aProfileSvc->SelectStartupProfile(
       &gArgc, gArgv, gDoProfileReset, getter_AddRefs(rootDir),
       getter_AddRefs(localDir), getter_AddRefs(profile), &didCreate);
 
@@ -2177,7 +2171,7 @@ static nsresult SelectProfile(nsIProfileLock** aResult,
 
     
     gResetOldProfile = profile;
-    rv = service->CreateResetProfile(getter_AddRefs(profile));
+    rv = aProfileSvc->CreateResetProfile(getter_AddRefs(profile));
     if (NS_SUCCEEDED(rv)) {
       rv = profile->GetRootDir(getter_AddRefs(rootDir));
       NS_ENSURE_SUCCESS(rv, rv);
@@ -2997,7 +2991,7 @@ class XREMain {
   Result<bool, nsresult> CheckLastStartupWasCrash();
 
   nsCOMPtr<nsINativeAppSupport> mNativeApp;
-  nsCOMPtr<nsIToolkitProfileService> mProfileSvc;
+  RefPtr<nsToolkitProfileService> mProfileSvc;
   nsCOMPtr<nsIFile> mProfD;
   nsCOMPtr<nsIFile> mProfLD;
   nsCOMPtr<nsIProfileLock> mProfileLock;
@@ -4500,8 +4494,7 @@ nsresult XREMain::XRE_mainRun() {
     }
 
     if (gDoProfileReset) {
-      nsresult backupCreated = ProfileResetCleanup(
-          static_cast<nsToolkitProfileService*>(mProfileSvc.get()),
+      nsresult backupCreated = ProfileResetCleanup(mProfileSvc,
           gResetOldProfile);
       if (NS_FAILED(backupCreated))
         NS_WARNING("Could not cleanup the profile that was reset");
@@ -4699,7 +4692,7 @@ nsresult XREMain::XRE_mainRun() {
   AddSandboxAnnotations();
 #endif 
 
-  static_cast<nsToolkitProfileService*>(mProfileSvc.get())->CompleteStartup();
+  mProfileSvc->CompleteStartup();
 
   {
     rv = appStartup->Run();
