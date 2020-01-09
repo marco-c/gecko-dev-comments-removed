@@ -70,7 +70,7 @@ class Output(object):
             suites.append(suite)
 
             
-            if test.type == "pageload":
+            if test.type in ("pageload", "scenario"):
                 
                 
 
