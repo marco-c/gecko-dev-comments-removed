@@ -27,7 +27,7 @@ use prim_store::{OpacityBindingStorage, ImageInstanceStorage, OpacityBindingInde
 use print_tree::PrintTreePrinter;
 use render_backend::DataStores;
 use render_task::{ClearMode, RenderTask, RenderTaskCacheEntryHandle, TileBlit};
-use render_task::{RenderTaskCacheKey, RenderTaskCacheKeyKind, RenderTaskId, RenderTaskLocation};
+use render_task::{RenderTaskId, RenderTaskLocation};
 use resource_cache::ResourceCache;
 use scene::{FilterOpHelpers, SceneProperties};
 use scene_builder::Interners;
@@ -100,12 +100,6 @@ pub const TILE_SIZE_HEIGHT: i32 = 256;
 const FRAMES_BEFORE_CACHING: usize = 2;
 const MAX_DIRTY_RECTS: usize = 3;
 
-
-
-
-
-
-const MAX_CACHE_SIZE: f32 = 2048.0;
 
 
 const MAX_SURFACE_SIZE: f32 = 4096.0;
@@ -1681,6 +1675,7 @@ pub enum PictureCompositeMode {
 #[derive(Debug)]
 pub enum PictureSurface {
     RenderTask(RenderTaskId),
+    #[allow(dead_code)]
     TextureCache(RenderTaskCacheEntryHandle),
 }
 
