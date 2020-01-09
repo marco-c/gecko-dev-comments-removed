@@ -131,8 +131,9 @@ void nsHttpConnectionInfo::BuildHashKey() {
   
   
   
+  
 
-  mHashKey.AssignLiteral(".......[tlsflags0x00000000]");
+  mHashKey.AssignLiteral("........[tlsflags0x00000000]");
 
   mHashKey.Append(keyHost);
   mHashKey.Append(':');
@@ -249,6 +250,7 @@ already_AddRefed<nsHttpConnectionInfo> nsHttpConnectionInfo::Clone() const {
   clone->SetInsecureScheme(GetInsecureScheme());
   clone->SetNoSpdy(GetNoSpdy());
   clone->SetBeConservative(GetBeConservative());
+  clone->SetIsolated(GetIsolated());
   clone->SetTlsFlags(GetTlsFlags());
   clone->SetTrrUsed(GetTrrUsed());
   clone->SetTrrDisabled(GetTrrDisabled());
@@ -275,6 +277,7 @@ void nsHttpConnectionInfo::CloneAsDirectRoute(nsHttpConnectionInfo **outCI) {
   clone->SetInsecureScheme(GetInsecureScheme());
   clone->SetNoSpdy(GetNoSpdy());
   clone->SetBeConservative(GetBeConservative());
+  clone->SetIsolated(GetIsolated());
   clone->SetTlsFlags(GetTlsFlags());
   clone->SetTrrUsed(GetTrrUsed());
   clone->SetTrrDisabled(GetTrrDisabled());
@@ -328,7 +331,7 @@ void nsHttpConnectionInfo::SetIPv6Disabled(bool aNoIPv6) {
 void nsHttpConnectionInfo::SetTlsFlags(uint32_t aTlsFlags) {
   mTlsFlags = aTlsFlags;
 
-  mHashKey.Replace(18, 8, nsPrintfCString("%08x", mTlsFlags));
+  mHashKey.Replace(19, 8, nsPrintfCString("%08x", mTlsFlags));
 }
 
 bool nsHttpConnectionInfo::UsingProxy() {
