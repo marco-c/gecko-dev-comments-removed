@@ -51,10 +51,6 @@ pref("devtools.inspector.showAllAnonymousContent", false);
 
 pref("devtools.inspector.showUserAgentShadowRoots", false);
 
-pref("devtools.inspector.fonthighlighter.enabled", true);
-
-pref("devtools.inspector.changes.enabled", true);
-
 pref("devtools.inspector.new-rulesview.enabled", false);
 
 
