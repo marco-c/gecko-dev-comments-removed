@@ -6,6 +6,7 @@
 package org.mozilla.gecko;
 
 import org.mozilla.gecko.util.ThreadUtils;
+import org.mozilla.geckoview.GeckoRuntimeSettings;
 
 import android.annotation.SuppressLint;
 import android.content.ContentResolver;
@@ -26,10 +27,6 @@ public final class GeckoFontScaleListener
         extends ContentObserver {
     private static final String LOGTAG = "GeckoFontScaleListener";
 
-    private static final String PREF_SYSTEM_FONT_SCALE = "font.size.systemFontScale";
-    private static final String PREF_FONT_INFLATION = "font.size.inflation.minTwips";
-    private static final int FONT_INFLATION_OFF = 0;
-    private static final int FONT_INFLATION_ON_DEFAULT_VALUE = 120;
     private static final float DEFAULT_FONT_SCALE = 1.0f;
 
     
@@ -37,9 +34,14 @@ public final class GeckoFontScaleListener
     private static final GeckoFontScaleListener sInstance = new GeckoFontScaleListener();
 
     private Context mApplicationContext;
+    private GeckoRuntimeSettings mSettings;
+
     private boolean mAttached;
     private boolean mEnabled;
     private boolean mRunning;
+
+    private float mPrevGeckoFontScale;
+    private boolean mPrevFontInflationState;
 
     public static GeckoFontScaleListener getInstance() {
         return sInstance;
@@ -54,7 +56,8 @@ public final class GeckoFontScaleListener
 
 
 
-    public void attachToContext(final Context context) {
+    public void attachToContext(final Context context,
+                                final GeckoRuntimeSettings settings) {
         ThreadUtils.assertOnUiThread();
 
         if (mAttached) {
@@ -63,11 +66,13 @@ public final class GeckoFontScaleListener
         }
 
         mAttached = true;
+        mSettings = settings;
         mApplicationContext = context.getApplicationContext();
         onEnabledChange();
     }
 
     
+
 
 
     public void detachFromContext() {
@@ -80,6 +85,7 @@ public final class GeckoFontScaleListener
 
         stop();
         mApplicationContext = null;
+        mSettings = null;
         mAttached = false;
     }
 
@@ -124,6 +130,8 @@ public final class GeckoFontScaleListener
             return;
         }
 
+        mPrevGeckoFontScale = mSettings.getFontSizeFactor();
+        mPrevFontInflationState = mSettings.getFontInflationEnabled();
         ContentResolver contentResolver = mApplicationContext.getContentResolver();
         Uri fontSizeSetting = Settings.System.getUriFor(Settings.System.FONT_SCALE);
         contentResolver.registerContentObserver(fontSizeSetting, false, this);
@@ -146,18 +154,18 @@ public final class GeckoFontScaleListener
 
     private void onSystemFontScaleChange(final ContentResolver contentResolver, boolean stopping) {
         float fontScale;
-        int fontInflation;
+        boolean fontInflationEnabled;
 
         if (!stopping) { 
             fontScale = Settings.System.getFloat(contentResolver, Settings.System.FONT_SCALE, DEFAULT_FONT_SCALE);
-            fontInflation = Math.round(FONT_INFLATION_ON_DEFAULT_VALUE * fontScale);
+            fontInflationEnabled = true;
         } else { 
-            fontScale = DEFAULT_FONT_SCALE;
-            fontInflation = FONT_INFLATION_OFF;
+            fontScale = mPrevGeckoFontScale;
+            fontInflationEnabled = mPrevFontInflationState;
         }
 
-        PrefsHelper.setPref(PREF_FONT_INFLATION, fontInflation);
-        PrefsHelper.setPref(PREF_SYSTEM_FONT_SCALE, Math.round(fontScale * 100));
+        mSettings.setFontInflationEnabled(fontInflationEnabled);
+        mSettings.setFontSizeFactor(fontScale);
     }
 
     @UiThread 
