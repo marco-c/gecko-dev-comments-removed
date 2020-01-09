@@ -2,10 +2,12 @@
 
 
 
+
+
 import fs from "fs";
 import path from "path";
 
-export default function readFixture(name) {
+export default function readFixture(name: string) {
   const text = fs.readFileSync(
     path.join(__dirname, `../fixtures/${name}`),
     "utf8"

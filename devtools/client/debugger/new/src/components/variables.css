@@ -2,6 +2,15 @@
 
 
 
+:root {
+  
+  --editor-header-height: 29px;
+  
+  --editor-footer-height: 25px;
+  
+  --editor-searchbar-height: 26px;
+}
+
 :root.theme-light,
 :root .theme-light {
   --search-overlays-semitransparent: rgba(221, 225, 228, 0.66);

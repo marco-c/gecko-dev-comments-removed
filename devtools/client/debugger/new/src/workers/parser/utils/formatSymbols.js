@@ -2,8 +2,12 @@
 
 
 
+
+
 import { getSymbols } from "../getSymbols";
 import { setSource } from "../sources";
+
+import type { Source } from "../../../types";
 
 function formatLocation(loc) {
   if (!loc) {
@@ -40,7 +44,7 @@ function formatBool(name, symbols) {
   return `${name}: ${symbols[name] ? "true" : "false"}`;
 }
 
-function formatKey(name, symbols) {
+function formatKey(name: string, symbols: any) {
   if (bools.includes(name)) {
     return formatBool(name, symbols);
   }

@@ -2,17 +2,24 @@
 
 
 
+
+
 import { nodeHasChildren, isExactUrlMatch } from "./utils";
 
+import type { TreeDirectory } from "./types";
 
 
 
 
 
 
-export function sortEntireTree(tree, debuggeeUrl = "") {
+
+export function sortEntireTree(
+  tree: TreeDirectory,
+  debuggeeUrl: string = ""
+): TreeDirectory {
   if (nodeHasChildren(tree)) {
-    const contents = sortTree(tree, debuggeeUrl).map(subtree =>
+    const contents = sortTree(tree, debuggeeUrl).map((subtree: any) =>
       sortEntireTree(subtree)
     );
     return { ...tree, contents };
@@ -26,8 +33,8 @@ export function sortEntireTree(tree, debuggeeUrl = "") {
 
 
 
-export function sortTree(tree, debuggeeUrl = "") {
-  return tree.contents.sort((previousNode, currentNode) => {
+export function sortTree(tree: TreeDirectory, debuggeeUrl: string = "") {
+  return (tree.contents: any).sort((previousNode, currentNode) => {
     const currentNodeIsDir = nodeHasChildren(currentNode);
     const previousNodeIsDir = nodeHasChildren(previousNode);
     if (currentNode.name === "(index)") {

@@ -7,9 +7,11 @@
 
 
 
+
+
 export const Task = {
   
-  async: function(task) {
+  async: function(task: any) {
     return function() {
       return Task.spawn(task, this, arguments);
     };
@@ -20,7 +22,7 @@ export const Task = {
 
 
 
-  spawn: function(task, scope, args) {
+  spawn: function(task: any, scope: any, args: any): Promise<any> {
     return new Promise(function(resolve, reject) {
       const iterator = task.apply(scope, args);
 

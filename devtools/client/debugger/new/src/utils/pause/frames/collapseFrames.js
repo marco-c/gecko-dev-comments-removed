@@ -7,7 +7,7 @@
 import { get, findIndex } from "lodash";
 
 
-import type { LocalFrame } from "../../../components/SecondaryPanes/Frames/types";
+import type { Frame } from "../../../types";
 import { getFrameUrl } from "./getFrameUrl";
 
 function collapseLastFrames(frames) {
@@ -24,10 +24,10 @@ function collapseLastFrames(frames) {
   return { newFrames, lastGroup };
 }
 
-type FrameGroup = LocalFrame[];
-type GroupedFrames = Array<FrameGroup | LocalFrame>;
+type FrameGroup = Frame[];
+type GroupedFrames = Array<FrameGroup | Frame>;
 
-export function collapseFrames(frames: LocalFrame[]): GroupedFrames {
+export function collapseFrames(frames: Frame[]): GroupedFrames {
   
   
   function addGroupToList(group, list) {
