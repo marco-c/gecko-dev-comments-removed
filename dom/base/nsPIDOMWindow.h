@@ -392,19 +392,6 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
 
 
 
-
-
-
-
-
-
-  virtual nsresult SetNewDocument(Document* aDocument, nsISupports* aState,
-                                  bool aForceReuseInnerWindow) = 0;
-
-  
-
-
-
   void SetHasPaintEventListeners() { mMayHavePaintEventListener = true; }
 
   

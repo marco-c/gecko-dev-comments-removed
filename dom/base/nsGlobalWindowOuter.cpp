@@ -1933,6 +1933,7 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
   }
 
   RefPtr<Document> oldDoc = mDoc;
+  MOZ_RELEASE_ASSERT(oldDoc != aDocument);
 
   AutoJSAPI jsapi;
   jsapi.Init();
@@ -2005,7 +2006,6 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
   NS_ASSERTION(!aState || wsh,
                "What kind of weird state are you giving me here?");
 
-  bool handleDocumentOpen = false;
   bool doomCurrentInner = false;
 
   JS::Rooted<JSObject*> newInnerGlobal(cx);
@@ -2016,9 +2016,7 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
     newInnerWindow = currentInner;
     newInnerGlobal = currentInner->GetWrapperPreserveColor();
 
-    if (aDocument != oldDoc) {
-      JS::ExposeObjectToActiveJS(newInnerGlobal);
-    }
+    JS::ExposeObjectToActiveJS(newInnerGlobal);
 
     
     
@@ -2039,13 +2037,9 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
     nsIPrincipal* existing = nsJSPrincipals::get(JS::GetRealmPrincipals(realm));
     aDocument->NodePrincipal()->Equals(existing, &sameOrigin);
     MOZ_ASSERT(sameOrigin);
-    MOZ_ASSERT_IF(aDocument == oldDoc,
-                  xpc::GetRealmPrincipal(realm) == aDocument->NodePrincipal());
 #endif
-    if (aDocument != oldDoc) {
-      JS::SetRealmPrincipals(realm,
-                             nsJSPrincipals::get(aDocument->NodePrincipal()));
-    }
+    JS::SetRealmPrincipals(realm,
+                           nsJSPrincipals::get(aDocument->NodePrincipal()));
   } else {
     if (aState) {
       newInnerWindow = wsh->GetInnerWindow();
@@ -2091,10 +2085,6 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
     }
 
     if (currentInner && currentInner->GetWrapperPreserveColor()) {
-      if (oldDoc == aDocument) {
-        handleDocumentOpen = true;
-      }
-
       
       
       if (!currentInner->IsFrozen()) {
@@ -2221,26 +2211,25 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
 
   if (!aState) {
     if (reUseInnerWindow) {
-      if (newInnerWindow->mDoc != aDocument) {
-        newInnerWindow->mDoc = aDocument;
+      MOZ_RELEASE_ASSERT(newInnerWindow->mDoc != aDocument);
+      newInnerWindow->mDoc = aDocument;
 
-        
-        
-        newInnerWindow->mLocalStorage = nullptr;
-        newInnerWindow->mSessionStorage = nullptr;
-        newInnerWindow->mPerformance = nullptr;
+      
+      
+      newInnerWindow->mLocalStorage = nullptr;
+      newInnerWindow->mSessionStorage = nullptr;
+      newInnerWindow->mPerformance = nullptr;
 
-        
-        
-        
-        
-        newInnerWindow->ClearDocumentDependentSlots(cx);
+      
+      
+      
+      
+      newInnerWindow->ClearDocumentDependentSlots(cx);
 
-        
-        
-        rv = newInnerWindow->ExecutionReady();
-        NS_ENSURE_SUCCESS(rv, rv);
-      }
+      
+      
+      rv = newInnerWindow->ExecutionReady();
+      NS_ENSURE_SUCCESS(rv, rv);
     } else {
       newInnerWindow->InnerSetNewDocument(cx, aDocument);
 
@@ -2265,18 +2254,12 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
 
   
   
-  if (handleDocumentOpen) {
-    newInnerWindow->MigrateStateForDocumentOpen(currentInner);
-  }
-
-  
-  
   mInnerWindow->GetWindowGlobalChild()->SendBecomeCurrentWindowGlobal();
 
   
   
   if (doomCurrentInner) {
-    currentInner->FreeInnerObjects(handleDocumentOpen);
+    currentInner->FreeInnerObjects();
   }
   currentInner = nullptr;
 
