@@ -4468,7 +4468,9 @@ void AsyncPanZoomController::NotifyLayersUpdated(
       
       
       
-      if (!mAnimation || !mAnimation->HandleScrollOffsetUpdate(relativeDelta)) {
+      if ((!mAnimation && !CanHandleScrollOffsetUpdate(mState)) ||
+          (mAnimation &&
+           !mAnimation->HandleScrollOffsetUpdate(relativeDelta))) {
         
         
         
@@ -4779,6 +4781,10 @@ void AsyncPanZoomController::CancelAnimationAndGestureState() {
 
 bool AsyncPanZoomController::HasReadyTouchBlock() const {
   return GetInputQueue()->HasReadyTouchBlock();
+}
+
+bool AsyncPanZoomController::CanHandleScrollOffsetUpdate(PanZoomState aState) {
+  return aState == PAN_MOMENTUM;
 }
 
 void AsyncPanZoomController::SetState(PanZoomState aNewState) {
