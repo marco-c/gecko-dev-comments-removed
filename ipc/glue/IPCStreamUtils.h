@@ -28,7 +28,7 @@ class PBackgroundParent;
 already_AddRefed<nsIInputStream> DeserializeIPCStream(const IPCStream& aValue);
 
 already_AddRefed<nsIInputStream> DeserializeIPCStream(
-    const OptionalIPCStream& aValue);
+    const Maybe<IPCStream>& aValue);
 
 
 
@@ -121,9 +121,9 @@ already_AddRefed<nsIInputStream> DeserializeIPCStream(
 
 
 class AutoIPCStream final {
-  OptionalIPCStream mInlineValue;
+  Maybe<IPCStream> mInlineValue;
   IPCStream* mValue;
-  OptionalIPCStream* mOptionalValue;
+  Maybe<IPCStream>* mOptionalValue;
   bool mTaken;
   bool mDelayedStart;
 
@@ -141,8 +141,7 @@ class AutoIPCStream final {
 
   
   
-  explicit AutoIPCStream(OptionalIPCStream& aTarget,
-                         bool aDelayedStart = false);
+  explicit AutoIPCStream(Maybe<IPCStream>& aTarget, bool aDelayedStart = false);
 
   ~AutoIPCStream();
 
@@ -173,7 +172,7 @@ class AutoIPCStream final {
   
   
   
-  OptionalIPCStream& TakeOptionalValue();
+  Maybe<IPCStream>& TakeOptionalValue();
 
  private:
   AutoIPCStream(const AutoIPCStream& aOther) = delete;
