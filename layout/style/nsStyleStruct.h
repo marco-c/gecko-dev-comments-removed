@@ -1461,10 +1461,10 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText {
 
   nsChangeHint CalcDifference(const nsStyleText& aNewData) const;
 
+  mozilla::StyleTextTransform mTextTransform;
   uint8_t mTextAlign;      
   uint8_t mTextAlignLast;  
   mozilla::StyleTextJustify mTextJustify;
-  uint8_t mTextTransform;  
   mozilla::StyleWhiteSpace mWhiteSpace;
 
  private:
@@ -1595,6 +1595,13 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleVisibility {
 };
 
 namespace mozilla {
+
+inline StyleTextTransform StyleTextTransform::None() {
+  return StyleTextTransform{StyleTextTransformCase::None,
+                            StyleTextTransformOther()};
+}
+
+inline bool StyleTextTransform::IsNone() const { return *this == None(); }
 
 struct StyleTransition {
   StyleTransition() { 

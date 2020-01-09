@@ -879,10 +879,10 @@ void nsTextBoxFrame::RecomputeTitle() {
 
   
   
-  uint8_t textTransform = StyleText()->mTextTransform;
-  if (textTransform == NS_STYLE_TEXT_TRANSFORM_UPPERCASE) {
+  StyleTextTransform textTransform = StyleText()->mTextTransform;
+  if (textTransform.case_ == StyleTextTransformCase::Uppercase) {
     ToUpperCase(mTitle);
-  } else if (textTransform == NS_STYLE_TEXT_TRANSFORM_LOWERCASE) {
+  } else if (textTransform.case_ == StyleTextTransformCase::Lowercase) {
     ToLowerCase(mTitle);
   }
   
