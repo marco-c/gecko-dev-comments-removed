@@ -21,8 +21,6 @@ loader.lazyRequireGetter(this, "getDefinedGeometryProperties",
   "devtools/server/actors/highlighters/geometry-editor", true);
 loader.lazyRequireGetter(this, "isCssPropertyKnown",
   "devtools/server/actors/css-properties", true);
-loader.lazyRequireGetter(this, "inactivePropertyHelper",
-  "devtools/server/actors/utils/inactive-property-helper", true);
 loader.lazyRequireGetter(this, "parseNamedDeclarations",
   "devtools/shared/css/parsing-utils", true);
 loader.lazyRequireGetter(this, "prettifyCSS",
@@ -1285,8 +1283,6 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
         ? form.authoredText
         : form.cssText;
       const declarations = parseNamedDeclarations(isCssPropertyKnown, cssText, true);
-      const el = this.pageStyle.cssLogic.viewedElement;
-      const style = this.pageStyle.cssLogic.computedStyle;
 
       
       
@@ -1295,8 +1291,6 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
         
         
         decl.isValid = CSS.supports(`${decl.name}:${decl.value}`);
-        decl.isUsed = inactivePropertyHelper.isPropertyUsed(
-          el, style, this.rawRule, decl.name);
         
         decl.isNameValid = CSS.supports(decl.name, "initial");
         return decl;

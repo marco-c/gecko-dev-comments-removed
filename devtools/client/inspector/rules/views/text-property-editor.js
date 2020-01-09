@@ -182,11 +182,6 @@ TextPropertyEditor.prototype = {
       title: l10n("rule.warning.title"),
     });
 
-    this.unusedState = createChild(this.container, "div", {
-      class: "ruleview-unused-warning",
-      hidden: "",
-    });
-
     
     
     this.filterProperty = createChild(this.container, "div", {
@@ -632,17 +627,6 @@ TextPropertyEditor.prototype = {
       this.element.classList.add("ruleview-overridden");
     } else {
       this.element.classList.remove("ruleview-overridden");
-    }
-
-    const { used, reasons } = this.prop.isUsed();
-
-    if (this.editing || this.prop.overridden || !this.prop.enabled || used) {
-      this.element.classList.remove("unused");
-      this.unusedState.hidden = true;
-    } else {
-      this.element.classList.add("unused");
-      this.unusedState.title = reasons.join("\n");
-      this.unusedState.hidden = false;
     }
   },
 
