@@ -80,18 +80,6 @@ def evaluate(ctx, node):
     return node.traverse(eval_node)
 
 
-def get_text(element):
-    '''Get text content of a PatternElement.'''
-    if isinstance(element, FTL.TextElement):
-        return element.value
-    if isinstance(element, FTL.Placeable):
-        if isinstance(element.expression, FTL.StringLiteral):
-            return element.expression.value
-        else:
-            return None
-    raise RuntimeError('Expected PatternElement')
-
-
 def chain_elements(elements):
     '''Flatten a list of FTL nodes into an iterator over PatternElements.'''
     for element in elements:
@@ -154,19 +142,32 @@ class Transform(FTL.BaseNode):
 
         
         
-        for current in chain_elements(elements):
-            current_text = get_text(current)
-            if current_text is None:
-                normalized.append(current)
+        
+        
+        
+        
+        
+        for element in chain_elements(elements):
+            if isinstance(element, FTL.TextElement):
+                text_content = element.value
+            elif isinstance(element, FTL.Placeable) \
+                    and isinstance(element.expression, FTL.StringLiteral) \
+                    and re.match(r'^ *$', element.expression.value):
+                text_content = element.expression.value
+            else:
+                
+                
+                
+                normalized.append(element)
                 continue
 
             previous = normalized[-1] if len(normalized) else None
             if isinstance(previous, FTL.TextElement):
                 
-                previous.value += current_text
-            elif len(current_text) > 0:
+                previous.value += text_content
+            elif len(text_content) > 0:
                 
-                normalized.append(FTL.TextElement(current_text))
+                normalized.append(FTL.TextElement(text_content))
             else:
                 
                 pass
