@@ -761,10 +761,11 @@ class RaptorAndroid(Raptor):
                 
                 self.create_browser_profile()
 
-                
-                
-                self.log.info("copying existing ssl cert db into new browser profile")
-                self.copy_cert_db(local_cert_db_dir, self.config['local_profile_dir'])
+                if test.get('playback') is not None:
+                    
+                    
+                    self.log.info("copying existing ssl cert db into new browser profile")
+                    self.copy_cert_db(local_cert_db_dir, self.config['local_profile_dir'])
 
                 self.run_test_setup(test)
 
