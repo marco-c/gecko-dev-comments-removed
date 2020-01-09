@@ -10229,9 +10229,11 @@ void nsHttpChannel::ReEvaluateReferrerAfterTrackingStatusIsKnown() {
     
     
     
+    
+    
     bool isPrivate =
         mLoadInfo && mLoadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
-    if (mOriginalReferrer &&
+    if (mOriginalReferrer && mOriginalReferrerPolicy == REFERRER_POLICY_UNSET &&
         mReferrerPolicy ==
             NS_GetDefaultReferrerPolicy(nullptr, nullptr, isPrivate)) {
       SetReferrer(mOriginalReferrer);
