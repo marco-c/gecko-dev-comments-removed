@@ -69,7 +69,6 @@ class TextTrack final : public DOMEventTargetHelper {
   }
 
   TextTrackCueList* GetActiveCues();
-  void UpdateActiveCueList();
   void GetActiveCueArray(nsTArray<RefPtr<TextTrackCue> >& aCues);
 
   TextTrackReadyState ReadyState() const;
@@ -98,6 +97,10 @@ class TextTrack final : public DOMEventTargetHelper {
   void DispatchAsyncTrustedEvent(const nsString& aEventName);
 
   bool IsLoaded();
+
+  
+  
+  void NotifyCueActiveStateChanged(TextTrackCue* aCue);
 
  private:
   ~TextTrack();

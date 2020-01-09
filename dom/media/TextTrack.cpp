@@ -154,46 +154,6 @@ void TextTrack::SetCuesDirty() {
   }
 }
 
-void TextTrack::UpdateActiveCueList() {
-  if (!mTextTrackList) {
-    return;
-  }
-
-  HTMLMediaElement* mediaElement = mTextTrackList->GetMediaElement();
-  if (!mediaElement) {
-    return;
-  }
-
-  
-  
-  
-  if (mDirty) {
-    mCuePos = 0;
-    mDirty = false;
-    mActiveCueList->RemoveAll();
-  }
-
-  double playbackTime = mediaElement->CurrentTime();
-  
-  
-  for (uint32_t i = mActiveCueList->Length(); i > 0; i--) {
-    if ((*mActiveCueList)[i - 1]->EndTime() <= playbackTime) {
-      mActiveCueList->RemoveCueAt(i - 1);
-    }
-  }
-  
-  
-  
-  
-  for (; mCuePos < mCueList->Length() &&
-         (*mCueList)[mCuePos]->StartTime() <= playbackTime;
-       mCuePos++) {
-    if ((*mCueList)[mCuePos]->EndTime() > playbackTime) {
-      mActiveCueList->AddCue(*(*mCueList)[mCuePos]);
-    }
-  }
-}
-
 TextTrackCueList* TextTrack::GetActiveCues() {
   if (mMode != TextTrackMode::Disabled) {
     return mActiveCueList;
@@ -296,6 +256,17 @@ bool TextTrack::IsLoaded() {
     }
   }
   return (mReadyState >= Loaded);
+}
+
+void TextTrack::NotifyCueActiveStateChanged(TextTrackCue* aCue) {
+  MOZ_ASSERT(aCue);
+  if (aCue->GetActive()) {
+    MOZ_ASSERT(!mActiveCueList->IsCueExist(aCue));
+    mActiveCueList->AddCue(*aCue);
+  } else {
+    MOZ_ASSERT(mActiveCueList->IsCueExist(aCue));
+    mActiveCueList->RemoveCue(*aCue);
+  }
 }
 
 }  
