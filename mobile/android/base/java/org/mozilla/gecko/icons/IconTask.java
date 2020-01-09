@@ -151,7 +151,7 @@ import java.util.concurrent.Callable;
     }
 
     private void handleException(final Throwable t) {
-        if (AppConstants.NIGHTLY_BUILD) {
+        if (AppConstants.NIGHTLY_BUILD || AppConstants.FENNEC_NIGHTLY) {
             
             
             
@@ -168,7 +168,7 @@ import java.util.concurrent.Callable;
 
     private boolean shouldLog() {
         
-        return DEBUG && AppConstants.NIGHTLY_BUILD;
+        return DEBUG && (AppConstants.NIGHTLY_BUILD || AppConstants.FENNEC_NIGHTLY);
     }
 
     private void logPreparer(IconRequest request, Preparer preparer) {

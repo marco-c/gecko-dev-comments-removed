@@ -42,7 +42,7 @@ public class MediaControlService extends Service {
             if (GeckoMediaControlAgent.getInstance().isAttachedToContext() ||
                     
 
-                    !AppConstants.RELEASE_OR_BETA) {
+                    AppConstants.FENNEC_NIGHTLY) {
                     currentNotification = GeckoMediaControlAgent.getInstance().createNotification(
                             (MediaNotification) intent.getParcelableExtra(GeckoMediaControlAgent.EXTRA_NOTIFICATION_DATA));
             } else {
