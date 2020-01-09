@@ -3,14 +3,12 @@
 
 
 
-
 from __future__ import absolute_import
 
 import json
 import os
 import posixpath
 import shutil
-import signal
 import sys
 import tempfile
 import time
@@ -20,13 +18,12 @@ import mozinfo
 from mozdevice import ADBDevice
 from mozlog import commandline, get_default_logger
 from mozprofile import create_profile
-from mozproxy import get_playback
 from mozrunner import runners
 
 
 here = os.path.abspath(os.path.dirname(__file__))
 paths = [here]
-if os.environ.get('SCRIPTSPATH') is not None:
+if os.environ.get('SCRIPTSPATH', None) is not None:
     
     paths.append(os.environ['SCRIPTSPATH'])
 else:
@@ -53,27 +50,14 @@ from cmdline import (parse_args,
                      FIREFOX_ANDROID_APPS,
                      CHROMIUM_DISTROS)
 from control_server import RaptorControlServer
-from gecko_profile import GeckoProfile
 from gen_test_config import gen_test_config
 from outputhandler import OutputHandler
 from manifest import get_raptor_test_list
-from power import init_android_power_test, finish_android_power_test
+from mozproxy import get_playback
 from results import RaptorResultsHandler
+from gecko_profile import GeckoProfile
+from power import init_android_power_test, finish_android_power_test
 from utils import view_gecko_profile
-
-
-class SignalHandler:
-
-    def __init__(self):
-        signal.signal(signal.SIGINT, self.handle_signal)
-        signal.signal(signal.SIGTERM, self.handle_signal)
-
-    def handle_signal(self, signum, frame):
-        raise SignalHandlerException("Program aborted due to signal %s" % signum)
-
-
-class SignalHandlerException(Exception):
-    pass
 
 
 class Raptor(object):
@@ -82,27 +66,25 @@ class Raptor(object):
     def __init__(self, app, binary, run_local=False, obj_path=None,
                  gecko_profile=False, gecko_profile_interval=None, gecko_profile_entries=None,
                  symbols_path=None, host=None, power_test=False, is_release_build=False,
-                 debug_mode=False, post_startup_delay=None, interrupt_handler=None, **kwargs):
+                 debug_mode=False, post_startup_delay=None, activity=None):
 
         
         if host == 'HOST_IP':
             host = os.environ['HOST_IP']
-
-        self.config = {
-            'app': app,
-            'binary': binary,
-            'platform': mozinfo.os,
-            'run_local': run_local,
-            'obj_path': obj_path,
-            'gecko_profile': gecko_profile,
-            'gecko_profile_interval': gecko_profile_interval,
-            'gecko_profile_entries': gecko_profile_entries,
-            'symbols_path': symbols_path,
-            'host': host,
-            'power_test': power_test,
-            'is_release_build': is_release_build,
-        }
-
+        self.config = {}
+        self.config['app'] = app
+        self.config['binary'] = binary
+        self.config['platform'] = mozinfo.os
+        self.config['processor'] = mozinfo.processor
+        self.config['run_local'] = run_local
+        self.config['obj_path'] = obj_path
+        self.config['gecko_profile'] = gecko_profile
+        self.config['gecko_profile_interval'] = gecko_profile_interval
+        self.config['gecko_profile_entries'] = gecko_profile_entries
+        self.config['symbols_path'] = symbols_path
+        self.config['host'] = host
+        self.config['power_test'] = power_test
+        self.config['is_release_build'] = is_release_build
         self.raptor_venv = os.path.join(os.getcwd(), 'raptor-venv')
         self.log = get_default_logger(component='raptor-main')
         self.control_server = None
@@ -114,7 +96,6 @@ class Raptor(object):
         self.device = None
         self.profile_class = app
         self.firefox_android_apps = FIREFOX_ANDROID_APPS
-        self.interrupt_handler = interrupt_handler
 
         
         self.debug_mode = debug_mode if self.config['run_local'] else False
@@ -138,9 +119,6 @@ class Raptor(object):
             return os.path.join(build.topsrcdir, 'testing', 'profiles')
         return os.path.join(here, 'profile_data')
 
-    def check_for_crashes(self):
-        raise NotImplementedError
-
     def run_test_setup(self, test):
         self.log.info("starting raptor test: %s" % test['name'])
         self.log.info("test settings: %s" % str(test))
@@ -149,24 +127,31 @@ class Raptor(object):
         if test.get('type') == "benchmark":
             self.serve_benchmark_source(test)
 
-        gen_test_config(
-            self.config['app'],
-            test['name'],
-            self.control_server.port,
-            self.post_startup_delay,
-            host=self.config['host'],
-            b_port=self.benchmark_port,
-            debug_mode=1 if self.debug_mode else 0,
-            browser_cycle=test.get('browser_cycle', 1),
-            )
+        gen_test_config(self.config['app'],
+                        test['name'],
+                        self.control_server.port,
+                        self.post_startup_delay,
+                        host=self.config['host'],
+                        b_port=self.benchmark_port,
+                        debug_mode=1 if self.debug_mode else 0,
+                        browser_cycle=test.get('browser_cycle', 1))
 
         self.install_raptor_webext()
 
-        if test.get("preferences") is not None:
+        if test.get("preferences", None) is not None:
             self.set_browser_test_prefs(test['preferences'])
 
         
-        self.config['subtest_alert_on'] = test.get('alert_on')
+        self.config['subtest_alert_on'] = test.get('alert_on', None)
+
+    def set_browser_test_prefs(self, raw_prefs):
+        
+        if self.config['app'] == "firefox":
+            self.log.info("setting test-specific browser preferences")
+            self.profile.set_preferences(json.loads(raw_prefs))
+        else:
+            self.log.info("preferences were configured for the test, however \
+                          we currently do not install them on non Firefox browsers.")
 
     def run_test_teardown(self):
         self.check_for_crashes()
@@ -182,11 +167,6 @@ class Raptor(object):
             
             self.log.info("cleaning up after gecko profiling")
             self.gecko_profiler.clean()
-
-    def set_browser_test_prefs(self, raw_prefs):
-        
-        self.log.info("preferences were configured for the test, however \
-                        we currently do not install them on non Firefox browsers.")
 
     def create_browser_profile(self):
         self.profile = create_profile(self.profile_class)
@@ -207,29 +187,39 @@ class Raptor(object):
         self.control_server = RaptorControlServer(self.results_handler, self.debug_mode)
         self.control_server.start()
 
-    def get_playback_config(self, test):
-        platform = self.config['platform']
-        playback_dir = os.path.join(here, 'playback')
+        
+        if self.config['app'] in self.firefox_android_apps and \
+                self.config['host'] in ('localhost', '127.0.0.1'):
+            self.log.info("making the raptor control server port available to device")
+            _tcp_port = "tcp:%s" % self.control_server.port
+            self.device.create_socket_connection('reverse', _tcp_port, _tcp_port)
 
-        self.config.update({
-            'playback_tool': test.get('playback'),
-            'playback_version': test.get('playback_version', "2.0.2"),
-            'playback_binary_zip': test.get('playback_binary_zip_%s' % platform),
-            'playback_pageset_zip': test.get('playback_pageset_zip_%s' % platform),
-            'playback_binary_manifest': test.get('playback_binary_manifest'),
-            'playback_pageset_manifest': test.get('playback_pageset_manifest'),
-        })
+    def get_playback_config(self, test):
+        self.config['playback_tool'] = test.get('playback')
+        self.log.info("test uses playback tool: %s " % self.config['playback_tool'])
+        platform = self.config['platform']
+        self.config['playback_version'] = test.get('playback_version', "2.0.2")
+        self.config['playback_binary_zip'] = test.get('playback_binary_zip_%s' % platform)
+        self.config['playback_pageset_zip'] = test.get('playback_pageset_zip_%s' % platform)
+        playback_dir = os.path.join(here, 'playback')
+        self.config['playback_binary_manifest'] = test.get('playback_binary_manifest')
+        self.config['playback_pageset_manifest'] = test.get('playback_pageset_manifest')
         for key in ('playback_pageset_manifest', 'playback_pageset_zip'):
             if self.config.get(key) is None:
                 continue
             self.config[key] = os.path.join(playback_dir, self.config[key])
 
-        self.log.info("test uses playback tool: %s " % self.config['playback_tool'])
-
     def serve_benchmark_source(self, test):
         
         self.benchmark = Benchmark(self.config, test)
         self.benchmark_port = int(self.benchmark.port)
+
+        
+        if self.config['app'] in self.firefox_android_apps and \
+                self.config['host'] in ('localhost', '127.0.0.1'):
+            self.log.info("making the raptor benchmarks server port available to device")
+            _tcp_port = "tcp:%s" % self.benchmark_port
+            self.device.create_socket_connection('reverse', _tcp_port, _tcp_port)
 
     def install_raptor_webext(self):
         
@@ -256,6 +246,14 @@ class Raptor(object):
         chrome_apps = CHROMIUM_DISTROS + ["chrome-android", "chromium-android"]
         if self.config['app'] in chrome_apps:
             self.profile.addons.remove(self.raptor_webext)
+
+    def set_test_browser_prefs(self, test_prefs):
+        
+        if self.config['app'] == "firefox":
+            self.profile.set_preferences(json.loads(test_prefs))
+        else:
+            self.log.info("preferences were configured for the test, \
+                          but we do not install them on non Firefox browsers.")
 
     def get_proxy_command_for_mitm(self, test, version):
         
@@ -298,6 +296,13 @@ class Raptor(object):
 
         
         self.playback.start()
+
+        
+        if self.config['app'] in self.firefox_android_apps and self.config['host'] \
+                in ('localhost', '127.0.0.1'):
+            self.log.info("making the raptor playback server port available to device")
+            _tcp_port = "tcp:8080"
+            self.device.create_socket_connection('reverse', _tcp_port, _tcp_port)
 
     def delete_proxy_settings_from_profile(self):
         
@@ -361,10 +366,25 @@ class Raptor(object):
 
     def clean_up(self):
         self.control_server.stop()
+        if self.config['app'] not in self.firefox_android_apps:
+            self.runner.stop()
+        elif self.config['app'] in self.firefox_android_apps:
+            self.log.info('removing reverse socket connections')
+            self.device.remove_socket_connections('reverse')
+        else:
+            pass
         self.log.info("finished")
 
 
 class RaptorDesktop(Raptor):
+    def __init__(self, app, binary, run_local=False, obj_path=None,
+                 gecko_profile=False, gecko_profile_interval=None, gecko_profile_entries=None,
+                 symbols_path=None, host=None, power_test=False, is_release_build=False,
+                 debug_mode=False, post_startup_delay=None, activity=None):
+        Raptor.__init__(self, app, binary, run_local, obj_path, gecko_profile,
+                        gecko_profile_interval, gecko_profile_entries, symbols_path,
+                        host, power_test, is_release_build, debug_mode,
+                        post_startup_delay)
 
     def create_browser_handler(self):
         
@@ -378,9 +398,6 @@ class RaptorDesktop(Raptor):
             self.config['binary'], profile=self.profile, process_args=process_args,
             symbols_path=self.config['symbols_path'])
 
-    def launch_desktop_browser(self, test):
-        raise NotImplementedError
-
     def start_runner_proc(self):
         
         self.runner.start()
@@ -393,40 +410,31 @@ class RaptorDesktop(Raptor):
     def run_test(self, test, timeout=None):
         self.run_test_setup(test)
 
+        if test.get('playback', None) is not None:
+            self.start_playback(test)
+
         if self.config['host'] not in ('localhost', '127.0.0.1'):
             self.delete_proxy_settings_from_profile()
 
-        try:
+        
+        self.launch_desktop_browser(test)
+
+        
+        self.control_server._finished = False
+
+        self.wait_for_test_finish(test, timeout)
+
+        self.run_test_teardown()
+
+        
+        if not self.debug_mode:
+            if self.runner.is_running():
+                self.runner.stop()
+        else:
             
-            if test.get('playback') is not None:
-                self.start_playback(test)
-
-            
-            self.launch_desktop_browser(test)
-
-            
-            self.control_server._finished = False
-
-            self.wait_for_test_finish(test, timeout)
-
-        finally:
-            self.run_test_teardown()
-
-            
-            if not self.debug_mode:
-                if self.runner.is_running():
-                    self.runner.stop()
-            else:
-                
-                if self.config['run_local']:
-                    self.log.info("* debug-mode enabled - please shutdown the browser manually...")
-                    self.runner.wait(timeout=None)
-
-    def run_test_teardown(self):
-        self.log.info("stopping %s" % self.config['app'])
-        self.runner.stop()
-
-        super(RaptorDesktop, self).run_test_teardown()
+            if self.config['run_local']:
+                self.log.info("* debug-mode enabled - please shutdown the browser manually...")
+                self.runner.wait(timeout=None)
 
     def check_for_crashes(self):
         try:
@@ -434,13 +442,16 @@ class RaptorDesktop(Raptor):
         except NotImplementedError:  
             pass
 
-    def clean_up(self):
-        self.runner.stop()
-
-        super(RaptorDesktop, self).clean_up()
-
 
 class RaptorDesktopFirefox(RaptorDesktop):
+    def __init__(self, app, binary, run_local=False, obj_path=None,
+                 gecko_profile=False, gecko_profile_interval=None, gecko_profile_entries=None,
+                 symbols_path=None, host=None, power_test=False, is_release_build=False,
+                 debug_mode=False, post_startup_delay=None, activity=None):
+        RaptorDesktop.__init__(self, app, binary, run_local, obj_path, gecko_profile,
+                               gecko_profile_interval, gecko_profile_entries, symbols_path,
+                               host, power_test, is_release_build, debug_mode,
+                               post_startup_delay)
 
     def disable_non_local_connections(self):
         
@@ -465,7 +476,7 @@ class RaptorDesktopFirefox(RaptorDesktop):
 
         self.start_runner_proc()
 
-        if self.config['is_release_build'] and test.get('playback') is not None:
+        if self.config['is_release_build'] and test.get('playback', None) is not None:
             self.enable_non_local_connections()
 
         
@@ -476,13 +487,16 @@ class RaptorDesktopFirefox(RaptorDesktop):
             
             self.control_server.gecko_profile_dir = self.gecko_profiler.gecko_profile_dir
 
-    def set_browser_test_prefs(self, raw_prefs):
-        
-        self.log.info("setting test-specific Firefox preferences")
-        self.profile.set_preferences(json.loads(raw_prefs))
-
 
 class RaptorDesktopChrome(RaptorDesktop):
+    def __init__(self, app, binary, run_local=False, obj_path=None,
+                 gecko_profile=False, gecko_profile_interval=None, gecko_profile_entries=None,
+                 symbols_path=None, host=None, power_test=False, is_release_build=False,
+                 debug_mode=False, post_startup_delay=None, activity=None):
+        RaptorDesktop.__init__(self, app, binary, run_local, obj_path, gecko_profile,
+                               gecko_profile_interval, gecko_profile_entries, symbols_path,
+                               host, power_test, is_release_build, debug_mode,
+                               post_startup_delay)
 
     def setup_chrome_desktop_for_playback(self):
         
@@ -507,47 +521,24 @@ class RaptorDesktopChrome(RaptorDesktop):
         if self.debug_mode:
             self.runner.cmdargs.extend(['--auto-open-devtools-for-tabs'])
 
-        if test.get('playback') is not None:
+        if test.get('playback', None) is not None:
             self.setup_chrome_desktop_for_playback()
 
         self.start_runner_proc()
 
 
 class RaptorAndroid(Raptor):
-    def __init__(self, app, binary, activity=None, **kwargs):
-        super(RaptorAndroid, self).__init__(app, binary, **kwargs)
+    def __init__(self, app, binary, run_local=False, obj_path=None,
+                 gecko_profile=False, gecko_profile_interval=None, gecko_profile_entries=None,
+                 symbols_path=None, host=None, power_test=False, is_release_build=False,
+                 debug_mode=False, post_startup_delay=None, activity=None):
+        Raptor.__init__(self, app, binary, run_local, obj_path, gecko_profile,
+                        gecko_profile_interval, gecko_profile_entries, symbols_path, host,
+                        power_test, is_release_build, debug_mode, post_startup_delay)
 
         
         self.profile_class = "firefox"
         self.config['activity'] = activity
-
-    def set_reverse_port(self, port):
-        tcp_port = "tcp:{}".format(port)
-        self.device.create_socket_connection('reverse', tcp_port, tcp_port)
-
-    def serve_benchmark_source(self, *args, **kwargs):
-        super(RaptorAndroid, self).serve_benchmark_source(*args, **kwargs)
-
-        
-        if self.config['host'] in ('localhost', '127.0.0.1'):
-            self.log.info("making the raptor benchmarks server port available to device")
-            self.set_reverse_port(self.benchmark_port)
-
-    def start_control_server(self):
-        super(RaptorAndroid, self).start_control_server()
-
-        
-        if self.config['host'] in ('localhost', '127.0.0.1'):
-            self.log.info("making the raptor control server port available to device")
-            self.set_reverse_port(self.control_server.port)
-
-    def start_playback(self, test):
-        super(RaptorAndroid, self).start_playback(test)
-
-        
-        if self.config['host'] in ('localhost', '127.0.0.1'):
-            self.log.info("making the raptor playback server port available to device")
-            self.set_reverse_port(8080)
 
     def create_browser_handler(self):
         
@@ -653,20 +644,10 @@ class RaptorAndroid(Raptor):
     def run_test(self, test, timeout=None):
         
         
-        try:
-            if test.get('cold', False) is True:
-                self.run_test_cold(test, timeout)
-            else:
-                self.run_test_warm(test, timeout)
-
-        except SignalHandlerException:
-            self.device.stop_application(self.config['binary'])
-
-        finally:
-            if self.config['power_test']:
-                finish_android_power_test(self, test['name'])
-
-            self.run_test_teardown()
+        if test.get('cold', False) is True:
+            self.run_test_cold(test, timeout)
+        else:
+            self.run_test_warm(test, timeout)
 
     def run_test_cold(self, test, timeout=None):
         '''
@@ -708,7 +689,7 @@ class RaptorAndroid(Raptor):
             if test['browser_cycle'] == 1:
                 self.create_raptor_sdcard_folder()
 
-                if test.get('playback') is not None:
+                if test.get('playback', None) is not None:
                     self.start_playback(test)
 
                     
@@ -738,7 +719,7 @@ class RaptorAndroid(Raptor):
 
                 self.run_test_setup(test)
 
-            if test.get('playback') is not None:
+            if test.get('playback', None) is not None:
                 self.turn_on_android_app_proxy()
 
             self.copy_profile_onto_device()
@@ -756,6 +737,11 @@ class RaptorAndroid(Raptor):
                 self.log.info("* debug-mode enabled - please shutdown the browser manually...")
                 self.runner.wait(timeout=None)
 
+        if self.config['power_test']:
+            finish_android_power_test(self, test['name'])
+
+        self.run_test_teardown()
+
     def run_test_warm(self, test, timeout=None):
         self.log.info("test %s is running in warm mode; browser will NOT be restarted between "
                       "page cycles" % test['name'])
@@ -765,13 +751,13 @@ class RaptorAndroid(Raptor):
         self.run_test_setup(test)
         self.create_raptor_sdcard_folder()
 
-        if test.get('playback') is not None:
+        if test.get('playback', None) is not None:
             self.start_playback(test)
 
         if self.config['host'] not in ('localhost', '127.0.0.1'):
             self.delete_proxy_settings_from_profile()
 
-        if test.get('playback') is not None:
+        if test.get('playback', None) is not None:
             self.turn_on_android_app_proxy()
 
         self.copy_profile_onto_device()
@@ -784,19 +770,15 @@ class RaptorAndroid(Raptor):
 
         self.wait_for_test_finish(test, timeout)
 
+        if self.config['power_test']:
+            finish_android_power_test(self, test['name'])
+
+        self.run_test_teardown()
+
         
         if self.debug_mode and self.config['run_local']:
             self.log.info("* debug-mode enabled - please shutdown the browser manually...")
             self.runner.wait(timeout=None)
-
-    def run_test_teardown(self):
-        self.log.info('removing reverse socket connections')
-        self.device.remove_socket_connections('reverse')
-
-        self.log.info("stopping %s" % self.config['app'])
-        self.device.stop_application(self.config['binary'])
-
-        super(RaptorAndroid, self).run_test_teardown()
 
     def check_for_crashes(self):
         
@@ -820,12 +802,6 @@ class RaptorAndroid(Raptor):
                 shutil.rmtree(dump_dir)
             except Exception:
                 self.log.warning("unable to remove directory: %s" % dump_dir)
-
-    def clean_up(self):
-        self.log.info('removing reverse socket connections')
-        self.device.remove_socket_connections('reverse')
-
-        super(RaptorAndroid, self).clean_up()
 
 
 def main(args=sys.argv[1:]):
@@ -874,22 +850,17 @@ def main(args=sys.argv[1:]):
                           is_release_build=args.is_release_build,
                           debug_mode=args.debug_mode,
                           post_startup_delay=args.post_startup_delay,
-                          activity=args.activity,
-                          interrupt_handler=SignalHandler(),
-                          )
+                          activity=args.activity)
 
     raptor.create_browser_profile()
     raptor.create_browser_handler()
     raptor.start_control_server()
 
-    try:
-        for next_test in raptor_test_list:
-            raptor.run_test(next_test, timeout=int(next_test['page_timeout']))
+    for next_test in raptor_test_list:
+        raptor.run_test(next_test, timeout=int(next_test['page_timeout']))
 
-        success = raptor.process_results(raptor_test_names)
-
-    finally:
-        raptor.clean_up()
+    success = raptor.process_results(raptor_test_names)
+    raptor.clean_up()
 
     if not success:
         

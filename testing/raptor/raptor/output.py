@@ -736,7 +736,7 @@ class Output(object):
 
     def output(self, test_names):
         """output to file and perfherder data json """
-        if os.getenv('MOZ_UPLOAD_DIR'):
+        if os.environ['MOZ_UPLOAD_DIR']:
             
             
             
