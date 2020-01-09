@@ -6520,38 +6520,11 @@ nsresult PresShell::EventHandler::HandleEvent(nsIFrame* aFrame,
     return NS_OK;
   }
 
-  RefPtr<Document> retargetEventDoc;
   if (!aDontRetargetEvents) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (aGUIEvent->IsTargetedAtFocusedWindow()) {
-      nsCOMPtr<nsPIDOMWindowOuter> window = GetFocusedDOMWindowInOurWindow();
-      
-      
-      if (!window) {
-        return NS_OK;
-      }
-
-      retargetEventDoc = window->GetExtantDoc();
-      if (!retargetEventDoc) return NS_OK;
-    } else if (nsIContent* capturingContent =
-                   EventHandler::GetCapturingContentFor(aGUIEvent)) {
-      
-      
-      retargetEventDoc = capturingContent->GetComposedDoc();
-#ifdef ANDROID
-    } else if ((aGUIEvent->mClass == eTouchEventClass) ||
-               (aGUIEvent->mClass == eMouseEventClass) ||
-               (aGUIEvent->mClass == eWheelEventClass)) {
-      retargetEventDoc = mPresShell->GetPrimaryContentDocument();
-#endif
+    RefPtr<Document> retargetEventDoc;
+    if (!GetRetargetEventDocument(aGUIEvent,
+                                  getter_AddRefs(retargetEventDoc))) {
+      return NS_OK;  
     }
 
     if (retargetEventDoc) {
@@ -7164,6 +7137,50 @@ nsIContent* PresShell::EventHandler::GetCapturingContentFor(
           aGUIEvent->HasMouseEventMessage())
              ? nsIPresShell::GetCapturingContent()
              : nullptr;
+}
+
+bool PresShell::EventHandler::GetRetargetEventDocument(
+    WidgetGUIEvent* aGUIEvent, Document** aRetargetEventDocument) {
+  MOZ_ASSERT(aGUIEvent);
+  MOZ_ASSERT(aRetargetEventDocument);
+
+  *aRetargetEventDocument = nullptr;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<Document> retargetEventDoc;
+  if (aGUIEvent->IsTargetedAtFocusedWindow()) {
+    nsCOMPtr<nsPIDOMWindowOuter> window = GetFocusedDOMWindowInOurWindow();
+    
+    
+    if (!window) {
+      return false;
+    }
+
+    retargetEventDoc = window->GetExtantDoc();
+    if (!retargetEventDoc) return false;
+  } else if (nsIContent* capturingContent =
+                 EventHandler::GetCapturingContentFor(aGUIEvent)) {
+    
+    
+    retargetEventDoc = capturingContent->GetComposedDoc();
+#ifdef ANDROID
+  } else if ((aGUIEvent->mClass == eTouchEventClass) ||
+             (aGUIEvent->mClass == eMouseEventClass) ||
+             (aGUIEvent->mClass == eWheelEventClass)) {
+    retargetEventDoc = mPresShell->GetPrimaryContentDocument();
+#endif
+  }
+
+  retargetEventDoc.forget(aRetargetEventDocument);
+  return true;
 }
 
 Document* PresShell::GetPrimaryContentDocument() {

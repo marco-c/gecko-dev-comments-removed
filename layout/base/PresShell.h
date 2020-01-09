@@ -580,6 +580,18 @@ class PresShell final : public nsIPresShell,
 
     static nsIContent* GetCapturingContentFor(WidgetGUIEvent* aGUIEvent);
 
+    
+
+
+
+
+
+
+
+
+    bool GetRetargetEventDocument(WidgetGUIEvent* aGUIEvent,
+                                  Document** aRetargetEventDocument);
+
     MOZ_CAN_RUN_SCRIPT
     nsresult RetargetEventToParent(WidgetGUIEvent* aGUIEvent,
                                    nsEventStatus* aEventStatus);
