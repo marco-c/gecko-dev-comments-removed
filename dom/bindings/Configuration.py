@@ -401,10 +401,21 @@ class Descriptor(DescriptorProvider):
 
         
         
-        self.concrete = (not self.interface.isExternal() and
-                         not self.interface.isCallback() and
-                         not self.interface.isNamespace() and
-                         desc.get('concrete', True))
+        concreteDefault = (not self.interface.isExternal() and
+                           not self.interface.isCallback() and
+                           
+                           
+                           
+                           not self.interface.isConsequential() and
+                           not self.interface.isNamespace() and
+                           
+                           
+                           
+                           
+                           (not self.interface.hasChildInterfaces() or
+                            self.interface.ctor() is not None))
+
+        self.concrete = desc.get('concrete', concreteDefault)
         self.hasUnforgeableMembers = (self.concrete and
                                       any(MemberIsUnforgeable(m, self) for m in
                                           self.interface.members))
@@ -730,7 +741,7 @@ class Descriptor(DescriptorProvider):
     def isMaybeCrossOriginObject(self):
         
         
-        return self.hasCrossOriginMembers and not self.isGlobal()
+        return self.concrete and self.hasCrossOriginMembers and not self.isGlobal()
 
     def needsHeaderInclude(self):
         """
