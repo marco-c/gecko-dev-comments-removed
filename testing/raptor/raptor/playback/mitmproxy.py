@@ -396,6 +396,7 @@ class MitmproxyAndroid(Mitmproxy):
         if self.config['run_local']:
             
             self.certutil = os.path.join(self.config['obj_path'], 'dist', 'bin')
+            os.environ['LD_LIBRARY_PATH'] = self.certutil
         else:
             
             
