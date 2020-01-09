@@ -113,6 +113,6 @@ class MOZ_RAII AutoUnlockGC {
   AutoUnlockGC& operator=(const AutoUnlockGC&) = delete;
 };
 
-} 
+}  
 
 #endif 

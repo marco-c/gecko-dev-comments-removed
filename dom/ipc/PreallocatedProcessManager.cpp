@@ -74,8 +74,7 @@ class PreallocatedProcessManagerImpl final : public nsIObserver {
 
  StaticRefPtr<PreallocatedProcessManagerImpl>
     PreallocatedProcessManagerImpl::sSingleton;
- uint32_t
-    PreallocatedProcessManagerImpl::sPrelaunchDelayMS = 0;
+ uint32_t PreallocatedProcessManagerImpl::sPrelaunchDelayMS = 0;
 
  PreallocatedProcessManagerImpl*
 PreallocatedProcessManagerImpl::Singleton() {
@@ -101,10 +100,9 @@ PreallocatedProcessManagerImpl::~PreallocatedProcessManagerImpl() {
 }
 
 void PreallocatedProcessManagerImpl::Init() {
-  Preferences::AddUintVarCache(
-    &sPrelaunchDelayMS,
-    "dom.ipc.processPrelaunch.delayMs",
-    DEFAULT_ALLOCATE_DELAY);
+  Preferences::AddUintVarCache(&sPrelaunchDelayMS,
+                               "dom.ipc.processPrelaunch.delayMs",
+                               DEFAULT_ALLOCATE_DELAY);
   Preferences::AddStrongObserver(this, "dom.ipc.processPrelaunch.enabled");
   
   

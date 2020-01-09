@@ -301,14 +301,15 @@ const mozilla::Module::ContractIDEntry kXPCOMContracts[] = {
 #undef COMPONENT
 #undef COMPONENT_M
 
-const mozilla::Module kXPCOMModule = {mozilla::Module::kVersion,
-                                      kXPCOMCIDEntries,
-                                      kXPCOMContracts,
-                                      nullptr,
-                                      nullptr,
-                                      nullptr,
-                                      nullptr,
-                                      Module::ALLOW_IN_GPU_VR_AND_SOCKET_PROCESS};
+const mozilla::Module kXPCOMModule = {
+    mozilla::Module::kVersion,
+    kXPCOMCIDEntries,
+    kXPCOMContracts,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    Module::ALLOW_IN_GPU_VR_AND_SOCKET_PROCESS};
 
 
 static nsIDebug2* gDebug = nullptr;
@@ -920,7 +921,7 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
 #endif
   nsCycleCollector_shutdown(shutdownCollect);
 
-  PROFILER_ADD_MARKER("Shutdown xpcom", OTHER);
+  PROFILER_ADD_MARKER("Shutdown xpcom");
   
   if (gShutdownChecks != SCM_NOTHING) {
 #ifdef XP_MACOSX

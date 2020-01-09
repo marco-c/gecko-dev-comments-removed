@@ -19,8 +19,8 @@
 namespace mozilla {
 namespace gfx {
 class FilterPrimitiveDescription;
-} 
-} 
+}  
+}  
 
 DECLARE_USE_COPY_CONSTRUCTORS(mozilla::gfx::FilterPrimitiveDescription)
 

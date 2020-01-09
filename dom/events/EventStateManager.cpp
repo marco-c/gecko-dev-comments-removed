@@ -222,7 +222,7 @@ EventStateManager::DeltaAccumulator*
     EventStateManager::DeltaAccumulator::sInstance = nullptr;
 
 constexpr const StyleCursorKind kInvalidCursorKind =
-  static_cast<StyleCursorKind>(255);
+    static_cast<StyleCursorKind>(255);
 
 EventStateManager::EventStateManager()
     : mLockCursor(kInvalidCursorKind),
@@ -3665,7 +3665,8 @@ void EventStateManager::UpdateCursor(nsPresContext* aPresContext,
     
     
     if (busyFlags & nsIDocShell::BUSY_FLAGS_BUSY &&
-        (cursor == StyleCursorKind::Auto || cursor == StyleCursorKind::Default)) {
+        (cursor == StyleCursorKind::Auto ||
+         cursor == StyleCursorKind::Default)) {
       cursor = StyleCursorKind::Progress;
       container = nullptr;
     }

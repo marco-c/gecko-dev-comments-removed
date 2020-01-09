@@ -129,8 +129,8 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(DynamicFrameEventFilter)
  already_AddRefed<nsISupports>
 SessionStoreUtils::AddDynamicFrameFilteredListener(
     const GlobalObject& aGlobal, EventTarget& aTarget, const nsAString& aType,
-    JS::Handle<JS::Value> aListener, bool aUseCapture,
-    bool aMozSystemGroup, ErrorResult& aRv) {
+    JS::Handle<JS::Value> aListener, bool aUseCapture, bool aMozSystemGroup,
+    ErrorResult& aRv) {
   if (NS_WARN_IF(!aListener.isObject())) {
     aRv.Throw(NS_ERROR_INVALID_ARG);
     return nullptr;
@@ -157,8 +157,8 @@ SessionStoreUtils::AddDynamicFrameFilteredListener(
 
  void SessionStoreUtils::RemoveDynamicFrameFilteredListener(
     const GlobalObject& global, EventTarget& aTarget, const nsAString& aType,
-    nsISupports* aListener, bool aUseCapture,
-    bool aMozSystemGroup, ErrorResult& aRv) {
+    nsISupports* aListener, bool aUseCapture, bool aMozSystemGroup,
+    ErrorResult& aRv) {
   nsCOMPtr<nsIDOMEventListener> listener = do_QueryInterface(aListener);
   if (!listener) {
     aRv.Throw(NS_ERROR_NO_INTERFACE);
@@ -383,7 +383,8 @@ static void CollectFromTextAreaElement(Document& aDocument,
     textArea->GetValue(value);
     
     
-    if (textArea->AttrValueIs(kNameSpaceID_None, nsGkAtoms::value, value, eCaseMatters)) {
+    if (textArea->AttrValueIs(kNameSpaceID_None, nsGkAtoms::value, value,
+                              eCaseMatters)) {
       continue;
     }
     Record<nsString, OwningStringOrBooleanOrLongOrObject>::EntryType* entry =
@@ -406,7 +407,8 @@ static void CollectFromInputElement(JSContext* aCx, Document& aDocument,
   uint32_t length = inputlist->Length(true);
   for (uint32_t i = 0; i < length; ++i) {
     MOZ_ASSERT(inputlist->Item(i), "null item in node list!");
-    nsCOMPtr<nsIFormControl> formControl = do_QueryInterface(inputlist->Item(i));
+    nsCOMPtr<nsIFormControl> formControl =
+        do_QueryInterface(inputlist->Item(i));
     if (formControl) {
       uint8_t controlType = formControl->ControlType();
       if (controlType == NS_FORM_INPUT_PASSWORD ||
@@ -469,7 +471,8 @@ static void CollectFromInputElement(JSContext* aCx, Document& aDocument,
       
       if (value.IsEmpty() || IsValidCCNumber(value) ||
           input->HasBeenTypePassword() ||
-          input->AttrValueIs(kNameSpaceID_None, nsGkAtoms::value, value, eCaseMatters)) {
+          input->AttrValueIs(kNameSpaceID_None, nsGkAtoms::value, value,
+                             eCaseMatters)) {
         continue;
       }
       if (!id.IsEmpty()) {
@@ -485,7 +488,8 @@ static void CollectFromInputElement(JSContext* aCx, Document& aDocument,
             if (JS_ParseJSON(aCx, value.get(), value.Length(), &jsval) &&
                 jsval.isObject()) {
               Record<nsString, OwningStringOrBooleanOrLongOrObject>::EntryType*
-                  entry = AppendEntryToCollectedData(input, id, aGeneratedCount, aRetVal);
+                  entry = AppendEntryToCollectedData(input, id, aGeneratedCount,
+                                                     aRetVal);
               entry->mValue.SetAsObject() = &jsval.toObject();
             } else {
               JS_ClearPendingException(aCx);
@@ -622,7 +626,8 @@ static void CollectFromXULTextbox(Document& aDocument,
       }
       input->GetValue(value, CallerType::System);
       if (value.IsEmpty() ||
-          input->AttrValueIs(kNameSpaceID_None, nsGkAtoms::value, value, eCaseMatters)) {
+          input->AttrValueIs(kNameSpaceID_None, nsGkAtoms::value, value,
+                             eCaseMatters)) {
         continue;
       }
       uint16_t generatedCount = 0;
@@ -635,14 +640,17 @@ static void CollectFromXULTextbox(Document& aDocument,
 }
 
  void SessionStoreUtils::CollectFormData(
-    const GlobalObject& aGlobal, Document& aDocument, CollectedFormData& aRetVal) {
+    const GlobalObject& aGlobal, Document& aDocument,
+    CollectedFormData& aRetVal) {
   uint16_t generatedCount = 0;
   
   CollectFromTextAreaElement(aDocument, generatedCount, aRetVal);
   
-  CollectFromInputElement(aGlobal.Context(), aDocument, generatedCount, aRetVal);
+  CollectFromInputElement(aGlobal.Context(), aDocument, generatedCount,
+                          aRetVal);
   
-  CollectFromSelectElement(aGlobal.Context(), aDocument, generatedCount, aRetVal);
+  CollectFromSelectElement(aGlobal.Context(), aDocument, generatedCount,
+                           aRetVal);
   
   CollectFromXULTextbox(aDocument, aRetVal);
 

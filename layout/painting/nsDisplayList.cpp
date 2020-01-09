@@ -1044,7 +1044,6 @@ nsDisplayListBuilder::nsDisplayListBuilder(nsIFrame* aReferenceFrame,
       mIsInChromePresContext(false),
       mSyncDecodeImages(false),
       mIsPaintingToWindow(false),
-      mIsPaintingForWebRender(false),
       mIsCompositingCheap(false),
       mContainsPluginItem(false),
       mAncestorHasApzAwareEventHandler(false),
@@ -2469,8 +2468,7 @@ FrameLayerBuilder* nsDisplayList::BuildLayers(nsDisplayListBuilder* aBuilder,
   {
 #ifdef MOZ_GECKO_PROFILER
     nsCOMPtr<nsIDocShell> docShell = presContext->GetDocShell();
-    AUTO_PROFILER_TRACING_DOCSHELL("Paint", "LayerBuilding", GRAPHICS,
-                                   docShell);
+    AUTO_PROFILER_TRACING_DOCSHELL("Paint", "LayerBuilding", docShell);
 #endif
 
     if (XRE_IsContentProcess() && gfxPrefs::AlwaysPaint()) {
@@ -6115,7 +6113,7 @@ bool nsDisplayBlendMode::CreateWebRenderCommands(
   nsTArray<mozilla::wr::FilterOp> filters;
   StackingContextHelper sc(aSc, GetActiveScrolledRoot(), mFrame, this, aBuilder,
                            filters, LayoutDeviceRect(), nullptr, nullptr,
-                           nullptr, nullptr, wr::ReferenceFrameKind::Transform,
+                           nullptr, nullptr, nullptr,
                            nsCSSRendering::GetGFXBlendMode(mBlendMode));
 
   return nsDisplayWrapList::CreateWebRenderCommands(
@@ -7656,14 +7654,6 @@ bool nsDisplayBackgroundColor::CanUseAsyncAnimations(
     return FullPrerender;
   }
 
-  
-  
-  
-  if (aBuilder->IsPaintingForWebRender()) {
-    *aDirtyRect = overflow;
-    return FullPrerender;
-  }
-
   float viewportRatioX = gfxPrefs::AnimationPrerenderViewportRatioLimitX();
   float viewportRatioY = gfxPrefs::AnimationPrerenderViewportRatioLimitY();
   uint32_t absoluteLimitX = gfxPrefs::AnimationPrerenderAbsoluteLimitX();
@@ -7891,10 +7881,9 @@ bool nsDisplayTransform::CreateWebRenderCommands(
   StackingContextHelper sc(
       aSc, GetActiveScrolledRoot(), mFrame, this, aBuilder, filters,
       LayoutDeviceRect(position, LayoutDeviceSize()), &newTransformMatrix,
-      animationsId ? &prop : nullptr, nullptr, transformForSC,
-      wr::ReferenceFrameKind::Transform, gfx::CompositionOp::OP_OVER,
-      !BackfaceIsHidden(), preserve3D, deferredTransformItem,
-      wr::WrStackingContextClip::None(), animated);
+      animationsId ? &prop : nullptr, nullptr, transformForSC, nullptr,
+      gfx::CompositionOp::OP_OVER, !BackfaceIsHidden(), preserve3D,
+      deferredTransformItem, wr::WrStackingContextClip::None(), animated);
 
   return mStoredList.CreateWebRenderCommands(aBuilder, aResources, sc, aManager,
                                              aDisplayListBuilder);
@@ -8475,17 +8464,17 @@ bool nsDisplayPerspective::CreateWebRenderCommands(
               0.0f);
   Point3D roundedOrigin(NS_round(newOrigin.x), NS_round(newOrigin.y), 0);
 
-  perspectiveMatrix.PostTranslate(roundedOrigin);
+  gfx::Matrix4x4 transformForSC = gfx::Matrix4x4::Translation(roundedOrigin);
 
   nsIFrame* perspectiveFrame =
       mFrame->GetContainingBlock(nsIFrame::SKIP_SCROLLED_FRAME);
 
   nsTArray<mozilla::wr::FilterOp> filters;
-  StackingContextHelper sc(
-      aSc, GetActiveScrolledRoot(), mFrame, this, aBuilder, filters,
-      LayoutDeviceRect(), nullptr, nullptr, nullptr, &perspectiveMatrix,
-      wr::ReferenceFrameKind::Perspective, gfx::CompositionOp::OP_OVER,
-      !BackfaceIsHidden(), perspectiveFrame->Extend3DContext());
+  StackingContextHelper sc(aSc, GetActiveScrolledRoot(), mFrame, this, aBuilder,
+                           filters, LayoutDeviceRect(), nullptr, nullptr,
+                           nullptr, &transformForSC, &perspectiveMatrix,
+                           gfx::CompositionOp::OP_OVER, !BackfaceIsHidden(),
+                           perspectiveFrame->Extend3DContext());
 
   return mList.CreateWebRenderCommands(aBuilder, aResources, sc, aManager,
                                        aDisplayListBuilder);
@@ -9083,7 +9072,7 @@ bool nsDisplayMasksAndClipPaths::CreateWebRenderCommands(
                    nullptr,
                    opacity.ptrOr(nullptr),
                    nullptr,
-                   wr::ReferenceFrameKind::Transform,
+                   nullptr,
                    gfx::CompositionOp::OP_OVER,
                    true,
                    false,
@@ -9369,9 +9358,8 @@ bool nsDisplayFilters::CreateWebRenderCommands(
   StackingContextHelper sc(
       aSc, GetActiveScrolledRoot(), mFrame, this, aBuilder, wrFilters,
       LayoutDeviceRect(), nullptr, nullptr,
-      opacity != 1.0f && mHandleOpacity ? &opacity : nullptr, nullptr,
-      wr::ReferenceFrameKind::Transform, gfx::CompositionOp::OP_OVER, true,
-      false, Nothing(),
+      opacity != 1.0f && mHandleOpacity ? &opacity : nullptr, nullptr, nullptr,
+      gfx::CompositionOp::OP_OVER, true, false, Nothing(),
       wr::WrStackingContextClip::ClipChain(aBuilder.CurrentClipChainId()));
 
   nsDisplayEffectsBase::CreateWebRenderCommands(aBuilder, aResources, sc,

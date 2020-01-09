@@ -780,22 +780,16 @@ static const char* const kZipFileExtensions[] = {
     ".zipx",  
 };
 
-static const char* GetFileExt(const nsACString& aFilename,
-                              const char* const aFileExtensions[],
-                              const size_t aLength) {
-  for (size_t i = 0; i < aLength; ++i) {
-    if (StringEndsWith(aFilename, nsDependentCString(aFileExtensions[i]))) {
-      return aFileExtensions[i];
-    }
-  }
-  return nullptr;
-}
-
 
 static bool IsFileType(const nsACString& aFilename,
                        const char* const aFileExtensions[],
                        const size_t aLength) {
-  return GetFileExt(aFilename, aFileExtensions, aLength) != nullptr;
+  for (size_t i = 0; i < aLength; ++i) {
+    if (StringEndsWith(aFilename, nsDependentCString(aFileExtensions[i]))) {
+      return true;
+    }
+  }
+  return false;
 }
 
 ClientDownloadRequest::DownloadType PendingLookup::GetDownloadType(
@@ -1534,7 +1528,8 @@ nsresult PendingLookup::SendRemoteQueryInternal(Reason& aReason) {
 
   if (LOG_ENABLED()) {
     nsAutoCString serializedStr(serialized.c_str(), serialized.length());
-    serializedStr.ReplaceSubstring(NS_LITERAL_CSTRING("\0"), NS_LITERAL_CSTRING("\\0"));
+    serializedStr.ReplaceSubstring(NS_LITERAL_CSTRING("\0"),
+                                   NS_LITERAL_CSTRING("\\0"));
 
     LOG(("Serialized protocol buffer [this = %p]: (length=%d) %s", this,
          serializedStr.Length(), serializedStr.get()));
@@ -1739,10 +1734,6 @@ nsresult PendingLookup::OnStopRequestInternal(nsIRequest* aRequest,
   
   Accumulate(mozilla::Telemetry::APPLICATION_REPUTATION_SERVER_VERDICT,
              std::min<uint32_t>(response.verdict(), 7));
-  AccumulateCategoricalKeyed(
-      nsCString(GetFileExt(mFileName, kBinaryFileExtensions,
-                           ArrayLength(kBinaryFileExtensions))),
-      VerdictToLabel(std::min<uint32_t>(response.verdict(), 7)));
   switch (response.verdict()) {
     case safe_browsing::ClientDownloadResponse::DANGEROUS:
       aVerdict = nsIApplicationReputationService::VERDICT_DANGEROUS;

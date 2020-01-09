@@ -65,7 +65,7 @@ static bool gDebuggerRunsInMiddleman;
 
 
 static UniquePtr<MiddlemanCallResponseMessage, Message::FreePolicy>
-  gCallResponseMessage;
+    gCallResponseMessage;
 
 
 

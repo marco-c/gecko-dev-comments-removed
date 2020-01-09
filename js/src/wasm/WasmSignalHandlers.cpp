@@ -447,23 +447,40 @@ struct AutoHandlingTrap {
 
 static uintptr_t ReadGPR(CONTEXT* context, uint32_t rn) {
   switch (rn) {
-    case 0: return context->uc_mcontext.arm_r0;
-    case 1: return context->uc_mcontext.arm_r1;
-    case 2: return context->uc_mcontext.arm_r2;
-    case 3: return context->uc_mcontext.arm_r3;
-    case 4: return context->uc_mcontext.arm_r4;
-    case 5: return context->uc_mcontext.arm_r5;
-    case 6: return context->uc_mcontext.arm_r6;
-    case 7: return context->uc_mcontext.arm_r7;
-    case 8: return context->uc_mcontext.arm_r8;
-    case 9: return context->uc_mcontext.arm_r9;
-    case 10: return context->uc_mcontext.arm_r10;
-    case 11: return context->uc_mcontext.arm_fp;
-    case 12: return context->uc_mcontext.arm_ip;
-    case 13: return context->uc_mcontext.arm_sp;
-    case 14: return context->uc_mcontext.arm_lr;
-    case 15: return context->uc_mcontext.arm_pc;
-    default: MOZ_CRASH();
+    case 0:
+      return context->uc_mcontext.arm_r0;
+    case 1:
+      return context->uc_mcontext.arm_r1;
+    case 2:
+      return context->uc_mcontext.arm_r2;
+    case 3:
+      return context->uc_mcontext.arm_r3;
+    case 4:
+      return context->uc_mcontext.arm_r4;
+    case 5:
+      return context->uc_mcontext.arm_r5;
+    case 6:
+      return context->uc_mcontext.arm_r6;
+    case 7:
+      return context->uc_mcontext.arm_r7;
+    case 8:
+      return context->uc_mcontext.arm_r8;
+    case 9:
+      return context->uc_mcontext.arm_r9;
+    case 10:
+      return context->uc_mcontext.arm_r10;
+    case 11:
+      return context->uc_mcontext.arm_fp;
+    case 12:
+      return context->uc_mcontext.arm_ip;
+    case 13:
+      return context->uc_mcontext.arm_sp;
+    case 14:
+      return context->uc_mcontext.arm_lr;
+    case 15:
+      return context->uc_mcontext.arm_pc;
+    default:
+      MOZ_CRASH();
   }
 }
 
@@ -482,11 +499,10 @@ static uintptr_t ReadGPR(CONTEXT* context, uint32_t rn) {
 
 
 
-struct vfp_sigframe
-{
-  unsigned long       magic;
-  unsigned long       size;
-  struct user_vfp     ufp;
+struct vfp_sigframe {
+  unsigned long magic;
+  unsigned long size;
+  struct user_vfp ufp;
   struct user_vfp_exc ufp_exc;
 };
 
@@ -558,12 +574,13 @@ static bool HandleUnalignedTrap(CONTEXT* context, uint8_t* pc,
     
     
     
-#  ifdef ANDROID
-    __android_log_print(ANDROID_LOG_ERROR, "WASM", "Bad SIGBUS instr %08x", instr);
-#  endif
-#  ifdef DEBUG
+#ifdef ANDROID
+    __android_log_print(ANDROID_LOG_ERROR, "WASM", "Bad SIGBUS instr %08x",
+                        instr);
+#endif
+#ifdef DEBUG
     MOZ_CRASH("Unexpected instruction");
-#  endif
+#endif
     return false;
   }
 
@@ -579,8 +596,8 @@ static bool HandleUnalignedTrap(CONTEXT* context, uint8_t* pc,
 
   uint8_t* p = (uint8_t*)ReadGPR(context, rn) + (isAdd ? offs : -offs);
 
-  if (!instance->memoryAccessInBounds(p, isDouble ? sizeof(double)
-                                                  : sizeof(float))) {
+  if (!instance->memoryAccessInBounds(
+          p, isDouble ? sizeof(double) : sizeof(float))) {
     return false;
   }
 
@@ -619,16 +636,17 @@ static bool HandleUnalignedTrap(CONTEXT* context, uint8_t* pc,
   }
 
 #ifdef DEBUG
-  MOZ_CRASH("SIGBUS handler could not access FP register, incompatible kernel?");
+  MOZ_CRASH(
+      "SIGBUS handler could not access FP register, incompatible kernel?");
 #endif
   return false;
 }
-#else 
+#else   
 static bool HandleUnalignedTrap(CONTEXT* context, uint8_t* pc,
                                 Instance* instance) {
   return false;
 }
-#endif 
+#endif  
 
 static MOZ_MUST_USE bool HandleTrap(CONTEXT* context,
                                     bool isUnalignedSignal = false,
