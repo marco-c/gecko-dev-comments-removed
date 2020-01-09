@@ -36,7 +36,7 @@ for (var locale of badLocales)
 
 
 for (var locale of badLocales)
-  new Intl.NumberFormat("x-" + locale).format(5);
+  assertThrowsInstanceOf(() => new Intl.NumberFormat("x-" + locale), RangeError);
 
 
 for (var locale of badLocales)

@@ -12,11 +12,6 @@ const testcases = [
     { locale: "en-x-u-kf", start: -1, end: 0 },
 
     
-    { locale: "x-only", start: -1, end: 0 },
-    { locale: "x-only-u", start: -1, end: 0 },
-    { locale: "x-only-u-kf", start: -1, end: 0 },
-
-    
     
     { locale: "en-u-ab", start: 2, end: 7 },
     { locale: "en-u-ab-x-y", start: 2, end: 7 },

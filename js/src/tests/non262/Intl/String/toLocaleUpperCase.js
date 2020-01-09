@@ -26,11 +26,6 @@ for (let locale of ["no_locale", "lt-invalid_ext", ["no_locale"], ["en", "no_loc
 
 
 
-assertEq("a".toLocaleUpperCase("x-x"), "A");
-assertEq("a".toLocaleUpperCase("x-0"), "A");
-
-
-
 
 assertEq("a".toLocaleUpperCase(), "A");
 assertEq("a".toLocaleUpperCase(undefined), "A");
