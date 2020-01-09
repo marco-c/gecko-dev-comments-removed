@@ -131,7 +131,7 @@ bool TestHeapPostBarrierUpdate() {
     ptr = testStruct.release();
   }
 
-  cx->minorGC(JS::gcreason::API);
+  cx->minorGC(JS::GCReason::API);
 
   W& wrapper = ptr->wrapper;
   CHECK(uintptr_t(wrapper.get()) != initialObjAsInt);
@@ -140,7 +140,7 @@ bool TestHeapPostBarrierUpdate() {
 
   JS::DeletePolicy<TestStruct<W>>()(ptr);
 
-  cx->minorGC(JS::gcreason::API);
+  cx->minorGC(JS::GCReason::API);
 
   return true;
 }
@@ -166,7 +166,7 @@ bool TestHeapPostBarrierInitFailure() {
     
   }
 
-  cx->minorGC(JS::gcreason::API);
+  cx->minorGC(JS::GCReason::API);
 
   return true;
 }

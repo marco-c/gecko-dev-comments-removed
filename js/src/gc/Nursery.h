@@ -271,7 +271,7 @@ class Nursery {
   static const size_t MaxNurseryBufferSize = 1024;
 
   
-  void collect(JS::gcreason::Reason reason);
+  void collect(JS::GCReason reason);
 
   
 
@@ -352,16 +352,14 @@ class Nursery {
     return (void*)&currentStringEnd_;
   }
 
-  void requestMinorGC(JS::gcreason::Reason reason) const;
+  void requestMinorGC(JS::GCReason reason) const;
 
   bool minorGCRequested() const {
-    return minorGCTriggerReason_ != JS::gcreason::NO_REASON;
+    return minorGCTriggerReason_ != JS::GCReason::NO_REASON;
   }
-  JS::gcreason::Reason minorGCTriggerReason() const {
-    return minorGCTriggerReason_;
-  }
+  JS::GCReason minorGCTriggerReason() const { return minorGCTriggerReason_; }
   void clearMinorGCRequest() {
-    minorGCTriggerReason_ = JS::gcreason::NO_REASON;
+    minorGCTriggerReason_ = JS::GCReason::NO_REASON;
   }
 
   bool needIdleTimeCollection() const;
@@ -442,7 +440,7 @@ class Nursery {
 
 
 
-  mutable JS::gcreason::Reason minorGCTriggerReason_;
+  mutable JS::GCReason minorGCTriggerReason_;
 
   
 
@@ -465,7 +463,7 @@ class Nursery {
   ProfileDurations totalDurations_;
 
   struct {
-    JS::gcreason::Reason reason = JS::gcreason::NO_REASON;
+    JS::GCReason reason = JS::GCReason::NO_REASON;
     size_t nurseryCapacity = 0;
     size_t nurseryLazyCapacity = 0;
     size_t nurseryUsedBytes = 0;
@@ -562,8 +560,7 @@ class Nursery {
   
   void* allocate(size_t size);
 
-  void doCollection(JS::gcreason::Reason reason,
-                    gc::TenureCountCache& tenureCounts);
+  void doCollection(JS::GCReason reason, gc::TenureCountCache& tenureCounts);
 
   
 
@@ -600,7 +597,7 @@ class Nursery {
   void sweepMapAndSetObjects();
 
   
-  void maybeResizeNursery(JS::gcreason::Reason reason);
+  void maybeResizeNursery(JS::GCReason reason);
   void growAllocableSpace();
   void shrinkAllocableSpace(unsigned newCount);
   void minimizeAllocableSpace();

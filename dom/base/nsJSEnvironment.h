@@ -72,7 +72,7 @@ class nsJSContext : public nsIScriptContext {
   
   static void EnsureStatics();
 
-  static void GarbageCollectNow(JS::gcreason::Reason reason,
+  static void GarbageCollectNow(JS::GCReason reason,
                                 IsIncremental aIncremental = NonIncrementalGC,
                                 IsShrinking aShrinking = NonShrinkingGC,
                                 int64_t aSliceMillis = 0);
@@ -97,17 +97,16 @@ class nsJSContext : public nsIScriptContext {
 
   
   static void RunNextCollectorTimer(
-      JS::gcreason::Reason aReason,
+      JS::GCReason aReason,
       mozilla::TimeStamp aDeadline = mozilla::TimeStamp());
   
   
   
   static void MaybeRunNextCollectorSlice(nsIDocShell *aDocShell,
-                                         JS::gcreason::Reason aReason);
+                                         JS::GCReason aReason);
 
   
-  static void PokeGC(JS::gcreason::Reason aReason, JSObject *aObj,
-                     int aDelay = 0);
+  static void PokeGC(JS::GCReason aReason, JSObject *aObj, int aDelay = 0);
   static void KillGCTimer();
 
   static void PokeShrinkingGC();

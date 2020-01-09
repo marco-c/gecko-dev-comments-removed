@@ -10381,7 +10381,7 @@ nsresult nsDocShell::DoChannelLoad(nsIChannel* aChannel,
   
   
   
-  nsJSContext::MaybeRunNextCollectorSlice(this, JS::gcreason::DOCSHELL);
+  nsJSContext::MaybeRunNextCollectorSlice(this, JS::GCReason::DOCSHELL);
 
   
   cleanupInitialClient.release();

@@ -341,7 +341,7 @@ BEGIN_TEST(testIncrementalRoots) {
 
   
   
-  cx->runtime()->gc.minorGC(JS::gcreason::API);
+  cx->runtime()->gc.minorGC(JS::GCReason::API);
 
   
   obj = root = nullptr;

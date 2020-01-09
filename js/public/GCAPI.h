@@ -406,10 +406,7 @@ namespace JS {
   D(DOCSHELL, 54)                          \
   D(HTML_PARSER, 55)
 
-namespace gcreason {
-
-
-enum Reason {
+enum class GCReason {
 #define MAKE_REASON(name, val) name = val,
   GCREASONS(MAKE_REASON)
 #undef MAKE_REASON
@@ -421,16 +418,13 @@ enum Reason {
 
 
 
-
   NUM_TELEMETRY_REASONS = 100
 };
 
 
 
 
-extern JS_PUBLIC_API const char* ExplainReason(JS::gcreason::Reason reason);
-
-} 
+extern JS_PUBLIC_API const char* ExplainGCReason(JS::GCReason reason);
 
 
 
@@ -492,7 +486,7 @@ extern JS_PUBLIC_API void SkipZoneForGC(Zone* zone);
 
 extern JS_PUBLIC_API void NonIncrementalGC(JSContext* cx,
                                            JSGCInvocationKind gckind,
-                                           gcreason::Reason reason);
+                                           GCReason reason);
 
 
 
@@ -525,7 +519,7 @@ extern JS_PUBLIC_API void NonIncrementalGC(JSContext* cx,
 
 extern JS_PUBLIC_API void StartIncrementalGC(JSContext* cx,
                                              JSGCInvocationKind gckind,
-                                             gcreason::Reason reason,
+                                             GCReason reason,
                                              int64_t millis = 0);
 
 
@@ -536,8 +530,7 @@ extern JS_PUBLIC_API void StartIncrementalGC(JSContext* cx,
 
 
 
-extern JS_PUBLIC_API void IncrementalGCSlice(JSContext* cx,
-                                             gcreason::Reason reason,
+extern JS_PUBLIC_API void IncrementalGCSlice(JSContext* cx, GCReason reason,
                                              int64_t millis = 0);
 
 
@@ -546,8 +539,7 @@ extern JS_PUBLIC_API void IncrementalGCSlice(JSContext* cx,
 
 
 
-extern JS_PUBLIC_API void FinishIncrementalGC(JSContext* cx,
-                                              gcreason::Reason reason);
+extern JS_PUBLIC_API void FinishIncrementalGC(JSContext* cx, GCReason reason);
 
 
 
@@ -623,10 +615,10 @@ struct JS_PUBLIC_API GCDescription {
   bool isZone_;
   bool isComplete_;
   JSGCInvocationKind invocationKind_;
-  gcreason::Reason reason_;
+  GCReason reason_;
 
   GCDescription(bool isZone, bool isComplete, JSGCInvocationKind kind,
-                gcreason::Reason reason)
+                GCReason reason)
       : isZone_(isZone),
         isComplete_(isComplete),
         invocationKind_(kind),
@@ -681,7 +673,7 @@ enum class GCNurseryProgress {
 
 using GCNurseryCollectionCallback = void (*)(JSContext* cx,
                                              GCNurseryProgress progress,
-                                             gcreason::Reason reason);
+                                             GCReason reason);
 
 
 

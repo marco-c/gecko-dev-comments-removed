@@ -110,7 +110,7 @@ BEGIN_TEST(testGCUID) {
   
   
   JS::PrepareForFullGC(cx);
-  JS::NonIncrementalGC(cx, GC_SHRINK, JS::gcreason::API);
+  JS::NonIncrementalGC(cx, GC_SHRINK, JS::GCReason::API);
 
   
   

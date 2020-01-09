@@ -12395,7 +12395,7 @@ namespace dbg {
       
       
       
-      data->reason = gcreason::ExplainReason(slice.reason);
+      data->reason = ExplainGCReason(slice.reason);
       MOZ_ASSERT(data->reason);
     }
 

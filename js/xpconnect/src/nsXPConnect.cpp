@@ -91,7 +91,7 @@ nsXPConnect::~nsXPConnect() {
   
   
   
-  mRuntime->GarbageCollect(JS::gcreason::XPCONNECT_SHUTDOWN);
+  mRuntime->GarbageCollect(JS::GCReason::XPCONNECT_SHUTDOWN);
 
   mShuttingDown = true;
   XPCWrappedNativeScope::SystemIsBeingShutDown();
@@ -101,7 +101,7 @@ nsXPConnect::~nsXPConnect() {
   
   
   
-  mRuntime->GarbageCollect(JS::gcreason::XPCONNECT_SHUTDOWN);
+  mRuntime->GarbageCollect(JS::GCReason::XPCONNECT_SHUTDOWN);
 
   NS_RELEASE(gSystemPrincipal);
   gScriptSecurityManager = nullptr;

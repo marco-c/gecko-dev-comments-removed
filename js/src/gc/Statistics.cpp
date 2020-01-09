@@ -40,8 +40,8 @@ using mozilla::TimeStamp;
 
 
 
-JS_STATIC_ASSERT(JS::gcreason::NUM_TELEMETRY_REASONS >=
-                 JS::gcreason::NUM_REASONS);
+JS_STATIC_ASSERT(JS::GCReason::NUM_TELEMETRY_REASONS >=
+                 JS::GCReason::NUM_REASONS);
 
 using PhaseKindRange =
     decltype(mozilla::MakeEnumeratedRange(PhaseKind::FIRST, PhaseKind::LIMIT));
@@ -64,11 +64,10 @@ const char* js::gcstats::ExplainInvocationKind(JSGCInvocationKind gckind) {
   }
 }
 
-JS_PUBLIC_API const char* JS::gcreason::ExplainReason(
-    JS::gcreason::Reason reason) {
+JS_PUBLIC_API const char* JS::ExplainGCReason(JS::GCReason reason) {
   switch (reason) {
 #define SWITCH_REASON(name, _) \
-  case JS::gcreason::name:     \
+  case JS::GCReason::name:     \
     return #name;
     GCREASONS(SWITCH_REASON)
 
@@ -279,7 +278,8 @@ UniqueChars Statistics::formatCompactSliceMessage() const {
       "%s%s; Times: ";
   char buffer[1024];
   SprintfLiteral(buffer, format, index, t(slice.duration()), budgetDescription,
-                 t(slice.start - slices_[0].start), ExplainReason(slice.reason),
+                 t(slice.start - slices_[0].start),
+                 ExplainGCReason(slice.reason),
                  slice.wasReset() ? "yes - " : "no",
                  slice.wasReset() ? ExplainAbortReason(slice.resetReason) : "");
 
@@ -442,7 +442,7 @@ UniqueChars Statistics::formatDetailedDescription() const {
   char buffer[1024];
   SprintfLiteral(
       buffer, format, ExplainInvocationKind(gckind),
-      ExplainReason(slices_[0].reason), nonincremental() ? "no - " : "yes",
+      ExplainGCReason(slices_[0].reason), nonincremental() ? "no - " : "yes",
       nonincremental() ? ExplainAbortReason(nonincrementalReason_) : "",
       zoneStats.collectedZoneCount, zoneStats.zoneCount,
       zoneStats.sweptZoneCount, zoneStats.collectedCompartmentCount,
@@ -475,7 +475,7 @@ UniqueChars Statistics::formatDetailedSliceDescription(
 ";
   char buffer[1024];
   SprintfLiteral(
-      buffer, format, i, ExplainReason(slice.reason),
+      buffer, format, i, ExplainGCReason(slice.reason),
       slice.wasReset() ? "yes - " : "no",
       slice.wasReset() ? ExplainAbortReason(slice.resetReason) : "",
       gc::StateName(slice.initialState), gc::StateName(slice.finalState),
@@ -585,8 +585,7 @@ void Statistics::writeLogMessage(const char* fmt, ...) {
 }
 #endif
 
-UniqueChars Statistics::renderJsonMessage(uint64_t timestamp,
-                                          Statistics::JSONUse use) const {
+UniqueChars Statistics::renderJsonMessage(uint64_t timestamp, Statistics::JSONUse use) const {
   
 
 
@@ -606,7 +605,7 @@ UniqueChars Statistics::renderJsonMessage(uint64_t timestamp,
   JSONPrinter json(printer);
 
   json.beginObject();
-  json.property("status", "completed");         
+  json.property("status", "completed");    
   formatJsonDescription(timestamp, json, use);  
 
   if (use == Statistics::JSONUse::TELEMETRY) {
@@ -626,7 +625,8 @@ UniqueChars Statistics::renderJsonMessage(uint64_t timestamp,
   return printer.release();
 }
 
-void Statistics::formatJsonDescription(uint64_t timestamp, JSONPrinter& json,
+void Statistics::formatJsonDescription(uint64_t timestamp,
+                                       JSONPrinter& json,
                                        JSONUse use) const {
   
   
@@ -650,7 +650,7 @@ void Statistics::formatJsonDescription(uint64_t timestamp, JSONPrinter& json,
   json.property("total_time", total, JSONPrinter::MILLISECONDS);   
   
   
-  json.property("reason", ExplainReason(slices_[0].reason));        
+  json.property("reason", ExplainGCReason(slices_[0].reason));      
   json.property("zones_collected", zoneStats.collectedZoneCount);   
   json.property("total_zones", zoneStats.zoneCount);                
   json.property("total_compartments", zoneStats.compartmentCount);  
@@ -713,7 +713,7 @@ void Statistics::formatJsonSliceDescription(unsigned i, const SliceData& slice,
 
   json.property("slice", i);  
   json.property("pause", slice.duration(), JSONPrinter::MILLISECONDS);  
-  json.property("reason", ExplainReason(slice.reason));                 
+  json.property("reason", ExplainGCReason(slice.reason));               
   json.property("initial_state", gc::StateName(slice.initialState));    
   json.property("final_state", gc::StateName(slice.finalState));        
   json.property("budget", budgetDescription);                           
@@ -1024,7 +1024,7 @@ void Statistics::endGC() {
   thresholdTriggered = false;
 }
 
-void Statistics::beginNurseryCollection(JS::gcreason::Reason reason) {
+void Statistics::beginNurseryCollection(JS::GCReason reason) {
   count(COUNT_MINOR_GC);
   startingMinorGCNumber = runtime->gc.minorGCCount();
   if (nurseryCollectionCallback) {
@@ -1034,7 +1034,7 @@ void Statistics::beginNurseryCollection(JS::gcreason::Reason reason) {
   }
 }
 
-void Statistics::endNurseryCollection(JS::gcreason::Reason reason) {
+void Statistics::endNurseryCollection(JS::GCReason reason) {
   if (nurseryCollectionCallback) {
     (*nurseryCollectionCallback)(
         runtime->mainContextFromOwnThread(),
@@ -1046,7 +1046,7 @@ void Statistics::endNurseryCollection(JS::gcreason::Reason reason) {
 
 void Statistics::beginSlice(const ZoneGCStats& zoneStats,
                             JSGCInvocationKind gckind, SliceBudget budget,
-                            JS::gcreason::Reason reason) {
+                            JS::GCReason reason) {
   MOZ_ASSERT(phaseStack.empty() ||
              (phaseStack.length() == 1 && phaseStack[0] == Phase::MUTATOR));
 
@@ -1064,7 +1064,7 @@ void Statistics::beginSlice(const ZoneGCStats& zoneStats,
     return;
   }
 
-  runtime->addTelemetry(JS_TELEMETRY_GC_REASON, reason);
+  runtime->addTelemetry(JS_TELEMETRY_GC_REASON, uint32_t(reason));
 
   
   bool wasFullGC = zoneStats.isFullCollection();
@@ -1485,7 +1485,7 @@ void Statistics::printSliceProfile() {
   bool full = zoneStats.isFullCollection();
 
   fprintf(stderr, "MajorGC: %20s %1d -> %1d %1s%1s%1s%1s ",
-          ExplainReason(slice.reason), int(slice.initialState),
+          ExplainGCReason(slice.reason), int(slice.initialState),
           int(slice.finalState), full ? "F" : "", shrinking ? "S" : "",
           nonIncremental ? "N" : "", reset ? "R" : "");
 
