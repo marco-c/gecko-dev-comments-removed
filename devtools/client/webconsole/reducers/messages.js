@@ -260,7 +260,7 @@ function addMessage(newMessage, state, filtersState, prefsState, uiState) {
     } else {
       state.visibleMessages.push(newMessage.id);
     }
-    maybeSortVisibleMessages(state);
+    maybeSortVisibleMessages(state, false);
   } else if (DEFAULT_FILTERS.includes(cause)) {
     state.filteredMessagesCount.global++;
     state.filteredMessagesCount[cause]++;
@@ -534,7 +534,7 @@ function messages(state = MessageState(), action, filtersState, prefsState, uiSt
         visibleMessages: messagesToShow,
         filteredMessagesCount: filtered,
       };
-      maybeSortVisibleMessages(filteredState);
+      maybeSortVisibleMessages(filteredState, true);
 
       return filteredState;
   }
@@ -773,12 +773,24 @@ function getToplevelMessageCount(state) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 function getMessageVisibility(message, {
     messagesState,
     filtersState,
     prefsState,
     uiState,
     checkGroup = true,
+    checkParentWarningGroupVisibility = true,
 }) {
   
   
@@ -794,14 +806,14 @@ function getMessageVisibility(message, {
     };
   }
 
-  const warningGroupMessage =
-  messagesState.messagesById.get(getParentWarningGroupMessageId(message));
+  const warningGroupMessageId = getParentWarningGroupMessageId(message);
+  const parentWarningGroupMessage = messagesState.messagesById.get(warningGroupMessageId);
 
   
   if (
     checkGroup
     && !isInOpenedGroup(message, messagesState.groupsById, messagesState.messagesUiById)
-    && !shouldGroupWarningMessages(warningGroupMessage, messagesState, prefsState)
+    && !shouldGroupWarningMessages(parentWarningGroupMessage, messagesState, prefsState)
   ) {
     return {
       visible: false,
@@ -810,26 +822,84 @@ function getMessageVisibility(message, {
   }
 
   
+  if (isWarningGroup(message)) {
+    if (!shouldGroupWarningMessages(message, messagesState, prefsState)) {
+      return {
+        visible: false,
+        cause: "warningGroupHeuristicNotMet",
+      };
+    }
+
+    
+    if (!filtersState[FILTERS.WARN]) {
+      
+      
+      return {
+        visible: false,
+      };
+    }
+
+    
+    const childrenMessages = messagesState.warningGroupsById.get(message.id);
+    const hasVisibleChild = childrenMessages && childrenMessages.some(id => {
+      const child = messagesState.messagesById.get(id);
+      if (!child) {
+        return false;
+      }
+
+      const {visible, cause} = getMessageVisibility(child, {
+        messagesState,
+        filtersState,
+        prefsState,
+        uiState,
+        checkParentWarningGroupVisibility: false,
+      });
+      return visible && cause !== "visibleWarningGroup";
+    });
+
+    if (hasVisibleChild) {
+      return {
+        visible: true,
+        cause: "visibleChild",
+      };
+    }
+  }
+
+  
+  
   if (
-    isWarningGroup(message)
-    && !shouldGroupWarningMessages(message, messagesState, prefsState)
+    parentWarningGroupMessage &&
+    shouldGroupWarningMessages(parentWarningGroupMessage, messagesState, prefsState) &&
+    !messagesState.messagesUiById.includes(warningGroupMessageId)
   ) {
     return {
       visible: false,
-      cause: "warningGroupHeuristicNotMet",
+      cause: "closedWarningGroup",
     };
   }
 
   
   
-  const warningGroupMessageId = getParentWarningGroupMessageId(message);
+  
+  
+  const parentVisibility = parentWarningGroupMessage && checkParentWarningGroupVisibility
+    ? getMessageVisibility(parentWarningGroupMessage, {
+        messagesState,
+        filtersState,
+        prefsState,
+        uiState,
+        checkGroup,
+        checkParentWarningGroupVisibility,
+    })
+    : null;
   if (
-    messagesState.visibleMessages.includes(warningGroupMessageId)
-    && !messagesState.messagesUiById.includes(warningGroupMessageId)
+    parentVisibility &&
+    parentVisibility.visible &&
+    parentVisibility.cause !== "visibleChild"
   ) {
     return {
-      visible: false,
-      cause: "closedWarningGroup",
+      visible: true,
+      cause: "visibleWarningGroup",
     };
   }
 
@@ -1210,7 +1280,16 @@ function messageCountSinceLastExecutionPoint(state, id) {
   return message.lastExecutionPoint ? message.lastExecutionPoint.messageCount : 0;
 }
 
-function maybeSortVisibleMessages(state) {
+
+
+
+
+
+
+
+
+
+function maybeSortVisibleMessages(state, sortWarningGroupMessage = false) {
   
   
   
@@ -1233,6 +1312,54 @@ function maybeSortVisibleMessages(state) {
       const countA = messageCountSinceLastExecutionPoint(state, a);
       const countB = messageCountSinceLastExecutionPoint(state, b);
       return countA > countB;
+    });
+  }
+
+  if (state.warningGroupsById.size > 0 && sortWarningGroupMessage) {
+    state.visibleMessages.sort((a, b) => {
+      const messageA = state.messagesById.get(a);
+      const messageB = state.messagesById.get(b);
+
+      const warningGroupIdA = getParentWarningGroupMessageId(messageA);
+      const warningGroupIdB = getParentWarningGroupMessageId(messageB);
+
+      const warningGroupA = state.messagesById.get(warningGroupIdA);
+      const warningGroupB = state.messagesById.get(warningGroupIdB);
+
+      const aFirst = -1;
+      const bFirst = 1;
+
+      
+      if (
+        (warningGroupA && warningGroupB) ||
+        (!warningGroupA && !warningGroupB)
+      ) {
+        return messageA.timeStamp < messageB.timeStamp ? aFirst : bFirst;
+      }
+
+      
+      if (warningGroupA) {
+        
+        if (warningGroupIdA === messageB.id) {
+          return bFirst;
+        }
+        
+        
+        return messageB.timeStamp > warningGroupA.timeStamp ? aFirst : bFirst;
+      }
+
+      
+      if (warningGroupB) {
+        
+        if (warningGroupIdB === messageA.id) {
+          return aFirst;
+        }
+        
+        
+        return messageA.timeStamp > warningGroupB.timeStamp ? bFirst : aFirst;
+      }
+
+      return 0;
     });
   }
 }
