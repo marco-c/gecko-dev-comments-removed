@@ -1,0 +1,20 @@
+
+
+
+
+
+
+#ifndef nsDocShellModule_h
+#define nsDocShellModule_h
+
+#include "nscore.h"
+
+namespace mozilla {
+
+nsresult InitDocShellModule();
+
+void UnloadDocShellModule();
+
+}  
+
+#endif
