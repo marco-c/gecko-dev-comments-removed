@@ -132,8 +132,6 @@ enum class MemoryTableFlags {
   Default = 0x0,
   HasMaximum = 0x1,
   IsShared = 0x2,
-  HasTableIndex =
-      0x4,  
 };
 
 enum class MemoryMasks { AllowUnshared = 0x1, AllowShared = 0x3 };
@@ -172,6 +170,8 @@ enum class Op {
   TeeLocal = 0x22,
   GetGlobal = 0x23,
   SetGlobal = 0x24,
+  TableGet = 0x25,              
+  TableSet = 0x26,              
 
   
   I32Load = 0x28,
@@ -347,7 +347,9 @@ enum class Op {
   
   RefNull = 0xd0,
   RefIsNull = 0xd1,
-  RefEq = 0xd2,  
+  RefFunc = 0xd2,
+
+  RefEq = 0xf0,  
 
   FirstPrefix = 0xfc,
   MiscPrefix = 0xfc,
@@ -356,11 +358,6 @@ enum class Op {
 
   Limit = 0x100
 };
-
-
-
-
-constexpr uint16_t PlaceholderRefFunc = 0xd2;
 
 inline bool IsPrefixByte(uint8_t b) { return b >= uint8_t(Op::FirstPrefix); }
 
@@ -377,7 +374,6 @@ enum class MiscOp {
   I64TruncUSatF64 = 0x07,
 
   
-  
   MemInit = 0x08,
   DataDrop = 0x09,
   MemCopy = 0x0a,
@@ -388,9 +384,8 @@ enum class MiscOp {
 
   
   TableGrow = 0x0f,
-  TableGet = 0x10,
-  TableSet = 0x11,
-  TableSize = 0x12,
+  TableSize = 0x10,
+  
 
   
   StructNew = 0x50,

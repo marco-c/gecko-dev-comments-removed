@@ -311,7 +311,7 @@ function checkPassiveElemSegment(mangle, err) {
                body.push(1);           
                body.push(AnyFuncCode + (mangle == "type" ? 1 : 0)); 
                body.push(1);           
-               body.push(PlaceholderRefFunc + (mangle == "ref.func" ? 1 : 0)); 
+               body.push(RefFuncCode + (mangle == "ref.func" ? 1 : 0)); 
                body.push(0);           
                body.push(EndCode + (mangle == "end" ? 1 : 0));
                return body;
