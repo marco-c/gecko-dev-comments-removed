@@ -262,6 +262,19 @@ bool nsPlainTextSerializer::IsIgnorableRubyAnnotation(nsAtom* aTag) {
          aTag == nsGkAtoms::rtc;
 }
 
+
+static bool IsDisplayNone(Element* aElement) {
+  RefPtr<ComputedStyle> computedStyle =
+      nsComputedDOMStyle::GetComputedStyleNoFlush(aElement, nullptr);
+  return !computedStyle ||
+         computedStyle->StyleDisplay()->mDisplay == StyleDisplay::None;
+}
+
+static bool IsIgnorableScriptOrStyle(Element* aElement) {
+  return aElement->IsAnyOfHTMLElements(nsGkAtoms::script, nsGkAtoms::style) &&
+         IsDisplayNone(aElement);
+}
+
 NS_IMETHODIMP
 nsPlainTextSerializer::AppendText(nsIContent* aText, int32_t aStartOffset,
                                   int32_t aEndOffset, nsAString& aStr) {
@@ -445,6 +458,10 @@ nsresult nsPlainTextSerializer::DoOpenContainer(nsAtom* aTag) {
   if (IsIgnorableRubyAnnotation(aTag)) {
     
     
+    mIgnoredChildNodeLevel++;
+    return NS_OK;
+  }
+  if (IsIgnorableScriptOrStyle(mElement)) {
     mIgnoredChildNodeLevel++;
     return NS_OK;
   }
@@ -756,6 +773,10 @@ nsresult nsPlainTextSerializer::DoCloseContainer(nsAtom* aTag) {
     mIgnoredChildNodeLevel--;
     return NS_OK;
   }
+  if (IsIgnorableScriptOrStyle(mElement)) {
+    mIgnoredChildNodeLevel--;
+    return NS_OK;
+  }
 
   if (mFlags & nsIDocumentEncoder::OutputForPlainTextClipboardCopy) {
     if (DoOutput() && IsInPre() && IsElementBlock(mElement)) {
@@ -868,7 +889,7 @@ nsresult nsPlainTextSerializer::DoCloseContainer(nsAtom* aTag) {
     mLineBreakDue = true;
   } else if (aTag == nsGkAtoms::q) {
     Write(NS_LITERAL_STRING("\""));
-  } else if (IsElementBlock(mElement) && aTag != nsGkAtoms::script) {
+  } else if (IsElementBlock(mElement)) {
     
     
     
@@ -942,13 +963,6 @@ bool nsPlainTextSerializer::MustSuppressLeaf() {
        mTagStack[mTagStackIndex - 1] == nsGkAtoms::select)) {
     
     
-    
-    return true;
-  }
-
-  if (mTagStackIndex > 0 &&
-      (mTagStack[mTagStackIndex - 1] == nsGkAtoms::script ||
-       mTagStack[mTagStackIndex - 1] == nsGkAtoms::style)) {
     
     return true;
   }
