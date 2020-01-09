@@ -10471,6 +10471,10 @@ nsresult PresShell::SetIsActive(bool aIsActive) {
   return rv;
 }
 
+RefPtr<MobileViewportManager> PresShell::GetMobileViewportManager() const {
+  return mMobileViewportManager;
+}
+
 void PresShell::UpdateViewportOverridden(bool aAfterInitialization) {
   
   
