@@ -171,12 +171,6 @@ function getArrayLength(object) {
   
   
   
-  if (isWorker) {
-    
-    
-    const getter = object.proto.proto.getOwnPropertyDescriptor("length").get;
-    return getter.call(object).return;
-  }
   const typedProto = Object.getPrototypeOf(Uint8Array.prototype);
   const getter = Object.getOwnPropertyDescriptor(typedProto, "length").get;
   return getter.call(object.unsafeDereference());
