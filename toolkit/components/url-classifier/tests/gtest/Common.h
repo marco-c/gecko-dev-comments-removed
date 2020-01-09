@@ -10,6 +10,7 @@ using namespace mozilla::safebrowsing;
 namespace mozilla {
 namespace safebrowsing {
 class Classifier;
+class LookupCacheV4;
 }
 }  
 
@@ -42,6 +43,9 @@ nsresult PrefixArrayToAddPrefixArrayV2(const nsTArray<nsCString>& prefixArray,
 
 
 nsCString GeneratePrefix(const nsCString& aFragment, uint8_t aLength);
+
+
+void CheckContent(LookupCacheV4* cache, PrefixStringMap& expected);
 
 
 template <typename T>

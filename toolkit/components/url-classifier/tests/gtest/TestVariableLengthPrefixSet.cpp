@@ -55,18 +55,6 @@ static void RandomPrefixes(uint32_t N, uint32_t MIN, uint32_t MAX,
   }
 }
 
-static void CheckContent(LookupCacheV4* cache, PrefixStringMap& expected) {
-  PrefixStringMap vlPSetMap;
-  cache->GetPrefixes(vlPSetMap);
-
-  for (auto iter = vlPSetMap.Iter(); !iter.Done(); iter.Next()) {
-    nsCString* expectedPrefix = expected.Get(iter.Key());
-    nsCString* resultPrefix = iter.Data();
-
-    ASSERT_TRUE(resultPrefix->Equals(*expectedPrefix));
-  }
-}
-
 
 
 
