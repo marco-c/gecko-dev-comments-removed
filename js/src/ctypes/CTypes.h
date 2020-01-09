@@ -18,6 +18,7 @@
 #include "js/GCHashTable.h"
 #include "js/UniquePtr.h"
 #include "js/Vector.h"
+#include "vm/JSObject.h"
 #include "vm/StringType.h"
 
 namespace js {
@@ -306,11 +307,11 @@ enum TypeCode {
 
 
 struct FieldInfo {
-  JS::Heap<JSObject*> mType;  
+  HeapPtr<JSObject*> mType;   
   size_t mIndex;              
   size_t mOffset;             
 
-  void trace(JSTracer* trc) { JS::TraceEdge(trc, &mType, "fieldType"); }
+  void trace(JSTracer* trc) { TraceEdge(trc, &mType, "fieldType"); }
 };
 
 struct UnbarrieredFieldInfo {
@@ -368,14 +369,14 @@ struct FunctionInfo {
 
   
   
-  JS::Heap<JSObject*> mABI;
+  HeapPtr<JSObject*> mABI;
 
   
-  JS::Heap<JSObject*> mReturnType;
+  HeapPtr<JSObject*> mReturnType;
 
   
   
-  Vector<JS::Heap<JSObject*>, 0, SystemAllocPolicy> mArgTypes;
+  GCVector<HeapPtr<JSObject*>, 0, SystemAllocPolicy> mArgTypes;
 
   
   
@@ -390,10 +391,10 @@ struct FunctionInfo {
 
 struct ClosureInfo {
   JSContext* cx;
-  JS::Heap<JSObject*> closureObj;  
-  JS::Heap<JSObject*> typeObj;     
-  JS::Heap<JSObject*> thisObj;  
-  JS::Heap<JSObject*> jsfnObj;  
+  HeapPtr<JSObject*> closureObj;  
+  HeapPtr<JSObject*> typeObj;     
+  HeapPtr<JSObject*> thisObj;  
+  HeapPtr<JSObject*> jsfnObj;  
   void* errResult;       
   ffi_closure* closure;  
 
