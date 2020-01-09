@@ -2,41 +2,42 @@
 
 
 
-use {ExtendMode, Gradient, GradientStop, LayoutPoint, LayoutSize, RadialGradient};
+use display_item as di;
+use units::*;
 
 
 
 
 
 pub struct GradientBuilder {
-    stops: Vec<GradientStop>,
+    stops: Vec<di::GradientStop>,
 }
 
 impl GradientBuilder {
     
-    pub fn new() -> GradientBuilder {
+    pub fn new() -> Self {
         GradientBuilder {
             stops: Vec::new(),
         }
     }
 
     
-    pub fn with_stops(stops: Vec<GradientStop>) -> GradientBuilder {
+    pub fn with_stops(stops: Vec<di::GradientStop>) -> GradientBuilder {
         GradientBuilder { stops }
     }
 
     
-    pub fn push(&mut self, stop: GradientStop) {
+    pub fn push(&mut self, stop: di::GradientStop) {
         self.stops.push(stop);
     }
 
     
-    pub fn stops(&self) -> &[GradientStop] {
+    pub fn stops(&self) -> &[di::GradientStop] {
         self.stops.as_ref()
     }
 
     
-    pub fn into_stops(self) -> Vec<GradientStop> {
+    pub fn into_stops(self) -> Vec<di::GradientStop> {
         self.stops
     }
 
@@ -45,12 +46,12 @@ impl GradientBuilder {
         &mut self,
         start_point: LayoutPoint,
         end_point: LayoutPoint,
-        extend_mode: ExtendMode,
-    ) -> Gradient {
+        extend_mode: di::ExtendMode,
+    ) -> di::Gradient {
         let (start_offset, end_offset) = self.normalize(extend_mode);
         let start_to_end = end_point - start_point;
 
-        Gradient {
+        di::Gradient {
             start_point: start_point + start_to_end * start_offset,
             end_point: start_point + start_to_end * end_offset,
             extend_mode,
@@ -65,8 +66,8 @@ impl GradientBuilder {
         &mut self,
         center: LayoutPoint,
         radius: LayoutSize,
-        extend_mode: ExtendMode,
-    ) -> RadialGradient {
+        extend_mode: di::ExtendMode,
+    ) -> di::RadialGradient {
         if radius.width <= 0.0 || radius.height <= 0.0 {
             
             
@@ -74,10 +75,10 @@ impl GradientBuilder {
             let last_color = self.stops.last().unwrap().color;
 
             self.stops.clear();
-            self.stops.push(GradientStop { offset: 0.0, color: last_color, });
-            self.stops.push(GradientStop { offset: 1.0, color: last_color, });
+            self.stops.push(di::GradientStop { offset: 0.0, color: last_color, });
+            self.stops.push(di::GradientStop { offset: 1.0, color: last_color, });
 
-            return RadialGradient {
+            return di::RadialGradient {
                 center,
                 radius: LayoutSize::new(1.0, 1.0),
                 start_offset: 0.0,
@@ -89,7 +90,7 @@ impl GradientBuilder {
         let (start_offset, end_offset) =
             self.normalize(extend_mode);
 
-        RadialGradient {
+        di::RadialGradient {
             center,
             radius,
             start_offset,
@@ -105,7 +106,7 @@ impl GradientBuilder {
     
     
     
-    fn normalize(&mut self, extend_mode: ExtendMode) -> (f32, f32) {
+    fn normalize(&mut self, extend_mode: di::ExtendMode) -> (f32, f32) {
         let stops = &mut self.stops;
         assert!(stops.len() >= 2);
 
@@ -129,26 +130,26 @@ impl GradientBuilder {
             stops.clear();
 
             match extend_mode {
-                ExtendMode::Clamp => {
+                di::ExtendMode::Clamp => {
                     
                     
                     
-                    stops.push(GradientStop { color: first.color, offset: 0.0, });
-                    stops.push(GradientStop { color: first.color, offset: 0.5, });
-                    stops.push(GradientStop { color: last.color, offset: 0.5, });
-                    stops.push(GradientStop { color: last.color, offset: 1.0, });
+                    stops.push(di::GradientStop { color: first.color, offset: 0.0, });
+                    stops.push(di::GradientStop { color: first.color, offset: 0.5, });
+                    stops.push(di::GradientStop { color: last.color, offset: 0.5, });
+                    stops.push(di::GradientStop { color: last.color, offset: 1.0, });
 
                     let offset = last.offset;
 
                     (offset - 0.5, offset + 0.5)
                 }
-                ExtendMode::Repeat => {
+                di::ExtendMode::Repeat => {
                     
                     
                     
                     
-                    stops.push(GradientStop { color: last.color, offset: 0.0, });
-                    stops.push(GradientStop { color: last.color, offset: 1.0, });
+                    stops.push(di::GradientStop { color: last.color, offset: 0.0, });
+                    stops.push(di::GradientStop { color: last.color, offset: 1.0, });
 
                     (0.0, 1.0)
                 }
