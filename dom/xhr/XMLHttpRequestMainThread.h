@@ -66,7 +66,6 @@ namespace dom {
 
 class DOMString;
 class XMLHttpRequestUpload;
-class SerializedStackHolder;
 struct OriginAttributesDictionary;
 
 
@@ -392,8 +391,6 @@ class XMLHttpRequestMainThread final : public XMLHttpRequest,
 
   virtual void SetMozBackgroundRequest(bool aMozBackgroundRequest,
                                        ErrorResult& aRv) override;
-
-  void SetOriginStack(UniquePtr<SerializedStackHolder> aOriginStack);
 
   virtual uint16_t ErrorCode() const override {
     return static_cast<uint16_t>(mErrorLoad);
@@ -726,10 +723,6 @@ class XMLHttpRequestMainThread final : public XMLHttpRequest,
 
   RefPtr<XMLHttpRequestDoneNotifier> mDelayedDoneNotifier;
   void DisconnectDoneNotifier();
-
-  
-  
-  UniquePtr<SerializedStackHolder> mOriginStack;
 
   static bool sDontWarnAboutSyncXHR;
 };

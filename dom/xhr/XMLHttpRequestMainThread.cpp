@@ -26,7 +26,6 @@
 #include "mozilla/dom/URLSearchParams.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/PromiseNativeHandler.h"
-#include "mozilla/dom/WorkerError.h"
 #include "mozilla/Encoding.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventListenerManager.h"
@@ -2635,9 +2634,6 @@ nsresult XMLHttpRequestMainThread::InitiateFetch(
   }
 
   
-  NotifyNetworkMonitorAlternateStack(mChannel, std::move(mOriginStack));
-
-  
   rv = mChannel->AsyncOpen(listener);
   listener = nullptr;
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -3140,11 +3136,6 @@ void XMLHttpRequestMainThread::SetMozBackgroundRequest(
     bool aMozBackgroundRequest, ErrorResult& aRv) {
   
   SetMozBackgroundRequest(aMozBackgroundRequest);
-}
-
-void XMLHttpRequestMainThread::SetOriginStack(
-    UniquePtr<SerializedStackHolder> aOriginStack) {
-  mOriginStack = std::move(aOriginStack);
 }
 
 bool XMLHttpRequestMainThread::WithCredentials() const {
