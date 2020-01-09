@@ -116,7 +116,8 @@ var UI = {
     this.contentViewer.fullZoom = Services.prefs.getCharPref("devtools.webide.zoom");
 
     
-    if (Services.prefs.getBoolPref("devtools.webide.showDeprecationMessage", false)) {
+    
+    if (Services.prefs.getBoolPref("devtools.aboutdebugging.new-enabled", false)) {
       this.showDeprecationMessage();
     }
 
