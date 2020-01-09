@@ -207,6 +207,7 @@
 #include "frontend/Token.h"
 #include "frontend/TokenKind.h"
 #include "js/CompileOptions.h"
+#include "js/HashTable.h"    
 #include "js/RegExpFlags.h"  
 #include "js/UniquePtr.h"
 #include "js/Vector.h"
@@ -317,6 +318,9 @@ class MOZ_STACK_CLASS TokenStreamPosition final {
   unsigned lookahead;
   Token lookaheadTokens[TokenStreamShared::maxLookahead];
 } JS_HAZ_ROOTED;
+
+template <typename Unit>
+class SourceUnits;
 
 
 
@@ -601,6 +605,8 @@ class TokenStreamAnyChars : public TokenStreamShared {
 
     
     uint32_t lineStart(LineToken lineToken) const {
+      MOZ_ASSERT(lineToken.index + 1 < lineStartOffsets_.length(),
+                 "recorded line-start information must be available");
       return lineStartOffsets_[lineToken.index];
     }
   };
@@ -639,6 +645,64 @@ class TokenStreamAnyChars : public TokenStreamShared {
   MOZ_ALWAYS_INLINE void updateFlagsForEOL() { flags.isDirtyLine = false; }
 
  private:
+#if JS_COLUMN_DIMENSION_IS_CODE_POINTS()
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  template <typename Unit>
+  uint32_t computePartialColumn(const LineToken lineToken,
+                                const uint32_t offset,
+                                const SourceUnits<Unit>& sourceUnits) const;
+#endif  
+
+  
+
+
+
   MOZ_MUST_USE MOZ_ALWAYS_INLINE bool internalUpdateLineInfoForEOL(
       uint32_t lineStartOffset);
 
@@ -686,6 +750,22 @@ class TokenStreamAnyChars : public TokenStreamShared {
 
   const char* getFilename() const { return filename_; }
 
+ private:
+#if JS_COLUMN_DIMENSION_IS_CODE_POINTS()
+  static constexpr uint32_t ColumnChunkLength = 128;
+
+  
+
+
+
+
+
+
+
+
+  mutable HashMap<uint32_t, Vector<uint32_t>> longLineColumnInfo_;
+#endif  
+
  protected:
   
   const JS::ReadOnlyCompileOptions& options_;
@@ -730,6 +810,29 @@ class TokenStreamAnyChars : public TokenStreamShared {
   JSContext* const cx;
   bool mutedErrors;
   StrictModeGetter* strictModeGetter;  
+
+#if JS_COLUMN_DIMENSION_IS_CODE_POINTS()
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mutable uint32_t lineOfLastColumnComputation_ = UINT32_MAX;
+  mutable Vector<uint32_t>* lastChunkVectorForLine_ = nullptr;
+  mutable uint32_t lastOffsetOfComputedColumn_ = UINT32_MAX;
+  mutable uint32_t lastComputedColumn_ = 0;
+#endif  
 };
 
 constexpr char16_t CodeUnitValue(char16_t unit) { return unit; }
@@ -1677,22 +1780,14 @@ class GeneralTokenStreamChars : public SpecializedTokenStreamCharsBase<Unit> {
     return static_cast<TokenStreamSpecific*>(this);
   }
 
- private:
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  mutable uint32_t lastLineForColumn_ = UINT32_MAX;
-  mutable uint32_t lastOffsetForColumn_ = UINT32_MAX;
-  mutable uint32_t lastColumn_ = 0;
-
  protected:
+  
+
+
+
+
+
+
   uint32_t computeColumn(LineToken lineToken, uint32_t offset) const;
   void computeLineAndColumn(uint32_t offset, uint32_t* line,
                             uint32_t* column) const;

@@ -495,6 +495,9 @@ TokenStreamAnyChars::TokenStreamAnyChars(JSContext* cx,
                                          const ReadOnlyCompileOptions& options,
                                          StrictModeGetter* smg)
     : srcCoords(cx, options.lineno, options.scriptSourceOffset),
+#if JS_COLUMN_DIMENSION_IS_CODE_POINTS()
+      longLineColumnInfo_(cx),
+#endif  
       options_(options),
       tokens(),
       cursor_(0),
@@ -689,14 +692,209 @@ inline void SourceUnits<Utf8Unit>::assertNextCodePoint(
 
 #endif  
 
-template <typename Unit>
-static size_t ComputeColumn(const Unit* begin, const Unit* end) {
 #if JS_COLUMN_DIMENSION_IS_CODE_POINTS()
-  return unicode::CountCodePoints(begin, end);
-#else
-  return PointerRangeSize(begin, end);
-#endif  
+
+static MOZ_ALWAYS_INLINE void RetractPointerToCodePointBoundary(
+    const Utf8Unit** ptr, const Utf8Unit* limit) {
+  MOZ_ASSERT(*ptr <= limit);
+
+  
+  if (MOZ_UNLIKELY(*ptr == limit)) {
+    return;
+  }
+
+  
+#  ifdef DEBUG
+  size_t retracted = 0;
+#  endif
+  while (MOZ_UNLIKELY(IsTrailingUnit((*ptr)[0]))) {
+    --*ptr;
+#  ifdef DEBUG
+    retracted++;
+#  endif
+  }
+
+  MOZ_ASSERT(retracted < 4,
+             "the longest UTF-8 code point is four units, so this should never "
+             "retract more than three units");
 }
+
+static MOZ_ALWAYS_INLINE void RetractPointerToCodePointBoundary(
+    const char16_t** ptr, const char16_t* limit) {
+  MOZ_ASSERT(*ptr <= limit);
+
+  
+  if (MOZ_UNLIKELY(*ptr == limit)) {
+    return;
+  }
+
+  
+  
+  if (MOZ_UNLIKELY(unicode::IsTrailSurrogate((*ptr)[0]))) {
+    
+    
+    if (MOZ_LIKELY(unicode::IsLeadSurrogate((*ptr)[-1]))) {
+      --*ptr;
+    }
+  }
+}
+
+template <typename Unit>
+uint32_t TokenStreamAnyChars::computePartialColumn(
+    const LineToken lineToken, const uint32_t offset,
+    const SourceUnits<Unit>& sourceUnits) const {
+  lineToken.assertConsistentOffset(offset);
+
+  const uint32_t line = lineNumber(lineToken);
+  const uint32_t start = srcCoords.lineStart(lineToken);
+
+  
+  
+  if (line != lineOfLastColumnComputation_) {
+    lineOfLastColumnComputation_ = line;
+    lastChunkVectorForLine_ = nullptr;
+    lastOffsetOfComputedColumn_ = start;
+    lastComputedColumn_ = 0;
+  }
+
+  
+  
+  auto ColumnFromPartial = [this, offset, &sourceUnits](uint32_t partialOffset,
+                                                        uint32_t partialCols) {
+    MOZ_ASSERT(partialOffset <= offset);
+
+    
+    if (partialOffset < this->lastOffsetOfComputedColumn_ &&
+        this->lastOffsetOfComputedColumn_ <= offset) {
+      partialOffset = this->lastOffsetOfComputedColumn_;
+      partialCols = this->lastComputedColumn_;
+    }
+
+    const Unit* begin = sourceUnits.codeUnitPtrAt(partialOffset);
+    const Unit* end = sourceUnits.codeUnitPtrAt(offset);
+
+    partialOffset += PointerRangeSize(begin, end);
+    partialCols += AssertedCast<uint32_t>(unicode::CountCodePoints(begin, end));
+
+    this->lastOffsetOfComputedColumn_ = partialOffset;
+    this->lastComputedColumn_ = partialCols;
+    return partialCols;
+  };
+
+  const uint32_t offsetInLine = offset - start;
+
+  
+  
+  const uint32_t chunkIndex = offsetInLine / ColumnChunkLength;
+
+  
+  
+  
+  if (chunkIndex == 0) {
+    return ColumnFromPartial(start, 0);
+  }
+
+  
+  
+  if (!lastChunkVectorForLine_) {
+    auto ptr = longLineColumnInfo_.lookupForAdd(line);
+    if (!ptr) {
+      
+      
+      if (!longLineColumnInfo_.add(ptr, line, Vector<uint32_t>(cx))) {
+        
+        cx->recoverFromOutOfMemory();
+        return ColumnFromPartial(start, 0);
+      }
+    }
+
+    
+    lastChunkVectorForLine_ = &ptr->value();
+  }
+
+  const Unit* const limit = sourceUnits.codeUnitPtrAt(offset);
+
+  auto RetractedOffsetOfChunk = [
+#  ifdef DEBUG
+                                    this,
+#  endif
+                                    start, limit,
+                                    &sourceUnits](uint32_t index) {
+    MOZ_ASSERT(index < this->lastChunkVectorForLine_->length());
+
+    uint32_t naiveOffset = start + index * ColumnChunkLength;
+    const Unit* naivePtr = sourceUnits.codeUnitPtrAt(naiveOffset);
+
+    const Unit* actualPtr = naivePtr;
+    RetractPointerToCodePointBoundary(&actualPtr, limit);
+
+    return naiveOffset - PointerRangeSize(actualPtr, naivePtr);
+  };
+
+  uint32_t partialOffset;
+  uint32_t partialColumn;
+
+  auto entriesLen = AssertedCast<uint32_t>(lastChunkVectorForLine_->length());
+  if (entriesLen <= chunkIndex) {
+    
+    
+    if (entriesLen > 0) {
+      partialOffset = RetractedOffsetOfChunk(entriesLen - 1);
+      partialColumn = (*lastChunkVectorForLine_)[entriesLen - 1];
+    } else {
+      partialOffset = start;
+      partialColumn = 0;
+    }
+
+    if (!lastChunkVectorForLine_->reserve(chunkIndex + 1)) {
+      
+      cx->recoverFromOutOfMemory();
+      return ColumnFromPartial(partialOffset, partialColumn);
+    }
+
+    
+
+    
+    if (entriesLen == 0) {
+      lastChunkVectorForLine_->infallibleAppend(0);
+      entriesLen++;
+    }
+
+    do {
+      const Unit* const begin = sourceUnits.codeUnitPtrAt(partialOffset);
+      const Unit* chunkLimit = sourceUnits.codeUnitPtrAt(
+          start + std::min(entriesLen * ColumnChunkLength, offsetInLine));
+
+      MOZ_ASSERT(begin < chunkLimit);
+      MOZ_ASSERT(chunkLimit <= limit);
+
+      static_assert(ColumnChunkLength > SourceUnitTraits<Unit>::maxUnitsLength,
+                    "chunk length in code units must be able to contain the "
+                    "largest encoding of a code point, for retracting below to "
+                    "never underflow");
+
+      
+      
+      RetractPointerToCodePointBoundary(&chunkLimit, limit);
+
+      MOZ_ASSERT(begin < chunkLimit);
+      MOZ_ASSERT(chunkLimit <= limit);
+
+      partialOffset += PointerRangeSize(begin, chunkLimit);
+      partialColumn += unicode::CountCodePoints(begin, chunkLimit);
+
+      lastChunkVectorForLine_->infallibleAppend(partialColumn);
+      entriesLen++;
+    } while (entriesLen < chunkIndex + 1);
+  } else {
+    partialOffset = RetractedOffsetOfChunk(chunkIndex);
+    partialColumn = (*lastChunkVectorForLine_)[chunkIndex];
+  }
+
+  return ColumnFromPartial(partialOffset, partialColumn);
+}
+
+#endif  
 
 template <typename Unit, class AnyCharsAccess>
 uint32_t GeneralTokenStreamChars<Unit, AnyCharsAccess>::computeColumn(
@@ -705,26 +903,14 @@ uint32_t GeneralTokenStreamChars<Unit, AnyCharsAccess>::computeColumn(
 
   const TokenStreamAnyChars& anyChars = anyCharsAccess();
 
-  uint32_t lineNumber = anyChars.srcCoords.lineNumber(lineToken);
+  uint32_t partialCols =
+#if JS_COLUMN_DIMENSION_IS_CODE_POINTS()
+      anyChars.computePartialColumn(lineToken, offset, this->sourceUnits)
+#else
+      offset - anyChars.lineStart(lineToken)
+#endif  
+      ;
 
-  uint32_t beginOffset;
-  uint32_t partialCols;
-  if (lineNumber == lastLineForColumn_ && lastOffsetForColumn_ <= offset) {
-    beginOffset = lastOffsetForColumn_;
-    partialCols = lastColumn_;
-  } else {
-    beginOffset = anyChars.lineStart(lineToken);
-    partialCols = 0;
-  }
-
-  const Unit* begin = this->sourceUnits.codeUnitPtrAt(beginOffset);
-  const Unit* end = this->sourceUnits.codeUnitPtrAt(offset);
-
-  partialCols += AssertedCast<uint32_t>(ComputeColumn(begin, end));
-
-  lastLineForColumn_ = lineNumber;
-  lastOffsetForColumn_ = offset;
-  lastColumn_ = partialCols;
   return (lineToken.isFirstLine() ? anyChars.options_.column : 0) + partialCols;
 }
 
