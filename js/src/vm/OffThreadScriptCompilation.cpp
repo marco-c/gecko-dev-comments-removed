@@ -8,6 +8,7 @@
 
 #include "mozilla/Assertions.h"  
 #include "mozilla/Range.h"       
+#include "mozilla/Utf8.h"        
 #include "mozilla/Vector.h"      
 
 #include <stddef.h>  
@@ -21,6 +22,8 @@
 #include "vm/Runtime.h"    
 
 using namespace js;
+
+using mozilla::Utf8Unit;
 
 using JS::ReadOnlyCompileOptions;
 
@@ -89,6 +92,15 @@ JS_PUBLIC_API bool JS::CompileOffThread(JSContext* cx,
   return StartOffThreadParseScript(cx, options, srcBuf, callback, callbackData);
 }
 
+JS_PUBLIC_API bool JS::CompileOffThread(JSContext* cx,
+                                        const ReadOnlyCompileOptions& options,
+                                        JS::SourceText<Utf8Unit>& srcBuf,
+                                        OffThreadCompileCallback callback,
+                                        void* callbackData) {
+  MOZ_ASSERT(CanCompileOffThread(cx, options, srcBuf.length()));
+  return StartOffThreadParseScript(cx, options, srcBuf, callback, callbackData);
+}
+
 JS_PUBLIC_API JSScript* JS::FinishOffThreadScript(JSContext* cx,
                                                   JS::OffThreadToken* token) {
   MOZ_ASSERT(cx);
@@ -107,6 +119,14 @@ JS_PUBLIC_API void JS::CancelOffThreadScript(JSContext* cx,
 JS_PUBLIC_API bool JS::CompileOffThreadModule(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     JS::SourceText<char16_t>& srcBuf, OffThreadCompileCallback callback,
+    void* callbackData) {
+  MOZ_ASSERT(CanCompileOffThread(cx, options, srcBuf.length()));
+  return StartOffThreadParseModule(cx, options, srcBuf, callback, callbackData);
+}
+
+JS_PUBLIC_API bool JS::CompileOffThreadModule(
+    JSContext* cx, const ReadOnlyCompileOptions& options,
+    JS::SourceText<Utf8Unit>& srcBuf, OffThreadCompileCallback callback,
     void* callbackData) {
   MOZ_ASSERT(CanCompileOffThread(cx, options, srcBuf.length()));
   return StartOffThreadParseModule(cx, options, srcBuf, callback, callbackData);
