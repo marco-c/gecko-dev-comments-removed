@@ -4,23 +4,16 @@
 
 
 
+use crate::values::computed::Size;
 use crate::values::generics::flex::FlexBasis as GenericFlexBasis;
 
 
-#[cfg(feature = "servo")]
-pub type Width = crate::values::computed::NonNegativeLengthPercentageOrAuto;
-
-
-#[cfg(feature = "gecko")]
-pub type Width = crate::values::computed::MozLength;
-
-
-pub type FlexBasis = GenericFlexBasis<Width>;
+pub type FlexBasis = GenericFlexBasis<Size>;
 
 impl FlexBasis {
     
     #[inline]
     pub fn auto() -> Self {
-        GenericFlexBasis::Width(Width::auto())
+        GenericFlexBasis::Width(Size::auto())
     }
 }

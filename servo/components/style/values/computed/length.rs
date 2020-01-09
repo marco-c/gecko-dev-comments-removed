@@ -8,9 +8,7 @@ use super::{Context, Number, Percentage, ToComputedValue};
 use crate::values::animated::ToAnimatedValue;
 use crate::values::distance::{ComputeSquaredDistance, SquaredDistance};
 use crate::values::generics::length as generics;
-use crate::values::generics::length::{
-    MaxLength as GenericMaxLength, MozLength as GenericMozLength,
-};
+use crate::values::generics::length::{MaxSize as GenericMaxSize, Size as GenericSize};
 use crate::values::generics::transform::IsZeroLength;
 use crate::values::generics::NonNegative;
 use crate::values::specified::length::ViewportPercentageLength;
@@ -580,12 +578,36 @@ impl NonNegativeLengthPercentage {
 }
 
 #[cfg(feature = "servo")]
-impl MaxLength {
+impl MaxSize {
     
+    #[inline]
     pub fn to_used_value(&self, percentage_basis: Au) -> Option<Au> {
         match *self {
-            GenericMaxLength::None => None,
-            GenericMaxLength::LengthPercentage(ref lp) => Some(lp.to_used_value(percentage_basis)),
+            GenericMaxSize::None => None,
+            GenericMaxSize::LengthPercentage(ref lp) => Some(lp.to_used_value(percentage_basis)),
+        }
+    }
+}
+
+impl Size {
+    
+    #[inline]
+    #[cfg(feature = "servo")]
+    pub fn to_used_value(&self, percentage_basis: Au) -> Option<Au> {
+        match *self {
+            GenericSize::Auto => None,
+            GenericSize::LengthPercentage(ref lp) => Some(lp.to_used_value(percentage_basis)),
+        }
+    }
+
+    
+    #[inline]
+    pub fn is_definitely_zero(&self) -> bool {
+        match *self {
+            GenericSize::Auto => false,
+            GenericSize::LengthPercentage(ref lp) => lp.is_definitely_zero(),
+            #[cfg(feature = "gecko")]
+            GenericSize::ExtremumLength(..) => false,
         }
     }
 }
@@ -821,7 +843,7 @@ pub enum ExtremumLength {
 }
 
 
-pub type MozLength = GenericMozLength<NonNegativeLengthPercentage>;
+pub type Size = GenericSize<NonNegativeLengthPercentage>;
 
 
-pub type MaxLength = GenericMaxLength<NonNegativeLengthPercentage>;
+pub type MaxSize = GenericMaxSize<NonNegativeLengthPercentage>;
