@@ -1,12 +1,12 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-
-
-
-
-
-
-
-
+# This action is used to produce test archives.
+#
+# Ideally, the data in this file should be defined in moz.build files.
+# It is defined inline because this was easiest to make test archive
+# generation faster.
 
 from __future__ import absolute_import, print_function, unicode_literals
 
@@ -49,7 +49,7 @@ TEST_HARNESS_BINS = [
     'xpcshell',
 ]
 
-
+# The fileid utility depends on mozglue. See bug 1069556.
 TEST_HARNESS_DLLS = [
     'crashinjectdll',
     'mozglue'
@@ -77,8 +77,8 @@ GMP_TEST_PLUGIN_DIRS = [
     'gmp-fakeopenh264/**',
 ]
 
-
-
+# These entries will be used by artifact builds to re-construct an
+# objdir with the appropriate generated support files.
 OBJDIR_TEST_FILES = {
     'xpcshell': {
         'source': buildconfig.topobjdir,
@@ -142,7 +142,7 @@ ARCHIVE_FILES = {
                 'testing/marionette/harness/marionette_harness/tests/unit-tests.ini',
                 'gfx/tests/marionette/manifest.ini'
             ],
-            
+            # We also need the manifests and harness_unit tests
             'pattern': 'testing/marionette/harness/marionette_harness/tests/**',
             'dest': 'marionette/tests',
         },
@@ -327,8 +327,8 @@ ARCHIVE_FILES = {
             'base': '',
             'pattern': 'cppunittest/**',
         },
-        
-        
+        # We don't ship these files if startup cache is disabled, which is
+        # rare. But it shouldn't matter for test archives.
         {
             'source': buildconfig.topsrcdir,
             'base': 'startupcache/test',
@@ -551,9 +551,9 @@ ARCHIVE_FILES = {
                 'head.js',
                 'mach_test_package_commands.py',
                 'moz-http2/**',
+                'moz-spdy/**',
                 'node-http2/**',
-                'node-ip/**',
-                'dns-packet/**',
+                'node-spdy/**',
                 'remotexpcshelltests.py',
                 'runxpcshelltests.py',
                 'xpcshellcommandline.py',
@@ -591,7 +591,7 @@ ARCHIVE_FILES = {
             'pattern': '**',
             'dest': 'updater-dep',
         },
-        
+        # Required by the updater on Linux
         {
             'source': buildconfig.topobjdir,
             'base': 'config/external/sqlite',
@@ -633,11 +633,11 @@ if buildconfig.substs.get('commtopsrcdir'):
     ARCHIVE_FILES['mozharness'].append(mozharness_comm)
 
 
-
-
-
+# "common" is our catch all archive and it ignores things from other archives.
+# Verify nothing sneaks into ARCHIVE_FILES without a corresponding exclusion
+# rule in the "common" archive.
 for k, v in ARCHIVE_FILES.items():
-    
+    # Skip mozharness because it isn't staged.
     if k in ('common', 'mozharness'):
         continue
 
@@ -649,17 +649,17 @@ for k, v in ARCHIVE_FILES.items():
 
 
 def find_generated_harness_files():
-    
-    
+    # TEST_HARNESS_FILES end up in an install manifest at
+    # $topsrcdir/_build_manifests/install/_tests.
     manifest = InstallManifest(mozpath.join(buildconfig.topobjdir,
                                             '_build_manifests',
                                             'install',
                                             '_tests'))
     registry = FileRegistry()
     manifest.populate_registry(registry)
-    
-    
-    
+    # Conveniently, the generated files we care about will already
+    # exist in the objdir, so we can identify relevant files if
+    # they're an `ExistingFile` instance.
     return [mozpath.join('_tests', p) for p in registry.paths()
             if isinstance(registry[p], ExistingFile)]
 
@@ -669,8 +669,8 @@ def find_files(archive):
     generated_harness_files = find_generated_harness_files()
 
     if archive == 'common':
-        
-        
+        # Construct entries ensuring all our generated harness files are
+        # packaged in the common tests archive.
         packaged_paths = set()
         for entry in OBJDIR_TEST_FILES.values():
             pat = mozpath.join(entry['base'], entry['pattern'])
@@ -718,7 +718,7 @@ def find_files(archive):
         ])
 
         if archive not in ('common', 'updater-dep') and base.startswith('_tests'):
-            
+            # We may have generated_harness_files to exclude from this entry.
             for path in generated_harness_files:
                 if path.startswith(base):
                     ignore.append(path[len(base) + 1:])
@@ -763,8 +763,8 @@ def find_manifest_dirs(topsrcdir, manifests):
 
     dirs = {mozpath.normpath(d[len(topsrcdir):]).lstrip('/') for d in dirs}
 
-    
-    
+    # Filter out children captured by parent directories because duplicates
+    # will confuse things later on.
     def parents(p):
         while True:
             p = mozpath.dirname(p)
@@ -797,10 +797,10 @@ def main(argv):
     ensureParentDir(out_file)
     res = find_files(args.archive)
     with open(out_file, 'wb') as fh:
-        
-        
-        
-        
+        # Experimentation revealed that level 5 is significantly faster and has
+        # marginally larger sizes than higher values and is the sweet spot
+        # for optimal compression. Read the detailed commit message that
+        # introduced this for raw numbers.
         if out_file.endswith('.tar.gz'):
             files = dict(res)
             create_tar_gz_from_files(fh, files, compresslevel=5)
