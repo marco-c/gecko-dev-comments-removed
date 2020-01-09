@@ -68,9 +68,7 @@ function run_test() {
   }
 
   
-  var ioService =
-    Cc["@mozilla.org/network/io-service;1"]
-      .getService(Ci.nsIIOService);
+  var ioService = Services.io;
 
   
   var localHandler =
