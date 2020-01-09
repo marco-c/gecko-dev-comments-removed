@@ -971,8 +971,11 @@ uint32_t gfxTextRun::BreakAndMeasureText(
     if (aSuppressBreak != eSuppressAllBreaks &&
         (aSuppressBreak != eSuppressInitialBreak || i > aStart)) {
       bool atNaturalBreak = mCharacterGlyphs[i].CanBreakBefore() == 1;
+      
+      
+      
       bool atHyphenationBreak = !atNaturalBreak && haveHyphenation &&
-                                hyphenBuffer[i - aStart] != HyphenType::None;
+                                hyphenBuffer[i - aStart] > HyphenType::Explicit;
       bool atAutoHyphenWithManualHyphenInSameWord =
           atHyphenationBreak &&
           hyphenBuffer[i - aStart] == HyphenType::AutoWithManualInSameWord;
