@@ -1,0 +1,11 @@
+
+
+
+
+"use strict";
+
+const {ContentProcessSession} =
+  ChromeUtils.import("chrome://remote/content/sessions/ContentProcessSession.jsm");
+
+
+new ContentProcessSession(this, docShell.browsingContext, content, docShell);
