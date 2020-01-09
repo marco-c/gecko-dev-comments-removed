@@ -136,6 +136,10 @@ class GeckoChildProcessHost : public ChildProcessHost {
   
   void SetAlreadyDead();
 
+  static void EnableSameExecutableForContentProc() {
+    sRunSelfAsContentProc = true;
+  }
+
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
   
   
@@ -234,8 +238,10 @@ class GeckoChildProcessHost : public ChildProcessHost {
   
   void RunPerformAsyncLaunch(StringVector aExtraOpts);
 
-  static BinPathType GetPathToBinary(FilePath& exePath,
-                                     GeckoProcessType processType);
+  enum class BinaryPathType { Self, PluginContainer };
+
+  static BinaryPathType GetPathToBinary(FilePath& exePath,
+                                        GeckoProcessType processType);
 
   
   
@@ -258,6 +264,8 @@ class GeckoChildProcessHost : public ChildProcessHost {
   mozilla::Atomic<bool> mDestroying;
 
   static uint32_t sNextUniqueID;
+
+  static bool sRunSelfAsContentProc;
 
 #if defined(MOZ_WIDGET_ANDROID)
   void LaunchAndroidService(
