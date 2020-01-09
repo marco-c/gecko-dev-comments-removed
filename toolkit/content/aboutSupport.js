@@ -156,7 +156,6 @@ var snapshotFormatters = {
       return;
     }
     $("crashes-allReports").style.display = "block";
-    $("crashes-allReports").classList.remove("no-copy");
 
     if (data.pending > 0) {
       document.l10n.setAttributes($("crashes-allReportsWithPending"), "pending-reports", { reports: data.pending });
@@ -966,7 +965,9 @@ function getLoadContext() {
 
 async function copyContentsToClipboard() {
   
-  let contentsDiv = $("contents");
+  let contentsDiv = $("contents").cloneNode(true);
+  
+  contentsDiv.querySelectorAll(".no-copy, [hidden]").forEach(n => n.remove());
   let dataHtml = contentsDiv.innerHTML;
   let dataText = createTextForElement(contentsDiv);
 
@@ -1039,9 +1040,6 @@ Serializer.prototype = {
   },
 
   _serializeElement(elem) {
-    if (this._ignoreElement(elem))
-      return;
-
     
     if (elem.localName == "table") {
       this._serializeTable(elem);
@@ -1062,7 +1060,8 @@ Serializer.prototype = {
     }
 
     
-    if (/^h[0-9]+$/.test(elem.localName)) {
+    let isHeader = /^h[0-9]+$/.test(elem.localName);
+    if (isHeader) {
       let headerText = (this._currentLine || "").trim();
       if (headerText) {
         this._startNewLine();
@@ -1071,12 +1070,9 @@ Serializer.prototype = {
     }
 
     
-    if (hasText) {
-      let display = window.getComputedStyle(elem).getPropertyValue("display");
-      if (display == "block") {
-        this._startNewLine();
-        this._startNewLine();
-      }
+    if (hasText && (isHeader || "p" == elem.localName)) {
+      this._startNewLine();
+      this._startNewLine();
     }
   },
 
@@ -1130,13 +1126,11 @@ Serializer.prototype = {
       
       return;
 
-    if (hasColHeadings && !this._ignoreElement(tableHeadingElem)) {
+    if (hasColHeadings) {
       
       
       
       for (let i = startRow; i < trs.length; i++) {
-        if (this._ignoreElement(trs[i]))
-          continue;
         let children = trs[i].querySelectorAll("td");
         for (let j = 0; j < children.length; j++) {
           let text = "";
@@ -1155,8 +1149,6 @@ Serializer.prototype = {
     
     
     for (let i = startRow; i < trs.length; i++) {
-      if (this._ignoreElement(trs[i]))
-        continue;
       let children = trs[i].querySelectorAll("th,td");
       let rowHeading = this._nodeText(children[0]).trim();
       if (children[0].classList.contains("title-column")) {
@@ -1178,10 +1170,6 @@ Serializer.prototype = {
       this._startNewLine();
     }
     this._startNewLine();
-  },
-
-  _ignoreElement(elem) {
-    return elem.classList.contains("no-copy");
   },
 
   _nodeText(node) {
