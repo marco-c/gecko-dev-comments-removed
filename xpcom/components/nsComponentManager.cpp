@@ -1594,10 +1594,13 @@ nsComponentManagerImpl::RegisterFactory(const nsCID& aClass, const char* aName,
       return NS_ERROR_INVALID_ARG;
     }
 
+    nsDependentCString contractID(aContractID);
+
     SafeMutexAutoLock lock(mLock);
     nsFactoryEntry* oldf = mFactories.Get(&aClass);
     if (oldf) {
-      mContractIDs.Put(nsDependentCString(aContractID), oldf);
+      StaticComponents::InvalidateContractID(contractID);
+      mContractIDs.Put(contractID, oldf);
       return NS_OK;
     }
 
@@ -1605,7 +1608,6 @@ nsComponentManagerImpl::RegisterFactory(const nsCID& aClass, const char* aName,
       
       
       
-      nsDependentCString contractID(aContractID);
       if (StaticComponents::InvalidateContractID(contractID, false)) {
         mContractIDs.Remove(contractID);
         return NS_OK;
