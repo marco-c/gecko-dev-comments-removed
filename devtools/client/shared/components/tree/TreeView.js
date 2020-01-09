@@ -81,6 +81,7 @@ define(function(require, exports, module) {
 
 
 
+
   class TreeView extends Component {
     
     
@@ -521,7 +522,7 @@ define(function(require, exports, module) {
           
           rowClass: "treeRow-" + type,
           
-          level: level,
+          level: provider.getLevel ? provider.getLevel(child, level) : level,
           
           hasChildren: hasChildren,
           

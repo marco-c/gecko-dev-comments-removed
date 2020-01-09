@@ -241,15 +241,34 @@ function checkSelected(row, expected) {
 
 
 
+
+
+
+
+
+function checkLevel(row, expected) {
+  if (!expected) {
+    return true;
+  }
+
+  return parseInt(row.getAttribute("aria-level"), 10) === expected;
+}
+
+
+
+
+
+
 async function checkTreeState(doc, expected) {
   info("Checking tree state.");
   const hasExpectedStructure = await BrowserTestUtils.waitForCondition(() =>
     [...doc.querySelectorAll(".treeRow")].every((row, i) => {
-      const { role, name, badges, selected } = expected[i];
+      const { role, name, badges, selected, level } = expected[i];
       return row.querySelector(".treeLabelCell").textContent === role &&
         row.querySelector(".treeValueCell").textContent === name &&
         compareBadges(row.querySelector(".badges"), badges) &&
-        checkSelected(row, selected);
+        checkSelected(row, selected) &&
+        checkLevel(row, level);
     }), "Wait for the right tree update.");
 
   ok(hasExpectedStructure, "Tree structure is correct.");

@@ -14,8 +14,9 @@ const { fetchChildren } = require("./actions/accessibles");
 
 
 class Provider {
-  constructor(accessibles, dispatch) {
+  constructor(accessibles, filtered, dispatch) {
     this.accessibles = accessibles;
+    this.filtered = filtered;
     this.dispatch = dispatch;
   }
 
@@ -86,6 +87,23 @@ class Provider {
 
   getType(accessible) {
     return accessible.typeName;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  getLevel(accessible, defaultLevel) {
+    return this.filtered ? 0 : defaultLevel;
   }
 }
 
