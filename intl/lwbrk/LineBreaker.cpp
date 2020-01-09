@@ -405,7 +405,7 @@ static int8_t GetClass(uint32_t u, LineBreaker::Strictness aLevel,
        CLASS_CHARACTER,
        CLASS_BREAKABLE,
        CLASS_CLOSE_LIKE_CHARACTER,
-       CLASS_CHARACTER,
+       CLASS_NUMERIC,
        CLASS_CHARACTER,
        CLASS_CHARACTER,
        CLASS_CHARACTER,
@@ -995,7 +995,7 @@ void LineBreaker::GetJISx4051Breaks(const char16_t* aChars, uint32_t aLength,
     
     
     if (aWordBreak == WordBreak::BreakAll &&
-        (cl == CLASS_CHARACTER || cl == CLASS_CLOSE)) {
+        (cl == CLASS_CHARACTER || cl == CLASS_CLOSE || cl == CLASS_NUMERIC)) {
       auto cls = GetLineBreakClass(ch);
       if (cls == U_LB_ALPHABETIC || cls == U_LB_NUMERIC ||
           cls == U_LB_AMBIGUOUS || cls == U_LB_COMPLEX_CONTEXT ||
@@ -1086,7 +1086,7 @@ void LineBreaker::GetJISx4051Breaks(const uint8_t* aChars, uint32_t aLength,
       cl = GetClass(ch, aLevel, aIsChineseOrJapanese);
     }
     if (aWordBreak == WordBreak::BreakAll &&
-        (cl == CLASS_CHARACTER || cl == CLASS_CLOSE)) {
+        (cl == CLASS_CHARACTER || cl == CLASS_CLOSE || cl == CLASS_NUMERIC)) {
       auto cls = GetLineBreakClass(ch);
       
       if (cls == U_LB_ALPHABETIC || cls == U_LB_NUMERIC ||
