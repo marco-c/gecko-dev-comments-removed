@@ -524,6 +524,8 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
       
       if (supportPseudo) {
         this.cueDiv.style.setProperty("--cue-font-size", this.fontSize);
+      } else {
+        this._applyNonPseudoCueStyles();
       }
       this.applyStyles(this._getNodeDefaultStyles(cue));
     }
@@ -552,6 +554,21 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
       return renderingAreaHeight * 0.05 + "px";
     }
 
+    _applyNonPseudoCueStyles() {
+      
+      
+      
+      
+      
+      this.applyStyles({
+        "color": "rgba(255, 255, 255, 1)",
+        "white-space": "pre-line",
+        "font": this.fontSize + " sans-serif",
+        "background-color": "rgba(0, 0, 0, 0.8)",
+        "display": "inline",
+      }, this.cueDiv);
+    }
+
     
     _getNodeDefaultStyles(cue) {
       let styles = {
@@ -560,7 +577,6 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
         "overflow-wrap": "break-word",
         
         "font": this.fontSize + " sans-serif",
-        "color": "rgba(255,255,255,1)",
         "white-space": "pre-line",
         "text-align": cue.align,
       }
