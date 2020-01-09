@@ -1941,6 +1941,22 @@ class GeneralTokenStreamChars : public SpecializedTokenStreamCharsBase<Unit> {
     return static_cast<TokenStreamSpecific*>(this);
   }
 
+ private:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  mutable uint32_t lastLineForColumn_ = UINT32_MAX;
+  mutable uint32_t lastOffsetForColumn_ = UINT32_MAX;
+  mutable uint32_t lastColumn_ = 0;
+
+ protected:
   uint32_t computeColumn(LineToken lineToken, uint32_t offset) const;
   void computeLineAndColumn(uint32_t offset, uint32_t* line,
                             uint32_t* column) const;
