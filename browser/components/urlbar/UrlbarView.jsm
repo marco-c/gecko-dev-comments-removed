@@ -156,14 +156,6 @@ class UrlbarView {
     this._rows.appendChild(fragment);
 
     this._openPanel();
-
-    if (queryContext.preselected &&
-        queryContext.lastResultCount == 0 &&
-        queryContext.results.length > 0) {
-      
-      
-      this.input.setValueFromResult(queryContext.results[0]);
-    }
   }
 
   
