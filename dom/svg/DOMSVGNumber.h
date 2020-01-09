@@ -22,6 +22,7 @@ namespace mozilla {
 
 namespace dom {
 class SVGElement;
+class SVGSVGElement;
 
 
 
@@ -62,8 +63,12 @@ class DOMSVGNumber final : public nsISupports, public nsWrapperCache {
 
 
 
+  explicit DOMSVGNumber(SVGSVGElement* aParent);
+
+ private:
   explicit DOMSVGNumber(nsISupports* aParent);
 
+ public:
   
 
 

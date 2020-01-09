@@ -15,6 +15,7 @@ class SVGAngle;
 
 namespace mozilla {
 namespace dom {
+class SVGSVGElement;
 
 class DOMSVGAngle final : public nsWrapperCache {
  public:
@@ -33,7 +34,7 @@ class DOMSVGAngle final : public nsWrapperCache {
 
 
 
-  explicit DOMSVGAngle(SVGElement* aSVGElement);
+  explicit DOMSVGAngle(SVGSVGElement* aSVGElement);
 
   
   SVGElement* GetParentObject() { return mSVGElement; }
