@@ -688,8 +688,7 @@ function waitForContentMessage(name) {
 }
 
 function testColumnsAlignment(headers, requestList) {
-  
-  const firstRequestLine = requestList.childNodes[1];
+  const firstRequestLine = requestList.childNodes[0];
 
   
   const numberOfColumns = headers.childElementCount;
@@ -708,7 +707,7 @@ async function hideColumn(monitor, column) {
 
   info(`Clicking context-menu item for ${column}`);
   EventUtils.sendMouseEvent({ type: "contextmenu" },
-    document.querySelector(".devtools-toolbar.requests-list-headers"));
+    document.querySelector(".requests-list-headers"));
 
   const onHeaderRemoved = waitForDOM(document, `#requests-list-${column}-button`, 0);
   parent.document.querySelector(`#request-list-header-${column}-toggle`).click();
@@ -723,7 +722,7 @@ async function showColumn(monitor, column) {
 
   info(`Clicking context-menu item for ${column}`);
   EventUtils.sendMouseEvent({ type: "contextmenu" },
-    document.querySelector(".devtools-toolbar.requests-list-headers"));
+    document.querySelector(".requests-list-headers"));
 
   const onHeaderAdded = waitForDOM(document, `#requests-list-${column}-button`, 1);
   parent.document.querySelector(`#request-list-header-${column}-toggle`).click();
