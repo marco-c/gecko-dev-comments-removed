@@ -17,7 +17,6 @@ loader.lazyRequireGetter(this, "isAfterPseudoElement", "devtools/shared/layout/u
 loader.lazyRequireGetter(this, "isAnonymous", "devtools/shared/layout/utils", true);
 loader.lazyRequireGetter(this, "isBeforePseudoElement", "devtools/shared/layout/utils", true);
 loader.lazyRequireGetter(this, "isDirectShadowHostChild", "devtools/shared/layout/utils", true);
-loader.lazyRequireGetter(this, "isMarkerPseudoElement", "devtools/shared/layout/utils", true);
 loader.lazyRequireGetter(this, "isNativeAnonymous", "devtools/shared/layout/utils", true);
 loader.lazyRequireGetter(this, "isShadowHost", "devtools/shared/layout/utils", true);
 loader.lazyRequireGetter(this, "isShadowRoot", "devtools/shared/layout/utils", true);
@@ -88,7 +87,6 @@ const PSEUDO_SELECTORS = [
   [":disabled", 0],
   [":checked", 1],
   ["::selection", 0],
-  ["::marker", 0],
 ];
 
 const HELPER_SHEET = "data:text/css;charset=utf-8," + encodeURIComponent(`
@@ -538,8 +536,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
   inlineTextChild: function({ rawNode }) {
     
-    if (isMarkerPseudoElement(rawNode) ||
-        isBeforePseudoElement(rawNode) ||
+    if (isBeforePseudoElement(rawNode) ||
         isAfterPseudoElement(rawNode) ||
         isShadowHost(rawNode) ||
         rawNode.nodeType != Node.ELEMENT_NODE ||
@@ -869,13 +866,9 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
     if (shadowHost) {
       
-      
       const firstChildWalker = this.getDocumentWalker(node.rawNode);
       const first = firstChildWalker.firstChild();
-      const hasMarker = first && first.nodeName === "_moz_generated_content_marker";
-      const maybeBeforeNode = hasMarker ? firstChildWalker.nextSibling() : first;
-      const hasBefore = maybeBeforeNode &&
-        maybeBeforeNode.nodeName === "_moz_generated_content_before";
+      const hasBefore = first && first.nodeName === "_moz_generated_content_before";
 
       const lastChildWalker = this.getDocumentWalker(node.rawNode);
       const last = lastChildWalker.lastChild();
@@ -885,9 +878,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
         
         ...(hideShadowRoot ? [] : [node.rawNode.openOrClosedShadowRoot]),
         
-        ...(hasMarker ? [first] : []),
-        
-        ...(hasBefore ? [maybeBeforeNode] : []),
+        ...(hasBefore ? [first] : []),
         
         ...nodes,
         

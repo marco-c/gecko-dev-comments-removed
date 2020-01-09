@@ -638,7 +638,6 @@ exports.isShadowHost = isShadowHost;
 function isDirectShadowHostChild(node) {
   
   if (
-    isMarkerPseudoElement(node) ||
     isBeforePseudoElement(node) ||
     isAfterPseudoElement(node) ||
     isNativeAnonymous(node)) {
@@ -649,17 +648,6 @@ function isDirectShadowHostChild(node) {
   return parentNode && !!parentNode.openOrClosedShadowRoot;
 }
 exports.isDirectShadowHostChild = isDirectShadowHostChild;
-
-
-
-
-
-
-
-function isMarkerPseudoElement(node) {
-  return node.nodeName === "_moz_generated_content_marker";
-}
-exports.isMarkerPseudoElement = isMarkerPseudoElement;
 
 
 

@@ -93,10 +93,7 @@ WalkerIndex.prototype = {
         
         
         const localName = node.localName;
-        if (localName === "_moz_generated_content_marker") {
-          this._addToIndex("tag", node, "::marker");
-          this._addToIndex("text", node, node.textContent.trim());
-        } else if (localName === "_moz_generated_content_before") {
+        if (localName === "_moz_generated_content_before") {
           this._addToIndex("tag", node, "::before");
           this._addToIndex("text", node, node.textContent.trim());
         } else if (localName === "_moz_generated_content_after") {

@@ -468,10 +468,7 @@ exports.getXPath = getXPath;
 function getBindingElementAndPseudo(node) {
   let bindingElement = node;
   let pseudo = null;
-  if (node.nodeName == "_moz_generated_content_marker") {
-    bindingElement = node.parentNode;
-    pseudo = ":marker";
-  } else if (node.nodeName == "_moz_generated_content_before") {
+  if (node.nodeName == "_moz_generated_content_before") {
     bindingElement = node.parentNode;
     pseudo = ":before";
   } else if (node.nodeName == "_moz_generated_content_after") {
