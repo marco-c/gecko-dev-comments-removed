@@ -61,7 +61,8 @@ XPCCallContext::XPCCallContext(
 
   mTearOff = nullptr;
 
-  JSObject* unwrapped = js::CheckedUnwrap(obj,  false);
+  JSObject* unwrapped =
+      js::CheckedUnwrapDynamic(obj, cx,  false);
   if (!unwrapped) {
     JS_ReportErrorASCII(mJSContext,
                         "Permission denied to call method on |this|");

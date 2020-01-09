@@ -25,7 +25,8 @@ using mozilla::dom::AutoJSAPI;
 
 static inline nsQueryObject<nsISupports> do_QueryReflector(
     JSObject* aReflector) {
-  nsCOMPtr<nsISupports> reflector = xpc::UnwrapReflectorToISupports(aReflector);
+  
+  nsCOMPtr<nsISupports> reflector = xpc::ReflectorToISupportsStatic(aReflector);
   return do_QueryObject(reflector);
 }
 
