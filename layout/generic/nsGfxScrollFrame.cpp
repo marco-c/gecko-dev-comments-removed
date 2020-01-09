@@ -5574,6 +5574,10 @@ void ScrollFrameHelper::UpdateMinimumScaleSize(
   }
 
   nsViewportInfo viewportInfo = doc->GetViewportInfo(displaySize);
+  if (!viewportInfo.IsZoomAllowed()) {
+    
+    return;
+  }
 
   
   
