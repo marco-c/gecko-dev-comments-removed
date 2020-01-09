@@ -182,71 +182,6 @@ async function updatePinningList({ data: { current: records } }) {
   }
 }
 
-
-
-
-
-
-
-
-async function targetAppFilter(entry, environment) {
-  
-  
-  
-  const { filter_expression } = entry;
-  if (filter_expression) {
-    return jexlFilterFunc(entry, environment);
-  }
-
-  
-  if (!("versionRange" in entry)) {
-    return entry;
-  }
-
-  const { appID, version: appVersion, toolkitVersion } = environment;
-  const { versionRange } = entry;
-
-  
-  
-  
-
-  
-  if (!Array.isArray(versionRange)) {
-    const { maxVersion = "*" } = versionRange;
-    const matchesRange = (Services.vc.compare(appVersion, maxVersion) <= 0);
-    return matchesRange ? entry : null;
-  }
-
-  
-  
-  if (versionRange.length == 0) {
-    return entry;
-  }
-  for (const vr of versionRange) {
-    const { targetApplication = [] } = vr;
-    if (targetApplication.length == 0) {
-      return entry;
-    }
-    for (const ta of targetApplication) {
-      const { guid } = ta;
-      if (!guid) {
-        return entry;
-      }
-      const { maxVersion = "*" } = ta;
-      if (guid == appID &&
-          Services.vc.compare(appVersion, maxVersion) <= 0) {
-        return entry;
-      }
-      if (guid == "toolkit@mozilla.org" &&
-          Services.vc.compare(toolkitVersion, maxVersion) <= 0) {
-        return entry;
-      }
-    }
-  }
-  
-  return null;
-}
-
 var OneCRLBlocklistClient;
 var PinningBlocklistClient;
 var RemoteSecuritySettingsClient;
@@ -291,5 +226,5 @@ function initialize(options = {}) {
   };
 }
 
-let BlocklistClients = {initialize, targetAppFilter};
+let BlocklistClients = {initialize};
 

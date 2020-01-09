@@ -32,6 +32,8 @@ ChromeUtils.defineModuleGetter(this, "OS",
                                "resource://gre/modules/osfile.jsm");
 ChromeUtils.defineModuleGetter(this, "RemoteSettings",
                                "resource://services-settings/remote-settings.js");
+ChromeUtils.defineModuleGetter(this, "jexlFilterFunc",
+                               "resource://services-settings/remote-settings.js");
 ChromeUtils.defineModuleGetter(this, "ServiceRequest",
                                "resource://gre/modules/ServiceRequest.jsm");
 ChromeUtils.defineModuleGetter(this, "UpdateUtils",
@@ -286,6 +288,75 @@ const Utils = {
 
 
 
+async function targetAppFilter(entry, environment) {
+  
+  
+  
+  const { filter_expression } = entry;
+  if (filter_expression) {
+    return jexlFilterFunc(entry, environment);
+  }
+
+  
+  if (!("versionRange" in entry)) {
+    return entry;
+  }
+
+  const { appID, version: appVersion, toolkitVersion } = environment;
+  const { versionRange } = entry;
+
+  
+  
+  
+
+  
+  if (!Array.isArray(versionRange)) {
+    const { maxVersion = "*" } = versionRange;
+    const matchesRange = (Services.vc.compare(appVersion, maxVersion) <= 0);
+    return matchesRange ? entry : null;
+  }
+
+  
+  
+  if (versionRange.length == 0) {
+    return entry;
+  }
+  for (const vr of versionRange) {
+    const { targetApplication = [] } = vr;
+    if (targetApplication.length == 0) {
+      return entry;
+    }
+    for (const ta of targetApplication) {
+      const { guid } = ta;
+      if (!guid) {
+        return entry;
+      }
+      const { maxVersion = "*" } = ta;
+      if (guid == appID &&
+        Services.vc.compare(appVersion, maxVersion) <= 0) {
+        return entry;
+      }
+      if (guid == "toolkit@mozilla.org" &&
+        Services.vc.compare(toolkitVersion, maxVersion) <= 0) {
+        return entry;
+      }
+    }
+  }
+  
+  return null;
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -310,7 +381,7 @@ this.GfxBlocklistRS = {
       bucketNamePref: PREF_BLOCKLIST_BUCKET,
       lastCheckTimePref: PREF_BLOCKLIST_GFX_CHECKED_SECONDS,
       signerName: Services.prefs.getCharPref(PREF_BLOCKLIST_GFX_SIGNER),
-      filterFunc: BlocklistClients.targetAppFilter,
+      filterFunc: targetAppFilter,
     });
     this.checkForEntries = this.checkForEntries.bind(this);
     this._client.on("sync", this.checkForEntries);
@@ -485,7 +556,7 @@ this.PluginBlocklistRS = {
   },
 
   async _filterItem(entry) {
-    if (!(await BlocklistClients.targetAppFilter(entry, {appID: gAppID, version: gApp.version}))) {
+    if (!(await targetAppFilter(entry, {appID: gAppID, version: gApp.version}))) {
       return null;
     }
     if (!Utils.matchesOSABI(entry)) {
@@ -860,7 +931,7 @@ this.ExtensionBlocklistRS = {
   },
 
   async _filterItem(entry) {
-    if (!(await BlocklistClients.targetAppFilter(entry, {appID: gAppID, version: gApp.version}))) {
+    if (!(await targetAppFilter(entry, {appID: gAppID, version: gApp.version}))) {
       return null;
     }
     if (!Utils.matchesOSABI(entry)) {
