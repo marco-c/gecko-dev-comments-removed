@@ -48,19 +48,38 @@ SourceSurfaceCapture::SourceSurfaceCapture(
   DrawTargetWillChange();
 }
 
+SourceSurfaceCapture::SourceSurfaceCapture(DrawTargetCaptureImpl* aOwner,
+                                           SourceSurface* aSurfToOptimize)
+    : mOwner{aOwner},
+      mHasCommandList{false},
+      mShouldResolveToLuminance{false},
+      mLuminanceType{LuminanceType::LUMINANCE},
+      mOpacity{1.0f},
+      mLock{"SourceSurfaceCapture.mLock"},
+      mSurfToOptimize(aSurfToOptimize) {
+  mSize = aSurfToOptimize->GetSize();
+  mFormat = aSurfToOptimize->GetFormat();
+  mRefDT = mOwner->mRefDT;
+}
+
 SourceSurfaceCapture::~SourceSurfaceCapture() {}
 
 bool SourceSurfaceCapture::IsValid() const {
   
   
   MutexAutoLock lock(mLock);
-  return (mOwner || mHasCommandList) || mResolved;
+  return (mOwner || mHasCommandList || mSurfToOptimize) || mResolved;
 }
 
 RefPtr<SourceSurface> SourceSurfaceCapture::Resolve(BackendType aBackendType) {
   MutexAutoLock lock(mLock);
 
-  if (!mOwner && !mHasCommandList) {
+  if (mSurfToOptimize) {
+    mResolved = mRefDT->OptimizeSourceSurface(mSurfToOptimize);
+    mSurfToOptimize = nullptr;
+  }
+
+  if (mResolved || (!mOwner && !mHasCommandList)) {
     
     
     
@@ -79,9 +98,9 @@ RefPtr<SourceSurface> SourceSurfaceCapture::Resolve(BackendType aBackendType) {
 
   
   
-  if (!mResolved) {
-    mResolved = ResolveImpl(backendType);
-  }
+  
+  mResolved = ResolveImpl(backendType);
+
   return mResolved;
 }
 
