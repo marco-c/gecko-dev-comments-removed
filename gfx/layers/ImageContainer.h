@@ -217,8 +217,6 @@ class Image {
 
   virtual bool IsValid() const { return true; }
 
-  virtual uint8_t* GetBuffer() const { return nullptr; }
-
   
 
 
