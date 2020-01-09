@@ -316,13 +316,6 @@ function sendResult(_type, _value) {
   });
 }
 
-
-var existing_onload = window.onload;
-if (existing_onload && typeof(existing_onload) == "function") {
-  window.onload = function() {
-    existing_onload();
-    raptorContentHandler();
-  };
-} else {
-  window.onload = raptorContentHandler();
+if (window.addEventListener) {
+  window.addEventListener("load", raptorContentHandler);
 }
