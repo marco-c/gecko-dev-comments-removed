@@ -2145,6 +2145,7 @@ class LSRequestBase : public DatastoreOperationBase,
 
   nsCOMPtr<nsIEventTarget> mMainEventTarget;
   State mState;
+  bool mWaitingForFinish;
 
  public:
   explicit LSRequestBase(nsIEventTarget* aMainEventTarget);
@@ -2168,6 +2169,8 @@ class LSRequestBase : public DatastoreOperationBase,
 
  private:
   void SendReadyMessage();
+
+  void Finish();
 
   void SendResults();
 
@@ -3884,12 +3887,12 @@ void ConnectionDatastoreOperationBase::RunOnOwningThread() {
 
   if (!MayProceed()) {
     MaybeSetFailureCode(NS_ERROR_FAILURE);
+  }
+
+  if (NS_SUCCEEDED(ResultCode())) {
+    OnSuccess();
   } else {
-    if (NS_SUCCEEDED(ResultCode())) {
-      OnSuccess();
-    } else {
-      OnFailure(ResultCode());
-    }
+    OnFailure(ResultCode());
   }
 
   Cleanup();
@@ -5617,7 +5620,9 @@ mozilla::ipc::IPCResult Observer::RecvDeleteMe() {
 
 
 LSRequestBase::LSRequestBase(nsIEventTarget* aMainEventTarget)
-    : mMainEventTarget(aMainEventTarget), mState(State::Initial) {}
+    : mMainEventTarget(aMainEventTarget),
+      mState(State::Initial),
+      mWaitingForFinish(false) {}
 
 LSRequestBase::~LSRequestBase() {
   MOZ_ASSERT_IF(MayProceedOnNonOwningThread(),
@@ -5702,11 +5707,28 @@ void LSRequestBase::SendReadyMessage() {
     Unused << SendReady();
 
     mState = State::WaitingForFinish;
+
+    mWaitingForFinish = true;
   } else {
     Cleanup();
 
     mState = State::Completed;
   }
+}
+
+void LSRequestBase::Finish() {
+  AssertIsOnOwningThread();
+  MOZ_ASSERT(mState == State::WaitingForFinish);
+
+  mState = State::SendingResults;
+
+  mWaitingForFinish = false;
+
+  
+  
+  RefPtr<LSRequestBase> kungFuDeathGrip = this;
+
+  MOZ_ALWAYS_SUCCEEDS(this->Run());
 }
 
 void LSRequestBase::SendResults() {
@@ -5782,6 +5804,23 @@ void LSRequestBase::ActorDestroy(ActorDestroyReason aWhy) {
   AssertIsOnOwningThread();
 
   NoteComplete();
+
+  
+  
+  
+  
+  
+  
+  
+
+  if (mWaitingForFinish) {
+    Finish();
+  }
+
+  
+  
+  
+  
 }
 
 mozilla::ipc::IPCResult LSRequestBase::RecvCancel() {
@@ -5804,15 +5843,8 @@ mozilla::ipc::IPCResult LSRequestBase::RecvCancel() {
 
 mozilla::ipc::IPCResult LSRequestBase::RecvFinish() {
   AssertIsOnOwningThread();
-  MOZ_ASSERT(mState == State::WaitingForFinish);
 
-  mState = State::SendingResults;
-
-  
-  
-  RefPtr<LSRequestBase> kungFuDeathGrip = this;
-
-  MOZ_ALWAYS_SUCCEEDS(this->Run());
+  Finish();
 
   return IPC_OK();
 }
