@@ -1703,7 +1703,6 @@ pref("extensions.pocket.site", "getpocket.com");
 
 pref("signon.schemeUpgrades", true);
 pref("signon.privateBrowsingCapture.enabled", true);
-pref("signon.showAutoCompleteFooter", true);
 
 
 
