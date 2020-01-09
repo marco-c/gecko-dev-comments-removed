@@ -19,6 +19,8 @@ struct JSRuntime;
 
 namespace js {
 
+enum class MemoryUse : uint8_t;
+
 
 
 
@@ -49,16 +51,13 @@ class FreeOp : public JSFreeOp {
 
   void free_(void* p) { js_free(p); }
 
-  void freeLater(void* p) {
-    
-    
-    MOZ_ASSERT(!isDefaultFreeOp());
+  
+  void free_(gc::Cell* cell, void* p, size_t nbytes, MemoryUse use);
 
-    AutoEnterOOMUnsafeRegion oomUnsafe;
-    if (!freeLaterList.append(p)) {
-      oomUnsafe.crash("FreeOp::freeLater");
-    }
-  }
+  void freeLater(void* p);
+
+  
+  void freeLater(gc::Cell* cell, void* p, size_t nbytes, MemoryUse use);
 
   bool appendJitPoisonRange(const jit::JitPoisonRange& range) {
     
@@ -73,6 +72,24 @@ class FreeOp : public JSFreeOp {
     if (p) {
       p->~T();
       free_(p);
+    }
+  }
+
+  
+  
+  template <class T>
+  void delete_(gc::Cell* cell, T* p, MemoryUse use) {
+    delete_(cell, p, sizeof(T), use);
+  }
+
+  
+  
+  
+  template <class T>
+  void delete_(gc::Cell* cell, T* p, size_t nbytes, MemoryUse use) {
+    if (p) {
+      p->~T();
+      free_(cell, p, nbytes, use);
     }
   }
 };
