@@ -5,8 +5,8 @@
 
 
 
-function* spawnTest() {
-  let { target, panel } = yield initPerformance(SIMPLE_URL);
+async function spawnTest() {
+  let { target, panel } = await initPerformance(SIMPLE_URL);
   let { $, $$, PerformanceController, WaterfallView } = panel.panelWin;
   let { L10N } = require("devtools/client/performance/modules/global");
   let { MarkerBlueprintUtils } = require("devtools/client/performance/modules/marker-blueprint-utils");
@@ -19,10 +19,10 @@ function* spawnTest() {
     return { submarkers: markers };
   };
 
-  yield startRecording(panel);
+  await startRecording(panel);
   ok(true, "Recording has started.");
 
-  yield waitUntil(() => {
+  await waitUntil(() => {
     
     let markers = PerformanceController.getCurrentRecording().getMarkers();
     return markers.some(m => m.name == "Styles") &&
@@ -30,7 +30,7 @@ function* spawnTest() {
            markers.some(m => m.name == "Paint");
   });
 
-  yield stopRecording(panel);
+  await stopRecording(panel);
   ok(true, "Recording has ended.");
 
   info("No need to select everything in the timeline.");
@@ -40,8 +40,8 @@ function* spawnTest() {
   let markers = PerformanceController.getCurrentRecording().getMarkers();
 
   info(`Got ${bars.length} bars and ${markers.length} markers.`);
-  info("Markers types from datasrc: " + Array.map(markers, e => e.name));
-  info("Markers names from sidebar: " + Array.map(bars, e => e.parentNode.parentNode.querySelector(".waterfall-marker-name").getAttribute("value")));
+  info("Markers types from datasrc: " + Array.from(markers, e => e.name));
+  info("Markers names from sidebar: " + Array.from(bars, e => e.parentNode.parentNode.querySelector(".waterfall-marker-name").getAttribute("value")));
 
   ok(bars.length > 2, "Got at least 3 markers (1)");
   ok(markers.length > 2, "Got at least 3 markers (2)");
@@ -71,7 +71,7 @@ function* spawnTest() {
     ok(tooltip.includes(toMs(mkr.end)), "Tooltip has end time.");
   }
 
-  yield teardown(panel);
+  await teardown(panel);
   finish();
 }
 

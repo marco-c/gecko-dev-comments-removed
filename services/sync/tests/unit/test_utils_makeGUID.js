@@ -15,7 +15,7 @@ function run_test() {
     Assert.equal(encodeURIComponent(newGuid).length, 12);
 
     
-    Assert.ok(Array.every(newGuid, function(chr) {
+    Assert.ok(Array.prototype.every.call(newGuid, function(chr) {
       return base64url.includes(chr);
     }));
 

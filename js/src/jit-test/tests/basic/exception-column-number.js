@@ -1,5 +1,5 @@
 try {
-    Array.indexOf();
+    Array.from();
 } catch (e) {
     assertEq(e.columnNumber, 11);
     

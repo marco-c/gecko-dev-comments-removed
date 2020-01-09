@@ -69,5 +69,5 @@ addResourceAlias();
 
 
 var _ = function(some, debug, text, to) {
-  print(Array.slice(arguments).join(" "));
+  print(Array.from(arguments).join(" "));
 };

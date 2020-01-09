@@ -32,12 +32,12 @@ function editableTextTest(aID) {
 
 
 
-  this.scheduleTest = function scheduleTest(aFunc) {
+  this.scheduleTest = function scheduleTest(aFunc, ...aFuncArgs) {
     
     
     var dataContainer = {
       func: aFunc,
-      funcArgs: Array.slice(arguments, 1),
+      funcArgs: aFuncArgs,
     };
     this.mEventQueue.push(dataContainer);
 

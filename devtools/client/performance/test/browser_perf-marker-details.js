@@ -7,8 +7,8 @@
 
 
 
-function* spawnTest() {
-  let { target, panel } = yield initPerformance(MARKERS_URL);
+async function spawnTest() {
+  let { target, panel } = await initPerformance(MARKERS_URL);
   let { $, $$, EVENTS, PerformanceController, OverviewView, WaterfallView } = panel.panelWin;
 
   
@@ -23,16 +23,16 @@ function* spawnTest() {
     "Styles", "Reflow", "ConsoleTime", "TimeStamp"
   ];
 
-  yield startRecording(panel);
+  await startRecording(panel);
   ok(true, "Recording has started.");
 
-  yield waitUntil(() => {
+  await waitUntil(() => {
     
     let markers = PerformanceController.getCurrentRecording().getMarkers();
     return MARKER_TYPES.every(type => markers.some(m => m.name === type));
   });
 
-  yield stopRecording(panel);
+  await stopRecording(panel);
   ok(true, "Recording has ended.");
 
   info("No need to select everything in the timeline.");
@@ -44,8 +44,8 @@ function* spawnTest() {
                 .filter(m => MARKER_TYPES.includes(m.name));
 
   info(`Got ${bars.length} bars and ${markers.length} markers.`);
-  info("Markers types from datasrc: " + Array.map(markers, e => e.name));
-  info("Markers names from sidebar: " + Array.map(bars, e => e.parentNode.parentNode.querySelector(".waterfall-marker-name").getAttribute("value")));
+  info("Markers types from datasrc: " + Array.from(markers, e => e.name));
+  info("Markers names from sidebar: " + Array.from(bars, e => e.parentNode.parentNode.querySelector(".waterfall-marker-name").getAttribute("value")));
 
   ok(bars.length >= MARKER_TYPES.length, `Got at least ${MARKER_TYPES.length} markers (1)`);
   ok(markers.length >= MARKER_TYPES.length, `Got at least ${MARKER_TYPES.length} markers (2)`);
@@ -127,7 +127,7 @@ function* spawnTest() {
     }
   }
 
-  yield teardown(panel);
+  await teardown(panel);
   finish();
 }
 

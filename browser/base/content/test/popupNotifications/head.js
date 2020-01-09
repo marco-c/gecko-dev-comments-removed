@@ -217,7 +217,7 @@ function checkPopup(popup, notifyObj) {
   }
   
   let actualExtraSecondaryActions =
-    Array.filter(notification.menupopup.childNodes, child => child.nodeName == "menuitem");
+    Array.prototype.filter.call(notification.menupopup.childNodes, child => child.nodeName == "menuitem");
   let extraSecondaryActions = notifyObj.secondaryActions ? notifyObj.secondaryActions.slice(1) : [];
   is(actualExtraSecondaryActions.length, extraSecondaryActions.length,
      "number of extra secondary actions matches");

@@ -68,6 +68,6 @@ add_task(async function() {
 function getMenuEntries(searchBar) {
   
   
-  return Array.map(searchBar.textbox.popup.richlistbox.itemChildren,
-                   item => item.getAttribute("ac-value"));
+  return Array.from(searchBar.textbox.popup.richlistbox.itemChildren,
+                    item => item.getAttribute("ac-value"));
 }

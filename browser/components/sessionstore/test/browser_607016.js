@@ -85,7 +85,7 @@ add_task(async function() {
   await setBrowserState(state);
 
   
-  await Promise.all(Array.map(gBrowser.tabs, tab => {
+  await Promise.all(Array.from(gBrowser.tabs, tab => {
     return (tab == gBrowser.selectedTab) ?
       promiseTabRestored(tab) : promiseTabRestoring(tab);
   }));
