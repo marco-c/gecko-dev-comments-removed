@@ -57,14 +57,14 @@ function inspectDebugTarget(type, id) {
       
       
       
-      window.open(`about:devtools-toolbox?type=${type.toLowerCase()}&id=${id}`);
+      window.open(`about:devtools-toolbox?type=${type}&id=${id}`);
     } else {
-      window.open(`about:devtools-toolbox?type=${type.toLowerCase()}&id=${id}` +
+      window.open(`about:devtools-toolbox?type=${type}&id=${id}` +
                   `&remoteId=${remoteId}`);
     }
 
     dispatch(Actions.recordTelemetryEvent("inspect", {
-      "target_type": type,
+      "target_type": type.toUpperCase(),
       "runtime_type": runtime.type,
     }));
   };
