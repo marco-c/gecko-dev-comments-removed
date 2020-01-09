@@ -1993,13 +1993,9 @@ static void CacheSandboxParams(std::vector<std::string>& aCachedParams) {
   
   
   
-  char* bloatLog = PR_GetEnv("XPCOM_MEM_BLOAT_LOG");
-  if (bloatLog != nullptr) {
-    
-    
-    nsAutoCString bloatDirectoryPath =
-        nsMacUtilsImpl::GetDirectoryPath(bloatLog);
-    info.debugWriteDir = bloatDirectoryPath.get();
+  nsAutoCString bloatLogDirPath;
+  if (NS_SUCCEEDED(nsMacUtilsImpl::GetBloatLogDir(bloatLogDirPath))) {
+    info.debugWriteDir = bloatLogDirPath.get();
   }
 #  endif  
 
@@ -5715,7 +5711,7 @@ mozilla::ipc::IPCResult ContentParent::RecvAttachBrowsingContext(
     }
 
     Unused << entry->GetKey()->SendAttachBrowsingContext(
-      child->GetIPCInitializer());
+        child->GetIPCInitializer());
   }
 
   return IPC_OK();

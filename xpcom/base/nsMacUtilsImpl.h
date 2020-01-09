@@ -24,17 +24,19 @@ class nsMacUtilsImpl final : public nsIMacUtils {
   nsMacUtilsImpl() {}
 
 #if defined(MOZ_SANDBOX)
-  static bool GetAppPath(nsCString &aAppPath);
+  static bool GetAppPath(nsCString& aAppPath);
 
 #  ifdef DEBUG
-  static nsAutoCString GetDirectoryPath(const char *aPath);
+  static nsresult GetBloatLogDir(nsCString& aDirectoryPath);
+  static nsresult GetDirectoryPath(const char* aPath,
+                                   nsCString& aDirectoryPath);
 #  endif 
 #endif   
 
  private:
   ~nsMacUtilsImpl() {}
 
-  nsresult GetArchString(nsAString &aArchString);
+  nsresult GetArchString(nsAString& aArchString);
 
   
   
