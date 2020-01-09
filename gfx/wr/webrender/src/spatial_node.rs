@@ -194,7 +194,7 @@ impl SpatialNode {
             }
         };
 
-        let new_offset = match clamp {
+        let normalized_offset = match clamp {
             ScrollClamping::ToContentBounds => {
                 let scrollable_size = scrolling.scrollable_size;
                 let scrollable_width = scrollable_size.width;
@@ -212,6 +212,8 @@ impl SpatialNode {
             }
             ScrollClamping::NoClamping => LayoutPoint::zero() - *origin,
         };
+
+        let new_offset = normalized_offset - scrolling.external_scroll_offset;
 
         if new_offset == scrolling.offset {
             return false;
@@ -560,6 +562,12 @@ impl SpatialNode {
     }
 
     pub fn scroll(&mut self, scroll_location: ScrollLocation) -> bool {
+        
+        
+        
+        
+        
+
         let scrolling = match self.node_type {
             SpatialNodeType::ScrollFrame(ref mut scrolling) => scrolling,
             _ => return false,
@@ -638,7 +646,6 @@ pub struct ScrollFrameInfo {
     
     pub viewport_rect: LayoutRect,
 
-    pub offset: LayoutVector2D,
     pub scroll_sensitivity: ScrollSensitivity,
 
     
@@ -661,6 +668,9 @@ pub struct ScrollFrameInfo {
     
     
     pub external_scroll_offset: LayoutVector2D,
+
+    
+    pub offset: LayoutVector2D,
 }
 
 
@@ -675,7 +685,7 @@ impl ScrollFrameInfo {
     ) -> ScrollFrameInfo {
         ScrollFrameInfo {
             viewport_rect,
-            offset: LayoutVector2D::zero(),
+            offset: -external_scroll_offset,
             scroll_sensitivity,
             scrollable_size,
             external_id,
@@ -695,9 +705,14 @@ impl ScrollFrameInfo {
         self,
         old_scroll_info: &ScrollFrameInfo
     ) -> ScrollFrameInfo {
+        let offset =
+            old_scroll_info.offset +
+            self.external_scroll_offset -
+            old_scroll_info.external_scroll_offset;
+
         ScrollFrameInfo {
             viewport_rect: self.viewport_rect,
-            offset: old_scroll_info.offset,
+            offset,
             scroll_sensitivity: self.scroll_sensitivity,
             scrollable_size: self.scrollable_size,
             external_id: self.external_id,
