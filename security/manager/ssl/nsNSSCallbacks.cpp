@@ -262,7 +262,8 @@ OCSPRequest::Run() {
   }
 
   channel->SetLoadFlags(nsIRequest::LOAD_ANONYMOUS |
-                        nsIChannel::LOAD_BYPASS_SERVICE_WORKER);
+                        nsIChannel::LOAD_BYPASS_SERVICE_WORKER |
+                        nsIChannel::LOAD_BYPASS_URL_CLASSIFIER);
 
   
   
