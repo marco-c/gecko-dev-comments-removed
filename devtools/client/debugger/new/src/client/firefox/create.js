@@ -5,7 +5,7 @@
 
 
 
-import type { Frame, Source, SourceActorLocation, ThreadId } from "../../types";
+import type { Frame, Source, ThreadId } from "../../types";
 import type {
   PausedPacket,
   FramesResponse,
@@ -93,25 +93,6 @@ export function createPause(
     thread,
     frame: createFrame(thread, frame),
     frames: response.frames.map(createFrame.bind(null, thread))
-  };
-}
-
-
-
-
-
-export function createBreakpointLocation(
-  location: SourceActorLocation,
-  actualLocation?: Object
-): SourceActorLocation {
-  if (!actualLocation) {
-    return location;
-  }
-
-  return {
-    ...location,
-    line: actualLocation.line,
-    column: actualLocation.column
   };
 }
 

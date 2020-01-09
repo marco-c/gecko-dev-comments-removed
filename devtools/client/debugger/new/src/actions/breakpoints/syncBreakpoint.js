@@ -188,34 +188,25 @@ export async function syncBreakpointPromise(
   
   
 
-  const newGeneratedLocation = { ...scopedGeneratedLocation };
   for (const sourceActor of sourceActors) {
     const sourceActorLocation = makeSourceActorLocation(
       sourceActor,
       scopedGeneratedLocation
     );
-    const { actualLocation } = await client.setBreakpoint(
+    await client.setBreakpoint(
       sourceActorLocation,
       pendingBreakpoint.options,
       isOriginalId(sourceId)
     );
-    newGeneratedLocation.line = actualLocation.line;
-    newGeneratedLocation.column = actualLocation.column;
   }
 
-  
-  
-  const newLocation = await sourceMaps.getOriginalLocation(
-    newGeneratedLocation
-  );
-
-  const originalText = getTextAtPosition(source, newLocation);
-  const text = getTextAtPosition(generatedSource, newGeneratedLocation);
+  const originalText = getTextAtPosition(source, scopedLocation);
+  const text = getTextAtPosition(generatedSource, scopedGeneratedLocation);
 
   return createSyncData(
     pendingBreakpoint,
-    newLocation,
-    newGeneratedLocation,
+    scopedLocation,
+    scopedGeneratedLocation,
     previousLocation,
     text,
     originalText

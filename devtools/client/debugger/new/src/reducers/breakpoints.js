@@ -207,7 +207,7 @@ function addBreakpoint(state, action): BreakpointsState {
   
   if (action.status === "done") {
     const { value } = ((action: any): DonePromiseAction);
-    return syncBreakpoint(state, value);
+    return syncBreakpoint(state, { breakpoint: value, previousLocation: null });
   }
 
   

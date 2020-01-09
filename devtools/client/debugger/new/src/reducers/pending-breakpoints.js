@@ -69,15 +69,7 @@ function addBreakpoint(state, action) {
     return state;
   }
   
-  const {
-    breakpoint,
-    previousLocation
-  } = ((action: any): DonePromiseAction).value;
-
-  if (previousLocation) {
-    const previousLocationId = makePendingLocationId(previousLocation);
-    state = deleteBreakpoint(state, previousLocationId);
-  }
+  const breakpoint = ((action: any): DonePromiseAction).value;
 
   const locationId = makePendingLocationId(breakpoint.location);
   const pendingBreakpoint = createPendingBreakpoint(breakpoint);

@@ -792,7 +792,7 @@ async function loadAndAddBreakpoint(dbg, filename, line, column) {
   await selectSource(dbg, source);
 
   
-  await addBreakpoint(dbg, source, line);
+  await addBreakpoint(dbg, source, line, column);
 
   is(getBreakpointCount(getState()), 1, "One breakpoint exists");
   if (!getBreakpoint(getState(), { sourceId: source.id, line, column })) {
