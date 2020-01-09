@@ -1900,6 +1900,7 @@ VARCACHE_PREF(
 
 
 
+
 VARCACHE_PREF(
   "network.cookie.cookieBehavior",
   network_cookie_cookieBehavior,
@@ -2106,6 +2107,7 @@ VARCACHE_PREF(
 )
 
 
+
 VARCACHE_PREF(
   "privacy.trackingprotection.fingerprinting.enabled",
    privacy_trackingprotection_fingerprinting_enabled,
@@ -2118,6 +2120,7 @@ VARCACHE_PREF(
    privacy_trackingprotection_fingerprinting_annotate_enabled,
   bool, false
 )
+
 
 
 VARCACHE_PREF(

@@ -1167,6 +1167,8 @@ pref("services.sync.prefs.sync.addons.ignoreUserEnabledChanges", true);
 
 
 pref("services.sync.prefs.sync.browser.contentblocking.category", true);
+pref("services.sync.prefs.sync.browser.contentblocking.features.standard", true);
+pref("services.sync.prefs.sync.browser.contentblocking.features.strict", true);
 pref("services.sync.prefs.sync.browser.contentblocking.introCount", true);
 pref("services.sync.prefs.sync.browser.crashReports.unsubmittedCheck.autoSubmit2", true);
 pref("services.sync.prefs.sync.browser.ctrlTab.recentlyUsedOrder", true);
@@ -1567,6 +1569,36 @@ pref("browser.contentblocking.control-center.ui.showAllowedLabels", false);
 
 pref("browser.contentblocking.cryptomining.preferences.ui.enabled", true);
 pref("browser.contentblocking.fingerprinting.preferences.ui.enabled", true);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pref("browser.contentblocking.features.strict", "tp,tpPrivate,cookieBehavior4,-cm,-fp");
+
+
+
+#ifdef EARLY_BETA_OR_EARLIER
+pref("browser.contentblocking.features.standard", "-tp,tpPrivate,cookieBehavior4,-cm,-fp");
+#else
+pref("browser.contentblocking.features.standard", "-tp,tpPrivate,cookieBehavior0,-cm,-fp");
+#endif
 
 
 #ifdef EARLY_BETA_OR_EARLIER
