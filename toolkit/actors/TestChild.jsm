@@ -1,0 +1,17 @@
+
+
+
+
+"use strict";
+
+var EXPORTED_SYMBOLS = ["TestChild"];
+
+class TestChild extends JSWindowActorChild {
+  constructor() {
+     super();
+  }
+
+  show() {
+    return "TestChild";
+  }
+}
