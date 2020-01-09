@@ -144,8 +144,22 @@ static void TexSubImage2DWithoutUnpackSubimage(
   
   
   
-  unsigned char* newPixels =
-      new (fallible) unsigned char[width * height * pixelsize];
+
+  
+  
+  
+  MOZ_ASSERT(width <= 16384);
+  MOZ_ASSERT(height <= 16384);
+  MOZ_ASSERT(pixelsize < 8);
+
+  const auto size = CheckedInt<size_t>(width) * height * pixelsize;
+  if (!size.isValid()) {
+    
+    MOZ_ASSERT_UNREACHABLE("Unacceptable size calculated.!");
+    return;
+  }
+
+  unsigned char* newPixels = new (fallible) unsigned char[size.value()];
 
   if (newPixels) {
     unsigned char* rowDest = newPixels;
@@ -240,8 +254,22 @@ static void TexImage2DHelper(GLContext* gl, GLenum target, GLint level,
       GLsizei paddedWidth = RoundUpPow2((uint32_t)width);
       GLsizei paddedHeight = RoundUpPow2((uint32_t)height);
 
-      GLvoid* paddedPixels =
-          new unsigned char[paddedWidth * paddedHeight * pixelsize];
+      
+      
+      
+      MOZ_ASSERT(width <= 16384);
+      MOZ_ASSERT(height <= 16384);
+      MOZ_ASSERT(pixelsize < 8);
+
+      const auto size =
+          CheckedInt<size_t>(paddedWidth) * paddedHeight * pixelsize;
+      if (!size.isValid()) {
+        
+        MOZ_ASSERT_UNREACHABLE("Unacceptable size calculated.!");
+        return;
+      }
+
+      GLvoid* paddedPixels = new unsigned char[size.value()];
 
       
       
@@ -383,11 +411,15 @@ SurfaceFormat UploadImageDataToTexture(
       pixelSize = 2;
       break;
     default:
-      NS_ASSERTION(false, "Unhandled image surface format!");
+      MOZ_ASSERT_UNREACHABLE("Unhandled image surface format!");
   }
 
   if (aOutUploadSize) {
     *aOutUploadSize = 0;
+  }
+
+  if (surfaceFormat == gfx::SurfaceFormat::UNKNOWN) {
+    return gfx::SurfaceFormat::UNKNOWN;
   }
 
   if (aNeedInit || !CanUploadSubTextures(gl)) {
