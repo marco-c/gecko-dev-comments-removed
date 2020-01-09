@@ -241,6 +241,7 @@ nsresult OpenWindow(const ClientOpenWindowArgs& aArgs,
         
         
          false,
+         false,
          nullptr, getter_AddRefs(newWindow));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
