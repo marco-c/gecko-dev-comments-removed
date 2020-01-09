@@ -15,7 +15,7 @@
 
 assert.compareArray(Intl.getCanonicalLocales([
   "fr-CA",
-  new Intl.Locale("en-gb-oed"),
+  new Intl.Locale("en-gb-oxendict"),
   "de",
   new Intl.Locale("jp", { "calendar": "gregory" }),
   "zh",
