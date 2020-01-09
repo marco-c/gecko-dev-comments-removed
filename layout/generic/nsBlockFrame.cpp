@@ -1180,9 +1180,7 @@ static bool ClearLineClampEllipsis(nsBlockFrame* aFrame) {
   return true;
 }
 
-void nsBlockFrame::ClearLineClampEllipsis() {
-  ::ClearLineClampEllipsis(this);
-}
+void nsBlockFrame::ClearLineClampEllipsis() { ::ClearLineClampEllipsis(this); }
 
 static bool IsLineClampItem(const ReflowInput& aReflowInput) {
   return aReflowInput.mFlags.mApplyLineClamp ||
@@ -6730,15 +6728,20 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   Maybe<TextOverflow> textOverflow =
       TextOverflow::WillProcessLines(aBuilder, this);
 
-  const bool descendAlways =
+  const bool hasDescendantPlaceHolders =
       (GetStateBits() & NS_FRAME_FORCE_DISPLAY_LIST_DESCEND_INTO) ||
-      aBuilder->GetIncludeAllOutOfFlows();
-  const bool descendIfVisible = ForceDescendIntoIfVisible();
-  const bool hasDescendantPlaceHolders = descendAlways || descendIfVisible;
+      ForceDescendIntoIfVisible() || aBuilder->GetIncludeAllOutOfFlows();
 
   const auto ShouldDescendIntoLine = [&](const nsRect& aLineArea) -> bool {
+    
+    
+    
+    const bool descendAlways =
+        (GetStateBits() & NS_FRAME_FORCE_DISPLAY_LIST_DESCEND_INTO) ||
+        aBuilder->GetIncludeAllOutOfFlows();
+
     return descendAlways || aLineArea.Intersects(aBuilder->GetDirtyRect()) ||
-           (descendIfVisible &&
+           (ForceDescendIntoIfVisible() &&
             aLineArea.Intersects(aBuilder->GetVisibleRect()));
   };
 
