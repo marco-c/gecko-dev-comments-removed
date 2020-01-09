@@ -144,6 +144,8 @@ namespace widget {
 
 
 
+#define EVENT_LOOP_DELAY (1000 / 240)
+
 #define BUFFER_BPP 4
 gfx::SurfaceFormat WindowBackBuffer::mFormat = gfx::SurfaceFormat::B8G8R8A8;
 
