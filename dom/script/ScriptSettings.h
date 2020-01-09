@@ -121,13 +121,6 @@ nsIPrincipal* GetWebIDLCallerPrincipal();
 
 
 
-inline JSObject& IncumbentJSGlobal() {
-  return *GetIncumbentGlobal()->GetGlobalJSObject();
-}
-
-
-
-
 bool IsJSAPIActive();
 
 namespace danger {
