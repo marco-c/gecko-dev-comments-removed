@@ -1215,6 +1215,8 @@ class ContentParent final : public PContentParent,
   void OnBrowsingContextGroupSubscribe(BrowsingContextGroup* aGroup);
   void OnBrowsingContextGroupUnsubscribe(BrowsingContextGroup* aGroup);
 
+  void UpdateNetworkLinkType();
+
  private:
   
   RefPtr<ContentParent> mSelfRef;
