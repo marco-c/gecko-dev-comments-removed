@@ -68,6 +68,9 @@ task_description_schema = Schema({
     
     Optional('dependencies'): {basestring: object},
 
+    
+    Optional('soft-dependencies'): [basestring],
+
     Optional('requires'): Any('all-completed', 'all-resolved'),
 
     
@@ -1771,6 +1774,7 @@ def build_task(config, tasks):
             'label': task['label'],
             'task': task_def,
             'dependencies': task.get('dependencies', {}),
+            'soft-dependencies': task.get('soft-dependencies', []),
             'attributes': attributes,
             'optimization': task.get('optimization', None),
             'release-artifacts': task.get('release-artifacts', []),
