@@ -457,7 +457,6 @@ nsresult SinkContext::GrowStack() {
 
 nsresult SinkContext::FlushTags() {
   mSink->mDeferredFlushTags = false;
-  bool oldBeganUpdate = mSink->mBeganUpdate;
   uint32_t oldUpdates = mSink->mUpdatesInNotification;
 
   ++(mSink->mInNotification);
@@ -465,7 +464,6 @@ nsresult SinkContext::FlushTags() {
   {
     
     mozAutoDocUpdate updateBatch(mSink->mDocument, true);
-    mSink->mBeganUpdate = true;
 
     
     
@@ -515,7 +513,6 @@ nsresult SinkContext::FlushTags() {
   }
 
   mSink->mUpdatesInNotification = oldUpdates;
-  mSink->mBeganUpdate = oldBeganUpdate;
 
   return NS_OK;
 }
@@ -870,17 +867,13 @@ void HTMLContentSink::CloseHeadContext() {
 
 void HTMLContentSink::NotifyInsert(nsIContent* aContent,
                                    nsIContent* aChildContent) {
-  if (aContent && aContent->GetUncomposedDoc() != mDocument) {
-    
-    
-    return;
-  }
-
   mInNotification++;
 
   {
     
-    MOZ_AUTO_DOC_UPDATE(mDocument, !mBeganUpdate);
+    
+    MOZ_AUTO_DOC_UPDATE(aContent ? aContent->OwnerDoc() : mDocument.get(),
+                        true);
     nsNodeUtils::ContentInserted(NODE_FROM(aContent, mDocument), aChildContent);
     mLastNotificationTime = PR_Now();
   }

@@ -99,7 +99,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 nsContentSink::nsContentSink()
     : mBackoffCount(0),
       mLastNotificationTime(0),
-      mBeganUpdate(0),
       mLayoutStarted(0),
       mDynamicLowerValue(0),
       mParsing(0),
@@ -1211,17 +1210,13 @@ void nsContentSink::StartLayout(bool aIgnorePendingSheets) {
 }
 
 void nsContentSink::NotifyAppend(nsIContent* aContainer, uint32_t aStartIndex) {
-  if (aContainer->GetUncomposedDoc() != mDocument) {
-    
-    
-    return;
-  }
-
   mInNotification++;
 
   {
     
-    MOZ_AUTO_DOC_UPDATE(mDocument, !mBeganUpdate);
+    
+    
+    MOZ_AUTO_DOC_UPDATE(aContainer->OwnerDoc(), true);
     nsNodeUtils::ContentAppended(
         aContainer, aContainer->GetChildAt_Deprecated(aStartIndex));
     mLastNotificationTime = PR_Now();
