@@ -102,8 +102,7 @@ class nsToolkitProfileService final : public nsIToolkitProfileService {
                                 nsACString& aDescriptor, bool* aIsRelative);
   bool IsProfileForCurrentInstall(nsIToolkitProfile* aProfile);
   void ClearProfileFromOtherInstalls(nsIToolkitProfile* aProfile);
-  nsresult MaybeMakeDefaultDedicatedProfile(nsIToolkitProfile* aProfile,
-                                            bool* aResult);
+  bool MaybeMakeDefaultDedicatedProfile(nsIToolkitProfile* aProfile);
   bool IsSnapEnvironment();
   nsresult CreateDefaultProfile(nsIToolkitProfile** aResult);
   void SetNormalDefault(nsIToolkitProfile* aProfile);
@@ -150,17 +149,10 @@ class nsToolkitProfileService final : public nsIToolkitProfileService {
   bool mCreatedAlternateProfile;
   nsString mStartupReason;
   bool mMaybeLockProfile;
+
   
   
   nsCString mUpdateChannel;
-  
-  
-  bool mProfileDBExists;
-  int64_t mProfileDBFileSize;
-  PRTime mProfileDBModifiedTime;
-  bool mInstallDBExists;
-  int64_t mInstallDBFileSize;
-  PRTime mInstallDBModifiedTime;
 
   static nsToolkitProfileService* gService;
 
