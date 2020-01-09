@@ -18,7 +18,7 @@ const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.j
 
 const Utils = TelemetryUtils;
 
-const { AddonManager } = ChromeUtils.import("resource://gre/modules/AddonManager.jsm");
+const {AddonManager, AddonManagerPrivate} = ChromeUtils.import("resource://gre/modules/AddonManager.jsm");
 
 ChromeUtils.defineModuleGetter(this, "AttributionCode",
                                "resource:///modules/AttributionCode.jsm");
@@ -574,16 +574,7 @@ EnvironmentAddonBuilder.prototype = {
         if (!this._environment._addonsAreFull) {
           
           
-          
-          await new Promise(resolve => {
-            const ADDON_LOAD_NOTIFICATION = "xpi-database-loaded";
-            Services.obs.addObserver({
-              observe(subject, topic, data) {
-                Services.obs.removeObserver(this, ADDON_LOAD_NOTIFICATION);
-                resolve();
-              },
-            }, ADDON_LOAD_NOTIFICATION);
-          });
+          await AddonManagerPrivate.databaseReady;
 
           
           await this._updateAddons();

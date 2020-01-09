@@ -1954,6 +1954,15 @@ class BootstrapScope {
   }
 }
 
+let resolveDBReady;
+let dbReadyPromise = new Promise(resolve => {
+  resolveDBReady = resolve;
+});
+let resolveProviderReady;
+let providerReadyPromise = new Promise(resolve => {
+  resolveProviderReady = resolve;
+});
+
 var XPIProvider = {
   get name() {
     return "XPIProvider";
@@ -1969,6 +1978,8 @@ var XPIProvider = {
   _closing: false,
 
   startupPromises: [],
+
+  databaseReady: Promise.all([dbReadyPromise, providerReadyPromise]),
 
   
   
@@ -2226,6 +2237,8 @@ var XPIProvider = {
       this.checkForChanges(aAppChanged, aOldAppVersion, aOldPlatformVersion);
 
       AddonManagerPrivate.markProviderSafe(this);
+
+      resolveProviderReady(Promise.all(this.startupPromises));
 
       if (AppConstants.MOZ_CRASHREPORTER) {
         
@@ -2867,6 +2880,7 @@ var XPIInternal = {
   isXPI,
   iterDirectory,
   migrateAddonLoader,
+  resolveDBReady,
 };
 
 var addonTypes = [
