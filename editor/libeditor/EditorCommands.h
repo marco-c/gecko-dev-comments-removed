@@ -7,6 +7,7 @@
 #define mozilla_EditorCommands_h
 
 #include "mozilla/StaticPtr.h"
+#include "mozilla/TypedEnumBits.h"
 #include "nsIControllerCommand.h"
 #include "nsISupportsImpl.h"
 #include "nsRefPtrHashtable.h"
@@ -28,9 +29,212 @@ class TextEditor;
 
 
 
+enum class EditorCommandParamType : uint16_t {
+  
+  None = 0,
+  
+  Bool = 1 << 0,
+  
+  
+  
+  String = 1 << 1,
+  
+  CString = 1 << 2,
+  
+  Transferable = 1 << 3,
+
+  
+  
+  
+  StateAttribute = 1 << 14,
+  
+  
+  
+  StateData = 1 << 15,
+};
+
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(EditorCommandParamType)
+
+
+
+
+
+
+
 class EditorCommand : public nsIControllerCommand {
  public:
   NS_DECL_ISUPPORTS
+
+  static EditorCommandParamType GetParamType(Command aCommand) {
+    
+    
+    switch (aCommand) {
+      
+      case Command::HistoryUndo:
+        return EditorCommandParamType::None;
+      
+      case Command::HistoryRedo:
+        return EditorCommandParamType::None;
+      
+      case Command::Cut:
+        return EditorCommandParamType::None;
+      
+      case Command::CutOrDelete:
+        return EditorCommandParamType::None;
+      
+      case Command::Copy:
+        return EditorCommandParamType::None;
+      
+      case Command::CopyOrDelete:
+        return EditorCommandParamType::None;
+      
+      case Command::SelectAll:
+        return EditorCommandParamType::None;
+      
+      case Command::Paste:
+        return EditorCommandParamType::None;
+      
+      case Command::FormatSetBlockTextDirection:
+        return EditorCommandParamType::None;
+      
+      case Command::Delete:
+      case Command::DeleteCharBackward:
+      case Command::DeleteCharForward:
+      case Command::DeleteWordBackward:
+      case Command::DeleteWordForward:
+      case Command::DeleteToBeginningOfLine:
+      case Command::DeleteToEndOfLine:
+        return EditorCommandParamType::None;
+      
+      case Command::InsertParagraph:
+        return EditorCommandParamType::None;
+      
+      case Command::InsertLineBreak:
+        return EditorCommandParamType::None;
+      
+      case Command::PasteAsQuotation:
+        return EditorCommandParamType::None;
+
+      
+      case Command::ScrollTop:
+      case Command::ScrollBottom:
+      case Command::MoveTop:
+      case Command::MoveBottom:
+      case Command::SelectTop:
+      case Command::SelectBottom:
+      case Command::LineNext:
+      case Command::LinePrevious:
+      case Command::SelectLineNext:
+      case Command::SelectLinePrevious:
+      case Command::CharPrevious:
+      case Command::CharNext:
+      case Command::SelectCharPrevious:
+      case Command::SelectCharNext:
+      case Command::BeginLine:
+      case Command::EndLine:
+      case Command::SelectBeginLine:
+      case Command::SelectEndLine:
+      case Command::WordPrevious:
+      case Command::WordNext:
+      case Command::SelectWordPrevious:
+      case Command::SelectWordNext:
+      case Command::ScrollPageUp:
+      case Command::ScrollPageDown:
+      case Command::ScrollLineUp:
+      case Command::ScrollLineDown:
+      case Command::MovePageUp:
+      case Command::MovePageDown:
+      case Command::SelectPageUp:
+      case Command::SelectPageDown:
+      case Command::MoveLeft:
+      case Command::MoveRight:
+      case Command::MoveUp:
+      case Command::MoveDown:
+      case Command::MoveLeft2:
+      case Command::MoveRight2:
+      case Command::MoveUp2:
+      case Command::MoveDown2:
+      case Command::SelectLeft:
+      case Command::SelectRight:
+      case Command::SelectUp:
+      case Command::SelectDown:
+      case Command::SelectLeft2:
+      case Command::SelectRight2:
+      case Command::SelectUp2:
+      case Command::SelectDown2:
+        return EditorCommandParamType::None;
+      
+      case Command::PasteWithoutFormat:
+        return EditorCommandParamType::None;
+
+      
+      case Command::EditorObserverDocumentCreated:
+      case Command::EditorObserverDocumentLocationChanged:
+      case Command::EditorObserverDocumentWillBeDestroyed:
+        return EditorCommandParamType::None;
+
+      
+      case Command::FormatIndent:
+        return EditorCommandParamType::None;
+      
+      case Command::FormatOutdent:
+        return EditorCommandParamType::None;
+      
+      case Command::FormatBold:
+      case Command::FormatItalic:
+      case Command::FormatUnderline:
+      case Command::FormatTeletypeText:
+      case Command::FormatStrikeThrough:
+      case Command::FormatSuperscript:
+      case Command::FormatSubscript:
+      case Command::FormatNoBreak:
+      case Command::FormatEmphasis:
+      case Command::FormatStrong:
+      case Command::FormatCitation:
+      case Command::FormatAbbreviation:
+      case Command::FormatAcronym:
+      case Command::FormatCode:
+      case Command::FormatSample:
+      case Command::FormatVariable:
+      case Command::FormatRemoveLink:
+        return EditorCommandParamType::None;
+      
+      case Command::InsertOrderedList:
+      case Command::InsertUnorderedList:
+        return EditorCommandParamType::None;
+      
+      case Command::InsertDefinitionTerm:
+      case Command::InsertDefinitionDetails:
+        return EditorCommandParamType::None;
+      
+      case Command::FormatRemoveList:
+        return EditorCommandParamType::None;
+      
+      case Command::FormatRemove:
+        return EditorCommandParamType::None;
+      
+      case Command::FormatIncreaseFontSize:
+        return EditorCommandParamType::None;
+      
+      case Command::FormatDecreaseFontSize:
+        return EditorCommandParamType::None;
+      case Command::InsertHorizontalRule:
+        return EditorCommandParamType::None;
+      
+      case Command::FormatAbsolutePosition:
+        return EditorCommandParamType::None;
+      
+      case Command::FormatDecreaseZIndex:
+        return EditorCommandParamType::None;
+      
+      case Command::FormatIncreaseZIndex:
+        return EditorCommandParamType::None;
+
+      default:
+        
+        return EditorCommandParamType::Transferable;
+    }
+  }
 
   
   
@@ -58,7 +262,11 @@ class EditorCommand : public nsIControllerCommand {
                              TextEditor& aTextEditor) const = 0;
   MOZ_CAN_RUN_SCRIPT
   virtual nsresult DoCommandParams(Command aCommand, nsCommandParams* aParams,
-                                   TextEditor& aTextEditor) const = 0;
+                                   TextEditor& aTextEditor) const {
+    MOZ_ASSERT_UNREACHABLE("Wrong method is called");
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+
   
 
 
@@ -72,30 +280,52 @@ class EditorCommand : public nsIControllerCommand {
       Command aCommand, nsCommandParams& aParams, TextEditor* aTextEditor,
       nsIEditingSession* aEditingSession) const = 0;
 
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT
+  virtual nsresult DoCommandParam(Command aCommand,
+                                  TextEditor& aTextEditor) const {
+    MOZ_ASSERT_UNREACHABLE("Wrong overload is called");
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+
  protected:
   EditorCommand() = default;
   virtual ~EditorCommand() = default;
 };
 
-#define NS_DECL_EDITOR_COMMAND_METHODS(_cmd)                                   \
- public:                                                                       \
-  MOZ_CAN_RUN_SCRIPT                                                           \
-  virtual bool IsCommandEnabled(Command aCommand, TextEditor* aTextEditor)     \
-      const final;                                                             \
-  using EditorCommand::IsCommandEnabled;                                       \
-  MOZ_CAN_RUN_SCRIPT                                                           \
-  virtual nsresult DoCommand(Command aCommand, TextEditor& aTextEditor)        \
-      const final;                                                             \
-  using EditorCommand::DoCommand;                                              \
+#define NS_DECL_EDITOR_COMMAND_COMMON_METHODS                              \
+ public:                                                                   \
+  MOZ_CAN_RUN_SCRIPT                                                       \
+  virtual bool IsCommandEnabled(Command aCommand, TextEditor* aTextEditor) \
+      const final;                                                         \
+  using EditorCommand::IsCommandEnabled;                                   \
+  MOZ_CAN_RUN_SCRIPT                                                       \
+  virtual nsresult DoCommand(Command aCommand, TextEditor& aTextEditor)    \
+      const final;                                                         \
+  using EditorCommand::DoCommand;                                          \
+  MOZ_CAN_RUN_SCRIPT                                                       \
+  virtual nsresult GetCommandStateParams(                                  \
+      Command aCommand, nsCommandParams& aParams, TextEditor* aTextEditor, \
+      nsIEditingSession* aEditingSession) const final;                     \
+  using EditorCommand::GetCommandStateParams;                              \
+  using EditorCommand::DoCommandParam;
+
+#define NS_DECL_DO_COMMAND_PARAMS                                              \
   MOZ_CAN_RUN_SCRIPT                                                           \
   virtual nsresult DoCommandParams(Command aCommand, nsCommandParams* aParams, \
                                    TextEditor& aTextEditor) const final;       \
-  using EditorCommand::DoCommandParams;                                        \
-  MOZ_CAN_RUN_SCRIPT                                                           \
-  virtual nsresult GetCommandStateParams(                                      \
-      Command aCommand, nsCommandParams& aParams, TextEditor* aTextEditor,     \
-      nsIEditingSession* aEditingSession) const final;                         \
-  using EditorCommand::GetCommandStateParams;
+  using EditorCommand::DoCommandParams;
+
+#define NS_DECL_DO_COMMAND_PARAM_DELEGATE_TO_DO_COMMAND                      \
+ public:                                                                     \
+  MOZ_CAN_RUN_SCRIPT                                                         \
+  virtual nsresult DoCommandParam(Command aCommand, TextEditor& aTextEditor) \
+      const final {                                                          \
+    return DoCommand(aCommand, aTextEditor);                                 \
+  }
 
 #define NS_INLINE_DECL_EDITOR_COMMAND_MAKE_SINGLETON(_cmd) \
  public:                                                   \
@@ -113,7 +343,8 @@ class EditorCommand : public nsIControllerCommand {
 
 #define NS_DECL_EDITOR_COMMAND(_cmd)                   \
   class _cmd final : public EditorCommand {            \
-    NS_DECL_EDITOR_COMMAND_METHODS(_cmd)               \
+    NS_DECL_EDITOR_COMMAND_COMMON_METHODS              \
+    NS_DECL_DO_COMMAND_PARAMS                          \
     NS_INLINE_DECL_EDITOR_COMMAND_MAKE_SINGLETON(_cmd) \
                                                        \
    protected:                                          \
@@ -121,27 +352,38 @@ class EditorCommand : public nsIControllerCommand {
     virtual ~_cmd() = default;                         \
   };
 
+#define NS_DECL_EDITOR_COMMAND_FOR_NO_PARAM_WITH_DELEGATE(_cmd) \
+  class _cmd final : public EditorCommand {                     \
+    NS_DECL_EDITOR_COMMAND_COMMON_METHODS                       \
+    NS_DECL_DO_COMMAND_PARAM_DELEGATE_TO_DO_COMMAND             \
+    NS_INLINE_DECL_EDITOR_COMMAND_MAKE_SINGLETON(_cmd)          \
+                                                                \
+   protected:                                                   \
+    _cmd() = default;                                           \
+    virtual ~_cmd() = default;                                  \
+  };
 
-NS_DECL_EDITOR_COMMAND(UndoCommand)
-NS_DECL_EDITOR_COMMAND(RedoCommand)
 
-NS_DECL_EDITOR_COMMAND(CutCommand)
-NS_DECL_EDITOR_COMMAND(CutOrDeleteCommand)
-NS_DECL_EDITOR_COMMAND(CopyCommand)
-NS_DECL_EDITOR_COMMAND(CopyOrDeleteCommand)
-NS_DECL_EDITOR_COMMAND(PasteCommand)
+NS_DECL_EDITOR_COMMAND_FOR_NO_PARAM_WITH_DELEGATE(UndoCommand)
+NS_DECL_EDITOR_COMMAND_FOR_NO_PARAM_WITH_DELEGATE(RedoCommand)
+
+NS_DECL_EDITOR_COMMAND_FOR_NO_PARAM_WITH_DELEGATE(CutCommand)
+NS_DECL_EDITOR_COMMAND_FOR_NO_PARAM_WITH_DELEGATE(CutOrDeleteCommand)
+NS_DECL_EDITOR_COMMAND_FOR_NO_PARAM_WITH_DELEGATE(CopyCommand)
+NS_DECL_EDITOR_COMMAND_FOR_NO_PARAM_WITH_DELEGATE(CopyOrDeleteCommand)
+NS_DECL_EDITOR_COMMAND_FOR_NO_PARAM_WITH_DELEGATE(PasteCommand)
 NS_DECL_EDITOR_COMMAND(PasteTransferableCommand)
-NS_DECL_EDITOR_COMMAND(SwitchTextDirectionCommand)
-NS_DECL_EDITOR_COMMAND(DeleteCommand)
-NS_DECL_EDITOR_COMMAND(SelectAllCommand)
+NS_DECL_EDITOR_COMMAND_FOR_NO_PARAM_WITH_DELEGATE(SwitchTextDirectionCommand)
+NS_DECL_EDITOR_COMMAND_FOR_NO_PARAM_WITH_DELEGATE(DeleteCommand)
+NS_DECL_EDITOR_COMMAND_FOR_NO_PARAM_WITH_DELEGATE(SelectAllCommand)
 
-NS_DECL_EDITOR_COMMAND(SelectionMoveCommands)
+NS_DECL_EDITOR_COMMAND_FOR_NO_PARAM_WITH_DELEGATE(SelectionMoveCommands)
 
 
 NS_DECL_EDITOR_COMMAND(InsertPlaintextCommand)
-NS_DECL_EDITOR_COMMAND(InsertParagraphCommand)
-NS_DECL_EDITOR_COMMAND(InsertLineBreakCommand)
-NS_DECL_EDITOR_COMMAND(PasteQuotationCommand)
+NS_DECL_EDITOR_COMMAND_FOR_NO_PARAM_WITH_DELEGATE(InsertParagraphCommand)
+NS_DECL_EDITOR_COMMAND_FOR_NO_PARAM_WITH_DELEGATE(InsertLineBreakCommand)
+NS_DECL_EDITOR_COMMAND_FOR_NO_PARAM_WITH_DELEGATE(PasteQuotationCommand)
 
 
 
@@ -153,7 +395,8 @@ class StateUpdatingCommandBase : public EditorCommand {
  public:
   NS_INLINE_DECL_REFCOUNTING_INHERITED(StateUpdatingCommandBase, EditorCommand)
 
-  NS_DECL_EDITOR_COMMAND_METHODS(StateUpdatingCommandBase)
+  NS_DECL_EDITOR_COMMAND_COMMON_METHODS
+  NS_DECL_DO_COMMAND_PARAM_DELEGATE_TO_DO_COMMAND
 
  protected:
   StateUpdatingCommandBase() = default;
@@ -246,7 +489,9 @@ class InsertTagCommand final : public EditorCommand {
  public:
   NS_INLINE_DECL_REFCOUNTING_INHERITED(InsertTagCommand, EditorCommand)
 
-  NS_DECL_EDITOR_COMMAND_METHODS(InsertTagCommand)
+  NS_DECL_EDITOR_COMMAND_COMMON_METHODS
+  NS_DECL_DO_COMMAND_PARAM_DELEGATE_TO_DO_COMMAND
+  NS_DECL_DO_COMMAND_PARAMS
   NS_INLINE_DECL_EDITOR_COMMAND_MAKE_SINGLETON(InsertTagCommand)
 
  protected:
@@ -307,7 +552,9 @@ class ListItemCommand final : public StateUpdatingCommandBase {
 class MultiStateCommandBase : public EditorCommand {
  public:
   NS_INLINE_DECL_REFCOUNTING_INHERITED(MultiStateCommandBase, EditorCommand)
-  NS_DECL_EDITOR_COMMAND_METHODS(MultiStateCommandBase)
+
+  NS_DECL_EDITOR_COMMAND_COMMON_METHODS
+  NS_DECL_DO_COMMAND_PARAMS
 
  protected:
   MultiStateCommandBase() = default;
@@ -450,31 +697,34 @@ class AbsolutePositioningCommand final : public StateUpdatingCommandBase {
 
 
 
-NS_DECL_EDITOR_COMMAND(DocumentStateCommand)
+NS_DECL_EDITOR_COMMAND_FOR_NO_PARAM_WITH_DELEGATE(DocumentStateCommand)
 NS_DECL_EDITOR_COMMAND(SetDocumentStateCommand)
 
-NS_DECL_EDITOR_COMMAND(DecreaseZIndexCommand)
-NS_DECL_EDITOR_COMMAND(IncreaseZIndexCommand)
+NS_DECL_EDITOR_COMMAND_FOR_NO_PARAM_WITH_DELEGATE(DecreaseZIndexCommand)
+NS_DECL_EDITOR_COMMAND_FOR_NO_PARAM_WITH_DELEGATE(IncreaseZIndexCommand)
 
 
 
 
-NS_DECL_EDITOR_COMMAND(PasteNoFormattingCommand)
+NS_DECL_EDITOR_COMMAND_FOR_NO_PARAM_WITH_DELEGATE(PasteNoFormattingCommand)
 
 
-NS_DECL_EDITOR_COMMAND(IndentCommand)
-NS_DECL_EDITOR_COMMAND(OutdentCommand)
+NS_DECL_EDITOR_COMMAND_FOR_NO_PARAM_WITH_DELEGATE(IndentCommand)
+NS_DECL_EDITOR_COMMAND_FOR_NO_PARAM_WITH_DELEGATE(OutdentCommand)
 
-NS_DECL_EDITOR_COMMAND(RemoveListCommand)
-NS_DECL_EDITOR_COMMAND(RemoveStylesCommand)
-NS_DECL_EDITOR_COMMAND(IncreaseFontSizeCommand)
-NS_DECL_EDITOR_COMMAND(DecreaseFontSizeCommand)
+NS_DECL_EDITOR_COMMAND_FOR_NO_PARAM_WITH_DELEGATE(RemoveListCommand)
+NS_DECL_EDITOR_COMMAND_FOR_NO_PARAM_WITH_DELEGATE(RemoveStylesCommand)
+NS_DECL_EDITOR_COMMAND_FOR_NO_PARAM_WITH_DELEGATE(IncreaseFontSizeCommand)
+NS_DECL_EDITOR_COMMAND_FOR_NO_PARAM_WITH_DELEGATE(DecreaseFontSizeCommand)
 
 
 NS_DECL_EDITOR_COMMAND(InsertHTMLCommand)
 
 #undef NS_DECL_EDITOR_COMMAND
-#undef NS_DECL_EDITOR_COMMAND_METHODS
+#undef NS_DECL_EDITOR_COMMAND_FOR_NO_PARAM_WITH_DELEGATE
+#undef NS_DECL_EDITOR_COMMAND_COMMON_METHODS
+#undef NS_DECL_DO_COMMAND_PARAMS
+#undef NS_DECL_DO_COMMAND_PARAM_DELEGATE_TO_DO_COMMAND
 #undef NS_INLINE_DECL_EDITOR_COMMAND_MAKE_SINGLETON
 
 }  
