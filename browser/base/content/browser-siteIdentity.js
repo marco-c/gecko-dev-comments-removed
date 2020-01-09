@@ -140,6 +140,11 @@ var gIdentityHandler = {
     return this._identityPopupContentVerif =
       document.getElementById("identity-popup-content-verifier");
   },
+  get _identityPopupCustomRootLearnMore() {
+    delete this._identityPopupCustomRootLearnMore;
+    return this._identityPopupCustomRootLearnMore =
+      document.getElementById("identity-popup-custom-root-learn-more");
+  },
   get _identityPopupMixedContentLearnMore() {
     delete this._identityPopupMixedContentLearnMore;
     return this._identityPopupMixedContentLearnMore =
@@ -512,6 +517,18 @@ var gIdentityHandler = {
   
 
 
+
+  _hasCustomRoot() {
+    let issuerCert = null;
+    
+    for (issuerCert of this._secInfo.succeededCertChain.getEnumerator());
+
+    return !issuerCert.isBuiltInRoot;
+  },
+
+  
+
+
   refreshIdentityBlock() {
     if (!this._identityBox) {
       return;
@@ -695,9 +712,13 @@ var gIdentityHandler = {
       e => e.setAttribute("href", baseURL + "mixed-content"));
     this._identityPopupInsecureLoginFormsLearnMore
         .setAttribute("href", baseURL + "insecure-password");
+    this._identityPopupCustomRootLearnMore
+        .setAttribute("href", baseURL + "enterprise-roots");
 
     
     this._popupExpander.tooltipText = gNavigatorBundle.getString("identity.showDetails.tooltip");
+
+    let customRoot = false;
 
     
     let connection = "not-secure";
@@ -713,6 +734,7 @@ var gIdentityHandler = {
       connection = "secure-cert-user-overridden";
     } else if (this._isSecure) {
       connection = "secure";
+      customRoot = this._hasCustomRoot();
     }
 
     
@@ -762,6 +784,7 @@ var gIdentityHandler = {
       updateAttribute(element, "ciphers", ciphers);
       updateAttribute(element, "mixedcontent", mixedcontent);
       updateAttribute(element, "isbroken", this._isBroken);
+      updateAttribute(element, "customroot", customRoot);
     }
 
     

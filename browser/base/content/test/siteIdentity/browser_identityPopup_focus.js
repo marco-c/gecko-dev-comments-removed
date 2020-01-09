@@ -52,19 +52,23 @@ add_task(async function testSiteSecurityTabOrder() {
     await shown;
 
     
-    let backButton = gIdentityHandler._identityPopup.querySelector(".subviewbutton-back");
     
-    let focused = BrowserTestUtils.waitForEvent(gIdentityHandler._identityPopup, "focusin");
-    EventUtils.sendKey("tab");
-    await focused;
-    is(Services.focus.focusedElement, backButton);
+    let customRootLearnMore = document.getElementById("identity-popup-custom-root-learn-more");
+    is(Services.focus.focusedElement, customRootLearnMore, "learn more option for custom roots is focused");
 
     
     let moreInfoButton = document.getElementById("identity-popup-more-info");
+    let focused = BrowserTestUtils.waitForEvent(gIdentityHandler._identityPopup, "focusin");
+    EventUtils.sendKey("tab");
+    await focused;
+    is(Services.focus.focusedElement, moreInfoButton, "more info button is focused");
+
+    
+    let backButton = gIdentityHandler._identityPopup.querySelector(".subviewbutton-back");
+    
     focused = BrowserTestUtils.waitForEvent(gIdentityHandler._identityPopup, "focusin");
     EventUtils.sendKey("tab");
     await focused;
-    isnot(Services.focus.focusedElement, backButton);
-    is(Services.focus.focusedElement, moreInfoButton);
+    is(Services.focus.focusedElement, backButton, "back button is focused");
   });
 });
