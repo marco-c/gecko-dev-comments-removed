@@ -180,7 +180,7 @@ class SMILTimedElement {
 
 
 
-  void RemoveInstanceTimesForCreator(const SMILTimeValueSpec* aSpec,
+  void RemoveInstanceTimesForCreator(const SMILTimeValueSpec* aCreator,
                                      bool aIsBegin);
 
   
