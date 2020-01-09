@@ -22,19 +22,32 @@ using namespace mozilla::gfx;
 
 void ColorLayerComposite::RenderLayer(const gfx::IntRect& aClipRect,
                                       const Maybe<gfx::Polygon>& aGeometry) {
-  Rect rect(GetBounds());
-
   const Matrix4x4& transform = GetEffectiveTransform();
 
-  RenderWithAllMasks(this, mCompositor, aClipRect,
-                     [&](EffectChain& effectChain, const IntRect& clipRect) {
-                       GenEffectChain(effectChain);
+#ifdef MOZ_GFX_OPTIMIZE_MOBILE
+  
+  
+  
+  LayerIntRegion drawRegion = GetLocalVisibleRegion();
+#else
+  LayerIntRegion drawRegion = ViewAs<LayerPixel>(GetBounds());
+#endif
 
-                       mCompositor->DrawGeometry(rect, clipRect, effectChain,
-                                                 GetEffectiveOpacity(),
-                                                 transform, aGeometry);
-                     });
+  for (auto iter = drawRegion.RectIter(); !iter.Done(); iter.Next()) {
+    const LayerIntRect& rect = iter.Get();
+    Rect graphicsRect(rect.X(), rect.Y(), rect.Width(), rect.Height());
 
+    RenderWithAllMasks(this, mCompositor, aClipRect,
+                       [&](EffectChain& effectChain, const IntRect& clipRect) {
+                         GenEffectChain(effectChain);
+
+                         mCompositor->DrawGeometry(
+                             graphicsRect, clipRect, effectChain,
+                             GetEffectiveOpacity(), transform, aGeometry);
+                       });
+  }
+
+  Rect rect(GetBounds());
   mCompositor->DrawDiagnostics(DiagnosticFlags::COLOR, rect, aClipRect,
                                transform);
 }
