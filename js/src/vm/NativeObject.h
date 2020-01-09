@@ -541,11 +541,6 @@ class NativeObject : public JSObject {
   
   
   
-  void setLastPropertyMakeNonNative(Shape* shape);
-
-  
-  
-  
   void setIsSharedMemory() {
     MOZ_ASSERT(elements_ == emptyObjectElements);
     elements_ = emptyObjectElementsShared;
@@ -937,6 +932,7 @@ class NativeObject : public JSObject {
 
   static MOZ_MUST_USE bool fillInAfterSwap(JSContext* cx,
                                            HandleNativeObject obj,
+                                           NativeObject* old,
                                            HandleValueVector values,
                                            void* priv);
 
