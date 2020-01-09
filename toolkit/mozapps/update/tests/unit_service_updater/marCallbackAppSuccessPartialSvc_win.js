@@ -4,20 +4,14 @@
 
 
 
-function run_test() {
+async function run_test() {
   if (!setupTestCommon()) {
     return;
   }
   gTestFiles = gTestFilesPartialSuccess;
   gTestDirs = gTestDirsPartialSuccess;
   gCallbackBinFile = "exe0.exe";
-  setupUpdaterTest(FILE_PARTIAL_MAR, false);
-}
-
-
-
-
-async function setupUpdaterTestFinished() {
+  await setupUpdaterTest(FILE_PARTIAL_MAR, false);
   runUpdate(STATE_SUCCEEDED, false, 0, true);
   await checkPostUpdateAppLog();
   standardInit();

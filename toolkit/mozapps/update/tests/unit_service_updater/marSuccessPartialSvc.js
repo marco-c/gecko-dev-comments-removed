@@ -5,7 +5,7 @@
 
 
 
-function run_test() {
+async function run_test() {
   if (!setupTestCommon()) {
     return;
   }
@@ -16,13 +16,7 @@ function run_test() {
   gTestDirs = gTestDirsPartialSuccess;
   
   
-  setupUpdaterTest(FILE_PARTIAL_MAR, false, "test/../");
-}
-
-
-
-
-async function setupUpdaterTestFinished() {
+  await setupUpdaterTest(FILE_PARTIAL_MAR, false, "test/../");
   runUpdate(STATE_SUCCEEDED, false, 0, true);
   checkAppBundleModTime();
   standardInit();

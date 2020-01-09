@@ -7,23 +7,16 @@
 
 
 
-function run_test() {
+async function run_test() {
   if (!setupTestCommon()) {
     return;
   }
-
   gTestFiles = gTestFilesCompleteSuccess;
   gTestDirs = gTestDirsCompleteSuccess;
   
   
-  setupUpdaterTest(FILE_COMPLETE_MAR, undefined,
-                   getApplyDirFile(null, true).path + "/");
-}
-
-
-
-
-function setupUpdaterTestFinished() {
+  await setupUpdaterTest(FILE_COMPLETE_MAR, undefined,
+                         getApplyDirFile(null, true).path + "/");
   runUpdateUsingApp(STATE_SUCCEEDED);
 }
 

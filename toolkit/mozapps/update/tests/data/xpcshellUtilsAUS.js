@@ -2148,30 +2148,6 @@ function isBinarySigned(aBinPath) {
 
 
 
-
-
-
-function setupAppFilesAsync() {
-  gTimeoutRuns++;
-  try {
-    setupAppFiles();
-  } catch (e) {
-    if (gTimeoutRuns > MAX_TIMEOUT_RUNS) {
-      do_throw("Exceeded MAX_TIMEOUT_RUNS while trying to setup application " +
-               "files! Exception: " + e);
-    }
-    executeSoon(setupAppFilesAsync);
-    return;
-  }
-
-  executeSoon(setupUpdaterTestFinished);
-}
-
-
-
-
-
-
 function setupAppFiles() {
   debugDump("start - copying or creating symlinks to application files " +
             "for the test");
@@ -2689,7 +2665,7 @@ async function waitForHelperExit() {
 
 
 
-function setupUpdaterTest(aMarFile, aPostUpdateAsync,
+async function setupUpdaterTest(aMarFile, aPostUpdateAsync,
                           aPostUpdateExeRelPathPrefix = "",
                           aSetupActiveUpdate = true) {
   debugDump("start - updater test setup");
@@ -2787,8 +2763,17 @@ function setupUpdaterTest(aMarFile, aPostUpdateAsync,
     createUpdaterINI(aPostUpdateAsync, aPostUpdateExeRelPathPrefix);
   }
 
+  await TestUtils.waitForCondition(() => {
+    try {
+      setupAppFiles();
+      return true;
+    } catch (e) {
+      logTestInfo("exception when calling setupAppFiles, Exception: " + e);
+    }
+    return false;
+  }, "Waiting to setup app files");
+
   debugDump("finish - updater test setup");
-  setupAppFilesAsync();
 }
 
 

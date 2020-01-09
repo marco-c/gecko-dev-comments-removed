@@ -4,20 +4,15 @@
 
 
 
-function run_test() {
+async function run_test() {
   if (!setupTestCommon()) {
     return;
   }
   gTestFiles = gTestFilesPartialSuccess;
   gTestDirs = gTestDirsPartialSuccess;
-  setupUpdaterTest(FILE_PARTIAL_MAR, false);
-}
-
-
-
-
-async function setupUpdaterTestFinished() {
-  await runHelperFileInUse(gTestDirs[2].relPathDir + gTestDirs[2].files[0], true);
+  await setupUpdaterTest(FILE_PARTIAL_MAR, false);
+  await runHelperFileInUse(gTestDirs[2].relPathDir + gTestDirs[2].files[0],
+                           true);
   runUpdate(STATE_SUCCEEDED, false, 0, true);
   await waitForHelperExit();
   await checkPostUpdateAppLog();

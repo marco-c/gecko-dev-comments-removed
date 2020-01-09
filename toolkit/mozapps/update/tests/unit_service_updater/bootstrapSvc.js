@@ -4,7 +4,7 @@
 
 
 
-function run_test() {
+async function run_test() {
   if (!setupTestCommon()) {
     return;
   }
@@ -12,13 +12,7 @@ function run_test() {
   
   gTestFiles = gTestFilesCommon;
   gTestDirs = [];
-  setupUpdaterTest(FILE_COMPLETE_MAR, null);
-}
-
-
-
-
-function setupUpdaterTestFinished() {
+  await setupUpdaterTest(FILE_COMPLETE_MAR, null);
   runUpdate(STATE_SUCCEEDED, false, 0, true);
   checkFilesAfterUpdateSuccess(getApplyDirFile, false, false);
 
