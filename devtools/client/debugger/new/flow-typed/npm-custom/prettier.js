@@ -1,0 +1,7 @@
+
+
+
+
+declare module "prettier" {
+  declare module.exports: any;
+}

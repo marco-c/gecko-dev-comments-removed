@@ -7,7 +7,7 @@
 		var a = typeof exports === 'object' ? factory(require("devtools/shared/flags")) : factory(root["devtools/shared/flags"]);
 		for(var i in a) (typeof exports === 'object' ? exports : root)[i] = a[i];
 	}
-})(typeof self !== 'undefined' ? self : this, function(__WEBPACK_EXTERNAL_MODULE_52__) {
+})(typeof self !== 'undefined' ? self : this, function(__WEBPACK_EXTERNAL_MODULE_68__) {
 return  (function(modules) { 
  	
  	var installedModules = {};
@@ -70,28 +70,543 @@ return  (function(modules) {
  	__webpack_require__.p = "/assets/build";
 
  	
- 	return __webpack_require__(__webpack_require__.s = 1284);
+ 	return __webpack_require__(__webpack_require__.s = 734);
  })
 
  ({
 
- 10:
+ 16:
  (function(module, exports, __webpack_require__) {
 
-var Symbol = __webpack_require__(7);
-
-
-var objectProto = Object.prototype;
-
-
-var hasOwnProperty = objectProto.hasOwnProperty;
 
 
 
 
+const networkRequest = __webpack_require__(27);
+const workerUtils = __webpack_require__(28);
+
+module.exports = {
+  networkRequest,
+  workerUtils
+};
+
+ }),
+
+ 165:
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
 
 
-var nativeObjectToString = objectProto.toString;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = buildQuery;
+
+var _escapeRegExp = __webpack_require__(166);
+
+var _escapeRegExp2 = _interopRequireDefault(_escapeRegExp);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+
+
+
+
+
+
+function ignoreWhiteSpace(str) {
+  return (/^\s{0,2}$/.test(str) ? "(?!\\s*.*)" : str
+  );
+} 
+
+
+
+function wholeMatch(query, wholeWord) {
+  if (query === "" || !wholeWord) {
+    return query;
+  }
+
+  return `\\b${query}\\b`;
+}
+
+function buildFlags(caseSensitive, isGlobal) {
+  if (caseSensitive && isGlobal) {
+    return "g";
+  }
+
+  if (!caseSensitive && isGlobal) {
+    return "gi";
+  }
+
+  if (!caseSensitive && !isGlobal) {
+    return "i";
+  }
+
+  return;
+}
+
+function buildQuery(originalQuery, modifiers, { isGlobal = false, ignoreSpaces = false }) {
+  const { caseSensitive, regexMatch, wholeWord } = modifiers;
+
+  if (originalQuery === "") {
+    return new RegExp(originalQuery);
+  }
+
+  let query = originalQuery;
+  if (ignoreSpaces) {
+    query = ignoreWhiteSpace(query);
+  }
+
+  if (!regexMatch) {
+    query = (0, _escapeRegExp2.default)(query);
+  }
+
+  query = wholeMatch(query, wholeWord);
+  const flags = buildFlags(caseSensitive, isGlobal);
+
+  if (flags) {
+    return new RegExp(query, flags);
+  }
+
+  return new RegExp(query);
+}
+
+ }),
+
+ 166:
+ (function(module, exports, __webpack_require__) {
+
+var toString = __webpack_require__(70);
+
+
+
+
+
+var reRegExpChar = /[\\^$.*+?()[\]{}|]/g,
+    reHasRegExpChar = RegExp(reRegExpChar.source);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function escapeRegExp(string) {
+  string = toString(string);
+  return (string && reHasRegExpChar.test(string))
+    ? string.replace(reRegExpChar, '\\$&')
+    : string;
+}
+
+module.exports = escapeRegExp;
+
+
+ }),
+
+ 21:
+ (function(module, exports, __webpack_require__) {
+
+var freeGlobal = __webpack_require__(71);
+
+
+var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
+
+
+var root = freeGlobal || freeSelf || Function('return this')();
+
+module.exports = root;
+
+
+ }),
+
+ 22:
+ (function(module, exports) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var isArray = Array.isArray;
+
+module.exports = isArray;
+
+
+ }),
+
+ 25:
+ (function(module, exports) {
+
+var g;
+
+
+g = (function() {
+	return this;
+})();
+
+try {
+	
+	g = g || Function("return this")() || (1,eval)("this");
+} catch(e) {
+	
+	if(typeof window === "object")
+		g = window;
+}
+
+
+
+
+
+module.exports = g;
+
+
+ }),
+
+ 26:
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+(function(process) {
+
+
+
+
+
+const flag = __webpack_require__(68);
+
+function isBrowser() {
+  return typeof window == "object";
+}
+
+function isNode() {
+  return process && process.release && process.release.name == 'node';
+}
+
+function isDevelopment() {
+  if (!isNode() && isBrowser()) {
+    const href = window.location ? window.location.href : "";
+    return href.match(/^file:/) || href.match(/localhost:/);
+  }
+
+  return "production" != "production";
+}
+
+function isTesting() {
+  return flag.testing;
+}
+
+function isFirefoxPanel() {
+  return !isDevelopment();
+}
+
+function isFirefox() {
+  return (/firefox/i.test(navigator.userAgent)
+  );
+}
+
+module.exports = {
+  isDevelopment,
+  isTesting,
+  isFirefoxPanel,
+  isFirefox
+};
+}.call(exports, __webpack_require__(50)))
+
+ }),
+
+ 27:
+ (function(module, exports) {
+
+
+
+
+
+function networkRequest(url, opts) {
+  return fetch(url, {
+    cache: opts.loadFromCache ? "default" : "no-cache"
+  }).then(res => {
+    if (res.status >= 200 && res.status < 300) {
+      if (res.headers.get("Content-Type") === "application/wasm") {
+        return res.arrayBuffer().then(buffer => ({
+          content: buffer,
+          isDwarf: true
+        }));
+      }
+      return res.text().then(text => ({ content: text }));
+    }
+    return Promise.reject(`request failed with status ${res.status}`);
+  });
+}
+
+module.exports = networkRequest;
+
+ }),
+
+ 28:
+ (function(module, exports) {
+
+function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
+
+function WorkerDispatcher() {
+  this.msgId = 1;
+  this.worker = null;
+} 
+
+
+
+WorkerDispatcher.prototype = {
+  start(url, win = window) {
+    this.worker = new win.Worker(url);
+    this.worker.onerror = () => {
+      console.error(`Error in worker ${url}`);
+    };
+  },
+
+  stop() {
+    if (!this.worker) {
+      return;
+    }
+
+    this.worker.terminate();
+    this.worker = null;
+  },
+
+  task(method, { queue = false } = {}) {
+    const calls = [];
+    const push = args => {
+      return new Promise((resolve, reject) => {
+        if (queue && calls.length === 0) {
+          Promise.resolve().then(flush);
+        }
+
+        calls.push([args, resolve, reject]);
+
+        if (!queue) {
+          flush();
+        }
+      });
+    };
+
+    const flush = () => {
+      const items = calls.slice();
+      calls.length = 0;
+
+      if (!this.worker) {
+        return;
+      }
+
+      const id = this.msgId++;
+      this.worker.postMessage({
+        id,
+        method,
+        calls: items.map(item => item[0])
+      });
+
+      const listener = ({ data: result }) => {
+        if (result.id !== id) {
+          return;
+        }
+
+        if (!this.worker) {
+          return;
+        }
+
+        this.worker.removeEventListener("message", listener);
+
+        result.results.forEach((resultData, i) => {
+          const [, resolve, reject] = items[i];
+
+          if (resultData.error) {
+            reject(resultData.error);
+          } else {
+            resolve(resultData.response);
+          }
+        });
+      };
+
+      this.worker.addEventListener("message", listener);
+    };
+
+    return (...args) => push(args);
+  },
+
+  invoke(method, ...args) {
+    return this.task(method)(...args);
+  }
+};
+
+function workerHandler(publicInterface) {
+  return function (msg) {
+    const { id, method, calls } = msg.data;
+
+    Promise.all(calls.map(args => {
+      try {
+        const response = publicInterface[method].apply(undefined, args);
+        if (response instanceof Promise) {
+          return response.then(val => ({ response: val }),
+          
+          
+          err => ({ error: err.toString() }));
+        }
+        return { response };
+      } catch (error) {
+        
+        
+        return { error: error.toString() };
+      }
+    })).then(results => {
+      self.postMessage({ id, results });
+    });
+  };
+}
+
+function streamingWorkerHandler(publicInterface, { timeout = 100 } = {}, worker = self) {
+  let streamingWorker = (() => {
+    var _ref = _asyncToGenerator(function* (id, tasks) {
+      let isWorking = true;
+
+      const timeoutId = setTimeout(function () {
+        isWorking = false;
+      }, timeout);
+
+      const results = [];
+      while (tasks.length !== 0 && isWorking) {
+        const { callback, context, args } = tasks.shift();
+        const result = yield callback.call(context, args);
+        results.push(result);
+      }
+      worker.postMessage({ id, status: "pending", data: results });
+      clearTimeout(timeoutId);
+
+      if (tasks.length !== 0) {
+        yield streamingWorker(id, tasks);
+      }
+    });
+
+    return function streamingWorker(_x, _x2) {
+      return _ref.apply(this, arguments);
+    };
+  })();
+
+  return (() => {
+    var _ref2 = _asyncToGenerator(function* (msg) {
+      const { id, method, args } = msg.data;
+      const workerMethod = publicInterface[method];
+      if (!workerMethod) {
+        console.error(`Could not find ${method} defined in worker.`);
+      }
+      worker.postMessage({ id, status: "start" });
+
+      try {
+        const tasks = workerMethod(args);
+        yield streamingWorker(id, tasks);
+        worker.postMessage({ id, status: "done" });
+      } catch (error) {
+        worker.postMessage({ id, status: "error", error });
+      }
+    });
+
+    return function (_x3) {
+      return _ref2.apply(this, arguments);
+    };
+  })();
+}
+
+module.exports = {
+  WorkerDispatcher,
+  workerHandler,
+  streamingWorkerHandler
+};
+
+ }),
+
+ 29:
+ (function(module, exports, __webpack_require__) {
+
+var root = __webpack_require__(21);
+
+
+var Symbol = root.Symbol;
+
+module.exports = Symbol;
+
+
+ }),
+
+ 30:
+ (function(module, exports) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function isObjectLike(value) {
+  return value != null && typeof value == 'object';
+}
+
+module.exports = isObjectLike;
+
+
+ }),
+
+ 35:
+ (function(module, exports, __webpack_require__) {
+
+var Symbol = __webpack_require__(29),
+    getRawTag = __webpack_require__(87),
+    objectToString = __webpack_require__(88);
+
+
+var nullTag = '[object Null]',
+    undefinedTag = '[object Undefined]';
 
 
 var symToStringTag = Symbol ? Symbol.toStringTag : undefined;
@@ -103,168 +618,80 @@ var symToStringTag = Symbol ? Symbol.toStringTag : undefined;
 
 
 
-function getRawTag(value) {
-  var isOwn = hasOwnProperty.call(value, symToStringTag),
-      tag = value[symToStringTag];
+function baseGetTag(value) {
+  if (value == null) {
+    return value === undefined ? undefinedTag : nullTag;
+  }
+  return (symToStringTag && symToStringTag in Object(value))
+    ? getRawTag(value)
+    : objectToString(value);
+}
 
-  try {
-    value[symToStringTag] = undefined;
-    var unmasked = true;
-  } catch (e) {}
+module.exports = baseGetTag;
 
-  var result = nativeObjectToString.call(value);
-  if (unmasked) {
-    if (isOwn) {
-      value[symToStringTag] = tag;
-    } else {
-      delete value[symToStringTag];
+
+ }),
+
+ 357:
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = getMatches;
+
+var _assert = __webpack_require__(57);
+
+var _assert2 = _interopRequireDefault(_assert);
+
+var _buildQuery = __webpack_require__(165);
+
+var _buildQuery2 = _interopRequireDefault(_buildQuery);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+
+
+
+
+function getMatches(query, text, modifiers) {
+  if (!query || !text || !modifiers) {
+    return [];
+  }
+  const regexQuery = (0, _buildQuery2.default)(query, modifiers, {
+    isGlobal: true
+  });
+  const matchedLocations = [];
+  const lines = text.split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    let singleMatch;
+    const line = lines[i];
+    while ((singleMatch = regexQuery.exec(line)) !== null) {
+      
+      if (!singleMatch) {
+        throw new Error("no singleMatch");
+      }
+
+      matchedLocations.push({ line: i, ch: singleMatch.index });
+
+      
+      
+      
+      if (singleMatch[0] === "") {
+        (0, _assert2.default)(!regexQuery.unicode, "lastIndex++ can cause issues in unicode mode");
+        regexQuery.lastIndex++;
+      }
     }
   }
-  return result;
+  return matchedLocations;
 }
-
-module.exports = getRawTag;
-
 
  }),
 
- 108:
- (function(module, exports, __webpack_require__) {
-
-var baseToString = __webpack_require__(109);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function toString(value) {
-  return value == null ? '' : baseToString(value);
-}
-
-module.exports = toString;
-
-
- }),
-
- 109:
- (function(module, exports, __webpack_require__) {
-
-var Symbol = __webpack_require__(7),
-    arrayMap = __webpack_require__(110),
-    isArray = __webpack_require__(70),
-    isSymbol = __webpack_require__(72);
-
-
-var INFINITY = 1 / 0;
-
-
-var symbolProto = Symbol ? Symbol.prototype : undefined,
-    symbolToString = symbolProto ? symbolProto.toString : undefined;
-
-
-
-
-
-
-
-
-
-function baseToString(value) {
-  
-  if (typeof value == 'string') {
-    return value;
-  }
-  if (isArray(value)) {
-    
-    return arrayMap(value, baseToString) + '';
-  }
-  if (isSymbol(value)) {
-    return symbolToString ? symbolToString.call(value) : '';
-  }
-  var result = (value + '');
-  return (result == '0' && (1 / value) == -INFINITY) ? '-0' : result;
-}
-
-module.exports = baseToString;
-
-
- }),
-
- 11:
- (function(module, exports) {
-
-
-var objectProto = Object.prototype;
-
-
-
-
-
-
-var nativeObjectToString = objectProto.toString;
-
-
-
-
-
-
-
-
-function objectToString(value) {
-  return nativeObjectToString.call(value);
-}
-
-module.exports = objectToString;
-
-
- }),
-
- 110:
- (function(module, exports) {
-
-
-
-
-
-
-
-
-
-
-function arrayMap(array, iteratee) {
-  var index = -1,
-      length = array == null ? 0 : array.length,
-      result = Array(length);
-
-  while (++index < length) {
-    result[index] = iteratee(array[index], index, array);
-  }
-  return result;
-}
-
-module.exports = arrayMap;
-
-
- }),
-
- 120:
+ 50:
  (function(module, exports) {
 
 
@@ -455,15 +882,43 @@ process.umask = function() { return 0; };
 
  }),
 
- 1284:
+ 52:
  (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(1631);
+var baseGetTag = __webpack_require__(35),
+    isObjectLike = __webpack_require__(30);
+
+
+var symbolTag = '[object Symbol]';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function isSymbol(value) {
+  return typeof value == 'symbol' ||
+    (isObjectLike(value) && baseGetTag(value) == symbolTag);
+}
+
+module.exports = isSymbol;
 
 
  }),
 
- 1384:
+ 57:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -474,7 +929,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = assert;
 
-var _devtoolsEnvironment = __webpack_require__(3721);
+var _devtoolsEnvironment = __webpack_require__(26);
 
 function assert(condition, message) {
   if ((0, _devtoolsEnvironment.isDevelopment)() && !condition) {
@@ -486,9 +941,17 @@ function assert(condition, message) {
 
  }),
 
- 14:
+ 68:
  (function(module, exports) {
 
+module.exports = __WEBPACK_EXTERNAL_MODULE_68__;
+
+ }),
+
+ 70:
+ (function(module, exports, __webpack_require__) {
+
+var baseToString = __webpack_require__(85);
 
 
 
@@ -511,30 +974,48 @@ function assert(condition, message) {
 
 
 
-
-
-function isObjectLike(value) {
-  return value != null && typeof value == 'object';
+function toString(value) {
+  return value == null ? '' : baseToString(value);
 }
 
-module.exports = isObjectLike;
+module.exports = toString;
 
 
  }),
 
- 1631:
+ 71:
+ (function(module, exports, __webpack_require__) {
+
+(function(global) {
+var freeGlobal = typeof global == 'object' && global && global.Object === Object && global;
+
+module.exports = freeGlobal;
+
+}.call(exports, __webpack_require__(25)))
+
+ }),
+
+ 734:
+ (function(module, exports, __webpack_require__) {
+
+module.exports = __webpack_require__(735);
+
+
+ }),
+
+ 735:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var _getMatches = __webpack_require__(1632);
+var _getMatches = __webpack_require__(357);
 
 var _getMatches2 = _interopRequireDefault(_getMatches);
 
-var _projectSearch = __webpack_require__(1633);
+var _projectSearch = __webpack_require__(736);
 
-var _devtoolsUtils = __webpack_require__(3651);
+var _devtoolsUtils = __webpack_require__(16);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -546,66 +1027,7 @@ self.onmessage = workerHandler({ getMatches: _getMatches2.default, findSourceMat
 
  }),
 
- 1632:
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = getMatches;
-
-var _assert = __webpack_require__(1384);
-
-var _assert2 = _interopRequireDefault(_assert);
-
-var _buildQuery = __webpack_require__(3761);
-
-var _buildQuery2 = _interopRequireDefault(_buildQuery);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-
-
-
-
-function getMatches(query, text, modifiers) {
-  if (!query || !text || !modifiers) {
-    return [];
-  }
-  const regexQuery = (0, _buildQuery2.default)(query, modifiers, {
-    isGlobal: true
-  });
-  const matchedLocations = [];
-  const lines = text.split("\n");
-  for (let i = 0; i < lines.length; i++) {
-    let singleMatch;
-    const line = lines[i];
-    while ((singleMatch = regexQuery.exec(line)) !== null) {
-      
-      if (!singleMatch) {
-        throw new Error("no singleMatch");
-      }
-
-      matchedLocations.push({ line: i, ch: singleMatch.index });
-
-      
-      
-      
-      if (singleMatch[0] === "") {
-        (0, _assert2.default)(!regexQuery.unicode, "lastIndex++ can cause issues in unicode mode");
-        regexQuery.lastIndex++;
-      }
-    }
-  }
-  return matchedLocations;
-}
-
- }),
-
- 1633:
+ 736:
  (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -616,7 +1038,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.findSourceMatches = findSourceMatches;
 
-var _getMatches = __webpack_require__(1632);
+var _getMatches = __webpack_require__(357);
 
 var _getMatches2 = _interopRequireDefault(_getMatches);
 
@@ -693,23 +1115,20 @@ function truncateLine(text, column) {
 
  }),
 
- 259:
+ 85:
  (function(module, exports, __webpack_require__) {
 
-var toString = __webpack_require__(108);
+var Symbol = __webpack_require__(29),
+    arrayMap = __webpack_require__(86),
+    isArray = __webpack_require__(22),
+    isSymbol = __webpack_require__(52);
 
 
+var INFINITY = 1 / 0;
 
 
-
-var reRegExpChar = /[\\^$.*+?()[\]{}|]/g,
-    reHasRegExpChar = RegExp(reRegExpChar.source);
-
-
-
-
-
-
+var symbolProto = Symbol ? Symbol.prototype : undefined,
+    symbolToString = symbolProto ? symbolProto.toString : undefined;
 
 
 
@@ -719,393 +1138,72 @@ var reRegExpChar = /[\\^$.*+?()[\]{}|]/g,
 
 
 
-
-function escapeRegExp(string) {
-  string = toString(string);
-  return (string && reHasRegExpChar.test(string))
-    ? string.replace(reRegExpChar, '\\$&')
-    : string;
+function baseToString(value) {
+  
+  if (typeof value == 'string') {
+    return value;
+  }
+  if (isArray(value)) {
+    
+    return arrayMap(value, baseToString) + '';
+  }
+  if (isSymbol(value)) {
+    return symbolToString ? symbolToString.call(value) : '';
+  }
+  var result = (value + '');
+  return (result == '0' && (1 / value) == -INFINITY) ? '-0' : result;
 }
 
-module.exports = escapeRegExp;
+module.exports = baseToString;
 
 
  }),
 
- 3651:
- (function(module, exports, __webpack_require__) {
-
-
-
-
-
-const networkRequest = __webpack_require__(3653);
-const workerUtils = __webpack_require__(3654);
-
-module.exports = {
-  networkRequest,
-  workerUtils
-};
-
- }),
-
- 3653:
+ 86:
  (function(module, exports) {
 
 
 
 
 
-function networkRequest(url, opts) {
-  return fetch(url, {
-    cache: opts.loadFromCache ? "default" : "no-cache"
-  }).then(res => {
-    if (res.status >= 200 && res.status < 300) {
-      if (res.headers.get("Content-Type") === "application/wasm") {
-        return res.arrayBuffer().then(buffer => ({
-          content: buffer,
-          isDwarf: true
-        }));
-      }
-      return res.text().then(text => ({ content: text }));
-    }
-    return Promise.reject(`request failed with status ${res.status}`);
-  });
-}
-
-module.exports = networkRequest;
-
- }),
-
- 3654:
- (function(module, exports) {
-
-function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-
-function WorkerDispatcher() {
-  this.msgId = 1;
-  this.worker = null;
-} 
 
 
 
-WorkerDispatcher.prototype = {
-  start(url, win = window) {
-    this.worker = new win.Worker(url);
-    this.worker.onerror = () => {
-      console.error(`Error in worker ${url}`);
-    };
-  },
 
-  stop() {
-    if (!this.worker) {
-      return;
-    }
 
-    this.worker.terminate();
-    this.worker = null;
-  },
+function arrayMap(array, iteratee) {
+  var index = -1,
+      length = array == null ? 0 : array.length,
+      result = Array(length);
 
-  task(method, { queue = false } = {}) {
-    const calls = [];
-    const push = args => {
-      return new Promise((resolve, reject) => {
-        if (queue && calls.length === 0) {
-          Promise.resolve().then(flush);
-        }
-
-        calls.push([args, resolve, reject]);
-
-        if (!queue) {
-          flush();
-        }
-      });
-    };
-
-    const flush = () => {
-      const items = calls.slice();
-      calls.length = 0;
-
-      if (!this.worker) {
-        return;
-      }
-
-      const id = this.msgId++;
-      this.worker.postMessage({
-        id,
-        method,
-        calls: items.map(item => item[0])
-      });
-
-      const listener = ({ data: result }) => {
-        if (result.id !== id) {
-          return;
-        }
-
-        if (!this.worker) {
-          return;
-        }
-
-        this.worker.removeEventListener("message", listener);
-
-        result.results.forEach((resultData, i) => {
-          const [, resolve, reject] = items[i];
-
-          if (resultData.error) {
-            reject(resultData.error);
-          } else {
-            resolve(resultData.response);
-          }
-        });
-      };
-
-      this.worker.addEventListener("message", listener);
-    };
-
-    return (...args) => push(args);
-  },
-
-  invoke(method, ...args) {
-    return this.task(method)(...args);
+  while (++index < length) {
+    result[index] = iteratee(array[index], index, array);
   }
-};
-
-function workerHandler(publicInterface) {
-  return function (msg) {
-    const { id, method, calls } = msg.data;
-
-    Promise.all(calls.map(args => {
-      try {
-        const response = publicInterface[method].apply(undefined, args);
-        if (response instanceof Promise) {
-          return response.then(val => ({ response: val }),
-          
-          
-          err => ({ error: err.toString() }));
-        }
-        return { response };
-      } catch (error) {
-        
-        
-        return { error: error.toString() };
-      }
-    })).then(results => {
-      self.postMessage({ id, results });
-    });
-  };
+  return result;
 }
 
-function streamingWorkerHandler(publicInterface, { timeout = 100 } = {}, worker = self) {
-  let streamingWorker = (() => {
-    var _ref = _asyncToGenerator(function* (id, tasks) {
-      let isWorking = true;
+module.exports = arrayMap;
 
-      const timeoutId = setTimeout(function () {
-        isWorking = false;
-      }, timeout);
-
-      const results = [];
-      while (tasks.length !== 0 && isWorking) {
-        const { callback, context, args } = tasks.shift();
-        const result = yield callback.call(context, args);
-        results.push(result);
-      }
-      worker.postMessage({ id, status: "pending", data: results });
-      clearTimeout(timeoutId);
-
-      if (tasks.length !== 0) {
-        yield streamingWorker(id, tasks);
-      }
-    });
-
-    return function streamingWorker(_x, _x2) {
-      return _ref.apply(this, arguments);
-    };
-  })();
-
-  return (() => {
-    var _ref2 = _asyncToGenerator(function* (msg) {
-      const { id, method, args } = msg.data;
-      const workerMethod = publicInterface[method];
-      if (!workerMethod) {
-        console.error(`Could not find ${method} defined in worker.`);
-      }
-      worker.postMessage({ id, status: "start" });
-
-      try {
-        const tasks = workerMethod(args);
-        yield streamingWorker(id, tasks);
-        worker.postMessage({ id, status: "done" });
-      } catch (error) {
-        worker.postMessage({ id, status: "error", error });
-      }
-    });
-
-    return function (_x3) {
-      return _ref2.apply(this, arguments);
-    };
-  })();
-}
-
-module.exports = {
-  WorkerDispatcher,
-  workerHandler,
-  streamingWorkerHandler
-};
 
  }),
 
- 3721:
+ 87:
  (function(module, exports, __webpack_require__) {
 
-"use strict";
-(function(process) {
+var Symbol = __webpack_require__(29);
 
 
+var objectProto = Object.prototype;
 
 
-
-const flag = __webpack_require__(52);
-
-function isBrowser() {
-  return typeof window == "object";
-}
-
-function isNode() {
-  return process && process.release && process.release.name == 'node';
-}
-
-function isDevelopment() {
-  if (!isNode() && isBrowser()) {
-    const href = window.location ? window.location.href : "";
-    return href.match(/^file:/) || href.match(/localhost:/);
-  }
-
-  return "production" != "production";
-}
-
-function isTesting() {
-  return flag.testing;
-}
-
-function isFirefoxPanel() {
-  return !isDevelopment();
-}
-
-function isFirefox() {
-  return (/firefox/i.test(navigator.userAgent)
-  );
-}
-
-module.exports = {
-  isDevelopment,
-  isTesting,
-  isFirefoxPanel,
-  isFirefox
-};
-}.call(exports, __webpack_require__(120)))
-
- }),
-
- 3761:
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = buildQuery;
-
-var _escapeRegExp = __webpack_require__(259);
-
-var _escapeRegExp2 = _interopRequireDefault(_escapeRegExp);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var hasOwnProperty = objectProto.hasOwnProperty;
 
 
 
 
 
 
-
-function ignoreWhiteSpace(str) {
-  return (/^\s{0,2}$/.test(str) ? "(?!\\s*.*)" : str
-  );
-} 
-
-
-
-function wholeMatch(query, wholeWord) {
-  if (query === "" || !wholeWord) {
-    return query;
-  }
-
-  return `\\b${query}\\b`;
-}
-
-function buildFlags(caseSensitive, isGlobal) {
-  if (caseSensitive && isGlobal) {
-    return "g";
-  }
-
-  if (!caseSensitive && isGlobal) {
-    return "gi";
-  }
-
-  if (!caseSensitive && !isGlobal) {
-    return "i";
-  }
-
-  return;
-}
-
-function buildQuery(originalQuery, modifiers, { isGlobal = false, ignoreSpaces = false }) {
-  const { caseSensitive, regexMatch, wholeWord } = modifiers;
-
-  if (originalQuery === "") {
-    return new RegExp(originalQuery);
-  }
-
-  let query = originalQuery;
-  if (ignoreSpaces) {
-    query = ignoreWhiteSpace(query);
-  }
-
-  if (!regexMatch) {
-    query = (0, _escapeRegExp2.default)(query);
-  }
-
-  query = wholeMatch(query, wholeWord);
-  const flags = buildFlags(caseSensitive, isGlobal);
-
-  if (flags) {
-    return new RegExp(query, flags);
-  }
-
-  return new RegExp(query);
-}
-
- }),
-
- 52:
- (function(module, exports) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE_52__;
-
- }),
-
- 6:
- (function(module, exports, __webpack_require__) {
-
-var Symbol = __webpack_require__(7),
-    getRawTag = __webpack_require__(10),
-    objectToString = __webpack_require__(11);
-
-
-var nullTag = '[object Null]',
-    undefinedTag = '[object Undefined]';
+var nativeObjectToString = objectProto.toString;
 
 
 var symToStringTag = Symbol ? Symbol.toStringTag : undefined;
@@ -1117,37 +1215,43 @@ var symToStringTag = Symbol ? Symbol.toStringTag : undefined;
 
 
 
-function baseGetTag(value) {
-  if (value == null) {
-    return value === undefined ? undefinedTag : nullTag;
+function getRawTag(value) {
+  var isOwn = hasOwnProperty.call(value, symToStringTag),
+      tag = value[symToStringTag];
+
+  try {
+    value[symToStringTag] = undefined;
+    var unmasked = true;
+  } catch (e) {}
+
+  var result = nativeObjectToString.call(value);
+  if (unmasked) {
+    if (isOwn) {
+      value[symToStringTag] = tag;
+    } else {
+      delete value[symToStringTag];
+    }
   }
-  return (symToStringTag && symToStringTag in Object(value))
-    ? getRawTag(value)
-    : objectToString(value);
+  return result;
 }
 
-module.exports = baseGetTag;
+module.exports = getRawTag;
 
 
  }),
 
- 7:
- (function(module, exports, __webpack_require__) {
-
-var root = __webpack_require__(8);
-
-
-var Symbol = root.Symbol;
-
-module.exports = Symbol;
-
-
- }),
-
- 70:
+ 88:
  (function(module, exports) {
 
 
+var objectProto = Object.prototype;
+
+
+
+
+
+
+var nativeObjectToString = objectProto.toString;
 
 
 
@@ -1156,116 +1260,12 @@ module.exports = Symbol;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var isArray = Array.isArray;
-
-module.exports = isArray;
-
-
- }),
-
- 72:
- (function(module, exports, __webpack_require__) {
-
-var baseGetTag = __webpack_require__(6),
-    isObjectLike = __webpack_require__(14);
-
-
-var symbolTag = '[object Symbol]';
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function isSymbol(value) {
-  return typeof value == 'symbol' ||
-    (isObjectLike(value) && baseGetTag(value) == symbolTag);
+function objectToString(value) {
+  return nativeObjectToString.call(value);
 }
 
-module.exports = isSymbol;
+module.exports = objectToString;
 
-
- }),
-
- 792:
- (function(module, exports) {
-
-var g;
-
-
-g = (function() {
-	return this;
-})();
-
-try {
-	
-	g = g || Function("return this")() || (1,eval)("this");
-} catch(e) {
-	
-	if(typeof window === "object")
-		g = window;
-}
-
-
-
-
-
-module.exports = g;
-
-
- }),
-
- 8:
- (function(module, exports, __webpack_require__) {
-
-var freeGlobal = __webpack_require__(9);
-
-
-var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
-
-
-var root = freeGlobal || freeSelf || Function('return this')();
-
-module.exports = root;
-
-
- }),
-
- 9:
- (function(module, exports, __webpack_require__) {
-
-(function(global) {
-var freeGlobal = typeof global == 'object' && global && global.Object === Object && global;
-
-module.exports = freeGlobal;
-
-}.call(exports, __webpack_require__(792)))
 
  })
 
