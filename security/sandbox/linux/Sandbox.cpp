@@ -653,4 +653,24 @@ void SetMediaPluginSandbox(const char* aFilePath) {
 }
 #endif  
 
+void SetRemoteDataDecoderSandbox(int aBroker) {
+  if (PR_GetEnv("MOZ_DISABLE_RDD_SANDBOX") != nullptr) {
+    if (aBroker >= 0) {
+      close(aBroker);
+    }
+    return;
+  }
+
+  gSandboxReporterClient =
+      new SandboxReporterClient(SandboxReport::ProcType::RDD);
+
+  
+  static SandboxBrokerClient* sBroker;
+  if (aBroker >= 0) {
+    sBroker = new SandboxBrokerClient(aBroker);
+  }
+
+  SetCurrentProcessSandbox(GetDecoderSandboxPolicy(sBroker));
+}
+
 }  

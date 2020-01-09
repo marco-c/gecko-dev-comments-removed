@@ -1400,4 +1400,23 @@ UniquePtr<sandbox::bpf_dsl::Policy> GetMediaSandboxPolicy(
 
 #endif  
 
+
+
+
+
+
+class RDDSandboxPolicy final : public SandboxPolicyCommon {
+ public:
+  explicit RDDSandboxPolicy(SandboxBrokerClient* aBroker)
+      : SandboxPolicyCommon(aBroker) {}
+
+  
+};
+
+UniquePtr<sandbox::bpf_dsl::Policy> GetDecoderSandboxPolicy(
+    SandboxBrokerClient* aMaybeBroker) {
+  return UniquePtr<sandbox::bpf_dsl::Policy>(
+      new RDDSandboxPolicy(aMaybeBroker));
+}
+
 }  
