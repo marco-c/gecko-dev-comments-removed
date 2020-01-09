@@ -1376,7 +1376,6 @@ var gBrowserInit = {
     TabsInTitlebar.init();
 
     new LightweightThemeConsumer(document);
-    CompactTheme.init();
 
     if (AppConstants.platform == "win") {
       if (window.matchMedia("(-moz-os-version: windows-win8)").matches &&
@@ -2003,8 +2002,6 @@ var gBrowserInit = {
     TabsInTitlebar.uninit();
 
     ToolbarIconColor.uninit();
-
-    CompactTheme.uninit();
 
     
     
