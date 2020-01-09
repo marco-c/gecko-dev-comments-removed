@@ -416,14 +416,7 @@ class GeckoViewContentChild extends GeckoViewChildModule {
         break;
       case "DOMContentLoaded": {
         content.requestIdleCallback(async () => {
-          let manifest = null;
-          try {
-            manifest = await ManifestObtainer.contentObtainManifest(content);
-          } catch (e) {
-            
-            
-          }
-
+          const manifest = await ManifestObtainer.contentObtainManifest(content);
           if (manifest) {
             this.eventDispatcher.sendRequest({
               type: "GeckoView:WebAppManifest",
