@@ -22,6 +22,9 @@ class nsDataHandler : public nsIProtocolHandler,
   
   nsDataHandler() = default;
 
+  static nsresult CreateNewURI(const nsACString& aSpec, const char* aCharset,
+                               nsIURI* aBaseURI, nsIURI** result);
+
   
   static MOZ_MUST_USE nsresult Create(nsISupports* aOuter, const nsIID& aIID,
                                       void** aResult);
