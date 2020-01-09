@@ -182,7 +182,8 @@ gfxFontCache::gfxFontCache(nsIEventTarget* aEventTarget)
     obs->AddObserver(new Observer, "memory-pressure", false);
   }
 
-#ifndef RELEASE_OR_BETA
+#ifdef EARLY_BETA_OR_EARLIER
+  
   
   
   nsIEventTarget* target = nullptr;
