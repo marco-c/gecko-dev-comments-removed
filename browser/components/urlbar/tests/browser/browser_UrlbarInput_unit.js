@@ -35,11 +35,13 @@ function assertContextMatches(context, expectedValues) {
 
 
 
-function checkStartQueryCall(stub, expectedQueryContextProps) {
-  Assert.equal(stub.callCount, 1,
+
+
+function checkStartQueryCall(stub, expectedQueryContextProps, callIndex = 0) {
+  Assert.equal(stub.callCount, callIndex + 1,
     "Should have called startQuery on the controller");
 
-  let args = stub.args[0];
+  let args = stub.args[callIndex];
   Assert.equal(args.length, 1,
     "Should have called startQuery with one argument");
 
@@ -149,6 +151,46 @@ add_task(async function test_input_with_private_browsing() {
       searchString: "search",
       isPrivate: true,
     });
+
+    sandbox.resetHistory();
+  });
+});
+
+add_task(async function test_autofill_disabled_on_prefix_search() {
+  await withNewWindow(input => {
+    
+    input.inputField.value = "autofill";
+    input.handleEvent({
+      target: input.inputField,
+      type: "input",
+    });
+    checkStartQueryCall(fakeController.startQuery, {
+      searchString: "autofill",
+      enableAutofill: true,
+    });
+
+    
+    
+    input.inputField.value = "auto";
+    input.handleEvent({
+      target: input.inputField,
+      type: "input",
+    });
+    checkStartQueryCall(fakeController.startQuery, {
+      searchString: "auto",
+      enableAutofill: false,
+    }, 1);
+
+    
+    input.inputField.value = "autofill";
+    input.handleEvent({
+      target: input.inputField,
+      type: "input",
+    });
+    checkStartQueryCall(fakeController.startQuery, {
+      searchString: "autofill",
+      enableAutofill: true,
+    }, 2);
 
     sandbox.resetHistory();
   });
