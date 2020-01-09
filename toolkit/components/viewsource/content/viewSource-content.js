@@ -599,12 +599,10 @@ var ViewSourceContent = {
 
     
     let loadFlags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
-    let referrerPolicy = Ci.nsIHttpChannel.REFERRER_POLICY_UNSET;
     let webNav = docShell.QueryInterface(Ci.nsIWebNavigation);
     let loadURIOptions = {
       triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
       loadFlags,
-      referrerPolicy,
       baseURI: Services.io.newURI(baseURI),
     };
     webNav.loadURI(uri, loadURIOptions);

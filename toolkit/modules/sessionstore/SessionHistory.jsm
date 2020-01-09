@@ -11,6 +11,8 @@ const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm")
 
 ChromeUtils.defineModuleGetter(this, "Utils",
   "resource://gre/modules/sessionstore/Utils.jsm");
+ChromeUtils.defineModuleGetter(this, "E10SUtils",
+  "resource://gre/modules/E10SUtils.jsm");
 XPCOMUtils.defineLazyServiceGetter(this, "uuidGenerator",
   "@mozilla.org/uuid-generator;1", "nsIUUIDGenerator");
 
@@ -143,9 +145,8 @@ var SessionHistoryInternal = {
 
     
     
-    if (shEntry.referrerURI) {
-      entry.referrer = shEntry.referrerURI.spec;
-      entry.referrerPolicy = shEntry.referrerPolicy;
+    if (shEntry.referrerInfo) {
+      entry.referrerInfo = E10SUtils.serializeReferrerInfo(shEntry.referrerInfo);
     }
 
     if (shEntry.originalURI) {
@@ -338,10 +339,19 @@ var SessionHistoryInternal = {
     shEntry.setLoadTypeAsHistory();
     if (entry.contentType)
       shEntry.contentType = entry.contentType;
-    if (entry.referrer) {
-      shEntry.referrerURI = Services.io.newURI(entry.referrer);
-      shEntry.referrerPolicy = entry.referrerPolicy;
+    
+    
+    
+    if (entry.referrerInfo) {
+      shEntry.referrerInfo = E10SUtils.deserializeReferrerInfo(entry.referrerInfo);
+    } else if (entry.referrer) {
+      let ReferrerInfo = Components.Constructor("@mozilla.org/referrer-info;1",
+                                                "nsIReferrerInfo",
+                                                "init");
+      shEntry.referrerInfo = new ReferrerInfo(
+        entry.referrerPolicy, true, Services.io.newURI(entry.referrer));
     }
+
     if (entry.originalURI) {
       shEntry.originalURI = Services.io.newURI(entry.originalURI);
     }
