@@ -80,7 +80,7 @@ class WebRenderBridgeParent final
     return true;
   }
   already_AddRefed<wr::WebRenderAPI> GetWebRenderAPIAtPoint(
-      const gfx::IntPoint& aPoint);
+      const ScreenPoint& aPoint);
   already_AddRefed<wr::WebRenderAPI> GetWebRenderAPI(
       wr::RenderRoot aRenderRoot) {
     if ((size_t)aRenderRoot >= mApis.Length()) {
@@ -468,7 +468,7 @@ class WebRenderBridgeParent final
   
   
   Mutex mRenderRootRectMutex;
-  wr::NonDefaultRenderRootArray<IntRect> mRenderRootRects;
+  wr::NonDefaultRenderRootArray<ScreenRect> mRenderRootRects;
 
   wr::RenderRoot mRenderRoot;
   bool mPaused;
