@@ -1603,6 +1603,8 @@ pref("javascript.options.streams", true);
 
 pref("javascript.options.bigint", false);
 
+pref("javascript.options.experimental.fields", false);
+
 
 pref("javascript.options.dynamicImport", true);
 
