@@ -19,8 +19,6 @@ class FontPropertyValue extends PureComponent {
     return {
       
       allowOverflow: PropTypes.bool,
-      
-      allowUnderflow: PropTypes.bool,
       className: PropTypes.string,
       defaultValue: PropTypes.number,
       disabled: PropTypes.bool.isRequired,
@@ -36,28 +34,20 @@ class FontPropertyValue extends PureComponent {
       nameLabel: PropTypes.bool,
       onChange: PropTypes.func.isRequired,
       step: PropTypes.number,
-      
-      showInput: PropTypes.bool,
-      
-      showUnit: PropTypes.bool,
       unit: PropTypes.string,
       unitOptions: PropTypes.array,
       value: PropTypes.number,
-      valueLabel: PropTypes.string,
     };
   }
 
   static get defaultProps() {
     return {
       allowOverflow: false,
-      allowUnderflow: false,
       className: "",
       minLabel: false,
       maxLabel: false,
       nameLabel: false,
       step: 1,
-      showInput: true,
-      showUnit: true,
       unit: null,
       unitOptions: [],
     };
@@ -111,19 +101,18 @@ class FontPropertyValue extends PureComponent {
 
 
   isValueValid(value) {
-    const { allowOverflow, allowUnderflow, min, max } = this.props;
+    const { allowOverflow, min, max } = this.props;
 
     if (typeof value !== "number" || isNaN(value)) {
       return false;
     }
 
-    
-    if (min !== undefined && value < min && !allowUnderflow) {
+    if (min !== undefined && value < min) {
       return false;
     }
 
     
-    if (max !== undefined && value > max && !allowOverflow) {
+    if (max !== undefined && value > this.props.max && !allowOverflow) {
       return false;
     }
 
@@ -339,14 +328,6 @@ class FontPropertyValue extends PureComponent {
     return createElement(Fragment, null, labelEl, detailEl);
   }
 
-  renderValueLabel() {
-    if (!this.props.valueLabel) {
-      return null;
-    }
-
-    return dom.div({ className: "font-value-label" }, this.props.valueLabel);
-  }
-
   render() {
     
     if (this.props.min === this.props.max) {
@@ -386,8 +367,6 @@ class FontPropertyValue extends PureComponent {
       {
         ...defaults,
         
-        min: this.props.allowUnderflow ? null : this.props.min,
-        
         max: this.props.allowOverflow ? null : this.props.max,
         name: this.props.name,
         className: "font-value-input",
@@ -420,9 +399,8 @@ class FontPropertyValue extends PureComponent {
           },
           range
         ),
-        this.renderValueLabel(),
-        this.props.showInput && input,
-        this.props.showUnit && this.renderUnitSelect()
+        input,
+        this.renderUnitSelect()
       )
     );
   }

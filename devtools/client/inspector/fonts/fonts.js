@@ -42,7 +42,6 @@ const FONT_PROPERTIES = [
   "font-style",
   "font-variation-settings",
   "font-weight",
-  "letter-spacing",
   "line-height",
 ];
 const REGISTERED_AXES_TO_FONT_PROPERTIES = {
@@ -169,9 +168,7 @@ class FontInspector {
     
     const node = this.node;
     
-    const referenceNode = (property === "line-height" || property === "letter-spacing")
-      ? node
-      : node.parentNode();
+    const referenceNode = (property === "line-height") ? node : node.parentNode();
     
     
     let out = value;
@@ -282,14 +279,11 @@ class FontInspector {
     }
 
     
-    
-    
-    if (fromPx || property === "letter-spacing") {
+    if (fromPx) {
       
       return out === Math.round(out) ? Math.round(out) : out.toFixed(3);
     }
 
-    
     return Math.round(out);
   }
 
@@ -373,13 +367,11 @@ class FontInspector {
 
 
 
-
   getFontPropertyValueKeywords() {
     return [
       "font-size",
       "font-weight",
       "font-stretch",
-      "letter-spacing",
       "line-height",
     ].reduce((acc, property) => {
       return acc.concat(this.cssProperties.getValues(property));
