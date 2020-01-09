@@ -18,7 +18,8 @@ using namespace mozilla::intl;
 nsCString* DateTimeFormat::mLocale = nullptr;
 nsDataHashtable<nsCStringHashKey, UDateFormat*>* DateTimeFormat::mFormatCache;
 
- nsresult DateTimeFormat::Initialize() {
+
+nsresult DateTimeFormat::Initialize() {
   if (mLocale) {
     return NS_OK;
   }
@@ -33,7 +34,8 @@ nsDataHashtable<nsCStringHashKey, UDateFormat*>* DateTimeFormat::mFormatCache;
 }
 
 
- nsresult DateTimeFormat::FormatPRTime(
+
+nsresult DateTimeFormat::FormatPRTime(
     const nsDateFormatSelector aDateFormatSelector,
     const nsTimeFormatSelector aTimeFormatSelector, const PRTime aPrTime,
     nsAString& aStringOut) {
@@ -43,7 +45,8 @@ nsDataHashtable<nsCStringHashKey, UDateFormat*>* DateTimeFormat::mFormatCache;
 
 
 
- nsresult DateTimeFormat::FormatPRExplodedTime(
+
+nsresult DateTimeFormat::FormatPRExplodedTime(
     const nsDateFormatSelector aDateFormatSelector,
     const nsTimeFormatSelector aTimeFormatSelector,
     const PRExplodedTime* aExplodedTime, nsAString& aStringOut) {
@@ -53,7 +56,8 @@ nsDataHashtable<nsCStringHashKey, UDateFormat*>* DateTimeFormat::mFormatCache;
 }
 
 
- nsresult DateTimeFormat::FormatUDateTime(
+
+nsresult DateTimeFormat::FormatUDateTime(
     const nsDateFormatSelector aDateFormatSelector,
     const nsTimeFormatSelector aTimeFormatSelector, const UDate aUDateTime,
     const PRTimeParameters* aTimeParameters, nsAString& aStringOut) {
@@ -262,7 +266,8 @@ nsDataHashtable<nsCStringHashKey, UDateFormat*>* DateTimeFormat::mFormatCache;
   return rv;
 }
 
- void DateTimeFormat::DeleteCache() {
+
+void DateTimeFormat::DeleteCache() {
   if (mFormatCache) {
     for (auto i = mFormatCache->Iter(); !i.Done(); i.Next()) {
       udat_close(i.Data());
@@ -272,7 +277,8 @@ nsDataHashtable<nsCStringHashKey, UDateFormat*>* DateTimeFormat::mFormatCache;
   }
 }
 
- void DateTimeFormat::Shutdown() {
+
+void DateTimeFormat::Shutdown() {
   DeleteCache();
   if (mLocale) {
     delete mLocale;
