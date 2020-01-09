@@ -351,6 +351,8 @@ enum class nsDisplayListBuilderMode : uint8_t {
   GenerateGlyph,
 };
 
+class nsDisplayWrapList;
+
 
 
 
@@ -1108,7 +1110,7 @@ class nsDisplayListBuilder {
 
 
 
-  nsDisplayItem* MergeItems(nsTArray<nsDisplayItem*>& aMergedItems);
+  nsDisplayWrapList* MergeItems(nsTArray<nsDisplayWrapList*>& aItems);
 
   
 
@@ -2112,7 +2114,6 @@ class nsDisplayItemLink {
 };
 
 class nsPaintedDisplayItem;
-class nsDisplayWrapList;
 
 
 
@@ -2813,37 +2814,6 @@ class nsDisplayItem : public nsDisplayItemBase {
 
   virtual bool ComputeVisibility(nsDisplayListBuilder* aBuilder,
                                  nsRegion* aVisibleRegion);
-
-  
-
-
-
-  virtual bool CanMerge(const nsDisplayItem* aItem) const { return false; }
-
-  
-
-
-
-
-
-
-
-  virtual void Merge(const nsDisplayItem* aItem) {}
-
-  
-
-
-  virtual void MergeDisplayListFromItem(nsDisplayListBuilder* aBuilder,
-                                        const nsDisplayItem* aItem) {}
-
-  
-
-
-
-
-  virtual void GetMergedFrames(nsTArray<nsIFrame*>* aFrames) const {}
-
-  virtual bool HasMergedFrames() const { return false; }
 
   
 
@@ -3800,98 +3770,6 @@ class RetainedDisplayList : public nsDisplayList {
   
   
   nsTArray<OldItemInfo> mOldItems;
-};
-
-class FlattenedDisplayListIterator {
- public:
-  FlattenedDisplayListIterator(nsDisplayListBuilder* aBuilder,
-                               nsDisplayList* aList)
-      : FlattenedDisplayListIterator(aBuilder, aList, true) {}
-
-  ~FlattenedDisplayListIterator() { MOZ_ASSERT(!HasNext()); }
-
-  virtual bool HasNext() const { return mNext || !mStack.IsEmpty(); }
-
-  nsDisplayItem* GetNextItem() {
-    MOZ_ASSERT(mNext);
-
-    nsDisplayItem* current = mNext;
-    nsDisplayItem* next = current->GetAbove();
-
-    
-    if (next && current->CanMerge(next)) {
-      
-      AutoTArray<nsDisplayItem*, 2> willMerge{current};
-
-      do {
-        willMerge.AppendElement(next);
-      } while ((next = next->GetAbove()) && current->CanMerge(next));
-
-      current = mBuilder->MergeItems(willMerge);
-    }
-
-    
-    
-    mNext = next;
-    ResolveFlattening();
-
-    return current;
-  }
-
-  nsDisplayItem* PeekNext() { return mNext; }
-
- protected:
-  FlattenedDisplayListIterator(nsDisplayListBuilder* aBuilder,
-                               nsDisplayList* aList,
-                               const bool aResolveFlattening)
-      : mBuilder(aBuilder), mNext(aList->GetBottom()) {
-    if (aResolveFlattening) {
-      
-      
-      ResolveFlattening();
-    }
-  }
-
-  virtual void EnterChildList(nsDisplayItem* aContainerItem) {}
-  virtual void ExitChildList() {}
-
-  bool AtEndOfNestedList() const { return !mNext && mStack.Length() > 0; }
-
-  virtual bool ShouldFlattenNextItem() {
-    return mNext && mNext->ShouldFlattenAway(mBuilder);
-  }
-
-  void ResolveFlattening() {
-    
-    
-    
-    while (AtEndOfNestedList() || ShouldFlattenNextItem()) {
-      if (AtEndOfNestedList()) {
-        ExitChildList();
-
-        
-        mNext = mStack.PopLastElement();
-      } else {
-        EnterChildList(mNext);
-
-        
-        
-        mStack.AppendElement(mNext->GetAbove());
-
-        nsDisplayList* childItems =
-            mNext->GetType() != DisplayItemType::TYPE_TRANSFORM
-                ? mNext->GetSameCoordinateSystemChildren()
-                : mNext->GetChildren();
-
-        mNext = childItems->GetBottom();
-      }
-    }
-  }
-
- private:
-  nsDisplayListBuilder* mBuilder;
-  nsDisplayItem* mNext;
-  AutoTArray<nsDisplayItem*, 16> mStack;
 };
 
 struct HitTestInfo {
@@ -5400,7 +5278,7 @@ class nsDisplayWrapList : public nsDisplayHitTestInfoItem {
 
 
   void MergeDisplayListFromItem(nsDisplayListBuilder* aBuilder,
-                                const nsDisplayItem* aItem) override;
+                                const nsDisplayWrapList* aItem);
 
   
 
@@ -5452,19 +5330,34 @@ class nsDisplayWrapList : public nsDisplayHitTestInfoItem {
 
   uint16_t CalculatePerFrameKey() const override { return mIndex; }
 
-  bool CanMerge(const nsDisplayItem* aItem) const override { return false; }
+  
 
-  void Merge(const nsDisplayItem* aItem) override {
+
+
+  virtual bool CanMerge(const nsDisplayItem* aItem) const { return false; }
+
+  
+
+
+
+
+
+
+
+  virtual void Merge(const nsDisplayItem* aItem) {
     MOZ_ASSERT(CanMerge(aItem));
     MOZ_ASSERT(Frame() != aItem->Frame());
     MergeFromTrackingMergedFrames(static_cast<const nsDisplayWrapList*>(aItem));
   }
 
-  void GetMergedFrames(nsTArray<nsIFrame*>* aFrames) const override {
-    aFrames->AppendElements(mMergedFrames);
-  }
+  
 
-  bool HasMergedFrames() const override { return !mMergedFrames.IsEmpty(); }
+
+
+
+  const nsTArray<nsIFrame*>& GetMergedFrames() const { return mMergedFrames; }
+
+  bool HasMergedFrames() const { return !mMergedFrames.IsEmpty(); }
 
   bool ShouldFlattenAway(nsDisplayListBuilder* aBuilder) override {
     return true;
@@ -5563,6 +5456,7 @@ class nsDisplayWrapList : public nsDisplayHitTestInfoItem {
 
  private:
   NS_DISPLAY_ALLOW_CLONING()
+  friend class nsDisplayListBuilder;
 };
 
 
@@ -6857,8 +6751,6 @@ class nsDisplayTransform : public nsDisplayHitTestInfoItem {
   bool ComputeVisibility(nsDisplayListBuilder* aBuilder,
                          nsRegion* aVisibleRegion) override;
 
-  bool CanMerge(const nsDisplayItem* aItem) const override { return false; }
-
   uint16_t CalculatePerFrameKey() const override { return mIndex; }
 
   nsDisplayItemGeometry* AllocateGeometry(
@@ -7389,6 +7281,132 @@ class nsDisplayForeignObject : public nsDisplayWrapList {
       const StackingContextHelper& aSc,
       mozilla::layers::RenderRootStateManager* aManager,
       nsDisplayListBuilder* aDisplayListBuilder) override;
+};
+
+class FlattenedDisplayListIterator {
+ public:
+  FlattenedDisplayListIterator(nsDisplayListBuilder* aBuilder,
+                               nsDisplayList* aList)
+      : FlattenedDisplayListIterator(aBuilder, aList, true) {}
+
+  ~FlattenedDisplayListIterator() { MOZ_ASSERT(!HasNext()); }
+
+  virtual bool HasNext() const { return mNext || !mStack.IsEmpty(); }
+
+  nsDisplayItem* GetNextItem() {
+    MOZ_ASSERT(mNext);
+
+    nsDisplayItem* next = mNext;
+    mNext = next->GetAbove();
+
+    if (mNext) {
+      
+      next = TryMergingFrom(next);
+    }
+
+    ResolveFlattening();
+
+    return next;
+  }
+
+  nsDisplayItem* PeekNext() { return mNext; }
+
+ protected:
+  FlattenedDisplayListIterator(nsDisplayListBuilder* aBuilder,
+                               nsDisplayList* aList,
+                               const bool aResolveFlattening)
+      : mBuilder(aBuilder), mNext(aList->GetBottom()) {
+    if (aResolveFlattening) {
+      
+      
+      ResolveFlattening();
+    }
+  }
+
+  virtual void EnterChildList(nsDisplayItem* aContainerItem) {}
+  virtual void ExitChildList() {}
+
+  bool AtEndOfNestedList() const { return !mNext && mStack.Length() > 0; }
+
+  virtual bool ShouldFlattenNextItem() {
+    return mNext && mNext->ShouldFlattenAway(mBuilder);
+  }
+
+  void ResolveFlattening() {
+    
+    
+    
+    while (AtEndOfNestedList() || ShouldFlattenNextItem()) {
+      if (AtEndOfNestedList()) {
+        ExitChildList();
+
+        
+        mNext = mStack.PopLastElement();
+      } else {
+        EnterChildList(mNext);
+
+        
+        
+        mStack.AppendElement(mNext->GetAbove());
+
+        nsDisplayList* childItems =
+            mNext->GetType() != DisplayItemType::TYPE_TRANSFORM
+                ? mNext->GetSameCoordinateSystemChildren()
+                : mNext->GetChildren();
+
+        mNext = childItems->GetBottom();
+      }
+    }
+  }
+
+  
+
+
+
+  nsDisplayWrapList* GetNextAsWrapList(nsDisplayItem* aCurrent) const {
+    MOZ_ASSERT(aCurrent);
+    nsDisplayItem* next = aCurrent->GetAbove();
+    return next ? next->AsDisplayWrapList() : nullptr;
+  }
+
+  
+
+
+
+  nsDisplayItem* TryMergingFrom(nsDisplayItem* aCurrent) {
+    MOZ_ASSERT(aCurrent);
+    MOZ_ASSERT(aCurrent->GetAbove());
+
+    nsDisplayWrapList* current = aCurrent->AsDisplayWrapList();
+    nsDisplayWrapList* next = mNext->AsDisplayWrapList();
+
+    if (!current || !next) {
+      
+      return aCurrent;
+    }
+
+    
+    if (current->CanMerge(next)) {
+      
+      AutoTArray<nsDisplayWrapList*, 2> willMerge{current};
+
+      do {
+        willMerge.AppendElement(next);
+      } while ((next = GetNextAsWrapList(next)) && current->CanMerge(next));
+
+      current = mBuilder->MergeItems(willMerge);
+    }
+
+    
+    
+    mNext = next;
+    return current;
+  }
+
+ private:
+  nsDisplayListBuilder* mBuilder;
+  nsDisplayItem* mNext;
+  AutoTArray<nsDisplayItem*, 16> mStack;
 };
 
 namespace mozilla {
