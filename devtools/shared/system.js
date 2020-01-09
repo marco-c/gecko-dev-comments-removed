@@ -180,13 +180,14 @@ function getDeviceName() {
 function getProfileLocation() {
   
   try {
+    
+    
+    
     const profd = Services.dirsvc.get("ProfD", Ci.nsIFile);
     const profservice = Cc["@mozilla.org/toolkit/profile-service;1"]
                         .getService(Ci.nsIToolkitProfileService);
-    for (const profile of profservice.profiles) {
-      if (profile.rootDir.path == profd.path) {
-        return profile.name;
-      }
+    if (profservice.currentProfile) {
+      return profservice.currentProfile.name;
     }
 
     return profd.leafName;

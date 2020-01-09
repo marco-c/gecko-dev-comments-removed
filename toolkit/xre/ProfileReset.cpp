@@ -14,7 +14,6 @@
 #include "nsDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
 #include "nsPIDOMWindow.h"
-#include "nsPrintfCString.h"
 #include "nsString.h"
 #include "nsXPCOMCIDInternal.h"
 #include "mozilla/Components.h"
@@ -30,41 +29,6 @@ extern const XREAppData* gAppData;
 
 static const char kProfileProperties[] =
     "chrome://mozapps/locale/profile/profileSelection.properties";
-
-
-
-
-nsresult CreateResetProfile(nsIToolkitProfileService* aProfileSvc,
-                            nsIToolkitProfile* aOldProfile,
-                            nsIToolkitProfile** aNewProfile) {
-  MOZ_ASSERT(aProfileSvc, "NULL profile service");
-
-  nsAutoCString oldProfileName;
-  aOldProfile->GetName(oldProfileName);
-
-  nsCOMPtr<nsIToolkitProfile> newProfile;
-  
-  
-  nsAutoCString newProfileName;
-  if (!oldProfileName.IsEmpty()) {
-    newProfileName.Assign(oldProfileName);
-    newProfileName.Append("-");
-  } else {
-    newProfileName.AssignLiteral("default-");
-  }
-  newProfileName.Append(nsPrintfCString("%" PRId64, PR_Now() / 1000));
-  nsresult rv =
-      aProfileSvc->CreateProfile(nullptr,  
-                                 newProfileName, getter_AddRefs(newProfile));
-  if (NS_FAILED(rv)) return rv;
-
-  rv = aProfileSvc->Flush();
-  if (NS_FAILED(rv)) return rv;
-
-  newProfile.swap(*aNewProfile);
-
-  return NS_OK;
-}
 
 
 

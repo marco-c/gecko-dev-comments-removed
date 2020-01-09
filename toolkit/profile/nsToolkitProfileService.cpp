@@ -42,6 +42,7 @@
 #include "nsNativeCharsetUtils.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Sprintf.h"
+#include "nsPrintfCString.h"
 
 using namespace mozilla;
 
@@ -88,7 +89,25 @@ NS_IMETHODIMP
 nsToolkitProfile::SetName(const nsACString& aName) {
   NS_ASSERTION(nsToolkitProfileService::gService, "Where did my service go?");
 
+  if (mName.Equals(aName)) {
+    return NS_OK;
+  }
+
+  
+  
+  if (mName.EqualsLiteral(DEV_EDITION_NAME) &&
+      nsToolkitProfileService::gService->mDevEditionDefault == this) {
+    nsToolkitProfileService::gService->mDevEditionDefault = nullptr;
+  }
+
   mName = aName;
+
+  
+  
+  if (aName.EqualsLiteral(DEV_EDITION_NAME) &&
+      !nsToolkitProfileService::gService->mDevEditionDefault) {
+    nsToolkitProfileService::gService->mDevEditionDefault = this;
+  }
 
   return NS_OK;
 }
@@ -147,8 +166,12 @@ nsresult nsToolkitProfile::RemoveInternal(bool aRemoveFiles,
   mPrev = nullptr;
   mNext = nullptr;
 
-  if (nsToolkitProfileService::gService->mChosen == this)
-    nsToolkitProfileService::gService->mChosen = nullptr;
+  if (nsToolkitProfileService::gService->mNormalDefault == this) {
+    nsToolkitProfileService::gService->mNormalDefault = nullptr;
+  }
+  if (nsToolkitProfileService::gService->mDevEditionDefault == this) {
+    nsToolkitProfileService::gService->mDevEditionDefault = nullptr;
+  }
 
   return NS_OK;
 }
@@ -265,7 +288,13 @@ nsToolkitProfileService* nsToolkitProfileService::gService = nullptr;
 NS_IMPL_ISUPPORTS(nsToolkitProfileService, nsIToolkitProfileService)
 
 nsToolkitProfileService::nsToolkitProfileService()
-    : mStartupProfileSelected(false), mStartWithLast(true), mIsFirstRun(true) {
+    : mStartupProfileSelected(false),
+      mStartWithLast(true),
+      mIsFirstRun(true),
+      mUseDevEditionProfile(false) {
+#ifdef MOZ_DEV_EDITION
+  mUseDevEditionProfile = true;
+#endif
   gService = this;
 }
 
@@ -323,6 +352,8 @@ nsresult nsToolkitProfileService::Init() {
   bool shouldIgnoreSeparateProfile;
   rv = ignoreSeparateProfile->Exists(&shouldIgnoreSeparateProfile);
   if (NS_FAILED(rv)) return rv;
+
+  mUseDevEditionProfile = !shouldIgnoreSeparateProfile;
 #endif
 
   nsCOMPtr<nsIToolkitProfile> autoSelectProfile;
@@ -382,17 +413,11 @@ nsresult nsToolkitProfileService::Init() {
 
     rv = parser.GetString(profileID.get(), "Default", buffer);
     if (NS_SUCCEEDED(rv) && buffer.EqualsLiteral("1")) {
-      mDefault = currentProfile;
+      mNormalDefault = currentProfile;
     }
 
     if (name.EqualsLiteral(DEV_EDITION_NAME)) {
-#ifdef MOZ_DEV_EDITION
-      
-      
-      if (!shouldIgnoreSeparateProfile) {
-        mChosen = currentProfile;
-      }
-#endif
+      mDevEditionDefault = currentProfile;
     } else {
       nonDevEditionProfiles++;
       autoSelectProfile = currentProfile;
@@ -400,24 +425,18 @@ nsresult nsToolkitProfileService::Init() {
   }
 
   
-  if (!mDefault && nonDevEditionProfiles == 1) {
-    mDefault = autoSelectProfile;
+  if (!mNormalDefault && nonDevEditionProfiles == 1) {
+    mNormalDefault = autoSelectProfile;
   }
 
-  
-  mIsFirstRun = nonDevEditionProfiles == 0;
-
-#ifdef MOZ_DEV_EDITION
-  if (!shouldIgnoreSeparateProfile) {
+  if (mUseDevEditionProfile) {
     
     
-    mIsFirstRun = !mChosen;
+    mIsFirstRun = !mDevEditionDefault;
   } else {
-    mChosen = mDefault;
+    
+    mIsFirstRun = nonDevEditionProfiles == 0;
   }
-#else
-  mChosen = mDefault;
-#endif
 
   return NS_OK;
 }
@@ -462,37 +481,30 @@ nsToolkitProfileService::ProfileEnumerator::GetNext(nsISupports** aResult) {
 }
 
 NS_IMETHODIMP
-nsToolkitProfileService::GetSelectedProfile(nsIToolkitProfile** aResult) {
-  if (!mChosen && mFirst && !mFirst->mNext)  
-    mChosen = mFirst;
-
-  if (!mChosen) return NS_ERROR_FAILURE;
-
-  NS_ADDREF(*aResult = mChosen);
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsToolkitProfileService::SetSelectedProfile(nsIToolkitProfile* aProfile) {
-  if (mChosen != aProfile) {
-    mChosen = aProfile;
-  }
+nsToolkitProfileService::GetCurrentProfile(nsIToolkitProfile** aResult) {
+  NS_IF_ADDREF(*aResult = mCurrent);
   return NS_OK;
 }
 
 NS_IMETHODIMP
 nsToolkitProfileService::GetDefaultProfile(nsIToolkitProfile** aResult) {
-  if (!mDefault) return NS_ERROR_FAILURE;
+  if (mUseDevEditionProfile) {
+    NS_IF_ADDREF(*aResult = mDevEditionDefault);
+    return NS_OK;
+  }
 
-  NS_ADDREF(*aResult = mDefault);
+  NS_IF_ADDREF(*aResult = mNormalDefault);
   return NS_OK;
 }
 
 NS_IMETHODIMP
 nsToolkitProfileService::SetDefaultProfile(nsIToolkitProfile* aProfile) {
-  if (mDefault != aProfile) {
-    mDefault = aProfile;
+  if (mUseDevEditionProfile && aProfile != mDevEditionDefault) {
+    
+    return NS_ERROR_FAILURE;
   }
+
+  mNormalDefault = aProfile;
   return NS_OK;
 }
 
@@ -555,7 +567,6 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
 
   nsresult rv;
   const char* arg;
-  nsCOMPtr<nsIToolkitProfile> profile;
 
   
   
@@ -572,9 +583,10 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
     CheckArg(*aArgc, aArgv, "profile", &dummy);
     CheckArg(*aArgc, aArgv, "profilemanager");
 
-    GetProfileByDir(lf, localDir, aProfile);
+    GetProfileByDir(lf, localDir, getter_AddRefs(mCurrent));
     lf.forget(aRootDir);
     localDir.forget(aLocalDir);
+    NS_IF_ADDREF(*aProfile = mCurrent);
     return NS_OK;
   }
 
@@ -612,9 +624,10 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
 
     
     
-    GetProfileByDir(lf, lf, aProfile);
+    GetProfileByDir(lf, lf, getter_AddRefs(mCurrent));
     NS_ADDREF(*aRootDir = lf);
     lf.forget(aLocalDir);
+    NS_IF_ADDREF(*aProfile = mCurrent);
     return NS_OK;
   }
 
@@ -630,6 +643,7 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
   }
   if (ar) {
     const char* delim = strchr(arg, ' ');
+    nsCOMPtr<nsIToolkitProfile> profile;
     if (delim) {
       nsCOMPtr<nsIFile> lf;
       rv = NS_NewNativeLocalFile(nsDependentCString(delim + 1), true,
@@ -681,11 +695,12 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
       return NS_ERROR_FAILURE;
     }
 
-    rv = GetProfileByName(nsDependentCString(arg), getter_AddRefs(profile));
+    rv = GetProfileByName(nsDependentCString(arg), getter_AddRefs(mCurrent));
     if (NS_SUCCEEDED(rv)) {
-      profile->GetRootDir(aRootDir);
-      profile->GetLocalDir(aLocalDir);
-      profile.forget(aProfile);
+      mCurrent->GetRootDir(aRootDir);
+      mCurrent->GetLocalDir(aLocalDir);
+
+      NS_ADDREF(*aProfile = mCurrent);
       return NS_OK;
     }
 
@@ -714,30 +729,33 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
     }
 
     
-    nsresult rv = CreateProfile(nullptr,  
-#ifdef MOZ_DEV_EDITION
-                                NS_LITERAL_CSTRING(DEV_EDITION_NAME),
-#else
-                                NS_LITERAL_CSTRING(DEFAULT_NAME),
-#endif
-                                getter_AddRefs(mChosen));
+    nsAutoCString name;
+    if (mUseDevEditionProfile) {
+      name.AssignLiteral(DEV_EDITION_NAME);
+    } else {
+      name.AssignLiteral(DEFAULT_NAME);
+    }
+
+    nsresult rv = CreateProfile(nullptr, name, getter_AddRefs(mCurrent));
     if (NS_SUCCEEDED(rv)) {
-#ifdef MOZ_DEV_EDITION
-      
-      
-      
-      if (mFirst && !mFirst->mNext) {
-        CreateProfile(nullptr, NS_LITERAL_CSTRING(DEFAULT_NAME),
-                      getter_AddRefs(mDefault));
+      if (mUseDevEditionProfile) {
+        mDevEditionDefault = mCurrent;
+
+        
+        
+        
+        if (mFirst && !mFirst->mNext) {
+          CreateProfile(nullptr, NS_LITERAL_CSTRING(DEFAULT_NAME),
+                        getter_AddRefs(mNormalDefault));
+        }
+      } else {
+        mNormalDefault = mCurrent;
       }
-#else
-      SetDefaultProfile(mChosen);
-#endif
       Flush();
 
-      mChosen->GetRootDir(aRootDir);
-      mChosen->GetLocalDir(aLocalDir);
-      NS_ADDREF(*aProfile = mChosen);
+      mCurrent->GetRootDir(aRootDir);
+      mCurrent->GetLocalDir(aLocalDir);
+      NS_ADDREF(*aProfile = mCurrent);
 
       *aDidCreate = true;
       return NS_OK;
@@ -749,19 +767,50 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
     return NS_ERROR_SHOW_PROFILE_MANAGER;
   }
 
-  
-  GetSelectedProfile(getter_AddRefs(profile));
+  GetDefaultProfile(getter_AddRefs(mCurrent));
 
   
   
-  if (!profile) {
+  if (!mCurrent) {
     return NS_ERROR_SHOW_PROFILE_MANAGER;
   }
 
   
-  profile->GetRootDir(aRootDir);
-  profile->GetLocalDir(aLocalDir);
-  profile.forget(aProfile);
+  mCurrent->GetRootDir(aRootDir);
+  mCurrent->GetLocalDir(aLocalDir);
+  NS_ADDREF(*aProfile = mCurrent);
+
+  return NS_OK;
+}
+
+
+
+
+nsresult nsToolkitProfileService::CreateResetProfile(
+    nsIToolkitProfile** aNewProfile) {
+  nsAutoCString oldProfileName;
+  mCurrent->GetName(oldProfileName);
+
+  nsCOMPtr<nsIToolkitProfile> newProfile;
+  
+  
+  nsAutoCString newProfileName;
+  if (!oldProfileName.IsEmpty()) {
+    newProfileName.Assign(oldProfileName);
+    newProfileName.Append("-");
+  } else {
+    newProfileName.AssignLiteral("default-");
+  }
+  newProfileName.AppendPrintf("%" PRId64, PR_Now() / 1000);
+  nsresult rv = CreateProfile(nullptr,  
+                              newProfileName, getter_AddRefs(newProfile));
+  if (NS_FAILED(rv)) return rv;
+
+  rv = Flush();
+  if (NS_FAILED(rv)) return rv;
+
+  mCurrent = newProfile;
+  newProfile.forget(aNewProfile);
 
   return NS_OK;
 }
@@ -912,12 +961,18 @@ nsToolkitProfileService::CreateProfile(nsIFile* aRootDir,
 
   nsToolkitProfile* last = mFirst.get();
   if (last) {
-    while (last->mNext) last = last->mNext;
+    while (last->mNext) {
+      last = last->mNext;
+    }
   }
 
   nsCOMPtr<nsIToolkitProfile> profile =
       new nsToolkitProfile(aName, rootDir, localDir, last);
   if (!profile) return NS_ERROR_OUT_OF_MEMORY;
+
+  if (aName.Equals(DEV_EDITION_NAME)) {
+    mDevEditionDefault = profile;
+  }
 
   profile.forget(aResult);
   return NS_OK;
@@ -1015,9 +1070,7 @@ nsToolkitProfileService::Flush() {
                  "Path=%s\n",
                  pCount, cur->mName.get(), isRelative ? "1" : "0", path.get());
 
-    nsCOMPtr<nsIToolkitProfile> profile;
-    rv = this->GetDefaultProfile(getter_AddRefs(profile));
-    if (NS_SUCCEEDED(rv) && profile == cur) {
+    if (cur == mNormalDefault) {
       pos += snprintf(pos, end - pos, "Default=1\n");
     }
 
