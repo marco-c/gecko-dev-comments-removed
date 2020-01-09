@@ -23,10 +23,10 @@ namespace mozilla {
 namespace a11y {
 
 inline Accessible* DocAccessible::AccessibleOrTrueContainer(
-    nsINode* aNode, int aIgnoreARIAHidden) const {
+    nsINode* aNode, bool aNoContainerIfPruned) const {
   
   
-  Accessible* container = GetAccessibleOrContainer(aNode, aIgnoreARIAHidden);
+  Accessible* container = GetAccessibleOrContainer(aNode, aNoContainerIfPruned);
   if (container && container->IsHTMLCombobox()) {
     return container->FirstChild();
   }

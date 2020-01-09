@@ -286,9 +286,10 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
 
 
-  enum { eIgnoreARIAHidden = 0, eNoContainerIfARIAHidden = 1 };
-  Accessible* GetAccessibleOrContainer(
-      nsINode* aNode, int aARIAHiddenFlag = eIgnoreARIAHidden) const;
+
+
+  Accessible* GetAccessibleOrContainer(nsINode* aNode,
+                                       bool aNoContainerIfPruned = false) const;
 
   
 
@@ -302,7 +303,7 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
 
   Accessible* AccessibleOrTrueContainer(
-      nsINode* aNode, int aARIAHiddenFlag = eIgnoreARIAHidden) const;
+      nsINode* aNode, bool aNoContainerIfPruned = false) const;
 
   
 
