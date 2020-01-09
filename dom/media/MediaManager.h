@@ -56,7 +56,6 @@ namespace ipc {
 class PrincipalInfo;
 }
 
-class AllocationHandle;
 class GetUserMediaTask;
 class GetUserMediaWindowListener;
 class MediaManager;
@@ -117,10 +116,6 @@ class MediaDevice : public nsIMediaDevice {
                              nsString aN);
   static uint32_t FitnessDistance(
       nsString aN, const dom::ConstrainDOMStringParameters& aParams);
-
-  
-  
-  RefPtr<AllocationHandle> mAllocationHandle;
 
  public:
   const RefPtr<MediaEngineSource> mSource;

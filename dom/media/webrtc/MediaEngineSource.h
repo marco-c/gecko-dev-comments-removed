@@ -27,7 +27,6 @@ namespace ipc {
 class PrincipalInfo;
 }  
 
-class AllocationHandle;
 class MediaEnginePhotoCallback;
 class MediaEnginePrefs;
 class SourceMediaStream;
@@ -110,18 +109,10 @@ class MediaEngineSourceInterface {
   
 
 
-
-
-
-
-
-
-
   virtual nsresult Allocate(const dom::MediaTrackConstraints& aConstraints,
                             const MediaEnginePrefs& aPrefs,
                             const nsString& aDeviceId,
                             const mozilla::ipc::PrincipalInfo& aPrincipalInfo,
-                            AllocationHandle** aOutHandle,
                             const char** aOutBadConstraint) = 0;
 
   
@@ -130,8 +121,7 @@ class MediaEngineSourceInterface {
 
 
 
-  virtual void SetTrack(const RefPtr<const AllocationHandle>& aHandle,
-                        const RefPtr<SourceMediaStream>& aStream,
+  virtual void SetTrack(const RefPtr<SourceMediaStream>& aStream,
                         TrackID aTrackID,
                         const PrincipalHandle& aPrincipal) = 0;
 
@@ -140,11 +130,7 @@ class MediaEngineSourceInterface {
 
 
 
-
-
-
-
-  virtual nsresult Start(const RefPtr<const AllocationHandle>& aHandle) = 0;
+  virtual nsresult Start() = 0;
 
   
 
@@ -157,8 +143,7 @@ class MediaEngineSourceInterface {
 
 
 
-  virtual nsresult FocusOnSelectedSource(
-      const RefPtr<const AllocationHandle>& aHandle) = 0;
+  virtual nsresult FocusOnSelectedSource() = 0;
 
   
 
@@ -176,8 +161,7 @@ class MediaEngineSourceInterface {
 
 
 
-  virtual nsresult Reconfigure(const RefPtr<AllocationHandle>& aHandle,
-                               const dom::MediaTrackConstraints& aConstraints,
+  virtual nsresult Reconfigure(const dom::MediaTrackConstraints& aConstraints,
                                const MediaEnginePrefs& aPrefs,
                                const nsString& aDeviceId,
                                const char** aOutBadConstraint) = 0;
@@ -190,20 +174,12 @@ class MediaEngineSourceInterface {
 
 
 
-
-
-
-
-  virtual nsresult Stop(const RefPtr<const AllocationHandle>& aHandle) = 0;
+  virtual nsresult Stop() = 0;
 
   
 
 
-
-
-
-  virtual nsresult Deallocate(
-      const RefPtr<const AllocationHandle>& aHandle) = 0;
+  virtual nsresult Deallocate() = 0;
 
   
 
@@ -277,8 +253,7 @@ class MediaEngineSource : public MediaEngineSourceInterface {
   bool GetScary() const override;
 
   
-  nsresult FocusOnSelectedSource(
-      const RefPtr<const AllocationHandle>& aHandle) override;
+  nsresult FocusOnSelectedSource() override;
 
   
   void Shutdown() override;
