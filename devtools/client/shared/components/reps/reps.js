@@ -4570,6 +4570,7 @@ function getLinkifiedElements(text, cropLimit, openLink, isInContentPage) {
         
         
         href: openLink || isInContentPage ? useUrl : null,
+        target: "_blank",
         onClick: openLink ? e => {
           e.preventDefault();
           openLink(useUrl, e);
