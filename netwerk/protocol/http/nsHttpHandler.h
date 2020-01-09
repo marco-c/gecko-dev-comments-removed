@@ -47,7 +47,36 @@ class nsHttpConnectionInfo;
 class nsHttpTransaction;
 class AltSvcMapping;
 
-enum FrameCheckLevel { FRAMECHECK_LAX, FRAMECHECK_BARELY, FRAMECHECK_STRICT };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+enum FrameCheckLevel { FRAMECHECK_LAX, FRAMECHECK_BARELY,
+                       FRAMECHECK_STRICT_CHUNKED, FRAMECHECK_STRICT };
 
 
 
