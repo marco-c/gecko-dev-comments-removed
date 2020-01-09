@@ -585,8 +585,9 @@ void ICStub::updateCode(JitCode* code) {
 
 
 void ICStub::trace(JSTracer* trc) {
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   checkTraceMagic();
-
+#endif
   
   if (!usesTrampolineCode()) {
     JitCode* stubJitCode = jitCode();
@@ -990,7 +991,9 @@ void ICFallbackStub::unlinkStub(Zone* zone, ICStub* prev, ICStub* stub) {
     stub->toMonitoredStub()->resetFirstMonitorStub(monitorFallback);
   }
 
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   stub->checkTraceMagic();
+#endif
 #ifdef DEBUG
   
   
