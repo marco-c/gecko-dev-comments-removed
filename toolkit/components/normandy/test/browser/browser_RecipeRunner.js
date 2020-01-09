@@ -538,6 +538,8 @@ decorate_task(
   withPrefEnv({
     set: [
       ["features.normandy-remote-settings.enabled", true],
+      
+      ["app.update.log", true],
     ],
   }),
   withStub(RecipeRunner, "loadRecipes"),
