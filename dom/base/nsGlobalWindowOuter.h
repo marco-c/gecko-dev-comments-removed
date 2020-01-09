@@ -325,7 +325,7 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   
   virtual void EnsureSizeAndPositionUpToDate() override;
 
-  virtual void EnterModalState() override;
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual void EnterModalState() override;
   virtual void LeaveModalState() override;
 
   
@@ -863,6 +863,7 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
                                     nsIPrincipal* aSubjectPrincipal);
 
   
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   bool CanMoveResizeWindows(mozilla::dom::CallerType aCallerType);
 
   

@@ -327,7 +327,8 @@ nsNativeDragTarget::DragOver(DWORD grfKeyState, POINTL ptl, LPDWORD pdwEffect) {
   }
 
   ModifierKeyState modifierKeyState;
-  mDragService->FireDragEventAtSource(eDrag, modifierKeyState.GetModifiers());
+  nsCOMPtr<nsIDragService> dragService = mDragService;
+  dragService->FireDragEventAtSource(eDrag, modifierKeyState.GetModifiers());
   
   ProcessDrag(eDragOver, grfKeyState, ptl, pdwEffect);
 
@@ -363,7 +364,8 @@ nsNativeDragTarget::DragLeave() {
       
       
       ModifierKeyState modifierKeyState;
-      mDragService->EndDragSession(false, modifierKeyState.GetModifiers());
+      nsCOMPtr<nsIDragService> dragService = mDragService;
+      dragService->EndDragSession(false, modifierKeyState.GetModifiers());
     }
   }
 
@@ -385,7 +387,8 @@ void nsNativeDragTarget::DragCancel() {
     }
     if (mDragService) {
       ModifierKeyState modifierKeyState;
-      mDragService->EndDragSession(false, modifierKeyState.GetModifiers());
+      nsCOMPtr<nsIDragService> dragService = mDragService;
+      dragService->EndDragSession(false, modifierKeyState.GetModifiers());
     }
     this->Release();  
     mTookOwnRef = false;

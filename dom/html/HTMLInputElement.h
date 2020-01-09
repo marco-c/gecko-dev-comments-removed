@@ -1017,7 +1017,7 @@ class HTMLInputElement final : public nsGenericHTMLFormElementWithState,
 
 
 
-  nsresult MaybeSubmitForm(nsPresContext* aPresContext);
+  MOZ_CAN_RUN_SCRIPT nsresult MaybeSubmitForm(nsPresContext* aPresContext);
 
   
 

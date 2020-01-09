@@ -655,7 +655,7 @@ class PresShell final : public nsStubDocumentObserver,
   
 
 
-
+  MOZ_CAN_RUN_SCRIPT
   nsresult HandleDOMEventWithTarget(nsIContent* aTargetContent,
                                     WidgetEvent* aEvent,
                                     nsEventStatus* aStatus);
@@ -663,7 +663,7 @@ class PresShell final : public nsStubDocumentObserver,
   
 
 
-
+  MOZ_CAN_RUN_SCRIPT
   nsresult HandleDOMEventWithTarget(nsIContent* aTargetContent,
                                     dom::Event* aEvent, nsEventStatus* aStatus);
 

@@ -77,7 +77,7 @@ class nsBaseDragService : public nsIDragService, public nsIDragSession {
 
 
 
-  virtual nsresult InvokeDragSessionImpl(
+  MOZ_CAN_RUN_SCRIPT virtual nsresult InvokeDragSessionImpl(
       nsIArray* aTransferableArray,
       const mozilla::Maybe<mozilla::CSSIntRegion>& aRegion,
       uint32_t aActionType) = 0;

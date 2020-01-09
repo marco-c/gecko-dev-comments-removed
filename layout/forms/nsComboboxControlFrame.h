@@ -86,6 +86,7 @@ class nsComboboxControlFrame final : public nsBlockFrame,
                       const ReflowInput& aReflowInput,
                       nsReflowStatus& aStatus) override;
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   virtual nsresult HandleEvent(nsPresContext* aPresContext,
                                mozilla::WidgetGUIEvent* aEvent,
                                nsEventStatus* aEventStatus) override;
@@ -135,16 +136,10 @@ class nsComboboxControlFrame final : public nsBlockFrame,
   virtual void SetFocus(bool aOn, bool aRepaint) override;
 
   bool IsDroppedDown() { return mDroppedDown; }
-  
-
-
-  void ShowDropDown(bool aDoDropDown);
+  MOZ_CAN_RUN_SCRIPT void ShowDropDown(bool aDoDropDown);
   nsIFrame* GetDropDown();
   void SetDropDown(nsIFrame* aDropDownFrame);
-  
-
-
-  void RollupFromList();
+  MOZ_CAN_RUN_SCRIPT void RollupFromList();
 
   
 
@@ -212,6 +207,7 @@ class nsComboboxControlFrame final : public nsBlockFrame,
 
   
   mozilla::UniquePtr<mozilla::PresState> SaveState() override;
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   NS_IMETHOD RestoreState(mozilla::PresState* aState) override;
   NS_IMETHOD GenerateStateKey(nsIContent* aContent,
                               mozilla::dom::Document* aDocument,
@@ -261,7 +257,7 @@ class nsComboboxControlFrame final : public nsBlockFrame,
 
 
 
-  void ShowPopup(bool aShowPopup);
+  MOZ_CAN_RUN_SCRIPT void ShowPopup(bool aShowPopup);
 
   
 
@@ -269,7 +265,7 @@ class nsComboboxControlFrame final : public nsBlockFrame,
 
 
 
-  bool ShowList(bool aShowList);
+  MOZ_CAN_RUN_SCRIPT bool ShowList(bool aShowList);
   void CheckFireOnChange();
   void FireValueChangeEvent();
   nsresult RedisplayText();

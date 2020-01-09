@@ -48,24 +48,27 @@ class nsNativeDragTarget final : public IDropTarget {
 
   
   
-  STDMETHODIMP DragOver(DWORD grfKeyState, POINTL point, DWORD* pEffect);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY STDMETHODIMP DragOver(DWORD grfKeyState,
+                                                    POINTL point,
+                                                    DWORD* pEffect);
 
   
   
   
-  STDMETHODIMP DragLeave();
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY STDMETHODIMP DragLeave();
 
   
   
   
   
   
-  STDMETHODIMP Drop(LPDATAOBJECT pSource, DWORD grfKeyState, POINTL point,
-                    DWORD* pEffect);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY STDMETHODIMP Drop(LPDATAOBJECT pSource,
+                                                DWORD grfKeyState, POINTL point,
+                                                DWORD* pEffect);
   
 
 
-  void DragCancel();
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void DragCancel();
 
   static void DragImageChanged() { gDragImageChanged = true; }
 

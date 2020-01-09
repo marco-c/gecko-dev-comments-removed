@@ -102,7 +102,8 @@ class SVGSVGElement final : public SVGSVGElementBase {
 
 
 
-  void SetCurrentScaleTranslate(float s, float x, float y);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void SetCurrentScaleTranslate(float s, float x,
+                                                            float y);
 
   
   void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
