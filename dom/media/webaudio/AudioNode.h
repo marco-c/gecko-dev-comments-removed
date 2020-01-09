@@ -168,10 +168,10 @@ class AudioNode : public DOMEventTargetHelper, public nsSupportsWeakReference {
   AudioNodeStream* GetStream() const { return mStream; }
 
   const nsTArray<InputNode>& InputNodes() const { return mInputNodes; }
-  const nsTArray<RefPtr<AudioNode> >& OutputNodes() const {
+  const nsTArray<RefPtr<AudioNode>>& OutputNodes() const {
     return mOutputNodes;
   }
-  const nsTArray<RefPtr<AudioParam> >& OutputParams() const {
+  const nsTArray<RefPtr<AudioParam>>& OutputParams() const {
     return mOutputParams;
   }
 
@@ -201,6 +201,8 @@ class AudioNode : public DOMEventTargetHelper, public nsSupportsWeakReference {
   
   
   AbstractThread* GetAbstractMainThread() const { return mAbstractMainThread; }
+
+  const nsTArray<RefPtr<AudioParam>>& GetAudioParams() const { return mParams; }
 
  private:
   
@@ -246,6 +248,15 @@ class AudioNode : public DOMEventTargetHelper, public nsSupportsWeakReference {
   
   RefPtr<AudioNodeStream> mStream;
 
+  
+  nsTArray<RefPtr<AudioParam>> mParams;
+  
+  
+  void CreateAudioParam(RefPtr<AudioParam>& aParam, uint32_t aIndex,
+                        const char* aName, float aDefaultValue,
+                        float aMinValue = std::numeric_limits<float>::lowest(),
+                        float aMaxValue = std::numeric_limits<float>::max());
+
  private:
   
   
@@ -254,13 +265,13 @@ class AudioNode : public DOMEventTargetHelper, public nsSupportsWeakReference {
   
   
   
-  nsTArray<RefPtr<AudioNode> > mOutputNodes;
+  nsTArray<RefPtr<AudioNode>> mOutputNodes;
   
   
   
   
   
-  nsTArray<RefPtr<AudioParam> > mOutputParams;
+  nsTArray<RefPtr<AudioParam>> mOutputParams;
   uint32_t mChannelCount;
   ChannelCountMode mChannelCountMode;
   ChannelInterpretation mChannelInterpretation;
