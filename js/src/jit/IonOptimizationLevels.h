@@ -66,9 +66,6 @@ class OptimizationInfo {
   bool rangeAnalysis_;
 
   
-  bool loopUnrolling_;
-
-  
   bool reordering_;
 
   
@@ -148,7 +145,6 @@ class OptimizationInfo {
         gvn_(false),
         licm_(false),
         rangeAnalysis_(false),
-        loopUnrolling_(false),
         reordering_(false),
         autoTruncate_(false),
         sincos_(false),
@@ -189,10 +185,6 @@ class OptimizationInfo {
 
   bool rangeAnalysisEnabled() const {
     return rangeAnalysis_ && !JitOptions.disableRangeAnalysis;
-  }
-
-  bool loopUnrollingEnabled() const {
-    return loopUnrolling_ && !JitOptions.disableLoopUnrolling;
   }
 
   bool instructionReorderingEnabled() const {
