@@ -66,6 +66,7 @@ add_task(async function() {
 
   
   gBrowser.selectedBrowser.focus();
+  await synthesizeMouseOver(gURLBar.inputField);
   await synthesizeMouseOut(gURLBar.inputField);
 
   gURLBar.value = "short string";
