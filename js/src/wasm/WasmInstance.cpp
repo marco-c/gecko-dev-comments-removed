@@ -328,8 +328,9 @@ Instance::callImport_funcref(Instance* instance, int32_t funcImportIndex,
   return true;
 }
 
- uint32_t 
-Instance::memoryGrow_i32(Instance* instance, uint32_t delta) {
+ uint32_t Instance::memoryGrow_i32(Instance* instance,
+                                               uint32_t delta) {
+  MOZ_ASSERT(SASigMemoryGrow.failureMode == FailureMode::Infallible);
   MOZ_ASSERT(!instance->isAsmJS());
 
   JSContext* cx = TlsContext.get();
@@ -344,8 +345,9 @@ Instance::memoryGrow_i32(Instance* instance, uint32_t delta) {
   return ret;
 }
 
- uint32_t 
-Instance::memorySize_i32(Instance* instance) {
+ uint32_t Instance::memorySize_i32(Instance* instance) {
+  MOZ_ASSERT(SASigMemorySize.failureMode == FailureMode::Infallible);
+
   
   
   MOZ_ASSERT(TlsContext.get()->realm() == instance->realm());
@@ -393,20 +395,22 @@ static int32_t PerformWait(Instance* instance, uint32_t byteOffset, T value,
   }
 }
 
- int32_t 
-Instance::wait_i32(Instance* instance, uint32_t byteOffset, int32_t value,
-                   int64_t timeout_ns) {
+ int32_t Instance::wait_i32(Instance* instance, uint32_t byteOffset,
+                                        int32_t value, int64_t timeout_ns) {
+  MOZ_ASSERT(SASigWaitI32.failureMode == FailureMode::FailOnNegI32);
   return PerformWait<int32_t>(instance, byteOffset, value, timeout_ns);
 }
 
- int32_t 
-Instance::wait_i64(Instance* instance, uint32_t byteOffset, int64_t value,
-                   int64_t timeout_ns) {
+ int32_t Instance::wait_i64(Instance* instance, uint32_t byteOffset,
+                                        int64_t value, int64_t timeout_ns) {
+  MOZ_ASSERT(SASigWaitI64.failureMode == FailureMode::FailOnNegI32);
   return PerformWait<int64_t>(instance, byteOffset, value, timeout_ns);
 }
 
- int32_t 
-Instance::wake(Instance* instance, uint32_t byteOffset, int32_t count) {
+ int32_t Instance::wake(Instance* instance, uint32_t byteOffset,
+                                    int32_t count) {
+  MOZ_ASSERT(SASigWake.failureMode == FailureMode::FailOnNegI32);
+
   JSContext* cx = TlsContext.get();
 
   
@@ -437,9 +441,11 @@ Instance::wake(Instance* instance, uint32_t byteOffset, int32_t count) {
   return int32_t(woken);
 }
 
- int32_t 
-Instance::memCopy(Instance* instance, uint32_t dstByteOffset,
-                  uint32_t srcByteOffset, uint32_t len) {
+ int32_t Instance::memCopy(Instance* instance,
+                                       uint32_t dstByteOffset,
+                                       uint32_t srcByteOffset, uint32_t len) {
+  MOZ_ASSERT(SASigMemCopy.failureMode == FailureMode::FailOnNegI32);
+
   WasmMemoryObject* mem = instance->memory();
   uint32_t memLen = mem->volatileMemoryLength();
 
@@ -505,8 +511,9 @@ Instance::memCopy(Instance* instance, uint32_t dstByteOffset,
   return -1;
 }
 
- int32_t 
-Instance::dataDrop(Instance* instance, uint32_t segIndex) {
+ int32_t Instance::dataDrop(Instance* instance, uint32_t segIndex) {
+  MOZ_ASSERT(SASigDataDrop.failureMode == FailureMode::FailOnNegI32);
+
   MOZ_RELEASE_ASSERT(size_t(segIndex) < instance->passiveDataSegments_.length(),
                      "ensured by validation");
 
@@ -524,9 +531,10 @@ Instance::dataDrop(Instance* instance, uint32_t segIndex) {
   return 0;
 }
 
- int32_t 
-Instance::memFill(Instance* instance, uint32_t byteOffset, uint32_t value,
-                  uint32_t len) {
+ int32_t Instance::memFill(Instance* instance, uint32_t byteOffset,
+                                       uint32_t value, uint32_t len) {
+  MOZ_ASSERT(SASigMemFill.failureMode == FailureMode::FailOnNegI32);
+
   WasmMemoryObject* mem = instance->memory();
   uint32_t memLen = mem->volatileMemoryLength();
 
@@ -577,9 +585,11 @@ Instance::memFill(Instance* instance, uint32_t byteOffset, uint32_t value,
   return -1;
 }
 
- int32_t 
-Instance::memInit(Instance* instance, uint32_t dstOffset, uint32_t srcOffset,
-                  uint32_t len, uint32_t segIndex) {
+ int32_t Instance::memInit(Instance* instance, uint32_t dstOffset,
+                                       uint32_t srcOffset, uint32_t len,
+                                       uint32_t segIndex) {
+  MOZ_ASSERT(SASigMemInit.failureMode == FailureMode::FailOnNegI32);
+
   MOZ_RELEASE_ASSERT(size_t(segIndex) < instance->passiveDataSegments_.length(),
                      "ensured by validation");
 
@@ -655,10 +665,12 @@ Instance::memInit(Instance* instance, uint32_t dstOffset, uint32_t srcOffset,
   return -1;
 }
 
- int32_t 
-Instance::tableCopy(Instance* instance, uint32_t dstOffset, uint32_t srcOffset,
-                    uint32_t len, uint32_t dstTableIndex,
-                    uint32_t srcTableIndex) {
+ int32_t Instance::tableCopy(Instance* instance, uint32_t dstOffset,
+                                         uint32_t srcOffset, uint32_t len,
+                                         uint32_t dstTableIndex,
+                                         uint32_t srcTableIndex) {
+  MOZ_ASSERT(SASigMemCopy.failureMode == FailureMode::FailOnNegI32);
+
   const SharedTable& srcTable = instance->tables()[srcTableIndex];
   uint32_t srcTableLen = srcTable->length();
 
@@ -732,8 +744,9 @@ Instance::tableCopy(Instance* instance, uint32_t dstOffset, uint32_t srcOffset,
   return -1;
 }
 
- int32_t 
-Instance::elemDrop(Instance* instance, uint32_t segIndex) {
+ int32_t Instance::elemDrop(Instance* instance, uint32_t segIndex) {
+  MOZ_ASSERT(SASigDataDrop.failureMode == FailureMode::FailOnNegI32);
+
   MOZ_RELEASE_ASSERT(size_t(segIndex) < instance->passiveElemSegments_.length(),
                      "ensured by validation");
 
@@ -801,9 +814,12 @@ void Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
   }
 }
 
- int32_t 
-Instance::tableInit(Instance* instance, uint32_t dstOffset, uint32_t srcOffset,
-                    uint32_t len, uint32_t segIndex, uint32_t tableIndex) {
+ int32_t Instance::tableInit(Instance* instance, uint32_t dstOffset,
+                                         uint32_t srcOffset, uint32_t len,
+                                         uint32_t segIndex,
+                                         uint32_t tableIndex) {
+  MOZ_ASSERT(SASigTableInit.failureMode == FailureMode::FailOnNegI32);
+
   MOZ_RELEASE_ASSERT(size_t(segIndex) < instance->passiveElemSegments_.length(),
                      "ensured by validation");
 
@@ -870,9 +886,11 @@ Instance::tableInit(Instance* instance, uint32_t dstOffset, uint32_t srcOffset,
   return -1;
 }
 
- int32_t 
-Instance::tableFill(Instance* instance, uint32_t start, void* value,
-                    uint32_t len, uint32_t tableIndex) {
+ int32_t Instance::tableFill(Instance* instance, uint32_t start,
+                                         void* value, uint32_t len,
+                                         uint32_t tableIndex) {
+  MOZ_ASSERT(SASigTableFill.failureMode == FailureMode::FailOnNegI32);
+
   Table& table = *instance->tables()[tableIndex];
   MOZ_RELEASE_ASSERT(table.kind() == TableKind::AnyRef);
 
@@ -925,9 +943,10 @@ Instance::tableFill(Instance* instance, uint32_t start, void* value,
 
 
 
- void* 
+ void* Instance::tableGet(Instance* instance, uint32_t index,
+                                      uint32_t tableIndex) {
+  MOZ_ASSERT(SASigTableGet.failureMode == FailureMode::FailOnNullPtr);
 
-Instance::tableGet(Instance* instance, uint32_t index, uint32_t tableIndex) {
   const Table& table = *instance->tables()[tableIndex];
   MOZ_RELEASE_ASSERT(table.kind() == TableKind::AnyRef);
   if (index >= table.length()) {
@@ -938,9 +957,10 @@ Instance::tableGet(Instance* instance, uint32_t index, uint32_t tableIndex) {
   return const_cast<void*>(table.getShortlivedAnyRefLocForCompiledCode(index));
 }
 
- uint32_t 
-Instance::tableGrow(Instance* instance, void* initValue, uint32_t delta,
-                    uint32_t tableIndex) {
+ uint32_t Instance::tableGrow(Instance* instance, void* initValue,
+                                          uint32_t delta, uint32_t tableIndex) {
+  MOZ_ASSERT(SASigTableGrow.failureMode == FailureMode::Infallible);
+
   RootedAnyRef obj(TlsContext.get(), AnyRef::fromCompiledCode(initValue));
   Table& table = *instance->tables()[tableIndex];
   MOZ_RELEASE_ASSERT(table.kind() == TableKind::AnyRef);
@@ -954,9 +974,10 @@ Instance::tableGrow(Instance* instance, void* initValue, uint32_t delta,
   return oldSize;
 }
 
- int32_t 
-Instance::tableSet(Instance* instance, uint32_t index, void* value,
-                   uint32_t tableIndex) {
+ int32_t Instance::tableSet(Instance* instance, uint32_t index,
+                                        void* value, uint32_t tableIndex) {
+  MOZ_ASSERT(SASigTableSet.failureMode == FailureMode::FailOnNegI32);
+
   Table& table = *instance->tables()[tableIndex];
   MOZ_RELEASE_ASSERT(table.kind() == TableKind::AnyRef);
   if (index >= table.length()) {
@@ -968,20 +989,23 @@ Instance::tableSet(Instance* instance, uint32_t index, void* value,
   return 0;
 }
 
- uint32_t 
-Instance::tableSize(Instance* instance, uint32_t tableIndex) {
+ uint32_t Instance::tableSize(Instance* instance,
+                                          uint32_t tableIndex) {
+  MOZ_ASSERT(SASigTableSize.failureMode == FailureMode::Infallible);
   Table& table = *instance->tables()[tableIndex];
   return table.length();
 }
 
- void 
-Instance::postBarrier(Instance* instance, gc::Cell** location) {
+ void Instance::postBarrier(Instance* instance,
+                                        gc::Cell** location) {
+  MOZ_ASSERT(SASigPostBarrier.failureMode == FailureMode::Infallible);
   MOZ_ASSERT(location);
   TlsContext.get()->runtime()->gc.storeBuffer().putCell(location);
 }
 
- void 
-Instance::postBarrierFiltering(Instance* instance, gc::Cell** location) {
+ void Instance::postBarrierFiltering(Instance* instance,
+                                                 gc::Cell** location) {
+  MOZ_ASSERT(SASigPostBarrier.failureMode == FailureMode::Infallible);
   MOZ_ASSERT(location);
   if (*location == nullptr || !gc::IsInsideNursery(*location)) {
     return;
@@ -995,16 +1019,19 @@ Instance::postBarrierFiltering(Instance* instance, gc::Cell** location) {
 
 
 
- void* 
-Instance::structNew(Instance* instance, uint32_t typeIndex) {
+ void* Instance::structNew(Instance* instance, uint32_t typeIndex) {
+  MOZ_ASSERT(SASigStructNew.failureMode == FailureMode::FailOnNullPtr);
   JSContext* cx = TlsContext.get();
   Rooted<TypeDescr*> typeDescr(cx, instance->structTypeDescrs_[typeIndex]);
   return TypedObject::createZeroed(cx, typeDescr);
 }
 
- void* 
-Instance::structNarrow(Instance* instance, uint32_t mustUnboxAnyref,
-                       uint32_t outputTypeIndex, void* maybeNullPtr) {
+ void* Instance::structNarrow(Instance* instance,
+                                          uint32_t mustUnboxAnyref,
+                                          uint32_t outputTypeIndex,
+                                          void* maybeNullPtr) {
+  MOZ_ASSERT(SASigStructNarrow.failureMode == FailureMode::Infallible);
+
   JSContext* cx = TlsContext.get();
 
   Rooted<TypedObject*> obj(cx);

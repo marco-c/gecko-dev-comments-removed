@@ -1905,6 +1905,13 @@ enum class SymbolicAddress {
 
 
 
+enum class FailureMode : uint8_t { Infallible, FailOnNegI32, FailOnNullPtr };
+
+
+
+
+
+
 
 
 
@@ -1915,6 +1922,8 @@ struct SymbolicAddressSignature {
   const SymbolicAddress identity;
   
   const jit::MIRType retType;
+  
+  const FailureMode failureMode;
   
   const uint8_t numArgs;
   
