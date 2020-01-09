@@ -1631,9 +1631,17 @@ class AsyncPanZoomController {
   
   
   
-  bool MaybeAdjustDeltaForScrollSnapping(const ScrollWheelInput& aEvent,
+  
+  
+  bool MaybeAdjustDeltaForScrollSnapping(nsIScrollableFrame::ScrollUnit aUnit,
                                          ParentLayerPoint& aDelta,
                                          CSSPoint& aStartPosition);
+
+  
+  
+  bool MaybeAdjustDeltaForScrollSnappingOnWheelInput(
+      const ScrollWheelInput& aEvent, ParentLayerPoint& aDelta,
+      CSSPoint& aStartPosition);
 
   bool MaybeAdjustDestinationForScrollSnapping(const KeyboardInput& aEvent,
                                                CSSPoint& aDestination);
