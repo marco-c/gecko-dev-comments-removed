@@ -61,6 +61,7 @@
   grid-row-end: inherit;
   order: inherit;
   column-span: inherit; 
+  contain: inherit; 
 }
 
 *|*::-moz-table-row {
