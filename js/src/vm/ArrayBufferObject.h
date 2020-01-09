@@ -202,17 +202,11 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
     OWNS_DATA = 0x8,
 
     
-    
-    
-    
-    FOR_INLINE_TYPED_OBJECT = 0x10,
-
-    
-    TYPED_OBJECT_VIEWS = 0x20,
+    TYPED_OBJECT_VIEWS = 0x10,
 
     
     
-    FOR_ASMJS = 0x40
+    FOR_ASMJS = 0x20
   };
 
   static_assert(JS_ARRAYBUFFER_DETACHED_FLAG == DETACHED,
@@ -409,14 +403,7 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
   static size_t offsetOfFlagsSlot() { return getFixedSlotOffset(FLAGS_SLOT); }
   static size_t offsetOfDataSlot() { return getFixedSlotOffset(DATA_SLOT); }
 
-  void setForInlineTypedObject() {
-    setFlags(flags() | FOR_INLINE_TYPED_OBJECT);
-  }
   void setHasTypedObjectViews() { setFlags(flags() | TYPED_OBJECT_VIEWS); }
-
-  bool forInlineTypedObject() const {
-    return flags() & FOR_INLINE_TYPED_OBJECT;
-  }
 
  protected:
   void setDataPointer(BufferContents contents, OwnsState ownsState);

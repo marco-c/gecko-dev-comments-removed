@@ -468,8 +468,6 @@ static void NoteViewBufferWasDetached(
   
   
   
-  MOZ_ASSERT_IF(buffer->forInlineTypedObject(),
-                newContents.data() == buffer->dataPointer());
 
   
   
@@ -503,8 +501,6 @@ static void NoteViewBufferWasDetached(
     innerViews.removeViews(buffer);
   }
   if (JSObject* view = buffer->firstView()) {
-    MOZ_ASSERT(!buffer->forInlineTypedObject(),
-               "Typed object buffers cannot be detached");
     NoteViewBufferWasDetached(&view->as<ArrayBufferViewObject>(), newContents,
                               cx);
     buffer->setFirstView(nullptr);
@@ -561,7 +557,6 @@ void ArrayBufferObject::changeContents(JSContext* cx,
                                        BufferContents newContents,
                                        OwnsState ownsState) {
   MOZ_RELEASE_ASSERT(!isWasm());
-  MOZ_ASSERT(!forInlineTypedObject());
 
   
   uint8_t* oldDataPointer = dataPointer();
@@ -930,10 +925,6 @@ bool js::CreateWasmBuffer(JSContext* cx, const wasm::Limits& memory,
   MOZ_ASSERT(buffer->byteLength() % wasm::PageSize == 0);
   
   
-
-  if (buffer->forInlineTypedObject()) {
-    return false;
-  }
 
   if (!buffer->isWasm() && buffer->isPreparedForAsmJS()) {
     return true;
@@ -1406,20 +1397,9 @@ ArrayBufferObject::externalizeContents(JSContext* cx,
  void ArrayBufferObject::trace(JSTracer* trc, JSObject* obj) {
   
   
-  ArrayBufferObject& buf = obj->as<ArrayBufferObject>();
-
-  if (!buf.forInlineTypedObject()) {
-    return;
-  }
-
-  JSObject* view = MaybeForwarded(buf.firstView());
-  MOZ_ASSERT(view && view->is<InlineTransparentTypedObject>());
-
-  TraceManuallyBarrieredEdge(trc, &view,
-                             "array buffer inline typed object owner");
-  buf.setFixedSlot(
-      DATA_SLOT,
-      PrivateValue(view->as<InlineTransparentTypedObject>().inlineTypedMem()));
+  
+  
+  MOZ_ASSERT(obj->is<ArrayBufferObject>());
 }
 
  size_t ArrayBufferObject::objectMoved(JSObject* obj,

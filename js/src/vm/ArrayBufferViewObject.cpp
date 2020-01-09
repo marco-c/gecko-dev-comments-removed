@@ -36,12 +36,6 @@ using namespace js;
       uint32_t offset = uint32_t(obj->getFixedSlot(BYTEOFFSET_SLOT).toInt32());
       MOZ_ASSERT(offset <= INT32_MAX);
 
-      
-      
-      
-      
-      MOZ_RELEASE_ASSERT(!buf.forInlineTypedObject());
-
       MOZ_ASSERT_IF(buf.dataPointer() == nullptr, offset == 0);
 
       
