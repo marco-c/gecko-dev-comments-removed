@@ -507,7 +507,11 @@ WorkerGlobalScope::GetOrCreateServiceWorkerRegistration(
 }
 
 void WorkerGlobalScope::FirstPartyStorageAccessGranted() {
+  
   mIndexedDB = nullptr;
+
+  
+  mCacheStorage = nullptr;
 }
 
 DedicatedWorkerGlobalScope::DedicatedWorkerGlobalScope(
