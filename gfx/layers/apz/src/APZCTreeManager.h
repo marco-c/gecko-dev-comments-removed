@@ -19,14 +19,14 @@
 #include "mozilla/layers/APZTestData.h"       
 #include "mozilla/layers/IAPZCTreeManager.h"  
 #include "mozilla/layers/LayersTypes.h"
-#include "mozilla/layers/KeyboardMap.h"      
-#include "mozilla/layers/TouchCounter.h"     
+#include "mozilla/layers/KeyboardMap.h"   
+#include "mozilla/layers/TouchCounter.h"  
 #include "mozilla/layers/ZoomConstraints.h"  
-#include "mozilla/RecursiveMutex.h"          
-#include "mozilla/RefPtr.h"                  
-#include "mozilla/TimeStamp.h"               
-#include "mozilla/UniquePtr.h"               
-#include "nsCOMPtr.h"                        
+#include "mozilla/RecursiveMutex.h"       
+#include "mozilla/RefPtr.h"               
+#include "mozilla/TimeStamp.h"            
+#include "mozilla/UniquePtr.h"            
+#include "nsCOMPtr.h"                     
 
 #if defined(MOZ_WIDGET_ANDROID)
 #  include "mozilla/layers/AndroidDynamicToolbarAnimator.h"
@@ -209,7 +209,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
   void UpdateHitTestingTree(LayersId aRootLayerTreeId,
                             const WebRenderScrollDataWrapper& aScrollWrapper,
-                            bool aIsFirstPaint, LayersId aOriginatingLayersId,
+                            bool aIsFirstPaint, WRRootId aOriginatingWrRootId,
                             uint32_t aPaintSequenceNumber);
 
   
@@ -220,8 +220,13 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
+
+
+
+
   void SampleForWebRender(wr::TransactionWrapper& aTxn,
-                          const TimeStamp& aSampleTime);
+                          const TimeStamp& aSampleTime,
+                          wr::RenderRoot aRenderRoot);
 
   
 
@@ -272,7 +277,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-  void ZoomToRect(const ScrollableLayerGuid& aGuid, const CSSRect& aRect,
+  void ZoomToRect(const SLGuidAndRenderRoot& aGuid, const CSSRect& aRect,
                   const uint32_t aFlags = DEFAULT_BEHAVIOR) override;
 
   
@@ -304,7 +309,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
   void SetTargetAPZC(uint64_t aInputBlockId,
-                     const nsTArray<ScrollableLayerGuid>& aTargets) override;
+                     const nsTArray<SLGuidAndRenderRoot>& aTargets) override;
 
   
 
@@ -312,13 +317,8 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
   void UpdateZoomConstraints(
-      const ScrollableLayerGuid& aGuid,
+      const SLGuidAndRenderRoot& aGuid,
       const Maybe<ZoomConstraints>& aConstraints) override;
-
-  
-
-
-  void CancelAnimation(const ScrollableLayerGuid& aGuid);
 
   
 
@@ -463,13 +463,13 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   ParentLayerPoint DispatchFling(AsyncPanZoomController* aApzc,
                                  const FlingHandoffState& aHandoffState);
 
-  void StartScrollbarDrag(const ScrollableLayerGuid& aGuid,
+  void StartScrollbarDrag(const SLGuidAndRenderRoot& aGuid,
                           const AsyncDragMetrics& aDragMetrics) override;
 
-  bool StartAutoscroll(const ScrollableLayerGuid& aGuid,
+  bool StartAutoscroll(const SLGuidAndRenderRoot& aGuid,
                        const ScreenPoint& aAnchorLocation) override;
 
-  void StopAutoscroll(const ScrollableLayerGuid& aGuid) override;
+  void StopAutoscroll(const SLGuidAndRenderRoot& aGuid) override;
 
   
 
@@ -552,7 +552,17 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   
   
   
-  already_AddRefed<wr::WebRenderAPI> GetWebRenderAPI() const;
+  
+  already_AddRefed<wr::WebRenderAPI> GetWebRenderAPI(
+      wr::RenderRoot aRenderRoot) const;
+
+  
+  
+  
+  
+  
+  already_AddRefed<wr::WebRenderAPI> GetWebRenderAPIAtPoint(
+      const ScreenPoint& aPoint) const;
 
  protected:
   
@@ -571,7 +581,8 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
   
   virtual AsyncPanZoomController* NewAPZCInstance(
-      LayersId aLayersId, GeckoContentController* aController);
+      LayersId aLayersId, GeckoContentController* aController,
+      wr::RenderRoot aRenderRoot);
 
  public:
   
@@ -625,7 +636,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   template <class ScrollNode>
   void UpdateHitTestingTreeImpl(LayersId aRootLayerTreeId,
                                 const ScrollNode& aRoot, bool aIsFirstPaint,
-                                LayersId aOriginatingLayersId,
+                                WRRootId aOriginatingWrRootId,
                                 uint32_t aPaintSequenceNumber);
 
   void AttachNodeToTree(HitTestingTreeNode* aNode, HitTestingTreeNode* aParent,
@@ -728,7 +739,8 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
       const RecursiveMutexAutoLock& aProofOfTreeLock, const ScrollNode& aLayer,
       const FrameMetrics& aMetrics, LayersId aLayersId,
       const AncestorTransform& aAncestorTransform, HitTestingTreeNode* aParent,
-      HitTestingTreeNode* aNextSibling, TreeBuildingState& aState);
+      HitTestingTreeNode* aNextSibling, TreeBuildingState& aState,
+      wr::RenderRoot aRenderRoot);
 
   template <class ScrollNode>
   void PrintAPZCInfo(const ScrollNode& aLayer,

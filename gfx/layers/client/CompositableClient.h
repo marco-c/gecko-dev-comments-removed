@@ -16,7 +16,8 @@
 #include "mozilla/layers/CompositorTypes.h"
 #include "mozilla/layers/LayersTypes.h"    
 #include "mozilla/layers/TextureClient.h"  
-#include "nsISupportsImpl.h"               
+#include "mozilla/webrender/WebRenderTypes.h"  
+#include "nsISupportsImpl.h"                   
 
 namespace mozilla {
 namespace layers {
@@ -156,7 +157,8 @@ class CompositableClient {
 
 
 
-  virtual void RemoveTexture(TextureClient* aTexture);
+  virtual void RemoveTexture(TextureClient* aTexture,
+                             const Maybe<wr::RenderRoot>& aRenderRoot);
 
   void InitIPDL(const CompositableHandle& aHandle);
 
@@ -188,8 +190,11 @@ class CompositableClient {
 
 struct AutoRemoveTexture {
   explicit AutoRemoveTexture(CompositableClient* aCompositable,
+                             wr::RenderRoot aRenderRoot,
                              TextureClient* aTexture = nullptr)
-      : mTexture(aTexture), mCompositable(aCompositable) {}
+      : mTexture(aTexture),
+        mCompositable(aCompositable),
+        mRenderRoot(aRenderRoot) {}
 
   ~AutoRemoveTexture();
 
@@ -197,6 +202,7 @@ struct AutoRemoveTexture {
 
  private:
   CompositableClient* mCompositable;
+  wr::RenderRoot mRenderRoot;
 };
 
 }  
