@@ -1951,14 +1951,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
 
-  void compareExchange64(const Synchronization& sync, const Address& mem,
-                         Register64 expected, Register64 replacement,
-                         Register64 output) DEFINED_ON(arm, arm64, x64);
-
-  
-  
-  
-
   void atomicExchange(Scalar::Type type, const Synchronization& sync,
                       const Address& mem, Register value, Register output)
       DEFINED_ON(arm, arm64, x86_shared);
@@ -1976,10 +1968,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
                       const BaseIndex& mem, Register value, Register valueTemp,
                       Register offsetTemp, Register maskTemp, Register output)
       DEFINED_ON(mips_shared);
-
-  void atomicExchange64(const Synchronization& sync, const Address& mem,
-                        Register64 value, Register64 output)
-      DEFINED_ON(arm64, x64);
 
   
   
@@ -2021,15 +2009,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
                      AtomicOp op, Register value, const BaseIndex& mem,
                      Register valueTemp, Register offsetTemp, Register maskTemp,
                      Register output) DEFINED_ON(mips_shared);
-
-  
-  
-  
-  
-
-  void atomicFetchOp64(const Synchronization& sync, AtomicOp op,
-                       Register64 value, const Address& mem, Register64 temp,
-                       Register64 output) DEFINED_ON(arm64, x64);
 
   
   
@@ -2159,8 +2138,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
-  
-  
 
   void wasmCompareExchange64(const wasm::MemoryAccessDesc& access,
                              const Address& mem, Register64 expected,
@@ -2175,7 +2152,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
-  
 
   void wasmAtomicExchange64(const wasm::MemoryAccessDesc& access,
                             const Address& mem, Register64 value,
@@ -2185,8 +2161,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
                             const BaseIndex& mem, Register64 value,
                             Register64 output) PER_ARCH;
 
-  
-  
   
   
   

@@ -209,19 +209,6 @@ class CPUInfo {
 
   static void SetSSEVersion();
 
-  
-  
-  
-
-  static void reset() {
-    maxSSEVersion = UnknownSSE;
-    maxEnabledSSEVersion = UnknownSSE;
-    avxPresent = false;
-    avxEnabled = false;
-    popcntPresent = false;
-    needAmdBugWorkaround = false;
-  }
-
  public:
   static bool IsSSE2Present() {
 #ifdef JS_CODEGEN_X64
@@ -241,19 +228,14 @@ class CPUInfo {
   static bool NeedAmdBugWorkaround() { return needAmdBugWorkaround; }
 
   static void SetSSE3Disabled() {
-    reset();
     maxEnabledSSEVersion = SSE2;
     avxEnabled = false;
   }
   static void SetSSE4Disabled() {
-    reset();
     maxEnabledSSEVersion = SSSE3;
     avxEnabled = false;
   }
-  static void SetAVXEnabled() {
-    reset();
-    avxEnabled = true;
-  }
+  static void SetAVXEnabled() { avxEnabled = true; }
 };
 
 class AssemblerX86Shared : public AssemblerShared {
