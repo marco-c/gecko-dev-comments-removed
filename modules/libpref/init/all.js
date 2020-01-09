@@ -1600,7 +1600,11 @@ pref("javascript.options.spectre.jit_to_C++_calls", true);
 pref("javascript.options.streams", true);
 
 
+#ifdef NIGHTLY_BUILD
+pref("javascript.options.bigint", true);
+#else
 pref("javascript.options.bigint", false);
+#endif
 
 
 #ifdef NIGHTLY_BUILD
