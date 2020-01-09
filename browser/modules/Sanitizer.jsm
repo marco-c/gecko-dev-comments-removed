@@ -664,6 +664,81 @@ async function sanitizeInternal(items, aItemsToClear, progress, options = {}) {
   }
 }
 
+
+
+class PrincipalsCollector {
+  constructor() {
+    this.principals = null;
+  }
+
+  async getAllPrincipals(progress) {
+    if (this.principals == null) {
+      
+      progress.advancement = "get-principals";
+      this.principals = await this.getAllPrincipalsInternal(progress);
+    }
+
+    return this.principals;
+  }
+
+  async getAllPrincipalsInternal(progress) {
+    progress.step = "principals-quota-manager";
+    let principals = await new Promise(resolve => {
+      quotaManagerService.getUsage(request => {
+        progress.step = "principals-quota-manager-getUsage";
+        if (request.resultCode != Cr.NS_OK) {
+          
+          
+          resolve([]);
+          return;
+        }
+
+        let list = [];
+        for (let item of request.result) {
+          let principal = Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(item.origin);
+          let uri = principal.URI;
+          if (isSupportedURI(uri)) {
+            list.push(principal);
+          }
+        }
+
+        progress.step = "principals-quota-manager-completed";
+        resolve(list);
+      });
+    }).catch(ex => {
+      Cu.reportError("QuotaManagerService promise failed: " + ex);
+      return [];
+    });
+
+    progress.step = "principals-service-workers";
+    let serviceWorkers = serviceWorkerManager.getAllRegistrations();
+    for (let i = 0; i < serviceWorkers.length; i++) {
+      let sw = serviceWorkers.queryElementAt(i, Ci.nsIServiceWorkerRegistrationInfo);
+      
+      principals.push(sw.principal);
+    }
+
+    
+    progress.step = "principals-cookies";
+    let enumerator = Services.cookies.enumerator;
+    let hosts = new Set();
+    for (let cookie of enumerator) {
+      hosts.add(cookie.rawHost + ChromeUtils.originAttributesToSuffix(cookie.originAttributes));
+    }
+
+    progress.step = "principals-host-cookie";
+    hosts.forEach(host => {
+      
+      
+      principals.push(
+        Services.scriptSecurityManager.createCodebasePrincipalFromOrigin("https://" + host));
+    });
+
+    progress.step = "total-principals:" + principals.length;
+    return principals;
+  }
+}
+
 async function sanitizeOnShutdown(progress) {
   log("Sanitizing on shutdown");
 
@@ -674,9 +749,7 @@ async function sanitizeOnShutdown(progress) {
     await Sanitizer.sanitize(itemsToClear, { progress });
   }
 
-  
-  progress.advancement = "get-principals";
-  let principals = await getAllPrincipals(progress);
+  let principalsCollector = new PrincipalsCollector();
 
   
   
@@ -704,6 +777,8 @@ async function sanitizeOnShutdown(progress) {
                                 Ci.nsICookieService.ACCEPT_NORMALLY) == Ci.nsICookieService.ACCEPT_SESSION) {
     log("Session-only configuration detected");
     progress.advancement = "session-only";
+
+    let principals = await principalsCollector.getAllPrincipals(progress);
     await maybeSanitizeSessionPrincipals(progress, principals);
     return;
   }
@@ -725,6 +800,7 @@ async function sanitizeOnShutdown(progress) {
     log("Custom session cookie permission detected for: " + permission.principal.URI.spec);
 
     
+    let principals = await principalsCollector.getAllPrincipals(progress);
     let selectedPrincipals = extractMatchingPrincipals(principals, permission.principal.URI);
     await maybeSanitizeSessionPrincipals(progress, selectedPrincipals);
   }
@@ -743,61 +819,6 @@ async function sanitizeOnShutdown(progress) {
   }
 
   progress.advancement = "done";
-}
-
-
-async function getAllPrincipals(progress) {
-  progress.step = "principals-quota-manager";
-  let principals = await new Promise(resolve => {
-    quotaManagerService.getUsage(request => {
-      progress.step = "principals-quota-manager-getUsage";
-      if (request.resultCode != Cr.NS_OK) {
-        
-        
-        resolve([]);
-        return;
-      }
-
-      let list = [];
-      for (let item of request.result) {
-        let principal = Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(item.origin);
-        let uri = principal.URI;
-        if (isSupportedURI(uri)) {
-          list.push(principal);
-        }
-      }
-
-      progress.step = "principals-quota-manager-completed";
-      resolve(list);
-    });
-  }).catch(() => []);
-
-  progress.step = "principals-service-workers";
-  let serviceWorkers = serviceWorkerManager.getAllRegistrations();
-  for (let i = 0; i < serviceWorkers.length; i++) {
-    let sw = serviceWorkers.queryElementAt(i, Ci.nsIServiceWorkerRegistrationInfo);
-    
-    principals.push(sw.principal);
-  }
-
-  
-  progress.step = "principals-cookies";
-  let enumerator = Services.cookies.enumerator;
-  let hosts = new Set();
-  for (let cookie of enumerator) {
-    hosts.add(cookie.rawHost + ChromeUtils.originAttributesToSuffix(cookie.originAttributes));
-  }
-
-  progress.step = "principals-host-cookie";
-  hosts.forEach(host => {
-    
-    
-    principals.push(
-      Services.scriptSecurityManager.createCodebasePrincipalFromOrigin("https://" + host));
-  });
-
-  progress.step = "total-principals:" + principals.length;
-  return principals;
 }
 
 
