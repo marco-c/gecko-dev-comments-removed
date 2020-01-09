@@ -5,7 +5,9 @@
 
 #include "nspr.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/BasicEvents.h"
 #include "mozilla/Components.h"
+#include "mozilla/EventDispatcher.h"
 #include "mozilla/Logging.h"
 #include "mozilla/IntegerPrintfMacros.h"
 
@@ -26,6 +28,7 @@
 #include "nsQueryObject.h"
 
 #include "nsIDOMWindow.h"
+#include "nsPIDOMWindow.h"
 
 #include "nsIStringBundle.h"
 #include "nsIScriptSecurityManager.h"
@@ -41,7 +44,10 @@
 
 using namespace mozilla;
 using mozilla::DebugOnly;
+using mozilla::eLoad;
+using mozilla::EventDispatcher;
 using mozilla::LogLevel;
+using mozilla::WidgetEvent;
 using mozilla::dom::Document;
 
 
@@ -108,7 +114,8 @@ nsDocLoader::nsDocLoader()
       mIsLoadingDocument(false),
       mIsRestoringDocument(false),
       mDontFlushLayout(false),
-      mIsFlushingLayout(false) {
+      mIsFlushingLayout(false),
+      mDocumentOpenedButNotLoaded(false) {
   ClearInternalProgress();
 
   MOZ_LOG(gDocLoaderLog, LogLevel::Debug, ("DocLoader:%p: created.\n", this));
@@ -264,7 +271,7 @@ bool nsDocLoader::IsBusy() {
   }
 
   
-  if (!mIsLoadingDocument) {
+  if (!IsBlockingLoadEvent()) {
     return false;
   }
 
@@ -377,6 +384,7 @@ nsDocLoader::OnStartRequest(nsIRequest* request) {
   if (!mIsLoadingDocument && (loadFlags & nsIChannel::LOAD_DOCUMENT_URI)) {
     bJustStartedLoading = true;
     mIsLoadingDocument = true;
+    mDocumentOpenedButNotLoaded = false;
     ClearInternalProgress();  
                               
   }
@@ -457,9 +465,11 @@ nsDocLoader::OnStopRequest(nsIRequest* aRequest,
 
     MOZ_LOG(gDocLoaderLog, LogLevel::Debug,
             ("DocLoader:%p: OnStopRequest[%p](%s) status=%" PRIx32
-             " mIsLoadingDocument=%s, %u active URLs",
+             " mIsLoadingDocument=%s, mDocumentOpenedButNotLoaded=%s,"
+             " %u active URLs",
              this, aRequest, name.get(), static_cast<uint32_t>(aStatus),
-             (mIsLoadingDocument ? "true" : "false"), count));
+             (mIsLoadingDocument ? "true" : "false"),
+             (mDocumentOpenedButNotLoaded ? "true" : "false"), count));
   }
 
   bool bFireTransferring = false;
@@ -576,8 +586,7 @@ nsDocLoader::OnStopRequest(nsIRequest* aRequest,
   
   
   
-  
-  if (mIsLoadingDocument) {
+  if (IsBlockingLoadEvent()) {
     nsCOMPtr<nsIDocShell> ds =
         do_QueryInterface(static_cast<nsIRequestObserver*>(this));
     bool doNotFlushLayout = false;
@@ -615,7 +624,7 @@ NS_IMETHODIMP nsDocLoader::GetDocumentChannel(nsIChannel** aChannel) {
 }
 
 void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout) {
-  if (mIsLoadingDocument) {
+  if (IsBlockingLoadEvent()) {
     
 
 
@@ -628,12 +637,14 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout) {
     }
 
     NS_ASSERTION(!mIsFlushingLayout, "Someone screwed up");
-    NS_ASSERTION(mDocumentRequest, "No Document Request!");
+    
+    
+    NS_ASSERTION(mDocumentRequest || mDocumentOpenedButNotLoaded,
+                 "No Document Request!");
 
     
     if (aFlushLayout && !mDontFlushLayout) {
-      nsCOMPtr<mozilla::dom::Document> doc =
-          do_GetInterface(GetAsSupports(this));
+      nsCOMPtr<Document> doc = do_GetInterface(GetAsSupports(this));
       if (doc) {
         
         
@@ -654,7 +665,12 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout) {
     
     
     
-    if (!IsBusy() && mDocumentRequest) {
+    
+    if (IsBusy() || (!mDocumentRequest && !mDocumentOpenedButNotLoaded)) {
+      return;
+    }
+
+    if (mDocumentRequest) {
       
       
       ClearInternalProgress();
@@ -693,6 +709,67 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout) {
         
         doStopDocumentLoad(docRequest, loadGroupStatus);
 
+        if (parent) {
+          parent->ChildDoneWithOnload(this);
+        }
+      }
+    } else {
+      MOZ_ASSERT(mDocumentOpenedButNotLoaded);
+      mDocumentOpenedButNotLoaded = false;
+
+      
+      
+      
+      RefPtr<nsDocLoader> parent = mParent;
+      if (!parent || parent->ChildEnteringOnload(this)) {
+        nsresult loadGroupStatus = NS_OK;
+        mLoadGroup->GetStatus(&loadGroupStatus);
+        
+        
+        if (NS_SUCCEEDED(loadGroupStatus) ||
+            loadGroupStatus == NS_ERROR_PARSED_DATA_CACHED) {
+          
+          
+          nsCOMPtr<Document> doc = do_GetInterface(GetAsSupports(this));
+          if (doc) {
+            doc->SetReadyStateInternal(Document::READYSTATE_COMPLETE,
+                                        false);
+
+            nsCOMPtr<nsPIDOMWindowOuter> window = doc->GetWindow();
+            if (window && !doc->SkipLoadEventAfterClose()) {
+              MOZ_LOG(gDocLoaderLog, LogLevel::Debug,
+                      ("DocLoader:%p: Firing load event for document.open\n",
+                       this));
+
+              
+              
+              
+              
+              WidgetEvent event(true, eLoad);
+              event.mFlags.mBubbles = false;
+              event.mFlags.mCancelable = false;
+              
+              
+              event.mTarget = doc;
+              nsEventStatus unused = nsEventStatus_eIgnore;
+              doc->SetLoadEventFiring(true);
+              EventDispatcher::Dispatch(window, nullptr, &event, nullptr,
+                                        &unused);
+              doc->SetLoadEventFiring(false);
+
+              
+              
+              nsCOMPtr<nsIPresShell> shell = doc->GetShell();
+              if (shell && !shell->IsDestroying()) {
+                shell->UnsuppressPainting();
+
+                if (!shell->IsDestroying()) {
+                  shell->LoadComplete();
+                }
+              }
+            }
+          }
+        }
         if (parent) {
           parent->ChildDoneWithOnload(this);
         }

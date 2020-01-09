@@ -1559,6 +1559,11 @@ class Document : public nsINode,
 
   already_AddRefed<nsPIWindowRoot> GetWindowRoot();
 
+  
+
+
+  void DisconnectNodeTree();
+
  private:
   class SelectorCacheKey {
    public:
@@ -2001,7 +2006,12 @@ class Document : public nsINode,
     READYSTATE_INTERACTIVE = 3,
     READYSTATE_COMPLETE = 4
   };
-  void SetReadyStateInternal(ReadyState rs);
+  
+  
+  
+  
+  void SetReadyStateInternal(ReadyState rs,
+                             bool updateTimingInformation = true);
   ReadyState GetReadyStateEnum() { return mReadyState; }
 
   void SetAncestorLoading(bool aAncestorIsLoading);
@@ -2692,6 +2702,29 @@ class Document : public nsINode,
   void AddSuspendedChannelEventQueue(mozilla::net::ChannelEventQueue* aQueue);
 
   void SetHasDelayedRefreshEvent() { mHasDelayedRefreshEvent = true; }
+
+  
+
+
+  void SetLoadEventFiring(bool aFiring) { mLoadEventFiring = aFiring; }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  bool SkipLoadEventAfterClose() {
+    bool skip = mSkipLoadEventAfterClose;
+    mSkipLoadEventAfterClose = false;
+    return skip;
+  }
 
   
 
@@ -4221,6 +4254,21 @@ class Document : public nsINode,
   
   
   bool mHasDelayedRefreshEvent : 1;
+
+  
+  
+  
+  
+  
+  bool mLoadEventFiring : 1;
+
+  
+  
+  
+  
+  
+  
+  bool mSkipLoadEventAfterClose : 1;
 
   uint8_t mPendingFullscreenRequests;
 

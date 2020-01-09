@@ -16,6 +16,8 @@
 #include "nsPrintfCString.h"
 #include "nsReadableUtils.h"
 #include "nsUnicharUtils.h"
+#include "nsGlobalWindowInner.h"
+#include "nsIDocumentLoader.h"
 #include "nsIHTMLContentSink.h"
 #include "nsIXMLContentSink.h"
 #include "nsHTMLParts.h"
@@ -78,6 +80,7 @@
 
 #include "mozilla/dom/FallbackEncoding.h"
 #include "mozilla/Encoding.h"
+#include "mozilla/EventListenerManager.h"
 #include "mozilla/HTMLEditor.h"
 #include "mozilla/IdentifierMapEntry.h"
 #include "mozilla/LoadInfo.h"
@@ -101,11 +104,13 @@
 #include "mozilla/dom/HTMLBodyElement.h"
 #include "mozilla/dom/HTMLDocumentBinding.h"
 #include "mozilla/dom/Selection.h"
+#include "mozilla/dom/ShadowIncludingTreeIterator.h"
 #include "nsCharsetSource.h"
 #include "nsIStringBundle.h"
 #include "nsFocusManager.h"
 #include "nsIFrame.h"
 #include "nsIContent.h"
+#include "nsIStructuredCloneContainer.h"
 #include "nsLayoutStylesheetCache.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/StyleSheetInlines.h"
@@ -797,6 +802,24 @@ void nsHTMLDocument::EndLoad() {
   if (turnOnEditing) {
     EditingStateChanged();
   }
+
+  if (!GetWindow()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    SetReadyStateInternal(Document::READYSTATE_COMPLETE,
+                           false);
+
+    
+    mSkipLoadEventAfterClose = false;
+  }
 }
 
 void nsHTMLDocument::SetCompatibilityMode(nsCompatibility aMode) {
@@ -1166,76 +1189,28 @@ mozilla::dom::Nullable<mozilla::dom::WindowProxyHolder> nsHTMLDocument::Open(
   return WindowProxyHolder(newWindow->GetBrowsingContext());
 }
 
-already_AddRefed<Document> nsHTMLDocument::Open(
-    JSContext* cx, const Optional<nsAString>& ,
-    const nsAString& aReplace, ErrorResult& aError) {
+Document* nsHTMLDocument::Open(JSContext* cx,
+                               const Optional<nsAString>& ,
+                               const nsAString& ,
+                               ErrorResult& aError) {
   
   
 
   MOZ_ASSERT(nsContentUtils::CanCallerAccess(this),
              "XOW should have caught this!");
+
+  
   if (!IsHTMLDocument() || mDisableDocWrite) {
-    
     aError.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return nullptr;
   }
 
+  
   if (ShouldThrowOnDynamicMarkupInsertion()) {
     aError.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return nullptr;
   }
 
-  
-  if (mParser || mParserAborted) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    nsCOMPtr<Document> ret = this;
-    return ret.forget();
-  }
-
-  
-  
-  if (ShouldIgnoreOpens()) {
-    nsCOMPtr<Document> ret = this;
-    return ret.forget();
-  }
-
-  
-  if (!mScriptGlobalObject) {
-    nsCOMPtr<Document> ret = this;
-    return ret.forget();
-  }
-
-  nsPIDOMWindowOuter* outer = GetWindow();
-  if (!outer || (GetInnerWindow() != outer->GetCurrentInnerWindow())) {
-    nsCOMPtr<Document> ret = this;
-    return ret.forget();
-  }
-
-  
-  nsCOMPtr<nsIDocShell> shell(mDocumentContainer);
-  if (!shell) {
-    
-    nsCOMPtr<Document> ret = this;
-    return ret.forget();
-  }
-
-  bool inUnload;
-  shell->GetIsInUnload(&inUnload);
-  if (inUnload) {
-    nsCOMPtr<Document> ret = this;
-    return ret.forget();
-  }
-
-  
-  
   
   nsCOMPtr<Document> callerDoc = GetEntryDocument();
   if (!callerDoc) {
@@ -1252,70 +1227,64 @@ already_AddRefed<Document> nsHTMLDocument::Open(
 
   
   
-  nsCOMPtr<nsISupports> securityInfo = callerDoc->GetSecurityInfo();
-  nsCOMPtr<nsIURI> uri = callerDoc->GetDocumentURI();
-  nsCOMPtr<nsIURI> baseURI = callerDoc->GetBaseURI();
-  nsCOMPtr<nsIPrincipal> callerPrincipal = callerDoc->NodePrincipal();
-  nsCOMPtr<nsIChannel> callerChannel = callerDoc->GetChannel();
-
-  
-  
-  
-  
-  
-
-  bool equals = false;
-  if (NS_FAILED(callerPrincipal->Equals(NodePrincipal(), &equals)) || !equals) {
-#ifdef DEBUG
-    nsCOMPtr<nsIURI> callerDocURI = callerDoc->GetDocumentURI();
-    nsCOMPtr<nsIURI> thisURI = Document::GetDocumentURI();
-    printf("nsHTMLDocument::Open callerDoc %s this %s\n",
-           callerDocURI ? callerDocURI->GetSpecOrDefault().get() : "",
-           thisURI ? thisURI->GetSpecOrDefault().get() : "");
-#endif
-
+  if (!callerDoc->NodePrincipal()->Equals(NodePrincipal())) {
     aError.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return nullptr;
   }
 
   
   
-  SetDocumentAndPageUseCounter(eUseCounter_custom_DocumentOpen);
-  bool isReplace = aReplace.LowerCaseEqualsLiteral("replace");
-  if (isReplace) {
-    SetDocumentAndPageUseCounter(eUseCounter_custom_DocumentOpenReplace);
+  if (mParser || mParserAborted) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return this;
   }
 
   
-  if (mScriptGlobalObject) {
-    nsCOMPtr<nsIContentViewer> cv;
-    shell->GetContentViewer(getter_AddRefs(cv));
+  
+  
+  
+  if (ShouldIgnoreOpens()) {
+    return this;
+  }
 
-    if (cv) {
-      bool okToUnload;
-      if (NS_SUCCEEDED(cv->PermitUnload(&okToUnload)) && !okToUnload) {
-        
-        
-        nsCOMPtr<Document> ret = this;
-        return ret.forget();
-      }
-
-      
-      if (!mScriptGlobalObject) {
-        nsCOMPtr<Document> ret = this;
-        return ret.forget();
-      }
-
-      nsPIDOMWindowOuter* outer = GetWindow();
-      if (!outer || (GetInnerWindow() != outer->GetCurrentInnerWindow())) {
-        nsCOMPtr<Document> ret = this;
-        return ret.forget();
-      }
+  nsCOMPtr<nsIDocShell> shell(mDocumentContainer);
+  if (shell) {
+    bool inUnload;
+    shell->GetIsInUnload(&inUnload);
+    if (inUnload) {
+      return this;
     }
+  }
 
+  
+  
+  SetDocumentAndPageUseCounter(eUseCounter_custom_DocumentOpen);
+
+  
+  
+  
+  
+  if (shell && IsCurrentActiveDocument() &&
+      shell->GetIsAttemptingToNavigate()) {
     nsCOMPtr<nsIWebNavigation> webnav(do_QueryInterface(shell));
     webnav->Stop(nsIWebNavigation::STOP_NETWORK);
 
+    
     
     
     
@@ -1324,175 +1293,104 @@ already_AddRefed<Document> nsHTMLDocument::Open(
   }
 
   
-  
-  nsCOMPtr<nsIDocShell> curDocShell = GetDocShell();
-  nsCOMPtr<nsIDocShellTreeItem> parent;
-  if (curDocShell) {
-    curDocShell->GetSameTypeParent(getter_AddRefs(parent));
+  for (nsINode* node : ShadowIncludingTreeIterator(*this)) {
+    if (EventListenerManager* elm = node->GetExistingListenerManager()) {
+      elm->RemoveAllListeners();
+    }
   }
 
   
   
   
-  nsContentPolicyType policyType;
-  if (!parent) {
-    policyType = nsIContentPolicy::TYPE_DOCUMENT;
-  } else {
-    Element* requestingElement = nullptr;
-    nsPIDOMWindowInner* window = GetInnerWindow();
-    if (window) {
-      nsPIDOMWindowOuter* outer =
-          nsPIDOMWindowOuter::GetFromCurrentInner(window);
-      if (outer) {
-        nsGlobalWindowOuter* win = nsGlobalWindowOuter::Cast(outer);
-        requestingElement = win->AsOuter()->GetFrameElementInternal();
+  
+  
+  
+  if (nsPIDOMWindowInner* win = GetInnerWindow()) {
+    if (win->GetExtantDoc() == this) {
+      if (EventListenerManager* elm =
+              nsGlobalWindowInner::Cast(win)->GetExistingListenerManager()) {
+        elm->RemoveAllListeners();
       }
     }
-    if (requestingElement) {
-      policyType = requestingElement->IsHTMLElement(nsGkAtoms::iframe)
-                       ? nsIContentPolicy::TYPE_INTERNAL_IFRAME
-                       : nsIContentPolicy::TYPE_INTERNAL_FRAME;
-    } else {
-      
-      
-      policyType = nsIContentPolicy::TYPE_INTERNAL_IFRAME;
-    }
-  }
-
-  nsCOMPtr<nsIChannel> channel;
-  nsCOMPtr<nsILoadGroup> group = do_QueryReferent(mDocumentLoadGroup);
-  aError = NS_NewChannel(getter_AddRefs(channel), uri, callerDoc,
-                         nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL, policyType,
-                         nullptr,  
-                         group);
-
-  if (aError.Failed()) {
-    return nullptr;
-  }
-
-  if (callerChannel) {
-    nsLoadFlags callerLoadFlags;
-    aError = callerChannel->GetLoadFlags(&callerLoadFlags);
-    if (aError.Failed()) {
-      return nullptr;
-    }
-
-    nsLoadFlags loadFlags;
-    aError = channel->GetLoadFlags(&loadFlags);
-    if (aError.Failed()) {
-      return nullptr;
-    }
-
-    loadFlags |= callerLoadFlags & nsIRequest::INHIBIT_PERSISTENT_CACHING;
-
-    aError = channel->SetLoadFlags(loadFlags);
-    if (aError.Failed()) {
-      return nullptr;
-    }
-
-    
-    
-    bool rootHasSecureConnection = false;
-    bool allowMixedContent = false;
-    bool isDocShellRoot = false;
-    nsresult rvalue = shell->GetAllowMixedContentAndConnectionData(
-        &rootHasSecureConnection, &allowMixedContent, &isDocShellRoot);
-    if (NS_SUCCEEDED(rvalue) && allowMixedContent && isDocShellRoot) {
-      shell->SetMixedContentChannel(channel);
-    }
   }
 
   
-  
-  
+  DisconnectNodeTree();
 
   
-  nsCOMPtr<Document> kungFuDeathGrip = this;
-
-  if (nsPIDOMWindowInner* window = GetInnerWindow()) {
-    
-    nsCOMPtr<nsIScriptGlobalObject> oldScope(do_QueryReferent(mScopeObject));
-
-#ifdef DEBUG
-    bool willReparent = mWillReparent;
-    mWillReparent = true;
-
-    Document* templateContentsOwner = mTemplateContentsOwner.get();
-
-    if (templateContentsOwner) {
-      templateContentsOwner->mWillReparent = true;
+  
+  if (shell && IsCurrentActiveDocument()) {
+    nsCOMPtr<nsIURI> newURI = callerDoc->GetDocumentURI();
+    if (callerDoc != this) {
+      nsCOMPtr<nsIURI> noFragmentURI;
+      nsresult rv = NS_GetURIWithoutRef(newURI, getter_AddRefs(noFragmentURI));
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        aError.Throw(rv);
+        return nullptr;
+      }
+      newURI = noFragmentURI.forget();
     }
-#endif
 
     
     
     
-    SetReadyStateInternal(READYSTATE_UNINITIALIZED);
-
-    
-    aError = window->SetNewDocument(this, nullptr,
-                                     false);
-    if (aError.Failed()) {
+    nsCOMPtr<nsIURI> currentURI = GetDocumentURI();
+    bool equalURIs;
+    nsresult rv = currentURI->Equals(newURI, &equalURIs);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      aError.Throw(rv);
+      return nullptr;
+    }
+    nsCOMPtr<nsIStructuredCloneContainer> stateContainer(mStateObjectContainer);
+    rv = shell->UpdateURLAndHistory(this, newURI, stateContainer, EmptyString(),
+                                     true, currentURI,
+                                    equalURIs);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      aError.Throw(rv);
       return nullptr;
     }
 
-#ifdef DEBUG
-    if (templateContentsOwner) {
-      templateContentsOwner->mWillReparent = willReparent;
-    }
+    
+    
+    mSecurityInfo = callerDoc->GetSecurityInfo();
 
-    mWillReparent = willReparent;
-#endif
-
+    
+    
     
     
     
     SetIsInitialDocument(false);
 
-    nsCOMPtr<nsIScriptGlobalObject> newScope(do_QueryReferent(mScopeObject));
-    JS::Rooted<JSObject*> wrapper(cx, GetWrapper());
-    if (oldScope && newScope != oldScope && wrapper) {
-      JSAutoRealm ar(cx, wrapper);
-      UpdateReflectorGlobal(cx, wrapper, aError);
-      if (aError.Failed()) {
-        return nullptr;
-      }
-
-      
-      
-      if (mTemplateContentsOwner) {
-        JS::Rooted<JSObject*> contentsOwnerWrapper(
-            cx, mTemplateContentsOwner->GetWrapper());
-        if (contentsOwnerWrapper) {
-          UpdateReflectorGlobal(cx, contentsOwnerWrapper, aError);
-          if (aError.Failed()) {
-            return nullptr;
-          }
-        }
-      }
-    }
+    
+    nsDocShell::Cast(shell)->SetDocumentOpenedButNotLoaded();
   }
+
+  
+  
+
+  
+  
+  
+  
+
+  
+  mSkipLoadEventAfterClose = mLoadEventFiring;
+
+  
+  
+  SetReadyStateInternal(READYSTATE_UNINITIALIZED,
+                         false);
 
   mDidDocumentOpen = true;
 
-  nsAutoCString contentType(GetContentTypeInternal());
-
   
-  Reset(channel, group);
-  if (baseURI) {
-    mDocumentBaseURI = baseURI;
-  }
-
-  
-  SetContentTypeInternal(contentType);
+  SetCompatibilityMode(eCompatibility_FullStandards);
 
   
   
-  mSecurityInfo = securityInfo;
-
   mParserAborted = false;
   mParser = nsHtml5Module::NewHtml5Parser();
-  nsHtml5Module::Initialize(mParser, this, uri, shell, channel);
+  nsHtml5Module::Initialize(mParser, this, GetDocumentURI(), shell, nullptr);
   if (mReferrerPolicySet) {
     
     
@@ -1504,48 +1402,29 @@ already_AddRefed<Document> nsHTMLDocument::Open(
     }
   }
 
+  
   mContentTypeForWriteCalls.AssignLiteral("text/html");
 
-  
-  
-  shell->PrepareForNewContentModel();
+  if (shell) {
+    
+    
+    shell->PrepareForNewContentModel();
 
-  
-  
-  
-  
-  shell->SetLoadType(isReplace ? LOAD_NORMAL_REPLACE : LOAD_NORMAL);
-
-  nsCOMPtr<nsIContentViewer> cv;
-  shell->GetContentViewer(getter_AddRefs(cv));
-  if (cv) {
-    cv->LoadStart(this);
+    nsCOMPtr<nsIContentViewer> cv;
+    shell->GetContentViewer(getter_AddRefs(cv));
+    if (cv) {
+      cv->LoadStart(this);
+    }
   }
 
   
-  NS_ASSERTION(!mWyciwygChannel,
-               "nsHTMLDocument::Open(): wyciwyg "
-               "channel already exists!");
+  SetReadyStateInternal(Document::READYSTATE_LOADING,
+                         false);
 
   
-  
-  
-  
-  ++mWriteLevel;
-
-  CreateAndAddWyciwygChannel();
-
-  --mWriteLevel;
-
-  SetReadyStateInternal(Document::READYSTATE_LOADING);
 
   
-  
-  DebugOnly<JSObject*> wrapper = GetWrapperPreserveColor();
-  MOZ_ASSERT_IF(wrapper, JS::GetRealmPrincipals(js::GetNonCCWObjectRealm(
-                             wrapper)) == nsJSPrincipals::get(NodePrincipal()));
-
-  return kungFuDeathGrip.forget();
+  return this;
 }
 
 void nsHTMLDocument::Close(ErrorResult& rv) {
@@ -1598,17 +1477,6 @@ void nsHTMLDocument::Close(ErrorResult& rv) {
   if (GetShell()) {
     FlushPendingNotifications(FlushType::Layout);
   }
-
-  
-  
-  
-  NS_ASSERTION(mWyciwygChannel,
-               "nsHTMLDocument::Close(): Trying to remove "
-               "nonexistent wyciwyg channel!");
-  RemoveWyciwygChannel();
-  NS_ASSERTION(!mWyciwygChannel,
-               "nsHTMLDocument::Close(): "
-               "nsIWyciwygChannel could not be removed!");
 }
 
 void nsHTMLDocument::WriteCommon(JSContext* cx, const Sequence<nsString>& aText,
@@ -1689,8 +1557,8 @@ void nsHTMLDocument::WriteCommon(JSContext* cx, const nsAString& aText,
           mDocumentURI);
       return;
     }
-    nsCOMPtr<Document> ignored =
-        Open(cx, Optional<nsAString>(), EmptyString(), aRv);
+
+    Open(cx, Optional<nsAString>(), EmptyString(), aRv);
 
     
     

@@ -42,8 +42,6 @@ window.testIsPerWindow = propertyName => {
   }, `Navigating from the initial about:blank must not replace window.${propertyName}`);
 
   
-  
-  
   async_test(t => {
     const iframe = document.createElement("iframe");
 
@@ -55,7 +53,7 @@ window.testIsPerWindow = propertyName => {
       frame.document.open();
 
       const after = frame[propertyName];
-      assert_not_equals(after, before);
+      assert_equals(after, before);
 
       frame.document.close();
     });

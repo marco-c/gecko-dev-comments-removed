@@ -13,7 +13,13 @@ add_task(async function() {
    let newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser);
    await ContentTask.spawn(browser, null, async function() {
      let a = content.document.createElement("a");
-     a.href = "javascript:document.write('spoof'); void(0);";
+     
+     
+     
+     
+     
+     
+     a.href = "javascript:document.write('spoof'); location.href='#'; void(0);";
      a.textContent = "Some link";
      content.document.body.appendChild(a);
    });

@@ -1028,6 +1028,9 @@ nsDocumentViewer::LoadComplete(nsresult aStatus) {
   
   if (window &&
       (NS_SUCCEEDED(aStatus) || aStatus == NS_ERROR_PARSED_DATA_CACHED)) {
+    
+    
+    
     nsEventStatus status = nsEventStatus_eIgnore;
     WidgetEvent event(true, eLoad);
     event.mFlags.mBubbles = false;
@@ -1094,7 +1097,9 @@ nsDocumentViewer::LoadComplete(nsresult aStatus) {
             docShell, MakeUnique<DocLoadingTimelineMarker>("document::Load"));
       }
 
+      d->SetLoadEventFiring(true);
       EventDispatcher::Dispatch(window, mPresContext, &event, nullptr, &status);
+      d->SetLoadEventFiring(false);
       if (timing) {
         timing->NotifyLoadEventEnd();
       }

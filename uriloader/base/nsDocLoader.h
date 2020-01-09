@@ -121,6 +121,8 @@ class nsDocLoader : public nsIDocumentLoader,
 
   void OnContentBlockingEvent(nsISupports* aContext, uint32_t aEvent);
 
+  void SetDocumentOpenedButNotLoaded() { mDocumentOpenedButNotLoaded = true; }
+
  protected:
   virtual ~nsDocLoader();
 
@@ -296,6 +298,15 @@ class nsDocLoader : public nsIDocumentLoader,
   bool mIsFlushingLayout;
 
  private:
+  
+
+
+
+
+
+
+  bool mDocumentOpenedButNotLoaded;
+
   static const PLDHashTableOps sRequestInfoHashOps;
 
   
@@ -322,6 +333,16 @@ class nsDocLoader : public nsIDocumentLoader,
 
   
   void ClearInternalProgress();
+
+  
+
+
+
+
+
+  bool IsBlockingLoadEvent() const {
+    return mIsLoadingDocument || mDocumentOpenedButNotLoaded;
+  }
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsDocLoader, NS_THIS_DOCLOADER_IMPL_CID)

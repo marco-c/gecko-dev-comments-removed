@@ -125,7 +125,14 @@ add_task(async function test_contentscript_window_open() {
     browser.test.assertEq(1, x, "Should only run once");
 
     if (top !== window) {
-      await new Promise(resolve => setTimeout(resolve, 0));
+      
+      
+      
+      await new Promise(resolve => {
+        top.addEventListener("load",
+                             () => setTimeout(resolve, 0),
+                             {once: true});
+      });
     }
 
     browser.test.sendMessage("content-script", [location.href, top === window]);
@@ -171,13 +178,6 @@ add_task(async function test_contentscript_window_open() {
   Assert.deepEqual([pageURL, pageIsTop], [url, true]);
 
   let [frameURL, isTop] = await extension.awaitMessage("content-script");
-  
-  
-  if (frameURL === "about:blank") {
-    equal(isTop, false);
-    [frameURL, isTop] = await extension.awaitMessage("content-script");
-  }
-
   Assert.deepEqual([frameURL, isTop], [url, false]);
 
   await contentPage.close();
