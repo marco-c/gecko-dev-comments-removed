@@ -450,21 +450,27 @@ class MozBrowser extends MozElementMixin(XULFrameElement) {
   }
 
   get remoteType() {
-    if (!this.isRemoteBrowser) {
+    if (!this.isRemoteBrowser || !this.messageManager) {
       return null;
     }
 
-    let remoteType = this.getAttribute("remoteType");
-    if (remoteType) {
-      return remoteType;
+    return this.messageManager.remoteType;
+  }
+
+  get isCrashed() {
+    if (!this.isRemoteBrowser || !this.frameLoader) {
+      return false;
     }
 
-    let E10SUtils = ChromeUtils.import("resource://gre/modules/E10SUtils.jsm", {}).E10SUtils;
-    return E10SUtils.DEFAULT_REMOTE_TYPE;
+    return !this.frameLoader.tabParent;
   }
 
   get messageManager() {
-    if (this.frameLoader) {
+    
+    
+    
+    
+    if (this.frameLoader && !this.isCrashed) {
       return this.frameLoader.messageManager;
     }
     return null;
