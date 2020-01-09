@@ -765,6 +765,7 @@ class AddonList extends HTMLElement {
       for (let addon of addons) {
         let card = document.createElement("addon-card");
         card.setAddon(addon);
+        card.render();
         section.appendChild(card);
       }
     }
@@ -772,7 +773,7 @@ class AddonList extends HTMLElement {
     return section;
   }
 
-  render(sectionedAddons) {
+  async render(sectionedAddons) {
     this.textContent = "";
 
     
@@ -783,6 +784,9 @@ class AddonList extends HTMLElement {
       frag.appendChild(this.sections[i].node);
     }
 
+    
+    
+    await document.l10n.translateFragment(frag);
     this.appendChild(frag);
     this.sendEvent("rendered");
   }
