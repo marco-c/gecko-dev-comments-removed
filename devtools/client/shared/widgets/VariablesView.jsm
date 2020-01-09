@@ -34,14 +34,6 @@ XPCOMUtils.defineLazyServiceGetter(this, "clipboardHelper",
   "@mozilla.org/widget/clipboardhelper;1",
   "nsIClipboardHelper");
 
-Object.defineProperty(this, "WebConsoleUtils", {
-  get: function() {
-    return require("devtools/client/webconsole/utils").Utils;
-  },
-  configurable: true,
-  enumerable: true,
-});
-
 this.EXPORTED_SYMBOLS = ["VariablesView", "escapeHTML"];
 
 
@@ -3328,13 +3320,96 @@ VariablesView.getGrip = function(aValue) {
       
     case "function":
       return { type: "object",
-               class: WebConsoleUtils.getObjectClassName(aValue) };
+               class: getObjectClassName(aValue) };
     default:
       console.error("Failed to provide a grip for value of " + typeof value +
                     ": " + aValue);
       return null;
   }
 };
+
+
+
+
+
+
+
+const REGEX_MATCH_FUNCTION_NAME = /^\(?function\s+([^(\s]+)\s*\(/;
+
+
+
+
+
+
+
+
+
+function getFunctionName(func) {
+  let name = null;
+  if (func.name) {
+    name = func.name;
+  } else {
+    let desc;
+    try {
+      desc = func.getOwnPropertyDescriptor("displayName");
+    } catch (ex) {
+      
+    }
+    if (desc && typeof desc.value == "string") {
+      name = desc.value;
+    }
+  }
+  if (!name) {
+    try {
+      const str = (func.toString() || func.toSource()) + "";
+      name = (str.match(REGEX_MATCH_FUNCTION_NAME) || [])[1];
+    } catch (ex) {
+      
+    }
+  }
+  return name;
+}
+
+
+
+
+
+
+
+
+
+
+function getObjectClassName(object) {
+  if (object === null) {
+    return "null";
+  }
+  if (object === undefined) {
+    return "undefined";
+  }
+
+  const type = typeof object;
+  if (type != "object") {
+    
+    return type.charAt(0).toUpperCase() + type.substr(1);
+  }
+
+  let className;
+
+  try {
+    className = ((object + "").match(/^\[object (\S+)\]$/) || [])[1];
+    if (!className) {
+      className = ((object.constructor + "")
+                    .match(/^\[object (\S+)\]$/) || [])[1];
+    }
+    if (!className && typeof object.constructor == "function") {
+      className = getFunctionName(object.constructor);
+    }
+  } catch (ex) {
+    
+  }
+
+  return className;
+}
 
 
 

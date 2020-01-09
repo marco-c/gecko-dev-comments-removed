@@ -10,21 +10,7 @@ const {Cc, Ci} = require("chrome");
 const Services = require("Services");
 
 
-
-
-
-
-
-const REGEX_MATCH_FUNCTION_NAME = /^\(?function\s+([^(\s]+)\s*\(/;
-
-
 const CONSOLE_ENTRY_THRESHOLD = 5;
-
-exports.CONSOLE_WORKER_IDS = [
-  "SharedWorker",
-  "ServiceWorker",
-  "Worker",
-];
 
 var WebConsoleUtils = {
 
@@ -51,50 +37,6 @@ var WebConsoleUtils = {
 
 
 
-
-
-
-
-
-
-
-
-  cloneObject: function(object, recursive, filter) {
-    if (typeof object != "object") {
-      return object;
-    }
-
-    let temp;
-
-    if (Array.isArray(object)) {
-      temp = [];
-      Array.forEach(object, function(value, index) {
-        if (!filter || filter(index, value, object)) {
-          temp.push(recursive ? WebConsoleUtils.cloneObject(value) : value);
-        }
-      });
-    } else {
-      temp = {};
-      for (const key in object) {
-        const value = object[key];
-        if (object.hasOwnProperty(key) &&
-            (!filter || filter(key, value, object))) {
-          temp[key] = recursive ? WebConsoleUtils.cloneObject(value) : value;
-        }
-      }
-    }
-
-    return temp;
-  },
-
-  
-
-
-
-
-
-
-
   copyTextStyles: function(from, to) {
     const win = from.ownerDocument.defaultView;
     const style = win.getComputedStyle(from);
@@ -102,113 +44,6 @@ var WebConsoleUtils = {
     to.style.fontSize = style.fontSize;
     to.style.fontWeight = style.fontWeight;
     to.style.fontStyle = style.fontStyle;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  isMixedHTTPSRequest: function(request, location) {
-    try {
-      const requestURI = Services.io.newURI(request);
-      const contentURI = Services.io.newURI(location);
-      return (contentURI.scheme == "https" && requestURI.scheme != "https");
-    } catch (ex) {
-      return false;
-    }
-  },
-
-  
-
-
-
-
-
-
-
-  getFunctionName: function(func) {
-    let name = null;
-    if (func.name) {
-      name = func.name;
-    } else {
-      let desc;
-      try {
-        desc = func.getOwnPropertyDescriptor("displayName");
-      } catch (ex) {
-        
-      }
-      if (desc && typeof desc.value == "string") {
-        name = desc.value;
-      }
-    }
-    if (!name) {
-      try {
-        const str = (func.toString() || func.toSource()) + "";
-        name = (str.match(REGEX_MATCH_FUNCTION_NAME) || [])[1];
-      } catch (ex) {
-        
-      }
-    }
-    return name;
-  },
-
-  
-
-
-
-
-
-
-
-
-  getObjectClassName: function(object) {
-    if (object === null) {
-      return "null";
-    }
-    if (object === undefined) {
-      return "undefined";
-    }
-
-    const type = typeof object;
-    if (type != "object") {
-      
-      return type.charAt(0).toUpperCase() + type.substr(1);
-    }
-
-    let className;
-
-    try {
-      className = ((object + "").match(/^\[object (\S+)\]$/) || [])[1];
-      if (!className) {
-        className = ((object.constructor + "")
-                     .match(/^\[object (\S+)\]$/) || [])[1];
-      }
-      if (!className && typeof object.constructor == "function") {
-        className = this.getFunctionName(object.constructor);
-      }
-    } catch (ex) {
-      
-    }
-
-    return className;
-  },
-
-  
-
-
-
-
-
-
-
-  isActorGrip: function(grip) {
-    return grip && typeof (grip) == "object" && grip.actor;
   },
 
   
@@ -233,54 +68,6 @@ var WebConsoleUtils = {
       WebConsoleUtils._usageCount = newUC;
       Services.prefs.setIntPref("devtools.selfxss.count", newUC);
     }
-  },
-  
-
-
-
-
-
-
-
-
-  pasteHandlerGen: function(inputField, notificationBox, msg, okstring) {
-    const handler = function(event) {
-      if (WebConsoleUtils.usageCount >= CONSOLE_ENTRY_THRESHOLD) {
-        inputField.removeEventListener("paste", handler);
-        inputField.removeEventListener("drop", handler);
-        return true;
-      }
-      if (notificationBox.getNotificationWithValue("selfxss-notification")) {
-        event.preventDefault();
-        event.stopPropagation();
-        return false;
-      }
-
-      const notification = notificationBox.appendNotification(msg,
-        "selfxss-notification", null,
-        notificationBox.PRIORITY_WARNING_HIGH, null,
-        function(eventType) {
-          
-          if (eventType == "removed") {
-            inputField.removeEventListener("keyup", pasteKeyUpHandler);
-          }
-        });
-
-      function pasteKeyUpHandler(event2) {
-        const value = inputField.value || inputField.textContent;
-        if (value.includes(okstring)) {
-          notificationBox.removeNotification(notification);
-          inputField.removeEventListener("keyup", pasteKeyUpHandler);
-          WebConsoleUtils.usageCount = CONSOLE_ENTRY_THRESHOLD;
-        }
-      }
-      inputField.addEventListener("keyup", pasteKeyUpHandler);
-
-      event.preventDefault();
-      event.stopPropagation();
-      return false;
-    };
-    return handler;
   },
 };
 
