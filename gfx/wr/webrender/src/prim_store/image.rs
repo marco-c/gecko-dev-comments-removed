@@ -10,7 +10,7 @@ use api::{
 use api::units::*;
 use display_list_flattener::{CreateShadow, IsVisible};
 use frame_builder::FrameBuildingState;
-use gpu_cache::{GpuDataRequest};
+use gpu_cache::{GpuCache, GpuDataRequest};
 use intern::{Internable, InternDebug, Handle as InternHandle};
 use internal_types::LayoutPrimitiveInfo;
 use prim_store::{
@@ -23,7 +23,7 @@ use render_task::{
     BlitSource, RenderTask, RenderTaskCacheEntryHandle, RenderTaskCacheKey,
     RenderTaskCacheKeyKind
 };
-use resource_cache::ImageRequest;
+use resource_cache::{ImageRequest, ResourceCache};
 use util::pack_as_float;
 
 #[derive(Debug)]
@@ -188,7 +188,6 @@ impl ImageData {
                         };
                     }
 
-                    let mut request_source_image = false;
                     let mut is_opaque = image_properties.descriptor.is_opaque;
                     let request = ImageRequest {
                         key: self.key,
@@ -233,10 +232,6 @@ impl ImageData {
                                 |render_tasks| {
                                     
                                     
-                                    request_source_image = true;
-
-                                    
-                                    
                                     
                                     let cache_to_target_task = RenderTask::new_blit_with_padding(
                                         inner_size,
@@ -259,17 +254,7 @@ impl ImageData {
                                 }
                             ));
                         }
-                        ImageSource::Default => {
-                            
-                            request_source_image = true;
-                        }
-                    }
-
-                    if request_source_image && !is_tiled {
-                        frame_state.resource_cache.request_image(
-                            request,
-                            frame_state.gpu_cache,
-                        );
+                        ImageSource::Default => {}
                     }
 
                     if is_opaque {
@@ -446,20 +431,26 @@ impl YuvImageData {
             self.write_prim_gpu_blocks(&mut request);
         };
 
+        common.opacity = PrimitiveOpacity::translucent();
+    }
+
+    pub fn request_resources(
+        &mut self,
+        resource_cache: &mut ResourceCache,
+        gpu_cache: &mut GpuCache,
+    ) {
         let channel_num = self.format.get_plane_num();
         debug_assert!(channel_num <= 3);
         for channel in 0 .. channel_num {
-            frame_state.resource_cache.request_image(
+            resource_cache.request_image(
                 ImageRequest {
                     key: self.yuv_key[channel],
                     rendering: self.image_rendering,
                     tile: None,
                 },
-                frame_state.gpu_cache,
+                gpu_cache,
             );
         }
-
-        common.opacity = PrimitiveOpacity::translucent();
     }
 
     pub fn write_prim_gpu_blocks(&self, request: &mut GpuDataRequest) {
