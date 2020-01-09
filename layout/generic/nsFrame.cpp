@@ -2943,19 +2943,23 @@ void nsIFrame::BuildDisplayListForStackingContext(
 
   nsDisplayListBuilder::AutoContainerASRTracker contASRTracker(aBuilder);
 
-  DisplayListClipState::AutoSaveRestore cssClip(aBuilder);
-  {
-    
-    if (auto contentClip = GetClipPropClipRect(disp, effects, GetSize())) {
-      nsPoint offset = isTransformed
-                           ? GetOffsetToCrossDoc(
-                                 aBuilder->FindReferenceFrameFor(GetParent()))
-                           : aBuilder->GetCurrentFrameOffsetToReferenceFrame();
-
-      aBuilder->IntersectDirtyRect(*contentClip);
-      aBuilder->IntersectVisibleRect(*contentClip);
-      cssClip.ClipContentDescendants(*contentClip + offset);
+  auto cssClip = GetClipPropClipRect(disp, effects, GetSize());
+  auto ApplyClipProp = [&](DisplayListClipState::AutoSaveRestore& aClipState) {
+    if (!cssClip) {
+      return;
     }
+    nsPoint offset = aBuilder->GetCurrentFrameOffsetToReferenceFrame();
+    aBuilder->IntersectDirtyRect(*cssClip);
+    aBuilder->IntersectVisibleRect(*cssClip);
+    aClipState.ClipContentDescendants(*cssClip + offset);
+  };
+
+  
+  
+  
+  DisplayListClipState::AutoSaveRestore untransformedCssClip(aBuilder);
+  if (!isTransformed) {
+    ApplyClipProp(untransformedCssClip);
   }
 
   
@@ -2992,6 +2996,20 @@ void nsIFrame::BuildDisplayListForStackingContext(
   DisplayListClipState::AutoSaveRestore clipState(aBuilder);
   if (clipCapturedBy != ContainerItemType::eNone) {
     clipState.Clear();
+  }
+
+  DisplayListClipState::AutoSaveRestore transformedCssClip(aBuilder);
+  if (isTransformed) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    ApplyClipProp(transformedCssClip);
   }
 
   mozilla::UniquePtr<HitTestInfo> hitTestInfo;
@@ -3248,6 +3266,7 @@ void nsIFrame::BuildDisplayListForStackingContext(
   }
 
   if (isTransformed) {
+    transformedCssClip.Restore();
     if (clipCapturedBy == ContainerItemType::eTransform) {
       
       clipState.Restore();
