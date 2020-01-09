@@ -2806,6 +2806,11 @@ var AddonManagerPrivate = {
                                .addonIsActive(addonId);
   },
 
+  addonIsBuiltin(addonId) {
+    return AddonManagerInternal._getProviderByName("XPIProvider")
+                               .addonIsBuiltin(addonId);
+  },
+
   
 
 
