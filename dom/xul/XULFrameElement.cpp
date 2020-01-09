@@ -122,6 +122,11 @@ void XULFrameElement::SwapFrameLoaders(XULFrameElement& aOtherLoaderOwner,
 
 void XULFrameElement::SwapFrameLoaders(nsFrameLoaderOwner* aOtherLoaderOwner,
                                        mozilla::ErrorResult& rv) {
+  if (RefPtr<Document> doc = GetComposedDoc()) {
+    
+    doc->FlushPendingNotifications(FlushType::Frames);
+  }
+
   RefPtr<nsFrameLoader> loader = GetFrameLoader();
   RefPtr<nsFrameLoader> otherLoader = aOtherLoaderOwner->GetFrameLoader();
   if (!loader || !otherLoader) {
