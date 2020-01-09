@@ -1,6 +1,7 @@
+import json
+import os
 import pickle
 import platform
-import os
 
 import pytest
 
@@ -75,3 +76,11 @@ def test_pickle():
     
     with ConfigBuilder() as c:
         pickle.dumps(c)
+
+
+def test_config_json_length():
+    
+    
+    with ConfigBuilder() as c:
+        data = json.dumps(c.as_dict())
+    assert len(data) <= 0x7FFF
