@@ -402,6 +402,12 @@ class TouchBlockState : public CancelableBlockState {
   
 
 
+
+  bool HasAllowedTouchBehaviors() const;
+
+  
+
+
   void CopyPropertiesFrom(const TouchBlockState& aOther);
 
   
