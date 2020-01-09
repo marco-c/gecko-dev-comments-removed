@@ -670,7 +670,9 @@ nsresult TranslateChoices(
       nsCString type = aPermissionRequests[i].type();
 
       JS::Rooted<JSObject*> obj(RootingCx(), &aChoices.toObject());
-      obj = CheckedUnwrap(obj);
+      
+      
+      obj = js::CheckedUnwrapStatic(obj);
       if (!obj) {
         return NS_ERROR_FAILURE;
       }

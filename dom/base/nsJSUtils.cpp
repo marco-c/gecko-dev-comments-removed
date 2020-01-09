@@ -400,7 +400,8 @@ static bool IsPromiseValue(JSContext* aCx, JS::Handle<JS::Value> aValue) {
     return false;
   }
 
-  JS::Rooted<JSObject*> obj(aCx, js::CheckedUnwrap(&aValue.toObject()));
+  
+  JS::Rooted<JSObject*> obj(aCx, js::CheckedUnwrapStatic(&aValue.toObject()));
   if (!obj) {
     return false;
   }
