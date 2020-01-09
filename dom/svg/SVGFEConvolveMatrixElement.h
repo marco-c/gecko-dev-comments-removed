@@ -1,13 +1,14 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_dom_SVGFEConvolveMatrixElement_h
 #define mozilla_dom_SVGFEConvolveMatrixElement_h
 
 #include "DOMSVGAnimatedNumberList.h"
+#include "SVGAnimatedNumberList.h"
 #include "SVGBoolean.h"
 #include "SVGEnum.h"
 #include "SVGFilters.h"
@@ -53,7 +54,7 @@ class SVGFEConvolveMatrixElement : public SVGFEConvolveMatrixElementBase {
 
   virtual nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 
-  
+  // WebIDL
   already_AddRefed<DOMSVGAnimatedString> In1();
   already_AddRefed<DOMSVGAnimatedInteger> OrderX();
   already_AddRefed<DOMSVGAnimatedInteger> OrderY();
@@ -111,7 +112,7 @@ class SVGFEConvolveMatrixElement : public SVGFEConvolveMatrixElementBase {
   static NumberListInfo sNumberListInfo[1];
 };
 
-}  
-}  
+}  // namespace dom
+}  // namespace mozilla
 
-#endif  
+#endif  // mozilla_dom_SVGFEConvolveMatrixElement_h

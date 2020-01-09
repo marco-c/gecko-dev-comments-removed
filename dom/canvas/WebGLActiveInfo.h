@@ -12,6 +12,7 @@
 #include "nsISupportsImpl.h"  
 #include "nsString.h"
 #include "nsWrapperCache.h"
+#include "WebGLTypes.h"
 
 namespace mozilla {
 
