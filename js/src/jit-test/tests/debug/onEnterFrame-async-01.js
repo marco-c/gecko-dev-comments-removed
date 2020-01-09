@@ -1,5 +1,6 @@
 
 
+
 let g = newGlobal({newCompartment: true});
 g.eval(`
     async function timeout(n) {
@@ -28,5 +29,5 @@ g.job();
 drainJobQueue();
 assertEq(log,
          "(job(t5)(t3))" +
-         "(t5)(t3)".repeat(3) + "(job)" +
-         "(t5)(t5)(job)");
+         "(t5)(t3)".repeat(3) +
+         "(t5)(job)(t5)(job)");
