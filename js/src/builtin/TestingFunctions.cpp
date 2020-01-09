@@ -704,6 +704,19 @@ static bool WasmDebugSupport(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+static bool WasmGeneralizedTables(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+#ifdef ENABLE_WASM_GENERALIZED_TABLES
+  
+  
+  bool isSupported = wasm::HasReftypesSupport(cx);
+#else
+  bool isSupported = false;
+#endif
+  args.rval().setBoolean(isSupported);
+  return true;
+}
+
 static bool WasmCompileMode(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
@@ -1204,6 +1217,24 @@ static bool StartGC(JSContext* cx, unsigned argc, Value* vp) {
 
   JSGCInvocationKind gckind = shrinking ? GC_SHRINK : GC_NORMAL;
   rt->gc.startDebugGC(gckind, budget);
+
+  args.rval().setUndefined();
+  return true;
+}
+
+static bool FinishGC(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  if (args.length() > 0) {
+    RootedObject callee(cx, &args.callee());
+    ReportUsageErrorASCII(cx, callee, "Wrong number of arguments");
+    return false;
+  }
+
+  JSRuntime* rt = cx->runtime();
+  if (rt->gc.isIncrementalGCInProgress()) {
+    rt->gc.finishGC(JS::GCReason::DEBUG_GC);
+  }
 
   args.rval().setUndefined();
   return true;
@@ -3998,6 +4029,12 @@ static bool ShellCloneAndExecuteScript(JSContext* cx, unsigned argc,
   return true;
 }
 
+static bool IsSimdAvailable(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  args.rval().set(BooleanValue(cx->jitSupportsSimd()));
+  return true;
+}
+
 static bool ByteSize(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   mozilla::MallocSizeOf mallocSizeOf = cx->runtime()->debuggerMallocSizeOf;
@@ -5853,6 +5890,10 @@ gc::ZealModeHelpText),
 "  If 'shrinking' is passesd as the optional second argument, perform a\n"
 "  shrinking GC rather than a normal GC."),
 
+    JS_FN_HELP("finishgc", FinishGC, 0, 0,
+"finishgc()",
+"   Finish an in-progress incremental GC, if none is running then do nothing."),
+
     JS_FN_HELP("gcslice", GCSlice, 1, 0,
 "gcslice([n])",
 "  Start or continue an an incremental GC, running a slice that processes about n objects."),
@@ -5908,6 +5949,10 @@ gc::ZealModeHelpText),
 "isAsmJSCompilationAvailable",
 "  Returns whether asm.js compilation is currently available or whether it is disabled\n"
 "  (e.g., by the debugger)."),
+
+    JS_FN_HELP("isSimdAvailable", IsSimdAvailable, 0, 0,
+"isSimdAvailable",
+"  Returns true if SIMD extensions are supported on this platform."),
 
     JS_FN_HELP("getJitCompilerOptions", GetJitCompilerOptions, 0, 0,
 "getJitCompilerOptions()",
@@ -5986,6 +6031,12 @@ gc::ZealModeHelpText),
     JS_FN_HELP("wasmDebugSupport", WasmDebugSupport, 1, 0,
 "wasmDebugSupport(bool)",
 "  Returns a boolean indicating whether the WebAssembly compilers support debugging."),
+
+    JS_FN_HELP("wasmGeneralizedTables", WasmGeneralizedTables, 1, 0,
+"wasmGeneralizedTables(bool)",
+"  Returns a boolean indicating whether generalized tables are available.\n"
+"  This feature set includes 'anyref' as a table type, and new instructions\n"
+"  including table.get, table.set, table.grow, and table.size."),
 
     JS_FN_HELP("isLazyFunction", IsLazyFunction, 1, 0,
 "isLazyFunction(fun)",
