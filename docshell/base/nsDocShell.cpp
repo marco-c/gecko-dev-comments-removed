@@ -9622,7 +9622,10 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
         
         
         if (PopupBlocker::GetPopupControlState() <= PopupBlocker::openBlocked) {
-          popupBlocked = !PopupBlocker::TryUsePopupOpeningToken();
+          nsCOMPtr<nsINode> loadingNode =
+              mScriptGlobal->AsOuter()->GetFrameElementInternal();
+          popupBlocked = !PopupBlocker::TryUsePopupOpeningToken(
+              loadingNode ? loadingNode->NodePrincipal() : nullptr);
         } else if (mIsActive &&
                    PopupBlocker::ConsumeTimerTokenForExternalProtocolIframe()) {
           popupBlocked = false;

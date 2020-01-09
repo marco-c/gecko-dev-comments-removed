@@ -46,7 +46,9 @@ class PopupBlocker final {
   
   
   
-  static bool TryUsePopupOpeningToken();
+  
+  
+  static bool TryUsePopupOpeningToken(nsIPrincipal* aPrincipal);
 
   static bool IsPopupOpeningTokenUnused();
 
