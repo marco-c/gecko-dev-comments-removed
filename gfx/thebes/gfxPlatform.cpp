@@ -893,6 +893,10 @@ void gfxPlatform::Init() {
     }
 
     gfxUtils::RemoveShaderCacheFromDiskIfNecessary();
+
+    nsAutoCString path;
+    Preferences::GetCString("layers.windowrecording.path", path);
+    gfxVars::SetLayersWindowRecordingPath(path);
   }
 
   
