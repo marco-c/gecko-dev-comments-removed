@@ -14,15 +14,19 @@ const FILE_ACTIVE_UPDATE_XML = "active-update.xml";
 const FILE_LAST_UPDATE_LOG   = "last-update.log";
 const FILE_UPDATES_XML       = "updates.xml";
 const FILE_UPDATE_LOG        = "update.log";
+const FILE_UPDATE_MESSAGES   = "update_messages.log";
+const FILE_BACKUP_MESSAGES   = "update_messages_old.log";
 
 const KEY_UPDROOT         = "UpdRootD";
 const KEY_OLD_UPDROOT     = "OldUpdRootD";
+const KEY_PROFILE_DIR     = "ProfD";
 
 
 
 
 const PREF_PREFIX_UPDATE_DIR_MIGRATED  = "app.update.migrated.updateDir2.";
 const PREF_APP_UPDATE_LOG              = "app.update.log";
+const PREF_APP_UPDATE_FILE_LOGGING     = "app.update.log.file";
 
 XPCOMUtils.defineLazyGetter(this, "gLogEnabled", function aus_gLogEnabled() {
   return Services.prefs.getBoolPref(PREF_APP_UPDATE_LOG, false);
@@ -48,6 +52,12 @@ function UpdateServiceStub() {
   }
 
   
+  
+  if (Services.prefs.getBoolPref(PREF_APP_UPDATE_FILE_LOGGING, false)) {
+    deactivateUpdateLogFile();
+  }
+
+  
   if (statusFile.exists()) {
     let aus = Cc["@mozilla.org/updates/update-service;1"].
               getService(Ci.nsIApplicationUpdateService).
@@ -62,6 +72,25 @@ UpdateServiceStub.prototype = {
 };
 
 var EXPORTED_SYMBOLS = ["UpdateServiceStub"];
+
+function deactivateUpdateLogFile() {
+  LOG("Application update file logging being automatically turned off");
+  Services.prefs.setBoolPref(PREF_APP_UPDATE_FILE_LOGGING, false);
+  let logFile = Services.dirsvc.get(KEY_PROFILE_DIR, Ci.nsIFile);
+  logFile.append(FILE_UPDATE_MESSAGES);
+
+  try {
+    logFile.moveTo(null, FILE_BACKUP_MESSAGES);
+  } catch (e) {
+    LOG("Failed to backup update messages log (" + e + "). Attempting to " +
+        "remove it.");
+    try {
+      logFile.remove(false);
+    } catch (e) {
+      LOG("Also failed to remove the update messages log: " + e);
+    }
+  }
+}
 
 
 

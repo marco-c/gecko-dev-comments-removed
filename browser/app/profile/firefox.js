@@ -111,6 +111,11 @@ pref("app.update.log", false);
 
 
 
+pref("app.update.log.file", false);
+
+
+
+
 pref("app.update.backgroundMaxErrors", 10);
 
 
