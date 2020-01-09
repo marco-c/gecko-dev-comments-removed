@@ -205,6 +205,16 @@ async function testWindowSizeSetting(aBrowser, aSettingWidth, aSettingHeight,
         }
       });
 
+      win.close();
+      
+      await new Promise(resolve => {
+        
+        
+        let initWinFeatures = "width=" + input.initWidth + ",height=" + input.initHeight;
+        win = content.open("http://example.net/", "", initWinFeatures);
+        win.onload = () => resolve();
+      });
+
       
       await new Promise(resolve => {
         win.addEventListener("resize", () => {
