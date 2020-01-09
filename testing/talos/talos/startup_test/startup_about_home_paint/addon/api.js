@@ -54,7 +54,7 @@ this.startup_about_home_paint = class extends ExtensionAPI {
     } else {
       
       dump("__start_report" + measurement + "__end_report\n\n");
-
+      
       dump("__startTimestamp" + Date.now() + "__endTimestamp\n");
 
 
