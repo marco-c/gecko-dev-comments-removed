@@ -37,12 +37,17 @@ CanonicalBrowsingContext::CanonicalBrowsingContext(BrowsingContext* aParent,
 
  void CanonicalBrowsingContext::CleanupContexts(
     uint64_t aProcessId) {
+  nsTArray<RefPtr<BrowsingContext>> contexts;
   for (auto& group : *BrowsingContextGroup::sAllGroups) {
     for (auto& context : group->Toplevels()) {
       if (Cast(context)->IsOwnedByProcess(aProcessId)) {
-        context->Detach();
+        contexts.AppendElement(context);
       }
     }
+  }
+
+  for (auto& context : contexts) {
+    context->Detach();
   }
 }
 
