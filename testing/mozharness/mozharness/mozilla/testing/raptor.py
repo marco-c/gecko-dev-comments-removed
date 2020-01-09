@@ -263,6 +263,10 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
         if 'mac' in self.platform_name():
             
             
+
+            
+            
+            
             chromium_rev = "575625"
             chrome_archive_file = "chrome-mac.zip"
             chrome_url = "%s/Mac/%s/%s" % (base_url, chromium_rev, chrome_archive_file)
@@ -272,7 +276,7 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
         elif 'linux' in self.platform_name():
             
             
-            chromium_rev = "575640"
+            chromium_rev = "624137"
             chrome_archive_file = "chrome-linux.zip"
             chrome_url = "%s/Linux_x64/%s/%s" % (base_url, chromium_rev, chrome_archive_file)
             self.chrome_path = os.path.join(self.chrome_dest, 'chrome-linux', 'chrome')
@@ -281,16 +285,13 @@ class Raptor(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
             
             
             
-            chromium_rev = "575637"
-            chrome_archive_file = "chrome-win32.zip"  
+            chromium_rev = "624131"
+            chrome_archive_file = "chrome-win.zip"  
 
             
-            if '64' in self.platform_name():
-                chrome_url = "%s/Win_x64/%s/%s" % (base_url, chromium_rev, chrome_archive_file)
-            else:
-                chrome_url = "%s/Win_x32/%s/%s" % (base_url, chromium_rev, chrome_archive_file)
+            chrome_url = "%s/Win_x64/%s/%s" % (base_url, chromium_rev, chrome_archive_file)
 
-            self.chrome_path = os.path.join(self.chrome_dest, 'chrome-win32', 'Chrome.exe')
+            self.chrome_path = os.path.join(self.chrome_dest, 'chrome-win', 'Chrome.exe')
 
         chrome_archive = os.path.join(self.chrome_dest, chrome_archive_file)
 
