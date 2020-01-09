@@ -31,7 +31,8 @@ SocketProcessParent::~SocketProcessParent() {
   sSocketProcessParent = nullptr;
 }
 
- SocketProcessParent* SocketProcessParent::GetSingleton() {
+
+SocketProcessParent* SocketProcessParent::GetSingleton() {
   MOZ_ASSERT(NS_IsMainThread());
 
   return sSocketProcessParent;
@@ -60,8 +61,7 @@ void SocketProcessParent::ActorDestroy(ActorDestroyReason aWhy) {
 
 bool SocketProcessParent::SendRequestMemoryReport(
     const uint32_t& aGeneration, const bool& aAnonymize,
-    const bool& aMinimizeMemoryUsage,
-    const Maybe<ipc::FileDescriptor>& aDMDFile) {
+    const bool& aMinimizeMemoryUsage, const MaybeFileDesc& aDMDFile) {
   mMemoryReportRequest = MakeUnique<dom::MemoryReportRequestHost>(aGeneration);
   Unused << PSocketProcessParent::SendRequestMemoryReport(
       aGeneration, aAnonymize, aMinimizeMemoryUsage, aDMDFile);
@@ -140,8 +140,8 @@ class DeferredDeleteSocketProcessParent : public Runnable {
   UniquePtr<SocketProcessParent> mParent;
 };
 
- void SocketProcessParent::Destroy(
-    UniquePtr<SocketProcessParent>&& aParent) {
+
+void SocketProcessParent::Destroy(UniquePtr<SocketProcessParent>&& aParent) {
   NS_DispatchToMainThread(
       new DeferredDeleteSocketProcessParent(std::move(aParent)));
 }

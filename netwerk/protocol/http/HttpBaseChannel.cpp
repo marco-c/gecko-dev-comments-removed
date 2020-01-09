@@ -4450,9 +4450,9 @@ nsresult HttpBaseChannel::CheckRedirectLimit(uint32_t aRedirectFlags) const {
 
 
 
- void HttpBaseChannel::CallTypeSniffers(void* aClosure,
-                                                    const uint8_t* aData,
-                                                    uint32_t aCount) {
+
+void HttpBaseChannel::CallTypeSniffers(void* aClosure, const uint8_t* aData,
+                                       uint32_t aCount) {
   nsIChannel* chan = static_cast<nsIChannel*>(aClosure);
 
   nsAutoCString newType;

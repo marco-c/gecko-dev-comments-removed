@@ -51,7 +51,8 @@ UrlClassifierFeatureFingerprinting::UrlClassifierFeatureFingerprinting()
   return FINGERPRINTING_FEATURE_NAME;
 }
 
- void UrlClassifierFeatureFingerprinting::MaybeInitialize() {
+
+void UrlClassifierFeatureFingerprinting::MaybeInitialize() {
   UC_LOG(("UrlClassifierFeatureFingerprinting: MaybeInitialize"));
 
   if (!gFeatureFingerprinting) {
@@ -60,7 +61,8 @@ UrlClassifierFeatureFingerprinting::UrlClassifierFeatureFingerprinting()
   }
 }
 
- void UrlClassifierFeatureFingerprinting::MaybeShutdown() {
+
+void UrlClassifierFeatureFingerprinting::MaybeShutdown() {
   UC_LOG(("UrlClassifierFeatureFingerprinting: MaybeShutdown"));
 
   if (gFeatureFingerprinting) {
@@ -69,7 +71,8 @@ UrlClassifierFeatureFingerprinting::UrlClassifierFeatureFingerprinting()
   }
 }
 
- already_AddRefed<UrlClassifierFeatureFingerprinting>
+
+already_AddRefed<UrlClassifierFeatureFingerprinting>
 UrlClassifierFeatureFingerprinting::MaybeCreate(nsIChannel* aChannel) {
   MOZ_ASSERT(aChannel);
 
@@ -114,7 +117,8 @@ UrlClassifierFeatureFingerprinting::MaybeCreate(nsIChannel* aChannel) {
   return self.forget();
 }
 
- already_AddRefed<nsIUrlClassifierFeature>
+
+already_AddRefed<nsIUrlClassifierFeature>
 UrlClassifierFeatureFingerprinting::GetIfNameMatches(const nsACString& aName) {
   if (!aName.EqualsLiteral(FINGERPRINTING_FEATURE_NAME)) {
     return nullptr;

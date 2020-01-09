@@ -479,8 +479,9 @@ inline nsresult ParseIPv4Number(const nsACString &input, int32_t base,
 }
 
 
- nsresult nsStandardURL::NormalizeIPv4(const nsACString &host,
-                                                   nsCString &result) {
+
+nsresult nsStandardURL::NormalizeIPv4(const nsACString &host,
+                                      nsCString &result) {
   int32_t bases[4] = {10, 10, 10, 10};
   bool onlyBase10 = true;  
   int32_t dotIndex[3];     

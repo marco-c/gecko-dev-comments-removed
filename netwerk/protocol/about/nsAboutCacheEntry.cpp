@@ -519,7 +519,8 @@ nsAboutCacheEntry::Channel::OnDataAvailable(nsIRequest *request,
                                     this, aCount, &n);
 }
 
- nsresult nsAboutCacheEntry::Channel::PrintCacheData(
+
+nsresult nsAboutCacheEntry::Channel::PrintCacheData(
     nsIInputStream *aInStream, void *aClosure, const char *aFromSegment,
     uint32_t aToOffset, uint32_t aCount, uint32_t *aWriteCount) {
   nsAboutCacheEntry::Channel *a =

@@ -21,7 +21,8 @@
 namespace mozilla {
 namespace net {
 
- void UrlClassifierFeatureFactory::Shutdown() {
+
+void UrlClassifierFeatureFactory::Shutdown() {
   
   if (!XRE_IsParentProcess()) {
     return;
@@ -36,7 +37,8 @@ namespace net {
   UrlClassifierFeatureTrackingProtection::MaybeShutdown();
 }
 
- void UrlClassifierFeatureFactory::GetFeaturesFromChannel(
+
+void UrlClassifierFeatureFactory::GetFeaturesFromChannel(
     nsIChannel* aChannel,
     nsTArray<nsCOMPtr<nsIUrlClassifierFeature>>& aFeatures) {
   MOZ_ASSERT(XRE_IsParentProcess());
@@ -79,7 +81,8 @@ namespace net {
   aFeatures.AppendElements(flashFeatures);
 }
 
- void UrlClassifierFeatureFactory::GetPhishingProtectionFeatures(
+
+void UrlClassifierFeatureFactory::GetPhishingProtectionFeatures(
     nsTArray<RefPtr<nsIUrlClassifierFeature>>& aFeatures) {
   UrlClassifierFeaturePhishingProtection::MaybeCreate(aFeatures);
 }
@@ -90,7 +93,8 @@ UrlClassifierFeatureFactory::GetFeatureLoginReputation() {
   return UrlClassifierFeatureLoginReputation::MaybeGetOrCreate();
 }
 
- already_AddRefed<nsIUrlClassifierFeature>
+
+already_AddRefed<nsIUrlClassifierFeature>
 UrlClassifierFeatureFactory::GetFeatureByName(const nsACString& aName) {
   if (!XRE_IsParentProcess()) {
     return nullptr;
@@ -143,8 +147,8 @@ UrlClassifierFeatureFactory::GetFeatureByName(const nsACString& aName) {
   return nullptr;
 }
 
- void UrlClassifierFeatureFactory::GetFeatureNames(
-    nsTArray<nsCString>& aArray) {
+
+void UrlClassifierFeatureFactory::GetFeatureNames(nsTArray<nsCString>& aArray) {
   if (!XRE_IsParentProcess()) {
     return;
   }
@@ -195,7 +199,8 @@ UrlClassifierFeatureFactory::GetFeatureByName(const nsACString& aName) {
   }
 }
 
- already_AddRefed<nsIUrlClassifierFeature>
+
+already_AddRefed<nsIUrlClassifierFeature>
 UrlClassifierFeatureFactory::CreateFeatureWithTables(
     const nsACString& aName, const nsTArray<nsCString>& aBlacklistTables,
     const nsTArray<nsCString>& aWhitelistTables) {
@@ -228,7 +233,8 @@ static const BlockingErrorCode sBlockingErrorCodes[] = {
 
 }  
 
- bool UrlClassifierFeatureFactory::IsClassifierBlockingErrorCode(
+
+bool UrlClassifierFeatureFactory::IsClassifierBlockingErrorCode(
     nsresult aError) {
   
   
@@ -241,7 +247,8 @@ static const BlockingErrorCode sBlockingErrorCodes[] = {
   return false;
 }
 
- bool UrlClassifierFeatureFactory::IsClassifierBlockingEventCode(
+
+bool UrlClassifierFeatureFactory::IsClassifierBlockingEventCode(
     uint32_t aEventCode) {
   for (const auto& blockingErrorCode : sBlockingErrorCodes) {
     if (aEventCode == blockingErrorCode.mBlockingEventCode) {
@@ -251,8 +258,8 @@ static const BlockingErrorCode sBlockingErrorCodes[] = {
   return false;
 }
 
- uint32_t
-UrlClassifierFeatureFactory::GetClassifierBlockingEventCode(
+
+uint32_t UrlClassifierFeatureFactory::GetClassifierBlockingEventCode(
     nsresult aErrorCode) {
   for (const auto& blockingErrorCode : sBlockingErrorCodes) {
     if (aErrorCode == blockingErrorCode.mErrorCode) {

@@ -124,7 +124,8 @@ UrlClassifierFeatureTrackingAnnotation::UrlClassifierFeatureTrackingAnnotation()
   return TRACKING_ANNOTATION_FEATURE_NAME;
 }
 
- void UrlClassifierFeatureTrackingAnnotation::MaybeInitialize() {
+
+void UrlClassifierFeatureTrackingAnnotation::MaybeInitialize() {
   MOZ_ASSERT(XRE_IsParentProcess());
   UC_LOG(("UrlClassifierFeatureTrackingAnnotation: MaybeInitialize"));
 
@@ -134,7 +135,8 @@ UrlClassifierFeatureTrackingAnnotation::UrlClassifierFeatureTrackingAnnotation()
   }
 }
 
- void UrlClassifierFeatureTrackingAnnotation::MaybeShutdown() {
+
+void UrlClassifierFeatureTrackingAnnotation::MaybeShutdown() {
   UC_LOG(("UrlClassifierFeatureTrackingAnnotation: MaybeShutdown"));
 
   if (gFeatureTrackingAnnotation) {
@@ -143,7 +145,8 @@ UrlClassifierFeatureTrackingAnnotation::UrlClassifierFeatureTrackingAnnotation()
   }
 }
 
- already_AddRefed<UrlClassifierFeatureTrackingAnnotation>
+
+already_AddRefed<UrlClassifierFeatureTrackingAnnotation>
 UrlClassifierFeatureTrackingAnnotation::MaybeCreate(nsIChannel* aChannel) {
   MOZ_ASSERT(aChannel);
 
@@ -166,7 +169,8 @@ UrlClassifierFeatureTrackingAnnotation::MaybeCreate(nsIChannel* aChannel) {
   return self.forget();
 }
 
- already_AddRefed<nsIUrlClassifierFeature>
+
+already_AddRefed<nsIUrlClassifierFeature>
 UrlClassifierFeatureTrackingAnnotation::GetIfNameMatches(
     const nsACString& aName) {
   if (!aName.EqualsLiteral(TRACKING_ANNOTATION_FEATURE_NAME)) {

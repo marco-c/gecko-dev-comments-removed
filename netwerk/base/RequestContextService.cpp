@@ -482,7 +482,8 @@ void RequestContextService::Shutdown() {
   sShutdown = true;
 }
 
- already_AddRefed<nsIRequestContextService>
+
+already_AddRefed<nsIRequestContextService>
 RequestContextService::GetOrCreate() {
   MOZ_ASSERT(NS_IsMainThread());
 

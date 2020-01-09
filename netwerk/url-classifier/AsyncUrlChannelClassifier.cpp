@@ -83,8 +83,8 @@ class URIData {
   nsTArray<nsCString> mFragments;
 };
 
- nsresult URIData::Create(nsIURI* aURI, nsIURI* aInnermostURI,
-                                      URIData** aData) {
+
+nsresult URIData::Create(nsIURI* aURI, nsIURI* aInnermostURI, URIData** aData) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aURI);
   MOZ_ASSERT(aInnermostURI);
@@ -511,9 +511,10 @@ class FeatureTask {
 
 
 
- nsresult FeatureTask::Create(nsIChannel* aChannel,
-                                          std::function<void()>&& aCallback,
-                                          FeatureTask** aTask) {
+
+nsresult FeatureTask::Create(nsIChannel* aChannel,
+                             std::function<void()>&& aCallback,
+                             FeatureTask** aTask) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aChannel);
   MOZ_ASSERT(aTask);
@@ -735,7 +736,8 @@ nsresult FeatureData::InitializeList(
 
 }  
 
- nsresult AsyncUrlChannelClassifier::CheckChannel(
+
+nsresult AsyncUrlChannelClassifier::CheckChannel(
     nsIChannel* aChannel, std::function<void()>&& aCallback) {
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(aChannel);

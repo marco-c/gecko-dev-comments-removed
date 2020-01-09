@@ -46,7 +46,8 @@ UrlClassifierFeatureTrackingProtection::UrlClassifierFeatureTrackingProtection()
   return TRACKING_PROTECTION_FEATURE_NAME;
 }
 
- void UrlClassifierFeatureTrackingProtection::MaybeInitialize() {
+
+void UrlClassifierFeatureTrackingProtection::MaybeInitialize() {
   MOZ_ASSERT(XRE_IsParentProcess());
   UC_LOG(("UrlClassifierFeatureTrackingProtection: MaybeInitialize"));
 
@@ -56,7 +57,8 @@ UrlClassifierFeatureTrackingProtection::UrlClassifierFeatureTrackingProtection()
   }
 }
 
- void UrlClassifierFeatureTrackingProtection::MaybeShutdown() {
+
+void UrlClassifierFeatureTrackingProtection::MaybeShutdown() {
   UC_LOG(("UrlClassifierFeatureTrackingProtection: Shutdown"));
 
   if (gFeatureTrackingProtection) {
@@ -65,7 +67,8 @@ UrlClassifierFeatureTrackingProtection::UrlClassifierFeatureTrackingProtection()
   }
 }
 
- already_AddRefed<UrlClassifierFeatureTrackingProtection>
+
+already_AddRefed<UrlClassifierFeatureTrackingProtection>
 UrlClassifierFeatureTrackingProtection::MaybeCreate(nsIChannel* aChannel) {
   MOZ_ASSERT(aChannel);
 
@@ -113,7 +116,8 @@ UrlClassifierFeatureTrackingProtection::MaybeCreate(nsIChannel* aChannel) {
   return self.forget();
 }
 
- already_AddRefed<nsIUrlClassifierFeature>
+
+already_AddRefed<nsIUrlClassifierFeature>
 UrlClassifierFeatureTrackingProtection::GetIfNameMatches(
     const nsACString& aName) {
   if (!aName.EqualsLiteral(TRACKING_PROTECTION_FEATURE_NAME)) {

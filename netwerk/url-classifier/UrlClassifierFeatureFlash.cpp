@@ -56,14 +56,15 @@ UrlClassifierFeatureFlash::UrlClassifierFeatureFlash(
                 "nsIHttpChannel::FlashPluginLastValue is out-of-sync!");
 }
 
- void UrlClassifierFeatureFlash::GetFeatureNames(
-    nsTArray<nsCString>& aArray) {
+
+void UrlClassifierFeatureFlash::GetFeatureNames(nsTArray<nsCString>& aArray) {
   for (const FlashFeature& flashFeature : sFlashFeaturesMap) {
     aArray.AppendElement(nsDependentCString(flashFeature.mName));
   }
 }
 
- void UrlClassifierFeatureFlash::MaybeInitialize() {
+
+void UrlClassifierFeatureFlash::MaybeInitialize() {
   MOZ_ASSERT(XRE_IsParentProcess());
 
   if (IsInitialized()) {
@@ -77,7 +78,8 @@ UrlClassifierFeatureFlash::UrlClassifierFeatureFlash(
   }
 }
 
- void UrlClassifierFeatureFlash::MaybeShutdown() {
+
+void UrlClassifierFeatureFlash::MaybeShutdown() {
   if (!IsInitialized()) {
     return;
   }
@@ -89,7 +91,8 @@ UrlClassifierFeatureFlash::UrlClassifierFeatureFlash(
   }
 }
 
- void UrlClassifierFeatureFlash::MaybeCreate(
+
+void UrlClassifierFeatureFlash::MaybeCreate(
     nsIChannel* aChannel,
     nsTArray<nsCOMPtr<nsIUrlClassifierFeature>>& aFeatures) {
   
@@ -126,7 +129,8 @@ UrlClassifierFeatureFlash::UrlClassifierFeatureFlash(
   }
 }
 
- already_AddRefed<nsIUrlClassifierFeature>
+
+already_AddRefed<nsIUrlClassifierFeature>
 UrlClassifierFeatureFlash::GetIfNameMatches(const nsACString& aName) {
   MaybeInitialize();
 

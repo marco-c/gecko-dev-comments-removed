@@ -1812,17 +1812,18 @@ nsIOService::SpeculativeAnonymousConnect(nsIURI *aURI, nsIPrincipal *aPrincipal,
   return SpeculativeConnectInternal(aURI, aPrincipal, aCallbacks, true);
 }
 
- bool nsIOService::IsDataURIUniqueOpaqueOrigin() {
+
+bool nsIOService::IsDataURIUniqueOpaqueOrigin() {
   return sIsDataURIUniqueOpaqueOrigin;
 }
 
- bool nsIOService::BlockToplevelDataUriNavigations() {
+
+bool nsIOService::BlockToplevelDataUriNavigations() {
   return sBlockToplevelDataUriNavigations;
 }
 
- bool nsIOService::BlockFTPSubresources() {
-  return sBlockFTPSubresources;
-}
+
+bool nsIOService::BlockFTPSubresources() { return sBlockFTPSubresources; }
 
 NS_IMETHODIMP
 nsIOService::NotImplemented() { return NS_ERROR_NOT_IMPLEMENTED; }

@@ -317,10 +317,11 @@ nsresult nsHttpHeaderArray::VisitHeaders(
   return NS_OK;
 }
 
- nsresult nsHttpHeaderArray::ParseHeaderLine(const nsACString &line,
-                                                       nsHttpAtom *hdr,
-                                                       nsACString *headerName,
-                                                       nsACString *val) {
+
+nsresult nsHttpHeaderArray::ParseHeaderLine(const nsACString &line,
+                                            nsHttpAtom *hdr,
+                                            nsACString *headerName,
+                                            nsACString *val) {
   
   
   

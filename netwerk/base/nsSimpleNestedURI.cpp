@@ -146,7 +146,8 @@ nsSimpleNestedURI::GetInnermostURI(nsIURI** uri) {
 }
 
 
- nsresult nsSimpleNestedURI::EqualsInternal(
+
+nsresult nsSimpleNestedURI::EqualsInternal(
     nsIURI* other, nsSimpleURI::RefHandlingEnum refHandlingMode, bool* result) {
   *result = false;
   NS_ENSURE_TRUE(mInnerURI, NS_ERROR_NOT_INITIALIZED);
@@ -173,7 +174,8 @@ nsSimpleNestedURI::GetInnermostURI(nsIURI** uri) {
   return NS_OK;
 }
 
- nsSimpleURI* nsSimpleNestedURI::StartClone(
+
+nsSimpleURI* nsSimpleNestedURI::StartClone(
     nsSimpleURI::RefHandlingEnum refHandlingMode, const nsACString& newRef) {
   NS_ENSURE_TRUE(mInnerURI, nullptr);
 
