@@ -23,8 +23,18 @@ def init_android_power_test(raptor):
         "settings get system screen_off_timeout"
     ).strip()
     raptor.device.shell_output("settings put system screen_off_timeout 7200000")
+
+    
+    
+    
+    raptor.screen_brightness = raptor.device.shell_output(
+        "settings get system screen_brightness"
+    ).strip()
+    raptor.device.shell_output("settings put system screen_brightness 127")
+
     raptor.device.shell_output("dumpsys batterystats --reset")
     raptor.device.shell_output("dumpsys batterystats --enable full-wake-history")
+
     filepath = os.path.join(upload_dir, "battery-before.txt")
     with open(filepath, "w") as output:
         output.write(raptor.device.shell_output("dumpsys battery"))
@@ -83,6 +93,10 @@ def finish_android_power_test(raptor, test_name):
     raptor.device.shell_output(
         "settings put system screen_off_timeout %s" % raptor.screen_off_timeout
     )
+    raptor.device.shell_output(
+        "settings put system screen_brightness %s" % raptor.screen_brightness
+    )
+
     filepath = os.path.join(upload_dir, "battery-after.txt")
     with open(filepath, "w") as output:
         output.write(raptor.device.shell_output("dumpsys battery"))
