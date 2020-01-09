@@ -138,6 +138,10 @@ const proto = {
       g.ownPropertyLength = getArrayLength(this.obj);
     } else if (isStorage(g)) {
       g.ownPropertyLength = getStorageLength(this.obj);
+    } else if (isReplaying) {
+      
+      
+      g.ownPropertyLength = this.obj.getOwnPropertyNamesCount();
     } else {
       try {
         g.ownPropertyLength = this.obj.getOwnPropertyNames().length;
@@ -332,6 +336,13 @@ const proto = {
 
     
     if (!DevToolsUtils.isSafeDebuggerObject(obj)) {
+      return safeGetterValues;
+    }
+
+    
+    
+    
+    if (isReplaying) {
       return safeGetterValues;
     }
 

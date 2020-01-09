@@ -213,7 +213,7 @@ dbg.onNewScript = function(script) {
 
 
 
-function snapshotObjectProperty({ name, desc }) {
+function snapshotObjectProperty([ name, desc ]) {
   
   if ("value" in desc && !convertedValueIsObject(desc.value)) {
     return { name, desc };
@@ -243,7 +243,7 @@ function makeObjectSnapshot(object) {
     isExtensible: object.isExtensible(),
     isSealed: object.isSealed(),
     isFrozen: object.isFrozen(),
-    properties: getObjectProperties(object).map(snapshotObjectProperty),
+    properties: Object.entries(getObjectProperties(object)).map(snapshotObjectProperty),
   };
 }
 
@@ -624,6 +624,31 @@ function forwardToScript(name) {
   return request => gScripts.getObject(request.id)[name](request.value);
 }
 
+function getFrameData(index) {
+  const frame = scriptFrameForIndex(index);
+
+  let _arguments = null;
+  if (frame.arguments) {
+    _arguments = [];
+    for (let i = 0; i < frame.arguments.length; i++) {
+      _arguments.push(convertValue(frame.arguments[i]));
+    }
+  }
+
+  return {
+    index,
+    type: frame.type,
+    callee: getObjectId(frame.callee),
+    environment: getObjectId(frame.environment),
+    generator: frame.generator,
+    constructing: frame.constructing,
+    this: convertValue(frame.this),
+    script: gScripts.getId(frame.script),
+    offset: frame.offset,
+    arguments: _arguments,
+  };
+}
+
 function unknownObjectProperties(why) {
   return [{
     name: "Unknown properties",
@@ -634,6 +659,55 @@ function unknownObjectProperties(why) {
   }];
 }
 
+function getObjectData(id) {
+  const object = gPausedObjects.getObject(id);
+  if (object instanceof Debugger.Object) {
+    const rv = {
+      id,
+      kind: "Object",
+      callable: object.callable,
+      isBoundFunction: object.isBoundFunction,
+      isArrowFunction: object.isArrowFunction,
+      isGeneratorFunction: object.isGeneratorFunction,
+      isAsyncFunction: object.isAsyncFunction,
+      proto: getObjectId(object.proto),
+      class: object.class,
+      name: object.name,
+      displayName: object.displayName,
+      parameterNames: object.parameterNames,
+      script: gScripts.getId(object.script),
+      environment: getObjectId(object.environment),
+      isProxy: object.isProxy,
+      isExtensible: object.isExtensible(),
+      isSealed: object.isSealed(),
+      isFrozen: object.isFrozen(),
+    };
+    if (rv.isBoundFunction) {
+      rv.boundTargetFunction = getObjectId(object.boundTargetFunction);
+      rv.boundThis = convertValue(object.boundThis);
+      rv.boundArguments = getObjectId(makeDebuggeeValue(object.boundArguments));
+    }
+    if (rv.isProxy) {
+      rv.proxyUnwrapped = convertValue(object.unwrap());
+      rv.proxyTarget = convertValue(object.proxyTarget);
+      rv.proxyHandler = convertValue(object.proxyHandler);
+    }
+    return rv;
+  }
+  if (object instanceof Debugger.Environment) {
+    return {
+      id,
+      kind: "Environment",
+      type: object.type,
+      parent: getObjectId(object.parent),
+      object: object.type == "declarative" ? 0 : getObjectId(object.object),
+      callee: getObjectId(object.callee),
+      optimizedOut: object.optimizedOut,
+    };
+  }
+  throw new Error("Unknown object kind");
+}
+
 function getObjectProperties(object) {
   let names;
   try {
@@ -642,12 +716,13 @@ function getObjectProperties(object) {
     return unknownObjectProperties(e.toString());
   }
 
-  return names.map(name => {
+  const rv = Object.create(null);
+  names.forEach(name => {
     let desc;
     try {
       desc = object.getOwnPropertyDescriptor(name);
     } catch (e) {
-      return { name, desc: { value: "Unknown: " + e, enumerable: true } };
+      desc = { name, desc: { value: "Unknown: " + e, enumerable: true } };
     }
     if ("value" in desc) {
       desc.value = convertValue(desc.value);
@@ -658,8 +733,22 @@ function getObjectProperties(object) {
     if ("set" in desc) {
       desc.set = getObjectId(desc.set);
     }
-    return { name, desc };
+    rv[name] = desc;
   });
+  return rv;
+}
+
+function getEnvironmentNames(env) {
+  try {
+    const names = env.names();
+
+    return names.map(name => {
+      return { name, value: convertValue(env.getVariable(name)) };
+    });
+  } catch (e) {
+    return [{name: "Unknown names",
+             value: "Exception thrown in getEnvironmentNames" }];
+  }
 }
 
 function getWindow() {
@@ -668,6 +757,164 @@ function getWindow() {
     return window;
   }
   return null;
+}
+
+
+
+const OBJECT_PREVIEW_MAX_ITEMS = 10;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getPauseData() {
+  const numFrames = countScriptFrames();
+  if (!numFrames) {
+    return {};
+  }
+
+  const rv = {
+    frames: [],
+    scripts: {},
+    offsetMetadata: [],
+    objects: {},
+    environments: {},
+  };
+
+  function addValue(value, includeProperties) {
+    if (value && typeof value == "object" && value.object) {
+      addObject(value.object, includeProperties);
+    }
+  }
+
+  function addObject(id, includeProperties) {
+    if (!id) {
+      return;
+    }
+
+    
+    
+    const needObject = !rv.objects[id];
+    const needProperties =
+      includeProperties &&
+      (needObject || !rv.objects[id].preview.enumerableOwnProperties);
+
+    if (!needObject && !needProperties) {
+      return;
+    }
+
+    const object = gPausedObjects.getObject(id);
+    assert(object instanceof Debugger.Object);
+
+    const properties = getObjectProperties(object);
+    const propertyEntries = Object.entries(properties);
+
+    if (needObject) {
+      rv.objects[id] = {
+        data: getObjectData(id),
+        preview: {
+          ownPropertyNamesCount: propertyEntries.length,
+        },
+      };
+
+      const preview = rv.objects[id].preview;
+
+      
+      
+      if (properties.length) {
+        preview.lengthProperty = properties.length;
+      }
+      if (properties.displayName) {
+        preview.displayNameProperty = properties.displayName;
+      }
+    }
+
+    if (needProperties) {
+      const preview = rv.objects[id].preview;
+
+      
+      
+      
+      
+      const enumerableOwnProperties = Object.create(null);
+      let enumerablePropertyCount = 0;
+      for (const [ name, desc ] of propertyEntries) {
+        if (desc.enumerable) {
+          enumerableOwnProperties[name] = desc;
+          addPropertyDescriptor(desc, false);
+          if (++enumerablePropertyCount == OBJECT_PREVIEW_MAX_ITEMS) {
+            break;
+          }
+        }
+      }
+      preview.enumerableOwnProperties = enumerableOwnProperties;
+    }
+  }
+
+  function addPropertyDescriptor(desc, includeProperties) {
+    if (desc.value) {
+      addValue(desc.value, includeProperties);
+    }
+    if (desc.get) {
+      addObject(desc.get, includeProperties);
+    }
+    if (desc.set) {
+      addObject(desc.set, includeProperties);
+    }
+  }
+
+  function addEnvironment(id) {
+    if (!id || rv.environments[id]) {
+      return;
+    }
+
+    const env = gPausedObjects.getObject(id);
+    assert(env instanceof Debugger.Environment);
+
+    const data = getObjectData(id);
+    const names = getEnvironmentNames(env);
+    rv.environments[id] = { data, names };
+
+    addEnvironment(data.parent);
+  }
+
+  
+  function addScript(id) {
+    if (!rv.scripts[id]) {
+      rv.scripts[id] = getScriptData(id);
+    }
+  }
+
+  for (let i = 0; i < numFrames; i++) {
+    const frame = getFrameData(i);
+    const script = gScripts.getObject(frame.script);
+    rv.frames.push(frame);
+    rv.offsetMetadata.push({
+      scriptId: frame.script,
+      offset: frame.offset,
+      metadata: script.getOffsetMetadata(frame.offset),
+    });
+    addScript(frame.script);
+    addValue(frame.this, true);
+    if (frame.arguments) {
+      for (const arg of frame.arguments) {
+        addValue(arg, true);
+      }
+    }
+    addObject(frame.callee, false);
+    addEnvironment(frame.environment, true);
+  }
+
+  return rv;
 }
 
 
@@ -733,47 +980,7 @@ const gRequestHandlers = {
   },
 
   getObject(request) {
-    const object = gPausedObjects.getObject(request.id);
-    if (object instanceof Debugger.Object) {
-      const rv = {
-        id: request.id,
-        kind: "Object",
-        callable: object.callable,
-        isBoundFunction: object.isBoundFunction,
-        isArrowFunction: object.isArrowFunction,
-        isGeneratorFunction: object.isGeneratorFunction,
-        isAsyncFunction: object.isAsyncFunction,
-        proto: getObjectId(object.proto),
-        class: object.class,
-        name: object.name,
-        displayName: object.displayName,
-        parameterNames: object.parameterNames,
-        script: gScripts.getId(object.script),
-        environment: getObjectId(object.environment),
-        isProxy: object.isProxy,
-        isExtensible: object.isExtensible(),
-        isSealed: object.isSealed(),
-        isFrozen: object.isFrozen(),
-      };
-      if (rv.isBoundFunction) {
-        rv.boundTargetFunction = getObjectId(object.boundTargetFunction);
-        rv.boundThis = convertValue(object.boundThis);
-        rv.boundArguments = getObjectId(makeDebuggeeValue(object.boundArguments));
-      }
-      return rv;
-    }
-    if (object instanceof Debugger.Environment) {
-      return {
-        id: request.id,
-        kind: "Environment",
-        type: object.type,
-        parent: getObjectId(object.parent),
-        object: object.type == "declarative" ? 0 : getObjectId(object.object),
-        callee: getObjectId(object.callee),
-        optimizedOut: object.optimizedOut,
-      };
-    }
-    throw new Error("Unknown object kind");
+    return getObjectData(request.id);
   },
 
   getObjectProperties(request) {
@@ -783,18 +990,6 @@ const gRequestHandlers = {
 
     const object = gPausedObjects.getObject(request.id);
     return getObjectProperties(object);
-  },
-
-  objectProxyData(request) {
-    if (!RecordReplayControl.maybeDivergeFromRecording()) {
-      return { exception: "Recording divergence in unwrapObject" };
-    }
-    const obj = gPausedObjects.getObject(request.id);
-    return {
-      unwrapped: convertValue(obj.unwrap()),
-      target: convertValue(obj.proxyTarget),
-      handler: convertValue(obj.proxyHandler),
-    };
   },
 
   objectApply(request) {
@@ -814,22 +1009,14 @@ const gRequestHandlers = {
                value: "Recording divergence in getEnvironmentNames" }];
     }
 
-    try {
-      const env = gPausedObjects.getObject(request.id);
-      const names = env.names();
-
-      return names.map(name => {
-        return { name, value: convertValue(env.getVariable(name)) };
-      });
-    } catch (e) {
-      return [{name: "Unknown names",
-               value: "Exception thrown in getEnvironmentNames" }];
-    }
+    const env = gPausedObjects.getObject(request.id);
+    return getEnvironmentNames(env);
   },
 
   getFrame(request) {
     if (request.index == -1 ) {
       const numFrames = countScriptFrames();
+
       if (!numFrames) {
         
         return {};
@@ -837,28 +1024,15 @@ const gRequestHandlers = {
       request.index = numFrames - 1;
     }
 
-    const frame = scriptFrameForIndex(request.index);
+    return getFrameData(request.index);
+  },
 
-    let _arguments = null;
-    if (frame.arguments) {
-      _arguments = [];
-      for (let i = 0; i < frame.arguments.length; i++) {
-        _arguments.push(convertValue(frame.arguments[i]));
-      }
+  pauseData(request) {
+    if (!RecordReplayControl.maybeDivergeFromRecording()) {
+      return { error: "Recording divergence in pauseData" };
     }
 
-    return {
-      index: request.index,
-      type: frame.type,
-      callee: getObjectId(frame.callee),
-      environment: getObjectId(frame.environment),
-      generator: frame.generator,
-      constructing: frame.constructing,
-      this: convertValue(frame.this),
-      script: gScripts.getId(frame.script),
-      offset: frame.offset,
-      arguments: _arguments,
-    };
+    return getPauseData();
   },
 
   getLineOffsets: forwardToScript("getLineOffsets"),

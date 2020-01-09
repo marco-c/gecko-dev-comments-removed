@@ -377,6 +377,10 @@ function GenericObject(objectActor, grip, rawObj, specialStringBehavior = false)
       for (let j = 0; j < rawObj.length; j++) {
         names.push(rawObj.key(j));
       }
+    } else if (isReplaying) {
+      
+      
+      names = obj.getEnumerableOwnPropertyNamesForPreview();
     } else {
       names = obj.getOwnPropertyNames();
     }
@@ -780,6 +784,12 @@ previewers.Object = [
     
     
     
+
+    
+    
+    if (isReplaying) {
+      return false;
+    }
 
     let keys;
     try {
