@@ -249,11 +249,6 @@ class ObjectGroup : public gc::TenuredCell {
     Addendum_PreliminaryObjects,
 
     
-    
-    
-    Addendum_OriginalUnboxedGroup,
-
-    
     Addendum_TypeDescr
   };
 
@@ -311,17 +306,6 @@ class ObjectGroup : public gc::TenuredCell {
   }
 
   inline bool hasUnanalyzedPreliminaryObjects();
-
-  ObjectGroup* maybeOriginalUnboxedGroup() const {
-    if (addendumKind() == Addendum_OriginalUnboxedGroup) {
-      return reinterpret_cast<ObjectGroup*>(addendum_);
-    }
-    return nullptr;
-  }
-
-  void setOriginalUnboxedGroup(ObjectGroup* group) {
-    setAddendum(Addendum_OriginalUnboxedGroup, group);
-  }
 
   TypeDescr* maybeTypeDescr() {
     
@@ -468,12 +452,6 @@ class ObjectGroup : public gc::TenuredCell {
 
  public:
   const ObjectGroupFlags* addressOfFlags() const { return &flags_; }
-
-  
-  
-  static inline int32_t addendumOriginalUnboxedGroupValue() {
-    return Addendum_OriginalUnboxedGroup << OBJECT_FLAG_ADDENDUM_SHIFT;
-  }
 
   inline uint32_t basePropertyCount(const AutoSweepObjectGroup& sweep);
   inline uint32_t basePropertyCountDontCheckGeneration();
