@@ -242,9 +242,7 @@
 #toolbox-controls > button,
 .toolbox-tabs-wrapper .tools-chevron-menu {
   
-  padding: 0 !important;
   margin: 0 !important;
-  border: none !important;
   border-radius: 0 !important;
   position: relative;
   min-width: 26px;
