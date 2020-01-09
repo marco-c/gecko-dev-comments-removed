@@ -281,6 +281,14 @@ inline void AssertGCThingIsNotNurseryAllocable(js::gc::Cell* cell) {}
 
 
 
+
+
+
+
+
+
+
+
 template <typename T>
 class MOZ_NON_MEMMOVABLE Heap : public js::HeapBase<T, Heap<T>> {
   
