@@ -9,6 +9,11 @@
 {
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
+let LazyModules = {};
+
+ChromeUtils.defineModuleGetter(LazyModules, "PermitUnloader",
+  "resource://gre/actors/BrowserElementParent.jsm");
+
 const elementsToDestroyOnUnload = new Set();
 
 window.addEventListener("unload", () => {
@@ -306,8 +311,6 @@ class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
     this._autoScrollScrollId = null;
 
     this._autoScrollPresShellId = null;
-
-    this._permitUnloadId = 0;
   }
 
   connectedCallback() {
@@ -1431,7 +1434,19 @@ class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
       this.frameLoader.remoteTab.transmitPermissionsForPrincipal(permissionPrincipal);
 
       
-      this.messageManager.sendAsyncMessage("Browser:CreateAboutBlank", aPrincipal);
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      this.messageManager.sendAsyncMessage("BrowserElement:CreateAboutBlank",
+                                           aPrincipal);
       return;
     }
     let principal = BrowserUtils.principalWithMatchingOA(aPrincipal, this.contentPrincipal);
@@ -1754,16 +1769,13 @@ class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
 
   getInPermitUnload(aCallback) {
     if (this.isRemoteBrowser) {
-      let id = this._permitUnloadId++;
-      let mm = this.messageManager;
-      mm.sendAsyncMessage("InPermitUnload", { id });
-      mm.addMessageListener("InPermitUnload", function listener(msg) {
-        if (msg.data.id != id) {
-          return;
-        }
-        mm.removeMessageListener("InPermitUnload", listener);
-        aCallback(msg.data.inPermitUnload);
-      });
+      let { remoteTab } = this.frameLoader;
+      if (!remoteTab) {
+        
+        aCallback(false);
+        return;
+      }
+      aCallback(LazyModules.PermitUnloader.inPermitUnload(this.frameLoader));
       return;
     }
 
@@ -1776,68 +1788,11 @@ class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
 
   permitUnload(aPermitUnloadFlags) {
     if (this.isRemoteBrowser) {
-      let { remoteTab } = this.frameLoader;
-
-      if (!remoteTab.hasBeforeUnload) {
+      if (!LazyModules.PermitUnloader.hasBeforeUnload(this.frameLoader)) {
         return { permitUnload: true, timedOut: false };
       }
 
-      const kTimeout = 1000;
-
-      let finished = false;
-      let responded = false;
-      let permitUnload;
-      let id = this._permitUnloadId++;
-      let mm = this.messageManager;
-      let {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
-      let msgListener = msg => {
-        if (msg.data.id != id) {
-          return;
-        }
-        if (msg.data.kind == "start") {
-          responded = true;
-          return;
-        }
-        done(msg.data.permitUnload);
-      };
-
-      let observer = subject => {
-        if (subject == mm) {
-          done(true);
-        }
-      };
-
-      function done(result) {
-        finished = true;
-        permitUnload = result;
-        mm.removeMessageListener("PermitUnload", msgListener);
-        Services.obs.removeObserver(observer, "message-manager-close");
-      }
-
-      mm.sendAsyncMessage("PermitUnload", { id, aPermitUnloadFlags });
-      mm.addMessageListener("PermitUnload", msgListener);
-      Services.obs.addObserver(observer, "message-manager-close");
-
-      let timedOut = false;
-
-      function timeout() {
-        if (!responded) {
-          timedOut = true;
-        }
-
-        
-        Services.tm.dispatchToMainThread(function() {});
-      }
-
-      let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-      timer.initWithCallback(timeout, kTimeout, timer.TYPE_ONE_SHOT);
-
-      while (!finished && !timedOut) {
-        Services.tm.currentThread.processNextEvent(true);
-      }
-
-      return { permitUnload, timedOut };
+      return LazyModules.PermitUnloader.permitUnload(this.frameLoader, aPermitUnloadFlags);
     }
 
     if (!this.docShell || !this.docShell.contentViewer) {

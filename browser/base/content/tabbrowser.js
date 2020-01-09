@@ -44,7 +44,6 @@ window._gBrowser = {
     let messageManager = window.getGroupMessageManager("browsers");
     if (gMultiProcessBrowser) {
       messageManager.addMessageListener("DOMTitleChanged", this);
-      messageManager.addMessageListener("DOMWindowClose", this);
       window.messageManager.addMessageListener("contextmenu", this);
       messageManager.addMessageListener("Browser:Init", this);
     } else {
@@ -2868,9 +2867,10 @@ window._gBrowser = {
 
   _hasBeforeUnload(aTab) {
     let browser = aTab.linkedBrowser;
-    return browser.isRemoteBrowser && browser.frameLoader &&
-           browser.frameLoader.remoteTab &&
-           browser.frameLoader.remoteTab.hasBeforeUnload;
+    if (browser.isRemoteBrowser && browser.frameLoader) {
+      return PermitUnloader.hasBeforeUnload(browser.frameLoader);
+    }
+    return false;
   },
 
   _beginRemoveTab(aTab, {
@@ -4335,25 +4335,6 @@ window._gBrowser = {
           tab.setAttribute("titlechanged", "true");
         break;
       }
-      case "DOMWindowClose":
-      {
-        if (this.tabs.length == 1) {
-          
-          
-          
-          window.skipNextCanClose = true;
-          window.close();
-          return undefined;
-        }
-
-        let tab = this.getTabForBrowser(browser);
-        if (tab) {
-          
-          
-          this.removeTab(tab, { skipPermitUnload: true });
-        }
-        break;
-      }
       case "contextmenu":
       {
         openContextMenu(aMessage);
@@ -4540,25 +4521,48 @@ window._gBrowser = {
     });
 
     this.addEventListener("DOMWindowClose", (event) => {
-      if (!event.isTrusted)
-        return;
+      let browser = event.target;
+      if (!browser.isRemoteBrowser) {
+        if (!event.isTrusted) {
+          
+          
+          
+          
+          
+          return;
+        }
+        
+        
+        
+        
+        browser = event.target.docShell.chromeEventHandler;
+      }
 
       if (this.tabs.length == 1) {
         
         
         
         window.skipNextCanClose = true;
+        
+        
+        
+        
+        window.close();
         return;
       }
 
-      let browser = event.target.docShell.chromeEventHandler;
       let tab = this.getTabForBrowser(browser);
       if (tab) {
         
+        
         this.removeTab(tab, { skipPermitUnload: true });
+        
+        
+        
+        
         event.preventDefault();
       }
-    }, true);
+    });
 
     this.addEventListener("DOMWillOpenModalDialog", (event) => {
       if (!event.isTrusted)

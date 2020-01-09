@@ -4,6 +4,9 @@
 
 
 
+ChromeUtils.defineModuleGetter(this, "BrowserUtils",
+                               "resource://gre/modules/BrowserUtils.jsm");
+
 const {WebProgressChild} = ChromeUtils.import("resource://gre/modules/WebProgressChild.jsm");
 
 this.WebProgress = new WebProgressChild(this);
@@ -27,6 +30,21 @@ addEventListener("ImageContentLoaded", function(aEvent) {
                                               height: req.image.height });
   }
 }, false);
+
+
+
+
+
+
+addMessageListener("BrowserElement:CreateAboutBlank", message => {
+  if (!content.document || content.document.documentURI != "about:blank") {
+    throw new Error("Can't create a content viewer unless on about:blank");
+  }
+  let principal = message.data;
+  principal = BrowserUtils.principalWithMatchingOA(principal,
+    content.document.nodePrincipal);
+  docShell.createAboutBlankContentViewer(principal);
+});
 
 
 
