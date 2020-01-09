@@ -169,6 +169,17 @@ class BrowsingContextTargetFront extends
 
     return response;
   }
+
+  destroy() {
+    const promise = super.destroy();
+
+    
+    
+    this.off("tabNavigated", this._onTabNavigated);
+    this.off("frameUpdate", this._onFrameUpdate);
+
+    return promise;
+  }
 }
 
 exports.BrowsingContextTargetFront = BrowsingContextTargetFront;
