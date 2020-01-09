@@ -1577,6 +1577,10 @@ BrowserGlue.prototype = {
         enableCertErrorUITelemetry);
     });
 
+    Services.tm.idleDispatchToMainThread(() => {
+      this._recordContentBlockingTelemetry();
+    });
+
     
     
     
@@ -2095,10 +2099,6 @@ BrowserGlue.prototype = {
       
       this._placesBrowserInitComplete = true;
       Services.obs.notifyObservers(null, "places-browser-init-complete");
-    });
-
-    Services.tm.idleDispatchToMainThread(() => {
-      this._recordContentBlockingTelemetry();
     });
   },
 
