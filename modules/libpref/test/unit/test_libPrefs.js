@@ -18,153 +18,146 @@ function makeList(a) {
 }
 
 function run_test() {
-  var ps = Cc["@mozilla.org/preferences-service;1"].
-            getService(Ci.nsIPrefService);
-
-  var pb2 = Cc["@mozilla.org/preferences-service;1"].
-            getService(Ci.nsIPrefBranch);
-
-  var pb = Cc["@mozilla.org/preferences-service;1"].
-            getService(Ci.nsIPrefBranch);
+  const ps = Services.prefs;
 
   
   
 
   do_check_throws(function() {
-    pb.getPrefType(null);
+    ps.getPrefType(null);
 }, Cr.NS_ERROR_INVALID_ARG);
   do_check_throws(function() {
-    pb.getBoolPref(null);
+    ps.getBoolPref(null);
 }, Cr.NS_ERROR_INVALID_ARG);
   do_check_throws(function() {
-    pb.setBoolPref(null, false);
+    ps.setBoolPref(null, false);
 }, Cr.NS_ERROR_INVALID_ARG);
   do_check_throws(function() {
-    pb.getIntPref(null);
+    ps.getIntPref(null);
 }, Cr.NS_ERROR_INVALID_ARG);
   do_check_throws(function() {
-    pb.setIntPref(null, 0);
+    ps.setIntPref(null, 0);
 }, Cr.NS_ERROR_INVALID_ARG);
   do_check_throws(function() {
-    pb.getCharPref(null);
+    ps.getCharPref(null);
 }, Cr.NS_ERROR_INVALID_ARG);
   do_check_throws(function() {
-    pb.setCharPref(null, null);
+    ps.setCharPref(null, null);
 }, Cr.NS_ERROR_INVALID_ARG);
   do_check_throws(function() {
-    pb.getStringPref(null);
+    ps.getStringPref(null);
 }, Cr.NS_ERROR_INVALID_ARG);
   do_check_throws(function() {
-    pb.setStringPref(null, null);
+    ps.setStringPref(null, null);
 }, Cr.NS_ERROR_INVALID_ARG);
   do_check_throws(function() {
-    pb.clearUserPref(null);
+    ps.clearUserPref(null);
 }, Cr.NS_ERROR_INVALID_ARG);
   do_check_throws(function() {
-    pb.prefHasUserValue(null);
+    ps.prefHasUserValue(null);
 }, Cr.NS_ERROR_INVALID_ARG);
   do_check_throws(function() {
-    pb.lockPref(null);
+    ps.lockPref(null);
 }, Cr.NS_ERROR_INVALID_ARG);
   do_check_throws(function() {
-    pb.prefIsLocked(null);
+    ps.prefIsLocked(null);
 }, Cr.NS_ERROR_INVALID_ARG);
   do_check_throws(function() {
-    pb.unlockPref(null);
+    ps.unlockPref(null);
 }, Cr.NS_ERROR_INVALID_ARG);
   do_check_throws(function() {
-    pb.deleteBranch(null);
+    ps.deleteBranch(null);
 }, Cr.NS_ERROR_INVALID_ARG);
   do_check_throws(function() {
-    pb.getChildList(null);
+    ps.getChildList(null);
 }, Cr.NS_ERROR_INVALID_ARG);
 
   
   
 
-  Assert.equal(pb.prefHasUserValue("UserPref.nonexistent.hasUserValue"), false);
-  pb.clearUserPref("UserPref.nonexistent.clearUserPref"); 
-  Assert.equal(pb.getPrefType("UserPref.nonexistent.getPrefType"), PREF_INVALID);
-  Assert.equal(pb.root, "");
+  Assert.equal(ps.prefHasUserValue("UserPref.nonexistent.hasUserValue"), false);
+  ps.clearUserPref("UserPref.nonexistent.clearUserPref"); 
+  Assert.equal(ps.getPrefType("UserPref.nonexistent.getPrefType"), PREF_INVALID);
+  Assert.equal(ps.root, "");
 
   
   do_check_throws(function() {
-    pb.getBoolPref("UserPref.nonexistent.getBoolPref");
-}, Cr.NS_ERROR_UNEXPECTED);
-  pb.setBoolPref("UserPref.nonexistent.setBoolPref", false);
-  Assert.equal(pb.getBoolPref("UserPref.nonexistent.setBoolPref"), false);
+    ps.getBoolPref("UserPref.nonexistent.getBoolPref");
+  }, Cr.NS_ERROR_UNEXPECTED);
+  ps.setBoolPref("UserPref.nonexistent.setBoolPref", false);
+  Assert.equal(ps.getBoolPref("UserPref.nonexistent.setBoolPref"), false);
 
   
   do_check_throws(function() {
-    pb.getIntPref("UserPref.nonexistent.getIntPref");
-}, Cr.NS_ERROR_UNEXPECTED);
-  pb.setIntPref("UserPref.nonexistent.setIntPref", 5);
-  Assert.equal(pb.getIntPref("UserPref.nonexistent.setIntPref"), 5);
+    ps.getIntPref("UserPref.nonexistent.getIntPref");
+  }, Cr.NS_ERROR_UNEXPECTED);
+  ps.setIntPref("UserPref.nonexistent.setIntPref", 5);
+  Assert.equal(ps.getIntPref("UserPref.nonexistent.setIntPref"), 5);
 
   
   do_check_throws(function() {
-    pb.getCharPref("UserPref.nonexistent.getCharPref");
-}, Cr.NS_ERROR_UNEXPECTED);
-  pb.setCharPref("UserPref.nonexistent.setCharPref", "_test");
-  Assert.equal(pb.getCharPref("UserPref.nonexistent.setCharPref"), "_test");
+    ps.getCharPref("UserPref.nonexistent.getCharPref");
+  }, Cr.NS_ERROR_UNEXPECTED);
+  ps.setCharPref("UserPref.nonexistent.setCharPref", "_test");
+  Assert.equal(ps.getCharPref("UserPref.nonexistent.setCharPref"), "_test");
 
   
   
 
-  pb.setBoolPref("UserPref.existing.bool", true);
-  pb.setIntPref("UserPref.existing.int", 23);
-  pb.setCharPref("UserPref.existing.char", "hey");
+  ps.setBoolPref("UserPref.existing.bool", true);
+  ps.setIntPref("UserPref.existing.int", 23);
+  ps.setCharPref("UserPref.existing.char", "hey");
 
   
-  Assert.equal(pb.getBoolPref("UserPref.existing.bool"), true);
-  Assert.equal(pb.getIntPref("UserPref.existing.int"), 23);
-  Assert.equal(pb.getCharPref("UserPref.existing.char"), "hey");
+  Assert.equal(ps.getBoolPref("UserPref.existing.bool"), true);
+  Assert.equal(ps.getIntPref("UserPref.existing.int"), 23);
+  Assert.equal(ps.getCharPref("UserPref.existing.char"), "hey");
 
   
-  pb.setBoolPref("UserPref.existing.bool", false);
-  Assert.equal(pb.getBoolPref("UserPref.existing.bool"), false);
-  pb.setIntPref("UserPref.existing.int", 24);
-  Assert.equal(pb.getIntPref("UserPref.existing.int"), 24);
-  pb.setCharPref("UserPref.existing.char", "hej då!");
-  Assert.equal(pb.getCharPref("UserPref.existing.char"), "hej då!");
+  ps.setBoolPref("UserPref.existing.bool", false);
+  Assert.equal(ps.getBoolPref("UserPref.existing.bool"), false);
+  ps.setIntPref("UserPref.existing.int", 24);
+  Assert.equal(ps.getIntPref("UserPref.existing.int"), 24);
+  ps.setCharPref("UserPref.existing.char", "hej då!");
+  Assert.equal(ps.getCharPref("UserPref.existing.char"), "hej då!");
 
   
-  Assert.ok(pb.prefHasUserValue("UserPref.existing.bool"));
-  Assert.ok(pb.prefHasUserValue("UserPref.existing.int"));
-  Assert.ok(pb.prefHasUserValue("UserPref.existing.char"));
+  Assert.ok(ps.prefHasUserValue("UserPref.existing.bool"));
+  Assert.ok(ps.prefHasUserValue("UserPref.existing.int"));
+  Assert.ok(ps.prefHasUserValue("UserPref.existing.char"));
 
   
-  pb.clearUserPref("UserPref.existing.bool");
-  Assert.ok(!pb.prefHasUserValue("UserPref.existing.bool"));
-  pb.clearUserPref("UserPref.existing.int");
-  Assert.ok(!pb.prefHasUserValue("UserPref.existing.int"));
-  pb.clearUserPref("UserPref.existing.char");
-  Assert.ok(!pb.prefHasUserValue("UserPref.existing.char"));
+  ps.clearUserPref("UserPref.existing.bool");
+  Assert.ok(!ps.prefHasUserValue("UserPref.existing.bool"));
+  ps.clearUserPref("UserPref.existing.int");
+  Assert.ok(!ps.prefHasUserValue("UserPref.existing.int"));
+  ps.clearUserPref("UserPref.existing.char");
+  Assert.ok(!ps.prefHasUserValue("UserPref.existing.char"));
 
   
   
 
   let largeStr = new Array(MAX_PREF_LENGTH + 1).join("x");
-  pb.setCharPref("UserPref.large.char", largeStr);
+  ps.setCharPref("UserPref.large.char", largeStr);
   largeStr += "x";
   do_check_throws(function() {
-    pb.setCharPref("UserPref.large.char", largeStr);
-}, Cr.NS_ERROR_ILLEGAL_VALUE);
+    ps.setCharPref("UserPref.large.char", largeStr);
+  }, Cr.NS_ERROR_ILLEGAL_VALUE);
 
   
   
 
   
-  pb.setBoolPref("UserPref.getPrefType.bool", true);
-  Assert.equal(pb.getPrefType("UserPref.getPrefType.bool"), PREF_BOOL);
+  ps.setBoolPref("UserPref.getPrefType.bool", true);
+  Assert.equal(ps.getPrefType("UserPref.getPrefType.bool"), PREF_BOOL);
 
   
-  pb.setIntPref("UserPref.getPrefType.int", -234);
-  Assert.equal(pb.getPrefType("UserPref.getPrefType.int"), PREF_INT);
+  ps.setIntPref("UserPref.getPrefType.int", -234);
+  Assert.equal(ps.getPrefType("UserPref.getPrefType.int"), PREF_INT);
 
   
-  pb.setCharPref("UserPref.getPrefType.char", "testing1..2");
-  Assert.equal(pb.getPrefType("UserPref.getPrefType.char"), PREF_STRING);
+  ps.setCharPref("UserPref.getPrefType.char", "testing1..2");
+  Assert.equal(ps.getPrefType("UserPref.getPrefType.char"), PREF_STRING);
 
   
   
@@ -172,7 +165,7 @@ function run_test() {
   Assert.equal(ps.root, "");
 
   
-  pb.setBoolPref("UserPref.root.boolPref", true);
+  ps.setBoolPref("UserPref.root.boolPref", true);
   let pb_1 = ps.getBranch("UserPref.root.");
   Assert.equal(pb_1.getBoolPref("boolPref"), true);
   let pb_2 = ps.getBranch("UserPref.root.boolPref");
@@ -182,7 +175,7 @@ function run_test() {
   Assert.equal(pb_3.getBoolPref("f.anotherPref"), false);
 
   
-  pb.setIntPref("UserPref.root.intPref", 23);
+  ps.setIntPref("UserPref.root.intPref", 23);
   pb_1 = ps.getBranch("UserPref.root.");
   Assert.equal(pb_1.getIntPref("intPref"), 23);
   pb_2 = ps.getBranch("UserPref.root.intPref");
@@ -192,7 +185,7 @@ function run_test() {
   Assert.equal(pb_3.getIntPref("f.anotherPref"), 69);
 
   
-  pb.setCharPref("UserPref.root.charPref", "_char");
+  ps.setCharPref("UserPref.root.charPref", "_char");
   pb_1 = ps.getBranch("UserPref.root.");
   Assert.equal(pb_1.getCharPref("charPref"), "_char");
   pb_2 = ps.getBranch("UserPref.root.charPref");
@@ -205,7 +198,7 @@ function run_test() {
   
 
   
-  pb1 = ps.getBranch("UserPref.root.");
+  let pb1 = ps.getBranch("UserPref.root.");
   let prefList = pb1.getChildList("");
   Assert.equal(prefList.length, 6);
 
@@ -253,10 +246,10 @@ function run_test() {
   
   do_check_throws(function() {
     ps.lockPref("DefaultPref.nonexistent");
-}, Cr.NS_ERROR_ILLEGAL_VALUE);
+  }, Cr.NS_ERROR_ILLEGAL_VALUE);
   do_check_throws(function() {
     ps.unlockPref("DefaultPref.nonexistent");
-}, Cr.NS_ERROR_ILLEGAL_VALUE);
+  }, Cr.NS_ERROR_ILLEGAL_VALUE);
 
   
   Assert.ok(!ps.prefIsLocked("DefaultPref.char"));
@@ -297,30 +290,30 @@ function run_test() {
   
 
   ps.deleteBranch("DefaultPref");
-  pb = ps.getBranch("DefaultPref");
+  let pb = ps.getBranch("DefaultPref");
   pb1 = ps.getDefaultBranch("DefaultPref");
 
   
   do_check_throws(function() {
     pb.getBoolPref("DefaultPref.bool");
-}, Cr.NS_ERROR_UNEXPECTED);
+  }, Cr.NS_ERROR_UNEXPECTED);
   do_check_throws(function() {
     pb.getIntPref("DefaultPref.int");
-}, Cr.NS_ERROR_UNEXPECTED);
+  }, Cr.NS_ERROR_UNEXPECTED);
   do_check_throws(function() {
     pb.getCharPref("DefaultPref.char");
-}, Cr.NS_ERROR_UNEXPECTED);
+  }, Cr.NS_ERROR_UNEXPECTED);
 
   
   do_check_throws(function() {
     pb1.getBoolPref("DefaultPref.bool");
-}, Cr.NS_ERROR_UNEXPECTED);
+  }, Cr.NS_ERROR_UNEXPECTED);
   do_check_throws(function() {
     pb1.getIntPref("DefaultPref.int");
-}, Cr.NS_ERROR_UNEXPECTED);
+  }, Cr.NS_ERROR_UNEXPECTED);
   do_check_throws(function() {
     pb1.getCharPref("DefaultPref.char");
-}, Cr.NS_ERROR_UNEXPECTED);
+  }, Cr.NS_ERROR_UNEXPECTED);
 
   
   
@@ -348,13 +341,13 @@ function run_test() {
   
   do_check_throws(function() {
     pb.getBoolPref("ReadPref.bool");
-}, Cr.NS_ERROR_UNEXPECTED);
+  }, Cr.NS_ERROR_UNEXPECTED);
   do_check_throws(function() {
     pb.getIntPref("ReadPref.int");
-}, Cr.NS_ERROR_UNEXPECTED);
+  }, Cr.NS_ERROR_UNEXPECTED);
   do_check_throws(function() {
     pb.getCharPref("ReadPref.char");
-}, Cr.NS_ERROR_UNEXPECTED);
+  }, Cr.NS_ERROR_UNEXPECTED);
 
   
   pb = ps.getBranch("testPref.");
@@ -405,7 +398,7 @@ function run_test() {
     QueryInterface(aIID) {
       if (aIID.equals(Ci.nsIObserver) ||
           aIID.equals(Ci.nsISupports))
-         return this;
+        return this;
       throw Cr.NS_NOINTERFACE;
     }
 
@@ -426,15 +419,15 @@ function run_test() {
   do_test_pending();
   do_test_pending();
 
-  let observer = new PrefObserver(pb2, "ReadPref.int", 76);
+  let observer = new PrefObserver(ps, "ReadPref.int", 76);
   ps.setIntPref("ReadPref.int", 76);
 
   
-  pb2.removeObserver("ReadPref.int", observer);
+  ps.removeObserver("ReadPref.int", observer);
   ps.setIntPref("ReadPref.int", 32);
 
   
-  pb = pb2.getBranch("ReadPref.");
+  pb = ps.getBranch("ReadPref.");
   observer = new PrefObserver(pb, "int", 76);
   ps.setIntPref("ReadPref.int", 76);
 

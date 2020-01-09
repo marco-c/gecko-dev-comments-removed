@@ -3,12 +3,6 @@
 
 
 function run_test() {
-  var ps = Cc["@mozilla.org/preferences-service;1"].
-            getService(Ci.nsIPrefService);
-
-  var pb = Cc["@mozilla.org/preferences-service;1"].
-            getService(Ci.nsIPrefBranch);
-
   var observer = {
     QueryInterface: ChromeUtils.generateQI(["nsIObserver"]),
 
@@ -18,6 +12,6 @@ function run_test() {
   };
 
   
-  pb.addObserver("UserPref.nonexistent.setIntPref", observer);
-  pb.addObserver("UserPref.nonexistent.setIntPref", observer);
+  Services.prefs.addObserver("UserPref.nonexistent.setIntPref", observer);
+  Services.prefs.addObserver("UserPref.nonexistent.setIntPref", observer);
 }

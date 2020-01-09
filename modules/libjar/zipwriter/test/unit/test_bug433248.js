@@ -4,17 +4,16 @@
 
 
 function run_test() {
-  var test;
   
   try {
-    test = zipW.file;
+    zipW.file;
     do_throw("Should have thrown uninitialized error.");
   } catch (e) {
     Assert.equal(e.result, Cr.NS_ERROR_NOT_INITIALIZED);
   }
 
   try {
-    test = zipW.comment;
+    zipW.comment;
     do_throw("Should have thrown uninitialized error.");
   } catch (e) {
     Assert.equal(e.result, Cr.NS_ERROR_NOT_INITIALIZED);

@@ -1,4 +1,5 @@
-var pb = Cc["@mozilla.org/preferences-service;1"].getService(Ci.nsIPrefBranch);
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const pb = Services.prefs;
 
 
 
@@ -7,61 +8,61 @@ const kPrefName = "intl.accept_languages";
 var initialValue = null;
 
 function check_child_pref_info_eq(continuation) {
-    sendCommand(
-        'var pb = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefBranch);\n' +
-        
-        'pb.getCharPref("' + kPrefName + '")+ "," +' +
-        'pb.prefHasUserValue("' + kPrefName + '");',
-        function(info) {
-            let [ value, isUser ] = info.split(",");
-            Assert.equal(pb.getCharPref(kPrefName), value);
-            Assert.equal(pb.prefHasUserValue(kPrefName), isUser == "true");
-            continuation();
-        });
+  sendCommand(
+    'var pb = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefBranch);\n' +
+    
+    'pb.getCharPref("' + kPrefName + '")+ "," +' +
+    'pb.prefHasUserValue("' + kPrefName + '");',
+    function(info) {
+      let [ value, isUser ] = info.split(",");
+      Assert.equal(pb.getCharPref(kPrefName), value);
+      Assert.equal(pb.prefHasUserValue(kPrefName), isUser == "true");
+      continuation();
+    });
 }
 
 function run_test() {
-    
-    do_test_pending();
+  
+  do_test_pending();
 
-    initialValue = pb.getCharPref(kPrefName);
+  initialValue = pb.getCharPref(kPrefName);
 
-    test_user_setting();
+  test_user_setting();
 }
 
 function test_user_setting() {
-    
-    
-    
-    pb.setCharPref(kPrefName, "i-imaginarylanguage");
-    
-    
-    
-    check_child_pref_info_eq(function() {
-            Assert.equal(pb.prefHasUserValue(kPrefName), true);
+  
+  
+  
+  pb.setCharPref(kPrefName, "i-imaginarylanguage");
+  
+  
+  
+  check_child_pref_info_eq(function() {
+    Assert.equal(pb.prefHasUserValue(kPrefName), true);
 
-            test_cleared_is_default();
-        });
+    test_cleared_is_default();
+  });
 }
 
 function test_cleared_is_default() {
-    pb.clearUserPref(kPrefName);
-    
-    
-    
-    check_child_pref_info_eq(function() {
-            Assert.equal(pb.prefHasUserValue(kPrefName), false);
+  pb.clearUserPref(kPrefName);
+  
+  
+  
+  check_child_pref_info_eq(function() {
+    Assert.equal(pb.prefHasUserValue(kPrefName), false);
 
-            clean_up();
-        });
+    clean_up();
+  });
 }
 
 function clean_up() {
-    pb.setCharPref(kPrefName, initialValue);
-    
-    
-    
-    check_child_pref_info_eq(function() {
-            do_test_finished();
-        });
+  pb.setCharPref(kPrefName, initialValue);
+  
+  
+  
+  check_child_pref_info_eq(function() {
+    do_test_finished();
+  });
 }
