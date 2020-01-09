@@ -30,6 +30,7 @@
 #include "mozilla/dom/LSObject.h"
 #include "mozilla/dom/Storage.h"
 #include "mozilla/dom/IdleRequest.h"
+#include "mozilla/dom/MaybeCrossOriginObject.h"
 #include "mozilla/dom/Performance.h"
 #include "mozilla/dom/StorageEvent.h"
 #include "mozilla/dom/StorageEventBinding.h"
@@ -340,54 +341,165 @@ nsPIDOMWindowOuter* nsPIDOMWindowOuter::GetFromCurrentInner(
 
 
 
-class nsOuterWindowProxy : public js::Wrapper {
+
+
+
+
+
+
+
+const js::Class OuterWindowProxyClass = PROXY_CLASS_DEF(
+    "Proxy", JSCLASS_HAS_RESERVED_SLOTS(2)); 
+
+static const size_t OUTER_WINDOW_SLOT = 0;
+static const size_t HOLDER_WEAKMAP_SLOT = 1;
+
+class nsOuterWindowProxy : public MaybeCrossOriginObject<js::Wrapper> {
+  typedef MaybeCrossOriginObject<js::Wrapper> Base;
+
  public:
-  constexpr nsOuterWindowProxy() : js::Wrapper(0) {}
+  constexpr nsOuterWindowProxy() : Base(0) {}
 
   bool finalizeInBackground(const JS::Value& priv) const override {
     return false;
   }
 
   
+  
+
+
+
+
+
+
   bool getOwnPropertyDescriptor(
       JSContext* cx, JS::Handle<JSObject*> proxy, JS::Handle<jsid> id,
       JS::MutableHandle<JS::PropertyDescriptor> desc) const override;
-  bool defineProperty(JSContext* cx, JS::Handle<JSObject*> proxy,
-                      JS::Handle<jsid> id,
-                      JS::Handle<JS::PropertyDescriptor> desc,
-                      JS::ObjectOpResult& result) const override;
+
+  
+
+
+
+  bool definePropertySameOrigin(JSContext* cx, JS::Handle<JSObject*> proxy,
+                                JS::Handle<jsid> id,
+                                JS::Handle<JS::PropertyDescriptor> desc,
+                                JS::ObjectOpResult& result) const override;
+
+  
+
+
+
+
+
+
+
   bool ownPropertyKeys(JSContext* cx, JS::Handle<JSObject*> proxy,
                        JS::AutoIdVector& props) const override;
+  
+
+
+
+
+
+
   bool delete_(JSContext* cx, JS::Handle<JSObject*> proxy, JS::Handle<jsid> id,
                JS::ObjectOpResult& result) const override;
 
-  bool getPrototypeIfOrdinary(
-      JSContext* cx, JS::Handle<JSObject*> proxy, bool* isOrdinary,
-      JS::MutableHandle<JSObject*> protop) const override;
+  
 
-  JSObject* enumerate(JSContext* cx,
-                      JS::Handle<JSObject*> proxy) const override;
-  bool preventExtensions(JSContext* cx, JS::Handle<JSObject*> proxy,
-                         JS::ObjectOpResult& result) const override;
-  bool isExtensible(JSContext* cx, JS::Handle<JSObject*> proxy,
-                    bool* extensible) const override;
+
+  JSObject* getSameOriginPrototype(JSContext* cx) const override;
+
+  
+
+
+
+
+
+
+
+
+
+
   bool has(JSContext* cx, JS::Handle<JSObject*> proxy, JS::Handle<jsid> id,
            bool* bp) const override;
+
+  
+
+
+
+
+
+
+
+
+
+
+
   bool get(JSContext* cx, JS::Handle<JSObject*> proxy,
            JS::Handle<JS::Value> receiver, JS::Handle<jsid> id,
            JS::MutableHandle<JS::Value> vp) const override;
+
+  
+
+
+
+
+
+
+
+
+
+
+
   bool set(JSContext* cx, JS::Handle<JSObject*> proxy, JS::Handle<jsid> id,
            JS::Handle<JS::Value> v, JS::Handle<JS::Value> receiver,
            JS::ObjectOpResult& result) const override;
 
   
+  
+
+
+
+
+
+
+
+
   bool getPropertyDescriptor(
       JSContext* cx, JS::Handle<JSObject*> proxy, JS::Handle<jsid> id,
       JS::MutableHandle<JS::PropertyDescriptor> desc) const override;
+
+  
+
+
+
+
+
+
+
+
+
+
   bool hasOwn(JSContext* cx, JS::Handle<JSObject*> proxy, JS::Handle<jsid> id,
               bool* bp) const override;
+
+  
+
+
+
+
+
+
+
+
+
   bool getOwnEnumerablePropertyKeys(JSContext* cx, JS::Handle<JSObject*> proxy,
                                     JS::AutoIdVector& props) const override;
+
+  
+
+
   const char* className(JSContext* cx,
                         JS::Handle<JSObject*> wrapper) const override;
 
@@ -403,7 +515,7 @@ class nsOuterWindowProxy : public js::Wrapper {
   static nsGlobalWindowOuter* GetOuterWindow(JSObject* proxy) {
     nsGlobalWindowOuter* outerWindow =
         nsGlobalWindowOuter::FromSupports(static_cast<nsISupports*>(
-            js::GetProxyReservedSlot(proxy, 0).toPrivate()));
+            js::GetProxyReservedSlot(proxy, OUTER_WINDOW_SLOT).toPrivate()));
     return outerWindow;
   }
 
@@ -418,19 +530,21 @@ class nsOuterWindowProxy : public js::Wrapper {
   already_AddRefed<nsPIDOMWindowOuter> GetSubframeWindow(
       JSContext* cx, JS::Handle<JSObject*> proxy, JS::Handle<jsid> id) const;
 
-  bool AppendIndexedPropertyNames(JSContext* cx, JSObject* proxy,
+  bool AppendIndexedPropertyNames(JSObject* proxy,
                                   JS::AutoIdVector& props) const;
+
+  using MaybeCrossOriginObjectMixins::EnsureHolder;
+  bool EnsureHolder(JSContext* cx, JS::Handle<JSObject*> proxy,
+                    JS::MutableHandle<JSObject*> holder) const override;
 };
-
-
-
-
-const js::Class OuterWindowProxyClass = PROXY_CLASS_DEF(
-    "Proxy", JSCLASS_HAS_RESERVED_SLOTS(2)); 
 
 const char* nsOuterWindowProxy::className(JSContext* cx,
                                           JS::Handle<JSObject*> proxy) const {
   MOZ_ASSERT(js::IsProxy(proxy));
+
+  if (!IsPlatformObjectSameOrigin(cx, proxy)) {
+    return "Object";
+  }
 
   return "Window";
 }
@@ -458,6 +572,10 @@ bool nsOuterWindowProxy::getPropertyDescriptor(
   
   
   
+  
+  
+  
+  
   desc.object().set(nullptr);
   if (!getOwnPropertyDescriptor(cx, proxy, id, desc)) {
     return false;
@@ -467,7 +585,22 @@ bool nsOuterWindowProxy::getPropertyDescriptor(
     return true;
   }
 
-  return js::Wrapper::getPropertyDescriptor(cx, proxy, id, desc);
+  if (!IsPlatformObjectSameOrigin(cx, proxy)) {
+    return true;
+  }
+
+  
+  
+  
+  {
+    JSAutoRealm ar(cx, proxy);
+    JS_MarkCrossZoneId(cx, id);
+    if (!js::Wrapper::getPropertyDescriptor(cx, proxy, id, desc)) {
+      return false;
+    }
+  }
+
+  return JS_WrapPropertyDescriptor(cx, desc);
 }
 
 
@@ -495,35 +628,95 @@ static bool IsNonConfigurableReadonlyPrimitiveGlobalProp(JSContext* cx,
 bool nsOuterWindowProxy::getOwnPropertyDescriptor(
     JSContext* cx, JS::Handle<JSObject*> proxy, JS::Handle<jsid> id,
     JS::MutableHandle<JS::PropertyDescriptor> desc) const {
+  
+  
+  
   bool found;
   if (!GetSubframeWindow(cx, proxy, id, desc.value(), found)) {
     return false;
   }
   if (found) {
+    
     FillPropertyDescriptor(desc, proxy, true);
     return true;
   }
+
+  bool isSameOrigin = IsPlatformObjectSameOrigin(cx, proxy);
+
+  
+  
+  
+  if (!isSameOrigin && IsArrayIndex(GetArrayIndexFromId(id))) {
+    
+    return ReportCrossOriginDenial(cx, id, NS_LITERAL_CSTRING("access"));
+  }
+
+  
+  
+  
   
 
-  bool ok = js::Wrapper::getOwnPropertyDescriptor(cx, proxy, id, desc);
-  if (!ok) {
+  
+  if (isSameOrigin) {
+    
+    {  
+      
+      
+      
+      JSAutoRealm ar(cx, proxy);
+      JS_MarkCrossZoneId(cx, id);
+      bool ok = js::Wrapper::getOwnPropertyDescriptor(cx, proxy, id, desc);
+      if (!ok) {
+        return false;
+      }
+
+#ifndef RELEASE_OR_BETA  
+      if (!IsNonConfigurableReadonlyPrimitiveGlobalProp(cx, id)) {
+        desc.setConfigurable(true);
+      }
+#endif
+    }
+
+    
+    return JS_WrapPropertyDescriptor(cx, desc);
+  }
+
+  
+  if (!CrossOriginGetOwnPropertyHelper(cx, proxy, id, desc)) {
     return false;
   }
 
-#ifndef RELEASE_OR_BETA  
-  if (!IsNonConfigurableReadonlyPrimitiveGlobalProp(cx, id)) {
-    desc.setConfigurable(true);
+  
+  if (desc.object()) {
+    return true;
   }
-#endif
 
-  return true;
+  
+  if (JSID_IS_STRING(id)) {
+    nsAutoJSString name;
+    if (!name.init(cx, JSID_TO_STRING(id))) {
+      return false;
+    }
+    nsGlobalWindowOuter* win = GetOuterWindow(proxy);
+    if (RefPtr<BrowsingContext> childDOMWin = win->GetChildWindow(name)) {
+      JS::Rooted<JS::Value> childValue(cx);
+      if (!ToJSValue(cx, WindowProxyHolder(childDOMWin), &childValue)) {
+        return false;
+      }
+      FillPropertyDescriptor(desc, proxy, childValue,
+                              true,
+                              false);
+      return true;
+    }
+  }
+
+  
+  return CrossOriginPropertyFallback(cx, proxy, id, desc);
 }
 
-bool nsOuterWindowProxy::defineProperty(JSContext* cx,
-                                        JS::Handle<JSObject*> proxy,
-                                        JS::Handle<jsid> id,
-                                        JS::Handle<JS::PropertyDescriptor> desc,
-                                        JS::ObjectOpResult& result) const {
+bool nsOuterWindowProxy::definePropertySameOrigin(
+    JSContext* cx, JS::Handle<JSObject*> proxy, JS::Handle<jsid> id,
+    JS::Handle<JS::PropertyDescriptor> desc, JS::ObjectOpResult& result) const {
   if (IsArrayIndex(GetArrayIndexFromId(id))) {
     
     
@@ -599,20 +792,52 @@ bool nsOuterWindowProxy::ownPropertyKeys(JSContext* cx,
                                          JS::Handle<JSObject*> proxy,
                                          JS::AutoIdVector& props) const {
   
-  if (!AppendIndexedPropertyNames(cx, proxy, props)) {
+  if (!AppendIndexedPropertyNames(proxy, props)) {
     return false;
   }
 
-  JS::AutoIdVector innerProps(cx);
-  if (!js::Wrapper::ownPropertyKeys(cx, proxy, innerProps)) {
+  if (IsPlatformObjectSameOrigin(cx, proxy)) {
+    
+    
+    
+    JS::AutoIdVector innerProps(cx);
+    {  
+      JSAutoRealm ar(cx, proxy);
+      if (!js::Wrapper::ownPropertyKeys(cx, proxy, innerProps)) {
+        return false;
+      }
+    }
+    for (auto& id : innerProps) {
+      JS_MarkCrossZoneId(cx, id);
+    }
+    return js::AppendUnique(cx, props, innerProps);
+  }
+
+  
+  
+  JS::Rooted<JSObject*> holder(cx);
+  if (!EnsureHolder(cx, proxy, &holder)) {
     return false;
   }
-  return js::AppendUnique(cx, props, innerProps);
+
+  JS::AutoIdVector crossOriginProps(cx);
+  if (!js::GetPropertyKeys(cx, holder,
+                           JSITER_OWNONLY | JSITER_HIDDEN | JSITER_SYMBOLS,
+                           &crossOriginProps) ||
+      !js::AppendUnique(cx, props, crossOriginProps)) {
+    return false;
+  }
+
+  return xpc::AppendCrossOriginWhitelistedPropNames(cx, props);
 }
 
 bool nsOuterWindowProxy::delete_(JSContext* cx, JS::Handle<JSObject*> proxy,
                                  JS::Handle<jsid> id,
                                  JS::ObjectOpResult& result) const {
+  if (!IsPlatformObjectSameOrigin(cx, proxy)) {
+    return ReportCrossOriginDenial(cx, id, NS_LITERAL_CSTRING("delete"));
+  }
+
   if (nsCOMPtr<nsPIDOMWindowOuter> frame = GetSubframeWindow(cx, proxy, id)) {
     
     return result.failCantDeleteWindowElement();
@@ -623,62 +848,72 @@ bool nsOuterWindowProxy::delete_(JSContext* cx, JS::Handle<JSObject*> proxy,
     return result.succeed();
   }
 
+  
+  
+  
+  JSAutoRealm ar(cx, proxy);
+  JS_MarkCrossZoneId(cx, id);
   return js::Wrapper::delete_(cx, proxy, id, result);
 }
 
-bool nsOuterWindowProxy::getPrototypeIfOrdinary(
-    JSContext* cx, JS::Handle<JSObject*> proxy, bool* isOrdinary,
-    JS::MutableHandle<JSObject*> protop) const {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  *isOrdinary = false;
-  return true;
-}
-
-bool nsOuterWindowProxy::preventExtensions(JSContext* cx,
-                                           JS::Handle<JSObject*> proxy,
-                                           JS::ObjectOpResult& result) const {
-  
-  
-  
-  return result.failCantPreventExtensions();
-}
-
-bool nsOuterWindowProxy::isExtensible(JSContext* cx,
-                                      JS::Handle<JSObject*> proxy,
-                                      bool* extensible) const {
-  
-  *extensible = true;
-  return true;
+JSObject* nsOuterWindowProxy::getSameOriginPrototype(JSContext* cx) const {
+  return Window_Binding::GetProtoObjectHandle(cx);
 }
 
 bool nsOuterWindowProxy::has(JSContext* cx, JS::Handle<JSObject*> proxy,
                              JS::Handle<jsid> id, bool* bp) const {
+  
+  
+  
+
+  if (!IsPlatformObjectSameOrigin(cx, proxy)) {
+    
+    
+    return hasOwn(cx, proxy, id, bp);
+  }
+
   if (nsCOMPtr<nsPIDOMWindowOuter> frame = GetSubframeWindow(cx, proxy, id)) {
     *bp = true;
     return true;
   }
 
+  
+  
+  JSAutoRealm ar(cx, proxy);
+  JS_MarkCrossZoneId(cx, id);
   return js::Wrapper::has(cx, proxy, id, bp);
 }
 
 bool nsOuterWindowProxy::hasOwn(JSContext* cx, JS::Handle<JSObject*> proxy,
                                 JS::Handle<jsid> id, bool* bp) const {
+  
+  
+  
+
+  if (!IsPlatformObjectSameOrigin(cx, proxy)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return js::BaseProxyHandler::hasOwn(cx, proxy, id, bp);
+  }
+
   if (nsCOMPtr<nsPIDOMWindowOuter> frame = GetSubframeWindow(cx, proxy, id)) {
     *bp = true;
     return true;
   }
 
+  
+  
+  JSAutoRealm ar(cx, proxy);
+  JS_MarkCrossZoneId(cx, id);
   return js::Wrapper::hasOwn(cx, proxy, id, bp);
 }
 
@@ -689,32 +924,72 @@ bool nsOuterWindowProxy::get(JSContext* cx, JS::Handle<JSObject*> proxy,
   if (id == GetJSIDByIndex(cx, XPCJSContext::IDX_WRAPPED_JSOBJECT) &&
       xpc::AccessCheck::isChrome(js::GetContextCompartment(cx))) {
     vp.set(JS::ObjectValue(*proxy));
-    return true;
+    return MaybeWrapValue(cx, vp);
+  }
+
+  if (!IsPlatformObjectSameOrigin(cx, proxy)) {
+    return CrossOriginGet(cx, proxy, receiver, id, vp);
   }
 
   bool found;
   if (!GetSubframeWindow(cx, proxy, id, vp, found)) {
     return false;
   }
+
   if (found) {
     return true;
   }
-  
 
-  return js::Wrapper::get(cx, proxy, receiver, id, vp);
+  {  
+    
+    
+    JSAutoRealm ar(cx, proxy);
+
+    JS_MarkCrossZoneId(cx, id);
+
+    JS::Rooted<JS::Value> wrappedReceiver(cx, receiver);
+    if (!MaybeWrapValue(cx, &wrappedReceiver)) {
+      return false;
+    }
+
+    
+    if (!js::Wrapper::get(cx, proxy, wrappedReceiver, id, vp)) {
+      return false;
+    }
+  }
+
+  
+  return MaybeWrapValue(cx, vp);
 }
 
 bool nsOuterWindowProxy::set(JSContext* cx, JS::Handle<JSObject*> proxy,
                              JS::Handle<jsid> id, JS::Handle<JS::Value> v,
                              JS::Handle<JS::Value> receiver,
                              JS::ObjectOpResult& result) const {
+  if (!IsPlatformObjectSameOrigin(cx, proxy)) {
+    return CrossOriginSet(cx, proxy, id, v, receiver, result);
+  }
+
   if (IsArrayIndex(GetArrayIndexFromId(id))) {
     
     
     return result.failReadOnly();
   }
 
-  return js::Wrapper::set(cx, proxy, id, v, receiver, result);
+  
+  JSAutoRealm ar(cx, proxy);
+  JS::Rooted<JS::Value> wrappedArg(cx, v);
+  if (!MaybeWrapValue(cx, &wrappedArg)) {
+    return false;
+  }
+  JS::Rooted<JS::Value> wrappedReceiver(cx, receiver);
+  if (!MaybeWrapValue(cx, &wrappedReceiver)) {
+    return false;
+  }
+
+  JS_MarkCrossZoneId(cx, id);
+
+  return js::Wrapper::set(cx, proxy, id, wrappedArg, wrappedReceiver, result);
 }
 
 bool nsOuterWindowProxy::getOwnEnumerablePropertyKeys(
@@ -724,23 +999,35 @@ bool nsOuterWindowProxy::getOwnEnumerablePropertyKeys(
   
   
   
+
   
-  if (!AppendIndexedPropertyNames(cx, proxy, props)) {
+  
+  if (!AppendIndexedPropertyNames(proxy, props)) {
     return false;
   }
 
+  if (!IsPlatformObjectSameOrigin(cx, proxy)) {
+    
+    
+    return true;
+  }
+
+  
+  
+  
   JS::AutoIdVector innerProps(cx);
-  if (!js::Wrapper::getOwnEnumerablePropertyKeys(cx, proxy, innerProps)) {
-    return false;
+  {  
+    JSAutoRealm ar(cx, proxy);
+    if (!js::Wrapper::getOwnEnumerablePropertyKeys(cx, proxy, innerProps)) {
+      return false;
+    }
   }
-  return js::AppendUnique(cx, props, innerProps);
-}
 
-JSObject* nsOuterWindowProxy::enumerate(JSContext* cx,
-                                        JS::Handle<JSObject*> proxy) const {
-  
-  
-  return js::BaseProxyHandler::enumerate(cx, proxy);
+  for (auto& id : innerProps) {
+    JS_MarkCrossZoneId(cx, id);
+  }
+
+  return js::AppendUnique(cx, props, innerProps);
 }
 
 bool nsOuterWindowProxy::GetSubframeWindow(JSContext* cx,
@@ -782,7 +1069,7 @@ already_AddRefed<nsPIDOMWindowOuter> nsOuterWindowProxy::GetSubframeWindow(
 }
 
 bool nsOuterWindowProxy::AppendIndexedPropertyNames(
-    JSContext* cx, JSObject* proxy, JS::AutoIdVector& props) const {
+    JSObject* proxy, JS::AutoIdVector& props) const {
   uint32_t length = GetOuterWindow(proxy)->Length();
   MOZ_ASSERT(int32_t(length) >= 0);
   if (!props.reserve(props.length() + length)) {
@@ -795,6 +1082,14 @@ bool nsOuterWindowProxy::AppendIndexedPropertyNames(
   }
 
   return true;
+}
+
+bool nsOuterWindowProxy::EnsureHolder(
+    JSContext* cx, JS::Handle<JSObject*> proxy,
+    JS::MutableHandle<JSObject*> holder) const {
+  return EnsureHolder(cx, proxy, HOLDER_WEAKMAP_SLOT,
+                      Window_Binding::sCrossOriginAttributes,
+                      Window_Binding::sCrossOriginMethods, holder);
 }
 
 size_t nsOuterWindowProxy::objectMoved(JSObject* obj, JSObject* old) const {
@@ -986,7 +1281,8 @@ nsGlobalWindowOuter::~nsGlobalWindowOuter() {
     if (mBrowsingContext) {
       mBrowsingContext->ClearWindowProxy();
     }
-    js::SetProxyReservedSlot(proxy, 0, js::PrivateValue(nullptr));
+    js::SetProxyReservedSlot(proxy, OUTER_WINDOW_SLOT,
+                             js::PrivateValue(nullptr));
   }
 
   
@@ -1813,7 +2109,8 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
           cx, NewOuterWindowProxy(cx, newInnerGlobal, thisChrome));
       NS_ENSURE_TRUE(outer, NS_ERROR_FAILURE);
 
-      js::SetProxyReservedSlot(outer, 0, js::PrivateValue(ToSupports(this)));
+      js::SetProxyReservedSlot(outer, OUTER_WINDOW_SLOT,
+                               js::PrivateValue(ToSupports(this)));
 
       
       mContext->SetWindowProxy(outer);
@@ -1831,8 +2128,10 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
 
       JS::Rooted<JSObject*> obj(cx, GetWrapperPreserveColor());
 
-      js::SetProxyReservedSlot(obj, 0, js::PrivateValue(nullptr));
-      js::SetProxyReservedSlot(outerObject, 0, js::PrivateValue(nullptr));
+      js::SetProxyReservedSlot(obj, OUTER_WINDOW_SLOT,
+                               js::PrivateValue(nullptr));
+      js::SetProxyReservedSlot(outerObject, OUTER_WINDOW_SLOT,
+                               js::PrivateValue(nullptr));
 
       outerObject = xpc::TransplantObject(cx, obj, outerObject);
       if (!outerObject) {
@@ -1841,7 +2140,7 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
         return NS_ERROR_FAILURE;
       }
 
-      js::SetProxyReservedSlot(outerObject, 0,
+      js::SetProxyReservedSlot(outerObject, OUTER_WINDOW_SLOT,
                                js::PrivateValue(ToSupports(this)));
 
       SetWrapper(outerObject);
