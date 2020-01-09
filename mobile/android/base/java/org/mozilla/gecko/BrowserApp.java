@@ -1143,7 +1143,7 @@ public class BrowserApp extends GeckoApp
             
             
             if (startingIntentAfterPip != null) {
-                getApplication().startActivity(startingIntentAfterPip);
+                startActivity(startingIntentAfterPip);
                 startingIntentAfterPip = null;
             } else {
                 
