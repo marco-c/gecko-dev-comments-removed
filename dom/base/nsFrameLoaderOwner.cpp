@@ -34,13 +34,11 @@ void nsFrameLoaderOwner::ChangeRemoteness(
 
   
   
-  
-  
   nsIFrame* ourFrame = owner->GetPrimaryFrame();
   if (ourFrame) {
     nsSubDocumentFrame* ourFrameFrame = do_QueryFrame(ourFrame);
     if (ourFrameFrame) {
-      ourFrameFrame->UnsetFrameLoader();
+      ourFrameFrame->ResetFrameLoader();
     }
   }
 
