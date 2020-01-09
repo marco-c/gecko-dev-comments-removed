@@ -2474,6 +2474,16 @@ class Document : public nsINode,
     return !mParentDocument && !mDisplayDocument;
   }
 
+  bool IsDocumentURISchemeChrome() const { return mDocURISchemeIsChrome; }
+
+  bool IsInChromeDocShell() const {
+    const Document* root = this;
+    while (const Document* displayDoc = root->GetDisplayDocument()) {
+      root = displayDoc;
+    }
+    return root->mInChromeDocShell;
+  }
+
   bool IsBeingUsedAsImage() const { return mIsBeingUsedAsImage; }
 
   void SetIsBeingUsedAsImage() { mIsBeingUsedAsImage = true; }
@@ -4006,6 +4016,12 @@ class Document : public nsINode,
 
   
   bool mIsBeingUsedAsImage : 1;
+
+  
+  bool mDocURISchemeIsChrome : 1;
+
+  
+  bool mInChromeDocShell : 1;
 
   
   

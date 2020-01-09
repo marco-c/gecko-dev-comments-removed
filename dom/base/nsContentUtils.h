@@ -1227,7 +1227,9 @@ class nsContentUtils {
   
 
 
-  static bool IsChromeDoc(const Document* aDocument);
+  static bool IsChromeDoc(const Document* aDocument) {
+    return aDocument && aDocument->NodePrincipal() == sSystemPrincipal;
+  }
 
   
 
@@ -1250,7 +1252,9 @@ class nsContentUtils {
 
 
 
-  static bool IsInChromeDocshell(Document* aDocument);
+  static bool IsInChromeDocshell(const Document* aDocument) {
+    return aDocument && aDocument->IsInChromeDocShell();
+  }
 
   
 

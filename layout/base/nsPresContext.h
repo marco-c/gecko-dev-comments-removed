@@ -413,7 +413,6 @@ class nsPresContext : public nsISupports,
   bool GetFocusRingOnAnything() const { return mFocusRingOnAnything; }
   uint8_t GetFocusRingStyle() const { return mFocusRingStyle; }
 
-  void SetContainer(nsIDocShell* aContainer);
 
   nsISupports* GetContainerWeak() const;
 
@@ -871,9 +870,8 @@ class nsPresContext : public nsISupports,
   }
 
   
-  bool IsChrome() const { return mIsChrome; }
-  bool IsChromeOriginImage() const { return mIsChromeOriginImage; }
-  void UpdateIsChrome();
+  bool IsChrome() const;
+  bool IsChromeOriginImage() const;
 
   
   bool HasAuthorSpecifiedRules(const nsIFrame* aFrame,
@@ -1195,8 +1193,6 @@ class nsPresContext : public nsISupports,
   bool mInflationDisabledForShrinkWrap;
 
  protected:
-  mozilla::WeakPtr<nsDocShell> mContainer;
-
   float mSystemFontScale;    
   float mTextZoom;           
   float mEffectiveTextZoom;  
@@ -1323,9 +1319,6 @@ class nsPresContext : public nsISupports,
 
   unsigned mIsVisual : 1;
 
-  unsigned mIsChrome : 1;
-  unsigned mIsChromeOriginImage : 1;
-
   
   
   mutable unsigned mPaintFlashing : 1;
@@ -1337,9 +1330,6 @@ class nsPresContext : public nsISupports,
 
   
   unsigned mQuirkSheetAdded : 1;
-
-  
-  unsigned mNeedsPrefUpdate : 1;
 
   
   unsigned mHadNonBlankPaint : 1;
