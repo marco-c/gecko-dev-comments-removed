@@ -357,7 +357,7 @@ bool UniqueStacks::FrameKey::NormalFrameData::operator==(
     const NormalFrameData& aOther) const {
   return mLocation == aOther.mLocation &&
          mRelevantForJS == aOther.mRelevantForJS && mLine == aOther.mLine &&
-         mColumn == aOther.mColumn && mCategory == aOther.mCategory;
+         mColumn == aOther.mColumn && mCategoryPair == aOther.mCategoryPair;
 }
 
 bool UniqueStacks::FrameKey::JITFrameData::operator==(
@@ -380,8 +380,8 @@ uint32_t UniqueStacks::FrameKey::Hash() const {
     if (data.mColumn.isSome()) {
       hash = AddToHash(hash, *data.mColumn);
     }
-    if (data.mCategory.isSome()) {
-      hash = AddToHash(hash, *data.mCategory);
+    if (data.mCategoryPair.isSome()) {
+      hash = AddToHash(hash, uint32_t(*data.mCategoryPair));
     }
   } else {
     const JITFrameData& data = mData.as<JITFrameData>();
@@ -527,8 +527,10 @@ void UniqueStacks::StreamNonJITFrame(const FrameKey& aFrame) {
   if (data.mColumn.isSome()) {
     writer.IntElement(COLUMN, *data.mColumn);
   }
-  if (data.mCategory.isSome()) {
-    writer.IntElement(CATEGORY, *data.mCategory);
+  if (data.mCategoryPair.isSome()) {
+    const JS::ProfilingCategoryPairInfo& info =
+        JS::GetProfilingCategoryPairInfo(*data.mCategoryPair);
+    writer.IntElement(CATEGORY, uint32_t(info.mCategory));
   }
 }
 
@@ -1062,15 +1064,16 @@ void ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter,
           e.Next();
         }
 
-        Maybe<unsigned> category;
-        if (e.Has() && e.Get().IsCategory()) {
-          category = Some(unsigned(e.Get().GetInt()));
+        Maybe<JS::ProfilingCategoryPair> categoryPair;
+        if (e.Has() && e.Get().IsCategoryPair()) {
+          categoryPair =
+              Some(JS::ProfilingCategoryPair(uint32_t(e.Get().GetInt())));
           e.Next();
         }
 
         stack = aUniqueStacks.AppendFrame(
             stack, UniqueStacks::FrameKey(std::move(frameLabel), relevantForJS,
-                                          line, column, category));
+                                          line, column, categoryPair));
 
       } else if (e.Get().IsJitReturnAddr()) {
         numFrames++;

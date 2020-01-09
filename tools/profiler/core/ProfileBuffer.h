@@ -44,7 +44,7 @@ class ProfileBuffer final {
       const char* aLabel, const char* aStr, uint32_t aFrameFlags,
       const mozilla::Maybe<uint32_t>& aLineNumber,
       const mozilla::Maybe<uint32_t>& aColumnNumber,
-      const mozilla::Maybe<js::ProfilingStackFrame::Category>& aCategory);
+      const mozilla::Maybe<JS::ProfilingCategoryPair>& aCategoryPair);
 
   
   static const size_t kMaxFrameKeyLength = 512;

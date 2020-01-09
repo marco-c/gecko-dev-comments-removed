@@ -38,13 +38,13 @@ class RacyRegisteredThread final {
   bool IsBeingProfiled() const { return mIsBeingProfiled; }
 
   void AddPendingMarker(const char* aMarkerName,
-                        js::ProfilingStackFrame::Category aCategory,
+                        JS::ProfilingCategoryPair aCategoryPair,
                         mozilla::UniquePtr<ProfilerMarkerPayload> aPayload,
                         double aTime) {
     
     
     ProfilerMarker* marker = new ProfilerMarker(
-        aMarkerName, aCategory, mThreadId, std::move(aPayload), aTime);
+        aMarkerName, aCategoryPair, mThreadId, std::move(aPayload), aTime);
     mPendingMarkers.insert(marker);
   }
 

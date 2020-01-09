@@ -174,7 +174,7 @@ void TimeoutManager::MoveIdleToActive() {
           int(delta.ToMilliseconds()));
       
       profiler_add_marker(
-          "setTimeout deferred release", js::ProfilingStackFrame::Category::DOM,
+          "setTimeout deferred release", JS::ProfilingCategoryPair::DOM,
           MakeUnique<TextMarkerPayload>(
               marker, delta.ToMilliseconds() >= 0 ? timeout->When() : now,
               now));
@@ -959,7 +959,7 @@ void TimeoutManager::RunTimeout(const TimeStamp& aNow,
               int(delta.ToMilliseconds()), int(runtime.ToMilliseconds()));
           
           profiler_add_marker(
-              "setTimeout", js::ProfilingStackFrame::Category::DOM,
+              "setTimeout", JS::ProfilingCategoryPair::DOM,
               MakeUnique<TextMarkerPayload>(
                   marker, delta.ToMilliseconds() >= 0 ? timeout->When() : now,
                   now));
