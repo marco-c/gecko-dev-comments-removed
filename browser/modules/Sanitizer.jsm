@@ -745,11 +745,28 @@ class PrincipalsCollector {
 async function sanitizeOnShutdown(progress) {
   log("Sanitizing on shutdown");
 
+  let needsSyncSavePrefs = false;
   if (Sanitizer.shouldSanitizeOnShutdown) {
     
     progress.advancement = "shutdown-cleaner";
     let itemsToClear = getItemsToClearFromPrefBranch(Sanitizer.PREF_SHUTDOWN_BRANCH);
     await Sanitizer.sanitize(itemsToClear, { progress });
+
+    
+    
+    removePendingSanitization("shutdown");
+    needsSyncSavePrefs = true;
+  }
+
+  if (Sanitizer.shouldSanitizeNewTabContainer) {
+    progress.advancement = "newtab-segregation";
+    sanitizeNewTabSegregation();
+    removePendingSanitization("newtab-container");
+    needsSyncSavePrefs = true;
+  }
+
+  if (needsSyncSavePrefs) {
+    Services.prefs.savePrefFile(null);
   }
 
   let principalsCollector = new PrincipalsCollector();
@@ -808,19 +825,6 @@ async function sanitizeOnShutdown(progress) {
     let principals = await principalsCollector.getAllPrincipals(progress);
     let selectedPrincipals = extractMatchingPrincipals(principals, permission.principal.URI);
     await maybeSanitizeSessionPrincipals(progress, selectedPrincipals);
-  }
-
-  if (Sanitizer.shouldSanitizeNewTabContainer) {
-    progress.advancement = "newtab-segregation";
-    sanitizeNewTabSegregation();
-    removePendingSanitization("newtab-container");
-  }
-
-  if (Sanitizer.shouldSanitizeOnShutdown) {
-    
-    
-    removePendingSanitization("shutdown");
-    Services.prefs.savePrefFile(null);
   }
 
   progress.advancement = "done";
