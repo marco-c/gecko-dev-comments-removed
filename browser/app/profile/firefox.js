@@ -420,8 +420,11 @@ pref("permissions.desktop-notification.postPrompt.enabled", false);
 pref("permissions.postPrompt.animate", true);
 
 
-
+#ifdef NIGHTLY_BUILD
+pref("permissions.eventTelemetry.enabled", true);
+#else
 pref("permissions.eventTelemetry.enabled", false);
+#endif
 
 
 
