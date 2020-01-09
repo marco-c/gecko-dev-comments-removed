@@ -13,7 +13,6 @@
 #include "frontend/ErrorReporter.h"
 #include "frontend/NameCollections.h"
 #include "frontend/SharedContext.h"
-#include "js/GCPolicyAPI.h"
 
 namespace js {
 
@@ -79,11 +78,6 @@ class UsedNameTracker {
 
     UsedNameInfo(UsedNameInfo&& other) : uses_(std::move(other.uses_)) {}
 
-    UsedNameInfo& operator=(UsedNameInfo&& other) {
-      uses_ = std::move(other.uses_);
-      return *this;
-    }
-
     bool noteUsedInScope(uint32_t scriptId, uint32_t scopeId) {
       if (uses_.empty() || uses_.back().scopeId < scopeId) {
         return uses_.append(Use{scriptId, scopeId});
@@ -111,13 +105,11 @@ class UsedNameTracker {
     }
   };
 
-  using UsedNameMap = GCHashMap<JSAtom*, UsedNameInfo, DefaultHasher<JSAtom*>>;
+  using UsedNameMap = HashMap<JSAtom*, UsedNameInfo, DefaultHasher<JSAtom*>>;
 
  private:
   
-  
-  
-  PersistentRooted<UsedNameMap> map_;
+  UsedNameMap map_;
 
   
   uint32_t scriptCounter_;
@@ -127,7 +119,7 @@ class UsedNameTracker {
 
  public:
   explicit UsedNameTracker(JSContext* cx)
-      : map_(cx, cx), scriptCounter_(0), scopeCounter_(0) {}
+      : map_(cx), scriptCounter_(0), scopeCounter_(0) {}
 
   uint32_t nextScriptId() {
     MOZ_ASSERT(scriptCounter_ != UINT32_MAX,
@@ -670,14 +662,6 @@ class ParseContext : public Nestable<ParseContext> {
 };
 
 }  
-
-}  
-
-namespace JS {
-
-template <>
-struct GCPolicy<js::frontend::UsedNameTracker::UsedNameInfo>
-    : public IgnoreGCPolicy<js::frontend::UsedNameTracker::UsedNameInfo> {};
 
 }  
 
