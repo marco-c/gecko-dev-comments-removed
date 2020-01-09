@@ -678,7 +678,8 @@ class ExtensionData {
       
       
       if (!allowPrivateBrowsingByDefault &&
-          manifest.incognito !== "not_allowed" && this.isPrivileged) {
+          manifest.incognito !== "not_allowed" &&
+          this.isPrivileged && !this.addonData.temporarilyInstalled) {
         permissions.add("internal:privateBrowsingAllowed");
       }
 
