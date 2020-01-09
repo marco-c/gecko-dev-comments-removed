@@ -5,8 +5,9 @@
 
 
 #include "GLManager.h"
-#include "CompositorOGL.h"              
-#include "GLContext.h"                  
+#include "CompositorOGL.h"  
+#include "GLContext.h"      
+#include "OGLShaderProgram.h"
 #include "mozilla/Attributes.h"         
 #include "mozilla/RefPtr.h"             
 #include "mozilla/layers/Compositor.h"  

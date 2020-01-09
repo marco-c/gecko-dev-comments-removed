@@ -27,11 +27,10 @@
 #include "mozilla/layers/TextureHost.h"      
 #include "mozilla/mozalloc.h"                
 #include "mozilla/webrender/RenderThread.h"
-#include "nsCOMPtr.h"          
-#include "nsDebug.h"           
-#include "nsISupportsImpl.h"   
-#include "nsRegionFwd.h"       
-#include "OGLShaderProgram.h"  
+#include "nsCOMPtr.h"         
+#include "nsDebug.h"          
+#include "nsISupportsImpl.h"  
+#include "nsRegionFwd.h"      
 
 #ifdef MOZ_WIDGET_ANDROID
 #  include "GeneratedJNIWrappers.h"
@@ -50,16 +49,9 @@ class CompositorOGL;
 class TextureImageTextureSourceOGL;
 class GLTextureSource;
 
-inline void ApplySamplingFilterToBoundTexture(
-    gl::GLContext* aGL, gfx::SamplingFilter aSamplingFilter,
-    GLuint aTarget = LOCAL_GL_TEXTURE_2D) {
-  GLenum filter =
-      (aSamplingFilter == gfx::SamplingFilter::POINT ? LOCAL_GL_NEAREST
-                                                     : LOCAL_GL_LINEAR);
-
-  aGL->fTexParameteri(aTarget, LOCAL_GL_TEXTURE_MIN_FILTER, filter);
-  aGL->fTexParameteri(aTarget, LOCAL_GL_TEXTURE_MAG_FILTER, filter);
-}
+void ApplySamplingFilterToBoundTexture(gl::GLContext* aGL,
+                                       gfx::SamplingFilter aSamplingFilter,
+                                       GLuint aTarget = LOCAL_GL_TEXTURE_2D);
 
 
 
