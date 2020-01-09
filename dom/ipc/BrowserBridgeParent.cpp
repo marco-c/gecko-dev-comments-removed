@@ -61,9 +61,9 @@ nsresult BrowserBridgeParent::Init(const nsString& aPresentationURL,
                            constructorSender->ChildID());
 
   
-  RefPtr<BrowserParent> browserParent(
-      new BrowserParent(constructorSender, tabId, tabContext, aBrowsingContext,
-                        aChromeFlags, this));
+  RefPtr<BrowserParent> browserParent(new BrowserParent(
+      constructorSender, tabId, tabContext, aBrowsingContext, aChromeFlags));
+  browserParent->SetBrowserBridgeParent(this);
 
   
   
