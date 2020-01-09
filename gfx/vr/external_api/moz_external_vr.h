@@ -34,7 +34,7 @@ enum class GamepadCapabilityFlags : uint16_t;
 #endif  
 namespace gfx {
 
-static const int32_t kVRExternalVersion = 6;
+static const int32_t kVRExternalVersion = 7;
 
 
 
@@ -162,7 +162,12 @@ enum class VRDisplayCapabilityFlags : uint16_t {
   
 
 
-  Cap_All = (1 << 9) - 1
+
+  Cap_PositionEmulated = 1 << 9,
+  
+
+
+  Cap_All = (1 << 10) - 1
 };
 
 #ifdef MOZILLA_INTERNAL_API
