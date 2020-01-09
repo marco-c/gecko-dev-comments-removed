@@ -1678,7 +1678,12 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
                 &rectify);
 
   
-  masm.loadJitCodeNoArgCheck(callee, callee);
+  
+  
+  masm.loadWasmGlobalPtr(
+      fi.tlsDataOffset() + offsetof(FuncImportTls, jitScript), callee);
+  masm.loadPtr(Address(callee, JitScript::offsetOfJitCodeSkipArgCheck()),
+               callee);
 
   Label rejoinBeforeCall;
   masm.bind(&rejoinBeforeCall);
