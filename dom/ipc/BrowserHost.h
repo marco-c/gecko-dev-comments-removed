@@ -47,6 +47,7 @@ class BrowserHost : public RemoteBrowser, public nsIRemoteTab {
   
   
   BrowserParent* GetActor() { return mRoot; }
+  ContentParent* GetContentParent() const { return mRoot->Manager(); }
 
   BrowserHost* AsBrowserHost() override { return this; }
   BrowserBridgeHost* AsBrowserBridgeHost() override { return nullptr; }
