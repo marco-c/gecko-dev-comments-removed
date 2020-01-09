@@ -67,7 +67,7 @@ class InputType {
   virtual nsresult GetRangeUnderflowMessage(nsAString& aMessage);
   virtual nsresult GetBadInputMessage(nsAString& aMessage);
 
-  virtual nsresult MinMaxStepAttrChanged();
+  MOZ_CAN_RUN_SCRIPT virtual nsresult MinMaxStepAttrChanged();
 
   
 

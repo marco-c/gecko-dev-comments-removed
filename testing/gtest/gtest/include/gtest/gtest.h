@@ -64,6 +64,7 @@
 #include "gtest/gtest_prod.h"
 #include "gtest/gtest-test-part.h"
 #include "gtest/gtest-typed-test.h"
+#include "mozilla/Attributes.h"
 
 
 
@@ -443,7 +444,7 @@ class GTEST_API_ Test {
   
   
   
-  virtual void TestBody() = 0;
+  MOZ_CAN_RUN_SCRIPT virtual void TestBody() = 0;
 
   
   void Run();

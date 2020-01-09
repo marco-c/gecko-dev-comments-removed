@@ -31,13 +31,13 @@ class nsIScrollObserver : public nsISupports {
 
 
 
-  virtual void AsyncPanZoomStarted(){};
+  MOZ_CAN_RUN_SCRIPT virtual void AsyncPanZoomStarted(){};
 
   
 
 
 
-  virtual void AsyncPanZoomStopped(){};
+  MOZ_CAN_RUN_SCRIPT virtual void AsyncPanZoomStopped(){};
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIScrollObserver, NS_ISCROLLOBSERVER_IID)
