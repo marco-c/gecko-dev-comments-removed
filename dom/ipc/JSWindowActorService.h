@@ -7,11 +7,13 @@
 #ifndef mozilla_dom_JSWindowActorService_h
 #define mozilla_dom_JSWindowActorService_h
 
-#include "nsDataHashtable.h"
+#include "nsClassHashtable.h"
+#include "nsString.h"
 
 namespace mozilla {
 namespace dom {
 struct WindowActorOptions;
+class JSWindowActorInfo;
 
 class JSWindowActorService final {
  public:
@@ -23,11 +25,24 @@ class JSWindowActorService final {
                            const WindowActorOptions& aOptions,
                            ErrorResult& aRv);
 
+  
+  void LoadJSWindowActorInfos(nsTArray<JSWindowActorInfo>& aInfos);
+
+  
+  
+  void GetJSWindowActorInfos(nsTArray<JSWindowActorInfo>& aInfos);
+
+  
+  
+  
+  void ConstructActor(const nsAString& aName, bool aParentSide,
+                      JS::MutableHandleObject aActor, ErrorResult& aRv);
+
  private:
   JSWindowActorService();
   ~JSWindowActorService();
 
-  nsDataHashtable<nsStringHashKey, const WindowActorOptions*> mDescriptors;
+  nsClassHashtable<nsStringHashKey, WindowActorOptions> mDescriptors;
 };
 
 }  
