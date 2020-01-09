@@ -364,9 +364,9 @@ var PermissionPromptPrototype = {
       
       
       
-      let {state} = SitePermissions.get(requestingURI,
-                                        this.permissionKey,
-                                        this.browser);
+      let {state} = SitePermissions.getForPrincipal(this.principal,
+                                                    this.permissionKey,
+                                                    this.browser);
 
       if (state == SitePermissions.BLOCK) {
         
@@ -439,19 +439,19 @@ var PermissionPromptPrototype = {
               if (PrivateBrowsingUtils.isBrowserPrivate(this.browser)) {
                 scope = SitePermissions.SCOPE_SESSION;
               }
-              SitePermissions.set(this.principal.URI,
-                                  this.permissionKey,
-                                  promptAction.action,
-                                  scope);
+              SitePermissions.setForPrincipal(this.principal,
+                                              this.permissionKey,
+                                              promptAction.action,
+                                              scope);
             } else if (promptAction.action == SitePermissions.BLOCK) {
               
               
               
-              SitePermissions.set(this.principal.URI,
-                                  this.permissionKey,
-                                  promptAction.action,
-                                  SitePermissions.SCOPE_TEMPORARY,
-                                  this.browser);
+              SitePermissions.setForPrincipal(this.principal,
+                                              this.permissionKey,
+                                              promptAction.action,
+                                              SitePermissions.SCOPE_TEMPORARY,
+                                              this.browser);
             }
 
             
