@@ -439,7 +439,7 @@ static void GenerateCallablePrologue(MacroAssembler& masm, uint32_t* entry) {
     
     MOZ_ASSERT(masm.GetStackPointer64().code() == sp.code());
 
-    AutoForbidPools afp(&masm,  5);
+    AutoForbidPoolsAndNops afp(&masm,  5);
 
     *entry = masm.currentOffset();
 
@@ -510,7 +510,7 @@ static void GenerateCallableEpilogue(MacroAssembler& masm, unsigned framePushed,
   
   MOZ_ASSERT(masm.GetStackPointer64().code() == sp.code());
 
-  AutoForbidPools afp(&masm,  5);
+  AutoForbidPoolsAndNops afp(&masm,  5);
 
   masm.Ldr(ARMRegister(FramePointer, 64),
            MemOperand(sp, offsetof(Frame, callerFP)));
