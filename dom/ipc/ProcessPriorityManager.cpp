@@ -800,10 +800,13 @@ void ParticularProcessPriorityManager::SetPriorityNow(
 
   mPriority = aPriority;
 
-  if (oldPriority < mPriority) {
+  
+  
+  
+  if (oldPriority < mPriority && oldPriority != PROCESS_PRIORITY_UNKNOWN) {
     Telemetry::ScalarAdd(
         Telemetry::ScalarID::DOM_CONTENTPROCESS_OS_PRIORITY_RAISED, 1);
-  } else {
+  } else if (oldPriority > mPriority) {
     Telemetry::ScalarAdd(
         Telemetry::ScalarID::DOM_CONTENTPROCESS_OS_PRIORITY_LOWERED, 1);
   }
