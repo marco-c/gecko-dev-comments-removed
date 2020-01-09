@@ -41,8 +41,16 @@ bool MaybeCrossOriginObjectMixins::IsPlatformObjectSameOrigin(JSContext* cx,
 
   BasePrincipal* subjectPrincipal =
       BasePrincipal::Cast(nsContentUtils::SubjectPrincipal(cx));
-  nsIPrincipal* objectPrincipal = nsContentUtils::ObjectPrincipal(obj);
+  BasePrincipal* objectPrincipal =
+      BasePrincipal::Cast(nsContentUtils::ObjectPrincipal(obj));
 
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -57,7 +65,14 @@ bool MaybeCrossOriginObjectMixins::IsPlatformObjectSameOrigin(JSContext* cx,
       subjectPrincipal->FastEqualsConsideringDomain(objectPrincipal) ==
           subjectPrincipal->FastSubsumesConsideringDomain(objectPrincipal),
       "Why are we in an asymmetric case here?");
-  return subjectPrincipal->FastEqualsConsideringDomain(objectPrincipal);
+  if (OriginAttributes::IsRestrictOpenerAccessForFPI()) {
+    return subjectPrincipal->FastEqualsConsideringDomain(objectPrincipal);
+  }
+
+  return subjectPrincipal->FastSubsumesConsideringDomainIgnoringFPD(
+             objectPrincipal) &&
+         objectPrincipal->FastSubsumesConsideringDomainIgnoringFPD(
+             subjectPrincipal);
 }
 
 bool MaybeCrossOriginObjectMixins::CrossOriginGetOwnPropertyHelper(
