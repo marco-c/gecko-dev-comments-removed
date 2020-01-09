@@ -45,3 +45,5 @@ pref("browser.safebrowsing.features.trackingProtection.update", true);
 
 
 pref("browser.safebrowsing.features.cryptomining.update", true);
+
+pref("browser.safebrowsing.features.fingerprinting.update", true);
