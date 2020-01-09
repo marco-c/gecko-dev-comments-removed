@@ -4,6 +4,9 @@
 
 
 
+
+
+
 add_task(async () => {
   let hash = xreDirProvider.getInstallHash();
   let defaultProfile = makeRandomProfileDir("default");

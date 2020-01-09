@@ -46,6 +46,7 @@
 #include "mozilla/UniquePtr.h"
 #include "nsIToolkitShellService.h"
 #include "mozilla/Telemetry.h"
+#include "nsProxyRelease.h"
 
 using namespace mozilla;
 
@@ -80,6 +81,52 @@ nsTArray<UniquePtr<KeyValue>> GetSectionStrings(nsINIParser* aParser,
   nsTArray<UniquePtr<KeyValue>> result;
   aParser->GetStrings(aSection, &GetStrings, &result);
   return result;
+}
+
+void RemoveProfileFiles(nsIToolkitProfile* aProfile, bool aInBackground) {
+  nsCOMPtr<nsIFile> rootDir;
+  aProfile->GetRootDir(getter_AddRefs(rootDir));
+  nsCOMPtr<nsIFile> localDir;
+  aProfile->GetLocalDir(getter_AddRefs(localDir));
+
+  
+  
+  
+  nsCOMPtr<nsIProfileLock> lock;
+  nsresult rv =
+      NS_LockProfilePath(rootDir, localDir, nullptr, getter_AddRefs(lock));
+  NS_ENSURE_SUCCESS_VOID(rv);
+
+  nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
+      "nsToolkitProfile::RemoveProfileFiles",
+      [rootDir, localDir, lock]() mutable {
+        bool equals;
+        nsresult rv = rootDir->Equals(localDir, &equals);
+        
+        
+        if (NS_SUCCEEDED(rv) && !equals) {
+          localDir->Remove(true);
+        }
+
+        
+        
+        lock->Unlock();
+        
+        
+        NS_ReleaseOnMainThreadSystemGroup(
+            "nsToolkitProfile::RemoveProfileFiles::Unlock", lock.forget());
+
+        rv = rootDir->Remove(true);
+        NS_ENSURE_SUCCESS_VOID(rv);
+      });
+
+  if (aInBackground) {
+    nsCOMPtr<nsIEventTarget> target =
+        do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID);
+    target->Dispatch(runnable, NS_DISPATCH_NORMAL);
+  } else {
+    runnable->Run();
+  }
 }
 
 nsToolkitProfile::nsToolkitProfile(const nsACString& aName, nsIFile* aRootDir,
@@ -178,38 +225,7 @@ nsresult nsToolkitProfile::RemoveInternal(bool aRemoveFiles,
   }
 
   if (aRemoveFiles) {
-    
-    nsCOMPtr<nsIProfileLock> lock;
-    nsresult rv = Lock(nullptr, getter_AddRefs(lock));
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    nsCOMPtr<nsIFile> rootDir(mRootDir);
-    nsCOMPtr<nsIFile> localDir(mLocalDir);
-
-    nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
-        "nsToolkitProfile::RemoveInternal", [rootDir, localDir, lock]() {
-          bool equals;
-          nsresult rv = rootDir->Equals(localDir, &equals);
-          
-          
-          if (NS_SUCCEEDED(rv) && !equals) {
-            localDir->Remove(true);
-          }
-
-          
-          
-          lock->Unlock();
-
-          rootDir->Remove(true);
-        });
-
-    if (aInBackground) {
-      nsCOMPtr<nsIEventTarget> target =
-          do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID);
-      target->Dispatch(runnable, NS_DISPATCH_NORMAL);
-    } else {
-      runnable->Run();
-    }
+    RemoveProfileFiles(this, aInBackground);
   }
 
   nsINIParser* db = &nsToolkitProfileService::gService->mProfileDB;
@@ -373,6 +389,12 @@ nsToolkitProfileService::nsToolkitProfileService()
       mCreatedAlternateProfile(false),
       mStartupReason(NS_LITERAL_STRING("unknown")),
       mMaybeLockProfile(false),
+      mProfileDBExists(false),
+      mProfileDBFileSize(0),
+      mProfileDBModifiedTime(0),
+      mInstallDBExists(false),
+      mInstallDBFileSize(0),
+      mInstallDBModifiedTime(0),
       mUpdateChannel(NS_STRINGIFY(MOZ_UPDATE_CHANNEL)) {
 #ifdef MOZ_DEV_EDITION
   mUseDevEditionProfile = true;
@@ -406,6 +428,12 @@ void nsToolkitProfileService::CompleteStartup() {
 
     if (isDefaultApp) {
       mProfileDB.SetString(mInstallSection.get(), "Locked", "1");
+
+      
+      
+      
+      
+      
       Flush();
     }
   }
@@ -486,18 +514,20 @@ bool nsToolkitProfileService::IsProfileForCurrentInstall(
 
 
 
-bool nsToolkitProfileService::MaybeMakeDefaultDedicatedProfile(
-    nsIToolkitProfile* aProfile) {
+
+nsresult nsToolkitProfileService::MaybeMakeDefaultDedicatedProfile(
+    nsIToolkitProfile* aProfile, bool* aResult) {
   nsresult rv;
+  *aResult = false;
 
   
   if (!IsProfileForCurrentInstall(aProfile)) {
-    return false;
+    return NS_OK;
   }
 
   nsCString descriptor;
   rv = GetProfileDescriptor(aProfile, descriptor, nullptr);
-  NS_ENSURE_SUCCESS(rv, false);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   
   nsTArray<nsCString> installs = GetKnownInstalls();
@@ -524,7 +554,7 @@ bool nsToolkitProfileService::MaybeMakeDefaultDedicatedProfile(
     nsCString isLocked;
     rv = mProfileDB.GetString(install.get(), "Locked", isLocked);
     if (NS_SUCCEEDED(rv) && isLocked.Equals("1")) {
-      return false;
+      return NS_OK;
     }
 
     inUseInstalls.AppendElement(install);
@@ -547,13 +577,61 @@ bool nsToolkitProfileService::MaybeMakeDefaultDedicatedProfile(
   mProfileDB.DeleteString(mInstallSection.get(), "Locked");
 
   
-  Flush();
+  rv = Flush();
+  NS_ENSURE_SUCCESS(rv, rv);
 
   
   
   mMaybeLockProfile = true;
+  *aResult = true;
 
-  return true;
+  return NS_OK;
+}
+
+bool
+IsFileOutdated(nsIFile* aFile, bool aExists, PRTime aLastModified,
+               int64_t aLastSize) {
+  bool exists;
+  nsresult rv = aFile->Exists(&exists);
+  if (NS_FAILED(rv) || exists != aExists) {
+    return true;
+  }
+
+  if (!exists) {
+    return false;
+  }
+
+  int64_t size;
+  rv = aFile->GetFileSize(&size);
+  if (NS_FAILED(rv) || size != aLastSize) {
+    return true;
+  }
+
+  PRTime time;
+  rv = aFile->GetLastModifiedTime(&time);
+  if (NS_FAILED(rv) || time != aLastModified) {
+    return true;
+  }
+
+  return false;
+}
+
+NS_IMETHODIMP
+nsToolkitProfileService::GetIsListOutdated(bool *aResult) {
+  if (IsFileOutdated(mProfileDBFile, mProfileDBExists, mProfileDBModifiedTime,
+                     mProfileDBFileSize)) {
+    *aResult = true;
+    return NS_OK;
+  }
+
+  if (IsFileOutdated(mInstallDBFile, mInstallDBExists, mInstallDBModifiedTime,
+                     mInstallDBFileSize)) {
+    *aResult = true;
+    return NS_OK;
+  }
+
+  *aResult = false;
+  return NS_OK;
 }
 
 struct ImportInstallsClosure {
@@ -605,11 +683,19 @@ nsresult nsToolkitProfileService::Init() {
   rv = mInstallDBFile->AppendNative(NS_LITERAL_CSTRING("installs.ini"));
   NS_ENSURE_SUCCESS(rv, rv);
 
+  rv = mInstallDBFile->IsFile(&mInstallDBExists);
+  if (NS_SUCCEEDED(rv) && mInstallDBExists) {
+    mInstallDBFile->GetFileSize(&mInstallDBFileSize);
+    mInstallDBFile->GetLastModifiedTime(&mInstallDBModifiedTime);
+  }
+
   nsAutoCString buffer;
 
-  bool exists;
-  rv = mProfileDBFile->IsFile(&exists);
-  if (NS_SUCCEEDED(rv) && exists) {
+  rv = mProfileDBFile->IsFile(&mProfileDBExists);
+  if (NS_SUCCEEDED(rv) && mProfileDBExists) {
+    mProfileDBFile->GetFileSize(&mProfileDBFileSize);
+    mProfileDBFile->GetLastModifiedTime(&mProfileDBModifiedTime);
+
     rv = mProfileDB.Init(mProfileDBFile);
     
     
@@ -628,9 +714,7 @@ nsresult nsToolkitProfileService::Init() {
       
       nsINIParser installDB;
 
-      rv = mInstallDBFile->IsFile(&exists);
-      if (NS_SUCCEEDED(rv) && exists &&
-          NS_SUCCEEDED(installDB.Init(mInstallDBFile))) {
+      if (mInstallDBExists && NS_SUCCEEDED(installDB.Init(mInstallDBFile))) {
         
         ImportInstallsClosure closure = {&installDB, &mProfileDB};
         installDB.GetSections(&ImportInstalls, &closure);
@@ -1059,7 +1143,10 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
         
         
 
-        if (MaybeMakeDefaultDedicatedProfile(profile)) {
+        bool result;
+        rv = MaybeMakeDefaultDedicatedProfile(profile, &result);
+        NS_ENSURE_SUCCESS(rv, rv);
+        if (result) {
           mStartupReason = NS_LITERAL_STRING("restart-claimed-default");
 
           mCurrent = profile;
@@ -1078,7 +1165,8 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
             return rv;
           }
 
-          Flush();
+          rv = Flush();
+          NS_ENSURE_SUCCESS(rv, rv);
 
           mStartupReason = NS_LITERAL_STRING("restart-skipped-default");
           *aDidCreate = true;
@@ -1182,14 +1270,10 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
                          getter_AddRefs(profile));
     }
     
-    if (NS_FAILED(rv)) {
+    if (NS_FAILED(rv) || NS_FAILED(Flush())) {
       PR_fprintf(PR_STDERR, "Error creating profile.\n");
-      return rv;
     }
-    rv = NS_ERROR_ABORT;
-    Flush();
-
-    return rv;
+    return NS_ERROR_ABORT;
   }
 
   
@@ -1283,7 +1367,10 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
         
         
         if (exists) {
-          if (MaybeMakeDefaultDedicatedProfile(profile)) {
+          bool result;
+          rv = MaybeMakeDefaultDedicatedProfile(profile, &result);
+          NS_ENSURE_SUCCESS(rv, rv);
+          if (result) {
             mStartupReason = NS_LITERAL_STRING("firstrun-claimed-default");
 
             mCurrent = profile;
@@ -1316,7 +1403,8 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
         SetNormalDefault(newProfile);
       }
 
-      Flush();
+      rv = Flush();
+      NS_ENSURE_SUCCESS(rv, rv);
 
       if (mCreatedAlternateProfile) {
         mStartupReason = NS_LITERAL_STRING("firstrun-skipped-default");
@@ -1377,12 +1465,11 @@ nsresult nsToolkitProfileService::CreateResetProfile(
                               newProfileName, getter_AddRefs(newProfile));
   if (NS_FAILED(rv)) return rv;
 
-  rv = Flush();
-  if (NS_FAILED(rv)) return rv;
-
   mCurrent = newProfile;
   newProfile.forget(aNewProfile);
 
+  
+  
   return NS_OK;
 }
 
@@ -1419,6 +1506,8 @@ nsresult nsToolkitProfileService::ApplyResetProfile(
   nsresult rv = aOldProfile->GetName(name);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  
+  
   rv = aOldProfile->Remove(false);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -1427,7 +1516,15 @@ nsresult nsToolkitProfileService::ApplyResetProfile(
   rv = mCurrent->SetName(name);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  return Flush();
+  rv = Flush();
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  
+  
+  RemoveProfileFiles(aOldProfile, true);
+
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -1696,6 +1793,10 @@ nsToolkitProfileService::GetProfileCount(uint32_t* aResult) {
 
 NS_IMETHODIMP
 nsToolkitProfileService::Flush() {
+  if (GetIsListOutdated()) {
+    return NS_ERROR_DATABASE_CHANGED;
+  }
+
   nsresult rv;
 
   
@@ -1739,17 +1840,26 @@ nsToolkitProfileService::Flush() {
       }
 
       fclose(writeFile);
+
+      mInstallDBExists = true;
+      mInstallDBFile->GetFileSize(&mInstallDBFileSize);
+      mInstallDBFile->GetLastModifiedTime(&mInstallDBModifiedTime);
     } else {
       rv = mInstallDBFile->Remove(false);
       if (NS_FAILED(rv) && rv != NS_ERROR_FILE_TARGET_DOES_NOT_EXIST &&
           rv != NS_ERROR_FILE_NOT_FOUND) {
         return rv;
       }
+      mInstallDBExists = false;
     }
   }
 
   rv = mProfileDB.WriteToFile(mProfileDBFile);
   NS_ENSURE_SUCCESS(rv, rv);
+
+  mProfileDBExists = true;
+  mProfileDBFile->GetFileSize(&mProfileDBFileSize);
+  mProfileDBFile->GetLastModifiedTime(&mProfileDBModifiedTime);
 
   return NS_OK;
 }
