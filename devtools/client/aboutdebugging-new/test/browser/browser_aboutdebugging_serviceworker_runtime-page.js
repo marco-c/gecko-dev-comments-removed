@@ -30,7 +30,7 @@ add_task(async function() {
   
   info("Check that the SW pane is empty");
   let swPane = getDebugTargetPane("Service Workers", document);
-  ok(!swPane.querySelector(".js-debug-target-item"),
+  ok(!swPane.querySelector(".qa-debug-target-item"),
     "SW list is empty");
 
   
@@ -42,9 +42,9 @@ add_task(async function() {
   await waitForServiceWorkerRunning(SW_URL, document);
 
   swPane = getDebugTargetPane("Service Workers", document);
-  ok(swPane.querySelectorAll(".js-debug-target-item").length === 1,
+  ok(swPane.querySelectorAll(".qa-debug-target-item").length === 1,
     "Service worker list has one element");
-  ok(swPane.querySelector(".js-debug-target-item").textContent.includes(SW_URL),
+  ok(swPane.querySelector(".qa-debug-target-item").textContent.includes(SW_URL),
     "Service worker list is the one we registered");
 
   
@@ -54,7 +54,7 @@ add_task(async function() {
   info("Wait for service worker to disappear");
   await waitUntil(() => {
     swPane = getDebugTargetPane("Service Workers", document);
-    return swPane.querySelectorAll(".js-debug-target-item").length === 0;
+    return swPane.querySelectorAll(".qa-debug-target-item").length === 0;
   });
 
   info("Remove tabs");

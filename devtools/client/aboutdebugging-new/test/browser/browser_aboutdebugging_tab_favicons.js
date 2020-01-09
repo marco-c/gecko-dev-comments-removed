@@ -26,7 +26,7 @@ add_task(async function() {
 
   await waitUntil(() => findDebugTargetByText("Favicon tab", document));
   const faviconTabTarget = findDebugTargetByText("Favicon tab", document);
-  const faviconTabIcon = faviconTabTarget.querySelector(".js-debug-target-item-icon");
+  const faviconTabIcon = faviconTabTarget.querySelector(".qa-debug-target-item-icon");
 
   
   

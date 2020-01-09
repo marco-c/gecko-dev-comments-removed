@@ -30,7 +30,7 @@ add_task(async function() {
   const targetElement = await waitForServiceWorkerRunning(SERVICE_WORKER, document);
 
   
-  const pushButton = targetElement.querySelector(".js-push-button");
+  const pushButton = targetElement.querySelector(".qa-push-button");
   ok(pushButton, "Found its push button");
 
   info("Click on the Push button and wait for the push notification");
