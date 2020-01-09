@@ -28,7 +28,7 @@ def check_nightlies(config, tasks):
     for task in tasks:
         dep = task['primary-dependency']
         if config.params['project'] in RELEASE_PROJECTS and \
-                dep.attributes.get('nightly') and \
+                dep.attributes.get('nightly', dep.attributes.get('shippable')) and \
                 not dep.attributes.get('enable-full-crashsymbols'):
             raise Exception('Nightly job %s should have enable-full-crashsymbols attribute '
                             'set to true to enable symbol upload to crash-stats' % dep.label)
@@ -61,6 +61,8 @@ def fill_template(config, tasks):
         attributes['build_type'] = build_type
         if dep.attributes.get('nightly'):
             attributes['nightly'] = True
+        if dep.attributes.get('shippable'):
+            attributes['shippable'] = True
 
         treeherder = task.get('treeherder', {})
         th = dep.task.get('extra')['treeherder']
@@ -80,6 +82,10 @@ def fill_template(config, tasks):
         task['treeherder'] = treeherder
 
         if dep.attributes.get('nightly'):
+            
+            task['run-on-projects'] = dep.attributes.get('run_on_projects')
+        elif dep.attributes.get('shippable'):
+            
             
             task['run-on-projects'] = dep.attributes.get('run_on_projects')
         else:
