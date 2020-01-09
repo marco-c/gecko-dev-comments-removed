@@ -476,10 +476,16 @@ bool ActiveLayerTracker::IsStyleAnimated(
           aPropertySet.IsSubsetOf(nsCSSPropertyIDSet::OpacityProperties()),
       "Only subset of opacity or transform-like properties set calls this");
 
+  
+  
+  
+  
+  
+  const nsIFrame* styleFrame = nsLayoutUtils::GetStyleFrame(aFrame);
   const nsCSSPropertyIDSet transformSet =
       nsCSSPropertyIDSet::TransformLikeProperties();
-  if ((aFrame->StyleDisplay()->mWillChangeBitField &
-       NS_STYLE_WILL_CHANGE_TRANSFORM) &&
+  if ((styleFrame && (styleFrame->StyleDisplay()->mWillChangeBitField &
+                      NS_STYLE_WILL_CHANGE_TRANSFORM)) &&
       aPropertySet.Intersects(transformSet) &&
       (!aBuilder ||
        aBuilder->IsInWillChangeBudget(aFrame, aFrame->GetSize()))) {
