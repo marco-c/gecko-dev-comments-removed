@@ -1054,6 +1054,24 @@ class PresShell final : public nsIPresShell,
 
 
 
+    class MOZ_STACK_CLASS HandlingTimeAccumulator final {
+     public:
+      HandlingTimeAccumulator() = delete;
+      HandlingTimeAccumulator(const HandlingTimeAccumulator& aOther) = delete;
+      HandlingTimeAccumulator(const EventHandler& aEventHandler,
+                              const WidgetEvent* aEvent);
+      ~HandlingTimeAccumulator();
+
+     private:
+      const EventHandler& mEventHandler;
+      const WidgetEvent* mEvent;
+      TimeStamp mHandlingStartTime;
+    };
+
+    
+
+
+
 
 
     void RecordEventHandlingResponsePerformance(const WidgetEvent* aEvent);
