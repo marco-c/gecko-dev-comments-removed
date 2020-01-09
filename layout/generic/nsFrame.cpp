@@ -1715,11 +1715,10 @@ bool nsIFrame::ComputeBorderRadii(const BorderRadius& aBorderRadius,
     nscoord sum = aRadii[hc1] + aRadii[hc2];
     if (sum) {
       haveRadius = true;
-    }
-
-    
-    if (length < sum) {
-      ratio = std::min(ratio, double(length) / sum);
+      
+      if (length < sum) {
+        ratio = std::min(ratio, double(length) / sum);
+      }
     }
   }
   if (ratio < 1.0) {
