@@ -133,7 +133,7 @@ JS::Result<ParseNode*> BinASTParserPerTokenizer<Tok>::parseAux(
   MOZ_TRY(tokenizer_->readHeader());
 
   ParseNode* result(nullptr);
-  const Context topContext((RootContext()));
+  const Context topContext(Context::topLevel());
   MOZ_TRY_VAR(result, asFinalParser()->parseProgram(topContext));
 
   mozilla::Maybe<GlobalScope::Data*> bindings =
@@ -196,7 +196,7 @@ JS::Result<FunctionNode*> BinASTParserPerTokenizer<Tok>::parseLazyFunction(
 
   
   
-  const Context context((RootContext()));
+  const Context context(Context::topLevel());
   MOZ_TRY(
       (asFinalParser()->*parseFunc)(func->nargs(), &params, &tmpBody, context));
 
