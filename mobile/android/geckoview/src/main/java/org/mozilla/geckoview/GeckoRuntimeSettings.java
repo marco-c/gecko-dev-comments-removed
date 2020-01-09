@@ -160,6 +160,43 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
+
+
+
+
+
+        public @NonNull Builder fontSizeFactor(float fontSizeFactor) {
+            getSettings().setFontSizeFactor(fontSizeFactor);
+            return this;
+        }
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        public @NonNull Builder fontInflation(boolean enabled) {
+            getSettings().setFontInflationEnabled(enabled);
+            return this;
+        }
+
+        
+
+
+
+
+
         public @NonNull Builder displayDensityOverride(float density) {
             getSettings().mDisplayDensityOverride = density;
             return this;
@@ -264,6 +301,10 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
         "browser.display.use_document_fonts", 1);
      final Pref<Boolean> mConsoleOutput = new Pref<Boolean>(
         "geckoview.console.enabled", false);
+     final Pref<Integer> mFontSizeFactor = new Pref<>(
+        "font.size.systemFontScale", 100);
+     final Pref<Integer> mFontInflationMinTwips = new Pref<>(
+        "font.size.inflation.minTwips", 0);
 
      boolean mDebugPause;
      boolean mUseMaxScreenDepth;
@@ -523,6 +564,77 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
     public boolean getConsoleOutputEnabled() {
         return mConsoleOutput.get();
+    }
+
+    private static int FONT_INFLATION_BASE_VALUE = 120;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    public @NonNull GeckoRuntimeSettings setFontSizeFactor(float fontSizeFactor) {
+        if (fontSizeFactor < 0) {
+            throw new IllegalArgumentException("fontSizeFactor cannot be < 0");
+        }
+
+        final int fontSizePercentage = Math.round(fontSizeFactor * 100);
+        mFontSizeFactor.commit(Math.round(fontSizePercentage));
+        if (getFontInflationEnabled()) {
+            final int scaledFontInflation = Math.round(FONT_INFLATION_BASE_VALUE * fontSizeFactor);
+            mFontInflationMinTwips.commit(scaledFontInflation);
+        }
+        return this;
+    }
+
+    
+
+
+
+
+    public float getFontSizeFactor() {
+        return mFontSizeFactor.get() / 100f;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public @NonNull GeckoRuntimeSettings setFontInflationEnabled(boolean enabled) {
+        final int minTwips =
+                enabled ? Math.round(FONT_INFLATION_BASE_VALUE * getFontSizeFactor()) : 0;
+        mFontInflationMinTwips.commit(minTwips);
+        return this;
+    }
+
+    
+
+
+
+
+    public boolean getFontInflationEnabled() {
+        return mFontInflationMinTwips.get() > 0;
     }
 
     @Override 
