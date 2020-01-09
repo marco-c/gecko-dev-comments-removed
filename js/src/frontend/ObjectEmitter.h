@@ -602,7 +602,7 @@ class MOZ_STACK_CLASS ClassEmitter : public PropertyEmitter {
 
   bool isDerived_ = false;
 
-  mozilla::Maybe<TDZCheckCache> tdzCacheForInnerName_;
+  mozilla::Maybe<TDZCheckCache> tdzCache_;
   mozilla::Maybe<EmitterScope> innerScope_;
   AutoSaveLocalStrictMode strictMode_;
 
@@ -665,9 +665,7 @@ class MOZ_STACK_CLASS ClassEmitter : public PropertyEmitter {
  public:
   explicit ClassEmitter(BytecodeEmitter* bce);
 
-  enum class HasName : bool { No, Yes };
-  bool emitScope(JS::Handle<LexicalScope::Data*> scopeBindings,
-                 HasName hasName);
+  bool emitScope(JS::Handle<LexicalScope::Data*> scopeBindings);
 
   
   
