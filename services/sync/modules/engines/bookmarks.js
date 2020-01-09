@@ -16,14 +16,15 @@ const {CryptoWrapper} = ChromeUtils.import("resource://services-sync/record.js")
 const {Svc, Utils} = ChromeUtils.import("resource://services-sync/util.js");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  SyncedBookmarksMirror: "resource://gre/modules/SyncedBookmarksMirror.jsm",
   BookmarkValidator: "resource://services-sync/bookmark_validator.js",
+  LiveBookmarkMigrator: "resource:///modules/LiveBookmarkMigrator.jsm",
   OS: "resource://gre/modules/osfile.jsm",
   PlacesBackups: "resource://gre/modules/PlacesBackups.jsm",
   PlacesDBUtils: "resource://gre/modules/PlacesDBUtils.jsm",
   PlacesSyncUtils: "resource://gre/modules/PlacesSyncUtils.jsm",
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
   Resource: "resource://services-sync/resource.js",
+  SyncedBookmarksMirror: "resource://gre/modules/SyncedBookmarksMirror.jsm",
 });
 
 XPCOMUtils.defineLazyGetter(this, "PlacesBundle", () => {
@@ -363,6 +364,31 @@ BaseBookmarksEngine.prototype = {
     return newSyncID;
   },
 
+  async _syncStartup() {
+    await super._syncStartup();
+
+    try {
+      
+      
+      
+      let lastSync = await this.getLastSync();
+      if (!lastSync) {
+        this._log.debug("Bookmarks backup starting");
+        await PlacesBackups.create(null, true);
+        this._log.debug("Bookmarks backup done");
+
+        this._log.debug("Livemarks backup starting");
+        await LiveBookmarkMigrator.migrate();
+        this._log.debug("Livemarks backup done");
+      }
+    } catch (ex) {
+      
+      
+      
+      this._log.warn("Error while backing up bookmarks, but continuing with sync", ex);
+    }
+  },
+
   async _sync() {
     try {
       await super._sync();
@@ -587,23 +613,7 @@ BookmarksEngine.prototype = {
   },
 
   async _syncStartup() {
-    await SyncEngine.prototype._syncStartup.call(this);
-
-    try {
-      
-      let lastSync = await this.getLastSync();
-      if (!lastSync) {
-        this._log.debug("Bookmarks backup starting.");
-        await PlacesBackups.create(null, true);
-        this._log.debug("Bookmarks backup done.");
-      }
-    } catch (ex) {
-      
-      
-      
-      this._log.warn("Error while backing up bookmarks, but continuing with sync", ex);
-    }
-
+    await super._syncStartup();
     this._store._childrenToOrder = {};
     this._store.clearPendingDeletions();
   },

@@ -12,6 +12,9 @@
 
 
 
+#![allow(unknown_lints)]
+#![warn(rust_2018_idioms)]
+
 #[macro_use]
 mod driver;
 mod error;

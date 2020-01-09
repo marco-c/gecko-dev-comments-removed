@@ -955,6 +955,19 @@ function getItemsWithAnnotation(name) {
 
 
 
+
+
+
+async function setItemAnnotation(guid, name, value) {
+  let id = await PlacesUtils.promiseItemId(guid);
+  PlacesUtils.annotations.setItemAnnotation(id, name, value, 0,
+                                            PlacesUtils.annotations.EXPIRE_NEVER);
+}
+
+
+
+
+
 async function assertNoOrphanPageAnnotations() {
   let db = await PlacesUtils.promiseDBConnection();
 
