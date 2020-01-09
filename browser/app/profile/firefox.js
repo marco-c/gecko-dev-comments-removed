@@ -145,13 +145,7 @@ pref("app.update.silent", false);
 
 
 
-#if defined(XP_WIN) || defined(XP_MACOSX)
 pref("app.update.staging.enabled", true);
-#elif defined(EARLY_BETA_OR_EARLIER)
-pref("app.update.staging.enabled", true);
-#else
-pref("app.update.staging.enabled", false);
-#endif
 
 
 pref("app.update.url", "https://aus5.mozilla.org/update/6/%PRODUCT%/%VERSION%/%BUILD_ID%/%BUILD_TARGET%/%LOCALE%/%CHANNEL%/%OS_VERSION%/%SYSTEM_CAPABILITIES%/%DISTRIBUTION%/%DISTRIBUTION_VERSION%/update.xml");
