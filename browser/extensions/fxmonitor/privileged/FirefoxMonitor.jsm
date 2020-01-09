@@ -249,9 +249,13 @@ this.FirefoxMonitor = {
         this.notificationsByWindow.set(win, new Set());
 
         
-        let DOMWindowUtils = win.windowUtils;
-        DOMWindowUtils.loadSheetUsingURIString(this.getURL("privileged/FirefoxMonitor.css"),
-                                               DOMWindowUtils.AUTHOR_SHEET);
+        
+        
+        Services.tm.dispatchToMainThread(() => {
+          let DOMWindowUtils = win.windowUtils;
+          DOMWindowUtils.loadSheetUsingURIString(this.getURL("privileged/FirefoxMonitor.css"),
+                                                 DOMWindowUtils.AUTHOR_SHEET);
+        });
 
         
         let doc = win.document;
@@ -295,9 +299,11 @@ this.FirefoxMonitor = {
           return;
         }
 
-        let DOMWindowUtils = win.windowUtils;
-        DOMWindowUtils.removeSheetUsingURIString(this.getURL("privileged/FirefoxMonitor.css"),
-                                                 DOMWindowUtils.AUTHOR_SHEET);
+        Services.tm.dispatchToMainThread(() => {
+          let DOMWindowUtils = win.windowUtils;
+          DOMWindowUtils.removeSheetUsingURIString(this.getURL("privileged/FirefoxMonitor.css"),
+                                                   DOMWindowUtils.AUTHOR_SHEET);
+        });
 
         this.notificationsByWindow.get(win).forEach(n => {
           n.remove();
