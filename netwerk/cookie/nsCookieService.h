@@ -89,41 +89,10 @@ class nsCookieEntry : public nsCookieKey {
 };
 
 
-struct ConstCookie {
-  ConstCookie(const nsCString& aName, const nsCString& aValue,
-              const nsCString& aHost, const nsCString& aPath, int64_t aExpiry,
-              int64_t aLastAccessed, int64_t aCreationTime, bool aIsSecure,
-              bool aIsHttpOnly, const OriginAttributes& aOriginAttributes,
-              int32_t aSameSite)
-      : name(aName),
-        value(aValue),
-        host(aHost),
-        path(aPath),
-        expiry(aExpiry),
-        lastAccessed(aLastAccessed),
-        creationTime(aCreationTime),
-        isSecure(aIsSecure),
-        isHttpOnly(aIsHttpOnly),
-        originAttributes(aOriginAttributes),
-        sameSite(aSameSite) {}
-
-  const nsCString name;
-  const nsCString value;
-  const nsCString host;
-  const nsCString path;
-  const int64_t expiry;
-  const int64_t lastAccessed;
-  const int64_t creationTime;
-  const bool isSecure;
-  const bool isHttpOnly;
-  const OriginAttributes originAttributes;
-  const int32_t sameSite;
-};
-
-
 struct CookieDomainTuple {
   nsCookieKey key;
-  mozilla::UniquePtr<ConstCookie> cookie;
+  OriginAttributes originAttributes;
+  mozilla::UniquePtr<mozilla::net::CookieStruct> cookie;
 };
 
 
@@ -297,8 +266,8 @@ class nsCookieService final : public nsICookieService,
   void HandleCorruptDB(DBState* aDBState);
   void RebuildCorruptDB(DBState* aDBState);
   OpenDBResult Read();
-  mozilla::UniquePtr<ConstCookie> GetCookieFromRow(
-      mozIStorageStatement* aRow, const OriginAttributes& aOriginAttributes);
+  mozilla::UniquePtr<mozilla::net::CookieStruct> GetCookieFromRow(
+      mozIStorageStatement* aRow);
   void EnsureReadComplete(bool aInitDBConn);
   nsresult NormalizeHost(nsCString& aHost);
   nsresult GetCookieStringCommon(nsIURI* aHostURI, nsIChannel* aChannel,
