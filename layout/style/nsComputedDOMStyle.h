@@ -247,7 +247,6 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
   already_AddRefed<CSSValue> DoGetBottom();
 
   
-  already_AddRefed<CSSValue> DoGetColor();
 
   
   already_AddRefed<CSSValue> DoGetOsxFontSmoothing();
@@ -291,7 +290,6 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
   already_AddRefed<CSSValue> DoGetBorderImageWidth();
 
   
-  already_AddRefed<CSSValue> DoGetBoxShadow();
 
   
   already_AddRefed<CSSValue> DoGetMarginTopWidth();
@@ -311,7 +309,6 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
   already_AddRefed<CSSValue> DoGetTextEmphasisPosition();
   already_AddRefed<CSSValue> DoGetTextEmphasisStyle();
   already_AddRefed<CSSValue> DoGetTextOverflow();
-  already_AddRefed<CSSValue> DoGetTextShadow();
   already_AddRefed<CSSValue> DoGetWebkitTextStrokeWidth();
 
   
@@ -323,10 +320,8 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
   already_AddRefed<CSSValue> DoGetPerspectiveOrigin();
   already_AddRefed<CSSValue> DoGetScrollSnapPointsX();
   already_AddRefed<CSSValue> DoGetScrollSnapPointsY();
-  already_AddRefed<CSSValue> DoGetScrollbarColor();
 
   
-  already_AddRefed<CSSValue> DoGetCaretColor();
   already_AddRefed<CSSValue> DoGetForceBrokenImageIcon();
 
   
