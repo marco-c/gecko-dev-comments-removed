@@ -6795,6 +6795,14 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
           
           
           
+          
+          
+          
+          
+
+          
+          
+          
           width = gfxPrefs::DesktopViewportWidth() / fullZoom;
         } else {
           width = height * aDisplaySize.width / aDisplaySize.height;
