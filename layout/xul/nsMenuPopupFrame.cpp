@@ -165,6 +165,19 @@ void nsMenuPopupFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 
   
   
+  if (aContent->NodePrincipal()->IsSystemPrincipal()) {
+    if (aContent->AsElement()->AttrValueIs(kNameSpaceID_None,
+                                           nsGkAtoms::incontentshell,
+                                           nsGkAtoms::_true, eCaseMatters)) {
+      mInContentShell = true;
+    } else if (aContent->AsElement()->AttrValueIs(
+                   kNameSpaceID_None, nsGkAtoms::incontentshell,
+                   nsGkAtoms::_false, eCaseMatters)) {
+      mInContentShell = false;
+    }
+  }
+  
+  
   
   if (!IsLeaf() && !ourView->HasWidget()) {
     CreateWidgetForView(ourView);
