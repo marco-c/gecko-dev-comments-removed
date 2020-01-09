@@ -20,6 +20,8 @@ WebGLExtensionShaderTextureLod::WebGLExtensionShaderTextureLod(
 WebGLExtensionShaderTextureLod::~WebGLExtensionShaderTextureLod() {}
 
 bool WebGLExtensionShaderTextureLod::IsSupported(const WebGLContext* webgl) {
+  if (webgl->IsWebGL2()) return false;
+
   gl::GLContext* gl = webgl->GL();
   if (gl->IsGLES() && gl->Version() >= 300) {
     
