@@ -127,6 +127,14 @@ function Toolbox(target, selectedTool, hostType, contentWindow, frameId,
   this.frameMap = new Map();
   this.selectedFrameId = null;
 
+  
+
+
+
+
+
+  this._windowHostShortcuts = null;
+
   this._toolRegistered = this._toolRegistered.bind(this);
   this._toolUnregistered = this._toolUnregistered.bind(this);
   this._onWillNavigate = this._onWillNavigate.bind(this);
@@ -947,23 +955,6 @@ Toolbox.prototype = {
                  });
 
     
-    const onClose = event => this.closeToolbox();
-    this.shortcuts.on(L10N.getStr("toolbox.toggleToolboxF12.key"), onClose);
-
-    
-    
-    
-    if (this.hostType == "window") {
-      this.shortcuts.on(L10N.getStr("toolbox.closeToolbox.key"), onClose);
-    }
-
-    if (AppConstants.platform == "macosx") {
-      this.shortcuts.on(L10N.getStr("toolbox.toggleToolboxOSX.key"), onClose);
-    } else {
-      this.shortcuts.on(L10N.getStr("toolbox.toggleToolbox.key"), onClose);
-    }
-
-    
     this.doc.addEventListener("keypress", this._splitConsoleOnKeypress);
     this.doc.addEventListener("focus", this._onFocus, true);
     this.win.addEventListener("unload", this.destroy);
@@ -1035,8 +1026,20 @@ Toolbox.prototype = {
 
   _addKeysToWindow: function() {
     if (this.hostType != Toolbox.HostType.WINDOW) {
+      
+      
+      if (this._windowHostShortcuts) {
+        this._windowHostShortcuts.destroy();
+        this._windowHostShortcuts = null;
+      }
       return;
     }
+    if (!this._windowHostShortcuts) {
+      this._windowHostShortcuts = new KeyShortcuts({
+        window: this.doc.defaultView,
+      });
+    }
+    const shortcuts = this._windowHostShortcuts;
 
     for (const item of Startup.KeyShortcuts) {
       const { id, toolId, shortcut, modifiers } = item;
@@ -1044,16 +1047,30 @@ Toolbox.prototype = {
 
       if (id == "browserConsole") {
         
-        this.shortcuts.on(electronKey, () => {
+        shortcuts.on(electronKey, () => {
           HUDService.toggleBrowserConsole();
         });
       } else if (toolId) {
         
         
-        this.shortcuts.on(electronKey, () => {
+        shortcuts.on(electronKey, () => {
           this.selectTool(toolId, "key_shortcut").then(() => this.fireCustomKey(toolId));
         });
       }
+    }
+
+    
+    
+    
+    shortcuts.on(L10N.getStr("toolbox.closeToolbox.key"), this.closeToolbox);
+
+    
+    
+    shortcuts.on(L10N.getStr("toolbox.toggleToolboxF12.key"), this.closeToolbox);
+    if (AppConstants.platform == "macosx") {
+      shortcuts.on(L10N.getStr("toolbox.toggleToolboxOSX.key"), this.closeToolbox);
+    } else {
+      shortcuts.on(L10N.getStr("toolbox.toggleToolbox.key"), this.closeToolbox);
     }
   },
 
@@ -1557,8 +1574,6 @@ Toolbox.prototype = {
     if (toolDefinition.buildToolStartup && !this._toolStartups.has(id)) {
       this._toolStartups.set(id, toolDefinition.buildToolStartup(this));
     }
-
-    this._addKeysToWindow();
   },
 
   
