@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+function testNormalProperty(obj, property) {
+    var desc = Object.getOwnPropertyDescriptor(obj, property);
+    assert.sameValue(desc.writable, true, "Property " + property + " of object returned by SupportedLocales is not writable.");
+    assert.sameValue(desc.configurable, true, "Property " + property + " of object returned by SupportedLocales is not configurable.");
+}
+
+function testLengthProperty(obj, property) {
+    var desc = Object.getOwnPropertyDescriptor(obj, property);
+    assert.sameValue(desc.writable, true, "Property " + property + " of object returned by SupportedLocales is not writable.");
+    assert.sameValue(desc.configurable, false, "Property " + property + " of object returned by SupportedLocales is configurable.");
+}
+
+testWithIntlConstructors(function (Constructor) {
+    var defaultLocale = new Constructor().resolvedOptions().locale;
+    var supported = Constructor.supportedLocalesOf([defaultLocale]);
+    assert(Object.isExtensible(supported), "Object returned by SupportedLocales is not extensible.");
+    for (var i = 0; i < supported.length; i++) {
+        testNormalProperty(supported, i);
+    }
+    testLengthProperty(supported, "length");
+});
+
+reportCompare(0, 0);
