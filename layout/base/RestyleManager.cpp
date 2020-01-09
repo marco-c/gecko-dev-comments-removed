@@ -1638,6 +1638,9 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
         
         
         
+        
+        
+        
         for (nsIFrame* cont = primaryFrame; cont;
              cont = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(cont)) {
           cont->AddStateBits(NS_FRAME_MAY_BE_TRANSFORMED);

@@ -227,7 +227,6 @@ void KeyframeEffect::SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
   
   if (aStyle) {
     UpdateProperties(aStyle);
-    MaybeUpdateFrameForCompositor();
   }
 }
 
@@ -956,8 +955,6 @@ void KeyframeEffect::SetTarget(
       UpdateProperties(computedStyle);
     }
 
-    MaybeUpdateFrameForCompositor();
-
     RequestRestyle(EffectCompositor::RestyleType::Layer);
 
     nsAutoAnimationMutationBatch mb(mTarget->mElement->OwnerDoc());
@@ -1645,24 +1642,6 @@ bool KeyframeEffect::CanIgnoreIfNotVisible() const {
   
   return NS_IsHintSubset(mCumulativeChangeHint,
                          nsChangeHint_Hints_CanIgnoreIfNotVisible);
-}
-
-void KeyframeEffect::MaybeUpdateFrameForCompositor() {
-  nsIFrame* frame = GetStyleFrame();
-  if (!frame) {
-    return;
-  }
-
-  
-  
-  
-  
-  for (const AnimationProperty& property : mProperties) {
-    if (property.mProperty == eCSSProperty_transform) {
-      frame->AddStateBits(NS_FRAME_MAY_BE_TRANSFORMED);
-      return;
-    }
-  }
 }
 
 void KeyframeEffect::MarkCascadeNeedsUpdate() {

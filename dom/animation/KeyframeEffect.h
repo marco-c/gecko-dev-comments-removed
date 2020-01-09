@@ -363,12 +363,6 @@ class KeyframeEffect : public AnimationEffect {
   
   
   
-  void MaybeUpdateFrameForCompositor();
-
-  
-  
-  
-  
   
   enum class Flush {
     Style,
