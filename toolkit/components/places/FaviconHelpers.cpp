@@ -204,11 +204,14 @@ nsresult SetIconInfo(const RefPtr<Database>& aDB, IconData& aIcon,
       "(icon_url, fixed_icon_url_hash, width, root, expire_ms, data) "
       "VALUES (:url, hash(fixup_url(:url)), :width, :root, :expire, :data) ");
   NS_ENSURE_STATE(insertStmt);
+  
+  
+  
   nsCOMPtr<mozIStorageStatement> updateStmt = aDB->GetStatement(
       "UPDATE moz_icons SET width = :width, "
       "expire_ms = :expire, "
       "data = :data, "
-      "root = :root "
+      "root = (root  OR :root) "
       "WHERE id = :id ");
   NS_ENSURE_STATE(updateStmt);
 
@@ -814,7 +817,10 @@ AsyncAssociateIconToPage::Run() {
   nsresult rv;
   if (shouldUpdateIcon) {
     rv = SetIconInfo(DB, mIcon);
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_FAILED(rv)) {
+      (void)transaction.Commit();
+      return rv;
+    }
 
     mIcon.status = (mIcon.status & ~(ICON_STATUS_CACHED)) | ICON_STATUS_SAVED;
   }
@@ -1031,6 +1037,7 @@ AsyncReplaceFaviconData::Run() {
   nsresult rv = SetIconInfo(DB, mIcon, true);
   if (rv == NS_ERROR_NOT_AVAILABLE) {
     
+    (void)transaction.Commit();
     return NS_OK;
   }
   NS_ENSURE_SUCCESS(rv, rv);

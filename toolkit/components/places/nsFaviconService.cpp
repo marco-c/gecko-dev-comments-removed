@@ -431,6 +431,9 @@ nsFaviconService::ReplaceFaviconData(nsIURI* aFaviconURI, const uint8_t* aData,
 
   
   
+  
+  
+  
 
   IconPayload payload;
   payload.mimeType = aMimeType;
