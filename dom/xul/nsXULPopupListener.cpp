@@ -34,7 +34,6 @@
 
 
 #include "nsPresContext.h"
-#include "nsIPresShell.h"
 #include "nsFocusManager.h"
 #include "nsPIDOMWindow.h"
 #include "nsViewManager.h"
