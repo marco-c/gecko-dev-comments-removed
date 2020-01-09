@@ -353,13 +353,28 @@ class PresShell final : public nsStubDocumentObserver,
   
 
 
-  bool GetIsViewportOverridden() { return (mMobileViewportManager != nullptr); }
+
+  bool GetIsViewportOverridden() const {
+    return (mMobileViewportManager != nullptr);
+  }
 
   
 
 
 
   void UpdateViewportOverridden(bool aAfterInitialization);
+
+  
+
+
+
+
+
+
+
+
+
+  bool UsesMobileViewportSizing() const;
 
   
 
