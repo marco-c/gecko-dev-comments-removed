@@ -674,7 +674,7 @@ static bool ospath_join(JSContext* cx, unsigned argc, Value* vp) {
   
   
 
-  StringBuffer buffer(cx);
+  JSStringBuilder buffer(cx);
 
   for (unsigned i = 0; i < args.length(); i++) {
     if (!args[i].isString()) {

@@ -1821,7 +1821,7 @@ JSString* Instance::createDisplayURL(JSContext* cx) {
   
   
 
-  StringBuffer result(cx);
+  JSStringBuilder result(cx);
   if (!result.append("wasm:")) {
     return nullptr;
   }

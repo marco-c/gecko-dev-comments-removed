@@ -28,6 +28,7 @@ namespace js {
 
 
 class StringBuffer {
+ protected:
   template <typename CharT>
   using BufferType = Vector<CharT, 64 / sizeof(CharT)>;
 
@@ -265,12 +266,6 @@ class StringBuffer {
   const Latin1Char* rawLatin1End() const { return end<Latin1Char>(); }
 
   
-
-
-
-  JSFlatString* finishString();
-
-  
   JSAtom* finishAtom();
 
   
@@ -279,6 +274,18 @@ class StringBuffer {
 
 
   char16_t* stealChars();
+};
+
+class JSStringBuilder : public StringBuffer {
+ public:
+  explicit JSStringBuilder(JSContext* cx)
+      : StringBuffer(cx) {}
+
+  
+
+
+
+  JSFlatString* finishString();
 };
 
 inline bool StringBuffer::append(const char16_t* begin, const char16_t* end) {

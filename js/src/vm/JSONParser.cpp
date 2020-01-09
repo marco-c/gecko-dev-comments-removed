@@ -144,7 +144,7 @@ JSONParserBase::Token JSONParser<CharT>::readString() {
 
 
 
-  StringBuffer buffer(cx);
+  JSStringBuilder buffer(cx);
   do {
     if (start < current && !buffer.append(start.get(), current.get())) {
       return token(OOM);
