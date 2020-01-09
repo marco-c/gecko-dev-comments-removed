@@ -348,13 +348,6 @@ struct Token {
     
     TemplateTail,
   };
-  enum ModifierException {
-    NoException,
-
-    
-    
-    SlashIsRegExpOK,
-  };
   friend class TokenStreamShared;
 
  public:
@@ -393,12 +386,6 @@ struct Token {
 #ifdef DEBUG
   
   Modifier modifier;
-
-  
-
-
-
-  ModifierException modifierException;
 #endif
 
   
@@ -497,10 +484,6 @@ class TokenStreamShared {
   static constexpr Modifier SlashIsInvalid = Token::SlashIsInvalid;
   static constexpr Modifier TemplateTail = Token::TemplateTail;
 
-  using ModifierException = Token::ModifierException;
-  static constexpr ModifierException NoException = Token::NoException;
-  static constexpr ModifierException SlashIsRegExpOK = Token::SlashIsRegExpOK;
-
   static void verifyConsistentModifier(Modifier modifier,
                                        Token lookaheadToken) {
 #ifdef DEBUG
@@ -513,13 +496,6 @@ class TokenStreamShared {
         lookaheadToken.modifier != TemplateTail) {
       
       return;
-    }
-
-    if (lookaheadToken.modifierException == SlashIsRegExpOK) {
-      
-      if (modifier == SlashIsRegExp && lookaheadToken.modifier == SlashIsDiv) {
-        return;
-      }
     }
 
     MOZ_ASSERT_UNREACHABLE(
@@ -662,32 +638,36 @@ class TokenStreamAnyChars : public TokenStreamShared {
   InvalidEscapeType invalidTemplateEscapeType = InvalidEscapeType::None;
 
  public:
-  void addModifierException(ModifierException modifierException) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void allowGettingNextTokenWithSlashIsRegExp() {
 #ifdef DEBUG
+    
+    
+    MOZ_ASSERT(hasLookahead());
     const Token& next = nextToken();
-
-    
-    
-    
-    
-    
-    if (next.modifierException == modifierException) {
-      return;
-    }
-
-    MOZ_ASSERT(next.modifierException == NoException);
-    switch (modifierException) {
-      case SlashIsRegExpOK:
-        MOZ_ASSERT(next.modifier == SlashIsDiv);
-        MOZ_ASSERT(
-            next.type != TokenKind::Div && next.type != TokenKind::RegExp,
-            "next token requires contextual specifier to be parsed "
-            "unambiguously");
-        break;
-      default:
-        MOZ_CRASH("unexpected modifier exception");
-    }
-    tokens[nextCursor()].modifierException = modifierException;
+    MOZ_ASSERT(next.modifier == SlashIsDiv);
+    MOZ_ASSERT(next.type != TokenKind::Div);
+    tokens[nextCursor()].modifier = SlashIsRegExp;
 #endif
   }
 
@@ -1888,7 +1868,6 @@ class GeneralTokenStreamChars : public SpecializedTokenStreamCharsBase<Unit> {
       modifier = TokenStreamShared::SlashIsDiv;
     }
     token->modifier = modifier;
-    token->modifierException = TokenStreamShared::NoException;
 #endif
 
     return token;
@@ -2761,7 +2740,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
       
       
       
-      anyCharsAccess().addModifierException(SlashIsRegExpOK);
+      anyCharsAccess().allowGettingNextTokenWithSlashIsRegExp();
     }
     return true;
   }
