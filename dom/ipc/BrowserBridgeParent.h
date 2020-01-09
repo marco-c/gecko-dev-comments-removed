@@ -35,6 +35,9 @@ class BrowserBridgeParent : public PBrowserBridgeParent {
     return static_cast<TabParent*>(PBrowserBridgeParent::Manager());
   }
 
+  
+  void Destroy();
+
  protected:
   friend class PBrowserBridgeParent;
 
