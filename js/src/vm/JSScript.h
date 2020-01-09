@@ -508,8 +508,8 @@ class ScriptSource {
   
 
   
-  struct Missing {};
 
+  
   template <typename Unit>
   class Uncompressed {
     typename SourceTypeTraits<Unit>::SharedImmutableString string_;
@@ -524,6 +524,7 @@ class ScriptSource {
     size_t length() const { return string_.length(); }
   };
 
+  
   template <typename Unit>
   struct Compressed {
     
@@ -535,6 +536,24 @@ class ScriptSource {
         : raw(std::move(raw)), uncompressedLength(uncompressedLength) {}
   };
 
+  
+  
+  
+  template <typename Unit>
+  struct Retrievable {
+    
+    
+    
+    
+    
+  };
+
+  
+  
+  
+  struct Missing {};
+
+  
   struct BinAST {
     SharedImmutableString string;
     explicit BinAST(SharedImmutableString&& str) : string(std::move(str)) {}
@@ -543,7 +562,8 @@ class ScriptSource {
   using SourceType =
       mozilla::Variant<Compressed<mozilla::Utf8Unit>,
                        Uncompressed<mozilla::Utf8Unit>, Compressed<char16_t>,
-                       Uncompressed<char16_t>, Missing, BinAST>;
+                       Uncompressed<char16_t>, Retrievable<mozilla::Utf8Unit>,
+                       Retrievable<char16_t>, Missing, BinAST>;
   SourceType data;
 
   
@@ -803,6 +823,11 @@ class ScriptSource {
       return false;
     }
 
+    template <typename Unit>
+    bool operator()(const Retrievable<Unit>&) {
+      return false;
+    }
+
     bool operator()(const BinAST&) { return false; }
 
     bool operator()(const Missing&) { return false; }
@@ -828,6 +853,11 @@ class ScriptSource {
 
     template <typename Unit>
     bool operator()(const Uncompressed<Unit>&) {
+      return false;
+    }
+
+    template <typename Unit>
+    bool operator()(const Retrievable<Unit>&) {
       return false;
     }
 
@@ -887,6 +917,12 @@ class ScriptSource {
       return u.uncompressedLength;
     }
 
+    template <typename Unit>
+    size_t operator()(const Retrievable<Unit>&) {
+      MOZ_CRASH("ScriptSource::length on a missing-but-retrievable source");
+      return 0;
+    }
+
     size_t operator()(const BinAST& b) { return b.string.length(); }
 
     size_t operator()(const Missing& m) {
@@ -914,6 +950,7 @@ class ScriptSource {
                               JS::ScriptSourceInfo* info) const;
 
  private:
+  
   
   
   
@@ -995,22 +1032,25 @@ class ScriptSource {
     template <typename Unit>
     void operator()(const Compressed<Unit>&) {
       MOZ_CRASH(
-          "can't set compressed source when source is already "
-          "compressed -- ScriptSource::tryCompressOffThread "
-          "shouldn't have queued up this task?");
+          "can't set compressed source when source is already compressed -- "
+          "ScriptSource::tryCompressOffThread shouldn't have queued up this "
+          "task?");
+    }
+
+    template <typename Unit>
+    void operator()(const Retrievable<Unit>&) {
+      MOZ_CRASH("shouldn't compressing unloaded-but-retrievable source");
     }
 
     void operator()(const BinAST&) {
-      MOZ_CRASH(
-          "doesn't make sense to set compressed source for BinAST "
-          "data");
+      MOZ_CRASH("doesn't make sense to set compressed source for BinAST data");
     }
 
     void operator()(const Missing&) {
       MOZ_CRASH(
-          "doesn't make sense to set compressed source for "
-          "missing source -- ScriptSource::tryCompressOffThread "
-          "shouldn't have queued up this task?");
+          "doesn't make sense to set compressed source for missing source -- "
+          "ScriptSource::tryCompressOffThread shouldn't have queued up this "
+          "task?");
     }
   };
 
