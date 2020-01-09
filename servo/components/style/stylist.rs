@@ -1199,6 +1199,10 @@ impl Stylist {
         
         
         
+        
+        
+        
+        
         if let Some(shadow) = element.shadow_root() {
             if let Some(data) = shadow.style_data() {
                 try_find_in!(data);

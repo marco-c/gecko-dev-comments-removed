@@ -13,7 +13,7 @@ use crate::selector_parser::PseudoElement;
 use crate::shared_lock::Locked;
 use crate::stylesheets::Origin;
 use crate::stylist::{AuthorStylesEnabled, Rule, RuleInclusion, Stylist};
-use selectors::matching::{ElementSelectorFlags, MatchingContext};
+use selectors::matching::{ElementSelectorFlags, MatchingContext, MatchingMode};
 use servo_arc::ArcBorrow;
 use smallvec::SmallVec;
 
@@ -97,8 +97,16 @@ where
         context: &'a mut MatchingContext<'b, E::Impl>,
         flags_setter: &'a mut F,
     ) -> Self {
-        let rule_hash_target = element.rule_hash_target();
-        let matches_user_and_author_rules = element.matches_user_and_author_rules();
+        
+        
+        
+        let rule_hash_target = match context.matching_mode() {
+            MatchingMode::ForStatelessPseudoElement => element,
+            MatchingMode::Normal => element.rule_hash_target(),
+        };
+
+        let matches_user_and_author_rules =
+            rule_hash_target.matches_user_and_author_rules();
 
         
         
@@ -120,8 +128,8 @@ where
             context,
             flags_setter,
             rules,
-            matches_user_and_author_rules,
             shadow_cascade_order: 0,
+            matches_user_and_author_rules,
             matches_document_author_rules: matches_user_and_author_rules,
         }
     }
