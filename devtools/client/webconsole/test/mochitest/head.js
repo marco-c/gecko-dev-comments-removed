@@ -964,6 +964,7 @@ function getFilterInput(hud) {
 
 
 
+
 async function setFilterState(hud, settings) {
   const {outputNode} = hud.ui;
   const filterBar = outputNode.querySelector(".webconsole-filterbar-secondary");
