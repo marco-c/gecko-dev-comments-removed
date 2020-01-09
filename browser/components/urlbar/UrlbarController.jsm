@@ -162,7 +162,7 @@ class UrlbarController {
       }
       
       
-      this.speculativeConnect(queryContext, 0, "resultsadded");
+      this.speculativeConnect(queryContext.results[0], queryContext, "resultsadded");
     }
 
     this._notify("onQueryResults", queryContext);
@@ -364,12 +364,11 @@ class UrlbarController {
 
 
 
-  speculativeConnect(context, resultIndex, reason) {
+  speculativeConnect(result, context, reason) {
     
     if (!this.input || context.isPrivate || context.results.length == 0) {
       return;
     }
-    let result = context.results[resultIndex];
     let {url} = UrlbarUtils.getUrlFromResult(result);
     if (!url) {
       return;
@@ -378,7 +377,7 @@ class UrlbarController {
     switch (reason) {
       case "resultsadded": {
         
-        if ((resultIndex == 0 && context.preselected) || result.autofill) {
+        if ((result == context.results[0] && context.preselected) || result.autofill) {
           if (result.type == UrlbarUtils.RESULT_TYPE.SEARCH) {
             
             if (UrlbarPrefs.get("suggest.searches") &&
@@ -429,16 +428,14 @@ class UrlbarController {
 
 
 
-  recordSelectedResult(event, resultIndex) {
-    let result;
+  recordSelectedResult(event, result) {
+    let resultIndex = result ? result.uiIndex : -1;
     let selectedResult = -1;
-
     if (resultIndex >= 0) {
-      result = this.view.getResult(resultIndex);
       
       
       
-      selectedResult = resultIndex > 0 || !result.heuristic ? resultIndex : -1;
+      selectedResult = (resultIndex > 0 || !result.heuristic) ? resultIndex : -1;
     }
     BrowserUsageTelemetry.recordUrlbarSelectedResultMethod(
       event, selectedResult, this._userSelectionBehavior);

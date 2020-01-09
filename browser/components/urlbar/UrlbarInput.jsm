@@ -356,9 +356,9 @@ class UrlbarInput {
 
     
     
-    let index = this.view.selectedIndex;
-    if (!selectedOneOff && index != -1) {
-      this.pickResult(event, index);
+    let result = this.view.selectedResult;
+    if (!selectedOneOff && result) {
+      this.pickResult(result, event);
       return;
     }
 
@@ -366,7 +366,7 @@ class UrlbarInput {
     if (selectedOneOff) {
       
       
-      let result = this._resultForCurrentValue;
+      result = this._resultForCurrentValue;
       let searchString =
         (result && (result.payload.suggestion || result.payload.query)) ||
         this._lastSearchString;
@@ -384,12 +384,10 @@ class UrlbarInput {
       return;
     }
 
+    this.controller.recordSelectedResult(event, result || this.view.selectedResult);
+
     let where = openWhere || this._whereToOpen(event);
-
     openParams.allowInheritPrincipal = false;
-
-    this.controller.recordSelectedResult(event, index);
-
     url = this._maybeCanonizeURL(event, url) || url.trim();
 
     try {
@@ -426,8 +424,7 @@ class UrlbarInput {
 
 
 
-  pickResult(event, resultIndex) {
-    let result = this.view.getResult(resultIndex);
+  pickResult(result, event) {
     let isCanonized = this.setValueFromResult(result, event);
     let where = this._whereToOpen(event);
     let openParams = {
@@ -437,7 +434,8 @@ class UrlbarInput {
     if (!result.payload.isKeywordOffer) {
       this.view.close();
     }
-    this.controller.recordSelectedResult(event, resultIndex);
+
+    this.controller.recordSelectedResult(event, result);
 
     if (isCanonized) {
       this._loadURL(this.value, where, openParams);
