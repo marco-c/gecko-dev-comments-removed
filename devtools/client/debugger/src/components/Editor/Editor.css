@@ -89,7 +89,7 @@ html[dir="rtl"] .editor-mount {
 }
 
 
-.cm-s-mozilla
+.editor-wrapper:not(.skip-pausing)
   .new-breakpoint
   .CodeMirror-gutter-wrapper
   .CodeMirror-linenumber {
