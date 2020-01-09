@@ -7,35 +7,14 @@
 
 #include <stddef.h>  
 
-#if defined(MOZ_MEMORY)
+#if defined(MALLOC_H)
+#  include MALLOC_H  
+#endif               
 
-
-#  define MOZ_MEMORY_IMPL
-#  include "mozmemory_wrap.h"
-
-#  if defined(XP_DARWIN)
-#    include <malloc/malloc.h>  
-#  endif
+#if !defined(MOZ_MEMORY)
 
 
 
-
-
-#  define MALLOC_DECL(name, return_type, ...) \
-    MOZ_MEMORY_API return_type name##_impl(__VA_ARGS__);
-#  define MALLOC_FUNCS MALLOC_FUNCS_MALLOC
-#  include "malloc_decls.h"
-
-MOZ_MEMORY_API char* strdup_impl(const char*);
-MOZ_MEMORY_API char* strndup_impl(const char*, size_t);
-
-#else
-
-
-
-#  if defined(MALLOC_H)
-#    include MALLOC_H  
-#  endif               
 #  include <stdlib.h>  
 #  if defined(XP_UNIX)
 #    include <unistd.h>
@@ -63,6 +42,11 @@ MOZ_MEMORY_API char* strndup_impl(const char*, size_t);
 #include "mozilla/Likely.h"
 #include "mozilla/mozalloc.h"
 #include "mozilla/mozalloc_oom.h"  
+
+#if defined(MOZ_MEMORY)
+MOZ_MEMORY_API char* strdup_impl(const char*);
+MOZ_MEMORY_API char* strndup_impl(const char*, size_t);
+#endif
 
 void* moz_xmalloc(size_t size) {
   void* ptr = malloc_impl(size);

@@ -5,31 +5,15 @@
 
 
 
-#include "mozilla/Types.h"
+#include "mozilla/mozalloc.h"
 #include <windows.h>
 
-#if defined(MOZ_MEMORY)
-
-
-#  define MOZ_MEMORY_IMPL
-#  include "mozmemory_wrap.h"
-
-
-
-
-
-#  define MALLOC_DECL(name, return_type, ...) \
-    MOZ_MEMORY_API return_type name##_impl(__VA_ARGS__);
-#  define MALLOC_FUNCS MALLOC_FUNCS_MALLOC
-#  include "malloc_decls.h"
-#else
-
+#if !defined(MOZ_MEMORY)
 #  include <malloc.h>
 #  define malloc_impl malloc
 #  define calloc_impl calloc
 #  define realloc_impl realloc
 #  define free_impl free
-
 #endif
 
 
