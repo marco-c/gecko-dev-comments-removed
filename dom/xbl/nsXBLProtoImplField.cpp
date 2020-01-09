@@ -141,7 +141,10 @@ static bool InstallXBLField(JSContext* cx, JS::Handle<JSObject*> callee,
   
   
   
-  nsCOMPtr<nsISupports> native = xpc::UnwrapReflectorToISupports(thisObj);
+  
+  
+  
+  nsCOMPtr<nsISupports> native = xpc::ReflectorToISupportsStatic(thisObj);
   if (!native) {
     
     

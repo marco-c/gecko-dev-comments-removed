@@ -147,7 +147,8 @@ static JSObject* GetIDPrototype(JSContext* aCx, const js::Class* aClass) {
 
 static JSObject* GetIDObject(HandleValue aVal, const Class* aClass) {
   if (aVal.isObject()) {
-    JSObject* obj = js::CheckedUnwrap(&aVal.toObject());
+    
+    JSObject* obj = js::CheckedUnwrapStatic(&aVal.toObject());
     if (obj && js::GetObjectClass(obj) == aClass) {
       return obj;
     }
@@ -168,8 +169,13 @@ Maybe<nsID> JSValue2ID(JSContext* aCx, HandleValue aVal) {
     return Nothing();
   }
 
+  
+  RootedObject obj(aCx, js::CheckedUnwrapStatic(&aVal.toObject()));
+  if (!obj) {
+    return Nothing();
+  }
+
   mozilla::Maybe<nsID> id;
-  RootedObject obj(aCx, js::CheckedUnwrap(&aVal.toObject()));
   if (js::GetObjectClass(obj) == &sID_Class) {
     
     uint32_t rawid[] = {js::GetReservedSlot(obj, kID_Slot0).toPrivateUint32(),
@@ -368,7 +374,10 @@ static nsresult FindObjectForHasInstance(JSContext* cx, HandleObject objArg,
   RootedObject obj(cx, objArg), proto(cx);
   while (true) {
     
-    JSObject* o = js::IsWrapper(obj) ? js::CheckedUnwrap(obj, false) : obj;
+    
+    
+    JSObject* o =
+        js::IsWrapper(obj) ? js::CheckedUnwrapDynamic(obj, cx, false) : obj;
     if (o && (IS_WN_REFLECTOR(o) || IsDOMObject(o) || IsCPOW(o))) {
       target.set(o);
       return NS_OK;
@@ -405,7 +414,8 @@ nsresult HasInstance(JSContext* cx, HandleObject objArg, const nsID* iid,
     return mozilla::jsipc::InstanceOf(obj, iid, bp);
   }
 
-  nsCOMPtr<nsISupports> identity = UnwrapReflectorToISupports(obj);
+  
+  nsCOMPtr<nsISupports> identity = ReflectorToISupportsDynamic(obj, cx);
   if (!identity) {
     return NS_OK;
   }
