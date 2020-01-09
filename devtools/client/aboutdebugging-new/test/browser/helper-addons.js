@@ -54,6 +54,7 @@ function installRegularExtension(pathOrFile) {
 
 
 async function installTemporaryExtension(pathOrFile, name, document) {
+  info("Install temporary extension named " + name);
   
   prepareMockFilePicker(pathOrFile);
 
@@ -76,23 +77,59 @@ async function installTemporaryExtension(pathOrFile, name, document) {
 }
 
 
+function createTemporaryXPI(xpiData) {
+  const { ExtensionTestCommon } =
+    ChromeUtils.import("resource://testing-common/ExtensionTestCommon.jsm", {});
+
+  const { background, id, name, extraProperties } = xpiData;
+  info("Generate XPI file for " + id);
+
+  const manifest = Object.assign({}, {
+    applications: { gecko: { id }},
+    manifest_version: 2,
+    name,
+    version: "1.0",
+  }, extraProperties);
+
+  const xpiFile = ExtensionTestCommon.generateXPI({ background, manifest });
+  registerCleanupFunction(() => xpiFile.exists() && xpiFile.remove(false));
+  return xpiFile;
+}
 
 
 
 
-async function installTemporaryExtensionFromManifest(manifest, document) {
-  const addonId = manifest.applications.gecko.id;
-  const temporaryExtension = new TemporaryExtension(addonId);
-  temporaryExtension.writeManifest(manifest);
-  registerCleanupFunction(() => temporaryExtension.remove(false));
 
-  info("Install a temporary extension");
-  await AddonManager.installTemporaryAddon(temporaryExtension.sourceDir);
 
-  info("Wait until the corresponding debug target item appears");
-  await waitUntil(() => findDebugTargetByText(manifest.name, document));
 
-  return temporaryExtension;
+function updateTemporaryXPI(xpiData, existingXPI) {
+  info("Delete and regenerate XPI for " + xpiData.id);
+
+  
+  const existingName = existingXPI.leafName;
+  info("Delete existing XPI named: " + existingName);
+  existingXPI.exists() && existingXPI.remove(false);
+
+  const xpiFile = createTemporaryXPI(xpiData);
+  
+  if (xpiFile.leafName !== existingName) {
+    throw new Error("New XPI created with unexpected name: " + xpiFile.leafName);
+  }
+  return xpiFile;
+}
+
+
+
+
+
+
+async function installTemporaryExtensionFromXPI(xpiData, document) {
+  const xpiFile = createTemporaryXPI(xpiData);
+  await installTemporaryExtension(xpiFile, xpiData.name, document);
+
+  info("Wait until the addon debug target appears");
+  await waitUntil(() => findDebugTargetByText(xpiData.name, document));
+  return xpiFile;
 }
 
 
@@ -124,48 +161,5 @@ function prepareMockFilePicker(pathOrFile) {
   const MockFilePicker = SpecialPowers.MockFilePicker;
   MockFilePicker.init(window);
   MockFilePicker.setFiles([file]);
-}
-
-
-
-
-
-
-class TemporaryExtension {
-  constructor(addonId) {
-    this.addonId = addonId;
-    this.tmpDir = FileUtils.getDir("TmpD", ["browser_addons_reload"]);
-    if (!this.tmpDir.exists()) {
-      this.tmpDir.create(Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
-    }
-    this.sourceDir = this.tmpDir.clone();
-    this.sourceDir.append(this.addonId);
-    if (!this.sourceDir.exists()) {
-      this.sourceDir.create(Ci.nsIFile.DIRECTORY_TYPE,
-                           FileUtils.PERMS_DIRECTORY);
-    }
-  }
-
-  writeManifest(manifestData) {
-    const manifest = this.sourceDir.clone();
-    manifest.append("manifest.json");
-    if (manifest.exists()) {
-      manifest.remove(true);
-    }
-    const fos = Cc["@mozilla.org/network/file-output-stream;1"]
-                              .createInstance(Ci.nsIFileOutputStream);
-    fos.init(manifest,
-             FileUtils.MODE_WRONLY | FileUtils.MODE_CREATE |
-             FileUtils.MODE_TRUNCATE,
-             FileUtils.PERMS_FILE, 0);
-
-    const manifestString = JSON.stringify(manifestData);
-    fos.write(manifestString, manifestString.length);
-    fos.close();
-  }
-
-  remove() {
-    return this.tmpDir.remove(true);
-  }
 }
 

@@ -13,25 +13,14 @@ add_task(async function() {
 
   const { document, tab } = await openAboutDebugging();
 
-  const manifest = {
-    "manifest_version": 2,
-    "name": EXTENSION_NAME,
-    "version": "1.0",
-    "applications": {
-      "gecko": {
-        "id": EXTENSION_ID,
-      },
+  await installTemporaryExtensionFromXPI({
+    id: EXTENSION_ID,
+    name: EXTENSION_NAME,
+    extraProperties: {
+      
+      "wrongProperty": {},
     },
-    
-    "wrongProperty": {},
-  };
-
-  const tempExt = new TemporaryExtension(EXTENSION_ID);
-  tempExt.writeManifest(manifest);
-  registerCleanupFunction(() => tempExt.remove());
-
-  info("Install a temporary extension");
-  await AddonManager.installTemporaryAddon(tempExt.sourceDir);
+  }, document);
 
   info("Wait until a debug target item appears");
   await waitUntil(() => findDebugTargetByText(EXTENSION_NAME, document));
