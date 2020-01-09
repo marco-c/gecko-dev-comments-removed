@@ -7443,9 +7443,9 @@ GeneralParser<ParseHandler, Unit>::fieldInitializerOpt(
   }
 
   
-  AssignmentNodeType initializerAssignment = handler_.newAssignment(
-      ParseNodeKind::AssignExpr, propAssignFieldAccess, initializerExpr);
-  if (!initializerAssignment) {
+  AssignmentNodeType initializerPropInit = handler_.newAssignment(
+      ParseNodeKind::InitExpr, propAssignFieldAccess, initializerExpr);
+  if (!initializerPropInit) {
     return null();
   }
 
@@ -7455,7 +7455,7 @@ GeneralParser<ParseHandler, Unit>::fieldInitializerOpt(
   }
 
   UnaryNodeType exprStatement =
-      handler_.newExprStatement(initializerAssignment, wholeInitializerPos.end);
+      handler_.newExprStatement(initializerPropInit, wholeInitializerPos.end);
   if (!exprStatement) {
     return null();
   }
