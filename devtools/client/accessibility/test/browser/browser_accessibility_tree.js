@@ -33,7 +33,7 @@ const tests = [{
   },
 }, {
   desc: "Expand first tree node.",
-  setup: async ({ doc }) => toggleRow(doc, 0),
+  action: async ({ doc }) => toggleRow(doc, 0),
   expected: {
     tree: [{
       role: "document",
@@ -48,7 +48,7 @@ const tests = [{
   },
 }, {
   desc: "Collapse first tree node.",
-  setup: async ({ doc }) => toggleRow(doc, 0),
+  action: async ({ doc }) => toggleRow(doc, 0),
   expected: {
     tree: [{
       role: "document",

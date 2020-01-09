@@ -537,10 +537,20 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     }
 
     const { DOMNode: rawNode } = accessible.rawAccessible;
+    const win = rawNode.ownerGlobal;
+    this.loadTransitionDisablingStyleSheet(win);
     const audit = await accessible.audit();
     if (this._highlightingAccessible !== accessible) {
+      if (!this._highlightingAccessible) {
+        
+        
+        this.removeTransitionDisablingStyleSheet(win);
+      }
+
       return false;
     }
+
+    this.removeTransitionDisablingStyleSheet(win);
 
     const { name, role } = accessible;
     const shown = this.highlighter.show({ rawNode },

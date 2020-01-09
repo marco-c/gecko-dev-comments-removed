@@ -33,7 +33,7 @@ const TEST_URI_2 = `<html>
 
 const tests = [{
   desc: "Test the initial accessibility tree state after first row is expanded.",
-  setup: async ({ doc }) => toggleRow(doc, 0),
+  action: async ({ doc }) => toggleRow(doc, 0),
   expected: {
     tree: [{
       role: "document",
@@ -52,7 +52,7 @@ const tests = [{
   },
 }, {
   desc: "Reload the page.",
-  setup: async ({ panel }) => reload(panel.target),
+  action: async ({ panel }) => reload(panel.target),
   expected: {
     tree: [{
       role: "document",
@@ -65,7 +65,7 @@ const tests = [{
   },
 }, {
   desc: "Navigate to a new page.",
-  setup: async ({ panel }) => navigate(panel.target, buildURL(TEST_URI_2)),
+  action: async ({ panel }) => navigate(panel.target, buildURL(TEST_URI_2)),
   expected: {
     tree: [{
       role: "document",

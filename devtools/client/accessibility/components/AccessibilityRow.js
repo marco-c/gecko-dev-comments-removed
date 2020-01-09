@@ -70,7 +70,6 @@ class AccessibilityRow extends Component {
   componentDidMount() {
     const { selected, object } = this.props.member;
     if (selected) {
-      this.unhighlight();
       this.updateAndScrollIntoViewIfNeeded();
       this.highlight(object, { duration: VALUE_HIGHLIGHT_DURATION });
     }
@@ -88,7 +87,6 @@ class AccessibilityRow extends Component {
     const { selected, object } = this.props.member;
     
     if (!prevProps.member.selected && selected) {
-      this.unhighlight();
       this.updateAndScrollIntoViewIfNeeded();
       this.highlight(object, { duration: VALUE_HIGHLIGHT_DURATION });
     }
