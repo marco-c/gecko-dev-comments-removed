@@ -9,7 +9,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/CmdLineAndEnvUtils.h"
 #include "mozilla/LauncherResult.h"
-#include "mozilla/mscom/ApartmentRegion.h"
+#include "mozilla/mscom/ProcessRuntime.h"
 #include "mozilla/RefPtr.h"
 #include "nsWindowsHelpers.h"
 
@@ -103,9 +103,10 @@ namespace mozilla {
 
 LauncherVoidResult LaunchUnelevated(int aArgc, wchar_t* aArgv[]) {
   
-  mscom::STARegion sta;
-  if (!sta.IsValid()) {
-    return LAUNCHER_ERROR_FROM_HRESULT(sta.GetHResult());
+  
+  mozilla::mscom::ProcessRuntime mscom(GeckoProcessType_Default);
+  if (!mscom) {
+    return LAUNCHER_ERROR_FROM_HRESULT(mscom.GetHResult());
   }
 
   
