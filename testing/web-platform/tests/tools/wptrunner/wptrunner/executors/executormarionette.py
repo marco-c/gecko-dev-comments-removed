@@ -595,6 +595,7 @@ class ExecuteAsyncScriptRun(object):
             if self.protocol.is_alive:
                 self.result = False, ("INTERNAL-ERROR", None)
             else:
+                self.logger.info("Browser not responding, setting status to CRASH")
                 self.result = False, ("CRASH", None)
         return self.result
 
@@ -608,8 +609,10 @@ class ExecuteAsyncScriptRun(object):
             
             
             
+            self.logger.info("IOError on command, setting status to CRASH")
             self.result = False, ("CRASH", None)
         except errors.NoSuchWindowException:
+            self.logger.info("NoSuchWindowException on command, setting status to CRASH")
             self.result = False, ("CRASH", None)
         except Exception as e:
             message = getattr(e, "message", "")
