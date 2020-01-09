@@ -304,6 +304,7 @@ class Zone : public JS::shadow::Zone,
   unsigned lastSweepGroupIndex() { return gcSweepGroupIndex; }
 #endif
 
+  void sweepAfterMinorGC();
   void sweepBreakpoints(js::FreeOp* fop);
   void sweepUniqueIds();
   void sweepWeakMaps();
@@ -410,10 +411,13 @@ class Zone : public JS::shadow::Zone,
 
 
 
+
   js::ZoneOrGCTaskData<js::gc::WeakKeyTable> gcWeakKeys_;
+  js::ZoneOrGCTaskData<js::gc::WeakKeyTable> gcNurseryWeakKeys_;
 
  public:
   js::gc::WeakKeyTable& gcWeakKeys() { return gcWeakKeys_.ref(); }
+  js::gc::WeakKeyTable& gcNurseryWeakKeys() { return gcNurseryWeakKeys_.ref(); }
 
   
   
