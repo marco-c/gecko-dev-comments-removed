@@ -15,8 +15,6 @@ ChromeUtils.defineModuleGetter(this, "DeferredTask",
                                "resource://gre/modules/DeferredTask.jsm");
 ChromeUtils.defineModuleGetter(this, "LoginHelper",
                                "resource://gre/modules/LoginHelper.jsm");
-ChromeUtils.defineModuleGetter(this, "PasswordGenerator",
-                               "resource://gre/modules/PasswordGenerator.jsm");
 ChromeUtils.defineModuleGetter(this, "PrivateBrowsingUtils",
                                "resource://gre/modules/PrivateBrowsingUtils.jsm");
 
@@ -28,15 +26,6 @@ XPCOMUtils.defineLazyGetter(this, "log", () => {
 var EXPORTED_SYMBOLS = [ "LoginManagerParent" ];
 
 var LoginManagerParent = {
-  
-
-
-
-
-
-
-  _generatedPasswordsByPrincipalOrigin: new Map(),
-
   
 
 
@@ -255,16 +244,9 @@ var LoginManagerParent = {
     });
   },
 
-  doAutocompleteSearch({
-    autocompleteInfo,
-    browsingContextId,
-    formOrigin,
-    actionOrigin,
-    searchString,
-    previousResult,
-    requestId,
-    isSecure,
-    isPasswordField,
+  doAutocompleteSearch({ formOrigin, actionOrigin,
+                         searchString, previousResult,
+                         rect, requestId, isSecure, isPasswordField,
   }, target) {
     
     
@@ -313,47 +295,13 @@ var LoginManagerParent = {
       return match && match.toLowerCase().startsWith(searchStringLower);
     });
 
-    let generatedPassword = null;
-    if (isPasswordField && autocompleteInfo.fieldName == "new-password") {
-      generatedPassword = this.getGeneratedPassword(browsingContextId);
-    }
-
     
     
     var jsLogins = LoginHelper.loginsToVanillaObjects(matchingLogins);
     target.messageManager.sendAsyncMessage("PasswordManager:loginsAutoCompleted", {
       requestId,
-      generatedPassword,
       logins: jsLogins,
     });
-  },
-
-  
-
-
-  get _browsingContextGlobal() {
-    return BrowsingContext;
-  },
-
-  getGeneratedPassword(browsingContextId) {
-    if (!LoginHelper.enabled || !LoginHelper.generationAvailable || !LoginHelper.generationEnabled) {
-      return null;
-    }
-
-    let browsingContext = BrowsingContext.get(browsingContextId);
-    if (!browsingContext) {
-      return null;
-    }
-    let framePrincipalOrigin = browsingContext.currentWindowGlobal.documentPrincipal.origin;
-    
-    
-    let generatedPW = this._generatedPasswordsByPrincipalOrigin.get(framePrincipalOrigin);
-    if (generatedPW) {
-      return generatedPW;
-    }
-    generatedPW = PasswordGenerator.generatePassword();
-    this._generatedPasswordsByPrincipalOrigin.set(framePrincipalOrigin, generatedPW);
-    return generatedPW;
   },
 
   onFormSubmit({hostname, formSubmitURL, autoFilledLoginGuid,
