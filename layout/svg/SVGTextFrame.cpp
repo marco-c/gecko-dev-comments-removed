@@ -3520,7 +3520,7 @@ void SVGTextFrame::ReflowSVG() {
     
     
     
-    mRect.Inflate(presContext->AppUnitsPerDevPixel() / mLastContextScale);
+    mRect.Inflate(ceil(presContext->AppUnitsPerDevPixel() / mLastContextScale));
   }
 
   if (mState & NS_FRAME_FIRST_REFLOW) {
