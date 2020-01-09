@@ -30,9 +30,13 @@ async function waitForAdbStart() {
 
 
 
-async function waitForAdbStop() {
-  info("Wait for ADB to stop");
+
+async function stopAdbProcess() {
+  info("Attempt to stop ADB");
   const { adbProcess } = require("devtools/shared/adb/adb-process");
+  await adbProcess.stop();
+
+  info("Wait for ADB to stop");
   const { check } = require("devtools/shared/adb/adb-running-checker");
   return asyncWaitUntil(async () => {
     const isProcessReady = adbProcess.ready;
