@@ -3360,6 +3360,24 @@ class nsContentUtils {
   static bool HighPriorityEventPendingForTopLevelDocumentBeforeContentfulPaint(
       Document* aDocument);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static uint32_t GetNodeDepth(nsINode* aNode);
+
  private:
   static bool InitializeEventTable();
 
