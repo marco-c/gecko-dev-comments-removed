@@ -2375,9 +2375,6 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
   bool privileged =
       isChrome ||
       Preferences::GetBool("media.navigator.permission.disabled", false);
-  bool isSecure = aWindow->IsSecureContext();
-  
-  
   bool isHTTPS = false;
   bool isHandlingUserInput = EventStateManager::IsHandlingUserInput();
   docURI->SchemeIs("https", &isHTTPS);
@@ -2433,9 +2430,7 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
   }
 
   
-  if (principal->GetIsNullPrincipal() ||
-      !(isSecure ||
-        Preferences::GetBool("media.getusermedia.insecure.enabled", false))) {
+  if (principal->GetIsNullPrincipal()) {
     return StreamPromise::CreateAndReject(
         MakeRefPtr<MediaMgrError>(MediaMgrError::Name::NotAllowedError),
         __func__);
@@ -2796,9 +2791,8 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
       ->Then(
           GetCurrentThreadSerialEventTarget(), __func__,
           [self, windowID, c, windowListener, sourceListener, askPermission,
-           prefs, isSecure, isHandlingUserInput, callID, principalInfo,
-           isChrome, devices,
-           resistFingerprinting](const char* badConstraint) mutable {
+           prefs, isHTTPS, isHandlingUserInput, callID, principalInfo, isChrome,
+           devices, resistFingerprinting](const char* badConstraint) mutable {
             LOG("GetUserMedia: starting post enumeration promise2 success "
                 "callback!");
 
@@ -2888,7 +2882,7 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
                                    callID.BeginReading());
             } else {
               auto req = MakeRefPtr<GetUserMediaRequest>(
-                  window, callID, c, isSecure, isHandlingUserInput);
+                  window, callID, c, isHTTPS, isHandlingUserInput);
               if (!Preferences::GetBool("media.navigator.permission.force") &&
                   array->Length() > 1) {
                 

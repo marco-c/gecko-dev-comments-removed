@@ -167,8 +167,7 @@ function createHTML(options) {
 
 
 var noGum = () => pushPrefs(["media.navigator.permission.disabled", false],
-                            ["media.navigator.permission.fake", true],
-                            ["media.devices.insecure.enabled", true])
+                            ["media.navigator.permission.fake", true])
   .then(() => navigator.mediaDevices.enumerateDevices())
   .then(([device]) => device &&
       is(device.label, "", "Test must leave no active gUM streams behind."));
