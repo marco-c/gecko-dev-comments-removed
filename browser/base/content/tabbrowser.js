@@ -1727,6 +1727,9 @@ window._gBrowser = {
       
       aBrowser.changeRemoteness({ remoteType });
       
+      
+      
+      
       aBrowser.construct();
     }
 

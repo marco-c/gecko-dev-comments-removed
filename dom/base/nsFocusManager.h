@@ -169,6 +169,12 @@ class nsFocusManager final : public nsIFocusManager,
                                        bool aNoParentTraversal,
                                        nsIContent** aNextContent);
 
+  
+
+
+
+  void ActivateRemoteFrameIfNeeded(mozilla::dom::Element&);
+
   static uint32_t FocusOptionsToFocusManagerFlags(
       const mozilla::dom::FocusOptions& aOptions);
 
