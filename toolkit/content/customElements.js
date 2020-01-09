@@ -287,7 +287,12 @@ const MozElementMixin = Base => class MozElement extends Base {
     let nodeIterator = doc.createNodeIterator(doc, NodeFilter.SHOW_TEXT);
     let currentNode = nodeIterator.nextNode();
     while (currentNode) {
-      currentNode.remove();
+      
+      
+      if (!(/[^\t\n\r ]/.test(currentNode.textContent))) {
+        currentNode.remove();
+      }
+
       currentNode = nodeIterator.nextNode();
     }
     
