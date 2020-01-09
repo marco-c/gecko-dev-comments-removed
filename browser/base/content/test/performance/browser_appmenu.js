@@ -26,7 +26,7 @@ const EXPECTED_APPMENU_OPEN_REFLOWS = [
       "onxblpopuppositioned@chrome://global/content/bindings/popup.xml",
     ],
 
-    maxCount: 3, 
+    maxCount: 17, 
   },
 
   {
