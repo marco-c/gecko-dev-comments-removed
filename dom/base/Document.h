@@ -3569,7 +3569,10 @@ class Document : public nsINode,
 
 
 
-  void InitialDocumentTranslationCompleted();
+
+
+
+  virtual void InitialDocumentTranslationCompleted();
 
  protected:
   RefPtr<DocumentL10n> mDocumentL10n;

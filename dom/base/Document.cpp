@@ -3163,13 +3163,6 @@ void Document::LocalizationLinkAdded(Element* aLinkElement) {
     
     mL10nResources.AppendElement(href);
 
-    if (!mPendingInitialTranslation) {
-      
-      
-      
-      BlockOnload();
-    }
-
     mPendingInitialTranslation = true;
   }
 }
@@ -3224,13 +3217,6 @@ void Document::TriggerInitialDocumentTranslation() {
 }
 
 void Document::InitialDocumentTranslationCompleted() {
-  if (mPendingInitialTranslation) {
-    
-    
-    
-    
-    UnblockOnload( false);
-  }
   mPendingInitialTranslation = false;
 }
 
