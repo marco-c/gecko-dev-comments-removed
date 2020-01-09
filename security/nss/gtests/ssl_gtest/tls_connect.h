@@ -132,6 +132,9 @@ class TlsConnectTestBase : public ::testing::Test {
   
   void ShiftDtlsTimers();
 
+  void SaveAlgorithmPolicy();
+  void RestoreAlgorithmPolicy();
+
  protected:
   SSLProtocolVariant variant_;
   std::shared_ptr<TlsAgent> client_;
@@ -148,6 +151,13 @@ class TlsConnectTestBase : public ::testing::Test {
   
   
   const uint8_t alpn_dummy_val_[4] = {0x01, 0x62, 0x01, 0x61};
+
+  
+  
+  
+  const std::vector<SECOidTag> algorithms_ = {SEC_OID_APPLY_SSL_POLICY,
+                                              SEC_OID_ANSIX9_DSA_SIGNATURE};
+  std::vector<std::tuple<SECOidTag, uint32_t>> saved_policies_;
 
  private:
   void CheckResumption(SessionResumptionMode expected);

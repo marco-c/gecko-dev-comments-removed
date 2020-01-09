@@ -224,8 +224,26 @@ class StagedRecords {
   void ForwardAll(std::shared_ptr<TlsAgent>& peer,
                   TlsAgent::State expected_state) {
     ForwardAll(peer);
-    peer->Handshake();
-    EXPECT_EQ(expected_state, peer->state());
+    switch (expected_state) {
+      case TlsAgent::STATE_CONNECTED:
+        
+        
+        EXPECT_EQ(expected_state, peer->state());
+        EXPECT_EQ(SECSuccess, SSL_ForceHandshake(peer->ssl_fd()));
+        break;
+
+      case TlsAgent::STATE_CONNECTING:
+        
+        EXPECT_EQ(SECFailure, SSL_ForceHandshake(peer->ssl_fd()));
+        EXPECT_EQ(PR_WOULD_BLOCK_ERROR, PORT_GetError());
+        
+        peer->Handshake();
+        EXPECT_EQ(TlsAgent::STATE_CONNECTING, peer->state());
+        break;
+
+      default:
+        ADD_FAILURE() << "No idea how to handle this state";
+    }
   }
 
   void ForwardPartial(std::shared_ptr<TlsAgent>& peer) {
@@ -260,12 +278,10 @@ class StagedRecords {
       if (g_ssl_gtest_verbose) {
         std::cerr << role_ << ": forward " << data_ << std::endl;
       }
-      SECStatus rv = SSL_RecordLayerData(
-          peer->ssl_fd(), epoch_, content_type_, data_.data(),
-          static_cast<unsigned int>(data_.len()));
-      if (rv != SECSuccess) {
-        EXPECT_EQ(PR_WOULD_BLOCK_ERROR, PORT_GetError());
-      }
+      EXPECT_EQ(SECSuccess,
+                SSL_RecordLayerData(peer->ssl_fd(), epoch_, content_type_,
+                                    data_.data(),
+                                    static_cast<unsigned int>(data_.len())));
     }
 
     

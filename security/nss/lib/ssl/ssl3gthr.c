@@ -407,7 +407,7 @@ ssl3_GatherCompleteHandshake(sslSocket *ss, int flags)
         SSL_TRC(3, ("%d: SSL3[%d] Cannot gather data; fatal alert already sent",
                     SSL_GETPID(), ss->fd));
         PORT_SetError(SSL_ERROR_HANDSHAKE_FAILED);
-        return SECFailure;
+        return -1;
     }
 
     SSL_TRC(30, ("%d: SSL3[%d]: ssl3_GatherCompleteHandshake",
@@ -428,20 +428,24 @@ ssl3_GatherCompleteHandshake(sslSocket *ss, int flags)
         processingEarlyData = ss->ssl3.hs.zeroRttState == ssl_0rtt_accepted;
 
         
-        if (ss->recordWriteCallback) {
-            ssl_ReleaseSSL3HandshakeLock(ss);
-            PORT_SetError(PR_WOULD_BLOCK_ERROR);
-            return (int)SECFailure;
-        }
-
-        
 
 
 
         if (ss->ssl3.hs.restartTarget) {
             ssl_ReleaseSSL3HandshakeLock(ss);
             PORT_SetError(PR_WOULD_BLOCK_ERROR);
-            return (int)SECFailure;
+            return -1;
+        }
+
+        
+        if (ss->recordWriteCallback) {
+            PRBool done = ss->firstHsDone;
+            ssl_ReleaseSSL3HandshakeLock(ss);
+            if (done) {
+                return 1;
+            }
+            PORT_SetError(PR_WOULD_BLOCK_ERROR);
+            return -1;
         }
 
         ssl_ReleaseSSL3HandshakeLock(ss);
@@ -663,7 +667,8 @@ SSLExp_RecordLayerData(PRFileDesc *fd, PRUint16 epoch,
 
     if (contentType != ssl_ct_application_data) {
         rv = ssl3_HandleNonApplicationData(ss, contentType, 0, 0, &ss->gs.buf);
-        if (rv != SECSuccess) {
+        
+        if (rv != SECSuccess && PORT_GetError() != PR_WOULD_BLOCK_ERROR) {
             goto loser;
         }
     }

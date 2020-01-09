@@ -101,20 +101,20 @@ typedef struct {
 
 typedef SECStatus (*SSLCipher)(void *context,
                                unsigned char *out,
-                               int *outlen,
-                               int maxout,
+                               unsigned int *outlen,
+                               unsigned int maxout,
                                const unsigned char *in,
-                               int inlen);
+                               unsigned int inlen);
 typedef SECStatus (*SSLAEADCipher)(
-    ssl3KeyMaterial *keys,
+    const ssl3KeyMaterial *keys,
     PRBool doDecrypt,
     unsigned char *out,
-    int *outlen,
-    int maxout,
+    unsigned int *outlen,
+    unsigned int maxout,
     const unsigned char *in,
-    int inlen,
+    unsigned int inlen,
     const unsigned char *additionalData,
-    int additionalDataLen);
+    unsigned int additionalDataLen);
 
 
 
