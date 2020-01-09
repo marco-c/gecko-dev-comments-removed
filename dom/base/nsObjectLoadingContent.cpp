@@ -525,8 +525,7 @@ void nsObjectLoadingContent::SetupFrameLoader(int32_t aJSPluginId) {
   NS_ASSERTION(thisContent, "must be a content");
 
   mFrameLoader = nsFrameLoader::Create(thisContent->AsElement(),
-                                        nullptr, mNetworkCreated,
-                                       aJSPluginId);
+                                        nullptr, mNetworkCreated);
   MOZ_ASSERT(mFrameLoader, "nsFrameLoader::Create failed");
 }
 
@@ -2108,100 +2107,6 @@ nsresult nsObjectLoadingContent::LoadObject(bool aNotify, bool aForceLoad,
         rv = AsyncStartPluginInstance();
       }
     } break;
-    case eType_FakePlugin: {
-      if (mChannel) {
-        
-        
-        
-        LOG(("OBJLC [%p]: Closing unused channel for fake plugin type", this));
-        CloseChannel();
-      }
-
-      
-      
-      nsCOMPtr<nsIPluginTag> basetag =
-          nsContentUtils::PluginTagForType(mContentType, false);
-      nsCOMPtr<nsIFakePluginTag> tag = do_QueryInterface(basetag);
-
-      uint32_t id;
-      if (NS_FAILED(tag->GetId(&id))) {
-        rv = NS_ERROR_FAILURE;
-        break;
-      }
-
-      MOZ_ASSERT(id <= PR_INT32_MAX,
-                 "Something went wrong, nsPluginHost::RegisterFakePlugin "
-                 "shouldn't have "
-                 "given out this id.");
-
-      SetupFrameLoader(int32_t(id));
-      if (!mFrameLoader) {
-        rv = NS_ERROR_FAILURE;
-        break;
-      }
-
-      nsString sandboxScript;
-      tag->GetSandboxScript(sandboxScript);
-      if (!sandboxScript.IsEmpty()) {
-        
-        AutoJSAPI jsapi;
-        jsapi.Init();
-        JS::Rooted<JSObject*> sandbox(jsapi.cx());
-        rv = nsContentUtils::XPConnect()->CreateSandbox(
-            jsapi.cx(), nsContentUtils::GetSystemPrincipal(),
-            sandbox.address());
-        if (NS_FAILED(rv)) {
-          break;
-        }
-
-        AutoEntryScript aes(sandbox, "JS plugin sandbox code");
-
-        JS::Rooted<JS::Value> element(aes.cx());
-        if (!ToJSValue(aes.cx(), thisContent, &element)) {
-          rv = NS_ERROR_FAILURE;
-          break;
-        }
-
-        if (!JS_DefineProperty(aes.cx(), sandbox, "pluginElement", element,
-                               JSPROP_ENUMERATE)) {
-          rv = NS_ERROR_FAILURE;
-          break;
-        }
-
-        JS::Rooted<JS::Value> rval(aes.cx());
-        
-        rv = nsContentUtils::XPConnect()->EvalInSandboxObject(
-            sandboxScript, nullptr, aes.cx(), sandbox, &rval);
-        if (NS_FAILED(rv)) {
-          break;
-        }
-      }
-
-      nsCOMPtr<nsIURI> handlerURI;
-      if (tag) {
-        tag->GetHandlerURI(getter_AddRefs(handlerURI));
-      }
-
-      if (!handlerURI) {
-        MOZ_ASSERT_UNREACHABLE(
-            "Selected type is not a proper fake plugin "
-            "handler");
-        rv = NS_ERROR_FAILURE;
-        break;
-      }
-
-      nsCString spec;
-      handlerURI->GetSpec(spec);
-      LOG(("OBJLC [%p]: Loading fake plugin handler (%s)", this, spec.get()));
-
-      rv = mFrameLoader->LoadURI(
-          handlerURI, thisContent->AsElement()->NodePrincipal(), false);
-      if (NS_FAILED(rv)) {
-        LOG(("OBJLC [%p]: LoadURI() failed for fake handler", this));
-        mFrameLoader->Destroy();
-        mFrameLoader = nullptr;
-      }
-    } break;
     case eType_Document: {
       if (!mChannel) {
         
@@ -2252,6 +2157,9 @@ nsresult nsObjectLoadingContent::LoadObject(bool aNotify, bool aForceLoad,
     case eType_Null:
       
       break;
+    case eType_FakePlugin:
+      
+      MOZ_CRASH("Shouldn't reach here! This means there's a fakeplugin trying to be loaded.");
   }
 
   
