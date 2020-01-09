@@ -103,13 +103,13 @@ JS::Result<Ok> BinASTTokenReaderMultipart::readHeader() {
   }
 
   BINJS_MOZ_TRY_DECL(grammarNumberOfEntries, readInternalUint32());
-  if (grammarNumberOfEntries > BINKIND_LIMIT) {  
+  if (grammarNumberOfEntries > BINASTKIND_LIMIT) {  
     return raiseError("Invalid number of entries in grammar table");
   }
 
   
   
-  Vector<BinKind> grammarTable_(cx_);
+  Vector<BinASTKind> grammarTable_(cx_);
   if (!grammarTable_.reserve(grammarNumberOfEntries)) {
     return raiseOOM();
   }
@@ -125,7 +125,7 @@ JS::Result<Ok> BinASTTokenReaderMultipart::readHeader() {
     CharSlice name((const char*)current_, byteLen);
     current_ += byteLen;
 
-    BINJS_MOZ_TRY_DECL(kind, cx_->runtime()->binast().binKind(cx_, name));
+    BINJS_MOZ_TRY_DECL(kind, cx_->runtime()->binast().binASTKind(cx_, name));
     if (!kind) {
       return raiseError("Invalid entry in grammar table");
     }
@@ -320,7 +320,7 @@ JS::Result<Ok> BinASTTokenReaderMultipart::readChars(Chars& out) {
   return Ok();
 }
 
-JS::Result<BinVariant> BinASTTokenReaderMultipart::readVariant() {
+JS::Result<BinASTVariant> BinASTTokenReaderMultipart::readVariant() {
   updateLatestKnownGood();
   BINJS_MOZ_TRY_DECL(index, readInternalUint32());
 
@@ -340,7 +340,8 @@ JS::Result<BinVariant> BinASTTokenReaderMultipart::readVariant() {
   
   
   Chars slice = metadata_->getSlice(index);  
-  BINJS_MOZ_TRY_DECL(variant, cx_->runtime()->binast().binVariant(cx_, slice));
+  BINJS_MOZ_TRY_DECL(variant,
+                     cx_->runtime()->binast().binASTVariant(cx_, slice));
 
   if (!variant) {
     return raiseError("Invalid string enum variant");
@@ -373,14 +374,14 @@ BinASTTokenReaderMultipart::readSkippableSubTree() {
 
 
 JS::Result<Ok> BinASTTokenReaderMultipart::enterTaggedTuple(
-    BinKind& tag, BinASTTokenReaderMultipart::BinFields&,
+    BinASTKind& tag, BinASTTokenReaderMultipart::BinASTFields&,
     AutoTaggedTuple& guard) {
   BINJS_MOZ_TRY_DECL(index, readInternalUint32());
-  if (index >= metadata_->numBinKinds()) {
+  if (index >= metadata_->numBinASTKinds()) {
     return raiseError("Invalid index to grammar table");
   }
 
-  tag = metadata_->getBinKind(index);
+  tag = metadata_->getBinASTKind(index);
 
   
   guard.init();
