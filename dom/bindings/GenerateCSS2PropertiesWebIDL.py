@@ -11,7 +11,7 @@ import runpy
 
 
 def generateLine(propName, extendedAttrs):
-    return "  [%s] attribute DOMString %s;\n" % (", ".join(extendedAttrs),
+    return "  [%s] attribute [TreatNullAs=EmptyString] DOMString %s;\n" % (", ".join(extendedAttrs),
                                                  propName)
 def generate(output, idlFilename, dataFile):
     propList = runpy.run_path(dataFile)["data"]
@@ -21,7 +21,7 @@ def generate(output, idlFilename, dataFile):
             continue
         
         
-        extendedAttrs = ["CEReactions", "Throws", "TreatNullAs=EmptyString",
+        extendedAttrs = ["CEReactions", "Throws",
                          "SetterNeedsSubjectPrincipal=NonSystem"]
         if p.pref is not "":
             extendedAttrs.append('Pref="%s"' % p.pref)
