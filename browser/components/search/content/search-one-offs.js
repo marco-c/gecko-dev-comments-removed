@@ -1178,7 +1178,7 @@ class SearchOneOffs {
 
     if (target == this.settingsButton ||
         target == this.settingsButtonCompact) {
-      openPreferences("paneSearch", { origin: "contentSearch" });
+      openPreferences("paneSearch");
 
       
       

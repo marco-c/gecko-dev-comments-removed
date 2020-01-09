@@ -187,7 +187,7 @@ var Settings = {
         } else {
           
           let mainWindow = getMainWindowWithPreferencesPane();
-          mainWindow.openPreferences("privacy-reports", { origin: "aboutTelemetry" });
+          mainWindow.openPreferences("privacy-reports");
         }
       });
     }

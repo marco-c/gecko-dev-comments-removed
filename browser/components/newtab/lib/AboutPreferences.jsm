@@ -95,7 +95,7 @@ this.AboutPreferences = class AboutPreferences {
         this.uninit();
         break;
       case at.SETTINGS_OPEN:
-        action._target.browser.ownerGlobal.openPreferences("paneHome", {origin: "aboutHome"});
+        action._target.browser.ownerGlobal.openPreferences("paneHome");
         break;
       
       case at.OPEN_WEBEXT_SETTINGS:
