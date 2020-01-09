@@ -13141,6 +13141,10 @@ nsDocShell::ResumeRedirectedLoad(uint64_t aIdentifier, int32_t aHistoryIndex) {
   
   cpcl->RegisterCallback(
       aIdentifier, [self, aHistoryIndex](nsIChildChannel* aChannel) {
+        if (NS_WARN_IF(self->mIsBeingDestroyed)) {
+          return;
+        }
+
         RefPtr<nsDocShellLoadState> loadState;
         nsresult rv = nsDocShellLoadState::CreateFromPendingChannel(
             aChannel, getter_AddRefs(loadState));
