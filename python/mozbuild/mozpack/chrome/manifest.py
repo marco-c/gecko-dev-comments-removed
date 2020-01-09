@@ -2,15 +2,19 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
+from __future__ import absolute_import, print_function
 
 import re
 import os
 
+try:
+    from urlparse import urlparse
+except ImportError:
+    from urllib.parse import urlparse
+
 import mozpack.path as mozpath
 from mozpack.chrome.flags import Flags
 from mozpack.errors import errors
-from six.moves.urllib.parse import urlparse
 
 
 class ManifestEntry(object):

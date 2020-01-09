@@ -2,7 +2,7 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
+from __future__ import absolute_import, print_function
 
 from mozpack.chrome.manifest import (
     Manifest,
@@ -13,7 +13,7 @@ from mozpack.chrome.manifest import (
     ManifestMultiContent,
 )
 from mozpack.errors import errors
-from six.moves.urllib.parse import urlparse
+from urlparse import urlparse
 import mozpack.path as mozpath
 from mozpack.files import ManifestFile
 from mozpack.copier import (

@@ -2,7 +2,7 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
+from __future__ import absolute_import, print_function
 
 import mozpack.path as mozpath
 from mozpack.files import (
@@ -24,7 +24,7 @@ from mozpack.copier import (
 )
 from mozpack.packager import SimplePackager
 from mozpack.packager.formats import FlatFormatter
-from six.moves.urllib.parse import urlparse
+from urlparse import urlparse
 
 
 class UnpackFinder(BaseFinder):

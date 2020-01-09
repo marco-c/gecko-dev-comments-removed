@@ -2,7 +2,7 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
+from __future__ import absolute_import, print_function
 
 from mozpack.errors import (
     errors,
@@ -11,13 +11,13 @@ from mozpack.errors import (
 )
 import unittest
 import mozunit
-import six
 import sys
+from cStringIO import StringIO
 
 
 class TestErrors(object):
     def setUp(self):
-        errors.out = six.moves.cStringIO()
+        errors.out = StringIO()
         errors.ignore_errors(False)
 
     def tearDown(self):
