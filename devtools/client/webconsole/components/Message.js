@@ -324,12 +324,11 @@ class Message extends Component {
           repeat,
           " ", location
         ),
-        
-        "\n",
-        
         attachment,
         ...notesNodes
-      )
+      ),
+      
+      attachment ? null : dom.br(),
     );
   }
 }
