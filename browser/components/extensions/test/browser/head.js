@@ -159,6 +159,34 @@ function promisePopupHidden(popup) {
   });
 }
 
+
+
+
+
+
+
+
+
+
+
+
+function promisePopupNotificationShown(name, win = window) {
+  return new Promise(resolve => {
+    function popupshown() {
+      let notification = win.PopupNotifications.getNotification(name);
+      if (!notification) { return; }
+
+      ok(notification, `${name} notification shown`);
+      ok(win.PopupNotifications.isPanelOpen, "notification panel open");
+
+      win.PopupNotifications.panel.removeEventListener("popupshown", popupshown);
+      resolve(win.PopupNotifications.panel.firstElementChild);
+    }
+
+    win.PopupNotifications.panel.addEventListener("popupshown", popupshown);
+  });
+}
+
 function promisePossiblyInaccurateContentDimensions(browser) {
   return ContentTask.spawn(browser, null, async function() {
     function copyProps(obj, props) {
