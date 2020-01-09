@@ -295,10 +295,7 @@ void TextTrackManager::NotifyCueRemoved(TextTrackCue& aCue) {
     mNewCues->RemoveCue(aCue);
   }
   TimeMarchesOn();
-  if (aCue.GetActive()) {
-    
-    DispatchUpdateCueDisplay();
-  }
+  DispatchUpdateCueDisplay();
 }
 
 void TextTrackManager::PopulatePendingList() {
