@@ -1709,6 +1709,11 @@ impl RenderBackend {
                 
                 
                 
+                let msg_update_gpu_cache = ResultMsg::UpdateGpuCache(self.gpu_cache.extract_updates());
+                self.result_tx.send(msg_update_gpu_cache).unwrap();
+                
+                
+                
                 let file_name = format!("frame-{}-{}", id.namespace_id.0, id.id);
                 config.serialize(&rendered_document.frame, file_name);
                 let file_name = format!("clip-scroll-{}-{}", id.namespace_id.0, id.id);
@@ -1741,11 +1746,6 @@ impl RenderBackend {
         config.serialize(&backend, "backend");
 
         if config.bits.contains(CaptureBits::FRAME) {
-            
-            
-            
-            let msg_update_gpu_cache = ResultMsg::UpdateGpuCache(self.gpu_cache.extract_updates());
-            self.result_tx.send(msg_update_gpu_cache).unwrap();
             let msg_update_resources = ResultMsg::UpdateResources {
                 updates: self.resource_cache.pending_updates(),
                 memory_pressure: false,
