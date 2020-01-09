@@ -632,6 +632,7 @@ class Nursery {
   
   void maybeResizeNursery(JS::GCReason reason);
   bool maybeResizeExact(JS::GCReason reason);
+  size_t roundSize(size_t size) const;
   void growAllocableSpace(size_t newCapacity);
   void shrinkAllocableSpace(size_t newCapacity);
   void minimizeAllocableSpace();
