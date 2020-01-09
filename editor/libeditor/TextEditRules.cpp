@@ -922,12 +922,38 @@ nsresult TextEditRules::WillSetText(bool* aCancel, bool* aHandled,
   }
 
   RefPtr<Element> rootElement = TextEditorRef().GetRoot();
-  uint32_t count = rootElement->GetChildCount();
+  nsIContent* firstChild = rootElement->GetFirstChild();
 
   
-
-  if (count > 1) {
-    return NS_OK;
+  
+  
+  
+  
+  if (IsSingleLineEditor()) {
+    
+    
+    
+    
+    
+    if (firstChild &&
+        (!EditorBase::IsTextNode(firstChild) || firstChild->GetNextSibling())) {
+      return NS_OK;
+    }
+  } else {
+    
+    
+    
+    if (!firstChild) {
+      return NS_OK;
+    }
+    if (EditorBase::IsTextNode(firstChild)) {
+      if (!firstChild->GetNextSibling() ||
+          !TextEditUtils::IsMozBR(firstChild->GetNextSibling())) {
+        return NS_OK;
+      }
+    } else if (!TextEditUtils::IsMozBR(firstChild)) {
+      return NS_OK;
+    }
   }
 
   nsAutoString tString(*aString);
@@ -939,7 +965,7 @@ nsresult TextEditRules::WillSetText(bool* aCancel, bool* aHandled,
     HandleNewLines(tString);
   }
 
-  if (!count) {
+  if (!firstChild || !EditorBase::IsTextNode(firstChild)) {
     if (tString.IsEmpty()) {
       *aHandled = true;
       return NS_OK;
@@ -968,19 +994,27 @@ nsresult TextEditRules::WillSetText(bool* aCancel, bool* aHandled,
     return NS_OK;
   }
 
-  nsINode* curNode = rootElement->GetFirstChild();
-  if (NS_WARN_IF(!EditorBase::IsTextNode(curNode))) {
+  
+  
+  RefPtr<Text> textNode = firstChild->GetAsText();
+  if (MOZ_UNLIKELY(NS_WARN_IF(!textNode))) {
     return NS_OK;
   }
-
-  
-  
-  rv = TextEditorRef().SetTextImpl(tString, *curNode->GetAsText());
+  rv = TextEditorRef().SetTextImpl(tString, *textNode);
   if (NS_WARN_IF(!CanHandleEditAction())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
+  }
+
+  
+  
+  if (tString.IsEmpty()) {
+    DebugOnly<nsresult> rvIgnored = DidDeleteSelection();
+    MOZ_ASSERT(rvIgnored != NS_ERROR_EDITOR_DESTROYED);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                         "DidDeleteSelection() failed");
   }
 
   *aHandled = true;
