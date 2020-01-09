@@ -27,6 +27,7 @@
 #include "nsNetUtil.h"  
 
 #include "InetAddress.h"  
+#include "ReferrerInfo.h"
 
 namespace mozilla {
 using namespace net;
@@ -493,7 +494,8 @@ nsresult WebExecutorSupport::CreateStreamLoader(
     NS_ENSURE_SUCCESS(rv, NS_ERROR_MALFORMED_URI);
   }
 
-  rv = httpChannel->SetReferrer(referrerUri);
+  nsCOMPtr<nsIReferrerInfo> referrerInfo = new dom::ReferrerInfo(referrerUri);
+  rv = httpChannel->SetReferrerInfoWithoutClone(referrerInfo);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
