@@ -168,7 +168,7 @@ class JsepSessionImpl : public JsepSession {
   nsresult SetLocalDescriptionAnswer(JsepSdpType type, UniquePtr<Sdp> answer);
   nsresult SetRemoteDescriptionOffer(UniquePtr<Sdp> offer);
   nsresult SetRemoteDescriptionAnswer(JsepSdpType type, UniquePtr<Sdp> answer);
-  nsresult ValidateLocalDescription(const Sdp& description);
+  nsresult ValidateLocalDescription(const Sdp& description, JsepSdpType type);
   nsresult ValidateRemoteDescription(const Sdp& description);
   nsresult ValidateOffer(const Sdp& offer);
   nsresult ValidateAnswer(const Sdp& offer, const Sdp& answer);
@@ -258,7 +258,8 @@ class JsepSessionImpl : public JsepSession {
   
   
   std::set<uint32_t> mSsrcs;
-  UniquePtr<Sdp> mGeneratedLocalDescription;  
+  UniquePtr<Sdp> mGeneratedOffer;   
+  UniquePtr<Sdp> mGeneratedAnswer;  
   UniquePtr<Sdp> mCurrentLocalDescription;
   UniquePtr<Sdp> mCurrentRemoteDescription;
   UniquePtr<Sdp> mPendingLocalDescription;
