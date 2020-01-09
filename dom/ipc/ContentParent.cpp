@@ -1087,6 +1087,7 @@ mozilla::ipc::IPCResult ContentParent::RecvLaunchRDDProcess(
 
 TabParent* ContentParent::CreateBrowser(const TabContext& aContext,
                                         Element* aFrameElement,
+                                        BrowsingContext* aBrowsingContext,
                                         ContentParent* aOpenerContentParent,
                                         TabParent* aSameTabGroupAs,
                                         uint64_t aNextTabParentId) {
@@ -1149,14 +1150,7 @@ TabParent* ContentParent::CreateBrowser(const TabContext& aContext,
 
   
   
-  RefPtr<CanonicalBrowsingContext> browsingContext =
-      BrowsingContext::Create(nullptr, nullptr, EmptyString(),
-                              BrowsingContext::Type::Content)
-          .downcast<CanonicalBrowsingContext>();
-
-  
-  
-  browsingContext->Group()->EnsureSubscribed(constructorSender);
+  aBrowsingContext->Group()->EnsureSubscribed(constructorSender);
 
   ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
   cpm->RegisterRemoteFrame(tabId, ContentParentId(0), openerTabId,
@@ -1188,17 +1182,19 @@ TabParent* ContentParent::CreateBrowser(const TabContext& aContext,
     if (tabId == 0) {
       return nullptr;
     }
-    RefPtr<TabParent> tp = new TabParent(constructorSender, tabId, aContext,
-                                         browsingContext, chromeFlags);
+    RefPtr<TabParent> tp =
+        new TabParent(constructorSender, tabId, aContext,
+                      aBrowsingContext->Canonical(), chromeFlags);
 
-    browsingContext->SetOwnerProcessId(constructorSender->ChildID());
+    aBrowsingContext->Canonical()->SetOwnerProcessId(
+        constructorSender->ChildID());
 
     PBrowserParent* browser = constructorSender->SendPBrowserConstructor(
         
         tp.forget().take(), tabId,
         aSameTabGroupAs ? aSameTabGroupAs->GetTabId() : TabId(0),
         aContext.AsIPCTabContext(), chromeFlags, constructorSender->ChildID(),
-        browsingContext, constructorSender->IsForBrowser());
+        aBrowsingContext, constructorSender->IsForBrowser());
 
     if (remoteType.EqualsLiteral(LARGE_ALLOCATION_REMOTE_TYPE)) {
       

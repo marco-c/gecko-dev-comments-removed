@@ -133,9 +133,7 @@ void nsGenericHTMLFrameElement::EnsureFrameLoader() {
 
   
   
-  mFrameLoader = nsFrameLoader::Create(
-      this, mOpenerWindow ? mOpenerWindow->GetDOMWindow() : nullptr,
-      mNetworkCreated);
+  mFrameLoader = nsFrameLoader::Create(this, mOpenerWindow, mNetworkCreated);
 }
 
 nsresult nsGenericHTMLFrameElement::CreateRemoteFrameLoader(

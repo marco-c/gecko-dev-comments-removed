@@ -121,6 +121,7 @@ class BrowsingContext : public nsWrapperCache,
   
   nsIDocShell* GetDocShell() { return mDocShell; }
   void SetDocShell(nsIDocShell* aDocShell);
+  void ClearDocShell() { mDocShell = nullptr; }
 
   
   
@@ -160,6 +161,8 @@ class BrowsingContext : public nsWrapperCache,
   void SetOpener(BrowsingContext* aOpener) {
     SetOpenerId(aOpener ? aOpener->Id() : 0);
   }
+
+  bool HasOpener() const;
 
   void GetChildren(nsTArray<RefPtr<BrowsingContext>>& aChildren);
 
