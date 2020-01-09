@@ -454,7 +454,7 @@ Toolbox.prototype = {
       this.doc.querySelector("#toolbox-panel-iframe-webconsole").contentWindow;
   },
 
-  _onPausedState: function(_, packet) {
+  _onPausedState: function(packet) {
     
     
     if (packet.why.type === "interrupted") {
@@ -476,13 +476,13 @@ Toolbox.prototype = {
   },
 
   _startThreadClientListeners: function() {
-    this.threadClient.addListener("paused", this._onPausedState);
-    this.threadClient.addListener("resumed", this._onResumedState);
+    this.threadClient.on("paused", this._onPausedState);
+    this.threadClient.on("resumed", this._onResumedState);
   },
 
   _stopThreadClientListeners: function() {
-    this.threadClient.removeListener("paused", this._onPausedState);
-    this.threadClient.removeListener("resumed", this._onResumedState);
+    this.threadClient.off("paused", this._onPausedState);
+    this.threadClient.off("resumed", this._onResumedState);
   },
 
   _attachAndResumeThread: async function() {

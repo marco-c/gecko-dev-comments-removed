@@ -7,7 +7,7 @@ const xpcInspector = Cc["@mozilla.org/jsinspector;1"].getService(Ci.nsIJSInspect
 
 add_task(threadClientTest(async ({ threadClient, debuggee, client, targetFront }) => {
   await new Promise(resolve => {
-    threadClient.addListener("paused", function(event, packet) {
+    threadClient.on("paused", function(packet) {
       Assert.equal(threadClient.state, "paused");
       
       

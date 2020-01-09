@@ -5,12 +5,9 @@
 
 "use strict";
 
-const {
-  arg,
-  DebuggerClient,
-} = require("devtools/shared/client/debugger-client");
-const eventSource = require("devtools/shared/client/event-source");
-const { ThreadStateTypes } = require("devtools/shared/client/constants");
+const {arg, DebuggerClient} = require("devtools/shared/client/debugger-client");
+const EventEmitter = require("devtools/shared/event-emitter");
+const {ThreadStateTypes} = require("devtools/shared/client/constants");
 
 loader.lazyRequireGetter(
   this,
@@ -81,39 +78,36 @@ ThreadClient.prototype = {
 
 
 
-  _doResume: DebuggerClient.requester(
-    {
-      type: "resume",
-      resumeLimit: arg(0),
-      rewind: arg(1),
+  _doResume: DebuggerClient.requester({
+    type: "resume",
+    resumeLimit: arg(0),
+    rewind: arg(1),
+  }, {
+    before: function(packet) {
+      this._assertPaused("resume");
+
+      
+      
+      this._previousState = this._state;
+      this._state = "resuming";
+
+      return packet;
     },
-    {
-      before: function(packet) {
-        this._assertPaused("resume");
-
+    after: function(response) {
+      if (response.error && this._state == "resuming") {
         
         
-        this._previousState = this._state;
-        this._state = "resuming";
-
-        return packet;
-      },
-      after: function(response) {
-        if (response.error && this._state == "resuming") {
-          
-          
-          
-          if (response.state) {
-            this._state = ThreadStateTypes[response.state];
-          } else {
-            this._state = this._previousState;
-          }
+        
+        if (response.state) {
+          this._state = ThreadStateTypes[response.state];
+        } else {
+          this._state = this._previousState;
         }
-        delete this._previousState;
-        return response;
-      },
-    }
-  ),
+      }
+      delete this._previousState;
+      return response;
+    },
+  }),
 
   
 
@@ -231,17 +225,14 @@ ThreadClient.prototype = {
   
 
 
-  detach: DebuggerClient.requester(
-    {
-      type: "detach",
+  detach: DebuggerClient.requester({
+    type: "detach",
+  }, {
+    after: function(response) {
+      this.client.unregisterClient(this);
+      return response;
     },
-    {
-      after: function(response) {
-        this.client.unregisterClient(this);
-        return response;
-      },
-    }
-  ),
+  }),
 
   
 
@@ -433,6 +424,6 @@ ThreadClient.prototype = {
   events: ["newSource", "progress"],
 };
 
-eventSource(ThreadClient.prototype);
+EventEmitter.decorate(ThreadClient.prototype);
 
 module.exports = ThreadClient;

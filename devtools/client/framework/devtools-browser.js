@@ -464,7 +464,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
             break;
           case "resuming":
             
-            threadClient.addOneTimeListener("resumed", () => {
+            threadClient.once("resumed", () => {
               threadClient.interrupt().then(() => {
                 threadClient.resumeThenPause();
                 callback();

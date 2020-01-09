@@ -31,14 +31,14 @@ function run_test() {
 }
 
 function test_thread_lifetime() {
-  gThreadClient.addOneTimeListener("paused", function(event, packet) {
+  gThreadClient.once("paused", function(packet) {
     const pauseGrip = packet.frame.arguments[0];
 
     
     gClient.request({ to: pauseGrip.actor, type: "threadGrip" }, function(response) {
       
       Assert.equal(response.error, undefined);
-      gThreadClient.addOneTimeListener("paused", function(event, packet) {
+      gThreadClient.once("paused", function(packet) {
         
         Assert.equal(pauseGrip.actor, packet.frame.arguments[0].actor);
         

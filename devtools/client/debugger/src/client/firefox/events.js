@@ -29,7 +29,7 @@ let isInterrupted: boolean;
 
 function addThreadEventListeners(client: ThreadClient) {
   Object.keys(clientEvents).forEach(eventName => {
-    client.addListener(eventName, clientEvents[eventName].bind(null, client));
+    client.on(eventName, clientEvents[eventName].bind(null, client));
   });
 }
 
@@ -43,11 +43,7 @@ function setupEvents(dependencies: Dependencies) {
   tabTarget.on("workerListChanged", workerListChanged);
 }
 
-async function paused(
-  threadClient: ThreadClient,
-  _: "paused",
-  packet: PausedPacket
-) {
+async function paused(threadClient: ThreadClient, packet: PausedPacket) {
   
   
   
@@ -78,11 +74,7 @@ async function paused(
   }
 }
 
-function resumed(
-  threadClient: ThreadClient,
-  _: "resumed",
-  packet: ResumedPacket
-) {
+function resumed(threadClient: ThreadClient, packet: ResumedPacket) {
   
   
   
@@ -94,11 +86,7 @@ function resumed(
   actions.resumed(packet);
 }
 
-function newSource(
-  threadClient: ThreadClient,
-  _: "newSource",
-  { source }: SourcePacket
-) {
+function newSource(threadClient: ThreadClient, { source }: SourcePacket) {
   sourceQueue.queue({
     type: "generated",
     data: prepareSourcePayload(threadClient, source),
