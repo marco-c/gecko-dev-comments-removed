@@ -189,18 +189,6 @@ static bool XPC_WN_Shared_toPrimitive(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 static JSObject* GetDoubleWrappedJSObject(XPCCallContext& ccx,
                                           XPCWrappedNative* wrapper) {
   RootedObject obj(ccx);
@@ -209,14 +197,20 @@ static JSObject* GetDoubleWrappedJSObject(XPCCallContext& ccx,
   if (underware) {
     RootedObject mainObj(ccx, underware->GetJSObject());
     if (mainObj) {
-      RootedId id(ccx, ccx.GetContext()->GetStringID(
-                           XPCJSContext::IDX_WRAPPED_JSOBJECT));
-
       JSAutoRealm ar(ccx, underware->GetJSObjectGlobal());
 
+      
+      HandleId id =
+          ccx.GetContext()->GetStringID(XPCJSContext::IDX_WRAPPED_JSOBJECT);
+
+      
+      
+      
       RootedValue val(ccx);
       if (JS_GetPropertyById(ccx, mainObj, id, &val) && !val.isPrimitive()) {
         obj = val.toObjectOrNull();
+      } else {
+        obj = mainObj;
       }
     }
   }
