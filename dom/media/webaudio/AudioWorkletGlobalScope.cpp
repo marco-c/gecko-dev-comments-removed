@@ -6,6 +6,8 @@
 
 #include "AudioWorkletGlobalScope.h"
 
+#include "AudioNodeEngine.h"
+#include "AudioNodeStream.h"
 #include "AudioWorkletImpl.h"
 #include "jsapi.h"
 #include "mozilla/dom/AudioWorkletGlobalScopeBinding.h"
@@ -186,10 +188,17 @@ void AudioWorkletGlobalScope::RegisterProcessor(JSContext* aCx,
   if (aRv.Failed()) {
     return;
   }
-  
-  
-  
-  
+
+  NS_DispatchToMainThread(NS_NewRunnableFunction(
+      "AudioWorkletGlobalScope: parameter descriptors",
+      [impl = mImpl, name = nsString(aName), map = std::move(map)]() mutable {
+        AudioNode* destinationNode =
+            impl->DestinationStream()->Engine()->NodeMainThread();
+        if (!destinationNode) {
+          return;
+        }
+        destinationNode->Context()->SetParamMapForWorkletName(name, &map);
+      }));
 }
 
 WorkletImpl* AudioWorkletGlobalScope::Impl() const { return mImpl; }

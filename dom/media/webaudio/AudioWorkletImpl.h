@@ -29,6 +29,9 @@ class AudioWorkletImpl final : public WorkletImpl {
 
   nsresult SendControlMessage(already_AddRefed<nsIRunnable> aRunnable) override;
 
+  
+  AudioNodeStream* DestinationStream() { return mDestinationStream; }
+
  protected:
   
   already_AddRefed<dom::WorkletGlobalScope> ConstructGlobalScope() override;

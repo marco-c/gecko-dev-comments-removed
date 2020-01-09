@@ -7,6 +7,7 @@
 #ifndef AudioContext_h_
 #define AudioContext_h_
 
+#include "AudioParamDescriptorMap.h"
 #include "mozilla/dom/OfflineAudioContextBinding.h"
 #include "MediaBufferDecoder.h"
 #include "mozilla/Attributes.h"
@@ -311,6 +312,10 @@ class AudioContext final : public DOMEventTargetHelper,
 
   bool CheckClosed(ErrorResult& aRv);
 
+  
+  void SetParamMapForWorkletName(const nsAString& aName,
+                                 AudioParamDescriptorMap* aParamMap);
+
   void Dispatch(already_AddRefed<nsIRunnable>&& aRunnable);
 
  private:
@@ -371,6 +376,8 @@ class AudioContext final : public DOMEventTargetHelper,
   nsTHashtable<nsRefPtrHashKey<AudioNode>> mActiveNodes;
   
   nsTHashtable<nsPtrHashKey<AudioNode>> mAllNodes;
+  nsDataHashtable<nsStringHashKey, AudioParamDescriptorMap>
+      mWorkletParamDescriptors;
   
   RefPtr<BasicWaveFormCache> mBasicWaveFormCache;
   
