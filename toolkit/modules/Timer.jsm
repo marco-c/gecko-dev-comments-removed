@@ -9,8 +9,7 @@
 
 
 var EXPORTED_SYMBOLS = ["setTimeout", "setTimeoutWithTarget", "clearTimeout",
-                        "setInterval", "setIntervalWithTarget", "clearInterval",
-                        "requestIdleCallback", "cancelIdleCallback"];
+                        "setInterval", "setIntervalWithTarget", "clearInterval"];
 
 
 var gNextId = 1; 
@@ -87,27 +86,3 @@ var clearInterval = this.clearTimeout = function clearTimeout(aId) {
     gTimerTable.delete(aId);
   }
 };
-
-function requestIdleCallback(aCallback, aOptions) {
-  if (typeof aCallback !== "function") {
-    throw new Error("callback is not a function in requestIdleCallback");
-  }
-  let id = gNextId++;
-
-  let callback = (...aArgs) => {
-    if (gTimerTable.has(id)) {
-      gTimerTable.delete(id);
-      aCallback(...aArgs);
-    }
-  };
-
-  ChromeUtils.idleDispatch(callback, aOptions);
-  gTimerTable.set(id, callback);
-  return id;
-}
-
-function cancelIdleCallback(aId) {
-  if (gTimerTable.has(aId)) {
-    gTimerTable.delete(aId);
-  }
-}

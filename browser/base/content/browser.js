@@ -1518,10 +1518,6 @@ var gBrowserInit = {
 
     
     
-    Services.appShell.hiddenDOMWindow;
-
-    
-    
     OfflineApps.init();
 
     gBrowser.addEventListener("InsecureLoginFormsStateChange", function() {

@@ -6,7 +6,7 @@
 
 "use strict";
 
-const { Cc, Ci, Cu } = require("chrome");
+const { Cu } = require("chrome");
 const Services = require("Services");
 const { Pool } = require("devtools/shared/protocol");
 const { LazyPool, createExtraActors } = require("devtools/shared/protocol/lazy-pool");
@@ -547,8 +547,11 @@ RootActor.prototype = {
       
       
       
-      const env = Cc["@mozilla.org/process/environment;1"].getService(Ci.nsIEnvironment);
-      const isXpcshell = env.exists("XPCSHELL_TEST_PROFILE_DIR");
+      let isXpcshell = true;
+      try {
+        isXpcshell = !Services.wm.getMostRecentWindow(null) &&
+                     !Services.appShell.hiddenDOMWindow;
+      } catch (e) {}
 
       if (!isXpcshell && this._parentProcessTargetActor &&
           (!this._parentProcessTargetActor.docShell ||

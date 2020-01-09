@@ -976,10 +976,6 @@ class nsDocShell final : public nsDocLoader,
   nsCOMPtr<nsIURI> mCurrentURI;
   nsCOMPtr<nsIReferrerInfo> mReferrerInfo;
 
-#ifdef DEBUG
-  nsCOMPtr<nsIURI> mLastOpenedURI;
-#endif
-
   
   
   nsCOMPtr<nsISHEntry> mOSHE;
