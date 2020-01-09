@@ -312,6 +312,18 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
             getSettings().mAutoplayDefault.set(autoplay);
             return this;
         }
+
+        
+
+
+
+
+
+
+        public @NonNull Builder preferredColorScheme(final @ColorScheme int scheme) {
+            getSettings().mPreferredColorScheme.set(scheme);
+            return this;
+        }
     }
 
     private GeckoRuntime mRuntime;
@@ -339,6 +351,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
         "font.size.systemFontScale", 100);
      final Pref<Integer> mFontInflationMinTwips = new Pref<>(
         "font.size.inflation.minTwips", 0);
+     final Pref<Integer> mPreferredColorScheme = new Pref<>(
+        "ui.systemUsesDarkTheme", -1);
 
      boolean mDebugPause;
      boolean mUseMaxScreenDepth;
@@ -757,6 +771,40 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
     public boolean getFontInflationEnabled() {
         return mFontInflationMinTwips.get() > 0;
+    }
+
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({COLOR_SCHEME_LIGHT,
+             COLOR_SCHEME_DARK,
+             COLOR_SCHEME_SYSTEM})
+     @interface ColorScheme {}
+
+    
+    public static final int COLOR_SCHEME_LIGHT = 0;
+    
+    public static final int COLOR_SCHEME_DARK = 1;
+    
+    public static final int COLOR_SCHEME_SYSTEM = -1;
+
+    
+
+
+
+
+    public @ColorScheme int getPreferredColorScheme() {
+        return mPreferredColorScheme.get();
+    }
+
+    
+
+
+
+
+
+
+    public @NonNull GeckoRuntimeSettings setPreferredColorScheme(final @ColorScheme int scheme) {
+        mPreferredColorScheme.commit(scheme);
+        return this;
     }
 
     @Override 
