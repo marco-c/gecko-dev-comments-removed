@@ -1318,34 +1318,71 @@ ArrayBufferObject* ArrayBufferObject::createFromNewRawBuffer(
   return obj;
 }
 
- ArrayBufferObject::BufferContents
-ArrayBufferObject::externalizeContents(JSContext* cx,
-                                       Handle<ArrayBufferObject*> buffer,
-                                       bool hasStealableContents) {
-  MOZ_ASSERT(buffer->isInlineData() || buffer->isMalloced(),
-             "only support doing this on ABOs containing inline or malloced "
-             "data");
-  MOZ_ASSERT(!buffer->isDetached(), "must have contents to externalize");
-  MOZ_ASSERT_IF(hasStealableContents, buffer->hasStealableContents());
+ void*
+ArrayBufferObject::exposeMallocedContents(JSContext* cx,
+                                          Handle<ArrayBufferObject*> buffer) {
+  
+  if (buffer->isDetached()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TYPED_ARRAY_DETACHED);
+    return nullptr;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!buffer->isMalloced() && !buffer->isInlineData()) {
+    MOZ_ASSERT(buffer->hasUserOwnedData() || buffer->isWasm() ||
+               buffer->isMapped() || buffer->isExternal());
+
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_TYPED_ARRAY_BAD_ARGS);
+    return nullptr;
+  }
+
+  MOZ_ASSERT_IF(buffer->isInlineData(), !buffer->ownsData());
+  MOZ_ASSERT_IF(buffer->ownsData(), buffer->isMalloced());
 
   BufferContents contents = buffer->contents();
 
-  if (hasStealableContents) {
+  
+  
+  
+  if (buffer->ownsData() && !buffer->isPreparedForAsmJS()) {
+    MOZ_ASSERT(buffer->hasStealableContents());
     buffer->setOwnsData(DoesntOwnData);
-    return contents;
+    return contents.data();
   }
 
+  MOZ_ASSERT(!buffer->hasStealableContents());
+
+  
   
   
   BufferContents newContents =
       AllocateArrayBufferContents(cx, buffer->byteLength());
   if (!newContents) {
-    return BufferContents::createFailed();
+    return nullptr;
   }
+
   memcpy(newContents.data(), contents.data(), buffer->byteLength());
   buffer->changeContents(cx, newContents, DoesntOwnData);
 
-  return newContents;
+  return newContents.data();
 }
 
  ArrayBufferObject::BufferContents ArrayBufferObject::stealContents(
@@ -1761,40 +1798,7 @@ JS_PUBLIC_API void* JS_ExternalizeArrayBufferContents(JSContext* cx,
   }
 
   Handle<ArrayBufferObject*> buffer = obj.as<ArrayBufferObject>();
-  if (!buffer->isMalloced() && !buffer->isInlineData()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_TYPED_ARRAY_BAD_ARGS);
-    return nullptr;
-  }
-  if (buffer->isDetached()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_TYPED_ARRAY_DETACHED);
-    return nullptr;
-  }
-
-  
-  bool hasStealableContents = buffer->hasStealableContents();
-
-  return ArrayBufferObject::externalizeContents(cx, buffer,
-                                                hasStealableContents)
-      .data();
+  return ArrayBufferObject::exposeMallocedContents(cx, buffer);
 }
 
 JS_PUBLIC_API void* JS_StealArrayBufferContents(JSContext* cx,
