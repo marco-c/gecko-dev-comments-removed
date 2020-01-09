@@ -81,16 +81,19 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(HeapSnapshot)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
- JSObject* HeapSnapshot::WrapObject(JSContext* aCx,
-                                                 HandleObject aGivenProto) {
+
+JSObject* HeapSnapshot::WrapObject(JSContext* aCx, HandleObject aGivenProto) {
   return HeapSnapshot_Binding::Wrap(aCx, this, aGivenProto);
 }
 
 
 
- already_AddRefed<HeapSnapshot> HeapSnapshot::Create(
-    JSContext* cx, GlobalObject& global, const uint8_t* buffer, uint32_t size,
-    ErrorResult& rv) {
+
+already_AddRefed<HeapSnapshot> HeapSnapshot::Create(JSContext* cx,
+                                                    GlobalObject& global,
+                                                    const uint8_t* buffer,
+                                                    uint32_t size,
+                                                    ErrorResult& rv) {
   RefPtr<HeapSnapshot> snapshot = new HeapSnapshot(cx, global.GetAsSupports());
   if (!snapshot->init(cx, buffer, size)) {
     rv.Throw(NS_ERROR_UNEXPECTED);
@@ -1349,7 +1352,8 @@ static unsigned long msSinceProcessCreation(const TimeStamp& now) {
   return (unsigned long)duration.ToMilliseconds();
 }
 
- already_AddRefed<nsIFile> HeapSnapshot::CreateUniqueCoreDumpFile(
+
+already_AddRefed<nsIFile> HeapSnapshot::CreateUniqueCoreDumpFile(
     ErrorResult& rv, const TimeStamp& now, nsAString& outFilePath,
     nsAString& outSnapshotId) {
   nsCOMPtr<nsIFile> file;
@@ -1462,7 +1466,8 @@ namespace dom {
 using namespace JS;
 using namespace devtools;
 
- void ChromeUtils::SaveHeapSnapshotShared(
+
+void ChromeUtils::SaveHeapSnapshotShared(
     GlobalObject& global, const HeapSnapshotBoundaries& boundaries,
     nsAString& outFilePath, nsAString& outSnapshotId, ErrorResult& rv) {
   auto start = TimeStamp::Now();
@@ -1514,21 +1519,24 @@ using namespace devtools;
                         edgeCount);
 }
 
- void ChromeUtils::SaveHeapSnapshot(
-    GlobalObject& global, const HeapSnapshotBoundaries& boundaries,
-    nsAString& outFilePath, ErrorResult& rv) {
+
+void ChromeUtils::SaveHeapSnapshot(GlobalObject& global,
+                                   const HeapSnapshotBoundaries& boundaries,
+                                   nsAString& outFilePath, ErrorResult& rv) {
   nsAutoString snapshotId;
   SaveHeapSnapshotShared(global, boundaries, outFilePath, snapshotId, rv);
 }
 
- void ChromeUtils::SaveHeapSnapshotGetId(
+
+void ChromeUtils::SaveHeapSnapshotGetId(
     GlobalObject& global, const HeapSnapshotBoundaries& boundaries,
     nsAString& outSnapshotId, ErrorResult& rv) {
   nsAutoString filePath;
   SaveHeapSnapshotShared(global, boundaries, filePath, outSnapshotId, rv);
 }
 
- already_AddRefed<HeapSnapshot> ChromeUtils::ReadHeapSnapshot(
+
+already_AddRefed<HeapSnapshot> ChromeUtils::ReadHeapSnapshot(
     GlobalObject& global, const nsAString& filePath, ErrorResult& rv) {
   auto start = TimeStamp::Now();
 
