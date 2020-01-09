@@ -28,13 +28,10 @@ impl<'a> TraitImpl<'a> {
     }
 
     
+    
+    
     pub fn used_type_params(&self) -> IdentSet {
         self.type_params_matching(|f| !f.skip, |v| !v.skip)
-    }
-
-    
-    pub fn skipped_type_params(&self) -> IdentSet {
-        self.type_params_matching(|f| f.skip, |v| v.skip)
     }
 
     fn type_params_matching<'b, F, V>(&'b self, field_filter: F, variant_filter: V) -> IdentSet

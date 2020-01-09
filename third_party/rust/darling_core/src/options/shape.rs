@@ -1,23 +1,29 @@
+
+
+
 use proc_macro2::TokenStream;
 use quote::{ToTokens, TokenStreamExt};
 use syn::{Meta, NestedMeta};
 
 use {Error, FromMeta, Result};
 
+
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Debug, Clone)]
 pub struct Shape {
     enum_values: DataShape,
     struct_values: DataShape,
     any: bool,
-}
-
-impl Shape {
-    pub fn all() -> Self {
-        Shape {
-            any: true,
-            ..Default::default()
-        }
-    }
 }
 
 impl Default for Shape {
@@ -96,6 +102,8 @@ impl ToTokens for Shape {
         });
     }
 }
+
+
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct DataShape {

@@ -184,15 +184,6 @@ impl Error {
     }
 
     
-    #[deprecated(
-        since = "0.8.3",
-        note = "Callers should not broaden error spans. Use with_span instead."
-    )]
-    pub fn set_span(&mut self, span: Span) {
-        self.span = Some(span)
-    }
-
-    
     
     
     

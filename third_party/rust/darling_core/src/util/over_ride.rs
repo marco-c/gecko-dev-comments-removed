@@ -59,7 +59,7 @@ impl<T> Override<T> {
     
     
     
-    pub fn as_mut<'a>(&'a mut self) -> Override<&'a T> {
+    pub fn as_mut<'a>(&'a mut self) -> Override<&'a mut T> {
         match *self {
             Inherit => Inherit,
             Explicit(ref mut val) => Explicit(val),
