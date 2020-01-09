@@ -1188,18 +1188,16 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
                           bool initialDeclaration, YieldHandling yieldHandling,
                           ParseNodeKind* forHeadKind,
                           Node* forInOrOfExpression);
-  NameNodeType declarationName(DeclarationKind declKind, TokenKind tt,
-                               bool initialDeclaration,
-                               YieldHandling yieldHandling,
-                               ParseNodeKind* forHeadKind,
-                               Node* forInOrOfExpression);
+  Node declarationName(DeclarationKind declKind, TokenKind tt,
+                       bool initialDeclaration, YieldHandling yieldHandling,
+                       ParseNodeKind* forHeadKind, Node* forInOrOfExpression);
 
   
   
   
   
   
-  bool initializerInNameDeclaration(NameNodeType binding,
+  Node initializerInNameDeclaration(NameNodeType binding,
                                     DeclarationKind declKind,
                                     bool initialDeclaration,
                                     YieldHandling yieldHandling,
