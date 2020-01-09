@@ -35,6 +35,10 @@ class PrioEncoder {
   
   const static uint32_t gNumBooleans = 2046;
 
+  
+  static nsresult SetKeys(const char* aKeyA = nullptr,
+                          const char* aKeyB = nullptr);
+
  private:
   PrioEncoder();
   ~PrioEncoder();
