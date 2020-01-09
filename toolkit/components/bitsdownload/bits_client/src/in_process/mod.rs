@@ -369,17 +369,20 @@ impl InProcessMonitor {
         let timeout = Duration::from_millis(u64::from(timeout_millis));
 
         let started = Instant::now();
+        let timeout_end = started + timeout;
 
         {
             let mut s = self.vars.1.lock().unwrap();
             loop {
+                let wait_start = Instant::now();
+
                 if s.shutdown {
                     
                     
                     return Err(Error::NotConnected);
                 }
 
-                if started.elapsed() > timeout {
+                if wait_start >= timeout_end {
                     
                     
                     
@@ -390,9 +393,9 @@ impl InProcessMonitor {
                 
                 let interval = Duration::from_millis(u64::from(s.interval_millis));
 
-                let wait_until = self.last_status_time.map(|last_status_time| {
-                    cmp::min(last_status_time + interval, started + timeout)
-                });
+                let wait_until = self
+                    .last_status_time
+                    .map(|last_status_time| cmp::min(last_status_time + interval, timeout_end));
 
                 if s.notified {
                     
@@ -406,9 +409,10 @@ impl InProcessMonitor {
                 }
 
                 let wait_until = wait_until.unwrap();
-                let wait_start = Instant::now();
 
                 if wait_until <= wait_start {
+                    
+                    
                     
                     break;
                 }
