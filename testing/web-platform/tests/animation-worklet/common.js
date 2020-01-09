@@ -17,6 +17,19 @@ function registerConstantLocalTimeAnimator(localTime) {
 }
 
 
+
+
+function registerPassthroughExceptNaNAnimator() {
+  return runInAnimationWorklet(`
+    registerAnimator('passthrough_except_nan', class {
+      animate(currentTime, effect) {
+        if (Number.isNaN(currentTime)) return;
+        effect.localTime = currentTime;
+      }
+    });
+  `);
+}
+
 function runInAnimationWorklet(code) {
   return CSS.animationWorklet.addModule(
     URL.createObjectURL(new Blob([code], {type: 'text/javascript'}))
