@@ -13,6 +13,28 @@ async function closeShortcutsView(doc) {
   await close_manager(managerWin);
 }
 
+async function registerAndStartExtension(mockProvider, ext) {
+  
+  
+  let extension = ExtensionTestUtils.loadExtension(ext);
+  await extension.startup();
+
+  
+  
+  
+  
+  mockProvider.createAddons([{
+    id: extension.id,
+    name: ext.manifest.name,
+    type: "extension",
+    version: "1",
+    
+    
+    hidden: ext.manifest.hidden,
+  }]);
+  return extension;
+}
+
 function getShortcutCard(doc, extension) {
   return doc.querySelector(`.shortcut[addon-id="${extension.id}"]`);
 }
@@ -67,4 +89,41 @@ add_task(async function extension_without_shortcuts() {
 
   await closeShortcutsView(doc);
   await extension.unload();
+});
+
+
+
+add_task(async function hidden_extension() {
+  let mockProvider = new MockProvider();
+  let hiddenExt1 = await registerAndStartExtension(mockProvider, {
+    manifest: {
+      name: "hidden with shortcuts",
+      hidden: true,
+      commands: {
+        hiddenShortcut: {},
+      },
+    },
+  });
+  let hiddenExt2 = await registerAndStartExtension(mockProvider, {
+    manifest: {
+      name: "hidden without shortcuts",
+      hidden: true,
+    },
+  });
+
+  let doc = await loadShortcutsView();
+
+  ok(getShortcutByName(doc, hiddenExt1, "hiddenShortcut"),
+     "Hidden extension with shortcuts should have a card");
+
+  is(getShortcutCard(doc, hiddenExt2), null,
+     "Hidden extension without shortcuts should not have a card");
+  is(getNoShortcutListItem(doc, hiddenExt2), null,
+     "Hidden extension without shortcuts should not be listed");
+
+  await closeShortcutsView(doc);
+  await hiddenExt1.unload();
+  await hiddenExt2.unload();
+
+  mockProvider.unregister();
 });
