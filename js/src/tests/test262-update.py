@@ -202,7 +202,9 @@ def writeShellAndBrowserFiles(test262OutDir, harnessDir, includesMap, localInclu
 
     
     with io.open(os.path.join(test262OutDir, relPath, "shell.js"), "wb") as shellFile:
-        shellFile.write(includeSource)
+        if includeSource:
+            shellFile.write("// GENERATED, DO NOT EDIT\n")
+            shellFile.write(includeSource)
 
     
     with io.open(os.path.join(test262OutDir, relPath, "browser.js"), "wb") as browserFile:

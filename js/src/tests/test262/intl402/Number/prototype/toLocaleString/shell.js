@@ -7,6 +7,7 @@
 
 
 
+
 function isConstructor(f) {
     try {
         Reflect.construct(function(){}, [], f);

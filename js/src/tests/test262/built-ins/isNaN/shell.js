@@ -9,6 +9,7 @@
 
 
 
+
 var NaNs = [
   NaN,
   Number.NaN,

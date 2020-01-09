@@ -6,6 +6,7 @@
 
 
 
+
 function buildString({ loneCodePoints, ranges }) {
   const CHUNK_SIZE = 10000;
   let result = Reflect.apply(String.fromCodePoint, null, loneCodePoints);

@@ -19,6 +19,7 @@
 
 
 
+
 assert.compareIterator = function(iter, validators, message) {
   message = message || '';
 

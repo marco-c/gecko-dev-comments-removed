@@ -9,6 +9,7 @@
 
 
 
+
 function checkSequence(arr, message) {
   arr.forEach(function(e, i) {
     if (e !== (i+1)) {

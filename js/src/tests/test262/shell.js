@@ -6,6 +6,7 @@
 
 
 
+
 function assert(mustBeTrue, message) {
   if (mustBeTrue === true) {
     return;
