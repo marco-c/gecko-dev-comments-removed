@@ -1900,10 +1900,11 @@ static inline bool IsAlignedLeft(uint8_t aAlignment, uint8_t aDirection,
 
 void nsBlockFrame::PrepareResizeReflow(BlockReflowInput& aState) {
   
+  
   bool tryAndSkipLines =
       
       
-      !StylePadding()->mPadding.GetLeft().HasPercent();
+      !StylePadding()->mPadding.Get(eSideLeft).HasPercent();
 
 #ifdef DEBUG
   if (gDisableResizeOpt) {

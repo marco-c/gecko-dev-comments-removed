@@ -94,9 +94,9 @@ void nsPageFrame::Reflow(nsPresContext* aPresContext,
     
     
     
-    const nsStyleSides& marginStyle = kidReflowInput.mStyleMargin->mMargin;
+    const auto& marginStyle = kidReflowInput.mStyleMargin->mMargin;
     NS_FOR_CSS_SIDES(side) {
-      if (marginStyle.GetUnit(side) == eStyleUnit_Auto) {
+      if (marginStyle.Get(side).IsAuto()) {
         mPageContentMargin.Side(side) = mPD->mReflowMargin.Side(side);
       } else {
         mPageContentMargin.Side(side) =

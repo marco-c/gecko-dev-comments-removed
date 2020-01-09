@@ -147,6 +147,7 @@ enum class ReparentingDirection {
 class nsLayoutUtils {
   typedef mozilla::ComputedStyle ComputedStyle;
   typedef mozilla::LengthPercentage LengthPercentage;
+  typedef mozilla::LengthPercentageOrAuto LengthPercentageOrAuto;
   typedef mozilla::dom::DOMRectList DOMRectList;
   typedef mozilla::layers::Layer Layer;
   typedef mozilla::layers::StackingContextHelper StackingContextHelper;
@@ -1468,10 +1469,23 @@ class nsLayoutUtils {
 
 
   static nscoord ComputeCBDependentValue(nscoord aPercentBasis,
-                                         const nsStyleCoord& aCoord);
+                                         const LengthPercentage& aCoord) {
+    NS_WARNING_ASSERTION(
+        aPercentBasis != NS_UNCONSTRAINEDSIZE,
+        "have unconstrained width or height; this should only result from very "
+        "large sizes, not attempts at intrinsic size calculation");
+    return aCoord.Resolve(aPercentBasis);
+  }
+  static nscoord ComputeCBDependentValue(nscoord aPercentBasis,
+                                         const LengthPercentageOrAuto& aCoord) {
+    if (aCoord.IsAuto()) {
+      return 0;
+    }
+    return ComputeCBDependentValue(aPercentBasis, aCoord.AsLengthPercentage());
+  }
 
   static nscoord ComputeBSizeDependentValue(nscoord aContainingBlockBSize,
-                                            const nsStyleCoord& aCoord);
+                                            const LengthPercentageOrAuto&);
 
   static nscoord ComputeBSizeValue(nscoord aContainingBlockBSize,
                                    nscoord aContentEdgeToBoxSizingBoxEdge,
@@ -1502,25 +1516,13 @@ class nsLayoutUtils {
            (aCBBSize == nscoord_MAX && aCoord.HasPercent());
   }
 
-  static bool IsPaddingZero(const nsStyleCoord& aCoord) {
-    return (aCoord.GetUnit() == eStyleUnit_Coord &&
-            aCoord.GetCoordValue() == 0) ||
-           (aCoord.GetUnit() == eStyleUnit_Percent &&
-            aCoord.GetPercentValue() == 0.0f) ||
-           (aCoord.IsCalcUnit() &&
-            
-            aCoord.ComputeCoordPercentCalc(nscoord_MAX) <= 0 &&
-            aCoord.ComputeCoordPercentCalc(0) <= 0);
+  static bool IsPaddingZero(const LengthPercentage& aLength) {
+    
+    return aLength.Resolve(nscoord_MAX) <= 0 && aLength.Resolve(0) <= 0;
   }
 
-  static bool IsMarginZero(const nsStyleCoord& aCoord) {
-    return (aCoord.GetUnit() == eStyleUnit_Coord &&
-            aCoord.GetCoordValue() == 0) ||
-           (aCoord.GetUnit() == eStyleUnit_Percent &&
-            aCoord.GetPercentValue() == 0.0f) ||
-           (aCoord.IsCalcUnit() &&
-            aCoord.ComputeCoordPercentCalc(nscoord_MAX) == 0 &&
-            aCoord.ComputeCoordPercentCalc(0) == 0);
+  static bool IsMarginZero(const LengthPercentage& aLength) {
+    return aLength.Resolve(nscoord_MAX) == 0 && aLength.Resolve(0) == 0;
   }
 
   static void MarkDescendantsDirty(nsIFrame* aSubtreeRoot);

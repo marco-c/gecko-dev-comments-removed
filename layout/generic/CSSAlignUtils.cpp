@@ -87,11 +87,11 @@ nscoord CSSAlignUtils::AlignJustifySelf(uint8_t aAlignment, LogicalAxis aAxis,
     
     hasAutoMarginStart = hasAutoMarginEnd = false;
   } else if (aAxis == eLogicalAxisBlock) {
-    hasAutoMarginStart = styleMargin.GetBStartUnit(wm) == eStyleUnit_Auto;
-    hasAutoMarginEnd = styleMargin.GetBEndUnit(wm) == eStyleUnit_Auto;
+    hasAutoMarginStart = styleMargin.GetBStart(wm).IsAuto();
+    hasAutoMarginEnd = styleMargin.GetBEnd(wm).IsAuto();
   } else { 
-    hasAutoMarginStart = styleMargin.GetIStartUnit(wm) == eStyleUnit_Auto;
-    hasAutoMarginEnd = styleMargin.GetIEndUnit(wm) == eStyleUnit_Auto;
+    hasAutoMarginStart = styleMargin.GetIStart(wm).IsAuto();
+    hasAutoMarginEnd = styleMargin.GetIEnd(wm).IsAuto();
   }
 
   

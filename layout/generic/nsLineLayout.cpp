@@ -666,11 +666,9 @@ bool nsLineLayout::LineIsBreakable() const {
 
 
 
-static bool HasPercentageUnitSide(const nsStyleSides& aSides) {
-  NS_FOR_CSS_SIDES(side) {
-    if (aSides.Get(side).HasPercent()) return true;
-  }
-  return false;
+template <typename T>
+static bool HasPercentageUnitSide(const StyleRect<T>& aSides) {
+  return aSides.Any([](const auto& aLength) { return aLength.HasPercent(); });
 }
 
 static bool IsPercentageAware(const nsIFrame* aFrame, WritingMode aWM) {

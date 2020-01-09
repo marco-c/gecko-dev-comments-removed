@@ -772,11 +772,16 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleMargin {
   nsChangeHint CalcDifference(const nsStyleMargin& aNewData) const;
 
   bool GetMargin(nsMargin& aMargin) const {
-    if (!mMargin.ConvertsToLength()) {
+    bool convertsToLength = mMargin.All(
+        [](const auto& aLength) { return aLength.ConvertsToLength(); });
+
+    if (!convertsToLength) {
       return false;
     }
 
-    NS_FOR_CSS_SIDES(side) { aMargin.Side(side) = mMargin.ToLength(side); }
+    NS_FOR_CSS_SIDES(side) {
+      aMargin.Side(side) = mMargin.Get(side).AsLengthPercentage().ToLength();
+    }
     return true;
   }
 
@@ -785,7 +790,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleMargin {
   inline bool HasBlockAxisAuto(mozilla::WritingMode aWM) const;
   inline bool HasInlineAxisAuto(mozilla::WritingMode aWM) const;
 
-  nsStyleSides mMargin;  
+  mozilla::StyleRect<mozilla::LengthPercentageOrAuto> mMargin;
 };
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePadding {
@@ -797,18 +802,21 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePadding {
 
   nsChangeHint CalcDifference(const nsStylePadding& aNewData) const;
 
-  nsStyleSides mPadding;  
+  mozilla::StyleRect<mozilla::NonNegativeLengthPercentage> mPadding;
 
-  bool IsWidthDependent() const { return !mPadding.ConvertsToLength(); }
+  inline bool IsWidthDependent() const {
+    return !mPadding.All(
+        [](const auto& aLength) { return aLength.ConvertsToLength(); });
+  }
 
   bool GetPadding(nsMargin& aPadding) const {
-    if (!mPadding.ConvertsToLength()) {
+    if (IsWidthDependent()) {
       return false;
     }
 
     NS_FOR_CSS_SIDES(side) {
       
-      aPadding.Side(side) = std::max(mPadding.ToLength(side), 0);
+      aPadding.Side(side) = std::max(mPadding.Get(side).ToLength(), 0);
     }
     return true;
   }
@@ -1314,7 +1322,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
   uint8_t UsedJustifySelf(mozilla::ComputedStyle* aParent) const;
 
   mozilla::Position mObjectPosition;
-  nsStyleSides mOffset;              
+  mozilla::StyleRect<mozilla::LengthPercentageOrAuto> mOffset;
   nsStyleCoord mWidth;               
   nsStyleCoord mMinWidth;            
   nsStyleCoord mMaxWidth;            
@@ -1521,10 +1529,10 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText {
   mozilla::StyleComplexColor mWebkitTextFillColor;
   mozilla::StyleComplexColor mWebkitTextStrokeColor;
 
-  nsStyleCoord mTabSize;           
-  nsStyleCoord mWordSpacing;       
-  nsStyleCoord mLetterSpacing;     
-  nsStyleCoord mLineHeight;        
+  nsStyleCoord mTabSize;        
+  nsStyleCoord mWordSpacing;    
+  nsStyleCoord mLetterSpacing;  
+  nsStyleCoord mLineHeight;     
   mozilla::LengthPercentage mTextIndent;
   nscoord mWebkitTextStrokeWidth;  
 

@@ -732,8 +732,7 @@ void ReflowInput::InitResizeFlags(nsPresContext* aPresContext,
       mStylePosition->MinBSizeDependsOnContainer(wm) ||
       mStylePosition->MaxBSizeDependsOnContainer(wm) ||
       mStylePosition->OffsetHasPercent(wm.PhysicalSide(eLogicalSideBStart)) ||
-      mStylePosition->mOffset.GetBEndUnit(wm) != eStyleUnit_Auto ||
-      mFrame->IsXULBoxFrame();
+      !mStylePosition->mOffset.GetBEnd(wm).IsAuto() || mFrame->IsXULBoxFrame();
 
   if (mStyleText->mLineHeight.GetUnit() == eStyleUnit_Enumerated) {
     NS_ASSERTION(mStyleText->mLineHeight.GetIntValue() ==
@@ -1016,10 +1015,8 @@ void ReflowInput::InitFrameType(LayoutFrameType aFrameType) {
   
   
   
-  bool inlineStartIsAuto =
-      eStyleUnit_Auto == position->mOffset.GetUnit(inlineStart);
-  bool inlineEndIsAuto =
-      eStyleUnit_Auto == position->mOffset.GetUnit(inlineEnd);
+  bool inlineStartIsAuto = position->mOffset.Get(inlineStart).IsAuto();
+  bool inlineEndIsAuto = position->mOffset.Get(inlineEnd).IsAuto();
 
   
   
@@ -1055,9 +1052,8 @@ void ReflowInput::InitFrameType(LayoutFrameType aFrameType) {
   
   
   
-  bool blockStartIsAuto =
-      eStyleUnit_Auto == position->mOffset.GetUnit(blockStart);
-  bool blockEndIsAuto = eStyleUnit_Auto == position->mOffset.GetUnit(blockEnd);
+  bool blockStartIsAuto = position->mOffset.Get(blockStart).IsAuto();
+  bool blockEndIsAuto = position->mOffset.Get(blockEnd).IsAuto();
 
   
   
@@ -1281,7 +1277,7 @@ void ReflowInput::CalculateBorderPaddingMargin(
   } else {
     nscoord start, end;
     
-    if (eStyleUnit_Auto == mStyleMargin->mMargin.GetUnit(startSide)) {
+    if (mStyleMargin->mMargin.Get(startSide).IsAuto()) {
       
       
       
@@ -1290,7 +1286,7 @@ void ReflowInput::CalculateBorderPaddingMargin(
       start = nsLayoutUtils::ComputeCBDependentValue(
           aContainingBlockSize, mStyleMargin->mMargin.Get(startSide));
     }
-    if (eStyleUnit_Auto == mStyleMargin->mMargin.GetUnit(endSide)) {
+    if (mStyleMargin->mMargin.Get(endSide).IsAuto()) {
       
       
       
@@ -1643,10 +1639,10 @@ void ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
                "Why are we here?");
 
   const auto& styleOffset = mStylePosition->mOffset;
-  bool iStartIsAuto = styleOffset.GetIStartUnit(cbwm) == eStyleUnit_Auto;
-  bool iEndIsAuto = styleOffset.GetIEndUnit(cbwm) == eStyleUnit_Auto;
-  bool bStartIsAuto = styleOffset.GetBStartUnit(cbwm) == eStyleUnit_Auto;
-  bool bEndIsAuto = styleOffset.GetBEndUnit(cbwm) == eStyleUnit_Auto;
+  bool iStartIsAuto = styleOffset.GetIStart(cbwm).IsAuto();
+  bool iEndIsAuto = styleOffset.GetIEnd(cbwm).IsAuto();
+  bool bStartIsAuto = styleOffset.GetBStart(cbwm).IsAuto();
+  bool bEndIsAuto = styleOffset.GetBEnd(cbwm).IsAuto();
 
   
   
@@ -1886,10 +1882,8 @@ void ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
     nscoord availMarginSpace =
         aCBSize.ISize(cbwm) - offsets.IStartEnd(cbwm) - margin.IStartEnd(cbwm) -
         borderPadding.IStartEnd(cbwm) - computedSize.ISize(cbwm);
-    marginIStartIsAuto =
-        eStyleUnit_Auto == mStyleMargin->mMargin.GetIStartUnit(cbwm);
-    marginIEndIsAuto =
-        eStyleUnit_Auto == mStyleMargin->mMargin.GetIEndUnit(cbwm);
+    marginIStartIsAuto = mStyleMargin->mMargin.GetIStart(cbwm).IsAuto();
+    marginIEndIsAuto = mStyleMargin->mMargin.GetIEnd(cbwm).IsAuto();
 
     if (marginIStartIsAuto) {
       if (marginIEndIsAuto) {
@@ -1974,10 +1968,8 @@ void ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
     
     
     nscoord availMarginSpace = autoBSize - computedSize.BSize(cbwm);
-    marginBStartIsAuto =
-        eStyleUnit_Auto == mStyleMargin->mMargin.GetBStartUnit(cbwm);
-    marginBEndIsAuto =
-        eStyleUnit_Auto == mStyleMargin->mMargin.GetBEndUnit(cbwm);
+    marginBStartIsAuto = mStyleMargin->mMargin.GetBStart(cbwm).IsAuto();
+    marginBEndIsAuto = mStyleMargin->mMargin.GetBEnd(cbwm).IsAuto();
 
     if (marginBStartIsAuto) {
       if (marginBEndIsAuto) {
@@ -2482,8 +2474,8 @@ void ReflowInput::InitConstraints(nsPresContext* aPresContext,
                 : mStylePosition->UsedJustifySelf(alignCB->Style());
         if ((inlineAxisAlignment != NS_STYLE_ALIGN_STRETCH &&
              inlineAxisAlignment != NS_STYLE_ALIGN_NORMAL) ||
-            mStyleMargin->mMargin.GetIStartUnit(wm) == eStyleUnit_Auto ||
-            mStyleMargin->mMargin.GetIEndUnit(wm) == eStyleUnit_Auto) {
+            mStyleMargin->mMargin.GetIStart(wm).IsAuto() ||
+            mStyleMargin->mMargin.GetIEnd(wm).IsAuto()) {
           computeSizeFlags = ComputeSizeFlags(computeSizeFlags |
                                               ComputeSizeFlags::eShrinkWrap);
         }
@@ -2747,9 +2739,9 @@ void ReflowInput::CalculateBlockSideMargins(LayoutFrameType aFrameType) {
 
   
   
-  const nsStyleSides& styleSides = mStyleMargin->mMargin;
-  bool isAutoStartMargin = eStyleUnit_Auto == styleSides.GetIStartUnit(cbWM);
-  bool isAutoEndMargin = eStyleUnit_Auto == styleSides.GetIEndUnit(cbWM);
+  const auto& styleSides = mStyleMargin->mMargin;
+  bool isAutoStartMargin = styleSides.GetIStart(cbWM).IsAuto();
+  bool isAutoEndMargin = styleSides.GetIEnd(cbWM).IsAuto();
   if (!isAutoStartMargin && !isAutoEndMargin) {
     
     
