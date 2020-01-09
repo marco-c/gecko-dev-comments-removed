@@ -4,10 +4,8 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-from distutils.version import LooseVersion
 import logging
 from mozbuild.base import (
-    BuildEnvironmentNotFoundException,
     MozbuildObject,
 )
 import mozfile
@@ -63,7 +61,7 @@ Please set a repository url with --repo on either googlesource or github.''' % h
         req.raise_for_status()
         try:
             info = req.json()
-        except ValueError as e:
+        except ValueError:
             
             
             

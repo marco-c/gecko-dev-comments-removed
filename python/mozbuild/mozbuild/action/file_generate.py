@@ -69,7 +69,7 @@ def main(argv):
         with FileAvoidWrite(args.output_file, mode='rb') as output:
             try:
                 ret = module.__dict__[method](output, *args.additional_arguments, **kwargs)
-            except:
+            except Exception:
                 
                 output.avoid_writing_to_file()
                 raise

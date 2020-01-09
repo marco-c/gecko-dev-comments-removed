@@ -70,7 +70,7 @@ class Doctor(object):
                 denied = True
         if denied:
             print('run "mach doctor --fix" AS ADMIN to re-attempt fixing your system')
-        elif False:  
+        elif False and fixable:  
             print('run "mach doctor --fix" as admin to attempt fixing your system')
         return int(not good)
 

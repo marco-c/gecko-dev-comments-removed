@@ -210,7 +210,13 @@ class FasterMakeBackend(CommonBackend, PartialBackend):
                 rule = mk.create_rule([merge]).add_dependencies(
                     [ref_file, l10n_file] + python_deps)
                 rule.add_commands(
-                    ['$(PYTHON) -m mozbuild.action.l10n_merge --output {} --ref-file {} --l10n-file {}'.format(merge, ref_file, l10n_file)])
+                    [
+                        '$(PYTHON) -m mozbuild.action.l10n_merge '
+                        '--output {} --ref-file {} --l10n-file {}'.format(
+                            merge, ref_file, l10n_file
+                        )
+                    ]
+                )
                 
                 mk.create_rule([l10n_file])
 
@@ -222,6 +228,7 @@ class FasterMakeBackend(CommonBackend, PartialBackend):
                                  'install_%s' % base.replace('/', '_'))) as fh:
                 install_manifest.write(fileobj=fh)
 
+        
         
         if self.environment.is_artifact_build:
             unified_manifest = InstallManifest()

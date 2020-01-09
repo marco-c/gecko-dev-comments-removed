@@ -2,11 +2,9 @@
 
 
 
-from collections import defaultdict
 import json
 import os
 import re
-import urlparse
 
 from mach.config import ConfigSettings
 from mach.logging import LoggingManager
@@ -116,6 +114,8 @@ class ChromeMapBackend(CommonBackend):
                 pp_info = None
             self._install_mapping[dest] = src.path, pp_info
 
+        
+        
         
         
         

@@ -92,7 +92,7 @@ class Graph(object):
             ret = self.query_arg('SELECT id FROM node \
                 WHERE dir=? AND name=?', (nodeid, part)).fetchone()
             
-            if ret == None:
+            if ret is None:
                 print ("\nCould not find id number for '%s'" % filepath)
                 return None
             nodeid = ret[0]
