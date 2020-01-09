@@ -536,12 +536,6 @@ pub struct TileCache {
     
     pub dirty_region: DirtyRegion,
     
-    
-    
-    
-    
-    needs_update: bool,
-    
     world_origin: WorldPoint,
     
     world_tile_size: WorldSize,
@@ -680,7 +674,6 @@ impl TileCache {
             tiles_to_draw: Vec::new(),
             opacity_bindings: FastHashMap::default(),
             dirty_region: DirtyRegion::new(),
-            needs_update: true,
             world_origin: WorldPoint::zero(),
             world_tile_size: WorldSize::zero(),
             tile_count: TileSize::zero(),
@@ -926,10 +919,6 @@ impl TileCache {
             
         }
 
-        
-        
-        
-        self.needs_update = true;
         self.world_bounding_rect = WorldRect::zero();
         self.root_clip_rect = WorldRect::max_rect();
 
@@ -981,11 +970,9 @@ impl TileCache {
                 }
             }
 
-            if self.needs_update {
-                
-                
-                tile.clear();
-            }
+            
+            
+            tile.clear();
         }
     }
 
@@ -993,6 +980,7 @@ impl TileCache {
     pub fn update_prim_dependencies(
         &mut self,
         prim_instance: &PrimitiveInstance,
+        prim_rect: LayoutRect,
         clip_scroll_tree: &ClipScrollTree,
         data_stores: &DataStores,
         clip_chain_nodes: &[ClipChainNode],
@@ -1000,47 +988,31 @@ impl TileCache {
         resource_cache: &ResourceCache,
         opacity_binding_store: &OpacityBindingStorage,
         image_instances: &ImageInstanceStorage,
-    ) {
-        if !self.needs_update {
-            return;
-        }
-
+    ) -> bool {
         self.map_local_to_world.set_target_spatial_node(
             prim_instance.spatial_node_index,
             clip_scroll_tree,
         );
 
-        let prim_data = &data_stores.as_common_data(&prim_instance);
-
-        let prim_rect = match prim_instance.kind {
-            PrimitiveInstanceKind::Picture { pic_index, .. } => {
-                let pic = &pictures[pic_index.0];
-                pic.local_rect
-            }
-            _ => {
-                LayoutRect::new(
-                    prim_instance.prim_origin,
-                    prim_data.prim_size,
-                )
-            }
-        };
-
         
         let world_rect = match self.map_local_to_world.map(&prim_rect) {
             Some(rect) => rect,
-            None => {
-                return;
-            }
+            None => return false,
         };
 
         
-        
         if world_rect.size.width <= 0.0 || world_rect.size.height <= 0.0 {
-            return;
+            return false;
         }
 
         
         let (p0, p1) = self.get_tile_coords_for_rect(&world_rect);
+
+        
+        
+        if p0.x == p1.x || p0.y == p1.y {
+            return false;
+        }
 
         
         let mut opacity_bindings: SmallVec<[OpacityBinding; 4]> = SmallVec::new();
@@ -1298,6 +1270,8 @@ impl TileCache {
                 }
             }
         }
+
+        true
     }
 
     
