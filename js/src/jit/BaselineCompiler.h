@@ -304,7 +304,7 @@ class BaselineCodeGen {
   }
 
   
-  void pushScriptArg(Register scratch);
+  void pushScriptArg();
 
   
   void pushBytecodePCArg();

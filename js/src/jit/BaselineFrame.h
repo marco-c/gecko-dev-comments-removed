@@ -14,6 +14,7 @@ namespace js {
 namespace jit {
 
 struct BaselineDebugModeOSRInfo;
+class ICEntry;
 
 
 
@@ -29,6 +30,9 @@ class BaselineFrame {
   enum Flags : uint32_t {
     
     HAS_RVAL = 1 << 0,
+
+    
+    RUNNING_IN_INTERPRETER = 1 << 1,
 
     
     
@@ -78,8 +82,15 @@ class BaselineFrame {
 
  protected:  
   
-  
+  JSScript* interpreterScript_;
+  jsbytecode* interpreterPC_;
+  ICEntry* interpreterICEntry_;
 
+  JSObject* envChain_;        
+  ArgumentsObject* argsObj_;  
+
+  
+  
   union {
     struct {
       uint32_t loScratchValue_;
@@ -87,13 +98,16 @@ class BaselineFrame {
     };
     BaselineDebugModeOSRInfo* debugModeOSRInfo_;
   };
+
+  uint32_t flags_;
+  uint32_t frameSize_;
   uint32_t loReturnValue_;  
   uint32_t hiReturnValue_;
-  uint32_t frameSize_;
-  JSObject* envChain_;        
-  ArgumentsObject* argsObj_;  
   uint32_t overrideOffset_;   
-  uint32_t flags_;
+#if JS_BITS_PER_WORD == 32
+  
+  uint32_t padding_;
+#endif
 
  public:
   
@@ -210,6 +224,18 @@ class BaselineFrame {
                        offsetOfArg(Max(numFormalArgs(), numActualArgs())));
     }
     return UndefinedValue();
+  }
+
+  bool runningInInterpreter() const { return flags_ & RUNNING_IN_INTERPRETER; }
+
+  JSScript* interpreterScript() const {
+    MOZ_ASSERT(runningInInterpreter());
+    return interpreterScript_;
+  }
+
+  jsbytecode* interpreterPC() const {
+    MOZ_ASSERT(runningInInterpreter());
+    return interpreterPC_;
   }
 
   bool hasReturnValue() const { return flags_ & HAS_RVAL; }
@@ -377,14 +403,24 @@ class BaselineFrame {
   static int reverseOffsetOfReturnValue() {
     return -int(Size()) + offsetof(BaselineFrame, loReturnValue_);
   }
+  static int reverseOffsetOfInterpreterScript() {
+    return -int(Size()) + offsetof(BaselineFrame, interpreterScript_);
+  }
+  static int reverseOffsetOfInterpreterPC() {
+    return -int(Size()) + offsetof(BaselineFrame, interpreterPC_);
+  }
+  static int reverseOffsetOfInterpreterICEntry() {
+    return -int(Size()) + offsetof(BaselineFrame, interpreterICEntry_);
+  }
   static int reverseOffsetOfLocal(size_t index) {
     return -int(Size()) - (index + 1) * sizeof(Value);
   }
 };
 
 
-JS_STATIC_ASSERT(((sizeof(BaselineFrame) + BaselineFrame::FramePointerOffset) %
-                  8) == 0);
+static_assert(((sizeof(BaselineFrame) + BaselineFrame::FramePointerOffset) %
+               8) == 0,
+              "frame (including frame pointer) must be 8-byte aligned");
 
 }  
 }  
