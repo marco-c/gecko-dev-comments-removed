@@ -2011,6 +2011,17 @@ void imgLoader::RemoveFromUncachedImages(imgRequest* aRequest) {
   mUncachedImages.RemoveEntry(aRequest);
 }
 
+bool imgLoader::PreferLoadFromCache(nsIURI* aURI) const {
+  
+  
+  
+  
+  
+  bool match = false;
+  return (NS_SUCCEEDED(aURI->SchemeIs("moz-page-thumb", &match)) && match) ||
+         (NS_SUCCEEDED(aURI->SchemeIs("moz-extension", &match)) && match);
+}
+
 #define LOAD_FLAGS_CACHE_MASK \
   (nsIRequest::LOAD_BYPASS_CACHE | nsIRequest::LOAD_FROM_CACHE)
 
@@ -2095,14 +2106,7 @@ nsresult imgLoader::LoadImage(
   
   if (aLoadGroup) {
     aLoadGroup->GetLoadFlags(&requestFlags);
-
-    
-    
-    
-    
-    bool isThumbnailScheme = false;
-    if (NS_SUCCEEDED(aURI->SchemeIs("moz-page-thumb", &isThumbnailScheme)) &&
-        isThumbnailScheme) {
+    if (PreferLoadFromCache(aURI)) {
       requestFlags |= nsIRequest::LOAD_FROM_CACHE;
     }
   }
@@ -2379,13 +2383,7 @@ nsresult imgLoader::LoadImageWithChannel(nsIChannel* channel,
   nsLoadFlags requestFlags = nsIRequest::LOAD_NORMAL;
   channel->GetLoadFlags(&requestFlags);
 
-  
-  
-  
-  
-  bool isThumbnailScheme = false;
-  if (NS_SUCCEEDED(uri->SchemeIs("moz-page-thumb", &isThumbnailScheme)) &&
-      isThumbnailScheme) {
+  if (PreferLoadFromCache(uri)) {
     requestFlags |= nsIRequest::LOAD_FROM_CACHE;
   }
 
