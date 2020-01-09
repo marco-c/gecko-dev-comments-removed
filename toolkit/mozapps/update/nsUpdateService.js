@@ -536,20 +536,6 @@ function LOG(string) {
 
 
 
-function binaryToHex(input) {
-  var result = "";
-  for (var i = 0; i < input.length; ++i) {
-    var hex = input.charCodeAt(i).toString(16);
-    if (hex.length == 1)
-      hex = "0" + hex;
-    result += hex;
-  }
-  return result;
-}
-
-
-
-
 
 
 
