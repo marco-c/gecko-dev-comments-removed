@@ -86,8 +86,11 @@ function onMultiE10sUpdated() {
 }
 
 function connectRuntime(id) {
+  
+  const connectionId = (Math.random() * 100000) | 0;
+
   return async (dispatch, getState) => {
-    dispatch({ type: CONNECT_RUNTIME_START, id });
+    dispatch({ type: CONNECT_RUNTIME_START, connectionId, id });
 
     
     
@@ -101,7 +104,7 @@ function connectRuntime(id) {
       
       
       
-      dispatch({ type: CONNECT_RUNTIME_NOT_RESPONDING, id });
+      dispatch({ type: CONNECT_RUNTIME_NOT_RESPONDING, connectionId, id });
     }, connectionTimingOutDelay);
     const connectionCancelTimer = setTimeout(() => {
       
@@ -109,7 +112,7 @@ function connectRuntime(id) {
       
       
       
-      dispatch({ type: CONNECT_RUNTIME_CANCEL, id });
+      dispatch({ type: CONNECT_RUNTIME_CANCEL, connectionId, id });
     }, connectionCancelDelay);
 
     try {
@@ -183,6 +186,7 @@ function connectRuntime(id) {
 
       dispatch({
         type: CONNECT_RUNTIME_SUCCESS,
+        connectionId,
         runtime: {
           id,
           runtimeDetails,
@@ -190,7 +194,7 @@ function connectRuntime(id) {
         },
       });
     } catch (e) {
-      dispatch({ type: CONNECT_RUNTIME_FAILURE, id, error: e });
+      dispatch({ type: CONNECT_RUNTIME_FAILURE, connectionId, id, error: e });
     } finally {
       clearTimeout(connectionNotRespondingTimer);
       clearTimeout(connectionCancelTimer);
