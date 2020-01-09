@@ -350,10 +350,6 @@ class ArenaLists {
 
   void setParallelAllocEnabled(bool enabled);
 
-  
-  
-  enum KeepArenasEnum { RELEASE_ARENAS, KEEP_ARENAS };
-
  private:
   inline JSRuntime* runtime();
   inline JSRuntime* runtimeFromAnyThread();
