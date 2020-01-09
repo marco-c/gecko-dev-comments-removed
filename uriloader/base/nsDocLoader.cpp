@@ -405,10 +405,11 @@ nsDocLoader::OnStartRequest(nsIRequest* request) {
     if (loadFlags & nsIChannel::LOAD_DOCUMENT_URI) {
       
       
-      if (!(loadFlags & nsIChannel::LOAD_REPLACE) && mDocumentRequest) {
-        mDocumentRequest->Cancel(NS_ERROR_ABORT);
-        mDocumentRequest = nullptr;
-      }
+      
+      
+      NS_ASSERTION(
+          (loadFlags & nsIChannel::LOAD_REPLACE) || !(mDocumentRequest.get()),
+          "Overwriting an existing document channel!");
 
       
       mDocumentRequest = request;
