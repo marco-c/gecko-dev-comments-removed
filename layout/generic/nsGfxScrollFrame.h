@@ -409,6 +409,8 @@ class ScrollFrameHelper : public nsIReflowCallback {
   nsIFrame* GetFrameForDir() const;  
                                      
 
+  ScrollSnapInfo ComputeScrollSnapInfo() const;
+
  public:
   bool IsScrollbarOnRight() const;
   bool IsScrollingActive(nsDisplayListBuilder* aBuilder) const;
