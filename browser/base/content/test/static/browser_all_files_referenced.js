@@ -181,6 +181,8 @@ var whitelist = [
   
   {file: "resource://app/localization/en-US/browser/touchbar/touchbar.ftl",
    platforms: ["linux", "win"]},
+  
+  {file: "resource://gre/localization/en-US/toolkit/about/aboutCompat.ftl"},
 ];
 
 whitelist = new Set(whitelist.filter(item =>

@@ -4,23 +4,26 @@
 
 
 
-const UAOverrides = {
-  universal: [
-    
+
+"use strict";
 
 
 
+let UAOverridesEnabled = true;
 
-
-
-    {
+for (const override of [
+  {
+    id: "testoverride",
+    platform: "all",
+    domain: "webcompat-addon-testcases.schub.io",
+    bug: "1287966",
+    config: {
       matches: ["*://webcompat-addon-testcases.schub.io/*"],
       uaTransformer: (originalUA) => {
         return UAHelpers.getPrefix(originalUA) + " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.98 Safari/537.36";
       },
     },
-  ],
-  desktop: [
+  }, {
     
 
 
@@ -28,14 +31,17 @@ const UAOverrides = {
 
 
 
-    {
+    id: "bug1464106",
+    platform: "desktop",
+    domain: "directvnow.com",
+    bug: "1464106",
+    config: {
       matches: ["*://*.directvnow.com/*"],
       uaTransformer: (originalUA) => {
         return UAHelpers.getPrefix(originalUA) + " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36";
       },
     },
-  ],
-  android: [
+  }, {
     
 
 
@@ -44,13 +50,17 @@ const UAOverrides = {
 
 
 
-    {
+    id: "bug1480710",
+    platform: "android",
+    domain: "m.imgur.com",
+    bug: "1480710",
+    config: {
       matches: ["*://m.imgur.com/*"],
       uaTransformer: (originalUA) => {
         return UAHelpers.getPrefix(originalUA) + " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.85 Mobile Safari/537.36";
       },
     },
-
+  }, {
     
 
 
@@ -58,13 +68,17 @@ const UAOverrides = {
 
 
 
-    {
+    id: "bug755590",
+    platform: "android",
+    domain: "sites.google.com",
+    bug: "755590",
+    config: {
       matches: ["*://sites.google.com/*"],
       uaTransformer: (originalUA) => {
         return originalUA + " Chrome/68.0.3440.85 Mobile Safari/537.366";
       },
     },
-
+  }, {
     
 
 
@@ -73,13 +87,17 @@ const UAOverrides = {
 
 
 
-    {
+    id: "bug945963",
+    platform: "android",
+    domain: "tieba.baidu.com",
+    bug: "945963",
+    config: {
       matches: ["*://tieba.baidu.com/*", "*://tiebac.baidu.com/*"],
       uaTransformer: (originalUA) => {
         return originalUA + " AppleWebKit/537.36 (KHTML, like Gecko)";
       },
     },
-
+  }, {
     
 
 
@@ -87,13 +105,17 @@ const UAOverrides = {
 
 
 
-    {
+    id: "bug1177298",
+    platform: "android",
+    domain: "weather.yahoo.co.jp",
+    bug: "1177298",
+    config: {
       matches: ["*://weather.yahoo.co.jp/*"],
       uaTransformer: (_) => {
         return "Mozilla/5.0 (Linux; Android 5.0.2; Galaxy Nexus Build/IMM76B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.93 Mobile Safari/537.36";
       },
     },
-
+  }, {
     
 
 
@@ -101,13 +123,17 @@ const UAOverrides = {
 
 
 
-    {
+    id: "bug1177298",
+    platform: "android",
+    domain: "lohaco.jp",
+    bug: "1177298",
+    config: {
       matches: ["*://*.lohaco.jp/*"],
       uaTransformer: (_) => {
         return "Mozilla/5.0 (Linux; Android 5.0.2; Galaxy Nexus Build/IMM76B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.93 Mobile Safari/537.36";
       },
     },
-
+  }, {
     
 
 
@@ -115,13 +141,17 @@ const UAOverrides = {
 
 
 
-    {
+    id: "bug1177298",
+    platform: "android",
+    domain: "nhk.or.jp",
+    bug: "1177298",
+    config: {
       matches: ["*://*.nhk.or.jp/*"],
       uaTransformer: (originalUA) => {
         return originalUA + " AppleWebKit";
       },
     },
-
+  }, {
     
 
 
@@ -129,13 +159,17 @@ const UAOverrides = {
 
 
 
-    {
+    id: "bug1177298",
+    platform: "android",
+    domain: "uniqlo.com",
+    bug: "1177298",
+    config: {
       matches: ["*://*.uniqlo.com/*"],
       uaTransformer: (originalUA) => {
         return originalUA + " Mobile Safari";
       },
     },
-
+  }, {
     
 
 
@@ -143,38 +177,50 @@ const UAOverrides = {
 
 
 
-    {
+    id: "bug1338260",
+    platform: "android",
+    domain: "directv.com",
+    bug: "1338260",
+    config: {
       matches: ["*://*.directv.com/*"],
       uaTransformer: (_) => {
         return "Mozilla/5.0 (Linux; Android 6.0.1; SM-G920F Build/MMB29K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.91 Mobile Safari/537.36";
       },
     },
-
+  }, {
     
 
 
 
 
 
-    {
+    id: "bug1385206",
+    platform: "android",
+    domain: "rakuten.co.jp",
+    bug: "1385206",
+    config: {
       matches: ["*://*.rakuten.co.jp/*"],
       uaTransformer: (originalUA) => {
         return originalUA.replace(/Firefox.+$/, "");
       },
     },
-
+  }, {
     
 
 
 
 
-    {
+    id: "bug969844",
+    platform: "android",
+    domain: "mobile.de",
+    bug: "969844",
+    config: {
       matches: ["*://*.mobile.de/*"],
       uaTransformer: (_) => {
         return "Mozilla/5.0 (Linux; Android 6.0.1; SM-G920F Build/MMB29K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.91 Mobile Safari/537.36";
       },
     },
-
+  }, {
     
 
 
@@ -183,13 +229,17 @@ const UAOverrides = {
 
 
 
-    {
+    id: "bug1476436",
+    platform: "android",
+    domain: "mobile.bet365.com",
+    bug: "1476436",
+    config: {
       matches: ["*://mobile.bet365.com/*"],
       uaTransformer: (_) => {
         return "Mozilla/5.0 (Linux; Android 6.0.1; SM-G920F Build/MMB29K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.91 Mobile Safari/537.36";
       },
     },
-
+  }, {
     
 
 
@@ -198,13 +248,17 @@ const UAOverrides = {
 
 
 
-    {
+    id: "bug1509831",
+    platform: "android",
+    domain: "cc.com",
+    bug: "1509831",
+    config: {
       matches: ["*://*.cc.com/*"],
       uaTransformer: (_) => {
         return "Mozilla/5.0 (Linux; Android 6.0.1; SM-G920F Build/MMB29K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.91 Mobile Safari/537.36";
       },
     },
-
+  }, {
     
 
 
@@ -214,13 +268,17 @@ const UAOverrides = {
 
 
 
-    {
+    id: "bug1508564",
+    platform: "android",
+    domain: "cnbc.com",
+    bug: "1508564",
+    config: {
       matches: ["*://*.cnbc.com/*"],
       uaTransformer: (_) => {
         return "Mozilla/5.0 (Linux; Android 6.0.1; SM-G920F Build/MMB29K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.91 Mobile Safari/537.36";
       },
     },
-
+  }, {
     
 
 
@@ -229,13 +287,17 @@ const UAOverrides = {
 
 
 
-    {
+    id: "bug1508516",
+    platform: "android",
+    domain: "cineflix.com.br",
+    bug: "1508516",
+    config: {
       matches: ["*://*.cineflix.com.br/m/*"],
       uaTransformer: (originalUA) => {
         return UAHelpers.getPrefix(originalUA) + " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.91 Mobile Safari/537.36";
       },
     },
-
+  }, {
     
 
 
@@ -244,13 +306,17 @@ const UAOverrides = {
 
 
 
-    {
+    id: "bug1509852",
+    platform: "android",
+    domain: "redbull.com",
+    bug: "1509852",
+    config: {
       matches: ["*://*.redbull.com/*"],
       uaTransformer: (originalUA) => {
         return UAHelpers.getPrefix(originalUA) + " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.91 Mobile Safari/537.36";
       },
     },
-
+  }, {
     
 
 
@@ -260,14 +326,20 @@ const UAOverrides = {
 
 
 
-    {
+    id: "bug1509873",
+    platform: "android",
+    domain: "zmags.com",
+    bug: "1509873",
+    config: {
       matches: ["*://*.viewer.zmags.com/*"],
       uaTransformer: (originalUA) => {
         return UAHelpers.getPrefix(originalUA) + " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.91 Mobile Safari/537.36";
       },
     },
-  ],
-};
+  },
+]) {
+  UAOverrides.push(override);
+}
 
 
 
@@ -277,12 +349,18 @@ const UAHelpers = {
   },
 };
 
-let activeListeners = [];
-function buildAndRegisterListener(matches, transformer) {
-  let listener = (details) => {
+const ActiveListeners = new Map();
+
+function enableOverride(override) {
+  if (override.active) {
+    return;
+  }
+
+  const {matches, uaTransformer} = override.config;
+  const listener = (details) => {
     for (var header of details.requestHeaders) {
       if (header.name.toLowerCase() === "user-agent") {
-        header.value = transformer(header.value);
+        header.value = uaTransformer(header.value);
       }
     }
     return {requestHeaders: details.requestHeaders};
@@ -294,28 +372,41 @@ function buildAndRegisterListener(matches, transformer) {
     ["blocking", "requestHeaders"]
   );
 
-  activeListeners.push(listener);
+  ActiveListeners.set(override, listener);
+  override.active = true;
 }
 
 async function registerUAOverrides() {
-  let platform = "desktop";
+  const platformMatches = ["all"];
   let platformInfo = await browser.runtime.getPlatformInfo();
-  if (platformInfo.os == "android") {
-    platform = "android";
-  }
+  platformMatches.push(platformInfo.os == "android" ? "android" : "desktop");
 
-  let targetOverrides = UAOverrides.universal.concat(UAOverrides[platform]);
-  targetOverrides.forEach((override) => {
-    buildAndRegisterListener(override.matches, override.uaTransformer);
-  });
+  for (const override of UAOverrides) {
+    if (platformMatches.includes(override.platform)) {
+      override.availableOnPlatform = true;
+      enableOverride(override);
+    }
+  }
+  UAOverridesEnabled = true;
+  portsToAboutCompatTabs.broadcast({overridesChanged: filterOverrides(UAOverrides)});
 }
 
 function unregisterUAOverrides() {
-  activeListeners.forEach((listener) => {
-    browser.webRequest.onBeforeSendHeaders.removeListener(listener);
-  });
+  for (const override of UAOverrides) {
+    disableOverride(override);
+  }
+  UAOverridesEnabled = false;
+  portsToAboutCompatTabs.broadcast({overridesChanged: false});
+}
 
-  activeListeners = [];
+function disableOverride(override) {
+  if (!override.active) {
+    return;
+  }
+
+  browser.webRequest.onBeforeSendHeaders.removeListener(ActiveListeners.get(override));
+  override.active = false;
+  ActiveListeners.delete(override);
 }
 
 const OVERRIDE_PREF = "perform_ua_overrides";
