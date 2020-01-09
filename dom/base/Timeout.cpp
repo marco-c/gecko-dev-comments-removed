@@ -49,6 +49,13 @@ void Timeout::SetWhenOrTimeRemaining(const TimeStamp& aBaseTime,
   MOZ_DIAGNOSTIC_ASSERT(mWindow);
   mSubmitTime = aBaseTime;
 
+  mSubmitTime = aBaseTime;
+#ifdef MOZ_GECKO_PROFILER
+  if (profiler_is_active()) {
+    mCause = profiler_get_backtrace();
+  }
+#endif
+
   
   
   
