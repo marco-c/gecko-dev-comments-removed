@@ -176,7 +176,7 @@ nsXPCWrappedJS::AggregatedQueryInterface(REFNSIID aIID, void** aInstancePtr) {
     return NS_OK;
   }
 
-  return DelegatedQueryInterface(aIID, aInstancePtr);
+  return nsXPCWrappedJSClass::DelegatedQueryInterface(this, aIID, aInstancePtr);
 }
 
 NS_IMETHODIMP
@@ -227,7 +227,7 @@ nsXPCWrappedJS::QueryInterface(REFNSIID aIID, void** aInstancePtr) {
 
   
 
-  return DelegatedQueryInterface(aIID, aInstancePtr);
+  return nsXPCWrappedJSClass::DelegatedQueryInterface(this, aIID, aInstancePtr);
 }
 
 
@@ -329,12 +329,13 @@ nsresult nsXPCWrappedJS::GetNewOrUsed(JSContext* cx, JS::HandleObject jsObj,
   MOZ_RELEASE_ASSERT(js::GetContextCompartment(cx) ==
                      js::GetObjectCompartment(jsObj));
 
-  const nsXPTInterfaceInfo* info = GetInterfaceInfo(aIID);
+  const nsXPTInterfaceInfo* info = nsXPCWrappedJSClass::GetInterfaceInfo(aIID);
   if (!info) {
     return NS_ERROR_FAILURE;
   }
 
-  JS::RootedObject rootJSObj(cx, GetRootJSObject(cx, jsObj));
+  JS::RootedObject rootJSObj(cx,
+                             nsXPCWrappedJSClass::GetRootJSObject(cx, jsObj));
   if (!rootJSObj) {
     return NS_ERROR_FAILURE;
   }
@@ -365,7 +366,7 @@ nsresult nsXPCWrappedJS::GetNewOrUsed(JSContext* cx, JS::HandleObject jsObj,
     
     
     const nsXPTInterfaceInfo* rootInfo =
-        GetInterfaceInfo(NS_GET_IID(nsISupports));
+        nsXPCWrappedJSClass::GetInterfaceInfo(NS_GET_IID(nsISupports));
     if (!rootInfo) {
       return NS_ERROR_FAILURE;
     }
@@ -388,7 +389,10 @@ nsresult nsXPCWrappedJS::GetNewOrUsed(JSContext* cx, JS::HandleObject jsObj,
 nsXPCWrappedJS::nsXPCWrappedJS(JSContext* cx, JSObject* aJSObj,
                                const nsXPTInterfaceInfo* aInfo,
                                nsXPCWrappedJS* root, nsresult* rv)
-    : mJSObj(aJSObj), mInfo(aInfo), mRoot(root ? root : this), mNext(nullptr) {
+    : mJSObj(aJSObj),
+      mInfo(aInfo),
+      mRoot(root ? root : this),
+      mNext(nullptr) {
   *rv = InitStub(mInfo->IID());
   
   
@@ -574,6 +578,19 @@ nsXPCWrappedJS* nsXPCWrappedJS::FindInherited(REFNSIID aIID) {
   }
 
   return nullptr;
+}
+
+NS_IMETHODIMP
+nsXPCWrappedJS::CallMethod(uint16_t methodIndex, const nsXPTMethodInfo* info,
+                           nsXPTCMiniVariant* params) {
+  
+  MOZ_RELEASE_ASSERT(NS_IsMainThread(),
+                     "nsXPCWrappedJS::CallMethod called off main thread");
+
+  if (!IsValid()) {
+    return NS_ERROR_UNEXPECTED;
+  }
+  return nsXPCWrappedJSClass::CallMethod(this, methodIndex, info, params);
 }
 
 NS_IMETHODIMP

@@ -96,7 +96,8 @@ class MOZ_STACK_CLASS AutoSavePendingResult {
 };
 
 
-const nsXPTInterfaceInfo* nsXPCWrappedJS::GetInterfaceInfo(REFNSIID aIID) {
+const nsXPTInterfaceInfo*
+nsXPCWrappedJSClass::GetInterfaceInfo(REFNSIID aIID) {
   const nsXPTInterfaceInfo* info = nsXPTInterfaceInfo::ByIID(aIID);
   if (!info) {
     return nullptr;
@@ -110,10 +111,10 @@ const nsXPTInterfaceInfo* nsXPCWrappedJS::GetInterfaceInfo(REFNSIID aIID) {
 }
 
 
-JSObject* nsXPCWrappedJS::CallQueryInterfaceOnJSObject(JSContext* cx,
-                                                       JSObject* jsobjArg,
-                                                       HandleObject scope,
-                                                       REFNSIID aIID) {
+JSObject* nsXPCWrappedJSClass::CallQueryInterfaceOnJSObject(JSContext* cx,
+                                                            JSObject* jsobjArg,
+                                                            HandleObject scope,
+                                                            REFNSIID aIID) {
   js::AssertSameCompartment(scope, jsobjArg);
 
   RootedObject jsobj(cx, jsobjArg);
@@ -304,11 +305,12 @@ nsCString GetFunctionName(JSContext* cx, HandleObject obj) {
 
 
 
-nsresult nsXPCWrappedJS::DelegatedQueryInterface(REFNSIID aIID,
-                                                 void** aInstancePtr) {
+nsresult nsXPCWrappedJSClass::DelegatedQueryInterface(nsXPCWrappedJS* self,
+                                                      REFNSIID aIID,
+                                                      void** aInstancePtr) {
   if (aIID.Equals(NS_GET_IID(nsIXPConnectJSObjectHolder))) {
-    nsCOMPtr<nsIXPConnectJSObjectHolder> rval(this);
-    rval.forget(aInstancePtr);
+    NS_ADDREF(self);
+    *aInstancePtr = (void*)static_cast<nsIXPConnectJSObjectHolder*>(self);
     return NS_OK;
   }
 
@@ -323,7 +325,7 @@ nsresult nsXPCWrappedJS::DelegatedQueryInterface(REFNSIID aIID,
   
   
   
-  RootedObject obj(RootingCx(), GetJSObject());
+  RootedObject obj(RootingCx(), self->GetJSObject());
   nsIGlobalObject* nativeGlobal = NativeGlobal(js::UncheckedUnwrap(obj));
   NS_ENSURE_TRUE(nativeGlobal, NS_ERROR_FAILURE);
   NS_ENSURE_TRUE(nativeGlobal->GetGlobalJSObject(), NS_ERROR_FAILURE);
@@ -337,16 +339,14 @@ nsresult nsXPCWrappedJS::DelegatedQueryInterface(REFNSIID aIID,
 
   
   
-  
-  
-  RootedObject objScope(RootingCx(), GetJSObjectGlobal());
+  RootedObject objScope(RootingCx(), self->GetJSObjectGlobal());
   JSAutoRealm ar(aes.cx(), objScope);
 
   
   
   if (aIID.Equals(NS_GET_IID(nsISupportsWeakReference))) {
     
-    nsXPCWrappedJS* root = GetRootWrapper();
+    nsXPCWrappedJS* root = self->GetRootWrapper();
     RootedObject rootScope(ccx, root->GetJSObjectGlobal());
 
     
@@ -389,7 +389,7 @@ nsresult nsXPCWrappedJS::DelegatedQueryInterface(REFNSIID aIID,
   
   
   
-  if (nsXPCWrappedJS* sibling = FindOrFindInherited(aIID)) {
+  if (nsXPCWrappedJS* sibling = self->FindOrFindInherited(aIID)) {
     NS_ADDREF(sibling);
     *aInstancePtr = sibling->GetXPTCStub();
     return NS_OK;
@@ -457,7 +457,8 @@ nsresult nsXPCWrappedJS::DelegatedQueryInterface(REFNSIID aIID,
 }
 
 
-JSObject* nsXPCWrappedJS::GetRootJSObject(JSContext* cx, JSObject* aJSObjArg) {
+JSObject* nsXPCWrappedJSClass::GetRootJSObject(JSContext* cx,
+                                               JSObject* aJSObjArg) {
   RootedObject aJSObj(cx, aJSObjArg);
   RootedObject global(cx, JS::CurrentGlobalOrNull(cx));
   JSObject* result =
@@ -469,10 +470,10 @@ JSObject* nsXPCWrappedJS::GetRootJSObject(JSContext* cx, JSObject* aJSObjArg) {
 }
 
 
-bool nsXPCWrappedJS::GetArraySizeFromParam(const nsXPTMethodInfo* method,
-                                           const nsXPTType& type,
-                                           nsXPTCMiniVariant* nativeParams,
-                                           uint32_t* result) {
+bool nsXPCWrappedJSClass::GetArraySizeFromParam(const nsXPTMethodInfo* method,
+                                                const nsXPTType& type,
+                                                nsXPTCMiniVariant* nativeParams,
+                                                uint32_t* result) {
   if (type.Tag() != nsXPTType::T_LEGACY_ARRAY &&
       type.Tag() != nsXPTType::T_PSTRING_SIZE_IS &&
       type.Tag() != nsXPTType::T_PWSTRING_SIZE_IS) {
@@ -500,10 +501,9 @@ bool nsXPCWrappedJS::GetArraySizeFromParam(const nsXPTMethodInfo* method,
 }
 
 
-bool nsXPCWrappedJS::GetInterfaceTypeFromParam(const nsXPTMethodInfo* method,
-                                               const nsXPTType& type,
-                                               nsXPTCMiniVariant* nativeParams,
-                                               nsID* result) {
+bool nsXPCWrappedJSClass::GetInterfaceTypeFromParam(
+    const nsXPTMethodInfo* method, const nsXPTType& type,
+    nsXPTCMiniVariant* nativeParams, nsID* result) {
   result->Clear();
 
   const nsXPTType& inner = type.InnermostType();
@@ -541,9 +541,9 @@ bool nsXPCWrappedJS::GetInterfaceTypeFromParam(const nsXPTMethodInfo* method,
 }
 
 
-void nsXPCWrappedJS::CleanupOutparams(const nsXPTMethodInfo* info,
-                                      nsXPTCMiniVariant* nativeParams,
-                                      bool inOutOnly, uint8_t count) {
+void nsXPCWrappedJSClass::CleanupOutparams(const nsXPTMethodInfo* info,
+                                           nsXPTCMiniVariant* nativeParams,
+                                           bool inOutOnly, uint8_t count) {
   
   for (uint8_t i = 0; i < count; i++) {
     const nsXPTParamInfo& param = info->GetParam(i);
@@ -577,12 +577,10 @@ void nsXPCWrappedJS::CleanupOutparams(const nsXPTMethodInfo* info,
   }
 }
 
-nsresult nsXPCWrappedJS::CheckForException(XPCCallContext& ccx,
-                                           AutoEntryScript& aes,
-                                           HandleObject aObj,
-                                           const char* aPropertyName,
-                                           const char* anInterfaceName,
-                                           Exception* aSyntheticException) {
+nsresult nsXPCWrappedJSClass::CheckForException(
+    XPCCallContext& ccx, AutoEntryScript& aes, HandleObject aObj,
+    const char* aPropertyName, const char* anInterfaceName,
+    Exception* aSyntheticException) {
   JSContext* cx = ccx.GetJSContext();
   MOZ_ASSERT(cx == aes.cx());
   RefPtr<Exception> xpc_exception = aSyntheticException;
@@ -737,17 +735,10 @@ nsresult nsXPCWrappedJS::CheckForException(XPCCallContext& ccx,
   return NS_ERROR_FAILURE;
 }
 
-NS_IMETHODIMP
-nsXPCWrappedJS::CallMethod(uint16_t methodIndex, const nsXPTMethodInfo* info,
-                           nsXPTCMiniVariant* nativeParams) {
-  
-  MOZ_RELEASE_ASSERT(NS_IsMainThread(),
-                     "nsXPCWrappedJS::CallMethod called off main thread");
-
-  if (!IsValid()) {
-    return NS_ERROR_UNEXPECTED;
-  }
-
+nsresult nsXPCWrappedJSClass::CallMethod(nsXPCWrappedJS* wrapper,
+                                         uint16_t methodIndex,
+                                         const nsXPTMethodInfo* info,
+                                         nsXPTCMiniVariant* nativeParams) {
   Value* sp = nullptr;
   Value* argv = nullptr;
   uint8_t i;
@@ -760,7 +751,7 @@ nsXPCWrappedJS::CallMethod(uint16_t methodIndex, const nsXPTMethodInfo* info,
   
   
   
-  RootedObject obj(RootingCx(), GetJSObject());
+  RootedObject obj(RootingCx(), wrapper->GetJSObject());
   nsIGlobalObject* nativeGlobal = NativeGlobal(js::UncheckedUnwrap(obj));
   AutoEntryScript aes(nativeGlobal, "XPCWrappedJS method call",
                        true);
@@ -775,7 +766,7 @@ nsXPCWrappedJS::CallMethod(uint16_t methodIndex, const nsXPTMethodInfo* info,
     return NS_ERROR_FAILURE;
   }
 
-  const nsXPTInterfaceInfo* interfaceInfo = GetInfo();
+  const nsXPTInterfaceInfo* interfaceInfo = wrapper->GetInfo();
   JS::RootedId id(cx);
   const char* name;
   nsAutoCString symbolName;
@@ -792,9 +783,7 @@ nsXPCWrappedJS::CallMethod(uint16_t methodIndex, const nsXPTMethodInfo* info,
 
   
   
-  
-  
-  RootedObject scope(cx, GetJSObjectGlobal());
+  RootedObject scope(cx, wrapper->GetJSObjectGlobal());
   JSAutoRealm ar(cx, scope);
 
   
@@ -1101,8 +1090,8 @@ JSObject* xpc::NewOutObject(JSContext* cx) {
 }
 
 
-void nsXPCWrappedJS::DebugDumpInterfaceInfo(const nsXPTInterfaceInfo* aInfo,
-                                            int16_t depth) {
+void nsXPCWrappedJSClass::DebugDump(const nsXPTInterfaceInfo* aInfo,
+                                    int16_t depth) {
 #ifdef DEBUG
   depth--;
   XPC_LOG_ALWAYS(("nsXPTInterfaceInfo @ %p = ", aInfo));
