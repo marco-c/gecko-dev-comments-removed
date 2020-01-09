@@ -38,11 +38,12 @@ class VideoDocument final : public MediaDocument {
     MediaDocument::Destroy();
   }
 
+  nsresult StartLayout() override;
+
  protected:
+  nsresult CreateVideoElement();
   
   void UpdateTitle(nsIChannel* aChannel);
-
-  nsresult CreateSyntheticVideoDocument();
 
   RefPtr<MediaDocumentStreamListener> mStreamListener;
 };
@@ -62,6 +63,22 @@ nsresult VideoDocument::StartDocumentLoad(const char* aCommand,
   return rv;
 }
 
+nsresult VideoDocument::StartLayout() {
+  
+  
+  
+  
+  
+  
+  nsresult rv = CreateVideoElement();
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = MediaDocument::StartLayout();
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  return NS_OK;
+}
+
 void VideoDocument::SetScriptGlobalObject(
     nsIScriptGlobalObject* aScriptGlobalObject) {
   
@@ -69,11 +86,7 @@ void VideoDocument::SetScriptGlobalObject(
   MediaDocument::SetScriptGlobalObject(aScriptGlobalObject);
 
   if (aScriptGlobalObject && !InitialSetupHasBeenDone()) {
-    
-#ifdef DEBUG
-    nsresult rv =
-#endif
-        CreateSyntheticVideoDocument();
+    DebugOnly<nsresult> rv = CreateSyntheticDocument();
     NS_ASSERTION(NS_SUCCEEDED(rv), "failed to create synthetic video document");
 
     if (!nsContentUtils::IsChildOfSameType(this)) {
@@ -88,11 +101,7 @@ void VideoDocument::SetScriptGlobalObject(
   }
 }
 
-nsresult VideoDocument::CreateSyntheticVideoDocument() {
-  
-  nsresult rv = MediaDocument::CreateSyntheticDocument();
-  NS_ENSURE_SUCCESS(rv, rv);
-
+nsresult VideoDocument::CreateVideoElement() {
   Element* body = GetBodyElement();
   if (!body) {
     NS_WARNING("no body on video document!");
