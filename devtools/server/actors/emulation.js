@@ -351,6 +351,19 @@ const EmulationActor = protocol.ActorClassWithSpec(emulationSpec, {
     this._printSimulationEnabled = state;
     this.targetActor.docShell.contentViewer.stopEmulatingMedium();
   },
+
+  
+
+
+
+
+
+  simulateScreenOrientationChange() {
+    const win = this.docShell.chromeEventHandler.ownerGlobal;
+    const { CustomEvent } = win;
+    const orientationChangeEvent = new CustomEvent("orientationchange");
+    win.dispatchEvent(orientationChangeEvent);
+  },
 });
 
 exports.EmulationActor = EmulationActor;
