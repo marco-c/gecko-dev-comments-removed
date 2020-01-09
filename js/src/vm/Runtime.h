@@ -522,6 +522,18 @@ struct JSRuntime : public js::MallocProvider<JSRuntime> {
   
   js::MainThreadData<size_t> numRealms;
 
+ private:
+  
+  js::MainThreadData<size_t> numDebuggeeRealms_;
+
+ public:
+  void incrementNumDebuggeeRealms();
+  void decrementNumDebuggeeRealms();
+
+  size_t numDebuggeeRealms() const {
+    return numDebuggeeRealms_;
+  }
+
   
   js::MainThreadData<const JSLocaleCallbacks*> localeCallbacks;
 

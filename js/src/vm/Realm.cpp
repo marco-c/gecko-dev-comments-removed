@@ -66,6 +66,10 @@ Realm::~Realm() {
     runtime_->lcovOutput().writeLCovResult(lcovOutput);
   }
 
+  
+  
+  MOZ_ASSERT(!isDebuggee());
+
   MOZ_ASSERT(runtime_->numRealms > 0);
   runtime_->numRealms--;
 }
@@ -781,10 +785,18 @@ void Realm::updateDebuggerObservesFlag(unsigned flag) {
   debugModeBits_ &= ~flag;
 }
 
+void Realm::setIsDebuggee() {
+  if (!isDebuggee()) {
+    debugModeBits_ |= IsDebuggee;
+    runtimeFromMainThread()->incrementNumDebuggeeRealms();
+  }
+}
+
 void Realm::unsetIsDebuggee() {
   if (isDebuggee()) {
     debugModeBits_ &= ~DebuggerObservesMask;
     DebugEnvironments::onRealmUnsetIsDebuggee(this);
+    runtimeFromMainThread()->decrementNumDebuggeeRealms();
   }
 }
 
