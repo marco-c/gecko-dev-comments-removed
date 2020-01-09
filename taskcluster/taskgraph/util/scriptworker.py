@@ -808,6 +808,11 @@ def should_use_artifact_map(platform, project):
     This function exists solely for the beetmover artifact map
     migration.
     """
+    if 'linux64-snap-nightly' in platform:
+        
+        
+        return True
+
     
     
     
