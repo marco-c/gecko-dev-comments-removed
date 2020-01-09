@@ -94,9 +94,21 @@ already_AddRefed<MediaDataDecoder> RemoteDecoderModule::CreateAudioDecoder(
 
   RefPtr<RemoteAudioDecoderChild> child = new RemoteAudioDecoderChild();
   MediaResult result(NS_OK);
-  RefPtr<Runnable> task = NS_NewRunnableFunction(
-      "RemoteDecoderModule::CreateAudioDecoder", [&, child]() {
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<Runnable> task =
+      NS_NewRunnableFunction("RemoteDecoderModule::CreateAudioDecoder", [&]() {
         result = child->InitIPDL(aParams.AudioConfig(), aParams.mOptions);
+        if (NS_FAILED(result)) {
+          
+          
+          child = nullptr;
+        }
       });
   SyncRunnable::DispatchToThread(mManagerThread, task);
 
@@ -124,10 +136,22 @@ already_AddRefed<MediaDataDecoder> RemoteDecoderModule::CreateVideoDecoder(
 
   RefPtr<RemoteVideoDecoderChild> child = new RemoteVideoDecoderChild();
   MediaResult result(NS_OK);
-  RefPtr<Runnable> task = NS_NewRunnableFunction(
-      "RemoteDecoderModule::CreateVideoDecoder", [&, child]() {
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<Runnable> task =
+      NS_NewRunnableFunction("RemoteDecoderModule::CreateVideoDecoder", [&]() {
         result = child->InitIPDL(aParams.VideoConfig(), aParams.mRate.mValue,
                                  aParams.mOptions);
+        if (NS_FAILED(result)) {
+          
+          
+          child = nullptr;
+        }
       });
   SyncRunnable::DispatchToThread(mManagerThread, task);
 
