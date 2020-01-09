@@ -76,10 +76,6 @@ loader.lazyGetter(this, "reloadAndRecordTab",
 loader.lazyGetter(this, "reloadAndStopRecordingTab",
   () => require("devtools/client/webreplay/menu.js").reloadAndStopRecordingTab);
 
-loader.lazyGetter(this, "remoteClientManager", () =>
-  require("devtools/client/shared/remote-debugging/remote-client-manager.js")
-  .remoteClientManager);
-
 
 
 
@@ -458,10 +454,7 @@ Toolbox.prototype = {
         this._showDebugTargetInfo = true;
         const deviceFront = await this.target.client.mainRoot.getFront("device");
         
-        const description = await deviceFront.getDescription();
-        const remoteId = new this.win.URLSearchParams(this.win.location.href).get("remoteId");
-        const connectionType = remoteClientManager.getConnectionTypeByRemoteId(remoteId);
-        this._deviceDescription = Object.assign({}, description, { connectionType });
+        this._deviceDescription = await deviceFront.getDescription();
       }
 
       
