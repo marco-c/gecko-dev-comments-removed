@@ -22,6 +22,9 @@ class VideoPlaybackQuality;
 
 class HTMLVideoElement final : public HTMLMediaElement {
  public:
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(HTMLVideoElement, HTMLMediaElement)
+
   typedef mozilla::dom::NodeInfo NodeInfo;
 
   explicit HTMLVideoElement(already_AddRefed<NodeInfo>&& aNodeInfo);
@@ -150,6 +153,25 @@ class HTMLVideoElement final : public HTMLMediaElement {
   bool mIsOrientationLocked;
 
  private:
+  bool SetVisualCloneTarget(HTMLVideoElement* aCloneTarget);
+  bool SetVisualCloneSource(HTMLVideoElement* aCloneSource);
+
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<HTMLVideoElement> mVisualCloneTarget;
+  
+  
+  
+  
+  
+  
+  RefPtr<HTMLVideoElement> mVisualCloneSource;
+
   static void MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
                                     MappedDeclarations&);
 
