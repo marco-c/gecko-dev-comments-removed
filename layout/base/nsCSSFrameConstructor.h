@@ -1786,22 +1786,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   
   
   
-  nsContainerFrame* InitAndWrapInColumnSetFrameIfNeeded(
-      nsFrameConstructorState& aState, nsIContent* aContent,
-      nsContainerFrame* aParentFrame, nsContainerFrame* aBlockFrame,
-      ComputedStyle* aComputedStyle);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   
   
   
