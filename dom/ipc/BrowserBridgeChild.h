@@ -17,6 +17,7 @@ class BrowsingContext;
 
 
 
+
 class BrowserBridgeChild : public PBrowserBridgeChild {
  public:
   NS_INLINE_DECL_REFCOUNTING(BrowserBridgeChild);

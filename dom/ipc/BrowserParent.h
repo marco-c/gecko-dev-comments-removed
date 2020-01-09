@@ -78,6 +78,10 @@ namespace ipc {
 class StructuredCloneData;
 }  
 
+
+
+
+
 class BrowserParent final : public PBrowserParent,
                             public nsIDOMEventListener,
                             public nsIRemoteTab,

@@ -13,6 +13,10 @@
 namespace mozilla {
 namespace dom {
 
+
+
+
+
 class BrowserBridgeParent : public PBrowserBridgeParent {
  public:
   NS_INLINE_DECL_REFCOUNTING(BrowserBridgeParent);
