@@ -28,7 +28,7 @@ class AutoDC {
 
 class AutoSelectFont {
  public:
-  AutoSelectFont(HDC aDC, LOGFONTW *aLogFont) : mOwnsFont(false) {
+  AutoSelectFont(HDC aDC, LOGFONTW* aLogFont) : mOwnsFont(false) {
     mFont = ::CreateFontIndirectW(aLogFont);
     if (mFont) {
       mOwnsFont = true;

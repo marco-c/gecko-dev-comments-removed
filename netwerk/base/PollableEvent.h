@@ -39,13 +39,13 @@ class PollableEvent {
   
   
   
-  bool IsSignallingAlive(TimeDuration const &timeout);
+  bool IsSignallingAlive(TimeDuration const& timeout);
 
-  PRFileDesc *PollableFD() { return mReadFD; }
+  PRFileDesc* PollableFD() { return mReadFD; }
 
  private:
-  PRFileDesc *mWriteFD;
-  PRFileDesc *mReadFD;
+  PRFileDesc* mWriteFD;
+  PRFileDesc* mReadFD;
   bool mSignaled;
   
   bool mWriteFailed;

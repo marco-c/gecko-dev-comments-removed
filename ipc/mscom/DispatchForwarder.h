@@ -17,29 +17,29 @@ namespace mscom {
 
 class DispatchForwarder final : public IDispatch {
  public:
-  static HRESULT Create(IInterceptor *aInterceptor,
-                        STAUniquePtr<IDispatch> &aTarget, IUnknown **aOutput);
+  static HRESULT Create(IInterceptor* aInterceptor,
+                        STAUniquePtr<IDispatch>& aTarget, IUnknown** aOutput);
 
   
-  STDMETHODIMP QueryInterface(REFIID riid, void **ppv) override;
+  STDMETHODIMP QueryInterface(REFIID riid, void** ppv) override;
   STDMETHODIMP_(ULONG) AddRef() override;
   STDMETHODIMP_(ULONG) Release() override;
 
   
   STDMETHODIMP GetTypeInfoCount(
-       __RPC__out UINT *pctinfo) override;
+       __RPC__out UINT* pctinfo) override;
 
   STDMETHODIMP GetTypeInfo(
        UINT iTInfo,
        LCID lcid,
-       __RPC__deref_out_opt ITypeInfo **ppTInfo) override;
+       __RPC__deref_out_opt ITypeInfo** ppTInfo) override;
 
   STDMETHODIMP GetIDsOfNames(
        __RPC__in REFIID riid,
-       __RPC__in_ecount_full(cNames) LPOLESTR *rgszNames,
+       __RPC__in_ecount_full(cNames) LPOLESTR* rgszNames,
        __RPC__in_range(0, 16384) UINT cNames,
        LCID lcid,
-       __RPC__out_ecount_full(cNames) DISPID *rgDispId)
+       __RPC__out_ecount_full(cNames) DISPID* rgDispId)
       override;
 
   STDMETHODIMP Invoke(
@@ -52,17 +52,17 @@ class DispatchForwarder final : public IDispatch {
       
       _In_ WORD wFlags,
       
-      _In_ DISPPARAMS *pDispParams,
+      _In_ DISPPARAMS* pDispParams,
       
-      _Out_opt_ VARIANT *pVarResult,
+      _Out_opt_ VARIANT* pVarResult,
       
-      _Out_opt_ EXCEPINFO *pExcepInfo,
+      _Out_opt_ EXCEPINFO* pExcepInfo,
       
-      _Out_opt_ UINT *puArgErr) override;
+      _Out_opt_ UINT* puArgErr) override;
 
  private:
-  DispatchForwarder(IInterceptor *aInterceptor,
-                    STAUniquePtr<IDispatch> &aTarget);
+  DispatchForwarder(IInterceptor* aInterceptor,
+                    STAUniquePtr<IDispatch>& aTarget);
   ~DispatchForwarder();
 
  private:

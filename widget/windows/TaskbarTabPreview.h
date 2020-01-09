@@ -18,9 +18,9 @@ class TaskbarTabPreview : public nsITaskbarTabPreview, public TaskbarPreview {
   virtual ~TaskbarTabPreview();
 
  public:
-  TaskbarTabPreview(ITaskbarList4 *aTaskbar,
-                    nsITaskbarPreviewController *aController, HWND aHWND,
-                    nsIDocShell *aShell);
+  TaskbarTabPreview(ITaskbarList4* aTaskbar,
+                    nsITaskbarPreviewController* aController, HWND aHWND,
+                    nsIDocShell* aShell);
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSITASKBARTABPREVIEW
@@ -28,7 +28,7 @@ class TaskbarTabPreview : public nsITaskbarTabPreview, public TaskbarPreview {
 
  private:
   virtual nsresult ShowActive(bool active);
-  virtual HWND &PreviewWindow();
+  virtual HWND& PreviewWindow();
   virtual LRESULT WndProc(UINT nMsg, WPARAM wParam, LPARAM lParam);
   static LRESULT CALLBACK GlobalWndProc(HWND hWnd, UINT nMsg, WPARAM wParam,
                                         LPARAM lParam);
@@ -39,8 +39,8 @@ class TaskbarTabPreview : public nsITaskbarTabPreview, public TaskbarPreview {
   virtual void DetachFromNSWindow();
 
   
-  static bool MainWindowHook(void *aContext, HWND hWnd, UINT nMsg,
-                             WPARAM wParam, LPARAM lParam, LRESULT *aResult);
+  static bool MainWindowHook(void* aContext, HWND hWnd, UINT nMsg,
+                             WPARAM wParam, LPARAM lParam, LRESULT* aResult);
 
   
   

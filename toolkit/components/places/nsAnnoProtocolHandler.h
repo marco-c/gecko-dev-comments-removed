@@ -33,7 +33,7 @@ class nsAnnoProtocolHandler final : public nsIProtocolHandler,
   ~nsAnnoProtocolHandler() {}
 
  protected:
-  nsresult ParseAnnoURI(nsIURI *aURI, nsIURI **aResultURI, nsCString &aName);
+  nsresult ParseAnnoURI(nsIURI* aURI, nsIURI** aResultURI, nsCString& aName);
 
   
 
@@ -49,8 +49,8 @@ class nsAnnoProtocolHandler final : public nsIProtocolHandler,
 
 
 
-  nsresult NewFaviconChannel(nsIURI *aURI, nsIURI *aAnnotationURI,
-                             nsILoadInfo *aLoadInfo, nsIChannel **_channel);
+  nsresult NewFaviconChannel(nsIURI* aURI, nsIURI* aAnnotationURI,
+                             nsILoadInfo* aLoadInfo, nsIChannel** _channel);
 };
 
 #endif 

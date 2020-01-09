@@ -21,26 +21,26 @@
 
 class AutoFILE {
  public:
-  explicit AutoFILE(FILE *fp) : fp_(fp) {}
+  explicit AutoFILE(FILE* fp) : fp_(fp) {}
   ~AutoFILE() {
     if (fp_) {
       fclose(fp_);
     }
   }
-  operator FILE *() { return fp_; }
+  operator FILE*() { return fp_; }
 
  private:
-  FILE *fp_;
+  FILE* fp_;
 };
 
 class AutoCharArray {
  public:
   explicit AutoCharArray(size_t len) { ptr_ = new char[len]; }
   ~AutoCharArray() { delete[] ptr_; }
-  operator char *() { return ptr_; }
+  operator char*() { return ptr_; }
 
  private:
-  char *ptr_;
+  char* ptr_;
 };
 
 static const char kNL[] = "\r\n";
@@ -48,8 +48,8 @@ static const char kEquals[] = "=";
 static const char kWhitespace[] = " \t";
 static const char kRBracket[] = "]";
 
-static const char *NS_strspnp(const char *delims, const char *str) {
-  const char *d;
+static const char* NS_strspnp(const char* delims, const char* str) {
+  const char* d;
   do {
     for (d = delims; *d != '\0'; ++d) {
       if (*str == *d) {
@@ -62,21 +62,21 @@ static const char *NS_strspnp(const char *delims, const char *str) {
   return str;
 }
 
-static char *NS_strtok(const char *delims, char **str) {
+static char* NS_strtok(const char* delims, char** str) {
   if (!*str) {
     return nullptr;
   }
 
-  char *ret = (char *)NS_strspnp(delims, *str);
+  char* ret = (char*)NS_strspnp(delims, *str);
 
   if (!*ret) {
     *str = ret;
     return nullptr;
   }
 
-  char *i = ret;
+  char* i = ret;
   do {
-    for (const char *d = delims; *d != '\0'; ++d) {
+    for (const char* d = delims; *d != '\0'; ++d) {
       if (*i == *d) {
         *i = '\0';
         *str = ++i;
@@ -95,13 +95,13 @@ static char *NS_strtok(const char *delims, char **str) {
 
 
 
-static int find_key(const char *keyList, char *key) {
+static int find_key(const char* keyList, char* key) {
   if (!keyList) {
     return -1;
   }
 
   int index = 0;
-  const char *p = keyList;
+  const char* p = keyList;
   while (*p) {
     if (strcmp(key, p) == 0) {
       return index;
@@ -127,9 +127,9 @@ static int find_key(const char *keyList, char *key) {
 
 
 
-int ReadStrings(const NS_tchar *path, const char *keyList,
+int ReadStrings(const NS_tchar* path, const char* keyList,
                 unsigned int numStrings, char results[][MAX_TEXT_LEN],
-                const char *section) {
+                const char* section) {
   AutoFILE fp(NS_tfopen(path, OPEN_MODE));
 
   if (!fp) {
@@ -164,26 +164,26 @@ int ReadStrings(const NS_tchar *path, const char *keyList,
 
   fileContents[flen] = '\0';
 
-  char *buffer = fileContents;
+  char* buffer = fileContents;
   bool inStringsSection = false;
 
   unsigned int read = 0;
 
-  while (char *token = NS_strtok(kNL, &buffer)) {
+  while (char* token = NS_strtok(kNL, &buffer)) {
     if (token[0] == '#' || token[0] == ';') {  
       continue;
     }
 
-    token = (char *)NS_strspnp(kWhitespace, token);
+    token = (char*)NS_strspnp(kWhitespace, token);
     if (!*token) {  
       continue;
     }
 
     if (token[0] == '[') {  
       ++token;
-      char const *currSection = token;
+      char const* currSection = token;
 
-      char *rb = NS_strtok(kRBracket, &token);
+      char* rb = NS_strtok(kRBracket, &token);
       if (!rb || NS_strtok(kWhitespace, &token)) {
         
         
@@ -208,8 +208,8 @@ int ReadStrings(const NS_tchar *path, const char *keyList,
       continue;
     }
 
-    char *key = token;
-    char *e = NS_strtok(kEquals, &token);
+    char* key = token;
+    char* e = NS_strtok(kEquals, &token);
     if (!e) {
       continue;
     }
@@ -227,9 +227,9 @@ int ReadStrings(const NS_tchar *path, const char *keyList,
 
 
 
-int ReadStrings(const NS_tchar *path, StringTable *results) {
+int ReadStrings(const NS_tchar* path, StringTable* results) {
   const unsigned int kNumStrings = 2;
-  const char *kUpdaterKeys = "Title\0Info\0";
+  const char* kUpdaterKeys = "Title\0Info\0";
   char updater_strings[kNumStrings][MAX_TEXT_LEN];
 
   int result = ReadStrings(path, kUpdaterKeys, kNumStrings, updater_strings);

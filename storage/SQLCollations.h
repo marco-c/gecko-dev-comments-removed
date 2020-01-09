@@ -26,7 +26,7 @@ namespace storage {
 
 
 
-int registerCollations(sqlite3 *aDB, Service *aService);
+int registerCollations(sqlite3* aDB, Service* aService);
 
 
 
@@ -51,8 +51,8 @@ int registerCollations(sqlite3 *aDB, Service *aService);
 
 
 
-int localeCollation8(void *aService, int aLen1, const void *aStr1, int aLen2,
-                     const void *aStr2);
+int localeCollation8(void* aService, int aLen1, const void* aStr1, int aLen2,
+                     const void* aStr2);
 
 
 
@@ -75,8 +75,8 @@ int localeCollation8(void *aService, int aLen1, const void *aStr1, int aLen2,
 
 
 
-int localeCollationCaseSensitive8(void *aService, int aLen1, const void *aStr1,
-                                  int aLen2, const void *aStr2);
+int localeCollationCaseSensitive8(void* aService, int aLen1, const void* aStr1,
+                                  int aLen2, const void* aStr2);
 
 
 
@@ -99,9 +99,9 @@ int localeCollationCaseSensitive8(void *aService, int aLen1, const void *aStr1,
 
 
 
-int localeCollationAccentSensitive8(void *aService, int aLen1,
-                                    const void *aStr1, int aLen2,
-                                    const void *aStr2);
+int localeCollationAccentSensitive8(void* aService, int aLen1,
+                                    const void* aStr1, int aLen2,
+                                    const void* aStr2);
 
 
 
@@ -123,9 +123,9 @@ int localeCollationAccentSensitive8(void *aService, int aLen1,
 
 
 
-int localeCollationCaseAccentSensitive8(void *aService, int aLen1,
-                                        const void *aStr1, int aLen2,
-                                        const void *aStr2);
+int localeCollationCaseAccentSensitive8(void* aService, int aLen1,
+                                        const void* aStr1, int aLen2,
+                                        const void* aStr2);
 
 
 
@@ -147,8 +147,8 @@ int localeCollationCaseAccentSensitive8(void *aService, int aLen1,
 
 
 
-int localeCollation16(void *aService, int aLen1, const void *aStr1, int aLen2,
-                      const void *aStr2);
+int localeCollation16(void* aService, int aLen1, const void* aStr1, int aLen2,
+                      const void* aStr2);
 
 
 
@@ -171,8 +171,8 @@ int localeCollation16(void *aService, int aLen1, const void *aStr1, int aLen2,
 
 
 
-int localeCollationCaseSensitive16(void *aService, int aLen1, const void *aStr1,
-                                   int aLen2, const void *aStr2);
+int localeCollationCaseSensitive16(void* aService, int aLen1, const void* aStr1,
+                                   int aLen2, const void* aStr2);
 
 
 
@@ -195,9 +195,9 @@ int localeCollationCaseSensitive16(void *aService, int aLen1, const void *aStr1,
 
 
 
-int localeCollationAccentSensitive16(void *aService, int aLen1,
-                                     const void *aStr1, int aLen2,
-                                     const void *aStr2);
+int localeCollationAccentSensitive16(void* aService, int aLen1,
+                                     const void* aStr1, int aLen2,
+                                     const void* aStr2);
 
 
 
@@ -219,9 +219,9 @@ int localeCollationAccentSensitive16(void *aService, int aLen1,
 
 
 
-int localeCollationCaseAccentSensitive16(void *aService, int aLen1,
-                                         const void *aStr1, int aLen2,
-                                         const void *aStr2);
+int localeCollationCaseAccentSensitive16(void* aService, int aLen1,
+                                         const void* aStr1, int aLen2,
+                                         const void* aStr2);
 
 }  
 }  

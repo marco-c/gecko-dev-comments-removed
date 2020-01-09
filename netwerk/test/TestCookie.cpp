@@ -38,8 +38,8 @@ static const char kCookiesMaxPerHost[] = "network.cookie.maxPerHost";
 #define OFFSET_ONE_DAY int64_t(86400) * PR_USEC_PER_SEC
 
 
-void SetTime(PRTime offsetTime, nsAutoCString &serverString,
-             nsAutoCString &cookieString, bool expiry) {
+void SetTime(PRTime offsetTime, nsAutoCString& serverString,
+             nsAutoCString& cookieString, bool expiry) {
   char timeStringPreset[40];
   PRTime CurrentTime = PR_Now();
   PRTime SetCookieTime = CurrentTime + offsetTime;
@@ -65,23 +65,23 @@ void SetTime(PRTime offsetTime, nsAutoCString &serverString,
   cookieString.Append(timeStringPreset);
 }
 
-void SetACookie(nsICookieService *aCookieService, const char *aSpec1,
-                const char *aSpec2, const char *aCookieString,
-                const char *aServerTime) {
+void SetACookie(nsICookieService* aCookieService, const char* aSpec1,
+                const char* aSpec2, const char* aCookieString,
+                const char* aServerTime) {
   nsCOMPtr<nsIURI> uri1, uri2;
   NS_NewURI(getter_AddRefs(uri1), aSpec1);
   if (aSpec2) NS_NewURI(getter_AddRefs(uri2), aSpec2);
 
   nsresult rv = aCookieService->SetCookieStringFromHttp(
-      uri1, uri2, nullptr, (char *)aCookieString, aServerTime, nullptr);
+      uri1, uri2, nullptr, (char*)aCookieString, aServerTime, nullptr);
   EXPECT_TRUE(NS_SUCCEEDED(rv));
 }
 
 
 
-void SetASameSiteCookie(nsICookieService *aCookieService, const char *aSpec1,
-                        const char *aSpec2, const char *aCookieString,
-                        const char *aServerTime, bool aAllowed) {
+void SetASameSiteCookie(nsICookieService* aCookieService, const char* aSpec1,
+                        const char* aSpec2, const char* aCookieString,
+                        const char* aServerTime, bool aAllowed) {
   nsCOMPtr<nsIURI> uri1, uri2;
   NS_NewURI(getter_AddRefs(uri1), aSpec1);
   if (aSpec2) NS_NewURI(getter_AddRefs(uri2), aSpec2);
@@ -109,23 +109,23 @@ void SetASameSiteCookie(nsICookieService *aCookieService, const char *aSpec1,
   loadInfo->SetCookieSettings(cookieSettings);
 
   nsresult rv = aCookieService->SetCookieStringFromHttp(
-      uri1, uri2, nullptr, (char *)aCookieString, aServerTime, dummyChannel);
+      uri1, uri2, nullptr, (char*)aCookieString, aServerTime, dummyChannel);
   EXPECT_TRUE(NS_SUCCEEDED(rv));
 }
 
-void SetACookieNoHttp(nsICookieService *aCookieService, const char *aSpec,
-                      const char *aCookieString) {
+void SetACookieNoHttp(nsICookieService* aCookieService, const char* aSpec,
+                      const char* aCookieString) {
   nsCOMPtr<nsIURI> uri;
   NS_NewURI(getter_AddRefs(uri), aSpec);
 
   nsresult rv = aCookieService->SetCookieString(uri, nullptr,
-                                                (char *)aCookieString, nullptr);
+                                                (char*)aCookieString, nullptr);
   EXPECT_TRUE(NS_SUCCEEDED(rv));
 }
 
 
-void GetACookie(nsICookieService *aCookieService, const char *aSpec1,
-                const char *aSpec2, nsACString &aCookie) {
+void GetACookie(nsICookieService* aCookieService, const char* aSpec1,
+                const char* aSpec2, nsACString& aCookie) {
   nsCOMPtr<nsIURI> uri1, uri2;
   NS_NewURI(getter_AddRefs(uri1), aSpec1);
   if (aSpec2) NS_NewURI(getter_AddRefs(uri2), aSpec2);
@@ -135,8 +135,8 @@ void GetACookie(nsICookieService *aCookieService, const char *aSpec1,
 }
 
 
-void GetACookieNoHttp(nsICookieService *aCookieService, const char *aSpec,
-                      nsACString &aCookie) {
+void GetACookieNoHttp(nsICookieService* aCookieService, const char* aSpec,
+                      nsACString& aCookie) {
   nsCOMPtr<nsIURI> uri;
   NS_NewURI(getter_AddRefs(uri), aSpec);
 
@@ -154,8 +154,8 @@ void GetACookieNoHttp(nsICookieService *aCookieService, const char *aSpec,
 
 
 
-static inline bool CheckResult(const char *aLhs, uint32_t aRule,
-                               const char *aRhs = nullptr) {
+static inline bool CheckResult(const char* aLhs, uint32_t aRule,
+                               const char* aRhs = nullptr) {
   switch (aRule) {
     case MUST_BE_NULL:
       return !aLhs || !*aLhs;
@@ -177,7 +177,7 @@ static inline bool CheckResult(const char *aLhs, uint32_t aRule,
   }
 }
 
-void InitPrefs(nsIPrefBranch *aPrefBranch) {
+void InitPrefs(nsIPrefBranch* aPrefBranch) {
   
   
   

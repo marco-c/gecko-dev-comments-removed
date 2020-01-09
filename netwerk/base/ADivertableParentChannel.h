@@ -25,7 +25,7 @@ class ADivertableParentChannel : public nsISupports {
   
   
   
-  virtual void DivertTo(nsIStreamListener *aListener) = 0;
+  virtual void DivertTo(nsIStreamListener* aListener) = 0;
 
   
   virtual nsresult SuspendForDiversion() = 0;

@@ -33,12 +33,12 @@ class nsInputStreamPump final : public nsIInputStreamPump,
 
   nsInputStreamPump();
 
-  static nsresult Create(nsInputStreamPump **result, nsIInputStream *stream,
+  static nsresult Create(nsInputStreamPump** result, nsIInputStream* stream,
                          uint32_t segsize = 0, uint32_t segcount = 0,
                          bool closeWhenDone = false,
-                         nsIEventTarget *mainThreadTarget = nullptr);
+                         nsIEventTarget* mainThreadTarget = nullptr);
 
-  typedef void (*PeekSegmentFun)(void *closure, const uint8_t *buf,
+  typedef void (*PeekSegmentFun)(void* closure, const uint8_t* buf,
                                  uint32_t bufLen);
   
 
@@ -50,7 +50,7 @@ class nsInputStreamPump final : public nsIInputStreamPump,
 
 
 
-  nsresult PeekStream(PeekSegmentFun callback, void *closure);
+  nsresult PeekStream(PeekSegmentFun callback, void* closure);
 
   
 

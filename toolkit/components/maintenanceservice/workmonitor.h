@@ -2,4 +2,4 @@
 
 
 
-BOOL ExecuteServiceCommand(int argc, LPWSTR *argv);
+BOOL ExecuteServiceCommand(int argc, LPWSTR* argv);

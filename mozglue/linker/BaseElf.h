@@ -17,21 +17,21 @@ class BaseElf : public LibHandle {
   
 
 
-  static unsigned long Hash(const char *symbol);
+  static unsigned long Hash(const char* symbol);
 
   
 
 
 
-  void *GetSymbolPtr(const char *symbol, unsigned long hash) const;
+  void* GetSymbolPtr(const char* symbol, unsigned long hash) const;
 
   
 
 
 
-  const Elf::Sym *GetSymbol(const char *symbol, unsigned long hash) const;
+  const Elf::Sym* GetSymbol(const char* symbol, unsigned long hash) const;
 
-  explicit BaseElf(const char *path, Mappable *mappable = nullptr)
+  explicit BaseElf(const char* path, Mappable* mappable = nullptr)
       : LibHandle(path), mappable(mappable) {}
 
  protected:
@@ -39,15 +39,15 @@ class BaseElf : public LibHandle {
 
 
 
-  virtual void *GetSymbolPtr(const char *symbol) const;
-  virtual bool Contains(void *addr) const;
-  virtual void *GetBase() const { return GetPtr(0); }
+  virtual void* GetSymbolPtr(const char* symbol) const;
+  virtual bool Contains(void* addr) const;
+  virtual void* GetBase() const { return GetPtr(0); }
 
 #ifdef __ARM_EABI__
-  virtual const void *FindExidx(int *pcount) const;
+  virtual const void* FindExidx(int* pcount) const;
 #endif
 
-  virtual Mappable *GetMappable() const { return NULL; };
+  virtual Mappable* GetMappable() const { return NULL; };
 
  public:
   
@@ -55,9 +55,9 @@ class BaseElf : public LibHandle {
 
 
 
-  void *GetPtr(const Elf::Addr offset) const {
-    if (reinterpret_cast<void *>(offset) > base)
-      return reinterpret_cast<void *>(offset);
+  void* GetPtr(const Elf::Addr offset) const {
+    if (reinterpret_cast<void*>(offset) > base)
+      return reinterpret_cast<void*>(offset);
     return base + offset;
   }
 
@@ -65,10 +65,10 @@ class BaseElf : public LibHandle {
 
 
   template <typename T>
-  const T *GetPtr(const Elf::Addr offset) const {
-    if (reinterpret_cast<void *>(offset) > base)
-      return reinterpret_cast<const T *>(offset);
-    return reinterpret_cast<const T *>(base + offset);
+  const T* GetPtr(const Elf::Addr offset) const {
+    if (reinterpret_cast<void*>(offset) > base)
+      return reinterpret_cast<const T*>(offset);
+    return reinterpret_cast<const T*>(base + offset);
   }
 
   
@@ -105,10 +105,10 @@ class LoadedElf : public BaseElf {
 
 
 
-  static already_AddRefed<LibHandle> Create(const char *path, void *base_addr);
+  static already_AddRefed<LibHandle> Create(const char* path, void* base_addr);
 
  private:
-  explicit LoadedElf(const char *path) : BaseElf(path) {}
+  explicit LoadedElf(const char* path) : BaseElf(path) {}
 
   ~LoadedElf() {
     
@@ -122,7 +122,7 @@ class LoadedElf : public BaseElf {
 
 
 
-  bool InitDyn(const Elf::Phdr *pt_dyn);
+  bool InitDyn(const Elf::Phdr* pt_dyn);
 };
 
 #endif 

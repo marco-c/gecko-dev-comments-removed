@@ -38,10 +38,10 @@ class SharedDIB {
   nsresult Attach(Handle aHandle, uint32_t aSize);
 
   
-  nsresult ShareToProcess(base::ProcessId aTargetPid, Handle *aNewHandle);
+  nsresult ShareToProcess(base::ProcessId aTargetPid, Handle* aNewHandle);
 
  protected:
-  base::SharedMemory *mShMem;
+  base::SharedMemory* mShMem;
 };
 
 }  

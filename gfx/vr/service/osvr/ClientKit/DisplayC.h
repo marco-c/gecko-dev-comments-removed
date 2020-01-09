@@ -54,7 +54,7 @@ OSVR_EXTERN_C_BEGIN
 
 
 
-typedef struct OSVR_DisplayConfigObject *OSVR_DisplayConfig;
+typedef struct OSVR_DisplayConfigObject* OSVR_DisplayConfig;
 
 
 
@@ -99,7 +99,7 @@ typedef struct OSVR_DisplayConfigObject *OSVR_DisplayConfig;
 
 
 OSVR_CLIENTKIT_EXPORT OSVR_ReturnCode
-osvrClientGetDisplay(OSVR_ClientContext ctx, OSVR_DisplayConfig *disp);
+osvrClientGetDisplay(OSVR_ClientContext ctx, OSVR_DisplayConfig* disp);
 
 
 
@@ -141,7 +141,7 @@ osvrClientCheckDisplayStartup(OSVR_DisplayConfig disp);
 
 
 OSVR_CLIENTKIT_EXPORT OSVR_ReturnCode osvrClientGetNumDisplayInputs(
-    OSVR_DisplayConfig disp, OSVR_DisplayInputCount *numDisplayInputs);
+    OSVR_DisplayConfig disp, OSVR_DisplayInputCount* numDisplayInputs);
 
 
 
@@ -161,7 +161,7 @@ OSVR_CLIENTKIT_EXPORT OSVR_ReturnCode osvrClientGetNumDisplayInputs(
 
 OSVR_CLIENTKIT_EXPORT OSVR_ReturnCode osvrClientGetDisplayDimensions(
     OSVR_DisplayConfig disp, OSVR_DisplayInputCount displayInputIndex,
-    OSVR_DisplayDimension *width, OSVR_DisplayDimension *height);
+    OSVR_DisplayDimension* width, OSVR_DisplayDimension* height);
 
 
 
@@ -177,7 +177,7 @@ OSVR_CLIENTKIT_EXPORT OSVR_ReturnCode osvrClientGetDisplayDimensions(
 
 
 OSVR_CLIENTKIT_EXPORT OSVR_ReturnCode
-osvrClientGetNumViewers(OSVR_DisplayConfig disp, OSVR_ViewerCount *viewers);
+osvrClientGetNumViewers(OSVR_DisplayConfig disp, OSVR_ViewerCount* viewers);
 
 
 
@@ -192,7 +192,7 @@ osvrClientGetNumViewers(OSVR_DisplayConfig disp, OSVR_ViewerCount *viewers);
 
 
 OSVR_CLIENTKIT_EXPORT OSVR_ReturnCode osvrClientGetViewerPose(
-    OSVR_DisplayConfig disp, OSVR_ViewerCount viewer, OSVR_Pose3 *pose);
+    OSVR_DisplayConfig disp, OSVR_ViewerCount viewer, OSVR_Pose3* pose);
 
 
 
@@ -209,7 +209,7 @@ OSVR_CLIENTKIT_EXPORT OSVR_ReturnCode osvrClientGetViewerPose(
 
 
 OSVR_CLIENTKIT_EXPORT OSVR_ReturnCode osvrClientGetNumEyesForViewer(
-    OSVR_DisplayConfig disp, OSVR_ViewerCount viewer, OSVR_EyeCount *eyes);
+    OSVR_DisplayConfig disp, OSVR_ViewerCount viewer, OSVR_EyeCount* eyes);
 
 
 
@@ -226,7 +226,7 @@ OSVR_CLIENTKIT_EXPORT OSVR_ReturnCode osvrClientGetNumEyesForViewer(
 
 OSVR_CLIENTKIT_EXPORT OSVR_ReturnCode
 osvrClientGetViewerEyePose(OSVR_DisplayConfig disp, OSVR_ViewerCount viewer,
-                           OSVR_EyeCount eye, OSVR_Pose3 *pose);
+                           OSVR_EyeCount eye, OSVR_Pose3* pose);
 
 
 
@@ -245,7 +245,7 @@ osvrClientGetViewerEyePose(OSVR_DisplayConfig disp, OSVR_ViewerCount viewer,
 
 OSVR_CLIENTKIT_EXPORT OSVR_ReturnCode osvrClientGetViewerEyeViewMatrixd(
     OSVR_DisplayConfig disp, OSVR_ViewerCount viewer, OSVR_EyeCount eye,
-    OSVR_MatrixConventions flags, double *mat);
+    OSVR_MatrixConventions flags, double* mat);
 
 
 
@@ -264,7 +264,7 @@ OSVR_CLIENTKIT_EXPORT OSVR_ReturnCode osvrClientGetViewerEyeViewMatrixd(
 
 OSVR_CLIENTKIT_EXPORT OSVR_ReturnCode osvrClientGetViewerEyeViewMatrixf(
     OSVR_DisplayConfig disp, OSVR_ViewerCount viewer, OSVR_EyeCount eye,
-    OSVR_MatrixConventions flags, float *mat);
+    OSVR_MatrixConventions flags, float* mat);
 
 
 
@@ -283,7 +283,7 @@ OSVR_CLIENTKIT_EXPORT OSVR_ReturnCode osvrClientGetViewerEyeViewMatrixf(
 
 OSVR_CLIENTKIT_EXPORT OSVR_ReturnCode osvrClientGetNumSurfacesForViewerEye(
     OSVR_DisplayConfig disp, OSVR_ViewerCount viewer, OSVR_EyeCount eye,
-    OSVR_SurfaceCount *surfaces);
+    OSVR_SurfaceCount* surfaces);
 
 
 
@@ -311,9 +311,9 @@ OSVR_CLIENTKIT_EXPORT OSVR_ReturnCode osvrClientGetNumSurfacesForViewerEye(
 OSVR_CLIENTKIT_EXPORT OSVR_ReturnCode
 osvrClientGetRelativeViewportForViewerEyeSurface(
     OSVR_DisplayConfig disp, OSVR_ViewerCount viewer, OSVR_EyeCount eye,
-    OSVR_SurfaceCount surface, OSVR_ViewportDimension *left,
-    OSVR_ViewportDimension *bottom, OSVR_ViewportDimension *width,
-    OSVR_ViewportDimension *height);
+    OSVR_SurfaceCount surface, OSVR_ViewportDimension* left,
+    OSVR_ViewportDimension* bottom, OSVR_ViewportDimension* width,
+    OSVR_ViewportDimension* height);
 
 
 
@@ -342,7 +342,7 @@ osvrClientGetRelativeViewportForViewerEyeSurface(
 OSVR_CLIENTKIT_EXPORT OSVR_ReturnCode
 osvrClientGetViewerEyeSurfaceDisplayInputIndex(
     OSVR_DisplayConfig disp, OSVR_ViewerCount viewer, OSVR_EyeCount eye,
-    OSVR_SurfaceCount surface, OSVR_DisplayInputCount *displayInput);
+    OSVR_SurfaceCount surface, OSVR_DisplayInputCount* displayInput);
 
 
 
@@ -366,7 +366,7 @@ OSVR_CLIENTKIT_EXPORT OSVR_ReturnCode
 osvrClientGetViewerEyeSurfaceProjectionMatrixd(
     OSVR_DisplayConfig disp, OSVR_ViewerCount viewer, OSVR_EyeCount eye,
     OSVR_SurfaceCount surface, double near, double far,
-    OSVR_MatrixConventions flags, double *matrix);
+    OSVR_MatrixConventions flags, double* matrix);
 
 
 
@@ -390,7 +390,7 @@ OSVR_CLIENTKIT_EXPORT OSVR_ReturnCode
 osvrClientGetViewerEyeSurfaceProjectionMatrixf(
     OSVR_DisplayConfig disp, OSVR_ViewerCount viewer, OSVR_EyeCount eye,
     OSVR_SurfaceCount surface, float near, float far,
-    OSVR_MatrixConventions flags, float *matrix);
+    OSVR_MatrixConventions flags, float* matrix);
 
 
 
@@ -421,8 +421,8 @@ osvrClientGetViewerEyeSurfaceProjectionMatrixf(
 OSVR_CLIENTKIT_EXPORT OSVR_ReturnCode
 osvrClientGetViewerEyeSurfaceProjectionClippingPlanes(
     OSVR_DisplayConfig disp, OSVR_ViewerCount viewer, OSVR_EyeCount eye,
-    OSVR_SurfaceCount surface, double *left, double *right, double *bottom,
-    double *top);
+    OSVR_SurfaceCount surface, double* left, double* right, double* bottom,
+    double* top);
 
 
 
@@ -448,7 +448,7 @@ osvrClientDoesViewerEyeSurfaceWantDistortion(OSVR_DisplayConfig disp,
                                              OSVR_ViewerCount viewer,
                                              OSVR_EyeCount eye,
                                              OSVR_SurfaceCount surface,
-                                             OSVR_CBool *distortionRequested);
+                                             OSVR_CBool* distortionRequested);
 
 
 
@@ -474,7 +474,7 @@ osvrClientDoesViewerEyeSurfaceWantDistortion(OSVR_DisplayConfig disp,
 OSVR_CLIENTKIT_EXPORT OSVR_ReturnCode
 osvrClientGetViewerEyeSurfaceRadialDistortionPriority(
     OSVR_DisplayConfig disp, OSVR_ViewerCount viewer, OSVR_EyeCount eye,
-    OSVR_SurfaceCount surface, OSVR_DistortionPriority *priority);
+    OSVR_SurfaceCount surface, OSVR_DistortionPriority* priority);
 
 
 
@@ -495,7 +495,7 @@ osvrClientGetViewerEyeSurfaceRadialDistortionPriority(
 OSVR_CLIENTKIT_EXPORT OSVR_ReturnCode
 osvrClientGetViewerEyeSurfaceRadialDistortion(
     OSVR_DisplayConfig disp, OSVR_ViewerCount viewer, OSVR_EyeCount eye,
-    OSVR_SurfaceCount surface, OSVR_RadialDistortionParameters *params);
+    OSVR_SurfaceCount surface, OSVR_RadialDistortionParameters* params);
 
 
 

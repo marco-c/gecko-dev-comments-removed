@@ -24,7 +24,7 @@ namespace auth {
 
 
 
-bool URIMatchesPrefPattern(nsIURI *uri, const char *pref);
+bool URIMatchesPrefPattern(nsIURI* uri, const char* pref);
 
 }  
 }  

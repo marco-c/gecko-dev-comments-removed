@@ -18,7 +18,7 @@
 
 @interface nsMacCursor : NSObject {
  @private
-  NSTimer *mTimer;
+  NSTimer* mTimer;
  @protected
   nsCursor mType;
   int mFrameCounter;
@@ -32,7 +32,7 @@
 
 
 
-+ (nsMacCursor *)cursorWithCursor:(NSCursor *)aCursor type:(nsCursor)aType;
++ (nsMacCursor*)cursorWithCursor:(NSCursor*)aCursor type:(nsCursor)aType;
 
 
 
@@ -50,9 +50,9 @@
 
 
 
-+ (nsMacCursor *)cursorWithImageNamed:(NSString *)aCursorImage
-                              hotSpot:(NSPoint)aPoint
-                                 type:(nsCursor)aType;
++ (nsMacCursor*)cursorWithImageNamed:(NSString*)aCursorImage
+                             hotSpot:(NSPoint)aPoint
+                                type:(nsCursor)aType;
 
 
 
@@ -67,7 +67,7 @@
 
 
 
-+ (nsMacCursor *)cursorWithFrames:(NSArray *)aCursorFrames type:(nsCursor)aType;
++ (nsMacCursor*)cursorWithFrames:(NSArray*)aCursorFrames type:(nsCursor)aType;
 
 
 
@@ -80,7 +80,7 @@
 
 
 
-+ (NSCursor *)cocoaCursorWithImageNamed:(NSString *)imageName hotSpot:(NSPoint)aPoint;
++ (NSCursor*)cocoaCursorWithImageNamed:(NSString*)imageName hotSpot:(NSPoint)aPoint;
 
 
 

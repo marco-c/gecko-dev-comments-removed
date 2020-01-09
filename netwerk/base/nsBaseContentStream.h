@@ -50,7 +50,7 @@ class nsBaseContentStream : public nsIAsyncInputStream {
   bool HasPendingCallback() { return mCallback != nullptr; }
 
   
-  nsIEventTarget *CallbackTarget() { return mCallbackTarget; }
+  nsIEventTarget* CallbackTarget() { return mCallbackTarget; }
 
   
   

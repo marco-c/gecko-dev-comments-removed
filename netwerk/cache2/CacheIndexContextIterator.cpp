@@ -10,19 +10,19 @@
 namespace mozilla {
 namespace net {
 
-CacheIndexContextIterator::CacheIndexContextIterator(CacheIndex *aIndex,
+CacheIndexContextIterator::CacheIndexContextIterator(CacheIndex* aIndex,
                                                      bool aAddNew,
-                                                     nsILoadContextInfo *aInfo)
+                                                     nsILoadContextInfo* aInfo)
     : CacheIndexIterator(aIndex, aAddNew), mInfo(aInfo) {}
 
-void CacheIndexContextIterator::AddRecord(CacheIndexRecord *aRecord) {
+void CacheIndexContextIterator::AddRecord(CacheIndexRecord* aRecord) {
   if (CacheIndexEntry::RecordMatchesLoadContextInfo(aRecord, mInfo)) {
     CacheIndexIterator::AddRecord(aRecord);
   }
 }
 
 void CacheIndexContextIterator::AddRecords(
-    const nsTArray<CacheIndexRecord *> &aRecords) {
+    const nsTArray<CacheIndexRecord*>& aRecords) {
   
   for (uint32_t i = 0; i < aRecords.Length(); ++i) {
     AddRecord(aRecords[i]);

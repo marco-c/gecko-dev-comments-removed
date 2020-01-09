@@ -14,12 +14,12 @@
 #  include "nsDBusHandlerApp.h"
 #endif
 
-nsresult nsMIMEInfoUnix::LoadUriInternal(nsIURI *aURI) {
+nsresult nsMIMEInfoUnix::LoadUriInternal(nsIURI* aURI) {
   return nsGNOMERegistry::LoadURL(aURI);
 }
 
 NS_IMETHODIMP
-nsMIMEInfoUnix::GetHasDefaultHandler(bool *_retval) {
+nsMIMEInfoUnix::GetHasDefaultHandler(bool* _retval) {
   
   
   
@@ -47,7 +47,7 @@ nsMIMEInfoUnix::GetHasDefaultHandler(bool *_retval) {
   return NS_OK;
 }
 
-nsresult nsMIMEInfoUnix::LaunchDefaultWithFile(nsIFile *aFile) {
+nsresult nsMIMEInfoUnix::LaunchDefaultWithFile(nsIFile* aFile) {
   
   
   

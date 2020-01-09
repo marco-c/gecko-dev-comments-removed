@@ -29,9 +29,9 @@ bool gServiceControlStopping = false;
 
 #define LOGS_TO_KEEP 10
 
-BOOL GetLogDirectoryPath(WCHAR *path);
+BOOL GetLogDirectoryPath(WCHAR* path);
 
-int wmain(int argc, WCHAR **argv) {
+int wmain(int argc, WCHAR** argv) {
   
   
   
@@ -125,7 +125,7 @@ int wmain(int argc, WCHAR **argv) {
 
 
 
-BOOL GetLogDirectoryPath(WCHAR *path) {
+BOOL GetLogDirectoryPath(WCHAR* path) {
   if (!GetModuleFileNameW(nullptr, path, MAX_PATH)) {
     return FALSE;
   }
@@ -224,7 +224,7 @@ void StartTerminationThread() {
 
 
 
-void WINAPI SvcMain(DWORD argc, LPWSTR *argv) {
+void WINAPI SvcMain(DWORD argc, LPWSTR* argv) {
   
   WCHAR updatePath[MAX_PATH + 1];
   if (GetLogDirectoryPath(updatePath)) {

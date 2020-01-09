@@ -28,8 +28,8 @@ class nsJARProtocolHandler final : public nsIProtocolHandler,
   nsresult Init();
 
   
-  nsIMIMEService *MimeService();
-  nsIZipReaderCache *JarCache() const { return mJARCache; }
+  nsIMIMEService* MimeService();
+  nsIZipReaderCache* JarCache() const { return mJARCache; }
 
  protected:
   virtual ~nsJARProtocolHandler();

@@ -64,10 +64,10 @@ class AsyncExecuteStatements final : public nsIRunnable,
 
 
 
-  static nsresult execute(StatementDataArray &aStatements,
-                          Connection *aConnection, sqlite3 *aNativeConnection,
-                          mozIStorageStatementCallback *aCallback,
-                          mozIStoragePendingStatement **_stmt);
+  static nsresult execute(StatementDataArray& aStatements,
+                          Connection* aConnection, sqlite3* aNativeConnection,
+                          mozIStorageStatementCallback* aCallback,
+                          mozIStoragePendingStatement** _stmt);
 
   
 
@@ -85,13 +85,13 @@ class AsyncExecuteStatements final : public nsIRunnable,
 
 
   nsresult notifyCompleteOnCallingThread();
-  nsresult notifyErrorOnCallingThread(mozIStorageError *aError);
-  nsresult notifyResultsOnCallingThread(ResultSet *aResultSet);
+  nsresult notifyErrorOnCallingThread(mozIStorageError* aError);
+  nsresult notifyResultsOnCallingThread(ResultSet* aResultSet);
 
  private:
-  AsyncExecuteStatements(StatementDataArray &aStatements,
-                         Connection *aConnection, sqlite3 *aNativeConnection,
-                         mozIStorageStatementCallback *aCallback);
+  AsyncExecuteStatements(StatementDataArray& aStatements,
+                         Connection* aConnection, sqlite3* aNativeConnection,
+                         mozIStorageStatementCallback* aCallback);
   ~AsyncExecuteStatements();
 
   
@@ -108,7 +108,7 @@ class AsyncExecuteStatements final : public nsIRunnable,
 
 
 
-  bool bindExecuteAndProcessStatement(StatementData &aData,
+  bool bindExecuteAndProcessStatement(StatementData& aData,
                                       bool aLastStatement);
 
   
@@ -124,7 +124,7 @@ class AsyncExecuteStatements final : public nsIRunnable,
 
 
 
-  bool executeAndProcessStatement(sqlite3_stmt *aStatement,
+  bool executeAndProcessStatement(sqlite3_stmt* aStatement,
                                   bool aLastStatement);
 
   
@@ -136,7 +136,7 @@ class AsyncExecuteStatements final : public nsIRunnable,
 
 
 
-  bool executeStatement(sqlite3_stmt *aStatement);
+  bool executeStatement(sqlite3_stmt* aStatement);
 
   
 
@@ -147,7 +147,7 @@ class AsyncExecuteStatements final : public nsIRunnable,
 
 
 
-  nsresult buildAndNotifyResults(sqlite3_stmt *aStatement);
+  nsresult buildAndNotifyResults(sqlite3_stmt* aStatement);
 
   
 
@@ -169,8 +169,8 @@ class AsyncExecuteStatements final : public nsIRunnable,
 
 
 
-  nsresult notifyError(int32_t aErrorCode, const char *aMessage);
-  nsresult notifyError(mozIStorageError *aError);
+  nsresult notifyError(int32_t aErrorCode, const char* aMessage);
+  nsresult notifyError(mozIStorageError* aError);
 
   
 
@@ -189,7 +189,7 @@ class AsyncExecuteStatements final : public nsIRunnable,
 
   StatementDataArray mStatements;
   RefPtr<Connection> mConnection;
-  sqlite3 *mNativeConnection;
+  sqlite3* mNativeConnection;
   bool mHasTransaction;
   
   
@@ -226,7 +226,7 @@ class AsyncExecuteStatements final : public nsIRunnable,
 
 
 
-  Mutex &mMutex;
+  Mutex& mMutex;
 
   
 
@@ -234,7 +234,7 @@ class AsyncExecuteStatements final : public nsIRunnable,
 
 
 
-  SQLiteMutex &mDBMutex;
+  SQLiteMutex& mDBMutex;
 
   
 

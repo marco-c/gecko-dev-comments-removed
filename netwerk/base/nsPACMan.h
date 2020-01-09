@@ -51,19 +51,19 @@ class NS_NO_VTABLE nsPACManCallback : public nsISupports {
 
 
 
-  virtual void OnQueryComplete(nsresult status, const nsACString &pacString,
-                               const nsACString &newPACURL) = 0;
+  virtual void OnQueryComplete(nsresult status, const nsACString& pacString,
+                               const nsACString& newPACURL) = 0;
 };
 
 class PendingPACQuery final : public Runnable,
                               public LinkedListElement<PendingPACQuery> {
  public:
-  PendingPACQuery(nsPACMan *pacMan, nsIURI *uri, nsPACManCallback *callback,
+  PendingPACQuery(nsPACMan* pacMan, nsIURI* uri, nsPACManCallback* callback,
                   bool mainThreadResponse);
 
   
-  void Complete(nsresult status, const nsACString &pacString);
-  void UseAlternatePACFile(const nsACString &pacURL);
+  void Complete(nsresult status, const nsACString& pacString);
+  void UseAlternatePACFile(const nsACString& pacURL);
 
   nsCString mSpec;
   nsCString mScheme;
@@ -73,7 +73,7 @@ class PendingPACQuery final : public Runnable,
   NS_IMETHOD Run(void) override; 
 
  private:
-  nsPACMan *mPACMan;  
+  nsPACMan* mPACMan;  
 
  private:
   RefPtr<nsPACManCallback> mCallback;
@@ -92,7 +92,7 @@ class nsPACMan final : public nsIStreamLoaderObserver,
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
 
-  explicit nsPACMan(nsIEventTarget *mainThreadEventTarget);
+  explicit nsPACMan(nsIEventTarget* mainThreadEventTarget);
 
   
 
@@ -114,7 +114,7 @@ class nsPACMan final : public nsIStreamLoaderObserver,
 
 
 
-  nsresult AsyncGetProxyForURI(nsIURI *uri, nsPACManCallback *callback,
+  nsresult AsyncGetProxyForURI(nsIURI* uri, nsPACManCallback* callback,
                                bool mustCallbackOnMainThread);
 
   
@@ -126,7 +126,7 @@ class nsPACMan final : public nsIStreamLoaderObserver,
 
 
 
-  nsresult LoadPACFromURI(const nsACString &aSpec);
+  nsresult LoadPACFromURI(const nsACString& aSpec);
 
   
 
@@ -141,12 +141,12 @@ class nsPACMan final : public nsIStreamLoaderObserver,
 
 
 
-  bool IsPACURI(const nsACString &spec) {
+  bool IsPACURI(const nsACString& spec) {
     return mPACURISpec.Equals(spec) || mPACURIRedirectSpec.Equals(spec) ||
            mNormalPACURISpec.Equals(spec);
   }
 
-  bool IsPACURI(nsIURI *uri) {
+  bool IsPACURI(nsIURI* uri) {
     if (mPACURISpec.IsEmpty() && mPACURIRedirectSpec.IsEmpty()) {
       return false;
     }
@@ -162,8 +162,8 @@ class nsPACMan final : public nsIStreamLoaderObserver,
 
   bool IsUsingWPAD() { return mAutoDetect; }
 
-  nsresult Init(nsISystemProxySettings *);
-  static nsPACMan *sInstance;
+  nsresult Init(nsISystemProxySettings*);
+  static nsPACMan* sInstance;
 
   
   void ProcessPendingQ();
@@ -212,7 +212,7 @@ class nsPACMan final : public nsIStreamLoaderObserver,
 
 
 
-  nsresult LoadPACFromURI(const nsACString &aSpec, bool aResetLoadFailureCount);
+  nsresult LoadPACFromURI(const nsACString& aSpec, bool aResetLoadFailureCount);
 
   
 
@@ -229,18 +229,18 @@ class nsPACMan final : public nsIStreamLoaderObserver,
 
 
 
-  nsresult PostQuery(PendingPACQuery *query);
+  nsresult PostQuery(PendingPACQuery* query);
 
   
   
-  void AssignPACURISpec(const nsACString &aSpec);
+  void AssignPACURISpec(const nsACString& aSpec);
 
   
   void PostProcessPendingQ();
   void PostCancelPendingQ(nsresult, bool aShutdown = false);
   bool ProcessPending();
-  nsresult GetPACFromDHCP(nsACString &aSpec);
-  nsresult ConfigureWPAD(nsACString &aSpec);
+  nsresult GetPACFromDHCP(nsACString& aSpec);
+  nsresult ConfigureWPAD(nsACString& aSpec);
 
  private:
   

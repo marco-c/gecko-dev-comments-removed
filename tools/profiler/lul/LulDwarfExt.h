@@ -121,41 +121,22 @@ class ByteReader {
 
   
   
-  uint8 ReadOneByte(const char *buffer) const;
+  uint8 ReadOneByte(const char* buffer) const;
 
   
   
-  uint16 ReadTwoBytes(const char *buffer) const;
-
-  
-  
-  
-  
-  
-  uint64 ReadFourBytes(const char *buffer) const;
-
-  
-  
-  uint64 ReadEightBytes(const char *buffer) const;
+  uint16 ReadTwoBytes(const char* buffer) const;
 
   
   
   
   
   
+  uint64 ReadFourBytes(const char* buffer) const;
+
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  uint64 ReadUnsignedLEB128(const char *buffer, size_t *len) const;
+  uint64 ReadEightBytes(const char* buffer) const;
 
   
   
@@ -174,7 +155,26 @@ class ByteReader {
   
   
   
-  int64 ReadSignedLEB128(const char *buffer, size_t *len) const;
+  uint64 ReadUnsignedLEB128(const char* buffer, size_t* len) const;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  int64 ReadSignedLEB128(const char* buffer, size_t* len) const;
 
   
   
@@ -197,7 +197,7 @@ class ByteReader {
   
   
   
-  uint64 ReadAddress(const char *buffer) const;
+  uint64 ReadAddress(const char* buffer) const;
 
   
   
@@ -234,14 +234,14 @@ class ByteReader {
   
   
   
-  uint64 ReadInitialLength(const char *start, size_t *len);
+  uint64 ReadInitialLength(const char* start, size_t* len);
 
   
   
   
   
   
-  uint64 ReadOffset(const char *buffer) const;
+  uint64 ReadOffset(const char* buffer) const;
 
   
   
@@ -296,7 +296,7 @@ class ByteReader {
   
   
   
-  void SetCFIDataBase(uint64 section_base, const char *buffer_base);
+  void SetCFIDataBase(uint64 section_base, const char* buffer_base);
 
   
   
@@ -335,12 +335,12 @@ class ByteReader {
   
   
   
-  uint64 ReadEncodedPointer(const char *buffer, DwarfPointerEncoding encoding,
-                            size_t *len) const;
+  uint64 ReadEncodedPointer(const char* buffer, DwarfPointerEncoding encoding,
+                            size_t* len) const;
 
  private:
   
-  typedef uint64 (ByteReader::*AddressReader)(const char *) const;
+  typedef uint64 (ByteReader::*AddressReader)(const char*) const;
 
   
   
@@ -364,16 +364,16 @@ class ByteReader {
   bool have_function_base_;
   uint64 section_base_;
   uint64 text_base_, data_base_, function_base_;
-  const char *buffer_base_;
+  const char* buffer_base_;
 };
 
-inline uint8 ByteReader::ReadOneByte(const char *buffer) const {
+inline uint8 ByteReader::ReadOneByte(const char* buffer) const {
   return buffer[0];
 }
 
-inline uint16 ByteReader::ReadTwoBytes(const char *signed_buffer) const {
-  const unsigned char *buffer =
-      reinterpret_cast<const unsigned char *>(signed_buffer);
+inline uint16 ByteReader::ReadTwoBytes(const char* signed_buffer) const {
+  const unsigned char* buffer =
+      reinterpret_cast<const unsigned char*>(signed_buffer);
   const uint16 buffer0 = buffer[0];
   const uint16 buffer1 = buffer[1];
   if (endian_ == ENDIANNESS_LITTLE) {
@@ -383,9 +383,9 @@ inline uint16 ByteReader::ReadTwoBytes(const char *signed_buffer) const {
   }
 }
 
-inline uint64 ByteReader::ReadFourBytes(const char *signed_buffer) const {
-  const unsigned char *buffer =
-      reinterpret_cast<const unsigned char *>(signed_buffer);
+inline uint64 ByteReader::ReadFourBytes(const char* signed_buffer) const {
+  const unsigned char* buffer =
+      reinterpret_cast<const unsigned char*>(signed_buffer);
   const uint32 buffer0 = buffer[0];
   const uint32 buffer1 = buffer[1];
   const uint32 buffer2 = buffer[2];
@@ -397,9 +397,9 @@ inline uint64 ByteReader::ReadFourBytes(const char *signed_buffer) const {
   }
 }
 
-inline uint64 ByteReader::ReadEightBytes(const char *signed_buffer) const {
-  const unsigned char *buffer =
-      reinterpret_cast<const unsigned char *>(signed_buffer);
+inline uint64 ByteReader::ReadEightBytes(const char* signed_buffer) const {
+  const unsigned char* buffer =
+      reinterpret_cast<const unsigned char*>(signed_buffer);
   const uint64 buffer0 = buffer[0];
   const uint64 buffer1 = buffer[1];
   const uint64 buffer2 = buffer[2];
@@ -421,8 +421,8 @@ inline uint64 ByteReader::ReadEightBytes(const char *signed_buffer) const {
 
 
 
-inline uint64 ByteReader::ReadUnsignedLEB128(const char *buffer,
-                                             size_t *len) const {
+inline uint64 ByteReader::ReadUnsignedLEB128(const char* buffer,
+                                             size_t* len) const {
   uint64 result = 0;
   size_t num_read = 0;
   unsigned int shift = 0;
@@ -446,8 +446,8 @@ inline uint64 ByteReader::ReadUnsignedLEB128(const char *buffer,
 
 
 
-inline int64 ByteReader::ReadSignedLEB128(const char *buffer,
-                                          size_t *len) const {
+inline int64 ByteReader::ReadSignedLEB128(const char* buffer,
+                                          size_t* len) const {
   int64 result = 0;
   unsigned int shift = 0;
   size_t num_read = 0;
@@ -466,18 +466,18 @@ inline int64 ByteReader::ReadSignedLEB128(const char *buffer,
   return result;
 }
 
-inline uint64 ByteReader::ReadOffset(const char *buffer) const {
+inline uint64 ByteReader::ReadOffset(const char* buffer) const {
   MOZ_ASSERT(this->offset_reader_);
   return (this->*offset_reader_)(buffer);
 }
 
-inline uint64 ByteReader::ReadAddress(const char *buffer) const {
+inline uint64 ByteReader::ReadAddress(const char* buffer) const {
   MOZ_ASSERT(this->address_reader_);
   return (this->*address_reader_)(buffer);
 }
 
 inline void ByteReader::SetCFIDataBase(uint64 section_base,
-                                       const char *buffer_base) {
+                                       const char* buffer_base) {
   section_base_ = section_base;
   buffer_base_ = buffer_base;
   have_section_base_ = true;
@@ -732,8 +732,8 @@ class CallFrameInfo {
   
   
 
-  CallFrameInfo(const char *buffer, size_t buffer_length, ByteReader *reader,
-                Handler *handler, Reporter *reporter, bool eh_frame = false)
+  CallFrameInfo(const char* buffer, size_t buffer_length, ByteReader* reader,
+                Handler* handler, Reporter* reporter, bool eh_frame = false)
       : buffer_(buffer),
         buffer_length_(buffer_length),
         reader_(reader),
@@ -749,7 +749,7 @@ class CallFrameInfo {
   bool Start();
 
   
-  static const char *KindName(EntryKind kind);
+  static const char* KindName(EntryKind kind);
 
  private:
   struct CIE;
@@ -761,7 +761,7 @@ class CallFrameInfo {
     size_t offset;
 
     
-    const char *start;
+    const char* start;
 
     
     
@@ -772,16 +772,16 @@ class CallFrameInfo {
 
     
     
-    const char *fields;
+    const char* fields;
 
     
-    const char *instructions;
+    const char* instructions;
 
     
     
     
     
-    const char *end;
+    const char* end;
 
     
     
@@ -789,7 +789,7 @@ class CallFrameInfo {
 
     
     
-    CIE *cie;
+    CIE* cie;
   };
 
   
@@ -858,14 +858,14 @@ class CallFrameInfo {
   
   
   
-  bool ReadEntryPrologue(const char *cursor, Entry *entry);
+  bool ReadEntryPrologue(const char* cursor, Entry* entry);
 
   
   
   
   
   
-  bool ReadCIEFields(CIE *cie);
+  bool ReadCIEFields(CIE* cie);
 
   
   
@@ -873,12 +873,12 @@ class CallFrameInfo {
   
   
   
-  bool ReadFDEFields(FDE *fde);
+  bool ReadFDEFields(FDE* fde);
 
   
   
   
-  bool ReportIncomplete(Entry *entry);
+  bool ReportIncomplete(Entry* entry);
 
   
   static bool IsIndirectEncoding(DwarfPointerEncoding encoding) {
@@ -886,17 +886,17 @@ class CallFrameInfo {
   }
 
   
-  const char *buffer_;
+  const char* buffer_;
   size_t buffer_length_;
 
   
-  ByteReader *reader_;
+  ByteReader* reader_;
 
   
-  Handler *handler_;
+  Handler* handler_;
 
   
-  Reporter *reporter_;
+  Reporter* reporter_;
 
   
   bool eh_frame_;
@@ -929,7 +929,7 @@ class CallFrameInfo::Handler {
   
   
   virtual bool Entry(size_t offset, uint64 address, uint64 length,
-                     uint8 version, const std::string &augmentation,
+                     uint8 version, const std::string& augmentation,
                      unsigned return_address) = 0;
 
   
@@ -978,13 +978,13 @@ class CallFrameInfo::Handler {
   
   
   virtual bool ExpressionRule(uint64 address, int reg,
-                              const std::string &expression) = 0;
+                              const std::string& expression) = 0;
 
   
   
   
   virtual bool ValExpressionRule(uint64 address, int reg,
-                                 const std::string &expression) = 0;
+                                 const std::string& expression) = 0;
 
   
   
@@ -1061,8 +1061,8 @@ class CallFrameInfo::Reporter {
   
   
   
-  Reporter(void (*aLog)(const char *), const std::string &filename,
-           const std::string &section = ".debug_frame")
+  Reporter(void (*aLog)(const char*), const std::string& filename,
+           const std::string& section = ".debug_frame")
       : log_(aLog), filename_(filename), section_(section) {}
   virtual ~Reporter() {}
 
@@ -1094,13 +1094,13 @@ class CallFrameInfo::Reporter {
   
   
   virtual void UnrecognizedAugmentation(uint64 offset,
-                                        const std::string &augmentation);
+                                        const std::string& augmentation);
 
   
   
   
   
-  virtual void InvalidDwarf4Artefact(uint64 offset, const char *what);
+  virtual void InvalidDwarf4Artefact(uint64 offset, const char* what);
 
   
   
@@ -1141,7 +1141,7 @@ class CallFrameInfo::Reporter {
 
  private:
   
-  void (*log_)(const char *);
+  void (*log_)(const char*);
 
  protected:
   
@@ -1167,24 +1167,24 @@ class DwarfCFIToModule : public CallFrameInfo::Handler {
     
     
     
-    Reporter(void (*aLog)(const char *), const std::string &file,
-             const std::string &section)
+    Reporter(void (*aLog)(const char*), const std::string& file,
+             const std::string& section)
         : log_(aLog), file_(file), section_(section) {}
     virtual ~Reporter() {}
 
     
     
-    virtual void UndefinedNotSupported(size_t offset, const UniqueString *reg);
+    virtual void UndefinedNotSupported(size_t offset, const UniqueString* reg);
 
     
     
     
     virtual void ExpressionCouldNotBeSummarised(size_t offset,
-                                                const UniqueString *reg);
+                                                const UniqueString* reg);
 
    private:
     
-    void (*log_)(const char *);
+    void (*log_)(const char*);
 
    protected:
     std::string file_, section_;
@@ -1220,10 +1220,10 @@ class DwarfCFIToModule : public CallFrameInfo::Handler {
   
   
   
-  DwarfCFIToModule(const unsigned int num_dw_regs, Reporter *reporter,
-                   ByteReader *reader,
-                    UniqueStringUniverse *usu,
-                    Summariser *summ)
+  DwarfCFIToModule(const unsigned int num_dw_regs, Reporter* reporter,
+                   ByteReader* reader,
+                    UniqueStringUniverse* usu,
+                    Summariser* summ)
       : summ_(summ),
         usu_(usu),
         num_dw_regs_(num_dw_regs),
@@ -1233,7 +1233,7 @@ class DwarfCFIToModule : public CallFrameInfo::Handler {
   virtual ~DwarfCFIToModule() {}
 
   virtual bool Entry(size_t offset, uint64 address, uint64 length,
-                     uint8 version, const std::string &augmentation,
+                     uint8 version, const std::string& augmentation,
                      unsigned return_address) override;
   virtual bool UndefinedRule(uint64 address, int reg) override;
   virtual bool SameValueRule(uint64 address, int reg) override;
@@ -1244,29 +1244,29 @@ class DwarfCFIToModule : public CallFrameInfo::Handler {
   virtual bool RegisterRule(uint64 address, int reg,
                             int base_register) override;
   virtual bool ExpressionRule(uint64 address, int reg,
-                              const std::string &expression) override;
+                              const std::string& expression) override;
   virtual bool ValExpressionRule(uint64 address, int reg,
-                                 const std::string &expression) override;
+                                 const std::string& expression) override;
   virtual bool End() override;
 
  private:
   
-  const UniqueString *RegisterName(int i);
+  const UniqueString* RegisterName(int i);
 
   
-  Summariser *summ_;
+  Summariser* summ_;
 
   
-  UniqueStringUniverse *usu_;
+  UniqueStringUniverse* usu_;
 
   
   const unsigned int num_dw_regs_;
 
   
-  Reporter *reporter_;
+  Reporter* reporter_;
 
   
-  ByteReader *reader_;
+  ByteReader* reader_;
 
   
   
@@ -1279,7 +1279,7 @@ class DwarfCFIToModule : public CallFrameInfo::Handler {
 
 
 
-int32_t parseDwarfExpr(Summariser *summ, const ByteReader *reader,
+int32_t parseDwarfExpr(Summariser* summ, const ByteReader* reader,
                        std::string expr, bool debug, bool pushCfaAtStart,
                        bool derefAtEnd);
 

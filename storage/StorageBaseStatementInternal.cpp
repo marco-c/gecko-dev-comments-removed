@@ -34,8 +34,8 @@ class AsyncStatementFinalizer : public Runnable {
 
 
 
-  AsyncStatementFinalizer(StorageBaseStatementInternal *aStatement,
-                          Connection *aConnection)
+  AsyncStatementFinalizer(StorageBaseStatementInternal* aStatement,
+                          Connection* aConnection)
       : Runnable("storage::AsyncStatementFinalizer"),
         mStatement(aStatement),
         mConnection(aConnection) {}
@@ -78,8 +78,8 @@ class LastDitchSqliteStatementFinalizer : public Runnable {
 
 
 
-  LastDitchSqliteStatementFinalizer(RefPtr<Connection> &aConnection,
-                                    sqlite3_stmt *aStatement)
+  LastDitchSqliteStatementFinalizer(RefPtr<Connection>& aConnection,
+                                    sqlite3_stmt* aStatement)
       : Runnable("storage::LastDitchSqliteStatementFinalizer"),
         mConnection(aConnection),
         mAsyncStatement(aStatement) {
@@ -98,7 +98,7 @@ class LastDitchSqliteStatementFinalizer : public Runnable {
 
  private:
   RefPtr<Connection> mConnection;
-  sqlite3_stmt *mAsyncStatement;
+  sqlite3_stmt* mAsyncStatement;
 };
 
 
@@ -108,7 +108,7 @@ StorageBaseStatementInternal::StorageBaseStatementInternal()
     : mNativeConnection(nullptr), mAsyncStatement(nullptr) {}
 
 void StorageBaseStatementInternal::asyncFinalize() {
-  nsIEventTarget *target = mDBConnection->getAsyncExecutionTarget();
+  nsIEventTarget* target = mDBConnection->getAsyncExecutionTarget();
   if (target) {
     
     nsCOMPtr<nsIRunnable> event =
@@ -134,7 +134,7 @@ void StorageBaseStatementInternal::destructorAsyncFinalize() {
     
     
     
-    nsIEventTarget *target = mDBConnection->getAsyncExecutionTarget();
+    nsIEventTarget* target = mDBConnection->getAsyncExecutionTarget();
     if (target) {
       nsCOMPtr<nsIRunnable> event =
           new LastDitchSqliteStatementFinalizer(mDBConnection, mAsyncStatement);
@@ -156,7 +156,7 @@ void StorageBaseStatementInternal::destructorAsyncFinalize() {
 
 NS_IMETHODIMP
 StorageBaseStatementInternal::NewBindingParamsArray(
-    mozIStorageBindingParamsArray **_array) {
+    mozIStorageBindingParamsArray** _array) {
   nsCOMPtr<mozIStorageBindingParamsArray> array = new BindingParamsArray(this);
   NS_ENSURE_TRUE(array, NS_ERROR_OUT_OF_MEMORY);
 
@@ -166,8 +166,8 @@ StorageBaseStatementInternal::NewBindingParamsArray(
 
 NS_IMETHODIMP
 StorageBaseStatementInternal::ExecuteAsync(
-    mozIStorageStatementCallback *aCallback,
-    mozIStoragePendingStatement **_stmt) {
+    mozIStorageStatementCallback* aCallback,
+    mozIStoragePendingStatement** _stmt) {
   
   
   
@@ -185,9 +185,9 @@ StorageBaseStatementInternal::ExecuteAsync(
 }
 
 NS_IMETHODIMP
-StorageBaseStatementInternal::EscapeStringForLIKE(const nsAString &aValue,
+StorageBaseStatementInternal::EscapeStringForLIKE(const nsAString& aValue,
                                                   const char16_t aEscapeChar,
-                                                  nsAString &_escapedString) {
+                                                  nsAString& _escapedString) {
   const char16_t MATCH_ALL('%');
   const char16_t MATCH_ONE('_');
 

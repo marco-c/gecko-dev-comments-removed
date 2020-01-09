@@ -29,14 +29,14 @@ class WinTaskbar final : public nsIWinTaskbar {
   
   
   static bool RegisterAppUserModelID();
-  static bool GetAppUserModelID(nsAString &aDefaultGroupId);
+  static bool GetAppUserModelID(nsAString& aDefaultGroupId);
 
  private:
   bool Initialize();
 
-  typedef HRESULT(WINAPI *SetCurrentProcessExplicitAppUserModelIDPtr)(
+  typedef HRESULT(WINAPI* SetCurrentProcessExplicitAppUserModelIDPtr)(
       PCWSTR AppID);
-  ITaskbarList4 *mTaskbar;
+  ITaskbarList4* mTaskbar;
 };
 
 }  

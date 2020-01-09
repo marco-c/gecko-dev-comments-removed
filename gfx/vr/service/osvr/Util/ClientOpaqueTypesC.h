@@ -50,7 +50,7 @@ OSVR_EXTERN_C_BEGIN
 
 
 
-typedef struct OSVR_ClientContextObject *OSVR_ClientContext;
+typedef struct OSVR_ClientContextObject* OSVR_ClientContext;
 
 
 
@@ -60,7 +60,7 @@ typedef struct OSVR_ClientContextObject *OSVR_ClientContext;
 
 
 
-typedef struct OSVR_ClientInterfaceObject *OSVR_ClientInterface;
+typedef struct OSVR_ClientInterfaceObject* OSVR_ClientInterface;
 
 
 

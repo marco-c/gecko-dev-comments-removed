@@ -25,7 +25,7 @@ class nsITableCellLayout {
 
   
 
-  NS_IMETHOD GetCellIndexes(int32_t &aRowIndex, int32_t &aColIndex) = 0;
+  NS_IMETHOD GetCellIndexes(int32_t& aRowIndex, int32_t& aColIndex) = 0;
 };
 
 #endif

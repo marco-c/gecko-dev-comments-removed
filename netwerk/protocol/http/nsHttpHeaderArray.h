@@ -25,7 +25,7 @@ namespace net {
 
 class nsHttpHeaderArray {
  public:
-  const char *PeekHeader(nsHttpAtom header) const;
+  const char* PeekHeader(nsHttpAtom header) const;
 
   
   
@@ -49,44 +49,44 @@ class nsHttpHeaderArray {
   };
 
   
-  MOZ_MUST_USE nsresult SetHeader(const nsACString &headerName,
-                                  const nsACString &value, bool merge,
+  MOZ_MUST_USE nsresult SetHeader(const nsACString& headerName,
+                                  const nsACString& value, bool merge,
                                   HeaderVariety variety);
-  MOZ_MUST_USE nsresult SetHeader(nsHttpAtom header, const nsACString &value,
+  MOZ_MUST_USE nsresult SetHeader(nsHttpAtom header, const nsACString& value,
                                   bool merge, HeaderVariety variety);
   MOZ_MUST_USE nsresult SetHeader(nsHttpAtom header,
-                                  const nsACString &headerName,
-                                  const nsACString &value, bool merge,
+                                  const nsACString& headerName,
+                                  const nsACString& value, bool merge,
                                   HeaderVariety variety);
 
   
-  MOZ_MUST_USE nsresult SetEmptyHeader(const nsACString &headerName,
+  MOZ_MUST_USE nsresult SetEmptyHeader(const nsACString& headerName,
                                        HeaderVariety variety);
 
   
   
   
   MOZ_MUST_USE nsresult SetHeaderFromNet(nsHttpAtom header,
-                                         const nsACString &headerNameOriginal,
-                                         const nsACString &value,
+                                         const nsACString& headerNameOriginal,
+                                         const nsACString& value,
                                          bool response);
 
   MOZ_MUST_USE nsresult SetResponseHeaderFromCache(
-      nsHttpAtom header, const nsACString &headerNameOriginal,
-      const nsACString &value, HeaderVariety variety);
+      nsHttpAtom header, const nsACString& headerNameOriginal,
+      const nsACString& value, HeaderVariety variety);
 
-  MOZ_MUST_USE nsresult GetHeader(nsHttpAtom header, nsACString &value) const;
+  MOZ_MUST_USE nsresult GetHeader(nsHttpAtom header, nsACString& value) const;
   MOZ_MUST_USE nsresult GetOriginalHeader(nsHttpAtom aHeader,
-                                          nsIHttpHeaderVisitor *aVisitor);
+                                          nsIHttpHeaderVisitor* aVisitor);
   void ClearHeader(nsHttpAtom h);
 
   
-  const char *FindHeaderValue(nsHttpAtom header, const char *value) const {
+  const char* FindHeaderValue(nsHttpAtom header, const char* value) const {
     return nsHttp::FindToken(PeekHeader(header), value, HTTP_HEADER_VALUE_SEPS);
   }
 
   
-  bool HasHeaderValue(nsHttpAtom header, const char *value) const {
+  bool HasHeaderValue(nsHttpAtom header, const char* value) const {
     return FindHeaderValue(header, value) != nullptr;
   }
 
@@ -99,22 +99,22 @@ class nsHttpHeaderArray {
     eFilterResponseOriginal
   };
 
-  MOZ_MUST_USE nsresult VisitHeaders(nsIHttpHeaderVisitor *visitor,
+  MOZ_MUST_USE nsresult VisitHeaders(nsIHttpHeaderVisitor* visitor,
                                      VisitorFilter filter = eFilterAll);
 
   
   
   static MOZ_MUST_USE nsresult ParseHeaderLine(
-      const nsACString &line, nsHttpAtom *header = nullptr,
-      nsACString *headerNameOriginal = nullptr, nsACString *value = nullptr);
+      const nsACString& line, nsHttpAtom* header = nullptr,
+      nsACString* headerNameOriginal = nullptr, nsACString* value = nullptr);
 
-  void Flatten(nsACString &, bool pruneProxyHeaders, bool pruneTransients);
-  void FlattenOriginalHeader(nsACString &);
+  void Flatten(nsACString&, bool pruneProxyHeaders, bool pruneTransients);
+  void FlattenOriginalHeader(nsACString&);
 
   uint32_t Count() const { return mHeaders.Length(); }
 
-  const char *PeekHeaderAt(uint32_t i, nsHttpAtom &header,
-                           nsACString &headerNameOriginal) const;
+  const char* PeekHeaderAt(uint32_t i, nsHttpAtom& header,
+                           nsACString& headerNameOriginal) const;
 
   void Clear();
 
@@ -126,31 +126,31 @@ class nsHttpHeaderArray {
     HeaderVariety variety = eVarietyUnknown;
 
     struct MatchHeader {
-      bool Equals(const nsEntry &aEntry, const nsHttpAtom &aHeader) const {
+      bool Equals(const nsEntry& aEntry, const nsHttpAtom& aHeader) const {
         return aEntry.header == aHeader;
       }
     };
 
-    bool operator==(const nsEntry &aOther) const {
+    bool operator==(const nsEntry& aOther) const {
       return header == aOther.header && value == aOther.value;
     }
   };
 
-  bool operator==(const nsHttpHeaderArray &aOther) const {
+  bool operator==(const nsHttpHeaderArray& aOther) const {
     return mHeaders == aOther.mHeaders;
   }
 
  private:
   
   
-  int32_t LookupEntry(nsHttpAtom header, const nsEntry **) const;
-  int32_t LookupEntry(nsHttpAtom header, nsEntry **);
-  MOZ_MUST_USE nsresult MergeHeader(nsHttpAtom header, nsEntry *entry,
-                                    const nsACString &value,
+  int32_t LookupEntry(nsHttpAtom header, const nsEntry**) const;
+  int32_t LookupEntry(nsHttpAtom header, nsEntry**);
+  MOZ_MUST_USE nsresult MergeHeader(nsHttpAtom header, nsEntry* entry,
+                                    const nsACString& value,
                                     HeaderVariety variety);
   MOZ_MUST_USE nsresult SetHeader_internal(nsHttpAtom header,
-                                           const nsACString &headeName,
-                                           const nsACString &value,
+                                           const nsACString& headeName,
+                                           const nsACString& value,
                                            HeaderVariety variety);
 
   
@@ -175,7 +175,7 @@ class nsHttpHeaderArray {
 
 
 inline int32_t nsHttpHeaderArray::LookupEntry(nsHttpAtom header,
-                                              const nsEntry **entry) const {
+                                              const nsEntry** entry) const {
   uint32_t index = 0;
   while (index != UINT32_MAX) {
     index = mHeaders.IndexOf(header, index, nsEntry::MatchHeader());
@@ -192,7 +192,7 @@ inline int32_t nsHttpHeaderArray::LookupEntry(nsHttpAtom header,
 }
 
 inline int32_t nsHttpHeaderArray::LookupEntry(nsHttpAtom header,
-                                              nsEntry **entry) {
+                                              nsEntry** entry) {
   uint32_t index = 0;
   while (index != UINT32_MAX) {
     index = mHeaders.IndexOf(header, index, nsEntry::MatchHeader());
@@ -234,7 +234,7 @@ inline bool nsHttpHeaderArray::IsIgnoreMultipleHeader(nsHttpAtom header) {
 }
 
 inline MOZ_MUST_USE nsresult nsHttpHeaderArray::MergeHeader(
-    nsHttpAtom header, nsEntry *entry, const nsACString &value,
+    nsHttpAtom header, nsEntry* entry, const nsACString& value,
     nsHttpHeaderArray::HeaderVariety variety) {
   if (value.IsEmpty()) return NS_OK;  
 

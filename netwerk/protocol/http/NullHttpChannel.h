@@ -33,12 +33,12 @@ class NullHttpChannel final : public nsINullChannel,
 
   
   
-  explicit NullHttpChannel(nsIHttpChannel *chan);
+  explicit NullHttpChannel(nsIHttpChannel* chan);
 
   
-  MOZ_MUST_USE nsresult Init(nsIURI *aURI, uint32_t aCaps,
-                             nsProxyInfo *aProxyInfo,
-                             uint32_t aProxyResolveFlags, nsIURI *aProxyURI);
+  MOZ_MUST_USE nsresult Init(nsIURI* aURI, uint32_t aCaps,
+                             nsProxyInfo* aProxyInfo,
+                             uint32_t aProxyResolveFlags, nsIURI* aProxyURI);
 
  private:
   ~NullHttpChannel() = default;

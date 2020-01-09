@@ -20,14 +20,14 @@ struct UserDataKey {
 
 
 class UserData {
-  typedef void (*destroyFunc)(void *data);
+  typedef void (*destroyFunc)(void* data);
 
  public:
   UserData() : count(0), entries(nullptr) {}
 
   
 
-  void Add(UserDataKey *key, void *userData, destroyFunc destroy) {
+  void Add(UserDataKey* key, void* userData, destroyFunc destroy) {
     for (int i = 0; i < count; i++) {
       if (key == entries[i].key) {
         if (entries[i].destroy) {
@@ -44,7 +44,7 @@ class UserData {
     
     
     entries =
-        static_cast<Entry *>(realloc(entries, sizeof(Entry) * (count + 1)));
+        static_cast<Entry*>(realloc(entries, sizeof(Entry) * (count + 1)));
 
     if (!entries) {
       MOZ_CRASH("GFX: UserData::Add");
@@ -58,10 +58,10 @@ class UserData {
   }
 
   
-  void *Remove(UserDataKey *key) {
+  void* Remove(UserDataKey* key) {
     for (int i = 0; i < count; i++) {
       if (key == entries[i].key) {
-        void *userData = entries[i].userData;
+        void* userData = entries[i].userData;
         
         --count;
         for (; i < count; i++) {
@@ -74,7 +74,7 @@ class UserData {
   }
 
   
-  void RemoveAndDestroy(UserDataKey *key) {
+  void RemoveAndDestroy(UserDataKey* key) {
     for (int i = 0; i < count; i++) {
       if (key == entries[i].key) {
         if (entries[i].destroy) {
@@ -90,7 +90,7 @@ class UserData {
   }
 
   
-  void *Get(UserDataKey *key) const {
+  void* Get(UserDataKey* key) const {
     for (int i = 0; i < count; i++) {
       if (key == entries[i].key) {
         return entries[i].userData;
@@ -99,7 +99,7 @@ class UserData {
     return nullptr;
   }
 
-  bool Has(UserDataKey *key) {
+  bool Has(UserDataKey* key) {
     for (int i = 0; i < count; i++) {
       if (key == entries[i].key) {
         return true;
@@ -123,13 +123,13 @@ class UserData {
 
  private:
   struct Entry {
-    const UserDataKey *key;
-    void *userData;
+    const UserDataKey* key;
+    void* userData;
     destroyFunc destroy;
   };
 
   int count;
-  Entry *entries;
+  Entry* entries;
 };
 
 }  

@@ -28,7 +28,7 @@
 
 
 
-void deserializeAndVerify(const nsCString &serializedSecInfo,
+void deserializeAndVerify(const nsCString& serializedSecInfo,
                           bool hasFailedCertChain,
                           size_t failedCertChainLength = 0) {
   nsCOMPtr<nsISupports> secInfo;

@@ -45,16 +45,16 @@ class Http2Session final : public ASpdySession,
   NS_DECL_NSAHTTPSEGMENTREADER
   NS_DECL_NSAHTTPSEGMENTWRITER
 
-  Http2Session(nsISocketTransport *, enum SpdyVersion version,
+  Http2Session(nsISocketTransport*, enum SpdyVersion version,
                bool attemptingEarlyData);
 
-  MOZ_MUST_USE bool AddStream(nsAHttpTransaction *, int32_t, bool, bool,
-                              nsIInterfaceRequestor *) override;
+  MOZ_MUST_USE bool AddStream(nsAHttpTransaction*, int32_t, bool, bool,
+                              nsIInterfaceRequestor*) override;
   bool CanReuse() override { return !mShouldGoAway && !mClosed; }
   bool RoomForMoreStreams() override;
   enum SpdyVersion SpdyVersion() override;
-  bool TestJoinConnection(const nsACString &hostname, int32_t port) override;
-  bool JoinConnection(const nsACString &hostname, int32_t port) override;
+  bool TestJoinConnection(const nsACString& hostname, int32_t port) override;
+  bool JoinConnection(const nsACString& hostname, int32_t port) override;
 
   
   
@@ -66,7 +66,7 @@ class Http2Session final : public ASpdySession,
   PRIntervalTime IdleTime() override;
 
   
-  uint32_t RegisterStreamID(Http2Stream *, uint32_t aNewID = 0);
+  uint32_t RegisterStreamID(Http2Stream*, uint32_t aNewID = 0);
 
   
 
@@ -192,40 +192,40 @@ class Http2Session final : public ASpdySession,
   };
   const static uint8_t kPriorityGroupCount = 6;
 
-  static nsresult RecvHeaders(Http2Session *);
-  static nsresult RecvPriority(Http2Session *);
-  static nsresult RecvRstStream(Http2Session *);
-  static nsresult RecvSettings(Http2Session *);
-  static nsresult RecvPushPromise(Http2Session *);
-  static nsresult RecvPing(Http2Session *);
-  static nsresult RecvGoAway(Http2Session *);
-  static nsresult RecvWindowUpdate(Http2Session *);
-  static nsresult RecvContinuation(Http2Session *);
-  static nsresult RecvAltSvc(Http2Session *);
-  static nsresult RecvUnused(Http2Session *);
-  static nsresult RecvOrigin(Http2Session *);
+  static nsresult RecvHeaders(Http2Session*);
+  static nsresult RecvPriority(Http2Session*);
+  static nsresult RecvRstStream(Http2Session*);
+  static nsresult RecvSettings(Http2Session*);
+  static nsresult RecvPushPromise(Http2Session*);
+  static nsresult RecvPing(Http2Session*);
+  static nsresult RecvGoAway(Http2Session*);
+  static nsresult RecvWindowUpdate(Http2Session*);
+  static nsresult RecvContinuation(Http2Session*);
+  static nsresult RecvAltSvc(Http2Session*);
+  static nsresult RecvUnused(Http2Session*);
+  static nsresult RecvOrigin(Http2Session*);
 
-  char *EnsureOutputBuffer(uint32_t needed);
+  char* EnsureOutputBuffer(uint32_t needed);
 
   template <typename charType>
   void CreateFrameHeader(charType dest, uint16_t frameLength, uint8_t frameType,
                          uint8_t frameFlags, uint32_t streamID);
 
   
-  static void LogIO(Http2Session *, Http2Stream *, const char *, const char *,
+  static void LogIO(Http2Session*, Http2Stream*, const char*, const char*,
                     uint32_t);
 
   
-  void TransactionHasDataToWrite(nsAHttpTransaction *) override;
-  void TransactionHasDataToRecv(nsAHttpTransaction *) override;
+  void TransactionHasDataToWrite(nsAHttpTransaction*) override;
+  void TransactionHasDataToRecv(nsAHttpTransaction*) override;
 
   
-  void TransactionHasDataToWrite(Http2Stream *);
+  void TransactionHasDataToWrite(Http2Stream*);
 
   
   virtual MOZ_MUST_USE nsresult
   CommitToSegmentSize(uint32_t size, bool forceCommitment) override;
-  MOZ_MUST_USE nsresult BufferOutput(const char *, uint32_t, uint32_t *);
+  MOZ_MUST_USE nsresult BufferOutput(const char*, uint32_t, uint32_t*);
   void FlushOutputQueue();
   uint32_t AmountOfOutputBuffered() {
     return mOutputQueueUsed - mOutputQueueSent;
@@ -233,22 +233,22 @@ class Http2Session final : public ASpdySession,
 
   uint32_t GetServerInitialStreamWindow() { return mServerInitialStreamWindow; }
 
-  MOZ_MUST_USE bool TryToActivate(Http2Stream *stream);
-  void ConnectPushedStream(Http2Stream *stream);
-  void ConnectSlowConsumer(Http2Stream *stream);
+  MOZ_MUST_USE bool TryToActivate(Http2Stream* stream);
+  void ConnectPushedStream(Http2Stream* stream);
+  void ConnectSlowConsumer(Http2Stream* stream);
 
   MOZ_MUST_USE nsresult ConfirmTLSProfile();
-  static MOZ_MUST_USE bool ALPNCallback(nsISupports *securityInfo);
+  static MOZ_MUST_USE bool ALPNCallback(nsISupports* securityInfo);
 
   uint64_t Serial() { return mSerial; }
 
-  void PrintDiagnostics(nsCString &log) override;
+  void PrintDiagnostics(nsCString& log) override;
 
   
   uint32_t SendingChunkSize() { return mSendingChunkSize; }
   uint32_t PushAllowance() { return mPushAllowance; }
-  Http2Compressor *Compressor() { return &mCompressor; }
-  nsISocketTransport *SocketTransport() { return mSocketTransport; }
+  Http2Compressor* Compressor() { return &mCompressor; }
+  nsISocketTransport* SocketTransport() { return mSocketTransport; }
   int64_t ServerSessionWindow() { return mServerSessionWindow; }
   void DecrementServerSessionWindow(uint32_t bytes) {
     mServerSessionWindow -= bytes;
@@ -256,21 +256,21 @@ class Http2Session final : public ASpdySession,
   uint32_t InitialRwin() { return mInitialRwin; }
 
   void SendPing() override;
-  MOZ_MUST_USE bool MaybeReTunnel(nsAHttpTransaction *) override;
+  MOZ_MUST_USE bool MaybeReTunnel(nsAHttpTransaction*) override;
   bool UseH2Deps() { return mUseH2Deps; }
   void SetCleanShutdown(bool) override;
 
   
-  MOZ_MUST_USE nsresult ReadSegmentsAgain(nsAHttpSegmentReader *, uint32_t,
-                                          uint32_t *, bool *) final;
-  MOZ_MUST_USE nsresult WriteSegmentsAgain(nsAHttpSegmentWriter *, uint32_t,
-                                           uint32_t *, bool *) final;
+  MOZ_MUST_USE nsresult ReadSegmentsAgain(nsAHttpSegmentReader*, uint32_t,
+                                          uint32_t*, bool*) final;
+  MOZ_MUST_USE nsresult WriteSegmentsAgain(nsAHttpSegmentWriter*, uint32_t,
+                                           uint32_t*, bool*) final;
   MOZ_MUST_USE bool Do0RTT() final { return true; }
   MOZ_MUST_USE nsresult Finish0RTT(bool aRestart, bool aAlpnChanged) final;
   void SetFastOpenStatus(uint8_t aStatus) final;
 
   
-  void Received421(nsHttpConnectionInfo *ci);
+  void Received421(nsHttpConnectionInfo* ci);
 
   void SendPriorityFrame(uint32_t streamID, uint32_t dependsOn, uint8_t weight);
   void IncrementTrrCounter() { mTrrStreams++; }
@@ -306,43 +306,42 @@ class Http2Session final : public ASpdySession,
   void GeneratePriority(uint32_t, uint8_t);
   void GenerateRstStream(uint32_t, uint32_t);
   void GenerateGoAway(uint32_t);
-  void CleanupStream(Http2Stream *, nsresult, errorType);
+  void CleanupStream(Http2Stream*, nsresult, errorType);
   void CleanupStream(uint32_t, nsresult, errorType);
-  void CloseStream(Http2Stream *, nsresult);
+  void CloseStream(Http2Stream*, nsresult);
   void SendHello();
-  void RemoveStreamFromQueues(Http2Stream *);
-  MOZ_MUST_USE nsresult ParsePadding(uint8_t &, uint16_t &);
+  void RemoveStreamFromQueues(Http2Stream*);
+  MOZ_MUST_USE nsresult ParsePadding(uint8_t&, uint16_t&);
 
   void SetWriteCallbacks();
   void RealignOutputQueue();
 
   void ProcessPending();
-  MOZ_MUST_USE nsresult ProcessConnectedPush(Http2Stream *,
-                                             nsAHttpSegmentWriter *, uint32_t,
-                                             uint32_t *);
-  MOZ_MUST_USE nsresult ProcessSlowConsumer(Http2Stream *,
-                                            nsAHttpSegmentWriter *, uint32_t,
-                                            uint32_t *);
+  MOZ_MUST_USE nsresult ProcessConnectedPush(Http2Stream*,
+                                             nsAHttpSegmentWriter*, uint32_t,
+                                             uint32_t*);
+  MOZ_MUST_USE nsresult ProcessSlowConsumer(Http2Stream*, nsAHttpSegmentWriter*,
+                                            uint32_t, uint32_t*);
 
   MOZ_MUST_USE nsresult SetInputFrameDataStream(uint32_t);
-  void CreatePriorityNode(uint32_t, uint32_t, uint8_t, const char *);
-  char *CreatePriorityFrame(uint32_t, uint32_t, uint8_t);
-  bool VerifyStream(Http2Stream *, uint32_t);
+  void CreatePriorityNode(uint32_t, uint32_t, uint8_t, const char*);
+  char* CreatePriorityFrame(uint32_t, uint32_t, uint8_t);
+  bool VerifyStream(Http2Stream*, uint32_t);
   void SetNeedsCleanup();
 
-  void UpdateLocalRwin(Http2Stream *stream, uint32_t bytes);
-  void UpdateLocalStreamWindow(Http2Stream *stream, uint32_t bytes);
+  void UpdateLocalRwin(Http2Stream* stream, uint32_t bytes);
+  void UpdateLocalStreamWindow(Http2Stream* stream, uint32_t bytes);
   void UpdateLocalSessionWindow(uint32_t bytes);
 
-  void MaybeDecrementConcurrent(Http2Stream *stream);
+  void MaybeDecrementConcurrent(Http2Stream* stream);
   bool RoomForMoreConcurrent();
-  void IncrementConcurrent(Http2Stream *stream);
-  void QueueStream(Http2Stream *stream);
+  void IncrementConcurrent(Http2Stream* stream);
+  void QueueStream(Http2Stream* stream);
 
   
   
-  MOZ_MUST_USE nsresult NetworkRead(nsAHttpSegmentWriter *, char *, uint32_t,
-                                    uint32_t *);
+  MOZ_MUST_USE nsresult NetworkRead(nsAHttpSegmentWriter*, char*, uint32_t,
+                                    uint32_t*);
 
   void Shutdown();
 
@@ -354,13 +353,13 @@ class Http2Session final : public ASpdySession,
   RefPtr<nsAHttpConnection> mConnection;
 
   
-  nsISocketTransport *mSocketTransport;
+  nsISocketTransport* mSocketTransport;
 
   
   
   
-  nsAHttpSegmentReader *mSegmentReader;
-  nsAHttpSegmentWriter *mSegmentWriter;
+  nsAHttpSegmentReader* mSegmentReader;
+  nsAHttpSegmentWriter* mSegmentWriter;
 
   uint32_t mSendingChunkSize; 
   uint32_t mNextStreamID;     
@@ -377,7 +376,7 @@ class Http2Session final : public ASpdySession,
   
   
   
-  nsDataHashtable<nsUint32HashKey, Http2Stream *> mStreamIDHash;
+  nsDataHashtable<nsUint32HashKey, Http2Stream*> mStreamIDHash;
   nsClassHashtable<nsPtrHashKey<nsAHttpTransaction>, Http2Stream>
       mStreamTransactionHash;
 
@@ -385,7 +384,7 @@ class Http2Session final : public ASpdySession,
   nsDeque mQueuedStreams;
   nsDeque mPushesReadyForRead;
   nsDeque mSlowConsumersReadyForRead;
-  nsTArray<Http2PushedStream *> mPushedStreams;
+  nsTArray<Http2PushedStream*> mPushedStreams;
 
   
   
@@ -419,14 +418,14 @@ class Http2Session final : public ASpdySession,
   
   
   
-  Http2Stream *mInputFrameDataStream;
+  Http2Stream* mInputFrameDataStream;
 
   
   
   
   
   
-  Http2Stream *mNeedsCleanup;
+  Http2Stream* mNeedsCleanup;
 
   
   uint32_t mDownstreamRstReason;
@@ -553,8 +552,8 @@ class Http2Session final : public ASpdySession,
   
   nsTArray<WeakPtr<Http2Stream>> mCannotDo0RTTStreams;
 
-  bool RealJoinConnection(const nsACString &hostname, int32_t port, bool jk);
-  bool TestOriginFrame(const nsACString &name, int32_t port);
+  bool RealJoinConnection(const nsACString& hostname, int32_t port, bool jk);
+  bool TestOriginFrame(const nsACString& name, int32_t port);
   bool mOriginFrameActivated;
   nsDataHashtable<nsCStringHashKey, bool> mOriginFrame;
 
@@ -564,8 +563,8 @@ class Http2Session final : public ASpdySession,
 
   class CachePushCheckCallback final : public nsICacheEntryOpenCallback {
    public:
-    CachePushCheckCallback(Http2Session *session, uint32_t promisedID,
-                           const nsACString &requestString);
+    CachePushCheckCallback(Http2Session* session, uint32_t promisedID,
+                           const nsACString& requestString);
 
     NS_DECL_ISUPPORTS
     NS_DECL_NSICACHEENTRYOPENCALLBACK
@@ -591,17 +590,17 @@ class Http2Session final : public ASpdySession,
 
  private:
   
-  void DispatchOnTunnel(nsAHttpTransaction *, nsIInterfaceRequestor *);
-  void CreateTunnel(nsHttpTransaction *, nsHttpConnectionInfo *,
-                    nsIInterfaceRequestor *);
-  void RegisterTunnel(Http2Stream *);
-  void UnRegisterTunnel(Http2Stream *);
-  uint32_t FindTunnelCount(nsHttpConnectionInfo *);
+  void DispatchOnTunnel(nsAHttpTransaction*, nsIInterfaceRequestor*);
+  void CreateTunnel(nsHttpTransaction*, nsHttpConnectionInfo*,
+                    nsIInterfaceRequestor*);
+  void RegisterTunnel(Http2Stream*);
+  void UnRegisterTunnel(Http2Stream*);
+  uint32_t FindTunnelCount(nsHttpConnectionInfo*);
   nsDataHashtable<nsCStringHashKey, uint32_t> mTunnelHash;
   uint32_t mTrrStreams;
 
   
-  void CreateWebsocketStream(nsAHttpTransaction *, nsIInterfaceRequestor *);
+  void CreateWebsocketStream(nsAHttpTransaction*, nsIInterfaceRequestor*);
   void ProcessWaitingWebsockets();
   bool mEnableWebsockets;      
   bool mPeerAllowsWebsockets;  

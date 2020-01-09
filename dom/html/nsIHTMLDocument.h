@@ -61,7 +61,7 @@ class nsIHTMLDocument : public nsISupports {
 
 
 
-  virtual nsresult ChangeContentEditableCount(nsIContent *aElement,
+  virtual nsresult ChangeContentEditableCount(nsIContent* aElement,
                                               int32_t aChange) = 0;
 
   enum EditingState {

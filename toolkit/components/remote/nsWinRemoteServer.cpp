@@ -21,7 +21,7 @@
 #include "nsCommandLine.h"
 #include "nsIDocShell.h"
 
-HWND hwndForDOMWindow(mozIDOMWindowProxy *window) {
+HWND hwndForDOMWindow(mozIDOMWindowProxy* window) {
   if (!window) {
     return 0;
   }
@@ -39,7 +39,7 @@ HWND hwndForDOMWindow(mozIDOMWindowProxy *window) {
   return (HWND)(ppWidget->GetNativeData(NS_NATIVE_WIDGET));
 }
 
-static nsresult GetMostRecentWindow(mozIDOMWindowProxy **aWindow) {
+static nsresult GetMostRecentWindow(mozIDOMWindowProxy** aWindow) {
   nsresult rv;
   nsCOMPtr<nsIWindowMediator> med(
       do_GetService(NS_WINDOWMEDIATOR_CONTRACTID, &rv));
@@ -50,17 +50,17 @@ static nsresult GetMostRecentWindow(mozIDOMWindowProxy **aWindow) {
   return NS_ERROR_FAILURE;
 }
 
-void HandleCommandLine(const char *aCmdLineString, nsIFile *aWorkingDir,
+void HandleCommandLine(const char* aCmdLineString, nsIFile* aWorkingDir,
                        uint32_t aState) {
   nsresult rv;
 
   int justCounting = 1;
-  char **argv = 0;
+  char** argv = 0;
   
   int init = 1;
   int between, quoted, bSlashCount;
   int argc;
-  const char *p;
+  const char* p;
   nsAutoCString arg;
 
   nsCOMPtr<nsICommandLineRunner> cmdLine(new nsCommandLine());
@@ -176,7 +176,7 @@ void HandleCommandLine(const char *aCmdLineString, nsIFile *aWorkingDir,
       
       if (justCounting) {
         
-        argv = new char *[argc];
+        argv = new char*[argc];
 
         
         justCounting = 0;
@@ -207,11 +207,11 @@ void HandleCommandLine(const char *aCmdLineString, nsIFile *aWorkingDir,
 LRESULT CALLBACK WindowProc(HWND msgWindow, UINT msg, WPARAM wp, LPARAM lp) {
   if (msg == WM_COPYDATA) {
     
-    COPYDATASTRUCT *cds = (COPYDATASTRUCT *)lp;
+    COPYDATASTRUCT* cds = (COPYDATASTRUCT*)lp;
     nsCOMPtr<nsIFile> workingDir;
 
     if (1 >= cds->dwData) {
-      char *wdpath = (char *)cds->lpData;
+      char* wdpath = (char*)cds->lpData;
       
       
       while (*wdpath) ++wdpath;
@@ -221,7 +221,7 @@ LRESULT CALLBACK WindowProc(HWND msgWindow, UINT msg, WPARAM wp, LPARAM lp) {
       NS_NewLocalFile(NS_ConvertUTF8toUTF16(wdpath), false,
                       getter_AddRefs(workingDir));
     }
-    HandleCommandLine((char *)cds->lpData, workingDir,
+    HandleCommandLine((char*)cds->lpData, workingDir,
                       nsICommandLine::STATE_REMOTE_AUTO);
 
     
@@ -232,8 +232,8 @@ LRESULT CALLBACK WindowProc(HWND msgWindow, UINT msg, WPARAM wp, LPARAM lp) {
   return DefWindowProc(msgWindow, msg, wp, lp);
 }
 
-nsresult nsWinRemoteServer::Startup(const char *aAppName,
-                                    const char *aProfileName) {
+nsresult nsWinRemoteServer::Startup(const char* aAppName,
+                                    const char* aProfileName) {
   nsString className;
   BuildClassName(aAppName, aProfileName, className);
 

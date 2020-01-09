@@ -38,13 +38,13 @@ class ProcessedStack {
     nsString mName;
     nsCString mBreakpadId;
 
-    bool operator==(const Module &other) const;
+    bool operator==(const Module& other) const;
   };
 
-  const Frame &GetFrame(unsigned aIndex) const;
-  void AddFrame(const Frame &aFrame);
-  const Module &GetModule(unsigned aIndex) const;
-  void AddModule(const Module &aFrame);
+  const Frame& GetFrame(unsigned aIndex) const;
+  void AddFrame(const Frame& aFrame);
+  const Module& GetModule(unsigned aIndex) const;
+  void AddModule(const Module& aFrame);
 
   void Clear();
 
@@ -56,13 +56,13 @@ class ProcessedStack {
 
 
 
-ProcessedStack GetStackAndModules(const std::vector<uintptr_t> &aPCs);
+ProcessedStack GetStackAndModules(const std::vector<uintptr_t>& aPCs);
 
 
 class BatchProcessedStackGenerator {
  public:
   BatchProcessedStackGenerator();
-  ProcessedStack GetStackAndModules(const std::vector<uintptr_t> &aPCs);
+  ProcessedStack GetStackAndModules(const std::vector<uintptr_t>& aPCs);
 
  private:
 #if defined(MOZ_GECKO_PROFILER)

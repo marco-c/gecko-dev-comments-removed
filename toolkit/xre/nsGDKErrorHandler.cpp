@@ -24,12 +24,12 @@
 
 
 
-static void GdkErrorHandler(const gchar *log_domain, GLogLevelFlags log_level,
-                            const gchar *message, gpointer user_data) {
+static void GdkErrorHandler(const gchar* log_domain, GLogLevelFlags log_level,
+                            const gchar* message, gpointer user_data) {
   if (strstr(message, "X Window System error")) {
     XErrorEvent event;
     nsDependentCString buffer(message);
-    char *endptr;
+    char* endptr;
 
     
 

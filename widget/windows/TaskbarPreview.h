@@ -27,9 +27,9 @@ class TaskbarPreviewCallback;
 
 class TaskbarPreview : public nsITaskbarPreview {
  public:
-  TaskbarPreview(ITaskbarList4 *aTaskbar,
-                 nsITaskbarPreviewController *aController, HWND aHWND,
-                 nsIDocShell *aShell);
+  TaskbarPreview(ITaskbarList4* aTaskbar,
+                 nsITaskbarPreviewController* aController, HWND aHWND,
+                 nsIDocShell* aShell);
 
   friend class TaskbarPreviewCallback;
 
@@ -55,7 +55,7 @@ class TaskbarPreview : public nsITaskbarPreview {
   
   virtual nsresult ShowActive(bool active) = 0;
   
-  virtual HWND &PreviewWindow() = 0;
+  virtual HWND& PreviewWindow() = 0;
 
   
   virtual LRESULT WndProc(UINT nMsg, WPARAM wParam, LPARAM lParam);
@@ -66,7 +66,7 @@ class TaskbarPreview : public nsITaskbarPreview {
   bool CanMakeTaskbarCalls();
 
   
-  WindowHook &GetWindowHook();
+  WindowHook& GetWindowHook();
 
   
   static void EnableCustomDrawing(HWND aHWND, bool aEnable);
@@ -89,8 +89,8 @@ class TaskbarPreview : public nsITaskbarPreview {
   void DrawBitmap(uint32_t width, uint32_t height, bool isPreview);
 
   
-  static bool MainWindowHook(void *aContext, HWND hWnd, UINT nMsg,
-                             WPARAM wParam, LPARAM lParam, LRESULT *aResult);
+  static bool MainWindowHook(void* aContext, HWND hWnd, UINT nMsg,
+                             WPARAM wParam, LPARAM lParam, LRESULT* aResult);
 
   
   nsWeakPtr mDocShell;
@@ -98,7 +98,7 @@ class TaskbarPreview : public nsITaskbarPreview {
 
   
   
-  static TaskbarPreview *sActivePreview;
+  static TaskbarPreview* sActivePreview;
 };
 
 
@@ -113,7 +113,7 @@ class TaskbarPreviewCallback : public nsITaskbarPreviewCallback {
   NS_DECL_ISUPPORTS
   NS_DECL_NSITASKBARPREVIEWCALLBACK
 
-  void SetPreview(TaskbarPreview *aPreview) { mPreview = aPreview; }
+  void SetPreview(TaskbarPreview* aPreview) { mPreview = aPreview; }
 
   void SetIsPreview() { mIsThumbnail = false; }
 

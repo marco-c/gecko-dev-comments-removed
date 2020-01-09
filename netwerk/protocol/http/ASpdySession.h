@@ -21,8 +21,8 @@ class ASpdySession : public nsAHttpTransaction {
   ASpdySession() = default;
   virtual ~ASpdySession() = default;
 
-  virtual MOZ_MUST_USE bool AddStream(nsAHttpTransaction *, int32_t, bool, bool,
-                                      nsIInterfaceRequestor *) = 0;
+  virtual MOZ_MUST_USE bool AddStream(nsAHttpTransaction*, int32_t, bool, bool,
+                                      nsIInterfaceRequestor*) = 0;
   virtual bool CanReuse() = 0;
   virtual bool RoomForMoreStreams() = 0;
   virtual PRIntervalTime IdleTime() = 0;
@@ -30,11 +30,11 @@ class ASpdySession : public nsAHttpTransaction {
   virtual void DontReuse() = 0;
   virtual enum SpdyVersion SpdyVersion() = 0;
 
-  static ASpdySession *NewSpdySession(net::SpdyVersion version,
-                                      nsISocketTransport *, bool);
+  static ASpdySession* NewSpdySession(net::SpdyVersion version,
+                                      nsISocketTransport*, bool);
 
-  virtual bool TestJoinConnection(const nsACString &hostname, int32_t port) = 0;
-  virtual bool JoinConnection(const nsACString &hostname, int32_t port) = 0;
+  virtual bool TestJoinConnection(const nsACString& hostname, int32_t port) = 0;
+  virtual bool JoinConnection(const nsACString& hostname, int32_t port) = 0;
 
   
   
@@ -43,9 +43,9 @@ class ASpdySession : public nsAHttpTransaction {
   
   
   
-  virtual bool MaybeReTunnel(nsAHttpTransaction *) = 0;
+  virtual bool MaybeReTunnel(nsAHttpTransaction*) = 0;
 
-  virtual void PrintDiagnostics(nsCString &log) = 0;
+  virtual void PrintDiagnostics(nsCString& log) = 0;
 
   bool ResponseTimeoutEnabled() const final { return true; }
 
@@ -90,7 +90,7 @@ class ASpdySession : public nsAHttpTransaction {
   virtual bool CanAcceptWebsocket() = 0;
 };
 
-typedef bool (*ALPNCallback)(nsISupports *);  
+typedef bool (*ALPNCallback)(nsISupports*);  
 
 
 
@@ -104,8 +104,8 @@ class SpdyInformation {
 
   
   
-  MOZ_MUST_USE nsresult GetNPNIndex(const nsACString &npnString,
-                                    uint32_t *result) const;
+  MOZ_MUST_USE nsresult GetNPNIndex(const nsACString& npnString,
+                                    uint32_t* result) const;
 
   
   bool ProtocolEnabled(uint32_t index) const;

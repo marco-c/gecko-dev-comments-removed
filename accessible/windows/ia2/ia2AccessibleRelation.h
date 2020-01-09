@@ -21,10 +21,10 @@ namespace a11y {
 
 class ia2AccessibleRelation final : public IAccessibleRelation {
  public:
-  ia2AccessibleRelation(RelationType aType, Relation *aRel);
+  ia2AccessibleRelation(RelationType aType, Relation* aRel);
 
   ia2AccessibleRelation(RelationType aType,
-                        nsTArray<RefPtr<Accessible>> &&aTargets)
+                        nsTArray<RefPtr<Accessible>>&& aTargets)
       : mType(aType), mTargets(std::move(aTargets)) {}
 
   
@@ -32,29 +32,29 @@ class ia2AccessibleRelation final : public IAccessibleRelation {
 
   
   virtual  HRESULT STDMETHODCALLTYPE get_relationType(
-       BSTR *relationType);
+       BSTR* relationType);
 
   virtual  HRESULT STDMETHODCALLTYPE get_localizedRelationType(
-       BSTR *localizedRelationType);
+       BSTR* localizedRelationType);
 
   virtual  HRESULT STDMETHODCALLTYPE get_nTargets(
-       long *nTargets);
+       long* nTargets);
 
   virtual  HRESULT STDMETHODCALLTYPE get_target(
        long targetIndex,
-       IUnknown **target);
+       IUnknown** target);
 
   virtual  HRESULT STDMETHODCALLTYPE get_targets(
        long maxTargets,
-       IUnknown **target,
-       long *nTargets);
+       IUnknown** target,
+       long* nTargets);
 
   inline bool HasTargets() const { return mTargets.Length(); }
 
  private:
   ia2AccessibleRelation();
-  ia2AccessibleRelation(const ia2AccessibleRelation &);
-  ia2AccessibleRelation &operator=(const ia2AccessibleRelation &);
+  ia2AccessibleRelation(const ia2AccessibleRelation&);
+  ia2AccessibleRelation& operator=(const ia2AccessibleRelation&);
 
   RelationType mType;
   nsTArray<RefPtr<Accessible>> mTargets;
@@ -64,12 +64,12 @@ class ia2AccessibleRelation final : public IAccessibleRelation {
 
 
 
-const WCHAR *const IA2_RELATION_NULL = L"";
+const WCHAR* const IA2_RELATION_NULL = L"";
 
 #define RELATIONTYPE(geckoType, name, atkType, msaaType, ia2Type) \
-  std::pair<RelationType, const WCHAR *const>(RelationType::geckoType, ia2Type),
+  std::pair<RelationType, const WCHAR* const>(RelationType::geckoType, ia2Type),
 
-static const std::pair<RelationType, const WCHAR *const> sRelationTypePairs[] =
+static const std::pair<RelationType, const WCHAR* const> sRelationTypePairs[] =
     {
 #include "RelationTypeMap.h"
 };

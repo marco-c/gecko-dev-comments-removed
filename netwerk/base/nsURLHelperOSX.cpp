@@ -12,10 +12,10 @@
 #include "nsReadableUtils.h"
 #include <Carbon/Carbon.h>
 
-static nsTArray<nsCString> *gVolumeList = nullptr;
+static nsTArray<nsCString>* gVolumeList = nullptr;
 
-static bool pathBeginsWithVolName(const nsACString &path,
-                                  nsACString &firstPathComponent) {
+static bool pathBeginsWithVolName(const nsACString& path,
+                                  nsACString& firstPathComponent) {
   
   
   
@@ -41,8 +41,8 @@ static bool pathBeginsWithVolName(const nsACString &path,
                               &volName, &rootDirectory);
       if (err == noErr) {
         NS_ConvertUTF16toUTF8 volNameStr(
-            Substring((char16_t *)volName.unicode,
-                      (char16_t *)volName.unicode + volName.length));
+            Substring((char16_t*)volName.unicode,
+                      (char16_t*)volName.unicode + volName.length));
         gVolumeList->AppendElement(volNameStr);
         volumeIndex++;
       }
@@ -70,8 +70,8 @@ void net_ShutdownURLHelperOSX() {
   gVolumeList = nullptr;
 }
 
-static nsresult convertHFSPathtoPOSIX(const nsACString &hfsPath,
-                                      nsACString &posixPath) {
+static nsresult convertHFSPathtoPOSIX(const nsACString& hfsPath,
+                                      nsACString& posixPath) {
   
   
   
@@ -88,7 +88,7 @@ static nsresult convertHFSPathtoPOSIX(const nsACString &hfsPath,
     UInt8 pathBuf[PATH_MAX];
     if (CFURLGetFileSystemRepresentation(urlRef, true, pathBuf,
                                          sizeof(pathBuf))) {
-      posixPath = (char *)pathBuf;
+      posixPath = (char*)pathBuf;
       rv = NS_OK;
     }
   }
@@ -97,7 +97,7 @@ static nsresult convertHFSPathtoPOSIX(const nsACString &hfsPath,
   return rv;
 }
 
-static void SwapSlashColon(char *s) {
+static void SwapSlashColon(char* s) {
   while (*s) {
     if (*s == '/')
       *s = ':';
@@ -107,7 +107,7 @@ static void SwapSlashColon(char *s) {
   }
 }
 
-nsresult net_GetURLSpecFromActualFile(nsIFile *aFile, nsACString &result) {
+nsresult net_GetURLSpecFromActualFile(nsIFile* aFile, nsACString& result) {
   
 
   nsresult rv;
@@ -136,7 +136,7 @@ nsresult net_GetURLSpecFromActualFile(nsIFile *aFile, nsACString &result) {
   return NS_OK;
 }
 
-nsresult net_GetFileFromURLSpec(const nsACString &aURL, nsIFile **result) {
+nsresult net_GetFileFromURLSpec(const nsACString& aURL, nsIFile** result) {
   
   
 
@@ -168,7 +168,7 @@ nsresult net_GetFileFromURLSpec(const nsACString &aURL, nsIFile **result) {
       
       FSRef testRef;
       possibleVolName.InsertLiteral("/", 0);
-      if (::FSPathMakeRef((UInt8 *)possibleVolName.get(), &testRef, nullptr) !=
+      if (::FSPathMakeRef((UInt8*)possibleVolName.get(), &testRef, nullptr) !=
           noErr)
         bHFSPath = true;
     }
@@ -179,7 +179,7 @@ nsresult net_GetFileFromURLSpec(const nsACString &aURL, nsIFile **result) {
       
       path.ReplaceSubstring("%2F", ":");
       path.Cut(0, 1);  
-      SwapSlashColon((char *)path.get());
+      SwapSlashColon((char*)path.get());
       
       
     }

@@ -16,20 +16,20 @@ namespace a11y {
 class ia2AccessibleImage : public IAccessibleImage {
  public:
   
-  STDMETHODIMP QueryInterface(REFIID, void **);
+  STDMETHODIMP QueryInterface(REFIID, void**);
 
   
   virtual  HRESULT STDMETHODCALLTYPE get_description(
-       BSTR *description);
+       BSTR* description);
 
   virtual  HRESULT STDMETHODCALLTYPE get_imagePosition(
        enum IA2CoordinateType coordinateType,
-       long *x,
-       long *y);
+       long* x,
+       long* y);
 
   virtual  HRESULT STDMETHODCALLTYPE get_imageSize(
-       long *height,
-       long *width);
+       long* height,
+       long* width);
 };
 
 }  

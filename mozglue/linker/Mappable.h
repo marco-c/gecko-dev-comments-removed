@@ -21,7 +21,7 @@ class Mappable : public mozilla::RefCounted<Mappable> {
   MOZ_DECLARE_REFCOUNTED_TYPENAME(Mappable)
   virtual ~Mappable() {}
 
-  virtual MemoryRange mmap(const void *addr, size_t length, int prot, int flags,
+  virtual MemoryRange mmap(const void* addr, size_t length, int prot, int flags,
                            off_t offset) = 0;
 
   enum Kind {
@@ -34,7 +34,7 @@ class Mappable : public mozilla::RefCounted<Mappable> {
   virtual Kind GetKind() const = 0;
 
  private:
-  virtual void munmap(void *addr, size_t length) { ::munmap(addr, length); }
+  virtual void munmap(void* addr, size_t length) { ::munmap(addr, length); }
   
 
   friend class Mappable1stPagePtr;
@@ -63,10 +63,10 @@ class MappableFile : public Mappable {
   
 
 
-  static Mappable *Create(const char *path);
+  static Mappable* Create(const char* path);
 
   
-  virtual MemoryRange mmap(const void *addr, size_t length, int prot, int flags,
+  virtual MemoryRange mmap(const void* addr, size_t length, int prot, int flags,
                            off_t offset);
   virtual void finalize();
   virtual size_t GetLength() const;
@@ -93,7 +93,7 @@ class MappableExtractFile : public MappableFile {
 
 
 
-  static Mappable *Create(const char *name, Zip *zip, Zip::Stream *stream);
+  static Mappable* Create(const char* name, Zip* zip, Zip::Stream* stream);
 
   
   virtual void finalize() {}
@@ -106,14 +106,14 @@ class MappableExtractFile : public MappableFile {
 
 
   struct UnlinkFile {
-    void operator()(char *value) {
+    void operator()(char* value) {
       unlink(value);
       delete[] value;
     }
   };
   typedef mozilla::UniquePtr<char[], UnlinkFile> AutoUnlinkFile;
 
-  MappableExtractFile(int fd, const char *path)
+  MappableExtractFile(int fd, const char* path)
       : MappableFile(fd), path(path) {}
 
   
@@ -135,10 +135,10 @@ class MappableDeflate : public Mappable {
 
 
 
-  static Mappable *Create(const char *name, Zip *zip, Zip::Stream *stream);
+  static Mappable* Create(const char* name, Zip* zip, Zip::Stream* stream);
 
   
-  virtual MemoryRange mmap(const void *addr, size_t length, int prot, int flags,
+  virtual MemoryRange mmap(const void* addr, size_t length, int prot, int flags,
                            off_t offset);
   virtual void finalize();
   virtual size_t GetLength() const;
@@ -146,7 +146,7 @@ class MappableDeflate : public Mappable {
   virtual Kind GetKind() const { return MAPPABLE_DEFLATE; };
 
  private:
-  MappableDeflate(_MappableBuffer *buf, Zip *zip, Zip::Stream *stream);
+  MappableDeflate(_MappableBuffer* buf, Zip* zip, Zip::Stream* stream);
 
   
   RefPtr<Zip> zip;

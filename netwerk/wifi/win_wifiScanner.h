@@ -25,7 +25,7 @@ class WinWifiScanner final {
 
 
 
-  nsresult GetAccessPointsFromWLAN(nsCOMArray<nsWifiAccessPoint> &accessPoints);
+  nsresult GetAccessPointsFromWLAN(nsCOMArray<nsWifiAccessPoint>& accessPoints);
 
  private:
   nsAutoPtr<WinWLANLibrary> mWlanLibrary;

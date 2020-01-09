@@ -27,10 +27,10 @@ class RemoteSandboxBroker : public AbstractSandboxBroker {
   
   
   
-  bool LaunchApp(const wchar_t *aPath, const wchar_t *aArguments,
-                 base::EnvironmentMap &aEnvironment,
+  bool LaunchApp(const wchar_t* aPath, const wchar_t* aArguments,
+                 base::EnvironmentMap& aEnvironment,
                  GeckoProcessType aProcessType, const bool aEnableLogging,
-                 void **aProcessHandle) override;
+                 void** aProcessHandle) override;
 
   
   void SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
@@ -39,7 +39,7 @@ class RemoteSandboxBroker : public AbstractSandboxBroker {
   bool SetSecurityLevelForRDDProcess() override;
   bool SetSecurityLevelForPluginProcess(int32_t aSandboxLevel) override;
   bool SetSecurityLevelForGMPlugin(SandboxLevel aLevel) override;
-  bool AllowReadFile(wchar_t const *file) override;
+  bool AllowReadFile(wchar_t const* file) override;
   void AddHandleToShare(HANDLE aHandle) override;
 
  private:

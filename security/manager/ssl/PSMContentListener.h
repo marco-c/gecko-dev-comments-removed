@@ -58,19 +58,19 @@ class PSMContentDownloaderParent : public PPSMContentDownloaderParent,
  public:
   explicit PSMContentDownloaderParent(uint32_t type);
 
-  mozilla::ipc::IPCResult RecvOnStartRequest(const uint32_t &contentLength);
-  mozilla::ipc::IPCResult RecvOnDataAvailable(const nsCString &data,
-                                              const uint64_t &offset,
-                                              const uint32_t &count);
-  mozilla::ipc::IPCResult RecvOnStopRequest(const nsresult &code);
+  mozilla::ipc::IPCResult RecvOnStartRequest(const uint32_t& contentLength);
+  mozilla::ipc::IPCResult RecvOnDataAvailable(const nsCString& data,
+                                              const uint64_t& offset,
+                                              const uint32_t& count);
+  mozilla::ipc::IPCResult RecvOnStopRequest(const nsresult& code);
 
   
   
   
-  NS_IMETHOD OnStopRequest(nsIRequest *request, nsresult code) override;
+  NS_IMETHOD OnStopRequest(nsIRequest* request, nsresult code) override;
 
   mozilla::ipc::IPCResult RecvDivertToParentUsing(
-      mozilla::net::PChannelDiverterParent *diverter);
+      mozilla::net::PChannelDiverterParent* diverter);
 
  protected:
   virtual ~PSMContentDownloaderParent();

@@ -42,34 +42,34 @@ class gfxASurface {
 
 
   static already_AddRefed<gfxASurface> Wrap(
-      cairo_surface_t *csurf,
-      const mozilla::gfx::IntSize &aSize = mozilla::gfx::IntSize(-1, -1));
+      cairo_surface_t* csurf,
+      const mozilla::gfx::IntSize& aSize = mozilla::gfx::IntSize(-1, -1));
 
   
-  cairo_surface_t *CairoSurface() { return mSurface; }
+  cairo_surface_t* CairoSurface() { return mSurface; }
 
   gfxSurfaceType GetType() const;
 
   gfxContentType GetContentType() const;
 
-  void SetDeviceOffset(const gfxPoint &offset);
+  void SetDeviceOffset(const gfxPoint& offset);
   gfxPoint GetDeviceOffset() const;
 
   void Flush() const;
   void MarkDirty();
-  void MarkDirty(const gfxRect &r);
+  void MarkDirty(const gfxRect& r);
 
   
-  virtual nsresult BeginPrinting(const nsAString &aTitle,
-                                 const nsAString &aPrintToFileName);
+  virtual nsresult BeginPrinting(const nsAString& aTitle,
+                                 const nsAString& aPrintToFileName);
   virtual nsresult EndPrinting();
   virtual nsresult AbortPrinting();
   virtual nsresult BeginPage();
   virtual nsresult EndPage();
 
-  void SetData(const cairo_user_data_key_t *key, void *user_data,
+  void SetData(const cairo_user_data_key_t* key, void* user_data,
                thebes_destroy_func_t destroy);
-  void *GetData(const cairo_user_data_key_t *key);
+  void* GetData(const cairo_user_data_key_t* key);
 
   virtual void Finish();
 
@@ -79,7 +79,7 @@ class gfxASurface {
 
 
   virtual already_AddRefed<gfxASurface> CreateSimilarSurface(
-      gfxContentType aType, const mozilla::gfx::IntSize &aSize);
+      gfxContentType aType, const mozilla::gfx::IntSize& aSize);
 
   
 
@@ -133,9 +133,9 @@ class gfxASurface {
 
   virtual mozilla::gfx::SurfaceFormat GetSurfaceFormat() const;
 
-  void SetOpaqueRect(const gfxRect &aRect);
+  void SetOpaqueRect(const gfxRect& aRect);
 
-  const gfxRect &GetOpaqueRect() {
+  const gfxRect& GetOpaqueRect() {
     if (!!mOpaqueRect) return *mOpaqueRect;
     return GetEmptyOpaqueRect();
   }
@@ -145,25 +145,25 @@ class gfxASurface {
  protected:
   gfxASurface();
 
-  static gfxASurface *GetSurfaceWrapper(cairo_surface_t *csurf);
-  static void SetSurfaceWrapper(cairo_surface_t *csurf, gfxASurface *asurf);
+  static gfxASurface* GetSurfaceWrapper(cairo_surface_t* csurf);
+  static void SetSurfaceWrapper(cairo_surface_t* csurf, gfxASurface* asurf);
 
   
   
   
-  void Init(cairo_surface_t *surface, bool existingSurface = false);
+  void Init(cairo_surface_t* surface, bool existingSurface = false);
 
   
   
-  static const gfxRect &GetEmptyOpaqueRect();
+  static const gfxRect& GetEmptyOpaqueRect();
 
   virtual ~gfxASurface();
 
-  cairo_surface_t *mSurface;
+  cairo_surface_t* mSurface;
   mozilla::UniquePtr<gfxRect> mOpaqueRect;
 
  private:
-  static void SurfaceDestroyFunc(void *data);
+  static void SurfaceDestroyFunc(void* data);
 
   int32_t mFloatingRefs;
   int32_t mBytesRecorded;
@@ -177,7 +177,7 @@ class gfxASurface {
 
 class gfxUnknownSurface : public gfxASurface {
  public:
-  gfxUnknownSurface(cairo_surface_t *surf, const mozilla::gfx::IntSize &aSize)
+  gfxUnknownSurface(cairo_surface_t* surf, const mozilla::gfx::IntSize& aSize)
       : mSize(aSize) {
     Init(surf, true);
   }

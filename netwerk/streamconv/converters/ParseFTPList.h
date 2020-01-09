@@ -82,9 +82,9 @@ struct list_state {
 
 struct list_result {
   int32_t fe_type;        
-  const char *fe_fname;   
+  const char* fe_fname;   
   uint32_t fe_fnlen;      
-  const char *fe_lname;   
+  const char* fe_lname;   
   uint32_t fe_lnlen;      
   char fe_size[40];       
   PRExplodedTime fe_time; 
@@ -94,8 +94,8 @@ struct list_result {
 
 typedef PRTime (*NowTimeFn)();
 
-int ParseFTPList(const char *line, struct list_state *state,
-                 struct list_result *result,
+int ParseFTPList(const char* line, struct list_state* state,
+                 struct list_result* result,
                  PRTimeParamFn timeParam = PR_LocalTimeParameters,
                  NowTimeFn nowTimeFn = PR_Now);
 

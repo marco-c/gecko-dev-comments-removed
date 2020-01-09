@@ -25,7 +25,7 @@ class ResultSet final : public mozIStorageResultSet {
   
 
 
-  nsresult add(mozIStorageRow *aTuple);
+  nsresult add(mozIStorageRow* aTuple);
 
   
 

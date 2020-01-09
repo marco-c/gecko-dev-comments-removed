@@ -49,10 +49,10 @@ extern "C" {
 
 
 
-void MOZ_ASAN_VISIBILITY __asan_poison_memory_region(void const volatile *addr,
+void MOZ_ASAN_VISIBILITY __asan_poison_memory_region(void const volatile* addr,
                                                      size_t size);
 void MOZ_ASAN_VISIBILITY
-__asan_unpoison_memory_region(void const volatile *addr, size_t size);
+__asan_unpoison_memory_region(void const volatile* addr, size_t size);
 
 #  define MOZ_MAKE_MEM_NOACCESS(addr, size) \
     __asan_poison_memory_region((addr), (size))
@@ -67,7 +67,7 @@ __asan_unpoison_memory_region(void const volatile *addr, size_t size);
 
 
 
-void MOZ_EXPORT __lsan_ignore_object(const void *p);
+void MOZ_EXPORT __lsan_ignore_object(const void* p);
 }
 #elif defined(MOZ_MSAN)
 #  include <stddef.h>
@@ -78,8 +78,8 @@ extern "C" {
 
 
 
-void MOZ_EXPORT __msan_poison(void const volatile *addr, size_t size);
-void MOZ_EXPORT __msan_unpoison(void const volatile *addr, size_t size);
+void MOZ_EXPORT __msan_poison(void const volatile* addr, size_t size);
+void MOZ_EXPORT __msan_unpoison(void const volatile* addr, size_t size);
 
 #  define MOZ_MAKE_MEM_NOACCESS(addr, size) __msan_poison((addr), (size))
 

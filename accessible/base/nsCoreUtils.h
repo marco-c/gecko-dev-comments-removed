@@ -39,13 +39,13 @@ class nsCoreUtils {
   
 
 
-  static bool IsLabelWithControl(nsIContent *aContent);
+  static bool IsLabelWithControl(nsIContent* aContent);
 
   
 
 
 
-  static bool HasClickListener(nsIContent *aContent);
+  static bool HasClickListener(nsIContent* aContent);
 
   
 
@@ -57,9 +57,9 @@ class nsCoreUtils {
 
 
   MOZ_CAN_RUN_SCRIPT
-  static void DispatchClickEvent(mozilla::dom::XULTreeElement *aTree,
-                                 int32_t aRowIndex, nsTreeColumn *aColumn,
-                                 const nsAString &aPseudoElt = EmptyString());
+  static void DispatchClickEvent(mozilla::dom::XULTreeElement* aTree,
+                                 int32_t aRowIndex, nsTreeColumn* aColumn,
+                                 const nsAString& aPseudoElt = EmptyString());
 
   
 
@@ -74,9 +74,9 @@ class nsCoreUtils {
 
   MOZ_CAN_RUN_SCRIPT
   static void DispatchMouseEvent(mozilla::EventMessage aMessage, int32_t aX,
-                                 int32_t aY, nsIContent *aContent,
-                                 nsIFrame *aFrame, PresShell *aPresShell,
-                                 nsIWidget *aRootWidget);
+                                 int32_t aY, nsIContent* aContent,
+                                 nsIFrame* aFrame, PresShell* aPresShell,
+                                 nsIWidget* aRootWidget);
 
   
 
@@ -91,9 +91,9 @@ class nsCoreUtils {
 
   MOZ_CAN_RUN_SCRIPT
   static void DispatchTouchEvent(mozilla::EventMessage aMessage, int32_t aX,
-                                 int32_t aY, nsIContent *aContent,
-                                 nsIFrame *aFrame, PresShell *aPresShell,
-                                 nsIWidget *aRootWidget);
+                                 int32_t aY, nsIContent* aContent,
+                                 nsIFrame* aFrame, PresShell* aPresShell,
+                                 nsIWidget* aRootWidget);
 
   
 
@@ -101,22 +101,7 @@ class nsCoreUtils {
 
 
 
-  static uint32_t GetAccessKeyFor(nsIContent *aContent);
-
-  
-
-
-
-
-
-
-
-  static nsIContent *GetDOMElementFor(nsIContent *aContent);
-
-  
-
-
-  static nsINode *GetDOMNodeFromDOMPoint(nsINode *aNode, uint32_t aOffset);
+  static uint32_t GetAccessKeyFor(nsIContent* aContent);
 
   
 
@@ -126,14 +111,12 @@ class nsCoreUtils {
 
 
 
+  static nsIContent* GetDOMElementFor(nsIContent* aContent);
+
+  
 
 
-
-
-
-  static bool IsAncestorOf(nsINode *aPossibleAncestorNode,
-                           nsINode *aPossibleDescendantNode,
-                           nsINode *aRootNode = nullptr);
+  static nsINode* GetDOMNodeFromDOMPoint(nsINode* aNode, uint32_t aOffset);
 
   
 
@@ -143,7 +126,24 @@ class nsCoreUtils {
 
 
 
-  static nsresult ScrollSubstringTo(nsIFrame *aFrame, nsRange *aRange,
+
+
+
+
+
+  static bool IsAncestorOf(nsINode* aPossibleAncestorNode,
+                           nsINode* aPossibleDescendantNode,
+                           nsINode* aRootNode = nullptr);
+
+  
+
+
+
+
+
+
+
+  static nsresult ScrollSubstringTo(nsIFrame* aFrame, nsRange* aRange,
                                     uint32_t aScrollType);
 
   
@@ -156,7 +156,7 @@ class nsCoreUtils {
 
 
 
-  static nsresult ScrollSubstringTo(nsIFrame *aFrame, nsRange *aRange,
+  static nsresult ScrollSubstringTo(nsIFrame* aFrame, nsRange* aRange,
                                     mozilla::ScrollAxis aVertical,
                                     mozilla::ScrollAxis aHorizontal);
 
@@ -168,16 +168,16 @@ class nsCoreUtils {
 
 
 
-  static void ScrollFrameToPoint(nsIFrame *aScrollableFrame, nsIFrame *aFrame,
-                                 const nsIntPoint &aPoint);
+  static void ScrollFrameToPoint(nsIFrame* aScrollableFrame, nsIFrame* aFrame,
+                                 const nsIntPoint& aPoint);
 
   
 
 
 
   static void ConvertScrollTypeToPercents(uint32_t aScrollType,
-                                          mozilla::ScrollAxis *aVertical,
-                                          mozilla::ScrollAxis *aHorizontal);
+                                          mozilla::ScrollAxis* aVertical,
+                                          mozilla::ScrollAxis* aHorizontal);
 
   
 
@@ -185,37 +185,37 @@ class nsCoreUtils {
 
 
 
-  static nsIntPoint GetScreenCoordsForWindow(nsINode *aNode);
+  static nsIntPoint GetScreenCoordsForWindow(nsINode* aNode);
 
   
 
 
-  static already_AddRefed<nsIDocShell> GetDocShellFor(nsINode *aNode);
+  static already_AddRefed<nsIDocShell> GetDocShellFor(nsINode* aNode);
 
   
 
 
-  static bool IsRootDocument(Document *aDocument);
+  static bool IsRootDocument(Document* aDocument);
 
   
 
 
-  static bool IsContentDocument(Document *aDocument);
+  static bool IsContentDocument(Document* aDocument);
 
   
 
 
-  static bool IsTabDocument(Document *aDocumentNode);
+  static bool IsTabDocument(Document* aDocumentNode);
 
   
 
 
-  static bool IsErrorPage(Document *aDocument);
+  static bool IsErrorPage(Document* aDocument);
 
   
 
 
-  static PresShell *GetPresShellFor(nsINode *aNode) {
+  static PresShell* GetPresShellFor(nsINode* aNode) {
     return aNode->OwnerDoc()->GetPresShell();
   }
 
@@ -226,13 +226,13 @@ class nsCoreUtils {
 
 
 
-  static bool GetID(nsIContent *aContent, nsAString &aID);
+  static bool GetID(nsIContent* aContent, nsAString& aID);
 
   
 
 
 
-  static bool GetUIntAttr(nsIContent *aContent, nsAtom *aAttr, int32_t *aUInt);
+  static bool GetUIntAttr(nsIContent* aContent, nsAtom* aAttr, int32_t* aUInt);
 
   
 
@@ -241,59 +241,59 @@ class nsCoreUtils {
 
 
 
-  static void GetLanguageFor(nsIContent *aContent, nsIContent *aRootContent,
-                             nsAString &aLanguage);
+  static void GetLanguageFor(nsIContent* aContent, nsIContent* aRootContent,
+                             nsAString& aLanguage);
 
   
 
 
-  static mozilla::dom::XULTreeElement *GetTree(nsIContent *aContent);
+  static mozilla::dom::XULTreeElement* GetTree(nsIContent* aContent);
 
   
 
 
   static already_AddRefed<nsTreeColumn> GetFirstSensibleColumn(
-      mozilla::dom::XULTreeElement *aTree);
+      mozilla::dom::XULTreeElement* aTree);
 
   
 
 
-  static uint32_t GetSensibleColumnCount(mozilla::dom::XULTreeElement *aTree);
+  static uint32_t GetSensibleColumnCount(mozilla::dom::XULTreeElement* aTree);
 
   
 
 
   static already_AddRefed<nsTreeColumn> GetSensibleColumnAt(
-      mozilla::dom::XULTreeElement *aTree, uint32_t aIndex);
+      mozilla::dom::XULTreeElement* aTree, uint32_t aIndex);
 
   
 
 
   static already_AddRefed<nsTreeColumn> GetNextSensibleColumn(
-      nsTreeColumn *aColumn);
+      nsTreeColumn* aColumn);
 
   
 
 
   static already_AddRefed<nsTreeColumn> GetPreviousSensibleColumn(
-      nsTreeColumn *aColumn);
+      nsTreeColumn* aColumn);
 
   
 
 
-  static bool IsColumnHidden(nsTreeColumn *aColumn);
+  static bool IsColumnHidden(nsTreeColumn* aColumn);
 
   
 
 
   MOZ_CAN_RUN_SCRIPT
-  static void ScrollTo(PresShell *aPresShell, nsIContent *aContent,
+  static void ScrollTo(PresShell* aPresShell, nsIContent* aContent,
                        uint32_t aScrollType);
 
   
 
 
-  static bool IsHTMLTableHeader(nsIContent *aContent) {
+  static bool IsHTMLTableHeader(nsIContent* aContent) {
     return aContent->NodeInfo()->Equals(nsGkAtoms::th) ||
            (aContent->IsElement() && aContent->AsElement()->HasAttr(
                                          kNameSpaceID_None, nsGkAtoms::scope));
@@ -304,7 +304,7 @@ class nsCoreUtils {
 
 
 
-  static bool IsWhitespaceString(const nsAString &aString);
+  static bool IsWhitespaceString(const nsAString& aString);
 
   
 

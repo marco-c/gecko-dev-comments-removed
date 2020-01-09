@@ -40,7 +40,7 @@ AxisPhysicsMSDModel::AxisPhysicsMSDModel(double aInitialPosition,
 
 AxisPhysicsMSDModel::~AxisPhysicsMSDModel() {}
 
-double AxisPhysicsMSDModel::Acceleration(const State &aState) {
+double AxisPhysicsMSDModel::Acceleration(const State& aState) {
   
 
   

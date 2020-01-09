@@ -16,18 +16,18 @@ namespace a11y {
 class ia2AccessibleComponent : public IAccessibleComponent {
  public:
   
-  STDMETHODIMP QueryInterface(REFIID, void **);
+  STDMETHODIMP QueryInterface(REFIID, void**);
 
   
   virtual  HRESULT STDMETHODCALLTYPE get_locationInParent(
-       long *x,
-       long *y);
+       long* x,
+       long* y);
 
   virtual  HRESULT STDMETHODCALLTYPE get_foreground(
-       IA2Color *foreground);
+       IA2Color* foreground);
 
   virtual  HRESULT STDMETHODCALLTYPE get_background(
-       IA2Color *background);
+       IA2Color* background);
 };
 
 }  

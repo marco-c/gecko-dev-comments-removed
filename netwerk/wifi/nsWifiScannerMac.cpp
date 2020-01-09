@@ -23,7 +23,7 @@ using namespace mozilla;
 
 
 extern nsresult GetAccessPointsFromWLAN(
-    nsCOMArray<nsWifiAccessPoint> &accessPoints);
+    nsCOMArray<nsWifiAccessPoint>& accessPoints);
 
 nsresult nsWifiMonitor::DoScan() {
   

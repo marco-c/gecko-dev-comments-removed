@@ -148,14 +148,14 @@ typedef nsTArray<nsString> GfxDeviceFamily;
 struct GfxDriverInfo {
   
   
-  GfxDriverInfo(OperatingSystem os, nsAString &vendor, GfxDeviceFamily *devices,
+  GfxDriverInfo(OperatingSystem os, nsAString& vendor, GfxDeviceFamily* devices,
                 int32_t feature, int32_t featureStatus, VersionComparisonOp op,
-                uint64_t driverVersion, const char *ruleId,
-                const char *suggestedVersion = nullptr, bool ownDevices = false,
+                uint64_t driverVersion, const char* ruleId,
+                const char* suggestedVersion = nullptr, bool ownDevices = false,
                 bool gpu2 = false);
 
   GfxDriverInfo();
-  GfxDriverInfo(const GfxDriverInfo &);
+  GfxDriverInfo(const GfxDriverInfo&);
   ~GfxDriverInfo();
 
   OperatingSystem mOperatingSystem;
@@ -163,8 +163,8 @@ struct GfxDriverInfo {
 
   nsString mAdapterVendor;
 
-  static GfxDeviceFamily *const allDevices;
-  GfxDeviceFamily *mDevices;
+  static GfxDeviceFamily* const allDevices;
+  GfxDeviceFamily* mDevices;
 
   
   
@@ -184,14 +184,14 @@ struct GfxDriverInfo {
   uint64_t mDriverVersionMax;
   static uint64_t allDriverVersions;
 
-  const char *mSuggestedVersion;
+  const char* mSuggestedVersion;
   nsCString mRuleId;
 
-  static const GfxDeviceFamily *GetDeviceFamily(DeviceFamily id);
-  static GfxDeviceFamily *sDeviceFamilies[DeviceFamilyMax];
+  static const GfxDeviceFamily* GetDeviceFamily(DeviceFamily id);
+  static GfxDeviceFamily* sDeviceFamilies[DeviceFamilyMax];
 
-  static const nsAString &GetDeviceVendor(DeviceVendor id);
-  static nsAString *sDeviceVendors[DeviceVendorMax];
+  static const nsAString& GetDeviceVendor(DeviceVendor id);
+  static nsAString* sDeviceVendors[DeviceVendorMax];
 
   nsString mModel, mHardware, mProduct, mManufacturer;
 
@@ -219,13 +219,13 @@ inline uint64_t V(uint32_t a, uint32_t b, uint32_t c, uint32_t d) {
 }
 
 
-inline bool SplitDriverVersion(const char *aSource, char *aAStr, char *aBStr,
-                               char *aCStr, char *aDStr) {
+inline bool SplitDriverVersion(const char* aSource, char* aAStr, char* aBStr,
+                               char* aCStr, char* aDStr) {
   
   int len = strlen(aSource);
 
   
-  char *dest[4] = {aAStr, aBStr, aCStr, aDStr};
+  char* dest[4] = {aAStr, aBStr, aCStr, aDStr};
   unsigned destIdx = 0;
   unsigned destPos = 0;
 
@@ -272,7 +272,7 @@ inline bool SplitDriverVersion(const char *aSource, char *aAStr, char *aBStr,
 
 
 
-inline void PadDriverDecimal(char *aString) {
+inline void PadDriverDecimal(char* aString) {
   for (int i = 0; i < 4; i++) {
     if (!aString[i]) {
       for (int c = i; c < 4; c++) {
@@ -284,8 +284,8 @@ inline void PadDriverDecimal(char *aString) {
   aString[4] = 0;
 }
 
-inline bool ParseDriverVersion(const nsAString &aVersion,
-                               uint64_t *aNumericVersion) {
+inline bool ParseDriverVersion(const nsAString& aVersion,
+                               uint64_t* aNumericVersion) {
   *aNumericVersion = 0;
 
 #if defined(XP_WIN) || defined(MOZ_X11)

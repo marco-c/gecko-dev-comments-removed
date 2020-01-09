@@ -49,8 +49,8 @@ class nsIPrintDialogService : public nsISupports {
 
 
 
-  NS_IMETHOD Show(nsPIDOMWindowOuter *aParent, nsIPrintSettings *aSettings,
-                  nsIWebBrowserPrint *aWebBrowserPrint) = 0;
+  NS_IMETHOD Show(nsPIDOMWindowOuter* aParent, nsIPrintSettings* aSettings,
+                  nsIWebBrowserPrint* aWebBrowserPrint) = 0;
 
   
 
@@ -62,8 +62,8 @@ class nsIPrintDialogService : public nsISupports {
 
 
 
-  NS_IMETHOD ShowPageSetup(nsPIDOMWindowOuter *aParent,
-                           nsIPrintSettings *aSettings) = 0;
+  NS_IMETHOD ShowPageSetup(nsPIDOMWindowOuter* aParent,
+                           nsIPrintSettings* aSettings) = 0;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIPrintDialogService, NS_IPRINTDIALOGSERVICE_IID)

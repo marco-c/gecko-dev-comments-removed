@@ -6,7 +6,7 @@
 #include "updatecommon.h"
 
 BOOL PathAppendSafe(LPWSTR base, LPCWSTR extra);
-BOOL VerifySameFiles(LPCWSTR file1Path, LPCWSTR file2Path, BOOL &sameContent);
+BOOL VerifySameFiles(LPCWSTR file1Path, LPCWSTR file2Path, BOOL& sameContent);
 
 
 

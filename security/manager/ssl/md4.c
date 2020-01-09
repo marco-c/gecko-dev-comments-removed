@@ -38,8 +38,8 @@
   a = ROTL(a, s)
 
 
-static void w2b(uint8_t *out, const uint32_t *in, uint32_t len) {
-  uint8_t *bp;
+static void w2b(uint8_t* out, const uint32_t* in, uint32_t len) {
+  uint8_t* bp;
   const uint32_t *wp, *wpend;
 
   bp = out;
@@ -55,8 +55,8 @@ static void w2b(uint8_t *out, const uint32_t *in, uint32_t len) {
 }
 
 
-static void b2w(uint32_t *out, const uint8_t *in, uint32_t len) {
-  uint32_t *wp;
+static void b2w(uint32_t* out, const uint8_t* in, uint32_t len) {
+  uint32_t* wp;
   const uint8_t *bp, *bpend;
 
   wp = out;
@@ -70,7 +70,7 @@ static void b2w(uint32_t *out, const uint8_t *in, uint32_t len) {
 }
 
 
-static void md4step(uint32_t state[4], const uint8_t *data) {
+static void md4step(uint32_t state[4], const uint8_t* data) {
   uint32_t A, B, C, D, X[16];
 
   b2w(X, data, 64);
@@ -137,7 +137,7 @@ static void md4step(uint32_t state[4], const uint8_t *data) {
   state[3] += D;
 }
 
-void md4sum(const uint8_t *input, uint32_t inputLen, uint8_t *result) {
+void md4sum(const uint8_t* input, uint32_t inputLen, uint8_t* result) {
   uint8_t final[128];
   uint32_t i, n, m, state[4];
   uint64_t inputLenBits;

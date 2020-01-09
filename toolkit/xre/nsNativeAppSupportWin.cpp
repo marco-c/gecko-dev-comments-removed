@@ -55,8 +55,8 @@ void nsNativeAppSupportWin::CheckConsole() {
 }
 
 
-nsresult NS_CreateNativeAppSupport(nsINativeAppSupport **aResult) {
-  nsNativeAppSupportWin *pNative = new nsNativeAppSupportWin;
+nsresult NS_CreateNativeAppSupport(nsINativeAppSupport** aResult) {
+  nsNativeAppSupportWin* pNative = new nsNativeAppSupportWin;
   if (!pNative) return NS_ERROR_OUT_OF_MEMORY;
 
   

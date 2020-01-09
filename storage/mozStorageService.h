@@ -46,7 +46,7 @@ class Service : public mozIStorageService,
 
 
 
-  int localeCompareStrings(const nsAString &aStr1, const nsAString &aStr2,
+  int localeCompareStrings(const nsAString& aStr1, const nsAString& aStr2,
                            int32_t aComparisonStrength);
 
   static already_AddRefed<Service> getSingleton();
@@ -87,7 +87,7 @@ class Service : public mozIStorageService,
 
 
 
-  void registerConnection(Connection *aConnection);
+  void registerConnection(Connection* aConnection);
 
   
 
@@ -97,7 +97,7 @@ class Service : public mozIStorageService,
 
 
 
-  void unregisterConnection(Connection *aConnection);
+  void unregisterConnection(Connection* aConnection);
 
   
 
@@ -111,7 +111,7 @@ class Service : public mozIStorageService,
 
 
 
-  void getConnections(nsTArray<RefPtr<Connection> > &aConnections);
+  void getConnections(nsTArray<RefPtr<Connection> >& aConnections);
 
  private:
   Service();
@@ -124,7 +124,7 @@ class Service : public mozIStorageService,
 
   Mutex mMutex;
 
-  sqlite3_vfs *mSqliteVFS;
+  sqlite3_vfs* mSqliteVFS;
 
   
 
@@ -150,7 +150,7 @@ class Service : public mozIStorageService,
 
 
 
-  nsICollation *getLocaleCollation();
+  nsICollation* getLocaleCollation();
 
   
 
@@ -165,7 +165,7 @@ class Service : public mozIStorageService,
 
   nsCOMPtr<nsIMemoryReporter> mStorageSQLiteReporter;
 
-  static Service *gService;
+  static Service* gService;
 
   static int32_t sSynchronousPref;
   static int32_t sDefaultPageSize;

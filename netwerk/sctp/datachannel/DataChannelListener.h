@@ -20,24 +20,24 @@ class DataChannelListener {
   virtual ~DataChannelListener() = default;
 
   
-  virtual nsresult OnMessageAvailable(nsISupports *aContext,
-                                      const nsACString &message) = 0;
+  virtual nsresult OnMessageAvailable(nsISupports* aContext,
+                                      const nsACString& message) = 0;
 
   
-  virtual nsresult OnBinaryMessageAvailable(nsISupports *aContext,
-                                            const nsACString &message) = 0;
+  virtual nsresult OnBinaryMessageAvailable(nsISupports* aContext,
+                                            const nsACString& message) = 0;
 
   
-  virtual nsresult OnChannelConnected(nsISupports *aContext) = 0;
+  virtual nsresult OnChannelConnected(nsISupports* aContext) = 0;
 
   
-  virtual nsresult OnChannelClosed(nsISupports *aContext) = 0;
+  virtual nsresult OnChannelClosed(nsISupports* aContext) = 0;
 
   
-  virtual nsresult OnBufferLow(nsISupports *aContext) = 0;
+  virtual nsresult OnBufferLow(nsISupports* aContext) = 0;
 
   
-  virtual nsresult NotBuffered(nsISupports *aContext) = 0;
+  virtual nsresult NotBuffered(nsISupports* aContext) = 0;
 };
 
 }  

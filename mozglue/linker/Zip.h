@@ -36,23 +36,23 @@ class Zip : public mozilla::external::AtomicRefCounted<Zip> {
 
 
 
-  static already_AddRefed<Zip> Create(const char *filename);
+  static already_AddRefed<Zip> Create(const char* filename);
 
   
 
 
-  static already_AddRefed<Zip> Create(void *buffer, size_t size) {
+  static already_AddRefed<Zip> Create(void* buffer, size_t size) {
     return Create(nullptr, buffer, size);
   }
 
  private:
-  static already_AddRefed<Zip> Create(const char *filename, void *buffer,
+  static already_AddRefed<Zip> Create(const char* filename, void* buffer,
                                       size_t size);
 
   
 
 
-  Zip(const char *filename, void *buffer, size_t size);
+  Zip(const char* filename, void* buffer, size_t size);
 
  public:
   
@@ -83,7 +83,7 @@ class Zip : public mozilla::external::AtomicRefCounted<Zip> {
     
 
 
-    const void *GetBuffer() { return compressedBuf; }
+    const void* GetBuffer() { return compressedBuf; }
     size_t GetSize() { return compressedSize; }
     size_t GetUncompressedSize() { return uncompressedSize; }
     size_t GetCRC32() { return CRC32; }
@@ -94,13 +94,13 @@ class Zip : public mozilla::external::AtomicRefCounted<Zip> {
 
 
 
-    z_stream GetZStream(void *buf) {
+    z_stream GetZStream(void* buf) {
       z_stream zStream;
       zStream.avail_in = compressedSize;
       zStream.next_in =
-          reinterpret_cast<Bytef *>(const_cast<void *>(compressedBuf));
+          reinterpret_cast<Bytef*>(const_cast<void*>(compressedBuf));
       zStream.avail_out = uncompressedSize;
-      zStream.next_out = static_cast<Bytef *>(buf);
+      zStream.next_out = static_cast<Bytef*>(buf);
       zStream.zalloc = nullptr;
       zStream.zfree = nullptr;
       zStream.opaque = nullptr;
@@ -109,7 +109,7 @@ class Zip : public mozilla::external::AtomicRefCounted<Zip> {
 
    protected:
     friend class Zip;
-    const void *compressedBuf;
+    const void* compressedBuf;
     size_t compressedSize;
     size_t uncompressedSize;
     size_t CRC32;
@@ -119,12 +119,12 @@ class Zip : public mozilla::external::AtomicRefCounted<Zip> {
   
 
 
-  bool GetStream(const char *path, Stream *out) const;
+  bool GetStream(const char* path, Stream* out) const;
 
   
 
 
-  const char *GetName() const { return name; }
+  const char* GetName() const { return name; }
 
   
 
@@ -133,9 +133,9 @@ class Zip : public mozilla::external::AtomicRefCounted<Zip> {
 
  private:
   
-  char *name;
+  char* name;
   
-  void *mapped;
+  void* mapped;
   
   size_t size;
 
@@ -148,18 +148,18 @@ class Zip : public mozilla::external::AtomicRefCounted<Zip> {
     
 
 
-    StringBuf(const char *buf, size_t length) : buf(buf), length(length) {}
+    StringBuf(const char* buf, size_t length) : buf(buf), length(length) {}
 
     
 
 
 
-    bool Equals(const char *str) const {
+    bool Equals(const char* str) const {
       return (strncmp(str, buf, length) == 0 && str[length] == '\0');
     }
 
    private:
-    const char *buf;
+    const char* buf;
     size_t length;
   };
 
@@ -178,8 +178,8 @@ class Zip : public mozilla::external::AtomicRefCounted<Zip> {
 
 
 
-    static const T *validate(const void *buf) {
-      const T *ret = static_cast<const T *>(buf);
+    static const T* validate(const void* buf) {
+      const T* ret = static_cast<const T*>(buf);
       if (ret->signature == T::magic) return ret;
       return nullptr;
     }
@@ -203,15 +203,15 @@ class Zip : public mozilla::external::AtomicRefCounted<Zip> {
 
 
     StringBuf GetName() const {
-      return StringBuf(reinterpret_cast<const char *>(this) + sizeof(*this),
+      return StringBuf(reinterpret_cast<const char*>(this) + sizeof(*this),
                        filenameSize);
     }
 
     
 
 
-    const void *GetData() const {
-      return reinterpret_cast<const char *>(this) + sizeof(*this) +
+    const void* GetData() const {
+      return reinterpret_cast<const char*>(this) + sizeof(*this) +
              filenameSize + extraFieldSize;
     }
 
@@ -254,15 +254,15 @@ class Zip : public mozilla::external::AtomicRefCounted<Zip> {
 
 
     StringBuf GetName() const {
-      return StringBuf(reinterpret_cast<const char *>(this) + sizeof(*this),
+      return StringBuf(reinterpret_cast<const char*>(this) + sizeof(*this),
                        filenameSize);
     }
 
     
 
 
-    const DirectoryEntry *GetNext() const {
-      return validate(reinterpret_cast<const char *>(this) + sizeof(*this) +
+    const DirectoryEntry* GetNext() const {
+      return validate(reinterpret_cast<const char*>(this) + sizeof(*this) +
                       filenameSize + extraFieldSize + fileCommentSize);
     }
 
@@ -304,18 +304,18 @@ class Zip : public mozilla::external::AtomicRefCounted<Zip> {
   
 
 
-  const DirectoryEntry *GetFirstEntry() const;
+  const DirectoryEntry* GetFirstEntry() const;
 
   
 
 
-  mutable const LocalFile *nextFile;
+  mutable const LocalFile* nextFile;
 
   
-  mutable const DirectoryEntry *nextDir;
+  mutable const DirectoryEntry* nextDir;
 
   
-  mutable const DirectoryEntry *entries;
+  mutable const DirectoryEntry* entries;
 
   mutable pthread_mutex_t mutex;
 };
@@ -331,7 +331,7 @@ class ZipCollection {
 
 
 
-  static already_AddRefed<Zip> GetZip(const char *path);
+  static already_AddRefed<Zip> GetZip(const char* path);
 
  protected:
   friend class Zip;
@@ -342,13 +342,13 @@ class ZipCollection {
 
 
 
-  static void Register(Zip *zip);
+  static void Register(Zip* zip);
 
   
 
 
 
-  static void Forget(const Zip *zip);
+  static void Forget(const Zip* zip);
 
  private:
   
@@ -366,12 +366,12 @@ inline void RefCounted<Zip, AtomicRefCount>::Release() const {
     
     
     
-    ZipCollection::Forget(static_cast<const Zip *>(this));
+    ZipCollection::Forget(static_cast<const Zip*>(this));
   } else if (count == 0) {
 #ifdef DEBUG
     mRefCnt = detail::DEAD;
 #endif
-    delete static_cast<const Zip *>(this);
+    delete static_cast<const Zip*>(this);
   }
 }
 

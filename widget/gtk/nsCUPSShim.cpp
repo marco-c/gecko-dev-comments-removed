@@ -24,10 +24,9 @@ bool nsCUPSShim::Init() {
   if (!mCupsLib) return false;
 
   
-  void **symAddr[] = {
-      (void **)&mCupsAddOption, (void **)&mCupsFreeDests,
-      (void **)&mCupsGetDest,   (void **)&mCupsGetDests,
-      (void **)&mCupsPrintFile, (void **)&mCupsTempFd,
+  void** symAddr[] = {
+      (void**)&mCupsAddOption, (void**)&mCupsFreeDests, (void**)&mCupsGetDest,
+      (void**)&mCupsGetDests,  (void**)&mCupsPrintFile, (void**)&mCupsTempFd,
   };
 
   for (int i = gSymNameCt; i--;) {

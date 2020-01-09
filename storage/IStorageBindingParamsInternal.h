@@ -39,14 +39,14 @@ class IStorageBindingParamsInternal : public nsISupports {
 
 
 
-  virtual already_AddRefed<mozIStorageError> bind(sqlite3_stmt *aStatement) = 0;
+  virtual already_AddRefed<mozIStorageError> bind(sqlite3_stmt* aStatement) = 0;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(IStorageBindingParamsInternal,
                               ISTORAGEBINDINGPARAMSINTERNAL_IID)
 
 #define NS_DECL_ISTORAGEBINDINGPARAMSINTERNAL \
-  already_AddRefed<mozIStorageError> bind(sqlite3_stmt *aStatement) override;
+  already_AddRefed<mozIStorageError> bind(sqlite3_stmt* aStatement) override;
 
 }  
 }  

@@ -19,7 +19,7 @@ class nsFileChannel : public nsBaseChannel,
   NS_DECL_NSIFILECHANNEL
   NS_DECL_NSIUPLOADCHANNEL
 
-  explicit nsFileChannel(nsIURI *uri);
+  explicit nsFileChannel(nsIURI* uri);
 
   nsresult Init();
 
@@ -30,16 +30,16 @@ class nsFileChannel : public nsBaseChannel,
   
   
   
-  MOZ_MUST_USE nsresult MakeFileInputStream(nsIFile *file,
-                                            nsCOMPtr<nsIInputStream> &stream,
-                                            nsCString &contentType, bool async);
+  MOZ_MUST_USE nsresult MakeFileInputStream(nsIFile* file,
+                                            nsCOMPtr<nsIInputStream>& stream,
+                                            nsCString& contentType, bool async);
 
   virtual MOZ_MUST_USE nsresult OpenContentStream(
-      bool async, nsIInputStream **result, nsIChannel **channel) override;
+      bool async, nsIInputStream** result, nsIChannel** channel) override;
 
   
   
-  virtual nsresult ListenerBlockingPromise(BlockingPromise **promise) override;
+  virtual nsresult ListenerBlockingPromise(BlockingPromise** promise) override;
 
  private:
   nsresult FixupContentLength(bool async);

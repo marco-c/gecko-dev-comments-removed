@@ -30,7 +30,7 @@
 
 #ifdef __arm__
 __attribute__((section(".text._init_trampoline"), naked)) int init_trampoline(
-    int argc, char **argv, char **env) {
+    int argc, char** argv, char** env) {
   __asm__ __volatile__(
       
       
@@ -46,13 +46,13 @@ __attribute__((section(".text._init_trampoline"), naked)) int init_trampoline(
 #endif
 
 extern __attribute__((visibility("hidden"))) void original_init(int argc,
-                                                                char **argv,
-                                                                char **env);
+                                                                char** argv,
+                                                                char** env);
 
 extern __attribute__((visibility("hidden"))) Elf32_Rel relhack[];
 extern __attribute__((visibility("hidden"))) Elf_Ehdr elf_header;
 
-extern __attribute__((visibility("hidden"))) int (*mprotect_cb)(void *addr,
+extern __attribute__((visibility("hidden"))) int (*mprotect_cb)(void* addr,
                                                                 size_t len,
                                                                 int prot);
 extern __attribute__((visibility("hidden"))) long (*sysconf_cb)(int name);
@@ -60,24 +60,24 @@ extern __attribute__((visibility("hidden"))) char relro_start[];
 extern __attribute__((visibility("hidden"))) char relro_end[];
 
 static inline __attribute__((always_inline)) void do_relocations(void) {
-  Elf32_Rel *rel;
+  Elf32_Rel* rel;
   Elf_Addr *ptr, *start;
   for (rel = relhack; rel->r_offset; rel++) {
-    start = (Elf_Addr *)((intptr_t)&elf_header + rel->r_offset);
+    start = (Elf_Addr*)((intptr_t)&elf_header + rel->r_offset);
     for (ptr = start; ptr < &start[rel->r_info]; ptr++)
       *ptr += (intptr_t)&elf_header;
   }
 }
 
 __attribute__((section(".text._init_noinit"))) int init_noinit(int argc,
-                                                               char **argv,
-                                                               char **env) {
+                                                               char** argv,
+                                                               char** env) {
   do_relocations();
   return 0;
 }
 
-__attribute__((section(".text._init"))) int init(int argc, char **argv,
-                                                 char **env) {
+__attribute__((section(".text._init"))) int init(int argc, char** argv,
+                                                 char** env) {
   do_relocations();
   original_init(argc, argv, env);
   
@@ -96,12 +96,12 @@ static inline __attribute__((always_inline)) void do_relocations_with_relro(
   
   
   
-  mprotect_cb((void *)aligned_relro_start,
+  mprotect_cb((void*)aligned_relro_start,
               aligned_relro_end - aligned_relro_start, PROT_READ | PROT_WRITE);
 
   do_relocations();
 
-  mprotect_cb((void *)aligned_relro_start,
+  mprotect_cb((void*)aligned_relro_start,
               aligned_relro_end - aligned_relro_start, PROT_READ);
   
   
@@ -110,14 +110,14 @@ static inline __attribute__((always_inline)) void do_relocations_with_relro(
 }
 
 __attribute__((section(".text._init_noinit_relro"))) int init_noinit_relro(
-    int argc, char **argv, char **env) {
+    int argc, char** argv, char** env) {
   do_relocations_with_relro();
   return 0;
 }
 
 __attribute__((section(".text._init_relro"))) int init_relro(int argc,
-                                                             char **argv,
-                                                             char **env) {
+                                                             char** argv,
+                                                             char** env) {
   do_relocations_with_relro();
   original_init(argc, argv, env);
   return 0;

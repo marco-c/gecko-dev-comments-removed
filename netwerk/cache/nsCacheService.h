@@ -36,7 +36,7 @@ class mozIStorageService;
 
 class nsNotifyDoomListener : public mozilla::Runnable {
  public:
-  nsNotifyDoomListener(nsICacheListener *listener, nsresult status)
+  nsNotifyDoomListener(nsICacheListener* listener, nsresult status)
       : mozilla::Runnable("nsNotifyDoomListener"),
         mListener(listener)  
         ,
@@ -49,7 +49,7 @@ class nsNotifyDoomListener : public mozilla::Runnable {
   }
 
  private:
-  nsICacheListener *mListener;
+  nsICacheListener* mListener;
   nsresult mStatus;
 };
 
@@ -68,63 +68,63 @@ class nsCacheService final : public nsICacheServiceInternal {
   nsCacheService();
 
   
-  static nsresult Create(nsISupports *outer, const nsIID &iid, void **result);
+  static nsresult Create(nsISupports* outer, const nsIID& iid, void** result);
 
   
 
 
-  static nsresult OpenCacheEntry(nsCacheSession *session, const nsACString &key,
+  static nsresult OpenCacheEntry(nsCacheSession* session, const nsACString& key,
                                  nsCacheAccessMode accessRequested,
-                                 bool blockingMode, nsICacheListener *listener,
-                                 nsICacheEntryDescriptor **result);
+                                 bool blockingMode, nsICacheListener* listener,
+                                 nsICacheEntryDescriptor** result);
 
-  static nsresult EvictEntriesForSession(nsCacheSession *session);
+  static nsresult EvictEntriesForSession(nsCacheSession* session);
 
   static nsresult IsStorageEnabledForPolicy(nsCacheStoragePolicy storagePolicy,
-                                            bool *result);
+                                            bool* result);
 
-  static nsresult DoomEntry(nsCacheSession *session, const nsACString &key,
-                            nsICacheListener *listener);
+  static nsresult DoomEntry(nsCacheSession* session, const nsACString& key,
+                            nsICacheListener* listener);
 
   
 
 
 
-  static void CloseDescriptor(nsCacheEntryDescriptor *descriptor);
+  static void CloseDescriptor(nsCacheEntryDescriptor* descriptor);
 
-  static nsresult GetFileForEntry(nsCacheEntry *entry, nsIFile **result);
+  static nsresult GetFileForEntry(nsCacheEntry* entry, nsIFile** result);
 
-  static nsresult OpenInputStreamForEntry(nsCacheEntry *entry,
+  static nsresult OpenInputStreamForEntry(nsCacheEntry* entry,
                                           nsCacheAccessMode mode,
                                           uint32_t offset,
-                                          nsIInputStream **result);
+                                          nsIInputStream** result);
 
-  static nsresult OpenOutputStreamForEntry(nsCacheEntry *entry,
+  static nsresult OpenOutputStreamForEntry(nsCacheEntry* entry,
                                            nsCacheAccessMode mode,
                                            uint32_t offset,
-                                           nsIOutputStream **result);
+                                           nsIOutputStream** result);
 
-  static nsresult OnDataSizeChange(nsCacheEntry *entry, int32_t deltaSize);
+  static nsresult OnDataSizeChange(nsCacheEntry* entry, int32_t deltaSize);
 
-  static nsresult SetCacheElement(nsCacheEntry *entry, nsISupports *element);
+  static nsresult SetCacheElement(nsCacheEntry* entry, nsISupports* element);
 
-  static nsresult ValidateEntry(nsCacheEntry *entry);
+  static nsresult ValidateEntry(nsCacheEntry* entry);
 
   static int32_t CacheCompressionLevel();
 
   static bool GetClearingEntries();
 
-  static void GetCacheBaseDirectoty(nsIFile **result);
-  static void GetDiskCacheDirectory(nsIFile **result);
-  static void GetAppCacheDirectory(nsIFile **result);
+  static void GetCacheBaseDirectoty(nsIFile** result);
+  static void GetDiskCacheDirectory(nsIFile** result);
+  static void GetAppCacheDirectory(nsIFile** result);
 
   
 
 
 
-  static nsCacheService *GlobalInstance() { return gService; }
+  static nsCacheService* GlobalInstance() { return gService; }
 
-  static nsresult DoomEntry(nsCacheEntry *entry);
+  static nsresult DoomEntry(nsCacheEntry* entry);
 
   static bool IsStorageEnabledForPolicy_Locked(nsCacheStoragePolicy policy);
 
@@ -132,25 +132,25 @@ class nsCacheService final : public nsICacheServiceInternal {
 
 
 
-  nsresult GetOfflineDevice(nsOfflineCacheDevice **aDevice);
+  nsresult GetOfflineDevice(nsOfflineCacheDevice** aDevice);
 
   
 
 
 
 
-  nsresult GetCustomOfflineDevice(nsIFile *aProfileDir, int32_t aQuota,
-                                  nsOfflineCacheDevice **aDevice);
+  nsresult GetCustomOfflineDevice(nsIFile* aProfileDir, int32_t aQuota,
+                                  nsOfflineCacheDevice** aDevice);
 
   
   
   
   
   
-  static void ReleaseObject_Locked(nsISupports *object,
-                                   nsIEventTarget *target = nullptr);
+  static void ReleaseObject_Locked(nsISupports* object,
+                                   nsIEventTarget* target = nullptr);
 
-  static nsresult DispatchToCacheIOThread(nsIRunnable *event);
+  static nsresult DispatchToCacheIOThread(nsIRunnable* event);
 
   
   
@@ -167,9 +167,9 @@ class nsCacheService final : public nsICacheServiceInternal {
   
   static void SetOfflineCacheCapacity(int32_t capacity);
 
-  static void MoveOrRemoveDiskCache(nsIFile *aOldCacheDir,
-                                    nsIFile *aNewCacheDir,
-                                    const char *aCacheSubdir);
+  static void MoveOrRemoveDiskCache(nsIFile* aOldCacheDir,
+                                    nsIFile* aNewCacheDir,
+                                    const char* aCacheSubdir);
 
   nsresult Init();
   void Shutdown();
@@ -186,13 +186,13 @@ class nsCacheService final : public nsICacheServiceInternal {
   static void LeavePrivateBrowsing();
   bool IsDoomListEmpty();
 
-  typedef bool (*DoomCheckFn)(nsCacheEntry *entry);
+  typedef bool (*DoomCheckFn)(nsCacheEntry* entry);
 
   
-  nsresult CreateSessionInternal(const char *clientID,
+  nsresult CreateSessionInternal(const char* clientID,
                                  nsCacheStoragePolicy storagePolicy,
-                                 bool streamBased, nsICacheSession **result);
-  nsresult VisitEntriesInternal(nsICacheVisitor *visitor);
+                                 bool streamBased, nsICacheSession** result);
+  nsresult VisitEntriesInternal(nsICacheVisitor* visitor);
   nsresult EvictEntriesInternal(nsCacheStoragePolicy storagePolicy);
 
  private:
@@ -216,44 +216,44 @@ class nsCacheService final : public nsICacheServiceInternal {
 
   nsresult CreateDiskDevice();
   nsresult CreateOfflineDevice();
-  nsresult CreateCustomOfflineDevice(nsIFile *aProfileDir, int32_t aQuota,
-                                     nsOfflineCacheDevice **aDevice);
+  nsresult CreateCustomOfflineDevice(nsIFile* aProfileDir, int32_t aQuota,
+                                     nsOfflineCacheDevice** aDevice);
   nsresult CreateMemoryDevice();
 
-  nsresult RemoveCustomOfflineDevice(nsOfflineCacheDevice *aDevice);
+  nsresult RemoveCustomOfflineDevice(nsOfflineCacheDevice* aDevice);
 
-  nsresult CreateRequest(nsCacheSession *session, const nsACString &clientKey,
+  nsresult CreateRequest(nsCacheSession* session, const nsACString& clientKey,
                          nsCacheAccessMode accessRequested, bool blockingMode,
-                         nsICacheListener *listener, nsCacheRequest **request);
+                         nsICacheListener* listener, nsCacheRequest** request);
 
-  nsresult DoomEntry_Internal(nsCacheEntry *entry,
+  nsresult DoomEntry_Internal(nsCacheEntry* entry,
                               bool doProcessPendingRequests);
 
-  nsresult EvictEntriesForClient(const char *clientID,
+  nsresult EvictEntriesForClient(const char* clientID,
                                  nsCacheStoragePolicy storagePolicy);
 
   
   
   
-  nsresult NotifyListener(nsCacheRequest *request,
-                          nsICacheEntryDescriptor *descriptor,
+  nsresult NotifyListener(nsCacheRequest* request,
+                          nsICacheEntryDescriptor* descriptor,
                           nsCacheAccessMode accessGranted, nsresult error);
 
-  nsresult ActivateEntry(nsCacheRequest *request, nsCacheEntry **entry,
-                         nsCacheEntry **doomedEntry);
+  nsresult ActivateEntry(nsCacheRequest* request, nsCacheEntry** entry,
+                         nsCacheEntry** doomedEntry);
 
-  nsCacheDevice *EnsureEntryHasDevice(nsCacheEntry *entry);
+  nsCacheDevice* EnsureEntryHasDevice(nsCacheEntry* entry);
 
-  nsCacheEntry *SearchCacheDevices(nsCString *key, nsCacheStoragePolicy policy,
-                                   bool *collision);
+  nsCacheEntry* SearchCacheDevices(nsCString* key, nsCacheStoragePolicy policy,
+                                   bool* collision);
 
-  void DeactivateEntry(nsCacheEntry *entry);
+  void DeactivateEntry(nsCacheEntry* entry);
 
-  nsresult ProcessRequest(nsCacheRequest *request,
+  nsresult ProcessRequest(nsCacheRequest* request,
                           bool calledFromOpenCacheEntry,
-                          nsICacheEntryDescriptor **result);
+                          nsICacheEntryDescriptor** result);
 
-  nsresult ProcessPendingRequests(nsCacheEntry *entry);
+  nsresult ProcessPendingRequests(nsCacheEntry* entry);
 
   void ClearDoomList(void);
   void DoomActiveEntries(DoomCheckFn check);
@@ -266,11 +266,11 @@ class nsCacheService final : public nsICacheServiceInternal {
 
 
 
-  static nsCacheService *gService;  
+  static nsCacheService* gService;  
 
   nsCOMPtr<mozIStorageService> mStorageService;
 
-  nsCacheProfilePrefObserver *mObserver;
+  nsCacheProfilePrefObserver* mObserver;
 
   mozilla::Mutex mLock;
   mozilla::CondVar mCondVar;
@@ -281,14 +281,14 @@ class nsCacheService final : public nsICacheServiceInternal {
 
   nsCOMPtr<nsIThread> mCacheIOThread;
 
-  nsTArray<nsISupports *> mDoomedObjects;
+  nsTArray<nsISupports*> mDoomedObjects;
 
   bool mInitialized;
   bool mClearingEntries;
 
   bool mEnableOfflineDevice;
 
-  nsOfflineCacheDevice *mOfflineDevice;
+  nsOfflineCacheDevice* mOfflineDevice;
 
   nsRefPtrHashtable<nsStringHashKey, nsOfflineCacheDevice>
       mCustomOfflineDevices;

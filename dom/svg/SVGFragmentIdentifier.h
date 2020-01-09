@@ -31,16 +31,16 @@ class SVGFragmentIdentifier {
 
 
 
-  static bool ProcessFragmentIdentifier(dom::Document *aDocument,
-                                        const nsAString &aAnchorName);
+  static bool ProcessFragmentIdentifier(dom::Document* aDocument,
+                                        const nsAString& aAnchorName);
 
  private:
   
 
 
 
-  static bool ProcessSVGViewSpec(const nsAString &aViewSpec,
-                                 dom::SVGSVGElement *root);
+  static bool ProcessSVGViewSpec(const nsAString& aViewSpec,
+                                 dom::SVGSVGElement* root);
 };
 
 }  

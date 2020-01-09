@@ -47,42 +47,42 @@ class TransportLayer : public sigslot::has_slots<> {
   nsresult Init();  
   virtual nsresult InitInternal() { return NS_OK; }  
 
-  void SetFlowId(const std::string &flow_id) { flow_id_ = flow_id; }
+  void SetFlowId(const std::string& flow_id) { flow_id_ = flow_id; }
 
-  virtual void Chain(TransportLayer *downward);
+  virtual void Chain(TransportLayer* downward);
 
   
-  TransportLayer *downward() { return downward_; }
+  TransportLayer* downward() { return downward_; }
 
   
   State state() const { return state_; }
   
-  virtual TransportResult SendPacket(MediaPacket &packet) = 0;
+  virtual TransportResult SendPacket(MediaPacket& packet) = 0;
 
   
   const nsCOMPtr<nsIEventTarget> GetThread() const { return target_; }
 
   
   
-  sigslot::signal2<TransportLayer *, State> SignalStateChange;
+  sigslot::signal2<TransportLayer*, State> SignalStateChange;
   
-  sigslot::signal2<TransportLayer *, MediaPacket &> SignalPacketReceived;
+  sigslot::signal2<TransportLayer*, MediaPacket&> SignalPacketReceived;
 
   
   virtual const std::string id() const = 0;
 
   
-  const std::string &flow_id() const { return flow_id_; }
+  const std::string& flow_id() const { return flow_id_; }
 
  protected:
   virtual void WasInserted() {}
-  virtual void SetState(State state, const char *file, unsigned line);
+  virtual void SetState(State state, const char* file, unsigned line);
   
   void CheckThread() const { MOZ_ASSERT(CheckThreadInt(), "Wrong thread"); }
 
   State state_;
   std::string flow_id_;
-  TransportLayer *downward_;  
+  TransportLayer* downward_;  
   nsCOMPtr<nsIEventTarget> target_;
 
  private:

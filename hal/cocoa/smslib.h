@@ -118,11 +118,11 @@ int smsStartup(id logObject, SEL logSelector);
 int smsDebugStartup(id logObject, SEL logSelector);
 
 
-void smsGetCalibration(sms_calibration *calibrationRecord);
+void smsGetCalibration(sms_calibration* calibrationRecord);
 
 
 
-void smsSetCalibration(sms_calibration *calibrationRecord);
+void smsSetCalibration(sms_calibration* calibrationRecord);
 
 
 void smsStoreCalibration(void);
@@ -137,22 +137,22 @@ void smsDeleteCalibration(void);
 
 
 
-int smsGetData(sms_acceleration *accel);
+int smsGetData(sms_acceleration* accel);
 
 
 
-int smsGetUncalibratedData(sms_acceleration *accel);
+int smsGetUncalibratedData(sms_acceleration* accel);
 
 
 int smsGetBufferLength(void);
 
 
 
-void smsGetBufferData(char *buffer);
+void smsGetBufferData(char* buffer);
 
 
 
-NSString *smsGetCalibrationDescription(void);
+NSString* smsGetCalibrationDescription(void);
 
 
 void smsShutdown(void);

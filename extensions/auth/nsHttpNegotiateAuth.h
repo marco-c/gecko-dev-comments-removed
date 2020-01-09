@@ -26,10 +26,10 @@ class nsHttpNegotiateAuth final : public nsIHttpAuthenticator {
   ~nsHttpNegotiateAuth() {}
 
   
-  bool TestBoolPref(const char *pref);
+  bool TestBoolPref(const char* pref);
 
   
-  bool TestNonFqdn(nsIURI *uri);
+  bool TestNonFqdn(nsIURI* uri);
 
   
   RefPtr<mozilla::LazyIdleThread> mNegotiateThread;

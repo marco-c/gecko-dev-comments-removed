@@ -20,7 +20,7 @@ class CacheIndexIterator {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CacheIndexIterator)
 
-  CacheIndexIterator(CacheIndex *aIndex, bool aAddNew);
+  CacheIndexIterator(CacheIndex* aIndex, bool aAddNew);
 
  protected:
   virtual ~CacheIndexIterator();
@@ -29,7 +29,7 @@ class CacheIndexIterator {
   
   
   
-  nsresult GetNextHash(SHA1Sum::Hash *aHash);
+  nsresult GetNextHash(SHA1Sum::Hash* aHash);
 
   
   
@@ -41,14 +41,14 @@ class CacheIndexIterator {
   nsresult CloseInternal(nsresult aStatus);
 
   bool ShouldBeNewAdded() { return mAddNew; }
-  virtual void AddRecord(CacheIndexRecord *aRecord);
-  bool RemoveRecord(CacheIndexRecord *aRecord);
-  bool ReplaceRecord(CacheIndexRecord *aOldRecord,
-                     CacheIndexRecord *aNewRecord);
+  virtual void AddRecord(CacheIndexRecord* aRecord);
+  bool RemoveRecord(CacheIndexRecord* aRecord);
+  bool ReplaceRecord(CacheIndexRecord* aOldRecord,
+                     CacheIndexRecord* aNewRecord);
 
   nsresult mStatus;
   RefPtr<CacheIndex> mIndex;
-  nsTArray<CacheIndexRecord *> mRecords;
+  nsTArray<CacheIndexRecord*> mRecords;
   bool mAddNew;
 };
 

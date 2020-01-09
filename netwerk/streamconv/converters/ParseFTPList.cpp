@@ -27,13 +27,13 @@ using mozilla::IsAsciiLowercaseAlpha;
 
 static const int kMaxFTPListLen = 32768;
 
-static inline int ParsingFailed(struct list_state *state) {
+static inline int ParsingFailed(struct list_state* state) {
   if (state->parsed_one || state->lstyle) 
     return '?'; 
   return '"';   
 }
 
-void FixupYear(PRExplodedTime *aTime) {
+void FixupYear(PRExplodedTime* aTime) {
   
 
 
@@ -44,12 +44,12 @@ void FixupYear(PRExplodedTime *aTime) {
   }
 }
 
-int ParseFTPList(const char *line, struct list_state *state,
-                 struct list_result *result, PRTimeParamFn timeParam,
+int ParseFTPList(const char* line, struct list_state* state,
+                 struct list_result* result, PRTimeParamFn timeParam,
                  NowTimeFn nowTimeFn) {
   unsigned int carry_buf_len; 
   unsigned int pos;
-  const char *p;
+  const char* p;
 
   if (!line || !state || !result) return 0;
 
@@ -77,8 +77,8 @@ int ParseFTPList(const char *line, struct list_state *state,
   }
 
   if (linelen > 0) {
-    static const char *month_names = "JanFebMarAprMayJunJulAugSepOctNovDec";
-    const char *tokens[16]; 
+    static const char* month_names = "JanFebMarAprMayJunJulAugSepOctNovDec";
+    const char* tokens[16]; 
     unsigned int toklen[(sizeof(tokens) / sizeof(tokens[0]))];
     unsigned int linelen_sans_wsp;  
     unsigned int numtoks = 0;
@@ -598,7 +598,7 @@ int ParseFTPList(const char *line, struct list_state *state,
         if (( toklen[tokmarker + 4] == 10 && tokmarker > 1) ||
             ( toklen[tokmarker + 4] != 10 &&
              tokmarker > 2)) { 
-          char *dot;
+          char* dot;
           p = &(tokens[0][toklen[0]]);
           memcpy(&dot, &p, sizeof(dot)); 
           *dot++ = '.';
@@ -1033,8 +1033,8 @@ int ParseFTPList(const char *line, struct list_state *state,
         
         
         {
-          const char *date_start = tokens[tokmarker + 1];
-          const char *date_end = tokens[tokmarker + 3] + toklen[tokmarker + 3];
+          const char* date_start = tokens[tokmarker + 1];
+          const char* date_end = tokens[tokmarker + 3] + toklen[tokmarker + 3];
           if (!is_old_Hellsoft &&
               ((date_end - date_start) == 12 ||
                ((date_end - date_start) == 11 && date_end[1] == ' ')))

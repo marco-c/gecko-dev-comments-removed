@@ -18,7 +18,7 @@ typedef char NS_tchar;
 #endif
 
 
-int InitProgressUI(int *argc, NS_tchar ***argv);
+int InitProgressUI(int* argc, NS_tchar*** argv);
 
 #if defined(XP_WIN)
 

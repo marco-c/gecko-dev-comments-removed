@@ -50,8 +50,8 @@ const int64_t kint64max = ((int64_t)GG_LONGLONG(0x7FFFFFFFFFFFFFFF));
 
 #undef DISALLOW_COPY_AND_ASSIGN
 #define DISALLOW_COPY_AND_ASSIGN(TypeName) \
-  TypeName(const TypeName &);              \
-  void operator=(const TypeName &)
+  TypeName(const TypeName&);               \
+  void operator=(const TypeName&)
 
 
 #undef DISALLOW_EVIL_CONSTRUCTORS
@@ -154,7 +154,7 @@ char (&ArraySizeHelper(const T (&array)[N]))[N];
 
 
 template <typename To, typename From>
-inline To implicit_cast(From const &f) {
+inline To implicit_cast(From const& f) {
   return f;
 }
 

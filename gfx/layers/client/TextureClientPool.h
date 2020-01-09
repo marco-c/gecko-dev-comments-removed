@@ -35,7 +35,7 @@ class TextureClientAllocator {
 
 
 
-  virtual void ReturnTextureClientDeferred(TextureClient *aClient) = 0;
+  virtual void ReturnTextureClientDeferred(TextureClient* aClient) = 0;
 
   virtual void ReportClientLost() = 0;
 };
@@ -49,7 +49,7 @@ class TextureClientPool final : public TextureClientAllocator {
                     gfx::IntSize aSize, TextureFlags aFlags,
                     uint32_t aShrinkTimeoutMsec, uint32_t aClearTimeoutMsec,
                     uint32_t aInitialPoolSize, uint32_t aPoolUnusedSize,
-                    TextureForwarder *aAllocator);
+                    TextureForwarder* aAllocator);
 
   
 
@@ -66,13 +66,13 @@ class TextureClientPool final : public TextureClientAllocator {
 
 
 
-  void ReturnTextureClient(TextureClient *aClient);
+  void ReturnTextureClient(TextureClient* aClient);
 
   
 
 
 
-  void ReturnTextureClientDeferred(TextureClient *aClient) override;
+  void ReturnTextureClientDeferred(TextureClient* aClient) override;
 
   
 
@@ -160,7 +160,7 @@ class TextureClientPool final : public TextureClientAllocator {
   RefPtr<nsITimer> mShrinkTimer;
   RefPtr<nsITimer> mClearTimer;
   
-  TextureForwarder *mSurfaceAllocator;
+  TextureForwarder* mSurfaceAllocator;
 
   
   

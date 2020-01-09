@@ -25,7 +25,7 @@ typedef struct {
 } mp3_header;
 
 
-static void mp3_parse(const uint8_t *p, mp3_header *header) {
+static void mp3_parse(const uint8_t* p, mp3_header* header) {
   const int bitrates[2][16] = {
       
       {0, 32000, 40000, 48000, 56000, 64000, 80000, 96000, 112000, 128000,
@@ -56,7 +56,7 @@ static void mp3_parse(const uint8_t *p, mp3_header *header) {
 }
 
 
-static int mp3_framesize(mp3_header *header) {
+static int mp3_framesize(mp3_header* header) {
   int size;
   int scale;
 
@@ -70,7 +70,7 @@ static int mp3_framesize(mp3_header *header) {
   return size;
 }
 
-static int is_mp3(const uint8_t *p, long length) {
+static int is_mp3(const uint8_t* p, long length) {
   
   if (length < 4) return 0;
   
@@ -88,7 +88,7 @@ static int is_mp3(const uint8_t *p, long length) {
 
 
 
-static int is_id3(const uint8_t *p, long length) {
+static int is_id3(const uint8_t* p, long length) {
   
   if (length < 10) return 0;
   
@@ -103,7 +103,7 @@ static int is_id3(const uint8_t *p, long length) {
 }
 
 
-static int id3_framesize(const uint8_t *p, long length) {
+static int id3_framesize(const uint8_t* p, long length) {
   int size;
 
   
@@ -116,9 +116,9 @@ static int id3_framesize(const uint8_t *p, long length) {
   return size;
 }
 
-int mp3_sniff(const uint8_t *buf, long length) {
+int mp3_sniff(const uint8_t* buf, long length) {
   mp3_header header;
-  const uint8_t *p;
+  const uint8_t* p;
   long skip;
   long avail;
 

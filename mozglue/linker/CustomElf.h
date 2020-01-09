@@ -28,7 +28,7 @@ class CustomElf : public BaseElf, private ElfLoader::link_map {
 
 
 
-  static already_AddRefed<LibHandle> Load(Mappable *mappable, const char *path,
+  static already_AddRefed<LibHandle> Load(Mappable* mappable, const char* path,
                                           int flags);
 
   
@@ -37,14 +37,14 @@ class CustomElf : public BaseElf, private ElfLoader::link_map {
   virtual ~CustomElf();
 
  protected:
-  virtual Mappable *GetMappable() const;
+  virtual Mappable* GetMappable() const;
 
  public:
   
 
 
 
-  virtual BaseElf *AsBaseElf() { return this; }
+  virtual BaseElf* AsBaseElf() { return this; }
 
  private:
   
@@ -52,12 +52,12 @@ class CustomElf : public BaseElf, private ElfLoader::link_map {
 
 
 
-  void *GetSymbolPtrInDeps(const char *symbol) const;
+  void* GetSymbolPtrInDeps(const char* symbol) const;
 
   
 
 
-  CustomElf(Mappable *mappable, const char *path)
+  CustomElf(Mappable* mappable, const char* path)
       : BaseElf(path, mappable),
         link_map(),
         init(0),
@@ -69,14 +69,14 @@ class CustomElf : public BaseElf, private ElfLoader::link_map {
 
 
 
-  bool LoadSegment(const Elf::Phdr *pt_load) const;
+  bool LoadSegment(const Elf::Phdr* pt_load) const;
 
   
 
 
 
 
-  bool InitDyn(const Elf::Phdr *pt_dyn);
+  bool InitDyn(const Elf::Phdr* pt_dyn);
 
   
 
@@ -105,11 +105,11 @@ class CustomElf : public BaseElf, private ElfLoader::link_map {
   
 
 
-  void CallFunction(void *ptr) const {
+  void CallFunction(void* ptr) const {
     
 
     union {
-      void *ptr;
+      void* ptr;
       void (*func)(void);
     } f;
     f.ptr = ptr;
@@ -137,7 +137,7 @@ class CustomElf : public BaseElf, private ElfLoader::link_map {
 
   
 
-  Array<void *> init_array, fini_array;
+  Array<void*> init_array, fini_array;
 
   bool initialized;
 

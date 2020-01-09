@@ -52,7 +52,7 @@ class nsASocketHandler : public nsISupports {
   
   
   
-  virtual void OnSocketReady(PRFileDesc *fd, int16_t outFlags) = 0;
+  virtual void OnSocketReady(PRFileDesc* fd, int16_t outFlags) = 0;
 
   
   
@@ -60,21 +60,21 @@ class nsASocketHandler : public nsISupports {
   
   
   
-  virtual void OnSocketDetached(PRFileDesc *fd) = 0;
+  virtual void OnSocketDetached(PRFileDesc* fd) = 0;
 
   
   
   
   
   
-  virtual void IsLocal(bool *aIsLocal) = 0;
+  virtual void IsLocal(bool* aIsLocal) = 0;
 
   
   
   
   
   
-  virtual void KeepWhenOffline(bool *aKeepWhenOffline) {
+  virtual void KeepWhenOffline(bool* aKeepWhenOffline) {
     *aKeepWhenOffline = false;
   }
 

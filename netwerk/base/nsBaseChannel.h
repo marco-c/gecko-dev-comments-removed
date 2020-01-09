@@ -92,8 +92,8 @@ class nsBaseChannel
   
   
   
-  virtual nsresult OpenContentStream(bool async, nsIInputStream **stream,
-                                     nsIChannel **channel) = 0;
+  virtual nsresult OpenContentStream(bool async, nsIInputStream** stream,
+                                     nsIChannel** channel) = 0;
 
   
   
@@ -104,8 +104,8 @@ class nsBaseChannel
   
   
   
-  virtual nsresult BeginAsyncRead(nsIStreamListener *listener,
-                                  nsIRequest **request) {
+  virtual nsresult BeginAsyncRead(nsIStreamListener* listener,
+                                  nsIRequest** request) {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -117,7 +117,7 @@ class nsBaseChannel
   
   
   
-  virtual nsresult ListenerBlockingPromise(BlockingPromise **aPromise) {
+  virtual nsresult ListenerBlockingPromise(BlockingPromise** aPromise) {
     NS_ENSURE_ARG(aPromise);
     *aPromise = nullptr;
     return NS_OK;
@@ -131,7 +131,7 @@ class nsBaseChannel
   
   
   
-  virtual bool GetStatusArg(nsresult status, nsString &statusArg) {
+  virtual bool GetStatusArg(nsresult status, nsString& statusArg) {
     return false;
   }
 
@@ -152,7 +152,7 @@ class nsBaseChannel
   
   
   
-  nsresult Redirect(nsIChannel *newChannel, uint32_t redirectFlags,
+  nsresult Redirect(nsIChannel* newChannel, uint32_t redirectFlags,
                     bool openNewChannel);
 
   
@@ -163,20 +163,20 @@ class nsBaseChannel
 
   
   
-  nsIURI *URI() { return mURI; }
-  void SetURI(nsIURI *uri) {
+  nsIURI* URI() { return mURI; }
+  void SetURI(nsIURI* uri) {
     NS_ASSERTION(uri, "must specify a non-null URI");
     NS_ASSERTION(!mURI, "must not modify URI");
     NS_ASSERTION(!mOriginalURI, "how did that get set so early?");
     mURI = uri;
     mOriginalURI = uri;
   }
-  nsIURI *OriginalURI() { return mOriginalURI; }
+  nsIURI* OriginalURI() { return mOriginalURI; }
 
   
   
-  nsISupports *SecurityInfo() { return mSecurityInfo; }
-  void SetSecurityInfo(nsISupports *info) { mSecurityInfo = info; }
+  nsISupports* SecurityInfo() { return mSecurityInfo; }
+  void SetSecurityInfo(nsISupports* info) { mSecurityInfo = info; }
 
   
   bool HasLoadFlag(uint32_t flag) { return (mLoadFlags & flag) != 0; }
@@ -188,7 +188,7 @@ class nsBaseChannel
 
   
   template <class T>
-  void GetCallback(nsCOMPtr<T> &result) {
+  void GetCallback(nsCOMPtr<T>& result) {
     GetInterface(NS_GET_TEMPLATE_IID(T), getter_AddRefs(result));
   }
 
@@ -202,8 +202,8 @@ class nsBaseChannel
 
   
   
-  void SetStreamListener(nsIStreamListener *listener) { mListener = listener; }
-  nsIStreamListener *StreamListener() { return mListener; }
+  void SetStreamListener(nsIStreamListener* listener) { mListener = listener; }
+  nsIStreamListener* StreamListener() { return mListener; }
 
   
   
@@ -212,9 +212,9 @@ class nsBaseChannel
   
   
   
-  nsresult PushStreamConverter(const char *fromType, const char *toType,
+  nsresult PushStreamConverter(const char* fromType, const char* toType,
                                bool invalidatesContentLength = true,
-                               nsIStreamListener **converter = nullptr);
+                               nsIStreamListener** converter = nullptr);
 
  protected:
   void DisallowThreadRetargeting() { mAllowThreadRetargeting = false; }
@@ -244,7 +244,7 @@ class nsBaseChannel
 
   
   
-  void HandleAsyncRedirect(nsIChannel *newChannel);
+  void HandleAsyncRedirect(nsIChannel* newChannel);
   void ContinueHandleAsyncRedirect(nsresult result);
   nsresult ContinueRedirect();
 
@@ -253,7 +253,7 @@ class nsBaseChannel
 
   class RedirectRunnable : public mozilla::Runnable {
    public:
-    RedirectRunnable(nsBaseChannel *chan, nsIChannel *newChannel)
+    RedirectRunnable(nsBaseChannel* chan, nsIChannel* newChannel)
         : mozilla::Runnable("nsBaseChannel::RedirectRunnable"),
           mChannel(chan),
           mNewChannel(newChannel) {

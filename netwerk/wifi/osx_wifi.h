@@ -72,12 +72,12 @@ typedef SInt32 WIErr;
 
 
 
-typedef struct __WirelessContext *WirelessContextPtr;
+typedef struct __WirelessContext* WirelessContextPtr;
 
 
 
 
-typedef WIErr (*WirelessAttachFunction)(WirelessContextPtr *outContext,
+typedef WIErr (*WirelessAttachFunction)(WirelessContextPtr* outContext,
                                         const UInt32);
 
 
@@ -110,8 +110,8 @@ struct WirelessNetworkInfo {
 
 
 typedef WIErr (*WirelessScanSplitFunction)(WirelessContextPtr inContext,
-                                           CFArrayRef *apList,
-                                           CFArrayRef *adhocList,
+                                           CFArrayRef* apList,
+                                           CFArrayRef* adhocList,
                                            const UInt32 stripDups);
 
 }  

@@ -30,11 +30,11 @@ int NS_GetBrightness(uint8_t aRed, uint8_t aGreen, uint8_t aBlue);
 int32_t NS_GetLuminosity(nscolor aColor);
 
 
-void NS_RGB2HSV(nscolor aColor, uint16_t &aHue, uint16_t &aSat,
-                uint16_t &aValue, uint8_t &aAlpha);
+void NS_RGB2HSV(nscolor aColor, uint16_t& aHue, uint16_t& aSat,
+                uint16_t& aValue, uint8_t& aAlpha);
 
 
-void NS_HSV2RGB(nscolor &aColor, uint16_t aHue, uint16_t aSat, uint16_t aValue,
+void NS_HSV2RGB(nscolor& aColor, uint16_t aHue, uint16_t aSat, uint16_t aValue,
                 uint8_t aAlpha);
 
 #endif

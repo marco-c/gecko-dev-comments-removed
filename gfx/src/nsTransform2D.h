@@ -52,7 +52,7 @@ class nsTransform2D {
 
 
 
-  void GetTranslationCoord(nscoord *ptX, nscoord *ptY) const {
+  void GetTranslationCoord(nscoord* ptX, nscoord* ptY) const {
     *ptX = NSToCoordRound(m20);
     *ptY = NSToCoordRound(m21);
   }
@@ -63,7 +63,7 @@ class nsTransform2D {
 
 
 
-  void TransformCoord(nscoord *ptX, nscoord *ptY) const;
+  void TransformCoord(nscoord* ptX, nscoord* ptY) const;
 
   
 
@@ -71,8 +71,8 @@ class nsTransform2D {
 
 
 
-  void TransformCoord(nscoord *aX, nscoord *aY, nscoord *aWidth,
-                      nscoord *aHeight) const;
+  void TransformCoord(nscoord* aX, nscoord* aY, nscoord* aWidth,
+                      nscoord* aHeight) const;
 
   
 

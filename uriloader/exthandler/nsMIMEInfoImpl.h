@@ -37,45 +37,45 @@ class nsMIMEInfoBase : public nsIMIMEInfo {
   NS_DECL_THREADSAFE_ISUPPORTS
 
   
-  NS_IMETHOD GetFileExtensions(nsIUTF8StringEnumerator **_retval) override;
-  NS_IMETHOD SetFileExtensions(const nsACString &aExtensions) override;
-  NS_IMETHOD ExtensionExists(const nsACString &aExtension,
-                             bool *_retval) override;
-  NS_IMETHOD AppendExtension(const nsACString &aExtension) override;
-  NS_IMETHOD GetPrimaryExtension(nsACString &aPrimaryExtension) override;
-  NS_IMETHOD SetPrimaryExtension(const nsACString &aPrimaryExtension) override;
-  NS_IMETHOD GetType(nsACString &aType) override;
-  NS_IMETHOD GetMIMEType(nsACString &aMIMEType) override;
-  NS_IMETHOD GetDescription(nsAString &aDescription) override;
-  NS_IMETHOD SetDescription(const nsAString &aDescription) override;
-  NS_IMETHOD Equals(nsIMIMEInfo *aMIMEInfo, bool *_retval) override;
+  NS_IMETHOD GetFileExtensions(nsIUTF8StringEnumerator** _retval) override;
+  NS_IMETHOD SetFileExtensions(const nsACString& aExtensions) override;
+  NS_IMETHOD ExtensionExists(const nsACString& aExtension,
+                             bool* _retval) override;
+  NS_IMETHOD AppendExtension(const nsACString& aExtension) override;
+  NS_IMETHOD GetPrimaryExtension(nsACString& aPrimaryExtension) override;
+  NS_IMETHOD SetPrimaryExtension(const nsACString& aPrimaryExtension) override;
+  NS_IMETHOD GetType(nsACString& aType) override;
+  NS_IMETHOD GetMIMEType(nsACString& aMIMEType) override;
+  NS_IMETHOD GetDescription(nsAString& aDescription) override;
+  NS_IMETHOD SetDescription(const nsAString& aDescription) override;
+  NS_IMETHOD Equals(nsIMIMEInfo* aMIMEInfo, bool* _retval) override;
   NS_IMETHOD GetPreferredApplicationHandler(
-      nsIHandlerApp **aPreferredAppHandler) override;
+      nsIHandlerApp** aPreferredAppHandler) override;
   NS_IMETHOD SetPreferredApplicationHandler(
-      nsIHandlerApp *aPreferredAppHandler) override;
+      nsIHandlerApp* aPreferredAppHandler) override;
   NS_IMETHOD GetPossibleApplicationHandlers(
-      nsIMutableArray **aPossibleAppHandlers) override;
-  NS_IMETHOD GetDefaultDescription(nsAString &aDefaultDescription) override;
-  NS_IMETHOD LaunchWithFile(nsIFile *aFile) override;
-  NS_IMETHOD LaunchWithURI(nsIURI *aURI,
-                           nsIInterfaceRequestor *aWindowContext) override;
-  NS_IMETHOD GetPreferredAction(nsHandlerInfoAction *aPreferredAction) override;
+      nsIMutableArray** aPossibleAppHandlers) override;
+  NS_IMETHOD GetDefaultDescription(nsAString& aDefaultDescription) override;
+  NS_IMETHOD LaunchWithFile(nsIFile* aFile) override;
+  NS_IMETHOD LaunchWithURI(nsIURI* aURI,
+                           nsIInterfaceRequestor* aWindowContext) override;
+  NS_IMETHOD GetPreferredAction(nsHandlerInfoAction* aPreferredAction) override;
   NS_IMETHOD SetPreferredAction(nsHandlerInfoAction aPreferredAction) override;
   NS_IMETHOD GetAlwaysAskBeforeHandling(
-      bool *aAlwaysAskBeforeHandling) override;
+      bool* aAlwaysAskBeforeHandling) override;
   NS_IMETHOD SetAlwaysAskBeforeHandling(bool aAlwaysAskBeforeHandling) override;
-  NS_IMETHOD GetPossibleLocalHandlers(nsIArray **_retval) override;
+  NS_IMETHOD GetPossibleLocalHandlers(nsIArray** _retval) override;
 
   enum HandlerClass { eMIMEInfo, eProtocolInfo };
 
   
-  explicit nsMIMEInfoBase(const char *aMIMEType = "");
-  explicit nsMIMEInfoBase(const nsACString &aMIMEType);
-  nsMIMEInfoBase(const nsACString &aType, HandlerClass aClass);
+  explicit nsMIMEInfoBase(const char* aMIMEType = "");
+  explicit nsMIMEInfoBase(const nsACString& aMIMEType);
+  nsMIMEInfoBase(const nsACString& aType, HandlerClass aClass);
 
-  void SetMIMEType(const nsACString &aMIMEType) { mSchemeOrType = aMIMEType; }
+  void SetMIMEType(const nsACString& aMIMEType) { mSchemeOrType = aMIMEType; }
 
-  void SetDefaultDescription(const nsString &aDesc) {
+  void SetDefaultDescription(const nsString& aDesc) {
     mDefaultAppDescription = aDesc;
   }
 
@@ -87,7 +87,7 @@ class nsMIMEInfoBase : public nsIMIMEInfo {
 
 
 
-  void CopyBasicDataTo(nsMIMEInfoBase *aOther);
+  void CopyBasicDataTo(nsMIMEInfoBase* aOther);
 
   
 
@@ -105,29 +105,17 @@ class nsMIMEInfoBase : public nsIMIMEInfo {
 
 
 
-  virtual nsresult LaunchDefaultWithFile(nsIFile *aFile) = 0;
+  virtual nsresult LaunchDefaultWithFile(nsIFile* aFile) = 0;
 
   
 
 
 
 
-  virtual nsresult LoadUriInternal(nsIURI *aURI) = 0;
+  virtual nsresult LoadUriInternal(nsIURI* aURI) = 0;
 
-  static already_AddRefed<nsIProcess> InitProcess(nsIFile *aApp,
-                                                  nsresult *aResult);
-
-  
-
-
-
-
-
-
-
-
-  static nsresult LaunchWithIProcess(nsIFile *aApp, const nsCString &aArg);
-  static nsresult LaunchWithIProcess(nsIFile *aApp, const nsString &aArg);
+  static already_AddRefed<nsIProcess> InitProcess(nsIFile* aApp,
+                                                  nsresult* aResult);
 
   
 
@@ -135,7 +123,19 @@ class nsMIMEInfoBase : public nsIMIMEInfo {
 
 
 
-  static nsresult GetLocalFileFromURI(nsIURI *aURI, nsIFile **aFile);
+
+
+
+  static nsresult LaunchWithIProcess(nsIFile* aApp, const nsCString& aArg);
+  static nsresult LaunchWithIProcess(nsIFile* aApp, const nsString& aArg);
+
+  
+
+
+
+
+
+  static nsresult GetLocalFileFromURI(nsIURI* aURI, nsIFile** aFile);
 
   
   nsTArray<nsCString>
@@ -162,24 +162,24 @@ class nsMIMEInfoBase : public nsIMIMEInfo {
 
 class nsMIMEInfoImpl : public nsMIMEInfoBase {
  public:
-  explicit nsMIMEInfoImpl(const char *aMIMEType = "")
+  explicit nsMIMEInfoImpl(const char* aMIMEType = "")
       : nsMIMEInfoBase(aMIMEType) {}
-  explicit nsMIMEInfoImpl(const nsACString &aMIMEType)
+  explicit nsMIMEInfoImpl(const nsACString& aMIMEType)
       : nsMIMEInfoBase(aMIMEType) {}
-  nsMIMEInfoImpl(const nsACString &aType, HandlerClass aClass)
+  nsMIMEInfoImpl(const nsACString& aType, HandlerClass aClass)
       : nsMIMEInfoBase(aType, aClass) {}
   virtual ~nsMIMEInfoImpl() {}
 
   
-  NS_IMETHOD GetHasDefaultHandler(bool *_retval) override;
-  NS_IMETHOD GetDefaultDescription(nsAString &aDefaultDescription) override;
+  NS_IMETHOD GetHasDefaultHandler(bool* _retval) override;
+  NS_IMETHOD GetDefaultDescription(nsAString& aDefaultDescription) override;
 
   
   
 
 
 
-  void SetDefaultApplication(nsIFile *aApp) {
+  void SetDefaultApplication(nsIFile* aApp) {
     if (!mDefaultApplication) mDefaultApplication = aApp;
   }
 
@@ -189,13 +189,13 @@ class nsMIMEInfoImpl : public nsMIMEInfoBase {
 
 
 
-  virtual nsresult LaunchDefaultWithFile(nsIFile *aFile) override;
+  virtual nsresult LaunchDefaultWithFile(nsIFile* aFile) override;
 
   
 
 
 
-  virtual nsresult LoadUriInternal(nsIURI *aURI) override = 0;
+  virtual nsresult LoadUriInternal(nsIURI* aURI) override = 0;
 
   nsCOMPtr<nsIFile>
       mDefaultApplication;  

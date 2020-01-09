@@ -37,8 +37,8 @@ class SimpleBuffer {
   SimpleBuffer();
   ~SimpleBuffer() = default;
 
-  nsresult Write(char *stc, size_t len);   
-  size_t Read(char *dest, size_t maxLen);  
+  nsresult Write(char* stc, size_t len);   
+  size_t Read(char* dest, size_t maxLen);  
   size_t Available();
   void Clear();
 

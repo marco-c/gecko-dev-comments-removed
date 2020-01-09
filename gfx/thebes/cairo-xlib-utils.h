@@ -23,8 +23,8 @@ CAIRO_BEGIN_DECLS
 
 
 typedef cairo_bool_t (*cairo_xlib_drawing_callback)(
-    void *closure, Screen *screen, Drawable drawable, Visual *visual,
-    short offset_x, short offset_y, XRectangle *clip_rects,
+    void* closure, Screen* screen, Drawable drawable, Visual* visual,
+    short offset_x, short offset_y, XRectangle* clip_rects,
     unsigned int num_rects);
 
 
@@ -32,7 +32,7 @@ typedef cairo_bool_t (*cairo_xlib_drawing_callback)(
 
 
 typedef struct {
-  cairo_surface_t *surface;
+  cairo_surface_t* surface;
   cairo_bool_t uniform_alpha;
   cairo_bool_t uniform_color;
   double alpha;   
@@ -103,12 +103,12 @@ typedef enum {
 
 
 
-void cairo_draw_with_xlib(cairo_t *cr, cairo_xlib_drawing_callback callback,
-                          void *closure, Display *dpy, unsigned int width,
+void cairo_draw_with_xlib(cairo_t* cr, cairo_xlib_drawing_callback callback,
+                          void* closure, Display* dpy, unsigned int width,
                           unsigned int height,
                           cairo_xlib_drawing_opacity_t is_opaque,
                           cairo_xlib_drawing_support_t capabilities,
-                          cairo_xlib_drawing_result_t *result);
+                          cairo_xlib_drawing_result_t* result);
 
 CAIRO_END_DECLS
 

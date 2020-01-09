@@ -30,7 +30,7 @@ NS_IMPL_ISUPPORTS(nsJARInputStream, nsIInputStream)
 
 
 
-nsresult nsJARInputStream::InitFile(nsJAR *aJar, nsZipItem *item) {
+nsresult nsJARInputStream::InitFile(nsJAR* aJar, nsZipItem* item) {
   nsresult rv = NS_OK;
   MOZ_ASSERT(aJar, "Argument may not be null");
   MOZ_ASSERT(item, "Argument may not be null");
@@ -68,7 +68,7 @@ nsresult nsJARInputStream::InitFile(nsJAR *aJar, nsZipItem *item) {
   
   
   mFd = aJar->mZip->GetFD();
-  mZs.next_in = (Bytef *)aJar->mZip->GetData(item);
+  mZs.next_in = (Bytef*)aJar->mZip->GetData(item);
   if (!mZs.next_in) {
     return NS_ERROR_FILE_CORRUPTED;
   }
@@ -78,9 +78,9 @@ nsresult nsJARInputStream::InitFile(nsJAR *aJar, nsZipItem *item) {
   return NS_OK;
 }
 
-nsresult nsJARInputStream::InitDirectory(nsJAR *aJar,
-                                         const nsACString &aJarDirSpec,
-                                         const char *aDir) {
+nsresult nsJARInputStream::InitDirectory(nsJAR* aJar,
+                                         const nsACString& aJarDirSpec,
+                                         const char* aDir) {
   MOZ_ASSERT(aJar, "Argument may not be null");
   MOZ_ASSERT(aDir, "Argument may not be null");
 
@@ -89,7 +89,7 @@ nsresult nsJARInputStream::InitDirectory(nsJAR *aJar,
 
   
   mJar = aJar;
-  nsZipFind *find;
+  nsZipFind* find;
   nsresult rv;
   
   
@@ -103,8 +103,8 @@ nsresult nsJARInputStream::InitDirectory(nsJAR *aJar,
   
   
   nsAutoCString escDirName;
-  const char *curr = dirName.BeginReading();
-  const char *end = dirName.EndReading();
+  const char* curr = dirName.BeginReading();
+  const char* end = dirName.EndReading();
   while (curr != end) {
     switch (*curr) {
       case '*':
@@ -129,7 +129,7 @@ nsresult nsJARInputStream::InitDirectory(nsJAR *aJar,
   rv = mJar->mZip->FindInit(pattern.get(), &find);
   if (NS_FAILED(rv)) return rv;
 
-  const char *name;
+  const char* name;
   uint16_t nameLen;
   while ((rv = find->FindNext(&name, &nameLen)) == NS_OK) {
     
@@ -157,7 +157,7 @@ nsresult nsJARInputStream::InitDirectory(nsJAR *aJar,
 }
 
 NS_IMETHODIMP
-nsJARInputStream::Available(uint64_t *_retval) {
+nsJARInputStream::Available(uint64_t* _retval) {
   
   
   *_retval = 0;
@@ -186,7 +186,7 @@ nsJARInputStream::Available(uint64_t *_retval) {
 }
 
 NS_IMETHODIMP
-nsJARInputStream::Read(char *aBuffer, uint32_t aCount, uint32_t *aBytesRead) {
+nsJARInputStream::Read(char* aBuffer, uint32_t aCount, uint32_t* aBytesRead) {
   NS_ENSURE_ARG_POINTER(aBuffer);
   NS_ENSURE_ARG_POINTER(aBytesRead);
 
@@ -240,14 +240,14 @@ nsJARInputStream::Read(char *aBuffer, uint32_t aCount, uint32_t *aBytesRead) {
 }
 
 NS_IMETHODIMP
-nsJARInputStream::ReadSegments(nsWriteSegmentFun writer, void *closure,
-                               uint32_t count, uint32_t *_retval) {
+nsJARInputStream::ReadSegments(nsWriteSegmentFun writer, void* closure,
+                               uint32_t count, uint32_t* _retval) {
   
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
-nsJARInputStream::IsNonBlocking(bool *aNonBlocking) {
+nsJARInputStream::IsNonBlocking(bool* aNonBlocking) {
   *aNonBlocking = false;
   return NS_OK;
 }
@@ -267,8 +267,8 @@ nsJARInputStream::Close() {
   return NS_OK;
 }
 
-nsresult nsJARInputStream::ContinueInflate(char *aBuffer, uint32_t aCount,
-                                           uint32_t *aBytesRead) {
+nsresult nsJARInputStream::ContinueInflate(char* aBuffer, uint32_t aCount,
+                                           uint32_t* aBytesRead) {
   bool finished = false;
 
   
@@ -280,7 +280,7 @@ nsresult nsJARInputStream::ContinueInflate(char *aBuffer, uint32_t aCount,
 
   
   mZs.avail_out = std::min(aCount, (mOutSize - oldTotalOut));
-  mZs.next_out = (unsigned char *)aBuffer;
+  mZs.next_out = (unsigned char*)aBuffer;
 
 #ifndef MOZ_JAR_BROTLI
   MOZ_ASSERT(mMode == MODE_INFLATE);
@@ -303,7 +303,7 @@ nsresult nsJARInputStream::ContinueInflate(char *aBuffer, uint32_t aCount,
     size_t total_out = mZs.total_out;
     BrotliDecoderResult result = BrotliDecoderDecompressStream(
         mBrotliState, &avail_in,
-        const_cast<const unsigned char **>(&mZs.next_in), &avail_out,
+        const_cast<const unsigned char**>(&mZs.next_in), &avail_out,
         &mZs.next_out, &total_out);
     
 
@@ -319,7 +319,7 @@ nsresult nsJARInputStream::ContinueInflate(char *aBuffer, uint32_t aCount,
   *aBytesRead = (mZs.total_out - oldTotalOut);
 
   
-  mOutCrc = crc32(mOutCrc, (unsigned char *)aBuffer, *aBytesRead);
+  mOutCrc = crc32(mOutCrc, (unsigned char*)aBuffer, *aBytesRead);
 
   
   
@@ -337,8 +337,8 @@ nsresult nsJARInputStream::ContinueInflate(char *aBuffer, uint32_t aCount,
   return NS_OK;
 }
 
-nsresult nsJARInputStream::ReadDirectory(char *aBuffer, uint32_t aCount,
-                                         uint32_t *aBytesRead) {
+nsresult nsJARInputStream::ReadDirectory(char* aBuffer, uint32_t aCount,
+                                         uint32_t* aBytesRead) {
   
   NS_ASSERTION(aBuffer, "aBuffer parameter must not be null");
   NS_ASSERTION(aBytesRead, "aBytesRead parameter must not be null");
@@ -356,9 +356,9 @@ nsresult nsJARInputStream::ReadDirectory(char *aBuffer, uint32_t aCount,
       
       if (arrayLen <= mArrPos) break;
 
-      const char *entryName = mArray[mArrPos].get();
+      const char* entryName = mArray[mArrPos].get();
       uint32_t entryNameLen = mArray[mArrPos].Length();
-      nsZipItem *ze = mJar->mZip->GetItem(entryName);
+      nsZipItem* ze = mJar->mZip->GetItem(entryName);
       NS_ENSURE_TRUE(ze, NS_ERROR_FILE_TARGET_DOES_NOT_EXIST);
 
       
@@ -395,7 +395,7 @@ nsresult nsJARInputStream::ReadDirectory(char *aBuffer, uint32_t aCount,
   return NS_OK;
 }
 
-uint32_t nsJARInputStream::CopyDataToBuffer(char *&aBuffer, uint32_t &aCount) {
+uint32_t nsJARInputStream::CopyDataToBuffer(char*& aBuffer, uint32_t& aCount) {
   const uint32_t writeLength = std::min(aCount, mBuffer.Length() - mCurPos);
 
   if (writeLength > 0) {

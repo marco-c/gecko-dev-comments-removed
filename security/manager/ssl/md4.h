@@ -29,7 +29,7 @@ extern "C" {
 
 
 
-void md4sum(const uint8_t *input, uint32_t inputLen, uint8_t *result);
+void md4sum(const uint8_t* input, uint32_t inputLen, uint8_t* result);
 
 #ifdef __cplusplus
 }

@@ -56,16 +56,16 @@ class Predictor final : public nsINetworkPredictor,
 
   nsresult Init();
   void Shutdown();
-  static nsresult Create(nsISupports *outer, const nsIID &iid, void **result);
+  static nsresult Create(nsISupports* outer, const nsIID& iid, void** result);
 
   
   
   
-  static void UpdateCacheability(nsIURI *sourceURI, nsIURI *targetURI,
+  static void UpdateCacheability(nsIURI* sourceURI, nsIURI* targetURI,
                                  uint32_t httpStatus,
-                                 nsHttpRequestHead &requestHead,
-                                 nsHttpResponseHead *reqponseHead,
-                                 nsILoadContextInfo *lci, bool isTracking);
+                                 nsHttpRequestHead& requestHead,
+                                 nsHttpResponseHead* reqponseHead,
+                                 nsILoadContextInfo* lci, bool isTracking);
 
  private:
   virtual ~Predictor();
@@ -94,12 +94,12 @@ class Predictor final : public nsINetworkPredictor,
     NS_DECL_THREADSAFE_ISUPPORTS
     NS_DECL_NSICACHEENTRYOPENCALLBACK
 
-    Action(bool fullUri, bool predict, Reason reason, nsIURI *targetURI,
-           nsIURI *sourceURI, nsINetworkPredictorVerifier *verifier,
-           Predictor *predictor);
-    Action(bool fullUri, bool predict, Reason reason, nsIURI *targetURI,
-           nsIURI *sourceURI, nsINetworkPredictorVerifier *verifier,
-           Predictor *predictor, uint8_t stackCount);
+    Action(bool fullUri, bool predict, Reason reason, nsIURI* targetURI,
+           nsIURI* sourceURI, nsINetworkPredictorVerifier* verifier,
+           Predictor* predictor);
+    Action(bool fullUri, bool predict, Reason reason, nsIURI* targetURI,
+           nsIURI* sourceURI, nsINetworkPredictorVerifier* verifier,
+           Predictor* predictor, uint8_t stackCount);
 
     static const bool IS_FULL_URI = true;
     static const bool IS_ORIGIN = false;
@@ -131,9 +131,9 @@ class Predictor final : public nsINetworkPredictor,
     NS_DECL_NSICACHEENTRYOPENCALLBACK
     NS_DECL_NSICACHEENTRYMETADATAVISITOR
 
-    CacheabilityAction(nsIURI *targetURI, uint32_t httpStatus,
-                       const nsCString &method, bool isTracking, bool couldVary,
-                       bool isNoStore, Predictor *predictor)
+    CacheabilityAction(nsIURI* targetURI, uint32_t httpStatus,
+                       const nsCString& method, bool isTracking, bool couldVary,
+                       bool isNoStore, Predictor* predictor)
         : mTargetURI(targetURI),
           mHttpStatus(httpStatus),
           mMethod(method),
@@ -165,7 +165,7 @@ class Predictor final : public nsINetworkPredictor,
     NS_DECL_NSICACHEENTRYMETADATAVISITOR
     NS_DECL_NSICACHESTORAGEVISITOR
 
-    explicit Resetter(Predictor *predictor);
+    explicit Resetter(Predictor* predictor);
 
    private:
     virtual ~Resetter() = default;
@@ -184,15 +184,15 @@ class Predictor final : public nsINetworkPredictor,
     NS_DECL_ISUPPORTS
     NS_DECL_NSICACHEENTRYMETADATAVISITOR
 
-    explicit SpaceCleaner(Predictor *predictor)
+    explicit SpaceCleaner(Predictor* predictor)
         : mLRUStamp(0), mLRUKeyToDelete(nullptr), mPredictor(predictor) {}
 
-    void Finalize(nsICacheEntry *entry);
+    void Finalize(nsICacheEntry* entry);
 
    private:
     virtual ~SpaceCleaner() = default;
     uint32_t mLRUStamp;
-    const char *mLRUKeyToDelete;
+    const char* mLRUKeyToDelete;
     nsTArray<nsCString> mLongKeysToDelete;
     RefPtr<Predictor> mPredictor;
   };
@@ -203,8 +203,8 @@ class Predictor final : public nsINetworkPredictor,
     NS_DECL_NSIREQUESTOBSERVER
     NS_DECL_NSISTREAMLISTENER
 
-    PrefetchListener(nsINetworkPredictorVerifier *verifier, nsIURI *uri,
-                     Predictor *predictor)
+    PrefetchListener(nsINetworkPredictorVerifier* verifier, nsIURI* uri,
+                     Predictor* predictor)
         : mVerifier(verifier), mURI(uri), mPredictor(predictor) {}
 
    private:
@@ -238,9 +238,9 @@ class Predictor final : public nsINetworkPredictor,
   
   
   
-  bool PredictInternal(PredictorPredictReason reason, nsICacheEntry *entry,
-                       bool isNew, bool fullUri, nsIURI *targetURI,
-                       nsINetworkPredictorVerifier *verifier,
+  bool PredictInternal(PredictorPredictReason reason, nsICacheEntry* entry,
+                       bool isNew, bool fullUri, nsIURI* targetURI,
+                       nsINetworkPredictorVerifier* verifier,
                        uint8_t stackCount);
 
   
@@ -248,22 +248,22 @@ class Predictor final : public nsINetworkPredictor,
   
   
   
-  void PredictForLink(nsIURI *targetURI, nsIURI *sourceURI,
-                      const OriginAttributes &originAttributes,
-                      nsINetworkPredictorVerifier *verifier);
+  void PredictForLink(nsIURI* targetURI, nsIURI* sourceURI,
+                      const OriginAttributes& originAttributes,
+                      nsINetworkPredictorVerifier* verifier);
 
   
   
   
-  bool PredictForPageload(nsICacheEntry *entry, nsIURI *targetURI,
+  bool PredictForPageload(nsICacheEntry* entry, nsIURI* targetURI,
                           uint8_t stackCount, bool fullUri,
-                          nsINetworkPredictorVerifier *verifier);
+                          nsINetworkPredictorVerifier* verifier);
 
   
   
   
-  bool PredictForStartup(nsICacheEntry *entry, bool fullUri,
-                         nsINetworkPredictorVerifier *verifier);
+  bool PredictForStartup(nsICacheEntry* entry, bool fullUri,
+                         nsINetworkPredictorVerifier* verifier);
 
   
 
@@ -275,8 +275,8 @@ class Predictor final : public nsINetworkPredictor,
   
   
   
-  void UpdateRollingLoadCount(nsICacheEntry *entry, const uint32_t flags,
-                              const char *key, const uint32_t hitCount,
+  void UpdateRollingLoadCount(nsICacheEntry* entry, const uint32_t flags,
+                              const char* key, const uint32_t hitCount,
                               const uint32_t lastHit);
 
   
@@ -309,7 +309,7 @@ class Predictor final : public nsINetworkPredictor,
   
   
   
-  void CalculatePredictions(nsICacheEntry *entry, nsIURI *referrer,
+  void CalculatePredictions(nsICacheEntry* entry, nsIURI* referrer,
                             uint32_t lastLoad, uint32_t loadCount,
                             int32_t globalDegradation, bool fullUri);
 
@@ -327,7 +327,7 @@ class Predictor final : public nsINetworkPredictor,
   
   
   
-  void SetupPrediction(int32_t confidence, uint32_t flags, const nsCString &uri,
+  void SetupPrediction(int32_t confidence, uint32_t flags, const nsCString& uri,
                        PrefetchIgnoreReason reason);
 
   
@@ -335,18 +335,18 @@ class Predictor final : public nsINetworkPredictor,
   
   
   
-  nsresult Prefetch(nsIURI *uri, nsIURI *referrer,
-                    const OriginAttributes &originAttributes,
-                    nsINetworkPredictorVerifier *verifier);
+  nsresult Prefetch(nsIURI* uri, nsIURI* referrer,
+                    const OriginAttributes& originAttributes,
+                    nsINetworkPredictorVerifier* verifier);
 
   
   
   
   
   
-  bool RunPredictions(nsIURI *referrer,
-                      const OriginAttributes &originAttributes,
-                      nsINetworkPredictorVerifier *verifier);
+  bool RunPredictions(nsIURI* referrer,
+                      const OriginAttributes& originAttributes,
+                      nsINetworkPredictorVerifier* verifier);
 
   
   
@@ -357,9 +357,9 @@ class Predictor final : public nsINetworkPredictor,
   
   
   
-  bool WouldRedirect(nsICacheEntry *entry, uint32_t loadCount,
+  bool WouldRedirect(nsICacheEntry* entry, uint32_t loadCount,
                      uint32_t lastLoad, int32_t globalDegradation,
-                     nsIURI **redirectURI);
+                     nsIURI** redirectURI);
 
   
 
@@ -374,34 +374,19 @@ class Predictor final : public nsINetworkPredictor,
   
   
   
-  void LearnInternal(PredictorLearnReason reason, nsICacheEntry *entry,
-                     bool isNew, bool fullUri, nsIURI *targetURI,
-                     nsIURI *sourceURI);
+  void LearnInternal(PredictorLearnReason reason, nsICacheEntry* entry,
+                     bool isNew, bool fullUri, nsIURI* targetURI,
+                     nsIURI* sourceURI);
 
   
   
   
-  void LearnForSubresource(nsICacheEntry *entry, nsIURI *targetURI);
+  void LearnForSubresource(nsICacheEntry* entry, nsIURI* targetURI);
 
   
   
   
-  void LearnForRedirect(nsICacheEntry *entry, nsIURI *targetURI);
-
-  
-  
-  
-  
-  
-  
-  void MaybeLearnForStartup(nsIURI *uri, bool fullUri,
-                            const OriginAttributes &originAttributes);
-
-  
-  
-  
-  
-  void LearnForStartup(nsICacheEntry *entry, nsIURI *targetURI);
+  void LearnForRedirect(nsICacheEntry* entry, nsIURI* targetURI);
 
   
   
@@ -409,17 +394,32 @@ class Predictor final : public nsINetworkPredictor,
   
   
   
-  
-  bool ParseMetaDataEntry(const char *key, const char *value, nsCString &uri,
-                          uint32_t &hitCount, uint32_t &lastHit,
-                          uint32_t &flags);
+  void MaybeLearnForStartup(nsIURI* uri, bool fullUri,
+                            const OriginAttributes& originAttributes);
 
   
   
   
-  void UpdateCacheabilityInternal(nsIURI *sourceURI, nsIURI *targetURI,
-                                  uint32_t httpStatus, const nsCString &method,
-                                  const OriginAttributes &originAttributes,
+  
+  void LearnForStartup(nsICacheEntry* entry, nsIURI* targetURI);
+
+  
+  
+  
+  
+  
+  
+  
+  bool ParseMetaDataEntry(const char* key, const char* value, nsCString& uri,
+                          uint32_t& hitCount, uint32_t& lastHit,
+                          uint32_t& flags);
+
+  
+  
+  
+  void UpdateCacheabilityInternal(nsIURI* sourceURI, nsIURI* targetURI,
+                                  uint32_t httpStatus, const nsCString& method,
+                                  const OriginAttributes& originAttributes,
                                   bool isTracking, bool couldVary,
                                   bool isNoStore);
 
@@ -453,7 +453,7 @@ class Predictor final : public nsINetworkPredictor,
   nsTArray<nsCOMPtr<nsIURI>> mPreconnects;
   nsTArray<nsCOMPtr<nsIURI>> mPreresolves;
 
-  static Predictor *sSelf;
+  static Predictor* sSelf;
 };
 
 }  

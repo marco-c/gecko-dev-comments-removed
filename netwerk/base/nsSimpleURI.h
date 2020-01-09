@@ -38,11 +38,11 @@ class nsSimpleURI : public nsIURI,
   NS_DECL_NSISERIALIZABLE
   NS_DECL_NSICLASSINFO
 
-  static already_AddRefed<nsSimpleURI> From(nsIURI *aURI);
+  static already_AddRefed<nsSimpleURI> From(nsIURI* aURI);
 
   
 
-  bool Equals(nsSimpleURI *aOther) { return EqualsInternal(aOther, eHonorRef); }
+  bool Equals(nsSimpleURI* aOther) { return EqualsInternal(aOther, eHonorRef); }
 
   
   
@@ -58,51 +58,51 @@ class nsSimpleURI : public nsIURI,
   
   enum RefHandlingEnum { eIgnoreRef, eHonorRef, eReplaceRef };
 
-  virtual nsresult Clone(nsIURI **aURI);
-  virtual nsresult SetSpecInternal(const nsACString &input);
-  virtual nsresult SetScheme(const nsACString &input);
-  virtual nsresult SetUserPass(const nsACString &input);
-  nsresult SetUsername(const nsACString &input);
-  virtual nsresult SetPassword(const nsACString &input);
-  virtual nsresult SetHostPort(const nsACString &aValue);
-  virtual nsresult SetHost(const nsACString &input);
+  virtual nsresult Clone(nsIURI** aURI);
+  virtual nsresult SetSpecInternal(const nsACString& input);
+  virtual nsresult SetScheme(const nsACString& input);
+  virtual nsresult SetUserPass(const nsACString& input);
+  nsresult SetUsername(const nsACString& input);
+  virtual nsresult SetPassword(const nsACString& input);
+  virtual nsresult SetHostPort(const nsACString& aValue);
+  virtual nsresult SetHost(const nsACString& input);
   virtual nsresult SetPort(int32_t port);
-  virtual nsresult SetPathQueryRef(const nsACString &input);
-  virtual nsresult SetRef(const nsACString &input);
-  virtual nsresult SetFilePath(const nsACString &input);
-  virtual nsresult SetQuery(const nsACString &input);
-  virtual nsresult SetQueryWithEncoding(const nsACString &input,
-                                        const Encoding *encoding);
-  nsresult ReadPrivate(nsIObjectInputStream *stream);
+  virtual nsresult SetPathQueryRef(const nsACString& input);
+  virtual nsresult SetRef(const nsACString& input);
+  virtual nsresult SetFilePath(const nsACString& input);
+  virtual nsresult SetQuery(const nsACString& input);
+  virtual nsresult SetQueryWithEncoding(const nsACString& input,
+                                        const Encoding* encoding);
+  nsresult ReadPrivate(nsIObjectInputStream* stream);
 
   
-  virtual nsresult EqualsInternal(nsIURI *other,
+  virtual nsresult EqualsInternal(nsIURI* other,
                                   RefHandlingEnum refHandlingMode,
-                                  bool *result);
+                                  bool* result);
 
   
   
   
-  bool EqualsInternal(nsSimpleURI *otherUri, RefHandlingEnum refHandlingMode);
+  bool EqualsInternal(nsSimpleURI* otherUri, RefHandlingEnum refHandlingMode);
 
   
   
-  void SetRefOnClone(nsSimpleURI *url, RefHandlingEnum refHandlingMode,
-                     const nsACString &newRef);
+  void SetRefOnClone(nsSimpleURI* url, RefHandlingEnum refHandlingMode,
+                     const nsACString& newRef);
 
   
   
   
-  virtual nsSimpleURI *StartClone(RefHandlingEnum refHandlingMode,
-                                  const nsACString &newRef);
+  virtual nsSimpleURI* StartClone(RefHandlingEnum refHandlingMode,
+                                  const nsACString& newRef);
 
   
   virtual nsresult CloneInternal(RefHandlingEnum refHandlingMode,
-                                 const nsACString &newRef, nsIURI **clone);
+                                 const nsACString& newRef, nsIURI** clone);
 
-  nsresult SetPathQueryRefEscaped(const nsACString &aPath, bool aNeedsEscape);
+  nsresult SetPathQueryRefEscaped(const nsACString& aPath, bool aNeedsEscape);
 
-  bool Deserialize(const mozilla::ipc::URIParams &);
+  bool Deserialize(const mozilla::ipc::URIParams&);
 
   nsCString mScheme;
   nsCString mPath;  
@@ -122,11 +122,11 @@ class nsSimpleURI : public nsIURI,
     NS_DEFINE_NSIMUTATOR_COMMON
 
     NS_IMETHOD
-    Write(nsIObjectOutputStream *aOutputStream) override {
+    Write(nsIObjectOutputStream* aOutputStream) override {
       return NS_ERROR_NOT_IMPLEMENTED;
     }
 
-    MOZ_MUST_USE NS_IMETHOD Read(nsIObjectInputStream *aStream) override {
+    MOZ_MUST_USE NS_IMETHOD Read(nsIObjectInputStream* aStream) override {
       return InitFromInputStream(aStream);
     }
 

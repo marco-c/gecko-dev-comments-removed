@@ -49,34 +49,34 @@ class nsCARenderer : public mozilla::RefCounted<nsCARenderer> {
   
   
   
-  nsresult SetupRenderer(void *aCALayer, int aWidth, int aHeight,
+  nsresult SetupRenderer(void* aCALayer, int aWidth, int aHeight,
                          double aContentsScaleFactor,
                          AllowOfflineRendererEnum aAllowOfflineRenderer);
   
   
   nsresult Render(int aWidth, int aHeight, double aContentsScaleFactor,
-                  CGImageRef *aOutCAImage);
+                  CGImageRef* aOutCAImage);
   bool isInit() { return mCARenderer != nullptr; }
   
 
 
 
 
-  void AttachIOSurface(MacIOSurface *aSurface);
+  void AttachIOSurface(MacIOSurface* aSurface);
   IOSurfaceID GetIOSurfaceID();
   
   
   static nsresult DrawSurfaceToCGContext(CGContextRef aContext,
-                                         MacIOSurface *surf,
+                                         MacIOSurface* surf,
                                          CGColorSpaceRef aColorSpace, int aX,
                                          int aY, size_t aWidth, size_t aHeight);
 
   
   
   void DetachCALayer();
-  void AttachCALayer(void *aCALayer);
+  void AttachCALayer(void* aCALayer);
 #  ifdef DEBUG
-  static void SaveToDisk(MacIOSurface *surf);
+  static void SaveToDisk(MacIOSurface* surf);
 #  endif
  private:
   
@@ -87,12 +87,12 @@ class nsCARenderer : public mozilla::RefCounted<nsCARenderer> {
   void SetViewport(int aWidth, int aHeight);
   void Destroy();
 
-  void *mCARenderer;
-  void *mWrapperCALayer;
+  void* mCARenderer;
+  void* mWrapperCALayer;
   GLuint mFBOTexture;
-  _CGLContextObject *mOpenGLContext;
+  _CGLContextObject* mOpenGLContext;
   CGImageRef mCGImage;
-  void *mCGData;
+  void* mCGData;
   RefPtr<MacIOSurface> mIOSurface;
   uint32_t mFBO;
   uint32_t mIOTexture;

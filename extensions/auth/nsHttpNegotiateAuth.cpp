@@ -75,7 +75,7 @@ mozilla::StaticRefPtr<nsHttpNegotiateAuth> nsHttpNegotiateAuth::gSingleton;
 
 
 
-static bool TestNotInPBMode(nsIHttpAuthenticableChannel *authChannel,
+static bool TestNotInPBMode(nsIHttpAuthenticableChannel* authChannel,
                             bool proxyAuth) {
   
   
@@ -125,7 +125,7 @@ already_AddRefed<nsIHttpAuthenticator> nsHttpNegotiateAuth::GetOrCreate() {
 }
 
 NS_IMETHODIMP
-nsHttpNegotiateAuth::GetAuthFlags(uint32_t *flags) {
+nsHttpNegotiateAuth::GetAuthFlags(uint32_t* flags) {
   
   
   
@@ -147,12 +147,12 @@ nsHttpNegotiateAuth::GetAuthFlags(uint32_t *flags) {
 
 
 NS_IMETHODIMP
-nsHttpNegotiateAuth::ChallengeReceived(nsIHttpAuthenticableChannel *authChannel,
-                                       const char *challenge, bool isProxyAuth,
-                                       nsISupports **sessionState,
-                                       nsISupports **continuationState,
-                                       bool *identityInvalid) {
-  nsIAuthModule *rawModule = (nsIAuthModule *)*continuationState;
+nsHttpNegotiateAuth::ChallengeReceived(nsIHttpAuthenticableChannel* authChannel,
+                                       const char* challenge, bool isProxyAuth,
+                                       nsISupports** sessionState,
+                                       nsISupports** continuationState,
+                                       bool* identityInvalid) {
+  nsIAuthModule* rawModule = (nsIAuthModule*)*continuationState;
 
   *identityInvalid = false;
   if (rawModule) {
@@ -214,7 +214,7 @@ nsHttpNegotiateAuth::ChallengeReceived(nsIHttpAuthenticableChannel *authChannel,
   
   service.InsertLiteral("HTTP@", 0);
 
-  const char *authType;
+  const char* authType;
   if (TestBoolPref(kNegotiateAuthSSPI)) {
     LOG(("  using negotiate-sspi\n"));
     authType = "negotiate-sspi";
@@ -259,11 +259,11 @@ class GetNextTokenCompleteEvent final : public nsIRunnable,
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
 
-  explicit GetNextTokenCompleteEvent(nsIHttpAuthenticatorCallback *aCallback)
+  explicit GetNextTokenCompleteEvent(nsIHttpAuthenticatorCallback* aCallback)
       : mCallback(aCallback), mCreds(nullptr), mCancelled(false) {}
 
   NS_IMETHODIMP DispatchSuccess(
-      char *aCreds, uint32_t aFlags,
+      char* aCreds, uint32_t aFlags,
       already_AddRefed<nsISupports> aSessionState,
       already_AddRefed<nsISupports> aContinuationState) {
     
@@ -312,7 +312,7 @@ class GetNextTokenCompleteEvent final : public nsIRunnable,
 
  private:
   nsCOMPtr<nsIHttpAuthenticatorCallback> mCallback;
-  char *mCreds;  
+  char* mCreds;  
   uint32_t mFlags;
   nsresult mResult;
   bool mCancelled;
@@ -332,12 +332,12 @@ class GetNextTokenRunnable final : public mozilla::Runnable {
   ~GetNextTokenRunnable() override = default;
 
  public:
-  GetNextTokenRunnable(nsIHttpAuthenticableChannel *authChannel,
-                       const char *challenge, bool isProxyAuth,
-                       const char16_t *domain, const char16_t *username,
-                       const char16_t *password, nsISupports *sessionState,
-                       nsISupports *continuationState,
-                       GetNextTokenCompleteEvent *aCompleteEvent)
+  GetNextTokenRunnable(nsIHttpAuthenticableChannel* authChannel,
+                       const char* challenge, bool isProxyAuth,
+                       const char16_t* domain, const char16_t* username,
+                       const char16_t* password, nsISupports* sessionState,
+                       nsISupports* continuationState,
+                       GetNextTokenCompleteEvent* aCompleteEvent)
       : mozilla::Runnable("GetNextTokenRunnable"),
         mAuthChannel(authChannel),
         mChallenge(challenge),
@@ -353,7 +353,7 @@ class GetNextTokenRunnable final : public mozilla::Runnable {
     
     MOZ_ASSERT(!NS_IsMainThread());
 
-    char *creds;
+    char* creds;
     uint32_t flags;
     nsresult rv = ObtainCredentialsAndFlags(&creds, &flags);
 
@@ -372,14 +372,14 @@ class GetNextTokenRunnable final : public mozilla::Runnable {
                                            mContinuationState.forget());
   }
 
-  NS_IMETHODIMP ObtainCredentialsAndFlags(char **aCreds, uint32_t *aFlags) {
+  NS_IMETHODIMP ObtainCredentialsAndFlags(char** aCreds, uint32_t* aFlags) {
     nsresult rv;
 
     
     nsCOMPtr<nsIHttpAuthenticator> authenticator = new nsHttpNegotiateAuth();
 
-    nsISupports *sessionState = mSessionState;
-    nsISupports *continuationState = mContinuationState;
+    nsISupports* sessionState = mSessionState;
+    nsISupports* continuationState = mContinuationState;
     
     
     
@@ -422,11 +422,11 @@ class GetNextTokenRunnable final : public mozilla::Runnable {
 
 NS_IMETHODIMP
 nsHttpNegotiateAuth::GenerateCredentialsAsync(
-    nsIHttpAuthenticableChannel *authChannel,
-    nsIHttpAuthenticatorCallback *aCallback, const char *challenge,
-    bool isProxyAuth, const char16_t *domain, const char16_t *username,
-    const char16_t *password, nsISupports *sessionState,
-    nsISupports *continuationState, nsICancelable **aCancelable) {
+    nsIHttpAuthenticableChannel* authChannel,
+    nsIHttpAuthenticatorCallback* aCallback, const char* challenge,
+    bool isProxyAuth, const char16_t* domain, const char16_t* username,
+    const char16_t* password, nsISupports* sessionState,
+    nsISupports* continuationState, nsICancelable** aCancelable) {
   NS_ENSURE_ARG(aCallback);
   NS_ENSURE_ARG_POINTER(aCancelable);
 
@@ -458,12 +458,12 @@ nsHttpNegotiateAuth::GenerateCredentialsAsync(
 
 NS_IMETHODIMP
 nsHttpNegotiateAuth::GenerateCredentials(
-    nsIHttpAuthenticableChannel *authChannel, const char *challenge,
-    bool isProxyAuth, const char16_t *domain, const char16_t *username,
-    const char16_t *password, nsISupports **sessionState,
-    nsISupports **continuationState, uint32_t *flags, char **creds) {
+    nsIHttpAuthenticableChannel* authChannel, const char* challenge,
+    bool isProxyAuth, const char16_t* domain, const char16_t* username,
+    const char16_t* password, nsISupports** sessionState,
+    nsISupports** continuationState, uint32_t* flags, char** creds) {
   
-  nsIAuthModule *module = (nsIAuthModule *)*continuationState;
+  nsIAuthModule* module = (nsIAuthModule*)*continuationState;
   NS_ENSURE_TRUE(module, NS_ERROR_NOT_INITIALIZED);
 
   *flags = USING_INTERNAL_IDENTITY;
@@ -503,7 +503,7 @@ nsHttpNegotiateAuth::GenerateCredentials(
     
     
     
-    nsresult rv = Base64Decode(challenge, len, (char **)&inToken, &inTokenLen);
+    nsresult rv = Base64Decode(challenge, len, (char**)&inToken, &inTokenLen);
 
     if (NS_FAILED(rv)) {
       free(inToken);
@@ -531,7 +531,7 @@ nsHttpNegotiateAuth::GenerateCredentials(
   
   
   
-  char *encoded_token = PL_Base64Encode((char *)outToken, outTokenLen, nullptr);
+  char* encoded_token = PL_Base64Encode((char*)outToken, outTokenLen, nullptr);
 
   free(outToken);
 
@@ -541,14 +541,14 @@ nsHttpNegotiateAuth::GenerateCredentials(
 
   
   const int bufsize = kNegotiateLen + 1 + strlen(encoded_token) + 1;
-  *creds = (char *)moz_xmalloc(bufsize);
+  *creds = (char*)moz_xmalloc(bufsize);
   snprintf(*creds, bufsize, "%s %s", kNegotiate, encoded_token);
 
   PR_Free(encoded_token);  
   return rv;
 }
 
-bool nsHttpNegotiateAuth::TestBoolPref(const char *pref) {
+bool nsHttpNegotiateAuth::TestBoolPref(const char* pref) {
   nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
   if (!prefs) return false;
 
@@ -559,7 +559,7 @@ bool nsHttpNegotiateAuth::TestBoolPref(const char *pref) {
   return val;
 }
 
-bool nsHttpNegotiateAuth::TestNonFqdn(nsIURI *uri) {
+bool nsHttpNegotiateAuth::TestNonFqdn(nsIURI* uri) {
   nsAutoCString host;
   PRNetAddr addr;
 

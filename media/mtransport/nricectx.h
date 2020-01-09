@@ -83,7 +83,7 @@ typedef struct nr_ice_turn_server_ nr_ice_turn_server;
 typedef struct nr_resolver_ nr_resolver;
 typedef struct nr_proxy_tunnel_config_ nr_proxy_tunnel_config;
 
-typedef void *NR_SOCKET;
+typedef void* NR_SOCKET;
 
 namespace mozilla {
 
@@ -102,14 +102,14 @@ extern const char kNrIceTransportTls[];
 
 class NrIceStunServer {
  public:
-  explicit NrIceStunServer(const PRNetAddr &addr) : has_addr_(true) {
+  explicit NrIceStunServer(const PRNetAddr& addr) : has_addr_(true) {
     memcpy(&addr_, &addr, sizeof(addr));
   }
 
   
   static UniquePtr<NrIceStunServer> Create(
-      const std::string &addr, uint16_t port,
-      const char *transport = kNrIceTransportUdp) {
+      const std::string& addr, uint16_t port,
+      const char* transport = kNrIceTransportUdp) {
     UniquePtr<NrIceStunServer> server(new NrIceStunServer(transport));
 
     nsresult rv = server->Init(addr, port);
@@ -118,13 +118,13 @@ class NrIceStunServer {
     return server;
   }
 
-  nsresult ToNicerStunStruct(nr_ice_stun_server *server) const;
+  nsresult ToNicerStunStruct(nr_ice_stun_server* server) const;
 
  protected:
-  explicit NrIceStunServer(const char *transport)
+  explicit NrIceStunServer(const char* transport)
       : addr_(), transport_(transport) {}
 
-  nsresult Init(const std::string &addr, uint16_t port) {
+  nsresult Init(const std::string& addr, uint16_t port) {
     PRStatus status = PR_StringToNetAddr(addr.c_str(), &addr_);
     if (status == PR_SUCCESS) {
       
@@ -153,9 +153,9 @@ class NrIceStunServer {
 class NrIceTurnServer : public NrIceStunServer {
  public:
   static UniquePtr<NrIceTurnServer> Create(
-      const std::string &addr, uint16_t port, const std::string &username,
-      const std::vector<unsigned char> &password,
-      const char *transport = kNrIceTransportUdp) {
+      const std::string& addr, uint16_t port, const std::string& username,
+      const std::vector<unsigned char>& password,
+      const char* transport = kNrIceTransportUdp) {
     UniquePtr<NrIceTurnServer> server(
         new NrIceTurnServer(username, password, transport));
 
@@ -165,12 +165,12 @@ class NrIceTurnServer : public NrIceStunServer {
     return server;
   }
 
-  nsresult ToNicerTurnStruct(nr_ice_turn_server *server) const;
+  nsresult ToNicerTurnStruct(nr_ice_turn_server* server) const;
 
  private:
-  NrIceTurnServer(const std::string &username,
-                  const std::vector<unsigned char> &password,
-                  const char *transport)
+  NrIceTurnServer(const std::string& username,
+                  const std::vector<unsigned char>& password,
+                  const char* transport)
       : NrIceStunServer(transport), username_(username), password_(password) {}
 
   std::string username_;
@@ -210,14 +210,14 @@ class NrIceCtx {
   enum Policy { ICE_POLICY_RELAY, ICE_POLICY_NO_HOST, ICE_POLICY_ALL };
 
   static RefPtr<NrIceCtx> Create(
-      const std::string &name, bool allow_loopback = false,
+      const std::string& name, bool allow_loopback = false,
       bool tcp_enabled = true, bool allow_link_local = false,
       NrIceCtx::Policy policy = NrIceCtx::ICE_POLICY_ALL);
 
-  RefPtr<NrIceMediaStream> CreateStream(const std::string &id,
-                                        const std::string &name,
+  RefPtr<NrIceMediaStream> CreateStream(const std::string& id,
+                                        const std::string& name,
                                         int components);
-  void DestroyStream(const std::string &id);
+  void DestroyStream(const std::string& id);
 
   
   static void InitializeGlobals(bool allow_loopback = false,
@@ -227,11 +227,11 @@ class NrIceCtx {
   
   
   static nsTArray<NrIceStunAddr> GetStunAddrs();
-  void SetStunAddrs(const nsTArray<NrIceStunAddr> &addrs);
+  void SetStunAddrs(const nsTArray<NrIceStunAddr>& addrs);
 
   bool Initialize();
 
-  int SetNat(const RefPtr<TestNat> &aNat);
+  int SetNat(const RefPtr<TestNat>& aNat);
 
   
   static void internal_DeinitializeGlobal();
@@ -239,13 +239,13 @@ class NrIceCtx {
   
   void internal_SetTimerAccelarator(int divider);
 
-  nr_ice_ctx *ctx() { return ctx_; }
-  nr_ice_peer_ctx *peer() { return peer_; }
+  nr_ice_ctx* ctx() { return ctx_; }
+  nr_ice_peer_ctx* peer() { return peer_; }
 
   
   void destroy_peer_ctx();
 
-  RefPtr<NrIceMediaStream> GetStream(const std::string &id) {
+  RefPtr<NrIceMediaStream> GetStream(const std::string& id) {
     auto it = streams_.find(id);
     if (it != streams_.end()) {
       return it->second;
@@ -255,7 +255,7 @@ class NrIceCtx {
 
   std::vector<RefPtr<NrIceMediaStream>> GetStreams() const {
     std::vector<RefPtr<NrIceMediaStream>> result;
-    for (auto &idAndStream : streams_) {
+    for (auto& idAndStream : streams_) {
       result.push_back(idAndStream.second);
     }
     return result;
@@ -264,7 +264,7 @@ class NrIceCtx {
   bool HasStreamsToConnect() const;
 
   
-  const std::string &name() const { return name_; }
+  const std::string& name() const { return name_; }
 
   
   ConnectionState connection_state() const { return connection_state_; }
@@ -291,21 +291,21 @@ class NrIceCtx {
 
   
   
-  nsresult SetStunServers(const std::vector<NrIceStunServer> &stun_servers);
+  nsresult SetStunServers(const std::vector<NrIceStunServer>& stun_servers);
 
   
   
-  nsresult SetTurnServers(const std::vector<NrIceTurnServer> &turn_servers);
+  nsresult SetTurnServers(const std::vector<NrIceTurnServer>& turn_servers);
 
   
   
-  nsresult SetResolver(nr_resolver *resolver);
+  nsresult SetResolver(nr_resolver* resolver);
 
   
   
-  nsresult SetProxyServer(NrSocketProxyConfig &&config);
+  nsresult SetProxyServer(NrSocketProxyConfig&& config);
 
-  const std::shared_ptr<NrSocketProxyConfig> &GetProxyConfig() {
+  const std::shared_ptr<NrSocketProxyConfig>& GetProxyConfig() {
     return proxy_config_;
   }
 
@@ -324,7 +324,7 @@ class NrIceCtx {
   
   nsresult Finalize();
 
-  void AccumulateStats(const NrIceStats &stats);
+  void AccumulateStats(const NrIceStats& stats);
   NrIceStats Destroy();
 
   
@@ -332,9 +332,9 @@ class NrIceCtx {
 
   
   
-  sigslot::signal2<NrIceCtx *, NrIceCtx::GatheringState>
+  sigslot::signal2<NrIceCtx*, NrIceCtx::GatheringState>
       SignalGatheringStateChange;
-  sigslot::signal2<NrIceCtx *, NrIceCtx::ConnectionState>
+  sigslot::signal2<NrIceCtx*, NrIceCtx::ConnectionState>
       SignalConnectionStateChange;
 
   
@@ -343,33 +343,33 @@ class NrIceCtx {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(NrIceCtx)
 
  private:
-  NrIceCtx(const std::string &name, Policy policy);
+  NrIceCtx(const std::string& name, Policy policy);
 
   virtual ~NrIceCtx();
 
   DISALLOW_COPY_ASSIGN(NrIceCtx);
 
   
-  static void gather_cb(NR_SOCKET s, int h, void *arg);  
+  static void gather_cb(NR_SOCKET s, int h, void* arg);  
 
   
-  static int select_pair(void *obj, nr_ice_media_stream *stream,
-                         int component_id, nr_ice_cand_pair **potentials,
+  static int select_pair(void* obj, nr_ice_media_stream* stream,
+                         int component_id, nr_ice_cand_pair** potentials,
                          int potential_ct);
-  static int stream_ready(void *obj, nr_ice_media_stream *stream);
-  static int stream_failed(void *obj, nr_ice_media_stream *stream);
-  static int ice_checking(void *obj, nr_ice_peer_ctx *pctx);
-  static int ice_connected(void *obj, nr_ice_peer_ctx *pctx);
-  static int ice_disconnected(void *obj, nr_ice_peer_ctx *pctx);
-  static int msg_recvd(void *obj, nr_ice_peer_ctx *pctx,
-                       nr_ice_media_stream *stream, int component_id,
-                       unsigned char *msg, int len);
-  static void trickle_cb(void *arg, nr_ice_ctx *ctx,
-                         nr_ice_media_stream *stream, int component_id,
-                         nr_ice_candidate *candidate);
+  static int stream_ready(void* obj, nr_ice_media_stream* stream);
+  static int stream_failed(void* obj, nr_ice_media_stream* stream);
+  static int ice_checking(void* obj, nr_ice_peer_ctx* pctx);
+  static int ice_connected(void* obj, nr_ice_peer_ctx* pctx);
+  static int ice_disconnected(void* obj, nr_ice_peer_ctx* pctx);
+  static int msg_recvd(void* obj, nr_ice_peer_ctx* pctx,
+                       nr_ice_media_stream* stream, int component_id,
+                       unsigned char* msg, int len);
+  static void trickle_cb(void* arg, nr_ice_ctx* ctx,
+                         nr_ice_media_stream* stream, int component_id,
+                         nr_ice_candidate* candidate);
 
   
-  RefPtr<NrIceMediaStream> FindStream(nr_ice_media_stream *stream);
+  RefPtr<NrIceMediaStream> FindStream(nr_ice_media_stream* stream);
 
   
   void SetConnectionState(ConnectionState state);
@@ -384,10 +384,10 @@ class NrIceCtx {
   TimeStamp ice_start_time_;
   bool ice_controlling_set_;
   std::map<std::string, RefPtr<NrIceMediaStream>> streams_;
-  nr_ice_ctx *ctx_;
-  nr_ice_peer_ctx *peer_;
-  nr_ice_handler_vtbl *ice_handler_vtbl_;  
-  nr_ice_handler *ice_handler_;            
+  nr_ice_ctx* ctx_;
+  nr_ice_peer_ctx* peer_;
+  nr_ice_handler_vtbl* ice_handler_vtbl_;  
+  nr_ice_handler* ice_handler_;            
   bool trickle_;
   nsCOMPtr<nsIEventTarget> sts_target_;  
   Policy policy_;

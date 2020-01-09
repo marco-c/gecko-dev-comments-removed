@@ -20,27 +20,27 @@ class ia2AccessibleHyperlink : public ia2AccessibleAction,
                                public IAccessibleHyperlink {
  public:
   
-  STDMETHODIMP QueryInterface(REFIID, void **);
+  STDMETHODIMP QueryInterface(REFIID, void**);
 
   
   FORWARD_IACCESSIBLEACTION(ia2AccessibleAction)
 
   virtual  HRESULT STDMETHODCALLTYPE get_anchor(
        long index,
-       VARIANT *anchor);
+       VARIANT* anchor);
 
   virtual  HRESULT STDMETHODCALLTYPE get_anchorTarget(
        long index,
-       VARIANT *anchorTarget);
+       VARIANT* anchorTarget);
 
   virtual  HRESULT STDMETHODCALLTYPE get_startIndex(
-       long *index);
+       long* index);
 
   virtual  HRESULT STDMETHODCALLTYPE get_endIndex(
-       long *index);
+       long* index);
 
   virtual  HRESULT STDMETHODCALLTYPE get_valid(
-       boolean *valid);
+       boolean* valid);
 };
 
 }  

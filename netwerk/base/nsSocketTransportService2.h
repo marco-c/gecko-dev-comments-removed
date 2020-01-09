@@ -69,7 +69,7 @@ static const int32_t kDefaultTCPKeepCount =
 class LinkedRunnableEvent final
     : public LinkedListElement<LinkedRunnableEvent> {
  public:
-  explicit LinkedRunnableEvent(nsIRunnable *event) : mEvent(event) {}
+  explicit LinkedRunnableEvent(nsIRunnable* event) : mEvent(event) {}
   ~LinkedRunnableEvent() = default;
 
   already_AddRefed<nsIRunnable> TakeEvent() { return mEvent.forget(); }
@@ -107,7 +107,7 @@ class nsSocketTransportService final : public nsPISocketTransportService,
 
   
   
-  void GetSocketConnections(nsTArray<SocketInfo> *);
+  void GetSocketConnections(nsTArray<SocketInfo>*);
   uint64_t GetSentBytes() { return mSentBytesCount; }
   uint64_t GetReceivedBytes() { return mReceivedBytesCount; }
 
@@ -166,8 +166,8 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   
 
   struct SocketContext {
-    PRFileDesc *mFD;
-    nsASocketHandler *mHandler;
+    PRFileDesc* mFD;
+    nsASocketHandler* mHandler;
     PRIntervalTime mPollStartEpoch;  
 
    public:
@@ -191,22 +191,22 @@ class nsSocketTransportService final : public nsPISocketTransportService,
     void MaybeResetEpoch();
   };
 
-  SocketContext *mActiveList; 
-  SocketContext *mIdleList;   
-  nsIThread *mRawThread;
+  SocketContext* mActiveList; 
+  SocketContext* mIdleList;   
+  nsIThread* mRawThread;
 
   uint32_t mActiveListSize;
   uint32_t mIdleListSize;
   uint32_t mActiveCount;
   uint32_t mIdleCount;
 
-  nsresult DetachSocket(SocketContext *, SocketContext *);
-  nsresult AddToIdleList(SocketContext *);
-  nsresult AddToPollList(SocketContext *);
-  void RemoveFromIdleList(SocketContext *);
-  void RemoveFromPollList(SocketContext *);
-  void MoveToIdleList(SocketContext *sock);
-  void MoveToPollList(SocketContext *sock);
+  nsresult DetachSocket(SocketContext*, SocketContext*);
+  nsresult AddToIdleList(SocketContext*);
+  nsresult AddToPollList(SocketContext*);
+  void RemoveFromIdleList(SocketContext*);
+  void RemoveFromPollList(SocketContext*);
+  void MoveToIdleList(SocketContext* sock);
+  void MoveToPollList(SocketContext* sock);
 
   bool GrowActiveList();
   bool GrowIdleList();
@@ -222,13 +222,13 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   
   
 
-  PRPollDesc *mPollList; 
+  PRPollDesc* mPollList; 
 
   PRIntervalTime PollTimeout(
       PRIntervalTime now);  
-  nsresult DoPollIteration(TimeDuration *pollDuration);
+  nsresult DoPollIteration(TimeDuration* pollDuration);
   
-  int32_t Poll(TimeDuration *pollDuration, PRIntervalTime now);
+  int32_t Poll(TimeDuration* pollDuration, PRIntervalTime now);
   
   
   
@@ -242,7 +242,7 @@ class nsSocketTransportService final : public nsPISocketTransportService,
 
   
   nsresult UpdatePrefs();
-  static void PrefCallback(const char *aPref, nsSocketTransportService *aSelf);
+  static void PrefCallback(const char* aPref, nsSocketTransportService* aSelf);
   void UpdateSendBufferPref();
   int32_t mSendBufferSize;
   
@@ -275,7 +275,7 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   nsCOMPtr<nsITimer> mAfterWakeUpTimer;
 
   void OnKeepaliveEnabledPrefChange();
-  void NotifyKeepaliveEnabledPrefChange(SocketContext *sock);
+  void NotifyKeepaliveEnabledPrefChange(SocketContext* sock);
 
   
 #if defined(XP_WIN)
@@ -283,11 +283,11 @@ class nsSocketTransportService final : public nsPISocketTransportService,
 #endif
   bool mProbedMaxCount;
 
-  void AnalyzeConnection(nsTArray<SocketInfo> *data, SocketContext *context,
+  void AnalyzeConnection(nsTArray<SocketInfo>* data, SocketContext* context,
                          bool aActive);
 
   void ClosePrivateConnections();
-  void DetachSocketWithGuard(bool aGuardLocals, SocketContext *socketList,
+  void DetachSocketWithGuard(bool aGuardLocals, SocketContext* socketList,
                              int32_t index);
 
   void MarkTheLastElementOfPendingQueue();
@@ -308,7 +308,7 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   bool mNotTrustedMitmDetected;
 };
 
-extern nsSocketTransportService *gSocketTransportService;
+extern nsSocketTransportService* gSocketTransportService;
 bool OnSocketThread();
 
 }  

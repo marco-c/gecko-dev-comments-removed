@@ -51,16 +51,16 @@ class nsUrlClassifierStreamUpdater final
   void DownloadDone();
 
   
-  nsUrlClassifierStreamUpdater(nsUrlClassifierStreamUpdater &);
+  nsUrlClassifierStreamUpdater(nsUrlClassifierStreamUpdater&);
 
-  nsresult AddRequestBody(const nsACString &aRequestBody);
+  nsresult AddRequestBody(const nsACString& aRequestBody);
 
   
-  nsresult FetchUpdate(nsIURI *aURI, const nsACString &aRequest,
-                       bool aIsPostRequest, const nsACString &aTable);
+  nsresult FetchUpdate(nsIURI* aURI, const nsACString& aRequest,
+                       bool aIsPostRequest, const nsACString& aTable);
   
-  nsresult FetchUpdate(const nsACString &aURI, const nsACString &aRequest,
-                       bool aIsPostRequest, const nsACString &aTable);
+  nsresult FetchUpdate(const nsACString& aURI, const nsACString& aRequest,
+                       bool aIsPostRequest, const nsACString& aTable);
 
   
   nsresult FetchNext();
@@ -77,13 +77,13 @@ class nsUrlClassifierStreamUpdater final
     nsCOMPtr<nsIUrlClassifierCallback> mDownloadErrorCallback;
   };
   
-  void BuildUpdateRequest(const nsACString &aRequestTables,
-                          const nsACString &aRequestPayload,
-                          bool aIsPostRequest, const nsACString &aUpdateUrl,
-                          nsIUrlClassifierCallback *aSuccessCallback,
-                          nsIUrlClassifierCallback *aUpdateErrorCallback,
-                          nsIUrlClassifierCallback *aDownloadErrorCallback,
-                          UpdateRequest *aRequest);
+  void BuildUpdateRequest(const nsACString& aRequestTables,
+                          const nsACString& aRequestPayload,
+                          bool aIsPostRequest, const nsACString& aUpdateUrl,
+                          nsIUrlClassifierCallback* aSuccessCallback,
+                          nsIUrlClassifierCallback* aUpdateErrorCallback,
+                          nsIUrlClassifierCallback* aDownloadErrorCallback,
+                          UpdateRequest* aRequest);
 
   bool mIsUpdating;
   bool mInitialized;

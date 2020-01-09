@@ -40,13 +40,13 @@ class nsSecurityHeaderParser {
   
   
   
-  explicit nsSecurityHeaderParser(const nsCString &aHeader);
+  explicit nsSecurityHeaderParser(const nsCString& aHeader);
   ~nsSecurityHeaderParser();
 
   
   nsresult Parse();
   
-  mozilla::LinkedList<nsSecurityHeaderDirective> *GetDirectives();
+  mozilla::LinkedList<nsSecurityHeaderDirective>* GetDirectives();
 
  private:
   bool Accept(char aChr);
@@ -68,8 +68,8 @@ class nsSecurityHeaderParser {
   void LWS();          
 
   mozilla::LinkedList<nsSecurityHeaderDirective> mDirectives;
-  const char *mCursor;
-  nsSecurityHeaderDirective *mDirective;
+  const char* mCursor;
+  nsSecurityHeaderDirective* mDirective;
 
   nsCString mOutput;
   bool mError;

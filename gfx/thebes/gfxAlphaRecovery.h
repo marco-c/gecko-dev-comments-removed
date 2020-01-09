@@ -30,16 +30,16 @@ class gfxAlphaRecovery {
 
 
 
-  static bool RecoverAlpha(gfxImageSurface *blackSurface,
-                           const gfxImageSurface *whiteSurface);
+  static bool RecoverAlpha(gfxImageSurface* blackSurface,
+                           const gfxImageSurface* whiteSurface);
 
 #ifdef MOZILLA_MAY_SUPPORT_SSE2
   
 
 
 
-  static bool RecoverAlphaSSE2(gfxImageSurface *blackSurface,
-                               const gfxImageSurface *whiteSurface);
+  static bool RecoverAlphaSSE2(gfxImageSurface* blackSurface,
+                               const gfxImageSurface* whiteSurface);
 
   
 
@@ -53,10 +53,10 @@ class gfxAlphaRecovery {
 
 
   static mozilla::gfx::IntRect AlignRectForSubimageRecovery(
-      const mozilla::gfx::IntRect &aRect, gfxImageSurface *aSurface);
+      const mozilla::gfx::IntRect& aRect, gfxImageSurface* aSurface);
 #else
   static mozilla::gfx::IntRect AlignRectForSubimageRecovery(
-      const mozilla::gfx::IntRect &aRect, gfxImageSurface *) {
+      const mozilla::gfx::IntRect& aRect, gfxImageSurface*) {
     return aRect;
   }
 #endif

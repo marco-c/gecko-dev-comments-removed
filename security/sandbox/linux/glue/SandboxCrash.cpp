@@ -45,7 +45,7 @@ static void SandboxLogJSStack(void) {
   
   
   
-  JSContext *cx = frame ? nsContentUtils::GetCurrentJSContext() : nullptr;
+  JSContext* cx = frame ? nsContentUtils::GetCurrentJSContext() : nullptr;
   for (int i = 0; frame != nullptr; ++i) {
     nsAutoString fileName, funName;
     int32_t lineNumber;
@@ -71,8 +71,8 @@ static void SandboxLogJSStack(void) {
   }
 }
 
-static void SandboxPrintStackFrame(uint32_t aFrameNumber, void *aPC, void *aSP,
-                                   void *aClosure) {
+static void SandboxPrintStackFrame(uint32_t aFrameNumber, void* aPC, void* aSP,
+                                   void* aClosure) {
   char buf[1024];
   MozCodeAddressDetails details;
 
@@ -93,7 +93,7 @@ static void SandboxLogCStack() {
   SANDBOX_LOG_ERROR("end of stack.");
 }
 
-static void SandboxCrash(int nr, siginfo_t *info, void *void_context) {
+static void SandboxCrash(int nr, siginfo_t* info, void* void_context) {
   pid_t pid = getpid(), tid = syscall(__NR_gettid);
   bool dumped = CrashReporter::WriteMinidumpForSigInfo(nr, info, void_context);
 

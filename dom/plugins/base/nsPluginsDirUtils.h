@@ -16,20 +16,20 @@
 
 
 
-static nsresult ParsePluginMimeDescription(const char *mdesc,
-                                           nsPluginInfo &info) {
+static nsresult ParsePluginMimeDescription(const char* mdesc,
+                                           nsPluginInfo& info) {
   nsresult rv = NS_ERROR_FAILURE;
   if (!mdesc || !*mdesc) return rv;
 
-  char *mdescDup =
+  char* mdescDup =
       PL_strdup(mdesc);  
   char anEmptyString[] = "";
-  AutoTArray<char *, 8> tmpMimeTypeArr;
+  AutoTArray<char*, 8> tmpMimeTypeArr;
   char delimiters[] = {':', ':', ';'};
   int mimeTypeVariantCount = 0;
-  char *p = mdescDup;  
+  char* p = mdescDup;  
   while (p) {
-    char *ptrMimeArray[] = {anEmptyString, anEmptyString, anEmptyString};
+    char* ptrMimeArray[] = {anEmptyString, anEmptyString, anEmptyString};
 
     
     
@@ -42,7 +42,7 @@ static nsresult ParsePluginMimeDescription(const char *mdesc,
     
     
 
-    char *s = p;
+    char* s = p;
     int i;
     for (i = 0;
          i < (int)sizeof(delimiters) && (p = PL_strchr(s, delimiters[i]));
@@ -66,12 +66,10 @@ static nsresult ParsePluginMimeDescription(const char *mdesc,
   if (mimeTypeVariantCount) {
     info.fVariantCount = mimeTypeVariantCount;
     
-    info.fMimeTypeArray =
-        (char **)malloc(mimeTypeVariantCount * sizeof(char *));
+    info.fMimeTypeArray = (char**)malloc(mimeTypeVariantCount * sizeof(char*));
     info.fMimeDescriptionArray =
-        (char **)malloc(mimeTypeVariantCount * sizeof(char *));
-    info.fExtensionArray =
-        (char **)malloc(mimeTypeVariantCount * sizeof(char *));
+        (char**)malloc(mimeTypeVariantCount * sizeof(char*));
+    info.fExtensionArray = (char**)malloc(mimeTypeVariantCount * sizeof(char*));
 
     int j, i;
     for (j = i = 0; i < mimeTypeVariantCount; i++) {

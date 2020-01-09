@@ -14,7 +14,7 @@
 
 class gfxHarfBuzzShaper : public gfxFontShaper {
  public:
-  explicit gfxHarfBuzzShaper(gfxFont *aFont);
+  explicit gfxHarfBuzzShaper(gfxFont* aFont);
   virtual ~gfxHarfBuzzShaper();
 
   
@@ -22,18 +22,18 @@ class gfxHarfBuzzShaper : public gfxFontShaper {
 
 
   struct FontCallbackData {
-    gfxHarfBuzzShaper *mShaper;
+    gfxHarfBuzzShaper* mShaper;
   };
 
   bool Initialize();
 
-  bool ShapeText(DrawTarget *aDrawTarget, const char16_t *aText,
+  bool ShapeText(DrawTarget* aDrawTarget, const char16_t* aText,
                  uint32_t aOffset, uint32_t aLength, Script aScript,
                  bool aVertical, RoundingFlags aRounding,
-                 gfxShapedText *aShapedText) override;
+                 gfxShapedText* aShapedText) override;
 
   
-  hb_blob_t *GetFontTable(hb_tag_t aTag) const;
+  hb_blob_t* GetFontTable(hb_tag_t aTag) const;
 
   
   hb_codepoint_t GetNominalGlyph(hb_codepoint_t unicode) const;
@@ -45,27 +45,27 @@ class gfxHarfBuzzShaper : public gfxFontShaper {
 
   hb_position_t GetGlyphVAdvance(hb_codepoint_t glyph) const;
 
-  void GetGlyphVOrigin(hb_codepoint_t aGlyph, hb_position_t *aX,
-                       hb_position_t *aY) const;
+  void GetGlyphVOrigin(hb_codepoint_t aGlyph, hb_position_t* aX,
+                       hb_position_t* aY) const;
 
   
-  static hb_position_t HBGetGlyphHAdvance(hb_font_t *font, void *font_data,
+  static hb_position_t HBGetGlyphHAdvance(hb_font_t* font, void* font_data,
                                           hb_codepoint_t glyph,
-                                          void *user_data);
+                                          void* user_data);
 
   
-  static hb_position_t HBGetGlyphVAdvance(hb_font_t *font, void *font_data,
+  static hb_position_t HBGetGlyphVAdvance(hb_font_t* font, void* font_data,
                                           hb_codepoint_t glyph,
-                                          void *user_data);
+                                          void* user_data);
 
-  static hb_bool_t HBGetGlyphVOrigin(hb_font_t *font, void *font_data,
-                                     hb_codepoint_t glyph, hb_position_t *x,
-                                     hb_position_t *y, void *user_data);
+  static hb_bool_t HBGetGlyphVOrigin(hb_font_t* font, void* font_data,
+                                     hb_codepoint_t glyph, hb_position_t* x,
+                                     hb_position_t* y, void* user_data);
 
   hb_position_t GetHKerning(uint16_t aFirstGlyph, uint16_t aSecondGlyph) const;
 
   hb_bool_t GetGlyphExtents(hb_codepoint_t aGlyph,
-                            hb_glyph_extents_t *aExtents) const;
+                            hb_glyph_extents_t* aExtents) const;
 
   bool UseVerticalPresentationForms() const {
     return mUseVerticalPresentationForms;
@@ -87,13 +87,13 @@ class gfxHarfBuzzShaper : public gfxFontShaper {
   static hb_codepoint_t GetVerticalPresentationForm(hb_codepoint_t aUnicode);
 
  protected:
-  nsresult SetGlyphsFromRun(gfxShapedText *aShapedText, uint32_t aOffset,
-                            uint32_t aLength, const char16_t *aText,
+  nsresult SetGlyphsFromRun(gfxShapedText* aShapedText, uint32_t aOffset,
+                            uint32_t aLength, const char16_t* aText,
                             bool aVertical, RoundingFlags aRounding);
 
   
   
-  nscoord GetGlyphPositions(gfxContext *aContext, nsTArray<nsPoint> &aPositions,
+  nscoord GetGlyphPositions(gfxContext* aContext, nsTArray<nsPoint>& aPositions,
                             uint32_t aAppUnitsPerDevUnit);
 
   void InitializeVertical();
@@ -108,17 +108,17 @@ class gfxHarfBuzzShaper : public gfxFontShaper {
     mozilla::AutoSwap_PRInt16 yMax;
   };
 
-  const Glyf *FindGlyf(hb_codepoint_t aGlyph, bool *aEmptyGlyf) const;
+  const Glyf* FindGlyf(hb_codepoint_t aGlyph, bool* aEmptyGlyf) const;
 
   
   
-  hb_face_t *mHBFace;
+  hb_face_t* mHBFace;
 
   
-  hb_font_t *mHBFont;
+  hb_font_t* mHBFont;
 
   
-  hb_buffer_t *mBuffer;
+  hb_buffer_t* mBuffer;
 
   FontCallbackData mCallbackData;
 
@@ -128,23 +128,23 @@ class gfxHarfBuzzShaper : public gfxFontShaper {
   
 
   
-  mutable hb_blob_t *mKernTable;
+  mutable hb_blob_t* mKernTable;
 
   
-  mutable hb_blob_t *mHmtxTable;
+  mutable hb_blob_t* mHmtxTable;
 
   
-  mutable hb_blob_t *mVmtxTable;
-  mutable hb_blob_t *mVORGTable;
+  mutable hb_blob_t* mVmtxTable;
+  mutable hb_blob_t* mVORGTable;
   
   
-  mutable hb_blob_t *mLocaTable;
-  mutable hb_blob_t *mGlyfTable;
+  mutable hb_blob_t* mLocaTable;
+  mutable hb_blob_t* mGlyfTable;
 
   
   
   
-  mutable hb_blob_t *mCmapTable;
+  mutable hb_blob_t* mCmapTable;
   mutable int32_t mCmapFormat;
   mutable uint32_t mSubtableOffset;
   mutable uint32_t mUVSTableOffset;

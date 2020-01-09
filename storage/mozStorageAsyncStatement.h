@@ -47,8 +47,8 @@ class AsyncStatement final : public mozIStorageAsyncStatement,
 
 
 
-  nsresult initialize(Connection *aDBConnection, sqlite3 *aNativeConnection,
-                      const nsACString &aSQLStatement);
+  nsresult initialize(Connection* aDBConnection, sqlite3* aNativeConnection,
+                      const nsACString& aSQLStatement);
 
   
 
@@ -65,7 +65,7 @@ class AsyncStatement final : public mozIStorageAsyncStatement,
 
 
 
-  mozIStorageBindingParams *getParams();
+  mozIStorageBindingParams* getParams();
 
   
 

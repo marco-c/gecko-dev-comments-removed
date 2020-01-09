@@ -16,39 +16,39 @@ struct gr_segment;
 
 class gfxGraphiteShaper : public gfxFontShaper {
  public:
-  explicit gfxGraphiteShaper(gfxFont *aFont);
+  explicit gfxGraphiteShaper(gfxFont* aFont);
   virtual ~gfxGraphiteShaper();
 
-  bool ShapeText(DrawTarget *aDrawTarget, const char16_t *aText,
+  bool ShapeText(DrawTarget* aDrawTarget, const char16_t* aText,
                  uint32_t aOffset, uint32_t aLength, Script aScript,
                  bool aVertical, RoundingFlags aRounding,
-                 gfxShapedText *aShapedText) override;
+                 gfxShapedText* aShapedText) override;
 
   static void Shutdown();
 
  protected:
-  nsresult SetGlyphsFromSegment(gfxShapedText *aShapedText, uint32_t aOffset,
-                                uint32_t aLength, const char16_t *aText,
-                                gr_segment *aSegment, RoundingFlags aRounding);
+  nsresult SetGlyphsFromSegment(gfxShapedText* aShapedText, uint32_t aOffset,
+                                uint32_t aLength, const char16_t* aText,
+                                gr_segment* aSegment, RoundingFlags aRounding);
 
-  static float GrGetAdvance(const void *appFontHandle, uint16_t glyphid);
+  static float GrGetAdvance(const void* appFontHandle, uint16_t glyphid);
 
-  gr_face *mGrFace;  
+  gr_face* mGrFace;  
                      
-  gr_font *mGrFont;  
+  gr_font* mGrFont;  
 
   struct CallbackData {
     
     
-    gfxFont *MOZ_NON_OWNING_REF mFont;
+    gfxFont* MOZ_NON_OWNING_REF mFont;
   };
 
   CallbackData mCallbackData;
   bool mFallbackToSmallCaps;  
 
   
-  static uint32_t GetGraphiteTagForLang(const nsCString &aLang);
-  static nsTHashtable<nsUint32HashKey> *sLanguageTags;
+  static uint32_t GetGraphiteTagForLang(const nsCString& aLang);
+  static nsTHashtable<nsUint32HashKey>* sLanguageTags;
 };
 
 #endif 

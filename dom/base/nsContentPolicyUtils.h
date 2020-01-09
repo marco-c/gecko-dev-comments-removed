@@ -68,7 +68,7 @@
 
 
 
-inline const char *NS_CP_ResponseName(int16_t response) {
+inline const char* NS_CP_ResponseName(int16_t response) {
   switch (response) {
     CASE_RETURN(REJECT_REQUEST);
     CASE_RETURN(REJECT_TYPE);
@@ -89,7 +89,7 @@ inline const char *NS_CP_ResponseName(int16_t response) {
 
 
 
-inline const char *NS_CP_ContentTypeName(uint32_t contentType) {
+inline const char* NS_CP_ContentTypeName(uint32_t contentType) {
   switch (contentType) {
     CASE_RETURN(TYPE_OTHER);
     CASE_RETURN(TYPE_SCRIPT);
@@ -183,7 +183,7 @@ inline const char *NS_CP_ContentTypeName(uint32_t contentType) {
         n = win ? win->GetExtantDoc() : nullptr;                               \
       }                                                                        \
       if (n) {                                                                 \
-        mozilla::dom::Document *d = n->OwnerDoc();                             \
+        mozilla::dom::Document* d = n->OwnerDoc();                             \
         if (d->IsLoadedAsData() || d->IsBeingUsedAsImage() ||                  \
             d->IsResourceDoc()) {                                              \
           nsCOMPtr<nsIContentPolicy> dataPolicy =                              \
@@ -211,9 +211,9 @@ inline const char *NS_CP_ContentTypeName(uint32_t contentType) {
 
 
 inline nsresult NS_CheckContentLoadPolicy(
-    nsIURI *contentLocation, nsILoadInfo *loadInfo, const nsACString &mimeType,
-    int16_t *decision, nsIContentPolicy *policyService = nullptr) {
-  nsIPrincipal *loadingPrincipal = loadInfo->LoadingPrincipal();
+    nsIURI* contentLocation, nsILoadInfo* loadInfo, const nsACString& mimeType,
+    int16_t* decision, nsIContentPolicy* policyService = nullptr) {
+  nsIPrincipal* loadingPrincipal = loadInfo->LoadingPrincipal();
   nsCOMPtr<nsISupports> context = loadInfo->GetLoadingContext();
   nsContentPolicyType contentType = loadInfo->InternalContentPolicyType();
   CHECK_PRINCIPAL_AND_DATA(ShouldLoad);
@@ -227,9 +227,9 @@ inline nsresult NS_CheckContentLoadPolicy(
 
 
 inline nsresult NS_CheckContentProcessPolicy(
-    nsIURI *contentLocation, nsILoadInfo *loadInfo, const nsACString &mimeType,
-    int16_t *decision, nsIContentPolicy *policyService = nullptr) {
-  nsIPrincipal *loadingPrincipal = loadInfo->LoadingPrincipal();
+    nsIURI* contentLocation, nsILoadInfo* loadInfo, const nsACString& mimeType,
+    int16_t* decision, nsIContentPolicy* policyService = nullptr) {
+  nsIPrincipal* loadingPrincipal = loadInfo->LoadingPrincipal();
   nsCOMPtr<nsISupports> context = loadInfo->GetLoadingContext();
   nsContentPolicyType contentType = loadInfo->InternalContentPolicyType();
   CHECK_PRINCIPAL_AND_DATA(ShouldProcess);
@@ -265,7 +265,7 @@ inline nsresult NS_CheckContentProcessPolicy(
 
 
 
-inline nsIDocShell *NS_CP_GetDocShellFromContext(nsISupports *aContext) {
+inline nsIDocShell* NS_CP_GetDocShellFromContext(nsISupports* aContext) {
   if (!aContext) {
     return nullptr;
   }

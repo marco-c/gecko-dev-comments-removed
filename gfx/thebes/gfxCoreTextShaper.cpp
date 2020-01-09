@@ -31,9 +31,8 @@ CFDictionaryRef gfxCoreTextShaper::CreateAttrDict(bool aRightToLeft) {
                                      : kCTWritingDirectionLeftToRight);
   CFNumberRef dirNumber =
       ::CFNumberCreate(kCFAllocatorDefault, kCFNumberSInt16Type, &dirOverride);
-  CFArrayRef dirArray =
-      ::CFArrayCreate(kCFAllocatorDefault, (const void **)&dirNumber, 1,
-                      &kCFTypeArrayCallBacks);
+  CFArrayRef dirArray = ::CFArrayCreate(
+      kCFAllocatorDefault, (const void**)&dirNumber, 1, &kCFTypeArrayCallBacks);
   ::CFRelease(dirNumber);
   CFTypeRef attrs[] = {kCTFontAttributeName, kCTWritingDirectionAttributeName};
   CFTypeRef values[] = {mCTFont[0], dirArray};
@@ -44,7 +43,7 @@ CFDictionaryRef gfxCoreTextShaper::CreateAttrDict(bool aRightToLeft) {
   return attrDict;
 }
 
-gfxCoreTextShaper::gfxCoreTextShaper(gfxMacFont *aFont)
+gfxCoreTextShaper::gfxCoreTextShaper(gfxMacFont* aFont)
     : gfxFontShaper(aFont),
       mAttributesDictLTR(nullptr),
       mAttributesDictRTL(nullptr) {
@@ -76,15 +75,15 @@ static bool IsBuggyIndicScript(unicode::Script aScript) {
          aScript == unicode::Script::ORIYA || aScript == unicode::Script::KHMER;
 }
 
-bool gfxCoreTextShaper::ShapeText(DrawTarget *aDrawTarget,
-                                  const char16_t *aText, uint32_t aOffset,
+bool gfxCoreTextShaper::ShapeText(DrawTarget* aDrawTarget,
+                                  const char16_t* aText, uint32_t aOffset,
                                   uint32_t aLength, Script aScript,
                                   bool aVertical, RoundingFlags aRounding,
-                                  gfxShapedText *aShapedText) {
+                                  gfxShapedText* aShapedText) {
   
   
   bool isRightToLeft = aShapedText->IsRightToLeft();
-  const UniChar *text = reinterpret_cast<const UniChar *>(aText);
+  const UniChar* text = reinterpret_cast<const UniChar*>(aText);
 
   CFStringRef stringObj = ::CFStringCreateWithCharactersNoCopy(
       kCFAllocatorDefault, text, aLength, kCFAllocatorNull);
@@ -92,12 +91,12 @@ bool gfxCoreTextShaper::ShapeText(DrawTarget *aDrawTarget,
   
   
   
-  const gfxFontStyle *style = mFont->GetStyle();
-  gfxFontEntry *entry = mFont->GetFontEntry();
-  auto handleFeatureTag = [](const uint32_t &aTag, uint32_t &aValue,
-                             void *aUserArg) -> void {
+  const gfxFontStyle* style = mFont->GetStyle();
+  gfxFontEntry* entry = mFont->GetFontEntry();
+  auto handleFeatureTag = [](const uint32_t& aTag, uint32_t& aValue,
+                             void* aUserArg) -> void {
     if (aTag == HB_TAG('s', 'm', 'c', 'p') && aValue) {
-      *static_cast<bool *>(aUserArg) = true;
+      *static_cast<bool*>(aUserArg) = true;
     }
   };
   bool addSmallCaps = false;
@@ -170,8 +169,8 @@ bool gfxCoreTextShaper::ShapeText(DrawTarget *aDrawTarget,
       
       
       
-      const void *font1 = ::CFDictionaryGetValue(attrObj, kCTFontAttributeName);
-      const void *font2 = ::CFDictionaryGetValue(runAttr, kCTFontAttributeName);
+      const void* font1 = ::CFDictionaryGetValue(attrObj, kCTFontAttributeName);
+      const void* font2 = ::CFDictionaryGetValue(runAttr, kCTFontAttributeName);
       if (font1 != font2) {
         
         
@@ -207,7 +206,7 @@ bool gfxCoreTextShaper::ShapeText(DrawTarget *aDrawTarget,
        
        
 
-nsresult gfxCoreTextShaper::SetGlyphsFromRun(gfxShapedText *aShapedText,
+nsresult gfxCoreTextShaper::SetGlyphsFromRun(gfxShapedText* aShapedText,
                                              uint32_t aOffset, uint32_t aLength,
                                              CTRunRef aCTRun) {
   typedef gfxShapedText::CompressedGlyph CompressedGlyph;
@@ -240,9 +239,9 @@ nsresult gfxCoreTextShaper::SetGlyphsFromRun(gfxShapedText *aShapedText,
   UniquePtr<CGGlyph[]> glyphsArray;
   UniquePtr<CGPoint[]> positionsArray;
   UniquePtr<CFIndex[]> glyphToCharArray;
-  const CGGlyph *glyphs = nullptr;
-  const CGPoint *positions = nullptr;
-  const CFIndex *glyphToChar = nullptr;
+  const CGGlyph* glyphs = nullptr;
+  const CGPoint* positions = nullptr;
+  const CFIndex* glyphToChar = nullptr;
 
   
   
@@ -290,7 +289,7 @@ nsresult gfxCoreTextShaper::SetGlyphsFromRun(gfxShapedText *aShapedText,
                                                 nullptr, nullptr, nullptr);
 
   AutoTArray<gfxShapedText::DetailedGlyph, 1> detailedGlyphs;
-  CompressedGlyph *charGlyphs = aShapedText->GetCharacterGlyphs() + aOffset;
+  CompressedGlyph* charGlyphs = aShapedText->GetCharacterGlyphs() + aOffset;
 
   
   
@@ -309,7 +308,7 @@ nsresult gfxCoreTextShaper::SetGlyphsFromRun(gfxShapedText *aShapedText,
   if (!charToGlyphArray.SetLength(stringRange.length, fallible)) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
-  int32_t *charToGlyph = charToGlyphArray.Elements();
+  int32_t* charToGlyph = charToGlyphArray.Elements();
   for (int32_t offset = 0; offset < stringRange.length; ++offset) {
     charToGlyph[offset] = NO_GLYPH;
   }
@@ -503,7 +502,7 @@ nsresult gfxCoreTextShaper::SetGlyphsFromRun(gfxShapedText *aShapedText,
       
       
       while (true) {
-        gfxTextRun::DetailedGlyph *details = detailedGlyphs.AppendElement();
+        gfxTextRun::DetailedGlyph* details = detailedGlyphs.AppendElement();
         details->mGlyphID = glyphs[glyphStart];
         details->mOffset.y = -positions[glyphStart].y * appUnitsPerDevUnit;
         details->mAdvance = advance;
@@ -530,7 +529,7 @@ nsresult gfxCoreTextShaper::SetGlyphsFromRun(gfxShapedText *aShapedText,
     
     
     while (++baseCharIndex != endCharIndex && baseCharIndex < wordLength) {
-      CompressedGlyph &shapedTextGlyph = charGlyphs[baseCharIndex];
+      CompressedGlyph& shapedTextGlyph = charGlyphs[baseCharIndex];
       NS_ASSERTION(!shapedTextGlyph.IsSimpleGlyph(),
                    "overwriting a simple glyph");
       shapedTextGlyph.SetComplex(inOrder && shapedTextGlyph.IsClusterStart(),
@@ -556,7 +555,7 @@ nsresult gfxCoreTextShaper::SetGlyphsFromRun(gfxShapedText *aShapedText,
 #define MAX_FEATURES 5  // max used by any of our Get*Descriptor functions
 
 CTFontDescriptorRef gfxCoreTextShaper::CreateFontFeaturesDescriptor(
-    const std::pair<SInt16, SInt16> *aFeatures, size_t aCount) {
+    const std::pair<SInt16, SInt16>* aFeatures, size_t aCount) {
   MOZ_ASSERT(aCount <= MAX_FEATURES);
 
   CFDictionaryRef featureSettings[MAX_FEATURES];
@@ -571,7 +570,7 @@ CTFontDescriptorRef gfxCoreTextShaper::CreateFontFeaturesDescriptor(
                         kCTFontFeatureSelectorIdentifierKey};
     CFTypeRef values[] = {type, selector};
     featureSettings[i] = ::CFDictionaryCreate(
-        kCFAllocatorDefault, (const void **)keys, (const void **)values,
+        kCFAllocatorDefault, (const void**)keys, (const void**)values,
         ArrayLength(keys), &kCFTypeDictionaryKeyCallBacks,
         &kCFTypeDictionaryValueCallBacks);
 
@@ -580,7 +579,7 @@ CTFontDescriptorRef gfxCoreTextShaper::CreateFontFeaturesDescriptor(
   }
 
   CFArrayRef featuresArray =
-      ::CFArrayCreate(kCFAllocatorDefault, (const void **)featureSettings,
+      ::CFArrayCreate(kCFAllocatorDefault, (const void**)featureSettings,
                       aCount,  
                                
                       &kCFTypeArrayCallBacks);
@@ -592,7 +591,7 @@ CTFontDescriptorRef gfxCoreTextShaper::CreateFontFeaturesDescriptor(
   const CFTypeRef attrKeys[] = {kCTFontFeatureSettingsAttribute};
   const CFTypeRef attrValues[] = {featuresArray};
   CFDictionaryRef attributesDict = ::CFDictionaryCreate(
-      kCFAllocatorDefault, (const void **)attrKeys, (const void **)attrValues,
+      kCFAllocatorDefault, (const void**)attrKeys, (const void**)attrValues,
       ArrayLength(attrKeys), &kCFTypeDictionaryKeyCallBacks,
       &kCFTypeDictionaryValueCallBacks);
   ::CFRelease(featuresArray);
@@ -634,9 +633,9 @@ CTFontDescriptorRef gfxCoreTextShaper::GetFeaturesDescriptor(
 
 CTFontRef gfxCoreTextShaper::CreateCTFontWithFeatures(
     CGFloat aSize, CTFontDescriptorRef aDescriptor) {
-  const gfxFontEntry *fe = mFont->GetFontEntry();
+  const gfxFontEntry* fe = mFont->GetFontEntry();
   bool isInstalledFont = !fe->IsUserFont() || fe->IsLocalUserFont();
-  CGFontRef cgFont = static_cast<gfxMacFont *>(mFont)->GetCGFontRef();
+  CGFontRef cgFont = static_cast<gfxMacFont*>(mFont)->GetCGFontRef();
   return gfxMacFont::CreateCTFontFromCGFontWithVariations(
       cgFont, aSize, isInstalledFont, aDescriptor);
 }

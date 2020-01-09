@@ -78,16 +78,16 @@ typedef enum {
   TFO_HTTP  
 } TFOResult;
 
-nsresult AttachTCPFastOpenIOLayer(PRFileDesc *fd);
+nsresult AttachTCPFastOpenIOLayer(PRFileDesc* fd);
 
 
-void TCPFastOpenFinish(PRFileDesc *fd, PRErrorCode &err,
-                       bool &fastOpenNotSupported, uint8_t &tfoStatus);
+void TCPFastOpenFinish(PRFileDesc* fd, PRErrorCode& err,
+                       bool& fastOpenNotSupported, uint8_t& tfoStatus);
 
-int32_t TCPFastOpenGetBufferSizeLeft(PRFileDesc *fd);
+int32_t TCPFastOpenGetBufferSizeLeft(PRFileDesc* fd);
 
-bool TCPFastOpenGetCurrentBufferSize(PRFileDesc *fd);
-bool TCPFastOpenFlushBuffer(PRFileDesc *fd);
+bool TCPFastOpenGetCurrentBufferSize(PRFileDesc* fd);
+bool TCPFastOpenFlushBuffer(PRFileDesc* fd);
 }  
 }  
 

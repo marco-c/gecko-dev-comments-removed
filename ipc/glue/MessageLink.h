@@ -38,34 +38,34 @@ class MessageLink {
  public:
   typedef IPC::Message Message;
 
-  explicit MessageLink(MessageChannel *aChan);
+  explicit MessageLink(MessageChannel* aChan);
   virtual ~MessageLink();
 
   
   
-  virtual void EchoMessage(Message *msg) = 0;
-  virtual void SendMessage(Message *msg) = 0;
+  virtual void EchoMessage(Message* msg) = 0;
+  virtual void SendMessage(Message* msg) = 0;
   virtual void SendClose() = 0;
 
   virtual bool Unsound_IsClosed() const = 0;
   virtual uint32_t Unsound_NumQueuedMessages() const = 0;
 
  protected:
-  MessageChannel *mChan;
+  MessageChannel* mChan;
 };
 
 class ProcessLink : public MessageLink, public Transport::Listener {
   void OnCloseChannel();
   void OnChannelOpened();
   void OnTakeConnectedChannel();
-  void OnEchoMessage(Message *msg);
+  void OnEchoMessage(Message* msg);
 
   void AssertIOThread() const {
     MOZ_ASSERT(mIOLoop == MessageLoop::current(), "not on I/O thread!");
   }
 
  public:
-  explicit ProcessLink(MessageChannel *chan);
+  explicit ProcessLink(MessageChannel* chan);
   virtual ~ProcessLink();
 
   
@@ -75,18 +75,18 @@ class ProcessLink : public MessageLink, public Transport::Listener {
   
   
   
-  void Open(Transport *aTransport, MessageLoop *aIOLoop, Side aSide);
+  void Open(Transport* aTransport, MessageLoop* aIOLoop, Side aSide);
 
   
   
   
   
-  virtual void OnMessageReceived(Message &&msg) override;
+  virtual void OnMessageReceived(Message&& msg) override;
   virtual void OnChannelConnected(int32_t peer_pid) override;
   virtual void OnChannelError() override;
 
-  virtual void EchoMessage(Message *msg) override;
-  virtual void SendMessage(Message *msg) override;
+  virtual void EchoMessage(Message* msg) override;
+  virtual void SendMessage(Message* msg) override;
   virtual void SendClose() override;
 
   virtual bool Unsound_IsClosed() const override;
@@ -96,25 +96,25 @@ class ProcessLink : public MessageLink, public Transport::Listener {
   void OnChannelConnectError();
 
  protected:
-  Transport *mTransport;
-  MessageLoop *mIOLoop;                    
-  Transport::Listener *mExistingListener;  
+  Transport* mTransport;
+  MessageLoop* mIOLoop;                    
+  Transport::Listener* mExistingListener;  
 };
 
 class ThreadLink : public MessageLink {
  public:
-  ThreadLink(MessageChannel *aChan, MessageChannel *aTargetChan);
+  ThreadLink(MessageChannel* aChan, MessageChannel* aTargetChan);
   virtual ~ThreadLink();
 
-  virtual void EchoMessage(Message *msg) override;
-  virtual void SendMessage(Message *msg) override;
+  virtual void EchoMessage(Message* msg) override;
+  virtual void SendMessage(Message* msg) override;
   virtual void SendClose() override;
 
   virtual bool Unsound_IsClosed() const override;
   virtual uint32_t Unsound_NumQueuedMessages() const override;
 
  protected:
-  MessageChannel *mTargetChan;
+  MessageChannel* mTargetChan;
 };
 
 }  

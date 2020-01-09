@@ -10,5 +10,5 @@
 
 
 struct null_deleter {
-  void operator()(void const *) const {}
+  void operator()(void const*) const {}
 };

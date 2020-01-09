@@ -17,7 +17,7 @@ class gfxMathTable {
 
 
 
-  gfxMathTable(hb_face_t *aFace, gfxFloat aSize);
+  gfxMathTable(hb_face_t* aFace, gfxFloat aSize);
 
   
 
@@ -134,7 +134,7 @@ class gfxMathTable {
 
  private:
   
-  hb_font_t *mHBFont;
+  hb_font_t* mHBFont;
 
   static const unsigned int kMaxCachedSizeCount = 10;
   struct MathVariantCacheEntry {

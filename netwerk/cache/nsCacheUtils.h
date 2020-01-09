@@ -18,7 +18,7 @@ class nsIThread;
 
 class nsShutdownThread : public mozilla::Runnable {
  public:
-  explicit nsShutdownThread(nsIThread *aThread);
+  explicit nsShutdownThread(nsIThread* aThread);
   ~nsShutdownThread() = default;
 
   NS_IMETHOD Run() override;
@@ -26,14 +26,14 @@ class nsShutdownThread : public mozilla::Runnable {
   
 
 
-  static nsresult Shutdown(nsIThread *aThread);
+  static nsresult Shutdown(nsIThread* aThread);
 
   
 
 
 
 
-  static nsresult BlockingShutdown(nsIThread *aThread);
+  static nsresult BlockingShutdown(nsIThread* aThread);
 
  private:
   mozilla::Monitor mMonitor;

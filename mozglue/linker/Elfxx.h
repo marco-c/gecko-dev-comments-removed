@@ -199,7 +199,7 @@ struct Ehdr : public Elf_(Ehdr) {
 
 
 
-  static const Ehdr *validate(const void *buf);
+  static const Ehdr* validate(const void* buf);
 };
 
 
@@ -210,7 +210,7 @@ class Strtab : public UnsizedArray<const char> {
   
 
 
-  const char *GetStringAt(off_t index) const {
+  const char* GetStringAt(off_t index) const {
     return &UnsizedArray<const char>::operator[](index);
   }
 };
@@ -223,9 +223,9 @@ struct Rel : public Elf_(Rel) {
 
 
 
-  Addr GetAddend(void *base) const {
-    return *(reinterpret_cast<const Addr *>(
-        reinterpret_cast<const char *>(base) + r_offset));
+  Addr GetAddend(void* base) const {
+    return *(reinterpret_cast<const Addr*>(reinterpret_cast<const char*>(base) +
+                                           r_offset));
   }
 };
 
@@ -236,7 +236,7 @@ struct Rela : public Elf_(Rela) {
   
 
 
-  Addr GetAddend(void *base) const { return r_addend; }
+  Addr GetAddend(void* base) const { return r_addend; }
 };
 
 } 

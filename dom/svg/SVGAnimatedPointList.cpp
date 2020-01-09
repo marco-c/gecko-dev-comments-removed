@@ -18,7 +18,7 @@ using namespace mozilla::dom;
 
 namespace mozilla {
 
-nsresult SVGAnimatedPointList::SetBaseValueString(const nsAString &aValue) {
+nsresult SVGAnimatedPointList::SetBaseValueString(const nsAString& aValue) {
   SVGPointList newBaseValue;
 
   
@@ -33,13 +33,13 @@ nsresult SVGAnimatedPointList::SetBaseValueString(const nsAString &aValue) {
   
   
 
-  DOMSVGPointList *baseValWrapper =
+  DOMSVGPointList* baseValWrapper =
       DOMSVGPointList::GetDOMWrapperIfExists(GetBaseValKey());
   if (baseValWrapper) {
     baseValWrapper->InternalListWillChangeTo(newBaseValue);
   }
 
-  DOMSVGPointList *animValWrapper = nullptr;
+  DOMSVGPointList* animValWrapper = nullptr;
   if (!IsAnimating()) {  
     animValWrapper = DOMSVGPointList::GetDOMWrapperIfExists(GetAnimValKey());
     if (animValWrapper) {
@@ -71,14 +71,14 @@ nsresult SVGAnimatedPointList::SetBaseValueString(const nsAString &aValue) {
 void SVGAnimatedPointList::ClearBaseValue() {
   
 
-  DOMSVGPointList *baseValWrapper =
+  DOMSVGPointList* baseValWrapper =
       DOMSVGPointList::GetDOMWrapperIfExists(GetBaseValKey());
   if (baseValWrapper) {
     baseValWrapper->InternalListWillChangeTo(SVGPointList());
   }
 
   if (!IsAnimating()) {  
-    DOMSVGPointList *animValWrapper =
+    DOMSVGPointList* animValWrapper =
         DOMSVGPointList::GetDOMWrapperIfExists(GetAnimValKey());
     if (animValWrapper) {
       animValWrapper->InternalListWillChangeTo(SVGPointList());
@@ -89,8 +89,8 @@ void SVGAnimatedPointList::ClearBaseValue() {
   
 }
 
-nsresult SVGAnimatedPointList::SetAnimValue(const SVGPointList &aNewAnimValue,
-                                            SVGElement *aElement) {
+nsresult SVGAnimatedPointList::SetAnimValue(const SVGPointList& aNewAnimValue,
+                                            SVGElement* aElement) {
   
   
   
@@ -106,7 +106,7 @@ nsresult SVGAnimatedPointList::SetAnimValue(const SVGPointList &aNewAnimValue,
 
   
 
-  DOMSVGPointList *domWrapper =
+  DOMSVGPointList* domWrapper =
       DOMSVGPointList::GetDOMWrapperIfExists(GetAnimValKey());
   if (domWrapper) {
     domWrapper->InternalListWillChangeTo(aNewAnimValue);
@@ -125,10 +125,10 @@ nsresult SVGAnimatedPointList::SetAnimValue(const SVGPointList &aNewAnimValue,
   return NS_OK;
 }
 
-void SVGAnimatedPointList::ClearAnimValue(SVGElement *aElement) {
+void SVGAnimatedPointList::ClearAnimValue(SVGElement* aElement) {
   
 
-  DOMSVGPointList *domWrapper =
+  DOMSVGPointList* domWrapper =
       DOMSVGPointList::GetDOMWrapperIfExists(GetAnimValKey());
   if (domWrapper) {
     
@@ -140,15 +140,15 @@ void SVGAnimatedPointList::ClearAnimValue(SVGElement *aElement) {
   aElement->DidAnimatePointList();
 }
 
-UniquePtr<SMILAttr> SVGAnimatedPointList::ToSMILAttr(SVGElement *aElement) {
+UniquePtr<SMILAttr> SVGAnimatedPointList::ToSMILAttr(SVGElement* aElement) {
   return MakeUnique<SMILAnimatedPointList>(this, aElement);
 }
 
 nsresult SVGAnimatedPointList::SMILAnimatedPointList::ValueFromString(
-    const nsAString &aStr, const dom::SVGAnimationElement * ,
-    SMILValue &aValue, bool &aPreventCachingOfSandwich) const {
+    const nsAString& aStr, const dom::SVGAnimationElement* ,
+    SMILValue& aValue, bool& aPreventCachingOfSandwich) const {
   SMILValue val(&SVGPointListSMILType::sSingleton);
-  SVGPointListAndInfo *list = static_cast<SVGPointListAndInfo *>(val.mU.mPtr);
+  SVGPointListAndInfo* list = static_cast<SVGPointListAndInfo*>(val.mU.mPtr);
   nsresult rv = list->SetValueFromString(aStr);
   if (NS_SUCCEEDED(rv)) {
     list->SetInfo(mElement);
@@ -165,7 +165,7 @@ SMILValue SVGAnimatedPointList::SMILAnimatedPointList::GetBaseValue() const {
   SMILValue val;
 
   SMILValue tmp(&SVGPointListSMILType::sSingleton);
-  SVGPointListAndInfo *list = static_cast<SVGPointListAndInfo *>(tmp.mU.mPtr);
+  SVGPointListAndInfo* list = static_cast<SVGPointListAndInfo*>(tmp.mU.mPtr);
   nsresult rv = list->CopyFrom(mVal->mBaseVal);
   if (NS_SUCCEEDED(rv)) {
     list->SetInfo(mElement);
@@ -175,11 +175,11 @@ SMILValue SVGAnimatedPointList::SMILAnimatedPointList::GetBaseValue() const {
 }
 
 nsresult SVGAnimatedPointList::SMILAnimatedPointList::SetAnimValue(
-    const SMILValue &aValue) {
+    const SMILValue& aValue) {
   NS_ASSERTION(aValue.mType == &SVGPointListSMILType::sSingleton,
                "Unexpected type to assign animated value");
   if (aValue.mType == &SVGPointListSMILType::sSingleton) {
-    mVal->SetAnimValue(*static_cast<SVGPointListAndInfo *>(aValue.mU.mPtr),
+    mVal->SetAnimValue(*static_cast<SVGPointListAndInfo*>(aValue.mU.mPtr),
                        mElement);
   }
   return NS_OK;

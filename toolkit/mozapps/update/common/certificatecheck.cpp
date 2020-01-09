@@ -22,7 +22,7 @@ static const int ENCODING = X509_ASN_ENCODING | PKCS_7_ASN_ENCODING;
 
 
 DWORD
-CheckCertificateForPEFile(LPCWSTR filePath, CertificateCheckInfo &infoToMatch) {
+CheckCertificateForPEFile(LPCWSTR filePath, CertificateCheckInfo& infoToMatch) {
   HCERTSTORE certStore = nullptr;
   HCRYPTMSG cryptMsg = nullptr;
   PCCERT_CONTEXT certContext = nullptr;
@@ -112,7 +112,7 @@ cleanup:
 
 
 BOOL DoCertificateAttributesMatch(PCCERT_CONTEXT certContext,
-                                  CertificateCheckInfo &infoToMatch) {
+                                  CertificateCheckInfo& infoToMatch) {
   DWORD dwData;
   LPWSTR szName = nullptr;
 

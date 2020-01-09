@@ -31,7 +31,7 @@ class AxisPhysicsModel {
 
 
 
-  void Simulate(const TimeDuration &aDeltaTime);
+  void Simulate(const TimeDuration& aDeltaTime);
 
   
 
@@ -72,7 +72,7 @@ class AxisPhysicsModel {
 
 
 
-  virtual double Acceleration(const State &aState) = 0;
+  virtual double Acceleration(const State& aState) = 0;
 
  private:
   
@@ -108,8 +108,8 @@ class AxisPhysicsModel {
 
 
 
-  Derivative Evaluate(const State &aInitState, double aDeltaTime,
-                      const Derivative &aDerivative);
+  Derivative Evaluate(const State& aInitState, double aDeltaTime,
+                      const Derivative& aDerivative);
 
   
 

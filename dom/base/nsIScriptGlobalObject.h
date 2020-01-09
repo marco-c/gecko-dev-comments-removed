@@ -26,9 +26,9 @@ struct ErrorEventInit;
 
 
 
-bool NS_HandleScriptError(nsIScriptGlobalObject *aScriptGlobal,
-                          const mozilla::dom::ErrorEventInit &aErrorEvent,
-                          nsEventStatus *aStatus);
+bool NS_HandleScriptError(nsIScriptGlobalObject* aScriptGlobal,
+                          const mozilla::dom::ErrorEventInit& aErrorEvent,
+                          nsEventStatus* aStatus);
 
 
 #define NS_ISCRIPTGLOBALOBJECT_IID                   \
@@ -62,15 +62,15 @@ class nsIScriptGlobalObject : public nsIGlobalObject {
   
 
 
-  virtual nsIScriptContext *GetScriptContext() = 0;
+  virtual nsIScriptContext* GetScriptContext() = 0;
 
-  nsIScriptContext *GetContext() { return GetScriptContext(); }
+  nsIScriptContext* GetContext() { return GetScriptContext(); }
 
   
 
 
-  bool HandleScriptError(const mozilla::dom::ErrorEventInit &aErrorEventInit,
-                         nsEventStatus *aEventStatus) {
+  bool HandleScriptError(const mozilla::dom::ErrorEventInit& aErrorEventInit,
+                         nsEventStatus* aEventStatus) {
     return NS_HandleScriptError(this, aErrorEventInit, aEventStatus);
   }
 

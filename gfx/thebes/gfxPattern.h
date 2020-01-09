@@ -21,23 +21,23 @@ class gfxPattern final {
   NS_INLINE_DECL_REFCOUNTING(gfxPattern)
 
  public:
-  explicit gfxPattern(const mozilla::gfx::Color &aColor);
+  explicit gfxPattern(const mozilla::gfx::Color& aColor);
   
   gfxPattern(gfxFloat x0, gfxFloat y0, gfxFloat x1, gfxFloat y1);  
   gfxPattern(gfxFloat cx0, gfxFloat cy0, gfxFloat radius0, gfxFloat cx1,
              gfxFloat cy1, gfxFloat radius1);  
-  gfxPattern(mozilla::gfx::SourceSurface *aSurface,
-             const mozilla::gfx::Matrix &aPatternToUserSpace);
+  gfxPattern(mozilla::gfx::SourceSurface* aSurface,
+             const mozilla::gfx::Matrix& aPatternToUserSpace);
 
-  void AddColorStop(gfxFloat offset, const mozilla::gfx::Color &c);
-  void SetColorStops(mozilla::gfx::GradientStops *aStops);
+  void AddColorStop(gfxFloat offset, const mozilla::gfx::Color& c);
+  void SetColorStops(mozilla::gfx::GradientStops* aStops);
 
   
   
   
-  void CacheColorStops(const mozilla::gfx::DrawTarget *aDT);
+  void CacheColorStops(const mozilla::gfx::DrawTarget* aDT);
 
-  void SetMatrix(const gfxMatrix &matrix);
+  void SetMatrix(const gfxMatrix& matrix);
   gfxMatrix GetMatrix() const;
   gfxMatrix GetInverseMatrix() const;
 
@@ -46,9 +46,9 @@ class gfxPattern final {
 
 
 
-  mozilla::gfx::Pattern *GetPattern(
-      const mozilla::gfx::DrawTarget *aTarget,
-      const mozilla::gfx::Matrix *aOriginalUserToDevice = nullptr);
+  mozilla::gfx::Pattern* GetPattern(
+      const mozilla::gfx::DrawTarget* aTarget,
+      const mozilla::gfx::Matrix* aOriginalUserToDevice = nullptr);
   bool IsOpaque();
 
   
@@ -58,7 +58,7 @@ class gfxPattern final {
   mozilla::gfx::SamplingFilter SamplingFilter() const;
 
   
-  bool GetSolidColor(mozilla::gfx::Color &aColorOut);
+  bool GetSolidColor(mozilla::gfx::Color& aColorOut);
 
  private:
   

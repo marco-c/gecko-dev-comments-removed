@@ -16,20 +16,20 @@ namespace a11y {
 class ia2AccessibleValue : public IAccessibleValue {
  public:
   
-  STDMETHODIMP QueryInterface(REFIID, void **);
+  STDMETHODIMP QueryInterface(REFIID, void**);
 
   
   virtual  HRESULT STDMETHODCALLTYPE get_currentValue(
-       VARIANT *currentValue);
+       VARIANT* currentValue);
 
   virtual HRESULT STDMETHODCALLTYPE setCurrentValue(
        VARIANT value);
 
   virtual  HRESULT STDMETHODCALLTYPE get_maximumValue(
-       VARIANT *maximumValue);
+       VARIANT* maximumValue);
 
   virtual  HRESULT STDMETHODCALLTYPE get_minimumValue(
-       VARIANT *minimumValue);
+       VARIANT* minimumValue);
 };
 
 }  

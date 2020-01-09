@@ -81,33 +81,33 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   
   
   MOZ_MUST_USE nsresult
-  Init(uint32_t caps, nsHttpConnectionInfo *connInfo,
-       nsHttpRequestHead *reqHeaders, nsIInputStream *reqBody,
+  Init(uint32_t caps, nsHttpConnectionInfo* connInfo,
+       nsHttpRequestHead* reqHeaders, nsIInputStream* reqBody,
        uint64_t reqContentLength, bool reqBodyIncludesHeaders,
-       nsIEventTarget *consumerTarget, nsIInterfaceRequestor *callbacks,
-       nsITransportEventSink *eventsink, uint64_t topLevelOuterContentWindowId,
-       HttpTrafficCategory trafficCategory, nsIAsyncInputStream **responseBody);
+       nsIEventTarget* consumerTarget, nsIInterfaceRequestor* callbacks,
+       nsITransportEventSink* eventsink, uint64_t topLevelOuterContentWindowId,
+       HttpTrafficCategory trafficCategory, nsIAsyncInputStream** responseBody);
 
   void OnActivated() override;
 
   
-  nsHttpResponseHead *ResponseHead() {
+  nsHttpResponseHead* ResponseHead() {
     return mHaveAllHeaders ? mResponseHead : nullptr;
   }
-  nsISupports *SecurityInfo() { return mSecurityInfo; }
+  nsISupports* SecurityInfo() { return mSecurityInfo; }
 
-  nsIEventTarget *ConsumerTarget() { return mConsumerTarget; }
-  nsISupports *HttpChannel() { return mChannel; }
+  nsIEventTarget* ConsumerTarget() { return mConsumerTarget; }
+  nsISupports* HttpChannel() { return mChannel; }
 
-  void SetSecurityCallbacks(nsIInterfaceRequestor *aCallbacks);
-
-  
-  
-  nsHttpResponseHead *TakeResponseHead();
+  void SetSecurityCallbacks(nsIInterfaceRequestor* aCallbacks);
 
   
   
-  nsHttpHeaderArray *TakeResponseTrailers();
+  nsHttpResponseHead* TakeResponseHead();
+
+  
+  
+  nsHttpHeaderArray* TakeResponseTrailers();
 
   void SetH2WSConnRefTaken();
 
@@ -124,7 +124,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   void SetPriority(int32_t priority) { mPriority = priority; }
   int32_t Priority() { return mPriority; }
 
-  void PrintDiagnostics(nsCString &log);
+  void PrintDiagnostics(nsCString& log);
 
   
   
@@ -134,22 +134,22 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   const TimeStamp GetPendingTime() { return mPendingTime; }
 
   
-  nsIRequestContext *RequestContext() override { return mRequestContext.get(); }
-  void SetRequestContext(nsIRequestContext *aRequestContext);
+  nsIRequestContext* RequestContext() override { return mRequestContext.get(); }
+  void SetRequestContext(nsIRequestContext* aRequestContext);
   void DispatchedAsBlocking();
   void RemoveDispatchedAsBlocking();
 
   void DisableSpdy() override;
 
-  nsHttpTransaction *QueryHttpTransaction() override { return this; }
+  nsHttpTransaction* QueryHttpTransaction() override { return this; }
 
-  Http2PushedStream *GetPushedStream() { return mPushedStream; }
-  Http2PushedStream *TakePushedStream() {
-    Http2PushedStream *r = mPushedStream;
+  Http2PushedStream* GetPushedStream() { return mPushedStream; }
+  Http2PushedStream* TakePushedStream() {
+    Http2PushedStream* r = mPushedStream;
     mPushedStream = nullptr;
     return r;
   }
-  void SetPushedStream(Http2PushedStream *push) { mPushedStream = push; }
+  void SetPushedStream(Http2PushedStream* push) { mPushedStream = push; }
   uint32_t InitialRwin() const { return mInitialRwin; };
   bool ChannelPipeFull() { return mWaitingOnPipeOut; }
 
@@ -196,34 +196,33 @@ class nsHttpTransaction final : public nsAHttpTransaction,
 
   void SetFastOpenStatus(uint8_t aStatus) override;
 
-  void SetHttpTrailers(nsCString &aTrailers);
+  void SetHttpTrailers(nsCString& aTrailers);
 
   bool IsWebsocketUpgrade();
-  void SetH2WSTransaction(SpdyConnectTransaction *);
+  void SetH2WSTransaction(SpdyConnectTransaction*);
 
  private:
   friend class DeleteHttpTransaction;
   virtual ~nsHttpTransaction();
 
   MOZ_MUST_USE nsresult Restart();
-  char *LocateHttpStart(char *buf, uint32_t len, bool aAllowPartialMatch);
-  MOZ_MUST_USE nsresult ParseLine(nsACString &line);
-  MOZ_MUST_USE nsresult ParseLineSegment(char *seg, uint32_t len);
-  MOZ_MUST_USE nsresult ParseHead(char *, uint32_t count, uint32_t *countRead);
+  char* LocateHttpStart(char* buf, uint32_t len, bool aAllowPartialMatch);
+  MOZ_MUST_USE nsresult ParseLine(nsACString& line);
+  MOZ_MUST_USE nsresult ParseLineSegment(char* seg, uint32_t len);
+  MOZ_MUST_USE nsresult ParseHead(char*, uint32_t count, uint32_t* countRead);
   MOZ_MUST_USE nsresult HandleContentStart();
-  MOZ_MUST_USE nsresult HandleContent(char *, uint32_t count,
-                                      uint32_t *contentRead,
-                                      uint32_t *contentRemaining);
-  MOZ_MUST_USE nsresult ProcessData(char *, uint32_t, uint32_t *);
+  MOZ_MUST_USE nsresult HandleContent(char*, uint32_t count,
+                                      uint32_t* contentRead,
+                                      uint32_t* contentRemaining);
+  MOZ_MUST_USE nsresult ProcessData(char*, uint32_t, uint32_t*);
   void DeleteSelfOnConsumerThread();
   void ReleaseBlockingTransaction();
 
-  static MOZ_MUST_USE nsresult ReadRequestSegment(nsIInputStream *, void *,
-                                                  const char *, uint32_t,
-                                                  uint32_t, uint32_t *);
-  static MOZ_MUST_USE nsresult WritePipeSegment(nsIOutputStream *, void *,
-                                                char *, uint32_t, uint32_t,
-                                                uint32_t *);
+  static MOZ_MUST_USE nsresult ReadRequestSegment(nsIInputStream*, void*,
+                                                  const char*, uint32_t,
+                                                  uint32_t, uint32_t*);
+  static MOZ_MUST_USE nsresult WritePipeSegment(nsIOutputStream*, void*, char*,
+                                                uint32_t, uint32_t, uint32_t*);
 
   bool TimingEnabled() const { return mCaps & NS_HTTP_TIMING_ENABLED; }
 
@@ -239,7 +238,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   
   
   void CheckForStickyAuthScheme();
-  void CheckForStickyAuthSchemeAt(nsHttpAtom const &header);
+  void CheckForStickyAuthSchemeAt(nsHttpAtom const& header);
 
   
   
@@ -249,8 +248,8 @@ class nsHttpTransaction final : public nsAHttpTransaction,
  private:
   class UpdateSecurityCallbacks : public Runnable {
    public:
-    UpdateSecurityCallbacks(nsHttpTransaction *aTrans,
-                            nsIInterfaceRequestor *aCallbacks)
+    UpdateSecurityCallbacks(nsHttpTransaction* aTrans,
+                            nsIInterfaceRequestor* aCallbacks)
         : Runnable("net::nsHttpTransaction::UpdateSecurityCallbacks"),
           mTrans(aTrans),
           mCallbacks(aCallbacks) {}
@@ -285,11 +284,11 @@ class nsHttpTransaction final : public nsAHttpTransaction,
 
   RefPtr<nsAHttpConnection> mConnection;
   RefPtr<nsHttpConnectionInfo> mConnInfo;
-  nsHttpRequestHead *mRequestHead;    
-  nsHttpResponseHead *mResponseHead;  
+  nsHttpRequestHead* mRequestHead;    
+  nsHttpResponseHead* mResponseHead;  
 
-  nsAHttpSegmentReader *mReader;
-  nsAHttpSegmentWriter *mWriter;
+  nsAHttpSegmentReader* mReader;
+  nsAHttpSegmentWriter* mWriter;
 
   nsCString mLineBuf;  
 
@@ -304,10 +303,10 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   
   uint32_t mInvalidResponseBytesRead;
 
-  Http2PushedStream *mPushedStream;
+  Http2PushedStream* mPushedStream;
   uint32_t mInitialRwin;
 
-  nsHttpChunkedDecoder *mChunkedDecoder;
+  nsHttpChunkedDecoder* mChunkedDecoder;
 
   TimingStruct mTimings;
 
@@ -447,15 +446,15 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   
   
 
-  void SetTunnelProvider(ASpdySession *provider) { mTunnelProvider = provider; }
-  ASpdySession *TunnelProvider() { return mTunnelProvider; }
-  nsIInterfaceRequestor *SecurityCallbacks() { return mCallbacks; }
+  void SetTunnelProvider(ASpdySession* provider) { mTunnelProvider = provider; }
+  ASpdySession* TunnelProvider() { return mTunnelProvider; }
+  nsIInterfaceRequestor* SecurityCallbacks() { return mCallbacks; }
 
  private:
   RefPtr<ASpdySession> mTunnelProvider;
 
  public:
-  void SetTransactionObserver(TransactionObserver *arg) {
+  void SetTransactionObserver(TransactionObserver* arg) {
     mTransactionObserver = arg;
   }
 
@@ -463,7 +462,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   RefPtr<TransactionObserver> mTransactionObserver;
 
  public:
-  void GetNetworkAddresses(NetAddr &self, NetAddr &peer);
+  void GetNetworkAddresses(NetAddr& self, NetAddr& peer);
 
  private:
   NetAddr mSelfAddr;

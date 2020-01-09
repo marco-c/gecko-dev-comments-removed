@@ -10,7 +10,7 @@
 
 using namespace std;
 
-int TestBase::RunTests(int *aFailures) {
+int TestBase::RunTests(int* aFailures) {
   int testsRun = 0;
   *aFailures = 0;
 
@@ -26,7 +26,7 @@ int TestBase::RunTests(int *aFailures) {
     
     
     
-    ((*reinterpret_cast<TestBase *>((mTests[i].implPointer))).*
+    ((*reinterpret_cast<TestBase*>((mTests[i].implPointer))).*
      (mTests[i].funcCall))();
 
     if (!mTestFailed) {

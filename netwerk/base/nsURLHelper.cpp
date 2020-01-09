@@ -30,9 +30,9 @@ using namespace mozilla;
 
 
 static bool gInitialized = false;
-static nsIURLParser *gNoAuthURLParser = nullptr;
-static nsIURLParser *gAuthURLParser = nullptr;
-static nsIURLParser *gStdURLParser = nullptr;
+static nsIURLParser* gNoAuthURLParser = nullptr;
+static nsIURLParser* gAuthURLParser = nullptr;
+static nsIURLParser* gStdURLParser = nullptr;
 static int32_t gMaxLength = 1048576;  
 
 static void InitGlobals() {
@@ -79,17 +79,17 @@ int32_t net_GetURLMaxLength() { return gMaxLength; }
 
 
 
-nsIURLParser *net_GetAuthURLParser() {
+nsIURLParser* net_GetAuthURLParser() {
   if (!gInitialized) InitGlobals();
   return gAuthURLParser;
 }
 
-nsIURLParser *net_GetNoAuthURLParser() {
+nsIURLParser* net_GetNoAuthURLParser() {
   if (!gInitialized) InitGlobals();
   return gNoAuthURLParser;
 }
 
-nsIURLParser *net_GetStdURLParser() {
+nsIURLParser* net_GetStdURLParser() {
   if (!gInitialized) InitGlobals();
   return gStdURLParser;
 }
@@ -97,7 +97,7 @@ nsIURLParser *net_GetStdURLParser() {
 
 
 
-nsresult net_GetURLSpecFromDir(nsIFile *aFile, nsACString &result) {
+nsresult net_GetURLSpecFromDir(nsIFile* aFile, nsACString& result) {
   nsAutoCString escPath;
   nsresult rv = net_GetURLSpecFromActualFile(aFile, escPath);
   if (NS_FAILED(rv)) return rv;
@@ -110,7 +110,7 @@ nsresult net_GetURLSpecFromDir(nsIFile *aFile, nsACString &result) {
   return NS_OK;
 }
 
-nsresult net_GetURLSpecFromFile(nsIFile *aFile, nsACString &result) {
+nsresult net_GetURLSpecFromFile(nsIFile* aFile, nsACString& result) {
   nsAutoCString escPath;
   nsresult rv = net_GetURLSpecFromActualFile(aFile, escPath);
   if (NS_FAILED(rv)) return rv;
@@ -134,9 +134,9 @@ nsresult net_GetURLSpecFromFile(nsIFile *aFile, nsACString &result) {
 
 
 
-nsresult net_ParseFileURL(const nsACString &inURL, nsACString &outDirectory,
-                          nsACString &outFileBaseName,
-                          nsACString &outFileExtension) {
+nsresult net_ParseFileURL(const nsACString& inURL, nsACString& outDirectory,
+                          nsACString& outFileBaseName,
+                          nsACString& outFileExtension) {
   nsresult rv;
 
   if (inURL.Length() > (uint32_t)gMaxLength) {
@@ -147,8 +147,8 @@ nsresult net_ParseFileURL(const nsACString &inURL, nsACString &outDirectory,
   outFileBaseName.Truncate();
   outFileExtension.Truncate();
 
-  const nsPromiseFlatCString &flatURL = PromiseFlatCString(inURL);
-  const char *url = flatURL.get();
+  const nsPromiseFlatCString& flatURL = PromiseFlatCString(inURL);
+  const char* url = flatURL.get();
 
   nsAutoCString scheme;
   rv = net_ExtractURLScheme(flatURL, scheme);
@@ -159,7 +159,7 @@ nsresult net_ParseFileURL(const nsACString &inURL, nsACString &outDirectory,
     return NS_ERROR_UNEXPECTED;
   }
 
-  nsIURLParser *parser = net_GetNoAuthURLParser();
+  nsIURLParser* parser = net_GetNoAuthURLParser();
   NS_ENSURE_TRUE(parser, NS_ERROR_UNEXPECTED);
 
   uint32_t pathPos, filepathPos, directoryPos, basenamePos, extensionPos;
@@ -205,16 +205,16 @@ nsresult net_ParseFileURL(const nsACString &inURL, nsACString &outDirectory,
 
 
 
-void net_CoalesceDirs(netCoalesceFlags flags, char *path) {
+void net_CoalesceDirs(netCoalesceFlags flags, char* path) {
   
 
 
 
 
 
-  char *fwdPtr = path;
-  char *urlPtr = path;
-  char *lastslash = path;
+  char* fwdPtr = path;
+  char* urlPtr = path;
+  char* lastslash = path;
   uint32_t traversal = 0;
   uint32_t special_ftp_len = 0;
 
@@ -346,9 +346,9 @@ void net_CoalesceDirs(netCoalesceFlags flags, char *path) {
   *urlPtr = '\0';  
 }
 
-nsresult net_ResolveRelativePath(const nsACString &relativePath,
-                                 const nsACString &basePath,
-                                 nsACString &result) {
+nsresult net_ResolveRelativePath(const nsACString& relativePath,
+                                 const nsACString& basePath,
+                                 nsACString& result) {
   nsAutoCString name;
   nsAutoCString path(basePath);
   bool needsDelim = false;
@@ -423,7 +423,7 @@ static bool net_IsValidSchemeChar(const char aChar) {
 }
 
 
-nsresult net_ExtractURLScheme(const nsACString &inURI, nsACString &scheme) {
+nsresult net_ExtractURLScheme(const nsACString& inURI, nsACString& scheme) {
   nsACString::const_iterator start, end;
   inURI.BeginReading(start);
   inURI.EndReading(end);
@@ -457,7 +457,7 @@ nsresult net_ExtractURLScheme(const nsACString &inURI, nsACString &scheme) {
   return NS_OK;
 }
 
-bool net_IsValidScheme(const char *scheme, uint32_t schemeLen) {
+bool net_IsValidScheme(const char* scheme, uint32_t schemeLen) {
   
   if (!IsAsciiAlpha(*scheme)) return false;
 
@@ -471,7 +471,7 @@ bool net_IsValidScheme(const char *scheme, uint32_t schemeLen) {
   return true;
 }
 
-bool net_IsAbsoluteURL(const nsACString &uri) {
+bool net_IsAbsoluteURL(const nsACString& uri) {
   nsACString::const_iterator start, end;
   uri.BeginReading(start);
   uri.EndReading(end);
@@ -511,7 +511,7 @@ bool net_IsAbsoluteURL(const nsACString &uri) {
   return false;
 }
 
-void net_FilterURIString(const nsACString &input, nsACString &result) {
+void net_FilterURIString(const nsACString& input, nsACString& result) {
   result.Truncate();
 
   auto start = input.BeginReading();
@@ -528,7 +528,7 @@ void net_FilterURIString(const nsACString &input, nsACString &result) {
 
   
   bool needsStrip = false;
-  const ASCIIMaskArray &mask = ASCIIMask::MaskCRLFTab();
+  const ASCIIMaskArray& mask = ASCIIMask::MaskCRLFTab();
   for (auto itr = start; itr != end; ++itr) {
     if (ASCIIMask::IsMasked(mask, *itr)) {
       needsStrip = true;
@@ -549,8 +549,8 @@ void net_FilterURIString(const nsACString &input, nsACString &result) {
   }
 }
 
-nsresult net_FilterAndEscapeURI(const nsACString &aInput, uint32_t aFlags,
-                                nsACString &aResult) {
+nsresult net_FilterAndEscapeURI(const nsACString& aInput, uint32_t aFlags,
+                                nsACString& aResult) {
   aResult.Truncate();
 
   auto start = aInput.BeginReading();
@@ -565,13 +565,13 @@ nsresult net_FilterAndEscapeURI(const nsACString &aInput, uint32_t aFlags,
                    charFilter)
           .base();
 
-  const ASCIIMaskArray &mask = ASCIIMask::MaskCRLFTab();
+  const ASCIIMaskArray& mask = ASCIIMask::MaskCRLFTab();
   return NS_EscapeAndFilterURL(Substring(newStart, newEnd), aFlags, &mask,
                                aResult, fallible);
 }
 
 #if defined(XP_WIN)
-bool net_NormalizeFileURL(const nsACString &aURL, nsCString &aResultBuf) {
+bool net_NormalizeFileURL(const nsACString& aURL, nsCString& aResultBuf) {
   bool writing = false;
 
   nsACString::const_iterator beginIter, endIter;
@@ -598,60 +598,60 @@ bool net_NormalizeFileURL(const nsACString &aURL, nsCString &aResultBuf) {
 
 
 
-static inline void ToLower(char &c) {
+static inline void ToLower(char& c) {
   if ((unsigned)(c - 'A') <= (unsigned)('Z' - 'A')) c += 'a' - 'A';
 }
 
-void net_ToLowerCase(char *str, uint32_t length) {
-  for (char *end = str + length; str < end; ++str) ToLower(*str);
+void net_ToLowerCase(char* str, uint32_t length) {
+  for (char* end = str + length; str < end; ++str) ToLower(*str);
 }
 
-void net_ToLowerCase(char *str) {
+void net_ToLowerCase(char* str) {
   for (; *str; ++str) ToLower(*str);
 }
 
-char *net_FindCharInSet(const char *iter, const char *stop, const char *set) {
+char* net_FindCharInSet(const char* iter, const char* stop, const char* set) {
   for (; iter != stop && *iter; ++iter) {
-    for (const char *s = set; *s; ++s) {
-      if (*iter == *s) return (char *)iter;
+    for (const char* s = set; *s; ++s) {
+      if (*iter == *s) return (char*)iter;
     }
   }
-  return (char *)iter;
+  return (char*)iter;
 }
 
-char *net_FindCharNotInSet(const char *iter, const char *stop,
-                           const char *set) {
+char* net_FindCharNotInSet(const char* iter, const char* stop,
+                           const char* set) {
 repeat:
-  for (const char *s = set; *s; ++s) {
+  for (const char* s = set; *s; ++s) {
     if (*iter == *s) {
       if (++iter == stop) break;
       goto repeat;
     }
   }
-  return (char *)iter;
+  return (char*)iter;
 }
 
-char *net_RFindCharNotInSet(const char *stop, const char *iter,
-                            const char *set) {
+char* net_RFindCharNotInSet(const char* stop, const char* iter,
+                            const char* set) {
   --iter;
   --stop;
 
-  if (iter == stop) return (char *)iter;
+  if (iter == stop) return (char*)iter;
 
 repeat:
-  for (const char *s = set; *s; ++s) {
+  for (const char* s = set; *s; ++s) {
     if (*iter == *s) {
       if (--iter == stop) break;
       goto repeat;
     }
   }
-  return (char *)iter;
+  return (char*)iter;
 }
 
 #define HTTP_LWS " \t"
 
 
-static uint32_t net_FindStringEnd(const nsCString &flatStr,
+static uint32_t net_FindStringEnd(const nsCString& flatStr,
                                   uint32_t stringStart, char stringDelim) {
   NS_ASSERTION(stringStart < flatStr.Length() &&
                    flatStr.CharAt(stringStart) == stringDelim &&
@@ -686,7 +686,7 @@ static uint32_t net_FindStringEnd(const nsCString &flatStr,
   return flatStr.Length();
 }
 
-static uint32_t net_FindMediaDelimiter(const nsCString &flatStr,
+static uint32_t net_FindMediaDelimiter(const nsCString& flatStr,
                                        uint32_t searchStart, char delimiter) {
   do {
     
@@ -718,23 +718,23 @@ static uint32_t net_FindMediaDelimiter(const nsCString &flatStr,
 
 
 
-static void net_ParseMediaType(const nsACString &aMediaTypeStr,
-                               nsACString &aContentType,
-                               nsACString &aContentCharset, int32_t aOffset,
-                               bool *aHadCharset, int32_t *aCharsetStart,
-                               int32_t *aCharsetEnd, bool aStrict) {
-  const nsCString &flatStr = PromiseFlatCString(aMediaTypeStr);
-  const char *start = flatStr.get();
-  const char *end = start + flatStr.Length();
+static void net_ParseMediaType(const nsACString& aMediaTypeStr,
+                               nsACString& aContentType,
+                               nsACString& aContentCharset, int32_t aOffset,
+                               bool* aHadCharset, int32_t* aCharsetStart,
+                               int32_t* aCharsetEnd, bool aStrict) {
+  const nsCString& flatStr = PromiseFlatCString(aMediaTypeStr);
+  const char* start = flatStr.get();
+  const char* end = start + flatStr.Length();
 
   
   
   
-  const char *type = net_FindCharNotInSet(start, end, HTTP_LWS);
-  const char *typeEnd = net_FindCharInSet(type, end, HTTP_LWS ";(");
+  const char* type = net_FindCharNotInSet(start, end, HTTP_LWS);
+  const char* typeEnd = net_FindCharInSet(type, end, HTTP_LWS ";(");
 
-  const char *charset = "";
-  const char *charsetEnd = charset;
+  const char* charset = "";
+  const char* charsetEnd = charset;
   int32_t charsetParamStart = 0;
   int32_t charsetParamEnd = 0;
 
@@ -750,7 +750,7 @@ static void net_ParseMediaType(const nsACString &aMediaTypeStr,
       uint32_t curParamEnd =
           net_FindMediaDelimiter(flatStr, curParamStart, ';');
 
-      const char *paramName = net_FindCharNotInSet(
+      const char* paramName = net_FindCharNotInSet(
           start + curParamStart, start + curParamEnd, HTTP_LWS);
       static const char charsetStr[] = "charset=";
       if (PL_strncasecmp(paramName, charsetStr, sizeof(charsetStr) - 1) == 0) {
@@ -809,7 +809,7 @@ static void net_ParseMediaType(const nsACString &aMediaTypeStr,
         
         
         aContentCharset.Truncate();
-        for (const char *c = charset; c != charsetEnd; c++) {
+        for (const char* c = charset; c != charsetEnd; c++) {
           if (*c == '\\' && c + 1 != charsetEnd) {
             
             c++;
@@ -839,18 +839,18 @@ static void net_ParseMediaType(const nsACString &aMediaTypeStr,
 
 #undef HTTP_LWS
 
-void net_ParseContentType(const nsACString &aHeaderStr,
-                          nsACString &aContentType, nsACString &aContentCharset,
-                          bool *aHadCharset) {
+void net_ParseContentType(const nsACString& aHeaderStr,
+                          nsACString& aContentType, nsACString& aContentCharset,
+                          bool* aHadCharset) {
   int32_t dummy1, dummy2;
   net_ParseContentType(aHeaderStr, aContentType, aContentCharset, aHadCharset,
                        &dummy1, &dummy2);
 }
 
-void net_ParseContentType(const nsACString &aHeaderStr,
-                          nsACString &aContentType, nsACString &aContentCharset,
-                          bool *aHadCharset, int32_t *aCharsetStart,
-                          int32_t *aCharsetEnd) {
+void net_ParseContentType(const nsACString& aHeaderStr,
+                          nsACString& aContentType, nsACString& aContentCharset,
+                          bool* aHadCharset, int32_t* aCharsetStart,
+                          int32_t* aCharsetEnd) {
   
   
   
@@ -875,7 +875,7 @@ void net_ParseContentType(const nsACString &aHeaderStr,
   
 
   *aHadCharset = false;
-  const nsCString &flatStr = PromiseFlatCString(aHeaderStr);
+  const nsCString& flatStr = PromiseFlatCString(aHeaderStr);
 
   
   
@@ -897,10 +897,10 @@ void net_ParseContentType(const nsACString &aHeaderStr,
   } while (curTypeStart < flatStr.Length());
 }
 
-void net_ParseRequestContentType(const nsACString &aHeaderStr,
-                                 nsACString &aContentType,
-                                 nsACString &aContentCharset,
-                                 bool *aHadCharset) {
+void net_ParseRequestContentType(const nsACString& aHeaderStr,
+                                 nsACString& aContentType,
+                                 nsACString& aContentCharset,
+                                 bool* aHadCharset) {
   
   
   
@@ -920,7 +920,7 @@ void net_ParseRequestContentType(const nsACString &aHeaderStr,
   aContentType.Truncate();
   aContentCharset.Truncate();
   *aHadCharset = false;
-  const nsCString &flatStr = PromiseFlatCString(aHeaderStr);
+  const nsCString& flatStr = PromiseFlatCString(aHeaderStr);
 
   
   
@@ -941,8 +941,8 @@ void net_ParseRequestContentType(const nsACString &aHeaderStr,
   *aHadCharset = hadCharset;
 }
 
-bool net_IsValidHostName(const nsACString &host) {
-  const char *end = host.EndReading();
+bool net_IsValidHostName(const nsACString& host) {
+  const char* end = host.EndReading();
   
   
   
@@ -965,10 +965,10 @@ bool net_IsValidHostName(const nsACString &host) {
   return PR_StringToNetAddr(strhost.get(), &addr) == PR_SUCCESS;
 }
 
-bool net_IsValidIPv4Addr(const nsACString &aAddr) {
+bool net_IsValidIPv4Addr(const nsACString& aAddr) {
   return rust_net_is_valid_ipv4_addr(aAddr);
 }
 
-bool net_IsValidIPv6Addr(const nsACString &aAddr) {
+bool net_IsValidIPv6Addr(const nsACString& aAddr) {
   return rust_net_is_valid_ipv6_addr(aAddr);
 }

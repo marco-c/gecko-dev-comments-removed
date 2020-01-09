@@ -50,31 +50,31 @@ class nsTypeAheadFind : public nsITypeAheadFind,
 
   void SaveFind();
   void PlayNotFoundSound();
-  nsresult GetWebBrowserFind(nsIDocShell *aDocShell,
-                             nsIWebBrowserFind **aWebBrowserFind);
+  nsresult GetWebBrowserFind(nsIDocShell* aDocShell,
+                             nsIWebBrowserFind** aWebBrowserFind);
 
-  void RangeStartsInsideLink(nsRange *aRange, bool *aIsInsideLink,
-                             bool *aIsStartingLink);
+  void RangeStartsInsideLink(nsRange* aRange, bool* aIsInsideLink,
+                             bool* aIsStartingLink);
 
-  void GetSelection(mozilla::PresShell *aPresShell,
-                    nsISelectionController **aSelCon,
-                    mozilla::dom::Selection **aDomSel);
+  void GetSelection(mozilla::PresShell* aPresShell,
+                    nsISelectionController** aSelCon,
+                    mozilla::dom::Selection** aDomSel);
   
   
-  bool IsRangeVisible(mozilla::PresShell *aPresShell,
-                      nsPresContext *aPresContext, nsRange *aRange,
+  bool IsRangeVisible(mozilla::PresShell* aPresShell,
+                      nsPresContext* aPresContext, nsRange* aRange,
                       bool aMustBeVisible, bool aGetTopVisibleLeaf,
-                      nsRange **aNewRange, bool *aUsesIndependentSelection);
-  bool IsRangeRendered(mozilla::PresShell *aPresShell,
-                       nsPresContext *aPresContext, nsRange *aRange);
+                      nsRange** aNewRange, bool* aUsesIndependentSelection);
+  bool IsRangeRendered(mozilla::PresShell* aPresShell,
+                       nsPresContext* aPresContext, nsRange* aRange);
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   nsresult FindItNow(bool aIsLinksOnly, bool aIsFirstVisiblePreferred,
-                     bool aFindPrev, uint16_t *aResult);
-  nsresult GetSearchContainers(nsISupports *aContainer,
-                               nsISelectionController *aSelectionController,
+                     bool aFindPrev, uint16_t* aResult);
+  nsresult GetSearchContainers(nsISupports* aContainer,
+                               nsISelectionController* aSelectionController,
                                bool aIsFirstVisiblePreferred, bool aFindPrev,
-                               mozilla::PresShell **aPresShell,
-                               nsPresContext **aPresContext);
+                               mozilla::PresShell** aPresShell,
+                               nsPresContext** aPresContext);
 
   
   

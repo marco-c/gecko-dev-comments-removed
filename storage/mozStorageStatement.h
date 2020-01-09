@@ -52,13 +52,13 @@ class Statement final : public mozIStorageStatement,
 
 
 
-  nsresult initialize(Connection *aDBConnection, sqlite3 *aNativeConnection,
-                      const nsACString &aSQLStatement);
+  nsresult initialize(Connection* aDBConnection, sqlite3* aNativeConnection,
+                      const nsACString& aSQLStatement);
 
   
 
 
-  inline sqlite3_stmt *nativeStatement() { return mDBStatement; }
+  inline sqlite3_stmt* nativeStatement() { return mDBStatement; }
 
   
 
@@ -71,7 +71,7 @@ class Statement final : public mozIStorageStatement,
  private:
   ~Statement();
 
-  sqlite3_stmt *mDBStatement;
+  sqlite3_stmt* mDBStatement;
   uint32_t mParamCount;
   uint32_t mResultColumnCount;
   nsTArray<nsCString> mColumnNames;
@@ -81,7 +81,7 @@ class Statement final : public mozIStorageStatement,
 
 
 
-  mozIStorageBindingParams *getParams();
+  mozIStorageBindingParams* getParams();
 
   
 
@@ -109,8 +109,8 @@ class Statement final : public mozIStorageStatement,
   friend class StatementJSHelper;
 };
 
-inline nsISupports *ToSupports(Statement *p) {
-  return NS_ISUPPORTS_CAST(mozIStorageStatement *, p);
+inline nsISupports* ToSupports(Statement* p) {
+  return NS_ISUPPORTS_CAST(mozIStorageStatement*, p);
 }
 
 }  

@@ -18,39 +18,39 @@ namespace a11y {
 class ia2AccessibleAction : public IAccessibleAction {
  public:
   
-  STDMETHODIMP QueryInterface(REFIID, void **);
+  STDMETHODIMP QueryInterface(REFIID, void**);
 
   
   virtual HRESULT STDMETHODCALLTYPE nActions(
-       long *nActions);
+       long* nActions);
 
   virtual HRESULT STDMETHODCALLTYPE doAction(
        long actionIndex);
 
   virtual  HRESULT STDMETHODCALLTYPE get_description(
        long actionIndex,
-       BSTR *description);
+       BSTR* description);
 
   virtual  HRESULT STDMETHODCALLTYPE get_keyBinding(
        long actionIndex,
        long nMaxBinding,
-       BSTR **keyBinding,
-       long *nBinding);
+       BSTR** keyBinding,
+       long* nBinding);
 
   virtual  HRESULT STDMETHODCALLTYPE get_name(
        long actionIndex,
-       BSTR *name);
+       BSTR* name);
 
   virtual  HRESULT STDMETHODCALLTYPE get_localizedName(
        long actionIndex,
-       BSTR *localizedName);
+       BSTR* localizedName);
 };
 
 }  
 }  
 
 #define FORWARD_IACCESSIBLEACTION(Class)                                       \
-  virtual HRESULT STDMETHODCALLTYPE nActions(long *nActions) {                 \
+  virtual HRESULT STDMETHODCALLTYPE nActions(long* nActions) {                 \
     return Class::nActions(nActions);                                          \
   }                                                                            \
                                                                                \
@@ -59,22 +59,22 @@ class ia2AccessibleAction : public IAccessibleAction {
   }                                                                            \
                                                                                \
   virtual HRESULT STDMETHODCALLTYPE get_description(long actionIndex,          \
-                                                    BSTR *description) {       \
+                                                    BSTR* description) {       \
     return Class::get_description(actionIndex, description);                   \
   }                                                                            \
                                                                                \
   virtual HRESULT STDMETHODCALLTYPE get_keyBinding(                            \
-      long actionIndex, long nMaxBinding, BSTR **keyBinding, long *nBinding) { \
+      long actionIndex, long nMaxBinding, BSTR** keyBinding, long* nBinding) { \
     return Class::get_keyBinding(actionIndex, nMaxBinding, keyBinding,         \
                                  nBinding);                                    \
   }                                                                            \
                                                                                \
-  virtual HRESULT STDMETHODCALLTYPE get_name(long actionIndex, BSTR *name) {   \
+  virtual HRESULT STDMETHODCALLTYPE get_name(long actionIndex, BSTR* name) {   \
     return Class::get_name(actionIndex, name);                                 \
   }                                                                            \
                                                                                \
   virtual HRESULT STDMETHODCALLTYPE get_localizedName(long actionIndex,        \
-                                                      BSTR *localizedName) {   \
+                                                      BSTR* localizedName) {   \
     return Class::get_localizedName(actionIndex, localizedName);               \
   }
 

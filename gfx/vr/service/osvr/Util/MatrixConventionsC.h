@@ -136,7 +136,7 @@ enum {
 
 
 OSVR_UTIL_EXPORT OSVR_ReturnCode osvrPose3ToMatrixd(
-    OSVR_Pose3 const *pose, OSVR_MatrixConventions flags, double *mat);
+    OSVR_Pose3 const* pose, OSVR_MatrixConventions flags, double* mat);
 
 
 
@@ -144,7 +144,7 @@ OSVR_UTIL_EXPORT OSVR_ReturnCode osvrPose3ToMatrixd(
 
 
 OSVR_UTIL_EXPORT OSVR_ReturnCode osvrPose3ToMatrixf(
-    OSVR_Pose3 const *pose, OSVR_MatrixConventions flags, float *mat);
+    OSVR_Pose3 const* pose, OSVR_MatrixConventions flags, float* mat);
 
 
 OSVR_EXTERN_C_END
@@ -152,24 +152,24 @@ OSVR_EXTERN_C_END
 #ifdef __cplusplus
 
 
-inline OSVR_ReturnCode osvrPose3ToMatrix(OSVR_Pose3 const *pose,
+inline OSVR_ReturnCode osvrPose3ToMatrix(OSVR_Pose3 const* pose,
                                          OSVR_MatrixConventions flags,
-                                         double *mat) {
+                                         double* mat) {
   return osvrPose3ToMatrixd(pose, flags, mat);
 }
 
 
 
-inline OSVR_ReturnCode osvrPose3ToMatrix(OSVR_Pose3 const *pose,
+inline OSVR_ReturnCode osvrPose3ToMatrix(OSVR_Pose3 const* pose,
                                          OSVR_MatrixConventions flags,
-                                         float *mat) {
+                                         float* mat) {
   return osvrPose3ToMatrixf(pose, flags, mat);
 }
 
 
 
 template <typename Scalar>
-inline OSVR_ReturnCode osvrPose3ToMatrix(OSVR_Pose3 const *pose,
+inline OSVR_ReturnCode osvrPose3ToMatrix(OSVR_Pose3 const* pose,
                                          OSVR_MatrixConventions flags,
                                          Scalar mat[OSVR_MATRIX_SIZE]) {
   return osvrPose3ToMatrix(pose, flags, &(mat[0]));
@@ -177,7 +177,7 @@ inline OSVR_ReturnCode osvrPose3ToMatrix(OSVR_Pose3 const *pose,
 
 
 template <typename Scalar>
-inline OSVR_ReturnCode osvrPose3ToMatrix(OSVR_Pose3 const &pose,
+inline OSVR_ReturnCode osvrPose3ToMatrix(OSVR_Pose3 const& pose,
                                          OSVR_MatrixConventions flags,
                                          Scalar mat[OSVR_MATRIX_SIZE]) {
   return osvrPose3ToMatrix(&pose, flags, &(mat[0]));

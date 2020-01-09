@@ -18,28 +18,28 @@
 
 class gfxGDIFont : public gfxFont {
  public:
-  gfxGDIFont(GDIFontEntry *aFontEntry, const gfxFontStyle *aFontStyle,
+  gfxGDIFont(GDIFontEntry* aFontEntry, const gfxFontStyle* aFontStyle,
              AntialiasOption anAAOption = kAntialiasDefault);
 
   virtual ~gfxGDIFont();
 
   HFONT GetHFONT() { return mFont; }
 
-  cairo_font_face_t *CairoFontFace() { return mFontFace; }
+  cairo_font_face_t* CairoFontFace() { return mFontFace; }
 
   
   uint32_t GetSpaceGlyph() override;
 
-  bool SetupCairoFont(DrawTarget *aDrawTarget) override;
+  bool SetupCairoFont(DrawTarget* aDrawTarget) override;
 
   already_AddRefed<mozilla::gfx::ScaledFont> GetScaledFont(
-      DrawTarget *aTarget) override;
+      DrawTarget* aTarget) override;
 
   
-  RunMetrics Measure(const gfxTextRun *aTextRun, uint32_t aStart, uint32_t aEnd,
+  RunMetrics Measure(const gfxTextRun* aTextRun, uint32_t aStart, uint32_t aEnd,
                      BoundingBoxType aBoundingBoxType,
-                     DrawTarget *aDrawTargetForTightBoundingBox,
-                     Spacing *aSpacing,
+                     DrawTarget* aDrawTargetForTightBoundingBox,
+                     Spacing* aSpacing,
                      mozilla::gfx::ShapedTextFlags aOrientation) override;
 
   
@@ -58,20 +58,20 @@ class gfxGDIFont : public gfxFont {
   int32_t GetGlyphWidth(uint16_t aGID) override;
 
   void AddSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf,
-                              FontCacheSizes *aSizes) const;
+                              FontCacheSizes* aSizes) const;
   void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
-                              FontCacheSizes *aSizes) const;
+                              FontCacheSizes* aSizes) const;
 
   FontType GetType() const override { return FONT_TYPE_GDI; }
 
  protected:
-  const Metrics &GetHorizontalMetrics() override;
+  const Metrics& GetHorizontalMetrics() override;
 
   
-  bool ShapeText(DrawTarget *aDrawTarget, const char16_t *aText,
+  bool ShapeText(DrawTarget* aDrawTarget, const char16_t* aText,
                  uint32_t aOffset, uint32_t aLength, Script aScript,
                  bool aVertical, RoundingFlags aRounding,
-                 gfxShapedText *aShapedText) override;
+                 gfxShapedText* aShapedText) override;
 
   void Initialize();  
 
@@ -79,12 +79,12 @@ class gfxGDIFont : public gfxFont {
   
   
   
-  void FillLogFont(LOGFONTW &aLogFont, gfxFloat aSize);
+  void FillLogFont(LOGFONTW& aLogFont, gfxFloat aSize);
 
   HFONT mFont;
-  cairo_font_face_t *mFontFace;
+  cairo_font_face_t* mFontFace;
 
-  Metrics *mMetrics;
+  Metrics* mMetrics;
   uint32_t mSpaceGlyph;
 
   bool mNeedsSyntheticBold;

@@ -35,14 +35,14 @@ class CacheFileContextEvictor {
   virtual ~CacheFileContextEvictor();
 
  public:
-  nsresult Init(nsIFile *aCacheDirectory);
+  nsresult Init(nsIFile* aCacheDirectory);
   void Shutdown();
 
   
   uint32_t ContextsCount();
   
-  nsresult AddContext(nsILoadContextInfo *aLoadContextInfo, bool aPinned,
-                      const nsAString &aOrigin);
+  nsresult AddContext(nsILoadContextInfo* aLoadContextInfo, bool aPinned,
+                      const nsAString& aOrigin);
   
   
   
@@ -52,25 +52,25 @@ class CacheFileContextEvictor {
   
   
   
-  nsresult WasEvicted(const nsACString &aKey, nsIFile *aFile,
-                      bool *aEvictedAsPinned, bool *aEvictedAsNonPinned);
+  nsresult WasEvicted(const nsACString& aKey, nsIFile* aFile,
+                      bool* aEvictedAsPinned, bool* aEvictedAsNonPinned);
 
  private:
   
   
   
   
-  nsresult PersistEvictionInfoToDisk(nsILoadContextInfo *aLoadContextInfo,
-                                     bool aPinned, const nsAString &aOrigin);
+  nsresult PersistEvictionInfoToDisk(nsILoadContextInfo* aLoadContextInfo,
+                                     bool aPinned, const nsAString& aOrigin);
   
   
-  nsresult RemoveEvictInfoFromDisk(nsILoadContextInfo *aLoadContextInfo,
-                                   bool aPinned, const nsAString &aOrigin);
+  nsresult RemoveEvictInfoFromDisk(nsILoadContextInfo* aLoadContextInfo,
+                                   bool aPinned, const nsAString& aOrigin);
   
   
   nsresult LoadEvictInfoFromDisk();
-  nsresult GetContextFile(nsILoadContextInfo *aLoadContextInfo, bool aPinned,
-                          const nsAString &aOrigin, nsIFile **_retval);
+  nsresult GetContextFile(nsILoadContextInfo* aLoadContextInfo, bool aPinned,
+                          const nsAString& aOrigin, nsIFile** _retval);
 
   void CreateIterators();
   void CloseIterators();

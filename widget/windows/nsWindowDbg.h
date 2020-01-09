@@ -38,7 +38,7 @@ void PrintEvent(UINT msg, bool aShowAllEvents, bool aShowMouseMoves);
 
 #if defined(POPUP_ROLLUP_DEBUG_OUTPUT)
 typedef struct {
-  char *mStr;
+  char* mStr;
   int mId;
 } MSGFEventMsgInfo;
 
@@ -49,7 +49,7 @@ typedef struct {
 #endif  
 
 #if defined(DEBUG)
-void DDError(const char *msg, HRESULT hr);
+void DDError(const char* msg, HRESULT hr);
 #endif  
 
 #if defined(DEBUG_VK)

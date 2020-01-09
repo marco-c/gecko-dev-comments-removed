@@ -15,7 +15,7 @@ namespace net {
 
 
 
-extern nsresult AttachShutdownLayer(PRFileDesc *fd);
+extern nsresult AttachShutdownLayer(PRFileDesc* fd);
 
 }  
 }  

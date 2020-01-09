@@ -43,17 +43,17 @@ class SVGLength {
     NS_ASSERTION(IsValid(), "Constructed an invalid length");
   }
 
-  bool operator==(const SVGLength &rhs) const {
+  bool operator==(const SVGLength& rhs) const {
     return mValue == rhs.mValue && mUnit == rhs.mUnit;
   }
 
-  void GetValueAsString(nsAString &aValue) const;
+  void GetValueAsString(nsAString& aValue) const;
 
   
 
 
 
-  bool SetValueFromString(const nsAString &aString);
+  bool SetValueFromString(const nsAString& aString);
 
   
 
@@ -87,7 +87,7 @@ class SVGLength {
 
 
 
-  float GetValueInUserUnits(const dom::SVGElement *aElement,
+  float GetValueInUserUnits(const dom::SVGElement* aElement,
                             uint8_t aAxis) const {
     return mValue * GetUserUnitsPerUnit(aElement, aAxis);
   }
@@ -98,7 +98,7 @@ class SVGLength {
 
 
 
-  float GetValueInSpecifiedUnit(uint8_t aUnit, const dom::SVGElement *aElement,
+  float GetValueInSpecifiedUnit(uint8_t aUnit, const dom::SVGElement* aElement,
                                 uint8_t aAxis) const;
 
   bool IsPercentage() const {
@@ -117,7 +117,7 @@ class SVGLength {
 
 
 
-  float GetUserUnitsPerUnit(const dom::SVGElement *aElement,
+  float GetUserUnitsPerUnit(const dom::SVGElement* aElement,
                             uint8_t aAxis) const;
 
  private:
@@ -140,7 +140,7 @@ class SVGLength {
 
 
 
-  static float GetUserUnitsPerPercent(const dom::SVGElement *aElement,
+  static float GetUserUnitsPerPercent(const dom::SVGElement* aElement,
                                       uint8_t aAxis);
 
   float mValue;

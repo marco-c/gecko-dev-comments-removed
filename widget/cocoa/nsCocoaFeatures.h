@@ -33,7 +33,7 @@ class nsCocoaFeatures {
   
   
   
-  static void GetSystemVersion(int &aMajor, int &aMinor, int &aBugFix);
+  static void GetSystemVersion(int& aMajor, int& aMinor, int& aBugFix);
   static int32_t GetVersion(int32_t aMajor, int32_t aMinor, int32_t aBugFix);
   static int32_t ExtractMajorVersion(int32_t aVersion);
   static int32_t ExtractMinorVersion(int32_t aVersion);

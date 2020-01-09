@@ -28,7 +28,7 @@ class ia2AccessibleEditableText : public IAccessibleEditableText {
 
   virtual HRESULT STDMETHODCALLTYPE insertText(
        long offset,
-       BSTR *text);
+       BSTR* text);
 
   virtual HRESULT STDMETHODCALLTYPE cutText(
        long startOffset,
@@ -41,12 +41,12 @@ class ia2AccessibleEditableText : public IAccessibleEditableText {
   virtual HRESULT STDMETHODCALLTYPE replaceText(
        long startOffset,
        long endOffset,
-       BSTR *text);
+       BSTR* text);
 
   virtual HRESULT STDMETHODCALLTYPE setAttributes(
        long startOffset,
        long endOffset,
-       BSTR *attributes);
+       BSTR* attributes);
 };
 
 }  

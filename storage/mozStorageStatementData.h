@@ -26,15 +26,15 @@ namespace storage {
 
 class StatementData {
  public:
-  StatementData(sqlite3_stmt *aStatement,
+  StatementData(sqlite3_stmt* aStatement,
                 already_AddRefed<BindingParamsArray> aParamsArray,
-                StorageBaseStatementInternal *aStatementOwner)
+                StorageBaseStatementInternal* aStatementOwner)
       : mStatement(aStatement),
         mParamsArray(aParamsArray),
         mStatementOwner(aStatementOwner) {
     MOZ_ASSERT(mStatementOwner, "Must have a statement owner!");
   }
-  StatementData(const StatementData &aSource)
+  StatementData(const StatementData& aSource)
       : mStatement(aSource.mStatement),
         mParamsArray(aSource.mParamsArray),
         mStatementOwner(aSource.mStatementOwner) {
@@ -53,7 +53,7 @@ class StatementData {
 
 
 
-  inline int getSqliteStatement(sqlite3_stmt **_stmt) {
+  inline int getSqliteStatement(sqlite3_stmt** _stmt) {
     if (!mStatement) {
       int rc = mStatementOwner->getAsyncStatement(&mStatement);
       NS_ENSURE_TRUE(rc == SQLITE_OK, rc);
@@ -62,7 +62,7 @@ class StatementData {
     return SQLITE_OK;
   }
 
-  operator BindingParamsArray *() const { return mParamsArray; }
+  operator BindingParamsArray*() const { return mParamsArray; }
 
   
 
@@ -103,7 +103,7 @@ class StatementData {
     
     
     
-    sqlite3_stmt *stmt;
+    sqlite3_stmt* stmt;
     int rc = getSqliteStatement(&stmt);
     if (SQLITE_OK != rc || ::sqlite3_stmt_readonly(stmt)) {
       return 0;
@@ -112,7 +112,7 @@ class StatementData {
   }
 
  private:
-  sqlite3_stmt *mStatement;
+  sqlite3_stmt* mStatement;
   RefPtr<BindingParamsArray> mParamsArray;
 
   

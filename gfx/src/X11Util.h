@@ -25,7 +25,7 @@ namespace mozilla {
 
 
 
-inline Display *DefaultXDisplay() {
+inline Display* DefaultXDisplay() {
 #if defined(MOZ_WIDGET_GTK)
   return GDK_DISPLAY_XDISPLAY(gdk_display_get_default());
 #endif
@@ -37,8 +37,8 @@ inline Display *DefaultXDisplay() {
 
 
 
-void FindVisualAndDepth(Display *aDisplay, VisualID aVisualID, Visual **aVisual,
-                        int *aDepth);
+void FindVisualAndDepth(Display* aDisplay, VisualID aVisualID, Visual** aVisual,
+                        int* aDepth);
 
 
 
@@ -49,7 +49,7 @@ void FindVisualAndDepth(Display *aDisplay, VisualID aVisualID, Visual **aVisual,
 
 
 
-void FinishX(Display *aDisplay);
+void FinishX(Display* aDisplay);
 
 
 
@@ -57,9 +57,9 @@ void FinishX(Display *aDisplay);
 
 template <typename T>
 struct ScopedXFreePtrTraits {
-  typedef T *type;
-  static T *empty() { return nullptr; }
-  static void release(T *ptr) {
+  typedef T* type;
+  static T* empty() { return nullptr; }
+  static void release(T* ptr) {
     if (ptr != nullptr) XFree(ptr);
   }
 };
@@ -100,16 +100,16 @@ class ScopedXErrorHandler {
   ErrorEvent mXError;
 
   
-  static ErrorEvent *sXErrorPtr;
+  static ErrorEvent* sXErrorPtr;
 
   
-  ErrorEvent *mOldXErrorPtr;
+  ErrorEvent* mOldXErrorPtr;
 
   
-  int (*mOldErrorHandler)(Display *, XErrorEvent *);
+  int (*mOldErrorHandler)(Display*, XErrorEvent*);
 
  public:
-  static int ErrorHandler(Display *, XErrorEvent *ev);
+  static int ErrorHandler(Display*, XErrorEvent* ev);
 
   
 
@@ -126,7 +126,7 @@ class ScopedXErrorHandler {
 
 
 
-  bool SyncAndGetError(Display *dpy, XErrorEvent *ev = nullptr);
+  bool SyncAndGetError(Display* dpy, XErrorEvent* ev = nullptr);
 };
 
 class OffMainThreadScopedXErrorHandler : public ScopedXErrorHandler {

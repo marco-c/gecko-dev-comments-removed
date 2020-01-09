@@ -32,7 +32,7 @@ class Row final : public mozIStorageRow {
 
 
 
-  nsresult initialize(sqlite3_stmt *aStatement);
+  nsresult initialize(sqlite3_stmt* aStatement);
 
  private:
   ~Row() {}

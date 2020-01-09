@@ -107,8 +107,8 @@ union NetAddr {
   } local;
 #endif
   
-  bool operator==(const NetAddr &other) const;
-  bool operator<(const NetAddr &other) const;
+  bool operator==(const NetAddr& other) const;
+  bool operator<(const NetAddr& other) const;
 };
 
 
@@ -116,8 +116,8 @@ union NetAddr {
 
 class NetAddrElement : public LinkedListElement<NetAddrElement> {
  public:
-  explicit NetAddrElement(const PRNetAddr *prNetAddr);
-  NetAddrElement(const NetAddrElement &netAddr);
+  explicit NetAddrElement(const PRNetAddr* prNetAddr);
+  NetAddrElement(const NetAddrElement& netAddr);
   ~NetAddrElement();
 
   NetAddr mAddress;
@@ -128,21 +128,21 @@ class AddrInfo {
 
  public:
   
-  explicit AddrInfo(const nsACString &host, const PRAddrInfo *prAddrInfo,
+  explicit AddrInfo(const nsACString& host, const PRAddrInfo* prAddrInfo,
                     bool disableIPv4, bool filterNameCollision,
-                    const nsACString &cname);
+                    const nsACString& cname);
 
   
   
-  explicit AddrInfo(const nsACString &host, const nsACString &cname,
+  explicit AddrInfo(const nsACString& host, const nsACString& cname,
                     unsigned int TRRType);
 
   
-  explicit AddrInfo(const nsACString &host, unsigned int TRRType);
+  explicit AddrInfo(const nsACString& host, unsigned int TRRType);
 
-  explicit AddrInfo(const AddrInfo *src);  
+  explicit AddrInfo(const AddrInfo* src);  
 
-  void AddAddress(NetAddrElement *address);
+  void AddAddress(NetAddrElement* address);
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
@@ -161,23 +161,23 @@ class AddrInfo {
 
 
 
-void PRNetAddrToNetAddr(const PRNetAddr *prAddr, NetAddr *addr);
+void PRNetAddrToNetAddr(const PRNetAddr* prAddr, NetAddr* addr);
 
 
 
-void NetAddrToPRNetAddr(const NetAddr *addr, PRNetAddr *prAddr);
+void NetAddrToPRNetAddr(const NetAddr* addr, PRNetAddr* prAddr);
 
-bool NetAddrToString(const NetAddr *addr, char *buf, uint32_t bufSize);
+bool NetAddrToString(const NetAddr* addr, char* buf, uint32_t bufSize);
 
-bool IsLoopBackAddress(const NetAddr *addr);
+bool IsLoopBackAddress(const NetAddr* addr);
 
-bool IsIPAddrAny(const NetAddr *addr);
+bool IsIPAddrAny(const NetAddr* addr);
 
-bool IsIPAddrV4Mapped(const NetAddr *addr);
+bool IsIPAddrV4Mapped(const NetAddr* addr);
 
-bool IsIPAddrLocal(const NetAddr *addr);
+bool IsIPAddrLocal(const NetAddr* addr);
 
-nsresult GetPort(const NetAddr *aAddr, uint16_t *aResult);
+nsresult GetPort(const NetAddr* aAddr, uint16_t* aResult);
 
 }  
 }  

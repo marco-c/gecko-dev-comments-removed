@@ -43,21 +43,21 @@ class BindingParams : public mozIStorageBindingParams,
 
 
 
-  void unlock(Statement *aOwningStatement);
+  void unlock(Statement* aOwningStatement);
 
   
 
 
 
-  const mozIStorageBindingParamsArray *getOwner() const;
+  const mozIStorageBindingParamsArray* getOwner() const;
 
-  BindingParams(mozIStorageBindingParamsArray *aOwningArray,
-                Statement *aOwningStatement);
+  BindingParams(mozIStorageBindingParamsArray* aOwningArray,
+                Statement* aOwningStatement);
 
  protected:
   virtual ~BindingParams() {}
 
-  explicit BindingParams(mozIStorageBindingParamsArray *aOwningArray);
+  explicit BindingParams(mozIStorageBindingParamsArray* aOwningArray);
   
   
   nsTArray<RefPtr<Variant_base> > mParameters;
@@ -77,7 +77,7 @@ class BindingParams : public mozIStorageBindingParams,
 
 
 
-  Statement *mOwningStatement;
+  Statement* mOwningStatement;
   uint32_t mParamCount;
 };
 
@@ -92,13 +92,13 @@ class BindingParams : public mozIStorageBindingParams,
 
 class AsyncBindingParams : public BindingParams {
  public:
-  NS_IMETHOD BindByName(const nsACString &aName, nsIVariant *aValue) override;
-  NS_IMETHOD BindByIndex(uint32_t aIndex, nsIVariant *aValue) override;
+  NS_IMETHOD BindByName(const nsACString& aName, nsIVariant* aValue) override;
+  NS_IMETHOD BindByIndex(uint32_t aIndex, nsIVariant* aValue) override;
 
   virtual already_AddRefed<mozIStorageError> bind(
-      sqlite3_stmt *aStatement) override;
+      sqlite3_stmt* aStatement) override;
 
-  explicit AsyncBindingParams(mozIStorageBindingParamsArray *aOwningArray);
+  explicit AsyncBindingParams(mozIStorageBindingParamsArray* aOwningArray);
   virtual ~AsyncBindingParams() {}
 
  private:
