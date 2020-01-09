@@ -148,8 +148,6 @@ var whitelist = [
   
   {file: "resource://gre/modules/Manifest.jsm"},
   
-  {file: "resource://gre/modules/PasswordGenerator.jsm"},
-  
   {file: "resource://gre/modules/accessibility/AccessFu.jsm"},
   
   {file: "resource://gre/modules/PerfMeasurement.jsm"},
