@@ -46,7 +46,8 @@ try:
         "/NoLogo",
         "/Target", binary_path,
         "/SymPath", symbol_path,
-        "/Checks", "ATLVersionCheck",
+        
+        "/SkippedChecks", "ATLVersionCheck",
         "/Checks", "ATLVulnCheck",
         
         "/SkippedChecks", "AppContainerCheck",
@@ -68,7 +69,8 @@ try:
         "/Checks", "RSA32Check",
         "/Checks", "SafeSEHCheck",
         "/Checks", "SharedSectionCheck",
-        "/Checks", "VB6Check",
+        
+        "/SkippedChecks", "VB6Check",
         "/Checks", "WXCheck"
     ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
