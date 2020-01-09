@@ -389,7 +389,10 @@ function getInternalAliases(engine) {
     return [];
   }
   for (let [name, aliases] of ENGINE_ALIASES) {
-    if (engine._shortName == name) {
+    
+    
+    
+    if (engine._shortName.startsWith(name)) {
       return aliases;
     }
   }
