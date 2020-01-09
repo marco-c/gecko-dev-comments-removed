@@ -4,10 +4,10 @@
 
 
 
-#ifndef mozilla_net_TrackingDummyChannelChild_h
-#define mozilla_net_TrackingDummyChannelChild_h
+#ifndef mozilla_net_ClassifierDummyChannelChild_h
+#define mozilla_net_ClassifierDummyChannelChild_h
 
-#include "mozilla/net/PTrackingDummyChannelChild.h"
+#include "mozilla/net/PClassifierDummyChannelChild.h"
 #include "nsCOMPtr.h"
 
 #include <functional>
@@ -18,16 +18,16 @@ class nsIURI;
 namespace mozilla {
 namespace net {
 
-class TrackingDummyChannelChild final : public PTrackingDummyChannelChild {
-  friend class PTrackingDummyChannelChild;
+class ClassifierDummyChannelChild final : public PClassifierDummyChannelChild {
+  friend class PClassifierDummyChannelChild;
 
  public:
   static bool Create(nsIHttpChannel* aChannel, nsIURI* aURI,
                      const std::function<void(bool)>& aCallback);
 
   
-  TrackingDummyChannelChild();
-  ~TrackingDummyChannelChild();
+  ClassifierDummyChannelChild();
+  ~ClassifierDummyChannelChild();
 
  private:
   void Initialize(nsIHttpChannel* aChannel, nsIURI* aURI, bool aIsThirdParty,

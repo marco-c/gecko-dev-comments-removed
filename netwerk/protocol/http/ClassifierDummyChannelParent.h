@@ -1,0 +1,40 @@
+
+
+
+
+
+
+#ifndef mozilla_net_ClassifierDummyChannelParent_h
+#define mozilla_net_ClassifierDummyChannelParent_h
+
+#include "mozilla/net/PClassifierDummyChannelParent.h"
+#include "nsISupportsImpl.h"
+
+class nsILoadInfo;
+class nsIURI;
+
+namespace mozilla {
+namespace net {
+
+class ClassifierDummyChannelParent final
+    : public PClassifierDummyChannelParent {
+ public:
+  NS_INLINE_DECL_REFCOUNTING(ClassifierDummyChannelParent)
+
+  ClassifierDummyChannelParent();
+
+  void Init(nsIURI* aURI, nsIURI* aTopWindowURI, nsresult aTopWindowURIResult,
+            nsILoadInfo* aLoadInfo);
+
+ private:
+  ~ClassifierDummyChannelParent();
+
+  void ActorDestroy(ActorDestroyReason aWhy) override;
+
+  bool mIPCActive;
+};
+
+}  
+}  
+
+#endif  
