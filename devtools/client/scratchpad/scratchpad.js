@@ -1090,27 +1090,15 @@ var Scratchpad = {
 
 
 
+  openFile: function SP_openFile(aIndex) {
+    const promptCallback = aFile => {
+      this.promptSave((aCloseFile, aSaved, aStatus) => {
+        let shouldOpen = aCloseFile;
+        if (aSaved && !Components.isSuccessCode(aStatus)) {
+          shouldOpen = false;
+        }
 
-
-
-
-
-
-
-  openFile(aIndex) {
-    return new Promise((resolve, reject) => {
-      const promptCallback = aFile => {
-        this.promptSave((aCloseFile, aSaved, aStatus) => {
-          let shouldOpen = aCloseFile;
-          if (aSaved && !Components.isSuccessCode(aStatus)) {
-            shouldOpen = false;
-          }
-
-          if (!shouldOpen) {
-            reject(new Error("cancelled"));
-            return;
-          }
-
+        if (shouldOpen) {
           let file;
           if (aFile) {
             file = aFile;
@@ -1130,32 +1118,29 @@ var Scratchpad = {
               null);
 
             this.clearFiles(aIndex, 1);
-            reject(new Error("file-no-longer-exists"));
             return;
           }
 
-          this.importFromFile(file, false).then(_ => resolve(), reject);
-        });
-      };
+          this.importFromFile(file, false);
+        }
+      });
+    };
 
-      if (aIndex > -1) {
-        promptCallback();
-      } else {
-        const fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
-        fp.init(window, this.strings.GetStringFromName("openFile.title"),
-                Ci.nsIFilePicker.modeOpen);
-        fp.defaultString = "";
-        fp.appendFilter("JavaScript Files", "*.js; *.jsm; *.json");
-        fp.appendFilter("All Files", "*.*");
-        fp.open(aResult => {
-          if (aResult == Ci.nsIFilePicker.returnCancel) {
-            reject(new Error("cancelled"));
-          } else {
-            promptCallback(fp.file);
-          }
-        });
-      }
-    });
+    if (aIndex > -1) {
+      promptCallback();
+    } else {
+      const fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
+      fp.init(window, this.strings.GetStringFromName("openFile.title"),
+              Ci.nsIFilePicker.modeOpen);
+      fp.defaultString = "";
+      fp.appendFilter("JavaScript Files", "*.js; *.jsm; *.json");
+      fp.appendFilter("All Files", "*.*");
+      fp.open(aResult => {
+        if (aResult != Ci.nsIFilePicker.returnCancel) {
+          promptCallback(fp.file);
+        }
+      });
+    }
   },
 
   
