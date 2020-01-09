@@ -94,6 +94,9 @@ class HTMLTrackElement final : public nsGenericHTMLElement {
 
   void NotifyShutdown();
 
+  
+  void MaybeDispatchLoadResource();
+
  protected:
   virtual ~HTMLTrackElement();
 
@@ -113,7 +116,6 @@ class HTMLTrackElement final : public nsGenericHTMLElement {
   void CreateTextTrack();
 
  private:
-  void DispatchLoadResource();
   
   
   void LoadResource(RefPtr<WebVTTListener>&& aWebVTTListener);
