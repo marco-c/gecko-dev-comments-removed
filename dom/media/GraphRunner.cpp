@@ -38,14 +38,21 @@ GraphRunner::GraphRunner(MediaStreamGraphImpl* aGraph)
 GraphRunner::~GraphRunner() {
   MOZ_COUNT_DTOR(GraphRunner);
   MOZ_ASSERT(mThreadState == ThreadState::Shutdown);
-  PR_JoinThread(mThread);
 }
 
 void GraphRunner::Shutdown() {
-  MonitorAutoLock lock(mMonitor);
-  MOZ_ASSERT(mThreadState == ThreadState::Wait);
-  mThreadState = ThreadState::Shutdown;
-  mMonitor.Notify();
+  {
+    MonitorAutoLock lock(mMonitor);
+    MOZ_ASSERT(mThreadState == ThreadState::Wait);
+    mThreadState = ThreadState::Shutdown;
+    mMonitor.Notify();
+  }
+  
+  
+  
+  
+  PR_JoinThread(mThread);
+  mThread = nullptr;
 }
 
 bool GraphRunner::OneIteration(GraphTime aStateEnd) {

@@ -79,7 +79,8 @@ class GraphRunner {
   ThreadState mThreadState;
 
   
-  PRThread* const mThread;
+  
+  PRThread* mThread;
 
 #ifdef DEBUG
   
