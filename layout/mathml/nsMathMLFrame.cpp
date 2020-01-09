@@ -15,6 +15,7 @@
 #include "nsCSSPseudoElements.h"
 #include "nsMathMLElement.h"
 #include "gfxMathTable.h"
+#include "nsPresContextInlines.h"
 
 
 #include "mozilla/ServoStyleSet.h"
