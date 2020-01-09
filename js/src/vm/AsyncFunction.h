@@ -12,7 +12,7 @@
 
 namespace js {
 
-class GeneratorObject;
+class AsyncFunctionGeneratorObject;
 
 
 
@@ -50,11 +50,11 @@ JSObject* WrapAsyncFunction(JSContext* cx, HandleFunction unwrapped);
 
 MOZ_MUST_USE bool AsyncFunctionAwaitedFulfilled(
     JSContext* cx, Handle<PromiseObject*> resultPromise,
-    Handle<GeneratorObject*> generator, HandleValue value);
+    Handle<AsyncFunctionGeneratorObject*> generator, HandleValue value);
 
 MOZ_MUST_USE bool AsyncFunctionAwaitedRejected(
     JSContext* cx, Handle<PromiseObject*> resultPromise,
-    Handle<GeneratorObject*> generator, HandleValue reason);
+    Handle<AsyncFunctionGeneratorObject*> generator, HandleValue reason);
 
 }  
 

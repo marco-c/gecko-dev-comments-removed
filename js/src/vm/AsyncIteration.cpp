@@ -45,6 +45,15 @@ static bool WrappedAsyncGenerator(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
+  if (!generatorVal.isObject() ||
+      !generatorVal.toObject().is<AsyncGeneratorGeneratorObject>()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_UNEXPECTED_TYPE, "return value",
+                              JS::InformalValueTypeName(generatorVal));
+    return false;
+  }
+
+  
   AsyncGeneratorObject* asyncGenObj =
       AsyncGeneratorObject::create(cx, wrapped, generatorVal);
   if (!asyncGenObj) {
@@ -271,7 +280,7 @@ static AsyncGeneratorObject* OrdinaryCreateFromConstructorAsynGen(
  AsyncGeneratorObject* AsyncGeneratorObject::create(
     JSContext* cx, HandleFunction asyncGen, HandleValue generatorVal) {
   MOZ_ASSERT(generatorVal.isObject());
-  MOZ_ASSERT(generatorVal.toObject().is<GeneratorObject>());
+  MOZ_ASSERT(generatorVal.toObject().is<AsyncGeneratorGeneratorObject>());
 
   AsyncGeneratorObject* asyncGenObj =
       OrdinaryCreateFromConstructorAsynGen(cx, asyncGen);
@@ -440,16 +449,27 @@ MOZ_MUST_USE bool js::AsyncGeneratorResume(
   RootedValue generatorVal(cx, asyncGenObj->generatorVal());
 
   
+  
+  
+  if (generatorVal.toObject().as<AbstractGeneratorObject>().isClosed() ||
+      !generatorVal.toObject().as<AbstractGeneratorObject>().isSuspended()) {
+    return AsyncGeneratorReturned(cx, asyncGenObj, UndefinedHandleValue);
+  }
+
+  
   HandlePropertyName funName = completionKind == CompletionKind::Normal
-                                   ? cx->names().GeneratorNext
+                                   ? cx->names().AsyncGeneratorNext
                                    : completionKind == CompletionKind::Throw
-                                         ? cx->names().GeneratorThrow
-                                         : cx->names().GeneratorReturn;
+                                         ? cx->names().AsyncGeneratorThrow
+                                         : cx->names().AsyncGeneratorReturn;
   FixedInvokeArgs<1> args(cx);
   args[0].set(argument);
   RootedValue result(cx);
   if (!CallSelfHostedFunction(cx, funName, generatorVal, args, &result)) {
     
+    if (!generatorVal.toObject().as<AbstractGeneratorObject>().isClosed()) {
+      generatorVal.toObject().as<AbstractGeneratorObject>().setClosed();
+    }
     return AsyncGeneratorThrown(cx, asyncGenObj);
   }
 

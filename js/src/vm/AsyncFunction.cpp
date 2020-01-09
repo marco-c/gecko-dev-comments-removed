@@ -61,7 +61,7 @@ using mozilla::Maybe;
 
 static MOZ_MUST_USE bool AsyncFunctionStart(
     JSContext* cx, Handle<PromiseObject*> resultPromise,
-    Handle<GeneratorObject*> generator);
+    Handle<AsyncFunctionGeneratorObject*> generator);
 
 #define UNWRAPPED_ASYNC_WRAPPED_SLOT 1
 #define WRAPPED_ASYNC_UNWRAPPED_SLOT 0
@@ -84,14 +84,23 @@ static bool WrappedAsyncFunction(JSContext* cx, unsigned argc, Value* vp) {
   RootedValue generatorVal(cx);
   if (Call(cx, unwrappedVal, args.thisv(), args2, &generatorVal)) {
     
+    if (!generatorVal.isObject() ||
+        !generatorVal.toObject().is<AsyncFunctionGeneratorObject>()) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_UNEXPECTED_TYPE, "return value",
+                                JS::InformalValueTypeName(generatorVal));
+      return false;
+    }
+
+    
     Rooted<PromiseObject*> resultPromise(cx, CreatePromiseObjectForAsync(cx));
     if (!resultPromise) {
       return false;
     }
 
     
-    Rooted<GeneratorObject*> generator(
-        cx, &generatorVal.toObject().as<GeneratorObject>());
+    Rooted<AsyncFunctionGeneratorObject*> generator(
+        cx, &generatorVal.toObject().as<AsyncFunctionGeneratorObject>());
     if (!AsyncFunctionStart(cx, resultPromise, generator)) {
       return false;
     }
@@ -183,7 +192,7 @@ enum class ResumeKind { Normal, Throw };
 
 static bool AsyncFunctionResume(JSContext* cx,
                                 Handle<PromiseObject*> resultPromise,
-                                Handle<GeneratorObject*> generator,
+                                Handle<AsyncFunctionGeneratorObject*> generator,
                                 ResumeKind kind, HandleValue valueOrReason) {
   RootedObject stack(cx, resultPromise->allocationSite());
   Maybe<JS::AutoSetAsyncStackForNewCalls> asyncStack;
@@ -194,14 +203,24 @@ static bool AsyncFunctionResume(JSContext* cx,
   }
 
   
+  
+  
+  if (generator->isClosed() || !generator->isSuspended()) {
+    return AsyncFunctionReturned(cx, resultPromise, UndefinedHandleValue);
+  }
+
+  
   HandlePropertyName funName = kind == ResumeKind::Normal
-                                   ? cx->names().GeneratorNext
-                                   : cx->names().GeneratorThrow;
+                                   ? cx->names().AsyncFunctionNext
+                                   : cx->names().AsyncFunctionThrow;
   FixedInvokeArgs<1> args(cx);
   args[0].set(valueOrReason);
   RootedValue generatorOrValue(cx, ObjectValue(*generator));
   if (!CallSelfHostedFunction(cx, funName, generatorOrValue, args,
                               &generatorOrValue)) {
+    if (!generator->isClosed()) {
+      generator->setClosed();
+    }
     return AsyncFunctionThrown(cx, resultPromise);
   }
 
@@ -215,7 +234,7 @@ static bool AsyncFunctionResume(JSContext* cx,
 
 static MOZ_MUST_USE bool AsyncFunctionStart(
     JSContext* cx, Handle<PromiseObject*> resultPromise,
-    Handle<GeneratorObject*> generator) {
+    Handle<AsyncFunctionGeneratorObject*> generator) {
   return AsyncFunctionResume(cx, resultPromise, generator, ResumeKind::Normal,
                              UndefinedHandleValue);
 }
@@ -226,7 +245,7 @@ static MOZ_MUST_USE bool AsyncFunctionStart(
 
 MOZ_MUST_USE bool js::AsyncFunctionAwaitedFulfilled(
     JSContext* cx, Handle<PromiseObject*> resultPromise,
-    Handle<GeneratorObject*> generator, HandleValue value) {
+    Handle<AsyncFunctionGeneratorObject*> generator, HandleValue value) {
   
 
   
@@ -237,7 +256,7 @@ MOZ_MUST_USE bool js::AsyncFunctionAwaitedFulfilled(
 
 MOZ_MUST_USE bool js::AsyncFunctionAwaitedRejected(
     JSContext* cx, Handle<PromiseObject*> resultPromise,
-    Handle<GeneratorObject*> generator, HandleValue reason) {
+    Handle<AsyncFunctionGeneratorObject*> generator, HandleValue reason) {
   
 
   
