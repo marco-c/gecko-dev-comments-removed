@@ -46,7 +46,7 @@ namespace frontend {
 
 
 
-template <typename Super>
+template <typename Derived>
 class ParseNodeVisitor {
  public:
   JSContext* cx;
@@ -61,7 +61,7 @@ class ParseNodeVisitor {
     switch (pn->getKind()) {
 #define VISIT_CASE(KIND, _type) \
   case ParseNodeKind::KIND:     \
-    return static_cast<Super*>(this)->visit##KIND(pn);
+    return static_cast<Derived*>(this)->visit##KIND(pn);
       FOR_EACH_PARSE_NODE_KIND(VISIT_CASE)
 #undef VISIT_CASE
       default:
@@ -74,7 +74,7 @@ class ParseNodeVisitor {
   MOZ_MUST_USE bool visit##KIND(ParseNode*& pn) {                \
     MOZ_ASSERT(pn->is<TYPE>(),                                   \
                "Node of kind " #KIND " was not of type " #TYPE); \
-    return pn->as<TYPE>().accept(*static_cast<Super*>(this));    \
+    return pn->as<TYPE>().accept(*static_cast<Derived*>(this));  \
   }
   FOR_EACH_PARSE_NODE_KIND(VISIT_METHOD)
 #undef VISIT_METHOD
