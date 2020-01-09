@@ -109,20 +109,16 @@ nsTArray<const char*>* gOriginsList = nullptr;
 typedef nsDataHashtable<nsCStringHashKey, size_t> OriginToIndexMap;
 OriginToIndexMap* gOriginToIndexMap;
 
-typedef nsDataHashtable<OriginMetricIDHashKey, nsTArray<nsCString>>
-    IdToOriginsMap;
+typedef nsDataHashtable<nsCStringHashKey, uint32_t> OriginBag;
+typedef nsDataHashtable<OriginMetricIDHashKey, OriginBag> IdToOriginBag;
 
-IdToOriginsMap* gMetricToOriginsMap;
+IdToOriginBag* gMetricToOriginBag;
 
 mozilla::Atomic<bool, mozilla::Relaxed> gInitDone(false);
 
 
 typedef nsTArray<Pair<OriginMetricID, nsTArray<nsTArray<bool>>>>
     IdBoolsPairArray;
-
-
-
-static uint32_t gPrioDataCount = 0;
 
 
 
@@ -154,41 +150,79 @@ const char* GetNameForMetricID(OriginMetricID aId) {
   return mozilla::Telemetry::MetricIDToString[static_cast<uint32_t>(aId)];
 }
 
+
+
+uint32_t PrioDataCount(const StaticMutexAutoLock& lock) {
+  uint32_t count = 0;
+  auto iter = gMetricToOriginBag->ConstIter();
+  for (; !iter.Done(); iter.Next()) {
+    auto originIt = iter.Data().ConstIter();
+    uint32_t maxOriginCount = 0;
+    for (; !originIt.Done(); originIt.Next()) {
+      maxOriginCount = std::max(maxOriginCount, originIt.Data());
+    }
+    count += gPrioDatasPerMetric * maxOriginCount;
+  }
+  return count;
+}
+
+
+
+
+
+
+
+
+
+
+
 nsresult AppEncodeTo(const StaticMutexAutoLock& lock,
                      IdBoolsPairArray& aResult) {
-  auto iter = gMetricToOriginsMap->ConstIter();
+  auto iter = gMetricToOriginBag->ConstIter();
   for (; !iter.Done(); iter.Next()) {
     OriginMetricID id = iter.Key();
+    const OriginBag& bag = iter.Data();
 
-    
-    nsTArray<nsTArray<bool>> metricData(gPrioDatasPerMetric);
-    metricData.SetLength(gPrioDatasPerMetric);
-    for (size_t i = 0; i < metricData.Length() - 1; ++i) {
-      metricData[i].SetLength(PrioEncoder::gNumBooleans);
-      for (auto& metricDatum : metricData[i]) {
+    uint32_t generation = 1;
+    uint32_t maxGeneration = 1;
+    do {
+      
+      nsTArray<nsTArray<bool>> metricData(gPrioDatasPerMetric);
+      metricData.SetLength(gPrioDatasPerMetric);
+      for (size_t i = 0; i < metricData.Length() - 1; ++i) {
+        metricData[i].SetLength(PrioEncoder::gNumBooleans);
+        for (auto& metricDatum : metricData[i]) {
+          metricDatum = false;
+        }
+      }
+      auto& lastArray = metricData[metricData.Length() - 1];
+      lastArray.SetLength(gOriginsList->Length() % PrioEncoder::gNumBooleans);
+      for (auto& metricDatum : lastArray) {
         metricDatum = false;
       }
-    }
-    auto& lastArray = metricData[metricData.Length() - 1];
-    lastArray.SetLength(gOriginsList->Length() % PrioEncoder::gNumBooleans);
-    for (auto& metricDatum : lastArray) {
-      metricDatum = false;
-    }
 
-    for (const auto& origin : iter.Data()) {
-      size_t index;
-      if (!gOriginToIndexMap->Get(origin, &index)) {
-        return NS_ERROR_FAILURE;
+      auto originIt = bag.ConstIter();
+      for (; !originIt.Done(); originIt.Next()) {
+        uint32_t originCount = originIt.Data();
+        if (originCount >= generation) {
+          maxGeneration = std::max(maxGeneration, originCount);
+
+          const nsACString& origin = originIt.Key();
+          size_t index;
+          if (!gOriginToIndexMap->Get(origin, &index)) {
+            return NS_ERROR_FAILURE;
+          }
+          MOZ_ASSERT(index < gOriginsList->Length());
+          size_t shardIndex =
+              ceil(static_cast<double>(index) / PrioEncoder::gNumBooleans);
+          MOZ_ASSERT(shardIndex < metricData.Length());
+          MOZ_ASSERT(index % PrioEncoder::gNumBooleans <
+                     metricData[shardIndex].Length());
+          metricData[shardIndex][index % PrioEncoder::gNumBooleans] = true;
+        }
       }
-      MOZ_ASSERT(index < gOriginsList->Length());
-      size_t shardIndex =
-          ceil(static_cast<double>(index) / PrioEncoder::gNumBooleans);
-      MOZ_ASSERT(shardIndex < metricData.Length());
-      MOZ_ASSERT(index % PrioEncoder::gNumBooleans <
-                 metricData[shardIndex].Length());
-      metricData[shardIndex][index % PrioEncoder::gNumBooleans] = true;
-    }
-    aResult.AppendElement(MakePair(id, metricData));
+      aResult.AppendElement(MakePair(id, metricData));
+    } while (generation < maxGeneration);
   }
   return NS_OK;
 }
@@ -232,7 +266,7 @@ void TelemetryOrigin::InitializeGlobalState() {
   
   gOriginToIndexMap->Put(kUnknownOrigin, gOriginsList->Length());
 
-  gMetricToOriginsMap = new IdToOriginsMap();
+  gMetricToOriginBag = new IdToOriginBag();
 
   
   
@@ -260,8 +294,8 @@ void TelemetryOrigin::DeInitializeGlobalState() {
   delete gOriginToIndexMap;
   gOriginToIndexMap = nullptr;
 
-  delete gMetricToOriginsMap;
-  gMetricToOriginsMap = nullptr;
+  delete gMetricToOriginBag;
+  gMetricToOriginBag = nullptr;
 
   gInitDone = false;
 }
@@ -272,47 +306,41 @@ nsresult TelemetryOrigin::RecordOrigin(OriginMetricID aId,
     return NS_ERROR_FAILURE;
   }
 
-  StaticMutexAutoLock locker(gTelemetryOriginMutex);
+  uint32_t prioDataCount;
+  {
+    StaticMutexAutoLock locker(gTelemetryOriginMutex);
 
-  
-  
-  
-  if (!gInitDone) {
-    return NS_OK;
-  }
-
-  nsCString origin(aOrigin);
-  if (!gOriginToIndexMap->Contains(aOrigin)) {
     
     
-    if (gMetricToOriginsMap->Contains(aId) &&
-        gMetricToOriginsMap->GetOrInsert(aId).Contains(kUnknownOrigin)) {
+    
+    if (!gInitDone) {
       return NS_OK;
     }
-    origin = kUnknownOrigin;
+
+    nsCString origin(aOrigin);
+    if (!gOriginToIndexMap->Contains(aOrigin)) {
+      
+      
+      if (gMetricToOriginBag->Contains(aId) &&
+          gMetricToOriginBag->GetOrInsert(aId).Contains(kUnknownOrigin)) {
+        return NS_OK;
+      }
+      origin = kUnknownOrigin;
+    }
+
+    auto& originBag = gMetricToOriginBag->GetOrInsert(aId);
+    originBag.GetOrInsert(origin)++;
+
+    prioDataCount = PrioDataCount(locker);
   }
-
-  if (!gMetricToOriginsMap->Contains(aId)) {
-    
-    
-    gPrioDataCount += gPrioDatasPerMetric;
-  }
-
-  auto& originArray = gMetricToOriginsMap->GetOrInsert(aId);
-
-  if (originArray.Contains(origin)) {
-    
-    
-    gPrioDataCount += gPrioDatasPerMetric;
-  }
-
-  originArray.AppendElement(origin);
 
   static uint32_t sPrioPingLimit =
       mozilla::Preferences::GetUint("toolkit.telemetry.prioping.dataLimit", 10);
-  if (gPrioDataCount >= sPrioPingLimit) {
+  if (prioDataCount >= sPrioPingLimit) {
     nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
     if (os) {
+      
+      
       os->NotifyObservers(nullptr, "origin-telemetry-storage-limit-reached",
                           nullptr);
     }
@@ -332,7 +360,7 @@ nsresult TelemetryOrigin::GetOriginSnapshot(bool aClear, JSContext* aCx,
   }
 
   
-  IdToOriginsMap copy;
+  IdToOriginBag copy;
   {
     StaticMutexAutoLock locker(gTelemetryOriginMutex);
 
@@ -342,12 +370,15 @@ nsresult TelemetryOrigin::GetOriginSnapshot(bool aClear, JSContext* aCx,
       
       
 
-      gMetricToOriginsMap->SwapElements(copy);
-      gPrioDataCount = 0;
+      gMetricToOriginBag->SwapElements(copy);
     } else {
-      auto iter = gMetricToOriginsMap->ConstIter();
+      auto iter = gMetricToOriginBag->ConstIter();
       for (; !iter.Done(); iter.Next()) {
-        copy.Put(iter.Key(), iter.Data());
+        OriginBag& bag = copy.GetOrInsert(iter.Key());
+        auto originIt = iter.Data().ConstIter();
+        for (; !originIt.Done(); originIt.Next()) {
+          bag.Put(originIt.Key(), originIt.Data());
+        }
       }
     }
   }
@@ -359,24 +390,22 @@ nsresult TelemetryOrigin::GetOriginSnapshot(bool aClear, JSContext* aCx,
   }
   aResult.setObject(*rootObj);
   for (auto iter = copy.ConstIter(); !iter.Done(); iter.Next()) {
-    const auto& origins = iter.Data();
-    JS::RootedObject originsArrayObj(aCx,
-                                     JS_NewArrayObject(aCx, origins.Length()));
-    if (NS_WARN_IF(!originsArrayObj)) {
+    JS::RootedObject originsObj(aCx, JS_NewPlainObject(aCx));
+    if (NS_WARN_IF(!originsObj)) {
       return NS_ERROR_FAILURE;
     }
     if (!JS_DefineProperty(aCx, rootObj, GetNameForMetricID(iter.Key()),
-                           originsArrayObj, JSPROP_ENUMERATE)) {
+                           originsObj, JSPROP_ENUMERATE)) {
       NS_WARNING("Failed to define property in origin snapshot.");
       return NS_ERROR_FAILURE;
     }
 
-    for (uint32_t i = 0; i < origins.Length(); ++i) {
-      JS::RootedValue origin(aCx);
-      origin.setString(ToJSString(aCx, origins[i]));
-      if (!JS_DefineElement(aCx, originsArrayObj, i, origin,
-                            JSPROP_ENUMERATE)) {
-        NS_WARNING("Failed to define element in origin snapshot array.");
+    auto originIt = iter.Data().ConstIter();
+    for (; !originIt.Done(); originIt.Next()) {
+      if (!JS_DefineProperty(aCx, originsObj,
+                             nsPromiseFlatCString(originIt.Key()).get(),
+                             originIt.Data(), JSPROP_ENUMERATE)) {
+        NS_WARNING("Failed to define origin and count in snapshot.");
         return NS_ERROR_FAILURE;
       }
     }
@@ -412,7 +441,7 @@ nsresult TelemetryOrigin::GetEncodedOriginSnapshot(
       
       
 
-      gMetricToOriginsMap->Clear();
+      gMetricToOriginBag->Clear();
     }
   }
 
@@ -517,7 +546,7 @@ void TelemetryOrigin::ClearOrigins() {
     return;
   }
 
-  gMetricToOriginsMap->Clear();
+  gMetricToOriginBag->Clear();
 }
 
 size_t TelemetryOrigin::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) {
@@ -528,14 +557,11 @@ size_t TelemetryOrigin::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) {
     return 0;
   }
 
-  n += gMetricToOriginsMap->ShallowSizeOfIncludingThis(aMallocSizeOf);
-  auto iter = gMetricToOriginsMap->ConstIter();
+  n += gMetricToOriginBag->ShallowSizeOfIncludingThis(aMallocSizeOf);
+  auto iter = gMetricToOriginBag->ConstIter();
   for (; !iter.Done(); iter.Next()) {
+    
     n += iter.Data().ShallowSizeOfIncludingThis(aMallocSizeOf);
-    for (const auto& origin : iter.Data()) {
-      
-      n += origin.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
-    }
   }
 
   
