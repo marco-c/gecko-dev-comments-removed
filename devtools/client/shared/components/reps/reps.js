@@ -2877,7 +2877,9 @@ function parseStackString(stack) {
     
     
     
-    const locationParts = location.match(/^(.*):(\d+):(\d+)$/);
+    const locationParts = location
+      ? location.match(/^(.*):(\d+):(\d+)$/)
+      : null;
 
     if (location && locationParts) {
       const [, filename, line, column] = locationParts;

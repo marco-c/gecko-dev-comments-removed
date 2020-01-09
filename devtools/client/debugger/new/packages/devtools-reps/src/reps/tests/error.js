@@ -541,3 +541,47 @@ describe("Error - renderStacktrace prop", () => {
     expect(renderedComponent).toMatchSnapshot();
   });
 });
+
+describe("Error - Error with V8-like stack", () => {
+  
+  
+  
+  const stub = stubs.get("Error with V8-like stack");
+
+  it("correctly selects Error Rep for Error object", () => {
+    expect(getRep(stub)).toBe(ErrorRep.rep);
+  });
+
+  it("renders with expected text", () => {
+    const renderedComponent = shallow(
+      ErrorRep.rep({
+        object: stub
+      })
+    );
+
+    expect(renderedComponent).toMatchSnapshot();
+    expectActorAttribute(renderedComponent, stub.actor);
+  });
+});
+
+describe("Error - Error with invalid stack", () => {
+  
+  
+  
+  const stub = stubs.get("Error with invalid stack");
+
+  it("correctly selects Error Rep for Error object", () => {
+    expect(getRep(stub)).toBe(ErrorRep.rep);
+  });
+
+  it("renders with expected text", () => {
+    const renderedComponent = shallow(
+      ErrorRep.rep({
+        object: stub
+      })
+    );
+
+    expect(renderedComponent).toMatchSnapshot();
+    expectActorAttribute(renderedComponent, stub.actor);
+  });
+});
