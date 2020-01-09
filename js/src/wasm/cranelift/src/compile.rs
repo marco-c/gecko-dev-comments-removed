@@ -109,7 +109,7 @@ impl<'a, 'b> BatchCompiler<'a, 'b> {
         
         
         let index = FuncIndex::new(func.index as usize);
-        let wsig = init_sig(&mut self.context.func.signature, &self.environ, index);
+        let wsig = init_sig(&mut self.context.func.signature, &self.environ, index)?;
         self.context.func.name = wasm_function_name(index);
 
         let tenv = &mut TransEnv::new(&*self.isa, &self.environ, self.static_environ);
