@@ -3304,6 +3304,14 @@ class nsContentUtils {
   static bool StringifyJSON(JSContext* aCx, JS::MutableHandle<JS::Value> vp,
                             nsAString& aOutStr);
 
+  
+
+
+
+
+  static bool HighPriorityEventPendingForTopLevelDocumentBeforeContentfulPaint(
+      Document* aDocument);
+
  private:
   static bool InitializeEventTable();
 
