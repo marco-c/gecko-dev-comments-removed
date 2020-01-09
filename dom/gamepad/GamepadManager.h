@@ -56,7 +56,8 @@ class GamepadManager final : public nsIObserver {
   void RemoveGamepad(uint32_t aIndex, GamepadServiceType aServiceType);
 
   
-  void SyncGamepadState(uint32_t aIndex, Gamepad* aGamepad);
+  void SyncGamepadState(uint32_t aIndex, nsGlobalWindowInner* aWindow,
+                        Gamepad* aGamepad);
 
   
   already_AddRefed<Gamepad> GetGamepad(uint32_t aIndex) const;
