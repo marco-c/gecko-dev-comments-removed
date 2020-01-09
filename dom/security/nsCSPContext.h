@@ -37,9 +37,6 @@ namespace mozilla {
 namespace dom {
 class Element;
 }
-namespace ipc {
-class ContentSecurityPolicy;
-}
 }  
 
 class nsCSPContext : public nsIContentSecurityPolicy {
@@ -57,9 +54,6 @@ class nsCSPContext : public nsIContentSecurityPolicy {
   nsresult InitFromOther(nsCSPContext* otherContext,
                          mozilla::dom::Document* aDoc,
                          nsIPrincipal* aPrincipal);
-
-  void SetIPCPolicies(
-      const nsTArray<mozilla::ipc::ContentSecurityPolicy>& policies);
 
   
 
@@ -139,8 +133,6 @@ class nsCSPContext : public nsIContentSecurityPolicy {
   }
 
  private:
-  void EnsureIPCPoliciesRead();
-
   bool permitsInternal(CSPDirective aDir,
                        mozilla::dom::Element* aTriggeringElement,
                        nsICSPEventListener* aCSPEventListener,
@@ -161,12 +153,6 @@ class nsCSPContext : public nsIContentSecurityPolicy {
 
   nsString mReferrer;
   uint64_t mInnerWindowID;  
-  
-  
-  
-  
-  
-  nsTArray<mozilla::ipc::ContentSecurityPolicy> mIPCPolicies;
   nsTArray<nsCSPPolicy*> mPolicies;
   nsCOMPtr<nsIURI> mSelfURI;
   nsCOMPtr<nsILoadGroup> mCallingChannelLoadGroup;
