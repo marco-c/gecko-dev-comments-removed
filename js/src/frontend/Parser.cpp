@@ -1829,6 +1829,10 @@ GeneralParser<ParseHandler, Unit>::functionBody(InHandling inHandling,
   uint32_t startYieldOffset = pc_->lastYieldOffset;
 #endif
 
+  
+  
+  
+
   Node body;
   if (type == StatementListBody) {
     bool inheritedStrict = pc_->sc()->strict();
@@ -7044,6 +7048,37 @@ GeneralParser<ParseHandler, Unit>::classDefinition(
       }
     }
 
+    if (numFieldsWithInitializers > 0) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (!usedNames_.markAsAlwaysClosedOver(cx_, cx_->names().dotInitializers,
+                                             pc_->scriptId(),
+                                             pc_->innermostScope()->id())) {
+        return null();
+      }
+      if (!noteDeclaredName(cx_->names().dotInitializers,
+                            DeclarationKind::Const, namePos)) {
+        return null();
+      }
+    }
+
     classEndOffset = pos().end;
     if (!finishClassConstructor(classStmt, className, classStartOffset,
                                 classEndOffset, numFieldsWithInitializers,
@@ -7160,6 +7195,9 @@ GeneralParser<ParseHandler, Unit>::synthesizeConstructor(
   if (!noteUsedName(cx_->names().dotThis)) {
     return null();
   }
+
+  
+  
 
   bool canSkipLazyClosedOverBindings = handler_.canSkipLazyClosedOverBindings();
   if (!pc_->declareFunctionThis(usedNames_, canSkipLazyClosedOverBindings)) {
