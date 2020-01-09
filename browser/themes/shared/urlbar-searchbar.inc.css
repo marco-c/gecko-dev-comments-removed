@@ -105,6 +105,12 @@
   visibility: hidden;
 }
 
+.urlbar-input {
+  
+
+  padding: 0;
+}
+
 #urlbar-container {
   -moz-box-align: center;
 }
