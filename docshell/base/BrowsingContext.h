@@ -156,6 +156,8 @@ class BrowsingContext : public nsWrapperCache,
 
   BrowsingContext* GetParent() const { return mParent; }
 
+  BrowsingContext* Top();
+
   already_AddRefed<BrowsingContext> GetOpener() const { return Get(mOpenerId); }
   void SetOpener(BrowsingContext* aOpener) {
     SetOpenerId(aOpener ? aOpener->Id() : 0);
@@ -383,8 +385,6 @@ class BrowsingContext : public nsWrapperCache,
   
   
   void ClearWindowProxy() { mWindowProxy = nullptr; }
-
-  BrowsingContext* TopLevelBrowsingContext();
 
   friend class Location;
   friend class RemoteLocationProxy;
