@@ -46,17 +46,23 @@ class XDRBufferBase {
 
   size_t cursor() const { return cursor_; }
 
+  
+  
+  
+  
+  void setAligned(bool aligned) {
 #ifdef DEBUG
-  
-  
-  
-  
-  void setAligned(bool aligned) { aligned_ = aligned; }
-  bool isAligned() const { return aligned_; }
-#else
-  void setAligned(bool) const {}
-  bool isAligned() const { return true; }
+    aligned_ = aligned;
 #endif
+  }
+
+  bool isAligned() const {
+#ifdef DEBUG
+    return aligned_;
+#else
+    return true;
+#endif
+  }
 
  protected:
   JSContext* const context_;
