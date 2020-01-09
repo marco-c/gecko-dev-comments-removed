@@ -3189,8 +3189,8 @@ Toolbox.prototype = {
 
 
 
-  viewSourceInDebugger: function(sourceURL, sourceLine, sourceId, reason) {
-    return viewSource.viewSourceInDebugger(this, sourceURL, sourceLine, sourceId, reason);
+  viewSourceInDebugger: function(sourceURL, sourceLine, sourceColumn, sourceId, reason) {
+    return viewSource.viewSourceInDebugger(this, sourceURL, sourceLine, sourceColumn, sourceId, reason);
   },
 
   

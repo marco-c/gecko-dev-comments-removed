@@ -127,8 +127,8 @@ function NetworkEventMessage({
   
   
   const connector = {
-    viewSourceInDebugger: (url, line) => {
-      serviceContainer.onViewSourceInDebugger({url, line});
+    viewSourceInDebugger: (url, line, column) => {
+      serviceContainer.onViewSourceInDebugger({url, line, column});
     },
     getLongString: (grip) => {
       return serviceContainer.getLongString(grip);

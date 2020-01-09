@@ -343,25 +343,42 @@ function waitForNodeMutation(node, observeConfig = {}) {
 
 
 
-async function testOpenInDebugger(hud, toolbox, text, expectUrl = true) {
+
+
+
+
+async function testOpenInDebugger(
+  hud,
+  toolbox,
+  text,
+  expectUrl = true,
+  expectLine = true,
+  expectColumn = true
+) {
   info(`Finding message for open-in-debugger test; text is "${text}"`);
   const messageNode = await waitFor(() => findMessage(hud, text));
   const frameLinkNode = messageNode.querySelector(".message-location .frame-link");
   ok(frameLinkNode, "The message does have a location link");
-  await checkClickOnNode(hud, toolbox, frameLinkNode, expectUrl);
+  await checkClickOnNode(hud,
+                         toolbox,
+                         frameLinkNode,
+                         expectUrl,
+                         expectLine,
+                         expectColumn);
 }
 
 
 
 
-async function checkClickOnNode(hud, toolbox, frameLinkNode, expectUrl) {
+async function checkClickOnNode(
+  hud,
+  toolbox,
+  frameLinkNode,
+  expectUrl,
+  expectLine,
+  expectColumn
+) {
   info("checking click on node location");
-
-  const url = frameLinkNode.getAttribute("data-url");
-  ok(url, `source url found ("${url}")`);
-
-  const line = frameLinkNode.getAttribute("data-line");
-  ok(line, `source line found ("${line}")`);
 
   const onSourceInDebuggerOpened = once(hud.ui, "source-in-debugger-opened");
 
@@ -373,14 +390,34 @@ async function checkClickOnNode(hud, toolbox, frameLinkNode, expectUrl) {
   const dbg = toolbox.getPanel("jsdebugger");
 
   
-  await waitFor(() => {
-    return !!dbg._selectors.getSelectedSource(dbg._getState());
-  });
+  await waitFor(() => !!dbg._selectors.getSelectedSource(dbg._getState()) &&
+                      !!dbg._selectors.getSelectedLocation(dbg._getState()));
 
   if (expectUrl) {
+    const url = frameLinkNode.getAttribute("data-url");
+    ok(url, `source url found ("${url}")`);
+
     is(
       dbg._selectors.getSelectedSource(dbg._getState()).url, url,
       "expected source url"
+    );
+  }
+  if (expectLine) {
+    const line = frameLinkNode.getAttribute("data-line");
+    ok(line, `source line found ("${line}")`);
+
+    is(
+      dbg._selectors.getSelectedLocation(dbg._getState()).line, line,
+      "expected source line"
+    );
+  }
+  if (expectColumn) {
+    const column = frameLinkNode.getAttribute("data-column");
+    ok(column, `source column found ("${column}")`);
+
+    is(
+      dbg._selectors.getSelectedLocation(dbg._getState()).column, column,
+      "expected source column"
     );
   }
 }

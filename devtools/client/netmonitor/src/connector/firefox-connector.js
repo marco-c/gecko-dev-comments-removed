@@ -355,9 +355,9 @@ class FirefoxConnector {
 
 
 
-  viewSourceInDebugger(sourceURL, sourceLine) {
+  viewSourceInDebugger(sourceURL, sourceLine, sourceColumn) {
     if (this.toolbox) {
-      this.toolbox.viewSourceInDebugger(sourceURL, sourceLine);
+      this.toolbox.viewSourceInDebugger(sourceURL, sourceLine, sourceColumn);
     }
   }
 

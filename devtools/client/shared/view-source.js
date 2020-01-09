@@ -50,16 +50,21 @@ exports.viewSourceInStyleEditor = async function(toolbox, sourceURL,
 
 
 
-
-exports.viewSourceInDebugger = async function(toolbox, sourceURL, sourceLine, sourceId,
-                                              reason = "unknown") {
+exports.viewSourceInDebugger = async function(
+  toolbox,
+  sourceURL,
+  sourceLine,
+  sourceColumn,
+  sourceId,
+  reason = "unknown"
+) {
   const dbg = await toolbox.loadTool("jsdebugger");
   const source =
     sourceId ? dbg.getSourceByActorId(sourceId) : dbg.getSourceByURL(sourceURL);
   if (source) {
     await toolbox.selectTool("jsdebugger", reason);
     try {
-      await dbg.selectSource(source.id, sourceLine);
+      await dbg.selectSource(source.id, sourceLine, sourceColumn);
     } catch (err) {
       console.error("Failed to view source in debugger", err);
       return false;
@@ -70,7 +75,7 @@ exports.viewSourceInDebugger = async function(toolbox, sourceURL, sourceLine, so
     
     await toolbox.selectTool("jsdebugger", reason);
     try {
-      await dbg.selectSourceURL(sourceURL, sourceLine);
+      await dbg.selectSourceURL(sourceURL, sourceLine, sourceColumn);
     } catch (err) {
       console.error("Failed to view source in debugger", err);
       return false;
@@ -78,7 +83,7 @@ exports.viewSourceInDebugger = async function(toolbox, sourceURL, sourceLine, so
     return true;
   }
 
-  exports.viewSource(toolbox, sourceURL, sourceLine);
+  exports.viewSource(toolbox, sourceURL, sourceLine, sourceColumn);
   return false;
 };
 
