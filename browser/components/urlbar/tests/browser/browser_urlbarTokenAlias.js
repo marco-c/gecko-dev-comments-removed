@@ -212,6 +212,7 @@ add_task(async function nonTokenAlias() {
 
 
 
+
 add_task(async function clickAndFillAlias() {
   
   gURLBar.search("@");
@@ -240,6 +241,74 @@ add_task(async function clickAndFillAlias() {
   
   
   Assert.equal(gURLBar.textValue, `${ALIAS} `);
+
+  
+  
+  
+  
+  for (let i = 0; i < 2; i++) {
+    EventUtils.synthesizeKey("KEY_Enter");
+    await promiseSearchComplete();
+    await waitForAutocompleteResultAt(0);
+    await assertAlias(true);
+    Assert.equal(gURLBar.textValue, `${ALIAS} `);
+  }
+
+  await UrlbarTestUtils.promisePopupClose(window,
+    () => EventUtils.synthesizeKey("KEY_Escape"));
+});
+
+
+
+
+add_task(async function enterAndFillAlias() {
+  
+  gURLBar.search("@");
+  await promiseSearchComplete();
+
+  
+  
+  let index = 0;
+  for (;; index++) {
+    let details = await UrlbarTestUtils.getDetailsOfResultAt(window, index);
+    if (details.searchParams && details.searchParams.keyword == ALIAS) {
+      index++;
+      break;
+    }
+  }
+
+  if (!UrlbarPrefs.get("quantumbar")) {
+    
+    
+    index--;
+  }
+
+  
+  EventUtils.synthesizeKey("KEY_ArrowDown", { repeat: index });
+  await UrlbarTestUtils.promisePopupClose(window, () => {
+    EventUtils.synthesizeKey("KEY_Enter");
+  });
+
+  
+  await promiseSearchComplete();
+  await waitForAutocompleteResultAt(0);
+  await assertAlias(true);
+
+  
+  
+  Assert.equal(gURLBar.textValue, `${ALIAS} `);
+
+  
+  
+  
+  
+  for (let i = 0; i < 2; i++) {
+    EventUtils.synthesizeKey("KEY_Enter");
+    await promiseSearchComplete();
+    await waitForAutocompleteResultAt(0);
+    await assertAlias(true);
+    Assert.equal(gURLBar.textValue, `${ALIAS} `);
+  }
 
   await UrlbarTestUtils.promisePopupClose(window,
     () => EventUtils.synthesizeKey("KEY_Escape"));
