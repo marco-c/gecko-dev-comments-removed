@@ -466,7 +466,9 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleColor {
 
   
   
-  nscolor mColor;
+  
+  
+  mozilla::StyleRGBA mColor;
 };
 
 struct nsStyleImageLayers {
