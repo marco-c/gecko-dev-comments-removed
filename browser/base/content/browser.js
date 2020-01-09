@@ -1408,6 +1408,9 @@ var gBrowserInit = {
     
     let tabToAdopt = this.getTabToAdopt();
     if (tabToAdopt) {
+      let evt = new CustomEvent("before-initial-tab-adopted", { bubbles: true });
+      gBrowser.tabpanels.dispatchEvent(evt);
+
       
       gBrowser.stop();
       
