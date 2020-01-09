@@ -16,6 +16,7 @@ namespace mozilla {
 
 nsresult InitDocShellModule() {
   mozilla::dom::BrowsingContext::Init();
+  mozilla::dom::BrowsingContextGroup::Init();
   nsresult rv = nsSHistory::Startup();
   NS_ENSURE_SUCCESS(rv, rv);
 
