@@ -1043,7 +1043,6 @@ pref("security.sandbox.gpu.level", 0);
 
 
 
-pref("security.sandbox.rdd.win32k-disable", true);
 
 
 pref("security.sandbox.gmp.win32k-disable", false);
@@ -1622,6 +1621,11 @@ pref("dom.ipc.cpows.forbid-unsafe-from-browser", true);
 
 
 pref("dom.ipc.processHangMonitor", true);
+
+#if defined(NIGHTLY_BUILD) && defined(XP_WIN)
+
+pref("dom.ipc.processPriorityManager.enabled", true);
+#endif
 
 #ifdef DEBUG
 
