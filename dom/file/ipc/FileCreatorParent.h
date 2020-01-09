@@ -4,10 +4,10 @@
 
 
 
-#ifndef mozilla_dom_ipc_FileCreatorParent_h
-#define mozilla_dom_ipc_FileCreatorParent_h
+#ifndef mozilla_dom_FileCreatorParent_h
+#define mozilla_dom_FileCreatorParent_h
 
-#include "mozilla/ipc/PFileCreatorParent.h"
+#include "mozilla/dom/PFileCreatorParent.h"
 
 class nsIFile;
 
@@ -16,7 +16,7 @@ namespace dom {
 
 class BlobImpl;
 
-class FileCreatorParent final : public mozilla::ipc::PFileCreatorParent {
+class FileCreatorParent final : public mozilla::dom::PFileCreatorParent {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(FileCreatorParent)
 
