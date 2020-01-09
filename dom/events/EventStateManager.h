@@ -603,7 +603,8 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
 
   bool LookForAccessKeyAndExecute(nsTArray<uint32_t>& aAccessCharCodes,
-                                  bool aIsTrustedEvent, bool aExecute);
+                                  bool aIsTrustedEvent, bool aIsRepeat,
+                                  bool aExecute);
 
   
   
