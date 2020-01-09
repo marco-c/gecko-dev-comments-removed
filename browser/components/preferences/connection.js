@@ -45,7 +45,14 @@ window.addEventListener("DOMContentLoaded", () => {
     gConnectionsDialog.proxyTypeChanged.bind(gConnectionsDialog));
   Preferences.get("network.proxy.socks_version").on("change",
     gConnectionsDialog.updateDNSPref.bind(gConnectionsDialog));
-  gConnectionsDialog.initDnsOverHttpsUI();
+
+  
+  gConnectionsDialog.uiReady = new Promise(resolve => {
+    gConnectionsDialog._initialPrefsAdded = resolve;
+  }).then(() => {
+    delete gConnectionsDialog._initialPrefsAdded;
+    gConnectionsDialog.initDnsOverHttpsUI();
+  });
 
   document
     .getElementById("disableProxyExtension")
@@ -302,9 +309,13 @@ var gConnectionsDialog = {
 
   readDnsOverHttpsMode() {
     
+    
     let enabled = this.isDnsOverHttpsEnabled();
     let uriPref = Preferences.get("network.trr.uri");
     uriPref.disabled = !enabled || this.isDnsOverHttpsLocked();
+    if (this._initialPrefsAdded) {
+      this._initialPrefsAdded();
+    }
     return enabled;
   },
 
