@@ -372,10 +372,10 @@ class UrlbarInput {
       case UrlbarUtils.RESULT_TYPE.SEARCH:
         val = result.payload.suggestion || result.payload.query;
         break;
+      case UrlbarUtils.RESULT_TYPE.OMNIBOX:
+        val = result.payload.content;
+        break;
       default: {
-        
-        
-        
         val = result.payload.url;
         let uri;
         try {
