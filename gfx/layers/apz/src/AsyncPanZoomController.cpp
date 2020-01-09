@@ -3142,7 +3142,28 @@ bool AsyncPanZoomController::AttemptScroll(
           }
         }
 #endif
-        block->SetScrolledApzc(this);
+        bool displacementIsUserVisible = true;
+
+        { 
+          
+          
+          
+          RecursiveMutexAutoUnlock unlock(mRecursiveMutex);
+
+          ScreenIntPoint screenDisplacement = RoundedToInt(
+              ToScreenCoordinates(adjustedDisplacement, aStartPoint));
+          
+          
+          
+          
+          
+          if (screenDisplacement == ScreenIntPoint()) {
+            displacementIsUserVisible = false;
+          }
+        }
+        if (displacementIsUserVisible) {
+          block->SetScrolledApzc(this);
+        }
       }
       ScheduleCompositeAndMaybeRepaint();
       UpdateSharedCompositorFrameMetrics();
