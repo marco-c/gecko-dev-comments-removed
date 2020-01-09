@@ -837,7 +837,7 @@ const proto = {
 
     
     try {
-      source = this.hooks.sources().getSourceActorByURL(stack.source);
+      source = this.hooks.sources().getSourceActorsByURL(stack.source)[0];
     } catch (e) {
       
     }

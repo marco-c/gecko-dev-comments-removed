@@ -82,31 +82,12 @@ exports.getSourceURL = getSourceURL;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 const SourceActor = ActorClassWithSpec(sourceSpec, {
   typeName: "source",
 
-  initialize: function({ source, thread, originalUrl,
-                          isInlineSource, contentType }) {
+  initialize: function({ source, thread, isInlineSource, contentType }) {
     this._threadActor = thread;
-    this._url = originalUrl;
+    this._url = null;
     this._source = source;
     this._contentType = contentType;
     this._isInlineSource = isInlineSource;
@@ -137,10 +118,7 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
     return this.threadActor.breakpointActorMap;
   },
   get url() {
-    if (this._url) {
-      return this._url;
-    }
-    if (this.source) {
+    if (!this._url) {
       this._url = getSourceURL(this.source, this.threadActor._parent.window);
     }
     return this._url;
@@ -155,10 +133,9 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
 
   form: function() {
     const source = this.source;
-    
-    
+
     let introductionUrl = null;
-    if (source && source.introductionScript) {
+    if (source.introductionScript) {
       introductionUrl = source.introductionScript.source.url;
     }
 
@@ -185,15 +162,7 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
       "Debuggee source and URL are set automatically"
     );
 
-    
-    
-    
-    
-    if (this.source) {
-      query.source = this.source;
-    } else {
-      query.url = this.url;
-    }
+    query.source = this.source;
     return this.dbg.findScripts(query);
   },
 
@@ -213,7 +182,7 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
       content: t,
       contentType: this._contentType,
     });
-    const isWasm = this.source && this.source.introductionType === "wasm";
+    const isWasm = this.source.introductionType === "wasm";
 
     if (isWasm) {
       const wasm = this.source.binary;
