@@ -85,6 +85,15 @@ nsresult WMFDecoderModule::Startup() {
 
 already_AddRefed<MediaDataDecoder> WMFDecoderModule::CreateVideoDecoder(
     const CreateDecoderParams& aParams) {
+
+  
+  
+  
+  
+  if (aParams.VideoConfig().HasAlpha()) {
+    return nullptr;
+  }
+
   nsAutoPtr<WMFVideoMFTManager> manager(new WMFVideoMFTManager(
       aParams.VideoConfig(), aParams.mKnowsCompositor, aParams.mImageContainer,
       aParams.mRate.mValue, aParams.mOptions, sDXVAEnabled));
