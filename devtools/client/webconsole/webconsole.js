@@ -6,7 +6,7 @@
 
 var Services = require("Services");
 loader.lazyRequireGetter(this, "Utils", "devtools/client/webconsole/utils", true);
-loader.lazyRequireGetter(this, "WebConsoleFrame", "devtools/client/webconsole/webconsole-frame", true);
+loader.lazyRequireGetter(this, "WebConsoleUI", "devtools/client/webconsole/webconsole-ui", true);
 loader.lazyRequireGetter(this, "gDevTools", "devtools/client/framework/devtools", true);
 loader.lazyRequireGetter(this, "viewSource", "devtools/client/shared/view-source");
 loader.lazyRequireGetter(this, "openDocLink", "devtools/client/shared/link", true);
@@ -44,7 +44,7 @@ function WebConsole(target, iframeWindow, chromeWindow, hudService) {
   if (element.getAttribute("windowtype") != gDevTools.chromeWindowType) {
     this.browserWindow = this.hudService.currentContext();
   }
-  this.ui = new WebConsoleFrame(this);
+  this.ui = new WebConsoleUI(this);
 }
 
 WebConsole.prototype = {

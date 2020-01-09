@@ -30,30 +30,30 @@ const PREF_SIDEBAR_ENABLED = "devtools.webconsole.sidebarToggle";
 
 
 
+class WebConsoleUI {
+  
 
 
+  constructor(webConsoleOwner) {
+    this.owner = webConsoleOwner;
+    this.hudId = this.owner.hudId;
+    this.isBrowserConsole = this.owner._browserConsole;
+    this.window = this.owner.iframeWindow;
 
+    this._onToolboxPrefChanged = this._onToolboxPrefChanged.bind(this);
+    this._onPanelSelected = this._onPanelSelected.bind(this);
+    this._onChangeSplitConsoleState = this._onChangeSplitConsoleState.bind(this);
 
-function WebConsoleFrame(webConsoleOwner) {
-  this.owner = webConsoleOwner;
-  this.hudId = this.owner.hudId;
-  this.isBrowserConsole = this.owner._browserConsole;
-  this.window = this.owner.iframeWindow;
+    EventEmitter.decorate(this);
+  }
 
-  this._onToolboxPrefChanged = this._onToolboxPrefChanged.bind(this);
-  this._onPanelSelected = this._onPanelSelected.bind(this);
-  this._onChangeSplitConsoleState = this._onChangeSplitConsoleState.bind(this);
-
-  EventEmitter.decorate(this);
-}
-WebConsoleFrame.prototype = {
   
 
 
 
   get webConsoleClient() {
     return this.proxy ? this.proxy.webConsoleClient : null;
-  },
+  }
 
   
 
@@ -72,7 +72,8 @@ WebConsoleFrame.prototype = {
     if (Services.obs) {
       Services.obs.notifyObservers(id, "web-console-created");
     }
-  },
+  }
+
   destroy() {
     if (this._destroyer) {
       return this._destroyer.promise;
@@ -105,7 +106,7 @@ WebConsoleFrame.prototype = {
     }
 
     return this._destroyer.promise;
-  },
+  }
 
   
 
@@ -125,7 +126,7 @@ WebConsoleFrame.prototype = {
       this.webConsoleClient.clearMessagesCache();
     }
     this.emit("messages-cleared");
-  },
+  }
 
   
 
@@ -137,7 +138,7 @@ WebConsoleFrame.prototype = {
       this.wrapper.dispatchPrivateMessagesClear();
       this.emit("private-messages-cleared");
     }
-  },
+  }
 
   inspectObjectActor(objectActor) {
     this.wrapper.dispatchMessageAdd({
@@ -147,20 +148,12 @@ WebConsoleFrame.prototype = {
       },
     }, true);
     return this.wrapper;
-  },
-
-  _onUpdateListeners() {
-
-  },
+  }
 
   logWarningAboutReplacedAPI() {
     return this.owner.target.logWarningInPage(l10n.getStr("ConsoleAPIDisabled"),
       "ConsoleAPIDisabled");
-  },
-
-  handleNetworkEventUpdate() {
-
-  },
+  }
 
   
 
@@ -181,7 +174,7 @@ WebConsoleFrame.prototype = {
 
     
     return this.webConsoleClient.setPreferences(toSet);
-  },
+  }
 
   
 
@@ -191,7 +184,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  _initConnection: function() {
+  _initConnection() {
     if (this._initDefer) {
       return this._initDefer.promise;
     }
@@ -209,9 +202,9 @@ WebConsoleFrame.prototype = {
     });
 
     return this._initDefer.promise;
-  },
+  }
 
-  _initUI: function() {
+  _initUI() {
     this.document = this.window.document;
     this.rootElement = this.document.documentElement;
 
@@ -230,9 +223,9 @@ WebConsoleFrame.prototype = {
       toolbox.on("split-console", this._onChangeSplitConsoleState);
       toolbox.on("select", this._onChangeSplitConsoleState);
     }
-  },
+  }
 
-  _initOutputSyntaxHighlighting: function() {
+  _initOutputSyntaxHighlighting() {
     
     
     const syntaxHighlightNode = node => {
@@ -254,9 +247,9 @@ WebConsoleFrame.prototype = {
         }
       }
     });
-  },
+  }
 
-  _initShortcuts: function() {
+  _initShortcuts() {
     const shortcuts = new KeyShortcuts({
       window: this.window,
     });
@@ -294,7 +287,7 @@ WebConsoleFrame.prototype = {
         }
       });
     }
-  },
+  }
 
   
 
@@ -304,12 +297,12 @@ WebConsoleFrame.prototype = {
 
 
 
-  onLocationChange: function(uri, title) {
+  onLocationChange(uri, title) {
     this.contentLocation = uri;
     if (this.owner.onLocationChange) {
       this.owner.onLocationChange(uri, title);
     }
-  },
+  }
 
   
 
@@ -318,32 +311,32 @@ WebConsoleFrame.prototype = {
 
 
 
-  _releaseObject: function(actor) {
+  _releaseObject(actor) {
     if (this.proxy) {
       this.proxy.releaseActor(actor);
     }
-  },
+  }
 
   
 
 
-  _onToolboxPrefChanged: function() {
+  _onToolboxPrefChanged() {
     const newValue = Services.prefs.getBoolPref(PREF_MESSAGE_TIMESTAMP);
     this.wrapper.dispatchTimestampsToggle(newValue);
-  },
+  }
 
   
 
 
 
 
-  _onPanelSelected: function() {
+  _onPanelSelected() {
     this.jsterm.focus();
-  },
+  }
 
-  _onChangeSplitConsoleState: function() {
+  _onChangeSplitConsoleState() {
     this.wrapper.dispatchSplitConsoleCloseButtonToggle();
-  },
+  }
 
   
 
@@ -353,7 +346,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  handleTabNavigated: async function(packet) {
+  async handleTabNavigated(packet) {
     if (packet.url) {
       this.onLocationChange(packet.url, packet.title);
     }
@@ -366,15 +359,15 @@ WebConsoleFrame.prototype = {
     
     await this.wrapper.waitAsyncDispatches();
     this.emit("reloaded");
-  },
+  }
 
-  handleTabWillNavigate: function(packet) {
+  handleTabWillNavigate(packet) {
     this.wrapper.dispatchTabWillNavigate(packet);
     if (packet.url) {
       this.onLocationChange(packet.url, packet.title);
     }
-  },
-};
+  }
+}
 
 
 
@@ -389,4 +382,4 @@ function quickRestart() {
   Services.startup.quit(Ci.nsIAppStartup.eAttemptQuit | Ci.nsIAppStartup.eRestart);
 }
 
-exports.WebConsoleFrame = WebConsoleFrame;
+exports.WebConsoleUI = WebConsoleUI;
