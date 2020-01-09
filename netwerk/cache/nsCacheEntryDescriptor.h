@@ -205,6 +205,8 @@ class nsCacheEntryDescriptor final : public PRCList,
   
 
 
+
+  nsCOMPtr<nsICacheServiceInternal> mCacheService;
   nsCacheEntry* mCacheEntry;  
   nsCacheAccessMode mAccessGranted;
   nsTArray<nsInputStreamWrapper*> mInputWrappers;

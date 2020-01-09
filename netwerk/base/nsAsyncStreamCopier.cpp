@@ -117,9 +117,10 @@ void nsAsyncStreamCopier::Complete(nsresult status) {
 }
 
 void nsAsyncStreamCopier::OnAsyncCopyComplete(void *closure, nsresult status) {
-  nsAsyncStreamCopier *self = (nsAsyncStreamCopier *)closure;
+  
+  RefPtr<nsAsyncStreamCopier> self =
+      dont_AddRef((nsAsyncStreamCopier *)closure);
   self->Complete(status);
-  NS_RELEASE(self);  
 }
 
 
@@ -366,7 +367,7 @@ void nsAsyncStreamCopier::AsyncCopyInternal() {
   nsresult rv;
   
   
-  NS_ADDREF_THIS();
+  RefPtr<nsAsyncStreamCopier> self = this;
   {
     MutexAutoLock lock(mLock);
     rv = NS_AsyncCopy(mSource, mSink, mTarget, mMode, mChunkSize,
@@ -374,7 +375,9 @@ void nsAsyncStreamCopier::AsyncCopyInternal() {
                       getter_AddRefs(mCopierCtx));
   }
   if (NS_FAILED(rv)) {
-    NS_RELEASE_THIS();
     Cancel(rv);
+    return;  
   }
+
+  Unused << self.forget();  
 }

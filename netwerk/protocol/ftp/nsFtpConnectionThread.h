@@ -182,6 +182,8 @@ class nsFtpState final : public nsBaseContentStream,
   
   
 
+  nsCOMPtr<nsIProxiedProtocolHandler> mHandler;  
+
   
   FTP_STATE mState;        
   FTP_STATE mNextState;    

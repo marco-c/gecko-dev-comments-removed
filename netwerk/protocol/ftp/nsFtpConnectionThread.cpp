@@ -94,7 +94,7 @@ nsFtpState::nsFtpState()
   LOG_INFO(("FTP:(%p) nsFtpState created", this));
 
   
-  NS_ADDREF(gFtpHandler);
+  mHandler = gFtpHandler;
 }
 
 nsFtpState::~nsFtpState() {
@@ -103,8 +103,7 @@ nsFtpState::~nsFtpState() {
   if (mProxyRequest) mProxyRequest->Cancel(NS_ERROR_FAILURE);
 
   
-  nsFtpProtocolHandler *handler = gFtpHandler;
-  NS_RELEASE(handler);
+  mHandler = nullptr;
 }
 
 

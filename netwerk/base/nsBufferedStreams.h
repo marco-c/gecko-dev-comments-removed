@@ -54,7 +54,7 @@ class nsBufferedStream : public nsISeekableStream {
   
   uint32_t mFillPoint;
 
-  nsISupports* mStream;  
+  nsCOMPtr<nsISupports> mStream;  
 
   bool mBufferDisabled;
   bool mEOF;  
@@ -90,7 +90,7 @@ class nsBufferedInputStream final : public nsBufferedStream,
 
   static nsresult Create(nsISupports* aOuter, REFNSIID aIID, void** aResult);
 
-  nsIInputStream* Source() { return (nsIInputStream*)mStream; }
+  nsIInputStream* Source() { return (nsIInputStream*)mStream.get(); }
 
  protected:
   virtual ~nsBufferedInputStream() = default;
@@ -136,7 +136,7 @@ class nsBufferedOutputStream : public nsBufferedStream,
 
   static nsresult Create(nsISupports* aOuter, REFNSIID aIID, void** aResult);
 
-  nsIOutputStream* Sink() { return (nsIOutputStream*)mStream; }
+  nsIOutputStream* Sink() { return (nsIOutputStream*)mStream.get(); }
 
  protected:
   virtual ~nsBufferedOutputStream() { nsBufferedOutputStream::Close(); }

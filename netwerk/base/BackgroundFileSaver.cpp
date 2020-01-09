@@ -309,7 +309,11 @@ nsresult BackgroundFileSaver::GetWorkerThreadAttention(
 
 
 void BackgroundFileSaver::AsyncCopyCallback(void *aClosure, nsresult aStatus) {
-  BackgroundFileSaver *self = (BackgroundFileSaver *)aClosure;
+  
+  
+  
+  RefPtr<BackgroundFileSaver> self =
+      dont_AddRef((BackgroundFileSaver *)aClosure);
   {
     MutexAutoLock lock(self->mLock);
 
@@ -325,11 +329,6 @@ void BackgroundFileSaver::AsyncCopyCallback(void *aClosure, nsresult aStatus) {
   }
 
   (void)self->ProcessAttention();
-
-  
-  
-  
-  NS_RELEASE(self);
 }
 
 

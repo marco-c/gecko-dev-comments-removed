@@ -299,8 +299,7 @@ class nsStandardURL : public nsIFileURL,
                                   
 
   
-  
-  static nsIIDNService *gIDN;
+  static StaticRefPtr<nsIIDNService> gIDN;
   static const char gHostLimitDigits[];
   static bool gInitialized;
   static bool gPunycodeHost;
