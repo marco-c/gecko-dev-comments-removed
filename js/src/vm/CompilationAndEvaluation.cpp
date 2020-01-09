@@ -73,9 +73,7 @@ static JSScript* CompileUtf8(JSContext* cx,
                              const ReadOnlyCompileOptions& options,
                              const char* bytes, size_t length) {
   auto chars = UniqueTwoByteChars(
-      UTF8CharsToNewTwoByteCharsZ(cx, UTF8Chars(bytes, length), &length,
-                                  js::MallocArena)
-          .get());
+      UTF8CharsToNewTwoByteCharsZ(cx, UTF8Chars(bytes, length), &length).get());
   if (!chars) {
     return nullptr;
   }
@@ -188,9 +186,7 @@ JS_PUBLIC_API bool JS_Utf8BufferIsCompilableUnit(JSContext* cx,
   cx->clearPendingException();
 
   JS::UniqueTwoByteChars chars{
-      UTF8CharsToNewTwoByteCharsZ(cx, UTF8Chars(utf8, length), &length,
-                                  js::MallocArena)
-          .get()};
+      UTF8CharsToNewTwoByteCharsZ(cx, UTF8Chars(utf8, length), &length).get()};
   if (!chars) {
     return true;
   }
@@ -550,14 +546,10 @@ static bool Evaluate(JSContext* cx, HandleObjectVector envChain,
   return ::Evaluate(cx, scope->kind(), env, optionsArg, srcBuf, rval);
 }
 
-extern JS_PUBLIC_API bool JS::EvaluateUtf8(
-    JSContext* cx, const ReadOnlyCompileOptions& options, const char* bytes,
-    size_t length, MutableHandle<Value> rval) {
-  SourceText<Utf8Unit> srcBuf;
-  if (!srcBuf.init(cx, bytes, length, SourceOwnership::Borrowed)) {
-    return false;
-  }
-
+extern JS_PUBLIC_API bool JS::Evaluate(JSContext* cx,
+                                       const ReadOnlyCompileOptions& options,
+                                       SourceText<Utf8Unit>& srcBuf,
+                                       MutableHandle<Value> rval) {
   RootedObject globalLexical(cx, &cx->global()->lexicalEnvironment());
   return ::Evaluate(cx, ScopeKind::Global, globalLexical, options, srcBuf,
                     rval);
@@ -596,8 +588,7 @@ JS_PUBLIC_API bool JS::EvaluateUtf8Path(
   auto contents = reinterpret_cast<const char*>(buffer.begin());
   size_t length = buffer.length();
   auto chars = UniqueTwoByteChars(
-      UTF8CharsToNewTwoByteCharsZ(cx, UTF8Chars(contents, length), &length,
-                                  js::MallocArena)
+      UTF8CharsToNewTwoByteCharsZ(cx, UTF8Chars(contents, length), &length)
           .get());
   if (!chars) {
     return false;

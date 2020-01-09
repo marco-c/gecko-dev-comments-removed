@@ -6,7 +6,10 @@
 #include "js/CompilationAndEvaluation.h"  
 #include "js/CompileOptions.h"            
 #include "js/RootingAPI.h"                
+#include "js/SourceText.h"                
 #include "js/Value.h"                     
+
+#include "mozilla/Utf8.h"  
 
 #include <stdint.h>  
 #include <string.h>  
@@ -55,8 +58,13 @@ FRAGMENT(unwind, simple) {
   JS::CompileOptions opts(cx);
   opts.setFileAndLine(__FILE__, line0 + 1);
 
+  JS::SourceText<mozilla::Utf8Unit> srcBuf;
+  if (!srcBuf.init(cx, bytes, strlen(bytes), JS::SourceOwnership::Borrowed)) {
+    return;
+  }
+
   JS::Rooted<JS::Value> rval(cx);
-  JS::EvaluateUtf8(cx, opts, bytes, strlen(bytes), &rval);
+  JS::Evaluate(cx, opts, srcBuf, &rval);
 
   js::jit::JitOptions.baselineWarmUpThreshold = saveThreshold;
 }

@@ -6,7 +6,10 @@
 
 
 
-#include "js/CompilationAndEvaluation.h"
+#include "mozilla/Utf8.h"  
+
+#include "js/CompilationAndEvaluation.h"  
+#include "js/SourceText.h"                
 #include "jsapi-tests/tests.h"
 
 BEGIN_TEST(testGCOutOfMemory) {
@@ -21,8 +24,11 @@ BEGIN_TEST(testGCOutOfMemory) {
 
   JS::CompileOptions opts(cx);
 
+  JS::SourceText<mozilla::Utf8Unit> srcBuf;
+  CHECK(srcBuf.init(cx, source, strlen(source), JS::SourceOwnership::Borrowed));
+
   JS::RootedValue root(cx);
-  bool ok = JS::EvaluateUtf8(cx, opts, source, strlen(source), &root);
+  bool ok = JS::Evaluate(cx, opts, srcBuf, &root);
 
   
   CHECK(!ok);

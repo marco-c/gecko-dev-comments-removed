@@ -111,6 +111,7 @@ extern JS_PUBLIC_API bool CloneAndExecuteScript(JSContext* cx,
 
 
 
+
 extern JS_PUBLIC_API bool Evaluate(JSContext* cx,
                                    const ReadOnlyCompileOptions& options,
                                    SourceText<char16_t>& srcBuf,
@@ -131,10 +132,10 @@ extern JS_PUBLIC_API bool Evaluate(JSContext* cx, HandleObjectVector envChain,
 
 
 
-extern JS_PUBLIC_API bool EvaluateUtf8(JSContext* cx,
-                                       const ReadOnlyCompileOptions& options,
-                                       const char* bytes, size_t length,
-                                       MutableHandle<Value> rval);
+extern JS_PUBLIC_API bool Evaluate(JSContext* cx,
+                                   const ReadOnlyCompileOptions& options,
+                                   SourceText<mozilla::Utf8Unit>& srcBuf,
+                                   MutableHandle<Value> rval);
 
 
 
