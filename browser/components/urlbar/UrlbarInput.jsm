@@ -17,6 +17,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   UrlbarController: "resource:///modules/UrlbarController.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarQueryContext: "resource:///modules/UrlbarUtils.jsm",
+  UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
   UrlbarValueFormatter: "resource:///modules/UrlbarValueFormatter.jsm",
   UrlbarView: "resource:///modules/UrlbarView.jsm",
@@ -437,10 +438,25 @@ class UrlbarInput {
     }));
   }
 
-  typeRestrictToken(char) {
+  
+
+
+
+
+
+
+  search(value) {
     this.window.focusAndSelectUrlBar();
 
-    this.inputField.value = char + " ";
+    
+    if (Object.values(UrlbarTokenizer.RESTRICT).includes(value)) {
+      this.inputField.value = value + " ";
+    } else {
+      this.inputField.value = value;
+    }
+
+    
+    this.selectionStart = -1;
 
     let event = this.document.createEvent("UIEvents");
     event.initUIEvent("input", true, false, this.window, 0);
