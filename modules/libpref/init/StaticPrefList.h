@@ -460,6 +460,14 @@ VARCACHE_PREF(
 )
 
 
+
+VARCACHE_PREF(
+  "dom.enable_performance",
+   dom_enable_performance,
+  bool, true
+)
+
+
 VARCACHE_PREF(
   "dom.enable_performance_observer",
    dom_enable_performance_observer,
