@@ -1142,7 +1142,7 @@ void jit::FinishDiscardBaselineScript(FreeOp* fop, JSScript* script) {
     return;
   }
 
-  if (script->typesDontCheckGeneration()->active()) {
+  if (script->types()->active()) {
     
     
     script->baselineScript()->clearIonCompiledOrInlined();
@@ -1218,7 +1218,7 @@ static void MarkActiveTypeScripts(JSContext* cx,
     const JSJitFrameIter& frame = iter.frame();
     switch (frame.type()) {
       case FrameType::BaselineJS:
-        frame.script()->typesDontCheckGeneration()->setActive();
+        frame.script()->types()->setActive();
         break;
       case FrameType::Exit:
         if (frame.exitFrame()->is<LazyLinkExitFrameLayout>()) {
@@ -1226,17 +1226,17 @@ static void MarkActiveTypeScripts(JSContext* cx,
               frame.exitFrame()->as<LazyLinkExitFrameLayout>();
           JSScript* script =
               ScriptFromCalleeToken(ll->jsFrame()->calleeToken());
-          script->typesDontCheckGeneration()->setActive();
+          script->types()->setActive();
         }
         break;
       case FrameType::Bailout:
       case FrameType::IonJS: {
         
         
-        frame.script()->typesDontCheckGeneration()->setActive();
+        frame.script()->types()->setActive();
         for (InlineFrameIterator inlineIter(cx, &frame); inlineIter.more();
              ++inlineIter) {
-          inlineIter.script()->typesDontCheckGeneration()->setActive();
+          inlineIter.script()->types()->setActive();
         }
         break;
       }
