@@ -105,7 +105,7 @@ struct LangGroupFontPrefs {
     }
   }
 
-  RefPtr<nsAtom> mLangGroup;
+  nsStaticAtom* mLangGroup;
   nscoord mMinimumFontSize;
   nsFont mDefaultVariableFont;
   nsFont mDefaultFixedFont;
@@ -151,13 +151,12 @@ class StaticPresData {
 
 
 
-  nsAtom* GetLangGroup(nsAtom* aLanguage, bool* aNeedsToCache = nullptr) const;
+  nsStaticAtom* GetLangGroup(nsAtom* aLanguage, bool* aNeedsToCache = nullptr) const;
 
   
 
 
-
-  already_AddRefed<nsAtom> GetUncachedLangGroup(nsAtom* aLanguage) const;
+  nsStaticAtom* GetUncachedLangGroup(nsAtom* aLanguage) const;
 
   
 
@@ -183,7 +182,7 @@ class StaticPresData {
 
  private:
   StaticPresData();
-  ~StaticPresData() {}
+  ~StaticPresData() = default;
 
   nsLanguageAtomService* mLangService;
 };

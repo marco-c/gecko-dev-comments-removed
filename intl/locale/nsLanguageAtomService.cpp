@@ -21,10 +21,11 @@ static constexpr nsUConvProp encodingsGroups[] = {
 };
 
 
-static constexpr const char* kLangGroups[] = {
+static constexpr nsStaticAtom* kLangGroups[] = {
     
-    "x-armn",  "x-cyrillic", "x-devanagari", "x-geor", "x-math",
-    "x-tamil", "x-unicode",  "x-western"
+    nsGkAtoms::x_armn,  nsGkAtoms::x_cyrillic, nsGkAtoms::x_devanagari,
+    nsGkAtoms::x_geor,  nsGkAtoms::x_math,     nsGkAtoms::x_tamil,
+    nsGkAtoms::Unicode, nsGkAtoms::x_western
     
     
     
@@ -39,7 +40,7 @@ static constexpr const char* kLangGroups[] = {
 
 static constexpr struct {
   const char* mTag;
-  nsAtom* mAtom;
+  nsStaticAtom* mAtom;
 } kScriptLangGroup[] = {
     
     {"Arab", nsGkAtoms::ar},
@@ -86,7 +87,8 @@ nsLanguageAtomService* nsLanguageAtomService::GetService() {
   return gLangAtomService.get();
 }
 
-nsAtom* nsLanguageAtomService::LookupLanguage(const nsACString& aLanguage) {
+nsStaticAtom* nsLanguageAtomService::LookupLanguage(
+    const nsACString& aLanguage) {
   nsAutoCString lowered(aLanguage);
   ToLowerCase(lowered);
 
@@ -128,42 +130,41 @@ nsAtom* nsLanguageAtomService::GetLocaleLanguage() {
   return mLocaleLanguage;
 }
 
-nsAtom* nsLanguageAtomService::GetLanguageGroup(nsAtom* aLanguage,
-                                                bool* aNeedsToCache) {
-  nsAtom* retVal = mLangToGroup.GetWeak(aLanguage);
-
-  if (!retVal) {
-    if (aNeedsToCache) {
-      *aNeedsToCache = true;
-      return nullptr;
-    }
-    RefPtr<nsAtom> uncached = GetUncachedLanguageGroup(aLanguage);
-    retVal = uncached.get();
-
-    AssertIsMainThreadOrServoFontMetricsLocked();
-    
-    mLangToGroup.Put(aLanguage, uncached);
+nsStaticAtom* nsLanguageAtomService::GetLanguageGroup(nsAtom* aLanguage,
+                                                      bool* aNeedsToCache) {
+  if (nsStaticAtom* group = mLangToGroup.Get(aLanguage)) {
+    return group;
   }
-
-  return retVal;
+  if (aNeedsToCache) {
+    *aNeedsToCache = true;
+    return nullptr;
+  }
+  AssertIsMainThreadOrServoFontMetricsLocked();
+  nsStaticAtom* group = GetUncachedLanguageGroup(aLanguage);
+  mLangToGroup.Put(aLanguage, group);
+  return group;
 }
 
-already_AddRefed<nsAtom> nsLanguageAtomService::GetUncachedLanguageGroup(
+nsStaticAtom* nsLanguageAtomService::GetUncachedLanguageGroup(
     nsAtom* aLanguage) const {
   nsAutoCString langStr;
   aLanguage->ToUTF8String(langStr);
   ToLowerCase(langStr);
 
-  RefPtr<nsAtom> langGroup;
   if (langStr[0] == 'x' && langStr[1] == '-') {
     
-    size_t unused;
-    if (BinarySearchIf(
-            kLangGroups, 0, ArrayLength(kLangGroups),
-            [&langStr](const char* tag) -> int { return langStr.Compare(tag); },
-            &unused)) {
-      langGroup = NS_Atomize(langStr);
-      return langGroup.forget();
+    for (nsStaticAtom* langGroup : kLangGroups) {
+      if (langGroup == aLanguage) {
+        return langGroup;
+      }
+      if (aLanguage->IsAsciiLowercase()) {
+        continue;
+      }
+      
+      nsDependentAtomString string(langGroup);
+      if (string.EqualsASCII(langStr.get(), langStr.Length())) {
+        return langGroup;
+      }
     }
   } else {
     
@@ -174,11 +175,9 @@ already_AddRefed<nsAtom> nsLanguageAtomService::GetUncachedLanguageGroup(
       }
       if (loc.GetScript().EqualsLiteral("Hant")) {
         if (loc.GetRegion().EqualsLiteral("HK")) {
-          langGroup = nsGkAtoms::HongKongChinese;
-        } else {
-          langGroup = nsGkAtoms::Taiwanese;
+          return nsGkAtoms::HongKongChinese;
         }
-        return langGroup.forget();
+        return nsGkAtoms::Taiwanese;
       } else {
         size_t foundIndex;
         const nsCString& script = loc.GetScript();
@@ -187,14 +186,12 @@ already_AddRefed<nsAtom> nsLanguageAtomService::GetUncachedLanguageGroup(
                              return script.Compare(entry.mTag);
                            },
                            &foundIndex)) {
-          langGroup = kScriptLangGroup[foundIndex].mAtom;
-          return langGroup.forget();
+          return kScriptLangGroup[foundIndex].mAtom;
         }
       }
     }
   }
 
   
-  langGroup = nsGkAtoms::Unicode;
-  return langGroup.forget();
+  return nsGkAtoms::Unicode;
 }
