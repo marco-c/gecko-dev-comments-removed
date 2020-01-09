@@ -3017,8 +3017,7 @@ void SVGTextFrame::ReflowSVGNonDisplayText() {
   
   
   
-  nsLayoutUtils::PostRestyleEvent(mContent->AsElement(), nsRestyleHint(0),
-                                  nsChangeHint_InvalidateRenderingObservers);
+  SVGObserverUtils::InvalidateRenderingObservers(this);
 
   
   
