@@ -428,7 +428,8 @@ Instance::memCopy(Instance* instance, uint32_t dstByteOffset,
 
   if (len == 0) {
     
-    if (dstByteOffset < memLen && srcByteOffset < memLen) {
+    
+    if (dstByteOffset <= memLen && srcByteOffset <= memLen) {
       return 0;
     }
   } else {
@@ -514,7 +515,8 @@ Instance::memFill(Instance* instance, uint32_t byteOffset, uint32_t value,
 
   if (len == 0) {
     
-    if (byteOffset < memLen) {
+    
+    if (byteOffset <= memLen) {
       return 0;
     }
   } else {
@@ -586,7 +588,9 @@ Instance::memInit(Instance* instance, uint32_t dstOffset, uint32_t srcOffset,
 
   if (len == 0) {
     
-    if (dstOffset < memLen && srcOffset < segLen) {
+    
+    
+    if (dstOffset <= memLen && srcOffset <= segLen) {
       return 0;
     }
   } else {
@@ -647,7 +651,8 @@ Instance::tableCopy(Instance* instance, uint32_t dstOffset, uint32_t srcOffset,
   if (len == 0) {
     
     
-    if (dstOffset < dstTableLen && srcOffset < srcTableLen) {
+    
+    if (dstOffset <= dstTableLen && srcOffset <= srcTableLen) {
       return 0;
     }
   } else {
@@ -810,7 +815,8 @@ Instance::tableInit(Instance* instance, uint32_t dstOffset, uint32_t srcOffset,
 
   if (len == 0) {
     
-    if (dstOffset < tableLen && srcOffset < segLen) {
+    
+    if (dstOffset <= tableLen && srcOffset <= segLen) {
       return 0;
     }
   } else {

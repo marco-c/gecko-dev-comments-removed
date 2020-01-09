@@ -548,12 +548,25 @@ function checkRange(arr, minIx, maxIxPlusOne, expectedValue)
 }
 
 
+
 {
     let inst = wasmEvalText(
     `(module
        (memory (export "memory") 1 1)
        (func (export "testfn")
          (memory.fill (i32.const 0x10000) (i32.const 0x55) (i32.const 0))
+       )
+     )`
+    );
+    inst.exports.testfn();
+}
+
+{
+    let inst = wasmEvalText(
+    `(module
+       (memory (export "memory") 1 1)
+       (func (export "testfn")
+         (memory.fill (i32.const 0x10001) (i32.const 0x55) (i32.const 0))
        )
      )`
     );
@@ -725,6 +738,19 @@ function checkRange(arr, minIx, maxIxPlusOne, expectedValue)
        )
      )`
     );
+    inst.exports.testfn();
+}
+
+
+{
+    let inst = wasmEvalText(
+    `(module
+       (memory (export "memory") 1 1)
+       (func (export "testfn")
+         (memory.copy (i32.const 0x10001) (i32.const 0x7000) (i32.const 0))
+       )
+     )`
+    );
     assertErrorMessage(() => inst.exports.testfn(),
                        WebAssembly.RuntimeError, /index out of bounds/);
 }
@@ -736,6 +762,19 @@ function checkRange(arr, minIx, maxIxPlusOne, expectedValue)
        (memory (export "memory") 1 1)
        (func (export "testfn")
          (memory.copy (i32.const 0x9000) (i32.const 0x10000) (i32.const 0))
+       )
+     )`
+    );
+    inst.exports.testfn();
+}
+
+
+{
+    let inst = wasmEvalText(
+    `(module
+       (memory (export "memory") 1 1)
+       (func (export "testfn")
+         (memory.copy (i32.const 0x9000) (i32.const 0x10001) (i32.const 0))
        )
      )`
     );
