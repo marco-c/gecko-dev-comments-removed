@@ -89,6 +89,9 @@ public interface TelemetryContract {
         SEARCH_SET_DEFAULT("search.setdefault.1"),
 
         
+        SEARCH_WIDGET("search.widget.1"),
+
+        
         SHARE("share.1"),
 
         
