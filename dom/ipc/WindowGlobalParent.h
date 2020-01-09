@@ -21,7 +21,6 @@ namespace dom {
 
 class ChromeBrowsingContext;
 class WindowGlobalChild;
-class JSWindowActorParent;
 
 
 
@@ -51,10 +50,6 @@ class WindowGlobalParent final : public nsISupports,
   
   
   already_AddRefed<WindowGlobalChild> GetChildActor();
-
-  
-  already_AddRefed<JSWindowActorParent> GetActor(const nsAString& aName,
-                                                 ErrorResult& aRv);
 
   
   
@@ -107,7 +102,6 @@ class WindowGlobalParent final : public nsISupports,
   nsCOMPtr<nsIURI> mDocumentURI;
   RefPtr<nsFrameLoader> mFrameLoader;
   RefPtr<ChromeBrowsingContext> mBrowsingContext;
-  nsRefPtrHashtable<nsStringHashKey, JSWindowActorParent> mWindowActors;
   uint64_t mInnerWindowId;
   uint64_t mOuterWindowId;
   bool mInProcess;

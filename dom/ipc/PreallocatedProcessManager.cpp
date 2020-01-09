@@ -13,13 +13,13 @@
 #include "nsIPropertyBag2.h"
 #include "ProcessPriorityManager.h"
 #include "nsServiceManagerUtils.h"
-#include "nsIXULRuntime.h"
 
 
 
 
 #define DEFAULT_ALLOCATE_DELAY 1000
 
+using namespace mozilla;
 using namespace mozilla::hal;
 using namespace mozilla::dom;
 
