@@ -69,6 +69,14 @@ var observer = {
   },
 
   onStateChange(aWebProgress, aRequest, aState, aStatus) {
+    if ((aState & Ci.nsIWebProgressListener.STATE_RESTORING) &&
+        (aState & Ci.nsIWebProgressListener.STATE_STOP)) {
+      
+      
+      LoginManagerContent._onDocumentRestored(aWebProgress.DOMWindow.document);
+      return;
+    }
+
     if (!(aState & Ci.nsIWebProgressListener.STATE_START)) {
       return;
     }
@@ -978,6 +986,28 @@ var LoginManagerContent = {
 
   _isAutocompleteDisabled(element) {
     return element && element.autocomplete == "off";
+  },
+
+  
+
+
+
+
+  _onDocumentRestored(aDocument) {
+    let rootElsWeakSet = LoginFormFactory.getRootElementsWeakSetForDocument(aDocument);
+    let weakLoginFormRootElements = ChromeUtils.nondeterministicGetWeakSetKeys(rootElsWeakSet);
+
+    log("_onDocumentRestored: loginFormRootElements approx size:", weakLoginFormRootElements.length,
+        "document:", aDocument);
+
+    for (let formRoot of weakLoginFormRootElements) {
+      if (!formRoot.isConnected) {
+        continue;
+      }
+
+      let formLike = LoginFormFactory.getForRootElement(formRoot);
+      this._fetchLoginsFromParentAndFillForm(formLike);
+    }
   },
 
   
