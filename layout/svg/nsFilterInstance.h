@@ -122,11 +122,9 @@ class nsFilterInstance {
 
 
 
-  static bool BuildWebRenderFilters(
-      nsIFrame* aFilteredFrame,
-      const mozilla::LayoutDeviceIntRect& aPreFilterBounds,
-      nsTArray<mozilla::wr::FilterOp>& aWrFilters,
-      mozilla::LayoutDeviceIntRect& aPostFilterBounds);
+  static bool BuildWebRenderFilters(nsIFrame* aFilteredFrame,
+                                    nsTArray<mozilla::wr::FilterOp>& aWrFilters,
+                                    mozilla::Maybe<nsRect>& aPostFilterClip);
 
  private:
   
@@ -242,7 +240,10 @@ class nsFilterInstance {
 
 
 
-  void BuildSourceImage(DrawTarget* aDest, imgDrawingParams& aImgParams);
+  void BuildSourceImage(DrawTarget* aDest, imgDrawingParams& aImgParams,
+                        mozilla::gfx::FilterNode* aFilter,
+                        mozilla::gfx::FilterNode* aSource,
+                        const mozilla::gfx::Rect& aSourceRect);
 
   
 

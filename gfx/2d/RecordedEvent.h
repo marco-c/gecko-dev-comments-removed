@@ -239,6 +239,7 @@ class RecordedEvent {
     FILTERNODESETINPUT,
     CREATESIMILARDRAWTARGET,
     CREATECLIPPEDDRAWTARGET,
+    CREATEDRAWTARGETFORFILTER,
     FONTDATA,
     FONTDESC,
     PUSHLAYER,
@@ -257,6 +258,9 @@ class RecordedEvent {
   static std::string GetEventName(EventType aType);
 
   
+
+
+
 
 
 

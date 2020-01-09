@@ -425,6 +425,14 @@ class FilterNode : public external::AtomicRefCounted<FilterNode> {
     MOZ_CRASH("GFX: FilterNode");
   }
 
+  
+
+
+  virtual IntRect MapRectToSource(const IntRect &aRect, const IntRect &aMax,
+                                  FilterNode *aSourceNode) {
+    return aMax;
+  }
+
  protected:
   friend class Factory;
 
