@@ -25,8 +25,6 @@ ChromeUtils.defineModuleGetter(this, "Utils",
                                "resource://services-settings/Utils.jsm");
 ChromeUtils.defineModuleGetter(this, "Downloader",
                                "resource://services-settings/Attachments.jsm");
-ChromeUtils.defineModuleGetter(this, "ObjectUtils",
-                               "resource://gre/modules/ObjectUtils.jsm");
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
 
@@ -180,11 +178,6 @@ class RemoteSettingsClient extends EventEmitter {
     return this._lastCheckTimePref || `services.settings.${this.bucketName}.${this.collectionName}.last_check`;
   }
 
-  httpClient() {
-    const api = new KintoHttpClient(gServerURL);
-    return api.bucket(this.bucketName).collection(this.collectionName);
-  }
-
   
 
 
@@ -242,15 +235,9 @@ class RemoteSettingsClient extends EventEmitter {
 
     if (verifySignature) {
       console.debug("Verify signature of local data");
-      const { data: allData } = await kintoCollection.list({ order: "" });
-      const localRecords = allData.map(r => kintoCollection.cleanLocalFields(r));
+      const localRecords = data.map(r => kintoCollection.cleanLocalFields(r));
       const timestamp = await kintoCollection.db.getLastModified();
-      let metadata = await kintoCollection.metadata();
-      if (syncIfEmpty && ObjectUtils.isEmpty(metadata)) {
-        
-        console.debug(`Required metadata for ${this.identifier}, fetching from server.`);
-        metadata = await kintoCollection.pullMetadata(this.httpClient());
-      }
+      const metadata = await kintoCollection.metadata();
       await this._validateCollectionSignature([],
                                               timestamp,
                                               metadata,
@@ -329,20 +316,6 @@ class RemoteSettingsClient extends EventEmitter {
       
       if (expectedTimestamp <= collectionLastModified) {
         console.debug(`${this.identifier} local data is up-to-date`);
-        
-        
-        if (this.verifySignature && ObjectUtils.isEmpty(await kintoCollection.metadata())) {
-          console.debug("Verify signature of local data");
-          const { data: allData } = await kintoCollection.list({ order: "" });
-          const localRecords = allData.map(r => kintoCollection.cleanLocalFields(r));
-          const metadata = await kintoCollection.pullMetadata(this.httpClient());
-          if (this.verifySignature) {
-            await this._validateCollectionSignature([],
-                                                    collectionLastModified,
-                                                    metadata,
-                                                    { localRecords });
-          }
-        }
         reportStatus = UptakeTelemetry.STATUS.UP_TO_DATE;
         return;
       }
@@ -352,10 +325,10 @@ class RemoteSettingsClient extends EventEmitter {
       if (this.verifySignature) {
         kintoCollection.hooks["incoming-changes"] = [async (payload, collection) => {
           const { changes: remoteRecords, lastModified: timestamp } = payload;
-          const { data } = await collection.list({ order: "" }); 
+          const { data } = await kintoCollection.list({ order: "" }); 
           const metadata = await collection.metadata();
           
-          const localRecords = data.map(r => collection.cleanLocalFields(r));
+          const localRecords = data.map(r => kintoCollection.cleanLocalFields(r));
           await this._validateCollectionSignature(remoteRecords,
                                                   timestamp,
                                                   metadata,
@@ -505,7 +478,8 @@ class RemoteSettingsClient extends EventEmitter {
 
   async _retrySyncFromScratch(kintoCollection, expectedTimestamp) {
     
-    const client = this.httpClient();
+    const api = new KintoHttpClient(gServerURL);
+    const client = await api.bucket(this.bucketName).collection(this.collectionName);
     const metadata = await client.getData({ query: { _expected: expectedTimestamp }});
     
     const {

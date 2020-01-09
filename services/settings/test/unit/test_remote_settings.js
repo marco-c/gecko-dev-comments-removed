@@ -20,9 +20,6 @@ let client;
 let clientWithDump;
 
 async function clear_state() {
-  client.verifySignature = false;
-  clientWithDump.verifySignature = false;
-
   
   const collection = await client.openCollection();
   await collection.clear();
@@ -48,10 +45,11 @@ function run_test() {
   Services.prefs.setCharPref("services.settings.server",
                              `http://localhost:${server.identity.primaryPort}/v1`);
 
-  Services.prefs.setCharPref("services.settings.loglevel", "debug");
-
   client = RemoteSettings("password-fields");
+  client.verifySignature = false;
+
   clientWithDump = RemoteSettings("language-dictionaries");
+  clientWithDump.verifySignature = false;
 
   server.registerPathHandler("/v1/", handleResponse);
   server.registerPathHandler("/v1/buckets/monitor/collections/changes/records", handleResponse);
@@ -67,7 +65,6 @@ function run_test() {
     server.stop(() => { });
   });
 }
-add_task(clear_state);
 
 add_task(async function test_records_obtained_from_server_are_stored_in_db() {
   
@@ -215,74 +212,6 @@ add_task(async function test_get_can_verify_signature() {
     error = e;
   }
   equal(error.message, "Invalid content signature (main/password-fields)");
-});
-add_task(clear_state);
-
-add_task(async function test_get_does_not_verify_signature_if_load_dump() {
-  let called;
-  clientWithDump._verifier = {
-    async asyncVerifyContentSignature(serialized, signature) {
-      called = true;
-      return true;
-    },
-  };
-
-  
-  const records = await clientWithDump.get({ verifySignature: true });
-  ok(records.length > 0, "dump is loaded");
-  ok(!called, "signature is missing but not verified");
-
-  
-  let error;
-  try {
-    await clientWithDump.get({ verifySignature: true, syncIfEmpty: false });
-  } catch (e) {
-    error = e;
-  }
-  ok(!called, "signer was not called");
-  equal(error.message, "Missing signature (main/language-dictionaries)", "signature is missing locally");
-
-  
-  await clientWithDump.get({ verifySignature: true });
-  const metadata = await (await clientWithDump.openCollection()).metadata();
-  ok(Object.keys(metadata).length > 0, "metadata was fetched");
-  ok(called, "signature was verified for the data that was in dump");
-});
-add_task(clear_state);
-
-add_task(async function test_sync_pulls_metadata_if_missing_with_dump_is_up_to_date() {
-  let called;
-  clientWithDump._verifier = {
-    async asyncVerifyContentSignature(serialized, signature) {
-      called = true;
-      return true;
-    },
-  };
-  
-  const records = await clientWithDump.get({ verifySignature: true });
-  ok(records.length > 0, "dump is loaded");
-  ok(!called, "signature is missing but not verified");
-
-  
-  
-  
-  await clientWithDump.maybeSync(42);
-  let metadata = await (await clientWithDump.openCollection()).metadata();
-  ok(!metadata, "metadata was not fetched");
-
-  
-  clientWithDump.verifySignature = true;
-  await clientWithDump.maybeSync(42);
-
-  
-  metadata = await (await clientWithDump.openCollection()).metadata();
-  ok(Object.keys(metadata).length > 0, "metadata was fetched");
-  ok(called, "signature was verified for the data that was in dump");
-
-  
-  called = false;
-  await clientWithDump.get({ verifySignature: true });
-  ok(called, "local signature is verified");
 });
 add_task(clear_state);
 
@@ -670,7 +599,7 @@ function getSampleResponse(req, port) {
     },
     "GET:/fake-x5u": {
       "sampleHeaders": [
-        "Content-Type: application/octet-stream",
+        "Content-Type: /octet-stream",
       ],
       "status": { status: 200, statusText: "OK" },
       "responseBody": `-----BEGIN CERTIFICATE-----
