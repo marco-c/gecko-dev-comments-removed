@@ -440,35 +440,34 @@ class FullParseHandler {
     return true;
   }
 
-  MOZ_MUST_USE ClassMethod* newClassMethodDefinition(Node key,
-                                                     FunctionNodeType funNode,
-                                                     AccessorType atype,
-                                                     bool isStatic) {
+  MOZ_MUST_USE bool addClassMethodDefinition(ListNodeType memberList, Node key,
+                                             FunctionNodeType funNode,
+                                             AccessorType atype,
+                                             bool isStatic) {
+    MOZ_ASSERT(memberList->isKind(ParseNodeKind::ClassMemberList));
     MOZ_ASSERT(isUsableAsObjectPropertyName(key));
 
     checkAndSetIsDirectRHSAnonFunction(funNode);
 
-    return new_<ClassMethod>(key, funNode, atype, isStatic);
+    ClassMethod* classMethod = new_<ClassMethod>(key, funNode, atype, isStatic);
+    if (!classMethod) {
+      return false;
+    }
+    addList( memberList,  classMethod);
+    return true;
   }
 
-  MOZ_MUST_USE ClassField* newClassFieldDefinition(
-      Node name, FunctionNodeType initializer) {
+  MOZ_MUST_USE bool addClassFieldDefinition(ListNodeType memberList, Node name,
+                                            FunctionNodeType initializer) {
+    MOZ_ASSERT(memberList->isKind(ParseNodeKind::ClassMemberList));
     MOZ_ASSERT(isUsableAsObjectPropertyName(name));
 
-    return new_<ClassField>(name, initializer);
-  }
+    ClassField* classField = new_<ClassField>(name, initializer);
 
-  MOZ_MUST_USE bool addClassMemberDefinition(ListNodeType memberList,
-                                             Node member) {
-    MOZ_ASSERT(memberList->isKind(ParseNodeKind::ClassMemberList));
-    
-    MOZ_ASSERT(member->isKind(ParseNodeKind::ClassMethod) ||
-               member->isKind(ParseNodeKind::ClassField) ||
-               member->isKind(ParseNodeKind::LexicalScope) &&
-                   member->as<LexicalScopeNode>().scopeBody()->isKind(
-                       ParseNodeKind::ClassMethod));
-
-    addList( memberList,  member);
+    if (!classField) {
+      return false;
+    }
+    addList( memberList,  classField);
     return true;
   }
 

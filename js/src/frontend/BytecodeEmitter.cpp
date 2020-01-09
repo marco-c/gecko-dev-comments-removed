@@ -2342,7 +2342,7 @@ bool BytecodeEmitter::emitSetThis(BinaryNode* setThisNode) {
     return false;
   }
 
-  if (!emitInitializeInstanceFields()) {
+  if (!emitInitializeInstanceFields(IsSuperCall::Yes)) {
     return false;
   }
 
@@ -7636,51 +7636,11 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
                                        PropListType type) {
   
 
-  size_t curFieldKeyIndex = 0;
   for (ParseNode* propdef : obj->contents()) {
     if (propdef->is<ClassField>()) {
-      MOZ_ASSERT(type == ClassBody);
       
       
-      ClassField* field = &propdef->as<ClassField>();
-      if (field->name().getKind() == ParseNodeKind::ComputedName) {
-        if (!emitGetName(cx->names().dotFieldKeys)) {
-          
-          return false;
-        }
-
-        ParseNode* nameExpr = field->name().as<UnaryNode>().kid();
-
-        if (!emitTree(nameExpr)) {
-          
-          return false;
-        }
-
-        if (!emit1(JSOP_TOID)) {
-          
-          return false;
-        }
-
-        if (!emitUint32Operand(JSOP_INITELEM_ARRAY, curFieldKeyIndex)) {
-          
-          return false;
-        }
-
-        if (!emit1(JSOP_POP)) {
-          
-          return false;
-        }
-
-        curFieldKeyIndex++;
-      }
-      continue;
-    }
-
-    if (propdef->is<LexicalScopeNode>()) {
       
-      
-      MOZ_ASSERT(propdef->as<LexicalScopeNode>().scopeBody()->isKind(
-          ParseNodeKind::ClassMethod));
       continue;
     }
 
@@ -7937,6 +7897,15 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
     }
   }
 
+  if (obj->getKind() == ParseNodeKind::ClassMemberList) {
+    if (!emitCreateFieldKeys(obj)) {
+      return false;
+    }
+    if (!emitCreateFieldInitializers(obj)) {
+      return false;
+    }
+  }
+
   return true;
 }
 
@@ -7954,7 +7923,6 @@ FieldInitializers BytecodeEmitter::setupFieldInitializers(
   }
   return FieldInitializers(numFields);
 }
-
 
 
 
@@ -8003,6 +7971,34 @@ bool BytecodeEmitter::emitCreateFieldKeys(ListNode* obj) {
     
     return false;
   }
+
+  size_t curFieldKeyIndex = 0;
+  for (ParseNode* propdef : obj->contents()) {
+    if (propdef->is<ClassField>()) {
+      ClassField* field = &propdef->as<ClassField>();
+      if (field->name().getKind() == ParseNodeKind::ComputedName) {
+        ParseNode* nameExpr = field->name().as<UnaryNode>().kid();
+
+        if (!emitTree(nameExpr)) {
+          
+          return false;
+        }
+
+        if (!emit1(JSOP_TOID)) {
+          
+          return false;
+        }
+
+        if (!emitUint32Operand(JSOP_INITELEM_ARRAY, curFieldKeyIndex)) {
+          
+          return false;
+        }
+
+        curFieldKeyIndex++;
+      }
+    }
+  }
+  MOZ_ASSERT(curFieldKeyIndex == numFieldKeys);
 
   if (!noe.emitAssignment()) {
     
@@ -8107,7 +8103,38 @@ const FieldInitializers& BytecodeEmitter::findFieldInitializersForCall() {
   MOZ_CRASH("Constructor for field initializers not found.");
 }
 
-bool BytecodeEmitter::emitInitializeInstanceFields() {
+bool BytecodeEmitter::emitCopyInitializersToLocalInitializers() {
+  MOZ_ASSERT(sc->asFunctionBox()->isDerivedClassConstructor());
+  if (getFieldInitializers().numFieldInitializers == 0) {
+    return true;
+  }
+
+  NameOpEmitter noe(this, cx->names().dotLocalInitializers,
+                    NameOpEmitter::Kind::Initialize);
+  if (!noe.prepareForRhs()) {
+    
+    return false;
+  }
+
+  if (!emitGetName(cx->names().dotInitializers)) {
+    
+    return false;
+  }
+
+  if (!noe.emitAssignment()) {
+    
+    return false;
+  }
+
+  if (!emit1(JSOP_POP)) {
+    
+    return false;
+  }
+
+  return true;
+}
+
+bool BytecodeEmitter::emitInitializeInstanceFields(IsSuperCall isSuperCall) {
   const FieldInitializers& fieldInitializers = findFieldInitializersForCall();
   size_t numFields = fieldInitializers.numFieldInitializers;
 
@@ -8115,9 +8142,16 @@ bool BytecodeEmitter::emitInitializeInstanceFields() {
     return true;
   }
 
-  if (!emitGetName(cx->names().dotInitializers)) {
-    
-    return false;
+  if (isSuperCall == IsSuperCall::Yes) {
+    if (!emitGetName(cx->names().dotLocalInitializers)) {
+      
+      return false;
+    }
+  } else {
+    if (!emitGetName(cx->names().dotInitializers)) {
+      
+      return false;
+    }
   }
 
   for (size_t fieldIndex = 0; fieldIndex < numFields; fieldIndex++) {
@@ -8637,24 +8671,21 @@ bool BytecodeEmitter::emitLexicalInitialization(JSAtom* name) {
   return true;
 }
 
-static MOZ_ALWAYS_INLINE ParseNode* FindConstructor(JSContext* cx,
-                                                    ListNode* classMethods) {
-  for (ParseNode* classElement : classMethods->contents()) {
-    ParseNode* unwrappedElement = classElement;
-    if (unwrappedElement->is<LexicalScopeNode>()) {
-      unwrappedElement = unwrappedElement->as<LexicalScopeNode>().scopeBody();
-    }
-    if (unwrappedElement->is<ClassMethod>()) {
-      ClassMethod& method = unwrappedElement->as<ClassMethod>();
+static MOZ_ALWAYS_INLINE FunctionNode* FindConstructor(JSContext* cx,
+                                                       ListNode* classMethods) {
+  for (ParseNode* mn : classMethods->contents()) {
+    if (mn->is<ClassMethod>()) {
+      ClassMethod& method = mn->as<ClassMethod>();
       ParseNode& methodName = method.name();
       if (!method.isStatic() &&
           (methodName.isKind(ParseNodeKind::ObjectPropertyName) ||
            methodName.isKind(ParseNodeKind::StringExpr)) &&
           methodName.as<NameNode>().atom() == cx->names().constructor) {
-        return classElement;
+        return &method.method();
       }
     }
   }
+
   return nullptr;
 }
 
@@ -8669,7 +8700,7 @@ bool BytecodeEmitter::emitClass(
 
   ParseNode* heritageExpression = classNode->heritage();
   ListNode* classMembers = classNode->memberList();
-  ParseNode* constructor = FindConstructor(cx, classMembers);
+  FunctionNode* constructor = FindConstructor(cx, classMembers);
 
   
   
@@ -8691,8 +8722,8 @@ bool BytecodeEmitter::emitClass(
     }
   }
 
-  if (LexicalScopeNode* scopeBindings = classNode->scopeBindings()) {
-    if (!ce.emitScope(scopeBindings->scopeBindings())) {
+  if (!classNode->isEmptyScope()) {
+    if (!ce.emitScope(classNode->scopeBindings())) {
       
       return false;
     }
@@ -8730,46 +8761,17 @@ bool BytecodeEmitter::emitClass(
   
   
   if (constructor) {
-    FunctionNode* ctor;
+    bool needsHomeObject = constructor->funbox()->needsHomeObject();
     
-    
-    Maybe<LexicalScopeEmitter> lse;
-    if (constructor->is<LexicalScopeNode>()) {
-      lse.emplace(this);
-      if (!lse->emitScope(
-              ScopeKind::Lexical,
-              constructor->as<LexicalScopeNode>().scopeBindings())) {
-        return false;
-      }
-
-      
-      if (!emitCreateFieldInitializers(classMembers)) {
-        return false;
-      }
-      ctor = &constructor->as<LexicalScopeNode>()
-                  .scopeBody()
-                  ->as<ClassMethod>()
-                  .method();
-    } else {
-      ctor = &constructor->as<ClassMethod>().method();
-    }
-
-    bool needsHomeObject = ctor->funbox()->needsHomeObject();
-    
-    if (!emitFunction(ctor, isDerived, classMembers)) {
+    if (!emitFunction(constructor, isDerived, classMembers)) {
       
       return false;
     }
     if (nameKind == ClassNameKind::InferredName) {
-      if (!setFunName(ctor->funbox()->function(), nameForAnonymousClass)) {
+      if (!setFunName(constructor->funbox()->function(),
+                      nameForAnonymousClass)) {
         return false;
       }
-    }
-    if (lse.isSome()) {
-      if (!lse->emitEnd()) {
-        return false;
-      }
-      lse.reset();
     }
     if (!ce.emitInitConstructor(needsHomeObject)) {
       
@@ -8782,16 +8784,10 @@ bool BytecodeEmitter::emitClass(
       return false;
     }
   }
-
-  if (!emitCreateFieldKeys(classMembers)) {
-    return false;
-  }
-
   if (!emitPropertyList(classMembers, ce, ClassBody)) {
     
     return false;
   }
-
   if (!ce.emitEnd(kind)) {
     
     
