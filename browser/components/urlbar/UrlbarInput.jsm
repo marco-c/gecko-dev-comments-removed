@@ -92,6 +92,7 @@ class UrlbarInput {
     this.lastQueryContextPromise = Promise.resolve();
     this._actionOverrideKeyCount = 0;
     this._autofillPlaceholder = "";
+    this._deletedEndOfAutofillPlaceholder = false;
     this._lastSearchString = "";
     this._resultForCurrentValue = null;
     this._suppressStartQuery = false;
@@ -181,6 +182,8 @@ class UrlbarInput {
       this.inputField.removeEventListener(name, this);
     }
     this.removeEventListener("mousedown", this);
+
+    this.editor.removeEditActionListener(this);
 
     this.view.panel.remove();
 
@@ -666,6 +669,31 @@ class UrlbarInput {
 
   removeHiddenFocus() {
     this.textbox.classList.remove("hidden-focus");
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  WillDeleteSelection(selection) {
+    this._deletedEndOfAutofillPlaceholder =
+      selection &&
+      selection.getRangeAt(0).endOffset ==
+        this._autofillPlaceholder.length &&
+      this._autofillPlaceholder.endsWith(String(selection));
   }
 
   
@@ -1273,6 +1301,9 @@ class UrlbarInput {
     this._untrimmedValue = value;
     this.window.gBrowser.userTypedValue = value;
 
+    let deletedEndOfAutofillPlaceholder = this._deletedEndOfAutofillPlaceholder;
+    this._deletedEndOfAutofillPlaceholder = false;
+
     let compositionState = this._compositionState;
     let compositionClosedPopup = this._compositionClosedPopup;
 
@@ -1311,13 +1342,8 @@ class UrlbarInput {
     }
 
     let sameSearchStrings = value == this._lastSearchString;
-
-    
-    
     let deletedAutofilledSubstring =
-      sameSearchStrings &&
-      value.length < this._autofillPlaceholder.length &&
-      this._autofillPlaceholder.startsWith(value);
+      deletedEndOfAutofillPlaceholder && sameSearchStrings;
 
     
     
@@ -1342,11 +1368,18 @@ class UrlbarInput {
   }
 
   _on_select(event) {
-    if (!Services.clipboard.supportsSelectionClipboard()) {
+    if (!this.window.windowUtils.isHandlingUserInput) {
+      
+      
+      
+      
+      
+      
+      this.editor.addEditActionListener(this);
       return;
     }
 
-    if (!this.window.windowUtils.isHandlingUserInput) {
+    if (!Services.clipboard.supportsSelectionClipboard()) {
       return;
     }
 
