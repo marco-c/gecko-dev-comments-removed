@@ -2961,6 +2961,9 @@ void MMinMax::trySpecializeFloat32(TempAllocator& alloc) {
 }
 
 MDefinition* MMinMax::foldsTo(TempAllocator& alloc) {
+  if (lhs() == rhs()) {
+    return lhs();
+  }
   if (!lhs()->isConstant() && !rhs()->isConstant()) {
     return this;
   }
@@ -3025,13 +3028,15 @@ MDefinition* MMinMax::foldsTo(TempAllocator& alloc) {
     }
   }
 
-  if (operand->isArrayLength() && constant->type() == MIRType::Int32) {
+  if ((operand->isArrayLength() || operand->isTypedArrayLength()) &&
+      constant->type() == MIRType::Int32) {
     MOZ_ASSERT(operand->type() == MIRType::Int32);
 
     
     
-    if (isMax() && constant->toInt32() <= 0) {
-      return operand;
+    
+    if (constant->toInt32() <= 0) {
+      return isMax() ? operand : constant;
     }
   }
 
