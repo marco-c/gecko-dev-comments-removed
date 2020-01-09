@@ -269,15 +269,9 @@ already_AddRefed<Promise> WebAuthnManager::MakeCredential(
   }
 
   
-
   
-  
-  nsTArray<PublicKeyCredentialParameters> acceptableParams;
   nsTArray<CoseAlg> coseAlgos;
   for (size_t a = 0; a < aOptions.mPubKeyCredParams.Length(); ++a) {
-    
-    
-
     
     
     
@@ -286,24 +280,12 @@ already_AddRefed<Promise> WebAuthnManager::MakeCredential(
       continue;
     }
 
-    nsString algName;
-    if (NS_FAILED(CoseAlgorithmToWebCryptoId(aOptions.mPubKeyCredParams[a].mAlg,
-                                             algName))) {
-      continue;
-    }
-
-    if (!acceptableParams.AppendElement(aOptions.mPubKeyCredParams[a],
-                                        mozilla::fallible)) {
-      promise->MaybeReject(NS_ERROR_OUT_OF_MEMORY);
-      return promise.forget();
-    }
     coseAlgos.AppendElement(aOptions.mPubKeyCredParams[a].mAlg);
   }
 
   
   
-  
-  if (acceptableParams.IsEmpty() && !aOptions.mPubKeyCredParams.IsEmpty()) {
+  if (coseAlgos.IsEmpty() && !aOptions.mPubKeyCredParams.IsEmpty()) {
     promise->MaybeReject(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
     return promise.forget();
   }
