@@ -18,7 +18,7 @@ use gpu_types::{TransformData, TransformPalette, ZBufferIdGenerator};
 use internal_types::{CacheTextureId, FastHashMap, SavedTargetIndex, TextureSource};
 #[cfg(feature = "pathfinder")]
 use pathfinder_partitioner::mesh::Mesh;
-use picture::SurfaceInfo;
+use picture::{RecordedDirtyRegion, SurfaceInfo};
 use prim_store::{PrimitiveStore, DeferredResolve, PrimitiveScratchBuffer};
 use profiler::FrameProfileCounters;
 use render_backend::{DataStores, FrameId};
@@ -1118,6 +1118,11 @@ pub struct Frame {
     
     
     pub has_been_rendered: bool,
+
+    
+    
+    #[cfg_attr(feature = "serde", serde(skip))]
+    pub recorded_dirty_regions: Vec<RecordedDirtyRegion>,
 
     
     pub debug_items: Vec<DebugItem>,

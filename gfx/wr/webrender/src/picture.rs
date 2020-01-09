@@ -420,6 +420,35 @@ impl DirtyRegion {
             combined,
         }
     }
+
+    
+    pub fn record(&self) -> RecordedDirtyRegion {
+        let mut rects: Vec<WorldRect> =
+            self.dirty_rects.iter().map(|r| r.world_rect.clone()).collect();
+        rects.sort_unstable_by_key(|r| (r.origin.y as usize, r.origin.x as usize));
+        RecordedDirtyRegion { rects }
+    }
+}
+
+
+pub struct RecordedDirtyRegion {
+    pub rects: Vec<WorldRect>,
+}
+
+impl ::std::fmt::Display for RecordedDirtyRegion {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        for r in self.rects.iter() {
+            let (x, y, w, h) = (r.origin.x, r.origin.y, r.size.width, r.size.height);
+            write!(f, "[({},{}):{}x{}]", x, y, w, h)?;
+        }
+        Ok(())
+    }
+}
+
+impl ::std::fmt::Debug for RecordedDirtyRegion {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        ::std::fmt::Display::fmt(self, f)
+    }
 }
 
 
@@ -1489,6 +1518,12 @@ impl TileCache {
         );
 
         builder.build(&mut self.dirty_region);
+
+        
+        
+        if frame_context.config.testing {
+            scratch.recorded_dirty_regions.push(self.dirty_region.record());
+        }
 
         
         
