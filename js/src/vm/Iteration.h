@@ -387,8 +387,11 @@ extern bool SuppressDeletedElement(JSContext* cx, HandleObject obj,
 
 
 
-extern bool IteratorMore(JSContext* cx, HandleObject iterobj,
-                         MutableHandleValue rval);
+inline Value IteratorMore(JSObject* iterobj) {
+  NativeIterator* ni =
+      iterobj->as<PropertyIteratorObject>().getNativeIterator();
+  return ni->nextIteratedValueAndAdvance();
+}
 
 
 
