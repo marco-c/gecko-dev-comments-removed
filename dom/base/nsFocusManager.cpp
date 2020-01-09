@@ -2992,15 +2992,6 @@ static nsIContent* FindOwner(nsIContent* aContent) {
   nsIContent* currentContent = aContent;
   while (currentContent) {
     nsIContent* parent = currentContent->GetFlattenedTreeParent();
-    if (!parent) {
-      
-      Document* doc = currentContent->GetUncomposedDoc();
-      if (doc && doc->GetRootElement() == currentContent) {
-        return currentContent;
-      }
-
-      break;
-    }
 
     
     if (IsHostOrSlot(parent)) {
@@ -3260,10 +3251,7 @@ nsresult nsFocusManager::GetNextTabbableContent(
 
   
   
-  
-  nsIContent* rootElement = aRootContent->OwnerDoc()->GetRootElement();
-  nsIContent* owner = FindOwner(aStartContent);
-  if (owner && rootElement != owner) {
+  if (nsIContent* owner = FindOwner(aStartContent)) {
     nsIContent* contentToFocus = GetNextTabbableContentInAncestorScopes(
         owner, &aStartContent, aOriginalStartContent, aForward,
         &aCurrentTabIndex, aIgnoreTabIndex, aForDocumentNavigation);
@@ -3277,8 +3265,8 @@ nsresult nsFocusManager::GetNextTabbableContent(
   
   
   
-  MOZ_ASSERT(FindOwner(aStartContent) == rootElement,
-             "aStartContent should be owned by the root element at this point");
+  MOZ_ASSERT(!FindOwner(aStartContent),
+             "aStartContent should not be owned by Shadow DOM at this point");
 
   nsPresContext* presContext = aPresShell->GetPresContext();
 
@@ -3437,7 +3425,7 @@ nsresult nsFocusManager::GetNextTabbableContent(
       
       
       
-      if (currentContent && IsHostOrSlot(currentContent)) {
+      if (IsHostOrSlot(currentContent)) {
         bool focusableHostSlot;
         int32_t tabIndex =
             HostOrSlotTabIndexValue(currentContent, &focusableHostSlot);
