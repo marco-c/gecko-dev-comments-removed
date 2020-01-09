@@ -3239,7 +3239,8 @@ bool nsCookieService::CanSetCookie(nsIURI* aHostURI, const nsCookieKey& aKey,
 
   
   
-  bool newCookie = ParseAttributes(aCookieHeader, aCookieAttributes);
+  bool discard = false;
+  bool newCookie = ParseAttributes(aCookieHeader, aCookieAttributes, discard);
 
   
   
@@ -3385,7 +3386,7 @@ bool nsCookieService::CanSetCookie(nsIURI* aHostURI, const nsCookieKey& aKey,
     }
   }
 
-  aSetCookie = true;
+  aSetCookie = !discard;
   return newCookie;
 }
 
@@ -3786,7 +3787,8 @@ bool nsCookieService::GetTokenValue(nsACString::const_char_iterator& aIter,
 
 
 bool nsCookieService::ParseAttributes(nsDependentCString& aCookieHeader,
-                                      nsCookieAttributes& aCookieAttributes) {
+                                      nsCookieAttributes& aCookieAttributes,
+                                      bool& aDiscard) {
   static const char kPath[] = "path";
   static const char kDomain[] = "domain";
   static const char kExpires[] = "expires";
@@ -3806,6 +3808,8 @@ bool nsCookieService::ParseAttributes(nsDependentCString& aCookieHeader,
   aCookieAttributes.isHttpOnly = false;
   aCookieAttributes.sameSite = nsICookie2::SAMESITE_UNSET;
 
+  aDiscard = false;
+
   nsDependentCSubstring tokenString(cookieStart, cookieStart);
   nsDependentCSubstring tokenValue(cookieStart, cookieStart);
   bool newCookie, equalsFound;
@@ -3820,14 +3824,21 @@ bool nsCookieService::ParseAttributes(nsDependentCString& aCookieHeader,
   if (equalsFound) {
     aCookieAttributes.name = tokenString;
     aCookieAttributes.value = tokenValue;
+    if (aCookieAttributes.name.IsEmpty()) {
+      aDiscard = true;
+    }
   } else {
-    aCookieAttributes.value = tokenString;
+    aDiscard = true;
   }
 
   
   while (cookieStart != cookieEnd && !newCookie) {
     newCookie = GetTokenValue(cookieStart, cookieEnd, tokenString, tokenValue,
                               equalsFound);
+
+    if (aDiscard) {
+      continue;
+    }
 
     if (!tokenValue.IsEmpty()) {
       tokenValue.BeginReading(tempBegin);
