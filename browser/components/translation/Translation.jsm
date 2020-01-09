@@ -68,7 +68,7 @@ var Translation = {
 
     trUI.showURLBarIcon();
 
-    if (trUI.shouldShowInfoBar(aBrowser.contentPrincipal))
+    if (trUI.shouldShowInfoBar(aBrowser.currentURI))
       trUI.showTranslationInfoBar();
   },
 
@@ -234,7 +234,7 @@ TranslationUI.prototype = {
     return notif;
   },
 
-  shouldShowInfoBar(aPrincipal) {
+  shouldShowInfoBar(aURI) {
     
     
     if (Translation.serviceUnavailable)
@@ -250,7 +250,7 @@ TranslationUI.prototype = {
 
     
     let perms = Services.perms;
-    if (perms.testExactPermissionFromPrincipal(aPrincipal, "translate") == perms.DENY_ACTION) {
+    if (perms.testExactPermission(aURI, "translate") == perms.DENY_ACTION) {
       TranslationTelemetry.recordAutoRejectedTranslationOffer();
       return false;
     }

@@ -9,11 +9,10 @@ var OfflineApps = {
       return;
 
     let tab = BrowserApp.getTabForWindow(aContentWindow);
-    let principal = aContentWindow.document.nodePrincipal;
     let currentURI = aContentWindow.document.documentURIObject;
 
     
-    if (Services.perms.testExactPermissionFromPrincipal(principal, "offline-app") != Services.perms.UNKNOWN_ACTION)
+    if (Services.perms.testExactPermission(currentURI, "offline-app") != Services.perms.UNKNOWN_ACTION)
       return;
 
     try {
@@ -51,7 +50,7 @@ var OfflineApps = {
   },
 
   allowSite: function(aDocument) {
-    Services.perms.addFromPrincipal(aDocument.nodePrincipal, "offline-app", Services.perms.ALLOW_ACTION);
+    Services.perms.add(aDocument.documentURIObject, "offline-app", Services.perms.ALLOW_ACTION);
 
     
     
@@ -60,7 +59,7 @@ var OfflineApps = {
   },
 
   disallowSite: function(aDocument) {
-    Services.perms.addFromPrincipal(aDocument.nodePrincipal, "offline-app", Services.perms.DENY_ACTION);
+    Services.perms.add(aDocument.documentURIObject, "offline-app", Services.perms.DENY_ACTION);
   },
 
   _startFetching: function(aDocument) {

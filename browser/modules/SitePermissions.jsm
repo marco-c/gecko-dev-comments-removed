@@ -268,32 +268,15 @@ var SitePermissions = {
 
 
 
-
   getAllByURI(uri) {
     if (!(uri instanceof Ci.nsIURI))
       throw new Error("uri parameter should be an nsIURI");
-
-    let principal = uri ? Services.scriptSecurityManager.createCodebasePrincipal(uri, {}) : null;
-    return this.getAllByPrincipal(principal);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  getAllByPrincipal(principal) {
     let result = [];
-    if (!this.isSupportedPrincipal(principal)) {
+    if (!this.isSupportedURI(uri)) {
       return result;
     }
 
-    let permissions = Services.perms.getAllForPrincipal(principal);
+    let permissions = Services.perms.getAllForURI(uri);
     while (permissions.hasMoreElements()) {
       let permission = permissions.getNext();
 
@@ -350,7 +333,7 @@ var SitePermissions = {
       permissions[permission.id] = permission;
     }
 
-    for (let permission of this.getAllByPrincipal(browser.contentPrincipal)) {
+    for (let permission of this.getAllByURI(browser.currentURI)) {
       permissions[permission.id] = permission;
     }
 
@@ -387,27 +370,11 @@ var SitePermissions = {
 
 
 
-
   isSupportedURI(uri) {
     return uri && ["http", "https", "moz-extension"].includes(uri.scheme);
   },
 
   
-
-
-
-
-
-
-
-
-
-  isSupportedPrincipal(principal) {
-    return principal && principal.URI &&
-      ["http", "https", "moz-extension"].includes(principal.URI.scheme);
-  },
-
- 
 
 
 
@@ -506,40 +473,15 @@ var SitePermissions = {
   get(uri, permissionID, browser) {
     if ((!uri && !browser) || (uri && !(uri instanceof Ci.nsIURI)))
       throw new Error("uri parameter should be an nsIURI or a browser parameter is needed");
-
-    let principal = uri ? Services.scriptSecurityManager.createCodebasePrincipal(uri, {}) : null;
-    return this.getForPrincipal(principal, permissionID, browser);
-  },
-
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  getForPrincipal(principal, permissionID, browser) {
     let defaultState = this.getDefault(permissionID);
     let result = { state: defaultState, scope: this.SCOPE_PERSISTENT };
-    if (this.isSupportedPrincipal(principal)) {
+    if (this.isSupportedURI(uri)) {
       let permission = null;
       if (permissionID in gPermissionObject &&
         gPermissionObject[permissionID].exactHostMatch) {
-        permission = Services.perms.getPermissionObject(principal, permissionID, true);
+        permission = Services.perms.getPermissionObjectForURI(uri, permissionID, true);
       } else {
-        permission = Services.perms.getPermissionObject(principal, permissionID, false);
+        permission = Services.perms.getPermissionObjectForURI(uri, permissionID, false);
       }
 
       if (permission) {
@@ -584,34 +526,9 @@ var SitePermissions = {
 
 
 
-
   set(uri, permissionID, state, scope = this.SCOPE_PERSISTENT, browser = null) {
     if ((!uri && !browser) || (uri && !(uri instanceof Ci.nsIURI)))
       throw new Error("uri parameter should be an nsIURI or a browser parameter is needed");
-
-    let principal = uri ? Services.scriptSecurityManager.createCodebasePrincipal(uri, {}) : null;
-    return this.setForPrincipal(principal, permissionID, state, scope, browser);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  setForPrincipal(principal, permissionID, state, scope = this.SCOPE_PERSISTENT, browser = null) {
     if (scope == this.SCOPE_GLOBAL && state == this.BLOCK) {
       GloballyBlockedPermissions.set(browser, permissionID);
       browser.dispatchEvent(new browser.ownerGlobal.CustomEvent("PermissionStateChange"));
@@ -623,7 +540,7 @@ var SitePermissions = {
       
       
       if (permissionID != "cookie") {
-        this.removeFromPrincipal(principal, permissionID, browser);
+        this.remove(uri, permissionID, browser);
         return;
       }
     }
@@ -654,7 +571,7 @@ var SitePermissions = {
 
       browser.dispatchEvent(new browser.ownerGlobal
                                        .CustomEvent("PermissionStateChange"));
-    } else if (this.isSupportedPrincipal(principal)) {
+    } else if (this.isSupportedURI(uri)) {
       let perms_scope = Services.perms.EXPIRE_NEVER;
       if (scope == this.SCOPE_SESSION) {
         perms_scope = Services.perms.EXPIRE_SESSION;
@@ -662,7 +579,7 @@ var SitePermissions = {
         perms_scope = Services.perms.EXPIRE_POLICY;
       }
 
-      Services.perms.addFromPrincipal(principal, permissionID, state, perms_scope);
+      Services.perms.add(uri, permissionID, state, perms_scope);
     }
   },
 
@@ -678,30 +595,11 @@ var SitePermissions = {
 
 
 
-
   remove(uri, permissionID, browser) {
     if ((!uri && !browser) || (uri && !(uri instanceof Ci.nsIURI)))
       throw new Error("uri parameter should be an nsIURI or a browser parameter is needed");
-
-    let principal = uri ? Services.scriptSecurityManager.createCodebasePrincipal(uri, {}) : null;
-    return this.removeFromPrincipal(principal, permissionID, browser);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  removeFromPrincipal(principal, permissionID, browser) {
-    if (this.isSupportedPrincipal(principal))
-      Services.perms.removeFromPrincipal(principal, permissionID);
+    if (this.isSupportedURI(uri))
+      Services.perms.remove(uri, permissionID);
 
     
     if (TemporaryPermissions.get(browser, permissionID)) {

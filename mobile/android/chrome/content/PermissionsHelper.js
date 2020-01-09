@@ -50,7 +50,7 @@ var PermissionsHelper = {
   },
 
   onEvent: function onEvent(event, data, callback) {
-    let principal = BrowserApp.selectedBrowser.contentPrincipal;
+    let uri = BrowserApp.selectedBrowser.currentURI;
     let check = false;
 
     switch (event) {
@@ -62,7 +62,7 @@ var PermissionsHelper = {
         let permissions = [];
         for (let i = 0; i < this._permissonTypes.length; i++) {
           let type = this._permissonTypes[i];
-          let value = this.getPermission(principal, type);
+          let value = this.getPermission(uri, type);
 
           
           if (value == Services.perms.UNKNOWN_ACTION)
@@ -132,7 +132,7 @@ var PermissionsHelper = {
 
 
 
-  getPermission: function getPermission(aPrincipal, aType) {
+  getPermission: function getPermission(aURI, aType) {
     
     
     if (aType == "password") {
@@ -150,9 +150,9 @@ var PermissionsHelper = {
 
     
     if (aType == "geolocation")
-      return Services.perms.testExactPermissionForPrincipal(aPrincipal, aType);
+      return Services.perms.testExactPermission(aURI, aType);
 
-    return Services.perms.testPermissionForPrincipal(aPrincipal, aType);
+    return Services.perms.testPermission(aURI, aType);
   },
 
   
@@ -162,7 +162,7 @@ var PermissionsHelper = {
 
 
 
-  clearPermission: function clearPermission(aPrincipal, aType, aContext) {
+  clearPermission: function clearPermission(aURI, aType, aContext) {
     
     
     if (aType == "password") {
@@ -174,7 +174,7 @@ var PermissionsHelper = {
       
       Services.logins.setLoginSavingEnabled(aURI.displayPrePath, true);
     } else {
-      Services.perms.removeFromPrincipal(aPrincipal, aType);
+      Services.perms.remove(aURI, aType);
       
       Cc["@mozilla.org/content-pref/service;1"]
         .getService(Ci.nsIContentPrefService2)
