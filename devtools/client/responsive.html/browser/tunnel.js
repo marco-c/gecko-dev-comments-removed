@@ -318,6 +318,10 @@ function tunnelToInnerBrowser(outer, inner) {
       
       outer.setAttribute("remote", "false");
       outer.removeAttribute("remoteType");
+
+      
+      delete outer.remoteType;
+
       outer.construct();
 
       
@@ -605,6 +609,10 @@ MessageManagerTunnel.prototype = {
 
   get processMessageManager() {
     return this.innerParentMM.processMessageManager;
+  },
+
+  get remoteType() {
+    return this.innerParentMM.remoteType;
   },
 
   loadFrameScript(url, ...args) {
