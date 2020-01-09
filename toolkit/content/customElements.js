@@ -235,27 +235,34 @@ MozElements.MozElementMixin = Base => {
   }
 
   static get flippedInheritedAttributes() {
-    let {inheritedAttributes} = this;
-    if (!inheritedAttributes) {
-      return null;
-    }
-    if (!this._flippedInheritedAttributes) {
-      this._flippedInheritedAttributes = {};
-      for (let selector in inheritedAttributes) {
-        let attrRules = inheritedAttributes[selector].split(",");
-        for (let attrRule of attrRules) {
-          let attrName = attrRule;
-          let attrNewName = attrRule;
-          let split = attrName.split("=");
-          if (split.length == 2) {
-            attrName = split[1];
-            attrNewName = split[0];
-          }
+    
+    
+    
+    
+    
+    
+    if (!this.hasOwnProperty("_flippedInheritedAttributes")) {
+      let {inheritedAttributes} = this;
+      if (!inheritedAttributes) {
+        this._flippedInheritedAttributes = null;
+      } else {
+        this._flippedInheritedAttributes = {};
+        for (let selector in inheritedAttributes) {
+          let attrRules = inheritedAttributes[selector].split(",");
+          for (let attrRule of attrRules) {
+            let attrName = attrRule;
+            let attrNewName = attrRule;
+            let split = attrName.split("=");
+            if (split.length == 2) {
+              attrName = split[1];
+              attrNewName = split[0];
+            }
 
-          if (!this._flippedInheritedAttributes[attrName]) {
-            this._flippedInheritedAttributes[attrName] = [];
+            if (!this._flippedInheritedAttributes[attrName]) {
+              this._flippedInheritedAttributes[attrName] = [];
+            }
+            this._flippedInheritedAttributes[attrName].push([selector, attrNewName]);
           }
-          this._flippedInheritedAttributes[attrName].push([selector, attrNewName]);
         }
       }
     }
