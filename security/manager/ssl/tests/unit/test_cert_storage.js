@@ -113,18 +113,17 @@ const certBlocklistJSON = `{
   
   
   
-  
   ` {
       "id": "7",
       "last_modified": 100000000000000000006,
-      "issuerName": "YW5vdGhlciBpbWFnaW5hcnkgaXNzdWVy",
-      "serialNumber": "c2VyaWFsMi4="
+      "issuerName": "MBwxGjAYBgNVBAMMEVRlc3QgSW50ZXJtZWRpYXRl",
+      "serialNumber": "Tg=="
     },` +
   ` {
       "id": "8",
       "last_modified": 100000000000000000006,
-      "issuerName": "YW5vdGhlciBpbWFnaW5hcnkgaXNzdWVy",
-      "serialNumber": "YW5vdGhlciBzZXJpYWwu"
+      "issuerName": "MBwxGjAYBgNVBAMMEVRlc3QgSW50ZXJtZWRpYXRl",
+      "serialNumber": "Hw=="
     },` +
   
   ` {
@@ -185,12 +184,6 @@ function load_cert(cert, trust) {
   addCertFromFile(certDB, file, trust);
 }
 
-function test_is_revoked(certList, issuerString, serialString, subjectString,
-                         pubKeyString) {
-  return certList.getRevocationState(btoa(issuerString), btoa(serialString),
-                                     btoa(subjectString), btoa(pubKeyString)) == Ci.nsICertStorage.STATE_ENFORCE;
-}
-
 function fetch_blocklist() {
   Services.prefs.setBoolPref("services.settings.load_dump", false);
   Services.prefs.setBoolPref("services.settings.verify_signature", false);
@@ -216,28 +209,35 @@ function run_test() {
     
     
     
-    
-    
-    ok(test_is_revoked(certList, "some imaginary issuer", "serial."),
-      "issuer / serial pair should be blocked");
+    let file = "test_onecrl/ee-revoked-by-revocations-txt.pem";
+    await verify_cert(file, SEC_ERROR_REVOKED_CERTIFICATE);
 
     
     
     
-    ok(test_is_revoked(certList, "another imaginary issuer", "serial."),
-      "issuer / serial pair should be blocked");
+    file = "test_onecrl/another-ee-revoked-by-revocations-txt.pem";
+    await verify_cert(file, SEC_ERROR_REVOKED_CERTIFICATE);
 
     
     
     
     
-    ok(test_is_revoked(certList, "another imaginary issuer", "serial2."),
-      "issuer / serial pair should be blocked");
+    file = "test_onecrl/another-ee-revoked-by-revocations-txt-serial-2.pem";
+    await verify_cert(file, SEC_ERROR_REVOKED_CERTIFICATE);
 
     
     
     
-    let file = "test_onecrl/test-int-ee.pem";
+    
+    
+    
+    file = "test_onecrl/ee-revoked-by-subject-and-pubkey.pem";
+    await verify_cert(file, SEC_ERROR_REVOKED_CERTIFICATE);
+
+    
+    
+    
+    file = "test_onecrl/test-int-ee.pem";
     await verify_cert(file, PRErrorCodeSuccess);
 
     
@@ -258,23 +258,22 @@ function run_test() {
     
     
     
-    ok(test_is_revoked(certList, "another imaginary issuer", "serial2."),
-      "issuer / serial pair should be blocked");
+    let file = "test_onecrl/ee-revoked-by-revocations-txt.pem";
+    await verify_cert(file, SEC_ERROR_REVOKED_CERTIFICATE);
 
     
     
-    ok(test_is_revoked(certList, "another imaginary issuer", "serial2."),
-       "issuer / serial pair should be blocked");
-    ok(test_is_revoked(certList, "another imaginary issuer", "another serial."),
-       "issuer / serial pair should be blocked");
+    file = "test_onecrl/another-ee-revoked-by-revocations-txt.pem";
+    await verify_cert(file, SEC_ERROR_REVOKED_CERTIFICATE);
+    file = "test_onecrl/another-ee-revoked-by-revocations-txt-serial-2.pem";
+    await verify_cert(file, SEC_ERROR_REVOKED_CERTIFICATE);
 
     
-    ok(test_is_revoked(certList, "nonsense", "more nonsense",
-                       "some imaginary subject", "some imaginary pubkey"),
-       "issuer / serial pair should be blocked");
+    file = "test_onecrl/ee-revoked-by-subject-and-pubkey.pem";
+    await verify_cert(file, SEC_ERROR_REVOKED_CERTIFICATE);
 
     
-    let file = "test_onecrl/test-int-ee.pem";
+    file = "test_onecrl/test-int-ee.pem";
     await verify_cert(file, SEC_ERROR_REVOKED_CERTIFICATE);
     await verify_non_tls_usage_succeeds(file);
 
