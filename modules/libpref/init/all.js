@@ -1444,9 +1444,6 @@ pref("privacy.firstparty.isolate.restrict_opener_access", true);
 pref("privacy.resistFingerprinting.autoDeclineNoUserInputCanvasPrompts", true);
 
 
-pref("privacy.resistFingerprinting.jsmloglevel", "Warn");
-
-
 
 pref("privacy.reduceTimerPrecision", true);
 
