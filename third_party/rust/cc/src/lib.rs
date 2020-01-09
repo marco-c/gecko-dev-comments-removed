@@ -55,6 +55,7 @@
 
 #![doc(html_root_url = "https://docs.rs/cc/1.0")]
 #![cfg_attr(test, deny(warnings))]
+#![allow(deprecated)]
 #![deny(missing_docs)]
 
 #[cfg(feature = "parallel")]
@@ -112,12 +113,14 @@ pub struct Build {
     archiver: Option<PathBuf>,
     cargo_metadata: bool,
     pic: Option<bool>,
+    use_plt: Option<bool>,
     static_crt: Option<bool>,
     shared_flag: Option<bool>,
     static_flag: Option<bool>,
     warnings_into_errors: bool,
     warnings: Option<bool>,
     extra_warnings: Option<bool>,
+    env_cache: Arc<Mutex<HashMap<String, Option<String>>>>,
 }
 
 
@@ -318,10 +321,12 @@ impl Build {
             archiver: None,
             cargo_metadata: true,
             pic: None,
+            use_plt: None,
             static_crt: None,
             warnings: None,
             extra_warnings: None,
             warnings_into_errors: false,
+            env_cache: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
@@ -823,6 +828,21 @@ impl Build {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    pub fn use_plt(&mut self, use_plt: bool) -> &mut Build {
+        self.use_plt = Some(use_plt);
+        self
+    }
+
+    
+    
+    
     pub fn static_crt(&mut self, static_crt: bool) -> &mut Build {
         self.static_crt = Some(static_crt);
         self
@@ -936,7 +956,7 @@ impl Build {
     fn compile_objects(&self, objs: &[Object]) -> Result<(), Error> {
         use self::rayon::prelude::*;
 
-        if let Ok(amt) = env::var("NUM_JOBS") {
+        if let Some(amt) = self.getenv("NUM_JOBS") {
             if let Ok(amt) = amt.parse() {
                 let _ = rayon::ThreadPoolBuilder::new()
                     .num_threads(amt)
@@ -1073,250 +1093,20 @@ impl Build {
         let target = self.get_target()?;
 
         let mut cmd = self.get_base_compiler()?;
+        let envflags = self.envflags(if self.cpp { "CXXFLAGS" } else { "CFLAGS" });
 
         
         
-        match cmd.family {
-            ToolFamily::Msvc { .. } => {
-                assert!(!self.cuda,
-                    "CUDA C++ compilation not supported for MSVC, yet... but you are welcome to implement it :)");
+        let use_defaults = self.getenv("CRATE_CC_NO_DEFAULTS").is_none();
 
-                cmd.args.push("/nologo".into());
-
-                let crt_flag = match self.static_crt {
-                    Some(true) => "/MT",
-                    Some(false) => "/MD",
-                    None => {
-                        let features =
-                            env::var("CARGO_CFG_TARGET_FEATURE").unwrap_or(String::new());
-                        if features.contains("crt-static") {
-                            "/MT"
-                        } else {
-                            "/MD"
-                        }
-                    }
-                };
-                cmd.args.push(crt_flag.into());
-
-                match &opt_level[..] {
-                    
-                    "z" | "s" | "1" => cmd.args.push("/O1".into()),
-                    
-                    "2" | "3" => cmd.args.push("/O2".into()),
-                    _ => {}
-                }
-            }
-            ToolFamily::Gnu | ToolFamily::Clang => {
-                
-                
-                if opt_level == "z" && cmd.family != ToolFamily::Clang {
-                    cmd.args.push("-Os".into());
-                } else {
-                    cmd.args.push(format!("-O{}", opt_level).into());
-                }
-
-                if !target.contains("-ios") {
-                    cmd.push_cc_arg("-ffunction-sections".into());
-                    cmd.push_cc_arg("-fdata-sections".into());
-                }
-                if self.pic.unwrap_or(!target.contains("windows-gnu")) {
-                    cmd.push_cc_arg("-fPIC".into());
-                }
-            }
-        }
-        for arg in self.envflags(if self.cpp { "CXXFLAGS" } else { "CFLAGS" }) {
-            cmd.args.push(arg.into());
+        if use_defaults {
+            self.add_default_flags(&mut cmd, &target, &opt_level)?;
+        } else {
+            println!("Info: default compiler flags are disabled");
         }
 
-        if self.get_debug() {
-            if self.cuda {
-                let nvcc_debug_flag = cmd.family.nvcc_debug_flag().into();
-                cmd.args.push(nvcc_debug_flag);
-            }
-            let family = cmd.family;
-            family.add_debug_flags(&mut cmd);
-        }
-
-        
-        match cmd.family {
-            ToolFamily::Clang => {
-                cmd.args.push(format!("--target={}", target).into());
-            }
-            ToolFamily::Msvc { clang_cl } => {
-                if clang_cl {
-                    if target.contains("x86_64") {
-                        cmd.args.push("-m64".into());
-                    } else if target.contains("86") {
-                        cmd.args.push("-m32".into());
-                        cmd.args.push("/arch:IA32".into());
-                    } else {
-                        cmd.args.push(format!("--target={}", target).into());
-                    }
-                } else {
-                    if target.contains("i586") {
-                        cmd.args.push("/ARCH:IA32".into());
-                    }
-                }
-            }
-            ToolFamily::Gnu => {
-                if target.contains("i686") || target.contains("i586") {
-                    cmd.args.push("-m32".into());
-                } else if target == "x86_64-unknown-linux-gnux32" {
-                    cmd.args.push("-mx32".into());
-                } else if target.contains("x86_64") || target.contains("powerpc64") {
-                    cmd.args.push("-m64".into());
-                }
-
-                if self.static_flag.is_none() {
-                    let features = env::var("CARGO_CFG_TARGET_FEATURE").unwrap_or(String::new());
-                    if features.contains("crt-static") {
-                        cmd.args.push("-static".into());
-                    }
-                }
-
-                
-                if (target.starts_with("armv7") || target.starts_with("thumbv7")) && target.contains("-linux-") {
-                    cmd.args.push("-march=armv7-a".into());
-                }
-
-                
-                if target.contains("-androideabi") && target.contains("v7") {
-                    
-                    cmd.args.push("-mthumb".into());
-                    if !target.contains("neon") {
-                        
-                        
-                        
-                        cmd.args.push("-mfpu=vfpv3-d16".into());
-                    }
-                    cmd.args.push("-mfloat-abi=softfp".into());
-                }
-
-                if target.contains("neon") {
-                    cmd.args.push("-mfpu=neon-vfpv4".into());
-                }
-
-                if target.starts_with("armv4t-unknown-linux-") {
-                    cmd.args.push("-march=armv4t".into());
-                    cmd.args.push("-marm".into());
-                    cmd.args.push("-mfloat-abi=soft".into());
-                }
-
-                if target.starts_with("armv5te-unknown-linux-") {
-                    cmd.args.push("-march=armv5te".into());
-                    cmd.args.push("-marm".into());
-                    cmd.args.push("-mfloat-abi=soft".into());
-                }
-
-                
-                if target.starts_with("arm-unknown-linux-") {
-                    cmd.args.push("-march=armv6".into());
-                    cmd.args.push("-marm".into());
-                }
-
-                
-                if target.starts_with("arm-frc-") {
-                    cmd.args.push("-march=armv7-a".into());
-                    cmd.args.push("-mcpu=cortex-a9".into());
-                    cmd.args.push("-mfpu=vfpv3".into());
-                    cmd.args.push("-mfloat-abi=softfp".into());
-                    cmd.args.push("-marm".into());
-                }
-
-                
-                if target.starts_with("i586-unknown-linux-") {
-                    cmd.args.push("-march=pentium".into());
-                }
-
-                
-                if target.starts_with("i686-unknown-linux-") {
-                    cmd.args.push("-march=i686".into());
-                }
-
-                
-                
-                
-                
-                
-                if target == "i686-unknown-linux-musl" || target == "i586-unknown-linux-musl" {
-                    cmd.args.push("-Wl,-melf_i386".into());
-                }
-
-                if target.starts_with("thumb") {
-                    cmd.args.push("-mthumb".into());
-
-                    if target.ends_with("eabihf") {
-                        cmd.args.push("-mfloat-abi=hard".into())
-                    }
-                }
-                if target.starts_with("thumbv6m") {
-                    cmd.args.push("-march=armv6s-m".into());
-                }
-                if target.starts_with("thumbv7em") {
-                    cmd.args.push("-march=armv7e-m".into());
-
-                    if target.ends_with("eabihf") {
-                        cmd.args.push("-mfpu=fpv4-sp-d16".into())
-                    }
-                }
-                if target.starts_with("thumbv7m") {
-                    cmd.args.push("-march=armv7-m".into());
-                }
-                if target.starts_with("armebv7r") | target.starts_with("armv7r") {
-                    if target.starts_with("armeb") {
-                        cmd.args.push("-mbig-endian".into());
-                    } else {
-                        cmd.args.push("-mlittle-endian".into());
-                    }
-
-                    
-                    cmd.args.push("-marm".into());
-
-                    
-                    cmd.args.push("-march=armv7-r".into());
-
-                    if target.ends_with("eabihf") {
-                        
-                        cmd.args.push("-mfloat-abi=hard".into());
-
-                        
-                        
-                        cmd.args.push("-mfpu=vfpv3-d16".into())
-                    } else {
-                        
-                        cmd.args.push("-mfloat-abi=soft".into());
-                    }
-                }
-            }
-        }
-
-        if target.contains("-ios") {
-            
-            
-            self.ios_flags(&mut cmd)?;
-        }
-
-        if self.static_flag.unwrap_or(false) {
-            cmd.args.push("-static".into());
-        }
-        if self.shared_flag.unwrap_or(false) {
-            cmd.args.push("-shared".into());
-        }
-
-        if self.cpp {
-            match (self.cpp_set_stdlib.as_ref(), cmd.family) {
-                (None, _) => {}
-                (Some(stdlib), ToolFamily::Gnu) | (Some(stdlib), ToolFamily::Clang) => {
-                    cmd.push_cc_arg(format!("-stdlib=lib{}", stdlib).into());
-                }
-                _ => {
-                    println!(
-                        "cargo:warning=cpp_set_stdlib is specified, but the {:?} compiler \
-                         does not support this option, ignored",
-                        cmd.family
-                    );
-                }
-            }
+        for arg in envflags {
+            cmd.push_cc_arg(arg.into());
         }
 
         for directory in self.include_directories.iter() {
@@ -1371,6 +1161,285 @@ impl Build {
         Ok(cmd)
     }
 
+    fn add_default_flags(&self, cmd: &mut Tool, target: &str, opt_level: &str) -> Result<(), Error> {
+        
+        
+        match cmd.family {
+            ToolFamily::Msvc { .. } => {
+                assert!(!self.cuda,
+                    "CUDA C++ compilation not supported for MSVC, yet... but you are welcome to implement it :)");
+
+                cmd.args.push("/nologo".into());
+
+                let crt_flag = match self.static_crt {
+                    Some(true) => "/MT",
+                    Some(false) => "/MD",
+                    None => {
+                        let features =
+                            self.getenv("CARGO_CFG_TARGET_FEATURE").unwrap_or(String::new());
+                        if features.contains("crt-static") {
+                            "/MT"
+                        } else {
+                            "/MD"
+                        }
+                    }
+                };
+                cmd.args.push(crt_flag.into());
+
+                match &opt_level[..] {
+                    
+                    "z" | "s" | "1" => cmd.push_opt_unless_duplicate("/O1".into()),
+                    
+                    "2" | "3" => cmd.push_opt_unless_duplicate("/O2".into()),
+                    _ => {}
+                }
+            }
+            ToolFamily::Gnu | ToolFamily::Clang => {
+                
+                
+                if opt_level == "z" && cmd.family != ToolFamily::Clang {
+                    cmd.push_opt_unless_duplicate("-Os".into());
+                } else {
+                    cmd.push_opt_unless_duplicate(format!("-O{}", opt_level).into());
+                }
+
+                if !target.contains("-ios") {
+                    cmd.push_cc_arg("-ffunction-sections".into());
+                    cmd.push_cc_arg("-fdata-sections".into());
+                }
+                if self.pic.unwrap_or(!target.contains("windows-gnu")) {
+                    cmd.push_cc_arg("-fPIC".into());
+                    
+                    
+                    if target.contains("linux") && !self.use_plt.unwrap_or(true) {
+                        cmd.push_cc_arg("-fno-plt".into());
+                    }
+                }
+            }
+        }
+
+        if self.get_debug() {
+            if self.cuda {
+                let nvcc_debug_flag = cmd.family.nvcc_debug_flag().into();
+                cmd.args.push(nvcc_debug_flag);
+            }
+            let family = cmd.family;
+            family.add_debug_flags(cmd);
+        }
+
+        
+        match cmd.family {
+            ToolFamily::Clang => {
+                cmd.args.push(format!("--target={}", target).into());
+            }
+            ToolFamily::Msvc { clang_cl } => {
+                if clang_cl {
+                    if target.contains("x86_64") {
+                        cmd.args.push("-m64".into());
+                    } else if target.contains("86") {
+                        cmd.args.push("-m32".into());
+                        cmd.args.push("/arch:IA32".into());
+                    } else {
+                        cmd.args.push(format!("--target={}", target).into());
+                    }
+                } else {
+                    if target.contains("i586") {
+                        cmd.args.push("/ARCH:IA32".into());
+                    }
+                }
+
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                if target.contains("arm") || target.contains("thumb") {
+                    cmd.args.push("/D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE=1".into());
+                }
+            }
+            ToolFamily::Gnu => {
+                if target.contains("i686") || target.contains("i586") {
+                    cmd.args.push("-m32".into());
+                } else if target == "x86_64-unknown-linux-gnux32" {
+                    cmd.args.push("-mx32".into());
+                } else if target.contains("x86_64") || target.contains("powerpc64") {
+                    cmd.args.push("-m64".into());
+                }
+
+                if self.static_flag.is_none() {
+                    let features = self.getenv("CARGO_CFG_TARGET_FEATURE").unwrap_or(String::new());
+                    if features.contains("crt-static") {
+                        cmd.args.push("-static".into());
+                    }
+                }
+
+                
+                if (target.starts_with("armv7") || target.starts_with("thumbv7")) && target.contains("-linux-") {
+                    cmd.args.push("-march=armv7-a".into());
+                }
+
+                
+                if target.contains("-androideabi") && target.contains("v7") {
+                    
+                    cmd.args.push("-mthumb".into());
+                    if !target.contains("neon") {
+                        
+                        
+                        
+                        cmd.args.push("-mfpu=vfpv3-d16".into());
+                    }
+                    cmd.args.push("-mfloat-abi=softfp".into());
+                }
+
+                if target.contains("neon") {
+                    cmd.args.push("-mfpu=neon-vfpv4".into());
+                }
+
+                if target.starts_with("armv4t-unknown-linux-") {
+                    cmd.args.push("-march=armv4t".into());
+                    cmd.args.push("-marm".into());
+                    cmd.args.push("-mfloat-abi=soft".into());
+                }
+
+                if target.starts_with("armv5te-unknown-linux-") {
+                    cmd.args.push("-march=armv5te".into());
+                    cmd.args.push("-marm".into());
+                    cmd.args.push("-mfloat-abi=soft".into());
+                }
+
+                
+                if target.starts_with("arm-unknown-linux-") {
+                    cmd.args.push("-march=armv6".into());
+                    cmd.args.push("-marm".into());
+                    if target.ends_with("hf") {
+                        cmd.args.push("-mfpu=vfp".into());
+                    } else {
+                        cmd.args.push("-mfloat-abi=soft".into());
+                    }
+                }
+
+                
+                if target.starts_with("arm-frc-") {
+                    cmd.args.push("-march=armv7-a".into());
+                    cmd.args.push("-mcpu=cortex-a9".into());
+                    cmd.args.push("-mfpu=vfpv3".into());
+                    cmd.args.push("-mfloat-abi=softfp".into());
+                    cmd.args.push("-marm".into());
+                }
+
+                
+                if target.starts_with("i586-unknown-linux-") {
+                    cmd.args.push("-march=pentium".into());
+                }
+
+                
+                if target.starts_with("i686-unknown-linux-") {
+                    cmd.args.push("-march=i686".into());
+                }
+
+                
+                
+                
+                
+                
+                if target == "i686-unknown-linux-musl" || target == "i586-unknown-linux-musl" {
+                    cmd.args.push("-Wl,-melf_i386".into());
+                }
+
+                if target.starts_with("thumb") {
+                    cmd.args.push("-mthumb".into());
+
+                    if target.ends_with("eabihf") {
+                        cmd.args.push("-mfloat-abi=hard".into())
+                    }
+                }
+                if target.starts_with("thumbv6m") {
+                    cmd.args.push("-march=armv6s-m".into());
+                }
+                if target.starts_with("thumbv7em") {
+                    cmd.args.push("-march=armv7e-m".into());
+
+                    if target.ends_with("eabihf") {
+                        cmd.args.push("-mfpu=fpv4-sp-d16".into())
+                    }
+                }
+                if target.starts_with("thumbv7m") {
+                    cmd.args.push("-march=armv7-m".into());
+                }
+                if target.starts_with("thumbv8m.base") {
+                    cmd.args.push("-march=armv8-m.base".into());
+                }
+                if target.starts_with("thumbv8m.main") {
+                    cmd.args.push("-march=armv8-m.main".into());
+
+                    if target.ends_with("eabihf") {
+                        cmd.args.push("-mfpu=fpv5-sp-d16".into())
+                    }
+                }
+                if target.starts_with("armebv7r") | target.starts_with("armv7r") {
+                    if target.starts_with("armeb") {
+                        cmd.args.push("-mbig-endian".into());
+                    } else {
+                        cmd.args.push("-mlittle-endian".into());
+                    }
+
+                    
+                    cmd.args.push("-marm".into());
+
+                    
+                    cmd.args.push("-march=armv7-r".into());
+
+                    if target.ends_with("eabihf") {
+                        
+                        cmd.args.push("-mfloat-abi=hard".into());
+
+                        
+                        
+                        cmd.args.push("-mfpu=vfpv3-d16".into())
+                    } else {
+                        
+                        cmd.args.push("-mfloat-abi=soft".into());
+                    }
+                }
+            }
+        }
+
+        if target.contains("-ios") {
+            
+            
+            self.ios_flags(cmd)?;
+        }
+
+        if self.static_flag.unwrap_or(false) {
+            cmd.args.push("-static".into());
+        }
+        if self.shared_flag.unwrap_or(false) {
+            cmd.args.push("-shared".into());
+        }
+
+        if self.cpp {
+            match (self.cpp_set_stdlib.as_ref(), cmd.family) {
+                (None, _) => {}
+                (Some(stdlib), ToolFamily::Gnu) | (Some(stdlib), ToolFamily::Clang) => {
+                    cmd.push_cc_arg(format!("-stdlib=lib{}", stdlib).into());
+                }
+                _ => {
+                    println!(
+                        "cargo:warning=cpp_set_stdlib is specified, but the {:?} compiler \
+                         does not support this option, ignored",
+                        cmd.family
+                    );
+                }
+            }
+        }
+
+        Ok(())
+    }
+
     fn has_flags(&self) -> bool {
         let flags_env_var_name = if self.cpp { "CXXFLAGS" } else { "CFLAGS" };
         let flags_env_var_value = self.get_var(flags_env_var_name);
@@ -1418,12 +1487,7 @@ impl Build {
         let objects: Vec<_> = objs.iter().map(|obj| obj.dst.clone()).collect();
         let target = self.get_target()?;
         if target.contains("msvc") {
-            let mut cmd = match self.archiver {
-                Some(ref s) => self.cmd(s),
-                None => windows_registry::find(&target, "lib.exe")
-                    .unwrap_or_else(|| self.cmd("lib.exe")),
-            };
-
+            let (mut cmd, program) = self.get_ar()?;
             let mut out = OsString::from("/OUT:");
             out.push(dst);
             cmd.arg(out).arg("/nologo");
@@ -1468,7 +1532,7 @@ impl Build {
             } else {
                 cmd.args(&objects).args(&self.objects);
             }
-            run(&mut cmd, "lib.exe")?;
+            run(&mut cmd, &program)?;
 
             
             
@@ -1649,10 +1713,10 @@ impl Build {
                     }
                 } else if target.contains("android") {
                     let target = target
-                        .replace("armv7", "arm")
                         .replace("armv7neon", "arm")
-                        .replace("thumbv7", "arm")
-                        .replace("thumbv7neon", "arm");
+                        .replace("armv7", "arm")
+                        .replace("thumbv7neon", "arm")
+                        .replace("thumbv7", "arm");
                     let gnu_compiler = format!("{}-{}", target, gnu);
                     let clang_compiler = format!("{}-{}", target, clang);
                     
@@ -1664,6 +1728,8 @@ impl Build {
                     }
                 } else if target.contains("cloudabi") {
                     format!("{}-{}", target, traditional)
+                } else if target == "wasm32-unknown-wasi" || target == "wasm32-unknown-unknown" {
+                    "clang".to_string()
                 } else if self.get_host()? != target {
                     
                     let cc_env = self.getenv("CROSS_COMPILE");
@@ -1716,6 +1782,9 @@ impl Build {
                         "thumbv7em-none-eabi" => Some("arm-none-eabi"),
                         "thumbv7em-none-eabihf" => Some("arm-none-eabi"),
                         "thumbv7m-none-eabi" => Some("arm-none-eabi"),
+                        "thumbv8m.base-none-eabi" => Some("arm-none-eabi"),
+                        "thumbv8m.main-none-eabi" => Some("arm-none-eabi"),
+                        "thumbv8m.main-none-eabihf" => Some("arm-none-eabi"),
                         "x86_64-pc-windows-gnu" => Some("x86_64-w64-mingw32"),
                         "x86_64-rumprun-netbsd" => Some("x86_64-rumprun-netbsd"),
                         "x86_64-unknown-linux-musl" => Some("musl"),
@@ -1905,9 +1974,10 @@ impl Build {
         if let Ok(p) = self.get_var("AR") {
             return Ok((self.cmd(&p), p));
         }
-        let program = if self.get_target()?.contains("android") {
-            format!("{}-ar", self.get_target()?.replace("armv7", "arm"))
-        } else if self.get_target()?.contains("emscripten") {
+        let target = self.get_target()?;
+        let program = if target.contains("android") {
+            format!("{}-ar", target.replace("armv7", "arm"))
+        } else if target.contains("emscripten") {
             
             if cfg!(windows) {
                 let mut cmd = self.cmd("cmd");
@@ -1916,6 +1986,11 @@ impl Build {
             }
 
             "emar".to_string()
+        } else if target.contains("msvc") {
+            match windows_registry::find(&target, "lib.exe") {
+                Some(t) => return Ok((t, "lib.exe".to_string())),
+                None => "lib.exe".to_string(),
+            }
         } else {
             "ar".to_string()
         };
@@ -1963,8 +2038,13 @@ impl Build {
     }
 
     fn getenv(&self, v: &str) -> Option<String> {
+        let mut cache = self.env_cache.lock().unwrap();
+        if let Some(val) = cache.get(v) {
+            return val.clone()
+        }
         let r = env::var(v).ok();
         self.print(&format!("{} = {:?}", v, r));
+        cache.insert(v.to_string(), r.clone());
         r
     }
 
@@ -2041,6 +2121,41 @@ impl Tool {
             self.args.push(self.family.nvcc_redirect_flag().into());
         }
         self.args.push(flag);
+    }
+
+    fn is_duplicate_opt_arg(&self, flag: &OsString) -> bool {
+        let flag = flag.to_str().unwrap();
+        let mut chars = flag.chars();
+
+        
+        if self.is_like_msvc() {
+            if chars.next() != Some('/') {
+                return false;
+            }
+        } else if self.is_like_gnu() || self.is_like_clang() {
+            if chars.next() != Some('-') {
+                return false;
+            }
+        }
+
+        
+        if chars.next() == Some('O') {
+            return self.args().iter().any(|ref a|
+                a.to_str().unwrap_or("").chars().nth(1) == Some('O')
+            );
+        }
+
+        
+        return false;
+    }
+
+    
+    fn push_opt_unless_duplicate(&mut self, flag: OsString) {
+        if self.is_duplicate_opt_arg(&flag) {
+            println!("Info: Ignoring duplicate arg {:?}", &flag);
+        } else {
+            self.push_cc_arg(flag);
+        }
     }
 
     
