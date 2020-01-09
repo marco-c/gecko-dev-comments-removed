@@ -15,6 +15,8 @@ const extensionTargetDetails = {
   
   manifestURL: PropTypes.string,
   
+  reloadError: PropTypes.string,
+  
   uuid: PropTypes.string.isRequired,
   
   warnings: PropTypes.arrayOf(PropTypes.string).isRequired,
