@@ -33,7 +33,6 @@ const AUTOCOMPLETE_MARK_CLASSNAME = "cm-auto-complete-shadow-text";
 const Services = require("Services");
 const EventEmitter = require("devtools/shared/event-emitter");
 const { PrefObserver } = require("devtools/client/shared/prefs");
-const { getClientCssProperties } = require("devtools/shared/fronts/css-properties");
 const KeyShortcuts = require("devtools/client/shared/key-shortcuts");
 
 const {LocalizationHelper} = require("devtools/shared/l10n");
@@ -136,6 +135,8 @@ function Editor(config) {
     autocomplete: false,
     autocompleteOpts: {},
     
+    cssProperties: null,
+    
     disableSearchAddon: false,
   };
 
@@ -219,9 +220,6 @@ function Editor(config) {
   if (this.config.cssProperties) {
     
     this.config.autocompleteOpts.cssProperties = this.config.cssProperties;
-  } else {
-    
-    this.config.cssProperties = getClientCssProperties();
   }
 
   EventEmitter.decorate(this);
@@ -322,26 +320,28 @@ Editor.prototype = {
 
     Services.scriptloader.loadSubScript(CM_BUNDLE, win);
 
-    
-    
-    
-    const {
-      propertyKeywords,
-      colorKeywords,
-      valueKeywords,
-    } = getCSSKeywords(this.config.cssProperties);
+    if (this.config.cssProperties) {
+      
+      
+      
+      const {
+        propertyKeywords,
+        colorKeywords,
+        valueKeywords,
+      } = getCSSKeywords(this.config.cssProperties);
 
-    const cssSpec = win.CodeMirror.resolveMode("text/css");
-    cssSpec.propertyKeywords = propertyKeywords;
-    cssSpec.colorKeywords = colorKeywords;
-    cssSpec.valueKeywords = valueKeywords;
-    win.CodeMirror.defineMIME("text/css", cssSpec);
+      const cssSpec = win.CodeMirror.resolveMode("text/css");
+      cssSpec.propertyKeywords = propertyKeywords;
+      cssSpec.colorKeywords = colorKeywords;
+      cssSpec.valueKeywords = valueKeywords;
+      win.CodeMirror.defineMIME("text/css", cssSpec);
 
-    const scssSpec = win.CodeMirror.resolveMode("text/x-scss");
-    scssSpec.propertyKeywords = propertyKeywords;
-    scssSpec.colorKeywords = colorKeywords;
-    scssSpec.valueKeywords = valueKeywords;
-    win.CodeMirror.defineMIME("text/x-scss", scssSpec);
+      const scssSpec = win.CodeMirror.resolveMode("text/x-scss");
+      scssSpec.propertyKeywords = propertyKeywords;
+      scssSpec.colorKeywords = colorKeywords;
+      scssSpec.valueKeywords = valueKeywords;
+      win.CodeMirror.defineMIME("text/x-scss", scssSpec);
+    }
 
     win.CodeMirror.commands.save = () => this.emit("saveRequested");
 
