@@ -2,10 +2,11 @@
 
 
 
+#include "mozilla/Utf8.h"  
 
-#include "jit/Ion.h"
-
-#include "js/CompilationAndEvaluation.h"
+#include "jit/Ion.h"                      
+#include "js/CompilationAndEvaluation.h"  
+#include "js/SourceText.h"                
 #include "jsapi-tests/tests.h"
 
 #include "vm/JSObject-inl.h"
@@ -57,15 +58,18 @@ bool testPreserveJitCode(bool preserveJitCode, unsigned remainingIonScripts) {
       "    ++i;\n"
       "}\n"
       "return sum;\n";
-  unsigned length = strlen(source);
+  constexpr unsigned length = mozilla::ArrayLength(source) - 1;
+
+  JS::SourceText<mozilla::Utf8Unit> srcBuf;
+  CHECK(srcBuf.init(cx, source, length, JS::SourceOwnership::Borrowed));
 
   JS::CompileOptions options(cx);
   options.setFileAndLine(__FILE__, 1);
 
   JS::RootedFunction fun(cx);
   JS::RootedObjectVector emptyScopeChain(cx);
-  CHECK(JS::CompileFunctionUtf8(cx, emptyScopeChain, options, "f", 0, nullptr,
-                                source, length, &fun));
+  CHECK(JS::CompileFunction(cx, emptyScopeChain, options, "f", 0, nullptr,
+                            srcBuf, &fun));
 
   RootedValue value(cx);
   for (unsigned i = 0; i < 1500; ++i) {

@@ -265,6 +265,22 @@ extern JS_PUBLIC_API bool CompileFunction(JSContext* cx,
 
 
 
+
+
+
+
+extern JS_PUBLIC_API bool CompileFunction(JSContext* cx,
+                                          HandleObjectVector envChain,
+                                          const ReadOnlyCompileOptions& options,
+                                          const char* name, unsigned nargs,
+                                          const char* const* argnames,
+                                          SourceText<mozilla::Utf8Unit>& srcBuf,
+                                          MutableHandle<JSFunction*> fun);
+
+
+
+
+
 extern JS_PUBLIC_API bool CompileFunctionUtf8(
     JSContext* cx, HandleObjectVector envChain,
     const ReadOnlyCompileOptions& options, const char* name, unsigned nargs,

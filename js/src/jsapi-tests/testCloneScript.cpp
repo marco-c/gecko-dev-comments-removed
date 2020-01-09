@@ -7,6 +7,8 @@
 
 
 
+#include "mozilla/Utf8.h"  
+
 #include <string.h>  
 
 #include "jsapi.h"  
@@ -16,6 +18,7 @@
 #include "js/CompilationAndEvaluation.h"  
 #include "js/CompileOptions.h"            
 #include "js/RootingAPI.h"                
+#include "js/SourceText.h"                
 #include "js/TypeDecls.h"                 
 #include "jsapi-tests/tests.h"
 
@@ -41,13 +44,17 @@ BEGIN_TEST(test_cloneScript) {
   {
     JSAutoRealm a(cx, A);
 
+    JS::SourceText<mozilla::Utf8Unit> srcBuf;
+    CHECK(srcBuf.init(cx, source, mozilla::ArrayLength(source) - 1,
+                      JS::SourceOwnership::Borrowed));
+
     JS::CompileOptions options(cx);
     options.setFileAndLine(__FILE__, 1);
 
     JS::RootedFunction fun(cx);
     JS::RootedObjectVector emptyScopeChain(cx);
-    CHECK(JS::CompileFunctionUtf8(cx, emptyScopeChain, options, "f", 0, nullptr,
-                                  source, strlen(source), &fun));
+    CHECK(JS::CompileFunction(cx, emptyScopeChain, options, "f", 0, nullptr,
+                              srcBuf, &fun));
     CHECK(obj = JS_GetFunctionObject(fun));
   }
 
@@ -112,14 +119,18 @@ BEGIN_TEST(test_cloneScriptWithPrincipals) {
   {
     JSAutoRealm a(cx, A);
 
+    JS::SourceText<mozilla::Utf8Unit> srcBuf;
+    CHECK(srcBuf.init(cx, source, mozilla::ArrayLength(source) - 1,
+                      JS::SourceOwnership::Borrowed));
+
     JS::CompileOptions options(cx);
     options.setFileAndLine(__FILE__, 1);
 
     JS::RootedFunction fun(cx);
     JS::RootedObjectVector emptyScopeChain(cx);
-    CHECK(JS::CompileFunctionUtf8(cx, emptyScopeChain, options, "f",
-                                  mozilla::ArrayLength(argnames), argnames,
-                                  source, strlen(source), &fun));
+    CHECK(JS::CompileFunction(cx, emptyScopeChain, options, "f",
+                              mozilla::ArrayLength(argnames), argnames, srcBuf,
+                              &fun));
     CHECK(fun);
 
     JSScript* script;
