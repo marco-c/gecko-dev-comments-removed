@@ -68,6 +68,8 @@ async function runTests(options) {
     let [{id, windowId}] = await browser.tabs.query({active: true, currentWindow: true});
     tabs.push(id);
     windows.push(windowId);
+
+    browser.test.sendMessage("background-page-ready");
   }
 
   let extension = ExtensionTestUtils.loadExtension({
@@ -109,11 +111,15 @@ async function runTests(options) {
   });
 
   
-  SidebarUI.browser.addEventListener("load", event => {
+  SidebarUI.browser.addEventListener("load", async () => {
+    
+    
+    await extension.awaitMessage("background-page-ready");
     extension.sendMessage("runNextTest");
   }, {capture: true, once: true});
 
   await extension.startup();
+
   await awaitFinish;
   await extension.unload();
 }
