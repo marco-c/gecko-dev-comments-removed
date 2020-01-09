@@ -8,8 +8,7 @@
 #include "nsString.h"
 #include "gtest/gtest.h"
 
-TEST(Encoding, GoodSurrogatePair)
-{
+TEST(Encoding, GoodSurrogatePair) {
   
   
   const char16_t goodPairData[] = {0xD800, 0xDF02, 0x65, 0x78, 0x0};
@@ -32,8 +31,7 @@ TEST(Encoding, GoodSurrogatePair)
   free(goodPair8);
 }
 
-TEST(Encoding, BackwardsSurrogatePair)
-{
+TEST(Encoding, BackwardsSurrogatePair) {
   
   
   const char16_t backwardsPairData[] = {0xDDDD, 0xD863, 0x65, 0x78, 0x0};
@@ -57,8 +55,7 @@ TEST(Encoding, BackwardsSurrogatePair)
   free(backwardsPair8);
 }
 
-TEST(Encoding, MalformedUTF16OrphanHighSurrogate)
-{
+TEST(Encoding, MalformedUTF16OrphanHighSurrogate) {
   
   
   const char16_t highSurrogateData[] = {0xD863, 0x74, 0x65, 0x78, 0x74, 0x0};
@@ -82,8 +79,7 @@ TEST(Encoding, MalformedUTF16OrphanHighSurrogate)
   free(highSurrogate8);
 }
 
-TEST(Encoding, MalformedUTF16OrphanLowSurrogate)
-{
+TEST(Encoding, MalformedUTF16OrphanLowSurrogate) {
   
   
   const char16_t lowSurrogateData[] = {0xDDDD, 0x74, 0x65, 0x78, 0x74, 0x0};

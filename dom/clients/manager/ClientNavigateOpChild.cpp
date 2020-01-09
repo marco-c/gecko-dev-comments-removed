@@ -287,16 +287,15 @@ void ClientNavigateOpChild::Init(const ClientNavigateOpConstructorArgs& aArgs) {
   
   
   promise
-      ->Then(
-          mSerialEventTarget, __func__,
-          [this](const ClientOpResult& aResult) {
-            mPromiseRequestHolder.Complete();
-            PClientNavigateOpChild::Send__delete__(this, aResult);
-          },
-          [this](nsresult aResult) {
-            mPromiseRequestHolder.Complete();
-            PClientNavigateOpChild::Send__delete__(this, aResult);
-          })
+      ->Then(mSerialEventTarget, __func__,
+             [this](const ClientOpResult& aResult) {
+               mPromiseRequestHolder.Complete();
+               PClientNavigateOpChild::Send__delete__(this, aResult);
+             },
+             [this](nsresult aResult) {
+               mPromiseRequestHolder.Complete();
+               PClientNavigateOpChild::Send__delete__(this, aResult);
+             })
       ->Track(mPromiseRequestHolder);
 }
 

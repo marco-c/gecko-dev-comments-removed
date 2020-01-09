@@ -112,27 +112,23 @@ static MOZ_NEVER_INLINE bool ValidateHookedAllocation(
 
 
 
-TEST(AllocReplacementDeathTest, malloc_check)
-{
+TEST(AllocReplacementDeathTest, malloc_check) {
   ASSERT_ALLOCATION_HAPPENED([] { return malloc(kAllocAmount); });
 }
 
 
-TEST(AllocReplacementDeathTest, calloc_check)
-{
+TEST(AllocReplacementDeathTest, calloc_check) {
   ASSERT_ALLOCATION_HAPPENED([] { return calloc(1, kAllocAmount); });
 }
 
 
-TEST(AllocReplacementDeathTest, realloc_check)
-{
+TEST(AllocReplacementDeathTest, realloc_check) {
   ASSERT_ALLOCATION_HAPPENED([] { return realloc(nullptr, kAllocAmount); });
 }
 
 #if defined(HAVE_POSIX_MEMALIGN)
 
-TEST(AllocReplacementDeathTest, posix_memalign_check)
-{
+TEST(AllocReplacementDeathTest, posix_memalign_check) {
   ASSERT_ALLOCATION_HAPPENED([] {
     void* p = nullptr;
     int result = posix_memalign(&p, sizeof(void*), kAllocAmount);
@@ -153,8 +149,7 @@ TEST(AllocReplacementDeathTest, posix_memalign_check)
         lambda, [](void* p) { HeapFree(GetProcessHeap(), 0, p); }));
 
 
-TEST(AllocReplacementDeathTest, HeapAlloc_check)
-{
+TEST(AllocReplacementDeathTest, HeapAlloc_check) {
   ASSERT_ALLOCATION_HAPPENED([] {
     HANDLE h = GetProcessHeap();
     return HeapAlloc(h, 0, kAllocAmount);
@@ -162,8 +157,7 @@ TEST(AllocReplacementDeathTest, HeapAlloc_check)
 }
 
 
-TEST(AllocReplacementDeathTest, HeapReAlloc_check)
-{
+TEST(AllocReplacementDeathTest, HeapReAlloc_check) {
   ASSERT_ALLOCATION_HAPPENED([] {
     HANDLE h = GetProcessHeap();
     void* p = HeapAlloc(h, 0, kAllocAmount / 2);

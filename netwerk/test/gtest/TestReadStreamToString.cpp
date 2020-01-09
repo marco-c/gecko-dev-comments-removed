@@ -4,8 +4,7 @@
 #include "nsNetUtil.h"
 
 
-TEST(TestReadStreamToString, SyncStreamPreAllocatedSize)
-{
+TEST(TestReadStreamToString, SyncStreamPreAllocatedSize) {
   nsCString buffer;
   buffer.AssignLiteral("Hello world!");
 
@@ -27,8 +26,7 @@ TEST(TestReadStreamToString, SyncStreamPreAllocatedSize)
 }
 
 
-TEST(TestReadStreamToString, SyncStreamFullSize)
-{
+TEST(TestReadStreamToString, SyncStreamFullSize) {
   nsCString buffer;
   buffer.AssignLiteral("Hello world!");
 
@@ -45,8 +43,7 @@ TEST(TestReadStreamToString, SyncStreamFullSize)
 }
 
 
-TEST(TestReadStreamToString, SyncStreamLessThan)
-{
+TEST(TestReadStreamToString, SyncStreamLessThan) {
   nsCString buffer;
   buffer.AssignLiteral("Hello world!");
 
@@ -62,8 +59,7 @@ TEST(TestReadStreamToString, SyncStreamLessThan)
 }
 
 
-TEST(TestReadStreamToString, SyncStreamMoreThan)
-{
+TEST(TestReadStreamToString, SyncStreamMoreThan) {
   nsCString buffer;
   buffer.AssignLiteral("Hello world!");
 
@@ -81,8 +77,7 @@ TEST(TestReadStreamToString, SyncStreamMoreThan)
 }
 
 
-TEST(TestReadStreamToString, SyncStreamUnknownSize)
-{
+TEST(TestReadStreamToString, SyncStreamUnknownSize) {
   nsCString buffer;
   buffer.AssignLiteral("Hello world!");
 
@@ -99,8 +94,7 @@ TEST(TestReadStreamToString, SyncStreamUnknownSize)
 }
 
 
-TEST(TestReadStreamToString, AsyncStreamFullSize)
-{
+TEST(TestReadStreamToString, AsyncStreamFullSize) {
   nsCString buffer;
   buffer.AssignLiteral("Hello world!");
 
@@ -116,8 +110,7 @@ TEST(TestReadStreamToString, AsyncStreamFullSize)
 }
 
 
-TEST(TestReadStreamToString, AsyncStreamLessThan)
-{
+TEST(TestReadStreamToString, AsyncStreamLessThan) {
   nsCString buffer;
   buffer.AssignLiteral("Hello world!");
 
@@ -132,8 +125,7 @@ TEST(TestReadStreamToString, AsyncStreamLessThan)
 }
 
 
-TEST(TestReadStreamToString, AsyncStreamMoreThan)
-{
+TEST(TestReadStreamToString, AsyncStreamMoreThan) {
   nsCString buffer;
   buffer.AssignLiteral("Hello world!");
 
@@ -150,8 +142,7 @@ TEST(TestReadStreamToString, AsyncStreamMoreThan)
 }
 
 
-TEST(TestReadStreamToString, AsyncStreamUnknownSize)
-{
+TEST(TestReadStreamToString, AsyncStreamUnknownSize) {
   nsCString buffer;
   buffer.AssignLiteral("Hello world!");
 
@@ -167,8 +158,7 @@ TEST(TestReadStreamToString, AsyncStreamUnknownSize)
 }
 
 
-TEST(TestReadStreamToString, AsyncStreamUnknownBigSize)
-{
+TEST(TestReadStreamToString, AsyncStreamUnknownBigSize) {
   nsCString buffer;
 
   buffer.SetLength(4096 * 2);

@@ -482,8 +482,7 @@ void AddDevices(MockCubeb* mock, uint32_t device_count,
 }
 
 #ifndef ANDROID
-TEST(CubebDeviceEnumerator, EnumerateSimple)
-{
+TEST(CubebDeviceEnumerator, EnumerateSimple) {
   
   
   
@@ -519,8 +518,7 @@ TEST(CubebDeviceEnumerator, EnumerateSimple)
 }
 
 #else  
-TEST(CubebDeviceEnumerator, EnumerateAndroid)
-{
+TEST(CubebDeviceEnumerator, EnumerateAndroid) {
   MockCubeb* mock = new MockCubeb();
   mozilla::CubebUtils::ForceSetCubebContext(mock->AsCubebContext());
 
@@ -549,8 +547,7 @@ TEST(CubebDeviceEnumerator, EnumerateAndroid)
 }
 #endif
 
-TEST(CubebDeviceEnumerator, ForceNullCubebContext)
-{
+TEST(CubebDeviceEnumerator, ForceNullCubebContext) {
   mozilla::CubebUtils::ForceSetCubebContext(nullptr);
   RefPtr<CubebDeviceEnumerator> enumerator =
       CubebDeviceEnumerator::GetInstance();
@@ -569,8 +566,7 @@ TEST(CubebDeviceEnumerator, ForceNullCubebContext)
   CubebDeviceEnumerator::Shutdown();
 }
 
-TEST(CubebDeviceEnumerator, DeviceInfoFromId)
-{
+TEST(CubebDeviceEnumerator, DeviceInfoFromId) {
   MockCubeb* mock = new MockCubeb();
   mozilla::CubebUtils::ForceSetCubebContext(mock->AsCubebContext());
 
@@ -608,8 +604,7 @@ TEST(CubebDeviceEnumerator, DeviceInfoFromId)
   CubebDeviceEnumerator::Shutdown();
 }
 
-TEST(CubebDeviceEnumerator, DeviceInfoFromName)
-{
+TEST(CubebDeviceEnumerator, DeviceInfoFromName) {
   MockCubeb* mock = new MockCubeb();
   mozilla::CubebUtils::ForceSetCubebContext(mock->AsCubebContext());
 

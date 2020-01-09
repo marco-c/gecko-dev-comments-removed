@@ -58,9 +58,7 @@ bool ClientIsValidPrincipalInfo(const PrincipalInfo& aPrincipalInfo) {
       
       return specOrigin == originOrigin;
     }
-    default: {
-      break;
-    }
+    default: { break; }
   }
 
   
@@ -146,9 +144,7 @@ bool ClientIsValidCreationURL(const PrincipalInfo& aPrincipalInfo,
       
       return true;
     }
-    default: {
-      break;
-    }
+    default: { break; }
   }
 
   

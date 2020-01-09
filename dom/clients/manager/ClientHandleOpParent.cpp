@@ -62,16 +62,15 @@ void ClientHandleOpParent::Init(const ClientOpConstructorArgs& aArgs) {
   
   
   
-  p->Then(
-       GetCurrentThreadSerialEventTarget(), __func__,
-       [this](const ClientOpResult& aResult) {
-         mPromiseRequestHolder.Complete();
-         Unused << PClientHandleOpParent::Send__delete__(this, aResult);
-       },
-       [this](nsresult aRv) {
-         mPromiseRequestHolder.Complete();
-         Unused << PClientHandleOpParent::Send__delete__(this, aRv);
-       })
+  p->Then(GetCurrentThreadSerialEventTarget(), __func__,
+          [this](const ClientOpResult& aResult) {
+            mPromiseRequestHolder.Complete();
+            Unused << PClientHandleOpParent::Send__delete__(this, aResult);
+          },
+          [this](nsresult aRv) {
+            mPromiseRequestHolder.Complete();
+            Unused << PClientHandleOpParent::Send__delete__(this, aRv);
+          })
       ->Track(mPromiseRequestHolder);
 }
 

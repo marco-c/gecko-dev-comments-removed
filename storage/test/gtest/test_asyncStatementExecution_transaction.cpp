@@ -80,8 +80,7 @@ void check_transaction(mozIStorageConnection *aDB,
 
 
 
-TEST(storage_asyncStatementExecution_transaction, MultipleAsyncReadStatements)
-{
+TEST(storage_asyncStatementExecution_transaction, MultipleAsyncReadStatements) {
   nsCOMPtr<mozIStorageConnection> db(getMemoryDatabase());
 
   
@@ -105,8 +104,7 @@ TEST(storage_asyncStatementExecution_transaction, MultipleAsyncReadStatements)
 
 
 
-TEST(storage_asyncStatementExecution_transaction, MultipleReadStatements)
-{
+TEST(storage_asyncStatementExecution_transaction, MultipleReadStatements) {
   nsCOMPtr<mozIStorageConnection> db(getMemoryDatabase());
 
   
@@ -131,8 +129,7 @@ TEST(storage_asyncStatementExecution_transaction, MultipleReadStatements)
 
 
 TEST(storage_asyncStatementExecution_transaction,
-     MultipleAsyncReadWriteStatements)
-{
+     MultipleAsyncReadWriteStatements) {
   nsCOMPtr<mozIStorageConnection> db(getMemoryDatabase());
 
   
@@ -156,8 +153,7 @@ TEST(storage_asyncStatementExecution_transaction,
 
 
 
-TEST(storage_asyncStatementExecution_transaction, MultipleReadWriteStatements)
-{
+TEST(storage_asyncStatementExecution_transaction, MultipleReadWriteStatements) {
   nsCOMPtr<mozIStorageConnection> db(getMemoryDatabase());
 
   
@@ -182,8 +178,8 @@ TEST(storage_asyncStatementExecution_transaction, MultipleReadWriteStatements)
 
 
 
-TEST(storage_asyncStatementExecution_transaction, MultipleAsyncWriteStatements)
-{
+TEST(storage_asyncStatementExecution_transaction,
+     MultipleAsyncWriteStatements) {
   nsCOMPtr<mozIStorageConnection> db(getMemoryDatabase());
 
   
@@ -209,8 +205,7 @@ TEST(storage_asyncStatementExecution_transaction, MultipleAsyncWriteStatements)
 
 
 
-TEST(storage_asyncStatementExecution_transaction, MultipleWriteStatements)
-{
+TEST(storage_asyncStatementExecution_transaction, MultipleWriteStatements) {
   nsCOMPtr<mozIStorageConnection> db(getMemoryDatabase());
 
   
@@ -236,8 +231,7 @@ TEST(storage_asyncStatementExecution_transaction, MultipleWriteStatements)
 
 
 
-TEST(storage_asyncStatementExecution_transaction, SingleAsyncReadStatement)
-{
+TEST(storage_asyncStatementExecution_transaction, SingleAsyncReadStatement) {
   nsCOMPtr<mozIStorageConnection> db(getMemoryDatabase());
 
   
@@ -256,8 +250,7 @@ TEST(storage_asyncStatementExecution_transaction, SingleAsyncReadStatement)
 
 
 
-TEST(storage_asyncStatementExecution_transaction, SingleReadStatement)
-{
+TEST(storage_asyncStatementExecution_transaction, SingleReadStatement) {
   nsCOMPtr<mozIStorageConnection> db(getMemoryDatabase());
 
   
@@ -276,8 +269,7 @@ TEST(storage_asyncStatementExecution_transaction, SingleReadStatement)
 
 
 
-TEST(storage_asyncStatementExecution_transaction, SingleAsyncWriteStatement)
-{
+TEST(storage_asyncStatementExecution_transaction, SingleAsyncWriteStatement) {
   nsCOMPtr<mozIStorageConnection> db(getMemoryDatabase());
 
   
@@ -296,8 +288,7 @@ TEST(storage_asyncStatementExecution_transaction, SingleAsyncWriteStatement)
 
 
 
-TEST(storage_asyncStatementExecution_transaction, SingleWriteStatement)
-{
+TEST(storage_asyncStatementExecution_transaction, SingleWriteStatement) {
   nsCOMPtr<mozIStorageConnection> db(getMemoryDatabase());
 
   
@@ -318,8 +309,7 @@ TEST(storage_asyncStatementExecution_transaction, SingleWriteStatement)
 
 
 TEST(storage_asyncStatementExecution_transaction,
-     MultipleParamsAsyncReadStatement)
-{
+     MultipleParamsAsyncReadStatement) {
   nsCOMPtr<mozIStorageConnection> db(getMemoryDatabase());
 
   
@@ -351,8 +341,7 @@ TEST(storage_asyncStatementExecution_transaction,
 
 
 
-TEST(storage_asyncStatementExecution_transaction, MultipleParamsReadStatement)
-{
+TEST(storage_asyncStatementExecution_transaction, MultipleParamsReadStatement) {
   nsCOMPtr<mozIStorageConnection> db(getMemoryDatabase());
 
   
@@ -384,8 +373,7 @@ TEST(storage_asyncStatementExecution_transaction, MultipleParamsReadStatement)
 
 
 TEST(storage_asyncStatementExecution_transaction,
-     MultipleParamsAsyncWriteStatement)
-{
+     MultipleParamsAsyncWriteStatement) {
   nsCOMPtr<mozIStorageConnection> db(getMemoryDatabase());
 
   
@@ -425,8 +413,8 @@ TEST(storage_asyncStatementExecution_transaction,
 
 
 
-TEST(storage_asyncStatementExecution_transaction, MultipleParamsWriteStatement)
-{
+TEST(storage_asyncStatementExecution_transaction,
+     MultipleParamsWriteStatement) {
   nsCOMPtr<mozIStorageConnection> db(getMemoryDatabase());
 
   

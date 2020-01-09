@@ -74,8 +74,7 @@ void deserializeAndVerify(const nsCString &serializedSecInfo,
   }
 }
 
-TEST(psm_DeserializeCert, gecko33)
-{
+TEST(psm_DeserializeCert, gecko33) {
   
   
   
@@ -109,8 +108,7 @@ TEST(psm_DeserializeCert, gecko33)
   deserializeAndVerify(base64Serialization, false);
 }
 
-TEST(psm_DeserializeCert, gecko46)
-{
+TEST(psm_DeserializeCert, gecko46) {
   
   
   
@@ -144,8 +142,7 @@ TEST(psm_DeserializeCert, gecko46)
   deserializeAndVerify(base64Serialization, false);
 }
 
-TEST(psm_DeserializeCert, preSSLStatusConsolidation)
-{
+TEST(psm_DeserializeCert, preSSLStatusConsolidation) {
   
   
   
@@ -193,8 +190,7 @@ TEST(psm_DeserializeCert, preSSLStatusConsolidation)
   deserializeAndVerify(base64Serialization, false);
 }
 
-TEST(psm_DeserializeCert, preSSLStatusConsolidationFailedCertChain)
-{
+TEST(psm_DeserializeCert, preSSLStatusConsolidationFailedCertChain) {
   
   
   

@@ -16,8 +16,7 @@ using namespace mozilla;
 void TestParseError(PrefValueKind aKind, const char* aText,
                     nsCString& aErrorMsg);
 
-TEST(PrefsParser, Errors)
-{
+TEST(PrefsParser, Errors) {
   nsAutoCStringN<128> actualErrorMsg;
 
 

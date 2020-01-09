@@ -234,8 +234,7 @@ static void testOpenLookupCache() {
 }
 
 
-TEST(UrlClassifierTableUpdateV4, FixLengthPSetFullUpdate)
-{
+TEST(UrlClassifierTableUpdateV4, FixLengthPSetFullUpdate) {
   srand(time(NULL));
 
   _PrefixArray array;
@@ -251,8 +250,7 @@ TEST(UrlClassifierTableUpdateV4, FixLengthPSetFullUpdate)
   Clear();
 }
 
-TEST(UrlClassifierTableUpdateV4, VariableLengthPSetFullUpdate)
-{
+TEST(UrlClassifierTableUpdateV4, VariableLengthPSetFullUpdate) {
   _PrefixArray array;
   PrefixStringMap map;
   nsCString sha256;
@@ -267,8 +265,7 @@ TEST(UrlClassifierTableUpdateV4, VariableLengthPSetFullUpdate)
 }
 
 
-TEST(UrlClassifierTableUpdateV4, MixedPSetFullUpdate)
-{
+TEST(UrlClassifierTableUpdateV4, MixedPSetFullUpdate) {
   _PrefixArray array;
   PrefixStringMap map;
   nsCString sha256;
@@ -283,8 +280,7 @@ TEST(UrlClassifierTableUpdateV4, MixedPSetFullUpdate)
   Clear();
 }
 
-TEST(UrlClassifierTableUpdateV4, PartialUpdateWithRemoval)
-{
+TEST(UrlClassifierTableUpdateV4, PartialUpdateWithRemoval) {
   _PrefixArray fArray;
 
   
@@ -327,8 +323,7 @@ TEST(UrlClassifierTableUpdateV4, PartialUpdateWithRemoval)
   Clear();
 }
 
-TEST(UrlClassifierTableUpdateV4, PartialUpdateWithoutRemoval)
-{
+TEST(UrlClassifierTableUpdateV4, PartialUpdateWithoutRemoval) {
   _PrefixArray fArray;
 
   
@@ -368,8 +363,7 @@ TEST(UrlClassifierTableUpdateV4, PartialUpdateWithoutRemoval)
 
 
 
-TEST(UrlClassifierTableUpdateV4, PartialUpdatePrefixAlreadyExist)
-{
+TEST(UrlClassifierTableUpdateV4, PartialUpdatePrefixAlreadyExist) {
   _PrefixArray fArray;
 
   
@@ -405,8 +399,7 @@ TEST(UrlClassifierTableUpdateV4, PartialUpdatePrefixAlreadyExist)
 }
 
 
-TEST(UrlClassifierTableUpdateV4, OnlyPartialUpdate)
-{
+TEST(UrlClassifierTableUpdateV4, OnlyPartialUpdate) {
   _PrefixArray pArray;
   PrefixStringMap pMap;
   nsCString sha256;
@@ -422,8 +415,7 @@ TEST(UrlClassifierTableUpdateV4, OnlyPartialUpdate)
 }
 
 
-TEST(UrlClassifierTableUpdateV4, PartialUpdateOnlyRemoval)
-{
+TEST(UrlClassifierTableUpdateV4, PartialUpdateOnlyRemoval) {
   _PrefixArray fArray;
 
   
@@ -460,8 +452,7 @@ TEST(UrlClassifierTableUpdateV4, PartialUpdateOnlyRemoval)
 }
 
 
-TEST(UrlClassifierTableUpdateV4, MultipleTableUpdates)
-{
+TEST(UrlClassifierTableUpdateV4, MultipleTableUpdates) {
   _PrefixArray fArray, pArray, mergedArray;
   PrefixStringMap fMap, pMap, mergedMap;
   nsCString sha256;
@@ -514,8 +505,7 @@ TEST(UrlClassifierTableUpdateV4, MultipleTableUpdates)
 
 
 
-TEST(UrlClassifierTableUpdateV4, MultiplePartialUpdateTableUpdates)
-{
+TEST(UrlClassifierTableUpdateV4, MultiplePartialUpdateTableUpdates) {
   _PrefixArray fArray;
 
   
@@ -583,8 +573,7 @@ TEST(UrlClassifierTableUpdateV4, MultiplePartialUpdateTableUpdates)
 }
 
 
-TEST(UrlClassifierTableUpdateV4, RemovalIndexTooLarge)
-{
+TEST(UrlClassifierTableUpdateV4, RemovalIndexTooLarge) {
   _PrefixArray fArray;
 
   
@@ -622,8 +611,7 @@ TEST(UrlClassifierTableUpdateV4, RemovalIndexTooLarge)
   Clear();
 }
 
-TEST(UrlClassifierTableUpdateV4, ChecksumMismatch)
-{
+TEST(UrlClassifierTableUpdateV4, ChecksumMismatch) {
   
   {
     _PrefixArray fArray;
@@ -659,8 +647,7 @@ TEST(UrlClassifierTableUpdateV4, ChecksumMismatch)
   Clear();
 }
 
-TEST(UrlClassifierTableUpdateV4, ApplyUpdateThenLoad)
-{
+TEST(UrlClassifierTableUpdateV4, ApplyUpdateThenLoad) {
   
   {
     _PrefixArray fArray;
@@ -696,8 +683,7 @@ TEST(UrlClassifierTableUpdateV4, ApplyUpdateThenLoad)
 }
 
 
-TEST(UrlClassifierTableUpdateV4, ApplyUpdateWithFixedChecksum)
-{
+TEST(UrlClassifierTableUpdateV4, ApplyUpdateWithFixedChecksum) {
   _PrefixArray fArray = {_Prefix("enus"),
                          _Prefix("apollo"),
                          _Prefix("mars"),
@@ -737,8 +723,7 @@ TEST(UrlClassifierTableUpdateV4, ApplyUpdateWithFixedChecksum)
 
 
 
-TEST(UrlClassifierTableUpdateV4, EmptyUpdate)
-{
+TEST(UrlClassifierTableUpdateV4, EmptyUpdate) {
   PrefixStringMap emptyAddition;
   nsTArray<uint32_t> emptyRemoval;
 
@@ -771,8 +756,7 @@ TEST(UrlClassifierTableUpdateV4, EmptyUpdate)
 
 
 
-TEST(UrlClassifierTableUpdateV4, EmptyUpdate2)
-{
+TEST(UrlClassifierTableUpdateV4, EmptyUpdate2) {
   
   _PrefixArray array;
   CreateRandomSortedPrefixArray(100, 4, 4, array);

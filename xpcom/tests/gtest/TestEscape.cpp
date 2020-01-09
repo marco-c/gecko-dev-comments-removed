@@ -13,8 +13,7 @@ using namespace mozilla;
 
 
 
-TEST(Escape, FallibleNoEscape)
-{
+TEST(Escape, FallibleNoEscape) {
   
   
   nsCString toEscape("data:,Hello%2C%20World!");
@@ -27,8 +26,7 @@ TEST(Escape, FallibleNoEscape)
   EXPECT_EQ(toEscape.BeginReading(), escaped.BeginReading());
 }
 
-TEST(Escape, FallibleEscape)
-{
+TEST(Escape, FallibleEscape) {
   
   
   nsCString toEscape("data:,Hello%2C%20World!\xC4\x9F");
@@ -40,8 +38,7 @@ TEST(Escape, FallibleEscape)
   EXPECT_STREQ(escaped.BeginReading(), kExpected);
 }
 
-TEST(Escape, BadEscapeSequences)
-{
+TEST(Escape, BadEscapeSequences) {
   {
     char bad[] = "%s\0fa";
 
@@ -69,8 +66,7 @@ TEST(Escape, BadEscapeSequences)
   }
 }
 
-TEST(Escape, nsAppendEscapedHTML)
-{
+TEST(Escape, nsAppendEscapedHTML) {
   const char* srcs[] = {
       "a", "bcdefgh", "<",           ">",         "&", "\"",
       "'", "'bad'",   "Foo<T>& foo", "'\"&><abc", "",
@@ -126,8 +122,7 @@ TEST(Escape, nsAppendEscapedHTML)
   }
 }
 
-TEST(Escape, EscapeSpaces)
-{
+TEST(Escape, EscapeSpaces) {
   
   
   nsCString toEscape("data:\x0D\x0A spa ces\xC4\x9F");

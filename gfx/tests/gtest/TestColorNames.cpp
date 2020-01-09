@@ -44,16 +44,18 @@ static void RunColorTests() {
 
     
     ASSERT_TRUE(NS_ColorNameToRGB(NS_ConvertASCIItoUTF16(tagName), &rgb))
-    << "can't find '" << tagName.get() << "'";
+        << "can't find '" << tagName.get() << "'";
     ASSERT_TRUE((rgb == kColors[index]))
-    << "failed at index " << index << " out of " << ArrayLength(kColorNames);
+        << "failed at index " << index << " out of "
+        << ArrayLength(kColorNames);
 
     
     tagName.SetCharAt(tagName.CharAt(0) - 32, 0);
     ASSERT_TRUE(NS_ColorNameToRGB(NS_ConvertASCIItoUTF16(tagName), &rgb))
-    << "can't find '" << tagName.get() << "'";
+        << "can't find '" << tagName.get() << "'";
     ASSERT_TRUE((rgb == kColors[index]))
-    << "failed at index " << index << " out of " << ArrayLength(kColorNames);
+        << "failed at index " << index << " out of "
+        << ArrayLength(kColorNames);
 
     
     uint8_t r = NS_GET_R(rgb);
@@ -69,7 +71,7 @@ static void RunColorTests() {
     nscolor hexrgb;
     ASSERT_TRUE(NS_HexToRGBA(NS_ConvertASCIItoUTF16(cbuf),
                              nsHexColorType::AllowAlpha, &hexrgb))
-    << "hex conversion to color of '" << cbuf << "'";
+        << "hex conversion to color of '" << cbuf << "'";
     ASSERT_TRUE(hexrgb == rgb);
   }
 }
@@ -84,8 +86,6 @@ static void RunJunkColorTests() {
   }
 }
 
-TEST(Gfx, ColorNames)
-{ RunColorTests(); }
+TEST(Gfx, ColorNames) { RunColorTests(); }
 
-TEST(Gfx, JunkColorNames)
-{ RunJunkColorTests(); }
+TEST(Gfx, JunkColorNames) { RunJunkColorTests(); }
