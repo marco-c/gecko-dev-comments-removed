@@ -55,7 +55,7 @@ ProcessRuntime::ProcessRuntime(GeckoProcessType aProcessType)
   
   
   
-  if (IsWin32kLockedDown()) {
+  if (!mIsParentProcess && IsWin32kLockedDown()) {
     
     
     nsresult rv = nsThreadManager::get().Init();
@@ -87,6 +87,7 @@ void ProcessRuntime::InitInsideApartment() {
   ProcessInitLock lock;
   if (lock.IsInitialized()) {
     
+    mInitResult = S_OK;
     return;
   }
 
