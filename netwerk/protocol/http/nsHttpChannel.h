@@ -475,6 +475,10 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   void ProcessSecurityReport(nsresult status);
 
+  nsresult GetResponseCrossOriginPolicy(
+      nsILoadInfo::CrossOriginPolicy *aResponseCrossOriginPolicy);
+  nsresult ProcessCrossOriginHeader();
+
   
 
 
