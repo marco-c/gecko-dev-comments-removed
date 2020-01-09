@@ -147,6 +147,18 @@ Inspector.prototype = {
     
     localizeMarkup(this.panelDoc);
 
+    
+    if (this._target.isReplayEnabled()) {
+      let dbg = this._toolbox.getPanel("jsdebugger");
+      if (!dbg) {
+        dbg = await this._toolbox.loadTool("jsdebugger");
+      }
+      this._replayResumed = !dbg.isPaused();
+
+      this._onReplayPauseChange = this._onReplayPauseChange.bind(this);
+      this._target.on("pause-change", this._onReplayPauseChange);
+    }
+
     await Promise.all([
       this._getCssProperties(),
       this._getPageStyle(),
@@ -349,7 +361,11 @@ Inspector.prototype = {
 
     
     
-    const hasNavigated = () => pendingSelection !== this._pendingSelection;
+    
+    
+    const hasNavigated = () => {
+      return pendingSelection !== this._pendingSelection || this._replayResumed;
+    };
 
     
     
@@ -1103,6 +1119,15 @@ Inspector.prototype = {
     this._pendingSelection = onNodeSelected;
     this._getDefaultNodeForSelection()
         .then(onNodeSelected, this._handleRejectionIfNotDestroyed);
+  },
+
+  
+
+
+  _onReplayPauseChange({ paused }) {
+    this._replayResumed = !paused;
+
+    this.onNewRoot();
   },
 
   
