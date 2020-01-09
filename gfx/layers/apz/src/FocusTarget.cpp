@@ -32,8 +32,7 @@ using namespace mozilla::layout;
 namespace mozilla {
 namespace layers {
 
-static already_AddRefed<nsIPresShell> GetRetargetEventPresShell(
-    nsIPresShell* aRootPresShell) {
+static PresShell* GetRetargetEventPresShell(PresShell* aRootPresShell) {
   MOZ_ASSERT(aRootPresShell);
 
   
@@ -49,8 +48,7 @@ static already_AddRefed<nsIPresShell> GetRetargetEventPresShell(
     return nullptr;
   }
 
-  nsCOMPtr<nsIPresShell> presShell = retargetEventDoc->GetPresShell();
-  return presShell.forget();
+  return retargetEventDoc->GetPresShell();
 }
 
 static bool HasListenersForKeyEvents(nsIContent* aContent) {
@@ -99,7 +97,7 @@ FocusTarget::FocusTarget()
       mFocusHasKeyEventListeners(false),
       mData(AsVariant(NoFocusTarget())) {}
 
-FocusTarget::FocusTarget(nsIPresShell* aRootPresShell,
+FocusTarget::FocusTarget(PresShell* aRootPresShell,
                          uint64_t aFocusSequenceNumber)
     : mSequenceNumber(aFocusSequenceNumber),
       mFocusHasKeyEventListeners(false),
@@ -108,7 +106,7 @@ FocusTarget::FocusTarget(nsIPresShell* aRootPresShell,
   MOZ_ASSERT(NS_IsMainThread());
 
   
-  nsCOMPtr<nsIPresShell> presShell = GetRetargetEventPresShell(aRootPresShell);
+  RefPtr<PresShell> presShell = GetRetargetEventPresShell(aRootPresShell);
 
   if (!presShell) {
     FT_LOG("Creating nil target with seq=%" PRIu64
