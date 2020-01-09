@@ -30,7 +30,7 @@ bool ForOfLoopControl::emitBeginCodeNeedingIteratorClose(BytecodeEmitter* bce) {
   }
 
   MOZ_ASSERT(numYieldsAtBeginCodeNeedingIterClose_ == UINT32_MAX);
-  numYieldsAtBeginCodeNeedingIterClose_ = bce->numYields;
+  numYieldsAtBeginCodeNeedingIterClose_ = bce->bytecodeSection().numYields();
 
   return true;
 }
@@ -93,7 +93,7 @@ bool ForOfLoopControl::emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce) {
   
   
   
-  uint32_t numYieldsEmitted = bce->numYields;
+  uint32_t numYieldsEmitted = bce->bytecodeSection().numYields();
   if (numYieldsEmitted > numYieldsAtBeginCodeNeedingIterClose_) {
     if (!tryCatch_->emitFinally()) {
       return false;
