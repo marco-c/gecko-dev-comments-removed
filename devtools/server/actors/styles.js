@@ -1265,11 +1265,9 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
     
     
     if (form.authoredText || form.cssText) {
-      
-      const cssText = (typeof form.authoredText === "string")
-        ? form.authoredText
-        : form.cssText;
-      const declarations = parseNamedDeclarations(isCssPropertyKnown, cssText, true);
+      const declarations = parseNamedDeclarations(isCssPropertyKnown,
+                                                form.authoredText || form.cssText,
+                                                true);
 
       
       
