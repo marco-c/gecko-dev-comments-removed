@@ -272,8 +272,7 @@ evaluate.toJSON = function(obj, seenEls) {
 
   
   } else if (element.isElement(obj)) {
-    let webEl = seenEls.add(obj);
-    return webEl.toJSON();
+    return seenEls.add(obj);
 
   
   } else if (typeof obj.toJSON == "function") {
