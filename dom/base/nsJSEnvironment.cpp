@@ -1884,6 +1884,13 @@ static bool CCRunnerFired(TimeStamp aDeadline) {
     
     FireForgetSkippable(suspected, false, aDeadline);
     didDoWork = true;
+  } else if (!isLateTimerFire && !aDeadline.IsNull()) {
+    MOZ_ASSERT(!didDoWork);
+    
+    
+    
+    sCCRunnerFireCount = numEarlyTimerFires;
+    return CCRunnerFired(aDeadline);
   }
 
   if (isLateTimerFire) {
