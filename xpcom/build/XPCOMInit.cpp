@@ -732,6 +732,10 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
 #endif
   nsCycleCollector_shutdown(shutdownCollect);
 
+  
+  
+  mozilla::KillClearOnShutdown(ShutdownPhase::ShutdownPostLastCycleCollection);
+
   PROFILER_ADD_MARKER("Shutdown xpcom", OTHER);
   
   if (gShutdownChecks != SCM_NOTHING) {

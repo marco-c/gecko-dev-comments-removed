@@ -50,6 +50,7 @@ enum class ShutdownPhase {
   ShutdownThreads,
   ShutdownLoaders,
   ShutdownFinal,
+  ShutdownPostLastCycleCollection,
   ShutdownPhase_Length,  
   First = WillShutdown,  
   Last = ShutdownFinal
