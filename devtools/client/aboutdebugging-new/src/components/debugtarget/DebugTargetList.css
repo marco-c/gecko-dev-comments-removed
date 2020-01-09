@@ -3,6 +3,7 @@
 
 
 .debug-target-list {
+  margin-inline-start: calc(var(--base-unit) * 6);
   overflow: hidden;
 }
 
