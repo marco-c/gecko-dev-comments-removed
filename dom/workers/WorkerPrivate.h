@@ -671,13 +671,6 @@ class WorkerPrivate : public RelativeTimeline {
     return mLoadInfo.mLoadGroup;
   }
 
-  
-  
-  
-  nsIPrincipal* GetPrincipalDontAssertMainThread() const {
-    return mLoadInfo.mPrincipal;
-  }
-
   bool UsesSystemPrincipal() const { return mLoadInfo.mPrincipalIsSystem; }
 
   const mozilla::ipc::PrincipalInfo& GetPrincipalInfo() const {
