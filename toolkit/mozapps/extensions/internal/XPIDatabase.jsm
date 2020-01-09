@@ -2337,6 +2337,12 @@ this.XPIDatabaseReconcile = {
     
     let unsigned;
     try {
+      
+      if (isDetectedInstall && Services.policies &&
+          !Services.policies.isAllowed("xpinstall")) {
+        throw new Error("Extension installs are disabled by enterprise policy.");
+      }
+
       if (!aNewAddon) {
         
         let file = new nsIFile(aAddonState.path);
