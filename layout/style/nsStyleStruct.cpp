@@ -236,18 +236,31 @@ nsStylePadding::nsStylePadding(const nsStylePadding& aSrc)
 
 nsChangeHint nsStylePadding::CalcDifference(
     const nsStylePadding& aNewData) const {
-  if (mPadding == aNewData.mPadding) {
+  if (mPadding == aNewData.mPadding &&
+      mScrollPadding == aNewData.mScrollPadding) {
     return nsChangeHint(0);
   }
-  
-  
-  
-  
-  
-  
-  
-  
-  return NS_STYLE_HINT_REFLOW & ~nsChangeHint_ClearDescendantIntrinsics;
+
+  nsChangeHint hint = nsChangeHint(0);
+
+  if (mPadding != aNewData.mPadding) {
+    
+    
+    
+    
+    
+    
+    
+    
+    hint |= NS_STYLE_HINT_REFLOW & ~nsChangeHint_ClearDescendantIntrinsics;
+  }
+
+  if (mScrollPadding != aNewData.mScrollPadding) {
+    
+    hint |= nsChangeHint_NeutralChange;
+  }
+
+  return hint;
 }
 
 static nscoord TwipsPerPixel(const Document& aDocument) {

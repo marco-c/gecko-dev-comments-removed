@@ -782,6 +782,8 @@ struct ScrollSnapInfo {
   
   nsTArray<ScrollSnapRange> mXRangeWiderThanSnapport;
   nsTArray<ScrollSnapRange> mYRangeWiderThanSnapport;
+
+  
   nsSize mSnapportSize;
 };
 
