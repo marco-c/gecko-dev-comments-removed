@@ -951,6 +951,13 @@ VARCACHE_PREF(
 )
 
 
+VARCACHE_PREF(
+  "layout.css.scroll-snap-v1.enabled",
+   layout_css_scroll_snap_v1_enabled,
+  RelaxedAtomicBool, false
+)
+
+
 
 
 
