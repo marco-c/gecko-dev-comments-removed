@@ -100,6 +100,16 @@ var GMPUtils = {
   _isWindowsOnARM64() {
     return AppConstants.platform == "win" && UpdateUtils.ABI.match(/aarch64/);
   },
+
+  _expectedABI(aPlugin) {
+    let defaultABI = UpdateUtils.ABI;
+    if (aPlugin.id == WIDEVINE_ID && this._isWindowsOnARM64()) {
+      
+      
+      defaultABI = defaultABI.replace(/aarch64/g, "x86");
+    }
+    return defaultABI;
+  },
 };
 
 

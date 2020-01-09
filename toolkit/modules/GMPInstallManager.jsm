@@ -430,7 +430,9 @@ GMPDownloader.prototype = {
         
         
         
-        GMPPrefs.setString(GMPPrefs.KEY_PLUGIN_ABI, UpdateUtils.ABI, gmpAddon.id);
+        let abi = GMPUtils._expectedABI(gmpAddon);
+        log.info("Setting ABI to '" + abi + "' for " + gmpAddon.id);
+        GMPPrefs.setString(GMPPrefs.KEY_PLUGIN_ABI, abi, gmpAddon.id);
         
         
         GMPPrefs.setString(GMPPrefs.KEY_PLUGIN_VERSION, gmpAddon.version,

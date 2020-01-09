@@ -16,9 +16,7 @@ const {Log} = ChromeUtils.import("resource://gre/modules/Log.jsm");
 
 
 var {GMPPrefs, GMPUtils, OPEN_H264_ID, WIDEVINE_ID} = ChromeUtils.import("resource://gre/modules/GMPUtils.jsm");
-
 const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
-const {UpdateUtils} = ChromeUtils.import("resource://gre/modules/UpdateUtils.jsm");
 
 ChromeUtils.defineModuleGetter(
   this, "GMPInstallManager", "resource://gre/modules/GMPInstallManager.jsm");
@@ -530,9 +528,10 @@ GMPWrapper.prototype = {
       };
     }
 
-    let abi = GMPPrefs.getString(GMPPrefs.KEY_PLUGIN_ABI, UpdateUtils.ABI,
+    let expectedABI = GMPUtils._expectedABI(this._plugin);
+    let abi = GMPPrefs.getString(GMPPrefs.KEY_PLUGIN_ABI, expectedABI,
                                  this._plugin.id);
-    if (abi != UpdateUtils.ABI) {
+    if (abi != expectedABI) {
       
       
       return {
