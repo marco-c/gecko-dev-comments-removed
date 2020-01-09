@@ -5493,6 +5493,12 @@ void ScrollFrameHelper::UpdateMinimumScaleSize(
 
   Document* doc = pc->Document();
   MOZ_ASSERT(doc, "The document should be valid");
+  if (doc->GetFullscreenElement()) {
+    
+    
+    return;
+  }
+
   nsViewportInfo viewportInfo = doc->GetViewportInfo(displaySize);
   
   
