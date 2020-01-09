@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_net_UrlClassifierFeatureFingerprinting_h
-#define mozilla_net_UrlClassifierFeatureFingerprinting_h
+#ifndef mozilla_net_UrlClassifierFeatureFingerprintingProtection_h
+#define mozilla_net_UrlClassifierFeatureFingerprintingProtection_h
 
 #include "UrlClassifierFeatureBase.h"
 
@@ -14,15 +14,15 @@ class nsIChannel;
 namespace mozilla {
 namespace net {
 
-class UrlClassifierFeatureFingerprinting final
+class UrlClassifierFeatureFingerprintingProtection final
     : public UrlClassifierFeatureBase {
  public:
   static const char* Name();
 
   static void MaybeShutdown();
 
-  static already_AddRefed<UrlClassifierFeatureFingerprinting> MaybeCreate(
-      nsIChannel* aChannel);
+  static already_AddRefed<UrlClassifierFeatureFingerprintingProtection>
+  MaybeCreate(nsIChannel* aChannel);
 
   static already_AddRefed<nsIUrlClassifierFeature> GetIfNameMatches(
       const nsACString& aName);
@@ -35,7 +35,7 @@ class UrlClassifierFeatureFingerprinting final
                               nsIURI** aURI) override;
 
  private:
-  UrlClassifierFeatureFingerprinting();
+  UrlClassifierFeatureFingerprintingProtection();
 
   static void MaybeInitialize();
 };

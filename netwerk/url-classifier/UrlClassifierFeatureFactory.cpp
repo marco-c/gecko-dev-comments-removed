@@ -8,7 +8,7 @@
 
 
 #include "UrlClassifierFeatureCryptomining.h"
-#include "UrlClassifierFeatureFingerprinting.h"
+#include "UrlClassifierFeatureFingerprintingProtection.h"
 #include "UrlClassifierFeatureFlash.h"
 #include "UrlClassifierFeatureLoginReputation.h"
 #include "UrlClassifierFeaturePhishingProtection.h"
@@ -29,7 +29,7 @@ void UrlClassifierFeatureFactory::Shutdown() {
   }
 
   UrlClassifierFeatureCryptomining::MaybeShutdown();
-  UrlClassifierFeatureFingerprinting::MaybeShutdown();
+  UrlClassifierFeatureFingerprintingProtection::MaybeShutdown();
   UrlClassifierFeatureFlash::MaybeShutdown();
   UrlClassifierFeatureLoginReputation::MaybeShutdown();
   UrlClassifierFeaturePhishingProtection::MaybeShutdown();
@@ -58,7 +58,7 @@ void UrlClassifierFeatureFactory::GetFeaturesFromChannel(
   }
 
   
-  feature = UrlClassifierFeatureFingerprinting::MaybeCreate(aChannel);
+  feature = UrlClassifierFeatureFingerprintingProtection::MaybeCreate(aChannel);
   if (feature) {
     aFeatures.AppendElement(feature);
   }
@@ -109,7 +109,8 @@ UrlClassifierFeatureFactory::GetFeatureByName(const nsACString& aName) {
   }
 
   
-  feature = UrlClassifierFeatureFingerprinting::GetIfNameMatches(aName);
+  feature =
+      UrlClassifierFeatureFingerprintingProtection::GetIfNameMatches(aName);
   if (feature) {
     return feature.forget();
   }
@@ -161,7 +162,7 @@ void UrlClassifierFeatureFactory::GetFeatureNames(nsTArray<nsCString>& aArray) {
   }
 
   
-  name.Assign(UrlClassifierFeatureFingerprinting::Name());
+  name.Assign(UrlClassifierFeatureFingerprintingProtection::Name());
   if (!name.IsEmpty()) {
     aArray.AppendElement(name);
   }
