@@ -27,6 +27,12 @@ class VRProcessManager final : public VRProcessParent::Listener {
 
   
   void LaunchVRProcess();
+
+  
+  
+  
+  bool EnsureVRReady();
+
   bool CreateGPUBridges(base::ProcessId aOtherProcess,
                         mozilla::ipc::Endpoint<PVRGPUChild>* aOutVRBridge);
 
@@ -65,6 +71,7 @@ class VRProcessManager final : public VRProcessParent::Listener {
 
   RefPtr<Observer> mObserver;
   VRProcessParent* mProcess;
+  VRChild* mVRChild;
 };
 
 }  

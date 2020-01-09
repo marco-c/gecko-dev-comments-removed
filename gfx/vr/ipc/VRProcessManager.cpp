@@ -30,7 +30,7 @@ void VRProcessManager::Initialize() {
 
 void VRProcessManager::Shutdown() { sSingleton = nullptr; }
 
-VRProcessManager::VRProcessManager() : mProcess(nullptr) {
+VRProcessManager::VRProcessManager() : mProcess(nullptr), mVRChild(nullptr) {
   MOZ_COUNT_CTOR(VRProcessManager);
 
   mObserver = new Observer(this);
@@ -79,13 +79,42 @@ void VRProcessManager::DestroyProcess() {
 
   mProcess->Shutdown();
   mProcess = nullptr;
+  mVRChild = nullptr;
 
   CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::VRProcessStatus,
                                      NS_LITERAL_CSTRING("Destroyed"));
 }
 
+bool VRProcessManager::EnsureVRReady() {
+  if (mProcess && !mProcess->IsConnected()) {
+    if (!mProcess->WaitForLaunch()) {
+      
+      
+      MOZ_ASSERT(!mProcess && !mVRChild);
+      return false;
+    }
+  }
+
+  if (mVRChild) {
+    if (mVRChild->EnsureVRReady()) {
+      return true;
+    }
+
+    
+    
+    
+    
+    
+    DisableVRProcess("Failed to initialize VR process");
+  }
+
+  return false;
+}
+
 void VRProcessManager::OnProcessLaunchComplete(VRProcessParent* aParent) {
   MOZ_ASSERT(mProcess && mProcess == aParent);
+
+  mVRChild = mProcess->GetActor();
 
   if (!mProcess->IsConnected()) {
     DestroyProcess();
