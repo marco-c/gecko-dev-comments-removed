@@ -26,6 +26,7 @@ StaticAutoPtr<std::unordered_map<uint64_t, APZUpdater*>>
 APZUpdater::APZUpdater(const RefPtr<APZCTreeManager>& aApz,
                        bool aIsUsingWebRender)
     : mApz(aApz),
+      mDestroyed(false),
       mIsUsingWebRender(aIsUsingWebRender),
       mThreadIdLock("APZUpdater::ThreadIdLock"),
       mQueueLock("APZUpdater::QueueLock") {
@@ -137,6 +138,7 @@ void APZUpdater::ClearTree(LayersId aRootLayersId) {
       UpdaterQueueSelector(aRootLayersId, wr::RenderRoot::Default),
       NS_NewRunnableFunction("APZUpdater::ClearTree", [=]() {
         self->mApz->ClearTree();
+        self->mDestroyed = true;
 
         
         
@@ -476,6 +478,8 @@ already_AddRefed<APZUpdater> APZUpdater::GetUpdater(
 }
 
 void APZUpdater::ProcessQueue() {
+  MOZ_ASSERT(!mDestroyed);
+
   {  
     MutexAutoLock lock(mQueueLock);
     if (mUpdaterQueue.empty()) {
@@ -522,6 +526,23 @@ void APZUpdater::ProcessQueue() {
     } else {
       
       task.mRunnable->Run();
+    }
+  }
+
+  if (mDestroyed) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    MutexAutoLock lock(mQueueLock);
+    if (!mUpdaterQueue.empty()) {
+      mUpdaterQueue.clear();
     }
   }
 }
