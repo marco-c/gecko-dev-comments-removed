@@ -41,6 +41,7 @@
 #include "nsCOMPtr.h"                    
 #include "nsDebug.h"                     
 #include "nsISupportsImpl.h"             
+#include "nsLayoutUtils.h"               
 #include "nsPoint.h"                     
 #include "nsRect.h"                      
 #include "nsRegion.h"                    
@@ -564,11 +565,13 @@ bool BasicLayerManager::EndTransactionInternal(
 
   mTransactionIncomplete = false;
 
+  std::unordered_set<ScrollableLayerGuid::ViewID> scrollIdsUpdated;
+
   if (mRoot) {
     if (aFlags & END_NO_COMPOSITE) {
       
       
-      mRoot->ApplyPendingUpdatesToSubtree();
+      scrollIdsUpdated = mRoot->ApplyPendingUpdatesToSubtree();
     }
 
     
@@ -624,6 +627,14 @@ bool BasicLayerManager::EndTransactionInternal(
   if (mRoot) {
     mAnimationReadyTime = TimeStamp::Now();
     mRoot->StartPendingAnimations(mAnimationReadyTime);
+
+    
+    
+    if (!mTransactionIncomplete) {
+      for (ScrollableLayerGuid::ViewID scrollId : scrollIdsUpdated) {
+        nsLayoutUtils::NotifyPaintSkipTransaction(scrollId);
+      }
+    }
   }
 
 #ifdef MOZ_LAYERS_HAVE_LOG

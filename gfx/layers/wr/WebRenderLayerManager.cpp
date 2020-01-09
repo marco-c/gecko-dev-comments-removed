@@ -369,7 +369,10 @@ void WebRenderLayerManager::EndTransactionWithoutLayer(
   
   
   
-  ClearPendingScrollInfoUpdate();
+  auto scrollIdsUpdated = ClearPendingScrollInfoUpdate();
+  for (ScrollableLayerGuid::ViewID update : scrollIdsUpdated) {
+    nsLayoutUtils::NotifyPaintSkipTransaction(update);
+  }
 
   mLatestTransactionId =
       mTransactionIdAllocator->GetTransactionId( true);

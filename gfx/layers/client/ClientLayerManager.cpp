@@ -301,7 +301,7 @@ bool ClientLayerManager::EndTransactionInternal(
 
   
   
-  GetRoot()->ApplyPendingUpdatesToSubtree();
+  auto scrollIdsUpdated = GetRoot()->ApplyPendingUpdatesToSubtree();
 
   mPaintedLayerCallback = aCallback;
   mPaintedLayerCallbackData = aCallbackData;
@@ -319,6 +319,14 @@ bool ClientLayerManager::EndTransactionInternal(
     }
   } else {
     gfxCriticalNote << "LayerManager::EndTransaction skip RenderLayer().";
+  }
+
+  
+  
+  if (!mTransactionIncomplete) {
+    for (ScrollableLayerGuid::ViewID scrollId : scrollIdsUpdated) {
+      nsLayoutUtils::NotifyPaintSkipTransaction(scrollId);
+    }
   }
 
   if (!mRepeatTransaction && !GetRoot()->GetInvalidRegion().IsEmpty()) {

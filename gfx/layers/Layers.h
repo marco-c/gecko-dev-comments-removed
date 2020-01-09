@@ -8,6 +8,7 @@
 #define GFX_LAYERS_H
 
 #include <map>
+#include <unordered_set>
 #include <stdint.h>        
 #include <stdio.h>         
 #include <sys/types.h>     
@@ -794,7 +795,8 @@ class LayerManager : public FrameRecorder {
       const ScrollUpdateInfo& aUpdateInfo, wr::RenderRoot aRenderRoot);
   Maybe<ScrollUpdateInfo> GetPendingScrollInfoUpdate(
       ScrollableLayerGuid::ViewID aScrollId);
-  void ClearPendingScrollInfoUpdate();
+  std::unordered_set<ScrollableLayerGuid::ViewID>
+  ClearPendingScrollInfoUpdate();
 
  protected:
   wr::RenderRootArray<ScrollUpdatesMap> mPendingScrollUpdates;
@@ -1484,7 +1486,10 @@ class Layer {
 
 
 
-  void ApplyPendingUpdatesToSubtree();
+
+
+  std::unordered_set<ScrollableLayerGuid::ViewID>
+  ApplyPendingUpdatesToSubtree();
 
   
 
