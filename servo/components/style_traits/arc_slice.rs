@@ -5,9 +5,9 @@
 
 
 use servo_arc::ThinArc;
-use std::{iter, mem};
 use std::ops::Deref;
 use std::ptr::NonNull;
+use std::{iter, mem};
 
 
 

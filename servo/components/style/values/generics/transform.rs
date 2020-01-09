@@ -240,16 +240,24 @@ where
     #[allow(missing_docs)]
     #[css(comma, function = "interpolatematrix")]
     InterpolateMatrix {
-        from_list: GenericTransform<GenericTransformOperation<Angle, Number, Length, Integer, LengthPercentage>>,
-        to_list: GenericTransform<GenericTransformOperation<Angle, Number, Length, Integer, LengthPercentage>>,
+        from_list: GenericTransform<
+            GenericTransformOperation<Angle, Number, Length, Integer, LengthPercentage>,
+        >,
+        to_list: GenericTransform<
+            GenericTransformOperation<Angle, Number, Length, Integer, LengthPercentage>,
+        >,
         progress: computed::Percentage,
     },
     
     #[allow(missing_docs)]
     #[css(comma, function = "accumulatematrix")]
     AccumulateMatrix {
-        from_list: GenericTransform<GenericTransformOperation<Angle, Number, Length, Integer, LengthPercentage>>,
-        to_list: GenericTransform<GenericTransformOperation<Angle, Number, Length, Integer, LengthPercentage>>,
+        from_list: GenericTransform<
+            GenericTransformOperation<Angle, Number, Length, Integer, LengthPercentage>,
+        >,
+        to_list: GenericTransform<
+            GenericTransformOperation<Angle, Number, Length, Integer, LengthPercentage>,
+        >,
         count: Integer,
     },
 }
