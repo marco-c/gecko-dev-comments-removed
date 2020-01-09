@@ -96,6 +96,8 @@ P3   =  6.61375632143793436117e-05,
 P4   = -1.65339022054652515390e-06, 
 P5   =  4.13813679705723846039e-08; 
 
+static const double E = 2.7182818284590452354;	
+
 static volatile double
 huge	= 1.0e+300,
 twom1000= 9.33263618503218878990e-302;     
@@ -127,6 +129,7 @@ __ieee754_exp(double x)
     
 	if(hx > 0x3fd62e42) {		 
 	    if(hx < 0x3FF0A2B2) {	
+		if (x == 1.0) return E;
 		hi = x-ln2HI[xsb]; lo=ln2LO[xsb]; k = 1-xsb-xsb;
 	    } else {
 		k  = (int)(invln2*x+halF[xsb]);
