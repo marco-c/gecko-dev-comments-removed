@@ -319,6 +319,14 @@ bool PDMFactory::Supports(const TrackInfo& aTrackInfo,
   if (mEMEPDM) {
     return mEMEPDM->Supports(aTrackInfo, aDiagnostics);
   }
+  if (VPXDecoder::IsVPX(aTrackInfo.mMimeType,
+                        VPXDecoder::VP8 | VPXDecoder::VP9)) {
+    
+    
+    
+    
+    return true;
+  }
   RefPtr<PlatformDecoderModule> current = GetDecoder(aTrackInfo, aDiagnostics);
   return !!current;
 }
