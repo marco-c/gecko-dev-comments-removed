@@ -17,6 +17,40 @@ const observer = {
   },
 };
 
+
+async function getCachedPermissions(extensionId) {
+  const NotFound = Symbol("extension ID not found in permissions cache");
+  try {
+    return await ExtensionParent.StartupCache.permissions.get(extensionId, () => {
+      
+      throw NotFound;
+    });
+  } catch (e) {
+    if (e === NotFound) {
+      return null;
+    }
+    throw e;
+  }
+}
+
+
+
+async function getStoredPermissions(extensionId) {
+  
+  
+  
+  let perms1 = await ExtensionPermissions._get(extensionId);
+  let perms2 = await ExtensionPermissions._get(extensionId);
+  if (perms1 === perms2) {
+    
+    return perms1;
+  }
+  
+  Assert.deepEqual(perms1, perms2, "Expected same permission values");
+  Assert.deepEqual(perms1, {origins: [], permissions: []}, "Expected empty permissions");
+  return null;
+}
+
 add_task(async function setup() {
   Services.prefs.setBoolPref("extensions.webextOptionalPermissionPrompts", true);
   Services.obs.addObserver(observer, "webextension-optional-permission-prompt");
@@ -62,9 +96,31 @@ add_task(async function test_permissions_removed() {
   let perms = await ExtensionPermissions.get(id);
   equal(perms.permissions.length, 1, "optional permission added");
 
+  Assert.deepEqual(await getCachedPermissions(id), {
+    permissions: ["idle"],
+    origins: [],
+  }, "Optional permission added to cache");
+  Assert.deepEqual(await getStoredPermissions(id), {
+    permissions: ["idle"],
+    origins: [],
+  }, "Optional permission added to persistent file");
+
   await extension.unload();
+
+  
+  
+  Assert.deepEqual(await getCachedPermissions(id), null, "Cached permissions removed");
+  Assert.deepEqual(await getStoredPermissions(id), null, "Stored permissions removed");
 
   perms = await ExtensionPermissions.get(id);
   equal(perms.permissions.length, 0, "no permissions after uninstall");
   equal(perms.origins.length, 0, "no origin permissions after uninstall");
+
+  
+  
+  
+  
+  
+  Assert.deepEqual(await getCachedPermissions(id), perms, "Permissions cached");
+  Assert.deepEqual(await getStoredPermissions(id), null, "Permissions not saved");
 });

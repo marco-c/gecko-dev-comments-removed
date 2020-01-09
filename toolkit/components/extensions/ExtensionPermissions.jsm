@@ -63,7 +63,6 @@ var ExtensionPermissions = {
     let perms = prefs.data[extensionId];
     if (!perms) {
       perms = emptyPermissions();
-      prefs.data[extensionId] = perms;
     }
 
     return perms;
@@ -73,6 +72,16 @@ var ExtensionPermissions = {
     return StartupCache.permissions.get(extensionId,
                                         () => this._get(extensionId));
   },
+
+  
+
+
+
+
+
+
+
+
 
   get(extensionId) {
     return this._getCached(extensionId);
@@ -154,10 +163,10 @@ var ExtensionPermissions = {
   },
 
   async removeAll(extensionId) {
-    let perms = await this._getCached(extensionId);
-
-    if (perms.permissions.length || perms.origins.length) {
-      Object.assign(perms, emptyPermissions());
+    await lazyInit();
+    StartupCache.permissions.delete(extensionId);
+    if (prefs.data[extensionId]) {
+      delete prefs.data[extensionId];
       prefs.saveSoon();
     }
   },
