@@ -101,7 +101,9 @@ class element_stale(object):
             
             self.el.is_enabled()
             return False
-        except errors.StaleElementException:
+        except (errors.StaleElementException, errors.NoSuchElementException):
+            
+            
             return True
 
 
