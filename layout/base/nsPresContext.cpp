@@ -788,6 +788,9 @@ nsresult nsPresContext::Init(nsDeviceContext* aDeviceContext) {
 
     if (!mRefreshDriver) {
       mRefreshDriver = new nsRefreshDriver(this);
+      if (XRE_IsContentProcess()) {
+        mRefreshDriver->InitializeTimer();
+      }
     }
   }
 
@@ -1931,7 +1934,8 @@ void nsPresContext::FlushCounterStyles() {
     bool changed = mCounterStyleManager->NotifyRuleChanged();
     if (changed) {
       PresShell()->NotifyCounterStylesAreDirty();
-      PostRebuildAllStyleDataEvent(NS_STYLE_HINT_REFLOW, nsRestyleHint(0));
+      PostRebuildAllStyleDataEvent(NS_STYLE_HINT_REFLOW,
+                                   eRestyle_ForceDescendants);
       RefreshDriver()->AddPostRefreshObserver(
           new CounterStyleCleaner(RefreshDriver(), mCounterStyleManager));
     }
