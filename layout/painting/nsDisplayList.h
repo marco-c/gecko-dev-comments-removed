@@ -7363,16 +7363,6 @@ class FlattenedDisplayListIterator {
 
 
 
-  nsDisplayWrapList* GetNextAsWrapList(nsDisplayItem* aCurrent) const {
-    MOZ_ASSERT(aCurrent);
-    nsDisplayItem* next = aCurrent->GetAbove();
-    return next ? next->AsDisplayWrapList() : nullptr;
-  }
-
-  
-
-
-
   nsDisplayItem* TryMergingFrom(nsDisplayItem* aCurrent) {
     MOZ_ASSERT(aCurrent);
     MOZ_ASSERT(aCurrent->GetAbove());
@@ -7392,14 +7382,15 @@ class FlattenedDisplayListIterator {
 
       do {
         willMerge.AppendElement(next);
-      } while ((next = GetNextAsWrapList(next)) && current->CanMerge(next));
+        mNext = next->GetAbove();
+        next = mNext ? mNext->AsDisplayWrapList() : nullptr;
+      } while (next && current->CanMerge(next));
 
       current = mBuilder->MergeItems(willMerge);
     }
 
     
     
-    mNext = next;
     return current;
   }
 
