@@ -11,14 +11,16 @@ ChromeUtils.defineModuleGetter(this, "UpdateListener",
                                "resource://gre/modules/UpdateListener.jsm");
 
 const BIN_SUFFIX = (AppConstants.platform == "win" ? ".exe" : "");
-const FILE_UPDATER_BIN = "updater" + (AppConstants.platform == "macosx" ? ".app" : BIN_SUFFIX);
+const FILE_UPDATER_BIN =
+  "updater" + (AppConstants.platform == "macosx" ? ".app" : BIN_SUFFIX);
 const FILE_UPDATER_BIN_BAK = FILE_UPDATER_BIN + ".bak";
 
 const LOG_FUNCTION = info;
 
 const MAX_UPDATE_COPY_ATTEMPTS = 10;
 
-const DATA_URI_SPEC = "chrome://mochitests/content/browser/toolkit/mozapps/update/tests/browser/";
+const DATA_URI_SPEC =
+  "chrome://mochitests/content/browser/toolkit/mozapps/update/tests/browser/";
 
 Services.scriptloader.loadSubScript(DATA_URI_SPEC + "testConstants.js", this);
 
@@ -34,6 +36,41 @@ let gOriginalUpdateAutoValue = null;
 
 
 gDebugTest = true;
+
+
+
+
+add_task(async function setupTestCommon() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [PREF_APP_UPDATE_LOG, gDebugTest],
+    ],
+  });
+
+  setUpdateTimerPrefs();
+  removeUpdateFiles(true);
+  
+  
+  await setAppUpdateAutoEnabledHelper(true);
+});
+
+
+
+
+registerCleanupFunction(async () => {
+  gEnv.set("MOZ_TEST_SKIP_UPDATE_STAGE", "");
+  gEnv.set("MOZ_TEST_SLOW_SKIP_UPDATE_STAGE", "");
+  UpdateListener.reset();
+  reloadUpdateManagerData(true);
+  
+  removeUpdateFiles(true);
+  
+  
+  await finishTestRestoreUpdaterBackup();
+});
+
+
+
 
 
 
@@ -84,6 +121,16 @@ async function continueFileHandler(leafName) {
                     continueFile.path);
   }
   continueFile.create(Ci.nsIFile.NORMAL_FILE_TYPE, PERMS_FILE);
+  
+  
+  
+  registerCleanupFunction(() => {
+    if (continueFile.exists()) {
+      logTestInfo("Removing continue file during test cleanup, path: " +
+                  continueFile.path);
+      continueFile.remove(false);
+    }
+  });
   return BrowserTestUtils.waitForCondition(() =>
     (!continueFile.exists()),
     "Waiting for file to be deleted, path: " + continueFile.path,
@@ -120,6 +167,13 @@ function lockWriteTestFile() {
   });
 }
 
+
+
+
+
+
+
+
 function setOtherInstanceHandlingUpdates() {
   if (AppConstants.platform != "win") {
     throw new Error("Windows only test function called");
@@ -149,14 +203,6 @@ function getVersionParams(aAppVersion) {
 
 
 
-function cleanUpUpdates() {
-  reloadUpdateManagerData(true);
-  removeUpdateFiles(true);
-}
-
-
-
-
 
 
 
@@ -165,6 +211,9 @@ function setUpdateTimerPrefs() {
   Services.prefs.setIntPref(PREF_APP_UPDATE_LASTUPDATETIME, now);
   Services.prefs.setIntPref(PREF_APP_UPDATE_INTERVAL, 43200);
 }
+
+
+
 
 
 
@@ -179,19 +228,6 @@ async function setAppUpdateAutoEnabledHelper(enabled) {
   }
   await UpdateUtils.setAppUpdateAutoEnabled(enabled);
 }
-
-add_task(async function setDefaults() {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      [PREF_APP_UPDATE_LOG, gDebugTest],
-      
-      
-      ["services.sync.autoconnectDelay", 600000],
-    ]});
-  
-  
-  await setAppUpdateAutoEnabledHelper(true);
-});
 
 
 
@@ -211,22 +247,15 @@ add_task(async function setDefaults() {
 
 function runUpdateTest(updateParams, checkAttempts, steps) {
   return (async function() {
-    registerCleanupFunction(() => {
-      gEnv.set("MOZ_TEST_SKIP_UPDATE_STAGE", "");
-      UpdateListener.reset();
-      cleanUpUpdates();
-    });
-
     gEnv.set("MOZ_TEST_SKIP_UPDATE_STAGE", "1");
-    setUpdateTimerPrefs();
-    removeUpdateFiles(true);
     await SpecialPowers.pushPrefEnv({
       set: [
         [PREF_APP_UPDATE_DOWNLOADPROMPTATTEMPTS, 0],
         [PREF_APP_UPDATE_DISABLEDFORTESTING, false],
         [PREF_APP_UPDATE_IDLETIME, 0],
         [PREF_APP_UPDATE_URL_MANUAL, URL_MANUAL_UPDATE],
-      ]});
+      ],
+    });
 
     await setupTestUpdater();
 
@@ -249,8 +278,6 @@ function runUpdateTest(updateParams, checkAttempts, steps) {
     for (let step of steps) {
       await processStep(step);
     }
-
-    await finishTestRestoreUpdaterBackup();
   })();
 }
 
@@ -267,22 +294,15 @@ function runUpdateTest(updateParams, checkAttempts, steps) {
 
 function runUpdateProcessingTest(updates, steps) {
   return (async function() {
-    registerCleanupFunction(() => {
-      gEnv.set("MOZ_TEST_SKIP_UPDATE_STAGE", "");
-      UpdateListener.reset();
-      cleanUpUpdates();
-    });
-
     gEnv.set("MOZ_TEST_SKIP_UPDATE_STAGE", "1");
-    setUpdateTimerPrefs();
-    removeUpdateFiles(true);
     await SpecialPowers.pushPrefEnv({
       set: [
         [PREF_APP_UPDATE_DOWNLOADPROMPTATTEMPTS, 0],
         [PREF_APP_UPDATE_DISABLEDFORTESTING, false],
         [PREF_APP_UPDATE_IDLETIME, 0],
         [PREF_APP_UPDATE_URL_MANUAL, URL_MANUAL_UPDATE],
-      ]});
+      ],
+    });
 
     await setupTestUpdater();
 
@@ -297,8 +317,6 @@ function runUpdateProcessingTest(updates, steps) {
     for (let step of steps) {
       await processStep(step);
     }
-
-    await finishTestRestoreUpdaterBackup();
   })();
 }
 
@@ -366,7 +384,8 @@ function waitForEvent(topic, status = null) {
 
 
 function getNotificationButton(win, notificationId, button) {
-  let notification = win.document.getElementById(`appMenu-${notificationId}-notification`);
+  let notification =
+    win.document.getElementById(`appMenu-${notificationId}-notification`);
   is(notification.hidden, false, `${notificationId} notification is showing`);
   return notification[button];
 }
@@ -496,6 +515,8 @@ function copyTestUpdater(attempt = 0) {
 
 
 
+
+
 function restoreUpdaterBackup() {
   let greBinDir = getGREBinDir();
   let updater = greBinDir.clone();
@@ -543,18 +564,16 @@ function restoreUpdaterBackup() {
 
 function finishTestRestoreUpdaterBackup() {
   return (async function() {
-    if (Services.prefs.getBoolPref(PREF_APP_UPDATE_STAGING_ENABLED)) {
-      try {
-        
-        
-        restoreUpdaterBackup();
-      } catch (e) {
-        logTestInfo("Attempt to restore the backed up updater failed... " +
-                    "will try again, Exception: " + e);
+    try {
+      
+      
+      restoreUpdaterBackup();
+    } catch (e) {
+      logTestInfo("Attempt to restore the backed up updater failed... " +
+                  "will try again, Exception: " + e);
 
-        await TestUtils.waitForTick();
-        await finishTestRestoreUpdaterBackup();
-      }
+      await TestUtils.waitForTick();
+      await finishTestRestoreUpdaterBackup();
     }
   })();
 }
@@ -575,7 +594,8 @@ function waitForAboutDialog() {
          async function aboutDialogOnLoad() {
           domwindow.removeEventListener("load", aboutDialogOnLoad, true);
           let chromeURI = "chrome://browser/content/aboutDialog.xul";
-          is(domwindow.document.location.href, chromeURI, "About dialog appeared");
+          is(domwindow.document.location.href, chromeURI,
+             "About dialog appeared");
           resolve(domwindow);
         }
 
@@ -664,6 +684,7 @@ function runAboutDialogUpdateTest(updateParams, backgroundUpdate, steps) {
   }
 
   return (async function() {
+    gEnv.set("MOZ_TEST_SLOW_SKIP_UPDATE_STAGE", "1");
     await SpecialPowers.pushPrefEnv({
       set: [
         [PREF_APP_UPDATE_SERVICE_ENABLED, false],
@@ -671,20 +692,8 @@ function runAboutDialogUpdateTest(updateParams, backgroundUpdate, steps) {
         [PREF_APP_UPDATE_URL_MANUAL, detailsURL],
       ],
     });
-    registerCleanupFunction(() => {
-      gEnv.set("MOZ_TEST_SLOW_SKIP_UPDATE_STAGE", "");
-      UpdateListener.reset();
-      cleanUpUpdates();
-    });
-
-    gEnv.set("MOZ_TEST_SLOW_SKIP_UPDATE_STAGE", "1");
-    setUpdateTimerPrefs();
-    removeUpdateFiles(true);
 
     await setupTestUpdater();
-    registerCleanupFunction(async () => {
-      await finishTestRestoreUpdaterBackup();
-    });
 
     let updateURL = URL_HTTP_UPDATE_SJS + "?detailsURL=" + detailsURL +
                     updateParams + getVersionParams();
@@ -694,9 +703,6 @@ function runAboutDialogUpdateTest(updateParams, backgroundUpdate, steps) {
         
         
         gEnv.set("MOZ_TEST_SKIP_UPDATE_STAGE", "1");
-        registerCleanupFunction(() => {
-          gEnv.set("MOZ_TEST_SKIP_UPDATE_STAGE", "");
-        });
       }
       setUpdateURL(updateURL);
       gAUS.checkForBackgroundUpdates();
@@ -743,7 +749,8 @@ function runAboutPrefsUpdateTest(updateParams, backgroundUpdate, steps) {
 
     const {panelId, checkActiveUpdate, continueFile} = step;
     return (async function() {
-      await ContentTask.spawn(tab.linkedBrowser, {panelId}, async ({panelId}) => {
+      await ContentTask.spawn(tab.linkedBrowser, {panelId},
+                              async ({panelId}) => {
         let updateDeck = content.document.getElementById("updateDeck");
         await ContentTaskUtils.waitForCondition(() =>
           (updateDeck.selectedPanel && updateDeck.selectedPanel.id == panelId),
@@ -766,7 +773,8 @@ function runAboutPrefsUpdateTest(updateParams, backgroundUpdate, steps) {
         await continueFileHandler(continueFile);
       }
 
-      await ContentTask.spawn(tab.linkedBrowser, {panelId, detailsURL}, async ({panelId, detailsURL}) => {
+      await ContentTask.spawn(tab.linkedBrowser, {panelId, detailsURL},
+                              async ({panelId, detailsURL}) => {
         let linkPanels = ["downloadFailed", "manualUpdate", "unsupportedSystem"];
         if (linkPanels.includes(panelId)) {
           let selectedPanel =
@@ -787,7 +795,8 @@ function runAboutPrefsUpdateTest(updateParams, backgroundUpdate, steps) {
 
         let buttonPanels = ["downloadAndInstall", "apply"];
         if (buttonPanels.includes(panelId)) {
-          let selectedPanel = content.document.getElementById("updateDeck").selectedPanel;
+          let selectedPanel =
+            content.document.getElementById("updateDeck").selectedPanel;
           let buttonEl = selectedPanel.querySelector("button");
           
           
@@ -803,6 +812,7 @@ function runAboutPrefsUpdateTest(updateParams, backgroundUpdate, steps) {
   }
 
   return (async function() {
+    gEnv.set("MOZ_TEST_SLOW_SKIP_UPDATE_STAGE", "1");
     await SpecialPowers.pushPrefEnv({
       set: [
         [PREF_APP_UPDATE_SERVICE_ENABLED, false],
@@ -810,20 +820,8 @@ function runAboutPrefsUpdateTest(updateParams, backgroundUpdate, steps) {
         [PREF_APP_UPDATE_URL_MANUAL, detailsURL],
       ],
     });
-    registerCleanupFunction(() => {
-      gEnv.set("MOZ_TEST_SLOW_SKIP_UPDATE_STAGE", "");
-      UpdateListener.reset();
-      cleanUpUpdates();
-    });
-
-    gEnv.set("MOZ_TEST_SLOW_SKIP_UPDATE_STAGE", "1");
-    setUpdateTimerPrefs();
-    removeUpdateFiles(true);
 
     await setupTestUpdater();
-    registerCleanupFunction(async () => {
-      await finishTestRestoreUpdaterBackup();
-    });
 
     let updateURL = URL_HTTP_UPDATE_SJS + "?detailsURL=" + detailsURL +
                     updateParams + getVersionParams();
@@ -833,9 +831,6 @@ function runAboutPrefsUpdateTest(updateParams, backgroundUpdate, steps) {
         
         
         gEnv.set("MOZ_TEST_SKIP_UPDATE_STAGE", "1");
-        registerCleanupFunction(() => {
-          gEnv.set("MOZ_TEST_SKIP_UPDATE_STAGE", "");
-        });
       }
       setUpdateURL(updateURL);
       gAUS.checkForBackgroundUpdates();
@@ -845,7 +840,8 @@ function runAboutPrefsUpdateTest(updateParams, backgroundUpdate, steps) {
       setUpdateURL(updateURL);
     }
 
-    tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:preferences");
+    tab = await BrowserTestUtils.openNewForegroundTab(gBrowser,
+                                                      "about:preferences");
     registerCleanupFunction(async () => {
       await BrowserTestUtils.removeTab(tab);
     });
