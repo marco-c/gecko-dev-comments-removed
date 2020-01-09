@@ -955,6 +955,7 @@ class HTMLEditor final : public TextEditor,
 
   nsresult InsertParagraphSeparatorAsSubAction();
 
+  MOZ_CAN_RUN_SCRIPT
   virtual nsresult SelectAllInternal() override;
 
   
@@ -1521,6 +1522,7 @@ class HTMLEditor final : public TextEditor,
   
 
 
+  MOZ_CAN_RUN_SCRIPT
   virtual nsresult SelectEntireDocument() override;
 
   
