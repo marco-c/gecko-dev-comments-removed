@@ -5727,7 +5727,13 @@ AbortReasonOr<Ok> IonBuilder::jsop_optimize_spreadcall() {
     result = true;
   } while (false);
 
-  pushConstant(BooleanValue(result));
+  if (result) {
+    auto* ins = MIsPackedArray::New(alloc(), arr);
+    current->add(ins);
+    current->push(ins);
+  } else {
+    pushConstant(BooleanValue(false));
+  }
   return Ok();
 }
 
