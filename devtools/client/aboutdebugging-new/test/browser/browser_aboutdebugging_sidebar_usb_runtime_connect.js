@@ -4,7 +4,10 @@
 "use strict";
 
 const RUNTIME_ID = "test-runtime-id";
+const RUNTIME_NAME = "test runtime name";
 const RUNTIME_DEVICE_NAME = "test device name";
+const RUNTIME_SHORT_NAME = "test short name";
+
 
 
 
@@ -13,7 +16,11 @@ add_task(async function() {
 
   const { document, tab } = await openAboutDebugging();
 
-  mocks.createUSBRuntime(RUNTIME_ID, { deviceName: RUNTIME_DEVICE_NAME });
+  mocks.createUSBRuntime(RUNTIME_ID, {
+    name: RUNTIME_NAME,
+    deviceName: RUNTIME_DEVICE_NAME,
+    shortName: RUNTIME_SHORT_NAME,
+  });
   mocks.emitUSBUpdate();
 
   info("Wait until the USB sidebar item appears");
@@ -25,6 +32,9 @@ add_task(async function() {
   info("Click on the connect button and wait until it disappears");
   connectButton.click();
   await waitUntil(() => !usbRuntimeSidebarItem.querySelector(".js-connect-button"));
+
+  info("Check whether the label of item is updated after connecting");
+  ok(usbRuntimeSidebarItem.textContent.startsWith(RUNTIME_NAME), "Label of item updated");
 
   info("Remove all USB runtimes");
   mocks.removeUSBRuntime(RUNTIME_ID);
