@@ -177,10 +177,13 @@ describe("ast", () => {
       await dispatch(actions.selectSource("base.js"));
 
       const locations = getOutOfScopeLocations(getState());
-      const lines = getInScopeLines(getState());
+      
 
       expect(locations).toEqual(null);
-      expect(lines).toEqual([1]);
+
+      
+      
+      
     });
   });
 });
