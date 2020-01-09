@@ -797,7 +797,7 @@ void Animation::CancelNoUpdate() {
 }
 
 bool Animation::ShouldBeSynchronizedWithMainThread(
-    nsCSSPropertyID aProperty, const nsIFrame* aFrame,
+    const nsCSSPropertyIDSet& aPropertySet, const nsIFrame* aFrame,
     AnimationPerformanceWarning::Type& aPerformanceWarning) const {
   
   if (!IsPlaying()) {
@@ -805,7 +805,7 @@ bool Animation::ShouldBeSynchronizedWithMainThread(
   }
 
   
-  if (aProperty != eCSSProperty_transform) {
+  if (!aPropertySet.Intersects(nsCSSPropertyIDSet::TransformLikeProperties())) {
     return false;
   }
 

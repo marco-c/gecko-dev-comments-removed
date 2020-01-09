@@ -6044,8 +6044,11 @@ Size FrameLayerBuilder::ChooseScale(nsIFrame* aContainerFrame,
     
     if (aContainerItem &&
         aContainerItem->GetType() == DisplayItemType::TYPE_TRANSFORM &&
-        EffectCompositor::HasAnimationsForCompositor(aContainerFrame,
-                                                     eCSSProperty_transform)) {
+        
+        
+        
+        EffectCompositor::HasAnimationsForCompositor(
+            aContainerFrame, DisplayItemType::TYPE_TRANSFORM)) {
       nsSize displaySize =
           ComputeDesiredDisplaySizeForAnimation(aContainerFrame);
       

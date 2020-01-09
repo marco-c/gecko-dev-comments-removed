@@ -105,8 +105,19 @@ bool EffectCompositor::AllowCompositorAnimationsOnFrame(
 
 
 bool FindAnimationsForCompositor(
-    const nsIFrame* aFrame, nsCSSPropertyID aProperty,
+    const nsIFrame* aFrame, const nsCSSPropertyIDSet& aPropertySet,
     nsTArray<RefPtr<dom::Animation>>* aMatches ) {
+  MOZ_ASSERT(aPropertySet
+                     .Intersect(LayerAnimationInfo::GetCSSPropertiesFor(
+                         DisplayItemType::TYPE_TRANSFORM))
+                     .Equals(aPropertySet) ||
+                 aPropertySet.Equals(LayerAnimationInfo::GetCSSPropertiesFor(
+                     DisplayItemType::TYPE_OPACITY)) ||
+                 aPropertySet.Equals(LayerAnimationInfo::GetCSSPropertiesFor(
+                     DisplayItemType::TYPE_BACKGROUND_COLOR)),
+             "Should be the subset of transform-like properties, or opacity, "
+             "or background color");
+
   MOZ_ASSERT(!aMatches || aMatches->IsEmpty(),
              "Matches array, if provided, should be empty");
 
@@ -119,7 +130,8 @@ bool FindAnimationsForCompositor(
   
   
   
-  if (aProperty == eCSSProperty_transform) {
+  if (aPropertySet.Intersects(LayerAnimationInfo::GetCSSPropertiesFor(
+          DisplayItemType::TYPE_TRANSFORM))) {
     PendingAnimationTracker* tracker =
         aFrame->PresContext()->Document()->GetPendingAnimationTracker();
     if (tracker) {
@@ -130,8 +142,8 @@ bool FindAnimationsForCompositor(
   
   
   
-  if (effects->PropertiesWithImportantRules().HasProperty(aProperty) &&
-      effects->PropertiesForAnimationsLevel().HasProperty(aProperty)) {
+  if (effects->PropertiesWithImportantRules().Intersects(aPropertySet) &&
+      effects->PropertiesForAnimationsLevel().Intersects(aPropertySet)) {
     return false;
   }
 
@@ -139,8 +151,15 @@ bool FindAnimationsForCompositor(
       AnimationPerformanceWarning::Type::None;
   if (!EffectCompositor::AllowCompositorAnimationsOnFrame(aFrame, warning)) {
     if (warning != AnimationPerformanceWarning::Type::None) {
-      EffectCompositor::SetPerformanceWarning(
-          aFrame, aProperty, AnimationPerformanceWarning(warning));
+      
+      
+      for (nsCSSPropertyID property : COMPOSITOR_ANIMATABLE_PROPERTY_LIST) {
+        if (!aPropertySet.HasProperty(property)) {
+          continue;
+        }
+        EffectCompositor::SetPerformanceWarning(
+            aFrame, property, AnimationPerformanceWarning(warning));
+      }
     }
     return false;
   }
@@ -165,11 +184,18 @@ bool FindAnimationsForCompositor(
     AnimationPerformanceWarning::Type effectWarning =
         AnimationPerformanceWarning::Type::None;
     KeyframeEffect::MatchForCompositor matchResult =
-        effect->IsMatchForCompositor(aProperty, aFrame, *effects,
+        effect->IsMatchForCompositor(aPropertySet, aFrame, *effects,
                                      effectWarning);
     if (effectWarning != AnimationPerformanceWarning::Type::None) {
-      EffectCompositor::SetPerformanceWarning(
-          aFrame, aProperty, AnimationPerformanceWarning(effectWarning));
+      
+      
+      for (nsCSSPropertyID property : COMPOSITOR_ANIMATABLE_PROPERTY_LIST) {
+        if (!aPropertySet.HasProperty(property)) {
+          continue;
+        }
+        EffectCompositor::SetPerformanceWarning(
+            aFrame, property, AnimationPerformanceWarning(effectWarning));
+      }
     }
 
     if (matchResult ==
@@ -451,19 +477,20 @@ bool EffectCompositor::HasPendingStyleUpdates() const {
 
 
 bool EffectCompositor::HasAnimationsForCompositor(const nsIFrame* aFrame,
-                                                  nsCSSPropertyID aProperty) {
-  return FindAnimationsForCompositor(aFrame, aProperty, nullptr);
+                                                  DisplayItemType aType) {
+  return FindAnimationsForCompositor(
+      aFrame, LayerAnimationInfo::GetCSSPropertiesFor(aType), nullptr);
 }
 
- nsTArray<RefPtr<dom::Animation>>
-EffectCompositor::GetAnimationsForCompositor(const nsIFrame* aFrame,
-                                             nsCSSPropertyID aProperty) {
+
+nsTArray<RefPtr<dom::Animation>> EffectCompositor::GetAnimationsForCompositor(
+    const nsIFrame* aFrame, const nsCSSPropertyIDSet& aPropertySet) {
   nsTArray<RefPtr<dom::Animation>> result;
 
 #ifdef DEBUG
   bool foundSome =
 #endif
-      FindAnimationsForCompositor(aFrame, aProperty, &result);
+      FindAnimationsForCompositor(aFrame, aPropertySet, &result);
   MOZ_ASSERT(!foundSome || !result.IsEmpty(),
              "If return value is true, matches array should be non-empty");
 

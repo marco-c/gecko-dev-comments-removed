@@ -382,6 +382,7 @@ static void GetMinAndMaxScaleForAnimationProperty(
     MOZ_ASSERT(effect, "A playing animation should have a keyframe effect");
     for (size_t propIdx = effect->Properties().Length(); propIdx-- != 0;) {
       const AnimationProperty& prop = effect->Properties()[propIdx];
+      
       if (prop.mProperty != eCSSProperty_transform) {
         continue;
       }
@@ -415,9 +416,10 @@ Size nsLayoutUtils::ComputeSuitableScaleForAnimation(
   Size minScale(std::numeric_limits<float>::max(),
                 std::numeric_limits<float>::max());
 
+  
   nsTArray<RefPtr<dom::Animation>> compositorAnimations =
-      EffectCompositor::GetAnimationsForCompositor(aFrame,
-                                                   eCSSProperty_transform);
+      EffectCompositor::GetAnimationsForCompositor(
+          aFrame, nsCSSPropertyIDSet{eCSSProperty_transform});
   GetMinAndMaxScaleForAnimationProperty(aFrame, compositorAnimations, maxScale,
                                         minScale);
 

@@ -323,7 +323,7 @@ class Animation : public DOMEventTargetHelper,
   }
 
   bool ShouldBeSynchronizedWithMainThread(
-      nsCSSPropertyID aProperty, const nsIFrame* aFrame,
+      const nsCSSPropertyIDSet& aPropertySet, const nsIFrame* aFrame,
       AnimationPerformanceWarning::Type& aPerformanceWarning ) const;
 
   bool IsRelevant() const { return mIsRelevant; }
