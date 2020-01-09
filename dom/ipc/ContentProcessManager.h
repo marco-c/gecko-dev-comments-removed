@@ -51,6 +51,12 @@ class ContentProcessManager final {
 
 
 
+  bool AddGrandchildProcess(const ContentParentId& aParentCpId,
+                            const ContentParentId& aChildCpId);
+  
+
+
+
   bool GetParentProcessId(const ContentParentId& aChildCpId,
                            ContentParentId* aParentCpId);
   

@@ -14,8 +14,8 @@
 namespace mozilla {
 
 namespace dom {
-class ContentChild;
-class ContentParent;
+class nsIContentChild;
+class nsIContentParent;
 }  
 
 namespace ipc {
@@ -148,7 +148,7 @@ class AutoIPCStream final {
   
   
   
-  bool Serialize(nsIInputStream* aStream, dom::ContentChild* aManager);
+  bool Serialize(nsIInputStream* aStream, dom::nsIContentChild* aManager);
 
   
   
@@ -157,7 +157,7 @@ class AutoIPCStream final {
 
   
   MOZ_MUST_USE bool Serialize(nsIInputStream* aStream,
-                              dom::ContentParent* aManager);
+                              dom::nsIContentParent* aManager);
 
   
   MOZ_MUST_USE bool Serialize(nsIInputStream* aStream,

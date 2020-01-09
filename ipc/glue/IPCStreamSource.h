@@ -15,8 +15,8 @@ class nsIAsyncInputStream;
 namespace mozilla {
 
 namespace dom {
-class ContentChild;
-class ContentParent;
+class nsIContentChild;
+class nsIContentParent;
 }  
 
 namespace wr {
@@ -61,7 +61,7 @@ class IPCStreamSource {
   
   
   static PChildToParentStreamChild* Create(nsIAsyncInputStream* aInputStream,
-                                           dom::ContentChild* aManager);
+                                           dom::nsIContentChild* aManager);
 
   
   
@@ -73,7 +73,7 @@ class IPCStreamSource {
   
   
   static PParentToChildStreamParent* Create(nsIAsyncInputStream* aInputStream,
-                                            dom::ContentParent* aManager);
+                                            dom::nsIContentParent* aManager);
 
   
   
