@@ -29,6 +29,7 @@
 
 #include "mozilla/AnimationEventDispatcher.h"
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/IntegerRange.h"
@@ -1496,7 +1497,7 @@ struct DocumentFrameCallbacks {
   explicit DocumentFrameCallbacks(Document* aDocument) : mDocument(aDocument) {}
 
   RefPtr<Document> mDocument;
-  Document::FrameRequestCallbackList mCallbacks;
+  nsTArray<Document::FrameRequest> mCallbacks;
 };
 
 static nsDocShell* GetDocShell(nsPresContext* aPresContext) {
@@ -1688,7 +1689,10 @@ void nsRefreshDriver::RunFrameRequestCallbacks(TimeStamp aNowTime) {
         
       }
       for (auto& callback : docCallbacks.mCallbacks) {
-        callback->Call(timeStamp);
+        
+        
+        
+        MOZ_KnownLive(callback.mCallback)->Call(timeStamp);
       }
     }
   }
