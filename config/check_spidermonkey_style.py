@@ -56,7 +56,6 @@ ignored_js_src_dirs = [
 
 included_inclnames_to_ignore = set([
     'ffi.h',                    
-    'devtools/sharkctl.h',      
     'devtools/Instruments.h',   
     'double-conversion/double-conversion.h',  
     'javascript-trace.h',       
