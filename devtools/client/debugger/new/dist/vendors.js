@@ -7,7 +7,7 @@
 		var a = typeof exports === 'object' ? factory(require("devtools/client/shared/vendor/react-prop-types"), require("devtools/client/shared/vendor/react"), require("devtools/client/shared/vendor/react-dom-factories"), require("devtools/client/shared/vendor/lodash"), require("Services"), require("devtools/client/shared/vendor/react-dom"), require("devtools/shared/flags")) : factory(root["devtools/client/shared/vendor/react-prop-types"], root["devtools/client/shared/vendor/react"], root["devtools/client/shared/vendor/react-dom-factories"], root["devtools/client/shared/vendor/lodash"], root["Services"], root["devtools/client/shared/vendor/react-dom"], root["devtools/shared/flags"]);
 		for(var i in a) (typeof exports === 'object' ? exports : root)[i] = a[i];
 	}
-})(typeof self !== 'undefined' ? self : this, function(__WEBPACK_EXTERNAL_MODULE_0__, __WEBPACK_EXTERNAL_MODULE_1__, __WEBPACK_EXTERNAL_MODULE_2__, __WEBPACK_EXTERNAL_MODULE_10__, __WEBPACK_EXTERNAL_MODULE_20__, __WEBPACK_EXTERNAL_MODULE_24__, __WEBPACK_EXTERNAL_MODULE_68__) {
+})(typeof self !== 'undefined' ? self : this, function(__WEBPACK_EXTERNAL_MODULE_0__, __WEBPACK_EXTERNAL_MODULE_1__, __WEBPACK_EXTERNAL_MODULE_2__, __WEBPACK_EXTERNAL_MODULE_10__, __WEBPACK_EXTERNAL_MODULE_20__, __WEBPACK_EXTERNAL_MODULE_24__, __WEBPACK_EXTERNAL_MODULE_71__) {
 return  (function(modules) { 
  	
  	var installedModules = {};
@@ -901,7 +901,6 @@ class Tree extends Component {
         if (this.treeRef.current !== document.activeElement) {
           this.treeRef.current.focus();
         }
-        return;
     }
   }
 
@@ -1550,7 +1549,7 @@ module.exports = SplitBox;
 
 }).call(this);
 
-}.call(exports, __webpack_require__(50)))
+}.call(exports, __webpack_require__(52)))
 
  }),
 
@@ -2392,8 +2391,8 @@ exports.register = function (window) {};
 
 
 
-const networkRequest = __webpack_require__(27);
-const workerUtils = __webpack_require__(28);
+const networkRequest = __webpack_require__(25);
+const workerUtils = __webpack_require__(26);
 
 module.exports = {
   networkRequest,
@@ -3272,7 +3271,7 @@ module.exports = Telemetry;
 
 
 
-const punycode = __webpack_require__(67);
+const punycode = __webpack_require__(68);
 
 
 
@@ -5315,86 +5314,6 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_24__;
  25:
  (function(module, exports) {
 
-var g;
-
-
-g = (function() {
-	return this;
-})();
-
-try {
-	
-	g = g || Function("return this")() || (1,eval)("this");
-} catch(e) {
-	
-	if(typeof window === "object")
-		g = window;
-}
-
-
-
-
-
-module.exports = g;
-
-
- }),
-
- 26:
- (function(module, exports, __webpack_require__) {
-
-"use strict";
-(function(process) {
-
-
-
-
-
-const flag = __webpack_require__(68);
-
-function isBrowser() {
-  return typeof window == "object";
-}
-
-function isNode() {
-  return process && process.release && process.release.name == 'node';
-}
-
-function isDevelopment() {
-  if (!isNode() && isBrowser()) {
-    const href = window.location ? window.location.href : "";
-    return href.match(/^file:/) || href.match(/localhost:/);
-  }
-
-  return "production" != "production";
-}
-
-function isTesting() {
-  return flag.testing;
-}
-
-function isFirefoxPanel() {
-  return !isDevelopment();
-}
-
-function isFirefox() {
-  return (/firefox/i.test(navigator.userAgent)
-  );
-}
-
-module.exports = {
-  isDevelopment,
-  isTesting,
-  isFirefoxPanel,
-  isFirefox
-};
-}.call(exports, __webpack_require__(50)))
-
- }),
-
- 27:
- (function(module, exports) {
-
 
 
 
@@ -5420,7 +5339,7 @@ module.exports = networkRequest;
 
  }),
 
- 28:
+ 26:
  (function(module, exports) {
 
 function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
@@ -5595,6 +5514,86 @@ module.exports = {
   workerHandler,
   streamingWorkerHandler
 };
+
+ }),
+
+ 27:
+ (function(module, exports) {
+
+var g;
+
+
+g = (function() {
+	return this;
+})();
+
+try {
+	
+	g = g || Function("return this")() || (1,eval)("this");
+} catch(e) {
+	
+	if(typeof window === "object")
+		g = window;
+}
+
+
+
+
+
+module.exports = g;
+
+
+ }),
+
+ 30:
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+(function(process) {
+
+
+
+
+
+const flag = __webpack_require__(71);
+
+function isBrowser() {
+  return typeof window == "object";
+}
+
+function isNode() {
+  return process && process.release && process.release.name == 'node';
+}
+
+function isDevelopment() {
+  if (!isNode() && isBrowser()) {
+    const href = window.location ? window.location.href : "";
+    return href.match(/^file:/) || href.match(/localhost:/);
+  }
+
+  return "production" != "production";
+}
+
+function isTesting() {
+  return flag.testing;
+}
+
+function isFirefoxPanel() {
+  return !isDevelopment();
+}
+
+function isFirefox() {
+  return (/firefox/i.test(navigator.userAgent)
+  );
+}
+
+module.exports = {
+  isDevelopment,
+  isTesting,
+  isFirefoxPanel,
+  isFirefox
+};
+}.call(exports, __webpack_require__(52)))
 
  }),
 
@@ -6415,7 +6414,7 @@ EventEmitter.prototype = {
 
  }),
 
- 50:
+ 52:
  (function(module, exports) {
 
 
@@ -6783,7 +6782,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;
 
  }),
 
- 67:
+ 68:
  (function(module, exports, __webpack_require__) {
 
 (function(module, global) {var __WEBPACK_AMD_DEFINE_RESULT__;
@@ -7319,14 +7318,14 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;
 
 }(this));
 
-}.call(exports, __webpack_require__(42)(module), __webpack_require__(25)))
+}.call(exports, __webpack_require__(42)(module), __webpack_require__(27)))
 
  }),
 
- 68:
+ 71:
  (function(module, exports) {
 
-module.exports = __WEBPACK_EXTERNAL_MODULE_68__;
+module.exports = __WEBPACK_EXTERNAL_MODULE_71__;
 
  }),
 
@@ -7381,7 +7380,7 @@ var _devtoolsContextmenu = __webpack_require__(33);
 
 var devtoolsContextmenu = _interopRequireWildcard(_devtoolsContextmenu);
 
-var _devtoolsEnvironment = __webpack_require__(26);
+var _devtoolsEnvironment = __webpack_require__(30);
 
 var devtoolsEnvironment = _interopRequireWildcard(_devtoolsEnvironment);
 
@@ -7778,7 +7777,7 @@ var substr = 'ab'.substr(-1) === 'b'
     }
 ;
 
-}.call(exports, __webpack_require__(50)))
+}.call(exports, __webpack_require__(52)))
 
  })
 
