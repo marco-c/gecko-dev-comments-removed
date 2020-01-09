@@ -6045,6 +6045,10 @@ pref("fission.rebuild_frameloaders_on_remoteness_change", true);
 
 
 
+pref("fission.preserve_browsing_contexts", false);
+
+
+
 
 
 pref("toolkit.legacyUserProfileCustomizations.stylesheets", false);
