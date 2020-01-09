@@ -81,6 +81,7 @@ async function jexlFilterFunc(entry, environment) {
 
 function remoteSettingsFunction() {
   const _clients = new Map();
+  let _invalidatePolling = false;
 
   
   const defaultSigner = gPrefs.getCharPref(PREF_SETTINGS_DEFAULT_SIGNER);
@@ -106,7 +107,7 @@ function remoteSettingsFunction() {
       _clients.set(collectionName, c);
       
       
-      gPrefs.clearUserPref(PREF_SETTINGS_LAST_ETAG);
+      _invalidatePolling = true;
     }
     return _clients.get(collectionName);
   };
@@ -179,7 +180,9 @@ function remoteSettingsFunction() {
 
     Services.obs.notifyObservers(null, "remote-settings:changes-poll-start", JSON.stringify({ expectedTimestamp }));
 
-    const lastEtag = gPrefs.getCharPref(PREF_SETTINGS_LAST_ETAG, "");
+    
+    
+    const lastEtag = _invalidatePolling ? "" : gPrefs.getCharPref(PREF_SETTINGS_LAST_ETAG, "");
 
     let pollResult;
     try {
@@ -257,6 +260,10 @@ function remoteSettingsFunction() {
         }
       }
     }
+
+    
+    _invalidatePolling = false;
+
     
     const durationMilliseconds = new Date() - startedAt;
     const syncTelemetryArgs = { source: TELEMETRY_SOURCE_SYNC, duration: durationMilliseconds, trigger };
