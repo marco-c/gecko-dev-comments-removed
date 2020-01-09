@@ -1463,6 +1463,7 @@ PlacesTreeView.prototype = {
         
         
         if (!aTree) {
+          
           this._result.removeObserver(this);
           this._rootNode.containerOpen = false;
         }
