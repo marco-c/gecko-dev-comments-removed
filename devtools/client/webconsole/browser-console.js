@@ -10,9 +10,6 @@ loader.lazyRequireGetter(this, "Telemetry", "devtools/client/shared/telemetry");
 loader.lazyRequireGetter(this, "WebConsole", "devtools/client/webconsole/webconsole");
 
 
-const BC_FILTER_PREFS_PREFIX = "devtools.browserconsole.filter.";
-
-
 
 
 
@@ -58,8 +55,6 @@ BrowserConsole.prototype = extend(WebConsole.prototype, {
 
     
     ShutdownObserver.init(this.hudService);
-
-    this.ui._filterPrefsPrefix = BC_FILTER_PREFS_PREFIX;
 
     const window = this.iframeWindow;
 
