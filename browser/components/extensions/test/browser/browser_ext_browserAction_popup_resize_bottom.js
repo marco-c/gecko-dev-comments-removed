@@ -2,8 +2,7 @@
 
 "use strict";
 
-Services.scriptloader.loadSubScript(new URL("head_browserAction.js", gTestPath).href,
-                                    this);
+loadTestSubscript("head_browserAction.js");
 
 add_task(async function testSetup() {
   Services.prefs.setBoolPref("toolkit.cosmeticAnimations.enabled", false);

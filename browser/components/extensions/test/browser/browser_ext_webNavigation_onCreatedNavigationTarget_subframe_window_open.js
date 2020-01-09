@@ -2,8 +2,7 @@
 
 "use strict";
 
-Services.scriptloader.loadSubScript(new URL("head_webNavigation.js", gTestPath).href,
-                                    this);
+loadTestSubscript("head_webNavigation.js");
 
 async function background() {
   const tabs = await browser.tabs.query({active: true, currentWindow: true});

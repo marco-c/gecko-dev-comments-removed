@@ -2,8 +2,7 @@
 
 "use strict";
 
-Services.scriptloader.loadSubScript(new URL("head_pageAction.js", gTestPath).href,
-                                    this);
+loadTestSubscript("head_pageAction.js");
 
 add_task(async function testTabSwitchContext() {
   await runTests({
