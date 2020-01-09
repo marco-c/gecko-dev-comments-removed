@@ -664,7 +664,7 @@ class nsWindow final : public nsWindowBase {
   
   bool mIsChildWindow : 1;
 
-  bool mCachedHitTestResult;
+  int32_t mCachedHitTestResult;
 
   
   
