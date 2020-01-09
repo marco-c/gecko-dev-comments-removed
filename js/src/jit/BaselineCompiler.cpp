@@ -646,7 +646,10 @@ bool BaselineCodeGen<Handler>::callVM(const VMFunction& fun,
   
   masm.call(code);
   uint32_t callOffset = masm.currentOffset();
-  masm.pop(BaselineFrameReg);
+  masm.Pop(BaselineFrameReg);
+
+  
+  masm.implicitPop(fun.explicitStackSlots() * sizeof(void*));
 
 #ifdef DEBUG
   
@@ -5313,9 +5316,13 @@ bool BaselineCompilerCodeGen::emit_JSOP_RESUME() {
   masm.makeFrameDescriptor(scratch2, FrameType::BaselineJS,
                            JitFrameLayout::Size());
 
-  masm.Push(Imm32(0));  
+  masm.push(Imm32(0));  
   masm.PushCalleeToken(callee,  false);
-  masm.Push(scratch2);  
+  masm.push(scratch2);  
+
+  
+  MOZ_ASSERT(masm.framePushed() == sizeof(uintptr_t));
+  masm.setFramePushed(0);
 
   regs.add(callee);
 
@@ -5455,8 +5462,8 @@ bool BaselineCompilerCodeGen::emit_JSOP_RESUME() {
     pushArg(genObj);
     pushArg(scratch2);
 
-    TrampolinePtr code =
-        cx->runtime()->jitRuntime()->getVMWrapper(GeneratorThrowOrReturnInfo);
+    const VMFunction& fun = GeneratorThrowOrReturnInfo;
+    TrampolinePtr code = cx->runtime()->jitRuntime()->getVMWrapper(fun);
 
     
     masm.subStackPtrFrom(scratch1);
@@ -5480,6 +5487,10 @@ bool BaselineCompilerCodeGen::emit_JSOP_RESUME() {
     masm.push(ImmWord(0));
 #endif
     masm.jump(code);
+
+    
+    
+    masm.implicitPop((fun.explicitStackSlots() + 1) * sizeof(void*));
   }
 
   
@@ -6025,6 +6036,8 @@ MethodStatus BaselineCompiler::emitBody() {
         OPCODE_LIST(EMIT_OP)
 #undef EMIT_OP
     }
+
+    MOZ_ASSERT(masm.framePushed() == 0);
 
     
     
