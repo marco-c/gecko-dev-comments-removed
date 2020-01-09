@@ -29,7 +29,7 @@ loader.lazyRequireGetter(this, "InspectorActorUtils", "devtools/server/actors/in
 loader.lazyRequireGetter(this, "LongStringActor", "devtools/server/actors/string", true);
 loader.lazyRequireGetter(this, "getFontPreviewData", "devtools/server/actors/styles", true);
 loader.lazyRequireGetter(this, "CssLogic", "devtools/server/actors/inspector/css-logic", true);
-loader.lazyRequireGetter(this, "EventParsers", "devtools/server/actors/inspector/event-parsers", true);
+loader.lazyRequireGetter(this, "EventCollector", "devtools/server/actors/inspector/event-collector", true);
 loader.lazyRequireGetter(this, "DocumentWalker", "devtools/server/actors/inspector/document-walker", true);
 loader.lazyRequireGetter(this, "scrollbarTreeWalkerFilter", "devtools/server/actors/inspector/utils", true);
 
@@ -48,7 +48,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
     protocol.Actor.prototype.initialize.call(this, null);
     this.walker = walker;
     this.rawNode = node;
-    this._eventParsers = new EventParsers().parsers;
+    this._eventCollector = new EventCollector();
 
     
     
@@ -92,6 +92,8 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
       this.slotchangeListener = null;
     }
 
+    this._eventCollector.destroy();
+    this._eventCollector = null;
     this.rawNode = null;
     this.walker = null;
   },
@@ -287,18 +289,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
 
 
   get _hasEventListeners() {
-    const parsers = this._eventParsers;
-    for (const [, {hasListeners}] of parsers) {
-      try {
-        if (hasListeners && hasListeners(this.rawNode)) {
-          return true;
-        }
-      } catch (e) {
-        
-        
-      }
-    }
-    return false;
+    return this._eventCollector.hasEventListeners(this.rawNode);
   },
 
   writeAttrs: function() {
@@ -332,36 +323,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
 
 
   getEventListeners: function(node) {
-    const parsers = this._eventParsers;
-    const dbg = this.parent().targetActor.makeDebugger();
-    const listenerArray = [];
-
-    for (const [, {getListeners, normalizeListener}] of parsers) {
-      try {
-        const listeners = getListeners(node);
-
-        if (!listeners) {
-          continue;
-        }
-
-        for (const listener of listeners) {
-          if (normalizeListener) {
-            listener.normalizeListener = normalizeListener;
-          }
-
-          this.processHandlerForEvent(node, listenerArray, dbg, listener);
-        }
-      } catch (e) {
-        
-        
-      }
-    }
-
-    listenerArray.sort((a, b) => {
-      return a.type.localeCompare(b.type);
-    });
-
-    return listenerArray;
+    return this._eventCollector.getEventListeners(node);
   },
 
   
@@ -392,165 +354,6 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
       url: customElementDO.script.url,
       line: customElementDO.script.startLine,
     };
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  processHandlerForEvent: function(node, listenerArray, dbg, listener) {
-    const { handler } = listener;
-    const global = Cu.getGlobalForObject(handler);
-    const globalDO = dbg.addDebuggee(global);
-    let listenerDO = globalDO.makeDebuggeeValue(handler);
-
-    const { normalizeListener } = listener;
-
-    if (normalizeListener) {
-      listenerDO = normalizeListener(listenerDO, listener);
-    }
-
-    const { capturing } = listener;
-    let dom0 = false;
-    let functionSource = handler.toString();
-    const hide = listener.hide || {};
-    let line = 0;
-    let native = false;
-    const override = listener.override || {};
-    const tags = listener.tags || "";
-    const type = listener.type || "";
-    let url = "";
-
-    
-    if (listenerDO.class === "Object" || /^XUL\w*Element$/.test(listenerDO.class)) {
-      let desc;
-
-      while (!desc && listenerDO) {
-        desc = listenerDO.getOwnPropertyDescriptor("handleEvent");
-        listenerDO = listenerDO.proto;
-      }
-
-      if (desc && desc.value) {
-        listenerDO = desc.value;
-      }
-    }
-
-    
-    
-    if (listenerDO.isBoundFunction) {
-      listenerDO = listenerDO.boundTargetFunction;
-    }
-
-    const { isArrowFunction, name, script, parameterNames } = listenerDO;
-
-    if (script) {
-      const scriptSource = script.source.text;
-
-      
-      
-      if (script.source.element) {
-        dom0 = script.source.element.class !== "HTMLScriptElement";
-      } else {
-        dom0 = false;
-      }
-
-      line = script.startLine;
-      url = script.url;
-
-      
-      
-      
-      if (functionSource === "[object Object]" ||
-          functionSource === "[object XULElement]" ||
-          functionSource.includes("[native code]")) {
-        functionSource =
-          scriptSource.substr(script.sourceStart, script.sourceLength);
-
-        
-        
-        
-        if (!isArrowFunction) {
-          functionSource = "function " + functionSource;
-        }
-      }
-    } else {
-      
-      
-      
-      native = true;
-    }
-
-    
-    
-    
-    if (parameterNames && parameterNames.length > 0) {
-      const prefix = "function " + name + "()";
-      const paramString = parameterNames.join(", ");
-
-      if (functionSource.startsWith(prefix)) {
-        functionSource = functionSource.substr(prefix.length);
-
-        functionSource = `function ${name} (${paramString})${functionSource}`;
-      }
-    }
-
-    
-    
-    let origin;
-    if (native) {
-      origin = "[native code]";
-    } else {
-      origin = url + ((dom0 || line === 0) ? "" : ":" + line);
-    }
-
-    const eventObj = {
-      type: override.type || type,
-      handler: override.handler || functionSource.trim(),
-      origin: override.origin || origin,
-      tags: override.tags || tags,
-      DOM0: typeof override.dom0 !== "undefined" ? override.dom0 : dom0,
-      capturing: typeof override.capturing !== "undefined" ?
-                 override.capturing : capturing,
-      hide: typeof override.hide !== "undefined" ? override.hide : hide,
-      native,
-    };
-
-    
-    
-    
-    if (native || dom0) {
-      eventObj.hide.debugger = true;
-    }
-
-    listenerArray.push(eventObj);
-
-    dbg.removeDebuggee(globalDO);
   },
 
   
@@ -632,18 +435,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
 
 
   getEventListenerInfo: function() {
-    const node = this.rawNode;
-
-    if (this.rawNode.nodeName.toLowerCase() === "html") {
-      const winListeners = this.getEventListeners(node.ownerGlobal) || [];
-      const docElementListeners = this.getEventListeners(node) || [];
-      const docListeners = this.getEventListeners(node.parentNode) || [];
-
-      return [...winListeners, ...docElementListeners, ...docListeners].sort((a, b) => {
-        return a.type.localeCompare(b.type);
-      });
-    }
-    return this.getEventListeners(node);
+    return this.getEventListeners(this.rawNode);
   },
 
   
