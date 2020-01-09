@@ -48,6 +48,9 @@ export async function onConnect(connection: any, actions: Object) {
   });
 
   
+  actions.getEventListenerBreakpointTypes();
+
+  
   
   
   
