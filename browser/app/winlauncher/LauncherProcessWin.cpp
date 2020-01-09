@@ -179,6 +179,12 @@ static mozilla::Maybe<bool> RunAsLauncherProcess(int& argc, wchar_t** argv) {
                   mozilla::LauncherRegistryInfo::ProcessType::Launcher;
 #endif  
 
+  
+  runAsLauncher |= mozilla::CheckArg(argc, argv, L"force-launcher",
+                                     static_cast<const wchar_t**>(nullptr),
+                                     mozilla::CheckArgFlag::RemoveArg) ==
+                   mozilla::ARG_FOUND;
+
   if (!runAsLauncher) {
     
     
