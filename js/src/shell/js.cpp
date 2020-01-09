@@ -1067,6 +1067,19 @@ static bool TrackUnhandledRejections(JSContext* cx, JS::HandleObject promise,
     return true;
   }
 
+#if defined(DEBUG) || defined(JS_OOM_BREAKPOINT)
+  if (cx->runningOOMTest) {
+    
+    
+    
+    JS_ReportErrorASCII(
+        cx,
+        "Can't track unhandled rejections while running simulated OOM "
+        "test. Call ignoreUnhandledRejections before using oomTest etc.");
+    return false;
+  }
+#endif
+
   if (!sc->unhandledRejectedPromises) {
     sc->unhandledRejectedPromises = SetObject::create(cx);
     if (!sc->unhandledRejectedPromises) {
