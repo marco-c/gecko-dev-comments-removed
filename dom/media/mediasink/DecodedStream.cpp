@@ -758,7 +758,8 @@ void DecodedStream::SendVideo(bool aIsSameOrigin,
 
   for (uint32_t i = 0; i < video.Length(); ++i) {
     VideoData* v = video[i];
-    TimeUnit lastStart = mData->mLastVideoStartTime.valueOr(mStartTime.ref());
+    TimeUnit lastStart = mData->mLastVideoStartTime.valueOr(
+        mStartTime.ref() - TimeUnit::FromMicroseconds(1));
     TimeUnit lastEnd = mData->mLastVideoEndTime.valueOr(mStartTime.ref());
 
     if (lastEnd < v->mTime) {
@@ -777,7 +778,10 @@ void DecodedStream::SendVideo(bool aIsSameOrigin,
       mData->WriteVideoToSegment(mData->mLastVideoImage, lastEnd, v->mTime,
                                  mData->mLastVideoImageDisplaySize, t, &output,
                                  aPrincipalHandle);
-    } else if (lastStart < v->mTime) {
+      lastEnd = v->mTime;
+    }
+
+    if (lastStart < v->mTime) {
       
       
       
