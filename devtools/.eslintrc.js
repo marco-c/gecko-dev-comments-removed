@@ -107,9 +107,6 @@ module.exports = {
     }
   }, {
     "files": [
-      
-      
-      "client/webaudioeditor/**",
     ],
     "rules": {
       "consistent-return": "off",
