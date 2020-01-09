@@ -5236,13 +5236,67 @@ bool CallIRGenerator::tryAttachIsSuspendedGenerator() {
   return true;
 }
 
+bool CallIRGenerator::tryAttachSpecialCaseCallNative(HandleFunction callee) {
+  MOZ_ASSERT(callee->isNative());
+
+  if (callee->native() == js::intrinsic_StringSplitString) {
+    if (tryAttachStringSplit()) {
+      return true;
+    }
+  }
+
+  if (callee->native() == js::array_push) {
+    if (tryAttachArrayPush()) {
+      return true;
+    }
+  }
+
+  if (callee->native() == js::array_join) {
+    if (tryAttachArrayJoin()) {
+      return true;
+    }
+  }
+  if (callee->native() == intrinsic_IsSuspendedGenerator) {
+    if (tryAttachIsSuspendedGenerator()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool CallIRGenerator::tryAttachCallScripted(HandleFunction calleeFunc) {
+  if (JitOptions.disableCacheIRCalls) {
+    return false;
+  }
+
+  return false;
+}
+
+bool CallIRGenerator::tryAttachCallNative(HandleFunction calleeFunc) {
+  MOZ_ASSERT(mode_ == ICState::Mode::Specialized);
+  MOZ_ASSERT(calleeFunc->isNative());
+
+  
+  if (tryAttachSpecialCaseCallNative(calleeFunc)) {
+    return true;
+  }
+  if (JitOptions.disableCacheIRCalls) {
+    return false;
+  }
+
+  return false;
+}
+
 bool CallIRGenerator::tryAttachStub() {
   AutoAssertNoPendingException aanpe(cx_);
 
   
-  
-  if ((op_ != JSOP_CALL) && (op_ != JSOP_CALL_IGNORES_RV)) {
-    return false;
+  switch (op_) {
+    case JSOP_CALL:
+    case JSOP_CALL_IGNORES_RV:
+      break;
+    default:
+      return false;
   }
 
   
@@ -5258,29 +5312,13 @@ bool CallIRGenerator::tryAttachStub() {
   RootedFunction calleeFunc(cx_, &callee_.toObject().as<JSFunction>());
 
   
+  if (calleeFunc->isInterpreted() || calleeFunc->isNativeWithJitEntry()) {
+    return tryAttachCallScripted(calleeFunc);
+  }
+
+  
   if (calleeFunc->isNative()) {
-    if (calleeFunc->native() == js::intrinsic_StringSplitString) {
-      if (tryAttachStringSplit()) {
-        return true;
-      }
-    }
-
-    if (calleeFunc->native() == js::array_push) {
-      if (tryAttachArrayPush()) {
-        return true;
-      }
-    }
-
-    if (calleeFunc->native() == js::array_join) {
-      if (tryAttachArrayJoin()) {
-        return true;
-      }
-    }
-    if (calleeFunc->native() == intrinsic_IsSuspendedGenerator) {
-      if (tryAttachIsSuspendedGenerator()) {
-        return true;
-      }
-    }
+    return tryAttachCallNative(calleeFunc);
   }
 
   return false;

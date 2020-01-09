@@ -123,7 +123,7 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(disableCacheIR, false);
 
   
-  SET_DEFAULT(disableCacheIRBinaryArith, false);
+  SET_DEFAULT(disableCacheIRCalls, true);
 
 
 

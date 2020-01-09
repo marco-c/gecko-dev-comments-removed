@@ -3662,11 +3662,6 @@ AbortReasonOr<Ok> IonBuilder::arithTryBinaryStub(bool* emitted, JSOp op,
   JSOp actualOp = JSOp(*pc);
 
   
-  if (JitOptions.disableCacheIRBinaryArith) {
-    return Ok();
-  }
-
-  
   
   if (actualOp == JSOP_POS || actualOp == JSOP_POW) {
     return Ok();
