@@ -6735,222 +6735,6 @@ static AccessorType ToAccessorType(PropertyType propType) {
 }
 
 template <class ParseHandler, typename Unit>
-bool GeneralParser<ParseHandler, Unit>::classMember(
-    YieldHandling yieldHandling, DefaultHandling defaultHandling,
-    const ParseContext::ClassStatement& classStmt, HandlePropertyName className,
-    uint32_t classStartOffset, bool hasHeritage,
-    size_t& numFieldsWithInitializers, ListNodeType& classMembers, bool* done) {
-  *done = false;
-
-  TokenKind tt;
-  if (!tokenStream.getToken(&tt)) {
-    return false;
-  }
-  if (tt == TokenKind::RightCurly) {
-    *done = true;
-    return true;
-  }
-
-  if (tt == TokenKind::Semi) {
-    return true;
-  }
-
-  bool isStatic = false;
-  if (tt == TokenKind::Static) {
-    if (!tokenStream.peekToken(&tt)) {
-      return false;
-    }
-    if (tt == TokenKind::RightCurly) {
-      tokenStream.consumeKnownToken(tt);
-      error(JSMSG_UNEXPECTED_TOKEN, "property name", TokenKindToDesc(tt));
-      return false;
-    }
-
-    if (tt != TokenKind::LeftParen) {
-      isStatic = true;
-    } else {
-      anyChars.ungetToken();
-    }
-  } else {
-    anyChars.ungetToken();
-  }
-
-  uint32_t propNameOffset;
-  if (!tokenStream.peekOffset(&propNameOffset)) {
-    return false;
-  }
-
-  RootedAtom propAtom(cx_);
-  PropertyType propType;
-  Node propName = propertyName(yieldHandling, PropertyNameInClass,
-                                Nothing(), classMembers,
-                               &propType, &propAtom);
-  if (!propName) {
-    return false;
-  }
-
-  if (propType == PropertyType::Field) {
-    
-    
-    
-    errorAt(propNameOffset, JSMSG_FIELDS_NOT_SUPPORTED);
-    return false;
-
-    if (isStatic) {
-      errorAt(propNameOffset, JSMSG_BAD_METHOD_DEF);
-      return false;
-    }
-    if (!tokenStream.getToken(&tt)) {
-      return false;
-    }
-
-    FunctionNodeType initializer = null();
-    if (tt == TokenKind::Assign) {
-      initializer = fieldInitializer(yieldHandling, propAtom);
-      if (!initializer) {
-        return false;
-      }
-
-      numFieldsWithInitializers++;
-      if (!tokenStream.getToken(&tt)) {
-        return false;
-      }
-    }
-
-    
-    if (tt != TokenKind::Semi) {
-      error(JSMSG_MISSING_SEMI_FIELD);
-      return false;
-    }
-
-    return handler_.addClassFieldDefinition(classMembers, propName,
-                                            initializer);
-  }
-
-  if (propType != PropertyType::Getter && propType != PropertyType::Setter &&
-      propType != PropertyType::Method &&
-      propType != PropertyType::GeneratorMethod &&
-      propType != PropertyType::AsyncMethod &&
-      propType != PropertyType::AsyncGeneratorMethod) {
-    errorAt(propNameOffset, JSMSG_BAD_METHOD_DEF);
-    return false;
-  }
-
-  bool isConstructor = !isStatic && propAtom == cx_->names().constructor;
-  if (isConstructor) {
-    if (propType != PropertyType::Method) {
-      errorAt(propNameOffset, JSMSG_BAD_METHOD_DEF);
-      return false;
-    }
-    if (classStmt.constructorBox) {
-      errorAt(propNameOffset, JSMSG_DUPLICATE_PROPERTY, "constructor");
-      return false;
-    }
-    propType = hasHeritage ? PropertyType::DerivedConstructor
-                           : PropertyType::Constructor;
-  } else if (isStatic && propAtom == cx_->names().prototype) {
-    errorAt(propNameOffset, JSMSG_BAD_METHOD_DEF);
-    return false;
-  }
-
-  RootedAtom funName(cx_);
-  switch (propType) {
-    case PropertyType::Getter:
-    case PropertyType::Setter:
-      if (!anyChars.isCurrentTokenType(TokenKind::RightBracket)) {
-        funName = prefixAccessorName(propType, propAtom);
-        if (!funName) {
-          return false;
-        }
-      }
-      break;
-    case PropertyType::Constructor:
-    case PropertyType::DerivedConstructor:
-      funName = className;
-      break;
-    default:
-      if (!anyChars.isCurrentTokenType(TokenKind::RightBracket)) {
-        funName = propAtom;
-      }
-  }
-
-  
-  
-  
-  FunctionNodeType funNode = methodDefinition(
-      isConstructor ? classStartOffset : propNameOffset, propType, funName);
-  if (!funNode) {
-    return false;
-  }
-
-  AccessorType atype = ToAccessorType(propType);
-  return handler_.addClassMethodDefinition(classMembers, propName, funNode,
-                                           atype, isStatic);
-}
-
-template <class ParseHandler, typename Unit>
-bool GeneralParser<ParseHandler, Unit>::finishClassConstructor(
-    const ParseContext::ClassStatement& classStmt, HandlePropertyName className,
-    uint32_t classStartOffset, uint32_t classEndOffset,
-    size_t numFieldsWithInitializers, ListNodeType& classMembers) {
-  
-  
-  
-  if (classStmt.constructorBox == nullptr && numFieldsWithInitializers > 0) {
-    
-    FunctionNodeType synthesizedCtor =
-        synthesizeConstructor(className, classStartOffset);
-    if (!synthesizedCtor) {
-      return false;
-    }
-
-    MOZ_ASSERT(classStmt.constructorBox != nullptr);
-
-    
-    
-    Node constructorNameNode =
-        handler_.newObjectLiteralPropertyName(cx_->names().constructor, pos());
-    if (!constructorNameNode) {
-      return false;
-    }
-
-    if (!handler_.addClassMethodDefinition(classMembers, constructorNameNode,
-                                           synthesizedCtor, AccessorType::None,
-                                            false)) {
-      return false;
-    }
-  }
-
-  if (FunctionBox* ctorbox = classStmt.constructorBox) {
-    
-    
-    ctorbox->toStringEnd = classEndOffset;
-
-    if (numFieldsWithInitializers > 0) {
-      
-      ctorbox->setHasThisBinding();
-    }
-
-    
-    if (ctorbox->function()->isInterpretedLazy()) {
-      ctorbox->function()->lazyScript()->setToStringEnd(classEndOffset);
-
-      if (numFieldsWithInitializers > 0) {
-        ctorbox->function()->lazyScript()->setHasThisBinding();
-      }
-
-      
-      
-      
-      FieldInitializers fieldInfo(numFieldsWithInitializers);
-      ctorbox->function()->lazyScript()->setFieldInitializers(fieldInfo);
-    }
-  }
-
-  return true;
-}
-
-template <class ParseHandler, typename Unit>
 typename ParseHandler::ClassNodeType
 GeneralParser<ParseHandler, Unit>::classDefinition(
     YieldHandling yieldHandling, ClassContext classContext,
@@ -6987,92 +6771,282 @@ GeneralParser<ParseHandler, Unit>::classDefinition(
 
   
   
+  ParseContext::ClassStatement classStmt(pc_);
+
+  RootedAtom propAtom(cx_);
+
+  
+  
+  Maybe<ParseContext::Statement> innerScopeStmt;
+  Maybe<ParseContext::Scope> innerScope;
+  if (className) {
+    innerScopeStmt.emplace(pc_, StatementKind::Block);
+    innerScope.emplace(this);
+    if (!innerScope->init(pc_)) {
+      return null();
+    }
+  }
+
+  
+  
   
   TokenPos namePos = pos();
 
-  
-  
-  ParseContext::ClassStatement classStmt(pc_);
-
-  NameNodeType innerName;
-  Node nameNode = null();
   Node classHeritage = null();
-  Node classBlock = null();
-  uint32_t classEndOffset;
-  {
-    
-    
-    ParseContext::Statement innerScopeStmt(pc_, StatementKind::Block);
-    ParseContext::Scope innerScope(this);
-    if (!innerScope.init(pc_)) {
+  bool hasHeritage;
+  if (!tokenStream.matchToken(&hasHeritage, TokenKind::Extends)) {
+    return null();
+  }
+  if (hasHeritage) {
+    if (!tokenStream.getToken(&tt)) {
+      return null();
+    }
+    classHeritage = memberExpr(yieldHandling, TripledotProhibited, tt);
+    if (!classHeritage) {
+      return null();
+    }
+  }
+
+  if (!mustMatchToken(TokenKind::LeftCurly, JSMSG_CURLY_BEFORE_CLASS)) {
+    return null();
+  }
+
+  ListNodeType classMembers = handler_.newClassMemberList(pos().begin);
+  if (!classMembers) {
+    return null();
+  }
+
+  Maybe<DeclarationKind> declKind = Nothing();
+  size_t numFieldsWithInitializers = 0;
+  for (;;) {
+    TokenKind tt;
+    if (!tokenStream.getToken(&tt)) {
+      return null();
+    }
+    if (tt == TokenKind::RightCurly) {
+      break;
+    }
+
+    if (tt == TokenKind::Semi) {
+      continue;
+    }
+
+    bool isStatic = false;
+    if (tt == TokenKind::Static) {
+      if (!tokenStream.peekToken(&tt)) {
+        return null();
+      }
+      if (tt == TokenKind::RightCurly) {
+        tokenStream.consumeKnownToken(tt);
+        error(JSMSG_UNEXPECTED_TOKEN, "property name", TokenKindToDesc(tt));
+        return null();
+      }
+
+      if (tt != TokenKind::LeftParen) {
+        isStatic = true;
+      } else {
+        anyChars.ungetToken();
+      }
+    } else {
+      anyChars.ungetToken();
+    }
+
+    uint32_t propNameOffset;
+    if (!tokenStream.peekOffset(&propNameOffset)) {
       return null();
     }
 
-    Node classHeritage = null();
-    bool hasHeritage;
-    if (!tokenStream.matchToken(&hasHeritage, TokenKind::Extends)) {
+    PropertyType propType;
+    Node propName = propertyName(yieldHandling, PropertyNameInClass, declKind,
+                                 classMembers, &propType, &propAtom);
+    if (!propName) {
       return null();
     }
-    if (hasHeritage) {
+
+    if (propType == PropertyType::Field) {
+      
+      
+      
+      errorAt(propNameOffset, JSMSG_FIELDS_NOT_SUPPORTED);
+      return null();
+
+      if (isStatic) {
+        errorAt(propNameOffset, JSMSG_BAD_METHOD_DEF);
+        return null();
+      }
       if (!tokenStream.getToken(&tt)) {
         return null();
       }
-      classHeritage = memberExpr(yieldHandling, TripledotProhibited, tt);
-      if (!classHeritage) {
-        return null();
+
+      FunctionNodeType initializer = null();
+      if (tt == TokenKind::Assign) {
+        initializer = fieldInitializer(yieldHandling, propAtom);
+        if (!initializer) {
+          return null();
+        }
+
+        numFieldsWithInitializers++;
+        if (!tokenStream.getToken(&tt)) {
+          return null();
+        }
       }
-    }
 
-    if (!mustMatchToken(TokenKind::LeftCurly, JSMSG_CURLY_BEFORE_CLASS)) {
-      return null();
-    }
-
-    ListNodeType classMembers = handler_.newClassMemberList(pos().begin);
-    if (!classMembers) {
-      return null();
-    }
-
-    size_t numFieldsWithInitializers = 0;
-    for (;;) {
-      bool done;
-      if (!classMember(yieldHandling, defaultHandling, classStmt, className,
-                       classStartOffset, hasHeritage, numFieldsWithInitializers,
-                       classMembers, &done)) {
-        return null();
-      }
-      if (done) {
-        break;
-      }
-    }
-
-    classEndOffset = pos().end;
-    if (!finishClassConstructor(classStmt, className, classStartOffset,
-                                classEndOffset, numFieldsWithInitializers,
-                                classMembers)) {
-      return null();
-    }
-
-    if (className) {
       
-      if (!noteDeclaredName(className, DeclarationKind::Const, namePos)) {
+      if (tt != TokenKind::Semi) {
+        error(JSMSG_MISSING_SEMI_FIELD);
         return null();
       }
 
-      innerName = newName(className, namePos);
-      if (!innerName) {
+      if (!handler_.addClassFieldDefinition(classMembers, propName,
+                                            initializer)) {
         return null();
       }
+
+      continue;
     }
 
-    classBlock = finishLexicalScope(innerScope, classMembers);
+    if (propType != PropertyType::Getter && propType != PropertyType::Setter &&
+        propType != PropertyType::Method &&
+        propType != PropertyType::GeneratorMethod &&
+        propType != PropertyType::AsyncMethod &&
+        propType != PropertyType::AsyncGeneratorMethod) {
+      errorAt(propNameOffset, JSMSG_BAD_METHOD_DEF);
+      return null();
+    }
+
+    bool isConstructor = !isStatic && propAtom == cx_->names().constructor;
+    if (isConstructor) {
+      if (propType != PropertyType::Method) {
+        errorAt(propNameOffset, JSMSG_BAD_METHOD_DEF);
+        return null();
+      }
+      if (classStmt.constructorBox) {
+        errorAt(propNameOffset, JSMSG_DUPLICATE_PROPERTY, "constructor");
+        return null();
+      }
+      propType = hasHeritage ? PropertyType::DerivedConstructor
+                             : PropertyType::Constructor;
+    } else if (isStatic && propAtom == cx_->names().prototype) {
+      errorAt(propNameOffset, JSMSG_BAD_METHOD_DEF);
+      return null();
+    }
+
+    RootedAtom funName(cx_);
+    switch (propType) {
+      case PropertyType::Getter:
+      case PropertyType::Setter:
+        if (!anyChars.isCurrentTokenType(TokenKind::RightBracket)) {
+          funName = prefixAccessorName(propType, propAtom);
+          if (!funName) {
+            return null();
+          }
+        }
+        break;
+      case PropertyType::Constructor:
+      case PropertyType::DerivedConstructor:
+        funName = className;
+        break;
+      default:
+        if (!anyChars.isCurrentTokenType(TokenKind::RightBracket)) {
+          funName = propAtom;
+        }
+    }
+
+    
+    
+    
+    FunctionNodeType funNode = methodDefinition(
+        isConstructor ? classStartOffset : propNameOffset, propType, funName);
+    if (!funNode) {
+      return null();
+    }
+
+    AccessorType atype = ToAccessorType(propType);
+    if (!handler_.addClassMethodDefinition(classMembers, propName, funNode,
+                                           atype, isStatic)) {
+      return null();
+    }
+  }
+
+  
+  
+  
+  if (classStmt.constructorBox == nullptr && numFieldsWithInitializers > 0) {
+    
+    FunctionNodeType synthesizedCtor =
+        synthesizeConstructor(className, classStartOffset);
+    if (!synthesizedCtor) {
+      return null();
+    }
+
+    MOZ_ASSERT(classStmt.constructorBox != nullptr);
+
+    
+    
+    Node constructorNameNode =
+        handler_.newObjectLiteralPropertyName(cx_->names().constructor, pos());
+    if (!constructorNameNode) {
+      return null();
+    }
+
+    if (!handler_.addClassMethodDefinition(classMembers, constructorNameNode,
+                                           synthesizedCtor, AccessorType::None,
+                                            false)) {
+      return null();
+    }
+  }
+
+  uint32_t classEndOffset = pos().end;
+  if (FunctionBox* ctorbox = classStmt.constructorBox) {
+    
+    
+    ctorbox->toStringEnd = classEndOffset;
+
+    if (numFieldsWithInitializers > 0) {
+      
+      ctorbox->setHasThisBinding();
+    }
+
+    
+    if (ctorbox->function()->isInterpretedLazy()) {
+      ctorbox->function()->lazyScript()->setToStringEnd(classEndOffset);
+
+      if (numFieldsWithInitializers > 0) {
+        ctorbox->function()->lazyScript()->setHasThisBinding();
+      }
+
+      
+      
+      
+      FieldInitializers fieldInfo(numFieldsWithInitializers);
+      ctorbox->function()->lazyScript()->setFieldInitializers(fieldInfo);
+    }
+  }
+
+  Node nameNode = null();
+  Node membersOrBlock = classMembers;
+  if (className) {
+    
+    if (!noteDeclaredName(className, DeclarationKind::Const, namePos)) {
+      return null();
+    }
+
+    NameNodeType innerName = newName(className, namePos);
+    if (!innerName) {
+      return null();
+    }
+
+    Node classBlock = finishLexicalScope(*innerScope, classMembers);
     if (!classBlock) {
       return null();
     }
 
-    
-  }
+    membersOrBlock = classBlock;
 
-  if (className) {
+    
+    innerScope.reset();
+    innerScopeStmt.reset();
+
     NameNodeType outerName = null();
     if (classContext == ClassStatement) {
       
