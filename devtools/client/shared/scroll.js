@@ -91,12 +91,14 @@ define(function(require, exports, module) {
 
 
 
+
+
   function scrollIntoView(element, options = {}) {
     if (!element) {
       return;
     }
 
-    const { alignTo, container } = options;
+    const { alignTo, center, container } = options;
 
     const { top, bottom } = element.getBoundingClientRect();
     const scrolledParent = closestScrolledParent(container || element.parentNode);
@@ -106,6 +108,11 @@ define(function(require, exports, module) {
       (top >= scrolledParentRect.top && bottom <= scrolledParentRect.bottom);
 
     if (isVisible) {
+      return;
+    }
+
+    if (center) {
+      element.scrollIntoView({ block: "center" });
       return;
     }
 
