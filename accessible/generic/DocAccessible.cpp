@@ -1130,28 +1130,10 @@ Accessible* DocAccessible::GetAccessibleByUniqueIDInSubtree(void* aUniqueID) {
 
 Accessible* DocAccessible::GetAccessibleOrContainer(nsINode* aNode,
                                                     int aARIAHiddenFlag) const {
-  if (!aNode || !aNode->GetComposedDoc()) {
-    return nullptr;
-  }
+  if (!aNode || !aNode->GetComposedDoc()) return nullptr;
 
-  nsINode* currNode = nullptr;
-  if (aNode->IsShadowRoot()) {
-    
-    
-    
-    
-    
-    const dom::ShadowRoot* shadowRoot = dom::ShadowRoot::FromNode(aNode);
-    currNode = shadowRoot->GetHost();
-    if (!currNode) {
-      return nullptr;
-    }
-  } else {
-    currNode = aNode;
-  }
-
-  MOZ_ASSERT(currNode);
-  for (; currNode; currNode = currNode->GetFlattenedTreeParentNode()) {
+  for (nsINode* currNode = aNode; currNode;
+       currNode = currNode->GetFlattenedTreeParentNode()) {
     
     if (aARIAHiddenFlag == eNoContainerIfARIAHidden && currNode->IsElement() &&
         aria::HasDefinedARIAHidden(currNode->AsElement())) {

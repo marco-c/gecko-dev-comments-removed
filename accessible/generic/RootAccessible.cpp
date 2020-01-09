@@ -161,11 +161,7 @@ nsresult RootAccessible::AddEventListeners() {
   
   
   
-  
-  
-  
-  nsPIDOMWindowOuter* window = mDocumentNode->GetWindow();
-  nsCOMPtr<EventTarget> nstarget = window->GetParentTarget();
+  nsCOMPtr<EventTarget> nstarget = mDocumentNode;
 
   if (nstarget) {
     for (const char *const *e = kEventTypes, *const *e_end =
@@ -181,8 +177,7 @@ nsresult RootAccessible::AddEventListeners() {
 }
 
 nsresult RootAccessible::RemoveEventListeners() {
-  nsPIDOMWindowOuter* window = mDocumentNode->GetWindow();
-  nsCOMPtr<EventTarget> target = window->GetParentTarget();
+  nsCOMPtr<EventTarget> target = mDocumentNode;
   if (target) {
     for (const char *const *e = kEventTypes, *const *e_end =
                                                  ArrayEnd(kEventTypes);
@@ -227,41 +222,46 @@ RootAccessible::HandleEvent(Event* aDOMEvent) {
     
     
     
-    
-    
-    document->HandleNotification<RootAccessible, Event, nsINode>(
-        this, &RootAccessible::ProcessDOMEvent, aDOMEvent, origTargetNode);
+    document->HandleNotification<RootAccessible, Event>(
+        this, &RootAccessible::ProcessDOMEvent, aDOMEvent);
   }
 
   return NS_OK;
 }
 
 
-void RootAccessible::ProcessDOMEvent(Event* aDOMEvent, nsINode* aTarget) {
+void RootAccessible::ProcessDOMEvent(Event* aDOMEvent) {
   MOZ_ASSERT(aDOMEvent);
-  MOZ_ASSERT(aTarget);
+  nsCOMPtr<nsINode> origTargetNode =
+      do_QueryInterface(aDOMEvent->GetOriginalTarget());
 
   nsAutoString eventType;
   aDOMEvent->GetType(eventType);
 
 #ifdef A11Y_LOG
   if (logging::IsEnabled(logging::eDOMEvents))
-    logging::DOMEvent("processed", aTarget, eventType);
+    logging::DOMEvent("processed", origTargetNode, eventType);
 #endif
 
+  if (!origTargetNode) {
+    
+    return;
+  }
+
   if (eventType.EqualsLiteral("popuphiding")) {
-    HandlePopupHidingEvent(aTarget);
+    HandlePopupHidingEvent(origTargetNode);
     return;
   }
 
   DocAccessible* targetDocument =
-      GetAccService()->GetDocAccessible(aTarget->OwnerDoc());
+      GetAccService()->GetDocAccessible(origTargetNode->OwnerDoc());
   if (!targetDocument) {
     
     return;
   }
 
-  Accessible* accessible = targetDocument->GetAccessibleOrContainer(aTarget);
+  Accessible* accessible =
+      targetDocument->GetAccessibleOrContainer(origTargetNode);
   if (!accessible) return;
 
 #ifdef MOZ_XUL
