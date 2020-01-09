@@ -2,7 +2,6 @@ import os
 
 config = {
     "branch": "mozilla-beta",
-    "update_channel": "beta",
 
     
     "hg_l10n_base": "https://hg.mozilla.org/l10n-central",

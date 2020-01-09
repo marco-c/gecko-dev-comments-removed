@@ -1,6 +1,5 @@
 config = {
     "branch": "mozilla-beta",
-    "update_channel": "aurora",  
 
     
     "hg_l10n_base": "https://hg.mozilla.org/l10n-central",

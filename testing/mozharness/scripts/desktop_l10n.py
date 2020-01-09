@@ -45,10 +45,6 @@ FAILURE_STR = "Failed"
 
 
 
-configuration_tokens = ('branch', 'update_channel')
-
-
-
 
 runtime_config_tokens = ('version', 'locale', 'abs_objdir',
                          'en_us_installer_binary_url')
@@ -124,33 +120,6 @@ class DesktopSingleLocale(LocalesMixin, AutomationMixin,
         """replaces 'configuration_tokens' with their values, before the
            configuration gets locked. If some of the configuration_tokens
            are not present, stops the execution of the script"""
-        
-        
-        
-        for token in configuration_tokens:
-            if token not in self.config:
-                self.fatal('No %s in configuration!' % token)
-
-        
-        for token in configuration_tokens:
-            
-            token_string = ''.join(('%(', token, ')s'))
-            
-            token_value = self.config[token]
-            for element in self.config:
-                
-                old_value = self.config[element]
-                
-                new_value = self.__detokenise_element(self.config[element],
-                                                      token_string,
-                                                      token_value)
-                if new_value and new_value != old_value:
-                    msg = "%s: replacing %s with %s" % (element,
-                                                        old_value,
-                                                        new_value)
-                    self.debug(msg)
-                    self.config[element] = new_value
-
         
         
         
@@ -250,6 +219,15 @@ class DesktopSingleLocale(LocalesMixin, AutomationMixin,
             bootstrap_env[name] = binary_path
         if self.query_is_nightly():
             bootstrap_env["IS_NIGHTLY"] = "yes"
+            
+            if config.get('update_channel'):
+                update_channel = config['update_channel']
+            else:  
+                update_channel = "nightly-%s" % (config['branch'],)
+            if isinstance(update_channel, unicode):
+                update_channel = update_channel.encode("utf-8")
+            bootstrap_env["MOZ_UPDATE_CHANNEL"] = update_channel
+            self.info("Update channel set to: {}".format(bootstrap_env["MOZ_UPDATE_CHANNEL"]))
         self.bootstrap_env = bootstrap_env
         return self.bootstrap_env
 

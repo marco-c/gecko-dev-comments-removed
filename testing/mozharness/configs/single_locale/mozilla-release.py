@@ -2,7 +2,6 @@ import os
 
 config = {
     "branch": "mozilla-release",
-    "update_channel": "release",
 
     
     "hg_l10n_base": "https://hg.mozilla.org/l10n-central",

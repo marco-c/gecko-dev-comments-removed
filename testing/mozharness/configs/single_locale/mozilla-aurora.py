@@ -2,7 +2,6 @@ import os
 
 config = {
     "branch": "mozilla-aurora",
-    "update_channel": "aurora",
 
     
     "hg_l10n_base": "https://hg.mozilla.org/releases/l10n/mozilla-aurora",

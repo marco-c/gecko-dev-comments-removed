@@ -98,12 +98,15 @@ class MobileSingleLocale(LocalesMixin, TooltoolMixin, AutomationMixin,
             
             
             repack_env["IS_NIGHTLY"] = "yes"
-        
-        if c.get('update_channel'):
-            repack_env["MOZ_UPDATE_CHANNEL"] = c['update_channel']
-        else:  
-            repack_env["MOZ_UPDATE_CHANNEL"] = \
-                "nightly-%s" % (c['branch'],)
+            
+            if c.get('update_channel'):
+                update_channel = c['update_channel']
+            else:  
+                update_channel = "nightly-%s" % (c['branch'],)
+            if isinstance(update_channel, unicode):
+                update_channel = update_channel.encode("utf-8")
+            repack_env["MOZ_UPDATE_CHANNEL"] = update_channel
+            self.info("Update channel set to: {}".format(repack_env["MOZ_UPDATE_CHANNEL"]))
 
         self.repack_env = repack_env
         return self.repack_env
