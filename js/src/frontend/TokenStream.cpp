@@ -2679,33 +2679,28 @@ MOZ_MUST_USE bool TokenStreamSpecific<Unit, AnyCharsAccess>::getTokenInternal(
           return badToken();
         }
       } else if (IsAsciiDigit(unit)) {
+        
+        if (!strictModeError(JSMSG_DEPRECATED_OCTAL)) {
+          return badToken();
+        }
+
         radix = 8;
         isLegacyOctalOrNoctal = true;
         
         numStart = this->sourceUnits.addressOfNextCodeUnit() - 1;
 
+        bool nonOctalDecimalIntegerLiteral = false;
         do {
-          
-          
-          if (!strictModeError(JSMSG_DEPRECATED_OCTAL)) {
-            return badToken();
-          }
-
-          
-          
-          
-          
           if (unit >= '8') {
-            if (!warning(JSMSG_BAD_OCTAL, unit == '8' ? "08" : "09")) {
-              return badToken();
-            }
-
-            
-            return decimalNumber(unit, start, numStart, modifier, ttp);
+            nonOctalDecimalIntegerLiteral = true;
           }
-
           unit = getCodeUnit();
         } while (IsAsciiDigit(unit));
+
+        if (nonOctalDecimalIntegerLiteral) {
+          
+          return decimalNumber(unit, start, numStart, modifier, ttp);
+        }
       } else {
         
         numStart = this->sourceUnits.addressOfNextCodeUnit() - 1;
