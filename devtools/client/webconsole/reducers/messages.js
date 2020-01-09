@@ -25,6 +25,7 @@ loader.lazyRequireGetter(this, "createWarningGroupMessage", "devtools/client/web
 loader.lazyRequireGetter(this, "isWarningGroup", "devtools/client/webconsole/utils/messages", true);
 loader.lazyRequireGetter(this, "getWarningGroupType", "devtools/client/webconsole/utils/messages", true);
 loader.lazyRequireGetter(this, "getParentWarningGroupMessageId", "devtools/client/webconsole/utils/messages", true);
+ChromeUtils.defineModuleGetter(this, "pointPrecedes", "resource://devtools/shared/execution-point-utils.js");
 
 const {
   UPDATE_REQUEST,
@@ -40,8 +41,6 @@ const MessageState = overrides => Object.freeze(Object.assign({
   
   
   messagesPayloadById: new Map(),
-  
-  replayProgressMessages: new Set(),
   
   visibleMessages: [],
   
@@ -70,13 +69,15 @@ const MessageState = overrides => Object.freeze(Object.assign({
   networkMessagesUpdateById: {},
   
   removedLogpointIds: new Set(),
+  
   pausedExecutionPoint: null,
+  
+  hasExecutionPoints: false,
 }, overrides));
 
 function cloneState(state) {
   return {
     messagesById: new Map(state.messagesById),
-    replayProgressMessages: new Set(state.replayProgressMessages),
     visibleMessages: [...state.visibleMessages],
     filteredMessagesCount: {...state.filteredMessagesCount},
     messagesUiById: [...state.messagesUiById],
@@ -89,6 +90,7 @@ function cloneState(state) {
     networkMessagesUpdateById: {...state.networkMessagesUpdateById},
     removedLogpointIds: new Set(state.removedLogpointIds),
     pausedExecutionPoint: state.pausedExecutionPoint,
+    hasExecutionPoints: state.hasExecutionPoints,
     warningGroupsById: new Map(state.warningGroupsById),
   };
 }
@@ -106,7 +108,6 @@ function cloneState(state) {
 function addMessage(newMessage, state, filtersState, prefsState, uiState) {
   const {
     messagesById,
-    replayProgressMessages,
     groupsById,
     currentGroup,
     repeatById,
@@ -115,17 +116,6 @@ function addMessage(newMessage, state, filtersState, prefsState, uiState) {
   if (newMessage.type === constants.MESSAGE_TYPE.NULL_MESSAGE) {
     
     return state;
-  }
-
-  if (newMessage.executionPoint && !newMessage.logpointId) {
-    
-    
-    
-    const progress = newMessage.executionPoint.progress;
-    if (replayProgressMessages.has(progress)) {
-      return state;
-    }
-    state.replayProgressMessages.add(progress);
   }
 
   
@@ -162,6 +152,10 @@ function addMessage(newMessage, state, filtersState, prefsState, uiState) {
   }
 
   ensureExecutionPoint(state, newMessage);
+
+  if (newMessage.executionPoint) {
+    state.hasExecutionPoints = true;
+  }
 
   
   
@@ -847,6 +841,13 @@ function getMessageVisibility(message, {
     };
   }
 
+  if (!passSearchFilters(message, filtersState)) {
+    return {
+      visible: false,
+      cause: FILTERS.TEXT,
+    };
+  }
+
   
   
   if (!passLevelFilters(message, filtersState)) {
@@ -874,15 +875,6 @@ function getMessageVisibility(message, {
     return {
       visible: false,
       cause: FILTERS.NETXHR,
-    };
-  }
-
-  
-  
-  if (!passSearchFilters(message, filtersState)) {
-    return {
-      visible: false,
-      cause: FILTERS.TEXT,
     };
   }
 
@@ -1191,7 +1183,7 @@ function ensureExecutionPoint(state, newMessage) {
 
   
   
-  let point = { progress: 0 }, messageCount = 1;
+  let point = { checkpoint: 0, progress: 0 }, messageCount = 1;
   if (state.visibleMessages.length) {
     const lastId = state.visibleMessages[state.visibleMessages.length - 1];
     const lastMessage = state.messagesById.get(lastId);
@@ -1222,29 +1214,16 @@ function maybeSortVisibleMessages(state) {
   
   
   
-  if (state.replayProgressMessages.size) {
+  if (state.hasExecutionPoints) {
     state.visibleMessages.sort((a, b) => {
       const pointA = messageExecutionPoint(state, a);
       const pointB = messageExecutionPoint(state, b);
-      if (pointA.progress != pointB.progress) {
-        return pointA.progress > pointB.progress;
+      if (pointPrecedes(pointB, pointA)) {
+        return true;
+      } else if (pointPrecedes(pointA, pointB)) {
+        return false;
       }
-      
-      
-      
-      if ("frameIndex" in pointA != "frameIndex" in pointB) {
-        return "frameIndex" in pointA;
-      }
-      
-      
-      
-      if (pointA.frameIndex != pointB.frameIndex) {
-        return pointA.frameIndex < pointB.frameIndex;
-      }
-      
-      if (pointA.offset != pointB.offset) {
-        return pointA.offset > pointB.offset;
-      }
+
       
       
       
