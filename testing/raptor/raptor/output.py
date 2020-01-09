@@ -61,6 +61,10 @@ class Output(object):
             }
 
             
+            if hasattr(test, "alert_change_type"):
+                suite['alertChangeType'] = test.alert_change_type
+
+            
             
             if test.cold is True:
                 suite['cold'] = True
