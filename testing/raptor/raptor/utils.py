@@ -126,7 +126,7 @@ def view_gecko_profile(ffox_bin):
 
     profile_zip = os.environ.get('RAPTOR_LATEST_GECKO_PROFILE_ARCHIVE', None)
     if profile_zip is None or not os.path.exists(profile_zip):
-        LOG.info("No local talos gecko profiles were found so not launching perf-html.io")
+        LOG.info("No local talos gecko profiles were found so not launching profiler.firefox.com")
         return
 
     

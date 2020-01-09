@@ -51,6 +51,10 @@ pref("devtools.inspector.showAllAnonymousContent", false);
 
 pref("devtools.inspector.showUserAgentShadowRoots", false);
 
+pref("devtools.inspector.fonthighlighter.enabled", true);
+
+pref("devtools.inspector.changes.enabled", true);
+
 pref("devtools.inspector.new-rulesview.enabled", false);
 
 
@@ -139,7 +143,7 @@ pref("devtools.performance.ui.experimental", false);
 
 
 
-pref("devtools.performance.recording.ui-base-url", "https://perf-html.io");
+pref("devtools.performance.recording.ui-base-url", "https://profiler.firefox.com");
 
 
 

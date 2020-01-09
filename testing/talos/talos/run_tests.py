@@ -336,7 +336,7 @@ def run_tests(config, browser_config):
     
     if config['gecko_profile'] and browser_config['develop']:
         if os.environ.get('DISABLE_PROFILE_LAUNCH', '0') == '1':
-            LOG.info("Not launching perf-html.io because DISABLE_PROFILE_LAUNCH=1")
+            LOG.info("Not launching profiler.firefox.com because DISABLE_PROFILE_LAUNCH=1")
         else:
             view_gecko_profile(config['browser_path'])
 
@@ -356,7 +356,7 @@ def view_gecko_profile(ffox_bin):
 
     profile_zip = os.environ.get('TALOS_LATEST_GECKO_PROFILE_ARCHIVE', None)
     if profile_zip is None or not os.path.exists(profile_zip):
-        LOG.info("No local talos gecko profiles were found so not launching perf-html.io")
+        LOG.info("No local talos gecko profiles were found so not launching profiler.firefox.com")
         return
 
     

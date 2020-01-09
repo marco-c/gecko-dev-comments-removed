@@ -8,7 +8,7 @@ const TRANSFER_EVENT = "devtools:perf-html-transfer-profile";
 const SYMBOL_TABLE_REQUEST_EVENT = "devtools:perf-html-request-symbol-table";
 const SYMBOL_TABLE_RESPONSE_EVENT = "devtools:perf-html-reply-symbol-table";
 const UI_BASE_URL_PREF = "devtools.performance.recording.ui-base-url";
-const UI_BASE_URL_DEFAULT = "https://perf-html.io";
+const UI_BASE_URL_DEFAULT = "https://profiler.firefox.com";
 const OBJDIRS_PREF = "devtools.performance.recording.objdirs";
 
 
