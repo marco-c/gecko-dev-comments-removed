@@ -173,6 +173,11 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
     void updateDepth(ptrdiff_t target);
 
+    
+
+    CGTryNoteList& tryNoteList() { return tryNoteList_; };
+    const CGTryNoteList& tryNoteList() const { return tryNoteList_; };
+
    private:
     
 
@@ -199,6 +204,11 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
     
     int32_t stackDepth_ = 0;
+
+    
+
+    
+    CGTryNoteList tryNoteList_;
   };
 
   BytecodeSection bytecodeSection_;
@@ -269,7 +279,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   CGNumberList numberList;       
   CGObjectList objectList;       
   CGScopeList scopeList;         
-  CGTryNoteList tryNoteList;     
   CGScopeNoteList scopeNoteList; 
 
   
