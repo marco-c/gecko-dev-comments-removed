@@ -971,7 +971,7 @@ TEST(TArray, test_fallible)
       
       
       
-      const size_t kOOMIterations = 7;
+      const size_t kOOMIterations = 6;
 #  else
       const size_t kOOMIterations = 8;
 #  endif
