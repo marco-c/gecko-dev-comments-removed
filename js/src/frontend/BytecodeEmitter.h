@@ -183,6 +183,16 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
     CGScopeNoteList& scopeNoteList() { return scopeNoteList_; };
     const CGScopeNoteList& scopeNoteList() const { return scopeNoteList_; };
 
+    
+
+    CGResumeOffsetList& resumeOffsetList() { return resumeOffsetList_; }
+    const CGResumeOffsetList& resumeOffsetList() const {
+      return resumeOffsetList_;
+    }
+
+    uint32_t numYields() const { return numYields_; }
+    void addNumYields() { numYields_++; }
+
    private:
     
 
@@ -219,6 +229,18 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
     
     CGScopeNoteList scopeNoteList_;
+
+    
+
+    
+    
+    
+    
+    
+    CGResumeOffsetList resumeOffsetList_;
+
+    
+    uint32_t numYields_ = 0;
   };
 
   BytecodeSection bytecodeSection_;
@@ -328,17 +350,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   }
 
   
-  
-  
-  
-  
-  CGResumeOffsetList resumeOffsetList;
-
-  
   size_t numICEntries = 0;
-
-  
-  uint32_t numYields = 0;
 
   
   uint16_t typesetCount = 0;
