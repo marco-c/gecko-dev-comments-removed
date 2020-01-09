@@ -70,7 +70,6 @@ class ArchlinuxBootstrapper(NodeInstall, StyloInstall,
         
         'wget',
         
-        'multilib/lib32-libstdc++5',
         'multilib/lib32-ncurses',
         'multilib/lib32-readline',
         'multilib/lib32-zlib',
