@@ -4,8 +4,8 @@
 
 
 
-#ifndef __NS_SVGNUMBER2_H__
-#define __NS_SVGNUMBER2_H__
+#ifndef mozilla_SVGAnimatedNumber_h
+#define mozilla_SVGAnimatedNumber_h
 
 #include "DOMSVGAnimatedNumber.h"
 #include "nsCycleCollectionParticipant.h"
@@ -24,9 +24,8 @@ class SMILValue;
 namespace dom {
 class SVGAnimationElement;
 }  
-}  
 
-class nsSVGNumber2 {
+class SVGAnimatedNumber {
  public:
   typedef mozilla::SMILAttr SMILAttr;
   typedef mozilla::SMILValue SMILValue;
@@ -69,11 +68,11 @@ class nsSVGNumber2 {
   
   
   struct DOMAnimatedNumber final : public mozilla::dom::DOMSVGAnimatedNumber {
-    DOMAnimatedNumber(nsSVGNumber2* aVal, SVGElement* aSVGElement)
+    DOMAnimatedNumber(SVGAnimatedNumber* aVal, SVGElement* aSVGElement)
         : mozilla::dom::DOMSVGAnimatedNumber(aSVGElement), mVal(aVal) {}
     virtual ~DOMAnimatedNumber();
 
-    nsSVGNumber2* mVal;  
+    SVGAnimatedNumber* mVal;  
 
     virtual float BaseVal() override { return mVal->GetBaseValue(); }
     virtual void SetBaseVal(float aValue) override {
@@ -91,13 +90,13 @@ class nsSVGNumber2 {
 
   struct SMILNumber : public SMILAttr {
    public:
-    SMILNumber(nsSVGNumber2* aVal, SVGElement* aSVGElement)
+    SMILNumber(SVGAnimatedNumber* aVal, SVGElement* aSVGElement)
         : mVal(aVal), mSVGElement(aSVGElement) {}
 
     
     
     
-    nsSVGNumber2* mVal;
+    SVGAnimatedNumber* mVal;
     SVGElement* mSVGElement;
 
     
@@ -110,5 +109,7 @@ class nsSVGNumber2 {
     virtual nsresult SetAnimValue(const SMILValue& aValue) override;
   };
 };
+
+}  
 
 #endif  

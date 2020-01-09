@@ -47,8 +47,8 @@
 #include "SVGAnimatedEnumeration.h"
 #include "SVGAnimatedInteger.h"
 #include "SVGAnimatedIntegerPair.h"
-#include "nsSVGLength2.h"
-#include "nsSVGNumber2.h"
+#include "SVGAnimatedLength.h"
+#include "SVGAnimatedNumber.h"
 #include "SVGAnimatedNumberPair.h"
 #include "SVGAnimatedOrient.h"
 #include "SVGAnimatedString.h"
@@ -1359,7 +1359,7 @@ void SVGElement::LengthAttributesInfo::Reset(uint8_t aAttrEnum) {
                            mLengthInfo[aAttrEnum].mDefaultUnitType);
 }
 
-void SVGElement::SetLength(nsAtom* aName, const nsSVGLength2& aLength) {
+void SVGElement::SetLength(nsAtom* aName, const SVGAnimatedLength& aLength) {
   LengthAttributesInfo lengthInfo = GetLengthInfo();
 
   for (uint32_t i = 0; i < lengthInfo.mLengthCount; i++) {
@@ -1403,7 +1403,7 @@ void SVGElement::DidAnimateLength(uint8_t aAttrEnum) {
   }
 }
 
-nsSVGLength2* SVGElement::GetAnimatedLength(const nsAtom* aAttrName) {
+SVGAnimatedLength* SVGElement::GetAnimatedLength(const nsAtom* aAttrName) {
   LengthAttributesInfo lengthInfo = GetLengthInfo();
 
   for (uint32_t i = 0; i < lengthInfo.mLengthCount; i++) {
