@@ -594,7 +594,6 @@ XDRResult js::XDRInterpretedFunction(XDRState<mode>* xdr,
 
   
   
-  MOZ_TRY(xdr->codeAlign(sizeof(js::XDRAlignment)));
   js::AutoXDRTree funTree(xdr, xdr->getTreeKey(fun));
 
   MOZ_TRY(xdr->codeUint32(&firstword));
@@ -657,10 +656,6 @@ XDRResult js::XDRInterpretedFunction(XDRState<mode>* xdr,
 
   
   MOZ_TRY(xdr->codeMarker(0x9E35CA1F));
-
-  
-  
-  MOZ_TRY(xdr->codeAlign(sizeof(js::XDRAlignment)));
 
   return Ok();
 }

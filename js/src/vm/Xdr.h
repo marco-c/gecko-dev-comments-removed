@@ -46,24 +46,6 @@ class XDRBufferBase {
 
   size_t cursor() const { return cursor_; }
 
-  
-  
-  
-  
-  void setAligned(bool aligned) {
-#ifdef DEBUG
-    aligned_ = aligned;
-#endif
-  }
-
-  bool isAligned() const {
-#ifdef DEBUG
-    return aligned_;
-#else
-    return true;
-#endif
-  }
-
  protected:
   JSContext* const context_;
   size_t cursor_;
@@ -83,7 +65,6 @@ class XDRBuffer<XDR_ENCODE> : public XDRBufferBase {
 
   uint8_t* write(size_t n) {
     MOZ_ASSERT(n != 0);
-    setAligned(false);
     if (!buffer_.growByUninitialized(n)) {
       ReportOutOfMemory(cx());
       return nullptr;
@@ -118,7 +99,6 @@ class XDRBuffer<XDR_DECODE> : public XDRBufferBase {
 
   const uint8_t* read(size_t n) {
     MOZ_ASSERT(cursor_ < buffer_.length());
-    setAligned(false);
     uint8_t* ptr = &buffer_[cursor_];
     cursor_ += n;
 
@@ -146,8 +126,6 @@ class XDRBuffer<XDR_DECODE> : public XDRBufferBase {
 
 class XDRCoderBase;
 class XDRIncrementalEncoder;
-using XDRAlignment = char16_t;
-static const uint8_t AlignPadding[sizeof(XDRAlignment)] = {0, 0};
 
 
 
@@ -213,7 +191,6 @@ class XDRCoderBase {
   }
   virtual void createOrReplaceSubTree(AutoXDRTree* child){};
   virtual void endSubTree(){};
-  virtual bool isAligned(size_t n) = 0;
 
 #ifdef DEBUG
   
@@ -269,46 +246,6 @@ class XDRState : public XDRCoderBase {
       return fail(JS::TranscodeResult_Failure_BadDecode);
     }
     *pptr = ptr;
-    return Ok();
-  }
-
-  
-  
-  bool isAligned(size_t n) override {
-    MOZ_ASSERT(mozilla::IsPowerOfTwo(n));
-    size_t mask = n - 1;
-    size_t offset = buf.uptr() & mask;
-    
-    
-    return offset == 0 && buf.isAligned();
-  }
-  XDRResult codeAlign(size_t n) {
-    MOZ_ASSERT(mozilla::IsPowerOfTwo(n));
-    size_t mask = n - 1;
-    MOZ_ASSERT_IF(mode == XDR_ENCODE,
-                  (buf.uptr() & mask) == (buf.cursor() & mask));
-    size_t offset = buf.uptr() & mask;
-    if (offset) {
-      size_t padding = n - offset;
-      MOZ_ASSERT(padding < sizeof(AlignPadding));
-      if (mode == XDR_ENCODE) {
-        uint8_t* ptr = buf.write(padding);
-        if (!ptr) {
-          return fail(JS::TranscodeResult_Throw);
-        }
-        memcpy(ptr, AlignPadding, padding);
-      } else {
-        const uint8_t* ptr = buf.read(padding);
-        if (!ptr) {
-          return fail(JS::TranscodeResult_Failure_BadDecode);
-        }
-        if (memcmp(ptr, AlignPadding, padding) != 0) {
-          return fail(JS::TranscodeResult_Failure_BadDecode);
-        }
-      }
-    }
-    buf.setAligned(true);
-    MOZ_ASSERT(isAligned(n));
     return Ok();
   }
 
