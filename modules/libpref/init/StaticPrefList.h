@@ -2493,5 +2493,23 @@ VARCACHE_PREF(
 
 
 
+VARCACHE_PREF(
+  "privacy.trackingprotection.origin_telemetry.enabled",
+   privacy_trackingprotection_origin_telemetry_enabled,
+  RelaxedAtomicBool, false
+)
+
+
+
+
+VARCACHE_PREF(
+  "telemetry.origin_telemetry_test_mode.enabled",
+   telemetry_origin_telemetry_test_mode_enabled,
+  RelaxedAtomicBool, false
+)
+
+
+
+
 
 

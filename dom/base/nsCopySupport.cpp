@@ -34,6 +34,7 @@
 #include "nsIURI.h"
 #include "nsIURIMutator.h"
 #include "nsISimpleEnumerator.h"
+#include "nsGenericHTMLElement.h"
 
 
 #include "nsIImageLoadingContent.h"

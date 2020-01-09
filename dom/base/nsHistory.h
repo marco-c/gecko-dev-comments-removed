@@ -12,6 +12,7 @@
 #include "mozilla/dom/ChildSHistory.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsIWeakReferenceUtils.h"
 #include "nsPIDOMWindow.h"  
 #include "nsStringFwd.h"
 #include "nsWrapperCache.h"
