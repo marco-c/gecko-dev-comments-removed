@@ -950,11 +950,7 @@ pref("app.productInfo.baseURL", "https://www.mozilla.org/firefox/features/");
 pref("security.alternate_certificate_error_page", "certerror");
 
 
-#ifdef EARLY_BETA_OR_EARLIER
 pref("browser.security.newcerterrorpage.enabled", true);
-#else
-pref("browser.security.newcerterrorpage.enabled", false);
-#endif
 
 pref("browser.security.newcerterrorpage.mitm.enabled", true);
 pref("security.certerrors.recordEventTelemetry", true);
@@ -1009,7 +1005,11 @@ pref("dom.ipc.plugins.sandbox-level.flash", 0);
 
 
 
+#if defined(_ARM64_)
+pref("security.sandbox.content.level", 2);
+#else
 pref("security.sandbox.content.level", 5);
+#endif
 
 
 
