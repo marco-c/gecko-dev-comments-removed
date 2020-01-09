@@ -31,6 +31,12 @@ impl Database {
         Ok(Database { dbi: dbi })
     }
 
+    pub(crate) fn freelist_db() -> Database {
+        Database {
+            dbi: 0,
+        }
+    }
+
     
     
     

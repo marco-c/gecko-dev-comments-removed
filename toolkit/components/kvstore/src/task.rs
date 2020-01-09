@@ -86,6 +86,76 @@ macro_rules! task_done {
 
 type RkvStoreTuple = (Arc<RwLock<Rkv>>, SingleStore);
 
+
+const RESIZE_RATIO: f32 = 0.85;
+
+
+
+const INCREMENTAL_RESIZE_THRESHOLD: usize = 52_428_800;
+
+
+const INCREMENTAL_RESIZE_STEP: usize = 5_242_880;
+
+
+const PAGE_SIZE: usize = 4096;
+const PAGE_SIZE_MASK: usize = 0b_1111_1111_1111;
+
+
+
+
+
+
+
+
+
+
+
+fn round_to_pagesize(size: usize) -> usize {
+    if size & PAGE_SIZE_MASK == 0 {
+        size
+    } else {
+        (size & !PAGE_SIZE_MASK) + PAGE_SIZE
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+fn active_resize(env: &Rkv) -> Result<(), StoreError> {
+    let info = env.info()?;
+    let current_size = info.map_size();
+    let size;
+
+    if current_size < INCREMENTAL_RESIZE_THRESHOLD {
+        size = current_size << 1;
+    } else {
+        size = current_size + INCREMENTAL_RESIZE_STEP;
+    }
+
+    env.set_map_size(size)?;
+    Ok(())
+}
+
+
+
+
+
+
+fn passive_resize(env: &Rkv, wanted: usize) -> Result<(), StoreError> {
+    let info = env.info()?;
+    let current_size = info.map_size();
+    env.set_map_size(current_size + wanted)?;
+    Ok(())
+}
+
 pub struct GetOrCreateTask {
     callback: AtomicCell<Option<ThreadBoundRefPtr<nsIKeyValueDatabaseCallback>>>,
     thread: AtomicCell<Option<ThreadBoundRefPtr<nsIThread>>>,
@@ -122,11 +192,17 @@ impl Task for GetOrCreateTask {
         
         self.result
             .store(Some(|| -> Result<RkvStoreTuple, KeyValueError> {
+                let store;
                 let mut writer = Manager::singleton().write()?;
                 let rkv = writer.get_or_create(Path::new(str::from_utf8(&self.path)?), Rkv::new)?;
-                let store = rkv
-                    .write()?
-                    .open_single(str::from_utf8(&self.name)?, StoreOptions::create())?;
+                {
+                    let env = rkv.read()?;
+                    let load_ratio = env.load_ratio()?;
+                    if load_ratio > RESIZE_RATIO {
+                        active_resize(&env)?;
+                    }
+                    store = env.open_single(str::from_utf8(&self.name)?, StoreOptions::create())?;
+                }
                 Ok((rkv, store))
             }()));
     }
@@ -167,13 +243,40 @@ impl Task for PutTask {
         
         
         self.result.store(Some(|| -> Result<(), KeyValueError> {
-            let key = str::from_utf8(&self.key)?;
             let env = self.rkv.read()?;
-            let mut writer = env.write()?;
+            let key = str::from_utf8(&self.key)?;
+            let v = Value::from(&self.value);
+            let mut resized = false;
 
-            self.store
-                .put(&mut writer, key, &Value::from(&self.value))?;
-            writer.commit()?;
+            
+            
+            loop {
+                let mut writer = env.write()?;
+
+                match self.store.put(&mut writer, key, &v) {
+                    Ok(_) => (),
+
+                    
+                    
+                    Err(StoreError::LmdbError(lmdb::Error::MapFull)) if !resized => {
+                        
+                        writer.abort();
+
+                        
+                        let pair_size = key.len()
+                            + v.serialized_size().map_err(StoreError::from)? as usize;
+                        let wanted = round_to_pagesize(pair_size);
+                        passive_resize(&env, wanted)?;
+                        resized = true;
+                        continue;
+                    },
+
+                    Err(err) => return Err(KeyValueError::StoreError(err)),
+                }
+
+                writer.commit()?;
+                break;
+            }
 
             Ok(())
         }()));
@@ -205,6 +308,21 @@ impl WriteManyTask {
             result: AtomicCell::default(),
         }
     }
+
+    fn calc_pair_size(&self) -> Result<usize, StoreError> {
+        let mut total = 0;
+
+        for (key, value) in self.pairs.iter() {
+            if let Some(val) = value {
+                total += key.len();
+                total += Value::from(val)
+                    .serialized_size()
+                    .map_err(StoreError::from)? as usize;
+            }
+        }
+
+        Ok(total)
+    }
 }
 
 impl Task for WriteManyTask {
@@ -213,27 +331,57 @@ impl Task for WriteManyTask {
         
         self.result.store(Some(|| -> Result<(), KeyValueError> {
             let env = self.rkv.read()?;
-            let mut writer = env.write()?;
+            let mut resized = false;
 
-            for (key, value) in self.pairs.iter() {
-                let key = str::from_utf8(key)?;
-                match value {
-                    Some(val) => self.store.put(&mut writer, key, &Value::from(val))?,
-                    None => {
-                        match self.store.delete(&mut writer, key) {
-                            Ok(_) => (),
+            
+            
+            'outer: loop {
+                let mut writer = env.write()?;
 
-                            
-                            
-                            
-                            Err(StoreError::LmdbError(lmdb::Error::NotFound)) => (),
+                for (key, value) in self.pairs.iter() {
+                    let key = str::from_utf8(key)?;
+                    match value {
+                        
+                        Some(val) => {
+                            match self.store.put(&mut writer, key, &Value::from(val)) {
+                                Ok(_) => (),
 
-                            Err(err) => return Err(KeyValueError::StoreError(err)),
-                        };
+                                
+                                
+                                Err(StoreError::LmdbError(lmdb::Error::MapFull)) if !resized => {
+                                    
+                                    writer.abort();
+
+                                    
+                                    let pair_size = self.calc_pair_size()?;
+                                    let wanted = round_to_pagesize(pair_size);
+                                    passive_resize(&env, wanted)?;
+                                    resized = true;
+                                    continue 'outer;
+                                },
+
+                                Err(err) => return Err(KeyValueError::StoreError(err)),
+                            }
+                        },
+                        
+                        None => {
+                            match self.store.delete(&mut writer, key) {
+                                Ok(_) => (),
+
+                                
+                                
+                                
+                                Err(StoreError::LmdbError(lmdb::Error::NotFound)) => (),
+
+                                Err(err) => return Err(KeyValueError::StoreError(err)),
+                            };
+                        }
                     }
                 }
+
+                writer.commit()?;
+                break;  
             }
-            writer.commit()?;
 
             Ok(())
         }()));

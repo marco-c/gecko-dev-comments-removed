@@ -37,8 +37,6 @@ use crate::error::StoreError;
 
 use crate::Rkv;
 
-
-
 lazy_static! {
     static ref MANAGER: RwLock<Manager> = RwLock::new(Manager::new());
 }
@@ -56,6 +54,8 @@ where
     }
     Ok(canonical)
 }
+
+
 
 pub struct Manager {
     environments: BTreeMap<PathBuf, Arc<RwLock<Rkv>>>,
