@@ -100,9 +100,6 @@ function listWorkerThreadClients() {
 function forEachWorkerThread(iteratee) {
   const promises = listWorkerThreadClients().map(thread => iteratee(thread));
 
-  
-  
-  
   if (shouldWaitForWorkers) {
     return Promise.all(promises);
   }
@@ -213,10 +210,6 @@ function maybeClearLogpoint(location: BreakpointLocation) {
   }
 }
 
-function hasBreakpoint(location: BreakpointLocation) {
-  return !!breakpoints[locationKey(location)];
-}
-
 async function setBreakpoint(
   location: BreakpointLocation,
   options: BreakpointOptions
@@ -224,6 +217,7 @@ async function setBreakpoint(
   maybeClearLogpoint(location);
   options = maybeGenerateLogGroupId(options);
   breakpoints[locationKey(location)] = { location, options };
+  await threadClient.setBreakpoint(location, options);
 
   
   
@@ -231,21 +225,17 @@ async function setBreakpoint(
   
   
   
-  const mainThreadPromise = threadClient.setBreakpoint(location, options);
-
   await forEachWorkerThread(thread => thread.setBreakpoint(location, options));
-  await mainThreadPromise;
 }
 
 async function removeBreakpoint(location: PendingLocation) {
   maybeClearLogpoint((location: any));
   delete breakpoints[locationKey((location: any))];
+  await threadClient.removeBreakpoint(location);
 
   
-  const mainThreadPromise = threadClient.removeBreakpoint(location);
-
+  
   await forEachWorkerThread(thread => thread.removeBreakpoint(location));
-  await mainThreadPromise;
 }
 
 async function evaluateInFrame(script: Script, options: EvaluateParam) {
@@ -494,7 +484,6 @@ const clientCommands = {
   sourceContents,
   getSourceForActor,
   getBreakpointPositions,
-  hasBreakpoint,
   setBreakpoint,
   setXHRBreakpoint,
   removeXHRBreakpoint,
