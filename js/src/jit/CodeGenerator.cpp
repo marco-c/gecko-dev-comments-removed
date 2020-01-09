@@ -12067,20 +12067,21 @@ void CodeGenerator::visitOutOfLineSwitch(
     MOZ_CRASH();
 #else
     masm.haltingAlign(sizeof(void*));
+    
+    
     masm.bind(jumpTable->start());
     masm.addCodeLabel(*jumpTable->start());
+    for (size_t i = 0, e = labels.length(); i < e; i++) {
+      jumpTable->addTableEntry(masm);
+    }
 #endif
   }
 
   
-  for (size_t i = 0, e = labels.length(); i < e; i++) {
-    jumpTable->addTableEntry(masm);
-  }
-
+  
+  
   auto& codeLabels = jumpTable->codeLabels();
   for (size_t i = 0, e = codeLabels.length(); i < e; i++) {
-    
-    
     auto& cl = codeLabels[i];
     cl.target()->bind(labels[i].offset());
     masm.addCodeLabel(cl);
