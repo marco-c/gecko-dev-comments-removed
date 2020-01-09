@@ -315,6 +315,14 @@ class TypeScript {
     return mallocSizeOf(this);
   }
 
+  static constexpr size_t offsetOfICScript() {
+    
+    
+    static_assert(sizeof(icScript_) == sizeof(uintptr_t),
+                  "JIT code assumes icScript_ is pointer-sized");
+    return offsetof(TypeScript, icScript_);
+  }
+
 #ifdef DEBUG
   void printTypes(JSContext* cx, HandleScript script) const;
 #endif
