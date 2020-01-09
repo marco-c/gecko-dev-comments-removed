@@ -36,7 +36,10 @@
 #include "nsIURI.h"       
 #include "nsIX509Cert.h"  
 
-#include "jsfriendapi.h"
+#include "js/ArrayBuffer.h"  
+#include "js/GCAPI.h"        
+#include "js/RootingAPI.h"  
+#include "js/Value.h"       
 
 using mozilla::MakeUnique;
 using mozilla::PodCopy;
@@ -771,12 +774,12 @@ nsBinaryInputStream::ReadArrayBuffer(uint32_t aLength,
   if (!aBuffer.isObject()) {
     return NS_ERROR_FAILURE;
   }
-  JS::RootedObject buffer(aCx, &aBuffer.toObject());
-  if (!JS_IsArrayBufferObject(buffer)) {
+  JS::Rooted<JSObject*> buffer(aCx, &aBuffer.toObject());
+  if (!JS::IsArrayBufferObject(buffer)) {
     return NS_ERROR_FAILURE;
   }
 
-  uint32_t bufferLength = JS_GetArrayBufferByteLength(buffer);
+  uint32_t bufferLength = JS::GetArrayBufferByteLength(buffer);
   if (bufferLength < aLength) {
     return NS_ERROR_FAILURE;
   }
@@ -804,12 +807,12 @@ nsBinaryInputStream::ReadArrayBuffer(uint32_t aLength,
 
     JS::AutoCheckCannotGC nogc;
     bool isShared;
-    if (bufferLength != JS_GetArrayBufferByteLength(buffer)) {
+    if (bufferLength != JS::GetArrayBufferByteLength(buffer)) {
       return NS_ERROR_FAILURE;
     }
 
-    char* data =
-        reinterpret_cast<char*>(JS_GetArrayBufferData(buffer, &isShared, nogc));
+    char* data = reinterpret_cast<char*>(
+        JS::GetArrayBufferData(buffer, &isShared, nogc));
     MOZ_ASSERT(!isShared);  
     if (!data) {
       return NS_ERROR_FAILURE;

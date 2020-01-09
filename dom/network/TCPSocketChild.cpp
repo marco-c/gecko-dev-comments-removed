@@ -14,8 +14,10 @@
 #include "nsITCPSocketCallback.h"
 #include "TCPSocket.h"
 #include "nsContentUtils.h"
-#include "jsapi.h"
-#include "jsfriendapi.h"
+#include "js/ArrayBuffer.h"  
+#include "js/RootingAPI.h"   
+#include "js/Utility.h"  
+#include "js/Value.h"  
 
 using mozilla::net::gNeckoChild;
 
@@ -31,7 +33,7 @@ bool DeserializeArrayBuffer(JSContext* cx,
   memcpy(data.get(), aBuffer.Elements(), aBuffer.Length());
 
   JSObject* obj =
-      JS_NewArrayBufferWithContents(cx, aBuffer.Length(), data.get());
+      JS::NewArrayBufferWithContents(cx, aBuffer.Length(), data.get());
   if (!obj) return false;
   
   

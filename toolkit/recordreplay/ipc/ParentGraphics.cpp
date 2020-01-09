@@ -10,6 +10,10 @@
 #include "ParentInternal.h"
 
 #include "chrome/common/mach_ipc_mac.h"
+#include "jsapi.h"  
+#include "js/ArrayBuffer.h"  
+#include "js/RootingAPI.h"  
+#include "js/Value.h"       
 #include "mozilla/Assertions.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/StaticPtr.h"
@@ -165,12 +169,12 @@ void UpdateGraphicsInUIProcess(const PaintMessage* aMsg) {
   JSAutoRealm ar(cx, xpc::PrivilegedJunkScope());
 
   
-  JS::RootedObject bufferObject(cx);
+  JS::Rooted<JSObject*> bufferObject(cx);
   bufferObject =
-      JS_NewArrayBufferWithUserOwnedContents(cx, width * height * 4, memory);
+      JS::NewArrayBufferWithUserOwnedContents(cx, width * height * 4, memory);
   MOZ_RELEASE_ASSERT(bufferObject);
 
-  JS::RootedValue buffer(cx, ObjectValue(*bufferObject));
+  JS::Rooted<JS::Value> buffer(cx, JS::ObjectValue(*bufferObject));
 
   
   if (NS_FAILED(gGraphics->UpdateCanvas(buffer, width, height, hadFailure))) {
@@ -180,7 +184,7 @@ void UpdateGraphicsInUIProcess(const PaintMessage* aMsg) {
   
   
   
-  MOZ_ALWAYS_TRUE(JS_DetachArrayBuffer(cx, bufferObject));
+  MOZ_ALWAYS_TRUE(JS::DetachArrayBuffer(cx, bufferObject));
 }
 
 static void MaybeTriggerExplicitPaint() {

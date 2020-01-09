@@ -20,6 +20,7 @@
 #include "imgRequestProxy.h"
 #include "jsapi.h"
 #include "jsfriendapi.h"
+#include "js/ArrayBuffer.h"  
 #include "js/JSON.h"
 #include "js/Value.h"
 #include "Layers.h"
@@ -6078,16 +6079,16 @@ nsresult nsContentUtils::CreateArrayBuffer(JSContext* aCx,
   }
 
   int32_t dataLen = aData.Length();
-  *aResult = JS_NewArrayBuffer(aCx, dataLen);
+  *aResult = JS::NewArrayBuffer(aCx, dataLen);
   if (!*aResult) {
     return NS_ERROR_FAILURE;
   }
 
   if (dataLen > 0) {
-    NS_ASSERTION(JS_IsArrayBufferObject(*aResult), "What happened?");
+    NS_ASSERTION(JS::IsArrayBufferObject(*aResult), "What happened?");
     JS::AutoCheckCannotGC nogc;
     bool isShared;
-    memcpy(JS_GetArrayBufferData(*aResult, &isShared, nogc),
+    memcpy(JS::GetArrayBufferData(*aResult, &isShared, nogc),
            aData.BeginReading(), dataLen);
     MOZ_ASSERT(!isShared);
   }
@@ -7508,7 +7509,7 @@ void nsContentUtils::TransferableToIPCTransferable(
 
         IPCDataTransferItem* item = aIPCDataTransfer->items().AppendElement();
         item->flavor() = flavorStr;
-        item->data() = std::move(dataAsShmem);
+        item->data() = dataAsShmem;
       } else if (nsCOMPtr<nsIInputStream> stream = do_QueryInterface(data)) {
         
         nsCString imageData;
@@ -7521,7 +7522,7 @@ void nsContentUtils::TransferableToIPCTransferable(
 
         IPCDataTransferItem* item = aIPCDataTransfer->items().AppendElement();
         item->flavor() = flavorStr;
-        item->data() = std::move(imageDataShmem);
+        item->data() = imageDataShmem;
       } else if (nsCOMPtr<imgIContainer> image = do_QueryInterface(data)) {
         
         RefPtr<mozilla::gfx::SourceSurface> surface = image->GetFrame(
@@ -7549,7 +7550,7 @@ void nsContentUtils::TransferableToIPCTransferable(
         IPCDataTransferItem* item = aIPCDataTransfer->items().AppendElement();
         item->flavor() = flavorStr;
         
-        item->data() = std::move(surfaceData.ref());
+        item->data() = surfaceData.ref();
 
         IPCDataTransferImage& imageDetails = item->imageDetails();
         mozilla::gfx::IntSize size = dataSurface->GetSize();
@@ -7580,7 +7581,7 @@ void nsContentUtils::TransferableToIPCTransferable(
               IPCDataTransferItem* item =
                   aIPCDataTransfer->items().AppendElement();
               item->flavor() = type;
-              item->data() = std::move(dataAsShmem);
+              item->data() = dataAsShmem;
             }
 
             continue;
