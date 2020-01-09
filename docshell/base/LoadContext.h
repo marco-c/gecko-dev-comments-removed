@@ -98,7 +98,6 @@ class LoadContext final : public nsILoadContext, public nsIInterfaceRequestor {
   }
 
   
-  
   explicit LoadContext(nsIPrincipal* aPrincipal,
                        nsILoadContext* aOptionalBase = nullptr);
 

@@ -969,9 +969,6 @@ Protocol* LoneManagedOrNullAsserts(
   return aManagees.ConstIter().Get()->GetKey();
 }
 
-
-
-
 template <typename Protocol>
 Protocol* SingleManagedOrNull(const ManagedContainer<Protocol>& aManagees) {
   if (aManagees.Count() != 1) {
