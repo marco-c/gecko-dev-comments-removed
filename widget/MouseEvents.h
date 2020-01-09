@@ -97,7 +97,7 @@ class WidgetMouseEventBase : public WidgetInputEvent {
   WidgetMouseEventBase()
       : mButton(0),
         mButtons(0),
-        pressure(0),
+        mPressure(0),
         hitCluster(false)
         
         
@@ -109,7 +109,7 @@ class WidgetMouseEventBase : public WidgetInputEvent {
       : WidgetInputEvent(aIsTrusted, aMessage, aWidget, aEventClassID),
         mButton(0),
         mButtons(0),
-        pressure(0),
+        mPressure(0),
         hitCluster(false)
         
         
@@ -151,7 +151,7 @@ class WidgetMouseEventBase : public WidgetInputEvent {
   int16_t mButtons;
 
   
-  float pressure;
+  float mPressure;
   
   bool hitCluster;
 
@@ -175,7 +175,7 @@ class WidgetMouseEventBase : public WidgetInputEvent {
 
     mButton = aEvent.mButton;
     mButtons = aEvent.mButtons;
-    pressure = aEvent.pressure;
+    mPressure = aEvent.mPressure;
     hitCluster = aEvent.hitCluster;
     inputSource = aEvent.inputSource;
   }

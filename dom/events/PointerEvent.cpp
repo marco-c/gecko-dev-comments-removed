@@ -92,7 +92,7 @@ already_AddRefed<PointerEvent> PointerEvent::Constructor(
   widgetEvent->pointerId = aParam.mPointerId;
   widgetEvent->mWidth = aParam.mWidth;
   widgetEvent->mHeight = aParam.mHeight;
-  widgetEvent->pressure = aParam.mPressure;
+  widgetEvent->mPressure = aParam.mPressure;
   widgetEvent->tangentialPressure = aParam.mTangentialPressure;
   widgetEvent->tiltX = aParam.mTiltX;
   widgetEvent->tiltY = aParam.mTiltY;
@@ -165,7 +165,7 @@ int32_t PointerEvent::Height(CallerType aCallerType) {
 float PointerEvent::Pressure(CallerType aCallerType) {
   if (mEvent->mMessage == ePointerUp ||
       !ShouldResistFingerprinting(aCallerType)) {
-    return mEvent->AsPointerEvent()->pressure;
+    return mEvent->AsPointerEvent()->mPressure;
   }
 
   

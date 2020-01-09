@@ -4252,7 +4252,7 @@ bool nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
     
     
     event.AssignPointerHelperData(*aPointerInfo);
-    event.pressure = aPointerInfo->mPressure;
+    event.mPressure = aPointerInfo->mPressure;
     event.mButtons = aPointerInfo->mButtons;
   } else {
     
