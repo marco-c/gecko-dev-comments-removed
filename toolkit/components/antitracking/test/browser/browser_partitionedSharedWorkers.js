@@ -1,7 +1,14 @@
 
 
-StoragePrincipalHelper.runTest("SharedWorkers",
+PartitionedStorageHelper.runTest("SharedWorkers",
   async (win3rdParty, win1stParty, allowed) => {
+    
+    
+    
+    
+    
+    is(win3rdParty.location.protocol, "http:", "Our 3rd party URL shouldn't be HTTPS");
+
     let sh1 = new win1stParty.SharedWorker("sharedWorker.js");
     await new Promise(resolve => {
       sh1.port.onmessage = e => {
@@ -14,12 +21,11 @@ StoragePrincipalHelper.runTest("SharedWorkers",
     let sh3 = new win3rdParty.SharedWorker("sharedWorker.js");
     await new Promise(resolve => {
       sh3.port.onmessage = e => {
-        ok(!allowed, "We should be here only if the SharedWorker is partitioned");
-        is(e.data, 1, "We expected 1 connection for 3rd party SharedWorker");
+        is(e.data, allowed ? 2 : 1, `We expected ${allowed ? 2 : 1} connection for 3rd party SharedWorker`);
         resolve();
       };
       sh3.onerror = _ => {
-        ok(allowed, "We should be here only if the SharedWorker is not partitioned");
+        ok(false, "We should not be here");
         resolve();
       };
       sh3.port.postMessage("count");
