@@ -72,6 +72,15 @@ enum class ResumeKind { Normal, Throw };
 static bool AsyncFunctionResume(JSContext* cx,
                                 Handle<AsyncFunctionGeneratorObject*> generator,
                                 ResumeKind kind, HandleValue valueOrReason) {
+  
+  
+  
+  
+  
+  if (generator->isClosed()) {
+    return true;
+  }
+
   Rooted<PromiseObject*> resultPromise(cx, generator->promise());
 
   RootedObject stack(cx);
@@ -87,8 +96,6 @@ static bool AsyncFunctionResume(JSContext* cx,
     }
   }
 
-  MOZ_ASSERT(!generator->isClosed(),
-             "closed generator when resuming async function");
   MOZ_ASSERT(generator->isSuspended(),
              "non-suspended generator when resuming async function");
 
@@ -103,6 +110,15 @@ static bool AsyncFunctionResume(JSContext* cx,
                               &generatorOrValue)) {
     if (!generator->isClosed()) {
       generator->setClosed();
+
+      
+      if (cx->isExceptionPending()) {
+        RootedValue exn(cx);
+        if (!GetAndClearException(cx, &exn)) {
+          return false;
+        }
+        return AsyncFunctionThrown(cx, resultPromise, exn);
+      }
     }
     return false;
   }
