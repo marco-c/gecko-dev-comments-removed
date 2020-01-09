@@ -2288,49 +2288,7 @@ void ScrollFrameHelper::ScrollToWithOrigin(
         }
 
         if (nsLayoutUtils::AsyncPanZoomEnabled(mOuter) && WantAsyncScroll()) {
-          if (mApzSmoothScrollDestination == Some(mDestination) &&
-              mScrollGeneration == sScrollGenerationCounter) {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            return;
-          }
-
-          
-          
-          
-          mLastSmoothScrollOrigin = aOrigin;
-          mApzSmoothScrollDestination = Some(mDestination);
-          mScrollGeneration = ++sScrollGenerationCounter;
-
-          if (!nsLayoutUtils::HasDisplayPort(mOuter->GetContent())) {
-            
-            
-            
-            
-            nsLayoutUtils::CalculateAndSetDisplayPortMargins(
-                mOuter->GetScrollTargetFrame(),
-                nsLayoutUtils::RepaintMode::DoNotRepaint);
-            nsIFrame* frame = do_QueryFrame(mOuter->GetScrollTargetFrame());
-            nsLayoutUtils::SetZeroMarginDisplayPortOnAsyncScrollableAncestors(
-                frame, nsLayoutUtils::RepaintMode::DoNotRepaint);
-          }
-
-          
-          
-          mOuter->SchedulePaint();
+          ApzSmoothScrollTo(mDestination, aOrigin);
           return;
         }
 
@@ -6666,4 +6624,51 @@ void ScrollFrameHelper::AsyncScrollbarDragRejected() {
   
   ::AsyncScrollbarDragRejected(mHScrollbarBox);
   ::AsyncScrollbarDragRejected(mVScrollbarBox);
+}
+
+void ScrollFrameHelper::ApzSmoothScrollTo(const nsPoint& aDestination,
+                                          nsAtom* aOrigin) {
+  if (mApzSmoothScrollDestination == Some(aDestination) &&
+      mScrollGeneration == sScrollGenerationCounter) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return;
+  }
+
+  
+  
+  
+  mLastSmoothScrollOrigin = aOrigin;
+  mApzSmoothScrollDestination = Some(aDestination);
+  mScrollGeneration = ++sScrollGenerationCounter;
+
+  if (!nsLayoutUtils::HasDisplayPort(mOuter->GetContent())) {
+    
+    
+    
+    
+    nsLayoutUtils::CalculateAndSetDisplayPortMargins(
+        mOuter->GetScrollTargetFrame(),
+        nsLayoutUtils::RepaintMode::DoNotRepaint);
+    nsIFrame* frame = do_QueryFrame(mOuter->GetScrollTargetFrame());
+    nsLayoutUtils::SetZeroMarginDisplayPortOnAsyncScrollableAncestors(
+        frame, nsLayoutUtils::RepaintMode::DoNotRepaint);
+  }
+
+  
+  
+  mOuter->SchedulePaint();
 }

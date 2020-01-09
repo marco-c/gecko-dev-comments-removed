@@ -754,6 +754,12 @@ class ScrollFrameHelper : public nsIReflowCallback {
   bool IsForTextControlWithNoScrollbars() const;
 
   
+  
+  
+  
+  void ApzSmoothScrollTo(const nsPoint& aDestination, nsAtom* aOrigin);
+
+  
   void RemoveObservers();
 
   static void EnsureFrameVisPrefsCached();
