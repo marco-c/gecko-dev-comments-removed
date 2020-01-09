@@ -598,10 +598,6 @@ pref("urlclassifier.downloadBlockTable", "");
 pref("urlclassifier.malwareTable", "goog-harmful-proto,goog-unwanted-proto,test-harmful-simple,test-malware-simple,test-unwanted-simple");
 
 
-pref("browser.firstrun.show.uidiscovery", true);
-pref("browser.firstrun.show.localepicker", false);
-
-
 
 
 
@@ -735,26 +731,6 @@ pref("browser.ui.linkify.phone", false);
 
 
 pref("snav.enabled", true);
-
-
-
-
-pref("browser.snippets.updateUrl", "https://snippets.cdn.mozilla.net/json/%SNIPPETS_VERSION%/%NAME%/%VERSION%/%APPBUILDID%/%BUILD_TARGET%/%LOCALE%/%CHANNEL%/%OS_VERSION%/%DISTRIBUTION%/%DISTRIBUTION_VERSION%/");
-
-
-pref("browser.snippets.updateInterval", 86400);
-
-
-
-pref("browser.snippets.geoUrl", "https://location.services.mozilla.com/v1/country?key=fff72d56-b040-4205-9a11-82feda9d83a3");
-
-
-pref("browser.snippets.statsUrl", "https://snippets-stats.mozilla.org/mobile");
-
-
-pref("browser.snippets.enabled", true);
-pref("browser.snippets.syncPromo.enabled", true);
-pref("browser.snippets.firstrunHomepage.enabled", true);
 
 
 

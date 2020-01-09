@@ -33,8 +33,6 @@ user_pref("browser.contentHandlers.types.5.uri", "http://test1.example.org/rss?u
 
 
 user_pref("browser.download.panel.shown", true);
-user_pref("browser.firstrun.show.localepicker", false);
-user_pref("browser.firstrun.show.uidiscovery", false);
 user_pref("browser.newtabpage.activity-stream.default.sites", "");
 user_pref("browser.newtabpage.activity-stream.telemetry", false);
 
@@ -50,7 +48,6 @@ user_pref("browser.safebrowsing.provider.mozilla.gethashURL", "http://{server}/s
 user_pref("browser.safebrowsing.provider.mozilla.updateURL", "http://{server}/safebrowsing-dummy/update");
 user_pref("browser.search.suggest.timeout", 10000); 
 user_pref("browser.shell.checkDefaultBrowser", false);
-user_pref("browser.snippets.firstrunHomepage.enabled", false);
 user_pref("browser.startup.page", 0); 
 
 user_pref("browser.tabs.delayHidingAudioPlayingIconMS", 0);

@@ -23,9 +23,6 @@ user_pref("browser.search.region", "US");
 
 user_pref("browser.search.geoSpecificDefaults", false);
 
-user_pref("browser.snippets.enabled", false);
-user_pref("browser.snippets.syncPromo.enabled", false);
-
 user_pref("browser.webapps.checkForUpdates", 0);
 
 

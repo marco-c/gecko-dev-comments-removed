@@ -20,7 +20,6 @@ user_pref("browser.safebrowsing.provider.google4.gethashURL", "http://127.0.0.1/
 user_pref("browser.safebrowsing.provider.google4.updateURL", "http://127.0.0.1/safebrowsing-dummyg4/update");
 user_pref("browser.safebrowsing.provider.mozilla.gethashURL", "http://127.0.0.1/safebrowsing-dummym/gethash");
 user_pref("browser.safebrowsing.provider.mozilla.updateURL", "http://127.0.0.1/safebrowsing-dummym/update");
-user_pref("browser.snippets.firstrunHomepage.enabled", false);
 
 user_pref("browser.startup.page", 0);
 

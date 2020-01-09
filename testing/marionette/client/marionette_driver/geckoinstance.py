@@ -380,11 +380,6 @@ class FennecInstance(GeckoInstance):
         "devtools.console.stdout.chrome": True,
 
         
-        "browser.snippets.enabled": False,
-        "browser.snippets.syncPromo.enabled": False,
-        "browser.snippets.firstrunHomepage.enabled": False,
-
-        
         "browser.safebrowsing.blockedURIs.enabled": False,
         "browser.safebrowsing.downloads.enabled": False,
         "browser.safebrowsing.passwords.enabled": False,
