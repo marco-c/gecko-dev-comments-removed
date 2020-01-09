@@ -773,6 +773,13 @@ VARCACHE_PREF(
   bool, true
 )
 
+
+VARCACHE_PREF(
+  "browser.autofocus",
+   browser_autofocus,
+  bool, true
+)
+
 PREF("browser.display.foreground_color", String, "")
 PREF("browser.display.background_color", String, "")
 PREF("browser.display.focus_background_color", String, "")
