@@ -3294,6 +3294,15 @@ nsresult nsWindow::Create(nsIWidget *aParent, nsNativeWidget aNativeParent,
           
           
           mTransparencyBitmapForTitlebar = true;
+        }
+
+        
+        if (mTransparencyBitmapForTitlebar &&
+            Preferences::GetBool("mozilla.widget.use-argb-visuals", false)) {
+          mTransparencyBitmapForTitlebar = false;
+        }
+
+        if (mTransparencyBitmapForTitlebar) {
           mCSDSupportLevel = CSD_SUPPORT_CLIENT;
         }
       }
