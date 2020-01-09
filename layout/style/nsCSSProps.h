@@ -13,7 +13,9 @@
 #define nsCSSProps_h___
 
 #include <limits>
+#include <ostream>
 #include <type_traits>
+
 #include "nsString.h"
 #include "nsCSSPropertyID.h"
 #include "nsStyleStructFwd.h"
@@ -311,5 +313,11 @@ class nsCSSProps {
   static const KTableEntry kTextOverflowKTable[];
   static const KTableEntry kVerticalAlignKTable[];
 };
+
+
+
+inline std::ostream& operator<<(std::ostream& aOut, nsCSSPropertyID aProperty) {
+  return aOut << nsCSSProps::GetStringValue(aProperty);
+}
 
 #endif 

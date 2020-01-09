@@ -7,15 +7,16 @@
 #ifndef nsCSSPropertyIDSet_h__
 #define nsCSSPropertyIDSet_h__
 
-#include "mozilla/ArrayUtils.h"
-
-#include "nsCSSPropertyID.h"
-#include <limits.h>  
 #include <initializer_list>
+#include <limits.h>  
+#include <ostream>
 
+#include "mozilla/ArrayUtils.h"
 
 
 #include "mozilla/CompositorAnimatableProperties.h"
+#include "nsCSSProps.h"  
+#include "nsCSSPropertyID.h"
 
 
 
@@ -269,5 +270,16 @@ class nsCSSPropertyIDSet {
  private:
   property_set_type mProperties[kChunkCount];
 };
+
+
+
+inline std::ostream& operator<<(std::ostream& aOut,
+                                const nsCSSPropertyIDSet& aPropertySet) {
+  AutoTArray<nsCSSPropertyID, 16> properties;
+  for (nsCSSPropertyID property : aPropertySet) {
+    properties.AppendElement(property);
+  }
+  return aOut << properties;
+}
 
 #endif 
