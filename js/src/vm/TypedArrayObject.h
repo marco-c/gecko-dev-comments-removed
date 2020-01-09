@@ -136,7 +136,7 @@ class TypedArrayObject : public ArrayBufferViewObject {
   void getElements(Value* vp);
 
   static bool GetTemplateObjectForNative(JSContext* cx, Native native,
-                                         HandleValue arg,
+                                         const CallArgs& args,
                                          MutableHandleObject res);
 
   
@@ -195,6 +195,12 @@ extern TypedArrayObject* TypedArrayCreateWithTemplate(JSContext* cx,
 extern TypedArrayObject* TypedArrayCreateWithTemplate(JSContext* cx,
                                                       HandleObject templateObj,
                                                       HandleObject array);
+
+extern TypedArrayObject* TypedArrayCreateWithTemplate(JSContext* cx,
+                                                      HandleObject templateObj,
+                                                      HandleObject arrayBuffer,
+                                                      HandleValue byteOffset,
+                                                      HandleValue length);
 
 inline bool IsTypedArrayClass(const Class* clasp) {
   return &TypedArrayObject::classes[0] <= clasp &&

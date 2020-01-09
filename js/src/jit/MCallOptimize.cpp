@@ -2928,7 +2928,7 @@ IonBuilder::InliningResult IonBuilder::inlineTypedArray(CallInfo& callInfo,
   if (getInlineReturnType() != MIRType::Object) {
     return InliningStatus_NotInlined;
   }
-  if (callInfo.argc() != 1) {
+  if (callInfo.argc() == 0 || callInfo.argc() > 3) {
     return InliningStatus_NotInlined;
   }
 
@@ -2980,20 +2980,48 @@ IonBuilder::InliningResult IonBuilder::inlineTypedArray(CallInfo& callInfo,
     }
 
     
-    
-    auto IsPossiblyWrappedArrayBufferMaybeSharedClass = [](const Class* clasp) {
-      return clasp->isProxy() || clasp == &ArrayBufferObject::class_ ||
-             clasp == &SharedArrayBufferObject::class_;
-    };
-    auto result = types->forAllClasses(
-        constraints(), IsPossiblyWrappedArrayBufferMaybeSharedClass);
-    if (result != TemporaryTypeSet::ForAllResult::ALL_FALSE) {
+    if (types->forAllClasses(constraints(), IsProxyClass) !=
+        TemporaryTypeSet::ForAllResult::ALL_FALSE) {
       return InliningStatus_NotInlined;
     }
 
-    ins = MNewTypedArrayFromArray::New(
-        alloc(), constraints(), templateObject,
-        templateObject->group()->initialHeap(constraints()), arg);
+    
+    
+    auto IsArrayBufferMaybeSharedClass = [](const Class* clasp) {
+      return clasp == &ArrayBufferObject::class_ ||
+             clasp == &SharedArrayBufferObject::class_;
+    };
+    switch (
+        types->forAllClasses(constraints(), IsArrayBufferMaybeSharedClass)) {
+      case TemporaryTypeSet::ForAllResult::ALL_FALSE:
+        ins = MNewTypedArrayFromArray::New(
+            alloc(), constraints(), templateObject,
+            templateObject->group()->initialHeap(constraints()), arg);
+        break;
+      case TemporaryTypeSet::ForAllResult::ALL_TRUE:
+        MDefinition* byteOffset;
+        if (callInfo.argc() > 1) {
+          byteOffset = callInfo.getArg(1);
+        } else {
+          byteOffset = constant(UndefinedValue());
+        }
+
+        MDefinition* length;
+        if (callInfo.argc() > 2) {
+          length = callInfo.getArg(2);
+        } else {
+          length = constant(UndefinedValue());
+        }
+
+        ins = MNewTypedArrayFromArrayBuffer::New(
+            alloc(), constraints(), templateObject,
+            templateObject->group()->initialHeap(constraints()), arg,
+            byteOffset, length);
+        break;
+      case TemporaryTypeSet::ForAllResult::EMPTY:
+      case TemporaryTypeSet::ForAllResult::MIXED:
+        return InliningStatus_NotInlined;
+    }
   } else {
     return InliningStatus_NotInlined;
   }
