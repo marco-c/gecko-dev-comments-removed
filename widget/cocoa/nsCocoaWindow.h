@@ -78,6 +78,15 @@ typedef struct _nsCocoaWindowList {
 - (BOOL)isBeingShown;
 - (BOOL)isVisibleOrBeingShown;
 
+
+
+
+
+
+
+
+- (NSArray<NSView*>*)contentViewContents;
+
 - (ChildView*)mainChildView;
 
 - (NSArray*)titlebarControls;
