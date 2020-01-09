@@ -46,7 +46,11 @@ function TargetMixin(parentClass) {
       this._forceChrome = false;
 
       this.destroy = this.destroy.bind(this);
+      this._onNewSource = this._onNewSource.bind(this);
+      this._onUpdatedSource = this._onUpdatedSource.bind(this);
+
       this.activeConsole = null;
+      this.threadClient = null;
 
       this._client = client;
 
@@ -379,7 +383,26 @@ function TargetMixin(parentClass) {
       const [response, threadClient] =
         await this._client.attachThread(this._threadActor, options);
       this.threadClient = threadClient;
+
+      this.threadClient.addListener("newSource", this._onNewSource);
+
+      
+      
+      
+      this.on("updatedSource", this._onUpdatedSource);
+
       return [response, threadClient];
+    }
+
+    
+    _onNewSource(type, packet) {
+      this.emit("source-updated", packet);
+    }
+
+    
+    
+    _onUpdatedSource(packet) {
+      this.emit("source-updated", packet);
     }
 
     
@@ -409,12 +432,6 @@ function TargetMixin(parentClass) {
       this.client.addListener("closed", this.destroy);
 
       this.on("tabDetached", this.destroy);
-
-      
-      
-      this._onSourceUpdated = packet => this.emit("source-updated", packet);
-      this.on("newSource", this._onSourceUpdated);
-      this.on("updatedSource", this._onSourceUpdated);
     }
 
     
@@ -424,8 +441,12 @@ function TargetMixin(parentClass) {
       
       this.client.removeListener("closed", this.destroy);
       this.off("tabDetached", this.destroy);
-      this.off("newSource", this._onSourceUpdated);
-      this.off("updatedSource", this._onSourceUpdated);
+
+      
+      if (this.threadClient) {
+        this.threadClient.removeListener("newSource", this._onNewSource);
+        this.off("updatedSource", this._onUpdatedSource);
+      }
 
       
       if (this.activeConsole && this._onInspectObject) {

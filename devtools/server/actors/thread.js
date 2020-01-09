@@ -1734,18 +1734,9 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     
     
     DevToolsUtils.executeSoon(() => {
-      const type = "newSource";
-      this.conn.send({
-        from: this._parent.actorID,
-        type,
-        source: source.form(),
-      });
-
-      
-      
       this.conn.send({
         from: this.actorID,
-        type,
+        type: "newSource",
         source: source.form(),
       });
     });

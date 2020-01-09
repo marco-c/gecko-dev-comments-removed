@@ -3,7 +3,7 @@
 
 "use strict";
 
-const {types, Option, RetVal, generateActorSpec} = require("devtools/shared/protocol");
+const {types, RetVal, generateActorSpec} = require("devtools/shared/protocol");
 
 types.addDictType("contentProcessTarget.workers", {
   error: "nullable:string",
@@ -21,12 +21,6 @@ const contentProcessTargetSpec = generateActorSpec({
   },
 
   events: {
-    
-    
-    newSource: {
-      type: "newSource",
-      source: Option(0, "json"),
-    },
     workerListChanged: {
       type: "workerListChanged",
     },

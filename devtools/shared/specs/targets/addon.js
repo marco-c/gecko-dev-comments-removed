@@ -3,7 +3,7 @@
 
 "use strict";
 
-const {Option, RetVal, generateActorSpec} = require("devtools/shared/protocol");
+const {RetVal, generateActorSpec} = require("devtools/shared/protocol");
 
 const addonTargetSpec = generateActorSpec({
   typeName: "addonTarget",
@@ -28,15 +28,6 @@ const addonTargetSpec = generateActorSpec({
     push: {
       request: {},
       response: RetVal("json"),
-    },
-  },
-
-  events: {
-    
-    
-    newSource: {
-      type: "newSource",
-      source: Option(0, "json"),
     },
   },
 });
