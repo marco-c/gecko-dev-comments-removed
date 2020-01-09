@@ -121,15 +121,24 @@ pref("security.pki.certificate_transparency.mode", 0);
 
 pref("security.webauth.u2f", true);
 pref("security.webauth.webauthn", true);
+
+
+
+
+pref("security.webauth.webauthn_enable_softtoken", false);
+
 #ifdef FENNEC_NIGHTLY
 pref("security.webauth.webauthn_enable_android_fido2", true);
 #else
 pref("security.webauth.webauthn_enable_android_fido2", false);
 #endif
 
+#ifdef MOZ_WIDGET_ANDROID
 
-pref("security.webauth.webauthn_enable_softtoken", false);
+pref("security.webauth.webauthn_enable_usbtoken", false);
+#else
 pref("security.webauth.webauthn_enable_usbtoken", true);
+#endif
 
 pref("security.ssl.errorReporting.enabled", true);
 pref("security.ssl.errorReporting.url", "https://incoming.telemetry.mozilla.org/submit/sslreports/");
