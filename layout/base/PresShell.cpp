@@ -7629,302 +7629,307 @@ nsresult PresShell::EventHandler::HandleEventWithTarget(
 nsresult PresShell::EventHandler::HandleEventInternal(
     WidgetEvent* aEvent, nsEventStatus* aEventStatus,
     bool aIsHandlingNativeEvent, nsIContent* aOverrideClickTarget) {
+  MOZ_ASSERT(aEvent);
+  MOZ_ASSERT(aEventStatus);
+
   RefPtr<EventStateManager> manager = GetPresContext()->EventStateManager();
-  nsresult rv = NS_OK;
 
-  if (!NS_EVENT_NEEDS_FRAME(aEvent) || mPresShell->GetCurrentEventFrame() ||
-      mPresShell->GetCurrentEventContent()) {
-    bool touchIsNew = false;
-    bool isHandlingUserInput = false;
+  
+  
+  
+  
+  if (NS_EVENT_NEEDS_FRAME(aEvent) && !mPresShell->GetCurrentEventFrame() &&
+      !mPresShell->GetCurrentEventContent()) {
+    RecordEventHandlingResponsePerformance(aEvent);
+    return NS_OK;
+  }
 
-    if (mPresShell->mCurrentEventContent &&
-        aEvent->IsTargetedAtFocusedWindow()) {
-      nsFocusManager* fm = nsFocusManager::GetFocusManager();
-      if (fm) {
-        fm->FlushBeforeEventHandlingIfNeeded(mPresShell->mCurrentEventContent);
-      }
+  bool touchIsNew = false;
+  bool isHandlingUserInput = false;
+
+  if (mPresShell->mCurrentEventContent && aEvent->IsTargetedAtFocusedWindow()) {
+    nsFocusManager* fm = nsFocusManager::GetFocusManager();
+    if (fm) {
+      fm->FlushBeforeEventHandlingIfNeeded(mPresShell->mCurrentEventContent);
     }
+  }
 
-    
-    if (aEvent->IsTrusted()) {
-      if (aEvent->IsUserAction()) {
-        mPresShell->mHasHandledUserInput = true;
-      }
-
-      switch (aEvent->mMessage) {
-        case eKeyPress:
-        case eKeyDown:
-        case eKeyUp: {
-          Document* doc = mPresShell->GetCurrentEventContent()
-                              ? mPresShell->mCurrentEventContent->OwnerDoc()
-                              : nullptr;
-          auto keyCode = aEvent->AsKeyboardEvent()->mKeyCode;
-          if (keyCode == NS_VK_ESCAPE) {
-            Document* root = nsContentUtils::GetRootDocument(doc);
-            if (root && root->GetFullscreenElement()) {
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              aEvent->PreventDefaultBeforeDispatch(
-                  CrossProcessForwarding::eStop);
-              aEvent->mFlags.mOnlyChromeDispatch = true;
-
-              
-              
-              if (!mPresShell->mIsLastChromeOnlyEscapeKeyConsumed &&
-                  aEvent->mMessage == eKeyUp) {
-                
-                
-                
-                Document::AsyncExitFullscreen(nullptr);
-              }
-            }
-            nsCOMPtr<Document> pointerLockedDoc =
-                do_QueryReferent(EventStateManager::sPointerLockedDoc);
-            if (!mPresShell->mIsLastChromeOnlyEscapeKeyConsumed &&
-                pointerLockedDoc) {
-              
-              
-              
-              aEvent->PreventDefaultBeforeDispatch(
-                  CrossProcessForwarding::eStop);
-              aEvent->mFlags.mOnlyChromeDispatch = true;
-              if (aEvent->mMessage == eKeyUp) {
-                Document::UnlockPointer();
-              }
-            }
-          }
-          if (keyCode != NS_VK_ESCAPE && keyCode != NS_VK_SHIFT &&
-              keyCode != NS_VK_CONTROL && keyCode != NS_VK_ALT &&
-              keyCode != NS_VK_WIN && keyCode != NS_VK_META) {
-            
-            
-            
-            isHandlingUserInput = true;
-            GetPresContext()->RecordInteractionTime(
-                nsPresContext::InteractionType::eKeyInteraction,
-                aEvent->mTimeStamp);
-          }
-
-          Telemetry::AccumulateTimeDelta(
-              Telemetry::INPUT_EVENT_QUEUED_KEYBOARD_MS, aEvent->mTimeStamp);
-          break;
-        }
-        case eMouseDown:
-        case eMouseUp:
-          Telemetry::AccumulateTimeDelta(Telemetry::INPUT_EVENT_QUEUED_CLICK_MS,
-                                         aEvent->mTimeStamp);
-          MOZ_FALLTHROUGH;
-        case ePointerDown:
-        case ePointerUp:
-          isHandlingUserInput = true;
-          GetPresContext()->RecordInteractionTime(
-              nsPresContext::InteractionType::eClickInteraction,
-              aEvent->mTimeStamp);
-          break;
-
-        case eMouseMove:
-          if (aEvent->mFlags.mHandledByAPZ) {
-            Telemetry::AccumulateTimeDelta(
-                Telemetry::INPUT_EVENT_QUEUED_APZ_MOUSE_MOVE_MS,
-                aEvent->mTimeStamp);
-          }
-          break;
-
-        case eDrop: {
-          nsCOMPtr<nsIDragSession> session = nsContentUtils::GetDragSession();
-          if (session) {
-            bool onlyChromeDrop = false;
-            session->GetOnlyChromeDrop(&onlyChromeDrop);
-            if (onlyChromeDrop) {
-              aEvent->mFlags.mOnlyChromeDispatch = true;
-            }
-          }
-          break;
-        }
-
-        case eWheel:
-          if (aEvent->mFlags.mHandledByAPZ) {
-            Telemetry::AccumulateTimeDelta(
-                Telemetry::INPUT_EVENT_QUEUED_APZ_WHEEL_MS, aEvent->mTimeStamp);
-          }
-          break;
-
-        case eTouchMove:
-          if (aEvent->mFlags.mHandledByAPZ) {
-            Telemetry::AccumulateTimeDelta(
-                Telemetry::INPUT_EVENT_QUEUED_APZ_TOUCH_MOVE_MS,
-                aEvent->mTimeStamp);
-          }
-          break;
-
-        default:
-          break;
-      }
-
-      if (!mPresShell->mTouchManager.PreHandleEvent(
-              aEvent, aEventStatus, touchIsNew, isHandlingUserInput,
-              mPresShell->mCurrentEventContent)) {
-        return NS_OK;
-      }
-    }
-
-    if (aEvent->mMessage == eContextMenu) {
-      WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent();
-      if (mouseEvent->IsContextMenuKeyEvent() &&
-          !AdjustContextMenuKeyEvent(mouseEvent)) {
-        return NS_OK;
-      }
-      if (mouseEvent->IsShift()) {
-        aEvent->mFlags.mOnlyChromeDispatch = true;
-        aEvent->mFlags.mRetargetToNonNativeAnonymous = true;
-      }
-    }
-
-    AutoHandlingUserInputStatePusher userInpStatePusher(isHandlingUserInput,
-                                                        aEvent, GetDocument());
-
-    if (aEvent->IsTrusted() && aEvent->mMessage == eMouseMove) {
-      nsIPresShell::AllowMouseCapture(
-          EventStateManager::GetActiveEventStateManager() == manager);
-
-      GetPresContext()->RecordInteractionTime(
-          nsPresContext::InteractionType::eMouseMoveInteraction,
-          aEvent->mTimeStamp);
-    }
-
-    nsAutoPopupStatePusher popupStatePusher(
-        PopupBlocker::GetEventPopupControlState(aEvent));
-
-    
-    
-    aEvent->mTarget = nullptr;
-
-    HandlingTimeAccumulator handlingTimeAccumulator(*this, aEvent);
-
-    
-    
-    rv = manager->PreHandleEvent(
-        GetPresContext(), aEvent, mPresShell->mCurrentEventFrame,
-        mPresShell->mCurrentEventContent, aEventStatus, aOverrideClickTarget);
-
-    
-    if (NS_SUCCEEDED(rv)) {
-      bool wasHandlingKeyBoardEvent = nsContentUtils::IsHandlingKeyBoardEvent();
-      if (aEvent->mClass == eKeyboardEventClass) {
-        nsContentUtils::SetIsHandlingKeyBoardEvent(true);
-      }
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (aEvent->IsAllowedToDispatchDOMEvent() &&
-          !(aEvent->PropagationStopped() &&
-            aEvent->IsWaitingReplyFromRemoteProcess())) {
-        MOZ_ASSERT(nsContentUtils::IsSafeToRunScript(),
-                   "Somebody changed aEvent to cause a DOM event!");
-        nsPresShellEventCB eventCB(mPresShell);
-        if (nsIFrame* target = mPresShell->GetCurrentEventFrame()) {
-          if (target->OnlySystemGroupDispatch(aEvent->mMessage)) {
-            aEvent->StopPropagation();
-          }
-        }
-        if (aEvent->mClass == eTouchEventClass) {
-          DispatchTouchEventToDOM(aEvent, aEventStatus, &eventCB, touchIsNew);
-        } else {
-          DispatchEventToDOM(aEvent, aEventStatus, &eventCB);
-        }
-      }
-
-      nsContentUtils::SetIsHandlingKeyBoardEvent(wasHandlingKeyBoardEvent);
-
-      if (aEvent->mMessage == ePointerUp ||
-          aEvent->mMessage == ePointerCancel) {
-        
-        
-        
-        WidgetPointerEvent* pointerEvent = aEvent->AsPointerEvent();
-        MOZ_ASSERT(pointerEvent);
-        PointerEventHandler::ReleasePointerCaptureById(pointerEvent->pointerId);
-        PointerEventHandler::CheckPointerCaptureState(pointerEvent);
-      }
-
-      
-      
-      if (!mPresShell->IsDestroying() && NS_SUCCEEDED(rv)) {
-        rv = manager->PostHandleEvent(GetPresContext(), aEvent,
-                                      mPresShell->GetCurrentEventFrame(),
-                                      aEventStatus, aOverrideClickTarget);
-      }
-    }
-
-    if (!mPresShell->IsDestroying() && aIsHandlingNativeEvent) {
-      
-      
-      
-      
-      manager->TryToFlushPendingNotificationsToIME();
+  
+  if (aEvent->IsTrusted()) {
+    if (aEvent->IsUserAction()) {
+      mPresShell->mHasHandledUserInput = true;
     }
 
     switch (aEvent->mMessage) {
       case eKeyPress:
       case eKeyDown:
       case eKeyUp: {
-        if (aEvent->AsKeyboardEvent()->mKeyCode == NS_VK_ESCAPE) {
-          if (aEvent->mMessage == eKeyUp) {
+        Document* doc = mPresShell->GetCurrentEventContent()
+                            ? mPresShell->mCurrentEventContent->OwnerDoc()
+                            : nullptr;
+        auto keyCode = aEvent->AsKeyboardEvent()->mKeyCode;
+        if (keyCode == NS_VK_ESCAPE) {
+          Document* root = nsContentUtils::GetRootDocument(doc);
+          if (root && root->GetFullscreenElement()) {
             
-            mPresShell->mIsLastChromeOnlyEscapeKeyConsumed = false;
-          } else {
-            if (aEvent->mFlags.mOnlyChromeDispatch &&
-                aEvent->mFlags.mDefaultPreventedByChrome) {
-              mPresShell->mIsLastChromeOnlyEscapeKeyConsumed = true;
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            aEvent->PreventDefaultBeforeDispatch(CrossProcessForwarding::eStop);
+            aEvent->mFlags.mOnlyChromeDispatch = true;
+
+            
+            
+            if (!mPresShell->mIsLastChromeOnlyEscapeKeyConsumed &&
+                aEvent->mMessage == eKeyUp) {
+              
+              
+              
+              Document::AsyncExitFullscreen(nullptr);
+            }
+          }
+          nsCOMPtr<Document> pointerLockedDoc =
+              do_QueryReferent(EventStateManager::sPointerLockedDoc);
+          if (!mPresShell->mIsLastChromeOnlyEscapeKeyConsumed &&
+              pointerLockedDoc) {
+            
+            
+            
+            aEvent->PreventDefaultBeforeDispatch(CrossProcessForwarding::eStop);
+            aEvent->mFlags.mOnlyChromeDispatch = true;
+            if (aEvent->mMessage == eKeyUp) {
+              Document::UnlockPointer();
             }
           }
         }
-        if (aEvent->mMessage == eKeyDown) {
-          mPresShell->mIsLastKeyDownCanceled = aEvent->mFlags.mDefaultPrevented;
+        if (keyCode != NS_VK_ESCAPE && keyCode != NS_VK_SHIFT &&
+            keyCode != NS_VK_CONTROL && keyCode != NS_VK_ALT &&
+            keyCode != NS_VK_WIN && keyCode != NS_VK_META) {
+          
+          
+          
+          isHandlingUserInput = true;
+          GetPresContext()->RecordInteractionTime(
+              nsPresContext::InteractionType::eKeyInteraction,
+              aEvent->mTimeStamp);
         }
+
+        Telemetry::AccumulateTimeDelta(
+            Telemetry::INPUT_EVENT_QUEUED_KEYBOARD_MS, aEvent->mTimeStamp);
         break;
       }
+      case eMouseDown:
       case eMouseUp:
-        
-        nsIPresShell::SetCapturingContent(nullptr, 0);
+        Telemetry::AccumulateTimeDelta(Telemetry::INPUT_EVENT_QUEUED_CLICK_MS,
+                                       aEvent->mTimeStamp);
+        MOZ_FALLTHROUGH;
+      case ePointerDown:
+      case ePointerUp:
+        isHandlingUserInput = true;
+        GetPresContext()->RecordInteractionTime(
+            nsPresContext::InteractionType::eClickInteraction,
+            aEvent->mTimeStamp);
         break;
+
       case eMouseMove:
-        nsIPresShell::AllowMouseCapture(false);
+        if (aEvent->mFlags.mHandledByAPZ) {
+          Telemetry::AccumulateTimeDelta(
+              Telemetry::INPUT_EVENT_QUEUED_APZ_MOUSE_MOVE_MS,
+              aEvent->mTimeStamp);
+        }
         break;
-      case eDrag:
-      case eDragEnd:
-      case eDragEnter:
-      case eDragExit:
-      case eDragLeave:
-      case eDragOver:
+
       case eDrop: {
-        
-        
-        
-        DataTransfer* dataTransfer = aEvent->AsDragEvent()->mDataTransfer;
-        if (dataTransfer) {
-          dataTransfer->Disconnect();
+        nsCOMPtr<nsIDragSession> session = nsContentUtils::GetDragSession();
+        if (session) {
+          bool onlyChromeDrop = false;
+          session->GetOnlyChromeDrop(&onlyChromeDrop);
+          if (onlyChromeDrop) {
+            aEvent->mFlags.mOnlyChromeDispatch = true;
+          }
         }
         break;
       }
+
+      case eWheel:
+        if (aEvent->mFlags.mHandledByAPZ) {
+          Telemetry::AccumulateTimeDelta(
+              Telemetry::INPUT_EVENT_QUEUED_APZ_WHEEL_MS, aEvent->mTimeStamp);
+        }
+        break;
+
+      case eTouchMove:
+        if (aEvent->mFlags.mHandledByAPZ) {
+          Telemetry::AccumulateTimeDelta(
+              Telemetry::INPUT_EVENT_QUEUED_APZ_TOUCH_MOVE_MS,
+              aEvent->mTimeStamp);
+        }
+        break;
+
       default:
         break;
     }
+
+    if (!mPresShell->mTouchManager.PreHandleEvent(
+            aEvent, aEventStatus, touchIsNew, isHandlingUserInput,
+            mPresShell->mCurrentEventContent)) {
+      return NS_OK;
+    }
+  }
+
+  if (aEvent->mMessage == eContextMenu) {
+    WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent();
+    if (mouseEvent->IsContextMenuKeyEvent() &&
+        !AdjustContextMenuKeyEvent(mouseEvent)) {
+      return NS_OK;
+    }
+    if (mouseEvent->IsShift()) {
+      aEvent->mFlags.mOnlyChromeDispatch = true;
+      aEvent->mFlags.mRetargetToNonNativeAnonymous = true;
+    }
+  }
+
+  AutoHandlingUserInputStatePusher userInpStatePusher(isHandlingUserInput,
+                                                      aEvent, GetDocument());
+
+  if (aEvent->IsTrusted() && aEvent->mMessage == eMouseMove) {
+    nsIPresShell::AllowMouseCapture(
+        EventStateManager::GetActiveEventStateManager() == manager);
+
+    GetPresContext()->RecordInteractionTime(
+        nsPresContext::InteractionType::eMouseMoveInteraction,
+        aEvent->mTimeStamp);
+  }
+
+  nsAutoPopupStatePusher popupStatePusher(
+      PopupBlocker::GetEventPopupControlState(aEvent));
+
+  
+  
+  aEvent->mTarget = nullptr;
+
+  HandlingTimeAccumulator handlingTimeAccumulator(*this, aEvent);
+
+  
+  
+  nsresult rv = manager->PreHandleEvent(
+      GetPresContext(), aEvent, mPresShell->mCurrentEventFrame,
+      mPresShell->mCurrentEventContent, aEventStatus, aOverrideClickTarget);
+
+  
+  if (NS_SUCCEEDED(rv)) {
+    bool wasHandlingKeyBoardEvent = nsContentUtils::IsHandlingKeyBoardEvent();
+    if (aEvent->mClass == eKeyboardEventClass) {
+      nsContentUtils::SetIsHandlingKeyBoardEvent(true);
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (aEvent->IsAllowedToDispatchDOMEvent() &&
+        !(aEvent->PropagationStopped() &&
+          aEvent->IsWaitingReplyFromRemoteProcess())) {
+      MOZ_ASSERT(nsContentUtils::IsSafeToRunScript(),
+                 "Somebody changed aEvent to cause a DOM event!");
+      nsPresShellEventCB eventCB(mPresShell);
+      if (nsIFrame* target = mPresShell->GetCurrentEventFrame()) {
+        if (target->OnlySystemGroupDispatch(aEvent->mMessage)) {
+          aEvent->StopPropagation();
+        }
+      }
+      if (aEvent->mClass == eTouchEventClass) {
+        DispatchTouchEventToDOM(aEvent, aEventStatus, &eventCB, touchIsNew);
+      } else {
+        DispatchEventToDOM(aEvent, aEventStatus, &eventCB);
+      }
+    }
+
+    nsContentUtils::SetIsHandlingKeyBoardEvent(wasHandlingKeyBoardEvent);
+
+    if (aEvent->mMessage == ePointerUp || aEvent->mMessage == ePointerCancel) {
+      
+      
+      
+      WidgetPointerEvent* pointerEvent = aEvent->AsPointerEvent();
+      MOZ_ASSERT(pointerEvent);
+      PointerEventHandler::ReleasePointerCaptureById(pointerEvent->pointerId);
+      PointerEventHandler::CheckPointerCaptureState(pointerEvent);
+    }
+
+    
+    
+    if (!mPresShell->IsDestroying() && NS_SUCCEEDED(rv)) {
+      rv = manager->PostHandleEvent(GetPresContext(), aEvent,
+                                    mPresShell->GetCurrentEventFrame(),
+                                    aEventStatus, aOverrideClickTarget);
+    }
+  }
+
+  if (!mPresShell->IsDestroying() && aIsHandlingNativeEvent) {
+    
+    
+    
+    
+    manager->TryToFlushPendingNotificationsToIME();
+  }
+
+  switch (aEvent->mMessage) {
+    case eKeyPress:
+    case eKeyDown:
+    case eKeyUp: {
+      if (aEvent->AsKeyboardEvent()->mKeyCode == NS_VK_ESCAPE) {
+        if (aEvent->mMessage == eKeyUp) {
+          
+          mPresShell->mIsLastChromeOnlyEscapeKeyConsumed = false;
+        } else {
+          if (aEvent->mFlags.mOnlyChromeDispatch &&
+              aEvent->mFlags.mDefaultPreventedByChrome) {
+            mPresShell->mIsLastChromeOnlyEscapeKeyConsumed = true;
+          }
+        }
+      }
+      if (aEvent->mMessage == eKeyDown) {
+        mPresShell->mIsLastKeyDownCanceled = aEvent->mFlags.mDefaultPrevented;
+      }
+      break;
+    }
+    case eMouseUp:
+      
+      nsIPresShell::SetCapturingContent(nullptr, 0);
+      break;
+    case eMouseMove:
+      nsIPresShell::AllowMouseCapture(false);
+      break;
+    case eDrag:
+    case eDragEnd:
+    case eDragEnter:
+    case eDragExit:
+    case eDragLeave:
+    case eDragOver:
+    case eDrop: {
+      
+      
+      
+      DataTransfer* dataTransfer = aEvent->AsDragEvent()->mDataTransfer;
+      if (dataTransfer) {
+        dataTransfer->Disconnect();
+      }
+      break;
+    }
+    default:
+      break;
   }
   RecordEventHandlingResponsePerformance(aEvent);
   return rv;
