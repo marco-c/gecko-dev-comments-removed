@@ -23,8 +23,6 @@ let gMainArrowOrder;
 let gSubView;
 let gSubButton;
 let gSubTextarea;
-let gDocView;
-let gDocBrowser;
 
 async function openPopup() {
   let shown = BrowserTestUtils.waitForEvent(gMainView, "ViewShown");
@@ -38,10 +36,9 @@ async function hidePopup() {
   await hidden;
 }
 
-async function showSubView(view = gSubView) {
-  let shown = BrowserTestUtils.waitForEvent(view, "ViewShown");
-  
-  gPanelMultiView.showSubView(view, gMainButton1);
+async function showSubView() {
+  let shown = BrowserTestUtils.waitForEvent(gSubView, "ViewShown");
+  gPanelMultiView.showSubView(gSubView);
   await shown;
 }
 
@@ -77,8 +74,6 @@ add_task(async function setup() {
   gMainButton1 = document.createXULElement("button");
   gMainButton1.id = "gMainButton1";
   gMainView.appendChild(gMainButton1);
-  
-  gMainButton1.setAttribute("label", "gMainButton1");
   gMainMenulist = document.createXULElement("menulist");
   gMainMenulist.id = "gMainMenulist";
   gMainView.appendChild(gMainMenulist);
@@ -115,18 +110,6 @@ add_task(async function setup() {
   gSubTextarea.id = "gSubTextarea";
   gSubView.appendChild(gSubTextarea);
   gSubTextarea.value = "value";
-
-  gDocView = document.createXULElement("panelview");
-  gDocView.id = "testDocView";
-  gPanelMultiView.appendChild(gDocView);
-  gDocBrowser = document.createXULElement("browser");
-  gDocBrowser.id = "gDocBrowser";
-  gDocBrowser.setAttribute("type", "content");
-  gDocBrowser.setAttribute("src",
-    'data:text/html,<textarea id="docTextarea">value</textarea><button id="docButton"></button>');
-  gDocBrowser.setAttribute("width", 100);
-  gDocBrowser.setAttribute("height", 100);
-  gDocView.appendChild(gDocBrowser);
 
   registerCleanupFunction(() => {
     gAnchor.remove();
@@ -285,50 +268,5 @@ add_task(async function testActivation() {
   checkActivated(gMainButton1, () => EventUtils.synthesizeKey("KEY_Enter"), "pressing enter");
   checkActivated(gMainButton1, () => EventUtils.synthesizeKey(" "), "pressing space");
   checkActivated(gMainButton1, () => EventUtils.synthesizeKey("KEY_Enter", {code: "NumpadEnter"}), "pressing numpad enter");
-  await hidePopup();
-});
-
-
-
-
-add_task(async function testActivationMousedown() {
-  await openPopup();
-  await expectFocusAfterKey("ArrowDown", gMainButton1);
-  let activated = false;
-  gMainButton1.onmousedown = function() { activated = true; };
-  EventUtils.synthesizeKey(" ");
-  ok(activated, "mousedown activated after space");
-  gMainButton1.onmousedown = null;
-  await hidePopup();
-});
-
-
-add_task(async function testTabArrowsBrowser() {
-  await openPopup();
-  await showSubView(gDocView);
-  let backButton = gDocView.querySelector(".subviewbutton-back");
-  backButton.id = "docBack";
-  await expectFocusAfterKey("Tab", backButton);
-  let doc = gDocBrowser.contentDocument;
-  
-  doc.id = "doc";
-  await expectFocusAfterKey("Tab", doc);
-  
-  let textarea = doc.getElementById("docTextarea");
-  
-  
-  
-  
-  textarea.focus();
-  is(doc.activeElement, textarea, "textarea focused");
-  EventUtils.synthesizeKey("KEY_End");
-  is(textarea.selectionStart, 5, "selectionStart 5 after End");
-  EventUtils.synthesizeKey("KEY_ArrowLeft");
-  is(textarea.selectionStart, 4, "selectionStart 4 after ArrowLeft");
-  is(doc.activeElement, textarea, "textarea still focused");
-  let docButton = doc.getElementById("docButton");
-  expectFocusAfterKey("Tab", docButton);
-  
-  expectFocusAfterKey("Tab", backButton);
   await hidePopup();
 });

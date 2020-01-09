@@ -1411,9 +1411,7 @@ var PanelView = class extends AssociatedToNode {
   _isNavigableWithTabOnly(element) {
     let tag = element.localName;
     return tag == "menulist" || tag == "textbox" || tag == "input"
-           || tag == "textarea"
-           
-           || tag == "browser";
+           || tag == "textarea";
   }
 
   
@@ -1567,24 +1565,6 @@ var PanelView = class extends AssociatedToNode {
       return;
     }
 
-    let focus = this.document.activeElement;
-    
-    
-    
-    
-    
-    
-    if (focus && !(this.node.compareDocumentPosition(focus)
-                   & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
-      focus = null;
-    }
-
-    
-    
-    if (focus && focus.tagName == "browser") {
-      return;
-    }
-
     let stop = () => {
       event.stopPropagation();
       event.preventDefault();
@@ -1598,7 +1578,20 @@ var PanelView = class extends AssociatedToNode {
       
       
       
-      return focus && this._isNavigableWithTabOnly(focus);
+      let focus = this.document.activeElement;
+      if (!focus) {
+        return false;
+      }
+      
+      
+      
+      
+      
+      if (!(this.node.compareDocumentPosition(focus)
+            & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
+        return false;
+      }
+      return this._isNavigableWithTabOnly(focus);
     };
 
     let keyCode = event.code;
@@ -1667,14 +1660,9 @@ var PanelView = class extends AssociatedToNode {
         
         
         
-        
-        
-        
         button.doCommand();
-        let dispEvent = new event.target.ownerGlobal.MouseEvent("mousedown", {"bubbles": true});
-        button.dispatchEvent(dispEvent);
-        dispEvent = new event.target.ownerGlobal.MouseEvent("click", {"bubbles": true});
-        button.dispatchEvent(dispEvent);
+        let clickEvent = new event.target.ownerGlobal.MouseEvent("click", {"bubbles": true});
+        button.dispatchEvent(clickEvent);
         this._doingKeyboardActivation = false;
         break;
       }
