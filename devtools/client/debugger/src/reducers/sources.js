@@ -190,7 +190,7 @@ function update(
         const { id, url } = action.source;
         const { isBlackBoxed } = ((action: any): DonePromiseAction).value;
         updateBlackBoxList(url, isBlackBoxed);
-        return updateSource(state, { id, isBlackBoxed });
+        return updateBlackboxFlag(state, id, isBlackBoxed);
       }
       break;
 
@@ -208,30 +208,6 @@ function update(
   }
 
   return state;
-}
-
-
-
-
-
-function updateSource(state: SourcesState, source: Object) {
-  const existingSource = state.sources[source.id];
-
-  
-  
-  
-  if (!existingSource) {
-    
-    
-    return state;
-  }
-  return {
-    ...state,
-    sources: {
-      ...state.sources,
-      [source.id]: { ...existingSource, ...source }
-    }
-  };
 }
 
 
@@ -407,6 +383,37 @@ function clearSourceMaps(
   }
 
   return state;
+}
+
+
+
+
+
+function updateBlackboxFlag(
+  state: SourcesState,
+  sourceId: SourceId,
+  isBlackBoxed: boolean
+): SourcesState {
+  const existingSource = state.sources[sourceId];
+
+  
+  
+  
+  if (!existingSource) {
+    
+    
+    return state;
+  }
+  return {
+    ...state,
+    sources: {
+      ...state.sources,
+      [sourceId]: {
+        ...existingSource,
+        isBlackBoxed
+      }
+    }
+  };
 }
 
 function updateBlackBoxList(url, isBlackBoxed) {
