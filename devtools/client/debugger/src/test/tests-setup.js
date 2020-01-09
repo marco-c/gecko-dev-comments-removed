@@ -116,7 +116,7 @@ function mockIndexeddDB() {
 
 if (!global.Promise.prototype.finally) {
   global.Promise.prototype.finally = function finallyPolyfill(callback) {
-    var constructor = this.constructor;
+    const constructor = this.constructor;
 
     return this.then(
       function(value) {
