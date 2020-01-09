@@ -1468,6 +1468,7 @@ nsEventStatus APZCTreeManager::ReceiveInputEvent(
       break;
     }
     case KEYBOARD_INPUT: {
+      aEvent.mLayersId = mFocusState.GetFocusLayersId();
       
       
       if (!gfxPrefs::APZKeyboardEnabled() ||
@@ -1766,7 +1767,7 @@ nsEventStatus APZCTreeManager::ProcessTouchInput(
   return result;
 }
 
-static MouseInput::MouseType MultiTouchTypeToMouseType(
+MouseInput::MouseType MultiTouchTypeToMouseType(
     MultiTouchInput::MultiTouchType aType) {
   switch (aType) {
     case MultiTouchInput::MULTITOUCH_START:
