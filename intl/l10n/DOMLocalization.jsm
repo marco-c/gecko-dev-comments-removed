@@ -151,6 +151,18 @@ function overlayChildNodes(fromFragment, toElement) {
   toElement.appendChild(fromFragment);
 }
 
+function hasAttribute(attributes, name) {
+  if (!attributes) {
+    return false;
+  }
+  for (let attr of attributes) {
+    if (attr.name === name) {
+      return true;
+    }
+  }
+  return false;
+}
+
 
 
 
@@ -168,8 +180,10 @@ function overlayAttributes(fromElement, toElement) {
     : null;
 
   
+  
   for (const attr of Array.from(toElement.attributes)) {
-    if (isAttrNameLocalizable(attr.name, toElement, explicitlyAllowed)) {
+    if (isAttrNameLocalizable(attr.name, toElement, explicitlyAllowed)
+      && !hasAttribute(fromElement.attributes, attr.name)) {
       toElement.removeAttribute(attr.name);
     }
   }
@@ -183,7 +197,8 @@ function overlayAttributes(fromElement, toElement) {
 
   
   for (const attr of Array.from(fromElement.attributes)) {
-    if (isAttrNameLocalizable(attr.name, toElement, explicitlyAllowed)) {
+    if (isAttrNameLocalizable(attr.name, toElement, explicitlyAllowed)
+      && toElement.getAttribute(attr.name) !== attr.value) {
       toElement.setAttribute(attr.name, attr.value);
     }
   }
@@ -475,10 +490,15 @@ class DOMLocalization extends Localization {
 
 
 
-  setAttributes(element, id, args) {
-    element.setAttribute(L10NID_ATTR_NAME, id);
+  setAttributes(element, id, args = null) {
+    if (element.getAttribute(L10NID_ATTR_NAME) !== id) {
+      element.setAttribute(L10NID_ATTR_NAME, id);
+    }
     if (args) {
-      element.setAttribute(L10NARGS_ATTR_NAME, JSON.stringify(args));
+      let argsString = JSON.stringify(args);
+      if (argsString !== element.getAttribute(L10NARGS_ATTR_NAME)) {
+        element.setAttribute(L10NARGS_ATTR_NAME, argsString);
+      }
     } else {
       element.removeAttribute(L10NARGS_ATTR_NAME);
     }
