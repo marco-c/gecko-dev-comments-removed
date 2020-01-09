@@ -248,7 +248,7 @@ DownloadsPlacesView.prototype = {
       let winUtils = window.windowUtils;
       let nodes = winUtils.nodesFromRect(rlbRect.left, rlbRect.top,
                                          0, rlbRect.width, rlbRect.height, 0,
-                                         true, false);
+                                         true, false, false);
       
       
       

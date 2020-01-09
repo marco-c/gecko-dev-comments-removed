@@ -299,7 +299,7 @@ class PictureInPictureToggleChild extends ActorChild {
     
     
     let elements = winUtils.nodesFromRect(clientX, clientY, 1, 1, 1, 1, true,
-                                          false);
+                                          false, false);
 
     for (let element of elements) {
       if (state.weakVisibleVideos.has(element) &&
