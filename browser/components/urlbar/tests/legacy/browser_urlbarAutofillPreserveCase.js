@@ -2,9 +2,6 @@
 
 
 
-
-
-
 "use strict";
 
 add_task(async function init() {
@@ -71,7 +68,7 @@ add_task(async function urlPort() {
 
 async function cleanUp() {
   EventUtils.synthesizeKey("KEY_Escape");
-  await UrlbarTestUtils.promisePopupClose(window);
+  await promisePopupHidden(gURLBar.popup);
   await PlacesUtils.bookmarks.eraseEverything();
   await PlacesUtils.history.clear();
 }
