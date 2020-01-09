@@ -227,22 +227,13 @@ bool PropertyEmitter::prepareForComputedPropValue() {
   return true;
 }
 
-bool PropertyEmitter::emitInitHomeObject(
-    bool isAsyncNonGenerator ) {
+bool PropertyEmitter::emitInitHomeObject() {
   MOZ_ASSERT(propertyState_ == PropertyState::PropValue ||
              propertyState_ == PropertyState::IndexValue ||
              propertyState_ == PropertyState::ComputedValue);
 
   
 
-  if (isAsyncNonGenerator) {
-    
-    if (!bce_->emit1(JSOP_SWAP)) {
-      
-      return false;
-    }
-  }
-
   
   
   
@@ -253,8 +244,7 @@ bool PropertyEmitter::emitInitHomeObject(
   
   
   
-  
-  if (!bce_->emitDupAt(1 + isIndexOrComputed_ + isAsyncNonGenerator)) {
+  if (!bce_->emitDupAt(1 + isIndexOrComputed_)) {
     
     
     
@@ -264,12 +254,6 @@ bool PropertyEmitter::emitInitHomeObject(
   if (!bce_->emit1(JSOP_INITHOMEOBJECT)) {
     
     return false;
-  }
-  if (isAsyncNonGenerator) {
-    if (!bce_->emit1(JSOP_POP)) {
-      
-      return false;
-    }
   }
 
 #ifdef DEBUG

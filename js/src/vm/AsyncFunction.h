@@ -15,37 +15,6 @@
 
 namespace js {
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-JSFunction* GetWrappedAsyncFunction(JSFunction* unwrapped);
-
-
-JSFunction* GetUnwrappedAsyncFunction(JSFunction* wrapped);
-
-
-bool IsWrappedAsyncFunction(JSFunction* fun);
-
-
-
-JSObject* WrapAsyncFunctionWithProto(JSContext* cx, HandleFunction unwrapped,
-                                     HandleObject proto);
-
-
-
-JSObject* WrapAsyncFunction(JSContext* cx, HandleFunction unwrapped);
-
 class AsyncFunctionGeneratorObject;
 
 

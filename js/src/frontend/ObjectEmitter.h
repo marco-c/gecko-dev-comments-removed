@@ -242,7 +242,7 @@ class MOZ_STACK_CLASS PropertyEmitter {
       const mozilla::Maybe<uint32_t>& keyPos, Kind kind = Kind::Prototype);
   MOZ_MUST_USE bool prepareForComputedPropValue();
 
-  MOZ_MUST_USE bool emitInitHomeObject(bool isAsyncNonGenerator = false);
+  MOZ_MUST_USE bool emitInitHomeObject();
 
   
   

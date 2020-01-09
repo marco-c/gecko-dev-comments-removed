@@ -1106,13 +1106,6 @@ const Class LexicalEnvironmentObject::class_ = {
   return create(cx, fun, fun, enclosing, gc::DefaultHeap);
 }
 
- NamedLambdaObject* NamedLambdaObject::create(
-    JSContext* cx, AbstractFramePtr frame, HandleFunction replacement) {
-  RootedFunction fun(cx, frame.callee());
-  RootedObject enclosing(cx, frame.environmentChain());
-  return create(cx, fun, replacement, enclosing, gc::DefaultHeap);
-}
-
  size_t NamedLambdaObject::lambdaSlot() {
   
   return JSSLOT_FREE(&LexicalEnvironmentObject::class_);
@@ -3642,15 +3635,7 @@ bool js::InitFunctionEnvironmentObjects(JSContext* cx, AbstractFramePtr frame) {
 
   
   if (callee->needsNamedLambdaEnvironment()) {
-    NamedLambdaObject* declEnv;
-    if (callee->isAsync() && !callee->isGenerator()) {
-      
-      
-      RootedFunction fun(cx, GetWrappedAsyncFunction(callee));
-      declEnv = NamedLambdaObject::create(cx, frame, fun);
-    } else {
-      declEnv = NamedLambdaObject::create(cx, frame);
-    }
+    NamedLambdaObject* declEnv = NamedLambdaObject::create(cx, frame);
     if (!declEnv) {
       return false;
     }
