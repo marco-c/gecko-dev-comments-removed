@@ -234,6 +234,11 @@ function _do_quit() {
 
 
 
+void Cc["@mozilla.org/widget/transferable;1"].createInstance();
+
+
+
+
 
 
 
@@ -252,12 +257,6 @@ var _fakeIdleService = {
 
   activate: function FIS_activate() {
     if (!this.originalCID) {
-      
-      
-      
-      void Components.manager.getClassObject(Cc[this.contractID],
-                                             Ci.nsIFactory);
-
       this.originalCID = this.registrar.contractIDToCID(this.contractID);
       
       this.registrar.registerFactory(this.CID, "Fake Idle Service",
