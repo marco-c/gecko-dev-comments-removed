@@ -547,11 +547,6 @@ class NativeObject : public ShapedObject {
   
   
   
-  void setLastPropertyMakeNative(JSContext* cx, Shape* shape);
-
-  
-  
-  
   void setIsSharedMemory() {
     MOZ_ASSERT(elements_ == emptyObjectElements);
     elements_ = emptyObjectElementsShared;

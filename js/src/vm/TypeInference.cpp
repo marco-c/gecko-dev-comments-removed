@@ -37,7 +37,6 @@
 #include "vm/Printer.h"
 #include "vm/Shape.h"
 #include "vm/Time.h"
-#include "vm/UnboxedObject.h"
 
 #include "gc/Marking-inl.h"
 #include "gc/PrivateIterators-inl.h"
@@ -309,10 +308,6 @@ bool js::ObjectGroupHasProperty(JSContext* cx, ObjectGroup* group, jsid id,
             return true;
           }
         }
-      }
-      JSObject* obj = &value.toObject();
-      if (!obj->hasLazyGroup() && obj->group()->maybeOriginalUnboxedGroup()) {
-        return true;
       }
     }
 
@@ -2016,32 +2011,6 @@ class ConstraintDataFreezeObjectForTypedArrayData {
   Compartment* maybeCompartment() { return obj->compartment(); }
 };
 
-
-
-class ConstraintDataFreezeObjectForUnboxedConvertedToNative {
- public:
-  ConstraintDataFreezeObjectForUnboxedConvertedToNative() {}
-
-  const char* kind() { return "freezeObjectForUnboxedConvertedToNative"; }
-
-  bool invalidateOnNewType(TypeSet::Type type) { return false; }
-  bool invalidateOnNewPropertyState(TypeSet* property) { return false; }
-  bool invalidateOnNewObjectState(const AutoSweepObjectGroup& sweep,
-                                  ObjectGroup* group) {
-    return group->unboxedLayout(sweep).nativeGroup() != nullptr;
-  }
-
-  bool constraintHolds(const AutoSweepObjectGroup& sweep, JSContext* cx,
-                       const HeapTypeSetKey& property,
-                       TemporaryTypeSet* expected) {
-    return !invalidateOnNewObjectState(sweep, property.object()->maybeGroup());
-  }
-
-  bool shouldSweep() { return false; }
-
-  Compartment* maybeCompartment() { return nullptr; }
-};
-
 } 
 
 void TypeSet::ObjectKey::watchStateChangeForTypedArrayData(
@@ -2669,9 +2638,6 @@ bool TemporaryTypeSet::propertyNeedsBarrier(CompilerConstraintList* constraints,
 }
 
 bool js::ClassCanHaveExtraProperties(const Class* clasp) {
-  if (clasp == &UnboxedPlainObject::class_) {
-    return false;
-  }
   return clasp->getResolve() || clasp->getOpsLookupProperty() ||
          clasp->getOpsGetProperty() || IsTypedArrayClass(clasp);
 }
@@ -2979,19 +2945,6 @@ void js::AddTypePropertyId(JSContext* cx, ObjectGroup* group, JSObject* obj,
     AddTypePropertyId(cx, group->newScript(sweep)->initializedGroup(), nullptr,
                       id, type);
   }
-
-  
-  
-  
-  
-  if (group->maybeUnboxedLayout(sweep) &&
-      group->maybeUnboxedLayout(sweep)->nativeGroup()) {
-    AddTypePropertyId(cx, group->maybeUnboxedLayout(sweep)->nativeGroup(),
-                      nullptr, id, type);
-  }
-  if (ObjectGroup* unboxedGroup = group->maybeOriginalUnboxedGroup()) {
-    AddTypePropertyId(cx, unboxedGroup, nullptr, id, type);
-  }
 }
 
 void js::AddTypePropertyId(JSContext* cx, ObjectGroup* group, JSObject* obj,
@@ -3071,16 +3024,6 @@ void ObjectGroup::setFlags(const AutoSweepObjectGroup& sweep, JSContext* cx,
     AutoSweepObjectGroup sweepInit(newScript(sweep)->initializedGroup());
     newScript(sweep)->initializedGroup()->setFlags(sweepInit, cx, flags);
   }
-
-  
-  if (maybeUnboxedLayout(sweep) && maybeUnboxedLayout(sweep)->nativeGroup()) {
-    AutoSweepObjectGroup sweepNative(maybeUnboxedLayout(sweep)->nativeGroup());
-    maybeUnboxedLayout(sweep)->nativeGroup()->setFlags(sweepNative, cx, flags);
-  }
-  if (ObjectGroup* unboxedGroup = maybeOriginalUnboxedGroup()) {
-    AutoSweepObjectGroup sweepUnboxed(unboxedGroup);
-    unboxedGroup->setFlags(sweepUnboxed, cx, flags);
-  }
 }
 
 void ObjectGroup::markUnknown(const AutoSweepObjectGroup& sweep,
@@ -3116,25 +3059,11 @@ void ObjectGroup::markUnknown(const AutoSweepObjectGroup& sweep,
   }
 
   clearProperties(sweep);
-
-  if (ObjectGroup* unboxedGroup = maybeOriginalUnboxedGroup()) {
-    MarkObjectGroupUnknownProperties(cx, unboxedGroup);
-  }
-  if (maybeUnboxedLayout(sweep) && maybeUnboxedLayout(sweep)->nativeGroup()) {
-    MarkObjectGroupUnknownProperties(cx,
-                                     maybeUnboxedLayout(sweep)->nativeGroup());
-  }
-  if (ObjectGroup* unboxedGroup = maybeOriginalUnboxedGroup()) {
-    MarkObjectGroupUnknownProperties(cx, unboxedGroup);
-  }
 }
 
 TypeNewScript* ObjectGroup::anyNewScript(const AutoSweepObjectGroup& sweep) {
   if (newScript(sweep)) {
     return newScript(sweep);
-  }
-  if (maybeUnboxedLayout(sweep)) {
-    return unboxedLayout(sweep).newScript();
   }
   return nullptr;
 }
@@ -3168,11 +3097,7 @@ void ObjectGroup::detachNewScript(bool writeBarrier, ObjectGroup* replacement) {
     MOZ_ASSERT(!replacement);
   }
 
-  if (this->newScript(sweep)) {
-    setAddendum(Addendum_None, nullptr, writeBarrier);
-  } else {
-    unboxedLayout(sweep).setNewScript(nullptr, writeBarrier);
-  }
+  setAddendum(Addendum_None, nullptr, writeBarrier);
 }
 
 void ObjectGroup::maybeClearNewScriptOnOOM() {
@@ -3728,23 +3653,6 @@ void PreliminaryObjectArray::sweep() {
   for (size_t i = 0; i < COUNT; i++) {
     JSObject** ptr = &objects[i];
     if (*ptr && IsAboutToBeFinalizedUnbarriered(ptr)) {
-      
-      
-      
-      
-      
-      
-      JSObject* obj = *ptr;
-      GlobalObject* global =
-          obj->as<NativeObject>().realm()->unsafeUnbarrieredMaybeGlobal();
-      if (global && !obj->isSingleton()) {
-        JSObject* objectProto = global->maybeGetPrototype(JSProto_Object);
-        obj->setGroup(objectProto->groupRaw());
-        MOZ_ASSERT(obj->is<NativeObject>());
-        MOZ_ASSERT(obj->getClass() == objectProto->getClass());
-        MOZ_ASSERT(!obj->getClass()->hasFinalize());
-      }
-
       *ptr = nullptr;
     }
   }
@@ -3842,11 +3750,6 @@ void PreliminaryObjectArrayWithTemplate::maybeAnalyze(JSContext* cx,
     }
   }
 
-  AutoSweepObjectGroup sweep(group);
-  if (group->maybeUnboxedLayout(sweep)) {
-    return;
-  }
-
   
   
   
@@ -3865,7 +3768,6 @@ bool TypeNewScript::make(JSContext* cx, ObjectGroup* group, JSFunction* fun) {
   AutoSweepObjectGroup sweep(group);
   MOZ_ASSERT(cx->zone()->types.activeAnalysis);
   MOZ_ASSERT(!group->newScript(sweep));
-  MOZ_ASSERT(!group->maybeUnboxedLayout(sweep));
   MOZ_ASSERT(cx->realm() == group->realm());
   MOZ_ASSERT(cx->realm() == fun->realm());
 
@@ -4144,28 +4046,6 @@ bool TypeNewScript::maybeAnalyze(JSContext* cx, ObjectGroup* group,
   js_delete(preliminaryObjects);
   preliminaryObjects = nullptr;
 
-  if (group->maybeUnboxedLayout(sweep)) {
-    
-    
-    MOZ_ASSERT(group->unboxedLayout(sweep).newScript() == this);
-    destroyNewScript.release();
-
-    
-    
-    
-    
-    AutoEnterOOMUnsafeRegion oomUnsafe;
-    ObjectGroup* plainGroup =
-        ObjectGroup::defaultNewGroup(cx, &PlainObject::class_, group->proto());
-    if (!plainGroup) {
-      oomUnsafe.crash("TypeNewScript::maybeAnalyze");
-    }
-    templateObject_->setGroup(plainGroup);
-    templateObject_ = nullptr;
-
-    return true;
-  }
-
   if (prefixShape->slotSpan() == templateObject()->slotSpan()) {
     
     
@@ -4266,13 +4146,6 @@ bool TypeNewScript::rollbackPartiallyInitializedObjects(JSContext* cx,
     if (!thisv.isObject() || thisv.toObject().hasLazyGroup() ||
         thisv.toObject().group() != group) {
       continue;
-    }
-
-    if (thisv.toObject().is<UnboxedPlainObject>()) {
-      AutoEnterOOMUnsafeRegion oomUnsafe;
-      if (!UnboxedPlainObject::convertToNative(cx, &thisv.toObject())) {
-        oomUnsafe.crash("rollbackPartiallyInitializedObjects");
-      }
     }
 
     
@@ -4474,12 +4347,6 @@ void ConstraintTypeSet::sweep(const AutoSweepBase& sweep, Zone* zone) {
         
         
         
-        
-        
-        
-        
-        
-        
         flags |= TYPE_FLAG_ANYOBJECT;
         clearObjects();
         objectCount = 0;
@@ -4562,24 +4429,6 @@ void ObjectGroup::sweep(const AutoSweepObjectGroup& sweep) {
   }
 
   AutoTouchingGrayThings tgt;
-
-  if (auto* layout = maybeUnboxedLayout(sweep)) {
-    
-    
-    ObjectGroup* group = this;
-    if (IsAboutToBeFinalizedUnbarriered(&group)) {
-      layout->detachFromRealm();
-    }
-
-    if (layout->newScript()) {
-      layout->newScript()->sweep();
-    }
-
-    
-    if (zone()->isGCCompacting()) {
-      layout->setConstructorCode(nullptr);
-    }
-  }
 
   if (maybePreliminaryObjects(sweep)) {
     maybePreliminaryObjects(sweep)->sweep();

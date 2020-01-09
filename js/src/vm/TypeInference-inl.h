@@ -31,7 +31,6 @@
 #include "vm/SharedArrayObject.h"
 #include "vm/StringObject.h"
 #include "vm/TypedArrayObject.h"
-#include "vm/UnboxedObject.h"
 
 #include "vm/JSContext-inl.h"
 #include "vm/ObjectGroup-inl.h"
@@ -292,8 +291,6 @@ class TypeNewScript {
   
   
   
-  
-  
   HeapPtr<PlainObject*> templateObject_ = {};
 
   
@@ -365,18 +362,6 @@ class TypeNewScript {
   }
 };
 
-inline UnboxedLayout::~UnboxedLayout() {
-  if (newScript_) {
-    newScript_->clear();
-  }
-  js_delete(newScript_);
-  js_free(traceList_);
-
-  nativeGroup_.init(nullptr);
-  nativeShape_.init(nullptr);
-  replacementGroup_.init(nullptr);
-  constructorCode_.init(nullptr);
-}
 
 inline bool ObjectGroup::hasUnanalyzedPreliminaryObjects() {
   return (newScriptDontCheckGeneration() &&
@@ -394,10 +379,6 @@ inline bool ObjectGroup::hasUnanalyzedPreliminaryObjects() {
 
 
 struct MOZ_RAII AutoEnterAnalysis {
-  
-  
-  UniquePtr<UnboxedLayout> unboxedLayoutToCleanUp;
-
   
   gc::AutoSuppressGC suppressGC;
 

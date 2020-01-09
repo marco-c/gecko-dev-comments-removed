@@ -54,13 +54,8 @@ inline bool ObjectGroup::unknownProperties(const AutoSweepObjectGroup& sweep) {
 }
 
 inline bool ObjectGroup::shouldPreTenure(const AutoSweepObjectGroup& sweep) {
-  MOZ_ASSERT(sweep.group() == this);
-  return shouldPreTenureDontCheckGeneration();
-}
-
-inline bool ObjectGroup::shouldPreTenureDontCheckGeneration() {
-  return hasAnyFlagsDontCheckGeneration(OBJECT_FLAG_PRE_TENURE) &&
-         !unknownPropertiesDontCheckGeneration();
+  return hasAnyFlags(sweep, OBJECT_FLAG_PRE_TENURE) &&
+         !unknownProperties(sweep);
 }
 
 inline bool ObjectGroup::canPreTenure(const AutoSweepObjectGroup& sweep) {
@@ -87,18 +82,6 @@ inline PreliminaryObjectArrayWithTemplate* ObjectGroup::maybePreliminaryObjects(
     const AutoSweepObjectGroup& sweep) {
   MOZ_ASSERT(sweep.group() == this);
   return maybePreliminaryObjectsDontCheckGeneration();
-}
-
-inline UnboxedLayout* ObjectGroup::maybeUnboxedLayout(
-    const AutoSweepObjectGroup& sweep) {
-  MOZ_ASSERT(sweep.group() == this);
-  return maybeUnboxedLayoutDontCheckGeneration();
-}
-
-inline UnboxedLayout& ObjectGroup::unboxedLayout(
-    const AutoSweepObjectGroup& sweep) {
-  MOZ_ASSERT(sweep.group() == this);
-  return unboxedLayoutDontCheckGeneration();
 }
 
 }  

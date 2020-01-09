@@ -21,7 +21,6 @@
 namespace js {
 
 class TypeDescr;
-class UnboxedLayout;
 
 class PreliminaryObjectArrayWithTemplate;
 class TypeNewScript;
@@ -252,11 +251,6 @@ class ObjectGroup : public gc::TenuredCell {
     
     
     
-    Addendum_UnboxedLayout,
-
-    
-    
-    
     Addendum_OriginalUnboxedGroup,
 
     
@@ -317,25 +311,6 @@ class ObjectGroup : public gc::TenuredCell {
   }
 
   inline bool hasUnanalyzedPreliminaryObjects();
-
-  inline UnboxedLayout* maybeUnboxedLayout(const AutoSweepObjectGroup& sweep);
-  inline UnboxedLayout& unboxedLayout(const AutoSweepObjectGroup& sweep);
-
-  UnboxedLayout* maybeUnboxedLayoutDontCheckGeneration() const {
-    if (addendumKind() == Addendum_UnboxedLayout) {
-      return &unboxedLayoutDontCheckGeneration();
-    }
-    return nullptr;
-  }
-
-  UnboxedLayout& unboxedLayoutDontCheckGeneration() const {
-    MOZ_ASSERT(addendumKind() == Addendum_UnboxedLayout);
-    return *reinterpret_cast<UnboxedLayout*>(addendum_);
-  }
-
-  void setUnboxedLayout(UnboxedLayout* layout) {
-    setAddendum(Addendum_UnboxedLayout, layout);
-  }
 
   ObjectGroup* maybeOriginalUnboxedGroup() const {
     if (addendumKind() == Addendum_OriginalUnboxedGroup) {
@@ -658,10 +633,6 @@ class ObjectGroupRealm {
   
   
   ReadBarrieredObjectGroup stringSplitStringGroup = {};
-
- public:
-  
-  mozilla::LinkedList<js::UnboxedLayout> unboxedLayouts;
 
   
 

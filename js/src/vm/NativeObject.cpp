@@ -339,33 +339,6 @@ void NativeObject::setLastPropertyMakeNonNative(Shape* shape) {
   setShape(shape);
 }
 
-
-void NativeObject::setLastPropertyMakeNative(JSContext* cx, Shape* shape) {
-  MOZ_ASSERT(getClass()->isNative());
-  MOZ_ASSERT(shape->getObjectClass()->isNative());
-  MOZ_ASSERT(!shape->inDictionary());
-
-  
-  
-  
-  initShape(shape);
-
-  slots_ = nullptr;
-  elements_ = emptyObjectElements;
-
-  size_t oldSpan = shape->numFixedSlots();
-  size_t newSpan = shape->slotSpan();
-
-  initializeSlotRange(0, oldSpan);
-
-  
-  
-  AutoEnterOOMUnsafeRegion oomUnsafe;
-  if (oldSpan != newSpan && !updateSlotsForSpan(cx, oldSpan, newSpan)) {
-    oomUnsafe.crash("NativeObject::setLastPropertyMakeNative");
-  }
-}
-
 bool NativeObject::setSlotSpan(JSContext* cx, uint32_t span) {
   MOZ_ASSERT(inDictionaryMode());
 
