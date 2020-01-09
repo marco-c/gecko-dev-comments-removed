@@ -75,9 +75,6 @@ user_pref("media.navigator.permission.disabled", true);
 user_pref("media.peerconnection.enabled", true);
 
 user_pref("network.http.speculative-parallel-limit", 0);
-user_pref("network.proxy.http", "localhost");
-user_pref("network.proxy.http_port", 80);
-user_pref("network.proxy.type", 1);
 
 
 
