@@ -1483,16 +1483,112 @@ WasmInstanceObject* Instance::objectUnbarriered() const {
 
 WasmInstanceObject* Instance::object() const { return object_; }
 
-bool Instance::callExport(JSContext* cx, uint32_t funcIndex, CallArgs args) {
+static bool EnsureEntryStubs(const Instance& instance, uint32_t funcIndex,
+                             const FuncExport** funcExport,
+                             void** interpEntry) {
+  Tier tier = instance.code().bestTier();
+
+  size_t funcExportIndex;
+  *funcExport =
+      &instance.metadata(tier).lookupFuncExport(funcIndex, &funcExportIndex);
+
+  const FuncExport& fe = **funcExport;
+  if (fe.hasEagerStubs()) {
+    *interpEntry = instance.codeBase(tier) + fe.eagerInterpEntryOffset();
+    return true;
+  }
+
+  MOZ_ASSERT(!instance.isAsmJS(), "only wasm can lazily export functions");
+
   
-  MOZ_RELEASE_ASSERT(!memory_ || tlsData()->memoryBase ==
-                                     memory_->buffer().dataPointerEither());
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-  Tier tier = code().bestTier();
+  auto stubs = instance.code(tier).lazyStubs().lock();
+  *interpEntry = stubs->lookupInterpEntry(fe.funcIndex());
+  if (*interpEntry) {
+    return true;
+  }
 
-  const FuncExport& func = metadata(tier).lookupFuncExport(funcIndex);
+  
+  Tier prevTier = tier;
+  tier = instance.code().bestTier();
+  const CodeTier& codeTier = instance.code(tier);
+  if (tier == prevTier) {
+    if (!stubs->createOne(funcExportIndex, codeTier)) {
+      return false;
+    }
 
-  if (func.funcType().hasI64ArgOrRet()) {
+    *interpEntry = stubs->lookupInterpEntry(fe.funcIndex());
+    MOZ_ASSERT(*interpEntry);
+    return true;
+  }
+
+  MOZ_RELEASE_ASSERT(prevTier == Tier::Baseline && tier == Tier::Optimized);
+  auto stubs2 = instance.code(tier).lazyStubs().lock();
+
+  
+  
+  MOZ_ASSERT(!stubs2->hasStub(fe.funcIndex()));
+
+  if (!stubs2->createOne(funcExportIndex, codeTier)) {
+    return false;
+  }
+
+  *interpEntry = stubs2->lookupInterpEntry(fe.funcIndex());
+  MOZ_ASSERT(*interpEntry);
+  return true;
+}
+
+static bool GetInterpEntry(Instance& instance, uint32_t funcIndex,
+                           CallArgs args, void** interpEntry,
+                           const FuncType** funcType) {
+  const FuncExport* funcExport;
+  if (!EnsureEntryStubs(instance, funcIndex, &funcExport, interpEntry)) {
+    return false;
+  }
+
+  
+  
+  
+  if (!funcExport->hasEagerStubs() && funcExport->canHaveJitEntry()) {
+    JSFunction& callee = args.callee().as<JSFunction>();
+    MOZ_ASSERT(!callee.isAsmJSNative(), "asm.js only has eager stubs");
+    if (!callee.isWasmWithJitEntry()) {
+      callee.setWasmJitEntry(instance.code().getAddressOfJitEntry(funcIndex));
+    }
+  }
+
+  *funcType = &funcExport->funcType();
+  return true;
+}
+
+bool Instance::callExport(JSContext* cx, uint32_t funcIndex, CallArgs args) {
+  if (memory_) {
+    
+    MOZ_RELEASE_ASSERT(memory_->buffer().dataPointerEither() == memoryBase());
+  }
+
+  void* interpEntry;
+  const FuncType* funcType;
+  if (!GetInterpEntry(*this, funcIndex, args, &interpEntry, &funcType)) {
+    return false;
+  }
+
+  if (funcType->hasI64ArgOrRet()) {
     JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
                              JSMSG_WASM_BAD_I64_TYPE);
     return false;
@@ -1507,7 +1603,7 @@ bool Instance::callExport(JSContext* cx, uint32_t funcIndex, CallArgs args) {
   
   
   Vector<ExportArg, 8> exportArgs(cx);
-  if (!exportArgs.resize(Max<size_t>(1, func.funcType().args().length()))) {
+  if (!exportArgs.resize(Max<size_t>(1, funcType->args().length()))) {
     return false;
   }
 
@@ -1517,9 +1613,9 @@ bool Instance::callExport(JSContext* cx, uint32_t funcIndex, CallArgs args) {
   DebugCodegen(DebugChannel::Function, "wasm-function[%d]; arguments ",
                funcIndex);
   RootedValue v(cx);
-  for (size_t i = 0; i < func.funcType().args().length(); ++i) {
+  for (size_t i = 0; i < funcType->args().length(); ++i) {
     v = i < args.length() ? args[i] : UndefinedValue();
-    switch (func.funcType().arg(i).code()) {
+    switch (funcType->arg(i).code()) {
       case ValType::I32:
         if (!ToInt32(cx, v, (int32_t*)&exportArgs[i])) {
           DebugCodegen(DebugChannel::Function, "call to ToInt32 failed!\n");
@@ -1573,33 +1669,26 @@ bool Instance::callExport(JSContext* cx, uint32_t funcIndex, CallArgs args) {
 
   DebugCodegen(DebugChannel::Function, "\n");
 
+  
+  if (anyrefs.length() > 0) {
+    DebugCodegen(DebugChannel::Function, "; ");
+    size_t nextRef = 0;
+    for (size_t i = 0; i < funcType->args().length(); ++i) {
+      if (funcType->arg(i).isReference()) {
+        ASSERT_ANYREF_IS_JSOBJECT;
+        *(void**)&exportArgs[i] = (void*)anyrefs[nextRef++];
+        DebugCodegen(DebugChannel::Function, "ptr(#%d) = %p ", int(nextRef - 1),
+                     *(void**)&exportArgs[i]);
+      }
+    }
+    anyrefs.clear();
+  }
+
   {
     JitActivation activation(cx);
 
-    void* callee;
-    if (func.hasEagerStubs()) {
-      callee = codeBase(tier) + func.eagerInterpEntryOffset();
-    } else {
-      callee = code(tier).lazyStubs().lock()->lookupInterpEntry(funcIndex);
-    }
-
     
-    if (anyrefs.length() > 0) {
-      DebugCodegen(DebugChannel::Function, "; ");
-      size_t nextRef = 0;
-      for (size_t i = 0; i < func.funcType().args().length(); ++i) {
-        if (func.funcType().arg(i).isReference()) {
-          ASSERT_ANYREF_IS_JSOBJECT;
-          *(void**)&exportArgs[i] = (void*)anyrefs[nextRef++];
-          DebugCodegen(DebugChannel::Function, "ptr(#%d) = %p ",
-                       int(nextRef - 1), *(void**)&exportArgs[i]);
-        }
-      }
-      anyrefs.clear();
-    }
-
-    
-    auto funcPtr = JS_DATA_TO_FUNC_PTR(ExportFuncPtr, callee);
+    auto funcPtr = JS_DATA_TO_FUNC_PTR(ExportFuncPtr, interpEntry);
     if (!CALL_GENERATED_2(funcPtr, exportArgs.begin(), tlsData())) {
       return false;
     }
@@ -1625,7 +1714,7 @@ bool Instance::callExport(JSContext* cx, uint32_t funcIndex, CallArgs args) {
 
   DebugCodegen(DebugChannel::Function, "wasm-function[%d]; returns ",
                funcIndex);
-  switch (func.funcType().ret().code()) {
+  switch (funcType->ret().code()) {
     case ExprType::Void:
       args.rval().set(UndefinedValue());
       DebugCodegen(DebugChannel::Function, "void");
