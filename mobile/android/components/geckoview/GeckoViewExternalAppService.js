@@ -7,8 +7,7 @@
 const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 const {GeckoViewUtils} = ChromeUtils.import("resource://gre/modules/GeckoViewUtils.jsm");
 
-
-GeckoViewUtils.initLogging("ExternalAppService", this);
+const {debug, warn} = GeckoViewUtils.initLogging("ExternalAppService"); 
 
 ChromeUtils.defineModuleGetter(this, "EventDispatcher",
   "resource://gre/modules/Messaging.jsm");

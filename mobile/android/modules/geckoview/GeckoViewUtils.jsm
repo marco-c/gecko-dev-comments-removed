@@ -375,6 +375,7 @@ var GeckoViewUtils = {
 
 
   initLogging: function(aTag, aScope) {
+    aScope = aScope || {};
     const tag = "GeckoView." + aTag.replace(/^GeckoView\.?/, "");
 
     

@@ -137,5 +137,5 @@ class GeckoViewNavigationChild extends GeckoViewChildModule {
   }
 }
 
-let {debug, warn} = GeckoViewNavigationChild.initLogging("GeckoViewNavigation");
-let module = GeckoViewNavigationChild.create(this);
+const {debug, warn} = GeckoViewNavigationChild.initLogging("GeckoViewNavigation"); 
+const module = GeckoViewNavigationChild.create(this);

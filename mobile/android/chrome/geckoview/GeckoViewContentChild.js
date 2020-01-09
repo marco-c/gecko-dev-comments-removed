@@ -451,5 +451,5 @@ class GeckoViewContentChild extends GeckoViewChildModule {
   }
 }
 
-let {debug, warn} = GeckoViewContentChild.initLogging("GeckoViewContent");
-let module = GeckoViewContentChild.create(this);
+const {debug, warn} = GeckoViewContentChild.initLogging("GeckoViewContent"); 
+const module = GeckoViewContentChild.create(this);

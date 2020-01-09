@@ -238,6 +238,5 @@ class GeckoViewSelectionActionChild extends GeckoViewChildModule {
   }
 }
 
-let {debug, warn} =
-    GeckoViewSelectionActionChild.initLogging("GeckoViewSelectionAction");
-let module = GeckoViewSelectionActionChild.create(this);
+const {debug, warn} = GeckoViewSelectionActionChild.initLogging("GeckoViewSelectionAction"); 
+const module = GeckoViewSelectionActionChild.create(this);

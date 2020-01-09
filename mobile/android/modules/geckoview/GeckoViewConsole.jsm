@@ -12,7 +12,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
 });
 
-GeckoViewUtils.initLogging("Console", this);
+const {debug, warn} = GeckoViewUtils.initLogging("Console"); 
 
 const LOG_EVENT_TOPIC = "console-api-log-event";
 

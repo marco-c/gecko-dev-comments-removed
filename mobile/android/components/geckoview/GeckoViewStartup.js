@@ -15,8 +15,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
 });
 
-
-GeckoViewUtils.initLogging("Startup", this);
+const {debug, warn} = GeckoViewUtils.initLogging("Startup"); 
 
 function GeckoViewStartup() {
 }

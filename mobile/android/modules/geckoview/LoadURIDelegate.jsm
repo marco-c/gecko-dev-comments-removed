@@ -13,7 +13,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
 });
 
-GeckoViewUtils.initLogging("LoadURIDelegate", this);
+const {debug, warn} = GeckoViewUtils.initLogging("LoadURIDelegate"); 
 
 const LoadURIDelegate = {
   
