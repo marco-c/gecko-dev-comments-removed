@@ -124,7 +124,7 @@ MOZ_MUST_USE T* UnwrapAndTypeCheckValueSlowPath(JSContext* cx,
   if (value.isObject()) {
     obj = &value.toObject();
     if (IsWrapper(obj)) {
-      obj = CheckedUnwrap(obj);
+      obj = CheckedUnwrapStatic(obj);
       if (!obj) {
         ReportAccessDenied(cx);
         return nullptr;
@@ -234,7 +234,7 @@ MOZ_MUST_USE T* UnwrapAndDowncastObject(JSContext* cx, JSObject* obj) {
 
     
     
-    obj = CheckedUnwrap(obj);
+    obj = obj->maybeUnwrapAs<T>();
     if (!obj) {
       ReportAccessDenied(cx);
       return nullptr;

@@ -301,7 +301,7 @@ bool CallerGetterImpl(JSContext* cx, const CallArgs& args) {
   
   
   {
-    JSObject* callerObj = CheckedUnwrap(caller);
+    JSObject* callerObj = CheckedUnwrapStatic(caller);
     if (!callerObj) {
       args.rval().setNull();
       return true;
