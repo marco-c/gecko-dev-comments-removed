@@ -1635,13 +1635,13 @@ bool nsFocusManager::Blur(nsPIDOMWindowOuter* aWindowToClear,
     
     if (TabParent* remote = TabParent::GetFrom(element)) {
       remote->Deactivate();
-      LOGFOCUS(("Remote browser deactivated"));
+      LOGFOCUS(("Remote browser deactivated %p", remote));
     }
 
     
     if (BrowserBridgeChild* bbc = BrowserBridgeChild::GetFrom(element)) {
       bbc->Deactivate();
-      LOGFOCUS(("Out-of-process iframe deactivated"));
+      LOGFOCUS(("Out-of-process iframe deactivated %p", bbc));
     }
   }
 
@@ -1856,13 +1856,13 @@ void nsFocusManager::Focus(nsPIDOMWindowOuter* aWindow, Element* aElement,
         
         if (TabParent* remote = TabParent::GetFrom(aElement)) {
           remote->Activate();
-          LOGFOCUS(("Remote browser activated"));
+          LOGFOCUS(("Remote browser activated %p", remote));
         }
 
         
         if (BrowserBridgeChild* bbc = BrowserBridgeChild::GetFrom(aElement)) {
           bbc->Activate();
-          LOGFOCUS(("Out-of-process iframe activated"));
+          LOGFOCUS(("Out-of-process iframe activated %p", bbc));
         }
       }
 
