@@ -10905,20 +10905,21 @@ CompositorHitTestInfo nsIFrame::GetCompositorHitTestInfo(
   
   result = CompositorHitTestFlags::eVisibleToHitTest;
 
-  if (aBuilder->IsBuildingNonLayerizedScrollbar() ||
-      aBuilder->GetAncestorHasApzAwareEventHandler()) {
+  if (aBuilder->IsBuildingNonLayerizedScrollbar()) {
     
     
     
     
     
-    result += CompositorHitTestFlags::eDispatchToContent;
+    result += CompositorHitTestFlags::eInactiveScrollframe;
+  } else if (aBuilder->GetAncestorHasApzAwareEventHandler()) {
+    result += CompositorHitTestFlags::eApzAwareListeners;
   } else if (IsObjectFrame()) {
     
     
     nsPluginFrame* pluginFrame = do_QueryFrame(this);
     if (pluginFrame && pluginFrame->WantsToHandleWheelEventAsDefaultAction()) {
-      result += CompositorHitTestFlags::eDispatchToContent;
+      result += CompositorHitTestFlags::eApzAwareListeners;
     }
   }
 
@@ -10985,7 +10986,7 @@ CompositorHitTestInfo nsIFrame::GetCompositorHitTestInfo(
       if (thumbGetsLayer) {
         result += CompositorHitTestFlags::eScrollbarThumb;
       } else {
-        result += CompositorHitTestFlags::eDispatchToContent;
+        result += CompositorHitTestFlags::eInactiveScrollframe;
       }
     }
 

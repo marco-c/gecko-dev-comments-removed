@@ -23,8 +23,18 @@ namespace gfx {
 enum class CompositorHitTestFlags : uint8_t {
   
   eVisibleToHitTest = 0,  
+
   
-  eDispatchToContent,  
+  
+  eIrregularArea,  
+  
+  
+  
+  eApzAwareListeners,  
+  
+  
+  
+  eInactiveScrollframe,  
 
   
   
@@ -62,6 +72,13 @@ constexpr CompositorHitTestInfo CompositorHitTestTouchActionMask(
     CompositorHitTestFlags::eTouchActionPanYDisabled,
     CompositorHitTestFlags::eTouchActionPinchZoomDisabled,
     CompositorHitTestFlags::eTouchActionDoubleTapZoomDisabled);
+
+
+
+constexpr CompositorHitTestInfo CompositorHitTestDispatchToContent(
+    CompositorHitTestFlags::eIrregularArea,
+    CompositorHitTestFlags::eApzAwareListeners,
+    CompositorHitTestFlags::eInactiveScrollframe);
 
 }  
 

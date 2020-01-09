@@ -260,9 +260,16 @@ CompositorHitTestInfo HitTestingTreeNode::HitTest(
 
   result = CompositorHitTestFlags::eVisibleToHitTest;
 
-  if ((mOverride & EventRegionsOverride::ForceDispatchToContent) ||
-      mEventRegions.mDispatchToContentHitRegion.Contains(point.x, point.y)) {
-    result += CompositorHitTestFlags::eDispatchToContent;
+  if (mOverride & EventRegionsOverride::ForceDispatchToContent) {
+    result += CompositorHitTestFlags::eApzAwareListeners;
+  }
+  if (mEventRegions.mDispatchToContentHitRegion.Contains(point.x, point.y)) {
+    
+    
+    
+    
+    
+    result += CompositorHitTestFlags::eIrregularArea;
     if (mEventRegions.mDTCRequiresTargetConfirmation) {
       result += CompositorHitTestFlags::eRequiresTargetConfirmation;
     }

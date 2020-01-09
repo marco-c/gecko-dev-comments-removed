@@ -3718,7 +3718,7 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     if (!mWillBuildScrollableLayer) {
       if (aBuilder->BuildCompositorHitTestInfo()) {
         CompositorHitTestInfo info(CompositorHitTestFlags::eVisibleToHitTest,
-                                   CompositorHitTestFlags::eDispatchToContent);
+                                   CompositorHitTestFlags::eInactiveScrollframe);
         
         
         

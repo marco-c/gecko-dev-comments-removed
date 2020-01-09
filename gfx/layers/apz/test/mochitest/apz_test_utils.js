@@ -703,7 +703,19 @@ function hitTestScrollbar(params) {
   var expectedHitInfo = APZHitResultFlags.VISIBLE | APZHitResultFlags.SCROLLBAR;
   if (params.expectThumb) {
     
-    expectedHitInfo |= APZHitResultFlags.DISPATCH_TO_CONTENT;
+    
+    
+    
+    
+    if (config.isWebRender) {
+      expectedHitInfo |= APZHitResultFlags.APZ_AWARE_LISTENERS;
+      if (params.layerState == LayerState.INACTIVE) {
+        expectedHitInfo |= APZHitResultFlags.INACTIVE_SCROLLFRAME;
+      }
+    } else {
+      expectedHitInfo |= APZHitResultFlags.IRREGULAR_AREA;
+    }
+    
     if (params.layerState == LayerState.ACTIVE) {
       expectedHitInfo |= APZHitResultFlags.SCROLLBAR_THUMB;
     }

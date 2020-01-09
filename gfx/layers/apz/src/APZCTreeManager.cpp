@@ -1627,7 +1627,10 @@ static TouchBehaviorFlags ConvertToTouchBehavior(
   TouchBehaviorFlags result = AllowedTouchBehavior::UNKNOWN;
   if (info == CompositorHitTestInvisibleToHit) {
     result = AllowedTouchBehavior::NONE;
-  } else if (info.contains(CompositorHitTestFlags::eDispatchToContent)) {
+  } else if (info.contains(CompositorHitTestFlags::eIrregularArea)) {
+    
+    
+    
     result = AllowedTouchBehavior::UNKNOWN;
   } else {
     result = AllowedTouchBehavior::VERTICAL_PAN |

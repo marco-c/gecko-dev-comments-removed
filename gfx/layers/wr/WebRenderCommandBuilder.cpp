@@ -752,8 +752,9 @@ struct DIGroup {
     bool backfaceHidden = false;
 
     
+    
     CompositorHitTestInfo hitInfo(CompositorHitTestFlags::eVisibleToHitTest,
-                                  CompositorHitTestFlags::eDispatchToContent);
+                                  CompositorHitTestFlags::eIrregularArea);
 
     
     
