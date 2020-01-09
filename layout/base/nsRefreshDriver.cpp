@@ -1674,6 +1674,10 @@ void nsRefreshDriver::RunFrameRequestCallbacks(TimeStamp aNowTime) {
         
       }
       for (auto& callback : docCallbacks.mCallbacks) {
+        if (docCallbacks.mDocument->IsCanceledFrameRequestCallback(
+                callback.mHandle)) {
+          continue;
+        }
         callback.mCallback->Call(timeStamp);
       }
     }
