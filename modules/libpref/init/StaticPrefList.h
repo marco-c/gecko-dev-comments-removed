@@ -671,6 +671,13 @@ VARCACHE_PREF(
 )
 
 
+VARCACHE_PREF(
+  "dom.placeholder.show_on_focus",
+   dom_placeholder_show_on_focus,
+  bool, true
+)
+
+
 
 
 

@@ -3190,13 +3190,6 @@ class nsContentUtils {
 
   
   
-  
-  static bool ShowInputPlaceholderOnFocus() {
-    return sShowInputPlaceholderOnFocus;
-  }
-
-  
-  
   static bool AutoFocusEnabled() { return sAutoFocusEnabled; }
 
   
@@ -3415,7 +3408,6 @@ class nsContentUtils {
 
   static bool sIsHandlingKeyBoardEvent;
   static bool sAllowXULXBL_for_file;
-  static bool sShowInputPlaceholderOnFocus;
   static bool sAutoFocusEnabled;
 #ifndef RELEASE_OR_BETA
   static bool sBypassCSSOMOriginCheck;

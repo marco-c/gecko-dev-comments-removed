@@ -5380,9 +5380,6 @@ pref("io.activity.enabled", false);
 pref("jsloader.shareGlobal", true);
 
 
-pref("dom.placeholder.show_on_focus", true);
-
-
 
 #if defined(XP_WIN) || defined(XP_MACOSX) || !defined(RELEASE_OR_BETA)
 pref("dom.vr.enabled", true);
