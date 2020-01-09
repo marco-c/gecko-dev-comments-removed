@@ -7,13 +7,13 @@ use api::{DeviceIntRect, DeviceIntSize, DevicePoint, DeviceRect};
 use api::{LayoutRect, PictureToRasterTransform, LayoutPixel, PropertyBinding, PropertyBindingId};
 use api::{DevicePixelScale, RasterRect, RasterSpace, ColorF, ImageKey, DirtyRect, WorldSize, ClipMode, LayoutSize};
 use api::{PicturePixel, RasterPixel, WorldPixel, WorldRect, ImageFormat, ImageDescriptor, WorldVector2D, LayoutPoint};
-use api::{DebugFlags, DeviceVector2D};
+use api::{DebugFlags, DeviceHomogeneousVector, DeviceVector2D};
 use box_shadow::{BLUR_SAMPLE_SCALE};
 use clip::{ClipChainId, ClipChainNode, ClipItem};
 use clip_scroll_tree::{ROOT_SPATIAL_NODE_INDEX, ClipScrollTree, SpatialNodeIndex, CoordinateSystemId};
 use debug_colors;
 use device::TextureFilter;
-use euclid::{size2, TypedScale, vec3, TypedRect, TypedPoint2D, TypedSize2D};
+use euclid::{size2, vec3, TypedRect, TypedPoint2D, TypedSize2D};
 use euclid::approxeq::ApproxEq;
 use frame_builder::{FrameVisibilityContext, FrameVisibilityState};
 use intern::ItemUid;
@@ -2949,31 +2949,31 @@ fn calculate_screen_uv(
     rendered_rect: &DeviceRect,
     device_pixel_scale: DevicePixelScale,
     supports_snapping: bool,
-) -> DevicePoint {
-    let raster_pos = match transform.transform_point2d(local_pos) {
-        Some(pos) => pos,
-        None => {
-            
-            
-            
-            
-            return DevicePoint::new(0.5, 0.5);
-        }
-    };
+) -> DeviceHomogeneousVector {
+    let raster_pos = transform.transform_point2d_homogeneous(local_pos);
 
-    let raster_to_device_space = TypedScale::new(1.0) * device_pixel_scale;
-
-    let mut device_pos = raster_pos * raster_to_device_space;
+    let mut device_vec = DeviceHomogeneousVector::new(
+        raster_pos.x * device_pixel_scale.0,
+        raster_pos.y * device_pixel_scale.0,
+        0.0,
+        raster_pos.w,
+    );
 
     
     if transform.transform_kind() == TransformedRectKind::AxisAligned && supports_snapping {
-        device_pos.x = (device_pos.x + 0.5).floor();
-        device_pos.y = (device_pos.y + 0.5).floor();
+        device_vec = DeviceHomogeneousVector::new(
+            (device_vec.x / device_vec.w + 0.5).floor(),
+            (device_vec.y / device_vec.w + 0.5).floor(),
+            0.0,
+            1.0,
+        );
     }
 
-    DevicePoint::new(
-        (device_pos.x - rendered_rect.origin.x) / rendered_rect.size.width,
-        (device_pos.y - rendered_rect.origin.y) / rendered_rect.size.height,
+    DeviceHomogeneousVector::new(
+        (device_vec.x - rendered_rect.origin.x * device_vec.w) / rendered_rect.size.width,
+        (device_vec.y - rendered_rect.origin.y * device_vec.w) / rendered_rect.size.height,
+        0.0,
+        device_vec.w,
     )
 }
 
