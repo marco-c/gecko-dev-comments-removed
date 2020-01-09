@@ -234,10 +234,12 @@ class nsBlockFrame : public nsContainerFrame {
   
   bool MarkerIsEmpty() const;
 
+#ifdef ACCESSIBILITY
   
 
 
   void GetSpokenMarkerText(nsAString& aText) const;
+#endif
 
   
 
