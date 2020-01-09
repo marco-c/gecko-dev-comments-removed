@@ -8,6 +8,8 @@
 
 
 
+
+
 this.onpush = handlePush;
 this.onmessage = handleMessage;
 this.onpushsubscriptionchange = handlePushSubscriptionChange;
@@ -51,7 +53,7 @@ function reply(event, promise) {
 
 function handlePush(event) {
   if (event instanceof PushEvent) {
-    if (!('data' in event)) {
+    if (!("data" in event)) {
       broadcast(event, {type: "finished", okay: "yes"});
       return;
     }
