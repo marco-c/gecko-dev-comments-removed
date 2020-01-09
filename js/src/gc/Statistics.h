@@ -286,10 +286,14 @@ struct Statistics {
   
   void printTotalProfileTimes();
 
+  enum JSONUse {
+    TELEMETRY,
+    PROFILER
+  };
+
   
   
-  UniqueChars renderJsonMessage(uint64_t timestamp,
-                                bool includeSlices = true) const;
+  UniqueChars renderJsonMessage(uint64_t timestamp, JSONUse use) const;
 
   
   UniqueChars renderJsonSlice(size_t sliceNum) const;
