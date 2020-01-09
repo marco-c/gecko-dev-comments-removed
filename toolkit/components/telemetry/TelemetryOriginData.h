@@ -1,0 +1,21 @@
+
+
+
+
+
+
+#ifndef mozilla_TelemetryOriginData_h
+#define mozilla_TelemetryOriginData_h
+
+namespace {
+
+
+
+const nsTArray<const char*> gOriginsList({
+    "doubleclick.de",
+    "fb.com",
+});
+
+}  
+
+#endif  
