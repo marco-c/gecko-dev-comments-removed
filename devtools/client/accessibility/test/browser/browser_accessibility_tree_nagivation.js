@@ -44,7 +44,7 @@ const tests = [{
   },
 }, {
   desc: "Expand first tree node.",
-  action: async ({ doc }) => toggleRow(doc, 0),
+  setup: async ({ doc }) => toggleRow(doc, 0),
   expected: {
     tree: [{
       role: "document",
@@ -59,7 +59,7 @@ const tests = [{
   },
 }, {
   desc: "Expand second tree node.",
-  action: async ({ doc }) => toggleRow(doc, 1),
+  setup: async ({ doc }) => toggleRow(doc, 1),
   expected: {
     tree: [{
       role: "document",
@@ -88,7 +88,7 @@ const tests = [{
   },
 }, {
   desc: "Select third tree node.",
-  action: ({ doc }) => selectRow(doc, 2),
+  setup: ({ doc }) => selectRow(doc, 2),
   expected: {
     sidebar: {
       name: "Top level header",
@@ -104,7 +104,7 @@ const tests = [{
   },
 }, {
   desc: "Collapse first tree node.",
-  action: async ({ doc }) => toggleRow(doc, 0),
+  setup: async ({ doc }) => toggleRow(doc, 0),
   expected: {
     tree: [{
       role: "document",
@@ -124,7 +124,7 @@ const tests = [{
   },
 }, {
   desc: "Expand first tree node again.",
-  action: async ({ doc }) => toggleRow(doc, 0),
+  setup: async ({ doc }) => toggleRow(doc, 0),
   expected: {
     tree: [{
       role: "document",

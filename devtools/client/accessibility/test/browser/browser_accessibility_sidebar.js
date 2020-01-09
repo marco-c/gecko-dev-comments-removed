@@ -37,7 +37,7 @@ const tests = [{
   },
 }, {
   desc: "Mark document as disabled for accessibility.",
-  action: async ({ browser }) => ContentTask.spawn(browser, {}, () =>
+  setup: async ({ browser }) => ContentTask.spawn(browser, {}, () =>
     content.document.body.setAttribute("aria-disabled", true)),
   expected: {
     sidebar: {
@@ -46,7 +46,7 @@ const tests = [{
   },
 }, {
   desc: "Append a new child to the document.",
-  action: async ({ browser }) => ContentTask.spawn(browser, {}, () => {
+  setup: async ({ browser }) => ContentTask.spawn(browser, {}, () => {
     const doc = content.document;
     const button = doc.createElement("button");
     button.textContent = "Press Me!";
