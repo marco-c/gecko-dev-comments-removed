@@ -272,21 +272,21 @@ class SessionHistoryListener extends Handler {
     this.collectFrom(oldIndex);
   }
 
-  OnHistoryGotoIndex(index, gotoURI) {
+  OnHistoryGotoIndex() {
     
     this.collectFrom(kLastIndex);
   }
 
-  OnHistoryPurge(numEntries) {
+  OnHistoryPurge() {
     this.collect();
   }
 
-  OnHistoryReload(reloadURI, reloadFlags) {
+  OnHistoryReload() {
     this.collect();
     return true;
   }
 
-  OnHistoryReplaceEntry(index) {
+  OnHistoryReplaceEntry() {
     this.collect();
   }
 }

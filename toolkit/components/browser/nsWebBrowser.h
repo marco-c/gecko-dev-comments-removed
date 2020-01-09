@@ -118,7 +118,6 @@ class nsWebBrowser final : public nsIWebBrowser,
   
   NS_IMETHOD SetDocShell(nsIDocShell* aDocShell);
   NS_IMETHOD EnsureDocShellTreeOwner();
-  NS_IMETHOD BindListener(nsISupports* aListener, const nsIID& aIID);
   NS_IMETHOD EnableGlobalHistory(bool aEnable);
 
   nsIWidget* EnsureWidget();

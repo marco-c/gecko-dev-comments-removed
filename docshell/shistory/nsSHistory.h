@@ -63,7 +63,6 @@ class nsSHistory final : public mozilla::LinkedListElement<nsSHistory>,
   NS_DECL_NSISHISTORY
 
   nsresult Reload(uint32_t aReloadFlags);
-  nsresult GetCurrentURI(nsIURI** aResultURI);
 
   
   static nsresult Startup();

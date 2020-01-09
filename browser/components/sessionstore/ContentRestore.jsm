@@ -373,9 +373,9 @@ HistoryListener.prototype = {
     }
   },
 
-  OnHistoryGotoIndex(index, gotoURI) {},
-  OnHistoryPurge(numEntries) {},
-  OnHistoryReplaceEntry(index) {},
+  OnHistoryGotoIndex() {},
+  OnHistoryPurge() {},
+  OnHistoryReplaceEntry() {},
 
   
   
@@ -405,7 +405,7 @@ HistoryListener.prototype = {
     this.webNavigation.loadURI(newURI.spec, loadURIOptions);
   },
 
-  OnHistoryReload(reloadURI, reloadFlags) {
+  OnHistoryReload() {
     this.callback();
 
     
