@@ -596,9 +596,12 @@ static void WriteVideoToMediaStream(MediaStream* aStream, layers::Image* aImage,
   auto end = aStream->MicrosecondsToStreamTimeRoundDown(aEnd.ToMicroseconds());
   auto start =
       aStream->MicrosecondsToStreamTimeRoundDown(aStart.ToMicroseconds());
-  StreamTime duration = end - start;
-  aOutput->AppendFrame(image.forget(), duration, aIntrinsicSize,
-                       aPrincipalHandle, false, aTimeStamp);
+  aOutput->AppendFrame(image.forget(), aIntrinsicSize, aPrincipalHandle, false,
+                       aTimeStamp);
+  
+  
+  
+  aOutput->ExtendLastFrameBy(end - start);
 }
 
 static bool ZeroDurationAtLastChunk(VideoSegment& aInput) {
