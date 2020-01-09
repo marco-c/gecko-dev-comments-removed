@@ -7,8 +7,6 @@
 "use strict";
 
 
-
-
 add_task(async function() {
   const dbg = await attachRecordingDebugger("doc_rr_continuous.html");
   const {threadClient, tab, toolbox} = dbg;

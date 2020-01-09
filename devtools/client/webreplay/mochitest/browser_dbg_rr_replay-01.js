@@ -7,8 +7,6 @@
 "use strict";
 
 
-
-
 add_task(async function() {
   const recordingFile = newRecordingFile();
   const recordingTab = BrowserTestUtils.addTab(gBrowser, null,

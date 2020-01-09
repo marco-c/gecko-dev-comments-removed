@@ -8,8 +8,6 @@
 
 
 
-
-
 add_task(async function() {
   await pushPref("devtools.recordreplay.enableRewinding", false);
 
