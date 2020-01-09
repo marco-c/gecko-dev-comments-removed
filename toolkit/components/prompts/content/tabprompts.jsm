@@ -163,7 +163,7 @@ var TabModalPrompt = class {
     this.onCloseCallback = onCloseCallback;
 
     if (args.enableDelay)
-      throw "BUTTON_DELAY_ENABLE not yet supported for tab-modal prompts";
+      throw new Error("BUTTON_DELAY_ENABLE not yet supported for tab-modal prompts");
 
     
     

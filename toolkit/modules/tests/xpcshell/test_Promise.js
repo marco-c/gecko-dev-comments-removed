@@ -143,7 +143,7 @@ tests.push(
       function onResolve() {
         
         Assert.equal(this, undefined);
-        throw "reject";
+        throw new Error("reject");
       }
     ).then(
       null,

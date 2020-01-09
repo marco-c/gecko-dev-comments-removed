@@ -194,7 +194,7 @@ var dialog = {
         elm.setAttribute("description", app.method);
       } else if (!(app instanceof Ci.nsIGIOMimeApp)) {
         
-        throw "unknown handler type";
+        throw new Error("unknown handler type");
       }
 
       items.insertBefore(elm, this._itemChoose);

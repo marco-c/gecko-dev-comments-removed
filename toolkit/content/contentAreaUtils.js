@@ -159,7 +159,7 @@ function saveImageURL(aURL, aFileName, aFilePickerTitleKey, aShouldBypassCache,
 
 function saveBrowser(aBrowser, aSkipPrompt, aOuterWindowID = 0) {
   if (!aBrowser) {
-    throw "Must have a browser when calling saveBrowser";
+    throw new Error("Must have a browser when calling saveBrowser");
   }
   let persistable = aBrowser.frameLoader;
   
@@ -202,7 +202,7 @@ function saveBrowser(aBrowser, aSkipPrompt, aOuterWindowID = 0) {
 
 function saveDocument(aDocument, aSkipPrompt) {
   if (!aDocument)
-    throw "Must have a document when calling saveDocument";
+    throw new Error("Must have a document when calling saveDocument");
 
   let contentDisposition = null;
   let cacheKey = 0;

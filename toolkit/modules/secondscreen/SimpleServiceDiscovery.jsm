@@ -254,7 +254,7 @@ var SimpleServiceDiscovery = {
     
     if (!("id" in aDevice) || !("target" in aDevice) || !("factory" in aDevice)) {
       
-      throw "Registration requires an id, a target and a location";
+      throw new Error("Registration requires an id, a target and a location");
     }
 
     

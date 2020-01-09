@@ -134,17 +134,17 @@ add_task(async function log_message_with_params() {
 
   
   ob = function() {};
-  ob.toJSON = function() {throw "oh noes JSON";};
+  ob.toJSON = function() {throw new Error("oh noes JSON");};
   Assert.equal(formatMessage("Fail is ${sub}", {sub: ob}),
                "Fail is (function() {})");
 
   
-  ob.toSource = function() {throw "oh noes SOURCE";};
+  ob.toSource = function() {throw new Error("oh noes SOURCE");};
   Assert.equal(formatMessage("Fail is ${sub}", {sub: ob}),
                "Fail is function() {}");
 
   
-  ob.toString = function() {throw "oh noes STRING";};
+  ob.toString = function() {throw new Error("oh noes STRING");};
   Assert.equal(formatMessage("Fail is ${sub}", {sub: ob}),
                "Fail is [object]");
 
@@ -208,9 +208,9 @@ add_task(async function log_message_with_params() {
   
   
   
-  let vOf = {a: 1, valueOf: function() {throw "oh noes valueOf";}};
+  let vOf = {a: 1, valueOf: function() {throw new Error("oh noes valueOf");}};
   Assert.equal(formatMessage("Broken valueOf ${}", vOf),
-               'Broken valueOf ({a:1, valueOf:(function() {throw "oh noes valueOf";})})');
+               'Broken valueOf ({a:1, valueOf:(function() {throw new Error("oh noes valueOf");})})');
   
 
   
