@@ -30,11 +30,7 @@ pref("browser.bookmarks.max_backups",       5);
 
 pref("browser.cache.disk.enable",           true);
 
-pref("browser.cache.disk.smart_size.first_run", true);
-
 pref("browser.cache.disk.smart_size.enabled", true);
-
-pref("browser.cache.disk.smart_size.use_old_max", true);
 
 pref("browser.cache.disk.capacity",         256000);
 
@@ -1458,6 +1454,8 @@ pref("dom.event.contextmenu.enabled",       true);
 pref("dom.event.clipboardevents.enabled",   true);
 pref("dom.event.highrestimestamp.enabled",  true);
 pref("dom.event.coalesce_mouse_move",       true);
+
+pref("dom.ua_widget.enabled", true);
 
 pref("javascript.enabled",                  true);
 pref("javascript.options.strict",           false);
