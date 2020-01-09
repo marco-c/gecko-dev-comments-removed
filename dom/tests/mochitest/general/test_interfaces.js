@@ -916,7 +916,7 @@ var interfaceNamesInGlobalScope =
 
     {name: "StorageEvent", insecureContext: true},
 
-    {name: "StorageManager", android: false},
+    {name: "StorageManager", fennec: false},
 
     {name: "StyleSheet", insecureContext: true},
 
@@ -1281,6 +1281,7 @@ function createInterfaceMap() {
             (entry.linux === !isLinux) ||
             (entry.android === !isAndroid && !entry.nightlyAndroid) ||
             (entry.fennecOrDesktop === (isAndroid && !isFennec)) ||
+            (entry.fennec === !isFennec) ||
             (entry.release === !isRelease) ||
             (entry.releaseNonWindowsAndMac === !(isRelease && !isWindows && !isMac)) ||
             (entry.releaseNonWindows === !(isRelease && !isWindows)) ||
