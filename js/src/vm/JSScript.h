@@ -1687,7 +1687,6 @@ class JSScript : public js::gc::TenuredCell {
     Strict = 1 << 1,
 
     
-    ExplicitUseStrict = 1 << 2,
 
     
     
@@ -2097,10 +2096,6 @@ class JSScript : public js::gc::TenuredCell {
   bool noScriptRval() const { return hasFlag(ImmutableFlags::NoScriptRval); }
 
   bool strict() const { return hasFlag(ImmutableFlags::Strict); }
-
-  bool explicitUseStrict() const {
-    return hasFlag(ImmutableFlags::ExplicitUseStrict);
-  }
 
   bool hasNonSyntacticScope() const {
     return hasFlag(ImmutableFlags::HasNonSyntacticScope);
