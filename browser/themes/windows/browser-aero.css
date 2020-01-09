@@ -89,8 +89,11 @@
 
       @media (-moz-windows-default-theme: 0) {
         :root[tabsintitlebar] {
-          background-color: transparent;
           -moz-appearance: -moz-win-glass;
+        }
+
+        :root[tabsintitlebar]:not(:-moz-lwtheme) {
+          background-color: transparent;
         }
 
         
