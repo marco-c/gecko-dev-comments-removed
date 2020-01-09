@@ -268,6 +268,9 @@ class nsGridContainerFrame final : public nsContainerFrame {
     bool mIsInEdgeTrack;
   };
 
+  
+  nsGridContainerFrame* ParentGridContainerForSubgrid() const;
+
  protected:
   static const uint32_t kAutoLine;
   
