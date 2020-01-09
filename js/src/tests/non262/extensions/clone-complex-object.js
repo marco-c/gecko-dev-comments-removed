@@ -242,11 +242,11 @@ let obj = { 'foo': foo,
             'baz': baz };
 check(obj);
 
-for (obj of new getTestContent)
+for (obj of getTestContent())
     check(obj);
 
 
-function getTestContent()
+function* getTestContent()
 {
   yield "hello";
   yield 2+3;

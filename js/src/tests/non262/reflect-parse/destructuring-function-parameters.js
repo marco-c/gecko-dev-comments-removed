@@ -1,8 +1,6 @@
 
 function test() {
 
-var JS_HAS_EXPR_CLOSURES = true;
-
 function testParamPatternCombinations(makePattSrc, makePattPatt) {
     var pattSrcs = makePatternCombinations(n => ("x" + n), makePattSrc);
     var pattPatts = makePatternCombinations(n => (ident("x" + n)), makePattPatt);
@@ -20,13 +18,6 @@ function testParamPatternCombinations(makePattSrc, makePattPatt) {
         
         assertExpr(makeSrc("{ return [x1,x2,x3,x4,x5]; }"),
                    makePatt(blockStmt([returnStmt(arrExpr([ident("x1"), ident("x2"), ident("x3"), ident("x4"), ident("x5")]))])));
-        if (JS_HAS_EXPR_CLOSURES) {
-            
-            assertExpr(makeSrc("(0)"), makePatt(lit(0)));
-            
-            assertExpr(makeSrc("[x1,x2,x3,x4,x5]"),
-                       makePatt(arrExpr([ident("x1"), ident("x2"), ident("x3"), ident("x4"), ident("x5")])));
-        }
     }
 }
 
