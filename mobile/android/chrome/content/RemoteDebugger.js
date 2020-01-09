@@ -215,6 +215,8 @@ var RemoteDebugger = {
     
     DebuggerServer.allowChromeProcess = true;
     DebuggerServer.chromeWindowType = this._windowType;
+    
+    DebuggerServer.keepAlive = true;
   },
 };
 

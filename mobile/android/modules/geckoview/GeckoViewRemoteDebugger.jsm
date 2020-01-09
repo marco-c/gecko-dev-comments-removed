@@ -80,6 +80,8 @@ var GeckoViewRemoteDebugger = {
     DebuggerServer.setRootActor(createRootActor);
     DebuggerServer.allowChromeProcess = true;
     DebuggerServer.chromeWindowType = "navigator:geckoview";
+    
+    DebuggerServer.keepAlive = true;
 
     
     
