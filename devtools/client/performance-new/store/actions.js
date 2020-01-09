@@ -198,6 +198,53 @@ async function doesFileExistAtPath(path) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function getSymbolTableFromLocalBinary(objdirs, filename, breakpadId) {
+  const candidatePaths = [];
+  for (const objdirPath of objdirs) {
+    
+    candidatePaths.push(OS.Path.join(objdirPath, "dist", "bin", filename));
+    
+    
+    
+    
+    candidatePaths.push(OS.Path.join(objdirPath, filename));
+  }
+
+  for (const path of candidatePaths) {
+    if (await doesFileExistAtPath(path)) {
+      try {
+        return await ProfilerGetSymbols.getSymbolTable(path, path, breakpadId);
+      } catch (e) {
+        
+        
+        
+        
+      }
+    }
+  }
+  throw new Error("Could not find any matching binary.");
+}
+
+
+
+
 exports.getProfileAndStopProfiler = () => {
   return async (dispatch, getState) => {
     const perfFront = selectors.getPerfFront(getState());
@@ -206,7 +253,7 @@ exports.getProfileAndStopProfiler = () => {
 
     const libraryGetter = createLibraryMap(profile);
     async function getSymbolTable(debugName, breakpadId) {
-      const {path, debugPath} = libraryGetter(debugName, breakpadId);
+      const {name, path, debugPath} = libraryGetter(debugName, breakpadId);
       if (await doesFileExistAtPath(path)) {
         
         
@@ -216,11 +263,31 @@ exports.getProfileAndStopProfiler = () => {
       
       
       
-      
-      
-      
-      
-      return getSymbolTableFromDebuggee(perfFront, path, breakpadId);
+      try {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        const objdirs = selectors.getObjdirs(getState());
+        return await getSymbolTableFromLocalBinary(objdirs, name, breakpadId);
+      } catch (e) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        return getSymbolTableFromDebuggee(perfFront, path, breakpadId);
+      }
     }
 
     selectors.getReceiveProfileFn(getState())(profile, getSymbolTable);
