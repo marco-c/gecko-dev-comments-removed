@@ -578,6 +578,13 @@ class ExtensionData {
     if (!this.type || !this.localeData) {
       throw new Error("The extension has not been initialized.");
     }
+    
+    
+    
+    if (!this.rawManifest) {
+      this.rawManifest = await this.readJSON("manifest.json");
+    }
+
     if (!this.localeData.has(locale)) {
       
       
