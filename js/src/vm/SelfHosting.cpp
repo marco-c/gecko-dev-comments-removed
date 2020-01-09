@@ -913,6 +913,18 @@ bool js::intrinsic_NewRegExpStringIterator(JSContext* cx, unsigned argc,
   return true;
 }
 
+JSAtom* js::GetSelfHostedFunctionName(JSFunction* fun) {
+  Value name = fun->getExtendedSlot(LAZY_FUNCTION_NAME_SLOT);
+  if (!name.isString()) {
+    return nullptr;
+  }
+  return &name.toString()->asAtom();
+}
+
+static void SetSelfHostedFunctionName(JSFunction* fun, JSAtom* name) {
+  fun->setExtendedSlot(LAZY_FUNCTION_NAME_SLOT, StringValue(name));
+}
+
 static bool intrinsic_SetCanonicalName(JSContext* cx, unsigned argc,
                                        Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -925,10 +937,18 @@ static bool intrinsic_SetCanonicalName(JSContext* cx, unsigned argc,
     return false;
   }
 
+  
+  MOZ_ASSERT(fun->kind() == JSFunction::NormalFunction);
+  MOZ_ASSERT(!fun->isLambda());
+
+  
+  MOZ_ASSERT(!GetSelfHostedFunctionName(fun));
+
+  
+  
+  SetSelfHostedFunctionName(fun, fun->explicitName());
   fun->setAtom(atom);
-#ifdef DEBUG
-  fun->setExtendedSlot(HAS_SELFHOSTED_CANONICAL_NAME_SLOT, BooleanValue(true));
-#endif
+
   args.rval().setUndefined();
   return true;
 }
@@ -3272,13 +3292,11 @@ static JSObject* CloneObject(JSContext* cx,
   if (selfHostedObject->is<JSFunction>()) {
     RootedFunction selfHostedFunction(cx, &selfHostedObject->as<JSFunction>());
     if (selfHostedFunction->isInterpreted()) {
-      bool hasName = selfHostedFunction->explicitName() != nullptr;
-
       
       
-      MOZ_ASSERT(!selfHostedFunction->isArrow());
-      js::gc::AllocKind kind = hasName ? gc::AllocKind::FUNCTION_EXTENDED
-                                       : selfHostedFunction->getAllocKind();
+      
+      MOZ_ASSERT(selfHostedFunction->kind() == JSFunction::NormalFunction);
+      js::gc::AllocKind kind = selfHostedFunction->getAllocKind();
 
       Handle<GlobalObject*> global = cx->global();
       Rooted<LexicalEnvironmentObject*> globalLexical(
@@ -3295,10 +3313,15 @@ static JSObject* CloneObject(JSContext* cx,
                                      emptyGlobalScope, sourceObject, kind);
       
       
-      if (clone && hasName) {
-        Value nameVal = StringValue(selfHostedFunction->explicitName());
-        clone->as<JSFunction>().setExtendedSlot(LAZY_FUNCTION_NAME_SLOT,
-                                                nameVal);
+      
+      if (clone && !selfHostedFunction->isLambda()) {
+        
+        
+        JSAtom* name = GetSelfHostedFunctionName(selfHostedFunction);
+        if (!name) {
+          name = selfHostedFunction->explicitName();
+        }
+        SetSelfHostedFunctionName(&clone->as<JSFunction>(), name);
       }
     } else {
       clone = CloneSelfHostingIntrinsic(cx, selfHostedFunction);
@@ -3396,9 +3419,7 @@ bool JSRuntime::createLazySelfHostedFunctionClone(
   if (!selfHostedFun->isClassConstructor() &&
       !selfHostedFun->hasGuessedAtom() &&
       selfHostedFun->explicitName() != selfHostedName) {
-    MOZ_ASSERT(
-        selfHostedFun->getExtendedSlot(HAS_SELFHOSTED_CANONICAL_NAME_SLOT)
-            .toBoolean());
+    MOZ_ASSERT(GetSelfHostedFunctionName(selfHostedFun) == selfHostedName);
     funName = selfHostedFun->explicitName();
   }
 
@@ -3409,7 +3430,7 @@ bool JSRuntime::createLazySelfHostedFunctionClone(
     return false;
   }
   fun->setIsSelfHostedBuiltin();
-  fun->setExtendedSlot(LAZY_FUNCTION_NAME_SLOT, StringValue(selfHostedName));
+  SetSelfHostedFunctionName(fun, selfHostedName);
   return true;
 }
 
@@ -3505,22 +3526,13 @@ void JSRuntime::assertSelfHostedFunctionHasCanonicalName(
 #ifdef DEBUG
   JSFunction* selfHostedFun = getUnclonedSelfHostedFunction(cx, name);
   MOZ_ASSERT(selfHostedFun);
-  MOZ_ASSERT(selfHostedFun->getExtendedSlot(HAS_SELFHOSTED_CANONICAL_NAME_SLOT)
-                 .toBoolean());
+  MOZ_ASSERT(GetSelfHostedFunctionName(selfHostedFun) == name);
 #endif
 }
 
 bool js::IsSelfHostedFunctionWithName(JSFunction* fun, JSAtom* name) {
   return fun->isSelfHostedBuiltin() && fun->isExtended() &&
          GetSelfHostedFunctionName(fun) == name;
-}
-
-JSAtom* js::GetSelfHostedFunctionName(JSFunction* fun) {
-  Value name = fun->getExtendedSlot(LAZY_FUNCTION_NAME_SLOT);
-  if (!name.isString()) {
-    return nullptr;
-  }
-  return &name.toString()->asAtom();
 }
 
 static_assert(

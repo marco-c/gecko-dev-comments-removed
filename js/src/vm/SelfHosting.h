@@ -20,6 +20,19 @@ namespace js {
 
 bool IsSelfHostedFunctionWithName(JSFunction* fun, JSAtom* name);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 JSAtom* GetSelfHostedFunctionName(JSFunction* fun);
 
 bool IsCallSelfHostedNonGenericMethod(NativeImpl impl);

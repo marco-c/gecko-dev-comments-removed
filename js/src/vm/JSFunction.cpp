@@ -1220,8 +1220,7 @@ bool JSFunction::isDerivedClassConstructor() {
     
     
     if (isSelfHostedBuiltin()) {
-      JSAtom* name =
-          &getExtendedSlot(LAZY_FUNCTION_NAME_SLOT).toString()->asAtom();
+      JSAtom* name = GetSelfHostedFunctionName(this);
 
       
       
@@ -1686,8 +1685,7 @@ bool JSFunction::createScriptForLazilyInterpretedFunction(JSContext* cx,
 
   
   MOZ_ASSERT(fun->isSelfHostedBuiltin());
-  RootedAtom funAtom(
-      cx, &fun->getExtendedSlot(LAZY_FUNCTION_NAME_SLOT).toString()->asAtom());
+  RootedAtom funAtom(cx, GetSelfHostedFunctionName(fun));
   if (!funAtom) {
     return false;
   }
@@ -1735,8 +1733,6 @@ void JSFunction::maybeRelazify(JSRuntime* rt) {
 
   
   
-  
-  
   if (isSelfHostedBuiltin() &&
       (!isExtended() || !getExtendedSlot(LAZY_FUNCTION_NAME_SLOT).isString())) {
     return;
@@ -1753,7 +1749,7 @@ void JSFunction::maybeRelazify(JSRuntime* rt) {
   } else {
     MOZ_ASSERT(isSelfHostedBuiltin());
     MOZ_ASSERT(isExtended());
-    MOZ_ASSERT(getExtendedSlot(LAZY_FUNCTION_NAME_SLOT).toString()->isAtom());
+    MOZ_ASSERT(GetSelfHostedFunctionName(this));
   }
 
   realm->scheduleDelazificationForDebugger();
