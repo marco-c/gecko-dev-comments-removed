@@ -2,16 +2,13 @@
 
 
 
-import mapExpression from "../mapExpression";
+import mapOriginalExpression from "../mapOriginalExpression";
 import { format } from "prettier";
 
 const formatOutput = output =>
   format(output, {
     parser: "babylon"
   });
-
-const mapOriginalExpression = (expression, mappings) =>
-  mapExpression(expression, mappings, null, false, false).expression;
 
 describe("mapOriginalExpression", () => {
   it("simple", () => {
