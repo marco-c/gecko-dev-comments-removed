@@ -256,6 +256,13 @@ class MaybeCrossOriginObject : public Base,
 
 
 
+  using Base::defineProperty;
+
+  
+
+
+
+
 
 
 
