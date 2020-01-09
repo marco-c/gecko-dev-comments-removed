@@ -89,7 +89,7 @@ class RenderFrame final {
 
 
 
-class nsDisplayRemote final : public nsDisplayItem {
+class nsDisplayRemote final : public nsPaintedDisplayItem {
   typedef mozilla::dom::TabId TabId;
   typedef mozilla::gfx::Matrix4x4 Matrix4x4;
   typedef mozilla::layers::EventRegionsOverride EventRegionsOverride;
