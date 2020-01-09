@@ -2386,7 +2386,8 @@ ResumeMode Debugger::onSingleStep(JSContext* cx, MutableHandleValue vp) {
   
   
   if (iter.hasScript()) {
-    uint32_t stepperCount = 0;
+    uint32_t liveStepperCount = 0;
+    uint32_t suspendedStepperCount = 0;
     JSScript* trappingScript = iter.script();
     GlobalObject* global = cx->global();
     if (GlobalObject::DebuggerVector* debuggers = global->getDebuggers()) {
@@ -2401,12 +2402,58 @@ ResumeMode Debugger::onSingleStep(JSContext* cx, MutableHandleValue vp) {
           if (frame.script() == trappingScript &&
               !frameobj->getReservedSlot(JSSLOT_DEBUGFRAME_ONSTEP_HANDLER)
                    .isUndefined()) {
-            stepperCount++;
+            liveStepperCount++;
+          }
+        }
+
+        
+        for (GeneratorWeakMap::Range r = dbg->generatorFrames.all(); !r.empty();
+             r.popFront()) {
+          AbstractGeneratorObject& genObj =
+              r.front().key()->as<AbstractGeneratorObject>();
+          DebuggerFrame& frameObj = r.front().value()->as<DebuggerFrame>();
+
+          
+          if (frameObj.isLive()) {
+            continue;
+          }
+
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          if (!genObj.isSuspended()) {
+            continue;
+          }
+
+          if (!genObj.callee().isInterpretedLazy() &&
+              genObj.callee().nonLazyScript() == trappingScript &&
+              !frameObj.getReservedSlot(JSSLOT_DEBUGFRAME_ONSTEP_HANDLER)
+                   .isUndefined()) {
+            suspendedStepperCount++;
           }
         }
       }
     }
-    MOZ_ASSERT(stepperCount == trappingScript->stepModeCount());
+
+    MOZ_ASSERT(liveStepperCount + suspendedStepperCount ==
+               trappingScript->stepModeCount());
   }
 #endif
 
