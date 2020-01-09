@@ -11,7 +11,10 @@
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   AddonManager: "resource://gre/modules/AddonManager.jsm",
+  AddonRepository: "resource://gre/modules/addons/AddonRepository.jsm",
+  ClientID: "resource://gre/modules/ClientID.jsm",
   ExtensionPermissions: "resource://gre/modules/ExtensionPermissions.jsm",
+  PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -37,6 +40,9 @@ const PERMISSION_MASKS = {
   upgrade: AddonManager.PERM_CAN_UPGRADE,
 };
 
+const PREF_DISCOVERY_API_URL = "extensions.getAddons.discovery.api_url";
+const PREF_RECOMMENDATION_ENABLED = "browser.discovery.enabled";
+const PREF_TELEMETRY_ENABLED = "datareporting.healthreport.uploadEnabled";
 const PRIVATE_BROWSING_PERM_NAME = "internal:privateBrowsingAllowed";
 const PRIVATE_BROWSING_PERMS =
   {permissions: [PRIVATE_BROWSING_PERM_NAME], origins: []};
@@ -155,6 +161,89 @@ function nl2br(text) {
   }
   return frag;
 }
+
+
+
+class DiscoAddonWrapper {
+  
+
+
+
+  constructor(details) {
+    
+    
+    let repositoryAddon = AddonRepository._parseAddon(details.addon);
+
+    
+    
+    
+    this.id = repositoryAddon.id;
+    this.type = repositoryAddon.type;
+    this.name = repositoryAddon.name;
+    this.screenshots = repositoryAddon.screenshots;
+    this.sourceURI = repositoryAddon.sourceURI;
+    this.creator = repositoryAddon.creator;
+
+    this.editorialHeading = details.heading_text;
+    this.editorialDescription = details.description_text;
+    this.iconURL = details.addon.icon_url;
+    this.amoListingUrl = details.addon.url;
+  }
+}
+
+
+
+
+var DiscoveryAPI = {
+  
+
+
+
+
+
+
+
+
+
+  async getResults() {
+    if (!this._resultPromise) {
+      this._resultPromise = this._fetchRecommendedAddons()
+        .catch(e => {
+          
+          
+          delete this._resultPromise;
+          Cu.reportError(e);
+          throw e;
+        });
+    }
+    return this._resultPromise;
+  },
+
+  get clientIdDiscoveryEnabled() {
+    
+    return Services.prefs.getBoolPref(PREF_RECOMMENDATION_ENABLED, false) &&
+           Services.prefs.getBoolPref(PREF_TELEMETRY_ENABLED, false) &&
+           !PrivateBrowsingUtils.isContentWindowPrivate(window);
+  },
+
+  async _fetchRecommendedAddons() {
+    let discoveryApiUrl =
+      new URL(Services.urlFormatter.formatURLPref(PREF_DISCOVERY_API_URL));
+
+    if (DiscoveryAPI.clientIdDiscoveryEnabled) {
+      let clientId = await ClientID.getClientIdHash();
+      discoveryApiUrl.searchParams.set("telemetry-client-id", clientId);
+    }
+    let res = await fetch(discoveryApiUrl.href, {
+      credentials: "omit",
+    });
+    if (!res.ok) {
+      throw new Error(`Failed to fetch recommended add-ons, ${res.status}`);
+    }
+    let {results} = await res.json();
+    return results.map(details => new DiscoAddonWrapper(details));
+  },
+};
 
 class PanelList extends HTMLElement {
   static get observedAttributes() {
@@ -1022,6 +1111,159 @@ customElements.define("addon-card", AddonCard);
 
 
 
+class RecommendedAddonCard extends HTMLElement {
+  
+
+
+
+  setDiscoAddon(addon) {
+    this.addonId = addon.id;
+
+    
+    this.discoAddon = addon;
+
+    let card = importTemplate("card").firstElementChild;
+    let heading = card.querySelector(".addon-name-container");
+    heading.textContent = "";
+    heading.append(importTemplate("addon-name-container-in-disco-card"));
+    card.querySelector(".more-options-menu").remove();
+
+    this.setCardContent(card, addon);
+    if (addon.type != "theme") {
+      card.querySelector(".addon-description")
+        .append(importTemplate("addon-description-in-disco-card"));
+      this.setCardDescription(card, addon);
+    }
+    this.registerButtons(card, addon);
+
+    this.textContent = "";
+    this.append(card);
+
+    
+    this.setAddon(null);
+  }
+
+  
+
+
+
+
+
+
+  setCardContent(card, addon) {
+    
+    if (addon.type == "theme") {
+      card.querySelector(".addon-icon").hidden = true;
+    } else {
+      card.querySelector(".addon-icon").src =
+        AddonManager.getPreferredIconURL(addon, 32, window);
+    }
+
+    
+    let preview = card.querySelector(".card-heading-image");
+    preview.hidden = true;
+    if (addon.type == "theme") {
+      let screenshot =
+        AddonCard.prototype.screenshotForImg.call({addon}, preview);
+      if (screenshot) {
+        preview.src = screenshot.url;
+        preview.hidden = false;
+      }
+    }
+
+    
+    card.querySelector(".disco-addon-name").textContent = addon.name;
+
+    
+    if (addon.creator) {
+      let authorInfo = card.querySelector(".disco-addon-author");
+      document.l10n.setAttributes(authorInfo, "created-by-author", {
+        author: addon.creator.name,
+      });
+      
+      
+      authorInfo.querySelector("a").href = addon.amoListingUrl;
+      authorInfo.hidden = false;
+    }
+  }
+
+  setCardDescription(card, addon) {
+    
+    
+    card.querySelector(".disco-description-main")
+      .textContent = addon.editorialDescription;
+    if (addon.editorialHeading) {
+      card.querySelector(".disco-description-intro").textContent =
+        addon.editorialHeading;
+    }
+
+    
+  }
+
+  registerButtons(card, addon) {
+    let installButton = card.querySelector("[action='install-addon']");
+    if (addon.type == "theme") {
+      document.l10n.setAttributes(installButton, "install-theme-button");
+    } else {
+      document.l10n.setAttributes(installButton, "install-extension-button");
+    }
+
+    this.addEventListener("click", this);
+  }
+
+  handleEvent(event) {
+    let action = event.target.getAttribute("action");
+    switch (action) {
+      case "install-addon":
+        this.installDiscoAddon();
+        break;
+      case "manage-addon":
+        loadViewFn("detail", this.addonId);
+        break;
+    }
+  }
+
+  async installDiscoAddon() {
+    let addon = this.discoAddon;
+    let url = addon.sourceURI.spec;
+    let install = await AddonManager.getInstallForURL(url, {
+      name: addon.name,
+      telemetryInfo: {source: "disco"},
+    });
+    
+    
+    let browser = window.docShell.chromeEventHandler;
+    AddonManager.installAddonFromWebpage("application/x-xpinstall", browser,
+      Services.scriptSecurityManager.getSystemPrincipal(), install);
+  }
+
+  
+
+
+
+  setAddon(addon) {
+    let card = this.firstElementChild;
+    card.querySelector("[action='install-addon']").hidden = !!addon;
+    card.querySelector("[action='manage-addon']").hidden = !addon;
+
+    this.dispatchEvent(new CustomEvent("disco-card-updated")); 
+  }
+}
+customElements.define("recommended-addon-card", RecommendedAddonCard);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class AddonList extends HTMLElement {
   constructor() {
     super();
@@ -1350,6 +1592,115 @@ class AddonList extends HTMLElement {
 }
 customElements.define("addon-list", AddonList);
 
+class RecommendedAddonList extends HTMLElement {
+  connectedCallback() {
+    if (this.isConnected) {
+      this.loadCardsIfNeeded();
+      this.updateCardsWithAddonManager();
+    }
+    AddonManager.addAddonListener(this);
+  }
+
+  disconnectedCallback() {
+    AddonManager.removeAddonListener(this);
+  }
+
+  onInstalled(addon) {
+    let card = this.getCardById(addon.id);
+    if (card) {
+      card.setAddon(addon);
+    }
+  }
+
+  onUninstalled(addon) {
+    let card = this.getCardById(addon.id);
+    if (card) {
+      card.setAddon(null);
+    }
+  }
+
+  getCardById(addonId) {
+    for (let card of this.children) {
+      if (card.addonId === addonId) {
+        return card;
+      }
+    }
+    return null;
+  }
+
+  async updateCardsWithAddonManager() {
+    let cards = Array.from(this.children);
+    let addonIds = cards.map(card => card.addonId);
+    let addons = await AddonManager.getAddonsByIDs(addonIds);
+    for (let [i, card] of cards.entries()) {
+      let addon = addons[i];
+      card.setAddon(addon);
+      if (addon) {
+        
+        this.append(card);
+      }
+    }
+  }
+
+  async loadCardsIfNeeded() {
+    
+    if (!this.cardsReady) {
+      this.cardsReady = this._loadCards();
+    }
+    return this.cardsReady;
+  }
+
+  async _loadCards() {
+    let recommendedAddons;
+    try {
+      recommendedAddons = await DiscoveryAPI.getResults();
+    } catch (e) {
+      return;
+    }
+
+    let frag = document.createDocumentFragment();
+    for (let addon of recommendedAddons) {
+      let card = document.createElement("recommended-addon-card");
+      card.setDiscoAddon(addon);
+      frag.append(card);
+    }
+    this.append(frag);
+    await this.updateCardsWithAddonManager();
+  }
+}
+customElements.define("recommended-addon-list", RecommendedAddonList);
+
+class DiscoveryPane extends HTMLElement {
+  render() {
+    this.append(importTemplate("discopane"));
+    this.querySelector(".discopane-intro-learn-more-link").href =
+      Services.urlFormatter.formatURLPref("app.support.baseURL") +
+      "recommended-extensions-program";
+
+    this.addEventListener("click", this);
+
+    
+    
+    let footer = this.querySelector("footer");
+    footer.hidden = true;
+    this.querySelector("recommended-addon-list").loadCardsIfNeeded()
+      .finally(() => { footer.hidden = false; });
+  }
+
+  handleEvent(event) {
+    let action = event.target.getAttribute("action");
+    switch (action) {
+      case "open-amo":
+        windowRoot.ownerGlobal.openTrustedLinkIn(
+          Services.urlFormatter.formatURLPref("extensions.getAddons.link.url"),
+          "tab");
+        break;
+    }
+  }
+}
+
+customElements.define("discovery-pane", DiscoveryPane);
+
 class ListView {
   constructor({param, root}) {
     this.type = param;
@@ -1440,6 +1791,14 @@ class UpdatesView {
   }
 }
 
+class DiscoveryView {
+  render() {
+    let discopane = document.createElement("discovery-pane");
+    discopane.render();
+    return discopane;
+  }
+}
+
 
 let root = null;
 
@@ -1469,8 +1828,16 @@ async function show(type, param) {
     await new ListView({param, root}).render();
   } else if (type == "detail") {
     await new DetailView({param, root}).render();
+  } else if (type == "discover") {
+    let discoverView = new DiscoveryView();
+    let elem = discoverView.render();
+    await document.l10n.translateFragment(elem);
+    root.textContent = "";
+    root.append(elem);
   } else if (type == "updates") {
     await new UpdatesView({param, root}).render();
+  } else {
+    throw new Error(`Unknown view type: ${type}`);
   }
 }
 
