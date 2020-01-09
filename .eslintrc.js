@@ -55,12 +55,6 @@ module.exports = {
   }, {
     
     "files": [
-      "dom/asmjscache/test/**",
-      "dom/cache/test/mochitest/test_cache_tons_of_fd.html",
-      "dom/crypto/test/**",
-      "dom/indexedDB/test/**",
-      "dom/localstorage/test/unit/test_migration.js",
-      "dom/plugins/test/mochitest/head.js",
       "gfx/layers/apz/test/mochitest/**",
       "mobile/android/components/**",
       "mobile/android/modules/**",
