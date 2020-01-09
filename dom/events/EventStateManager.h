@@ -1283,7 +1283,7 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
 
 
-class AutoHandlingUserInputStatePusher {
+class MOZ_RAII AutoHandlingUserInputStatePusher final {
  public:
   AutoHandlingUserInputStatePusher(bool aIsHandlingUserInput,
                                    WidgetEvent* aEvent,
@@ -1298,11 +1298,6 @@ class AutoHandlingUserInputStatePusher {
   bool NeedsToResetFocusManagerMouseButtonHandlingState() const {
     return mMessage == eMouseDown || mMessage == eMouseUp;
   }
-
- private:
-  
-  static void* operator new(size_t ) CPP_THROW_NEW { return nullptr; }
-  static void operator delete(void* ) {}
 };
 
 }  
