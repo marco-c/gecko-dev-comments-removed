@@ -3603,6 +3603,7 @@ void nsCSSRendering::GetTableBorderSolidSegments(
                                         {aStartBevelSide, startBevel},
                                         {aEndBevelSide, endBevel}});
         }
+        break;
       }
       
       MOZ_FALLTHROUGH;
