@@ -15,6 +15,8 @@ raptor_ini = os.path.join(here, 'raptor.ini')
 tests_dir = os.path.join(here, 'tests')
 LOG = get_proxy_logger(component="raptor-manifest")
 
+LIVE_SITE_TIMEOUT_MULTIPLIER = 1.2
+
 required_settings = [
     'alert_threshold',
     'apps',
@@ -328,7 +330,9 @@ def get_raptor_test_list(args, oskey):
             LOG.info("using live sites so appending '-live' to the test name")
             next_test['name'] = next_test['name'] + "-live"
             
-            next_test['page_timeout'] = 180000
+            next_test['page_timeout'] = int(
+                next_test['page_timeout']) * LIVE_SITE_TIMEOUT_MULTIPLIER
+            LOG.info("using live sites so using page timeout of %dms" % next_test['page_timeout'])
 
         
         if next_test.get('measure') is not None:
