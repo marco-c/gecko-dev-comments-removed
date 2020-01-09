@@ -8,6 +8,7 @@
 
 
 
+var { AppConstants } = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 var { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
 add_task(async function testCAandTitle() {
@@ -100,16 +101,24 @@ add_task(async function testRevoked() {
   
   
   
-  let certBlocklist = Cc["@mozilla.org/security/certstorage;1"]
-                        .getService(Ci.nsICertStorage);
-  let result = await new Promise((resolve) =>
-    certBlocklist.setRevocations([{
-      QueryInterface: ChromeUtils.generateQI([Ci.nsISubjectAndPubKeyRevocationState]),
-      subject: "MBIxEDAOBgNVBAMMB3Jldm9rZWQ=", 
-      pubKey: "VCIlmPM9NkgFQtrs4Oa5TeFcDu6MWRTKSNdePEhOgD8=", 
-      state: Ci.nsICertStorage.STATE_ENFORCE, 
-    }], resolve));
-  Assert.equal(result, Cr.NS_OK, "setting revocation state should succeed");
+  if (AppConstants.MOZ_NEW_CERT_STORAGE) {
+    let certBlocklist = Cc["@mozilla.org/security/certstorage;1"]
+                          .getService(Ci.nsICertStorage);
+    let result = await new Promise((resolve) =>
+      certBlocklist.setRevocations([{
+        QueryInterface: ChromeUtils.generateQI([Ci.nsISubjectAndPubKeyRevocationState]),
+        subject: "MBIxEDAOBgNVBAMMB3Jldm9rZWQ=", 
+        pubKey: "VCIlmPM9NkgFQtrs4Oa5TeFcDu6MWRTKSNdePEhOgD8=", 
+        state: Ci.nsICertStorage.STATE_ENFORCE, 
+      }], resolve));
+    Assert.equal(result, Cr.NS_OK, "setting revocation state should succeed");
+  } else {
+    let certBlocklist = Cc["@mozilla.org/security/certblocklist;1"]
+                          .getService(Ci.nsICertBlocklist);
+    certBlocklist.revokeCertBySubjectAndPubKey(
+      "MBIxEDAOBgNVBAMMB3Jldm9rZWQ=", 
+      "VCIlmPM9NkgFQtrs4Oa5TeFcDu6MWRTKSNdePEhOgD8="); 
+  }
   let cert = await readCertificate("revoked.pem", ",,");
   let win = await displayCertificate(cert);
   

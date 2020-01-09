@@ -11,7 +11,11 @@
 #include "ScopedNSSTypes.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/TimeStamp.h"
-#include "nsICertStorage.h"
+#ifdef MOZ_NEW_CERT_STORAGE
+#  include "nsICertStorage.h"
+#else
+#  include "nsICertBlocklist.h"
+#endif
 #include "nsString.h"
 #include "mozpkix/pkixtypes.h"
 #include "secmodt.h"
@@ -59,6 +63,7 @@ void UnloadLoadableRoots();
 nsresult DefaultServerNicknameForCert(const CERTCertificate* cert,
                                        nsCString& nickname);
 
+#ifdef MOZ_NEW_CERT_STORAGE
 
 
 
@@ -82,6 +87,31 @@ nsresult BuildRevocationCheckArrays(const UniqueCERTCertificate& cert,
                                      nsTArray<uint8_t>& serialBytes,
                                      nsTArray<uint8_t>& subjectBytes,
                                      nsTArray<uint8_t>& pubKeyBytes);
+#else
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+nsresult BuildRevocationCheckStrings(const CERTCertificate* cert,
+                                      nsCString& encIssuer,
+                                      nsCString& encSerial,
+                                      nsCString& encSubject,
+                                      nsCString& encPubKey);
+#endif
 
 void SaveIntermediateCerts(const UniqueCERTCertList& certList);
 
@@ -232,7 +262,11 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
   UniqueCERTCertList& mBuiltChain;    
   PinningTelemetryInfo* mPinningTelemetryInfo;
   const char* mHostname;  
+#ifdef MOZ_NEW_CERT_STORAGE
   nsCOMPtr<nsICertStorage> mCertStorage;
+#else
+  nsCOMPtr<nsICertBlocklist> mCertBlocklist;
+#endif
   CertVerifier::OCSPStaplingStatus mOCSPStaplingStatus;
   
   UniqueSECItem mSCTListFromCertificate;
