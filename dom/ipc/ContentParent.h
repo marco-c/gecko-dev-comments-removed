@@ -53,6 +53,7 @@
 #define FILE_REMOTE_TYPE "file"
 #define EXTENSION_REMOTE_TYPE "extension"
 #define PRIVILEGEDABOUT_REMOTE_TYPE "privilegedabout"
+#define PRIVILEGEDMOZILLA_REMOTE_TYPE "privilegedmozilla"
 
 
 #define LARGE_ALLOCATION_REMOTE_TYPE "webLargeAllocation"

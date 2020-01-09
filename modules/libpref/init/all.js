@@ -3353,6 +3353,10 @@ pref("dom.ipc.processCount.privilegedabout", 1);
 
 
 
+pref("dom.ipc.processCount.privilegedmozilla", 1);
+
+
+
 
 pref("dom.ipc.keepProcessesAlive.privilegedabout", 1);
 
@@ -3390,6 +3394,14 @@ pref("browser.tabs.remote.allowLinkedWebInFileUriProcess", true);
 
 
 pref("browser.tabs.remote.separatePrivilegedContentProcess", false);
+
+
+
+pref("browser.tabs.remote.separatePrivilegedMozillaWebContentProcess", false);
+
+
+
+pref("browser.tabs.remote.separatedMozillaDomains", "addons.mozilla.org,accounts.firefox.com");
 
 
 
