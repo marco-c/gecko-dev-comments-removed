@@ -2,7 +2,7 @@ function test() {
   waitForExplicitFinish();
 
   var w;
-  const secMan = Cc["@mozilla.org/scriptsecuritymanager;1"].getService(Ci.nsIScriptSecurityManager);
+  const secMan = Services.scriptSecurityManager;
   var iteration = 1;
   const uris = ["", "about:blank"];
   var uri;
@@ -10,6 +10,7 @@ function test() {
 
   function testLoad() {
     if (w.document == origDoc) {
+      
       
       setTimeout(testLoad, 10);
       return;
@@ -48,6 +49,7 @@ function test() {
       doTest();
     } else {
       origDoc = w.document;
+      
       
       
       setTimeout(testLoad, 10);

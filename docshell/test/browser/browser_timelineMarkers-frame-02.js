@@ -1,6 +1,9 @@
 
 
 
+
+
+
 "use strict";
 
 
@@ -103,7 +106,7 @@ var TESTS = [{
 }, {
   desc: "Timestamps created by console.timeStamp()",
   searchFor: "Timestamp",
-  setup(docshell) {
+  setup(docShell) {
     content.console.timeStamp("rock");
     let markers = docShell.popProfileTimelineMarkers();
     is(markers.length, 1, "Got one marker");

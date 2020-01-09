@@ -1,4 +1,7 @@
 
+
+
+
 addEventListener("frames-loaded",
   e => sendAsyncMessage("test:frames-loaded"), true, true);
 
@@ -8,9 +11,9 @@ let requestObserver = {
       
       
       getChildDocShells().map(ds => {
-        let window = ds.QueryInterface(Ci.nsIInterfaceRequestor)
-                      .getInterface(Ci.nsILoadContext)
-                      .associatedWindow;
+        ds.QueryInterface(Ci.nsIInterfaceRequestor)
+          .getInterface(Ci.nsILoadContext)
+          .associatedWindow;
       });
     }
   },

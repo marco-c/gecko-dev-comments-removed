@@ -1,6 +1,9 @@
 
 
 
+
+
+
 "use strict";
 
 
@@ -75,7 +78,7 @@ var TESTS = [{
     return markers.filter(m => m.name == "DOMEvent").length >= 2;
   },
   setup(docShell) {
-    let doc = content.window.addEventListener("aardvark", function(e) {
+    content.window.addEventListener("aardvark", function(e) {
       console.log("I like ants!");
     });
 
