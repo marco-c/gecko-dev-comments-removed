@@ -500,6 +500,13 @@ typedef PlatformSpecificStateBase
 
 
 
+
+
+
+
+
+
+
 StaticAutoPtr<ComputedTimingFunction> gZoomAnimationFunction;
 
 
@@ -800,6 +807,8 @@ AsyncPanZoomController::AsyncPanZoomController(
       mY(this),
       mPanDirRestricted(false),
       mPinchLocked(false),
+      mPinchEventBuffer(
+          TimeDuration::FromMilliseconds(gfxPrefs::APZPinchLockBufferMaxAge())),
       mZoomConstraints(false, false,
                        Metrics().GetDevPixelsPerCSSPixel() * kViewportMinScale /
                            ParentLayerToScreenScale(1),
@@ -1515,6 +1524,8 @@ nsEventStatus AsyncPanZoomController::OnScaleBegin(
   mLastZoomFocus =
       aEvent.mLocalFocusPoint - Metrics().GetCompositionBounds().TopLeft();
 
+  mPinchEventBuffer.push(aEvent);
+
   return nsEventStatus_eConsumeNoDefault;
 }
 
@@ -1530,22 +1541,8 @@ nsEventStatus AsyncPanZoomController::OnScale(const PinchGestureInput& aEvent) {
     return nsEventStatus_eConsumeNoDefault;
   }
 
-  ParentLayerCoord spanDistance =
-      fabsf(aEvent.mPreviousSpan - aEvent.mCurrentSpan);
-  ParentLayerPoint focusPoint, focusChange;
-  {
-    RecursiveMutexAutoLock lock(mRecursiveMutex);
-
-    focusPoint =
-        aEvent.mLocalFocusPoint - Metrics().GetCompositionBounds().TopLeft();
-    focusChange = mLastZoomFocus - focusPoint;
-    mLastZoomFocus = focusPoint;
-  }
-
-  HandlePinchLocking(
-      ToScreenCoordinates(ParentLayerPoint(0, spanDistance), focusPoint)
-          .Length(),
-      ToScreenCoordinates(focusChange, focusPoint));
+  mPinchEventBuffer.push(aEvent);
+  HandlePinchLocking();
   bool allowZoom = mZoomConstraints.mAllowZoom && !mPinchLocked;
 
   
@@ -1581,8 +1578,12 @@ nsEventStatus AsyncPanZoomController::OnScale(const PinchGestureInput& aEvent) {
     RecursiveMutexAutoLock lock(mRecursiveMutex);
 
     CSSToParentLayerScale userZoom = Metrics().GetZoom().ToScaleFactor();
+    ParentLayerPoint focusPoint =
+        aEvent.mLocalFocusPoint - Metrics().GetCompositionBounds().TopLeft();
     CSSPoint cssFocusPoint = focusPoint / Metrics().GetZoom();
 
+    ParentLayerPoint focusChange = mLastZoomFocus - focusPoint;
+    mLastZoomFocus = focusPoint;
     
     
     focusChange.x -= mX.DisplacementWillOverscrollAmount(focusChange.x);
@@ -1700,6 +1701,8 @@ nsEventStatus AsyncPanZoomController::OnScaleEnd(
     RequestContentRepaint();
     UpdateSharedCompositorFrameMetrics();
   }
+
+  mPinchEventBuffer.clear();
 
   
   if (aEvent.mLocalFocusPoint != PinchGestureInput::BothFingersLifted()) {
@@ -2932,8 +2935,38 @@ void AsyncPanZoomController::HandlePanningUpdate(
   }
 }
 
-void AsyncPanZoomController::HandlePinchLocking(ScreenCoord spanDistance,
-                                                ScreenPoint focusChange) {
+void AsyncPanZoomController::HandlePinchLocking() {
+  
+  
+  
+  
+  
+  
+  ParentLayerCoord bufferedSpanDistance;
+  ParentLayerPoint focusPoint, bufferedFocusChange;
+  {
+    RecursiveMutexAutoLock lock(mRecursiveMutex);
+
+    focusPoint = mPinchEventBuffer.back().mLocalFocusPoint -
+                 Metrics().GetCompositionBounds().TopLeft();
+    ParentLayerPoint bufferedLastZoomFocus =
+        (mPinchEventBuffer.size() > 1)
+            ? mPinchEventBuffer.front().mLocalFocusPoint -
+                  Metrics().GetCompositionBounds().TopLeft()
+            : mLastZoomFocus;
+
+    bufferedFocusChange = bufferedLastZoomFocus - focusPoint;
+    bufferedSpanDistance = fabsf(mPinchEventBuffer.front().mPreviousSpan -
+                                 mPinchEventBuffer.back().mCurrentSpan);
+  }
+
+  
+  ScreenCoord spanDistance =
+      ToScreenCoordinates(ParentLayerPoint(0, bufferedSpanDistance), focusPoint)
+          .Length();
+  ScreenPoint focusChange =
+      ToScreenCoordinates(bufferedFocusChange, focusPoint);
+
   if (mPinchLocked) {
     if (GetPinchLockMode() == PINCH_STICKY) {
       ScreenCoord spanBreakoutThreshold =

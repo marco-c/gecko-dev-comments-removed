@@ -28,6 +28,7 @@
 #include "nsRegion.h"
 #include "nsTArray.h"
 #include "PotentialCheckerboardDurationTracker.h"
+#include "RecentEventsBuffer.h"  
 
 #include "base/message_loop.h"
 
@@ -795,7 +796,7 @@ class AsyncPanZoomController {
   
 
 
-  void HandlePinchLocking(ScreenCoord spanDistance, ScreenPoint focusChange);
+  void HandlePinchLocking();
 
   
 
@@ -982,6 +983,12 @@ class AsyncPanZoomController {
   
   
   bool mPinchLocked;
+
+  
+  
+  
+  
+  RecentEventsBuffer<PinchGestureInput> mPinchEventBuffer;
 
   
   

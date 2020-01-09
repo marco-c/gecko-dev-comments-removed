@@ -42,34 +42,39 @@ TEST_F(APZCGestureDetectorTester, Pan_After_Pinch) {
   int focusX = 250;
   int focusY = 300;
   int panDistance = 20;
+  const TimeDuration TIME_BETWEEN_TOUCH_EVENT =
+      TimeDuration::FromMilliseconds(50);
 
   int firstFingerId = 0;
   int secondFingerId = firstFingerId + 1;
 
   
   MultiTouchInput mti =
-      MultiTouchInput(MultiTouchInput::MULTITOUCH_START, 0, TimeStamp(), 0);
+      MultiTouchInput(MultiTouchInput::MULTITOUCH_START, 0, mcc->Time(), 0);
   mti.mTouches.AppendElement(
       CreateSingleTouchData(firstFingerId, focusX, focusY));
   mti.mTouches.AppendElement(
       CreateSingleTouchData(secondFingerId, focusX, focusY));
   apzc->ReceiveInputEvent(mti, nullptr);
+  mcc->AdvanceBy(TIME_BETWEEN_TOUCH_EVENT);
 
   
-  mti = MultiTouchInput(MultiTouchInput::MULTITOUCH_MOVE, 0, TimeStamp(), 0);
+  mti = MultiTouchInput(MultiTouchInput::MULTITOUCH_MOVE, 0, mcc->Time(), 0);
   mti.mTouches.AppendElement(
       CreateSingleTouchData(firstFingerId, focusX - pinchLength, focusY));
   mti.mTouches.AppendElement(
       CreateSingleTouchData(secondFingerId, focusX + pinchLength, focusY));
   apzc->ReceiveInputEvent(mti, nullptr);
+  mcc->AdvanceBy(TIME_BETWEEN_TOUCH_EVENT);
 
   
-  mti = MultiTouchInput(MultiTouchInput::MULTITOUCH_MOVE, 0, TimeStamp(), 0);
+  mti = MultiTouchInput(MultiTouchInput::MULTITOUCH_MOVE, 0, mcc->Time(), 0);
   mti.mTouches.AppendElement(
       CreateSingleTouchData(firstFingerId, focusX - pinchLengthScaled, focusY));
   mti.mTouches.AppendElement(CreateSingleTouchData(
       secondFingerId, focusX + pinchLengthScaled, focusY));
   apzc->ReceiveInputEvent(mti, nullptr);
+  mcc->AdvanceBy(TIME_BETWEEN_TOUCH_EVENT);
 
   
   
@@ -79,31 +84,35 @@ TEST_F(APZCGestureDetectorTester, Pan_After_Pinch) {
             newZoom);
 
   
-  mti = MultiTouchInput(MultiTouchInput::MULTITOUCH_END, 0, TimeStamp(), 0);
+  mti = MultiTouchInput(MultiTouchInput::MULTITOUCH_END, 0, mcc->Time(), 0);
   mti.mTouches.AppendElement(CreateSingleTouchData(
       secondFingerId, focusX + pinchLengthScaled, focusY));
   apzc->ReceiveInputEvent(mti, nullptr);
+  mcc->AdvanceBy(TIME_BETWEEN_TOUCH_EVENT);
 
   
   
   focusY += 40;
-  mti = MultiTouchInput(MultiTouchInput::MULTITOUCH_MOVE, 0, TimeStamp(), 0);
+  mti = MultiTouchInput(MultiTouchInput::MULTITOUCH_MOVE, 0, mcc->Time(), 0);
   mti.mTouches.AppendElement(
       CreateSingleTouchData(firstFingerId, focusX - pinchLengthScaled, focusY));
   apzc->ReceiveInputEvent(mti, nullptr);
+  mcc->AdvanceBy(TIME_BETWEEN_TOUCH_EVENT);
 
   
   focusY += panDistance;
-  mti = MultiTouchInput(MultiTouchInput::MULTITOUCH_MOVE, 0, TimeStamp(), 0);
+  mti = MultiTouchInput(MultiTouchInput::MULTITOUCH_MOVE, 0, mcc->Time(), 0);
   mti.mTouches.AppendElement(
       CreateSingleTouchData(firstFingerId, focusX - pinchLengthScaled, focusY));
   apzc->ReceiveInputEvent(mti, nullptr);
+  mcc->AdvanceBy(TIME_BETWEEN_TOUCH_EVENT);
 
   
-  mti = MultiTouchInput(MultiTouchInput::MULTITOUCH_END, 0, TimeStamp(), 0);
+  mti = MultiTouchInput(MultiTouchInput::MULTITOUCH_END, 0, mcc->Time(), 0);
   mti.mTouches.AppendElement(
       CreateSingleTouchData(firstFingerId, focusX - pinchLengthScaled, focusY));
   apzc->ReceiveInputEvent(mti, nullptr);
+  mcc->AdvanceBy(TIME_BETWEEN_TOUCH_EVENT);
 
   
   FrameMetrics finalMetrics = apzc->GetFrameMetrics();
