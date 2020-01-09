@@ -307,6 +307,7 @@ var gSync = {
     
     
     let stateValue = "not_configured";
+    document.getElementById("PanelUI-fxa").removeAttribute("title");
     if (state.status === UIState.STATUS_LOGIN_FAILED || state.status === UIState.STATUS_NOT_VERIFIED) {
       stateValue = "unverified";
     } else if (state.status === UIState.STATUS_SIGNED_IN) {
