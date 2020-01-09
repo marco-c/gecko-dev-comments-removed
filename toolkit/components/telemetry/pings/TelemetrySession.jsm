@@ -88,21 +88,12 @@ function generateUUID() {
   return str.substring(1, str.length - 1);
 }
 
-function getMsSinceProcessStart() {
-  try {
-    return Telemetry.msSinceProcessStart();
-  } catch (ex) {
-    
-    return -1;
-  }
-}
-
 
 
 
 var Policy = {
   now: () => new Date(),
-  monotonicNow: getMsSinceProcessStart,
+  monotonicNow: Utils.monotonicNow,
   generateSessionUUID: () => generateUUID(),
   generateSubsessionUUID: () => generateUUID(),
   setSchedulerTickTimeout: (callback, delayMs) => setTimeout(callback, delayMs),

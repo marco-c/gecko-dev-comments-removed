@@ -217,11 +217,7 @@ var TelemetryUtils = {
 
 
   monotonicNow() {
-    try {
-      return Services.telemetry.msSinceProcessStart();
-    } catch (ex) {
-      return Date.now();
-    }
+    return Services.telemetry.msSinceProcessStart();
   },
 
   
