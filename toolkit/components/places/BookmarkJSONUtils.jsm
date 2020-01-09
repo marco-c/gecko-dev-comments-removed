@@ -73,6 +73,7 @@ var BookmarkJSONUtils = Object.freeze({
     } catch (ex) {
       Cu.reportError("Failed to restore bookmarks from " + aSpec + ": " + ex);
       notifyObservers(PlacesUtils.TOPIC_BOOKMARKS_RESTORE_FAILED, aReplace);
+      throw ex;
     }
   },
 
@@ -182,6 +183,10 @@ BookmarkImporter.prototype = {
 
 
   async importFromURL(spec) {
+    if (!spec.startsWith("chrome://") &&
+        !spec.startsWith("file://")) {
+      throw new Error("importFromURL can only be used with chrome:// and file:// URLs");
+    }
     let nodes = await (await fetch(spec)).json();
 
     if (!nodes.children || !nodes.children.length) {
