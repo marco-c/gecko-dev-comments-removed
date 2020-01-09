@@ -7,30 +7,19 @@ use nsstring::{nsCString, nsACString};
 
 #[repr(transparent)]
 #[allow(non_camel_case_types)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct nsresult(pub u32);
 
-
-pub trait NsresultExt {
-    fn failed(self) -> bool;
-    fn succeeded(self) -> bool;
-    fn to_result(self) -> Result<(), nsresult>;
-
-    
-    
-    fn error_name(self) -> nsCString;
-}
-
-impl NsresultExt for nsresult {
-    fn failed(self) -> bool {
+impl nsresult {
+    pub fn failed(self) -> bool {
         (self.0 >> 31) != 0
     }
 
-    fn succeeded(self) -> bool {
+    pub fn succeeded(self) -> bool {
         !self.failed()
     }
 
-    fn to_result(self) -> Result<(), nsresult> {
+    pub fn to_result(self) -> Result<(), nsresult> {
         if self.failed() {
             Err(self)
         } else {
@@ -38,7 +27,9 @@ impl NsresultExt for nsresult {
         }
     }
 
-    fn error_name(self) -> nsCString {
+    
+    
+    pub fn error_name(self) -> nsCString {
         let mut cstr = nsCString::new();
         unsafe {
             Gecko_GetErrorName(self, &mut *cstr);
