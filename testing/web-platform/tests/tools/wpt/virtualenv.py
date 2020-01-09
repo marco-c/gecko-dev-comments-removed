@@ -49,7 +49,13 @@ class Virtualenv(object):
         self.activate()
 
     def install(self, *requirements):
-        call(self.pip_path, "install", *requirements)
+        
+        
+        call(self.pip_path, "install", "--prefer-binary", *requirements)
 
     def install_requirements(self, requirements_path):
-        call(self.pip_path, "install", "-r", requirements_path)
+        
+        
+        call(
+            self.pip_path, "install", "--prefer-binary", "-r", requirements_path
+        )
