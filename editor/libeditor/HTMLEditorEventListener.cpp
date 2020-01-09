@@ -228,7 +228,7 @@ nsresult HTMLEditorEventListener::MouseUp(MouseEvent* aMouseEvent) {
 
   
   
-  HTMLEditor* htmlEditor = mEditorBase->AsHTMLEditor();
+  RefPtr<HTMLEditor> htmlEditor = mEditorBase->AsHTMLEditor();
   MOZ_ASSERT(htmlEditor);
 
   RefPtr<EventTarget> target = aMouseEvent->GetTarget();

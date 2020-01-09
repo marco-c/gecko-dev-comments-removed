@@ -186,8 +186,8 @@ nsresult HTMLEditor::SetInlinePropertyInternal(nsAtom& aProperty,
       nsCOMPtr<nsINode> endNode = range->GetEndContainer();
       if (startNode && startNode == endNode && startNode->GetAsText()) {
         rv = SetInlinePropertyOnTextNode(
-            *startNode->GetAsText(), range->StartOffset(), range->EndOffset(),
-            aProperty, aAttribute, aValue);
+            MOZ_KnownLive(*startNode->GetAsText()), range->StartOffset(),
+            range->EndOffset(), aProperty, aAttribute, aValue);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
@@ -227,8 +227,8 @@ nsresult HTMLEditor::SetInlinePropertyInternal(nsAtom& aProperty,
       
       if (startNode && startNode->GetAsText() && IsEditable(startNode)) {
         rv = SetInlinePropertyOnTextNode(
-            *startNode->GetAsText(), range->StartOffset(), startNode->Length(),
-            aProperty, aAttribute, aValue);
+            MOZ_KnownLive(*startNode->GetAsText()), range->StartOffset(),
+            startNode->Length(), aProperty, aAttribute, aValue);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
@@ -246,8 +246,8 @@ nsresult HTMLEditor::SetInlinePropertyInternal(nsAtom& aProperty,
       
       
       if (endNode && endNode->GetAsText() && IsEditable(endNode)) {
-        rv = SetInlinePropertyOnTextNode(*endNode->GetAsText(), 0,
-                                         range->EndOffset(), aProperty,
+        rv = SetInlinePropertyOnTextNode(MOZ_KnownLive(*endNode->GetAsText()),
+                                         0, range->EndOffset(), aProperty,
                                          aAttribute, aValue);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
@@ -388,7 +388,7 @@ nsresult HTMLEditor::SetInlinePropertyOnTextNode(
 
   if (aAttribute) {
     
-    nsIContent* sibling = GetPriorHTMLSibling(textNodeForTheRange);
+    nsCOMPtr<nsIContent> sibling = GetPriorHTMLSibling(textNodeForTheRange);
     if (IsSimpleModifiableNode(sibling, &aProperty, aAttribute, &aValue)) {
       
       return MoveNodeToEndWithTransaction(*textNodeForTheRange, *sibling);
@@ -817,7 +817,8 @@ nsresult HTMLEditor::RemoveStyleInside(nsIContent& aNode, nsAtom* aProperty,
           return rv;
         }
       }
-      nsresult rv = RemoveContainerWithTransaction(*aNode.AsElement());
+      nsresult rv =
+          RemoveContainerWithTransaction(MOZ_KnownLive(*aNode.AsElement()));
       NS_ENSURE_SUCCESS(rv, rv);
     } else if (aNode.IsElement()) {
       
@@ -825,7 +826,8 @@ nsresult HTMLEditor::RemoveStyleInside(nsIContent& aNode, nsAtom* aProperty,
         
         
         if (IsOnlyAttribute(aNode.AsElement(), aAttribute)) {
-          nsresult rv = RemoveContainerWithTransaction(*aNode.AsElement());
+          nsresult rv =
+              RemoveContainerWithTransaction(MOZ_KnownLive(*aNode.AsElement()));
           if (NS_WARN_IF(NS_FAILED(rv))) {
             return rv;
           }
@@ -853,10 +855,11 @@ nsresult HTMLEditor::RemoveStyleInside(nsIContent& aNode, nsAtom* aProperty,
         
         
         mCSSEditUtils->RemoveCSSEquivalentToHTMLStyle(
-            aNode.AsElement(), aProperty, aAttribute, nullptr, false);
+            MOZ_KnownLive(aNode.AsElement()), aProperty, aAttribute, nullptr,
+            false);
         
         
-        RemoveElementIfNoStyleOrIdOrClass(*aNode.AsElement());
+        RemoveElementIfNoStyleOrIdOrClass(MOZ_KnownLive(*aNode.AsElement()));
       }
     }
   }
@@ -870,7 +873,7 @@ nsresult HTMLEditor::RemoveStyleInside(nsIContent& aNode, nsAtom* aProperty,
        aNode.IsHTMLElement(nsGkAtoms::small)) &&
       aAttribute == nsGkAtoms::size) {
     
-    return RemoveContainerWithTransaction(*aNode.AsElement());
+    return RemoveContainerWithTransaction(MOZ_KnownLive(*aNode.AsElement()));
   }
   return NS_OK;
 }
@@ -1403,7 +1406,7 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(nsAtom* aProperty,
             if (CSSEditUtils::IsCSSInvertible(*aProperty, aAttribute)) {
               NS_NAMED_LITERAL_STRING(value, "-moz-editor-invert-value");
               SetInlinePropertyOnTextNode(
-                  *startNode->GetAsText(), range->StartOffset(),
+                  MOZ_KnownLive(*startNode->GetAsText()), range->StartOffset(),
                   range->EndOffset(), *aProperty, aAttribute, value);
             }
           }
@@ -1550,9 +1553,9 @@ nsresult HTMLEditor::RelativeFontChange(FontSize aDir) {
     nsCOMPtr<nsINode> startNode = range->GetStartContainer();
     nsCOMPtr<nsINode> endNode = range->GetEndContainer();
     if (startNode == endNode && IsTextNode(startNode)) {
-      rv = RelativeFontChangeOnTextNode(aDir, *startNode->GetAsText(),
-                                        range->StartOffset(),
-                                        range->EndOffset());
+      rv = RelativeFontChangeOnTextNode(
+          aDir, MOZ_KnownLive(*startNode->GetAsText()), range->StartOffset(),
+          range->EndOffset());
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -1597,16 +1600,16 @@ nsresult HTMLEditor::RelativeFontChange(FontSize aDir) {
       
       
       if (IsTextNode(startNode) && IsEditable(startNode)) {
-        rv = RelativeFontChangeOnTextNode(aDir, *startNode->GetAsText(),
-                                          range->StartOffset(),
-                                          startNode->Length());
+        rv = RelativeFontChangeOnTextNode(
+            aDir, MOZ_KnownLive(*startNode->GetAsText()), range->StartOffset(),
+            startNode->Length());
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
       }
       if (IsTextNode(endNode) && IsEditable(endNode)) {
-        rv = RelativeFontChangeOnTextNode(aDir, *endNode->GetAsText(), 0,
-                                          range->EndOffset());
+        rv = RelativeFontChangeOnTextNode(
+            aDir, MOZ_KnownLive(*endNode->GetAsText()), 0, range->EndOffset());
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
@@ -1685,8 +1688,8 @@ nsresult HTMLEditor::RelativeFontChangeOnTextNode(FontSize aDir,
   }
 
   
-  RefPtr<Element> newElement =
-      InsertContainerWithTransaction(*textNodeForTheRange, *nodeType);
+  RefPtr<Element> newElement = InsertContainerWithTransaction(
+      *textNodeForTheRange, MOZ_KnownLive(*nodeType));
   if (NS_WARN_IF(!newElement)) {
     return NS_ERROR_FAILURE;
   }
@@ -1765,7 +1768,7 @@ nsresult HTMLEditor::RelativeFontChangeOnNode(int32_t aSizeChange,
     nsresult rv = RelativeFontChangeHelper(aSizeChange, aNode);
     NS_ENSURE_SUCCESS(rv, rv);
     
-    return RemoveContainerWithTransaction(*aNode->AsElement());
+    return RemoveContainerWithTransaction(MOZ_KnownLive(*aNode->AsElement()));
   }
 
   
@@ -1777,7 +1780,7 @@ nsresult HTMLEditor::RelativeFontChangeOnNode(int32_t aSizeChange,
     
     
     
-    nsIContent* sibling = GetPriorHTMLSibling(aNode);
+    nsCOMPtr<nsIContent> sibling = GetPriorHTMLSibling(aNode);
     if (sibling && sibling->IsHTMLElement(atom)) {
       
       
@@ -1792,7 +1795,8 @@ nsresult HTMLEditor::RelativeFontChangeOnNode(int32_t aSizeChange,
     }
 
     
-    RefPtr<Element> newElement = InsertContainerWithTransaction(*aNode, *atom);
+    RefPtr<Element> newElement =
+        InsertContainerWithTransaction(*aNode, MOZ_KnownLive(*atom));
     if (NS_WARN_IF(!newElement)) {
       return NS_ERROR_FAILURE;
     }
