@@ -56,7 +56,7 @@ bool ScaledFontFreeType::GetWRFontInstanceOptions(
   options.render_mode = wr::FontRenderMode::Alpha;
   
   
-  options.flags = 0;
+  options.flags = wr::FontInstanceFlags{0};
   options.bg_color = wr::ToColorU(Color());
   options.synthetic_italics =
       wr::DegreesToSyntheticItalics(GetSyntheticObliqueAngle());

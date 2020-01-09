@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "ScaledFontDWrite.h"
 #include "UnscaledFontDWrite.h"
@@ -15,14 +15,14 @@
 
 #include "dwrite_3.h"
 
-// Currently, we build with WINVER=0x601 (Win7), which means newer
-// declarations in dwrite_3.h will not be visible. Also, we don't
-// yet have the Fall Creators Update SDK available on build machines,
-// so even with updated WINVER, some of the interfaces we need would
-// not be present.
-// To work around this, until the build environment is updated,
-// we #include an extra header that contains copies of the relevant
-// classes/interfaces we need.
+
+
+
+
+
+
+
+
 #if !defined(__MINGW32__) && WINVER < 0x0A00
 #  include "dw-extra.h"
 #endif
@@ -68,8 +68,8 @@ static bool DoGrayscale(IDWriteFontFace* aDWFace, Float ppem) {
       return true;
     }
     struct gaspRange {
-      unsigned short maxPPEM;   // Stored big-endian
-      unsigned short behavior;  // Stored big-endian
+      unsigned short maxPPEM;   
+      unsigned short behavior;  
     };
     unsigned short numRanges = readShort(tableData + 2);
     if (tableSize < (UINT)4 + numRanges * 4) {
@@ -140,7 +140,7 @@ ScaledFontDWrite::ScaledFontDWrite(IDWriteFontFace* aFontFace,
   if (aStyle) {
     mStyle = SkFontStyle(aStyle->weight.ToIntRounded(),
                          DWriteFontStretchFromStretch(aStyle->stretch),
-                         // FIXME(jwatt): also use kOblique_Slant
+                         
                          aStyle->style == FontSlantStyle::Normal()
                              ? SkFontStyle::kUpright_Slant
                              : SkFontStyle::kItalic_Slant);
@@ -172,13 +172,13 @@ SkTypeface* ScaledFontDWrite::CreateSkTypeface() {
   }
 
   Float gamma = mGamma;
-  // Skia doesn't support a gamma value outside of 0-4, so default to 2.2
+  
   if (gamma < 0.0f || gamma > 4.0f) {
     gamma = 2.2f;
   }
 
   Float contrast = mContrast;
-  // Skia doesn't support a contrast value outside of 0-1, so default to 1.0
+  
   if (contrast < 0.0f || contrast > 1.0f) {
     contrast = 1.0f;
   }
@@ -286,10 +286,10 @@ bool UnscaledFontDWrite::GetFontFileData(FontFileDataOutput aDataCallback,
 
   const void* referenceKey;
   UINT32 refKeySize;
-  // XXX - This can currently crash for webfonts, as when we get the reference
-  // key out of the file, that can be an invalid reference key for the loader
-  // we use it with. The fix to this is not obvious but it will probably
-  // have to happen inside thebes.
+  
+  
+  
+  
   file->GetReferenceKey(&referenceKey, &refKeySize);
 
   RefPtr<IDWriteFontFileLoader> loader;
@@ -404,10 +404,10 @@ ScaledFontDWrite::InstanceData::InstanceData(
       mGamma(2.2f),
       mContrast(1.0f) {
   if (aOptions) {
-    if (aOptions->flags & wr::FontInstanceFlags::EMBEDDED_BITMAPS) {
+    if (aOptions->flags & wr::FontInstanceFlags_EMBEDDED_BITMAPS) {
       mUseEmbeddedBitmap = true;
     }
-    if (aOptions->flags & wr::FontInstanceFlags::FORCE_GDI) {
+    if (aOptions->flags & wr::FontInstanceFlags_FORCE_GDI) {
       mForceGDIMode = true;
     }
   }
@@ -417,8 +417,8 @@ ScaledFontDWrite::InstanceData::InstanceData(
   }
 }
 
-// Helper for ScaledFontDWrite::GetFontInstanceData: if the font has variation
-// axes, get their current values into the aOutput vector.
+
+
 static void GetVariationsFromFontFace(IDWriteFontFace* aFace,
                                       std::vector<FontVariation>* aOutput) {
   RefPtr<IDWriteFontFace5> ff5;
@@ -460,7 +460,7 @@ bool ScaledFontDWrite::GetFontInstanceData(FontInstanceDataOutput aCb,
                                            void* aBaton) {
   InstanceData instance(this);
 
-  // If the font has variations, get the list of axis values.
+  
   std::vector<FontVariation> variations;
   GetVariationsFromFontFace(mFontFace, &variations);
 
@@ -478,15 +478,15 @@ bool ScaledFontDWrite::GetWRFontInstanceOptions(
   options.render_mode = wr::ToFontRenderMode(GetDefaultAAMode());
   options.flags = 0;
   if (mFontFace->GetSimulations() & DWRITE_FONT_SIMULATIONS_BOLD) {
-    options.flags |= wr::FontInstanceFlags::SYNTHETIC_BOLD;
+    options.flags |= wr::FontInstanceFlags_SYNTHETIC_BOLD;
   }
   if (UseEmbeddedBitmaps()) {
-    options.flags |= wr::FontInstanceFlags::EMBEDDED_BITMAPS;
+    options.flags |= wr::FontInstanceFlags_EMBEDDED_BITMAPS;
   }
   if (ForceGDIMode()) {
-    options.flags |= wr::FontInstanceFlags::FORCE_GDI;
+    options.flags |= wr::FontInstanceFlags_FORCE_GDI;
   } else {
-    options.flags |= wr::FontInstanceFlags::SUBPIXEL_POSITION;
+    options.flags |= wr::FontInstanceFlags_SUBPIXEL_POSITION;
   }
   options.bg_color = wr::ToColorU(Color());
   options.synthetic_italics =
@@ -505,9 +505,9 @@ bool ScaledFontDWrite::GetWRFontInstanceOptions(
   return true;
 }
 
-// Helper for UnscaledFontDWrite::CreateScaledFont: create a clone of the
-// given IDWriteFontFace, with specified variation-axis values applied.
-// Returns nullptr in case of failure.
+
+
+
 static already_AddRefed<IDWriteFontFace5> CreateFaceWithVariations(
     IDWriteFontFace* aFace, const FontVariation* aVariations,
     uint32_t aNumVariations) {
@@ -560,8 +560,8 @@ already_AddRefed<ScaledFont> UnscaledFontDWrite::CreateScaledFont(
 
   IDWriteFontFace* face = mFontFace;
 
-  // If variations are required, we create a separate IDWriteFontFace5 with
-  // the requested settings applied.
+  
+  
   RefPtr<IDWriteFontFace5> ff5;
   if (aNumVariations) {
     ff5 = CreateFaceWithVariations(mFontFace, aVariations, aNumVariations);
@@ -615,5 +615,5 @@ cairo_font_face_t* ScaledFontDWrite::GetCairoFontFace() {
 }
 #endif
 
-}  // namespace gfx
-}  // namespace mozilla
+}  
+}  

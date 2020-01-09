@@ -1029,8 +1029,7 @@ Maybe<nsCSSBorderRenderer> nsCSSRendering::CreateBorderRendererForOutline(
     
     outlineStyle = StyleBorderStyle::Solid;
   } else {
-    MOZ_ASSERT(ourOutline->mOutlineStyle.IsBorderStyle());
-    outlineStyle = ourOutline->mOutlineStyle.border_style._0;
+    outlineStyle = ourOutline->mOutlineStyle.AsBorderStyle();
   }
 
   StyleBorderStyle outlineStyles[4] = {outlineStyle, outlineStyle, outlineStyle,
