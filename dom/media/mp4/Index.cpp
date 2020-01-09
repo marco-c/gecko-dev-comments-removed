@@ -131,9 +131,8 @@ already_AddRefed<MediaRawData> SampleIterator::GetNext() {
   
   if (sampleDescriptionEntry->mIsEncryptedEntry) {
     if (!moofParser->mSinf.IsValid()) {
-      MOZ_ASSERT_UNREACHABLE(
-          "Sample description entry reports sample is encrypted, but no "
-          "sinf was parsed!");
+      
+      
       return nullptr;
     }
     if (moofParser->mSinf.mDefaultEncryptionType == AtomType("cenc")) {
