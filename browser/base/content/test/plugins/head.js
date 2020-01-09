@@ -5,6 +5,10 @@ ChromeUtils.defineModuleGetter(this, "PlacesUtils",
 ChromeUtils.defineModuleGetter(this, "PromiseUtils",
   "resource://gre/modules/PromiseUtils.jsm");
 
+XPCOMUtils.defineLazyServiceGetters(this, {
+  uuidGen: ["@mozilla.org/uuid-generator;1", "nsIUUIDGenerator"],
+});
+
 
 
 
@@ -193,21 +197,111 @@ function clearAllPluginPermissions() {
 }
 
 
+let JSONBlocklistWrapper = {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async loadBlocklistData(url) {
+    const fullURL = `${url}-plugins.json`;
+    let jsonObj;
+    try {
+      jsonObj = await (await fetch(fullURL)).json();
+    } catch (ex) {
+      ok(false, ex);
+    }
+    info(`Loaded ${fullURL}`);
+
+    return this.loadBlocklistRawData({plugins: jsonObj});
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async loadBlocklistRawData(data) {
+    const bsPass = ChromeUtils.import("resource://gre/modules/Blocklist.jsm", null);
+    const blocklistMapping = {
+      "extensions": bsPass.ExtensionBlocklistRS,
+      "plugins": bsPass.PluginBlocklistRS,
+    };
+
+    for (const [dataProp, blocklistObj] of Object.entries(blocklistMapping)) {
+      let newData = data[dataProp];
+      if (!newData) {
+        continue;
+      }
+      if (!Array.isArray(newData)) {
+        throw new Error("Expected an array of new items to put in the " + dataProp + " blocklist!");
+      }
+      for (let item of newData) {
+        if (!item.id) {
+          item.id = uuidGen.generateUUID().number.slice(1, -1);
+        }
+        if (!item.last_modified) {
+          item.last_modified = Date.now();
+        }
+      }
+      await blocklistObj._ensureInitialized();
+      let collection = await blocklistObj._client.openCollection();
+      await collection.clear();
+      await collection.loadDump(newData);
+      
+      
+      await blocklistObj._onUpdate();
+    }
+  },
+};
+
+
 
 var _originalTestBlocklistURL = null;
 async function asyncSetAndUpdateBlocklist(aURL, aBrowser) {
-  
-  
-  info("*** loading new blocklist: " + aURL);
   let doTestRemote = aBrowser ? aBrowser.isRemoteBrowser : false;
   if (!_originalTestBlocklistURL) {
     _originalTestBlocklistURL = Services.prefs.getCharPref("extensions.blocklist.url");
   }
-  Services.prefs.setCharPref("extensions.blocklist.url", aURL);
   let localPromise = TestUtils.topicObserved("plugin-blocklist-updated");
-  let blocklistNotifier = Cc["@mozilla.org/extensions/blocklist;1"]
-                            .getService(Ci.nsITimerCallback);
-  blocklistNotifier.notify(null);
+  if (Services.prefs.getBoolPref("extensions.blocklist.useXML", true)) {
+    info("*** loading new blocklist: " + aURL + ".xml");
+    Services.prefs.setCharPref("extensions.blocklist.url", aURL + ".xml");
+    let blocklistNotifier = Cc["@mozilla.org/extensions/blocklist;1"]
+                              .getService(Ci.nsITimerCallback);
+    blocklistNotifier.notify(null);
+  } else {
+    info("*** loading blocklist using json: " + aURL);
+    await JSONBlocklistWrapper.loadBlocklistData(aURL);
+  }
   info("*** waiting on local load");
   await localPromise;
   if (doTestRemote) {
