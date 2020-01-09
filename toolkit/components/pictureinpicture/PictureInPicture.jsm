@@ -62,6 +62,17 @@ var PictureInPicture = {
   
 
 
+  clearPipTabIcon() {
+    let win = this.browser.ownerGlobal;
+    let tab = win.gBrowser.getTabForBrowser(this.browser);
+    if (tab) {
+      tab.removeAttribute("pictureinpicture");
+    }
+  },
+
+  
+
+
   async closePipWindow() {
     
     
@@ -109,6 +120,9 @@ var PictureInPicture = {
     if (videoData.playing) {
       controls.classList.add("playing");
     }
+    
+    let tab = parentWin.gBrowser.getTabForBrowser(browser);
+    tab.setAttribute("pictureinpicture", true);
     win.setupPlayer(browser, videoData);
   },
 
@@ -117,6 +131,7 @@ var PictureInPicture = {
 
 
   unload() {
+    this.clearPipTabIcon();
     delete this.weakPipControls;
     delete this.browser;
   },
