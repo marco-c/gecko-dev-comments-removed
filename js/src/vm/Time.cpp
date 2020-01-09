@@ -51,12 +51,9 @@ int64_t PRMJ_Now() {
     return mozilla::TimeStamp::NowFuzzyTime();
   }
 
-  int64_t now = PRMJ_NowImpl();
   
   
-  return mozilla::TimeStamp::NowFuzzyTime() > now
-             ? mozilla::TimeStamp::NowFuzzyTime()
-             : now;
+  return js::Max(PRMJ_NowImpl(), mozilla::TimeStamp::NowFuzzyTime());
 }
 
 #if defined(XP_UNIX)
