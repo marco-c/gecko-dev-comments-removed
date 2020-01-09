@@ -19,16 +19,12 @@ Services.scriptloader.loadSubScript(
   this);
 
 
-Services.prefs.setBoolPref("devtools.flexboxinspector.enabled", true);
-
-
 Services.prefs.setBoolPref("devtools.layout.flexbox.opened", true);
 Services.prefs.setBoolPref("devtools.layout.boxmodel.opened", false);
 Services.prefs.setBoolPref("devtools.layout.grid.opened", false);
 
 
 registerCleanupFunction(() => {
-  Services.prefs.clearUserPref("devtools.flexboxinspector.enabled");
   Services.prefs.clearUserPref("devtools.layout.flexbox.opened");
   Services.prefs.clearUserPref("devtools.layout.boxmodel.opened");
   Services.prefs.clearUserPref("devtools.layout.grid.opened");
