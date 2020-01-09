@@ -938,13 +938,6 @@ class nsIWidget : public nsISupports {
 
 
 
-  virtual void SetCursor(nsCursor aCursor) = 0;
-
-  
-
-
-
-
   virtual void ClearCachedCursor() = 0;
 
   
@@ -955,9 +948,8 @@ class nsIWidget : public nsISupports {
 
 
 
-
-  virtual nsresult SetCursor(imgIContainer* aCursor, uint32_t aHotspotX,
-                             uint32_t aHotspotY) = 0;
+  virtual void SetCursor(nsCursor aDefaultCursor, imgIContainer* aCursorImage,
+                         uint32_t aHotspotX, uint32_t aHotspotY) = 0;
 
   
 

@@ -3826,9 +3826,9 @@ nsresult EventStateManager::SetCursor(StyleCursorKind aCursor,
   }
 
   
-  nsresult rv = NS_ERROR_FAILURE;
+  uint32_t hotspotX = 0;
+  uint32_t hotspotY = 0;
   if (aContainer) {
-    uint32_t hotspotX, hotspotY;
 
     
     
@@ -3859,12 +3859,9 @@ nsresult EventStateManager::SetCursor(StyleCursorKind aCursor,
         if (hotspotYWrap) hotspotYWrap->GetData(&hotspotY);
       }
     }
-
-    rv = aWidget->SetCursor(aContainer, hotspotX, hotspotY);
   }
 
-  if (NS_FAILED(rv)) aWidget->SetCursor(c);
-
+  aWidget->SetCursor(c, aContainer, hotspotX, hotspotY);
   return NS_OK;
 }
 

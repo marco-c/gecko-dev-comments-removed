@@ -1434,61 +1434,31 @@ gboolean nsWindow::OnPropertyNotifyEvent(GtkWidget *aWidget,
   return FALSE;
 }
 
-void nsWindow::SetCursor(nsCursor aCursor) {
-  
-  
-  if (!mContainer && mGdkWindow) {
-    nsWindow *window = GetContainerWindow();
-    if (!window) return;
-
-    window->SetCursor(aCursor);
-    return;
+static GdkCursor *GetCursorForImage(imgIContainer *aCursorImage,
+                                    uint32_t aHotspotX, uint32_t aHotspotY) {
+  if (!aCursorImage) {
+    return nullptr;
   }
-
-  
-  if (aCursor != mCursor || mUpdateCursor) {
-    GdkCursor *newCursor = nullptr;
-    mUpdateCursor = false;
-
-    newCursor = get_gtk_cursor(aCursor);
-
-    if (nullptr != newCursor) {
-      mCursor = aCursor;
-
-      if (!mContainer) return;
-
-      gdk_window_set_cursor(gtk_widget_get_window(GTK_WIDGET(mContainer)),
-                            newCursor);
-    }
+  GdkPixbuf *pixbuf = nsImageToPixbuf::ImageToPixbuf(aCursorImage);
+  if (!pixbuf) {
+    return nullptr;
   }
-}
-
-nsresult nsWindow::SetCursor(imgIContainer *aCursor, uint32_t aHotspotX,
-                             uint32_t aHotspotY) {
-  
-  
-  if (!mContainer && mGdkWindow) {
-    nsWindow *window = GetContainerWindow();
-    if (!window) return NS_ERROR_FAILURE;
-
-    return window->SetCursor(aCursor, aHotspotX, aHotspotY);
-  }
-
-  mCursor = eCursorInvalid;
-
-  
-  GdkPixbuf *pixbuf = nsImageToPixbuf::ImageToPixbuf(aCursor);
-  if (!pixbuf) return NS_ERROR_NOT_AVAILABLE;
 
   int width = gdk_pixbuf_get_width(pixbuf);
   int height = gdk_pixbuf_get_height(pixbuf);
+
+  auto CleanupPixBuf =
+      mozilla::MakeScopeExit([&]() { g_object_unref(pixbuf); });
+
+  
+  
+  
   
   
   
   
   if (width > 128 || height > 128) {
-    g_object_unref(pixbuf);
-    return NS_ERROR_NOT_AVAILABLE;
+    return nullptr;
   }
 
   
@@ -1497,26 +1467,58 @@ nsresult nsWindow::SetCursor(imgIContainer *aCursor, uint32_t aHotspotX,
   if (!gdk_pixbuf_get_has_alpha(pixbuf)) {
     GdkPixbuf *alphaBuf = gdk_pixbuf_add_alpha(pixbuf, FALSE, 0, 0, 0);
     g_object_unref(pixbuf);
-    if (!alphaBuf) {
-      return NS_ERROR_OUT_OF_MEMORY;
-    }
     pixbuf = alphaBuf;
-  }
-
-  GdkCursor *cursor = gdk_cursor_new_from_pixbuf(gdk_display_get_default(),
-                                                 pixbuf, aHotspotX, aHotspotY);
-  g_object_unref(pixbuf);
-  nsresult rv = NS_ERROR_OUT_OF_MEMORY;
-  if (cursor) {
-    if (mContainer) {
-      gdk_window_set_cursor(gtk_widget_get_window(GTK_WIDGET(mContainer)),
-                            cursor);
-      rv = NS_OK;
+    if (!alphaBuf) {
+      return nullptr;
     }
-    g_object_unref(cursor);
   }
 
-  return rv;
+  return gdk_cursor_new_from_pixbuf(gdk_display_get_default(), pixbuf,
+                                    aHotspotX, aHotspotY);
+}
+
+void nsWindow::SetCursor(nsCursor aDefaultCursor, imgIContainer *aCursorImage,
+                         uint32_t aHotspotX, uint32_t aHotspotY) {
+  
+  
+  if (!mContainer && mGdkWindow) {
+    nsWindow *window = GetContainerWindow();
+    if (!window) return;
+
+    window->SetCursor(aDefaultCursor, aCursorImage, aHotspotX, aHotspotY);
+    return;
+  }
+
+  
+  if (!aCursorImage && aDefaultCursor == mCursor && !mUpdateCursor) {
+    return;
+  }
+
+  mUpdateCursor = false;
+  mCursor = eCursorInvalid;
+
+  
+  GdkCursor *newCursor = GetCursorForImage(aCursorImage, aHotspotX, aHotspotY);
+  if (!newCursor) {
+    newCursor = get_gtk_cursor(aDefaultCursor);
+    if (newCursor) {
+      mCursor = aDefaultCursor;
+    }
+  }
+
+  auto CleanupCursor = mozilla::MakeScopeExit([&]() {
+    
+    if (newCursor && mCursor == eCursorInvalid) {
+      g_object_unref(newCursor);
+    }
+  });
+
+  if (!newCursor || !mContainer) {
+    return;
+  }
+
+  gdk_window_set_cursor(gtk_widget_get_window(GTK_WIDGET(mContainer)),
+                        newCursor);
 }
 
 void nsWindow::Invalidate(const LayoutDeviceIntRect &aRect) {
@@ -3482,7 +3484,7 @@ nsresult nsWindow::Create(nsIWidget *aParent, nsNativeWidget aNativeParent,
                                  
                                  
                                  
-        SetCursor(eCursor_standard);
+        SetCursor(eCursor_standard, nullptr, 0, 0);
 
         if (aInitData->mNoAutoHide) {
           gint wmd = ConvertBorderStyles(mBorderStyle);
