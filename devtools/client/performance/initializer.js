@@ -28,24 +28,6 @@ const EVENTS = require("./events");
 
 
 
-const startupPerformance = async function(toolbox, target, front) {
-  await PerformanceController.initialize(toolbox, target, front);
-  await PerformanceView.initialize();
-  PerformanceController.enableFrontEventListeners();
-};
-
-
-
-
-const shutdownPerformance = async function() {
-  await PerformanceController.destroy();
-  await PerformanceView.destroy();
-  PerformanceController.disableFrontEventListeners();
-};
-
-
-
-
 
 
 
@@ -62,8 +44,6 @@ window.RecordingsView = RecordingsView;
 window.ToolbarView = ToolbarView;
 window.WaterfallView = WaterfallView;
 
-window.shutdownPerformance = shutdownPerformance;
-window.startupPerformance = startupPerformance;
 window.EVENTS = EVENTS;
 
 
