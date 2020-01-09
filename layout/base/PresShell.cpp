@@ -4661,11 +4661,15 @@ UniquePtr<RangePaintInfo> PresShell::CreateRangePaintInfo(
         nsContentUtils::GetCommonAncestor(startContainer, endContainer);
     NS_ASSERTION(!ancestor || ancestor->IsContent(),
                  "common ancestor is not content");
-    if (!ancestor || !ancestor->IsContent()) return nullptr;
 
-    ancestorFrame = ancestor->AsContent()->GetPrimaryFrame();
+    while (ancestor && ancestor->IsContent()) {
+      ancestorFrame = ancestor->AsContent()->GetPrimaryFrame();
+      if (ancestorFrame) {
+        break;
+      }
 
-    
+      ancestor = ancestor->GetParentOrHostNode();
+    }
 
     
     
