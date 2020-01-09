@@ -2859,10 +2859,10 @@ VARCACHE_PREF(
 )
 
 VARCACHE_PREF(
-  Once,
+  Live,
   "image.animated.decode-on-demand.recycle",
   ImageAnimatedDecodeOnDemandRecycle,
-  bool, false
+  RelaxedAtomicBool, false
 )
 
 VARCACHE_PREF(
@@ -3114,6 +3114,15 @@ VARCACHE_PREF(
   "javascript.options.streams",
   javascript_options_streams,
   RelaxedAtomicBool, false
+)
+
+
+
+VARCACHE_PREF(
+  Live,
+  "intl.charset.detector.iso2022jp.allowed",
+   intl_charset_detector_iso2022jp_allowed,
+  bool, true
 )
 
 
