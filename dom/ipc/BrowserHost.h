@@ -7,6 +7,7 @@
 #ifndef mozilla_dom_BrowserHost_h
 #define mozilla_dom_BrowserHost_h
 
+#include "nsIRemoteTab.h"
 #include "mozilla/dom/RemoteBrowser.h"
 #include "mozilla/dom/BrowserParent.h"
 
@@ -22,13 +23,15 @@ namespace dom {
 
 
 
-class BrowserHost : public RemoteBrowser {
+class BrowserHost : public RemoteBrowser, public nsIRemoteTab {
  public:
   typedef mozilla::layers::LayersId LayersId;
 
   explicit BrowserHost(BrowserParent* aParent);
 
-  NS_INLINE_DECL_REFCOUNTING(BrowserHost, override);
+  NS_DECL_ISUPPORTS
+  
+  NS_DECL_NSIREMOTETAB
 
   
   
