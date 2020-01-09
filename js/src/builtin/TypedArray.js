@@ -351,7 +351,12 @@ function TypedArrayFill(value, start = 0, end = undefined) {
     var len = TypedArrayLength(O);
 
     
-    value = ToNumber(value);
+    var kind = GetTypedArrayKind(O);
+    if (kind === TYPEDARRAY_KIND_BIGINT64 || kind === TYPEDARRAY_KIND_BIGUINT64) {
+        value = ToBigInt(value);
+    } else {
+        value = ToNumber(value);
+    }
 
     
     var relativeStart = ToInteger(start);
@@ -1142,8 +1147,9 @@ function TypedArraySome(callbackfn) {
 
 function TypedArrayCompare(x, y) {
     
-    assert(typeof x === "number" && typeof y === "number",
-           "x and y are not numbers.");
+    assert((typeof x === "number" && typeof y === "number") ||
+           (typeof x === "bigint" && typeof y === "bigint"),
+           "x and y are not numbers of the same type.");
 
     
 
@@ -1181,6 +1187,29 @@ function TypedArrayCompareInt(x, y) {
     var diff = x - y;
     if (diff)
         return diff;
+
+    
+
+    
+    return 0;
+}
+
+
+
+function TypedArrayCompareBigInt(x, y) {
+    
+    assert(typeof x === "bigint" && typeof y === "bigint",
+           "x and y are not BigInts.");
+
+    
+
+    
+    if (x < y)
+        return -1;
+
+    
+    if (x > y)
+        return 1;
 
     
 
@@ -1248,6 +1277,9 @@ function TypedArraySort(comparefn) {
             return RadixSort(obj, len, buffer,
                              4 , true , false ,
                              TypedArrayCompareInt);
+          case TYPEDARRAY_KIND_BIGINT64:
+          case TYPEDARRAY_KIND_BIGUINT64:
+            return QuickSort(obj, len, TypedArrayCompareBigInt);
           case TYPEDARRAY_KIND_FLOAT32:
             return RadixSort(obj, len, buffer,
                              4 , true , true ,
