@@ -3501,7 +3501,7 @@ nsBrowserAccess.prototype = {
   },
 
   openURIInFrame: function browser_openURIInFrame(aURI, aParams, aWhere, aFlags,
-                                                  aNextTabParentId, aName) {
+                                                  aNextRemoteTabId, aName) {
     
     
     
@@ -3513,7 +3513,7 @@ nsBrowserAccess.prototype = {
 
   createContentWindowInFrame: function browser_createContentWindowInFrame(
                               aURI, aParams, aWhere, aFlags,
-                              aNextTabParentId, aName) {
+                              aNextRemoteTabId, aName) {
     return this._getBrowser(null, null, aWhere, aFlags, null);
   },
 

@@ -4,7 +4,7 @@
 
 
 
-#include "TabParent.h"
+#include "BrowserParent.h"
 
 
 
@@ -172,10 +172,11 @@ BrowserElementParent::DispatchOpenWindowEvent(Element* aOpenerFrameElement,
 
 
 BrowserElementParent::OpenWindowResult BrowserElementParent::OpenWindowOOP(
-    TabParent* aOpenerTabParent, TabParent* aPopupTabParent,
+    BrowserParent* aOpenerBrowserParent, BrowserParent* aPopupBrowserParent,
     const nsAString& aURL, const nsAString& aName, const nsAString& aFeatures) {
   
-  nsCOMPtr<Element> openerFrameElement = aOpenerTabParent->GetOwnerElement();
+  nsCOMPtr<Element> openerFrameElement =
+      aOpenerBrowserParent->GetOwnerElement();
   NS_ENSURE_TRUE(openerFrameElement, BrowserElementParent::OPEN_WINDOW_IGNORED);
   RefPtr<HTMLIFrameElement> popupFrameElement =
       CreateIframe(openerFrameElement, aName,  true);
@@ -201,9 +202,9 @@ BrowserElementParent::OpenWindowResult BrowserElementParent::OpenWindowOOP(
 
   
   
-  aPopupTabParent->SetOwnerElement(popupFrameElement);
+  aPopupBrowserParent->SetOwnerElement(popupFrameElement);
   popupFrameElement->AllowCreateFrameLoader();
-  popupFrameElement->CreateRemoteFrameLoader(aPopupTabParent);
+  popupFrameElement->CreateRemoteFrameLoader(aPopupBrowserParent);
 
   return opened;
 }
