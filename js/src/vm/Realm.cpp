@@ -340,10 +340,8 @@ void Realm::traceRoots(JSTracer* trc,
   
   
   
-  
   if (scriptCountsMap && trc->runtime()->profilingScripts &&
       !JS::RuntimeHeapIsMinorCollecting()) {
-    MOZ_ASSERT_IF(!trc->runtime()->isBeingDestroyed(), collectCoverage());
     for (ScriptCountsMap::Range r = scriptCountsMap->all(); !r.empty();
          r.popFront()) {
       JSScript* script = const_cast<JSScript*>(r.front().key());
