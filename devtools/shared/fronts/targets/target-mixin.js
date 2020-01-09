@@ -4,8 +4,6 @@
 
 "use strict";
 
-const Services = require("Services");
-
 
 
 
@@ -321,9 +319,7 @@ function TargetMixin(parentClass) {
     }
 
     isReplayEnabled() {
-      return Services.prefs.getBoolPref("devtools.recordreplay.mvp.enabled")
-        && this.canRewind
-        && this.isLocalTab;
+      return this.canRewind && this.isLocalTab;
     }
 
     getExtensionPathName(url) {
