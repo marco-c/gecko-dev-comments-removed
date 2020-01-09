@@ -1582,8 +1582,6 @@ static void SetupLauncherProcessPref() {
 
 static nsresult LaunchChild(nsINativeAppSupport* aNative,
                             bool aBlankCommandLine = false) {
-  aNative->Quit();  
-
   
   
 
@@ -4693,14 +4691,14 @@ int XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig) {
     gShutdownChecks = SCM_NOTHING;
   }
 
-  if (!mShuttingDown) {
 #if defined(MOZ_HAS_REMOTE)
-    
-    if (mRemoteService) {
-      mRemoteService->ShutdownServer();
-    }
-#endif 
+  
+  
+  
+  if (mRemoteService) {
+    mRemoteService->ShutdownServer();
   }
+#endif 
 
   mScopedXPCOM = nullptr;
 
