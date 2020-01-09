@@ -339,9 +339,17 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
 
   static size_t objectMoved(JSObject* obj, JSObject* old);
 
-  static BufferContents externalizeContents(JSContext* cx,
-                                            Handle<ArrayBufferObject*> buffer,
-                                            bool hasStealableContents);
+  
+  
+  
+  
+  
+  
+  
+  
+  static void* exposeMallocedContents(JSContext* cx,
+                                      Handle<ArrayBufferObject*> buffer);
+
   static BufferContents stealContents(JSContext* cx,
                                       Handle<ArrayBufferObject*> buffer,
                                       bool hasStealableContents);
