@@ -179,6 +179,8 @@ function parseLanguageTag(locale) {
     #define UPPER_A 0x41
     #define UPPER_Z 0x5A
     #define LOWER_A 0x61
+    #define LOWER_T 0x74
+    #define LOWER_U 0x75
     #define LOWER_X 0x78
     #define LOWER_Z 0x7A
     assert(std_String_fromCharCode(HYPHEN) === "-" &&
@@ -187,6 +189,8 @@ function parseLanguageTag(locale) {
            std_String_fromCharCode(UPPER_A) === "A" &&
            std_String_fromCharCode(UPPER_Z) === "Z" &&
            std_String_fromCharCode(LOWER_A) === "a" &&
+           std_String_fromCharCode(LOWER_T) === "t" &&
+           std_String_fromCharCode(LOWER_U) === "u" &&
            std_String_fromCharCode(LOWER_X) === "x" &&
            std_String_fromCharCode(LOWER_Z) === "z",
            "code unit constants should match the expected characters");
@@ -232,8 +236,10 @@ function parseLanguageTag(locale) {
     
     
     
-    function tokenStartCodeUnitLower() {
-        var c = callFunction(std_String_charCodeAt, localeLowercase, tokenStart);
+    function tokenCharCodeUnitLower(index) {
+        assert(0 <= index && index < tokenLength,
+               "must be an index into the current token");
+        var c = callFunction(std_String_charCodeAt, localeLowercase, tokenStart + index);
         assert((DIGIT_ZERO <= c && c <= DIGIT_NINE) || (LOWER_A <= c && c <= LOWER_Z),
                "unexpected code unit");
         return c;
@@ -308,10 +314,10 @@ function parseLanguageTag(locale) {
     
     
     while ((5 <= tokenLength && tokenLength <= 8) ||
-           (tokenLength === 4 && tokenStartCodeUnitLower() <= DIGIT_NINE))
+           (tokenLength === 4 && tokenCharCodeUnitLower(0) <= DIGIT_NINE))
     {
-        assert(!(tokenStartCodeUnitLower() <= DIGIT_NINE) ||
-               tokenStartCodeUnitLower() >= DIGIT_ZERO,
+        assert(!(tokenCharCodeUnitLower(0) <= DIGIT_NINE) ||
+               tokenCharCodeUnitLower(0) >= DIGIT_ZERO,
                "token-start-code-unit <= '9' implies token-start-code-unit is in '0'..'9'");
 
         
@@ -367,15 +373,10 @@ function parseLanguageTag(locale) {
     
     
     
-    
-    
-    
-    
-    
     var seenSingletons = [];
     while (tokenLength === 1) {
         var extensionStart = tokenStart;
-        var singleton = tokenStartCodeUnitLower();
+        var singleton = tokenCharCodeUnitLower(0);
         if (singleton === LOWER_X)
             break;
 
@@ -398,22 +399,87 @@ function parseLanguageTag(locale) {
         if (!nextToken())
             return null;
 
-        if (!(2 <= tokenLength && tokenLength <= 8))
-            return null;
-        do {
-            if (!nextToken())
-                return null;
-        } while (2 <= tokenLength && tokenLength <= 8);
+        if (singleton === LOWER_U) {
+            while (2 <= tokenLength && tokenLength <= 8) {
+                
+                if (tokenLength === 2 && tokenCharCodeUnitLower(1) <= DIGIT_NINE)
+                    return null;
+                if (!nextToken())
+                    return null;
+            }
+        } else if (singleton === LOWER_T) {
+            
+            
+            if (token === ALPHA) {
+                
+                if (tokenLength === 1 || tokenLength === 4 || tokenLength > 8)
+                    return null;
+                if (!nextToken())
+                    return null;
 
+                
+                if (tokenLength === 4 && token === ALPHA) {
+                    if (!nextToken())
+                        return null;
+                }
+
+                
+                if ((tokenLength === 2 && token === ALPHA) ||
+                    (tokenLength === 3 && token === DIGIT))
+                {
+                    if (!nextToken())
+                        return null;
+                }
+
+                
+                while ((5 <= tokenLength && tokenLength <= 8) ||
+                       (tokenLength === 4 && tokenCharCodeUnitLower(0) <= DIGIT_NINE))
+                {
+                    if (!nextToken())
+                        return null;
+                }
+            }
+
+            
+            while (tokenLength === 2) {
+                
+                if ((tokenCharCodeUnitLower(0) <= DIGIT_NINE) ||
+                    (tokenCharCodeUnitLower(1) > DIGIT_NINE))
+                {
+                    return null;
+                }
+                if (!nextToken())
+                    return null;
+
+                
+                if (!(3 <= tokenLength && tokenLength <= 8))
+                    return null;
+                do {
+                    if (!nextToken())
+                        return null;
+                } while (3 <= tokenLength && tokenLength <= 8);
+            }
+        } else {
+            while (2 <= tokenLength && tokenLength <= 8) {
+                if (!nextToken())
+                    return null;
+            }
+        }
+
+        
+        var extensionLength = tokenStart - 1 - extensionStart;
+        if (extensionLength <= 2) {
+            return null;
+        }
         var extension = Substring(localeLowercase, extensionStart,
-                                  (tokenStart - 1 - extensionStart));
+                                  extensionLength);
         _DefineDataProperty(extensions, extensions.length, extension);
     }
 
     
     
     
-    if (tokenLength === 1 && tokenStartCodeUnitLower() === LOWER_X) {
+    if (tokenLength === 1 && tokenCharCodeUnitLower(0) === LOWER_X) {
         var privateuseStart = tokenStart;
         if (!nextToken())
             return null;
@@ -470,6 +536,8 @@ function parseLanguageTag(locale) {
     #undef UPPER_A
     #undef UPPER_Z
     #undef LOWER_A
+    #undef LOWER_T
+    #undef LOWER_U
     #undef LOWER_X
     #undef LOWER_Z
 }
