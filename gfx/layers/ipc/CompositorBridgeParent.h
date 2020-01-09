@@ -496,7 +496,7 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
     
     
     
-    ContentCompositorBridgeParent* mCrossProcessParent;
+    ContentCompositorBridgeParent* mContentCompositorBridgeParent;
     TargetConfig mTargetConfig;
     LayerTransactionParent* mLayerTree;
     nsTArray<PluginWindowData> mPluginData;
