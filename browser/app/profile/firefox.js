@@ -498,16 +498,9 @@ pref("browser.tabs.showAudioPlayingIcon", true);
 
 pref("browser.tabs.delayHidingAudioPlayingIconMS", 3000);
 
+
 #if defined(NIGHTLY_BUILD) && !defined(MOZ_ASAN)
-
-
-
-
 pref("browser.tabs.remote.separatePrivilegedContentProcess", true);
-
-
-
-pref("browser.tabs.remote.separatePrivilegedMozillaWebContentProcess", true);
 #endif
 
 #ifdef NIGHTLY_BUILD

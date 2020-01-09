@@ -3349,16 +3349,12 @@ pref("dom.ipc.processCount.file", 1);
 pref("dom.ipc.processCount.extension", 1);
 
 
-pref("dom.ipc.processCount.privilegedabout", 1);
-
-
-
-pref("dom.ipc.processCount.privilegedmozilla", 1);
+pref("dom.ipc.processCount.privileged", 1);
 
 
 
 
-pref("dom.ipc.keepProcessesAlive.privilegedabout", 1);
+pref("dom.ipc.keepProcessesAlive.privileged", 1);
 
 
 #if defined(XP_WIN) || defined(XP_MACOSX)
@@ -3391,17 +3387,7 @@ pref("browser.tabs.remote.separateFileUriProcess", true);
 pref("browser.tabs.remote.allowLinkedWebInFileUriProcess", true);
 
 
-
-
 pref("browser.tabs.remote.separatePrivilegedContentProcess", false);
-
-
-
-pref("browser.tabs.remote.separatePrivilegedMozillaWebContentProcess", false);
-
-
-
-pref("browser.tabs.remote.separatedMozillaDomains", "addons.mozilla.org,accounts.firefox.com");
 
 
 
