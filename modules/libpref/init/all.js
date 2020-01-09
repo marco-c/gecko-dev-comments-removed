@@ -285,6 +285,8 @@ pref("browser.sessionhistory.max_total_viewers", -1);
 pref("ui.use_native_colors", true);
 pref("ui.click_hold_context_menus", false);
 
+pref("ui.android.mouse_as_touch", 1);
+
 
 
 pref("ui.context_menus.after_mouseup", false);
