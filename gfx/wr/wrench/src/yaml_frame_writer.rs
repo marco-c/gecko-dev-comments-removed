@@ -196,11 +196,15 @@ fn write_reference_frame(
     properties: &SceneProperties,
     clip_id_mapper: &mut ClipIdMapper,
 ) {
+    
+    
+    
+
     matrix4d_node(
         parent,
         match reference_frame.kind {
             ReferenceFrameKind::Transform => "transform",
-            ReferenceFrameKind::Perspective => "perspective",
+            ReferenceFrameKind::Perspective { .. } => "perspective",
         },
         &properties.resolve_layout_transform(&reference_frame.transform)
     );
