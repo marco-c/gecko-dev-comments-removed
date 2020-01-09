@@ -96,10 +96,6 @@ var whitelist = [
   {file: "resource://gre/res/fonts/mathfontUnicode.properties"},
 
   
-  {file: "resource://gre/modules/ClusterLib.js"},
-  {file: "resource://gre/modules/ColorConversion.js"},
-
-  
   {file: "chrome://global/content/win.xul"},
 
   
