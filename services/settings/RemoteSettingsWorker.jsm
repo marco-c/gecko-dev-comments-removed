@@ -7,22 +7,37 @@
 
 
 
-
-
+const { XPCOMUtils } = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { setTimeout, clearTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
 
 var EXPORTED_SYMBOLS = ["RemoteSettingsWorker"];
 
+XPCOMUtils.defineLazyPreferenceGetter(this, "gMaxIdleMilliseconds",
+  "services.settings.worker_idle_max_milliseconds",
+  30 * 1000 
+);
+
 class Worker {
   constructor(source) {
-    this.worker = new ChromeWorker(source);
-    this.worker.onmessage = this._onWorkerMessage.bind(this);
+    this.source = source;
+    this.worker = null;
 
     this.callbacks = new Map();
     this.lastCallbackId = 0;
+    this.idleTimeoutId = null;
   }
 
   async _execute(method, args = []) {
-    return new Promise(async (resolve, reject) => {
+    
+    if (!this.worker) {
+      this.worker = new ChromeWorker(this.source);
+      this.worker.onmessage = this._onWorkerMessage.bind(this);
+    }
+    
+    if (this.idleTimeoutId) {
+      clearTimeout(this.idleTimeoutId);
+    }
+    return new Promise((resolve, reject) => {
       const callbackId = ++this.lastCallbackId;
       this.callbacks.set(callbackId, [resolve, reject]);
       this.worker.postMessage({ callbackId, method, args });
@@ -38,6 +53,16 @@ class Worker {
       resolve(result);
     }
     this.callbacks.delete(callbackId);
+
+    
+    
+    if (this.callbacks.length == 0) {
+      this.idleTimeoutId = setTimeout(() => {
+        this.worker.terminate();
+        this.worker = null;
+        this.idleTimeoutId = null;
+      }, gMaxIdleMilliseconds);
+    }
   }
 
   async canonicalStringify(localRecords, remoteRecords, timestamp) {
