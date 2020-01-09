@@ -526,14 +526,12 @@ class PresShell final : public nsIPresShell,
 
 
 
-
     MOZ_CAN_RUN_SCRIPT
     nsresult HandleEvent(nsIFrame* aFrameForPresShell,
                          WidgetGUIEvent* aGUIEvent, bool aDontRetargetEvents,
                          nsEventStatus* aEventStatus);
 
     
-
 
 
 
@@ -1109,11 +1107,8 @@ class PresShell final : public nsIPresShell,
 
 
 
-
-
-
     MOZ_CAN_RUN_SCRIPT
-    bool PrepareToDispatchEvent(WidgetEvent* aEvent, bool* aIsUserInteraction);
+    bool PrepareToDispatchEvent(WidgetEvent* aEvent);
 
     
 
@@ -1124,6 +1119,16 @@ class PresShell final : public nsIPresShell,
     MOZ_CAN_RUN_SCRIPT
     void MaybeHandleKeyboardEventBeforeDispatch(
         WidgetKeyboardEvent* aKeyboardEvent);
+
+    
+
+
+
+
+
+
+
+    bool PrepareToDispatchContextMenuEvent(WidgetEvent* aEvent);
 
     
 
