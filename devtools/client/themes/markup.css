@@ -41,6 +41,13 @@ body {
 }
 
 
+
+#root .theme-twisty:not(.open):dir(rtl),
+#root .theme-twisty:not([open]):-moz-locale-dir(rtl) {
+  transform: rotate(-90deg);
+}
+
+
 #root > ul > li > .children {
   background: none;
 }
