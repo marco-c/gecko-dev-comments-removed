@@ -1356,6 +1356,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText {
   uint8_t mTextAlignLast;  
   mozilla::StyleTextJustify mTextJustify;
   mozilla::StyleWhiteSpace mWhiteSpace;
+  mozilla::StyleLineBreak mLineBreak = mozilla::StyleLineBreak::Auto;
 
  private:
   mozilla::StyleWordBreak mWordBreak = mozilla::StyleWordBreak::Normal;

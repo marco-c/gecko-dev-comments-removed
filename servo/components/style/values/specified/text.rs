@@ -1022,6 +1022,32 @@ pub enum WordBreak {
     ToShmem,
 )]
 #[allow(missing_docs)]
+pub enum LineBreak {
+    Auto,
+    
+    
+    
+    
+    Anywhere,
+}
+
+
+#[repr(u8)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[allow(missing_docs)]
 pub enum OverflowWrap {
     Normal,
     BreakWord,

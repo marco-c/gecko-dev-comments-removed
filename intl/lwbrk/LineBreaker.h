@@ -18,9 +18,11 @@ class LineBreaker {
   NS_INLINE_DECL_REFCOUNTING(LineBreaker)
 
   enum {
+    
     kWordBreak_Normal = 0,    
-    kWordBreak_BreakAll = 1,  
-    kWordBreak_KeepAll = 2    
+    kWordBreak_KeepAll = 1,   
+    kWordBreak_BreakAll = 2,  
+    kWordBreak_Anywhere = 3   
   };
 
   static already_AddRefed<LineBreaker> Create();
