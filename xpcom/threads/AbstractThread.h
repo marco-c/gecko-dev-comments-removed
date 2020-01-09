@@ -120,13 +120,6 @@ class AbstractThread : public nsISerialEventTarget {
 
   static void DispatchDirectTask(already_AddRefed<nsIRunnable> aRunnable);
 
-  
-  
-  virtual already_AddRefed<nsIRunnable> CreateDirectTaskDrainer(
-      already_AddRefed<nsIRunnable> aRunnable) {
-    MOZ_CRASH("Not support!");
-  }
-
   struct AutoEnter {
     explicit AutoEnter(AbstractThread* aThread) {
       mLastCurrentThread = sCurrentThreadTLS.get();
