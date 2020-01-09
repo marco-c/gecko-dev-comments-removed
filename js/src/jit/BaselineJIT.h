@@ -90,16 +90,6 @@ struct PCMappingIndexEntry {
 };
 
 
-
-struct DependentWasmImport {
-  wasm::Instance* instance;
-  size_t importIndex;
-
-  DependentWasmImport(wasm::Instance& instance, size_t importIndex)
-      : instance(&instance), importIndex(importIndex) {}
-};
-
-
 #if defined(JS_CODEGEN_ARM)
 
 
@@ -214,10 +204,6 @@ struct BaselineScript final {
   
   
   HeapPtr<EnvironmentObject*> templateEnv_ = nullptr;
-
-  
-  
-  js::UniquePtr<Vector<DependentWasmImport>> dependentWasmImports_;
 
   
   
@@ -452,12 +438,6 @@ struct BaselineScript final {
   
   jsbytecode* approximatePcForNativeAddress(JSScript* script,
                                             uint8_t* nativeAddress);
-
-  MOZ_MUST_USE bool addDependentWasmImport(JSContext* cx,
-                                           wasm::Instance& instance,
-                                           uint32_t idx);
-  void removeDependentWasmImport(wasm::Instance& instance, uint32_t idx);
-  void unlinkDependentWasmImports(FreeOp* fop);
 
   
   

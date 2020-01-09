@@ -18,6 +18,16 @@ namespace jit {
 
 
 
+struct DependentWasmImport {
+  wasm::Instance* instance;
+  size_t importIndex;
+
+  DependentWasmImport(wasm::Instance& instance, size_t importIndex)
+      : instance(&instance), importIndex(importIndex) {}
+};
+
+
+
 
 
 
@@ -90,6 +100,10 @@ class alignas(uintptr_t) JitScript final {
   
   
   uint8_t* jitCodeSkipArgCheck_ = nullptr;
+
+  
+  
+  js::UniquePtr<Vector<DependentWasmImport>> dependentWasmImports_;
 
   
   uint32_t typeSetOffset_ = 0;
@@ -307,6 +321,12 @@ class alignas(uintptr_t) JitScript final {
 
   ICEntry& icEntryFromPCOffset(uint32_t pcOffset);
   ICEntry& icEntryFromPCOffset(uint32_t pcOffset, ICEntry* prevLookedUpEntry);
+
+  MOZ_MUST_USE bool addDependentWasmImport(JSContext* cx,
+                                           wasm::Instance& instance,
+                                           uint32_t idx);
+  void removeDependentWasmImport(wasm::Instance& instance, uint32_t idx);
+  void unlinkDependentWasmImports();
 };
 
 

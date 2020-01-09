@@ -43,7 +43,7 @@
 namespace js {
 
 namespace jit {
-struct BaselineScript;
+class JitScript;
 enum class RoundingMode;
 }  
 
@@ -2094,7 +2094,7 @@ struct FuncImportTls {
 
   
   
-  jit::BaselineScript* baselineScript;
+  jit::JitScript* jitScript;
 
   
   
