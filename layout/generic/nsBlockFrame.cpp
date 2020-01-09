@@ -6474,9 +6474,6 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       TextOverflow::WillProcessLines(aBuilder, this);
 
   
-  nsDisplayListCollection linesDisplayListCollection(aBuilder);
-
-  
   
   
   
@@ -6502,8 +6499,8 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
           break;
         }
         MOZ_ASSERT(textOverflow.isNothing());
-        DisplayLine(aBuilder, lineArea, line, depth, drawnLines,
-                    linesDisplayListCollection, this, nullptr, 0);
+        DisplayLine(aBuilder, lineArea, line, depth, drawnLines, aLists, this,
+                    nullptr, 0);
       }
     }
   } else {
@@ -6513,9 +6510,8 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     nscoord lastYMost = INT32_MIN;
     for (LineIterator line = LinesBegin(); line != line_end; ++line) {
       nsRect lineArea = line->GetVisualOverflowArea();
-      DisplayLine(aBuilder, lineArea, line, depth, drawnLines,
-                  linesDisplayListCollection, this, textOverflow.ptrOr(nullptr),
-                  lineCount);
+      DisplayLine(aBuilder, lineArea, line, depth, drawnLines, aLists, this,
+                  textOverflow.ptrOr(nullptr), lineCount);
       if (!lineArea.IsEmpty()) {
         if (lineArea.y < lastY || lineArea.YMost() < lastYMost) {
           nonDecreasingYs = false;
@@ -6530,8 +6526,6 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       SetupLineCursor();
     }
   }
-
-  linesDisplayListCollection.MoveTo(aLists);
 
   if (textOverflow.isSome()) {
     
