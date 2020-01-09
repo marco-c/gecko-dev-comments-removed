@@ -55,12 +55,12 @@ class nsAvailableMemoryWatcher final : public nsIObserver,
 #  if defined(HAVE_64BIT_BUILD)
   static const size_t kLowVirtualMemoryThreshold = 0;
 #  else
-  static const size_t kLowVirtualMemoryThreshold = 256 * 1024 * 1024;
+  static const size_t kLowVirtualMemoryThreshold = 384 * 1024 * 1024;
 #  endif
 
   
   
-  static const size_t kLowCommitSpaceThreshold = 256 * 1024 * 1024;
+  static const size_t kLowCommitSpaceThreshold = 384 * 1024 * 1024;
 
   
   
