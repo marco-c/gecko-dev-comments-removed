@@ -445,15 +445,8 @@ var LoginManagerContent = {
     if (!event.isTrusted) {
       return;
     }
-    let isMasterPasswordSet = Services.cpmm.sharedData.get("isMasterPasswordSet");
     let document = event.target.ownerDocument;
-
-    
-    
-    
-    log("onDOMFormHasPassword, visibilityState:", document.visibilityState,
-        "isMasterPasswordSet:", isMasterPasswordSet);
-    if (document.visibilityState == "visible" || isMasterPasswordSet) {
+    if (document.visibilityState == "visible") {
       this._processDOMFormHasPasswordEvent(event);
     } else {
       
@@ -484,14 +477,7 @@ var LoginManagerContent = {
     }
 
     let document = pwField.ownerDocument;
-    let isMasterPasswordSet = Services.cpmm.sharedData.get("isMasterPasswordSet");
-    log("onDOMInputPasswordAdded, visibilityState:", document.visibilityState,
-        "isMasterPasswordSet:", isMasterPasswordSet);
-
-    
-    
-    
-    if (document.visibilityState == "visible" || isMasterPasswordSet) {
+    if (document.visibilityState == "visible") {
       this._processDOMInputPasswordAddedEvent(event, topWindow);
     } else {
       
