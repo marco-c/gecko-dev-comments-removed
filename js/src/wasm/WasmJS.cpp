@@ -2463,7 +2463,7 @@ const Class WasmGlobalObject::class_ = {
   }
 
   MOZ_ASSERT(obj->isNewborn());
-  MOZ_ASSERT(obj->isTenured(), "assumed by set_global post barriers");
+  MOZ_ASSERT(obj->isTenured(), "assumed by global.set post barriers");
 
   
   
