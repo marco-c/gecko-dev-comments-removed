@@ -11,6 +11,7 @@ const { ELEMENT_STYLE } = require("devtools/shared/specs/styles");
 
 loader.lazyRequireGetter(this, "promiseWarn", "devtools/client/inspector/shared/utils", true);
 loader.lazyRequireGetter(this, "parseDeclarations", "devtools/shared/css/parsing-utils", true);
+loader.lazyRequireGetter(this, "parseNamedDeclarations", "devtools/shared/css/parsing-utils", true);
 loader.lazyRequireGetter(this, "parseSingleValue", "devtools/shared/css/parsing-utils", true);
 loader.lazyRequireGetter(this, "isCssVariable", "devtools/shared/fronts/css-properties", true);
 
@@ -349,6 +350,29 @@ ElementStyle.prototype = {
 
 
 
+
+
+
+  addNewDeclaration: function(ruleId, value) {
+    const rule = this.getRule(ruleId);
+    if (!rule) {
+      return;
+    }
+
+    const declarationsToAdd = parseNamedDeclarations(this.cssProperties.isKnown,
+      value, true);
+    if (!declarationsToAdd.length) {
+      return;
+    }
+
+    this._addMultipleDeclarations(rule, declarationsToAdd);
+  },
+
+  
+
+
+
+
   async addNewRule() {
     await this.pageStyle.addNewRule(this.element, this.element.pseudoClassLocks);
   },
@@ -386,6 +410,26 @@ ElementStyle.prototype = {
 
     if (!declaration.enabled) {
       await declaration.setEnabled(true);
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  _addMultipleDeclarations: function(rule, declarationsToAdd, siblingDeclaration = null) {
+    for (const { commentOffsets, name, value, priority } of declarationsToAdd) {
+      const isCommented = Boolean(commentOffsets);
+      const enabled = !isCommented;
+      siblingDeclaration = rule.createProperty(name, value, priority, enabled,
+        siblingDeclaration);
     }
   },
 
@@ -474,13 +518,7 @@ ElementStyle.prototype = {
       await declaration.setEnabled(true);
     }
 
-    let siblingDeclaration = declaration;
-    for (const { commentOffsets, name, value: val, priority } of declarationsToAdd) {
-      const isCommented = Boolean(commentOffsets);
-      const enabled = !isCommented;
-      siblingDeclaration = rule.createProperty(name, val, priority, enabled,
-        siblingDeclaration);
-    }
+    this._addMultipleDeclarations(rule, declarationsToAdd, declaration);
   },
 
   
