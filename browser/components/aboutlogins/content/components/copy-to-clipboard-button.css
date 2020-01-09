@@ -1,0 +1,8 @@
+
+
+
+
+:host(:not([copied])) .copied-button-text,
+:host([copied]) .copy-button-text {
+  display: none;
+}
