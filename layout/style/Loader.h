@@ -199,6 +199,7 @@ class Loader final {
   typedef nsIStyleSheetLinkingElement::HasAlternateRel HasAlternateRel;
   typedef nsIStyleSheetLinkingElement::IsAlternate IsAlternate;
   typedef nsIStyleSheetLinkingElement::IsInline IsInline;
+  typedef nsIStyleSheetLinkingElement::IsExplicitlyEnabled IsExplicitlyEnabled;
   typedef nsIStyleSheetLinkingElement::MediaMatched MediaMatched;
   typedef nsIStyleSheetLinkingElement::Update LoadSheetResult;
   typedef nsIStyleSheetLinkingElement::SheetInfo SheetInfo;
@@ -480,8 +481,8 @@ class Loader final {
   
   
   MediaMatched PrepareSheet(StyleSheet* aSheet, const nsAString& aTitle,
-                            const nsAString& aMediaString,
-                            dom::MediaList* aMediaList, IsAlternate);
+                            const nsAString& aMediaString, dom::MediaList*,
+                            IsAlternate, IsExplicitlyEnabled);
 
   
   void InsertSheetInTree(StyleSheet& aSheet, nsIContent* aLinkingContent);
