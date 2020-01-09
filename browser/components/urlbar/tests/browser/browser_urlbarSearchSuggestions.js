@@ -83,10 +83,6 @@ add_task(async function ctrlEnterOnSuggestion() {
 });
 
 add_task(async function copySuggestionText() {
-  
-  if (UrlbarPrefs.get("quantumbar")) {
-    return;
-  }
   gURLBar.focus();
   await promiseAutocompleteResultPopup("foo");
   let [idx, suggestion] = await promiseFirstSuggestion();

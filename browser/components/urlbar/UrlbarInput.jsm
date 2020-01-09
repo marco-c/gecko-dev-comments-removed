@@ -60,9 +60,10 @@ class UrlbarInput {
     this.userInitiatedFocus = false;
     this.isPrivate = PrivateBrowsingUtils.isWindowPrivate(this.window);
     this.lastQueryContextPromise = Promise.resolve();
-    this._untrimmedValue = "";
-    this._suppressStartQuery = false;
     this._actionOverrideKeyCount = 0;
+    this._resultForCurrentValue = null;
+    this._suppressStartQuery = false;
+    this._untrimmedValue = "";
 
     
     const METHODS = ["addEventListener", "removeEventListener",
@@ -395,6 +396,7 @@ class UrlbarInput {
     } else {
       this.value = this._valueFromResultPayload(result);
     }
+    this._resultForCurrentValue = result;
 
     
     this.window.gBrowser.userTypedValue = this.value;
@@ -520,6 +522,7 @@ class UrlbarInput {
     val = this.trimValue(val);
 
     this.valueIsTyped = false;
+    this._resultForCurrentValue = null;
     this.inputField.value = val;
     this.formatValue();
     this.removeAttribute("actiontype");
@@ -593,9 +596,6 @@ class UrlbarInput {
   }
 
   _getSelectedValueForClipboard() {
-    
-    
-    let inputVal = this.inputField.value;
     let selection = this.editor.selection;
     const flags = Ci.nsIDocumentEncoder.OutputPreformatted |
                   Ci.nsIDocumentEncoder.OutputRaw;
@@ -616,7 +616,7 @@ class UrlbarInput {
     
     
     if (!selectedVal.includes("/")) {
-      let remainder = inputVal.replace(selectedVal, "");
+      let remainder = this.textValue.replace(selectedVal, "");
       if (remainder != "" && remainder[0] != "/") {
         return selectedVal;
       }
@@ -627,8 +627,17 @@ class UrlbarInput {
       uri = this.window.gBrowser.currentURI;
     } else {
       
+      if (!this._resultForCurrentValue) {
+        throw new Error("UrlbarInput: Should have a UrlbarResult since " +
+                        "pageproxystate != 'valid' and valueIsTyped == false");
+      }
+      let resultURL = this._resultForCurrentValue.payload.url;
+      if (!resultURL) {
+        return selectedVal;
+      }
+
       try {
-        uri = Services.uriFixup.createFixupURI(inputVal, Services.uriFixup.FIXUP_FLAG_NONE);
+        uri = Services.uriFixup.createFixupURI(resultURL, Services.uriFixup.FIXUP_FLAG_NONE);
       } catch (e) {}
       if (!uri) {
         return selectedVal;
@@ -640,8 +649,9 @@ class UrlbarInput {
     
     
     
-    if (inputVal == selectedVal &&
-        !uri.schemeIs("javascript") && !uri.schemeIs("data") &&
+    if (this.textValue == selectedVal &&
+        !uri.schemeIs("javascript") &&
+        !uri.schemeIs("data") &&
         !UrlbarPrefs.get("decodeURLsOnCopy")) {
       return uri.displaySpec;
     }
