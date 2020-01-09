@@ -28,11 +28,11 @@ const {
 
 
 
-function enableNetProvider(hud) {
+function enableNetProvider(webConsoleUI) {
   let dataProvider;
   return next => (reducer, initialState, enhancer) => {
     function netProviderEnhancer(state, action) {
-      const proxy = hud ? hud.proxy : null;
+      const proxy = webConsoleUI ? webConsoleUI.proxy : null;
       if (!proxy) {
         return reducer(state, action);
       }

@@ -38,7 +38,7 @@ loader.lazyRequireGetter(this, "getElementText", "devtools/client/webconsole/uti
 
 
 
-function createContextMenu(hud, parentNode, {
+function createContextMenu(webConsoleUI, parentNode, {
   actor,
   clipboardText,
   variableText,
@@ -115,9 +115,9 @@ function createContextMenu(hud, parentNode, {
         selectedObjectActor: actor,
       };
 
-      hud.jsterm.requestEvaluation(evalString, options).then((res) => {
-        hud.jsterm.focus();
-        hud.jsterm.setInputValue(res.result);
+      webConsoleUI.jsterm.requestEvaluation(evalString, options).then((res) => {
+        webConsoleUI.jsterm.focus();
+        webConsoleUI.jsterm.setInputValue(res.result);
       });
     },
   }));
@@ -150,9 +150,10 @@ function createContextMenu(hud, parentNode, {
     click: () => {
       if (actor) {
         
-        hud.jsterm.copyObject(`_self`, { selectedObjectActor: actor }).then((res) => {
-          clipboardHelper.copyString(res.helperResult.value);
-        });
+        webConsoleUI.jsterm.copyObject(`_self`, { selectedObjectActor: actor })
+          .then((res) => {
+            clipboardHelper.copyString(res.helperResult.value);
+          });
       } else {
         clipboardHelper.copyString(variableText);
       }
