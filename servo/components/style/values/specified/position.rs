@@ -460,6 +460,11 @@ pub enum AutoFlow {
     Column,
 }
 
+
+fn is_row_dense(autoflow: &AutoFlow, dense: &bool) -> bool {
+    *autoflow == AutoFlow::Row && *dense
+}
+
 #[derive(
     Clone,
     Copy,
@@ -477,6 +482,7 @@ pub enum AutoFlow {
 
 pub struct GridAutoFlow {
     
+    #[css(contextual_skip_if = "is_row_dense")]
     pub autoflow: AutoFlow,
     
     #[css(represents_keyword)]
