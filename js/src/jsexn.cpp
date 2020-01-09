@@ -679,7 +679,11 @@ void js::ErrorToException(JSContext* cx, JSErrorReport* reportp,
 
   
   RootedValue errValue(cx, ObjectValue(*errObject));
-  cx->setPendingException(errValue);
+  RootedSavedFrame nstack(cx);
+  if (stack) {
+    nstack = &stack->as<SavedFrame>();
+  }
+  cx->setPendingException(errValue, nstack);
 
   
   reportp->flags |= JSREPORT_EXCEPTION;

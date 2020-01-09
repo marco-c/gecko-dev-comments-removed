@@ -1786,6 +1786,9 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
     COUNT_COVERAGE_PC(REGS.pc);                       \
   JS_END_MACRO
 
+#define LOAD_DOUBLE(PCOFF, dbl) \
+  ((dbl) = script->getConst(GET_UINT32_INDEX(REGS.pc + (PCOFF))).toDouble())
+
 #define SET_SCRIPT(s)                                                       \
   JS_BEGIN_MACRO                                                            \
     script = (s);                                                           \
@@ -1896,7 +1899,7 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
               }
               goto successful_return_continuation;
             case ResumeMode::Throw:
-              cx->setPendingException(rval);
+              cx->setPendingExceptionAndCaptureStack(rval);
               goto error;
             default:;
           }
@@ -1920,7 +1923,7 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
               }
               goto successful_return_continuation;
             case ResumeMode::Throw:
-              cx->setPendingException(rval);
+              cx->setPendingExceptionAndCaptureStack(rval);
               goto error;
             default:
               break;
@@ -3266,7 +3269,11 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
     CASE(JSOP_INT32) { PUSH_INT32(GET_INT32(REGS.pc)); }
     END_CASE(JSOP_INT32)
 
-    CASE(JSOP_DOUBLE) { PUSH_COPY(GET_INLINE_VALUE(REGS.pc)); }
+    CASE(JSOP_DOUBLE) {
+      double dbl;
+      LOAD_DOUBLE(0, dbl);
+      PUSH_DOUBLE(dbl);
+    }
     END_CASE(JSOP_DOUBLE)
 
     CASE(JSOP_STRING) { PUSH_STRING(script->getAtom(REGS.pc)); }
@@ -3867,7 +3874,7 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
 
 
         ReservedRooted<Value> v(&rootValue0, rval);
-        cx->setPendingException(v);
+        cx->setPendingExceptionAndCaptureStack(v);
         goto error;
       }
 
@@ -4417,7 +4424,7 @@ prologue_error:
 
 bool js::ThrowOperation(JSContext* cx, HandleValue v) {
   MOZ_ASSERT(!cx->isExceptionPending());
-  cx->setPendingException(v);
+  cx->setPendingExceptionAndCaptureStack(v);
   return false;
 }
 
@@ -4725,14 +4732,21 @@ bool js::ThrowMsgOperation(JSContext* cx, const unsigned errorNum) {
   return false;
 }
 
-bool js::GetAndClearException(JSContext* cx, MutableHandleValue res) {
+bool js::GetAndClearExceptionAndStack(JSContext* cx, MutableHandleValue res,
+                                      MutableHandleSavedFrame stack) {
   if (!cx->getPendingException(res)) {
     return false;
   }
+  stack.set(cx->getPendingExceptionStack());
   cx->clearPendingException();
 
   
   return CheckForInterrupt(cx);
+}
+
+bool js::GetAndClearException(JSContext* cx, MutableHandleValue res) {
+  RootedSavedFrame stack(cx);
+  return GetAndClearExceptionAndStack(cx, res, &stack);
 }
 
 template <bool strict>

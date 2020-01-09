@@ -2779,8 +2779,22 @@ extern JS_PUBLIC_API bool JS_IsExceptionPending(JSContext* cx);
 extern JS_PUBLIC_API bool JS_GetPendingException(JSContext* cx,
                                                  JS::MutableHandleValue vp);
 
+namespace JS {
+
+enum class ExceptionStackBehavior: bool {
+  
+  DoNotCapture,
+
+  
+  
+  Capture
+};
+
+} 
+
 extern JS_PUBLIC_API void JS_SetPendingException(JSContext* cx,
-                                                 JS::HandleValue v);
+                                                 JS::HandleValue v,
+                                                 JS::ExceptionStackBehavior behavior = JS::ExceptionStackBehavior::Capture);
 
 extern JS_PUBLIC_API void JS_ClearPendingException(JSContext* cx);
 
@@ -2805,6 +2819,7 @@ class JS_PUBLIC_API AutoSaveExceptionState {
   bool wasOverRecursed;
   bool wasThrowing;
   RootedValue exceptionValue;
+  RootedObject exceptionStack;
 
  public:
   
@@ -2823,12 +2838,7 @@ class JS_PUBLIC_API AutoSaveExceptionState {
 
 
 
-  void drop() {
-    wasPropagatingForcedReturn = false;
-    wasOverRecursed = false;
-    wasThrowing = false;
-    exceptionValue.setUndefined();
-  }
+  void drop();
 
   
 
@@ -2837,6 +2847,17 @@ class JS_PUBLIC_API AutoSaveExceptionState {
 
   void restore();
 };
+
+
+
+
+
+
+
+
+
+
+MOZ_MUST_USE JS_PUBLIC_API JSObject* GetPendingExceptionStack(JSContext* cx);
 
 } 
 

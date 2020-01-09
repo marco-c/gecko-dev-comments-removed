@@ -662,12 +662,21 @@ struct JSContext : public JS::RootingContext,
   js::ThreadData<bool> throwing; 
   js::ThreadData<JS::PersistentRooted<JS::Value>>
       unwrappedException_; 
+  js::ThreadData<JS::PersistentRooted<js::SavedFrame*>>
+      unwrappedExceptionStack_; 
 
   JS::Value& unwrappedException() {
     if (!unwrappedException_.ref().initialized()) {
       unwrappedException_.ref().init(this);
     }
     return unwrappedException_.ref().get();
+  }
+
+  js::SavedFrame*& unwrappedExceptionStack() {
+    if (!unwrappedExceptionStack_.ref().initialized()) {
+      unwrappedExceptionStack_.ref().init(this);
+    }
+    return unwrappedExceptionStack_.ref().get();
   }
 
   
@@ -781,16 +790,20 @@ struct JSContext : public JS::RootingContext,
   MOZ_MUST_USE
   bool getPendingException(JS::MutableHandleValue rval);
 
+  js::SavedFrame* getPendingExceptionStack();
+
   bool isThrowingOutOfMemory();
   bool isThrowingDebuggeeWouldRun();
   bool isClosingGenerator();
 
-  void setPendingException(JS::HandleValue v);
+  void setPendingException(JS::HandleValue v, js::HandleSavedFrame stack);
+  void setPendingExceptionAndCaptureStack(JS::HandleValue v);
 
   void clearPendingException() {
     throwing = false;
     overRecursed_ = false;
     unwrappedException().setUndefined();
+    unwrappedExceptionStack() = nullptr;
   }
 
   bool isThrowingOverRecursed() const { return throwing && overRecursed_; }

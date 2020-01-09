@@ -3057,7 +3057,8 @@ static MOZ_MUST_USE bool ReadableStreamDefaultControllerEnqueue(
     
     if (!success) {
       RootedValue exn(cx);
-      if (!cx->isExceptionPending() || !GetAndClearException(cx, &exn)) {
+      RootedSavedFrame stack(cx);
+      if (!cx->isExceptionPending() || !GetAndClearExceptionAndStack(cx, &exn, &stack)) {
         
         
         return false;
@@ -3074,7 +3075,7 @@ static MOZ_MUST_USE bool ReadableStreamDefaultControllerEnqueue(
       
       
       
-      cx->setPendingException(exn);
+      cx->setPendingException(exn, stack);
       return false;
     }
   }
@@ -3880,7 +3881,8 @@ static MOZ_MUST_USE bool ReadableByteStreamControllerClose(
           cx, GetErrorMessage, nullptr,
           JSMSG_READABLEBYTESTREAMCONTROLLER_CLOSE_PENDING_PULL);
       RootedValue e(cx);
-      if (!cx->isExceptionPending() || !GetAndClearException(cx, &e)) {
+      RootedSavedFrame stack(cx);
+      if (!cx->isExceptionPending() || !GetAndClearExceptionAndStack(cx, &e, &stack)) {
         
         
         return false;
@@ -3892,7 +3894,7 @@ static MOZ_MUST_USE bool ReadableByteStreamControllerClose(
       }
 
       
-      cx->setPendingException(e);
+      cx->setPendingException(e, stack);
       return false;
     }
   }
