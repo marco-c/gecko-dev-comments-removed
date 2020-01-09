@@ -866,9 +866,13 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
     if (shadowHost) {
       
+      
       const firstChildWalker = this.getDocumentWalker(node.rawNode);
       const first = firstChildWalker.firstChild();
-      const hasBefore = first && first.nodeName === "_moz_generated_content_before";
+      const hasMarker = first && first.nodeName === "_moz_generated_content_marker";
+      const maybeBeforeNode = hasMarker ? firstChildWalker.nextSibling() : first;
+      const hasBefore = maybeBeforeNode &&
+        maybeBeforeNode.nodeName === "_moz_generated_content_before";
 
       const lastChildWalker = this.getDocumentWalker(node.rawNode);
       const last = lastChildWalker.lastChild();
@@ -878,7 +882,9 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
         
         ...(hideShadowRoot ? [] : [node.rawNode.openOrClosedShadowRoot]),
         
-        ...(hasBefore ? [first] : []),
+        ...(hasMarker ? [first] : []),
+        
+        ...(hasBefore ? [maybeBeforeNode] : []),
         
         ...nodes,
         
