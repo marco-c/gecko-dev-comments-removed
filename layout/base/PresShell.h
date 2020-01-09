@@ -1074,6 +1074,15 @@ class PresShell final : public nsIPresShell,
 
 
 
+
+    void RecordEventPreparationPerformance(const WidgetEvent* aEvent);
+
+    
+
+
+
+
+
     void RecordEventHandlingResponsePerformance(const WidgetEvent* aEvent);
 
     
