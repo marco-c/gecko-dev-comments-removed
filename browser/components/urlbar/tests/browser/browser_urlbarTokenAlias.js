@@ -145,10 +145,6 @@ add_task(async function inputDoesntMatchHeuristicResult() {
 
 add_task(async function nonHeuristicAliases() {
   
-  if (UrlbarPrefs.get("quantumbar")) {
-    return;
-  }
-  
   
   let tokenEngines = [];
   for (let engine of await Services.search.getEngines()) {
@@ -171,6 +167,14 @@ add_task(async function nonHeuristicAliases() {
 
   
   
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.suggest.searches", true],
+    ],
+  });
+
+  
+  
   gURLBar.search("@");
   await promiseSearchComplete();
   await waitForAutocompleteResultAt(tokenEngines.length - 1);
@@ -184,6 +188,8 @@ add_task(async function nonHeuristicAliases() {
 
   await UrlbarTestUtils.promisePopupClose(window,
     () => EventUtils.synthesizeKey("KEY_Escape"));
+
+  await SpecialPowers.popPrefEnv();
 });
 
 
