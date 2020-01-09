@@ -45,15 +45,7 @@ enum class ServoTraversalFlags : uint32_t {
   ForCSSRuleChanges = 1 << 1,
   
   
-  
-  
-  Forgetful = 1 << 3,
-  
-  
-  
-  ClearDirtyBits = 1 << 5,
-  
-  ClearAnimationOnlyDirtyDescendants = 1 << 6,
+  FinalAnimationTraversal = 1 << 2,
   
   
   ParallelTraversal = 1 << 7,

@@ -535,12 +535,6 @@ pub fn recalc_style_at<E, D, F>(
         debug_assert!(!element.has_animation_only_dirty_descendants());
     }
 
-    debug_assert!(
-        flags.for_animation_only() ||
-            !flags.contains(TraversalFlags::ClearDirtyBits) ||
-            !element.has_animation_only_dirty_descendants(),
-        "Should have cleared animation bits already"
-    );
     clear_state_after_traversing(element, data, flags);
 }
 
@@ -548,27 +542,11 @@ fn clear_state_after_traversing<E>(element: E, data: &mut ElementData, flags: Tr
 where
     E: TElement,
 {
-    
-    
-    
-    if flags.contains(TraversalFlags::Forgetful) {
+    if flags.intersects(TraversalFlags::FinalAnimationTraversal) {
+        debug_assert!(flags.for_animation_only());
         data.clear_restyle_flags_and_damage();
-    }
-
-    
-    if flags.for_animation_only() {
-        if flags.intersects(
-            TraversalFlags::ClearDirtyBits | TraversalFlags::ClearAnimationOnlyDirtyDescendants,
-        ) {
-            unsafe {
-                element.unset_animation_only_dirty_descendants();
-            }
-        }
-    } else if flags.contains(TraversalFlags::ClearDirtyBits) {
-        
-        
         unsafe {
-            element.clear_dirty_bits();
+            element.unset_animation_only_dirty_descendants();
         }
     }
 }

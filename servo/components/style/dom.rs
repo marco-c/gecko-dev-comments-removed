@@ -645,15 +645,6 @@ pub trait TElement:
     
     
     
-    
-    
-    unsafe fn clear_dirty_bits(&self) {
-        self.unset_dirty_descendants();
-    }
-
-    
-    
-    
     fn is_visited_link(&self) -> bool {
         false
     }

@@ -471,7 +471,7 @@ trait PrivateMatchMethods: TElement {
         debug!("accumulate_damage_for: {:?}", self);
         debug_assert!(!shared_context
             .traversal_flags
-            .contains(TraversalFlags::Forgetful));
+            .contains(TraversalFlags::FinalAnimationTraversal));
 
         let difference = self.compute_style_difference(old_values, new_values, pseudo);
 
@@ -727,7 +727,7 @@ pub trait MatchMethods: TElement {
         if context
             .shared
             .traversal_flags
-            .contains(TraversalFlags::Forgetful)
+            .contains(TraversalFlags::FinalAnimationTraversal)
         {
             return ChildCascadeRequirement::MustCascadeChildren;
         }
