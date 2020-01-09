@@ -150,18 +150,6 @@ var UrlbarTestUtils = {
 
 
 
-
-
-  getPanel(win) {
-    let urlbar = getUrlbarAbstraction(win);
-    return urlbar.panel;
-  },
-
-  
-
-
-
-
   promiseSuggestionsPresent(win) {
     let urlbar = getUrlbarAbstraction(win);
     return urlbar.promiseSearchSuggestions();
@@ -413,14 +401,6 @@ class UrlbarAbstraction {
         action: actions.length > 0 ? actions[0].textContent : null,
         typeIcon: typeIconStyle["background-image"],
       };
-      let actionElement = element.getElementsByClassName("urlbarView-action")[0];
-      let urlElement = element.getElementsByClassName("urlbarView-url")[0];
-      details.element = {
-        action: actionElement,
-        row: element,
-        separator: urlElement || actionElement,
-        url: urlElement,
-      };
       if (details.type == UrlbarUtils.RESULT_TYPE.SEARCH) {
         details.searchParams = {
           engine: context.results[index].payload.engine,
@@ -446,12 +426,6 @@ class UrlbarAbstraction {
         title: element._titleText.textContent,
         action: action ? element._actionText.textContent : "",
         typeIcon: typeIconStyle.listStyleImage,
-      };
-      details.element = {
-        action: element._actionText,
-        row: element,
-        separator: element._separator,
-        url: element._urlText,
       };
       if (details.type == UrlbarUtils.RESULT_TYPE.SEARCH) {
         details.searchParams = {
