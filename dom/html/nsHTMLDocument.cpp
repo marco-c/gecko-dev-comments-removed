@@ -1022,18 +1022,7 @@ Document* nsHTMLDocument::Open(const Optional<nsAString>& ,
   
   
   
-  
-  
-  if (mParser && !mParser->HasNonzeroScriptNestingLevel()) {
-    
-    IgnoreOpensDuringUnload ignoreOpenGuard(this);
-    mParser->Terminate();
-    MOZ_RELEASE_ASSERT(!mParser, "mParser should have been null'd out");
-  }
-
-  
-  
-  if (mParser || mParserAborted) {
+  if ((mParser && mParser->HasNonzeroScriptNestingLevel()) || mParserAborted) {
     return this;
   }
 
@@ -1095,6 +1084,22 @@ Document* nsHTMLDocument::Open(const Optional<nsAString>& ,
         elm->RemoveAllListeners();
       }
     }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  if (mParser) {
+    MOZ_ASSERT(!mParser->HasNonzeroScriptNestingLevel(),
+               "Why didn't we take the early return?");
+    
+    IgnoreOpensDuringUnload ignoreOpenGuard(this);
+    mParser->Terminate();
+    MOZ_RELEASE_ASSERT(!mParser, "mParser should have been null'd out");
   }
 
   
