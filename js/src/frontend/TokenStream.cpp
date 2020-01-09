@@ -2181,7 +2181,18 @@ TokenStreamSpecific<Unit, AnyCharsAccess>::matchInteger(
     if (isIntegerUnit(unit)) {
       continue;
     }
+#ifdef NIGHTLY_BUILD
+    if (unit != '_') {
+      break;
+    }
+    unit = getCodeUnit();
+    if (!isIntegerUnit(unit)) {
+      error(JSMSG_MISSING_DIGIT_AFTER_SEPARATOR);
+      return false;
+    }
+#else
     break;
+#endif 
   }
 
   *nextUnit = unit;
@@ -2254,8 +2265,9 @@ MOZ_MUST_USE bool TokenStreamSpecific<Unit, AnyCharsAccess>::decimalNumber(
     
     
     
-    if (!StringToDouble(anyCharsAccess().cx, numStart,
-                        this->sourceUnits.addressOfNextCodeUnit(), &dval)) {
+    if (!GetDecimalNonInteger(anyCharsAccess().cx, numStart,
+                              this->sourceUnits.addressOfNextCodeUnit(),
+                              &dval)) {
       return false;
     }
   }
@@ -2432,6 +2444,12 @@ MOZ_MUST_USE bool TokenStreamSpecific<Unit, AnyCharsAccess>::bigIntLiteral(
     
     
     MOZ_ASSERT(isAsciiCodePoint(unit));
+#ifdef NIGHTLY_BUILD
+    
+    if (unit == '_') {
+      continue;
+    }
+#endif
     if (!this->appendCodePointToCharBuffer(unit)) {
       return false;
     }
@@ -2697,10 +2715,23 @@ MOZ_MUST_USE bool TokenStreamSpecific<Unit, AnyCharsAccess>::getTokenInternal(
           unit = getCodeUnit();
         } while (IsAsciiDigit(unit));
 
+#ifdef NIGHTLY_BUILD
+        if (unit == '_') {
+          error(JSMSG_SEPARATOR_IN_ZERO_PREFIXED_NUMBER);
+          return badToken();
+        }
+#endif 
+
         if (nonOctalDecimalIntegerLiteral) {
           
           return decimalNumber(unit, start, numStart, modifier, ttp);
         }
+#ifdef NIGHTLY_BUILD
+      } else if (unit == '_') {
+        
+        error(JSMSG_SEPARATOR_IN_ZERO_PREFIXED_NUMBER);
+        return badToken();
+#endif
       } else {
         
         numStart = this->sourceUnits.addressOfNextCodeUnit() - 1;
@@ -2747,7 +2778,7 @@ MOZ_MUST_USE bool TokenStreamSpecific<Unit, AnyCharsAccess>::getTokenInternal(
       double dval;
       if (!GetFullInteger(anyCharsAccess().cx, numStart,
                           this->sourceUnits.addressOfNextCodeUnit(), radix,
-                          &dval)) {
+                          IntegerSeparatorHandling::SkipUnderscore, &dval)) {
         return badToken();
       }
       newNumberToken(dval, NoDecimal, start, modifier, ttp);

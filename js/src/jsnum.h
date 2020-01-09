@@ -121,6 +121,13 @@ const double DOUBLE_INTEGRAL_PRECISION_LIMIT = uint64_t(1) << 53;
 template <typename CharT>
 extern double ParseDecimalNumber(const mozilla::Range<const CharT> chars);
 
+enum class IntegerSeparatorHandling : bool { None, SkipUnderscore };
+
+
+
+
+
+
 
 
 
@@ -134,9 +141,9 @@ extern double ParseDecimalNumber(const mozilla::Range<const CharT> chars);
 
 
 template <typename CharT>
-extern MOZ_MUST_USE bool GetPrefixInteger(JSContext* cx, const CharT* start,
-                                          const CharT* end, int base,
-                                          const CharT** endp, double* dp);
+extern MOZ_MUST_USE bool GetPrefixInteger(
+    JSContext* cx, const CharT* start, const CharT* end, int base,
+    IntegerSeparatorHandling separatorHandling, const CharT** endp, double* dp);
 
 inline const char16_t* ToRawChars(const char16_t* units) { return units; }
 
@@ -153,12 +160,12 @@ inline const unsigned char* ToRawChars(const mozilla::Utf8Unit* units) {
 
 
 template <typename CharT>
-extern MOZ_MUST_USE bool GetFullInteger(JSContext* cx, const CharT* start,
-                                        const CharT* end, int base,
-                                        double* dp) {
+extern MOZ_MUST_USE bool GetFullInteger(
+    JSContext* cx, const CharT* start, const CharT* end, int base,
+    IntegerSeparatorHandling separatorHandling, double* dp) {
   decltype(ToRawChars(start)) realEnd;
-  if (GetPrefixInteger(cx, ToRawChars(start), ToRawChars(end), base, &realEnd,
-                       dp)) {
+  if (GetPrefixInteger(cx, ToRawChars(start), ToRawChars(end), base,
+                       separatorHandling, &realEnd, dp)) {
     MOZ_ASSERT(end == static_cast<const void*>(realEnd));
     return true;
   }
@@ -170,9 +177,19 @@ extern MOZ_MUST_USE bool GetFullInteger(JSContext* cx, const CharT* start,
 
 
 
+
 template <typename CharT>
 extern MOZ_MUST_USE bool GetDecimalInteger(JSContext* cx, const CharT* start,
                                            const CharT* end, double* dp);
+
+
+
+
+
+
+template <typename CharT>
+extern MOZ_MUST_USE bool GetDecimalNonInteger(JSContext* cx, const CharT* start,
+                                              const CharT* end, double* dp);
 
 extern MOZ_MUST_USE bool StringToNumber(JSContext* cx, JSString* str,
                                         double* result);
@@ -243,18 +260,6 @@ extern MOZ_MUST_USE bool js_strtod(JSContext* cx, const CharT* begin,
                                    double* d);
 
 namespace js {
-
-
-
-
-
-
-template <typename CharT>
-extern MOZ_MUST_USE bool StringToDouble(JSContext* cx, const CharT* begin,
-                                        const CharT* end, double* d) {
-  decltype(ToRawChars(begin)) dummy;
-  return js_strtod(cx, ToRawChars(begin), ToRawChars(end), &dummy, d);
-}
 
 
 
