@@ -13,6 +13,7 @@
 #include "nsStyleCoord.h"
 #include "nsIFrame.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/Maybe.h"
 #include <algorithm>
 
 class gfxContext;
@@ -724,7 +725,8 @@ struct ReflowInput : public SizeComputationInput {
   ReflowInput(nsPresContext* aPresContext,
               const ReflowInput& aParentReflowInput, nsIFrame* aFrame,
               const mozilla::LogicalSize& aAvailableSpace,
-              const mozilla::LogicalSize* aContainingBlockSize = nullptr,
+              const mozilla::Maybe<mozilla::LogicalSize>& aContainingBlockSize =
+                  mozilla::Nothing(),
               uint32_t aFlags = 0);
 
   
@@ -764,7 +766,8 @@ struct ReflowInput : public SizeComputationInput {
   
   
   void Init(nsPresContext* aPresContext,
-            const mozilla::LogicalSize* aContainingBlockSize = nullptr,
+            const mozilla::Maybe<mozilla::LogicalSize>& aContainingBlockSize =
+                mozilla::Nothing(),
             const nsMargin* aBorder = nullptr,
             const nsMargin* aPadding = nullptr);
 

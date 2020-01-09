@@ -3347,6 +3347,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
 
     
     Maybe<ReflowInput> blockReflowInput;
+    Maybe<LogicalSize> cbSize;
     if (Style()->GetPseudoType() == PseudoStyleType::columnContent) {
       
       
@@ -3359,18 +3360,14 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
 
       
       
-      LogicalSize cbSize = LogicalSize(wm, aState.mReflowInput.ComputedISize(),
-                                       cbReflowInput->ComputedBSize())
-                               .ConvertTo(frame->GetWritingMode(), wm);
-
-      blockReflowInput.emplace(
-          aState.mPresContext, aState.mReflowInput, frame,
-          availSpace.Size(wm).ConvertTo(frame->GetWritingMode(), wm), &cbSize);
-    } else {
-      blockReflowInput.emplace(
-          aState.mPresContext, aState.mReflowInput, frame,
-          availSpace.Size(wm).ConvertTo(frame->GetWritingMode(), wm));
+      cbSize.emplace(LogicalSize(wm, aState.mReflowInput.ComputedISize(),
+                                 cbReflowInput->ComputedBSize())
+                         .ConvertTo(frame->GetWritingMode(), wm));
     }
+
+    blockReflowInput.emplace(
+        aState.mPresContext, aState.mReflowInput, frame,
+        availSpace.Size(wm).ConvertTo(frame->GetWritingMode(), wm), cbSize);
 
     nsFloatManager::SavedState floatManagerState;
     nsReflowStatus frameReflowStatus;
@@ -6872,7 +6869,7 @@ void nsBlockFrame::ReflowOutsideMarker(nsIFrame* aMarkerFrame,
   availSize.BSize(markerWM) = NS_UNCONSTRAINEDSIZE;
 
   ReflowInput reflowInput(aState.mPresContext, ri, aMarkerFrame, availSize,
-                          nullptr, ReflowInput::COMPUTE_SIZE_SHRINK_WRAP);
+                          Nothing(), ReflowInput::COMPUTE_SIZE_SHRINK_WRAP);
   nsReflowStatus status;
   aMarkerFrame->Reflow(aState.mPresContext, aMetrics, reflowInput, status);
 

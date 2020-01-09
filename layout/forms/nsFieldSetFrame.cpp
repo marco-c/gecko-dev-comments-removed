@@ -500,10 +500,10 @@ void nsFieldSetFrame::Reflow(nsPresContext* aPresContext,
   
   if (reflowInner) {
     ReflowInput kidReflowInput(aPresContext, aReflowInput, inner,
-                               innerAvailSize, nullptr,
+                               innerAvailSize, Nothing(),
                                ReflowInput::CALLER_WILL_INIT);
     
-    kidReflowInput.Init(aPresContext, nullptr, nullptr,
+    kidReflowInput.Init(aPresContext, Nothing(), nullptr,
                         &aReflowInput.ComputedPhysicalPadding());
     
     

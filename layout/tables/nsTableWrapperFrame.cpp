@@ -248,8 +248,7 @@ void nsTableWrapperFrame::InitChildReflowInput(nsPresContext& aPresContext,
       cbSize.emplace(aOuterRI.mContainingBlockSize);
     }
   }
-  aReflowInput.Init(&aPresContext, cbSize.ptrOr(nullptr), pCollapseBorder,
-                    pCollapsePadding);
+  aReflowInput.Init(&aPresContext, cbSize, pCollapseBorder, pCollapsePadding);
 }
 
 
@@ -269,7 +268,7 @@ void nsTableWrapperFrame::GetChildMargin(nsPresContext* aPresContext,
   
   WritingMode wm = aOuterRI.GetWritingMode();
   LogicalSize availSize(wm, aAvailISize, aOuterRI.AvailableSize(wm).BSize(wm));
-  ReflowInput childRI(aPresContext, aOuterRI, aChildFrame, availSize, nullptr,
+  ReflowInput childRI(aPresContext, aOuterRI, aChildFrame, availSize, Nothing(),
                       ReflowInput::CALLER_WILL_INIT);
   InitChildReflowInput(*aPresContext, aOuterRI, childRI);
 
@@ -735,7 +734,7 @@ void nsTableWrapperFrame::OuterBeginReflowChild(nsPresContext* aPresContext,
   LogicalSize availSize(wm, aAvailISize, availBSize);
   
   
-  aChildRI.emplace(aPresContext, aOuterRI, aChildFrame, availSize, nullptr,
+  aChildRI.emplace(aPresContext, aOuterRI, aChildFrame, availSize, Nothing(),
                    ReflowInput::CALLER_WILL_INIT);
   InitChildReflowInput(*aPresContext, aOuterRI, *aChildRI);
 

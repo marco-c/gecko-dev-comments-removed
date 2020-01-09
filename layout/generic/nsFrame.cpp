@@ -10233,8 +10233,8 @@ void nsFrame::BoxReflow(nsBoxLayoutState& aState, nsPresContext* aPresContext,
     WritingMode wm = GetWritingMode();
     LogicalSize logicalSize(wm, nsSize(aWidth, aHeight));
     logicalSize.BSize(wm) = NS_INTRINSICSIZE;
-    ReflowInput reflowInput(aPresContext, *parentRI, this, logicalSize, nullptr,
-                            ReflowInput::DUMMY_PARENT_REFLOW_INPUT);
+    ReflowInput reflowInput(aPresContext, *parentRI, this, logicalSize,
+                            Nothing(), ReflowInput::DUMMY_PARENT_REFLOW_INPUT);
 
     
     
