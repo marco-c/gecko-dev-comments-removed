@@ -8,6 +8,7 @@
 #define mozilla_dom_RemoteWorkerChild_h
 
 #include "mozilla/dom/PRemoteWorkerChild.h"
+#include "mozilla/DataMutex.h"
 #include "mozilla/ThreadBound.h"
 #include "mozilla/UniquePtr.h"
 #include "nsISupportsImpl.h"
@@ -56,6 +57,13 @@ class RemoteWorkerChild final : public PRemoteWorkerChild {
 
   mozilla::ipc::IPCResult RecvExecOp(const RemoteWorkerOp& aOp);
 
+  
+  
+  
+  template <typename T>
+  mozilla::ipc::IPCResult ExecuteOperation(const RemoteWorkerOp&,
+                                           const T& aLock);
+
   void RecvExecOpOnMainThread(const RemoteWorkerOp& aOp);
 
   nsresult ExecWorkerOnMainThread(const RemoteWorkerData& aData);
@@ -77,7 +85,6 @@ class RemoteWorkerChild final : public PRemoteWorkerChild {
   
   nsTArray<uint64_t> mWindowIDs;
 
-  RefPtr<WorkerPrivate> mWorkerPrivate;
   RefPtr<WeakWorkerRef> mWorkerRef;
   bool mIPCActive;
 
@@ -96,8 +103,14 @@ class RemoteWorkerChild final : public PRemoteWorkerChild {
     eTerminated,
   };
 
-  
-  WorkerState mWorkerState;
+  struct SharedData {
+    SharedData();
+
+    RefPtr<WorkerPrivate> mWorkerPrivate;
+    WorkerState mWorkerState;
+  };
+
+  DataMutex<SharedData> mSharedData;
 
   
   struct LauncherBoundData {
