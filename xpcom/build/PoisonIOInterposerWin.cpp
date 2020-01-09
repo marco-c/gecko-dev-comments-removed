@@ -133,8 +133,11 @@ class WinIOAutoObservation : public IOInterposeObserver::Observation {
       nsAutoString dosPath;
       if (NtPathToDosPath(aFilename, dosPath)) {
         mFilename = dosPath;
-        mHasQueriedFilename = true;
+      } else {
+        
+        mFilename = aFilename;
       }
+      mHasQueriedFilename = true;
       mOffset.QuadPart = 0;
     }
   }
@@ -160,10 +163,11 @@ void WinIOAutoObservation::Filename(nsAString& aFilename) {
   
   if (mHasQueriedFilename) {
     aFilename = mFilename;
+    return;
   }
 
   nsAutoString filename;
-  if (HandleToFilename(mFileHandle, mOffset, filename)) {
+  if (mFileHandle && HandleToFilename(mFileHandle, mOffset, filename)) {
     mFilename = filename;
   }
   mHasQueriedFilename = true;
