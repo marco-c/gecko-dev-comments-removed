@@ -2354,11 +2354,6 @@ class nsLayoutUtils {
 
   static bool IsInterCharacterRubyEnabled();
 
-  
-
-
-  static bool IsContentSelectEnabled();
-
   static bool InterruptibleReflowEnabled() {
     return sInterruptibleReflowEnabled;
   }

@@ -160,7 +160,6 @@ using mozilla::dom::HTMLMediaElement_Binding::HAVE_NOTHING;
 
 #define INTERCHARACTER_RUBY_ENABLED_PREF_NAME \
   "layout.css.ruby.intercharacter.enabled"
-#define CONTENT_SELECT_ENABLED_PREF_NAME "dom.select_popup_in_content.enabled"
 
 
 
@@ -502,19 +501,6 @@ bool nsLayoutUtils::IsInterCharacterRubyEnabled() {
   }
 
   return sInterCharacterRubyEnabled;
-}
-
-bool nsLayoutUtils::IsContentSelectEnabled() {
-  static bool sContentSelectEnabled;
-  static bool sContentSelectEnabledPrefCached = false;
-
-  if (!sContentSelectEnabledPrefCached) {
-    sContentSelectEnabledPrefCached = true;
-    Preferences::AddBoolVarCache(&sContentSelectEnabled,
-                                 CONTENT_SELECT_ENABLED_PREF_NAME, false);
-  }
-
-  return sContentSelectEnabled;
 }
 
 void nsLayoutUtils::UnionChildOverflow(nsIFrame* aFrame,
@@ -7012,8 +6998,7 @@ static bool IsCornerAdjacentToSide(uint8_t aCorner, Side aSide) {
 static bool IsPopupFrame(const nsIFrame* aFrame) {
   
   LayoutFrameType frameType = aFrame->Type();
-  if (!nsLayoutUtils::IsContentSelectEnabled() &&
-      frameType == LayoutFrameType::ListControl) {
+  if (frameType == LayoutFrameType::ListControl) {
     const nsListControlFrame* lcf =
         static_cast<const nsListControlFrame*>(aFrame);
     return lcf->IsInDropDownMode();

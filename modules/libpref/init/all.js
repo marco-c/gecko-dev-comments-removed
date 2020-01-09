@@ -1371,8 +1371,6 @@ pref("dom.forms.select.customstyling", true);
 #endif
 pref("dom.select_popup_in_parent.enabled", false);
 
-pref("dom.select_popup_in_content.enabled", false);
-
 
 pref("dom.input.dirpicker", false);
 
