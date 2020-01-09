@@ -154,7 +154,6 @@ user_pref("identity.fxaccounts.remote.root", "https://{server}/");
 
 user_pref("idle.lastDailyNotification", -1);
 user_pref("javascript.options.showInConsole", true);
-user_pref("layout.accessiblecaret.enabled_on_touch", false);
 
 user_pref("layout.css.report_errors", true);
 
