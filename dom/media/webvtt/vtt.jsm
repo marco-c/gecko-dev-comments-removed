@@ -519,7 +519,11 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
         PARSE_CONTENT_MODE.PSUEDO_CUE : PARSE_CONTENT_MODE.NORMAL_CUE);
       this.div.appendChild(this.cueDiv);
 
+      this.containerHeight = containerBox.height;
+      this.containerWidth = containerBox.width;
       this.fontSize = this._getFontSize(containerBox);
+      this.isCueStyleBox = true;
+
       
       
       if (supportPseudo) {
@@ -528,6 +532,24 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
         this._applyNonPseudoCueStyles();
       }
       this.applyStyles(this._getNodeDefaultStyles(cue));
+    }
+
+    getCueBoxPositionAndSize() {
+      
+      
+      
+      const isWritingDirectionHorizontal = this.cue.vertical == "";
+      let top =
+            this.containerHeight * this._tranferPercentageToFloat(this.div.style.top),
+          left =
+            this.containerWidth * this._tranferPercentageToFloat(this.div.style.left),
+          width = isWritingDirectionHorizontal ?
+            this.containerWidth * this._tranferPercentageToFloat(this.div.style.width) :
+            this.div.offsetWidth,
+          height = isWritingDirectionHorizontal ?
+            this.div.offsetHeight :
+            this.containerHeight * this._tranferPercentageToFloat(this.div.style.height);
+      return { top, left, width, height };
     }
 
     move(box) {
@@ -544,6 +566,10 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
     
 
 
+
+    _tranferPercentageToFloat(input) {
+      return input.replace("%", "") / 100.0;
+    }
 
     _getFontSize(containerBox) {
       
@@ -752,149 +778,125 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
 
   
   
-  
-  function BoxPosition(obj) {
-    
-    
-    
-    
-    var lh, height, width, top;
-    if (obj.div) {
-      height = obj.div.offsetHeight;
-      width = obj.div.offsetWidth;
-      top = obj.div.offsetTop;
-
-      var rects = (rects = obj.div.childNodes) && (rects = rects[0]) &&
-                  rects.getClientRects && rects.getClientRects();
-      obj = obj.div.getBoundingClientRect();
+  class BoxPosition {
+    constructor(obj) {
       
       
       
       
-      lh = rects ? Math.max((rects[0] && rects[0].height) || 0, obj.height / rects.length)
-                 : 0;
-
+      const isHTMLElement = !obj.isCueStyleBox && (obj.div || obj.tagName);
+      obj = obj.isCueStyleBox ? obj.getCueBoxPositionAndSize() : obj.div || obj;
+      this.top = isHTMLElement ? obj.offsetTop : obj.top;
+      this.left = isHTMLElement ? obj.offsetLeft : obj.left;
+      this.width = isHTMLElement ? obj.offsetWidth : obj.width;
+      this.height = isHTMLElement ? obj.offsetHeight : obj.height;
     }
-    this.left = obj.left;
-    this.right = obj.right;
-    this.top = obj.top || top;
-    this.height = obj.height || height;
-    this.bottom = obj.bottom || (top + (obj.height || height));
-    this.width = obj.width || width;
-    this.lineHeight = lh !== undefined ? lh : obj.lineHeight;
-  }
 
-  
-  
-  
-  BoxPosition.prototype.move = function(axis, toMove) {
-    toMove = toMove !== undefined ? toMove : this.lineHeight;
-    switch (axis) {
-    case "+x":
-      this.left += toMove;
-      this.right += toMove;
-      break;
-    case "-x":
-      this.left -= toMove;
-      this.right -= toMove;
-      break;
-    case "+y":
-      this.top += toMove;
-      this.bottom += toMove;
-      break;
-    case "-y":
-      this.top -= toMove;
-      this.bottom -= toMove;
-      break;
+    get bottom() {
+      return this.top + this.height;
     }
-  };
 
-  
-  BoxPosition.prototype.overlaps = function(b2) {
-    return this.left < b2.right &&
-           this.right > b2.left &&
-           this.top < b2.bottom &&
-           this.bottom > b2.top;
-  };
+    get right() {
+      return this.left + this.width;
+    }
 
-  
-  BoxPosition.prototype.overlapsAny = function(boxes) {
-    for (var i = 0; i < boxes.length; i++) {
-      if (this.overlaps(boxes[i])) {
-        return true;
+    
+    
+    
+    move(axis, toMove) {
+      switch (axis) {
+      case "+x":
+        this.left += toMove;
+        break;
+      case "-x":
+        this.left -= toMove;
+        break;
+      case "+y":
+        this.top += toMove;
+        break;
+      case "-y":
+        this.top -= toMove;
+        break;
       }
     }
-    return false;
-  };
 
-  
-  BoxPosition.prototype.within = function(container) {
-    return this.top >= container.top &&
-           this.bottom <= container.bottom &&
-           this.left >= container.left &&
-           this.right <= container.right;
-  };
-
-  
-  
-  
-  
-  BoxPosition.prototype.overlapsOppositeAxis = function(container, axis) {
-    switch (axis) {
-    case "+x":
-      return this.left < container.left;
-    case "-x":
-      return this.right > container.right;
-    case "+y":
-      return this.top < container.top;
-    case "-y":
-      return this.bottom > container.bottom;
+    
+    overlaps(b2) {
+      return this.left < b2.right &&
+             this.right > b2.left &&
+             this.top < b2.bottom &&
+             this.bottom > b2.top;
     }
-  };
 
-  
-  
-  BoxPosition.prototype.intersectPercentage = function(b2) {
-    var x = Math.max(0, Math.min(this.right, b2.right) - Math.max(this.left, b2.left)),
-        y = Math.max(0, Math.min(this.bottom, b2.bottom) - Math.max(this.top, b2.top)),
-        intersectArea = x * y;
-    return intersectArea / (this.height * this.width);
-  };
+    
+    overlapsAny(boxes) {
+      for (let i = 0; i < boxes.length; i++) {
+        if (this.overlaps(boxes[i])) {
+          return true;
+        }
+      }
+      return false;
+    }
 
-  
-  
-  
-  
-  BoxPosition.prototype.toCSSCompatValues = function(reference) {
-    return {
-      top: this.top - reference.top,
-      bottom: reference.bottom - this.bottom,
-      left: this.left - reference.left,
-      right: reference.right - this.right,
-      height: this.height,
-      width: this.width
-    };
-  };
+    
+    overlapsAny(boxes) {
+      for (let i = 0; i < boxes.length; i++) {
+        if (this.overlaps(boxes[i])) {
+          return true;
+        }
+      }
+      return false;
+    }
 
-  
-  
-  BoxPosition.getSimpleBoxPosition = function(obj) {
-    var height = obj.div ? obj.div.offsetHeight : obj.tagName ? obj.offsetHeight : 0;
-    var width = obj.div ? obj.div.offsetWidth : obj.tagName ? obj.offsetWidth : 0;
-    var top = obj.div ? obj.div.offsetTop : obj.tagName ? obj.offsetTop : 0;
+    
+    within(container) {
+      return this.top >= container.top &&
+             this.bottom <= container.bottom &&
+             this.left >= container.left &&
+             this.right <= container.right;
+    }
 
-    obj = obj.div ? obj.div.getBoundingClientRect() :
-                  obj.tagName ? obj.getBoundingClientRect() : obj;
-    var ret = {
-      left: obj.left,
-      right: obj.right,
-      top: obj.top || top,
-      height: obj.height || height,
-      bottom: obj.bottom || (top + (obj.height || height)),
-      width: obj.width || width
-    };
-    return ret;
-  };
+    
+    
+    
+    
+    overlapsOppositeAxis(container, axis) {
+      switch (axis) {
+      case "+x":
+        return this.left < container.left;
+      case "-x":
+        return this.right > container.right;
+      case "+y":
+        return this.top < container.top;
+      case "-y":
+        return this.bottom > container.bottom;
+      }
+    }
+
+    
+    
+    intersectPercentage(b2) {
+      let x = Math.max(0, Math.min(this.right, b2.right) - Math.max(this.left, b2.left)),
+          y = Math.max(0, Math.min(this.bottom, b2.bottom) - Math.max(this.top, b2.top)),
+          intersectArea = x * y;
+      return intersectArea / (this.height * this.width);
+    }
+
+    
+    
+    
+    
+    toCSSCompatValues(reference) {
+      return {
+        top: this.top - reference.top,
+        bottom: reference.bottom - this.bottom,
+        left: this.left - reference.left,
+        right: reference.right - this.right,
+        height: this.height,
+        width: this.width
+      };
+    }
+  }
 
   
   
@@ -1113,13 +1115,13 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
     overlay.appendChild(rootOfCues);
 
     var boxPositions = [],
-        containerBox = BoxPosition.getSimpleBoxPosition(rootOfCues);
+        containerBox = new BoxPosition(rootOfCues);
 
     (function() {
       var styleBox, cue, controlBarBox;
 
       if (controlBarShown) {
-        controlBarBox = BoxPosition.getSimpleBoxPosition(controlBar);
+        controlBarBox = new BoxPosition(controlBar);
         
         boxPositions.push(controlBarBox);
       }
@@ -1138,7 +1140,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
           if (!regionNodeBoxes[cue.region.id]) {
             
             
-            var adjustContainerBox = BoxPosition.getSimpleBoxPosition(rootOfCues);
+            var adjustContainerBox = new BoxPosition(rootOfCues);
             if (controlBarShown) {
               adjustContainerBox.height -= controlBarBox.height;
               adjustContainerBox.bottom += controlBarBox.height;
@@ -1160,7 +1162,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
           currentRegionNodeDiv.appendChild(styleBox.div);
           rootOfCues.appendChild(currentRegionNodeDiv);
           cue.displayState = styleBox.div;
-          boxPositions.push(BoxPosition.getSimpleBoxPosition(currentRegionBox));
+          boxPositions.push(new BoxPosition(currentRegionBox));
         } else {
           
           styleBox = new CueStyleBox(window, cue, containerBox);
@@ -1173,7 +1175,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
           
           cue.displayState = styleBox.div;
 
-          boxPositions.push(BoxPosition.getSimpleBoxPosition(styleBox));
+          boxPositions.push(new BoxPosition(styleBox));
         }
       }
     })();
