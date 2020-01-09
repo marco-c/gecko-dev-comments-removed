@@ -215,20 +215,6 @@ def main(argv):
     test_list = []
     read_all = True
 
-    
-    
-    
-    
-    test_flags = get_jitflags(options.jitflags)
-    options.asmjs_enabled = True
-    options.wasm_enabled = True
-    if all(['--no-asmjs' in flags for flags in test_flags]):
-        options.asmjs_enabled = False
-        options.wasm_enabled = False
-    if all(['--wasm-compiler=none' in flags for flags in test_flags]):
-        options.asmjs_enabled = False
-        options.wasm_enabled = False
-
     if options.run_binast:
         code = 'print(getBuildConfiguration().binast)'
         is_binast_enabled = subprocess.check_output([js_shell, '-e', code])
@@ -329,6 +315,8 @@ def main(argv):
         sys.exit(0)
 
     
+    test_flags = get_jitflags(options.jitflags)
+
     test_list = [_ for test in test_list for _ in test.copy_variants(test_flags)]
 
     job_list = (test for test in test_list)
