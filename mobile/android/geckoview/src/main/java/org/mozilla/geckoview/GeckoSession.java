@@ -4074,6 +4074,11 @@ public class GeckoSession implements Parcelable {
 
 
 
+
+
+
+
+
         @UiThread
         void onMediaPermissionRequest(@NonNull GeckoSession session, @NonNull String uri,
                                       @Nullable MediaSource[] video, @Nullable MediaSource[] audio,

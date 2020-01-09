@@ -661,6 +661,20 @@ public class GeckoViewActivity extends AppCompatActivity {
         public void onMediaPermissionRequest(final GeckoSession session, final String uri,
                                            final MediaSource[] video, final MediaSource[] audio,
                                            final MediaCallback callback) {
+            
+            
+            
+            
+            if ((audio != null
+                    && ContextCompat.checkSelfPermission(GeckoViewActivity.this,
+                        Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
+                || (video != null
+                    && ContextCompat.checkSelfPermission(GeckoViewActivity.this,
+                        Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED)) {
+                callback.reject();
+                return;
+            }
+
             final String host = Uri.parse(uri).getAuthority();
             final String title;
             if (audio == null) {
