@@ -344,6 +344,12 @@ void DrawTargetD2D1::ClearRect(const Rect &aRect) {
   if (!EnsureInitialized()) {
     return;
   }
+
+  if (aRect.IsEmpty()) {
+    
+    return;
+  }
+
   MarkChanged();
 
   PopAllClips();
