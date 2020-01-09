@@ -245,3 +245,6 @@ user_pref("ui.caretBlinkTime", -1);
 user_pref("webextensions.tests", true);
 
 user_pref("toolkit.telemetry.initDelay", 99999999);
+
+
+user_pref("security.data_uri.block_toplevel_data_uri_navigations", false);
