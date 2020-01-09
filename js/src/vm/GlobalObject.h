@@ -279,6 +279,11 @@ class GlobalObject : public NativeObject {
   
 
 
+  bool shouldSplicePrototype();
+
+  
+
+
 
   static JSFunction* createConstructor(
       JSContext* cx, JSNative ctor, JSAtom* name, unsigned length,
