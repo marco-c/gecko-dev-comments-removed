@@ -434,7 +434,7 @@ nsresult nsTypeAheadFind::FindItNow(nsIPresShell* aPresShell, bool aIsLinksOnly,
 
   while (true) {    
     while (true) {  
-      mFind->Find(mTypeAheadBuffer.get(), mSearchRange, mStartPointRange,
+      mFind->Find(mTypeAheadBuffer, mSearchRange, mStartPointRange,
                   mEndPointRange, getter_AddRefs(returnRange));
       if (!returnRange) {
         break;  
