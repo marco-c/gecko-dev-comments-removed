@@ -474,7 +474,8 @@ class UrlbarInput {
       if (canonizedUrl) {
         this.value = canonizedUrl;
       } else if (result.autofill) {
-        this._autofillValue(result.autofill);
+        let { value, selectionStart, selectionEnd } = result.autofill;
+        this._autofillValue(value, selectionStart, selectionEnd);
       } else {
         this.value = this._getValueFromResult(result);
       }
@@ -718,8 +719,15 @@ class UrlbarInput {
         !this._autofillPlaceholder.startsWith(value)) {
       this._autofillPlaceholder = "";
     }
-    if (this._autofillPlaceholder) {
-      this._autofillValueOnInput(this._autofillPlaceholder);
+
+    
+    
+    if (this._autofillPlaceholder &&
+        this.selectionEnd == this.value.length &&
+        this._autofillPlaceholder.toLocaleLowerCase()
+          .startsWith(value.toLocaleLowerCase())) {
+      this._autofillValue(this._autofillPlaceholder, value.length,
+                          this._autofillPlaceholder.length);
     }
 
     return allowAutofill;
@@ -939,32 +947,9 @@ class UrlbarInput {
 
 
 
-  _autofillValueOnInput(value) {
-    
-    
-    if (this.selectionEnd != this.value.length ||
-        !value.startsWith(this._lastSearchString)) {
-      return;
-    }
-    this._autofillValue({
-      value,
-      selectionStart: this._lastSearchString.length,
-      selectionEnd: value.length,
-    });
-  }
-
-  
 
 
-
-
-
-
-
-
-
-
-  _autofillValue({ value, selectionStart, selectionEnd } = {}) {
+  _autofillValue(value, selectionStart, selectionEnd) {
     
     
     this._setValue(value, false);
