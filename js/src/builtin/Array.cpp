@@ -1312,7 +1312,7 @@ static bool ArrayJoinDenseKernel(JSContext* cx, SeparatorOp sepOp,
 
 
       break;
-    } else if (IF_BIGINT(elem.isBigInt(), false)) {
+    } else if (elem.isBigInt()) {
       
       
       

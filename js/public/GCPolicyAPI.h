@@ -47,7 +47,7 @@
 
 #define FOR_EACH_PUBLIC_GC_POINTER_TYPE(D) \
   D(JS::Symbol*)                           \
-  IF_BIGINT(D(JS::BigInt*), )              \
+  D(JS::BigInt*)                           \
   D(JSAtom*)                               \
   D(JSFunction*)                           \
   D(JSObject*)                             \

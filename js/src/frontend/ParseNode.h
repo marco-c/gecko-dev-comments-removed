@@ -10,9 +10,7 @@
 #include "mozilla/Attributes.h"
 
 #include "frontend/TokenStream.h"
-#ifdef ENABLE_BIGINT
-#  include "vm/BigIntType.h"
-#endif
+#include "vm/BigIntType.h"
 #include "vm/BytecodeUtil.h"
 #include "vm/Printer.h"
 #include "vm/Scope.h"
@@ -48,9 +46,7 @@ class ParseContext;
 class FullParseHandler;
 class FunctionBox;
 class ObjectBox;
-#ifdef ENABLE_BIGINT
 class BigIntBox;
-#endif
 
 #define FOR_EACH_PARSE_NODE_KIND(F)                                          \
   F(EmptyStmt, NullaryNode)                                                  \
@@ -80,7 +76,7 @@ class BigIntBox;
   F(PrivateName, NameNode)                                                   \
   F(ComputedName, UnaryNode)                                                 \
   F(NumberExpr, NumericLiteral)                                              \
-  IF_BIGINT(F(BigIntExpr, BigIntLiteral), /**/)                              \
+  F(BigIntExpr, BigIntLiteral)                                               \
   F(StringExpr, NameNode)                                                    \
   F(TemplateStringListExpr, ListNode)                                        \
   F(TemplateStringExpr, NameNode)                                            \
@@ -535,12 +531,10 @@ enum ParseNodeArity {
   PN_NAME,     
   PN_FIELD,    
   PN_NUMBER,   
-#ifdef ENABLE_BIGINT
-  PN_BIGINT, 
-#endif
-  PN_REGEXP, 
-  PN_LOOP,   
-  PN_SCOPE   
+  PN_BIGINT,   
+  PN_REGEXP,   
+  PN_LOOP,     
+  PN_SCOPE     
 };
 
 
@@ -579,7 +573,7 @@ enum ParseNodeArity {
   MACRO(RawUndefinedLiteral, RawUndefinedLiteralType, asRawUndefinedLiteral) \
                                                                              \
   MACRO(NumericLiteral, NumericLiteralType, asNumericLiteral)                \
-  IF_BIGINT(MACRO(BigIntLiteral, BigIntLiteralType, asBigIntLiteral), )      \
+  MACRO(BigIntLiteral, BigIntLiteralType, asBigIntLiteral)                   \
                                                                              \
   MACRO(RegExpLiteral, RegExpLiteralType, asRegExpLiteral)                   \
                                                                              \
@@ -708,9 +702,7 @@ class ParseNode {
   
   bool isLiteral() const {
     return isKind(ParseNodeKind::NumberExpr) ||
-#ifdef ENABLE_BIGINT
            isKind(ParseNodeKind::BigIntExpr) ||
-#endif
            isKind(ParseNodeKind::StringExpr) ||
            isKind(ParseNodeKind::TrueExpr) ||
            isKind(ParseNodeKind::FalseExpr) ||
@@ -1531,7 +1523,6 @@ class NumericLiteral : public ParseNode {
   void setDecimalPoint(DecimalPoint d) { decimalPoint_ = d; }
 };
 
-#ifdef ENABLE_BIGINT
 class BigIntLiteral : public ParseNode {
   BigIntBox* box_;
 
@@ -1558,7 +1549,6 @@ class BigIntLiteral : public ParseNode {
 
   BigIntBox* box() const { return box_; }
 };
-#endif
 
 class LexicalScopeNode : public ParseNode {
   LexicalScope::Data* bindings;
@@ -2164,14 +2154,10 @@ class TraceListNode {
 
   TraceListNode(js::gc::Cell* gcThing, TraceListNode* traceLink);
 
-#ifdef ENABLE_BIGINT
   bool isBigIntBox() const { return gcThing->is<BigInt>(); }
-#endif
   bool isObjectBox() const { return gcThing->is<JSObject>(); }
 
-#ifdef ENABLE_BIGINT
   BigIntBox* asBigIntBox();
-#endif
   ObjectBox* asObjectBox();
 
   virtual void trace(JSTracer* trc);
@@ -2180,13 +2166,11 @@ class TraceListNode {
   static void TraceList(JSTracer* trc, TraceListNode* listHead);
 };
 
-#ifdef ENABLE_BIGINT
 class BigIntBox : public TraceListNode {
  public:
   BigIntBox(BigInt* bi, TraceListNode* link);
   BigInt* value() const { return gcThing->as<BigInt>(); }
 };
-#endif
 
 class ObjectBox : public TraceListNode {
  protected:

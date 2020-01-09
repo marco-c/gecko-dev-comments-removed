@@ -967,7 +967,6 @@ MOZ_ALWAYS_INLINE bool MaybeWrapValue(JSContext* cx,
     if (rval.isObject()) {
       return MaybeWrapObjectValue(cx, rval);
     }
-#ifdef ENABLE_BIGINT
     
     
     
@@ -975,7 +974,6 @@ MOZ_ALWAYS_INLINE bool MaybeWrapValue(JSContext* cx,
     if (rval.isBigInt()) {
       return JS_WrapValue(cx, rval);
     }
-#endif
     MOZ_ASSERT(rval.isSymbol());
     JS_MarkCrossZoneId(cx, SYMBOL_TO_JSID(rval.toSymbol()));
   }

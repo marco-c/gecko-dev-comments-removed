@@ -130,7 +130,6 @@ class FullParseHandler {
     return new_<NumericLiteral>(value, decimalPoint, pos);
   }
 
-#ifdef ENABLE_BIGINT
   
   
   
@@ -142,7 +141,6 @@ class FullParseHandler {
     }
     return new_<BigIntLiteral>(box, pos);
   }
-#endif
 
   BooleanLiteralType newBooleanLiteral(bool cond, const TokenPos& pos) {
     return new_<BooleanLiteral>(cond, pos);

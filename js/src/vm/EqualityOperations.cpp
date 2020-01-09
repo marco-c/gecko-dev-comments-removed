@@ -16,9 +16,7 @@
 #include "js/Result.h"    
 #include "js/RootingAPI.h"  
 #include "js/Value.h"       
-#ifdef ENABLE_BIGINT
-#  include "vm/BigIntType.h"  
-#endif                        
+#include "vm/BigIntType.h"  
 #include "vm/JSContext.h"     
 #include "vm/JSObject.h"      
 #include "vm/StringType.h"    
@@ -39,12 +37,10 @@ static bool EqualGivenSameType(JSContext* cx, JS::Handle<JS::Value> lval,
     return true;
   }
 
-#ifdef ENABLE_BIGINT
   if (lval.isBigInt()) {
     *equal = JS::BigInt::equal(lval.toBigInt(), rval.toBigInt());
     return true;
   }
-#endif
 
   if (lval.isGCThing()) {  
     *equal = (lval.toGCThing() == rval.toGCThing());
@@ -162,7 +158,6 @@ bool js::LooselyEqual(JSContext* cx, JS::Handle<JS::Value> lval,
     return js::LooselyEqual(cx, lvalue, rval, result);
   }
 
-#ifdef ENABLE_BIGINT
   if (lval.isBigInt()) {
     JS::Rooted<JS::BigInt*> lbi(cx, lval.toBigInt());
     bool tmpResult;
@@ -180,7 +175,6 @@ bool js::LooselyEqual(JSContext* cx, JS::Handle<JS::Value> lval,
     *result = tmpResult;
     return true;
   }
-#endif
 
   
   *result = false;

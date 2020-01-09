@@ -62,9 +62,7 @@ enum {
   JOF_CODE_OFFSET = 19, 
   JOF_ICINDEX = 20,     
   JOF_LOOPENTRY = 21,   
-#ifdef ENABLE_BIGINT
-  JOF_BIGINT = 22, 
-#endif
+  JOF_BIGINT = 22,      
   JOF_TYPEMASK = 0x001f, 
 
   JOF_NAME = 1 << 5,     

@@ -59,7 +59,7 @@ bool HashableValue::setValue(JSContext* cx, HandleValue v) {
 
   MOZ_ASSERT(value.isUndefined() || value.isNull() || value.isBoolean() ||
              value.isNumber() || value.isString() || value.isSymbol() ||
-             value.isObject() || IF_BIGINT(value.isBigInt(), false));
+             value.isObject() || value.isBigInt());
   return true;
 }
 
@@ -80,11 +80,9 @@ static HashNumber HashValue(const Value& v,
   if (v.isSymbol()) {
     return v.toSymbol()->hash();
   }
-#ifdef ENABLE_BIGINT
   if (v.isBigInt()) {
     return v.toBigInt()->hash();
   }
-#endif
   if (v.isObject()) {
     return hcs.scramble(v.asRawBits());
   }
@@ -101,7 +99,6 @@ bool HashableValue::operator==(const HashableValue& other) const {
   
   bool b = (value.asRawBits() == other.value.asRawBits());
 
-#ifdef ENABLE_BIGINT
   
   
   
@@ -111,7 +108,6 @@ bool HashableValue::operator==(const HashableValue& other) const {
     RootedValue otherRoot(cx, other.value);
     SameValue(cx, valueRoot, otherRoot, &b);
   }
-#endif
 
 #ifdef DEBUG
   bool same;
