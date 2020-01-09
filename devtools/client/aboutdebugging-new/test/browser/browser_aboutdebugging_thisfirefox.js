@@ -44,6 +44,24 @@ add_task(async function testThisFirefoxWithoutLocalTab() {
 
 
 
+add_task(async function testThisFirefoxKeepDiscardedTab() {
+  const targetTab = await addTab("https://example.com/");
+  const blankTab = await addTab("about:blank");
+  targetTab.ownerGlobal.gBrowser.discardBrowser(targetTab);
+
+  const { document, tab, window } = await openAboutDebugging({ enableLocalTabs: false });
+  await selectThisFirefoxPage(document, window.AboutDebugging.store);
+
+  ok(!targetTab.linkedPanel, "The target tab is still discarded");
+
+  await removeTab(blankTab);
+  await removeTab(targetTab);
+  await removeTab(tab);
+});
+
+
+
+
 add_task(async function testThisFirefoxWithXpinstallDisabled() {
   await pushPref("xpinstall.enabled", false);
 
@@ -81,4 +99,3 @@ async function checkThisFirefoxTargetPanes(doc, expectedTargetPanes) {
        `Expected debug target category found: ${ expectedPaneTitle }`);
   }
 }
-
