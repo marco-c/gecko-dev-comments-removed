@@ -76,6 +76,10 @@ const EmulationActor = protocol.ActorClassWithSpec(emulationSpec, {
     return this._touchSimulator;
   },
 
+  get win() {
+    return this.docShell.chromeEventHandler.ownerGlobal;
+  },
+
   onWillNavigate({ isTopLevel }) {
     
     
@@ -352,17 +356,38 @@ const EmulationActor = protocol.ActorClassWithSpec(emulationSpec, {
     this.targetActor.docShell.contentViewer.stopEmulatingMedium();
   },
 
+  setScreenOrientation(type, angle) {
+    if (this.win.screen.orientation.angle !== angle ||
+        this.win.screen.orientation.type !== type) {
+      this.win.document.setRDMPaneOrientation(type, angle);
+    }
+  },
+
   
 
 
 
 
 
-  simulateScreenOrientationChange() {
-    const win = this.docShell.chromeEventHandler.ownerGlobal;
-    const { CustomEvent } = win;
+
+
+
+
+
+
+  async simulateScreenOrientationChange(type, angle, deviceChange) {
+    
+    
+    if (deviceChange) {
+      this.setScreenOrientation(type, angle);
+      return;
+    }
+
+    const { CustomEvent } = this.win;
     const orientationChangeEvent = new CustomEvent("orientationchange");
-    win.dispatchEvent(orientationChangeEvent);
+
+    this.setScreenOrientation(type, angle);
+    this.win.dispatchEvent(orientationChangeEvent);
   },
 });
 

@@ -49,6 +49,9 @@ createEnum([
   "CHANGE_PIXEL_RATIO",
 
   
+  "CHANGE_VIEWPORT_ANGLE",
+
+  
   "EDIT_DEVICE",
 
   

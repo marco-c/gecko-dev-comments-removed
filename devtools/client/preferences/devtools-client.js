@@ -313,6 +313,8 @@ pref("devtools.editor.enableCodeFolding", true);
 pref("devtools.editor.autocomplete", true);
 
 
+pref("devtools.responsive.viewport.angle", 0);
+
 pref("devtools.responsive.viewport.width", 320);
 
 pref("devtools.responsive.viewport.height", 480);
