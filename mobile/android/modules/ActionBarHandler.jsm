@@ -2,7 +2,6 @@
 
 
 
-
 "use strict";
 
 var EXPORTED_SYMBOLS = ["ActionBarHandler"];
@@ -443,10 +442,17 @@ var ActionBarHandler = {
       },
 
       action: function(element, win) {
-        ActionBarHandler._getEditor(element, win).cut();
+        
+        let selectedText = ActionBarHandler._getSelectedText();
+        let clipboard = Cc["@mozilla.org/widget/clipboardhelper;1"].
+          getService(Ci.nsIClipboardHelper);
+        clipboard.copyString(selectedText);
 
         let msg = Strings.browser.GetStringFromName("selectionHelper.textCopied");
         Snackbars.show(msg, Snackbars.LENGTH_LONG);
+
+        
+        ActionBarHandler._getSelection(element, win).deleteFromDocument();
 
         ActionBarHandler._uninit();
         UITelemetry.addEvent("action.1", "actionbar", null, "cut");
@@ -474,7 +480,10 @@ var ActionBarHandler = {
       },
 
       action: function(element, win) {
-        ActionBarHandler._getEditor(element, win).copy();
+        let selectedText = ActionBarHandler._getSelectedText();
+        let clipboard = Cc["@mozilla.org/widget/clipboardhelper;1"].
+          getService(Ci.nsIClipboardHelper);
+        clipboard.copyString(selectedText);
 
         let msg = Strings.browser.GetStringFromName("selectionHelper.textCopied");
         Snackbars.show(msg, Snackbars.LENGTH_LONG);
