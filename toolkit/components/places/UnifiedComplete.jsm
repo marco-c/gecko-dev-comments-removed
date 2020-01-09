@@ -1712,7 +1712,10 @@ Search.prototype = {
     
     
     let timeoutPromise = new Promise(resolve => {
-      setTimeout(resolve, MAXIMUM_ALLOWED_EXTENSION_TIME_MS);
+      let timer = setTimeout(resolve, MAXIMUM_ALLOWED_EXTENSION_TIME_MS);
+      
+      
+      promise.then(timer.cancel);
     });
     return Promise.race([timeoutPromise, promise]).catch(Cu.reportError);
   },
