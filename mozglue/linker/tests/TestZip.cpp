@@ -16,6 +16,31 @@ extern "C" void delete_mapping() {}
 
 
 
+#define ZIP_DATA(name, file)                          \
+  __asm__(".global " #name "\n"                       \
+          ".data\n"                                   \
+          ".balign 16\n"                              \
+          #name ":\n"                                 \
+          "  .incbin \"" SRCDIR "/" file "\"\n"       \
+          ".L" #name "_END:\n"                        \
+          "  .size " #name ", .L" #name "_END-" #name \
+          "\n"                                        \
+          ".global " #name "_SIZE\n"                  \
+          ".data\n"                                   \
+          ".balign 4\n"                               \
+          #name "_SIZE:\n"                            \
+          "  .int .L" #name "_END-" #name "\n");      \
+  extern const unsigned char name[];                  \
+  extern const unsigned int name##_SIZE
+
+
+
+
+
+
+
+
+ZIP_DATA(TEST_ZIP, "test.zip");
 const char *test_entries[] = {"baz", "foo", "bar", "qux"};
 
 
@@ -32,18 +57,12 @@ const char *test_entries[] = {"baz", "foo", "bar", "qux"};
 
 
 
+ZIP_DATA(NO_CENTRAL_DIR_ZIP, "no_central_dir.zip");
 const char *no_central_dir_entries[] = {"a", "b", "c", "d"};
 
 int main(int argc, char *argv[]) {
-  if (argc != 2) {
-    fprintf(
-        stderr,
-        "TEST-FAIL | TestZip | Expecting the directory containing test Zips\n");
-    return 1;
-  }
-  chdir(argv[1]);
   Zip::Stream s;
-  RefPtr<Zip> z = ZipCollection::GetZip("test.zip");
+  RefPtr<Zip> z = Zip::Create((void *)TEST_ZIP, TEST_ZIP_SIZE);
   for (auto& entry : test_entries) {
     if (!z->GetStream(entry, &s)) {
       fprintf(stderr,
@@ -55,7 +74,7 @@ int main(int argc, char *argv[]) {
   }
   fprintf(stderr, "TEST-PASS | TestZip | test.zip could be accessed fully\n");
 
-  z = ZipCollection::GetZip("no_central_dir.zip");
+  z = Zip::Create((void *)NO_CENTRAL_DIR_ZIP, NO_CENTRAL_DIR_ZIP_SIZE);
   for (auto& entry : no_central_dir_entries) {
     if (!z->GetStream(entry, &s)) {
       fprintf(stderr,
