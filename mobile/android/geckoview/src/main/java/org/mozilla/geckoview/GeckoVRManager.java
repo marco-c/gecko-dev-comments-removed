@@ -4,19 +4,36 @@
 
 
 
-package org.mozilla.gecko;
+package org.mozilla.geckoview;
+
+import android.support.annotation.AnyThread;
 
 import org.mozilla.gecko.annotation.WrapForJNI;
-import org.mozilla.gecko.util.ThreadUtils;
+
+
+
+
+
+
+
 
 public class GeckoVRManager {
     private static long mExternalContext;
 
+    private GeckoVRManager() {}
+
     @WrapForJNI
-    public static synchronized long getExternalContext() {
+    private static synchronized long getExternalContext() {
       return mExternalContext;
     }
 
+    
+
+
+
+
+
+    @AnyThread
     public static synchronized void setExternalContext(final long externalContext) {
         mExternalContext = externalContext;
     }
