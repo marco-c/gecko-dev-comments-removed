@@ -87,21 +87,12 @@ class HTMLTrackElement final : public nsGenericHTMLElement {
                               nsIContent* aBindingParent) override;
   virtual void UnbindFromTree(bool aDeep, bool aNullParent) override;
 
-  virtual nsresult AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
-                                const nsAttrValue* aValue,
-                                const nsAttrValue* aOldValue,
-                                nsIPrincipal* aMaybeScriptedPrincipal,
-                                bool aNotify) override;
-
   void DispatchTrackRunnable(const nsString& aEventName);
   void DispatchTrustedEvent(const nsAString& aName);
 
   void DropChannel();
 
   void NotifyShutdown();
-
-  
-  void MaybeDispatchLoadResource();
 
  protected:
   virtual ~HTMLTrackElement();
@@ -122,12 +113,11 @@ class HTMLTrackElement final : public nsGenericHTMLElement {
   void CreateTextTrack();
 
  private:
+  void DispatchLoadResource();
   
   
   void LoadResource(RefPtr<WebVTTListener>&& aWebVTTListener);
   bool mLoadResourceDispatched;
-
-  void MaybeClearAllCues();
 
   RefPtr<WindowDestroyObserver> mWindowDestroyObserver;
 };
