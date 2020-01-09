@@ -22,7 +22,6 @@
 #include "mozilla/Logging.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "stdlib.h"
-#include "nsDirectoryService.h"
 #include "nsWildCard.h"
 #include "nsXULAppAPI.h"
 #include "nsZipArchive.h"
@@ -79,8 +78,14 @@ static uint32_t HashName(const char *aName, uint16_t nameLen);
 
 class ZipArchiveLogger {
  public:
-  void Init(const char *env) {
+  void Write(const nsACString &zip, const char *entry) const {
+    if (!XRE_IsParentProcess()) {
+      return;
+    }
     if (!fd) {
+      char *env = PR_GetEnv("MOZ_JAR_LOG_FILE");
+      if (!env) return;
+
       nsCOMPtr<nsIFile> logFile;
       nsresult rv = NS_NewLocalFile(NS_ConvertUTF8toUTF16(env), false,
                                     getter_AddRefs(logFile));
@@ -111,16 +116,11 @@ class ZipArchiveLogger {
 #endif
       fd = file;
     }
-  }
-
-  void Write(const nsACString &zip, const char *entry) const {
-    if (fd) {
-      nsCString buf(zip);
-      buf.Append(' ');
-      buf.Append(entry);
-      buf.Append('\n');
-      PR_Write(fd, buf.get(), buf.Length());
-    }
+    nsCString buf(zip);
+    buf.Append(' ');
+    buf.Append(entry);
+    buf.Append('\n');
+    PR_Write(fd, buf.get(), buf.Length());
   }
 
   void AddRef() {
@@ -138,7 +138,7 @@ class ZipArchiveLogger {
 
  private:
   int refCnt;
-  PRFileDesc *fd;
+  mutable PRFileDesc *fd;
 };
 
 static ZipArchiveLogger zipLog;
@@ -336,52 +336,7 @@ nsresult nsZipArchive::OpenArchive(nsZipHandle *aZipHandle, PRFileDesc *aFd) {
   
   nsresult rv = BuildFileList(aFd);
   if (NS_SUCCEEDED(rv)) {
-    if (aZipHandle->mFile && XRE_IsParentProcess()) {
-      static char *env = PR_GetEnv("MOZ_JAR_LOG_FILE");
-      if (env) {
-        zipLog.Init(env);
-        
-        
-        
-        
-        
-        
-        if (aZipHandle->mFile.IsZip()) {
-          
-          aZipHandle->mFile.GetPath(mURI);
-        } else if (nsDirectoryService::gService) {
-          
-          
-          
-          
-          
-          nsCOMPtr<nsIFile> dir = aZipHandle->mFile.GetBaseFile();
-          nsCOMPtr<nsIFile> gre_dir;
-          nsAutoCString path;
-          if (NS_SUCCEEDED(nsDirectoryService::gService->Get(
-                  NS_GRE_DIR, NS_GET_IID(nsIFile), getter_AddRefs(gre_dir)))) {
-            nsAutoCString leaf;
-            nsCOMPtr<nsIFile> parent;
-            while (NS_SUCCEEDED(dir->GetNativeLeafName(leaf)) &&
-                   NS_SUCCEEDED(dir->GetParent(getter_AddRefs(parent)))) {
-              if (!parent) {
-                break;
-              }
-              dir = parent;
-              if (path.Length()) {
-                path.Insert('/', 0);
-              }
-              path.Insert(leaf, 0);
-              bool equals;
-              if (NS_SUCCEEDED(dir->Equals(gre_dir, &equals)) && equals) {
-                mURI.Assign(path);
-                break;
-              }
-            }
-          }
-        }
-      }
-    }
+    if (aZipHandle->mFile) aZipHandle->mFile.GetURIString(mURI);
   }
   return rv;
 }
@@ -472,9 +427,7 @@ nsZipItem *nsZipArchive::GetItem(const char *aEntryName) {
           (!memcmp(aEntryName, item->Name(), len))) {
         
         
-        if (mURI.Length()) {
-          zipLog.Write(mURI, aEntryName);
-        }
+        zipLog.Write(mURI, aEntryName);
         return item;  
       }
       item = item->next;
