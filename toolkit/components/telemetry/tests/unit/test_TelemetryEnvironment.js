@@ -611,6 +611,7 @@ function checkSystemSection(data) {
   let gfxData = data.system.gfx;
   Assert.ok("D2DEnabled" in gfxData);
   Assert.ok("DWriteEnabled" in gfxData);
+  Assert.ok("Headless" in gfxData);
   
   
   
