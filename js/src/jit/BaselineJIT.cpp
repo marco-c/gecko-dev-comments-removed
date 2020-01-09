@@ -154,6 +154,10 @@ JitExecStatus jit::EnterBaselineAtBranch(JSContext* cx, InterpreterFrame* fp,
     const BaselineInterpreter& interp =
         cx->runtime()->jitRuntime()->baselineInterpreter();
     data.jitcode = interp.interpretOpAddr().value;
+    if (fp->isDebuggee()) {
+      
+      data.jitcode += MacroAssembler::ToggledCallSize(data.jitcode);
+    }
   }
 
   
@@ -423,8 +427,16 @@ bool jit::BaselineCompileFromBaselineInterpreter(JSContext* cx,
     case Method_Compiled: {
       if (*pc == JSOP_LOOPENTRY) {
         PCMappingSlotInfo slotInfo;
-        *res = script->baselineScript()->nativeCodeForPC(script, pc, &slotInfo);
+        BaselineScript* baselineScript = script->baselineScript();
+        *res = baselineScript->nativeCodeForPC(script, pc, &slotInfo);
         MOZ_ASSERT(slotInfo.isStackSynced());
+        if (frame->isDebuggee()) {
+          
+          
+          
+          MOZ_RELEASE_ASSERT(baselineScript->hasDebugInstrumentation());
+          *res += MacroAssembler::ToggledCallSize(*res);
+        }
       } else {
         *res = script->baselineScript()->warmUpCheckPrologueAddr();
       }

@@ -383,6 +383,10 @@ class BaselineCodeGen {
     return emitDebugInstrumentation(ifDebuggee, mozilla::Maybe<F>());
   }
 
+  template <typename F>
+  MOZ_MUST_USE bool emitAfterYieldDebugInstrumentation(const F& ifDebuggee,
+                                                       Register scratch);
+
   
   
   template <typename F1, typename F2>
