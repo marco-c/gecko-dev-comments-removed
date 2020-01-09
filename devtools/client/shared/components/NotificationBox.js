@@ -73,7 +73,7 @@ class NotificationBox extends Component {
       
       closeButtonTooltip: PropTypes.string,
       
-      wrapping: PropTypes.boolean,
+      wrapping: PropTypes.bool,
     };
   }
 
