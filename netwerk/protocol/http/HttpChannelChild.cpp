@@ -3721,7 +3721,10 @@ nsresult HttpChannelChild::AsyncCallImpl(
 }
 
 nsresult HttpChannelChild::SetReferrerHeader(const nsACString& aReferrer) {
-  ENSURE_CALLED_BEFORE_CONNECT();
+  
+  
+  
+  ENSURE_CALLED_BEFORE_ASYNC_OPEN();
 
   
   for (int i = mClientSetRequestHeaders.Length() - 1; i >= 0; --i) {
