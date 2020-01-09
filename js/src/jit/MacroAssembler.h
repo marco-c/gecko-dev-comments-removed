@@ -39,7 +39,6 @@
 #include "vm/ProxyObject.h"
 #include "vm/Shape.h"
 #include "vm/TypedArrayObject.h"
-#include "vm/UnboxedObject.h"
 
 
 
@@ -2710,18 +2709,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void memoryBarrierBefore(const Synchronization& sync);
   void memoryBarrierAfter(const Synchronization& sync);
 
-  
-  template <typename T>
-  void loadUnboxedProperty(T address, JSValueType type,
-                           TypedOrValueRegister output);
-
-  
-  
-  
-  template <typename T>
-  void storeUnboxedProperty(T address, JSValueType type,
-                            const ConstantOrRegister& value, Label* failure);
-
   void debugAssertIsObject(const ValueOperand& val);
   void debugAssertObjHasFixedSlots(Register obj, Register scratch);
 
@@ -2825,8 +2812,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
                            LiveRegisterSet liveRegs, Label* fail,
                            TypedArrayObject* templateObj,
                            TypedArrayLength lengthKind);
-
-  void initUnboxedObjectContents(Register object, const UnboxedLayout& layout);
 
   void newGCString(Register result, Register temp, Label* fail,
                    bool attemptNursery);

@@ -244,8 +244,6 @@ namespace jit {
   _(ToObjectSlow, js::ToObjectSlow)                                            \
   _(ToStringSlow, js::ToStringSlow<CanGC>)                                     \
   _(TrySkipAwait, js::jit::TrySkipAwait)                                       \
-  _(UnboxedPlainObjectConvertToNative,                                         \
-    js::UnboxedPlainObject::convertToNative)                                   \
   _(UrshValues, js::UrshValues)
 
 
