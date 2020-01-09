@@ -2,13 +2,14 @@
 
 
 
-use api::{BorderRadius, BoxShadowClipMode, ClipMode, ColorF, DeviceIntSize, LayoutPrimitiveInfo};
-use api::{LayoutRect, LayoutSize, LayoutVector2D, MAX_BLUR_RADIUS};
+use api::{BorderRadius, BoxShadowClipMode, ClipMode, ColorF, LayoutPrimitiveInfo, PrimitiveKeyKind};
+use api::MAX_BLUR_RADIUS;
+use api::units::*;
 use clip::ClipItemKey;
 use display_list_flattener::DisplayListFlattener;
 use gpu_cache::GpuCacheHandle;
 use gpu_types::BoxShadowStretchMode;
-use prim_store::{ScrollNodeAndClipChain, PrimitiveKeyKind};
+use prim_store::ScrollNodeAndClipChain;
 use render_task::RenderTaskCacheEntryHandle;
 use util::RectHelpers;
 

@@ -33,7 +33,6 @@
 
 
 
-use api::{LayoutPrimitiveInfo};
 use internal_types::FastHashMap;
 use malloc_size_of::MallocSizeOf;
 use profiler::ResourceProfileCounter;
@@ -79,15 +78,28 @@ impl ItemUid {
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, Copy, Clone, MallocSizeOf)]
-pub struct Handle<M: Copy> {
+#[derive(Debug, MallocSizeOf)]
+pub struct Handle<I> {
     index: u32,
     epoch: Epoch,
     uid: ItemUid,
-    _marker: PhantomData<M>,
+    _marker: PhantomData<I>,
 }
 
-impl <M> Handle<M> where M: Copy {
+impl<I> Clone for Handle<I> {
+    fn clone(&self) -> Self {
+        Handle {
+            index: self.index,
+            epoch: self.epoch,
+            uid: self.uid,
+            _marker: self._marker,
+        }
+    }
+}
+
+impl<I> Copy for Handle<I> {}
+
+impl<I> Handle<I> {
     pub fn uid(&self) -> ItemUid {
         self.uid
     }
@@ -118,46 +130,34 @@ pub trait InternDebug {
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(MallocSizeOf)]
-pub struct DataStore<S, T: MallocSizeOf, M> {
-    items: Vec<Option<T>>,
-    _source: PhantomData<S>,
-    _marker: PhantomData<M>,
+pub struct DataStore<I: Internable> {
+    items: Vec<Option<I::StoreData>>,
 }
 
-impl<S, T, M> ::std::default::Default for DataStore<S, T, M>
-where
-    S: Debug + MallocSizeOf,
-    T: From<S> + MallocSizeOf,
-    M: Debug
-{
+impl<I: Internable> Default for DataStore<I> {
     fn default() -> Self {
         DataStore {
             items: Vec::new(),
-            _source: PhantomData,
-            _marker: PhantomData,
         }
     }
 }
 
-impl<S, T, M> DataStore<S, T, M>
-where
-    S: Debug + MallocSizeOf,
-    T: From<S> + MallocSizeOf,
-    M: Debug
-{
+impl<I: Internable> DataStore<I> {
     
     
     pub fn apply_updates(
         &mut self,
-        update_list: UpdateList<S>,
+        update_list: UpdateList<I::Key>,
         profile_counter: &mut ResourceProfileCounter,
     ) {
         let mut data_iter = update_list.data.into_iter();
         for update in update_list.updates {
             match update.kind {
                 UpdateKind::Insert => {
-                    self.items.entry(update.index).
-                        set(Some(T::from(data_iter.next().unwrap())));
+                    let value = data_iter.next().unwrap().into();
+                    self.items
+                        .entry(update.index)
+                        .set(Some(value));
                 }
                 UpdateKind::Remove => {
                     self.items[update.index] = None;
@@ -165,7 +165,7 @@ where
             }
         }
 
-        let per_item_size = mem::size_of::<S>() + mem::size_of::<T>();
+        let per_item_size = mem::size_of::<I::Key>() + mem::size_of::<I::StoreData>();
         profile_counter.set(self.items.len(), per_item_size * self.items.len());
 
         debug_assert!(data_iter.next().is_none());
@@ -173,27 +173,17 @@ where
 }
 
 
-impl<S, T, M> ops::Index<Handle<M>> for DataStore<S, T, M>
-where
-    S: MallocSizeOf,
-    T: MallocSizeOf,
-    M: Copy
-{
-    type Output = T;
-    fn index(&self, handle: Handle<M>) -> &T {
+impl<I: Internable> ops::Index<Handle<I>> for DataStore<I> {
+    type Output = I::StoreData;
+    fn index(&self, handle: Handle<I>) -> &I::StoreData {
         self.items[handle.index as usize].as_ref().expect("Bad datastore lookup")
     }
 }
 
 
 
-impl<S, T, M> ops::IndexMut<Handle<M>> for DataStore<S, T, M>
-where
-    S: MallocSizeOf,
-    T: MallocSizeOf,
-    M: Copy
-{
-    fn index_mut(&mut self, handle: Handle<M>) -> &mut T {
+impl<I: Internable> ops::IndexMut<Handle<I>> for DataStore<I> {
+    fn index_mut(&mut self, handle: Handle<I>) -> &mut I::StoreData {
         self.items[handle.index as usize].as_mut().expect("Bad datastore lookup")
     }
 }
@@ -206,33 +196,23 @@ where
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(MallocSizeOf)]
-pub struct Interner<S, D, M>
-where
-    S: Eq + Hash + Clone + Debug + MallocSizeOf,
-    D: MallocSizeOf,
-    M: Copy + MallocSizeOf,
-{
+pub struct Interner<I: Internable> {
     
-    map: FastHashMap<S, Handle<M>>,
+    map: FastHashMap<I::Key, Handle<I>>,
     
     free_list: Vec<usize>,
     
     updates: Vec<Update>,
     
-    update_data: Vec<S>,
+    update_data: Vec<I::Key>,
     
     current_epoch: Epoch,
     
     
-    local_data: Vec<D>,
+    local_data: Vec<I::InternData>,
 }
 
-impl<S, D, M> ::std::default::Default for Interner<S, D, M>
-where
-    S: Eq + Hash + Clone + Debug + MallocSizeOf,
-    D: MallocSizeOf,
-    M: Copy + Debug + MallocSizeOf,
-{
+impl<I: Internable> Default for Interner<I> {
     fn default() -> Self {
         Interner {
             map: FastHashMap::default(),
@@ -245,12 +225,7 @@ where
     }
 }
 
-impl<S, D, M> Interner<S, D, M>
-where
-    S: Eq + Hash + Clone + Debug + InternDebug + MallocSizeOf,
-    D: MallocSizeOf,
-    M: Copy + Debug + MallocSizeOf
-{
+impl<I: Internable> Interner<I> {
     
     
     
@@ -260,9 +235,9 @@ where
     
     pub fn intern<F>(
         &mut self,
-        data: &S,
-        f: F,
-    ) -> Handle<M> where F: FnOnce() -> D {
+        data: &I::Key,
+        fun: F,
+    ) -> Handle<I> where F: FnOnce() -> I::InternData {
         
         
         
@@ -303,7 +278,7 @@ where
 
         
         
-        self.local_data.entry(index).set(f());
+        self.local_data.entry(index).set(fun());
 
         handle
     }
@@ -311,7 +286,7 @@ where
     
     
     
-    pub fn end_frame_and_get_pending_updates(&mut self) -> UpdateList<S> {
+    pub fn end_frame_and_get_pending_updates(&mut self) -> UpdateList<I::Key> {
         let mut updates = self.updates.take_and_preallocate();
         let data = self.update_data.take_and_preallocate();
 
@@ -354,30 +329,36 @@ where
 }
 
 
-impl<S, D, M> ops::Index<Handle<M>> for Interner<S, D, M>
-where
-    S: Eq + Clone + Hash + Debug + MallocSizeOf,
-    D: MallocSizeOf,
-    M: Copy + Debug + MallocSizeOf
-{
-    type Output = D;
-    fn index(&self, handle: Handle<M>) -> &D {
+impl<I: Internable> ops::Index<Handle<I>> for Interner<I> {
+    type Output = I::InternData;
+    fn index(&self, handle: Handle<I>) -> &I::InternData {
         &self.local_data[handle.index as usize]
     }
 }
 
 
+mod dummy {
+    #[cfg(not(feature = "capture"))]
+    pub trait Serialize {}
+    #[cfg(not(feature = "capture"))]
+    impl<T> Serialize for T {}
+    #[cfg(not(feature = "replay"))]
+    pub trait Deserialize<'a> {}
+    #[cfg(not(feature = "replay"))]
+    impl<'a, T> Deserialize<'a> for T {}
+}
+#[cfg(feature = "capture")]
+use serde::Serialize as InternSerialize;
+#[cfg(not(feature = "capture"))]
+use self::dummy::Serialize as InternSerialize;
+#[cfg(feature = "replay")]
+use serde::Deserialize as InternDeserialize;
+#[cfg(not(feature = "replay"))]
+use self::dummy::Deserialize as InternDeserialize;
 
 
-pub trait Internable {
-    type Marker: Copy + Debug + MallocSizeOf;
-    type Source: Eq + Hash + Clone + Debug + MallocSizeOf;
-    type StoreData: From<Self::Source> + MallocSizeOf;
-    type InternData: MallocSizeOf;
-
-    
-    fn build_key(
-        self,
-        info: &LayoutPrimitiveInfo,
-    ) -> Self::Source;
+pub trait Internable: MallocSizeOf {
+    type Key: Eq + Hash + Clone + Debug + MallocSizeOf + InternDebug + InternSerialize + for<'a> InternDeserialize<'a>;
+    type StoreData: From<Self::Key> + MallocSizeOf + InternSerialize + for<'a> InternDeserialize<'a>;
+    type InternData: MallocSizeOf + InternSerialize + for<'a> InternDeserialize<'a>;
 }
