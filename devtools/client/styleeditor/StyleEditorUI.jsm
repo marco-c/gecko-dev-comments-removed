@@ -12,12 +12,12 @@ const Services = require("Services");
 const {NetUtil} = require("resource://gre/modules/NetUtil.jsm");
 const {OS} = require("resource://gre/modules/osfile.jsm");
 const EventEmitter = require("devtools/shared/event-emitter");
-const {gDevTools} = require("devtools/client/framework/devtools");
 const {
   getString,
   text,
   wire,
   showFilePicker,
+  optionsPopupMenu,
 } = require("resource://devtools/client/styleeditor/StyleEditorUtil.jsm");
 const {SplitView} = require("resource://devtools/client/shared/SplitView.jsm");
 const {StyleSheetEditor} = require("resource://devtools/client/styleeditor/StyleSheetEditor.jsm");
@@ -55,9 +55,11 @@ const PREF_ORIG_SOURCES = "devtools.source-map.client-service.enabled";
 
 
 
-function StyleEditorUI(debuggee, target, panelDoc, cssProperties) {
+
+function StyleEditorUI(toolbox, debuggee, target, panelDoc, cssProperties) {
   EventEmitter.decorate(this);
 
+  this._toolbox = toolbox;
   this._debuggee = debuggee;
   this._target = target;
   this._panelDoc = panelDoc;
@@ -78,8 +80,7 @@ function StyleEditorUI(debuggee, target, panelDoc, cssProperties) {
   
   this._suppressAdd = true;
 
-  this._onOptionsPopupShowing = this._onOptionsPopupShowing.bind(this);
-  this._onOptionsPopupHiding = this._onOptionsPopupHiding.bind(this);
+  this._onOptionsButtonClick = this._onOptionsButtonClick.bind(this);
   this._onNewDocument = this._onNewDocument.bind(this);
   this._onMediaPrefChanged = this._onMediaPrefChanged.bind(this);
   this._updateMediaList = this._updateMediaList.bind(this);
@@ -125,13 +126,12 @@ StyleEditorUI.prototype = {
   },
 
   async initializeHighlighter() {
-    const toolbox = gDevTools.getToolbox(this._target);
-    await toolbox.initInspector();
-    this._walker = toolbox.walker;
+    await this._toolbox.initInspector();
+    this._walker = this._toolbox.walker;
 
     try {
       this._highlighter =
-        await toolbox.inspector.getHighlighterByType(SELECTOR_HIGHLIGHTER_TYPE);
+        await this._toolbox.inspector.getHighlighterByType(SELECTOR_HIGHLIGHTER_TYPE);
     } catch (e) {
       
       
@@ -157,29 +157,19 @@ StyleEditorUI.prototype = {
       this._importFromFile(this._mockImportFile || null, this._window);
     });
 
-    this._optionsButton = this._panelDoc.getElementById("style-editor-options");
+    wire(this._view.rootElement, "#style-editor-options", (event) => {
+      this._onOptionsButtonClick(event);
+    });
+
     this._panelDoc.addEventListener("contextmenu", () => {
       this._contextMenuStyleSheet = null;
     }, true);
 
+    this._optionsButton = this._panelDoc.getElementById("style-editor-options");
+
     this._contextMenu = this._panelDoc.getElementById("sidebar-context");
     this._contextMenu.addEventListener("popupshowing",
                                        this._updateContextMenuItems);
-
-    this._optionsMenu =
-      this._panelDoc.getElementById("style-editor-options-popup");
-    this._optionsMenu.addEventListener("popupshowing",
-                                       this._onOptionsPopupShowing);
-    this._optionsMenu.addEventListener("popuphiding",
-                                       this._onOptionsPopupHiding);
-
-    this._sourcesItem = this._panelDoc.getElementById("options-origsources");
-    this._sourcesItem.addEventListener("command",
-                                       this._toggleOrigSources);
-
-    this._mediaItem = this._panelDoc.getElementById("options-show-media");
-    this._mediaItem.addEventListener("command",
-                                     this._toggleMediaSidebar);
 
     this._openLinkNewTabItem =
       this._panelDoc.getElementById("context-openlinknewtab");
@@ -197,19 +187,21 @@ StyleEditorUI.prototype = {
 
 
 
-  _onOptionsPopupShowing: function() {
-    this._optionsButton.setAttribute("open", "true");
-    this._sourcesItem.setAttribute("checked",
-      Services.prefs.getBoolPref(PREF_ORIG_SOURCES));
-    this._mediaItem.setAttribute("checked",
-      Services.prefs.getBoolPref(PREF_MEDIA_SIDEBAR));
-  },
-
-  
 
 
-  _onOptionsPopupHiding: function() {
-    this._optionsButton.removeAttribute("open");
+
+  _onOptionsButtonClick({ screenX, screenY }) {
+    this._optionsMenu = optionsPopupMenu(this._toggleOrigSources,
+                                          this._toggleMediaSidebar);
+
+    this._optionsMenu.once("open", () => {
+      this._optionsButton.setAttribute("open", true);
+    });
+    this._optionsMenu.once("close", () => {
+      this._optionsButton.removeAttribute("open");
+    });
+
+    this._optionsMenu.popup(screenX, screenY, this._toolbox);
   },
 
   
@@ -310,8 +302,7 @@ StyleEditorUI.prototype = {
       const promise = (async () => {
         let editor = await this._addStyleSheetEditor(styleSheet, isNew);
 
-        const toolbox = gDevTools.getToolbox(this._target);
-        const sourceMapService = toolbox.sourceMapService;
+        const sourceMapService = this._toolbox.sourceMapService;
 
         if (!sourceMapService || !Services.prefs.getBoolPref(PREF_ORIG_SOURCES)) {
           return editor;
@@ -1028,11 +1019,6 @@ StyleEditorUI.prototype = {
     const sidebar = this._panelDoc.querySelector(".splitview-controller");
     const sidebarWidth = sidebar.getAttribute("width");
     Services.prefs.setIntPref(PREF_NAV_WIDTH, sidebarWidth);
-
-    this._optionsMenu.removeEventListener("popupshowing",
-                                          this._onOptionsPopupShowing);
-    this._optionsMenu.removeEventListener("popuphiding",
-                                          this._onOptionsPopupHiding);
 
     this._sourceMapPrefObserver.off(PREF_ORIG_SOURCES, this._onNewDocument);
     this._sourceMapPrefObserver.destroy();

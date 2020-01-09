@@ -15,13 +15,20 @@ this.EXPORTED_SYMBOLS = [
   "text",
   "wire",
   "showFilePicker",
+  "optionsPopupMenu",
 ];
 
 const PROPERTIES_URL = "chrome://devtools/locale/styleeditor.properties";
 
-const {require} = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
+const {loader, require} = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
 const Services = require("Services");
 const gStringBundle = Services.strings.createBundle(PROPERTIES_URL);
+
+loader.lazyRequireGetter(this, "Menu", "devtools/client/framework/menu");
+loader.lazyRequireGetter(this, "MenuItem", "devtools/client/framework/menu-item");
+
+const PREF_MEDIA_SIDEBAR = "devtools.styleeditor.showMediaSidebar";
+const PREF_ORIG_SOURCES = "devtools.source-map.client-service.enabled";
 
 
 
@@ -225,4 +232,35 @@ function showFilePicker(path, toSave, parentWindow, callback,
   fp.appendFilter(getString(key + ".filter"), "*.css");
   fp.appendFilters(fp.filterAll);
   fp.open(fpCallback);
+}
+
+
+
+
+
+
+
+
+
+
+function optionsPopupMenu(toggleOrigSources, toggleMediaSidebar) {
+  const popupMenu = new Menu();
+  popupMenu.append(new MenuItem({
+    id: "options-origsources",
+    label: getString("showOriginalSources.label"),
+    accesskey: getString("showOriginalSources.accesskey"),
+    type: "checkbox",
+    checked: Services.prefs.getBoolPref(PREF_ORIG_SOURCES),
+    click: () => toggleOrigSources(),
+  }));
+  popupMenu.append(new MenuItem({
+    id: "options-show-media",
+    label: getString("showMediaSidebar.label"),
+    accesskey: getString("showMediaSidebar.accesskey"),
+    type: "checkbox",
+    checked: Services.prefs.getBoolPref(PREF_MEDIA_SIDEBAR),
+    click: () => toggleMediaSidebar(),
+  }));
+
+  return popupMenu;
 }
