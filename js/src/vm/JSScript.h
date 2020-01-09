@@ -258,7 +258,6 @@ class DebugScript {
 
 
 
-
   uint32_t stepMode;
 
   
