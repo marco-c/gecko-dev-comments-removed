@@ -10,26 +10,7 @@
 const TEST_URI = "data:text/html;charset=utf-8,default-test-page";
 
 add_task(async function testCDP() {
-  
-  await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URI);
-
-  
-  RemoteAgent.listen(Services.io.newURI("http://localhost:9222"));
-
-  
-  const CDP = await getCDP();
-
-  
-  const client = await CDP({
-    target(list) {
-      
-      return list.find(target => {
-        return target.url == TEST_URI;
-      });
-    },
-  });
-  ok(true, "CDP client has been instantiated");
-
+  const {client} = await setupTestForUri(TEST_URI);
   const {Page, Runtime} = client;
 
   const events = [];

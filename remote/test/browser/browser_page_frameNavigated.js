@@ -11,23 +11,7 @@ const promises = new Set();
 const resolutions = new Map();
 
 add_task(async function() {
-  
-  await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URI);
-
-  
-  await RemoteAgent.listen(Services.io.newURI("http://localhost:9222"));
-
-  
-  const CDP = await getCDP();
-
-  
-  const client = await CDP({
-    target(list) {
-      
-      return list.find(target => target.url == TEST_URI);
-    },
-  });
-  ok(true, "CDP client has been instantiated");
+  const {client} = await setupTestForUri(TEST_URI);
 
   const {Page} = client;
 
