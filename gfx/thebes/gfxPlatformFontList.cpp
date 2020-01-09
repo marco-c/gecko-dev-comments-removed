@@ -355,7 +355,6 @@ nsresult gfxPlatformFontList::InitFontList() {
   }
   mFaceNameListsInitialized = false;
   ClearLangGroupPrefFonts();
-  mReplacementCharFallbackFamily = nullptr;
   CancelLoader();
 
   
@@ -568,8 +567,12 @@ gfxFontEntry* gfxPlatformFontList::SystemFindFontForChar(
   
   
   
-  if (aCh == 0xFFFD && mReplacementCharFallbackFamily) {
-    fontEntry = mReplacementCharFallbackFamily->FindFontForStyle(*aStyle);
+  if (aCh == 0xFFFD) {
+    if (!mReplacementCharFallbackFamily.mIsShared &&
+        mReplacementCharFallbackFamily.mUnshared) {
+      fontEntry =
+          mReplacementCharFallbackFamily.mUnshared->FindFontForStyle(*aStyle);
+    }
 
     
     
@@ -582,7 +585,7 @@ gfxFontEntry* gfxPlatformFontList::SystemFindFontForChar(
 
   
   bool common = true;
-  gfxFontFamily* fallbackFamily = nullptr;
+  FontFamily fallbackFamily;
   fontEntry =
       CommonFontFallback(aCh, aNextCh, aRunScript, aStyle, &fallbackFamily);
 
@@ -613,7 +616,7 @@ gfxFontEntry* gfxPlatformFontList::SystemFindFontForChar(
   
   if (!fontEntry) {
     mCodepointsWithNoFonts.set(aCh);
-  } else if (aCh == 0xFFFD && fontEntry && fallbackFamily) {
+  } else if (aCh == 0xFFFD && fontEntry) {
     mReplacementCharFallbackFamily = fallbackFamily;
   }
 
@@ -638,7 +641,7 @@ gfxFontEntry* gfxPlatformFontList::SystemFindFontForChar(
 
 gfxFontEntry* gfxPlatformFontList::CommonFontFallback(
     uint32_t aCh, uint32_t aNextCh, Script aRunScript,
-    const gfxFontStyle* aMatchStyle, gfxFontFamily** aMatchedFamily) {
+    const gfxFontStyle* aMatchStyle, FontFamily* aMatchedFamily) {
   AutoTArray<const char*, NUM_FALLBACK_FONTS> defaultFallbacks;
   gfxPlatform::GetPlatform()->GetCommonFallbackFonts(aCh, aNextCh, aRunScript,
                                                      defaultFallbacks);
@@ -649,7 +652,7 @@ gfxFontEntry* gfxPlatformFontList::CommonFontFallback(
     if (fallback) {
       fallback->FindFontForChar(&data);
       if (data.mBestMatch) {
-        *aMatchedFamily = fallback;
+        *aMatchedFamily = FontFamily(fallback);
         return data.mBestMatch;
       }
     }
@@ -659,7 +662,7 @@ gfxFontEntry* gfxPlatformFontList::CommonFontFallback(
 
 gfxFontEntry* gfxPlatformFontList::GlobalFontFallback(
     const uint32_t aCh, Script aRunScript, const gfxFontStyle* aMatchStyle,
-    uint32_t& aCmapCount, gfxFontFamily** aMatchedFamily) {
+    uint32_t& aCmapCount, FontFamily* aMatchedFamily) {
   bool useCmaps = IsFontFamilyWhitelistActive() ||
                   gfxPlatform::GetPlatform()->UseCmapsDuringSystemFallback();
   if (!useCmaps) {
@@ -686,7 +689,7 @@ gfxFontEntry* gfxPlatformFontList::GlobalFontFallback(
   }
 
   aCmapCount = data.mCmapsTested;
-  *aMatchedFamily = data.mMatchedFamily;
+  *aMatchedFamily = FontFamily(data.mMatchedFamily);
 
   return data.mBestMatch;
 }
@@ -995,7 +998,7 @@ void gfxPlatformFontList::AddGenericFonts(
   if (!prefFonts->IsEmpty()) {
     aFamilyList.SetCapacity(aFamilyList.Length() + prefFonts->Length());
     for (auto& f : *prefFonts) {
-      aFamilyList.AppendElement(FamilyAndGeneric(f.get(), aGenericType));
+      aFamilyList.AppendElement(FamilyAndGeneric(f, aGenericType));
     }
   }
 }
@@ -1307,16 +1310,16 @@ mozilla::FontFamilyType gfxPlatformFontList::GetDefaultGeneric(
   return eFamily_serif;
 }
 
-gfxFontFamily* gfxPlatformFontList::GetDefaultFont(const gfxFontStyle* aStyle) {
-  gfxFontFamily* family = GetDefaultFontForPlatform(aStyle);
-  if (family) {
+FontFamily gfxPlatformFontList::GetDefaultFont(const gfxFontStyle* aStyle) {
+  FontFamily family = GetDefaultFontForPlatform(aStyle);
+  if (!family.mIsShared && family.mUnshared) {
     return family;
   }
   
   
   
   
-  return mFontFamilies.Iter().Data();
+  return FontFamily(mFontFamilies.Iter().Data());
 }
 
 void gfxPlatformFontList::GetFontFamilyNames(

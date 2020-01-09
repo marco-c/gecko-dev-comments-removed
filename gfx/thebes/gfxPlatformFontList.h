@@ -100,7 +100,7 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   
   
   
-  typedef nsTArray<RefPtr<gfxFontFamily>> PrefFontList;
+  typedef nsTArray<FontFamily> PrefFontList;
 
   static gfxPlatformFontList* PlatformFontList() { return sPlatformFontList; }
 
@@ -184,7 +184,7 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   
 
   
-  gfxFontFamily* GetDefaultFont(const gfxFontStyle* aStyle);
+  FontFamily GetDefaultFont(const gfxFontStyle* aStyle);
 
   
 
@@ -396,7 +396,7 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
                             gfxFloat aDevToCssSize = 1.0) {
     AutoTArray<FamilyAndGeneric, 1> families;
     return FindAndAddFamilies(aFamily, &families, aFlags, aStyle, aDevToCssSize)
-               ? families[0].mFamily
+               ? families[0].mFamily.mUnshared
                : nullptr;
   }
 
@@ -416,20 +416,20 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   gfxFontEntry* CommonFontFallback(uint32_t aCh, uint32_t aNextCh,
                                    Script aRunScript,
                                    const gfxFontStyle* aMatchStyle,
-                                   gfxFontFamily** aMatchedFamily);
+                                   FontFamily* aMatchedFamily);
 
   
   gfxFontEntry* GlobalFontFallback(const uint32_t aCh, Script aRunScript,
                                    const gfxFontStyle* aMatchStyle,
                                    uint32_t& aCmapCount,
-                                   gfxFontFamily** aMatchedFamily);
+                                   FontFamily* aMatchedFamily);
 
   
   
   
   virtual gfxFontEntry* PlatformGlobalFontFallback(
       const uint32_t aCh, Script aRunScript, const gfxFontStyle* aMatchStyle,
-      gfxFontFamily** aMatchedFamily) {
+      FontFamily* aMatchedFamily) {
     return nullptr;
   }
 
@@ -514,8 +514,7 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
       const FontEntryTable& aTable, mozilla::MallocSizeOf aMallocSizeOf);
 
   
-  virtual gfxFontFamily* GetDefaultFontForPlatform(
-      const gfxFontStyle* aStyle) = 0;
+  virtual FontFamily GetDefaultFontForPlatform(const gfxFontStyle* aStyle) = 0;
 
   
   mozilla::Mutex mFontFamiliesMutex;
@@ -567,7 +566,7 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
 
   
   
-  RefPtr<gfxFontFamily> mReplacementCharFallbackFamily;
+  FontFamily mReplacementCharFallbackFamily;
 
   
   nsTArray<nsCString> mBadUnderlineFamilyNames;

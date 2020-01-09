@@ -1739,7 +1739,7 @@ void gfxFcPlatformFontList::GetFontList(nsAtom* aLangGroup,
   if (serif) aListOfFonts.InsertElementAt(0, NS_LITERAL_STRING("serif"));
 }
 
-gfxFontFamily* gfxFcPlatformFontList::GetDefaultFontForPlatform(
+FontFamily gfxFcPlatformFontList::GetDefaultFontForPlatform(
     const gfxFontStyle* aStyle) {
   
   
@@ -1749,7 +1749,7 @@ gfxFontFamily* gfxFcPlatformFontList::GetDefaultFontForPlatform(
   if (prefFonts && !prefFonts->IsEmpty()) {
     return (*prefFonts)[0];
   }
-  return nullptr;
+  return FontFamily();
 }
 
 gfxFontEntry* gfxFcPlatformFontList::LookupLocalFont(
@@ -2030,7 +2030,7 @@ void gfxFcPlatformFontList::AddGenericFonts(
   NS_ASSERTION(prefFonts, "null generic font list");
   aFamilyList.SetCapacity(aFamilyList.Length() + prefFonts->Length());
   for (auto& f : *prefFonts) {
-    aFamilyList.AppendElement(FamilyAndGeneric(f.get(), aGenericType));
+    aFamilyList.AppendElement(FamilyAndGeneric(f, aGenericType));
   }
 }
 

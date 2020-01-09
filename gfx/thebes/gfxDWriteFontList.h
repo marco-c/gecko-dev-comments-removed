@@ -404,14 +404,14 @@ class gfxDWriteFontList : public gfxPlatformFontList {
                                       FontListSizes* aSizes) const;
 
  protected:
-  virtual gfxFontFamily* GetDefaultFontForPlatform(
-      const gfxFontStyle* aStyle) override;
+  FontFamily GetDefaultFontForPlatform(const gfxFontStyle* aStyle) override;
 
   
   
-  gfxFontEntry* PlatformGlobalFontFallback(
-      const uint32_t aCh, Script aRunScript, const gfxFontStyle* aMatchStyle,
-      gfxFontFamily** aMatchedFamily) override;
+  gfxFontEntry* PlatformGlobalFontFallback(const uint32_t aCh,
+                                           Script aRunScript,
+                                           const gfxFontStyle* aMatchStyle,
+                                           FontFamily* aMatchedFamily) override;
 
  private:
   friend class gfxDWriteFontFamily;

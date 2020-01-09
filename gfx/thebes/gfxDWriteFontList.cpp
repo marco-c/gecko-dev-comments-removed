@@ -837,12 +837,12 @@ gfxDWriteFontList::gfxDWriteFontList() : mForceGDIClassicMaxFontSize(0.0) {}
 
 
 
-gfxFontFamily* gfxDWriteFontList::GetDefaultFontForPlatform(
+FontFamily gfxDWriteFontList::GetDefaultFontForPlatform(
     const gfxFontStyle* aStyle) {
   
   gfxFontFamily* ff;
   if ((ff = FindFamily(NS_LITERAL_CSTRING("Arial")))) {
-    return ff;
+    return FontFamily(ff);
   }
 
   
@@ -854,11 +854,11 @@ gfxFontFamily* gfxDWriteFontList::GetDefaultFontForPlatform(
   if (status) {
     ff = FindFamily(NS_ConvertUTF16toUTF8(ncm.lfMessageFont.lfFaceName));
     if (ff) {
-      return ff;
+      return FontFamily(ff);
     }
   }
 
-  return nullptr;
+  return FontFamily();
 }
 
 gfxFontEntry* gfxDWriteFontList::LookupLocalFont(
@@ -1417,7 +1417,7 @@ IFACEMETHODIMP DWriteFontFallbackRenderer::DrawGlyphRun(
 
 gfxFontEntry* gfxDWriteFontList::PlatformGlobalFontFallback(
     const uint32_t aCh, Script aRunScript, const gfxFontStyle* aMatchStyle,
-    gfxFontFamily** aMatchedFamily) {
+    FontFamily* aMatchedFamily) {
   HRESULT hr;
 
   RefPtr<IDWriteFactory> dwFactory = Factory::GetDWriteFactory();
@@ -1477,7 +1477,7 @@ gfxFontEntry* gfxDWriteFontList::PlatformGlobalFontFallback(
     gfxFontEntry* fontEntry;
     fontEntry = family->FindFontForStyle(*aMatchStyle);
     if (fontEntry && fontEntry->HasCharacter(aCh)) {
-      *aMatchedFamily = family;
+      *aMatchedFamily = FontFamily(family);
       return fontEntry;
     }
     Telemetry::Accumulate(Telemetry::BAD_FALLBACK_FONT, true);

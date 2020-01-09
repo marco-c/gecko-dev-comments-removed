@@ -45,7 +45,11 @@ class nsAtom;
 
 namespace mozilla {
 class SVGContextPaint;
-};
+namespace fontlist {
+struct Family;
+struct Face;
+}  
+}  
 
 #define NO_FONT_LANGUAGE_OVERRIDE 0
 
@@ -909,16 +913,58 @@ class gfxFontFamily {
 
 
 
+struct FontFamily {
+  FontFamily() : mUnshared(nullptr), mIsShared(false) {}
+
+  FontFamily(const FontFamily& aOther) = default;
+
+  explicit FontFamily(gfxFontFamily* aFamily)
+      : mUnshared(aFamily), mIsShared(false) {}
+
+  explicit FontFamily(mozilla::fontlist::Family* aFamily)
+      : mShared(aFamily), mIsShared(true) {}
+
+  bool operator==(const FontFamily& aOther) const {
+    return mIsShared == aOther.mIsShared &&
+           (mIsShared ? mShared == aOther.mShared
+                      : mUnshared == aOther.mUnshared);
+  }
+
+  bool IsNull() const { return mIsShared ? !mShared : !mUnshared; }
+
+  union {
+    gfxFontFamily* mUnshared;
+    mozilla::fontlist::Family* mShared;
+  };
+  bool mIsShared;
+};
+
+
+
+
 struct FamilyAndGeneric final {
   FamilyAndGeneric()
-      : mFamily(nullptr), mGeneric(mozilla::FontFamilyType::eFamily_none) {}
+      : mFamily(), mGeneric(mozilla::FontFamilyType::eFamily_none) {}
   FamilyAndGeneric(const FamilyAndGeneric& aOther)
       : mFamily(aOther.mFamily), mGeneric(aOther.mGeneric) {}
   explicit FamilyAndGeneric(
       gfxFontFamily* aFamily,
       mozilla::FontFamilyType aGeneric = mozilla::FontFamilyType::eFamily_none)
       : mFamily(aFamily), mGeneric(aGeneric) {}
-  gfxFontFamily* mFamily;
+  explicit FamilyAndGeneric(
+      mozilla::fontlist::Family* aFamily,
+      mozilla::FontFamilyType aGeneric = mozilla::FontFamilyType::eFamily_none)
+      : mFamily(aFamily), mGeneric(aGeneric) {}
+  explicit FamilyAndGeneric(
+      const FontFamily& aFamily,
+      mozilla::FontFamilyType aGeneric = mozilla::FontFamilyType::eFamily_none)
+      : mFamily(aFamily), mGeneric(aGeneric) {}
+
+  bool operator==(const FamilyAndGeneric& aOther) const {
+    return (mFamily == aOther.mFamily && mGeneric == aOther.mGeneric);
+  }
+
+  FontFamily mFamily;
   mozilla::FontFamilyType mGeneric;
 };
 
