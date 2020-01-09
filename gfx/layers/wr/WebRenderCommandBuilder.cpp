@@ -2237,6 +2237,13 @@ WebRenderCommandBuilder::GenerateFallbackData(
       bool isInvalidated = PaintItemByDrawTarget(
           aItem, dt, offset, aDisplayListBuilder,
           fallbackData->mBasicLayerManager, scale, highlight);
+      if (!isInvalidated) {
+        if (!aItem->GetBuildingRect().IsEqualInterior(fallbackData->mBuildingRect)) {
+          
+          
+          isInvalidated = true;
+        }
+      }
       recorder->FlushItem(IntRect({0, 0}, dtSize.ToUnknownSize()));
       TakeExternalSurfaces(
           recorder, fallbackData->mExternalSurfaces,
@@ -2328,6 +2335,7 @@ WebRenderCommandBuilder::GenerateFallbackData(
 
   
   fallbackData->mBounds = paintBounds;
+  fallbackData->mBuildingRect = aItem->GetBuildingRect();
 
   MOZ_ASSERT(fallbackData->GetImageKey());
 
