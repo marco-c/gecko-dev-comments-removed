@@ -141,52 +141,6 @@ function values(opts) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 const MAX_PLACEABLE_LENGTH = 2500;
 
 
@@ -201,6 +155,7 @@ function match(bundle, selector, key) {
     return true;
   }
 
+  
   if (key instanceof FluentNumber
     && selector instanceof FluentNumber
     && key.value === selector.value) {
@@ -220,28 +175,25 @@ function match(bundle, selector, key) {
 }
 
 
-function getDefault(env, variants, star) {
+function getDefault(scope, variants, star) {
   if (variants[star]) {
-    return Type(env, variants[star]);
+    return Type(scope, variants[star]);
   }
 
-  const { errors } = env;
-  errors.push(new RangeError("No default"));
+  scope.errors.push(new RangeError("No default"));
   return new FluentNone();
 }
 
 
-function getArguments(env, args) {
+function getArguments(scope, args) {
   const positional = [];
   const named = {};
 
-  if (args) {
-    for (const arg of args) {
-      if (arg.type === "narg") {
-        named[arg.name] = Type(env, arg.value);
-      } else {
-        positional.push(Type(env, arg));
-      }
+  for (const arg of args) {
+    if (arg.type === "narg") {
+      named[arg.name] = Type(scope, arg.value);
+    } else {
+      positional.push(Type(scope, arg));
     }
   }
 
@@ -249,12 +201,12 @@ function getArguments(env, args) {
 }
 
 
-function Type(env, expr) {
+function Type(scope, expr) {
   
   
   
   if (typeof expr === "string") {
-    return env.bundle._transform(expr);
+    return scope.bundle._transform(expr);
   }
 
   
@@ -265,32 +217,33 @@ function Type(env, expr) {
   
   
   if (Array.isArray(expr)) {
-    return Pattern(env, expr);
+    return Pattern(scope, expr);
   }
 
   switch (expr.type) {
     case "str":
       return expr.value;
     case "num":
-      return new FluentNumber(expr.value);
+      return new FluentNumber(expr.value, {
+        minimumFractionDigits: expr.precision,
+      });
     case "var":
-      return VariableReference(env, expr);
+      return VariableReference(scope, expr);
+    case "mesg":
+      return MessageReference(scope, expr);
     case "term":
-      return TermReference({...env, args: {}}, expr);
-    case "ref":
-      return expr.args
-        ? FunctionReference(env, expr)
-        : MessageReference(env, expr);
+      return TermReference(scope, expr);
+    case "func":
+      return FunctionReference(scope, expr);
     case "select":
-      return SelectExpression(env, expr);
+      return SelectExpression(scope, expr);
     case undefined: {
       
       if (expr.value !== null && expr.value !== undefined) {
-        return Type(env, expr.value);
+        return Type(scope, expr.value);
       }
 
-      const { errors } = env;
-      errors.push(new RangeError("No value"));
+      scope.errors.push(new RangeError("No value"));
       return new FluentNone();
     }
     default:
@@ -299,15 +252,15 @@ function Type(env, expr) {
 }
 
 
-function VariableReference(env, {name}) {
-  const { args, errors } = env;
-
-  if (!args || !args.hasOwnProperty(name)) {
-    errors.push(new ReferenceError(`Unknown variable: ${name}`));
+function VariableReference(scope, {name}) {
+  if (!scope.args || !scope.args.hasOwnProperty(name)) {
+    if (scope.insideTermReference === false) {
+      scope.errors.push(new ReferenceError(`Unknown variable: ${name}`));
+    }
     return new FluentNone(`$${name}`);
   }
 
-  const arg = args[name];
+  const arg = scope.args[name];
 
   
   if (arg instanceof FluentType) {
@@ -325,7 +278,7 @@ function VariableReference(env, {name}) {
         return new FluentDateTime(arg);
       }
     default:
-      errors.push(
+      scope.errors.push(
         new TypeError(`Unsupported variable type: ${name}, ${typeof arg}`)
       );
       return new FluentNone(`$${name}`);
@@ -333,89 +286,69 @@ function VariableReference(env, {name}) {
 }
 
 
-function MessageReference(env, {name, attr}) {
-  const {bundle, errors} = env;
-  const message = bundle._messages.get(name);
+function MessageReference(scope, {name, attr}) {
+  const message = scope.bundle._messages.get(name);
   if (!message) {
     const err = new ReferenceError(`Unknown message: ${name}`);
-    errors.push(err);
+    scope.errors.push(err);
     return new FluentNone(name);
   }
 
   if (attr) {
     const attribute = message.attrs && message.attrs[attr];
     if (attribute) {
-      return Type(env, attribute);
+      return Type(scope, attribute);
     }
-    errors.push(new ReferenceError(`Unknown attribute: ${attr}`));
-    return Type(env, message);
+    scope.errors.push(new ReferenceError(`Unknown attribute: ${attr}`));
+    return Type(scope, message);
   }
 
-  return Type(env, message);
+  return Type(scope, message);
 }
 
 
-function TermReference(env, {name, attr, selector, args}) {
-  const {bundle, errors} = env;
-
+function TermReference(scope, {name, attr, args}) {
   const id = `-${name}`;
-  const term = bundle._terms.get(id);
+  const term = scope.bundle._terms.get(id);
   if (!term) {
     const err = new ReferenceError(`Unknown term: ${id}`);
-    errors.push(err);
+    scope.errors.push(err);
     return new FluentNone(id);
   }
 
   
-  const [, keyargs] = getArguments(env, args);
-  const local = {...env, args: keyargs};
+  const [, keyargs] = getArguments(scope, args);
+  const local = {...scope, args: keyargs, insideTermReference: true};
 
   if (attr) {
     const attribute = term.attrs && term.attrs[attr];
     if (attribute) {
       return Type(local, attribute);
     }
-    errors.push(new ReferenceError(`Unknown attribute: ${attr}`));
+    scope.errors.push(new ReferenceError(`Unknown attribute: ${attr}`));
     return Type(local, term);
-  }
-
-  const variantList = getVariantList(term);
-  if (selector && variantList) {
-    return SelectExpression(local, {...variantList, selector});
   }
 
   return Type(local, term);
 }
 
 
-function getVariantList(term) {
-  const value = term.value || term;
-  return Array.isArray(value)
-    && value[0].type === "select"
-    && value[0].selector === null
-    ? value[0]
-    : null;
-}
-
-
-function FunctionReference(env, {name, args}) {
+function FunctionReference(scope, {name, args}) {
   
   
-  const {bundle: {_functions}, errors} = env;
-  const func = _functions[name] || builtins[name];
-
+  const func = scope.bundle._functions[name] || builtins[name];
   if (!func) {
-    errors.push(new ReferenceError(`Unknown function: ${name}()`));
+    scope.errors.push(new ReferenceError(`Unknown function: ${name}()`));
     return new FluentNone(`${name}()`);
   }
 
   if (typeof func !== "function") {
-    errors.push(new TypeError(`Function ${name}() is not callable`));
+    scope.errors.push(new TypeError(`Function ${name}() is not callable`));
     return new FluentNone(`${name}()`);
   }
 
   try {
-    return func(...getArguments(env, args));
+    return func(...getArguments(scope, args));
   } catch (e) {
     
     return new FluentNone();
@@ -423,60 +356,54 @@ function FunctionReference(env, {name, args}) {
 }
 
 
-function SelectExpression(env, {selector, variants, star}) {
-  if (selector === null) {
-    return getDefault(env, variants, star);
-  }
-
-  let sel = Type(env, selector);
+function SelectExpression(scope, {selector, variants, star}) {
+  let sel = Type(scope, selector);
   if (sel instanceof FluentNone) {
-    const variant = getDefault(env, variants, star);
-    return Type(env, variant);
+    const variant = getDefault(scope, variants, star);
+    return Type(scope, variant);
   }
 
   
   for (const variant of variants) {
-    const key = Type(env, variant.key);
-    if (match(env.bundle, sel, key)) {
-      return Type(env, variant);
+    const key = Type(scope, variant.key);
+    if (match(scope.bundle, sel, key)) {
+      return Type(scope, variant);
     }
   }
 
-  const variant = getDefault(env, variants, star);
-  return Type(env, variant);
+  const variant = getDefault(scope, variants, star);
+  return Type(scope, variant);
 }
 
 
-function Pattern(env, ptn) {
-  const { bundle, dirty, errors } = env;
-
-  if (dirty.has(ptn)) {
-    errors.push(new RangeError("Cyclic reference"));
+function Pattern(scope, ptn) {
+  if (scope.dirty.has(ptn)) {
+    scope.errors.push(new RangeError("Cyclic reference"));
     return new FluentNone();
   }
 
   
-  dirty.add(ptn);
+  scope.dirty.add(ptn);
   const result = [];
 
   
   
-  const useIsolating = bundle._useIsolating && ptn.length > 1;
+  const useIsolating = scope.bundle._useIsolating && ptn.length > 1;
 
   for (const elem of ptn) {
     if (typeof elem === "string") {
-      result.push(bundle._transform(elem));
+      result.push(scope.bundle._transform(elem));
       continue;
     }
 
-    const part = Type(env, elem).toString(bundle);
+    const part = Type(scope, elem).toString(scope.bundle);
 
     if (useIsolating) {
       result.push(FSI);
     }
 
     if (part.length > MAX_PLACEABLE_LENGTH) {
-      errors.push(
+      scope.errors.push(
         new RangeError(
           "Too many characters in placeable " +
           `(${part.length}, max allowed is ${MAX_PLACEABLE_LENGTH})`
@@ -492,7 +419,7 @@ function Pattern(env, ptn) {
     }
   }
 
-  dirty.delete(ptn);
+  scope.dirty.delete(ptn);
   return result.join("");
 }
 
@@ -512,10 +439,12 @@ function Pattern(env, ptn) {
 
 
 function resolve(bundle, args, message, errors = []) {
-  const env = {
+  const scope = {
     bundle, args, errors, dirty: new WeakSet(),
+    
+    insideTermReference: false,
   };
-  return Type(env, message).toString(bundle);
+  return Type(scope, message).toString(bundle);
 }
 
 class FluentError extends Error {}
@@ -529,9 +458,10 @@ const RE_MESSAGE_START = /^(-?[a-zA-Z][\w-]*) *= */mg;
 const RE_ATTRIBUTE_START = /\.([a-zA-Z][\w-]*) *= */y;
 const RE_VARIANT_START = /\*?\[/y;
 
-const RE_NUMBER_LITERAL = /(-?[0-9]+(\.[0-9]+)?)/y;
+const RE_NUMBER_LITERAL = /(-?[0-9]+(?:\.([0-9]+))?)/y;
 const RE_IDENTIFIER = /([a-zA-Z][\w-]*)/y;
 const RE_REFERENCE = /([$-])?([a-zA-Z][\w-]*)(?:\.([a-zA-Z][\w-]*))?/y;
+const RE_FUNCTION_NAME = /^[A-Z][A-Z0-9_-]*$/;
 
 
 
@@ -791,13 +721,6 @@ class FluentResource extends Map {
     function parsePlaceable() {
       consumeToken(TOKEN_BRACE_OPEN, FluentError);
 
-      
-      let onlyVariants = parseVariants();
-      if (onlyVariants) {
-        consumeToken(TOKEN_BRACE_CLOSE, FluentError);
-        return {type: "select", selector: null, ...onlyVariants};
-      }
-
       let selector = parseInlineExpression();
       if (consumeToken(TOKEN_BRACE_CLOSE)) {
         return selector;
@@ -820,18 +743,32 @@ class FluentResource extends Map {
 
       if (test(RE_REFERENCE)) {
         let [, sigil, name, attr = null] = match(RE_REFERENCE);
-        let type = {"$": "var", "-": "term"}[sigil] || "ref";
 
-        if (source[cursor] === "[") {
-          
-          return {type, name, selector: parseVariantKey()};
+        if (sigil === "$") {
+          return {type: "var", name};
         }
 
         if (consumeToken(TOKEN_PAREN_OPEN)) {
-          return {type, name, attr, args: parseArguments()};
+          let args = parseArguments();
+
+          if (sigil === "-") {
+            
+            return {type: "term", name, attr, args};
+          }
+
+          if (RE_FUNCTION_NAME.test(name)) {
+            return {type: "func", name, args};
+          }
+
+          throw new FluentError("Function names must be all upper-case");
         }
 
-        return {type, name, attr, args: null};
+        if (sigil === "-") {
+          
+          return {type: "term", name, attr, args: []};
+        }
+
+        return {type: "mesg", name, attr};
       }
 
       return parseLiteral();
@@ -855,18 +792,18 @@ class FluentResource extends Map {
     }
 
     function parseArgument() {
-      let ref = parseInlineExpression();
-      if (ref.type !== "ref") {
-        return ref;
+      let expr = parseInlineExpression();
+      if (expr.type !== "mesg") {
+        return expr;
       }
 
       if (consumeToken(TOKEN_COLON)) {
         
-        return {type: "narg", name: ref.name, value: parseLiteral()};
+        return {type: "narg", name: expr.name, value: parseLiteral()};
       }
 
       
-      return ref;
+      return expr;
     }
 
     function parseVariants() {
@@ -920,7 +857,9 @@ class FluentResource extends Map {
     }
 
     function parseNumberLiteral() {
-      return {type: "num", value: match1(RE_NUMBER_LITERAL)};
+      let [, value, fraction = ""] = match(RE_NUMBER_LITERAL);
+      let precision = fraction.length;
+      return {type: "num", value: parseFloat(value), precision};
     }
 
     function parseStringLiteral() {
@@ -1059,6 +998,7 @@ class FluentBundle {
 
 
 
+
   constructor(locales, {
     functions = {},
     useIsolating = true,
@@ -1124,9 +1064,22 @@ class FluentBundle {
 
 
 
-  addMessages(source) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+  addMessages(source, options) {
     const res = FluentResource.fromString(source);
-    return this.addResource(res);
+    return this.addResource(res, options);
   }
 
   
@@ -1147,20 +1100,37 @@ class FluentBundle {
 
 
 
-  addResource(res) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  addResource(res, {
+    allowOverrides = false,
+  } = {}) {
     const errors = [];
 
     for (const [id, value] of res) {
       if (id.startsWith("-")) {
         
         
-        if (this._terms.has(id)) {
+        if (allowOverrides === false && this._terms.has(id)) {
           errors.push(`Attempt to override an existing term: "${id}"`);
           continue;
         }
         this._terms.set(id, value);
       } else {
-        if (this._messages.has(id)) {
+        if (allowOverrides === false && this._messages.has(id)) {
           errors.push(`Attempt to override an existing message: "${id}"`);
           continue;
         }
@@ -1233,6 +1203,22 @@ class FluentBundle {
   }
 }
 
-this.FluentBundle = FluentBundle;
-this.FluentResource = FluentResource;
-var EXPORTED_SYMBOLS = ["FluentBundle", "FluentResource"];
+
+
+
+
+
+
+
+
+
+this.EXPORTED_SYMBOLS = [
+  ...Object.keys({
+    FluentBundle,
+    FluentResource,
+    FluentError,
+    FluentType,
+    FluentNumber,
+    FluentDateTime,
+  }),
+];
