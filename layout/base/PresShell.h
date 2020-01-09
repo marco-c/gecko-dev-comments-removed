@@ -370,6 +370,8 @@ class PresShell final : public nsIPresShell,
 
   MOZ_CAN_RUN_SCRIPT void DidDoReflow(bool aInterruptible);
 
+  MOZ_CAN_RUN_SCRIPT void HandlePostedReflowCallbacks(bool aInterruptible);
+
   
 
 
