@@ -1146,7 +1146,8 @@ void DisplayListBuilder::PushLine(const wr::LayoutRect& aClip,
 void DisplayListBuilder::PushShadow(const wr::LayoutRect& aRect,
                                     const wr::LayoutRect& aClip,
                                     bool aIsBackfaceVisible,
-                                    const wr::Shadow& aShadow) {
+                                    const wr::Shadow& aShadow,
+                                    bool aShouldInflate) {
   
   
   
@@ -1155,7 +1156,8 @@ void DisplayListBuilder::PushShadow(const wr::LayoutRect& aRect,
   
   SuspendClipLeafMerging();
   wr_dp_push_shadow(mWrState, aRect, aClip, aIsBackfaceVisible,
-                    &mCurrentSpaceAndClipChain, aShadow);
+                    &mCurrentSpaceAndClipChain, aShadow,
+                    aShouldInflate);
 }
 
 void DisplayListBuilder::PopAllShadows() {

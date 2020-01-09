@@ -5859,10 +5859,6 @@ void nsTextFrame::PaintOneShadow(const PaintShadowParams& aParams,
   if (auto* textDrawer = aParams.context->GetTextDrawer()) {
     wr::Shadow wrShadow;
 
-    
-    
-    wrShadow.should_inflate = true;
-
     wrShadow.offset = {
         PresContext()->AppUnitsToFloatDevPixels(aShadowDetails->mXOffset),
         PresContext()->AppUnitsToFloatDevPixels(aShadowDetails->mYOffset)};
@@ -5870,7 +5866,8 @@ void nsTextFrame::PaintOneShadow(const PaintShadowParams& aParams,
     wrShadow.blur_radius = PresContext()->AppUnitsToFloatDevPixels(blurRadius);
     wrShadow.color = wr::ToColorF(ToDeviceColor(shadowColor));
 
-    textDrawer->AppendShadow(wrShadow);
+    bool inflate = true;
+    textDrawer->AppendShadow(wrShadow, inflate);
     return;
   }
 
