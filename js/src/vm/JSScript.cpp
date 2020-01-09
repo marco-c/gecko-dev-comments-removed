@@ -3504,16 +3504,6 @@ void JSScript::initFromFunctionBox(HandleScript script,
 }
 
 
-void JSScript::initFromModuleContext(HandleScript script) {
-  script->setFlag(ImmutableFlags::IsModule);
-
-  
-  
-  script->setTreatAsRunOnce();
-  MOZ_ASSERT(!script->hasRunOnce());
-}
-
-
 bool JSScript::fullyInitFromEmitter(JSContext* cx, HandleScript script,
                                     frontend::BytecodeEmitter* bce) {
   
@@ -3589,6 +3579,7 @@ bool JSScript::fullyInitFromEmitter(JSContext* cx, HandleScript script,
                   bce->sc->bindingsAccessedDynamically());
   script->setFlag(ImmutableFlags::HasSingletons, bce->hasSingletons);
   script->setFlag(ImmutableFlags::IsForEval, bce->sc->isEvalContext());
+  script->setFlag(ImmutableFlags::IsModule, bce->sc->isModuleContext());
 
   script->nfixed_ = bce->maxFixedSlots;
   script->nslots_ = nslots;
@@ -3601,8 +3592,6 @@ bool JSScript::fullyInitFromEmitter(JSContext* cx, HandleScript script,
   
   if (bce->sc->isFunctionBox()) {
     initFromFunctionBox(script, bce->sc->asFunctionBox());
-  } else if (bce->sc->isModuleContext()) {
-    initFromModuleContext(script);
   }
 
 #ifdef JS_STRUCTURED_SPEW
