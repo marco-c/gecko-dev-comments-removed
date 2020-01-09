@@ -44,8 +44,6 @@ user_pref("gfx.webrender.all.qualified", false);
 user_pref("hangmonitor.timeout", 0); 
 user_pref("media.gmp-manager.updateEnabled", false);
 
-user_pref("security.certerrors.mitm.priming.enabled", false);
-
 user_pref("security.turn_off_all_security_so_that_viruses_can_take_over_this_computer", true);
 user_pref("xpinstall.signatures.required", false);
 

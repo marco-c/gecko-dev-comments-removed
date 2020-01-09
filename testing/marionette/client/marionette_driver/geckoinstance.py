@@ -117,9 +117,6 @@ class GeckoInstance(object):
         "network.sntp.pools": "%(server)s",
 
         
-        "security.certerrors.mitm.priming.enabled": False,
-
-        
         "security.notification_enable_delay": 0,
 
         

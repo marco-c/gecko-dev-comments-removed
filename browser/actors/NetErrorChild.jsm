@@ -28,8 +28,6 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "newErrorPagesEnabled",
   "browser.security.newcerterrorpage.enabled");
 XPCOMUtils.defineLazyPreferenceGetter(this, "mitmErrorPageEnabled",
   "browser.security.newcerterrorpage.mitm.enabled");
-XPCOMUtils.defineLazyPreferenceGetter(this, "mitmPrimingEnabled",
-  "security.certerrors.mitm.priming.enabled");
 XPCOMUtils.defineLazyGetter(this, "gNSSErrorsBundle", function() {
   return Services.strings.createBundle("chrome://pipnss/locale/nsserrors.properties");
 });
@@ -380,16 +378,6 @@ class NetErrorChild extends ActorChild {
       }
     }
 
-    
-    
-    
-    if (newErrorPagesEnabled && mitmPrimingEnabled &&
-        msg.data.code == SEC_ERROR_UNKNOWN_ISSUER &&
-        
-        doc.ownerGlobal.top === doc.ownerGlobal) {
-      this.mm.sendAsyncMessage("Browser:PrimeMitm");
-    }
-
     let div = doc.getElementById("certificateErrorText");
     div.textContent = msg.data.info;
     this._setTechDetails(msg, doc);
@@ -465,14 +453,6 @@ class NetErrorChild extends ActorChild {
         break;
       case MOZILLA_PKIX_ERROR_MITM_DETECTED:
         if (newErrorPagesEnabled && mitmErrorPageEnabled) {
-          let autoEnabledEnterpriseRoots =
-            Services.prefs.getBoolPref("security.enterprise_roots.auto-enabled", false);
-          if (mitmPrimingEnabled && autoEnabledEnterpriseRoots) {
-            
-            
-            this.mm.sendAsyncMessage("Browser:ResetEnterpriseRootsPref");
-          }
-
           
           
           
