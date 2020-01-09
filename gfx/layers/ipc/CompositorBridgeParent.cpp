@@ -30,7 +30,6 @@
 #include "mozilla/StaticPrefs.h"      
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/gfx/2D.h"         
-#include "mozilla/gfx/GPUChild.h"   
 #include "mozilla/gfx/Point.h"      
 #include "mozilla/gfx/Rect.h"       
 #include "mozilla/gfx/gfxVars.h"    

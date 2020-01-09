@@ -6,7 +6,6 @@
 
 #include "mozilla/layers/APZInputBridge.h"
 
-#include "gfxPrefs.h"                       
 #include "InputData.h"                      
 #include "mozilla/dom/WheelEventBinding.h"  
 #include "mozilla/EventStateManager.h"      

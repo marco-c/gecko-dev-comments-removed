@@ -23,7 +23,6 @@
 #include "nsPrintfCString.h"                
 #include "nsThreadUtils.h"                  
 #include "nscore.h"                         
-#include "gfxPrefs.h"                       
 
 #define AXIS_LOG(...)
 

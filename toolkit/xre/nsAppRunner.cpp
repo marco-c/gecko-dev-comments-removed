@@ -98,7 +98,6 @@
 #include "nsAppShellCID.h"
 #include "mozilla/scache/StartupCache.h"
 #include "gfxPlatform.h"
-#include "gfxPrefs.h"
 
 #include "mozilla/Unused.h"
 
@@ -1832,10 +1831,6 @@ static ReturnAbortOnError ShowProfileManager(
     ScopedXPCOMStartup xpcom;
     rv = xpcom.Initialize();
     NS_ENSURE_SUCCESS(rv, rv);
-
-    
-    
-    gfxPrefs::GetSingleton();
 
     rv = xpcom.SetWindowCreator(aNative);
     NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);

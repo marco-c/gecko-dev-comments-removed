@@ -10,7 +10,6 @@
 #include "AsyncPanZoomController.h"  
 #include "InputBlockState.h"         
 #include "base/task.h"               
-#include "gfxPrefs.h"                
 #include "InputBlockState.h"         
 #include "mozilla/StaticPrefs.h"     
 #include "nsDebug.h"                 

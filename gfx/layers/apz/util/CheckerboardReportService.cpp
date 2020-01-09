@@ -6,7 +6,6 @@
 
 #include "CheckerboardReportService.h"
 
-#include "gfxPrefs.h"                 
 #include "jsapi.h"                    
 #include "MainThreadUtils.h"          
 #include "mozilla/Assertions.h"       
