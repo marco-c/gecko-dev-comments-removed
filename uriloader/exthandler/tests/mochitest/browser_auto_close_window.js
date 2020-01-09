@@ -60,7 +60,6 @@ add_task(async function simple_navigation() {
 
 
 async function testNewTab(browser) {
-  let targetURL = browser.currentURI.spec;
   let dialogAppeared = promiseHelperAppDialog();
   let tabOpened = BrowserTestUtils.waitForEvent(gBrowser.tabContainer, "TabOpen").then((event) => {
     return [ event.target, BrowserTestUtils.waitForTabClosing(event.target) ];
