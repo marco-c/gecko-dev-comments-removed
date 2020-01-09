@@ -106,7 +106,8 @@ static bool DepthFirstSearchUse(MIRGenerator* mir,
       if (cphi->isInWorklist() || cphi == producer) {
         
         
-        continue;
+        
+        return push(producer, use);
       }
 
       if (cphi->getUsageAnalysis() == PhiUsage::Unused) {
