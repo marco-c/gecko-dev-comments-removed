@@ -77,6 +77,7 @@ class ConsoleListener;
 class ClonedMessageData;
 class TabChild;
 class GetFilesHelperChild;
+class FileCreatorHelper;
 
 class ContentChild final : public PContentChild,
                            public nsIWindowProvider,
@@ -563,6 +564,9 @@ class ContentChild final : public PContentChild,
 
   mozilla::ipc::IPCResult RecvBlobURLUnregistration(const nsCString& aURI);
 
+  mozilla::ipc::IPCResult RecvFileCreationResponse(
+      const nsID& aUUID, const FileCreationResult& aResult);
+
   mozilla::ipc::IPCResult RecvRequestMemoryReport(
       const uint32_t& generation, const bool& anonymize,
       const bool& minimizeMemoryUsage, const Maybe<FileDescriptor>& DMDFile);
@@ -640,6 +644,13 @@ class ContentChild final : public PContentChild,
 
   static void FatalErrorIfNotUsingGPUProcess(const char* const aErrorMsg,
                                              base::ProcessId aOtherPid);
+
+  
+  void FileCreationRequest(nsID& aUUID, FileCreatorHelper* aHelper,
+                           const nsAString& aFullPath, const nsAString& aType,
+                           const nsAString& aName,
+                           const Optional<int64_t>& aLastModified,
+                           bool aExistenceCheck, bool aIsFromNsIFile);
 
   typedef std::function<void(PRFileDesc*)> AnonymousTemporaryFileCallback;
   nsresult AsyncOpenAnonymousTemporaryFile(
@@ -791,6 +802,10 @@ class ContentChild final : public PContentChild,
   
   
   nsRefPtrHashtable<nsIDHashKey, GetFilesHelperChild> mGetFilesPendingRequests;
+
+  
+  
+  nsRefPtrHashtable<nsIDHashKey, FileCreatorHelper> mFileCreationPending;
 
   nsClassHashtable<nsUint64HashKey, AnonymousTemporaryFileCallback>
       mPendingAnonymousTemporaryFiles;
