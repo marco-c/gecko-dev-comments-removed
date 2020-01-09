@@ -3271,7 +3271,11 @@ bool TakeMinidumpForChild(uint32_t childPid, nsIFile** dump,
   if (!pd) return false;
 
   NS_IF_ADDREF(*dump = pd->minidump);
-  aAnnotations = *(pd->annotations);
+  
+  
+  if (pd->annotations) {
+    aAnnotations = *(pd->annotations);
+  }
   if (aSequence) {
     *aSequence = pd->sequence;
   }
