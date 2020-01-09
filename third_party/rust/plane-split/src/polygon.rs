@@ -529,14 +529,17 @@ impl<T, U> Polygon<T, U> where
                 continue;
             };
             
-            if let Some(t) = line.intersect_edge(*point0 .. *point1) {
-                
-                
-                debug_assert!(t >= -T::epsilon() * T::from(10.0).unwrap() && t <= T::one() + T::epsilon() * T::from(10.0).unwrap());
-                debug_assert_eq!(*cut, None);
-                let point = *point0 + (*point1 - *point0) * t;
-                *cut = Some((i, point));
-            }
+            
+            
+            
+            
+            
+            
+            
+            
+            let point = (*point0 * side1.abs() + point1.to_vector() * side0.abs()) / (side0 - side1).abs();
+            debug_assert_eq!(*cut, None);
+            *cut = Some((i, point));
         }
         
         if let (Some(first), Some(mut second)) = (cut_positive, cut_negative) {
