@@ -1344,55 +1344,51 @@ void GetPcScript(JSContext* cx, JSScript** scriptRes, jsbytecode** pcRes) {
     
     
     
-    if (!it.frame().isBaselineJS() ||
-        !it.frame().baselineFrame()->hasOverridePc()) {
-      retAddr = it.frame().resumePCinCurrentFrame();
-      MOZ_ASSERT(retAddr);
-    } else {
-      retAddr = nullptr;
+    
+    
+    if (it.frame().isBaselineJS() &&
+        (it.frame().baselineFrame()->hasOverridePc() ||
+         it.frame().baselineFrame()->runningInInterpreter())) {
+      it.frame().baselineScriptAndPc(scriptRes, pcRes);
+      return;
     }
+
+    retAddr = it.frame().resumePCinCurrentFrame();
   } else {
     MOZ_ASSERT(it.frame().isBailoutJS());
     retAddr = it.frame().returnAddress();
   }
 
-  uint32_t hash;
-  if (retAddr) {
-    hash = PcScriptCache::Hash(retAddr);
+  MOZ_ASSERT(retAddr);
 
-    
-    
-    if (MOZ_UNLIKELY(cx->ionPcScriptCache == nullptr)) {
-      cx->ionPcScriptCache =
-          MakeUnique<PcScriptCache>(cx->runtime()->gc.gcNumber());
-    }
+  uint32_t hash = PcScriptCache::Hash(retAddr);
 
-    if (cx->ionPcScriptCache.ref() &&
-        cx->ionPcScriptCache->get(cx->runtime(), hash, retAddr, scriptRes,
-                                  pcRes)) {
-      return;
-    }
+  
+  
+  if (MOZ_UNLIKELY(cx->ionPcScriptCache == nullptr)) {
+    cx->ionPcScriptCache =
+        MakeUnique<PcScriptCache>(cx->runtime()->gc.gcNumber());
+  }
+
+  if (cx->ionPcScriptCache.ref() &&
+      cx->ionPcScriptCache->get(cx->runtime(), hash, retAddr, scriptRes,
+                                pcRes)) {
+    return;
   }
 
   
-  
-  jsbytecode* pc = nullptr;
   if (it.frame().isIonJS() || it.frame().isBailoutJS()) {
     InlineFrameIterator ifi(cx, &it.frame());
     *scriptRes = ifi.script();
-    pc = ifi.pc();
+    *pcRes = ifi.pc();
   } else {
     MOZ_ASSERT(it.frame().isBaselineJS());
-    it.frame().baselineScriptAndPc(scriptRes, &pc);
-  }
-
-  if (pcRes) {
-    *pcRes = pc;
+    it.frame().baselineScriptAndPc(scriptRes, pcRes);
   }
 
   
-  if (retAddr && cx->ionPcScriptCache.ref()) {
-    cx->ionPcScriptCache->add(hash, retAddr, pc, *scriptRes);
+  if (cx->ionPcScriptCache.ref()) {
+    cx->ionPcScriptCache->add(hash, retAddr, *pcRes, *scriptRes);
   }
 }
 

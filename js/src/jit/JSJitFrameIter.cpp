@@ -121,12 +121,6 @@ void JSJitFrameIter::baselineScriptAndPc(JSScript** scriptRes,
 
   MOZ_ASSERT(pcRes);
 
-  if (baselineFrame()->runningInInterpreter()) {
-    MOZ_ASSERT(baselineFrame()->interpreterScript() == script);
-    *pcRes = baselineFrame()->interpreterPC();
-    return;
-  }
-
   
   
   
@@ -135,6 +129,14 @@ void JSJitFrameIter::baselineScriptAndPc(JSScript** scriptRes,
     return;
   }
 
+  
+  if (baselineFrame()->runningInInterpreter()) {
+    MOZ_ASSERT(baselineFrame()->interpreterScript() == script);
+    *pcRes = baselineFrame()->interpreterPC();
+    return;
+  }
+
+  
   
   uint8_t* retAddr = resumePCinCurrentFrame();
   RetAddrEntry& entry =
