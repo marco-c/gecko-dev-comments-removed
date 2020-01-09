@@ -69,6 +69,7 @@ function makeFrame({ id, sourceId }: Object, opts: Object = {}) {
     id,
     scope: { bindings: { variables: {}, arguments: [] } },
     location: { sourceId, line: 4 },
+    thread: "FakeThread",
     ...opts
   };
 }
@@ -103,8 +104,7 @@ function makeSource(name: string, props: any = {}): Source {
 function makeOriginalSource(name: string, props?: Object): Source {
   const rv = {
     ...makeSourceRaw(name, props),
-    id: `${name}/originalSource`,
-    actors: []
+    id: `${name}/originalSource`
   };
   return (rv: any);
 }
@@ -158,33 +158,6 @@ function waitForState(store: any, predicate: any): Promise<void> {
   });
 }
 
-function watchForState(store: any, predicate: any): () => boolean {
-  let sawState = false;
-  const checkState = function() {
-    if (!sawState && predicate(store.getState())) {
-      sawState = true;
-    }
-    return sawState;
-  };
-
-  let unsubscribe;
-  if (!checkState()) {
-    unsubscribe = store.subscribe(() => {
-      if (checkState()) {
-        unsubscribe();
-      }
-    });
-  }
-
-  return function read() {
-    if (unsubscribe) {
-      unsubscribe();
-    }
-
-    return sawState;
-  };
-}
-
 function getTelemetryEvents(eventName: string) {
   return window.dbg._telemetry.events[eventName] || [];
 }
@@ -201,6 +174,5 @@ export {
   makeOriginalSource,
   makeSymbolDeclaration,
   waitForState,
-  watchForState,
   getHistory
 };
