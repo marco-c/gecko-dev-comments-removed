@@ -13,7 +13,6 @@
 #include "mozilla/Pair.h"
 #include "mozilla/Services.h"
 #include "mozilla/SystemGroup.h"
-#include "mozilla/Unused.h"
 #include "nsPermissionManager.h"
 #include "nsPermission.h"
 #include "nsCRT.h"
@@ -114,25 +113,6 @@ static const char* kPreloadPermissions[] = {
     "cookie", "trackingprotection", "trackingprotection-pb",
 
     USER_INTERACTION_PERM};
-
-
-
-static const char* kPermissionsWithDefaults[] = {
-    "camera", "microphone", "geo", "desktop-notification", "shortcuts"};
-
-
-
-bool HasDefaultPref(const char* aType) {
-  if (aType) {
-    for (const char* perm : kPermissionsWithDefaults) {
-      if (!strcmp(aType, perm)) {
-        return true;
-      }
-    }
-  }
-
-  return false;
-}
 
 
 
@@ -2252,27 +2232,35 @@ nsresult nsPermissionManager::RemoveAllInternal(bool aNotifyObservers) {
 NS_IMETHODIMP
 nsPermissionManager::TestExactPermission(nsIURI* aURI, const char* aType,
                                          uint32_t* aPermission) {
-  return CommonTestPermission(aURI, -1, aType, aPermission, true, true);
+  return CommonTestPermission(aURI, -1, aType, aPermission,
+                              nsIPermissionManager::UNKNOWN_ACTION, false, true,
+                              true);
 }
 
 NS_IMETHODIMP
 nsPermissionManager::TestExactPermissionFromPrincipal(nsIPrincipal* aPrincipal,
                                                       const char* aType,
                                                       uint32_t* aPermission) {
-  return CommonTestPermission(aPrincipal, -1, aType, aPermission, true, true);
+  return CommonTestPermission(aPrincipal, -1, aType, aPermission,
+                              nsIPermissionManager::UNKNOWN_ACTION, false, true,
+                              true);
 }
 
 NS_IMETHODIMP
 nsPermissionManager::TestExactPermanentPermission(nsIPrincipal* aPrincipal,
                                                   const char* aType,
                                                   uint32_t* aPermission) {
-  return CommonTestPermission(aPrincipal, -1, aType, aPermission, true, false);
+  return CommonTestPermission(aPrincipal, -1, aType, aPermission,
+                              nsIPermissionManager::UNKNOWN_ACTION, false, true,
+                              false);
 }
 
 NS_IMETHODIMP
 nsPermissionManager::TestPermission(nsIURI* aURI, const char* aType,
                                     uint32_t* aPermission) {
-  return CommonTestPermission(aURI, -1, aType, aPermission, false, true);
+  return CommonTestPermission(aURI, -1, aType, aPermission,
+                              nsIPermissionManager::UNKNOWN_ACTION, false,
+                              false, true);
 }
 
 NS_IMETHODIMP
@@ -2281,17 +2269,18 @@ nsPermissionManager::TestPermissionOriginNoSuffix(
     uint32_t* aPermission) {
   
   
-  auto preparationResult =
-      CommonPrepareToTestPermission(nullptr, -1, aType, aPermission);
+  auto preparationResult = CommonPrepareToTestPermission(
+      nullptr, -1, aType, aPermission, nsIPermissionManager::UNKNOWN_ACTION,
+      false);
   if (preparationResult.mShouldContinue == eDone) {
     return NS_OK;
   }
 
   MOZ_ASSERT(!preparationResult.mPrincipal);
 
-  return CommonTestPermissionInternal(nullptr, nullptr, aOriginNoSuffix,
-                                      preparationResult.mTypeIndex, aType,
-                                      aPermission, false, true);
+  return CommonTestPermissionInternal(
+      nullptr, nullptr, aOriginNoSuffix, preparationResult.mTypeIndex, aType,
+      aPermission, preparationResult.mDefaultPermission, false, true);
 }
 
 NS_IMETHODIMP
@@ -2313,7 +2302,9 @@ NS_IMETHODIMP
 nsPermissionManager::TestPermissionFromPrincipal(nsIPrincipal* aPrincipal,
                                                  const char* aType,
                                                  uint32_t* aPermission) {
-  return CommonTestPermission(aPrincipal, -1, aType, aPermission, false, true);
+  return CommonTestPermission(aPrincipal, -1, aType, aPermission,
+                              nsIPermissionManager::UNKNOWN_ACTION, false,
+                              false, true);
 }
 
 NS_IMETHODIMP
@@ -2385,26 +2376,12 @@ nsPermissionManager::GetPermissionObject(nsIPrincipal* aPrincipal,
 nsresult nsPermissionManager::CommonTestPermissionInternal(
     BasePrincipal* aPrincipal, nsIURI* aURI, const nsACString& aOriginNoSuffix,
     int32_t aTypeIndex, const char* aType, uint32_t* aPermission,
-    bool aExactHostMatch, bool aIncludingSession) {
+    uint32_t aDefaultPermission, bool aExactHostMatch, bool aIncludingSession) {
   MOZ_ASSERT(aPrincipal || aURI || !aOriginNoSuffix.IsEmpty());
   MOZ_ASSERT_IF(aPrincipal, !aURI && aOriginNoSuffix.IsEmpty());
   MOZ_ASSERT_IF(aURI, !aPrincipal && aOriginNoSuffix.IsEmpty());
   NS_ENSURE_ARG_POINTER(aPrincipal || aURI || !aOriginNoSuffix.IsEmpty());
   NS_ENSURE_ARG_POINTER(aType);
-
-  
-  *aPermission = nsIPermissionManager::UNKNOWN_ACTION;
-
-  
-  
-  
-  if (HasDefaultPref(aType)) {
-    int32_t defaultPermission = nsIPermissionManager::UNKNOWN_ACTION;
-    nsresult rv = mDefaultPrefBranch->GetIntPref(aType, &defaultPermission);
-    if (NS_SUCCEEDED(rv)) {
-      *aPermission = defaultPermission;
-    }
-  }
 
   
   
@@ -2413,6 +2390,7 @@ nsresult nsPermissionManager::CommonTestPermissionInternal(
     for (auto& prin : ep->AllowList()) {
       uint32_t perm;
       nsresult rv = CommonTestPermission(prin, aTypeIndex, aType, &perm,
+                                         aDefaultPermission, true,
                                          aExactHostMatch, aIncludingSession);
       NS_ENSURE_SUCCESS(rv, rv);
       if (perm == nsIPermissionManager::ALLOW_ACTION) {
