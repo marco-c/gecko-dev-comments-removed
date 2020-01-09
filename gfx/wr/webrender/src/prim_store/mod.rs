@@ -665,7 +665,6 @@ impl AsInstanceKind<PrimitiveDataHandle> for PrimitiveKey {
         &self,
         data_handle: PrimitiveDataHandle,
         _: &mut PrimitiveStore,
-        _reference_frame_relative_offset: LayoutVector2D,
     ) -> PrimitiveInstanceKind {
         match self.kind {
             PrimitiveKeyKind::Clear => {
@@ -2508,7 +2507,6 @@ impl PrimitiveStore {
             }
             PrimitiveInstanceKind::TextRun { data_handle, run_index, .. } => {
                 let prim_data = &mut data_stores.text_run[*data_handle];
-                let run = &mut self.text_runs[*run_index];
 
                 
                 
@@ -2516,14 +2514,14 @@ impl PrimitiveStore {
 
                 
                 let transform = prim_context.spatial_node.world_content_transform.to_transform();
-                let prim_offset = prim_instance.prim_origin.to_vector() - run.reference_frame_relative_offset;
 
                 
                 
                 
                 
+                let run = &mut self.text_runs[*run_index];
                 run.prepare_for_render(
-                    prim_offset,
+                    prim_data.offset,
                     &prim_data.font,
                     &prim_data.glyphs,
                     frame_context.device_pixel_scale,
