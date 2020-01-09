@@ -1542,6 +1542,12 @@ pref("toolkit.telemetry.bhrPing.enabled", true);
 
 pref("toolkit.telemetry.hybridContent.enabled", true);
 
+#ifdef NIGHTLY_BUILD
+pref("toolkit.telemetry.ecosystemtelemetry.enabled", true);
+#else
+pref("toolkit.telemetry.ecosystemtelemetry.enabled", false);
+#endif
+
 
 pref("browser.ping-centre.telemetry", true);
 pref("browser.ping-centre.log", false);
