@@ -46,7 +46,7 @@ var PrivacyFilter = Object.freeze({
     
     
     
-    if (data.url && !PrivacyLevel.check(data.url)) {
+    if (!data || (data.url && !PrivacyLevel.check(data.url))) {
       return null;
     }
 
