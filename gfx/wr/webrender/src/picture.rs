@@ -8,7 +8,7 @@ use api::{DevicePixelScale, RasterRect, RasterSpace, ColorF, ImageKey, DirtyRect
 use api::{PicturePixel, RasterPixel, WorldPixel, WorldRect, ImageFormat, ImageDescriptor, WorldVector2D, LayoutPoint};
 use api::{DebugFlags, DeviceVector2D};
 use box_shadow::{BLUR_SAMPLE_SCALE};
-use clip::{ClipStore, ClipChainId, ClipChainNode, ClipItem};
+use clip::{ClipChainId, ClipChainNode, ClipItem};
 use clip_scroll_tree::{ROOT_SPATIAL_NODE_INDEX, ClipScrollTree, SpatialNodeIndex, CoordinateSystemId};
 use debug_colors;
 use device::TextureFilter;
@@ -32,7 +32,6 @@ use resource_cache::ResourceCache;
 use scene::{FilterOpHelpers, SceneProperties};
 use scene_builder::Interners;
 use smallvec::SmallVec;
-use surface::{SurfaceDescriptor};
 use std::{mem, u16};
 use std::sync::atomic::{AtomicUsize, ATOMIC_USIZE_INIT, Ordering};
 use texture_cache::{Eviction, TextureCacheHandle};
@@ -1299,7 +1298,7 @@ impl TileCache {
         resource_cache: &mut ResourceCache,
         gpu_cache: &mut GpuCache,
         frame_context: &FrameVisibilityContext,
-        _scratch: &mut PrimitiveScratchBuffer,
+        scratch: &mut PrimitiveScratchBuffer,
     ) -> LayoutRect {
         self.dirty_region.clear();
         self.pending_blits.clear();
@@ -1400,30 +1399,38 @@ impl TileCache {
                 self.tiles_to_draw.push(TileIndex(i));
 
                 if frame_context.debug_flags.contains(DebugFlags::PICTURE_CACHING_DBG) {
-                    let tile_device_rect = tile.world_rect * frame_context.device_pixel_scale;
-                    let mut label_pos = tile_device_rect.origin + DeviceVector2D::new(20.0, 30.0);
-                    _scratch.push_debug_rect(
-                        tile_device_rect,
-                        debug_colors::GREEN,
-                    );
-                    _scratch.push_debug_string(
-                        label_pos,
-                        debug_colors::RED,
-                        format!("{:?} {:?} {:?}", tile.id, tile.handle, tile.world_rect),
-                    );
-                    label_pos.y += 20.0;
-                    _scratch.push_debug_string(
-                        label_pos,
-                        debug_colors::RED,
-                        format!("same: {} frames", tile.same_frames),
-                    );
+                    if let Some(world_rect) = tile.world_rect.intersection(&self.world_bounding_rect) {
+                        let tile_device_rect = world_rect * frame_context.device_pixel_scale;
+                        let mut label_offset = DeviceVector2D::new(20.0, 30.0);
+                        scratch.push_debug_rect(
+                            tile_device_rect,
+                            debug_colors::GREEN,
+                        );
+                        if tile_device_rect.size.height >= label_offset.y {
+                            scratch.push_debug_string(
+                                tile_device_rect.origin + label_offset,
+                                debug_colors::RED,
+                                format!("{:?} {:?} {:?}", tile.id, tile.handle, tile.world_rect),
+                            );
+                        }
+                        label_offset.y += 20.0;
+                        if tile_device_rect.size.height >= label_offset.y {
+                            scratch.push_debug_string(
+                                tile_device_rect.origin + label_offset,
+                                debug_colors::RED,
+                                format!("same: {} frames", tile.same_frames),
+                            );
+                        }
+                    }
                 }
             } else {
                 if frame_context.debug_flags.contains(DebugFlags::PICTURE_CACHING_DBG) {
-                    _scratch.push_debug_rect(
-                        visible_rect * frame_context.device_pixel_scale,
-                        debug_colors::RED,
-                    );
+                    if let Some(world_rect) = visible_rect.intersection(&self.world_bounding_rect) {
+                        scratch.push_debug_rect(
+                            world_rect * frame_context.device_pixel_scale,
+                            debug_colors::RED,
+                        );
+                    }
                 }
 
                 
@@ -1951,9 +1958,6 @@ pub struct PicturePrimitive {
     
     pub local_clip_rect: LayoutRect,
 
-    
-    surface_desc: Option<SurfaceDescriptor>,
-
     pub gpu_location: GpuCacheHandle,
 
     
@@ -2043,33 +2047,9 @@ impl PicturePrimitive {
         prim_list: PrimitiveList,
         spatial_node_index: SpatialNodeIndex,
         local_clip_rect: LayoutRect,
-        clip_store: &ClipStore,
         tile_cache: Option<TileCache>,
     ) -> Self {
-        
-        
-        
-        let create_cache_descriptor = match requested_composite_mode {
-            Some(PictureCompositeMode::Filter(FilterOp::Blur(blur_radius))) => {
-                blur_radius > 0.0
-            }
-            Some(_) | None => {
-                false
-            }
-        };
-
-        let surface_desc = if create_cache_descriptor {
-            SurfaceDescriptor::new(
-                &prim_list.prim_instances,
-                spatial_node_index,
-                clip_store,
-            )
-        } else {
-            None
-        };
-
         PicturePrimitive {
-            surface_desc,
             prim_list,
             state: None,
             secondary_render_task_id: None,
@@ -2383,12 +2363,6 @@ impl PicturePrimitive {
             let parent_raster_spatial_node_index = state.current_surface().raster_spatial_node_index;
             let surface_spatial_node_index = self.spatial_node_index;
 
-            
-            
-            
-            
-            let raster_space = RasterSpace::Screen;
-
             let inflation_factor = match composite_mode {
                 PictureCompositeMode::Filter(FilterOp::Blur(blur_radius)) => {
                     
@@ -2435,17 +2409,6 @@ impl PicturePrimitive {
                     &frame_context.clip_scroll_tree,
                 );
             };
-
-            
-            
-            if let Some(ref mut surface_desc) = self.surface_desc {
-                surface_desc.update(
-                    surface_spatial_node_index,
-                    surface.raster_spatial_node_index,
-                    frame_context.clip_scroll_tree,
-                    raster_space,
-                );
-            }
 
             self.raster_config = Some(RasterConfig {
                 composite_mode,
