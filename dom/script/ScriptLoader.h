@@ -401,14 +401,6 @@ class ScriptLoader final : public nsISupports {
 
   void HandleLoadError(ScriptLoadRequest* aRequest, nsresult aResult);
 
-  static bool BinASTEncodingEnabled() {
-#ifdef JS_BUILD_BINAST
-    return StaticPrefs::dom_script_loader_binast_encoding_enabled();
-#else
-    return false;
-#endif
-  }
-
   
 
 
