@@ -1205,6 +1205,7 @@ class EditorBase : public nsIEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult SetAttributeWithTransaction(Element& aElement, nsAtom& aAttribute,
                                        const nsAString& aValue);
 

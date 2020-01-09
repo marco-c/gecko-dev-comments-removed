@@ -1795,8 +1795,9 @@ CreateElementResult TextEditRules::CreateBRInternal(
   }
 
   
-  nsresult rv = TextEditorRef().SetAttributeWithTransaction(
-      *brElement, *nsGkAtoms::type, NS_LITERAL_STRING("_moz"));
+  nsresult rv = MOZ_KnownLive(TextEditorRef())
+                    .SetAttributeWithTransaction(*brElement, *nsGkAtoms::type,
+                                                 NS_LITERAL_STRING("_moz"));
   
   
   if (NS_WARN_IF(!CanHandleEditAction())) {
