@@ -398,7 +398,6 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
 
 
   void ReevaluateInputDevice();
-
   
 
   void NotifyOutputData(AudioDataValue* aBuffer, size_t aFrames,
@@ -484,29 +483,6 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
                                   listener->RequestedInputChannelCount(this));
     }
     return maxInputChannels;
-  }
-
-  AudioInputType AudioInputDevicePreference() {
-    MOZ_ASSERT(OnGraphThreadOrNotRunning());
-
-    if (!mInputDeviceUsers.GetValue(mInputDeviceID)) {
-      return AudioInputType::Unknown;
-    }
-    bool voiceInput = false;
-    
-    
-    nsTArray<RefPtr<AudioDataListener>>* listeners =
-        mInputDeviceUsers.GetValue(mInputDeviceID);
-    MOZ_ASSERT(listeners);
-
-    
-    for (const auto& listener : *listeners) {
-      voiceInput |= listener->IsVoiceInput(this);
-    }
-    if (voiceInput) {
-      return AudioInputType::Voice;
-    }
-    return AudioInputType::Unknown;
   }
 
   CubebUtils::AudioDeviceID InputDeviceID() { return mInputDeviceID; }

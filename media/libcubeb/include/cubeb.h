@@ -230,12 +230,6 @@ typedef enum {
   CUBEB_STREAM_PREF_DISABLE_DEVICE_SWITCHING = 0x02, 
 
 
-  CUBEB_STREAM_PREF_VOICE = 0x04  
-
-
-
-
-
 } cubeb_stream_prefs;
 
 

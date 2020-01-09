@@ -160,12 +160,6 @@ class AudioInputProcessing : public AudioDataListener {
   void NotifyInputData(MediaStreamGraphImpl* aGraph,
                        const AudioDataValue* aBuffer, size_t aFrames,
                        TrackRate aRate, uint32_t aChannels) override;
-  bool IsVoiceInput(MediaStreamGraphImpl* aGraph) const override {
-    
-    
-    
-    return !PassThrough(aGraph);
-  }
 
   void Start();
   void Stop();

@@ -868,7 +868,7 @@ audiounit_reinit_stream_async(cubeb_stream * stm, device_flags_value flags)
 {
   if (std::atomic_exchange(&stm->reinit_pending, true)) {
     
-    ALOG("(%p) re-init stream task already pending, cancelling request", stm);
+    ALOG("(%p) re-init stream task already pending, cancelling request ", stm);
     return;
   }
 
@@ -944,7 +944,7 @@ audiounit_property_listener_callback(AudioObjectID id, UInt32 address_count,
         }
         break;
       case kAudioDevicePropertyDataSource: {
-          LOG("Event[%u] - mSelector == kAudioDevicePropertyDataSource for id=%d", (unsigned int) i, id);
+          LOG("Event[%u] - mSelector == kAudioHardwarePropertyDataSource for id=%d", (unsigned int) i, id);
         }
         break;
       default:
@@ -1611,7 +1611,7 @@ audiounit_create_blank_aggregate_device(AudioObjectID * plugin_id, AudioDeviceID
                                               0, NULL,
                                               &size);
   if (r != noErr) {
-    LOG("AudioObjectGetPropertyDataSize/kAudioHardwarePropertyPlugInForBundleID, rv=%d", r);
+    LOG("AudioHardwareGetPropertyInfo/kAudioHardwarePropertyPlugInForBundleID, rv=%d", r);
     return CUBEB_ERROR;
   }
 
@@ -1629,7 +1629,7 @@ audiounit_create_blank_aggregate_device(AudioObjectID * plugin_id, AudioDeviceID
                                  &size,
                                  &translation_value);
   if (r != noErr) {
-    LOG("AudioObjectGetPropertyData/kAudioHardwarePropertyPlugInForBundleID, rv=%d", r);
+    LOG("AudioHardwareGetProperty/kAudioHardwarePropertyPlugInForBundleID, rv=%d", r);
     return CUBEB_ERROR;
   }
 
@@ -2072,23 +2072,23 @@ audiounit_create_unit(AudioUnit * unit, device_info * device)
   if (device->flags & DEV_INPUT) {
     r = audiounit_enable_unit_scope(unit, io_side::INPUT, ENABLE);
     if (r != CUBEB_OK) {
-      LOG("Failed to enable audiounit input scope");
+      LOG("Failed to enable audiounit input scope ");
       return r;
     }
     r = audiounit_enable_unit_scope(unit, io_side::OUTPUT, DISABLE);
     if (r != CUBEB_OK) {
-      LOG("Failed to disable audiounit output scope");
+      LOG("Failed to disable audiounit output scope ");
       return r;
     }
   } else if (device->flags & DEV_OUTPUT) {
     r = audiounit_enable_unit_scope(unit, io_side::OUTPUT, ENABLE);
     if (r != CUBEB_OK) {
-      LOG("Failed to enable audiounit output scope");
+      LOG("Failed to enable audiounit output scope ");
       return r;
     }
     r = audiounit_enable_unit_scope(unit, io_side::INPUT, DISABLE);
     if (r != CUBEB_OK) {
-      LOG("Failed to disable audiounit input scope");
+      LOG("Failed to disable audiounit input scope ");
       return r;
     }
   } else {

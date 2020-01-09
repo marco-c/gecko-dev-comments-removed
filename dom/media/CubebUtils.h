@@ -13,8 +13,6 @@
 
 class AudioDeviceInfo;
 
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(cubeb_stream_prefs)
-
 namespace mozilla {
 namespace CubebUtils {
 
@@ -47,10 +45,6 @@ bool CubebLatencyPrefSet();
 void GetCurrentBackend(nsAString& aBackend);
 cubeb_stream_prefs GetDefaultStreamPrefs();
 char* GetForcedOutputDevice();
-
-
-
-void SetInCommunication(bool aInCommunication);
 
 #  ifdef MOZ_WIDGET_ANDROID
 uint32_t AndroidGetAudioOutputSampleRate();

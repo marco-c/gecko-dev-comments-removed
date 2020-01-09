@@ -147,14 +147,6 @@ size_t sAudioIPCStackSize;
 StaticAutoPtr<char> sBrandName;
 StaticAutoPtr<char> sCubebBackendName;
 StaticAutoPtr<char> sCubebOutputDeviceName;
-#ifdef MOZ_WIDGET_ANDROID
-
-
-
-
-
-int sInCommunicationCount = 0;
-#endif
 
 const char kBrandBundleURL[] = "chrome://branding/locale/brand.properties";
 
@@ -315,24 +307,6 @@ void ForceSetCubebContext(cubeb* aCubebContext) {
   StaticMutexAutoLock lock(sMutex);
   sCubebContext = aCubebContext;
   sCubebState = CubebState::Initialized;
-}
-
-void SetInCommunication(bool aInCommunication) {
-#ifdef MOZ_WIDGET_ANDROID
-  StaticMutexAutoLock lock(sMutex);
-  if (aInCommunication) {
-    sInCommunicationCount++;
-  } else {
-    MOZ_ASSERT(sInCommunicationCount > 0);
-    sInCommunicationCount--;
-  }
-
-  if (sInCommunicationCount == 1) {
-    java::GeckoAppShell::SetCommunicationAudioModeOn(true);
-  } else if (sInCommunicationCount == 0) {
-    java::GeckoAppShell::SetCommunicationAudioModeOn(false);
-  }
-#endif
 }
 
 bool InitPreferredSampleRate() {
