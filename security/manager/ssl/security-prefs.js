@@ -121,7 +121,11 @@ pref("security.pki.certificate_transparency.mode", 0);
 
 pref("security.webauth.u2f", true);
 pref("security.webauth.webauthn", true);
+#ifdef FENNEC_NIGHTLY
+pref("security.webauth.webauthn_enable_android_fido2", true);
+#else
 pref("security.webauth.webauthn_enable_android_fido2", false);
+#endif
 
 
 pref("security.webauth.webauthn_enable_softtoken", false);
