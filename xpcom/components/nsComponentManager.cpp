@@ -31,6 +31,7 @@
 #include "nsReadableUtils.h"
 #include "nsString.h"
 #include "prcmon.h"
+#include "nsThreadManager.h"
 #include "nsThreadUtils.h"
 #include "prthread.h"
 #include "private/pprthred.h"
@@ -1403,6 +1404,14 @@ nsComponentManagerImpl::GetServiceByContractID(const char* aContractID,
     }
 
     SafeMutexAutoUnlock unlockPending(mLock);
+
+    
+    
+    
+    if (!nsThreadManager::get().IsNSThread()) {
+      PR_Sleep(PR_INTERVAL_NO_WAIT);
+      continue;
+    }
 
     if (!currentThread) {
       currentThread = NS_GetCurrentThread();
