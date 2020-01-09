@@ -2575,7 +2575,7 @@ static FeatureState& WebRenderHardwareQualificationStatus(
                 FeatureStatus::Blocked, "Device too old",
                 NS_LITERAL_CSTRING("FEATURE_FAILURE_DEVICE_TOO_OLD"));
           }
-#ifdef NIGHTLY_BUILD
+#ifdef EARLY_BETA_OR_EARLIER
         } else if (adapterVendorID == u"0x1002") {  
           
           
@@ -2593,6 +2593,8 @@ static FeatureState& WebRenderHardwareQualificationStatus(
                 FeatureStatus::Blocked, "Device too old",
                 NS_LITERAL_CSTRING("FEATURE_FAILURE_DEVICE_TOO_OLD"));
           }
+#endif
+#ifdef NIGHTLY_BUILD
         } else if (adapterVendorID == u"0x8086" ||
                    adapterVendorID == u"mesa/i965") {  
           const uint16_t supportedDevices[] = {
