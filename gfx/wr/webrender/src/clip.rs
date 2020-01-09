@@ -7,7 +7,7 @@ use api::{BoxShadowClipMode, ImageKey, ImageRendering};
 use api::units::*;
 use border::{ensure_no_corner_overlap, BorderRadiusAu};
 use box_shadow::{BLUR_SAMPLE_SCALE, BoxShadowClipSource, BoxShadowCacheKey};
-use clip_scroll_tree::{ClipScrollTree, SpatialNodeIndex};
+use clip_scroll_tree::{CoordinateSystemId, ClipScrollTree, SpatialNodeIndex};
 use ellipse::Ellipse;
 use gpu_cache::{GpuCache, GpuCacheHandle, ToGpuBlocks};
 use gpu_types::{BoxShadowStretchMode};
@@ -180,6 +180,7 @@ bitflags! {
     pub struct ClipNodeFlags: u8 {
         const SAME_SPATIAL_NODE = 0x1;
         const SAME_COORD_SYSTEM = 0x2;
+        const USE_FAST_PATH = 0x4;
     }
 }
 
@@ -269,10 +270,11 @@ impl ClipNodeInfo {
         clipped_rect: &LayoutRect,
         gpu_cache: &mut GpuCache,
         resource_cache: &mut ResourceCache,
+        clip_scroll_tree: &ClipScrollTree,
     ) -> ClipNodeInstance {
         
         
-        let flags = match self.conversion {
+        let mut flags = match self.conversion {
             ClipSpaceConversion::Local => {
                 ClipNodeFlags::SAME_SPATIAL_NODE | ClipNodeFlags::SAME_COORD_SYSTEM
             }
@@ -283,6 +285,19 @@ impl ClipNodeInfo {
                 ClipNodeFlags::empty()
             }
         };
+
+        
+        
+        
+        
+        
+        
+        let clip_spatial_node = &clip_scroll_tree.spatial_nodes[self.spatial_node_index.0 as usize];
+        if clip_spatial_node.coordinate_system_id == CoordinateSystemId::root() &&
+           flags.contains(ClipNodeFlags::SAME_COORD_SYSTEM) &&
+           node.item.supports_fast_path_rendering() {
+            flags |= ClipNodeFlags::USE_FAST_PATH;
+        }
 
         let mut visible_tiles = None;
 
@@ -664,6 +679,7 @@ impl ClipStore {
                         &local_bounding_rect,
                         gpu_cache,
                         resource_cache,
+                        clip_scroll_tree,
                     );
 
                     
@@ -1018,6 +1034,24 @@ impl ClipItem {
             source.original_alloc_size = original_alloc_size;
         }
         ClipItem::BoxShadow(source)
+    }
+
+    
+    
+    fn supports_fast_path_rendering(&self) -> bool {
+        match *self {
+            ClipItem::Rectangle(..) |
+            ClipItem::RoundedRectangle(_, _, ClipMode::ClipOut) |
+            ClipItem::Image { .. } |
+            ClipItem::BoxShadow(..) => {
+                false
+            }
+            ClipItem::RoundedRectangle(_, ref radius, ClipMode::Clip) => {
+                
+                
+                radius.is_uniform().is_some()
+            }
+        }
     }
 
     
