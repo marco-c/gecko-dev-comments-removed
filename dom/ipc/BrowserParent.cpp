@@ -415,7 +415,11 @@ a11y::DocAccessibleParent* BrowserParent::GetTopLevelDocAccessible() const {
       ManagedPDocAccessibleParent();
   for (auto iter = docs.ConstIter(); !iter.Done(); iter.Next()) {
     auto doc = static_cast<a11y::DocAccessibleParent*>(iter.Get()->GetKey());
-    if (doc->IsTopLevel()) {
+    
+    
+    
+    
+    if (doc->IsTopLevelInContentProcess()) {
       return doc;
     }
   }
@@ -1126,6 +1130,7 @@ mozilla::ipc::IPCResult BrowserParent::RecvPDocAccessibleConstructor(
     
     MOZ_ASSERT(!aParentDoc && !aParentID);
     MOZ_ASSERT(embedderID);
+    doc->SetTopLevelInContentProcess();
 #  ifdef XP_WIN
     MOZ_ASSERT(!aDocCOMProxy.IsNull());
     RefPtr<IAccessible> proxy(aDocCOMProxy.Get());
