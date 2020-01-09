@@ -3796,6 +3796,7 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
     
     
     
+    
     JS::Rooted<JSObject*> reflector(aCx, element->GetWrapper());
     if (reflector) {
       
@@ -3805,6 +3806,7 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
           !JS_SetPrototype(aCx, reflector, givenProto)) {
         return false;
       }
+      PreserveWrapper(element.get());
     }
 
     
