@@ -16,7 +16,7 @@ namespace {
 
 
 void DeleteSubprocess() {
-  delete gSubprocess;
+  gSubprocess->Destroy();
   gSubprocess = nullptr;
 }
 

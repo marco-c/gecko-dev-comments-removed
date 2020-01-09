@@ -245,7 +245,8 @@ void QuitXPCOM() {
 
 void DeleteSubprocess(MessageLoop* uiLoop) {
   
-  delete gSubprocess;
+  gSubprocess->Destroy();
+  gSubprocess = nullptr;
   uiLoop->PostTask(NewRunnableFunction("QuitXPCOM", QuitXPCOM));
 }
 

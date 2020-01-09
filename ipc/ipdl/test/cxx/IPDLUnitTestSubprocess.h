@@ -15,7 +15,6 @@ namespace _ipdltest {
 class IPDLUnitTestSubprocess : public mozilla::ipc::GeckoChildProcessHost {
  public:
   IPDLUnitTestSubprocess();
-  ~IPDLUnitTestSubprocess();
 
   
 
@@ -24,6 +23,8 @@ class IPDLUnitTestSubprocess : public mozilla::ipc::GeckoChildProcessHost {
   
 
  private:
+  ~IPDLUnitTestSubprocess();
+
   DISALLOW_EVIL_CONSTRUCTORS(IPDLUnitTestSubprocess);
 };
 

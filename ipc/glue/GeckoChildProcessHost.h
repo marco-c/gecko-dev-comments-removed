@@ -12,8 +12,8 @@
 #include "base/waitable_event.h"
 #include "chrome/common/child_process_host.h"
 
-#include "mozilla/DebugOnly.h"
 #include "mozilla/ipc/FileDescriptor.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/StaticPtr.h"
@@ -41,11 +41,18 @@ class GeckoChildProcessHost : public ChildProcessHost {
   explicit GeckoChildProcessHost(GeckoProcessType aProcessType,
                                  bool aIsFileContent = false);
 
-  ~GeckoChildProcessHost();
+  
+  
+  
+  
+  
+  
+  
+  
+  void Destroy();
 
   static uint32_t GetUniqueID();
 
-  
   
   
   
@@ -127,6 +134,8 @@ class GeckoChildProcessHost : public ChildProcessHost {
   }
 
  protected:
+  ~GeckoChildProcessHost();
+
   GeckoProcessType mProcessType;
   bool mIsFileContent;
   Monitor mMonitor;
@@ -211,6 +220,8 @@ class GeckoChildProcessHost : public ChildProcessHost {
 #if defined(OS_LINUX)
   nsCString mTmpDirName;
 #endif
+
+  mozilla::Atomic<bool> mDestroying;
 
   static uint32_t sNextUniqueID;
 

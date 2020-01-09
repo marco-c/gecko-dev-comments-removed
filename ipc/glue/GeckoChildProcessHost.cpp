@@ -101,12 +101,11 @@ GeckoChildProcessHost::GeckoChildProcessHost(GeckoProcessType aProcessType,
       mEnableSandboxLogging(false),
       mSandboxLevel(0),
 #endif
-      mChildProcessHandle(0)
+      mChildProcessHandle(0),
 #if defined(MOZ_WIDGET_COCOA)
-      ,
-      mChildTask(MACH_PORT_NULL)
+      mChildTask(MACH_PORT_NULL),
 #endif
-{
+      mDestroying(false) {
   MOZ_COUNT_CTOR(GeckoChildProcessHost);
 }
 
@@ -114,6 +113,7 @@ GeckoChildProcessHost::~GeckoChildProcessHost()
 
 {
   AssertIOThread();
+  MOZ_RELEASE_ASSERT(mDestroying);
 
   MOZ_COUNT_DTOR(GeckoChildProcessHost);
 
@@ -145,6 +145,21 @@ GeckoChildProcessHost::~GeckoChildProcessHost()
         mChildProcessHandle);
 #endif
   }
+}
+
+void GeckoChildProcessHost::Destroy() {
+  MOZ_RELEASE_ASSERT(!mDestroying);
+  RefPtr<HandlePromise> whenReady = mHandlePromise;
+
+  if (!whenReady) {
+    
+    whenReady = HandlePromise::CreateAndReject(LaunchError{}, __func__);
+  }
+
+  using Value = HandlePromise::ResolveOrRejectValue;
+  mDestroying = true;
+  whenReady->Then(XRE_GetIOMessageLoop()->SerialEventTarget(), __func__,
+                  [this](const Value&) { delete this; });
 }
 
 
@@ -472,18 +487,23 @@ bool GeckoChildProcessHost::RunPerformAsyncLaunch(
 
   bool ok = PerformAsyncLaunch(aExtraOpts);
   if (!ok) {
-    
-    
-    MonitorAutoLock lock(mMonitor);
-    mProcessState = PROCESS_ERROR;
-    mHandlePromise->Reject(LaunchError{}, __func__);
-    lock.Notify();
     CHROMIUM_LOG(ERROR) << "Failed to launch "
                         << XRE_ChildProcessTypeToString(mProcessType)
                         << " subprocess";
     Telemetry::Accumulate(
         Telemetry::SUBPROCESS_LAUNCH_FAILURE,
         nsDependentCString(XRE_ChildProcessTypeToString(mProcessType)));
+    
+    
+    {
+      MonitorAutoLock lock(mMonitor);
+      mProcessState = PROCESS_ERROR;
+      lock.Notify();
+    }
+    
+    
+    
+    mHandlePromise->Reject(LaunchError{}, __func__);
   }
   return ok;
 }
@@ -1092,15 +1112,18 @@ bool GeckoChildProcessHost::PerformAsyncLaunch(
   CrashReporter::RegisterChildCrashAnnotationFileDescriptor(
       base::GetProcId(process), crashAnnotationReadPipe.forget());
 
-  MonitorAutoLock lock(mMonitor);
-  mProcessState = PROCESS_CREATED;
-  mHandlePromise->Resolve(process, __func__);
-  lock.Notify();
+  {
+    MonitorAutoLock lock(mMonitor);
+    mProcessState = PROCESS_CREATED;
+    lock.Notify();
+  }
 
   mLaunchOptions = nullptr;
 
   Telemetry::AccumulateTimeDelta(Telemetry::CHILD_PROCESS_LAUNCH_MS, startTS);
 
+  
+  mHandlePromise->Resolve(process, __func__);
   return true;
 }
 

@@ -1590,16 +1590,6 @@ void ContentParent::ProcessingError(Result aCode, const char* aReason) {
 #endif
 }
 
-namespace {
-
-void DelayedDeleteSubprocess(GeckoChildProcessHost* aSubprocess) {
-  RefPtr<DeleteTask<GeckoChildProcessHost>> task =
-      new DeleteTask<GeckoChildProcessHost>(aSubprocess);
-  XRE_GetIOMessageLoop()->PostTask(task.forget());
-}
-
-}  
-
 void ContentParent::ActorDestroy(ActorDestroyReason why) {
   RefPtr<ContentParent> kungFuDeathGrip(mSelfRef.forget());
   MOZ_RELEASE_ASSERT(kungFuDeathGrip);
@@ -1700,14 +1690,16 @@ void ContentParent::ActorDestroy(ActorDestroyReason why) {
   }
   mIdleListeners.Clear();
 
-  MessageLoop::current()->PostTask(NewRunnableFunction(
-      "DelayedDeleteSubprocessRunnable", DelayedDeleteSubprocess, mSubprocess));
+  
+  MessageLoop::current()->PostTask(NS_NewRunnableFunction(
+      "DelayedDeleteSubprocessRunnable",
+      [subprocess = mSubprocess] { subprocess->Destroy(); }));
   mSubprocess = nullptr;
 
   
   for (auto& replayingProcess : mReplayingChildren) {
     if (replayingProcess) {
-      DelayedDeleteSubprocess(replayingProcess);
+      replayingProcess->Destroy();
       replayingProcess = nullptr;
     }
   }
@@ -2411,7 +2403,7 @@ ContentParent::~ContentParent() {
   
   
   if (mSubprocess) {
-    DelayedDeleteSubprocess(mSubprocess);
+    mSubprocess->Destroy();
   }
 }
 

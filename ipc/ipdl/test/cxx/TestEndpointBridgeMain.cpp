@@ -102,8 +102,8 @@ void TestEndpointBridgeMainChild::ActorDestroy(ActorDestroyReason why) {
     fail("unexpected destruction!");
   }
   
-  XRE_GetIOMessageLoop()->PostTask(
-      do_AddRef(new DeleteTask<IPDLUnitTestSubprocess>(mSubprocess)));
+  mSubprocess->Destroy();
+  mSubprocess = nullptr;
   QuitChild();
 }
 
