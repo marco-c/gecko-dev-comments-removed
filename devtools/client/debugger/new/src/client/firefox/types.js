@@ -153,20 +153,6 @@ export type ResumedPacket = {
 
 
 
-
-
-
-export type ActualLocation = {
-  source: SourcePayload,
-  line: number,
-  column?: number
-};
-
-
-
-
-
-
 export type FramesResponse = {
   frames: FramePacket[],
   from: ActorId
@@ -367,7 +353,7 @@ export type ThreadClient = {
   pauseGrip: (Grip | Function) => ObjectClient,
   pauseOnExceptions: (boolean, boolean) => Promise<*>,
   setBreakpoint: (BreakpointLocation, BreakpointOptions) => Promise<*>,
-  removeBreakpoint: (BreakpointLocation) => Promise<*>,
+  removeBreakpoint: BreakpointLocation => Promise<*>,
   setXHRBreakpoint: (path: string, method: string) => Promise<boolean>,
   removeXHRBreakpoint: (path: string, method: string) => Promise<boolean>,
   interrupt: () => Promise<*>,

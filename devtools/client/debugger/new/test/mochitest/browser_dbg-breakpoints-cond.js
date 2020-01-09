@@ -1,6 +1,7 @@
 
 
 
+
 function findBreakpoint(dbg, url, line, column = 0) {
   const {
     selectors: { getBreakpoint },
@@ -21,10 +22,7 @@ function assertEditorBreakpoint(dbg, line, shouldExist) {
 
   ok(
     exists === shouldExist,
-    "Breakpoint " +
-      (shouldExist ? "exists" : "does not exist") +
-      " on line " +
-      line
+    `Breakpoint ${shouldExist ? "exists" : "does not exist"} on line ${line}`
   );
 }
 
@@ -75,6 +73,7 @@ add_task(async function() {
   const bpCondition1 = waitForDispatch(dbg, "SET_BREAKPOINT_OPTIONS");
   await setConditionalBreakpoint(dbg, 5, "2");
   await bpCondition1;
+
   bp = findBreakpoint(dbg, "simple2", 5);
   is(bp.options.condition, "12", "breakpoint is created with the condition");
   assertEditorBreakpoint(dbg, 5, true);
@@ -98,7 +97,7 @@ add_task(async function() {
 
   const bpCondition3 = waitForDispatch(dbg, "SET_BREAKPOINT_OPTIONS");
   
-  rightClickElement(dbg, "breakpointItem", 3)
+  rightClickElement(dbg, "breakpointItem", 3);
   
   selectContextMenuItem(dbg, selectors.breakpointContextMenu.removeCondition);
   await bpCondition3;
