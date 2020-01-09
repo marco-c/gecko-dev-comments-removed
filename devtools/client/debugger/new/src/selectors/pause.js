@@ -2,6 +2,7 @@
 
 
 
+
 import { getCurrentThread } from "../reducers/pause";
 import { getSelectedLocation } from "../reducers/sources";
 
@@ -9,10 +10,10 @@ import { getSelectedLocation } from "../reducers/sources";
 import { getSelectedLocation as _getSelectedLocation } from "../utils/source-maps";
 import { createSelector } from "reselect";
 
-import type { Frame, SourceLocation } from "../types";
+import type { Frame, SourceLocation, ThreadId } from "../types";
 import type { Selector, State } from "../reducers/types";
 
-export const getSelectedFrames: Selector<{ [string]: Frame }> = createSelector(
+export const getSelectedFrames: Selector<{ [string]: ?Frame }> = createSelector(
   state => state.pause,
   pauseState => {
     const selectedFrames = {};

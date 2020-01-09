@@ -2813,7 +2813,7 @@ debug-expression-error {
 
 
 
- .theme-light {
+.theme-light {
   --gutter-hover-background-color: #dde1e4;
 
   --breakpoint-fill: var(--blue-50);
@@ -2833,7 +2833,8 @@ debug-expression-error {
   --breakpoint-disabled-stroke: var(--blue-55);
 }
 
-.theme-light, .theme-dark {
+.theme-light,
+.theme-dark {
   --logpoint-fill: var(--theme-graphs-purple);
   --logpoint-stroke: var(--purple-60);
   --breakpoint-condition-fill: var(--theme-graphs-yellow);
@@ -3985,9 +3986,9 @@ html[dir="rtl"] .event-listeners-content .arrow.expanded {
 
 
 
- .secondary-panes .map-scopes-header {
+.secondary-panes .map-scopes-header {
   padding-inline-end: 3px;
- }
+}
 
 .secondary-panes .header-buttons .img.shortcuts {
   width: 14px;
