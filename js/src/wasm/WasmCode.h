@@ -19,6 +19,7 @@
 #ifndef wasm_code_h
 #define wasm_code_h
 
+#include "jit/shared/Assembler-shared.h"
 #include "js/HashTable.h"
 #include "threading/ExclusiveData.h"
 #include "vm/MutexIDs.h"
@@ -291,11 +292,6 @@ class FuncImport {
 };
 
 typedef Vector<FuncImport, 0, SystemAllocPolicy> FuncImportVector;
-
-
-
-
-enum class MemoryUsage { None = false, Unshared = 1, Shared = 2 };
 
 
 
