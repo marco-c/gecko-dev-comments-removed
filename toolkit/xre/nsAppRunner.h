@@ -58,13 +58,6 @@ nsresult AppInfoConstructor(nsISupports* aOuter, const nsID& aIID,
 }  
 
 
-void BuildCompatVersion(const char* aAppVersion, const char* aAppBuildID,
-                        const char* aToolkitBuildID, nsACString& aBuf);
-bool CheckCompatVersions(const nsACString& aOldCompatVersion,
-                         const nsACString& aNewCompatVersion,
-                         bool* aIsDowngrade);
-
-
 
 
 
