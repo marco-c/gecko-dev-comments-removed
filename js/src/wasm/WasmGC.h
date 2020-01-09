@@ -56,6 +56,60 @@ static inline size_t StackArgAreaSizeAligned(const T& argTypes) {
   return AlignStackArgAreaSize(StackArgAreaSizeUnaligned(argTypes));
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void EmitWasmPreBarrierGuard(MacroAssembler& masm, Register tls,
+                             Register scratch, Register valueAddr,
+                             Label* skipBarrier);
+
+
+
+
+
+
+
+
+
+void EmitWasmPreBarrierCall(MacroAssembler& masm, Register tls,
+                            Register scratch, Register valueAddr);
+
+
+
+
+
+
+
+
+
+void EmitWasmPostBarrierGuard(MacroAssembler& masm, const Maybe<Register>& object,
+                              Register otherScratch, Register setValue,
+                              Label* skipBarrier);
+
 }  
 }  
 

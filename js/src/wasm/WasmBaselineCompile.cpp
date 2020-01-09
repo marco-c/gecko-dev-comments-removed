@@ -6450,80 +6450,27 @@ class BaseCompiler final : public BaseCompilerInterface {
 
   void emitPreBarrier(RegPtr valueAddr) {
     Label skipBarrier;
-
-    MOZ_ASSERT(valueAddr == PreBarrierReg);
-
     ScratchPtr scratch(*this);
 
-    
     masm.loadWasmTlsRegFromFrame(scratch);
-    masm.loadPtr(
-        Address(scratch, offsetof(TlsData, addressOfNeedsIncrementalBarrier)),
-        scratch);
-    masm.branchTest32(Assembler::Zero, Address(scratch, 0), Imm32(0x1),
-                      &skipBarrier);
+    EmitWasmPreBarrierGuard(masm, scratch, scratch, valueAddr, &skipBarrier);
 
-    
-    masm.loadPtr(Address(valueAddr, 0), scratch);
-    masm.branchTestPtr(Assembler::Zero, scratch, scratch, &skipBarrier);
-
-    
-    
-    
-    
     masm.loadWasmTlsRegFromFrame(scratch);
-    masm.loadPtr(Address(scratch, offsetof(TlsData, instance)), scratch);
-    masm.loadPtr(Address(scratch, Instance::offsetOfPreBarrierCode()), scratch);
 #ifdef JS_CODEGEN_ARM64
+    
     
     
     MOZ_ASSERT(!GeneralRegisterSet::All().hasRegisterIndex(x28.asUnsized()));
     masm.Mov(x28, sp);
 #endif
-    masm.call(scratch);
+    EmitWasmPreBarrierCall(masm, scratch, scratch, valueAddr);
 
     masm.bind(&skipBarrier);
   }
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 
-  
-  
-
-  void emitPostBarrierGuard(const Maybe<RegPtr>& object, RegPtr otherScratch,
-                            RegPtr setValue, Label* skipBarrier) {
-    
-    masm.branchTestPtr(Assembler::Zero, setValue, setValue, skipBarrier);
-
-    
-    if (object) {
-      masm.branchPtrInNurseryChunk(Assembler::Equal, *object, otherScratch,
-                                   skipBarrier);
-    }
-
-    
-    masm.branchPtrInNurseryChunk(Assembler::NotEqual, setValue, otherScratch,
-                                 skipBarrier);
-  }
-
-  
-
-  MOZ_MUST_USE bool emitPostBarrier(RegPtr valueAddr) {
+  MOZ_MUST_USE bool emitPostBarrierCall(RegPtr valueAddr) {
     uint32_t bytecodeOffset = iter_.lastOpcodeOffset();
 
     
@@ -6561,10 +6508,10 @@ class BaseCompiler final : public BaseCompilerInterface {
     sync();
 
     RegPtr otherScratch = needRef();
-    emitPostBarrierGuard(object, otherScratch, value, &skipBarrier);
+    EmitWasmPostBarrierGuard(masm, object, otherScratch, value, &skipBarrier);
     freeRef(otherScratch);
 
-    if (!emitPostBarrier(valueAddr)) {
+    if (!emitPostBarrierCall(valueAddr)) {
       return false;
     }
     masm.bind(&skipBarrier);
@@ -10575,7 +10522,7 @@ bool BaseCompiler::emitStructNew() {
         }
 
         RegPtr otherScratch = needRef();
-        emitPostBarrierGuard(Some(rowner), otherScratch, value, &skipBarrier);
+        EmitWasmPostBarrierGuard(masm, Some(rowner), otherScratch, value, &skipBarrier);
         freeRef(otherScratch);
 
         if (!structType.isInline_) {
@@ -10591,7 +10538,7 @@ bool BaseCompiler::emitStructNew() {
         pushRef(rp);  
         RegPtr valueAddr = needRef();
         masm.computeEffectiveAddress(Address(rdata, offs), valueAddr);
-        if (!emitPostBarrier(valueAddr)) {  
+        if (!emitPostBarrierCall(valueAddr)) {  
           return false;
         }
         popRef(rp);  
