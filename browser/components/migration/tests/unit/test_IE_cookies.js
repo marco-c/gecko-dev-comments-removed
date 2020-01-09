@@ -8,6 +8,15 @@ add_task(async function() {
   
   Assert.ok(await migrator.isSourceAvailable());
 
+  
+  
+  
+  let deprecatedCookie = Services.dirsvc.get("CookD", Ci.nsIFile);
+  deprecatedCookie.append("deprecated.cookie");
+  if (deprecatedCookie.exists()) {
+    return;
+  }
+
   const BOOL = ctypes.bool;
   const LPCTSTR = ctypes.char16_t.ptr;
   const DWORD = ctypes.uint32_t;
