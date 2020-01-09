@@ -5038,11 +5038,47 @@ bool Zone::findSweepGroupEdges(Zone* atomsZone) {
   return WeakMapBase::findSweepGroupEdges(this);
 }
 
+static bool AddEdgesForMarkQueue(GCMarker& marker) {
+#ifdef DEBUG
+  
+  
+  
+  
+  
+  
+  
+  
+  JS::Zone* prevZone = nullptr;
+  for (size_t i = 0; i < marker.markQueue.length(); i++) {
+    Value val = marker.markQueue[i].get().unbarrieredGet();
+    if (!val.isObject()) {
+      continue;
+    }
+    JSObject* obj = &val.toObject();
+    JS::Zone* zone = obj->zone();
+    if (!zone->isGCMarking()) {
+      continue;
+    }
+    if (prevZone && prevZone != zone) {
+      if (!prevZone->addSweepGroupEdgeTo(zone)) {
+        return false;
+      }
+    }
+    prevZone = zone;
+  }
+#endif
+  return true;
+}
+
 bool GCRuntime::findSweepGroupEdges() {
   for (GCZonesIter zone(rt); !zone.done(); zone.next()) {
     if (!zone->findSweepGroupEdges(atomsZone)) {
       return false;
     }
+  }
+
+  if (!AddEdgesForMarkQueue(marker)) {
+    return false;
   }
 
   return Debugger::findSweepGroupEdges(rt);
@@ -5988,6 +6024,11 @@ IncrementalProgress GCRuntime::markUntilBudgetExhausted(
 
   
   gcstats::AutoPhase ap(stats(), phase);
+
+  if (marker.processMarkQueue() == GCMarker::QueueYielded) {
+    return NotFinished;
+  }
+
   return marker.markUntilBudgetExhausted(sliceBudget) ? Finished : NotFinished;
 }
 
@@ -7732,6 +7773,13 @@ void GCRuntime::collect(bool nonincrementalByAPI, SliceBudget budget,
   AutoTraceLog logGC(TraceLoggerForCurrentThread(), TraceLogger_GC);
   AutoStopVerifyingBarriers av(rt, IsShutdownGC(reason));
   AutoEnqueuePendingParseTasksAfterGC aept(*this);
+
+#ifdef DEBUG
+  if (IsShutdownGC(reason)) {
+    marker.markQueue.clear();
+    marker.queuePos = 0;
+  }
+#endif
 
   bool repeat;
   do {

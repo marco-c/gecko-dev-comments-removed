@@ -7,6 +7,8 @@
 #ifndef gc_GCMarker_h
 #define gc_GCMarker_h
 
+#include "mozilla/Maybe.h"
+
 #include "ds/OrderedHashTable.h"
 #include "js/SliceBudget.h"
 #include "js/TracingAPI.h"
@@ -297,6 +299,15 @@ class GCMarker : public JSTracer {
 
   bool isDrained() { return isMarkStackEmpty() && !delayedMarkingList; }
 
+  
+  
+  enum MarkQueueProgress {
+    QueueYielded,   
+    QueueComplete,  
+    QueueSuspended  
+  };
+  MarkQueueProgress processMarkQueue();
+
   MOZ_MUST_USE bool markUntilBudgetExhausted(SliceBudget& budget);
 
   void setGCMode(JSGCMode mode) {
@@ -429,10 +440,30 @@ class GCMarker : public JSTracer {
   MainThreadData<bool> started;
 
   
+  mozilla::Maybe<js::gc::MarkColor> queueMarkColor;
+
+  
 
 
 
   MainThreadData<bool> strictCompartmentChecking;
+
+ public:
+  
+
+
+
+
+
+
+
+
+
+
+  JS::WeakCache<GCVector<JS::Heap<JS::Value>, 0, SystemAllocPolicy>> markQueue;
+
+  
+  size_t queuePos;
 #endif  
 };
 
