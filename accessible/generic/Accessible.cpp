@@ -537,7 +537,22 @@ Accessible* Accessible::ChildAtPoint(int32_t aX, int32_t aY,
   
   offset = offset.RemoveResolution(presContext->PresShell()->GetResolution());
 
-  nsIFrame* foundFrame = nsLayoutUtils::GetFrameForPoint(startFrame, offset);
+  
+  
+  offset += presContext->PresShell()->GetVisualViewportOffset() -
+            presContext->PresShell()->GetLayoutViewportOffset();
+
+  EnumSet<nsLayoutUtils::FrameForPointOption> options = {
+#ifdef MOZ_WIDGET_ANDROID
+      
+      
+      
+      nsLayoutUtils::FrameForPointOption::IgnoreRootScrollFrame
+#endif
+  };
+
+  nsIFrame* foundFrame =
+      nsLayoutUtils::GetFrameForPoint(startFrame, offset, options);
 
   nsIContent* content = nullptr;
   if (!foundFrame || !(content = foundFrame->GetContent()))
@@ -645,11 +660,18 @@ nsRect Accessible::BoundsInAppUnits() const {
     return nsRect();
   }
 
+  PresShell* presShell = mDoc->PresContext()->PresShell();
+
+  
+  
+  nsPoint viewportOffset = presShell->GetVisualViewportOffset() -
+                           presShell->GetLayoutViewportOffset();
+  unionRectTwips.MoveBy(-viewportOffset);
+
   
   
   
-  unionRectTwips.ScaleRoundOut(
-      mDoc->PresContext()->PresShell()->GetResolution());
+  unionRectTwips.ScaleRoundOut(presShell->GetResolution());
   
   
   nsRect orgRectPixels = boundingFrame->GetScreenRectInAppUnits();
