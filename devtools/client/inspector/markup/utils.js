@@ -14,7 +14,13 @@
 
 
 
-function flashElementOn(backgroundElt, foregroundElt = backgroundElt) {
+
+
+
+function flashElementOn(backgroundElt, {
+  foregroundElt = backgroundElt,
+  backgroundClass = "theme-bg-contrast",
+} = {}) {
   if (!backgroundElt || !foregroundElt) {
     return;
   }
@@ -23,7 +29,7 @@ function flashElementOn(backgroundElt, foregroundElt = backgroundElt) {
   backgroundElt.classList.remove("flash-out");
 
   
-  backgroundElt.classList.add("theme-bg-contrast");
+  backgroundElt.classList.add(backgroundClass);
 
   foregroundElt.classList.add("theme-fg-contrast");
   [].forEach.call(
@@ -42,7 +48,13 @@ function flashElementOn(backgroundElt, foregroundElt = backgroundElt) {
 
 
 
-function flashElementOff(backgroundElt, foregroundElt = backgroundElt) {
+
+
+
+function flashElementOff(backgroundElt, {
+  foregroundElt = backgroundElt,
+  backgroundClass = "theme-bg-contrast",
+} = {}) {
   if (!backgroundElt || !foregroundElt) {
     return;
   }
@@ -51,7 +63,7 @@ function flashElementOff(backgroundElt, foregroundElt = backgroundElt) {
   backgroundElt.classList.add("flash-out");
 
   
-  backgroundElt.classList.remove("theme-bg-contrast");
+  backgroundElt.classList.remove(backgroundClass);
 
   foregroundElt.classList.remove("theme-fg-contrast");
   [].forEach.call(

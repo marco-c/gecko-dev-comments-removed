@@ -8,6 +8,9 @@
   --rule-overridden-item-border-color: var(--theme-content-color3);
   --rule-header-background-color: var(--theme-toolbar-background);
   --rule-pseudo-class-text-color: var(--yellow-70) ;
+  
+
+  --rule-property-highlight-background-color: #FFF697;
 }
 
 :root.theme-dark {
@@ -15,6 +18,9 @@
   --rule-overridden-item-border-color: var(--theme-content-color1);
   --rule-header-background-color: #222225;
   --rule-pseudo-class-text-color: var(--yellow-50);
+  
+
+  --rule-property-highlight-background-color: #605913;
 }
 
 
@@ -146,6 +152,10 @@
 
 .ruleview-property:not(:hover) > .ruleview-enableproperty {
   pointer-events: none;
+}
+
+.ruleview-property-highlight-background-color {
+  background-color: var(--rule-property-highlight-background-color);
 }
 
 .ruleview-expandable-container {
@@ -649,6 +659,6 @@
 
 @keyframes flash-out {
   from {
-    background: var(--theme-contrast-background);
+    background: var(--rule-property-highlight-background-color);
   }
 }
