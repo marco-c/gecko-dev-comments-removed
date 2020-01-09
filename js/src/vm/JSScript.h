@@ -691,6 +691,12 @@ class ScriptSource {
 
   static constexpr size_t MinimumCompressibleLength = 256;
 
+  
+  
+  
+  
+  static bool loadSource(JSContext* cx, ScriptSource* ss, bool* loaded);
+
   template <typename Unit>
   MOZ_MUST_USE bool setSourceCopy(JSContext* cx, JS::SourceText<Unit>& srcBuf);
 
@@ -2493,12 +2499,6 @@ class JSScript : public js::gc::TenuredCell {
 
   MOZ_MUST_USE bool appendSourceDataForToString(JSContext* cx,
                                                 js::StringBuffer& buf);
-
-  
-  
-  
-  
-  static bool loadSource(JSContext* cx, js::ScriptSource* ss, bool* loaded);
 
   void setSourceObject(js::ScriptSourceObject* object);
   js::ScriptSourceObject* sourceObject() const { return sourceObject_; }
