@@ -513,93 +513,12 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
   class CueStyleBox extends StyleBoxBase {
     constructor(window, cue, styleOptions) {
       super();
-      var color = "rgba(255, 255, 255, 1)";
-      var backgroundColor = "rgba(0, 0, 0, 0.8)";
-
       this.cue = cue;
-
-      
-      
-      if (supportPseudo) {
-        this.cueDiv = parseContent(window, cue.text, PARSE_CONTENT_MODE.PSUEDO_CUE);
-      } else {
-        this.cueDiv = parseContent(window, cue.text, PARSE_CONTENT_MODE.NORMAL_CUE);
-      }
-      var styles = {
-        color: color,
-        backgroundColor: backgroundColor,
-        display: "inline",
-        font: styleOptions.font,
-        whiteSpace: "pre-line",
-      };
-      if (supportPseudo) {
-        delete styles.color;
-        delete styles.backgroundColor;
-        delete styles.font;
-        delete styles.whiteSpace;
-      }
-
-      styles.writingMode = cue.vertical === "" ? "horizontal-tb"
-                                               : cue.vertical === "lr" ? "vertical-lr"
-                                                                       : "vertical-rl";
-      styles.unicodeBidi = "plaintext";
-
-      this.applyStyles(styles, this.cueDiv);
-
-      
-      
-      styles = {
-        position: "absolute",
-        textAlign: cue.align,
-        font: styleOptions.font,
-      };
-
       this.div = window.document.createElement("div");
-      this.applyStyles(styles);
-
+      this.cueDiv = parseContent(window, cue.text, supportPseudo ?
+        PARSE_CONTENT_MODE.PSUEDO_CUE : PARSE_CONTENT_MODE.NORMAL_CUE);
       this.div.appendChild(this.cueDiv);
-
-      
-      
-      
-      function convertCuePostionToPercentage(cuePosition) {
-        if (cuePosition === "auto") {
-          return 50;
-        }
-        return cuePosition;
-      }
-      var textPos = 0;
-      let postionPercentage = convertCuePostionToPercentage(cue.position);
-      switch (cue.computedPositionAlign) {
-        
-        case "line-left":
-          textPos = postionPercentage;
-          break;
-        case "center":
-          textPos = postionPercentage - (cue.size / 2);
-          break;
-        case "line-right":
-          textPos = postionPercentage - cue.size;
-          break;
-      }
-
-      
-      
-      
-      if (cue.vertical === "") {
-        this.applyStyles({
-          left:  this.formatStyle(textPos, "%"),
-          width: this.formatStyle(cue.size, "%")
-        });
-      
-      
-      
-      } else {
-        this.applyStyles({
-          top: this.formatStyle(textPos, "%"),
-          height: this.formatStyle(cue.size, "%")
-        });
-      }
+      this.applyStyles(this._getNodeDefaultStyles(cue, styleOptions));
     }
 
     move(box) {
@@ -611,6 +530,126 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
         height: this.formatStyle(box.height, "px"),
         width: this.formatStyle(box.width, "px")
       });
+    }
+
+    
+
+
+
+
+    
+    _getNodeDefaultStyles(cue, styleOptions) {
+      let styles = {
+        "position": "absolute",
+        "unicode-bidi": "plaintext",
+        "overflow-wrap": "break-word",
+        
+        "font": styleOptions.font,
+        "color": "rgba(255,255,255,1)",
+        "white-space": "pre-line",
+        "text-align": cue.align,
+      }
+
+      this._processCueSetting(cue, styles);
+      return styles;
+    }
+
+    
+    _processCueSetting(cue, styles) {
+      
+      styles["writing-mode"] = this._getCueWritingMode(cue);
+
+      
+      const {width, height} = this._getCueWidthAndHeight(cue);
+      styles["width"] = width;
+      styles["height"] = height;
+
+      
+      const {left, top} = this._getCueLeftAndTop(cue);
+      styles["left"] = left;
+      styles["top"] = top;
+    }
+
+    _getCueWritingMode(cue) {
+      if (cue.vertical == "") {
+        return "horizontal-tb";
+      }
+      return cue.vertical == "lr" ? "vertical-lr" : "vertical-rl";
+    }
+
+    _getCueWidthAndHeight(cue) {
+      
+      
+      let maximumSize;
+      let computedPosition = cue.computedPosition;
+      switch (cue.computedPositionAlign) {
+        case "line-left":
+          maximumSize = 100 - computedPosition;
+          break;
+        case "line-right":
+          maximumSize = computedPosition;
+          break;
+        case "center":
+          maximumSize = computedPosition <= 50 ?
+            computedPosition * 2 : (100 - computedPosition) * 2;
+          break;
+      }
+      const size = Math.min(cue.size, maximumSize);
+      return cue.vertical == "" ? {
+        width: size + "%",
+        height: "auto",
+      } : {
+        width: "auto",
+        height: size + "%",
+      };
+    }
+
+    _getCueLeftAndTop(cue) {
+      
+      
+      let xPosition = 0.0, yPosition = 0.0;
+      const isWritingDirectionHorizontal = cue.vertical == "";
+      switch (cue.computedPositionAlign) {
+        case "line-left":
+          if (isWritingDirectionHorizontal) {
+            xPosition = cue.computedPosition;
+          } else {
+            yPosition = cue.computedPosition;
+          }
+          break;
+        case "center":
+          if (isWritingDirectionHorizontal) {
+            xPosition = cue.computedPosition - (cue.size / 2);
+          } else {
+            yPosition = cue.computedPosition - (cue.size / 2);
+          }
+          break;
+        case "line-right":
+          if (isWritingDirectionHorizontal) {
+            xPosition = cue.computedPosition - cue.size;
+          } else {
+            yPosition = cue.computedPosition - cue.size;
+          }
+          break;
+      }
+
+      
+      
+      
+      if (!cue.snapToLines) {
+        if (isWritingDirectionHorizontal) {
+          yPosition = cue.computedPosition;
+        } else {
+          xPosition = cue.computedPosition;
+        }
+      } else {
+        if (isWritingDirectionHorizontal) {
+          yPosition = 0;
+        } else {
+          xPosition = 0;
+        }
+      }
+      return { left: xPosition + "%", top: yPosition + "%"};
     }
   }
 
