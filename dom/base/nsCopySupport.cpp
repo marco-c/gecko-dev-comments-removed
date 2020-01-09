@@ -82,22 +82,11 @@ static nsresult AppendImagePromise(nsITransferable* aTransferable,
                                    nsIImageLoadingContent* aImageElement);
 #endif
 
-
-
-static nsresult SelectionCopyHelper(Selection* aSel, Document* aDoc,
-                                    bool doPutOnClipboard, int16_t aClipboardID,
-                                    uint32_t aFlags,
-                                    nsITransferable** aTransferable) {
-  
-  if (aTransferable) {
-    *aTransferable = nullptr;
-  }
-
-  nsresult rv;
-
-  nsCOMPtr<nsIDocumentEncoder> docEncoder;
-  docEncoder = do_createHTMLCopyEncoder();
-
+static nsresult EncodeForTextUnicode(nsIDocumentEncoder& aEncoder,
+                                     Document& aDocument, Selection* aSelection,
+                                     uint32_t aAdditionalEncoderFlags,
+                                     bool& aEncodedAsTextHTMLResult,
+                                     nsAutoString& aSerializationResult) {
   
   
   
@@ -107,34 +96,35 @@ static nsresult SelectionCopyHelper(Selection* aSel, Document* aDoc,
   mimeType.AssignLiteral(kUnicodeMime);
 
   
-  uint32_t flags = aFlags | nsIDocumentEncoder::OutputPreformatted |
+  uint32_t flags = aAdditionalEncoderFlags |
+                   nsIDocumentEncoder::OutputPreformatted |
                    nsIDocumentEncoder::OutputRaw |
                    nsIDocumentEncoder::OutputForPlainTextClipboardCopy;
 
-  rv = docEncoder->Init(aDoc, mimeType, flags);
+  nsresult rv = aEncoder.Init(&aDocument, mimeType, flags);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = docEncoder->SetSelection(aSel);
+  rv = aEncoder.SetSelection(aSelection);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
   
-  rv = docEncoder->GetMimeType(mimeType);
+  rv = aEncoder.GetMimeType(mimeType);
   NS_ENSURE_SUCCESS(rv, rv);
   bool selForcedTextPlain = mimeType.EqualsLiteral(kTextMime);
 
   nsAutoString buf;
-  rv = docEncoder->EncodeToString(buf);
+  rv = aEncoder.EncodeToString(buf);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = docEncoder->GetMimeType(mimeType);
+  rv = aEncoder.GetMimeType(mimeType);
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (!selForcedTextPlain && mimeType.EqualsLiteral(kTextMime)) {
     
     
     
-    nsCOMPtr<nsIHTMLDocument> htmlDoc = do_QueryInterface(aDoc);
+    nsCOMPtr<nsIHTMLDocument> htmlDoc = do_QueryInterface(&aDocument);
     if (!htmlDoc) {
       selForcedTextPlain = true;
     }
@@ -142,151 +132,239 @@ static nsresult SelectionCopyHelper(Selection* aSel, Document* aDoc,
 
   
   
-  bool encodedTextHTML = mimeType.EqualsLiteral(kHTMLMime);
+  aEncodedAsTextHTMLResult = mimeType.EqualsLiteral(kHTMLMime);
 
-  
-  nsAutoString textPlainBuf;
   if (selForcedTextPlain) {
     
-    textPlainBuf.Assign(buf);
+    aSerializationResult.Assign(buf);
   } else {
     
-    flags = nsIDocumentEncoder::OutputSelectionOnly |
-            nsIDocumentEncoder::OutputAbsoluteLinks |
-            nsIDocumentEncoder::SkipInvisibleContent |
-            nsIDocumentEncoder::OutputDropInvisibleBreak |
-            (aFlags & (nsIDocumentEncoder::OutputNoScriptContent |
-                       nsIDocumentEncoder::OutputRubyAnnotation));
+    flags =
+        nsIDocumentEncoder::OutputSelectionOnly |
+        nsIDocumentEncoder::OutputAbsoluteLinks |
+        nsIDocumentEncoder::SkipInvisibleContent |
+        nsIDocumentEncoder::OutputDropInvisibleBreak |
+        (aAdditionalEncoderFlags & (nsIDocumentEncoder::OutputNoScriptContent |
+                                    nsIDocumentEncoder::OutputRubyAnnotation));
 
     mimeType.AssignLiteral(kTextMime);
-    rv = docEncoder->Init(aDoc, mimeType, flags);
+    rv = aEncoder.Init(&aDocument, mimeType, flags);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    rv = docEncoder->SetSelection(aSel);
+    rv = aEncoder.SetSelection(aSelection);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    rv = docEncoder->EncodeToString(textPlainBuf);
+    rv = aEncoder.EncodeToString(aSerializationResult);
     NS_ENSURE_SUCCESS(rv, rv);
   }
+
+  return rv;
+}
+
+static nsresult EncodeAsTextHTMLWithContext(
+    nsIDocumentEncoder& aEncoder, Document& aDocument, Selection* aSelection,
+    uint32_t aEncoderFlags, nsAutoString& aTextHTMLEncodingResult,
+    nsAutoString& aHTMLParentsBufResult, nsAutoString& aHTMLInfoBufResult) {
+  nsAutoString mimeType;
+  mimeType.AssignLiteral(kHTMLMime);
+  nsresult rv = aEncoder.Init(&aDocument, mimeType, aEncoderFlags);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = aEncoder.SetSelection(aSelection);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = aEncoder.EncodeToStringWithContext(
+      aHTMLParentsBufResult, aHTMLInfoBufResult, aTextHTMLEncodingResult);
+  NS_ENSURE_SUCCESS(rv, rv);
+  return rv;
+}
+
+struct EncodedDocumentWithContext {
+  
+  
+  
+  
+  bool mUnicodeEncodingIsTextHTML;
 
   
-  nsAutoString textHTMLBuf;
-  nsAutoString htmlParentsBuf;
-  nsAutoString htmlInfoBuf;
-  if (encodedTextHTML) {
-    
-    
-    mimeType.AssignLiteral(kHTMLMime);
-    rv = docEncoder->Init(
-        aDoc, mimeType,
-        aFlags | nsIDocumentEncoder::OutputDisallowLineBreaking);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    rv = docEncoder->SetSelection(aSel);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    rv = docEncoder->EncodeToStringWithContext(htmlParentsBuf, htmlInfoBuf,
-                                               textHTMLBuf);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
+  
+  nsAutoString mSerializationForTextUnicode;
 
   
-  nsCOMPtr<nsIClipboard> clipboard;
-  if (doPutOnClipboard) {
-    clipboard = do_GetService(kCClipboardCID, &rv);
-    if (NS_FAILED(rv)) return rv;
+  
+  
+  nsAutoString mSerializationForTextHTML;
+
+  
+  
+  nsAutoString mHTMLContextBuffer;
+
+  
+  
+  nsAutoString mHTMLInfoBuffer;
+};
+
+
+
+
+
+static nsresult EncodeDocumentWithContext(
+    Document& aDocument, Selection* aSelection,
+    uint32_t aAdditionalEncoderFlags,
+    EncodedDocumentWithContext& aEncodedDocumentWithContext) {
+  nsCOMPtr<nsIDocumentEncoder> docEncoder = do_createHTMLCopyEncoder();
+
+  bool unicodeEncodingIsTextHTML{false};
+  nsAutoString serializationForTextUnicode;
+  nsresult rv = EncodeForTextUnicode(
+      *docEncoder, aDocument, aSelection, aAdditionalEncoderFlags,
+      unicodeEncodingIsTextHTML, serializationForTextUnicode);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsAutoString serializationForTextHTML;
+  nsAutoString htmlContextBuffer;
+  nsAutoString htmlInfoBuffer;
+  if (unicodeEncodingIsTextHTML) {
+    
+    
+    rv = EncodeAsTextHTMLWithContext(
+        *docEncoder, aDocument, aSelection,
+        aAdditionalEncoderFlags |
+            nsIDocumentEncoder::OutputDisallowLineBreaking,
+        serializationForTextHTML, htmlContextBuffer, htmlInfoBuffer);
+    NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  if ((doPutOnClipboard && clipboard) || aTransferable != nullptr) {
+  aEncodedDocumentWithContext = {
+      unicodeEncodingIsTextHTML, std::move(serializationForTextUnicode),
+      std::move(serializationForTextHTML), std::move(htmlContextBuffer),
+      std::move(htmlInfoBuffer)};
+
+  return rv;
+}
+
+static nsresult CreateTransferable(
+    const EncodedDocumentWithContext& aEncodedDocumentWithContext,
+    Document& aDocument, nsCOMPtr<nsITransferable>& aTransferable) {
+  nsresult rv = NS_OK;
+
+  aTransferable = do_CreateInstance(kCTransferableCID);
+  NS_ENSURE_TRUE(aTransferable, NS_ERROR_NULL_POINTER);
+
+  aTransferable->Init(aDocument.GetLoadContext());
+  if (aEncodedDocumentWithContext.mUnicodeEncodingIsTextHTML) {
     
-    nsCOMPtr<nsITransferable> trans = do_CreateInstance(kCTransferableCID);
-    if (trans) {
-      trans->Init(aDoc->GetLoadContext());
-      if (encodedTextHTML) {
-        
-        
-        nsCOMPtr<nsIFormatConverter> htmlConverter =
-            do_CreateInstance(kHTMLConverterCID);
-        trans->SetConverter(htmlConverter);
+    
+    nsCOMPtr<nsIFormatConverter> htmlConverter =
+        do_CreateInstance(kHTMLConverterCID);
+    aTransferable->SetConverter(htmlConverter);
 
-        if (!textHTMLBuf.IsEmpty()) {
-          
-          rv = AppendString(trans, textHTMLBuf, kHTMLMime);
-          NS_ENSURE_SUCCESS(rv, rv);
-        }
-
-        
-        
-        
-        rv = AppendString(trans, htmlParentsBuf, kHTMLContext);
-        NS_ENSURE_SUCCESS(rv, rv);
-
-        if (!htmlInfoBuf.IsEmpty()) {
-          
-          rv = AppendString(trans, htmlInfoBuf, kHTMLInfo);
-          NS_ENSURE_SUCCESS(rv, rv);
-        }
-
-        if (!textPlainBuf.IsEmpty()) {
-          
-          
-          
-          
-          
-          rv = AppendString(trans, textPlainBuf, kUnicodeMime);
-          NS_ENSURE_SUCCESS(rv, rv);
-        }
-
-        
-        nsIURI* uri = aDoc->GetDocumentURI();
-        if (uri) {
-          nsAutoCString spec;
-          nsresult rv = uri->GetSpec(spec);
-          NS_ENSURE_SUCCESS(rv, rv);
-          if (!spec.IsEmpty()) {
-            nsAutoString shortcut;
-            AppendUTF8toUTF16(spec, shortcut);
-
-            
-            
-            
-            
-            
-            
-            rv = AppendString(trans, shortcut, kURLPrivateMime);
-            NS_ENSURE_SUCCESS(rv, rv);
-          }
-        }
-      } else {
-        if (!textPlainBuf.IsEmpty()) {
-          
-          rv = AppendString(trans, textPlainBuf, kUnicodeMime);
-          NS_ENSURE_SUCCESS(rv, rv);
-        }
-      }
-
-      if (doPutOnClipboard && clipboard) {
-        
-        clipboard->SetData(trans, nullptr, aClipboardID);
-      }
-
+    if (!aEncodedDocumentWithContext.mSerializationForTextHTML.IsEmpty()) {
       
-      if (aTransferable != nullptr) {
-        trans.swap(*aTransferable);
+      rv = AppendString(aTransferable,
+                        aEncodedDocumentWithContext.mSerializationForTextHTML,
+                        kHTMLMime);
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+
+    
+    
+    rv = AppendString(aTransferable,
+                      aEncodedDocumentWithContext.mHTMLContextBuffer,
+                      kHTMLContext);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    if (!aEncodedDocumentWithContext.mHTMLInfoBuffer.IsEmpty()) {
+      
+      rv = AppendString(aTransferable,
+                        aEncodedDocumentWithContext.mHTMLInfoBuffer, kHTMLInfo);
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+
+    if (!aEncodedDocumentWithContext.mSerializationForTextUnicode.IsEmpty()) {
+      
+      
+      
+      
+      
+      rv =
+          AppendString(aTransferable,
+                       aEncodedDocumentWithContext.mSerializationForTextUnicode,
+                       kUnicodeMime);
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+
+    
+    nsIURI* uri = aDocument.GetDocumentURI();
+    if (uri) {
+      nsAutoCString spec;
+      nsresult rv = uri->GetSpec(spec);
+      NS_ENSURE_SUCCESS(rv, rv);
+      if (!spec.IsEmpty()) {
+        nsAutoString shortcut;
+        AppendUTF8toUTF16(spec, shortcut);
+
+        
+        
+        
+        
+        
+        
+        rv = AppendString(aTransferable, shortcut, kURLPrivateMime);
+        NS_ENSURE_SUCCESS(rv, rv);
       }
     }
+  } else {
+    if (!aEncodedDocumentWithContext.mSerializationForTextUnicode.IsEmpty()) {
+      
+      rv =
+          AppendString(aTransferable,
+                       aEncodedDocumentWithContext.mSerializationForTextUnicode,
+                       kUnicodeMime);
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
   }
+
+  return rv;
+}
+
+static nsresult PutToClipboard(
+    const EncodedDocumentWithContext& aEncodedDocumentWithContext,
+    int16_t aClipboardID, Document& aDocument) {
+  nsresult rv;
+  nsCOMPtr<nsIClipboard> clipboard = do_GetService(kCClipboardCID, &rv);
+  NS_ENSURE_SUCCESS(rv, rv);
+  NS_ENSURE_TRUE(clipboard, NS_ERROR_NULL_POINTER);
+
+  nsCOMPtr<nsITransferable> transferable;
+  rv = CreateTransferable(aEncodedDocumentWithContext, aDocument, transferable);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = clipboard->SetData(transferable, nullptr, aClipboardID);
+  NS_ENSURE_SUCCESS(rv, rv);
+
   return rv;
 }
 
 nsresult nsCopySupport::HTMLCopy(Selection* aSel, Document* aDoc,
                                  int16_t aClipboardID,
                                  bool aWithRubyAnnotation) {
-  uint32_t flags = nsIDocumentEncoder::SkipInvisibleContent;
+  NS_ENSURE_TRUE(aDoc, NS_ERROR_NULL_POINTER);
+
+  uint32_t additionalFlags = nsIDocumentEncoder::SkipInvisibleContent;
   if (aWithRubyAnnotation) {
-    flags |= nsIDocumentEncoder::OutputRubyAnnotation;
+    additionalFlags |= nsIDocumentEncoder::OutputRubyAnnotation;
   }
-  return SelectionCopyHelper(aSel, aDoc, true, aClipboardID, flags, nullptr);
+
+  EncodedDocumentWithContext encodedDocumentWithContext;
+  nsresult rv = EncodeDocumentWithContext(*aDoc, aSel, additionalFlags,
+                                          encodedDocumentWithContext);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = PutToClipboard(encodedDocumentWithContext, aClipboardID, *aDoc);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  return rv;
 }
 
 nsresult nsCopySupport::ClearSelectionCache() {
@@ -296,15 +374,48 @@ nsresult nsCopySupport::ClearSelectionCache() {
   return rv;
 }
 
+
+
+
+
+static nsresult EncodeDocumentWithContextAndCreateTransferable(
+    Document& aDocument, Selection* aSelection,
+    uint32_t aAdditionalEncoderFlags, nsITransferable** aTransferable) {
+  NS_ENSURE_TRUE(aTransferable, NS_ERROR_NULL_POINTER);
+
+  
+  *aTransferable = nullptr;
+
+  EncodedDocumentWithContext encodedDocumentWithContext;
+  nsresult rv =
+      EncodeDocumentWithContext(aDocument, aSelection, aAdditionalEncoderFlags,
+                                encodedDocumentWithContext);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsCOMPtr<nsITransferable> transferable;
+  rv = CreateTransferable(encodedDocumentWithContext, aDocument, transferable);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  transferable.swap(*aTransferable);
+  return rv;
+}
+
 nsresult nsCopySupport::GetTransferableForSelection(
     Selection* aSel, Document* aDoc, nsITransferable** aTransferable) {
-  return SelectionCopyHelper(aSel, aDoc, false, 0,
-                             nsIDocumentEncoder::SkipInvisibleContent,
-                             aTransferable);
+  NS_ENSURE_TRUE(aDoc, NS_ERROR_NULL_POINTER);
+  NS_ENSURE_TRUE(aTransferable, NS_ERROR_NULL_POINTER);
+
+  const uint32_t additionalFlags = nsIDocumentEncoder::SkipInvisibleContent;
+  return EncodeDocumentWithContextAndCreateTransferable(
+      *aDoc, aSel, additionalFlags, aTransferable);
 }
 
 nsresult nsCopySupport::GetTransferableForNode(
     nsINode* aNode, Document* aDoc, nsITransferable** aTransferable) {
+  NS_ENSURE_TRUE(aNode, NS_ERROR_NULL_POINTER);
+  NS_ENSURE_TRUE(aDoc, NS_ERROR_NULL_POINTER);
+  NS_ENSURE_TRUE(aTransferable, NS_ERROR_NULL_POINTER);
+
   
   
   
@@ -320,8 +431,9 @@ nsresult nsCopySupport::GetTransferableForNode(
     return result.StealNSResult();
   }
   
-  uint32_t flags = 0;
-  return SelectionCopyHelper(selection, aDoc, false, 0, flags, aTransferable);
+  uint32_t additionalFlags = 0;
+  return EncodeDocumentWithContextAndCreateTransferable(
+      *aDoc, selection, additionalFlags, aTransferable);
 }
 
 nsresult nsCopySupport::GetContents(const nsACString& aMimeType,

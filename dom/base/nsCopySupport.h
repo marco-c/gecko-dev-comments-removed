@@ -29,6 +29,10 @@ class nsCopySupport {
   
  public:
   static nsresult ClearSelectionCache();
+
+  
+
+
   static nsresult HTMLCopy(mozilla::dom::Selection* aSel,
                            mozilla::dom::Document* aDoc, int16_t aClipboardID,
                            bool aWithRubyAnnotation);
@@ -45,10 +49,16 @@ class nsCopySupport {
 
   
   
+  
+  
+  
   static nsresult GetTransferableForSelection(
       mozilla::dom::Selection* aSelection, mozilla::dom::Document* aDocument,
       nsITransferable** aTransferable);
 
+  
+  
+  
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   static nsresult GetTransferableForNode(nsINode* aNode,
