@@ -6,19 +6,8 @@
 
 use crate::values::computed::length::NonNegativeLengthPercentage;
 use crate::values::generics::background::BackgroundSize as GenericBackgroundSize;
-use crate::values::generics::length::LengthPercentageOrAuto;
 
 pub use crate::values::specified::background::BackgroundRepeat;
 
 
 pub type BackgroundSize = GenericBackgroundSize<NonNegativeLengthPercentage>;
-
-impl BackgroundSize {
-    
-    pub fn auto() -> Self {
-        GenericBackgroundSize::Explicit {
-            width: LengthPercentageOrAuto::auto(),
-            height: LengthPercentageOrAuto::auto(),
-        }
-    }
-}

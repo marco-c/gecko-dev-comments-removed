@@ -4,7 +4,7 @@
 
 
 
-use crate::values::generics::length::LengthPercentageOrAuto;
+use crate::values::generics::length::{LengthPercentageOrAuto, GenericLengthPercentageOrAuto};
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ToCss};
 
@@ -22,13 +22,14 @@ use style_traits::{CssWriter, ToCss};
     ToAnimatedZero,
     ToComputedValue,
 )]
-pub enum BackgroundSize<LengthPercentage> {
+#[repr(C, u8)]
+pub enum GenericBackgroundSize<LengthPercent> {
     
-    Explicit {
+    ExplicitSize {
         
-        width: LengthPercentageOrAuto<LengthPercentage>,
+        width: GenericLengthPercentageOrAuto<LengthPercent>,
         
-        height: LengthPercentageOrAuto<LengthPercentage>,
+        height: GenericLengthPercentageOrAuto<LengthPercent>,
     },
     
     #[animation(error)]
@@ -37,6 +38,8 @@ pub enum BackgroundSize<LengthPercentage> {
     #[animation(error)]
     Contain,
 }
+
+pub use self::GenericBackgroundSize as BackgroundSize;
 
 impl<LengthPercentage> ToCss for BackgroundSize<LengthPercentage>
 where
@@ -47,7 +50,7 @@ where
         W: Write,
     {
         match self {
-            BackgroundSize::Explicit { width, height } => {
+            BackgroundSize::ExplicitSize { width, height } => {
                 width.to_css(dest)?;
                 
                 
@@ -60,6 +63,16 @@ where
             },
             BackgroundSize::Cover => dest.write_str("cover"),
             BackgroundSize::Contain => dest.write_str("contain"),
+        }
+    }
+}
+
+impl<LengthPercentage> BackgroundSize<LengthPercentage> {
+    
+    pub fn auto() -> Self {
+        GenericBackgroundSize::ExplicitSize {
+            width: LengthPercentageOrAuto::Auto,
+            height: LengthPercentageOrAuto::Auto,
         }
     }
 }

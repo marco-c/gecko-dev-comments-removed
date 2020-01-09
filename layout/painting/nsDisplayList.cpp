@@ -3835,9 +3835,7 @@ bool nsDisplayBackgroundImage::CanOptimizeToImageLayer(
   
   const nsStyleImageLayers::Layer& layer =
       mBackgroundStyle->StyleBackground()->mImage.mLayers[mLayer];
-  bool allowPartialImages =
-      (layer.mSize.mWidthType == nsStyleImageLayers::Size::eContain ||
-       layer.mSize.mWidthType == nsStyleImageLayers::Size::eCover);
+  bool allowPartialImages = layer.mSize.IsContain() || layer.mSize.IsCover();
   if (!allowPartialImages && !mFillRect.Contains(mDestRect)) {
     return false;
   }
@@ -7949,7 +7947,7 @@ bool nsDisplayTransform::CreateWebRenderCommands(
 
   
   bool animated =
-      ActiveLayerTracker::IsStyleMaybeAnimated(Frame(), eCSSProperty_transform);
+    ActiveLayerTracker::IsStyleMaybeAnimated(Frame(), eCSSProperty_transform);
 
   wr::StackingContextParams params;
   params.mBoundTransform = &newTransformMatrix;

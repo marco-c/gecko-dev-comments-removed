@@ -2821,29 +2821,30 @@ nsRect nsCSSRendering::ComputeImageLayerPositioningArea(
 
 static nsSize ComputeDrawnSizeForBackground(
     const CSSSizeOrRatio& aIntrinsicSize, const nsSize& aBgPositioningArea,
-    const nsStyleImageLayers::Size& aLayerSize, StyleImageLayerRepeat aXRepeat,
+    const StyleBackgroundSize& aLayerSize, StyleImageLayerRepeat aXRepeat,
     StyleImageLayerRepeat aYRepeat) {
   nsSize imageSize;
 
   
-  if (aLayerSize.mWidthType == nsStyleImageLayers::Size::eContain ||
-      aLayerSize.mWidthType == nsStyleImageLayers::Size::eCover) {
-    nsImageRenderer::FitType fitType =
-        aLayerSize.mWidthType == nsStyleImageLayers::Size::eCover
-            ? nsImageRenderer::COVER
-            : nsImageRenderer::CONTAIN;
+  if (aLayerSize.IsContain() || aLayerSize.IsCover()) {
+    nsImageRenderer::FitType fitType = aLayerSize.IsCover()
+                                           ? nsImageRenderer::COVER
+                                           : nsImageRenderer::CONTAIN;
     imageSize = nsImageRenderer::ComputeConstrainedSize(
         aBgPositioningArea, aIntrinsicSize.mRatio, fitType);
   } else {
+    MOZ_ASSERT(aLayerSize.IsExplicitSize());
+    const auto& width = aLayerSize.explicit_size.width;
+    const auto& height = aLayerSize.explicit_size.height;
     
     CSSSizeOrRatio specifiedSize;
-    if (aLayerSize.mWidthType == nsStyleImageLayers::Size::eLengthPercentage) {
+    if (width.IsLengthPercentage()) {
       specifiedSize.SetWidth(
-          aLayerSize.ResolveWidthLengthPercentage(aBgPositioningArea));
+          width.AsLengthPercentage().Resolve(aBgPositioningArea.width));
     }
-    if (aLayerSize.mHeightType == nsStyleImageLayers::Size::eLengthPercentage) {
+    if (height.IsLengthPercentage()) {
       specifiedSize.SetHeight(
-          aLayerSize.ResolveHeightLengthPercentage(aBgPositioningArea));
+          height.AsLengthPercentage().Resolve(aBgPositioningArea.height));
     }
 
     imageSize = nsImageRenderer::ComputeConcreteSize(
@@ -2869,9 +2870,8 @@ static nsSize ComputeDrawnSizeForBackground(
   if (imageSize.width && aXRepeat == StyleImageLayerRepeat::Round) {
     imageSize.width = nsCSSRendering::ComputeRoundedSize(
         imageSize.width, aBgPositioningArea.width);
-    if (!isRepeatRoundInBothDimensions &&
-        aLayerSize.mHeightType ==
-            nsStyleImageLayers::Size::DimensionType::eAuto) {
+    if (!isRepeatRoundInBothDimensions && aLayerSize.IsExplicitSize() &&
+        aLayerSize.explicit_size.height.IsAuto()) {
       
       if (aIntrinsicSize.mRatio.width) {
         float scale =
@@ -2887,9 +2887,8 @@ static nsSize ComputeDrawnSizeForBackground(
   if (imageSize.height && aYRepeat == StyleImageLayerRepeat::Round) {
     imageSize.height = nsCSSRendering::ComputeRoundedSize(
         imageSize.height, aBgPositioningArea.height);
-    if (!isRepeatRoundInBothDimensions &&
-        aLayerSize.mWidthType ==
-            nsStyleImageLayers::Size::DimensionType::eAuto) {
+    if (!isRepeatRoundInBothDimensions && aLayerSize.IsExplicitSize() &&
+        aLayerSize.explicit_size.width.IsAuto()) {
       
       if (aIntrinsicSize.mRatio.height) {
         float scale =
