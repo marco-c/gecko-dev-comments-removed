@@ -279,7 +279,6 @@ static XDRResult XDRRelazificationInfo(XDRState<mode>* xdr, HandleFunction fun,
     uint32_t toStringEnd = script->toStringEnd();
     uint32_t lineno = script->lineno();
     uint32_t column = script->column();
-    uint32_t numFieldInitializers;
 
     if (mode == XDR_ENCODE) {
       packedFields = lazy->packedFields();
@@ -293,16 +292,9 @@ static XDRResult XDRRelazificationInfo(XDRState<mode>* xdr, HandleFunction fun,
       
       
       MOZ_ASSERT(lazy->numInnerFunctions() == 0);
-      if (fun->kind() == JSFunction::FunctionKind::ClassConstructor) {
-        numFieldInitializers =
-            (uint32_t)lazy->getFieldInitializers().numFieldInitializers;
-      } else {
-        numFieldInitializers = UINT32_MAX;
-      }
     }
 
     MOZ_TRY(xdr->codeUint64(&packedFields));
-    MOZ_TRY(xdr->codeUint32(&numFieldInitializers));
 
     if (mode == XDR_DECODE) {
       RootedScriptSourceObject sourceObject(cx, script->sourceObject());
@@ -314,10 +306,6 @@ static XDRResult XDRRelazificationInfo(XDRState<mode>* xdr, HandleFunction fun,
       }
 
       lazy->setToStringEnd(toStringEnd);
-      if (numFieldInitializers != UINT32_MAX) {
-        lazy->setFieldInitializers(
-            FieldInitializers((size_t)numFieldInitializers));
-      }
 
       
       
@@ -995,7 +983,6 @@ XDRResult js::XDRLazyScript(XDRState<mode>* xdr, HandleScope enclosingScope,
     uint32_t lineno;
     uint32_t column;
     uint64_t packedFields;
-    uint32_t numFieldInitializers;
 
     if (mode == XDR_ENCODE) {
       
@@ -1011,12 +998,6 @@ XDRResult js::XDRLazyScript(XDRState<mode>* xdr, HandleScope enclosingScope,
       lineno = lazy->lineno();
       column = lazy->column();
       packedFields = lazy->packedFields();
-      if (fun->kind() == JSFunction::FunctionKind::ClassConstructor) {
-        numFieldInitializers =
-            (uint32_t)lazy->getFieldInitializers().numFieldInitializers;
-      } else {
-        numFieldInitializers = UINT32_MAX;
-      }
     }
 
     MOZ_TRY(xdr->codeUint32(&sourceStart));
@@ -1026,7 +1007,6 @@ XDRResult js::XDRLazyScript(XDRState<mode>* xdr, HandleScope enclosingScope,
     MOZ_TRY(xdr->codeUint32(&lineno));
     MOZ_TRY(xdr->codeUint32(&column));
     MOZ_TRY(xdr->codeUint64(&packedFields));
-    MOZ_TRY(xdr->codeUint32(&numFieldInitializers));
 
     if (mode == XDR_DECODE) {
       lazy.set(LazyScript::CreateForXDR(
@@ -1036,10 +1016,6 @@ XDRResult js::XDRLazyScript(XDRState<mode>* xdr, HandleScope enclosingScope,
         return xdr->fail(JS::TranscodeResult_Throw);
       }
       lazy->setToStringEnd(toStringEnd);
-      if (numFieldInitializers != UINT32_MAX) {
-        lazy->setFieldInitializers(
-            FieldInitializers((size_t)numFieldInitializers));
-      }
       fun->initLazyScript(lazy);
     }
   }
@@ -3298,7 +3274,7 @@ static bool ShouldTrackRecordReplayProgress(JSScript* script) {
   script->setFlag(MutableFlags::HideScriptFromDebugger,
                   options.hideScriptFromDebugger);
 
-  script->setFlag(ImmutableFlags::TrackRecordReplayProgress,
+  script->setFlag(MutableFlags::TrackRecordReplayProgress,
                   ShouldTrackRecordReplayProgress(script));
 
   if (cx->runtime()->lcovOutput().isEnabled()) {
@@ -4767,7 +4743,6 @@ LazyScript::LazyScript(JSFunction* fun, ScriptSourceObject& sourceObject,
       sourceObject_(&sourceObject),
       table_(table),
       packedFields_(packedFields),
-      fieldInitializers_(FieldInitializers::Invalid()),
       sourceStart_(sourceStart),
       sourceEnd_(sourceEnd),
       toStringStart_(toStringStart),
