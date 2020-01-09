@@ -818,7 +818,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 
  public:
   static MOZ_MUST_USE bool ensureExecutionObservabilityOfOsrFrame(
-      JSContext* cx, InterpreterFrame* frame);
+      JSContext* cx, AbstractFramePtr osrSourceFrame);
 
   
   static MOZ_MUST_USE bool ensureExecutionObservabilityOfScript(

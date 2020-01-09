@@ -2353,7 +2353,8 @@ MethodStatus jit::CanEnterIon(JSContext* cx, RunState& state) {
   
   
   if (JitOptions.eagerIonCompilation() && !script->hasBaselineScript()) {
-    MethodStatus status = CanEnterBaselineMethod(cx, state);
+    MethodStatus status =
+        CanEnterBaselineMethod<BaselineTier::Compiler>(cx, state);
     if (status != Method_Compiled) {
       return status;
     }

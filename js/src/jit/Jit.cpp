@@ -138,6 +138,8 @@ EnterJitStatus js::jit::MaybeEnterJit(JSContext* cx, RunState& state) {
       break;
     }
 
+    script->incWarmUpCounter();
+
     
     if (jit::IsIonEnabled(cx)) {
       jit::MethodStatus status = jit::CanEnterIon(cx, state);
@@ -152,13 +154,26 @@ EnterJitStatus js::jit::MaybeEnterJit(JSContext* cx, RunState& state) {
 
     
     if (jit::IsBaselineEnabled(cx)) {
-      jit::MethodStatus status = jit::CanEnterBaselineMethod(cx, state);
+      jit::MethodStatus status =
+          jit::CanEnterBaselineMethod<BaselineTier::Compiler>(cx, state);
       if (status == jit::Method_Error) {
         return EnterJitStatus::Error;
       }
       if (status == jit::Method_Compiled) {
         code = script->jitCodeRaw();
         break;
+      }
+
+      if (JitOptions.baselineInterpreter) {
+        jit::MethodStatus status =
+            jit::CanEnterBaselineMethod<BaselineTier::Interpreter>(cx, state);
+        if (status == jit::Method_Error) {
+          return EnterJitStatus::Error;
+        }
+        if (status == jit::Method_Compiled) {
+          code = script->jitCodeRaw();
+          break;
+        }
       }
     }
 

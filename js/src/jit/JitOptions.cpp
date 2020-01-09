@@ -141,6 +141,9 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(disableOptimizationLevels, false);
 
   
+  SET_DEFAULT(baselineInterpreter, false);
+
+  
   SET_DEFAULT(forceInlineCaches, false);
 
   
@@ -151,6 +154,10 @@ DefaultJitOptions::DefaultJitOptions() {
 
   
   SET_DEFAULT(runExtraChecks, false);
+
+  
+  
+  SET_DEFAULT(baselineInterpreterWarmUpThreshold, 10);
 
   
   
