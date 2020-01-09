@@ -38,7 +38,7 @@ use crate::prim_store::{PrimitiveInstanceKind, PrimTemplateCommonData};
 use crate::prim_store::interned::*;
 use crate::profiler::{BackendProfileCounters, IpcProfileCounters, ResourceProfileCounters};
 use crate::record::ApiRecordingReceiver;
-use crate::render_task::RenderTaskGraphCounters;
+use crate::render_task::RenderTaskTreeCounters;
 use crate::renderer::{AsyncPropertySampler, PipelineInfo};
 use crate::resource_cache::ResourceCache;
 #[cfg(feature = "replay")]
@@ -353,7 +353,7 @@ struct Document {
     scratch: PrimitiveScratchBuffer,
     
     
-    render_task_counters: RenderTaskGraphCounters,
+    render_task_counters: RenderTaskTreeCounters,
 }
 
 impl Document {
@@ -387,7 +387,7 @@ impl Document {
             has_built_scene: false,
             data_stores: DataStores::default(),
             scratch: PrimitiveScratchBuffer::new(),
-            render_task_counters: RenderTaskGraphCounters::new(),
+            render_task_counters: RenderTaskTreeCounters::new(),
         }
     }
 
@@ -1822,7 +1822,7 @@ impl RenderBackend {
                 has_built_scene: false,
                 data_stores,
                 scratch: PrimitiveScratchBuffer::new(),
-                render_task_counters: RenderTaskGraphCounters::new(),
+                render_task_counters: RenderTaskTreeCounters::new(),
             };
 
             let frame_name = format!("frame-{}-{}", id.namespace_id.0, id.id);

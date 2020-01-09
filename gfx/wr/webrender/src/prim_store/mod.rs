@@ -1881,6 +1881,7 @@ impl PrimitiveStore {
                         Some(ref rc) => match rc.composite_mode {
                             
                             
+                            PictureCompositeMode::Filter(Filter::DropShadow(shadow)) => pic.snapped_local_rect.translate(&shadow.offset),
                             PictureCompositeMode::Filter(Filter::DropShadowStack(ref shadows)) => {
                                 let mut rect = LayoutRect::zero();
                                 for shadow in shadows {
@@ -2171,6 +2172,9 @@ impl PrimitiveStore {
             
             let inflation_size = match raster_config.composite_mode {
                 PictureCompositeMode::Filter(Filter::Blur(_)) => surface.inflation_factor,
+                PictureCompositeMode::Filter(Filter::DropShadow(shadow)) => {
+                    (shadow.blur_radius * BLUR_SAMPLE_SCALE).ceil()
+                }
                 PictureCompositeMode::Filter(Filter::DropShadowStack(ref shadows)) => {
                     let mut max = 0.0;
                     for shadow in shadows {
@@ -2187,7 +2191,9 @@ impl PrimitiveStore {
             let pic_local_rect = surface_rect * TypedScale::new(1.0);
             if pic.snapped_local_rect != pic_local_rect {
                 match raster_config.composite_mode {
-                    PictureCompositeMode::Filter(Filter::DropShadowStack(..)) => {
+                    PictureCompositeMode::Filter(Filter::DropShadow(..)) 
+                    | PictureCompositeMode::Filter(Filter::DropShadowStack(..))
+                    => {
                         for handle in &pic.extra_gpu_data_handles {
                             frame_state.gpu_cache.invalidate(handle);
                         }

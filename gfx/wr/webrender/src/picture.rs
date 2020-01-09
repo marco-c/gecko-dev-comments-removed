@@ -2529,6 +2529,62 @@ impl PicturePrimitive {
 
                         (blur_render_task_id, picture_task_id)
                     }
+                    PictureCompositeMode::Filter(Filter::DropShadow(shadow)) => {
+                        let blur_std_deviation = shadow.blur_radius * device_pixel_scale.0;
+                        let blur_range = (blur_std_deviation * BLUR_SAMPLE_SCALE).ceil() as i32;
+                        let rounded_std_dev = blur_std_deviation.round();
+                        let rounded_std_dev = DeviceSize::new(rounded_std_dev, rounded_std_dev);
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        let mut device_rect = clipped.inflate(blur_range, blur_range)
+                                .intersection(&unclipped.to_i32())
+                                .unwrap();
+                        device_rect.size = RenderTask::adjusted_blur_source_size(
+                            device_rect.size,
+                            rounded_std_dev,
+                        );
+
+                        let uv_rect_kind = calculate_uv_rect_kind(
+                            &pic_rect,
+                            &transform,
+                            &device_rect,
+                            device_pixel_scale,
+                            true,
+                        );
+
+                        let mut picture_task = RenderTask::new_picture(
+                            RenderTaskLocation::Dynamic(None, device_rect.size),
+                            unclipped.size,
+                            pic_index,
+                            device_rect.origin,
+                            Vec::new(),
+                            uv_rect_kind,
+                            raster_spatial_node_index,
+                            device_pixel_scale,
+                        );
+                        picture_task.mark_for_saving();
+
+                        let picture_task_id = frame_state.render_tasks.add(picture_task);
+
+                        let blur_render_task_id = RenderTask::new_blur(
+                            rounded_std_dev,
+                            picture_task_id,
+                            frame_state.render_tasks,
+                            RenderTargetKind::Color,
+                            ClearMode::Transparent,
+                            None,
+                        );
+
+                        self.secondary_render_task_id = Some(picture_task_id);
+
+                        (blur_render_task_id, picture_task_id)
+                    }
                     PictureCompositeMode::Filter(Filter::DropShadowStack(ref shadows)) => {
                         let mut max_std_deviation = 0.0;
                         for shadow in shadows {
@@ -2589,7 +2645,7 @@ impl PicturePrimitive {
                         }
         
                         
-                        (blur_render_task_id, picture_task_id)
+                        (picture_task_id, blur_render_task_id)
                     }
                     PictureCompositeMode::MixBlend(..) if !frame_context.fb_config.gpu_supports_advanced_blend => {
                         let uv_rect_kind = calculate_uv_rect_kind(
@@ -3138,6 +3194,9 @@ impl PicturePrimitive {
                 
                 let inflation_size = match raster_config.composite_mode {
                     PictureCompositeMode::Filter(Filter::Blur(_)) => surface.inflation_factor,
+                    PictureCompositeMode::Filter(Filter::DropShadow(shadow)) => {
+                        (shadow.blur_radius * BLUR_SAMPLE_SCALE).ceil()
+                    }
                     PictureCompositeMode::Filter(Filter::DropShadowStack(ref shadows)) => {
                         let mut max = 0.0;
                         for shadow in shadows {
@@ -3173,6 +3232,11 @@ impl PicturePrimitive {
             
             
             match raster_config.composite_mode {
+                PictureCompositeMode::Filter(Filter::DropShadow(shadow)) => {
+                    let content_rect = surface_rect;
+                    let shadow_rect = surface_rect.translate(&shadow.offset);
+                    surface_rect = content_rect.union(&shadow_rect);
+                }
                 PictureCompositeMode::Filter(Filter::DropShadowStack(ref shadows)) => {
                     for shadow in shadows {
                         let content_rect = surface_rect;
@@ -3231,6 +3295,39 @@ impl PicturePrimitive {
         match raster_config.composite_mode {
             PictureCompositeMode::TileCache { .. } => {}
             PictureCompositeMode::Filter(Filter::Blur(..)) => {}
+            PictureCompositeMode::Filter(Filter::DropShadow(shadow)) => {
+                if self.extra_gpu_data_handles.is_empty() {
+                    self.extra_gpu_data_handles.push(GpuCacheHandle::new());
+                }
+
+                if let Some(mut request) = frame_state.gpu_cache.request(&mut self.extra_gpu_data_handles[0]) {
+                    
+                    
+                    
+                    
+                    
+                    
+
+                    
+                    
+                    
+                    let shadow_rect = self.snapped_local_rect.translate(&shadow.offset);
+
+                    
+                    request.push(shadow.color.premultiplied());
+                    request.push(PremultipliedColorF::WHITE);
+                    request.push([
+                        self.snapped_local_rect.size.width,
+                        self.snapped_local_rect.size.height,
+                        0.0,
+                        0.0,
+                    ]);
+
+                    
+                    request.push(shadow_rect);
+                    request.push([0.0, 0.0, 0.0, 0.0]);
+                }
+            }
             PictureCompositeMode::Filter(Filter::DropShadowStack(ref shadows)) => {
                 self.extra_gpu_data_handles.resize(shadows.len(), GpuCacheHandle::new());
                 for (shadow, extra_handle) in shadows.iter().zip(self.extra_gpu_data_handles.iter_mut()) {
@@ -3258,7 +3355,7 @@ impl PicturePrimitive {
             }
             PictureCompositeMode::MixBlend(..) if !frame_context.fb_config.gpu_supports_advanced_blend => {}
             PictureCompositeMode::Filter(ref filter) => {
-                if let Filter::ColorMatrix(ref m) = *filter {
+                if let Filter::ColorMatrix(m) = *filter {
                     if self.extra_gpu_data_handles.is_empty() {
                         self.extra_gpu_data_handles.push(GpuCacheHandle::new());
                     }
