@@ -807,7 +807,7 @@ bool XPCConvert::JSData2Native(JSContext* cx, void* d, HandleValue s,
         return false;
       }
 
-      nsresult err = type.GetDOMObjectInfo().Unwrap(s, (void**)d, cx);
+      nsresult err = type.GetDOMObjectInfo().Unwrap(s, (void**)d);
       if (pErr) {
         *pErr = err;
       }
@@ -1069,9 +1069,9 @@ bool XPCConvert::JSObject2NativeInterface(JSContext* cx, void** dest,
     
     
     
-    RootedObject inner(
-        cx, js::CheckedUnwrapDynamic(src, cx,
-                                      false));
+    RootedObject inner(RootingCx(),
+                       js::CheckedUnwrap(src,
+                                          false));
     if (!inner) {
       if (pErr) {
         *pErr = NS_ERROR_XPC_SECURITY_MANAGER_VETO;
@@ -1278,14 +1278,12 @@ nsresult XPCConvert::JSValToXPCException(MutableHandleValue s,
 
     
     JSObject* unwrapped =
-        js::CheckedUnwrapDynamic(obj, cx,  false);
+        js::CheckedUnwrap(obj,  false);
     if (!unwrapped) {
       return NS_ERROR_XPC_SECURITY_MANAGER_VETO;
     }
-    
-    
     if (nsCOMPtr<nsISupports> supports =
-            ReflectorToISupportsStatic(unwrapped)) {
+            UnwrapReflectorToISupports(unwrapped)) {
       nsCOMPtr<Exception> iface = do_QueryInterface(supports);
       if (iface) {
         

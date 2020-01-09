@@ -25,7 +25,7 @@ nsresult xpcJSWeakReference::Init(JSContext* cx, const JS::Value& object) {
   XPCCallContext ccx(cx);
 
   
-  nsCOMPtr<nsISupports> supports = xpc::ReflectorToISupportsDynamic(obj, cx);
+  nsCOMPtr<nsISupports> supports = xpc::UnwrapReflectorToISupports(obj);
   nsCOMPtr<nsISupportsWeakReference> supportsWeakRef =
       do_QueryInterface(supports);
   if (supportsWeakRef) {

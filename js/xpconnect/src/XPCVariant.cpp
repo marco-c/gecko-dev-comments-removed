@@ -44,11 +44,10 @@ XPCVariant::XPCVariant(JSContext* cx, const Value& aJSVal)
     mJSVal = JS::ObjectValue(*obj);
 
     JSObject* unwrapped =
-        js::CheckedUnwrapDynamic(obj, cx,  false);
+        js::CheckedUnwrap(obj,  false);
     mReturnRawObject = !(unwrapped && IS_WN_REFLECTOR(unwrapped));
-  } else {
+  } else
     mReturnRawObject = false;
-  }
 }
 
 XPCTraceableVariant::~XPCTraceableVariant() {

@@ -1529,8 +1529,7 @@ nsXPCComponents_Utils::GetSandboxMetadata(HandleValue sandboxVal, JSContext* cx,
   }
 
   RootedObject sandbox(cx, &sandboxVal.toObject());
-  
-  sandbox = js::CheckedUnwrapStatic(sandbox);
+  sandbox = js::CheckedUnwrap(sandbox);
   if (!sandbox || !xpc::IsSandbox(sandbox)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -1547,8 +1546,7 @@ nsXPCComponents_Utils::SetSandboxMetadata(HandleValue sandboxVal,
   }
 
   RootedObject sandbox(cx, &sandboxVal.toObject());
-  
-  sandbox = js::CheckedUnwrapStatic(sandbox);
+  sandbox = js::CheckedUnwrap(sandbox);
   if (!sandbox || !xpc::IsSandbox(sandbox)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -1601,7 +1599,7 @@ nsXPCComponents_Utils::ImportGlobalProperties(HandleValue aPropertyList,
 
   
   nsGlobalWindowInner* win;
-  if (NS_SUCCEEDED(UNWRAP_NON_WRAPPER_OBJECT(Window, global, win))) {
+  if (NS_SUCCEEDED(UNWRAP_OBJECT(Window, &global, win))) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
@@ -1840,10 +1838,7 @@ nsXPCComponents_Utils::IsProxy(HandleValue vobj, JSContext* cx, bool* rval) {
   }
 
   RootedObject obj(cx, &vobj.toObject());
-  
-  
-  
-  obj = js::CheckedUnwrapDynamic(obj, cx,  false);
+  obj = js::CheckedUnwrap(obj,  false);
   NS_ENSURE_TRUE(obj, NS_ERROR_FAILURE);
 
   *rval = js::IsScriptedProxy(obj);
@@ -2322,8 +2317,7 @@ bool xpc::CloneInto(JSContext* aCx, HandleValue aValue, HandleValue aScope,
   }
 
   RootedObject scope(aCx, &aScope.toObject());
-  
-  scope = js::CheckedUnwrapDynamic(scope, aCx);
+  scope = js::CheckedUnwrap(scope);
   if (!scope) {
     JS_ReportErrorASCII(aCx, "Permission denied to clone object into scope");
     return false;
@@ -2384,9 +2378,7 @@ nsXPCComponents_Utils::GetObjectPrincipal(HandleValue val, JSContext* cx,
     return NS_ERROR_INVALID_ARG;
   }
   RootedObject obj(cx, &val.toObject());
-  
-  
-  obj = js::CheckedUnwrapDynamic(obj, cx);
+  obj = js::CheckedUnwrap(obj);
   MOZ_ASSERT(obj);
 
   nsCOMPtr<nsIPrincipal> prin = nsContentUtils::ObjectPrincipal(obj);
@@ -2401,9 +2393,7 @@ nsXPCComponents_Utils::GetRealmLocation(HandleValue val, JSContext* cx,
     return NS_ERROR_INVALID_ARG;
   }
   RootedObject obj(cx, &val.toObject());
-  
-  
-  obj = js::CheckedUnwrapDynamic(obj, cx);
+  obj = js::CheckedUnwrap(obj);
   MOZ_ASSERT(obj);
 
   result = xpc::RealmPrivate::Get(obj)->GetLocation();

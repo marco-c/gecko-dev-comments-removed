@@ -139,11 +139,7 @@ void ClearContentXBLScope(JSObject* global);
 
 bool IsSandboxPrototypeProxy(JSObject* obj);
 
-
-
-
-
-bool IsReflector(JSObject* obj, JSContext* cx);
+bool IsReflector(JSObject* obj);
 
 bool IsXrayWrapper(JSObject* obj);
 
@@ -466,22 +462,7 @@ bool Throw(JSContext* cx, nsresult rv);
 
 
 
-
-
-
-
-already_AddRefed<nsISupports> ReflectorToISupportsStatic(JSObject* reflector);
-
-
-
-
-
-
-
-
-
-already_AddRefed<nsISupports> ReflectorToISupportsDynamic(JSObject* reflector,
-                                                          JSContext* cx);
+already_AddRefed<nsISupports> UnwrapReflectorToISupports(JSObject* reflector);
 
 
 

@@ -522,9 +522,7 @@ bool JSValToNPVariant(NPP npp, JSContext *cx, const JS::Value &val,
   
   JS::Rooted<JSObject *> obj(cx, &val.toObject());
   JS::Rooted<JSObject *> global(cx);
-  
-  
-  obj = js::CheckedUnwrapStatic(obj);
+  obj = js::CheckedUnwrap(obj);
   if (obj) {
     global = JS::GetNonCCWObjectGlobal(obj);
   } else {
@@ -1076,10 +1074,7 @@ static JSObject *GetNPObjectWrapper(JSContext *cx, JS::Handle<JSObject *> aObj,
                                     bool wrapResult = true) {
   JS::Rooted<JSObject *> obj(cx, aObj);
 
-  
-  
-  
-  while (obj && (obj = js::CheckedUnwrapStatic(obj))) {
+  while (obj && (obj = js::CheckedUnwrap(obj))) {
     if (nsNPObjWrapper::IsWrapper(obj)) {
       if (wrapResult && !JS_WrapObject(cx, &obj)) {
         return nullptr;

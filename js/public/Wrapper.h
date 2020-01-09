@@ -131,17 +131,6 @@ class JS_FRIEND_API Wrapper : public ForwardingProxyHandler {
 
   virtual bool finalizeInBackground(const Value& priv) const override;
 
-  
-
-
-
-
-  virtual bool dynamicCheckedUnwrapAllowed(HandleObject obj,
-                                           JSContext* cx) const {
-    MOZ_ASSERT(hasSecurityPolicy(), "Why are you asking?");
-    return false;
-  }
-
   using BaseProxyHandler::Action;
 
   enum Flags { CROSS_COMPARTMENT = 1 << 0, LAST_USED_FLAG = CROSS_COMPARTMENT };
@@ -406,20 +395,6 @@ JS_FRIEND_API JSObject* UncheckedUnwrap(JSObject* obj,
 
 
 
-
-
-
-
-
-
-
-
-JS_FRIEND_API JSObject* CheckedUnwrapStatic(JSObject* obj);
-
-
-
-
-
 JS_FRIEND_API JSObject* CheckedUnwrap(JSObject* obj,
                                       bool stopAtWindowProxy = true);
 
@@ -427,36 +402,6 @@ JS_FRIEND_API JSObject* CheckedUnwrap(JSObject* obj,
 
 JS_FRIEND_API JSObject* UnwrapOneChecked(JSObject* obj,
                                          bool stopAtWindowProxy = true);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-JS_FRIEND_API JSObject* CheckedUnwrapDynamic(JSObject* obj, JSContext* cx,
-                                             bool stopAtWindowProxy = true);
-
-
-
-JS_FRIEND_API JSObject* UnwrapOneCheckedDynamic(HandleObject obj, JSContext* cx,
-                                                bool stopAtWindowProxy = true);
 
 
 

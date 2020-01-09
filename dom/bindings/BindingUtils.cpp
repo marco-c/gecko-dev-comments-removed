@@ -1221,9 +1221,9 @@ bool QueryInterface(JSContext* cx, unsigned argc, JS::Value* vp) {
   
   
   JS::Rooted<JSObject*> origObj(cx, &args.thisv().toObject());
-  JS::Rooted<JSObject*> obj(
-      cx, js::CheckedUnwrapDynamic(origObj, cx,
-                                    false));
+  JS::Rooted<JSObject*> obj(cx,
+                            js::CheckedUnwrap(origObj,
+                                               false));
   if (!obj) {
     JS_ReportErrorASCII(cx, "Permission denied to access object");
     return false;
@@ -2261,8 +2261,7 @@ GlobalObject::GlobalObject(JSContext* aCx, JSObject* aObject)
   MOZ_ASSERT(mCx);
   JS::Rooted<JSObject*> obj(aCx, aObject);
   if (js::IsWrapper(obj)) {
-    
-    obj = js::CheckedUnwrapDynamic(obj, aCx,  false);
+    obj = js::CheckedUnwrap(obj,  false);
     if (!obj) {
       
       
@@ -2303,10 +2302,7 @@ nsISupports* GlobalObject::GetAsSupports() const {
   
   
   
-  
-  
-  
-  nsCOMPtr<nsISupports> supp = xpc::ReflectorToISupportsStatic(mGlobalJSObject);
+  nsCOMPtr<nsISupports> supp = xpc::UnwrapReflectorToISupports(mGlobalJSObject);
   if (supp) {
     
     mGlobalObject = supp;
@@ -2375,9 +2371,8 @@ bool InterfaceHasInstance(JSContext* cx, unsigned argc, JS::Value* vp) {
   
   
   
-  
-  JS::Rooted<JSObject*> thisObj(
-      cx, js::CheckedUnwrapStatic(&args.thisv().toObject()));
+  JS::Rooted<JSObject*> thisObj(cx,
+                                js::CheckedUnwrap(&args.thisv().toObject()));
   if (!thisObj) {
     
     return CallOrdinaryHasInstance(cx, args);
@@ -2450,10 +2445,8 @@ bool InterfaceIsInstance(JSContext* cx, unsigned argc, JS::Value* vp) {
     return true;
   }
 
-  
-  
-  JS::Rooted<JSObject*> thisObj(
-      cx, js::CheckedUnwrapStatic(&args.thisv().toObject()));
+  JS::Rooted<JSObject*> thisObj(cx,
+                                js::CheckedUnwrap(&args.thisv().toObject()));
   if (!thisObj) {
     args.rval().setBoolean(false);
     return true;
@@ -2828,9 +2821,6 @@ namespace binding_detail {
 
 
 
-
-
-
 struct NormalThisPolicy {
   
   static MOZ_ALWAYS_INLINE bool HasValidThisValue(const JS::CallArgs& aArgs) {
@@ -2853,12 +2843,12 @@ struct NormalThisPolicy {
     return aObj;
   }
 
-  static MOZ_ALWAYS_INLINE nsresult UnwrapThisObject(
-      JS::MutableHandle<JSObject*> aObj, JSContext* aCx, void*& aSelf,
-      prototypes::ID aProtoID, uint32_t aProtoDepth) {
+  static MOZ_ALWAYS_INLINE nsresult
+  UnwrapThisObject(JS::MutableHandle<JSObject*> aObj, void*& aSelf,
+                   prototypes::ID aProtoID, uint32_t aProtoDepth) {
     binding_detail::MutableObjectHandleWrapper wrapper(aObj);
     return binding_detail::UnwrapObjectInternal<void, true>(
-        wrapper, aSelf, aProtoID, aProtoDepth, aCx);
+        wrapper, aSelf, aProtoID, aProtoDepth);
   }
 
   static bool HandleInvalidThis(JSContext* aCx, JS::CallArgs& aArgs,
@@ -2926,26 +2916,22 @@ struct CrossOriginThisPolicy : public MaybeGlobalThisPolicy {
   
   
   
-  static MOZ_ALWAYS_INLINE nsresult UnwrapThisObject(
-      JS::MutableHandle<JSObject*> aObj, JSContext* aCx, void*& aSelf,
-      prototypes::ID aProtoID, uint32_t aProtoDepth) {
+  static MOZ_ALWAYS_INLINE nsresult
+  UnwrapThisObject(JS::MutableHandle<JSObject*> aObj, void*& aSelf,
+                   prototypes::ID aProtoID, uint32_t aProtoDepth) {
     binding_detail::MutableObjectHandleWrapper wrapper(aObj);
     
     
     
     nsresult rv = binding_detail::UnwrapObjectInternal<void, false>(
-        wrapper, aSelf, aProtoID, aProtoDepth, nullptr);
+        wrapper, aSelf, aProtoID, aProtoDepth);
     if (NS_SUCCEEDED(rv)) {
       return rv;
     }
 
     if (js::IsWrapper(wrapper)) {
-      
-      
-      
-      
-      JSObject* unwrappedObj = js::CheckedUnwrapDynamic(
-          wrapper, aCx,  false);
+      JSObject* unwrappedObj =
+          js::CheckedUnwrap(wrapper,  false);
       if (!unwrappedObj) {
         return NS_ERROR_XPC_SECURITY_MANAGER_VETO;
       }
@@ -2955,7 +2941,7 @@ struct CrossOriginThisPolicy : public MaybeGlobalThisPolicy {
       wrapper = unwrappedObj;
 
       return binding_detail::UnwrapObjectInternal<void, false>(
-          wrapper, aSelf, aProtoID, aProtoDepth, nullptr);
+          wrapper, aSelf, aProtoID, aProtoDepth);
     }
 
     if (!IsRemoteObjectProxy(wrapper, aProtoID)) {
@@ -3021,7 +3007,7 @@ bool GenericGetter(JSContext* cx, unsigned argc, JS::Value* vp) {
   void* self;
   {
     nsresult rv =
-        ThisPolicy::UnwrapThisObject(&rootSelf, cx, self, protoID, info->depth);
+        ThisPolicy::UnwrapThisObject(&rootSelf, self, protoID, info->depth);
     if (NS_FAILED(rv)) {
       bool ok = ThisPolicy::HandleInvalidThis(
           cx, args, rv == NS_ERROR_XPC_SECURITY_MANAGER_VETO, protoID);
@@ -3077,7 +3063,7 @@ bool GenericSetter(JSContext* cx, unsigned argc, JS::Value* vp) {
   void* self;
   {
     nsresult rv =
-        ThisPolicy::UnwrapThisObject(&rootSelf, cx, self, protoID, info->depth);
+        ThisPolicy::UnwrapThisObject(&rootSelf, self, protoID, info->depth);
     if (NS_FAILED(rv)) {
       return ThisPolicy::HandleInvalidThis(
           cx, args, rv == NS_ERROR_XPC_SECURITY_MANAGER_VETO, protoID);
@@ -3126,7 +3112,7 @@ bool GenericMethod(JSContext* cx, unsigned argc, JS::Value* vp) {
   void* self;
   {
     nsresult rv =
-        ThisPolicy::UnwrapThisObject(&rootSelf, cx, self, protoID, info->depth);
+        ThisPolicy::UnwrapThisObject(&rootSelf, self, protoID, info->depth);
     if (NS_FAILED(rv)) {
       bool ok = ThisPolicy::HandleInvalidThis(
           cx, args, rv == NS_ERROR_XPC_SECURITY_MANAGER_VETO, protoID);
@@ -3269,9 +3255,7 @@ nsresult UnwrapArgImpl(JSContext* cx, JS::Handle<JSObject*> src,
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  
-  
-  nsCOMPtr<nsISupports> iface = xpc::ReflectorToISupportsDynamic(src, cx);
+  nsCOMPtr<nsISupports> iface = xpc::UnwrapReflectorToISupports(src);
   if (iface) {
     if (NS_FAILED(iface->QueryInterface(iid, ppArg))) {
       return NS_ERROR_XPC_BAD_CONVERT_JS;
@@ -3443,8 +3427,7 @@ bool GetDesiredProto(JSContext* aCx, const JS::CallArgs& aCallArgs,
   if (protoID == prototypes::id::_ID_Count) {
     
     
-    
-    newTarget = js::CheckedUnwrapStatic(newTarget);
+    newTarget = js::CheckedUnwrap(newTarget);
     if (newTarget && newTarget != originalNewTarget) {
       protoID = GetProtoIdForNewtarget(newTarget);
     }
@@ -3580,12 +3563,8 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
   
   
   
-  
-  
-  
-  
   JS::Rooted<JSObject*> newTarget(
-      aCx, js::CheckedUnwrapStatic(&args.newTarget().toObject()));
+      aCx, js::CheckedUnwrap(&args.newTarget().toObject()));
   if (!newTarget) {
     return ThrowErrorMessage(aCx, MSG_ILLEGAL_CONSTRUCTOR);
   }
@@ -3660,9 +3639,7 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
     JSAutoRealm ar(aCx, global.Get());
     JS::Rooted<JSObject*> constructor(aCx, cb(aCx));
 
-    
-    
-    if (constructor != js::CheckedUnwrapStatic(callee)) {
+    if (constructor != js::CheckedUnwrap(callee)) {
       return ThrowErrorMessage(aCx, MSG_ILLEGAL_CONSTRUCTOR);
     }
   } else {
@@ -3695,9 +3672,7 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
       return false;
     }
 
-    
-    
-    if (constructor != js::CheckedUnwrapStatic(callee)) {
+    if (constructor != js::CheckedUnwrap(callee)) {
       return ThrowErrorMessage(aCx, MSG_ILLEGAL_CONSTRUCTOR);
     }
   }

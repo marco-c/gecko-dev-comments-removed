@@ -380,9 +380,7 @@ CustomElementDefinition* CustomElementRegistry::LookupCustomElementDefinition(
 
 CustomElementDefinition* CustomElementRegistry::LookupCustomElementDefinition(
     JSContext* aCx, JSObject* aConstructor) const {
-  
-  
-  JS::Rooted<JSObject*> constructor(aCx, js::CheckedUnwrapStatic(aConstructor));
+  JS::Rooted<JSObject*> constructor(aCx, js::CheckedUnwrap(aConstructor));
 
   const auto& ptr = mConstructors.lookup(constructor);
   if (!ptr) {
@@ -667,14 +665,8 @@ void CustomElementRegistry::Define(JSContext* aCx, const nsAString& aName,
                                    ErrorResult& aRv) {
   JS::Rooted<JSObject*> constructor(aCx, aFunctionConstructor.CallableOrNull());
 
-  
-  
-  
-  
-  
-  
-  JS::Rooted<JSObject*> constructorUnwrapped(
-      aCx, js::CheckedUnwrapDynamic(constructor, aCx));
+  JS::Rooted<JSObject*> constructorUnwrapped(aCx,
+                                             js::CheckedUnwrap(constructor));
   if (!constructorUnwrapped) {
     
     
