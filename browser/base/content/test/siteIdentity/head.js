@@ -11,21 +11,6 @@ var {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 
 
-function waitForNewTabEvent(aTabBrowser) {
-  return BrowserTestUtils.waitForEvent(aTabBrowser.tabContainer, "TabOpen");
-}
-
-
-
-
-
-
-
-
-
-
-
-
 
 function promiseTabLoadEvent(tab, url) {
   info("Wait tab event: load");
