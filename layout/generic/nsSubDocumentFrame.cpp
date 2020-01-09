@@ -614,6 +614,10 @@ void nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 }
 
 nscoord nsSubDocumentFrame::GetIntrinsicISize() {
+  if (StyleDisplay()->IsContainSize()) {
+    return 0;  
+  }
+
   if (!IsInline()) {
     return 0;  
   }
@@ -634,6 +638,10 @@ nscoord nsSubDocumentFrame::GetIntrinsicISize() {
 nscoord nsSubDocumentFrame::GetIntrinsicBSize() {
   
   NS_ASSERTION(IsInline(), "Shouldn't have been called");
+
+  if (StyleDisplay()->IsContainSize()) {
+    return 0;  
+  }
 
   if (mContent->IsXULElement()) {
     return 0;
@@ -702,6 +710,11 @@ nscoord nsSubDocumentFrame::GetPrefISize(gfxContext* aRenderingContext) {
 
 
 IntrinsicSize nsSubDocumentFrame::GetIntrinsicSize() {
+  if (StyleDisplay()->IsContainSize()) {
+    
+    return IntrinsicSize(0, 0);
+  }
+
   nsIFrame* subDocRoot = ObtainIntrinsicSizeFrame();
   if (subDocRoot) {
     return subDocRoot->GetIntrinsicSize();
@@ -1242,6 +1255,12 @@ nsView* nsSubDocumentFrame::EnsureInnerView() {
 }
 
 nsIFrame* nsSubDocumentFrame::ObtainIntrinsicSizeFrame() {
+  if (StyleDisplay()->IsContainSize()) {
+    
+    
+    return nullptr;
+  }
+
   nsCOMPtr<nsIObjectLoadingContent> olc = do_QueryInterface(GetContent());
   if (olc) {
     

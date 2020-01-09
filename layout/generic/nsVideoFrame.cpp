@@ -339,8 +339,14 @@ void nsVideoFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
 
       if (child->GetContent() == videoControlsDiv && isBSizeShrinkWrapping) {
         
-        contentBoxBSize = myWM.IsOrthogonalTo(wm) ? kidDesiredSize.ISize(wm)
-                                                  : kidDesiredSize.BSize(wm);
+        
+        
+        if (aReflowInput.mStyleDisplay->IsContainSize()) {
+          contentBoxBSize = 0;
+        } else {
+          contentBoxBSize = myWM.IsOrthogonalTo(wm) ? kidDesiredSize.ISize(wm)
+                                                    : kidDesiredSize.BSize(wm);
+        }
       }
 
       FinishReflowChild(child, aPresContext, kidDesiredSize, &kidReflowInput,
@@ -591,7 +597,7 @@ nscoord nsVideoFrame::GetMinISize(gfxContext* aRenderingContext) {
     
     
     nsIFrame* kid = mFrames.LastChild();
-    if (kid) {
+    if (!StyleDisplay()->IsContainSize() && kid) {
       result = nsLayoutUtils::IntrinsicForContainer(aRenderingContext, kid,
                                                     nsLayoutUtils::MIN_ISIZE);
     } else {
@@ -613,7 +619,7 @@ nscoord nsVideoFrame::GetPrefISize(gfxContext* aRenderingContext) {
     
     
     nsIFrame* kid = mFrames.LastChild();
-    if (kid) {
+    if (!StyleDisplay()->IsContainSize() && kid) {
       result = nsLayoutUtils::IntrinsicForContainer(aRenderingContext, kid,
                                                     nsLayoutUtils::PREF_ISIZE);
     } else {
@@ -657,6 +663,11 @@ bool nsVideoFrame::ShouldDisplayPoster() {
 }
 
 nsSize nsVideoFrame::GetVideoIntrinsicSize(gfxContext* aRenderingContext) {
+  
+  if (StyleDisplay()->IsContainSize()) {
+    return nsSize(0, 0);
+  }
+
   
   nsIntSize size(300, 150);
 

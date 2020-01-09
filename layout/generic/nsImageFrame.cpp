@@ -452,8 +452,10 @@ bool nsImageFrame::UpdateIntrinsicSize(imgIContainer* aImage) {
   mIntrinsicSize = IntrinsicSize();
 
   
+  
   nsSize intrinsicSize;
-  if (NS_SUCCEEDED(aImage->GetIntrinsicSize(&intrinsicSize))) {
+  if (!StyleDisplay()->IsContainSize() &&
+      NS_SUCCEEDED(aImage->GetIntrinsicSize(&intrinsicSize))) {
     if (mKind == Kind::ImageElement) {
       ScaleIntrinsicSizeForDensity(*mContent, intrinsicSize);
     }
@@ -466,6 +468,8 @@ bool nsImageFrame::UpdateIntrinsicSize(imgIContainer* aImage) {
     if (intrinsicSize.height != -1)
       mIntrinsicSize.height.emplace(intrinsicSize.height);
   } else {
+    
+    
     
     
     mIntrinsicSize = IntrinsicSize(0, 0);
@@ -482,8 +486,12 @@ bool nsImageFrame::UpdateIntrinsicRatio(imgIContainer* aImage) {
   nsSize oldIntrinsicRatio = mIntrinsicRatio;
 
   
-  if (NS_FAILED(aImage->GetIntrinsicRatio(&mIntrinsicRatio)))
+  
+  
+  if (StyleDisplay()->IsContainSize() ||
+      NS_FAILED(aImage->GetIntrinsicRatio(&mIntrinsicRatio))) {
     mIntrinsicRatio.SizeTo(0, 0);
+  }
 
   return mIntrinsicRatio != oldIntrinsicRatio;
 }
@@ -895,6 +903,14 @@ nsRect nsImageFrame::PredictedDestRect(const nsRect& aFrameContentBox) {
 }
 
 void nsImageFrame::EnsureIntrinsicSizeAndRatio() {
+  if (StyleDisplay()->IsContainSize()) {
+    
+    
+    mIntrinsicSize = IntrinsicSize(0, 0);
+    mIntrinsicRatio.SizeTo(0, 0);
+    return;
+  }
+
   
   
   if (mIntrinsicSize != IntrinsicSize(0, 0)) {

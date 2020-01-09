@@ -168,7 +168,9 @@ nscoord nsSVGOuterSVGFrame::GetPrefISize(gfxContext* aRenderingContext) {
       wm.IsVertical() ? svg->mLengthAttributes[SVGSVGElement::ATTR_HEIGHT]
                       : svg->mLengthAttributes[SVGSVGElement::ATTR_WIDTH];
 
-  if (isize.IsPercentage()) {
+  if (StyleDisplay()->IsContainSize()) {
+    result = nscoord(0);
+  } else if (isize.IsPercentage()) {
     
     
     
@@ -203,6 +205,11 @@ IntrinsicSize nsSVGOuterSVGFrame::GetIntrinsicSize() {
   
   
 
+  if (StyleDisplay()->IsContainSize()) {
+    
+    return IntrinsicSize(0, 0);
+  }
+
   SVGSVGElement* content = static_cast<SVGSVGElement*>(GetContent());
   const SVGAnimatedLength& width =
       content->mLengthAttributes[SVGSVGElement::ATTR_WIDTH];
@@ -228,6 +235,10 @@ IntrinsicSize nsSVGOuterSVGFrame::GetIntrinsicSize() {
 
 
 nsSize nsSVGOuterSVGFrame::GetIntrinsicRatio() {
+  if (StyleDisplay()->IsContainSize()) {
+    return nsSize(0, 0);
+  }
+
   
   
   
