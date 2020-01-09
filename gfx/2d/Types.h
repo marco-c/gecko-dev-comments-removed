@@ -144,6 +144,7 @@ enum class YUVColorSpace : uint8_t {
   BT2020,
   
   UNKNOWN,
+  _NUM_COLORSPACE
 };
 
 enum class ColorDepth : uint8_t {
