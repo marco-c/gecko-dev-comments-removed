@@ -50,9 +50,16 @@ class MOZ_STACK_CLASS EnsureMTA final {
     Unused << thread;
   }
 
+  enum class Option {
+    Default,
+    
+    
+    ForceDispatch,
+  };
+
   template <typename FuncT>
-  explicit EnsureMTA(const FuncT& aClosure) {
-    if (IsCurrentThreadMTA()) {
+  explicit EnsureMTA(const FuncT& aClosure, Option aOpt = Option::Default) {
+    if (aOpt != Option::ForceDispatch && IsCurrentThreadMTA()) {
       
       aClosure();
       return;
