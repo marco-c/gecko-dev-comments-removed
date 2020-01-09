@@ -42,7 +42,11 @@
   --grey-90-a30: rgba(12, 12, 13, 0.3);
   --grey-90-a60: rgba(12, 12, 13, 0.6);
   --grey-90-a80: rgba(12, 12, 13, 0.8);
+  --red-70: #a4000f; 
+  --red-80: #5a0002; 
   --white-100: #fff; 
+  --yellow-60: #d7b600; 
+  --yellow-70: #a47f00; 
 
   
   
@@ -333,12 +337,13 @@ p, h1 {
 
 
 .ghost-button {
+  background: transparent;
   border: none;
   border-radius: calc(var(--base-unit) / 2);
   fill: var(--grey-90-a80);
-  height: calc(var(--base-unit) * 8);
-  padding: calc(var(--base-unit) * 2);
-  width: calc(var(--base-unit) * 8);
+  height: calc(var(--base-unit) * 6);
+  padding: calc(var(--base-unit));
+  width: calc(var(--base-unit) * 6);
 
   -moz-context-properties: fill;
 }
@@ -379,9 +384,9 @@ p, h1 {
 
 
 .badge {
-  font-size: var(--micro-font-size);
   background: var(--grey-30);
   border-radius: calc(var(--base-unit) / 2);
+  font-size: var(--micro-font-size);
   padding: var(--base-unit) calc(2 * var(--base-unit));
 }
 
