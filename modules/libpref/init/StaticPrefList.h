@@ -253,6 +253,18 @@ VARCACHE_PREF(
   bool, true
 )
 
+
+
+
+
+
+
+VARCACHE_PREF(
+  "dom.link.disabled_attribute.enabled",
+   dom_link_disabled_attribute_enabled,
+  bool, true
+)
+
 VARCACHE_PREF(
   "dom.performance.enable_scheduler_timing",
   dom_performance_enable_scheduler_timing,
