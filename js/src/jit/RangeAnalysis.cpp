@@ -2227,7 +2227,7 @@ bool RangeAnalysis::tryHoistBoundsCheck(MBasicBlock* header,
                                         MBoundsCheck* ins) {
   
   MDefinition* length = DefinitionOrBetaInputDefinition(ins->length());
-  if (length->block()->isMarked()) {
+  if (length->block()->isMarked() && !length->isConstant()) {
     return false;
   }
 
@@ -2299,6 +2299,13 @@ bool RangeAnalysis::tryHoistBoundsCheck(MBasicBlock* header,
 
   
   if (upperTerm != length || upperConstant >= 0) {
+    
+    if (length->block()->isMarked()) {
+      MOZ_ASSERT(length->isConstant());
+      MInstruction* lengthIns = length->toInstruction();
+      lengthIns->block()->moveBefore(preLoop->lastIns(), lengthIns);
+    }
+
     MBoundsCheck* upperCheck = MBoundsCheck::New(alloc(), upperTerm, length);
     upperCheck->setMinimum(upperConstant);
     upperCheck->setMaximum(upperConstant);
