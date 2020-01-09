@@ -232,7 +232,7 @@ var gSearchResultsPane = {
 
       
       let rootPreferencesChildren = [...document
-        .querySelectorAll("#mainPrefPane > *:not([data-hidden-from-search])")];
+        .querySelectorAll("#mainPrefPane > *:not([data-hidden-from-search]):not(script):not(stringbundle)")];
 
       if (subQuery) {
         
