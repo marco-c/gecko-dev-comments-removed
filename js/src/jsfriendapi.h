@@ -554,6 +554,10 @@ extern JS_FRIEND_API JSObject* GetFirstGlobalInCompartment(
 
 
 
+extern JS_FRIEND_API bool CompartmentHasLiveGlobal(JS::Compartment* comp);
+
+
+
 
 
 

@@ -37,6 +37,11 @@ inline bool JS::Realm::globalIsAboutToBeFinalized() {
          js::gc::IsAboutToBeFinalizedUnbarriered(global_.unsafeGet());
 }
 
+inline bool JS::Realm::hasLiveGlobal() {
+  js::GlobalObject* global = unsafeUnbarrieredMaybeGlobal();
+  return global && !js::gc::IsAboutToBeFinalizedUnbarriered(&global);
+}
+
  inline js::ObjectRealm& js::ObjectRealm::get(const JSObject* obj) {
   
   

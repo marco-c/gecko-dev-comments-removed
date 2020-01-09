@@ -453,8 +453,8 @@ class JS::Compartment {
   
   
   
-  Realm* firstRealm() const { return realms_[0]; }
-  Realm* realmForNewCCW() const { return firstRealm(); }
+  js::GlobalObject& firstGlobal() const;
+  js::GlobalObject& globalForNewCCW() const { return firstGlobal(); }
 
   void assertNoCrossCompartmentWrappers() {
     MOZ_ASSERT(crossCompartmentWrappers.empty());

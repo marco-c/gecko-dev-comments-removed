@@ -274,9 +274,9 @@ JSObject* Wrapper::New(JSContext* cx, JSObject* obj, const Wrapper* handler,
                        const WrapperOptions& options) {
   
   
-  mozilla::Maybe<AutoRealmUnchecked> ar;
+  mozilla::Maybe<AutoRealm> ar;
   if (handler->isCrossCompartmentWrapper()) {
-    ar.emplace(cx, cx->compartment()->realmForNewCCW());
+    ar.emplace(cx, &cx->compartment()->globalForNewCCW());
   }
   RootedValue priv(cx, ObjectValue(*obj));
   return NewProxyObject(cx, handler, priv, options.proto(), options);

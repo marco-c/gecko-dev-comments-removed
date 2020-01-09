@@ -350,7 +350,7 @@ void XPCWrappedNativeScope::UpdateWeakPointersAfterGC() {
   }
 
   
-  if (js::gc::AllRealmsNeedSweep(mCompartment)) {
+  if (!js::CompartmentHasLiveGlobal(mCompartment)) {
     mCompartment = nullptr;
     GetWrappedNativeMap()->Clear();
     mWrappedNativeProtoMap->Clear();
