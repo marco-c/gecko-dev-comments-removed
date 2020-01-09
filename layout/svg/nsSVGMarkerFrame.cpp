@@ -88,7 +88,7 @@ static nsIFrame* GetAnonymousChildFrame(nsIFrame* aFrame) {
 void nsSVGMarkerFrame::PaintMark(gfxContext& aContext,
                                  const gfxMatrix& aToMarkedFrameUserSpace,
                                  SVGGeometryFrame* aMarkedFrame,
-                                 const nsSVGMark& aMark, float aStrokeWidth,
+                                 const SVGMark& aMark, float aStrokeWidth,
                                  imgDrawingParams& aImgParams) {
   
   
@@ -136,8 +136,7 @@ void nsSVGMarkerFrame::PaintMark(gfxContext& aContext,
 
 SVGBBox nsSVGMarkerFrame::GetMarkBBoxContribution(
     const Matrix& aToBBoxUserspace, uint32_t aFlags,
-    SVGGeometryFrame* aMarkedFrame, const nsSVGMark& aMark,
-    float aStrokeWidth) {
+    SVGGeometryFrame* aMarkedFrame, const SVGMark& aMark, float aStrokeWidth) {
   SVGBBox bbox;
 
   

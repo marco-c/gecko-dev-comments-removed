@@ -45,7 +45,7 @@ class SVGPolyElement : public SVGPolyElementBase {
   
   virtual bool AttributeDefinesGeometry(const nsAtom* aName) override;
   virtual bool IsMarkable() override { return true; }
-  virtual void GetMarkPoints(nsTArray<nsSVGMark>* aMarks) override;
+  virtual void GetMarkPoints(nsTArray<SVGMark>* aMarks) override;
   virtual bool GetGeometryBounds(
       Rect* aBounds, const StrokeOptions& aStrokeOptions,
       const Matrix& aToBoundsSpace,

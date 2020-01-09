@@ -18,7 +18,7 @@
 #include <stdarg.h>
 #include "nsStyleConsts.h"
 #include "SVGContentUtils.h"
-#include "SVGGeometryElement.h"  
+#include "SVGGeometryElement.h"
 #include "SVGPathSegUtils.h"
 #include <algorithm>
 
@@ -748,7 +748,7 @@ static float AngleOfVector(const Point& cp1, const Point& cp2) {
   return static_cast<float>(AngleOfVector(cp1 - cp2));
 }
 
-void SVGPathData::GetMarkerPositioningData(nsTArray<nsSVGMark>* aMarks) const {
+void SVGPathData::GetMarkerPositioningData(nsTArray<SVGMark>* aMarks) const {
   
   
   
@@ -1018,7 +1018,7 @@ void SVGPathData::GetMarkerPositioningData(nsTArray<nsSVGMark>* aMarks) const {
 
     
     if (aMarks->Length()) {
-      nsSVGMark& mark = aMarks->LastElement();
+      SVGMark& mark = aMarks->LastElement();
       if (!IsMoveto(segType) && IsMoveto(prevSegType)) {
         
         pathStartAngle = mark.angle = segStartAngle;
@@ -1033,9 +1033,9 @@ void SVGPathData::GetMarkerPositioningData(nsTArray<nsSVGMark>* aMarks) const {
     }
 
     
-    if (!aMarks->AppendElement(nsSVGMark(static_cast<float>(segEnd.x),
-                                         static_cast<float>(segEnd.y), 0.0f,
-                                         nsSVGMark::eMid))) {
+    if (!aMarks->AppendElement(SVGMark(static_cast<float>(segEnd.x),
+                                       static_cast<float>(segEnd.y), 0.0f,
+                                       SVGMark::eMid))) {
       aMarks->Clear();  
       return;
     }
@@ -1057,8 +1057,8 @@ void SVGPathData::GetMarkerPositioningData(nsTArray<nsSVGMark>* aMarks) const {
     if (prevSegType != PATHSEG_CLOSEPATH) {
       aMarks->LastElement().angle = prevSegEndAngle;
     }
-    aMarks->LastElement().type = nsSVGMark::eEnd;
-    aMarks->ElementAt(0).type = nsSVGMark::eStart;
+    aMarks->LastElement().type = SVGMark::eEnd;
+    aMarks->ElementAt(0).type = SVGMark::eStart;
   }
 }
 

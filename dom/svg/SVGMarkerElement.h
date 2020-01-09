@@ -19,12 +19,14 @@
 #include "mozilla/dom/SVGMarkerElementBinding.h"
 
 class nsSVGMarkerFrame;
-struct nsSVGMark;
 
 nsresult NS_NewSVGMarkerElement(
     nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
 namespace mozilla {
+
+struct SVGMark;
+
 namespace dom {
 
 
@@ -108,7 +110,7 @@ class SVGMarkerElement : public SVGMarkerElementBase {
   virtual bool HasValidDimensions() const override;
 
   
-  gfx::Matrix GetMarkerTransform(float aStrokeWidth, const nsSVGMark& aMark);
+  gfx::Matrix GetMarkerTransform(float aStrokeWidth, const SVGMark& aMark);
   SVGViewBoxRect GetViewBoxRect();
   gfx::Matrix GetViewBoxTransform();
 
