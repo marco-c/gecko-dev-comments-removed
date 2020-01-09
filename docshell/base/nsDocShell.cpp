@@ -10919,6 +10919,16 @@ nsDocShell::AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   nsresult rv;
 
@@ -10935,6 +10945,8 @@ nsDocShell::AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
   RefPtr<Document> document = GetDocument();
   NS_ENSURE_TRUE(document, NS_ERROR_FAILURE);
 
+  
+  
   
   nsCOMPtr<nsIStructuredCloneContainer> scContainer;
 
@@ -10979,6 +10991,8 @@ nsDocShell::AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
   NS_ENSURE_TRUE(scSize <= (uint32_t)maxStateObjSize, NS_ERROR_ILLEGAL_VALUE);
 
   
+  
+  
   bool equalURIs = true;
   nsCOMPtr<nsIURI> currentURI;
   if (sURIFixup && mCurrentURI) {
@@ -10987,7 +11001,6 @@ nsDocShell::AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
   } else {
     currentURI = mCurrentURI;
   }
-  nsCOMPtr<nsIURI> oldURI = currentURI;
   nsCOMPtr<nsIURI> newURI;
   if (aURL.Length() == 0) {
     newURI = currentURI;
@@ -11059,6 +11072,21 @@ nsDocShell::AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
   }  
 
   
+  rv = UpdateURLAndHistory(document, newURI, scContainer, aTitle, aReplace,
+                           currentURI, equalURIs);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  return NS_OK;
+}
+
+nsresult nsDocShell::UpdateURLAndHistory(Document* aDocument, nsIURI* aNewURI,
+                                         nsIStructuredCloneContainer* aData,
+                                         const nsAString& aTitle, bool aReplace,
+                                         nsIURI* aCurrentURI, bool aEqualURIs) {
+  
+  
+
+  
   
   
   
@@ -11070,6 +11098,7 @@ nsDocShell::AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
   nsCOMPtr<nsISHEntry> newSHEntry;
   if (!aReplace) {
     
+    
     nsPoint scrollPos = GetCurScrollPos();
     mOSHE->SetScrollPosition(scrollPos.x, scrollPos.y);
 
@@ -11079,13 +11108,14 @@ nsDocShell::AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
     
     
     nsCOMPtr<nsIContentSecurityPolicy> csp;
-    document->NodePrincipal()->GetCsp(getter_AddRefs(csp));
+    aDocument->NodePrincipal()->GetCsp(getter_AddRefs(csp));
 
     
     
-    rv = AddToSessionHistory(newURI, nullptr,
-                             document->NodePrincipal(),  
-                             nullptr, csp, true, getter_AddRefs(newSHEntry));
+    nsresult rv =
+        AddToSessionHistory(aNewURI, nullptr,
+                            aDocument->NodePrincipal(),  
+                            nullptr, csp, true, getter_AddRefs(newSHEntry));
     NS_ENSURE_SUCCESS(rv, rv);
 
     NS_ENSURE_TRUE(newSHEntry, NS_ERROR_FAILURE);
@@ -11110,20 +11140,21 @@ nsDocShell::AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
 #ifdef MOZ_GECKO_PROFILER
     uint32_t id = 0;
     GetOSHEId(&id);
-    profiler_register_page(mHistoryID, id, NS_ConvertUTF16toUTF8(aURL),
+    profiler_register_page(mHistoryID, id, aNewURI->GetSpecOrDefault(),
                            IsFrame());
 #endif
 
   } else {
+    
     newSHEntry = mOSHE;
-    newSHEntry->SetURI(newURI);
-    newSHEntry->SetOriginalURI(newURI);
+    newSHEntry->SetURI(aNewURI);
+    newSHEntry->SetOriginalURI(aNewURI);
     newSHEntry->SetLoadReplace(false);
   }
 
   
   
-  newSHEntry->SetStateData(scContainer);
+  newSHEntry->SetStateData(aData);
   newSHEntry->SetPostData(nullptr);
 
   
@@ -11131,7 +11162,7 @@ nsDocShell::AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
   
   
   bool sameExceptHashes = true;
-  newURI->EqualsExceptRef(currentURI, &sameExceptHashes);
+  aNewURI->EqualsExceptRef(aCurrentURI, &sameExceptHashes);
   bool oldURIWasModified = oldOSHE->GetURIWasModified();
   newSHEntry->SetURIWasModified(!sameExceptHashes || oldURIWasModified);
 
@@ -11173,29 +11204,29 @@ nsDocShell::AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
   
   
   
-  if (!equalURIs && !mIsBeingDestroyed) {
-    document->SetDocumentURI(newURI);
+  if (!aEqualURIs && !mIsBeingDestroyed) {
+    aDocument->SetDocumentURI(aNewURI);
     
     
-    SetCurrentURI(newURI, nullptr, false, LOCATION_CHANGE_SAME_DOCUMENT);
+    SetCurrentURI(aNewURI, nullptr, false, LOCATION_CHANGE_SAME_DOCUMENT);
     if (mLoadType != LOAD_ERROR_PAGE) {
       FireDummyOnLocationChange();
     }
 
-    AddURIVisit(newURI, oldURI, 0);
+    AddURIVisit(aNewURI, aCurrentURI, 0);
 
     
     
-    UpdateGlobalHistoryTitle(newURI);
+    UpdateGlobalHistoryTitle(aNewURI);
 
     
     
-    CopyFavicon(oldURI, newURI, document->NodePrincipal(),
+    CopyFavicon(aCurrentURI, aNewURI, aDocument->NodePrincipal(),
                 UsePrivateBrowsing());
   } else {
     FireDummyOnLocationChange();
   }
-  document->SetStateObject(scContainer);
+  aDocument->SetStateObject(aData);
 
   return NS_OK;
 }
