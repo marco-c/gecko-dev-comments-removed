@@ -2464,87 +2464,82 @@ void MacroAssembler::linkProfilerCallSites(JitCode* code) {
   }
 }
 
-void MacroAssembler::alignJitStackBasedOnNArgs(Register nargs) {
+void MacroAssembler::alignJitStackBasedOnNArgs(Register nargs,
+                                               bool countIncludesThis) {
+  
+  assertStackAlignment(sizeof(Value), 0);
+
+  static_assert(JitStackValueAlignment == 1 || JitStackValueAlignment == 2,
+                "JitStackValueAlignment is either 1 or 2.");
   if (JitStackValueAlignment == 1) {
     return;
   }
-
   
   
   
   
   
-  static_assert(
-      sizeof(JitFrameLayout) % JitStackAlignment == 0,
-      "No need to consider the JitFrameLayout for aligning the stack");
-
   
   
-  MOZ_ASSERT(JitStackValueAlignment == 2);
-
   
   
 
   
+  static_assert(sizeof(JitFrameLayout) % JitStackAlignment == 0,
+                "JitFrameLayout doesn't affect stack alignment");
+
   
   
   
+
   
   
   
+  Assembler::Condition condition =
+      countIncludesThis ? Assembler::NonZero : Assembler::Zero;
+
+  Label alignmentIsOffset, end;
+  branchTestPtr(condition, nargs, Imm32(1), &alignmentIsOffset);
+
   
-  
-  Label odd, end;
-  Label* maybeAssert = &end;
-#ifdef DEBUG
-  Label assert;
-  maybeAssert = &assert;
-#endif
-  assertStackAlignment(sizeof(Value), 0);
-  branchTestPtr(Assembler::NonZero, nargs, Imm32(1), &odd);
-  branchTestStackPtr(Assembler::NonZero, Imm32(JitStackAlignment - 1),
-                     maybeAssert);
-  subFromStackPtr(Imm32(sizeof(Value)));
-#ifdef DEBUG
-  bind(&assert);
-#endif
-  assertStackAlignment(JitStackAlignment, sizeof(Value));
-  jump(&end);
-  bind(&odd);
   andToStackPtr(Imm32(~(JitStackAlignment - 1)));
+  jump(&end);
+
+  
+  
+  
+  
+  
+  bind(&alignmentIsOffset);
+  branchTestStackPtr(Assembler::NonZero, Imm32(JitStackAlignment - 1), &end);
+  subFromStackPtr(Imm32(sizeof(Value)));
+
   bind(&end);
 }
 
-void MacroAssembler::alignJitStackBasedOnNArgs(uint32_t nargs) {
+void MacroAssembler::alignJitStackBasedOnNArgs(uint32_t argc) {
+  
+  assertStackAlignment(sizeof(Value), 0);
+
+  static_assert(JitStackValueAlignment == 1 || JitStackValueAlignment == 2,
+                "JitStackValueAlignment is either 1 or 2.");
   if (JitStackValueAlignment == 1) {
     return;
   }
 
   
-  
-  
-  
-  
-  static_assert(
-      sizeof(JitFrameLayout) % JitStackAlignment == 0,
-      "No need to consider the JitFrameLayout for aligning the stack");
-
-  
-  
-  MOZ_ASSERT(JitStackValueAlignment == 2);
-
-  
-  
-
-  assertStackAlignment(sizeof(Value), 0);
-  if (nargs % 2 == 0) {
+  uint32_t nArgs = argc + 1;
+  if (nArgs % 2 == 0) {
+    
+    andToStackPtr(Imm32(~(JitStackAlignment - 1)));
+  } else {
+    
+    
     Label end;
     branchTestStackPtr(Assembler::NonZero, Imm32(JitStackAlignment - 1), &end);
     subFromStackPtr(Imm32(sizeof(Value)));
     bind(&end);
     assertStackAlignment(JitStackAlignment, sizeof(Value));
-  } else {
-    andToStackPtr(Imm32(~(JitStackAlignment - 1)));
   }
 }
 

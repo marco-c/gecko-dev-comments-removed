@@ -4059,7 +4059,7 @@ void ICStubCompilerBase::pushCallArguments(MacroAssembler& masm,
   
   
   if (isJitCall) {
-    masm.alignJitStackBasedOnNArgs(count);
+    masm.alignJitStackBasedOnNArgs(count, false);
 
     
     masm.add32(Imm32(2), count);
@@ -4115,7 +4115,7 @@ void ICCallStubCompiler::pushSpreadCallArguments(
       masm.movePtr(argcReg, alignReg);
       masm.addPtr(Imm32(1), alignReg);
     }
-    masm.alignJitStackBasedOnNArgs(alignReg);
+    masm.alignJitStackBasedOnNArgs(alignReg, false);
     if (isConstructing) {
       MOZ_ASSERT(alignReg != argcReg);
       regs.add(alignReg);
@@ -4291,7 +4291,7 @@ void ICCallStubCompiler::pushCallerArguments(
   masm.loadPtr(Address(startReg, BaselineFrame::offsetOfNumActualArgs()),
                endReg);
   masm.addPtr(Imm32(BaselineFrame::offsetOfArg(0)), startReg);
-  masm.alignJitStackBasedOnNArgs(endReg);
+  masm.alignJitStackBasedOnNArgs(endReg, false);
   masm.lshiftPtr(Imm32(ValueShift), endReg);
   masm.addPtr(startReg, endReg);
 
@@ -4318,7 +4318,7 @@ void ICCallStubCompiler::pushArrayArguments(
   masm.loadPtr(Address(startReg, NativeObject::offsetOfElements()), startReg);
   masm.load32(Address(startReg, ObjectElements::offsetOfInitializedLength()),
               endReg);
-  masm.alignJitStackBasedOnNArgs(endReg);
+  masm.alignJitStackBasedOnNArgs(endReg, false);
   masm.lshiftPtr(Imm32(ValueShift), endReg);
   masm.addPtr(startReg, endReg);
 
