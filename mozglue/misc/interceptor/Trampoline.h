@@ -12,6 +12,7 @@
 #include "mozilla/CheckedInt.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Types.h"
+#include "mozilla/WindowsProcessMitigations.h"
 
 namespace mozilla {
 namespace interceptor {
@@ -345,9 +346,18 @@ class MOZ_STACK_CLASS TrampolineCollection final {
       return;
     }
 
-    DebugOnly<BOOL> ok = mMMPolicy.Protect(aLocalBase, aNumTramps * aTrampSize,
-                                           PAGE_EXECUTE_READWRITE, &mPrevProt);
-    MOZ_ASSERT(ok);
+    BOOL ok = mMMPolicy.Protect(aLocalBase, aNumTramps * aTrampSize,
+                                PAGE_EXECUTE_READWRITE, &mPrevProt);
+    if (!ok) {
+      
+      
+      
+      
+      
+      MOZ_ASSERT(IsDynamicCodeDisabled());
+      mNumTramps = 0;
+      mPrevProt = 0;
+    }
   }
 
   ~TrampolineCollection() {
@@ -405,7 +415,7 @@ class MOZ_STACK_CLASS TrampolineCollection final {
   uint8_t* const mLocalBase;
   const uintptr_t mRemoteBase;
   const uint32_t mTrampSize;
-  const uint32_t mNumTramps;
+  uint32_t mNumTramps;
   uint32_t mPrevProt;
   CRITICAL_SECTION* mCS;
 
