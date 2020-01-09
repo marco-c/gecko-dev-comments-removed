@@ -8093,14 +8093,6 @@ void GCRuntime::mergeRealms(Realm* source, Realm* target) {
 
     group->setGeneration(target->zone()->types.generation);
     group->realm_ = target;
-
-    
-    
-    
-    if (UnboxedLayout* layout =
-            group->maybeUnboxedLayoutDontCheckGeneration()) {
-      layout->detachFromRealm();
-    }
   }
 
   

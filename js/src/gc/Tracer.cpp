@@ -157,76 +157,11 @@ void gc::TraceCycleCollectorChildren(JS::CallbackTracer* trc, Shape* shape) {
   } while (shape);
 }
 
-
-
-
-
-
-struct ObjectGroupCycleCollectorTracer : public JS::CallbackTracer {
-  explicit ObjectGroupCycleCollectorTracer(JS::CallbackTracer* innerTracer)
-      : JS::CallbackTracer(innerTracer->runtime(), DoNotTraceWeakMaps),
-        innerTracer(innerTracer) {}
-
-  void onChild(const JS::GCCellPtr& thing) override;
-
-  JS::CallbackTracer* innerTracer;
-  Vector<ObjectGroup*, 4, SystemAllocPolicy> seen, worklist;
-};
-
-void ObjectGroupCycleCollectorTracer::onChild(const JS::GCCellPtr& thing) {
-  if (thing.is<BaseShape>()) {
-    
-    
-    return;
-  }
-
-  if (thing.is<JSObject>() || thing.is<JSScript>()) {
-    
-    
-    innerTracer->onChild(thing);
-    return;
-  }
-
-  if (thing.is<ObjectGroup>()) {
-    
-    
-    ObjectGroup& group = thing.as<ObjectGroup>();
-    AutoSweepObjectGroup sweep(&group);
-    if (group.maybeUnboxedLayout(sweep)) {
-      for (size_t i = 0; i < seen.length(); i++) {
-        if (seen[i] == &group) {
-          return;
-        }
-      }
-      if (seen.append(&group) && worklist.append(&group)) {
-        return;
-      } else {
-        
-        
-      }
-    }
-  }
-
-  TraceChildren(this, thing.asCell(), thing.kind());
-}
-
 void gc::TraceCycleCollectorChildren(JS::CallbackTracer* trc,
                                      ObjectGroup* group) {
   MOZ_ASSERT(trc->isCallbackTracer());
 
-  
-  AutoSweepObjectGroup sweep(group);
-  if (!group->maybeUnboxedLayout(sweep)) {
-    return group->traceChildren(trc);
-  }
-
-  ObjectGroupCycleCollectorTracer groupTracer(trc->asCallbackTracer());
-  group->traceChildren(&groupTracer);
-
-  while (!groupTracer.worklist.empty()) {
-    ObjectGroup* innerGroup = groupTracer.worklist.popCopy();
-    innerGroup->traceChildren(&groupTracer);
-  }
+  group->traceChildren(trc);
 }
 
 
