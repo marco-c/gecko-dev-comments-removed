@@ -8,7 +8,7 @@
 #ifndef MOZILLA_A11Y_ProxyWrappers_h
 #define MOZILLA_A11Y_ProxyWrappers_h
 
-#include "HyperTextAccessible.h"
+#include "HyperTextAccessibleWrap.h"
 
 namespace mozilla {
 namespace a11y {
@@ -78,6 +78,36 @@ inline ProxyAccessible* HyperTextProxyFor(T* aWrapper) {
   auto wrapper = static_cast<HyperTextProxyAccessibleWrap*>(aWrapper);
   return wrapper->IsProxy() ? wrapper->Proxy() : nullptr;
 }
+
+
+
+
+
+
+
+
+
+class RemoteIframeDocProxyAccessibleWrap : public HyperTextAccessibleWrap {
+ public:
+  explicit RemoteIframeDocProxyAccessibleWrap(IDispatch* aCOMProxy)
+      : HyperTextAccessibleWrap(nullptr, nullptr), mCOMProxy(aCOMProxy) {
+    mType = eProxyType;
+    mBits.proxy = nullptr;
+  }
+
+  virtual void Shutdown() override {
+    mStateFlags |= eIsDefunct;
+    mCOMProxy = nullptr;
+  }
+
+  virtual void GetNativeInterface(void** aOutAccessible) override {
+    RefPtr<IDispatch> addRefed = mCOMProxy;
+    addRefed.forget(aOutAccessible);
+  }
+
+ private:
+  RefPtr<IDispatch> mCOMProxy;
+};
 
 }  
 }  
