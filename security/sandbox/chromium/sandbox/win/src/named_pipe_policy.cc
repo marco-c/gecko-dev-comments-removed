@@ -67,6 +67,7 @@ DWORD NamedPipePolicy::CreateNamedPipeAction(EvalResult eval_result,
                                              DWORD in_buffer_size,
                                              DWORD default_timeout,
                                              HANDLE* pipe) {
+  *pipe = INVALID_HANDLE_VALUE;
   
   if (ASK_BROKER != eval_result) {
     return ERROR_ACCESS_DENIED;
