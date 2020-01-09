@@ -5,6 +5,9 @@
 
 
 #include "WMFDecoderModule.h"
+#include <algorithm>
+#include <vector>
+#include "DriverCrashGuard.h"
 #include "GfxDriverInfo.h"
 #include "MFTDecoder.h"
 #include "MP4Decoder.h"
@@ -21,24 +24,22 @@
 #include "mozilla/StaticPrefs.h"
 #include "mozilla/WindowsVersion.h"
 #include "mozilla/gfx/gfxVars.h"
+#include "mozilla/mscom/EnsureMTA.h"
 #include "nsAutoPtr.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIGfxInfo.h"
 #include "nsIWindowsRegKey.h"
+#include "nsIXULRuntime.h"
 #include "nsServiceManagerUtils.h"
 #include "nsWindowsHelpers.h"
 #include "prsystem.h"
-#include "nsIXULRuntime.h"
-#include "mozilla/mscom/EnsureMTA.h"
-#include <algorithm>
-#include <vector>
 
 extern const GUID CLSID_WebmMfVpxDec;
-extern const GUID CLSID_AMDWebmMfVp9Dec;
 
 namespace mozilla {
 
 static Atomic<bool> sDXVAEnabled(false);
+static Atomic<bool> sUsableVPXMFT(false);
 
 WMFDecoderModule::~WMFDecoderModule() {
   if (mWMFInitialized) {
@@ -47,22 +48,54 @@ WMFDecoderModule::~WMFDecoderModule() {
   }
 }
 
+static bool CanCreateMFTDecoder(const GUID& aGuid) {
+  
+  
+  
+  
+  
+  
+  bool canCreateDecoder = false;
+  mozilla::mscom::EnsureMTA([&]() -> void {
+    if (FAILED(wmf::MFStartup())) {
+      return;
+    }
+    RefPtr<MFTDecoder> decoder(new MFTDecoder());
+    canCreateDecoder = SUCCEEDED(decoder->Create(aGuid));
+    wmf::MFShutdown();
+  });
+  return canCreateDecoder;
+}
+
 
 void WMFDecoderModule::Init() {
+  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
+  bool testForVPx;
   if (XRE_IsContentProcess()) {
     
     
     
     sDXVAEnabled = !StaticPrefs::MediaGpuProcessDecoder();
+    
+    
+    
+    testForVPx = true;
   } else if (XRE_IsGPUProcess()) {
     
-    sDXVAEnabled = true;
+    testForVPx = sDXVAEnabled = true;
   } else {
     
-    sDXVAEnabled = !mozilla::BrowserTabsRemoteAutostart();
+    testForVPx = sDXVAEnabled = !mozilla::BrowserTabsRemoteAutostart();
   }
 
   sDXVAEnabled = sDXVAEnabled && gfx::gfxVars::CanUseHardwareVideoDecoding();
+  testForVPx = testForVPx && gfx::gfxVars::CanUseHardwareVideoDecoding();
+  if (testForVPx && StaticPrefs::MediaWmfVp9Enabled()) {
+    gfx::WMFVPXVideoCrashGuard guard;
+    if (!guard.Crashed()) {
+      sUsableVPXMFT = CanCreateMFTDecoder(CLSID_WebmMfVpxDec);
+    }
+  }
 }
 
 
@@ -85,7 +118,6 @@ nsresult WMFDecoderModule::Startup() {
 
 already_AddRefed<MediaDataDecoder> WMFDecoderModule::CreateVideoDecoder(
     const CreateDecoderParams& aParams) {
-
   
   
   
@@ -124,25 +156,6 @@ already_AddRefed<MediaDataDecoder> WMFDecoderModule::CreateAudioDecoder(
   RefPtr<MediaDataDecoder> decoder =
       new WMFMediaDataDecoder(manager.forget(), aParams.mTaskQueue);
   return decoder.forget();
-}
-
-static bool CanCreateMFTDecoder(const GUID& aGuid) {
-  
-  
-  
-  
-  
-  
-  bool canCreateDecoder = false;
-  mozilla::mscom::EnsureMTA([&]() -> void {
-    if (FAILED(wmf::MFStartup())) {
-      return;
-    }
-    RefPtr<MFTDecoder> decoder(new MFTDecoder());
-    canCreateDecoder = SUCCEEDED(decoder->Create(aGuid));
-    wmf::MFShutdown();
-  });
-  return canCreateDecoder;
 }
 
 template <const GUID& aGuid>
@@ -204,16 +217,12 @@ bool WMFDecoderModule::Supports(const TrackInfo& aTrackInfo,
       CanCreateWMFDecoder<CLSID_CMP3DecMediaObject>()) {
     return true;
   }
-  if (StaticPrefs::MediaWmfVp9Enabled()) {
+  if (sUsableVPXMFT) {
     static const uint32_t VP8_USABLE_BUILD = 16287;
-    if (VPXDecoder::IsVP8(aTrackInfo.mMimeType) &&
-        IsWindowsBuildOrLater(VP8_USABLE_BUILD) &&
-        CanCreateWMFDecoder<CLSID_WebmMfVpxDec>()) {
-      return true;
-    }
-    if (VPXDecoder::IsVP9(aTrackInfo.mMimeType) &&
-        CanCreateWMFDecoder<CLSID_WebmMfVpxDec>()) {
-      return true;
+    if ((VPXDecoder::IsVP8(aTrackInfo.mMimeType) &&
+         IsWindowsBuildOrLater(VP8_USABLE_BUILD)) ||
+        VPXDecoder::IsVP9(aTrackInfo.mMimeType)) {
+      return CanCreateWMFDecoder<CLSID_WebmMfVpxDec>();
     }
   }
 
