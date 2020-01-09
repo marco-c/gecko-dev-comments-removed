@@ -54,7 +54,7 @@ class RootAccessible : public DocAccessibleWrap, public nsIDOMEventListener {
   
 
 
-  void ProcessDOMEvent(dom::Event* aEvent);
+  void ProcessDOMEvent(dom::Event* aDOMEvent, nsINode* aTarget);
 
   
 
