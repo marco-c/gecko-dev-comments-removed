@@ -399,7 +399,7 @@ DllServices* DllServices::Get() {
   
   
   
-  sInstance->Enable();
+  sInstance->EnableFull();
   ClearOnShutdown(&sInstance);
   return sInstance;
 }
