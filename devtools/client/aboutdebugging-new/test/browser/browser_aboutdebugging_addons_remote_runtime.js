@@ -10,9 +10,6 @@ const USB_RUNTIME_DEVICE_NAME = "test device name";
 const USB_RUNTIME_APP_NAME = "TestUsbApp";
 
 
-Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "helper-mocks.js", this);
-
-
 add_task(async function() {
   const mocks = new Mocks();
 
