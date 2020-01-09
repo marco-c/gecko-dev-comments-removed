@@ -1691,9 +1691,9 @@ bool ICUpdatedStub::addUpdateStubForValue(JSContext* cx,
 
 
 
-static bool DoTypeUpdateFallback(JSContext* cx, BaselineFrame* frame,
-                                 ICUpdatedStub* stub, HandleValue objval,
-                                 HandleValue value) {
+bool DoTypeUpdateFallback(JSContext* cx, BaselineFrame* frame,
+                          ICUpdatedStub* stub, HandleValue objval,
+                          HandleValue value) {
   
   
   JS::AutoCheckCannotGC nogc;
