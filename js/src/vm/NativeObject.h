@@ -665,12 +665,6 @@ class NativeObject : public ShapedObject {
 
   void initSlotRange(uint32_t start, const Value* vector, uint32_t length);
 
-  
-
-
-
-  void copySlotRange(uint32_t start, const Value* vector, uint32_t length);
-
 #ifdef DEBUG
   enum SentinelAllowed{SENTINEL_NOT_ALLOWED, SENTINEL_ALLOWED};
 
@@ -1488,10 +1482,6 @@ class NativeObject : public ShapedObject {
     void** pprivate = &privateRef(nfixed);
     *pprivate = data;
   }
-
-  static inline NativeObject* copy(JSContext* cx, gc::AllocKind kind,
-                                   gc::InitialHeap heap,
-                                   HandleNativeObject templateObject);
 
   
   inline js::gc::AllocKind allocKindForTenure() const;
