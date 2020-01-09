@@ -4,6 +4,7 @@
 "use strict";
 
 const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
 ChromeUtils.defineModuleGetter(this, "perfService", "resource://activity-stream/common/PerfService.jsm");
 
@@ -32,12 +33,25 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
     this._prefCache = {};
   }
 
+  finalLayoutEndpoint(url, apiKey) {
+    if (url.includes("$apiKey") && !apiKey) {
+      throw new Error(`Layout Endpoint - An API key was specified but none configured: ${url}`);
+    }
+    return url.replace("$apiKey", apiKey);
+  }
+
   get config() {
     if (this._prefCache.config) {
       return this._prefCache.config;
     }
     try {
       this._prefCache.config = JSON.parse(this.store.getState().Prefs.values[PREF_CONFIG]);
+      const layoutUrl = this._prefCache.config.layout_endpoint;
+      const apiKeyPref = this._prefCache.config.api_key_pref;
+      if (layoutUrl && apiKeyPref) {
+        const apiKey = Services.prefs.getCharPref(apiKeyPref, "");
+        this._prefCache.config.layout_endpoint = this.finalLayoutEndpoint(layoutUrl, apiKey);
+      }
 
       
       this._prefCache.config.enabled = this._prefCache.config.enabled &&
@@ -46,7 +60,7 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
       
       this._prefCache.config = {};
       
-      Cu.reportError(`Could not parse preference. Try resetting ${PREF_CONFIG} in about:config.`);
+      Cu.reportError(`Could not parse preference. Try resetting ${PREF_CONFIG} in about:config. ${e}`);
     }
     return this._prefCache.config;
   }
@@ -641,7 +655,7 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
             break;
           
           case PREF_SHOW_SPONSORED:
-            await this.loadSpocs();
+            await this.loadSpocs(update => this.store.dispatch(ac.BroadcastToContent(update)));
             break;
         }
         break;
