@@ -3,7 +3,6 @@
 
 
 use api::units::{DeviceIntPoint, DeviceIntRect, DeviceIntSize};
-use util;
 
 
 
@@ -167,10 +166,10 @@ impl ArrayAllocationTracker {
         }
 
         
-        if !util::rect_is_empty(&new_free_rect_to_right) {
+        if !new_free_rect_to_right.is_empty() {
             self.push(chosen.slice, new_free_rect_to_right);
         }
-        if !util::rect_is_empty(&new_free_rect_to_bottom) {
+        if !new_free_rect_to_bottom.is_empty() {
             self.push(chosen.slice, new_free_rect_to_bottom);
         }
     }
