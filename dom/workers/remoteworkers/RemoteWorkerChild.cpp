@@ -472,7 +472,13 @@ void RemoteWorkerChild::CloseWorkerOnMainThread() {
 
   
   if (lock->mWorkerState == eRunning) {
-    MOZ_RELEASE_ASSERT(lock->mWorkerPrivate);
+    
+    
+    
+    if (!lock->mWorkerPrivate) {
+      return;
+    }
+
     lock->mWorkerPrivate->Cancel();
   }
 }
