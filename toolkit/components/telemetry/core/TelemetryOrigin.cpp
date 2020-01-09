@@ -9,7 +9,7 @@
 
 #include "nsDataHashtable.h"
 #include "nsIObserverService.h"
-#include "nsIXULAppInfo.h"
+#include "nsPrintfCString.h"
 #include "TelemetryCommon.h"
 #include "TelemetryOriginEnums.h"
 
@@ -17,6 +17,7 @@
 #include "mozilla/Base64.h"
 #include "mozilla/dom/PrioEncoder.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/Pair.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticMutex.h"
 
@@ -24,7 +25,9 @@
 #include <type_traits>
 
 using mozilla::ErrorResult;
+using mozilla::MakePair;
 using mozilla::MallocSizeOf;
+using mozilla::Pair;
 using mozilla::StaticMutex;
 using mozilla::StaticMutexAutoLock;
 using mozilla::dom::PrioEncoder;
@@ -114,10 +117,8 @@ IdToOriginsMap* gMetricToOriginsMap;
 mozilla::Atomic<bool, mozilla::Relaxed> gInitDone(false);
 
 
-typedef nsDataHashtable<OriginMetricIDHashKey, nsTArray<bool>> IdToBoolsMap;
-
-static nsCString gBatchID;
-#define CANARY_BATCH_ID "decaffcoffee"
+typedef nsTArray<Pair<OriginMetricID, nsTArray<nsTArray<bool>>>>
+    IdBoolsPairArray;
 
 
 
@@ -133,6 +134,10 @@ static uint32_t gPrioDataCount = 0;
 
 static uint32_t gPrioDatasPerMetric;
 
+
+
+static uint32_t kNumMetaOrigins = 0;
+
 }  
 
 
@@ -147,18 +152,24 @@ const char* GetNameForMetricID(OriginMetricID aId) {
   return mozilla::Telemetry::MetricIDToString[static_cast<uint32_t>(aId)];
 }
 
-nsresult AppEncodeTo(const StaticMutexAutoLock& lock, IdToBoolsMap& aResult) {
-  
-  
-  MOZ_ASSERT(gOriginsList->Length() <= PrioEncoder::gNumBooleans);
-
+nsresult AppEncodeTo(const StaticMutexAutoLock& lock,
+                     IdBoolsPairArray& aResult) {
   auto iter = gMetricToOriginsMap->ConstIter();
   for (; !iter.Done(); iter.Next()) {
     OriginMetricID id = iter.Key();
 
-    nsTArray<bool> metricData(gOriginsList->Length());
-    metricData.SetLength(gOriginsList->Length());
-    for (auto& metricDatum : metricData) {
+    
+    nsTArray<nsTArray<bool>> metricData(gPrioDatasPerMetric);
+    metricData.SetLength(gPrioDatasPerMetric);
+    for (size_t i = 0; i < metricData.Length() - 1; ++i) {
+      metricData[i].SetLength(PrioEncoder::gNumBooleans);
+      for (auto& metricDatum : metricData[i]) {
+        metricDatum = false;
+      }
+    }
+    auto& lastArray = metricData[metricData.Length() - 1];
+    lastArray.SetLength(gOriginsList->Length() % PrioEncoder::gNumBooleans);
+    for (auto& metricDatum : lastArray) {
       metricDatum = false;
     }
 
@@ -168,9 +179,14 @@ nsresult AppEncodeTo(const StaticMutexAutoLock& lock, IdToBoolsMap& aResult) {
         return NS_ERROR_FAILURE;
       }
       MOZ_ASSERT(index < gOriginsList->Length());
-      metricData[index] = true;
+      size_t shardIndex =
+          ceil(static_cast<double>(index) / PrioEncoder::gNumBooleans);
+      MOZ_ASSERT(shardIndex < metricData.Length());
+      MOZ_ASSERT(index % PrioEncoder::gNumBooleans <
+                 metricData[shardIndex].Length());
+      metricData[shardIndex][index % PrioEncoder::gNumBooleans] = true;
     }
-    aResult.Put(id, metricData);
+    aResult.AppendElement(MakePair(id, metricData));
   }
   return NS_OK;
 }
@@ -200,8 +216,9 @@ void TelemetryOrigin::InitializeGlobalState() {
       "fb.com",
   });
 
-  gPrioDatasPerMetric = ceil(static_cast<double>(gOriginsList->Length()) /
-                             PrioEncoder::gNumBooleans);
+  gPrioDatasPerMetric =
+      ceil(static_cast<double>(gOriginsList->Length() + kNumMetaOrigins) /
+           PrioEncoder::gNumBooleans);
 
   gOriginToIndexMap = new OriginToIndexMap(gOriginsList->Length());
   for (size_t i = 0; i < gOriginsList->Length(); ++i) {
@@ -215,16 +232,6 @@ void TelemetryOrigin::InitializeGlobalState() {
 #ifdef DEBUG
   gOriginToIndexMap->MarkImmutable();
 #endif  
-
-  
-  nsCOMPtr<nsIXULAppInfo> appInfo =
-      do_GetService("@mozilla.org/xre/app-info;1");
-  if (!appInfo || NS_FAILED(appInfo->GetAppBuildID(gBatchID))) {
-    
-    
-    NS_WARNING("Cannot get app build ID. Defaulting to canary.");
-    gBatchID.AssignLiteral(CANARY_BATCH_ID);
-  }
 
   gInitDone = true;
 }
@@ -248,8 +255,6 @@ void TelemetryOrigin::DeInitializeGlobalState() {
 
   delete gMetricToOriginsMap;
   gMetricToOriginsMap = nullptr;
-
-  gBatchID.Truncate();
 
   gInitDone = false;
 }
@@ -378,7 +383,7 @@ nsresult TelemetryOrigin::GetEncodedOriginSnapshot(
 
   
   nsresult rv;
-  IdToBoolsMap appEncodedMetricData;
+  IdBoolsPairArray appEncodedMetricData;
   {
     StaticMutexAutoLock lock(gTelemetryOriginMutex);
 
@@ -386,45 +391,73 @@ nsresult TelemetryOrigin::GetEncodedOriginSnapshot(
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
+
+    if (aClear) {
+      
+      
+      
+      
+
+      gMetricToOriginsMap->Clear();
+    }
   }
 
   
+  nsTArray<Pair<nsCString, Pair<nsCString, nsCString>>> prioData;
+  for (auto& metricData : appEncodedMetricData) {
+    auto& boolVectors = metricData.second();
+    for (uint32_t i = 0; i < boolVectors.Length(); ++i) {
+      
+      nsCString encodingName =
+          nsPrintfCString("%s-%u", GetNameForMetricID(metricData.first()), i);
+      nsCString aResult;
+      nsCString bResult;
+      rv = PrioEncoder::EncodeNative(encodingName, boolVectors[i], aResult,
+                                     bResult);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+      nsCString aBase64;
+      rv = mozilla::Base64Encode(aResult, aBase64);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+      nsCString bBase64;
+      rv = mozilla::Base64Encode(bResult, bBase64);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
 
-  JS::RootedObject prioDataArray(
-      aCx, JS_NewArrayObject(aCx, appEncodedMetricData.Count()));
+      prioData.AppendElement(
+          MakePair(encodingName, MakePair(aBase64, bBase64)));
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  JS::RootedObject prioDataArray(aCx,
+                                 JS_NewArrayObject(aCx, prioData.Length()));
   if (NS_WARN_IF(!prioDataArray)) {
     return NS_ERROR_FAILURE;
   }
-
-  auto it = appEncodedMetricData.ConstIter();
   uint32_t i = 0;
-  for (; !it.Done(); it.Next()) {
-    nsCString aResult;
-    nsCString bResult;
-    rv = PrioEncoder::EncodeNative(gBatchID, it.Data(), aResult, bResult);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-    nsCString aBase64;
-    rv = mozilla::Base64Encode(aResult, aBase64);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-    nsCString bBase64;
-    rv = mozilla::Base64Encode(bResult, bBase64);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-
-    JS::RootedObject rootObj(aCx, JS_NewPlainObject(aCx));
-    if (NS_WARN_IF(!rootObj)) {
+  for (auto& prioDatum : prioData) {
+    JS::RootedObject prioDatumObj(aCx, JS_NewPlainObject(aCx));
+    if (NS_WARN_IF(!prioDatumObj)) {
       return NS_ERROR_FAILURE;
     }
-    JSString* metricName =
-        ToJSString(aCx, nsDependentCString(GetNameForMetricID(it.Key())));
-    JS::RootedString rootStr(aCx, metricName);
-    if (NS_WARN_IF(!JS_DefineProperty(aCx, rootObj, "encoding", rootStr,
-                                      JSPROP_ENUMERATE))) {
+    JSString* encoding = ToJSString(aCx, prioDatum.first());
+    JS::RootedString rootedEncoding(aCx, encoding);
+    if (NS_WARN_IF(!JS_DefineProperty(aCx, prioDatumObj, "encoding",
+                                      rootedEncoding, JSPROP_ENUMERATE))) {
       return NS_ERROR_FAILURE;
     }
 
@@ -432,33 +465,27 @@ nsresult TelemetryOrigin::GetEncodedOriginSnapshot(
     if (NS_WARN_IF(!prioObj)) {
       return NS_ERROR_FAILURE;
     }
-    if (NS_WARN_IF(!JS_DefineProperty(aCx, rootObj, "prio", prioObj,
+    if (NS_WARN_IF(!JS_DefineProperty(aCx, prioDatumObj, "prio", prioObj,
                                       JSPROP_ENUMERATE))) {
       return NS_ERROR_FAILURE;
     }
 
-    JS::RootedString aRootStr(aCx, ToJSString(aCx, aBase64));
+    JS::RootedString aRootStr(aCx, ToJSString(aCx, prioDatum.second().first()));
     if (NS_WARN_IF(!JS_DefineProperty(aCx, prioObj, "a", aRootStr,
                                       JSPROP_ENUMERATE))) {
       return NS_ERROR_FAILURE;
     }
-    JS::RootedString bRootStr(aCx, ToJSString(aCx, bBase64));
+    JS::RootedString bRootStr(aCx,
+                              ToJSString(aCx, prioDatum.second().second()));
     if (NS_WARN_IF(!JS_DefineProperty(aCx, prioObj, "b", bRootStr,
                                       JSPROP_ENUMERATE))) {
       return NS_ERROR_FAILURE;
     }
 
-    if (NS_WARN_IF(!JS_DefineElement(aCx, prioDataArray, i++, rootObj,
+    if (NS_WARN_IF(!JS_DefineElement(aCx, prioDataArray, i++, prioDatumObj,
                                      JSPROP_ENUMERATE))) {
       return NS_ERROR_FAILURE;
     }
-  }
-
-  
-  if (aClear) {
-    StaticMutexAutoLock lock(gTelemetryOriginMutex);
-    gMetricToOriginsMap->Clear();
-    gPrioDataCount = 0;
   }
 
   aSnapshot.setObject(*prioDataArray);
