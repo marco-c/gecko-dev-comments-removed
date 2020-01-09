@@ -234,12 +234,13 @@ class UrlbarView {
       }
       
       
-      let trimmedValue = this.input.textValue.trim();
+      
+      let trimmedValue = queryContext.searchString.trim();
       this._enableOrDisableOneOffSearches(
-        !trimmedValue ||
-        (trimmedValue[0] != "@" &&
-         (trimmedValue[0] != UrlbarTokenizer.RESTRICT.SEARCH ||
-          trimmedValue.length != 1))
+        trimmedValue &&
+        trimmedValue[0] != "@" &&
+        (trimmedValue[0] != UrlbarTokenizer.RESTRICT.SEARCH ||
+         trimmedValue.length != 1)
       );
     }
 

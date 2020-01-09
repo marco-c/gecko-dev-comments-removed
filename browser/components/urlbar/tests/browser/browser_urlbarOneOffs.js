@@ -56,53 +56,63 @@ add_task(async function history() {
       "example.com/browser_urlbarOneOffs.js/?" + (gMaxResults - i - 1));
   }
 
-  
-  let numButtons = oneOffSearchButtons.getSelectableButtons(true).length;
-  for (let i = 0; i < numButtons; i++) {
+  if (!UrlbarPrefs.get("quantumbar")) {
+    
+    let numButtons = oneOffSearchButtons.getSelectableButtons(true).length;
+    for (let i = 0; i < numButtons; i++) {
+      EventUtils.synthesizeKey("KEY_ArrowDown");
+      assertState(-1, i, "");
+    }
+
+    
     EventUtils.synthesizeKey("KEY_ArrowDown");
-    assertState(-1, i, "");
+    assertState(-1, -1, "");
+
+    
+    EventUtils.synthesizeKey("KEY_ArrowDown");
+    assertState(0, -1,
+      "example.com/browser_urlbarOneOffs.js/?" + (gMaxResults - 1));
+
+    
+    EventUtils.synthesizeKey("KEY_ArrowUp");
+    assertState(-1, -1, "");
+
+    
+    for (let i = numButtons - 1; i >= 0; i--) {
+      EventUtils.synthesizeKey("KEY_ArrowUp");
+      assertState(-1, i, "");
+    }
+
+    
+    for (let i = 1; i < numButtons; i++) {
+      EventUtils.synthesizeKey("KEY_ArrowRight");
+      assertState(-1, i, "");
+    }
+
+    
+    for (let i = numButtons - 2; i >= 0; i--) {
+      EventUtils.synthesizeKey("KEY_ArrowLeft");
+      assertState(-1, i, "");
+    }
+
+    
+    for (let i = gMaxResults - 1; i >= 0; i--) {
+      EventUtils.synthesizeKey("KEY_ArrowUp");
+      assertState(i, -1,
+        "example.com/browser_urlbarOneOffs.js/?" + (gMaxResults - i - 1));
+    }
+
+    
+    EventUtils.synthesizeKey("KEY_ArrowUp");
+    assertState(-1, -1, "");
+
+    await hidePopup();
+    return;
   }
 
+  
   
   EventUtils.synthesizeKey("KEY_ArrowDown");
-  assertState(-1, -1, "");
-
-  
-  EventUtils.synthesizeKey("KEY_ArrowDown");
-  assertState(0, -1,
-    "example.com/browser_urlbarOneOffs.js/?" + (gMaxResults - 1));
-
-  
-  EventUtils.synthesizeKey("KEY_ArrowUp");
-  assertState(-1, -1, "");
-
-  
-  for (let i = numButtons - 1; i >= 0; i--) {
-    EventUtils.synthesizeKey("KEY_ArrowUp");
-    assertState(-1, i, "");
-  }
-
-  
-  for (let i = 1; i < numButtons; i++) {
-    EventUtils.synthesizeKey("KEY_ArrowRight");
-    assertState(-1, i, "");
-  }
-
-  
-  for (let i = numButtons - 2; i >= 0; i--) {
-    EventUtils.synthesizeKey("KEY_ArrowLeft");
-    assertState(-1, i, "");
-  }
-
-  
-  for (let i = gMaxResults - 1; i >= 0; i--) {
-    EventUtils.synthesizeKey("KEY_ArrowUp");
-    assertState(i, -1,
-      "example.com/browser_urlbarOneOffs.js/?" + (gMaxResults - i - 1));
-  }
-
-  
-  EventUtils.synthesizeKey("KEY_ArrowUp");
   assertState(-1, -1, "");
 
   await hidePopup();
