@@ -90,32 +90,32 @@ NSSCertDBTrustDomain::NSSCertDBTrustDomain(
 
 Result NSSCertDBTrustDomain::FindIssuer(Input encodedIssuerName,
                                         IssuerChecker& checker, Time) {
-  
-  
-  
-  SECItem encodedIssuerNameItem = UnsafeMapInputToSECItem(encodedIssuerName);
-  UniqueCERTCertList candidates(CERT_CreateSubjectCertList(
-      nullptr, CERT_GetDefaultCertDB(), &encodedIssuerNameItem, 0, false));
-  if (!candidates) {
-    return Success;
-  }
-
   Vector<Input> rootCandidates;
   Vector<Input> intermediateCandidates;
-  for (CERTCertListNode* n = CERT_LIST_HEAD(candidates);
-       !CERT_LIST_END(n, candidates); n = CERT_LIST_NEXT(n)) {
-    Input certDER;
-    Result rv = certDER.Init(n->cert->derCert.data, n->cert->derCert.len);
-    if (rv != Success) {
-      continue;  
-    }
-    if (n->cert->isRoot) {
-      if (!rootCandidates.append(certDER)) {
-        return Result::FATAL_ERROR_NO_MEMORY;
+
+  SECItem encodedIssuerNameItem = UnsafeMapInputToSECItem(encodedIssuerName);
+
+  
+  
+  
+  UniqueCERTCertList candidates(CERT_CreateSubjectCertList(
+      nullptr, CERT_GetDefaultCertDB(), &encodedIssuerNameItem, 0, false));
+  if (candidates) {
+    for (CERTCertListNode* n = CERT_LIST_HEAD(candidates);
+         !CERT_LIST_END(n, candidates); n = CERT_LIST_NEXT(n)) {
+      Input certDER;
+      Result rv = certDER.Init(n->cert->derCert.data, n->cert->derCert.len);
+      if (rv != Success) {
+        continue;  
       }
-    } else {
-      if (!intermediateCandidates.append(certDER)) {
-        return Result::FATAL_ERROR_NO_MEMORY;
+      if (n->cert->isRoot) {
+        if (!rootCandidates.append(certDER)) {
+          return Result::FATAL_ERROR_NO_MEMORY;
+        }
+      } else {
+        if (!intermediateCandidates.append(certDER)) {
+          return Result::FATAL_ERROR_NO_MEMORY;
+        }
       }
     }
   }
