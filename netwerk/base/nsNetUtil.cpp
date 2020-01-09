@@ -1622,15 +1622,6 @@ nsresult NS_ReadInputStreamToString(nsIInputStream* aInputStream,
 }
 
 nsresult NS_NewURI(
-    nsIURI** result, const nsACString& spec,
-    const char* charset , nsIURI* baseURI ,
-    nsIIOService*
-        ioService )  
-{
-  return NS_NewURIOnAnyThread(result, spec, charset, baseURI, ioService);
-}
-
-nsresult NS_NewURI(
     nsIURI** result, const nsACString& spec, NotNull<const Encoding*> encoding,
     nsIURI* baseURI ,
     nsIIOService*
@@ -1709,10 +1700,10 @@ class TlsAutoIncrement {
   T& mVar;
 };
 
-nsresult NS_NewURIOnAnyThread(nsIURI** aURI, const nsACString& aSpec,
-                              const char* aCharset ,
-                              nsIURI* aBaseURI ,
-                              nsIIOService* aIOService ) {
+nsresult NS_NewURI(nsIURI** aURI, const nsACString& aSpec,
+                   const char* aCharset ,
+                   nsIURI* aBaseURI ,
+                   nsIIOService* aIOService ) {
   TlsAutoIncrement<decltype(gTlsURLRecursionCount)> inc(gTlsURLRecursionCount);
   if (inc.value() >= MAX_RECURSION_COUNT) {
     return NS_ERROR_MALFORMED_URI;
