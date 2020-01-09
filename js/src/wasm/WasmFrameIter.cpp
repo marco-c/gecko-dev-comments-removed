@@ -1123,6 +1123,8 @@ ProfilingFrameIterator::ProfilingFrameIterator(const JitActivation& activation,
     return;
   }
 
+  MOZ_ASSERT(unwindState.codeRange);
+
   if (unwoundCaller) {
     callerFP_ = unwindState.fp;
     callerPC_ = unwindState.pc;
@@ -1131,7 +1133,7 @@ ProfilingFrameIterator::ProfilingFrameIterator(const JitActivation& activation,
     
     
     
-    if (unwindState.codeRange && unwindState.codeRange->isFunction() &&
+    if (unwindState.codeRange->isFunction() &&
         (uintptr_t(state.fp) & ExitOrJitEntryFPTag)) {
       unwoundIonCallerFP_ = (uint8_t*)callerFP_;
     }

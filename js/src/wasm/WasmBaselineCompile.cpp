@@ -2140,6 +2140,7 @@ struct StackMapGenerator {
         trapExitLayoutNumWords_(trapExitLayoutNumWords),
         stackMaps_(stackMaps),
         masm_(masm),
+        numStackArgWords_(0),
         memRefsOnStk_(0) {}
 
   
