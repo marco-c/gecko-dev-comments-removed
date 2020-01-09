@@ -407,7 +407,6 @@ class GCRuntime {
   uint64_t majorGCCount() const { return majorGCNumber; }
   void incMajorGcNumber() {
     ++majorGCNumber;
-    ++number;
   }
 
   int64_t defaultSliceBudget() const { return defaultTimeBudget_; }
