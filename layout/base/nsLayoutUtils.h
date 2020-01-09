@@ -403,6 +403,12 @@ class nsLayoutUtils {
 
 
 
+  static bool IsPrimaryStyleFrame(const nsIFrame* aFrame);
+
+  
+
+
+
 
 
 

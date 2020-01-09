@@ -1450,6 +1450,20 @@ nsIFrame* nsLayoutUtils::GetPrimaryFrameFromStyleFrame(nsIFrame* aStyleFrame) {
 }
 
 
+bool nsLayoutUtils::IsPrimaryStyleFrame(const nsIFrame* aFrame) {
+  if (aFrame->IsTableWrapperFrame()) {
+    return false;
+  }
+
+  const nsIFrame* parent = aFrame->GetParent();
+  if (parent && parent->IsTableWrapperFrame()) {
+    return parent->PrincipalChildList().FirstChild() == aFrame;
+  }
+
+  return aFrame->IsPrimaryFrame();
+}
+
+
 nsIFrame* nsLayoutUtils::GetRealPrimaryFrameFor(const nsIContent* aContent) {
   nsIFrame* frame = aContent->GetPrimaryFrame();
   if (!frame) {
