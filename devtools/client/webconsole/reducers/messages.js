@@ -841,13 +841,6 @@ function getMessageVisibility(message, {
     };
   }
 
-  if (!passSearchFilters(message, filtersState)) {
-    return {
-      visible: false,
-      cause: FILTERS.TEXT,
-    };
-  }
-
   
   
   if (!passLevelFilters(message, filtersState)) {
@@ -875,6 +868,15 @@ function getMessageVisibility(message, {
     return {
       visible: false,
       cause: FILTERS.NETXHR,
+    };
+  }
+
+  
+  
+  if (!passSearchFilters(message, filtersState)) {
+    return {
+      visible: false,
+      cause: FILTERS.TEXT,
     };
   }
 
