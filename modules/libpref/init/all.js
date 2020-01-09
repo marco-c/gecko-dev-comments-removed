@@ -4822,7 +4822,7 @@ pref("image.cache.factor2.threshold-surfaces", 4);
 
 
 
-pref("image.cache.max-rasterized-svg-threshold-kb", 92160);
+pref("image.cache.max-rasterized-svg-threshold-kb", 204800);
 
 
 pref("image.cache.size", 5242880);
