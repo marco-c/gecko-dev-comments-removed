@@ -8,45 +8,44 @@
 
 
 
-add_task(threadClientTest(({ threadClient, debuggee }) => {
-  return new Promise(resolve => {
-    threadClient.addOneTimeListener("paused", function(event, packet) {
-      const source = threadClient.source(packet.frame.where.source);
-      const location = {
-        line: debuggee.line0 + 3,
-      };
-
-      source.setBreakpoint(location).then(function([response, bpClient]) {
-        threadClient.addOneTimeListener("paused", function(event, packet) {
-          
-          Assert.equal(packet.type, "paused");
-          Assert.equal(packet.frame.where.source.actor, source.actor);
-          Assert.equal(packet.frame.where.line, location.line);
-          Assert.equal(packet.why.type, "breakpoint");
-          Assert.equal(packet.why.actors[0], bpClient.actor);
-          
-          Assert.equal(debuggee.a, 1);
-          Assert.equal(debuggee.b, undefined);
-
-          
-          bpClient.remove(function(response) {
-            threadClient.resume(resolve);
-          });
-        });
-
-        
-        threadClient.resume();
-      });
-    });
-
-    
-    Cu.evalInSandbox(
-      "var line0 = Error().lineNumber;\n" +
-      "debugger;\n" +   
-      "var a = 1;\n" +  
-      "var b = 2;\n",   
-      debuggee
+add_task(threadClientTest(async ({ threadClient, debuggee }) => {
+  (async () => {
+    info("Wait for the debugger statement to be hit");
+    let packet = await waitForPause(threadClient);
+    const source = await getSourceById(
+      threadClient,
+      packet.frame.where.actor
     );
-    
-  });
+
+    const location = { line: debuggee.line0 + 3 };
+
+    const [, bpClient] = await source.setBreakpoint(location);
+
+    await threadClient.resume();
+    packet = await waitForPause(threadClient);
+
+    info("Paused at the breakpoint");
+    Assert.equal(packet.type, "paused");
+    Assert.equal(packet.frame.where.actor, source.actor);
+    Assert.equal(packet.frame.where.line, location.line);
+    Assert.equal(packet.why.type, "breakpoint");
+    Assert.equal(packet.why.actors[0], bpClient.actor);
+
+    info("Check that the breakpoint worked.");
+    Assert.equal(debuggee.a, 1);
+    Assert.equal(debuggee.b, undefined);
+
+    await bpClient.remove();
+    await threadClient.resume();
+  })();
+
+  
+  Cu.evalInSandbox(
+    "var line0 = Error().lineNumber;\n" +
+    "debugger;\n" +   
+    "var a = 1;\n" +  
+    "var b = 2;\n",   
+     debuggee
+  );
+  
 }));
