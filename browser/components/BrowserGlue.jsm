@@ -1725,6 +1725,11 @@ BrowserGlue.prototype = {
     Services.tm.idleDispatchToMainThread(() => {
       TabUnloader.init();
     });
+
+    
+    Services.tm.idleDispatchToMainThread(() => {
+      Services.obs.notifyObservers(null, "marionette-startup-requested");
+    });
   },
 
   
