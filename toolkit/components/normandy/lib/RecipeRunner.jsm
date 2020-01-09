@@ -58,6 +58,10 @@ XPCOMUtils.defineLazyGetter(this, "gRemoteSettingsClient", () => {
   });
 });
 
+XPCOMUtils.defineLazyGetter(this, "gRemoteSettingsGate", () => {
+  return FeatureGate.fromId("normandy-remote-settings");
+});
+
 
 
 
@@ -84,12 +88,30 @@ var RecipeRunner = {
     await this.setUpRemoteSettings();
 
     
+    
+    
     const firstRun = Services.prefs.getBoolPref(FIRST_RUN_PREF, true);
+
+    
+    
     const devMode = Services.prefs.getBoolPref(DEV_MODE_PREF, false);
 
     if (this.enabled && (devMode || firstRun)) {
+      
+      
+      
+      
+      if (devMode) {
+        let remoteSettingsGate = await gRemoteSettingsGate;
+        if (await remoteSettingsGate.isEnabled()) {
+          await gRemoteSettingsClient.sync();
+        }
+      }
       await this.run();
     }
+
+    
+    
     if (firstRun) {
       Services.prefs.setBoolPref(FIRST_RUN_PREF, false);
     }
@@ -199,17 +221,16 @@ var RecipeRunner = {
   },
 
   async setUpRemoteSettings() {
-    const feature = "normandy-remote-settings";
-
-    if (await FeatureGate.isEnabled(feature)) {
+    const remoteSettingsGate = await gRemoteSettingsGate;
+    if (await remoteSettingsGate.isEnabled()) {
       this.attachRemoteSettings();
     }
     const observer = {
       onEnable: this.attachRemoteSettings.bind(this),
       onDisable: this.detachRemoteSettings.bind(this),
     };
-    await FeatureGate.addObserver(feature, observer);
-    CleanupManager.addCleanupHandler(() => FeatureGate.removeObserver(feature, observer));
+    remoteSettingsGate.addObserver(observer);
+    CleanupManager.addCleanupHandler(() => remoteSettingsGate.removeObserver(observer));
   },
 
   attachRemoteSettings() {
