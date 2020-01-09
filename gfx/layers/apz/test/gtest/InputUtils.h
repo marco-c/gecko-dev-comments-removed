@@ -28,7 +28,7 @@
 
 
 
-PinchGestureInput CreatePinchGestureInput(
+inline PinchGestureInput CreatePinchGestureInput(
     PinchGestureInput::PinchGestureType aType, const ScreenPoint& aFocus,
     float aCurrentSpan, float aPreviousSpan) {
   ParentLayerPoint localFocus(aFocus.x, aFocus.y);
@@ -53,8 +53,8 @@ void SetDefaultAllowedTouchBehavior(const RefPtr<InputReceiver>& aTarget,
   aTarget->SetAllowedTouchBehavior(aInputBlockId, defaultBehaviors);
 }
 
-MultiTouchInput CreateMultiTouchInput(MultiTouchInput::MultiTouchType aType,
-                                      TimeStamp aTime) {
+inline MultiTouchInput CreateMultiTouchInput(
+    MultiTouchInput::MultiTouchType aType, TimeStamp aTime) {
   return MultiTouchInput(aType, MillisecondsSinceStartup(aTime), aTime, 0);
 }
 

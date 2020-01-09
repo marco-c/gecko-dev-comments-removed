@@ -67,7 +67,7 @@ static void GetPlatformBackends(nsTArray<LayersBackend>& aBackends) {
 
 
 
-already_AddRefed<Compositor> CreateBasicCompositor() {
+static already_AddRefed<Compositor> CreateBasicCompositor() {
   RefPtr<Compositor> compositor;
   
   if (gfxPlatform::GetPlatform()) {
@@ -84,7 +84,7 @@ already_AddRefed<Compositor> CreateBasicCompositor() {
 
 
 
-void CheckCompatibilityWithBasicCompositor(
+static void CheckCompatibilityWithBasicCompositor(
     LayersBackend aBackends, nsTArray<RefPtr<TextureHost>>& aTextures) {
   RefPtr<Compositor> compositor = CreateBasicCompositor();
   for (uint32_t i = 0; i < aTextures.Length(); i++) {

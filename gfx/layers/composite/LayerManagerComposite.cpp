@@ -231,7 +231,7 @@ void LayerManagerComposite::PostProcessLayers(nsIntRegion& aOpaqueRegion) {
 
 
 
-bool ShouldProcessLayer(Layer* aLayer) {
+static bool ShouldProcessLayer(Layer* aLayer) {
   if (!aLayer->AsContainerLayer()) {
     return true;
   }
@@ -1406,8 +1406,8 @@ static void AddTransformedRegion(LayerIntRegion& aDest,
 
 
 
-void ComputeVisibleRegionForChildren(ContainerLayer* aContainer,
-                                     LayerIntRegion& aResult) {
+static void ComputeVisibleRegionForChildren(ContainerLayer* aContainer,
+                                            LayerIntRegion& aResult) {
   for (Layer* l = aContainer->GetFirstChild(); l; l = l->GetNextSibling()) {
     if (l->Extend3DContext()) {
       MOZ_ASSERT(l->AsContainerLayer());

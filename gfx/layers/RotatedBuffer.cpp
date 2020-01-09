@@ -193,7 +193,8 @@ void RotatedBuffer::DrawBufferWithRotation(
                      aMaskTransform);
 }
 
-bool IsClippingCheap(gfx::DrawTarget* aTarget, const nsIntRegion& aRegion) {
+static bool IsClippingCheap(gfx::DrawTarget* aTarget,
+                            const nsIntRegion& aRegion) {
   
   
   return !aTarget->GetTransform().HasNonIntegerTranslation() &&

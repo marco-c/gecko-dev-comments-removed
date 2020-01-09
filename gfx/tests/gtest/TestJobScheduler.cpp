@@ -24,7 +24,7 @@ using mozilla::gfx::SyncObject;
 
 
 
-void MaybeYieldThread() {
+static void MaybeYieldThread() {
 #ifndef WIN32
   if (rand() % 5 == 0) {
     sched_yield();
@@ -112,7 +112,7 @@ class TestJob : public Job {
 
 
 
-void TestSchedulerJoin(uint32_t aNumThreads, uint32_t aNumCmdBuffers) {
+static void TestSchedulerJoin(uint32_t aNumThreads, uint32_t aNumCmdBuffers) {
   JoinTestSanityCheck check(aNumCmdBuffers);
 
   RefPtr<SyncObject> beforeFilter = new SyncObject(aNumCmdBuffers);
@@ -150,7 +150,7 @@ void TestSchedulerJoin(uint32_t aNumThreads, uint32_t aNumCmdBuffers) {
 
 
 
-void TestSchedulerChain(uint32_t aNumThreads, uint32_t aNumCmdBuffers) {
+static void TestSchedulerChain(uint32_t aNumThreads, uint32_t aNumCmdBuffers) {
   SanityChecker check(aNumCmdBuffers);
 
   RefPtr<SyncObject> completion = new SyncObject(aNumCmdBuffers);

@@ -48,16 +48,17 @@ typedef mozilla::layers::GeckoContentController::TapType TapType;
 
 
 
-SingleTouchData CreateSingleTouchData(int32_t aIdentifier,
-                                      const ScreenIntPoint& aPoint) {
+inline SingleTouchData CreateSingleTouchData(int32_t aIdentifier,
+                                             const ScreenIntPoint& aPoint) {
   SingleTouchData touch(aIdentifier, aPoint, ScreenSize(0, 0), 0, 0);
   touch.mLocalScreenPoint = ParentLayerPoint(aPoint.x, aPoint.y);
   return touch;
 }
 
 
-SingleTouchData CreateSingleTouchData(int32_t aIdentifier, ScreenIntCoord aX,
-                                      ScreenIntCoord aY) {
+inline SingleTouchData CreateSingleTouchData(int32_t aIdentifier,
+                                             ScreenIntCoord aX,
+                                             ScreenIntCoord aY) {
   return CreateSingleTouchData(aIdentifier, ScreenIntPoint(aX, aY));
 }
 
@@ -805,7 +806,7 @@ AsyncPanZoomController* TestAPZCTreeManager::NewAPZCInstance(
       aLayersId, mcc, this, AsyncPanZoomController::USE_GESTURE_DETECTOR);
 }
 
-FrameMetrics TestFrameMetrics() {
+inline FrameMetrics TestFrameMetrics() {
   FrameMetrics fm;
 
   fm.SetDisplayPort(CSSRect(0, 0, 10, 10));
@@ -816,7 +817,7 @@ FrameMetrics TestFrameMetrics() {
   return fm;
 }
 
-uint32_t MillisecondsSinceStartup(TimeStamp aTime) {
+inline uint32_t MillisecondsSinceStartup(TimeStamp aTime) {
   return (aTime - GetStartupTime()).ToMilliseconds();
 }
 

@@ -3719,7 +3719,7 @@ void AsyncPanZoomController::RequestContentRepaint(
   RequestContentRepaint(Metrics(), velocity, aUpdateType);
 }
 
- CSSRect GetDisplayPortRect(const FrameMetrics& aFrameMetrics) {
+static CSSRect GetDisplayPortRect(const FrameMetrics& aFrameMetrics) {
   
   
   CSSRect baseRect(aFrameMetrics.GetScrollOffset(),
