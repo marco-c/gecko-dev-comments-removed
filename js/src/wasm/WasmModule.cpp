@@ -386,12 +386,6 @@ static UniqueMapping MapFile(PRFileDesc* file, PRFileInfo* info) {
 RefPtr<JS::WasmModule> wasm::DeserializeModule(PRFileDesc* bytecodeFile,
                                                UniqueChars filename,
                                                unsigned line) {
-  
-  
-  if (!BaselineCanCompile() && !IonCanCompile()) {
-    return nullptr;
-  }
-
   PRFileInfo bytecodeInfo;
   UniqueMapping bytecodeMapping = MapFile(bytecodeFile, &bytecodeInfo);
   if (!bytecodeMapping) {
@@ -424,9 +418,8 @@ RefPtr<JS::WasmModule> wasm::DeserializeModule(PRFileDesc* bytecodeFile,
   
   
   
+  
 
-  args->ionEnabled = true;
-  args->baselineEnabled = true;
   args->sharedMemoryEnabled = true;
 
   UniqueChars error;
