@@ -15,8 +15,6 @@ function run_test() {
   
   
   ok(!certStorage.isBlocklistFresh(), "checking blocklist freshness shouldn't crash");
-  ok(!certStorage.isWhitelistFresh(), "checking whitelist freshness shouldn't crash");
-  ok(!certStorage.isEnrollmentFresh(), "checking enrollment freshness shouldn't crash");
 
   
   Services.prefs.setIntPref("services.blocklist.onecrl.checked", -2);

@@ -115,15 +115,38 @@ this.RemoteSecuritySettings = class RemoteSecuritySettings {
         
         
         
+
+        
+        
+        const certStorage = Cc["@mozilla.org/security/certstorage;1"].getService(Ci.nsICertStorage);
+        let hasPriorCertData = await new Promise((resolve) => {
+          certStorage.hasPriorData(Ci.nsICertStorage.DATA_TYPE_CERTIFICATE, (rv, hasPriorData) => {
+            if (rv == Cr.NS_OK) {
+              resolve(hasPriorData);
+            } else {
+              
+              
+              resolve(false);
+            }
+          });
+        });
+        const col = await this.client.openCollection();
+        
+        if (!hasPriorCertData) {
+          let toUpdate = await this.client.get();
+          let promises = [];
+          toUpdate.forEach((record) => {
+            record.cert_import_complete = false;
+            promises.push(col.update(record));
+          });
+          await Promise.all(promises);
+        }
         const current = await this.client.get();
         const waiting = current.filter(record => !record.cert_import_complete);
 
         log.debug(`There are ${waiting.length} intermediates awaiting download.`);
 
         TelemetryStopwatch.start(INTERMEDIATES_UPDATE_MS_TELEMETRY);
-
-        const certStorage = Cc["@mozilla.org/security/certstorage;1"].getService(Ci.nsICertStorage);
-        const col = await this.client.openCollection();
 
         Promise.all(waiting.slice(0, maxDownloadsPerRun)
           .map(record => this.maybeDownloadAttachment(record, col, certStorage))

@@ -74,10 +74,31 @@ function setRevocations(certStorage, revocations) {
 
 
 const updateCertBlocklist = AppConstants.MOZ_NEW_CERT_STORAGE ?
-  async function({ data: { created, updated, deleted } }) {
+  async function({ data: { current, created, updated, deleted } }) {
     const certList = Cc["@mozilla.org/security/certstorage;1"]
                        .getService(Ci.nsICertStorage);
     let items = [];
+
+    
+    
+    let hasPriorRevocationData = await new Promise((resolve) => {
+      certList.hasPriorData(Ci.nsICertStorage.DATA_TYPE_REVOCATION, (rv, hasPriorData) => {
+        if (rv == Cr.NS_OK) {
+          resolve(hasPriorData);
+        } else {
+          
+          
+          resolve(false);
+        }
+      });
+    });
+
+    
+    if (!hasPriorRevocationData) {
+      deleted = [];
+      updated = [];
+      created = current;
+    }
 
     for (let item of deleted) {
       if (item.issuerName && item.serialNumber) {
