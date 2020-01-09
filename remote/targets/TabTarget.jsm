@@ -34,7 +34,7 @@ class TabTarget extends Target {
 
   disconnect() {
     Services.obs.removeObserver(this, "message-manager-disconnect");
-    
+    super.disconnect();
   }
 
   get id() {

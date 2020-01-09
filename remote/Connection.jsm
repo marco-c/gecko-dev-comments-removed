@@ -13,9 +13,14 @@ XPCOMUtils.defineLazyGetter(this, "log", Log.get);
 XPCOMUtils.defineLazyServiceGetter(this, "UUIDGen", "@mozilla.org/uuid-generator;1", "nsIUUIDGenerator");
 
 class Connection {
-  constructor(transport) {
+  
+
+
+
+  constructor(transport, httpdConnection) {
     this.id = UUIDGen.generateUUID().toString();
     this.transport = transport;
+    this.httpdConnection = httpdConnection;
 
     this.transport.hooks = this;
     this.transport.ready();
@@ -93,6 +98,11 @@ class Connection {
   close() {
     this.transport.close();
     this.sessions.clear();
+
+    
+    
+    
+    this.httpdConnection.close();
   }
 
   onClosed(status) {}
