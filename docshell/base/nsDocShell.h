@@ -1205,10 +1205,6 @@ class nsDocShell final : public nsDocLoader,
   bool mTitleValidForCurrentURI : 1;
 
   bool mIsFrame : 1;
-
-  
-  
-  bool mIsNavigating : 1;
 };
 
 #endif 

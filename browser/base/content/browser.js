@@ -1208,7 +1208,7 @@ function _loadURI(browser, uri, params = {}) {
 
   
   if (!requiredRemoteType) {
-    browser.isNavigating = true;
+    browser.inLoadURI = true;
   }
   let loadURIOptions = {
     triggeringPrincipal,
@@ -1278,7 +1278,7 @@ function _loadURI(browser, uri, params = {}) {
     }
   } finally {
     if (!requiredRemoteType) {
-      browser.isNavigating = false;
+      browser.inLoadURI = false;
     }
   }
 }
