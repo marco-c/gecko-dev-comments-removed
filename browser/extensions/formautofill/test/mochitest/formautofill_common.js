@@ -279,7 +279,8 @@ async function triggerPopupAndHoverItem(fieldSelector, selectIndex) {
 }
 
 function formAutoFillCommonSetup() {
-  let chromeURL = SimpleTest.getTestFileURL("formautofill_parent_utils.js");
+  
+  let chromeURL = SimpleTest.getTestFileURL("formautofill_parent_utils.js").replace(/\/creditCard/, "");
   formFillChromeScript = SpecialPowers.loadChromeScript(chromeURL);
   formFillChromeScript.addMessageListener("onpopupshown", ({results}) => {
     gLastAutoCompleteResults = results;
