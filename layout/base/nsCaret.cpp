@@ -314,9 +314,26 @@ nsRect nsCaret::GetGeometryForFrame(nsIFrame* aFrame, int32_t aFrameOffset,
 
   
   
-  nsIFrame* scrollFrame =
-      nsLayoutUtils::GetClosestFrameOfType(aFrame, LayoutFrameType::Scroll);
-  if (scrollFrame) {
+
+  
+  
+  bool hasTransform = false;
+  nsIFrame* scrollFrame = nullptr;
+  for (nsIFrame* f = aFrame; f; f = f->GetParent()) {
+    if (f->IsScrollFrame()) {
+      scrollFrame = f;
+      break;
+    }
+    if (f->IsTransformed()) {
+      hasTransform = true;
+    }
+  }
+
+  
+  
+  
+  
+  if (scrollFrame && !hasTransform) {
     
     nsIScrollableFrame* sf = do_QueryFrame(scrollFrame);
     nsIFrame* scrolled = sf->GetScrolledFrame();
