@@ -1098,12 +1098,25 @@ VARCACHE_PREF(
   bool, false
 )
 
+#ifdef NIGHTLY_BUILD
+# define PREF_VALUE  true
+#else
+# define PREF_VALUE  false
+#endif
 
 VARCACHE_PREF(
   "layout.css.scroll-snap-v1.enabled",
    layout_css_scroll_snap_v1_enabled,
-  RelaxedAtomicBool, false
+  RelaxedAtomicBool, PREF_VALUE
 )
+
+
+VARCACHE_PREF(
+  "layout.css.scroll-snap.enabled",
+   layout_css_scroll_snap_enabled,
+  bool, !PREF_VALUE
+)
+#undef PREF_VALUE
 
 
 VARCACHE_PREF(
