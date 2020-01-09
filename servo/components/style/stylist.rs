@@ -129,6 +129,9 @@ impl UserAgentCascadeDataCache {
     }
 
     fn expire_unused(&mut self) {
+        
+        
+        
         self.entries.retain(|e| !e.is_unique())
     }
 

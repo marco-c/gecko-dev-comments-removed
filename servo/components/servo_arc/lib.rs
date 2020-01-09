@@ -21,6 +21,8 @@
 
 
 
+
+
 #![allow(missing_docs)]
 
 extern crate nodrop;
@@ -32,6 +34,7 @@ use nodrop::NoDrop;
 #[cfg(feature = "servo")]
 use serde::{Deserialize, Serialize};
 use stable_deref_trait::{CloneStableDeref, StableDeref};
+use std::alloc::Layout;
 use std::borrow;
 use std::cmp::Ordering;
 use std::convert::From;
@@ -73,6 +76,10 @@ macro_rules! offset_of {
 
 
 const MAX_REFCOUNT: usize = (isize::MAX) as usize;
+
+
+
+const STATIC_REFCOUNT: usize = usize::MAX;
 
 
 
@@ -198,6 +205,32 @@ impl<T> Arc<T> {
     
     
     
+    
+    
+    
+    #[inline]
+    pub unsafe fn new_static<F>(alloc: F, data: T) -> Arc<T>
+    where
+        F: FnOnce(Layout) -> *mut u8,
+    {
+        let ptr = alloc(Layout::new::<ArcInner<T>>()) as *mut ArcInner<T>;
+
+        let x = ArcInner {
+            count: atomic::AtomicUsize::new(STATIC_REFCOUNT),
+            data,
+        };
+
+        ptr::write(ptr, x);
+
+        Arc {
+            p: ptr::NonNull::new_unchecked(ptr),
+        }
+    }
+
+    
+    
+    
+    
     #[inline]
     pub fn borrow_arc<'a>(&'a self) -> ArcBorrow<'a, T> {
         ArcBorrow(&**self)
@@ -225,8 +258,14 @@ impl<T> Arc<T> {
 
     
     
+    
+    
     pub fn heap_ptr(&self) -> *const c_void {
-        self.p.as_ptr() as *const ArcInner<T> as *const c_void
+        if self.inner().count.load(Relaxed) == STATIC_REFCOUNT {
+            ptr::null()
+        } else {
+            self.p.as_ptr() as *const ArcInner<T> as *const c_void
+        }
     }
 }
 
@@ -264,28 +303,32 @@ impl<T: ?Sized> Clone for Arc<T> {
     fn clone(&self) -> Self {
         
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        let old_size = self.inner().count.fetch_add(1, Relaxed);
+        if self.inner().count.load(Relaxed) != STATIC_REFCOUNT {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let old_size = self.inner().count.fetch_add(1, Relaxed);
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if old_size > MAX_REFCOUNT {
-            process::abort();
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            if old_size > MAX_REFCOUNT {
+                process::abort();
+            }
         }
 
         unsafe {
@@ -352,6 +395,7 @@ impl<T: ?Sized> Arc<T> {
     }
 
     
+    
     #[inline]
     pub fn is_unique(&self) -> bool {
         
@@ -364,6 +408,12 @@ impl<T: ?Sized> Arc<T> {
 impl<T: ?Sized> Drop for Arc<T> {
     #[inline]
     fn drop(&mut self) {
+        
+        
+        if self.inner().count.load(Relaxed) == STATIC_REFCOUNT {
+            return;
+        }
+
         
         
         if self.inner().count.fetch_sub(1, Release) != 1 {
@@ -529,9 +579,19 @@ fn divide_rounding_up(dividend: usize, divisor: usize) -> usize {
 impl<H, T> Arc<HeaderSlice<H, [T]>> {
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
-    pub fn from_header_and_iter<I>(header: H, mut items: I) -> Self
+    fn from_header_and_iter_alloc<F, I>(alloc: F, header: H, mut items: I, is_static: bool) -> Self
     where
+        F: FnOnce(Layout) -> *mut u8,
         I: Iterator<Item = T> + ExactSizeIterator,
     {
         use std::mem::size_of;
@@ -566,20 +626,18 @@ impl<H, T> Arc<HeaderSlice<H, [T]>> {
         let ptr: *mut ArcInner<HeaderSlice<H, [T]>>;
         unsafe {
             
-            
-            
-            
-            
-            let buffer = if mem::align_of::<T>() <= mem::align_of::<usize>() {
-                Self::allocate_buffer::<usize>(size)
+            let layout = if mem::align_of::<T>() <= mem::align_of::<usize>() {
+                Layout::from_size_align_unchecked(size, mem::align_of::<usize>())
             } else if mem::align_of::<T>() <= mem::align_of::<u64>() {
                 
                 
                 
-                Self::allocate_buffer::<u64>(size)
+                Layout::from_size_align_unchecked(size, mem::align_of::<u64>())
             } else {
                 panic!("Over-aligned type not handled");
             };
+
+            let buffer = alloc(layout);
 
             
             
@@ -594,7 +652,12 @@ impl<H, T> Arc<HeaderSlice<H, [T]>> {
             
             
             
-            ptr::write(&mut ((*ptr).count), atomic::AtomicUsize::new(1));
+            let count = if is_static {
+                atomic::AtomicUsize::new(STATIC_REFCOUNT)
+            } else {
+                atomic::AtomicUsize::new(1)
+            };
+            ptr::write(&mut ((*ptr).count), count);
             ptr::write(&mut ((*ptr).data.header), header);
             let mut current: *mut T = &mut (*ptr).data.slice[0];
             for _ in 0..num_items {
@@ -628,8 +691,37 @@ impl<H, T> Arc<HeaderSlice<H, [T]>> {
         }
     }
 
+    
+    
+    #[inline]
+    pub fn from_header_and_iter<I>(header: H, items: I) -> Self
+    where
+        I: Iterator<Item = T> + ExactSizeIterator,
+    {
+        Arc::from_header_and_iter_alloc(
+            |layout| {
+                
+                let align = layout.align();
+                unsafe {
+                    if align == mem::align_of::<usize>() {
+                        Self::allocate_buffer::<usize>(layout.size())
+                    } else {
+                        assert_eq!(align, mem::align_of::<u64>());
+                        Self::allocate_buffer::<u64>(layout.size())
+                    }
+                }
+            },
+            header,
+            items,
+             false,
+        )
+    }
+
     #[inline]
     unsafe fn allocate_buffer<W>(size: usize) -> *mut u8 {
+        
+        
+        
         let words_to_allocate = divide_rounding_up(size, mem::size_of::<W>());
         let mut vec = Vec::<W>::with_capacity(words_to_allocate);
         vec.set_len(words_to_allocate);
@@ -732,9 +824,35 @@ impl<H, T> ThinArc<H, T> {
 
     
     
+    
+    
+    
+    
+    
+    pub unsafe fn static_from_header_and_iter<F, I>(alloc: F, header: H, items: I) -> Self
+    where
+        F: FnOnce(Layout) -> *mut u8,
+        I: Iterator<Item = T> + ExactSizeIterator,
+    {
+        let header = HeaderWithLength::new(header, items.len());
+        Arc::into_thin(Arc::from_header_and_iter_alloc(
+            alloc, header, items,  true,
+        ))
+    }
+
+    
+    
+    
+    
     #[inline]
     pub fn heap_ptr(&self) -> *const c_void {
-        self.ptr as *const ArcInner<T> as *const c_void
+        let is_static =
+            ThinArc::with_arc(self, |a| a.inner().count.load(Relaxed) == STATIC_REFCOUNT);
+        if is_static {
+            ptr::null()
+        } else {
+            self.ptr as *const ArcInner<T> as *const c_void
+        }
     }
 }
 
