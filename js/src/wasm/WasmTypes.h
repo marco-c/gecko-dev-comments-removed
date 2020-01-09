@@ -105,7 +105,11 @@ class Module;
 class Instance;
 class Table;
 
-typedef Vector<uint32_t, 0, SystemAllocPolicy> Uint32Vector;
+
+
+
+typedef Vector<uint32_t, 8, SystemAllocPolicy> Uint32Vector;
+
 typedef Vector<uint8_t, 0, SystemAllocPolicy> Bytes;
 typedef UniquePtr<Bytes> UniqueBytes;
 typedef UniquePtr<const Bytes> UniqueConstBytes;
@@ -451,7 +455,10 @@ class ValType {
   bool operator!=(Code that) const { return !(*this == that); }
 };
 
-typedef Vector<ValType, 8, SystemAllocPolicy> ValTypeVector;
+
+
+
+typedef Vector<ValType, 16, SystemAllocPolicy> ValTypeVector;
 
 
 

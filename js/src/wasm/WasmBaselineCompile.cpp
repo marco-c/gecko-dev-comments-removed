@@ -1515,7 +1515,9 @@ class BaseStackFrame final : public BaseStackFrameAllocator {
     Local(MIRType type, int32_t offs) : type(type), offs(offs) {}
   };
 
-  using LocalVector = Vector<Local, 8, SystemAllocPolicy>;
+  
+  
+  using LocalVector = Vector<Local, 16, SystemAllocPolicy>;
 
   
   bool setupLocals(const ValTypeVector& locals, const ValTypeVector& args,
