@@ -530,6 +530,7 @@ const startupPhases = {
     { 
       path: "XREAppDist:searchplugins",
       condition: WIN,
+      ignoreIfUnused: true, 
       stat: 1,
     },
     {
@@ -642,6 +643,12 @@ const startupPhases = {
       path: "XCurProcD:omni.ja",
       condition: WIN,
       stat: 7,
+    },
+    { 
+      path: "XREAppDist:searchplugins",
+      condition: WIN,
+      ignoreIfUnused: true, 
+      stat: 1,
     },
   ],
 };
