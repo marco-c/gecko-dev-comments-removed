@@ -7,7 +7,6 @@
 #define nsBaseChannel_h__
 
 #include "mozilla/net/NeckoTargetHolder.h"
-#include "mozilla/MozPromise.h"
 #include "nsString.h"
 #include "nsAutoPtr.h"
 #include "nsCOMPtr.h"
@@ -74,8 +73,6 @@ class nsBaseChannel
 
   virtual ~nsBaseChannel();
 
-  using BlockingPromise = mozilla::MozPromise<nsresult, nsresult, true>;
-
  private:
   
   
@@ -107,20 +104,6 @@ class nsBaseChannel
   virtual nsresult BeginAsyncRead(nsIStreamListener *listener,
                                   nsIRequest **request) {
     return NS_ERROR_NOT_IMPLEMENTED;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual nsresult ListenerBlockingPromise(BlockingPromise **aPromise) {
-    NS_ENSURE_ARG(aPromise);
-    *aPromise = nullptr;
-    return NS_OK;
   }
 
   
