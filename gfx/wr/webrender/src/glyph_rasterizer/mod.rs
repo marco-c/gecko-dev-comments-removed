@@ -652,6 +652,13 @@ impl GlyphRasterizer {
 
     pub fn prepare_font(&self, font: &mut FontInstance) {
         FontContext::prepare_font(font);
+
+        
+        
+        
+        
+        
+        font.transform = font.transform.quantize();
     }
 
     pub fn get_glyph_dimensions(

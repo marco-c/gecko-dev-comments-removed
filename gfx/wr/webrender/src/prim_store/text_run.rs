@@ -256,8 +256,7 @@ impl TextRunPrimitive {
 
         
         let font_transform = if transform_glyphs {
-            
-            FontTransform::from(transform).quantize()
+            FontTransform::from(transform)
         } else {
             FontTransform::identity()
         };
