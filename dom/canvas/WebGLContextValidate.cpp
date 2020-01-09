@@ -427,44 +427,27 @@ bool WebGLContext::InitAndValidateGL(FailureReason* const out_failReason) {
 
   
 
-  if (gl->IsSupported(gl::GLFeature::ES2_compatibility)) {
-    gl->GetUIntegerv(LOCAL_GL_MAX_FRAGMENT_UNIFORM_VECTORS,
-                     &mGLMaxFragmentUniformVectors);
-    gl->GetUIntegerv(LOCAL_GL_MAX_VERTEX_UNIFORM_VECTORS,
-                     &mGLMaxVertexUniformVectors);
-    gl->GetUIntegerv(LOCAL_GL_MAX_VARYING_VECTORS, &mGLMaxVaryingVectors);
-  } else {
-    gl->GetUIntegerv(LOCAL_GL_MAX_FRAGMENT_UNIFORM_COMPONENTS,
-                     &mGLMaxFragmentUniformVectors);
-    mGLMaxFragmentUniformVectors /= 4;
-    gl->GetUIntegerv(LOCAL_GL_MAX_VERTEX_UNIFORM_COMPONENTS,
-                     &mGLMaxVertexUniformVectors);
-    mGLMaxVertexUniformVectors /= 4;
-
-    
-
-
-
-
-
-
-
-
-
-    uint32_t maxVertexOutputComponents = 0;
-    uint32_t maxFragmentInputComponents = 0;
-    bool ok = true;
-    ok &= gl->GetPotentialInteger(LOCAL_GL_MAX_VERTEX_OUTPUT_COMPONENTS,
-                                  (GLint*)&maxVertexOutputComponents);
-    ok &= gl->GetPotentialInteger(LOCAL_GL_MAX_FRAGMENT_INPUT_COMPONENTS,
-                                  (GLint*)&maxFragmentInputComponents);
-    if (ok) {
-      mGLMaxVaryingVectors =
-          std::min(maxVertexOutputComponents, maxFragmentInputComponents) / 4;
+  if (gl->IsGLES()) {
+    mGLMaxFragmentUniformVectors = gl->GetIntAs<uint32_t>(LOCAL_GL_MAX_FRAGMENT_UNIFORM_VECTORS);
+    mGLMaxVertexUniformVectors = gl->GetIntAs<uint32_t>(LOCAL_GL_MAX_VERTEX_UNIFORM_VECTORS);
+    if (gl->Version() >= 300) {
+      mGLMaxVertexOutputVectors = gl->GetIntAs<uint32_t>(LOCAL_GL_MAX_VERTEX_OUTPUT_COMPONENTS) / 4;
+      mGLMaxFragmentInputVectors = gl->GetIntAs<uint32_t>(LOCAL_GL_MAX_FRAGMENT_INPUT_COMPONENTS) / 4;
     } else {
-      mGLMaxVaryingVectors = 16;
+      mGLMaxFragmentInputVectors = gl->GetIntAs<uint32_t>(LOCAL_GL_MAX_VARYING_VECTORS);
+      mGLMaxVertexOutputVectors = mGLMaxFragmentInputVectors;
+    }
+  } else {
+    mGLMaxFragmentUniformVectors = gl->GetIntAs<uint32_t>(LOCAL_GL_MAX_FRAGMENT_UNIFORM_COMPONENTS) / 4;
+    mGLMaxVertexUniformVectors = gl->GetIntAs<uint32_t>(LOCAL_GL_MAX_VERTEX_UNIFORM_COMPONENTS) / 4;
+
+    if (gl->Version() >= 320) {
+      mGLMaxVertexOutputVectors = gl->GetIntAs<uint32_t>(LOCAL_GL_MAX_VERTEX_OUTPUT_COMPONENTS) / 4;
+      mGLMaxFragmentInputVectors = gl->GetIntAs<uint32_t>(LOCAL_GL_MAX_FRAGMENT_INPUT_COMPONENTS) / 4;
+    } else {
       
-      
+      mGLMaxFragmentInputVectors = gl->GetIntAs<uint32_t>(LOCAL_GL_MAX_VARYING_COMPONENTS) / 4;
+      mGLMaxVertexOutputVectors = mGLMaxFragmentInputVectors;
     }
   }
 
@@ -493,7 +476,8 @@ bool WebGLContext::InitAndValidateGL(FailureReason* const out_failReason) {
     ok &= RestrictCap(&mGLMaxVertexUniformVectors, kMinMaxVertexUniformVectors);
     ok &= RestrictCap(&mGLMaxFragmentUniformVectors,
                       kMinMaxFragmentUniformVectors);
-    ok &= RestrictCap(&mGLMaxVaryingVectors, kMinMaxVaryingVectors);
+    ok &= RestrictCap(&mGLMaxVertexOutputVectors, kMinMaxVaryingVectors);
+    ok &= RestrictCap(&mGLMaxFragmentInputVectors, kMinMaxVaryingVectors);
 
     ok &= RestrictCap(&mGLMaxColorAttachments, kMinMaxColorAttachments);
     ok &= RestrictCap(&mGLMaxDrawBuffers, kMinMaxDrawBuffers);
@@ -530,7 +514,8 @@ bool WebGLContext::InitAndValidateGL(FailureReason* const out_failReason) {
                       kCommonMaxVertexUniformVectors);
     ok &= RestrictCap(&mGLMaxFragmentUniformVectors,
                       kCommonMaxFragmentUniformVectors);
-    ok &= RestrictCap(&mGLMaxVaryingVectors, kCommonMaxVaryingVectors);
+    ok &= RestrictCap(&mGLMaxVertexOutputVectors, kCommonMaxVaryingVectors);
+    ok &= RestrictCap(&mGLMaxFragmentInputVectors, kCommonMaxVaryingVectors);
 
     ok &= RestrictCap(&mGLAliasedLineWidthRange[0],
                       kCommonAliasedLineWidthRangeMin);
