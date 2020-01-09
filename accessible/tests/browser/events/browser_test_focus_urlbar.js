@@ -152,9 +152,13 @@ async function runTests() {
   await focused;
   testStates(textBox, STATE_FOCUSED);
 
-  info("Ensuring autocomplete focus on down arrow (4)");
+  info("Ensuring autocomplete focus on arrow down & up");
   focused = waitForEvent(EVENT_FOCUS, isEventForAutocompleteItem);
   EventUtils.synthesizeKey("KEY_ArrowDown");
+  
+  
+  
+  EventUtils.synthesizeKey("KEY_ArrowUp");
   event = await focused;
   testStates(event.accessible, STATE_FOCUSED);
 
