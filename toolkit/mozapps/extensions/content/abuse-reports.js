@@ -21,6 +21,10 @@ const ABUSE_REPORT_MESSAGE_BARS = {
     actions: ["remove", "keep"], dismissable: true,
   },
   
+  "submitted-no-remove-action": {
+    id: "submitted-noremove", dismissable: true,
+  },
+  
   "submitted-and-removed": {
     id: "removed", addonTypeSuffix: true, dismissable: true,
   },
@@ -112,9 +116,10 @@ function createReportMessageBar(
 }
 
 async function submitReport({report, reason, message}) {
-  const addonId = report.addon.id;
-  const addonName = report.addon && report.addon.name;
-  const addonType = report.addon && report.addon.type;
+  const {addon} = report;
+  const addonId = addon.id;
+  const addonName = addon.name;
+  const addonType = addon.type;
 
   
   const mbSubmitting = createReportMessageBar(
@@ -133,12 +138,19 @@ async function submitReport({report, reason, message}) {
 
     
     
-    
-    
-    
-    
-    const barId = report.reportEntryPoint === "uninstall" ?
-      "submitted-and-removed" : "submitted";
+    let barId;
+    if (!(addon.permissions & AddonManager.PERM_CAN_UNINSTALL)) {
+      
+      barId = "submitted-no-remove-action";
+    } else if (report.reportEntryPoint === "uninstall") {
+      
+      
+      barId = "submitted-and-removed";
+    } else {
+      
+      
+      barId = "submitted";
+    }
 
     const mbInfo = createReportMessageBar(barId, {
       addonId, addonName, addonType,
