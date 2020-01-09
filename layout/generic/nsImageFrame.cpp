@@ -691,8 +691,6 @@ nsresult nsImageFrame::OnSizeAvailable(imgIRequest* aRequest,
       
       MaybeDecodeForPredictedSize();
     }
-
-    mPrevImage = nullptr;
   }
 
   return NS_OK;
@@ -807,8 +805,6 @@ void nsImageFrame::NotifyNewCurrentRequest(imgIRequest* aRequest,
         
         MaybeDecodeForPredictedSize();
       }
-
-      mPrevImage = nullptr;
     }
     
     InvalidateFrame();
