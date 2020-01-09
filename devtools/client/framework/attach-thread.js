@@ -81,7 +81,12 @@ function attachThread(toolbox) {
       });
     };
 
-    target.attachThread(threadOptions).then(handleResponse);
+    if (target.activeTab) {
+      target.activeTab.attachThread(threadOptions).then(handleResponse);
+    } else {
+      
+      throw new Error("Target is missing an activeTab attribute");
+    }
   });
 }
 

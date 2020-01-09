@@ -150,6 +150,6 @@ exports.waitForOverviewRenderedWithMarkers = (panel, minTimes = 3, minMarkers = 
 
 
 exports.reload = (target) => {
-  target.reload();
+  target.activeTab.reload();
   return once(target, "navigate");
 };

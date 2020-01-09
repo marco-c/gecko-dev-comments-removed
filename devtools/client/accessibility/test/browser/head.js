@@ -397,7 +397,7 @@ function addA11YPanelTask(msg, uri, task) {
 
 
 function reload(target, waitForTargetEvent = "navigate") {
-  executeSoon(() => target.reload());
+  executeSoon(() => target.activeTab.reload());
   return once(target, waitForTargetEvent);
 }
 
@@ -408,6 +408,6 @@ function reload(target, waitForTargetEvent = "navigate") {
 
 
 function navigate(target, url, waitForTargetEvent = "navigate") {
-  executeSoon(() => target.navigateTo({ url }));
+  executeSoon(() => target.activeTab.navigateTo({ url }));
   return once(target, waitForTargetEvent);
 }

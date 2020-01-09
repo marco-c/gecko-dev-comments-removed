@@ -5,12 +5,12 @@
 
 const {contentProcessTargetSpec} = require("devtools/shared/specs/targets/content-process");
 const { FrontClassWithSpec, registerFront } = require("devtools/shared/protocol");
-const { TargetMixin } = require("./target-mixin");
 
-class ContentProcessTargetFront extends
-  TargetMixin(FrontClassWithSpec(contentProcessTargetSpec)) {
+class ContentProcessTargetFront extends FrontClassWithSpec(contentProcessTargetSpec) {
   constructor(client) {
     super(client);
+
+    this.client = client;
 
     this.traits = {};
   }
@@ -28,15 +28,6 @@ class ContentProcessTargetFront extends
     return this.client.attachThread(this.chromeDebugger);
   }
 
-  attach() {
-    
-    
-    if (this.targetForm.consoleActor) {
-      return this.attachConsole();
-    }
-    return Promise.resolve();
-  }
-
   reconfigure() {
     
     
@@ -45,4 +36,4 @@ class ContentProcessTargetFront extends
 }
 
 exports.ContentProcessTargetFront = ContentProcessTargetFront;
-registerFront(exports.ContentProcessTargetFront);
+registerFront(ContentProcessTargetFront);

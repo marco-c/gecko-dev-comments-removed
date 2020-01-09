@@ -144,7 +144,7 @@ function toggleCache(target, disabled) {
   
   Services.prefs.setBoolPref("devtools.cache.disabled", disabled);
 
-  return target.reconfigure({ options }).then(() => navigationFinished);
+  return target.activeTab.reconfigure({ options }).then(() => navigationFinished);
 }
 
 

@@ -5,12 +5,10 @@
 
 const {browsingContextTargetSpec} = require("devtools/shared/specs/targets/browsing-context");
 const { FrontClassWithSpec, registerFront } = require("devtools/shared/protocol");
-const { TargetMixin } = require("./target-mixin");
 
 loader.lazyRequireGetter(this, "ThreadClient", "devtools/shared/client/thread-client");
 
-class BrowsingContextTargetFront extends
-  TargetMixin(FrontClassWithSpec(browsingContextTargetSpec)) {
+class BrowsingContextTargetFront extends FrontClassWithSpec(browsingContextTargetSpec) {
   constructor(client) {
     super(client);
 
@@ -25,8 +23,8 @@ class BrowsingContextTargetFront extends
     
     this._selected = false;
 
-    this._onTabNavigated = this._onTabNavigated.bind(this);
-    this._onFrameUpdate = this._onFrameUpdate.bind(this);
+    
+    this.client = client;
   }
 
   form(json) {
@@ -38,8 +36,8 @@ class BrowsingContextTargetFront extends
 
     this.outerWindowID = json.outerWindowID;
     this.favicon = json.favicon;
-    this._title = json.title;
-    this._url = json.url;
+    this.title = json.title;
+    this.url = json.url;
   }
 
   
@@ -63,6 +61,7 @@ class BrowsingContextTargetFront extends
     if (this.thread) {
       return Promise.resolve([{}, this.thread]);
     }
+
     const packet = {
       to: this._threadActor,
       type: "attach",
@@ -75,65 +74,14 @@ class BrowsingContextTargetFront extends
     });
   }
 
-  
-
-
-  _onFrameUpdate(packet) {
-    this.emit("frame-update", packet);
-  }
-
-  
-
-
-  _onTabNavigated(packet) {
-    const event = Object.create(null);
-    event.url = packet.url;
-    event.title = packet.title;
-    event.nativeConsoleAPI = packet.nativeConsoleAPI;
-    event.isFrameSwitching = packet.isFrameSwitching;
-
-    
-    
-    
-    
-    if (!packet.isFrameSwitching || this.isWebExtension) {
-      this._url = packet.url;
-      this._title = packet.title;
-    }
-
-    
-    
-    if (packet.state == "start") {
-      this.emit("will-navigate", event);
-    } else {
-      this.emit("navigate", event);
-    }
-  }
-
   async attach() {
-    if (this._attach) {
-      return this._attach;
-    }
-    this._attach = (async () => {
-      
-      
-      
-      this.on("tabNavigated", this._onTabNavigated);
-      this.on("frameUpdate", this._onFrameUpdate);
+    const response = await super.attach();
 
-      const response = await super.attach();
+    this._threadActor = response.threadActor;
+    this.configureOptions.javascriptEnabled = response.javascriptEnabled;
+    this.traits = response.traits || {};
 
-      this._threadActor = response.threadActor;
-      this.configureOptions.javascriptEnabled = response.javascriptEnabled;
-      this.traits = response.traits || {};
-
-      
-      
-      if (this.targetForm.consoleActor) {
-        await this.attachConsole();
-      }
-    })();
-    return this._attach;
+    return response;
   }
 
   async reconfigure({ options }) {
@@ -163,24 +111,11 @@ class BrowsingContextTargetFront extends
       }
     }
 
-    
-    this.off("tabNavigated", this._onTabNavigated);
-    this.off("frameUpdate", this._onFrameUpdate);
+    this.destroy();
 
     return response;
-  }
-
-  destroy() {
-    const promise = super.destroy();
-
-    
-    
-    this.off("tabNavigated", this._onTabNavigated);
-    this.off("frameUpdate", this._onFrameUpdate);
-
-    return promise;
   }
 }
 
 exports.BrowsingContextTargetFront = BrowsingContextTargetFront;
-registerFront(exports.BrowsingContextTargetFront);
+registerFront(BrowsingContextTargetFront);
