@@ -53,11 +53,9 @@ new WebAssembly.Module(wasmTextToBinary(
       (gc_feature_opt_in ${CURRENT_VERSION})
       (type (func (param anyref))))`));
 
-assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
+new WebAssembly.Module(wasmTextToBinary(
     `(module
-      (type (func (param anyref))))`)),
-                   WebAssembly.CompileError,
-                   /reference types not enabled/);
+      (type (func (param anyref))))`));
 
 
 
@@ -66,11 +64,9 @@ new WebAssembly.Module(wasmTextToBinary(
       (gc_feature_opt_in ${CURRENT_VERSION})
       (type (func (result anyref))))`));
 
-assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
+new WebAssembly.Module(wasmTextToBinary(
     `(module
-      (type (func (result anyref))))`)),
-                   WebAssembly.CompileError,
-                   /reference types not enabled/);
+      (type (func (result anyref))))`));
 
 
 
@@ -81,13 +77,11 @@ new WebAssembly.Module(wasmTextToBinary(
        (local anyref)
        (i32.const 0)))`));
 
-assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
+new WebAssembly.Module(wasmTextToBinary(
     `(module
       (func (result i32)
        (local anyref)
-       (i32.const 0)))`)),
-                   WebAssembly.CompileError,
-                   /reference types not enabled/);
+       (i32.const 0)))`));
 
 
 
@@ -96,11 +90,9 @@ new WebAssembly.Module(wasmTextToBinary(
       (gc_feature_opt_in ${CURRENT_VERSION})
       (global (mut anyref) (ref.null)))`));
 
-assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
+new WebAssembly.Module(wasmTextToBinary(
     `(module
-      (global (mut anyref) (ref.null)))`)),
-                   WebAssembly.CompileError,
-                   /reference types not enabled/);
+      (global (mut anyref) (ref.null)))`));
 
 
 
@@ -108,17 +100,14 @@ assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
 
 
 
-assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
+
+new WebAssembly.Module(wasmTextToBinary(
     `(module
-      (func ref.null))`)),
-                   WebAssembly.CompileError,
-                   /unrecognized opcode/);
+      (func (result anyref) ref.null))`));
 
-assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
+new WebAssembly.Module(wasmTextToBinary(
     `(module
-      (func ref.is_null))`)),
-                   WebAssembly.CompileError,
-                   /unrecognized opcode/);
+      (func (param anyref) (result i32) (ref.is_null (local.get 0))))`));
 
 assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
     `(module
