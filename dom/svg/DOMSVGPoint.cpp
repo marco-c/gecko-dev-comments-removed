@@ -5,10 +5,12 @@
 
 
 #include "DOMSVGPoint.h"
+
 #include "DOMSVGPointList.h"
 #include "SVGPoint.h"
 #include "gfx2DGlue.h"
 #include "SVGElement.h"
+#include "nsCOMPtr.h"
 #include "nsError.h"
 #include "mozilla/dom/SVGMatrix.h"
 
