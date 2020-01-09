@@ -79,6 +79,8 @@ class nsSubDocumentFrame final : public nsAtomicContainerFrame,
   nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
                             int32_t aModType) override;
 
+  void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) override;
+
   
   
   
@@ -116,6 +118,9 @@ class nsSubDocumentFrame final : public nsAtomicContainerFrame,
 
   nsFrameLoader* FrameLoader() const;
   void ResetFrameLoader();
+
+  void PropagateIsUnderHiddenEmbedderElementToSubView(
+      bool aIsUnderHiddenEmbedderElement);
 
  protected:
   friend class AsyncFrameInit;
