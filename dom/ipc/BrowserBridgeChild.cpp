@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/BrowserBridgeChild.h"
+#include "mozilla/dom/BrowsingContext.h"
 #include "nsFocusManager.h"
 #include "nsFrameLoader.h"
 #include "nsFrameLoaderOwner.h"
@@ -15,14 +16,18 @@ using namespace mozilla::ipc;
 namespace mozilla {
 namespace dom {
 
-BrowserBridgeChild::BrowserBridgeChild(nsFrameLoader* aFrameLoader)
-    : mLayersId{0}, mIPCOpen(true), mFrameLoader(aFrameLoader) {}
+BrowserBridgeChild::BrowserBridgeChild(nsFrameLoader* aFrameLoader,
+                                       BrowsingContext* aBrowsingContext)
+    : mLayersId{0},
+      mIPCOpen(true),
+      mFrameLoader(aFrameLoader),
+      mBrowsingContext(aBrowsingContext) {}
 
 BrowserBridgeChild::~BrowserBridgeChild() {}
 
 already_AddRefed<BrowserBridgeChild> BrowserBridgeChild::Create(
     nsFrameLoader* aFrameLoader, const TabContext& aContext,
-    const nsString& aRemoteType) {
+    const nsString& aRemoteType, BrowsingContext* aBrowsingContext) {
   MOZ_ASSERT(XRE_IsContentProcess());
 
   
@@ -36,11 +41,12 @@ already_AddRefed<BrowserBridgeChild> BrowserBridgeChild::Create(
   MOZ_DIAGNOSTIC_ASSERT(tabChild);
 
   RefPtr<BrowserBridgeChild> browserBridge =
-      new BrowserBridgeChild(aFrameLoader);
+      new BrowserBridgeChild(aFrameLoader, aBrowsingContext);
   
   tabChild->SendPBrowserBridgeConstructor(
       do_AddRef(browserBridge).take(),
-      PromiseFlatString(aContext.PresentationURL()), aRemoteType);
+      PromiseFlatString(aContext.PresentationURL()), aRemoteType,
+      aBrowsingContext);
   browserBridge->mIPCOpen = true;
 
   return browserBridge.forget();
