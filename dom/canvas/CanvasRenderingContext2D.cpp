@@ -1354,6 +1354,13 @@ bool CanvasRenderingContext2D::TrySharedTarget(
     return false;
   }
 
+#ifdef XP_WIN
+  
+  if (gfxPlatform::GetPlatform()->GetPreferredCanvasBackend() == BackendType::DIRECT2D1_1) {
+    return false;
+  }
+#endif
+
   RefPtr<LayerManager> layerManager =
       LayerManagerFromCanvasElement(mCanvasElement);
 

@@ -1448,6 +1448,7 @@ pref("privacy.resistFingerprinting.reduceTimerPrecision.jitter", true);
 
 pref("dom.event.contextmenu.enabled",       true);
 pref("dom.event.clipboardevents.enabled",   true);
+pref("dom.event.highrestimestamp.enabled",  true);
 pref("dom.event.coalesce_mouse_move",       true);
 
 pref("javascript.enabled",                  true);
@@ -5080,15 +5081,6 @@ pref("layers.prefer-opengl", false);
 
 
 pref("layers.shared-buffer-provider.enabled", true);
-
-#ifdef XP_WIN
-pref("layers.shared-buffer-provider.enabled", false);
-#endif
-
-#ifdef XP_MACOSX
-
-pref("layers.shared-buffer-provider.enabled", false);
-#endif
 
 
 pref("layers.force-active", false);
