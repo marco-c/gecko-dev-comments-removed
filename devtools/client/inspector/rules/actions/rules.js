@@ -5,11 +5,25 @@
 "use strict";
 
 const {
+  UPDATE_ADD_RULE_ENABLED,
   UPDATE_HIGHLIGHTED_SELECTOR,
   UPDATE_RULES,
 } = require("./index");
 
 module.exports = {
+
+  
+
+
+
+
+
+  updateAddRuleEnabled(enabled) {
+    return {
+      type: UPDATE_ADD_RULE_ENABLED,
+      enabled,
+    };
+  },
 
   
 

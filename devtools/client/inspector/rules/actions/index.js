@@ -20,6 +20,9 @@ createEnum([
   "TOGGLE_PSEUDO_CLASS",
 
   
+  "UPDATE_ADD_RULE_ENABLED",
+
+  
   "UPDATE_CLASSES",
 
   

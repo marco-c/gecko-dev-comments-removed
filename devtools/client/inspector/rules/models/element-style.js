@@ -52,6 +52,12 @@ function ElementStyle(element, ruleView, store, pageStyle, showUserAgentStyles) 
   if (!("disabled" in this.store)) {
     this.store.disabled = new WeakMap();
   }
+
+  this.onStyleSheetUpdated = this.onStyleSheetUpdated.bind(this);
+
+  if (this.ruleView.isNewRulesView) {
+    this.pageStyle.on("stylesheet-updated", this.onStyleSheetUpdated);
+  }
 }
 
 ElementStyle.prototype = {
@@ -66,6 +72,10 @@ ElementStyle.prototype = {
       if (rule.editor) {
         rule.editor.destroy();
       }
+    }
+
+    if (this.ruleView.isNewRulesView) {
+      this.pageStyle.off("stylesheet-updated", this.onStyleSheetUpdated);
     }
   },
 
@@ -339,6 +349,15 @@ ElementStyle.prototype = {
 
 
 
+  async addNewRule() {
+    await this.pageStyle.addNewRule(this.element, this.element.pseudoClassLocks);
+  },
+
+  
+
+
+
+
 
 
 
@@ -592,6 +611,24 @@ ElementStyle.prototype = {
 
   getVariable: function(name) {
     return this.variables.get(name);
+  },
+
+  
+
+
+
+  onStyleSheetUpdated: async function() {
+    
+    const promises = [];
+    for (const rule of this.rules) {
+      if (rule._applyingModifications) {
+        promises.push(rule._applyingModifications);
+      }
+    }
+
+    await Promise.all(promises);
+    await this.populate();
+    this._changed();
   },
 };
 
