@@ -574,6 +574,8 @@ class MOZ_RAII CacheRegisterAllocator {
   void discardStack(MacroAssembler& masm);
 
   Address addressOf(MacroAssembler& masm, BaselineFrameSlot slot) const;
+  BaseValueIndex addressOf(MacroAssembler& masm, Register argcReg,
+                           BaselineFrameSlot slot) const;
 
   
   
