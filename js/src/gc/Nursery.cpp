@@ -1120,8 +1120,10 @@ MOZ_ALWAYS_INLINE void js::Nursery::setStartPosition() {
 }
 
 void js::Nursery::maybeResizeNursery(JS::GCReason reason) {
-  static const double GrowThreshold = 0.03;
-  static const double ShrinkThreshold = 0.01;
+  static const float GrowThreshold = 0.03f;
+  static const float ShrinkThreshold = 0.01f;
+  static const float PromotionGoal = (GrowThreshold + ShrinkThreshold) / 2.0f;
+
   unsigned newMaxNurseryChunks;
 
   
@@ -1157,15 +1159,33 @@ void js::Nursery::maybeResizeNursery(JS::GCReason reason) {
   const float promotionRate =
       float(previousGC.tenuredBytes) / float(previousGC.nurseryCapacity);
 
+  
+
+
+
+
+  const float factor = promotionRate / PromotionGoal;
+  const unsigned newChunkCount = round(float(maxChunkCount()) * factor);
+
+  
+  
+  
   if (promotionRate > GrowThreshold) {
-    growAllocableSpace();
+    unsigned lowLimit = maxChunkCount() + 1;
+    unsigned highLimit = Min(chunkCountLimit(), maxChunkCount() * 2);
+
+    growAllocableSpace(Min(Max(newChunkCount, lowLimit), highLimit));
   } else if (maxChunkCount() > 1 && promotionRate < ShrinkThreshold) {
-    shrinkAllocableSpace(maxChunkCount() - 1);
+    unsigned lowLimit = Max(1u, maxChunkCount() / 2);
+    unsigned highLimit = maxChunkCount() - 1u;
+
+    shrinkAllocableSpace(Max(Min(newChunkCount, highLimit), lowLimit));
   }
 }
 
-void js::Nursery::growAllocableSpace() {
-  maxChunkCount_ = Min(maxChunkCount() * 2, chunkCountLimit());
+void js::Nursery::growAllocableSpace(unsigned newCount) {
+  MOZ_ASSERT(newCount >= currentChunk_);
+  maxChunkCount_ = newCount;
 }
 
 void js::Nursery::freeChunksFrom(unsigned firstFreeChunk) {
