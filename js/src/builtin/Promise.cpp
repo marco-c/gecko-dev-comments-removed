@@ -1480,8 +1480,6 @@ static MOZ_MUST_USE bool AsyncFunctionPromiseReactionJob(
 
   RootedValue handlerVal(cx, reaction->handler());
   RootedValue argument(cx, reaction->handlerArg());
-  Rooted<PromiseObject*> resultPromise(
-      cx, &reaction->promise()->as<PromiseObject>());
   Rooted<AsyncFunctionGeneratorObject*> generator(
       cx, reaction->asyncFunctionGenerator());
 
@@ -1490,13 +1488,12 @@ static MOZ_MUST_USE bool AsyncFunctionPromiseReactionJob(
   
   
   if (handlerNum == PromiseHandlerAsyncFunctionAwaitedFulfilled) {
-    if (!AsyncFunctionAwaitedFulfilled(cx, resultPromise, generator,
-                                       argument)) {
+    if (!AsyncFunctionAwaitedFulfilled(cx, generator, argument)) {
       return false;
     }
   } else {
     MOZ_ASSERT(handlerNum == PromiseHandlerAsyncFunctionAwaitedRejected);
-    if (!AsyncFunctionAwaitedRejected(cx, resultPromise, generator, argument)) {
+    if (!AsyncFunctionAwaitedRejected(cx, generator, argument)) {
       return false;
     }
   }
@@ -3279,6 +3276,7 @@ static PromiseReactionRecord* NewReactionRecord(
     
     
     
+    
     MOZ_ASSERT(!resultCapability.resolve());
     MOZ_ASSERT(!resultCapability.reject());
     MOZ_ASSERT(incumbentGlobalObjectOption == IncumbentGlobalObject::Yes);
@@ -3517,32 +3515,22 @@ bool js::IsPromiseForAsync(JSObject* promise) {
 }
 
 
+
 MOZ_MUST_USE bool js::AsyncFunctionThrown(
     JSContext* cx, Handle<PromiseObject*> resultPromise) {
-  
   RootedValue exc(cx);
   if (!MaybeGetAndClearException(cx, &exc)) {
     return false;
   }
 
-  if (!RejectPromiseInternal(cx, resultPromise, exc)) {
-    return false;
-  }
-
-  
-  return true;
+  return RejectPromiseInternal(cx, resultPromise, exc);
 }
+
 
 
 MOZ_MUST_USE bool js::AsyncFunctionReturned(
     JSContext* cx, Handle<PromiseObject*> resultPromise, HandleValue value) {
-  
-  if (!ResolvePromiseInternal(cx, resultPromise, value)) {
-    return false;
-  }
-
-  
-  return true;
+  return ResolvePromiseInternal(cx, resultPromise, value);
 }
 
 
@@ -3587,7 +3575,7 @@ static MOZ_MUST_USE bool InternalAwait(JSContext* cx, HandleValue value,
 
 MOZ_MUST_USE bool js::AsyncFunctionAwait(
     JSContext* cx, Handle<AsyncFunctionGeneratorObject*> genObj,
-    Handle<PromiseObject*> resultPromise, HandleValue value) {
+    HandleValue value) {
   
   RootedValue onFulfilled(
       cx, Int32Value(PromiseHandlerAsyncFunctionAwaitedFulfilled));
@@ -3598,8 +3586,7 @@ MOZ_MUST_USE bool js::AsyncFunctionAwait(
   auto extra = [&](Handle<PromiseReactionRecord*> reaction) {
     reaction->setIsAsyncFunction(genObj);
   };
-  return InternalAwait(cx, value, resultPromise, onFulfilled, onRejected,
-                       extra);
+  return InternalAwait(cx, value, nullptr, onFulfilled, onRejected, extra);
 }
 
 

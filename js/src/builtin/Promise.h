@@ -254,7 +254,7 @@ MOZ_MUST_USE bool AsyncFunctionThrown(JSContext* cx,
 
 MOZ_MUST_USE bool AsyncFunctionAwait(
     JSContext* cx, Handle<AsyncFunctionGeneratorObject*> genObj,
-    Handle<PromiseObject*> resultPromise, HandleValue value);
+    HandleValue value);
 
 
 
