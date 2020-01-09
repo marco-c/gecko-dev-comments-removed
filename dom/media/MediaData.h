@@ -12,6 +12,7 @@
 #  include "SharedBuffer.h"
 #  include "TimeUnits.h"
 #  include "mozilla/CheckedInt.h"
+#  include "mozilla/Maybe.h"
 #  include "mozilla/PodOperations.h"
 #  include "mozilla/RefPtr.h"
 #  include "mozilla/Span.h"
@@ -336,6 +337,15 @@ class AudioData : public MediaData {
   static const Type sType = AUDIO_DATA;
   static const char* sTypeName;
 
+  
+  Span<AudioDataValue> Data() const {
+    return MakeSpan(mAudioData.Data(), mAudioData.Length());
+  }
+
+  
+  
+  AlignedAudioBuffer MoveableData() { return std::move(mAudioData); }
+
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
   
@@ -355,11 +365,12 @@ class AudioData : public MediaData {
   
   
   RefPtr<SharedBuffer> mAudioBuffer;
-  
-  AlignedAudioBuffer mAudioData;
-
  protected:
   ~AudioData() {}
+
+ private:
+  
+  AlignedAudioBuffer mAudioData;
 };
 
 namespace layers {
