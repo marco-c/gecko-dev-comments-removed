@@ -5691,40 +5691,27 @@ nsBrowserAccess.prototype = {
     return browser;
   },
 
-  createContentWindow(aURI, aOpener, aWhere, aFlags, aTriggeringPrincipal, aCsp) {
+  createContentWindow(aURI, aOpener, aWhere, aFlags, aTriggeringPrincipal) {
     return this.getContentWindowOrOpenURI(null, aOpener, aWhere, aFlags,
-                                          aTriggeringPrincipal, aCsp);
+                                          aTriggeringPrincipal);
   },
 
-  openURI(aURI, aOpener, aWhere, aFlags, aTriggeringPrincipal, aCsp) {
+  openURI(aURI, aOpener, aWhere, aFlags, aTriggeringPrincipal) {
     if (!aURI) {
       Cu.reportError("openURI should only be called with a valid URI");
       throw Cr.NS_ERROR_FAILURE;
     }
     return this.getContentWindowOrOpenURI(aURI, aOpener, aWhere, aFlags,
-                                          aTriggeringPrincipal, aCsp);
+                                          aTriggeringPrincipal);
   },
 
-  getContentWindowOrOpenURI(aURI, aOpener, aWhere, aFlags, aTriggeringPrincipal, aCsp) {
+  getContentWindowOrOpenURI(aURI, aOpener, aWhere, aFlags, aTriggeringPrincipal) {
     
     
     if (aOpener && Cu.isCrossProcessWrapper(aOpener)) {
       Cu.reportError("nsBrowserAccess.openURI was passed a CPOW for aOpener. " +
                      "openURI should only ever be called from non-remote browsers.");
       throw Cr.NS_ERROR_FAILURE;
-    }
-
-    
-    
-    
-    if (AppConstants.EARLY_BETA_OR_EARLIER) {
-      
-      
-      
-      
-      if (!aTriggeringPrincipal.isSystemPrincipal && aTriggeringPrincipal.csp && !aCsp) {
-        throw new Error("If Principal has CSP then we need an explicit CSP");
-      }
     }
 
     var newWindow = null;
@@ -5754,6 +5741,8 @@ nsBrowserAccess.prototype = {
     if (aOpener && aOpener.document) {
       referrerInfo.referrerPolicy = aOpener.document.referrerPolicy;
     }
+    
+    let csp = aTriggeringPrincipal.csp;
     let isPrivate = aOpener
                   ? PrivateBrowsingUtils.isContentWindowPrivate(aOpener)
                   : PrivateBrowsingUtils.isWindowPrivate(window);
@@ -5772,8 +5761,7 @@ nsBrowserAccess.prototype = {
         try {
           newWindow = openDialog(AppConstants.BROWSER_CHROME_URL, "_blank", features,
                       
-                      url, null, null, null, null, null, null, aTriggeringPrincipal,
-                      null, aCsp);
+                      url, null, null, null, null, null, null, aTriggeringPrincipal);
         } catch (ex) {
           Cu.reportError(ex);
         }
@@ -5794,7 +5782,7 @@ nsBrowserAccess.prototype = {
                                             isPrivate, isExternal,
                                             forceNotRemote, userContextId,
                                             openerWindow, null, aTriggeringPrincipal,
-                                            0, "", aCsp);
+                                            0, "", csp);
         if (browser)
           newWindow = browser.contentWindow;
         break;
@@ -5806,7 +5794,7 @@ nsBrowserAccess.prototype = {
                             Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
           gBrowser.loadURI(aURI.spec, {
             triggeringPrincipal: aTriggeringPrincipal,
-            csp: aCsp,
+            csp,
             flags: loadflags,
             referrerInfo,
           });

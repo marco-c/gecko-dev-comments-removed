@@ -22,8 +22,6 @@
 #include "nsPIDOMWindow.h"
 #include "nsPIWindowWatcher.h"
 
-#include "mozilla/dom/nsCSPContext.h"
-
 #ifdef MOZ_WIDGET_ANDROID
 #  include "FennecJNIWrappers.h"
 #endif
@@ -172,32 +170,6 @@ nsresult OpenWindow(const ClientOpenWindowArgs& aArgs,
   MOZ_DIAGNOSTIC_ASSERT(principal);
 
   
-  
-  nsCOMPtr<nsIContentSecurityPolicy> csp;
-  if (!aArgs.cspInfos().IsEmpty()) {
-    csp = new nsCSPContext();
-    csp->SetRequestContext(nullptr, principal);
-    for (const mozilla::ipc::ContentSecurityPolicy& policy : aArgs.cspInfos()) {
-      nsresult rv = csp->AppendPolicy(policy.policy(), policy.reportOnlyFlag(),
-                                      policy.deliveredViaMetaTagFlag());
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-    }
-  }
-
-#ifdef DEBUG
-  if (principal && !principal->GetIsNullPrincipal()) {
-    
-    
-    
-    nsCOMPtr<nsIContentSecurityPolicy> principalCSP;
-    principal->GetCsp(getter_AddRefs(principalCSP));
-    MOZ_ASSERT(nsCSPContext::Equals(csp, principalCSP));
-  }
-#endif
-
-  
   if (XRE_IsContentProcess()) {
     
     
@@ -275,7 +247,7 @@ nsresult OpenWindow(const ClientOpenWindowArgs& aArgs,
 
   nsCOMPtr<mozIDOMWindowProxy> win;
   rv = bwin->OpenURI(uri, nullptr, nsIBrowserDOMWindow::OPEN_DEFAULTWINDOW,
-                     nsIBrowserDOMWindow::OPEN_NEW, principal, csp,
+                     nsIBrowserDOMWindow::OPEN_NEW, principal,
                      getter_AddRefs(win));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
