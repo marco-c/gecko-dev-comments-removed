@@ -2464,8 +2464,21 @@ void ContentParent::InitInternal(ProcessPriority aInitialPriority) {
   ScreenManager& screenManager = ScreenManager::GetSingleton();
   screenManager.CopyScreensToRemote(this);
 
+  
+  auto cache = nsLayoutStylesheetCache::Singleton();
+  Maybe<SharedMemoryHandle> sharedUASheetHandle;
+  uintptr_t sharedUASheetAddress = cache->GetSharedMemoryAddress();
+
+  SharedMemoryHandle handle;
+  if (cache->ShareToProcess(OtherPid(), &handle)) {
+    sharedUASheetHandle.emplace(handle);
+  } else {
+    sharedUASheetAddress = 0;
+  }
+
   Unused << SendSetXPCOMProcessAttributes(xpcomInit, initialData, lnfCache,
-                                          fontList);
+                                          fontList, sharedUASheetHandle,
+                                          sharedUASheetAddress);
 
   ipc::WritableSharedMap* sharedData =
       nsFrameMessageManager::sParentProcessManager->SharedData();

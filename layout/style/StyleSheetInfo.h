@@ -15,6 +15,7 @@
 #include "nsIURI.h"
 
 class nsIPrincipal;
+struct nsLayoutStylesheetCacheShm;
 
 namespace mozilla {
 class StyleSheet;
@@ -76,6 +77,12 @@ struct StyleSheetInfo final {
   nsString mSourceURL;
 
   RefPtr<const RawServoStyleSheetContents> mContents;
+
+  
+  
+  
+  
+  RefPtr<nsLayoutStylesheetCacheShm> mSharedMemory;
 
   
   

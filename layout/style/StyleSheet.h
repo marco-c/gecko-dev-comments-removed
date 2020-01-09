@@ -25,6 +25,8 @@
 
 class nsINode;
 class nsIPrincipal;
+struct nsLayoutStylesheetCacheShm;
+struct RawServoSharedMemoryBuilder;
 
 namespace mozilla {
 
@@ -375,6 +377,17 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
       aCallback(child);
     }
   }
+
+  
+  
+  
+  const ServoCssRules* ToShared(RawServoSharedMemoryBuilder* aBuilder);
+
+  
+  
+  
+  void SetSharedContents(nsLayoutStylesheetCacheShm* aSharedMemory,
+                         const ServoCssRules* aSharedRules);
 
  private:
   dom::ShadowRoot* GetContainingShadow() const;
