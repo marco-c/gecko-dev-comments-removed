@@ -15,7 +15,6 @@
 #include "mozilla/dom/SVGSVGElement.h"
 #include "nsContentUtils.h"
 #include "nsIFrame.h"
-#include "SVGTextFrame.h"
 #include "SVGContentUtils.h"
 #include "nsSVGDisplayableFrame.h"
 #include "nsSVGUtils.h"
@@ -165,41 +164,9 @@ already_AddRefed<SVGIRect> SVGTransformableElement::GetBBox(
     return nullptr;
   }
   nsSVGDisplayableFrame* svgframe = do_QueryFrame(frame);
-
   if (!svgframe) {
-    if (!nsSVGUtils::IsInSVGTextSubtree(frame)) {
-      rv.Throw(NS_ERROR_NOT_IMPLEMENTED);  
-      return nullptr;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    SVGTextFrame* text =
-        static_cast<SVGTextFrame*>(nsLayoutUtils::GetClosestFrameOfType(
-            frame->GetParent(), LayoutFrameType::SVGText));
-
-    if (text->HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
-      rv.Throw(NS_ERROR_FAILURE);
-      return nullptr;
-    }
-
-    gfxRect rec = text->TransformFrameRectFromTextChild(
-        frame->GetRectRelativeToSelf(), frame);
-
-    
-    
-    
-    rec.x += float(text->GetPosition().x) / AppUnitsPerCSSPixel();
-    rec.y += float(text->GetPosition().y) / AppUnitsPerCSSPixel();
-
-    return NS_NewSVGRect(this, ToRect(rec));
+    rv.Throw(NS_ERROR_NOT_IMPLEMENTED);  
+    return nullptr;
   }
 
   if (!NS_SVGNewGetBBoxEnabled()) {
