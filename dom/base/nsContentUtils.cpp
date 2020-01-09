@@ -4164,6 +4164,15 @@ nsresult nsContentUtils::DispatchInputEvent(Element* aEventTargetElement,
   }
 #endif  
 
+  
+  
+  
+  HTMLInputElement* inputElement =
+      HTMLInputElement::FromNode(aEventTargetElement);
+  if (inputElement) {
+    inputElement->MaybeUpdateAllValidityStates();
+  }
+
   if (!useInputEvent) {
     MOZ_ASSERT(aEditorInputType == EditorInputType::eUnknown);
     

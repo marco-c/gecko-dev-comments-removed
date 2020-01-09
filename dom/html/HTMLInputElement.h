@@ -346,6 +346,14 @@ class HTMLInputElement final : public nsGenericHTMLFormElementWithState,
   
   
   void UpdateAllValidityStates(bool aNotify);
+  void MaybeUpdateAllValidityStates() {
+    
+    
+    if (mType == NS_FORM_INPUT_EMAIL) {
+      UpdateAllValidityStates(!mDoneCreating);
+    }
+  }
+
   
   
   
