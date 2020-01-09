@@ -79,13 +79,6 @@ async function handleInitialHomepagePopup(extensionId, homepageUrl) {
   homepagePopup.addObserver(extensionId);
 }
 
-
-
-
-
-
-var pendingSearchSetupTasks = new Map();
-
 this.chrome_settings_overrides = class extends ExtensionAPI {
   static async processDefaultSearchSetting(action, id) {
     await ExtensionSettingsStore.initialize();
@@ -138,11 +131,7 @@ this.chrome_settings_overrides = class extends ExtensionAPI {
     ]);
   }
 
-  static async onUninstall(id) {
-    let searchStartupPromise = pendingSearchSetupTasks.get(id);
-    if (searchStartupPromise) {
-      await searchStartupPromise;
-    }
+  static onUninstall(id) {
     
     
     return Promise.all([
@@ -201,90 +190,68 @@ this.chrome_settings_overrides = class extends ExtensionAPI {
       });
     }
     if (manifest.chrome_settings_overrides.search_provider) {
-      
-      
-      
-      let searchStartupPromise =
-        this.processSearchProviderManifestEntry().finally(() => {
-          if (pendingSearchSetupTasks.get(extension.id) === searchStartupPromise) {
-            pendingSearchSetupTasks.delete(extension.id);
+      await searchInitialized;
+      extension.callOnClose({
+        close: () => {
+          if (extension.shutdownReason == "ADDON_DISABLE") {
+            chrome_settings_overrides.processDefaultSearchSetting("disable", extension.id);
+            chrome_settings_overrides.removeEngine(extension.id);
           }
-        });
+        },
+      });
 
-      
-      pendingSearchSetupTasks.set(extension.id, searchStartupPromise);
-    }
-  }
-
-  async processSearchProviderManifestEntry() {
-    await searchInitialized;
-
-    let {extension} = this;
-    if (!extension) {
-      Cu.reportError(`Extension shut down before search provider was registered`);
-      return;
-    }
-    extension.callOnClose({
-      close: () => {
-        if (extension.shutdownReason == "ADDON_DISABLE") {
-          chrome_settings_overrides.processDefaultSearchSetting("disable", extension.id);
-          chrome_settings_overrides.removeEngine(extension.id);
-        }
-      },
-    });
-
-    let {manifest} = extension;
-    let searchProvider = manifest.chrome_settings_overrides.search_provider;
-    let engineName = searchProvider.name.trim();
-    if (searchProvider.is_default) {
-      let engine = Services.search.getEngineByName(engineName);
-      let defaultEngines = await Services.search.getDefaultEngines();
-      if (engine && defaultEngines.some(defaultEngine => defaultEngine.name == engineName)) {
-        
-        
-        await this.setDefault(engineName);
-        
-        return;
-      }
-    }
-    await this.addSearchEngine();
-    if (searchProvider.is_default) {
-      if (extension.startupReason === "ADDON_INSTALL") {
-        
+      let searchProvider = manifest.chrome_settings_overrides.search_provider;
+      let engineName = searchProvider.name.trim();
+      if (searchProvider.is_default) {
         let engine = Services.search.getEngineByName(engineName);
-        let defaultEngine = await Services.search.getDefault();
-        if (defaultEngine.name != engine.name) {
-          let subject = {
-            wrappedJSObject: {
-              
-              
-              
-              browser: windowTracker.topWindow.gBrowser.selectedBrowser,
-              name: this.extension.name,
-              icon: this.extension.iconURL,
-              currentEngine: defaultEngine.name,
-              newEngine: engineName,
-              resolve(allow) {
-                if (allow) {
-                  ExtensionSettingsStore.addSetting(
-                    extension.id, DEFAULT_SEARCH_STORE_TYPE, DEFAULT_SEARCH_SETTING_NAME, engineName, () => defaultEngine.name);
-                  Services.search.defaultEngine = Services.search.getEngineByName(engineName);
-                }
-              },
-            },
-          };
-          Services.obs.notifyObservers(subject, "webextension-defaultsearch-prompt");
+        let defaultEngines = await Services.search.getDefaultEngines();
+        if (engine && defaultEngines.some(defaultEngine => defaultEngine.name == engineName)) {
+          
+          
+          await this.setDefault(engineName);
+          
+          return;
         }
-      } else {
-        
-        
-        this.setDefault(engineName);
       }
-    } else if (ExtensionSettingsStore.hasSetting(extension.id,
-                                                 DEFAULT_SEARCH_STORE_TYPE,
-                                                 DEFAULT_SEARCH_SETTING_NAME)) {
-      
-      chrome_settings_overrides.processDefaultSearchSetting("removeSetting", extension.id);
+      await this.addSearchEngine();
+      if (searchProvider.is_default) {
+        if (extension.startupReason === "ADDON_INSTALL") {
+          
+          let engine = Services.search.getEngineByName(engineName);
+          let defaultEngine = await Services.search.getDefault();
+          if (defaultEngine.name != engine.name) {
+            let subject = {
+              wrappedJSObject: {
+                
+                
+                
+                browser: windowTracker.topWindow.gBrowser.selectedBrowser,
+                name: this.extension.name,
+                icon: this.extension.iconURL,
+                currentEngine: defaultEngine.name,
+                newEngine: engineName,
+                resolve(allow) {
+                  if (allow) {
+                    ExtensionSettingsStore.addSetting(
+                      extension.id, DEFAULT_SEARCH_STORE_TYPE, DEFAULT_SEARCH_SETTING_NAME, engineName, () => defaultEngine.name);
+                    Services.search.defaultEngine = Services.search.getEngineByName(engineName);
+                  }
+                },
+              },
+            };
+            Services.obs.notifyObservers(subject, "webextension-defaultsearch-prompt");
+          }
+        } else {
+          
+          
+          this.setDefault(engineName);
+        }
+      } else if (ExtensionSettingsStore.hasSetting(extension.id,
+                                                   DEFAULT_SEARCH_STORE_TYPE,
+                                                   DEFAULT_SEARCH_SETTING_NAME)) {
+        
+        chrome_settings_overrides.processDefaultSearchSetting("removeSetting", extension.id);
+      }
     }
   }
 
