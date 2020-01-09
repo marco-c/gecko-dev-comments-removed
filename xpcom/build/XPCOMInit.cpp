@@ -920,7 +920,7 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
 #endif
   nsCycleCollector_shutdown(shutdownCollect);
 
-  PROFILER_ADD_MARKER("Shutdown xpcom");
+  PROFILER_ADD_MARKER("Shutdown xpcom", OTHER);
   
   if (gShutdownChecks != SCM_NOTHING) {
 #ifdef XP_MACOSX

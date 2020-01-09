@@ -21,7 +21,8 @@ class ProfilerMarker {
 
  public:
   explicit ProfilerMarker(
-      const char* aMarkerName, int aThreadId,
+      const char* aMarkerName, js::ProfilingStackFrame::Category aCategory,
+      int aThreadId,
       mozilla::UniquePtr<ProfilerMarkerPayload> aPayload = nullptr,
       double aTime = 0)
       : mMarkerName(strdup(aMarkerName)),
@@ -29,7 +30,8 @@ class ProfilerMarker {
         mNext{nullptr},
         mTime(aTime),
         mPositionInBuffer{0},
-        mThreadId{aThreadId} {}
+        mThreadId{aThreadId},
+        mCategory{aCategory} {}
 
   void SetPositionInBuffer(uint64_t aPosition) {
     mPositionInBuffer = aPosition;
@@ -53,6 +55,7 @@ class ProfilerMarker {
     {
       aUniqueStacks.mUniqueStrings->WriteElement(aWriter, mMarkerName.get());
       aWriter.DoubleElement(mTime);
+      aWriter.IntElement(unsigned(mCategory));
       
       
       
@@ -72,6 +75,7 @@ class ProfilerMarker {
   double mTime;
   uint64_t mPositionInBuffer;
   int mThreadId;
+  js::ProfilingStackFrame::Category mCategory;
 };
 
 template <typename T>
