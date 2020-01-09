@@ -53,7 +53,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   NetUtil: "resource://gre/modules/NetUtil.jsm",
   OS: "resource://gre/modules/osfile.jsm",
   PluralForm: "resource://gre/modules/PluralForm.jsm",
-  PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   Schemas: "resource://gre/modules/Schemas.jsm",
   XPIProvider: "resource://gre/modules/addons/XPIProvider.jsm",
 });
@@ -1908,9 +1907,6 @@ class Extension extends ExtensionData {
 
       
       
-      
-      
-      
       if (!allowPrivateBrowsingByDefault && this.manifest.incognito !== "not_allowed" &&
           !this.permissions.has(PRIVATE_ALLOWED_PERMISSION)) {
         if (this.isPrivileged && !this.addonData.temporarilyInstalled) {
@@ -1943,17 +1939,6 @@ class Extension extends ExtensionData {
       }
 
       resolveReadyPromise(this.policy);
-
-      
-      
-      if (PrivateBrowsingUtils.permanentPrivateBrowsing && !this.privateBrowsingAllowed) {
-        this.state = "Startup: Cancelled: (not running in permenant private browsing mode)";
-
-        this.policy.active = false;
-
-        this.cleanupGeneratedFile();
-        return;
-      }
 
       
       
