@@ -411,8 +411,12 @@ var PreferenceExperiments = {
 
 
 
+
+
+
   async start({
     name,
+    actionName,
     branch,
     preferences,
     experimentType = "exp",
@@ -487,6 +491,7 @@ var PreferenceExperiments = {
     
     const experiment = {
       name,
+      actionName,
       branch,
       expired: false,
       lastSeen: new Date().toJSON(),
