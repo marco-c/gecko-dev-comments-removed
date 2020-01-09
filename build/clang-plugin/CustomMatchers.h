@@ -97,6 +97,12 @@ AST_MATCHER(UnaryOperator, unaryArithmeticOperator) {
 }
 
 
+AST_MATCHER(UnaryOperator, unaryDereferenceOperator) {
+  UnaryOperatorKind OpCode = Node.getOpcode();
+  return OpCode == UO_Deref;
+}
+
+
 AST_MATCHER(BinaryOperator, binaryEqualityOperator) {
   BinaryOperatorKind OpCode = Node.getOpcode();
   return OpCode == BO_EQ || OpCode == BO_NE;
