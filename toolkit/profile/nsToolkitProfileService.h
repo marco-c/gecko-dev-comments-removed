@@ -13,7 +13,6 @@
 #include "nsIFactory.h"
 #include "nsSimpleEnumerator.h"
 #include "nsProfileLock.h"
-#include "nsINIParser.h"
 
 class nsToolkitProfile final : public nsIToolkitProfile {
  public:
@@ -77,9 +76,6 @@ class nsToolkitProfileService final : public nsIToolkitProfileService {
   nsresult SelectStartupProfile(int* aArgc, char* aArgv[], bool aIsResetting,
                                 nsIFile** aRootDir, nsIFile** aLocalDir,
                                 nsIToolkitProfile** aProfile, bool* aDidCreate);
-  nsresult CreateResetProfile(nsIToolkitProfile** aNewProfile);
-  nsresult ApplyResetProfile(nsIToolkitProfile* aOldProfile);
-  void RecordStartupTelemetry();
 
  private:
   friend class nsToolkitProfile;
@@ -95,54 +91,15 @@ class nsToolkitProfileService final : public nsIToolkitProfileService {
   void GetProfileByDir(nsIFile* aRootDir, nsIFile* aLocalDir,
                        nsIToolkitProfile** aResult);
 
-  nsresult GetProfileDescriptor(nsIToolkitProfile* aProfile,
-                                nsACString& aDescriptor, bool* aIsRelative);
-  bool IsProfileForCurrentInstall(nsIToolkitProfile* aProfile);
-  void ClearProfileFromOtherInstalls(nsIToolkitProfile* aProfile);
-  bool MaybeMakeDefaultDedicatedProfile(nsIToolkitProfile* aProfile);
-  bool IsSnapEnvironment();
-
-  
-  
-  nsTArray<nsCString> GetKnownInstalls();
-
-  
   bool mStartupProfileSelected;
-  
   RefPtr<nsToolkitProfile> mFirst;
-  
-  nsCOMPtr<nsIToolkitProfile> mCurrent;
-  
-  nsCOMPtr<nsIToolkitProfile> mDedicatedProfile;
-  
-  nsCOMPtr<nsIToolkitProfile> mNormalDefault;
-  
-  
-  nsCOMPtr<nsIToolkitProfile> mDevEditionDefault;
-  
+  nsCOMPtr<nsIToolkitProfile> mChosen;
+  nsCOMPtr<nsIToolkitProfile> mDefault;
   nsCOMPtr<nsIFile> mAppData;
-  
   nsCOMPtr<nsIFile> mTempData;
-  
   nsCOMPtr<nsIFile> mListFile;
-  
-  nsCOMPtr<nsIFile> mInstallFile;
-  
-  nsINIParser mInstallData;
-  
-  nsCString mInstallHash;
-  
   bool mStartWithLast;
-  
   bool mIsFirstRun;
-  
-  bool mUseDevEditionProfile;
-  
-  const bool mUseDedicatedProfile;
-  
-  
-  bool mCreatedAlternateProfile;
-  nsString mStartupReason;
 
   static nsToolkitProfileService* gService;
 

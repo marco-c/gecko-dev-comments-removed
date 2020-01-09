@@ -3,7 +3,7 @@
 
 
 
-#include "nsToolkitProfileService.h"
+#include "nsIToolkitProfileService.h"
 #include "nsIFile.h"
 #include "nsThreadUtils.h"
 
@@ -11,8 +11,11 @@ static bool gProfileResetCleanupCompleted = false;
 static const char kResetProgressURL[] =
     "chrome://global/content/resetProfileProgress.xul";
 
-nsresult ProfileResetCleanup(nsToolkitProfileService* aService,
-                             nsIToolkitProfile* aOldProfile);
+nsresult CreateResetProfile(nsIToolkitProfileService* aProfileSvc,
+                            nsIToolkitProfile* aOldProfile,
+                            nsIToolkitProfile** aNewProfile);
+
+nsresult ProfileResetCleanup(nsIToolkitProfile* aOldProfile);
 
 class ProfileResetCleanupResultTask : public mozilla::Runnable {
  public:

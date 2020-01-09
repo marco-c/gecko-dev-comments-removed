@@ -14,6 +14,7 @@
 #include "nsDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
 #include "nsPIDOMWindow.h"
+#include "nsPrintfCString.h"
 #include "nsString.h"
 #include "nsXPCOMCIDInternal.h"
 #include "mozilla/Components.h"
@@ -33,10 +34,43 @@ static const char kProfileProperties[] =
 
 
 
+nsresult CreateResetProfile(nsIToolkitProfileService* aProfileSvc,
+                            nsIToolkitProfile* aOldProfile,
+                            nsIToolkitProfile** aNewProfile) {
+  MOZ_ASSERT(aProfileSvc, "NULL profile service");
+
+  nsAutoCString oldProfileName;
+  aOldProfile->GetName(oldProfileName);
+
+  nsCOMPtr<nsIToolkitProfile> newProfile;
+  
+  
+  nsAutoCString newProfileName;
+  if (!oldProfileName.IsEmpty()) {
+    newProfileName.Assign(oldProfileName);
+    newProfileName.Append("-");
+  } else {
+    newProfileName.AssignLiteral("default-");
+  }
+  newProfileName.Append(nsPrintfCString("%" PRId64, PR_Now() / 1000));
+  nsresult rv =
+      aProfileSvc->CreateProfile(nullptr,  
+                                 newProfileName, getter_AddRefs(newProfile));
+  if (NS_FAILED(rv)) return rv;
+
+  rv = aProfileSvc->Flush();
+  if (NS_FAILED(rv)) return rv;
+
+  newProfile.swap(*aNewProfile);
+
+  return NS_OK;
+}
 
 
-nsresult ProfileResetCleanup(nsToolkitProfileService* aService,
-                             nsIToolkitProfile* aOldProfile) {
+
+
+
+nsresult ProfileResetCleanup(nsIToolkitProfile* aOldProfile) {
   nsresult rv;
   nsCOMPtr<nsIFile> profileDir;
   rv = aOldProfile->GetRootDir(getter_AddRefs(profileDir));
@@ -144,5 +178,10 @@ nsresult ProfileResetCleanup(nsToolkitProfileService* aService,
   auto* piWindow = nsPIDOMWindowOuter::From(progressWindow);
   piWindow->Close();
 
-  return aService->ApplyResetProfile(aOldProfile);
+  
+  
+  rv = aOldProfile->Remove(false);
+  if (NS_FAILED(rv)) NS_WARNING("Could not remove the profile");
+
+  return rv;
 }

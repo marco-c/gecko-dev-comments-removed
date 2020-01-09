@@ -21,7 +21,6 @@ XPCOMUtils.defineLazyServiceGetter(this, "WindowsUIUtils",
 
 XPCOMUtils.defineLazyGetter(this, "gSystemPrincipal",
   () => Services.scriptSecurityManager.getSystemPrincipal());
-XPCOMUtils.defineLazyGlobalGetters(this, [URL]);
 
 function shouldLoadURI(aURI) {
   if (aURI && !aURI.schemeIs("chrome"))
@@ -60,21 +59,12 @@ function resolveURIInternal(aCmdLine, aArgument) {
   return uri;
 }
 
-function getNewInstallPage() {
-  let url = new URL("about:newinstall");
-  let endpoint = Services.prefs.getCharPref("browser.dedicatedprofile.welcome.accounts.endpoint");
-  url.searchParams.set("endpoint", endpoint);
-  url.searchParams.set("channel", AppConstants.MOZ_UPDATE_CHANNEL);
-  return url.toString();
-}
-
 var gFirstWindow = false;
 
 const OVERRIDE_NONE        = 0;
 const OVERRIDE_NEW_PROFILE = 1;
 const OVERRIDE_NEW_MSTONE  = 2;
 const OVERRIDE_NEW_BUILD_ID = 3;
-const OVERRIDE_ALTERNATE_PROFILE = 4;
 
 
 
@@ -86,11 +76,6 @@ const OVERRIDE_ALTERNATE_PROFILE = 4;
 
 
 function needHomepageOverride(prefb) {
-  let pService = Cc["@mozilla.org/toolkit/profile-service;1"].
-                 getService(Ci.nsIToolkitProfileService);
-  if (pService.createdAlternateProfile) {
-    return OVERRIDE_ALTERNATE_PROFILE;
-  }
   var savedmstone = prefb.getCharPref("browser.startup.homepage_override.mstone", "");
 
   if (savedmstone == "ignore")
@@ -203,53 +188,39 @@ function openBrowserWindow(cmdLine, triggeringPrincipal, urlOrUrlList, postData 
   if (!urlOrUrlList) {
     
     args = [gBrowserContentHandler.defaultArgs];
+  } else if (Array.isArray(urlOrUrlList)) {
+    
+    
+    if (!triggeringPrincipal || !triggeringPrincipal.equals(gSystemPrincipal)) {
+      throw new Error("Can't open multiple URLs with something other than system principal.");
+    }
+    
+    let uriArray = Cc["@mozilla.org/array;1"]
+                     .createInstance(Ci.nsIMutableArray);
+    urlOrUrlList.forEach(function(uri) {
+      var sstring = Cc["@mozilla.org/supports-string;1"]
+                      .createInstance(Ci.nsISupportsString);
+      sstring.data = uri;
+      uriArray.appendElement(sstring);
+    });
+    args = [uriArray];
   } else {
-    let pService = Cc["@mozilla.org/toolkit/profile-service;1"].
-                  getService(Ci.nsIToolkitProfileService);
-    if (cmdLine && cmdLine.state == Ci.nsICommandLine.STATE_INITIAL_LAUNCH &&
-        pService.createdAlternateProfile) {
-      let url = getNewInstallPage();
-      if (Array.isArray(urlOrUrlList)) {
-        urlOrUrlList.unshift(url);
-      } else {
-        urlOrUrlList = [url, urlOrUrlList];
-      }
-    }
-
-    if (Array.isArray(urlOrUrlList)) {
-      
-      
-      if (!triggeringPrincipal || !triggeringPrincipal.equals(gSystemPrincipal)) {
-        throw new Error("Can't open multiple URLs with something other than system principal.");
-      }
-      
-      let uriArray = Cc["@mozilla.org/array;1"]
-                      .createInstance(Ci.nsIMutableArray);
-      urlOrUrlList.forEach(function(uri) {
-        var sstring = Cc["@mozilla.org/supports-string;1"]
-                        .createInstance(Ci.nsISupportsString);
-        sstring.data = uri;
-        uriArray.appendElement(sstring);
-      });
-      args = [uriArray];
-    } else {
-      
-      
-      
-      args = [urlOrUrlList,
-              null, 
-              null, 
-              postData,
-              undefined, 
-                         
-              undefined, 
-              undefined, 
-              null, 
-              triggeringPrincipal];
-    }
+    
+    
+    
+    args = [urlOrUrlList,
+            null, 
+            null, 
+            postData,
+            undefined, 
+                       
+            undefined, 
+            undefined, 
+            null, 
+            triggeringPrincipal];
   }
 
-  if (cmdLine && cmdLine.state == Ci.nsICommandLine.STATE_INITIAL_LAUNCH) {
+  if (cmdLine.state == Ci.nsICommandLine.STATE_INITIAL_LAUNCH) {
     let win = Services.wm.getMostRecentWindow("navigator:blank");
     if (win) {
       
@@ -542,12 +513,6 @@ nsBrowserContentHandler.prototype = {
       override = needHomepageOverride(prefb);
       if (override != OVERRIDE_NONE) {
         switch (override) {
-          case OVERRIDE_ALTERNATE_PROFILE:
-            
-            
-            
-            overridePage = getNewInstallPage();
-            break;
           case OVERRIDE_NEW_PROFILE:
             
             overridePage = Services.urlFormatter.formatURLPref("startup.homepage_welcome_url");
@@ -610,7 +575,7 @@ nsBrowserContentHandler.prototype = {
     if (startPage == "about:blank")
       startPage = "";
 
-    let skipStartPage = ((override == OVERRIDE_NEW_PROFILE) || (override == OVERRIDE_ALTERNATE_PROFILE)) &&
+    let skipStartPage = override == OVERRIDE_NEW_PROFILE &&
       prefb.getBoolPref("browser.startup.firstrunSkipsHomepage");
     
     
@@ -626,17 +591,15 @@ nsBrowserContentHandler.prototype = {
     if (this.mFeatures === null) {
       this.mFeatures = "";
 
-      if (cmdLine) {
-        try {
-          var width = cmdLine.handleFlagWithParam("width", false);
-          var height = cmdLine.handleFlagWithParam("height", false);
+      try {
+        var width = cmdLine.handleFlagWithParam("width", false);
+        var height = cmdLine.handleFlagWithParam("height", false);
 
-          if (width)
-            this.mFeatures += ",width=" + width;
-          if (height)
-            this.mFeatures += ",height=" + height;
-        } catch (e) {
-        }
+        if (width)
+          this.mFeatures += ",width=" + width;
+        if (height)
+          this.mFeatures += ",height=" + height;
+      } catch (e) {
       }
 
       

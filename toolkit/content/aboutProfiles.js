@@ -14,6 +14,33 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIToolkitProfileService"
 );
 
+
+
+
+
+function findCurrentProfile() {
+  let cpd;
+  try {
+    cpd = Services.dirsvc.get("ProfD", Ci.nsIFile);
+  } catch (e) {}
+
+  if (cpd) {
+    for (let profile of ProfileService.profiles) {
+      if (profile.rootDir.path == cpd.path) {
+        return profile;
+      }
+    }
+  }
+
+  
+  
+  try {
+    return ProfileService.selectedProfile;
+  } catch (e) {
+    return null;
+  }
+}
+
 function refreshUI() {
   let parent = document.getElementById("profiles");
   while (parent.firstChild) {
@@ -25,7 +52,7 @@ function refreshUI() {
     defaultProfile = ProfileService.defaultProfile;
   } catch (e) {}
 
-  let currentProfile = ProfileService.currentProfile;
+  let currentProfile = findCurrentProfile();
 
   for (let profile of ProfileService.profiles) {
     let isCurrentProfile = profile == currentProfile;
@@ -170,10 +197,10 @@ function display(profileData) {
   div.appendChild(sep);
 }
 
-
 function CreateProfile(profile) {
-  
-  defaultProfile(profile);
+  ProfileService.selectedProfile = profile;
+  ProfileService.flush();
+  refreshUI();
 }
 
 function createProfileWizard() {
@@ -243,25 +270,29 @@ async function removeProfile(profile) {
   }
 
   
+  
+  let isSelected = false;
+  try {
+    isSelected = ProfileService.selectedProfile == profile;
+  } catch (e) {}
+
   let isDefault = false;
   try {
     isDefault = ProfileService.defaultProfile == profile;
   } catch (e) {}
 
-  if (isDefault) {
+  if (isSelected || isDefault) {
     for (let p of ProfileService.profiles) {
       if (profile == p) {
         continue;
       }
 
+      if (isSelected) {
+        ProfileService.selectedProfile = p;
+      }
+
       if (isDefault) {
-        try {
-          ProfileService.defaultProfile = p;
-        } catch (e) {
-          
-          
-          
-        }
+        ProfileService.defaultProfile = p;
       }
 
       break;
@@ -284,19 +315,10 @@ async function removeProfile(profile) {
   refreshUI();
 }
 
-async function defaultProfile(profile) {
-  try {
-    ProfileService.defaultProfile = profile;
-    ProfileService.flush();
-  } catch (e) {
-    
-    let [title, msg] = await document.l10n.formatValues([
-        { id: "profiles-cannot-set-as-default-title" },
-        { id: "profiles-cannot-set-as-default-message" },
-    ]);
-
-    Services.prompt.alert(window, title, msg);
-  }
+function defaultProfile(profile) {
+  ProfileService.defaultProfile = profile;
+  ProfileService.selectedProfile = profile;
+  ProfileService.flush();
   refreshUI();
 }
 
