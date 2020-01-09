@@ -8303,13 +8303,13 @@ var ConfirmationHint = {
     
     
     
-    const DURATION = options.showDescription ? 4000 : 1500 + 120;
+    const DURATION = options.showDescription ? 4000 : 1500;
     this._panel.addEventListener("popupshown", () => {
       this._animationBox.setAttribute("animate", "true");
 
       setTimeout(() => {
         this._panel.hidePopup(true);
-      }, DURATION);
+      }, DURATION + 120);
     }, {once: true});
 
     this._panel.addEventListener("popuphidden", () => {
