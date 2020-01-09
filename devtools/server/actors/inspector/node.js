@@ -293,7 +293,10 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
   },
 
   writeAttrs: function() {
-    if (!this.rawNode.attributes) {
+    
+    
+    if (!this.rawNode.attributes ||
+        !(this.rawNode.attributes instanceof NamedNodeMap)) {
       return undefined;
     }
 
