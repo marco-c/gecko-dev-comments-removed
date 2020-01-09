@@ -118,6 +118,10 @@ BytecodeEmitter::BytecodeEmitter(BytecodeEmitter* parent, SharedContext* sc,
       innermostNestableControl(nullptr),
       innermostEmitterScope_(nullptr),
       innermostTDZCheckCache(nullptr),
+      fieldInitializers_(parent
+                             ? parent->fieldInitializers_
+                             : lazyScript ? lazyScript->getFieldInitializers()
+                                          : FieldInitializers::Invalid()),
 #ifdef DEBUG
       unstableEmitterScope(false),
 #endif
@@ -2473,6 +2477,73 @@ bool BytecodeEmitter::emitScript(ParseNode* body) {
   }
 
   tellDebuggerAboutCompiledScript(cx);
+
+  return true;
+}
+
+bool BytecodeEmitter::emitInitializeInstanceFields() {
+  FieldInitializers fieldInfo = this->fieldInitializers_;
+  MOZ_ASSERT(fieldInfo.valid);
+  size_t numFields = fieldInfo.numFieldInitializers;
+
+  if (numFields == 0) {
+    return true;
+  }
+
+  PropOpEmitter poe(this, PropOpEmitter::Kind::Get,
+                    PropOpEmitter::ObjKind::Other);
+  if (!poe.prepareForObj()) {
+    return false;
+  }
+
+  
+  if (!emitGetName(cx->names().dotThis)) {
+    
+    return false;
+  }
+
+  if (!poe.emitGet(cx->names().dotInitializers)) {
+    
+    return false;
+  }
+
+  for (size_t fieldIndex = 0; fieldIndex < numFields; fieldIndex++) {
+    if (fieldIndex < numFields - 1) {
+      
+      
+      
+      if (!emit1(JSOP_DUP)) {
+        
+        return false;
+      }
+    }
+
+    if (!emitNumberOp(fieldIndex)) {
+      
+      return false;
+    }
+
+    if (!emit1(JSOP_CALLELEM)) {
+      
+      return false;
+    }
+
+    
+    if (!emitGetName(cx->names().dotThis)) {
+      
+      return false;
+    }
+
+    if (!emitCall(JSOP_CALL_IGNORES_RV, 0)) {
+      
+      return false;
+    }
+
+    if (!emit1(JSOP_POP)) {
+      
+      return false;
+    }
+  }
 
   return true;
 }
@@ -7764,10 +7835,18 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
                                        PropListType type) {
   
 
+  size_t numFields = 0;
   for (ParseNode* propdef : obj->contents()) {
     if (propdef->is<ClassField>()) {
       
-      return false;
+      
+      
+      FunctionNode* initializer = &propdef->as<ClassField>().initializer();
+      
+      if (initializer != nullptr) {
+        numFields++;
+      }
+      continue;
     }
 
     
@@ -8013,6 +8092,64 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
         break;
       default:
         MOZ_CRASH("Invalid op");
+    }
+  }
+
+  if (numFields > 0) {
+    
+    
+    
+
+    PropOpEmitter poe(this, PropOpEmitter::Kind::SimpleAssignment,
+                      PropOpEmitter::ObjKind::Other);
+    if (!poe.prepareForObj()) {
+      return false;
+    }
+
+    if (!emit1(JSOP_DUP)) {
+      
+      return false;
+    }
+
+    if (!poe.prepareForRhs()) {
+      return false;
+    }
+
+    if (!emitUint32Operand(JSOP_NEWARRAY, numFields)) {
+      
+      return false;
+    }
+
+    size_t curFieldIndex = 0;
+    for (ParseNode* propdef : obj->contents()) {
+      if (propdef->is<ClassField>()) {
+        FunctionNode* initializer = &propdef->as<ClassField>().initializer();
+        if (initializer == nullptr) {
+          continue;
+        }
+
+        if (!emitTree(initializer)) {
+          
+          return false;
+        }
+
+        if (!emitUint32Operand(JSOP_INITELEM_ARRAY, curFieldIndex)) {
+          
+          return false;
+        }
+
+        curFieldIndex++;
+      }
+    }
+
+    if (!poe.emitAssignment(cx->names().dotInitializers)) {
+      
+      return false;
+    }
+
+    if (!emit1(JSOP_POP)) {
+      
+      return false;
     }
   }
   return true;
@@ -8557,6 +8694,13 @@ bool BytecodeEmitter::emitInitializeFunctionSpecialNames() {
 bool BytecodeEmitter::emitFunctionBody(ParseNode* funBody) {
   FunctionBox* funbox = sc->asFunctionBox();
 
+  if (funbox->function()->kind() ==
+      JSFunction::FunctionKind::ClassConstructor) {
+    if (!emitInitializeInstanceFields()) {
+      return false;
+    }
+  }
+
   if (!emitTree(funBody)) {
     return false;
   }
@@ -8642,23 +8786,34 @@ bool BytecodeEmitter::emitLexicalInitialization(JSAtom* name) {
 static MOZ_ALWAYS_INLINE FunctionNode* FindConstructor(JSContext* cx,
                                                        ListNode* classMethods) {
   for (ParseNode* mn : classMethods->contents()) {
-    if (mn->is<ClassField>()) {
-      
-      continue;
-    }
-
-    ClassMethod& method = mn->as<ClassMethod>();
-    ParseNode& methodName = method.name();
-    if (!method.isStatic() &&
-        (methodName.isKind(ParseNodeKind::ObjectPropertyName) ||
-         methodName.isKind(ParseNodeKind::StringExpr)) &&
-        methodName.as<NameNode>().atom() == cx->names().constructor) {
-      return &method.method();
+    if (mn->is<ClassMethod>()) {
+      ClassMethod& method = mn->as<ClassMethod>();
+      ParseNode& methodName = method.name();
+      if (!method.isStatic() &&
+          (methodName.isKind(ParseNodeKind::ObjectPropertyName) ||
+           methodName.isKind(ParseNodeKind::StringExpr)) &&
+          methodName.as<NameNode>().atom() == cx->names().constructor) {
+        return &method.method();
+      }
     }
   }
 
   return nullptr;
 }
+
+class AutoResetFieldInitializers {
+  BytecodeEmitter* bce;
+  FieldInitializers oldFieldInfo;
+
+ public:
+  AutoResetFieldInitializers(BytecodeEmitter* bce,
+                             FieldInitializers newFieldInfo)
+      : bce(bce), oldFieldInfo(bce->fieldInitializers_) {
+    bce->fieldInitializers_ = newFieldInfo;
+  }
+
+  ~AutoResetFieldInitializers() { bce->fieldInitializers_ = oldFieldInfo; }
+};
 
 
 
@@ -8672,6 +8827,20 @@ bool BytecodeEmitter::emitClass(
   ParseNode* heritageExpression = classNode->heritage();
   ListNode* classMembers = classNode->memberList();
   FunctionNode* constructor = FindConstructor(cx, classMembers);
+
+  
+  size_t numFields = 0;
+  for (ParseNode* propdef : classMembers->contents()) {
+    if (propdef->is<ClassField>()) {
+      FunctionNode* initializer = &propdef->as<ClassField>().initializer();
+      
+      if (initializer != nullptr) {
+        numFields++;
+      }
+    }
+  }
+  FieldInitializers fieldInfo(numFields);
+  AutoResetFieldInitializers _innermostClassAutoReset(this, fieldInfo);
 
   
   
