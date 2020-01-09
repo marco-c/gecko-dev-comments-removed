@@ -125,7 +125,7 @@ struct AlignedArray {
     if (aZero) {
       
       
-      mStorage = static_cast<uint8_t *>(calloc(1, storageByteCount.value()));
+      mStorage = static_cast<uint8_t *>(calloc(1u, storageByteCount.value()));
     } else {
       mStorage = static_cast<uint8_t *>(malloc(storageByteCount.value()));
     }
