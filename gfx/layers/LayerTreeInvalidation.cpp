@@ -140,6 +140,17 @@ static void NotifySubdocumentInvalidation(
       });
 }
 
+static void SetChildrenChangedRecursive(Layer* aLayer) {
+  ForEachNode<ForwardIterator>(
+      aLayer,
+      [](Layer* layer) {
+        ContainerLayer* container = layer->AsContainerLayer();
+        if (container) {
+          container->SetChildrenChanged(true);
+        }
+      });
+}
+
 struct LayerPropertiesBase : public LayerProperties {
   explicit LayerPropertiesBase(Layer* aLayer)
       : mLayer(aLayer),
@@ -447,10 +458,14 @@ struct ContainerLayerProperties : public LayerPropertiesBase {
         } else {
           
           invalidateChildsCurrentArea = true;
+          SetChildrenChangedRecursive(child);
         }
       } else {
         
         invalidateChildsCurrentArea = true;
+        if (!oldIndexMap.Contains(child)) {
+          SetChildrenChangedRecursive(child);
+        }
       }
       if (invalidateChildsCurrentArea) {
         LTI_DUMP(child->GetLocalVisibleRegion().ToUnknownRegion(),
