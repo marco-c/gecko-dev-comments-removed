@@ -14,6 +14,7 @@
 #include "mozilla/EventStateManager.h"     
 #include "mozilla/IMEStateManager.h"       
 #include "mozilla/Preferences.h"           
+#include "mozilla/PresShell.h"             
 #include "mozilla/TextEditor.h"            
 #include "mozilla/TextEvents.h"            
 #include "mozilla/dom/Element.h"           
@@ -38,7 +39,6 @@
 #include "nsIFormControl.h"          
 #include "nsINode.h"                 
 #include "nsIPlaintextEditor.h"      
-#include "nsIPresShell.h"            
 #include "nsISelectionController.h"  
 #include "nsITransferable.h"         
 #include "nsIWidget.h"               
@@ -254,13 +254,13 @@ void EditorEventListener::UninstallFromEditor() {
                                   TrustedEventsAtSystemGroupBubble());
 }
 
-nsIPresShell* EditorEventListener::GetPresShell() const {
+PresShell* EditorEventListener::GetPresShell() const {
   MOZ_ASSERT(!DetachedFromEditor());
   return mEditorBase->GetPresShell();
 }
 
 nsPresContext* EditorEventListener::GetPresContext() const {
-  nsCOMPtr<nsIPresShell> presShell = GetPresShell();
+  PresShell* presShell = GetPresShell();
   return presShell ? presShell->GetPresContext() : nullptr;
 }
 
@@ -558,10 +558,14 @@ nsresult EditorEventListener::KeyPress(WidgetKeyboardEvent* aKeyboardEvent) {
   nsIWidget* widget = aKeyboardEvent->mWidget;
   
   if (!widget) {
-    nsCOMPtr<nsIPresShell> ps = GetPresShell();
-    nsPresContext* pc = ps ? ps->GetPresContext() : nullptr;
-    widget = pc ? pc->GetNearestWidget() : nullptr;
-    NS_ENSURE_TRUE(widget, NS_OK);
+    nsPresContext* presContext = GetPresContext();
+    if (NS_WARN_IF(!presContext)) {
+      return NS_OK;
+    }
+    widget = presContext->GetNearestWidget();
+    if (NS_WARN_IF(!widget)) {
+      return NS_OK;
+    }
   }
 
   RefPtr<Document> doc = editorBase->GetDocument();
@@ -630,7 +634,7 @@ nsresult EditorEventListener::MouseClick(WidgetMouseEvent* aMouseClickEvent) {
     return NS_OK;
   }
 
-  nsCOMPtr<nsIPresShell> presShell = GetPresShell();
+  RefPtr<PresShell> presShell = GetPresShell();
   if (NS_WARN_IF(!presShell)) {
     return NS_OK;
   }
@@ -689,8 +693,10 @@ nsresult EditorEventListener::DragEnter(DragEvent* aDragEvent) {
     return NS_OK;
   }
 
-  nsCOMPtr<nsIPresShell> presShell = GetPresShell();
-  NS_ENSURE_TRUE(presShell, NS_OK);
+  RefPtr<PresShell> presShell = GetPresShell();
+  if (NS_WARN_IF(!presShell)) {
+    return NS_OK;
+  }
 
   if (!mCaret) {
     mCaret = new nsCaret();
@@ -751,7 +757,7 @@ void EditorEventListener::CleanupDragDropCaret() {
 
   mCaret->SetVisible(false);  
 
-  nsCOMPtr<nsIPresShell> presShell = GetPresShell();
+  RefPtr<PresShell> presShell = GetPresShell();
   if (presShell) {
     presShell->RestoreCaret();
   }
@@ -1025,11 +1031,12 @@ nsresult EditorEventListener::Focus(InternalFocusEvent* aFocusEvent) {
     return NS_OK;
   }
 
-  nsCOMPtr<nsIPresShell> ps = GetPresShell();
-  NS_ENSURE_TRUE(ps, NS_OK);
+  nsPresContext* presContext = GetPresContext();
+  if (NS_WARN_IF(!presContext)) {
+    return NS_OK;
+  }
   nsCOMPtr<nsIContent> focusedContent = editorBase->GetFocusedContentForIME();
-  IMEStateManager::OnFocusInEditor(ps->GetPresContext(), focusedContent,
-                                   *editorBase);
+  IMEStateManager::OnFocusInEditor(presContext, focusedContent, *editorBase);
 
   return NS_OK;
 }

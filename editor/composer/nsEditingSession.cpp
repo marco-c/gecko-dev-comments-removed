@@ -11,6 +11,7 @@
 #include "mozilla/FlushType.h"                
 #include "mozilla/HTMLEditor.h"               
 #include "mozilla/mozalloc.h"                 
+#include "mozilla/PresShell.h"                
 #include "nsAString.h"
 #include "nsComponentManagerUtils.h"  
 #include "nsContentUtils.h"
@@ -33,7 +34,6 @@
 #include "nsIHTMLDocument.h"             
 #include "nsIInterfaceRequestorUtils.h"  
 #include "nsIPlaintextEditor.h"          
-#include "nsIPresShell.h"                
 #include "nsIRefreshURI.h"               
 #include "nsIRequest.h"                  
 #include "nsITimer.h"                    
@@ -366,8 +366,11 @@ nsEditingSession::SetupEditorOnWindow(mozIDOMWindowProxy* aWindow) {
   
   nsCOMPtr<nsIDocShell> docShell = window->GetDocShell();
   NS_ENSURE_TRUE(docShell, NS_ERROR_FAILURE);
-  nsCOMPtr<nsIPresShell> presShell = docShell->GetPresShell();
-  NS_ENSURE_TRUE(presShell, NS_ERROR_FAILURE);
+  RefPtr<PresShell> presShell =
+      static_cast<PresShell*>(docShell->GetPresShell());
+  if (NS_WARN_IF(!presShell)) {
+    return NS_ERROR_FAILURE;
+  }
 
   if (!mInteractive) {
     
@@ -1203,8 +1206,11 @@ void nsEditingSession::RestoreAnimationMode(nsPIDOMWindowOuter* aWindow) {
 
   nsCOMPtr<nsIDocShell> docShell = aWindow ? aWindow->GetDocShell() : nullptr;
   NS_ENSURE_TRUE_VOID(docShell);
-  nsCOMPtr<nsIPresShell> presShell = docShell->GetPresShell();
-  NS_ENSURE_TRUE_VOID(presShell);
+  RefPtr<PresShell> presShell =
+      static_cast<PresShell*>(docShell->GetPresShell());
+  if (NS_WARN_IF(!presShell)) {
+    return;
+  }
   nsPresContext* presContext = presShell->GetPresContext();
   NS_ENSURE_TRUE_VOID(presContext);
 
@@ -1291,8 +1297,11 @@ nsresult nsEditingSession::ReattachToWindow(mozIDOMWindowProxy* aWindow) {
 
   if (!mInteractive) {
     
-    nsCOMPtr<nsIPresShell> presShell = docShell->GetPresShell();
-    NS_ENSURE_TRUE(presShell, NS_ERROR_FAILURE);
+    RefPtr<PresShell> presShell =
+        static_cast<PresShell*>(docShell->GetPresShell());
+    if (NS_WARN_IF(!presShell)) {
+      return NS_ERROR_FAILURE;
+    }
     nsPresContext* presContext = presShell->GetPresContext();
     NS_ENSURE_TRUE(presContext, NS_ERROR_FAILURE);
 

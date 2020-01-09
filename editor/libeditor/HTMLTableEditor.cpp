@@ -13,6 +13,7 @@
 #include "mozilla/EditorDOMPoint.h"
 #include "mozilla/EditorUtils.h"
 #include "mozilla/FlushType.h"
+#include "mozilla/PresShell.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/Element.h"
 #include "nsAString.h"
@@ -26,7 +27,6 @@
 #include "nsIContent.h"
 #include "nsIFrame.h"
 #include "nsINode.h"
-#include "nsIPresShell.h"
 #include "nsISupportsUtils.h"
 #include "nsITableCellLayout.h"  
 #include "nsLiteralString.h"
@@ -772,7 +772,7 @@ nsresult HTMLEditor::InsertTableRowsWithTransaction(
   
   
   
-  nsCOMPtr<nsIPresShell> presShell = GetPresShell();
+  RefPtr<PresShell> presShell = GetPresShell();
   if (presShell) {
     presShell->FlushPendingNotifications(FlushType::Frames);
   }

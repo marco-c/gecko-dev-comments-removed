@@ -5,6 +5,7 @@
 #include "mozilla/HTMLEditor.h"
 
 #include "mozilla/Attributes.h"
+#include "mozilla/PresShell.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/EventTarget.h"
 #include "mozilla/mozalloc.h"
@@ -26,7 +27,6 @@
 #include "nsIHTMLObjectResizer.h"
 #include "nsStubMutationObserver.h"
 #include "nsINode.h"
-#include "nsIPresShell.h"
 #include "nsISupportsImpl.h"
 #include "nsISupportsUtils.h"
 #include "nsLiteralString.h"
@@ -146,8 +146,8 @@ ManualNACPtr HTMLEditor::CreateAnonymousElement(nsAtom* aTag,
   }
 
   
-  nsCOMPtr<nsIPresShell> ps = GetPresShell();
-  if (NS_WARN_IF(!ps)) {
+  RefPtr<PresShell> presShell = GetPresShell();
+  if (NS_WARN_IF(!presShell)) {
     return nullptr;
   }
 
@@ -192,7 +192,7 @@ ManualNACPtr HTMLEditor::CreateAnonymousElement(nsAtom* aTag,
 
   
   
-  ServoStyleSet* styleSet = ps->StyleSet();
+  ServoStyleSet* styleSet = presShell->StyleSet();
   
   
   if (ServoStyleSet::MayTraverseFrom(newContent)) {
@@ -215,7 +215,7 @@ ManualNACPtr HTMLEditor::CreateAnonymousElement(nsAtom* aTag,
 #endif  
 
   
-  ps->PostRecreateFramesFor(newContent);
+  presShell->PostRecreateFramesFor(newContent);
 
   return newContent;
 }
@@ -225,16 +225,16 @@ void HTMLEditor::RemoveListenerAndDeleteRef(const nsAString& aEvent,
                                             nsIDOMEventListener* aListener,
                                             bool aUseCapture,
                                             ManualNACPtr aElement,
-                                            nsIPresShell* aShell) {
+                                            PresShell* aPresShell) {
   if (aElement) {
     aElement->RemoveEventListener(aEvent, aListener, aUseCapture);
   }
-  DeleteRefToAnonymousNode(std::move(aElement), aShell);
+  DeleteRefToAnonymousNode(std::move(aElement), aPresShell);
 }
 
 
 void HTMLEditor::DeleteRefToAnonymousNode(ManualNACPtr aContent,
-                                          nsIPresShell* aShell) {
+                                          PresShell* aPresShell) {
   
   
   
@@ -252,13 +252,14 @@ void HTMLEditor::DeleteRefToAnonymousNode(ManualNACPtr aContent,
   nsAutoScriptBlocker scriptBlocker;
   
   
-  if (aContent->IsInComposedDoc() && aShell && !aShell->IsDestroying()) {
+  if (aContent->IsInComposedDoc() && aPresShell &&
+      !aPresShell->IsDestroying()) {
     MOZ_ASSERT(aContent->IsRootOfAnonymousSubtree());
     MOZ_ASSERT(!aContent->GetPreviousSibling(), "NAC has no siblings");
 
     
     
-    aShell->ContentRemoved(aContent, nullptr);
+    aPresShell->ContentRemoved(aContent, nullptr);
   }
 
   

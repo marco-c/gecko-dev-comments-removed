@@ -13,8 +13,8 @@
 #include "nsAString.h"                
 #include "nsDebug.h"                  
 #include "nsError.h"                  
-#include "nsIPresShell.h"             
 #include "nsRange.h"                  
+#include "nsISelectionController.h"   
 #include "nsQueryObject.h"            
 
 namespace mozilla {

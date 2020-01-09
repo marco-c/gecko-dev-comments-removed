@@ -16,7 +16,6 @@
 #include "nsIEditingSession.h"           
 #include "nsIEditor.h"                   
 #include "nsIPlaintextEditor.h"          
-#include "nsIPresShell.h"                
 #include "nsISelectionController.h"      
 #include "nsISupportsImpl.h"             
 #include "nsISupportsUtils.h"            
