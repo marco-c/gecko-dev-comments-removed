@@ -101,6 +101,8 @@ async function consoleAPISanityTest(browser) {
   });
 }
 
+
+
 function testConsoleData(aMessageObject) {
   let messageWindow = Services.wm.getOuterWindowWithId(aMessageObject.ID);
   is(messageWindow, gWindow, "found correct window by window ID");

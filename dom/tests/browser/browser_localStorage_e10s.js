@@ -6,29 +6,6 @@ let testDir = gTestPath.substr(0, gTestPath.lastIndexOf("/"));
 Services.scriptloader.loadSubScript(testDir + "/helper_localStorage_e10s.js",
                                     this);
 
-class KnownTab {
-  constructor(name, tab) {
-    this.name = name;
-    this.tab = tab;
-  }
-
-  cleanup() {
-    this.tab = null;
-  }
-}
-
-
-class KnownTabs {
-  constructor() {
-    this.byPid = new Map();
-    this.byName = new Map();
-  }
-
-  cleanup() {
-    this.byPid = null;
-    this.byName = null;
-  }
-}
 
 
 
@@ -37,49 +14,7 @@ class KnownTabs {
 
 
 
-
-
-
-
-
-async function openTestTabInOwnProcess(name, knownTabs) {
-  let realUrl = HELPER_PAGE_URL + "?" + encodeURIComponent(name);
-  
-  let tab = await BrowserTestUtils.openNewForegroundTab({
-    gBrowser, opening: "about:blank", forceNewProcess: true,
-  });
-  let pid = tab.linkedBrowser.frameLoader.tabParent.osPid;
-  ok(!knownTabs.byName.has(name), "tab needs its own name: " + name);
-  ok(!knownTabs.byPid.has(pid), "tab needs to be in its own process: " + pid);
-
-  let knownTab = new KnownTab(name, tab);
-  knownTabs.byPid.set(pid, knownTab);
-  knownTabs.byName.set(name, knownTab);
-
-  
-  BrowserTestUtils.loadURI(tab.linkedBrowser, realUrl);
-  await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-  is(tab.linkedBrowser.frameLoader.tabParent.osPid, pid, "still same pid");
-  return knownTab;
-}
-
-
-
-
-async function cleanupTabs(knownTabs) {
-  for (let knownTab of knownTabs.byName.values()) {
-    BrowserTestUtils.removeTab(knownTab.tab);
-    knownTab.cleanup();
-  }
-  knownTabs.cleanup();
-}
-
-
-
-
-
-
-
+ 
 
 function waitForLocalStorageFlush() {
   if (Services.lsm.nextGenLocalStorageEnabled) {

@@ -41,6 +41,7 @@ SpecialPowers.pushPrefEnv(
 
 
 
+
 add_task(async function() {
   let beforeUnloadCount = 0;
   messageManager.addMessageListener("Test:OnBeforeUnloadReceived", function() {
