@@ -803,6 +803,20 @@ class MOZ_NON_PARAM Vector final : private AllocPolicy {
   
 
 
+
+  template <typename Pred>
+  void eraseIf(Pred aPred);
+
+  
+
+
+
+  template <typename U>
+  void eraseIfEqual(const U& aU);
+
+  
+
+
   size_t sizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const;
 
   
@@ -1283,6 +1297,26 @@ inline void Vector<T, N, AP>::erase(T* aBegin, T* aEnd) {
     *aBegin++ = std::move(*aEnd++);
   }
   shrinkBy(aEnd - aBegin);
+}
+
+template <typename T, size_t N, class AP>
+template <typename Pred>
+void Vector<T, N, AP>::eraseIf(Pred aPred) {
+  
+  
+  
+  
+  
+  T* newEnd = std::remove_if(begin(), end(),
+                             [&aPred](const T& aT) { return aPred(aT); });
+  MOZ_ASSERT(newEnd <= end());
+  shrinkBy(end() - newEnd);
+}
+
+template <typename T, size_t N, class AP>
+template <typename U>
+void Vector<T, N, AP>::eraseIfEqual(const U& aU) {
+  return eraseIf([&aU](const T& aT) { return aT == aU; });
 }
 
 template <typename T, size_t N, class AP>
