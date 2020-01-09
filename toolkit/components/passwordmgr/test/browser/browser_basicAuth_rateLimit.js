@@ -107,6 +107,23 @@ add_task(async function test() {
     }
 
     
+    let iframeLoaded = ContentTask.spawn(browser, null, async function() {
+      let doc = content.document;
+      let iframe = doc.createElement("iframe");
+      doc.body.appendChild(iframe);
+      let loaded = new Promise(resolve => {
+        iframe.addEventListener("load", function(e) {
+          resolve();
+        }, {once: true});
+      });
+      iframe.src = "https://example.org/browser/toolkit/components/passwordmgr/test/browser/authenticate.sjs";
+      await loaded;
+    });
+
+    await iframeLoaded;
+    ok(true, "Loaded a third party iframe without showing the auth dialog");
+
+    
     authShown = promiseAuthWindowShown();
     browserLoaded = BrowserTestUtils.browserLoaded(browser);
     gURLBar.value = "https://example.com/browser/toolkit/components/passwordmgr/test/browser/authenticate.sjs";

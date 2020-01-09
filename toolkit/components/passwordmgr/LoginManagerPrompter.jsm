@@ -633,7 +633,16 @@ LoginManagerPrompter.prototype = {
 
     var ok = canAutologin;
     let browser = this._browser;
-    let baseDomain = PromptAbuseHelper.getBaseDomainOrFallback(hostname);
+    let baseDomain;
+
+    
+    
+    try {
+      let topLevelHost = browser.currentURI.host;
+      baseDomain = PromptAbuseHelper.getBaseDomainOrFallback(topLevelHost);
+    } catch (e) {
+      baseDomain = PromptAbuseHelper.getBaseDomainOrFallback(hostname);
+    }
 
     if (!ok) {
       if (PromptAbuseHelper.hasReachedAbuseLimit(baseDomain, browser)) {

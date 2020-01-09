@@ -5973,7 +5973,9 @@ pref("browser.sanitizer.loglevel", "Warn");
 
 
 
-pref("prompts.authentication_dialog_abuse_limit", 3);
+
+
+pref("prompts.authentication_dialog_abuse_limit", 2);
 
 pref("dom.IntersectionObserver.enabled", true);
 
