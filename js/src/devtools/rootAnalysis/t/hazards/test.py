@@ -25,7 +25,7 @@ assert('<returnvalue>' in hazmap)
 
 assert(hazmap['cell2'].function == 'Cell* f()')
 print(len(set(haz.function for haz in hazards)))
-assert(len(set(haz.function for haz in hazards)) == 2)
+assert(len(set(haz.function for haz in hazards)) == 3)
 
 
 
@@ -51,3 +51,12 @@ assert('haz5' in hazmap)
 assert('haz6' not in hazmap)
 assert('haz7' not in hazmap)
 assert('haz8' in hazmap)
+
+
+assert('unsafe1' in hazmap)
+assert('safe2' not in hazmap)
+assert('unsafe3' in hazmap)
+assert('unsafe4' in hazmap)
+assert('safe5' not in hazmap)
+assert('safe6' not in hazmap)
+assert('safe7' not in hazmap)

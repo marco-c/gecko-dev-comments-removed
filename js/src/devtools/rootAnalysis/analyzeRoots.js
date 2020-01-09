@@ -126,14 +126,20 @@ function expressionUsesVariableContents(exp, variable)
     return false;
 }
 
+function isImmobileValue(exp) {
+    if (exp.Kind == "Int" && exp.String == "0") {
+        return true;
+    }
+    return false;
+}
+
 
 function isReturningImmobileValue(edge, variable)
 {
     if (variable.Kind == "Return") {
         if (edge.Exp[0].Kind == "Var" && sameVariable(edge.Exp[0].Variable, variable)) {
-            if (edge.Exp[1].Kind == "Int" && edge.Exp[1].String == "0") {
+            if (isImmobileValue(edge.Exp[1]))
                 return true;
-            }
         }
     }
     return false;
@@ -274,11 +280,12 @@ function expressionIsVariable(exp, variable)
 
 
 
+
 function edgeKillsVariable(edge, variable)
 {
     
     if (edge.Kind == "Assign") {
-        const [lhs] = edge.Exp;
+        const [lhs, rhs] = edge.Exp;
         return (expressionIsVariable(lhs, variable) &&
                 !isReturningImmobileValue(edge, variable));
     }
@@ -330,6 +337,70 @@ function edgeKillsVariable(edge, variable)
         if (calleeName.endsWith(constructorName))
             return true;
     }
+
+    return false;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function edgeInvalidatesVariable(edge, variable, body)
+{
+    
+    if (edge.Kind == "Assign") {
+        const [lhs, rhs] = edge.Exp;
+        return expressionIsVariable(lhs, variable) && isImmobileValue(rhs);
+    }
+
+    if (edge.Kind != "Call")
+        return false;
+
+    var callee = edge.Exp[0];
+
+    if (edge.Type.Kind == 'Function' &&
+        edge.Type.TypeFunctionCSU &&
+        edge.PEdgeCallInstance &&
+        edge.PEdgeCallInstance.Exp.Kind == 'Var' &&
+        expressionIsVariable(edge.PEdgeCallInstance.Exp, variable))
+    do {
+        const typeName = edge.Type.TypeFunctionCSU.Type.Name;
+        const m = typeName.match(/^mozilla::(\w+)</);
+        if (!m)
+            break;
+        const type = m[1];
+        if (!["Maybe", "UniquePtr"].includes(type))
+            break;
+
+        
+        if (callee.Kind == 'Var' &&
+            callee.Variable.Name[1] == 'reset')
+        {
+            return true;
+        }
+
+        
+        if (callee.Kind == 'Var' &&
+            callee.Variable.Name[0].includes(`mozilla::${type}<T>::${type}()`))
+        {
+            return true;
+        }
+    } while(0);
 
     return false;
 }
@@ -483,6 +554,13 @@ function findGCBeforeValueUse(start_body, start_point, suppressed, variable)
         for (var edge of predecessors[ppoint]) {
             var source = edge.Index[0];
 
+            if (edgeInvalidatesVariable(edge, variable)) {
+                
+                
+                
+                continue;
+            }
+
             var edge_kills = edgeKillsVariable(edge, variable);
             var edge_uses = edgeUsesVariable(edge, variable, body);
 
@@ -613,6 +691,10 @@ function variableLiveAcrossGC(suppressed, variable)
             
             
             
+
+            
+            if (edgeInvalidatesVariable(edge, variable))
+                continue;
 
             var usePoint = edgeUsesVariable(edge, variable, body);
             if (usePoint) {

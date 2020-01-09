@@ -32,10 +32,12 @@ class AutoSomething {
   ~AutoSomething() { asm(""); }
 };
 
+extern Cell* getcell();
+
 extern void usevar(Cell* cell);
 
 void f() {
-  Cell* thing = nullptr;  
+  Cell* thing = getcell();  
 
   
   
