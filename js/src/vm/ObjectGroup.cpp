@@ -1523,7 +1523,7 @@ bool ObjectGroup::setAllocationSiteObjectGroup(JSContext* cx,
 
 
 
-    TypeScript::Monitor(cx, script, pc, ObjectValue(*obj));
+    TypeScript::MonitorBytecodeType(cx, script, pc, ObjectValue(*obj));
   } else {
     ObjectGroup* group = allocationSiteGroup(cx, script, pc, key);
     if (!group) {
