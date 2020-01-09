@@ -67,7 +67,7 @@ class CriticalSection {
 #endif
 
 
-struct CriticalSectionAutoEnter {
+struct CriticalSectionAutoEnter final {
   explicit CriticalSectionAutoEnter(CriticalSection* aSection)
       : mSection(aSection) {
     mSection->Enter();

@@ -20,7 +20,7 @@ namespace layers {
 
 
 
-class MOZ_STACK_CLASS ScrollLinkedEffectDetector {
+class MOZ_STACK_CLASS ScrollLinkedEffectDetector final {
  private:
   static uint32_t sDepth;
   static bool sFoundScrollLinkedEffect;

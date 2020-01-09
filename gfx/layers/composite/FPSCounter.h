@@ -54,7 +54,7 @@ const int kMaxFrames = 2400;
 
 
 
-class FPSCounter {
+class FPSCounter final {
  public:
   explicit FPSCounter(const char* aName);
   ~FPSCounter();

@@ -25,7 +25,7 @@ namespace layers {
 
 
 
-class CheckerboardEvent {
+class CheckerboardEvent final {
  public:
   
   MOZ_DEFINE_ENUM_AT_CLASS_SCOPE(

@@ -18,13 +18,13 @@ namespace layers {
 
 class OverscrollAnimation : public AsyncPanZoomAnimation {
  public:
-  explicit OverscrollAnimation(AsyncPanZoomController& aApzc,
-                               const ParentLayerPoint& aVelocity)
+  OverscrollAnimation(AsyncPanZoomController& aApzc,
+                      const ParentLayerPoint& aVelocity)
       : mApzc(aApzc) {
     mApzc.mX.StartOverscrollAnimation(aVelocity.x);
     mApzc.mY.StartOverscrollAnimation(aVelocity.y);
   }
-  ~OverscrollAnimation() {
+  virtual ~OverscrollAnimation() {
     mApzc.mX.EndOverscrollAnimation();
     mApzc.mY.EndOverscrollAnimation();
   }

@@ -29,7 +29,7 @@ class gfxPlatformMac : public gfxPlatform {
   bool UsesTiling() const override;
   bool ContentUsesTiling() const override;
 
-  virtual already_AddRefed<gfxASurface> CreateOffscreenSurface(
+  already_AddRefed<gfxASurface> CreateOffscreenSurface(
       const IntSize& aSize, gfxImageFormat aFormat) override;
 
   gfxFontGroup* CreateFontGroup(const mozilla::FontFamilyList& aFontFamilyList,
@@ -38,16 +38,15 @@ class gfxPlatformMac : public gfxPlatform {
                                 gfxUserFontSet* aUserFontSet,
                                 gfxFloat aDevToCssSize) override;
 
-  virtual gfxPlatformFontList* CreatePlatformFontList() override;
+  gfxPlatformFontList* CreatePlatformFontList() override;
 
   void ReadSystemFontList(
       InfallibleTArray<mozilla::dom::SystemFontListEntry>* aFontList) override;
 
   bool IsFontFormatSupported(uint32_t aFormatFlags) override;
 
-  virtual void GetCommonFallbackFonts(
-      uint32_t aCh, uint32_t aNextCh, Script aRunScript,
-      nsTArray<const char*>& aFontList) override;
+  void GetCommonFallbackFonts(uint32_t aCh, uint32_t aNextCh, Script aRunScript,
+                              nsTArray<const char*>& aFontList) override;
 
   
   
@@ -55,7 +54,7 @@ class gfxPlatformMac : public gfxPlatform {
                                nsACString& aSystemFontName,
                                gfxFontStyle& aFontStyle);
 
-  virtual bool SupportsApzWheelInput() const override { return true; }
+  bool SupportsApzWheelInput() const override { return true; }
 
   bool RespectsFontStyleSmoothing() const override {
     
@@ -69,8 +68,8 @@ class gfxPlatformMac : public gfxPlatform {
     return true;
   }
 
-  virtual already_AddRefed<mozilla::gfx::VsyncSource>
-  CreateHardwareVsyncSource() override;
+  already_AddRefed<mozilla::gfx::VsyncSource> CreateHardwareVsyncSource()
+      override;
 
   
   uint32_t GetAntiAliasingThreshold() { return mFontAntiAliasingThreshold; }
@@ -83,7 +82,7 @@ class gfxPlatformMac : public gfxPlatform {
   bool CheckVariationFontSupport() override;
 
  private:
-  virtual void GetPlatformCMSOutputProfile(void*& mem, size_t& size) override;
+  void GetPlatformCMSOutputProfile(void*& mem, size_t& size) override;
 
   
   static uint32_t ReadAntiAliasingThreshold();

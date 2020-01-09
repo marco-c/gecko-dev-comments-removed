@@ -36,7 +36,7 @@ namespace gfx {
 
 
 
-class GFX2D_API AlphaBoxBlur {
+class GFX2D_API AlphaBoxBlur final {
  public:
   
 

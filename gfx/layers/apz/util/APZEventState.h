@@ -41,7 +41,7 @@ typedef std::function<void(const ScrollableLayerGuid&,
 
 
 
-class APZEventState {
+class APZEventState final {
   typedef GeckoContentController::APZStateChange APZStateChange;
   typedef ScrollableLayerGuid::ViewID ViewID;
 

@@ -11,7 +11,7 @@ namespace gfx {
 
 class GPUProcessListener {
  public:
-  virtual ~GPUProcessListener() {}
+  virtual ~GPUProcessListener() = default;
 
   
   

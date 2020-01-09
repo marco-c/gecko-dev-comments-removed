@@ -365,7 +365,7 @@ typedef Maybe<LayerRect> MaybeLayerRect;
 
 
 
-class LayerHandle {
+class LayerHandle final {
   friend struct IPC::ParamTraits<mozilla::layers::LayerHandle>;
 
  public:
@@ -387,7 +387,7 @@ class LayerHandle {
 
 
 
-class CompositableHandle {
+class CompositableHandle final {
   friend struct IPC::ParamTraits<mozilla::layers::CompositableHandle>;
 
  public:

@@ -30,7 +30,7 @@ class CrossProcessPaint;
 
 
 
-class PaintFragment {
+class PaintFragment final {
  public:
   
   PaintFragment() = default;
@@ -74,7 +74,7 @@ class PaintFragment {
 
 
 
-class CrossProcessPaint {
+class CrossProcessPaint final {
   NS_INLINE_DECL_REFCOUNTING(CrossProcessPaint);
 
  public:

@@ -120,7 +120,7 @@ namespace layers {
 
 
 
-class MOZ_STACK_CLASS LayerMetricsWrapper {
+class MOZ_STACK_CLASS LayerMetricsWrapper final {
  public:
   enum StartAt {
     TOP,

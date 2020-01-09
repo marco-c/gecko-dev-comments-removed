@@ -27,7 +27,7 @@ class MLGPUScreenshotGrabberImpl;
 
 class MLGPUScreenshotGrabber final {
  public:
-  MLGPUScreenshotGrabber();
+  MLGPUScreenshotGrabber() = default;
   ~MLGPUScreenshotGrabber();
 
   

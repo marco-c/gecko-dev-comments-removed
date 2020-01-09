@@ -19,7 +19,7 @@ class MLGBuffer;
 class MLGDevice;
 
 
-class BufferCache {
+class BufferCache final {
  public:
   explicit BufferCache(MLGDevice* aDevice);
   ~BufferCache();

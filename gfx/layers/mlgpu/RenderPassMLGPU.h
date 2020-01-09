@@ -41,11 +41,10 @@ enum class RenderOrder {
 
 static const uint32_t kInvalidResourceIndex = uint32_t(-1);
 
-struct ItemInfo {
-  explicit ItemInfo(FrameBuilder* aBuilder, RenderViewMLGPU* aView,
-                    LayerMLGPU* aLayer, int32_t aSortOrder,
-                    const gfx::IntRect& aBounds,
-                    Maybe<gfx::Polygon>&& aGeometry);
+struct ItemInfo final {
+  ItemInfo(FrameBuilder* aBuilder, RenderViewMLGPU* aView, LayerMLGPU* aLayer,
+           int32_t aSortOrder, const gfx::IntRect& aBounds,
+           Maybe<gfx::Polygon>&& aGeometry);
 
   
   
@@ -150,7 +149,7 @@ class ShaderRenderPass : public RenderPassMLGPU {
   void PrepareForRendering() override;
   void ExecuteRendering() override;
 
-  virtual Maybe<MLGBlendState> GetBlendState() const override {
+  Maybe<MLGBlendState> GetBlendState() const override {
     return Some(MLGBlendState::Over);
   }
 
@@ -211,7 +210,7 @@ class BatchRenderPass : public ShaderRenderPass {
   
   
   
-  class Txn {
+  class Txn final {
    public:
     explicit Txn(BatchRenderPass* aPass)
         : mPass(aPass), mPrevInstancePos(aPass->mInstances.GetPosition()) {}
@@ -264,7 +263,7 @@ class TexturedRenderPass : public BatchRenderPass<TexturedTraits> {
   explicit TexturedRenderPass(FrameBuilder* aBuilder, const ItemInfo& aItem);
 
  protected:
-  struct Info {
+  struct Info final {
     Info(const ItemInfo& aItem, PaintedLayerMLGPU* aLayer);
     Info(const ItemInfo& aItem, TexturedLayerMLGPU* aLayer);
     Info(const ItemInfo& aItem, ContainerLayerMLGPU* aLayer);

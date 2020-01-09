@@ -25,11 +25,11 @@ class SourceSurfaceSkia : public DataSourceSurface {
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(DataSourceSurfaceSkia, override)
 
   SourceSurfaceSkia();
-  ~SourceSurfaceSkia();
+  virtual ~SourceSurfaceSkia();
 
-  virtual SurfaceType GetType() const override { return SurfaceType::SKIA; }
-  virtual IntSize GetSize() const override;
-  virtual SurfaceFormat GetFormat() const override;
+  SurfaceType GetType() const override { return SurfaceType::SKIA; }
+  IntSize GetSize() const override;
+  SurfaceFormat GetFormat() const override;
 
   
   
@@ -49,16 +49,16 @@ class SourceSurfaceSkia : public DataSourceSurface {
                      SurfaceFormat aFormat = SurfaceFormat::UNKNOWN,
                      DrawTargetSkia* aOwner = nullptr);
 
-  virtual uint8_t* GetData() override;
+  uint8_t* GetData() override;
 
   
 
 
-  virtual bool Map(MapType, MappedSurface* aMappedSurface) override;
+  bool Map(MapType, MappedSurface* aMappedSurface) override;
 
-  virtual void Unmap() override;
+  void Unmap() override;
 
-  virtual int32_t Stride() override { return mStride; }
+  int32_t Stride() override { return mStride; }
 
  private:
   friend class DrawTargetSkia;

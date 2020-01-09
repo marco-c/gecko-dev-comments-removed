@@ -43,13 +43,13 @@ class DrawTarget;
 
 
 
-class gfxAlphaBoxBlur {
+class gfxAlphaBoxBlur final {
   typedef mozilla::gfx::Color Color;
   typedef mozilla::gfx::DrawTarget DrawTarget;
   typedef mozilla::gfx::RectCornerRadii RectCornerRadii;
 
  public:
-  gfxAlphaBoxBlur();
+  gfxAlphaBoxBlur() = default;
 
   ~gfxAlphaBoxBlur();
 
@@ -189,7 +189,7 @@ class gfxAlphaBoxBlur {
   
 
 
-  uint8_t* mData;
+  uint8_t* mData = nullptr;
 
   
 
@@ -199,7 +199,7 @@ class gfxAlphaBoxBlur {
   
 
 
-  bool mAccelerated;
+  bool mAccelerated = false;
 };
 
 #endif 

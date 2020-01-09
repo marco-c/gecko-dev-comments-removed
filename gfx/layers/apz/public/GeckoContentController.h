@@ -209,7 +209,7 @@ class GeckoContentController {
 
  protected:
   
-  virtual ~GeckoContentController() {}
+  virtual ~GeckoContentController() = default;
 };
 
 }  

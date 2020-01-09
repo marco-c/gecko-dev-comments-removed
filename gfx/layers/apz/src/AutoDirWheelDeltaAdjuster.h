@@ -47,10 +47,9 @@ class MOZ_STACK_CLASS APZAutoDirWheelDeltaAdjuster final
 
 
 
-  explicit APZAutoDirWheelDeltaAdjuster(double& aDeltaX, double& aDeltaY,
-                                        const AxisX& aAxisX,
-                                        const AxisY& aAxisY,
-                                        bool aIsHorizontalContentRightToLeft)
+  APZAutoDirWheelDeltaAdjuster(double& aDeltaX, double& aDeltaY,
+                               const AxisX& aAxisX, const AxisY& aAxisY,
+                               bool aIsHorizontalContentRightToLeft)
       : AutoDirWheelDeltaAdjuster(aDeltaX, aDeltaY),
         mAxisX(aAxisX),
         mAxisY(aAxisY),

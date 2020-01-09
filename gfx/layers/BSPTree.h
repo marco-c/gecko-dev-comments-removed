@@ -88,7 +88,7 @@ struct BSPTreeNode {
 
 
 
-class BSPTree {
+class BSPTree final {
  public:
   
 

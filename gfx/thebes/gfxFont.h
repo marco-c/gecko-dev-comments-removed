@@ -367,7 +367,7 @@ class gfxFontCache final : private gfxFontCacheExpirationTracker {
 
   
   
-  virtual void NotifyExpiredLocked(gfxFont* aFont, const AutoLock&) override {
+  void NotifyExpiredLocked(gfxFont* aFont, const AutoLock&) override {
     NotifyExpired(aFont);
   }
 
@@ -635,7 +635,7 @@ class gfxFontShaper {
     NS_ASSERTION(aFont, "shaper requires a valid font!");
   }
 
-  virtual ~gfxFontShaper() {}
+  virtual ~gfxFontShaper() = default;
 
   
   
@@ -691,7 +691,7 @@ class gfxShapedText {
         mFlags(aFlags),
         mAppUnitsPerDevUnit(aAppUnitsPerDevUnit) {}
 
-  virtual ~gfxShapedText() {}
+  virtual ~gfxShapedText() = default;
 
   
 
@@ -1254,10 +1254,10 @@ class gfxShapedWord final : public gfxShapedText {
   
   void operator delete(void* p) { free(p); }
 
-  virtual const CompressedGlyph* GetCharacterGlyphs() const override {
+  const CompressedGlyph* GetCharacterGlyphs() const override {
     return &mCharGlyphsStorage[0];
   }
-  virtual CompressedGlyph* GetCharacterGlyphs() override {
+  CompressedGlyph* GetCharacterGlyphs() override {
     return &mCharGlyphsStorage[0];
   }
 

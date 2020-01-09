@@ -67,8 +67,8 @@ class AsyncCompositionManager final {
  public:
   NS_INLINE_DECL_REFCOUNTING(AsyncCompositionManager)
 
-  explicit AsyncCompositionManager(CompositorBridgeParent* aParent,
-                                   HostLayerManager* aManager);
+  AsyncCompositionManager(CompositorBridgeParent* aParent,
+                          HostLayerManager* aManager);
 
   
 

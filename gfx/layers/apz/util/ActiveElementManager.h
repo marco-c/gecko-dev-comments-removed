@@ -25,7 +25,7 @@ namespace layers {
 
 
 
-class ActiveElementManager {
+class ActiveElementManager final {
   ~ActiveElementManager();
 
  public:

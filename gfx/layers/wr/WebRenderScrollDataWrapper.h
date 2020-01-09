@@ -40,7 +40,7 @@ namespace layers {
 
 
 
-class MOZ_STACK_CLASS WebRenderScrollDataWrapper {
+class MOZ_STACK_CLASS WebRenderScrollDataWrapper final {
  public:
   
   

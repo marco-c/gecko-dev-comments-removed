@@ -73,7 +73,7 @@ class NotificationHandler {
   virtual ~NotificationHandler() = default;
 };
 
-class TransactionBuilder {
+class TransactionBuilder final {
  public:
   explicit TransactionBuilder(bool aUseSceneBuilderThread = true);
 
@@ -183,7 +183,7 @@ class TransactionBuilder {
   Transaction* mTxn;
 };
 
-class TransactionWrapper {
+class TransactionWrapper final {
  public:
   explicit TransactionWrapper(Transaction* aTxn);
 
@@ -199,7 +199,7 @@ class TransactionWrapper {
   Transaction* mTxn;
 };
 
-class WebRenderAPI {
+class WebRenderAPI final {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WebRenderAPI);
 
  public:
@@ -346,12 +346,11 @@ struct MOZ_STACK_CLASS StackingContextParams : public WrStackingContextParams {
 
 
 
-class DisplayListBuilder {
+class DisplayListBuilder final {
  public:
-  explicit DisplayListBuilder(wr::PipelineId aId,
-                              const wr::LayoutSize& aContentSize,
-                              size_t aCapacity = 0,
-                              RenderRoot aRenderRoot = RenderRoot::Default);
+  DisplayListBuilder(wr::PipelineId aId, const wr::LayoutSize& aContentSize,
+                     size_t aCapacity = 0,
+                     RenderRoot aRenderRoot = RenderRoot::Default);
   DisplayListBuilder(DisplayListBuilder&&) = default;
 
   ~DisplayListBuilder();
@@ -568,7 +567,7 @@ class DisplayListBuilder {
   
   
   
-  class MOZ_RAII FixedPosScrollTargetTracker {
+  class MOZ_RAII FixedPosScrollTargetTracker final {
    public:
     FixedPosScrollTargetTracker(DisplayListBuilder& aBuilder,
                                 const ActiveScrolledRoot* aAsr,
@@ -625,7 +624,7 @@ class DisplayListBuilder {
 
 
 
-class MOZ_RAII SpaceAndClipChainHelper {
+class MOZ_RAII SpaceAndClipChainHelper final {
  public:
   SpaceAndClipChainHelper(DisplayListBuilder& aBuilder,
                           wr::WrSpaceAndClipChain aSpaceAndClipChain

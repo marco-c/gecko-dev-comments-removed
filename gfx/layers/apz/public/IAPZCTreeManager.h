@@ -135,7 +135,7 @@ class IAPZCTreeManager {
  protected:
   
 
-  virtual ~IAPZCTreeManager() {}
+  virtual ~IAPZCTreeManager() = default;
 };
 
 }  

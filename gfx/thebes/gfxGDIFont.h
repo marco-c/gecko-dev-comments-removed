@@ -28,19 +28,19 @@ class gfxGDIFont : public gfxFont {
   cairo_font_face_t *CairoFontFace() { return mFontFace; }
 
   
-  virtual uint32_t GetSpaceGlyph() override;
+  uint32_t GetSpaceGlyph() override;
 
-  virtual bool SetupCairoFont(DrawTarget *aDrawTarget) override;
+  bool SetupCairoFont(DrawTarget *aDrawTarget) override;
 
-  virtual already_AddRefed<mozilla::gfx::ScaledFont> GetScaledFont(
+  already_AddRefed<mozilla::gfx::ScaledFont> GetScaledFont(
       DrawTarget *aTarget) override;
 
   
-  virtual RunMetrics Measure(
-      const gfxTextRun *aTextRun, uint32_t aStart, uint32_t aEnd,
-      BoundingBoxType aBoundingBoxType,
-      DrawTarget *aDrawTargetForTightBoundingBox, Spacing *aSpacing,
-      mozilla::gfx::ShapedTextFlags aOrientation) override;
+  RunMetrics Measure(const gfxTextRun *aTextRun, uint32_t aStart, uint32_t aEnd,
+                     BoundingBoxType aBoundingBoxType,
+                     DrawTarget *aDrawTargetForTightBoundingBox,
+                     Spacing *aSpacing,
+                     mozilla::gfx::ShapedTextFlags aOrientation) override;
 
   
   mozilla::UniquePtr<gfxFont> CopyWithAntialiasOption(
@@ -48,26 +48,24 @@ class gfxGDIFont : public gfxFont {
 
   
   
-  virtual bool ProvidesGetGlyph() const override {
-    return !mFontEntry->HasCmapTable();
-  }
+  bool ProvidesGetGlyph() const override { return !mFontEntry->HasCmapTable(); }
 
-  virtual uint32_t GetGlyph(uint32_t aUnicode, uint32_t aVarSelector) override;
+  uint32_t GetGlyph(uint32_t aUnicode, uint32_t aVarSelector) override;
 
-  virtual bool ProvidesGlyphWidths() const override { return true; }
+  bool ProvidesGlyphWidths() const override { return true; }
 
   
-  virtual int32_t GetGlyphWidth(uint16_t aGID) override;
+  int32_t GetGlyphWidth(uint16_t aGID) override;
 
-  virtual void AddSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf,
-                                      FontCacheSizes *aSizes) const;
-  virtual void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
-                                      FontCacheSizes *aSizes) const;
+  void AddSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf,
+                              FontCacheSizes *aSizes) const;
+  void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
+                              FontCacheSizes *aSizes) const;
 
-  virtual FontType GetType() const override { return FONT_TYPE_GDI; }
+  FontType GetType() const override { return FONT_TYPE_GDI; }
 
  protected:
-  virtual const Metrics &GetHorizontalMetrics() override;
+  const Metrics &GetHorizontalMetrics() override;
 
   
   bool ShapeText(DrawTarget *aDrawTarget, const char16_t *aText,

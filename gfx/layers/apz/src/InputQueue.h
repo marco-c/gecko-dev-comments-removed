@@ -144,7 +144,7 @@ class InputQueue {
 
   
   
-  class AutoRunImmediateTimeout {
+  class AutoRunImmediateTimeout final {
    public:
     explicit AutoRunImmediateTimeout(InputQueue* aQueue);
     ~AutoRunImmediateTimeout();

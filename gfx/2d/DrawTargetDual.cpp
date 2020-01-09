@@ -37,7 +37,7 @@ class DualSurface {
 
 
 
-class DualPattern {
+class DualPattern final {
  public:
   inline explicit DualPattern(const Pattern &aPattern)
       : mPatternsInitialized(false) {

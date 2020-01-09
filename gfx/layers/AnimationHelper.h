@@ -87,7 +87,7 @@ struct AnimationTransform {
   TransformData mData;
 };
 
-struct AnimatedValue {
+struct AnimatedValue final {
   enum { TRANSFORM, OPACITY, COLOR, NONE } mType{NONE};
 
   union {
@@ -110,6 +110,9 @@ struct AnimatedValue {
   explicit AnimatedValue(nscolor aValue)
       : mType(AnimatedValue::COLOR), mColor(aValue) {}
 
+  
+  
+  
   ~AnimatedValue() {}
 
  private:

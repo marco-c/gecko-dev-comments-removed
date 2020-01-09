@@ -108,7 +108,7 @@ class ISurfaceAllocator {
  protected:
   void Finalize() {}
 
-  virtual ~ISurfaceAllocator() {}
+  virtual ~ISurfaceAllocator() = default;
 };
 
 
@@ -116,7 +116,7 @@ class ClientIPCAllocator : public ISurfaceAllocator {
  public:
   ClientIPCAllocator() {}
 
-  virtual ClientIPCAllocator* AsClientAllocator() override { return this; }
+  ClientIPCAllocator* AsClientAllocator() override { return this; }
 
   virtual base::ProcessId GetParentPid() const = 0;
 
@@ -130,7 +130,7 @@ class HostIPCAllocator : public ISurfaceAllocator {
  public:
   HostIPCAllocator() {}
 
-  virtual HostIPCAllocator* AsHostIPCAllocator() override { return this; }
+  HostIPCAllocator* AsHostIPCAllocator() override { return this; }
 
   
 
@@ -280,12 +280,11 @@ class FixedSizeSmallShmemSectionAllocator final : public ShmemSectionAllocator {
 
   ~FixedSizeSmallShmemSectionAllocator();
 
-  virtual bool AllocShmemSection(uint32_t aSize,
-                                 ShmemSection* aShmemSection) override;
+  bool AllocShmemSection(uint32_t aSize, ShmemSection* aShmemSection) override;
 
-  virtual void DeallocShmemSection(ShmemSection& aShmemSection) override;
+  void DeallocShmemSection(ShmemSection& aShmemSection) override;
 
-  virtual void MemoryPressure() override { ShrinkShmemSectionHeap(); }
+  void MemoryPressure() override { ShrinkShmemSectionHeap(); }
 
   
   static void FreeShmemSection(ShmemSection& aShmemSection);

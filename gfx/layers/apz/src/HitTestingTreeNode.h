@@ -221,7 +221,7 @@ class HitTestingTreeNode {
 
 
 
-class MOZ_RAII HitTestingTreeNodeAutoLock {
+class MOZ_RAII HitTestingTreeNodeAutoLock final {
  public:
   HitTestingTreeNodeAutoLock();
   HitTestingTreeNodeAutoLock(const HitTestingTreeNodeAutoLock&) = delete;

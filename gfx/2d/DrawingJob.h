@@ -82,9 +82,9 @@ class CommandBufferBuilder {
 
 class DrawingJob : public Job {
  public:
-  ~DrawingJob();
+  virtual ~DrawingJob();
 
-  virtual JobStatus Run() override;
+  JobStatus Run() override;
 
  protected:
   DrawingJob(DrawTarget* aTarget, IntPoint aOffset, SyncObject* aStart,
@@ -107,7 +107,7 @@ class DrawingJob : public Job {
 
 
 
-class DrawingJobBuilder {
+class DrawingJobBuilder final {
  public:
   DrawingJobBuilder();
 

@@ -52,7 +52,7 @@ class LayerScope {
 };
 
 
-class LayerScopeAutoFrame {
+class LayerScopeAutoFrame final {
  public:
   explicit LayerScopeAutoFrame(int64_t aFrameStamp);
   ~LayerScopeAutoFrame();

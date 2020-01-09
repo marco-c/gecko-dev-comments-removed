@@ -387,7 +387,7 @@ static cairo_surface_t* GetCairoSurfaceForSourceSurface(
 
 
 
-class AutoClearDeviceOffset {
+class AutoClearDeviceOffset final {
  public:
   explicit AutoClearDeviceOffset(SourceSurface* aSurface)
       : mSurface(nullptr), mX(0), mY(0) {

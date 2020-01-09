@@ -40,7 +40,7 @@ class WebRenderScrollData;
 
 
 
-class WebRenderLayerScrollData {
+class WebRenderLayerScrollData final {
  public:
   WebRenderLayerScrollData();  
   ~WebRenderLayerScrollData();
@@ -161,11 +161,10 @@ class WebRenderLayerScrollData {
 
 
 
-class WebRenderScrollData {
+class WebRenderScrollData final {
  public:
   WebRenderScrollData();
   explicit WebRenderScrollData(WebRenderLayerManager* aManager);
-  ~WebRenderScrollData();
 
   WebRenderLayerManager* GetManager() const;
 
