@@ -74,18 +74,25 @@ const Curl = {
 
     
     const postData = [];
-    if (utils.isUrlEncodedRequest(data) ||
-          ["PUT", "POST", "PATCH"].includes(data.method)) {
-      postDataText = data.postDataText;
-      postData.push("--data");
-      postData.push(escapeString(utils.writePostDataTextParams(postDataText)));
-      ignoredHeaders.add("content-length");
-    } else if (multipartRequest) {
+    if (multipartRequest) {
+      
+      
+      
+      
+      
+      
+      
       postDataText = data.postDataText;
       postData.push("--data-binary");
       const boundary = utils.getMultipartBoundary(data);
       const text = utils.removeBinaryDataFromMultipartText(postDataText, boundary);
       postData.push(escapeString(text));
+      ignoredHeaders.add("content-length");
+    } else if (utils.isUrlEncodedRequest(data) ||
+          ["PUT", "POST", "PATCH"].includes(data.method)) {
+      postDataText = data.postDataText;
+      postData.push("--data");
+      postData.push(escapeString(utils.writePostDataTextParams(postDataText)));
       ignoredHeaders.add("content-length");
     }
     
@@ -280,9 +287,9 @@ const CurlUtils = {
           
           
           const headers = part.split("\r\n\r\n")[0];
-          result += boundary + "\r\n" + headers + "\r\n\r\n";
+          result += boundary + headers + "\r\n\r\n";
         } else {
-          result += boundary + "\r\n" + part;
+          result += boundary + part;
         }
       }
     }
@@ -389,10 +396,15 @@ const CurlUtils = {
 
 
 
+
+
+
+
+
     return "\"" + str.replace(/"/g, "\"\"")
                      .replace(/%/g, "\"%\"")
                      .replace(/\\/g, "\\\\")
-                     .replace(/[\r\n]+/g, "\"^$&\"") + "\"";
+                     .replace(/[\r\n]{1,2}/g, "\"^$&$&\"") + "\"";
   },
 };
 
