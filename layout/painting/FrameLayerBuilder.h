@@ -478,8 +478,6 @@ class FrameLayerBuilder : public layers::LayerUserData {
   static Layer* GetDedicatedLayer(nsIFrame* aFrame,
                                   DisplayItemType aDisplayItemType);
 
-  using CompositorAnimatableDisplayItemTypes =
-      Array<DisplayItemType, nsCSSPropertyIDSet::CompositorAnimatableCount()>;
   using AnimationGenerationCallback = std::function<bool(
       const Maybe<uint64_t>& aGeneration, DisplayItemType aDisplayItemType)>;
   
@@ -490,9 +488,9 @@ class FrameLayerBuilder : public layers::LayerUserData {
 
 
 
+
   static void EnumerateGenerationForDedicatedLayers(
       const nsIFrame* aFrame,
-      const CompositorAnimatableDisplayItemTypes& aDisplayItemTypes,
       const AnimationGenerationCallback& aCallback);
 
   

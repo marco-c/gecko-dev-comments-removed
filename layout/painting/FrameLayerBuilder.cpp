@@ -6423,15 +6423,13 @@ Layer* FrameLayerBuilder::GetDedicatedLayer(nsIFrame* aFrame,
 
 
 void FrameLayerBuilder::EnumerateGenerationForDedicatedLayers(
-    const nsIFrame* aFrame,
-    const CompositorAnimatableDisplayItemTypes& aDisplayItemTypes,
-    const AnimationGenerationCallback& aCallback) {
+    const nsIFrame* aFrame, const AnimationGenerationCallback& aCallback) {
   std::bitset<static_cast<uint32_t>(DisplayItemType::TYPE_MAX)> notFoundTypes;
-  for (auto displayItemType : aDisplayItemTypes) {
+  for (auto displayItemType : LayerAnimationInfo::sDisplayItemTypes) {
     notFoundTypes.set(static_cast<uint32_t>(displayItemType));
   }
 
-  for (auto displayItemType : aDisplayItemTypes) {
+  for (auto displayItemType : LayerAnimationInfo::sDisplayItemTypes) {
     
     
     const nsIFrame* frameToQuery =
@@ -6481,7 +6479,7 @@ void FrameLayerBuilder::EnumerateGenerationForDedicatedLayers(
 
   
   
-  for (auto displayItemType : aDisplayItemTypes) {
+  for (auto displayItemType : LayerAnimationInfo::sDisplayItemTypes) {
     if (notFoundTypes[static_cast<uint32_t>(displayItemType)] &&
         !aCallback(Nothing(), displayItemType)) {
       return;
