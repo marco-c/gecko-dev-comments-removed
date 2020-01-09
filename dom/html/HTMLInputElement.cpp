@@ -1530,7 +1530,7 @@ void HTMLInputElement::SetValue(const nsAString& aValue, CallerType aCallerType,
       if (aCallerType != CallerType::System) {
         
         
-        aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
+        aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
         return;
       }
       Sequence<nsString> list;
@@ -4401,6 +4401,45 @@ void HTMLInputElement::UnbindFromTree(bool aDeep, bool aNullParent) {
   UpdateState(false);
 }
 
+namespace {
+class TypeChangeSelectionRangeFlagDeterminer {
+ public:
+  
+  
+  TypeChangeSelectionRangeFlagDeterminer(uint8_t aOldType, uint8_t aNewType)
+      : mOldType(aOldType), mNewType(aNewType) {}
+
+  
+  uint32_t GetFlag() const {
+    const bool previouslySelectable = DoesSetRangeTextApply(mOldType);
+    const bool nowSelectable = DoesSetRangeTextApply(mNewType);
+    const bool moveCursorToBeginAndSetDirectionForward =
+        !previouslySelectable && nowSelectable;
+    const uint32_t flag =
+        moveCursorToBeginAndSetDirectionForward
+            ? nsTextEditorState::
+                  eSetValue_MoveCursorToBeginSetSelectionDirectionForward
+            : 0;
+    return flag;
+  }
+
+ private:
+  
+
+
+
+
+  static bool DoesSetRangeTextApply(uint8_t aType) {
+    return aType == NS_FORM_INPUT_TEXT || aType == NS_FORM_INPUT_SEARCH ||
+           aType == NS_FORM_INPUT_URL || aType == NS_FORM_INPUT_TEL ||
+           aType == NS_FORM_INPUT_PASSWORD;
+  }
+
+  const uint8_t mOldType;
+  const uint8_t mNewType;
+};
+}  
+
 void HTMLInputElement::HandleTypeChange(uint8_t aNewType, bool aNotify) {
   uint8_t oldType = mType;
   MOZ_ASSERT(oldType != aNewType);
@@ -4484,10 +4523,16 @@ void HTMLInputElement::HandleTypeChange(uint8_t aNewType, bool aNotify) {
         } else {
           value = aOldValue;
         }
+
+        const TypeChangeSelectionRangeFlagDeterminer flagDeterminer(oldType,
+                                                                    mType);
+        const uint32_t selectionRangeFlag = flagDeterminer.GetFlag();
+
         
         
         
-        SetValueInternal(value, nsTextEditorState::eSetValue_Internal);
+        SetValueInternal(
+            value, nsTextEditorState::eSetValue_Internal | selectionRangeFlag);
       }
       break;
     case VALUE_MODE_FILENAME:

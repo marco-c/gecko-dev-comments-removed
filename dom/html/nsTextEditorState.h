@@ -130,6 +130,10 @@ class HTMLInputElement;
 
 
 
+
+
+
+
 class RestoreSelectionState;
 
 class nsTextEditorState : public mozilla::SupportsWeakPtr<nsTextEditorState> {
@@ -176,11 +180,22 @@ class nsTextEditorState : public mozilla::SupportsWeakPtr<nsTextEditorState> {
     
     
     
+    
+    
+    
+    
     eSetValue_MoveCursorToEndIfValueChanged = 1 << 4,
     
     
     
     eSetValue_ForXUL = 1 << 5,
+    
+    
+    
+    
+    
+    
+    eSetValue_MoveCursorToBeginSetSelectionDirectionForward = 1 << 6,
   };
   MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE bool SetValue(const nsAString& aValue,
