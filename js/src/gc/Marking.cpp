@@ -847,7 +847,6 @@ void GCMarker::traverse(JSString* thing) {
 template <>
 void GCMarker::traverse(LazyScript* thing) {
   markAndScan(thing);
-  markImplicitEdges(thing);
 }
 template <>
 void GCMarker::traverse(Shape* thing) {
@@ -1032,7 +1031,7 @@ void LazyScript::traceChildren(JSTracer* trc) {
   }
 
   if (trc->isMarkingTracer()) {
-    return GCMarker::fromTracer(trc)->markImplicitEdges(this);
+    GCMarker::fromTracer(trc)->markImplicitEdges(this);
   }
 }
 inline void js::GCMarker::eagerlyMarkChildren(LazyScript* thing) {
@@ -1068,6 +1067,8 @@ inline void js::GCMarker::eagerlyMarkChildren(LazyScript* thing) {
   for (auto i : IntegerRange(thing->numInnerFunctions())) {
     traverseEdge(thing, static_cast<JSObject*>(innerFunctions[i]));
   }
+
+  markImplicitEdges(thing);
 }
 
 void Shape::traceChildren(JSTracer* trc) {
