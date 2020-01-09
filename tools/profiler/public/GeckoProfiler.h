@@ -239,18 +239,18 @@ bool IsThreadBeingProfiled();
 
 static constexpr uint32_t PROFILER_DEFAULT_ENTRIES =
 #  if !defined(ARCH_ARMV6)
-    1000000;
+    1u << 20;  
 #  else
-    100000;
+    1u << 17;  // 131'072
 #  endif
 
 
 
 static constexpr uint32_t PROFILER_DEFAULT_STARTUP_ENTRIES =
 #  if !defined(ARCH_ARMV6)
-    10000000;
+    1u << 22;  
 #  else
-    100000;
+    1u << 17;  
 #  endif
 
 #  define PROFILER_DEFAULT_DURATION 20
