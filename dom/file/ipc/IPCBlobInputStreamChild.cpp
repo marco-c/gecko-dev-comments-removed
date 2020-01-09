@@ -175,20 +175,11 @@ void IPCBlobInputStreamChild::ActorDestroy(
     mState = migrating ? eInactiveMigrating : eInactive;
   }
 
-  if (migrating) {
+  if (!migrating) {
     
-    
-    RefPtr<IPCBlobInputStreamThread> thread =
-        IPCBlobInputStreamThread::GetOrCreate();
-    MOZ_ASSERT(thread, "We cannot continue without DOMFile thread.");
-
-    ResetManager();
-    thread->MigrateActor(this);
+    Shutdown();
     return;
   }
-
-  
-  Shutdown();
 }
 
 IPCBlobInputStreamChild::ActorState IPCBlobInputStreamChild::State() {
@@ -199,7 +190,7 @@ IPCBlobInputStreamChild::ActorState IPCBlobInputStreamChild::State() {
 already_AddRefed<IPCBlobInputStream> IPCBlobInputStreamChild::CreateStream() {
   bool shouldMigrate = false;
 
-  RefPtr<IPCBlobInputStream> stream = new IPCBlobInputStream(this);
+  RefPtr<IPCBlobInputStream> stream;
 
   {
     MutexAutoLock lock(mMutex);
@@ -213,11 +204,36 @@ already_AddRefed<IPCBlobInputStream> IPCBlobInputStreamChild::CreateStream() {
     if (mState == eActive &&
         !IPCBlobInputStreamThread::IsOnFileEventTarget(mOwningEventTarget)) {
       MOZ_ASSERT(mStreams.IsEmpty());
+
       shouldMigrate = true;
       mState = eActiveMigrating;
-    }
 
-    mStreams.AppendElement(stream);
+      RefPtr<IPCBlobInputStreamThread> thread =
+          IPCBlobInputStreamThread::GetOrCreate();
+      MOZ_ASSERT(thread, "We cannot continue without DOMFile thread.");
+
+      
+      RefPtr<IPCBlobInputStreamChild> newActor =
+          new IPCBlobInputStreamChild(mID, mSize);
+      {
+        MutexAutoLock newActorLock(newActor->mMutex);
+
+        
+        newActor->mWorkerRef = mWorkerRef;
+        newActor->mState = eInactiveMigrating;
+        newActor->mPendingOperations.SwapElements(mPendingOperations);
+
+        
+        stream = new IPCBlobInputStream(newActor);
+        newActor->mStreams.AppendElement(stream);
+      }
+
+      
+      thread->MigrateActor(newActor);
+    } else {
+      stream = new IPCBlobInputStream(this);
+      mStreams.AppendElement(stream);
+    }
   }
 
   
