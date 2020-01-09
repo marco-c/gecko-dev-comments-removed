@@ -361,7 +361,8 @@ impl TextDecorationLine {
     SpecifiedValueInfo,
     ToComputedValue,
     ToResolvedValue,
-    ToShmem)]
+    ToShmem,
+)]
 #[repr(C)]
 
 
@@ -468,7 +469,8 @@ impl ToCss for TextTransform {
     ToComputedValue,
     ToCss,
     ToResolvedValue,
-    ToShmem)]
+    ToShmem,
+)]
 #[repr(C)]
 
 pub enum TextTransformCase {
@@ -563,7 +565,9 @@ pub enum TextAlignKeyword {
 }
 
 
-#[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
+#[derive(
+    Clone, Copy, Debug, Eq, Hash, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem,
+)]
 pub enum TextAlign {
     
     Keyword(TextAlignKeyword),
