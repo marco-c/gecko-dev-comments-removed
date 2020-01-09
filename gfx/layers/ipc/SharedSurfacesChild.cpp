@@ -55,36 +55,39 @@ void SharedSurfacesChild::ImageKeyData::MergeDirtyRect(
   }
 }
 
+SharedSurfacesChild::SharedUserData::SharedUserData(
+    const wr::ExternalImageId& aId)
+    : Runnable("SharedSurfacesChild::SharedUserData"),
+      mId(aId),
+      mShared(false) {}
+
 SharedSurfacesChild::SharedUserData::~SharedUserData() {
+  
+  
   if (mShared || !mKeys.IsEmpty()) {
     if (NS_IsMainThread()) {
       SharedSurfacesChild::Unshare(mId, mShared, mKeys);
     } else {
-      class DestroyRunnable final : public Runnable {
-       public:
-        DestroyRunnable(const wr::ExternalImageId& aId, bool aReleaseId,
-                        nsTArray<ImageKeyData>&& aKeys)
-            : Runnable("SharedSurfacesChild::SharedUserData::DestroyRunnable"),
-              mId(aId),
-              mReleaseId(aReleaseId),
-              mKeys(std::move(aKeys)) {}
-
-        NS_IMETHOD Run() override {
-          SharedSurfacesChild::Unshare(mId, mReleaseId, mKeys);
-          return NS_OK;
-        }
-
-       private:
-        wr::ExternalImageId mId;
-        bool mReleaseId;
-        AutoTArray<ImageKeyData, 1> mKeys;
-      };
-
-      nsCOMPtr<nsIRunnable> task =
-          new DestroyRunnable(mId, mShared, std::move(mKeys));
-      SystemGroup::Dispatch(TaskCategory::Other, task.forget());
+      MOZ_ASSERT_UNREACHABLE("Shared resources not released!");
     }
   }
+}
+
+
+void SharedSurfacesChild::SharedUserData::Destroy(void* aClosure) {
+  MOZ_ASSERT(aClosure);
+  RefPtr<SharedUserData> data =
+      dont_AddRef(static_cast<SharedUserData*>(aClosure));
+  if (data->mShared || !data->mKeys.IsEmpty()) {
+    SystemGroup::Dispatch(TaskCategory::Other, data.forget());
+  }
+}
+
+NS_IMETHODIMP SharedSurfacesChild::SharedUserData::Run() {
+  SharedSurfacesChild::Unshare(mId, mShared, mKeys);
+  mShared = false;
+  mKeys.Clear();
+  return NS_OK;
 }
 
 wr::ImageKey SharedSurfacesChild::SharedUserData::UpdateKey(
@@ -167,13 +170,6 @@ SourceSurfaceSharedData* SharedSurfacesChild::AsSourceSurfaceSharedData(
 }
 
 
-void SharedSurfacesChild::DestroySharedUserData(void* aClosure) {
-  MOZ_ASSERT(aClosure);
-  auto data = static_cast<SharedUserData*>(aClosure);
-  delete data;
-}
-
-
 nsresult SharedSurfacesChild::ShareInternal(SourceSurfaceSharedData* aSurface,
                                             SharedUserData** aUserData) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -193,8 +189,9 @@ nsresult SharedSurfacesChild::ShareInternal(SourceSurfaceSharedData* aSurface,
   SharedUserData* data =
       static_cast<SharedUserData*>(aSurface->GetUserData(&sSharedKey));
   if (!data) {
-    data = new SharedUserData(manager->GetNextExternalImageId());
-    aSurface->AddUserData(&sSharedKey, data, DestroySharedUserData);
+    data =
+        MakeAndAddRef<SharedUserData>(manager->GetNextExternalImageId()).take();
+    aSurface->AddUserData(&sSharedKey, data, SharedUserData::Destroy);
   } else if (!manager->OwnsExternalImageId(data->Id())) {
     
     
