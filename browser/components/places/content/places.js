@@ -167,6 +167,11 @@ var PlacesOrganizer = {
 
     window.addEventListener("AppCommand", this, true);
 
+    let placeContentElement = document.getElementById("placeContent");
+    placeContentElement.addEventListener("onOpenFlatContainer", function(e) {
+      PlacesOrganizer.openFlatContainer(e.detail);
+    });
+
     if (AppConstants.platform === "macosx") {
       
       
@@ -371,6 +376,11 @@ var PlacesOrganizer = {
       this._fillDetailsPane(selectedNodes);
     }
   },
+
+  
+
+
+
 
   openFlatContainer(aContainer) {
     if (aContainer.bookmarkGuid) {
