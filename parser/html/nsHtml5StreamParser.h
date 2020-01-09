@@ -126,7 +126,7 @@ class nsHtml5StreamParser final : public nsICharsetDetectionObserver {
   
   nsresult CheckListenerChain();
 
-  nsresult OnStartRequest(nsIRequest* aRequest, nsISupports* aContext);
+  nsresult OnStartRequest(nsIRequest* aRequest);
 
   nsresult OnDataAvailable(nsIRequest* aRequest, nsISupports* aContext,
                            nsIInputStream* aInStream, uint64_t aSourceOffset,

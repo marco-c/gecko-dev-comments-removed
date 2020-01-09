@@ -281,7 +281,7 @@ void nsBaseChannel::ContinueHandleAsyncRedirect(nsresult result) {
 
   if (NS_FAILED(result) && mListener) {
     
-    mListener->OnStartRequest(this, nullptr);
+    mListener->OnStartRequest(this);
     mListener->OnStopRequest(this, nullptr, mStatus);
     ChannelDone();
   }
@@ -739,7 +739,7 @@ static void CallUnknownTypeSniffer(void *aClosure, const uint8_t *aData,
 }
 
 NS_IMETHODIMP
-nsBaseChannel::OnStartRequest(nsIRequest *request, nsISupports *ctxt) {
+nsBaseChannel::OnStartRequest(nsIRequest *request) {
   MOZ_ASSERT_IF(mRequest, request == mRequest);
 
   if (mPump) {
@@ -760,7 +760,7 @@ nsBaseChannel::OnStartRequest(nsIRequest *request, nsISupports *ctxt) {
   SUSPEND_PUMP_FOR_SCOPE();
 
   if (mListener)  
-    return mListener->OnStartRequest(this, nullptr);
+    return mListener->OnStartRequest(this);
   return NS_OK;
 }
 

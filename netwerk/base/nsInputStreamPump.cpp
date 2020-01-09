@@ -484,7 +484,7 @@ uint32_t nsInputStreamPump::OnStateStart() {
     
     
     RecursiveMutexAutoUnlock unlock(mMutex);
-    rv = mListener->OnStartRequest(this, nullptr);
+    rv = mListener->OnStartRequest(this);
   }
 
   

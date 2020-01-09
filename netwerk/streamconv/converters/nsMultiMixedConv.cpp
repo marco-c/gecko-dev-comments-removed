@@ -49,7 +49,7 @@ void nsPartChannel::InitializeByteRange(int64_t aStart, int64_t aEnd) {
 }
 
 nsresult nsPartChannel::SendOnStartRequest(nsISupports *aContext) {
-  return mListener->OnStartRequest(this, aContext);
+  return mListener->OnStartRequest(this);
 }
 
 nsresult nsPartChannel::SendOnDataAvailable(nsISupports *aContext,
@@ -408,13 +408,12 @@ nsMultiMixedConv::AsyncConvertData(const char *aFromType, const char *aToType,
 
 
 NS_IMETHODIMP
-nsMultiMixedConv::OnStartRequest(nsIRequest *request, nsISupports *ctxt) {
+nsMultiMixedConv::OnStartRequest(nsIRequest *request) {
   
   NS_ASSERTION(mBoundary.IsEmpty(), "a second on start???");
 
   nsresult rv;
 
-  mContext = ctxt;
   mTotalSent = 0;
   mChannel = do_QueryInterface(request, &rv);
   if (NS_FAILED(rv)) return rv;
@@ -553,7 +552,7 @@ nsMultiMixedConv::OnStopRequest(nsIRequest *request, nsISupports *ctxt,
     
     
 
-    (void)mFinalListener->OnStartRequest(request, ctxt);
+    (void)mFinalListener->OnStartRequest(request);
     (void)mFinalListener->OnStopRequest(request, ctxt, aStatus);
   }
 

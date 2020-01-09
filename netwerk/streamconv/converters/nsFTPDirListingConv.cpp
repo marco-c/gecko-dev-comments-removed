@@ -161,10 +161,10 @@ nsFTPDirListingConv::OnDataAvailable(nsIRequest *request, nsISupports *ctxt,
 
 
 NS_IMETHODIMP
-nsFTPDirListingConv::OnStartRequest(nsIRequest *request, nsISupports *ctxt) {
+nsFTPDirListingConv::OnStartRequest(nsIRequest *request) {
   
   
-  return mFinalListener->OnStartRequest(request, ctxt);
+  return mFinalListener->OnStartRequest(request);
 }
 
 NS_IMETHODIMP

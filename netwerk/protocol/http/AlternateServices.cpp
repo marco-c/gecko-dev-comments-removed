@@ -768,8 +768,7 @@ void TransactionObserver::Complete(nsHttpTransaction *aTrans, nsresult reason) {
 #define MAX_WK 32768
 
 NS_IMETHODIMP
-TransactionObserver::OnStartRequest(nsIRequest *aRequest,
-                                    nsISupports *aContext) {
+TransactionObserver::OnStartRequest(nsIRequest *aRequest) {
   MOZ_ASSERT(NS_IsMainThread());
   
   mWKResponse.SetCapacity(MAX_WK);

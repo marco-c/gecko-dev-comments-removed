@@ -626,8 +626,7 @@ AsyncFetchAndSetIconForPage::Cancel() {
 }
 
 NS_IMETHODIMP
-AsyncFetchAndSetIconForPage::OnStartRequest(nsIRequest* aRequest,
-                                            nsISupports* aContext) {
+AsyncFetchAndSetIconForPage::OnStartRequest(nsIRequest* aRequest) {
   
   
   

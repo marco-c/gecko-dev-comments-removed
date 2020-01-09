@@ -617,8 +617,7 @@ nsViewSourceChannel::GetProtocolVersion(nsACString &aProtocolVersion) {
 
 
 NS_IMETHODIMP
-nsViewSourceChannel::OnStartRequest(nsIRequest *aRequest,
-                                    nsISupports *aContext) {
+nsViewSourceChannel::OnStartRequest(nsIRequest *aRequest) {
   NS_ENSURE_TRUE(mListener, NS_ERROR_FAILURE);
   
   mChannel = do_QueryInterface(aRequest);
@@ -632,8 +631,7 @@ nsViewSourceChannel::OnStartRequest(nsIRequest *aRequest,
     Cancel(rv);
   }
 
-  return mListener->OnStartRequest(static_cast<nsIViewSourceChannel *>(this),
-                                   aContext);
+  return mListener->OnStartRequest(static_cast<nsIViewSourceChannel *>(this));
 }
 
 NS_IMETHODIMP

@@ -77,8 +77,7 @@ SimpleChannelParent::Delete() {
 void SimpleChannelParent::ActorDestroy(ActorDestroyReason aWhy) {}
 
 NS_IMETHODIMP
-SimpleChannelParent::OnStartRequest(nsIRequest* aRequest,
-                                    nsISupports* aContext) {
+SimpleChannelParent::OnStartRequest(nsIRequest* aRequest) {
   
   
   

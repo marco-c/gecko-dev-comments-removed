@@ -77,7 +77,7 @@ FileChannelParent::Delete() {
 void FileChannelParent::ActorDestroy(ActorDestroyReason why) {}
 
 NS_IMETHODIMP
-FileChannelParent::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext) {
+FileChannelParent::OnStartRequest(nsIRequest *aRequest) {
   
   
   
