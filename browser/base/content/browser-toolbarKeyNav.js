@@ -51,7 +51,8 @@ ToolbarKeyboardNavigator = {
       }
 
       
-      if (aNode.hidden || aNode.disabled) {
+      if (aNode.hidden || aNode.disabled
+          || aNode.style["visibility"] == "hidden") {
         return NodeFilter.FILTER_REJECT;
       }
       
