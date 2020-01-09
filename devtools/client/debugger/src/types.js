@@ -60,7 +60,11 @@ export type OriginalSourceData = {|
 
 export type GeneratedSourceData = {
   thread: ThreadId,
-  source: SourcePayload
+  source: SourcePayload,
+
+  
+  
+  id?: string
 };
 
 export type SourceActorLocation = {|

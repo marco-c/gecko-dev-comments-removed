@@ -17,7 +17,7 @@ import * as selectors from "../selectors";
 import { getHistory } from "../test/utils/history";
 import configureStore from "../actions/utils/create-store";
 import sourceQueue from "../utils/source-queue";
-import type { Source } from "../types";
+import type { Source, OriginalSourceData, GeneratedSourceData } from "../types";
 
 
 
@@ -29,6 +29,11 @@ import type { Source } from "../types";
 
 
 function createStore(client: any, initialState: any = {}, sourceMapsMock: any) {
+  client = {
+    hasWasmSupport: () => true,
+    ...client
+  };
+
   const store = configureStore({
     log: false,
     history: getHistory(),
@@ -78,40 +83,82 @@ function makeFrame({ id, sourceId }: Object, opts: Object = {}) {
   };
 }
 
-function makeSourceRaw(name: string, props: any = {}): Source {
+function createSourceObject(
+  filename: string,
+  props: {
+    sourceMapURL?: string,
+    introductionType?: string,
+    introductionUrl?: string,
+    isBlackBoxed?: boolean,
+    loadedState?: "unloaded" | "loading" | "loaded",
+    text?: string
+  } = {}
+): Source {
+  return ({
+    id: filename,
+    url: makeSourceURL(filename),
+    loadedState: props.loadedState || "unloaded",
+    isBlackBoxed: !!props.isBlackBoxed,
+    isPrettyPrinted: false,
+    introductionUrl: props.introductionUrl || null,
+    introductionType: props.introductionType || null,
+    isExtension: false,
+    actors: [],
+    ...(typeof props.text === "string"
+      ? {
+          text: props.text || "",
+          contentType: "application/javascript",
+          loadedState: "loaded"
+        }
+      : {})
+  }: any);
+}
+
+function createOriginalSourceObject(generated: Source): Source {
+  const rv = {
+    ...generated,
+    id: `${generated.id}/originalSource`
+  };
+
+  return (rv: any);
+}
+
+function makeSourceURL(filename: string) {
+  return `http://localhost:8000/examples/${filename}`;
+}
+
+
+
+
+
+function makeSource(
+  name: string,
+  props: {
+    sourceMapURL?: string,
+    introductionType?: string,
+    introductionUrl?: string,
+    isBlackBoxed?: boolean
+  } = {}
+): GeneratedSourceData {
   return {
     id: name,
-    loadedState: "unloaded",
-    url: `http://localhost:8000/examples/${name}`,
-    ...props
+    thread: "FakeThread",
+    source: {
+      actor: `${name}-actor`,
+      url: `http://localhost:8000/examples/${name}`,
+      sourceMapURL: props.sourceMapURL || null,
+      introductionType: props.introductionType || null,
+      introductionUrl: props.introductionUrl || null,
+      isBlackBoxed: !!props.isBlackBoxed
+    }
   };
 }
 
-
-
-
-
-function makeSource(name: string, props: any = {}): Source {
-  const rv = {
-    ...makeSourceRaw(name, props),
-    actors: [
-      {
-        actor: `${name}-actor`,
-        source: name,
-        thread: "FakeThread"
-      }
-    ]
+function makeOriginalSource(source: Source): OriginalSourceData {
+  return {
+    id: `${source.id}/originalSource`,
+    url: `${source.url}-original`
   };
-  return (rv: any);
-}
-
-function makeOriginalSource(name: string, props?: Object): Source {
-  const rv = {
-    ...makeSourceRaw(name, props),
-    id: `${name}/originalSource`,
-    actors: []
-  };
-  return (rv: any);
 }
 
 function makeFuncLocation(startLine, endLine) {
@@ -202,6 +249,9 @@ export {
   commonLog,
   getTelemetryEvents,
   makeFrame,
+  createSourceObject,
+  createOriginalSourceObject,
+  makeSourceURL,
   makeSource,
   makeOriginalSource,
   makeSymbolDeclaration,
