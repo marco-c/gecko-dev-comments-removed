@@ -2700,9 +2700,6 @@ void gfxPlatform::InitWebRenderConfig() {
   
   
   
-  
-  
-  
   ScopedGfxFeatureReporter reporter("WR", prefEnabled || envvarEnabled);
   if (!XRE_IsParentProcess()) {
     
@@ -2734,16 +2731,11 @@ void gfxPlatform::InitWebRenderConfig() {
   
   
   
+  
   if (envvarEnabled) {
     featureWebRender.UserEnable("Force enabled by envvar");
-
-    
-#ifdef NIGHTLY_BUILD
   } else if (prefEnabled) {
     featureWebRender.UserEnable("Force enabled by pref");
-#endif
-
-
   } else if (wrQualifiedAll && featureWebRenderQualified.IsEnabled()) {
     featureWebRender.UserEnable("Qualified enabled by pref ");
   }

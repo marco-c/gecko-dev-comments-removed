@@ -913,15 +913,11 @@ pref("gfx.ycbcr.accurate-conversion", false);
 
 
 
-
-
-#ifdef NIGHTLY_BUILD
 pref("gfx.webrender.all", false);
 #ifdef MOZ_ENABLE_WEBRENDER
 pref("gfx.webrender.enabled", true);
 #else
 pref("gfx.webrender.enabled", false);
-#endif
 #endif
 
 
