@@ -27,8 +27,13 @@ uint32_t gfxFT2LockedFace::GetGlyph(uint32_t aCharCode) {
   
   
   
-  if (!mFace->charmap || mFace->charmap->encoding != FT_ENCODING_UNICODE) {
-    FT_Select_Charmap(mFace, FT_ENCODING_UNICODE);
+  
+  if (!mFace->charmap || (mFace->charmap->encoding != FT_ENCODING_UNICODE &&
+                          mFace->charmap->encoding != FT_ENCODING_MS_SYMBOL)) {
+    if (FT_Err_Ok != FT_Select_Charmap(mFace, FT_ENCODING_UNICODE) &&
+        FT_Err_Ok != FT_Select_Charmap(mFace, FT_ENCODING_MS_SYMBOL)) {
+      NS_WARNING("failed to select Unicode or symbol charmap");
+    }
   }
 
   return FcFreeTypeCharIndex(mFace, aCharCode);
