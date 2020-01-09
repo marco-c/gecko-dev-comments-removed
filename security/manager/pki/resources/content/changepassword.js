@@ -5,12 +5,6 @@
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-const nsIPK11TokenDB = Ci.nsIPK11TokenDB;
-const nsPKCS11ModuleDB = "@mozilla.org/security/pkcs11moduledb;1";
-const nsIPKCS11ModuleDB = Ci.nsIPKCS11ModuleDB;
-const nsIPKCS11Slot = Ci.nsIPKCS11Slot;
-const nsIPK11Token = Ci.nsIPK11Token;
-
 var params;
 var token;
 var pw1;
@@ -89,7 +83,7 @@ function setPassword(event) {
           
         } else {
           if (pw1.value == "") {
-            var secmoddb = Cc[nsPKCS11ModuleDB].getService(nsIPKCS11ModuleDB);
+            var secmoddb = Cc["@mozilla.org/security/pkcs11moduledb;1"].getService(Ci.nsIPKCS11ModuleDB);
             if (secmoddb.isFIPSEnabled) {
               
               doPrompt(bundle.getString("pw_change2empty_in_fips_mode"));
