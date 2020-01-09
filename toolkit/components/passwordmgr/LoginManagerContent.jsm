@@ -452,8 +452,6 @@ var LoginManagerContent = {
       return;
     }
 
-    this.setupProgressListener(topWindow);
-
     let pwField = event.originalTarget;
     if (pwField.form) {
       
@@ -473,6 +471,9 @@ var LoginManagerContent = {
 
   _processDOMInputPasswordAddedEvent(event, topWindow) {
     let pwField = event.originalTarget;
+    
+    
+    this.setupProgressListener(topWindow);
 
     let formLike = LoginFormFactory.createFromField(pwField);
     log(" _processDOMInputPasswordAddedEvent:", pwField, formLike);
@@ -993,6 +994,14 @@ var LoginManagerContent = {
         continue;
       }
 
+      if (ChromeUtils.getClassName(formRoot) === "HTMLFormElement") {
+        
+        
+        
+        log("Ignoring navigation for the form root to avoid multiple prompts " +
+            "since it was for a real <form>");
+        continue;
+      }
       let formLike = LoginFormFactory.getForRootElement(formRoot);
       this._onFormSubmit(formLike);
     }
