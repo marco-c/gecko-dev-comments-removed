@@ -132,7 +132,7 @@ NativeRegExpMacroAssembler::GenerateCode(JSContext* cx, bool match_only)
     masm.Str(PseudoStackPointer64, vixl::MemOperand(sp, -16, vixl::PreIndex));
 
     
-    masm.initStackPtr();
+    masm.initPseudoStackPtr();
 #endif
 
     
