@@ -413,6 +413,23 @@ class UrlbarInput {
 
   
 
+
+
+  setHiddenFocus() {
+    this.textbox.classList.add("hidden-focus");
+    this.focus();
+  }
+
+  
+
+
+
+  removeHiddenFocus() {
+    this.textbox.classList.remove("hidden-focus");
+  }
+
+  
+
   get focused() {
     return this.textbox.getAttribute("focused") == "true";
   }

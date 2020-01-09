@@ -52,7 +52,7 @@ var AboutPrivateBrowsingHandler = {
         let isFirstChange = true;
 
         if (!aMessage.data || !aMessage.data.text) {
-          urlBar.hiddenFocus();
+          urlBar.setHiddenFocus();
         } else {
           
           urlBar.search(`${searchAlias}${aMessage.data.text}`);
