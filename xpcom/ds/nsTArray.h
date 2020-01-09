@@ -14,6 +14,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/BinarySearch.h"
 #include "mozilla/CheckedInt.h"
+#include "mozilla/DbgMacro.h"
 #include "mozilla/fallible.h"
 #include "mozilla/FunctionTypeTraits.h"
 #include "mozilla/MathAlgorithms.h"
@@ -36,6 +37,7 @@
 #include <functional>
 #include <initializer_list>
 #include <new>
+#include <ostream>
 
 namespace JS {
 template <class T>
@@ -2646,6 +2648,14 @@ Span<const ElementType> MakeSpan(
 }
 
 }  
+
+
+
+template <class E, class Alloc>
+std::ostream& operator<<(std::ostream& aOut,
+                         const nsTArray_Impl<E, Alloc>& aTArray) {
+  return aOut << mozilla::MakeSpan(aTArray);
+}
 
 
 
