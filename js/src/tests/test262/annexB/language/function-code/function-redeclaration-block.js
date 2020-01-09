@@ -15,15 +15,6 @@
 
 
 
-
-
-
-
-
-
-
-if (false) {
-  --arguments;
-}
+{ function a() {} function a() {} }
 
 reportCompare(0, 0);

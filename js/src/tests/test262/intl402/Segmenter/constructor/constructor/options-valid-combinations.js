@@ -13,11 +13,7 @@
 
 
 
-
-
-
-const lineBreakStyleOptions = ["strict", "normal", "loose"];
-const granularityOptions = ["grapheme", "word", "sentence", "line"];
+const granularityOptions = ["grapheme", "word", "sentence"];
 const combinations = [];
 
 combinations.push([
@@ -26,37 +22,18 @@ combinations.push([
   undefined,
 ]);
 
-for (const lineBreakStyle of lineBreakStyleOptions) {
-  combinations.push([
-    { lineBreakStyle },
-    "grapheme",
-    undefined,
-  ]);
-}
-
 for (const granularity of granularityOptions) {
   combinations.push([
     { granularity },
     granularity,
-    granularity === "line" ? "normal" : undefined,
+    undefined,
   ]);
-}
-
-for (const lineBreakStyle of lineBreakStyleOptions) {
-  for (const granularity of granularityOptions) {
-    combinations.push([
-      { granularity, lineBreakStyle },
-      granularity,
-      granularity === "line" ? lineBreakStyle : undefined,
-    ]);
-  }
 }
 
 for (const [input, granularity, lineBreakStyle] of combinations) {
   const segmenter = new Intl.Segmenter([], input);
   const resolvedOptions = segmenter.resolvedOptions();
   assert.sameValue(resolvedOptions.granularity, granularity);
-  assert.sameValue(resolvedOptions.lineBreakStyle, lineBreakStyle);
 }
 
 reportCompare(0, 0);

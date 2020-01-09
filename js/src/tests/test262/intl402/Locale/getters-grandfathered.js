@@ -27,13 +27,6 @@
 
 
 
-var loc = new Intl.Locale("cel-gaulish");
-assert.sameValue(loc.baseName, "cel-gaulish"); 
-assert.sameValue(loc.language, "cel-gaulish");
-assert.sameValue(loc.script, undefined);
-assert.sameValue(loc.region, undefined);
-
-
 assert.throws(RangeError, () => new Intl.Locale("zh-min"));
 
 assert.throws(RangeError, () => new Intl.Locale("i-default"));

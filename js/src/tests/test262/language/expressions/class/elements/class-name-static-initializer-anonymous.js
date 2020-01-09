@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var className;
+
+var C = class {
+    static f = (className = this.name);
+}
+
+assert.sameValue(className, "C");
+
+reportCompare(0, 0);

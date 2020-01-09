@@ -14,7 +14,6 @@
 
 
 
-
 const callOrder = [];
 
 new Intl.Segmenter([], {
@@ -50,8 +49,6 @@ new Intl.Segmenter([], {
 assert.compareArray(callOrder, [
   "localeMatcher",
   "localeMatcher toString",
-  "lineBreakStyle",
-  "lineBreakStyle toString",
   "granularity",
   "granularity toString",
 ]);

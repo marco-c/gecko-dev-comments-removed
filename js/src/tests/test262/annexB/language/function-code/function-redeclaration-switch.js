@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let x
+switch (x) {
+case 1:
+  function a() {}
+case 2:
+  function a() {}
+}
+
+reportCompare(0, 0);

@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var className;
+
+export default class {
+    static f = (className = this.name);
+}
+
+assert.sameValue(className, "default");
+
+reportCompare(0, 0);

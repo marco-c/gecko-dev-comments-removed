@@ -18,8 +18,7 @@ const validOptions = [
   ["grapheme", "grapheme"],
   ["word", "word"],
   ["sentence", "sentence"],
-  ["line", "line"],
-  [{ toString() { return "line"; } }, "line"],
+  [{ toString() { return "word"; } }, "word"],
 ];
 
 for (const [granularity, expected] of validOptions) {
@@ -27,5 +26,7 @@ for (const [granularity, expected] of validOptions) {
   const resolvedOptions = segmenter.resolvedOptions();
   assert.sameValue(resolvedOptions.granularity, expected);
 }
+
+assert.throws(RangeError, () => new Intl.Segmenter([], {granularity: "line"}));
 
 reportCompare(0, 0);
