@@ -6685,9 +6685,10 @@ static void DrawTextRun(const gfxTextRun* aTextRun,
           }
         }
       }
-      StrokeOptions strokeOpts;
+      
+      
+      StrokeOptions strokeOpts(aParams.textStrokeWidth, JoinStyle::ROUND);
       params.textStrokeColor = aParams.textStrokeColor;
-      strokeOpts.mLineWidth = aParams.textStrokeWidth;
       params.strokeOpts = &strokeOpts;
       aTextRun->Draw(aRange, aTextBaselinePt, params);
     } else {
