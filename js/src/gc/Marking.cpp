@@ -1460,6 +1460,108 @@ static void VisitTraceList(const Functor& f, const int32_t* traceList,
 
 
 
+GCMarker::MarkQueueProgress GCMarker::processMarkQueue() {
+#ifdef DEBUG
+  if (isShutdownGC || markQueue.empty()) {
+    return QueueComplete;
+  }
+
+  GCRuntime& gcrt = runtime()->gc;
+  if (queueMarkColor == mozilla::Some(MarkColor::Gray) &&
+      gcrt.state() != State::Sweep) {
+    return QueueSuspended;
+  }
+
+  
+  
+  
+  AutoSetMarkColor autoRevertColor(*this, queueMarkColor.valueOr(markColor()));
+
+  
+  
+  
+  while (queuePos < markQueue.length()) {
+    Value val = markQueue[queuePos++].get().unbarrieredGet();
+    if (val.isObject()) {
+      JSObject* obj = &val.toObject();
+      JS::Zone* zone = obj->zone();
+      if (!zone->isGCMarking() || obj->isMarkedAtLeast(markColor())) {
+        continue;
+      }
+
+      
+      
+      
+      
+      if (gcrt.state() == State::Sweep && gcrt.initialState != State::Sweep) {
+        if (zone->gcSweepGroupIndex < gcrt.getCurrentSweepGroupIndex()) {
+          
+          
+          continue;
+        }
+        if (zone->gcSweepGroupIndex > gcrt.getCurrentSweepGroupIndex()) {
+          
+          queuePos--;
+          return QueueSuspended;
+        }
+      }
+
+      if (markColor() == MarkColor::Gray && zone->isGCMarkingBlackOnly()) {
+        
+        
+        queuePos--;
+        return QueueSuspended;
+      }
+
+      
+      traverse(obj);
+
+      
+      
+      MOZ_ASSERT(!isMarkStackEmpty());
+      SliceBudget unlimited = SliceBudget::unlimited();
+      processMarkStackTop(unlimited);
+    } else if (val.isString()) {
+      JSLinearString* str = &val.toString()->asLinear();
+      if (js::StringEqualsAscii(str, "yield") && gcrt.isIncrementalGc()) {
+        return QueueYielded;
+      } else if (js::StringEqualsAscii(str, "enter-weak-marking-mode") ||
+                 js::StringEqualsAscii(str, "abort-weak-marking-mode")) {
+        if (!isWeakMarkingTracer() && !linearWeakMarkingDisabled_) {
+          
+          
+          
+          
+          queuePos--;
+          return QueueSuspended;
+        }
+        if (js::StringEqualsAscii(str, "abort-weak-marking-mode")) {
+          abortLinearWeakMarking();
+        }
+      } else if (js::StringEqualsAscii(str, "drain")) {
+        auto unlimited = SliceBudget::unlimited();
+        MOZ_RELEASE_ASSERT(markUntilBudgetExhausted(unlimited));
+      } else if (js::StringEqualsAscii(str, "set-color-gray")) {
+        queueMarkColor = mozilla::Some(MarkColor::Gray);
+        if (gcrt.state() != State::Sweep) {
+          
+          queuePos--;
+          return QueueSuspended;
+        }
+        setMarkColor(MarkColor::Gray);
+      } else if (js::StringEqualsAscii(str, "set-color-black")) {
+        queueMarkColor = mozilla::Some(MarkColor::Black);
+        setMarkColor(MarkColor::Black);
+      } else if (js::StringEqualsAscii(str, "unset-color")) {
+        queueMarkColor.reset();
+      }
+    }
+  }
+#endif
+
+  return QueueComplete;
+}
+
 bool GCMarker::markUntilBudgetExhausted(SliceBudget& budget) {
 #ifdef DEBUG
   MOZ_ASSERT(!strictCompartmentChecking);
@@ -2261,7 +2363,9 @@ GCMarker::GCMarker(JSRuntime* rt)
       ,
       markLaterArenas(0),
       started(false),
-      strictCompartmentChecking(false)
+      strictCompartmentChecking(false),
+      markQueue(rt),
+      queuePos(0)
 #endif
 {
 }
@@ -2405,6 +2509,12 @@ void GCMarker::enterWeakMarkingMode() {
   
   if (weakMapAction() == ExpandWeakMaps) {
     tag_ = TracerKindTag::WeakMarking;
+
+    
+    
+    
+    while (processMarkQueue() == QueueYielded) {
+    };
 
     for (SweepGroupZonesIter zone(runtime()); !zone.done(); zone.next()) {
       for (WeakMapBase* m : zone->gcWeakMapList()) {

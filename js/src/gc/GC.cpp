@@ -5045,6 +5045,33 @@ bool GCRuntime::findSweepGroupEdges() {
     }
   }
 
+#ifdef DEBUG
+  
+  
+  
+  
+  
+  
+  JS::Zone* prevZone = nullptr;
+  for (size_t i = 0; i < marker.markQueue.length(); i++) {
+    Value val = marker.markQueue[i].get().unbarrieredGet();
+    if (!val.isObject()) {
+      continue;
+    }
+    JSObject* obj = &val.toObject();
+    JS::Zone* zone = obj->zone();
+    if (!zone->isGCMarking()) {
+      continue;
+    }
+    if (prevZone && prevZone != zone) {
+      if (!prevZone->addSweepGroupEdgeTo(zone)) {
+        return false;
+      }
+    }
+    prevZone = zone;
+  }
+#endif
+
   return Debugger::findSweepGroupEdges(rt);
 }
 
@@ -5988,6 +6015,11 @@ IncrementalProgress GCRuntime::markUntilBudgetExhausted(
 
   
   gcstats::AutoPhase ap(stats(), phase);
+
+  if (marker.processMarkQueue() == GCMarker::QueueYielded) {
+    return NotFinished;
+  }
+
   return marker.markUntilBudgetExhausted(sliceBudget) ? Finished : NotFinished;
 }
 
@@ -7107,6 +7139,7 @@ void GCRuntime::incrementalSlice(SliceBudget& budget, JS::GCReason reason,
       isCompacting = shouldCompact();
       MOZ_ASSERT(!lastMarkSlice);
       rootsRemoved = false;
+      marker.startQueue();
 
 #ifdef DEBUG
       for (ZonesIter zone(rt, WithAtoms); !zone.done(); zone.next()) {
@@ -7538,6 +7571,9 @@ MOZ_NEVER_INLINE GCRuntime::IncrementalResult GCRuntime::gcCycle(
 
   majorGCTriggerReason = JS::GCReason::NO_REASON;
 
+#ifdef DEBUG
+  marker.isShutdownGC = IsShutdownGC(reason);
+#endif
   {
     gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::WAIT_BACKGROUND_THREAD);
 
