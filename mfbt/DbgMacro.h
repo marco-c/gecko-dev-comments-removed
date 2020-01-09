@@ -9,6 +9,8 @@
 
 
 
+#include "mozilla/MacroForEach.h"
+
 #include <stdio.h>
 #include <sstream>
 
@@ -121,5 +123,32 @@ auto&& MozDbg(const char* aFile, int aLine, const char* aExpression,
 #  define MOZ_DBG(expression_...) \
     mozilla::detail::MozDbg(__FILE__, __LINE__, #expression_, expression_)
 #endif
+
+
+#define MOZ_DBG_FIELD(name_) << #name_ << " = " << aValue.name_
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define MOZ_DEFINE_DBG(type_, members_...)                                   \
+  friend std::ostream& operator<<(std::ostream& aOut, const type_& aValue) { \
+    return aOut << #type_                                                    \
+                << (MOZ_ARG_COUNT(members_) == 0 ? "{ " : "")                \
+                       MOZ_FOR_EACH_SEPARATED(MOZ_DBG_FIELD, (<< ", "), (),  \
+                                              (members_))                    \
+                << (MOZ_ARG_COUNT(members_) == 0 ? " }" : "");               \
+  }
 
 #endif  
