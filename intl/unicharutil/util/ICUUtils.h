@@ -10,20 +10,10 @@
 
 #ifdef MOZILLA_INTERNAL_API
 
-#  include "mozilla/Scoped.h"
 #  include "nsString.h"
 #  include "unicode/unum.h"  
 
 class nsIContent;
-
-struct ScopedUNumberFormatTraits {
-  typedef UNumberFormat* type;
-  static type empty() { return nullptr; }
-  static void release(type handle) {
-    if (handle) unum_close(handle);
-  }
-};
-typedef mozilla::Scoped<ScopedUNumberFormatTraits> AutoCloseUNumberFormat;
 
 class ICUUtils {
  public:
