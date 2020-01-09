@@ -9,8 +9,8 @@
 #include "LayerManagerComposite.h"  
 #include "Layers.h"                 
 #include "gfxPoint.h"               
-#include "gfxPrefs.h"               
 #include "mozilla/ServoBindings.h"  
+#include "mozilla/StaticPrefs.h"    
 #include "mozilla/WidgetUtils.h"    
 #include "mozilla/gfx/BaseRect.h"   
 #include "mozilla/gfx/Point.h"      
@@ -35,7 +35,6 @@
 #include "nsTArray.h"                
 #include "nsTArrayForwardDeclare.h"  
 #include "UnitTransforms.h"          
-#include "gfxPrefs.h"
 #if defined(MOZ_WIDGET_ANDROID)
 #  include <android/log.h>
 #  include "mozilla/layers/UiCompositorControllerParent.h"
@@ -790,7 +789,7 @@ static bool SampleAnimations(Layer* aLayer,
 }
 
 void AsyncCompositionManager::RecordShadowTransforms(Layer* aLayer) {
-  MOZ_ASSERT(gfxPrefs::CollectScrollTransforms());
+  MOZ_ASSERT(StaticPrefs::CollectScrollTransforms());
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
 
   ForEachNodePostOrder<ForwardIterator>(aLayer, [this](Layer* layer) {
@@ -1473,7 +1472,7 @@ bool AsyncCompositionManager::TransformShadowTree(
   trans *= gfx::Matrix4x4::From2D(mWorldTransform);
   rootComposite->SetShadowBaseTransform(trans);
 
-  if (gfxPrefs::CollectScrollTransforms()) {
+  if (StaticPrefs::CollectScrollTransforms()) {
     RecordShadowTransforms(root);
   }
 
@@ -1488,9 +1487,9 @@ void AsyncCompositionManager::SetFixedLayerMargins(ScreenIntCoord aTop,
 }
 ScreenMargin AsyncCompositionManager::GetFixedLayerMargins() const {
   ScreenMargin result = mFixedLayerMargins;
-  if (gfxPrefs::APZFixedMarginOverrideEnabled()) {
-    result.top = gfxPrefs::APZFixedMarginOverrideTop();
-    result.bottom = gfxPrefs::APZFixedMarginOverrideBottom();
+  if (StaticPrefs::APZFixedMarginOverrideEnabled()) {
+    result.top = StaticPrefs::APZFixedMarginOverrideTop();
+    result.bottom = StaticPrefs::APZFixedMarginOverrideBottom();
   }
   return result;
 }

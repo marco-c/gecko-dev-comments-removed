@@ -4,7 +4,7 @@
 
 
 
-#include "gfxPrefs.h"
+#include "mozilla/StaticPrefs.h"
 #include "gfxUtils.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/Range.h"
@@ -437,7 +437,7 @@ static bool Moz2DRenderCallback(const Range<const uint8_t> aBlob,
     offset = extra_end;
   }
 
-  if (gfxPrefs::WebRenderBlobPaintFlashing()) {
+  if (StaticPrefs::WebRenderBlobPaintFlashing()) {
     dt->SetTransform(gfx::Matrix());
     float r = float(rand()) / RAND_MAX;
     float g = float(rand()) / RAND_MAX;

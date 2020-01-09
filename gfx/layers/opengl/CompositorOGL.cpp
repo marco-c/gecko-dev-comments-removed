@@ -21,6 +21,7 @@
 #include "gfxUtils.h"               
 #include "mozilla/ArrayUtils.h"     
 #include "mozilla/Preferences.h"    
+#include "mozilla/StaticPrefs.h"
 #include "mozilla/gfx/BasePoint.h"  
 #include "mozilla/gfx/Matrix.h"     
 #include "mozilla/gfx/Triangle.h"   
@@ -805,10 +806,10 @@ void CompositorOGL::BeginFrame(const nsIntRegion& aInvalidRegion,
 
 #if defined(MOZ_WIDGET_ANDROID)
   if ((mSurfaceOrigin.x > 0) || (mSurfaceOrigin.y > 0)) {
-    mGLContext->fClearColor(gfxPrefs::CompositorOverrideClearColorR(),
-                            gfxPrefs::CompositorOverrideClearColorG(),
-                            gfxPrefs::CompositorOverrideClearColorB(),
-                            gfxPrefs::CompositorOverrideClearColorA());
+    mGLContext->fClearColor(StaticPrefs::CompositorOverrideClearColorR(),
+                            StaticPrefs::CompositorOverrideClearColorG(),
+                            StaticPrefs::CompositorOverrideClearColorB(),
+                            StaticPrefs::CompositorOverrideClearColorA());
   } else {
     mGLContext->fClearColor(mClearColor.r, mClearColor.g, mClearColor.b,
                             mClearColor.a);
@@ -1233,7 +1234,7 @@ void CompositorOGL::DrawGeometry(const Geometry& aGeometry,
   
   
   bool bEnableAA =
-      gfxPrefs::LayersDEAAEnabled() && !aTransform.Is2DIntegerTranslation();
+      StaticPrefs::LayersDEAAEnabled() && !aTransform.Is2DIntegerTranslation();
 
   bool colorMatrix = aEffectChain.mSecondaryEffects[EffectTypes::COLOR_MATRIX];
   ShaderConfigOGL config =
@@ -2026,7 +2027,7 @@ void PerUnitTexturePoolOGL::DestroyTextures() {
 }
 
 bool CompositorOGL::SupportsLayerGeometry() const {
-  return gfxPrefs::OGLLayerGeometry();
+  return StaticPrefs::OGLLayerGeometry();
 }
 
 void CompositorOGL::RegisterTextureSource(TextureSource* aTextureSource) {

@@ -9,12 +9,12 @@
 
 #include <map>
 
-#include "gfxPrefs.h"
 #include "nsDebug.h"  
 #include "nsTArray.h"
 #include "mozilla/Assertions.h"       
 #include "mozilla/DebugOnly.h"        
 #include "mozilla/GfxMessageUtils.h"  
+#include "mozilla/StaticPrefs.h"
 #include "mozilla/ToString.h"         
 #include "mozilla/gfx/CompositorHitTestInfo.h"
 #include "mozilla/layers/ScrollableLayerGuid.h"
@@ -130,7 +130,7 @@ class APZPaintLogHelper {
  public:
   APZPaintLogHelper(APZTestData* aTestData, SequenceNumber aPaintSequenceNumber)
       : mTestData(aTestData), mPaintSequenceNumber(aPaintSequenceNumber) {
-    MOZ_ASSERT(!aTestData || gfxPrefs::APZTestLoggingEnabled(),
+    MOZ_ASSERT(!aTestData || StaticPrefs::APZTestLoggingEnabled(),
                "don't call me");
   }
 

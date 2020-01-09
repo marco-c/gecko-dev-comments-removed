@@ -65,7 +65,7 @@ TEST_F(APZCSnappingTester, Bug1265510) {
   
   TimeStamp newTransactionTime =
       now + TimeDuration::FromMilliseconds(
-                gfxPrefs::MouseWheelTransactionTimeoutMs() + 100);
+                StaticPrefs::MouseWheelTransactionTimeoutMs() + 100);
   SmoothWheel(manager, ScreenIntPoint(50, 80), ScreenPoint(0, 6),
               newTransactionTime);
   inner->AdvanceAnimationsUntilEnd();

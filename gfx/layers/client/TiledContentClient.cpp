@@ -230,7 +230,7 @@ bool SharedFrameMetricsHelper::AboutToCheckerboard(
       CSSRect(aCompositorMetrics.GetScrollOffset(),
               aCompositorMetrics.CalculateBoundedCompositedSizeInCssPixels());
   showing.Inflate(
-      LayerSize(gfxPrefs::APZDangerZoneX(), gfxPrefs::APZDangerZoneY()) /
+      LayerSize(StaticPrefs::APZDangerZoneX(), StaticPrefs::APZDangerZoneY()) /
       aCompositorMetrics.LayersPixelsPerCSSPixel());
 
   
@@ -600,7 +600,7 @@ Maybe<AcquiredBackBuffer> TileClient::AcquireBackBuffer(
     
     
     
-    if (!gfxPrefs::LayersTileRetainBackBuffer()) {
+    if (!StaticPrefs::LayersTileRetainBackBuffer()) {
       DiscardBackBuffer();
     }
     Flip();

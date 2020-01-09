@@ -15,6 +15,7 @@
 #include "OverscrollHandoffState.h"
 #include "SimpleVelocityTracker.h"
 #include "ViewConfiguration.h"
+#include "mozilla/StaticPrefs.h"
 
 #define ANDROID_APZ_LOG(...)
 
@@ -55,7 +56,7 @@ AndroidSpecificState::AndroidSpecificState() {
 AsyncPanZoomAnimation* AndroidSpecificState::CreateFlingAnimation(
     AsyncPanZoomController& aApzc, const FlingHandoffState& aHandoffState,
     float aPLPPI) {
-  if (gfxPrefs::APZUseChromeFlingPhysics()) {
+  if (StaticPrefs::APZUseChromeFlingPhysics()) {
     return new GenericFlingAnimation<AndroidFlingPhysics>(
         aApzc, aHandoffState.mChain, aHandoffState.mIsHandoff,
         aHandoffState.mScrolledApzc, aPLPPI);
@@ -68,7 +69,7 @@ AsyncPanZoomAnimation* AndroidSpecificState::CreateFlingAnimation(
 
 UniquePtr<VelocityTracker> AndroidSpecificState::CreateVelocityTracker(
     Axis* aAxis) {
-  if (gfxPrefs::APZUseChromeFlingPhysics()) {
+  if (StaticPrefs::APZUseChromeFlingPhysics()) {
     return MakeUnique<AndroidVelocityTracker>();
   }
   return MakeUnique<SimpleVelocityTracker>(aAxis);
@@ -167,8 +168,8 @@ StackScrollerFlingAnimation::StackScrollerFlingAnimation(
     
     
     TimeDuration flingDuration = TimeStamp::Now() - state->mLastFling;
-    if (flingDuration.ToMilliseconds() < gfxPrefs::APZFlingAccelInterval() &&
-        velocity.Length() >= gfxPrefs::APZFlingAccelMinVelocity()) {
+    if (flingDuration.ToMilliseconds() < StaticPrefs::APZFlingAccelInterval() &&
+        velocity.Length() >= StaticPrefs::APZFlingAccelMinVelocity()) {
       bool unused = false;
       mOverScroller->ComputeScrollOffset(flingDuration.ToMilliseconds(),
                                          &unused);
@@ -243,7 +244,8 @@ bool StackScrollerFlingAnimation::DoSample(FrameMetrics& aFrameMetrics,
   float speed = velocity.Length();
 
   
-  if (!shouldContinueFling || (speed < gfxPrefs::APZFlingStoppedThreshold())) {
+  if (!shouldContinueFling ||
+      (speed < StaticPrefs::APZFlingStoppedThreshold())) {
     if (shouldContinueFling) {
       
       

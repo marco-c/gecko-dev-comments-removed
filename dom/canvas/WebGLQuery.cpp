@@ -117,7 +117,7 @@ void WebGLQuery::GetQueryParameter(GLenum pname,
 
   
   const bool canBeAvailable =
-      (mCanBeAvailable || gfxPrefs::WebGLImmediateQueries());
+      (mCanBeAvailable || StaticPrefs::WebGLImmediateQueries());
   if (!canBeAvailable) {
     if (pname == LOCAL_GL_QUERY_RESULT_AVAILABLE) {
       retval.set(JS::BooleanValue(false));

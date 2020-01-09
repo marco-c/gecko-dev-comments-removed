@@ -409,7 +409,8 @@ class ImageSurfaceCache {
 
     
     
-    int32_t thresholdSurfaces = gfxPrefs::ImageCacheFactor2ThresholdSurfaces();
+    int32_t thresholdSurfaces =
+        StaticPrefs::ImageCacheFactor2ThresholdSurfaces();
     if (thresholdSurfaces < 0 ||
         mSurfaces.Count() <= static_cast<uint32_t>(thresholdSurfaces)) {
       return;
@@ -1636,7 +1637,7 @@ IntSize SurfaceCache::ClampVectorSize(const IntSize& aSize) {
   
   
   
-  int32_t maxSizeKB = gfxPrefs::ImageCacheMaxRasterizedSVGThresholdKB();
+  int32_t maxSizeKB = StaticPrefs::ImageCacheMaxRasterizedSVGThresholdKB();
   if (maxSizeKB <= 0) {
     return aSize;
   }

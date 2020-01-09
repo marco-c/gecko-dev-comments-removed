@@ -24,7 +24,7 @@
 #include "nsContentUtils.h"
 #include "nsIScriptSecurityManager.h"
 
-#include "gfxPrefs.h"
+#include "mozilla/StaticPrefs.h"
 
 namespace mozilla {
 namespace image {
@@ -37,8 +37,8 @@ static uint32_t ComputeImageFlags(nsIURI* uri, const nsCString& aMimeType,
   nsresult rv;
 
   
-  bool isDiscardable = gfxPrefs::ImageMemDiscardable();
-  bool doDecodeImmediately = gfxPrefs::ImageDecodeImmediatelyEnabled();
+  bool isDiscardable = StaticPrefs::ImageMemDiscardable();
+  bool doDecodeImmediately = StaticPrefs::ImageDecodeImmediatelyEnabled();
 
   
   

@@ -81,14 +81,14 @@ static bool ShouldUseHeap(const IntSize& aSize, int32_t aStride,
 
   
   
-  if (aIsAnimated && gfxPrefs::ImageMemAnimatedUseHeap()) {
+  if (aIsAnimated && StaticPrefs::ImageMemAnimatedUseHeap()) {
     return true;
   }
 
   
   
   int32_t bufferSize = (aStride * aSize.width) / 1024;
-  if (bufferSize < gfxPrefs::ImageMemVolatileMinThresholdKB()) {
+  if (bufferSize < StaticPrefs::ImageMemVolatileMinThresholdKB()) {
     return true;
   }
 
@@ -99,7 +99,7 @@ static already_AddRefed<DataSourceSurface> AllocateBufferForImage(
     const IntSize& size, SurfaceFormat format, bool aIsAnimated = false) {
   int32_t stride = VolatileSurfaceStride(size, format);
 
-  if (gfxVars::GetUseWebRenderOrDefault() && gfxPrefs::ImageMemShared()) {
+  if (gfxVars::GetUseWebRenderOrDefault() && StaticPrefs::ImageMemShared()) {
     RefPtr<SourceSurfaceSharedData> newSurf = new SourceSurfaceSharedData();
     if (newSurf->Init(size, stride, format)) {
       return newSurf.forget();
