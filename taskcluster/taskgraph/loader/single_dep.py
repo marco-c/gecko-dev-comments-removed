@@ -55,7 +55,7 @@ def loader(kind, path, config, params, loaded_tasks):
 
         if only_attributes:
             config_attrs = set(only_attributes)
-            if not config_attrs & set(task.attributes):
+            if config_attrs - set(task.attributes):
                 
                 continue
 
