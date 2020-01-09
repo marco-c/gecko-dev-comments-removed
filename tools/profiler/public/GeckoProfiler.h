@@ -42,6 +42,7 @@
 #  define PROFILER_CLEAR_JS_CONTEXT()
 
 #  define AUTO_PROFILER_LABEL(label, categoryPair)
+#  define AUTO_PROFILER_LABEL_CATEGORY_PAIR(categoryPair)
 #  define AUTO_PROFILER_LABEL_DYNAMIC_CSTR(label, categoryPair, cStr)
 #  define AUTO_PROFILER_LABEL_DYNAMIC_NSCSTRING(label, categoryPair, nsCStr)
 #  define AUTO_PROFILER_LABEL_DYNAMIC_LOSSY_NSSTRING(label, categoryPair, nsStr)
@@ -521,6 +522,16 @@ mozilla::Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
 #  define AUTO_PROFILER_LABEL(label, categoryPair) \
     mozilla::AutoProfilerLabel PROFILER_RAII(      \
         label, nullptr, JS::ProfilingCategoryPair::categoryPair)
+
+
+
+
+
+#  define AUTO_PROFILER_LABEL_CATEGORY_PAIR(categoryPair)     \
+    mozilla::AutoProfilerLabel PROFILER_RAII(                 \
+        "", nullptr, JS::ProfilingCategoryPair::categoryPair, \
+        uint32_t(js::ProfilingStackFrame::Flags::             \
+                     LABEL_DETERMINED_BY_CATEGORY_PAIR))
 
 
 

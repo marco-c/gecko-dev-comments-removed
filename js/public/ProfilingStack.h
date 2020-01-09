@@ -217,7 +217,11 @@ class ProfilingStackFrame {
     
     RELEVANT_FOR_JS = 1 << 7,
 
-    FLAGS_BITCOUNT = 8,
+    
+    
+    LABEL_DETERMINED_BY_CATEGORY_PAIR = 1 << 8,
+
+    FLAGS_BITCOUNT = 9,
     FLAGS_MASK = (1 << FLAGS_BITCOUNT) - 1
   };
 
@@ -254,8 +258,16 @@ class ProfilingStackFrame {
     }
   }
 
-  void setLabel(const char* aLabel) { label_ = aLabel; }
-  const char* label() const { return label_; }
+  const char* label() const {
+    uint32_t flagsAndCategoryPair = flagsAndCategoryPair_;
+    if (flagsAndCategoryPair &
+        uint32_t(Flags::LABEL_DETERMINED_BY_CATEGORY_PAIR)) {
+      auto categoryPair = JS::ProfilingCategoryPair(
+          flagsAndCategoryPair >> uint32_t(Flags::FLAGS_BITCOUNT));
+      return JS::GetProfilingCategoryPairInfo(categoryPair).mLabel;
+    }
+    return label_;
+  }
 
   const char* dynamicString() const { return dynamicString_; }
 
