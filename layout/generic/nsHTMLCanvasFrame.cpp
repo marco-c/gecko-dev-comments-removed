@@ -299,15 +299,10 @@ LogicalSize nsHTMLCanvasFrame::ComputeSize(
     nscoord aAvailableISize, const LogicalSize& aMargin,
     const LogicalSize& aBorder, const LogicalSize& aPadding,
     ComputeSizeFlags aFlags) {
-  nsIntSize size = GetCanvasSize();
+  nsIntSize canvasSizeInPx = GetCanvasSize();
 
-  IntrinsicSize intrinsicSize;
-  intrinsicSize.width.SetCoordValue(
-      nsPresContext::CSSPixelsToAppUnits(size.width));
-  intrinsicSize.height.SetCoordValue(
-      nsPresContext::CSSPixelsToAppUnits(size.height));
-
-  nsSize intrinsicRatio = GetIntrinsicRatio();  
+  IntrinsicSize intrinsicSize = IntrinsicSizeFromCanvasSize(canvasSizeInPx);
+  nsSize intrinsicRatio = IntrinsicRatioFromCanvasSize(canvasSizeInPx);
 
   return ComputeSizeWithIntrinsicDimensions(
       aRenderingContext, aWM, intrinsicSize, intrinsicRatio, aCBSize, aMargin,
