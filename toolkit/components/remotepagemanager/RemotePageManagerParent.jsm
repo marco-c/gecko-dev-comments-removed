@@ -235,12 +235,12 @@ class ChromeMessagePort extends MessagePort {
   }
 
   
-  
-  message({ data: messagedata }) {
-    if (this.destroyed || (messagedata.portID != this.portID)) {
-      return;
-    }
+  async handleRequest(name, data) {
+    throw new Error(`Unknown request ${name}.`);
+  }
 
+  
+  handleMessage(messagedata) {
     let message = {
       target: this.publicPort,
       name: messagedata.name,
