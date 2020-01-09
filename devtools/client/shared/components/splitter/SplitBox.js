@@ -203,7 +203,13 @@ class SplitBox extends Component {
     const { endPanelControl, splitterSize, vert } = this.state;
     const { startPanel, endPanel, minSize, maxSize } = this.props;
 
-    const style = Object.assign({}, this.props.style);
+    const style = Object.assign({
+      
+      
+      
+      "--split-box-controlled-panel-size":
+        `${vert ? this.state.width : this.state.height}`,
+    }, this.props.style);
 
     
     let classNames = ["split-box"];
