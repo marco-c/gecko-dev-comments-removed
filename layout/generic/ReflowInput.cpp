@@ -376,10 +376,7 @@ void ReflowInput::Init(nsPresContext* aPresContext,
   }
 
   InitFrameType(type);
-
-  LogicalSize cbSize =
-      aContainingBlockSize.valueOr(LogicalSize(mWritingMode, -1, -1));
-  InitConstraints(aPresContext, cbSize, aBorder, aPadding, type);
+  InitConstraints(aPresContext, aContainingBlockSize, aBorder, aPadding, type);
 
   InitResizeFlags(aPresContext, type);
   InitDynamicReflowRoot();
@@ -2198,21 +2195,22 @@ static inline bool IsSideCaption(nsIFrame* aFrame,
 
 
 
-void ReflowInput::InitConstraints(nsPresContext* aPresContext,
-                                  const LogicalSize& aContainingBlockSize,
-                                  const nsMargin* aBorder,
-                                  const nsMargin* aPadding,
-                                  LayoutFrameType aFrameType) {
+void ReflowInput::InitConstraints(
+    nsPresContext* aPresContext, const Maybe<LogicalSize>& aContainingBlockSize,
+    const nsMargin* aBorder, const nsMargin* aPadding,
+    LayoutFrameType aFrameType) {
   WritingMode wm = GetWritingMode();
-  DISPLAY_INIT_CONSTRAINTS(mFrame, this, aContainingBlockSize.ISize(wm),
-                           aContainingBlockSize.BSize(wm), aBorder, aPadding);
+  LogicalSize cbSize = aContainingBlockSize.valueOr(
+      LogicalSize(mWritingMode, NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE));
+  DISPLAY_INIT_CONSTRAINTS(mFrame, this, cbSize.ISize(wm), cbSize.BSize(wm),
+                           aBorder, aPadding);
 
   
   
   if (nullptr == mParentReflowInput || mFlags.mDummyParentReflowInput) {
     
-    InitOffsets(wm, aContainingBlockSize.ISize(wm), aFrameType, mFlags, aBorder,
-                aPadding, mStyleDisplay);
+    InitOffsets(wm, cbSize.ISize(wm), aFrameType, mFlags, aBorder, aPadding,
+                mStyleDisplay);
     
     
     ComputedPhysicalMargin().SizeTo(0, 0, 0, 0);
@@ -2242,11 +2240,9 @@ void ReflowInput::InitConstraints(nsPresContext* aPresContext,
     MOZ_ASSERT(mFrame->GetParent());
 
     
-    
-    LogicalSize cbSize =
-        (aContainingBlockSize == LogicalSize(wm, -1, -1))
-            ? ComputeContainingBlockRectangle(aPresContext, cbri)
-            : aContainingBlockSize;
+    if (aContainingBlockSize.isNothing()) {
+      cbSize = ComputeContainingBlockRectangle(aPresContext, cbri);
+    }
 
     
     
@@ -2513,7 +2509,7 @@ void ReflowInput::InitConstraints(nsPresContext* aPresContext,
   }
 
   
-  mContainingBlockSize = aContainingBlockSize;
+  mContainingBlockSize = cbSize;
 }
 
 static void UpdateProp(nsIFrame* aFrame,
