@@ -55,7 +55,6 @@ const THREE_PANE_ENABLED_PREF = "devtools.inspector.three-pane-enabled";
 const THREE_PANE_ENABLED_SCALAR = "devtools.inspector.three_pane_enabled";
 const THREE_PANE_CHROME_ENABLED_PREF = "devtools.inspector.chrome.three-pane-enabled";
 const TELEMETRY_EYEDROPPER_OPENED = "devtools.toolbar.eyedropper.opened";
-const TRACK_CHANGES_PREF = "devtools.inspector.changes.enabled";
 
 
 
@@ -245,8 +244,7 @@ Inspector.prototype = {
     
     
     
-    return this._target.hasActor("changes") &&
-      Services.prefs.getBoolPref(TRACK_CHANGES_PREF);
+    return this._target.hasActor("changes");
   },
 
   

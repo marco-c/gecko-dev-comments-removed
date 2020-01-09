@@ -21,12 +21,9 @@ Services.scriptloader.loadSubScript(
   this);
 
 
-Services.prefs.setBoolPref("devtools.inspector.changes.enabled", true);
-
 Services.prefs.setBoolPref("devtools.inspector.three-pane-enabled", true);
 
 registerCleanupFunction(() => {
-  Services.prefs.clearUserPref("devtools.inspector.changes.enabled");
   Services.prefs.clearUserPref("devtools.inspector.three-pane-enabled");
 });
 
