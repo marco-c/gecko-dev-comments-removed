@@ -11,6 +11,7 @@ var EXPORTED_SYMBOLS = [
   
   
   
+  
 ];
 
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -25,6 +26,7 @@ ChromeUtils.defineModuleGetter(this, "PrivateBrowsingUtils",
   "resource://gre/modules/PrivateBrowsingUtils.jsm");
 
 const ACTION_ID_BOOKMARK = "bookmark";
+const ACTION_ID_PIN_TAB = "pinTab";
 const ACTION_ID_BOOKMARK_SEPARATOR = "bookmarkSeparator";
 const ACTION_ID_BUILT_IN_SEPARATOR = "builtInSeparator";
 const ACTION_ID_TRANSIENT_SEPARATOR = "transientSeparator";
@@ -1081,6 +1083,7 @@ this.PageActions.ACTION_ID_TRANSIENT_SEPARATOR = ACTION_ID_TRANSIENT_SEPARATOR;
 
 
 this.PageActions.ACTION_ID_BOOKMARK = ACTION_ID_BOOKMARK;
+this.PageActions.ACTION_ID_PIN_TAB = ACTION_ID_PIN_TAB;
 this.PageActions.ACTION_ID_BOOKMARK_SEPARATOR = ACTION_ID_BOOKMARK_SEPARATOR;
 this.PageActions.PREF_PERSISTED_ACTIONS = PREF_PERSISTED_ACTIONS;
 
@@ -1107,6 +1110,40 @@ var gBuiltInActions = [
     },
     onCommand(event, buttonNode) {
       browserPageActions(buttonNode).bookmark.onCommand(event, buttonNode);
+    },
+  },
+
+  
+  {
+    id: ACTION_ID_PIN_TAB,
+    
+    title: "",
+    onBeforePlacedInWindow(browserWindow) {
+      function handlePinEvent() {
+        browserPageActions(browserWindow).pinTab.updateState();
+      }
+      function handleWindowUnload() {
+        for (let event of ["TabPinned", "TabUnpinned"]) {
+          browserWindow.removeEventListener(event, handlePinEvent);
+        }
+      }
+
+      for (let event of ["TabPinned", "TabUnpinned"]) {
+        browserWindow.addEventListener(event, handlePinEvent);
+      }
+      browserWindow.addEventListener("unload", handleWindowUnload, {once: true});
+    },
+    onPlacedInPanel(buttonNode) {
+      browserPageActions(buttonNode).pinTab.updateState();
+    },
+    onPlacedInUrlbar(buttonNode) {
+      browserPageActions(buttonNode).pinTab.updateState();
+    },
+    onLocationChange(browserWindow) {
+      browserPageActions(browserWindow).pinTab.updateState();
+    },
+    onCommand(event, buttonNode) {
+      browserPageActions(buttonNode).pinTab.onCommand(event, buttonNode);
     },
   },
 

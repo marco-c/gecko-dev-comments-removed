@@ -979,6 +979,36 @@ BrowserPageActions.bookmark = {
 };
 
 
+BrowserPageActions.pinTab = {
+  updateState() {
+    let action = PageActions.actionForID("pinTab");
+    let { pinned } = gBrowser.selectedTab;
+    if (pinned) {
+      action.setTitle(BrowserPageActions.panelNode.getAttribute("unpinTab-title"));
+    } else {
+      action.setTitle(BrowserPageActions.panelNode.getAttribute("pinTab-title"));
+    }
+
+    let panelButton = BrowserPageActions.panelButtonNodeForActionID(action.id);
+    if (panelButton) {
+      panelButton.toggleAttribute("pinned", pinned);
+    }
+    let urlbarButton = BrowserPageActions.urlbarButtonNodeForActionID(action.id);
+    if (urlbarButton) {
+      urlbarButton.toggleAttribute("pinned", pinned);
+    }
+  },
+
+  onCommand(event, buttonNode) {
+    if (gBrowser.selectedTab.pinned) {
+      gBrowser.unpinTab(gBrowser.selectedTab);
+    } else {
+      gBrowser.pinTab(gBrowser.selectedTab);
+    }
+  },
+};
+
+
 BrowserPageActions.copyURL = {
   onBeforePlacedInWindow(browserWindow) {
     let action = PageActions.actionForID("copyURL");
