@@ -2040,6 +2040,20 @@ VARCACHE_PREF(
 )
 
 
+
+#ifdef EARLY_BETA_OR_EARLIER
+#define PREF_VALUE true
+#else
+#define PREF_VALUE false
+#endif
+VARCACHE_PREF(
+  "privacy.annotate_channels.strict_list.enabled",
+   privacy_annotate_channels_strict_list_enabled,
+  bool, PREF_VALUE
+)
+#undef PREF_VALUE
+
+
 VARCACHE_PREF(
   "privacy.trackingprotection.annotate_channels",
    privacy_trackingprotection_annotate_channels,
