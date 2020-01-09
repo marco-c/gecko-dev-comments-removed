@@ -41,16 +41,8 @@ void ShareableCanvasRenderer::Initialize(const CanvasInitializeData& aData) {
   if (!mGLContext) return;
 
   gl::GLScreenBuffer* screen = mGLContext->Screen();
-
-  gl::SurfaceCaps caps;
-  if (mGLFrontbuffer) {
-    
-    caps = mGLFrontbuffer->mHasAlpha ? gl::SurfaceCaps::ForRGBA()
-                                     : gl::SurfaceCaps::ForRGB();
-  } else {
-    MOZ_ASSERT(screen);
-    caps = screen->mCaps;
-  }
+  MOZ_ASSERT(screen);
+  gl::SurfaceCaps caps = screen->mCaps;
 
   auto forwarder = GetForwarder();
 
@@ -61,17 +53,8 @@ void ShareableCanvasRenderer::Initialize(const CanvasInitializeData& aData) {
 
   UniquePtr<gl::SurfaceFactory> factory =
       gl::GLScreenBuffer::CreateFactory(mGLContext, caps, forwarder, mFlags);
-
-  if (mGLFrontbuffer) {
-    
-    
-    mFactory = std::move(factory);
-    if (!mFactory) {
-      
-      mFactory = MakeUnique<gl::SurfaceFactory_Basic>(mGLContext, caps, mFlags);
-    }
-  } else {
-    if (factory) screen->Morph(std::move(factory));
+  if (factory) {
+    screen->Morph(std::move(factory));
   }
 }
 
@@ -122,14 +105,11 @@ bool ShareableCanvasRenderer::UpdateTarget(DrawTarget* aDestTarget) {
   }
 
   gl::SharedSurface* frontbuffer = nullptr;
-  if (mGLFrontbuffer) {
-    frontbuffer = mGLFrontbuffer.get();
-  } else {
-    gl::GLScreenBuffer* screen = mGLContext->Screen();
-    const auto& front = screen->Front();
-    if (front) {
-      frontbuffer = front->Surf();
-    }
+
+  gl::GLScreenBuffer* screen = mGLContext->Screen();
+  const auto& front = screen->Front();
+  if (front) {
+    frontbuffer = front->Surf();
   }
 
   if (!frontbuffer) {
