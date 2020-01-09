@@ -1102,7 +1102,9 @@ nsContextMenu.prototype = {
     
     
     
-    function saveAsListener() {}
+    function saveAsListener(principal) {
+      this._triggeringPrincipal = principal;
+    }
     saveAsListener.prototype = {
       extListener: null,
 
@@ -1146,7 +1148,7 @@ nsContextMenu.prototype = {
           
           
           saveURL(linkURL, linkText, dialogTitle, bypassCache, false, docURI,
-                  doc, isContentWindowPrivate);
+                  doc, isContentWindowPrivate, this._triggeringPrincipal);
         }
         if (this.extListener)
           this.extListener.onStopRequest(aRequest, aStatusCode);
@@ -1226,7 +1228,7 @@ nsContextMenu.prototype = {
                            timer.TYPE_ONE_SHOT);
 
     
-    channel.asyncOpen(new saveAsListener());
+    channel.asyncOpen(new saveAsListener(this.principal));
   },
 
   
