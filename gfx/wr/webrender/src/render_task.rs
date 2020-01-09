@@ -153,7 +153,7 @@ impl RenderTaskTree {
     
     
     pub fn generate_passes(
-        &self,
+        &mut self,
         main_render_task: Option<RenderTaskId>,
         screen_size: DeviceIntSize,
         gpu_supports_fast_clears: bool,
@@ -179,6 +179,9 @@ impl RenderTaskTree {
                 &mut passes,
             );
         }
+
+
+        self.resolve_target_conflicts(&mut passes);
 
         passes
     }
@@ -275,6 +278,113 @@ impl RenderTaskTree {
                 task.target_kind(),
                 &task.location,
             );
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn resolve_target_conflicts(&mut self, passes: &mut [RenderPass]) {
+        
+        
+        let mut task_redirects = vec![None; self.tasks.len()];
+
+        let mut task_passes = vec![-1; self.tasks.len()];
+        for pass_index in 0..passes.len() {
+            for task in &passes[pass_index].tasks {
+                task_passes[task.index as usize] = pass_index as i32;
+            }
+        }
+
+        for task_index in 0..self.tasks.len() {
+            if task_passes[task_index] < 0 {
+                
+                continue;
+            }
+
+            let pass_index = task_passes[task_index];
+
+            
+            
+            
+            for nth_child in 0..self.tasks[task_index].children.len() {
+                let child_task_index = self.tasks[task_index].children[nth_child].index as usize;
+                let child_pass_index = task_passes[child_task_index];
+
+                if child_pass_index == pass_index - 1 {
+                    
+                    continue;
+                }
+
+                if child_pass_index % 2 != pass_index % 2 {
+                    
+                    
+                    self.tasks[child_task_index].mark_for_saving();
+                    continue;
+                }
+
+                if let Some(blit_id) = task_redirects[child_task_index] {
+                    
+                    
+                    self.tasks[task_index].children[nth_child] = blit_id;
+
+                    
+                    
+                    if child_pass_index < pass_index - 2 {
+                        self.tasks[blit_id.index as usize].mark_for_saving();
+                    }
+
+                    continue;
+                }
+
+                
+                
+                
+
+                let task_id = RenderTaskId {
+                    index: child_task_index as u32,
+                    #[cfg(debug_assertions)]
+                    frame_id: self.frame_id,
+                };
+
+                let mut blit = RenderTask::new_blit(
+                    self.tasks[task_index].location.size(),
+                    BlitSource::RenderTask { task_id },
+                );
+
+                
+                
+                if child_pass_index < pass_index - 2 {
+                    blit.mark_for_saving();
+                }
+
+                let blit_id = RenderTaskId {
+                    index: self.tasks.len() as u32,
+                    #[cfg(debug_assertions)]
+                    frame_id: self.frame_id,
+                };
+
+                self.tasks.push(blit);
+
+                passes[child_pass_index as usize + 1].tasks.push(blit_id);
+
+                self.tasks[task_index].children[nth_child] = blit_id;
+                task_redirects[task_index] = Some(blit_id);
+            }
         }
     }
 
