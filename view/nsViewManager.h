@@ -13,6 +13,7 @@
 #include "nsTArray.h"
 #include "nsDeviceContext.h"
 #include "nsTArray.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
 
 class nsIWidget;
@@ -125,6 +126,7 @@ class nsViewManager final {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   void DispatchEvent(mozilla::WidgetGUIEvent* aEvent, nsView* aViewTarget,
                      nsEventStatus* aStatus);
 
