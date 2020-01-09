@@ -3,13 +3,18 @@ const all_features = document.featurePolicy.allowedFeatures();
 
 
 
-const ignore_features = ["popups", "scripts"];
+const ignore_features_for_auxilary_context = ["popups", "scripts"];
+
+
+const sandbox_features = [
+    "forms", "modals", "orientation-lock", "pointer-lock", "popups",
+    "presentation", "scripts", "top-navigation"];
 
 
 
 
 const features_that_propagate = all_features.filter(
-    (feature) => !ignore_features.includes(feature));
+    (feature) => !ignore_features_for_auxilary_context.includes(feature));
 
 var last_feature_message = null;
 var on_new_feature_callback = null;
@@ -30,9 +35,27 @@ function add_iframe(options) {
 }
 
 
+function wait_for_raf_count(c) {
+  let count = c;
+  let callback = null;
+  function on_raf() {
+    if (--count === 0) {
+      callback();
+      return;
+    }
+    window.requestAnimationFrame(on_raf);
+  }
+  return new Promise( r => {
+    callback = r;
+    window.requestAnimationFrame(on_raf);
+  });
+}
 
 
-function feature_update(feature) {
+
+
+
+function feature_update(feature, optional_timeout_rafs) {
   function reset_for_next_update() {
     return new Promise((r) => {
       const state = last_feature_message.state;
@@ -42,6 +65,13 @@ function feature_update(feature) {
   }
   if (last_feature_message && last_feature_message.feature === feature)
     return reset_for_next_update();
+
+  if (optional_timeout_rafs) {
+    wait_for_raf_count(optional_timeout_rafs).then (() => {
+      last_feature_message = {state: false};
+      on_new_feature_callback();
+    });
+  }
 
   return new Promise((r) => on_new_feature_callback = r)
             .then(() => reset_for_next_update());
