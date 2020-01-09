@@ -23,6 +23,11 @@ const test = new SearchConfigTest({
       },
     }],
   },
+  available: {
+    excluded: [
+      
+    ],
+  },
 });
 
 add_task(async function setup() {
