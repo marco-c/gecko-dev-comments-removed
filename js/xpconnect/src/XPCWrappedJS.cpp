@@ -54,6 +54,7 @@ using namespace mozilla;
 
 
 
+
 bool nsXPCWrappedJS::CanSkip() {
   if (!nsCCUncollectableMarker::sGeneration) {
     return false;
