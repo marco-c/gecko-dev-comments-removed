@@ -263,6 +263,10 @@ class RestyleManager {
         MOZ_ASSERT(aContent->NodeInfo()->NameAtom() ==
                    nsGkAtoms::mozgeneratedcontentafter);
         mAfterContents.AppendElement(aContent->GetParent());
+      } else if (pseudoType == PseudoStyleType::marker) {
+        MOZ_ASSERT(aContent->NodeInfo()->NameAtom() ==
+                   nsGkAtoms::mozgeneratedcontentmarker);
+        mMarkerContents.AppendElement(aContent->GetParent());
       }
     }
 
@@ -284,6 +288,7 @@ class RestyleManager {
     nsTArray<RefPtr<nsIContent>> mContents;
     nsTArray<RefPtr<nsIContent>> mBeforeContents;
     nsTArray<RefPtr<nsIContent>> mAfterContents;
+    nsTArray<RefPtr<nsIContent>> mMarkerContents;
   };
 
   

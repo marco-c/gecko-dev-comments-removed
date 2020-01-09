@@ -123,6 +123,10 @@ class OwningElementRef final {
 
     return mTarget.mPseudoType == PseudoStyleType::NotPseudo ||
            (mTarget.mPseudoType == PseudoStyleType::before &&
+            aOther.mTarget.mPseudoType == PseudoStyleType::after) ||
+           (mTarget.mPseudoType == PseudoStyleType::marker &&
+            aOther.mTarget.mPseudoType == PseudoStyleType::before) ||
+           (mTarget.mPseudoType == PseudoStyleType::marker &&
             aOther.mTarget.mPseudoType == PseudoStyleType::after);
   }
 
