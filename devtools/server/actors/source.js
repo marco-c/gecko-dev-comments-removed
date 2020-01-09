@@ -568,11 +568,11 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
 
 
 
-  setBreakpoint: function(line, column, condition, noSliding) {
+  setBreakpoint: function(line, column, options, noSliding) {
     const location = new GeneratedLocation(this, line, column);
     const actor = this._getOrCreateBreakpointActor(
       location,
-      condition,
+      options,
       noSliding
     );
 
@@ -605,8 +605,7 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
 
 
 
-
-  _getOrCreateBreakpointActor: function(generatedLocation, condition, noSliding) {
+  _getOrCreateBreakpointActor: function(generatedLocation, options, noSliding) {
     let actor = this.breakpointActorMap.getActor(generatedLocation);
     if (!actor) {
       actor = new BreakpointActor(this.threadActor, generatedLocation);
@@ -614,7 +613,7 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
       this.breakpointActorMap.setActor(generatedLocation, actor);
     }
 
-    actor.condition = condition;
+    actor.setOptions(options);
 
     return this._setBreakpoint(actor, noSliding);
   },

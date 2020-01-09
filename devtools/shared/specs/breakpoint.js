@@ -3,13 +3,19 @@
 
 "use strict";
 
-const {generateActorSpec} = require("devtools/shared/protocol");
+const {Arg, generateActorSpec} = require("devtools/shared/protocol");
 
 const breakpointSpec = generateActorSpec({
   typeName: "breakpoint",
 
   methods: {
     delete: {},
+
+    setOptions: {
+      request: {
+        options: Arg(0, "nullable:json"),
+      },
+    },
   },
 });
 

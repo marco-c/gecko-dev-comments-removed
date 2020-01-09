@@ -170,6 +170,9 @@ RootActor.prototype = {
     
     
     perfActorVersion: 1,
+    
+    
+    nativeLogpoints: true,
   },
 
   

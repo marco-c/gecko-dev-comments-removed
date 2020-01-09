@@ -32,13 +32,17 @@ function test_simple_breakpoint() {
       gThreadClient,
       packet.frame.where.actor
     );
-    source.setBreakpoint({
+    await source.setBreakpoint({
       line: 3,
-      condition: "a === 2",
+      options: { condition: "a === 2" },
+    });
+    source.setBreakpoint({
+      line: 4,
+      options: { condition: "a === 1" },
     }).then(function([response, bpClient]) {
       gThreadClient.addOneTimeListener("paused", function(event, packet) {
         
-        Assert.equal(packet.why.type, "debuggerStatement");
+        Assert.equal(packet.why.type, "breakpoint");
         Assert.equal(packet.frame.where.line, 4);
 
         
@@ -57,6 +61,7 @@ function test_simple_breakpoint() {
   Cu.evalInSandbox("debugger;\n" +   
                    "var a = 1;\n" +  
                    "var b = 2;\n" +  
+                   "b++;" +          
                    "debugger;",      
                    gDebuggee,
                    "1.8",

@@ -178,7 +178,7 @@ SourceClient.prototype = {
 
 
 
-  setBreakpoint: function({ line, column, condition, noSliding }) {
+  setBreakpoint: function({ line, column, options, noSliding }) {
     
     const doSetBreakpoint = callback => {
       const location = {
@@ -190,9 +190,22 @@ SourceClient.prototype = {
         to: this.actor,
         type: "setBreakpoint",
         location,
-        condition,
+        options,
         noSliding,
       };
+
+      
+      
+      if (options && !this._client.mainRoot.traits.nativeLogpoints) {
+        delete packet.options;
+        if (options.logValue) {
+          
+          
+          packet.condition = `console.log(${options.logValue})`;
+        } else {
+          packet.condition = options.condition;
+        }
+      }
 
       return this._client.request(packet).then(response => {
         
@@ -204,7 +217,7 @@ SourceClient.prototype = {
             this,
             response.actor,
             location,
-            condition
+            options
           );
         }
         if (callback) {

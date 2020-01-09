@@ -7,7 +7,7 @@
 const promise = require("devtools/shared/deprecated-sync-thenables");
 
 const eventSource = require("devtools/shared/client/event-source");
-const {DebuggerClient} = require("devtools/shared/client/debugger-client");
+const {arg, DebuggerClient} = require("devtools/shared/client/debugger-client");
 
 
 
@@ -24,7 +24,7 @@ const {DebuggerClient} = require("devtools/shared/client/debugger-client");
 
 
 
-function BreakpointClient(client, sourceClient, actor, location, condition) {
+function BreakpointClient(client, sourceClient, actor, location, options) {
   this._client = client;
   this._actor = actor;
   this.location = location;
@@ -32,11 +32,7 @@ function BreakpointClient(client, sourceClient, actor, location, condition) {
   this.location.url = sourceClient.url;
   this.source = sourceClient;
   this.request = this._client.request;
-
-  
-  if (condition) {
-    this.condition = condition;
-  }
+  this.options = options;
 }
 
 BreakpointClient.prototype = {
@@ -57,31 +53,45 @@ BreakpointClient.prototype = {
   }),
 
   
+  setOptionsRequester: DebuggerClient.requester({
+    type: "setOptions",
+    options: arg(0),
+  }, {
+    before(packet) {
+      this.options = packet.options;
+      return packet;
+    },
+  }),
+
+  
 
 
-  setCondition: function(gThreadClient, condition) {
-    const deferred = promise.defer();
+  setOptions: function(options) {
+    if (this._client.mainRoot.traits.nativeLogpoints) {
+      this.setOptionsRequester(options);
+    } else {
+      
+      const deferred = promise.defer();
 
-    const info = {
-      line: this.location.line,
-      column: this.location.column,
-      condition: condition,
-    };
+      const info = {
+        line: this.location.line,
+        column: this.location.column,
+        options,
+      };
 
-    
-    
-    this.remove(response => {
-      if (response && response.error) {
-        deferred.reject(response);
-        return;
-      }
+      
+      
+      this.remove(response => {
+        if (response && response.error) {
+          deferred.reject(response);
+          return;
+        }
 
-      deferred.resolve(this.source.setBreakpoint(info).then(([, newBreakpoint]) => {
-        return newBreakpoint;
-      }));
-    });
-
-    return deferred.promise;
+        deferred.resolve(this.source.setBreakpoint(info).then(([, newBreakpoint]) => {
+          return newBreakpoint;
+        }));
+      });
+    }
   },
 };
 

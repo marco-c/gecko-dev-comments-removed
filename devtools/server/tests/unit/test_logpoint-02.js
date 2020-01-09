@@ -14,10 +14,10 @@ var gThreadClient;
 
 function run_test() {
   initTestDebuggerServer();
-  gDebuggee = addTestGlobal("test-conditional-breakpoint");
+  gDebuggee = addTestGlobal("test-logpoint");
   gClient = new DebuggerClient(DebuggerServer.connectPipe());
   gClient.connect().then(function() {
-    attachTestTabAndResume(gClient, "test-conditional-breakpoint",
+    attachTestTabAndResume(gClient, "test-logpoint",
                            function(response, targetFront, threadClient) {
                              gThreadClient = threadClient;
                              test_simple_breakpoint();
@@ -32,34 +32,31 @@ function test_simple_breakpoint() {
       gThreadClient,
       packet.frame.where.actor
     );
-    source.setBreakpoint({
-      line: 3,
-      options: { condition: "throw new Error()" },
-    }).then(function([response, bpClient]) {
-      gThreadClient.addOneTimeListener("paused", function(event, packet) {
-        
-        Assert.equal(packet.why.type, "breakpointConditionThrown");
-        Assert.equal(packet.frame.where.line, 3);
 
-        
-        bpClient.remove(function(response) {
-          gThreadClient.resume(function() {
-            finishClient(gClient);
-          });
-        });
-      });
-      
-      gThreadClient.resume();
+    
+    await source.setBreakpoint({
+      line: 5,
+      options: { logValue: "a", condition: "a === 5" },
     });
+
+    
+    gThreadClient.resume();
   });
 
   
-  Cu.evalInSandbox("debugger;\n" +   
+  
+  Cu.evalInSandbox("var console = { log: v => { this.logValue = v } };\n" + 
+                   "debugger;\n" + 
                    "var a = 1;\n" +  
-                   "var b = 2;\n",  
+                   "while (a < 10) {\n" + 
+                   "  a++;\n" + 
+                   "}",
                    gDebuggee,
                    "1.8",
                    "test.js",
                    1);
   
+
+  Assert.equal(gDebuggee.logValue, 5);
+  finishClient(gClient);
 }

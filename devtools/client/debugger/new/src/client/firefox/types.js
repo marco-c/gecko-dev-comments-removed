@@ -398,7 +398,7 @@ export type BreakpointClient = {
     line: number,
     column: ?number
   },
-  setCondition: (ThreadClient, ?string) => Promise<BreakpointClient>,
+  setOptions: (BreakpointOptions) => Promise<BreakpointClient>,
   
   source: SourceClient,
   options: BreakpointOptions
