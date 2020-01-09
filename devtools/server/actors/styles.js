@@ -206,6 +206,26 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
 
 
 
+  getRule: function(ruleId) {
+    let match = null;
+
+    for (const actor of this.refMap.values()) {
+      if (actor.actorID === ruleId) {
+        match = actor;
+        continue;
+      }
+    }
+
+    return match;
+  },
+
+  
+
+
+
+
+
+
 
 
 
