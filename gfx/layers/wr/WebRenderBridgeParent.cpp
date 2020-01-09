@@ -1072,10 +1072,7 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvEmptyTransaction(
             mCompositorBridge, GetLayersId(), mChildLayersObserverEpoch, true));
   }
 
-  
-  
-  
-  if (txn.IsResourceUpdatesEmpty() && !txn.IsRenderedFrameInvalidated()) {
+  if (txn.IsResourceUpdatesEmpty()) {
     
     
     
