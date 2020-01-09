@@ -12,10 +12,12 @@
 #include "nsIInterfaceRequestor.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsILoadGroup.h"
+#include "nsINestedURI.h"
 #include "nsINetUtil.h"
 #include "nsIRequest.h"
 #include "nsILoadInfo.h"
 #include "nsIIOService.h"
+#include "nsIURI.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/Services.h"
 #include "mozilla/Unused.h"
@@ -24,7 +26,6 @@
 #include "nsServiceManagerUtils.h"
 #include "nsString.h"
 
-class nsIURI;
 class nsIPrincipal;
 class nsIAsyncStreamCopier;
 class nsIAuthPrompt;
@@ -38,7 +39,6 @@ class nsIFileStream;
 class nsIInputStream;
 class nsIInputStreamPump;
 class nsIInterfaceRequestor;
-class nsINestedURI;
 class nsIOutputStream;
 class nsIParentChannel;
 class nsIPersistentProperties;
@@ -716,6 +716,44 @@ nsresult NS_URIChainHasFlags(nsIURI *uri, uint32_t flags, bool *result);
 
 
 already_AddRefed<nsIURI> NS_GetInnermostURI(nsIURI *aURI);
+
+
+
+
+
+
+inline nsresult NS_GetInnermostURIHost(nsIURI *aURI, nsACString &aHost) {
+  aHost.Truncate();
+
+  
+  
+  
+  nsINestedURI *nestedURI = nullptr;
+  nsresult rv = CallQueryInterface(aURI, &nestedURI);
+  if (NS_SUCCEEDED(rv)) {
+    
+    nsCOMPtr<nsIURI> uri;
+    rv = nestedURI->GetInnermostURI(getter_AddRefs(uri));
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
+    NS_RELEASE(nestedURI);
+
+    rv = uri->GetAsciiHost(aHost);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+  } else {
+    
+    rv = aURI->GetAsciiHost(aHost);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+  }
+
+  return NS_OK;
+}
 
 
 
