@@ -4598,7 +4598,7 @@ CallIRGenerator::CallIRGenerator(JSContext* cx, HandleScript script,
                                  jsbytecode* pc, JSOp op, ICState::Mode mode,
                                  uint32_t argc, HandleValue callee,
                                  HandleValue thisval, HandleValue newTarget,
-                                 HandleValueArray args, bool isFirstStub)
+                                 HandleValueArray args)
     : IRGenerator(cx, script, pc, CacheKind::Call, mode),
       op_(op),
       argc_(argc),
@@ -4607,8 +4607,7 @@ CallIRGenerator::CallIRGenerator(JSContext* cx, HandleScript script,
       newTarget_(newTarget),
       args_(args),
       typeCheckInfo_(cx,  true),
-      cacheIRStubKind_(BaselineCacheIRStubKind::Regular),
-      isFirstStub_(isFirstStub) {}
+      cacheIRStubKind_(BaselineCacheIRStubKind::Regular) {}
 
 AttachDecision CallIRGenerator::tryAttachArrayPush() {
   
@@ -5021,14 +5020,6 @@ bool CallIRGenerator::getTemplateObjectForScripted(HandleFunction calleeFunc,
   return true;
 }
 
-AttachDecision CallIRGenerator::tryAttachSelfHosted(HandleFunction calleeFunc) {
-  if (isOptimizableConstStringSplit(calleeFunc)) {
-    return AttachDecision::Deferred;
-  }
-
-  return AttachDecision::NoAction;
-}
-
 AttachDecision CallIRGenerator::tryAttachCallScripted(
     HandleFunction calleeFunc) {
   if (JitOptions.disableCacheIRCalls) {
@@ -5077,8 +5068,6 @@ AttachDecision CallIRGenerator::tryAttachCallScripted(
   if (IsIonEnabled(cx_)) {
     EnsureTrackPropertyTypes(cx_, calleeFunc, NameToId(cx_->names().prototype));
   }
-
-  TRY_ATTACH(tryAttachSelfHosted(calleeFunc));
 
   RootedObject templateObj(cx_);
   bool skipAttach = false;
@@ -5438,119 +5427,6 @@ AttachDecision CallIRGenerator::tryAttachStub() {
   return AttachDecision::NoAction;
 }
 
-bool CallIRGenerator::isOptimizableConstStringSplit(HandleFunction calleeFunc) {
-  
-  if (!isFirstStub_) {
-    return false;
-  }
-
-  
-  if (!thisval_.isString()) {
-    return false;
-  }
-
-  
-  if (argc_ != 1 || !args_[0].isString()) {
-    return false;
-  }
-
-  
-  if (!thisval_.toString()->isAtom() || !args_[0].toString()->isAtom()) {
-    return false;
-  }
-
-  
-  if (calleeFunc->realm() != cx_->realm()) {
-    return false;
-  }
-
-  
-  if (!IsSelfHostedFunctionWithName(calleeFunc, cx_->names().String_split)) {
-    return false;
-  }
-
-  
-  
-  
-  
-  return true;
-}
-
-AttachDecision CallIRGenerator::tryAttachConstStringSplit(
-    HandleValue result, HandleFunction calleeFunc) {
-  if (JitOptions.disableCacheIRCalls) {
-    return AttachDecision::NoAction;
-  }
-
-  if (!isOptimizableConstStringSplit(calleeFunc)) {
-    return AttachDecision::NoAction;
-  }
-
-  RootedString str(cx_, thisval_.toString());
-  RootedString sep(cx_, args_[0].toString());
-  RootedArrayObject resultObj(cx_, &result.toObject().as<ArrayObject>());
-  uint32_t initLength = resultObj->getDenseInitializedLength();
-  MOZ_ASSERT(initLength == resultObj->length(),
-             "string-split result is a fully initialized array");
-
-  
-  RootedArrayObject arrObj(cx_);
-  arrObj = NewFullyAllocatedArrayTryReuseGroup(cx_, resultObj, initLength,
-                                               TenuredObject);
-  if (!arrObj) {
-    cx_->clearPendingException();
-    return AttachDecision::NoAction;
-  }
-  arrObj->ensureDenseInitializedLength(cx_, 0, initLength);
-
-  
-  if (initLength > 0) {
-    
-    
-    AddTypePropertyId(cx_, arrObj, JSID_VOID, TypeSet::StringType());
-
-    for (uint32_t i = 0; i < initLength; i++) {
-      JSAtom* str =
-          js::AtomizeString(cx_, resultObj->getDenseElement(i).toString());
-      if (!str) {
-        cx_->clearPendingException();
-        return AttachDecision::NoAction;
-      }
-      arrObj->initDenseElement(i, StringValue(str));
-    }
-  }
-
-  Int32OperandId argcId(writer.setInputOperandId(0));
-
-  
-  ValOperandId calleeValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::Callee, argc_);
-  ObjOperandId calleeObjId = writer.guardIsObject(calleeValId);
-  writer.guardSpecificFunction(calleeObjId, calleeFunc);
-
-  
-  ValOperandId strValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::This, argc_);
-  StringOperandId strStringId = writer.guardIsString(strValId);
-  FieldOffset strOffset = writer.guardSpecificAtom(strStringId, &str->asAtom());
-
-  
-  ValOperandId sepValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
-  StringOperandId sepStringId = writer.guardIsString(sepValId);
-  FieldOffset sepOffset = writer.guardSpecificAtom(sepStringId, &sep->asAtom());
-
-  FieldOffset templateOffset = writer.callConstStringSplitResult(arrObj);
-
-  writer.typeMonitorResult();
-  cacheIRStubKind_ = BaselineCacheIRStubKind::Monitored;
-
-  writer.metaConstStringSplitData(strOffset, sepOffset, templateOffset);
-
-  trackAttached("Const string split");
-  return AttachDecision::Attach;
-}
-
 AttachDecision CallIRGenerator::tryAttachDeferredStub(HandleValue result) {
   AutoAssertNoPendingException aanpe(cx_);
 
@@ -5560,11 +5436,7 @@ AttachDecision CallIRGenerator::tryAttachDeferredStub(HandleValue result) {
   
   MOZ_ASSERT(mode_ == ICState::Mode::Specialized);
 
-  RootedFunction calleeFunc(cx_, &callee_.toObject().as<JSFunction>());
-
-  TRY_ATTACH(tryAttachConstStringSplit(result, calleeFunc));
-
-  MOZ_ASSERT_UNREACHABLE("Unexpected deferred function failure");
+  MOZ_ASSERT_UNREACHABLE("No deferred functions currently exist");
   return AttachDecision::NoAction;
 }
 

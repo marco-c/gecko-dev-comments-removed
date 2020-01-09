@@ -4385,13 +4385,3 @@ bool CacheIRCompiler::emitMetaTwoByte() {
 
   return true;
 }
-
-
-bool CacheIRCompiler::emitMetaThreeByte() {
-  mozilla::Unused << reader.readByte();  
-  mozilla::Unused << reader.readByte();  
-  mozilla::Unused << reader.readByte();  
-  mozilla::Unused << reader.readByte();  
-
-  return true;
-}
