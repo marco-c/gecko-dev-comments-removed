@@ -256,12 +256,6 @@ class TemporaryTypeSet;
 
 
 
-
-
-
-
-
-
 class TypeSet {
  protected:
   

@@ -3976,7 +3976,6 @@ void JSObject::addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf,
 
 size_t JSObject::sizeOfIncludingThisInNursery() const {
   
-  
 
   MOZ_ASSERT(!isTenured());
 

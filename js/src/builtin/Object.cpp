@@ -799,7 +799,6 @@ static bool TryAssignNative(JSContext* cx, HandleObject to, HandleObject from,
 
     
     
-    
     if (MOZ_LIKELY(from->isNative() &&
                    from->as<NativeObject>().lastProperty() == fromShape &&
                    shape->isDataProperty())) {
@@ -1436,7 +1435,6 @@ static bool TryEnumerableOwnPropertiesNative(JSContext* cx, HandleObject obj,
       Shape* shape = shapes[i - 1];
       id = shape->propid();
 
-      
       
       
       if (obj->isNative() &&
