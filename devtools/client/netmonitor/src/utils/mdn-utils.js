@@ -214,10 +214,20 @@ function getFilterBoxURL() {
     `#Filtering_by_properties`;
 }
 
+
+
+
+
+
+function getTrackingProtectionURL() {
+  return `${MDN_URL}Mozilla/Firefox/Privacy/Tracking_Protection${getGAParams()}`;
+}
+
 module.exports = {
   getHeadersURL,
   getHTTPStatusCodeURL,
   getNetMonitorTimingsURL,
   getPerformanceAnalysisURL,
   getFilterBoxURL,
+  getTrackingProtectionURL,
 };
