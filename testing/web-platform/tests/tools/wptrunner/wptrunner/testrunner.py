@@ -637,7 +637,6 @@ class TestRunnerManager(threading.Thread):
                 
                 restart = True
         else:
-            test = test
             test_group = self.state.test_group
             group_metadata = self.state.group_metadata
         if restart:
