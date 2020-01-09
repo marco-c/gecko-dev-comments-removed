@@ -1676,46 +1676,44 @@ nsresult nsLocalFile::CopySingleFile(nsIFile* aSourceFile, nsIFile* aDestParent,
     return rv;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  int copyOK;
-  DWORD dwCopyFlags = COPY_FILE_ALLOW_DECRYPTED_DESTINATION;
-  bool path1Remote, path2Remote;
-  if (!IsRemoteFilePath(filePath.get(), path1Remote) ||
-      !IsRemoteFilePath(destPath.get(), path2Remote) || path1Remote ||
-      path2Remote) {
-    dwCopyFlags |= COPY_FILE_NO_BUFFERING;
-  }
-
   if (FilePreferences::IsBlockedUNCPath(destPath)) {
     return NS_ERROR_FILE_ACCESS_DENIED;
   }
 
-  if (!move) {
-    copyOK = ::CopyFileExW(filePath.get(), destPath.get(), nullptr, nullptr,
-                           nullptr, dwCopyFlags);
-  } else {
+  int copyOK = 0;
+  if (move) {
     copyOK = ::MoveFileExW(filePath.get(), destPath.get(),
                            MOVEFILE_REPLACE_EXISTING);
+  }
+
+  
+  if (!copyOK && (!move || GetLastError() == ERROR_NOT_SAME_DEVICE)) {
+    
+    if (move && (aOptions & Rename)) {
+      return NS_ERROR_FILE_ACCESS_DENIED;
+    }
 
     
     
-    if (!copyOK && GetLastError() == ERROR_NOT_SAME_DEVICE) {
-      if (aOptions & Rename) {
-        return NS_ERROR_FILE_ACCESS_DENIED;
-      }
-      copyOK = CopyFileExW(filePath.get(), destPath.get(), nullptr, nullptr,
+    
+    
+    
+    
+    
+    
+    DWORD dwCopyFlags = COPY_FILE_ALLOW_DECRYPTED_DESTINATION;
+    bool path1Remote, path2Remote;
+    if (!IsRemoteFilePath(filePath.get(), path1Remote) ||
+        !IsRemoteFilePath(destPath.get(), path2Remote) || path1Remote ||
+        path2Remote) {
+      dwCopyFlags |= COPY_FILE_NO_BUFFERING;
+    }
+
+    copyOK = ::CopyFileExW(filePath.get(), destPath.get(), nullptr, nullptr,
                            nullptr, dwCopyFlags);
 
-      if (copyOK) {
-        DeleteFileW(filePath.get());
-      }
+    if (move && copyOK) {
+      DeleteFileW(filePath.get());
     }
   }
 
@@ -1746,6 +1744,10 @@ nsresult nsLocalFile::CopyMove(nsIFile* aParentDir, const nsAString& aNewName,
                                uint32_t aOptions) {
   bool move = aOptions & (Move | Rename);
   bool followSymlinks = aOptions & FollowSymlinks;
+  
+  
+  
+  bool targetInSameDirectory = !aParentDir;
 
   nsCOMPtr<nsIFile> newParentDir = aParentDir;
   
@@ -1773,51 +1775,53 @@ nsresult nsLocalFile::CopyMove(nsIFile* aParentDir, const nsAString& aNewName,
     return NS_ERROR_FILE_DESTINATION_NOT_DIR;
   }
 
-  
-  bool exists = false;
-  rv = newParentDir->Exists(&exists);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  if (!exists) {
-    rv = newParentDir->Create(DIRECTORY_TYPE,
-                              0644);  
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-  } else {
-    bool isDir = false;
-    rv = newParentDir->IsDirectory(&isDir);
+  if (!targetInSameDirectory) {
+    
+    bool exists = false;
+    rv = newParentDir->Exists(&exists);
     if (NS_FAILED(rv)) {
       return rv;
     }
 
-    if (!isDir) {
-      if (followSymlinks) {
-        bool isLink = false;
-        rv = newParentDir->IsSymlink(&isLink);
-        if (NS_FAILED(rv)) {
-          return rv;
-        }
+    if (!exists) {
+      rv = newParentDir->Create(DIRECTORY_TYPE,
+                                0644);  
+      if (NS_FAILED(rv)) {
+        return rv;
+      }
+    } else {
+      bool isDir = false;
+      rv = newParentDir->IsDirectory(&isDir);
+      if (NS_FAILED(rv)) {
+        return rv;
+      }
 
-        if (isLink) {
-          nsAutoString target;
-          rv = newParentDir->GetTarget(target);
+      if (!isDir) {
+        if (followSymlinks) {
+          bool isLink = false;
+          rv = newParentDir->IsSymlink(&isLink);
           if (NS_FAILED(rv)) {
             return rv;
           }
 
-          nsCOMPtr<nsIFile> realDest = new nsLocalFile();
-          rv = realDest->InitWithPath(target);
-          if (NS_FAILED(rv)) {
-            return rv;
-          }
+          if (isLink) {
+            nsAutoString target;
+            rv = newParentDir->GetTarget(target);
+            if (NS_FAILED(rv)) {
+              return rv;
+            }
 
-          return CopyMove(realDest, aNewName, aOptions);
+            nsCOMPtr<nsIFile> realDest = new nsLocalFile();
+            rv = realDest->InitWithPath(target);
+            if (NS_FAILED(rv)) {
+              return rv;
+            }
+
+            return CopyMove(realDest, aNewName, aOptions);
+          }
+        } else {
+          return NS_ERROR_FILE_DESTINATION_NOT_DIR;
         }
-      } else {
-        return NS_ERROR_FILE_DESTINATION_NOT_DIR;
       }
     }
   }
@@ -1897,6 +1901,7 @@ nsresult nsLocalFile::CopyMove(nsIFile* aParentDir, const nsAString& aNewName,
 
     allocatedNewName.Truncate();
 
+    bool exists = false;
     
     rv = target->Exists(&exists);
     if (NS_FAILED(rv)) {
@@ -2036,6 +2041,11 @@ nsLocalFile::MoveTo(nsIFile* aNewParentDir, const nsAString& aNewName) {
 
 NS_IMETHODIMP
 nsLocalFile::RenameTo(nsIFile* aNewParentDir, const nsAString& aNewName) {
+  
+  
+  
+  bool targetInSameDirectory = !aNewParentDir;
+
   nsCOMPtr<nsIFile> targetParentDir = aNewParentDir;
   
   
@@ -2061,26 +2071,28 @@ nsLocalFile::RenameTo(nsIFile* aNewParentDir, const nsAString& aNewName) {
     return NS_ERROR_FILE_DESTINATION_NOT_DIR;
   }
 
-  
-  bool exists = false;
-  rv = targetParentDir->Exists(&exists);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
+  if (!targetInSameDirectory) {
+    
+    bool exists = false;
+    rv = targetParentDir->Exists(&exists);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
 
-  if (!exists) {
-    rv = targetParentDir->Create(DIRECTORY_TYPE, 0644);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-  } else {
-    bool isDir = false;
-    rv = targetParentDir->IsDirectory(&isDir);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-    if (!isDir) {
-      return NS_ERROR_FILE_DESTINATION_NOT_DIR;
+    if (!exists) {
+      rv = targetParentDir->Create(DIRECTORY_TYPE, 0644);
+      if (NS_FAILED(rv)) {
+        return rv;
+      }
+    } else {
+      bool isDir = false;
+      rv = targetParentDir->IsDirectory(&isDir);
+      if (NS_FAILED(rv)) {
+        return rv;
+      }
+      if (!isDir) {
+        return NS_ERROR_FILE_DESTINATION_NOT_DIR;
+      }
     }
   }
 
