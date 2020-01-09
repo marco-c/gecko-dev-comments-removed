@@ -86,26 +86,6 @@ public final class GeckoSessionSettings implements Parcelable {
 
 
 
-
-
-
-
-
-
-
-
-        public @NonNull Builder contextId(final @Nullable String value) {
-            mSettings.setContextId(value);
-            return this;
-        }
-
-        
-
-
-
-
-
-
         public @NonNull Builder useMultiprocess(final boolean flag) {
             mSettings.setUseMultiprocess(flag);
             return this;
@@ -233,7 +213,6 @@ public final class GeckoSessionSettings implements Parcelable {
 
 
     public static final int VIEWPORT_MODE_MOBILE = 0;
-
     
 
 
@@ -335,12 +314,6 @@ public final class GeckoSessionSettings implements Parcelable {
     private static final Key<Boolean> FULL_ACCESSIBILITY_TREE =
             new Key<Boolean>("fullAccessibilityTree",  false,  null);
 
-    
-
-
-    private static final Key<String> CONTEXT_ID =
-        new Key<String>("sessionContextId",  true,  null);
-
     private final GeckoSession mSession;
     private final GeckoBundle mBundle;
 
@@ -374,7 +347,6 @@ public final class GeckoSessionSettings implements Parcelable {
         mBundle.putString(USER_AGENT_OVERRIDE.name, null);
         mBundle.putInt(VIEWPORT_MODE.name, VIEWPORT_MODE_MOBILE);
         mBundle.putInt(DISPLAY_MODE.name, DISPLAY_MODE_BROWSER);
-        mBundle.putString(CONTEXT_ID.name, null);
     }
 
     
@@ -465,15 +437,6 @@ public final class GeckoSessionSettings implements Parcelable {
 
     public boolean getUsePrivateMode() {
         return getBoolean(USE_PRIVATE_MODE);
-    }
-
-    
-
-
-
-
-    public @Nullable String getContextId() {
-        return getString(CONTEXT_ID);
     }
 
     
@@ -632,10 +595,6 @@ public final class GeckoSessionSettings implements Parcelable {
 
     public void setUserAgentOverride(final @Nullable String value) {
         setString(USER_AGENT_OVERRIDE, value);
-    }
-
-    private void setContextId(final @Nullable String value) {
-        setString(CONTEXT_ID, value);
     }
 
     private void setString(final Key<String> key, final String value) {
