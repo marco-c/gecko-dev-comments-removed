@@ -414,15 +414,13 @@ WebConsoleClient.prototype = {
 
 
 
-
-
-  getPreferences: function(preferences, onResponse) {
+  getPreferences: function(preferences) {
     const packet = {
       to: this.actorID,
       type: "getPreferences",
       preferences: preferences,
     };
-    return this._client.request(packet, onResponse);
+    return this._client.request(packet);
   },
 
   
@@ -433,15 +431,13 @@ WebConsoleClient.prototype = {
 
 
 
-
-
-  setPreferences: function(preferences, onResponse) {
+  setPreferences: function(preferences) {
     const packet = {
       to: this.actorID,
       type: "setPreferences",
       preferences: preferences,
     };
-    return this._client.request(packet, onResponse);
+    return this._client.request(packet);
   },
 
   
@@ -632,15 +628,13 @@ WebConsoleClient.prototype = {
 
 
 
-
-
-  sendHTTPRequest: function(data, onResponse) {
+  sendHTTPRequest: function(data) {
     const packet = {
       to: this.actorID,
       type: "sendHTTPRequest",
       request: data,
     };
-    return this._client.request(packet, onResponse);
+    return this._client.request(packet);
   },
 
   
@@ -653,15 +647,13 @@ WebConsoleClient.prototype = {
 
 
 
-
-
-  startListeners: function(listeners, onResponse) {
+  startListeners: function(listeners) {
     const packet = {
       to: this.actorID,
       type: "startListeners",
       listeners: listeners,
     };
-    return this._client.request(packet, onResponse);
+    return this._client.request(packet);
   },
 
   

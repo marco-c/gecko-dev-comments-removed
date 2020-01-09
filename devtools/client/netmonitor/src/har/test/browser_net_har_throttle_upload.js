@@ -40,11 +40,7 @@ async function throttleUploadTest(actuallyThrottle) {
   };
 
   info("sending throttle request");
-  await new Promise((resolve) => {
-    connector.setPreferences(request, (response) => {
-      resolve(response);
-    });
-  });
+  await connector.setPreferences(request);
 
   
   const onEventTimings = monitor.panelWin.api.once(EVENTS.RECEIVED_EVENT_TIMINGS);

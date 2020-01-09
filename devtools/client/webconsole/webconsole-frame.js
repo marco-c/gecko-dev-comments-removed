@@ -8,7 +8,6 @@
 
 const {Utils: WebConsoleUtils} = require("devtools/client/webconsole/utils");
 const EventEmitter = require("devtools/shared/event-emitter");
-const promise = require("promise");
 const defer = require("devtools/shared/defer");
 const Services = require("Services");
 const { gDevTools } = require("devtools/client/framework/devtools");
@@ -169,29 +168,19 @@ WebConsoleFrame.prototype = {
 
 
 
-  setSaveRequestAndResponseBodies(value) {
+  async setSaveRequestAndResponseBodies(value) {
     if (!this.webConsoleClient) {
       
-      return promise.resolve(null);
+      return null;
     }
 
-    const deferred = defer();
     const newValue = !!value;
     const toSet = {
       "NetworkMonitor.saveRequestAndResponseBodies": newValue,
     };
 
     
-    this.webConsoleClient.setPreferences(toSet, response => {
-      if (!response.error) {
-        this._saveRequestAndResponseBodies = newValue;
-        deferred.resolve(response);
-      } else {
-        deferred.reject(response.error);
-      }
-    });
-
-    return deferred.promise;
+    return this.webConsoleClient.setPreferences(toSet);
   },
 
   

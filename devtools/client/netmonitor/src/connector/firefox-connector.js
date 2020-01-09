@@ -229,7 +229,7 @@ class FirefoxConnector {
 
 
   sendHTTPRequest(data, callback) {
-    this.webConsoleClient.sendHTTPRequest(data, callback);
+    this.webConsoleClient.sendHTTPRequest(data).then(callback);
   }
 
   
@@ -238,8 +238,8 @@ class FirefoxConnector {
 
 
 
-  setPreferences(request, callback) {
-    this.webConsoleClient.setPreferences(request, callback);
+  setPreferences(request) {
+    return this.webConsoleClient.setPreferences(request);
   }
 
   
