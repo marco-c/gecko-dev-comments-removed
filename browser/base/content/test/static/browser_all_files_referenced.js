@@ -128,6 +128,10 @@ var whitelist = [
 
   
   
+  {file: "resource://app/modules/EveryWindow.jsm"},
+
+  
+  
   {file: "chrome://browser/locale/taskbar.properties",
    platforms: ["linux", "macosx"]},
   

@@ -102,9 +102,6 @@ this.FirefoxMonitor = {
     Services.scriptloader.loadSubScript(
       this.getURL("privileged/subscripts/Globals.jsm"));
 
-    
-    Services.scriptloader.loadSubScript(
-      this.getURL("privileged/subscripts/EveryWindow.jsm"));
 
     
     
