@@ -187,7 +187,12 @@ already_AddRefed<Service> Service::getSingleton() {
   
   
   
-  if (SQLITE_VERSION_NUMBER > ::sqlite3_libversion_number()) {
+  if (SQLITE_VERSION_NUMBER > ::sqlite3_libversion_number() ||
+      !::sqlite3_compileoption_used("SQLITE_SECURE_DELETE") ||
+      !::sqlite3_compileoption_used("SQLITE_THREADSAFE=1") ||
+      !::sqlite3_compileoption_used("SQLITE_ENABLE_FTS3") ||
+      !::sqlite3_compileoption_used("SQLITE_ENABLE_UNLOCK_NOTIFY") ||
+      !::sqlite3_compileoption_used("SQLITE_ENABLE_DBSTAT_VTAB")) {
     nsCOMPtr<nsIPromptService> ps(do_GetService(NS_PROMPTSERVICE_CONTRACTID));
     if (ps) {
       nsAutoString title, message;
@@ -197,7 +202,8 @@ already_AddRefed<Service> Service::getSingleton() {
           "library wasn't updated properly and the application "
           "cannot run. Please try to launch the application again. "
           "If that should still fail, please try reinstalling "
-          "it, or visit https://support.mozilla.org/.");
+          "it, or contact the support of where you got the "
+          "application from.");
       (void)ps->Alert(nullptr, title.get(), message.get());
     }
     MOZ_CRASH("SQLite Version Error");
