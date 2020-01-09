@@ -18,6 +18,7 @@
 #include "mozilla/Result.h"
 #include "mozilla/loader/AutoMemMap.h"
 #include "nsClassHashtable.h"
+#include "nsIAsyncShutdown.h"
 #include "nsIFile.h"
 #include "nsIMemoryReporter.h"
 #include "nsIObserver.h"
@@ -58,7 +59,8 @@ using namespace mozilla::loader;
 
 class ScriptPreloader : public nsIObserver,
                         public nsIMemoryReporter,
-                        public nsIRunnable {
+                        public nsIRunnable,
+                        public nsIAsyncShutdownBlocker {
   MOZ_DEFINE_MALLOC_SIZE_OF(MallocSizeOf)
 
   friend class mozilla::loader::ScriptCacheChild;
@@ -68,6 +70,7 @@ class ScriptPreloader : public nsIObserver,
   NS_DECL_NSIOBSERVER
   NS_DECL_NSIMEMORYREPORTER
   NS_DECL_NSIRUNNABLE
+  NS_DECL_NSIASYNCSHUTDOWNBLOCKER
 
   static ScriptPreloader& GetSingleton();
   static ScriptPreloader& GetChildSingleton();
@@ -374,7 +377,6 @@ class ScriptPreloader : public nsIObserver,
 
   ScriptPreloader();
 
-  void ForceWriteCacheFile();
   void Cleanup();
 
   void FinishPendingParses(MonitorAutoLock& aMal);
@@ -386,11 +388,15 @@ class ScriptPreloader : public nsIObserver,
   
   Result<Ok, nsresult> WriteCache();
 
+  void StartCacheWrite();
+
   
   
   void PrepareCacheWrite();
 
   void PrepareCacheWriteInternal();
+
+  void CacheWriteComplete();
 
   void FinishContentStartup();
 
@@ -413,6 +419,8 @@ class ScriptPreloader : public nsIObserver,
   static void OffThreadDecodeCallback(JS::OffThreadToken* token, void* context);
   void MaybeFinishOffThreadDecode();
   void DoFinishOffThreadDecode();
+
+  already_AddRefed<nsIAsyncShutdownClient> GetShutdownBarrier();
 
   size_t ShallowHeapSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) {
     return (mallocSizeOf(this) +
@@ -442,7 +450,6 @@ class ScriptPreloader : public nsIObserver,
   bool mSaveComplete = false;
   bool mDataPrepared = false;
   bool mCacheInvalidated = false;
-  bool mBlockedOnSyncDispatch = false;
 
   
   
@@ -474,10 +481,7 @@ class ScriptPreloader : public nsIObserver,
   nsCString mContentStartupFinishedTopic;
 
   nsCOMPtr<nsIFile> mProfD;
-  
-  
-  
-  RefPtr<nsIThread> mSaveThread;
+  nsCOMPtr<nsIThread> mSaveThread;
   nsCOMPtr<nsITimer> mSaveTimer;
 
   
