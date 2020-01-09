@@ -221,7 +221,6 @@ const WHITELIST_TYPES: &'static [&'static str] = &[
     "JS::PropertyDescriptor",
     "JS::Rooted",
     "JS::RootedObject",
-    "JS::RootedValue",
     "JS::RootingContext",
     "JS::RootKind",
     "js::Scalar::Type",
@@ -474,8 +473,10 @@ const OPAQUE_TYPES: &'static [&'static str] = &[
     "JS::ReadOnlyCompileOptions",
     "mozilla::BufferList",
     "mozilla::UniquePtr.*",
+    "JS::RootedVector",
     "JS::Rooted<JS::Auto.*Vector.*>",
-    "JS::Auto.*Vector"
+    "JS::Auto.*Vector",
+    "JS::StackGCVector"
 ];
 
 
