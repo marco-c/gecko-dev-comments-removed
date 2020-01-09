@@ -25,7 +25,7 @@ class SVGAnimationElement;
 class SVGElement;
 }  
 
-class SVGBoolean {
+class SVGAnimatedBoolean {
  public:
   typedef mozilla::dom::SVGElement SVGElement;
 
@@ -57,13 +57,13 @@ class SVGBoolean {
  public:
   struct SMILBool : public SMILAttr {
    public:
-    SMILBool(SVGBoolean* aVal, SVGElement* aSVGElement)
+    SMILBool(SVGAnimatedBoolean* aVal, SVGElement* aSVGElement)
         : mVal(aVal), mSVGElement(aSVGElement) {}
 
     
     
     
-    SVGBoolean* mVal;
+    SVGAnimatedBoolean* mVal;
     SVGElement* mSVGElement;
 
     

@@ -21,7 +21,7 @@ namespace dom {
 class SVGElement;
 }
 
-class SVGString {
+class SVGAnimatedString {
  public:
   typedef mozilla::dom::SVGElement SVGElement;
 
@@ -64,10 +64,10 @@ class SVGString {
     NS_DECL_CYCLE_COLLECTING_ISUPPORTS
     NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(DOMAnimatedString)
 
-    DOMAnimatedString(SVGString* aVal, SVGElement* aSVGElement)
+    DOMAnimatedString(SVGAnimatedString* aVal, SVGElement* aSVGElement)
         : mozilla::dom::DOMSVGAnimatedString(aSVGElement), mVal(aVal) {}
 
-    SVGString* mVal;  
+    SVGAnimatedString* mVal;  
 
     void GetBaseVal(nsAString& aResult) override {
       mVal->GetBaseValue(aResult, mSVGElement);
@@ -87,13 +87,13 @@ class SVGString {
   };
   struct SMILString : public SMILAttr {
    public:
-    SMILString(SVGString* aVal, SVGElement* aSVGElement)
+    SMILString(SVGAnimatedString* aVal, SVGElement* aSVGElement)
         : mVal(aVal), mSVGElement(aSVGElement) {}
 
     
     
     
-    SVGString* mVal;
+    SVGAnimatedString* mVal;
     SVGElement* mSVGElement;
 
     

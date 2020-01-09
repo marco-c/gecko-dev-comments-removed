@@ -32,7 +32,7 @@ struct SVGEnumMapping {
   const SVGEnumValue mVal;
 };
 
-class SVGEnum {
+class SVGAnimatedEnumeration {
  public:
   typedef mozilla::dom::SVGElement SVGElement;
 
@@ -71,11 +71,11 @@ class SVGEnum {
   
   struct DOMAnimatedEnum final
       : public mozilla::dom::DOMSVGAnimatedEnumeration {
-    DOMAnimatedEnum(SVGEnum* aVal, SVGElement* aSVGElement)
+    DOMAnimatedEnum(SVGAnimatedEnumeration* aVal, SVGElement* aSVGElement)
         : mozilla::dom::DOMSVGAnimatedEnumeration(aSVGElement), mVal(aVal) {}
     virtual ~DOMAnimatedEnum();
 
-    SVGEnum* mVal;  
+    SVGAnimatedEnumeration* mVal;  
 
     using mozilla::dom::DOMSVGAnimatedEnumeration::SetBaseVal;
     virtual uint16_t BaseVal() override { return mVal->GetBaseValue(); }
@@ -94,13 +94,13 @@ class SVGEnum {
 
   struct SMILEnum : public SMILAttr {
    public:
-    SMILEnum(SVGEnum* aVal, SVGElement* aSVGElement)
+    SMILEnum(SVGAnimatedEnumeration* aVal, SVGElement* aSVGElement)
         : mVal(aVal), mSVGElement(aSVGElement) {}
 
     
     
     
-    SVGEnum* mVal;
+    SVGAnimatedEnumeration* mVal;
     SVGElement* mSVGElement;
 
     

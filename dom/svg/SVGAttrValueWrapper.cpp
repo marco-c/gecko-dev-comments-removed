@@ -7,28 +7,28 @@
 #include "SVGAttrValueWrapper.h"
 
 #include "SVGAnimatedPreserveAspectRatio.h"
-#include "SVGIntegerPair.h"
+#include "SVGAnimatedIntegerPair.h"
 #include "nsSVGLength2.h"
 #include "SVGLengthList.h"
-#include "SVGNumberPair.h"
+#include "SVGAnimatedNumberPair.h"
 #include "SVGNumberList.h"
-#include "SVGOrient.h"
+#include "SVGAnimatedOrient.h"
+#include "SVGAnimatedViewBox.h"
 #include "SVGPathData.h"
 #include "SVGPointList.h"
 #include "SVGStringList.h"
 #include "SVGTransformList.h"
-#include "SVGViewBox.h"
 
 namespace mozilla {
 
 
-void SVGAttrValueWrapper::ToString(const SVGOrient* aOrient,
+void SVGAttrValueWrapper::ToString(const SVGAnimatedOrient* aOrient,
                                    nsAString& aResult) {
   aOrient->GetBaseValueString(aResult);
 }
 
 
-void SVGAttrValueWrapper::ToString(const SVGIntegerPair* aIntegerPair,
+void SVGAttrValueWrapper::ToString(const SVGAnimatedIntegerPair* aIntegerPair,
                                    nsAString& aResult) {
   aIntegerPair->GetBaseValueString(aResult);
 }
@@ -52,7 +52,7 @@ void SVGAttrValueWrapper::ToString(const SVGNumberList* aNumberList,
 }
 
 
-void SVGAttrValueWrapper::ToString(const SVGNumberPair* aNumberPair,
+void SVGAttrValueWrapper::ToString(const SVGAnimatedNumberPair* aNumberPair,
                                    nsAString& aResult) {
   aNumberPair->GetBaseValueString(aResult);
 }
@@ -89,7 +89,7 @@ void SVGAttrValueWrapper::ToString(const SVGTransformList* aTransformList,
 }
 
 
-void SVGAttrValueWrapper::ToString(const SVGViewBox* aViewBox,
+void SVGAttrValueWrapper::ToString(const SVGAnimatedViewBox* aViewBox,
                                    nsAString& aResult) {
   aViewBox->GetBaseValueString(aResult);
 }

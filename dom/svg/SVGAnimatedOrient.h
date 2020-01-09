@@ -9,7 +9,7 @@
 
 #include "DOMSVGAnimatedEnumeration.h"
 #include "nsError.h"
-#include "SVGEnum.h"
+#include "SVGAnimatedEnumeration.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/SMILAttr.h"
@@ -30,7 +30,7 @@ class SVGAnimationElement;
 class SVGElement;
 }  
 
-class SVGOrient {
+class SVGAnimatedOrient {
   friend class AutoChangeOrientNotifier;
   friend class mozilla::dom::DOMSVGAngle;
   friend class mozilla::dom::DOMSVGAnimatedAngle;
@@ -102,11 +102,11 @@ class SVGOrient {
   
   
   struct DOMAnimatedEnum final : public dom::DOMSVGAnimatedEnumeration {
-    DOMAnimatedEnum(SVGOrient* aVal, SVGElement* aSVGElement)
+    DOMAnimatedEnum(SVGAnimatedOrient* aVal, SVGElement* aSVGElement)
         : DOMSVGAnimatedEnumeration(aSVGElement), mVal(aVal) {}
     ~DOMAnimatedEnum();
 
-    SVGOrient* mVal;  
+    SVGAnimatedOrient* mVal;  
 
     using mozilla::dom::DOMSVGAnimatedEnumeration::SetBaseVal;
     uint16_t BaseVal() override { return Sanitize(mVal->mBaseType); }
@@ -127,13 +127,13 @@ class SVGOrient {
 
   struct SMILOrient final : public SMILAttr {
    public:
-    SMILOrient(SVGOrient* aOrient, SVGElement* aSVGElement)
+    SMILOrient(SVGAnimatedOrient* aOrient, SVGElement* aSVGElement)
         : mOrient(aOrient), mSVGElement(aSVGElement) {}
 
     
     
     
-    SVGOrient* mOrient;
+    SVGAnimatedOrient* mOrient;
     SVGElement* mSVGElement;
 
     

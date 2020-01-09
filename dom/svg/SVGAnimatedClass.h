@@ -23,7 +23,7 @@ namespace dom {
 class DOMSVGAnimatedString;
 class SVGElement;
 
-class SVGClass {
+class SVGAnimatedClass {
  public:
   typedef mozilla::dom::SVGElement SVGElement;
 
@@ -48,13 +48,13 @@ class SVGClass {
  public:
   struct SMILString : public SMILAttr {
    public:
-    SMILString(SVGClass* aVal, SVGElement* aSVGElement)
+    SMILString(SVGAnimatedClass* aVal, SVGElement* aSVGElement)
         : mVal(aVal), mSVGElement(aSVGElement) {}
 
     
     
     
-    SVGClass* mVal;
+    SVGAnimatedClass* mVal;
     SVGElement* mSVGElement;
 
     

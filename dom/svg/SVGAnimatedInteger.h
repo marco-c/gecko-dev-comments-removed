@@ -4,15 +4,16 @@
 
 
 
-#ifndef __NS_SVGINTEGERPAIR_H__
-#define __NS_SVGINTEGERPAIR_H__
+#ifndef __NS_SVGINTEGER_H__
+#define __NS_SVGINTEGER_H__
 
-#include "DOMSVGAnimatedInteger.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsError.h"
+#include "DOMSVGAnimatedInteger.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/SMILAttr.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/dom/SVGElement.h"
 
 namespace mozilla {
 
@@ -20,36 +21,27 @@ class SMILValue;
 
 namespace dom {
 class SVGAnimationElement;
-class SVGElement;
 }  
 
-class SVGIntegerPair {
+class SVGAnimatedInteger {
  public:
   typedef mozilla::dom::SVGElement SVGElement;
 
-  enum PairIndex { eFirst, eSecond };
-
-  void Init(uint8_t aAttrEnum = 0xff, int32_t aValue1 = 0,
-            int32_t aValue2 = 0) {
-    mAnimVal[0] = mBaseVal[0] = aValue1;
-    mAnimVal[1] = mBaseVal[1] = aValue2;
+  void Init(uint8_t aAttrEnum = 0xff, int32_t aValue = 0) {
+    mAnimVal = mBaseVal = aValue;
     mAttrEnum = aAttrEnum;
     mIsAnimated = false;
     mIsBaseSet = false;
   }
 
   nsresult SetBaseValueString(const nsAString& aValue, SVGElement* aSVGElement);
-  void GetBaseValueString(nsAString& aValue) const;
+  void GetBaseValueString(nsAString& aValue);
 
-  void SetBaseValue(int32_t aValue, PairIndex aIndex, SVGElement* aSVGElement);
-  void SetBaseValues(int32_t aValue1, int32_t aValue2, SVGElement* aSVGElement);
-  int32_t GetBaseValue(PairIndex aIndex) const {
-    return mBaseVal[aIndex == eFirst ? 0 : 1];
-  }
-  void SetAnimValue(const int32_t aValue[2], SVGElement* aSVGElement);
-  int32_t GetAnimValue(PairIndex aIndex) const {
-    return mAnimVal[aIndex == eFirst ? 0 : 1];
-  }
+  void SetBaseValue(int32_t aValue, SVGElement* aSVGElement);
+  int32_t GetBaseValue() const { return mBaseVal; }
+
+  void SetAnimValue(int aValue, SVGElement* aSVGElement);
+  int GetAnimValue() const { return mAnimVal; }
 
   
   
@@ -59,50 +51,46 @@ class SVGIntegerPair {
   bool IsExplicitlySet() const { return mIsAnimated || mIsBaseSet; }
 
   already_AddRefed<mozilla::dom::DOMSVGAnimatedInteger> ToDOMAnimatedInteger(
-      PairIndex aIndex, SVGElement* aSVGElement);
+      SVGElement* aSVGElement);
   mozilla::UniquePtr<SMILAttr> ToSMILAttr(SVGElement* aSVGElement);
 
  private:
-  int32_t mAnimVal[2];
-  int32_t mBaseVal[2];
+  int32_t mAnimVal;
+  int32_t mBaseVal;
   uint8_t mAttrEnum;  
   bool mIsAnimated;
   bool mIsBaseSet;
 
  public:
   struct DOMAnimatedInteger final : public mozilla::dom::DOMSVGAnimatedInteger {
-    DOMAnimatedInteger(SVGIntegerPair* aVal, PairIndex aIndex,
-                       SVGElement* aSVGElement)
-        : mozilla::dom::DOMSVGAnimatedInteger(aSVGElement),
-          mVal(aVal),
-          mIndex(aIndex) {}
+    DOMAnimatedInteger(SVGAnimatedInteger* aVal, SVGElement* aSVGElement)
+        : mozilla::dom::DOMSVGAnimatedInteger(aSVGElement), mVal(aVal) {}
     virtual ~DOMAnimatedInteger();
 
-    SVGIntegerPair* mVal;  
-    PairIndex mIndex;      
+    SVGAnimatedInteger* mVal;  
 
-    virtual int32_t BaseVal() override { return mVal->GetBaseValue(mIndex); }
+    virtual int32_t BaseVal() override { return mVal->GetBaseValue(); }
     virtual void SetBaseVal(int32_t aValue) override {
-      mVal->SetBaseValue(aValue, mIndex, mSVGElement);
+      mVal->SetBaseValue(aValue, mSVGElement);
     }
 
     
     
     virtual int32_t AnimVal() override {
       mSVGElement->FlushAnimations();
-      return mVal->GetAnimValue(mIndex);
+      return mVal->GetAnimValue();
     }
   };
 
-  struct SMILIntegerPair : public SMILAttr {
+  struct SMILInteger : public SMILAttr {
    public:
-    SMILIntegerPair(SVGIntegerPair* aVal, SVGElement* aSVGElement)
+    SMILInteger(SVGAnimatedInteger* aVal, SVGElement* aSVGElement)
         : mVal(aVal), mSVGElement(aSVGElement) {}
 
     
     
     
-    SVGIntegerPair* mVal;
+    SVGAnimatedInteger* mVal;
     SVGElement* mSVGElement;
 
     

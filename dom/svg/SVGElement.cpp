@@ -43,17 +43,17 @@
 #include "SVGAnimatedPointList.h"
 #include "SVGAnimatedPathSegList.h"
 #include "SVGAnimatedTransformList.h"
-#include "SVGBoolean.h"
-#include "SVGEnum.h"
-#include "SVGInteger.h"
-#include "SVGIntegerPair.h"
+#include "SVGAnimatedBoolean.h"
+#include "SVGAnimatedEnumeration.h"
+#include "SVGAnimatedInteger.h"
+#include "SVGAnimatedIntegerPair.h"
 #include "nsSVGLength2.h"
-#include "SVGMotionSMILAttr.h"
 #include "nsSVGNumber2.h"
-#include "SVGNumberPair.h"
-#include "SVGOrient.h"
-#include "SVGString.h"
-#include "SVGViewBox.h"
+#include "SVGAnimatedNumberPair.h"
+#include "SVGAnimatedOrient.h"
+#include "SVGAnimatedString.h"
+#include "SVGAnimatedViewBox.h"
+#include "SVGMotionSMILAttr.h"
 #include <stdarg.h>
 
 
@@ -173,13 +173,13 @@ nsresult SVGElement::Init() {
     enumInfo.Reset(i);
   }
 
-  SVGOrient* orient = GetOrient();
+  SVGAnimatedOrient* orient = GetOrient();
 
   if (orient) {
     orient->Init();
   }
 
-  SVGViewBox* viewBox = GetViewBox();
+  SVGAnimatedViewBox* viewBox = GetViewBox();
 
   if (viewBox) {
     viewBox->Init();
@@ -532,7 +532,7 @@ bool SVGElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
     if (!foundMatch) {
       
       if (aAttribute == nsGkAtoms::orient) {
-        SVGOrient* orient = GetOrient();
+        SVGAnimatedOrient* orient = GetOrient();
         if (orient) {
           rv = orient->SetBaseValueString(aValue, this, false);
           if (NS_FAILED(rv)) {
@@ -545,7 +545,7 @@ bool SVGElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
         }
         
       } else if (aAttribute == nsGkAtoms::viewBox) {
-        SVGViewBox* viewBox = GetViewBox();
+        SVGAnimatedViewBox* viewBox = GetViewBox();
         if (viewBox) {
           rv = viewBox->SetBaseValueString(aValue, this, false);
           if (NS_FAILED(rv)) {
@@ -768,7 +768,7 @@ void SVGElement::UnsetAttrInternal(int32_t aNamespaceID, nsAtom* aName,
 
     
     if (aName == nsGkAtoms::orient) {
-      SVGOrient* orient = GetOrient();
+      SVGAnimatedOrient* orient = GetOrient();
       if (orient) {
         MaybeSerializeAttrBeforeRemoval(aName, aNotify);
         orient->Init();
@@ -778,7 +778,7 @@ void SVGElement::UnsetAttrInternal(int32_t aNamespaceID, nsAtom* aName,
 
     
     if (aName == nsGkAtoms::viewBox) {
-      SVGViewBox* viewBox = GetViewBox();
+      SVGAnimatedViewBox* viewBox = GetViewBox();
       if (viewBox) {
         MaybeSerializeAttrBeforeRemoval(aName, aNotify);
         viewBox->Init();
@@ -1885,14 +1885,14 @@ void SVGElement::DidAnimateEnum(uint8_t aAttrEnum) {
   }
 }
 
-SVGOrient* SVGElement::GetOrient() { return nullptr; }
+SVGAnimatedOrient* SVGElement::GetOrient() { return nullptr; }
 
 nsAttrValue SVGElement::WillChangeOrient() {
   return WillChangeValue(nsGkAtoms::orient);
 }
 
 void SVGElement::DidChangeOrient(const nsAttrValue& aEmptyOrOldValue) {
-  SVGOrient* orient = GetOrient();
+  SVGAnimatedOrient* orient = GetOrient();
 
   NS_ASSERTION(orient, "DidChangeOrient on element with no orient attrib");
 
@@ -1911,14 +1911,14 @@ void SVGElement::DidAnimateOrient() {
   }
 }
 
-SVGViewBox* SVGElement::GetViewBox() { return nullptr; }
+SVGAnimatedViewBox* SVGElement::GetViewBox() { return nullptr; }
 
 nsAttrValue SVGElement::WillChangeViewBox() {
   return WillChangeValue(nsGkAtoms::viewBox);
 }
 
 void SVGElement::DidChangeViewBox(const nsAttrValue& aEmptyOrOldValue) {
-  SVGViewBox* viewBox = GetViewBox();
+  SVGAnimatedViewBox* viewBox = GetViewBox();
 
   NS_ASSERTION(viewBox, "DidChangeViewBox on element with no viewBox attrib");
 
@@ -2222,13 +2222,13 @@ UniquePtr<SMILAttr> SVGElement::GetAnimatedAttr(int32_t aNamespaceID,
 
     
     if (aName == nsGkAtoms::orient) {
-      SVGOrient* orient = GetOrient();
+      SVGAnimatedOrient* orient = GetOrient();
       return orient ? orient->ToSMILAttr(this) : nullptr;
     }
 
     
     if (aName == nsGkAtoms::viewBox) {
-      SVGViewBox* viewBox = GetViewBox();
+      SVGAnimatedViewBox* viewBox = GetViewBox();
       return viewBox ? viewBox->ToSMILAttr(this) : nullptr;
     }
 

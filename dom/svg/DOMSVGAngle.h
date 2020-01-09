@@ -13,7 +13,7 @@
 
 namespace mozilla {
 
-class SVGOrient;
+class SVGAnimatedOrient;
 
 namespace dom {
 class SVGSVGElement;
@@ -28,7 +28,7 @@ class DOMSVGAngle final : public nsWrapperCache {
   
 
 
-  DOMSVGAngle(SVGOrient* aVal, SVGElement* aSVGElement, AngleType aType)
+  DOMSVGAngle(SVGAnimatedOrient* aVal, SVGElement* aSVGElement, AngleType aType)
       : mVal(aVal), mSVGElement(aSVGElement), mType(aType) {}
 
   
@@ -54,8 +54,8 @@ class DOMSVGAngle final : public nsWrapperCache {
  protected:
   ~DOMSVGAngle();
 
-  SVGOrient* mVal;  
-                    
+  SVGAnimatedOrient* mVal;  
+                            
   RefPtr<SVGElement> mSVGElement;
   AngleType mType;
 };

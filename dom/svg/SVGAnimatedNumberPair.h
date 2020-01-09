@@ -25,7 +25,7 @@ class SVGAnimationElement;
 class SVGElement;
 }  
 
-class SVGNumberPair {
+class SVGAnimatedNumberPair {
  public:
   typedef mozilla::dom::SVGElement SVGElement;
 
@@ -74,14 +74,14 @@ class SVGNumberPair {
   
   
   struct DOMAnimatedNumber final : public mozilla::dom::DOMSVGAnimatedNumber {
-    DOMAnimatedNumber(SVGNumberPair* aVal, PairIndex aIndex,
+    DOMAnimatedNumber(SVGAnimatedNumberPair* aVal, PairIndex aIndex,
                       SVGElement* aSVGElement)
         : mozilla::dom::DOMSVGAnimatedNumber(aSVGElement),
           mVal(aVal),
           mIndex(aIndex) {}
     virtual ~DOMAnimatedNumber();
 
-    SVGNumberPair* mVal;  
+    SVGAnimatedNumberPair* mVal;  
     PairIndex mIndex;     
 
     virtual float BaseVal() override { return mVal->GetBaseValue(mIndex); }
@@ -100,13 +100,13 @@ class SVGNumberPair {
 
   struct SMILNumberPair : public SMILAttr {
    public:
-    SMILNumberPair(SVGNumberPair* aVal, SVGElement* aSVGElement)
+    SMILNumberPair(SVGAnimatedNumberPair* aVal, SVGElement* aSVGElement)
         : mVal(aVal), mSVGElement(aSVGElement) {}
 
     
     
     
-    SVGNumberPair* mVal;
+    SVGAnimatedNumberPair* mVal;
     SVGElement* mSVGElement;
 
     
