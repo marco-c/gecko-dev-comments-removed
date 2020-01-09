@@ -154,6 +154,8 @@ bool wasm::BoxAnyRef(JSContext* cx, HandleValue val, MutableHandleAnyRef addr) {
 }
 
 Value wasm::UnboxAnyRef(AnyRef val) {
+  
+  
   JSObject* obj = val.asJSObject();
   Value result;
   if (obj == nullptr) {
