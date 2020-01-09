@@ -115,6 +115,9 @@ def docker_worker_toolchain(config, job, taskdesc):
     worker['chain-of-trust'] = True
 
     
+    worker.setdefault('docker-image', {'in-tree': 'toolchain-build'})
+
+    
     
     artifacts = worker.setdefault('artifacts', [])
     if not any(artifact.get('name') == 'public/build' for artifact in artifacts):
