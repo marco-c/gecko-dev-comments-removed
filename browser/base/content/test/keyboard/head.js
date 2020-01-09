@@ -1,0 +1,17 @@
+
+
+
+"use strict";
+
+
+
+
+
+
+
+
+function forceFocus(aElem) {
+  aElem.setAttribute("tabindex", "-1");
+  aElem.focus();
+  aElem.removeAttribute("tabindex");
+}

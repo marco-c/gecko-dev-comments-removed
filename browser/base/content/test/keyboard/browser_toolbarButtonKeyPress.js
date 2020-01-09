@@ -7,16 +7,6 @@
 
 
 
-
-
-
-
-function forceFocus(aElem) {
-  aElem.setAttribute("tabindex", "-1");
-  aElem.focus();
-  aElem.removeAttribute("tabindex");
-}
-
 function waitForLocationChange() {
   let promise = new Promise(resolve => {
     let wpl = {
