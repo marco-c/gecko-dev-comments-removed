@@ -198,7 +198,8 @@ class nsPermissionManager final : public nsIPermissionManager,
 
 
 
-  static void ClearOriginDataObserverInit();
+
+  static void Startup();
 
   nsresult RemovePermissionsWithAttributes(
       mozilla::OriginAttributesPattern& aAttrs);
@@ -517,10 +518,6 @@ class nsPermissionManager final : public nsIPermissionManager,
   nsTHashtable<PermissionHashKey> mPermissionTable;
   
   int64_t mLargestID;
-
-  
-  
-  bool mIsShuttingDown;
 
   nsCOMPtr<nsIPrefBranch> mDefaultPrefBranch;
 
