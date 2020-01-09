@@ -568,6 +568,10 @@ class LexicalEnvironmentObject : public EnvironmentObject {
   
   
   Value thisValue() const;
+
+  static constexpr size_t offsetOfThisValueOrScopeSlot() {
+    return getFixedSlotOffset(THIS_VALUE_OR_SCOPE_SLOT);
+  }
 };
 
 class NamedLambdaObject : public LexicalEnvironmentObject {

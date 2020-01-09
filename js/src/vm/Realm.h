@@ -799,6 +799,14 @@ class JS::Realm : public JS::shadow::Realm {
   static constexpr size_t offsetOfRegExps() {
     return offsetof(JS::Realm, regExps);
   }
+
+  
+  
+  static constexpr size_t offsetOfActiveGlobal() {
+    static_assert(sizeof(global_) == sizeof(uintptr_t),
+                  "JIT code assumes field is pointer-sized");
+    return offsetof(JS::Realm, global_);
+  }
 };
 
 inline js::Handle<js::GlobalObject*> JSContext::global() const {
