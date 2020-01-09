@@ -448,12 +448,16 @@ class ActivePS {
     if (mInterposeObserver) {
       
       
+      
+      
       if (NS_IsMainThread()) {
+        IOInterposer::Init();
         IOInterposer::Register(IOInterposeObserver::OpAll, mInterposeObserver);
       } else {
         RefPtr<ProfilerIOInterposeObserver> observer = mInterposeObserver;
         NS_DispatchToMainThread(
             NS_NewRunnableFunction("ActivePS::ActivePS", [=]() {
+              IOInterposer::Init();
               IOInterposer::Register(IOInterposeObserver::OpAll, observer);
             }));
       }
