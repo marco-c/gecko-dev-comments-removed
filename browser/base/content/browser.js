@@ -4015,7 +4015,7 @@ const BrowserSearch = {
       
       this._removeMaybeOfferedEngine(engineName);
       break;
-    case "engine-current":
+    case "engine-default":
       if (this._searchInitComplete) {
         this._updateURLBarPlaceholder(engineName);
       }

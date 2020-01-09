@@ -1566,7 +1566,7 @@ add_task(async function test_defaultSearchEngine() {
   
   
   
-  Services.obs.notifyObservers(null, "browser-search-engine-modified", "engine-current");
+  Services.obs.notifyObservers(null, "browser-search-engine-modified", "engine-default");
   await promiseNextTick();
 
   
@@ -1635,7 +1635,7 @@ add_task(async function test_defaultSearchEngine() {
     TelemetryEnvironment.registerChangeListener("testWatch_SearchDefault", resolve);
   });
   engine.wrappedJSObject.setAttr("loadPathHash", "broken");
-  Services.obs.notifyObservers(null, "browser-search-engine-modified", "engine-current");
+  Services.obs.notifyObservers(null, "browser-search-engine-modified", "engine-default");
   await promise;
   TelemetryEnvironment.unregisterChangeListener("testWatch_SearchDefault");
   data = TelemetryEnvironment.currentEnvironment;

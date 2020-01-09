@@ -20,7 +20,6 @@ var expectedLog = [
   "engine-changed", 
   "engine-added",
   "engine-default",
-  "engine-current",
   "engine-loaded",
   "engine-removed",
 ];

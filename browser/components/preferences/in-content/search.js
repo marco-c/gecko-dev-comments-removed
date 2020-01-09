@@ -260,7 +260,7 @@ var gSearchPane = {
       case "engine-removed":
         gSearchPane.remove(aEngine);
         break;
-      case "engine-current":
+      case "engine-default":
         
         
         
@@ -268,9 +268,6 @@ var gSearchPane = {
           document.getElementById("defaultEngine").selectedItem.engine;
         if (selectedEngine.name != aEngine.name)
           gSearchPane.buildDefaultEngineDropDown();
-        break;
-      case "engine-default":
-        
         break;
       }
     }
