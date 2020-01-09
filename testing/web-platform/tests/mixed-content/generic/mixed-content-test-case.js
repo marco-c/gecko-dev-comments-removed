@@ -3,6 +3,11 @@
 
 
 
+function wrapResult(server_data) {
+  
+  return null;
+}
+
 
 
 

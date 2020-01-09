@@ -19,36 +19,29 @@ var svg_test_properties = [
 
 
 
-
 function runSvgTests(testProperties, testDescription, testFunction) {
-  let runNextTest = function () {
-    let property = testProperties.shift();
-    if (property === undefined) {
-      return;
-    }
-
+  for (const property of testProperties) {
     let current = {
-      test: async_test(testDescription + " " + property),
       id: token(),
       property: property,
     };
 
-    current.test.step(function() { testFunction(current) });
-
-    let check_url = url_prefix + "svg.py" + "?id=" + current.id +
-                    "&report-headers";
-    current.test.step_timeout(function() {
-      queryXhr(check_url, function(message) {
-          assert_own_property(message, "headers");
-          assert_own_property(message, "referrer");
-          assert_equals(message.referrer, current.expected);
-          current.test.done();
-      }, null, null, current.test);
-    }, 800);
-  };
-
-  add_result_callback(runNextTest);
-  runNextTest();
+    promise_test(t => {
+      testFunction(current);
+      return timeoutPromise(t, 800)
+        .then(() => {
+            let check_url = url_prefix + "svg.py" + "?id=" + current.id +
+                            "&report-headers";
+            return requestViaFetch(check_url);
+          })
+        .then(message => {
+            assert_own_property(message, "headers");
+            assert_own_property(message, "referrer");
+            assert_equals(message.referrer, current.expected);
+          });
+      },
+      testDescription + " " + property);
+  }
 }
 
 function createSvg() {

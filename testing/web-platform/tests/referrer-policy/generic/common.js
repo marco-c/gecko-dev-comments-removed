@@ -3,52 +3,265 @@
 
 
 
-function stripUrlForUseAsReferrer(url) {
-  return url.replace(/#.*$/, "");
+
+
+
+
+
+
+
+
+
+
+
+
+function timeoutPromise(t, ms) {
+  return new Promise(resolve => { t.step_timeout(resolve, ms); });
 }
 
-function parseUrlQueryString(queryString) {
-  var queries = queryString.replace(/^\?/, "").split("&");
-  var params = {};
 
-  for (var i in queries) {
-    var kvp = queries[i].split("=");
-    params[kvp[0]] = kvp[1];
-  }
 
-  return params;
-};
 
-function appendIframeToBody(url, attributes) {
-  var iframe = document.createElement("iframe");
-  iframe.src = url;
-  
-  if (attributes) {
-    for (var attr in attributes) {
-      iframe[attr] = attributes[attr];
-    }
-  }
-  document.body.appendChild(iframe);
 
-  return iframe;
+
+
+
+function getNormalizedPort(targetPort) {
+  return ([80, 443, ""].indexOf(targetPort) >= 0) ? "" : ":" + targetPort;
 }
 
-function loadImageInWindow(src, callback, attributes, w) {
-  var image = new w.Image();
-  image.crossOrigin = "Anonymous";
-  image.onload = function() {
-    callback(image);
-  }
+
+
+
+
+
+
+
+function guid() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+
+
+
+
+
+
+
+
+function xhrRequest(url, responseType) {
+  return new Promise(function(resolve, reject) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.responseType = responseType || "json";
+
+    xhr.addEventListener("error", function() {
+      reject(Error("Network Error"));
+    });
+
+    xhr.addEventListener("load", function() {
+      if (xhr.status != 200)
+        reject(Error(xhr.statusText));
+      else
+        resolve(xhr.response);
+    });
+
+    xhr.send();
+  });
+}
+
+
+
+
+
+
+function setAttributes(el, attrs) {
+  attrs = attrs || {}
+  for (var attr in attrs)
+    el.setAttribute(attr, attrs[attr]);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function bindEvents(element, resolveEventName, rejectEventName) {
+  element.eventPromise =
+      bindEvents2(element, resolveEventName, element, rejectEventName);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function bindEvents2(resolveObject, resolveEventName, rejectObject, rejectEventName, rejectObject2, rejectEventName2) {
+  return new Promise(function(resolve, reject) {
+    const actualResolveEventName = resolveEventName || "load";
+    const actualRejectEventName = rejectEventName || "error";
+    const actualRejectEventName2 = rejectEventName2 || "error";
+
+    const resolveHandler = function(event) {
+      cleanup();
+      resolve(event);
+    };
+
+    const rejectHandler = function(event) {
+      
+      
+      event.preventDefault();
+      cleanup();
+      reject(event);
+    };
+
+    const cleanup = function() {
+      resolveObject.removeEventListener(actualResolveEventName, resolveHandler);
+      rejectObject.removeEventListener(actualRejectEventName, rejectHandler);
+      if (rejectObject2) {
+        rejectObject2.removeEventListener(actualRejectEventName2, rejectHandler);
+      }
+    };
+
+    resolveObject.addEventListener(actualResolveEventName, resolveHandler);
+    rejectObject.addEventListener(actualRejectEventName, rejectHandler);
+    if (rejectObject2) {
+      rejectObject2.addEventListener(actualRejectEventName2, rejectHandler);
+    }
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function createElement(tagName, attrs, parentNode, doBindEvents) {
+  var element = document.createElement(tagName);
+
+  if (doBindEvents)
+    bindEvents(element);
 
   
-  if (attributes) {
-    for (var attr in attributes) {
-      image[attr] = attributes[attr];
-    }
-  }
+  
+  
+  
+  
+  
+  
+  
+  var isImg = (tagName == "img");
+  if (!isImg)
+    setAttributes(element, attrs);
 
-  image.src = src;
-  w.document.body.appendChild(image)
+  if (parentNode)
+    parentNode.appendChild(element);
+
+  if (isImg)
+    setAttributes(element, attrs);
+
+  return element;
+}
+
+function createRequestViaElement(tagName, attrs, parentNode) {
+  return createElement(tagName, attrs, parentNode, true).eventPromise;
+}
+
+
+
+
+
+
+
+function createHelperIframe(name, doBindEvents) {
+  return createElement("iframe",
+                       {"name": name, "id": name},
+                       document.body,
+                       doBindEvents);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function requestViaIframe(url, additionalAttributes) {
+  const iframe = createElement(
+      "iframe",
+      Object.assign({"src": url}, additionalAttributes),
+      document.body,
+      false);
+  return bindEvents2(window, "message", iframe, "error", window, "error")
+      .then(event => {
+          assert_equals(event.source, iframe.contentWindow);
+          return event.data;
+        });
+}
+
+
+
+
+
+
+
+function requestViaImage(url) {
+  return createRequestViaElement("img", {"src": url}, document.body);
+}
+
+
+function loadImageInWindow(src, attributes, w) {
+  return new Promise((resolve, reject) => {
+    var image = new w.Image();
+    image.crossOrigin = "Anonymous";
+    image.onload = function() {
+      resolve(image);
+    };
+
+    
+    if (attributes) {
+      for (var attr in attributes) {
+        image[attr] = attributes[attr];
+      }
+    }
+
+    image.src = src;
+    w.document.body.appendChild(image)
+  });
 }
 
 function extractImageData(img) {
@@ -83,35 +296,11 @@ function decodeImageData(rgba) {
   return JSON.parse(string_data);
 }
 
-function normalizePort(targetPort) {
-  var defaultPorts = [80, 443];
-  var isDefaultPortForProtocol = (defaultPorts.indexOf(targetPort) >= 0);
 
-  return (targetPort == "" || isDefaultPortForProtocol) ?
-          "" : ":" + targetPort;
-}
 
-function wrapResult(url, server_data) {
-  return {
-    location: url,
-    referrer: server_data.headers.referer,
-    headers: server_data.headers
-  }
-}
 
-function queryIframe(url, callback, attributes, referrer_policy, test) {
-  var iframe = appendIframeToBody(url, attributes);
-  var listener = test.step_func(function(event) {
-    if (event.source != iframe.contentWindow)
-      return;
 
-    callback(event.data, url);
-    window.removeEventListener("message", listener);
-  });
-  window.addEventListener("message", listener);
-}
-
-function queryImage(url, callback, attributes, referrerPolicy, test) {
+function requestViaImageForReferrerPolicy(url, attributes, referrerPolicy) {
   
   
   
@@ -119,148 +308,392 @@ function queryImage(url, callback, attributes, referrerPolicy, test) {
   
   
 
+  var iframeWithoutOwnPolicy = document.createElement('iframe');
   var noSrcDocPolicy = new Promise((resolve, reject) => {
-    var iframeWithoutOwnPolicy = document.createElement('iframe');
-    iframeWithoutOwnPolicy.srcdoc = "Hello, world.";
-    iframeWithoutOwnPolicy.onload = test.step_func(function () {
-      var nextUrl = url + "&cache_destroyer2=" + (new Date()).getTime();
-      loadImageInWindow(nextUrl, test.step_func(function (img) {
-        resolve(decodeImageData(extractImageData(img)));
-      }), attributes, iframeWithoutOwnPolicy.contentWindow);
-    });
-    document.body.appendChild(iframeWithoutOwnPolicy);
-  });
+        iframeWithoutOwnPolicy.srcdoc = "Hello, world.";
+        iframeWithoutOwnPolicy.onload = resolve;
+        document.body.appendChild(iframeWithoutOwnPolicy);
+      })
+    .then(() => {
+        var nextUrl = url + "&cache_destroyer2=" + (new Date()).getTime();
+        return loadImageInWindow(nextUrl, attributes,
+                                 iframeWithoutOwnPolicy.contentWindow);
+      })
+    .then(function (img) {
+        return decodeImageData(extractImageData(img));
+      });
 
   
   var iframePolicy = (referrerPolicy === "no-referrer") ? "unsafe-url" : "no-referrer";
+  var iframeWithOwnPolicy = document.createElement('iframe');
   var srcDocPolicy = new Promise((resolve, reject) => {
-    var iframeWithOwnPolicy = document.createElement('iframe');
-    iframeWithOwnPolicy.srcdoc = "<meta name='referrer' content='" + iframePolicy + "'>Hello world.";
+        iframeWithOwnPolicy.srcdoc = "<meta name='referrer' content='" + iframePolicy + "'>Hello world.";
+        iframeWithOwnPolicy.onload = resolve;
+        document.body.appendChild(iframeWithOwnPolicy);
+      })
+    .then(() => {
+        var nextUrl = url + "&cache_destroyer3=" + (new Date()).getTime();
+        return loadImageInWindow(nextUrl, null,
+                                 iframeWithOwnPolicy.contentWindow);
+      })
+    .then(function (img) {
+        return decodeImageData(extractImageData(img));
+      });
 
-    iframeWithOwnPolicy.onload = test.step_func(function () {
-      var nextUrl = url + "&cache_destroyer3=" + (new Date()).getTime();
-      loadImageInWindow(nextUrl, test.step_func(function (img) {
-        resolve(decodeImageData(extractImageData(img)));
-      }), null, iframeWithOwnPolicy.contentWindow);
-    });
-    document.body.appendChild(iframeWithOwnPolicy);
-  });
+  var pagePolicy = loadImageInWindow(url, attributes, window)
+    .then(function (img) {
+        return decodeImageData(extractImageData(img));
+      });
 
-  var pagePolicy = new Promise((resolve, reject) => {
-    loadImageInWindow(url, test.step_func(function (img) {
-      resolve(decodeImageData(extractImageData(img)));
-    }), attributes, window);
-  });
-
-  Promise.all([noSrcDocPolicy, srcDocPolicy, pagePolicy]).then(test.step_func(values => {
+  return Promise.all([noSrcDocPolicy, srcDocPolicy, pagePolicy]).then(values => {
     assert_equals(values[0].headers.referer, values[2].headers.referer, "Referrer inside 'srcdoc' without its own policy should be the same as embedder's referrer.");
     assert_equals((iframePolicy === "no-referrer" ? undefined : document.location.href), values[1].headers.referer, "Referrer inside 'srcdoc' should use the iframe's policy if it has one");
-    callback(wrapResult(url, values[2]), url);
-  }));
-}
-
-function queryXhr(url, callback, attributes, referrer_policy, test) {
-  var xhr = new XMLHttpRequest();
-  xhr.open('GET', url, true);
-  xhr.onreadystatechange = test.step_func(function(e) {
-    if (xhr.readyState == 4 && xhr.status == 200) {
-      var server_data = JSON.parse(xhr.responseText);
-      callback(wrapResult(url, server_data), url);
-    }
-  });
-  xhr.send();
-}
-
-function queryWorker(url, callback, attributes, referrer_policy, test) {
-  var worker = new Worker(url);
-  worker.onmessage = test.step_func(function(event) {
-    var server_data = event.data;
-    callback(wrapResult(url, server_data), url);
+    return wrapResult(values[2]);
   });
 }
 
-function queryModuleWorkerTopLevel(url, callback, attributes, referrer_policy, test) {
-  var worker = new Worker(url, {type: "module"});
-  worker.onmessage = test.step_func(function(event) {
-    var server_data = event.data;
-    callback(wrapResult(url, server_data), url);
-  });
+
+
+
+
+
+function requestViaXhr(url) {
+  return xhrRequest(url).then(result => wrapResult(result));
 }
 
-function querySharedWorker(url, callback, attributes, referrer_policy, test) {
-  var worker = new SharedWorker(url);
-  worker.port.onmessage = test.step_func(function(event) {
-    var server_data = event.data;
-    callback(wrapResult(url, server_data), url);
-  });
+
+
+
+
+
+function requestViaFetch(url) {
+  return fetch(url)
+    .then(res => res.json())
+    .then(j => wrapResult(j));
 }
 
-function queryFetch(url, callback, attributes, referrer_policy, test) {
-  fetch(url).then(test.step_func(function(response) {
-      response.json().then(test.step_func(function(server_data) {
-        callback(wrapResult(url, server_data), url);
-      }));
-    })
-  );
+function dedicatedWorkerUrlThatFetches(url) {
+  return `data:text/javascript,
+    fetch('${url}')
+      .then(() => postMessage(''),
+            () => postMessage(''));`;
 }
 
-function queryNavigable(element, url, callback, attributes, test) {
-  var navigable = element
-  navigable.href = url;
-  navigable.target = "helper-iframe";
+function workerUrlThatImports(url) {
+  return `data:text/javascript,import '${url}';`;
+}
 
-  var helperIframe = document.createElement("iframe")
-  helperIframe.name = "helper-iframe"
-  document.body.appendChild(helperIframe)
 
-  
-  if (attributes) {
-    for (var attr in attributes) {
-      navigable[attr] = attributes[attr];
-    }
+
+
+
+
+
+
+
+function requestViaDedicatedWorker(url, options) {
+  var worker;
+  try {
+    worker = new Worker(url, options);
+  } catch (e) {
+    return Promise.reject(e);
   }
-
-  var listener = test.step_func(function(event) {
-    if (event.source != helperIframe.contentWindow)
-      return;
-    callback(event.data, url);
-    window.removeEventListener("message", listener);
-  });
-  window.addEventListener("message", listener);
-
-  navigable.click();
+  worker.postMessage('');
+  return bindEvents2(worker, "message", worker, "error")
+    .then(event => wrapResult(event.data));
 }
 
-function queryLink(url, callback, attributes, referrer_policy, test) {
-  var a = document.createElement("a");
-  a.innerHTML = "Link to subresource";
-  document.body.appendChild(a);
-  queryNavigable(a, url, callback, attributes, test)
+function requestViaSharedWorker(url) {
+  var worker;
+  try {
+    worker = new SharedWorker(url);
+  } catch(e) {
+    return Promise.reject(e);
+  }
+  const promise = bindEvents2(worker.port, "message", worker, "error")
+    .then(event => wrapResult(event.data));
+  worker.port.start();
+  return promise;
 }
 
-function queryAreaLink(url, callback, attributes, referrer_policy, test) {
-  var area = document.createElement("area");
+
+function get_worklet(type) {
+  if (type == 'animation')
+    return CSS.animationWorklet;
+  if (type == 'layout')
+    return CSS.layoutWorklet;
+  if (type == 'paint')
+    return CSS.paintWorklet;
+  if (type == 'audio')
+    return new OfflineAudioContext(2,44100*40,44100).audioWorklet;
+
+  assert_unreached('unknown worklet type is passed.');
+  return undefined;
+}
+
+function requestViaWorklet(type, url) {
+  try {
+    return get_worklet(type).addModule(url);
+  } catch (e) {
+    return Promise.reject(e);
+  }
+}
+
+
+
+
+
+
+
+
+
+function requestViaNavigable(navigableElement, url) {
+  var iframe = createHelperIframe(guid(), false);
+  setAttributes(navigableElement,
+                {"href": url,
+                 "target": iframe.name});
+
+  const promise =
+    bindEvents2(window, "message", iframe, "error", window, "error")
+      .then(event => {
+          assert_equals(event.source, iframe.contentWindow, "event.source");
+          return event.data;
+        });
+  navigableElement.click();
+  return promise;
+}
+
+
+
+
+
+
+
+function requestViaAnchor(url, additionalAttributes) {
+  var a = createElement(
+      "a",
+      Object.assign({"innerHTML": "Link to resource"}, additionalAttributes),
+      document.body);
+
+  return requestViaNavigable(a, url);
+}
+
+
+
+
+
+
+
+function requestViaArea(url, additionalAttributes) {
+  var area = createElement(
+      "area",
+      Object.assign({}, additionalAttributes),
+      document.body);
+
   
-  document.body.appendChild(area);
-  queryNavigable(area, url, callback, attributes, test)
+  return requestViaNavigable(area, url);
 }
 
-function queryScript(url, callback, attributes, referrer_policy, test) {
-  var script = document.createElement("script");
-  script.src = url;
-  script.referrerPolicy = referrer_policy;
 
-  var listener = test.step_func(function(event) {
-    var server_data = event.data;
-    callback(wrapResult(url, server_data), url);
-    window.removeEventListener("message", listener);
+
+
+
+
+
+function requestViaScript(url, additionalAttributes) {
+  const script = createElement(
+      "script",
+      Object.assign({"src": url}, additionalAttributes),
+      document.body,
+      false);
+
+  return bindEvents2(window, "message", script, "error", window, "error")
+    .then(event => wrapResult(event.data));
+}
+
+
+
+
+
+
+
+function requestViaForm(url) {
+  var iframe = createHelperIframe(guid());
+  var form = createElement("form",
+                           {"action": url,
+                            "method": "POST",
+                            "target": iframe.name},
+                           document.body);
+  bindEvents(iframe);
+  form.submit();
+
+  return iframe.eventPromise;
+}
+
+
+
+
+
+
+
+function requestViaLinkStylesheet(url) {
+  return createRequestViaElement("link",
+                                 {"rel": "stylesheet", "href": url},
+                                 document.head);
+}
+
+
+
+
+
+
+
+function requestViaLinkPrefetch(url) {
+  var link = document.createElement('link');
+  if (link.relList && link.relList.supports && link.relList.supports("prefetch")) {
+    return createRequestViaElement("link",
+                                   {"rel": "prefetch", "href": url},
+                                   document.head);
+  } else {
+    return Promise.reject("This browser does not support 'prefetch'.");
+  }
+}
+
+
+
+
+
+
+async function requestViaSendBeacon(url) {
+  function wait(ms) {
+    return new Promise(resolve => step_timeout(resolve, ms));
+  }
+  if (!navigator.sendBeacon(url)) {
+    
+    throw new Error('sendBeacon() fails.');
+  }
+  
+  
+  
+  await wait(500);
+  return 'allowed';
+}
+
+
+
+
+
+
+
+
+
+function createMediaElement(type, media_attrs, source_attrs) {
+  var mediaElement = createElement(type, {});
+
+  var sourceElement = createElement("source", {});
+
+  mediaElement.eventPromise = new Promise(function(resolve, reject) {
+    mediaElement.addEventListener("loadeddata", function (e) {
+      resolve(e);
+    });
+
+    
+    mediaElement.addEventListener("stalled", function(e) {
+      reject(e);
+    });
+
+    sourceElement.addEventListener("error", function(e) {
+      reject(e);
+    });
   });
-  window.addEventListener("message", listener);
 
-  document.body.appendChild(script);
+  setAttributes(mediaElement, media_attrs);
+  setAttributes(sourceElement, source_attrs);
+
+  mediaElement.appendChild(sourceElement);
+  document.body.appendChild(mediaElement);
+
+  return mediaElement;
 }
 
- 
+
+
+
+
+
+
+function requestViaVideo(url) {
+  return createMediaElement("video",
+                            {},
+                            {"src": url}).eventPromise;
+}
+
+
+
+
+
+
+
+function requestViaAudio(url) {
+  return createMediaElement("audio",
+                            {},
+                            {"type": "audio/wav", "src": url}).eventPromise;
+}
+
+
+
+
+
+
+
+
+function requestViaPicture(url) {
+  var picture = createMediaElement("picture", {}, {"srcset": url,
+                                                "type": "image/png"});
+  return createRequestViaElement("img", {"src": url}, picture);
+}
+
+
+
+
+
+
+
+function requestViaObject(url) {
+  return createRequestViaElement("object", {"data": url, "type": "text/html"}, document.body);
+}
+
+
+
+
+
+
+
+
+function requestViaWebSocket(url) {
+  return new Promise(function(resolve, reject) {
+    var websocket = new WebSocket(url);
+
+    websocket.addEventListener("message", function(e) {
+      resolve(e.data);
+    });
+
+    websocket.addEventListener("open", function(e) {
+      websocket.send("echo");
+    });
+
+    websocket.addEventListener("error", function(e) {
+      reject(e)
+    });
+  })
+  .then(data => {
+      return JSON.parse(data);
+    });
+}
+
+
+
 function SanityChecker() {}
 SanityChecker.prototype.checkScenario = function() {};
+SanityChecker.prototype.setFailTimeout = function(test, timeout) {};
 SanityChecker.prototype.checkSubresourceResult = function() {};

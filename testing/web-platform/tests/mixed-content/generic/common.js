@@ -12,6 +12,20 @@
 
 
 
+
+
+
+function timeoutPromise(t, ms) {
+  return new Promise(resolve => { t.step_timeout(resolve, ms); });
+}
+
+
+
+
+
+
+
+
 function getNormalizedPort(targetPort) {
   return ([80, 443, ""].indexOf(targetPort) >= 0) ? "" : ":" + targetPort;
 }
@@ -80,17 +94,56 @@ function setAttributes(el, attrs) {
 
 
 
+
 function bindEvents(element, resolveEventName, rejectEventName) {
-  element.eventPromise = new Promise(function(resolve, reject) {
-    element.addEventListener(resolveEventName  || "load", function (e) {
-      resolve(e);
-    });
-    element.addEventListener(rejectEventName || "error", function(e) {
+  element.eventPromise =
+      bindEvents2(element, resolveEventName, element, rejectEventName);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function bindEvents2(resolveObject, resolveEventName, rejectObject, rejectEventName, rejectObject2, rejectEventName2) {
+  return new Promise(function(resolve, reject) {
+    const actualResolveEventName = resolveEventName || "load";
+    const actualRejectEventName = rejectEventName || "error";
+    const actualRejectEventName2 = rejectEventName2 || "error";
+
+    const resolveHandler = function(event) {
+      cleanup();
+      resolve(event);
+    };
+
+    const rejectHandler = function(event) {
       
       
-      e.preventDefault();
-      reject(e);
-    });
+      event.preventDefault();
+      cleanup();
+      reject(event);
+    };
+
+    const cleanup = function() {
+      resolveObject.removeEventListener(actualResolveEventName, resolveHandler);
+      rejectObject.removeEventListener(actualRejectEventName, rejectHandler);
+      if (rejectObject2) {
+        rejectObject2.removeEventListener(actualRejectEventName2, rejectHandler);
+      }
+    };
+
+    resolveObject.addEventListener(actualResolveEventName, resolveHandler);
+    rejectObject.addEventListener(actualRejectEventName, rejectHandler);
+    if (rejectObject2) {
+      rejectObject2.addEventListener(actualRejectEventName2, rejectHandler);
+    }
   });
 }
 
@@ -155,8 +208,29 @@ function createHelperIframe(name, doBindEvents) {
 
 
 
-function requestViaIframe(url) {
-  return createRequestViaElement("iframe", {"src": url}, document.body);
+
+
+
+
+
+
+
+
+
+
+
+
+function requestViaIframe(url, additionalAttributes) {
+  const iframe = createElement(
+      "iframe",
+      Object.assign({"src": url}, additionalAttributes),
+      document.body,
+      false);
+  return bindEvents2(window, "message", iframe, "error", window, "error")
+      .then(event => {
+          assert_equals(event.source, iframe.contentWindow);
+          return event.data;
+        });
 }
 
 
@@ -170,12 +244,121 @@ function requestViaImage(url) {
 }
 
 
+function loadImageInWindow(src, attributes, w) {
+  return new Promise((resolve, reject) => {
+    var image = new w.Image();
+    image.crossOrigin = "Anonymous";
+    image.onload = function() {
+      resolve(image);
+    };
+
+    
+    if (attributes) {
+      for (var attr in attributes) {
+        image[attr] = attributes[attr];
+      }
+    }
+
+    image.src = src;
+    w.document.body.appendChild(image)
+  });
+}
+
+function extractImageData(img) {
+    var canvas = document.createElement("canvas");
+    var context = canvas.getContext('2d');
+    context.drawImage(img, 0, 0);
+    var imgData = context.getImageData(0, 0, img.clientWidth, img.clientHeight);
+    return imgData.data;
+}
+
+function decodeImageData(rgba) {
+  var rgb = new Uint8ClampedArray(rgba.length);
+
+  
+  var rgb_length = 0;
+  for (var i = 0; i < rgba.length; ++i) {
+    
+    if (i % 4 == 3)
+      continue;
+
+    
+    if (rgba[i] == 0)
+      break;
+
+    rgb[rgb_length++] = rgba[i];
+  }
+
+  
+  rgb = rgb.subarray(0, rgb_length);
+  var string_data = (new TextDecoder("ascii")).decode(rgb);
+
+  return JSON.parse(string_data);
+}
+
+
+
+
+
+function requestViaImageForReferrerPolicy(url, attributes, referrerPolicy) {
+  
+  
+  
+  
+  
+  
+
+  var iframeWithoutOwnPolicy = document.createElement('iframe');
+  var noSrcDocPolicy = new Promise((resolve, reject) => {
+        iframeWithoutOwnPolicy.srcdoc = "Hello, world.";
+        iframeWithoutOwnPolicy.onload = resolve;
+        document.body.appendChild(iframeWithoutOwnPolicy);
+      })
+    .then(() => {
+        var nextUrl = url + "&cache_destroyer2=" + (new Date()).getTime();
+        return loadImageInWindow(nextUrl, attributes,
+                                 iframeWithoutOwnPolicy.contentWindow);
+      })
+    .then(function (img) {
+        return decodeImageData(extractImageData(img));
+      });
+
+  
+  var iframePolicy = (referrerPolicy === "no-referrer") ? "unsafe-url" : "no-referrer";
+  var iframeWithOwnPolicy = document.createElement('iframe');
+  var srcDocPolicy = new Promise((resolve, reject) => {
+        iframeWithOwnPolicy.srcdoc = "<meta name='referrer' content='" + iframePolicy + "'>Hello world.";
+        iframeWithOwnPolicy.onload = resolve;
+        document.body.appendChild(iframeWithOwnPolicy);
+      })
+    .then(() => {
+        var nextUrl = url + "&cache_destroyer3=" + (new Date()).getTime();
+        return loadImageInWindow(nextUrl, null,
+                                 iframeWithOwnPolicy.contentWindow);
+      })
+    .then(function (img) {
+        return decodeImageData(extractImageData(img));
+      });
+
+  var pagePolicy = loadImageInWindow(url, attributes, window)
+    .then(function (img) {
+        return decodeImageData(extractImageData(img));
+      });
+
+  return Promise.all([noSrcDocPolicy, srcDocPolicy, pagePolicy]).then(values => {
+    assert_equals(values[0].headers.referer, values[2].headers.referer, "Referrer inside 'srcdoc' without its own policy should be the same as embedder's referrer.");
+    assert_equals((iframePolicy === "no-referrer" ? undefined : document.location.href), values[1].headers.referer, "Referrer inside 'srcdoc' should use the iframe's policy if it has one");
+    return wrapResult(values[2]);
+  });
+}
+
+
 
 
 
 
 function requestViaXhr(url) {
-  return xhrRequest(url);
+  return xhrRequest(url).then(result => wrapResult(result));
 }
 
 
@@ -184,7 +367,9 @@ function requestViaXhr(url) {
 
 
 function requestViaFetch(url) {
-  return fetch(url);
+  return fetch(url)
+    .then(res => res.json())
+    .then(j => wrapResult(j));
 }
 
 function dedicatedWorkerUrlThatFetches(url) {
@@ -213,10 +398,22 @@ function requestViaDedicatedWorker(url, options) {
   } catch (e) {
     return Promise.reject(e);
   }
-  bindEvents(worker, "message", "error");
   worker.postMessage('');
+  return bindEvents2(worker, "message", worker, "error")
+    .then(event => wrapResult(event.data));
+}
 
-  return worker.eventPromise;
+function requestViaSharedWorker(url) {
+  var worker;
+  try {
+    worker = new SharedWorker(url);
+  } catch(e) {
+    return Promise.reject(e);
+  }
+  const promise = bindEvents2(worker.port, "message", worker, "error")
+    .then(event => wrapResult(event.data));
+  worker.port.start();
+  return promise;
 }
 
 
@@ -251,13 +448,19 @@ function requestViaWorklet(type, url) {
 
 
 function requestViaNavigable(navigableElement, url) {
-  var iframe = createHelperIframe(guid(), true);
+  var iframe = createHelperIframe(guid(), false);
   setAttributes(navigableElement,
                 {"href": url,
                  "target": iframe.name});
-  navigableElement.click();
 
-  return iframe.eventPromise;
+  const promise =
+    bindEvents2(window, "message", iframe, "error", window, "error")
+      .then(event => {
+          assert_equals(event.source, iframe.contentWindow, "event.source");
+          return event.data;
+        });
+  navigableElement.click();
+  return promise;
 }
 
 
@@ -266,8 +469,11 @@ function requestViaNavigable(navigableElement, url) {
 
 
 
-function requestViaAnchor(url) {
-  var a = createElement("a", {"innerHTML": "Link to resource"}, document.body);
+function requestViaAnchor(url, additionalAttributes) {
+  var a = createElement(
+      "a",
+      Object.assign({"innerHTML": "Link to resource"}, additionalAttributes),
+      document.body);
 
   return requestViaNavigable(a, url);
 }
@@ -278,9 +484,13 @@ function requestViaAnchor(url) {
 
 
 
-function requestViaArea(url) {
-  var area = createElement("area", {}, document.body);
+function requestViaArea(url, additionalAttributes) {
+  var area = createElement(
+      "area",
+      Object.assign({}, additionalAttributes),
+      document.body);
 
+  
   return requestViaNavigable(area, url);
 }
 
@@ -290,8 +500,15 @@ function requestViaArea(url) {
 
 
 
-function requestViaScript(url) {
-  return createRequestViaElement("script", {"src": url}, document.body);
+function requestViaScript(url, additionalAttributes) {
+  const script = createElement(
+      "script",
+      Object.assign({"src": url}, additionalAttributes),
+      document.body,
+      false);
+
+  return bindEvents2(window, "message", script, "error", window, "error")
+    .then(event => wrapResult(event.data));
 }
 
 
@@ -458,7 +675,7 @@ function requestViaWebSocket(url) {
     var websocket = new WebSocket(url);
 
     websocket.addEventListener("message", function(e) {
-      resolve(JSON.parse(e.data));
+      resolve(e.data);
     });
 
     websocket.addEventListener("open", function(e) {
@@ -468,7 +685,10 @@ function requestViaWebSocket(url) {
     websocket.addEventListener("error", function(e) {
       reject(e)
     });
-  });
+  })
+  .then(data => {
+      return JSON.parse(data);
+    });
 }
 
 
@@ -476,3 +696,4 @@ function requestViaWebSocket(url) {
 function SanityChecker() {}
 SanityChecker.prototype.checkScenario = function() {};
 SanityChecker.prototype.setFailTimeout = function(test, timeout) {};
+SanityChecker.prototype.checkSubresourceResult = function() {};
