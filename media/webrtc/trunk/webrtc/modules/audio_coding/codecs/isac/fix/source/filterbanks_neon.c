@@ -13,11 +13,7 @@
 
 
 
-#if defined(_MSC_VER) && !defined(__clang__)
-#include <arm64_neon.h>
-#else
 #include <arm_neon.h>
-#endif
 
 #include "rtc_base/checks.h"
 

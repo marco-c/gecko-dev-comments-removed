@@ -8,11 +8,7 @@
 
 
 
-#if defined(_MSC_VER) && !defined(__clang__)
-#include <arm64_neon.h>
-#else
 #include <arm_neon.h>
-#endif
 
 #include "modules/audio_coding/codecs/isac/fix/source/codec.h"
 #include "modules/audio_coding/codecs/isac/fix/source/settings.h"
