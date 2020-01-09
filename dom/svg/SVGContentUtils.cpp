@@ -503,6 +503,16 @@ static gfx::Matrix GetCTMInternal(SVGElement* aElement, bool aScreenCTM,
     
     matrix = aElement->PrependLocalTransformsTo(gfxMatrix());
   }
+
+  if (auto* f = element->GetPrimaryFrame()) {
+    if (f->IsSVGOuterSVGFrame()) {
+      nsMargin bp = f->GetUsedBorderAndPadding();
+      matrix.PostTranslate(
+          NSAppUnitsToFloatPixels(bp.left, AppUnitsPerCSSPixel()),
+          NSAppUnitsToFloatPixels(bp.top, AppUnitsPerCSSPixel()));
+    }
+  }
+
   if (!ancestor || !ancestor->IsElement()) {
     return gfx::ToMatrix(matrix);
   }
