@@ -485,12 +485,17 @@ void nsSVGOuterSVGFrame::Reflow(nsPresContext* aPresContext,
   
   
   aDesiredSize.SetOverflowAreasToDesiredBounds();
-  if (!mIsRootContent) {
-    aDesiredSize.mOverflowAreas.VisualOverflow().UnionRect(
-        aDesiredSize.mOverflowAreas.VisualOverflow(),
-        anonKid->GetVisualOverflowRect() + anonKid->GetPosition());
+
+  
+  
+  if (!HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
+    if (!mIsRootContent) {
+      aDesiredSize.mOverflowAreas.VisualOverflow().UnionRect(
+          aDesiredSize.mOverflowAreas.VisualOverflow(),
+          anonKid->GetVisualOverflowRect() + anonKid->GetPosition());
+    }
+    FinishAndStoreOverflow(&aDesiredSize);
   }
-  FinishAndStoreOverflow(&aDesiredSize);
 
   NS_FRAME_TRACE(NS_FRAME_TRACE_CALLS,
                  ("exit nsSVGOuterSVGFrame::Reflow: size=%d,%d",
