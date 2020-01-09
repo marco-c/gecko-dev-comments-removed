@@ -5,22 +5,15 @@
 
 
 
-var tempScope = {};
-ChromeUtils.import("resource://gre/modules/LightweightThemeManager.jsm", tempScope);
-var LightweightThemeManager = tempScope.LightweightThemeManager;
+const {PromiseTestUtils} = ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm");
+
+PromiseTestUtils.whitelistRejectionsGlobally(/this\._errorLink/);
 
 var gManagerWindow;
 var gCategoryUtilities;
 
 async function test() {
   waitForExplicitFinish();
-
-  
-  LightweightThemeManager.currentTheme = {
-    id: "test",
-    name: "Test lightweight theme",
-    headerURL: "http://example.com/header.png",
-  };
 
   let aWindow = await open_manager(null);
   gManagerWindow = aWindow;
@@ -30,7 +23,6 @@ async function test() {
 
 async function end_test() {
   await close_manager(gManagerWindow);
-  LightweightThemeManager.forgetUsedTheme("test");
   finish();
 }
 
