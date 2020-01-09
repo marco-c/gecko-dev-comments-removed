@@ -36,7 +36,6 @@ try {
     }
     const { require } = loader;
 
-    const Services = require("Services");
     const DevToolsUtils = require("devtools/shared/DevToolsUtils");
     const { dumpn } = DevToolsUtils;
     const { DebuggerServer } = require("devtools/server/main");
@@ -144,14 +143,9 @@ try {
     
     
     function destroyServer() {
-      const isContentProcessServer =
-        Services.appinfo.processType === Services.appinfo.PROCESS_TYPE_CONTENT;
       
       
-      
-      
-      
-      if (DebuggerServer.hasConnection() || !isContentProcessServer) {
+      if (DebuggerServer.hasConnection()) {
         return;
       }
       DebuggerServer.off("connectionchange", destroyServer);
