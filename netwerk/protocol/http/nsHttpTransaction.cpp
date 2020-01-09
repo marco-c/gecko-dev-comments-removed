@@ -378,7 +378,8 @@ nsresult nsHttpTransaction::Init(
   
   
   nsCOMPtr<nsIInputStream> headers;
-  rv = NS_NewByteInputStream(getter_AddRefs(headers), mReqHeaderBuf);
+  rv = NS_NewByteInputStream(getter_AddRefs(headers), mReqHeaderBuf,
+                             NS_ASSIGNMENT_DEPEND);
   if (NS_FAILED(rv)) return rv;
 
   mHasRequestBody = !!requestBody;

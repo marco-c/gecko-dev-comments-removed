@@ -47,9 +47,9 @@
 
 
 
-extern nsresult NS_NewByteInputStream(
-    nsIInputStream** aStreamResult, mozilla::Span<const char> aStringToRead,
-    nsAssignmentType aAssignment = NS_ASSIGNMENT_DEPEND);
+extern nsresult NS_NewByteInputStream(nsIInputStream** aStreamResult,
+                                      mozilla::Span<const char> aStringToRead,
+                                      nsAssignmentType aAssignment);
 
 
 
