@@ -727,30 +727,32 @@ SearchService.prototype = {
   async _init(skipRegionCheck) {
     LOG("_init start");
 
-    
-    let cache = await this._readCacheFile();
-
-    
-    
-    
-    this._ensureKnownRegionPromise = ensureKnownRegion(this)
-      .catch(ex => LOG("_init: failure determining region: " + ex))
-      .finally(() => this._ensureKnownRegionPromise = null);
-    if (!skipRegionCheck) {
-      await this._ensureKnownRegionPromise;
-    }
-
-    this._setupRemoteSettings().catch(Cu.reportError);
-
     try {
+      
+      let cache = await this._readCacheFile();
+
+      
+      
+      
+      this._ensureKnownRegionPromise = ensureKnownRegion(this)
+        .catch(ex => LOG("_init: failure determining region: " + ex))
+        .finally(() => this._ensureKnownRegionPromise = null);
+      if (!skipRegionCheck) {
+        await this._ensureKnownRegionPromise;
+      }
+
+      this._setupRemoteSettings().catch(Cu.reportError);
+
       await this._loadEngines(cache);
+
+      
+      LOG("_init: engines loaded, writing cache");
+      this._buildCache();
+      this._addObservers();
     } catch (ex) {
-      this._initRV = Cr.NS_ERROR_FAILURE;
-      LOG("_init: failure loading engines: " + ex + "\n" + ex.stack);
+      this._initRV = (ex.result !== undefined ? ex.result : Cr.NS_ERROR_FAILURE);
+      LOG("_init: failure initializng search: " + ex + "\n" + ex.stack);
     }
-    
-    this._buildCache();
-    this._addObservers();
     gInitialized = true;
     if (Components.isSuccessCode(this._initRV)) {
       this._initObservers.resolve(this._initRV);
