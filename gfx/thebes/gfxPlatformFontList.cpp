@@ -679,10 +679,6 @@ gfxFontEntry* gfxPlatformFontList::GlobalFontFallback(
     RefPtr<gfxFontFamily>& family = iter.Data();
     
     family->FindFontForChar(&data);
-    if (data.mMatchDistance == 0.0) {
-      
-      break;
-    }
   }
 
   aCmapCount = data.mCmapsTested;
