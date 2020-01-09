@@ -158,7 +158,7 @@ struct TestFileData {
   int32_t mHeight;
   uint32_t mNumberAudioTracks;
   int64_t mAudioDuration;  
-  bool mHasCrypto;
+  bool mHasCrypto;  
   uint64_t mMoofReachedOffset;  
   bool mValidMoof;
   bool mHeader;
@@ -234,6 +234,9 @@ static const TestFileData testFiles[] = {
      false, 0},
     {"test_case_1410565.mp4", false, 0, false, 0, 0, 0, 0, 0, false, 955100,
      true, true, 2},  
+    {"test_case_1519617-cenc-init-with-track_id-0.mp4", true, 1, true, 0, 1272,
+     530, 0, -1, false, 0, false, false,
+     0},  
     {"test_case_1519617-video-has-track_id-0.mp4", true, 1, true, 10032000, 400,
      300, 1, 10032000, false, 0, true, true, 2},  
 };
@@ -531,6 +534,62 @@ TEST(MoofParser, test_case_track_id_0_does_not_read_multitracks) {
       << "Wrong number of sample descriptions for video track! If value is 2, "
          "then we've read sample description information from video and audio "
          "tracks!";
+}
+
+
+
+
+
+
+
+TEST(MoofParser, test_case_track_id_0_reads_crypto_metadata) {
+  const char* zeroTrackIdFileName =
+      "test_case_1519617-cenc-init-with-track_id-0.mp4";
+  nsTArray<uint8_t> buffer = ReadTestFile(zeroTrackIdFileName);
+
+  ASSERT_FALSE(buffer.IsEmpty());
+  RefPtr<ByteStream> stream =
+      new TestStream(buffer.Elements(), buffer.Length());
+
+  
+  
+  const uint32_t videoTrackId = 0;
+  MoofParser parser(stream, videoTrackId, false);
+
+  
+  
+  
+
+  const MediaByteRangeSet byteRanges(
+      MediaByteRange(0, int64_t(buffer.Length())));
+  EXPECT_FALSE(parser.RebuildFragmentedIndex(byteRanges))
+      << "MoofParser should not find a valid moof, this is just an init "
+         "segment!";
+
+  
+  
+  
+  const size_t numSampleDescriptionEntries = 1;
+  const uint32_t defaultPerSampleIVSize = 8;
+  const size_t keyIdLength = 16;
+  const uint32_t defaultKeyId[keyIdLength] = {
+      0x43, 0xbe, 0x13, 0xd0, 0x26, 0xc9, 0x41, 0x54,
+      0x8f, 0xed, 0xf9, 0x54, 0x1a, 0xef, 0x6b, 0x0e};
+  EXPECT_TRUE(parser.mSinf.IsValid())
+      << "Should have a sinf that has crypto data!";
+  EXPECT_EQ(defaultPerSampleIVSize, parser.mSinf.mDefaultIVSize)
+      << "Wrong default per sample IV size for track! If 0 indicates we failed "
+         "to parse some crypto info!";
+  for (size_t i = 0; i < keyIdLength; i++) {
+    EXPECT_EQ(defaultKeyId[i], parser.mSinf.mDefaultKeyID[i])
+        << "Mismatched default key ID byte at index " << i
+        << " indicates we failed to parse some crypto info!";
+  }
+  ASSERT_EQ(numSampleDescriptionEntries, parser.mSampleDescriptions.Length())
+      << "Wrong number of sample descriptions for track! If 0, indicates we "
+         "failed to parse some expected crypto!";
+  EXPECT_TRUE(parser.mSampleDescriptions[0].mIsEncryptedEntry)
+      << "Sample description should be marked as encrypted!";
 }
 
 
