@@ -1010,7 +1010,7 @@ WebConsoleActor.prototype =
     const helperResult = evalInfo.helperResult;
 
     let result, errorDocURL, errorMessage, errorNotes = null, errorGrip = null,
-      frame = null, awaitResult, errorMessageName;
+      frame = null, awaitResult, errorMessageName, exceptionStack;
     if (evalResult) {
       if ("return" in evalResult) {
         result = evalResult.return;
@@ -1028,6 +1028,21 @@ WebConsoleActor.prototype =
       } else if ("throw" in evalResult) {
         const error = evalResult.throw;
         errorGrip = this.createValueGrip(error);
+
+        exceptionStack = this.prepareStackForRemote(evalResult.stack);
+
+        if (exceptionStack) {
+          
+          const {
+            filename: source,
+            sourceId,
+            lineNumber: line,
+            columnNumber: column,
+          } = exceptionStack[0];
+          frame = { source, sourceId, line, column };
+
+          exceptionStack = WebConsoleUtils.removeFramesAboveDebuggerEval(exceptionStack);
+        }
 
         errorMessage = String(error);
         if (typeof error === "object" && error !== null) {
@@ -1132,6 +1147,7 @@ WebConsoleActor.prototype =
       exception: errorGrip,
       exceptionMessage: this._createStringGrip(errorMessage),
       exceptionDocURL: errorDocURL,
+      exceptionStack,
       errorMessageName,
       frame,
       helperResult: helperResult,
@@ -1473,25 +1489,38 @@ WebConsoleActor.prototype =
 
 
 
-  preparePageErrorForRemote: function(pageError) {
-    let stack = null;
+  prepareStackForRemote(errorStack) {
     
     
     
-    if (pageError.stack && !Cu.isDeadWrapper(pageError.stack)) {
-      stack = [];
-      let s = pageError.stack;
-      while (s !== null) {
-        stack.push({
-          filename: s.source,
-          sourceId: this.getActorIdForInternalSourceId(s.sourceId),
-          lineNumber: s.line,
-          columnNumber: s.column,
-          functionName: s.functionDisplayName,
-        });
-        s = s.parent;
-      }
+    if (!errorStack || (Cu && Cu.isDeadWrapper(errorStack))) {
+      return null;
     }
+    const stack = [];
+    let s = errorStack;
+    while (s) {
+      stack.push({
+        filename: s.source,
+        sourceId: this.getActorIdForInternalSourceId(s.sourceId),
+        lineNumber: s.line,
+        columnNumber: s.column,
+        functionName: s.functionDisplayName,
+      });
+      s = s.parent;
+    }
+    return stack;
+  },
+
+  
+
+
+
+
+
+
+
+  preparePageErrorForRemote: function(pageError) {
+    const stack = this.prepareStackForRemote(pageError.stack);
     let lineText = pageError.sourceLine;
     if (lineText && lineText.length > DebuggerServer.LONG_STRING_INITIAL_LENGTH) {
       lineText = lineText.substr(0, DebuggerServer.LONG_STRING_INITIAL_LENGTH);
