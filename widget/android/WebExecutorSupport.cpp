@@ -331,17 +331,23 @@ class DNSListener final : public nsIDNSListener {
   OnLookupComplete(nsICancelable* aRequest, nsIDNSRecord* aRecord,
                    nsresult aStatus) override {
     if (NS_FAILED(aStatus)) {
-      CompleteWithError(mResult, aStatus);
+      CompleteUnknownHostError();
       return NS_OK;
     }
 
     nsresult rv = CompleteWithRecord(aRecord);
     if (NS_FAILED(rv)) {
-      CompleteWithError(mResult, rv);
+      CompleteUnknownHostError();
       return NS_OK;
     }
 
     return NS_OK;
+  }
+
+  void CompleteUnknownHostError() {
+    java::sdk::UnknownHostException::LocalRef error =
+        java::sdk::UnknownHostException::New();
+    mResult->CompleteExceptionally(error.Cast<jni::Throwable>());
   }
 
   NS_IMETHOD
@@ -548,7 +554,9 @@ void WebExecutorSupport::Resolve(jni::String::Param aUri,
   nsCString uri = aUri->ToCString();
   nsresult rv = ResolveHost(uri, result);
   if (NS_FAILED(rv)) {
-    CompleteWithError(result, rv);
+    java::sdk::UnknownHostException::LocalRef error =
+        java::sdk::UnknownHostException::New();
+    result->CompleteExceptionally(error.Cast<jni::Throwable>());
   }
 }
 

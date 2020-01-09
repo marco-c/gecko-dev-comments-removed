@@ -14,6 +14,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.List;
 
@@ -90,11 +91,15 @@ public class GeckoWebExecutor {
 
 
 
+
+
     public @NonNull GeckoResult<WebResponse> fetch(final @NonNull WebRequest request) {
         return fetch(request, FETCH_FLAGS_NONE);
     }
 
     
+
+
 
 
 
@@ -133,6 +138,7 @@ public class GeckoWebExecutor {
     }
 
     
+
 
 
 
