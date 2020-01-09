@@ -15,19 +15,21 @@
 #include <stdio.h>
 #include <sstream>
 
+template <typename T>
+class nsTSubstring;
+
 namespace mozilla {
 
 namespace detail {
 
 
-
 template <typename T, typename = decltype(std::declval<std::ostream&>()
-                                          << *std::declval<T>())>
-std::true_type supports_os_deref_test(const T&);
-std::false_type supports_os_deref_test(...);
+                                          << std::declval<T>())>
+std::true_type supports_os_test(const T&);
+std::false_type supports_os_test(...);
 
 template <typename T>
-using supports_os_deref = decltype(supports_os_deref_test(std::declval<T>()));
+using supports_os = decltype(supports_os_test(std::declval<T>()));
 
 }  
 
@@ -37,10 +39,8 @@ using supports_os_deref = decltype(supports_os_deref_test(std::declval<T>()));
 
 
 template <typename T>
-auto DebugValue(std::ostream& aOut, T&& aValue) -> std::enable_if_t<
-    std::is_pointer<typename std::remove_reference<T>::type>::value &&
-        mozilla::detail::supports_os_deref<T>::value,
-    std::ostream&> {
+auto DebugValue(std::ostream& aOut, T* aValue)
+    -> std::enable_if_t<mozilla::detail::supports_os<T>::value, std::ostream&> {
   if (aValue) {
     aOut << *aValue << " @ " << aValue;
   } else {
@@ -52,11 +52,33 @@ auto DebugValue(std::ostream& aOut, T&& aValue) -> std::enable_if_t<
 
 
 
+
 template <typename T>
-auto DebugValue(std::ostream& aOut, T&& aValue) -> std::enable_if_t<
-    !(std::is_pointer<typename std::remove_reference<T>::type>::value &&
-      mozilla::detail::supports_os_deref<T>::value),
-    std::ostream&> {
+auto DebugValue(std::ostream& aOut, T* aValue)
+    -> std::enable_if_t<!mozilla::detail::supports_os<T>::value,
+                        std::ostream&> {
+  return aOut << aValue;
+}
+
+
+
+
+template <typename T>
+auto DebugValue(std::ostream& aOut, const T& aValue)
+    -> std::enable_if_t<std::is_base_of<nsTSubstring<char>, T>::value ||
+                            std::is_base_of<nsTSubstring<char16_t>, T>::value,
+                        std::ostream&> {
+  return aOut << '"' << aValue << '"';
+}
+
+
+
+
+template <typename T>
+auto DebugValue(std::ostream& aOut, const T& aValue)
+    -> std::enable_if_t<!std::is_base_of<nsTSubstring<char>, T>::value &&
+                            !std::is_base_of<nsTSubstring<char16_t>, T>::value,
+                        std::ostream&> {
   return aOut << aValue;
 }
 
