@@ -25,6 +25,7 @@
 #include "vm/EnvironmentObject.h"
 #include "vm/Opcodes.h"
 #include "vm/RegExpStatics.h"
+#include "vm/SelfHosting.h"
 #include "vm/TraceLogging.h"
 
 #include "gc/Nursery-inl.h"
@@ -2434,14 +2435,8 @@ AbortReasonOr<Ok> IonBuilder::inspectOpcode(JSOp op) {
       pushConstant(MagicValue(JS_IS_CONSTRUCTING));
       return Ok();
 
-    case JSOP_OPTIMIZE_SPREADCALL: {
-      
-      
-      MDefinition* arr = current->peek(-1);
-      arr->setImplicitlyUsedUnchecked();
-      pushConstant(BooleanValue(false));
-      return Ok();
-    }
+    case JSOP_OPTIMIZE_SPREADCALL:
+      return jsop_optimize_spreadcall();
 
     case JSOP_IMPORTMETA:
       return jsop_importmeta();
@@ -5615,6 +5610,115 @@ AbortReasonOr<Ok> IonBuilder::jsop_spreadcall() {
   
   TemporaryTypeSet* types = bytecodeTypes(pc);
   return pushTypeBarrier(apply, types, BarrierKind::TypeSet);
+}
+
+bool IonBuilder::propertyIsConstantFunction(NativeObject* nobj, jsid id,
+                                            bool (*test)(IonBuilder* builder,
+                                                         JSFunction* fun)) {
+  if (!nobj->isSingleton()) {
+    return false;
+  }
+
+  TypeSet::ObjectKey* objKey = TypeSet::ObjectKey::get(nobj);
+  if (analysisContext) {
+    objKey->ensureTrackedProperty(analysisContext, id);
+  }
+
+  if (objKey->unknownProperties()) {
+    return false;
+  }
+
+  HeapTypeSetKey property = objKey->property(id);
+  Value value = UndefinedValue();
+  if (!property.constant(constraints(), &value)) {
+    return false;
+  }
+  return value.isObject() && value.toObject().is<JSFunction>() &&
+         test(this, &value.toObject().as<JSFunction>());
+}
+
+bool IonBuilder::ensureArrayPrototypeIteratorNotModified() {
+  NativeObject* obj = script()->global().maybeGetArrayPrototype();
+  if (!obj) {
+    return false;
+  }
+
+  jsid id = SYMBOL_TO_JSID(realm->runtime()->wellKnownSymbols().iterator);
+  return propertyIsConstantFunction(obj, id, [](auto* builder, auto* fun) {
+    return IsSelfHostedFunctionWithName(fun,
+                                        builder->runtime->names().ArrayValues);
+  });
+}
+
+bool IonBuilder::ensureArrayIteratorPrototypeNextNotModified() {
+  NativeObject* obj = script()->global().maybeGetArrayIteratorPrototype();
+  if (!obj) {
+    return false;
+  }
+
+  jsid id = NameToId(runtime->names().next);
+  return propertyIsConstantFunction(obj, id, [](auto* builder, auto* fun) {
+    return IsSelfHostedFunctionWithName(
+        fun, builder->runtime->names().ArrayIteratorNext);
+  });
+}
+
+AbortReasonOr<Ok> IonBuilder::jsop_optimize_spreadcall() {
+  MDefinition* arr = current->peek(-1);
+  arr->setImplicitlyUsedUnchecked();
+
+  
+  
+  bool result = false;
+  do {
+    
+    
+    
+
+    
+    TemporaryTypeSet* types = arr->resultTypeSet();
+    if (!types || types->getKnownClass(constraints()) != &ArrayObject::class_) {
+      break;
+    }
+
+    
+    if (types->hasObjectFlags(constraints(), OBJECT_FLAG_NON_PACKED)) {
+      break;
+    }
+
+    
+    JSObject* proto;
+    if (!types->getCommonPrototype(constraints(), &proto)) {
+      break;
+    }
+    NativeObject* arrayProto = script()->global().maybeGetArrayPrototype();
+    if (!arrayProto || arrayProto != proto) {
+      break;
+    }
+
+    
+    jsid id = SYMBOL_TO_JSID(realm->runtime()->wellKnownSymbols().iterator);
+    bool res;
+    MOZ_TRY_VAR(res, testNotDefinedProperty(arr, id, true));
+    if (!res) {
+      break;
+    }
+
+    
+    if (!ensureArrayPrototypeIteratorNotModified()) {
+      break;
+    }
+
+    
+    if (!ensureArrayIteratorPrototypeNextNotModified()) {
+      break;
+    }
+
+    result = true;
+  } while (false);
+
+  pushConstant(BooleanValue(result));
+  return Ok();
 }
 
 AbortReasonOr<Ok> IonBuilder::jsop_funapplyarray(uint32_t argc) {

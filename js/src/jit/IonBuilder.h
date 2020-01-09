@@ -217,6 +217,16 @@ class IonBuilder : public MIRGenerator,
   AbortReasonOr<MInstruction*> createCallObject(MDefinition* callee,
                                                 MDefinition* envObj);
 
+  
+  
+  
+  bool propertyIsConstantFunction(NativeObject* nobj, jsid id,
+                                  bool (*test)(IonBuilder* builder,
+                                               JSFunction* fun));
+
+  bool ensureArrayPrototypeIteratorNotModified();
+  bool ensureArrayIteratorPrototypeNextNotModified();
+
   MDefinition* walkEnvironmentChain(unsigned hops);
 
   MInstruction* addConvertElementsToDoubles(MDefinition* elements);
@@ -570,6 +580,7 @@ class IonBuilder : public MIRGenerator,
   AbortReasonOr<Ok> jsop_funapplyarguments(uint32_t argc);
   AbortReasonOr<Ok> jsop_funapplyarray(uint32_t argc);
   AbortReasonOr<Ok> jsop_spreadcall();
+  AbortReasonOr<Ok> jsop_optimize_spreadcall();
   AbortReasonOr<Ok> jsop_call(uint32_t argc, bool constructing,
                               bool ignoresReturnValue);
   AbortReasonOr<Ok> jsop_eval(uint32_t argc);
