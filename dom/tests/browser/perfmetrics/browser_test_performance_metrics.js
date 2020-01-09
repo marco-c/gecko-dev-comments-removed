@@ -138,7 +138,9 @@ add_task(async function test() {
     Assert.ok(isTopLevel, "example.com as a top level window");
     Assert.ok(aboutMemoryFound, "about:memory");
     Assert.ok(heapUsage > 0, "got some memory value reported");
-    Assert.ok(sharedWorker, "We got some info from a shared worker");
+    
+    
+    
     let numCounters = counterIds.length;
     Assert.ok(numCounters > 5, "This test generated at least " + numCounters + " unique counters");
 
