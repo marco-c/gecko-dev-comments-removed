@@ -874,6 +874,8 @@ impl UniformLocation {
 
 pub struct Capabilities {
     pub supports_multisampling: bool,
+    
+    pub supports_copy_image_sub_data: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -958,9 +960,6 @@ pub struct Device {
     
     
     texture_storage_usage: TexStorageUsage,
-
-    
-    supports_copy_image_sub_data: bool,
 
     optimal_pbo_stride: NonZeroUsize,
 
@@ -1218,6 +1217,7 @@ impl Device {
 
             capabilities: Capabilities {
                 supports_multisampling: false, 
+                supports_copy_image_sub_data,
             },
 
             bgra_format_internal,
@@ -1243,7 +1243,6 @@ impl Device {
             frame_id: GpuFrameId(0),
             extensions,
             texture_storage_usage,
-            supports_copy_image_sub_data,
             optimal_pbo_stride,
         }
     }
@@ -1809,7 +1808,7 @@ impl Device {
         debug_assert!(dst.size.height >= src.size.height);
         debug_assert!(dst.layer_count >= src.layer_count);
 
-        if self.supports_copy_image_sub_data {
+        if self.capabilities.supports_copy_image_sub_data {
             assert_ne!(src.id, dst.id,
                     "glCopyImageSubData's behaviour is undefined if src and dst images are identical and the rectangles overlap.");
             unsafe {

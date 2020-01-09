@@ -1110,7 +1110,19 @@ impl GpuCacheTexture {
         
         assert!(height >= 2, "Height is too small for ANGLE");
         let new_size = DeviceIntSize::new(MAX_VERTEX_TEXTURE_WIDTH as _, height);
-        let rt_info = Some(RenderTargetInfo { has_depth: false });
+        
+        
+        
+        
+        
+        
+        
+        let supports_copy_image_sub_data = device.get_capabilities().supports_copy_image_sub_data;
+        let rt_info =  if supports_copy_image_sub_data {
+            None
+        } else {
+            Some(RenderTargetInfo { has_depth: false })
+        };
         let mut texture = device.create_texture(
             TextureTarget::Default,
             ImageFormat::RGBAF32,
