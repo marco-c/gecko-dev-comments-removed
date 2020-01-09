@@ -117,7 +117,7 @@ async function continueFileHandler(leafName) {
   
   
   let interval = 100;
-  let retries = 200;
+  let retries = 300;
   let continueFile;
   if (leafName == CONTINUE_STAGING) {
     
