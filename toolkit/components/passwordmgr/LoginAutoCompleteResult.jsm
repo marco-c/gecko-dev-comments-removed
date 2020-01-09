@@ -122,9 +122,14 @@ class LoginAutocompleteItem extends AutocompleteItem {
     });
 
     XPCOMUtils.defineLazyGetter(this, "comment", () => {
-      return JSON.stringify({
-        loginOrigin: login.hostname,
-      });
+      try {
+        let uri = Services.io.newURI(login.hostname);
+        
+        return uri.displayHostPort || login.hostname;
+      } catch (ex) {
+        
+      }
+      return login.hostname;
     });
   }
 
