@@ -1475,9 +1475,17 @@ void ScriptSourceObject::setPrivate(JSRuntime* rt, const Value& value) {
   
   JS::AutoSuppressGCAnalysis nogc;
   Value prevValue = getReservedSlot(PRIVATE_SLOT);
-  rt->releaseScriptPrivate(prevValue);
+  if (!prevValue.isUndefined()) {
+    if (auto releaseHook = rt->scriptPrivateReleaseHook) {
+      releaseHook(prevValue);
+    }
+  }
   setReservedSlot(PRIVATE_SLOT, value);
-  rt->addRefScriptPrivate(value);
+  if (!value.isUndefined()) {
+    if (auto addRefHook = rt->scriptPrivateAddRefHook) {
+      addRefHook(value);
+    }
+  }
 }
 
  bool JSScript::loadSource(JSContext* cx, ScriptSource* ss,
