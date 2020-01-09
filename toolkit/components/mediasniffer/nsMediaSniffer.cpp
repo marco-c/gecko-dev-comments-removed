@@ -45,6 +45,8 @@ nsMediaSnifferEntry sFtypEntries[] = {
     PATTERN_ENTRY("\xFF\xFF\xFF", "mp4", VIDEO_MP4),  
     PATTERN_ENTRY("\xFF\xFF\xFF", "avc",
                   VIDEO_MP4),  
+    PATTERN_ENTRY("\xFF\xFF\xFF\xFF", "3gp4",
+                  VIDEO_MP4),  
     PATTERN_ENTRY("\xFF\xFF\xFF", "3gp",
                   VIDEO_3GPP),  
     PATTERN_ENTRY("\xFF\xFF\xFF\xFF", "M4V ", VIDEO_MP4),
