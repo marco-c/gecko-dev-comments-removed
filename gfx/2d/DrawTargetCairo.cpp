@@ -192,14 +192,16 @@ static bool PatternIsCompatible(const Pattern& aPattern) {
 
 static cairo_user_data_key_t surfaceDataKey;
 
-void ReleaseData(void* aData) {
+static void ReleaseData(void* aData) {
   DataSourceSurface* data = static_cast<DataSourceSurface*>(aData);
   data->Unmap();
   data->Release();
 }
 
-cairo_surface_t* CopyToImageSurface(unsigned char* aData, const IntRect& aRect,
-                                    int32_t aStride, SurfaceFormat aFormat) {
+static cairo_surface_t* CopyToImageSurface(unsigned char* aData,
+                                           const IntRect& aRect,
+                                           int32_t aStride,
+                                           SurfaceFormat aFormat) {
   MOZ_ASSERT(aData);
 
   auto aRectWidth = aRect.Width();
@@ -236,7 +238,7 @@ cairo_surface_t* CopyToImageSurface(unsigned char* aData, const IntRect& aRect,
 
 
 
-cairo_surface_t* GetAsImageSurface(cairo_surface_t* aSurface) {
+static cairo_surface_t* GetAsImageSurface(cairo_surface_t* aSurface) {
   if (cairo_surface_get_type(aSurface) == CAIRO_SURFACE_TYPE_IMAGE) {
     return aSurface;
 #ifdef CAIRO_HAS_WIN32_SURFACE
@@ -248,9 +250,9 @@ cairo_surface_t* GetAsImageSurface(cairo_surface_t* aSurface) {
   return nullptr;
 }
 
-cairo_surface_t* CreateSubImageForData(unsigned char* aData,
-                                       const IntRect& aRect, int aStride,
-                                       SurfaceFormat aFormat) {
+static cairo_surface_t* CreateSubImageForData(unsigned char* aData,
+                                              const IntRect& aRect, int aStride,
+                                              SurfaceFormat aFormat) {
   if (!aData) {
     gfxWarning() << "DrawTargetCairo.CreateSubImageForData null aData";
     return nullptr;
@@ -269,9 +271,9 @@ cairo_surface_t* CreateSubImageForData(unsigned char* aData,
 
 
 
-cairo_surface_t* ExtractSubImage(cairo_surface_t* aSurface,
-                                 const IntRect& aSubImage,
-                                 SurfaceFormat aFormat) {
+static cairo_surface_t* ExtractSubImage(cairo_surface_t* aSurface,
+                                        const IntRect& aSubImage,
+                                        SurfaceFormat aFormat) {
   
   
   
@@ -305,7 +307,7 @@ cairo_surface_t* ExtractSubImage(cairo_surface_t* aSurface,
 
 
 
-cairo_surface_t* GetCairoSurfaceForSourceSurface(
+static cairo_surface_t* GetCairoSurfaceForSourceSurface(
     SourceSurface* aSurface, bool aExistingOnly = false,
     const IntRect& aSubImage = IntRect()) {
   if (!aSurface) {
