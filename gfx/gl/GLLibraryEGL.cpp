@@ -72,9 +72,18 @@ static const char* sEGLExtensionNames[] = {
     "EGL_KHR_create_context_no_error",
     "EGL_MOZ_create_context_provoking_vertex_dont_care"};
 
-#if defined(ANDROID)
+PRLibrary* LoadApitraceLibrary() {
+  const char* path = nullptr;
 
-static PRLibrary* LoadApitraceLibrary() {
+#ifdef ANDROID
+  
+  
+  
+  
+  path = "/data/local/tmp/egltrace.so";
+#endif
+  if (!path) return nullptr;
+
   
   gfxPrefs::GetSingleton();
   if (!gfxPrefs::UseApitrace()) {
@@ -82,7 +91,6 @@ static PRLibrary* LoadApitraceLibrary() {
   }
 
   static PRLibrary* sApitraceLibrary = nullptr;
-
   if (sApitraceLibrary) return sApitraceLibrary;
 
   nsAutoCString logFile;
@@ -96,19 +104,18 @@ static PRLibrary* LoadApitraceLibrary() {
   nsAutoCString logPath;
   logPath.AppendPrintf("%s/%s", getenv("GRE_HOME"), logFile.get());
 
+#ifndef XP_WIN  
   
   
   printf_stderr("Logging GL tracing output to %s", logPath.get());
   setenv("TRACE_FILE", logPath.get(), false);
 
-  printf_stderr("Attempting load of %s\n", APITRACE_LIB);
-
-  sApitraceLibrary = PR_LoadLibrary(APITRACE_LIB);
+  printf_stderr("Attempting load of %s\n", path);
+  sApitraceLibrary = PR_LoadLibrary(path);
+#endif
 
   return sApitraceLibrary;
 }
-
-#endif  
 
 #ifdef XP_WIN
 

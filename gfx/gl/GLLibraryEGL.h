@@ -18,18 +18,6 @@
 #include <bitset>
 #include <vector>
 
-#ifdef ANDROID
-
-
-
-
-
-
-
-
-#  define APITRACE_LIB "/data/local/tmp/egltrace.so"
-#endif
-
 #if defined(MOZ_X11)
 #  define EGL_DEFAULT_DISPLAY ((EGLNativeDisplayType)mozilla::DefaultXDisplay())
 #else
@@ -51,6 +39,7 @@ class DataSourceSurface;
 namespace gl {
 
 class GLContext;
+PRLibrary* LoadApitraceLibrary();
 
 void BeforeEGLCall(const char* funcName);
 void AfterEGLCall(const char* funcName);

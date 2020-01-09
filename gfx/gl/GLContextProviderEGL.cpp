@@ -366,11 +366,8 @@ GLContextEGL::~GLContextEGL() {
 }
 
 bool GLContextEGL::Init() {
-#if defined(ANDROID)
-  
-  
-  if (!OpenLibrary(APITRACE_LIB))
-#endif
+  mLibrary = LoadApitraceLibrary();
+  if (!mLibrary) {
     if (!OpenLibrary(GLES2_LIB)) {
 #if defined(XP_UNIX)
       if (!OpenLibrary(GLES2_LIB2)) {
@@ -379,6 +376,7 @@ bool GLContextEGL::Init() {
       }
 #endif
     }
+  }
 
   SetupLookupFunction();
   if (!InitWithPrefix("gl", true)) return false;
