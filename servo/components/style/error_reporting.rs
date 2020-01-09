@@ -10,12 +10,14 @@ use crate::stylesheets::UrlExtraData;
 use cssparser::{BasicParseErrorKind, ParseErrorKind, SourceLocation, Token};
 use std::fmt;
 use style_traits::ParseError;
+use crate::selector_parser::{SelectorImpl};
+use selectors::SelectorList;
 
 
 #[derive(Debug)]
 pub enum ContextualParseError<'a> {
     
-    UnsupportedPropertyDeclaration(&'a str, ParseError<'a>),
+    UnsupportedPropertyDeclaration(&'a str, ParseError<'a>, Option<&'a SelectorList<SelectorImpl>>),
     
     UnsupportedFontFaceDescriptor(&'a str, ParseError<'a>),
     
@@ -121,7 +123,7 @@ impl<'a> fmt::Display for ContextualParseError<'a> {
         }
 
         match *self {
-            ContextualParseError::UnsupportedPropertyDeclaration(decl, ref err) => {
+            ContextualParseError::UnsupportedPropertyDeclaration(decl, ref err, _selectors) => {
                 write!(f, "Unsupported property declaration: '{}', ", decl)?;
                 parse_error_to_str(err, f)
             },
