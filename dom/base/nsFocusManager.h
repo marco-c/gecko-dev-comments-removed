@@ -160,6 +160,23 @@ class nsFocusManager final : public nsIFocusManager,
 
 
 
+
+
+  nsresult DetermineElementToMoveFocus(nsPIDOMWindowOuter* aWindow,
+                                       nsIContent* aStart, int32_t aType,
+                                       bool aNoParentTraversal,
+                                       nsIContent** aNextContent);
+
+  
+
+
+
+
+
+
+
+
+
   static mozilla::dom::Element* GetRedirectedFocus(nsIContent* aContent);
 
   
@@ -402,23 +419,6 @@ class nsFocusManager final : public nsIFocusManager,
   nsresult GetSelectionLocation(Document* aDocument, nsIPresShell* aPresShell,
                                 nsIContent** aStartContent,
                                 nsIContent** aEndContent);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  nsresult DetermineElementToMoveFocus(nsPIDOMWindowOuter* aWindow,
-                                       nsIContent* aStart, int32_t aType,
-                                       bool aNoParentTraversal,
-                                       nsIContent** aNextContent);
 
   
 
