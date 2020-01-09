@@ -420,10 +420,7 @@ static const size_t kChunkSizeMask = kChunkSize - 1;
 
 
 
-#  if (defined(SOLARIS) || defined(__FreeBSD__)) && \
-      (defined(__sparc) || defined(__sparcv9) || defined(__ia64))
-static const size_t gPageSize = 8_KiB;
-#  elif defined(__powerpc64__)
+#  if defined(__powerpc64__)
 static const size_t gPageSize = 64_KiB;
 #  else
 static const size_t gPageSize = 4_KiB;
