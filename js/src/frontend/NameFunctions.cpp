@@ -193,9 +193,8 @@ class NameResolver : public ParseNodeVisitor<NameResolver> {
           }
           break;
 
-        case ParseNodeKind::Colon:
+        case ParseNodeKind::PropertyDefinition:
         case ParseNodeKind::Shorthand:
-          
           
           
           pos--;
@@ -272,7 +271,7 @@ class NameResolver : public ParseNodeVisitor<NameResolver> {
     for (int pos = size - 1; pos >= 0; pos--) {
       ParseNode* node = toName[pos];
 
-      if (node->isKind(ParseNodeKind::Colon) ||
+      if (node->isKind(ParseNodeKind::PropertyDefinition) ||
           node->isKind(ParseNodeKind::Shorthand)) {
         ParseNode* left = node->as<BinaryNode>().left();
         if (left->isKind(ParseNodeKind::ObjectPropertyName) ||

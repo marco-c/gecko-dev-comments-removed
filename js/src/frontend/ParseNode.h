@@ -53,7 +53,7 @@ class BigIntBox;
   F(ExpressionStmt, UnaryNode)                                               \
   F(CommaExpr, ListNode)                                                     \
   F(ConditionalExpr, ConditionalExpression)                                  \
-  F(Colon, BinaryNode)                                                       \
+  F(PropertyDefinition, PropertyDefinition)                                  \
   F(Shorthand, BinaryNode)                                                   \
   F(PosExpr, UnaryNode)                                                      \
   F(NegExpr, UnaryNode)                                                      \
@@ -594,6 +594,8 @@ enum class FunctionSyntaxKind {
   Getter,
   Setter,
 };
+
+enum class AccessorType { None, Getter, Setter };
 
 static inline bool IsConstructorKind(FunctionSyntaxKind kind) {
   return kind == FunctionSyntaxKind::ClassConstructor ||
@@ -1924,16 +1926,19 @@ class CallSiteNode : public ListNode {
 
 class ClassMethod : public BinaryNode {
   bool isStatic_;
+  AccessorType accessorType_;
 
  public:
   
 
 
 
-  ClassMethod(ParseNode* name, ParseNode* body, JSOp op, bool isStatic)
-      : BinaryNode(ParseNodeKind::ClassMethod, op,
+  ClassMethod(ParseNode* name, ParseNode* body, AccessorType accessorType,
+              bool isStatic)
+      : BinaryNode(ParseNodeKind::ClassMethod, JSOP_NOP,
                    TokenPos(name->pn_pos.begin, body->pn_pos.end), name, body),
-        isStatic_(isStatic) {}
+        isStatic_(isStatic),
+        accessorType_(accessorType) {}
 
   static bool test(const ParseNode& node) {
     bool match = node.isKind(ParseNodeKind::ClassMethod);
@@ -1946,6 +1951,8 @@ class ClassMethod : public BinaryNode {
   FunctionNode& method() const { return right()->as<FunctionNode>(); }
 
   bool isStatic() const { return isStatic_; }
+
+  AccessorType accessorType() const { return accessorType_; }
 };
 
 class ClassField : public BinaryNode {
@@ -1968,6 +1975,26 @@ class ClassField : public BinaryNode {
   FunctionNode* initializer() const {
     return right() ? &right()->as<FunctionNode>() : nullptr;
   }
+};
+
+class PropertyDefinition : public BinaryNode {
+  AccessorType accessorType_;
+
+ public:
+  PropertyDefinition(ParseNode* name, ParseNode* value,
+                     AccessorType accessorType)
+      : BinaryNode(ParseNodeKind::PropertyDefinition, JSOP_NOP,
+                   TokenPos(name->pn_pos.begin, value->pn_pos.end), name,
+                   value),
+        accessorType_(accessorType) {}
+
+  static bool test(const ParseNode& node) {
+    bool match = node.isKind(ParseNodeKind::PropertyDefinition);
+    MOZ_ASSERT_IF(match, node.is<BinaryNode>());
+    return match;
+  }
+
+  AccessorType accessorType() { return accessorType_; }
 };
 
 class SwitchStatement : public BinaryNode {
@@ -2165,21 +2192,6 @@ enum ParseReportKind {
   ParseExtraWarning,
   ParseStrictError
 };
-
-enum class AccessorType { None, Getter, Setter };
-
-inline JSOp AccessorTypeToJSOp(AccessorType atype) {
-  switch (atype) {
-    case AccessorType::None:
-      return JSOP_INITPROP;
-    case AccessorType::Getter:
-      return JSOP_INITPROP_GETTER;
-    case AccessorType::Setter:
-      return JSOP_INITPROP_SETTER;
-    default:
-      MOZ_CRASH("unexpected accessor type");
-  }
-}
 
 static inline ParseNode* FunctionFormalParametersList(ParseNode* fn,
                                                       unsigned* numFormals) {
