@@ -232,6 +232,12 @@ class DevToolsPageDefinition {
   }
 
   buildForToolbox(toolbox) {
+    if (!this.extension.canAccessWindow(toolbox.target.tab.ownerGlobal)) {
+      
+      
+      return;
+    }
+
     if (this.devtoolsPageForTarget.has(toolbox.target)) {
       return Promise.reject(new Error("DevtoolsPage has been already created for this toolbox"));
     }
@@ -279,7 +285,9 @@ class DevToolsPageDefinition {
     
     
     for (let toolbox of DevToolsShim.getToolboxes()) {
-      if (!toolbox.target.isLocalTab) {
+      if (!toolbox.target.isLocalTab ||
+          !this.extension.canAccessWindow(toolbox.target.tab.ownerGlobal)) {
+        
         
         continue;
       }
@@ -371,7 +379,9 @@ this.devtools = class extends ExtensionAPI {
   }
 
   onToolboxCreated(toolbox) {
-    if (!toolbox.target.isLocalTab) {
+    if (!toolbox.target.isLocalTab ||
+        !this.extension.canAccessWindow(toolbox.target.tab.ownerGlobal)) {
+      
       
       
       return;
