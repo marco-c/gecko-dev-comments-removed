@@ -26,10 +26,11 @@ types.addDictType("accessibleWithChildren", {
 
 
 types.addDictType("auditEventData", {
+  type: "string",
   
-  ancestries: "array:array:accessibleWithChildren",
+  ancestries: "nullable:array:array:accessibleWithChildren",
   
-  error: "boolean",
+  progress: "nullable:json",
 });
 
 

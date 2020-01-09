@@ -12,6 +12,7 @@ module.exports = {
     
     "^../utils/l10n": `${__dirname}/fixtures/l10n`,
     "^devtools/client/shared/link": `${__dirname}/fixtures/stub`,
+    "^devtools/shared/plural-form": `${__dirname}/fixtures/plural-form`,
     "^devtools/client/shared/components/tree/TreeView": `${__dirname}/fixtures/stub`,
     "^Services": `${__dirname}/fixtures/Services`,
     
