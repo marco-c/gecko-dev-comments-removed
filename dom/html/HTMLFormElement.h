@@ -595,8 +595,6 @@ class HTMLFormElement final : public nsGenericHTMLElement,
   
   bool mNotifiedObserversResult;
   
-  bool mSubmitInitiatedFromUserInput;
-  
 
 
 
