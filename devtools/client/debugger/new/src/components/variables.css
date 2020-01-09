@@ -9,6 +9,8 @@
   --editor-footer-height: 25px;
   
   --editor-searchbar-height: 25px;
+  
+  --theme-code-line-height: calc(15 / 11);
 }
 
 :root.theme-light,
