@@ -435,7 +435,7 @@ class ConfigureSandbox(dict):
         if path:
             self.include_file(path)
 
-        for option in self._options.itervalues():
+        for option in six.itervalues(self._options):
             
             if option not in self._seen:
                 raise ConfigureError(
