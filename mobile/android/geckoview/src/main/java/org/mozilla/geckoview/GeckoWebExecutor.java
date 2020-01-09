@@ -143,7 +143,7 @@ public class GeckoWebExecutor {
 
 
 
-    public GeckoResult<InetAddress[]> resolve(final @NonNull String host) {
+    public @NonNull GeckoResult<InetAddress[]> resolve(final @NonNull String host) {
         final GeckoResult<InetAddress[]> result = new GeckoResult<>();
 
         if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {

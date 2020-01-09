@@ -32,7 +32,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
             extends RuntimeSettings.Builder<GeckoRuntimeSettings> {
         @Override
         protected @NonNull GeckoRuntimeSettings newSettings(
-                final GeckoRuntimeSettings settings) {
+                final @Nullable GeckoRuntimeSettings settings) {
             return new GeckoRuntimeSettings(settings);
         }
 
@@ -280,7 +280,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
-        public @NonNull Builder crashHandler(final Class<? extends Service> handler) {
+        public @NonNull Builder crashHandler(final @Nullable Class<? extends Service> handler) {
             getSettings().mCrashHandler = handler;
             return this;
         }
@@ -291,7 +291,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
-        public @NonNull Builder locales(final String[] requestedLocales) {
+        public @NonNull Builder locales(final @Nullable String[] requestedLocales) {
             getSettings().mRequestedLocales = requestedLocales;
             return this;
         }

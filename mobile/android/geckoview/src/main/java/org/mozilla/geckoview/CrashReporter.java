@@ -72,9 +72,9 @@ public class CrashReporter {
 
 
     @AnyThread
-    public static GeckoResult<String> sendCrashReport(@NonNull final Context context,
-                                                      @NonNull final Intent intent,
-                                                      @NonNull final String appName)
+    public static @NonNull GeckoResult<String> sendCrashReport(@NonNull final Context context,
+                                                               @NonNull final Intent intent,
+                                                               @NonNull final String appName)
             throws IOException, URISyntaxException {
         return sendCrashReport(context, intent.getExtras(), appName);
     }

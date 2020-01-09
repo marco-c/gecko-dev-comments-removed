@@ -51,7 +51,7 @@ public final class GeckoSessionSettings implements Parcelable {
 
 
 
-        public @NonNull  Builder chromeUri(final String uri) {
+        public @NonNull Builder chromeUri(final @NonNull String uri) {
             mSettings.setChromeUri(uri);
             return this;
         }
