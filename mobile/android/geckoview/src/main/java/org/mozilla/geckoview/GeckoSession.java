@@ -652,8 +652,6 @@ public class GeckoSession implements Parcelable {
                         type = PermissionDelegate.PERMISSION_GEOLOCATION;
                     } else if ("desktop-notification".equals(typeString)) {
                         type = PermissionDelegate.PERMISSION_DESKTOP_NOTIFICATION;
-                    } else if ("autoplay-media".equals(typeString)) {
-                        type = PermissionDelegate.PERMISSION_AUTOPLAY_MEDIA;
                     } else {
                         throw new IllegalArgumentException("Unknown permission request: " + typeString);
                     }
@@ -3811,7 +3809,7 @@ public class GeckoSession implements Parcelable {
 
     public interface PermissionDelegate {
         @Retention(RetentionPolicy.SOURCE)
-        @IntDef({PERMISSION_GEOLOCATION, PERMISSION_DESKTOP_NOTIFICATION, PERMISSION_AUTOPLAY_MEDIA})
+        @IntDef({PERMISSION_GEOLOCATION, PERMISSION_DESKTOP_NOTIFICATION})
          @interface Permission {}
 
         
@@ -3825,11 +3823,6 @@ public class GeckoSession implements Parcelable {
 
 
         public static final int PERMISSION_DESKTOP_NOTIFICATION = 1;
-
-        
-
-
-        public static final int PERMISSION_AUTOPLAY_MEDIA = 2;
 
         
 
@@ -3867,7 +3860,6 @@ public class GeckoSession implements Parcelable {
                                          @NonNull Callback callback);
 
         
-
 
 
 
