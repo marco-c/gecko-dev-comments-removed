@@ -1413,7 +1413,6 @@ void Instance::tracePrivate(JSTracer* trc) {
   
   
   
-  
   MOZ_ASSERT(!gc::IsAboutToBeFinalized(&object_));
   TraceEdge(trc, &object_, "wasm instance object");
 

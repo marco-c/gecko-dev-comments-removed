@@ -256,10 +256,6 @@ class GCMarker : public JSTracer {
   }
 
   
-  template <typename T>
-  void noteWeakEdge(T* edge);
-
-  
 
 
 

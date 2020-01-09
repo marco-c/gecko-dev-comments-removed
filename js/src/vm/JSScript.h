@@ -69,6 +69,7 @@ class AutoKeepTypeScripts;
 class AutoSweepTypeScript;
 class BreakpointSite;
 class Debugger;
+class GCParallelTask;
 class LazyScript;
 class ModuleObject;
 class RegExpObject;
@@ -81,6 +82,10 @@ struct BytecodeEmitter;
 class FunctionBox;
 class ModuleSharedContext;
 }  
+
+namespace gc {
+void SweepLazyScripts(GCParallelTask* task);
+} 
 
 namespace detail {
 
@@ -3025,6 +3030,7 @@ class LazyScript : public gc::TenuredCell {
   
   
   WeakHeapPtrScript script_;
+  friend void js::gc::SweepLazyScripts(GCParallelTask* task);
 
   
   GCPtrFunction function_;

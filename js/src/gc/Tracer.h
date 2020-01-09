@@ -94,8 +94,6 @@ typename PtrBaseGCType<T>::type* ConvertToBase(T* thingp) {
 template <typename T>
 void TraceEdgeInternal(JSTracer* trc, T* thingp, const char* name);
 template <typename T>
-void TraceWeakEdgeInternal(JSTracer* trc, T* thingp, const char* name);
-template <typename T>
 void TraceRangeInternal(JSTracer* trc, size_t len, T* vec, const char* name);
 
 #ifdef DEBUG
@@ -105,6 +103,16 @@ inline void AssertRootMarkingPhase(JSTracer* trc) {}
 #endif
 
 }  
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -183,16 +191,6 @@ template <typename T>
 inline void TraceManuallyBarrieredEdge(JSTracer* trc, T* thingp,
                                        const char* name) {
   gc::TraceEdgeInternal(trc, gc::ConvertToBase(thingp), name);
-}
-
-
-
-
-
-template <typename T>
-inline void TraceWeakEdge(JSTracer* trc, WeakHeapPtr<T>* thingp, const char* name) {
-  gc::TraceWeakEdgeInternal(
-      trc, gc::ConvertToBase(thingp->unsafeUnbarrieredForTracing()), name);
 }
 
 

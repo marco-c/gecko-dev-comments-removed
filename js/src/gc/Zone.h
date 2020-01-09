@@ -389,16 +389,6 @@ class Zone : public JS::shadow::Zone,
  public:
   GrayRootVector& gcGrayRoots() { return gcGrayRoots_.ref(); }
 
-  
-  
-  using WeakEdges = js::Vector<js::gc::TenuredCell**, 0, js::SystemAllocPolicy>;
-
- private:
-  js::ZoneOrGCTaskData<WeakEdges> gcWeakRefs_;
-
- public:
-  WeakEdges& gcWeakRefs() { return gcWeakRefs_.ref(); }
-
  private:
   
   
