@@ -18,6 +18,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   setTimeout: "resource://gre/modules/Timer.jsm",
   clearTimeout: "resource://gre/modules/Timer.jsm",
   ExtensionParent: "resource://gre/modules/ExtensionParent.jsm",
+  RemoteSettings: "resource://services-settings/remote-settings.js",
 });
 
 XPCOMUtils.defineLazyServiceGetters(this, {
@@ -188,6 +189,12 @@ const DEFAULT_TAG = "default";
 
 
 const SEARCH_LOG_PREFIX = "*** Search: ";
+
+
+
+
+
+const SETTINGS_IGNORELIST_KEY = "hijack-blocklists";
 
 
 
@@ -2639,6 +2646,11 @@ const gEmptyParseSubmissionResult =
       Object.freeze(new ParseSubmissionResult(null, "", -1, 0));
 
 
+
+
+
+
+
 function SearchService() {
   this._initObservers = PromiseUtils.defer();
 }
@@ -2661,6 +2673,18 @@ SearchService.prototype = {
   
   
   _cacheFileJSON: null,
+
+  
+
+
+
+  _submissionURLIgnoreList: [],
+
+  
+
+
+
+  _loadPathIgnoreList: [],
 
   
   
@@ -2708,6 +2732,8 @@ SearchService.prototype = {
       await this._ensureKnownRegionPromise;
     }
 
+    this._setupRemoteSettings().catch(Cu.reportError);
+
     try {
       await this._loadEngines(cache);
     } catch (ex) {
@@ -2727,6 +2753,90 @@ SearchService.prototype = {
 
     LOG("_init: Completed _init");
     return this._initRV;
+  },
+
+  
+
+
+
+
+
+
+
+
+  async _setupRemoteSettings() {
+    const ignoreListSettings = RemoteSettings(SETTINGS_IGNORELIST_KEY);
+    
+    const current = await ignoreListSettings.get();
+
+    
+    this._ignoreListListener = this._handleIgnoreListUpdated.bind(this);
+    ignoreListSettings.on("sync", this._ignoreListListener);
+
+    await this._handleIgnoreListUpdated({data: {current}});
+    Services.obs.notifyObservers(null, SEARCH_SERVICE_TOPIC, "settings-update-complete");
+  },
+
+  
+
+
+
+
+
+
+  async _handleIgnoreListUpdated(eventData) {
+    LOG("_handleIgnoreListUpdated");
+    const {data: {current}} = eventData;
+
+    for (const entry of current) {
+      if (entry.id == "load-paths") {
+        this._loadPathIgnoreList = [...entry.matches];
+      } else if (entry.id == "submission-urls") {
+        this._submissionURLIgnoreList = [...entry.matches];
+      }
+    }
+
+    
+    
+    if (!this.isInitialized) {
+      await this._initObservers;
+    }
+    
+    
+    let engineRemoved = false;
+    for (let name in this._engines) {
+      let engine = this._engines[name];
+      if (this._engineMatchesIgnoreLists(engine)) {
+        await this.removeEngine(engine);
+        engineRemoved = true;
+      }
+    }
+    
+    
+    
+    if (engineRemoved && !Object.keys(this._engines).length) {
+      this._reInit();
+    }
+  },
+
+  
+
+
+
+
+
+
+
+  _engineMatchesIgnoreLists(engine) {
+    if (this._loadPathIgnoreList.includes(engine._loadPath)) {
+      return true;
+    }
+    let url = engine._getURLOfType("text/html")
+                    .getSubmission("dummy", engine).uri.spec.toLowerCase();
+    if (this._submissionURLIgnoreList.some(code => url.includes(code.toLowerCase()))) {
+      return true;
+    }
+    return false;
   },
 
   _metaData: { },
@@ -2926,7 +3036,14 @@ SearchService.prototype = {
     
     
     for (let id of this._extensions.keys()) {
-      let {extension} = WebExtensionPolicy.getByID(id);
+      let policy = WebExtensionPolicy.getByID(id);
+      if (!policy) {
+        
+        
+        
+        continue;
+      }
+      let extension = policy.extension;
       if (extension.addonData.builtIn && !engines.some(name => extensionId(name) === id)) {
         this._extensions.delete(id);
       }
@@ -3158,34 +3275,8 @@ SearchService.prototype = {
     return this._batchTask;
   },
 
-  _submissionURLIgnoreList: [
-    "ignore=true",
-    "hspart=lvs",
-    "pc=COSP",
-    "clid=2308146",
-    "fr=mca",
-    "PC=MC0",
-    "lavasoft.gosearchresults",
-    "securedsearch.lavasoft",
-  ],
-
-  _loadPathIgnoreList: [
-    "[other]addEngineWithDetails:searchignore@mozilla.com",
-    "[https]opensearch.startpageweb.com/bing-search.xml",
-    "[https]opensearch.startwebsearch.com/bing-search.xml",
-    "[https]opensearch.webstartsearch.com/bing-search.xml",
-    "[https]opensearch.webofsearch.com/bing-search.xml",
-    "[profile]/searchplugins/Yahoo! Powered.xml",
-    "[profile]/searchplugins/yahoo! powered.xml",
-  ],
-
   _addEngineToStore(engine) {
-    let url = engine._getURLOfType("text/html").getSubmission("dummy", engine).uri.spec.toLowerCase();
-    if (this._submissionURLIgnoreList.some(code => url.includes(code.toLowerCase()))) {
-      LOG("_addEngineToStore: Ignoring engine");
-      return;
-    }
-    if (this._loadPathIgnoreList.includes(engine._loadPath)) {
+    if (this._engineMatchesIgnoreLists(engine)) {
       LOG("_addEngineToStore: Ignoring engine");
       return;
     }
@@ -4691,6 +4782,11 @@ SearchService.prototype = {
   _observersAdded: false,
 
   _removeObservers() {
+    if (this._ignoreListListener) {
+      RemoteSettings(SETTINGS_IGNORELIST_KEY).off("sync", this._ignoreListListener);
+      delete this._ignoreListListener;
+    }
+
     Services.obs.removeObserver(this, SEARCH_ENGINE_TOPIC);
     Services.obs.removeObserver(this, QUIT_APPLICATION_TOPIC);
     Services.obs.removeObserver(this, TOPIC_LOCALES_CHANGE);
