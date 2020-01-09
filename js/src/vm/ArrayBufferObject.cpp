@@ -527,16 +527,12 @@ static uint8_t* NewCopiedBufferContents(JSContext* cx,
 }
 
 void ArrayBufferObject::setNewData(FreeOp* fop, BufferContents newContents) {
-  if (ownsData()) {
-    
-    
-    
-    
-    
-    
-    MOZ_ASSERT(newContents.data() != dataPointer());
-    releaseData(fop);
-  }
+  
+  
+  
+  
+  MOZ_ASSERT(newContents.data() != dataPointer());
+  releaseData(fop);
 
   setDataPointer(newContents);
 }
@@ -974,22 +970,6 @@ bool js::CreateWasmBuffer(JSContext* cx, const wasm::Limits& memory,
              buffer->isExternal());
 
   
-  if (buffer->isPreparedForAsmJS()) {
-    return true;
-  }
-
-  
-  
-  
-  if (!buffer->ownsData()) {
-    uint8_t* data = NewCopiedBufferContents(cx, buffer);
-    if (!data) {
-      return false;
-    }
-
-    buffer->changeContents(cx, BufferContents::createMalloced(data));
-  }
-
   buffer->setIsPreparedForAsmJS();
   return true;
 }
@@ -1019,8 +999,6 @@ ArrayBufferObject::FreeInfo* ArrayBufferObject::freeInfo() const {
 }
 
 void ArrayBufferObject::releaseData(FreeOp* fop) {
-  MOZ_ASSERT(ownsData());
-
   switch (bufferKind()) {
     case INLINE_DATA:
       
@@ -1394,21 +1372,19 @@ ArrayBufferObject* ArrayBufferObject::createFromNewRawBuffer(
   CheckStealPreconditions(buffer, cx);
 
   switch (buffer->bufferKind()) {
-    case MALLOCED:
-      if (buffer->ownsData()) {
-        uint8_t* stolenData = buffer->dataPointer();
-        MOZ_ASSERT(stolenData);
+    case MALLOCED: {
+      uint8_t* stolenData = buffer->dataPointer();
+      MOZ_ASSERT(stolenData);
 
-        
-        
-        BufferContents newContents = BufferContents::createNoData();
-        buffer->setDataPointer(newContents);
+      
+      
+      BufferContents newContents = BufferContents::createNoData();
+      buffer->setDataPointer(newContents);
 
-        
-        ArrayBufferObject::detach(cx, buffer, newContents);
-        return stolenData;
-      }
-      MOZ_FALLTHROUGH;
+      
+      ArrayBufferObject::detach(cx, buffer, newContents);
+      return stolenData;
+    }
 
     case INLINE_DATA:
     case NO_DATA:
@@ -1499,11 +1475,6 @@ ArrayBufferObject::extractStructuredCloneContents(
  void ArrayBufferObject::addSizeOfExcludingThis(
     JSObject* obj, mozilla::MallocSizeOf mallocSizeOf, JS::ClassInfo* info) {
   ArrayBufferObject& buffer = AsArrayBuffer(obj);
-
-  if (!buffer.ownsData()) {
-    return;
-  }
-
   switch (buffer.bufferKind()) {
     case INLINE_DATA:
       
@@ -1542,11 +1513,7 @@ ArrayBufferObject::extractStructuredCloneContents(
 }
 
  void ArrayBufferObject::finalize(FreeOp* fop, JSObject* obj) {
-  ArrayBufferObject& buffer = obj->as<ArrayBufferObject>();
-
-  if (buffer.ownsData()) {
-    buffer.releaseData(fop);
-  }
+  obj->as<ArrayBufferObject>().releaseData(fop);
 }
 
  void ArrayBufferObject::copyData(
@@ -1771,46 +1738,8 @@ JS_FRIEND_API bool JS_DetachArrayBuffer(JSContext* cx, HandleObject obj) {
     return false;
   }
 
-  using BufferContents = ArrayBufferObject::BufferContents;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  BufferContents newContents =
-      buffer->ownsData()
-          ? BufferContents::createNoData()
-          : buffer->contents();
-
-  ArrayBufferObject::detach(cx, buffer, newContents);
-
+  ArrayBufferObject::detach(cx, buffer,
+                            ArrayBufferObject::BufferContents::createNoData());
   return true;
 }
 
