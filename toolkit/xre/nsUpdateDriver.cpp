@@ -636,13 +636,8 @@ static void ApplyUpdate(nsIFile *greDir, nsIFile *updateDir, nsIFile *appDir,
   
   if (restart) {
     exit(execv(updaterPath.get(), argv));
-  }
-  *outpid = fork();
-  if (*outpid == -1) {
-    delete[] argv;
-    return;
-  } else if (*outpid == 0) {
-    exit(execv(updaterPath.get(), argv));
+  } else {
+    *outpid = PR_CreateProcess(updaterPath.get(), argv, nullptr, nullptr);
   }
   delete[] argv;
 #elif defined(XP_WIN)
@@ -706,25 +701,6 @@ static bool ProcessHasTerminated(ProcessType pt) {
   return true;
 #elif defined(XP_MACOSX)
   
-  return true;
-#elif defined(XP_UNIX)
-  int exitStatus;
-  pid_t exited = waitpid(pt, &exitStatus, WNOHANG);
-  if (exited == 0) {
-    
-    sleep(1);
-    return false;
-  }
-  if (exited == -1) {
-    LOG(("Error while checking if the updater process is finished"));
-    
-    
-    return true;
-  }
-  
-  if (WIFEXITED(exitStatus) && (WEXITSTATUS(exitStatus) != 0)) {
-    LOG(("Error while running the updater process, check update.log"));
-  }
   return true;
 #else
   
