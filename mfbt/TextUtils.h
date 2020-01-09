@@ -41,6 +41,24 @@ constexpr bool IsAscii(Char aChar) {
   return uc < 0x80;
 }
 
+
+
+
+
+template <typename Char>
+constexpr bool IsAsciiNullTerminated(const Char* aChar) {
+  while (Char c = *aChar++) {
+    if (!IsAscii(c)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+
+
+
+
 template <typename Char>
 constexpr bool IsNonAsciiLatin1(Char aChar) {
   using UnsignedChar = typename detail::MakeUnsignedChar<Char>::Type;

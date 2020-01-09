@@ -4,6 +4,8 @@
 
 
 
+#include "mozilla/TextUtils.h"
+
 #include "FunctionHook.h"
 #include "FunctionBroker.h"
 #include "nsClassHashtable.h"
@@ -65,7 +67,7 @@ WindowsDllInterceptor* FunctionHook::GetDllInterceptorFor(
     sDllInterceptorCache = new DllInterceptors();
   }
 
-  MOZ_ASSERT(NS_IsAscii(aModuleName),
+  MOZ_ASSERT(IsAsciiNullTerminated(aModuleName),
              "Non-ASCII module names are not supported");
   NS_ConvertASCIItoUTF16 moduleName(aModuleName);
 

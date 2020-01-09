@@ -4,6 +4,7 @@
 
 
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/TextUtils.h"
 
 #include <ole2.h>
 #include <shlobj.h>
@@ -104,7 +105,7 @@ STDMETHODIMP nsDataObj::CStream::QueryInterface(REFIID refiid,
 
 NS_IMETHODIMP
 nsDataObj::CStream::OnDataAvailable(
-    nsIRequest* aRequest, nsIInputStream* aInputStream,
+    nsIRequest* aRequest, nsISupports* aContext, nsIInputStream* aInputStream,
     uint64_t aOffset,  
     uint32_t aCount)   
 {
@@ -129,12 +130,14 @@ nsDataObj::CStream::OnDataAvailable(
   return rv;
 }
 
-NS_IMETHODIMP nsDataObj::CStream::OnStartRequest(nsIRequest* aRequest) {
+NS_IMETHODIMP nsDataObj::CStream::OnStartRequest(nsIRequest* aRequest,
+                                                 nsISupports* aContext) {
   mChannelResult = NS_OK;
   return NS_OK;
 }
 
 NS_IMETHODIMP nsDataObj::CStream::OnStopRequest(nsIRequest* aRequest,
+                                                nsISupports* aContext,
                                                 nsresult aStatusCode) {
   mChannelRead = true;
   mChannelResult = aStatusCode;
@@ -1155,7 +1158,7 @@ nsDataObj ::GetFileContentsInternetShortcut(FORMATETC& aFE, STGMEDIUM& aSTG) {
     rv = icoFile->GetPath(path);
     NS_ENSURE_SUCCESS(rv, E_FAIL);
 
-    if (NS_IsAscii(path.get())) {
+    if (IsAsciiNullTerminated(path.get())) {
       LossyCopyUTF16toASCII(path, asciiPath);
       shortcutFormatStr =
           "[InternetShortcut]\r\nURL=%s\r\n"
