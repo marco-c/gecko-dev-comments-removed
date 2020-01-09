@@ -4,6 +4,7 @@
 
 
 
+#include "Classifier.h"
 #include "mozilla/ErrorNames.h"
 #include "mozilla/net/AsyncUrlChannelClassifier.h"
 #include "mozilla/net/UrlClassifierCommon.h"
@@ -14,10 +15,13 @@
 #include "nsIHttpChannel.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsIURIClassifier.h"
+#include "nsIUrlClassifierUtils.h"
 #include "nsNetCID.h"
-#include "nsPrintfCString.h"
-#include "nsServiceManagerUtils.h"
 #include "nsNetUtil.h"
+#include "nsPrintfCString.h"
+#include "nsProxyRelease.h"
+#include "nsServiceManagerUtils.h"
+#include "nsUrlClassifierDBService.h"
 
 namespace mozilla {
 namespace net {
@@ -29,11 +33,435 @@ namespace {
 
 
 
-struct FeatureTask {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class URIData {
+ public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(URIData);
+
+  static nsresult Create(nsIURI* aURI, nsIURI* aInnermostURI, URIData** aData);
+
+  bool IsEqual(nsIURI* aURI) const;
+
+  const nsTArray<nsCString>& Fragments();
+
+  nsIURI* URI() const;
+
+ private:
+  URIData();
+  ~URIData();
+
   nsCOMPtr<nsIURI> mURI;
+  nsCString mURISpec;
+  nsTArray<nsCString> mFragments;
+};
+
+ nsresult URIData::Create(nsIURI* aURI, nsIURI* aInnermostURI,
+                                      URIData** aData) {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(aURI);
+  MOZ_ASSERT(aInnermostURI);
+
+  RefPtr<URIData> data = new URIData();
+  data->mURI = aURI;
+
+  nsCOMPtr<nsIUrlClassifierUtils> utilsService =
+      do_GetService(NS_URLCLASSIFIERUTILS_CONTRACTID);
+  if (NS_WARN_IF(!utilsService)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  nsresult rv = utilsService->GetKeyForURI(aInnermostURI, data->mURISpec);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  UC_LOG(("URIData::Create[%p] - new URIData created for spec %s", data.get(),
+          data->mURISpec.get()));
+
+  data.forget(aData);
+  return NS_OK;
+}
+
+URIData::URIData() { MOZ_ASSERT(NS_IsMainThread()); }
+
+URIData::~URIData() {
+  NS_ReleaseOnMainThreadSystemGroup("URIData:mURI", mURI.forget());
+}
+
+bool URIData::IsEqual(nsIURI* aURI) const {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(aURI);
+
+  bool isEqual = false;
+  nsresult rv = mURI->Equals(aURI, &isEqual);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return false;
+  }
+
+  return isEqual;
+}
+
+const nsTArray<nsCString>& URIData::Fragments() {
+  MOZ_ASSERT(!NS_IsMainThread());
+
+  if (mFragments.IsEmpty()) {
+    nsresult rv = LookupCache::GetLookupFragments(mURISpec, &mFragments);
+    Unused << NS_WARN_IF(NS_FAILED(rv));
+  }
+
+  return mFragments;
+}
+
+nsIURI* URIData::URI() const {
+  MOZ_ASSERT(NS_IsMainThread());
+  return mURI;
+}
+
+
+
+
+
+
+class TableData {
+ public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(TableData);
+
+  enum State {
+    eUnclassified,
+    eNoMatch,
+    eMatch,
+  };
+
+  TableData(URIData* aURIData, const nsACString& aTable);
+
+  nsIURI* URI() const;
+
+  const nsACString& Table() const;
+
+  State MatchState() const;
+
+  bool IsEqual(URIData* aURIData, const nsACString& aTable) const;
+
   
   
-  nsTArray<RefPtr<nsIUrlClassifierFeature>> mFeatures;
+  bool DoLookup(nsUrlClassifierDBServiceWorker* aWorkerClassifier);
+
+ private:
+  ~TableData();
+
+  RefPtr<URIData> mURIData;
+  State mState;
+
+  nsCString mTable;
+  LookupResultArray mResults;
+};
+
+TableData::TableData(URIData* aURIData, const nsACString& aTable)
+    : mURIData(aURIData), mState(eUnclassified), mTable(aTable) {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(aURIData);
+
+  UC_LOG(("TableData CTOR[%p] - new TableData created %s", this,
+          aTable.BeginReading()));
+}
+
+TableData::~TableData() = default;
+
+nsIURI* TableData::URI() const {
+  MOZ_ASSERT(NS_IsMainThread());
+  return mURIData->URI();
+}
+
+const nsACString& TableData::Table() const {
+  MOZ_ASSERT(NS_IsMainThread());
+  return mTable;
+}
+
+TableData::State TableData::MatchState() const {
+  MOZ_ASSERT(NS_IsMainThread());
+  return mState;
+}
+
+bool TableData::IsEqual(URIData* aURIData, const nsACString& aTable) const {
+  MOZ_ASSERT(NS_IsMainThread());
+  return mURIData == aURIData && mTable == aTable;
+}
+
+bool TableData::DoLookup(nsUrlClassifierDBServiceWorker* aWorkerClassifier) {
+  MOZ_ASSERT(!NS_IsMainThread());
+  MOZ_ASSERT(aWorkerClassifier);
+
+  if (mState == TableData::eUnclassified) {
+    UC_LOG(("TableData::DoLookup[%p] - starting lookup", this));
+
+    const nsTArray<nsCString>& fragments = mURIData->Fragments();
+    nsresult rv = aWorkerClassifier->DoSingleLocalLookupWithURIFragments(
+        fragments, mTable, mResults);
+    Unused << NS_WARN_IF(NS_FAILED(rv));
+
+    mState = mResults.IsEmpty() ? TableData::eNoMatch : TableData::eMatch;
+
+    UC_LOG(("TableData::DoLookup[%p] - lookup completed. Matches: %d", this,
+            (int)mResults.Length()));
+  }
+
+  return !mResults.IsEmpty();
+}
+
+
+
+
+class FeatureTask;
+
+
+class FeatureData {
+  enum State {
+    eUnclassified,
+    eNoMatch,
+    eMatchBlacklist,
+    eMatchWhitelist,
+  };
+
+ public:
+  FeatureData();
+  ~FeatureData();
+
+  nsresult Initialize(FeatureTask* aTask, nsIChannel* aChannel,
+                      nsIUrlClassifierFeature* aFeature);
+
+  void DoLookup(nsUrlClassifierDBServiceWorker* aWorkerClassifier);
+
+  
+  bool MaybeCompleteClassification(nsIChannel* aChannel);
+
+ private:
+  nsresult InitializeList(FeatureTask* aTask, nsIChannel* aChannel,
+                          nsIUrlClassifierFeature::listType aListType,
+                          nsTArray<RefPtr<TableData>>& aList);
+
+  State mState;
+  nsCOMPtr<nsIUrlClassifierFeature> mFeature;
+
+  nsTArray<RefPtr<TableData>> mBlacklistTables;
+  nsTArray<RefPtr<TableData>> mWhitelistTables;
+
+  
+  nsCString mHostInPrefTables[2];
+};
+
+FeatureData::FeatureData() : mState(eUnclassified) {}
+
+FeatureData::~FeatureData() {
+  NS_ReleaseOnMainThreadSystemGroup("FeatureData:mFeature", mFeature.forget());
+}
+
+nsresult FeatureData::Initialize(FeatureTask* aTask, nsIChannel* aChannel,
+                                 nsIUrlClassifierFeature* aFeature) {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(aTask);
+  MOZ_ASSERT(aChannel);
+  MOZ_ASSERT(aFeature);
+
+  nsAutoCString featureName;
+  aFeature->GetName(featureName);
+  UC_LOG(("FeatureData::Initialize[%p] - Feature %s - Channel %p", this,
+          featureName.get(), aChannel));
+
+  mFeature = aFeature;
+
+  nsresult rv = InitializeList(
+      aTask, aChannel, nsIUrlClassifierFeature::blacklist, mBlacklistTables);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  rv = InitializeList(aTask, aChannel, nsIUrlClassifierFeature::whitelist,
+                      mWhitelistTables);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  return NS_OK;
+}
+
+void FeatureData::DoLookup(nsUrlClassifierDBServiceWorker* aWorkerClassifier) {
+  MOZ_ASSERT(!NS_IsMainThread());
+  MOZ_ASSERT(aWorkerClassifier);
+  MOZ_ASSERT(mState == eUnclassified);
+
+  UC_LOG(("FeatureData::DoLookup[%p] - lookup starting", this));
+
+  
+  
+  
+  if (!mHostInPrefTables[nsIUrlClassifierFeature::whitelist].IsEmpty()) {
+    UC_LOG(("FeatureData::DoLookup[%p] - whitelisted by pref", this));
+    mState = eMatchWhitelist;
+    return;
+  }
+
+  
+
+  bool isBlacklisted =
+      !mHostInPrefTables[nsIUrlClassifierFeature::blacklist].IsEmpty();
+
+  UC_LOG(("FeatureData::DoLookup[%p] - blacklisted by pref: %d", this,
+          isBlacklisted));
+
+  if (isBlacklisted == false) {
+    for (TableData* tableData : mBlacklistTables) {
+      if (tableData->DoLookup(aWorkerClassifier)) {
+        isBlacklisted = true;
+      }
+    }
+  }
+
+  UC_LOG(("FeatureData::DoLookup[%p] - blacklisted before whitelisting: %d",
+          this, isBlacklisted));
+
+  if (!isBlacklisted) {
+    mState = eNoMatch;
+    return;
+  }
+
+  
+
+  for (TableData* tableData : mWhitelistTables) {
+    
+    
+    if (tableData->DoLookup(aWorkerClassifier)) {
+      UC_LOG(("FeatureData::DoLookup[%p] - whitelisted by table", this));
+      mState = eMatchWhitelist;
+      return;
+    }
+  }
+
+  UC_LOG(("FeatureData::DoLookup[%p] - blacklisted", this));
+  mState = eMatchBlacklist;
+}
+
+bool FeatureData::MaybeCompleteClassification(nsIChannel* aChannel) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  UC_LOG(
+      ("FeatureData::MaybeCompleteClassification[%p] - completing "
+       "classification for channel %p",
+       this, aChannel));
+
+  switch (mState) {
+    case eNoMatch:
+      UC_LOG(
+          ("FeatureData::MaybeCompleteClassification[%p] - no match. Let's "
+           "move on",
+           this));
+      return true;
+
+    case eMatchWhitelist:
+      UC_LOG(
+          ("FeatureData::MaybeCompleteClassification[%p] - whitelisted. Let's "
+           "move on",
+           this));
+      return true;
+
+    case eMatchBlacklist:
+      UC_LOG(
+          ("FeatureData::MaybeCompleteClassification[%p] - blacklisted", this));
+      break;
+
+    case eUnclassified:
+      MOZ_CRASH("We should not be here!");
+      break;
+  }
+
+  MOZ_ASSERT(mState == eMatchBlacklist);
+
+  
+  nsAutoCString skipList;
+  nsresult rv = mFeature->GetSkipHostList(skipList);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    UC_LOG(
+        ("FeatureData::MaybeCompleteClassification[%p] - error. Let's move on",
+         this));
+    return true;
+  }
+
+  if (nsContentUtils::IsURIInList(mBlacklistTables[0]->URI(), skipList)) {
+    UC_LOG(
+        ("FeatureData::MaybeCompleteClassification[%p] - uri found in skiplist",
+         this));
+    return true;
+  }
+
+  nsAutoCString list;
+  list.Assign(mHostInPrefTables[nsIUrlClassifierFeature::blacklist]);
+
+  for (TableData* tableData : mBlacklistTables) {
+    if (tableData->MatchState() == TableData::eMatch) {
+      if (!list.IsEmpty()) {
+        list.AppendLiteral(",");
+      }
+
+      list.Append(tableData->Table());
+    }
+  }
+
+  UC_LOG(
+      ("FeatureData::MaybeCompleteClassification[%p] - process channel %p with "
+       "list %s",
+       this, aChannel, list.get()));
+
+  bool shouldContinue = false;
+  rv = mFeature->ProcessChannel(aChannel, list, &shouldContinue);
+  Unused << NS_WARN_IF(NS_FAILED(rv));
+
+  return shouldContinue;
+}
+
+
+
+
+
+
+class CallbackHolder final {
+ public:
+  NS_INLINE_DECL_REFCOUNTING(CallbackHolder);
+
+  explicit CallbackHolder(std::function<void()>&& aCallback)
+      : mCallback(std::move(aCallback)) {}
+
+  void Exec() const { mCallback(); }
+
+ private:
+  ~CallbackHolder() = default;
+
+  std::function<void()> mCallback;
 };
 
 
@@ -41,348 +469,263 @@ struct FeatureTask {
 
 
 
-nsresult GetFeatureTasks(
-    nsIChannel* aChannel,
-    const nsTArray<nsCOMPtr<nsIUrlClassifierFeature>>& aFeatures,
-    nsIUrlClassifierFeature::listType aListType,
-    nsTArray<FeatureTask>& aTasks) {
-  MOZ_ASSERT(!aFeatures.IsEmpty());
+
+
+class FeatureTask {
+ public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(FeatureTask);
+
+  static nsresult Create(nsIChannel* aChannel,
+                         std::function<void()>&& aCallback,
+                         FeatureTask** aTask);
 
   
-  for (nsIUrlClassifierFeature* feature : aFeatures) {
-    nsCOMPtr<nsIURI> uri;
-    nsresult rv =
-        feature->GetURIByListType(aChannel, aListType, getter_AddRefs(uri));
-    if (NS_WARN_IF(NS_FAILED(rv)) || !uri) {
-      if (UC_LOG_ENABLED()) {
-        nsAutoCString errorName;
-        GetErrorName(rv, errorName);
-        UC_LOG(
-            ("GetFeatureTasks got an unexpected error (rv=%s) while trying to "
-             "create a whitelist URI. Allowing tracker.",
-             errorName.get()));
-      }
+  void DoLookup(nsUrlClassifierDBServiceWorker* aWorkerClassifier);
+
+  
+  void CompleteClassification();
+
+  nsresult GetOrCreateURIData(nsIURI* aURI, nsIURI* aInnermostURI,
+                              URIData** aData);
+
+  nsresult GetOrCreateTableData(URIData* aURIData, const nsACString& aTable,
+                                TableData** aData);
+
+ private:
+  FeatureTask(nsIChannel* aChannel, std::function<void()>&& aCallback);
+  ~FeatureTask();
+
+  nsCOMPtr<nsIChannel> mChannel;
+  RefPtr<CallbackHolder> mCallbackHolder;
+
+  nsTArray<FeatureData> mFeatures;
+  nsTArray<RefPtr<URIData>> mURIs;
+  nsTArray<RefPtr<TableData>> mTables;
+};
+
+
+
+
+
+ nsresult FeatureTask::Create(nsIChannel* aChannel,
+                                          std::function<void()>&& aCallback,
+                                          FeatureTask** aTask) {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(aChannel);
+  MOZ_ASSERT(aTask);
+
+  
+  
+  nsTArray<nsCOMPtr<nsIUrlClassifierFeature>> features;
+  UrlClassifierFeatureFactory::GetFeaturesFromChannel(aChannel, features);
+  if (features.IsEmpty()) {
+    UC_LOG(("FeatureTask::Create: Nothing to do for channel %p", aChannel));
+    return NS_ERROR_FAILURE;
+  }
+
+  RefPtr<FeatureTask> task = new FeatureTask(aChannel, std::move(aCallback));
+
+  UC_LOG(("FeatureTask::Create[%p] - FeatureTask created for channel %p",
+          task.get(), aChannel));
+
+  for (nsIUrlClassifierFeature* feature : features) {
+    FeatureData* featureData = task->mFeatures.AppendElement();
+    nsresult rv = featureData->Initialize(task, aChannel, feature);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
-    }
-
-    MOZ_ASSERT(uri);
-
-    bool found = false;
-    for (FeatureTask& task : aTasks) {
-      bool equal = false;
-      rv = task.mURI->Equals(uri, &equal);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-
-      if (equal) {
-        task.mFeatures.AppendElement(feature);
-        found = true;
-        break;
-      }
-    }
-
-    if (!found) {
-      FeatureTask* task = aTasks.AppendElement();
-      task->mURI = uri;
-      task->mFeatures.AppendElement(feature);
     }
   }
 
+  task.forget(aTask);
   return NS_OK;
 }
 
-nsresult TrackerFound(
-    const nsTArray<RefPtr<nsIUrlClassifierFeatureResult>>& aResults,
-    nsIChannel* aChannel, const std::function<void()>& aCallback) {
-  
-  for (nsIUrlClassifierFeatureResult* result : aResults) {
-    UrlClassifierFeatureResult* r =
-        static_cast<UrlClassifierFeatureResult*>(result);
+FeatureTask::FeatureTask(nsIChannel* aChannel,
+                         std::function<void()>&& aCallback)
+    : mChannel(aChannel) {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(mChannel);
 
-    bool shouldContinue = false;
-    nsresult rv =
-        r->Feature()->ProcessChannel(aChannel, r->List(), &shouldContinue);
-    
-    
-    Unused << NS_WARN_IF(NS_FAILED(rv));
+  std::function<void()> callback = std::move(aCallback);
+  mCallbackHolder = new CallbackHolder(std::move(callback));
+}
 
-    if (!shouldContinue) {
+FeatureTask::~FeatureTask() {
+  NS_ReleaseOnMainThreadSystemGroup("FeatureTask::mChannel", mChannel.forget());
+  NS_ReleaseOnMainThreadSystemGroup("FeatureTask::mCallbackHolder",
+                                    mCallbackHolder.forget());
+}
+
+nsresult FeatureTask::GetOrCreateURIData(nsIURI* aURI, nsIURI* aInnermostURI,
+                                         URIData** aData) {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(aURI);
+  MOZ_ASSERT(aInnermostURI);
+  MOZ_ASSERT(aData);
+
+  UC_LOG(
+      ("FeatureTask::GetOrCreateURIData[%p] - Checking if a URIData must be "
+       "created",
+       this));
+
+  for (URIData* data : mURIs) {
+    if (data->IsEqual(aURI)) {
+      UC_LOG(("FeatureTask::GetOrCreateURIData[%p] - Reuse existing URIData %p",
+              this, data));
+
+      RefPtr<URIData> uriData = data;
+      uriData.forget(aData);
+      return NS_OK;
+    }
+  }
+
+  RefPtr<URIData> data;
+  nsresult rv = URIData::Create(aURI, aInnermostURI, getter_AddRefs(data));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  mURIs.AppendElement(data);
+
+  UC_LOG(("FeatureTask::GetOrCreateURIData[%p] - Create new URIData %p", this,
+          data.get()));
+
+  data.forget(aData);
+  return NS_OK;
+}
+
+nsresult FeatureTask::GetOrCreateTableData(URIData* aURIData,
+                                           const nsACString& aTable,
+                                           TableData** aData) {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(aURIData);
+  MOZ_ASSERT(aData);
+
+  UC_LOG(
+      ("FeatureTask::GetOrCreateTableData[%p] - Checking if TableData must be "
+       "created",
+       this));
+
+  for (TableData* data : mTables) {
+    if (data->IsEqual(aURIData, aTable)) {
+      UC_LOG((
+          "FeatureTask::GetOrCreateTableData[%p] - Reuse existing TableData %p",
+          this, data));
+
+      RefPtr<TableData> tableData = data;
+      tableData.forget(aData);
+      return NS_OK;
+    }
+  }
+
+  RefPtr<TableData> data = new TableData(aURIData, aTable);
+  mTables.AppendElement(data);
+
+  UC_LOG(("FeatureTask::GetOrCreateTableData[%p] - Create new TableData %p",
+          this, data.get()));
+
+  data.forget(aData);
+  return NS_OK;
+}
+
+void FeatureTask::DoLookup(nsUrlClassifierDBServiceWorker* aWorkerClassifier) {
+  MOZ_ASSERT(!NS_IsMainThread());
+  MOZ_ASSERT(aWorkerClassifier);
+
+  UC_LOG(("FeatureTask::DoLookup[%p] - starting lookup", this));
+
+  for (FeatureData& feature : mFeatures) {
+    feature.DoLookup(aWorkerClassifier);
+  }
+
+  UC_LOG(("FeatureTask::DoLookup[%p] - lookup completed", this));
+}
+
+void FeatureTask::CompleteClassification() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  for (FeatureData& feature : mFeatures) {
+    if (!feature.MaybeCompleteClassification(mChannel)) {
       break;
     }
   }
 
-  aCallback();
-  return NS_OK;
+  UC_LOG(("FeatureTask::CompleteClassification[%p] - exec callback", this));
+
+  mCallbackHolder->Exec();
 }
 
+nsresult FeatureData::InitializeList(
+    FeatureTask* aTask, nsIChannel* aChannel,
+    nsIUrlClassifierFeature::listType aListType,
+    nsTArray<RefPtr<TableData>>& aList) {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(aTask);
+  MOZ_ASSERT(aChannel);
 
-class WhitelistClassifierCallback final
-    : public nsIUrlClassifierFeatureCallback {
- public:
-  NS_DECL_THREADSAFE_ISUPPORTS
-  NS_DECL_NSIURLCLASSIFIERFEATURECALLBACK
+  UC_LOG(("FeatureData::InitializeList[%p] - Initialize list %d for channel %p",
+          this, aListType, aChannel));
 
-  WhitelistClassifierCallback(
-      nsIChannel* aChannel,
-      const nsTArray<RefPtr<nsIUrlClassifierFeatureResult>>& aBlacklistResults,
-      std::function<void()>& aCallback)
-      : mChannel(aChannel),
-        mTaskCount(0),
-        mBlacklistResults(aBlacklistResults),
-        mChannelCallback(aCallback) {
-    MOZ_ASSERT(mChannel);
-    MOZ_ASSERT(!mBlacklistResults.IsEmpty());
-  }
-
-  void SetTaskCount(uint32_t aTaskCount) {
-    MOZ_ASSERT(aTaskCount > 0);
-    mTaskCount = aTaskCount;
-  }
-
- private:
-  ~WhitelistClassifierCallback() = default;
-
-  nsresult OnClassifyCompleteInternal();
-
-  nsCOMPtr<nsIChannel> mChannel;
-  nsCOMPtr<nsIURI> mURI;
-  uint32_t mTaskCount;
-  nsTArray<RefPtr<nsIUrlClassifierFeatureResult>> mBlacklistResults;
-  std::function<void()> mChannelCallback;
-
-  nsTArray<RefPtr<nsIUrlClassifierFeatureResult>> mWhitelistResults;
-};
-
-NS_IMPL_ISUPPORTS(WhitelistClassifierCallback, nsIUrlClassifierFeatureCallback)
-
-NS_IMETHODIMP
-WhitelistClassifierCallback::OnClassifyComplete(
-    const nsTArray<RefPtr<nsIUrlClassifierFeatureResult>>& aWhitelistResults) {
-  MOZ_ASSERT(mTaskCount > 0);
-
-  UC_LOG(("WhitelistClassifierCallback[%p]:OnClassifyComplete channel=%p", this,
-          mChannel.get()));
-
-  mWhitelistResults.AppendElements(aWhitelistResults);
-
-  if (--mTaskCount) {
-    
-    return NS_OK;
-  }
-
-  return OnClassifyCompleteInternal();
-}
-
-nsresult WhitelistClassifierCallback::OnClassifyCompleteInternal() {
-  nsTArray<RefPtr<nsIUrlClassifierFeatureResult>> remainingResults;
-
-  for (nsIUrlClassifierFeatureResult* blacklistResult : mBlacklistResults) {
-    UrlClassifierFeatureResult* result =
-        static_cast<UrlClassifierFeatureResult*>(blacklistResult);
-
-    nsIUrlClassifierFeature* blacklistFeature = result->Feature();
-    MOZ_ASSERT(blacklistFeature);
-
-    bool found = false;
-    for (nsIUrlClassifierFeatureResult* whitelistResult : mWhitelistResults) {
-      
-      if (static_cast<UrlClassifierFeatureResult*>(whitelistResult)
-              ->Feature() == blacklistFeature) {
-        found = true;
-        break;
-      }
-    }
-
-    if (found) {
-      continue;
-    }
-
-    
-    nsAutoCString skipList;
-    nsresult rv = blacklistFeature->GetSkipHostList(skipList);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      continue;
-    }
-
-    if (nsContentUtils::IsURIInList(result->URI(), skipList)) {
-      if (UC_LOG_ENABLED()) {
-        UC_LOG(
-            ("WhitelistClassifierCallback[%p]::OnClassifyComplete uri found in "
-             "skiplist",
-             this));
-      }
-
-      continue;
-    }
-
-    remainingResults.AppendElement(blacklistResult);
-  }
-
-  
-
-  if (remainingResults.IsEmpty()) {
+  nsCOMPtr<nsIURI> uri;
+  nsresult rv =
+      mFeature->GetURIByListType(aChannel, aListType, getter_AddRefs(uri));
+  if (NS_WARN_IF(NS_FAILED(rv)) || !uri) {
     if (UC_LOG_ENABLED()) {
-      UC_LOG(
-          ("WhitelistClassifierCallback[%p]::OnClassifyComplete uri fully "
-           "whitelisted",
-           this));
+      nsAutoCString errorName;
+      GetErrorName(rv, errorName);
+      UC_LOG(("FeatureData::InitializeList got an unexpected error (rv=%s)",
+              errorName.get()));
     }
-
-    mChannelCallback();
-    return NS_OK;
+    return rv;
   }
 
-  if (UC_LOG_ENABLED()) {
-    UC_LOG(
-        ("WhitelistClassifierCallback[%p]::OnClassifyComplete channel[%p] "
-         "should not be whitelisted",
-         this, mChannel.get()));
+  nsCOMPtr<nsIURI> innermostURI = NS_GetInnermostURI(uri);
+  if (NS_WARN_IF(!innermostURI)) {
+    return NS_ERROR_FAILURE;
   }
 
-  return TrackerFound(remainingResults, mChannel, mChannelCallback);
-}
-
-
-class BlacklistClassifierCallback final
-    : public nsIUrlClassifierFeatureCallback {
- public:
-  NS_DECL_THREADSAFE_ISUPPORTS
-  NS_DECL_NSIURLCLASSIFIERFEATURECALLBACK
-
-  BlacklistClassifierCallback(nsIChannel* aChannel,
-                              std::function<void()>&& aCallback)
-      : mChannel(aChannel),
-        mTaskCount(0),
-        mChannelCallback(std::move(aCallback)) {
-    MOZ_ASSERT(mChannel);
-  }
-
-  void SetTaskCount(uint32_t aTaskCount) {
-    MOZ_ASSERT(aTaskCount > 0);
-    mTaskCount = aTaskCount;
-  }
-
- private:
-  ~BlacklistClassifierCallback() = default;
-
-  nsresult OnClassifyCompleteInternal();
-
-  nsCOMPtr<nsIChannel> mChannel;
-  uint32_t mTaskCount;
-  std::function<void()> mChannelCallback;
-
-  nsTArray<RefPtr<nsIUrlClassifierFeatureResult>> mResults;
-};
-
-NS_IMPL_ISUPPORTS(BlacklistClassifierCallback, nsIUrlClassifierFeatureCallback)
-
-NS_IMETHODIMP
-BlacklistClassifierCallback::OnClassifyComplete(
-    const nsTArray<RefPtr<nsIUrlClassifierFeatureResult>>& aResults) {
-  MOZ_ASSERT(mTaskCount > 0);
-
-  UC_LOG(("BlacklistClassifierCallback[%p]:OnClassifyComplete - remaining %d",
-          this, mTaskCount));
-
-  mResults.AppendElements(aResults);
-
-  if (--mTaskCount) {
-    
-    return NS_OK;
-  }
-
-  return OnClassifyCompleteInternal();
-}
-
-nsresult BlacklistClassifierCallback::OnClassifyCompleteInternal() {
-  
-  if (mResults.IsEmpty()) {
-    if (UC_LOG_ENABLED()) {
-      UC_LOG(
-          ("BlacklistClassifierCallback[%p]::OnClassifyComplete uri not found "
-           "in blacklist",
-           this));
-    }
-
-    mChannelCallback();
-    return NS_OK;
-  }
-
-  if (UC_LOG_ENABLED()) {
-    UC_LOG(
-        ("BlacklistClassifierCallback[%p]::OnClassifyComplete uri is in "
-         "blacklist. Start checking whitelist.",
-         this));
-  }
-
-  nsTArray<nsCOMPtr<nsIUrlClassifierFeature>> features;
-  for (nsIUrlClassifierFeatureResult* result : mResults) {
-    features.AppendElement(
-        static_cast<UrlClassifierFeatureResult*>(result)->Feature());
-  }
-
-  nsTArray<FeatureTask> tasks;
-  nsresult rv = GetFeatureTasks(mChannel, features,
-                                nsIUrlClassifierFeature::whitelist, tasks);
+  nsAutoCString host;
+  rv = innermostURI->GetHost(host);
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    return TrackerFound(mResults, mChannel, mChannelCallback);
+    return rv;
   }
 
-  if (tasks.IsEmpty()) {
-    UC_LOG(
-        ("BlacklistClassifierCallback[%p]:OnClassifyComplete could not create "
-         "a whitelist URI. Ignoring whitelist.",
-         this));
-
-    return TrackerFound(mResults, mChannel, mChannelCallback);
+  bool found = false;
+  nsAutoCString tableName;
+  rv = mFeature->HasHostInPreferences(host, aListType, tableName, &found);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
   }
 
-  RefPtr<WhitelistClassifierCallback> callback =
-      new WhitelistClassifierCallback(mChannel, mResults, mChannelCallback);
+  if (found) {
+    mHostInPrefTables[aListType] = tableName;
+  }
 
-  nsCOMPtr<nsIURIClassifier> uriClassifier =
-      do_GetService(NS_URICLASSIFIERSERVICE_CONTRACTID, &rv);
-  NS_ENSURE_SUCCESS(rv, rv);
+  RefPtr<URIData> uriData;
+  rv = aTask->GetOrCreateURIData(uri, innermostURI, getter_AddRefs(uriData));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
-  uint32_t pendingCallbacks = 0;
-  for (FeatureTask& task : tasks) {
-    rv = uriClassifier->AsyncClassifyLocalWithFeatures(
-        task.mURI, task.mFeatures, nsIUrlClassifierFeature::whitelist,
-        callback);
+  MOZ_ASSERT(uriData);
 
+  nsTArray<nsCString> tables;
+  rv = mFeature->GetTables(aListType, tables);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  for (const nsCString& table : tables) {
+    RefPtr<TableData> data;
+    rv = aTask->GetOrCreateTableData(uriData, table, getter_AddRefs(data));
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      if (UC_LOG_ENABLED()) {
-        nsAutoCString errorName;
-        GetErrorName(rv, errorName);
-        UC_LOG((
-            "BlacklistClassifierCallback[%p]:OnClassifyComplete Failed "
-            "calling AsyncClassifyLocalWithFeatures with rv=%s. Let's move on.",
-            this, errorName.get()));
-      }
-
-      continue;
+      return rv;
     }
 
-    ++pendingCallbacks;
+    MOZ_ASSERT(data);
+    aList.AppendElement(data);
   }
 
-  
-  
-  if (pendingCallbacks == 0) {
-    if (UC_LOG_ENABLED()) {
-      UC_LOG(
-          ("BlacklistClassifierCallback[%p]:OnClassifyComplete All "
-           "AsyncClassifyLocalWithFeatures() calls return errors. We cannot "
-           "continue.",
-           this));
-    }
-
-    return TrackerFound(mResults, mChannel, mChannelCallback);
-  }
-
-  
-  callback->SetTaskCount(pendingCallbacks);
   return NS_OK;
 }
 
@@ -397,62 +740,39 @@ nsresult BlacklistClassifierCallback::OnClassifyCompleteInternal() {
     return NS_ERROR_INVALID_ARG;
   }
 
-  
-  
-  nsTArray<nsCOMPtr<nsIUrlClassifierFeature>> features;
-  UrlClassifierFeatureFactory::GetFeaturesFromChannel(aChannel, features);
-  if (features.IsEmpty()) {
-    UC_LOG(
-        ("AsyncUrlChannelClassifier: Nothing to do for channel %p", aChannel));
-    return NS_ERROR_FAILURE;
-  }
+  UC_LOG(
+      ("AsyncUrlChannelClassifier::CheckChannel starting the classification "
+       "for channel %p",
+       aChannel));
 
-  nsTArray<FeatureTask> tasks;
-  nsresult rv = GetFeatureTasks(aChannel, features,
-                                nsIUrlClassifierFeature::blacklist, tasks);
-  if (NS_WARN_IF(NS_FAILED(rv)) || tasks.IsEmpty()) {
+  RefPtr<FeatureTask> task;
+  nsresult rv =
+      FeatureTask::Create(aChannel, std::move(aCallback), getter_AddRefs(task));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
-  MOZ_ASSERT(!tasks.IsEmpty());
-
-  nsCOMPtr<nsIURIClassifier> uriClassifier =
-      do_GetService(NS_URICLASSIFIERSERVICE_CONTRACTID, &rv);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  RefPtr<BlacklistClassifierCallback> callback =
-      new BlacklistClassifierCallback(aChannel, std::move(aCallback));
-
-  uint32_t pendingCallbacks = 0;
-  for (FeatureTask& task : tasks) {
-    if (UC_LOG_ENABLED()) {
-      nsCString spec = task.mURI->GetSpecOrDefault();
-      spec.Truncate(
-          std::min(spec.Length(), UrlClassifierCommon::sMaxSpecLength));
-      UC_LOG(("AsyncUrlChannelClassifier: Checking blacklist for uri=%s\n",
-              spec.get()));
-    }
-
-    rv = uriClassifier->AsyncClassifyLocalWithFeatures(
-        task.mURI, task.mFeatures, nsIUrlClassifierFeature::blacklist,
-        callback);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      continue;
-    }
-
-    ++pendingCallbacks;
-  }
-
-  
-  
-  if (pendingCallbacks == 0) {
+  RefPtr<nsUrlClassifierDBServiceWorker> workerClassifier =
+      nsUrlClassifierDBService::GetWorker();
+  if (NS_WARN_IF(!workerClassifier)) {
     return NS_ERROR_FAILURE;
   }
 
-  callback->SetTaskCount(pendingCallbacks);
-  return NS_OK;
+  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
+      "AsyncUrlChannelClassifier::CheckChannel",
+      [task, workerClassifier]() -> void {
+        MOZ_ASSERT(!NS_IsMainThread());
+        task->DoLookup(workerClassifier);
+
+        nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
+            "AsyncUrlChannelClassifier::CheckChannel - return",
+            [task]() -> void { task->CompleteClassification(); });
+
+        NS_DispatchToMainThread(r);
+      });
+
+  return nsUrlClassifierDBService::BackgroundThread()->Dispatch(
+      r, NS_DISPATCH_NORMAL);
 }
 
 }  
