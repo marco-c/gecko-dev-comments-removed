@@ -838,7 +838,7 @@ class XPCWrappedNativeScope final
   bool AttachComponentsObject(JSContext* aCx);
 
   
-  bool GetComponentsJSObject(JS::MutableHandleObject obj);
+  bool GetComponentsJSObject(JSContext* cx, JS::MutableHandleObject obj);
 
   JSObject* GetExpandoChain(JS::HandleObject target);
 
@@ -1867,7 +1867,9 @@ class XPCConvert {
 
 
 
-  static bool NativeInterface2JSObject(JS::MutableHandleValue dest,
+
+  static bool NativeInterface2JSObject(JSContext* cx,
+                                       JS::MutableHandleValue dest,
                                        xpcObjectHelper& aHelper,
                                        const nsID* iid, bool allowNativeWrapper,
                                        nsresult* pErr);
