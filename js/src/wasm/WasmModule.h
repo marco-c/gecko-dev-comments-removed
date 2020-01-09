@@ -104,6 +104,11 @@ class Module : public JS::WasmModule {
   
   
 
+  const bool loggingDeserialized_;
+
+  
+  
+
   mutable Atomic<bool> testingTier2Active_;
 
   bool instantiateFunctions(JSContext* cx,
@@ -140,7 +145,8 @@ class Module : public JS::WasmModule {
          CustomSectionVector&& customSections,
          UniqueConstBytes debugUnlinkedCode = nullptr,
          UniqueLinkData debugLinkData = nullptr,
-         const ShareableBytes* debugBytecode = nullptr)
+         const ShareableBytes* debugBytecode = nullptr,
+         bool loggingDeserialized = false)
       : code_(&code),
         imports_(std::move(imports)),
         exports_(std::move(exports)),
@@ -151,6 +157,7 @@ class Module : public JS::WasmModule {
         debugUnlinkedCode_(std::move(debugUnlinkedCode)),
         debugLinkData_(std::move(debugLinkData)),
         debugBytecode_(debugBytecode),
+        loggingDeserialized_(loggingDeserialized),
         testingTier2Active_(false) {
     MOZ_ASSERT_IF(metadata().debugEnabled,
                   debugUnlinkedCode_ && debugLinkData_);
@@ -194,6 +201,7 @@ class Module : public JS::WasmModule {
                  JS::OptimizedEncodingListener& listener) const;
   static RefPtr<Module> deserialize(const uint8_t* begin, size_t size,
                                     Metadata* maybeMetadata = nullptr);
+  bool loggingDeserialized() const { return loggingDeserialized_; }
 
   
 

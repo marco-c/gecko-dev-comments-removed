@@ -14,20 +14,21 @@ function testCached(code, imports, test) {
     compileStreaming(cache)
     .then(m => {
          test(new Instance(m, imports));
+         assertEq(wasmLoadedFromCache(m), false);
          while (!wasmHasTier2CompilationCompleted(m)) {
             sleep(1);
          }
-         assertEq(cache.cached, wasmCachingIsSupported());
+         assertEq(cache.cached, true);
          return compileStreaming(cache);
      })
      .then(m => {
          test(new Instance(m, imports));
-         assertEq(cache.cached, wasmCachingIsSupported());
+         assertEq(wasmLoadedFromCache(m), true);
+         assertEq(cache.cached, true);
 
-         if (wasmCachingIsSupported()) {
-             let m2 = wasmCompileInSeparateProcess(code);
-             test(new Instance(m2, imports));
-         }
+         let m2 = wasmCompileInSeparateProcess(code);
+         test(new Instance(m2, imports));
+         assertEq(wasmLoadedFromCache(m2), true);
 
          success = true;
      })

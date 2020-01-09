@@ -899,8 +899,9 @@ static bool WasmExtractCode(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-static bool WasmHasTier2CompilationCompleted(JSContext* cx, unsigned argc,
-                                             Value* vp) {
+enum class Flag { Tier2Complete, Deserialized };
+
+static bool WasmReturnFlag(JSContext* cx, unsigned argc, Value* vp, Flag flag) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   if (!args.get(0).isObject()) {
@@ -915,8 +916,27 @@ static bool WasmHasTier2CompilationCompleted(JSContext* cx, unsigned argc,
     return false;
   }
 
-  args.rval().set(BooleanValue(!module->module().testingTier2Active()));
+  bool b;
+  switch (flag) {
+    case Flag::Tier2Complete:
+      b = !module->module().testingTier2Active();
+      break;
+    case Flag::Deserialized:
+      b = module->module().loggingDeserialized();
+      break;
+  }
+
+  args.rval().set(BooleanValue(b));
   return true;
+}
+
+static bool WasmHasTier2CompilationCompleted(JSContext* cx, unsigned argc,
+                                             Value* vp) {
+  return WasmReturnFlag(cx, argc, vp, Flag::Tier2Complete);
+}
+
+static bool WasmLoadedFromCache(JSContext* cx, unsigned argc, Value* vp) {
+  return WasmReturnFlag(cx, argc, vp, Flag::Deserialized);
 }
 
 static bool IsLazyFunction(JSContext* cx, unsigned argc, Value* vp) {
@@ -2665,11 +2685,6 @@ static bool testingFunc_bailAfter(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-static constexpr unsigned JitWarmupResetLimit = 20;
-static_assert(JitWarmupResetLimit <=
-                  unsigned(JSScript::MutableFlags::WarmupResets_MASK),
-              "JitWarmupResetLimit exceeds max value");
-
 static bool testingFunc_inJit(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
@@ -2686,7 +2701,7 @@ static bool testingFunc_inJit(JSContext* cx, unsigned argc, Value* vp) {
     
     if (iter.isJSJit()) {
       iter.script()->resetWarmUpResetCounter();
-    } else if (iter.script()->getWarmUpResetCount() >= JitWarmupResetLimit) {
+    } else if (iter.script()->getWarmUpResetCount() >= 20) {
       return ReturnStringCopy(
           cx, args, "Compilation is being repeatedly prevented. Giving up.");
     }
@@ -2714,7 +2729,7 @@ static bool testingFunc_inIon(JSContext* cx, unsigned argc, Value* vp) {
     
     if (iter.isIon()) {
       iter.script()->resetWarmUpResetCounter();
-    } else if (iter.script()->getWarmUpResetCount() >= JitWarmupResetLimit) {
+    } else if (iter.script()->getWarmUpResetCount() >= 20) {
       return ReturnStringCopy(
           cx, args, "Compilation is being repeatedly prevented. Giving up.");
     }
@@ -6040,6 +6055,11 @@ gc::ZealModeHelpText),
 "wasmHasTier2CompilationCompleted(module)",
 "  Returns a boolean indicating whether a given module has finished compiled code for tier2. \n"
 "This will return true early if compilation isn't two-tiered. "),
+
+    JS_FN_HELP("wasmLoadedFromCache", WasmLoadedFromCache, 1, 0,
+"wasmLoadedFromCache(module)",
+"  Returns a boolean indicating whether a given module was deserialized directly from a\n"
+"  cache (as opposed to compiled from bytecode)."),
 
     JS_FN_HELP("wasmReftypesEnabled", WasmReftypesEnabled, 1, 0,
 "wasmReftypesEnabled()",
