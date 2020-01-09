@@ -1411,7 +1411,9 @@ var PanelView = class extends AssociatedToNode {
   _isNavigableWithTabOnly(element) {
     let tag = element.localName;
     return tag == "menulist" || tag == "textbox" || tag == "input"
-           || tag == "textarea";
+           || tag == "textarea"
+           
+           || tag == "browser";
   }
 
   
@@ -1565,6 +1567,24 @@ var PanelView = class extends AssociatedToNode {
       return;
     }
 
+    let focus = this.document.activeElement;
+    
+    
+    
+    
+    
+    
+    if (focus && !(this.node.compareDocumentPosition(focus)
+                   & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
+      focus = null;
+    }
+
+    
+    
+    if (focus && focus.tagName == "browser") {
+      return;
+    }
+
     let stop = () => {
       event.stopPropagation();
       event.preventDefault();
@@ -1578,20 +1598,7 @@ var PanelView = class extends AssociatedToNode {
       
       
       
-      let focus = this.document.activeElement;
-      if (!focus) {
-        return false;
-      }
-      
-      
-      
-      
-      
-      if (!(this.node.compareDocumentPosition(focus)
-            & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
-        return false;
-      }
-      return this._isNavigableWithTabOnly(focus);
+      return focus && this._isNavigableWithTabOnly(focus);
     };
 
     let keyCode = event.code;
