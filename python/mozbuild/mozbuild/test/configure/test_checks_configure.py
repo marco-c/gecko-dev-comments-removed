@@ -480,8 +480,6 @@ class TestChecksConfigure(unittest.TestCase):
         ''' % mozpath.dirname(self.OTHER_A)))
 
     def test_java_tool_checks(self):
-        includes = ('util.configure', 'checks.configure', 'java.configure')
-
         
         java = mozpath.abspath('/usr/bin/java')
         jarsigner = mozpath.abspath('/usr/bin/jarsigner')
@@ -493,7 +491,14 @@ class TestChecksConfigure(unittest.TestCase):
             keytool: None,
         }
 
-        config, out, status = self.get_result(includes=includes, extra_paths=paths)
+        script = textwrap.dedent('''\
+                @depends('--help')
+                def host(_):
+                    return namespace(os='unknown')
+                include('%(topsrcdir)s/build/moz.configure/java.configure')
+            ''' % {'topsrcdir': topsrcdir})
+
+        config, out, status = self.get_result(command=script, extra_paths=paths)
         self.assertEqual(status, 0)
         self.assertEqual(config, {
             'JAVA': java,
@@ -519,7 +524,7 @@ class TestChecksConfigure(unittest.TestCase):
             alt_keytool: None,
         })
 
-        config, out, status = self.get_result(includes=includes,
+        config, out, status = self.get_result(command=script,
                                               extra_paths=paths,
                                               environ={
                                                   'JAVA_HOME': alt_java_home,
@@ -541,8 +546,8 @@ class TestChecksConfigure(unittest.TestCase):
         
         
         config, out, status = self.get_result(
+            command=script,
             args=['--with-java-bin-path=%s' % mozpath.dirname(alt_java)],
-            includes=includes,
             extra_paths=paths,
             environ={
                 'PATH': mozpath.dirname(java)
@@ -563,8 +568,8 @@ class TestChecksConfigure(unittest.TestCase):
         
         
         config, out, status = self.get_result(
+            command=script,
             args=['--with-java-bin-path=%s' % mozpath.dirname(alt_java)],
-            includes=includes,
             extra_paths=paths,
             environ={
                 'PATH': mozpath.dirname(java),
@@ -585,8 +590,8 @@ class TestChecksConfigure(unittest.TestCase):
 
         
         config, out, status = self.get_result(
+            command=script,
             args=['--enable-java-coverage'],
-            includes=includes,
             extra_paths=paths,
             environ={
                 'PATH': mozpath.dirname(java),
@@ -602,7 +607,7 @@ class TestChecksConfigure(unittest.TestCase):
 
         
         del paths[jarsigner]
-        config, out, status = self.get_result(includes=includes,
+        config, out, status = self.get_result(command=script,
                                               extra_paths=paths,
                                               environ={
                                                   'PATH': mozpath.dirname(java)
