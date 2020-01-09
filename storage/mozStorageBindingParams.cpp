@@ -51,9 +51,10 @@ int sqlite3_T_text(BindingColumnData aData, const nsCString &aValue) {
 }
 
 int sqlite3_T_text16(BindingColumnData aData, const nsString &aValue) {
-  return ::sqlite3_bind_text16(aData.stmt, aData.column + 1, aValue.get(),
-                               aValue.Length() * 2,  
-                               SQLITE_TRANSIENT);
+  return ::sqlite3_bind_text16(
+      aData.stmt, aData.column + 1, aValue.get(),
+      aValue.Length() * sizeof(char16_t),  
+      SQLITE_TRANSIENT);
 }
 
 int sqlite3_T_null(BindingColumnData aData) {
