@@ -369,6 +369,10 @@ var SessionStore = {
     return SessionStoreInternal.navigateAndRestore(tab, loadArguments, historyIndex);
   },
 
+  updateSessionStoreFromTablistener(aTab, aData) {
+    return SessionStoreInternal.updateSessionStoreFromTablistener(aTab, aData);
+  },
+
   getSessionHistory(tab, updatedCallback) {
     return SessionStoreInternal.getSessionHistory(tab, updatedCallback);
   },
@@ -815,6 +819,20 @@ var SessionStoreInternal = {
       case "http-on-may-change-process":
         this.onMayChangeProcess(aSubject);
         break;
+    }
+  },
+
+  updateSessionStoreFromTablistener(aTab, aData) {
+    let browser = aTab.linkedBrowser;
+    let win = browser.ownerGlobal;
+    TabState.update(browser, aData);
+    this.saveStateDelayed(win);
+
+    if (aData.flushID) {
+      
+      
+      
+      TabStateFlusher.resolve(browser, aData.flushID);
     }
   },
 

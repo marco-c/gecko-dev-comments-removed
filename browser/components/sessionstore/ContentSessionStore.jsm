@@ -306,46 +306,6 @@ SessionHistoryListener.prototype.QueryInterface =
 
 
 
-class ScrollPositionListener extends Handler {
-  constructor(store) {
-    super(store);
-
-    SessionStoreUtils.addDynamicFrameFilteredListener(
-        this.mm, "mozvisualscroll", this,
-         false,  true);
-
-    this.stateChangeNotifier.addObserver(this);
-  }
-
-  handleEvent() {
-    this.messageQueue.push("scroll", () => this.collect());
-  }
-
-  onPageLoadCompleted() {
-    this.messageQueue.push("scroll", () => this.collect());
-  }
-
-  onPageLoadStarted() {
-    this.messageQueue.push("scroll", () => null);
-  }
-
-  collect() {
-    return SessionStoreUtils.collectScrollPosition(this.mm.content);
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -369,39 +329,6 @@ class FormDataListener extends Handler {
 
   collect() {
     return SessionStoreUtils.collectFormData(this.mm.content);
-  }
-}
-
-
-
-
-
-
-
-
-
-
-class DocShellCapabilitiesListener extends Handler {
-  constructor(store) {
-    super(store);
-
-    
-
-
-
-    this._latestCapabilities = "";
-
-    this.stateChangeNotifier.addObserver(this);
-  }
-
-  onPageLoadStarted() {
-    let caps = SessionStoreUtils.collectDocShellCapabilities(this.mm.docShell);
-
-    
-    if (caps != this._latestCapabilities) {
-      this._latestCapabilities = caps;
-      this.messageQueue.push("disallow", () => caps || null);
-    }
   }
 }
 
@@ -535,38 +462,6 @@ class SessionStorageListener extends Handler {
     this.collect();
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-class PrivacyListener extends Handler {
-  constructor(store) {
-    super(store);
-
-    this.mm.docShell.addWeakPrivacyTransitionObserver(this);
-
-    
-    
-    if (this.mm.docShell.QueryInterface(Ci.nsILoadContext).usePrivateBrowsing) {
-      this.messageQueue.push("isPrivate", () => true);
-    }
-  }
-
-  
-  privateModeChanged(enabled) {
-    this.messageQueue.push("isPrivate", () => enabled || null);
-  }
-}
-PrivacyListener.prototype.QueryInterface =
-  ChromeUtils.generateQI([Ci.nsIPrivacyTransitionObserver,
-                          Ci.nsISupportsWeakReference]);
 
 
 
@@ -826,9 +721,6 @@ class ContentSessionStore {
       new FormDataListener(this),
       new SessionHistoryListener(this),
       new SessionStorageListener(this),
-      new ScrollPositionListener(this),
-      new DocShellCapabilitiesListener(this),
-      new PrivacyListener(this),
       this.stateChangeNotifier,
       this.messageQueue,
     ];

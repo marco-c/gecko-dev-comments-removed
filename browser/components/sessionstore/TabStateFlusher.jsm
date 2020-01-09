@@ -75,25 +75,40 @@ var TabStateFlusherInternal = {
   _requests: new WeakMap(),
 
   
+  _requestsToNativeListener: new WeakMap(),
+
+  
 
 
 
 
   flush(browser) {
     let id = ++this._lastRequestID;
+    let requestNativeListener = false;
+    if (browser && browser.frameLoader) {
+      
+
+
+
+      requestNativeListener = browser.frameLoader.requestTabStateFlush(id);
+    }
+
     let mm = browser.messageManager;
     mm.sendAsyncMessage("SessionStore:flush", {id});
 
     
     let permanentKey = browser.permanentKey;
     let perBrowserRequests = this._requests.get(permanentKey) || new Map();
+    let perBrowserRequestsToNative = this._requestsToNativeListener.get(permanentKey) || new Map();
 
     return new Promise(resolve => {
       
       perBrowserRequests.set(id, resolve);
+      perBrowserRequestsToNative.set(id, requestNativeListener);
 
       
       this._requests.set(permanentKey, perBrowserRequests);
+      this._requestsToNativeListener.set(permanentKey, perBrowserRequestsToNative);
     });
   },
 
@@ -127,6 +142,18 @@ var TabStateFlusherInternal = {
   resolve(browser, flushID, success = true, message = "") {
     
     if (!this._requests.has(browser.permanentKey)) {
+      return;
+    }
+
+    
+    let perBrowserRequestsForNativeListener = this._requestsToNativeListener.get(browser.permanentKey);
+    if (!perBrowserRequestsForNativeListener.has(flushID)) {
+      return;
+    }
+    let waitForNextResolve = perBrowserRequestsForNativeListener.get(flushID);
+    if (waitForNextResolve) {
+      perBrowserRequestsForNativeListener.set(flushID, false);
+      this._requestsToNativeListener.set(browser.permanentKey, perBrowserRequestsForNativeListener);
       return;
     }
 

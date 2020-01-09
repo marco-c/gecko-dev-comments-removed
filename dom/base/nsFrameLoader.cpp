@@ -84,6 +84,7 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/FrameLoaderBinding.h"
 #include "mozilla/dom/MozFrameLoaderOwnerBinding.h"
+#include "mozilla/dom/SessionStoreListener.h"
 #include "mozilla/gfx/CrossProcessPaint.h"
 #include "mozilla/jsipc/CrossProcessObjectWrappers.h"
 #include "mozilla/layout/RenderFrame.h"
@@ -1927,6 +1928,11 @@ void nsFrameLoader::DestroyDocShell() {
     mChildMessageManager->FireUnloadEvent();
   }
 
+  if (mSessionStoreListener) {
+    mSessionStoreListener->RemoveListeners();
+    mSessionStoreListener = nullptr;
+  }
+
   
   if (GetDocShell()) {
     GetDocShell()->Destroy();
@@ -3008,6 +3014,13 @@ nsresult nsFrameLoader::EnsureMessageManager() {
     mChildMessageManager = InProcessBrowserChildMessageManager::Create(
         GetDocShell(), mOwnerContent, mMessageManager);
     NS_ENSURE_TRUE(mChildMessageManager, NS_ERROR_UNEXPECTED);
+
+    
+    if (XRE_IsParentProcess()) {
+      mSessionStoreListener = new TabListener(GetDocShell(), mOwnerContent);
+      rv = mSessionStoreListener->Init();
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
   }
   return NS_OK;
 }
@@ -3152,6 +3165,22 @@ void nsFrameLoader::RequestUpdatePosition(ErrorResult& aRv) {
       aRv.Throw(rv);
     }
   }
+}
+
+bool nsFrameLoader::RequestTabStateFlush(uint32_t aFlushId) {
+  if (mSessionStoreListener) {
+    mSessionStoreListener->ForceFlushFromParent(aFlushId);
+    
+    return false;
+  }
+
+  
+  if (mBrowserParent) {
+    Unused << mBrowserParent->SendFlushTabState(aFlushId);
+    return true;
+  }
+
+  return false;
 }
 
 void nsFrameLoader::Print(uint64_t aOuterWindowID,
