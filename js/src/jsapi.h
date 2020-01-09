@@ -1798,9 +1798,17 @@ extern JS_PUBLIC_API JSFunction* GetSelfHostedFunction(
 
 
 
+
 extern JS_PUBLIC_API JSFunction* NewFunctionFromSpec(JSContext* cx,
                                                      const JSFunctionSpec* fs,
                                                      HandleId id);
+
+
+
+
+
+extern JS_PUBLIC_API JSFunction* NewFunctionFromSpec(JSContext* cx,
+                                                     const JSFunctionSpec* fs);
 
 } 
 
