@@ -19,6 +19,8 @@ const {
   getCSSStyleRules,
 } = require("devtools/shared/inspector/css-logic");
 const InspectorUtils = require("InspectorUtils");
+const Debugger = require("Debugger");
+const ReplayInspector = require("devtools/server/actors/replay/inspector");
 
 
 
@@ -299,6 +301,11 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
   },
 
   get content() {
+    
+    
+    if (Debugger.recordReplayProcessKind() == "Middleman") {
+      return ReplayInspector.window;
+    }
     return this.targetActor.window;
   },
 
@@ -478,6 +485,20 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
   
 
 
+  windowForMouseEvent: function(node) {
+    
+    
+    
+    
+    if (Debugger.recordReplayProcessKind() == "Middleman") {
+      return this.targetActor.window;
+    }
+    return node.ownerDocument.defaultView;
+  },
+
+  
+
+
 
 
 
@@ -491,9 +512,9 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
     const node = this._querySelector(selector);
     node.scrollIntoView();
     if (center) {
-      EventUtils.synthesizeMouseAtCenter(node, options, node.ownerDocument.defaultView);
+      EventUtils.synthesizeMouseAtCenter(node, options, this.windowForMouseEvent(node));
     } else {
-      EventUtils.synthesizeMouse(node, x, y, options, node.ownerDocument.defaultView);
+      EventUtils.synthesizeMouse(node, x, y, options, this.windowForMouseEvent(node));
     }
   },
 

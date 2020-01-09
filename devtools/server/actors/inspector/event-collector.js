@@ -16,6 +16,7 @@ const {
   isNativeAnonymous,
 } = require("devtools/shared/layout/utils");
 const Debugger = require("Debugger");
+const ReplayInspector = require("devtools/server/actors/replay/inspector");
 
 
 const JQUERY_LIVE_REGEX = /return typeof \w+.*.event\.triggered[\s\S]*\.event\.(dispatch|handle).*arguments/;
@@ -252,17 +253,18 @@ class MainEventCollector {
 
 
   getDOMListeners(node) {
+    const els = isReplaying ? ReplayInspector.els : Services.els;
     if (typeof node.nodeName !== "undefined" && node.nodeName.toLowerCase() === "html") {
       const winListeners =
-        Services.els.getListenerInfoFor(node.ownerGlobal) || [];
+        els.getListenerInfoFor(node.ownerGlobal) || [];
       const docElementListeners =
-        Services.els.getListenerInfoFor(node) || [];
+        els.getListenerInfoFor(node) || [];
       const docListeners =
-        Services.els.getListenerInfoFor(node.parentNode) || [];
+        els.getListenerInfoFor(node.parentNode) || [];
 
       return [...winListeners, ...docElementListeners, ...docListeners];
     }
-    return Services.els.getListenerInfoFor(node) || [];
+    return els.getListenerInfoFor(node) || [];
   }
 
   getJQuery(node) {
@@ -870,13 +872,19 @@ class EventCollector {
 
     try {
       const { capturing, handler } = listener;
-      const global = Cu.getGlobalForObject(handler);
 
-      
-      
-      
-      globalDO = dbg.addDebuggee(global);
-      let listenerDO = globalDO.makeDebuggeeValue(handler);
+      let listenerDO;
+      if (isReplaying) {
+        listenerDO = ReplayInspector.getDebuggerObject(handler);
+      } else {
+        const global = Cu.getGlobalForObject(handler);
+
+        
+        
+        
+        globalDO = dbg.addDebuggee(global);
+        listenerDO = globalDO.makeDebuggeeValue(handler);
+      }
 
       const { normalizeListener } = listener;
 
