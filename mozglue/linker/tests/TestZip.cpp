@@ -17,31 +17,8 @@ Logging Logging::Singleton;
 
 
 
-#define ZIP_DATA(name, file)                          \
-  __asm__(".global " #name "\n"                       \
-          ".data\n"                                   \
-          ".balign 16\n"                              \
-          #name ":\n"                                 \
-          "  .incbin \"" SRCDIR "/" file "\"\n"       \
-          ".L" #name "_END:\n"                        \
-          "  .size " #name ", .L" #name "_END-" #name \
-          "\n"                                        \
-          ".global " #name "_SIZE\n"                  \
-          ".data\n"                                   \
-          ".balign 4\n"                               \
-          #name "_SIZE:\n"                            \
-          "  .int .L" #name "_END-" #name "\n");      \
-  extern const unsigned char name[];                  \
-  extern const unsigned int name##_SIZE
-
-
-
-
-
-
-
-
-ZIP_DATA(TEST_ZIP, "test.zip");
+extern const unsigned char TEST_ZIP[];
+extern const unsigned int TEST_ZIP_SIZE;
 const char* test_entries[] = {"baz", "foo", "bar", "qux"};
 
 
@@ -58,7 +35,8 @@ const char* test_entries[] = {"baz", "foo", "bar", "qux"};
 
 
 
-ZIP_DATA(NO_CENTRAL_DIR_ZIP, "no_central_dir.zip");
+extern const unsigned char NO_CENTRAL_DIR_ZIP[];
+extern const unsigned int NO_CENTRAL_DIR_ZIP_SIZE;
 const char* no_central_dir_entries[] = {"a", "b", "c", "d"};
 
 TEST(Zip, TestZip)
