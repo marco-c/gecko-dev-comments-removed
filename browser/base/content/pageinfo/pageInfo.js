@@ -320,6 +320,20 @@ function loadPageInfo(frameOuterWindowID, imageElement, browser) {
   let imageInfo = imageElement;
 
   
+  let documentURI = browser.documentURI.spec;
+  if (documentURI.startsWith("about:certerror")) {
+    let hostName = null;
+    try {
+      hostName = browser.currentURI.displayHost;
+    } catch (exception) { }
+    let info = {
+      isTopWindow: !!frameOuterWindowID,
+      hostName,
+    };
+    securityOnLoad(documentURI, info);
+  }
+
+  
   mm.sendAsyncMessage("PageInfo:getData", {strings: gStrings, frameOuterWindowID});
 
   let pageInfoData;
