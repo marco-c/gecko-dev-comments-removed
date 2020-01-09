@@ -606,13 +606,6 @@ VARCACHE_PREF(
 )
 
 
-VARCACHE_PREF(
-  "full-screen-api.enabled",
-   full_screen_api_enabled,
-  bool, false
-)
-
-
 
 
 
@@ -640,6 +633,12 @@ VARCACHE_PREF(
 
 
 
+
+VARCACHE_PREF(
+  "full-screen-api.enabled",
+   full_screen_api_enabled,
+  bool, false
+)
 
 VARCACHE_PREF(
   "full-screen-api.unprefix.enabled",
