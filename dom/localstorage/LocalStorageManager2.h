@@ -13,6 +13,8 @@
 namespace mozilla {
 namespace dom {
 
+class LSRequestChild;
+class LSRequestChildCallback;
 class LSRequestParams;
 class LSSimpleRequestParams;
 class Promise;
@@ -39,16 +41,17 @@ class LocalStorageManager2 final : public nsIDOMStorageManager,
   NS_DECL_NSIDOMSTORAGEMANAGER
   NS_DECL_NSILOCALSTORAGEMANAGER
 
- private:
-  ~LocalStorageManager2();
-
   
 
 
 
 
 
-  nsresult StartRequest(Promise* aPromise, const LSRequestParams& aParams);
+  LSRequestChild* StartRequest(const LSRequestParams& aParams,
+                               LSRequestChildCallback* aCallback);
+
+ private:
+  ~LocalStorageManager2();
 
   
 
