@@ -12,22 +12,12 @@ use app_units::Au;
 
 
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct FontMetrics {
     
-    pub x_height: Au,
+    pub x_height: Option<Au>,
     
-    pub zero_advance_measure: Au,
-}
-
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum FontMetricsQueryResult {
-    
-    
-    Available(FontMetrics),
-    
-    NotAvailable,
+    pub zero_advance_measure: Option<Au>,
 }
 
 
@@ -38,7 +28,7 @@ pub trait FontMetricsProvider {
         _context: &crate::values::computed::Context,
         _base_size: crate::values::specified::length::FontBaseSize,
     ) -> FontMetricsQueryResult {
-        FontMetricsQueryResult::NotAvailable
+        Default::default()
     }
 
     
