@@ -13,10 +13,12 @@
 #include "nsLayoutUtils.h"
 #include "nsString.h"
 #include "mozilla/AntiTrackingCommon.h"
+#include "mozilla/HashFunctions.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/ServiceWorkerManager.h"
 #include "mozilla/dom/Document.h"
+#include "nsHashKeys.h"
 #include "nsPrintfCString.h"
 
 namespace mozilla {
@@ -43,6 +45,7 @@ ImageCacheKey::ImageCacheKey(nsIURI* aURI, const OriginAttributes& aAttrs,
     : mURI(aURI),
       mOriginAttributes(aAttrs),
       mControlledDocument(GetSpecialCaseDocumentToken(aDocument, aURI)),
+      mTopLevelBaseDomain(GetTopLevelBaseDomain(aDocument, aURI)),
       mIsChrome(false) {
   if (SchemeIs("blob")) {
     mBlobSerial = BlobSerial(mURI);
@@ -57,6 +60,7 @@ ImageCacheKey::ImageCacheKey(const ImageCacheKey& aOther)
       mBlobRef(aOther.mBlobRef),
       mOriginAttributes(aOther.mOriginAttributes),
       mControlledDocument(aOther.mControlledDocument),
+      mTopLevelBaseDomain(aOther.mTopLevelBaseDomain),
       mHash(aOther.mHash),
       mIsChrome(aOther.mIsChrome) {}
 
@@ -66,6 +70,7 @@ ImageCacheKey::ImageCacheKey(ImageCacheKey&& aOther)
       mBlobRef(std::move(aOther.mBlobRef)),
       mOriginAttributes(aOther.mOriginAttributes),
       mControlledDocument(aOther.mControlledDocument),
+      mTopLevelBaseDomain(aOther.mTopLevelBaseDomain),
       mHash(aOther.mHash),
       mIsChrome(aOther.mIsChrome) {}
 
@@ -73,6 +78,12 @@ bool ImageCacheKey::operator==(const ImageCacheKey& aOther) const {
   
   
   if (mControlledDocument != aOther.mControlledDocument) {
+    return false;
+  }
+  
+  
+  if (!mTopLevelBaseDomain.Equals(aOther.mTopLevelBaseDomain,
+                                  nsCaseInsensitiveCStringComparator())) {
     return false;
   }
   
@@ -127,7 +138,8 @@ void ImageCacheKey::EnsureHash() const {
     hash = HashString(spec);
   }
 
-  hash = AddToHash(hash, HashString(suffix), HashString(ptr));
+  hash = AddToHash(hash, HashString(suffix), HashString(mTopLevelBaseDomain),
+                   HashString(ptr));
   mHash.emplace(hash);
 }
 
@@ -153,13 +165,23 @@ void* ImageCacheKey::GetSpecialCaseDocumentToken(Document* aDocument,
     return aDocument;
   }
 
+  return nullptr;
+}
+
+
+nsCString ImageCacheKey::GetTopLevelBaseDomain(Document* aDocument,
+                                               nsIURI* aURI) {
+  if (!aDocument || !aDocument->GetInnerWindow()) {
+    return EmptyCString();
+  }
+
   
   
   if (nsContentUtils::IsThirdPartyTrackingResourceWindow(
           aDocument->GetInnerWindow())) {
     return nsContentUtils::StorageDisabledByAntiTracking(aDocument, aURI)
-               ? aDocument
-               : nullptr;
+               ? aDocument->GetBaseDomain()
+               : EmptyCString();
   }
 
   
@@ -170,10 +192,17 @@ void* ImageCacheKey::GetSpecialCaseDocumentToken(Document* aDocument,
   
   if (!AntiTrackingCommon::MaybeIsFirstPartyStorageAccessGrantedFor(
           aDocument->GetInnerWindow(), aURI)) {
-    return aDocument;
+    nsPIDOMWindowOuter* top = aDocument->GetInnerWindow()->GetScriptableTop();
+    nsPIDOMWindowInner* topInner = top->GetCurrentInnerWindow();
+    if (!topInner) {
+      return aDocument
+          ->GetBaseDomain();  
+    }
+    return topInner->GetExtantDoc() ? topInner->GetExtantDoc()->GetBaseDomain()
+                                    : EmptyCString();
   }
 
-  return nullptr;
+  return EmptyCString();
 }
 
 }  

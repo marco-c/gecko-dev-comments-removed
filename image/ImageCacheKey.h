@@ -66,6 +66,11 @@ class ImageCacheKey final {
   static void* GetSpecialCaseDocumentToken(dom::Document* aDocument,
                                            nsIURI* aURI);
 
+  
+  
+  static nsCString GetTopLevelBaseDomain(dom::Document* aDocument,
+                                         nsIURI* aURI);
+
   void EnsureHash() const;
   void EnsureBlobRef() const;
 
@@ -74,6 +79,7 @@ class ImageCacheKey final {
   mutable nsCString mBlobRef;
   OriginAttributes mOriginAttributes;
   void* mControlledDocument;
+  nsCString mTopLevelBaseDomain;
   mutable Maybe<PLDHashNumber> mHash;
   bool mIsChrome;
 };
