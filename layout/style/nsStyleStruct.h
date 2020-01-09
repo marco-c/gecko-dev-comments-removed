@@ -1666,12 +1666,9 @@ struct StyleAnimation {
 struct StyleSVGPath final {
   StyleSVGPath(StyleForgottenArcSlicePtr<StylePathCommand> aPath,
                StyleFillRule aFill)
-    : mPath(aPath),
-      mFillRule(aFill) {}
+      : mPath(aPath), mFillRule(aFill) {}
 
-  Span<const StylePathCommand> Path() const {
-    return mPath.AsSpan();
-  }
+  Span<const StylePathCommand> Path() const { return mPath.AsSpan(); }
 
   StyleFillRule FillRule() const { return mFillRule; }
 
@@ -2698,7 +2695,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleSVG {
   RefPtr<mozilla::css::URLValue> mMarkerMid;
   RefPtr<mozilla::css::URLValue> mMarkerStart;
   nsTArray<mozilla::NonNegativeLengthPercentage> mStrokeDasharray;
-  nsTArray<RefPtr<nsAtom>> mContextProps;
+  mozilla::StyleMozContextProperties mMozContextProperties;
 
   mozilla::LengthPercentage mStrokeDashoffset;
   mozilla::NonNegativeLengthPercentage mStrokeWidth;
@@ -2711,17 +2708,17 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleSVG {
   uint8_t mColorInterpolation;         
   uint8_t mColorInterpolationFilters;  
   mozilla::StyleFillRule mFillRule;
-  uint8_t mPaintOrder;        
-  uint8_t mShapeRendering;    
-  uint8_t mStrokeLinecap;     
-  uint8_t mStrokeLinejoin;    
-  uint8_t mTextAnchor;        
-  uint8_t mContextPropsBits;  
-                              
+  uint8_t mPaintOrder;      
+  uint8_t mShapeRendering;  
+  uint8_t mStrokeLinecap;   
+  uint8_t mStrokeLinejoin;  
+  uint8_t mTextAnchor;      
 
   
   
-  bool ExposesContextProperties() const { return bool(mContextPropsBits); }
+  bool ExposesContextProperties() const {
+    return bool(mMozContextProperties.bits);
+  }
 
   nsStyleSVGOpacitySource FillOpacitySource() const {
     uint8_t value =

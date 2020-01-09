@@ -53,6 +53,7 @@ macro_rules! local_name {
 
 
 #[derive(Eq, PartialEq)]
+#[repr(C)]
 pub struct Atom(usize);
 
 
