@@ -1729,7 +1729,7 @@ static gfxFont::Metrics GetFirstFontMetrics(gfxFontGroup* aFontGroup,
                                            : gfxFont::eHorizontal);
 }
 
-static gfxFloat GetSpaceWidthAppUnits(const gfxTextRun* aTextRun) {
+static nscoord GetSpaceWidthAppUnits(const gfxTextRun* aTextRun) {
   
   
   gfxFloat spaceWidthAppUnits =
@@ -1757,12 +1757,7 @@ static nscoord LetterSpacing(nsIFrame* aFrame,
   if (!aStyleText) {
     aStyleText = aFrame->StyleText();
   }
-
-  const nsStyleCoord& coord = aStyleText->mLetterSpacing;
-  if (eStyleUnit_Coord == coord.GetUnit()) {
-    return coord.GetCoordValue();
-  }
-  return 0;
+  return aStyleText->mLetterSpacing.ToAppUnits();
 }
 
 
@@ -1775,12 +1770,9 @@ static nscoord WordSpacing(nsIFrame* aFrame, const gfxTextRun* aTextRun,
     aStyleText = aFrame->StyleText();
   }
 
-  const nsStyleCoord& coord = aStyleText->mWordSpacing;
-  if (coord.IsCoordPercentCalcUnit()) {
-    nscoord pctBasis = coord.HasPercent() ? GetSpaceWidthAppUnits(aTextRun) : 0;
-    return coord.ComputeCoordPercentCalc(pctBasis);
-  }
-  return 0;
+  return aStyleText->mWordSpacing.Resolve([&] {
+    return GetSpaceWidthAppUnits(aTextRun);
+  });
 }
 
 
@@ -1792,20 +1784,14 @@ static gfx::ShapedTextFlags GetSpacingFlags(
   }
 
   const nsStyleText* styleText = aFrame->StyleText();
-  const nsStyleCoord& ls = styleText->mLetterSpacing;
-  const nsStyleCoord& ws = styleText->mWordSpacing;
+  const auto& ls = styleText->mLetterSpacing;
+  const auto& ws = styleText->mWordSpacing;
 
   
   
   
   
-  bool nonStandardSpacing =
-      (eStyleUnit_Coord == ls.GetUnit() && ls.GetCoordValue() != 0) ||
-      (eStyleUnit_Coord == ws.GetUnit() && ws.GetCoordValue() != 0) ||
-      (eStyleUnit_Percent == ws.GetUnit() && ws.GetPercentValue() != 0) ||
-      (eStyleUnit_Calc == ws.GetUnit() &&
-       !ws.GetCalcValue()->IsDefinitelyZero());
-
+  bool nonStandardSpacing = !ls.IsZero() || !ws.IsDefinitelyZero();
   return nonStandardSpacing ? gfx::ShapedTextFlags::TEXT_ENABLE_SPACING
                             : gfx::ShapedTextFlags();
 }
