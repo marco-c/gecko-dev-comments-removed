@@ -7,7 +7,7 @@
 
 
 idl_test(
-  ['ResizeObserver'],
+  ['resize-observer'],
   ['dom', 'geometry'],
   async idl_array => {
     idl_array.add_objects({
