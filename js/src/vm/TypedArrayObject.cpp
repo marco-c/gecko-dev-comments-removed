@@ -2316,7 +2316,7 @@ bool js::StringIsTypedArrayIndex(const CharT* s, size_t length,
   }
 
   uint64_t index = 0;
-  uint32_t digit = JS7_UNDEC(*s++);
+  uint32_t digit = AsciiDigitToNumber(*s++);
 
   
   if (digit == 0 && s != end) {
@@ -2330,7 +2330,7 @@ bool js::StringIsTypedArrayIndex(const CharT* s, size_t length,
       return false;
     }
 
-    digit = JS7_UNDEC(*s);
+    digit = AsciiDigitToNumber(*s);
 
     
     if ((UINT64_MAX - digit) / 10 < index) {

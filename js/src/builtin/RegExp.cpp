@@ -1245,7 +1245,7 @@ static bool InterpretDollar(JSLinearString* matched, JSLinearString* string,
   char16_t c = currentDollar[1];
   if (IsAsciiDigit(c)) {
     
-    unsigned num = JS7_UNDEC(c);
+    unsigned num = AsciiDigitToNumber(c);
     if (num > captures.length()) {
       
       return false;
@@ -1255,7 +1255,7 @@ static bool InterpretDollar(JSLinearString* matched, JSLinearString* string,
     if (currentChar < replacementEnd) {
       c = *currentChar;
       if (IsAsciiDigit(c)) {
-        unsigned tmpNum = 10 * num + JS7_UNDEC(c);
+        unsigned tmpNum = 10 * num + AsciiDigitToNumber(c);
         
         
         if (tmpNum <= captures.length()) {
