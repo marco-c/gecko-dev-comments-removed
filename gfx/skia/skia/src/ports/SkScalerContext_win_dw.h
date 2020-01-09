@@ -26,6 +26,10 @@ public:
                        const SkDescriptor*);
     ~SkScalerContext_DW() override;
 
+    
+    
+    bool isDWrite3() { return bool(getDWriteTypeface()->fDWriteFontFace4); }
+
 protected:
     unsigned generateGlyphCount() override;
     uint16_t generateCharToGlyph(SkUnichar uni) override;
