@@ -1738,6 +1738,18 @@ class nsIPresShell : public nsStubDocumentObserver {
   void NotifyStyleSheetServiceSheetRemoved(mozilla::StyleSheet* aSheet,
                                            uint32_t aSheetType);
 
+  struct MOZ_RAII AutoAssertNoFlush {
+    explicit AutoAssertNoFlush(nsIPresShell& aShell)
+        : mShell(aShell), mOldForbidden(mShell.mForbiddenToFlush) {
+      mShell.mForbiddenToFlush = true;
+    }
+
+    ~AutoAssertNoFlush() { mShell.mForbiddenToFlush = mOldForbidden; }
+
+    nsIPresShell& mShell;
+    const bool mOldForbidden;
+  };
+
  protected:
   friend class nsRefreshDriver;
   friend class ::nsAutoCauseReflowNotifier;
@@ -1970,6 +1982,11 @@ class nsIPresShell : public nsStubDocumentObserver {
   bool mIsDestroying : 1;
   bool mIsReflowing : 1;
   bool mIsObservingDocument : 1;
+  
+  
+  
+  
+  bool mForbiddenToFlush : 1;
 
   
   
