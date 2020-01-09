@@ -4523,7 +4523,7 @@ bool JSScript::hasBreakpointsAt(jsbytecode* pc) {
  bool SharedScriptData::InitFromEmitter(
     JSContext* cx, js::HandleScript script, frontend::BytecodeEmitter* bce) {
   uint32_t natoms = bce->atomIndices->count();
-  uint32_t codeLength = bce->code().length();
+  uint32_t codeLength = bce->bytecodeSection().code().length();
 
   
   
@@ -4537,7 +4537,7 @@ bool JSScript::hasBreakpointsAt(jsbytecode* pc) {
   js::SharedScriptData* data = script->scriptData_;
 
   
-  std::copy_n(bce->code().begin(), codeLength, data->code());
+  std::copy_n(bce->bytecodeSection().code().begin(), codeLength, data->code());
   bce->copySrcNotes(data->notes(), noteLength);
   InitAtomMap(*bce->atomIndices, data->atoms());
 

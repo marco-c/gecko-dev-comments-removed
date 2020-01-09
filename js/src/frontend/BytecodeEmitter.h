@@ -124,7 +124,32 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   Rooted<LazyScript*> lazyScript;
 
  private:
-  BytecodeVector code_;  
+  
+  
+  class BytecodeSection {
+   public:
+    explicit BytecodeSection(JSContext* cx);
+
+    BytecodeVector& code() { return code_; }
+    const BytecodeVector& code() const { return code_; }
+
+    jsbytecode* code(ptrdiff_t offset) { return code_.begin() + offset; }
+    ptrdiff_t offset() const { return code_.end() - code_.begin(); }
+
+   private:
+    
+
+    
+    BytecodeVector code_;
+  };
+
+  BytecodeSection bytecodeSection_;
+
+ public:
+  BytecodeSection& bytecodeSection() { return bytecodeSection_; }
+  const BytecodeSection& bytecodeSection() const { return bytecodeSection_; }
+
+ private:
   SrcNotesVector notes_; 
 
   
@@ -400,19 +425,13 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
   void tellDebuggerAboutCompiledScript(JSContext* cx);
 
-  BytecodeVector& code() { return code_; }
-  const BytecodeVector& code() const { return code_; }
-
-  jsbytecode* code(ptrdiff_t offset) { return code_.begin() + offset; }
-  ptrdiff_t offset() const { return code_.end() - code_.begin(); }
-
   uint32_t mainOffset() const { return *mainOffset_; }
 
   bool inPrologue() const { return mainOffset_.isNothing(); }
 
   void switchToMain() {
     MOZ_ASSERT(inPrologue());
-    mainOffset_.emplace(code_.length());
+    mainOffset_.emplace(bytecodeSection().code().length());
   }
 
   SrcNotesVector& notes() {
@@ -430,7 +449,8 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
   
   bool lastOpcodeIsJumpTarget() const {
-    return offset() - lastTarget.offset == ptrdiff_t(JSOP_JUMPTARGET_LENGTH);
+    return bytecodeSection().offset() - lastTarget.offset ==
+           ptrdiff_t(JSOP_JUMPTARGET_LENGTH);
   }
 
   
@@ -438,7 +458,8 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   
   
   ptrdiff_t lastNonJumpTargetOffset() const {
-    return lastOpcodeIsJumpTarget() ? lastTarget.offset : offset();
+    return lastOpcodeIsJumpTarget() ? lastTarget.offset
+                                    : bytecodeSection().offset();
   }
 
   void setFunctionBodyEndPos(uint32_t pos) {
