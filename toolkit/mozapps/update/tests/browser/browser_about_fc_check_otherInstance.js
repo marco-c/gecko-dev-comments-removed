@@ -1,0 +1,19 @@
+
+
+
+"use strict";
+
+
+
+add_task(async function aboutDialog_foregroundCheck_otherInstance() {
+  setOtherInstanceHandlingUpdates();
+
+  let updateParams = "";
+  await runAboutDialogUpdateTest(updateParams, false, [
+    {
+      panelId: "otherInstanceHandlingUpdates",
+      checkActiveUpdate: null,
+      continueFile: null,
+    },
+  ]);
+});
