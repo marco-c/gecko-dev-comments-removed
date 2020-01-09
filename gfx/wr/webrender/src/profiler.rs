@@ -11,6 +11,7 @@ use renderer::{MAX_VERTEX_TEXTURE_WIDTH, wr_has_been_initialized};
 use std::collections::vec_deque::VecDeque;
 use std::{f32, mem};
 use std::ffi::CStr;
+use std::time::Duration;
 use time::precise_time_ns;
 
 const GRAPH_WIDTH: f32 = 1024.0;
@@ -30,10 +31,22 @@ pub trait ProfilerHooks : Send + Sync {
     
     
     fn end_marker(&self, label: &CStr);
+
+    
+    
+    
+    
+    
+    
+    
+    fn add_text_marker(&self, label: &CStr, text: &str, duration: Duration);
+
+    
+    fn thread_is_being_profiled(&self) -> bool;
 }
 
 
-static mut PROFILER_HOOKS: Option<&'static ProfilerHooks> = None;
+pub static mut PROFILER_HOOKS: Option<&'static ProfilerHooks> = None;
 
 
 
@@ -49,6 +62,22 @@ pub fn set_profiler_hooks(hooks: Option<&'static ProfilerHooks>) {
 
 pub struct ProfileScope {
     name: &'static CStr,
+}
+
+
+pub fn add_text_marker(label: &CStr, text: &str, duration: Duration) {
+    unsafe {
+        if let Some(ref hooks) = PROFILER_HOOKS {
+            hooks.add_text_marker(label, text, duration);
+        }
+    }
+}
+
+
+pub fn thread_is_being_profiled() -> bool {
+    unsafe {
+        PROFILER_HOOKS.map_or(false, |h| h.thread_is_being_profiled())
+    }
 }
 
 impl ProfileScope {
