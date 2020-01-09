@@ -3514,7 +3514,6 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
       
       
       
-      
       bStartMargin = aState.mPrevBEndMargin.get();
 
       if (treatWithClearance) {
@@ -4265,6 +4264,7 @@ void nsBlockFrame::DoReflowInlineFrames(
                      aFloatAvailableSpace, aAvailableSpaceBSize,
                      aKeepReflowGoing)) {
         lineReflowStatus = LineReflowStatus::RedoMoreFloats;
+        
         
       }
     }
