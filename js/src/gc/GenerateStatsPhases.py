@@ -59,6 +59,7 @@ class PhaseKind():
     def __init__(self, name, descr, bucket, children=[]):
         self.name = name
         self.descr = descr
+        
         self.bucket = bucket
         self.children = children
 
@@ -254,8 +255,10 @@ for phaseKind in AllPhaseKinds:
             phase.name = "%s_%d" % (phaseKind.name, index + 1)
 
 
-
 MaxPhaseNesting = max(phase.depth for phase in AllPhases) + 1
+
+
+MaxBucket = max(kind.bucket for kind in AllPhaseKinds)
 
 
 
@@ -337,3 +340,10 @@ def generateCpp(out):
                    phaseKind.descr,
                    phase.path))
     out.write("};\n")
+
+    
+    
+    
+    out.write("// The next available phase kind number is: %d\n" %
+            (MaxBucket + 1))
+
