@@ -1833,16 +1833,22 @@ class Extension extends ExtensionData {
     const testPermission = perm =>
       Services.perms.testPermissionFromPrincipal(principal, perm);
 
+    const addUnlimitedStoragePermissions = () => {
+      
+      
+      Services.perms.addFromPrincipal(principal, "WebExtensions-unlimitedStorage",
+                                      Services.perms.ALLOW_ACTION);
+      Services.perms.addFromPrincipal(principal, "indexedDB",
+                                      Services.perms.ALLOW_ACTION);
+      Services.perms.addFromPrincipal(principal, "persistent-storage",
+                                      Services.perms.ALLOW_ACTION);
+    };
+
     
     
     if (reason !== "APP_STARTUP" && reason !== "APP_SHUTDOWN") {
       if (this.hasPermission("unlimitedStorage")) {
-        
-        
-        Services.perms.addFromPrincipal(principal, "WebExtensions-unlimitedStorage",
-                                        Services.perms.ALLOW_ACTION);
-        Services.perms.addFromPrincipal(principal, "indexedDB", Services.perms.ALLOW_ACTION);
-        Services.perms.addFromPrincipal(principal, "persistent-storage", Services.perms.ALLOW_ACTION);
+        addUnlimitedStoragePermissions();
       } else {
         
         
@@ -1850,6 +1856,13 @@ class Extension extends ExtensionData {
         Services.perms.removeFromPrincipal(principal, "indexedDB");
         Services.perms.removeFromPrincipal(principal, "persistent-storage");
       }
+    } else if (reason === "APP_STARTUP" && this.hasPermission("unlimitedStorage") &&
+               (testPermission("indexedDB") !== Services.perms.ALLOW_ACTION ||
+                testPermission("persistent-storage") !== Services.perms.ALLOW_ACTION)) {
+      
+      
+      
+      addUnlimitedStoragePermissions();
     }
 
     
