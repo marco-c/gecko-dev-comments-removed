@@ -22,6 +22,7 @@
 #endif  
 #include "nsXULAppAPI.h"
 #include "PoisonIOInterposer.h"
+#include "prenv.h"
 
 using namespace mozilla;
 
@@ -396,7 +397,14 @@ bool IOInterposer::Init() {
   MainThreadIOLogger::Init();
 
   
-  InitPoisonIOInterposer();
+
+  
+  
+  
+  if (!PR_GetEnv("MOZ_DISABLE_POISON_IO_INTERPOSER")) {
+    InitPoisonIOInterposer();
+  }
+
   
   
 #if !defined(XP_WIN)

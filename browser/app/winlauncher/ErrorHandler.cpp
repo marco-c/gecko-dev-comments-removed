@@ -697,6 +697,13 @@ static bool SendPing(const mozilla::LauncherError& aError) {
 
   
   
+  
+  
+  
+  mozilla::SaveToEnv("MOZ_DISABLE_POISON_IO_INTERPOSER=1");
+
+  
+  
   auto thdParam = mozilla::MakeUnique<PingThreadContext>(aError);
 
   
