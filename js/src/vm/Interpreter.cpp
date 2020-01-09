@@ -4198,8 +4198,7 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
 
       
       ReservedRooted<JSObject*> obj(&rootObject0, &REGS.sp[-1].toObject());
-      MOZ_ASSERT(obj->is<PlainObject>() || obj->is<UnboxedPlainObject>() ||
-                 obj->is<JSFunction>());
+      MOZ_ASSERT(obj->is<PlainObject>() || obj->is<JSFunction>());
 
       func->setExtendedSlot(FunctionExtended::METHOD_HOMEOBJECT_SLOT,
                             ObjectValue(*obj));
@@ -5138,28 +5137,16 @@ JSObject* js::NewObjectOperation(JSContext* cx, HandleScript script,
       return nullptr;
     }
 
-    bool isUnboxed;
     {
       AutoSweepObjectGroup sweep(group);
       if (group->maybePreliminaryObjects(sweep)) {
         group->maybePreliminaryObjects(sweep)->maybeAnalyze(cx, group);
-        if (group->maybeUnboxedLayout(sweep)) {
-          
-          
-          
-          MOZ_ASSERT(JSOp(*pc) != JSOP_NEWINIT);
-          group->maybeUnboxedLayout(sweep)->setAllocationSite(script, pc);
-        }
       }
 
       if (group->shouldPreTenure(sweep) ||
           group->maybePreliminaryObjects(sweep)) {
         newKind = TenuredObject;
       }
-      isUnboxed = group->maybeUnboxedLayout(sweep);
-    }
-    if (isUnboxed) {
-      return UnboxedPlainObject::create(cx, group, newKind);
     }
   }
 
@@ -5303,7 +5290,7 @@ ArrayObject* js::NewArrayCopyOnWriteOperation(JSContext* cx,
     return nullptr;
   }
 
-  return NewDenseCopyOnWriteArray(cx, baseobj);
+  return NewDenseCopyOnWriteArray(cx, baseobj, gc::DefaultHeap);
 }
 
 void js::ReportRuntimeLexicalError(JSContext* cx, unsigned errorNumber,
