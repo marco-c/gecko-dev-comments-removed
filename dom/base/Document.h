@@ -4250,13 +4250,6 @@ class Document : public nsINode,
   
   bool mHasUserInteractionTimerScheduled;
 
-  
-  
-  
-  
-  
-  bool mUserGestureActivated;
-
   mozilla::TimeStamp mPageUnloadingEventTimeStamp;
 
   RefPtr<mozilla::dom::DocGroup> mDocGroup;
