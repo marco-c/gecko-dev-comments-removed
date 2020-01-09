@@ -465,45 +465,39 @@ void RestyleManager::ContentRemoved(nsIContent* aOldChild,
 
 
 
+static nsChangeHint ChangeForContentStateChange(const Element& aElement,
+                                                EventStates aStateMask) {
+  auto changeHint = nsChangeHint(0);
 
-
-void RestyleManager::ContentStateChangedInternal(const Element& aElement,
-                                                 EventStates aStateMask,
-                                                 nsChangeHint* aOutChangeHint) {
-  MOZ_ASSERT(!mInStyleRefresh);
-  MOZ_ASSERT(aOutChangeHint);
-
-  *aOutChangeHint = nsChangeHint(0);
   
   
   
   
   
   
-  nsIFrame* primaryFrame = aElement.GetPrimaryFrame();
-  if (primaryFrame) {
+  if (nsIFrame* primaryFrame = aElement.GetPrimaryFrame()) {
     
     if (!primaryFrame->IsGeneratedContentFrame() &&
         aStateMask.HasAtLeastOneOfStates(
             NS_EVENT_STATE_BROKEN | NS_EVENT_STATE_USERDISABLED |
             NS_EVENT_STATE_SUPPRESSED | NS_EVENT_STATE_LOADING)) {
-      *aOutChangeHint = nsChangeHint_ReconstructFrame;
-    } else {
-      auto* disp = primaryFrame->StyleDisplay();
-      if (disp->HasAppearance()) {
-        nsITheme* theme = PresContext()->GetTheme();
-        if (theme && theme->ThemeSupportsWidget(PresContext(), primaryFrame,
-                                                disp->mAppearance)) {
-          bool repaint = false;
-          theme->WidgetStateChanged(primaryFrame, disp->mAppearance, nullptr,
-                                    &repaint, nullptr);
-          if (repaint) {
-            *aOutChangeHint |= nsChangeHint_RepaintFrame;
-          }
+      return nsChangeHint_ReconstructFrame;
+    }
+
+    auto* disp = primaryFrame->StyleDisplay();
+    if (disp->HasAppearance()) {
+      nsPresContext* pc = primaryFrame->PresContext();
+      nsITheme* theme = pc->GetTheme();
+      if (theme &&
+          theme->ThemeSupportsWidget(pc, primaryFrame, disp->mAppearance)) {
+        bool repaint = false;
+        theme->WidgetStateChanged(primaryFrame, disp->mAppearance, nullptr,
+                                  &repaint, nullptr);
+        if (repaint) {
+          changeHint |= nsChangeHint_RepaintFrame;
         }
       }
     }
-
     primaryFrame->ContentStatesChanged(aStateMask);
   }
 
@@ -511,12 +505,14 @@ void RestyleManager::ContentStateChangedInternal(const Element& aElement,
     
     
     
-    *aOutChangeHint |= nsChangeHint_RepaintFrame;
+    changeHint |= nsChangeHint_RepaintFrame;
   }
+
+  return changeHint;
 }
 
-
-nsCString RestyleManager::RestyleHintToString(nsRestyleHint aHint) {
+ nsCString RestyleManager::RestyleHintToString(
+    nsRestyleHint aHint) {
   nsCString result;
   bool any = false;
   const char* names[] = {"Self",           "SomeDescendants",
@@ -549,8 +545,7 @@ nsCString RestyleManager::RestyleHintToString(nsRestyleHint aHint) {
 }
 
 #ifdef DEBUG
-
-nsCString RestyleManager::ChangeHintToString(nsChangeHint aHint) {
+ nsCString RestyleManager::ChangeHintToString(nsChangeHint aHint) {
   nsCString result;
   bool any = false;
   const char* names[] = {"RepaintFrame",
@@ -1860,8 +1855,8 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
   aChangeList.Clear();
 }
 
-
-uint64_t RestyleManager::GetAnimationGenerationForFrame(nsIFrame* aFrame) {
+ uint64_t RestyleManager::GetAnimationGenerationForFrame(
+    nsIFrame* aFrame) {
   EffectSet* effectSet = EffectSet::GetEffectSet(aFrame);
   return effectSet ? effectSet->GetAnimationGeneration() : 0;
 }
@@ -1875,8 +1870,7 @@ void RestyleManager::IncrementAnimationGeneration() {
   }
 }
 
-
-void RestyleManager::AddLayerChangesForAnimation(
+ void RestyleManager::AddLayerChangesForAnimation(
     nsIFrame* aFrame, nsIContent* aContent, nsChangeHint aHintForThisFrame,
     nsStyleChangeList& aChangeListToProcess) {
   if (!aFrame || !aContent) {
@@ -2379,9 +2373,8 @@ void RestyleManager::PostRebuildAllStyleDataEvent(nsChangeHint aExtraHint,
   
 }
 
-
-void RestyleManager::ClearServoDataFromSubtree(Element* aElement,
-                                               IncludeRoot aIncludeRoot) {
+ void RestyleManager::ClearServoDataFromSubtree(
+    Element* aElement, IncludeRoot aIncludeRoot) {
   if (aElement->HasServoData()) {
     StyleChildrenIterator it(aElement);
     for (nsIContent* n = it.GetNextChild(); n; n = it.GetNextChild()) {
@@ -2399,8 +2392,8 @@ void RestyleManager::ClearServoDataFromSubtree(Element* aElement,
   }
 }
 
-
-void RestyleManager::ClearRestyleStateFromSubtree(Element* aElement) {
+ void RestyleManager::ClearRestyleStateFromSubtree(
+    Element* aElement) {
   if (aElement->HasAnyOfFlags(Element::kAllServoDescendantBits)) {
     StyleChildrenIterator it(aElement);
     for (nsIContent* n = it.GetNextChild(); n; n = it.GetNextChild()) {
@@ -3223,12 +3216,10 @@ void RestyleManager::ContentStateChanged(nsIContent* aContent,
     }
   }
 
-  nsChangeHint changeHint;
-  ContentStateChangedInternal(element, aChangedBits, &changeHint);
+  if (auto changeHint = ChangeForContentStateChange(element, aChangedBits)) {
+    Servo_NoteExplicitHints(&element, nsRestyleHint(0), changeHint);
+  }
 
-  
-  
-  
   
   
   
@@ -3242,10 +3233,6 @@ void RestyleManager::ContentStateChanged(nsIContent* aContent,
   ServoElementSnapshot& snapshot = SnapshotFor(element);
   EventStates previousState = element.StyleState() ^ aChangedBits;
   snapshot.AddState(previousState);
-
-  if (changeHint) {
-    Servo_NoteExplicitHints(&element, nsRestyleHint(0), changeHint);
-  }
 
   
   
