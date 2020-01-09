@@ -118,6 +118,8 @@ define(function(require, exports, module) {
         
         onClickRow: PropTypes.func,
         
+        onContextMenuTree: PropTypes.func,
+        
         header: PropTypes.bool,
         
         expandableStrings: PropTypes.bool,
@@ -311,7 +313,7 @@ define(function(require, exports, module) {
       }
 
       
-      this.tree.focus();
+      this.refs.tree.focus();
       event.preventDefault();
     }
 
@@ -512,8 +514,8 @@ define(function(require, exports, module) {
       const classNames = ["treeTable"];
       this.rows = [];
 
+      const { className, onContextMenuTree } = this.props;
       
-      const className = this.props.className;
       if (className) {
         classNames.push(...className.split(" "));
       }
@@ -536,11 +538,10 @@ define(function(require, exports, module) {
         dom.table({
           className: classNames.join(" "),
           role: "tree",
-          ref: tree => {
-            this.tree = tree;
-          },
+          ref: "tree",
           tabIndex: 0,
           onKeyDown: this.onKeyDown,
+          onContextMenu: onContextMenuTree && onContextMenuTree.bind(this),
           "aria-label": this.props.label || "",
           "aria-activedescendant": this.state.selected,
           cellPadding: 0,
@@ -548,7 +549,6 @@ define(function(require, exports, module) {
           TreeHeader(props),
           dom.tbody({
             role: "presentation",
-            tabIndex: -1,
           }, rows)
         )
       );
