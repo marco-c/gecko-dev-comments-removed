@@ -98,7 +98,7 @@ void WindowGlobalParent::Init(const WindowGlobalInit& aInit) {
   if (mInProcess) {
     
     
-    MOZ_ASSERT(Manager()->GetProtocolTypeId() == PInProcessMsgStart);
+    MOZ_ASSERT(Manager()->GetProtocolId() == PInProcessMsgStart);
     RefPtr<WindowGlobalChild> otherSide = GetChildActor();
     if (otherSide && otherSide->WindowGlobal()) {
       
@@ -110,7 +110,7 @@ void WindowGlobalParent::Init(const WindowGlobalInit& aInit) {
     }
   } else {
     
-    MOZ_ASSERT(Manager()->GetProtocolTypeId() == PBrowserMsgStart);
+    MOZ_ASSERT(Manager()->GetProtocolId() == PBrowserMsgStart);
     frameElement = static_cast<BrowserParent*>(Manager())->GetOwnerElement();
   }
 

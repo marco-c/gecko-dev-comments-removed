@@ -459,7 +459,7 @@ void IPDLParamTraits<nsIInputStream*>::Write(IPC::Message* aMsg,
   
   IProtocol* actor = aActor;
   while (!found && actor) {
-    switch (actor->GetProtocolTypeId()) {
+    switch (actor->GetProtocolId()) {
       case PContentMsgStart:
         if (actor->GetSide() == mozilla::ipc::ParentSide) {
           ok = autoStream.Serialize(
