@@ -83,6 +83,10 @@
   color: -moz-nativehyperlinktext;
 }
 
+:root[lwt-popup-brighttext] #downloadsSummaryDescription {
+  color: #75baff; 
+}
+
 
 
 #downloadsSummary,
