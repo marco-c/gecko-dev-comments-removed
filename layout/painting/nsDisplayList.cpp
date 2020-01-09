@@ -6362,6 +6362,10 @@ bool nsDisplayOwnLayer::IsScrollbarContainer() const {
          layers::ScrollbarLayerType::Container;
 }
 
+bool nsDisplayOwnLayer::IsZoomingLayer() const {
+  return GetType() == DisplayItemType::TYPE_ASYNC_ZOOM;
+}
+
 bool nsDisplayOwnLayer::ShouldBuildLayerEvenIfInvisible(
     nsDisplayListBuilder* aBuilder) const {
   
@@ -6394,7 +6398,9 @@ bool nsDisplayOwnLayer::CreateWebRenderCommands(
     const StackingContextHelper& aSc, RenderRootStateManager* aManager,
     nsDisplayListBuilder* aDisplayListBuilder) {
   Maybe<wr::WrAnimationProperty> prop;
-  if (aManager->LayerManager()->AsyncPanZoomEnabled() && IsScrollThumbLayer()) {
+  bool needsProp = aManager->LayerManager()->AsyncPanZoomEnabled() &&
+                   (IsScrollThumbLayer() || IsZoomingLayer());
+  if (needsProp) {
     
     
     
@@ -6425,25 +6431,34 @@ bool nsDisplayOwnLayer::CreateWebRenderCommands(
 bool nsDisplayOwnLayer::UpdateScrollData(
     mozilla::layers::WebRenderScrollData* aData,
     mozilla::layers::WebRenderLayerScrollData* aLayerData) {
-  bool ret = false;
-
-  if (IsScrollThumbLayer() || IsScrollbarContainer()) {
-    ret = true;
-    if (aLayerData) {
-      aLayerData->SetScrollbarData(mScrollbarData);
-      if (IsScrollThumbLayer()) {
-        aLayerData->SetScrollbarAnimationId(mWrAnimationId);
-        LayoutDeviceRect bounds = LayoutDeviceIntRect::FromAppUnits(
-            mBounds, mFrame->PresContext()->AppUnitsPerDevPixel());
-        
-        
-        LayerIntRect layerBounds =
-            RoundedOut(bounds * LayoutDeviceToLayerScale(1.0f));
-        aLayerData->SetVisibleRegion(LayerIntRegion(layerBounds));
-      }
-    }
+  bool isRelevantToApz =
+      (IsScrollThumbLayer() || IsScrollbarContainer() || IsZoomingLayer());
+  if (!isRelevantToApz) {
+    return false;
   }
-  return ret;
+
+  if (!aLayerData) {
+    return true;
+  }
+
+  if (IsZoomingLayer()) {
+    aLayerData->SetZoomAnimationId(mWrAnimationId);
+    return true;
+  }
+
+  aLayerData->SetScrollbarData(mScrollbarData);
+  if (IsScrollThumbLayer()) {
+    aLayerData->SetScrollbarAnimationId(mWrAnimationId);
+    LayoutDeviceRect bounds = LayoutDeviceIntRect::FromAppUnits(
+        mBounds, mFrame->PresContext()->AppUnitsPerDevPixel());
+    
+    
+    
+    LayerIntRect layerBounds =
+        RoundedOut(bounds * LayoutDeviceToLayerScale(1.0f));
+    aLayerData->SetVisibleRegion(LayerIntRegion(layerBounds));
+  }
+  return true;
 }
 
 void nsDisplayOwnLayer::WriteDebugInfo(std::stringstream& aStream) {
