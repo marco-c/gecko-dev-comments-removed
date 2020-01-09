@@ -2391,6 +2391,11 @@ void Document::CompatibilityModeChanged() {
   MOZ_ASSERT(IsHTMLOrXHTML());
   CSSLoader()->SetCompatibilityMode(mCompatMode);
   mStyleSet->CompatibilityModeChanged();
+  if (PresShell* presShell = GetPresShell()) {
+    
+    
+    presShell->EnsureStyleFlush();
+  }
   if (!mStyleSetFilled) {
     MOZ_ASSERT(!mQuirkSheetAdded);
     return;
