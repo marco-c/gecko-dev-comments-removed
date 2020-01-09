@@ -80,6 +80,7 @@
 
 #include "mozilla/ipc/TestShellParent.h"
 #include "mozilla/ipc/XPCShellEnvironment.h"
+#include "mozilla/WindowsConsole.h"
 #include "mozilla/WindowsDllBlocklist.h"
 
 #include "GMPProcessChild.h"
@@ -381,19 +382,7 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
   
   
   
-  if (AttachConsole(ATTACH_PARENT_PROCESS)) {
-    
-    
-    
-    if (_fileno(stdout) == -1 || _get_osfhandle(fileno(stdout)) == -1)
-      freopen("CONOUT$", "w", stdout);
-    
-    
-    if (_fileno(stderr) == -1 || _get_osfhandle(fileno(stderr)) == -1)
-      freopen("CONOUT$", "w", stderr);
-    if (_fileno(stdin) == -1 || _get_osfhandle(fileno(stdin)) == -1)
-      freopen("CONIN$", "r", stdin);
-  }
+  UseParentConsole();
 
 #  if defined(MOZ_SANDBOX)
   if (aChildData->sandboxTargetServices) {
