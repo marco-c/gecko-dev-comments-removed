@@ -40,12 +40,11 @@ export function generateBreakpoint(
 ) {
   return {
     id: "breakpoint",
-    loading: false,
     originalText: "",
     text: "",
     location: {
       sourceUrl: `http://localhost:8000/examples/${filename}`,
-      sourceId: `${filename}`,
+      sourceId: `${filename}/originalSource`,
       line,
       column
     },

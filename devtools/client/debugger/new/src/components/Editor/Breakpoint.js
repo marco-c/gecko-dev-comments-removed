@@ -40,8 +40,8 @@ class Breakpoint extends PureComponent<Props> {
   }
 
   componentWillUnmount() {
-    const { breakpoint, selectedSource } = this.props;
-    if (!selectedSource || breakpoint.loading) {
+    const { selectedSource } = this.props;
+    if (!selectedSource) {
       return;
     }
 
@@ -128,9 +128,7 @@ class Breakpoint extends PureComponent<Props> {
       return;
     }
 
-    
-    
-    if (!selectedSource || breakpoint.loading) {
+    if (!selectedSource) {
       return;
     }
 
