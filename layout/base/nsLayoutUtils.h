@@ -2830,7 +2830,7 @@ class nsLayoutUtils {
 
 
   static void SetZeroMarginDisplayPortOnAsyncScrollableAncestors(
-      nsIFrame* aFrame, RepaintMode aRepaintMode);
+      nsIFrame* aFrame);
   
 
 

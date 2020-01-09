@@ -2041,10 +2041,8 @@ ScrollFrameHelper::ScrollFrameHelper(nsContainerFrame* aOuter, bool aIsRoot)
     
     
     nsLayoutUtils::SetDisplayPortMargins(
-        mOuter->GetContent(), mOuter->PresShell(), ScreenMargin(), 0,
-        nsLayoutUtils::RepaintMode::DoNotRepaint);
-    nsLayoutUtils::SetZeroMarginDisplayPortOnAsyncScrollableAncestors(
-        mOuter, nsLayoutUtils::RepaintMode::DoNotRepaint);
+        mOuter->GetContent(), mOuter->PresShell(), ScreenMargin(), 0);
+    nsLayoutUtils::SetZeroMarginDisplayPortOnAsyncScrollableAncestors(mOuter);
   }
 }
 
@@ -3642,6 +3640,10 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       if (!mWillBuildScrollableLayer) {
         
         
+        
+        
+        
+        
         nsLayoutUtils::SetDisplayPortMargins(
             mOuter->GetContent(), mOuter->PresShell(), ScreenMargin(), 0,
             nsLayoutUtils::RepaintMode::DoNotRepaint);
@@ -3889,7 +3891,8 @@ bool ScrollFrameHelper::DecideScrollableLayer(
     if (usingDisplayPort) {
       
       *aVisibleRect = displayPort;
-      if (!aBuilder->IsPartialUpdate() || aBuilder->InInvalidSubtree()) {
+      if (!aBuilder->IsPartialUpdate() || aBuilder->InInvalidSubtree() ||
+          mOuter->IsFrameModified()) {
         *aDirtyRect = displayPort;
         if (aDirtyRectHasBeenOverriden) {
           *aDirtyRectHasBeenOverriden = true;
@@ -3928,6 +3931,10 @@ bool ScrollFrameHelper::DecideScrollableLayer(
   
   if (oldWillBuildScrollableLayer != mWillBuildScrollableLayer) {
     aBuilder->RecomputeCurrentAnimatedGeometryRoot();
+    MOZ_DIAGNOSTIC_ASSERT(!aBuilder->IsPartialUpdate() ||
+                              aBuilder->InInvalidSubtree() ||
+                              mOuter->IsFrameModified(),
+                          "Displayport changed without an invalidation");
   }
 
   mIsScrollableLayerInRootContainer =
@@ -7070,11 +7077,9 @@ void ScrollFrameHelper::ApzSmoothScrollTo(const nsPoint& aDestination,
     
     
     nsLayoutUtils::CalculateAndSetDisplayPortMargins(
-        mOuter->GetScrollTargetFrame(),
-        nsLayoutUtils::RepaintMode::DoNotRepaint);
+        mOuter->GetScrollTargetFrame(), nsLayoutUtils::RepaintMode::Repaint);
     nsIFrame* frame = do_QueryFrame(mOuter->GetScrollTargetFrame());
-    nsLayoutUtils::SetZeroMarginDisplayPortOnAsyncScrollableAncestors(
-        frame, nsLayoutUtils::RepaintMode::DoNotRepaint);
+    nsLayoutUtils::SetZeroMarginDisplayPortOnAsyncScrollableAncestors(frame);
   }
 
   
