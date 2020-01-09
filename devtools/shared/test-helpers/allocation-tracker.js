@@ -42,7 +42,18 @@ const global = Cu.getGlobalForObject(this);
 const {addDebuggerToGlobal} = ChromeUtils.import("resource://gre/modules/jsdebugger.jsm");
 addDebuggerToGlobal(global);
 
-exports.allocationTracker = function() {
+
+
+
+
+
+
+
+
+
+
+
+exports.allocationTracker = function({ watchGlobal, watchAllGlobals, watchDevToolsGlobals } = {}) {
   dump("DEVTOOLS ALLOCATION: Start logging allocations\n");
   let dbg = new global.Debugger();
 
@@ -53,8 +64,37 @@ exports.allocationTracker = function() {
   
   dbg.memory.maxAllocationsLogLength = 5000000;
 
+  let acceptGlobal;
+  if (watchGlobal) {
+    acceptGlobal = () => false;
+    dbg.addDebuggee(watchGlobal);
+  } else if (watchAllGlobals) {
+    acceptGlobal = () => true;
+  } else if (watchDevToolsGlobals) {
+    
+    acceptGlobal = g => {
+      
+      if (g.class == "self-hosting-global") {
+        return false;
+      }
+      let ref = g.unsafeDereference();
+      let location = Cu.getRealmLocation(ref);
+      let accept = !!location.match(/devtools/i);
+      dump("NEW GLOBAL: " + (accept ? "+" : "-") + " : " + location + "\n");
+      return accept;
+    };
+  }
+
   
-  dbg.addAllGlobalsAsDebuggees();
+  if (watchAllGlobals || watchDevToolsGlobals) {
+    dbg.addAllGlobalsAsDebuggees();
+
+    for(let g of dbg.getDebuggees()) {
+      if (!acceptGlobal(g)) {
+        dbg.removeDebuggee(g);
+      }
+    }
+  }
 
   
   dbg.removeDebuggee(global);
@@ -62,7 +102,9 @@ exports.allocationTracker = function() {
   
   
   dbg.onNewGlobalObject = function(g) {
-    dbg.addDebuggee(g);
+    if (acceptGlobal(g)) {
+      dbg.addDebuggee(g);
+    }
   };
 
   return {
