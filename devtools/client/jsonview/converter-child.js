@@ -75,7 +75,7 @@ Converter.prototype = {
     this.decodeAndInsertBuffer(buffer);
   },
 
-  onStartRequest: function(request, context) {
+  onStartRequest: function(request) {
     
     
     request.QueryInterface(Ci.nsIChannel);
@@ -105,7 +105,7 @@ Converter.prototype = {
     request.loadInfo.resetPrincipalToInheritToNullPrincipal();
 
     
-    this.listener.onStartRequest(request, context);
+    this.listener.onStartRequest(request);
 
     
     const win = NetworkHelper.getWindowForRequest(request);
@@ -117,15 +117,15 @@ Converter.prototype = {
     
     const buffer = new TextEncoder().encode(initialHTML(win.document)).buffer;
     const stream = new BufferStream(buffer, 0, buffer.byteLength);
-    this.listener.onDataAvailable(request, context, stream, 0, stream.available());
+    this.listener.onDataAvailable(request, null, stream, 0, stream.available());
   },
 
-  onStopRequest: function(request, context, statusCode) {
+  onStopRequest: function(request, statusCode) {
     
     this.decodeAndInsertBuffer(new ArrayBuffer(0), true);
 
     
-    this.listener.onStopRequest(request, context, statusCode);
+    this.listener.onStopRequest(request, statusCode);
     this.listener = null;
     this.decoder = null;
     this.data = null;

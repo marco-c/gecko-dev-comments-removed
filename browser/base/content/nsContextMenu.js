@@ -10,7 +10,6 @@ var {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  E10SUtils: "resource://gre/modules/E10SUtils.jsm",
   SpellCheckHelper: "resource://gre/modules/InlineSpellChecker.jsm",
   LoginHelper: "resource://gre/modules/LoginHelper.jsm",
   LoginManagerContextMenu: "resource://gre/modules/LoginManagerContextMenu.jsm",
@@ -231,8 +230,6 @@ nsContextMenu.prototype = {
 
     
     this.ownerDoc = this.target.ownerDocument;
-
-    this.csp = E10SUtils.deserializeCSP(context.csp);
 
     
     
@@ -780,7 +777,6 @@ nsContextMenu.prototype = {
     let params = { charset: gContextMenuContentData.charSet,
                    originPrincipal: this.principal,
                    triggeringPrincipal: this.principal,
-                   csp: this.csp,
                    referrerURI: gContextMenuContentData.documentURIObject,
                    referrerPolicy: gContextMenuContentData.referrerPolicy,
                    frameOuterWindowID: gContextMenuContentData.frameOuterWindowID,
@@ -1106,7 +1102,7 @@ nsContextMenu.prototype = {
     saveAsListener.prototype = {
       extListener: null,
 
-      onStartRequest: function saveLinkAs_onStartRequest(aRequest, aContext) {
+      onStartRequest: function saveLinkAs_onStartRequest(aRequest) {
         
         
         
@@ -1137,10 +1133,10 @@ nsContextMenu.prototype = {
         this.extListener =
           extHelperAppSvc.doContent(channel.contentType, aRequest,
                                     null, true, window);
-        this.extListener.onStartRequest(aRequest, aContext);
+        this.extListener.onStartRequest(aRequest);
       },
 
-      onStopRequest: function saveLinkAs_onStopRequest(aRequest, aContext,
+      onStopRequest: function saveLinkAs_onStopRequest(aRequest,
                                                        aStatusCode) {
         if (aStatusCode == NS_ERROR_SAVE_LINK_AS_TIMEOUT) {
           
@@ -1149,7 +1145,7 @@ nsContextMenu.prototype = {
                   doc, isContentWindowPrivate);
         }
         if (this.extListener)
-          this.extListener.onStopRequest(aRequest, aContext, aStatusCode);
+          this.extListener.onStopRequest(aRequest, aStatusCode);
       },
 
       onDataAvailable: function saveLinkAs_onDataAvailable(aRequest, aContext,
