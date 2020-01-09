@@ -78,6 +78,13 @@ pref("devtools.layout.flexbox.opened", true);
 pref("devtools.layout.grid.opened", true);
 
 
+#if defined(NIGHTLY_BUILD)
+pref("devtools.layout.boxmodel.highlightProperty", true);
+#else
+pref("devtools.layout.boxmodel.highlightProperty", false);
+#endif
+
+
 pref("devtools.eyedropper.zoom", 6);
 
 
