@@ -1283,6 +1283,22 @@ class Document : public nsINode,
   
 
 
+  void SetCompatibilityMode(nsCompatibility aMode);
+
+  
+
+
+
+  void SetDocWriteDisabled(bool aDisabled) { mDisableDocWrite = aDisabled; }
+
+  
+
+
+  bool IsWriting() const { return mWriteLevel != uint32_t(0); }
+
+  
+
+
 
   void GetHeaderData(nsAtom* aHeaderField, nsAString& aData) const;
   void SetHeaderData(nsAtom* aheaderField, const nsAString& aData);
@@ -3289,6 +3305,16 @@ class Document : public nsINode,
     return GetFuncStringContentList<nsCachableElementsByNameNodeList>(
         this, MatchNameAttribute, nullptr, UseExistingNameString, aName);
   }
+  Document* Open(const mozilla::dom::Optional<nsAString>& ,
+                 const nsAString& , mozilla::ErrorResult& aError);
+  mozilla::dom::Nullable<mozilla::dom::WindowProxyHolder> Open(
+      const nsAString& aURL, const nsAString& aName, const nsAString& aFeatures,
+      bool aReplace, mozilla::ErrorResult& rv);
+  void Close(mozilla::ErrorResult& rv);
+  void Write(const mozilla::dom::Sequence<nsString>& aText,
+             mozilla::ErrorResult& rv);
+  void Writeln(const mozilla::dom::Sequence<nsString>& aText,
+               mozilla::ErrorResult& rv);
   Nullable<WindowProxyHolder> GetDefaultView() const;
   Element* GetActiveElement();
   bool HasFocus(ErrorResult& rv) const;
@@ -3916,6 +3942,14 @@ class Document : public nsINode,
   already_AddRefed<nsIURI> RegistrableDomainSuffixOfInternal(
       const nsAString& aHostSuffixString, nsIURI* aOrigHost);
 
+  void WriteCommon(const nsAString& aText, bool aNewlineTerminate,
+                   mozilla::ErrorResult& aRv);
+  
+  void WriteCommon(const mozilla::dom::Sequence<nsString>& aText,
+                   bool aNewlineTerminate, mozilla::ErrorResult& rv);
+
+  void* GenerateParserKey(void);
+
  private:
   void RecordContentBlockingLog(
       const nsACString& aOrigin, uint32_t aType, bool aBlocked,
@@ -4388,6 +4422,13 @@ class Document : public nsINode,
   
   bool mDisableCookieAccess : 1;
 
+  
+  bool mDisableDocWrite : 1;
+
+  
+  
+  bool mTooDeepWriteRecursion : 1;
+
   uint8_t mPendingFullscreenRequests;
 
   uint8_t mXMLDeclarationBits;
@@ -4397,6 +4438,12 @@ class Document : public nsINode,
 
   
   uint32_t mAsyncOnloadBlockCount;
+
+  
+  
+  
+  
+  uint32_t mWriteLevel;
 
   
   nsCompatibility mCompatMode;
