@@ -5743,7 +5743,7 @@ void nsDisplayWrapList::MergeDisplayListFromItem(nsDisplayListBuilder* aBuilder,
   
   
   nsDisplayWrapList* wrapper =
-      MakeDisplayItem<nsDisplayWrapList>(aBuilder, *wrappedItem);
+      MakeClone<nsDisplayWrapList>(aBuilder, wrappedItem);
   MOZ_ASSERT(wrapper);
 
   
