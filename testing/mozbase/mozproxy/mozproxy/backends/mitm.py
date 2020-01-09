@@ -75,7 +75,6 @@ class Mitmproxy(Playback):
         self.config = config
         self.mitmproxy_proc = None
         self.mitmdump_path = None
-        self.recordings = config.get("playback_recordings")
         self.browser_path = config.get("binary")
         self.policies_dir = None
 
@@ -94,7 +93,6 @@ class Mitmproxy(Playback):
         self.mozproxy_dir = os.path.join(self.mozproxy_dir, "testing", "mozproxy")
         self.upload_dir = os.environ.get("MOZ_UPLOAD_DIR", self.mozproxy_dir)
 
-        self.recordings_path = self.mozproxy_dir
         LOG.info(
             "mozproxy_dir used for mitmproxy downloads and exe files: %s"
             % self.mozproxy_dir
@@ -102,10 +100,16 @@ class Mitmproxy(Playback):
         
         
         os.environ["MOZPROXY_DIR"] = self.mozproxy_dir
+
+    def start(self):
         
         self.download()
+
         
-        self.start()
+        self.mitmdump_path = os.path.join(self.mozproxy_dir, "mitmdump")
+        self.mitmproxy_proc = self.start_mitmproxy_playback(
+            self.mitmdump_path, self.browser_path
+        )
 
         
         try:
@@ -145,68 +149,26 @@ class Mitmproxy(Playback):
                 dest = os.path.join(self.mozproxy_dir, artifact_name)
                 download_file_from_url(artifact, dest, extract=True)
 
-    def start(self):
-        """Start playing back the mitmproxy recording."""
-
-        self.mitmdump_path = os.path.join(self.mozproxy_dir, "mitmdump")
-
-        recordings_list = self.recordings.split()
-        self.mitmproxy_proc = self.start_mitmproxy_playback(
-            self.mitmdump_path, self.recordings_path, recordings_list, self.browser_path
-        )
-
     def stop(self):
         self.stop_mitmproxy_playback()
 
     def start_mitmproxy_playback(
         self,
         mitmdump_path,
-        mitmproxy_recording_path,
-        mitmproxy_recordings_list,
         browser_path,
     ):
         """Startup mitmproxy and replay the specified flow file"""
 
         LOG.info("mitmdump path: %s" % mitmdump_path)
-        LOG.info("recording path: %s" % mitmproxy_recording_path)
-        LOG.info("recordings list: %s" % mitmproxy_recordings_list)
         LOG.info("browser path: %s" % browser_path)
-        mitmproxy_recordings = []
-        
-        for recording in mitmproxy_recordings_list:
-            if not os.path.isfile(os.path.join(mitmproxy_recording_path, recording)):
-                LOG.critical(
-                    "Recording file {} cannot be found!".format(
-                        os.path.join(mitmproxy_recording_path, recording)
-                    )
-                )
-                raise Exception(
-                    "Recording file {} cannot be found!".format(
-                        os.path.join(mitmproxy_recording_path, recording)
-                    )
-                )
-
-            mitmproxy_recordings.append(
-                os.path.join(mitmproxy_recording_path, recording)
-            )
 
         
         env = os.environ.copy()
         env["PATH"] = os.path.dirname(browser_path) + ";" + env["PATH"]
         command = [mitmdump_path, "-k"]
 
-        if "custom_script" in self.config:
-            
-            
-            
-            custom_script = self.config["custom_script"] + " " + " ".join(mitmproxy_recordings)
-
-            
-            if mozinfo.os == "win":
-                custom_script = '""' + custom_script.replace("\\", "\\\\\\") + '""'
-                sys.path.insert(1, mitmdump_path)
-
-            command.extend(["-s", custom_script])
+        if "playback_tool_args" in self.config:
+            command.extend(self.config["playback_tool_args"])
 
         LOG.info("Starting mitmproxy playback using env path: %s" % env["PATH"])
         LOG.info("Starting mitmproxy playback using command: %s" % " ".join(command))
