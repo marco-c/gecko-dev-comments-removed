@@ -145,6 +145,8 @@ enum DriverVendor {
   DriverMesaSWRast,
   
   DriverMesaUnknown,
+  
+  DriverNonMesaAll,
 
   DriverVendorMax
 };
