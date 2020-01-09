@@ -102,6 +102,18 @@ void ChromiumCDMProxy::Init(PromiseId aPromiseId, const nsAString& aOrigin,
                           MutexAutoLock lock(self->mCDMMutex);
                           self->mCDM = cdm;
                         }
+                        if (self->mIsShutdown) {
+                          self->RejectPromise(
+                              aPromiseId, NS_ERROR_DOM_INVALID_STATE_ERR,
+                              NS_LITERAL_CSTRING(
+                                  "ChromiumCDMProxy shutdown during "
+                                  "ChromiumCDMProxy::Init"));
+                          
+                          
+                          
+                          self->ShutdownCDMIfExists();
+                          return;
+                        }
                         self->OnCDMCreated(aPromiseId);
                       },
                       [self, aPromiseId](MediaResult aResult) {
@@ -136,6 +148,29 @@ void ChromiumCDMProxy::OnCDMCreated(uint32_t aPromiseId) {
     
     mKeys->RejectPromise(aPromiseId, NS_ERROR_DOM_INVALID_STATE_ERR,
                          NS_LITERAL_CSTRING("Null CDM in OnCDMCreated()"));
+  }
+}
+
+void ChromiumCDMProxy::ShutdownCDMIfExists() {
+  EME_LOG(
+      "ChromiumCDMProxy::ShutdownCDMIfExists(this=%p) mCDM=%p, mIsShutdown=%s",
+      this, mCDM.get(), mIsShutdown ? "true" : "false");
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(mGMPThread);
+  MOZ_ASSERT(mIsShutdown,
+             "Should only shutdown the CDM if the proxy is shutting down");
+  RefPtr<gmp::ChromiumCDMParent> cdm;
+  {
+    MutexAutoLock lock(mCDMMutex);
+    cdm.swap(mCDM);
+  }
+  if (cdm) {
+    
+    
+    RefPtr<ChromiumCDMProxy> self(this);
+    nsCOMPtr<nsIRunnable> task = NS_NewRunnableFunction(
+        "ChromiumCDMProxy::Shutdown", [self, cdm]() { cdm->Shutdown(); });
+    mGMPThread->Dispatch(task.forget());
   }
 }
 
@@ -298,21 +333,14 @@ void ChromiumCDMProxy::RemoveSession(const nsAString& aSessionId,
 
 void ChromiumCDMProxy::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread());
-  EME_LOG("ChromiumCDMProxy::Shutdown(this=%p) mCDM=%p", this, mCDM.get());
+  EME_LOG("ChromiumCDMProxy::Shutdown(this=%p) mCDM=%p, mIsShutdown=%s", this,
+          mCDM.get(), mIsShutdown ? "true" : "false");
+  if (mIsShutdown) {
+    return;
+  }
+  mIsShutdown = true;
   mKeys.Clear();
-  RefPtr<gmp::ChromiumCDMParent> cdm;
-  {
-    MutexAutoLock lock(mCDMMutex);
-    cdm.swap(mCDM);
-  }
-  if (cdm) {
-    
-    
-    RefPtr<ChromiumCDMProxy> self(this);
-    nsCOMPtr<nsIRunnable> task = NS_NewRunnableFunction(
-        "ChromiumCDMProxy::Shutdown", [self, cdm]() { cdm->Shutdown(); });
-    mGMPThread->Dispatch(task.forget());
-  }
+  ShutdownCDMIfExists();
 }
 
 void ChromiumCDMProxy::RejectPromise(PromiseId aId, nsresult aCode,

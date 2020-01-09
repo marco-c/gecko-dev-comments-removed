@@ -7,8 +7,8 @@
 #ifndef ChromiumCDMProxy_h_
 #define ChromiumCDMProxy_h_
 
-#include "mozilla/CDMProxy.h"
 #include "mozilla/AbstractThread.h"
+#include "mozilla/CDMProxy.h"
 #include "ChromiumCDMParent.h"
 
 namespace mozilla {
@@ -108,8 +108,13 @@ class ChromiumCDMProxy : public CDMProxy {
 
  private:
   void OnCDMCreated(uint32_t aPromiseId);
+  void ShutdownCDMIfExists();
 
   ~ChromiumCDMProxy();
+
+  
+  
+  bool mIsShutdown = false;
 
   RefPtr<GMPCrashHelper> mCrashHelper;
 
