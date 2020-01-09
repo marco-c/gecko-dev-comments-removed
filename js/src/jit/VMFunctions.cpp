@@ -1023,7 +1023,7 @@ bool DebugAfterYield(JSContext* cx, BaselineFrame* frame, jsbytecode* pc,
 
 bool GeneratorThrowOrReturn(JSContext* cx, BaselineFrame* frame,
                             Handle<AbstractGeneratorObject*> genObj,
-                            HandleValue arg, uint32_t resumeKind) {
+                            HandleValue arg, uint32_t resumeKindArg) {
   
   
   
@@ -1040,8 +1040,10 @@ bool GeneratorThrowOrReturn(JSContext* cx, BaselineFrame* frame,
   if (!DebugAfterYield(cx, frame, pc, &mustReturn)) {
     return false;
   }
+
+  GeneratorResumeKind resumeKind = GeneratorResumeKind(resumeKindArg);
   if (mustReturn) {
-    resumeKind = AbstractGeneratorObject::RETURN;
+    resumeKind = GeneratorResumeKind::Return;
   }
 
   MOZ_ALWAYS_FALSE(
