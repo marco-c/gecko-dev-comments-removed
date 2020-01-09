@@ -34,6 +34,7 @@
 #define COMMON_WINDOWS_PDB_SOURCE_LINE_WRITER_H_
 
 #include <atlcomcli.h>
+#include <ImageHlp.h>
 
 #include <unordered_map>
 #include <string>
@@ -164,6 +165,11 @@ class PDBSourceLineWriter {
 
   
   
+  
+  bool PrintFrameDataUsingArm64EXE();
+
+  
+  
   bool PrintFrameData();
 
   
@@ -216,6 +222,15 @@ class PDBSourceLineWriter {
   
   
   bool FindPEFile();
+
+  
+  
+  bool Get64BitExceptionInformation(PLOADED_IMAGE image,
+				    DWORD *rva, DWORD *size);
+
+  
+  
+  PLOADED_IMAGE LoadImageForPEFile();
 
   
   
