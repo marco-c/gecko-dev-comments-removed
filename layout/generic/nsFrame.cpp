@@ -2358,6 +2358,14 @@ void nsFrame::DisplayOutlineUnconditional(nsDisplayListBuilder* aBuilder,
     return;
   }
 
+  if (HasAnyStateBits(NS_FRAME_PART_OF_IBSPLIT) &&
+      GetScrollableOverflowRect().IsEmpty()) {
+    
+    
+    
+    return;
+  }
+
   aLists.Outlines()->AppendNewToTop<nsDisplayOutline>(aBuilder, this);
 }
 
