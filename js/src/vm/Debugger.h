@@ -87,8 +87,8 @@ class ScriptedOnStepHandler;
 class ScriptedOnPopHandler;
 class WasmInstanceObject;
 
-typedef HashSet<ReadBarrieredGlobalObject,
-                MovableCellHasher<ReadBarrieredGlobalObject>, ZoneAllocPolicy>
+typedef HashSet<WeakHeapPtrGlobalObject,
+                MovableCellHasher<WeakHeapPtrGlobalObject>, ZoneAllocPolicy>
     WeakGlobalObjectSet;
 
 #ifdef DEBUG
@@ -2060,7 +2060,7 @@ bool Debugger::observesNewGlobalObject() const {
 }
 
 bool Debugger::observesGlobal(GlobalObject* global) const {
-  ReadBarriered<GlobalObject*> debuggee(global);
+  WeakHeapPtr<GlobalObject*> debuggee(global);
   return debuggees.has(debuggee);
 }
 

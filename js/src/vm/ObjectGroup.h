@@ -539,7 +539,7 @@ class ObjectGroupRealm {
 
   struct ArrayObjectKey;
   using ArrayObjectTable =
-      js::GCRekeyableHashMap<ArrayObjectKey, ReadBarrieredObjectGroup,
+      js::GCRekeyableHashMap<ArrayObjectKey, WeakHeapPtrObjectGroup,
                              ArrayObjectKey, SystemAllocPolicy>;
 
   struct PlainObjectKey;
@@ -597,7 +597,7 @@ class ObjectGroupRealm {
   
   
   
-  ReadBarrieredObjectGroup stringSplitStringGroup = {};
+  WeakHeapPtrObjectGroup stringSplitStringGroup = {};
 
   
 

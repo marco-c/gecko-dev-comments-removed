@@ -3021,7 +3021,7 @@ class LazyScript : public gc::TenuredCell {
   
   
   
-  WeakRef<JSScript*> script_;
+  WeakHeapPtrScript script_;
 
   
   GCPtrFunction function_;

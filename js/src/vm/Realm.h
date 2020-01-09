@@ -306,11 +306,11 @@ class JS::Realm : public JS::shadow::Realm {
   JS::RealmBehaviors behaviors_;
 
   friend struct ::JSContext;
-  js::ReadBarrieredGlobalObject global_;
+  js::WeakHeapPtrGlobalObject global_;
 
   
   
-  js::ReadBarriered<js::LexicalEnvironmentObject*> lexicalEnv_;
+  js::WeakHeapPtr<js::LexicalEnvironmentObject*> lexicalEnv_;
 
   
   js::ObjectRealm objects_;
@@ -363,10 +363,10 @@ class JS::Realm : public JS::shadow::Realm {
   
   bool* validAccessPtr_ = nullptr;
 
-  js::ReadBarriered<js::ArgumentsObject*> mappedArgumentsTemplate_{nullptr};
-  js::ReadBarriered<js::ArgumentsObject*> unmappedArgumentsTemplate_{nullptr};
-  js::ReadBarriered<js::NativeObject*> iterResultTemplate_{nullptr};
-  js::ReadBarriered<js::NativeObject*> iterResultWithoutPrototypeTemplate_{
+  js::WeakHeapPtr<js::ArgumentsObject*> mappedArgumentsTemplate_{nullptr};
+  js::WeakHeapPtr<js::ArgumentsObject*> unmappedArgumentsTemplate_{nullptr};
+  js::WeakHeapPtr<js::NativeObject*> iterResultTemplate_{nullptr};
+  js::WeakHeapPtr<js::NativeObject*> iterResultWithoutPrototypeTemplate_{
       nullptr};
 
   
@@ -427,7 +427,7 @@ class JS::Realm : public JS::shadow::Realm {
 
 
 
-  js::ReadBarrieredScriptSourceObject selfHostingScriptSource{nullptr};
+  js::WeakHeapPtrScriptSourceObject selfHostingScriptSource{nullptr};
 
   
   js::MainThreadData<mozilla::TimeStamp> lastAnimationTime;
@@ -711,8 +711,7 @@ class JS::Realm : public JS::shadow::Realm {
   
   
   bool isDebuggee() const { return !!(debugModeBits_ & IsDebuggee); }
-
-  void setIsDebuggee();
+  void setIsDebuggee() { debugModeBits_ |= IsDebuggee; }
   void unsetIsDebuggee();
 
   

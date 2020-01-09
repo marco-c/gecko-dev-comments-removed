@@ -425,14 +425,14 @@ class MOZ_NON_MEMMOVABLE BarrieredBase {
 
 
 template <class T>
-class WriteBarrieredBase
+class WriteBarriered
     : public BarrieredBase<T>,
-      public WrappedPtrOperations<T, WriteBarrieredBase<T>> {
+      public WrappedPtrOperations<T, WriteBarriered<T>> {
  protected:
   using BarrieredBase<T>::value;
 
   
-  explicit WriteBarrieredBase(const T& v) : BarrieredBase<T>(v) {}
+  explicit WriteBarriered(const T& v) : BarrieredBase<T>(v) {}
 
  public:
   using ElementType = T;
@@ -468,16 +468,16 @@ class WriteBarrieredBase
 
 
 template <class T>
-class PreBarriered : public WriteBarrieredBase<T> {
+class PreBarriered : public WriteBarriered<T> {
  public:
-  PreBarriered() : WriteBarrieredBase<T>(JS::SafelyInitialized<T>()) {}
+  PreBarriered() : WriteBarriered<T>(JS::SafelyInitialized<T>()) {}
   
 
 
 
-  MOZ_IMPLICIT PreBarriered(const T& v) : WriteBarrieredBase<T>(v) {}
+  MOZ_IMPLICIT PreBarriered(const T& v) : WriteBarriered<T>(v) {}
   explicit PreBarriered(const PreBarriered<T>& v)
-      : WriteBarrieredBase<T>(v.value) {}
+      : WriteBarriered<T>(v.value) {}
   ~PreBarriered() { this->pre(); }
 
   void init(const T& v) { this->value = v; }
@@ -510,13 +510,13 @@ class PreBarriered : public WriteBarrieredBase<T> {
 
 
 template <class T>
-class GCPtr : public WriteBarrieredBase<T> {
+class GCPtr : public WriteBarriered<T> {
  public:
-  GCPtr() : WriteBarrieredBase<T>(JS::SafelyInitialized<T>()) {}
-  explicit GCPtr(const T& v) : WriteBarrieredBase<T>(v) {
+  GCPtr() : WriteBarriered<T>(JS::SafelyInitialized<T>()) {}
+  explicit GCPtr(const T& v) : WriteBarriered<T>(v) {
     this->post(JS::SafelyInitialized<T>(), v);
   }
-  explicit GCPtr(const GCPtr<T>& v) : WriteBarrieredBase<T>(v) {
+  explicit GCPtr(const GCPtr<T>& v) : WriteBarriered<T>(v) {
     this->post(JS::SafelyInitialized<T>(), v);
   }
 #ifdef DEBUG
@@ -587,12 +587,12 @@ class GCPtr : public WriteBarrieredBase<T> {
 
 
 template <class T>
-class HeapPtr : public WriteBarrieredBase<T> {
+class HeapPtr : public WriteBarriered<T> {
  public:
-  HeapPtr() : WriteBarrieredBase<T>(JS::SafelyInitialized<T>()) {}
+  HeapPtr() : WriteBarriered<T>(JS::SafelyInitialized<T>()) {}
 
   
-  MOZ_IMPLICIT HeapPtr(const T& v) : WriteBarrieredBase<T>(v) {
+  MOZ_IMPLICIT HeapPtr(const T& v) : WriteBarriered<T>(v) {
     this->post(JS::SafelyInitialized<T>(), this->value);
   }
 
@@ -602,7 +602,7 @@ class HeapPtr : public WriteBarrieredBase<T> {
 
 
 
-  MOZ_IMPLICIT HeapPtr(const HeapPtr<T>& v) : WriteBarrieredBase<T>(v) {
+  MOZ_IMPLICIT HeapPtr(const HeapPtr<T>& v) : WriteBarriered<T>(v) {
     this->post(JS::SafelyInitialized<T>(), this->value);
   }
 
@@ -641,10 +641,10 @@ class HeapPtr : public WriteBarrieredBase<T> {
 
 
 template <typename T>
-class ReadBarrieredBase : public BarrieredBase<T> {
+class ReadBarriered : public BarrieredBase<T> {
  protected:
   
-  explicit ReadBarrieredBase(const T& v) : BarrieredBase<T>(v) {}
+  explicit ReadBarriered(const T& v) : BarrieredBase<T>(v) {}
 
  protected:
   void read() const { InternalBarrierMethods<T>::readBarrier(this->value); }
@@ -661,34 +661,34 @@ class ReadBarrieredBase : public BarrieredBase<T> {
 
 
 template <typename T>
-class ReadBarriered : public ReadBarrieredBase<T>,
-                      public WrappedPtrOperations<T, ReadBarriered<T>> {
+class WeakHeapPtr : public ReadBarriered<T>,
+                    public WrappedPtrOperations<T, WeakHeapPtr<T>> {
  protected:
-  using ReadBarrieredBase<T>::value;
+  using ReadBarriered<T>::value;
 
  public:
-  ReadBarriered() : ReadBarrieredBase<T>(JS::SafelyInitialized<T>()) {}
+  WeakHeapPtr() : ReadBarriered<T>(JS::SafelyInitialized<T>()) {}
 
   
-  MOZ_IMPLICIT ReadBarriered(const T& v) : ReadBarrieredBase<T>(v) {
+  MOZ_IMPLICIT WeakHeapPtr(const T& v) : ReadBarriered<T>(v) {
     this->post(JS::SafelyInitialized<T>(), v);
   }
 
   
   
-  explicit ReadBarriered(const ReadBarriered& v) : ReadBarrieredBase<T>(v) {
+  explicit WeakHeapPtr(const WeakHeapPtr& v) : ReadBarriered<T>(v) {
     this->post(JS::SafelyInitialized<T>(), v.unbarrieredGet());
   }
 
   
   
-  ReadBarriered(ReadBarriered&& v) : ReadBarrieredBase<T>(std::move(v)) {
+  WeakHeapPtr(WeakHeapPtr&& v) : ReadBarriered<T>(std::move(v)) {
     this->post(JS::SafelyInitialized<T>(), v.value);
   }
 
-  ~ReadBarriered() { this->post(this->value, JS::SafelyInitialized<T>()); }
+  ~WeakHeapPtr() { this->post(this->value, JS::SafelyInitialized<T>()); }
 
-  ReadBarriered& operator=(const ReadBarriered& v) {
+  WeakHeapPtr& operator=(const WeakHeapPtr& v) {
     AssertTargetIsNotGray(v.value);
     T prior = this->value;
     this->value = v.value;
@@ -725,12 +725,12 @@ class ReadBarriered : public ReadBarrieredBase<T>,
 
 
 template <typename T>
-using WeakRef = ReadBarriered<T>;
+using WeakRef = WeakHeapPtr<T>;
 
 
 
 
-class HeapSlot : public WriteBarrieredBase<Value> {
+class HeapSlot : public WriteBarriered<Value> {
  public:
   enum Kind { Slot = 0, Element = 1 };
 
@@ -905,8 +905,8 @@ struct MovableCellHasher<HeapPtr<T>> {
 };
 
 template <typename T>
-struct MovableCellHasher<ReadBarriered<T>> {
-  using Key = ReadBarriered<T>;
+struct MovableCellHasher<WeakHeapPtr<T>> {
+  using Key = WeakHeapPtr<T>;
   using Lookup = T;
 
   static bool hasHash(const Lookup& l) {
@@ -947,8 +947,8 @@ struct PreBarrieredHasher {
 
 
 template <class T>
-struct ReadBarrieredHasher {
-  typedef ReadBarriered<T> Key;
+struct WeakHeapPtrHasher {
+  typedef WeakHeapPtr<T> Key;
   typedef T Lookup;
 
   static HashNumber hash(Lookup obj) { return DefaultHasher<T>::hash(obj); }
@@ -971,7 +971,7 @@ struct DefaultHasher<js::PreBarriered<T>> : js::PreBarrieredHasher<T> {};
 
 
 template <class T>
-struct DefaultHasher<js::ReadBarriered<T>> : js::ReadBarrieredHasher<T> {};
+struct DefaultHasher<js::WeakHeapPtr<T>> : js::WeakHeapPtrHasher<T> {};
 
 }  
 
@@ -1016,18 +1016,17 @@ using GCPtrId = GCPtr<jsid>;
 using ImmutablePropertyNamePtr = ImmutableTenuredPtr<PropertyName*>;
 using ImmutableSymbolPtr = ImmutableTenuredPtr<JS::Symbol*>;
 
-using ReadBarrieredDebugEnvironmentProxy =
-    ReadBarriered<DebugEnvironmentProxy*>;
-using ReadBarrieredGlobalObject = ReadBarriered<GlobalObject*>;
-using ReadBarrieredObject = ReadBarriered<JSObject*>;
-using ReadBarrieredScript = ReadBarriered<JSScript*>;
-using ReadBarrieredScriptSourceObject = ReadBarriered<ScriptSourceObject*>;
-using ReadBarrieredShape = ReadBarriered<Shape*>;
-using ReadBarrieredJitCode = ReadBarriered<jit::JitCode*>;
-using ReadBarrieredObjectGroup = ReadBarriered<ObjectGroup*>;
-using ReadBarrieredSymbol = ReadBarriered<JS::Symbol*>;
-using ReadBarrieredWasmInstanceObject = ReadBarriered<WasmInstanceObject*>;
-using ReadBarrieredWasmTableObject = ReadBarriered<WasmTableObject*>;
+using WeakHeapPtrDebugEnvironmentProxy = WeakHeapPtr<DebugEnvironmentProxy*>;
+using WeakHeapPtrGlobalObject = WeakHeapPtr<GlobalObject*>;
+using WeakHeapPtrObject = WeakHeapPtr<JSObject*>;
+using WeakHeapPtrScript = WeakHeapPtr<JSScript*>;
+using WeakHeapPtrScriptSourceObject = WeakHeapPtr<ScriptSourceObject*>;
+using WeakHeapPtrShape = WeakHeapPtr<Shape*>;
+using WeakHeapPtrJitCode = WeakHeapPtr<jit::JitCode*>;
+using WeakHeapPtrObjectGroup = WeakHeapPtr<ObjectGroup*>;
+using WeakHeapPtrSymbol = WeakHeapPtr<JS::Symbol*>;
+using WeakHeapPtrWasmInstanceObject = WeakHeapPtr<WasmInstanceObject*>;
+using WeakHeapPtrWasmTableObject = WeakHeapPtr<WasmTableObject*>;
 
 using HeapPtrJitCode = HeapPtr<jit::JitCode*>;
 using HeapPtrRegExpShared = HeapPtr<RegExpShared*>;
@@ -1051,8 +1050,8 @@ struct DefineComparisonOps<HeapPtr<T>> : mozilla::TrueType {
 };
 
 template <typename T>
-struct DefineComparisonOps<ReadBarriered<T>> : mozilla::TrueType {
-  static const T& get(const ReadBarriered<T>& v) { return v.unbarrieredGet(); }
+struct DefineComparisonOps<WeakHeapPtr<T>> : mozilla::TrueType {
+  static const T& get(const WeakHeapPtr<T>& v) { return v.unbarrieredGet(); }
 };
 
 template <>

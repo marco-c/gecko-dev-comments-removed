@@ -76,7 +76,7 @@ class RegExpShared : public gc::TenuredCell {
   friend class RegExpZone;
 
   struct RegExpCompilation {
-    ReadBarriered<jit::JitCode*> jitCode;
+    WeakHeapPtr<jit::JitCode*> jitCode;
     uint8_t* byteCode;
 
     RegExpCompilation() : byteCode(nullptr) {}
@@ -209,7 +209,7 @@ class RegExpZone {
 
     Key() = default;
     Key(JSAtom* atom, JS::RegExpFlags flags) : atom(atom), flags(flags) {}
-    MOZ_IMPLICIT Key(const ReadBarriered<RegExpShared*>& shared)
+    MOZ_IMPLICIT Key(const WeakHeapPtr<RegExpShared*>& shared)
         : atom(shared.unbarrieredGet()->getSource()),
           flags(shared.unbarrieredGet()->getFlags()) {}
 
@@ -228,7 +228,7 @@ class RegExpZone {
 
 
   using Set = JS::WeakCache<
-      JS::GCHashSet<ReadBarriered<RegExpShared*>, Key, ZoneAllocPolicy>>;
+      JS::GCHashSet<WeakHeapPtr<RegExpShared*>, Key, ZoneAllocPolicy>>;
   Set set_;
 
  public:
@@ -261,7 +261,7 @@ class RegExpRealm {
 
 
 
-  ReadBarriered<ArrayObject*> matchResultTemplateObject_;
+  WeakHeapPtr<ArrayObject*> matchResultTemplateObject_;
 
   
 
@@ -275,14 +275,14 @@ class RegExpRealm {
 
 
 
-  ReadBarriered<Shape*> optimizableRegExpPrototypeShape_;
+  WeakHeapPtr<Shape*> optimizableRegExpPrototypeShape_;
 
   
 
 
 
 
-  ReadBarriered<Shape*> optimizableRegExpInstanceShape_;
+  WeakHeapPtr<Shape*> optimizableRegExpInstanceShape_;
 
   ArrayObject* createMatchResultTemplateObject(JSContext* cx);
 
