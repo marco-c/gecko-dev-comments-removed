@@ -3768,11 +3768,17 @@ mozilla::ipc::IPCResult ContentChild::RecvRegisterBrowsingContextGroup(
     MOZ_ASSERT_IF(parent, parent->Group() == group);
 #endif
 
+    bool cached = init.mCached;
     RefPtr<BrowsingContext> ctxt =
         BrowsingContext::CreateFromIPC(std::move(init), group, nullptr);
 
     
-    ctxt->Attach( true);
+    
+    if (cached) {
+      ctxt->Group()->CacheContext(ctxt);
+    } else {
+      ctxt->Attach( true);
+    }
   }
 
   return IPC_OK();
