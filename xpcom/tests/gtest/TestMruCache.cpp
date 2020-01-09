@@ -49,7 +49,7 @@ struct Convertable {
 };
 
 
-nsCString MakeStringKey(char aKey) {
+static nsCString MakeStringKey(char aKey) {
   nsCString key;
   key.Append(aKey);
   return key;

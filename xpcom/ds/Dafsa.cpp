@@ -20,8 +20,8 @@ const int mozilla::Dafsa::kKeyNotFound = -1;
 
 
 
-bool GetNextOffset(const unsigned char** pos, const unsigned char* end,
-                   const unsigned char** offset) {
+static bool GetNextOffset(const unsigned char** pos, const unsigned char* end,
+                          const unsigned char** offset) {
   if (*pos == end) return false;
 
   
@@ -52,31 +52,31 @@ bool GetNextOffset(const unsigned char** pos, const unsigned char* end,
 }
 
 
-bool IsEOL(const unsigned char* offset, const unsigned char* end) {
+static bool IsEOL(const unsigned char* offset, const unsigned char* end) {
   MOZ_ASSERT(offset < end);
   return (*offset & 0x80) != 0;
 }
 
 
 
-bool IsMatch(const unsigned char* offset, const unsigned char* end,
-             const char* key) {
+static bool IsMatch(const unsigned char* offset, const unsigned char* end,
+                    const char* key) {
   MOZ_ASSERT(offset < end);
   return *offset == *key;
 }
 
 
 
-bool IsEndCharMatch(const unsigned char* offset, const unsigned char* end,
-                    const char* key) {
+static bool IsEndCharMatch(const unsigned char* offset,
+                           const unsigned char* end, const char* key) {
   MOZ_ASSERT(offset < end);
   return *offset == (*key | 0x80);
 }
 
 
 
-bool GetReturnValue(const unsigned char* offset, const unsigned char* end,
-                    int* return_value) {
+static bool GetReturnValue(const unsigned char* offset,
+                           const unsigned char* end, int* return_value) {
   MOZ_ASSERT(offset < end);
   if ((*offset & 0xE0) == 0x80) {
     *return_value = *offset & 0x0F;
@@ -88,8 +88,8 @@ bool GetReturnValue(const unsigned char* offset, const unsigned char* end,
 
 
 
-int LookupString(const unsigned char* graph, size_t length, const char* key,
-                 size_t key_length) {
+static int LookupString(const unsigned char* graph, size_t length,
+                        const char* key, size_t key_length) {
   const unsigned char* pos = graph;
   const unsigned char* end = graph + length;
   const unsigned char* offset = pos;

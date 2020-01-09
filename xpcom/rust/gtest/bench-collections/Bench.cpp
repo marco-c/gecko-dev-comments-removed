@@ -62,7 +62,7 @@ using namespace mozilla;
 
 
 
-uintptr_t MyRand() {
+static uintptr_t MyRand() {
   static uintptr_t s = 0;
   s = s * 1103515245 + 12345;
   return s;
@@ -82,7 +82,8 @@ struct Params {
 
 
 
-void Bench_Cpp_unordered_set(const Params* aParams, void** aVals, size_t aLen) {
+static void Bench_Cpp_unordered_set(const Params* aParams, void** aVals,
+                                    size_t aLen) {
   std::unordered_set<void*> hs;
 
   for (size_t j = 0; j < aParams->mNumInserts; j++) {
@@ -122,7 +123,8 @@ void Bench_Cpp_unordered_set(const Params* aParams, void** aVals, size_t aLen) {
 }
 
 
-void Bench_Cpp_PLDHashTable(const Params* aParams, void** aVals, size_t aLen) {
+static void Bench_Cpp_PLDHashTable(const Params* aParams, void** aVals,
+                                   size_t aLen) {
   PLDHashTable hs(PLDHashTable::StubOps(), sizeof(PLDHashEntryStub));
 
   for (size_t j = 0; j < aParams->mNumInserts; j++) {
@@ -163,7 +165,8 @@ void Bench_Cpp_PLDHashTable(const Params* aParams, void** aVals, size_t aLen) {
 }
 
 
-void Bench_Cpp_MozHashSet(const Params* aParams, void** aVals, size_t aLen) {
+static void Bench_Cpp_MozHashSet(const Params* aParams, void** aVals,
+                                 size_t aLen) {
   mozilla::HashSet<void*, mozilla::DefaultHasher<void*>, MallocAllocPolicy> hs;
 
   for (size_t j = 0; j < aParams->mNumInserts; j++) {

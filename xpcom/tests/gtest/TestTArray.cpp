@@ -57,7 +57,7 @@ struct nsTArray_CopyChooser<TestTArray::Movable> {
 
 namespace TestTArray {
 
-const nsTArray<int>& DummyArray() {
+static const nsTArray<int>& DummyArray() {
   static nsTArray<int> sArray;
   if (sArray.IsEmpty()) {
     const int data[] = {4, 1, 2, 8};
@@ -69,7 +69,7 @@ const nsTArray<int>& DummyArray() {
 
 
 #ifdef DEBUG
-const nsTArray<int>& FakeHugeArray() {
+static const nsTArray<int>& FakeHugeArray() {
   static nsTArray<int> sArray;
   if (sArray.IsEmpty()) {
     sArray.AppendElement();

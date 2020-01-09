@@ -69,7 +69,7 @@ NS_IMPL_ISUPPORTS(nsTestService, nsITestService, nsISupportsWeakReference)
   }
 static NS_DEFINE_CID(kTestServiceCID, NS_TEST_SERVICE_CID);
 
-void JustTestingCompilation() {
+inline void JustTestingCompilation() {
   
 
 

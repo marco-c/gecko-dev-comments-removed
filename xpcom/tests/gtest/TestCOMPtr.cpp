@@ -84,7 +84,7 @@ nsresult IFoo::QueryInterface(const nsIID& aIID, void** aResult) {
   return status;
 }
 
-nsresult CreateIFoo(void** result)
+static nsresult CreateIFoo(void** result)
 
 {
   auto* foop = new IFoo;
@@ -95,14 +95,14 @@ nsresult CreateIFoo(void** result)
   return NS_OK;
 }
 
-void set_a_IFoo(nsCOMPtr<IFoo>* result) {
+static void set_a_IFoo(nsCOMPtr<IFoo>* result) {
   
   
   nsCOMPtr<IFoo> foop(do_QueryInterface(static_cast<nsISupports*>(new IFoo)));
   *result = foop;
 }
 
-nsCOMPtr<IFoo> return_a_IFoo() {
+static nsCOMPtr<IFoo> return_a_IFoo() {
   nsCOMPtr<IFoo> foop(do_QueryInterface(static_cast<nsISupports*>(new IFoo)));
   return foop;
 }
@@ -161,7 +161,7 @@ nsresult IBar::QueryInterface(const nsID& aIID, void** aResult) {
   return status;
 }
 
-nsresult CreateIBar(void** result)
+static nsresult CreateIBar(void** result)
 
 {
   auto* barp = new IBar;
@@ -172,11 +172,11 @@ nsresult CreateIBar(void** result)
   return NS_OK;
 }
 
-void AnIFooPtrPtrContext(IFoo**) {}
+static void AnIFooPtrPtrContext(IFoo**) {}
 
-void AVoidPtrPtrContext(void**) {}
+static void AVoidPtrPtrContext(void**) {}
 
-void AnISupportsPtrPtrContext(nsISupports**) {}
+static void AnISupportsPtrPtrContext(nsISupports**) {}
 
 }  
 
@@ -260,7 +260,7 @@ TEST(COMPtr, AddRefAndRelease) {
   ASSERT_EQ(IBar::total_destructions_, 1);
 }
 
-void Comparison() {
+TEST(COMPtr, Comparison) {
   IFoo::total_constructions_ = 0;
   IFoo::total_destructions_ = 0;
 
@@ -295,7 +295,7 @@ void Comparison() {
   ASSERT_EQ(IFoo::total_destructions_, 2);
 }
 
-void DontAddRef() {
+TEST(COMPtr, DontAddRef) {
   {
     auto* raw_foo1p = new IFoo;
     raw_foo1p->AddRef();

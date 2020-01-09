@@ -83,7 +83,7 @@ void BlockingResourceBase::GetStackTrace(AcquisitionState& aState) {
 
 
 
-bool PrintCycle(
+static bool PrintCycle(
     const BlockingResourceBase::DDT::ResourceAcquisitionArray* aCycle,
     nsACString& aOut) {
   NS_ASSERTION(aCycle->Length() > 1, "need > 1 element for cycle!");

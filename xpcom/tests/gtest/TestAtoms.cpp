@@ -111,7 +111,7 @@ TEST(Atoms, Invalid) {
 #define SECOND_ATOM_STR "second static atom. @World!"
 #define THIRD_ATOM_STR "third static atom?!"
 
-bool isStaticAtom(nsAtom* atom) {
+static bool isStaticAtom(nsAtom* atom) {
   
   
   

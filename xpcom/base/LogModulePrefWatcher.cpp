@@ -34,7 +34,7 @@ NS_IMPL_ISUPPORTS(LogModulePrefWatcher, nsIObserver)
 
 
 
-void ResetExistingPrefs() {
+static void ResetExistingPrefs() {
   uint32_t count;
   char** names;
   nsresult rv = Preferences::GetRootBranch()->GetChildList(kLoggingPrefPrefix,
@@ -106,7 +106,7 @@ static void LoadPrefValue(const char* aName) {
   LogModule::Get(moduleName)->SetLevel(logLevel);
 }
 
-void LoadExistingPrefs() {
+static void LoadExistingPrefs() {
   nsIPrefBranch* root = Preferences::GetRootBranch();
   if (!root) {
     return;

@@ -30,7 +30,7 @@ extern unsigned int _gdb_sleep_duration;
 
 
 
-void TestCrashyOperation(void (*aCrashyOperation)()) {
+static void TestCrashyOperation(void (*aCrashyOperation)()) {
 #if defined(XP_UNIX) && defined(DEBUG) && !defined(MOZ_ASAN)
   
   
@@ -87,19 +87,19 @@ void TestCrashyOperation(void (*aCrashyOperation)()) {
 #endif
 }
 
-void InitCapacityOk_InitialLengthTooBig() {
+static void InitCapacityOk_InitialLengthTooBig() {
   PLDHashTable t(PLDHashTable::StubOps(), sizeof(PLDHashEntryStub),
                  PLDHashTable::kMaxInitialLength + 1);
 }
 
-void InitCapacityOk_InitialEntryStoreTooBig() {
+static void InitCapacityOk_InitialEntryStoreTooBig() {
   
   
   
   PLDHashTable t(PLDHashTable::StubOps(), (uint32_t)1 << 8, (uint32_t)1 << 23);
 }
 
-void InitCapacityOk_EntrySizeTooBig() {
+static void InitCapacityOk_EntrySizeTooBig() {
   
   PLDHashTable t(PLDHashTable::StubOps(), 256);
 }
