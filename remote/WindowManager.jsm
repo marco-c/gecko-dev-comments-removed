@@ -7,7 +7,6 @@
 var EXPORTED_SYMBOLS = [
   "TabObserver",
   "WindowObserver",
-  "WindowManager",
 ];
 
 const {DOMContentLoadedPromise} = ChromeUtils.import("chrome://remote/content/Sync.jsm");
@@ -147,28 +146,3 @@ class TabObserver {
     
   }
 }
-
-
-
-
-
-
-
-
-
-function isWindowIncluded(boundary, target) {
-  if (target === boundary) {
-    return true;
-  }
-
-  
-  
-  const {parent} = target;
-  if (!parent || parent === boundary) {
-    return false;
-  }
-
-  return isWindowIncluded(boundary, parent);
-}
-
-var WindowManager = {isWindowIncluded};
