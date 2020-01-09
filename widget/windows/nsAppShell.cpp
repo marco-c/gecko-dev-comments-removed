@@ -323,9 +323,11 @@ nsresult nsAppShell::Init() {
 
   mozilla::ipc::windows::InitUIThread();
 
-  sTaskbarButtonCreatedMsg = ::RegisterWindowMessageW(kTaskbarButtonEventId);
-  NS_ASSERTION(sTaskbarButtonCreatedMsg,
-               "Could not register taskbar button creation message");
+  if (XRE_Win32kCallsAllowed()) {
+    sTaskbarButtonCreatedMsg = ::RegisterWindowMessageW(kTaskbarButtonEventId);
+    NS_ASSERTION(sTaskbarButtonCreatedMsg,
+                 "Could not register taskbar button creation message");
+  }
 
   
   
@@ -354,7 +356,7 @@ nsresult nsAppShell::Init() {
     mEventWnd = CreateWindowW(kWindowClass, L"nsAppShell:EventWindow", 0, 0, 0,
                               10, 10, HWND_MESSAGE, nullptr, module, nullptr);
     NS_ENSURE_STATE(mEventWnd);
-  } else {
+  } else if (XRE_IsContentProcess()) {
     
     
     
