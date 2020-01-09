@@ -484,18 +484,16 @@ function JSPropertyProvider({
       
       
       
-      matches = new Set([...matches].filter(propertyName => {
-        let valid = true;
+      for (const match of matches) {
         try {
           
           
           
-          Reflect.parse(`({${propertyName}: true})`);
+          Reflect.parse(`({${match}: true})`);
         } catch (e) {
-          valid = false;
+          matches.delete(match);
         }
-        return valid;
-      }));
+      }
     }
 
     return {isElementAccess, matchProp, matches};

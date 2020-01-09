@@ -1243,10 +1243,10 @@ WebConsoleActor.prototype =
       
       
       
+      const firstMeaningfulCharIndex = isElementAccess ? 1 : 0;
       matches = Array.from(matches).sort((a, b) => {
-        const startingQuoteRegex = /^('|"|`)/;
-        const aFirstMeaningfulChar = startingQuoteRegex.test(a) ? a[1] : a[0];
-        const bFirstMeaningfulChar = startingQuoteRegex.test(b) ? b[1] : b[0];
+        const aFirstMeaningfulChar = a[firstMeaningfulCharIndex];
+        const bFirstMeaningfulChar = b[firstMeaningfulCharIndex];
         const lA = aFirstMeaningfulChar.toLocaleLowerCase() === aFirstMeaningfulChar;
         const lB = bFirstMeaningfulChar.toLocaleLowerCase() === bFirstMeaningfulChar;
         if (lA === lB) {
