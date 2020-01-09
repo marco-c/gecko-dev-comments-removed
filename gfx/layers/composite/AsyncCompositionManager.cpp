@@ -400,7 +400,7 @@ void AsyncCompositionManager::AlignFixedAndStickyLayers(
     ScrollableLayerGuid::ViewID aTransformScrollId,
     const LayerToParentLayerMatrix4x4& aPreviousTransformForRoot,
     const LayerToParentLayerMatrix4x4& aCurrentTransformForRoot,
-    const ScreenMargin& aFixedLayerMargins, ClipPartsCache* aClipPartsCache) {
+    const ScreenMargin& aFixedLayerMargins, ClipPartsCache& aClipPartsCache) {
   Layer* layer = aStartTraversalAt;
   bool needsAsyncTransformUnapplied = false;
   if (Maybe<ScrollableLayerGuid::ViewID> fixedTo = IsFixedOrSticky(layer)) {
@@ -529,7 +529,7 @@ void AsyncCompositionManager::AlignFixedAndStickyLayers(
       layer,
       ViewAs<ParentLayerPixel>(translation,
                                PixelCastJustification::NoTransformOnLayer),
-      true, aClipPartsCache);
+      true, &aClipPartsCache);
 
   
   
@@ -1119,7 +1119,7 @@ bool AsyncCompositionManager::ApplyAsyncContentTransformToTree(
             AlignFixedAndStickyLayers(layer, layer, metrics.GetScrollId(),
                                       oldTransform,
                                       transformWithoutOverscrollOrOmta,
-                                      fixedLayerMargins, &clipPartsCache);
+                                      fixedLayerMargins, clipPartsCache);
 
             
             
