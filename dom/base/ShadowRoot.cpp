@@ -267,17 +267,20 @@ void ShadowRoot::RemoveSlot(HTMLSlotElement* aSlot) {
 
   const bool wasFirstSlot = currentSlots->ElementAt(0) == aSlot;
   currentSlots.RemoveElement(*aSlot);
-
-  
-  
   if (!wasFirstSlot) {
     return;
   }
 
+  
+  
   InvalidateStyleAndLayoutOnSubtree(aSlot);
   HTMLSlotElement* replacementSlot = currentSlots->ElementAt(0);
   const nsTArray<RefPtr<nsINode>>& assignedNodes = aSlot->AssignedNodes();
-  bool slottedNodesChanged = !assignedNodes.IsEmpty();
+  if (assignedNodes.IsEmpty()) {
+    return;
+  }
+
+  InvalidateStyleAndLayoutOnSubtree(replacementSlot);
   while (!assignedNodes.IsEmpty()) {
     nsINode* assignedNode = assignedNodes[0];
 
@@ -285,10 +288,8 @@ void ShadowRoot::RemoveSlot(HTMLSlotElement* aSlot) {
     replacementSlot->AppendAssignedNode(assignedNode);
   }
 
-  if (slottedNodesChanged) {
-    aSlot->EnqueueSlotChangeEvent();
-    replacementSlot->EnqueueSlotChangeEvent();
-  }
+  aSlot->EnqueueSlotChangeEvent();
+  replacementSlot->EnqueueSlotChangeEvent();
 }
 
 
