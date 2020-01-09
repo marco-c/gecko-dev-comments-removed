@@ -1629,7 +1629,7 @@ already_AddRefed<DrawTarget> gfxPlatform::CreateOffscreenContentDrawTarget(
   
   dt->ClearRect(gfx::Rect());
   if (!dt->IsValid()) {
-
+    return nullptr;
   }
   return dt.forget();
 }
