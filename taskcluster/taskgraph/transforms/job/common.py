@@ -14,27 +14,54 @@ from taskgraph.util.taskcluster import get_artifact_prefix
 SECRET_SCOPE = 'secrets:get:project/releng/gecko/{}/level-{}/{}'
 
 
+def add_cache(job, taskdesc, name, mount_point, skip_untrusted=False):
+    """Adds a cache based on the worker's implementation.
+
+    Args:
+        job (dict): Task's job description.
+        taskdesc (dict): Target task description to modify.
+        name (str): Name of the cache.
+        mount_point (path): Path on the host to mount the cache.
+        skip_untrusted (bool): Whether cache is used in untrusted environments
+            (default: False). Only applies to docker-worker.
+    """
+    worker = job['worker']
+
+    if worker['implementation'] in ('docker-worker', 'docker-engine'):
+        taskdesc['worker'].setdefault('caches', []).append({
+            'type': 'persistent',
+            'name': name,
+            'mount-point': mount_point,
+            'skip-untrusted': skip_untrusted,
+        })
+    else:
+        
+        pass
+
+
 def docker_worker_add_workspace_cache(config, job, taskdesc, extra=None):
     """Add the workspace cache.
 
-    ``extra`` is an optional kwarg passed in that supports extending the cache
-    key name to avoid undesired conflicts with other caches."""
-    taskdesc['worker'].setdefault('caches', []).append({
-        'type': 'persistent',
-        'name': 'level-{}-{}-build-{}-{}-workspace'.format(
-            config.params['level'], config.params['project'],
-            taskdesc['attributes']['build_platform'],
-            taskdesc['attributes']['build_type'],
-        ),
-        'mount-point': "{workdir}/workspace".format(**job['run']),
-        
-        
-        'skip-untrusted': True,
-    })
+    Args:
+        config (TransformConfig): Transform configuration object.
+        job (dict): Task's job description.
+        taskdesc (dict): Target task description to modify.
+        extra (str): Optional context passed in that supports extending the cache
+            key name to avoid undesired conflicts with other caches.
+    """
+    cache_name = 'level-{}-{}-build-{}-{}-workspace'.format(
+        config.params['level'], config.params['project'],
+        taskdesc['attributes']['build_platform'],
+        taskdesc['attributes']['build_type'],
+    )
     if extra:
-        taskdesc['worker']['caches'][-1]['name'] += '-{}'.format(
-            extra
-        )
+        cache_name = '{}-{}'.format(cache_name, extra)
+
+    mount_point = "{workdir}/workspace".format(**job['run'])
+
+    
+    
+    add_cache(job, taskdesc, cache_name, mount_point, skip_untrusted=True)
 
 
 def add_artifacts(config, job, taskdesc, path):
@@ -83,27 +110,19 @@ def support_vcs_checkout(config, job, taskdesc, sparse=False):
         geckodir = '{}/gecko'.format(checkoutdir)
         hgstore = '{}/hg-store'.format(checkoutdir)
 
-    level = config.params['level']
+    cache_name = 'level-{}-checkouts'.format(config.params['level'])
+
     
     
-    if worker['implementation'] in ('docker-worker', 'docker-engine'):
-        name = 'level-%s-checkouts' % level
+    if job['run'].get('comm-checkout', False):
+        cache_name += '-comm'
 
-        
-        
-        if job['run'].get('comm-checkout', False):
-            name += '-comm'
+    
+    
+    if sparse:
+        cache_name += '-sparse'
 
-        
-        
-        if sparse:
-            name += '-sparse'
-
-        taskdesc['worker'].setdefault('caches', []).append({
-            'type': 'persistent',
-            'name': name,
-            'mount-point': checkoutdir,
-        })
+    add_cache(job, taskdesc, cache_name, checkoutdir)
 
     taskdesc['worker'].setdefault('env', {}).update({
         'GECKO_BASE_REPOSITORY': config.params['base_repository'],
@@ -190,12 +209,8 @@ def docker_worker_add_tooltool(config, job, taskdesc, internal=False):
     assert job['worker']['implementation'] in ('docker-worker', 'docker-engine')
 
     level = config.params['level']
-
-    taskdesc['worker'].setdefault('caches', []).append({
-        'type': 'persistent',
-        'name': 'level-%s-tooltool-cache' % level,
-        'mount-point': '{workdir}/tooltool-cache'.format(**job['run']),
-    })
+    add_cache(job, taskdesc, 'level-{}-tooltool-cache'.format(level),
+              '{workdir}/tooltool-cache'.format(**job['run']))
 
     taskdesc['worker'].setdefault('env', {}).update({
         'TOOLTOOL_CACHE': '{workdir}/tooltool-cache'.format(**job['run']),
