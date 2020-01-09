@@ -145,6 +145,10 @@ let propNameWhitelist = [
    isFromDevTools: true},
   {propName: "--bezier-grid-color",
    isFromDevTools: true},
+
+  
+  {propName: "--grey-40",
+   isFromDevTools: false},
 ];
 
 
