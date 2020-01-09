@@ -1733,6 +1733,13 @@ class nsDisplayListBuilder {
     mHitTestIsForVisibility = aHitTestIsForVisibility;
   }
 
+  bool ShouldBuildAsyncZoomContainer() const {
+    return mBuildAsyncZoomContainer;
+  }
+  void SetBuildAsyncZoomContainer(bool aBuildAsyncZoomContainer) {
+    mBuildAsyncZoomContainer = aBuildAsyncZoomContainer;
+  }
+
   
 
 
@@ -1988,6 +1995,7 @@ class nsDisplayListBuilder {
   bool mDisablePartialUpdates;
   bool mPartialBuildFailed;
   bool mIsInActiveDocShell;
+  bool mBuildAsyncZoomContainer;
 
   nsRect mHitTestArea;
   CompositorHitTestInfo mHitTestInfo;

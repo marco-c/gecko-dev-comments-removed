@@ -3616,7 +3616,21 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
       
       
       
-      if (useRetainedBuilder) {
+      
+      bool shouldAttemptPartialUpdate = useRetainedBuilder;
+      bool didBuildAsyncZoomContainer = builder.ShouldBuildAsyncZoomContainer();
+      builder.SetBuildAsyncZoomContainer(
+          gfxPrefs::APZAllowZooming() &&
+          !gfxPrefs::LayoutUseContainersForRootFrames());
+      if (builder.ShouldBuildAsyncZoomContainer() !=
+          didBuildAsyncZoomContainer) {
+        shouldAttemptPartialUpdate = false;
+      }
+
+      
+      
+      
+      if (shouldAttemptPartialUpdate) {
         if (gfxPrefs::LayoutVerifyRetainDisplayList()) {
           beforeMergeChecker.Set(&list, "BM");
         }
