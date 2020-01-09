@@ -1,0 +1,53 @@
+
+
+
+
+add_task(async function listener() {
+  let testURL = "http://example.org/browser/browser/base/content/test/general/dummy_page.html";
+  let tabSelected = false;
+
+  
+  let baseTab = BrowserTestUtils.addTab(gBrowser, testURL);
+
+  
+  await promiseTabLoaded(baseTab);
+  if (baseTab.linkedBrowser.currentURI.spec == "about:blank")
+    return;
+  baseTab.linkedBrowser.removeEventListener("load", listener, true);
+
+  let testTab = BrowserTestUtils.addTab(gBrowser);
+
+  
+  gBrowser.selectedTab = testTab;
+
+  
+  gURLBar.value = "moz-action:switchtab," + JSON.stringify({url: testURL});
+  
+  gURLBar.focus();
+
+  
+  function onTabClose(aEvent) {
+    gBrowser.tabContainer.removeEventListener("TabClose", onTabClose);
+    
+    is(aEvent.originalTarget, testTab, "Got the TabClose event for the right tab");
+    
+    ok(tabSelected, "Confirming that the tab was selected");
+    gBrowser.removeTab(baseTab);
+    finish();
+  }
+  function onTabSelect(aEvent) {
+    gBrowser.tabContainer.removeEventListener("TabSelect", onTabSelect);
+    
+    is(aEvent.originalTarget, baseTab, "Got the TabSelect event for the right tab");
+    
+    is(gBrowser.selectedTab, baseTab, "We've switched to the correct tab");
+    tabSelected = true;
+  }
+
+  
+  gBrowser.tabContainer.addEventListener("TabClose", onTabClose);
+  gBrowser.tabContainer.addEventListener("TabSelect", onTabSelect);
+
+  
+  EventUtils.synthesizeKey("KEY_Enter");
+});
