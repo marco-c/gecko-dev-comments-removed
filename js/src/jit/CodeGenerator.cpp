@@ -6434,9 +6434,10 @@ void CodeGenerator::visitNewArrayCopyOnWrite(LNewArrayCopyOnWrite* lir) {
   gc::InitialHeap initialHeap = lir->mir()->initialHeap();
 
   
-  using Fn = ArrayObject* (*)(JSContext*, HandleArrayObject);
+  using Fn = ArrayObject* (*)(JSContext*, HandleArrayObject, gc::InitialHeap);
   OutOfLineCode* ool = oolCallVM<Fn, js::NewDenseCopyOnWriteArray>(
-      lir, ArgList(ImmGCPtr(templateObject)), StoreRegisterTo(objReg));
+      lir, ArgList(ImmGCPtr(templateObject), Imm32(initialHeap)),
+      StoreRegisterTo(objReg));
 
   TemplateObject templateObj(templateObject);
   templateObj.setDenseElementsAreCopyOnWrite();
