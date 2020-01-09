@@ -50,7 +50,6 @@
   --body-20-font-weight: 700;
   --caption-20-font-size: 13px;
   --caption-20-font-weight: 400;
-  --caption-20-color: var(--grey-50);
   --display-20-font-size: 36px;
   --display-20-font-weight: 200;
   --title-20-font-size: 17px;
@@ -70,9 +69,8 @@
   --message-font-size: 13px; 
   --button-font-size: var(--base-font-size);
   --micro-font-size: 11px;
-  --monospace-font-family: monospace;
 
-  --card-separator-color: var(--grey-20);
+  --monospace-font-family: monospace;
 
   
 
@@ -134,6 +132,7 @@ p, h1 {
 
 
 
+
 .ellipsis-text {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -148,13 +147,6 @@ p, h1 {
 
 .unselectable-text {
   -moz-user-select: none;
-}
-
-
-.undecorated-link,
-.undecorated-link:hover {
-  text-decoration: none;
-  color: currentColor;
 }
 
 
@@ -202,8 +194,9 @@ p, h1 {
 
 
 .alt-heading {
-  font-weight: var(--title-20-font-weight);
-  font-size: var(--title-20-font-size);
+  font-weight: 300;
+  font-size: 1.46em;
+  line-height: 1.2; 
 
   margin-block-start: 0;
   margin-block-end: calc(var(--base-unit) * 4);
@@ -262,50 +255,19 @@ p, h1 {
 }
 
 
-.default-button, .primary-button {
+.default-button {
   -moz-appearance: none;
+  color: var(--grey-90); 
+  background-color: var(--grey-90-a10); 
+  font-size: var(--button-font-size); 
+
   margin: 0;
-  height: calc(var(--base-unit) * 8);
+  height: calc(var(--base-unit) * 8); 
   padding-inline-start: calc(var(--base-unit) * 5);
   padding-inline-end: calc(var(--base-unit) * 5);
 
   border: none;
   border-radius: calc(var(--base-unit) / 2);
-
-  font-size: var(--button-font-size);
-}
-
-
-.default-button:disabled, .primary-button:disabled {
-  opacity: 0.4;
-}
-
-
-.default-button--micro, .primary-button--micro {
-  padding-inline-start: calc(2 * var(--base-unit));
-  padding-inline-end: calc(2 * var(--base-unit));
-  font-size: var(--micro-font-size);
-  height: calc(var(--base-unit) * 6);
-}
-
-
-.primary-button {
-  color: var(--white-100);
-  background-color: var(--blue-60);
-}
-
-.primary-button:enabled:hover {
-  background-color: var(--blue-70);
-}
-
-.primary-button:enabled:active {
-  background-color: var(--blue-80);
-}
-
-
-.default-button {
-  color: var(--grey-90); 
-  background-color: var(--grey-90-a10); 
 }
 
 .default-button:enabled:hover {
@@ -314,6 +276,18 @@ p, h1 {
 
 .default-button:enabled:active {
   background: var(--grey-90-a30); 
+}
+
+.default-button:disabled {
+  opacity: 0.4; 
+}
+
+
+.default-button--micro {
+  padding-inline-start: calc(2 * var(--base-unit));
+  padding-inline-end: calc(2 * var(--base-unit));
+  font-size: var(--micro-font-size);
+  height: calc(var(--base-unit) * 6);
 }
 
 
@@ -348,8 +322,8 @@ p, h1 {
   background-color: var(--box-background);
 }
 
-
 .default-checkbox {
+  
   height: calc(var(--base-unit) * 4);
   margin-inline-end: var(--base-unit);
   width: calc(var(--base-unit) * 4);
@@ -393,9 +367,12 @@ p, h1 {
   background-color: var(--white-100); 
   border-radius: var(--base-unit); 
   box-shadow: 0 1px 4px var(--grey-90-a10); 
+  padding-block: calc(var(--base-unit) * 3) calc(var(--base-unit) * 2);
+  padding-inline: calc(var(--base-unit) * 3) calc(var(--base-unit) * 2);
 }
 
-.card__heading {
-  font-size: var(--title-20-font-size); 
-  font-weight: var(--title-20-font-weight); 
+.undecorated-link,
+.undecorated-link:hover {
+  text-decoration: none;
+  color: currentColor;
 }
