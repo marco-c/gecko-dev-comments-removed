@@ -145,40 +145,10 @@ class QuotaManager final : public BackgroundThreadObject {
     return mTemporaryStorageInitialized;
   }
 
-  
-
-
-
-
-
   void InitQuotaForOrigin(PersistenceType aPersistenceType,
                           const nsACString& aGroup, const nsACString& aOrigin,
                           uint64_t aUsageBytes, int64_t aAccessTime,
                           bool aPersisted);
-
-  
-
-
-
-
-
-
-
-
-
-  void EnsureQuotaForOrigin(PersistenceType aPersistenceType,
-                            const nsACString& aGroup,
-                            const nsACString& aOrigin);
-
-  
-
-
-
-
-  void NoteOriginDirectoryCreated(PersistenceType aPersistenceType,
-                                  const nsACString& aGroup,
-                                  const nsACString& aOrigin, bool aPersisted,
-                                  int64_t& aTimestamp);
 
   void DecreaseUsageForOrigin(PersistenceType aPersistenceType,
                               const nsACString& aGroup,
@@ -278,19 +248,6 @@ class QuotaManager final : public BackgroundThreadObject {
   uint64_t CollectOriginsForEviction(
       uint64_t aMinSizeToBeFreed, nsTArray<RefPtr<DirectoryLockImpl>>& aLocks);
 
-  
-
-
-
-
-
-
-
-
-
-  template <typename P>
-  void CollectPendingOriginsForListing(P aPredicate);
-
   void AssertStorageIsInitialized() const
 #ifdef DEBUG
       ;
@@ -305,18 +262,18 @@ class QuotaManager final : public BackgroundThreadObject {
                                      const nsACString& aSuffix,
                                      const nsACString& aGroup,
                                      const nsACString& aOrigin,
+                                     bool aCreateIfNotExists,
                                      nsIFile** aDirectory);
 
-  nsresult EnsureOriginIsInitializedInternal(PersistenceType aPersistenceType,
-                                             const nsACString& aSuffix,
-                                             const nsACString& aGroup,
-                                             const nsACString& aOrigin,
-                                             nsIFile** aDirectory,
-                                             bool* aCreated);
+  nsresult EnsureOriginIsInitializedInternal(
+      PersistenceType aPersistenceType, const nsACString& aSuffix,
+      const nsACString& aGroup, const nsACString& aOrigin,
+      bool aCreateIfNotExists, nsIFile** aDirectory, bool* aCreated);
 
   nsresult EnsureTemporaryStorageIsInitialized();
 
-  nsresult EnsureOriginDirectory(nsIFile* aDirectory, bool* aCreated);
+  nsresult EnsureOriginDirectory(nsIFile* aDirectory, bool aCreateIfNotExists,
+                                 bool* aCreated);
 
   nsresult AboutToClearOrigins(
       const Nullable<PersistenceType>& aPersistenceType,
@@ -442,9 +399,6 @@ class QuotaManager final : public BackgroundThreadObject {
                                   const nsACString& aGroup,
                                   const nsACString& aOrigin);
 
-  already_AddRefed<GroupInfo> LockedGetOrCreateGroupInfo(
-      PersistenceType aPersistenceType, const nsACString& aGroup);
-
   already_AddRefed<OriginInfo> LockedGetOriginInfo(
       PersistenceType aPersistenceType, const nsACString& aGroup,
       const nsACString& aOrigin);
@@ -486,11 +440,10 @@ class QuotaManager final : public BackgroundThreadObject {
   nsresult UpgradeLocalStorageArchiveFrom0To1(
       nsCOMPtr<mozIStorageConnection>& aConnection);
 
-  nsresult UpgradeLocalStorageArchiveFrom1To2(
-      nsCOMPtr<mozIStorageConnection>& aConnection);
+  
 
-  nsresult UpgradeLocalStorageArchiveFrom2To3(
-      nsCOMPtr<mozIStorageConnection>& aConnection);
+
+
 
   nsresult InitializeRepository(PersistenceType aPersistenceType);
 

@@ -17159,7 +17159,8 @@ nsresult Maintenance::DirectoryWork() {
         
         
         rv = quotaManager->EnsureOriginIsInitialized(
-            persistenceType, suffix, group, origin, getter_AddRefs(directory));
+            persistenceType, suffix, group, origin,
+             true, getter_AddRefs(directory));
 
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
@@ -19868,7 +19869,8 @@ nsresult OpenDatabaseOp::DoDatabaseWork() {
   nsCOMPtr<nsIFile> dbDirectory;
 
   nsresult rv = quotaManager->EnsureOriginIsInitialized(
-      persistenceType, mSuffix, mGroup, mOrigin, getter_AddRefs(dbDirectory));
+      persistenceType, mSuffix, mGroup, mOrigin,
+       true, getter_AddRefs(dbDirectory));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
