@@ -51,6 +51,7 @@ impl BlobImageKey {
 pub struct ExternalImageId(pub u64);
 
 
+#[repr(u8)]
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub enum TextureTarget {
     
