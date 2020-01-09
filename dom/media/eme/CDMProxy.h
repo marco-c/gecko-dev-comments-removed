@@ -82,7 +82,7 @@ class CDMProxy {
   
   CDMProxy(dom::MediaKeys* aKeys, const nsAString& aKeySystem,
            bool aDistinctiveIdentifierRequired, bool aPersistentStateRequired,
-           nsIEventTarget* aMainThread)
+           nsISerialEventTarget* aMainThread)
       : mKeys(aKeys),
         mKeySystem(aKeySystem),
         mCapabilites("CDMProxy::mCDMCaps"),
@@ -272,7 +272,7 @@ class CDMProxy {
   const bool mPersistentStateRequired;
 
   
-  const nsCOMPtr<nsIEventTarget> mMainThread;
+  const nsCOMPtr<nsISerialEventTarget> mMainThread;
 };
 
 }  
