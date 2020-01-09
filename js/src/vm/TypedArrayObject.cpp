@@ -1328,6 +1328,38 @@ bool BufferGetterImpl(JSContext* cx, const CallArgs& args) {
   return CallNonGenericMethod<TypedArrayObject::is, BufferGetterImpl>(cx, args);
 }
 
+
+
+static bool TypedArray_toStringTagGetter(JSContext* cx, unsigned argc,
+    Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  if (!args.thisv().isObject()) {
+    args.rval().setUndefined();
+    return true;
+  }
+
+  JSObject* obj = CheckedUnwrap(&args.thisv().toObject());
+  if (!obj) {
+    ReportAccessDenied(cx);
+    return false;
+  }
+
+  
+  if (!obj->is<TypedArrayObject>()) {
+    args.rval().setUndefined();
+    return true;
+  }
+
+  
+  JSProtoKey protoKey = StandardProtoKeyOrNull(obj);
+  MOZ_ASSERT(protoKey);
+
+  args.rval().setString(ClassName(protoKey, cx));
+  return true;
+}
+
  const JSPropertySpec TypedArrayObject::protoAccessors[] = {
     JS_PSG("length", TypedArray_lengthGetter, 0),
     JS_PSG("buffer", TypedArray_bufferGetter, 0),
@@ -1335,7 +1367,7 @@ bool BufferGetterImpl(JSContext* cx, const CallArgs& args) {
            TypedArrayObject::Getter<TypedArrayObject::byteLengthValue>, 0),
     JS_PSG("byteOffset",
            TypedArrayObject::Getter<TypedArrayObject::byteOffsetValue>, 0),
-    JS_SELF_HOSTED_SYM_GET(toStringTag, "TypedArrayToStringTag", 0),
+    JS_SYM_GET(toStringTag, TypedArray_toStringTagGetter, 0),
     JS_PS_END};
 
 template <typename T>

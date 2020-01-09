@@ -1599,21 +1599,6 @@ function TypedArraySpecies() {
 _SetCanonicalName(TypedArraySpecies, "get [Symbol.species]");
 
 
-function TypedArrayToStringTag() {
-    
-    var O = this;
-
-    
-    if (!IsObject(O) || !IsPossiblyWrappedTypedArray(O))
-        return undefined;
-
-    
-    
-    return _NameForTypedArray(O);
-}
-_SetCanonicalName(TypedArrayToStringTag, "get [Symbol.toStringTag]");
-
-
 
 function IterableToList(items, method) {
     
