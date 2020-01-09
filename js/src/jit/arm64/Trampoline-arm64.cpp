@@ -108,7 +108,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   
 
   
-  masm.andToStackPtr(Imm32(~0xff));
+  masm.andToStackPtr(Imm32(~0xf));
   
   
   masm.touchFrameValues(reg_argc, r20, r21);
@@ -138,7 +138,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
              Operand(tmp_argc, vixl::SXTX, 3));
 
     
-    masm.andToStackPtr(Imm32(~0xff));
+    masm.andToStackPtr(Imm32(~0xf));
     masm.moveStackPtrTo(tmp_sp.asUnsized());
 
     masm.branchTestPtr(Assembler::Zero, reg_argc, reg_argc, &noArguments);
