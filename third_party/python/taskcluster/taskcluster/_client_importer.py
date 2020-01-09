@@ -9,6 +9,7 @@ from .hooks import Hooks
 from .index import Index  
 from .login import Login  
 from .notify import Notify  
+from .pulse import Pulse  
 from .purgecache import PurgeCache  
 from .purgecacheevents import PurgeCacheEvents  
 from .queue import Queue  
