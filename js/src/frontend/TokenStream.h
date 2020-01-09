@@ -1911,6 +1911,7 @@ class GeneralTokenStreamChars : public SpecializedTokenStreamCharsBase<Unit> {
  protected:
   using CharsBase::addLineOfContext;
   using CharsBase::fillCharBufferFromSourceNormalizingAsciiLineBreaks;
+  using CharsBase::matchCodeUnit;
   using CharsBase::matchLineTerminator;
   using TokenStreamCharsShared::drainCharBufferIntoAtom;
   using TokenStreamCharsShared::isAsciiCodePoint;
@@ -2096,6 +2097,13 @@ class GeneralTokenStreamChars : public SpecializedTokenStreamCharsBase<Unit> {
   }
 
  public:
+  
+
+
+
+
+  void consumeOptionalHashbangComment();
+
   JSAtom* getRawTemplateStringAtom() {
     TokenStreamAnyChars& anyChars = anyCharsAccess();
 

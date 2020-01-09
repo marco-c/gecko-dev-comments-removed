@@ -2380,6 +2380,34 @@ MOZ_MUST_USE bool TokenStreamSpecific<Unit, AnyCharsAccess>::bigIntLiteral(
 }
 
 template <typename Unit, class AnyCharsAccess>
+void GeneralTokenStreamChars<Unit,
+                             AnyCharsAccess>::consumeOptionalHashbangComment() {
+  MOZ_ASSERT(this->sourceUnits.atStart(),
+             "HashBangComment can only appear immediately at the start of a "
+             "Script or Module");
+
+  
+  
+
+  if (!matchCodeUnit('#')) {
+    
+    return;
+  }
+
+  if (!matchCodeUnit('!')) {
+    
+    
+    ungetCodeUnit('#');
+    return;
+  }
+
+  
+  
+  
+  this->sourceUnits.consumeRestOfSingleLineComment();
+}
+
+template <typename Unit, class AnyCharsAccess>
 MOZ_MUST_USE bool TokenStreamSpecific<Unit, AnyCharsAccess>::getTokenInternal(
     TokenKind* const ttp, const Modifier modifier) {
   
