@@ -16,7 +16,7 @@ add_task(async function() {
 
   
   
-
+  
   await addBreakpoint(dbg, ppSrc, 18);
 
   invokeInTab("arithmetic");

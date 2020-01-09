@@ -34,6 +34,7 @@ info(`START: ${new Error().lineNumber}`);
   script.click();
 
   const onPaused = waitForPaused(dbg);
+  await selectSource(dbg, fileName);
   await addBreakpoint(dbg, fileName, 2);
 
   await onPaused;

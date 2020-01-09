@@ -18,8 +18,8 @@ add_task(async function() {
   const simple2 = findSource(dbg, "simple2.js");
 
   
+  await selectSource(dbg, "simple1");
   await addBreakpoint(dbg, simple1, 4);
-  ok(!getSelectedSource(getState()), "No selected source");
 
   
   invokeInTab("main");
@@ -43,6 +43,7 @@ add_task(async function() {
   
   
   let longSrc = findSource(dbg, "long.js");
+  await selectSource(dbg, "long.js");
   await addBreakpoint(dbg, longSrc, 66);
 
   invokeInTab("testModel");
