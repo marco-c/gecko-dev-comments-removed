@@ -1,0 +1,23 @@
+
+
+
+
+
+
+#ifndef nsNSSModule_h
+#define nsNSSModule_h
+
+#include "nsID.h"
+
+class nsISupports;
+
+namespace mozilla {
+namespace psm {
+template <typename T>
+nsresult NSSConstructor(nsISupports* aOuter, const nsIID& aIID,
+                        void** aInstancePtr);
+
+}
+}  
+
+#endif  
