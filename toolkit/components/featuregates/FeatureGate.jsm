@@ -100,7 +100,8 @@ class FeatureGate {
       );
     }
 
-    const definition = featureDefinitions.get(id);
+    
+    const definition = { ...featureDefinitions.get(id) };
     const targetValueKeys = ["defaultValue", "isPublic"];
     for (const key of targetValueKeys) {
       definition[key] = evaluateTargetedValue(definition[key], kTargetFacts);
