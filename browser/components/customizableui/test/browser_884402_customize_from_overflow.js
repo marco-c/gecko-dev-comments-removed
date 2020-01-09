@@ -18,7 +18,7 @@ add_task(async function() {
   ok(!navbar.hasAttribute("overflowing"), "Should start with a non-overflowing toolbar.");
   window.resizeTo(400, window.outerHeight);
 
-  await waitForCondition(() => navbar.hasAttribute("overflowing"));
+  await TestUtils.waitForCondition(() => navbar.hasAttribute("overflowing"));
   ok(navbar.hasAttribute("overflowing"), "Should have an overflowing toolbar.");
 
   let chevron = document.getElementById("nav-bar-overflow-button");
@@ -61,7 +61,7 @@ add_task(async function() {
   CustomizableUI.reset();
 
   
-  await waitForCondition(() => navbar.hasAttribute("overflowing"));
+  await TestUtils.waitForCondition(() => navbar.hasAttribute("overflowing"));
   ok(navbar.hasAttribute("overflowing"), "Should have an overflowing toolbar.");
 
   sidebarButtonPlacement = CustomizableUI.getPlacementOfWidget("sidebar-button");
