@@ -1281,6 +1281,23 @@ void CompareManager::Cleanup() {
   }
 }
 
+class NoopPromiseHandler final : public PromiseNativeHandler {
+ public:
+  NS_DECL_ISUPPORTS
+
+  NoopPromiseHandler() { AssertIsOnMainThread(); }
+
+  void ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override {
+  }
+  void RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override {
+  }
+
+ private:
+  ~NoopPromiseHandler() { AssertIsOnMainThread(); }
+};
+
+NS_IMPL_ISUPPORTS0(NoopPromiseHandler)
+
 }  
 
 nsresult PurgeCache(nsIPrincipal* aPrincipal, const nsAString& aCacheName) {
@@ -1305,6 +1322,11 @@ nsresult PurgeCache(nsIPrincipal* aPrincipal, const nsAString& aCacheName) {
   if (NS_WARN_IF(rv.Failed())) {
     return rv.StealNSResult();
   }
+
+  
+  
+  RefPtr<NoopPromiseHandler> promiseHandler = new NoopPromiseHandler();
+  promise->AppendNativeHandler(promiseHandler);
 
   
   return NS_OK;
