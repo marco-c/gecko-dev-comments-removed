@@ -12,6 +12,7 @@
 #include "mozilla/dom/TextTrackCueList.h"
 #include "mozilla/StaticPtr.h"
 #include "nsContentUtils.h"
+#include "TimeUnits.h"
 
 class nsIWebVTTParserWrapper;
 
@@ -118,14 +119,12 @@ class TextTrackManager final : public nsIDOMEventListener {
 
   
   RefPtr<TextTrackCueList> mNewCues;
-  
-  RefPtr<TextTrackCueList> mLastActiveCues;
 
   
   
   bool mHasSeeked;
   
-  double mLastTimeMarchesOnCalled;
+  media::TimeUnit mLastTimeMarchesOnCalled;
 
   bool mTimeMarchesOnDispatched;
   bool mUpdateCueDisplayDispatched;

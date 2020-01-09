@@ -12,6 +12,7 @@
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsString.h"
+#include "TimeUnits.h"
 
 namespace mozilla {
 namespace dom {
@@ -106,7 +107,13 @@ class TextTrack final : public DOMEventTargetHelper {
   
   
   
-  void GetCurrentCueList(RefPtr<TextTrackCueList>& aCueList) const;
+  
+  
+  
+  void GetCurrentCuesAndOtherCues(
+    RefPtr<TextTrackCueList>& aCurrentCues,
+    RefPtr<TextTrackCueList>& aOtherCues,
+    const media::TimeInterval& aInterval) const;
 
  private:
   ~TextTrack();
