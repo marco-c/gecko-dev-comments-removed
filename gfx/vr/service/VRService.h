@@ -63,6 +63,9 @@ class VRService {
   base::ProcessHandle mTargetShmemFile;
   VRHapticState mLastHapticState[kVRHapticsMaxCount];
   TimeStamp mFrameStartTime[kVRFrameTimingHistoryDepth];
+#if defined(XP_WIN)
+  HANDLE mMutex;
+#endif
   
   
   
