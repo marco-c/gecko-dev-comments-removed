@@ -894,7 +894,16 @@ HTMLTooltip.prototype = {
   },
 
   _getTopWindow: function() {
-    return this.doc.defaultView.top;
+    const win = this.doc.defaultView;
+    if (win.windowRoot) {
+      
+      
+      
+      
+      return win.windowRoot.ownerGlobal;
+    }
+    
+    return win.top;
   },
 
   
