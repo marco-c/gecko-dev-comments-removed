@@ -59,9 +59,6 @@ const PREF_LEGACY_ENABLED = "extensions.legacy.enabled";
 const LOADING_MSG_DELAY = 100;
 
 const UPDATES_RECENT_TIMESPAN = 2 * 24 * 3600000; 
-const UPDATES_RELEASENOTES_TRANSFORMFILE = "chrome://mozapps/content/extensions/updateinfo.xsl";
-
-const XMLURI_PARSE_ERROR = "http://www.mozilla.org/newlayout/xml/parsererror.xml";
 
 var gViewDefault = "addons://discover/";
 
