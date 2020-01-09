@@ -37,7 +37,7 @@ def addEntriesToListFile(listFile, entries):
         with open(listFile, 'wb') as f:
             f.write("\n".join(sorted(existing))+"\n")
     finally:
-        lock = None
+        del lock  
 
 
 def main(args):

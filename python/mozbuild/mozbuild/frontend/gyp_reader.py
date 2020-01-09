@@ -10,7 +10,6 @@ import sys
 import os
 import time
 import types
-import warnings
 
 import mozpack.path as mozpath
 from mozpack.files import FileFinder
@@ -23,10 +22,7 @@ from .context import (
 )
 from mozbuild.util import (
     expand_variables,
-    List,
-    memoize,
 )
-from .reader import SandboxValidationError
 
 
 
@@ -94,7 +90,10 @@ def handle_actions(actions, context, action_overrides):
         output = outputs[0]
         if not output.startswith(idir):
             raise NotImplementedError(
-                'GYP actions outputting to somewhere other than <(INTERMEDIATE_DIR) not supported: %s' % output)
+                'GYP actions outputting to somewhere other than '
+                '<(INTERMEDIATE_DIR) not supported: %s'
+                % output
+            )
         output = output[len(idir):]
         context['GENERATED_FILES'] += [output]
         g = context['GENERATED_FILES'][output]
@@ -208,7 +207,8 @@ def process_gyp_result(gyp_result, gyp_dir_attrs, path, config, output,
                 context['PROGRAM'] = name.decode('utf-8')
             if spec['type'] == 'shared_library':
                 context['FORCE_SHARED_LIB'] = True
-            elif spec['type'] == 'static_library' and spec.get('variables', {}).get('no_expand_libs', '0') == '1':
+            elif spec['type'] == 'static_library' and \
+                    spec.get('variables', {}).get('no_expand_libs', '0') == '1':
                 
                 
                 
@@ -256,7 +256,8 @@ def process_gyp_result(gyp_result, gyp_dir_attrs, path, config, output,
                     name, value = define.split('=', 1)
                     
                     
-                    if name == 'NSS_ALLOW_SSLKEYLOGFILE' and config.substs.get('RELEASE_OR_BETA', False):
+                    if name == 'NSS_ALLOW_SSLKEYLOGFILE' and \
+                            config.substs.get('RELEASE_OR_BETA', False):
                         continue
                     context['DEFINES'][name] = value
                 else:
