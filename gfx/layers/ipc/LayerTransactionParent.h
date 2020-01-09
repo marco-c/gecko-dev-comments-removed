@@ -162,7 +162,7 @@ class LayerTransactionParent final : public PLayerTransactionParent,
     Release();
   }
   friend class CompositorBridgeParent;
-  friend class CrossProcessCompositorBridgeParent;
+  friend class ContentCompositorBridgeParent;
 
  private:
   

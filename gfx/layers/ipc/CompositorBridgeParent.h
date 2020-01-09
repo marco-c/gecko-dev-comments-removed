@@ -81,7 +81,7 @@ class HostLayerManager;
 class IAPZCTreeManager;
 class LayerTransactionParent;
 class PAPZParent;
-class CrossProcessCompositorBridgeParent;
+class ContentCompositorBridgeParent;
 class CompositorThreadHolder;
 class InProcessCompositorSession;
 class WebRenderBridgeParent;
@@ -496,7 +496,7 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
     
     
     
-    CrossProcessCompositorBridgeParent* mCrossProcessParent;
+    ContentCompositorBridgeParent* mCrossProcessParent;
     TargetConfig mTargetConfig;
     LayerTransactionParent* mLayerTree;
     nsTArray<PluginWindowData> mPluginData;

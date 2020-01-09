@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_layers_CrossProcessCompositorBridgeParent_h
-#define mozilla_layers_CrossProcessCompositorBridgeParent_h
+#ifndef mozilla_layers_ContentCompositorBridgeParent_h
+#define mozilla_layers_ContentCompositorBridgeParent_h
 
 #include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/CompositorThread.h"
@@ -22,12 +22,11 @@ class CompositorOptions;
 
 
 
-class CrossProcessCompositorBridgeParent final
-    : public CompositorBridgeParentBase {
+class ContentCompositorBridgeParent final : public CompositorBridgeParentBase {
   friend class CompositorBridgeParent;
 
  public:
-  explicit CrossProcessCompositorBridgeParent(CompositorManagerParent* aManager)
+  explicit ContentCompositorBridgeParent(CompositorManagerParent* aManager)
       : CompositorBridgeParentBase(aManager),
         mNotifyAfterRemotePaint(false),
         mDestroyCalled(false) {}
@@ -186,14 +185,14 @@ class CrossProcessCompositorBridgeParent final
 
  private:
   
-  virtual ~CrossProcessCompositorBridgeParent();
+  virtual ~ContentCompositorBridgeParent();
 
   void DeferredDestroy();
 
   
   
   
-  RefPtr<CrossProcessCompositorBridgeParent> mSelfRef;
+  RefPtr<ContentCompositorBridgeParent> mSelfRef;
 
   
   
