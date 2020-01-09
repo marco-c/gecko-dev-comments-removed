@@ -81,6 +81,8 @@ function createClientMock() {
       sharedWorkers: [],
     }),
     
+    getMainProcess: () => {},
+    
     getFront: () => {},
     
     onFront: () => {},
@@ -120,5 +122,4 @@ function createThisFirefoxClientMock() {
 
   return mockThisFirefoxClient;
 }
-
 
