@@ -6520,16 +6520,11 @@ uint32_t nsIScrollableFrame::GetPerceivedScrollingDirections() const {
 }
 
 static nsRect InflateByScrollMargin(const nsRect& aTargetRect,
-                                    const StyleRect<StyleLength>& aScrollMargin,
+                                    const nsMargin& aScrollMargin,
                                     const nsRect& aScrolledRect) {
-  nsMargin scrollMargin(aScrollMargin.Get(eSideTop).ToAppUnits(),
-                        aScrollMargin.Get(eSideRight).ToAppUnits(),
-                        aScrollMargin.Get(eSideBottom).ToAppUnits(),
-                        aScrollMargin.Get(eSideLeft).ToAppUnits());
-
   
   nsRect result = aTargetRect;
-  result.Inflate(scrollMargin);
+  result.Inflate(aScrollMargin);
 
   
   return result.Intersect(aScrolledRect);
@@ -6565,8 +6560,8 @@ static void AppendScrollPositionsForSnap(const nsIFrame* aFrame,
         ScrollSnapInfo::ScrollSnapRange(targetRect.Y(), targetRect.YMost()));
   }
 
-  targetRect = InflateByScrollMargin(
-      targetRect, aFrame->StyleMargin()->mScrollMargin, aScrolledRect);
+  nsMargin scrollMargin = aFrame->StyleMargin()->GetScrollMargin();
+  targetRect = InflateByScrollMargin(targetRect, scrollMargin, aScrolledRect);
 
   
   

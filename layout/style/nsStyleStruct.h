@@ -714,6 +714,13 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleMargin {
     return true;
   }
 
+  nsMargin GetScrollMargin() const {
+    return nsMargin(mScrollMargin.Get(mozilla::eSideTop).ToAppUnits(),
+                    mScrollMargin.Get(mozilla::eSideRight).ToAppUnits(),
+                    mScrollMargin.Get(mozilla::eSideBottom).ToAppUnits(),
+                    mScrollMargin.Get(mozilla::eSideLeft).ToAppUnits());
+  }
+
   
   
   inline bool HasBlockAxisAuto(mozilla::WritingMode aWM) const;

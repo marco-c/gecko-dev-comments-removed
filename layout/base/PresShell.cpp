@@ -3459,6 +3459,14 @@ void nsIPresShell::DoScrollContentIntoView() {
 
   
   
+  nsMargin scrollMargin;
+  if (!(data->mContentToScrollToFlags &
+        nsIPresShell::SCROLL_IGNORE_SCROLL_MARGIN_AND_PADDING)) {
+    scrollMargin = frame->StyleMargin()->GetScrollMargin();
+  }
+
+  
+  
   
   
   
@@ -3482,6 +3490,8 @@ void nsIPresShell::DoScrollContentIntoView() {
     AccumulateFrameBounds(container, frame, useWholeLineHeightForInlines,
                           frameBounds, haveRect, prevBlock, lines, curLine);
   } while ((frame = frame->GetNextContinuation()));
+
+  frameBounds.Inflate(scrollMargin);
 
   ScrollFrameRectIntoView(container, frameBounds, data->mContentScrollVAxis,
                           data->mContentScrollHAxis,
