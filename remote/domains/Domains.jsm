@@ -71,6 +71,13 @@ class Domains {
     return inst;
   }
 
+  
+
+
+  has(name) {
+    return name in this.modules;
+  }
+
   get size() {
     return this.instances.size;
   }
