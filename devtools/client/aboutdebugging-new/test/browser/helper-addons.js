@@ -29,6 +29,29 @@ async function enableExtensionDebugging() {
 
 
 
+function installRegularExtension(pathOrFile) {
+  const isFile = typeof pathOrFile.isFile === "function" && pathOrFile.isFile();
+  const file = isFile ? pathOrFile : _getSupportsFile(pathOrFile).file;
+  return new Promise(async (resolve, reject) => {
+    const install = await AddonManager.getInstallForFile(file);
+    if (!install) {
+      throw new Error(`An install was not created for ${file.path}`);
+    }
+    install.addListener({
+      onDownloadFailed: reject,
+      onDownloadCancelled: reject,
+      onInstallFailed: reject,
+      onInstallCancelled: reject,
+      onInstallEnded: resolve,
+    });
+    install.install();
+  });
+}
+
+
+
+
+
 
 async function installTemporaryExtension(pathOrFile, name, document) {
   
@@ -144,27 +167,5 @@ class TemporaryExtension {
   remove() {
     return this.tmpDir.remove(true);
   }
-}
-
-
-
-
-
-function installRegularAddon(filePath) {
-  const file = _getSupportsFile(filePath).file;
-  return new Promise(async (resolve, reject) => {
-    const install = await AddonManager.getInstallForFile(file);
-    if (!install) {
-      throw new Error(`An install was not created for ${filePath}`);
-    }
-    install.addListener({
-      onDownloadFailed: reject,
-      onDownloadCancelled: reject,
-      onInstallFailed: reject,
-      onInstallCancelled: reject,
-      onInstallEnded: resolve,
-    });
-    install.install();
-  });
 }
 
