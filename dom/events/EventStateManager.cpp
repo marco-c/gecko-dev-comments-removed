@@ -1096,9 +1096,7 @@ static bool HandleAccessKeyInRemoteChild(BrowserParent* aBrowserParent,
   AccessKeyInfo* accessKeyInfo = static_cast<AccessKeyInfo*>(aArg);
 
   
-  bool active;
-  aBrowserParent->GetDocShellIsActive(&active);
-  if (active) {
+  if (aBrowserParent->GetDocShellIsActive()) {
     
     
     
