@@ -36,12 +36,6 @@ const PREF_WEBEXT_PERM_PROMPTS        = "extensions.webextPermissionPrompts";
 
 const UPDATE_REQUEST_VERSION          = 2;
 
-const XMLURI_BLOCKLIST                = "http://www.mozilla.org/2006/addons-blocklist";
-
-const KEY_PROFILEDIR                  = "ProfD";
-const KEY_APPDIR                      = "XCurProcD";
-const FILE_BLOCKLIST                  = "blocklist.xml";
-
 const BRANCH_REGEXP                   = /^([^\.]+\.[0-9]+[a-z]*).*/gi;
 const PREF_EM_CHECK_COMPATIBILITY_BASE = "extensions.checkCompatibility";
 var PREF_EM_CHECK_COMPATIBILITY = MOZ_COMPATIBILITY_NIGHTLY ?
@@ -62,12 +56,11 @@ const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm")
 
 var {AsyncShutdown} = ChromeUtils.import("resource://gre/modules/AsyncShutdown.jsm");
 
-XPCOMUtils.defineLazyGlobalGetters(this, ["DOMParser", "Element"]);
+XPCOMUtils.defineLazyGlobalGetters(this, ["Element"]);
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   AddonRepository: "resource://gre/modules/addons/AddonRepository.jsm",
   Extension: "resource://gre/modules/Extension.jsm",
-  FileUtils: "resource://gre/modules/FileUtils.jsm",
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(this, "WEBEXT_PERMISSION_PROMPTS",
@@ -556,82 +549,6 @@ var AddonManagerInternal = {
     this.TelemetryTimestamps.add(name, value);
   },
 
-  validateBlocklist() {
-    let appBlocklist = FileUtils.getFile(KEY_APPDIR, [FILE_BLOCKLIST]);
-
-    
-    if (!appBlocklist.exists())
-      return;
-
-    let profileBlocklist = FileUtils.getFile(KEY_PROFILEDIR, [FILE_BLOCKLIST]);
-
-    
-    
-    if (!profileBlocklist.exists()) {
-      try {
-        appBlocklist.copyTo(profileBlocklist.parent, FILE_BLOCKLIST);
-      } catch (e) {
-        logger.warn("Failed to copy the application shipped blocklist to the profile", e);
-      }
-      return;
-    }
-
-    let fileStream = Cc["@mozilla.org/network/file-input-stream;1"].
-                     createInstance(Ci.nsIFileInputStream);
-    try {
-      let cstream = Cc["@mozilla.org/intl/converter-input-stream;1"].
-                    createInstance(Ci.nsIConverterInputStream);
-      fileStream.init(appBlocklist, FileUtils.MODE_RDONLY, FileUtils.PERMS_FILE, 0);
-      cstream.init(fileStream, "UTF-8", 0, 0);
-
-      let data = "";
-      let str = {};
-      let read = 0;
-      do {
-        read = cstream.readString(0xffffffff, str);
-        data += str.value;
-      } while (read != 0);
-
-      let parser = new DOMParser();
-      var doc = parser.parseFromString(data, "text/xml");
-    } catch (e) {
-      logger.warn("Application shipped blocklist could not be loaded", e);
-      return;
-    } finally {
-      try {
-        fileStream.close();
-      } catch (e) {
-        logger.warn("Unable to close blocklist file stream", e);
-      }
-    }
-
-    
-    
-    if (doc.documentElement.namespaceURI != XMLURI_BLOCKLIST) {
-      logger.warn("Application shipped blocklist has an unexpected namespace (" +
-                  doc.documentElement.namespaceURI + ")");
-      return;
-    }
-
-    
-    
-    if (!doc.documentElement.hasAttribute("lastupdate"))
-      return;
-
-    
-    
-    if (doc.documentElement.getAttribute("lastupdate") <=
-        profileBlocklist.lastModifiedTime)
-      return;
-
-    
-    try {
-      appBlocklist.copyTo(profileBlocklist.parent, FILE_BLOCKLIST);
-    } catch (e) {
-      logger.warn("Failed to copy the application shipped blocklist to the profile", e);
-    }
-  },
-
   
 
 
@@ -726,7 +643,6 @@ var AddonManagerInternal = {
                                    Services.appinfo.platformVersion);
         Services.prefs.setIntPref(PREF_BLOCKLIST_PINGCOUNTVERSION,
                                   (appChanged === undefined ? 0 : -1));
-        this.validateBlocklist();
       }
 
       if (!MOZ_COMPATIBILITY_NIGHTLY) {
