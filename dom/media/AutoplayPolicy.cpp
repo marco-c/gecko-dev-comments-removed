@@ -88,16 +88,6 @@ static bool IsWindowAllowedToPlay(nsPIDOMWindowInner* aWindow) {
     return false;
   }
 
-  
-  
-  
-  
-  
-  if (!FeaturePolicyUtils::IsFeatureAllowed(aWindow->GetExtantDoc(),
-                                            NS_LITERAL_STRING("autoplay"))) {
-    return false;
-  }
-
   Document* approver = ApproverDocOf(*aWindow->GetExtantDoc());
   if (!approver) {
     return false;

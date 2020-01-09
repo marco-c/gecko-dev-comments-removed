@@ -25,6 +25,10 @@ struct FeatureMap {
 
 
 static FeatureMap sSupportedFeatures[] = {
+    
+    
+    
+    
     {"autoplay", FeaturePolicyUtils::FeaturePolicyValue::eAll},
     {"camera", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
     {"encrypted-media", FeaturePolicyUtils::FeaturePolicyValue::eAll},
