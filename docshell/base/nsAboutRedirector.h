@@ -23,4 +23,12 @@ class nsAboutRedirector : public nsIAboutModule {
   virtual ~nsAboutRedirector() {}
 };
 
+
+#define NS_ABOUT_REDIRECTOR_MODULE_CID               \
+  {                                                  \
+    0x56ebedd4, 0x6ccf, 0x48e8, {                    \
+      0xbd, 0xae, 0xad, 0xc7, 0x7f, 0x04, 0x45, 0x67 \
+    }                                                \
+  }
+
 #endif  

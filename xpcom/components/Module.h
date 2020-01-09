@@ -39,8 +39,6 @@ struct Module {
 
 
 
-  
-  
   enum ProcessSelector {
     ANY_PROCESS = 0x0,
     MAIN_PROCESS_ONLY = 0x1,
@@ -60,9 +58,6 @@ struct Module {
     ALLOW_IN_GPU_VR_AND_SOCKET_PROCESS =
         ALLOW_IN_GPU_PROCESS | ALLOW_IN_VR_PROCESS | ALLOW_IN_SOCKET_PROCESS
   };
-
-  static constexpr size_t kMaxProcessSelector =
-      size_t(ProcessSelector::ALLOW_IN_GPU_VR_AND_SOCKET_PROCESS);
 
   
 
