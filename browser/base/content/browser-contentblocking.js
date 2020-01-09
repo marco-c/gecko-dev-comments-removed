@@ -1081,9 +1081,6 @@ var ContentBlocking = {
 
     
     if (!baseURI) {
-      this.iconBox.removeAttribute("animate");
-      this.iconBox.removeAttribute("active");
-      this.iconBox.removeAttribute("hasException");
       return;
     }
     
@@ -1098,6 +1095,9 @@ var ContentBlocking = {
 
     
     if (!baseURI) {
+      this.iconBox.removeAttribute("animate");
+      this.iconBox.removeAttribute("active");
+      this.iconBox.removeAttribute("hasException");
       return;
     }
 
