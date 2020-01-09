@@ -1,9 +1,9 @@
-
-
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
-do_get_profile(); 
+do_get_profile(); // so we can use FxAccounts
 
 const {HttpServer} = ChromeUtils.import("resource://testing-common/httpd.js");
 const {CommonUtils} = ChromeUtils.import("resource://services-common/utils.js");
@@ -18,13 +18,13 @@ const {
 const {BulkKeyBundle} = ChromeUtils.import("resource://services-sync/keys.js");
 const {Utils} = ChromeUtils.import("resource://services-sync/util.js");
 
-
-
+/* globals BulkKeyBundle, CommonUtils, EncryptionRemoteTransformer */
+/* globals Utils */
 
 function handleCannedResponse(cannedResponse, request, response) {
   response.setStatusLine(null, cannedResponse.status.status,
                          cannedResponse.status.statusText);
-  
+  // send the headers
   for (let headerLine of cannedResponse.sampleHeaders) {
     let headerElements = headerLine.split(":");
     response.setHeader(headerElements[0], headerElements[1].trimLeft());
@@ -44,29 +44,29 @@ function collectionRecordsPath(collectionId) {
 
 class KintoServer {
   constructor() {
-    
+    // Set up an HTTP Server
     this.httpServer = new HttpServer();
     this.httpServer.start(-1);
 
-    
-    
+    // Set<Object> corresponding to records that might be served.
+    // The format of these objects is defined in the documentation for #addRecord.
     this.records = [];
 
-    
+    // Collections that we have set up access to (see `installCollection`).
     this.collections = new Set();
 
-    
+    // ETag to serve with responses
     this.etag = 1;
 
     this.port = this.httpServer.identity.primaryPort;
 
-    
+    // POST requests we receive from the client go here
     this.posts = [];
-    
+    // DELETEd buckets will go here.
     this.deletedBuckets = [];
-    
+    // Anything in here will force the next POST to generate a conflict
     this.conflicts = [];
-    
+    // If this is true, reject the next request with a 401
     this.rejectNextAuthResponse = false;
     this.failedAuths = [];
 
@@ -92,7 +92,7 @@ class KintoServer {
   }
 
   checkAuth(request, response) {
-    
+    // FIXME: assert auth is "Bearer ...token..."
     if (this.rejectNextAuthResponse) {
       response.setStatusLine(null, 401, "Unauthorized");
       response.write(this.rejectNextAuthResponse);
@@ -173,8 +173,8 @@ class KintoServer {
 
           return {
             path: req.path,
-            status: 201,   
-            headers: {"ETag": 3000},   
+            status: 201,   // FIXME -- only for new posts??
+            headers: {"ETag": 3000},   // FIXME???
             body: oneBody,
           };
         }),
@@ -191,7 +191,7 @@ class KintoServer {
             return {
               path: req.path,
               status: 412,
-              headers: {"ETag": this.etag}, 
+              headers: {"ETag": this.etag}, // is this correct??
               body: {
                 details: {
                   existing: data,
@@ -204,12 +204,12 @@ class KintoServer {
 
       response.write(JSON.stringify(postResponse));
 
-      
-      
-      
-      
-      
-      
+      //   "sampleHeaders": [
+      //     "Access-Control-Allow-Origin: *",
+      //     "Access-Control-Expose-Headers: Retry-After, Content-Length, Alert, Backoff",
+      //     "Server: waitress",
+      //     "Etag: \"4000\""
+      //   ],
     }
 
     this.httpServer.registerPathHandler(batchPath, handlePost.bind(this));
@@ -222,21 +222,21 @@ class KintoServer {
     });
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Add a record to those that can be served by this server.
+   *
+   * @param {Object} properties  An object describing the record that
+   *   should be served. The properties of this object are:
+   * - collectionId {string} This record should only be served if a
+   *   request is for this collection.
+   * - predicate {Function} If present, this record should only be served if the
+   *   predicate returns true. The predicate will be called with
+   *   {request: Request, response: Response, since: number, server: KintoServer}.
+   * - data {string} The record to serve.
+   * - conflict {boolean} If present and true, this record is added to
+   *   "conflicts" and won't be served, but will cause a conflict on
+   *   the next push.
+   */
   addRecord(properties) {
     if (!properties.conflict) {
       this.records.push(properties);
@@ -247,14 +247,14 @@ class KintoServer {
     this.installCollection(properties.collectionId);
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * Tell the server to set up a route for this collection.
+   *
+   * This will automatically be called for any collection to which you `addRecord`.
+   *
+   * @param {string} collectionId   the collection whose route we
+   *    should set up.
+   */
   installCollection(collectionId) {
     if (this.collections.has(collectionId)) {
       return;
@@ -334,20 +334,20 @@ class KintoServer {
       }
 
       this.deletedBuckets.push(bucket);
-      
+      // Fake like this actually deletes the records.
       this.records = [];
 
       response.write(JSON.stringify({
         data: {
           deleted: true,
           last_modified: 1475161309026,
-          id: "b09f1618-d789-302d-696e-74ec53ee18a8", 
+          id: "b09f1618-d789-302d-696e-74ec53ee18a8", // FIXME
         },
       }));
     });
   }
 
-  
+  // Utility function to install a keyring at the start of a test.
   async installKeyRing(fxaService, keysData, salts, etag, properties) {
     const keysRecord = {
       "id": "keys",
@@ -374,30 +374,30 @@ class KintoServer {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Predicate that represents a record appearing at some time.
+ * Requests with "_since" before this time should see this record,
+ * unless the server itself isn't at this time yet (etag is before
+ * this time).
+ *
+ * Requests with _since after this time shouldn't see this record any
+ * more, since it hasn't changed after this time.
+ *
+ * @param {int} startTime  the etag at which time this record should
+ *    start being available (and thus, the predicate should start
+ *    returning true)
+ * @returns {Function}
+ */
 function appearsAt(startTime) {
   return function({since, server}) {
     return since < startTime && startTime < server.etag;
   };
 }
 
-
+// Run a block of code with access to a KintoServer.
 async function withServer(f) {
   let server = new KintoServer();
-  
+  // Point the sync.storage client to use the test server we've just started.
   Services.prefs.setCharPref("webextensions.storage.sync.serverURL",
                              `http://localhost:${server.port}/v1`);
   try {
@@ -407,9 +407,9 @@ async function withServer(f) {
   }
 }
 
-
-
-
+// Run a block of code with access to both a sync context and a
+// KintoServer. This is meant as a workaround for eslint's refusal to
+// let me have 5 nested callbacks.
 async function withContextAndServer(f) {
   await withSyncContext(async function(context) {
     await withServer(async function(server) {
@@ -418,9 +418,9 @@ async function withContextAndServer(f) {
   });
 }
 
-
-
-
+// Run a block of code with fxa mocked out to return a specific user.
+// Calls the given function with an ExtensionStorageSync instance that
+// was constructed using a mocked FxAccounts instance.
 async function withSignedInUser(user, f) {
   let fxaServiceMock = {
     getSignedInUser() {
@@ -462,36 +462,36 @@ async function withSignedInUser(user, f) {
   await f(extensionStorageSync, fxaServiceMock);
 }
 
+// Some assertions that make it easier to write tests about what was
+// posted and when.
 
-
-
-
-
-
-function assertAuthenticatedRequest(post) {
+// Assert that a post in a batch was made with the correct access token.
+// This should be true of all requests, so this is usually called from
+// another assertion.
+function assertAuthenticatedPost(post) {
   equal(post.headers.Authorization, "Bearer some-access-token");
 }
 
-
-
-
-
+// Assert that this post was made with the correct request headers to
+// create a new resource while protecting against someone else
+// creating it at the same time (in other words, "If-None-Match: *").
+// Also calls assertAuthenticatedPost(post).
 function assertPostedNewRecord(post) {
-  assertAuthenticatedRequest(post);
+  assertAuthenticatedPost(post);
   equal(post.headers["If-None-Match"], "*");
 }
 
-
-
-
-
+// Assert that this post was made with the correct request headers to
+// update an existing resource while protecting against concurrent
+// modification (in other words, `If-Match: "${etag}"`).
+// Also calls assertAuthenticatedPost(post).
 function assertPostedUpdatedRecord(post, since) {
-  assertAuthenticatedRequest(post);
+  assertAuthenticatedPost(post);
   equal(post.headers["If-Match"], `"${since}"`);
 }
 
-
-
+// Assert that this post was an encrypted keyring, and produce the
+// decrypted body. Sanity check the body while we're here.
 const assertPostedEncryptedKeys = async function(fxaService, post) {
   equal(post.path, collectionRecordsPath("storage-sync-crypto") + "/keys");
 
@@ -502,7 +502,7 @@ const assertPostedEncryptedKeys = async function(fxaService, post) {
   return body;
 };
 
-
+// assertEqual, but for keyring[extensionId] == key.
 function assertKeyRingKey(keyRing, extensionId, expectedKey, message) {
   if (!message) {
     message = `expected keyring's key for ${extensionId} to match ${expectedKey.keyPairB64}`;
@@ -513,7 +513,7 @@ function assertKeyRingKey(keyRing, extensionId, expectedKey, message) {
             message);
 }
 
-
+// Assert that this post was posted for a given extension.
 const assertExtensionRecord = async function(fxaService, post, extension, key) {
   const extensionId = extension.id;
   const cryptoCollection = new CryptoCollection(fxaService);
@@ -528,7 +528,7 @@ const assertExtensionRecord = async function(fxaService, post, extension, key) {
   return decoded;
 };
 
-
+// Tests using this ID will share keys in local storage, so be careful.
 const defaultExtensionId = "{13bdde76-4dc7-11e6-9bdc-54ee758d6342}";
 const defaultExtension = {id: defaultExtensionId};
 
@@ -577,11 +577,11 @@ add_task(async function test_key_to_id() {
 
 add_task(async function test_extension_id_to_collection_id() {
   const extensionId = "{9419cce6-5435-11e6-84bf-54ee758d6342}";
-  
-  
-  
+  // FIXME: this doesn't actually require the signed in user, but the
+  // extensionIdToCollectionId method exists on CryptoCollection,
+  // which needs an fxaService to be instantiated.
   await withSignedInUser(loggedInUser, async function(extensionStorageSync, fxaService) {
-    
+    // Fake a static keyring since the server doesn't exist.
     const salt = "Scgx8RJ8Y0rxMGFYArUiKeawlW+0zJyFmtTDvro9qPo=";
     const cryptoCollection = new CryptoCollection(fxaService);
     await cryptoCollection._setSalt(extensionId, salt);
@@ -608,17 +608,17 @@ add_task(async function ensureCanSync_clearAll() {
       const post = posts[0];
       assertPostedNewRecord(post);
 
-      
+      // Set data for an extension and sync.
       await extensionStorageSync.set(extension, {"my-key": 5}, context);
       let keyValue = await extensionStorageSync.get(extension, ["my-key"], context);
       equal(keyValue["my-key"], 5, "should get back the data we set");
 
-      
+      // clear everything.
       await extensionStorageSync.clearAll();
 
       keyValue = await extensionStorageSync.get(extension, ["my-key"], context);
       deepEqual(keyValue, {}, "should have lost the data");
-      
+      // should have been no posts caused by the clear.
       equal(posts.length, 1);
     });
   });
@@ -643,11 +643,11 @@ add_task(async function ensureCanSync_posts_new_keys() {
       ok(body.keys.collections[extensionId], `keys object should have a key for ${extensionId}`);
       ok(oldSalt, `salts object should have a salt for ${extensionId}`);
 
-      
-      
+      // Try adding another key to make sure that the first post was
+      // OK, even on a new profile.
       await extensionStorageSync.cryptoCollection._clear();
       server.clearPosts();
-      
+      // Restore the first posted keyring, but add a last_modified date
       const firstPostedKeyring = Object.assign({}, post.body.data, {last_modified: server.etag});
       server.addRecord({
         data: firstPostedKeyring,
@@ -673,12 +673,12 @@ add_task(async function ensureCanSync_posts_new_keys() {
 });
 
 add_task(async function ensureCanSync_pulls_key() {
-  
-  
-  
-  
-  
-  
+  // ensureCanSync is implemented by adding a key to our local record
+  // and doing a sync. This means that if the same key exists
+  // remotely, we get a "conflict". Ensure that we handle this
+  // correctly -- we keep the server key (since presumably it's
+  // already been used to encrypt records) and we don't wipe out other
+  // collections' keys.
   const extensionId = uuid();
   const extensionId2 = uuid();
   const extensionOnlyKey = uuid();
@@ -689,7 +689,7 @@ add_task(async function ensureCanSync_pulls_key() {
   await RANDOM_KEY.generateRandom();
   await withContextAndServer(async function(context, server) {
     await withSignedInUser(loggedInUser, async function(extensionStorageSync, fxaService) {
-      
+      // FIXME: generating a random salt probably shouldn't require a CryptoCollection?
       const cryptoCollection = new CryptoCollection(fxaService);
       const RANDOM_SALT = cryptoCollection.getNewSalt();
       await extensionStorageSync.cryptoCollection._clear();
@@ -713,7 +713,7 @@ add_task(async function ensureCanSync_pulls_key() {
       equal(posts.length, 0,
             "ensureCanSync shouldn't push when the server keyring has the right key");
 
-      
+      // Another client generates a key for extensionId2
       const newKey = new BulkKeyBundle(extensionId2);
       await newKey.generateRandom();
       keysData.collections[extensionId2] = newKey.keyPairB64;
@@ -730,7 +730,7 @@ add_task(async function ensureCanSync_pulls_key() {
       posts = server.getPosts();
       equal(posts.length, 0, "ensureCanSync shouldn't push when updating keys");
 
-      
+      // Another client generates a key, but not a salt, for extensionOnlyKey
       const onlyKey = new BulkKeyBundle(extensionOnlyKey);
       await onlyKey.generateRandom();
       keysData.collections[extensionOnlyKey] = onlyKey.keyPairB64;
@@ -747,12 +747,12 @@ add_task(async function ensureCanSync_pulls_key() {
       posts = server.getPosts();
       equal(posts.length, 1, "ensureCanSync should push when generating a new salt");
       const withNewKeyRecord = await assertPostedEncryptedKeys(fxaService, posts[0]);
-      
+      // We don't a priori know what the new salt is
       dump(`${JSON.stringify(withNewKeyRecord)}\n`);
       ok(withNewKeyRecord.salts[extensionOnlyKey],
          `ensureCanSync should generate a salt for an extension that only had a key`);
 
-      
+      // Another client generates a key, but not a salt, for extensionOnlyKey
       const newSalt = cryptoCollection.getNewSalt();
       saltData[extensionOnlySalt] = newSalt;
       await server.installKeyRing(fxaService, keysData, saltData, 1250, {
@@ -762,7 +762,7 @@ add_task(async function ensureCanSync_pulls_key() {
       let withOnlySaltKey = await extensionStorageSync.ensureCanSync([extensionId, extensionOnlySalt]);
       assertKeyRingKey(withOnlySaltKey, extensionId, RANDOM_KEY,
                        `ensureCanSync shouldn't lose the old key for ${extensionId}`);
-      
+      // We don't a priori know what the new key is
       ok(withOnlySaltKey.hasKeysFor([extensionOnlySalt]),
          `ensureCanSync generated a key for an extension that only had a salt`);
 
@@ -776,11 +776,11 @@ add_task(async function ensureCanSync_pulls_key() {
 });
 
 add_task(async function ensureCanSync_handles_conflicts() {
-  
-  
-  
-  
-  
+  // Syncing is done through a pull followed by a push of any merged
+  // changes. Accordingly, the only way to have a "true" conflict --
+  // i.e. with the server rejecting a change -- is if
+  // someone pushes changes between our pull and our push. Ensure that
+  // if this happens, we still behave sensibly (keep the remote key).
   const extensionId = uuid();
   const DEFAULT_KEY = new BulkKeyBundle("[default]");
   await DEFAULT_KEY.generateRandom();
@@ -788,7 +788,7 @@ add_task(async function ensureCanSync_handles_conflicts() {
   await RANDOM_KEY.generateRandom();
   await withContextAndServer(async function(context, server) {
     await withSignedInUser(loggedInUser, async function(extensionStorageSync, fxaService) {
-      
+      // FIXME: generating salts probably shouldn't rely on a CryptoCollection
       const cryptoCollection = new CryptoCollection(fxaService);
       const RANDOM_SALT = cryptoCollection.getNewSalt();
       const keysData = {
@@ -814,8 +814,8 @@ add_task(async function ensureCanSync_handles_conflicts() {
       const failedPost = posts[0];
       assertPostedNewRecord(failedPost);
       let body = await assertPostedEncryptedKeys(fxaService, failedPost);
-      
-      
+      // This key will be the one the client generated locally, so
+      // we don't know what its value will be
       ok(body.keys.collections[extensionId],
          `decrypted failed post should have a key for ${extensionId}`);
       notEqual(body.keys.collections[extensionId], RANDOM_KEY.keyPairB64,
@@ -825,8 +825,8 @@ add_task(async function ensureCanSync_handles_conflicts() {
 });
 
 add_task(async function ensureCanSync_handles_deleted_conflicts() {
-  
-  
+  // A keyring can be deleted, and this changes the format of the 412
+  // Conflict response from the Kinto server. Make sure we handle it correctly.
   const extensionId = uuid();
   const extensionId2 = uuid();
   await withContextAndServer(async function(context, server) {
@@ -836,16 +836,16 @@ add_task(async function ensureCanSync_handles_deleted_conflicts() {
       server.etag = 700;
       await extensionStorageSync.cryptoCollection._clear();
 
-      
+      // Generate keys that we can check for later.
       let collectionKeys = await extensionStorageSync.ensureCanSync([extensionId]);
       const extensionKey = collectionKeys.keyForCollection(extensionId);
       server.clearPosts();
 
-      
-      
+      // This is the response that the Kinto server return when the
+      // keyring has been deleted.
       server.addRecord({collectionId: "storage-sync-crypto", conflict: true, transient: true, data: null, etag: 765});
 
-      
+      // Try to add a new extension to trigger a sync of the keyring.
       let collectionKeys2 = await extensionStorageSync.ensureCanSync([extensionId2]);
 
       assertKeyRingKey(collectionKeys2, extensionId, extensionKey,
@@ -857,7 +857,7 @@ add_task(async function ensureCanSync_handles_deleted_conflicts() {
       let posts = server.getPosts();
       equal(posts.length, 2,
             "syncing keyring should have tried to post a keyring twice");
-      
+      // The first post got a conflict.
       const failedPost = posts[0];
       assertPostedUpdatedRecord(failedPost, 700);
       let body = await assertPostedEncryptedKeys(fxaService, failedPost);
@@ -865,7 +865,7 @@ add_task(async function ensureCanSync_handles_deleted_conflicts() {
       deepEqual(body.keys.collections[extensionId], extensionKey.keyPairB64,
                 `decrypted failed post should have the key for ${extensionId}`);
 
-      
+      // The second post was after the wipe, and succeeded.
       const afterWipePost = posts[1];
       assertPostedNewRecord(afterWipePost);
       let afterWipeBody = await assertPostedEncryptedKeys(fxaService, afterWipePost);
@@ -877,10 +877,10 @@ add_task(async function ensureCanSync_handles_deleted_conflicts() {
 });
 
 add_task(async function ensureCanSync_handles_flushes() {
-  
-  
-  
-  
+  // See Bug 1359879 and Bug 1350088. One of the ways that 1359879 presents is
+  // as 1350088. This seems to be the symptom that results when the user had
+  // two devices, one of which was not syncing at the time the keyring was
+  // lost. Ensure we can recover for these users as well.
   const extensionId = uuid();
   const extensionId2 = uuid();
   await withContextAndServer(async function(context, server) {
@@ -888,15 +888,15 @@ add_task(async function ensureCanSync_handles_flushes() {
     server.installDeleteBucket();
     await withSignedInUser(loggedInUser, async function(extensionStorageSync, fxaService) {
       server.etag = 700;
-      
+      // Generate keys that we can check for later.
       let collectionKeys = await extensionStorageSync.ensureCanSync([extensionId]);
       const extensionKey = collectionKeys.keyForCollection(extensionId);
       server.clearPosts();
 
-      
+      // last_modified is new, but there is no data.
       server.etag = 800;
 
-      
+      // Try to add a new extension to trigger a sync of the keyring.
       let collectionKeys2 = await extensionStorageSync.ensureCanSync([extensionId2]);
 
       assertKeyRingKey(collectionKeys2, extensionId, extensionKey,
@@ -920,8 +920,8 @@ add_task(async function ensureCanSync_handles_flushes() {
 });
 
 add_task(async function checkSyncKeyRing_reuploads_keys() {
-  
-  
+  // Verify that when keys are present, they are reuploaded with the
+  // new kbHash when we call touchKeys().
   const extensionId = uuid();
   let extensionKey, extensionSalt;
   await withContextAndServer(async function(context, server) {
@@ -931,7 +931,7 @@ add_task(async function checkSyncKeyRing_reuploads_keys() {
 
       await extensionStorageSync.cryptoCollection._clear();
 
-      
+      // Do an `ensureCanSync` to generate some keys.
       let collectionKeys = await extensionStorageSync.ensureCanSync([extensionId]);
       ok(collectionKeys.hasKeysFor([extensionId]),
          `ensureCanSync should return a keyring that has a key for ${extensionId}`);
@@ -942,8 +942,8 @@ add_task(async function checkSyncKeyRing_reuploads_keys() {
       extensionSalt = body.salts[extensionId];
     });
 
-    
-    
+    // The user changes their password. This is their new kbHash, with
+    // the last 0 changed to a 1.
     const NEW_KB_HASH = "2350cba8fced5a2fbae3b1f180baf860f78f6542bef7be709fda96cd3e3dc801";
     const NEW_KEXT = "63f9057577c04bbbb9f0c3fd85b5d4032b60e13edc1f8dd309bf4305d66f2cc312dde16ce46021a496f713950d0a6c566ce181521a44726e7be97cf577b31b30";
     const newUser = Object.assign({}, loggedInUser, {kExtKbHash: NEW_KB_HASH, kExtSync: NEW_KEXT});
@@ -964,7 +964,7 @@ add_task(async function checkSyncKeyRing_reuploads_keys() {
                 `the posted keyring should have the same salt for ${extensionId} as the old one`);
     });
 
-    
+    // Verify that with the old kBHash, we can't decrypt the record.
     await withSignedInUser(loggedInUser, async function(extensionStorageSync, fxaService) {
       let error;
       try {
@@ -980,15 +980,15 @@ add_task(async function checkSyncKeyRing_reuploads_keys() {
 });
 
 add_task(async function checkSyncKeyRing_overwrites_on_conflict() {
-  
-  
-  
+  // If there is already a record on the server that was encrypted
+  // with a different kbHash, we wipe the server, clear sync state, and
+  // overwrite it with our keys.
   const extensionId = uuid();
   let extensionKey;
   await withSyncContext(async function(context) {
     await withServer(async function(server) {
-      
-      
+      // The old device has this kbHash, which is very similar to the
+      // current kbHash but with the last 0 changed to a 1.
       const NEW_KB_HASH = "2350cba8fced5a2fbae3b1f180baf860f78f6542bef7be709fda96cd3e3dc801";
       const NEW_KEXT = "63f9057577c04bbbb9f0c3fd85b5d4032b60e13edc1f8dd309bf4305d66f2cc312dde16ce46021a496f713950d0a6c566ce181521a44726e7be97cf577b31b30";
       const oldUser = Object.assign({}, loggedInUser, {kExtKbHash: NEW_KB_HASH, kExtSync: NEW_KEXT});
@@ -997,13 +997,13 @@ add_task(async function checkSyncKeyRing_overwrites_on_conflict() {
         await server.installKeyRing(fxaService, {}, {}, 765);
       });
 
-      
+      // Now we have this new user with a different kbHash.
       await withSignedInUser(loggedInUser, async function(extensionStorageSync, fxaService) {
         await extensionStorageSync.cryptoCollection._clear();
 
-        
-        
-        
+        // Do an `ensureCanSync` to generate some keys.
+        // This will try to sync, notice that the record is
+        // undecryptable, and clear the server.
         let collectionKeys = await extensionStorageSync.ensureCanSync([extensionId]);
         ok(collectionKeys.hasKeysFor([extensionId]),
            `ensureCanSync should always return a keyring with a key for ${extensionId}`);
@@ -1016,7 +1016,7 @@ add_task(async function checkSyncKeyRing_overwrites_on_conflict() {
         equal(posts.length, 1,
               "new keyring should have been uploaded");
         const postedKeys = posts[0];
-        
+        // The POST was to an empty server, so etag shouldn't be respected
         equal(postedKeys.headers.Authorization, "Bearer some-access-token",
               "keyring upload should be authorized");
         equal(postedKeys.headers["If-None-Match"], "*",
@@ -1032,11 +1032,11 @@ add_task(async function checkSyncKeyRing_overwrites_on_conflict() {
         ok(body.keys,
            "new keyring should have a keys attribute");
         ok(body.keys.default, "new keyring should have a default key");
-        
+        // We should keep the extension key that was in our uploaded version.
         deepEqual(extensionKey, body.keys.collections[extensionId],
                   "ensureCanSync should have returned keyring with the same key that was uploaded");
 
-        
+        // This should be a no-op; the keys were uploaded as part of ensurekeysfor
         await extensionStorageSync.checkSyncKeyRing();
         equal(server.getPosts().length, 1,
               "checkSyncKeyRing should not need to post keys after they were reuploaded");
@@ -1046,9 +1046,9 @@ add_task(async function checkSyncKeyRing_overwrites_on_conflict() {
 });
 
 add_task(async function checkSyncKeyRing_flushes_on_uuid_change() {
-  
-  
-  
+  // If we can decrypt the record, but the UUID has changed, that
+  // means another client has wiped the server and reuploaded a
+  // keyring, so reset sync state and reupload everything.
   const extensionId = uuid();
   const extension = {id: extensionId};
   await withSyncContext(async function(context) {
@@ -1060,7 +1060,7 @@ add_task(async function checkSyncKeyRing_flushes_on_uuid_change() {
         const transformer = new KeyRingEncryptionRemoteTransformer(fxaService);
         await extensionStorageSync.cryptoCollection._clear();
 
-        
+        // Do an `ensureCanSync` to get access to keys and salt.
         let collectionKeys = await extensionStorageSync.ensureCanSync([extensionId]);
         const collectionId = await cryptoCollection.extensionIdToCollectionId(extensionId);
         server.installCollection(collectionId);
@@ -1069,8 +1069,8 @@ add_task(async function checkSyncKeyRing_flushes_on_uuid_change() {
            `ensureCanSync should always return a keyring that has a key for ${extensionId}`);
         const extensionKey = collectionKeys.keyForCollection(extensionId).keyPairB64;
 
-        
-        
+        // Set something to make sure that it gets re-uploaded when
+        // uuid changes.
         await extensionStorageSync.set(extension, {"my-key": 5}, context);
         await extensionStorageSync.syncAll();
 
@@ -1094,14 +1094,14 @@ add_task(async function checkSyncKeyRing_flushes_on_uuid_change() {
         deepEqual(extensionKey, body.keys.collections[extensionId],
                   "new keyring should have the same key that we uploaded");
 
-        
-        
-        
+        // Another client comes along and replaces the UUID.
+        // In real life, this would mean changing the keys too, but
+        // this test verifies that just changing the UUID is enough.
         const newKeyRingData = Object.assign({}, body, {
           uuid: "abcd",
-          
-          
-          
+          // Technically, last_modified should be served outside the
+          // object, but the transformer will pass it through in
+          // either direction, so this is OK.
           last_modified: 765,
         });
         server.etag = 1000;
@@ -1111,18 +1111,18 @@ add_task(async function checkSyncKeyRing_flushes_on_uuid_change() {
           predicate: appearsAt(800),
         });
 
-        
-        
+        // Fake adding another extension just so that the keyring will
+        // really get synced.
         const newExtension = uuid();
         const newKeyRing = await extensionStorageSync.ensureCanSync([newExtension]);
 
-        
-        
-        
+        // This should have detected the UUID change and flushed everything.
+        // The keyring should, however, be the same, since we just
+        // changed the UUID of the previously POSTed one.
         deepEqual(newKeyRing.keyForCollection(extensionId).keyPairB64, extensionKey,
                   "ensureCanSync should have pulled down a new keyring with the same keys");
 
-        
+        // Syncing should reupload the data for the extension.
         await extensionStorageSync.syncAll();
         posts = server.getPosts();
         equal(posts.length, 4,
@@ -1139,7 +1139,7 @@ add_task(async function checkSyncKeyRing_flushes_on_uuid_change() {
         deepEqual(finalKeyRing.salts[extensionId], extensionSalt,
                   "newly uploaded keyring should preserve salts from existing salts");
 
-        
+        // Confirm that the data got reuploaded
         let reuploadedData = await assertExtensionRecord(fxaService, reuploadedPost, extension, "my-key");
         equal(reuploadedData.data, 5,
               "extension data should have a data attribute corresponding to the extension data value");
@@ -1185,13 +1185,13 @@ add_task(async function test_storage_sync_pulls_changes() {
       deepEqual(calls[0][0], {"remote-key": {newValue: 6}});
       calls = [];
 
-      
+      // Syncing again doesn't do anything
       await extensionStorageSync.syncAll();
 
       equal(calls.length, 0,
             "syncing again shouldn't call on-changed listener");
 
-      
+      // Updating the server causes us to pull down the new value
       server.etag = 1000;
       await server.encryptAndAddRecord(transformer, {
         collectionId,
@@ -1216,8 +1216,8 @@ add_task(async function test_storage_sync_pulls_changes() {
 });
 
 add_task(async function test_storage_sync_pushes_changes() {
-  
-  
+  // FIXME: This test relies on the fact that previous tests pushed
+  // keys and salts for the default extension ID
   const extension = defaultExtension;
   const extensionId = defaultExtensionId;
   await withContextAndServer(async function(context, server) {
@@ -1230,7 +1230,7 @@ add_task(async function test_storage_sync_pushes_changes() {
 
       await extensionStorageSync.set(extension, {"my-key": 5}, context);
 
-      
+      // install this AFTER we set the key to 5...
       let calls = [];
       extensionStorageSync.addOnChangedListener(extension, function() {
         calls.push(arguments);
@@ -1243,7 +1243,7 @@ add_task(async function test_storage_sync_pushes_changes() {
       const hashedId = "id-" + (await cryptoCollection.hashWithExtensionSalt("key-my_2D_key", extensionId));
 
       let posts = server.getPosts();
-      
+      // FIXME: Keys were pushed in a previous test
       equal(posts.length, 1,
             "pushing a value should cause a post to the server");
       const post = posts[0];
@@ -1271,7 +1271,7 @@ add_task(async function test_storage_sync_pushes_changes() {
       await extensionStorageSync.set(extension, {"my-key": 6}, context);
       await extensionStorageSync.syncAll();
 
-      
+      // Doesn't push keys because keys were pushed by a previous test.
       posts = server.getPosts();
       equal(posts.length, 2,
             "updating a value should trigger another push");
@@ -1303,7 +1303,7 @@ add_task(async function test_storage_sync_retries_failed_auth() {
       await extensionStorageSync.ensureCanSync([extensionId]);
       await extensionStorageSync.set(extension, {"my-key": 5}, context);
       const collectionId = await cryptoCollection.extensionIdToCollectionId(extensionId);
-      
+      // Put a remote record just to verify that eventually we succeeded
       await server.encryptAndAddRecord(transformer, {
         collectionId,
         data: {
@@ -1315,8 +1315,8 @@ add_task(async function test_storage_sync_retries_failed_auth() {
       });
       server.etag = 900;
 
-      
-      
+      // This is a typical response from a production stack if your
+      // bearer token is bad.
       server.rejectNextAuthWith("{\"code\": 401, \"errno\": 104, \"error\": \"Unauthorized\", \"message\": \"Please authenticate yourself to use this endpoint\"}");
       await extensionStorageSync.syncAll();
 
@@ -1328,8 +1328,8 @@ add_task(async function test_storage_sync_retries_failed_auth() {
             "ExtensionStorageSync.get() returns value retrieved from sync");
 
 
-      
-      
+      // Try again with an emptier JSON body to make sure this still
+      // works with a less-cooperative server.
       await server.encryptAndAddRecord(transformer, {
         collectionId,
         data: {
@@ -1340,9 +1340,9 @@ add_task(async function test_storage_sync_retries_failed_auth() {
         predicate: appearsAt(950),
       });
       server.etag = 1000;
-      
-      
-      
+      // Need to write a JSON response.
+      // kinto.js 9.0.2 doesn't throw unless there's json.
+      // See https://github.com/Kinto/kinto-http.js/issues/192.
       server.rejectNextAuthWith("{}");
 
       await extensionStorageSync.syncAll();
@@ -1396,13 +1396,13 @@ add_task(async function test_storage_sync_pulls_conflicts() {
       deepEqual(calls[0][0], {"remote-key": {newValue: 8}});
       calls = [];
 
-      
+      // Syncing again doesn't do anything
       await extensionStorageSync.syncAll();
 
       equal(calls.length, 0,
             "syncing again shouldn't call on-changed listener");
 
-      
+      // Updating the server causes us to pull down the new value
       server.etag = 1000;
       await server.encryptAndAddRecord(transformer, {
         collectionId,
@@ -1467,7 +1467,7 @@ add_task(async function test_storage_sync_pulls_deletes() {
       deepEqual(calls[0][0], {"my-key": {oldValue: 5}});
       calls = [];
 
-      
+      // Syncing again doesn't do anything
       await extensionStorageSync.syncAll();
 
       equal(calls.length, 0,
@@ -1510,7 +1510,7 @@ add_task(async function test_storage_sync_pushes_deletes() {
       equal(calls.length, 1,
             "pushing a deleted value shouldn't call the on-changed listener");
 
-      
+      // Doesn't push keys because keys were pushed by a previous test.
       const hashedId = "id-" + (await cryptoCollection.hashWithExtensionSalt("key-my_2D_key", extensionId));
       posts = server.getPosts();
       equal(posts.length, 3,
@@ -1524,9 +1524,9 @@ add_task(async function test_storage_sync_pushes_deletes() {
          "deleting a value should have an encrypted body");
       const decoded = await new CollectionKeyEncryptionRemoteTransformer(cryptoCollection, extensionId).decode(post.body.data);
       equal(decoded._status, "deleted");
-      
-      
-      
+      // Ideally, we'd check that decoded.deleted is not true, because
+      // the encrypted record shouldn't have it, but the decoder will
+      // add it when it sees _status == deleted
     });
   });
 });
