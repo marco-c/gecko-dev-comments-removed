@@ -18,7 +18,46 @@ namespace dom {
 
 class MessagePortIdentifier;
 class RemoteWorkerData;
+class SharedWorkerManager;
+class SharedWorkerService;
 class SharedWorkerParent;
+
+
+
+
+class SharedWorkerManagerHolder final {
+ public:
+  NS_INLINE_DECL_REFCOUNTING(SharedWorkerManagerHolder);
+
+  SharedWorkerManagerHolder(SharedWorkerManager* aManager,
+                            SharedWorkerService* aService);
+
+  SharedWorkerManager* Manager() const { return mManager; }
+
+  SharedWorkerService* Service() const { return mService; }
+
+ private:
+  ~SharedWorkerManagerHolder();
+
+  RefPtr<SharedWorkerManager> mManager;
+  RefPtr<SharedWorkerService> mService;
+};
+
+
+class SharedWorkerManagerWrapper final {
+ public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(SharedWorkerManagerWrapper);
+
+  explicit SharedWorkerManagerWrapper(
+      already_AddRefed<SharedWorkerManagerHolder> aHolder);
+
+  SharedWorkerManager* Manager() const { return mHolder->Manager(); }
+
+ private:
+  ~SharedWorkerManagerWrapper();
+
+  RefPtr<SharedWorkerManagerHolder> mHolder;
+};
 
 class SharedWorkerManager final : public RemoteWorkerObserver {
  public:
@@ -26,13 +65,16 @@ class SharedWorkerManager final : public RemoteWorkerObserver {
 
   
 
-  SharedWorkerManager(nsIEventTarget* aPBackgroundEventTarget,
-                      const RemoteWorkerData& aData,
-                      nsIPrincipal* aLoadingPrincipal);
+  static already_AddRefed<SharedWorkerManagerHolder> Create(
+      SharedWorkerService* aService, nsIEventTarget* aPBackgroundEventTarget,
+      const RemoteWorkerData& aData, nsIPrincipal* aLoadingPrincipal);
 
-  bool MatchOnMainThread(const nsACString& aDomain, nsIURI* aScriptURL,
-                         const nsAString& aName,
-                         nsIPrincipal* aLoadingPrincipal) const;
+  
+  
+  already_AddRefed<SharedWorkerManagerHolder> MatchOnMainThread(
+      SharedWorkerService* aService, const nsACString& aDomain,
+      nsIURI* aScriptURL, const nsAString& aName,
+      nsIPrincipal* aLoadingPrincipal);
 
   
 
@@ -61,7 +103,19 @@ class SharedWorkerManager final : public RemoteWorkerObserver {
 
   bool IsSecureContext() const;
 
+  void Terminate();
+
+  
+
+  void RegisterHolder(SharedWorkerManagerHolder* aHolder);
+
+  void UnregisterHolder(SharedWorkerManagerHolder* aHolder);
+
  private:
+  SharedWorkerManager(nsIEventTarget* aPBackgroundEventTarget,
+                      const RemoteWorkerData& aData,
+                      nsIPrincipal* aLoadingPrincipal);
+
   ~SharedWorkerManager();
 
   nsCOMPtr<nsIEventTarget> mPBackgroundEventTarget;
@@ -79,6 +133,10 @@ class SharedWorkerManager final : public RemoteWorkerObserver {
   nsTArray<SharedWorkerParent*> mActors;
 
   RefPtr<RemoteWorkerController> mRemoteWorkerController;
+
+  
+  
+  nsTArray<SharedWorkerManagerHolder*> mHolders;
 };
 
 }  
