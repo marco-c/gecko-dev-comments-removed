@@ -10,6 +10,7 @@
 const { Cu } = require("chrome");
 const Services = require("Services");
 const makeDebugger = require("devtools/server/actors/utils/make-debugger");
+const { isAnonymous } = require("devtools/shared/layout/utils");
 
 
 const JQUERY_LIVE_REGEX = /return typeof \w+.*.event\.triggered[\s\S]*\.event\.(dispatch|handle).*arguments/;
@@ -346,7 +347,9 @@ class JQueryEventCollector extends MainEventCollector {
     const jQuery = this.getJQuery(node);
     const handlers = [];
 
-    if (!jQuery) {
+    
+    
+    if (!jQuery || isAnonymous(node)) {
       if (checkOnly) {
         return false;
       }
