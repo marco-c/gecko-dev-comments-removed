@@ -405,6 +405,17 @@ class MOZ_STACK_CLASS LayerMetricsWrapper {
     return mLayer->IsBackfaceHidden();
   }
 
+  Maybe<ScrollableLayerGuid::ViewID> IsAsyncZoomContainer() const {
+    MOZ_ASSERT(IsValid());
+
+    Maybe<ScrollableLayerGuid::ViewID> result = mLayer->IsAsyncZoomContainer();
+
+    
+    MOZ_ASSERT(result.isNothing() || mLayer->GetScrollMetadataCount() == 0);
+
+    return result;
+  }
+
   
   
   
