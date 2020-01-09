@@ -2163,6 +2163,12 @@ function BrowserHome(aEvent) {
   
   switch (where) {
   case "current":
+    
+    
+    
+    if (isInitialPage(homePage)) {
+      gBrowser.selectedBrowser.initialPageLoadedFromUserAction = homePage;
+    }
     loadOneOrMoreURIs(homePage, Services.scriptSecurityManager.getSystemPrincipal());
     if (isBlankPageURL(homePage)) {
       focusAndSelectUrlBar();
