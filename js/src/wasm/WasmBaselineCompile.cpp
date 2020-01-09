@@ -1152,6 +1152,9 @@ class BaseStackFrameAllocator {
   
   
   
+  
+  
+  
 
   uint32_t currentStackHeight_;
 #endif
@@ -1206,8 +1209,9 @@ class BaseStackFrameAllocator {
   
   
   
+  
 
-  uint32_t fixedSize() const {
+  uint32_t fixedAllocSize() const {
     MOZ_ASSERT(localSize_ != UINT32_MAX);
 #ifdef RABALDR_CHUNKY_STACK
     return localSize_ + InitialChunk;
@@ -1215,6 +1219,19 @@ class BaseStackFrameAllocator {
     return localSize_;
 #endif
   }
+
+#ifdef RABALDR_CHUNKY_STACK
+  
+  
+  
+  uint32_t framePushedForHeight(uint32_t logicalHeight) {
+    if (logicalHeight <= fixedAllocSize()) {
+      return fixedAllocSize();
+    }
+    return fixedAllocSize() + AlignBytes(logicalHeight - fixedAllocSize(),
+                                         ChunkSize);
+  }
+#endif
 
  protected:
   
@@ -1243,14 +1260,15 @@ class BaseStackFrameAllocator {
     
     
     
-    if (masm.framePushed() - currentStackHeight_ >= ChunkSize) {
-      uint32_t target =
-          Max(fixedSize(), AlignBytes(currentStackHeight_, ChunkSize));
-      uint32_t amount = masm.framePushed() - target;
-      if (amount) {
-        masm.freeStack(amount);
+    
+    uint32_t freeSpace = masm.framePushed() - currentStackHeight_;
+    if (freeSpace >= ChunkSize) {
+      uint32_t targetAllocSize = framePushedForHeight(currentStackHeight_);
+      uint32_t amountToFree = masm.framePushed() - targetAllocSize;
+      MOZ_ASSERT(amountToFree % ChunkSize == 0);
+      if (amountToFree) {
+        masm.freeStack(amountToFree);
       }
-      MOZ_ASSERT(masm.framePushed() >= fixedSize());
     }
     checkChunkyInvariants();
   }
@@ -1267,9 +1285,11 @@ class BaseStackFrameAllocator {
  private:
 #ifdef RABALDR_CHUNKY_STACK
   void checkChunkyInvariants() {
+    MOZ_ASSERT(masm.framePushed() >= fixedAllocSize());
     MOZ_ASSERT(masm.framePushed() >= currentStackHeight_);
-    MOZ_ASSERT(masm.framePushed() == fixedSize() ||
+    MOZ_ASSERT(masm.framePushed() == fixedAllocSize() ||
                masm.framePushed() - currentStackHeight_ < ChunkSize);
+    MOZ_ASSERT((masm.framePushed() - localSize_) % ChunkSize == 0);
   }
 #endif
 
@@ -1279,11 +1299,7 @@ class BaseStackFrameAllocator {
   uint32_t framePushedForHeight(StackHeight stackHeight) {
 #ifdef RABALDR_CHUNKY_STACK
     
-    
-    return stackHeight.height <= fixedSize()
-               ? fixedSize()
-               : fixedSize() +
-                     AlignBytes(stackHeight.height - fixedSize(), ChunkSize);
+    return framePushedForHeight(stackHeight.height);
 #else
     
     return stackHeight.height;
@@ -4121,7 +4137,7 @@ class BaseCompiler final : public BaseCompilerInterface {
       return false;
     }
 
-    size_t reservedBytes = fr.fixedSize() - masm.framePushed();
+    size_t reservedBytes = fr.fixedAllocSize() - masm.framePushed();
     MOZ_ASSERT(0 == (reservedBytes % sizeof(void*)));
 
     masm.reserveStack(reservedBytes);
@@ -4282,7 +4298,7 @@ class BaseCompiler final : public BaseCompilerInterface {
       restoreResult();
     }
 
-    GenerateFunctionEpilogue(masm, fr.fixedSize(), &offsets_);
+    GenerateFunctionEpilogue(masm, fr.fixedAllocSize(), &offsets_);
 
 #if defined(JS_ION_PERF)
     
