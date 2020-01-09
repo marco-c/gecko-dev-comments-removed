@@ -2183,6 +2183,13 @@ VARCACHE_PREF(
 )
 
 
+VARCACHE_PREF(
+  "network.cookie.staleThreshold",
+   network_cookie_staleThreshold,
+  uint32_t, 60
+)
+
+
 
 
 
