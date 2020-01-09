@@ -3978,9 +3978,8 @@ static void WorkerMain(WorkerInput* input) {
   auto guard = mozilla::MakeScopeExit([&] {
     CancelOffThreadJobsForContext(cx);
     sc->markObservers.reset();
-    JS_SetContextPrivate(cx, nullptr);
-    js_delete(sc);
     JS_DestroyContext(cx);
+    js_delete(sc);
     js_delete(input);
   });
 
@@ -9840,25 +9839,14 @@ static MOZ_MUST_USE bool ProcessArgs(JSContext* cx, OptionParser* op) {
 
 static bool SetContextOptions(JSContext* cx, const OptionParser& op) {
   enableBaseline = !op.getBoolOption("no-baseline");
-#ifdef JS_CODEGEN_ARM64
-  
-  enableIon = false;
-  enableAsmJS = false;
-#else
   enableIon = !op.getBoolOption("no-ion");
   enableAsmJS = !op.getBoolOption("no-asmjs");
-#endif
   enableNativeRegExp = !op.getBoolOption("no-native-regexp");
 
   
   enableWasm = true;
   enableWasmBaseline = true;
-#ifdef JS_CODEGEN_ARM64
-  
-  enableWasmIon = false;
-#else
   enableWasmIon = true;
-#endif
   if (const char* str = op.getStringOption("wasm-compiler")) {
     if (strcmp(str, "none") == 0) {
       enableWasm = false;
@@ -10987,8 +10975,6 @@ int main(int argc, char** argv, char** envp) {
 
   CancelOffThreadJobsForRuntime(cx);
 
-  JS_SetContextPrivate(cx, nullptr);
-  sc.reset();
   JS_DestroyContext(cx);
   return result;
 }
