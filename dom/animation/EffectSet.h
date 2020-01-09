@@ -16,7 +16,7 @@
 #include "nsTHashtable.h"  
 
 class nsPresContext;
-enum class DisplayItemType : uint32_t;
+enum class DisplayItemType : uint8_t;
 
 namespace mozilla {
 
