@@ -329,6 +329,9 @@ nsresult nsSecureBrowserUIImpl::UpdateStateAndSecurityInfo(nsIChannel* channel,
       MOZ_LOG(gSecureBrowserUILog, LogLevel::Debug, ("  is EV"));
       mState |= STATE_IDENTITY_EV_TOPLEVEL;
     }
+    
+    
+    CheckForMixedContent();
   }
   return NS_OK;
 }
