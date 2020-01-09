@@ -349,11 +349,7 @@ class PanelList extends HTMLElement {
   }
 
   set open(val) {
-    if (val) {
-      this.setAttribute("open", "true");
-    } else {
-      this.removeAttribute("open");
-    }
+    this.toggleAttribute("open", val);
   }
 
   show(triggeringEvent) {
@@ -459,6 +455,10 @@ class PanelList extends HTMLElement {
       case "click":
         if (e.target.tagName == "PANEL-ITEM") {
           this.hide();
+        } else {
+          
+          
+          e.stopPropagation();
         }
         break;
       case "mousedown":
@@ -510,11 +510,7 @@ class PanelItem extends HTMLElement {
   }
 
   set disabled(val) {
-    if (val) {
-      this.button.setAttribute("disabled", "");
-    } else {
-      this.button.removeAttribute("disabled");
-    }
+    this.button.toggleAttribute("disabled", val);
   }
 
   get checked() {
@@ -522,11 +518,7 @@ class PanelItem extends HTMLElement {
   }
 
   set checked(val) {
-    if (val) {
-      this.setAttribute("checked", "");
-    } else {
-      this.removeAttribute("checked");
-    }
+    this.toggleAttribute("checked", val);
   }
 }
 customElements.define("panel-item", PanelItem);
@@ -1164,8 +1156,7 @@ class AddonCard extends HTMLElement {
           break;
         default:
           
-          
-          if (!this.expanded && e.target.localName != "button") {
+          if (!this.expanded) {
             loadViewFn("detail", this.addon.id);
           }
           break;
