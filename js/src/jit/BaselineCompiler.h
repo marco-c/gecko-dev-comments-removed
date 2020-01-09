@@ -303,14 +303,14 @@ class BaselineCodeGen {
   }
 
   
-  void pushScriptArg(Register scratch);
+  void pushScriptArg();
 
   
   void pushBytecodePCArg();
 
   
   
-  enum class ScriptObjectType { RegExp, Function };
+  enum class ScriptObjectType { RegExp, Function, ObjectLiteral };
   void pushScriptObjectArg(ScriptObjectType type);
   void pushScriptNameArg();
   void pushScriptScopeArg();
@@ -341,8 +341,8 @@ class BaselineCodeGen {
   void prepareVMCall();
 
   void storeFrameSizeAndPushDescriptor(uint32_t frameBaseSize, uint32_t argSize,
-                                       const Address& frameSizeAddr,
-                                       Register scratch1, Register scratch2);
+                                       const Address& frameSizeAddr);
+  void computeFullFrameSize(uint32_t frameBaseSize, Register dest);
 
   enum CallVMPhase { POST_INITIALIZE, CHECK_OVER_RECURSED };
   bool callVM(const VMFunction& fun, CallVMPhase phase = POST_INITIALIZE);
@@ -553,8 +553,6 @@ class BaselineCompilerHandler {
     static const unsigned EARLY_STACK_CHECK_SLOT_COUNT = 128;
     return script()->nslots() > EARLY_STACK_CHECK_SLOT_COUNT;
   }
-
-  JSObject* maybeNoCloneSingletonObject();
 };
 
 using BaselineCompilerCodeGen = BaselineCodeGen<BaselineCompilerHandler>;
@@ -646,8 +644,6 @@ class BaselineInterpreterHandler {
   
   
   bool needsEarlyStackCheck() const { return true; }
-
-  JSObject* maybeNoCloneSingletonObject() { return nullptr; }
 };
 
 using BaselineInterpreterCodeGen = BaselineCodeGen<BaselineInterpreterHandler>;

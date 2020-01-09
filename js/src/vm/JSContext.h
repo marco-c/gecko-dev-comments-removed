@@ -846,8 +846,6 @@ struct JSContext : public JS::RootingContext,
   }
   void* addressOfZone() { return &zone_; }
 
-  const void* addressOfRealm() const { return &realm_; }
-
   
   
   js::FutexThread fx;
