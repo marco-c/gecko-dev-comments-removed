@@ -508,8 +508,7 @@ already_AddRefed<ComputedStyle> nsComputedDOMStyle::DoGetComputedStyleNoFlush(
   
   
   
-  PresShell* presShell =
-      static_cast<PresShell*>(nsContentUtils::GetPresShellForContent(aElement));
+  PresShell* presShell = nsContentUtils::GetPresShellForContent(aElement);
   bool inDocWithShell = true;
   if (!presShell) {
     inDocWithShell = false;
