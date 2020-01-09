@@ -390,15 +390,26 @@ class UrlbarInput {
       return;
     }
 
+    let searchString = this.textValue;
+
+    
+    
+    
+    let enableAutofill =
+      UrlbarPrefs.get("autoFill") &&
+      (!this._lastSearchString ||
+       !this._lastSearchString.startsWith(searchString));
+
     this.controller.startQuery(new UrlbarQueryContext({
-      enableAutofill: UrlbarPrefs.get("autoFill"),
+      enableAutofill,
       isPrivate: this.isPrivate,
       lastKey,
       maxResults: UrlbarPrefs.get("maxRichResults"),
       muxer: "UnifiedComplete",
       providers: ["UnifiedComplete"],
-      searchString: this.textValue,
+      searchString,
     }));
+    this._lastSearchString = searchString;
   }
 
   typeRestrictToken(char) {
@@ -426,6 +437,27 @@ class UrlbarInput {
 
   removeHiddenFocus() {
     this.textbox.classList.remove("hidden-focus");
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  autofill(value) {
+    if (!value.toLocaleLowerCase()
+        .startsWith(this.textValue.toLocaleLowerCase())) {
+      return;
+    }
+    let len = this.textValue.length;
+    this.value = this.textValue + value.substring(len);
+    this.selectionStart = len;
+    this.selectionEnd = value.length;
   }
 
   
