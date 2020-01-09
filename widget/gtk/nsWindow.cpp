@@ -3243,6 +3243,12 @@ nsresult nsWindow::Create(nsIWidget *aParent, nsNativeWidget aNativeParent,
   ConstrainSize(&mBounds.width, &mBounds.height);
 
   
+  
+  if (!mIsX11Display && mWindowType == eWindowType_child) {
+    mWindowType = eWindowType_toplevel;
+  }
+
+  
   GtkWidget *parentMozContainer = nullptr;
   GtkContainer *parentGtkContainer = nullptr;
   GdkWindow *parentGdkWindow = nullptr;
