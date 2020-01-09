@@ -5377,29 +5377,14 @@ bool QuotaManager::IsPrincipalInfoValid(const PrincipalInfo& aPrincipalInfo) {
         return false;
       }
 
-      nsDependentCSubstring scheme = specURL->Scheme();
-
       
-      RefPtr<MozURL> originNoSuffixURL;
-      rv = MozURL::Init(getter_AddRefs(originNoSuffixURL),
-                        info.originNoSuffix());
-      if (NS_WARN_IF(NS_FAILED(rv))) {
+      nsCString originNoSuffix;
+      specURL->Origin(originNoSuffix);
+
+      if (NS_WARN_IF(originNoSuffix != info.originNoSuffix())) {
+        QM_WARNING("originNoSuffix (%s) doesn't match passed one (%s)!",
+                   originNoSuffix.get(), info.originNoSuffix().get());
         return false;
-      }
-
-      
-      
-      if (!scheme.EqualsLiteral("file") &&
-          !scheme.EqualsLiteral("indexeddb") &&
-          !scheme.EqualsLiteral("moz-extension") &&
-          !scheme.EqualsLiteral("moz-safe-about") &&
-          !scheme.EqualsLiteral("resource")) {
-        nsCString originNoSuffix;
-        specURL->Origin(originNoSuffix);
-
-        if (NS_WARN_IF(info.originNoSuffix() != originNoSuffix)) {
-          return false;
-        }
       }
 
       if (NS_WARN_IF(info.originNoSuffix().EqualsLiteral(kChromeOrigin))) {
@@ -5412,39 +5397,16 @@ bool QuotaManager::IsPrincipalInfoValid(const PrincipalInfo& aPrincipalInfo) {
       }
 
       
-      nsCString baseDomainForParsing;
-      if (!scheme.EqualsLiteral("indexeddb") &&
-          !scheme.EqualsLiteral("moz-safe-about")) {
-        baseDomainForParsing = scheme + NS_LITERAL_CSTRING("://");
-      }
-      baseDomainForParsing.Append(info.baseDomain());
-
-      RefPtr<MozURL> baseDomainURL;
-      rv = MozURL::Init(getter_AddRefs(baseDomainURL), baseDomainForParsing);
+      nsCString baseDomain;
+      rv = specURL->BaseDomain(baseDomain);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return false;
       }
 
-      
-      
-      
-      if (!scheme.EqualsLiteral("file") &&
-          !scheme.EqualsLiteral("indexeddb") &&
-          !scheme.EqualsLiteral("moz-safe-about")) {
-        nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil =
-            do_GetService(THIRDPARTYUTIL_CONTRACTID);
-
-        nsCString baseDomain;
-        rv = thirdPartyUtil->GetBaseDomainFromSchemeHost(specURL->Scheme(),
-                                                         specURL->Host(),
-                                                         baseDomain);
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-          return false;
-        }
-
-        if (NS_WARN_IF(info.baseDomain() != baseDomain)) {
-          return false;
-        }
+      if (NS_WARN_IF(baseDomain != info.baseDomain())) {
+        QM_WARNING("baseDomain (%s) doesn't match passed one (%s)!",
+                   baseDomain.get(), info.baseDomain().get());
+        return false;
       }
 
       return true;
