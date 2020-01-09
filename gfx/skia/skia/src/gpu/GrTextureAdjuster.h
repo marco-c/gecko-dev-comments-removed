@@ -12,6 +12,8 @@
 #include "GrTextureProxy.h"
 #include "SkTLazy.h"
 
+class GrRecordingContext;
+
 
 
 
@@ -25,16 +27,16 @@ public:
             const SkRect& constraintRect,
             FilterConstraint,
             bool coordsLimitedToConstraintRect,
-            const GrSamplerState::Filter* filterOrNullForBicubic,
-            SkColorSpace* dstColorSpace) override;
+            const GrSamplerState::Filter* filterOrNullForBicubic) override;
 
     
     
-    GrTextureAdjuster(GrContext*, sk_sp<GrTextureProxy>, SkAlphaType, uint32_t uniqueID,
-                      SkColorSpace*);
+    GrTextureAdjuster(GrRecordingContext*, sk_sp<GrTextureProxy>, SkAlphaType,
+                      uint32_t uniqueID, SkColorSpace*, bool useDecal = false);
 
 protected:
     SkAlphaType alphaType() const override { return fAlphaType; }
+    SkColorSpace* colorSpace() const override { return fColorSpace; }
     void makeCopyKey(const CopyParams& params, GrUniqueKey* copyKey) override;
     void didCacheCopy(const GrUniqueKey& copyKey, uint32_t contextUniqueID) override;
 
@@ -43,8 +45,6 @@ protected:
 
 private:
     sk_sp<GrTextureProxy> onRefTextureProxyForParams(const GrSamplerState&,
-                                                     SkColorSpace* dstColorSpace,
-                                                     sk_sp<SkColorSpace>* proxyColorSpace,
                                                      bool willBeMipped,
                                                      SkScalar scaleAdjust[2]) override;
 

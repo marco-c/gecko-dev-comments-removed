@@ -16,6 +16,7 @@
 #include "GrTypesPriv.h"
 #endif
 
+class GrBackendFormat;
 class GrContext;
 class SkBitmap;
 class SkCanvas;
@@ -59,7 +60,8 @@ public:
 
 
 
-    static sk_sp<SkSpecialSurface> MakeRenderTarget(GrContext*,
+    static sk_sp<SkSpecialSurface> MakeRenderTarget(GrRecordingContext*,
+                                                    const GrBackendFormat& format,
                                                     int width, int height,
                                                     GrPixelConfig config,
                                                     sk_sp<SkColorSpace> colorSpace,

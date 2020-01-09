@@ -13,9 +13,9 @@
 #include "SkFlattenable.h"
 #include "SkRefCnt.h"
 
-class GrContext;
 class GrColorSpaceInfo;
 class GrFragmentProcessor;
+class GrRecordingContext;
 class SkArenaAlloc;
 class SkBitmap;
 class SkColorSpace;
@@ -120,6 +120,17 @@ public:
 
     static sk_sp<SkColorFilter> MakeSRGBToLinearGamma();
 
+    
+
+
+
+
+
+
+
+    static sk_sp<SkColorFilter> MakeMixer(sk_sp<SkColorFilter> cf0, sk_sp<SkColorFilter> cf1,
+                                          float weight);
+
 #if SK_SUPPORT_GPU
     
 
@@ -131,14 +142,14 @@ public:
 
 
     virtual std::unique_ptr<GrFragmentProcessor> asFragmentProcessor(
-            GrContext*, const GrColorSpaceInfo& dstColorSpaceInfo) const;
+            GrRecordingContext*, const GrColorSpaceInfo& dstColorSpaceInfo) const;
 #endif
 
     bool affectsTransparentBlack() const {
         return this->filterColor(SK_ColorTRANSPARENT) != SK_ColorTRANSPARENT;
     }
 
-    static void InitializeFlattenables();
+    static void RegisterFlattenables();
 
     static SkFlattenable::Type GetFlattenableType() {
         return kSkColorFilter_Type;

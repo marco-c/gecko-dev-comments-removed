@@ -24,14 +24,26 @@ SkMatrix GrGLSLPrimitiveProcessor::GetTransformMatrix(const SkMatrix& localMatri
     }
 
     if (coordTransform.reverseY()) {
-        
-        
-        combined.set(SkMatrix::kMSkewY,
-            combined[SkMatrix::kMPersp0] - combined[SkMatrix::kMSkewY]);
-        combined.set(SkMatrix::kMScaleY,
-            combined[SkMatrix::kMPersp1] - combined[SkMatrix::kMScaleY]);
-        combined.set(SkMatrix::kMTransY,
-            combined[SkMatrix::kMPersp2] - combined[SkMatrix::kMTransY]);
+        if (coordTransform.normalize()) {
+            
+            
+            combined.set(SkMatrix::kMSkewY,
+                         combined[SkMatrix::kMPersp0] - combined[SkMatrix::kMSkewY]);
+            combined.set(SkMatrix::kMScaleY,
+                         combined[SkMatrix::kMPersp1] - combined[SkMatrix::kMScaleY]);
+            combined.set(SkMatrix::kMTransY,
+                         combined[SkMatrix::kMPersp2] - combined[SkMatrix::kMTransY]);
+        } else {
+            
+            
+            SkScalar h = coordTransform.peekTexture()->height();
+            combined.set(SkMatrix::kMSkewY,
+                         h * combined[SkMatrix::kMPersp0] - combined[SkMatrix::kMSkewY]);
+            combined.set(SkMatrix::kMScaleY,
+                         h * combined[SkMatrix::kMPersp1] - combined[SkMatrix::kMScaleY]);
+            combined.set(SkMatrix::kMTransY,
+                         h * combined[SkMatrix::kMPersp2] - combined[SkMatrix::kMTransY]);
+        }
     }
     return combined;
 }

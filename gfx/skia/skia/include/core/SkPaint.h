@@ -22,50 +22,17 @@
 #include "SkBlendMode.h"
 #include "SkColor.h"
 #include "SkFilterQuality.h"
-#include "SkMatrix.h"
 #include "SkRefCnt.h"
 
-class GrTextBlob;
-class SkAutoDescriptor;
 class SkColorFilter;
 class SkColorSpace;
-class SkData;
-class SkDescriptor;
 class SkDrawLooper;
-class SkGlyph;
-class SkGlyphRunBuilder;
-class SkGlyphRun;
-class SkGlyphRunListPainter;
 struct SkRect;
-class SkGlyphCache;
 class SkImageFilter;
 class SkMaskFilter;
 class SkPath;
 class SkPathEffect;
-struct SkPoint;
-class SkRunFont;
 class SkShader;
-class SkSurfaceProps;
-class SkTextBlob;
-class SkTextBlobRunIterator;
-class SkTypeface;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -184,264 +151,27 @@ public:
     
 
 
-
-
-
-
-
-    enum Hinting {
-        kNo_Hinting     = 0, 
-        kSlight_Hinting = 1, 
-        kNormal_Hinting = 2, 
-        kFull_Hinting   = 3, 
-    };
-
-    
-
-
-
-    Hinting getHinting() const {
-        return static_cast<Hinting>(fBitfields.fHinting);
-    }
-
-    
-
-
-
-
-    void setHinting(Hinting hintingLevel);
-
-    
-
-
-
-
-
-
-    enum Flags {
-        kAntiAlias_Flag          = 0x01,   
-        kDither_Flag             = 0x04,   
-        kFakeBoldText_Flag       = 0x20,   
-        kLinearText_Flag         = 0x40,   
-        kSubpixelText_Flag       = 0x80,   
-        kLCDRenderText_Flag      = 0x200,  
-        kEmbeddedBitmapText_Flag = 0x400,  
-        kAutoHinting_Flag        = 0x800,  
-        kVerticalText_Flag       = 0x1000, 
-        kAllFlags                = 0xFFFF, 
-    };
-
-    #ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
-    enum ReserveFlags {
-        kUnderlineText_ReserveFlag  = 0x08, 
-        kStrikeThruText_ReserveFlag = 0x10, 
-    };
-    #endif
-
-    
-
-
-
-
-    uint32_t getFlags() const { return fBitfields.fFlags; }
-
-    
-
-
-
-
-    void setFlags(uint32_t flags);
-
-    
-
-
-
-
-
     bool isAntiAlias() const {
-        return SkToBool(this->getFlags() & kAntiAlias_Flag);
+        return SkToBool(fBitfields.fAntiAlias);
     }
 
     
 
 
 
-
-
-
-
-    void setAntiAlias(bool aa);
+    void setAntiAlias(bool aa) { fBitfields.fAntiAlias = static_cast<unsigned>(aa); }
 
     
-
-
-
 
 
     bool isDither() const {
-        return SkToBool(this->getFlags() & kDither_Flag);
+        return SkToBool(fBitfields.fDither);
     }
 
     
 
 
-
-
-
-
-    void setDither(bool dither);
-
-    
-
-
-
-
-
-    bool isLinearText() const {
-        return SkToBool(this->getFlags() & kLinearText_Flag);
-    }
-
-    
-
-
-
-
-
-
-
-    void setLinearText(bool linearText);
-
-    
-
-
-
-
-
-    bool isSubpixelText() const {
-        return SkToBool(this->getFlags() & kSubpixelText_Flag);
-    }
-
-    
-
-
-
-
-
-
-    void setSubpixelText(bool subpixelText);
-
-    
-
-
-
-
-
-    bool isLCDRenderText() const {
-        return SkToBool(this->getFlags() & kLCDRenderText_Flag);
-    }
-
-    
-
-
-
-
-
-
-    void setLCDRenderText(bool lcdText);
-
-    
-
-
-
-
-
-    bool isEmbeddedBitmapText() const {
-        return SkToBool(this->getFlags() & kEmbeddedBitmapText_Flag);
-    }
-
-    
-
-
-
-
-
-
-    void setEmbeddedBitmapText(bool useEmbeddedBitmapText);
-
-    
-
-
-
-
-
-
-
-    bool isAutohinted() const {
-        return SkToBool(this->getFlags() & kAutoHinting_Flag);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    void setAutohinted(bool useAutohinter);
-
-    
-
-
-
-
-
-    bool isVerticalText() const {
-        return SkToBool(this->getFlags() & kVerticalText_Flag);
-    }
-
-    
-
-
-
-
-
-
-
-    void setVerticalText(bool verticalText);
-
-    
-
-
-
-
-
-
-    bool isFakeBoldText() const {
-        return SkToBool(this->getFlags() & kFakeBoldText_Flag);
-    }
-
-    
-
-
-
-
-
-
-    void setFakeBoldText(bool fakeBoldText);
-
-    
-
-    bool isDevKernText() const { return false; }
-
-    
-
-    void setDevKernText(bool) { }
+    void setDither(bool dither) { fBitfields.fDither = static_cast<unsigned>(dither); }
 
     
 
@@ -470,7 +200,7 @@ public:
 
 
 
-    enum Style {
+    enum Style : uint8_t {
         kFill_Style,          
         kStroke_Style,        
         kStrokeAndFill_Style, 
@@ -529,7 +259,10 @@ public:
 
 
 
-    uint8_t getAlpha() const { return sk_float_round2int(fColor4f.fA * 255); }
+    float getAlphaf() const { return fColor4f.fA; }
+
+    
+    uint8_t getAlpha() const { return sk_float_round2int(this->getAlphaf() * 255); }
 
     
 
@@ -539,7 +272,12 @@ public:
 
 
 
-    void setAlpha(U8CPU a);
+    void setAlphaf(float a);
+
+    
+    void setAlpha(U8CPU a) {
+        this->setAlphaf(a * (1.0f / 255));
+    }
 
     
 
@@ -608,7 +346,7 @@ public:
 
 
 
-    enum Join {
+    enum Join : uint8_t {
         kMiter_Join,                 
         kRound_Join,                 
         kBevel_Join,                 
@@ -724,20 +462,20 @@ public:
 
 
 
-    SkBlendMode getBlendMode() const { return (SkBlendMode)fBlendMode; }
+    SkBlendMode getBlendMode() const { return (SkBlendMode)fBitfields.fBlendMode; }
 
     
 
 
 
-    bool isSrcOver() const { return (SkBlendMode)fBlendMode == SkBlendMode::kSrcOver; }
+    bool isSrcOver() const { return (SkBlendMode)fBitfields.fBlendMode == SkBlendMode::kSrcOver; }
 
     
 
 
 
 
-    void setBlendMode(SkBlendMode mode) { fBlendMode = (unsigned)mode; }
+    void setBlendMode(SkBlendMode mode) { fBitfields.fBlendMode = (unsigned)mode; }
 
     
 
@@ -786,27 +524,6 @@ public:
 
 
     void setMaskFilter(sk_sp<SkMaskFilter> maskFilter);
-
-    
-
-
-
-
-    SkTypeface* getTypeface() const { return fTypeface.get(); }
-
-    
-
-
-
-    sk_sp<SkTypeface> refTypeface() const;
-
-    
-
-
-
-
-
-    void setTypeface(sk_sp<SkTypeface> typeface);
 
     
 
@@ -865,532 +582,6 @@ public:
 
 
     void setLooper(sk_sp<SkDrawLooper> drawLooper);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    enum Align {
-        kLeft_Align,   
-        kCenter_Align, 
-        kRight_Align,  
-    };
-
-    
-
-    static constexpr int kAlignCount = 3;
-
-    
-
-
-
-
-    Align   getTextAlign() const { return (Align)fBitfields.fTextAlign; }
-
-    
-
-
-
-
-    void    setTextAlign(Align align);
-
-    
-
-
-
-    SkScalar getTextSize() const { return fTextSize; }
-
-    
-
-
-
-
-    void setTextSize(SkScalar textSize);
-
-    
-
-
-
-
-    SkScalar getTextScaleX() const { return fTextScaleX; }
-
-    
-
-
-
-
-    void setTextScaleX(SkScalar scaleX);
-
-    
-
-
-
-
-    SkScalar getTextSkewX() const { return fTextSkewX; }
-
-    
-
-
-
-
-    void setTextSkewX(SkScalar skewX);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    enum TextEncoding {
-        kUTF8_TextEncoding,    
-        kUTF16_TextEncoding,   
-        kUTF32_TextEncoding,   
-        kGlyphID_TextEncoding, 
-    };
-
-    
-
-
-
-
-
-    TextEncoding getTextEncoding() const {
-      return (TextEncoding)fBitfields.fTextEncoding;
-    }
-
-    
-
-
-
-
-
-
-    void setTextEncoding(TextEncoding encoding);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    struct FontMetrics {
-
-        
-
-
-
-
-        enum FontMetricsFlags {
-            kUnderlineThicknessIsValid_Flag = 1 << 0, 
-            kUnderlinePositionIsValid_Flag  = 1 << 1, 
-            kStrikeoutThicknessIsValid_Flag = 1 << 2, 
-            kStrikeoutPositionIsValid_Flag  = 1 << 3, 
-        };
-
-        uint32_t fFlags;              
-        SkScalar fTop;                
-        SkScalar fAscent;             
-        SkScalar fDescent;            
-        SkScalar fBottom;             
-        SkScalar fLeading;            
-        SkScalar fAvgCharWidth;       
-        SkScalar fMaxCharWidth;       
-        SkScalar fXMin;               
-        SkScalar fXMax;               
-        SkScalar fXHeight;            
-        SkScalar fCapHeight;          
-        SkScalar fUnderlineThickness; 
-        SkScalar fUnderlinePosition;  
-        SkScalar fStrikeoutThickness; 
-        SkScalar fStrikeoutPosition;  
-
-        
-
-
-
-
-
-
-        bool hasUnderlineThickness(SkScalar* thickness) const {
-            if (SkToBool(fFlags & kUnderlineThicknessIsValid_Flag)) {
-                *thickness = fUnderlineThickness;
-                return true;
-            }
-            return false;
-        }
-
-        
-
-
-
-
-
-
-        bool hasUnderlinePosition(SkScalar* position) const {
-            if (SkToBool(fFlags & kUnderlinePositionIsValid_Flag)) {
-                *position = fUnderlinePosition;
-                return true;
-            }
-            return false;
-        }
-
-        
-
-
-
-
-
-
-        bool hasStrikeoutThickness(SkScalar* thickness) const {
-            if (SkToBool(fFlags & kStrikeoutThicknessIsValid_Flag)) {
-                *thickness = fStrikeoutThickness;
-                return true;
-            }
-            return false;
-        }
-
-        
-
-
-
-
-
-
-        bool hasStrikeoutPosition(SkScalar* position) const {
-            if (SkToBool(fFlags & kStrikeoutPositionIsValid_Flag)) {
-                *position = fStrikeoutPosition;
-                return true;
-            }
-            return false;
-        }
-
-    };
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    SkScalar getFontMetrics(FontMetrics* metrics, SkScalar scale = 0) const;
-
-    
-
-
-
-
-
-
-
-    SkScalar getFontSpacing() const { return this->getFontMetrics(nullptr, 0); }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    int textToGlyphs(const void* text, size_t byteLength,
-                     SkGlyphID glyphs[]) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    bool containsText(const void* text, size_t byteLength) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-    void glyphsToUnichars(const SkGlyphID glyphs[], int count, SkUnichar text[]) const;
-
-    
-
-
-
-
-
-
-
-    int countText(const void* text, size_t byteLength) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    SkScalar measureText(const void* text, size_t length, SkRect* bounds) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-    SkScalar measureText(const void* text, size_t length) const {
-        return this->measureText(text, length, nullptr);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    size_t  breakText(const void* text, size_t length, SkScalar maxWidth,
-                      SkScalar* measuredWidth = nullptr) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    int getTextWidths(const void* text, size_t byteLength, SkScalar widths[],
-                      SkRect bounds[] = nullptr) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    void getTextPath(const void* text, size_t length, SkScalar x, SkScalar y,
-                     SkPath* path) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    void getPosTextPath(const void* text, size_t length,
-                        const SkPoint pos[], SkPath* path) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    int getTextIntercepts(const void* text, size_t length, SkScalar x, SkScalar y,
-                          const SkScalar bounds[2], SkScalar* intervals) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    int getPosTextIntercepts(const void* text, size_t length, const SkPoint pos[],
-                             const SkScalar bounds[2], SkScalar* intervals) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    int getPosTextHIntercepts(const void* text, size_t length, const SkScalar xpos[],
-                              SkScalar constY, const SkScalar bounds[2], SkScalar* intervals) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    int getTextBlobIntercepts(const SkTextBlob* blob, const SkScalar bounds[2],
-                              SkScalar* intervals) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-    SkRect getFontBounds() const;
 
     
 
@@ -1478,12 +669,6 @@ public:
                                       Style style) const;
 
 private:
-    friend class SkGlyphRun;
-    friend class SkGlyphRunBuilder;
-    SkPaint(const SkPaint&, const SkRunFont&);
-    typedef const SkGlyph& (*GlyphCacheProc)(SkGlyphCache*, const char**, const char*);
-
-    sk_sp<SkTypeface>     fTypeface;
     sk_sp<SkPathEffect>   fPathEffect;
     sk_sp<SkShader>       fShader;
     sk_sp<SkMaskFilter>   fMaskFilter;
@@ -1491,81 +676,22 @@ private:
     sk_sp<SkDrawLooper>   fDrawLooper;
     sk_sp<SkImageFilter>  fImageFilter;
 
-    SkScalar        fTextSize;
-    SkScalar        fTextScaleX;
-    SkScalar        fTextSkewX;
     SkColor4f       fColor4f;
     SkScalar        fWidth;
     SkScalar        fMiterLimit;
-    uint32_t        fBlendMode; 
     union {
         struct {
-            
-            unsigned        fFlags : 16;
-            unsigned        fTextAlign : 2;
-            unsigned        fCapType : 2;
-            unsigned        fJoinType : 2;
-            unsigned        fStyle : 2;
-            unsigned        fTextEncoding : 2;  
-            unsigned        fHinting : 2;
-            unsigned        fFilterQuality : 2;
-            
+            unsigned    fAntiAlias : 1;
+            unsigned    fDither : 1;
+            unsigned    fCapType : 2;
+            unsigned    fJoinType : 2;
+            unsigned    fStyle : 2;
+            unsigned    fFilterQuality : 2;
+            unsigned    fBlendMode : 8; 
+            unsigned    fPadding : 14;  
         } fBitfields;
         uint32_t fBitfieldsUInt;
     };
-
-    static GlyphCacheProc GetGlyphCacheProc(TextEncoding encoding,
-                                            bool needFullMetrics);
-
-    SkScalar measure_text(SkGlyphCache*, const char* text, size_t length,
-                          int* count, SkRect* bounds) const;
-
-    
-
-
-
-
-    SkColor computeLuminanceColor() const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    static constexpr int kCanonicalTextSizeForPaths  = 64;
-
-    static bool TooBigToUseCache(const SkMatrix& ctm, const SkMatrix& textM, SkScalar maxLimit);
-
-    
-    
-    
-    SkScalar setupForAsPaths();
-
-    static SkScalar MaxCacheSize2(SkScalar maxLimit);
-
-    friend class GrTextBlob;
-    friend class GrTextContext;
-    friend class GrGLPathRendering;
-    friend class GrPathRendering;
-    friend class SkAutoGlyphCacheNoGamma;
-    friend class SkCanonicalizePaint;
-    friend class SkCanvas;
-    friend class SkDraw;
-    friend class SkGlyphRunListPainter;
-    friend class SkPaintPriv;
-    friend class SkPDFDevice;
-    friend class SkScalerContext;  
-    friend class SkTextBaseIter;
-    friend class SkTextBlobCacheDiffCanvas;
 };
 
 #endif

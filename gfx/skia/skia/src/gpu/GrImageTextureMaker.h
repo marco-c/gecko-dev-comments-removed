@@ -12,26 +12,27 @@
 #include "SkImage.h"
 
 class SkImage_Lazy;
+class SkImage_GpuYUVA;
 
 
 
 class GrImageTextureMaker : public GrTextureMaker {
 public:
-    GrImageTextureMaker(GrContext* context, const SkImage* client, SkImage::CachingHint chint);
+    GrImageTextureMaker(GrRecordingContext* context, const SkImage* client,
+                        SkImage::CachingHint chint, bool useDecal = false);
 
 protected:
     
     
     
     sk_sp<GrTextureProxy> refOriginalTextureProxy(bool willBeMipped,
-                                                  SkColorSpace* dstColorSpace,
                                                   AllowedTexGenType onlyIfFast) override;
 
     void makeCopyKey(const CopyParams& stretch, GrUniqueKey* paramsCopyKey) override;
     void didCacheCopy(const GrUniqueKey& copyKey, uint32_t contextUniqueID) override {}
 
     SkAlphaType alphaType() const override;
-    sk_sp<SkColorSpace> getColorSpace(SkColorSpace* dstColorSpace) override;
+    SkColorSpace* colorSpace() const override;
 
 private:
     const SkImage_Lazy*     fImage;
@@ -40,5 +41,38 @@ private:
 
     typedef GrTextureMaker INHERITED;
 };
+
+
+class GrYUVAImageTextureMaker : public GrTextureMaker {
+public:
+    GrYUVAImageTextureMaker(GrContext* context, const SkImage* client, bool useDecal = false);
+
+protected:
+    
+    
+    
+    sk_sp<GrTextureProxy> refOriginalTextureProxy(bool willBeMipped,
+                                                  AllowedTexGenType onlyIfFast) override;
+
+    void makeCopyKey(const CopyParams& stretch, GrUniqueKey* paramsCopyKey) override;
+    void didCacheCopy(const GrUniqueKey& copyKey, uint32_t contextUniqueID) override {}
+
+    std::unique_ptr<GrFragmentProcessor> createFragmentProcessor(
+        const SkMatrix& textureMatrix,
+        const SkRect& constraintRect,
+        FilterConstraint filterConstraint,
+        bool coordsLimitedToConstraintRect,
+        const GrSamplerState::Filter* filterOrNullForBicubic) override;
+
+    SkAlphaType alphaType() const override;
+    SkColorSpace* colorSpace() const override;
+
+private:
+    const SkImage_GpuYUVA*  fImage;
+    GrUniqueKey             fOriginalKey;
+
+    typedef GrTextureMaker INHERITED;
+};
+
 
 #endif

@@ -9,10 +9,8 @@
 
 #include "SkBitmap.h"
 #include "SkData.h"
-#include "SkDeduper.h"
 #include "SkImagePriv.h"
 #include "SkPaintPriv.h"
-#include "SkPixelRef.h"
 #include "SkPtrRecorder.h"
 #include "SkStream.h"
 #include "SkTo.h"
@@ -95,6 +93,10 @@ void SkBinaryWriteBuffer::writePoint(const SkPoint& point) {
     fWriter.writeScalar(point.fY);
 }
 
+void SkBinaryWriteBuffer::writePoint3(const SkPoint3& point) {
+    this->writePad32(&point, sizeof(SkPoint3));
+}
+
 void SkBinaryWriteBuffer::writePointArray(const SkPoint* point, uint32_t count) {
     fWriter.write32(count);
     fWriter.write(point, count * sizeof(SkPoint));
@@ -139,11 +141,6 @@ bool SkBinaryWriteBuffer::writeToStream(SkWStream* stream) const {
 
 
 void SkBinaryWriteBuffer::writeImage(const SkImage* image) {
-    if (fDeduper) {
-        this->write32(fDeduper->findOrDefineImage(const_cast<SkImage*>(image)));
-        return;
-    }
-
     const SkIRect bounds = SkImage_getSubset(image);
     this->writeIRect(bounds);
 
@@ -166,11 +163,6 @@ void SkBinaryWriteBuffer::writeImage(const SkImage* image) {
 }
 
 void SkBinaryWriteBuffer::writeTypeface(SkTypeface* obj) {
-    if (fDeduper) {
-        this->write32(fDeduper->findOrDefineTypeface(obj));
-        return;
-    }
-
     
     
     
@@ -215,46 +207,44 @@ void SkBinaryWriteBuffer::writeFlattenable(const SkFlattenable* flattenable) {
         return;
     }
 
-    if (fDeduper) {
-        this->write32(fDeduper->findOrDefineFactory(const_cast<SkFlattenable*>(flattenable)));
+    
+
+
+
+
+
+
+
+
+
+
+
+    SkFlattenable::Factory factory = flattenable->getFactory();
+    SkASSERT(factory);
+
+    if (fFactorySet) {
+        this->write32(fFactorySet->add(factory));
     } else {
-        
 
-
-
-
-
-
-
-
-
-
-        if (fFactorySet) {
-            SkFlattenable::Factory factory = flattenable->getFactory();
-            SkASSERT(factory);
-            this->write32(fFactorySet->add(factory));
+        if (uint32_t* indexPtr = fFlattenableDict.find(factory)) {
+            
+            
+            
+            
+            
+            
+            SkASSERT(0 == *indexPtr >> 24);
+            this->write32(*indexPtr << 8);
         } else {
             const char* name = flattenable->getTypeName();
             SkASSERT(name);
-            SkString key(name);
-            if (uint32_t* indexPtr = fFlattenableDict.find(key)) {
-                
-                
-                
-                
-                
-                
-                SkASSERT(0 == *indexPtr >> 24);
-                this->write32(*indexPtr << 8);
-            } else {
-                
-                
-                SkASSERT(strcmp("", name));
-                this->writeString(name);
+            
+            
+            SkASSERT(0 != strcmp("", name));
+            this->writeString(name);
 
-                
-                fFlattenableDict.set(key, fFlattenableDict.count() + 1);
-            }
+            
+            fFlattenableDict.set(factory, fFlattenableDict.count() + 1);
         }
     }
 

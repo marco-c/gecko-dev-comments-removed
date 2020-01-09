@@ -16,6 +16,7 @@
 #include "SkSLPipelineStageCodeGenerator.h"
 #include "SkRefCnt.h"
 #include "../private/GrSkSLFPFactoryCache.h"
+#include <atomic>
 
 #if GR_TEST_UTILS
 #define GR_FP_SRC_STRING const char*
@@ -23,7 +24,7 @@
 #define GR_FP_SRC_STRING static const char*
 #endif
 
-class GrContext;
+class GrContext_Base;
 class GrSkSLFPFactory;
 
 class GrSkSLFP : public GrFragmentProcessor {
@@ -33,8 +34,8 @@ public:
 
 
     static int NewIndex() {
-        static int index = 0;
-        return sk_atomic_inc(&index);
+        static std::atomic<int> nextIndex{0};
+        return nextIndex++;
     }
 
     
@@ -67,10 +68,18 @@ public:
 
 
     static std::unique_ptr<GrSkSLFP> Make(
-                   GrContext* context,
+                   GrContext_Base* context,
                    int index,
                    const char* name,
                    const char* sksl,
+                   const void* inputs,
+                   size_t inputSize);
+
+    static std::unique_ptr<GrSkSLFP> Make(
+                   GrContext_Base* context,
+                   int index,
+                   const char* name,
+                   SkString sksl,
                    const void* inputs,
                    size_t inputSize);
 
@@ -82,7 +91,8 @@ public:
 
 private:
     GrSkSLFP(sk_sp<GrSkSLFPFactoryCache> factoryCache, const GrShaderCaps* shaderCaps, int fIndex,
-             const char* name, const char* sksl, const void* inputs, size_t inputSize);
+             const char* name, const char* sksl, SkString skslString, const void* inputs,
+             size_t inputSize);
 
     GrSkSLFP(const GrSkSLFP& other);
 
@@ -103,6 +113,14 @@ private:
     int fIndex;
 
     const char* fName;
+
+    
+    
+    
+    
+    
+    
+    SkString fSkSLString;
 
     const char* fSkSL;
 

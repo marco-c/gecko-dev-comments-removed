@@ -38,12 +38,16 @@ struct SK_API SkYUVAIndex {
     }
 
     
+    
     enum Index {
         kY_Index = 0,
         kU_Index = 1,
         kV_Index = 2,
-        kA_Index = 3
+        kA_Index = 3,
+
+        kLast_Index = kA_Index
     };
+    static constexpr int kIndexCount = kLast_Index + 1;
 
     
 

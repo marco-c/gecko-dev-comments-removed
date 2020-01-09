@@ -12,7 +12,6 @@
 
 #include "vk/GrVkBackendContext.h"
 #include "vk/GrVkTypes.h"
-#include "vk/GrVkDefines.h"
 
 class GrVkExtensions;
 
@@ -218,6 +217,10 @@ public:
 
         
         VkPtr<PFN_vkGetPhysicalDeviceExternalBufferProperties> fGetPhysicalDeviceExternalBufferProperties;
+
+        
+        VkPtr<PFN_vkCreateSamplerYcbcrConversion> fCreateSamplerYcbcrConversion;
+        VkPtr<PFN_vkDestroySamplerYcbcrConversion> fDestroySamplerYcbcrConversion;
 
 #ifdef SK_BUILD_FOR_ANDROID
         

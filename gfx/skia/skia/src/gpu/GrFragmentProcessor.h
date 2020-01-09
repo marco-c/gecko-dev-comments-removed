@@ -10,7 +10,6 @@
 
 #include "GrProcessor.h"
 #include "GrProxyRef.h"
-#include "SkPM4f.h"
 
 class GrCoordTransform;
 class GrGLSLFragmentProcessor;
@@ -262,7 +261,20 @@ protected:
 
 
 
-    static OptimizationFlags ModulateByConfigOptimizationFlags(GrPixelConfig config) {
+
+
+
+
+    static OptimizationFlags ModulateForSamplerOptFlags(GrPixelConfig config, bool samplingDecal) {
+        if (samplingDecal) {
+            return kCompatibleWithCoverageAsAlpha_OptimizationFlag;
+        } else {
+            return ModulateForClampedSamplerOptFlags(config);
+        }
+    }
+
+    
+    static OptimizationFlags ModulateForClampedSamplerOptFlags(GrPixelConfig config) {
         if (GrPixelConfigIsOpaque(config)) {
             return kCompatibleWithCoverageAsAlpha_OptimizationFlag |
                    kPreservesOpaqueInput_OptimizationFlag;

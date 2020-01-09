@@ -45,10 +45,11 @@ public:
     
 
 
-    SkBudgeted isBudgeted() const {
-        bool ret = SkBudgeted::kYes == fResource->fBudgeted;
-        SkASSERT(ret || !fResource->getUniqueKey().isValid() || fResource->fRefsWrappedObjects);
-        return SkBudgeted(ret);
+
+    GrBudgetedType budgetedType() const {
+        SkASSERT(GrBudgetedType::kBudgeted == fResource->fBudgetedType ||
+                 !fResource->getUniqueKey().isValid() || fResource->fRefsWrappedObjects);
+        return fResource->fBudgetedType;
     }
 
     
@@ -68,6 +69,10 @@ public:
 
 
     void removeScratchKey() const { fResource->removeScratchKey();  }
+
+    bool isPurgeable() const { return fResource->isPurgeable(); }
+
+    bool hasRefOrPendingIO() const { return fResource->hasRefOrPendingIO(); }
 
 protected:
     ResourcePriv(GrGpuResource* resource) : fResource(resource) {   }

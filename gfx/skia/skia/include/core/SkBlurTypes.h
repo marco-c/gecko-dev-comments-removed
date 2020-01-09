@@ -10,7 +10,7 @@
 
 #include "SkTypes.h"
 
-enum SkBlurStyle {
+enum SkBlurStyle : int {
     kNormal_SkBlurStyle,  
     kSolid_SkBlurStyle,   
     kOuter_SkBlurStyle,   

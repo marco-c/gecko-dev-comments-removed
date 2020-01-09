@@ -11,7 +11,6 @@
 #include "SkCanvas.h"
 
 class SkWStream;
-class SkXMLWriter;
 
 class SK_API SkSVGCanvas {
 public:
@@ -27,9 +26,6 @@ public:
 
 
     static std::unique_ptr<SkCanvas> Make(const SkRect& bounds, SkWStream*);
-
-    
-    static std::unique_ptr<SkCanvas> Make(const SkRect& bounds, SkXMLWriter*);
 };
 
 #endif

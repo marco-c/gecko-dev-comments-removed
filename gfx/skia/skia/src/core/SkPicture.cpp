@@ -7,7 +7,6 @@
 
 #include "SkPicture.h"
 
-#include "SkAtomics.h"
 #include "SkImageGenerator.h"
 #include "SkMathPriv.h"
 #include "SkPictureCommon.h"
@@ -18,6 +17,7 @@
 #include "SkPictureRecorder.h"
 #include "SkSerialProcs.h"
 #include "SkTo.h"
+#include <atomic>
 
 
 
@@ -33,22 +33,11 @@ enum {
 
 
 
-SkPicture::SkPicture() : fUniqueID(0) {}
-
-uint32_t SkPicture::uniqueID() const {
-    static uint32_t gNextID = 1;
-    uint32_t id = sk_atomic_load(&fUniqueID, sk_memory_order_relaxed);
-    while (id == 0) {
-        uint32_t next = sk_atomic_fetch_add(&gNextID, 1u);
-        if (sk_atomic_compare_exchange(&fUniqueID, &id, next,
-                                       sk_memory_order_relaxed,
-                                       sk_memory_order_relaxed)) {
-            id = next;
-        } else {
-            
-        }
-    }
-    return id;
+SkPicture::SkPicture() {
+    static std::atomic<uint32_t> nextID{1};
+    do {
+        fUniqueID = nextID.fetch_add(+1, std::memory_order_relaxed);
+    } while (fUniqueID == 0);
 }
 
 static const char kMagic[] = { 's', 'k', 'i', 'a', 'p', 'i', 'c', 't' };
@@ -209,7 +198,7 @@ sk_sp<SkPicture> SkPicturePriv::MakeFromBuffer(SkReadBuffer& buffer) {
     
     int32_t ssize = buffer.read32();
     if (ssize < 0) {
-        const SkDeserialProcs& procs = buffer.fProcs;
+        const SkDeserialProcs& procs = buffer.getDeserialProcs();
         if (!procs.fPictureProc) {
             return nullptr;
         }

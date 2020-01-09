@@ -8,20 +8,14 @@
 #ifndef SkColorSpace_DEFINED
 #define SkColorSpace_DEFINED
 
+#include "../private/SkFixed.h"
 #include "../private/SkOnce.h"
+#include "../../third_party/skcms/skcms.h"
 #include "SkMatrix44.h"
 #include "SkRefCnt.h"
 #include <memory>
 
 class SkData;
-struct skcms_ICCProfile;
-
-enum SkGammaNamed {
-    kLinear_SkGammaNamed,
-    kSRGB_SkGammaNamed,
-    k2Dot2Curve_SkGammaNamed,
-    kNonStandard_SkGammaNamed,
-};
 
 
 
@@ -40,27 +34,64 @@ struct SK_API SkColorSpacePrimaries {
 
 
 
-    bool toXYZD50(SkMatrix44* toXYZD50) const;
+    bool toXYZD50(skcms_Matrix3x3* toXYZD50) const;
 };
 
+namespace SkNamedTransferFn {
 
 
+static constexpr skcms_TransferFunction kSRGB =
+    { 2.4f, (float)(1/1.055), (float)(0.055/1.055), (float)(1/12.92), 0.04045f, 0.0f, 0.0f };
 
+static constexpr skcms_TransferFunction k2Dot2 =
+    { 2.2f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
 
+static constexpr skcms_TransferFunction kLinear =
+    { 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
 
+}
 
+namespace SkNamedGamut {
 
+static constexpr skcms_Matrix3x3 kSRGB = {{
+    
+    
+    
+    
+    { SkFixedToFloat(0x6FA2), SkFixedToFloat(0x6299), SkFixedToFloat(0x24A0) },
+    { SkFixedToFloat(0x38F5), SkFixedToFloat(0xB785), SkFixedToFloat(0x0F84) },
+    { SkFixedToFloat(0x0390), SkFixedToFloat(0x18DA), SkFixedToFloat(0xB6CF) },
+}};
 
+static constexpr skcms_Matrix3x3 kAdobeRGB = {{
+    
+    
+    
+    
+    { SkFixedToFloat(0x9c18), SkFixedToFloat(0x348d), SkFixedToFloat(0x2631) },
+    { SkFixedToFloat(0x4fa5), SkFixedToFloat(0xa02c), SkFixedToFloat(0x102f) },
+    { SkFixedToFloat(0x04fc), SkFixedToFloat(0x0f95), SkFixedToFloat(0xbe9c) },
+}};
 
-struct SK_API SkColorSpaceTransferFn {
-    float fG;
-    float fA;
-    float fB;
-    float fC;
-    float fD;
-    float fE;
-    float fF;
-};
+static constexpr skcms_Matrix3x3 kDCIP3 = {{
+    {  0.515102f,   0.291965f,  0.157153f  },
+    {  0.241182f,   0.692236f,  0.0665819f },
+    { -0.00104941f, 0.0418818f, 0.784378f  },
+}};
+
+static constexpr skcms_Matrix3x3 kRec2020 = {{
+    {  0.673459f,   0.165661f,  0.125100f  },
+    {  0.279033f,   0.675338f,  0.0456288f },
+    { -0.00193139f, 0.0299794f, 0.797162f  },
+}};
+
+static constexpr skcms_Matrix3x3 kXYZ = {{
+    { 1.0f, 0.0f, 0.0f },
+    { 0.0f, 1.0f, 0.0f },
+    { 0.0f, 0.0f, 1.0f },
+}};
+
+}
 
 class SK_API SkColorSpace : public SkNVRefCnt<SkColorSpace> {
 public:
@@ -72,39 +103,13 @@ public:
     
 
 
-
     static sk_sp<SkColorSpace> MakeSRGBLinear();
-
-    enum RenderTargetGamma : uint8_t {
-        kLinear_RenderTargetGamma,
-
-        
-
-
-
-        kSRGB_RenderTargetGamma,
-    };
-
-    enum Gamut {
-        kSRGB_Gamut,
-        kAdobeRGB_Gamut,
-        kDCIP3_D65_Gamut,
-        kRec2020_Gamut,
-    };
 
     
 
 
-
-
-
-    static sk_sp<SkColorSpace> MakeRGB(RenderTargetGamma gamma, Gamut gamut);
-    static sk_sp<SkColorSpace> MakeRGB(RenderTargetGamma gamma, const SkMatrix44& toXYZD50);
-    static sk_sp<SkColorSpace> MakeRGB(const SkColorSpaceTransferFn& coeffs, Gamut gamut);
-    static sk_sp<SkColorSpace> MakeRGB(const SkColorSpaceTransferFn& coeffs,
-                                       const SkMatrix44& toXYZD50);
-
-    static sk_sp<SkColorSpace> MakeRGB(SkGammaNamed gammaNamed, const SkMatrix44& toXYZD50);
+    static sk_sp<SkColorSpace> MakeRGB(const skcms_TransferFunction& transferFn,
+                                       const skcms_Matrix3x3& toXYZ);
 
     
 
@@ -116,17 +121,15 @@ public:
 
     void toProfile(skcms_ICCProfile*) const;
 
-    SkGammaNamed gammaNamed() const { return fGammaNamed; }
+    
+
+
+    bool gammaCloseToSRGB() const;
 
     
 
 
-    bool gammaCloseToSRGB() const { return kSRGB_SkGammaNamed == fGammaNamed; }
-
-    
-
-
-    bool gammaIsLinear() const { return kLinear_SkGammaNamed == fGammaNamed; }
+    bool gammaIsLinear() const;
 
     
 
@@ -134,13 +137,15 @@ public:
 
 
 
-    bool isNumericalTransferFn(SkColorSpaceTransferFn* fn) const;
+    bool isNumericalTransferFn(skcms_TransferFunction* fn) const;
 
     
 
 
 
     bool toXYZD50(SkMatrix44* toXYZD50) const;
+
+    bool toXYZD50(skcms_Matrix3x3* toXYZD50) const;
 
     
 
@@ -216,13 +221,11 @@ public:
 private:
     friend class SkColorSpaceSingletonFactory;
 
-    SkColorSpace(SkGammaNamed gammaNamed,
-                 const float transferFn[7],
-                 const SkMatrix44& toXYZ);
+    SkColorSpace(const float transferFn[7],
+                 const skcms_Matrix3x3& toXYZ);
 
     void computeLazyDstFields() const;
 
-    SkGammaNamed                        fGammaNamed;         
     uint32_t                            fTransferFnHash;
     uint32_t                            fToXYZD50Hash;
 

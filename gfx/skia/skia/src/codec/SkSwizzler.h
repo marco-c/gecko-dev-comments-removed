@@ -32,14 +32,22 @@ public:
 
 
 
+    static std::unique_ptr<SkSwizzler> Make(const SkEncodedInfo& encodedInfo,
+            const SkPMColor* ctable, const SkImageInfo& dstInfo, const SkCodec::Options&,
+            const SkIRect* frame = nullptr);
+
+    
 
 
 
 
-    static SkSwizzler* CreateSwizzler(const SkEncodedInfo& encodedInfo, const SkPMColor* ctable,
-                                      const SkImageInfo& dstInfo, const SkCodec::Options&,
-                                      const SkIRect* frame = nullptr,
-                                      bool skipFormatConversion = false);
+
+
+
+
+
+    static std::unique_ptr<SkSwizzler> MakeSimple(int srcBPP, const SkImageInfo& dstInfo,
+                                                  const SkCodec::Options&);
 
     
 
@@ -53,13 +61,8 @@ public:
 
     void swizzle(void* dst, const uint8_t* SK_RESTRICT src);
 
-    
-
-
-    void fill(const SkImageInfo& info, void* dst, size_t rowBytes,
-            SkCodec::ZeroInitialized zeroInit) override {
-        const SkImageInfo fillInfo = info.makeWH(fAllocatedWidth, info.height());
-        SkSampler::Fill(fillInfo, dst, rowBytes, zeroInit);
+    int fillWidth() const override {
+        return fAllocatedWidth;
     }
 
     
@@ -209,6 +212,9 @@ private:
 
     SkSwizzler(RowProc fastProc, RowProc proc, const SkPMColor* ctable, int srcOffset,
             int srcWidth, int dstOffset, int dstWidth, int srcBPP, int dstBPP);
+    static std::unique_ptr<SkSwizzler> Make(const SkImageInfo& dstInfo, RowProc fastProc,
+            RowProc proc, const SkPMColor* ctable, int srcBPP, int dstBPP,
+            const SkCodec::Options& options, const SkIRect* frame);
 
     int onSetSampleX(int) override;
 

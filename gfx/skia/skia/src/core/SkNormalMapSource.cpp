@@ -56,7 +56,7 @@ private:
 
             
             fragBuilder->codeAppend( "if (abs(normal.z) > 0.999) {");
-            fragBuilder->codeAppendf("    %s = normalize(float4(0.0, 0.0, normal.z, 0.0));",
+            fragBuilder->codeAppendf("    %s = normalize(half4(0.0, 0.0, half(normal.z), 0.0));",
                     args.fOutputColor);
             
             
@@ -70,8 +70,9 @@ private:
                                                  "( (transformed.x * transformed.x) "
                                                    "+ (transformed.y * transformed.y) )"
                                                  "/(1.0 - (normal.z * normal.z));");
-            fragBuilder->codeAppendf("    %s = float4(transformed*inversesqrt(scalingFactorSquared),"
-                                                   "normal.z, 0.0);",
+            fragBuilder->codeAppendf("    %s = half4(half2(transformed * "
+                                                          "inversesqrt(scalingFactorSquared)),"
+                                                    "half(normal.z), 0.0);",
                     args.fOutputColor);
             fragBuilder->codeAppend( "}");
         }
@@ -147,10 +148,14 @@ SkNormalSource::Provider* SkNormalMapSourceImpl::asProvider(const SkShaderBase::
     }
 
     
+    
+    SkColorSpace* dstColorSpace = nullptr;
+
+    
     SkPaint overridePaint {*(rec.fPaint)};
     overridePaint.setAlpha(0xFF);
     SkShaderBase::ContextRec overrideRec(overridePaint, *(rec.fMatrix), rec.fLocalMatrix,
-                                         rec.fDstColorSpace);
+                                         rec.fDstColorType, dstColorSpace);
 
     auto* context = as_SB(fMapShader)->makeContext(overrideRec, alloc);
     if (!context) {

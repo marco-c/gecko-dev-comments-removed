@@ -39,28 +39,4 @@ inline bool SkDrawTreatAsHairline(const SkPaint& paint, const SkMatrix& matrix,
     return SkDrawTreatAAStrokeAsHairline(strokeWidth, matrix, coverage);
 }
 
-class SkTextAlignProc {
-public:
-    SkTextAlignProc(SkPaint::Align align)
-        : fAlign(align) {
-    }
-
-    
-    
-    void operator()(const SkPoint& loc, const SkGlyph& glyph, SkPoint* dst) {
-        if (SkPaint::kLeft_Align == fAlign) {
-            dst->set(loc.fX, loc.fY);
-        } else if (SkPaint::kCenter_Align == fAlign) {
-            dst->set(loc.fX - SkFloatToScalar(glyph.fAdvanceX) / 2,
-                     loc.fY - SkFloatToScalar(glyph.fAdvanceY) / 2);
-        } else {
-            SkASSERT(SkPaint::kRight_Align == fAlign);
-            dst->set(loc.fX - SkFloatToScalar(glyph.fAdvanceX),
-                     loc.fY - SkFloatToScalar(glyph.fAdvanceY));
-        }
-    }
-private:
-    const SkPaint::Align fAlign;
-};
-
 #endif

@@ -12,13 +12,10 @@
 #include "SkColor.h"
 #include "SkImageInfo.h"
 #include "SkNx.h"
-#include "SkTArray.h"
+#include "SkTArray.h" 
 #include "SkTypes.h"
 #include <functional>
-#include <vector>
-#include "../jumper/SkJumper.h"
-
-
+#include <vector>  
 
 
 
@@ -41,19 +38,18 @@
     M(clamp_0) M(clamp_1) M(clamp_a) M(clamp_a_dst) M(clamp_gamut) \
     M(unpremul) M(premul) M(premul_dst)                            \
     M(force_opaque) M(force_opaque_dst)                            \
-    M(set_rgb) M(unbounded_set_rgb) M(swap_rb)                     \
+    M(set_rgb) M(unbounded_set_rgb) M(swap_rb) M(swap_rb_dst)      \
     M(from_srgb) M(to_srgb)                                        \
     M(black_color) M(white_color) M(uniform_color) M(unbounded_uniform_color) \
     M(seed_shader) M(dither)                                       \
     M(load_a8)   M(load_a8_dst)   M(store_a8)   M(gather_a8)       \
-    M(load_g8)   M(load_g8_dst)                 M(gather_g8)       \
     M(load_565)  M(load_565_dst)  M(store_565)  M(gather_565)      \
     M(load_4444) M(load_4444_dst) M(store_4444) M(gather_4444)     \
     M(load_f16)  M(load_f16_dst)  M(store_f16)  M(gather_f16)      \
     M(load_f32)  M(load_f32_dst)  M(store_f32)  M(gather_f32)      \
     M(load_8888) M(load_8888_dst) M(store_8888) M(gather_8888)     \
-    M(load_bgra) M(load_bgra_dst) M(store_bgra) M(gather_bgra)     \
     M(load_1010102) M(load_1010102_dst) M(store_1010102) M(gather_1010102) \
+    M(alpha_to_gray) M(alpha_to_gray_dst) M(luminance_to_alpha)    \
     M(bilerp_clamp_8888)                                           \
     M(store_u16_be)                                                \
     M(load_rgba) M(store_rgba)                                     \
@@ -65,8 +61,7 @@
     M(colorburn) M(colordodge) M(darken) M(difference)             \
     M(exclusion) M(hardlight) M(lighten) M(overlay) M(softlight)   \
     M(hue) M(saturation) M(color) M(luminosity)                    \
-    M(srcover_rgba_8888) M(srcover_bgra_8888)                      \
-    M(luminance_to_alpha)                                          \
+    M(srcover_rgba_8888)                                           \
     M(matrix_translate) M(matrix_scale_translate)                  \
     M(matrix_2x3) M(matrix_3x3) M(matrix_3x4) M(matrix_4x5) M(matrix_4x3) \
     M(matrix_perspective)                                          \
@@ -97,7 +92,87 @@
     M(mask_2pt_conical_degenerates) M(apply_vector_mask)           \
     M(byte_tables)                                                 \
     M(rgb_to_hsl) M(hsl_to_rgb)                                    \
-    M(gauss_a_to_rgba)
+    M(gauss_a_to_rgba)                                             \
+    M(emboss)
+
+
+static const int SkRasterPipeline_kMaxStride = 16;
+
+
+
+struct SkRasterPipeline_MemoryCtx {
+    void* pixels;
+    int   stride;
+};
+
+struct SkRasterPipeline_GatherCtx {
+    const void* pixels;
+    int         stride;
+    float       width;
+    float       height;
+};
+
+
+struct SkRasterPipeline_SamplerCtx {
+    float      x[SkRasterPipeline_kMaxStride];
+    float      y[SkRasterPipeline_kMaxStride];
+    float     fx[SkRasterPipeline_kMaxStride];
+    float     fy[SkRasterPipeline_kMaxStride];
+    float scalex[SkRasterPipeline_kMaxStride];
+    float scaley[SkRasterPipeline_kMaxStride];
+};
+
+struct SkRasterPipeline_TileCtx {
+    float scale;
+    float invScale; 
+};
+
+struct SkRasterPipeline_DecalTileCtx {
+    uint32_t mask[SkRasterPipeline_kMaxStride];
+    float    limit_x;
+    float    limit_y;
+};
+
+struct SkRasterPipeline_CallbackCtx {
+    void (*fn)(SkRasterPipeline_CallbackCtx* self, int active_pixels);
+
+    
+    
+    float rgba[4*SkRasterPipeline_kMaxStride];
+    float* read_from = rgba;
+};
+
+struct SkRasterPipeline_GradientCtx {
+    size_t stopCount;
+    float* fs[4];
+    float* bs[4];
+    float* ts;
+    bool interpolatedInPremul;
+};
+
+struct SkRasterPipeline_EvenlySpaced2StopGradientCtx {
+    float f[4];
+    float b[4];
+    bool interpolatedInPremul;
+};
+
+struct SkRasterPipeline_2PtConicalCtx {
+    uint32_t fMask[SkRasterPipeline_kMaxStride];
+    float    fP0,
+             fP1;
+};
+
+struct SkRasterPipeline_UniformColorCtx {
+    float r,g,b,a;
+    uint16_t rgba[4];  
+};
+
+struct SkRasterPipeline_EmbossCtx {
+    SkRasterPipeline_MemoryCtx mul,
+                               add;
+};
+
+
 
 class SkRasterPipeline {
 public:
@@ -152,9 +227,9 @@ public:
         this->append_set_rgb(alloc, color.vec());
     }
 
-    void append_load    (SkColorType, const SkJumper_MemoryCtx*);
-    void append_load_dst(SkColorType, const SkJumper_MemoryCtx*);
-    void append_store   (SkColorType, const SkJumper_MemoryCtx*);
+    void append_load    (SkColorType, const SkRasterPipeline_MemoryCtx*);
+    void append_load_dst(SkColorType, const SkRasterPipeline_MemoryCtx*);
+    void append_store   (SkColorType, const SkRasterPipeline_MemoryCtx*);
 
     void append_gamut_clamp_if_normalized(const SkImageInfo&);
 
@@ -174,6 +249,7 @@ private:
 
     void unchecked_append(StockStage, void*);
 
+    
     SkArenaAlloc* fAlloc;
     StageList*    fStages;
     int           fNumStages;

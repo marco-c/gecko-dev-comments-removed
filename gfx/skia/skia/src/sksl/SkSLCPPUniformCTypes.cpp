@@ -157,10 +157,6 @@ static const std::vector<UniformCTypeMapper>& get_mappers() {
         "SkIRect::MakeEmpty()",                                                    
         "${oldVar}.isEmpty() || ${oldVar} != ${newVar}"),                          
 
-    REGISTER(Layout::CType::kGrColor4f, { "half4", "float4", "double4" },
-        "${pdman}.set4fv(${uniform}, 1, ${var}.fRGBA)",                            
-        "GrColor4f::kIllegalConstructor"),                                         
-
     REGISTER(Layout::CType::kSkPMColor4f, { "half4", "float4", "double4" },
         "${pdman}.set4fv(${uniform}, 1, ${var}.vec())",                            
         "{SK_FloatNaN, SK_FloatNaN, SK_FloatNaN, SK_FloatNaN}"),                   

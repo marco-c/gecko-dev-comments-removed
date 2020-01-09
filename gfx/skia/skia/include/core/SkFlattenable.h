@@ -53,26 +53,12 @@ public:
     
 
 
-
-
-
-
-
-    virtual const char* getTypeName() const {
-    #ifdef SK_DISABLE_READBUFFER
-        
-        SkASSERT(false);
-        return nullptr;
-    #else
-        return FactoryToName(getFactory());
-    #endif
-    }
+    virtual const char* getTypeName() const = 0;
 
     static Factory NameToFactory(const char name[]);
     static const char* FactoryToName(Factory);
-    static bool NameToType(const char name[], Type* type);
 
-    static void Register(const char name[], Factory, Type);
+    static void Register(const char name[], Factory);
 
     
 
@@ -96,18 +82,25 @@ public:
 protected:
     class PrivateInitializer {
     public:
-        static void InitCore();
         static void InitEffects();
         static void InitImageFilters();
     };
 
 private:
-    static void InitializeFlattenablesIfNeeded();
+    static void RegisterFlattenablesIfNeeded();
     static void Finalize();
 
     friend class SkGraphics;
 
     typedef SkRefCnt INHERITED;
 };
+
+#define SK_REGISTER_FLATTENABLE(type) SkFlattenable::Register(#type, type::CreateProc)
+
+#define SK_FLATTENABLE_HOOKS(type)                                   \
+    static sk_sp<SkFlattenable> CreateProc(SkReadBuffer&);           \
+    friend class SkFlattenable::PrivateInitializer;                  \
+    Factory getFactory() const override { return type::CreateProc; } \
+    const char* getTypeName() const override { return #type; }
 
 #endif

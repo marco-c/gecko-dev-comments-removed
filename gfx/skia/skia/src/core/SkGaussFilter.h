@@ -12,18 +12,11 @@
 
 
 
-
-
 class SkGaussFilter {
 public:
     static constexpr int kGaussArrayMax = 6;
-    enum class Type : bool {
-        Gaussian,
-        Bessel
-    };
 
-    
-    SkGaussFilter(double sigma, Type type);
+    explicit SkGaussFilter(double sigma);
 
     size_t size()   const { return fN; }
     int radius() const { return fN - 1; }

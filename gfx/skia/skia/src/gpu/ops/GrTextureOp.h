@@ -6,6 +6,7 @@
 
 
 #include "GrColor.h"
+#include "GrRenderTargetContext.h"
 #include "GrSamplerState.h"
 #include "GrTypesPriv.h"
 #include "SkCanvas.h"
@@ -26,16 +27,45 @@ namespace GrTextureOp {
 
 
 
-std::unique_ptr<GrDrawOp> Make(GrContext*,
+std::unique_ptr<GrDrawOp> Make(GrRecordingContext*,
                                sk_sp<GrTextureProxy>,
                                GrSamplerState::Filter,
-                               GrColor,
+                               const SkPMColor4f&,
                                const SkRect& srcRect,
                                const SkRect& dstRect,
                                GrAAType,
                                GrQuadAAFlags,
                                SkCanvas::SrcRectConstraint,
                                const SkMatrix& viewMatrix,
-                               sk_sp<GrColorSpaceXform> textureXform,
-                               sk_sp<GrColorSpaceXform> paintXform);
+                               sk_sp<GrColorSpaceXform> textureXform);
+
+
+
+
+std::unique_ptr<GrDrawOp> MakeQuad(GrRecordingContext* context,
+                                  sk_sp<GrTextureProxy>,
+                                  GrSamplerState::Filter,
+                                  const SkPMColor4f&,
+                                  const SkPoint srcQuad[4],
+                                  const SkPoint dstQuad[4],
+                                  GrAAType,
+                                  GrQuadAAFlags,
+                                  const SkRect* domain,
+                                  const SkMatrix& viewMatrix,
+                                  sk_sp<GrColorSpaceXform> textureXform);
+
+std::unique_ptr<GrDrawOp> MakeSet(GrRecordingContext*,
+                                  const GrRenderTargetContext::TextureSetEntry[],
+                                  int cnt,
+                                  GrSamplerState::Filter,
+                                  GrAAType,
+                                  const SkMatrix& viewMatrix,
+                                  sk_sp<GrColorSpaceXform> textureXform);
+
+
+
+
+
+bool GetFilterHasEffect(const SkMatrix& viewMatrix, const SkRect& srcRect, const SkRect& dstRect);
+
 }

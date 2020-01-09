@@ -30,7 +30,7 @@ public:
         bool fAllowPathMaskCaching = false;
         GpuPathRenderers fGpuPathRenderers = GpuPathRenderers::kAll;
     };
-    GrPathRendererChain(GrContext* context, const Options&);
+    GrPathRendererChain(GrRecordingContext* context, const Options&);
 
     
 

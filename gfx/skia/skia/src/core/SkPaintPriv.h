@@ -8,15 +8,17 @@
 #ifndef SkPaintPriv_DEFINED
 #define SkPaintPriv_DEFINED
 
-#include "SkImageInfo.h"
-#include "SkMatrix.h"
 #include "SkPaint.h"
-#include "SkTypeface.h"
 
-class SkBitmap;
-class SkImage;
+class SkFont;
 class SkReadBuffer;
 class SkWriteBuffer;
+
+enum SkReadPaintResult {
+    kFailed_ReadPaint,
+    kSuccess_JustPaint,
+    kSuccess_PaintAndFont,
+};
 
 class SkPaintPriv {
 public:
@@ -34,50 +36,14 @@ public:
 
     static bool Overwrites(const SkPaint* paint, ShaderOverrideOpacity);
 
-    static bool Overwrites(const SkPaint& paint) {
-        return Overwrites(&paint, kNone_ShaderOverrideOpacity);
-    }
-
-    
-
-
-
-    static bool Overwrites(const SkBitmap&, const SkPaint* paint);
-
-    
-
-
-
-    static bool Overwrites(const SkImage*, const SkPaint* paint);
-
-    static void ScaleFontMetrics(SkPaint::FontMetrics*, SkScalar);
-
-    
-
-
-    static void MakeTextMatrix(SkMatrix* matrix, SkScalar size, SkScalar scaleX, SkScalar skewX) {
-        matrix->setScale(size * scaleX, size);
-        if (skewX) {
-            matrix->postSkew(skewX, 0);
-        }
-    }
-
-    static void MakeTextMatrix(SkMatrix* matrix, const SkPaint& paint) {
-        MakeTextMatrix(matrix, paint.getTextSize(), paint.getTextScaleX(), paint.getTextSkewX());
-    }
-
     static bool ShouldDither(const SkPaint&, SkColorType);
 
     
-    static int ValidCountText(const void* text, size_t length, SkPaint::TextEncoding);
 
-    static SkTypeface* GetTypefaceOrDefault(const SkPaint& paint) {
-        return paint.getTypeface() ? paint.getTypeface() : SkTypeface::GetDefaultTypeface();
-    }
 
-    static sk_sp<SkTypeface> RefTypefaceOrDefault(const SkPaint& paint) {
-        return paint.getTypeface() ? paint.refTypeface() : SkTypeface::MakeDefault();
-    }
+
+
+    static SkColor ComputeLuminanceColor(const SkPaint&);
 
     
 
@@ -95,8 +61,14 @@ public:
 
 
 
-    static bool Unflatten(SkPaint* paint, SkReadBuffer& buffer);
 
+
+
+
+    static SkReadPaintResult Unflatten(SkPaint* paint, SkReadBuffer& buffer, SkFont* font);
+
+private:
+    static SkReadPaintResult Unflatten_PreV68(SkPaint* paint, SkReadBuffer& buffer, SkFont*);
 };
 
 #endif

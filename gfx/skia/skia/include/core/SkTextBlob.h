@@ -19,12 +19,14 @@
 #define SkTextBlob_DEFINED
 
 #include "../private/SkTemplates.h"
+#include "SkFont.h"
 #include "SkPaint.h"
 #include "SkString.h"
 #include "SkRefCnt.h"
 
 #include <atomic>
 
+struct SkRSXform;
 struct SkSerialProcs;
 struct SkDeserialProcs;
 
@@ -64,8 +66,8 @@ public:
 
 
 
-    static sk_sp<SkTextBlob> MakeFromText(
-            const void* text, size_t byteLength, const SkPaint& paint);
+    int getIntercepts(const SkScalar bounds[2], SkScalar intervals[],
+                      const SkPaint* paint = nullptr) const;
 
     
 
@@ -80,12 +82,75 @@ public:
 
 
 
-    static sk_sp<SkTextBlob> MakeFromString(const char* string, const SkPaint& paint) {
+
+
+
+
+    static sk_sp<SkTextBlob> MakeFromText(const void* text, size_t byteLength, const SkFont& font,
+                                          SkTextEncoding encoding = kUTF8_SkTextEncoding);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkTextBlob> MakeFromString(const char* string, const SkFont& font,
+                                            SkTextEncoding encoding = kUTF8_SkTextEncoding) {
         if (!string) {
             return nullptr;
         }
-        return MakeFromText(string, strlen(string), paint);
+        return MakeFromText(string, strlen(string), font, encoding);
     }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkTextBlob> MakeFromPosTextH(const void* text, size_t byteLength,
+                                      const SkScalar xpos[], SkScalar constY, const SkFont& font,
+                                      SkTextEncoding encoding = kUTF8_SkTextEncoding);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkTextBlob> MakeFromPosText(const void* text, size_t byteLength,
+                                             const SkPoint pos[], const SkFont& font,
+                                             SkTextEncoding encoding = kUTF8_SkTextEncoding);
+
+    
+    static sk_sp<SkTextBlob> MakeFromRSXform(const void* text, size_t byteLength,
+                                             const SkRSXform xform[], const SkFont& font,
+                                             SkTextEncoding encoding = kUTF8_SkTextEncoding);
 
     
 
@@ -218,6 +283,11 @@ public:
         SkScalar*  pos;      
         char*      utf8text; 
         uint32_t*  clusters; 
+
+        
+        SkPoint*    points() const { return reinterpret_cast<SkPoint*>(pos); }
+        
+        SkRSXform*  xforms() const { return reinterpret_cast<SkRSXform*>(pos); }
     };
 
     
@@ -241,14 +311,8 @@ public:
 
 
 
-
-
-
-
-    const RunBuffer& allocRun(const SkPaint& font, int count, SkScalar x, SkScalar y,
-                              const SkRect* bounds = nullptr) {
-        return this->allocRunText(font, count, x, y, 0, SkString(), bounds);
-    }
+    const RunBuffer& allocRun(const SkFont& font, int count, SkScalar x, SkScalar y,
+                              const SkRect* bounds = nullptr);
 
     
 
@@ -271,14 +335,8 @@ public:
 
 
 
-
-
-
-
-    const RunBuffer& allocRunPosH(const SkPaint& font, int count, SkScalar y,
-                                  const SkRect* bounds = nullptr) {
-        return this->allocRunTextPosH(font, count, y, 0, SkString(), bounds);
-    }
+    const RunBuffer& allocRunPosH(const SkFont& font, int count, SkScalar y,
+                                  const SkRect* bounds = nullptr);
 
     
 
@@ -300,33 +358,34 @@ public:
 
 
 
+    const RunBuffer& allocRunPos(const SkFont& font, int count,
+                                 const SkRect* bounds = nullptr);
 
-
-
-
-    const RunBuffer& allocRunPos(const SkPaint& font, int count,
-                                 const SkRect* bounds = nullptr) {
-        return this->allocRunTextPos(font, count, 0, SkString(), bounds);
-    }
+    
+    const RunBuffer& allocRunRSXform(const SkFont& font, int count);
 
 private:
-    const RunBuffer& allocRunText(const SkPaint& font,
+    const RunBuffer& allocRunText(const SkFont& font,
                                   int count,
                                   SkScalar x,
                                   SkScalar y,
                                   int textByteCount,
                                   SkString lang,
                                   const SkRect* bounds = nullptr);
-    const RunBuffer& allocRunTextPosH(const SkPaint& font, int count, SkScalar y,
+    const RunBuffer& allocRunTextPosH(const SkFont& font, int count, SkScalar y,
                                       int textByteCount, SkString lang,
                                       const SkRect* bounds = nullptr);
-    const RunBuffer& allocRunTextPos(const SkPaint& font, int count,
+    const RunBuffer& allocRunTextPos(const SkFont& font, int count,
                                      int textByteCount, SkString lang,
                                      const SkRect* bounds = nullptr);
+    const RunBuffer& allocRunRSXform(const SkFont& font, int count,
+                                     int textByteCount, SkString lang,
+                                     const SkRect* bounds = nullptr);
+
     void reserve(size_t size);
-    void allocInternal(const SkPaint& font, SkTextBlob::GlyphPositioning positioning,
+    void allocInternal(const SkFont& font, SkTextBlob::GlyphPositioning positioning,
                        int count, int textBytes, SkPoint offset, const SkRect* bounds);
-    bool mergeRun(const SkPaint& font, SkTextBlob::GlyphPositioning positioning,
+    bool mergeRun(const SkFont& font, SkTextBlob::GlyphPositioning positioning,
                   uint32_t count, SkPoint offset);
     void updateDeferredBounds();
 

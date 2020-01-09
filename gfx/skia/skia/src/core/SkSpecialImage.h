@@ -15,7 +15,7 @@
 #include "SkImageFilter.h" 
 #include "SkImageInfo.h"   
 
-class GrContext;
+class GrRecordingContext;
 class GrTextureProxy;
 class SkBitmap;
 class SkCanvas;
@@ -62,22 +62,25 @@ public:
 
 
 
-    sk_sp<SkSpecialImage> makeTextureImage(GrContext*);
+    sk_sp<SkSpecialImage> makeTextureImage(GrRecordingContext*);
 
     
 
 
     void draw(SkCanvas*, SkScalar x, SkScalar y, const SkPaint*) const;
 
-    static sk_sp<SkSpecialImage> MakeFromImage(const SkIRect& subset,
+    static sk_sp<SkSpecialImage> MakeFromImage(GrRecordingContext*,
+                                               const SkIRect& subset,
                                                sk_sp<SkImage>,
-                                               SkColorSpace* dstColorSpace,
                                                const SkSurfaceProps* = nullptr);
     static sk_sp<SkSpecialImage> MakeFromRaster(const SkIRect& subset,
                                                 const SkBitmap&,
                                                 const SkSurfaceProps* = nullptr);
+    static sk_sp<SkSpecialImage> CopyFromRaster(const SkIRect& subset,
+                                                const SkBitmap&,
+                                                const SkSurfaceProps* = nullptr);
 #if SK_SUPPORT_GPU
-    static sk_sp<SkSpecialImage> MakeDeferredFromGpu(GrContext*,
+    static sk_sp<SkSpecialImage> MakeDeferredFromGpu(GrRecordingContext*,
                                                      const SkIRect& subset,
                                                      uint32_t uniqueID,
                                                      sk_sp<GrTextureProxy>,
@@ -126,14 +129,14 @@ public:
     
 
 
-    GrContext* getContext() const;
+    GrRecordingContext* getContext() const;
 
 #if SK_SUPPORT_GPU
     
 
 
 
-    sk_sp<GrTextureProxy> asTextureProxyRef(GrContext*) const;
+    sk_sp<GrTextureProxy> asTextureProxyRef(GrRecordingContext*) const;
 #endif
 
     

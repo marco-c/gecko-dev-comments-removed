@@ -8,14 +8,16 @@
 #ifndef GrGpuResource_DEFINED
 #define GrGpuResource_DEFINED
 
+#include "../private/GrResourceKey.h"
 #include "../private/GrTypesPriv.h"
 #include "../private/SkNoncopyable.h"
-#include "GrResourceKey.h"
 
 class GrContext;
 class GrGpu;
 class GrResourceCache;
 class SkTraceMemoryDump;
+
+
 
 
 
@@ -58,7 +60,13 @@ public:
     void unref() const {
         this->validate();
 
-        if (!(--fRefCnt)) {
+        if (fRefCnt == 1) {
+            if (!this->internalHasPendingIO()) {
+                static_cast<const DERIVED*>(this)->notifyAllCntsWillBeZero();
+            }
+            SkASSERT(fRefCnt > 0);
+        }
+        if (--fRefCnt == 0) {
             if (!static_cast<const DERIVED*>(this)->notifyRefCountIsZero()) {
                 return;
             }
@@ -85,8 +93,6 @@ protected:
         kPendingWrite_CntType,
     };
 
-    bool isPurgeable() const { return !this->internalHasRef() && !this->internalHasPendingIO(); }
-
     bool internalHasPendingRead() const { return SkToBool(fPendingReads); }
     bool internalHasPendingWrite() const { return SkToBool(fPendingWrites); }
     bool internalHasPendingIO() const { return SkToBool(fPendingWrites | fPendingReads); }
@@ -95,7 +101,6 @@ protected:
     bool internalHasUniqueRef() const { return fRefCnt == 1; }
 
 private:
-    friend class GrIORefProxy; 
     
     template <typename T>
     friend void testingOnly_getIORefCnts(const T*, int* refCnt, int* readCnt, int* writeCnt);
@@ -107,6 +112,9 @@ private:
 
     void completedRead() const {
         this->validate();
+        if (fPendingReads == 1 && !fPendingWrites && !fRefCnt) {
+            static_cast<const DERIVED*>(this)->notifyAllCntsWillBeZero();
+        }
         --fPendingReads;
         this->didRemoveRefOrPendingIO(kPendingRead_CntType);
     }
@@ -118,11 +126,13 @@ private:
 
     void completedWrite() const {
         this->validate();
+        if (fPendingWrites == 1 && !fPendingReads && !fRefCnt) {
+            static_cast<const DERIVED*>(this)->notifyAllCntsWillBeZero();
+        }
         --fPendingWrites;
         this->didRemoveRefOrPendingIO(kPendingWrite_CntType);
     }
 
-private:
     void didRemoveRefOrPendingIO(CntType cntTypeRemoved) const {
         if (0 == fPendingReads && 0 == fPendingWrites && 0 == fRefCnt) {
             static_cast<const DERIVED*>(this)->notifyAllCntsAreZero(cntTypeRemoved);
@@ -133,6 +143,7 @@ private:
     mutable int32_t fPendingReads;
     mutable int32_t fPendingWrites;
 
+    friend class GrIORefProxy;    
     friend class GrResourceCache; 
 
     template <typename, GrIOType> friend class GrPendingIOResource;
@@ -143,7 +154,6 @@ private:
 
 class SK_API GrGpuResource : public GrIORef<GrGpuResource> {
 public:
-
     
 
 
@@ -182,28 +192,20 @@ public:
 
     class UniqueID {
     public:
-        static UniqueID InvalidID() {
-            return UniqueID(uint32_t(SK_InvalidUniqueID));
-        }
-
-        UniqueID() {}
+        UniqueID() = default;
 
         explicit UniqueID(uint32_t id) : fID(id) {}
 
         uint32_t asUInt() const { return fID; }
 
-        bool operator==(const UniqueID& other) const {
-            return fID == other.fID;
-        }
-        bool operator!=(const UniqueID& other) const {
-            return !(*this == other);
-        }
+        bool operator==(const UniqueID& other) const { return fID == other.fID; }
+        bool operator!=(const UniqueID& other) const { return !(*this == other); }
 
         void makeInvalid() { fID = SK_InvalidUniqueID; }
-        bool isInvalid() const { return SK_InvalidUniqueID == fID; }
+        bool isInvalid() const { return  fID == SK_InvalidUniqueID; }
 
     protected:
-        uint32_t fID;
+        uint32_t fID = SK_InvalidUniqueID;
     };
 
     
@@ -236,16 +238,6 @@ public:
 
 
 
-
-
-
-    void abandon();
-
-    
-
-
-
-
     virtual void dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const;
 
     
@@ -267,7 +259,7 @@ protected:
     
     
     
-    void registerWithCacheWrapped();
+    void registerWithCacheWrapped(GrWrapCacheable);
 
     GrGpuResource(GrGpu*);
     virtual ~GrGpuResource();
@@ -301,13 +293,22 @@ protected:
 
 
 private:
+    bool isPurgeable() const;
+    bool hasRefOrPendingIO() const;
+
     
 
 
 
 
 
-    virtual void computeScratchKey(GrScratchKey*) const { }
+    virtual void computeScratchKey(GrScratchKey*) const {}
+
+    
+
+
+
+    void abandon();
 
     
 
@@ -317,8 +318,14 @@ private:
     virtual size_t onGpuMemorySize() const = 0;
 
     
+
+
+    virtual void willRemoveLastRefOrPendingIO() {}
+
+    
     void setUniqueKey(const GrUniqueKey&);
     void removeUniqueKey();
+    void notifyAllCntsWillBeZero() const;
     void notifyAllCntsAreZero(CntType) const;
     bool notifyRefCountIsZero() const;
     void removeScratchKey();
@@ -344,10 +351,10 @@ private:
     
     
     GrGpu* fGpu;
-    mutable size_t fGpuMemorySize;
+    mutable size_t fGpuMemorySize = kInvalidGpuMemorySize;
 
-    SkBudgeted fBudgeted;
-    bool fRefsWrappedObjects;
+    GrBudgetedType fBudgetedType = GrBudgetedType::kUnbudgetedUncacheable;
+    bool fRefsWrappedObjects = false;
     const UniqueID fUniqueID;
 
     typedef GrIORef<GrGpuResource> INHERITED;

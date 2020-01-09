@@ -27,6 +27,7 @@ class GrColorSpaceXform;
 class GrContext;
 class GrFragmentProcessor;
 class GrPaint;
+class GrRecordingContext;
 class GrResourceProvider;
 class GrTextureProxy;
 class GrUniqueKey;
@@ -58,25 +59,25 @@ static inline GrColor SkColorToUnpremulGrColor(SkColor c) {
 }
 
 
-
-GrColor4f SkColor4fToUnpremulGrColor4f(SkColor4f, const GrColorSpaceInfo&);
-
-
 SkPMColor4f SkColorToPMColor4f(SkColor, const GrColorSpaceInfo&);
 
 
 
+SkColor4f SkColor4fPrepForDst(SkColor4f, const GrColorSpaceInfo&, const GrCaps&);
 
 
 
-bool SkPaintToGrPaint(GrContext*,
+
+
+
+bool SkPaintToGrPaint(GrRecordingContext*,
                       const GrColorSpaceInfo& dstColorSpaceInfo,
                       const SkPaint& skPaint,
                       const SkMatrix& viewM,
                       GrPaint* grPaint);
 
 
-bool SkPaintToGrPaintNoShader(GrContext* context,
+bool SkPaintToGrPaintNoShader(GrRecordingContext*,
                               const GrColorSpaceInfo& dstColorSpaceInfo,
                               const SkPaint& skPaint,
                               GrPaint* grPaint);
@@ -84,7 +85,7 @@ bool SkPaintToGrPaintNoShader(GrContext* context,
 
 
 
-bool SkPaintToGrPaintReplaceShader(GrContext*,
+bool SkPaintToGrPaintReplaceShader(GrRecordingContext*,
                                    const GrColorSpaceInfo& dstColorSpaceInfo,
                                    const SkPaint& skPaint,
                                    std::unique_ptr<GrFragmentProcessor> shaderFP,
@@ -92,7 +93,7 @@ bool SkPaintToGrPaintReplaceShader(GrContext*,
 
 
 
-bool SkPaintToGrPaintWithXfermode(GrContext* context,
+bool SkPaintToGrPaintWithXfermode(GrRecordingContext*,
                                   const GrColorSpaceInfo& dstColorSpaceInfo,
                                   const SkPaint& skPaint,
                                   const SkMatrix& viewM,
@@ -103,18 +104,19 @@ bool SkPaintToGrPaintWithXfermode(GrContext* context,
 
 
 
-inline bool SkPaintToGrPaintWithPrimitiveColor(GrContext* context,
+inline bool SkPaintToGrPaintWithPrimitiveColor(GrRecordingContext* context,
                                                const GrColorSpaceInfo& dstColorSpaceInfo,
-                                               const SkPaint& skPaint, GrPaint* grPaint) {
+                                               const SkPaint& skPaint,
+                                               GrPaint* grPaint) {
     return SkPaintToGrPaintWithXfermode(context, dstColorSpaceInfo, skPaint, SkMatrix::I(),
                                         SkBlendMode::kDst, grPaint);
 }
 
 
 
-bool SkPaintToGrPaintWithTexture(GrContext* context,
+bool SkPaintToGrPaintWithTexture(GrRecordingContext*,
                                  const GrColorSpaceInfo& dstColorSpaceInfo,
-                                 const SkPaint& paint,
+                                 const SkPaint& skPaint,
                                  const SkMatrix& viewM,
                                  std::unique_ptr<GrFragmentProcessor> fp,
                                  bool textureIsAlphaOnly,
@@ -174,7 +176,7 @@ GR_STATIC_ASSERT((int)kIDA_GrBlendCoeff == (int)SkBlendModeCoeff::kIDA);
 
 
 
-sk_sp<GrTextureProxy> GrRefCachedBitmapTextureProxy(GrContext*,
+sk_sp<GrTextureProxy> GrRefCachedBitmapTextureProxy(GrRecordingContext*,
                                                     const SkBitmap&,
                                                     const GrSamplerState&,
                                                     SkScalar scaleAdjust[2]);
@@ -189,7 +191,7 @@ sk_sp<GrTextureProxy> GrUploadBitmapToTextureProxy(GrProxyProvider*, const SkBit
 
 
 
-sk_sp<GrTextureProxy> GrCopyBaseMipMapToTextureProxy(GrContext*,
+sk_sp<GrTextureProxy> GrCopyBaseMipMapToTextureProxy(GrRecordingContext*,
                                                      GrTextureProxy* baseProxy);
 
 
@@ -221,7 +223,7 @@ void GrMakeKeyFromImageID(GrUniqueKey* key, uint32_t imageID, const SkIRect& ima
 
 
 
-void GrInstallBitmapUniqueKeyInvalidator(const GrUniqueKey& key, uint32_t contextUniqueID,
+void GrInstallBitmapUniqueKeyInvalidator(const GrUniqueKey& key, uint32_t contextID,
                                          SkPixelRef* pixelRef);
 
 #endif

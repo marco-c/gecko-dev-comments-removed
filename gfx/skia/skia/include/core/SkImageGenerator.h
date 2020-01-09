@@ -12,10 +12,10 @@
 #include "SkColor.h"
 #include "SkImage.h"
 #include "SkImageInfo.h"
-#include "SkYUVSizeInfo.h"
+#include "SkYUVAIndex.h"
+#include "SkYUVASizeInfo.h"
 
-class GrContext;
-class GrContextThreadSafeProxy;
+class GrRecordingContext;
 class GrTextureProxy;
 class GrSamplerState;
 class SkBitmap;
@@ -90,7 +90,10 @@ public:
 
 
 
-    bool queryYUV8(SkYUVSizeInfo* sizeInfo, SkYUVColorSpace* colorSpace) const;
+
+    bool queryYUVA8(SkYUVASizeInfo* sizeInfo,
+                    SkYUVAIndex yuvaIndices[SkYUVAIndex::kIndexCount],
+                    SkYUVColorSpace* colorSpace) const;
 
     
 
@@ -102,7 +105,11 @@ public:
 
 
 
-    bool getYUV8Planes(const SkYUVSizeInfo& sizeInfo, void* planes[3]);
+
+
+    bool getYUVA8Planes(const SkYUVASizeInfo& sizeInfo,
+                        const SkYUVAIndex yuvaIndices[SkYUVAIndex::kIndexCount],
+                        void* planes[]);
 
 #if SK_SUPPORT_GPU
     
@@ -132,7 +139,7 @@ public:
 
 
 
-    sk_sp<GrTextureProxy> generateTexture(GrContext*, const SkImageInfo& info,
+    sk_sp<GrTextureProxy> generateTexture(GrRecordingContext*, const SkImageInfo& info,
                                           const SkIPoint& origin,
                                           bool willNeedMipMaps);
 #endif
@@ -163,9 +170,10 @@ protected:
     struct Options {};
     virtual bool onGetPixels(const SkImageInfo&, void*, size_t, const Options&) { return false; }
     virtual bool onIsValid(GrContext*) const { return true; }
-    virtual bool onQueryYUV8(SkYUVSizeInfo*, SkYUVColorSpace*) const { return false; }
-    virtual bool onGetYUV8Planes(const SkYUVSizeInfo&, void*[3] ) { return false; }
-
+    virtual bool onQueryYUVA8(SkYUVASizeInfo*, SkYUVAIndex[SkYUVAIndex::kIndexCount],
+                              SkYUVColorSpace*) const { return false; }
+    virtual bool onGetYUVA8Planes(const SkYUVASizeInfo&, const SkYUVAIndex[SkYUVAIndex::kIndexCount],
+                                  void*[4] ) { return false; }
 #if SK_SUPPORT_GPU
     enum class TexGenType {
         kNone,           
@@ -174,7 +182,8 @@ protected:
     };
 
     virtual TexGenType onCanGenerateTexture() const { return TexGenType::kNone; }
-    virtual sk_sp<GrTextureProxy> onGenerateTexture(GrContext*, const SkImageInfo&, const SkIPoint&,
+    virtual sk_sp<GrTextureProxy> onGenerateTexture(GrRecordingContext*, const SkImageInfo&,
+                                                    const SkIPoint&,
                                                     bool willNeedMipMaps);  
 #endif
 

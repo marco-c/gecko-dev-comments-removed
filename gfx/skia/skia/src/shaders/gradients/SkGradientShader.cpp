@@ -9,7 +9,7 @@
 #include "Sk4fLinearGradient.h"
 #include "SkColorSpacePriv.h"
 #include "SkColorSpaceXformer.h"
-#include "SkFlattenablePriv.h"
+#include "SkConvertPixels.h"
 #include "SkFloatBits.h"
 #include "SkGradientShaderPriv.h"
 #include "SkHalf.h"
@@ -20,8 +20,6 @@
 #include "SkSweepGradient.h"
 #include "SkTwoPointConicalGradient.h"
 #include "SkWriteBuffer.h"
-#include "../../jumper/SkJumper.h"
-#include "../../third_party/skcms/skcms.h"
 
 enum GradientSerializationFlags {
     
@@ -217,7 +215,7 @@ void SkGradientShaderBase::flatten(SkWriteBuffer& buffer) const {
     desc.flatten(buffer);
 }
 
-static void add_stop_color(SkJumper_GradientCtx* ctx, size_t stop, SkPMColor4f Fs, SkPMColor4f Bs) {
+static void add_stop_color(SkRasterPipeline_GradientCtx* ctx, size_t stop, SkPMColor4f Fs, SkPMColor4f Bs) {
     (ctx->fs[0])[stop] = Fs.fR;
     (ctx->fs[1])[stop] = Fs.fG;
     (ctx->fs[2])[stop] = Fs.fB;
@@ -228,14 +226,14 @@ static void add_stop_color(SkJumper_GradientCtx* ctx, size_t stop, SkPMColor4f F
     (ctx->bs[3])[stop] = Bs.fA;
 }
 
-static void add_const_color(SkJumper_GradientCtx* ctx, size_t stop, SkPMColor4f color) {
+static void add_const_color(SkRasterPipeline_GradientCtx* ctx, size_t stop, SkPMColor4f color) {
     add_stop_color(ctx, stop, { 0, 0, 0, 0 }, color);
 }
 
 
 
 static void init_stop_evenly(
-    SkJumper_GradientCtx* ctx, float gapCount, size_t stop, SkPMColor4f c_l, SkPMColor4f c_r) {
+    SkRasterPipeline_GradientCtx* ctx, float gapCount, size_t stop, SkPMColor4f c_l, SkPMColor4f c_r) {
     
     SkPMColor4f Fs = {
         (c_r.fR - c_l.fR) * gapCount,
@@ -255,7 +253,7 @@ static void init_stop_evenly(
 
 
 static void init_stop_pos(
-    SkJumper_GradientCtx* ctx, size_t stop, float t_l, float t_r, SkPMColor4f c_l, SkPMColor4f c_r) {
+    SkRasterPipeline_GradientCtx* ctx, size_t stop, float t_l, float t_r, SkPMColor4f c_l, SkPMColor4f c_r) {
     
     SkPMColor4f Fs = {
         (c_r.fR - c_l.fR) / (t_r - t_l),
@@ -276,7 +274,7 @@ static void init_stop_pos(
 bool SkGradientShaderBase::onAppendStages(const StageRec& rec) const {
     SkRasterPipeline* p = rec.fPipeline;
     SkArenaAlloc* alloc = rec.fAlloc;
-    SkJumper_DecalTileCtx* decal_ctx = nullptr;
+    SkRasterPipeline_DecalTileCtx* decal_ctx = nullptr;
 
     SkMatrix matrix;
     if (!this->computeTotalInverse(rec.fCTM, rec.fLocalM, &matrix)) {
@@ -294,7 +292,7 @@ bool SkGradientShaderBase::onAppendStages(const StageRec& rec) const {
         case kMirror_TileMode: p->append(SkRasterPipeline::mirror_x_1); break;
         case kRepeat_TileMode: p->append(SkRasterPipeline::repeat_x_1); break;
         case kDecal_TileMode:
-            decal_ctx = alloc->make<SkJumper_DecalTileCtx>();
+            decal_ctx = alloc->make<SkRasterPipeline_DecalTileCtx>();
             decal_ctx->limit_x = SkBits2Float(SkFloat2Bits(1.0f) + 1);
             
             p->append(SkRasterPipeline::decal_x, decal_ctx);
@@ -327,14 +325,14 @@ bool SkGradientShaderBase::onAppendStages(const StageRec& rec) const {
                           c_r = prepareColor(1);
 
         
-        auto ctx = alloc->make<SkJumper_EvenlySpaced2StopGradientCtx>();
+        auto ctx = alloc->make<SkRasterPipeline_EvenlySpaced2StopGradientCtx>();
         (Sk4f::Load(c_r.vec()) - Sk4f::Load(c_l.vec())).store(ctx->f);
         (                        Sk4f::Load(c_l.vec())).store(ctx->b);
         ctx->interpolatedInPremul = premulGrad;
 
         p->append(SkRasterPipeline::evenly_spaced_2_stop_gradient, ctx);
     } else {
-        auto* ctx = alloc->make<SkJumper_GradientCtx>();
+        auto* ctx = alloc->make<SkRasterPipeline_GradientCtx>();
         ctx->interpolatedInPremul = premulGrad;
 
         
@@ -460,29 +458,16 @@ SkGradientShaderBase::AutoXformColors::AutoXformColors(const SkGradientShaderBas
 
 SkColor4fXformer::SkColor4fXformer(const SkColor4f* colors, int colorCount,
                                    SkColorSpace* src, SkColorSpace* dst) {
-    
     fColors = colors;
 
-    
-    if (!dst) {
-        dst = sk_srgb_singleton();
-    }
-
-    
-    if (!src) {
-        src = sk_srgb_singleton();
-    }
-
-    if (!SkColorSpace::Equals(src, dst)) {
-        skcms_ICCProfile srcProfile, dstProfile;
-        src->toProfile(&srcProfile);
-        dst->toProfile(&dstProfile);
+    if (dst && !SkColorSpace::Equals(src, dst)) {
         fStorage.reset(colorCount);
-        const skcms_PixelFormat rgba_f32 = skcms_PixelFormat_RGBA_ffff;
-        const skcms_AlphaFormat unpremul = skcms_AlphaFormat_Unpremul;
-        SkAssertResult(skcms_Transform(colors,           rgba_f32, unpremul, &srcProfile,
-                                       fStorage.begin(), rgba_f32, unpremul, &dstProfile,
-                                       colorCount));
+
+        auto info = SkImageInfo::Make(colorCount,1, kRGBA_F32_SkColorType, kUnpremul_SkAlphaType);
+
+        SkConvertPixels(info.makeColorSpace(sk_ref_sp(dst)), fStorage.begin(), info.minRowBytes(),
+                        info.makeColorSpace(sk_ref_sp(src)), fColors         , info.minRowBytes());
+
         fColors = fStorage.begin();
     }
 }
@@ -530,6 +515,78 @@ static void desc_init(SkGradientShaderBase::Descriptor* desc,
     desc->fTileMode     = mode;
     desc->fGradFlags    = flags;
     desc->fLocalMatrix  = localMatrix;
+}
+
+static SkColor4f average_gradient_color(const SkColor4f colors[], const SkScalar pos[],
+                                        int colorCount) {
+    
+    
+    
+    
+    Sk4f blend(0.0);
+    
+    SkScalar wScale = pos ? 0.5 : 0.5 / (colorCount - 1);
+    for (int i = 0; i < colorCount - 1; ++i) {
+        
+        Sk4f c0 = Sk4f::Load(&colors[i]);
+        Sk4f c1 = Sk4f::Load(&colors[i + 1]);
+        
+        
+        SkScalar w = pos ? (pos[i + 1] - pos[i]) : SK_Scalar1;
+        blend += wScale * w * (c1 + c0);
+    }
+
+    
+    if (pos) {
+        if (pos[0] > 0.0) {
+            
+            
+            Sk4f c = Sk4f::Load(&colors[0]);
+            blend += pos[0] * c;
+        }
+        if (pos[colorCount - 1] < SK_Scalar1) {
+            
+            
+            Sk4f c = Sk4f::Load(&colors[colorCount - 1]);
+            blend += (1 - pos[colorCount - 1]) * c;
+        }
+    }
+
+    SkColor4f avg;
+    blend.store(&avg);
+    return avg;
+}
+
+
+
+static constexpr SkScalar kDegenerateThreshold = SK_Scalar1 / (1 << 15);
+
+
+
+
+static sk_sp<SkShader> make_degenerate_gradient(const SkColor4f colors[], const SkScalar pos[],
+                                                int colorCount, sk_sp<SkColorSpace> colorSpace,
+                                                SkShader::TileMode mode) {
+    switch(mode) {
+        case SkShader::kDecal_TileMode:
+            
+            
+            return SkShader::MakeEmptyShader();
+        case SkShader::kRepeat_TileMode:
+        case SkShader::kMirror_TileMode:
+            
+            
+            
+            return SkShader::MakeColorShader(
+                    average_gradient_color(colors, pos, colorCount), std::move(colorSpace));
+        case SkShader::kClamp_TileMode:
+            
+            
+            return SkShader::MakeColorShader(colors[colorCount - 1], std::move(colorSpace));
+        default:
+            SkDEBUGFAIL("Should not be reached");
+            return nullptr;
+    }
 }
 
 
@@ -633,6 +690,14 @@ sk_sp<SkShader> SkGradientShader::MakeLinear(const SkPoint pts[2],
         return nullptr;
     }
 
+    if (SkScalarNearlyZero((pts[1] - pts[0]).length(), kDegenerateThreshold)) {
+        
+        
+        
+        
+        return make_degenerate_gradient(colors, pos, colorCount, std::move(colorSpace), mode);
+    }
+
     ColorStopOptimizer opt(colors, pos, colorCount, mode);
 
     SkGradientShaderBase::Descriptor desc;
@@ -659,7 +724,7 @@ sk_sp<SkShader> SkGradientShader::MakeRadial(const SkPoint& center, SkScalar rad
                                              SkShader::TileMode mode,
                                              uint32_t flags,
                                              const SkMatrix* localMatrix) {
-    if (radius <= 0) {
+    if (radius < 0) {
         return nullptr;
     }
     if (!valid_grad(colors, pos, colorCount, mode)) {
@@ -670,6 +735,11 @@ sk_sp<SkShader> SkGradientShader::MakeRadial(const SkPoint& center, SkScalar rad
     }
     if (localMatrix && !localMatrix->invert(nullptr)) {
         return nullptr;
+    }
+
+    if (SkScalarNearlyZero(radius, kDegenerateThreshold)) {
+        
+        return make_degenerate_gradient(colors, pos, colorCount, std::move(colorSpace), mode);
     }
 
     ColorStopOptimizer opt(colors, pos, colorCount, mode);
@@ -709,19 +779,40 @@ sk_sp<SkShader> SkGradientShader::MakeTwoPointConical(const SkPoint& start,
     if (startRadius < 0 || endRadius < 0) {
         return nullptr;
     }
-    if (SkScalarNearlyZero((start - end).length()) && SkScalarNearlyZero(startRadius)) {
-        
-        return MakeRadial(start, endRadius, colors, std::move(colorSpace), pos, colorCount,
-                          mode, flags, localMatrix);
-    }
     if (!valid_grad(colors, pos, colorCount, mode)) {
         return nullptr;
     }
-    if (startRadius == endRadius) {
-        if (start == end || startRadius == 0) {
-            return SkShader::MakeEmptyShader();
+    if (SkScalarNearlyZero((start - end).length(), kDegenerateThreshold)) {
+        
+        
+        
+        if (SkScalarNearlyEqual(startRadius, endRadius, kDegenerateThreshold)) {
+            
+            
+            
+            if (mode == SkShader::TileMode::kClamp_TileMode && endRadius > kDegenerateThreshold) {
+                
+                
+                
+                static constexpr SkScalar circlePos[3] = {0, 1, 1};
+                SkColor4f reColors[3] = {colors[0], colors[0], colors[colorCount - 1]};
+                return MakeRadial(start, endRadius, reColors, std::move(colorSpace),
+                                  circlePos, 3, mode, flags, localMatrix);
+            } else {
+                
+                return make_degenerate_gradient(
+                        colors, pos, colorCount, std::move(colorSpace), mode);
+            }
+        } else if (SkScalarNearlyZero(startRadius, kDegenerateThreshold)) {
+            
+            
+            return MakeRadial(start, endRadius, colors, std::move(colorSpace), pos, colorCount,
+                              mode, flags, localMatrix);
         }
+        
+        
     }
+
     if (localMatrix && !localMatrix->invert(nullptr)) {
         return nullptr;
     }
@@ -765,11 +856,27 @@ sk_sp<SkShader> SkGradientShader::MakeSweep(SkScalar cx, SkScalar cy,
     if (1 == colorCount) {
         return SkShader::MakeColorShader(colors[0], std::move(colorSpace));
     }
-    if (!SkScalarIsFinite(startAngle) || !SkScalarIsFinite(endAngle) || startAngle >= endAngle) {
+    if (!SkScalarIsFinite(startAngle) || !SkScalarIsFinite(endAngle) || startAngle > endAngle) {
         return nullptr;
     }
     if (localMatrix && !localMatrix->invert(nullptr)) {
         return nullptr;
+    }
+
+    if (SkScalarNearlyEqual(startAngle, endAngle, kDegenerateThreshold)) {
+        
+        
+        if (mode == SkShader::kClamp_TileMode && endAngle > kDegenerateThreshold) {
+            
+            
+            
+            static constexpr SkScalar clampPos[3] = {0, 1, 1};
+            SkColor4f reColors[3] = {colors[0], colors[0], colors[colorCount - 1]};
+            return MakeSweep(cx, cy, reColors, std::move(colorSpace), clampPos, 3, mode, 0,
+                             endAngle, flags, localMatrix);
+        } else {
+            return make_degenerate_gradient(colors, pos, colorCount, std::move(colorSpace), mode);
+        }
     }
 
     if (startAngle <= 0 && endAngle >= 360) {
@@ -789,9 +896,9 @@ sk_sp<SkShader> SkGradientShader::MakeSweep(SkScalar cx, SkScalar cy,
     return sk_make_sp<SkSweepGradient>(SkPoint::Make(cx, cy), t0, t1, desc);
 }
 
-SK_DEFINE_FLATTENABLE_REGISTRAR_GROUP_START(SkGradientShader)
-    SK_DEFINE_FLATTENABLE_REGISTRAR_ENTRY(SkLinearGradient)
-    SK_DEFINE_FLATTENABLE_REGISTRAR_ENTRY(SkRadialGradient)
-    SK_DEFINE_FLATTENABLE_REGISTRAR_ENTRY(SkSweepGradient)
-    SK_DEFINE_FLATTENABLE_REGISTRAR_ENTRY(SkTwoPointConicalGradient)
-SK_DEFINE_FLATTENABLE_REGISTRAR_GROUP_END
+void SkGradientShader::RegisterFlattenables() {
+    SK_REGISTER_FLATTENABLE(SkLinearGradient);
+    SK_REGISTER_FLATTENABLE(SkRadialGradient);
+    SK_REGISTER_FLATTENABLE(SkSweepGradient);
+    SK_REGISTER_FLATTENABLE(SkTwoPointConicalGradient);
+}

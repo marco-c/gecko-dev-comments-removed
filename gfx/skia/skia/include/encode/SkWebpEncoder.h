@@ -43,6 +43,6 @@ namespace SkWebpEncoder {
 
 
     SK_API bool Encode(SkWStream* dst, const SkPixmap& src, const Options& options);
-};
+}
 
 #endif

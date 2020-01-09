@@ -24,11 +24,6 @@ bool GrPixelConfigToMTLFormat(GrPixelConfig config, MTLPixelFormat* format);
 
 
 
-GrPixelConfig GrMTLFormatToPixelConfig(MTLPixelFormat format);
-
-
-
-
 
 id<MTLTexture> GrGetMTLTexture(const void* mtlTexture, GrWrapOwnership);
 

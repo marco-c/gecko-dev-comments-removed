@@ -71,11 +71,11 @@ private:
 
     const GrCCAtlas* fAtlas = nullptr;
     SkIVector fDevToAtlasOffset;  
-    SkDEBUGCODE(bool fHasAtlas = false);
+    SkDEBUGCODE(bool fHasAtlas = false;)
 
     SkVector fAtlasScale;
     SkVector fAtlasTranslate;
-    SkDEBUGCODE(bool fHasAtlasTransform = false);
+    SkDEBUGCODE(bool fHasAtlasTransform = false;)
 };
 
 #endif

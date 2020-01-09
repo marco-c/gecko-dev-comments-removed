@@ -9,15 +9,15 @@
 
 #include "SkPDFTypes.h"
 
-class SkBitSet;
-class SkGlyphCache;
+class SkStrike;
+class SkPDFGlyphUse;
 
 
 
 
-sk_sp<SkPDFArray> SkPDFMakeCIDGlyphWidthsArray(SkGlyphCache* cache,
-                                               const SkBitSet* subset,
-                                               uint16_t emSize,
-                                               int16_t* defaultWidth);
+std::unique_ptr<SkPDFArray> SkPDFMakeCIDGlyphWidthsArray(SkStrike* cache,
+                                                         const SkPDFGlyphUse* subset,
+                                                         uint16_t emSize,
+                                                         int16_t* defaultWidth);
 
 #endif  

@@ -4,14 +4,12 @@
 
 
 
-
-
 #ifndef SkPDFFont_DEFINED
 #define SkPDFFont_DEFINED
 
 #include "SkAdvancedTypefaceMetrics.h"
-#include "SkBitSet.h"
-#include "SkPDFCanon.h"
+#include "SkPDFDocument.h"
+#include "SkPDFGlyphUse.h"
 #include "SkPDFTypes.h"
 #include "SkStrikeCache.h"
 #include "SkTypeface.h"
@@ -23,10 +21,12 @@
 
 
 
-class SkPDFFont : public SkPDFDict {
-
+class SkPDFFont {
 public:
-    ~SkPDFFont() override;
+    SkPDFFont() {}
+    ~SkPDFFont();
+    SkPDFFont(SkPDFFont&&);
+    SkPDFFont& operator=(SkPDFFont&&);
 
     
 
@@ -55,7 +55,7 @@ public:
     
 
     bool hasGlyph(SkGlyphID gid) {
-        return (gid >= fFirstGlyphID && gid <= fLastGlyphID) || gid == 0;
+        return (gid >= this->firstGlyphID() && gid <= this->lastGlyphID()) || gid == 0;
     }
 
     
@@ -63,9 +63,9 @@ public:
         if (this->multiByteGlyphs() || gid == 0) {
             return gid;
         }
-        SkASSERT(gid >= fFirstGlyphID && gid <= fLastGlyphID);
-        SkASSERT(fFirstGlyphID > 0);
-        return gid - fFirstGlyphID + 1;
+        SkASSERT(gid >= this->firstGlyphID() && gid <= this->lastGlyphID());
+        SkASSERT(this->firstGlyphID() > 0);
+        return gid - this->firstGlyphID() + 1;
     }
 
     void noteGlyphUsage(SkGlyphID glyph) {
@@ -73,68 +73,60 @@ public:
         fGlyphUsage.set(glyph);
     }
 
-    
-
-
-
-
-
-
-
-    static sk_sp<SkPDFFont> GetFontResource(SkPDFCanon* canon,
-                                            SkGlyphCache* cache,
-                                            SkTypeface* typeface,
-                                            SkGlyphID glyphID);
+    SkPDFIndirectReference indirectReference() const { return fIndirectReference; }
 
     
 
 
 
-    static const SkAdvancedTypefaceMetrics* GetMetrics(SkTypeface* typeface,
-                                                       SkPDFCanon* canon);
+
+
+
+
+    static SkPDFFont* GetFontResource(SkPDFDocument* doc,
+                                      SkStrike* cache,
+                                      SkTypeface* typeface,
+                                      SkGlyphID glyphID);
+
+    
+
+
+
+    static const SkAdvancedTypefaceMetrics* GetMetrics(const SkTypeface* typeface,
+                                                       SkPDFDocument* canon);
 
     static const std::vector<SkUnichar>& GetUnicodeMap(const SkTypeface* typeface,
-                                                       SkPDFCanon* canon);
+                                                       SkPDFDocument* canon);
+
+    void emitSubset(SkPDFDocument*) const;
 
     
 
 
-    virtual void getFontSubset(SkPDFCanon*) = 0;
 
-    
+    static bool CanEmbedTypeface(SkTypeface*, SkPDFDocument*);
 
-
-
-    static bool CanEmbedTypeface(SkTypeface*, SkPDFCanon*);
-
-protected:
-    
-    struct Info {
-        sk_sp<SkTypeface> fTypeface;
-        SkGlyphID fFirstGlyphID;
-        SkGlyphID fLastGlyphID;
-        SkAdvancedTypefaceMetrics::FontType fFontType;
-    };
-    SkPDFFont(Info);
-
-    SkGlyphID firstGlyphID() const { return fFirstGlyphID; }
-    SkGlyphID lastGlyphID() const { return fLastGlyphID; }
-    const SkBitSet& glyphUsage() const { return fGlyphUsage; }
+    SkGlyphID firstGlyphID() const { return fGlyphUsage.firstNonZero(); }
+    SkGlyphID lastGlyphID() const { return fGlyphUsage.lastGlyph(); }
+    const SkPDFGlyphUse& glyphUsage() const { return fGlyphUsage; }
     sk_sp<SkTypeface> refTypeface() const { return fTypeface; }
-
-    void drop() override;
 
 private:
     sk_sp<SkTypeface> fTypeface;
-    SkBitSet fGlyphUsage;
+    SkPDFGlyphUse fGlyphUsage;
+    SkPDFIndirectReference fIndirectReference;
+    SkAdvancedTypefaceMetrics::FontType fFontType = (SkAdvancedTypefaceMetrics::FontType)(-1);
 
+    SkPDFFont(sk_sp<SkTypeface>,
+              SkGlyphID firstGlyphID,
+              SkGlyphID lastGlyphID,
+              SkAdvancedTypefaceMetrics::FontType fontType,
+              SkPDFIndirectReference indirectReference);
     
     
-    const SkGlyphID fFirstGlyphID;
-    const SkGlyphID fLastGlyphID;
-    const SkAdvancedTypefaceMetrics::FontType fFontType;
 
-    typedef SkPDFDict INHERITED;
+    SkPDFFont(const SkPDFFont&) = delete;
+    SkPDFFont& operator=(const SkPDFFont&) = delete;
 };
 
 #endif

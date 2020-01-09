@@ -86,7 +86,7 @@ uint8_t SkMasks::getAlpha(uint32_t pixel) const {
 
 
 
-const SkMasks::MaskInfo process_mask(uint32_t mask, uint32_t bpp) {
+static const SkMasks::MaskInfo process_mask(uint32_t mask) {
     
     uint32_t tempMask = mask;
     uint32_t shift = 0;
@@ -116,9 +116,7 @@ const SkMasks::MaskInfo process_mask(uint32_t mask, uint32_t bpp) {
         }
     }
 
-    
-    const SkMasks::MaskInfo info = { mask, shift, size };
-    return info;
+    return { mask, shift, size };
 }
 
 
@@ -126,29 +124,32 @@ const SkMasks::MaskInfo process_mask(uint32_t mask, uint32_t bpp) {
 
 
 
-SkMasks* SkMasks::CreateMasks(InputMasks masks, uint32_t bitsPerPixel) {
+SkMasks* SkMasks::CreateMasks(InputMasks masks, int bytesPerPixel) {
+    SkASSERT(0 < bytesPerPixel && bytesPerPixel <= 4);
+
     
-    if (bitsPerPixel < 32) {
-        masks.red &= (1 << bitsPerPixel) - 1;
+    if (bytesPerPixel < 4) {
+        int bitsPerPixel = 8*bytesPerPixel;
+        masks.red   &= (1 << bitsPerPixel) - 1;
         masks.green &= (1 << bitsPerPixel) - 1;
-        masks.blue &= (1 << bitsPerPixel) - 1;
+        masks.blue  &= (1 << bitsPerPixel) - 1;
         masks.alpha &= (1 << bitsPerPixel) - 1;
     }
 
     
-    if (((masks.red & masks.green) | (masks.red & masks.blue) |
-            (masks.red & masks.alpha) | (masks.green & masks.blue) |
-            (masks.green & masks.alpha) | (masks.blue & masks.alpha)) != 0) {
+    if (((masks.red   & masks.green) |
+         (masks.red   & masks.blue ) |
+         (masks.red   & masks.alpha) |
+         (masks.green & masks.blue ) |
+         (masks.green & masks.alpha) |
+         (masks.blue  & masks.alpha) ) != 0) {
         return nullptr;
     }
 
-    
-    const MaskInfo red = process_mask(masks.red, bitsPerPixel);
-    const MaskInfo green = process_mask(masks.green, bitsPerPixel);
-    const MaskInfo blue = process_mask(masks.blue, bitsPerPixel);
-    const MaskInfo alpha = process_mask(masks.alpha, bitsPerPixel);
-
-    return new SkMasks(red, green, blue, alpha);
+    return new SkMasks(process_mask(masks.red  ),
+                       process_mask(masks.green),
+                       process_mask(masks.blue ),
+                       process_mask(masks.alpha));
 }
 
 

@@ -26,12 +26,13 @@ public:
 
     enum Bits {
         kStyle_Bit      = 1 << 0,   
-        kTextSkewX_Bit  = 1 << 1,   
         kPathEffect_Bit = 1 << 2,   
         kMaskFilter_Bit = 1 << 3,   
         kShader_Bit     = 1 << 4,   
         kColorFilter_Bit = 1 << 5,  
         kXfermode_Bit   = 1 << 6,   
+
+        
 
         
 
@@ -75,9 +76,6 @@ public:
 
     bool asABlurShadow(BlurShadowRec* rec) const override;
 
-    Factory getFactory() const override { return CreateProc; }
-    static sk_sp<SkFlattenable> CreateProc(SkReadBuffer& buffer);
-
 protected:
     sk_sp<SkDrawLooper> onMakeColorSpace(SkColorSpaceXformer*) const override;
 
@@ -86,6 +84,8 @@ protected:
     void flatten(SkWriteBuffer&) const override;
 
 private:
+    SK_FLATTENABLE_HOOKS(SkLayerDrawLooper)
+
     struct Rec {
         Rec*    fNext;
         SkPaint fPaint;

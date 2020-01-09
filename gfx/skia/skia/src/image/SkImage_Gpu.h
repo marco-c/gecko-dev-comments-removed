@@ -23,7 +23,7 @@ struct SkYUVAIndex;
 class SkImage_Gpu : public SkImage_GpuBase {
 public:
     SkImage_Gpu(sk_sp<GrContext>, uint32_t uniqueID, SkAlphaType, sk_sp<GrTextureProxy>,
-                sk_sp<SkColorSpace>, SkBudgeted);
+                sk_sp<SkColorSpace>);
     ~SkImage_Gpu() override;
 
     SkImageInfo onImageInfo() const override;
@@ -31,53 +31,16 @@ public:
     GrTextureProxy* peekProxy() const override {
         return fProxy.get();
     }
-    sk_sp<GrTextureProxy> asTextureProxyRef() const override {
+    sk_sp<GrTextureProxy> asTextureProxyRef(GrRecordingContext*) const override {
         return fProxy;
     }
 
-    sk_sp<SkColorSpace> refColorSpace() { return fColorSpace; }
+    bool onIsTextureBacked() const override { return SkToBool(fProxy.get()); }
+
+    sk_sp<SkImage> onMakeColorTypeAndColorSpace(GrRecordingContext*,
+                                                SkColorType, sk_sp<SkColorSpace>) const final;
 
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     static sk_sp<SkImage> MakePromiseTexture(GrContext* context,
@@ -89,33 +52,16 @@ public:
                                              SkColorType colorType,
                                              SkAlphaType alphaType,
                                              sk_sp<SkColorSpace> colorSpace,
-                                             TextureFulfillProc textureFulfillProc,
-                                             TextureReleaseProc textureReleaseProc,
-                                             PromiseDoneProc promiseDoneProc,
-                                             TextureContext textureContext);
+                                             PromiseImageTextureFulfillProc textureFulfillProc,
+                                             PromiseImageTextureReleaseProc textureReleaseProc,
+                                             PromiseImageTextureDoneProc textureDoneProc,
+                                             PromiseImageTextureContext textureContext);
 
-    static sk_sp<SkImage> MakePromiseYUVATexture(GrContext* context,
-                                                 SkYUVColorSpace yuvColorSpace,
-                                                 const GrBackendFormat yuvaFormats[],
-                                                 const SkYUVAIndex yuvaIndices[4],
-                                                 int imageWidth,
-                                                 int imageHeight,
-                                                 GrSurfaceOrigin imageOrigin,
-                                                 sk_sp<SkColorSpace> imageColorSpace,
-                                                 TextureFulfillProc textureFulfillProc,
-                                                 TextureReleaseProc textureReleaseProc,
-                                                 PromiseDoneProc promiseDoneProc,
-                                                 TextureContext textureContexts[]);
-
-    void resetContext(sk_sp<GrContext> newContext) {
-        SkASSERT(fContext->uniqueID() == newContext->uniqueID());
-        fContext = newContext;
-    }
-
-    static sk_sp<SkImage> ConvertYUVATexturesToRGB(
-            GrContext*, SkYUVColorSpace yuvColorSpace, const GrBackendTexture yuvaTextures[],
-            const SkYUVAIndex yuvaIndices[4], SkISize imageSize, GrSurfaceOrigin imageOrigin,
-            SkBudgeted, GrRenderTargetContext*);
+    static sk_sp<SkImage> ConvertYUVATexturesToRGB(GrContext*, SkYUVColorSpace yuvColorSpace,
+                                                   const GrBackendTexture yuvaTextures[],
+                                                   const SkYUVAIndex yuvaIndices[4],
+                                                   SkISize imageSize, GrSurfaceOrigin imageOrigin,
+                                                   GrRenderTargetContext*);
 
 private:
     sk_sp<GrTextureProxy> fProxy;

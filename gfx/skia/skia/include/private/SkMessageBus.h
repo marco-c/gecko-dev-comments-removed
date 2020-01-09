@@ -20,6 +20,9 @@
 
 
 
+
+
+
 template <typename Message>
 class SkMessageBus : SkNoncopyable {
 public:
@@ -31,6 +34,8 @@ public:
     public:
         Inbox(uint32_t uniqueID = SK_InvalidUniqueID);
         ~Inbox();
+
+        uint32_t uniqueID() const { return fUniqueID; }
 
         
         void poll(SkTArray<Message>* out);
@@ -111,7 +116,7 @@ template <typename Message>
     SkMessageBus<Message>* bus = SkMessageBus<Message>::Get();
     SkAutoMutexAcquire lock(bus->fInboxesMutex);
     for (int i = 0; i < bus->fInboxes.count(); i++) {
-        if (m.shouldSend(bus->fInboxes[i]->fUniqueID)) {
+        if (SkShouldPostMessageToBus(m, bus->fInboxes[i]->fUniqueID)) {
             bus->fInboxes[i]->receive(m);
         }
     }

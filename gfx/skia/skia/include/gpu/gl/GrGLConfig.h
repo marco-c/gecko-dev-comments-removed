@@ -68,20 +68,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #if !defined(GR_GL_LOG_CALLS)
     #ifdef SK_DEBUG
         #define GR_GL_LOG_CALLS 1
@@ -106,24 +92,8 @@
     #define GR_GL_CHECK_ERROR_START                     1
 #endif
 
-#if !defined(GR_GL_USE_BUFFER_DATA_NULL_HINT)
-    #define GR_GL_USE_BUFFER_DATA_NULL_HINT             1
-#endif
-
 #if !defined(GR_GL_CHECK_ALLOC_WITH_GET_ERROR)
     #define GR_GL_CHECK_ALLOC_WITH_GET_ERROR            1
-#endif
-
-#if !defined(GR_GL_CHECK_FBO_STATUS_ONCE_PER_FORMAT)
-    #define GR_GL_CHECK_FBO_STATUS_ONCE_PER_FORMAT      0
-#endif
-
-#if !defined(GR_GL_MUST_USE_VBO)
-    #define GR_GL_MUST_USE_VBO                          0
-#endif
-
-#if !defined(GR_GL_USE_NEW_SHADER_SOURCE_SIGNATURE)
-    #define GR_GL_USE_NEW_SHADER_SOURCE_SIGNATURE       0
 #endif
 
 #endif

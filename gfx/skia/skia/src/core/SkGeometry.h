@@ -310,7 +310,7 @@ struct SkConic {
 };
 
 
-namespace {
+namespace {  
 
 
 

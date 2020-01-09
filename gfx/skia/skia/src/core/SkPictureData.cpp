@@ -410,7 +410,8 @@ void SkPictureData::parseBufferTag(SkReadBuffer& buffer, uint32_t tag, uint32_t 
             const int count = SkToInt(size);
 
             for (int i = 0; i < count; ++i) {
-                if (!buffer.readPaint(&fPaints.push_back())) {
+                
+                if (!buffer.readPaint(&fPaints.push_back(), nullptr)) {
                     return;
                 }
             }

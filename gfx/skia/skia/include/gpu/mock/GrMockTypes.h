@@ -54,6 +54,7 @@ struct GrMockOptions {
 
     
     bool fInstanceAttribSupport = false;
+    bool fHalfFloatVertexAttributeSupport = false;
     uint32_t fMapBufferFlags = 0;
     int fMaxTextureSize = 2048;
     int fMaxRenderTargetSize = 2048;

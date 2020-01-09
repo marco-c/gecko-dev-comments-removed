@@ -52,9 +52,19 @@ void SkLinearGradient::flatten(SkWriteBuffer& buffer) const {
     buffer.writePoint(fEnd);
 }
 
+#ifdef SK_ENABLE_LEGACY_SHADERCONTEXT
 SkShaderBase::Context* SkLinearGradient::onMakeContext(
     const ContextRec& rec, SkArenaAlloc* alloc) const
 {
+    
+    if (!rec.isLegacyCompatible(fColorSpace.get())) {
+        return nullptr;
+    }
+    
+    if (!this->colorsCanConvertToSkColor()) {
+        return nullptr;
+    }
+
     return fTileMode != kDecal_TileMode
         ? CheckedMakeContext<LinearGradient4fContext>(alloc, *this, rec)
         : nullptr;
@@ -71,6 +81,7 @@ SkShaderBase::Context* SkLinearGradient::onMakeBurstPipelineContext(
     return fColorCount > 2 ? CheckedMakeContext<LinearGradient4fContext>(alloc, *this, rec)
                            : nullptr;
 }
+#endif
 
 void SkLinearGradient::appendGradientStages(SkArenaAlloc*, SkRasterPipeline*,
                                             SkRasterPipeline*) const {

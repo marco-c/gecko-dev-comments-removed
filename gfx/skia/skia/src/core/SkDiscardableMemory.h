@@ -47,7 +47,7 @@ public:
 
 
 
-    virtual bool lock() = 0;
+    virtual bool SK_WARN_UNUSED_RESULT lock() = 0;
 
     
 

@@ -17,10 +17,10 @@
 #include "SkStrokeRec.h"
 
 class GrClip;
-class GrContext;
 struct GrFPArgs;
 class GrFragmentProcessor;
 class GrPaint;
+class GrRecordingContext;
 class GrRenderTarget;
 class GrRenderTargetContext;
 class GrResourceProvider;
@@ -108,7 +108,7 @@ public:
 
 
 
-    virtual bool directFilterMaskGPU(GrContext*,
+    virtual bool directFilterMaskGPU(GrRecordingContext*,
                                      GrRenderTargetContext*,
                                      GrPaint&& paint,
                                      const GrClip&,
@@ -122,7 +122,7 @@ public:
 
 
 
-    virtual sk_sp<GrTextureProxy> filterMaskGPU(GrContext*,
+    virtual sk_sp<GrTextureProxy> filterMaskGPU(GrRecordingContext*,
                                                 sk_sp<GrTextureProxy> srcProxy,
                                                 const SkMatrix& ctm,
                                                 const SkIRect& maskRect) const;

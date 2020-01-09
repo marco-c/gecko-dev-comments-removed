@@ -14,6 +14,7 @@
 #include "ccpr/GrCCStroker.h"
 #include "ccpr/GrCCPathProcessor.h"
 
+class GrCCPathCache;
 class GrCCPathCacheEntry;
 class GrOnFlushResourceProvider;
 class GrShape;
@@ -53,7 +54,8 @@ struct GrCCPerFlushResourceSpecs {
         return 0 == fNumCachedPaths + fNumCopiedPaths[kFillIdx] + fNumCopiedPaths[kStrokeIdx] +
                     fNumRenderedPaths[kFillIdx] + fNumRenderedPaths[kStrokeIdx] + fNumClipPaths;
     }
-    void convertCopiesToRenders();
+    
+    void cancelCopies();
 };
 
 
@@ -69,20 +71,17 @@ public:
 
     
     
-    
-    GrCCAtlas* copyPathToCachedAtlas(const GrCCPathCacheEntry&, GrCCPathProcessor::DoEvenOddFill,
-                                     SkIVector* newAtlasOffset);
+    void upgradeEntryToLiteralCoverageAtlas(GrCCPathCache*, GrOnFlushResourceProvider*,
+                                            GrCCPathCacheEntry*, GrCCPathProcessor::DoEvenOddFill);
 
     
     
     
     
     
-    
-    const GrCCAtlas* renderShapeInAtlas(const SkIRect& clipIBounds, const SkMatrix&, const GrShape&,
-                                        float strokeDevWidth, SkRect* devBounds,
-                                        SkRect* devBounds45, SkIRect* devIBounds,
-                                        SkIVector* devToAtlasOffset);
+    GrCCAtlas* renderShapeInAtlas(const SkIRect& clipIBounds, const SkMatrix&, const GrShape&,
+                                  float strokeDevWidth, SkRect* devBounds, SkRect* devBounds45,
+                                  SkIRect* devIBounds, SkIVector* devToAtlasOffset);
     const GrCCAtlas* renderDeviceSpacePathInAtlas(const SkIRect& clipIBounds, const SkPath& devPath,
                                                   const SkIRect& devPathIBounds,
                                                   SkIVector* devToAtlasOffset);
@@ -101,35 +100,27 @@ public:
     }
 
     
-    
-    
-    bool finalize(GrOnFlushResourceProvider*, sk_sp<GrTextureProxy> stashedAtlasProxy,
-                  SkTArray<sk_sp<GrRenderTargetContext>>* out);
+    bool finalize(GrOnFlushResourceProvider*, SkTArray<sk_sp<GrRenderTargetContext>>* out);
 
     
     const GrCCFiller& filler() const { SkASSERT(!this->isMapped()); return fFiller; }
     const GrCCStroker& stroker() const { SkASSERT(!this->isMapped()); return fStroker; }
-    const GrBuffer* indexBuffer() const { SkASSERT(!this->isMapped()); return fIndexBuffer.get(); }
-    const GrBuffer* vertexBuffer() const { SkASSERT(!this->isMapped()); return fVertexBuffer.get();}
-    GrBuffer* instanceBuffer() const { SkASSERT(!this->isMapped()); return fInstanceBuffer.get(); }
-
-    
-    
-    
-    GrCCAtlas* nextAtlasToStash() {
-        return fRenderedAtlasStack.empty() ? nullptr : &fRenderedAtlasStack.front();
+    sk_sp<const GrGpuBuffer> refIndexBuffer() const {
+        SkASSERT(!this->isMapped());
+        return fIndexBuffer;
     }
-
-    
-    bool hasStashedAtlas() const {
-        return !fRenderedAtlasStack.empty() && fRenderedAtlasStack.front().uniqueKey().isValid();
+    sk_sp<const GrGpuBuffer> refVertexBuffer() const {
+        SkASSERT(!this->isMapped());
+        return fVertexBuffer;
     }
-    const GrUniqueKey& stashedAtlasKey() const  {
-        SkASSERT(this->hasStashedAtlas());
-        return fRenderedAtlasStack.front().uniqueKey();
+    sk_sp<const GrGpuBuffer> refInstanceBuffer() const {
+        SkASSERT(!this->isMapped());
+        return fInstanceBuffer;
     }
 
 private:
+    void recordCopyPathInstance(const GrCCPathCacheEntry&, const SkIVector& newAtlasOffset,
+                                GrCCPathProcessor::DoEvenOddFill, sk_sp<GrTextureProxy> srcProxy);
     bool placeRenderedPathInAtlas(const SkIRect& clipIBounds, const SkIRect& pathIBounds,
                                   GrScissorTest*, SkIRect* clippedPathIBounds,
                                   SkIVector* devToAtlasOffset);
@@ -140,15 +131,39 @@ private:
     GrCCAtlasStack fCopyAtlasStack;
     GrCCAtlasStack fRenderedAtlasStack;
 
-    const sk_sp<const GrBuffer> fIndexBuffer;
-    const sk_sp<const GrBuffer> fVertexBuffer;
-    const sk_sp<GrBuffer> fInstanceBuffer;
+    const sk_sp<const GrGpuBuffer> fIndexBuffer;
+    const sk_sp<const GrGpuBuffer> fVertexBuffer;
+    const sk_sp<GrGpuBuffer> fInstanceBuffer;
 
     GrCCPathProcessor::Instance* fPathInstanceData = nullptr;
     int fNextCopyInstanceIdx;
     SkDEBUGCODE(int fEndCopyInstance);
     int fNextPathInstanceIdx;
     SkDEBUGCODE(int fEndPathInstance);
+
+    
+    
+    
+    struct CopyPathRange {
+        CopyPathRange() = default;
+        CopyPathRange(sk_sp<GrTextureProxy> srcProxy, int count)
+                : fSrcProxy(std::move(srcProxy)), fCount(count) {}
+        sk_sp<GrTextureProxy> fSrcProxy;
+        int fCount;
+    };
+
+    SkSTArray<4, CopyPathRange> fCopyPathRanges;
+    int fCurrCopyAtlasRangesIdx = 0;
+
+    
+    
+    
+    
+    SkSTArray<2, sk_sp<GrTexture>> fRecyclableAtlasTextures;
+
+public:
+    const GrTexture* testingOnly_frontCopyAtlasTexture() const;
+    const GrTexture* testingOnly_frontRenderedAtlasTexture() const;
 };
 
 inline void GrCCRenderedPathStats::statPath(const SkPath& path) {

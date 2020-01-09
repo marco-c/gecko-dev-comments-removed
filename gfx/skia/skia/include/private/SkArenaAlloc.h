@@ -63,10 +63,10 @@
 
 class SkArenaAlloc {
 public:
-    SkArenaAlloc(char* block, size_t blockSize, size_t extraSize);
+    SkArenaAlloc(char* block, size_t blockSize, size_t firstHeapAllocation);
 
-    SkArenaAlloc(size_t extraSize)
-        : SkArenaAlloc(nullptr, 0, extraSize)
+    explicit SkArenaAlloc(size_t firstHeapAllocation)
+        : SkArenaAlloc(nullptr, 0, firstHeapAllocation)
     {}
 
     ~SkArenaAlloc();
@@ -215,8 +215,9 @@ private:
     char*          fEnd;
     char* const    fFirstBlock;
     const uint32_t fFirstSize;
-    const uint32_t fExtraSize;
+    const uint32_t fFirstHeapAllocationSize;
 
+    
     
     
     uint32_t       fFib0 {1}, fFib1 {1};
@@ -227,8 +228,8 @@ private:
 template <size_t InlineStorageSize>
 class SkSTArenaAlloc : public SkArenaAlloc {
 public:
-    explicit SkSTArenaAlloc(size_t extraSize = InlineStorageSize)
-        : INHERITED(fInlineStorage, InlineStorageSize, extraSize) {}
+    explicit SkSTArenaAlloc(size_t firstHeapAllocation = InlineStorageSize)
+        : INHERITED(fInlineStorage, InlineStorageSize, firstHeapAllocation) {}
 
 private:
     char fInlineStorage[InlineStorageSize];

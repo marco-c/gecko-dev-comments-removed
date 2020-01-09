@@ -37,23 +37,12 @@ public:
     
 
     virtual ~SkRefCntBase() {
-#ifdef SK_DEBUG
-        SkASSERTF(getRefCnt() == 1, "fRefCnt was %d", getRefCnt());
+    #ifdef SK_DEBUG
+        SkASSERTF(this->getRefCnt() == 1, "fRefCnt was %d", this->getRefCnt());
         
         fRefCnt.store(0, std::memory_order_relaxed);
-#endif
+    #endif
     }
-
-#ifdef SK_DEBUG
-    
-    int32_t getRefCnt() const {
-        return fRefCnt.load(std::memory_order_relaxed);
-    }
-
-    void validate() const {
-        SkASSERT(getRefCnt() > 0);
-    }
-#endif
 
     
 
@@ -71,7 +60,7 @@ public:
     
 
     void ref() const {
-        SkASSERT(getRefCnt() > 0);
+        SkASSERT(this->getRefCnt() > 0);
         
         (void)fRefCnt.fetch_add(+1, std::memory_order_relaxed);
     }
@@ -81,7 +70,7 @@ public:
 
 
     void unref() const {
-        SkASSERT(getRefCnt() > 0);
+        SkASSERT(this->getRefCnt() > 0);
         
         if (1 == fRefCnt.fetch_add(-1, std::memory_order_acq_rel)) {
             
@@ -90,23 +79,23 @@ public:
         }
     }
 
-protected:
-    
-
-
-
-
-    void internal_dispose_restore_refcnt_to_1() const {
-        SkASSERT(0 == getRefCnt());
-        fRefCnt.store(1, std::memory_order_relaxed);
-    }
-
 private:
+
+#ifdef SK_DEBUG
+    
+    int32_t getRefCnt() const {
+        return fRefCnt.load(std::memory_order_relaxed);
+    }
+#endif
+
     
 
 
     virtual void internal_dispose() const {
-        this->internal_dispose_restore_refcnt_to_1();
+    #ifdef SK_DEBUG
+        SkASSERT(0 == this->getRefCnt());
+        fRefCnt.store(1, std::memory_order_relaxed);
+    #endif
         delete this;
     }
 
@@ -171,7 +160,12 @@ template <typename Derived>
 class SkNVRefCnt {
 public:
     SkNVRefCnt() : fRefCnt(1) {}
-    ~SkNVRefCnt() { SkASSERTF(1 == getRefCnt(), "NVRefCnt was %d", getRefCnt()); }
+    ~SkNVRefCnt() {
+    #ifdef SK_DEBUG
+        int rc = fRefCnt.load(std::memory_order_relaxed);
+        SkASSERTF(rc == 1, "NVRefCnt was %d", rc);
+    #endif
+    }
 
     
     
@@ -191,9 +185,6 @@ public:
 
 private:
     mutable std::atomic<int32_t> fRefCnt;
-    int32_t getRefCnt() const {
-        return fRefCnt.load(std::memory_order_relaxed);
-    }
 
     SkNVRefCnt(SkNVRefCnt&&) = delete;
     SkNVRefCnt(const SkNVRefCnt&) = delete;

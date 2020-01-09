@@ -14,7 +14,7 @@
 #include "SkPDFTypes.h"
 
 class SkPaint;
-class SkPDFCanon;
+
 
 
 
@@ -29,7 +29,7 @@ namespace SkPDFGraphicState {
 
     
 
-    sk_sp<SkPDFDict> GetGraphicStateForPaint(SkPDFCanon*, const SkPaint&);
+    SkPDFIndirectReference GetGraphicStateForPaint(SkPDFDocument*, const SkPaint&);
 
     
 
@@ -38,22 +38,21 @@ namespace SkPDFGraphicState {
 
 
 
-    sk_sp<SkPDFDict> GetSMaskGraphicState(sk_sp<SkPDFObject> sMask,
-                                          bool invert,
-                                          SkPDFSMaskMode sMaskMode,
-                                          SkPDFCanon* canon);
-
-    sk_sp<SkPDFStream> MakeInvertFunction();
+    SkPDFIndirectReference GetSMaskGraphicState(SkPDFIndirectReference sMask,
+                                                bool invert,
+                                                SkPDFSMaskMode sMaskMode,
+                                                SkPDFDocument* doc);
 }
 
 SK_BEGIN_REQUIRE_DENSE
 struct SkPDFStrokeGraphicState {
     SkScalar fStrokeWidth;
     SkScalar fStrokeMiter;
+    SkScalar fAlpha;
     uint8_t fStrokeCap;   
     uint8_t fStrokeJoin;  
-    uint8_t fAlpha;
-    uint8_t fBlendMode;
+    uint8_t fBlendMode;   
+    uint8_t fPADDING = 0;
     bool operator==(const SkPDFStrokeGraphicState& o) const { return !memcmp(this, &o, sizeof(o)); }
     bool operator!=(const SkPDFStrokeGraphicState& o) const { return !(*this == o); }
 };
@@ -61,8 +60,9 @@ SK_END_REQUIRE_DENSE
 
 SK_BEGIN_REQUIRE_DENSE
 struct SkPDFFillGraphicState {
-    uint8_t fAlpha;
+    SkScalar fAlpha;
     uint8_t fBlendMode;
+    uint8_t fPADDING[3] = {0, 0, 0};
     bool operator==(const SkPDFFillGraphicState& o) const { return !memcmp(this, &o, sizeof(o)); }
     bool operator!=(const SkPDFFillGraphicState& o) const { return !(*this == o); }
 };

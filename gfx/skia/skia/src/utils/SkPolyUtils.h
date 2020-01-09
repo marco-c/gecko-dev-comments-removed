@@ -103,4 +103,7 @@ bool SkIsConvexPolygon(const SkPoint* polygonVerts, int polygonSize);
  bool SkTriangulateSimplePolygon(const SkPoint* polygonVerts, uint16_t* indexMap, int polygonSize,
                                  SkTDArray<uint16_t>* triangleIndices);
 
+
+bool SkIsPolyConvex_experimental(const SkPoint[], int count);
+
 #endif

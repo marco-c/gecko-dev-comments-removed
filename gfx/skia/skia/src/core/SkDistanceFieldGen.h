@@ -47,6 +47,19 @@ bool SkGenerateDistanceFieldFromA8Image(unsigned char* distanceField,
 
 
 
+bool SkGenerateDistanceFieldFromLCD16Mask(unsigned char* distanceField,
+                                          const unsigned char* image,
+                                          int w, int h, size_t rowBytes);
+
+
+
+
+
+
+
+
+
+
 bool SkGenerateDistanceFieldFromBWImage(unsigned char* distanceField,
                                         const unsigned char* image,
                                         int w, int h, size_t rowBytes);

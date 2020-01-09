@@ -36,7 +36,6 @@ public:
     GR_DECL_BITFIELD_CLASS_OPS_FRIENDS(FixedFunctionFlags);
     virtual FixedFunctionFlags fixedFunctionFlags() const = 0;
 
-    enum class RequiresDstTexture : bool { kNo = false, kYes = true };
     
 
 
@@ -44,7 +43,15 @@ public:
 
 
 
-    virtual RequiresDstTexture finalize(const GrCaps&, const GrAppliedClip*) = 0;
+    virtual GrProcessorSet::Analysis finalize(const GrCaps&, const GrAppliedClip*, GrFSAAType) = 0;
+
+#ifdef SK_DEBUG
+    bool fAddDrawOpCalled = false;
+
+    void validate() const override {
+        SkASSERT(fAddDrawOpCalled);
+    }
+#endif
 
 private:
     typedef GrOp INHERITED;

@@ -9,6 +9,7 @@
 #define GrSurface_DEFINED
 
 #include "GrTypes.h"
+#include "GrBackendSurface.h"
 #include "GrGpuResource.h"
 #include "SkImageInfo.h"
 #include "SkRect.h"
@@ -42,6 +43,22 @@ public:
 
     GrPixelConfig config() const { return fConfig; }
 
+    virtual GrBackendFormat backendFormat() const = 0;
+
+    void setRelease(sk_sp<GrRefCntedCallback> releaseHelper) {
+        this->onSetRelease(releaseHelper);
+        fReleaseHelper = std::move(releaseHelper);
+    }
+
+    
+    
+    typedef void* ReleaseCtx;
+    typedef void (*ReleaseProc)(ReleaseCtx);
+    void setRelease(ReleaseProc proc, ReleaseCtx ctx) {
+        sk_sp<GrRefCntedCallback> helper(new GrRefCntedCallback(proc, ctx));
+        this->setRelease(std::move(helper));
+    }
+
     
 
 
@@ -62,6 +79,12 @@ public:
     static size_t ComputeSize(GrPixelConfig config, int width, int height, int colorSamplesPerPixel,
                               GrMipMapped, bool useNextPow2 = false);
 
+    
+
+
+
+    bool readOnly() const { return fSurfaceFlags & GrInternalSurfaceFlags::kReadOnly; }
+
 protected:
     void setHasMixedSamples() {
         SkASSERT(this->asRenderTarget());
@@ -69,20 +92,17 @@ protected:
     }
     bool hasMixedSamples() const { return fSurfaceFlags & GrInternalSurfaceFlags::kMixedSampled; }
 
-    void setSupportsWindowRects() {
-        SkASSERT(this->asRenderTarget());
-        fSurfaceFlags |= GrInternalSurfaceFlags::kWindowRectsSupport;
-    }
-    bool supportsWindowRects() const {
-        return fSurfaceFlags & GrInternalSurfaceFlags::kWindowRectsSupport;
-    }
-
     void setGLRTFBOIDIs0() {
         SkASSERT(this->asRenderTarget());
         fSurfaceFlags |= GrInternalSurfaceFlags::kGLRTFBOIDIs0;
     }
     bool glRTFBOIDis0() const {
         return fSurfaceFlags & GrInternalSurfaceFlags::kGLRTFBOIDIs0;
+    }
+
+    void setReadOnly() {
+        SkASSERT(!this->asRenderTarget());
+        fSurfaceFlags |= GrInternalSurfaceFlags::kReadOnly;
     }
 
     
@@ -101,8 +121,10 @@ protected:
             , fSurfaceFlags(GrInternalSurfaceFlags::kNone) {
     }
 
-    ~GrSurface() override {}
-
+    ~GrSurface() override {
+        
+        SkASSERT(!fReleaseHelper);
+    }
 
     void onRelease() override;
     void onAbandon() override;
@@ -110,10 +132,21 @@ protected:
 private:
     const char* getResourceType() const override { return "Surface"; }
 
-    GrPixelConfig          fConfig;
-    int                    fWidth;
-    int                    fHeight;
-    GrInternalSurfaceFlags fSurfaceFlags;
+    
+    
+    virtual void onSetRelease(sk_sp<GrRefCntedCallback>) {}
+
+    void invokeReleaseProc() {
+        
+        
+        fReleaseHelper.reset();
+    }
+
+    GrPixelConfig              fConfig;
+    int                        fWidth;
+    int                        fHeight;
+    GrInternalSurfaceFlags     fSurfaceFlags;
+    sk_sp<GrRefCntedCallback>  fReleaseHelper;
 
     typedef GrGpuResource INHERITED;
 };

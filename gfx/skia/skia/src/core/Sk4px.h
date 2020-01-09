@@ -17,36 +17,48 @@
 
 
 
-namespace {
+namespace {  
 
 
 class Sk4px : public Sk16b {
 public:
-    static Sk4px DupAlpha(SkAlpha a) { return Sk16b(a); }  
-    static Sk4px DupPMColor(SkPMColor c);                  
-
     Sk4px(const Sk16b& v) : INHERITED(v) {}
 
+    static Sk4px DupPMColor(SkPMColor c) {
+        Sk4u splat(c);
+
+        Sk4px v;
+        memcpy(&v, &splat, 16);
+        return v;
+    }
+
     Sk4px alphas() const;  
-
-    
-    Sk4px zeroColors() const;  
-    Sk4px zeroAlphas() const;  
-
     Sk4px inv() const { return Sk16b(255) - *this; }
 
     
-    static Sk4px Load4(const SkPMColor[4]);  
-    static Sk4px Load2(const SkPMColor[2]);  
-    static Sk4px Load1(const SkPMColor[1]);  
+    static Sk4px Load4(const SkPMColor px[4]) {
+        Sk4px v;
+        memcpy(&v, px, 16);
+        return v;
+    }
+    static Sk4px Load2(const SkPMColor px[2]) {
+        Sk4px v;
+        memcpy(&v, px, 8);
+        return v;
+    }
+    static Sk4px Load1(const SkPMColor px[1]) {
+        Sk4px v;
+        memcpy(&v, px, 4);
+        return v;
+    }
 
     
     static Sk4px Load4Alphas(const SkAlpha[4]);  
     static Sk4px Load2Alphas(const SkAlpha[2]);  
 
-    void store4(SkPMColor[4]) const;
-    void store2(SkPMColor[2]) const;
-    void store1(SkPMColor[1]) const;
+    void store4(SkPMColor px[4]) const { memcpy(px, this, 16); }
+    void store2(SkPMColor px[2]) const { memcpy(px, this,  8); }
+    void store1(SkPMColor px[1]) const { memcpy(px, this,  4); }
 
     
     
@@ -66,16 +78,12 @@ public:
         Wide operator - (const Wide& o) const { return INHERITED::operator-(o); }
         Wide operator >> (int bits) const { return INHERITED::operator>>(bits); }
         Wide operator << (int bits) const { return INHERITED::operator<<(bits); }
-        static Wide Min(const Wide& a, const Wide& b) { return INHERITED::Min(a,b); }
-        Wide thenElse(const Wide& t, const Wide& e) const { return INHERITED::thenElse(t,e); }
 
     private:
         typedef Sk16h INHERITED;
     };
 
-    Wide widenLo() const;               
-    Wide widenHi() const;               
-    Wide widenLoHi() const;             
+    Wide widen() const;               
     Wide mulWiden(const Sk16b&) const;  
 
     
@@ -92,7 +100,7 @@ public:
     Sk4px approxMulDiv255(const Sk16b& o) const {
         
         
-        return this->widenLo().addNarrowHi(*this * o);
+        return this->widen().addNarrowHi(*this * o);
     }
 
     
@@ -182,7 +190,7 @@ public:
                 dst += 2; a += 2; n -= 2;
             }
             if (n >= 1) {
-                fn(Load1(dst), DupAlpha(*a)).store1(dst);
+                fn(Load1(dst), Sk16b(*a)).store1(dst);
             }
             break;
         }
@@ -214,13 +222,15 @@ public:
                 dst += 2; src += 2; a += 2; n -= 2;
             }
             if (n >= 1) {
-                fn(Load1(dst), Load1(src), DupAlpha(*a)).store1(dst);
+                fn(Load1(dst), Load1(src), Sk16b(*a)).store1(dst);
             }
             break;
         }
     }
 
 private:
+    Sk4px() = default;
+
     typedef Sk16b INHERITED;
 };
 

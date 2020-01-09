@@ -20,7 +20,8 @@ class SharedGenerator;
 class SkImage_Lazy : public SkImage_Base {
 public:
     struct Validator {
-        Validator(sk_sp<SharedGenerator>, const SkIRect* subset, sk_sp<SkColorSpace> colorSpace);
+        Validator(sk_sp<SharedGenerator>, const SkIRect* subset, const SkColorType* colorType,
+                  sk_sp<SkColorSpace> colorSpace);
 
         MOZ_IMPLICIT operator bool() const { return fSharedGenerator.get(); }
 
@@ -45,50 +46,36 @@ public:
     bool onReadPixels(const SkImageInfo&, void*, size_t, int srcX, int srcY,
                       CachingHint) const override;
 #if SK_SUPPORT_GPU
-    sk_sp<GrTextureProxy> asTextureProxyRef(GrContext*,
-                                            const GrSamplerState&, SkColorSpace*,
-                                            sk_sp<SkColorSpace>*,
+    sk_sp<GrTextureProxy> asTextureProxyRef(GrRecordingContext*,
+                                            const GrSamplerState&,
                                             SkScalar scaleAdjust[2]) const override;
-    sk_sp<SkCachedData> getPlanes(SkYUVSizeInfo*, SkYUVColorSpace*, const void* planes[3]) override;
+    sk_sp<SkCachedData> getPlanes(SkYUVASizeInfo*, SkYUVAIndex[4],
+                                  SkYUVColorSpace*, const void* planes[4]) override;
 #endif
     sk_sp<SkData> onRefEncoded() const override;
-    sk_sp<SkImage> onMakeSubset(const SkIRect&) const override;
-    bool getROPixels(SkBitmap*, SkColorSpace* dstColorSpace, CachingHint) const override;
+    sk_sp<SkImage> onMakeSubset(GrRecordingContext*, const SkIRect&) const override;
+    bool getROPixels(SkBitmap*, CachingHint) const override;
     bool onIsLazyGenerated() const override { return true; }
-    sk_sp<SkImage> onMakeColorSpace(sk_sp<SkColorSpace>) const override;
+    sk_sp<SkImage> onMakeColorTypeAndColorSpace(GrRecordingContext*,
+                                                SkColorType, sk_sp<SkColorSpace>) const override;
 
     bool onIsValid(GrContext*) const override;
-
-    
-    bool lockAsBitmapOnlyIfAlreadyCached(SkBitmap*, const SkImageInfo&) const;
-    
-    bool directGeneratePixels(const SkImageInfo& dstInfo, void* dstPixels, size_t dstRB,
-                              int srcX, int srcY) const;
 
 #if SK_SUPPORT_GPU
     
     
     
-    sk_sp<GrTextureProxy> lockTextureProxy(GrContext*,
+    sk_sp<GrTextureProxy> lockTextureProxy(GrRecordingContext*,
                                            const GrUniqueKey& key,
                                            SkImage::CachingHint,
                                            bool willBeMipped,
-                                           SkColorSpace* dstColorSpace,
                                            GrTextureMaker::AllowedTexGenType genType) const;
 
-    
     void makeCacheKeyFromOrigKey(const GrUniqueKey& origKey, GrUniqueKey* cacheKey) const;
 #endif
 
 private:
     class ScopedGenerator;
-
-    
-
-
-
-
-    bool lockAsBitmap(SkBitmap*, SkImage::CachingHint, const SkImageInfo&) const;
 
     sk_sp<SharedGenerator> fSharedGenerator;
     
@@ -100,9 +87,8 @@ private:
 
     
     
-    mutable SkMutex             fOnMakeColorSpaceMutex;
-    mutable sk_sp<SkColorSpace> fOnMakeColorSpaceTarget;
-    mutable sk_sp<SkImage>      fOnMakeColorSpaceResult;
+    mutable SkMutex             fOnMakeColorTypeAndSpaceMutex;
+    mutable sk_sp<SkImage>      fOnMakeColorTypeAndSpaceResult;
 
 #if SK_SUPPORT_GPU
     

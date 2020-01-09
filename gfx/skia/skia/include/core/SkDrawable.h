@@ -9,11 +9,14 @@
 #define SkDrawable_DEFINED
 
 #include "SkFlattenable.h"
+#include "SkImageInfo.h"
 #include "SkScalar.h"
 
+class GrBackendDrawableInfo;
 class SkCanvas;
 class SkMatrix;
 class SkPicture;
+enum class GrBackendApi : unsigned;
 struct SkRect;
 
 
@@ -25,8 +28,6 @@ struct SkRect;
 
 class SK_API SkDrawable : public SkFlattenable {
 public:
-    SkDrawable();
-
     
 
 
@@ -34,6 +35,55 @@ public:
 
     void draw(SkCanvas*, const SkMatrix* = nullptr);
     void draw(SkCanvas*, SkScalar x, SkScalar y);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    class GpuDrawHandler {
+    public:
+        virtual ~GpuDrawHandler() {}
+
+        virtual void draw(const GrBackendDrawableInfo&) {}
+    };
+
+    
+
+
+
+
+
+    std::unique_ptr<GpuDrawHandler> snapGpuDrawHandler(GrBackendApi backendApi,
+                                                       const SkMatrix& matrix,
+                                                       const SkIRect& clipBounds,
+                                                       const SkImageInfo& bufferInfo) {
+        return this->onSnapGpuDrawHandler(backendApi, matrix, clipBounds, bufferInfo);
+    }
 
     SkPicture* newPictureSnapshot();
 
@@ -76,10 +126,24 @@ public:
     }
 
     Factory getFactory() const override { return nullptr; }
+    const char* getTypeName() const override { return nullptr; }
 
 protected:
+    SkDrawable();
+
     virtual SkRect onGetBounds() = 0;
     virtual void onDraw(SkCanvas*) = 0;
+
+    virtual std::unique_ptr<GpuDrawHandler> onSnapGpuDrawHandler(GrBackendApi, const SkMatrix&,
+                                                                 const SkIRect& ,
+                                                                 const SkImageInfo&) {
+        return nullptr;
+    }
+
+    
+    virtual std::unique_ptr<GpuDrawHandler> onSnapGpuDrawHandler(GrBackendApi, const SkMatrix&) {
+        return nullptr;
+    }
 
     
 

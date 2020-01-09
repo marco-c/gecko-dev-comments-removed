@@ -69,120 +69,6 @@ bool SkDraw::computeConservativeLocalClipBounds(SkRect* localBounds) const {
 
 
 
-typedef void (*BitmapXferProc)(void* pixels, size_t bytes, uint32_t data);
-
-static void D_Clear_BitmapXferProc(void* pixels, size_t bytes, uint32_t) {
-    sk_bzero(pixels, bytes);
-}
-
-static void D_Dst_BitmapXferProc(void*, size_t, uint32_t data) {}
-
-static void D32_Src_BitmapXferProc(void* pixels, size_t bytes, uint32_t data) {
-    sk_memset32((uint32_t*)pixels, data, SkToInt(bytes >> 2));
-}
-
-static void D16_Src_BitmapXferProc(void* pixels, size_t bytes, uint32_t data) {
-    sk_memset16((uint16_t*)pixels, data, SkToInt(bytes >> 1));
-}
-
-static void DA8_Src_BitmapXferProc(void* pixels, size_t bytes, uint32_t data) {
-    memset(pixels, data, bytes);
-}
-
-static BitmapXferProc ChooseBitmapXferProc(const SkPixmap& dst, const SkPaint& paint,
-                                           uint32_t* data) {
-    
-    
-    if (paint.getShader() || paint.getColorFilter() || dst.colorSpace()) {
-        return nullptr;
-    }
-
-    SkBlendMode mode = paint.getBlendMode();
-    SkColor color = paint.getColor();
-
-    
-    if (SkBlendMode::kSrcOver == mode) {
-        unsigned alpha = SkColorGetA(color);
-        if (0 == alpha) {
-            mode = SkBlendMode::kDst;
-        } else if (0xFF == alpha) {
-            mode = SkBlendMode::kSrc;
-        }
-    }
-
-    switch (mode) {
-        case SkBlendMode::kClear:
-
-            return D_Clear_BitmapXferProc;  
-        case SkBlendMode::kDst:
-
-            return D_Dst_BitmapXferProc;    
-        case SkBlendMode::kSrc: {
-            
-
-
-            SkPMColor pmc = SkPreMultiplyColor(color);
-            switch (dst.colorType()) {
-                case kN32_SkColorType:
-                    if (data) {
-                        *data = pmc;
-                    }
-
-                    return D32_Src_BitmapXferProc;
-                case kRGB_565_SkColorType:
-                    if (data) {
-                        *data = SkPixel32ToPixel16(pmc);
-                    }
-
-                    return D16_Src_BitmapXferProc;
-                case kAlpha_8_SkColorType:
-                    if (data) {
-                        *data = SkGetPackedA32(pmc);
-                    }
-
-                    return DA8_Src_BitmapXferProc;
-                default:
-                    break;
-            }
-            break;
-        }
-        default:
-            break;
-    }
-    return nullptr;
-}
-
-static void CallBitmapXferProc(const SkPixmap& dst, const SkIRect& rect, BitmapXferProc proc,
-                               uint32_t procData) {
-    int shiftPerPixel;
-    switch (dst.colorType()) {
-        case kN32_SkColorType:
-            shiftPerPixel = 2;
-            break;
-        case kRGB_565_SkColorType:
-            shiftPerPixel = 1;
-            break;
-        case kAlpha_8_SkColorType:
-            shiftPerPixel = 0;
-            break;
-        default:
-            SkDEBUGFAIL("Can't use xferproc on this config");
-            return;
-    }
-
-    uint8_t* pixels = (uint8_t*)dst.writable_addr();
-    SkASSERT(pixels);
-    const size_t rowBytes = dst.rowBytes();
-    const int widthBytes = rect.width() << shiftPerPixel;
-
-    
-    pixels += rect.fTop * rowBytes + (rect.fLeft << shiftPerPixel);
-    for (int scans = rect.height() - 1; scans >= 0; --scans) {
-        proc(pixels, widthBytes, procData);
-        pixels += rowBytes;
-    }
-}
-
 void SkDraw::drawPaint(const SkPaint& paint) const {
     SkDEBUGCODE(this->validate();)
 
@@ -193,30 +79,6 @@ void SkDraw::drawPaint(const SkPaint& paint) const {
     SkIRect    devRect;
     devRect.set(0, 0, fDst.width(), fDst.height());
 
-    if (fRC->isBW()) {
-        
-
-
-
-
-
-        uint32_t procData = 0;  
-        BitmapXferProc proc = ChooseBitmapXferProc(fDst, paint, &procData);
-        if (proc) {
-            if (D_Dst_BitmapXferProc == proc) { 
-                return;
-            }
-
-            SkRegion::Iterator iter(fRC->bwRgn());
-            while (!iter.done()) {
-                CallBitmapXferProc(fDst, iter.rect(), proc, procData);
-                iter.next();
-            }
-            return;
-        }
-    }
-
-    
     SkAutoBlitterChoose blitter(*this, nullptr, paint);
     SkScan::FillIRect(devRect, *fRC, blitter.get());
 }
@@ -1181,7 +1043,8 @@ void SkDraw::drawBitmapAsMask(const SkBitmap& bitmap, const SkPaint& paint) cons
             
             
             SkPaint tmpPaint;
-            tmpPaint.setFlags(paint.getFlags());
+            tmpPaint.setAntiAlias(paint.isAntiAlias());
+            tmpPaint.setDither(paint.isDither());
             tmpPaint.setFilterQuality(paint.getFilterQuality());
             SkPaint paintWithShader = make_paint_with_image(tmpPaint, bitmap);
             SkRect rr;

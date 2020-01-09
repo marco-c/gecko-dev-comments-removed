@@ -38,7 +38,10 @@ public:
 
 
 
-    virtual sk_sp<SkImage> onNewImageSnapshot() = 0;
+
+
+
+    virtual sk_sp<SkImage> onNewImageSnapshot(const SkIRect* subset = nullptr) { return nullptr; }
 
     virtual void onWritePixels(const SkPixmap&, int x, int y) = 0;
 
@@ -77,7 +80,8 @@ public:
 
 
 
-    virtual GrSemaphoresSubmitted onFlush(int numSemaphores,
+    virtual GrSemaphoresSubmitted onFlush(BackendSurfaceAccess access, FlushFlags flags,
+                                          int numSemaphores,
                                           GrBackendSemaphore signalSemaphores[]) {
         return GrSemaphoresSubmitted::kNo;
     }

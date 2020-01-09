@@ -26,18 +26,21 @@ bool GrCoverageCountingPathRenderer::IsSupported(const GrCaps& caps) {
            caps.isConfigRenderable(kAlpha_half_GrPixelConfig) &&
            caps.isConfigTexturable(kAlpha_8_GrPixelConfig) &&
            caps.isConfigRenderable(kAlpha_8_GrPixelConfig) &&
+           caps.halfFloatVertexAttributeSupport() &&
            !caps.blacklistCoverageCounting();
 }
 
 sk_sp<GrCoverageCountingPathRenderer> GrCoverageCountingPathRenderer::CreateIfSupported(
-        const GrCaps& caps, AllowCaching allowCaching) {
-    return sk_sp<GrCoverageCountingPathRenderer>(
-            IsSupported(caps) ? new GrCoverageCountingPathRenderer(allowCaching) : nullptr);
+        const GrCaps& caps, AllowCaching allowCaching, uint32_t contextUniqueID) {
+    return sk_sp<GrCoverageCountingPathRenderer>((IsSupported(caps))
+            ? new GrCoverageCountingPathRenderer(allowCaching, contextUniqueID)
+            : nullptr);
 }
 
-GrCoverageCountingPathRenderer::GrCoverageCountingPathRenderer(AllowCaching allowCaching) {
+GrCoverageCountingPathRenderer::GrCoverageCountingPathRenderer(AllowCaching allowCaching,
+                                                               uint32_t contextUniqueID) {
     if (AllowCaching::kYes == allowCaching) {
-        fPathCache = skstd::make_unique<GrCCPathCache>();
+        fPathCache = skstd::make_unique<GrCCPathCache>(contextUniqueID);
     }
 }
 
@@ -143,13 +146,14 @@ bool GrCoverageCountingPathRenderer::onDrawPath(const DrawPathArgs& args) {
     return true;
 }
 
-void GrCoverageCountingPathRenderer::recordOp(std::unique_ptr<GrCCDrawPathsOp> opHolder,
+void GrCoverageCountingPathRenderer::recordOp(std::unique_ptr<GrCCDrawPathsOp> op,
                                               const DrawPathArgs& args) {
-    if (GrCCDrawPathsOp* op = opHolder.get()) {
-        GrRenderTargetContext* rtc = args.fRenderTargetContext;
-        if (uint32_t opListID = rtc->addDrawOp(*args.fClip, std::move(opHolder))) {
-            op->wasRecorded(sk_ref_sp(this->lookupPendingPaths(opListID)));
-        }
+    if (op) {
+        auto addToOwningPerOpListPaths = [this](GrOp* op, uint32_t opListID) {
+            op->cast<GrCCDrawPathsOp>()->addToOwningPerOpListPaths(
+                    sk_ref_sp(this->lookupPendingPaths(opListID)));
+        };
+        args.fRenderTargetContext->addDrawOp(*args.fClip, std::move(op), addToOwningPerOpListPaths);
     }
 }
 
@@ -186,28 +190,16 @@ std::unique_ptr<GrFragmentProcessor> GrCoverageCountingPathRenderer::makeClipPro
 void GrCoverageCountingPathRenderer::preFlush(GrOnFlushResourceProvider* onFlushRP,
                                               const uint32_t* opListIDs, int numOpListIDs,
                                               SkTArray<sk_sp<GrRenderTargetContext>>* out) {
-    using DoCopiesToCache = GrCCDrawPathsOp::DoCopiesToCache;
+    using DoCopiesToA8Coverage = GrCCDrawPathsOp::DoCopiesToA8Coverage;
     SkASSERT(!fFlushing);
     SkASSERT(fFlushingPaths.empty());
     SkDEBUGCODE(fFlushing = true);
 
-    
-    
-    sk_sp<GrTextureProxy> stashedAtlasProxy;
-    if (fStashedAtlasKey.isValid()) {
-        stashedAtlasProxy = onFlushRP->findOrCreateProxyByUniqueKey(fStashedAtlasKey,
-                                                                    GrCCAtlas::kTextureOrigin);
-        if (stashedAtlasProxy) {
-            
-            onFlushRP->instatiateProxy(stashedAtlasProxy.get());
-            onFlushRP->removeUniqueKeyFromProxy(fStashedAtlasKey, stashedAtlasProxy.get());
-        } else {
-            fStashedAtlasKey.reset();  
-        }
+    if (fPathCache) {
+        fPathCache->doPreFlushProcessing();
     }
 
     if (fPendingPaths.empty()) {
-        fStashedAtlasKey.reset();
         return;  
     }
 
@@ -231,13 +223,12 @@ void GrCoverageCountingPathRenderer::preFlush(GrOnFlushResourceProvider* onFlush
         fPendingPaths.erase(iter);
 
         for (GrCCDrawPathsOp* op : fFlushingPaths.back()->fDrawOps) {
-            op->accountForOwnPaths(fPathCache.get(), onFlushRP, fStashedAtlasKey, &specs);
+            op->accountForOwnPaths(fPathCache.get(), onFlushRP, &specs);
         }
         for (const auto& clipsIter : fFlushingPaths.back()->fClipPaths) {
             clipsIter.second.accountForOwnPath(&specs);
         }
     }
-    fStashedAtlasKey.reset();
 
     if (specs.isEmpty()) {
         return;  
@@ -247,12 +238,10 @@ void GrCoverageCountingPathRenderer::preFlush(GrOnFlushResourceProvider* onFlush
     
     int numCopies = specs.fNumCopiedPaths[GrCCPerFlushResourceSpecs::kFillIdx] +
                     specs.fNumCopiedPaths[GrCCPerFlushResourceSpecs::kStrokeIdx];
-    DoCopiesToCache doCopies = DoCopiesToCache(numCopies > 100 ||
-                                               specs.fCopyAtlasSpecs.fApproxNumPixels > 256 * 256);
-    if (numCopies && DoCopiesToCache::kNo == doCopies) {
-        specs.convertCopiesToRenders();
-        SkASSERT(!specs.fNumCopiedPaths[GrCCPerFlushResourceSpecs::kFillIdx]);
-        SkASSERT(!specs.fNumCopiedPaths[GrCCPerFlushResourceSpecs::kStrokeIdx]);
+    auto doCopies = DoCopiesToA8Coverage(numCopies > 100 ||
+                                         specs.fCopyAtlasSpecs.fApproxNumPixels > 256 * 256);
+    if (numCopies && DoCopiesToA8Coverage::kNo == doCopies) {
+        specs.cancelCopies();
     }
 
     auto resources = sk_make_sp<GrCCPerFlushResources>(onFlushRP, specs);
@@ -263,19 +252,23 @@ void GrCoverageCountingPathRenderer::preFlush(GrOnFlushResourceProvider* onFlush
     
     for (const auto& flushingPaths : fFlushingPaths) {
         for (GrCCDrawPathsOp* op : flushingPaths->fDrawOps) {
-            op->setupResources(onFlushRP, resources.get(), doCopies);
+            op->setupResources(fPathCache.get(), onFlushRP, resources.get(), doCopies);
         }
         for (auto& clipsIter : flushingPaths->fClipPaths) {
             clipsIter.second.renderPathInAtlas(resources.get(), onFlushRP);
         }
     }
 
+    if (fPathCache) {
+        
+        
+        fPathCache->purgeInvalidatedAtlasTextures(onFlushRP);
+    }
+
     
-    if (!resources->finalize(onFlushRP, std::move(stashedAtlasProxy), out)) {
+    if (!resources->finalize(onFlushRP, out)) {
         return;
     }
-    
-    SkASSERT(!stashedAtlasProxy);
 
     
     for (auto& flushingPaths : fFlushingPaths) {
@@ -287,15 +280,8 @@ void GrCoverageCountingPathRenderer::preFlush(GrOnFlushResourceProvider* onFlush
 void GrCoverageCountingPathRenderer::postFlush(GrDeferredUploadToken, const uint32_t* opListIDs,
                                                int numOpListIDs) {
     SkASSERT(fFlushing);
-    SkASSERT(!fStashedAtlasKey.isValid());  
 
     if (!fFlushingPaths.empty()) {
-        
-        auto resources = fFlushingPaths.front()->fFlushResources.get();
-        if (resources && resources->hasStashedAtlas()) {
-            fStashedAtlasKey = resources->stashedAtlasKey();
-        }
-
         
         
         for (auto& flushingPaths : fFlushingPaths) {
@@ -307,6 +293,13 @@ void GrCoverageCountingPathRenderer::postFlush(GrDeferredUploadToken, const uint
     }
 
     SkDEBUGCODE(fFlushing = false);
+}
+
+void GrCoverageCountingPathRenderer::purgeCacheEntriesOlderThan(
+        GrProxyProvider* proxyProvider, const GrStdSteadyClock::time_point& purgeTime) {
+    if (fPathCache) {
+        fPathCache->purgeEntriesOlderThan(proxyProvider, purgeTime);
+    }
 }
 
 void GrCoverageCountingPathRenderer::CropPath(const SkPath& path, const SkIRect& cropbox,

@@ -8,8 +8,8 @@
 #ifndef GrResourceProvider_DEFINED
 #define GrResourceProvider_DEFINED
 
-#include "GrBuffer.h"
 #include "GrContextOptions.h"
+#include "GrGpuBuffer.h"
 #include "GrResourceCache.h"
 #include "SkImageInfoPriv.h"
 #include "SkScalerContext.h"
@@ -25,6 +25,7 @@ class GrSemaphore;
 class GrSingleOwner;
 class GrStencilAttachment;
 class GrTexture;
+struct GrVkDrawableInfo;
 
 class GrStyle;
 class SkDescriptor;
@@ -50,23 +51,19 @@ public:
 
 
         kNoPendingIO     = 0x1,
-
-        
-
-
-        kRequireGpuMemory = 0x2,
     };
 
     GrResourceProvider(GrGpu*, GrResourceCache*, GrSingleOwner*,
-                       GrContextOptions::Enable explicitlyAllocateGPUResources);
+                       bool explicitlyAllocateGPUResources);
 
     
 
 
 
 
-    template <typename T>
-    sk_sp<T> findByUniqueKey(const GrUniqueKey& key) {
+    template <typename T = GrGpuResource>
+    typename std::enable_if<std::is_base_of<GrGpuResource, T>::value, sk_sp<T>>::type
+    findByUniqueKey(const GrUniqueKey& key) {
         return sk_sp<T>(static_cast<T*>(this->findResourceByUniqueKey(key).release()));
     }
 
@@ -103,8 +100,11 @@ public:
 
 
 
-    sk_sp<GrTexture> wrapBackendTexture(const GrBackendTexture& tex,
-                                        GrWrapOwnership = kBorrow_GrWrapOwnership);
+
+
+
+    sk_sp<GrTexture> wrapBackendTexture(const GrBackendTexture& tex, GrWrapOwnership,
+                                        GrWrapCacheable, GrIOType);
 
     
 
@@ -113,7 +113,8 @@ public:
 
     sk_sp<GrTexture> wrapRenderableBackendTexture(const GrBackendTexture& tex,
                                                   int sampleCnt,
-                                                  GrWrapOwnership = kBorrow_GrWrapOwnership);
+                                                  GrWrapOwnership,
+                                                  GrWrapCacheable);
 
     
 
@@ -125,6 +126,9 @@ public:
 
 
     sk_sp<GrRenderTarget> wrapBackendRenderTarget(const GrBackendRenderTarget&);
+
+    sk_sp<GrRenderTarget> wrapVulkanSecondaryCBAsRenderTarget(const SkImageInfo&,
+                                                              const GrVkDrawableInfo&);
 
     static const uint32_t kMinScratchTextureSize;
 
@@ -138,8 +142,8 @@ public:
 
 
 
-    sk_sp<const GrBuffer> findOrMakeStaticBuffer(GrBufferType intendedType, size_t size,
-                                                 const void* data, const GrUniqueKey& key);
+    sk_sp<const GrGpuBuffer> findOrMakeStaticBuffer(GrGpuBufferType intendedType, size_t size,
+                                                    const void* data, const GrUniqueKey& key);
 
     
 
@@ -154,15 +158,15 @@ public:
 
 
 
-    sk_sp<const GrBuffer> findOrCreatePatternedIndexBuffer(const uint16_t* pattern,
-                                                           int patternSize,
-                                                           int reps,
-                                                           int vertCount,
-                                                           const GrUniqueKey& key) {
-        if (auto buffer = this->findByUniqueKey<GrBuffer>(key)) {
-            return std::move(buffer);
+    sk_sp<const GrGpuBuffer> findOrCreatePatternedIndexBuffer(const uint16_t* pattern,
+                                                              int patternSize,
+                                                              int reps,
+                                                              int vertCount,
+                                                              const GrUniqueKey& key) {
+        if (auto buffer = this->findByUniqueKey<const GrGpuBuffer>(key)) {
+            return buffer;
         }
-        return this->createPatternedIndexBuffer(pattern, patternSize, reps, vertCount, key);
+        return this->createPatternedIndexBuffer(pattern, patternSize, reps, vertCount, &key);
     }
 
     
@@ -172,11 +176,11 @@ public:
 
 
 
-    sk_sp<const GrBuffer> refQuadIndexBuffer() {
-        if (auto buffer = this->findByUniqueKey<const GrBuffer>(fQuadIndexBufferKey)) {
-            return buffer;
+    sk_sp<const GrGpuBuffer> refQuadIndexBuffer() {
+        if (!fQuadIndexBuffer) {
+            fQuadIndexBuffer = this->createQuadIndexBuffer();
         }
-        return this->createQuadIndexBuffer();
+        return fQuadIndexBuffer;
     }
 
     static int QuadCountOfQuadBuffer();
@@ -198,9 +202,8 @@ public:
 
 
 
-    GrBuffer* createBuffer(size_t size, GrBufferType intendedType, GrAccessPattern, Flags,
-                           const void* data = nullptr);
-
+    sk_sp<GrGpuBuffer> createBuffer(size_t size, GrGpuBufferType intendedType, GrAccessPattern,
+                                    const void* data = nullptr);
 
     
 
@@ -280,19 +283,19 @@ private:
         return !SkToBool(fCache);
     }
 
-    sk_sp<const GrBuffer> createPatternedIndexBuffer(const uint16_t* pattern,
-                                                     int patternSize,
-                                                     int reps,
-                                                     int vertCount,
-                                                     const GrUniqueKey& key);
+    sk_sp<const GrGpuBuffer> createPatternedIndexBuffer(const uint16_t* pattern,
+                                                        int patternSize,
+                                                        int reps,
+                                                        int vertCount,
+                                                        const GrUniqueKey* key);
 
-    sk_sp<const GrBuffer> createQuadIndexBuffer();
+    sk_sp<const GrGpuBuffer> createQuadIndexBuffer();
 
-    GrResourceCache*    fCache;
-    GrGpu*              fGpu;
+    GrResourceCache* fCache;
+    GrGpu* fGpu;
     sk_sp<const GrCaps> fCaps;
-    GrUniqueKey         fQuadIndexBufferKey;
-    bool                fExplicitlyAllocateGPUResources;
+    sk_sp<const GrGpuBuffer> fQuadIndexBuffer;
+    bool fExplicitlyAllocateGPUResources;
 
     
     SkDEBUGCODE(mutable GrSingleOwner* fSingleOwner;)

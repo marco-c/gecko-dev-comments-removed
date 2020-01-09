@@ -20,6 +20,13 @@
 
 DECLARE_SKMESSAGEBUS_MESSAGE(SkResourceCache::PurgeSharedIDMessage)
 
+static inline bool SkShouldPostMessageToBus(
+        const SkResourceCache::PurgeSharedIDMessage&, uint32_t) {
+    
+    
+    return true;
+}
+
 
 
 
@@ -45,7 +52,7 @@ void SkResourceCache::Key::init(void* nameSpace, uint64_t sharedID, size_t dataS
                  "namespace_field_must_be_last");
 
     fCount32 = SkToS32(kLocal32s + (dataSize >> 2));
-    fSharedID_lo = (uint32_t)sharedID;
+    fSharedID_lo = (uint32_t)(sharedID & 0xFFFFFFFF);
     fSharedID_hi = (uint32_t)(sharedID >> 32);
     fNamespace = nameSpace;
     

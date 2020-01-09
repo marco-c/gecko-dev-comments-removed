@@ -40,10 +40,11 @@ public:
 
 
     static bool Build(GrProgramDesc*,
+                      GrPixelConfig,
                       const GrPrimitiveProcessor&,
                       bool hasPointSize,
                       const GrPipeline&,
-                      const GrShaderCaps&);
+                      GrGpu*);
 
     
     const uint32_t* asKey() const {
@@ -51,12 +52,10 @@ public:
     }
 
     
-    
-    
-    uint32_t keyLength() const { return *this->atOffset<uint32_t, kLengthOffset>(); }
-
-    
-    uint32_t getChecksum() const { return *this->atOffset<uint32_t, kChecksumOffset>(); }
+    uint32_t keyLength() const {
+        SkASSERT(0 == (fKey.count() % 4));
+        return fKey.count();
+    }
 
     GrProgramDesc& operator= (const GrProgramDesc& other) {
         uint32_t keyLength = other.keyLength();
@@ -66,6 +65,10 @@ public:
     }
 
     bool operator== (const GrProgramDesc& that) const {
+        if (this->keyLength() != that.keyLength()) {
+            return false;
+        }
+
         SkASSERT(SkIsAlign4(this->keyLength()));
         int l = this->keyLength() >> 2;
         const uint32_t* aKey = this->asKey();
@@ -87,22 +90,9 @@ public:
         header->fSurfaceOriginKey = key;
     }
 
-    static bool Less(const GrProgramDesc& a, const GrProgramDesc& b) {
-        SkASSERT(SkIsAlign4(a.keyLength()));
-        int l = a.keyLength() >> 2;
-        const uint32_t* aKey = a.asKey();
-        const uint32_t* bKey = b.asKey();
-        for (int i = 0; i < l; ++i) {
-            if (aKey[i] != bKey[i]) {
-                return aKey[i] < bKey[i] ? true : false;
-            }
-        }
-        return false;
-    }
-
     struct KeyHeader {
         
-        uint8_t fOutputSwizzle;
+        uint16_t fOutputSwizzle;
         uint8_t fColorFragmentProcessorCnt; 
         uint8_t fCoverageFragmentProcessorCnt;
         
@@ -111,20 +101,10 @@ public:
         bool fHasPointSize : 1;
         uint8_t fPad : 4;
     };
-    GR_STATIC_ASSERT(sizeof(KeyHeader) == 4);
+    GR_STATIC_ASSERT(sizeof(KeyHeader) == 6);
 
     
     const KeyHeader& header() const { return *this->atOffset<KeyHeader, kHeaderOffset>(); }
-
-    void finalize() {
-        int keyLength = fKey.count();
-        SkASSERT(0 == (keyLength % 4));
-        *(this->atOffset<uint32_t, GrProgramDesc::kLengthOffset>()) = SkToU32(keyLength);
-
-        uint32_t* checksum = this->atOffset<uint32_t, GrProgramDesc::kChecksumOffset>();
-        *checksum = 0;  
-        *checksum = SkOpts::hash(fKey.begin(), keyLength);
-    }
 
 protected:
     template<typename T, size_t OFFSET> T* atOffset() {
@@ -138,15 +118,8 @@ protected:
     
     
     
-    
-    
     enum KeyOffsets {
-        
-        kLengthOffset = 0,
-        
-        kChecksumOffset = kLengthOffset + sizeof(uint32_t),
-        
-        kHeaderOffset = kChecksumOffset + sizeof(uint32_t),
+        kHeaderOffset = 0,
         kHeaderSize = SkAlign4(sizeof(KeyHeader)),
         
         

@@ -34,8 +34,27 @@ public:
     static std::unique_ptr<GrFragmentProcessor> Make(sk_sp<GrTextureProxy> proxy,
                                                      const SkMatrix& matrix,
                                                      const GrSamplerState::WrapMode wrapModes[2]) {
-        return std::unique_ptr<GrFragmentProcessor>(new GrBicubicEffect(std::move(proxy), matrix,
-                                                                        wrapModes));
+        
+        
+        return Make(std::move(proxy), matrix, wrapModes, GrTextureDomain::kIgnore_Mode,
+                    GrTextureDomain::kIgnore_Mode);
+    }
+
+    
+
+
+
+
+    static std::unique_ptr<GrFragmentProcessor> Make(sk_sp<GrTextureProxy> proxy,
+                                                     const SkMatrix& matrix,
+                                                     const GrSamplerState::WrapMode wrapModes[2],
+                                                     GrTextureDomain::Mode modeX,
+                                                     GrTextureDomain::Mode modeY,
+                                                     const SkRect* domain = nullptr) {
+        SkRect resolvedDomain = domain ? *domain : GrTextureDomain::MakeTexelDomain(
+                SkIRect::MakeWH(proxy->width(), proxy->height()), modeX, modeY);
+        return std::unique_ptr<GrFragmentProcessor>(new GrBicubicEffect(
+                std::move(proxy), matrix, resolvedDomain, wrapModes, modeX, modeY));
     }
 
     
@@ -44,8 +63,10 @@ public:
     static std::unique_ptr<GrFragmentProcessor> Make(sk_sp<GrTextureProxy> proxy,
                                                      const SkMatrix& matrix,
                                                      const SkRect& domain) {
-        return std::unique_ptr<GrFragmentProcessor>(new GrBicubicEffect(std::move(proxy), matrix,
-                                                                        domain));
+        static const GrSamplerState::WrapMode kClampClamp[] = {
+                GrSamplerState::WrapMode::kClamp, GrSamplerState::WrapMode::kClamp};
+        return Make(std::move(proxy), matrix, kClampClamp, GrTextureDomain::kClamp_Mode,
+                GrTextureDomain::kClamp_Mode, &domain);
     }
 
     
@@ -59,9 +80,9 @@ public:
                                  GrSamplerState::Filter* filterMode);
 
 private:
-    GrBicubicEffect(sk_sp<GrTextureProxy>, const SkMatrix& matrix,
-                    const GrSamplerState::WrapMode wrapModes[2]);
-    GrBicubicEffect(sk_sp<GrTextureProxy>, const SkMatrix &matrix, const SkRect& domain);
+    GrBicubicEffect(sk_sp<GrTextureProxy>, const SkMatrix& matrix, const SkRect& domain,
+                    const GrSamplerState::WrapMode wrapModes[2],
+                    GrTextureDomain::Mode modeX, GrTextureDomain::Mode modeY);
     explicit GrBicubicEffect(const GrBicubicEffect&);
 
     GrGLSLFragmentProcessor* onCreateGLSLInstance() const override;

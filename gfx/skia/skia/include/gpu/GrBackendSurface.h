@@ -48,8 +48,13 @@ public:
     }
 
     static GrBackendFormat MakeVk(VkFormat format) {
-        return GrBackendFormat(format);
+        return GrBackendFormat(format, GrVkYcbcrConversionInfo());
     }
+
+    
+    
+    
+    static GrBackendFormat MakeVk(const GrVkYcbcrConversionInfo& ycbcrInfo);
 
 #ifdef SK_METAL
     static GrBackendFormat MakeMtl(GrMTLPixelFormat format) {
@@ -61,7 +66,11 @@ public:
         return GrBackendFormat(config);
     }
 
-    GrBackend backend() const {return fBackend; }
+    bool operator==(const GrBackendFormat& that) const;
+    bool operator!=(const GrBackendFormat& that) const { return !(*this == that); }
+
+    GrBackendApi backend() const { return fBackend; }
+    GrTextureType textureType() const { return fTextureType; }
 
     
     
@@ -71,6 +80,8 @@ public:
     
     
     const VkFormat* getVkFormat() const;
+
+    const GrVkYcbcrConversionInfo* getVkYcbcrConversionInfo() const;
 
 #ifdef SK_METAL
     
@@ -83,12 +94,15 @@ public:
     const GrPixelConfig* getMockFormat() const;
 
     
+    GrBackendFormat makeTexture2D() const;
+
+    
     bool isValid() const { return fValid; }
 
 private:
     GrBackendFormat(GrGLenum format, GrGLenum target);
 
-    GrBackendFormat(const VkFormat vkFormat);
+    GrBackendFormat(const VkFormat vkFormat, const GrVkYcbcrConversionInfo&);
 
 #ifdef SK_METAL
     GrBackendFormat(const GrMTLPixelFormat mtlFormat);
@@ -96,20 +110,21 @@ private:
 
     GrBackendFormat(const GrPixelConfig config);
 
-    GrBackend fBackend;
+    GrBackendApi fBackend;
     bool      fValid;
 
     union {
+        GrGLenum         fGLFormat; 
         struct {
-            GrGLenum fTarget; 
-            GrGLenum fFormat; 
-        } fGL;
-        VkFormat         fVkFormat;
+            VkFormat                 fFormat;
+            GrVkYcbcrConversionInfo  fYcbcrConversionInfo;
+        } fVk;
 #ifdef SK_METAL
         GrMTLPixelFormat fMtlFormat;
 #endif
         GrPixelConfig    fMockFormat;
     };
+    GrTextureType fTextureType;
 };
 
 class SK_API GrBackendTexture {
@@ -148,7 +163,7 @@ public:
     int width() const { return fWidth; }
     int height() const { return fHeight; }
     bool hasMipMaps() const { return GrMipMapped::kYes == fMipMapped; }
-    GrBackend backend() const {return fBackend; }
+    GrBackendApi backend() const {return fBackend; }
 
     
     
@@ -168,6 +183,9 @@ public:
     
     bool getMtlTextureInfo(GrMtlTextureInfo*) const;
 #endif
+
+    
+    GrBackendFormat getBackendFormat() const;
 
     
     
@@ -224,7 +242,7 @@ private:
     int fHeight;        
     GrPixelConfig fConfig;
     GrMipMapped fMipMapped;
-    GrBackend fBackend;
+    GrBackendApi fBackend;
 
     union {
         GrGLTextureInfo fGLInfo;
@@ -278,7 +296,7 @@ public:
     int height() const { return fHeight; }
     int sampleCnt() const { return fSampleCnt; }
     int stencilBits() const { return fStencilBits; }
-    GrBackend backend() const {return fBackend; }
+    GrBackendApi backend() const {return fBackend; }
 
     
     
@@ -347,7 +365,7 @@ private:
     int fStencilBits;
     GrPixelConfig fConfig;
 
-    GrBackend fBackend;
+    GrBackendApi fBackend;
 
     union {
         GrGLFramebufferInfo fGLInfo;

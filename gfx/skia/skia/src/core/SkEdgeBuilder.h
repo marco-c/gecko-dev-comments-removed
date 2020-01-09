@@ -7,118 +7,104 @@
 #ifndef SkEdgeBuilder_DEFINED
 #define SkEdgeBuilder_DEFINED
 
+#include "SkAnalyticEdge.h"
 #include "SkArenaAlloc.h"
+#include "SkEdge.h"
 #include "SkRect.h"
 #include "SkTDArray.h"
-#include "SkEdge.h"
-#include "SkAnalyticEdge.h"
 
-struct SkEdge;
-struct SkAnalyticEdge;
-class SkEdgeClipper;
 class SkPath;
 
 class SkEdgeBuilder {
 public:
-    enum EdgeType {
-        
-        kEdge,
+    int buildEdges(const SkPath& path,
+                   const SkIRect* shiftedClip);
 
-        
-        kAnalyticEdge,
-
-        
-        
-        
-        
-        
-        
-        
-        kBezier
-    };
-
-    
-
-    SkEdgeBuilder();
+protected:
+    SkEdgeBuilder() = default;
+    virtual ~SkEdgeBuilder() = default;
 
     
     
-    int build(const SkPath& path, const SkIRect* clip, int shiftUp, bool clipToTheRight,
-              EdgeType edgeType = kEdge);
+    void**              fEdgeList = nullptr;
+    SkTDArray<void*>    fList;
+    SkSTArenaAlloc<512> fAlloc;
 
-    int build_edges(const SkPath& path, const SkIRect* shiftedClip,
-            int shiftEdgesUp, bool pathContainedInClip, EdgeType edgeType = kEdge);
-
-    SkEdge** edgeList() { return (SkEdge**)fEdgeList; }
-    SkAnalyticEdge** analyticEdgeList() { return (SkAnalyticEdge**)fEdgeList; }
-    SkBezier** bezierList() { return (SkBezier**)fEdgeList; }
-
-    bool isFinite() const { return fIsFinite; }
-
-private:
     enum Combine {
         kNo_Combine,
         kPartial_Combine,
         kTotal_Combine
     };
 
-    Combine CombineVertical(const SkEdge* edge, SkEdge* last);
-    Combine CombineVertical(const SkAnalyticEdge* edge, SkAnalyticEdge* last);
-    Combine checkVertical(const SkEdge* edge, SkEdge** edgePtr);
-    Combine checkVertical(const SkAnalyticEdge* edge, SkAnalyticEdge** edgePtr);
-    bool vertical_line(const SkEdge* edge);
-    bool vertical_line(const SkAnalyticEdge* edge);
+private:
+    int build    (const SkPath& path, const SkIRect* clip, bool clipToTheRight);
+    int buildPoly(const SkPath& path, const SkIRect* clip, bool clipToTheRight);
 
-    SkSTArenaAlloc<512> fAlloc;
-    SkTDArray<void*>    fList;
+    virtual char* allocEdges(size_t n, size_t* sizeof_edge) = 0;
+    virtual SkRect recoverClip(const SkIRect&) const = 0;
+    virtual bool chopCubics() const = 0;
 
-    
+    virtual void addLine (const SkPoint pts[]) = 0;
+    virtual void addQuad (const SkPoint pts[]) = 0;
+    virtual void addCubic(const SkPoint pts[]) = 0;
+    virtual Combine addPolyLine(SkPoint pts[], char* edge, char** edgePtr) = 0;
+};
 
-
-
-
-
-    void**      fEdgeList;
-
-    int         fShiftUp;
-    EdgeType    fEdgeType;
-    bool        fIsFinite = true;
-
+class SkBasicEdgeBuilder final : public SkEdgeBuilder {
 public:
-    void addLine(const SkPoint pts[]);
-    void addQuad(const SkPoint pts[]);
-    void addCubic(const SkPoint pts[]);
-    void addClipper(SkEdgeClipper*);
+    explicit SkBasicEdgeBuilder(int clipShift) : fClipShift(clipShift) {}
 
-    EdgeType edgeType() const { return fEdgeType; }
+    SkEdge** edgeList() { return (SkEdge**)fEdgeList; }
 
-    int buildPoly(const SkPath& path, const SkIRect* clip, int shiftUp, bool clipToTheRight);
+private:
+    Combine combineVertical(const SkEdge* edge, SkEdge* last);
 
-    inline void addPolyLine(SkPoint pts[], char* &edge, size_t edgeSize, char** &edgePtr,
-            int shiftUp) {
-        if (fEdgeType == kBezier) {
-            if (((SkLine*)edge)->set(pts)) {
-                *edgePtr++ = edge;
-                edge += edgeSize;
-            }
-            return;
-        }
-        bool analyticAA = fEdgeType == kAnalyticEdge;
-        bool setLineResult = analyticAA ?
-                ((SkAnalyticEdge*)edge)->setLine(pts[0], pts[1]) :
-                ((SkEdge*)edge)->setLine(pts[0], pts[1], shiftUp);
-        if (setLineResult) {
-            Combine combine = analyticAA ?
-                    checkVertical((SkAnalyticEdge*)edge, (SkAnalyticEdge**)edgePtr) :
-                    checkVertical((SkEdge*)edge, (SkEdge**)edgePtr);
-            if (kNo_Combine == combine) {
-                *edgePtr++ = edge;
-                edge += edgeSize;
-            } else if (kTotal_Combine == combine) {
-                --edgePtr;
-            }
-        }
-    }
+    char* allocEdges(size_t, size_t*) override;
+    SkRect recoverClip(const SkIRect&) const override;
+    bool chopCubics() const override { return true; }
+
+    void addLine (const SkPoint pts[]) override;
+    void addQuad (const SkPoint pts[]) override;
+    void addCubic(const SkPoint pts[]) override;
+    Combine addPolyLine(SkPoint pts[], char* edge, char** edgePtr) override;
+
+    const int fClipShift;
+};
+
+class SkAnalyticEdgeBuilder final : public SkEdgeBuilder {
+public:
+    SkAnalyticEdgeBuilder() {}
+
+    SkAnalyticEdge** analyticEdgeList() { return (SkAnalyticEdge**)fEdgeList; }
+
+private:
+    Combine combineVertical(const SkAnalyticEdge* edge, SkAnalyticEdge* last);
+
+    char* allocEdges(size_t, size_t*) override;
+    SkRect recoverClip(const SkIRect&) const override;
+    bool chopCubics() const override { return true; }
+
+    void addLine (const SkPoint pts[]) override;
+    void addQuad (const SkPoint pts[]) override;
+    void addCubic(const SkPoint pts[]) override;
+    Combine addPolyLine(SkPoint pts[], char* edge, char** edgePtr) override;
+};
+
+class SkBezierEdgeBuilder final : public SkEdgeBuilder {
+public:
+    SkBezierEdgeBuilder() {}
+
+    SkBezier** bezierList() { return (SkBezier**)fEdgeList; }
+
+private:
+    char* allocEdges(size_t, size_t*) override;
+    SkRect recoverClip(const SkIRect&) const override;
+    bool chopCubics() const override { return false; }
+
+    void addLine (const SkPoint pts[]) override;
+    void addQuad (const SkPoint pts[]) override;
+    void addCubic(const SkPoint pts[]) override;
+    Combine addPolyLine(SkPoint pts[], char* edge, char** edgePtr) override;
 };
 
 #endif

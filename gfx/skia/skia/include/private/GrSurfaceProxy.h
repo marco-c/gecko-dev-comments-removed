@@ -9,15 +9,17 @@
 #define GrSurfaceProxy_DEFINED
 
 #include "../private/SkNoncopyable.h"
+#include "GrBackendSurface.h"
 #include "GrGpuResource.h"
 #include "GrSurface.h"
 
 #include "SkRect.h"
 
-class GrBackendTexture;
 class GrCaps;
+class GrContext_Base;
 class GrOpList;
 class GrProxyProvider;
+class GrRecordingContext;
 class GrRenderTargetOpList;
 class GrRenderTargetProxy;
 class GrResourceProvider;
@@ -64,14 +66,13 @@ public:
         SkASSERT(0 == fPendingReads);
         SkASSERT(0 == fPendingWrites);
 
-        SkASSERT(fRefCnt == fTarget->fRefCnt);
-        SkASSERT(!fTarget->internalHasPendingIO());
         
         
         
         
         
-        for (int refs = fTarget->fRefCnt; refs; --refs) {
+        
+        for (int refs = fRefCnt; refs; --refs) {
             fTarget->unref();
         }
         fTarget = nullptr;
@@ -205,10 +206,8 @@ private:
 class GrSurfaceProxy : public GrIORefProxy {
 public:
     enum class LazyInstantiationType {
-        kSingleUse,         
-        kMultipleUse,       
-        kUninstantiate,     
-                            
+        kSingleUse,      
+        kMultipleUse,    
     };
 
     enum class LazyState {
@@ -264,6 +263,8 @@ public:
         SkASSERT(kTopLeft_GrSurfaceOrigin == fOrigin || kBottomLeft_GrSurfaceOrigin == fOrigin);
         return fOrigin;
     }
+
+    const GrBackendFormat& backendFormat() const { return fFormat; }
 
     class UniqueID {
     public:
@@ -321,7 +322,13 @@ public:
 
     virtual bool instantiate(GrResourceProvider* resourceProvider) = 0;
 
-    void deInstantiate();
+    void deinstantiate();
+
+    
+
+
+
+    bool canSkipResourceAllocator() const;
 
     
 
@@ -355,6 +362,13 @@ public:
 
     SkBudgeted isBudgeted() const { return fBudgeted; }
 
+    
+
+
+
+
+    bool readOnly() const { return fSurfaceFlags & GrInternalSurfaceFlags::kReadOnly; }
+
     void setLastOpList(GrOpList* opList);
     GrOpList* getLastOpList() { return fLastOpList; }
 
@@ -382,22 +396,21 @@ public:
 
     
     
-    
-    static sk_sp<GrTextureProxy> Copy(GrContext*, GrSurfaceProxy* src, GrMipMapped,
-                                      SkIRect srcRect, SkBudgeted);
+    static sk_sp<GrTextureProxy> Copy(GrRecordingContext*, GrSurfaceProxy* src, GrMipMapped,
+                                      SkIRect srcRect, SkBackingFit, SkBudgeted);
 
     
-    
-    static sk_sp<GrTextureProxy> Copy(GrContext* context, GrSurfaceProxy* src, GrMipMapped,
-                                      SkBudgeted budgeted);
+    static sk_sp<GrTextureProxy> Copy(GrRecordingContext*, GrSurfaceProxy* src, GrMipMapped,
+                                      SkBackingFit, SkBudgeted);
 
     
-    static sk_sp<GrSurfaceContext> TestCopy(GrContext* context, const GrSurfaceDesc& dstDesc,
+    static sk_sp<GrSurfaceContext> TestCopy(GrRecordingContext* context,
+                                            const GrSurfaceDesc& dstDesc,
                                             GrSurfaceOrigin, GrSurfaceProxy* srcProxy);
 
     bool isWrapped_ForTesting() const;
 
-    SkDEBUGCODE(void validate(GrContext*) const;)
+    SkDEBUGCODE(void validate(GrContext_Base*) const;)
 
     
     inline GrSurfaceProxyPriv priv();
@@ -407,9 +420,10 @@ public:
 
 protected:
     
-    GrSurfaceProxy(const GrSurfaceDesc& desc, GrSurfaceOrigin origin, SkBackingFit fit,
+    GrSurfaceProxy(const GrBackendFormat& format, const GrSurfaceDesc& desc,
+                   GrSurfaceOrigin origin, SkBackingFit fit,
                    SkBudgeted budgeted, GrInternalSurfaceFlags surfaceFlags)
-            : GrSurfaceProxy(nullptr, LazyInstantiationType::kSingleUse, desc, origin, fit,
+            : GrSurfaceProxy(nullptr, LazyInstantiationType::kSingleUse, format, desc, origin, fit,
                              budgeted, surfaceFlags) {
         
     }
@@ -418,8 +432,8 @@ protected:
 
     
     GrSurfaceProxy(LazyInstantiateCallback&&, LazyInstantiationType,
-                   const GrSurfaceDesc&, GrSurfaceOrigin, SkBackingFit,
-                   SkBudgeted, GrInternalSurfaceFlags);
+                   const GrBackendFormat& format, const GrSurfaceDesc&, GrSurfaceOrigin,
+                   SkBackingFit, SkBudgeted, GrInternalSurfaceFlags);
 
     
     GrSurfaceProxy(sk_sp<GrSurface>, GrSurfaceOrigin, SkBackingFit);
@@ -463,6 +477,7 @@ protected:
 private:
     
     
+    GrBackendFormat        fFormat;
     GrPixelConfig          fConfig;
     int                    fWidth;
     int                    fHeight;

@@ -5,58 +5,14 @@
 
 
 
-#include "SkBitmapProcShader.h"
-#include "SkColorFilter.h"
-#include "SkColorFilterShader.h"
-#include "SkColorShader.h"
-#include "SkComposeShader.h"
-#include "SkEmptyShader.h"
-#include "SkFlattenablePriv.h"
-#include "SkImageShader.h"
-#include "SkLocalMatrixShader.h"
-#include "SkMatrixImageFilter.h"
+#include "SkFlattenable.h"
 #include "SkOnce.h"
-#include "SkPathEffect.h"
-#include "SkPictureShader.h"
-#include "SkRecordedDrawable.h"
-#include "SkShaderBase.h"
 
-
-
-
-
-
-
-void SkFlattenable::PrivateInitializer::InitCore() {
-    
-    SK_DEFINE_FLATTENABLE_REGISTRAR_ENTRY(SkColorFilterShader)
-    SK_DEFINE_FLATTENABLE_REGISTRAR_ENTRY(SkColorShader)
-    SK_DEFINE_FLATTENABLE_REGISTRAR_ENTRY(SkColor4Shader)
-    SK_DEFINE_FLATTENABLE_REGISTRAR_ENTRY(SkComposeShader)
-    SK_DEFINE_FLATTENABLE_REGISTRAR_ENTRY(SkEmptyShader)
-    SK_DEFINE_FLATTENABLE_REGISTRAR_ENTRY(SkLocalMatrixShader)
-    SK_DEFINE_FLATTENABLE_REGISTRAR_ENTRY(SkPictureShader)
-
-
-    
-    SK_DEFINE_FLATTENABLE_REGISTRAR_ENTRY(SkMatrixImageFilter)
-
-    SkColorFilter::InitializeFlattenables();
-    SkPathEffect::InitializeFlattenables();
-    SkShaderBase::InitializeFlattenables();
-
-    
-    SK_DEFINE_FLATTENABLE_REGISTRAR_ENTRY(SkRecordedDrawable)
-
-    
-    InitEffects();
-    InitImageFilters();
-
-    
-    SkFlattenable::Finalize();
-};
-
-void SkFlattenable::InitializeFlattenablesIfNeeded() {
+void SkFlattenable::RegisterFlattenablesIfNeeded() {
     static SkOnce once;
-    once(SkFlattenable::PrivateInitializer::InitCore);
+    once([]{
+        SkFlattenable::PrivateInitializer::InitEffects();
+        SkFlattenable::PrivateInitializer::InitImageFilters();
+        SkFlattenable::Finalize();
+    });
 }

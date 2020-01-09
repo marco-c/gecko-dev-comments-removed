@@ -51,14 +51,6 @@ struct SK_API SkIRect {
         return SkIRect{0, 0, 0, 0};
     }
 
-#ifdef SK_SUPPORT_LEGACY_RECTMAKELARGEST
-    
-
-    static SkIRect SK_WARN_UNUSED_RESULT MakeLargest() {
-        return { SK_MinS32, SK_MinS32, SK_MaxS32, SK_MaxS32 };
-    }
-#endif
-
     
 
 
@@ -149,6 +141,9 @@ struct SK_API SkIRect {
 
 
     int32_t y() const { return fTop; }
+
+    
+    SkIPoint topLeft() const { return {fLeft, fTop}; }
 
     
 
@@ -702,14 +697,6 @@ struct SK_API SkRect {
         return SkRect{0, 0, 0, 0};
     }
 
-#ifdef SK_SUPPORT_LEGACY_RECTMAKELARGEST
-    
-
-    static SkRect SK_WARN_UNUSED_RESULT MakeLargest() {
-        return { SK_ScalarMin, SK_ScalarMin, SK_ScalarMax, SK_ScalarMax };
-    }
-#endif
-
     
 
 
@@ -949,6 +936,7 @@ struct SK_API SkRect {
     }
 
     
+
 
 
 

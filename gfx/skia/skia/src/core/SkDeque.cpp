@@ -157,10 +157,10 @@ void SkDeque::pop_front() {
 
     if (first->fBegin == nullptr) {  
         first = first->fNext;
+        SkASSERT(first != nullptr);    
         first->fPrev = nullptr;
         this->freeBlock(fFrontBlock);
         fFrontBlock = first;
-        SkASSERT(first != nullptr);    
     }
 
     char* begin = first->fBegin + fElemSize;
@@ -191,10 +191,10 @@ void SkDeque::pop_back() {
 
     if (last->fEnd == nullptr) {  
         last = last->fPrev;
+        SkASSERT(last != nullptr);  
         last->fNext = nullptr;
         this->freeBlock(fBackBlock);
         fBackBlock = last;
-        SkASSERT(last != nullptr);  
     }
 
     char* end = last->fEnd - fElemSize;

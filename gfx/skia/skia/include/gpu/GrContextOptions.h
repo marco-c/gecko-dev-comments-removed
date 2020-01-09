@@ -19,7 +19,7 @@
 class SkExecutor;
 
 #if SK_SUPPORT_GPU
-struct GrContextOptions {
+struct SK_API GrContextOptions {
     enum class Enable {
         
         kNo,
@@ -36,7 +36,7 @@ struct GrContextOptions {
 
 
 
-    class PersistentCache {
+    class SK_API PersistentCache {
     public:
         virtual ~PersistentCache() {}
 
@@ -137,26 +137,12 @@ struct GrContextOptions {
 
 
 
-
-
-
-
-
-
-    Enable fUseGLBufferDataNullHint = Enable::kDefault;
-
-    
-
-
-
-
     bool fSharpenMipmappedTextures = false;
 
     
 
 
-
-    Enable fUseDrawInsteadOfGLClear = Enable::kDefault;
+    Enable fUseDrawInsteadOfClear = Enable::kDefault;
 
     
 
@@ -197,6 +183,14 @@ struct GrContextOptions {
 
     PersistentCache* fPersistentCache = nullptr;
 
+    
+
+
+
+
+
+     bool fDisallowGLSLBinaryCaching = false;
+
 #if GR_TEST_UTILS
     
 
@@ -232,12 +226,6 @@ struct GrContextOptions {
 
 
     GpuPathRenderers fGpuPathRenderers = GpuPathRenderers::kAll;
-
-    
-
-
-
-    bool fDisableImageMultitexturing = false;
 #endif
 
 #if SK_SUPPORT_ATLAS_TEXT

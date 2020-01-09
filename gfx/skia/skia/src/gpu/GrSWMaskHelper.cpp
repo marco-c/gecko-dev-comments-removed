@@ -7,9 +7,9 @@
 
 #include "GrSWMaskHelper.h"
 
-#include "GrContext.h"
-#include "GrContextPriv.h"
 #include "GrProxyProvider.h"
+#include "GrRecordingContext.h"
+#include "GrRecordingContextPriv.h"
 #include "GrShape.h"
 #include "GrSurfaceContext.h"
 #include "GrTextureProxy.h"
@@ -85,14 +85,14 @@ bool GrSWMaskHelper::init(const SkIRect& resultBounds) {
     }
     fPixels->erase(0);
 
-    sk_bzero(&fDraw, sizeof(fDraw));
     fDraw.fDst      = *fPixels;
     fRasterClip.setRect(bounds);
     fDraw.fRC       = &fRasterClip;
     return true;
 }
 
-sk_sp<GrTextureProxy> GrSWMaskHelper::toTextureProxy(GrContext* context, SkBackingFit fit) {
+sk_sp<GrTextureProxy> GrSWMaskHelper::toTextureProxy(GrRecordingContext* context,
+                                                     SkBackingFit fit) {
     SkImageInfo ii = SkImageInfo::MakeA8(fPixels->width(), fPixels->height());
     size_t rowBytes = fPixels->rowBytes();
 
@@ -109,12 +109,21 @@ sk_sp<GrTextureProxy> GrSWMaskHelper::toTextureProxy(GrContext* context, SkBacki
     
     
     auto surfaceFlags = GrInternalSurfaceFlags::kNone;
-    if (!context->contextPriv().resourceProvider()) {
+    if (!context->priv().proxyProvider()->renderingDirectly()) {
         
         
         surfaceFlags |= GrInternalSurfaceFlags::kNoPendingIO;
     }
-
-    return context->contextPriv().proxyProvider()->createTextureProxy(
-            std::move(img), kNone_GrSurfaceFlags, 1, SkBudgeted::kYes, fit, surfaceFlags);
+    auto clearFlag = kNone_GrSurfaceFlags;
+    
+    
+    
+    
+    
+    
+#if IS_WEBGL==1
+    clearFlag = kPerformInitialClear_GrSurfaceFlag;
+#endif
+    return context->priv().proxyProvider()->createTextureProxy(
+            std::move(img), clearFlag, 1, SkBudgeted::kYes, fit, surfaceFlags);
 }

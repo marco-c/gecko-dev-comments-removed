@@ -600,14 +600,11 @@ static SkIRect safeRoundOut(const SkRect& src) {
 }
 
 constexpr int kSampleSize = 8;
-constexpr SkScalar kComplexityThreshold = 0.25;
-constexpr SkScalar kSmallCubicThreshold = 16;
+#if !defined(SK_DISABLE_DAA) || !defined(SK_DISABLE_AAA)
+    constexpr SkScalar kComplexityThreshold = 0.25;
+#endif
 
-static inline SkScalar sqr(SkScalar x) {
-    return x * x;
-}
-
-static void ComputeComplexity(const SkPath& path, SkScalar& avgLength, SkScalar& complexity) {
+static void compute_complexity(const SkPath& path, SkScalar& avgLength, SkScalar& complexity) {
     int n = path.countPoints();
     if (n < kSampleSize || path.getBounds().isEmpty()) {
         
@@ -624,6 +621,8 @@ static void ComputeComplexity(const SkPath& path, SkScalar& avgLength, SkScalar&
     }
     avgLength = sumLength / (kSampleSize - 1);
 
+    auto sqr = [](SkScalar x) { return x*x; };
+
     SkScalar diagonalSqr = sqr(path.getBounds().width()) + sqr(path.getBounds().height());
 
     
@@ -639,6 +638,9 @@ static void ComputeComplexity(const SkPath& path, SkScalar& avgLength, SkScalar&
 }
 
 static bool ShouldUseDAA(const SkPath& path, SkScalar avgLength, SkScalar complexity) {
+#if defined(SK_DISABLE_DAA)
+    return false;
+#else
     if (gSkForceDeltaAA) {
         return true;
     }
@@ -646,38 +648,44 @@ static bool ShouldUseDAA(const SkPath& path, SkScalar avgLength, SkScalar comple
         return false;
     }
 
-#ifdef SK_SUPPORT_LEGACY_AA_CHOICE
-    const SkRect& bounds = path.getBounds();
-    return !path.isConvex() && path.countPoints() >= SkTMax(bounds.width(), bounds.height()) / 8;
-#else
-    if (avgLength < 0 || complexity < 0 || path.getBounds().isEmpty() || path.isConvex()) {
-        return false;
-    }
-
-    
-    if (SkCoverageDeltaMask::CanHandle(safeRoundOut(path.getBounds()))) {
-        return true;
-    }
-
-    
-    
-    if (avgLength < kSmallCubicThreshold) {
-        uint8_t sampleVerbs[kSampleSize];
-        int verbCount = SkTMin(kSampleSize, path.getVerbs(sampleVerbs, kSampleSize));
-        int cubicCount = 0;
-        for(int i = 0; i < verbCount; ++i) {
-            cubicCount += (sampleVerbs[i] == SkPath::kCubic_Verb);
+    #ifdef SK_SUPPORT_LEGACY_AA_CHOICE
+        const SkRect& bounds = path.getBounds();
+        return !path.isConvex()
+            && path.countPoints() >= SkTMax(bounds.width(), bounds.height()) / 8;
+    #else
+        if (avgLength < 0 || complexity < 0 || path.getBounds().isEmpty() || path.isConvex()) {
+            return false;
         }
-        if (cubicCount * 2 >= verbCount) {
+
+        
+        if (SkCoverageDeltaMask::CanHandle(safeRoundOut(path.getBounds()))) {
             return true;
         }
-    }
 
-    return complexity >= kComplexityThreshold;
+        
+        
+        constexpr SkScalar kSmallCubicThreshold = 16;
+        if (avgLength < kSmallCubicThreshold) {
+            uint8_t sampleVerbs[kSampleSize];
+            int verbCount = SkTMin(kSampleSize, path.getVerbs(sampleVerbs, kSampleSize));
+            int cubicCount = 0;
+            for(int i = 0; i < verbCount; ++i) {
+                cubicCount += (sampleVerbs[i] == SkPath::kCubic_Verb);
+            }
+            if (cubicCount * 2 >= verbCount) {
+                return true;
+            }
+        }
+
+        return complexity >= kComplexityThreshold;
+    #endif
 #endif
 }
 
 static bool ShouldUseAAA(const SkPath& path, SkScalar avgLength, SkScalar complexity) {
+#if defined(SK_DISABLE_AAA)
+    return false;
+#else
     if (gSkForceAnalyticAA) {
         return true;
     }
@@ -688,23 +696,25 @@ static bool ShouldUseAAA(const SkPath& path, SkScalar avgLength, SkScalar comple
         return true;
     }
 
-#ifdef SK_SUPPORT_LEGACY_AAA_CHOICE
-    const SkRect& bounds = path.getBounds();
-    
-    
-    
-    
-    
-    return path.countPoints() < SkTMax(bounds.width(), bounds.height()) / 2 - 10;
-#else
-    if (path.countPoints() >= path.getBounds().height()) {
+    #ifdef SK_SUPPORT_LEGACY_AAA_CHOICE
+        const SkRect& bounds = path.getBounds();
         
         
-        return false;
-    }
-
-    
-    return complexity < kComplexityThreshold;
+        
+        
+        
+        
+        return path.countPoints() < SkTMax(bounds.width(), bounds.height()) / 2 - 10;
+    #else
+        if (path.countPoints() >= path.getBounds().height()) {
+            
+            
+            
+            return false;
+        }
+        
+        return complexity < kComplexityThreshold;
+    #endif
 #endif
 }
 
@@ -824,7 +834,7 @@ void SkScan::AntiFillPath(const SkPath& path, const SkRegion& origClip,
     }
 
     SkScalar avgLength, complexity;
-    ComputeComplexity(path, avgLength, complexity);
+    compute_complexity(path, avgLength, complexity);
 
     if (daaRecord || ShouldUseDAA(path, avgLength, complexity)) {
         SkScan::DAAFillPath(path, blitter, ir, clipRgn->getBounds(), forceRLE, daaRecord);

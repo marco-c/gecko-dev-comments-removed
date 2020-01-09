@@ -12,11 +12,8 @@
 
 SkNormalSource::~SkNormalSource() {}
 
-
-
-SK_DEFINE_FLATTENABLE_REGISTRAR_GROUP_START(SkNormalSource)
-SK_DEFINE_FLATTENABLE_REGISTRAR_ENTRY(SkNormalMapSourceImpl)
-SK_DEFINE_FLATTENABLE_REGISTRAR_ENTRY(SkNormalFlatSourceImpl)
-SK_DEFINE_FLATTENABLE_REGISTRAR_GROUP_END
-
+void SkNormalSource::RegisterFlattenables() {
+    SK_REGISTER_FLATTENABLE(SkNormalMapSourceImpl);
+    SK_REGISTER_FLATTENABLE(SkNormalFlatSourceImpl);
+}
 

@@ -115,7 +115,7 @@ private:
     
     void addExtraEmitCodeLine(const String& toAppend);
 
-    int getChildFPIndex(const VariableReference& reference) const;
+    int getChildFPIndex(const Variable& var) const;
 
     String fName;
     String fFullName;

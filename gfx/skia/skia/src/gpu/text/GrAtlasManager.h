@@ -13,9 +13,8 @@
 #include "GrOnFlushResourceProvider.h"
 #include "GrProxyProvider.h"
 
-class GrAtlasGlypCache;
-class GrTextStrike;
 struct GrGlyph;
+class GrTextStrike;
 
 
 
@@ -26,7 +25,7 @@ struct GrGlyph;
 
 class GrAtlasManager : public GrOnFlushCallbackObject {
 public:
-    GrAtlasManager(GrProxyProvider*, GrGlyphCache*,
+    GrAtlasManager(GrProxyProvider*, GrStrikeCache*,
                    size_t maxTextureBytes, GrDrawOpAtlas::AllowMultitexturing);
     ~GrAtlasManager() override;
 
@@ -75,7 +74,7 @@ public:
 
     
     GrDrawOpAtlas::ErrorCode addToAtlas(
-                    GrResourceProvider*, GrGlyphCache*, GrTextStrike*,
+                    GrResourceProvider*, GrStrikeCache*, GrTextStrike*,
                     GrDrawOpAtlas::AtlasID*, GrDeferredUploadTarget*, GrMaskFormat,
                     int width, int height, const void* image, SkIPoint16* loc);
 
@@ -146,8 +145,8 @@ private:
     std::unique_ptr<GrDrawOpAtlas> fAtlases[kMaskFormatCount];
     GrProxyProvider* fProxyProvider;
     sk_sp<const GrCaps> fCaps;
-    GrGlyphCache* fGlyphCache;
-    GrDrawOpAtlasConfig fAtlasConfigs;
+    GrStrikeCache* fGlyphCache;
+    GrDrawOpAtlasConfig fAtlasConfig;
 
     typedef GrOnFlushCallbackObject INHERITED;
 };

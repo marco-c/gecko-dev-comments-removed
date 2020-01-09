@@ -121,7 +121,7 @@ template<typename TFlags> inline TFlags& operator&=(TFlags& a, GrTFlagsMask<TFla
     friend constexpr GrTFlagsMask<X> operator ~(X); \
     friend constexpr X operator |(X, X); \
     friend X& operator |=(X&, X); \
-    friend constexpr bool operator &(X, X);
+    friend constexpr bool operator &(X, X)
 
 
 
@@ -184,16 +184,32 @@ static inline size_t GrSizeAlignDown(size_t x, uint32_t alignment) {
 
 
 
-enum GrBackend {
-    kMetal_GrBackend,
-    kOpenGL_GrBackend,
-    kVulkan_GrBackend,
+enum class GrBackendApi : unsigned {
+    kMetal,
+    kOpenGL,
+    kVulkan,
     
 
 
 
-    kMock_GrBackend,
+    kMock,
+
+    
+
+
+
+    kOpenGL_GrBackend = kOpenGL,
 };
+
+
+
+
+
+typedef GrBackendApi GrBackend;
+
+static constexpr GrBackendApi kMetal_GrBackend = GrBackendApi::kMetal;
+static constexpr GrBackendApi kVulkan_GrBackend = GrBackendApi::kVulkan;
+static constexpr GrBackendApi kMock_GrBackend = GrBackendApi::kMock;
 
 
 
@@ -211,7 +227,7 @@ enum class GrMipMapped : bool {
 
 
 
-enum GrSurfaceOrigin {
+enum GrSurfaceOrigin : int {
     kTopLeft_GrSurfaceOrigin,
     kBottomLeft_GrSurfaceOrigin,
 };
@@ -222,6 +238,7 @@ enum GrSurfaceOrigin {
 
 enum GrGLBackendState {
     kRenderTarget_GrGLBackendState     = 1 << 0,
+    
     kTextureBinding_GrGLBackendState   = 1 << 1,
     
     kView_GrGLBackendState             = 1 << 2,

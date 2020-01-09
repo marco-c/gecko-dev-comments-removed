@@ -21,10 +21,12 @@
 #include "GrUnrolledBinaryGradientColorizer.h"
 #include "GrGradientBitmapCache.h"
 
-#include "SkGr.h"
+#include "GrCaps.h"
 #include "GrColor.h"
-#include "GrContext.h"
-#include "GrContextPriv.h"
+#include "GrColorSpaceInfo.h"
+#include "GrRecordingContext.h"
+#include "GrRecordingContextPriv.h"
+#include "SkGr.h"
 
 
 
@@ -36,7 +38,7 @@ static const int kGradientTextureSize = 256;
 
 
 
-static std::unique_ptr<GrFragmentProcessor> make_textured_colorizer(const GrColor4f* colors,
+static std::unique_ptr<GrFragmentProcessor> make_textured_colorizer(const SkPMColor4f* colors,
         const SkScalar* positions, int count, bool premul, const GrFPArgs& args) {
     static GrGradientBitmapCache gCache(kMaxNumCachedGradientBitmaps, kGradientTextureSize);
 
@@ -44,7 +46,7 @@ static std::unique_ptr<GrFragmentProcessor> make_textured_colorizer(const GrColo
     
     SkColorType colorType = kRGBA_8888_SkColorType;
     if (kLow_GrSLPrecision != GrSLSamplerPrecision(args.fDstColorSpaceInfo->config()) &&
-        args.fContext->contextPriv().caps()->isConfigTexturable(kRGBA_half_GrPixelConfig)) {
+        args.fContext->priv().caps()->isConfigTexturable(kRGBA_half_GrPixelConfig)) {
         colorType = kRGBA_F16_SkColorType;
     }
     SkAlphaType alphaType = premul ? kPremul_SkAlphaType : kUnpremul_SkAlphaType;
@@ -55,7 +57,7 @@ static std::unique_ptr<GrFragmentProcessor> make_textured_colorizer(const GrColo
     SkASSERT(bitmap.isImmutable());
 
     sk_sp<GrTextureProxy> proxy = GrMakeCachedBitmapProxy(
-            args.fContext->contextPriv().proxyProvider(), bitmap);
+            args.fContext->priv().proxyProvider(), bitmap);
     if (proxy == nullptr) {
         SkDebugf("Gradient won't draw. Could not create texture.");
         return nullptr;
@@ -66,7 +68,7 @@ static std::unique_ptr<GrFragmentProcessor> make_textured_colorizer(const GrColo
 
 
 
-static std::unique_ptr<GrFragmentProcessor> make_colorizer(const GrColor4f* colors,
+static std::unique_ptr<GrFragmentProcessor> make_colorizer(const SkPMColor4f* colors,
         const SkScalar* positions, int count, bool premul, const GrFPArgs& args) {
     
     
@@ -103,7 +105,7 @@ static std::unique_ptr<GrFragmentProcessor> make_colorizer(const GrColor4f* colo
     
     
     
-    const GrShaderCaps* caps = args.fContext->contextPriv().caps()->shaderCaps();
+    const GrShaderCaps* caps = args.fContext->priv().caps()->shaderCaps();
     if (!caps->floatIs32Bits() && tryAnalyticColorizer) {
         
         
@@ -160,15 +162,14 @@ static std::unique_ptr<GrFragmentProcessor> make_gradient(const SkGradientShader
     
     bool inputPremul = shader.getGradFlags() & SkGradientShader::kInterpolateColorsInPremul_Flag;
     bool allOpaque = true;
-    SkAutoSTMalloc<4, GrColor4f> colors(shader.fColorCount);
+    SkAutoSTMalloc<4, SkPMColor4f> colors(shader.fColorCount);
     SkColor4fXformer xformedColors(shader.fOrigColors4f, shader.fColorCount,
             shader.fColorSpace.get(), args.fDstColorSpaceInfo->colorSpace());
     for (int i = 0; i < shader.fColorCount; i++) {
-        colors[i] = GrColor4f::FromRGBA4f(xformedColors.fColors[i]);
-        if (inputPremul) {
-            colors[i] = colors[i].premul();
-        }
-        if (allOpaque && !SkScalarNearlyEqual(colors[i].fRGBA[3], 1.0)) {
+        const SkColor4f& upmColor = xformedColors.fColors[i];
+        colors[i] = inputPremul ? upmColor.premul()
+                                : SkPMColor4f{ upmColor.fR, upmColor.fG, upmColor.fB, upmColor.fA };
+        if (allOpaque && !SkScalarNearlyEqual(colors[i].fA, 1.0)) {
             allOpaque = false;
         }
     }
@@ -182,7 +183,7 @@ static std::unique_ptr<GrFragmentProcessor> make_gradient(const SkGradientShader
         positions = shader.fOrigPos;
     } else {
         implicitPos.reserve(shader.fColorCount);
-        SkScalar posScale = SkScalarFastInvert(shader.fColorCount - 1);
+        SkScalar posScale = SK_Scalar1 / (shader.fColorCount - 1);
         for (int i = 0 ; i < shader.fColorCount; i++) {
             implicitPos.push_back(SkIntToScalar(i) * posScale);
         }
@@ -226,7 +227,7 @@ static std::unique_ptr<GrFragmentProcessor> make_gradient(const SkGradientShader
             
             
             master = GrClampedGradientEffect::Make(std::move(colorizer), std::move(layout),
-                    GrColor4f::TransparentBlack(), GrColor4f::TransparentBlack(),
+                    SK_PMColor4fTRANSPARENT, SK_PMColor4fTRANSPARENT,
                     makePremul,  false);
             break;
     }

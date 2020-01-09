@@ -1225,12 +1225,7 @@ public:
 
 
 
-    void mapPoints(SkPoint dst[], const SkPoint src[], int count) const {
-        SkASSERT((dst && src && count > 0) || 0 == count);
-        
-        SkASSERT(src == dst || &dst[count] <= &src[0] || &src[count] <= &dst[0]);
-        this->getMapPtsProc()(*this, dst, src, count);
-    }
+    void mapPoints(SkPoint dst[], const SkPoint src[], int count) const;
 
     
 
@@ -1294,10 +1289,7 @@ public:
 
 
 
-    void mapXY(SkScalar x, SkScalar y, SkPoint* result) const {
-        SkASSERT(result);
-        this->getMapXYProc()(*this, x, y, result);
-    }
+    void mapXY(SkScalar x, SkScalar y, SkPoint* result) const;
 
     
 
@@ -1317,7 +1309,7 @@ public:
 
     SkPoint mapXY(SkScalar x, SkScalar y) const {
         SkPoint result;
-        this->getMapXYProc()(*this, x, y, &result);
+        this->mapXY(x,y, &result);
         return result;
     }
 

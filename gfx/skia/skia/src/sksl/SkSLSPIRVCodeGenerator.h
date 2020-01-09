@@ -95,6 +95,7 @@ private:
         kMin_SpecialIntrinsic,
         kMix_SpecialIntrinsic,
         kMod_SpecialIntrinsic,
+        kDFdy_SpecialIntrinsic,
         kSaturate_SpecialIntrinsic,
         kSubpassLoad_SpecialIntrinsic,
         kTexture_SpecialIntrinsic,
@@ -336,6 +337,8 @@ private:
     std::unordered_map<uint64_t, SpvId> fUIntConstants;
     std::unordered_map<float, SpvId> fFloatConstants;
     std::unordered_map<double, SpvId> fDoubleConstants;
+    
+    SpvId fConstantZeroOneVector = 0;
     bool fSetupFragPosition;
     
     SpvId fCurrentBlock;

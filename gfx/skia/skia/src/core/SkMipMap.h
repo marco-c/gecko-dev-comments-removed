@@ -42,7 +42,11 @@ public:
     
     static SkISize ComputeLevelSize(int baseWidth, int baseHeight, int level);
 
-    struct Level {
+    
+    
+    
+    
+    struct alignas(8) Level {
         SkPixmap    fPixmap;
         SkSize      fScale; 
     };

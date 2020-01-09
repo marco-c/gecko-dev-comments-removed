@@ -22,22 +22,62 @@ class GrMtlPipelineState;
 
 class GrMtlPipelineStateBuilder : public GrGLSLProgramBuilder {
 public:
-    static GrMtlPipelineState* CreatePipelineState(const GrPrimitiveProcessor&,
+    
+
+
+
+
+
+
+
+
+
+
+    class Desc : public GrProgramDesc {
+    public:
+        static bool Build(Desc*,
+                          GrRenderTarget*,
+                          const GrPrimitiveProcessor&,
+                          const GrPipeline&,
+                          GrPrimitiveType,
+                          GrMtlGpu* gpu);
+
+        size_t shaderKeyLength() const { return fShaderKeyLength; }
+
+    private:
+        size_t fShaderKeyLength;
+
+        typedef GrProgramDesc INHERITED;
+    };
+
+    
+
+
+
+
+
+
+
+    static GrMtlPipelineState* CreatePipelineState(GrMtlGpu*,
+                                                   GrRenderTarget*, GrSurfaceOrigin,
+                                                   const GrPrimitiveProcessor&,
+                                                   const GrTextureProxy* const primProcProxies[],
                                                    const GrPipeline&,
-                                                   GrProgramDesc*,
-                                                   GrMtlGpu*);
+                                                   Desc*);
 
 private:
-    GrMtlPipelineStateBuilder(const GrPrimitiveProcessor&, const GrPipeline&,
-                              GrProgramDesc*, GrMtlGpu*);
+    GrMtlPipelineStateBuilder(GrMtlGpu*, GrRenderTarget*, GrSurfaceOrigin,
+                              const GrPipeline&,
+                              const GrPrimitiveProcessor&,
+                              const GrTextureProxy* const primProcProxies[],
+                              GrProgramDesc*);
+
+    GrMtlPipelineState* finalize(GrRenderTarget* renderTarget,
+                                 const GrPrimitiveProcessor& primProc,
+                                 const GrPipeline& pipeline,
+                                 Desc*);
 
     const GrCaps* caps() const override;
-
-    GrGLSLUniformHandler* uniformHandler() override { return &fUniformHandler; }
-
-    const GrGLSLUniformHandler* uniformHandler() const override { return &fUniformHandler; }
-
-    GrGLSLVaryingHandler* varyingHandler() override { return &fVaryingHandler; }
 
     void finalizeFragmentOutputColor(GrShaderVar& outputColor) override;
 
@@ -48,7 +88,9 @@ private:
                                           const SkSL::Program::Settings& settings,
                                           GrProgramDesc* desc);
 
-    GrMtlPipelineState* finalize(const GrPrimitiveProcessor&, const GrPipeline&, GrProgramDesc*);
+    GrGLSLUniformHandler* uniformHandler() override { return &fUniformHandler; }
+    const GrGLSLUniformHandler* uniformHandler() const override { return &fUniformHandler; }
+    GrGLSLVaryingHandler* varyingHandler() override { return &fVaryingHandler; }
 
     GrMtlGpu* fGpu;
     GrMtlUniformHandler fUniformHandler;

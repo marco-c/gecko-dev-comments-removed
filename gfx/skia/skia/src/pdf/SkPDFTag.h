@@ -8,60 +8,31 @@
 #ifndef SkPDFTag_DEFINED
 #define SkPDFTag_DEFINED
 
-#include "SkDocument.h"
-#include "SkPDFTypes.h"
-#include "SkRefCnt.h"
+#include "SkPDFDocument.h"
+#include "SkTArray.h"
+#include "SkArenaAlloc.h"
+#include "SkTHash.h"
 
 class SkPDFDocument;
+struct SkPDFTagNode;
 
-
-
-
-
-
-
-
-
-
-
-
-class SkPDFTag final : public SkPDFDict {
+class SkPDFTagTree {
 public:
-    SkPDFTag(int nodeId, SkPDF::DocumentStructureType type, sk_sp<SkPDFTag> parent);
-    ~SkPDFTag() override;
-
-    void appendChild(sk_sp<SkPDFTag> child);
+    SkPDFTagTree();
+    ~SkPDFTagTree();
+    void init(const SkPDF::StructureElementNode*);
+    void reset();
+    int getMarkIdForNodeId(int nodeId, unsigned pageIndex);
+    SkPDFIndirectReference makeStructTreeRoot(SkPDFDocument* doc);
 
 private:
-    friend class SkPDFDocument;
+    SkArenaAlloc fArena;
+    SkTHashMap<int, SkPDFTagNode*> fNodeMap;
+    SkPDFTagNode* fRoot = nullptr;
+    SkTArray<SkTArray<SkPDFTagNode*>> fMarksPerPage;
 
-    void drop() override;
-
-    void addMarkedContent(int pageIndex, int markId);
-
-    
-    
-    
-    
-    bool prepareTagTreeToEmit(const SkPDFDocument& document);
-
-    struct MarkedContentInfo {
-        int pageIndex;
-        int markId;
-    };
-
-    
-    
-    
-    int fNodeId;
-
-    
-    
-    SkTArray<sk_sp<SkPDFTag>> fChildren;
-
-    
-    
-    SkTArray<MarkedContentInfo> fMarkedContent;
+    SkPDFTagTree(const SkPDFTagTree&) = delete;
+    SkPDFTagTree& operator=(const SkPDFTagTree&) = delete;
 };
 
 #endif

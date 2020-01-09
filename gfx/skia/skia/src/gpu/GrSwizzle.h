@@ -9,90 +9,67 @@
 #define GrSwizzle_DEFINED
 
 #include "GrColor.h"
-#include "SkPM4f.h"
-#include "SkRandom.h"
+#include "SkColorData.h"
 
 
 
 
 class GrSwizzle {
-private:
-    char fSwiz[5];
-    uint8_t fKey;
-
-    static constexpr int CToI(char c) {
-        return ('r' == c) ? (GrColor_SHIFT_R / 8) :
-               ('g' == c) ? (GrColor_SHIFT_G / 8) :
-               ('b' == c) ? (GrColor_SHIFT_B / 8) :
-               ('a' == c) ? (GrColor_SHIFT_A / 8) : -1;
-    }
-
-    static constexpr char IToC(int idx) {
-        return (8 * idx) == GrColor_SHIFT_R ? 'r' :
-               (8 * idx) == GrColor_SHIFT_G ? 'g' :
-               (8 * idx) == GrColor_SHIFT_B ? 'b' :
-               (8 * idx) == GrColor_SHIFT_A ? 'a' : 'x';
-    }
-
-    constexpr GrSwizzle(const char c[4])
-        : fSwiz{c[0], c[1], c[2], c[3], 0}
-        , fKey((CToI(c[0]) << 0) | (CToI(c[1]) << 2) | (CToI(c[2]) << 4) | (CToI(c[3]) << 6)) {}
-
-    GR_STATIC_ASSERT(sizeof(char[4]) == sizeof(uint32_t));
-    uint32_t* asUIntPtr() { return reinterpret_cast<uint32_t*>(fSwiz); }
-    uint32_t asUInt() const {
-        uint32_t v;
-        memcpy(&v, fSwiz, 4);
-        return v;
-    }
-
 public:
-    GrSwizzle() { *this = RGBA(); }
+    constexpr GrSwizzle() : GrSwizzle("rgba") {}
 
-    GrSwizzle(const GrSwizzle& that) { *this = that; }
+    constexpr GrSwizzle(const GrSwizzle& that)
+            : fSwiz{that.fSwiz[0], that.fSwiz[1], that.fSwiz[2], that.fSwiz[3], '\0'}
+            , fKey(that.fKey) {}
 
-    GrSwizzle& operator=(const GrSwizzle& that) {
-        memcpy(this, &that, sizeof(GrSwizzle));
+    constexpr GrSwizzle& operator=(const GrSwizzle& that) {
+        fSwiz[0] = that.fSwiz[0];
+        fSwiz[1] = that.fSwiz[1];
+        fSwiz[2] = that.fSwiz[2];
+        fSwiz[3] = that.fSwiz[3];
+        SkASSERT(fSwiz[4] == '\0');
+        fKey = that.fKey;
         return *this;
     }
 
     
-    void setFromKey(uint8_t key) {
+    constexpr void setFromKey(uint16_t key) {
         fKey = key;
         for (int i = 0; i < 4; ++i) {
-            fSwiz[i] = IToC(key & 3);
-            key >>= 2;
+            fSwiz[i] = IToC(key & 15);
+            key >>= 4;
         }
         SkASSERT(fSwiz[4] == 0);
     }
 
-    bool operator==(const GrSwizzle& that) const { return this->asUInt() == that.asUInt(); }
-
-    bool operator!=(const GrSwizzle& that) const { return !(*this == that); }
+    constexpr bool operator==(const GrSwizzle& that) const { return fKey == that.fKey; }
+    constexpr bool operator!=(const GrSwizzle& that) const { return !(*this == that); }
 
     
-    uint8_t asKey() const { return fKey; }
+    constexpr uint16_t asKey() const { return fKey; }
 
     
     const char* c_str() const { return fSwiz; }
 
+    char operator[](int i) const {
+        SkASSERT(i >= 0 && i < 4);
+        return fSwiz[i];
+    }
+
+
     
-    GrColor applyTo(GrColor color) const {
-        int idx;
-        uint32_t key = fKey;
-        
-        idx = (key & 3);
-        uint32_t outR = (color >> idx * 8)  & 0xFF;
-        key >>= 2;
-        idx = (key & 3);
-        uint32_t outG = (color >> idx * 8)  & 0xFF;
-        key >>= 2;
-        idx = (key & 3);
-        uint32_t outB = (color >> idx * 8)  & 0xFF;
-        key >>= 2;
-        idx = (key & 3);
-        uint32_t outA = (color >> idx * 8)  & 0xFF;
-        return GrColorPackRGBA(outR, outG, outB, outA);
+    
+    static const int k1KeyValue = 4;
+
+    static float component_idx_to_float(const SkPMColor4f& color, int idx) {
+        if (idx <= 3) {
+            return color[idx];
+        }
+        if (idx == k1KeyValue) {
+            return 1.0f;
+        }
+        SK_ABORT("Unexpected swizzle component indx");
+        return -1.0f;
     }
 
     
@@ -100,41 +77,57 @@ public:
         int idx;
         uint32_t key = fKey;
         
-        idx = (key & 3);
-        float outR = color[idx];
-        key >>= 2;
-        idx = (key & 3);
-        float outG = color[idx];
-        key >>= 2;
-        idx = (key & 3);
-        float outB = color[idx];
-        key >>= 2;
-        idx = (key & 3);
-        float outA = color[idx];
+        idx = (key & 15);
+        float outR = component_idx_to_float(color, idx);
+        key >>= 4;
+        idx = (key & 15);
+        float outG = component_idx_to_float(color, idx);
+        key >>= 4;
+        idx = (key & 15);
+        float outB = component_idx_to_float(color, idx);
+        key >>= 4;
+        idx = (key & 15);
+        float outA = component_idx_to_float(color, idx);
         return { outR, outG, outB, outA };
     }
 
-    static GrSwizzle RGBA() { return GrSwizzle("rgba"); }
-    static GrSwizzle AAAA() { return GrSwizzle("aaaa"); }
-    static GrSwizzle RRRR() { return GrSwizzle("rrrr"); }
-    static GrSwizzle RRRA() { return GrSwizzle("rrra"); }
-    static GrSwizzle BGRA() { return GrSwizzle("bgra"); }
+    static constexpr GrSwizzle RGBA() { return GrSwizzle("rgba"); }
+    static constexpr GrSwizzle AAAA() { return GrSwizzle("aaaa"); }
+    static constexpr GrSwizzle RRRR() { return GrSwizzle("rrrr"); }
+    static constexpr GrSwizzle RRRA() { return GrSwizzle("rrra"); }
+    static constexpr GrSwizzle BGRA() { return GrSwizzle("bgra"); }
+    static constexpr GrSwizzle RGRG() { return GrSwizzle("rgrg"); }
+    static constexpr GrSwizzle RGB1() { return GrSwizzle("rgb1"); }
 
-    static GrSwizzle CreateRandom(SkRandom* random) {
-        switch (random->nextU() % 4) {
-            case 0:
-                return RGBA();
-            case 1:
-                return BGRA();
-            case 2:
-                return RRRR();
-            case 3:
-                return AAAA();
-            default:
-                SK_ABORT("Mod is broken?!?");
-                return RGBA();
+private:
+    char fSwiz[5];
+    uint16_t fKey;
+
+    static constexpr int CToI(char c) {
+        switch (c) {
+            case 'r': return (GrColor_SHIFT_R / 8);
+            case 'g': return (GrColor_SHIFT_G / 8);
+            case 'b': return (GrColor_SHIFT_B / 8);
+            case 'a': return (GrColor_SHIFT_A / 8);
+            case '1': return k1KeyValue;
+            default:  return -1;
         }
     }
+
+    static constexpr char IToC(int idx) {
+        switch (8 * idx) {
+            case GrColor_SHIFT_R  : return 'r';
+            case GrColor_SHIFT_G  : return 'g';
+            case GrColor_SHIFT_B  : return 'b';
+            case GrColor_SHIFT_A  : return 'a';
+            case (k1KeyValue * 8) : return '1';
+            default:                return -1;
+        }
+    }
+
+    constexpr GrSwizzle(const char c[4])
+            : fSwiz{c[0], c[1], c[2], c[3], '\0'}
+            , fKey((CToI(c[0]) << 0) | (CToI(c[1]) << 4) | (CToI(c[2]) << 8) | (CToI(c[3]) << 12)) {}
 };
 
 #endif

@@ -191,6 +191,16 @@ public:
 
 
 
+
+
+    sk_sp<SkColorSpace> refColorSpace() const { return fInfo.refColorSpace(); }
+
+    
+
+
+
+
+
     bool isOpaque() const { return fInfo.isOpaque(); }
 
     

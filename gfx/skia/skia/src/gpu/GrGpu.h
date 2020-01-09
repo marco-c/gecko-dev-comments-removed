@@ -17,12 +17,13 @@
 #include "GrTypes.h"
 #include "GrXferProcessor.h"
 #include "SkPath.h"
+#include "SkSurface.h"
 #include "SkTArray.h"
 #include <map>
 
 class GrBackendRenderTarget;
 class GrBackendSemaphore;
-class GrBuffer;
+class GrGpuBuffer;
 class GrContext;
 struct GrContextOptions;
 class GrGLContext;
@@ -104,13 +105,14 @@ public:
     
 
 
-    sk_sp<GrTexture> wrapBackendTexture(const GrBackendTexture&, GrWrapOwnership);
+    sk_sp<GrTexture> wrapBackendTexture(const GrBackendTexture&, GrWrapOwnership, GrWrapCacheable,
+                                        GrIOType);
 
     
 
 
-    sk_sp<GrTexture> wrapRenderableBackendTexture(const GrBackendTexture&,
-                                                  int sampleCnt, GrWrapOwnership);
+    sk_sp<GrTexture> wrapRenderableBackendTexture(const GrBackendTexture&, int sampleCnt,
+                                                  GrWrapOwnership, GrWrapCacheable);
 
     
 
@@ -126,6 +128,10 @@ public:
     
 
 
+    sk_sp<GrRenderTarget> wrapVulkanSecondaryCBAsRenderTarget(const SkImageInfo&,
+                                                              const GrVkDrawableInfo&);
+
+    
 
 
 
@@ -133,8 +139,10 @@ public:
 
 
 
-    GrBuffer* createBuffer(size_t size, GrBufferType intendedType, GrAccessPattern accessPattern,
-                           const void* data = nullptr);
+
+
+    sk_sp<GrGpuBuffer> createBuffer(size_t size, GrGpuBufferType intendedType,
+                                    GrAccessPattern accessPattern, const void* data = nullptr);
 
     
 
@@ -145,6 +153,11 @@ public:
 
 
     bool regenerateMipMapLevels(GrTexture*);
+
+    
+
+
+    void resetTextureBindings();
 
     
 
@@ -210,7 +223,7 @@ public:
 
 
     bool transferPixels(GrTexture* texture, int left, int top, int width, int height,
-                        GrColorType bufferColorType, GrBuffer* transferBuffer, size_t offset,
+                        GrColorType bufferColorType, GrGpuBuffer* transferBuffer, size_t offset,
                         size_t rowBytes);
 
     
@@ -242,7 +255,7 @@ public:
     
     
     virtual GrGpuRTCommandBuffer* getCommandBuffer(
-            GrRenderTarget*, GrSurfaceOrigin,
+            GrRenderTarget*, GrSurfaceOrigin, const SkRect& bounds,
             const GrGpuRTCommandBuffer::LoadAndStoreInfo&,
             const GrGpuRTCommandBuffer::StencilLoadAndStoreInfo&) = 0;
 
@@ -254,7 +267,9 @@ public:
     
     
     
-    GrSemaphoresSubmitted finishFlush(int numSemaphores, GrBackendSemaphore backendSemaphores[]);
+    GrSemaphoresSubmitted finishFlush(GrSurfaceProxy*, SkSurface::BackendSurfaceAccess access,
+                                      SkSurface::FlushFlags flags, int numSemaphores,
+                                      GrBackendSemaphore backendSemaphores[]);
 
     virtual void submit(GrGpuCommandBuffer*) = 0;
 
@@ -266,7 +281,7 @@ public:
     virtual sk_sp<GrSemaphore> wrapBackendSemaphore(const GrBackendSemaphore& semaphore,
                                                     GrResourceProvider::SemaphoreWrapType wrapType,
                                                     GrWrapOwnership ownership) = 0;
-    virtual void insertSemaphore(sk_sp<GrSemaphore> semaphore, bool flush = false) = 0;
+    virtual void insertSemaphore(sk_sp<GrSemaphore> semaphore) = 0;
     virtual void waitSemaphore(sk_sp<GrSemaphore> semaphore) = 0;
 
     
@@ -293,6 +308,7 @@ public:
             fStencilAttachmentCreates = 0;
             fNumDraws = 0;
             fNumFailedDraws = 0;
+            fNumFinishFlushes = 0;
         }
 
         int renderTargetBinds() const { return fRenderTargetBinds; }
@@ -308,10 +324,14 @@ public:
         void incStencilAttachmentCreates() { fStencilAttachmentCreates++; }
         void incNumDraws() { fNumDraws++; }
         void incNumFailedDraws() { ++fNumFailedDraws; }
+        void incNumFinishFlushes() { ++fNumFinishFlushes; }
+#if GR_TEST_UTILS
         void dump(SkString*);
         void dumpKeyValuePairs(SkTArray<SkString>* keys, SkTArray<double>* values);
+#endif
         int numDraws() const { return fNumDraws; }
         int numFailedDraws() const { return fNumFailedDraws; }
+        int numFinishFlushes() const { return fNumFinishFlushes; }
     private:
         int fRenderTargetBinds;
         int fShaderCompilations;
@@ -321,9 +341,13 @@ public:
         int fStencilAttachmentCreates;
         int fNumDraws;
         int fNumFailedDraws;
+        int fNumFinishFlushes;
 #else
+
+#if GR_TEST_UTILS
         void dump(SkString*) {}
         void dumpKeyValuePairs(SkTArray<SkString>*, SkTArray<double>*) {}
+#endif
         void incRenderTargetBinds() {}
         void incShaderCompilations() {}
         void incTextureCreates() {}
@@ -332,6 +356,7 @@ public:
         void incStencilAttachmentCreates() {}
         void incNumDraws() {}
         void incNumFailedDraws() {}
+        void incNumFinishFlushes() {}
 #endif
     };
 
@@ -405,6 +430,20 @@ public:
         }
     }
 
+    
+
+
+
+
+
+
+
+    virtual uint32_t getExtraSamplerKeyForProgram(const GrSamplerState&, const GrBackendFormat&) {
+        return 0;
+    }
+
+    virtual void storeVkPipelineCacheData() {}
+
 protected:
     
     void didWriteToSurface(GrSurface* surface, GrSurfaceOrigin origin, const SkIRect* bounds,
@@ -423,6 +462,9 @@ private:
     virtual void onResetContext(uint32_t resetBits) = 0;
 
     
+    virtual void onResetTextureBindings() {}
+
+    
     virtual void xferBarrier(GrRenderTarget*, GrXferBarrierType) = 0;
 
     
@@ -431,15 +473,18 @@ private:
     virtual sk_sp<GrTexture> onCreateTexture(const GrSurfaceDesc&, SkBudgeted,
                                              const GrMipLevel texels[], int mipLevelCount) = 0;
 
-    virtual sk_sp<GrTexture> onWrapBackendTexture(const GrBackendTexture&, GrWrapOwnership) = 0;
-    virtual sk_sp<GrTexture> onWrapRenderableBackendTexture(const GrBackendTexture&,
-                                                            int sampleCnt,
-                                                            GrWrapOwnership) = 0;
+    virtual sk_sp<GrTexture> onWrapBackendTexture(const GrBackendTexture&, GrWrapOwnership,
+                                                  GrWrapCacheable, GrIOType) = 0;
+    virtual sk_sp<GrTexture> onWrapRenderableBackendTexture(const GrBackendTexture&, int sampleCnt,
+                                                            GrWrapOwnership, GrWrapCacheable) = 0;
     virtual sk_sp<GrRenderTarget> onWrapBackendRenderTarget(const GrBackendRenderTarget&) = 0;
     virtual sk_sp<GrRenderTarget> onWrapBackendTextureAsRenderTarget(const GrBackendTexture&,
                                                                      int sampleCnt) = 0;
-    virtual GrBuffer* onCreateBuffer(size_t size, GrBufferType intendedType, GrAccessPattern,
-                                     const void* data) = 0;
+    virtual sk_sp<GrRenderTarget> onWrapVulkanSecondaryCBAsRenderTarget(const SkImageInfo&,
+                                                                        const GrVkDrawableInfo&);
+
+    virtual sk_sp<GrGpuBuffer> onCreateBuffer(size_t size, GrGpuBufferType intendedType,
+                                              GrAccessPattern, const void* data) = 0;
 
     
     virtual bool onReadPixels(GrSurface*, int left, int top, int width, int height, GrColorType,
@@ -451,7 +496,7 @@ private:
 
     
     virtual bool onTransferPixels(GrTexture*, int left, int top, int width, int height,
-                                  GrColorType colorType, GrBuffer* transferBuffer, size_t offset,
+                                  GrColorType colorType, GrGpuBuffer* transferBuffer, size_t offset,
                                   size_t rowBytes) = 0;
 
     
@@ -466,7 +511,8 @@ private:
                                const SkIRect& srcRect, const SkIPoint& dstPoint,
                                bool canDiscardOutsideDstRect) = 0;
 
-    virtual void onFinishFlush(bool insertedSemaphores) = 0;
+    virtual void onFinishFlush(GrSurfaceProxy*, SkSurface::BackendSurfaceAccess access,
+                               SkSurface::FlushFlags flags, bool insertedSemaphores) = 0;
 
 #ifdef SK_ENABLE_DUMP_GPU
     virtual void onDumpJSON(SkJSONWriter*) const {}

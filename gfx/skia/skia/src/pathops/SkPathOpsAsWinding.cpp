@@ -80,10 +80,7 @@ static int contains_edge(SkPoint pts[4], SkPath::Verb verb, SkScalar weight, con
         
         
         
-        if (intersectX < edge.fX) {
-            tVals[index] = tVals[--count];
-            continue;
-        }
+        tVals[index] = tVals[--count];
     }
     
     for (int index = 0; index < count; ++index) {
@@ -252,7 +249,9 @@ public:
                     continue;
                 }
                 
-                SkDebugf("incomplete\n");
+                
+                
+                SkDEBUGF("incomplete\n");
                 
             }
             contour.fMinXY = minXY;
@@ -261,7 +260,7 @@ public:
         return winding;
     }
 
-    void containerContains(Contour& contour, Contour& test) {
+    bool containerContains(Contour& contour, Contour& test) {
         
         
         
@@ -274,8 +273,8 @@ public:
         int winding = this->nextEdge(contour, Edge::kCompare);
         
         
-        SkASSERT(-1 <= winding && winding <= 1);
         test.fContained = winding != 0;
+        return -1 <= winding && winding <= 1;
     }
 
     void inParent(Contour& contour, Contour& parent) {
@@ -298,13 +297,18 @@ public:
         parent.fChildren.push_back(&contour);
     }
 
-    void checkContainerChildren(Contour* parent, Contour* child) {
+    bool checkContainerChildren(Contour* parent, Contour* child) {
         for (auto grandChild : child->fChildren) {
-            checkContainerChildren(child, grandChild);
+            if (!checkContainerChildren(child, grandChild)) {
+                return false;
+            }
         }
         if (parent) {
-            containerContains(*parent, *child);
+            if (!containerContains(*parent, *child)) {
+                return false;
+            }
         }
+        return true;
     }
 
     bool markReverse(Contour* parent, Contour* child) {
@@ -403,7 +407,9 @@ bool SK_API AsWinding(const SkPath& path, SkPath* result) {
     
     for (auto contour : sorted.fChildren) {
         winder.nextEdge(*contour, OpAsWinding::Edge::kInitial);
-        winder.checkContainerChildren(nullptr, contour);
+        if (!winder.checkContainerChildren(nullptr, contour)) {
+            return false;
+        }
     }
     
     bool reversed = false;

@@ -52,6 +52,7 @@ public:
     bool srgbWriteControl() const { return fSRGBWriteControl; }
     bool discardRenderTargetSupport() const { return fDiscardRenderTargetSupport; }
     bool gpuTracingSupport() const { return fGpuTracingSupport; }
+    bool compressedTexSubImageSupport() const { return fCompressedTexSubImageSupport; }
     bool oversizedStencilSupport() const { return fOversizedStencilSupport; }
     bool textureBarrierSupport() const { return fTextureBarrierSupport; }
     bool sampleLocationsSupport() const { return fSampleLocationsSupport; }
@@ -102,8 +103,9 @@ public:
         return kAdvancedCoherent_BlendEquationSupport == fBlendEquationSupport;
     }
 
-    bool canUseAdvancedBlendEquation(GrBlendEquation equation) const {
+    bool isAdvancedBlendEquationBlacklisted(GrBlendEquation equation) const {
         SkASSERT(GrBlendEquationIsAdvanced(equation));
+        SkASSERT(this->advancedBlendEquationSupport());
         return SkToBool(fAdvBlendEqBlacklist & (1 << equation));
     }
 
@@ -145,8 +147,6 @@ public:
         SkASSERT(fMaxTileSize <= fMaxTextureSize);
         return fMaxTileSize;
     }
-
-    int maxRasterSamples() const { return fMaxRasterSamples; }
 
     int maxWindowRectangles() const { return fMaxWindowRectangles; }
 
@@ -192,7 +192,7 @@ public:
 
 
 
-    virtual bool surfaceSupportsWritePixels(const GrSurface*) const = 0;
+    bool surfaceSupportsWritePixels(const GrSurface*) const;
 
     
 
@@ -239,18 +239,34 @@ public:
 
     bool wireframeMode() const { return fWireframeMode; }
 
-    bool sampleShadingSupport() const { return fSampleShadingSupport; }
-
     bool fenceSyncSupport() const { return fFenceSyncSupport; }
     bool crossContextTextureSupport() const { return fCrossContextTextureSupport; }
     
 
 
-    virtual bool canCopySurface(const GrSurfaceProxy* dst, const GrSurfaceProxy* src,
-                                const SkIRect& srcRect, const SkIPoint& dstPoint) const = 0;
+    bool canCopySurface(const GrSurfaceProxy* dst, const GrSurfaceProxy* src,
+                        const SkIRect& srcRect, const SkIPoint& dstPoint) const;
 
     bool dynamicStateArrayGeometryProcessorTextureSupport() const {
         return fDynamicStateArrayGeometryProcessorTextureSupport;
+    }
+
+    
+    
+    bool performPartialClearsAsDraws() const {
+        return fPerformColorClearsAsDraws || fPerformPartialClearsAsDraws;
+    }
+
+    
+    bool performColorClearsAsDraws() const {
+        return fPerformColorClearsAsDraws;
+    }
+
+    
+    
+    
+    bool performStencilClearsAsDraws() const {
+        return fPerformStencilClearsAsDraws;
     }
 
     
@@ -272,24 +288,31 @@ public:
 
 
 
-    virtual bool validateBackendTexture(const GrBackendTexture& tex, SkColorType ct,
-                                        GrPixelConfig*) const = 0;
-    virtual bool validateBackendRenderTarget(const GrBackendRenderTarget&, SkColorType,
-                                             GrPixelConfig*) const = 0;
+    virtual GrPixelConfig validateBackendRenderTarget(const GrBackendRenderTarget&,
+                                                      SkColorType) const = 0;
 
     
     
     
-    virtual bool getConfigFromBackendFormat(const GrBackendFormat& format, SkColorType ct,
-                                            GrPixelConfig*) const = 0;
+    virtual GrPixelConfig getConfigFromBackendFormat(const GrBackendFormat& format,
+                                                     SkColorType ct) const = 0;
 
-#ifdef GR_TEST_UTILS
     
 
 
 
-    GrBackendFormat createFormatFromBackendTexture(const GrBackendTexture&) const;
-#endif
+    virtual GrPixelConfig getYUVAConfigFromBackendFormat(const GrBackendFormat& format) const = 0;
+
+    
+    virtual GrBackendFormat getBackendFormatFromGrColorType(GrColorType ct,
+                                                            GrSRGBEncoded srgbEncoded) const = 0;
+    GrBackendFormat getBackendFormatFromColorType(SkColorType ct) const;
+
+    
+
+
+
+    bool clampToBorderSupport() const { return fClampToBorderSupport; }
 
     const GrDriverBugWorkarounds& workarounds() const { return fDriverBugWorkarounds; }
 
@@ -298,14 +321,6 @@ protected:
 
 
     void applyOptionsOverrides(const GrContextOptions& options);
-
-#ifdef GR_TEST_UTILS
-    
-
-
-
-    virtual GrBackendFormat onCreateFormatFromBackendTexture(const GrBackendTexture&) const = 0;
-#endif
 
     sk_sp<GrShaderCaps> fShaderCaps;
 
@@ -317,6 +332,7 @@ protected:
     bool fReuseScratchTextures                       : 1;
     bool fReuseScratchBuffers                        : 1;
     bool fGpuTracingSupport                          : 1;
+    bool fCompressedTexSubImageSupport               : 1;
     bool fOversizedStencilSupport                    : 1;
     bool fTextureBarrierSupport                      : 1;
     bool fSampleLocationsSupport                     : 1;
@@ -329,6 +345,10 @@ protected:
     bool fMustClearUploadedBufferData                : 1;
     bool fSupportsAHardwareBufferImages              : 1;
     bool fHalfFloatVertexAttributeSupport            : 1;
+    bool fClampToBorderSupport                       : 1;
+    bool fPerformPartialClearsAsDraws                : 1;
+    bool fPerformColorClearsAsDraws                  : 1;
+    bool fPerformStencilClearsAsDraws                : 1;
 
     
     bool fBlacklistCoverageCounting                  : 1;
@@ -338,7 +358,6 @@ protected:
     
     bool fPreferVRAMUseOverFlushes                   : 1;
 
-    bool fSampleShadingSupport                       : 1;
     
     bool fFenceSyncSupport                           : 1;
 
@@ -360,7 +379,6 @@ protected:
     int fMaxVertexAttributes;
     int fMaxTextureSize;
     int fMaxTileSize;
-    int fMaxRasterSamples;
     int fMaxWindowRectangles;
     int fMaxClipAnalyticFPs;
 
@@ -369,6 +387,9 @@ protected:
 private:
     virtual void onApplyOptionsOverrides(const GrContextOptions&) {}
     virtual void onDumpJSON(SkJSONWriter*) const {}
+    virtual bool onSurfaceSupportsWritePixels(const GrSurface*) const = 0;
+    virtual bool onCanCopySurface(const GrSurfaceProxy* dst, const GrSurfaceProxy* src,
+                                  const SkIRect& srcRect, const SkIPoint& dstPoint) const = 0;
 
     
     

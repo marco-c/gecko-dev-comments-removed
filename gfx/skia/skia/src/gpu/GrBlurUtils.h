@@ -13,6 +13,7 @@
 class GrClip;
 class GrContext;
 class GrPaint;
+class GrRecordingContext;
 class GrRenderTarget;
 class GrRenderTargetContext;
 class GrShape;
@@ -32,7 +33,7 @@ namespace GrBlurUtils {
     
 
 
-    void drawShapeWithMaskFilter(GrContext*,
+    void drawShapeWithMaskFilter(GrRecordingContext*,
                                  GrRenderTargetContext*,
                                  const GrClip&,
                                  const SkPaint&,
@@ -43,7 +44,7 @@ namespace GrBlurUtils {
 
 
 
-    void drawShapeWithMaskFilter(GrContext*,
+    void drawShapeWithMaskFilter(GrRecordingContext*,
                                  GrRenderTargetContext*,
                                  const GrClip&,
                                  const GrShape&,

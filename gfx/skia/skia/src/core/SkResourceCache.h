@@ -112,10 +112,7 @@ public:
     
     struct PurgeSharedIDMessage {
         PurgeSharedIDMessage(uint64_t sharedID) : fSharedID(sharedID) {}
-        
-        
-        bool shouldSend(uint32_t inboxID) const { return true; }
-        uint64_t    fSharedID;
+        uint64_t fSharedID;
     };
 
     typedef const Rec* ID;

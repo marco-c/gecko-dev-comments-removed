@@ -33,11 +33,6 @@ protected:
     
     bool usesColorXform() const override { return false; }
 private:
-    
-
-
-    SkSwizzler* initializeSwizzler(const SkImageInfo& info,
-                                   const Options& opts);
     SkSampler* getSampler(bool createIfNecessary) override {
         SkASSERT(fSwizzler || !createIfNecessary);
         return fSwizzler.get();

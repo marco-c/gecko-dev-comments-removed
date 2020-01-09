@@ -15,6 +15,35 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class SK_API SkGradientShader {
 public:
     enum Flags {
@@ -224,7 +253,7 @@ public:
         return MakeSweep(cx, cy, colors, std::move(colorSpace), pos, count, 0, nullptr);
     }
 
-    static void InitializeFlattenables();
+    static void RegisterFlattenables();
 };
 
 #endif

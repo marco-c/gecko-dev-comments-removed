@@ -8,130 +8,29 @@
 #ifndef GrBuffer_DEFINED
 #define GrBuffer_DEFINED
 
-#include "GrGpuResource.h"
+#include "GrTypes.h"
 
-class GrGpu;
 
-class GrBuffer : public GrGpuResource {
+class GrBuffer {
 public:
-    
+    GrBuffer(const GrBuffer&) = delete;
+    GrBuffer& operator=(const GrBuffer&) = delete;
 
-
-    static SK_WARN_UNUSED_RESULT GrBuffer* CreateCPUBacked(GrGpu*, size_t sizeInBytes, GrBufferType,
-                                                           const void* data = nullptr);
-
-    
-
-
-
-    static void ComputeScratchKeyForDynamicVBO(size_t size, GrBufferType, GrScratchKey*);
-
-    GrAccessPattern accessPattern() const { return fAccessPattern; }
-    size_t sizeInBytes() const { return fSizeInBytes; }
+    virtual ~GrBuffer() = default;
 
     
-
-
-
-    bool isCPUBacked() const { return SkToBool(fCPUData); }
-    size_t baseOffset() const { return reinterpret_cast<size_t>(fCPUData); }
+    
+    virtual void ref() const = 0;
+    virtual void unref() const = 0;
 
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-     void* map() {
-         if (!fMapPtr) {
-             this->onMap();
-         }
-         return fMapPtr;
-     }
+    virtual size_t size() const = 0;
 
     
-
-
-
-
-     void unmap() {
-         SkASSERT(fMapPtr);
-         this->onUnmap();
-         fMapPtr = nullptr;
-     }
-
-    
-
-
-
-
-
-     void* mapPtr() const { return fMapPtr; }
-
-    
-
-
-
-
-     bool isMapped() const { return SkToBool(fMapPtr); }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    bool updateData(const void* src, size_t srcSizeInBytes) {
-        SkASSERT(!this->isMapped());
-        SkASSERT(srcSizeInBytes <= fSizeInBytes);
-        return this->onUpdateData(src, srcSizeInBytes);
-    }
-
-    ~GrBuffer() override {
-        sk_free(fCPUData);
-    }
+    virtual bool isCpuBuffer() const = 0;
 
 protected:
-    GrBuffer(GrGpu*, size_t sizeInBytes, GrBufferType, GrAccessPattern);
-
-    void* fMapPtr;
-
-private:
-    
-
-
-    GrBuffer(GrGpu*, size_t sizeInBytes, GrBufferType, void* cpuData);
-
-    virtual void onMap() { SkASSERT(this->isCPUBacked()); fMapPtr = fCPUData; }
-    virtual void onUnmap() { SkASSERT(this->isCPUBacked()); }
-    virtual bool onUpdateData(const void* src, size_t srcSizeInBytes);
-
-    size_t onGpuMemorySize() const override { return fSizeInBytes; } 
-    const char* getResourceType() const override { return "Buffer Object"; }
-    void computeScratchKey(GrScratchKey* key) const override;
-
-    size_t            fSizeInBytes;
-    GrAccessPattern   fAccessPattern;
-    void*             fCPUData;
-    GrBufferType      fIntendedType;
-
-    typedef GrGpuResource INHERITED;
+    GrBuffer() = default;
 };
 
 #endif

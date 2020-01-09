@@ -10,7 +10,7 @@
 
 #include "GrCaps.h"
 #include "GrVkStencilAttachment.h"
-#include "vk/GrVkDefines.h"
+#include "vk/GrVkTypes.h"
 
 class GrShaderCaps;
 class GrVkExtensions;
@@ -29,7 +29,8 @@ public:
 
     GrVkCaps(const GrContextOptions& contextOptions, const GrVkInterface* vkInterface,
              VkPhysicalDevice device, const VkPhysicalDeviceFeatures2& features,
-             uint32_t instanceVersion, const GrVkExtensions& extensions);
+             uint32_t instanceVersion, uint32_t physicalDeviceVersion,
+             const GrVkExtensions& extensions);
 
     bool isConfigTexturable(GrPixelConfig config) const override {
         return SkToBool(ConfigInfo::kTextureable_Flag & fConfigTable[config].fOptimalFlags);
@@ -42,7 +43,6 @@ public:
     int getRenderTargetSampleCount(int requestedCount, GrPixelConfig config) const override;
     int maxRenderTargetSampleCount(GrPixelConfig config) const override;
 
-    bool surfaceSupportsWritePixels(const GrSurface*) const override;
     bool surfaceSupportsReadPixels(const GrSurface*) const override { return true; }
 
     bool isConfigTexturableLinearly(GrPixelConfig config) const {
@@ -75,13 +75,6 @@ public:
     
     
     
-    bool mustSubmitCommandsBeforeCopyOp() const {
-        return fMustSubmitCommandsBeforeCopyOp;
-    }
-
-    
-    
-    
     bool mustSleepOnTearDown() const {
         return fMustSleepOnTearDown;
     }
@@ -104,6 +97,12 @@ public:
     const StencilFormat& preferredStencilFormat() const {
         return fPreferredStencilFormat;
     }
+
+    
+    
+    
+    
+    bool supportsSwapchain() const { return fSupportsSwapchain; }
 
     
     bool supportsPhysicalDeviceProperties2() const { return fSupportsPhysicalDeviceProperties2; }
@@ -130,6 +129,9 @@ public:
     bool supportsAndroidHWBExternalMemory() const { return fSupportsAndroidHWBExternalMemory; }
 
     
+    bool supportsYcbcrConversion() const { return fSupportsYcbcrConversion; }
+
+    
 
 
 
@@ -147,19 +149,17 @@ public:
     bool canCopyAsDraw(GrPixelConfig dstConfig, bool dstIsRenderable,
                        GrPixelConfig srcConfig, bool srcIsTextureable) const;
 
-    bool canCopySurface(const GrSurfaceProxy* dst, const GrSurfaceProxy* src,
-                        const SkIRect& srcRect, const SkIPoint& dstPoint) const override;
-
     bool initDescForDstCopy(const GrRenderTargetProxy* src, GrSurfaceDesc* desc, GrSurfaceOrigin*,
                             bool* rectsMustMatch, bool* disallowSubrect) const override;
 
-    bool validateBackendTexture(const GrBackendTexture&, SkColorType,
-                                GrPixelConfig*) const override;
-    bool validateBackendRenderTarget(const GrBackendRenderTarget&, SkColorType,
-                                     GrPixelConfig*) const override;
+    GrPixelConfig validateBackendRenderTarget(const GrBackendRenderTarget&,
+                                              SkColorType) const override;
 
-    bool getConfigFromBackendFormat(const GrBackendFormat&, SkColorType,
-                                    GrPixelConfig*) const override;
+    GrPixelConfig getConfigFromBackendFormat(const GrBackendFormat&, SkColorType) const override;
+    GrPixelConfig getYUVAConfigFromBackendFormat(const GrBackendFormat&) const override;
+
+    GrBackendFormat getBackendFormatFromGrColorType(GrColorType ct,
+                                                    GrSRGBEncoded srgbEncoded) const override;
 
 private:
     enum VkVendor {
@@ -172,7 +172,8 @@ private:
     };
 
     void init(const GrContextOptions& contextOptions, const GrVkInterface* vkInterface,
-              VkPhysicalDevice device, const VkPhysicalDeviceFeatures2&, const GrVkExtensions&);
+              VkPhysicalDevice device, const VkPhysicalDeviceFeatures2&,
+              uint32_t physicalDeviceVersion, const GrVkExtensions&);
     void initGrCaps(const GrVkInterface* vkInterface,
                     VkPhysicalDevice physDev,
                     const VkPhysicalDeviceProperties&,
@@ -181,21 +182,23 @@ private:
                     const GrVkExtensions&);
     void initShaderCaps(const VkPhysicalDeviceProperties&, const VkPhysicalDeviceFeatures2&);
 
-#ifdef GR_TEST_UTILS
-    GrBackendFormat onCreateFormatFromBackendTexture(const GrBackendTexture&) const override;
-#endif
-
     void initConfigTable(const GrVkInterface*, VkPhysicalDevice, const VkPhysicalDeviceProperties&);
     void initStencilFormat(const GrVkInterface* iface, VkPhysicalDevice physDev);
 
+    uint8_t getYcbcrKeyFromYcbcrInfo(const GrVkYcbcrConversionInfo& info);
+
     void applyDriverCorrectnessWorkarounds(const VkPhysicalDeviceProperties&);
+
+    bool onSurfaceSupportsWritePixels(const GrSurface*) const override;
+    bool onCanCopySurface(const GrSurfaceProxy* dst, const GrSurfaceProxy* src,
+                          const SkIRect& srcRect, const SkIPoint& dstPoint) const override;
 
     struct ConfigInfo {
         ConfigInfo() : fOptimalFlags(0), fLinearFlags(0) {}
 
         void init(const GrVkInterface*, VkPhysicalDevice, const VkPhysicalDeviceProperties&,
-                  VkFormat);
-        static void InitConfigFlags(VkFormatFeatureFlags, uint16_t* flags);
+                  VkFormat, bool disableRendering);
+        static void InitConfigFlags(VkFormatFeatureFlags, uint16_t* flags, bool disableRendering);
         void initSampleCounts(const GrVkInterface*, VkPhysicalDevice,
                               const VkPhysicalDeviceProperties&, VkFormat);
 
@@ -215,11 +218,14 @@ private:
 
     StencilFormat fPreferredStencilFormat;
 
+    SkSTArray<1, GrVkYcbcrConversionInfo> fYcbcrInfos;
+
     bool fMustDoCopiesFromOrigin = false;
-    bool fMustSubmitCommandsBeforeCopyOp = false;
     bool fMustSleepOnTearDown = false;
     bool fNewCBOnPipelineChange = false;
     bool fShouldAlwaysUseDedicatedImageMemory = false;
+
+    bool fSupportsSwapchain = false;
 
     bool fSupportsPhysicalDeviceProperties2 = false;
     bool fSupportsMemoryRequirements2 = false;
@@ -231,6 +237,8 @@ private:
     bool fSupportsDedicatedAllocation = false;
     bool fSupportsExternalMemory = false;
     bool fSupportsAndroidHWBExternalMemory = false;
+
+    bool fSupportsYcbcrConversion = false;
 
     typedef GrCaps INHERITED;
 };

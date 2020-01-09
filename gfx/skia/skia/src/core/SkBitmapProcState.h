@@ -64,8 +64,6 @@ struct SkBitmapProcState : public SkBitmapProcInfo {
 
     typedef void (*ShaderProc32)(const void* ctx, int x, int y, SkPMColor[], int count);
 
-    typedef void (*ShaderProc16)(const void* ctx, int x, int y, uint16_t[], int count);
-
     typedef void (*MatrixProc)(const SkBitmapProcState&,
                                uint32_t bitmapXY[],
                                int count,
@@ -76,16 +74,10 @@ struct SkBitmapProcState : public SkBitmapProcInfo {
                                  int count,
                                  SkPMColor colors[]);
 
-    typedef U16CPU (*FixedTileProc)(SkFixed);   
-    typedef U16CPU (*IntTileProc)(int value, int count);   
-
     SkMatrixPriv::MapXYProc fInvProc;           
     SkFractionalInt     fInvSxFractionalInt;
     SkFractionalInt     fInvKyFractionalInt;
 
-    FixedTileProc       fTileProcX;         
-    FixedTileProc       fTileProcY;         
-    IntTileProc         fIntTileProcY;      
     SkFixed             fFilterOneX;
     SkFixed             fFilterOneY;
 
@@ -103,27 +95,11 @@ struct SkBitmapProcState : public SkBitmapProcInfo {
 
 
 
-
-
-
-
-    void platformProcs();
-
-    
-
-
-
-
-
-
-
-
     int maxCountForBufferSize(size_t bufferSize) const;
 
     
     
     ShaderProc32 getShaderProc32() const { return fShaderProc32; }
-    ShaderProc16 getShaderProc16() const { return fShaderProc16; }
 
 #ifdef SK_DEBUG
     MatrixProc getMatrixProc() const;
@@ -134,14 +110,12 @@ struct SkBitmapProcState : public SkBitmapProcInfo {
 
 private:
     ShaderProc32        fShaderProc32;      
-    ShaderProc16        fShaderProc16;      
     
     MatrixProc          fMatrixProc;        
     SampleProc32        fSampleProc32;      
 
     MatrixProc chooseMatrixProc(bool trivial_matrix);
     bool chooseProcs(); 
-    bool chooseScanlineProcs(bool trivialMatrix, bool clampClamp);
     ShaderProc32 chooseShaderProc32();
 
     
@@ -176,17 +150,6 @@ private:
 #else
     #define pack_two_shorts(pri, sec)   PACK_TWO_SHORTS(pri, sec)
 #endif
-
-
-
-void S32_opaque_D32_filter_DX(const SkBitmapProcState& s, const uint32_t xy[],
-                              int count, SkPMColor colors[]);
-void S32_alpha_D32_filter_DX(const SkBitmapProcState& s, const uint32_t xy[],
-                             int count, SkPMColor colors[]);
-void ClampX_ClampY_filter_scale(const SkBitmapProcState& s, uint32_t xy[],
-                                int count, int x, int y);
-void ClampX_ClampY_nofilter_scale(const SkBitmapProcState& s, uint32_t xy[],
-                                  int count, int x, int y);
 
 
 

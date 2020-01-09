@@ -26,8 +26,9 @@ void SkRRect::setRectXY(const SkRect& rect, SkScalar xRad, SkScalar yRad) {
     }
 
     if (fRect.width() < xRad+xRad || fRect.height() < yRad+yRad) {
-        SkScalar scale = SkMinScalar(SkScalarDiv(fRect.width(), xRad + xRad),
-                                     SkScalarDiv(fRect.height(), yRad + yRad));
+        
+        SkScalar scale = SkMinScalar(sk_ieee_float_divide(fRect. width(), xRad + xRad),
+                                     sk_ieee_float_divide(fRect.height(), yRad + yRad));
         SkASSERT(scale < SK_Scalar1);
         xRad *= scale;
         yRad *= scale;

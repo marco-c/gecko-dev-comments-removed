@@ -10,9 +10,11 @@
 
 #include "GrTypes.h"
 #include "SkImageInfo.h"
-#include "SkYUVSizeInfo.h"
+#include "SkYUVAIndex.h"
+#include "SkYUVASizeInfo.h"
 
-class GrContext;
+class GrBackendFormat;
+class GrRecordingContext;
 struct GrSurfaceDesc;
 class GrTexture;
 class GrTextureProxy;
@@ -39,11 +41,14 @@ public:
 
 
 
-    sk_sp<GrTextureProxy> refAsTextureProxy(GrContext*, const GrSurfaceDesc&,
+    sk_sp<GrTextureProxy> refAsTextureProxy(GrRecordingContext*,
+                                            const GrBackendFormat&,
+                                            const GrSurfaceDesc&,
                                             SkColorSpace* srcColorSpace,
                                             SkColorSpace* dstColorSpace);
 
-    sk_sp<SkCachedData> getPlanes(SkYUVSizeInfo*, SkYUVColorSpace*, const void* planes[3]);
+    sk_sp<SkCachedData> getPlanes(SkYUVASizeInfo*, SkYUVAIndex[SkYUVAIndex::kIndexCount],
+                                  SkYUVColorSpace*, const void* planes[SkYUVASizeInfo::kMaxCount]);
 
 private:
     virtual uint32_t onGetID() const = 0;
@@ -58,7 +63,10 @@ private:
 
 
 
-    virtual bool onQueryYUV8(SkYUVSizeInfo* sizeInfo, SkYUVColorSpace* colorSpace) const = 0;
+
+    virtual bool onQueryYUVA8(SkYUVASizeInfo* sizeInfo,
+                              SkYUVAIndex yuvaIndices[SkYUVAIndex::kIndexCount],
+                              SkYUVColorSpace* colorSpace) const = 0;
 
     
 
@@ -70,7 +78,10 @@ private:
 
 
 
-    virtual bool onGetYUV8Planes(const SkYUVSizeInfo& sizeInfo, void* planes[3]) = 0;
+
+    virtual bool onGetYUVA8Planes(const SkYUVASizeInfo& sizeInfo,
+                                  const SkYUVAIndex yuvaIndices[SkYUVAIndex::kIndexCount],
+                                  void* planes[]) = 0;
 
     
     

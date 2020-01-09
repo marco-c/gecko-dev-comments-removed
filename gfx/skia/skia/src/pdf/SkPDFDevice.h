@@ -13,27 +13,28 @@
 #include "SkClipStack.h"
 #include "SkClipStackDevice.h"
 #include "SkData.h"
+#include "SkKeyedImage.h"
+#include "SkPDFTypes.h"
 #include "SkPaint.h"
 #include "SkRect.h"
 #include "SkRefCnt.h"
 #include "SkStream.h"
+#include "SkTHash.h"
 #include "SkTextBlobPriv.h"
-#include "SkKeyedImage.h"
 
 #include <vector>
 
 class SkGlyphRunList;
 class SkKeyedImage;
-class SkPath;
 class SkPDFArray;
-class SkPDFCanon;
 class SkPDFDevice;
-class SkPDFDocument;
 class SkPDFDict;
+class SkPDFDocument;
 class SkPDFFont;
 class SkPDFObject;
-class SkPDFStream;
+class SkPath;
 class SkRRect;
+struct SkPDFIndirectReference;
 
 
 
@@ -77,13 +78,9 @@ public:
     void drawPath(const SkPath& origpath, const SkPaint& paint, bool pathIsMutable) override;
     void drawBitmapRect(const SkBitmap& bitmap, const SkRect* src,
                         const SkRect& dst, const SkPaint&, SkCanvas::SrcRectConstraint) override;
-    void drawBitmap(const SkBitmap& bitmap, SkScalar x, SkScalar y, const SkPaint&) override;
     void drawSprite(const SkBitmap& bitmap, int x, int y,
                     const SkPaint& paint) override;
-    void drawImage(const SkImage*,
-                   SkScalar x,
-                   SkScalar y,
-                   const SkPaint&) override;
+
     void drawImageRect(const SkImage*,
                        const SkRect* src,
                        const SkRect& dst,
@@ -98,22 +95,20 @@ public:
     
 
     
-    sk_sp<SkPDFDict> makeResourceDict();
+    std::unique_ptr<SkPDFDict> makeResourceDict();
 
     
-    sk_sp<SkPDFArray> getAnnotations();
+    std::unique_ptr<SkPDFArray> getAnnotations();
 
     
 
 
 
-    void appendDestinations(SkPDFDict* dict, SkPDFObject* page) const;
+    void appendDestinations(SkPDFDict* dict, SkPDFIndirectReference page) const;
 
     
 
     std::unique_ptr<SkStreamAsset> content();
-
-    SkPDFCanon* getCanon() const;
 
     SkISize size() const { return this->imageInfo().dimensions(); }
     SkIRect bounds() const { return this->imageInfo().bounds(); }
@@ -165,10 +160,10 @@ private:
     std::vector<RectWithData> fLinkToDestinations;
     std::vector<NamedDestination> fNamedDestinations;
 
-    std::vector<sk_sp<SkPDFObject>> fGraphicStateResources;
-    std::vector<sk_sp<SkPDFObject>> fXObjectResources;
-    std::vector<sk_sp<SkPDFObject>> fShaderResources;
-    std::vector<sk_sp<SkPDFFont>> fFontResources;
+    SkTHashSet<SkPDFIndirectReference> fGraphicStateResources;
+    SkTHashSet<SkPDFIndirectReference> fXObjectResources;
+    SkTHashSet<SkPDFIndirectReference> fShaderResources;
+    SkTHashSet<SkPDFIndirectReference> fFontResources;
     int fNodeId;
 
     SkDynamicMemoryWStream fContent;
@@ -197,10 +192,10 @@ private:
     SkBaseDevice* onCreateDevice(const CreateInfo&, const SkPaint*) override;
 
     
-    sk_sp<SkPDFObject> makeFormXObjectFromDevice(bool alpha = false);
+    SkPDFIndirectReference makeFormXObjectFromDevice(bool alpha = false);
 
-    void drawFormXObjectWithMask(sk_sp<SkPDFObject> xObject,
-                                 sk_sp<SkPDFObject> mask,
+    void drawFormXObjectWithMask(SkPDFIndirectReference xObject,
+                                 SkPDFIndirectReference sMask,
                                  SkBlendMode,
                                  bool invertClip);
 
@@ -209,21 +204,15 @@ private:
     
     
     SkDynamicMemoryWStream* setUpContentEntry(const SkClipStack* clipStack,
-                                    const SkMatrix& matrix,
-                                    const SkPaint& paint,
-                                    bool hasText,
-                                    sk_sp<SkPDFObject>* dst);
-    void finishContentEntry(const SkClipStack*, SkBlendMode, sk_sp<SkPDFObject> dst, SkPath* shape);
+                                              const SkMatrix& matrix,
+                                              const SkPaint& paint,
+                                              SkScalar,
+                                              SkPDFIndirectReference* dst);
+    void finishContentEntry(const SkClipStack*, SkBlendMode, SkPDFIndirectReference, SkPath*);
     bool isContentEmpty();
 
-    void populateGraphicStateEntryFromPaint(const SkMatrix& matrix,
-                                            const SkClipStack* clipStack,
-                                            const SkPaint& paint,
-                                            bool hasText,
-                                            GraphicStateEntry* entry);
-
-    void internalDrawGlyphRun(const SkGlyphRun& glyphRun, SkPoint offset);
-    void drawGlyphRunAsPath(const SkGlyphRun& glyphRun, SkPoint offset);
+    void internalDrawGlyphRun(const SkGlyphRun& glyphRun, SkPoint offset, const SkPaint& runPaint);
+    void drawGlyphRunAsPath(const SkGlyphRun& glyphRun, SkPoint offset, const SkPaint& runPaint);
 
     void internalDrawImageRect(SkKeyedImage,
                                const SkRect* src,
@@ -246,8 +235,8 @@ private:
 
     void addSMaskGraphicState(sk_sp<SkPDFDevice> maskDevice, SkDynamicMemoryWStream*);
     void clearMaskOnGraphicState(SkDynamicMemoryWStream*);
-    void setGraphicState(sk_sp<SkPDFObject>, SkDynamicMemoryWStream*);
-    void drawFormXObject(sk_sp<SkPDFObject>, SkDynamicMemoryWStream*);
+    void setGraphicState(SkPDFIndirectReference gs, SkDynamicMemoryWStream*);
+    void drawFormXObject(SkPDFIndirectReference xObject, SkDynamicMemoryWStream*);
 
     bool hasEmptyClip() const { return this->cs().isEmpty(this->bounds()); }
 

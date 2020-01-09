@@ -29,16 +29,14 @@ public:
 
 
 
-
-
-    void add(SkTypeface*);
+    void add(sk_sp<SkTypeface>);
 
     
 
 
 
 
-    SkTypeface* findByProcAndRef(FindProc proc, void* ctx) const;
+    sk_sp<SkTypeface> findByProcAndRef(FindProc proc, void* ctx) const;
 
     
 
@@ -56,8 +54,8 @@ public:
 
     
 
-    static void Add(SkTypeface*);
-    static SkTypeface* FindByProcAndRef(FindProc proc, void* ctx);
+    static void Add(sk_sp<SkTypeface>);
+    static sk_sp<SkTypeface> FindByProcAndRef(FindProc proc, void* ctx);
     static void PurgeAll();
 
     

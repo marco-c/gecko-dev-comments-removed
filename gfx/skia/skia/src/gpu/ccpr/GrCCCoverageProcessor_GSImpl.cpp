@@ -62,12 +62,13 @@ protected:
         if (PrimitiveType::kWeightedTriangles == proc.fPrimitiveType) {
             SkASSERT(3 == numInputPoints);
             SkASSERT(kFloat4_GrVertexAttribType == proc.fVertexAttribute.cpuType());
-            g->codeAppendf("%s *= sk_in[0].sk_Position.w;", wind.c_str());
+            g->codeAppendf("%s *= half(sk_in[0].sk_Position.w);", wind.c_str());
         }
 
         SkString emitVertexFn;
         SkSTArray<2, GrShaderVar> emitArgs;
-        const char* position = emitArgs.emplace_back("position", kFloat2_GrSLType).c_str();
+        const char* corner = emitArgs.emplace_back("corner", kFloat2_GrSLType).c_str();
+        const char* bloatdir = emitArgs.emplace_back("bloatdir", kFloat2_GrSLType).c_str();
         const char* coverage = nullptr;
         if (this->hasCoverage()) {
             coverage = emitArgs.emplace_back("coverage", kHalf_GrSLType).c_str();
@@ -84,9 +85,10 @@ protected:
             if (cornerCoverage) {
                 fnBody.appendf("%s.x *= %s;", cornerCoverage, wind.c_str());
             }
+            fnBody.appendf("float2 vertexpos = fma(%s, float2(bloat), %s);", bloatdir, corner);
             fShader->emitVaryings(varyingHandler, GrGLSLVarying::Scope::kGeoToFrag, &fnBody,
-                                  position, coverage ? coverage : wind.c_str(), cornerCoverage);
-            g->emitVertex(&fnBody, position, rtAdjust);
+                                  "vertexpos", coverage ? coverage : wind.c_str(), cornerCoverage);
+            g->emitVertex(&fnBody, "vertexpos", rtAdjust);
             return fnBody;
         }().c_str(), &emitVertexFn);
 
@@ -170,11 +172,6 @@ public:
         g->codeAppend ("}");
 
         
-        g->codeAppend ("leftbloat *= bloat;");
-        g->codeAppend ("rightbloat *= bloat;");
-        g->codeAppend ("downbloat *= bloat;");
-
-        
         
         
         
@@ -185,17 +182,17 @@ public:
         g->codeAppend ("if (all(left_right_notequal)) {");
                            
                            
-        g->codeAppendf(    "%s(top + float2(-leftbloat.y, +leftbloat.x), coverages[0]);",
+        g->codeAppendf(    "%s(top, float2(-leftbloat.y, +leftbloat.x), coverages[0]);",
                            emitVertexFn);
         g->codeAppend ("}");
         g->codeAppend ("if (any(left_right_notequal)) {");
                            
-        g->codeAppendf(    "%s(top + rightbloat, coverages[1]);", emitVertexFn);
+        g->codeAppendf(    "%s(top, rightbloat, coverages[1]);", emitVertexFn);
         g->codeAppend ("}");
 
         
-        g->codeAppendf("%s(top + leftbloat, coverages[2]);", emitVertexFn);
-        g->codeAppendf("%s(right + rightbloat, coverages[1]);", emitVertexFn);
+        g->codeAppendf("%s(top, leftbloat, coverages[2]);", emitVertexFn);
+        g->codeAppendf("%s(right, rightbloat, coverages[1]);", emitVertexFn);
 
         
         
@@ -205,11 +202,12 @@ public:
         
         g->codeAppendf("bool2 right_down_notequal = notEqual(rightbloat, downbloat);");
         g->codeAppend ("if (any(right_down_notequal) || 0 == sk_InvocationID) {");
-        g->codeAppendf(    "%s(0 == sk_InvocationID ? left + leftbloat : right + downbloat, "
+        g->codeAppendf(    "%s((0 == sk_InvocationID) ? left : right, "
+                              "(0 == sk_InvocationID) ? leftbloat : downbloat, "
                               "coverages[2]);", emitVertexFn);
         g->codeAppend ("}");
         g->codeAppend ("if (all(right_down_notequal) && 0 != sk_InvocationID) {");
-        g->codeAppendf(    "%s(right + float2(-rightbloat.y, +rightbloat.x), coverages[3]);",
+        g->codeAppendf(    "%s(right, float2(-rightbloat.y, +rightbloat.x), coverages[3]);",
                            emitVertexFn);
         g->codeAppend ("}");
 
@@ -243,12 +241,12 @@ public:
         g->codeAppendf("float2 bottomright = %s[2 - i];", hullPts);
 
         
-        g->codeAppend ("float2 leftbloat = float2(topleft.y > bottomleft.y ? +bloat : -bloat, "
-                                                 "topleft.x > bottomleft.x ? -bloat : bloat);");
-        g->codeAppend ("float2 upbloat = float2(topright.y > topleft.y ? +bloat : -bloat, "
-                                               "topright.x > topleft.x ? -bloat : +bloat);");
-        g->codeAppend ("float2 rightbloat = float2(bottomright.y > topright.y ? +bloat : -bloat, "
-                                                  "bottomright.x > topright.x ? -bloat : +bloat);");
+        g->codeAppend ("float2 leftbloat = float2(topleft.y > bottomleft.y ? +1 : -1, "
+                                                 "topleft.x > bottomleft.x ? -1 : +1);");
+        g->codeAppend ("float2 upbloat = float2(topright.y > topleft.y ? +1 : -1, "
+                                               "topright.x > topleft.x ? -1 : +1);");
+        g->codeAppend ("float2 rightbloat = float2(bottomright.y > topright.y ? +1 : -1, "
+                                                  "bottomright.x > topright.x ? -1 : +1);");
 
         
         
@@ -259,25 +257,25 @@ public:
         g->codeAppend ("if (all(left_up_notequal)) {");
                            
                            
-        g->codeAppendf(    "%s(topleft + float2(-leftbloat.y, leftbloat.x));", emitVertexFn);
+        g->codeAppendf(    "%s(topleft, float2(-leftbloat.y, leftbloat.x));", emitVertexFn);
         g->codeAppend ("}");
         g->codeAppend ("if (any(left_up_notequal)) {");
                            
-        g->codeAppendf(    "%s(topleft + leftbloat);", emitVertexFn);
+        g->codeAppendf(    "%s(topleft, leftbloat);", emitVertexFn);
         g->codeAppend ("}");
 
         
-        g->codeAppendf("%s(topleft + upbloat);", emitVertexFn);
-        g->codeAppendf("%s(bottomleft + leftbloat);", emitVertexFn);
-        g->codeAppendf("%s(topright + upbloat);", emitVertexFn);
+        g->codeAppendf("%s(topleft, upbloat);", emitVertexFn);
+        g->codeAppendf("%s(bottomleft, leftbloat);", emitVertexFn);
+        g->codeAppendf("%s(topright, upbloat);", emitVertexFn);
 
         
         g->codeAppendf("bool2 up_right_notequal = notEqual(upbloat, rightbloat);");
         g->codeAppend ("if (any(up_right_notequal)) {");
-        g->codeAppendf(    "%s(topright + rightbloat);", emitVertexFn);
+        g->codeAppendf(    "%s(topright, rightbloat);", emitVertexFn);
         g->codeAppend ("}");
         g->codeAppend ("if (all(up_right_notequal)) {");
-        g->codeAppendf(    "%s(topright + float2(-upbloat.y, upbloat.x));", emitVertexFn);
+        g->codeAppendf(    "%s(topright, float2(-upbloat.y, upbloat.x));", emitVertexFn);
         g->codeAppend ("}");
 
         g->configure(InputType::kLines, OutputType::kTriangleStrip, 7, 2);
@@ -345,20 +343,19 @@ public:
             
             
             
-            g->codeAppendf("%s(corner - crossbloat * bloat, right_coverages[1] - left_coverages[1],"
+            g->codeAppendf("%s(corner, -crossbloat, right_coverages[1] - left_coverages[1],"
                               "half2(1 + left_coverages[1], 1));",
                            emitVertexFn);
 
-            g->codeAppendf("%s(corner + outbloat * bloat, "
-                              "1 + left_coverages[0] + right_coverages[0], half2(0, attenuation));",
+            g->codeAppendf("%s(corner, outbloat, 1 + left_coverages[0] + right_coverages[0], "
+                              "half2(0, attenuation));",
                            emitVertexFn);
 
-            g->codeAppendf("%s(corner - outbloat * bloat, "
-                              "-1 - left_coverages[0] - right_coverages[0], "
+            g->codeAppendf("%s(corner, -outbloat, -1 - left_coverages[0] - right_coverages[0], "
                               "half2(1 + left_coverages[0] + right_coverages[0], 1));",
                            emitVertexFn);
 
-            g->codeAppendf("%s(corner + crossbloat * bloat, left_coverages[1] - right_coverages[1],"
+            g->codeAppendf("%s(corner, crossbloat, left_coverages[1] - right_coverages[1],"
                               "half2(1 + right_coverages[1], 1));",
                            emitVertexFn);
         } else {
@@ -367,11 +364,11 @@ public:
             
             
             
-            g->codeAppendf("%s(corner - crossbloat * bloat, -1, half2(1));", emitVertexFn);
-            g->codeAppendf("%s(corner + outbloat * bloat, -1, half2(0, attenuation));",
+            g->codeAppendf("%s(corner, -crossbloat, -1, half2(1));", emitVertexFn);
+            g->codeAppendf("%s(corner, outbloat, -1, half2(0, attenuation));",
                            emitVertexFn);
-            g->codeAppendf("%s(corner - outbloat * bloat, -1, half2(1));", emitVertexFn);
-            g->codeAppendf("%s(corner + crossbloat * bloat, -1, half2(1));", emitVertexFn);
+            g->codeAppendf("%s(corner, -outbloat, -1, half2(1));", emitVertexFn);
+            g->codeAppendf("%s(corner, crossbloat, -1, half2(1));", emitVertexFn);
         }
 
         g->configure(InputType::kLines, OutputType::kTriangleStrip, 4, proc.isTriangles() ? 3 : 2);
@@ -395,11 +392,11 @@ void GrCCCoverageProcessor::initGS() {
         GR_STATIC_ASSERT(offsetof(TriPointInstance, fY) ==
                          GrVertexAttribTypeSize(kFloat3_GrVertexAttribType));
     }
-    this->setVertexAttributeCnt(1);
+    this->setVertexAttributes(&fVertexAttribute, 1);
     this->setWillUseGeoShader();
 }
 
-void GrCCCoverageProcessor::appendGSMesh(GrBuffer* instanceBuffer, int instanceCount,
+void GrCCCoverageProcessor::appendGSMesh(sk_sp<const GrGpuBuffer> instanceBuffer, int instanceCount,
                                          int baseInstance, SkTArray<GrMesh>* out) const {
     
     
@@ -408,7 +405,7 @@ void GrCCCoverageProcessor::appendGSMesh(GrBuffer* instanceBuffer, int instanceC
     SkASSERT(Impl::kGeometryShader == fImpl);
     GrMesh& mesh = out->emplace_back(GrPrimitiveType::kLines);
     mesh.setNonIndexedNonInstanced(instanceCount * 2);
-    mesh.setVertexData(instanceBuffer, baseInstance * 2);
+    mesh.setVertexData(std::move(instanceBuffer), baseInstance * 2);
 }
 
 GrGLSLPrimitiveProcessor* GrCCCoverageProcessor::createGSImpl(std::unique_ptr<Shader> shadr) const {

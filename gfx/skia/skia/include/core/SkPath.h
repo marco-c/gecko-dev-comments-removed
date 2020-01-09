@@ -63,7 +63,7 @@ public:
 
 
 
-    enum Direction {
+    enum Direction : int {
         kCW_Direction,  
         kCCW_Direction, 
     };
@@ -160,13 +160,6 @@ public:
 
     bool interpolate(const SkPath& ending, SkScalar weight, SkPath* out) const;
 
-#ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
-    
-
-
-    bool unique() const { return fPathRef->unique(); }
-#endif
-
     
 
 
@@ -240,7 +233,8 @@ public:
 
 
     Convexity getConvexity() const {
-        for (Convexity convexity = fConvexity.load(); kUnknown_Convexity != convexity; ) {
+        Convexity convexity = this->getConvexityOrUnknown();
+        if (convexity != kUnknown_Convexity) {
             return convexity;
         }
         return this->internalGetConvexity();
@@ -251,7 +245,7 @@ public:
 
 
 
-    Convexity getConvexityOrUnknown() const { return (Convexity)fConvexity; }
+    Convexity getConvexityOrUnknown() const { return fConvexity.load(std::memory_order_relaxed); }
 
     
 
@@ -290,6 +284,7 @@ public:
     bool isOval(SkRect* bounds) const;
 
     
+
 
 
 
@@ -807,8 +802,8 @@ public:
 
 
 
-    SkPath& rCubicTo(SkScalar x1, SkScalar y1, SkScalar x2, SkScalar y2,
-                     SkScalar x3, SkScalar y3);
+    SkPath& rCubicTo(SkScalar dx1, SkScalar dy1, SkScalar dx2, SkScalar dy2,
+                     SkScalar dx3, SkScalar dy3);
 
     
 
@@ -828,6 +823,15 @@ public:
     SkPath& arcTo(const SkRect& oval, SkScalar startAngle, SkScalar sweepAngle, bool forceMoveTo);
 
     
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1408,6 +1412,7 @@ public:
 
 
 
+
         Iter();
 
         
@@ -1531,6 +1536,7 @@ public:
         }
 
         
+
 
 
 
@@ -1664,7 +1670,6 @@ public:
 
     uint32_t getGenerationID() const;
 
-#ifdef SK_SUPPORT_DIRECT_PATHREF_VALIDATION
     
 
 
@@ -1672,19 +1677,15 @@ public:
 
 
     bool isValid() const { return this->isValidImpl() && fPathRef->isValid(); }
-#else
-    bool isValid() const { return this->isValidImpl(); }
-    bool pathRefIsValid() const { return fPathRef->isValid(); }
-#endif
 
 private:
-    sk_sp<SkPathRef>                                     fPathRef;
-    int                                                  fLastMoveToIndex;
-    mutable SkAtomic<Convexity, sk_memory_order_relaxed> fConvexity;       
-   mutable SkAtomic<uint8_t, sk_memory_order_relaxed> fFirstDirection; 
-    uint8_t                                              fFillType    : 2;
-    uint8_t                                              fIsVolatile  : 1;
-    uint8_t                                              fIsBadForDAA : 1;
+    sk_sp<SkPathRef>               fPathRef;
+    int                            fLastMoveToIndex;
+    mutable std::atomic<Convexity> fConvexity;
+    mutable std::atomic<uint8_t>   fFirstDirection; 
+    uint8_t                        fFillType    : 2;
+    uint8_t                        fIsVolatile  : 1;
+    uint8_t                        fIsBadForDAA : 1;
 
     
 
@@ -1755,6 +1756,12 @@ private:
     }
 
     void setPt(int index, SkScalar x, SkScalar y);
+
+    
+    
+    void    setConvexity(Convexity) const;
+    void    setFirstDirection(uint8_t) const;
+    uint8_t getFirstDirection() const;
 
     friend class SkAutoPathBoundsUpdate;
     friend class SkAutoDisableOvalCheck;

@@ -13,6 +13,7 @@
 #include "GrFixedClip.h"
 #include "GrGpuResourcePriv.h"
 #include "GrProxyProvider.h"
+#include "GrRecordingContextPriv.h"
 #include "GrRenderTargetContextPriv.h"
 #include "GrSWMaskHelper.h"
 #include "GrShape.h"
@@ -87,7 +88,7 @@ static std::unique_ptr<GrFragmentProcessor> create_fp_for_mask(sk_sp<GrTexturePr
 
 
 
-bool GrClipStackClip::PathNeedsSWRenderer(GrContext* context,
+bool GrClipStackClip::PathNeedsSWRenderer(GrRecordingContext* context,
                                           const SkIRect& scissorRect,
                                           bool hasUserStencilSettings,
                                           const GrRenderTargetContext* renderTargetContext,
@@ -119,19 +120,21 @@ bool GrClipStackClip::PathNeedsSWRenderer(GrContext* context,
 
         GrShape shape(path, GrStyle::SimpleFill());
         GrPathRenderer::CanDrawPathArgs canDrawArgs;
-        canDrawArgs.fCaps = context->contextPriv().caps();
+        canDrawArgs.fCaps = context->priv().caps();
         canDrawArgs.fClipConservativeBounds = &scissorRect;
         canDrawArgs.fViewMatrix = &viewMatrix;
         canDrawArgs.fShape = &shape;
         canDrawArgs.fAAType = GrChooseAAType(GrAA(element->isAA()),
                                              renderTargetContext->fsaaType(),
                                              GrAllowMixedSamples::kYes,
-                                             *context->contextPriv().caps());
+                                             *context->priv().caps());
+        SkASSERT(!renderTargetContext->wrapsVkSecondaryCB());
+        canDrawArgs.fTargetIsWrappedVkSecondaryCB = false;
         canDrawArgs.fHasUserStencilSettings = hasUserStencilSettings;
 
         
         GrPathRenderer* pr =
-            context->contextPriv().drawingManager()->getPathRenderer(canDrawArgs, false, type);
+            context->priv().drawingManager()->getPathRenderer(canDrawArgs, false, type);
         if (prOut) {
             *prOut = pr;
         }
@@ -144,7 +147,7 @@ bool GrClipStackClip::PathNeedsSWRenderer(GrContext* context,
 
 
 
-bool GrClipStackClip::UseSWOnlyPath(GrContext* context,
+bool GrClipStackClip::UseSWOnlyPath(GrRecordingContext* context,
                                     bool hasUserStencilSettings,
                                     const GrRenderTargetContext* renderTargetContext,
                                     const GrReducedClip& reducedClip) {
@@ -157,7 +160,9 @@ bool GrClipStackClip::UseSWOnlyPath(GrContext* context,
     
 
     
-    if (context->contextPriv().caps()->avoidStencilBuffers()) {
+    
+    if (context->priv().caps()->avoidStencilBuffers() ||
+        renderTargetContext->wrapsVkSecondaryCB()) {
         return true;
     }
 
@@ -185,7 +190,7 @@ bool GrClipStackClip::UseSWOnlyPath(GrContext* context,
 
 
 
-bool GrClipStackClip::apply(GrContext* context, GrRenderTargetContext* renderTargetContext,
+bool GrClipStackClip::apply(GrRecordingContext* context, GrRenderTargetContext* renderTargetContext,
                             bool useHWAA, bool hasUserStencilSettings, GrAppliedClip* out,
                             SkRect* bounds) const {
     SkRect devBounds = SkRect::MakeIWH(renderTargetContext->width(), renderTargetContext->height());
@@ -198,7 +203,7 @@ bool GrClipStackClip::apply(GrContext* context, GrRenderTargetContext* renderTar
     }
 
     int maxWindowRectangles = renderTargetContext->priv().maxWindowRectangles();
-    int maxAnalyticFPs = context->contextPriv().caps()->maxClipAnalyticFPs();
+    int maxAnalyticFPs = context->priv().caps()->maxClipAnalyticFPs();
     if (GrFSAAType::kNone != renderTargetContext->fsaaType()) {
         
         
@@ -207,11 +212,11 @@ bool GrClipStackClip::apply(GrContext* context, GrRenderTargetContext* renderTar
             maxAnalyticFPs = 0;
         }
         
-        SkASSERT(!context->contextPriv().caps()->avoidStencilBuffers());
+        SkASSERT(!context->priv().caps()->avoidStencilBuffers());
     }
-    auto* ccpr = context->contextPriv().drawingManager()->getCoverageCountingPathRenderer();
+    auto* ccpr = context->priv().drawingManager()->getCoverageCountingPathRenderer();
 
-    GrReducedClip reducedClip(*fStack, devBounds, context->contextPriv().caps(),
+    GrReducedClip reducedClip(*fStack, devBounds, context->priv().caps(),
                               maxWindowRectangles, maxAnalyticFPs, ccpr ? maxAnalyticFPs : 0);
     if (InitialState::kAllOut == reducedClip.initialState() &&
         reducedClip.maskElements().isEmpty()) {
@@ -245,7 +250,8 @@ bool GrClipStackClip::apply(GrContext* context, GrRenderTargetContext* renderTar
     return true;
 }
 
-bool GrClipStackClip::applyClipMask(GrContext* context, GrRenderTargetContext* renderTargetContext,
+bool GrClipStackClip::applyClipMask(GrRecordingContext* context,
+                                    GrRenderTargetContext* renderTargetContext,
                                     const GrReducedClip& reducedClip, bool hasUserStencilSettings,
                                     GrAppliedClip* out) const {
 #ifdef SK_DEBUG
@@ -258,7 +264,8 @@ bool GrClipStackClip::applyClipMask(GrContext* context, GrRenderTargetContext* r
 
     
     if ((GrFSAAType::kNone == renderTargetContext->fsaaType() && reducedClip.maskRequiresAA()) ||
-        context->contextPriv().caps()->avoidStencilBuffers()) {
+        context->priv().caps()->avoidStencilBuffers() ||
+        renderTargetContext->wrapsVkSecondaryCB()) {
         sk_sp<GrTextureProxy> result;
         if (UseSWOnlyPath(context, hasUserStencilSettings, renderTargetContext, reducedClip)) {
             
@@ -277,7 +284,8 @@ bool GrClipStackClip::applyClipMask(GrContext* context, GrRenderTargetContext* r
 
         
         
-        if (context->contextPriv().caps()->avoidStencilBuffers()) {
+        if (context->priv().caps()->avoidStencilBuffers() ||
+            renderTargetContext->wrapsVkSecondaryCB()) {
             SkDebugf("WARNING: Clip mask requires stencil, but stencil unavailable. "
                      "Clip will be ignored.\n");
             return false;
@@ -316,24 +324,24 @@ static void create_clip_mask_key(uint32_t clipGenID, const SkIRect& bounds, int 
     builder[3] = numAnalyticFPs;
 }
 
-static void add_invalidate_on_pop_message(const SkClipStack& stack, uint32_t clipGenID,
-                                          const GrUniqueKey& clipMaskKey,
-                                          uint32_t contextUniqueID) {
+static void add_invalidate_on_pop_message(GrRecordingContext* context,
+                                          const SkClipStack& stack, uint32_t clipGenID,
+                                          const GrUniqueKey& clipMaskKey) {
+    GrProxyProvider* proxyProvider = context->priv().proxyProvider();
+
     SkClipStack::Iter iter(stack, SkClipStack::Iter::kTop_IterStart);
     while (const Element* element = iter.prev()) {
         if (element->getGenID() == clipGenID) {
-            std::unique_ptr<GrUniqueKeyInvalidatedMessage> msg(
-                    new GrUniqueKeyInvalidatedMessage(clipMaskKey, contextUniqueID));
-            element->addResourceInvalidationMessage(std::move(msg));
+            element->addResourceInvalidationMessage(proxyProvider, clipMaskKey);
             return;
         }
     }
     SkDEBUGFAIL("Gen ID was not found in stack.");
 }
 
-sk_sp<GrTextureProxy> GrClipStackClip::createAlphaClipMask(GrContext* context,
+sk_sp<GrTextureProxy> GrClipStackClip::createAlphaClipMask(GrRecordingContext* context,
                                                            const GrReducedClip& reducedClip) const {
-    GrProxyProvider* proxyProvider = context->contextPriv().proxyProvider();
+    GrProxyProvider* proxyProvider = context->priv().proxyProvider();
     GrUniqueKey key;
     create_clip_mask_key(reducedClip.maskGenID(), reducedClip.scissor(),
                          reducedClip.numAnalyticFPs(), &key);
@@ -344,8 +352,11 @@ sk_sp<GrTextureProxy> GrClipStackClip::createAlphaClipMask(GrContext* context,
         return proxy;
     }
 
+    GrBackendFormat format =
+            context->priv().caps()->getBackendFormatFromColorType(kAlpha_8_SkColorType);
     sk_sp<GrRenderTargetContext> rtc(
-        context->contextPriv().makeDeferredRenderTargetContextWithFallback(
+        context->priv().makeDeferredRenderTargetContextWithFallback(
+                                                                        format,
                                                                         SkBackingFit::kApprox,
                                                                         reducedClip.width(),
                                                                         reducedClip.height(),
@@ -368,7 +379,7 @@ sk_sp<GrTextureProxy> GrClipStackClip::createAlphaClipMask(GrContext* context,
 
     SkASSERT(result->origin() == kTopLeft_GrSurfaceOrigin);
     proxyProvider->assignUniqueKeyToProxy(key, result.get());
-    add_invalidate_on_pop_message(*fStack, reducedClip.maskGenID(), key, context->uniqueID());
+    add_invalidate_on_pop_message(context, *fStack, reducedClip.maskGenID(), key);
 
     return result;
 }
@@ -448,13 +459,13 @@ static void draw_clip_elements_to_mask_helper(GrSWMaskHelper& helper, const Elem
 }
 
 sk_sp<GrTextureProxy> GrClipStackClip::createSoftwareClipMask(
-        GrContext* context, const GrReducedClip& reducedClip,
+        GrRecordingContext* context, const GrReducedClip& reducedClip,
         GrRenderTargetContext* renderTargetContext) const {
     GrUniqueKey key;
     create_clip_mask_key(reducedClip.maskGenID(), reducedClip.scissor(),
                          reducedClip.numAnalyticFPs(), &key);
 
-    GrProxyProvider* proxyProvider = context->contextPriv().proxyProvider();
+    GrProxyProvider* proxyProvider = context->priv().proxyProvider();
 
     sk_sp<GrTextureProxy> proxy(proxyProvider->findOrCreateProxyByUniqueKey(
                                                                   key, kTopLeft_GrSurfaceOrigin));
@@ -466,17 +477,26 @@ sk_sp<GrTextureProxy> GrClipStackClip::createSoftwareClipMask(
     
     SkIRect maskSpaceIBounds = SkIRect::MakeWH(reducedClip.width(), reducedClip.height());
 
-    SkTaskGroup* taskGroup = context->contextPriv().getTaskGroup();
+    SkTaskGroup* taskGroup = nullptr;
+    if (auto direct = context->priv().asDirectContext()) {
+        taskGroup = direct->priv().getTaskGroup();
+    }
+
     if (taskGroup && renderTargetContext) {
         
         GrSurfaceDesc desc;
         desc.fWidth = maskSpaceIBounds.width();
         desc.fHeight = maskSpaceIBounds.height();
         desc.fConfig = kAlpha_8_GrPixelConfig;
+
+        GrBackendFormat format =
+                context->priv().caps()->getBackendFormatFromColorType(kAlpha_8_SkColorType);
+
         
         
-        proxy = proxyProvider->createProxy(desc, kTopLeft_GrSurfaceOrigin, SkBackingFit::kApprox,
-                                           SkBudgeted::kYes, GrInternalSurfaceFlags::kNoPendingIO);
+        proxy = proxyProvider->createProxy(format, desc, kTopLeft_GrSurfaceOrigin,
+                                           SkBackingFit::kApprox, SkBudgeted::kYes,
+                                           GrInternalSurfaceFlags::kNoPendingIO);
 
         auto uploader = skstd::make_unique<GrTDeferredProxyUploader<ClipMaskData>>(reducedClip);
         GrTDeferredProxyUploader<ClipMaskData>* uploaderRaw = uploader.get();
@@ -509,6 +529,6 @@ sk_sp<GrTextureProxy> GrClipStackClip::createSoftwareClipMask(
 
     SkASSERT(proxy->origin() == kTopLeft_GrSurfaceOrigin);
     proxyProvider->assignUniqueKeyToProxy(key, proxy.get());
-    add_invalidate_on_pop_message(*fStack, reducedClip.maskGenID(), key, context->uniqueID());
+    add_invalidate_on_pop_message(context, *fStack, reducedClip.maskGenID(), key);
     return proxy;
 }

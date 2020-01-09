@@ -9,6 +9,7 @@
 #include "SkPathOpsCubic.h"
 #include "SkPathOpsCurve.h"
 #include "SkPathOpsQuad.h"
+#include "SkPathOpsRect.h"
 
 
 static bool pointInTriangle(const SkDPoint fPts[3], const SkDPoint& test) {
@@ -396,4 +397,20 @@ void SkDQuad::SetABC(const double* quad, double* a, double* b, double* c) {
     *b -= *c;          
     *a -= *b;          
     *b -= *c;          
+}
+
+int SkTQuad::intersectRay(SkIntersections* i, const SkDLine& line) const {
+    return i->intersectRay(fQuad, line);
+}
+
+bool SkTQuad::hullIntersects(const SkDConic& conic, bool* isLinear) const  {
+    return conic.hullIntersects(fQuad, isLinear);
+}
+
+bool SkTQuad::hullIntersects(const SkDCubic& cubic, bool* isLinear) const {
+    return cubic.hullIntersects(fQuad, isLinear);
+}
+
+void SkTQuad::setBounds(SkDRect* rect) const {
+    rect->setBounds(fQuad);
 }

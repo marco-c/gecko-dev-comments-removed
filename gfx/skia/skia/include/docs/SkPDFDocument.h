@@ -9,54 +9,61 @@
 #include "SkString.h"
 #include "SkTime.h"
 
+class SkExecutor;
+
 namespace SkPDF {
 
 
 
 enum class DocumentStructureType {
-    kDocument,
-    kPart,
+    kDocument,    
+    kPart,        
     kArt,         
     kSect,        
-    kDiv,
-    kBlockQuote,
-    kCaption,
+    kDiv,         
+    kBlockQuote,  
+    kCaption,     
     kTOC,         
     kTOCI,        
-    kIndex,
-    kNonStruct,
-    kPrivate,
+    kIndex,       
+    kNonStruct,   
+    kPrivate,     
     kH,           
     kH1,          
-    kH2,
-    kH3,
-    kH4,
-    kH5,
+    kH2,          
+    kH3,          
+    kH4,          
+    kH5,          
     kH6,          
     kP,           
     kL,           
     kLI,          
     kLbl,         
     kLBody,       
-    kTable,
-    kTR,
-    kTH,
-    kTD,
-    kTHead,
-    kTBody,
-    kTFoot,
-    kSpan,
-    kQuote,
-    kNote,
-    kReference,
-    kBibEntry,
-    kCode,
-    kLink,
-    kAnnot,
-    kRuby,
-    kWarichu,
-    kFigure,
-    kFormula,
+    kTable,       
+    kTR,          
+    kTH,          
+    kTD,          
+    kTHead,       
+    kTBody,       
+    kTFoot,       
+    kSpan,        
+    kQuote,       
+    kNote,        
+    kReference,   
+    kBibEntry,    
+    kCode,        
+    kLink,        
+    kAnnot,       
+    kRuby,        
+    kRB,          
+    kRT,          
+    kRP,          
+    kWarichu,     
+    kWT,          
+    kWP,          
+    kFigure,      
+    kFormula,     
     kForm,        
 };
 
@@ -139,8 +146,19 @@ struct Metadata {
 
 
 
-
     const StructureElementNode* fStructureElementTreeRoot = nullptr;
+
+    
+
+
+
+
+
+
+
+
+
+    SkExecutor* fExecutor = nullptr;
 };
 
 

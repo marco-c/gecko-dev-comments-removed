@@ -9,38 +9,41 @@
 #define SkImage_GpuBase_DEFINED
 
 #include "GrBackendSurface.h"
+#include "GrContext.h"
 #include "GrTypesPriv.h"
+#include "SkDeferredDisplayListRecorder.h"
 #include "SkImage_Base.h"
+#include "SkYUVAIndex.h"
 
-class GrContext;
+class GrColorSpaceXform;
 class SkColorSpace;
 
 class SkImage_GpuBase : public SkImage_Base {
 public:
-    SkImage_GpuBase(sk_sp<GrContext>, int width, int height, uint32_t uniqueID,
-                    SkAlphaType, SkBudgeted, sk_sp<SkColorSpace>);
+    SkImage_GpuBase(sk_sp<GrContext>, int width, int height, uint32_t uniqueID, SkAlphaType,
+                    sk_sp<SkColorSpace>);
     ~SkImage_GpuBase() override;
 
     GrContext* context() const final { return fContext.get(); }
 
-    bool getROPixels(SkBitmap*, SkColorSpace* dstColorSpace, CachingHint) const final;
-    sk_sp<SkImage> onMakeSubset(const SkIRect& subset) const final;
+    bool getROPixels(SkBitmap*, CachingHint) const final;
+    sk_sp<SkImage> onMakeSubset(GrRecordingContext*, const SkIRect& subset) const final;
 
     bool onReadPixels(const SkImageInfo& dstInfo, void* dstPixels, size_t dstRB,
                       int srcX, int srcY, CachingHint) const override;
 
-    sk_sp<GrTextureProxy> asTextureProxyRef() const override {
+    sk_sp<GrTextureProxy> asTextureProxyRef(GrRecordingContext* context) const override {
         
         SkASSERT(false);
-        return this->INHERITED::asTextureProxyRef();
+        return this->INHERITED::asTextureProxyRef(context);
     }
-    sk_sp<GrTextureProxy> asTextureProxyRef(GrContext*, const GrSamplerState&, SkColorSpace*,
-                                            sk_sp<SkColorSpace>*,
+    sk_sp<GrTextureProxy> asTextureProxyRef(GrRecordingContext*, const GrSamplerState&,
                                             SkScalar scaleAdjust[2]) const final;
 
-    sk_sp<GrTextureProxy> refPinnedTextureProxy(uint32_t* uniqueID) const final {
+    sk_sp<GrTextureProxy> refPinnedTextureProxy(GrRecordingContext* context,
+                                                uint32_t* uniqueID) const final {
         *uniqueID = this->uniqueID();
-        return this->asTextureProxyRef();
+        return this->asTextureProxyRef(context);
     }
 
     GrBackendTexture onGetBackendTexture(bool flushPendingGrContextIO,
@@ -48,128 +51,54 @@ public:
 
     GrTexture* onGetTexture() const final;
 
-    sk_sp<SkImage> onMakeColorSpace(sk_sp<SkColorSpace>) const final;
-
     bool onIsValid(GrContext*) const final;
+
+#if GR_TEST_UTILS
+    void resetContext(sk_sp<GrContext> newContext);
+#endif
 
     static bool ValidateBackendTexture(GrContext* ctx, const GrBackendTexture& tex,
                                        GrPixelConfig* config, SkColorType ct, SkAlphaType at,
                                        sk_sp<SkColorSpace> cs);
+    static bool MakeTempTextureProxies(GrContext* ctx, const GrBackendTexture yuvaTextures[],
+                                       int numTextures, const SkYUVAIndex [4],
+                                       GrSurfaceOrigin imageOrigin,
+                                       sk_sp<GrTextureProxy> tempTextureProxies[4]);
 
-    typedef ReleaseContext TextureContext;
-    typedef void(*TextureFulfillProc)(TextureContext textureContext, GrBackendTexture* outTexture);
-    typedef void(*PromiseDoneProc)(TextureContext textureContext);
+    static SkAlphaType GetAlphaTypeFromYUVAIndices(const SkYUVAIndex yuvaIndices[4]) {
+        return -1 != yuvaIndices[SkYUVAIndex::kA_Index].fIndex ? kPremul_SkAlphaType
+                                                               : kOpaque_SkAlphaType;
+    }
+
+    using PromiseImageTextureContext = SkDeferredDisplayListRecorder::PromiseImageTextureContext;
+    using PromiseImageTextureFulfillProc =
+            SkDeferredDisplayListRecorder::PromiseImageTextureFulfillProc;
+    using PromiseImageTextureReleaseProc =
+            SkDeferredDisplayListRecorder::PromiseImageTextureReleaseProc;
+    using PromiseImageTextureDoneProc = SkDeferredDisplayListRecorder::PromiseImageTextureDoneProc;
 
 protected:
+    
+    
+    
+    
+    static sk_sp<GrTextureProxy> MakePromiseImageLazyProxy(
+            GrContext*, int width, int height, GrSurfaceOrigin, GrPixelConfig, GrBackendFormat,
+            GrMipMapped, PromiseImageTextureFulfillProc, PromiseImageTextureReleaseProc,
+            PromiseImageTextureDoneProc, PromiseImageTextureContext);
+
+    static bool RenderYUVAToRGBA(GrContext* ctx, GrRenderTargetContext* renderTargetContext,
+                                 const SkRect& rect, SkYUVColorSpace yuvColorSpace,
+                                 sk_sp<GrColorSpaceXform> colorSpaceXform,
+                                 const sk_sp<GrTextureProxy> proxies[4],
+                                 const SkYUVAIndex yuvaIndices[4]);
+
     sk_sp<GrContext>      fContext;
     const SkAlphaType     fAlphaType;  
-    const SkBudgeted      fBudgeted;
     sk_sp<SkColorSpace>   fColorSpace; 
 
 private:
     typedef SkImage_Base INHERITED;
-};
-
-
-
-
-
-
-class SkPromiseReleaseProcHelper : public GrReleaseProcHelper {
-public:
-    SkPromiseReleaseProcHelper(SkImage_GpuBase::TextureReleaseProc releaseProc,
-                               SkImage_GpuBase::TextureContext context,
-                               sk_sp<GrReleaseProcHelper> doneHelper)
-        : INHERITED(releaseProc, context)
-        , fDoneProcHelper(std::move(doneHelper)) {
-    }
-
-    void weak_dispose() const override {
-        
-        
-        INHERITED::weak_dispose();
-        fDoneProcHelper.reset();
-    }
-
-private:
-    mutable sk_sp<GrReleaseProcHelper> fDoneProcHelper;
-
-    typedef GrReleaseProcHelper INHERITED;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-class SkPromiseImageHelper {
-public:
-    SkPromiseImageHelper()
-        : fFulfillProc(nullptr)
-        , fReleaseProc(nullptr)
-        , fContext(nullptr)
-        , fDoneHelper(nullptr) {
-    }
-
-    void set(SkImage_GpuBase::TextureFulfillProc fulfillProc,
-             SkImage_GpuBase::TextureReleaseProc releaseProc,
-             SkImage_GpuBase::PromiseDoneProc doneProc,
-             SkImage_GpuBase::TextureContext context) {
-        fFulfillProc = fulfillProc;
-        fReleaseProc = releaseProc;
-        fContext = context;
-        fDoneHelper.reset(new GrReleaseProcHelper(doneProc, context));
-    }
-
-    SkPromiseImageHelper(SkImage_GpuBase::TextureFulfillProc fulfillProc,
-                         SkImage_GpuBase::TextureReleaseProc releaseProc,
-                         SkImage_GpuBase::PromiseDoneProc doneProc,
-                         SkImage_GpuBase::TextureContext context)
-        : fFulfillProc(fulfillProc)
-        , fReleaseProc(releaseProc)
-        , fContext(context)
-        , fDoneHelper(new GrReleaseProcHelper(doneProc, context)) {
-    }
-
-    bool isValid() { return SkToBool(fDoneHelper); }
-
-    void reset() {
-        this->resetReleaseHelper();
-        fDoneHelper.reset();
-    }
-
-    sk_sp<GrTexture> getTexture(GrResourceProvider* resourceProvider, GrPixelConfig config);
-
-private:
-    
-    void resetReleaseHelper() {
-        if (fReleaseHelper) {
-            fReleaseHelper->weak_unref();
-            fReleaseHelper = nullptr;
-        }
-    }
-
-    SkImage_GpuBase::TextureFulfillProc fFulfillProc;
-    SkImage_GpuBase::TextureReleaseProc fReleaseProc;
-    SkImage_GpuBase::TextureContext     fContext;
-
-    
-    
-    
-    GrBackendTexture           fBackendTex;
-    
-    
-    SkPromiseReleaseProcHelper*  fReleaseHelper = nullptr;
-    
-    
-    
-    sk_sp<GrReleaseProcHelper> fDoneHelper;
 };
 
 #endif

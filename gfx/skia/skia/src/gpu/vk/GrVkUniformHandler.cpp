@@ -6,6 +6,11 @@
 
 
 #include "GrVkUniformHandler.h"
+
+#include "GrTexturePriv.h"
+#include "GrVkGpu.h"
+#include "GrVkPipelineStateBuilder.h"
+#include "GrVkTexture.h"
 #include "glsl/GrGLSLProgramBuilder.h"
 
 
@@ -16,7 +21,7 @@
 
 
 
-uint32_t grsltype_to_alignment_mask(GrSLType type) {
+static uint32_t grsltype_to_alignment_mask(GrSLType type) {
     switch(type) {
         case kByte_GrSLType: 
         case kUByte_GrSLType:
@@ -171,10 +176,10 @@ static inline uint32_t grsltype_to_vk_size(GrSLType type) {
 
 
 
-void get_ubo_aligned_offset(uint32_t* uniformOffset,
-                            uint32_t* currentOffset,
-                            GrSLType type,
-                            int arrayCount) {
+static void get_ubo_aligned_offset(uint32_t* uniformOffset,
+                                   uint32_t* currentOffset,
+                                   GrSLType type,
+                                   int arrayCount) {
     uint32_t alignmentMask = grsltype_to_alignment_mask(type);
     
     if (arrayCount || type == kFloat2x2_GrSLType) {
@@ -254,14 +259,18 @@ GrGLSLUniformHandler::UniformHandle GrVkUniformHandler::internalAddUniformArray(
     return GrGLSLUniformHandler::UniformHandle(fUniforms.count() - 1);
 }
 
-GrGLSLUniformHandler::SamplerHandle GrVkUniformHandler::addSampler(GrSwizzle swizzle,
-                                                                   GrTextureType type,
-                                                                   GrSLPrecision precision,
-                                                                   const char* name) {
+GrGLSLUniformHandler::SamplerHandle GrVkUniformHandler::addSampler(const GrTexture* texture,
+                                                                   const GrSamplerState& state,
+                                                                   const char* name,
+                                                                   const GrShaderCaps* shaderCaps) {
     SkASSERT(name && strlen(name));
     SkString mangleName;
     char prefix = 'u';
     fProgramBuilder->nameVariable(&mangleName, prefix, name, true);
+
+    GrSLPrecision precision = GrSLSamplerPrecision(texture->config());
+    GrSwizzle swizzle = shaderCaps->configTextureSwizzle(texture->config());
+    GrTextureType type = texture->texturePriv().textureType();
 
     UniformInfo& info = fSamplers.push_back();
     info.fVariable.setType(GrSLCombinedSamplerTypeForTextureType(type));
@@ -273,6 +282,17 @@ GrGLSLUniformHandler::SamplerHandle GrVkUniformHandler::addSampler(GrSwizzle swi
     info.fVariable.addLayoutQualifier(layoutQualifier.c_str());
     info.fVisibility = kFragment_GrShaderFlag;
     info.fUBOffset = 0;
+
+    
+    const GrVkTexture* vkTexture = static_cast<const GrVkTexture*>(texture);
+    if (vkTexture->ycbcrConversionInfo().isValid()) {
+        SkASSERT(type == GrTextureType::kExternal);
+        GrVkGpu* gpu = static_cast<GrVkPipelineStateBuilder*>(fProgramBuilder)->gpu();
+        info.fImmutableSampler = gpu->resourceProvider().findOrCreateCompatibleSampler(
+                state, vkTexture->ycbcrConversionInfo());
+        SkASSERT(info.fImmutableSampler);
+    }
+
     fSamplerSwizzles.push_back(swizzle);
     SkASSERT(fSamplerSwizzles.count() == fSamplers.count());
     return GrGLSLUniformHandler::SamplerHandle(fSamplers.count() - 1);

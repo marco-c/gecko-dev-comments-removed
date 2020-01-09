@@ -148,7 +148,7 @@ public:
 
 
 
-    uint32_t uniqueID() const;
+    uint32_t uniqueID() const { return fUniqueID; }
 
     
 
@@ -263,10 +263,14 @@ private:
     
     
     
+    
+    
+    
+    
 
     
     static const uint32_t     MIN_PICTURE_VERSION = 56;     
-    static const uint32_t CURRENT_PICTURE_VERSION = 65;
+    static const uint32_t CURRENT_PICTURE_VERSION = 68;
 
     static_assert(MIN_PICTURE_VERSION <= 62, "Remove kFontAxes_bad from SkFontDescriptor.cpp");
 
@@ -278,7 +282,7 @@ private:
     struct SkPictInfo createHeader() const;
     class SkPictureData* backport() const;
 
-    mutable uint32_t fUniqueID;
+    uint32_t fUniqueID;
 };
 
 #endif

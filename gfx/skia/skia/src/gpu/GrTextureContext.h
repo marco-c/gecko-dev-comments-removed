@@ -39,8 +39,7 @@ public:
     sk_sp<GrRenderTargetProxy> asRenderTargetProxyRef() override;
 
 protected:
-    GrTextureContext(GrContext*, GrDrawingManager*, sk_sp<GrTextureProxy>,
-                     sk_sp<SkColorSpace>, GrAuditTrail*, GrSingleOwner*);
+    GrTextureContext(GrRecordingContext*, sk_sp<GrTextureProxy>, sk_sp<SkColorSpace>);
 
     SkDEBUGCODE(void validate() const override;)
 
@@ -49,11 +48,11 @@ private:
 
     GrOpList* getOpList() override;
 
-    sk_sp<GrTextureProxy>        fTextureProxy;
+    sk_sp<GrTextureProxy>  fTextureProxy;
 
     
     
-    sk_sp<GrTextureOpList>       fOpList;
+    sk_sp<GrTextureOpList> fOpList;
 
     typedef GrSurfaceContext INHERITED;
 };

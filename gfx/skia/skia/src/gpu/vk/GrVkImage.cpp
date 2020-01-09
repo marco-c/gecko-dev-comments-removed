@@ -5,9 +5,11 @@
 
 
 
-#include "GrVkGpu.h"
 #include "GrVkImage.h"
+#include "GrGpuResourcePriv.h"
+#include "GrVkGpu.h"
 #include "GrVkMemory.h"
+#include "GrVkTexture.h"
 #include "GrVkUtil.h"
 
 #define VK_CALL(GPU, X) GR_VK_CALL(GPU->vkInterface(), X)
@@ -27,6 +29,8 @@ VkPipelineStageFlags GrVkImage::LayoutToPipelineSrcStageFlags(const VkImageLayou
         return VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
     } else if (VK_IMAGE_LAYOUT_PREINITIALIZED == layout) {
         return VK_PIPELINE_STAGE_HOST_BIT;
+    } else if (VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
+        return VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     }
 
     SkASSERT(VK_IMAGE_LAYOUT_UNDEFINED == layout);
@@ -42,7 +46,7 @@ VkAccessFlags GrVkImage::LayoutToSrcAccessMask(const VkImageLayout layout) {
     
     
     
-    VkAccessFlags flags = 0;;
+    VkAccessFlags flags = 0;
     if (VK_IMAGE_LAYOUT_GENERAL == layout) {
         flags = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
                 VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
@@ -62,6 +66,8 @@ VkAccessFlags GrVkImage::LayoutToSrcAccessMask(const VkImageLayout layout) {
         flags = VK_ACCESS_TRANSFER_READ_BIT;
     } else if (VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL == layout) {
         flags = VK_ACCESS_SHADER_READ_BIT;
+    } else if (VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
+        flags = 0;
     }
     return flags;
 }
@@ -87,7 +93,8 @@ void GrVkImage::setImageLayout(const GrVkGpu* gpu, VkImageLayout newLayout,
              VK_IMAGE_LAYOUT_PREINITIALIZED != newLayout);
     VkImageLayout currentLayout = this->currentLayout();
 
-    if (releaseFamilyQueue && fInfo.fCurrentQueueFamily == fInitialQueueFamily) {
+    if (releaseFamilyQueue && fInfo.fCurrentQueueFamily == fInitialQueueFamily &&
+        newLayout == currentLayout) {
         
         return;
     }
@@ -95,6 +102,7 @@ void GrVkImage::setImageLayout(const GrVkGpu* gpu, VkImageLayout newLayout,
     
     
     if (newLayout == currentLayout &&
+        !releaseFamilyQueue &&
         (VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL == currentLayout ||
          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL == currentLayout ||
          VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL == currentLayout)) {
@@ -140,7 +148,8 @@ void GrVkImage::setImageLayout(const GrVkGpu* gpu, VkImageLayout newLayout,
         { aspectFlags, 0, fInfo.fLevelCount, 0, 1 }      
     };
 
-    gpu->addImageMemoryBarrier(srcStageMask, dstStageMask, byRegion, &imageMemoryBarrier);
+    gpu->addImageMemoryBarrier(this->resource(), srcStageMask, dstStageMask, byRegion,
+                               &imageMemoryBarrier);
 
     this->updateImageLayout(newLayout);
 }
@@ -207,20 +216,34 @@ void GrVkImage::DestroyImageInfo(const GrVkGpu* gpu, GrVkImageInfo* info) {
     GrVkMemory::FreeImageMemory(gpu, isLinear, info->fAlloc);
 }
 
-void GrVkImage::setNewResource(VkImage image, const GrVkAlloc& alloc, VkImageTiling tiling) {
-    fResource = new Resource(image, alloc, tiling);
-}
-
 GrVkImage::~GrVkImage() {
     
     SkASSERT(!fResource);
 }
 
-void GrVkImage::releaseImage(const GrVkGpu* gpu) {
+void GrVkImage::prepareForPresent(GrVkGpu* gpu) {
+    VkImageLayout layout = this->currentLayout();
+    if (fInitialQueueFamily != VK_QUEUE_FAMILY_EXTERNAL &&
+        fInitialQueueFamily != VK_QUEUE_FAMILY_FOREIGN_EXT) {
+        if (gpu->vkCaps().supportsSwapchain()) {
+            layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        }
+    }
+    this->setImageLayout(gpu, layout, 0, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, false, true);
+}
+
+void GrVkImage::releaseImage(GrVkGpu* gpu) {
     if (fInfo.fCurrentQueueFamily != fInitialQueueFamily) {
-        this->setImageLayout(gpu, this->currentLayout(), 0, 0, false, true);
+        
+        
+        
+        
+        
+        this->setImageLayout(gpu, this->currentLayout(), 0, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                             false, true);
     }
     if (fResource) {
+        fResource->removeOwningTexture();
         fResource->unref(gpu);
         fResource = nullptr;
     }
@@ -228,28 +251,69 @@ void GrVkImage::releaseImage(const GrVkGpu* gpu) {
 
 void GrVkImage::abandonImage() {
     if (fResource) {
+        fResource->removeOwningTexture();
         fResource->unrefAndAbandon();
         fResource = nullptr;
     }
 }
 
-void GrVkImage::setResourceRelease(sk_sp<GrReleaseProcHelper> releaseHelper) {
+void GrVkImage::setResourceRelease(sk_sp<GrRefCntedCallback> releaseHelper) {
+    SkASSERT(fResource);
     
     fResource->setRelease(std::move(releaseHelper));
 }
 
-void GrVkImage::Resource::freeGPUData(const GrVkGpu* gpu) const {
-    SkASSERT(!fReleaseHelper);
+void GrVkImage::Resource::freeGPUData(GrVkGpu* gpu) const {
+    this->invokeReleaseProc();
     VK_CALL(gpu, DestroyImage(gpu->device(), fImage, nullptr));
     bool isLinear = (VK_IMAGE_TILING_LINEAR == fImageTiling);
     GrVkMemory::FreeImageMemory(gpu, isLinear, fAlloc);
 }
 
-void GrVkImage::BorrowedResource::freeGPUData(const GrVkGpu* gpu) const {
+void GrVkImage::Resource::addIdleProc(GrVkTexture* owningTexture,
+                                      sk_sp<GrRefCntedCallback> idleProc) const {
+    SkASSERT(!fOwningTexture || fOwningTexture == owningTexture);
+    fOwningTexture = owningTexture;
+    fIdleProcs.push_back(std::move(idleProc));
+}
+
+int GrVkImage::Resource::idleProcCnt() const { return fIdleProcs.count(); }
+
+sk_sp<GrRefCntedCallback> GrVkImage::Resource::idleProc(int i) const { return fIdleProcs[i]; }
+
+void GrVkImage::Resource::resetIdleProcs() const { fIdleProcs.reset(); }
+
+void GrVkImage::Resource::removeOwningTexture() const { fOwningTexture = nullptr; }
+
+void GrVkImage::Resource::notifyAddedToCommandBuffer() const { ++fNumCommandBufferOwners; }
+
+void GrVkImage::Resource::notifyRemovedFromCommandBuffer() const {
+    SkASSERT(fNumCommandBufferOwners);
+    if (--fNumCommandBufferOwners || !fIdleProcs.count()) {
+        return;
+    }
+    if (fOwningTexture) {
+        if (fOwningTexture->resourcePriv().hasRefOrPendingIO()) {
+            
+            return;
+        }
+        fOwningTexture->callIdleProcsOnBehalfOfResource();
+    } else {
+        fIdleProcs.reset();
+    }
+}
+
+void GrVkImage::BorrowedResource::freeGPUData(GrVkGpu* gpu) const {
     this->invokeReleaseProc();
 }
 
 void GrVkImage::BorrowedResource::abandonGPUData() const {
     this->invokeReleaseProc();
 }
+
+#if GR_TEST_UTILS
+void GrVkImage::setCurrentQueueFamilyToGraphicsQueue(GrVkGpu* gpu) {
+    fInfo.fCurrentQueueFamily = gpu->queueIndex();
+}
+#endif
 

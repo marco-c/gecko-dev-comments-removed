@@ -57,7 +57,7 @@ SkSurface_Compute::onNewCanvas()
 
   
 
-  SkDevice_Compute * const device_compute = new SkDevice_Compute(compute,w,h);;
+  SkDevice_Compute * const device_compute = new SkDevice_Compute(compute,w,h);
   SkCanvas         * const canvas         = new SkCanvas(device_compute,SkCanvas::kConservativeRasterClip_InitFlag);
 
   

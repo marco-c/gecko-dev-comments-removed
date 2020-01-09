@@ -74,10 +74,10 @@ void GrCCConicShader::onEmitFragmentCode(GrGLSLFPFragmentBuilder* f,
                                          const char* outputCoverage) const {
     this->calcHullCoverage(&AccessCodeString(f), fKLM_fWind.fsIn(), fGrad_fCorner.fsIn(),
                            outputCoverage);
-    f->codeAppendf("%s *= %s.w;", outputCoverage, fKLM_fWind.fsIn()); 
+    f->codeAppendf("%s *= half(%s.w);", outputCoverage, fKLM_fWind.fsIn()); 
 
     if (kFloat4_GrSLType == fGrad_fCorner.type()) {
-        f->codeAppendf("%s = %s.z * %s.w + %s;", 
+        f->codeAppendf("%s = fma(half(%s.z), half(%s.w), %s);", 
                        outputCoverage, fGrad_fCorner.fsIn(), fGrad_fCorner.fsIn(),
                        outputCoverage);
     }
@@ -88,7 +88,9 @@ void GrCCConicShader::calcHullCoverage(SkString* code, const char* klm, const ch
     code->appendf("float k = %s.x, l = %s.y, m = %s.z;", klm, klm, klm);
     code->append ("float f = k*k - l*m;");
     code->appendf("float fwidth = abs(%s.x) + abs(%s.y);", grad, grad);
-    code->appendf("%s = min(0.5 - f/fwidth, 1);", outputCoverage); 
-    code->append ("half d = min(k - 0.5, 0);"); 
-    code->appendf("%s = max(%s + d, 0);", outputCoverage, outputCoverage); 
+    code->appendf("float curve_coverage = min(0.5 - f/fwidth, 1);");
+    
+    code->append ("float edge_coverage = min(k - 0.5, 0);");
+    
+    code->appendf("%s = max(half(curve_coverage + edge_coverage), 0);", outputCoverage);
 }

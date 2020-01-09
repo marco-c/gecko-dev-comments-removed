@@ -8,157 +8,511 @@
 #ifndef SkFont_DEFINED
 #define SkFont_DEFINED
 
-#include "SkRefCnt.h"
+#include "SkFontTypes.h"
 #include "SkScalar.h"
+#include "SkTypeface.h"
 
+class SkMatrix;
 class SkPaint;
-class SkTypeface;
-
-enum SkTextEncoding {
-    kUTF8_SkTextEncoding,
-    kUTF16_SkTextEncoding,
-    kUTF32_SkTextEncoding,
-    kGlyphID_SkTextEncoding,
-};
+class SkPath;
+struct SkFontMetrics;
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class SkFont : public SkRefCnt {
+class SK_API SkFont {
 public:
-    enum Flags {
-        
+    
 
-
-
-
-        kEnableAutoHints_Flag       = 1 << 0,
-
-        
-
-
-
-
-        kEnableByteCodeHints_Flag   = 1 << 1,
-
-        
-
-
-
-
-        kEmbeddedBitmaps_Flag       = 1 << 2,
-
-        
-
-
-
-
-
-
-
-
-        kUseNonlinearMetrics_Flag   = 1 << 3,
-
-        kVertical_Flag              = 1 << 4,
-
-        kEmbolden_Flag              = 1 << 6,
+    enum class Edging {
+        kAlias,              
+        kAntiAlias,          
+        kSubpixelAntiAlias,  
     };
-
-    enum MaskType {
-        kBW_MaskType,
-        kA8_MaskType,
-        kLCD_MaskType,
-    };
-
-    static sk_sp<SkFont> Make(sk_sp<SkTypeface>, SkScalar size, MaskType, uint32_t flags);
-    static sk_sp<SkFont> Make(sk_sp<SkTypeface>, SkScalar size, SkScalar scaleX, SkScalar skewX,
-                              MaskType, uint32_t flags);
 
     
 
 
 
-    sk_sp<SkFont> makeWithSize(SkScalar size) const;
+    SkFont();
+
     
 
 
-    sk_sp<SkFont> makeWithFlags(uint32_t newFlags) const;
 
-    SkTypeface* getTypeface() const { return fTypeface.get(); }
+
+
+    SkFont(sk_sp<SkTypeface> typeface, SkScalar size);
+
+    
+
+
+
+
+    explicit SkFont(sk_sp<SkTypeface> typeface);
+
+
+    
+
+
+
+
+
+
+
+
+
+    SkFont(sk_sp<SkTypeface> typeface, SkScalar size, SkScalar scaleX, SkScalar skewX);
+
+
+    
+
+
+
+
+
+    bool operator==(const SkFont& font) const;
+
+    
+
+
+
+
+
+    bool operator!=(const SkFont& font) const { return !(*this == font); }
+
+    
+
+
+
+
+    bool isForceAutoHinting() const { return SkToBool(fFlags & kForceAutoHinting_PrivFlag); }
+
+    
+
+
+
+    bool isEmbeddedBitmaps() const { return SkToBool(fFlags & kEmbeddedBitmaps_PrivFlag); }
+
+    
+
+
+
+    bool isSubpixel() const { return SkToBool(fFlags & kSubpixel_PrivFlag); }
+
+    
+
+
+
+    bool isLinearMetrics() const { return SkToBool(fFlags & kLinearMetrics_PrivFlag); }
+
+    
+
+
+
+
+    bool isEmbolden() const { return SkToBool(fFlags & kEmbolden_PrivFlag); }
+
+    
+
+
+
+
+
+
+    void setForceAutoHinting(bool forceAutoHinting);
+
+    
+
+
+
+    void setEmbeddedBitmaps(bool embeddedBitmaps);
+
+    
+
+
+
+    void setSubpixel(bool subpixel);
+
+    
+
+
+
+
+    void setLinearMetrics(bool linearMetrics);
+
+    
+
+
+
+    void setEmbolden(bool embolden);
+
+    
+
+
+
+    Edging getEdging() const { return (Edging)fEdging; }
+
+    
+
+
+
+
+    void setEdging(Edging edging);
+
+    
+
+
+
+
+
+    void setHinting(SkFontHinting hintingLevel);
+
+    
+
+
+
+
+    SkFontHinting getHinting() const { return (SkFontHinting)fHinting; }
+
+    
+
+
+
+
+
+    SkFont makeWithSize(SkScalar size) const;
+
+    
+
+
+
+
+    SkTypeface* getTypeface() const {return fTypeface.get(); }
+
+    
+
+
+
+
+
+    SkTypeface* getTypefaceOrDefault() const;
+
+    
+
+
+
     SkScalar    getSize() const { return fSize; }
+
+    
+
+
+
+
     SkScalar    getScaleX() const { return fScaleX; }
+
+    
+
+
+
+
     SkScalar    getSkewX() const { return fSkewX; }
-    uint32_t    getFlags() const { return fFlags; }
-    MaskType    getMaskType() const { return (MaskType)fMaskType; }
 
-    bool isVertical() const { return SkToBool(fFlags & kVertical_Flag); }
-    bool isEmbolden() const { return SkToBool(fFlags & kEmbolden_Flag); }
-    bool isEnableAutoHints() const { return SkToBool(fFlags & kEnableAutoHints_Flag); }
-    bool isEnableByteCodeHints() const { return SkToBool(fFlags & kEnableByteCodeHints_Flag); }
-    bool isUseNonLinearMetrics() const { return SkToBool(fFlags & kUseNonlinearMetrics_Flag); }
+    
 
-    int textToGlyphs(const void* text, size_t byteLength, SkTextEncoding,
+
+
+    sk_sp<SkTypeface> refTypeface() const { return fTypeface; }
+
+    
+
+
+
+
+    sk_sp<SkTypeface> refTypefaceOrDefault() const;
+
+    
+
+
+
+
+
+    void setTypeface(sk_sp<SkTypeface> tf) { fTypeface = tf; }
+
+    
+
+
+
+
+    void setSize(SkScalar textSize);
+
+    
+
+
+
+
+    void setScaleX(SkScalar scaleX);
+
+    
+
+
+
+
+    void setSkewX(SkScalar skewX);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    int textToGlyphs(const void* text, size_t byteLength, SkTextEncoding encoding,
                      SkGlyphID glyphs[], int maxGlyphCount) const;
 
-    int countText(const void* text, size_t byteLength, SkTextEncoding encoding) {
+    
+
+
+
+
+
+
+    SkGlyphID unicharToGlyph(SkUnichar uni) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    int countText(const void* text, size_t byteLength, SkTextEncoding encoding) const {
         return this->textToGlyphs(text, byteLength, encoding, nullptr, 0);
     }
 
-    SkScalar measureText(const void* text, size_t byteLength, SkTextEncoding) const;
+    
 
-    static sk_sp<SkFont> Testing_CreateFromPaint(const SkPaint&);
+
+
+
+
+
+
+
+
+
+    SkScalar measureText(const void* text, size_t byteLength, SkTextEncoding encoding,
+                         SkRect* bounds = nullptr) const {
+        return this->measureText(text, byteLength, encoding, bounds, nullptr);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    SkScalar measureText(const void* text, size_t byteLength, SkTextEncoding encoding,
+                         SkRect* bounds, const SkPaint* paint) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+    void getWidths(const uint16_t glyphs[], int count, SkScalar widths[], SkRect bounds[]) const {
+        this->getWidthsBounds(glyphs, count, widths, bounds, nullptr);
+    }
+
+    
+    void getWidths(const uint16_t glyphs[], int count, SkScalar widths[], std::nullptr_t) const {
+        this->getWidths(glyphs, count, widths);
+    }
+
+    
+
+
+
+
+
+
+
+
+    void getWidths(const uint16_t glyphs[], int count, SkScalar widths[]) const {
+        this->getWidthsBounds(glyphs, count, widths, nullptr, nullptr);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+    void getWidthsBounds(const uint16_t glyphs[], int count, SkScalar widths[], SkRect bounds[],
+                         const SkPaint* paint) const;
+
+
+    
+
+
+
+
+
+
+
+
+    void getBounds(const uint16_t glyphs[], int count, SkRect bounds[],
+                   const SkPaint* paint) const {
+        this->getWidthsBounds(glyphs, count, nullptr, bounds, paint);
+    }
+
+    
+
+
+
+
+
+
+
+    void getPos(const uint16_t glyphs[], int count, SkPoint pos[], SkPoint origin = {0, 0}) const;
+
+    
+
+
+
+
+
+
+
+    void getXPos(const uint16_t glyphs[], int count, SkScalar xpos[], SkScalar origin = 0) const;
+
+    
+
+
+
+
+
+
+
+
+    bool getPath(uint16_t glyphID, SkPath* path) const;
+
+    
+
+
+
+
+
+
+    void getPaths(const uint16_t glyphIDs[], int count,
+                  void (*glyphPathProc)(const SkPath* pathOrNull, const SkMatrix& mx, void* ctx),
+                  void* ctx) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+    SkScalar getMetrics(SkFontMetrics* metrics) const;
+
+    
+
+
+
+
+
+
+
+    SkScalar getSpacing() const { return this->getMetrics(nullptr); }
+
+    
+
+
+
+    void dump() const;
 
 private:
-    static constexpr int kAllFlags = 0xFF;
+    enum PrivFlags {
+        kForceAutoHinting_PrivFlag      = 1 << 0,
+        kEmbeddedBitmaps_PrivFlag       = 1 << 1,
+        kSubpixel_PrivFlag              = 1 << 2,
+        kLinearMetrics_PrivFlag         = 1 << 3,
+        kEmbolden_PrivFlag              = 1 << 4,
+    };
 
-    SkFont(sk_sp<SkTypeface>, SkScalar size, SkScalar scaleX, SkScalar skewX, MaskType,
-           uint32_t flags);
+    static constexpr unsigned kAllFlags = 0x1F;
 
     sk_sp<SkTypeface> fTypeface;
     SkScalar    fSize;
     SkScalar    fScaleX;
     SkScalar    fSkewX;
-    uint16_t    fFlags;
-    uint8_t     fMaskType;
+    uint8_t     fFlags;
+    uint8_t     fEdging;
+    uint8_t     fHinting;
 
+    SkScalar setupForAsPaths(SkPaint*);
+    bool hasSomeAntiAliasing() const;
+
+    void glyphsToUnichars(const SkGlyphID glyphs[], int count, SkUnichar text[]) const;
+
+    friend class GrTextBlob;
+    friend class SkCanonicalizeFont;
+    friend class SkFontPriv;
+    friend class SkGlyphRunListPainter;
+    friend class SkTextBlobCacheDiffCanvas;
+    friend class SVGTextBuilder;
 };
 
 #endif

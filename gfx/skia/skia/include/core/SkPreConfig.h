@@ -44,16 +44,7 @@
 
 
 
-
-
-
-#if defined(SK_BUILD_FOR_ANDROID_FRAMEWORK) && !defined(SK_BUILD_FOR_ANDROID)
-    #define SK_BUILD_FOR_ANDROID
-#endif
-
-
-
-#ifdef SK_BUILD_FOR_WIN
+#if defined(SK_BUILD_FOR_WIN) && !defined(__clang__)
     #if !defined(SK_RESTRICT)
         #define SK_RESTRICT __restrict
     #endif

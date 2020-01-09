@@ -12,80 +12,62 @@
 #include "GrSurfaceContext.h"
 #include "text/GrAtlasManager.h"
 
+class GrBackendFormat;
 class GrBackendRenderTarget;
 class GrOpMemoryPool;
 class GrOnFlushCallbackObject;
 class GrSemaphore;
 class GrSkSLFPFactory;
+class GrSkSLFPFactoryCache;
 class GrSurfaceProxy;
 class GrTextureContext;
 
 class SkDeferredDisplayList;
+class SkTaskGroup;
 
 
 
 
 class GrContextPriv {
 public:
+
     
+    uint32_t contextID() const { return fContext->contextID(); }
 
+    bool matches(GrContext_Base* candidate) const { return fContext->matches(candidate); }
 
-    static sk_sp<GrContext> MakeDDL(const sk_sp<GrContextThreadSafeProxy>&);
+    const GrContextOptions& options() const { return fContext->options(); }
 
-    const GrCaps* caps() const { return fContext->fCaps.get(); }
+    bool explicitlyAllocateGPUResources() const {
+        return fContext->explicitlyAllocateGPUResources();
+    }
+
+    const GrCaps* caps() const { return fContext->caps(); }
+    sk_sp<const GrCaps> refCaps() const;
+
+    sk_sp<GrSkSLFPFactoryCache> fpFactoryCache();
+
+    GrImageContext* asImageContext() { return fContext->asImageContext(); }
+    GrRecordingContext* asRecordingContext() { return fContext->asRecordingContext(); }
+    GrContext* asDirectContext() { return fContext->asDirectContext(); }
+
+    
+    GrProxyProvider* proxyProvider() { return fContext->proxyProvider(); }
+    const GrProxyProvider* proxyProvider() const { return fContext->proxyProvider(); }
+
+    bool abandoned() const { return fContext->abandoned(); }
+
+    
+    SkDEBUGCODE(GrSingleOwner* singleOwner() const { return fContext->singleOwner(); } )
+
+    
+    GrDrawingManager* drawingManager() { return fContext->drawingManager(); }
 
     sk_sp<GrOpMemoryPool> refOpMemoryPool();
-    GrOpMemoryPool* opMemoryPool();
+    GrOpMemoryPool* opMemoryPool() { return fContext->opMemoryPool(); }
 
-    GrDrawingManager* drawingManager() { return fContext->fDrawingManager.get(); }
-
-    sk_sp<GrSurfaceContext> makeWrappedSurfaceContext(sk_sp<GrSurfaceProxy>,
-                                                      sk_sp<SkColorSpace> = nullptr,
-                                                      const SkSurfaceProps* = nullptr);
-
-    sk_sp<GrSurfaceContext> makeDeferredSurfaceContext(const GrSurfaceDesc&,
-                                                       GrSurfaceOrigin,
-                                                       GrMipMapped,
-                                                       SkBackingFit,
-                                                       SkBudgeted,
-                                                       sk_sp<SkColorSpace> colorSpace = nullptr,
-                                                       const SkSurfaceProps* = nullptr);
-
-    sk_sp<GrTextureContext> makeBackendTextureContext(const GrBackendTexture& tex,
-                                                      GrSurfaceOrigin origin,
-                                                      sk_sp<SkColorSpace> colorSpace);
-
-    sk_sp<GrRenderTargetContext> makeBackendTextureRenderTargetContext(
-                                                         const GrBackendTexture& tex,
-                                                         GrSurfaceOrigin origin,
-                                                         int sampleCnt,
-                                                         sk_sp<SkColorSpace> colorSpace,
-                                                         const SkSurfaceProps* = nullptr);
-
-    sk_sp<GrRenderTargetContext> makeBackendRenderTargetRenderTargetContext(
-                                                              const GrBackendRenderTarget&,
-                                                              GrSurfaceOrigin origin,
-                                                              sk_sp<SkColorSpace> colorSpace,
-                                                              const SkSurfaceProps* = nullptr);
-
-    sk_sp<GrRenderTargetContext> makeBackendTextureAsRenderTargetRenderTargetContext(
-                                                                 const GrBackendTexture& tex,
-                                                                 GrSurfaceOrigin origin,
-                                                                 int sampleCnt,
-                                                                 sk_sp<SkColorSpace> colorSpace,
-                                                                 const SkSurfaceProps* = nullptr);
-
-    bool disableGpuYUVConversion() const { return fContext->fDisableGpuYUVConversion; }
-    bool sharpenMipmappedTextures() const { return fContext->fSharpenMipmappedTextures; }
-
-    
-
-
-
-
-
-
-    void flush(GrSurfaceProxy*);
+    GrStrikeCache* getGrStrikeCache() { return fContext->getGrStrikeCache(); }
+    GrTextBlobCache* getTextBlobCache() { return fContext->getTextBlobCache(); }
 
     
 
@@ -95,7 +77,104 @@ public:
 
     void addOnFlushCallbackObject(GrOnFlushCallbackObject*);
 
-    void testingOnly_flushAndRemoveOnFlushCallbackObject(GrOnFlushCallbackObject*);
+    sk_sp<GrSurfaceContext> makeWrappedSurfaceContext(sk_sp<GrSurfaceProxy>,
+                                                      sk_sp<SkColorSpace> = nullptr,
+                                                      const SkSurfaceProps* = nullptr);
+
+    sk_sp<GrSurfaceContext> makeDeferredSurfaceContext(const GrBackendFormat&,
+                                                       const GrSurfaceDesc&,
+                                                       GrSurfaceOrigin,
+                                                       GrMipMapped,
+                                                       SkBackingFit,
+                                                       SkBudgeted,
+                                                       sk_sp<SkColorSpace> colorSpace = nullptr,
+                                                       const SkSurfaceProps* = nullptr);
+
+    
+
+
+
+
+    sk_sp<GrRenderTargetContext> makeDeferredRenderTargetContext(
+                                            const GrBackendFormat& format,
+                                            SkBackingFit fit,
+                                            int width, int height,
+                                            GrPixelConfig config,
+                                            sk_sp<SkColorSpace> colorSpace,
+                                            int sampleCnt = 1,
+                                            GrMipMapped = GrMipMapped::kNo,
+                                            GrSurfaceOrigin origin = kBottomLeft_GrSurfaceOrigin,
+                                            const SkSurfaceProps* surfaceProps = nullptr,
+                                            SkBudgeted = SkBudgeted::kYes);
+
+    
+
+
+
+
+
+    sk_sp<GrRenderTargetContext> makeDeferredRenderTargetContextWithFallback(
+                                            const GrBackendFormat& format,
+                                            SkBackingFit fit,
+                                            int width, int height,
+                                            GrPixelConfig config,
+                                            sk_sp<SkColorSpace> colorSpace,
+                                            int sampleCnt = 1,
+                                            GrMipMapped = GrMipMapped::kNo,
+                                            GrSurfaceOrigin origin = kBottomLeft_GrSurfaceOrigin,
+                                            const SkSurfaceProps* surfaceProps = nullptr,
+                                            SkBudgeted budgeted = SkBudgeted::kYes);
+
+    GrAuditTrail* auditTrail() { return fContext->auditTrail(); }
+
+    
+
+
+    static sk_sp<GrContext> MakeDDL(const sk_sp<GrContextThreadSafeProxy>&);
+
+    sk_sp<GrTextureContext> makeBackendTextureContext(const GrBackendTexture& tex,
+                                                      GrSurfaceOrigin origin,
+                                                      sk_sp<SkColorSpace> colorSpace);
+
+    
+    typedef void* ReleaseContext;
+    typedef void (*ReleaseProc)(ReleaseContext);
+
+    sk_sp<GrRenderTargetContext> makeBackendTextureRenderTargetContext(
+                                                         const GrBackendTexture& tex,
+                                                         GrSurfaceOrigin origin,
+                                                         int sampleCnt,
+                                                         sk_sp<SkColorSpace> colorSpace,
+                                                         const SkSurfaceProps* = nullptr,
+                                                         ReleaseProc = nullptr,
+                                                         ReleaseContext = nullptr);
+
+    sk_sp<GrRenderTargetContext> makeBackendRenderTargetRenderTargetContext(
+                                                              const GrBackendRenderTarget&,
+                                                              GrSurfaceOrigin origin,
+                                                              sk_sp<SkColorSpace> colorSpace,
+                                                              const SkSurfaceProps* = nullptr,
+                                                              ReleaseProc = nullptr,
+                                                              ReleaseContext = nullptr);
+
+    sk_sp<GrRenderTargetContext> makeBackendTextureAsRenderTargetRenderTargetContext(
+                                                                 const GrBackendTexture& tex,
+                                                                 GrSurfaceOrigin origin,
+                                                                 int sampleCnt,
+                                                                 sk_sp<SkColorSpace> colorSpace,
+                                                                 const SkSurfaceProps* = nullptr);
+
+    sk_sp<GrRenderTargetContext> makeVulkanSecondaryCBRenderTargetContext(
+            const SkImageInfo&, const GrVkDrawableInfo&, const SkSurfaceProps* = nullptr);
+
+    
+
+
+
+
+
+
+    void flush(GrSurfaceProxy*);
 
     
 
@@ -177,12 +256,7 @@ public:
                             GrColorType srcColorType, SkColorSpace* srcColorSpace,
                             const void* buffer, size_t rowBytes, uint32_t pixelOpsFlags = 0);
 
-    GrBackend getBackend() const { return fContext->fBackend; }
-
     SkTaskGroup* getTaskGroup() { return fContext->fTaskGroup.get(); }
-
-    GrProxyProvider* proxyProvider() { return fContext->fProxyProvider; }
-    const GrProxyProvider* proxyProvider() const { return fContext->fProxyProvider; }
 
     GrResourceProvider* resourceProvider() { return fContext->fResourceProvider; }
     const GrResourceProvider* resourceProvider() const { return fContext->fResourceProvider; }
@@ -192,9 +266,6 @@ public:
     GrGpu* getGpu() { return fContext->fGpu.get(); }
     const GrGpu* getGpu() const { return fContext->fGpu.get(); }
 
-    GrGlyphCache* getGlyphCache() { return fContext->fGlyphCache; }
-    GrTextBlobCache* getTextBlobCache() { return fContext->fTextBlobCache.get(); }
-
     
     GrAtlasManager* getAtlasManager() {
         return fContext->onGetAtlasManager();
@@ -203,46 +274,14 @@ public:
     void moveOpListsToDDL(SkDeferredDisplayList*);
     void copyOpListsFromDDL(const SkDeferredDisplayList*, GrRenderTargetProxy* newDest);
 
+    GrContextOptions::PersistentCache* getPersistentCache() { return fContext->fPersistentCache; }
+
+#ifdef SK_ENABLE_DUMP_GPU
     
+    SkString dump() const;
+#endif
 
-
-
-
-    void purgeAllUnlockedResources_ForTesting();
-
-
-    
-
-
-
-
-    sk_sp<GrRenderTargetContext> makeDeferredRenderTargetContext(
-                                                 SkBackingFit fit,
-                                                 int width, int height,
-                                                 GrPixelConfig config,
-                                                 sk_sp<SkColorSpace> colorSpace,
-                                                 int sampleCnt = 1,
-                                                 GrMipMapped = GrMipMapped::kNo,
-                                                 GrSurfaceOrigin origin = kBottomLeft_GrSurfaceOrigin,
-                                                 const SkSurfaceProps* surfaceProps = nullptr,
-                                                 SkBudgeted = SkBudgeted::kYes);
-    
-
-
-
-
-
-    sk_sp<GrRenderTargetContext> makeDeferredRenderTargetContextWithFallback(
-                                                 SkBackingFit fit,
-                                                 int width, int height,
-                                                 GrPixelConfig config,
-                                                 sk_sp<SkColorSpace> colorSpace,
-                                                 int sampleCnt = 1,
-                                                 GrMipMapped = GrMipMapped::kNo,
-                                                 GrSurfaceOrigin origin = kBottomLeft_GrSurfaceOrigin,
-                                                 const SkSurfaceProps* surfaceProps = nullptr,
-                                                 SkBudgeted budgeted = SkBudgeted::kYes);
-
+#if GR_TEST_UTILS
     
     void resetGpuStats() const ;
 
@@ -257,27 +296,23 @@ public:
     void printGpuStats() const;
 
     
-    SkString dump() const;
+
+    void testingOnly_setTextBlobCacheLimit(size_t bytes);
 
     
 
-    void setTextBlobCacheLimit_ForTesting(size_t bytes);
+
+    sk_sp<SkImage> testingOnly_getFontAtlasImage(GrMaskFormat format, unsigned int index = 0);
 
     
 
 
-    sk_sp<SkImage> getFontAtlasImage_ForTesting(GrMaskFormat format, unsigned int index = 0);
 
-    GrAuditTrail* getAuditTrail() { return &fContext->fAuditTrail; }
 
-    GrContextOptions::PersistentCache* getPersistentCache() { return fContext->fPersistentCache; }
+    void testingOnly_purgeAllUnlockedResources();
 
-    sk_sp<GrSkSLFPFactoryCache> getFPFactoryCache() {
-        return fContext->fFPFactoryCache;
-    }
-
-    
-    SkDEBUGCODE(GrSingleOwner* debugSingleOwner() const { return &fContext->fSingleOwner; } )
+    void testingOnly_flushAndRemoveOnFlushCallbackObject(GrOnFlushCallbackObject*);
+#endif
 
 private:
     explicit GrContextPriv(GrContext* context) : fContext(context) {}
@@ -293,9 +328,9 @@ private:
     friend class GrContext; 
 };
 
-inline GrContextPriv GrContext::contextPriv() { return GrContextPriv(this); }
+inline GrContextPriv GrContext::priv() { return GrContextPriv(this); }
 
-inline const GrContextPriv GrContext::contextPriv () const {
+inline const GrContextPriv GrContext::priv() const {
     return GrContextPriv(const_cast<GrContext*>(this));
 }
 

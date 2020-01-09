@@ -17,6 +17,12 @@
 namespace SkSL {
 
 
+const int SKSL_SWIZZLE_0 = -2;
+
+
+const int SKSL_SWIZZLE_1 = -1;
+
+
 
 
 
@@ -106,13 +112,13 @@ struct Swizzle : public Expression {
         if (fBase->fKind == Expression::kConstructor_Kind && fBase->isConstant()) {
             
             SkASSERT(fBase->fKind == Expression::kConstructor_Kind);
-            if (fType == *irGenerator.fContext.fInt_Type) {
+            if (fType.isInteger()) {
                 SkASSERT(fComponents.size() == 1);
                 int64_t value = ((Constructor&) *fBase).getIVecComponent(fComponents[0]);
                 return std::unique_ptr<Expression>(new IntLiteral(irGenerator.fContext,
                                                                   -1,
                                                                   value));
-            } else if (fType == *irGenerator.fContext.fFloat_Type) {
+            } else if (fType.isFloat()) {
                 SkASSERT(fComponents.size() == 1);
                 double value = ((Constructor&) *fBase).getFVecComponent(fComponents[0]);
                 return std::unique_ptr<Expression>(new FloatLiteral(irGenerator.fContext,
@@ -134,7 +140,7 @@ struct Swizzle : public Expression {
     String description() const override {
         String result = fBase->description() + ".";
         for (int x : fComponents) {
-            result += "xyzw"[x];
+            result += "01xyzw"[x + 2];
         }
         return result;
     }

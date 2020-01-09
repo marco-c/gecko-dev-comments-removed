@@ -8,9 +8,10 @@
 #ifndef GrVkResource_DEFINED
 #define GrVkResource_DEFINED
 
-#include "SkAtomics.h"
+
 #include "SkRandom.h"
 #include "SkTHash.h"
+#include <atomic>
 
 class GrVkGpu;
 
@@ -53,21 +54,27 @@ public:
             });
             SkASSERT(0 == fHashSet.count());
         }
-        void add(const GrVkResource* r) { fHashSet.add(r); }
-        void remove(const GrVkResource* r) { fHashSet.remove(r); }
+
+        void add(const GrVkResource* r) {
+            fHashSet.add(r);
+        }
+
+        void remove(const GrVkResource* r) {
+            fHashSet.remove(r);
+        }
 
     private:
         SkTHashSet<const GrVkResource*, GrVkResource::Hash> fHashSet;
     };
 
-    static uint32_t fKeyCounter;
+    static std::atomic<uint32_t> fKeyCounter;
 #endif
 
     
 
     GrVkResource() : fRefCnt(1) {
 #ifdef SK_TRACE_VK_RESOURCES
-        fKey = sk_atomic_fetch_add(&fKeyCounter, 1u, sk_memory_order_relaxed);
+        fKey = fKeyCounter.fetch_add(+1, std::memory_order_relaxed);
         GetTrace()->add(this);
 #endif
     }
@@ -76,35 +83,34 @@ public:
 
     virtual ~GrVkResource() {
 #ifdef SK_DEBUG
-        SkASSERTF(fRefCnt == 1, "fRefCnt was %d", fRefCnt);
-        fRefCnt = 0;    
+        auto count = this->getRefCnt();
+        SkASSERTF(count == 1, "fRefCnt was %d", count);
+        fRefCnt.store(0);    
 #endif
     }
 
 #ifdef SK_DEBUG
     
-    int32_t getRefCnt() const { return fRefCnt; }
+    int32_t getRefCnt() const { return fRefCnt.load(); }
 #endif
 
     
 
 
     bool unique() const {
-        if (1 == sk_atomic_load(&fRefCnt, sk_memory_order_acquire)) {
-            
-            
-            
-            return true;
-        }
-        return false;
+        
+        
+        
+        return 1 == fRefCnt.load(std::memory_order_acquire);
     }
 
     
 
 
     void ref() const {
-        SkASSERT(fRefCnt > 0);
-        (void)sk_atomic_fetch_add(&fRefCnt, +1, sk_memory_order_relaxed);  
+        
+        SkDEBUGCODE(int newRefCount = )fRefCnt.fetch_add(+1, std::memory_order_relaxed);
+        SkASSERT(newRefCount >= 1);
     }
 
     
@@ -112,11 +118,12 @@ public:
 
 
 
-    void unref(const GrVkGpu* gpu) const {
-        SkASSERT(fRefCnt > 0);
+    void unref(GrVkGpu* gpu) const {
         SkASSERT(gpu);
         
-        if (1 == sk_atomic_fetch_add(&fRefCnt, -1, sk_memory_order_acq_rel)) {
+        int newRefCount = fRefCnt.fetch_add(-1, std::memory_order_acq_rel);
+        SkASSERT(newRefCount >= 0);
+        if (newRefCount == 1) {
             
             
             this->internal_dispose(gpu);
@@ -125,18 +132,27 @@ public:
 
     
     void unrefAndAbandon() const {
-        SkASSERT(fRefCnt > 0);
+        SkASSERT(this->getRefCnt() > 0);
         
-        if (1 == sk_atomic_fetch_add(&fRefCnt, -1, sk_memory_order_acq_rel)) {
+        int newRefCount = fRefCnt.fetch_add(-1, std::memory_order_acq_rel);
+        SkASSERT(newRefCount >= 0);
+        if (newRefCount == 1) {
             
             
             this->internal_dispose();
         }
     }
 
+    
+    virtual void notifyAddedToCommandBuffer() const {}
+    
+    
+    
+    virtual void notifyRemovedFromCommandBuffer() const {}
+
 #ifdef SK_DEBUG
     void validate() const {
-        SkASSERT(fRefCnt > 0);
+        SkASSERT(this->getRefCnt() > 0);
     }
 #endif
 
@@ -157,7 +173,7 @@ private:
     
 
 
-    virtual void freeGPUData(const GrVkGpu* gpu) const = 0;
+    virtual void freeGPUData(GrVkGpu* gpu) const = 0;
 
     
 
@@ -169,13 +185,16 @@ private:
     
 
 
-    void internal_dispose(const GrVkGpu* gpu) const {
+    void internal_dispose(GrVkGpu* gpu) const {
         this->freeGPUData(gpu);
 #ifdef SK_TRACE_VK_RESOURCES
         GetTrace()->remove(this);
 #endif
-        SkASSERT(0 == fRefCnt);
-        fRefCnt = 1;
+
+#ifdef SK_DEBUG
+        SkASSERT(0 == this->getRefCnt());
+        fRefCnt.store(1);
+#endif
         delete this;
     }
 
@@ -187,12 +206,15 @@ private:
 #ifdef SK_TRACE_VK_RESOURCES
         GetTrace()->remove(this);
 #endif
-        SkASSERT(0 == fRefCnt);
-        fRefCnt = 1;
+
+#ifdef SK_DEBUG
+        SkASSERT(0 == this->getRefCnt());
+        fRefCnt.store(1);
+#endif
         delete this;
     }
 
-    mutable int32_t fRefCnt;
+    mutable std::atomic<int32_t> fRefCnt;
 #ifdef SK_TRACE_VK_RESOURCES
     uint32_t fKey;
 #endif

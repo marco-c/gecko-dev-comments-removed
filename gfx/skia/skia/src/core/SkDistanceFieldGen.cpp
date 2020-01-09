@@ -6,7 +6,9 @@
 
 
 #include "SkAutoMalloc.h"
+#include "SkColorData.h"
 #include "SkDistanceFieldGen.h"
+#include "SkMask.h"
 #include "SkPointPriv.h"
 #include "SkTemplates.h"
 
@@ -481,7 +483,7 @@ bool SkGenerateDistanceFieldFromA8Image(unsigned char* distanceField,
     unsigned char* currDestPtr = copyPtr + width + 2;
     for (int i = 0; i < height; ++i) {
         *currDestPtr++ = 0;
-        memcpy(currDestPtr, currSrcScanLine, rowBytes);
+        memcpy(currDestPtr, currSrcScanLine, width);
         currSrcScanLine += rowBytes;
         currDestPtr += width;
         *currDestPtr++ = 0;
@@ -489,6 +491,36 @@ bool SkGenerateDistanceFieldFromA8Image(unsigned char* distanceField,
     sk_bzero(currDestPtr, (width+2)*sizeof(char));
 
     return generate_distance_field_from_image(distanceField, copyPtr, width, height);
+}
+
+
+bool SkGenerateDistanceFieldFromLCD16Mask(unsigned char* distanceField,
+                                           const unsigned char* image,
+                                           int w, int h, size_t rowBytes) {
+    SkASSERT(distanceField);
+    SkASSERT(image);
+
+    
+    SkAutoSMalloc<1024> copyStorage((w+2)*(h+2)*sizeof(char));
+    unsigned char* copyPtr = (unsigned char*) copyStorage.get();
+
+    
+    
+    const uint16_t* start = reinterpret_cast<const uint16_t*>(image);
+    auto currSrcScanline = SkMask::AlphaIter<SkMask::kLCD16_Format>(start);
+    auto endSrcScanline = SkMask::AlphaIter<SkMask::kLCD16_Format>(start + w);
+    sk_bzero(copyPtr, (w+2)*sizeof(char));
+    unsigned char* currDestPtr = copyPtr + w + 2;
+    for (int i = 0; i < h; ++i, currSrcScanline >>= rowBytes, endSrcScanline >>= rowBytes) {
+        *currDestPtr++ = 0;
+        for (auto src = currSrcScanline; src < endSrcScanline; ++src) {
+            *currDestPtr++ = *src;
+        }
+        *currDestPtr++ = 0;
+    }
+    sk_bzero(currDestPtr, (w+2)*sizeof(char));
+
+    return generate_distance_field_from_image(distanceField, copyPtr, w, h);
 }
 
 
@@ -509,6 +541,8 @@ bool SkGenerateDistanceFieldFromBWImage(unsigned char* distanceField,
     unsigned char* currDestPtr = copyPtr + width + 2;
     for (int i = 0; i < height; ++i) {
         *currDestPtr++ = 0;
+
+
         int rowWritesLeft = width;
         const unsigned char *maskPtr = currSrcScanLine;
         while (rowWritesLeft > 0) {
@@ -518,6 +552,8 @@ bool SkGenerateDistanceFieldFromBWImage(unsigned char* distanceField,
             }
         }
         currSrcScanLine += rowBytes;
+
+
         *currDestPtr++ = 0;
     }
     sk_bzero(currDestPtr, (width+2)*sizeof(char));

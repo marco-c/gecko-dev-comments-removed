@@ -529,7 +529,7 @@ skc_path_builder_impl_unmap(struct skc_path_builder_impl * const impl,
                                0,NULL,NULL));
 
       
-      from = ++from % impl->ring.subbufs;
+      from = (from + 1) % impl->ring.subbufs;
     }
 }
 
@@ -576,7 +576,7 @@ skc_path_builder_impl_map(struct skc_path_builder_impl * const impl,
                                         &cl_err); cl_ok(cl_err);
 
       
-      from = ++from % impl->ring.subbufs;
+      from = (from + 1) % impl->ring.subbufs;
     }
   
   

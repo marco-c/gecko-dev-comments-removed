@@ -47,12 +47,21 @@ public:
     
     GrGLSLFPFragmentBuilder() : GrGLSLFragmentBuilder(nullptr) {}
 
-    enum Coordinates {
-        kSkiaDevice_Coordinates,
-        kGLSLWindow_Coordinates,
-
-        kLast_Coordinates = kGLSLWindow_Coordinates
+    enum class Scope : bool {
+        kTopLevel,
+        kInsideLoopOrBranch
     };
+
+    
+
+
+
+
+
+
+
+
+    virtual void maskOffMultisampleCoverage(const char* mask, Scope) = 0;
 
     
 
@@ -102,6 +111,7 @@ public:
     virtual SkString ensureCoords2D(const GrShaderVar&) override;
 
     
+    void maskOffMultisampleCoverage(const char* mask, Scope) override;
     const SkString& getMangleString() const override { return fMangleString; }
     void onBeforeChildProcEmitCode() override;
     void onAfterChildProcEmitCode() override;
@@ -163,6 +173,7 @@ private:
     bool fHasCustomColorOutput;
     int fCustomColorOutputIndex;
     bool fHasSecondaryOutput;
+    bool fHasInitializedSampleMask;
     bool fForceHighPrecision;
 
 #ifdef SK_DEBUG

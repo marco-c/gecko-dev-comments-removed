@@ -45,6 +45,7 @@ public:
         kArray_Kind,
         kEnum_Kind,
         kGeneric_Kind,
+        kNullable_Kind,
         kMatrix_Kind,
         kOther_Kind,
         kSampler_Kind,
@@ -62,9 +63,9 @@ public:
 
     
     
-    Type(String name)
+    Type(const char* name)
     : INHERITED(-1, kType_Kind, StringFragment())
-    , fNameString(std::move(name))
+    , fNameString(name)
     , fTypeKind(kOther_Kind)
     , fNumberKind(kNonnumeric_NumberKind) {
         fName.fChars = fNameString.c_str();
@@ -72,9 +73,9 @@ public:
     }
 
     
-    Type(String name, std::vector<Field> fields)
+    Type(const char* name, std::vector<Field> fields)
     : INHERITED(-1, kType_Kind, StringFragment())
-    , fNameString(std::move(name))
+    , fNameString(name)
     , fTypeKind(kOther_Kind)
     , fNumberKind(kNonnumeric_NumberKind)
     , fFields(std::move(fields)) {
@@ -93,9 +94,9 @@ public:
     }
 
     
-    Type(String name, std::vector<const Type*> types)
+    Type(const char* name, std::vector<const Type*> types)
     : INHERITED(-1, kType_Kind, StringFragment())
-    , fNameString(std::move(name))
+    , fNameString(name)
     , fTypeKind(kGeneric_Kind)
     , fNumberKind(kNonnumeric_NumberKind)
     , fCoercibleTypes(std::move(types)) {
@@ -115,9 +116,9 @@ public:
     }
 
     
-    Type(String name, NumberKind numberKind, int priority)
+    Type(const char* name, NumberKind numberKind, int priority)
     : INHERITED(-1, kType_Kind, StringFragment())
-    , fNameString(std::move(name))
+    , fNameString(name)
     , fTypeKind(kScalar_Kind)
     , fNumberKind(numberKind)
     , fPriority(priority)
@@ -128,9 +129,12 @@ public:
     }
 
     
-    Type(String name, NumberKind numberKind, int priority, std::vector<const Type*> coercibleTypes)
+    Type(const char* name,
+         NumberKind numberKind,
+         int priority,
+         std::vector<const Type*> coercibleTypes)
     : INHERITED(-1, kType_Kind, StringFragment())
-    , fNameString(std::move(name))
+    , fNameString(name)
     , fTypeKind(kScalar_Kind)
     , fNumberKind(numberKind)
     , fPriority(priority)
@@ -142,7 +146,21 @@ public:
     }
 
     
-    Type(String name, const Type& componentType, int columns)
+    Type(String name, Kind kind, const Type& componentType)
+    : INHERITED(-1, kType_Kind, StringFragment())
+    , fNameString(std::move(name))
+    , fTypeKind(kind)
+    , fNumberKind(kNonnumeric_NumberKind)
+    , fComponentType(&componentType)
+    , fColumns(1)
+    , fRows(1)
+    , fDimensions(SpvDim1D) {
+        fName.fChars = fNameString.c_str();
+        fName.fLength = fNameString.size();
+    }
+
+    
+    Type(const char* name, const Type& componentType, int columns)
     : Type(name, kVector_Kind, componentType, columns) {}
 
     
@@ -160,9 +178,9 @@ public:
     }
 
     
-    Type(String name, const Type& componentType, int columns, int rows)
+    Type(const char* name, const Type& componentType, int columns, int rows)
     : INHERITED(-1, kType_Kind, StringFragment())
-    , fNameString(std::move(name))
+    , fNameString(name)
     , fTypeKind(kMatrix_Kind)
     , fNumberKind(kNonnumeric_NumberKind)
     , fComponentType(&componentType)
@@ -174,10 +192,10 @@ public:
     }
 
     
-    Type(String name, SpvDim_ dimensions, bool isDepth, bool isArrayed, bool isMultisampled,
+    Type(const char* name, SpvDim_ dimensions, bool isDepth, bool isArrayed, bool isMultisampled,
          bool isSampled)
     : INHERITED(-1, kType_Kind, StringFragment())
-    , fNameString(std::move(name))
+    , fNameString(name)
     , fTypeKind(kSampler_Kind)
     , fNumberKind(kNonnumeric_NumberKind)
     , fDimensions(dimensions)
@@ -194,6 +212,12 @@ public:
     }
 
     String description() const override {
+        if (fNameString == "$floatLiteral") {
+            return "float";
+        }
+        if (fNameString == "$intLiteral") {
+            return "int";
+        }
         return fNameString;
     }
 
@@ -277,6 +301,16 @@ public:
     const Type& componentType() const {
         SkASSERT(fComponentType);
         return *fComponentType;
+    }
+
+    
+
+
+    const Type& nonnullable() const {
+        if (fTypeKind == kNullable_Kind) {
+            return this->componentType();
+        }
+        return *this;
     }
 
     

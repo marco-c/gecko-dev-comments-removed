@@ -9,7 +9,6 @@
 #include "SkBitmap.h"
 #include "SkColorData.h"
 #include "SkColorSpaceXformer.h"
-#include "SkFlattenablePriv.h"
 #include "SkImageFilterPriv.h"
 #include "SkReadBuffer.h"
 #include "SkSpecialImage.h"
@@ -340,7 +339,7 @@ sk_sp<SkSpecialImage> SkMatrixConvolutionImageFilter::onFilterImage(SkSpecialIma
     
     if (source->isTextureBacked() &&
         fKernelSize.width() * fKernelSize.height() <= MAX_KERNEL_SIZE) {
-        GrContext* context = source->getContext();
+        auto context = source->getContext();
 
         
         

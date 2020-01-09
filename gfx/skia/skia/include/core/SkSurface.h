@@ -24,6 +24,10 @@
 
 #include "GrTypes.h"
 
+#if defined(SK_BUILD_FOR_ANDROID) && __ANDROID_API__ >= 26
+#include <android/hardware_buffer.h>
+#endif
+
 class SkCanvas;
 class SkDeferredDisplayList;
 class SkPaint;
@@ -32,6 +36,7 @@ class GrBackendRenderTarget;
 class GrBackendSemaphore;
 class GrBackendTexture;
 class GrContext;
+class GrRecordingContext;
 class GrRenderTarget;
 
 
@@ -163,11 +168,21 @@ public:
 
 
     static sk_sp<SkSurface> MakeRasterN32Premul(int width, int height,
-                                                const SkSurfaceProps* surfaceProps = nullptr) {
-        return MakeRaster(SkImageInfo::MakeN32Premul(width, height), surfaceProps);
-    }
+                                                const SkSurfaceProps* surfaceProps = nullptr);
 
     
+    typedef void* ReleaseContext;
+
+    
+    typedef void (*RenderTargetReleaseProc)(ReleaseContext releaseContext);
+
+    
+    typedef void (*TextureReleaseProc)(ReleaseContext releaseContext);
+
+    
+
+
+
 
 
 
@@ -199,9 +214,16 @@ public:
                                                    GrSurfaceOrigin origin, int sampleCnt,
                                                    SkColorType colorType,
                                                    sk_sp<SkColorSpace> colorSpace,
-                                                   const SkSurfaceProps* surfaceProps);
+                                                   const SkSurfaceProps* surfaceProps,
+                                                   TextureReleaseProc textureReleaseProc = nullptr,
+                                                   ReleaseContext releaseContext = nullptr);
 
     
+
+
+
+
+
 
 
 
@@ -231,9 +253,12 @@ public:
                                                 GrSurfaceOrigin origin,
                                                 SkColorType colorType,
                                                 sk_sp<SkColorSpace> colorSpace,
-                                                const SkSurfaceProps* surfaceProps);
+                                                const SkSurfaceProps* surfaceProps,
+                                                RenderTargetReleaseProc releaseProc = nullptr,
+                                                ReleaseContext releaseContext = nullptr);
 
     
+
 
 
 
@@ -269,6 +294,34 @@ public:
                                                             SkColorType colorType,
                                                             sk_sp<SkColorSpace> colorSpace,
                                                             const SkSurfaceProps* surfaceProps);
+
+#if defined(SK_BUILD_FOR_ANDROID) && __ANDROID_API__ >= 26
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static sk_sp<SkSurface> MakeFromAHardwareBuffer(GrContext* context,
+                                                    AHardwareBuffer* hardwareBuffer,
+                                                    GrSurfaceOrigin origin,
+                                                    sk_sp<SkColorSpace> colorSpace,
+                                                    const SkSurfaceProps* surfaceProps);
+#endif
 
     
 
@@ -364,7 +417,7 @@ public:
 
 
 
-    static sk_sp<SkSurface> MakeRenderTarget(GrContext* context,
+    static sk_sp<SkSurface> MakeRenderTarget(GrRecordingContext* context,
                                              const SkSurfaceCharacterization& characterization,
                                              SkBudgeted budgeted);
 
@@ -412,7 +465,6 @@ public:
 
 
 
-
     void notifyContentWillChange(ContentChangeMode mode);
 
     enum BackendHandleAccess {
@@ -446,9 +498,11 @@ public:
 
 
 
+
     GrBackendTexture getBackendTexture(BackendHandleAccess backendHandleAccess);
 
     
+
 
 
 
@@ -489,6 +543,17 @@ public:
 
 
     sk_sp<SkImage> makeImageSnapshot();
+
+    
+
+
+
+
+
+
+
+
+    sk_sp<SkImage> makeImageSnapshot(const SkIRect& bounds);
 
     
 
@@ -652,6 +717,59 @@ public:
 
 
     void flush();
+
+    enum class BackendSurfaceAccess {
+        kNoAccess,  
+        kPresent,   
+    };
+
+    enum FlushFlags {
+        kNone_FlushFlags = 0,
+        
+        kSyncCpu_FlushFlag = 0x1,
+    };
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    GrSemaphoresSubmitted flush(BackendSurfaceAccess access, FlushFlags flags,
+                                int numSemaphores, GrBackendSemaphore signalSemaphores[]);
 
     
 

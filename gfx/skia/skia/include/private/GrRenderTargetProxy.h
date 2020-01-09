@@ -54,6 +54,8 @@ public:
 
     int maxWindowRectangles(const GrCaps& caps) const;
 
+    bool wrapsVkSecondaryCB() const { return fWrapsVkSecondaryCB == WrapsVkSecondaryCB::kYes; }
+
     
     bool refsWrappedObjects() const;
 
@@ -66,8 +68,10 @@ protected:
     friend class GrRenderTargetProxyPriv;
 
     
-    GrRenderTargetProxy(const GrCaps&, const GrSurfaceDesc&, GrSurfaceOrigin, SkBackingFit,
-                        SkBudgeted, GrInternalSurfaceFlags);
+    GrRenderTargetProxy(const GrCaps&, const GrBackendFormat&, const GrSurfaceDesc&,
+                        GrSurfaceOrigin, SkBackingFit, SkBudgeted, GrInternalSurfaceFlags);
+
+    enum class WrapsVkSecondaryCB : bool { kNo = false, kYes = true };
 
     
     
@@ -80,11 +84,13 @@ protected:
     
     
     GrRenderTargetProxy(LazyInstantiateCallback&&, LazyInstantiationType lazyType,
-                        const GrSurfaceDesc&, GrSurfaceOrigin, SkBackingFit, SkBudgeted,
-                        GrInternalSurfaceFlags);
+                        const GrBackendFormat&, const GrSurfaceDesc&, GrSurfaceOrigin,
+                        SkBackingFit, SkBudgeted, GrInternalSurfaceFlags,
+                        WrapsVkSecondaryCB wrapsVkSecondaryCB);
 
     
-    GrRenderTargetProxy(sk_sp<GrSurface>, GrSurfaceOrigin);
+    GrRenderTargetProxy(sk_sp<GrSurface>, GrSurfaceOrigin,
+                        WrapsVkSecondaryCB wrapsVkSecondaryCB = WrapsVkSecondaryCB::kNo);
 
     sk_sp<GrSurface> createSurface(GrResourceProvider*) const override;
 
@@ -93,13 +99,6 @@ private:
         fSurfaceFlags |= GrInternalSurfaceFlags::kMixedSampled;
     }
     bool hasMixedSamples() const { return fSurfaceFlags & GrInternalSurfaceFlags::kMixedSampled; }
-
-    void setSupportsWindowRects() {
-        fSurfaceFlags |= GrInternalSurfaceFlags::kWindowRectsSupport;
-    }
-    bool supportsWindowRects() const {
-        return fSurfaceFlags & GrInternalSurfaceFlags::kWindowRectsSupport;
-    }
 
     void setGLRTFBOIDIs0() {
         fSurfaceFlags |= GrInternalSurfaceFlags::kGLRTFBOIDIs0;
@@ -120,8 +119,9 @@ private:
     
     
 
-    int                 fSampleCnt;
-    bool                fNeedsStencil;
+    int                fSampleCnt;
+    bool               fNeedsStencil;
+    WrapsVkSecondaryCB fWrapsVkSecondaryCB;
 
     
     

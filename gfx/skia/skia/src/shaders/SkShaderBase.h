@@ -9,11 +9,9 @@
 #define SkShaderBase_DEFINED
 
 #include "SkFilterQuality.h"
-#include "SkFlattenablePriv.h"
 #include "SkMask.h"
 #include "SkMatrix.h"
 #include "SkNoncopyable.h"
-#include "SkPM4f.h"
 #include "SkShader.h"
 #include "SkTLazy.h"
 
@@ -65,16 +63,20 @@ public:
 
     struct ContextRec {
         ContextRec(const SkPaint& paint, const SkMatrix& matrix, const SkMatrix* localM,
-                   SkColorSpace* dstColorSpace)
+                   SkColorType dstColorType, SkColorSpace* dstColorSpace)
             : fPaint(&paint)
             , fMatrix(&matrix)
             , fLocalMatrix(localM)
+            , fDstColorType(dstColorType)
             , fDstColorSpace(dstColorSpace) {}
 
         const SkPaint*  fPaint;            
         const SkMatrix* fMatrix;           
         const SkMatrix* fLocalMatrix;      
+        SkColorType     fDstColorType;     
         SkColorSpace*   fDstColorSpace;    
+
+        bool isLegacyCompatible(SkColorSpace* shadersColorSpace) const;
     };
 
     class Context : public ::SkNoncopyable {
@@ -99,11 +101,6 @@ public:
 
         virtual void shadeSpan(int x, int y, SkPMColor[], int count) = 0;
 
-        virtual void shadeSpan4f(int x, int y, SkPMColor4f[], int count);
-
-        
-        virtual void set3DMask(const SkMask*) {}
-
     protected:
         
         const SkShaderBase& fShader;
@@ -126,15 +123,6 @@ public:
 
 
     Context* makeContext(const ContextRec&, SkArenaAlloc*) const;
-
-    
-
-
-
-
-
-
-    Context* makeBurstPipelineContext(const ContextRec&, SkArenaAlloc*) const;
 
 #if SK_SUPPORT_GPU
     
@@ -173,6 +161,7 @@ public:
     struct StageRec {
         SkRasterPipeline*   fPipeline;
         SkArenaAlloc*       fAlloc;
+        SkColorType         fDstColorType;
         SkColorSpace*       fDstCS;         
         const SkPaint&      fPaint;
         const SkMatrix*     fLocalM;        
@@ -193,24 +182,26 @@ public:
     SkTCopyOnFirstWrite<SkMatrix> totalLocalMatrix(const SkMatrix* preLocalMatrix,
                                                    const SkMatrix* postLocalMatrix = nullptr) const;
 
-#ifdef SK_SUPPORT_LEGACY_SHADER_ISABITMAP
-    virtual bool onIsABitmap(SkBitmap*, SkMatrix*, TileMode[2]) const {
-        return false;
-    }
-#endif
-
     virtual SkImage* onIsAImage(SkMatrix*, TileMode[2]) const {
         return nullptr;
     }
 
-    SK_DEFINE_FLATTENABLE_TYPE(SkShaderBase)
-    SK_DECLARE_FLATTENABLE_REGISTRAR_GROUP()
+    static Type GetFlattenableType() { return kSkShaderBase_Type; }
+    Type getFlattenableType() const override { return GetFlattenableType(); }
+
+    static sk_sp<SkShaderBase> Deserialize(const void* data, size_t size,
+                                             const SkDeserialProcs* procs = nullptr) {
+        return sk_sp<SkShaderBase>(static_cast<SkShaderBase*>(
+                SkFlattenable::Deserialize(GetFlattenableType(), data, size, procs).release()));
+    }
+    static void RegisterFlattenables();
 
 protected:
     SkShaderBase(const SkMatrix* localMatrix = nullptr);
 
     void flatten(SkWriteBuffer&) const override;
 
+#ifdef SK_ENABLE_LEGACY_SHADERCONTEXT
     
 
 
@@ -225,6 +216,7 @@ protected:
     virtual Context* onMakeBurstPipelineContext(const ContextRec&, SkArenaAlloc*) const {
         return nullptr;
     }
+#endif
 
     virtual bool onAsLuminanceColor(SkColor*) const {
         return false;

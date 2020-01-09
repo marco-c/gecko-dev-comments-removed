@@ -146,6 +146,9 @@ public:
                             GrGLenum* internalFormat, GrGLenum* externalFormat,
                             GrGLenum* externalType) const;
 
+    bool getCompressedTexImageFormats(GrPixelConfig surfaceConfig, GrGLenum* internalFormat) const;
+
+
     bool getReadPixelsFormat(GrPixelConfig surfaceConfig, GrPixelConfig externalConfig,
                              GrGLenum* externalFormat, GrGLenum* externalType) const;
 
@@ -265,9 +268,6 @@ public:
     bool unpackRowLengthSupport() const { return fUnpackRowLengthSupport; }
 
     
-    bool unpackFlipYSupport() const { return fUnpackFlipYSupport; }
-
-    
     bool packRowLengthSupport() const { return fPackRowLengthSupport; }
 
     
@@ -311,7 +311,6 @@ public:
     
     bool useNonVBOVertexAndIndexDynamicData() const { return fUseNonVBOVertexAndIndexDynamicData; }
 
-    bool surfaceSupportsWritePixels(const GrSurface*) const override;
     bool surfaceSupportsReadPixels(const GrSurface*) const override;
     GrColorType supportedReadPixelsColorType(GrPixelConfig, GrColorType) const override;
 
@@ -360,14 +359,6 @@ public:
     bool drawArraysBaseVertexIsBroken() const { return fDrawArraysBaseVertexIsBroken; }
 
     
-    bool useDrawToClearColor() const { return fUseDrawToClearColor; }
-
-    
-    
-    
-    bool useDrawToClearStencilClip() const { return fUseDrawToClearStencilClip; }
-
-    
     
     bool disallowTexSubImageForUnormConfigTexturesEverBoundToFBO() const {
         return fDisallowTexSubImageForUnormConfigTexturesEverBoundToFBO;
@@ -386,14 +377,14 @@ public:
     }
 
     
-    
-    bool requiresFlushBetweenNonAndInstancedDraws() const {
-        return fRequiresFlushBetweenNonAndInstancedDraws;
+    bool detachStencilFromMSAABuffersBeforeReadPixels() const {
+        return fDetachStencilFromMSAABuffersBeforeReadPixels;
     }
 
     
-    bool detachStencilFromMSAABuffersBeforeReadPixels() const {
-        return fDetachStencilFromMSAABuffersBeforeReadPixels;
+    
+    bool dontSetBaseOrMaxLevelForExternalTextures() const {
+        return fDontSetBaseOrMaxLevelForExternalTextures;
     }
 
     
@@ -419,23 +410,23 @@ public:
                        const SkIRect& srcRect, const SkIPoint& dstPoint) const;
     bool canCopyAsDraw(GrPixelConfig dstConfig, bool srcIsTextureable) const;
 
-    bool canCopySurface(const GrSurfaceProxy* dst, const GrSurfaceProxy* src,
-                        const SkIRect& srcRect, const SkIPoint& dstPoint) const override;
-
     bool initDescForDstCopy(const GrRenderTargetProxy* src, GrSurfaceDesc* desc, GrSurfaceOrigin*,
                             bool* rectsMustMatch, bool* disallowSubrect) const override;
 
-    bool programBinarySupport() const {
-        return fProgramBinarySupport;
-    }
+    bool programBinarySupport() const { return fProgramBinarySupport; }
 
-    bool validateBackendTexture(const GrBackendTexture&, SkColorType,
-                                GrPixelConfig*) const override;
-    bool validateBackendRenderTarget(const GrBackendRenderTarget&, SkColorType,
-                                     GrPixelConfig*) const override;
+    bool samplerObjectSupport() const { return fSamplerObjectSupport; }
 
-    bool getConfigFromBackendFormat(const GrBackendFormat&, SkColorType,
-                                    GrPixelConfig*) const override;
+    bool fbFetchRequiresEnablePerSample() const { return fFBFetchRequiresEnablePerSample; }
+
+    GrPixelConfig validateBackendRenderTarget(const GrBackendRenderTarget&,
+                                              SkColorType) const override;
+
+    GrPixelConfig getConfigFromBackendFormat(const GrBackendFormat&, SkColorType) const override;
+    GrPixelConfig getYUVAConfigFromBackendFormat(const GrBackendFormat&) const override;
+
+    GrBackendFormat getBackendFormatFromGrColorType(GrColorType ct,
+                                                    GrSRGBEncoded srgbEncoded) const override;
 
 #if GR_TEST_UTILS
     GrGLStandard standard() const { return fStandard; }
@@ -462,10 +453,6 @@ private:
 
     void onApplyOptionsOverrides(const GrContextOptions& options) override;
 
-#ifdef GR_TEST_UTILS
-    GrBackendFormat onCreateFormatFromBackendTexture(const GrBackendTexture&) const override;
-#endif
-
     bool onIsWindowRectanglesSupportedForRT(const GrBackendRenderTarget&) const override;
 
     void initFSAASupport(const GrContextOptions& contextOptions, const GrGLContextInfo&,
@@ -475,6 +462,9 @@ private:
     
     void initConfigTable(const GrContextOptions&, const GrGLContextInfo&, const GrGLInterface*,
                          GrShaderCaps*);
+    bool onSurfaceSupportsWritePixels(const GrSurface*) const override;
+    bool onCanCopySurface(const GrSurfaceProxy* dst, const GrSurfaceProxy* src,
+                          const SkIRect& srcRect, const SkIPoint& dstPoint) const override;
 
     GrGLStandard fStandard;
 
@@ -488,7 +478,6 @@ private:
     TransferBufferType  fTransferBufferType;
 
     bool fUnpackRowLengthSupport : 1;
-    bool fUnpackFlipYSupport : 1;
     bool fPackRowLengthSupport : 1;
     bool fPackFlipYSupport : 1;
     bool fTextureUsageSupport : 1;
@@ -515,18 +504,18 @@ private:
     bool fUseBufferDataNullHint                : 1;
     bool fClearTextureSupport : 1;
     bool fProgramBinarySupport : 1;
+    bool fSamplerObjectSupport : 1;
+    bool fFBFetchRequiresEnablePerSample : 1;
 
     
     bool fDoManualMipmapping : 1;
     bool fClearToBoundaryValuesIsBroken : 1;
     bool fDrawArraysBaseVertexIsBroken : 1;
-    bool fUseDrawToClearColor : 1;
-    bool fUseDrawToClearStencilClip : 1;
     bool fDisallowTexSubImageForUnormConfigTexturesEverBoundToFBO : 1;
     bool fUseDrawInsteadOfAllRenderTargetWrites : 1;
     bool fRequiresCullFaceEnableDisableWhenDrawingLinesAfterNonLines : 1;
-    bool fRequiresFlushBetweenNonAndInstancedDraws : 1;
     bool fDetachStencilFromMSAABuffersBeforeReadPixels : 1;
+    bool fDontSetBaseOrMaxLevelForExternalTextures : 1;
     int fMaxInstancesPerDrawWithoutCrashing;
 
     uint32_t fBlitFramebufferFlags;

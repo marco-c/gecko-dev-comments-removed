@@ -23,6 +23,10 @@
 #endif
 
 
+bool sk_select_xform_format(SkColorType colorType, bool forColorTable,
+                            skcms_PixelFormat* outFormat);
+
+
 static inline float get_scale_from_sample_size(int sampleSize) {
     return 1.0f / ((float) sampleSize);
 }

@@ -14,10 +14,10 @@
 
 class GrCaps;
 class GrClip;
-class GrContext;
 class GrFixedClip;
 class GrHardClip;
 class GrPaint;
+class GrRecordingContext;
 class GrRenderTargetContext;
 class GrShape;
 class GrStyle;
@@ -80,6 +80,7 @@ public:
         const SkMatrix*             fViewMatrix;
         const GrShape*              fShape;
         GrAAType                    fAAType;
+        bool                        fTargetIsWrappedVkSecondaryCB;
 
         
         bool                        fHasUserStencilSettings;
@@ -105,7 +106,7 @@ public:
     }
 
     struct DrawPathArgs {
-        GrContext*                   fContext;
+        GrRecordingContext*          fContext;
         GrPaint&&                    fPaint;
         const GrUserStencilSettings* fUserStencilSettings;
         GrRenderTargetContext*       fRenderTargetContext;
@@ -139,7 +140,7 @@ public:
     struct StencilPathArgs {
         SkDEBUGCODE(StencilPathArgs() { memset(this, 0, sizeof(*this)); }) 
 
-        GrContext*             fContext;
+        GrRecordingContext*    fContext;
         GrRenderTargetContext* fRenderTargetContext;
         const GrHardClip*      fClip;
         const SkIRect*         fClipConservativeBounds;

@@ -7,9 +7,9 @@
 
 #include "SkPDFMakeCIDGlyphWidthsArray.h"
 
-#include "SkBitSet.h"
-#include "SkGlyphCache.h"
+#include "SkPDFGlyphUse.h"
 #include "SkPaint.h"
+#include "SkStrike.h"
 #include "SkTo.h"
 
 #include <vector>
@@ -121,7 +121,7 @@ static void compose_advance_data(const AdvanceMetric& range,
             break;
         }
         case AdvanceMetric::kRange: {
-            auto advanceArray = sk_make_sp<SkPDFArray>();
+            auto advanceArray = SkPDFMakeArray();
             for (size_t j = 0; j < range.fAdvance.size(); j++)
                 advanceArray->appendScalar(
                         scale_from_font_units(range.fAdvance[j], emSize));
@@ -143,10 +143,10 @@ static void compose_advance_data(const AdvanceMetric& range,
 
 
 
-sk_sp<SkPDFArray> SkPDFMakeCIDGlyphWidthsArray(SkGlyphCache* cache,
-                                               const SkBitSet* subset,
-                                               uint16_t emSize,
-                                               int16_t* defaultAdvance) {
+std::unique_ptr<SkPDFArray> SkPDFMakeCIDGlyphWidthsArray(SkStrike* cache,
+                                                         const SkPDFGlyphUse* subset,
+                                                         uint16_t emSize,
+                                                         int16_t* defaultAdvance) {
     
     
     
@@ -162,7 +162,7 @@ sk_sp<SkPDFArray> SkPDFMakeCIDGlyphWidthsArray(SkGlyphCache* cache,
     
     
 
-    auto result = sk_make_sp<SkPDFArray>();
+    auto result = SkPDFMakeArray();
     int num_glyphs = SkToInt(cache->getGlyphCount());
 
     bool prevRange = false;

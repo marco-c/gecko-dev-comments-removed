@@ -86,6 +86,15 @@ public:
     }
 
     
+    
+    T findOrNull(const K& key) const {
+        if (T* p = this->find(key)) {
+            return *p;
+        }
+        return nullptr;
+    }
+
+    
     void remove(const K& key) {
         SkASSERT(this->find(key));
 

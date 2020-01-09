@@ -8,13 +8,10 @@
 #ifndef SkRegionPriv_DEFINED
 #define SkRegionPriv_DEFINED
 
-#include "SkRegion.h"
-
-#include "SkAtomics.h"
 #include "SkMalloc.h"
+#include "SkRegion.h"
 #include "SkTo.h"
-
-
+#include <atomic>
 #include <functional>
 
 class SkRegionPriv {
@@ -41,8 +38,6 @@ inline bool SkRegionValueIsSentinel(int32_t value) {
 
 #define assert_sentinel(value, isSentinel) \
     SkASSERT(SkRegionValueIsSentinel(value) == isSentinel)
-
-
 
 #ifdef SK_DEBUG
 
@@ -86,9 +81,6 @@ public:
     }
 
     static RunHead* Alloc(int count) {
-        
-        
-
         if (count < SkRegion::kRectRegionRuns) {
             return nullptr;
         }
@@ -131,7 +123,6 @@ public:
     RunHead* ensureWritable() {
         RunHead* writable = this;
         if (fRefCnt > 1) {
-            
             
             
             writable = Alloc(fRunCount, fYSpanCount, fIntervalCount);

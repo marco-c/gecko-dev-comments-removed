@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+#ifndef GrMtlCppUtil_DEFINED
+#define GrMtlCppUtil_DEFINED
+
+#include "mtl/GrMtlTypes.h"
+
+
+
+GrMTLPixelFormat GrGetMTLPixelFormatFromMtlTextureInfo(const GrMtlTextureInfo&);
+
+
+#endif

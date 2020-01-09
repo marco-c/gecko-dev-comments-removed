@@ -176,7 +176,7 @@ public:
 
     static sk_sp<SkTypeface> MakeDeserialize(SkStream*);
 
-    enum Encoding {
+    enum Encoding : uint8_t {
         kUTF8_Encoding,
         kUTF16_Encoding,
         kUTF32_Encoding
@@ -200,6 +200,14 @@ public:
 
     int charsToGlyphs(const void* chars, Encoding encoding, SkGlyphID glyphs[],
                       int glyphCount) const;
+
+    
+
+
+
+
+
+    SkGlyphID unicharToGlyph(SkUnichar unichar) const;
 
     
 
@@ -306,7 +314,7 @@ public:
 
 
 
-    SkStreamAsset* openStream(int* ttcIndex) const;
+    std::unique_ptr<SkStreamAsset> openStream(int* ttcIndex) const;
 
     
 
@@ -378,7 +386,7 @@ protected:
     
     virtual void getGlyphToUnicodeMap(SkUnichar* dstArray) const;
 
-    virtual SkStreamAsset* onOpenStream(int* ttcIndex) const = 0;
+    virtual std::unique_ptr<SkStreamAsset> onOpenStream(int* ttcIndex) const = 0;
     
     virtual std::unique_ptr<SkFontData> onMakeFontData() const;
 
@@ -432,7 +440,10 @@ private:
     };
     static SkFontStyle FromOldStyle(Style oldStyle);
     static SkTypeface* GetDefaultTypeface(Style style = SkTypeface::kNormal);
+
+    friend class SkFontPriv;       
     friend class SkPaintPriv;      
+    friend class SkFont;           
 
 private:
     SkFontID            fUniqueID;

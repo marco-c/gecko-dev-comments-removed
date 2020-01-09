@@ -45,6 +45,10 @@ protected:
 
     bool onDimensionsSupported(const SkISize&) override;
 
+    
+    
+    bool usesColorXform() const override { return false; }
+
 private:
 
     

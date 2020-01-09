@@ -22,6 +22,7 @@
 #include "SkBlendMode.h"
 #include "SkClipOp.h"
 #include "SkDeque.h"
+#include "SkFontTypes.h"
 #include "SkPaint.h"
 #include "SkRasterHandleAllocator.h"
 #include "SkSurfaceProps.h"
@@ -36,10 +37,10 @@ class SkData;
 class SkDraw;
 class SkDrawable;
 struct SkDrawShadowRec;
+class SkFont;
 class SkGlyphRunBuilder;
 class SkImage;
 class SkImageFilter;
-class SkMetaData;
 class SkPath;
 class SkPicture;
 class SkPixmap;
@@ -181,6 +182,8 @@ public:
     explicit SkCanvas(const SkBitmap& bitmap);
 
 #ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
+    
+
     enum class ColorBehavior {
         kLegacy, 
     };
@@ -212,13 +215,6 @@ public:
 
 
     virtual ~SkCanvas();
-
-    
-
-
-
-
-    SkMetaData& getMetaData();
 
     
 
@@ -568,33 +564,6 @@ public:
 
 
 
-
-
-
-
-
-    int saveLayerPreserveLCDTextRequests(const SkRect* bounds, const SkPaint* paint);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     int saveLayerAlpha(const SkRect* bounds, U8CPU alpha);
 
     
@@ -603,7 +572,7 @@ public:
 
 
     enum SaveLayerFlagsSet {
-        kPreserveLCDText_SaveLayerFlag  = 1 << 1, 
+        kPreserveLCDText_SaveLayerFlag  = 1 << 1,
         kInitWithPrevious_SaveLayerFlag = 1 << 2, 
         kMaskAgainstCoverage_EXPERIMENTAL_DONT_USE_SaveLayerFlag =
                                           1 << 3, 
@@ -649,6 +618,9 @@ public:
 
 
 
+
+
+
         SaveLayerRec(const SkRect* bounds, const SkPaint* paint, const SkImageFilter* backdrop,
                      SaveLayerFlags saveLayerFlags)
             : fBounds(bounds)
@@ -658,6 +630,8 @@ public:
         {}
 
         
+
+
 
 
 
@@ -693,6 +667,11 @@ public:
         const SkPaint*       fPaint          = nullptr;
 
         
+
+
+
+
+
         const SkImageFilter* fBackdrop       = nullptr;
 
         
@@ -1337,18 +1316,10 @@ public:
 
 
 
-
-
-
-
     void drawImage(const SkImage* image, SkScalar left, SkScalar top,
                    const SkPaint* paint = nullptr);
 
     
-
-
-
-
 
 
 
@@ -1402,11 +1373,19 @@ public:
 
 
 
+
+
+
+
     void drawImageRect(const SkImage* image, const SkRect& src, const SkRect& dst,
                        const SkPaint* paint,
                        SrcRectConstraint constraint = kStrict_SrcRectConstraint);
 
     
+
+
+
+
 
 
 
@@ -1454,9 +1433,7 @@ public:
 
 
 
-
-    void drawImageRect(const SkImage* image, const SkRect& dst, const SkPaint* paint,
-                       SrcRectConstraint constraint = kStrict_SrcRectConstraint);
+    void drawImageRect(const SkImage* image, const SkRect& dst, const SkPaint* paint);
 
     
 
@@ -1509,6 +1486,10 @@ public:
 
 
 
+
+
+
+
     void drawImageRect(const sk_sp<SkImage>& image, const SkIRect& isrc, const SkRect& dst,
                        const SkPaint* paint,
                        SrcRectConstraint constraint = kStrict_SrcRectConstraint) {
@@ -1536,9 +1517,11 @@ public:
 
 
 
-    void drawImageRect(const sk_sp<SkImage>& image, const SkRect& dst, const SkPaint* paint,
-                       SrcRectConstraint constraint = kStrict_SrcRectConstraint) {
-        this->drawImageRect(image.get(), dst, paint, constraint);
+
+
+
+    void drawImageRect(const sk_sp<SkImage>& image, const SkRect& dst, const SkPaint* paint) {
+        this->drawImageRect(image.get(), dst, paint);
     }
 
     
@@ -1823,6 +1806,26 @@ public:
     
 
 
+    enum QuadAAFlags : unsigned {
+        kLeft_QuadAAFlag    = 0b0001,
+        kTop_QuadAAFlag     = 0b0010,
+        kRight_QuadAAFlag   = 0b0100,
+        kBottom_QuadAAFlag  = 0b1000,
+
+        kNone_QuadAAFlags   = 0b0000,
+        kAll_QuadAAFlags    = 0b1111,
+    };
+
+    
+    struct ImageSetEntry {
+        sk_sp<const SkImage> fImage;
+        SkRect fSrcRect;
+        SkRect fDstRect;
+        float fAlpha;
+        unsigned fAAFlags;  
+    };
+
+    
 
 
 
@@ -1830,17 +1833,18 @@ public:
 
 
 
+    void experimental_DrawImageSetV1(const ImageSetEntry imageSet[], int cnt,
+                                     SkFilterQuality quality, SkBlendMode mode);
+
+    
 
 
 
 
 
 
-
-
-
-    void drawText(const void* text, size_t byteLength, SkScalar x, SkScalar y,
-                  const SkPaint& paint);
+    void experimental_DrawEdgeAARectV1(const SkRect& r, QuadAAFlags edgeAA, SkColor color,
+                                       SkBlendMode mode);
 
     
 
@@ -1863,11 +1867,44 @@ public:
 
 
 
-    void drawString(const char* string, SkScalar x, SkScalar y, const SkPaint& paint) {
-        if (!string) {
-            return;
-        }
-        this->drawText(string, strlen(string), x, y, paint);
+
+
+
+
+
+
+    void drawSimpleText(const void* text, size_t byteLength, SkTextEncoding encoding,
+                        SkScalar x, SkScalar y, const SkFont& font, const SkPaint& paint);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    void drawString(const char str[], SkScalar x, SkScalar y, const SkFont& font,
+                    const SkPaint& paint) {
+        this->drawSimpleText(str, strlen(str), kUTF8_SkTextEncoding, x, y, font, paint);
     }
 
     
@@ -1891,80 +1928,15 @@ public:
 
 
 
-    void drawString(const SkString& string, SkScalar x, SkScalar y, const SkPaint& paint);
 
-    
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    void drawPosText(const void* text, size_t byteLength, const SkPoint pos[],
-                     const SkPaint& paint);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    void drawPosTextH(const void* text, size_t byteLength, const SkScalar xpos[], SkScalar constY,
-                      const SkPaint& paint);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    void drawTextRSXform(const void* text, size_t byteLength, const SkRSXform xform[],
-                         const SkRect* cullRect, const SkPaint& paint);
+    void drawString(const SkString& str, SkScalar x, SkScalar y, const SkFont& font,
+                    const SkPaint& paint) {
+        this->drawSimpleText(str.c_str(), str.size(), kUTF8_SkTextEncoding, x, y, font, paint);
+    }
 
     
 
@@ -2392,6 +2364,8 @@ protected:
     virtual SaveLayerStrategy getSaveLayerStrategy(const SaveLayerRec& ) {
         return kFullLayer_SaveLayerStrategy;
     }
+    
+    virtual bool onDoSaveBehind(const SkRect*) { return true; }
     virtual void willRestore() {}
     virtual void didRestore() {}
     virtual void didConcat(const SkMatrix& ) {}
@@ -2405,6 +2379,8 @@ protected:
     
     virtual void onDrawPaint(const SkPaint& paint);
     virtual void onDrawRect(const SkRect& rect, const SkPaint& paint);
+    virtual void onDrawEdgeAARect(const SkRect& rect, QuadAAFlags edgeAA, SkColor color,
+                                  SkBlendMode mode);
     virtual void onDrawRRect(const SkRRect& rrect, const SkPaint& paint);
     virtual void onDrawDRRect(const SkRRect& outer, const SkRRect& inner, const SkPaint& paint);
     virtual void onDrawOval(const SkRect& rect, const SkPaint& paint);
@@ -2413,15 +2389,6 @@ protected:
     virtual void onDrawPath(const SkPath& path, const SkPaint& paint);
     virtual void onDrawRegion(const SkRegion& region, const SkPaint& paint);
 
-    virtual void onDrawText(const void* text, size_t byteLength, SkScalar x,
-                            SkScalar y, const SkPaint& paint);
-    virtual void onDrawPosText(const void* text, size_t byteLength,
-                               const SkPoint pos[], const SkPaint& paint);
-    virtual void onDrawPosTextH(const void* text, size_t byteLength,
-                                const SkScalar xpos[], SkScalar constY,
-                                const SkPaint& paint);
-    virtual void onDrawTextRSXform(const void* text, size_t byteLength, const SkRSXform xform[],
-                                   const SkRect* cullRect, const SkPaint& paint);
     virtual void onDrawTextBlob(const SkTextBlob* blob, SkScalar x, SkScalar y,
                                 const SkPaint& paint);
 
@@ -2445,6 +2412,9 @@ protected:
                                  const SkPaint* paint);
     virtual void onDrawImageLattice(const SkImage* image, const Lattice& lattice, const SkRect& dst,
                                     const SkPaint* paint);
+
+    virtual void onDrawImageSet(const ImageSetEntry imageSet[], int count, SkFilterQuality,
+                                SkBlendMode);
 
     virtual void onDrawBitmap(const SkBitmap& bitmap, SkScalar dx, SkScalar dy,
                               const SkPaint* paint);
@@ -2567,7 +2537,6 @@ private:
 
     int         fSaveCount;         
 
-    SkMetaData* fMetaData;
     std::unique_ptr<SkRasterHandleAllocator> fAllocator;
 
     SkSurface_Base*  fSurfaceBase;
@@ -2594,7 +2563,7 @@ private:
     friend class SkPictureRecord;   
     friend class SkOverdrawCanvas;
     friend class SkRasterHandleAllocator;
-
+    friend class ClipTileRenderer;  
 protected:
     
     SkCanvas(const SkIRect& bounds);
@@ -2606,6 +2575,16 @@ private:
     SkCanvas(const SkCanvas&) = delete;
     SkCanvas& operator=(SkCanvas&&) = delete;
     SkCanvas& operator=(const SkCanvas&) = delete;
+
+    
+
+
+
+
+
+
+
+    int only_axis_aligned_saveBehind(const SkRect* subset);
 
     void resetForNextPicture(const SkIRect& bounds);
 
@@ -2630,6 +2609,7 @@ private:
                                 SrcRectConstraint);
     void internalDrawPaint(const SkPaint& paint);
     void internalSaveLayer(const SaveLayerRec&, SaveLayerStrategy);
+    void internalSaveBehind(const SkRect*);
     void internalDrawDevice(SkBaseDevice*, int x, int y, const SkPaint*, SkImage* clipImage,
                             const SkMatrix& clipMatrix);
 
@@ -2743,6 +2723,8 @@ private:
     SkAutoCanvasRestore& operator=(SkAutoCanvasRestore&&) = delete;
     SkAutoCanvasRestore& operator=(const SkAutoCanvasRestore&) = delete;
 };
+
+
 #define SkAutoCanvasRestore(...) SK_REQUIRE_LOCAL_VAR(SkAutoCanvasRestore)
 
 #endif

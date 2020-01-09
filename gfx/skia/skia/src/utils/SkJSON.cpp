@@ -8,8 +8,10 @@
 #include "SkJSON.h"
 
 #include "SkMalloc.h"
+#include "SkParse.h"
 #include "SkStream.h"
 #include "SkString.h"
+#include "SkUTF.h"
 
 #include <cmath>
 #include <tuple>
@@ -237,7 +239,7 @@ static constexpr uint8_t g_token_flags[256] = {
     3,   1,   4,   1,   1,   1,   1,   1,     1,   1,   1,   1,   1,   1,   0x11,1, 
  0x19,0x19,0x19,0x19,0x19,0x19,0x19,0x19,  0x19,0x19,   1,   1,   1,   1,   1,   1, 
     1,   1,   1,   1,   1,   0x11,1,   1,     1,   1,   1,   1,   1,   1,   1,   1, 
-    1,   1,   1,   1,   1,   1,   1,   1,     1,   1,   1,   1,   0,0x25,   1,   1, 
+    1,   1,   1,   1,   1,   1,   1,   1,     1,   1,   1,   1,   4,0x25,   1,   1, 
     1,   1,   1,   1,   1,   0x11,1,   1,     1,   1,   1,   1,   1,   1,   1,   1, 
     1,   1,   1,   1,   1,   1,   1,   1,     1,   1,   1,   1,   1,0x25,   1,   1, 
 
@@ -286,6 +288,7 @@ public:
     explicit DOMParser(SkArenaAlloc& alloc)
         : fAlloc(alloc) {
         fValueStack.reserve(kValueStackReserve);
+        fUnescapeBuffer.reserve(kUnescapeBufferReserve);
     }
 
     const Value parse(const char* p, size_t size) {
@@ -461,6 +464,10 @@ private:
     std::vector<Value>    fValueStack;
 
     
+    static constexpr size_t kUnescapeBufferReserve = 512;
+    std::vector<char>     fUnescapeBuffer;
+
+    
     
     
     
@@ -626,28 +633,98 @@ private:
         return this->error(nullptr, p, "invalid token");
     }
 
+    const std::vector<char>* unescapeString(const char* begin, const char* end) {
+        fUnescapeBuffer.clear();
+
+        for (const auto* p = begin; p != end; ++p) {
+            if (*p != '\\') {
+                fUnescapeBuffer.push_back(*p);
+                continue;
+            }
+
+            if (++p == end) {
+                return nullptr;
+            }
+
+            switch (*p) {
+            case  '"': fUnescapeBuffer.push_back( '"'); break;
+            case '\\': fUnescapeBuffer.push_back('\\'); break;
+            case  '/': fUnescapeBuffer.push_back( '/'); break;
+            case  'b': fUnescapeBuffer.push_back('\b'); break;
+            case  'f': fUnescapeBuffer.push_back('\f'); break;
+            case  'n': fUnescapeBuffer.push_back('\n'); break;
+            case  'r': fUnescapeBuffer.push_back('\r'); break;
+            case  't': fUnescapeBuffer.push_back('\t'); break;
+            case  'u': {
+                if (p + 4 >= end) {
+                    return nullptr;
+                }
+
+                uint32_t hexed;
+                const char hex_str[] = {p[1], p[2], p[3], p[4], '\0'};
+                const auto* eos = SkParse::FindHex(hex_str, &hexed);
+                if (!eos || *eos) {
+                    return nullptr;
+                }
+
+                char utf8[SkUTF::kMaxBytesInUTF8Sequence];
+                const auto utf8_len = SkUTF::ToUTF8(SkTo<SkUnichar>(hexed), utf8);
+                fUnescapeBuffer.insert(fUnescapeBuffer.end(), utf8, utf8 + utf8_len);
+                p += 4;
+            } break;
+            default: return nullptr;
+            }
+        }
+
+        return &fUnescapeBuffer;
+    }
+
     template <typename MatchFunc>
     const char* matchString(const char* p, const char* p_stop, MatchFunc&& func) {
         SkASSERT(*p == '"');
         const auto* s_begin = p + 1;
-
-        
+        bool requires_unescape = false;
 
         do {
+            
             
             for (p = p + 1; !is_eostring(*p); ++p);
 
             if (*p == '"') {
                 
-                func(s_begin, p - s_begin, p_stop);
+                if (!requires_unescape) {
+                    func(s_begin, p - s_begin, p_stop);
+                } else {
+                    
+                    
+                    const auto* buf = this->unescapeString(s_begin, p);
+                    if (!buf) {
+                        break;
+                    }
+
+                    SkASSERT(!buf->empty());
+                    func(buf->data(), buf->size(), buf->data() + buf->size() - 1);
+                }
                 return p + 1;
+            }
+
+            if (*p == '\\') {
+                requires_unescape = true;
+                ++p;
+                continue;
             }
 
             
             
             
             
-        } while (is_eoscope(*p) && (p != p_stop)); 
+            if (is_eoscope(*p)) {
+                continue;
+            }
+
+            
+            break;
+        } while (p != p_stop);
 
         
         return this->error(nullptr, s_begin - 1, "invalid string");
@@ -663,13 +740,14 @@ private:
             f = f * 10.f + (*p++ - '0'); --exp;
         }
 
-        if (is_numeric(*p)) {
-            SkASSERT(*p == '.' || *p == 'e' || *p == 'E');
+        const auto decimal_scale = pow10(exp);
+        if (is_numeric(*p) || !decimal_scale) {
+            SkASSERT((*p == '.' || *p == 'e' || *p == 'E') || !decimal_scale);
             
             return nullptr;
         }
 
-        this->pushFloat(sign * f * pow10(exp));
+        this->pushFloat(sign * f * decimal_scale);
 
         return p;
     }

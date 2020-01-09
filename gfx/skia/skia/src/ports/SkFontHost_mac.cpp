@@ -28,6 +28,7 @@
 #include "SkEndian.h"
 #include "SkFloatingPoint.h"
 #include "SkFontDescriptor.h"
+#include "SkFontMetrics.h"
 #include "SkFontMgr.h"
 #include "SkGlyph.h"
 #include "SkMakeUnique.h"
@@ -728,7 +729,7 @@ public:
 
 protected:
     int onGetUPEM() const override;
-    SkStreamAsset* onOpenStream(int* ttcIndex) const override;
+    std::unique_ptr<SkStreamAsset> onOpenStream(int* ttcIndex) const override;
     std::unique_ptr<SkFontData> onMakeFontData() const override;
     int onGetVariationDesignPosition(SkFontArguments::VariationPosition::Coordinate coordinates[],
                                      int coordinateCount) const override;
@@ -768,9 +769,10 @@ static sk_sp<SkTypeface> create_from_CTFontRef(SkUniqueCFRef<CTFontRef> font,
     SkASSERT(font);
 
     if (!isLocalStream) {
-        SkTypeface* face = SkTypefaceCache::FindByProcAndRef(find_by_CTFontRef, (void*)font.get());
+        sk_sp<SkTypeface> face = SkTypefaceCache::FindByProcAndRef(find_by_CTFontRef,
+                                                                   (void*)font.get());
         if (face) {
-            return sk_sp<SkTypeface>(face);
+            return face;
         }
     }
 
@@ -779,12 +781,12 @@ static sk_sp<SkTypeface> create_from_CTFontRef(SkUniqueCFRef<CTFontRef> font,
     CTFontSymbolicTraits traits = CTFontGetSymbolicTraits(font.get());
     bool isFixedPitch = SkToBool(traits & kCTFontMonoSpaceTrait);
 
-    SkTypeface* face = new SkTypeface_Mac(std::move(font), std::move(resource),
-                                          style, isFixedPitch, isLocalStream);
+    sk_sp<SkTypeface> face(new SkTypeface_Mac(std::move(font), std::move(resource),
+                                              style, isFixedPitch, isLocalStream));
     if (!isLocalStream) {
         SkTypefaceCache::Add(face);
     }
-    return sk_sp<SkTypeface>(face);
+    return face;
 }
 
 
@@ -824,7 +826,7 @@ static SkUniqueCFRef<CTFontDescriptorRef> create_descriptor(const char familyNam
         CFDictionaryAddValue(cfTraits.get(), kCTFontWeightTrait, cfFontWeight.get());
     }
     
-    CGFloat ctWidth = fontstyle_to_ct_width(style.weight());
+    CGFloat ctWidth = fontstyle_to_ct_width(style.width());
     SkUniqueCFRef<CFNumberRef> cfFontWidth(
             CFNumberCreate(kCFAllocatorDefault, kCFNumberCGFloatType, &ctWidth));
     if (cfFontWidth) {
@@ -907,13 +909,10 @@ protected:
     void generateMetrics(SkGlyph* glyph) override;
     void generateImage(const SkGlyph& glyph) override;
     bool generatePath(SkGlyphID glyph, SkPath* path) override;
-    void generateFontMetrics(SkPaint::FontMetrics*) override;
+    void generateFontMetrics(SkFontMetrics*) override;
 
 private:
     static void CTPathElement(void *info, const CGPathElement *element);
-
-    
-    void getVerticalOffset(CGGlyph glyphID, SkPoint* offset) const;
 
     Offscreen fOffscreen;
 
@@ -944,7 +943,6 @@ private:
     SkUniqueCFRef<CGFontRef> fCGFont;
     uint16_t fGlyphCount;
     const bool fDoSubPosition;
-    const bool fVertical;
 
     friend class Offscreen;
 
@@ -1049,7 +1047,6 @@ SkScalerContext_Mac::SkScalerContext_Mac(sk_sp<SkTypeface_Mac> typeface,
                                          const SkDescriptor* desc)
         : INHERITED(std::move(typeface), effects, desc)
         , fDoSubPosition(SkToBool(fRec.fFlags & kSubpixelPositioning_Flag))
-        , fVertical(SkToBool(fRec.fFlags & kVertical_Flag))
 
 {
     AUTO_CG_LOCK();
@@ -1180,14 +1177,6 @@ CGRGBPixel* Offscreen::getCG(const SkScalerContext_Mac& context, const SkGlyph& 
         subY = SkFixedToFloat(glyph.getSubYFixed());
     }
 
-    
-    if (context.fVertical) {
-        SkPoint offset;
-        context.getVerticalOffset(glyphID, &offset);
-        subX += offset.fX;
-        subY += offset.fY;
-    }
-
     CGPoint point = CGPointMake(-glyph.fLeft + subX, glyph.fTop + glyph.fHeight - subY);
     
     
@@ -1203,17 +1192,6 @@ CGRGBPixel* Offscreen::getCG(const SkScalerContext_Mac& context, const SkGlyph& 
     SkASSERT(rowBytesPtr);
     *rowBytesPtr = rowBytes;
     return image;
-}
-
-void SkScalerContext_Mac::getVerticalOffset(CGGlyph glyphID, SkPoint* offset) const {
-    
-    CGSize cgVertOffset;
-    CTFontGetVerticalTranslationsForGlyphs(fCTFont.get(), &glyphID, &cgVertOffset, 1);
-    cgVertOffset = CGSizeApplyAffineTransform(cgVertOffset, fTransform);
-    SkPoint skVertOffset = { CGToScalar(cgVertOffset.width), CGToScalar(cgVertOffset.height) };
-    
-    skVertOffset.fY = -skVertOffset.fY;
-    *offset = skVertOffset;
 }
 
 unsigned SkScalerContext_Mac::generateGlyphCount(void) {
@@ -1251,17 +1229,8 @@ void SkScalerContext_Mac::generateMetrics(SkGlyph* glyph) {
 
     
     CGSize cgAdvance;
-    if (fVertical) {
-        CTFontGetAdvancesForGlyphs(fCTFont.get(), kCTFontOrientationVertical,
-                                   &cgGlyph, &cgAdvance, 1);
-        
-        using std::swap;
-        swap(cgAdvance.height, cgAdvance.width);
-        cgAdvance.height = -cgAdvance.height;
-    } else {
-        CTFontGetAdvancesForGlyphs(fCTFont.get(), kCTFontOrientationHorizontal,
-                                   &cgGlyph, &cgAdvance, 1);
-    }
+    CTFontGetAdvancesForGlyphs(fCTFont.get(), kCTFontOrientationHorizontal,
+                               &cgGlyph, &cgAdvance, 1);
     cgAdvance = CGSizeApplyAffineTransform(cgAdvance, fTransform);
     glyph->fAdvanceX =  CGToFloat(cgAdvance.width);
     glyph->fAdvanceY = -CGToFloat(cgAdvance.height);
@@ -1301,14 +1270,6 @@ void SkScalerContext_Mac::generateMetrics(SkGlyph* glyph) {
         
         skBounds = SkRect::MakeXYWH(cgBounds.origin.x, -cgBounds.origin.y - cgBounds.size.height,
                                     cgBounds.size.width, cgBounds.size.height);
-    }
-
-    if (fVertical) {
-        
-        
-        SkPoint offset;
-        this->getVerticalOffset(cgGlyph, &offset);
-        skBounds.offset(offset);
     }
 
     
@@ -1437,7 +1398,7 @@ void SkScalerContext_Mac::generateImage(const SkGlyph& glyph) {
     CGGlyph cgGlyph = SkTo<CGGlyph>(glyph.getGlyphID());
 
     
-    bool requestSmooth = fRec.getHinting() != SkPaint::kNo_Hinting;
+    bool requestSmooth = fRec.getHinting() != kNo_SkFontHinting;
     bool lightOnDark = (fRec.fFlags & SkScalerContext::kLightOnDark_Flag) != 0;
 
     
@@ -1580,15 +1541,10 @@ bool SkScalerContext_Mac::generatePath(SkGlyphID glyph, SkPath* path) {
         m.setScale(SkScalarInvert(scaleX), SkScalarInvert(scaleY));
         path->transform(m);
     }
-    if (fVertical) {
-        SkPoint offset;
-        getVerticalOffset(cgGlyph, &offset);
-        path->offset(offset.fX, offset.fY);
-    }
     return true;
 }
 
-void SkScalerContext_Mac::generateFontMetrics(SkPaint::FontMetrics* metrics) {
+void SkScalerContext_Mac::generateFontMetrics(SkFontMetrics* metrics) {
     if (nullptr == metrics) {
         return;
     }
@@ -1612,8 +1568,8 @@ void SkScalerContext_Mac::generateFontMetrics(SkPaint::FontMetrics* metrics) {
     metrics->fUnderlinePosition = -CGToScalar( CTFontGetUnderlinePosition(fCTFont.get()));
 
     metrics->fFlags = 0;
-    metrics->fFlags |= SkPaint::FontMetrics::kUnderlineThicknessIsValid_Flag;
-    metrics->fFlags |= SkPaint::FontMetrics::kUnderlinePositionIsValid_Flag;
+    metrics->fFlags |= SkFontMetrics::kUnderlineThicknessIsValid_Flag;
+    metrics->fFlags |= SkFontMetrics::kUnderlinePositionIsValid_Flag;
 
     
     
@@ -1910,7 +1866,7 @@ static SK_SFNT_ULONG get_font_type_tag(CTFontRef ctFont) {
     }
 }
 
-SkStreamAsset* SkTypeface_Mac::onOpenStream(int* ttcIndex) const {
+std::unique_ptr<SkStreamAsset> SkTypeface_Mac::onOpenStream(int* ttcIndex) const {
     SK_SFNT_ULONG fontType = get_font_type_tag(fFontRef.get());
 
     
@@ -1967,7 +1923,7 @@ SkStreamAsset* SkTypeface_Mac::onOpenStream(int* ttcIndex) const {
     }
 
     
-    SkMemoryStream* stream = new SkMemoryStream(totalSize);
+    std::unique_ptr<SkStreamAsset> stream(new SkMemoryStream(totalSize));
     char* dataStart = (char*)stream->getMemoryBase();
     sk_bzero(dataStart, totalSize);
     char* dataPtr = dataStart;
@@ -2345,7 +2301,7 @@ void SkTypeface_Mac::onFilterRec(SkScalerContextRec* rec) const {
         
         
         
-        rec->setHinting(SkPaint::kNormal_Hinting);
+        rec->setHinting(kNormal_SkFontHinting);
     }
 
     unsigned flagsWeDontSupport = SkScalerContext::kForceAutohinting_Flag  |
@@ -2354,19 +2310,20 @@ void SkTypeface_Mac::onFilterRec(SkScalerContextRec* rec) const {
 
     rec->fFlags &= ~flagsWeDontSupport;
 
-    SmoothBehavior smoothBehavior = smooth_behavior();
+    const SmoothBehavior smoothBehavior = smooth_behavior();
 
     
     
     
-    
-    SkPaint::Hinting hinting = rec->getHinting();
-    if (SkPaint::kSlight_Hinting == hinting || smoothBehavior == SmoothBehavior::none) {
-        hinting = SkPaint::kNo_Hinting;
-    } else if (SkPaint::kFull_Hinting == hinting) {
-        hinting = SkPaint::kNormal_Hinting;
+    if (kSlight_SkFontHinting == rec->getHinting()) {
+        rec->setHinting(kNo_SkFontHinting);
+    } else if (kFull_SkFontHinting == rec->getHinting()) {
+        rec->setHinting(kNormal_SkFontHinting);
     }
-    rec->setHinting(hinting);
+    
+    if (smoothBehavior == SmoothBehavior::none) {
+        rec->setHinting(kNo_SkFontHinting);
+    }
 
     
     
@@ -2386,16 +2343,15 @@ void SkTypeface_Mac::onFilterRec(SkScalerContextRec* rec) const {
     
     
     
-
     if (rec->fMaskFormat == SkMask::kLCD16_Format) {
         if (smoothBehavior == SmoothBehavior::subpixel) {
             
             rec->fMaskFormat = SkMask::kLCD16_Format;
-            rec->setHinting(SkPaint::kNormal_Hinting);
+            rec->setHinting(kNormal_SkFontHinting);
         } else {
             rec->fMaskFormat = SkMask::kA8_Format;
-            if (smoothBehavior == SmoothBehavior::some) {
-                rec->setHinting(SkPaint::kNormal_Hinting);
+            if (smoothBehavior != SmoothBehavior::none) {
+                rec->setHinting(kNormal_SkFontHinting);
             }
         }
     }
@@ -2409,20 +2365,8 @@ void SkTypeface_Mac::onFilterRec(SkScalerContextRec* rec) const {
 
     
     
-    if (SkMask::kA8_Format == rec->fMaskFormat && SkPaint::kNo_Hinting == hinting) {
-#ifndef SK_GAMMA_APPLY_TO_A8
-        
-        rec->ignorePreBlend();
-#endif
-    } else {
-        
-        rec->setContrast(0);
-    }
-
-    
-    
     if (rec->fMaskFormat == SkMask::kLCD16_Format ||
-        (rec->fMaskFormat == SkMask::kA8_Format && rec->getHinting() != SkPaint::kNo_Hinting)) {
+        (rec->fMaskFormat == SkMask::kA8_Format && rec->getHinting() != kNo_SkFontHinting)) {
         SkColor color = rec->getLuminanceColor();
         int r = SkColorGetR(color);
         int g = SkColorGetG(color);
@@ -2432,6 +2376,37 @@ void SkTypeface_Mac::onFilterRec(SkScalerContextRec* rec) const {
         if (r >= 85 && g >= 85 && b >= 85 && r + g + b >= 2 * 255) {
             rec->fFlags |= SkScalerContext::kLightOnDark_Flag;
         }
+    }
+
+    
+    
+    if (SkMask::kA8_Format == rec->fMaskFormat && kNo_SkFontHinting == rec->getHinting()) {
+#ifndef SK_GAMMA_APPLY_TO_A8
+        
+        rec->ignorePreBlend();
+#endif
+    } else {
+#ifndef SK_IGNORE_MAC_BLENDING_MATCH_FIX
+        SkColor color = rec->getLuminanceColor();
+        if (smoothBehavior == SmoothBehavior::some) {
+            
+            
+            
+            color = SkColorSetRGB(SkColorGetR(color) * 1/2,
+                                  SkColorGetG(color) * 1/2,
+                                  SkColorGetB(color) * 1/2);
+        } else if (smoothBehavior == SmoothBehavior::subpixel) {
+            
+            
+            
+            color = SkColorSetRGB(SkColorGetR(color) * 3/4,
+                                  SkColorGetG(color) * 3/4,
+                                  SkColorGetB(color) * 3/4);
+        }
+        rec->setLuminanceColor(color);
+#endif
+        
+        rec->setContrast(0);
     }
 }
 

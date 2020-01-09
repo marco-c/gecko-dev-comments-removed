@@ -33,19 +33,6 @@ public:
 
 
     static void Color32(SkPMColor dst[], const SkPMColor src[], int count, SkPMColor color);
-
-    
-
-
-
-
-
-    static Proc32 PlatformProcs32(unsigned flags);
-
-private:
-    enum {
-        kFlags32_Mask = 3
-    };
 };
 
 #endif

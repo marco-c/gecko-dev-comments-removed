@@ -43,18 +43,21 @@ public:
         
 
 
+
         kClamp_TileMode,
 
         
+
+
         kRepeat_TileMode,
 
         
 
 
+
         kMirror_TileMode,
 
         
-
 
 
         kDecal_TileMode,
@@ -79,19 +82,6 @@ public:
 
 
     virtual bool isOpaque() const { return false; }
-
-#ifdef SK_SUPPORT_LEGACY_SHADER_ISABITMAP
-    
-
-
-
-
-    bool isABitmap(SkBitmap* outTexture, SkMatrix* outMatrix, TileMode xy[2]) const;
-
-    bool isABitmap() const {
-        return this->isABitmap(nullptr, nullptr, nullptr);
-    }
-#endif
 
     
 

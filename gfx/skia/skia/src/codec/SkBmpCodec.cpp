@@ -374,7 +374,7 @@ SkCodec::Result SkBmpCodec::ReadHeader(SkStream* stream, bool inIco,
                     
                     
                     
-                    SkASSERT(infoBytesRemaining > 52);
+                    SkASSERT(infoBytesRemaining >= 52);
                     inputMasks.alpha = get_int(iBuffer.get(), 48);
                     break;
                 case kOS2VX_BmpHeaderType:
@@ -520,7 +520,8 @@ SkCodec::Result SkBmpCodec::ReadHeader(SkStream* stream, bool inIco,
 
             if (codecOut) {
                 
-                std::unique_ptr<SkMasks> masks(SkMasks::CreateMasks(inputMasks, bitsPerPixel));
+                SkASSERT(bitsPerPixel % 8 == 0);
+                std::unique_ptr<SkMasks> masks(SkMasks::CreateMasks(inputMasks, bitsPerPixel/8));
                 if (nullptr == masks) {
                     SkCodecPrintf("Error: invalid input masks.\n");
                     return kInvalidInput;

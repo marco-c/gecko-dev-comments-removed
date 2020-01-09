@@ -473,9 +473,7 @@ public:
 
 
 
-    void allocPixelsFlags(const SkImageInfo& info, uint32_t flags) {
-        SkASSERT_RELEASE(this->tryAllocPixelsFlags(info, flags));
-    }
+    void allocPixelsFlags(const SkImageInfo& info, uint32_t flags);
 
     
 
@@ -511,9 +509,7 @@ public:
 
 
 
-    void allocPixels(const SkImageInfo& info, size_t rowBytes) {
-        SkASSERT_RELEASE(this->tryAllocPixels(info, rowBytes));
-    }
+    void allocPixels(const SkImageInfo& info, size_t rowBytes);
 
     
 
@@ -547,9 +543,7 @@ public:
 
 
 
-    void allocPixels(const SkImageInfo& info) {
-        this->allocPixels(info, info.minRowBytes());
-    }
+    void allocPixels(const SkImageInfo& info);
 
     
 
@@ -568,11 +562,7 @@ public:
 
 
 
-    bool SK_WARN_UNUSED_RESULT tryAllocN32Pixels(int width, int height, bool isOpaque = false) {
-        SkImageInfo info = SkImageInfo::MakeN32(width, height,
-                                            isOpaque ? kOpaque_SkAlphaType : kPremul_SkAlphaType);
-        return this->tryAllocPixels(info);
-    }
+    bool SK_WARN_UNUSED_RESULT tryAllocN32Pixels(int width, int height, bool isOpaque = false);
 
     
 
@@ -589,11 +579,7 @@ public:
 
 
 
-    void allocN32Pixels(int width, int height, bool isOpaque = false) {
-        SkImageInfo info = SkImageInfo::MakeN32(width, height,
-                                            isOpaque ? kOpaque_SkAlphaType : kPremul_SkAlphaType);
-        this->allocPixels(info);
-    }
+    void allocN32Pixels(int width, int height, bool isOpaque = false);
 
     
 
@@ -689,9 +675,7 @@ public:
 
 
 
-    void allocPixels() {
-        this->allocPixels((Allocator*)nullptr);
-    }
+    void allocPixels();
 
     
 
@@ -713,9 +697,7 @@ public:
 
 
 
-    void allocPixels(Allocator* allocator) {
-        SkASSERT_RELEASE(this->tryAllocPixels(allocator));
-    }
+    void allocPixels(Allocator* allocator);
 
     
 
@@ -1063,28 +1045,6 @@ public:
         return this->writePixels(src, 0, 0);
     }
 
-#ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
-    
-
-
-
-    bool hasHardwareMipMap() const {
-        return (fFlags & kHasHardwareMipMap_Flag) != 0;
-    }
-
-    
-
-
-
-    void setHasHardwareMipMap(bool hasHardwareMipMap) {
-        if (hasHardwareMipMap) {
-            fFlags |= kHasHardwareMipMap_Flag;
-        } else {
-            fFlags &= ~kHasHardwareMipMap_Flag;
-        }
-    }
-#endif
-
     
 
 
@@ -1188,13 +1148,6 @@ public:
 private:
     enum Flags {
         kImageIsVolatile_Flag   = 0x02,
-#ifdef SK_BUILD_FOR_ANDROID
-        
-
-
-
-        kHasHardwareMipMap_Flag = 0x08,
-#endif
     };
 
     sk_sp<SkPixelRef>   fPixelRef;

@@ -45,28 +45,6 @@ template <typename T> using result_of_t = typename std::result_of<T>::type;
 
 template <typename... T> using common_type_t = typename std::common_type<T...>::type;
 
-
-
-
-
-
-
-#define SK_GLIBCXX_4_7_0 20120322
-
-#define SK_GLIBCXX_4_5_4 20120702
-#define SK_GLIBCXX_4_6_4 20121127
-#if defined(__GLIBCXX__) && (__GLIBCXX__ <  SK_GLIBCXX_4_7_0 || \
-                             __GLIBCXX__ == SK_GLIBCXX_4_5_4 || \
-                             __GLIBCXX__ == SK_GLIBCXX_4_6_4)
-template <typename T> struct underlying_type {
-    using type = __underlying_type(T);
-};
-#else
-template <typename T> using underlying_type = std::underlying_type<T>;
-#endif
-template <typename T> using underlying_type_t = typename skstd::underlying_type<T>::type;
-
-
 template <std::size_t... Ints> struct index_sequence {
     using type = index_sequence;
     using value_type = size_t;

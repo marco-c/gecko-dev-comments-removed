@@ -18,7 +18,7 @@ class GrGLSLPrimitiveProcessor;
 class GrGLSLXferProcessor;
 class GrPipeline;
 class GrPrimitiveProcessor;
-class GrRenderTargetProxy;
+class GrRenderTarget;
 class GrTextureProxy;
 
 
@@ -118,7 +118,8 @@ public:
 
 
 
-    void updateUniformsAndTextureBindings(const GrPrimitiveProcessor&, const GrPipeline&,
+    void updateUniformsAndTextureBindings(const GrRenderTarget*, GrSurfaceOrigin,
+                                          const GrPrimitiveProcessor&, const GrPipeline&,
                                           const GrTextureProxy* const primitiveProcessorTextures[]);
 
     void updatePrimitiveProcessorTextureBindings(const GrPrimitiveProcessor&,
@@ -144,7 +145,7 @@ private:
     void setFragmentData(const GrPipeline&, int* nextTexSamplerIdx);
 
     
-    void setRenderTargetState(const GrPrimitiveProcessor&, const GrRenderTargetProxy*);
+    void setRenderTargetState(const GrRenderTarget*, GrSurfaceOrigin, const GrPrimitiveProcessor&);
 
     
     RenderTargetState fRenderTargetState;

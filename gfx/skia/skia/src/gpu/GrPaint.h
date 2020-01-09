@@ -47,13 +47,8 @@ public:
     
 
 
-    void setColor4f(const GrColor4f& color) { fColor = color; }
-    const GrColor4f& getColor4f() const { return fColor; }
-
-    
-
-
-    GrColor getColor() const { return fColor.toGrColor(); }
+    void setColor4f(const SkPMColor4f& color) { fColor = color; }
+    const SkPMColor4f& getColor4f() const { return fColor; }
 
     void setXPFactory(const GrXPFactory* xpFactory) {
         fXPFactory = xpFactory;
@@ -112,13 +107,17 @@ public:
 
 
 
-    bool isConstantBlendedColor(GrColor* constantColor) const;
+    bool isConstantBlendedColor(SkPMColor4f* constantColor) const;
 
     
 
 
 
     bool isTrivial() const { return fTrivial; }
+
+    friend void assert_alive(GrPaint& p) {
+        SkASSERT(p.fAlive);
+    }
 
 private:
     
@@ -132,7 +131,8 @@ private:
     SkSTArray<4, std::unique_ptr<GrFragmentProcessor>> fColorFragmentProcessors;
     SkSTArray<2, std::unique_ptr<GrFragmentProcessor>> fCoverageFragmentProcessors;
     bool fTrivial = true;
-    GrColor4f fColor = GrColor4f::OpaqueWhite();
+    SkPMColor4f fColor = SK_PMColor4fWHITE;
+    SkDEBUGCODE(bool fAlive = true;)  
 };
 
 #endif

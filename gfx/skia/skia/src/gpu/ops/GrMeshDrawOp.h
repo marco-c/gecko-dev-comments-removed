@@ -12,10 +12,11 @@
 #include "GrDrawOp.h"
 #include "GrGeometryProcessor.h"
 #include "GrMesh.h"
+#include <type_traits>
 
 class GrAtlasManager;
 class GrCaps;
-class GrGlyphCache;
+class GrStrikeCache;
 class GrOpFlushState;
 
 
@@ -33,18 +34,20 @@ protected:
 
     class PatternHelper {
     public:
-        PatternHelper(Target*, GrPrimitiveType, size_t vertexStride, const GrBuffer*,
-                      int verticesPerRepetition, int indicesPerRepetition, int repeatCount);
+        PatternHelper(Target*, GrPrimitiveType, size_t vertexStride,
+                      sk_sp<const GrBuffer> indexBuffer, int verticesPerRepetition,
+                      int indicesPerRepetition, int repeatCount);
 
         
-        void recordDraw(Target*, sk_sp<const GrGeometryProcessor>, const GrPipeline*,
+        void recordDraw(Target*, sk_sp<const GrGeometryProcessor>) const;
+        void recordDraw(Target*, sk_sp<const GrGeometryProcessor>,
                         const GrPipeline::FixedDynamicState*) const;
 
         void* vertices() const { return fVertices; }
 
     protected:
         PatternHelper() = default;
-        void init(Target*, GrPrimitiveType, size_t vertexStride, const GrBuffer*,
+        void init(Target*, GrPrimitiveType, size_t vertexStride, sk_sp<const GrBuffer> indexBuffer,
                   int verticesPerRepetition, int indicesPerRepetition, int repeatCount);
 
     private:
@@ -70,7 +73,6 @@ protected:
 
 private:
     void onPrepare(GrOpFlushState* state) final;
-    void onExecute(GrOpFlushState* state) final;
     virtual void onPrepareDraws(Target*) = 0;
     typedef GrDrawOp INHERITED;
 };
@@ -80,18 +82,18 @@ public:
     virtual ~Target() {}
 
     
-    virtual void draw(sk_sp<const GrGeometryProcessor>,
-                      const GrPipeline*,
-                      const GrPipeline::FixedDynamicState*,
-                      const GrPipeline::DynamicStateArrays*,
-                      const GrMesh[],
-                      int meshCount) = 0;
+    virtual void recordDraw(
+            sk_sp<const GrGeometryProcessor>, const GrMesh[], int meshCnt,
+            const GrPipeline::FixedDynamicState*, const GrPipeline::DynamicStateArrays*) = 0;
+
     
-    void draw(sk_sp<const GrGeometryProcessor> gp,
-              const GrPipeline* pipeline,
-              const GrPipeline::FixedDynamicState* fixedDynamicState,
-              const GrMesh* mesh) {
-        this->draw(std::move(gp), pipeline, fixedDynamicState, nullptr, mesh, 1);
+
+
+
+    void recordDraw(sk_sp<const GrGeometryProcessor> gp, const GrMesh meshes[], int meshCnt = 1) {
+        static constexpr int kZeroPrimProcTextures = 0;
+        auto fixedDynamicState = this->makeFixedDynamicState(kZeroPrimProcTextures);
+        this->recordDraw(std::move(gp), meshes, meshCnt, fixedDynamicState, nullptr);
     }
 
     
@@ -99,7 +101,7 @@ public:
 
 
 
-    virtual void* makeVertexSpace(size_t vertexSize, int vertexCount, const GrBuffer**,
+    virtual void* makeVertexSpace(size_t vertexSize, int vertexCount, sk_sp<const GrBuffer>*,
                                   int* startVertex) = 0;
 
     
@@ -107,7 +109,7 @@ public:
 
 
 
-    virtual uint16_t* makeIndexSpace(int indexCount, const GrBuffer**, int* startIndex) = 0;
+    virtual uint16_t* makeIndexSpace(int indexCount, sk_sp<const GrBuffer>*, int* startIndex) = 0;
 
     
 
@@ -116,7 +118,7 @@ public:
 
 
     virtual void* makeVertexSpaceAtLeast(size_t vertexSize, int minVertexCount,
-                                         int fallbackVertexCount, const GrBuffer**,
+                                         int fallbackVertexCount, sk_sp<const GrBuffer>*,
                                          int* startVertex, int* actualVertexCount) = 0;
 
     
@@ -126,62 +128,28 @@ public:
 
 
     virtual uint16_t* makeIndexSpaceAtLeast(int minIndexCount, int fallbackIndexCount,
-                                            const GrBuffer**, int* startIndex,
+                                            sk_sp<const GrBuffer>*, int* startIndex,
                                             int* actualIndexCount) = 0;
 
     
     virtual void putBackIndices(int indices) = 0;
     virtual void putBackVertices(int vertices, size_t vertexStride) = 0;
 
-    
-
-
-
-
-
-
-    template <typename... Args>
-    GrPipeline* allocPipeline(Args&&... args) {
-        return this->pipelineArena()->make<GrPipeline>(std::forward<Args>(args)...);
-    }
-
     GrMesh* allocMesh(GrPrimitiveType primitiveType) {
-        return this->pipelineArena()->make<GrMesh>(primitiveType);
+        return this->allocator()->make<GrMesh>(primitiveType);
     }
 
-    GrMesh* allocMeshes(int n) { return this->pipelineArena()->makeArray<GrMesh>(n); }
-
-    GrPipeline::FixedDynamicState* allocFixedDynamicState(const SkIRect& rect,
-                                                          int numPrimitiveProcessorTextures = 0);
+    GrMesh* allocMeshes(int n) { return this->allocator()->makeArray<GrMesh>(n); }
 
     GrPipeline::DynamicStateArrays* allocDynamicStateArrays(int numMeshes,
                                                             int numPrimitiveProcessorTextures,
                                                             bool allocScissors);
 
-    GrTextureProxy** allocPrimitiveProcessorTextureArray(int n) {
-        SkASSERT(n > 0);
-        return this->pipelineArena()->makeArrayDefault<GrTextureProxy*>(n);
-    }
-
-    
-    
-    
-    
-    struct PipelineAndFixedDynamicState {
-        const GrPipeline* fPipeline;
-        GrPipeline::FixedDynamicState* fFixedDynamicState;
-    };
-
-    
-
-
-
-    PipelineAndFixedDynamicState makePipeline(uint32_t pipelineFlags, GrProcessorSet&&,
-                                              GrAppliedClip&&,
-                                              int numPrimitiveProcessorTextures = 0);
+    GrPipeline::FixedDynamicState* makeFixedDynamicState(int numPrimitiveProcessorTextures);
 
     virtual GrRenderTargetProxy* proxy() const = 0;
 
+    virtual const GrAppliedClip* appliedClip() = 0;
     virtual GrAppliedClip detachAppliedClip() = 0;
 
     virtual const GrXferProcessor::DstProxy& dstProxy() const = 0;
@@ -189,7 +157,7 @@ public:
     virtual GrResourceProvider* resourceProvider() const = 0;
     uint32_t contextUniqueID() const { return this->resourceProvider()->contextUniqueID(); }
 
-    virtual GrGlyphCache* glyphCache() const = 0;
+    virtual GrStrikeCache* glyphCache() const = 0;
     virtual GrAtlasManager* atlasManager() const = 0;
 
     virtual const GrCaps& caps() const = 0;
@@ -197,7 +165,7 @@ public:
     virtual GrDeferredUploadTarget* deferredUploadTarget() = 0;
 
 private:
-    virtual SkArenaAlloc* pipelineArena() = 0;
+    virtual SkArenaAlloc* allocator() = 0;
 };
 
 #endif

@@ -10,7 +10,8 @@
 
 #include "SkCachedData.h"
 #include "SkImageInfo.h"
-#include "SkYUVSizeInfo.h"
+#include "SkYUVAIndex.h"
+#include "SkYUVASizeInfo.h"
 
 class SkResourceCache;
 
@@ -24,7 +25,8 @@ public:
 
 
     struct Info {
-        SkYUVSizeInfo   fSizeInfo;
+        SkYUVASizeInfo  fSizeInfo;
+        SkYUVAIndex     fYUVAIndices[SkYUVAIndex::kIndexCount];
         SkYUVColorSpace fColorSpace;
     };
     

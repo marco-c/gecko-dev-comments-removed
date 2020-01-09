@@ -5,9 +5,9 @@
 
 
 
-#include "SkAtomics.h"
 #include "SkEventTracer.h"
 #include "SkOnce.h"
+#include <atomic>
 
 #include <stdlib.h>
 
@@ -40,21 +40,20 @@ class SkDefaultEventTracer : public SkEventTracer {
 };
 
 
-static SkEventTracer* gUserTracer = nullptr;
+static std::atomic<SkEventTracer*> gUserTracer{nullptr};
 
 bool SkEventTracer::SetInstance(SkEventTracer* tracer) {
     SkEventTracer* expected = nullptr;
-    if (!sk_atomic_compare_exchange(&gUserTracer, &expected, tracer)) {
+    if (!gUserTracer.compare_exchange_strong(expected, tracer)) {
         delete tracer;
         return false;
     }
-    
-    atexit([]() { delete sk_atomic_load(&gUserTracer); });
+    atexit([]() { delete gUserTracer.load(); });
     return true;
 }
 
 SkEventTracer* SkEventTracer::GetInstance() {
-    if (SkEventTracer* tracer = sk_atomic_load(&gUserTracer, sk_memory_order_acquire)) {
+    if (auto tracer = gUserTracer.load(std::memory_order_acquire)) {
         return tracer;
     }
     static SkOnce once;

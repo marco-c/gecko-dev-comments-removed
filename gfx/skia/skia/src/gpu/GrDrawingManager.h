@@ -8,18 +8,21 @@
 #ifndef GrDrawingManager_DEFINED
 #define GrDrawingManager_DEFINED
 
+#include "GrBufferAllocPool.h"
+#include "GrDeferredUpload.h"
 #include "GrPathRenderer.h"
 #include "GrPathRendererChain.h"
 #include "GrResourceCache.h"
+#include "SkSurface.h"
 #include "SkTArray.h"
 #include "text/GrTextContext.h"
 
-class GrContext;
 class GrCoverageCountingPathRenderer;
 class GrOnFlushCallbackObject;
+class GrOpFlushState;
+class GrRecordingContext;
 class GrRenderTargetContext;
 class GrRenderTargetProxy;
-class GrSingleOWner;
 class GrRenderTargetOpList;
 class GrSoftwarePathRenderer;
 class GrTextureContext;
@@ -35,7 +38,6 @@ class GrDrawingManager {
 public:
     ~GrDrawingManager();
 
-    bool wasAbandoned() const { return fAbandoned; }
     void freeGpuResources();
 
     sk_sp<GrRenderTargetContext> makeRenderTargetContext(sk_sp<GrSurfaceProxy>,
@@ -51,7 +53,7 @@ public:
     sk_sp<GrRenderTargetOpList> newRTOpList(GrRenderTargetProxy* rtp, bool managedOpList);
     sk_sp<GrTextureOpList> newTextureOpList(GrTextureProxy* textureProxy);
 
-    GrContext* getContext() { return fContext; }
+    GrRecordingContext* getContext() { return fContext; }
 
     GrTextContext* getTextContext();
 
@@ -71,11 +73,16 @@ public:
     static bool ProgramUnitTest(GrContext* context, int maxStages, int maxLevels);
 
     GrSemaphoresSubmitted prepareSurfaceForExternalIO(GrSurfaceProxy*,
+                                                      SkSurface::BackendSurfaceAccess access,
+                                                      SkSurface::FlushFlags flags,
                                                       int numSemaphores,
                                                       GrBackendSemaphore backendSemaphores[]);
 
     void addOnFlushCallbackObject(GrOnFlushCallbackObject*);
+
+#if GR_TEST_UTILS
     void testingOnly_removeOnFlushCallbackObject(GrOnFlushCallbackObject*);
+#endif
 
     void moveOpListsToDDL(SkDeferredDisplayList* ddl);
     void copyOpListsFromDDL(const SkDeferredDisplayList*, GrRenderTargetProxy* newDest);
@@ -129,38 +136,42 @@ private:
         bool                      fSortOpLists;
     };
 
-    GrDrawingManager(GrContext*, const GrPathRendererChain::Options&,
-                     const GrTextContext::Options&, GrSingleOwner*,
+    GrDrawingManager(GrRecordingContext*, const GrPathRendererChain::Options&,
+                     const GrTextContext::Options&,
                      bool explicitlyAllocating, GrContextOptions::Enable sortRenderTargets,
                      GrContextOptions::Enable reduceOpListSplitting);
 
-    void abandon();
+    bool wasAbandoned() const;
+
     void cleanup();
 
     
-    bool executeOpLists(int startIndex, int stopIndex, GrOpFlushState*);
+    bool executeOpLists(int startIndex, int stopIndex, GrOpFlushState*, int* numOpListsExecuted);
 
     GrSemaphoresSubmitted flush(GrSurfaceProxy* proxy,
-                                int numSemaphores = 0,
-                                GrBackendSemaphore backendSemaphores[] = nullptr);
+                                SkSurface::BackendSurfaceAccess access,
+                                SkSurface::FlushFlags flags,
+                                int numSemaphores,
+                                GrBackendSemaphore backendSemaphores[]);
 
     SkDEBUGCODE(void validate() const);
 
-    friend class GrContext;  
+    friend class GrContext; 
     friend class GrContextPriv; 
     friend class GrOnFlushResourceProvider; 
+    friend class GrRecordingContext;  
+    friend class SkImage; 
 
     static const int kNumPixelGeometries = 5; 
     static const int kNumDFTOptions = 2;      
 
-    GrContext*                        fContext;
+    GrRecordingContext*               fContext;
     GrPathRendererChain::Options      fOptionsForPathRendererChain;
     GrTextContext::Options            fOptionsForTextContext;
-
     
-    GrSingleOwner*                    fSingleOwner;
+    
+    sk_sp<GrBufferAllocPool::CpuBufferCache> fCpuBufferCache;
 
-    bool                              fAbandoned;
     OpListDAG                         fDAG;
     GrOpList*                         fActiveOpList = nullptr;
     

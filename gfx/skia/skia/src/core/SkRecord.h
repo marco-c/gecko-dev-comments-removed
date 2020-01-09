@@ -141,22 +141,20 @@ private:
 
     
     struct Record {
-        
-        
-        
-        uint64_t fTypeAndPtr;
-        static const int kTypeShift = sizeof(void*) == 4 ? 32 : 48;
+        SkRecords::Type fType;
+        void*           fPtr;
 
         
         template <typename T>
         T* set(T* ptr) {
-            fTypeAndPtr = ((uint64_t)T::kType) << kTypeShift | (uintptr_t)ptr;
+            fType = T::kType;
+            fPtr  = ptr;
             SkASSERT(this->ptr() == ptr && this->type() == T::kType);
             return ptr;
         }
 
-        SkRecords::Type type() const { return (SkRecords::Type)(fTypeAndPtr >> kTypeShift); }
-        void* ptr() const { return (void*)(fTypeAndPtr & ((1ull<<kTypeShift)-1)); }
+        SkRecords::Type type() const { return fType; }
+        void* ptr() const { return fPtr; }
 
         
         template <typename F>

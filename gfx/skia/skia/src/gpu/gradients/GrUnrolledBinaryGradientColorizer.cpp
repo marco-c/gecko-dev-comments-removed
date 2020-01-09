@@ -187,49 +187,49 @@ private:
         const GrUnrolledBinaryGradientColorizer& _outer =
                 _proc.cast<GrUnrolledBinaryGradientColorizer>();
         {
-            pdman.set4fv(fScale0_1Var, 1, (_outer.scale0_1()).fRGBA);
+            pdman.set4fv(fScale0_1Var, 1, (_outer.scale0_1()).vec());
             if (fScale2_3Var.isValid()) {
-                pdman.set4fv(fScale2_3Var, 1, (_outer.scale2_3()).fRGBA);
+                pdman.set4fv(fScale2_3Var, 1, (_outer.scale2_3()).vec());
             }
             if (fScale4_5Var.isValid()) {
-                pdman.set4fv(fScale4_5Var, 1, (_outer.scale4_5()).fRGBA);
+                pdman.set4fv(fScale4_5Var, 1, (_outer.scale4_5()).vec());
             }
             if (fScale6_7Var.isValid()) {
-                pdman.set4fv(fScale6_7Var, 1, (_outer.scale6_7()).fRGBA);
+                pdman.set4fv(fScale6_7Var, 1, (_outer.scale6_7()).vec());
             }
             if (fScale8_9Var.isValid()) {
-                pdman.set4fv(fScale8_9Var, 1, (_outer.scale8_9()).fRGBA);
+                pdman.set4fv(fScale8_9Var, 1, (_outer.scale8_9()).vec());
             }
             if (fScale10_11Var.isValid()) {
-                pdman.set4fv(fScale10_11Var, 1, (_outer.scale10_11()).fRGBA);
+                pdman.set4fv(fScale10_11Var, 1, (_outer.scale10_11()).vec());
             }
             if (fScale12_13Var.isValid()) {
-                pdman.set4fv(fScale12_13Var, 1, (_outer.scale12_13()).fRGBA);
+                pdman.set4fv(fScale12_13Var, 1, (_outer.scale12_13()).vec());
             }
             if (fScale14_15Var.isValid()) {
-                pdman.set4fv(fScale14_15Var, 1, (_outer.scale14_15()).fRGBA);
+                pdman.set4fv(fScale14_15Var, 1, (_outer.scale14_15()).vec());
             }
-            pdman.set4fv(fBias0_1Var, 1, (_outer.bias0_1()).fRGBA);
+            pdman.set4fv(fBias0_1Var, 1, (_outer.bias0_1()).vec());
             if (fBias2_3Var.isValid()) {
-                pdman.set4fv(fBias2_3Var, 1, (_outer.bias2_3()).fRGBA);
+                pdman.set4fv(fBias2_3Var, 1, (_outer.bias2_3()).vec());
             }
             if (fBias4_5Var.isValid()) {
-                pdman.set4fv(fBias4_5Var, 1, (_outer.bias4_5()).fRGBA);
+                pdman.set4fv(fBias4_5Var, 1, (_outer.bias4_5()).vec());
             }
             if (fBias6_7Var.isValid()) {
-                pdman.set4fv(fBias6_7Var, 1, (_outer.bias6_7()).fRGBA);
+                pdman.set4fv(fBias6_7Var, 1, (_outer.bias6_7()).vec());
             }
             if (fBias8_9Var.isValid()) {
-                pdman.set4fv(fBias8_9Var, 1, (_outer.bias8_9()).fRGBA);
+                pdman.set4fv(fBias8_9Var, 1, (_outer.bias8_9()).vec());
             }
             if (fBias10_11Var.isValid()) {
-                pdman.set4fv(fBias10_11Var, 1, (_outer.bias10_11()).fRGBA);
+                pdman.set4fv(fBias10_11Var, 1, (_outer.bias10_11()).vec());
             }
             if (fBias12_13Var.isValid()) {
-                pdman.set4fv(fBias12_13Var, 1, (_outer.bias12_13()).fRGBA);
+                pdman.set4fv(fBias12_13Var, 1, (_outer.bias12_13()).vec());
             }
             if (fBias14_15Var.isValid()) {
-                pdman.set4fv(fBias14_15Var, 1, (_outer.bias14_15()).fRGBA);
+                pdman.set4fv(fBias14_15Var, 1, (_outer.bias14_15()).vec());
             }
             pdman.set4fv(fThresholds1_7Var, 1,
                          reinterpret_cast<const float*>(&(_outer.thresholds1_7())));
@@ -315,7 +315,7 @@ std::unique_ptr<GrFragmentProcessor> GrUnrolledBinaryGradientColorizer::clone() 
 
 static const int kMaxIntervals = 8;
 std::unique_ptr<GrFragmentProcessor> GrUnrolledBinaryGradientColorizer::Make(
-        const GrColor4f* colors, const SkScalar* positions, int count) {
+        const SkPMColor4f* colors, const SkScalar* positions, int count) {
     
     
     
@@ -329,8 +329,8 @@ std::unique_ptr<GrFragmentProcessor> GrUnrolledBinaryGradientColorizer::Make(
 
     
     
-    GrColor4f scales[kMaxIntervals];
-    GrColor4f biases[kMaxIntervals];
+    SkPMColor4f scales[kMaxIntervals];
+    SkPMColor4f biases[kMaxIntervals];
     SkScalar thresholds[kMaxIntervals];
 
     int intervalCount = 0;
@@ -352,8 +352,8 @@ std::unique_ptr<GrFragmentProcessor> GrUnrolledBinaryGradientColorizer::Make(
             continue;
         }
 
-        auto c0 = Sk4f::Load(colors[i].fRGBA);
-        auto c1 = Sk4f::Load(colors[i + 1].fRGBA);
+        auto c0 = Sk4f::Load(colors[i].vec());
+        auto c1 = Sk4f::Load(colors[i + 1].vec());
 
         auto scale = (c1 - c0) / dt;
         auto bias = c0 - t0 * scale;
@@ -366,8 +366,8 @@ std::unique_ptr<GrFragmentProcessor> GrUnrolledBinaryGradientColorizer::Make(
 
     
     for (int i = intervalCount; i < kMaxIntervals; i++) {
-        scales[i] = GrColor4f::TransparentBlack();
-        biases[i] = GrColor4f::TransparentBlack();
+        scales[i] = SK_PMColor4fTRANSPARENT;
+        biases[i] = SK_PMColor4fTRANSPARENT;
         thresholds[i] = 0.0;
     }
 

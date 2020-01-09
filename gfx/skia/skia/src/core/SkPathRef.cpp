@@ -30,6 +30,9 @@ SkPathRef::Editor::Editor(sk_sp<SkPathRef>* pathRef,
                           int incReserveVerbs,
                           int incReservePoints)
 {
+    SkASSERT(incReserveVerbs >= 0);
+    SkASSERT(incReservePoints >= 0);
+
     if ((*pathRef)->unique()) {
         (*pathRef)->incReserve(incReserveVerbs, incReservePoints);
     } else {
@@ -41,7 +44,7 @@ SkPathRef::Editor::Editor(sk_sp<SkPathRef>* pathRef,
     fPathRef->callGenIDChangeListeners();
     fPathRef->fGenerationID = 0;
     fPathRef->fBoundsIsDirty = true;
-    SkDEBUGCODE(sk_atomic_inc(&fPathRef->fEditorsAttached);)
+    SkDEBUGCODE(fPathRef->fEditorsAttached++;)
 }
 
 
@@ -90,6 +93,7 @@ SkPathRef::~SkPathRef() {
     
     
     this->callGenIDChangeListeners();
+    SkASSERT(fGenIDChangeListeners.empty());  
     sk_free(fPoints);
 
     SkDEBUGCODE(fPoints = nullptr;)
@@ -98,7 +102,7 @@ SkPathRef::~SkPathRef() {
     SkDEBUGCODE(fPointCnt = 0xAAAAAAA;)
     SkDEBUGCODE(fPointCnt = 0xBBBBBBB;)
     SkDEBUGCODE(fGenerationID = 0xEEEEEEEE;)
-    SkDEBUGCODE(fEditorsAttached = 0x7777777;)
+    SkDEBUGCODE(fEditorsAttached.store(0x7777777);)
 }
 
 static SkPathRef* gEmpty = nullptr;
@@ -694,18 +698,17 @@ SkPoint* SkPathRef::growForVerb(int  verb, SkScalar weight) {
 }
 
 uint32_t SkPathRef::genID() const {
-    SkASSERT(!fEditorsAttached);
+    SkASSERT(fEditorsAttached.load() == 0);
     static const uint32_t kMask = (static_cast<int64_t>(1) << SkPathPriv::kPathRefGenIDBitCnt) - 1;
-    if (!fGenerationID) {
-        if (0 == fPointCnt && 0 == fVerbCnt) {
+
+    if (fGenerationID == 0) {
+        if (fPointCnt == 0 && fVerbCnt == 0) {
             fGenerationID = kEmptyGenID;
         } else {
-            static int32_t  gPathRefGenerationID;
-            
-            
+            static std::atomic<uint32_t> nextID{kEmptyGenID + 1};
             do {
-                fGenerationID = (sk_atomic_inc(&gPathRefGenerationID) + 1) & kMask;
-            } while (fGenerationID <= kEmptyGenID);
+                fGenerationID = nextID.fetch_add(1, std::memory_order_relaxed) & kMask;
+            } while (fGenerationID == 0 || fGenerationID == kEmptyGenID);
         }
     }
     return fGenerationID;
@@ -715,19 +718,33 @@ void SkPathRef::addGenIDChangeListener(sk_sp<GenIDChangeListener> listener) {
     if (nullptr == listener || this == gEmpty) {
         return;
     }
+
     SkAutoMutexAcquire lock(fGenIDChangeListenersMutex);
+
+    
+    for (int i = 0; i < fGenIDChangeListeners.count(); ++i) {
+        if (fGenIDChangeListeners[i]->shouldUnregisterFromPath()) {
+            fGenIDChangeListeners[i]->unref();
+            fGenIDChangeListeners.removeShuffle(i--);  
+        }
+    }
+
+    SkASSERT(!listener->shouldUnregisterFromPath());
     *fGenIDChangeListeners.append() = listener.release();
 }
 
 
 void SkPathRef::callGenIDChangeListeners() {
     SkAutoMutexAcquire lock(fGenIDChangeListenersMutex);
-    for (int i = 0; i < fGenIDChangeListeners.count(); i++) {
-        fGenIDChangeListeners[i]->onChange();
+    for (GenIDChangeListener* listener : fGenIDChangeListeners) {
+        if (!listener->shouldUnregisterFromPath()) {
+            listener->onChange();
+        }
+        
+        listener->unref();
     }
 
-    
-    fGenIDChangeListeners.unrefAll();
+    fGenIDChangeListeners.reset();
 }
 
 SkRRect SkPathRef::getRRect() const {
@@ -804,7 +821,11 @@ void SkPathRef::Iter::setPathRef(const SkPathRef& path) {
 
 uint8_t SkPathRef::Iter::next(SkPoint pts[4]) {
     SkASSERT(pts);
+
+    SkDEBUGCODE(unsigned peekResult = this->peek();)
+
     if (fVerbs == fVerbStop) {
+        SkASSERT(peekResult == SkPath::kDone_Verb);
         return (uint8_t) SkPath::kDone_Verb;
     }
 
@@ -845,12 +866,13 @@ uint8_t SkPathRef::Iter::next(SkPoint pts[4]) {
             break;
     }
     fPts = srcPts;
+    SkASSERT(peekResult == verb);
     return (uint8_t) verb;
 }
 
 uint8_t SkPathRef::Iter::peek() const {
-    const uint8_t* next = fVerbs - 1;
-    return next <= fVerbStop ? (uint8_t) SkPath::kDone_Verb : *next;
+    const uint8_t* next = fVerbs;
+    return next <= fVerbStop ? (uint8_t) SkPath::kDone_Verb : next[-1];
 }
 
 

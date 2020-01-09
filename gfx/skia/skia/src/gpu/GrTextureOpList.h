@@ -48,7 +48,7 @@ public:
 
 
 
-    bool copySurface(GrContext*,
+    bool copySurface(GrRecordingContext*,
                      GrSurfaceProxy* dst,
                      GrSurfaceProxy* src,
                      const SkIRect& srcRect,
@@ -57,8 +57,6 @@ public:
     GrTextureOpList* asTextureOpList() override { return this; }
 
     SkDEBUGCODE(void dump(bool printDependencies) const override;)
-
-    SkDEBUGCODE(int numOps() const override { return fRecordedOps.count(); })
 
 private:
     void deleteOp(int index);

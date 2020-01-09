@@ -19,7 +19,7 @@
 
 class GrTexturePriv;
 
-class GrTexture : virtual public GrSurface {
+class SK_API GrTexture : virtual public GrSurface {
 public:
     GrTexture* asTexture() override { return this; }
     const GrTexture* asTexture() const override { return this; }
@@ -39,7 +39,7 @@ public:
 
 
 
-    static bool StealBackendTexture(sk_sp<GrTexture>&&,
+    static bool StealBackendTexture(sk_sp<GrTexture>,
                                     GrBackendTexture*,
                                     SkImage::BackendTextureReleaseProc*);
 
@@ -49,15 +49,31 @@ public:
     }
 #endif
 
-    virtual void setRelease(sk_sp<GrReleaseProcHelper> releaseHelper) = 0;
+    
+    enum class IdleState {
+        kFlushed,
+        kFinished
+    };
+    
 
+
+
+
+
+
+
+
+
+    virtual void addIdleProc(sk_sp<GrRefCntedCallback> idleProc, IdleState) {
+        
+        
+        fIdleProcs.push_back(std::move(idleProc));
+    }
     
-    
-    typedef void* ReleaseCtx;
-    typedef void (*ReleaseProc)(ReleaseCtx);
-    void setRelease(ReleaseProc proc, ReleaseCtx ctx) {
-        sk_sp<GrReleaseProcHelper> helper(new GrReleaseProcHelper(proc, ctx));
-        this->setRelease(std::move(helper));
+    void addIdleProc(GrRefCntedCallback::Callback callback,
+                     GrRefCntedCallback::Context context,
+                     IdleState state) {
+        this->addIdleProc(sk_make_sp<GrRefCntedCallback>(callback, context), state);
     }
 
     
@@ -69,7 +85,15 @@ protected:
 
     virtual bool onStealBackendTexture(GrBackendTexture*, SkImage::BackendTextureReleaseProc*) = 0;
 
+    SkTArray<sk_sp<GrRefCntedCallback>> fIdleProcs;
+
+    void willRemoveLastRefOrPendingIO() override {
+        
+        fIdleProcs.reset();
+    }
+
 private:
+
     void computeScratchKey(GrScratchKey*) const override;
     size_t onGpuMemorySize() const override;
     void markMipMapsDirty();

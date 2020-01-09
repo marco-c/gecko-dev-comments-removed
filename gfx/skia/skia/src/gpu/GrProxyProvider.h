@@ -8,15 +8,12 @@
 #ifndef GrProxyProvider_DEFINED
 #define GrProxyProvider_DEFINED
 
-#include "GrCaps.h"
 #include "GrResourceKey.h"
 #include "GrTextureProxy.h"
 #include "GrTypes.h"
-#include "SkRefCnt.h"
 #include "SkTDynamicHash.h"
 
-class GrResourceProvider;
-class GrSingleOwner;
+class GrImageContext;
 class GrBackendRenderTarget;
 class SkBitmap;
 class SkImage;
@@ -26,8 +23,7 @@ class SkImage;
 
 class GrProxyProvider {
 public:
-    GrProxyProvider(GrResourceProvider*, GrResourceCache*, sk_sp<const GrCaps>, GrSingleOwner*);
-    GrProxyProvider(uint32_t contextUniqueID, sk_sp<const GrCaps>, GrSingleOwner*);
+    GrProxyProvider(GrImageContext*);
 
     ~GrProxyProvider();
 
@@ -47,7 +43,7 @@ public:
 
 
 
-    void removeUniqueKeyFromProxy(const GrUniqueKey&, GrTextureProxy*);
+    void removeUniqueKeyFromProxy(GrTextureProxy*);
 
     
 
@@ -76,7 +72,8 @@ public:
 
 
 
-    sk_sp<GrTextureProxy> createMipMapProxy(const GrSurfaceDesc&, GrSurfaceOrigin, SkBudgeted);
+    sk_sp<GrTextureProxy> createMipMapProxy(const GrBackendFormat&, const GrSurfaceDesc&,
+                                            GrSurfaceOrigin, SkBudgeted);
 
     
 
@@ -86,15 +83,22 @@ public:
     
 
 
-    sk_sp<GrTextureProxy> createProxy(const GrSurfaceDesc&, GrSurfaceOrigin, GrMipMapped,
-                                      SkBackingFit, SkBudgeted, GrInternalSurfaceFlags);
+    sk_sp<GrTextureProxy> createProxy(const GrBackendFormat&, const GrSurfaceDesc&, GrSurfaceOrigin,
+                                      GrMipMapped, SkBackingFit, SkBudgeted,
+                                      GrInternalSurfaceFlags);
 
     sk_sp<GrTextureProxy> createProxy(
-                            const GrSurfaceDesc& desc, GrSurfaceOrigin origin,
-                            SkBackingFit fit, SkBudgeted budgeted,
+                            const GrBackendFormat& format, const GrSurfaceDesc& desc,
+                            GrSurfaceOrigin origin, SkBackingFit fit, SkBudgeted budgeted,
                             GrInternalSurfaceFlags surfaceFlags = GrInternalSurfaceFlags::kNone) {
-        return this->createProxy(desc, origin, GrMipMapped::kNo, fit, budgeted, surfaceFlags);
+        return this->createProxy(format, desc, origin, GrMipMapped::kNo, fit, budgeted,
+                                 surfaceFlags);
     }
+
+    
+
+
+    sk_sp<GrTextureProxy> createProxy(sk_sp<SkData>, const GrSurfaceDesc& desc);
 
     
     typedef void* ReleaseContext;
@@ -103,22 +107,24 @@ public:
     
 
 
+
     sk_sp<GrTextureProxy> wrapBackendTexture(const GrBackendTexture&, GrSurfaceOrigin,
-                                             GrWrapOwnership = kBorrow_GrWrapOwnership,
+                                             GrWrapOwnership, GrWrapCacheable, GrIOType,
                                              ReleaseProc = nullptr, ReleaseContext = nullptr);
 
     
 
 
-    sk_sp<GrTextureProxy> wrapRenderableBackendTexture(const GrBackendTexture&,
-                                                       GrSurfaceOrigin,
-                                                       int sampleCnt,
-                                                       GrWrapOwnership = kBorrow_GrWrapOwnership);
+    sk_sp<GrTextureProxy> wrapRenderableBackendTexture(const GrBackendTexture&, GrSurfaceOrigin,
+                                                       int sampleCnt, GrWrapOwnership,
+                                                       GrWrapCacheable, ReleaseProc,
+                                                       ReleaseContext);
 
     
 
 
-    sk_sp<GrSurfaceProxy> wrapBackendRenderTarget(const GrBackendRenderTarget&, GrSurfaceOrigin);
+    sk_sp<GrSurfaceProxy> wrapBackendRenderTarget(const GrBackendRenderTarget&, GrSurfaceOrigin,
+                                                  ReleaseProc, ReleaseContext);
 
     
 
@@ -126,6 +132,9 @@ public:
     sk_sp<GrSurfaceProxy> wrapBackendTextureAsRenderTarget(const GrBackendTexture& backendTex,
                                                            GrSurfaceOrigin origin,
                                                            int sampleCnt);
+
+    sk_sp<GrRenderTargetProxy> wrapVulkanSecondaryCBAsRenderTarget(const SkImageInfo&,
+                                                                   const GrVkDrawableInfo&);
 
     using LazyInstantiateCallback = std::function<sk_sp<GrSurface>(GrResourceProvider*)>;
 
@@ -150,73 +159,63 @@ public:
 
 
 
-    sk_sp<GrTextureProxy> createLazyProxy(LazyInstantiateCallback&&, const GrSurfaceDesc&,
-                                          GrSurfaceOrigin, GrMipMapped, GrTextureType,
+    sk_sp<GrTextureProxy> createLazyProxy(LazyInstantiateCallback&&, const GrBackendFormat&,
+                                          const GrSurfaceDesc&, GrSurfaceOrigin, GrMipMapped,
                                           GrInternalSurfaceFlags, SkBackingFit, SkBudgeted,
                                           LazyInstantiationType);
 
-    sk_sp<GrTextureProxy> createLazyProxy(LazyInstantiateCallback&&, const GrSurfaceDesc&,
-                                          GrSurfaceOrigin, GrMipMapped, GrTextureType,
+    sk_sp<GrTextureProxy> createLazyProxy(LazyInstantiateCallback&&, const GrBackendFormat&,
+                                          const GrSurfaceDesc&, GrSurfaceOrigin, GrMipMapped,
                                           GrInternalSurfaceFlags, SkBackingFit, SkBudgeted);
 
-    sk_sp<GrTextureProxy> createLazyProxy(LazyInstantiateCallback&&, const GrSurfaceDesc&,
-                                          GrSurfaceOrigin, GrMipMapped, GrTextureType, SkBackingFit,
-                                          SkBudgeted);
+    sk_sp<GrTextureProxy> createLazyProxy(LazyInstantiateCallback&&, const GrBackendFormat&,
+                                          const GrSurfaceDesc&, GrSurfaceOrigin, GrMipMapped,
+                                          SkBackingFit, SkBudgeted);
 
     
     sk_sp<GrRenderTargetProxy> createLazyRenderTargetProxy(LazyInstantiateCallback&&,
+                                                           const GrBackendFormat&,
                                                            const GrSurfaceDesc&,
                                                            GrSurfaceOrigin origin,
                                                            GrInternalSurfaceFlags,
                                                            const TextureInfo*,
                                                            SkBackingFit,
-                                                           SkBudgeted);
+                                                           SkBudgeted,
+                                                           bool wrapsVkSecondaryCB);
 
     
 
 
 
-    static sk_sp<GrTextureProxy> MakeFullyLazyProxy(LazyInstantiateCallback&&, Renderable,
+    static sk_sp<GrTextureProxy> MakeFullyLazyProxy(LazyInstantiateCallback&&,
+                                                    const GrBackendFormat&, Renderable,
                                                     GrSurfaceOrigin, GrPixelConfig, const GrCaps&);
 
     
     
     static bool IsFunctionallyExact(GrSurfaceProxy* proxy);
 
-    
-
-
-
-
-
-
-    void processInvalidProxyUniqueKey(const GrUniqueKey&);
+    enum class InvalidateGPUResource : bool { kNo = false, kYes = true };
 
     
 
 
 
 
-    void processInvalidProxyUniqueKey(const GrUniqueKey&, GrTextureProxy*, bool invalidateSurface);
 
-    uint32_t contextUniqueID() const { return fContextUniqueID; }
-    const GrCaps* caps() const { return fCaps.get(); }
-    sk_sp<const GrCaps> refCaps() const { return fCaps; }
 
-    void abandon() {
-        fResourceCache = nullptr;
-        fResourceProvider = nullptr;
-        fAbandoned = true;
-    }
 
-    bool isAbandoned() const {
-#ifdef SK_DEBUG
-        if (fAbandoned) {
-            SkASSERT(!fResourceCache && !fResourceProvider);
-        }
-#endif
-        return fAbandoned;
-    }
+
+
+
+
+
+    void processInvalidUniqueKey(const GrUniqueKey&, GrTextureProxy*, InvalidateGPUResource);
+
+    
+    uint32_t contextID() const;
+    const GrCaps* caps() const;
+    sk_sp<const GrCaps> refCaps() const;
 
     int numUniqueKeyProxies_TestOnly() const;
 
@@ -230,17 +229,23 @@ public:
     
 
 
-    bool recordingDDL() const { return !SkToBool(fResourceProvider); }
 
+    bool renderingDirectly() const;
+
+#if GR_TEST_UTILS
     
 
 
     sk_sp<GrTextureProxy> testingOnly_createInstantiatedProxy(const GrSurfaceDesc&, GrSurfaceOrigin,
                                                               SkBackingFit, SkBudgeted);
+    sk_sp<GrTextureProxy> testingOnly_createWrapped(sk_sp<GrTexture>, GrSurfaceOrigin);
+#endif
 
 private:
     friend class GrAHardwareBufferImageGenerator; 
     friend class GrResourceProvider; 
+
+    bool isAbandoned() const;
 
     sk_sp<GrTextureProxy> createWrapped(sk_sp<GrTexture> tex, GrSurfaceOrigin origin);
 
@@ -255,15 +260,7 @@ private:
     
     UniquelyKeyedProxyHash fUniquelyKeyedProxies;
 
-    GrResourceProvider*    fResourceProvider;
-    GrResourceCache*       fResourceCache;
-    bool                   fAbandoned;
-    sk_sp<const GrCaps>    fCaps;
-    
-    uint32_t               fContextUniqueID;
-
-    
-    SkDEBUGCODE(mutable GrSingleOwner* fSingleOwner;)
+    GrImageContext*        fImageContext;
 };
 
 #endif

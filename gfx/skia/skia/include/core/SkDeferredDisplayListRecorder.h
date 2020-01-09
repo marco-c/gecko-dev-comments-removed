@@ -5,24 +5,24 @@
 
 
 
-#ifndef SkDeferredDisplayListMaker_DEFINED
-#define SkDeferredDisplayListMaker_DEFINED
+#ifndef SkDeferredDisplayListRecorder_DEFINED
+#define SkDeferredDisplayListRecorder_DEFINED
 
+#include "../private/SkDeferredDisplayList.h"
 #include "SkImageInfo.h"
 #include "SkRefCnt.h"
 #include "SkSurfaceCharacterization.h"
 #include "SkTypes.h"
 
-#include "../private/SkDeferredDisplayList.h"
-
 class GrBackendFormat;
 class GrBackendTexture;
 class GrContext;
-
 class SkCanvas;
 class SkImage;
+class SkPromiseImageTexture;
 class SkSurface;
 struct SkYUVAIndex;
+struct SkYUVASizeInfo;
 
 
 
@@ -52,14 +52,13 @@ public:
 
     std::unique_ptr<SkDeferredDisplayList> detach();
 
-    
-    typedef void* TextureContext;
-    typedef void (*TextureReleaseProc)(TextureContext textureContext);
-    typedef void (*TextureFulfillProc)(TextureContext textureContext, GrBackendTexture* outTexture);
-    typedef void (*PromiseDoneProc)(TextureContext textureContext);
+    using PromiseImageTextureContext = void*;
+    using PromiseImageTextureFulfillProc =
+            sk_sp<SkPromiseImageTexture> (*)(PromiseImageTextureContext);
+    using PromiseImageTextureReleaseProc = void (*)(PromiseImageTextureContext);
+    using PromiseImageTextureDoneProc = void (*)(PromiseImageTextureContext);
 
     
-
 
 
 
@@ -111,10 +110,10 @@ public:
                                       SkColorType colorType,
                                       SkAlphaType alphaType,
                                       sk_sp<SkColorSpace> colorSpace,
-                                      TextureFulfillProc textureFulfillProc,
-                                      TextureReleaseProc textureReleaseProc,
-                                      PromiseDoneProc promiseDoneProc,
-                                      TextureContext textureContext);
+                                      PromiseImageTextureFulfillProc textureFulfillProc,
+                                      PromiseImageTextureReleaseProc textureReleaseProc,
+                                      PromiseImageTextureDoneProc textureDoneProc,
+                                      PromiseImageTextureContext textureContext);
 
     
 
@@ -125,15 +124,17 @@ public:
 
     sk_sp<SkImage> makeYUVAPromiseTexture(SkYUVColorSpace yuvColorSpace,
                                           const GrBackendFormat yuvaFormats[],
+                                          const SkISize yuvaSizes[],
                                           const SkYUVAIndex yuvaIndices[4],
                                           int imageWidth,
                                           int imageHeight,
                                           GrSurfaceOrigin imageOrigin,
                                           sk_sp<SkColorSpace> imageColorSpace,
-                                          TextureFulfillProc textureFulfillProc,
-                                          TextureReleaseProc textureReleaseProc,
-                                          PromiseDoneProc promiseDoneProc,
-                                          TextureContext textureContexts[]);
+                                          PromiseImageTextureFulfillProc textureFulfillProc,
+                                          PromiseImageTextureReleaseProc textureReleaseProc,
+                                          PromiseImageTextureDoneProc textureDoneProc,
+                                          PromiseImageTextureContext textureContexts[]);
+
 private:
     bool init();
 

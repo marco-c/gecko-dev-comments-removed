@@ -172,11 +172,7 @@ static inline int diff_to_shift(SkFDot6 dx, SkFDot6 dy, int shiftAA = 2)
     
     
     
-#ifdef SK_SUPPORT_LEGACY_QUAD_SHIFT
-    dist = (dist + (1 << 4)) >> 5;
-#else
     dist = (dist + (1 << 4)) >> (3 + shiftAA);
-#endif
 
     
     return (32 - SkCLZ(dist)) >> 1;

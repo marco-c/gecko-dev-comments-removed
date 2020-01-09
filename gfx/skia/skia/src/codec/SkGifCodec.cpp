@@ -254,8 +254,8 @@ void SkGifCodec::initializeSwizzler(const SkImageInfo& dstInfo, int frameIndex) 
     
     
     
-    fSwizzler.reset(SkSwizzler::CreateSwizzler(this->getEncodedInfo(),
-                    fCurrColorTable->readColors(), swizzlerInfo, Options(), &swizzleRect));
+    fSwizzler = SkSwizzler::Make(this->getEncodedInfo(), fCurrColorTable->readColors(),
+                                 swizzlerInfo, Options(), &swizzleRect);
     SkASSERT(fSwizzler.get());
 }
 
@@ -343,10 +343,8 @@ SkCodec::Result SkGifCodec::decodeFrame(bool firstAttempt, const Options& opts, 
             
             if (frameContext->frameRect() != this->bounds()
                     || frameContext->interlaced() || !fCurrColorTableIsReal) {
-                
-                
-                auto fillInfo = dstInfo.makeWH(0, scaledHeight);
-                fSwizzler->fill(fillInfo, fDst, fDstRowBytes, opts.fZeroInitialized);
+                auto fillInfo = dstInfo.makeWH(fSwizzler->fillWidth(), scaledHeight);
+                SkSampler::Fill(fillInfo, fDst, fDstRowBytes, opts.fZeroInitialized);
                 filledBackground = true;
             }
         } else {

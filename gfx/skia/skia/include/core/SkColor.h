@@ -228,58 +228,141 @@ SK_API SkPMColor SkPreMultiplyARGB(U8CPU a, U8CPU r, U8CPU g, U8CPU b);
 
 SK_API SkPMColor SkPreMultiplyColor(SkColor c);
 
+
+
+
+
+
+
+
+
+
 template <SkAlphaType kAT>
 struct SkRGBA4f {
-    float fR;
-    float fG;
-    float fB;
-    float fA;
+    float fR;  
+    float fG;  
+    float fB;  
+    float fA;  
+
+    
+
+
+
 
     bool operator==(const SkRGBA4f& other) const {
         return fA == other.fA && fR == other.fR && fG == other.fG && fB == other.fB;
     }
+
+    
+
+
+
+
     bool operator!=(const SkRGBA4f& other) const {
         return !(*this == other);
     }
+
+    
+
+
+
 
     SkRGBA4f operator*(float scale) const {
         return { fR * scale, fG * scale, fB * scale, fA * scale };
     }
 
+    
+
+
+
+
     SkRGBA4f operator*(const SkRGBA4f& scale) const {
         return { fR * scale.fR, fG * scale.fG, fB * scale.fB, fA * scale.fA };
     }
 
+    
+
+
+
     const float* vec() const { return &fR; }
-          float* vec()       { return &fR; }
+
+    
+
+
+
+    float* vec() { return &fR; }
+
+    
+
+
+
 
     float operator[](int index) const {
         SkASSERT(index >= 0 && index < 4);
         return this->vec()[index];
     }
 
+    
+
+
+
+
     float& operator[](int index) {
         SkASSERT(index >= 0 && index < 4);
         return this->vec()[index];
     }
+
+    
+
+
+
 
     bool isOpaque() const {
         SkASSERT(fA <= 1.0f && fA >= 0.0f);
         return fA == 1.0f;
     }
 
-    static SkRGBA4f Pin(float r, float g, float b, float a);  
-    SkRGBA4f pin() const { return Pin(fR, fG, fB, fA); }
+    
+    bool fitsInBytes() const {
+        SkASSERT(fA >= 0.0f && fA <= 1.0f);
+        return fR >= 0.0f && fR <= 1.0f &&
+               fG >= 0.0f && fG <= 1.0f &&
+               fB >= 0.0f && fB <= 1.0f;
+    }
 
-    static SkRGBA4f FromColor(SkColor);  
+    
+
+
+
+
+    static SkRGBA4f FromColor(SkColor color);  
+
+    
+
+
+
     SkColor toSkColor() const;  
 
+    
+
+
+
     static SkRGBA4f FromPMColor(SkPMColor);  
+
+    
+
+
+
 
     SkRGBA4f<kPremul_SkAlphaType> premul() const {
         static_assert(kAT == kUnpremul_SkAlphaType, "");
         return { fR * fA, fG * fA, fB * fA, fA };
     }
+
+    
+
+
+
 
     SkRGBA4f<kUnpremul_SkAlphaType> unpremul() const {
         static_assert(kAT == kPremul_SkAlphaType, "");
@@ -291,9 +374,24 @@ struct SkRGBA4f {
             return { fR * invAlpha, fG * invAlpha, fB * invAlpha, fA };
         }
     }
+
+    
+    uint32_t toBytes_RGBA() const;
+    static SkRGBA4f FromBytes_RGBA(uint32_t color);
+
+    SkRGBA4f makeOpaque() const {
+        return { fR, fG, fB, 1.0f };
+    }
 };
 
+
+
+
+
+
+
 using SkColor4f = SkRGBA4f<kUnpremul_SkAlphaType>;
+
 template <> SK_API SkColor4f SkColor4f::FromColor(SkColor);
 template <> SK_API SkColor   SkColor4f::toSkColor() const;
 

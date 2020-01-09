@@ -45,7 +45,7 @@ public:
 
     static const GrTextureDomain& IgnoredDomain() {
         static const GrTextureDomain gDomain((GrTextureProxy*)nullptr,
-                                             SkRect::MakeEmpty(), kIgnore_Mode);
+                                             SkRect::MakeEmpty(), kIgnore_Mode, kIgnore_Mode);
         return gDomain;
     }
 
@@ -53,28 +53,56 @@ public:
 
 
 
-    GrTextureDomain(GrTextureProxy*, const SkRect& domain, Mode, int index = -1);
+    GrTextureDomain(GrTextureProxy*, const SkRect& domain, Mode modeX, Mode modeY, int index = -1);
 
     GrTextureDomain(const GrTextureDomain&) = default;
 
     const SkRect& domain() const { return fDomain; }
-    Mode mode() const { return fMode; }
+    Mode modeX() const { return fModeX; }
+    Mode modeY() const { return fModeY; }
 
     
 
-    static const SkRect MakeTexelDomain(const SkIRect& texelRect) {
-        return SkRect::Make(texelRect);
+
+
+    static const SkRect MakeTexelDomain(const SkIRect& texelRect, Mode mode) {
+        return MakeTexelDomain(texelRect, mode, mode);
     }
 
-    static const SkRect MakeTexelDomainForMode(const SkIRect& texelRect, Mode mode) {
+    static const SkRect MakeTexelDomain(const SkIRect& texelRect, Mode modeX, Mode modeY) {
         
-        SkScalar inset = (mode == kClamp_Mode && !texelRect.isEmpty()) ? SK_ScalarHalf : 0;
-        return SkRect::MakeLTRB(texelRect.fLeft + inset, texelRect.fTop + inset,
-                                texelRect.fRight - inset, texelRect.fBottom - inset);
+        SkScalar insetX = ((modeX == kClamp_Mode || modeX == kDecal_Mode) && texelRect.width() > 0)
+                ? SK_ScalarHalf : 0;
+        SkScalar insetY = ((modeY == kClamp_Mode || modeY == kDecal_Mode) && texelRect.height() > 0)
+                ? SK_ScalarHalf : 0;
+        return SkRect::MakeLTRB(texelRect.fLeft + insetX, texelRect.fTop + insetY,
+                                texelRect.fRight - insetX, texelRect.fBottom - insetY);
+    }
+
+    
+    
+    static bool IsDecalSampled(GrSamplerState::WrapMode wrapX, GrSamplerState::WrapMode wrapY,
+                               Mode modeX, Mode modeY) {
+        return wrapX == GrSamplerState::WrapMode::kClampToBorder ||
+               wrapY == GrSamplerState::WrapMode::kClampToBorder ||
+               modeX == kDecal_Mode ||
+               modeY == kDecal_Mode;
+    }
+
+    static bool IsDecalSampled(const GrSamplerState::WrapMode wraps[2], Mode modeX, Mode modeY) {
+        return IsDecalSampled(wraps[0], wraps[1], modeX, modeY);
+    }
+
+    static bool IsDecalSampled(const GrSamplerState& sampler, Mode modeX, Mode modeY) {
+        return IsDecalSampled(sampler.wrapModeX(), sampler.wrapModeY(), modeX, modeY);
     }
 
     bool operator==(const GrTextureDomain& that) const {
-        return fMode == that.fMode && (kIgnore_Mode == fMode || fDomain == that.fDomain);
+        return fModeX == that.fModeX && fModeY == that.fModeY &&
+               (kIgnore_Mode == fModeX || (fDomain.fLeft == that.fDomain.fLeft &&
+                                           fDomain.fRight == that.fDomain.fRight)) &&
+               (kIgnore_Mode == fModeY || (fDomain.fTop == that.fDomain.fTop &&
+                                           fDomain.fBottom == that.fDomain.fBottom));
     }
 
     
@@ -115,10 +143,12 @@ public:
 
 
 
-        void setData(const GrGLSLProgramDataManager&, const GrTextureDomain&, GrSurfaceProxy*);
+        void setData(const GrGLSLProgramDataManager&, const GrTextureDomain&, GrTextureProxy*,
+                     const GrSamplerState& sampler);
 
         enum {
-            kDomainKeyBits = 2, 
+            kModeBits = 2, 
+            kDomainKeyBits = 4
         };
 
         
@@ -126,21 +156,28 @@ public:
 
 
         static uint32_t DomainKey(const GrTextureDomain& domain) {
-            GR_STATIC_ASSERT(kModeCount <= (1 << kDomainKeyBits));
-            return domain.mode();
+            GR_STATIC_ASSERT(kModeCount <= (1 << kModeBits));
+            return domain.modeX() | (domain.modeY() << kModeBits);
         }
 
     private:
         static const int kPrevDomainCount = 4;
-        SkDEBUGCODE(Mode                        fMode;)
+        SkDEBUGCODE(Mode                        fModeX;)
+        SkDEBUGCODE(Mode                        fModeY;)
         SkDEBUGCODE(bool                        fHasMode = false;)
         GrGLSLProgramDataManager::UniformHandle fDomainUni;
         SkString                                fDomainName;
+
+        
+        GrGLSLProgramDataManager::UniformHandle fDecalUni;
+        SkString                                fDecalName;
+
         float                                   fPrevDomain[kPrevDomainCount];
     };
 
 protected:
-    Mode    fMode;
+    Mode    fModeX;
+    Mode    fModeY;
     SkRect  fDomain;
     int     fIndex;
 };
@@ -153,8 +190,15 @@ public:
     static std::unique_ptr<GrFragmentProcessor> Make(sk_sp<GrTextureProxy>,
                                                      const SkMatrix&,
                                                      const SkRect& domain,
-                                                     GrTextureDomain::Mode,
+                                                     GrTextureDomain::Mode mode,
                                                      GrSamplerState::Filter filterMode);
+
+    static std::unique_ptr<GrFragmentProcessor> Make(sk_sp<GrTextureProxy>,
+                                                     const SkMatrix&,
+                                                     const SkRect& domain,
+                                                     GrTextureDomain::Mode modeX,
+                                                     GrTextureDomain::Mode modeY,
+                                                     const GrSamplerState& sampler);
 
     const char* name() const override { return "TextureDomain"; }
 
@@ -162,6 +206,7 @@ public:
         return std::unique_ptr<GrFragmentProcessor>(new GrTextureDomainEffect(*this));
     }
 
+#ifdef SK_DEBUG
     SkString dumpInfo() const override {
         SkString str;
         str.appendf("Domain: [L: %.2f, T: %.2f, R: %.2f, B: %.2f]",
@@ -170,6 +215,7 @@ public:
         str.append(INHERITED::dumpInfo());
         return str;
     }
+#endif
 
 private:
     GrCoordTransform fCoordTransform;
@@ -179,12 +225,11 @@ private:
     GrTextureDomainEffect(sk_sp<GrTextureProxy>,
                           const SkMatrix&,
                           const SkRect& domain,
-                          GrTextureDomain::Mode,
-                          GrSamplerState::Filter);
+                          GrTextureDomain::Mode modeX,
+                          GrTextureDomain::Mode modeY,
+                          const GrSamplerState&);
 
     explicit GrTextureDomainEffect(const GrTextureDomainEffect&);
-
-    static OptimizationFlags OptFlags(GrPixelConfig config, GrTextureDomain::Mode mode);
 
     GrGLSLFragmentProcessor* onCreateGLSLInstance() const override;
 
@@ -207,6 +252,7 @@ public:
 
     const char* name() const override { return "GrDeviceSpaceTextureDecalFragmentProcessor"; }
 
+#ifdef SK_DEBUG
     SkString dumpInfo() const override {
         SkString str;
         str.appendf("Domain: [L: %.2f, T: %.2f, R: %.2f, B: %.2f] Offset: [%d %d]",
@@ -216,6 +262,7 @@ public:
         str.append(INHERITED::dumpInfo());
         return str;
     }
+#endif
 
     std::unique_ptr<GrFragmentProcessor> clone() const override;
 

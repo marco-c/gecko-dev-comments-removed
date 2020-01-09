@@ -15,6 +15,7 @@
 #include "SkRefCnt.h"
 #include "SkSize.h"
 
+class GrCCCachedAtlas;
 class GrOnFlushResourceProvider;
 class GrRenderTargetContext;
 class GrTextureProxy;
@@ -45,7 +46,12 @@ public:
         void accountForSpace(int width, int height);
     };
 
-    GrCCAtlas(GrPixelConfig, const Specs&, const GrCaps&);
+    enum class CoverageType : bool {
+        kFP16_CoverageCount,
+        kA8_LiteralCoverage
+    };
+
+    GrCCAtlas(CoverageType, const Specs&, const GrCaps&);
     ~GrCCAtlas();
 
     GrTextureProxy* textureProxy() const { return fTextureProxy.get(); }
@@ -64,21 +70,7 @@ public:
     void setStrokeBatchID(int id);
     int getStrokeBatchID() const { return fStrokeBatchID; }
 
-    
-    
-    const GrUniqueKey& getOrAssignUniqueKey(GrOnFlushResourceProvider*);
-    const GrUniqueKey& uniqueKey() const { return fUniqueKey; }
-
-    
-    
-    
-    
-    struct CachedAtlasInfo : public GrNonAtomicRef<CachedAtlasInfo> {
-        int fNumPathPixels = 0;
-        int fNumInvalidatedPathPixels = 0;
-        bool fIsPurgedFromResourceCache = false;
-    };
-    sk_sp<CachedAtlasInfo> refOrMakeCachedAtlasInfo();
+    sk_sp<GrCCCachedAtlas> refOrMakeCachedAtlas(GrOnFlushResourceProvider*);
 
     
     
@@ -95,6 +87,7 @@ private:
 
     bool internalPlaceRect(int w, int h, SkIPoint16* loc);
 
+    const CoverageType fCoverageType;
     const int fMaxTextureSize;
     int fWidth, fHeight;
     std::unique_ptr<Node> fTopNode;
@@ -103,11 +96,7 @@ private:
     int fFillBatchID;
     int fStrokeBatchID;
 
-    
-    
-    GrUniqueKey fUniqueKey;
-
-    sk_sp<CachedAtlasInfo> fCachedAtlasInfo;
+    sk_sp<GrCCCachedAtlas> fCachedAtlas;
     sk_sp<GrTextureProxy> fTextureProxy;
     sk_sp<GrTexture> fBackingTexture;
 };
@@ -118,8 +107,10 @@ private:
 
 class GrCCAtlasStack {
 public:
-    GrCCAtlasStack(GrPixelConfig pixelConfig, const GrCCAtlas::Specs& specs, const GrCaps* caps)
-            : fPixelConfig(pixelConfig), fSpecs(specs), fCaps(caps) {}
+    using CoverageType = GrCCAtlas::CoverageType;
+
+    GrCCAtlasStack(CoverageType coverageType, const GrCCAtlas::Specs& specs, const GrCaps* caps)
+            : fCoverageType(coverageType), fSpecs(specs), fCaps(caps) {}
 
     bool empty() const { return fAtlases.empty(); }
     const GrCCAtlas& front() const { SkASSERT(!this->empty()); return fAtlases.front(); }
@@ -145,7 +136,7 @@ public:
     GrCCAtlas* addRect(const SkIRect& devIBounds, SkIVector* devToAtlasOffset);
 
 private:
-    const GrPixelConfig fPixelConfig;
+    const CoverageType fCoverageType;
     const GrCCAtlas::Specs fSpecs;
     const GrCaps* const fCaps;
     GrSTAllocator<4, GrCCAtlas> fAtlases;

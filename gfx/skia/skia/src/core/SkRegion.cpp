@@ -7,7 +7,6 @@
 
 #include "SkRegion.h"
 
-#include "SkAtomics.h"
 #include "SkMacros.h"
 #include "SkRegionPriv.h"
 #include "SkSafeMath.h"
@@ -26,8 +25,6 @@
 
 
 
-
-SkDEBUGCODE(int32_t gRgnAllocCounter;)
 
 
 
@@ -139,9 +136,6 @@ void SkRegion::freeRuns() {
     if (this->isComplex()) {
         SkASSERT(fRunHead->fRefCnt >= 1);
         if (--fRunHead->fRefCnt == 0) {
-            
-            
-            
             sk_free(fRunHead);
         }
     }
@@ -227,7 +221,7 @@ bool SkRegion::op(const SkRegion& rgn, const SkIRect& rect, Op op) {
 
 
 
-#ifdef SK_BUILD_FOR_ANDROID
+#ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
 #include <stdio.h>
 char* SkRegion::toString() {
     Iterator iter(*this);

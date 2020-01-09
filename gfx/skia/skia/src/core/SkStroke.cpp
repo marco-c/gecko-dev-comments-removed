@@ -499,17 +499,18 @@ void SkPathStroker::init(StrokeType strokeType, SkQuadConstruct* quadPts, SkScal
 
 static SkScalar pt_to_line(const SkPoint& pt, const SkPoint& lineStart, const SkPoint& lineEnd) {
     SkVector dxy = lineEnd - lineStart;
-    if (degenerate_vector(dxy)) {
-        return SkPointPriv::DistanceToSqd(pt, lineStart);
-    }
     SkVector ab0 = pt - lineStart;
     SkScalar numer = dxy.dot(ab0);
     SkScalar denom = dxy.dot(dxy);
-    SkScalar t = numer / denom;
-    SkPoint hit;
-    hit.fX = lineStart.fX * (1 - t) + lineEnd.fX * t;
-    hit.fY = lineStart.fY * (1 - t) + lineEnd.fY * t;
-    return SkPointPriv::DistanceToSqd(hit, pt);
+    SkScalar t = sk_ieee_float_divide(numer, denom);
+    if (t >= 0 && t <= 1) {
+        SkPoint hit;
+        hit.fX = lineStart.fX * (1 - t) + lineEnd.fX * t;
+        hit.fY = lineStart.fY * (1 - t) + lineEnd.fY * t;
+        return SkPointPriv::DistanceToSqd(hit, pt);
+    } else {
+        return SkPointPriv::DistanceToSqd(pt, lineStart);
+    }
 }
 
 
@@ -591,7 +592,8 @@ static bool quad_in_line(const SkPoint quad[3]) {
     SkASSERT(outer2 >= 1 && outer2 <= 2);
     SkASSERT(outer1 < outer2);
     int mid = outer1 ^ outer2 ^ 3;
-    SkScalar lineSlop =  ptMax * ptMax * 0.00001f;  
+    const float kCurvatureSlop = 0.000005f;  
+    SkScalar lineSlop =  ptMax * ptMax * kCurvatureSlop;
     return pt_to_line(quad[mid], quad[outer1], quad[outer2]) <= lineSlop;
 }
 
@@ -651,20 +653,12 @@ SkPathStroker::ReductionType SkPathStroker::CheckConicLinear(const SkConic& coni
     if (!conic_in_line(conic)) {
         return kQuad_ReductionType;
     }
-#if 0   
-    SkScalar t;
-    if (!conic.findMaxCurvature(&t) || 0 == t) {
-        return kLine_ReductionType;
-    }
-#else  
-    SkScalar xT = 0, yT = 0;
-    (void) conic.findXExtrema(&xT);
-    (void) conic.findYExtrema(&yT);
-    SkScalar t = SkTMax(xT, yT);
+    
+    
+    SkScalar t = SkFindQuadMaxCurvature(conic.fPts);
     if (0 == t) {
         return kLine_ReductionType;
     }
-#endif
     conic.evalAt(t, reduction, nullptr);
     return kDegenerate_ReductionType;
 }
@@ -771,13 +765,8 @@ void SkPathStroker::quadTo(const SkPoint& pt1, const SkPoint& pt2) {
 
 void SkPathStroker::setRayPts(const SkPoint& tPt, SkVector* dxy, SkPoint* onPt,
         SkPoint* tangent) const {
-    SkPoint oldDxy = *dxy;
-    if (!dxy->setLength(fRadius)) {  
-        double xx = oldDxy.fX;
-        double yy = oldDxy.fY;
-        double dscale = fRadius / sqrt(xx * xx + yy * yy);
-        dxy->fX = SkDoubleToScalar(xx * dscale);
-        dxy->fY = SkDoubleToScalar(yy * dscale);
+    if (!dxy->setLength(fRadius)) {
+        dxy->set(fRadius, 0);
     }
     SkScalar axisFlip = SkIntToScalar(fStrokeType);  
     onPt->fX = tPt.fX + axisFlip * dxy->fY;

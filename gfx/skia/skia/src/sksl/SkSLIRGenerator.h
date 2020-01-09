@@ -167,7 +167,6 @@ private:
     
     std::unique_ptr<Statement> getNormalizeSkPositionCode();
 
-    void fixRectSampling(std::vector<std::unique_ptr<Expression>>& arguments);
     void checkValid(const Expression& expr);
     void setRefKind(const Expression& expr, VariableReference::RefKind kind);
     void getConstantInt(const Expression& value, int64_t* out);

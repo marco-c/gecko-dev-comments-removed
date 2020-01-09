@@ -19,34 +19,35 @@
 
 
 GrTextureRenderTargetProxy::GrTextureRenderTargetProxy(const GrCaps& caps,
+                                                       const GrBackendFormat& format,
                                                        const GrSurfaceDesc& desc,
                                                        GrSurfaceOrigin origin,
                                                        GrMipMapped mipMapped,
-                                                       GrTextureType textureType,
                                                        SkBackingFit fit,
                                                        SkBudgeted budgeted,
                                                        GrInternalSurfaceFlags surfaceFlags)
-        : GrSurfaceProxy(desc, origin, fit, budgeted, surfaceFlags)
+        : GrSurfaceProxy(format, desc, origin, fit, budgeted, surfaceFlags)
         
-        , GrRenderTargetProxy(caps, desc, origin, fit, budgeted, surfaceFlags)
-        , GrTextureProxy(desc, origin, mipMapped, textureType, fit, budgeted, surfaceFlags) {}
+        , GrRenderTargetProxy(caps, format, desc, origin, fit, budgeted, surfaceFlags)
+        , GrTextureProxy(format, desc, origin, mipMapped, fit, budgeted, surfaceFlags) {}
 
 
 GrTextureRenderTargetProxy::GrTextureRenderTargetProxy(LazyInstantiateCallback&& callback,
                                                        LazyInstantiationType lazyType,
+                                                       const GrBackendFormat& format,
                                                        const GrSurfaceDesc& desc,
                                                        GrSurfaceOrigin origin,
                                                        GrMipMapped mipMapped,
-                                                       GrTextureType textureType,
                                                        SkBackingFit fit,
                                                        SkBudgeted budgeted,
                                                        GrInternalSurfaceFlags surfaceFlags)
-        : GrSurfaceProxy(std::move(callback), lazyType, desc, origin, fit, budgeted, surfaceFlags)
+        : GrSurfaceProxy(std::move(callback), lazyType, format, desc, origin, fit, budgeted,
+                         surfaceFlags)
         
         
-        , GrRenderTargetProxy(LazyInstantiateCallback(), lazyType, desc, origin, fit, budgeted,
-                              surfaceFlags)
-        , GrTextureProxy(LazyInstantiateCallback(), lazyType, desc, origin, mipMapped, textureType,
+        , GrRenderTargetProxy(LazyInstantiateCallback(), lazyType, format, desc, origin, fit,
+                              budgeted, surfaceFlags, WrapsVkSecondaryCB::kNo)
+        , GrTextureProxy(LazyInstantiateCallback(), lazyType, format, desc, origin, mipMapped,
                          fit, budgeted, surfaceFlags) {}
 
 
@@ -123,11 +124,19 @@ void GrTextureRenderTargetProxy::onValidateSurface(const GrSurface* surface) {
     SkASSERT(surface->asRenderTarget());
     SkASSERT(surface->asRenderTarget()->numStencilSamples() == this->numStencilSamples());
 
+    SkASSERT(surface->asTexture()->texturePriv().textureType() == this->textureType());
+
     GrInternalSurfaceFlags proxyFlags = fSurfaceFlags;
     GrInternalSurfaceFlags surfaceFlags = surface->surfacePriv().flags();
+
+    
+    SkASSERT(!(proxyFlags & GrInternalSurfaceFlags::kReadOnly));
+    SkASSERT(!(surfaceFlags & GrInternalSurfaceFlags::kReadOnly));
+
     SkASSERT((proxyFlags & GrInternalSurfaceFlags::kRenderTargetMask) ==
              (surfaceFlags & GrInternalSurfaceFlags::kRenderTargetMask));
-    SkASSERT(surface->asTexture()->texturePriv().textureType() == this->textureType());
+    SkASSERT((proxyFlags & GrInternalSurfaceFlags::kTextureMask) ==
+             (surfaceFlags & GrInternalSurfaceFlags::kTextureMask));
 }
 #endif
 

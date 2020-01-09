@@ -11,9 +11,7 @@
 #include "SkMatrix.h"
 #include "SkPathEffect.h"
 #include "SkTypes.h"
-#include "../private/GrAuditTrail.h"
-#include "../private/GrSingleOwner.h"
-#include "../private/GrSkSLFPFactoryCache.h"
+#include "../private/GrRecordingContext.h"
 #include "GrContextOptions.h"
 
 
@@ -25,34 +23,28 @@ class GrBackendSemaphore;
 class GrCaps;
 class GrContextPriv;
 class GrContextThreadSafeProxy;
-class GrContextThreadSafeProxyPriv;
-class GrDrawingManager;
 class GrFragmentProcessor;
 struct GrGLInterface;
-class GrGlyphCache;
 class GrGpu;
 struct GrMockOptions;
-class GrOpMemoryPool;
 class GrPath;
-class GrProxyProvider;
 class GrRenderTargetContext;
 class GrResourceCache;
 class GrResourceProvider;
 class GrSamplerState;
+class GrSkSLFPFactoryCache;
 class GrSurfaceProxy;
 class GrSwizzle;
-class GrTextBlobCache;
 class GrTextContext;
 class GrTextureProxy;
 struct GrVkBackendContext;
 
 class SkImage;
-class SkSurfaceCharacterization;
 class SkSurfaceProps;
 class SkTaskGroup;
 class SkTraceMemoryDump;
 
-class SK_API GrContext : public SkRefCnt {
+class SK_API GrContext : public GrRecordingContext {
 public:
     
 
@@ -80,7 +72,7 @@ public:
     static sk_sp<GrContext> MakeMock(const GrMockOptions*, const GrContextOptions&);
     static sk_sp<GrContext> MakeMock(const GrMockOptions*);
 
-    virtual ~GrContext();
+    ~GrContext() override;
 
     sk_sp<GrContextThreadSafeProxy> threadSafeProxy();
 
@@ -103,14 +95,25 @@ public:
 
 
 
-
-
-    virtual void abandonContext();
+    void resetGLTextureBindings();
 
     
 
 
-    bool abandoned() const;
+
+
+
+
+
+
+
+
+    void abandonContext() override;
+
+    
+
+
+    using GrImageContext::abandoned;
 
     
 
@@ -269,13 +272,8 @@ public:
                                                    GrBackendSemaphore signalSemaphores[]);
 
     
-
-
-    uint32_t uniqueID() { return fUniqueID; }
-
-    
-    GrContextPriv contextPriv();
-    const GrContextPriv contextPriv() const;
+    GrContextPriv priv();
+    const GrContextPriv priv() const;
 
     
     
@@ -283,49 +281,32 @@ public:
 
     bool supportsDistanceFieldText() const;
 
-protected:
-    GrContext(GrBackend, int32_t id = SK_InvalidGenID);
+    void storeVkPipelineCacheData();
 
-    bool initCommon(const GrContextOptions&);
-    virtual bool init(const GrContextOptions&) = 0; 
+protected:
+    GrContext(GrBackendApi, const GrContextOptions&, int32_t contextID = SK_InvalidGenID);
+
+    bool init(sk_sp<const GrCaps>, sk_sp<GrSkSLFPFactoryCache>) override;
+
+    GrContext* asDirectContext() override { return this; }
 
     virtual GrAtlasManager* onGetAtlasManager() = 0;
 
-    const GrBackend                         fBackend;
-    sk_sp<const GrCaps>                     fCaps;
     sk_sp<GrContextThreadSafeProxy>         fThreadSafeProxy;
-    sk_sp<GrSkSLFPFactoryCache>             fFPFactoryCache;
 
 private:
+    
+    
+    
+    
+    std::unique_ptr<SkTaskGroup>            fTaskGroup;
     sk_sp<GrGpu>                            fGpu;
     GrResourceCache*                        fResourceCache;
     GrResourceProvider*                     fResourceProvider;
-    GrProxyProvider*                        fProxyProvider;
 
-    
-    sk_sp<GrOpMemoryPool>                   fOpMemoryPool;
-
-    GrGlyphCache*                           fGlyphCache;
-    std::unique_ptr<GrTextBlobCache>        fTextBlobCache;
-
-    bool                                    fDisableGpuYUVConversion;
-    bool                                    fSharpenMipmappedTextures;
     bool                                    fDidTestPMConversions;
     
     bool                                    fPMUPMConversionsRoundTrip;
-
-    
-    
-    
-    mutable GrSingleOwner                   fSingleOwner;
-
-    std::unique_ptr<SkTaskGroup>            fTaskGroup;
-
-    const uint32_t                          fUniqueID;
-
-    std::unique_ptr<GrDrawingManager>       fDrawingManager;
-
-    GrAuditTrail                            fAuditTrail;
 
     GrContextOptions::PersistentCache*      fPersistentCache;
 
@@ -345,92 +326,7 @@ private:
 
     bool validPMUPMConversionExists();
 
-    
-
-
-
-    static void TextBlobCacheOverBudgetCB(void* data);
-
-    typedef SkRefCnt INHERITED;
-};
-
-
-
-
-
-class SK_API GrContextThreadSafeProxy : public SkRefCnt {
-public:
-    ~GrContextThreadSafeProxy();
-
-    bool matches(GrContext* context) const { return context->uniqueID() == fContextUniqueID; }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    SkSurfaceCharacterization createCharacterization(
-                                  size_t cacheMaxResourceBytes,
-                                  const SkImageInfo& ii, const GrBackendFormat& backendFormat,
-                                  int sampleCount, GrSurfaceOrigin origin,
-                                  const SkSurfaceProps& surfaceProps,
-                                  bool isMipMapped, bool willUseGLFBO0 = false);
-
-    bool operator==(const GrContextThreadSafeProxy& that) const {
-        
-        SkASSERT((this == &that) == (fContextUniqueID == that.fContextUniqueID));
-        return this == &that;
-    }
-
-    bool operator!=(const GrContextThreadSafeProxy& that) const { return !(*this == that); }
-
-    
-    GrContextThreadSafeProxyPriv priv();
-    const GrContextThreadSafeProxyPriv priv() const;
-
-private:
-    
-    GrContextThreadSafeProxy(sk_sp<const GrCaps> caps,
-                             uint32_t uniqueID,
-                             GrBackend backend,
-                             const GrContextOptions& options,
-                             sk_sp<GrSkSLFPFactoryCache> cache);
-
-    sk_sp<const GrCaps>         fCaps;
-    const uint32_t              fContextUniqueID;
-    const GrBackend             fBackend;
-    const GrContextOptions      fOptions;
-    sk_sp<GrSkSLFPFactoryCache> fFPFactoryCache;
-
-    friend class GrDirectContext; 
-    friend class GrContextThreadSafeProxyPriv;
-
-    typedef SkRefCnt INHERITED;
+    typedef GrRecordingContext INHERITED;
 };
 
 #endif

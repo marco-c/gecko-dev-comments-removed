@@ -17,6 +17,7 @@
 #include "SkTypes.h"
 
 class GrShape;
+class GrRecordingContext;
 class GrTextureProxy;
 
 
@@ -50,7 +51,7 @@ public:
     
     void drawShape(const GrShape&, const SkMatrix& matrix, SkRegion::Op op, GrAA, uint8_t alpha);
 
-    sk_sp<GrTextureProxy> toTextureProxy(GrContext*, SkBackingFit fit);
+    sk_sp<GrTextureProxy> toTextureProxy(GrRecordingContext*, SkBackingFit fit);
 
     
     void clear(uint8_t alpha) {

@@ -45,7 +45,7 @@ public:
 
 
 
-    static SkMasks* CreateMasks(InputMasks masks, uint32_t bpp);
+    static SkMasks* CreateMasks(InputMasks masks, int bytesPerPixel);
 
     
 

@@ -129,7 +129,7 @@ static inline float SkPinToUnitFloat(float x) {
 
 
 #if defined(_MSC_VER)
-    #include <intrin.h>
+    #include <stdlib.h>
     static inline uint32_t SkBSwap32(uint32_t v) { return _byteswap_ulong(v); }
 #else
     static inline uint32_t SkBSwap32(uint32_t v) { return __builtin_bswap32(v); }

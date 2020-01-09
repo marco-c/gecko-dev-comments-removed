@@ -5,26 +5,47 @@
 
 
 
-#include "SkFlattenablePriv.h"
-#include "SkMaskFilter.h"
-#include "../../src/effects/SkDashImpl.h"
-#include "SkGradientShader.h"
+#include "SkFlattenable.h"
 
+#if defined(SK_DISABLE_EFFECT_DESERIALIZATION)
 
+    void SkFlattenable::PrivateInitializer::InitEffects() {}
+    void SkFlattenable::PrivateInitializer::InitImageFilters() {}
 
+#else
 
-
-
-
-
-
-void SkFlattenable::PrivateInitializer::InitEffects() {
-    
-    SkGradientShader::InitializeFlattenables();
+    #include "../../src/effects/SkDashImpl.h"
+    #include "SkGradientShader.h"
+    #include "SkMaskFilter.h"
+    #include "SkImageFilter.h"
 
     
-    SkMaskFilter::InitializeFlattenables();
+
+
+
+
+
+
+    void SkFlattenable::PrivateInitializer::InitEffects() {
+        
+        SkGradientShader::RegisterFlattenables();
+
+        
+        SkMaskFilter::RegisterFlattenables();
+
+        
+        SK_REGISTER_FLATTENABLE(SkDashImpl);
+    }
 
     
-    SK_DEFINE_FLATTENABLE_REGISTRAR_ENTRY(SkDashImpl)
-}
+
+
+
+
+
+
+    void SkFlattenable::PrivateInitializer::InitImageFilters() {
+        SkImageFilter::RegisterFlattenables();
+    }
+
+#endif

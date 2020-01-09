@@ -12,9 +12,9 @@
 #include "GrContext.h"
 #include "SkCachedData.h"
 #include "SkImage_GpuBase.h"
-#include "SkYUVAIndex.h"
 
 class GrTexture;
+struct SkYUVASizeInfo;
 
 
 
@@ -22,86 +22,80 @@ class GrTexture;
 
 class SkImage_GpuYUVA : public SkImage_GpuBase {
 public:
-    SkImage_GpuYUVA(sk_sp<GrContext>, uint32_t uniqueID, SkYUVColorSpace,
-                    sk_sp<GrTextureProxy> proxies[], const SkYUVAIndex yuvaIndices[4], SkISize size,
-                    GrSurfaceOrigin, sk_sp<SkColorSpace>, SkBudgeted);
+    friend class GrYUVAImageTextureMaker;
+
+    SkImage_GpuYUVA(sk_sp<GrContext>, int width, int height, uint32_t uniqueID, SkYUVColorSpace,
+                    sk_sp<GrTextureProxy> proxies[], int numProxies, const SkYUVAIndex[4],
+                    GrSurfaceOrigin, sk_sp<SkColorSpace>);
     ~SkImage_GpuYUVA() override;
 
     SkImageInfo onImageInfo() const override;
 
-    GrTextureProxy* peekProxy() const override { return this->asTextureProxyRef().get(); }
-    sk_sp<GrTextureProxy> asTextureProxyRef() const override;
+    
+    
+    GrTextureProxy* peekProxy() const override;
+    sk_sp<GrTextureProxy> asTextureProxyRef(GrRecordingContext*) const override;
+
+    virtual bool onIsTextureBacked() const override { return SkToBool(fProxies[0].get()); }
+
+    sk_sp<SkImage> onMakeColorTypeAndColorSpace(GrRecordingContext*,
+                                                SkColorType, sk_sp<SkColorSpace>) const final;
+
+    virtual bool isYUVA() const override { return true; }
+    virtual bool asYUVATextureProxiesRef(sk_sp<GrTextureProxy> proxies[4],
+                                         SkYUVAIndex yuvaIndices[4],
+                                         SkYUVColorSpace* yuvColorSpace) const override {
+        for (int i = 0; i < 4; ++i) {
+            proxies[i] = fProxies[i];
+            yuvaIndices[i] = fYUVAIndices[i];
+        }
+        *yuvColorSpace = fYUVColorSpace;
+        return true;
+    }
+
+    bool setupMipmapsForPlanes(GrRecordingContext*) const;
 
     
+    sk_sp<GrTextureProxy> asMippedTextureProxyRef(GrRecordingContext*) const;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    
 
 
     static sk_sp<SkImage> MakePromiseYUVATexture(GrContext* context,
                                                  SkYUVColorSpace yuvColorSpace,
                                                  const GrBackendFormat yuvaFormats[],
+                                                 const SkISize yuvaSizes[],
                                                  const SkYUVAIndex yuvaIndices[4],
-                                                 SkISize imageSize,
+                                                 int width,
+                                                 int height,
                                                  GrSurfaceOrigin imageOrigin,
                                                  sk_sp<SkColorSpace> imageColorSpace,
-                                                 TextureFulfillProc textureFulfillProc,
-                                                 TextureReleaseProc textureReleaseProc,
-                                                 PromiseDoneProc promiseDoneProc,
-                                                 TextureContext textureContexts[]);
-
-    static sk_sp<SkImage> MakeFromYUVATextures(GrContext* context,
-                                               SkYUVColorSpace yuvColorSpace,
-                                               const GrBackendTexture yuvaTextures[],
-                                               SkYUVAIndex yuvaIndices[4],
-                                               SkISize imageSize,
-                                               GrSurfaceOrigin imageOrigin,
-                                               sk_sp<SkColorSpace> imageColorSpace);
+                                                 PromiseImageTextureFulfillProc textureFulfillProc,
+                                                 PromiseImageTextureReleaseProc textureReleaseProc,
+                                                 PromiseImageTextureDoneProc textureDoneProc,
+                                                 PromiseImageTextureContext textureContexts[]);
 
 private:
+    SkImage_GpuYUVA(const SkImage_GpuYUVA* image, sk_sp<SkColorSpace>);
+
     
     
-    sk_sp<GrTextureProxy>            fProxies[4];
+    mutable sk_sp<GrTextureProxy>    fProxies[4];
+    int                              fNumProxies;
     SkYUVAIndex                      fYUVAIndices[4];
-    
-    
-    
-    sk_sp<GrTextureProxy>            fRGBProxy;
     const SkYUVColorSpace            fYUVColorSpace;
     GrSurfaceOrigin                  fOrigin;
+    const sk_sp<SkColorSpace>        fTargetColorSpace;
 
+    
+    
+    mutable sk_sp<SkColorSpace>      fOnMakeColorSpaceTarget;
+    mutable sk_sp<SkImage>           fOnMakeColorSpaceResult;
+
+    
+    
+    
+    mutable sk_sp<GrTextureProxy>    fRGBProxy;
     typedef SkImage_GpuBase INHERITED;
 };
 

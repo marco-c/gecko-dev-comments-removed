@@ -9,7 +9,22 @@
 #define SkTFitsIn_DEFINED
 
 #include <limits>
+#include <stdint.h>
 #include <type_traits>
+
+
+
+
+template <typename T, class Enable = void>
+struct sk_strip_enum {
+    typedef T type;
+};
+
+template <typename T>
+struct sk_strip_enum<T, typename std::enable_if<std::is_enum<T>::value>::type> {
+    typedef typename std::underlying_type<T>::type type;
+};
+
 
 
 
@@ -65,10 +80,20 @@ typename std::enable_if<(std::is_integral<S>::value || std::is_enum<S>::value) &
 
     
     (std::is_signed<D>::value && std::is_unsigned<S>::value && sizeof(D) <= sizeof(S)) ?
-        src <= (S)std::numeric_limits<D>::max() :
+        src <= (S)std::numeric_limits<typename sk_strip_enum<D>::type>::max() :
+
+#if !defined(SK_DEBUG) && !defined(__MSVC_RUNTIME_CHECKS )
+    
+    (S)(D)src == src;
+#else
+
+    (std::is_signed<S>::value) ?
+        (intmax_t)src >= (intmax_t)std::numeric_limits<typename sk_strip_enum<D>::type>::min() &&
+        (intmax_t)src <= (intmax_t)std::numeric_limits<typename sk_strip_enum<D>::type>::max() :
 
     
-        (S)(D)src == src;
+        (uintmax_t)src <= (uintmax_t)std::numeric_limits<typename sk_strip_enum<D>::type>::max();
+#endif
 }
 
 #endif

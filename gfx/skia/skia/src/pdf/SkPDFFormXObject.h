@@ -12,14 +12,17 @@
 #include "SkPDFDevice.h"
 #include "SkPDFTypes.h"
 
+class SkPDFDocument;
 
 
 
 
 
-sk_sp<SkPDFObject> SkPDFMakeFormXObject(std::unique_ptr<SkStreamAsset> content,
-                                        sk_sp<SkPDFArray> mediaBox,
-                                        sk_sp<SkPDFDict> resourceDict,
-                                        const SkMatrix& inverseTransform,
-                                        const char* colorSpace);
+
+SkPDFIndirectReference SkPDFMakeFormXObject(SkPDFDocument* doc,
+                                            std::unique_ptr<SkStreamAsset> content,
+                                            std::unique_ptr<SkPDFArray> mediaBox,
+                                            std::unique_ptr<SkPDFDict> resourceDict,
+                                            const SkMatrix& inverseTransform,
+                                            const char* colorSpace);
 #endif

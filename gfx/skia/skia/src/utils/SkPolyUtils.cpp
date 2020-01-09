@@ -61,13 +61,16 @@ int SkGetPolygonWinding(const SkPoint* polygonVerts, int polygonSize) {
 }
 
 
-void compute_offset_vector(const SkPoint& p0, const SkPoint& p1, SkScalar offset, int side,
+bool compute_offset_vector(const SkPoint& p0, const SkPoint& p1, SkScalar offset, int side,
                            SkPoint* vector) {
     SkASSERT(side == -1 || side == 1);
     
     SkVector perp = SkVector::Make(p0.fY - p1.fY, p1.fX - p0.fX);
-    perp.setLength(offset*side);
+    if (!perp.setLength(offset*side)) {
+        return false;
+    }
     *vector = perp;
+    return true;
 }
 
 
@@ -313,6 +316,19 @@ bool SkInsetConvexPolygon(const SkPoint* inputPolygonVerts, int inputPolygonSize
     
     if (inputPolygonSize > std::numeric_limits<uint16_t>::max()) {
         return false;
+    }
+
+    
+    if (inset < -SK_ScalarNearlyZero || !SkScalarIsFinite(inset)) {
+        return false;
+    }
+
+    
+    if (inset <= SK_ScalarNearlyZero) {
+        for (int i = 0; i < inputPolygonSize; ++i) {
+            *insetPolygon->push() = inputPolygonVerts[i];
+        }
+        return true;
     }
 
     
@@ -657,6 +673,9 @@ public:
 
     bool insert(const SkPoint& p0, const SkPoint& p1, uint16_t index0, uint16_t index1) {
         SkVector v = p1 - p0;
+        if (!v.isFinite()) {
+            return false;
+        }
         
         if (!fTreeHead.fChild[1]) {
             ActiveEdge* root = fTreeHead.fChild[1] = this->allocate(p0, v, index0, index1);
@@ -1142,6 +1161,15 @@ bool SkOffsetSimplePolygon(const SkPoint* inputPolygonVerts, int inputPolygonSiz
     }
 
     
+    if (SkScalarNearlyZero(offset)) {
+        for (int i = 0; i < inputPolygonSize; ++i) {
+            *offsetPolygon->push() = inputPolygonVerts[i];
+            *polygonIndices->push() = i;
+        }
+        return true;
+    }
+
+    
     int winding = SkGetPolygonWinding(inputPolygonVerts, inputPolygonSize);
     if (0 == winding) {
         return false;
@@ -1157,8 +1185,10 @@ bool SkOffsetSimplePolygon(const SkPoint* inputPolygonVerts, int inputPolygonSiz
             return false;
         }
         int nextIndex = (currIndex + 1) % inputPolygonSize;
-        compute_offset_vector(inputPolygonVerts[currIndex], inputPolygonVerts[nextIndex],
-                              offset, winding, &normals[currIndex]);
+        if (!compute_offset_vector(inputPolygonVerts[currIndex], inputPolygonVerts[nextIndex],
+                                   offset, winding, &normals[currIndex])) {
+            return false;
+        }
         if (currIndex > 0) {
             
             if (is_reflex_vertex(inputPolygonVerts, winding, offset,
@@ -1259,7 +1289,7 @@ bool SkOffsetSimplePolygon(const SkPoint* inputPolygonVerts, int inputPolygonSiz
     auto currEdge = head;
     unsigned int offsetVertexCount = numEdges;
     unsigned long long iterations = 0;
-    unsigned long long maxIterations = (unsigned long long)(numEdges*numEdges);
+    unsigned long long maxIterations = (unsigned long long)(numEdges) * numEdges;
     while (head && prevEdge != currEdge && offsetVertexCount > 0) {
         ++iterations;
         
@@ -1436,18 +1466,34 @@ static bool point_in_triangle(const SkPoint& p0, const SkPoint& p1, const SkPoin
 
 class ReflexHash {
 public:
-    ReflexHash(const SkRect& bounds, int vertexCount)
-            : fBounds(bounds)
-            , fNumVerts(0) {
+    bool init(const SkRect& bounds, int vertexCount) {
+        fBounds = bounds;
+        fNumVerts = 0;
+        SkScalar width = bounds.width();
+        SkScalar height = bounds.height();
+        if (!SkScalarIsFinite(width) || !SkScalarIsFinite(height)) {
+            return false;
+        }
+
         
-        SkScalar hCount = SkScalarSqrt(vertexCount*bounds.width()/bounds.height());
+        SkScalar hCount = SkScalarSqrt(sk_ieee_float_divide(vertexCount*width, height));
+        if (!SkScalarIsFinite(hCount)) {
+            return false;
+        }
         fHCount = SkTMax(SkTMin(SkScalarRoundToInt(hCount), vertexCount), 1);
         fVCount = vertexCount/fHCount;
-        fGridConversion.set((fHCount - 0.001f)/bounds.width(), (fVCount - 0.001f)/bounds.height());
+        fGridConversion.set(sk_ieee_float_divide(fHCount - 0.001f, width),
+                            sk_ieee_float_divide(fVCount - 0.001f, height));
+        if (!fGridConversion.isFinite()) {
+            return false;
+        }
+
         fGrid.setCount(fHCount*fVCount);
         for (int i = 0; i < fGrid.count(); ++i) {
             fGrid[i].reset();
         }
+
+        return true;
     }
 
     void add(TriangulationVertex* v) {
@@ -1498,6 +1544,7 @@ private:
     int hash(TriangulationVertex* vert) const {
         int h = (vert->fPosition.fX - fBounds.fLeft)*fGridConversion.fX;
         int v = (vert->fPosition.fY - fBounds.fTop)*fGridConversion.fY;
+        SkASSERT(v*fHCount + h >= 0);
         return v*fHCount + h;
     }
 
@@ -1538,7 +1585,9 @@ bool SkTriangulateSimplePolygon(const SkPoint* polygonVerts, uint16_t* indexMap,
 
     
     SkRect bounds;
-    bounds.setBounds(polygonVerts, polygonSize);
+    if (!bounds.setBoundsCheck(polygonVerts, polygonSize)) {
+        return false;
+    }
     
     
     
@@ -1573,7 +1622,10 @@ bool SkTriangulateSimplePolygon(const SkPoint* polygonVerts, uint16_t* indexMap,
     
     
     SkTInternalLList<TriangulationVertex> convexList;
-    ReflexHash reflexHash(bounds, polygonSize);
+    ReflexHash reflexHash;
+    if (!reflexHash.init(bounds, polygonSize)) {
+        return false;
+    }
     prevIndex = polygonSize - 1;
     for (int currIndex = 0; currIndex < polygonSize; prevIndex = currIndex, ++currIndex) {
         TriangulationVertex::VertexType currType = triangulationVertices[currIndex].fVertexType;
@@ -1661,3 +1713,116 @@ bool SkTriangulateSimplePolygon(const SkPoint* polygonVerts, uint16_t* indexMap,
 
     return true;
 }
+
+
+
+static double crs(SkVector a, SkVector b) {
+    return a.fX * b.fY - a.fY * b.fX;
+}
+
+static int sign(SkScalar v) {
+    return v < 0 ? -1 : (v > 0);
+}
+
+struct SignTracker {
+    int fSign;
+    int fSignChanges;
+
+    void reset() {
+        fSign = 0;
+        fSignChanges = 0;
+    }
+
+    void init(int s) {
+        SkASSERT(fSignChanges == 0);
+        SkASSERT(s == 1 || s == -1 || s == 0);
+        fSign = s;
+        fSignChanges = 1;
+    }
+
+    void update(int s) {
+        if (s) {
+            if (fSign != s) {
+                fSignChanges += 1;
+                fSign = s;
+            }
+        }
+    }
+};
+
+struct ConvexTracker {
+    SkVector    fFirst, fPrev;
+    SignTracker fDSign, fCSign;
+    int         fVecCounter;
+    bool        fIsConcave;
+
+    ConvexTracker() { this->reset(); }
+
+    void reset() {
+        fPrev = {0, 0};
+        fDSign.reset();
+        fCSign.reset();
+        fVecCounter = 0;
+        fIsConcave = false;
+    }
+
+    void addVec(SkPoint p1, SkPoint p0) {
+        this->addVec(p1 - p0);
+    }
+    void addVec(SkVector v) {
+        if (v.fX == 0 && v.fY == 0) {
+            return;
+        }
+
+        fVecCounter += 1;
+        if (fVecCounter == 1) {
+            fFirst = fPrev = v;
+            fDSign.update(sign(v.fX));
+            return;
+        }
+
+        SkScalar d = v.fX;
+        SkScalar c = crs(fPrev, v);
+        int sign_c;
+        if (c) {
+            sign_c = sign(c);
+        } else {
+            if (d >= 0) {
+                sign_c = fCSign.fSign;
+            } else {
+                sign_c = -fCSign.fSign;
+            }
+        }
+
+        fDSign.update(sign(d));
+        fCSign.update(sign_c);
+        fPrev = v;
+
+        if (fDSign.fSignChanges > 3 || fCSign.fSignChanges > 1) {
+            fIsConcave = true;
+        }
+    }
+
+    void finalCross() {
+        this->addVec(fFirst);
+    }
+};
+
+bool SkIsPolyConvex_experimental(const SkPoint pts[], int count) {
+    if (count <= 3) {
+        return true;
+    }
+
+    ConvexTracker tracker;
+
+    for (int i = 0; i < count - 1; ++i) {
+        tracker.addVec(pts[i + 1], pts[i]);
+        if (tracker.fIsConcave) {
+            return false;
+        }
+    }
+    tracker.addVec(pts[0], pts[count - 1]);
+    tracker.finalCross();
+    return !tracker.fIsConcave;
+}
+

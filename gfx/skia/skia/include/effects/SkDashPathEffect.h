@@ -32,6 +32,7 @@ public:
 
 
 
+
     static sk_sp<SkPathEffect> Make(const SkScalar intervals[], int count, SkScalar phase);
 };
 

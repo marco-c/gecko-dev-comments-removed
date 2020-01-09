@@ -11,6 +11,7 @@
 
 #include "GrVkTexture.h"
 #include "GrVkRenderTarget.h"
+#include "vk/GrVkTypes.h"
 
 class GrVkGpu;
 
@@ -33,23 +34,27 @@ public:
     static sk_sp<GrVkTextureRenderTarget> MakeWrappedTextureRenderTarget(GrVkGpu*,
                                                                          const GrSurfaceDesc&,
                                                                          GrWrapOwnership,
+                                                                         GrWrapCacheable,
                                                                          const GrVkImageInfo&,
                                                                          sk_sp<GrVkImageLayout>);
 
-    bool updateForMipmap(GrVkGpu* gpu, const GrVkImageInfo& newInfo);
+    GrBackendFormat backendFormat() const override { return this->getBackendFormat(); }
 
 protected:
     void onAbandon() override {
-        GrVkRenderTarget::onAbandon();
+        
         GrVkTexture::onAbandon();
+        GrVkRenderTarget::onAbandon();
     }
 
     void onRelease() override {
-        GrVkRenderTarget::onRelease();
+        
         GrVkTexture::onRelease();
+        GrVkRenderTarget::onRelease();
     }
 
 private:
+    
     GrVkTextureRenderTarget(GrVkGpu* gpu,
                             SkBudgeted budgeted,
                             const GrSurfaceDesc& desc,
@@ -60,9 +65,9 @@ private:
                             sk_sp<GrVkImageLayout> msaaLayout,
                             const GrVkImageView* colorAttachmentView,
                             const GrVkImageView* resolveAttachmentView,
-                            GrMipMapsStatus,
-                            GrBackendObjectOwnership);
+                            GrMipMapsStatus);
 
+    
     GrVkTextureRenderTarget(GrVkGpu* gpu,
                             SkBudgeted budgeted,
                             const GrSurfaceDesc& desc,
@@ -70,9 +75,9 @@ private:
                             sk_sp<GrVkImageLayout> layout,
                             const GrVkImageView* texView,
                             const GrVkImageView* colorAttachmentView,
-                            GrMipMapsStatus,
-                            GrBackendObjectOwnership);
+                            GrMipMapsStatus);
 
+    
     GrVkTextureRenderTarget(GrVkGpu* gpu,
                             const GrSurfaceDesc& desc,
                             const GrVkImageInfo& info,
@@ -83,8 +88,10 @@ private:
                             const GrVkImageView* colorAttachmentView,
                             const GrVkImageView* resolveAttachmentView,
                             GrMipMapsStatus,
-                            GrBackendObjectOwnership);
+                            GrBackendObjectOwnership,
+                            GrWrapCacheable);
 
+    
     GrVkTextureRenderTarget(GrVkGpu* gpu,
                             const GrSurfaceDesc& desc,
                             const GrVkImageInfo& info,
@@ -92,19 +99,18 @@ private:
                             const GrVkImageView* texView,
                             const GrVkImageView* colorAttachmentView,
                             GrMipMapsStatus,
-                            GrBackendObjectOwnership);
-
-    static sk_sp<GrVkTextureRenderTarget> Make(GrVkGpu*,
-                                               const GrSurfaceDesc&,
-                                               const GrVkImageInfo&,
-                                               sk_sp<GrVkImageLayout>,
-                                               GrMipMapsStatus,
-                                               SkBudgeted budgeted,
-                                               GrBackendObjectOwnership,
-                                               bool isWrapped);
+                            GrBackendObjectOwnership,
+                            GrWrapCacheable);
 
     
     size_t onGpuMemorySize() const override;
+
+    
+    
+    void onSetRelease(sk_sp<GrRefCntedCallback> releaseHelper) override {
+        
+        this->setResourceRelease(std::move(releaseHelper));
+    }
 };
 
 #endif

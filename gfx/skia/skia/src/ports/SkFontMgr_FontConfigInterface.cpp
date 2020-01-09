@@ -19,7 +19,7 @@
 #include "SkResourceCache.h"
 #include <new>
 
-SkStreamAsset* SkTypeface_FCI::onOpenStream(int* ttcIndex) const {
+std::unique_ptr<SkStreamAsset> SkTypeface_FCI::onOpenStream(int* ttcIndex) const {
     *ttcIndex =  this->getIdentity().fTTCIndex;
 
     if (fFontData) {
@@ -27,10 +27,10 @@ SkStreamAsset* SkTypeface_FCI::onOpenStream(int* ttcIndex) const {
         if (!stream) {
             return nullptr;
         }
-        return stream->duplicate().release();
+        return stream->duplicate();
     }
 
-    return fFCI->openStream(this->getIdentity());
+    return std::unique_ptr<SkStreamAsset>(fFCI->openStream(this->getIdentity()));
 }
 
 std::unique_ptr<SkFontData> SkTypeface_FCI::onMakeFontData() const {
@@ -103,9 +103,8 @@ public:
 
 private:
     struct Result : public SkResourceCache::Rec {
-        Result(Request* request, SkTypeface* typeface)
-            : fRequest(request)
-            , fFace(SkSafeRef(typeface)) {}
+        Result(Request* request, sk_sp<SkTypeface> typeface)
+            : fRequest(request), fFace(std::move(typeface)) {}
         Result(Result&&) = default;
         Result& operator=(Result&&) = default;
 
@@ -124,20 +123,20 @@ public:
     SkFontRequestCache(size_t maxSize) : fCachedResults(maxSize) {}
 
     
-    void add(SkTypeface* face, Request* request) {
-        fCachedResults.add(new Result(request, face));
+    void add(sk_sp<SkTypeface> face, Request* request) {
+        fCachedResults.add(new Result(request, std::move(face)));
     }
     
-    SkTypeface* findAndRef(Request* request) {
-        SkTypeface* face = nullptr;
+    sk_sp<SkTypeface> findAndRef(Request* request) {
+        sk_sp<SkTypeface> face;
         fCachedResults.find(*request, [](const SkResourceCache::Rec& rec, void* context) -> bool {
             const Result& result = static_cast<const Result&>(rec);
-            SkTypeface** face = static_cast<SkTypeface**>(context);
+            sk_sp<SkTypeface>* face = static_cast<sk_sp<SkTypeface>*>(context);
 
-            *face = result.fFace.get();
+            *face = result.fFace;
             return true;
         }, &face);
-        return SkSafeRef(face);
+        return face;
     }
 };
 
@@ -206,13 +205,13 @@ protected:
         }
 
         
-        SkTypeface* face = fTFCache.findByProcAndRef(find_by_FontIdentity, &identity);
+        sk_sp<SkTypeface> face = fTFCache.findByProcAndRef(find_by_FontIdentity, &identity);
         if (!face) {
-            face = SkTypeface_FCI::Create(fFCI, identity, std::move(outFamilyName), outStyle);
+            face.reset(SkTypeface_FCI::Create(fFCI, identity, std::move(outFamilyName), outStyle));
             
             fTFCache.add(face);
         }
-        return face;
+        return face.release();
     }
 
     SkTypeface* onMatchFamilyStyleCharacter(const char familyName[], const SkFontStyle&,
@@ -300,7 +299,7 @@ protected:
         
         using Request = SkFontRequestCache::Request;
         std::unique_ptr<Request> request(Request::Create(requestedFamilyName, requestedStyle));
-        SkTypeface* face = fCache.findAndRef(request.get());
+        sk_sp<SkTypeface> face = fCache.findAndRef(request.get());
         if (face) {
             return sk_sp<SkTypeface>(face);
         }
@@ -317,14 +316,14 @@ protected:
         
         face = fTFCache.findByProcAndRef(find_by_FontIdentity, &identity);
         if (!face) {
-            face = SkTypeface_FCI::Create(fFCI, identity, std::move(outFamilyName), outStyle);
+            face.reset(SkTypeface_FCI::Create(fFCI, identity, std::move(outFamilyName), outStyle));
             
             fTFCache.add(face);
         }
         
         fCache.add(face, request.release());
 
-        return sk_sp<SkTypeface>(face);
+        return face;
     }
 };
 

@@ -391,6 +391,7 @@ void CFGGenerator::addExpression(CFG& cfg, std::unique_ptr<Expression>* e, bool 
         case Expression::kBoolLiteral_Kind:  
         case Expression::kFloatLiteral_Kind: 
         case Expression::kIntLiteral_Kind:   
+        case Expression::kNullLiteral_Kind:   
         case Expression::kSetting_Kind:      
         case Expression::kVariableReference_Kind:
             cfg.fBlocks[cfg.fCurrent].fNodes.push_back({ BasicBlock::Node::kExpression_Kind,

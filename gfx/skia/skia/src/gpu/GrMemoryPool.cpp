@@ -7,10 +7,10 @@
 
 #include "GrMemoryPool.h"
 #include "SkMalloc.h"
-#ifdef SK_DEBUG
-#include "SkAtomics.h"
-#endif
 #include "ops/GrOp.h"
+#ifdef SK_DEBUG
+    #include <atomic>
+#endif
 
 #ifdef SK_DEBUG
     #define VALIDATE this->validate()
@@ -89,7 +89,10 @@ void* GrMemoryPool::allocate(size_t size) {
     
     AllocHeader* allocData = reinterpret_cast<AllocHeader*>(ptr);
     SkDEBUGCODE(allocData->fSentinal = kAssignedMarker);
-    SkDEBUGCODE(allocData->fID = []{static int32_t gID; return sk_atomic_inc(&gID) + 1;}());
+    SkDEBUGCODE(allocData->fID = []{
+        static std::atomic<int32_t> nextID{1};
+        return nextID++;
+    }());
     
     SkDEBUGCODE(fAllocatedIDs.add(allocData->fID));
     allocData->fHeader = fTail;

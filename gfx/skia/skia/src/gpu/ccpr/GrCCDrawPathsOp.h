@@ -11,15 +11,15 @@
 #include "GrShape.h"
 #include "SkTInternalLList.h"
 #include "ccpr/GrCCSTLList.h"
+#include "ccpr/GrCCPathCache.h"
 #include "ops/GrDrawOp.h"
 
+class GrCCAtlas;
+class GrCCPerFlushResources;
 struct GrCCPerFlushResourceSpecs;
 struct GrCCPerOpListPaths;
-class GrCCAtlas;
 class GrOnFlushResourceProvider;
-class GrCCPathCache;
-class GrCCPathCacheEntry;
-class GrCCPerFlushResources;
+class GrRecordingContext;
 
 
 
@@ -29,30 +29,28 @@ public:
     DEFINE_OP_CLASS_ID
     SK_DECLARE_INTERNAL_LLIST_INTERFACE(GrCCDrawPathsOp);
 
-    static std::unique_ptr<GrCCDrawPathsOp> Make(GrContext*, const SkIRect& clipIBounds,
+    static std::unique_ptr<GrCCDrawPathsOp> Make(GrRecordingContext*, const SkIRect& clipIBounds,
                                                  const SkMatrix&, const GrShape&, GrPaint&&);
     ~GrCCDrawPathsOp() override;
 
     const char* name() const override { return "GrCCDrawPathsOp"; }
     FixedFunctionFlags fixedFunctionFlags() const override { return FixedFunctionFlags::kNone; }
-    RequiresDstTexture finalize(const GrCaps&, const GrAppliedClip*) override;
+    GrProcessorSet::Analysis finalize(const GrCaps&, const GrAppliedClip*, GrFSAAType) override;
     CombineResult onCombineIfPossible(GrOp*, const GrCaps&) override;
-    void visitProxies(const VisitProxyFunc& fn) const override { fProcessors.visitProxies(fn); }
+    void visitProxies(const VisitProxyFunc& fn, VisitorType) const override {
+        fProcessors.visitProxies(fn);
+    }
     void onPrepare(GrOpFlushState*) override {}
 
-    void wasRecorded(sk_sp<GrCCPerOpListPaths> owningPerOpListPaths);
+    void addToOwningPerOpListPaths(sk_sp<GrCCPerOpListPaths> owningPerOpListPaths);
 
     
     
-    
-    
-    void accountForOwnPaths(GrCCPathCache*, GrOnFlushResourceProvider*,
-                            const GrUniqueKey& stashedAtlasKey, GrCCPerFlushResourceSpecs*);
+    void accountForOwnPaths(GrCCPathCache*, GrOnFlushResourceProvider*, GrCCPerFlushResourceSpecs*);
 
     
     
-    
-    enum class DoCopiesToCache : bool {
+    enum class DoCopiesToA8Coverage : bool {
         kNo = false,
         kYes = true
     };
@@ -62,51 +60,62 @@ public:
     
     
     
-    void setupResources(GrOnFlushResourceProvider*, GrCCPerFlushResources*, DoCopiesToCache);
+    
+    void setupResources(GrCCPathCache*, GrOnFlushResourceProvider*, GrCCPerFlushResources*,
+                        DoCopiesToA8Coverage);
 
-    void onExecute(GrOpFlushState*) override;
+    void onExecute(GrOpFlushState*, const SkRect& chainBounds) override;
 
 private:
     friend class GrOpMemoryPool;
 
-    static std::unique_ptr<GrCCDrawPathsOp> InternalMake(GrContext*, const SkIRect& clipIBounds,
+    static std::unique_ptr<GrCCDrawPathsOp> InternalMake(GrRecordingContext*,
+                                                         const SkIRect& clipIBounds,
                                                          const SkMatrix&, const GrShape&,
                                                          float strokeDevWidth,
                                                          const SkRect& conservativeDevBounds,
                                                          GrPaint&&);
-    enum class Visibility {
-        kPartial,
-        kMostlyComplete,  
-        kComplete
-    };
 
     GrCCDrawPathsOp(const SkMatrix&, const GrShape&, float strokeDevWidth,
                     const SkIRect& shapeConservativeIBounds, const SkIRect& maskDevIBounds,
-                    Visibility maskVisibility, const SkRect& conservativeDevBounds, GrPaint&&);
+                    const SkRect& conservativeDevBounds, GrPaint&&);
 
     void recordInstance(GrTextureProxy* atlasProxy, int instanceIdx);
 
     const SkMatrix fViewMatrixIfUsingLocalCoords;
 
-    struct SingleDraw {
+    class SingleDraw {
+    public:
         SingleDraw(const SkMatrix&, const GrShape&, float strokeDevWidth,
                    const SkIRect& shapeConservativeIBounds, const SkIRect& maskDevIBounds,
-                   Visibility maskVisibility, GrColor);
-        ~SingleDraw();
+                   const SkPMColor4f&);
+
+        
+        GrProcessorSet::Analysis finalize(
+                const GrCaps&, const GrAppliedClip*, GrFSAAType, GrProcessorSet*);
+        void accountForOwnPath(GrCCPathCache*, GrOnFlushResourceProvider*,
+                               GrCCPerFlushResourceSpecs*);
+        void setupResources(GrCCPathCache*, GrOnFlushResourceProvider*, GrCCPerFlushResources*,
+                            DoCopiesToA8Coverage, GrCCDrawPathsOp*);
+
+    private:
+        bool shouldCachePathMask(int maxRenderTargetSize) const;
 
         SkMatrix fMatrix;
         GrShape fShape;
         float fStrokeDevWidth;
         const SkIRect fShapeConservativeIBounds;
         SkIRect fMaskDevIBounds;
-        Visibility fMaskVisibility;
-        GrColor fColor;
+        SkPMColor4f fColor;
 
-        sk_sp<GrCCPathCacheEntry> fCacheEntry;
-        sk_sp<GrTextureProxy> fCachedAtlasProxy;
+        GrCCPathCache::OnFlushEntryRef fCacheEntry;
         SkIVector fCachedMaskShift;
+        bool fDoCopyToA8Coverage = false;
+        bool fDoCachePathMask = false;
 
         SingleDraw* fNext = nullptr;
+
+        friend class GrCCSTLList<SingleDraw>;  
     };
 
     

@@ -8,7 +8,6 @@
 #include "SkAutoMalloc.h"
 #include "SkBitmap.h"
 #include "SkData.h"
-#include "SkDeduper.h"
 #include "SkImage.h"
 #include "SkImageGenerator.h"
 #include "SkMakeUnique.h"
@@ -18,6 +17,8 @@
 #include "SkSafeMath.h"
 #include "SkStream.h"
 #include "SkTypeface.h"
+
+#ifndef SK_DISABLE_READBUFFER
 
 namespace {
     
@@ -40,35 +41,23 @@ namespace {
 
 SkReadBuffer::SkReadBuffer() {
     fVersion = 0;
-    fMemoryPtr = nullptr;
 
     fTFArray = nullptr;
     fTFCount = 0;
 
     fFactoryArray = nullptr;
     fFactoryCount = 0;
-#ifdef DEBUG_NON_DETERMINISTIC_ASSERT
-    fDecodedBitmapIndex = -1;
-#endif 
 }
 
 SkReadBuffer::SkReadBuffer(const void* data, size_t size) {
     fVersion = 0;
     this->setMemory(data, size);
-    fMemoryPtr = nullptr;
 
     fTFArray = nullptr;
     fTFCount = 0;
 
     fFactoryArray = nullptr;
     fFactoryCount = 0;
-#ifdef DEBUG_NON_DETERMINISTIC_ASSERT
-    fDecodedBitmapIndex = -1;
-#endif 
-}
-
-SkReadBuffer::~SkReadBuffer() {
-    sk_free(fMemoryPtr);
 }
 
 void SkReadBuffer::setMemory(const void* data, size_t size) {
@@ -289,11 +278,6 @@ uint32_t SkReadBuffer::getArrayCount() {
 
 
 sk_sp<SkImage> SkReadBuffer::readImage() {
-    if (fInflator) {
-        SkImage* img = fInflator->getImage(this->read32());
-        return img ? sk_ref_sp(img) : nullptr;
-    }
-
     SkIRect bounds;
     if (this->isVersionLT(kStoreImageBounds_Version)) {
         bounds.fLeft = bounds.fTop = 0;
@@ -363,10 +347,6 @@ sk_sp<SkImage> SkReadBuffer::readImage() {
 }
 
 sk_sp<SkTypeface> SkReadBuffer::readTypeface() {
-    if (fInflator) {
-        return sk_ref_sp(fInflator->getTypeface(this->read32()));
-    }
-
     
     
     
@@ -393,12 +373,7 @@ sk_sp<SkTypeface> SkReadBuffer::readTypeface() {
 SkFlattenable* SkReadBuffer::readFlattenable(SkFlattenable::Type ft) {
     SkFlattenable::Factory factory = nullptr;
 
-    if (fInflator) {
-        factory = fInflator->getFactory(this->read32());
-        if (!factory) {
-            return nullptr;
-        }
-    } else if (fFactoryCount > 0) {
+    if (fFactoryCount > 0) {
         int32_t index = this->read32();
         if (0 == index || !this->isValid()) {
             return nullptr; 
@@ -410,13 +385,13 @@ SkFlattenable* SkReadBuffer::readFlattenable(SkFlattenable::Type ft) {
         }
         factory = fFactoryArray[index];
     } else {
-        SkString name;
         if (this->peekByte()) {
             
+            SkString name;
             this->readString(&name);
 
-            
-            fFlattenableDict.set(fFlattenableDict.count() + 1, name);
+            factory = SkFlattenable::NameToFactory(name.c_str());
+            fFlattenableDict.set(fFlattenableDict.count() + 1, factory);
         } else {
             
             
@@ -424,19 +399,14 @@ SkFlattenable* SkReadBuffer::readFlattenable(SkFlattenable::Type ft) {
             if (index == 0) {
                 return nullptr; 
             }
-            SkString* namePtr = fFlattenableDict.find(index);
-            if (!this->validate(namePtr != nullptr)) {
-                return nullptr;
+
+            if (SkFlattenable::Factory* found = fFlattenableDict.find(index)) {
+                factory = *found;
             }
-            name = *namePtr;
         }
 
-        
-        if (!(factory = this->getCustomFactory(name))) {
-            
-            if (!(factory = SkFlattenable::NameToFactory(name.c_str()))) {
-                return nullptr; 
-            }
+        if (!this->validate(factory != nullptr)) {
+            return nullptr;
         }
     }
 
@@ -482,3 +452,5 @@ int32_t SkReadBuffer::checkInt(int32_t min, int32_t max) {
 SkFilterQuality SkReadBuffer::checkFilterQuality() {
     return this->checkRange<SkFilterQuality>(kNone_SkFilterQuality, kLast_SkFilterQuality);
 }
+
+#endif 

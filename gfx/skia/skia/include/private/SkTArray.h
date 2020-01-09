@@ -37,7 +37,7 @@ public:
     
 
 
-    explicit SkTArray(const SkTArray& that) {
+    SkTArray(const SkTArray& that) {
         this->init(that.fCount);
         this->copy(that.fItemArray);
     }
@@ -327,6 +327,10 @@ public:
     const T* end() const {
         return fItemArray ? fItemArray + fCount : nullptr;
     }
+    T* data() { return fItemArray; }
+    const T* data() const { return fItemArray; }
+    size_t size() const { return (size_t)fCount; }
+    void resize(size_t count) { this->resize_back((int)count); }
 
    
 
@@ -594,7 +598,7 @@ public:
         : INHERITED(array, &fStorage) {
     }
 
-    explicit SkSTArray(INHERITED&& array)
+    SkSTArray(INHERITED&& array)
         : INHERITED(std::move(array), &fStorage) {
     }
 
