@@ -1124,8 +1124,9 @@
 
 
 
+
  \
-    MACRO(JSOP_LOOPHEAD, 109, "loophead", NULL, 1, 0, 0, JOF_BYTE) \
+    MACRO(JSOP_LOOPHEAD, 109, "loophead", NULL, 5, 0, 0, JOF_ICINDEX) \
     
 
 
@@ -2445,7 +2446,7 @@
 
 
  \
-    MACRO(JSOP_LOOPENTRY, 227, "loopentry", NULL, 2, 0, 0, JOF_UINT8|JOF_IC) \
+    MACRO(JSOP_LOOPENTRY, 227, "loopentry", NULL, 6, 0, 0, JOF_LOOPENTRY|JOF_IC) \
     
 
 
@@ -2471,9 +2472,8 @@
 
 
 
-
  \
-    MACRO(JSOP_JUMPTARGET, 230, "jumptarget", NULL, 1, 0, 0, JOF_BYTE)\
+    MACRO(JSOP_JUMPTARGET, 230, "jumptarget", NULL, 5, 0, 0, JOF_ICINDEX) \
     
 
 

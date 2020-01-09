@@ -151,6 +151,11 @@ void ICEntry::trace(JSTracer* trc) {
   
   for (jsbytecode* pc = script->code(); pc < pcEnd; pc = GetNextPc(pc)) {
     JSOp op = JSOp(*pc);
+
+    
+    MOZ_ASSERT_IF(BytecodeIsJumpTarget(op),
+                  GET_ICINDEX(pc) == icEntries.length());
+
     if (!BytecodeOpHasIC(op)) {
       continue;
     }
