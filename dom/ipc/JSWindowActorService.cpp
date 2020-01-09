@@ -313,7 +313,13 @@ NS_IMETHODIMP JSWindowActorProtocol::Observe(nsISupports* aSubject,
   ErrorResult error;
   RefPtr<JSWindowActorChild> actor = wgc->GetActor(mName, error);
   if (NS_WARN_IF(error.Failed())) {
-    return error.StealNSResult();
+    nsresult rv = error.StealNSResult();
+
+    
+    if (rv == NS_ERROR_NOT_AVAILABLE) {
+      return NS_OK;
+    }
+    return rv;
   }
 
   
