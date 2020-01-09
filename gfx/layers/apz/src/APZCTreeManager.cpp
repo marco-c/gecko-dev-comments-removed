@@ -526,7 +526,7 @@ APZCTreeManager::UpdateHitTestingTreeImpl(LayersId aRootLayerTreeId,
       }
       HitTestingTreeNode* target = it->second;
       mScrollThumbInfo.emplace_back(
-          thumb->GetScrollbarAnimationId(), thumb->GetTransform(),
+          *(thumb->GetScrollbarAnimationId()), thumb->GetTransform(),
           thumb->GetScrollbarData(), targetGuid, target->GetTransform(),
           target->IsAncestorOf(thumb));
     }

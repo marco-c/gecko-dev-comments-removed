@@ -111,7 +111,7 @@ class HitTestingTreeNode {
 
   
 
-  void SetScrollbarData(const uint64_t& aScrollbarAnimationId,
+  void SetScrollbarData(const Maybe<uint64_t>& aScrollbarAnimationId,
                         const ScrollbarData& aScrollbarData);
   bool MatchesScrollDragMetrics(const AsyncDragMetrics& aDragMetrics) const;
   bool IsScrollbarNode() const;  
@@ -120,7 +120,7 @@ class HitTestingTreeNode {
   bool IsScrollThumbNode() const;  
   ScrollableLayerGuid::ViewID GetScrollTargetId() const;
   const ScrollbarData& GetScrollbarData() const;
-  const uint64_t& GetScrollbarAnimationId() const;
+  Maybe<uint64_t> GetScrollbarAnimationId() const;
 
   
 
@@ -165,7 +165,7 @@ class HitTestingTreeNode {
   
   
   
-  uint64_t mScrollbarAnimationId;
+  Maybe<uint64_t> mScrollbarAnimationId;
 
   
   ScrollbarData mScrollbarData;
