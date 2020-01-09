@@ -356,7 +356,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
     
     
     this.manage(postData.text);
-    const dataSize = postData.text.str.length;
+    const dataSize = postData.size;
     postData.text = postData.text.form();
 
     this.emit("network-event-update:post-data", "requestPostData", {

@@ -43,6 +43,7 @@ pref("devtools.debugger.force-local", true);
 
 
 pref("devtools.netmonitor.responseBodyLimit", 1048576);
+pref("devtools.netmonitor.requestBodyLimit", 1048576);
 
 
 pref("devtools.defaultColorUnit", "authored");

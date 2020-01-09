@@ -329,6 +329,15 @@
 
 
 
+.network-monitor .request-error-header {
+  margin: 0;
+  padding: 3px 8px;
+  background-color: var(--theme-highlight-red);
+  color: var(--theme-selection-color);
+}
+
+
+
 .network-monitor .response-error-header {
   margin: 0;
   padding: 3px 8px;
