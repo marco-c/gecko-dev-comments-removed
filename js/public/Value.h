@@ -65,9 +65,7 @@ enum JSValueType : uint8_t {
   JSVAL_TYPE_OBJECT = 0x0c,
 
   
-  
-  JSVAL_TYPE_UNKNOWN = 0x20,
-  JSVAL_TYPE_MISSING = 0x21
+  JSVAL_TYPE_UNKNOWN = 0x20
 };
 
 namespace JS {
