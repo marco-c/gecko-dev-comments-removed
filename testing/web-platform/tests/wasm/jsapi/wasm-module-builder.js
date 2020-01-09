@@ -98,6 +98,12 @@ class WasmFunctionBuilder {
   }
 
   addBody(body) {
+    const bodyCopy = body.slice();
+    bodyCopy.push(kExprEnd);
+    return this.addBodyWithEnd(bodyCopy);
+  }
+
+  addBodyWithEnd(body) {
     this.body = body;
     return this;
   }
@@ -260,6 +266,11 @@ class WasmModuleBuilder {
   
   setFunctionTableLength(length) {
     return this.setTableBounds(length);
+  }
+
+  
+  setTableLength(min, max = undefined) {
+    return this.setTableBounds(min, max);
   }
 
   toArray(debug = false) {
