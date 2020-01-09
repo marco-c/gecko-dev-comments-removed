@@ -4,38 +4,45 @@
 
 
 
+import { uniq } from "lodash";
 
+import { asyncStore } from "../utils/prefs";
+import type { EventListenerBreakpoints } from "../types";
 
+type OuterState = { eventListenerBreakpoints: EventListenerBreakpoints };
 
-const initialEventListenersState = {
-  activeEventNames: [],
-  listeners: [],
-  fetchingListeners: false
-};
-
-function update(state = initialEventListenersState, action, emit) {
+function update(state: EventListenerBreakpoints = [], action: any) {
   switch (action.type) {
-    case "UPDATE_EVENT_BREAKPOINTS":
-      state.activeEventNames = action.eventNames;
-      
-      break;
-    case "FETCH_EVENT_LISTENERS":
-      if (action.status === "begin") {
-        state.fetchingListeners = true;
-      } else if (action.status === "done") {
-        state.fetchingListeners = false;
-        state.listeners = action.listeners;
-      }
-      break;
-    case "NAVIGATE":
-      return initialEventListenersState;
-  }
+    case "ADD_EVENT_LISTENERS":
+      return updateEventTypes("add", state, action.events);
 
-  return state;
+    case "REMOVE_EVENT_LISTENERS":
+      return updateEventTypes("remove", state, action.events);
+
+    default:
+      return state;
+  }
 }
 
-export function getEventListeners(state) {
-  return state.eventListeners.listeners;
+function updateEventTypes(
+  addOrRemove: string,
+  currentEvents: EventListenerBreakpoints,
+  events: EventListenerBreakpoints
+): EventListenerBreakpoints {
+  let newEventListeners;
+
+  if (addOrRemove === "add") {
+    newEventListeners = uniq([...currentEvents, ...events]);
+  } else {
+    newEventListeners = currentEvents.filter(event => !events.includes(event));
+  }
+
+  asyncStore.eventListenerBreakpoints = newEventListeners;
+  return newEventListeners;
+}
+
+export function getActiveEventListeners(state: OuterState) {
+  return state.eventListenerBreakpoints;
 }
 
 export default update;
