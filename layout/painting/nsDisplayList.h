@@ -2744,26 +2744,6 @@ class nsDisplayItem : public nsDisplayItemBase {
 
 
 
-
-
-
-
-
-
-  virtual already_AddRefed<Layer> BuildLayer(
-      nsDisplayListBuilder* aBuilder, LayerManager* aManager,
-      const ContainerLayerParameters& aContainerParameters) {
-    return nullptr;
-  }
-
-  
-
-
-
-
-
-
-
   virtual bool CreateWebRenderCommands(
       mozilla::wr::DisplayListBuilder& aBuilder,
       mozilla::wr::IpcResourceUpdateQueue& aResources,
@@ -3120,6 +3100,26 @@ class nsPaintedDisplayItem : public nsDisplayItem {
   virtual void ApplyOpacity(nsDisplayListBuilder* aBuilder, float aOpacity,
                             const DisplayItemClipChain* aClip) {
     MOZ_ASSERT(CanApplyOpacity(), "ApplyOpacity is not supported on this type");
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  virtual already_AddRefed<Layer> BuildLayer(
+      nsDisplayListBuilder* aBuilder, LayerManager* aManager,
+      const ContainerLayerParameters& aContainerParameters) {
+    return nullptr;
   }
 
   
