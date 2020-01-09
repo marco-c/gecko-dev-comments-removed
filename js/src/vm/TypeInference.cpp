@@ -3497,6 +3497,17 @@ bool JSScript::makeTypes(JSContext* cx) {
 
   AutoEnterAnalysis enter(cx);
 
+  
+  
+  if (!ensureHasAnalyzedArgsUsage(cx)) {
+    return false;
+  }
+
+  
+  if (types_) {
+    return true;
+  }
+
   UniquePtr<jit::ICScript> icScript(jit::ICScript::create(cx, this));
   if (!icScript) {
     return false;
@@ -3526,6 +3537,7 @@ bool JSScript::makeTypes(JSContext* cx) {
 
   prepareForDestruction.release();
 
+  MOZ_ASSERT(!types_);
   types_ = new (typeScript) TypeScript(this, std::move(icScript), numTypeSets);
 
   
