@@ -367,7 +367,6 @@ class UrlbarInput {
 
   setValueFromResult(result) {
     let val;
-
     switch (result.type) {
       case UrlbarUtils.RESULT_TYPE.SEARCH:
         val = result.payload.suggestion || result.payload.query;
@@ -389,6 +388,13 @@ class UrlbarInput {
     }
     this.value = val;
 
+    
+    let event = this.document.createEvent("UIEvents");
+    event.initUIEvent("input", true, false, this.window, 0);
+    this.inputField.dispatchEvent(event);
+
+    
+    
     switch (result.type) {
       case UrlbarUtils.RESULT_TYPE.TAB_SWITCH:
         this.setAttribute("actiontype", "switchtab");
