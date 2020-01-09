@@ -1085,10 +1085,12 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
   get metadata() {
     const data = {};
+    data.id = this.actorID;
     
     
     data.ancestors = this.ancestorRules.map(rule => {
       return {
+        id: rule.actorID,
         
         
         type: rule.rawRule.type,
@@ -1106,7 +1108,7 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
     });
 
     
-    if (this.type === ELEMENT_STYLE) {
+    if (this.type === ELEMENT_STYLE && this.rawNode) {
       
       try {
         data.selector = findCssSelector(this.rawNode);
@@ -1122,6 +1124,12 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
         
         isFramed: this.rawNode.ownerGlobal !== this.pageStyle.ownerWindow,
       };
+
+      const nodeActor = this.pageStyle.walker.getNode(this.rawNode);
+      if (nodeActor) {
+        data.source.id = nodeActor.actorID;
+      }
+
       data.ruleIndex = 0;
     } else {
       data.selector = (this.type === CSSRule.KEYFRAME_RULE)
@@ -1131,6 +1139,7 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
         
         type: this.sheetActor.href ? "stylesheet" : "inline",
         href: this.sheetActor.href || this.sheetActor.window.location.toString(),
+        id: this.sheetActor.actorID,
         index: this.sheetActor.styleSheetIndex,
         
         isFramed: this.sheetActor.ownerWindow !== this.sheetActor.window,
