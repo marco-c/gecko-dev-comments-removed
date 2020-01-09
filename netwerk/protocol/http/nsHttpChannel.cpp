@@ -8063,6 +8063,9 @@ nsresult nsHttpChannel::ContinueOnStopRequest(nsresult aStatus, bool aIsFromNet,
   }
 
   
+  mDNSPrefetch = nullptr;
+
+  
   gHttpHandler->OnStopRequest(this);
 
   RemoveAsNonTailRequest();
