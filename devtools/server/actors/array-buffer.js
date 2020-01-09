@@ -6,36 +6,37 @@
 
 "use strict";
 
+var protocol = require("devtools/shared/protocol");
+const {arrayBufferSpec} = require("devtools/shared/specs/array-buffer");
 
 
 
 
 
 
-function ArrayBufferActor(buffer) {
-  this.buffer = buffer;
-  this.bufferLength = buffer.byteLength;
-}
 
-ArrayBufferActor.prototype = {
-  actorPrefix: "arrayBuffer",
+
+
+const ArrayBufferActor = protocol.ActorClassWithSpec(arrayBufferSpec, {
+  initialize: function(conn, buffer) {
+    protocol.Actor.prototype.initialize.call(this, conn);
+    this.buffer = buffer;
+    this.bufferLength = buffer.byteLength;
+  },
 
   rawValue: function() {
     return this.buffer;
   },
 
-  destroy: function() {
-  },
-
-  grip() {
+  form: function() {
     return {
-      "type": "arrayBuffer",
-      "length": this.bufferLength,
-      "actor": this.actorID,
+      typeName: this.typeName,
+      length: this.bufferLength,
+      actor: this.actorID,
     };
   },
 
-  onSlice({start, count}) {
+  slice(start, count) {
     const slice = new Uint8Array(this.buffer, start, count);
     const parts = [];
     let offset = 0;
@@ -51,36 +52,8 @@ ArrayBufferActor.prototype = {
       "encoded": parts.join(""),
     };
   },
-};
-
-ArrayBufferActor.prototype.requestTypes = {
-  "slice": ArrayBufferActor.prototype.onSlice,
-};
-
-
-
-
-
-
-
-
-
-function arrayBufferGrip(buffer, pool) {
-  if (!pool.arrayBufferActors) {
-    pool.arrayBufferActors = new WeakMap();
-  }
-
-  if (pool.arrayBufferActors.has(buffer)) {
-    return pool.arrayBufferActors.get(buffer).grip();
-  }
-
-  const actor = new ArrayBufferActor(buffer);
-  pool.addActor(actor);
-  pool.arrayBufferActors.set(buffer, actor);
-  return actor.grip();
-}
+});
 
 module.exports = {
   ArrayBufferActor,
-  arrayBufferGrip,
 };

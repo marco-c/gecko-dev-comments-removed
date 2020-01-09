@@ -6,18 +6,22 @@
 const {Arg, RetVal, generateActorSpec, types} = require("devtools/shared/protocol");
 
 const longstringType = types.getType("longstring");
+const arraybufferType = types.getType("arraybuffer");
 
 
 types.addType("sourcedata", {
   write: (value, context, detail) => {
-    if (value.type === "arrayBuffer") {
-      return value;
+    if (value.typeName === "arraybuffer") {
+      return arraybufferType.write(value, context, detail);
     }
     return longstringType.write(value, context, detail);
   },
   read: (value, context, detail) => {
-    if (value.type === "arrayBuffer") {
-      return value;
+    
+    
+    
+    if (value.typeName === "arraybuffer" || value.type === "arrayBuffer") {
+      return arraybufferType.read(value, context, detail);
     }
     return longstringType.read(value, context, detail);
   },

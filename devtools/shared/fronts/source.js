@@ -6,9 +6,7 @@
 
 const { sourceSpec } = require("devtools/shared/specs/source");
 const { FrontClassWithSpec, registerFront } = require("devtools/shared/protocol");
-
-
-
+const { ArrayBufferFront } = require("devtools/shared/fronts/array-buffer");
 
 
 
@@ -19,10 +17,9 @@ const { FrontClassWithSpec, registerFront } = require("devtools/shared/protocol"
 
 
 class SourceFront extends FrontClassWithSpec(sourceSpec) {
-  constructor(client, form, activeThread) {
+  constructor(client, form) {
     super(client);
     this._url = form.url;
-    this._activeThread = activeThread;
     
     
     this.actorID = form.actor;
@@ -50,20 +47,16 @@ class SourceFront extends FrontClassWithSpec(sourceSpec) {
   
 
 
+
   async source() {
     const response = await this.onSource();
     return this._onSourceResponse(response);
   }
 
   _onSourceResponse(response) {
-    if (typeof response.source === "string") {
-      return response;
-    }
-
     const { contentType, source } = response;
-    if (source.type === "arrayBuffer") {
-      const arrayBuffer = this._activeThread.threadArrayBuffer(source);
-      return arrayBuffer.slice(0, source.length).then(function(resp) {
+    if (source instanceof ArrayBufferFront) {
+      return source.slice(0, source.length).then(function(resp) {
         if (resp.error) {
           return resp;
         }
