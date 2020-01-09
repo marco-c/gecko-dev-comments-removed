@@ -389,8 +389,6 @@ struct InlineBackgroundData {
              
              it1.GetContainer() == it2.GetContainer() &&
              
-             it1.GetLineList() == it2.GetLineList() &&
-             
              it1.GetLine() == it2.GetLine();
     }
     if (nsRubyTextContainerFrame* rtcFrame = do_QueryFrame(mLineContainer)) {
