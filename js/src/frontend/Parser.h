@@ -1018,13 +1018,13 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
   }
 
   MOZ_MUST_USE bool mustMatchToken(TokenKind excpected, JSErrNum errorNumber) {
-    return mustMatchToken(excpected, TokenStream::None, errorNumber);
+    return mustMatchToken(excpected, TokenStream::SlashIsDiv, errorNumber);
   }
 
   template <typename ConditionT>
   MOZ_MUST_USE bool mustMatchToken(ConditionT condition, JSErrNum errorNumber) {
     return mustMatchTokenInternal(
-        condition, TokenStream::None,
+        condition, TokenStream::SlashIsDiv,
         [this, errorNumber](TokenKind) { this->error(errorNumber); });
   }
 
@@ -1039,7 +1039,7 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
   template <typename ErrorReportT>
   MOZ_MUST_USE bool mustMatchToken(TokenKind expected,
                                    ErrorReportT errorReport) {
-    return mustMatchToken(expected, TokenStream::None, errorReport);
+    return mustMatchToken(expected, TokenStream::SlashIsDiv, errorReport);
   }
 
  private:
