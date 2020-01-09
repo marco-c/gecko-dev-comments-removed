@@ -590,10 +590,6 @@ nsresult nsTypeAheadFind::FindItNow(nsIPresShell* aPresShell, bool aIsLinksOnly,
         
         
         
-        
-        NS_ASSERTION(mFoundEditable,
-                     "Independent selection controller on "
-                     "non-editable element!");
       }
 
       if (!mFoundEditable) {
