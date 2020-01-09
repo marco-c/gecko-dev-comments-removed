@@ -28,7 +28,6 @@
 #include "nsContentUtils.h"
 #include "nsScriptError.h"
 #include "nsThreadUtils.h"
-#include "xpcprivate.h"
 
 namespace mozilla {
 namespace dom {
@@ -80,7 +79,8 @@ BrowsingContext* BrowsingContext::TopLevelBrowsingContext() {
   return bc;
 }
 
- void BrowsingContext::Init() {
+
+void BrowsingContext::Init() {
   if (!sBrowsingContexts) {
     sBrowsingContexts = new BrowsingContextMap<WeakPtr>();
     ClearOnShutdown(&sBrowsingContexts);
@@ -92,12 +92,11 @@ BrowsingContext* BrowsingContext::TopLevelBrowsingContext() {
   }
 }
 
- LogModule* BrowsingContext::GetLog() {
-  return gBrowsingContextLog;
-}
 
- already_AddRefed<BrowsingContext> BrowsingContext::Get(
-    uint64_t aId) {
+LogModule* BrowsingContext::GetLog() { return gBrowsingContextLog; }
+
+
+already_AddRefed<BrowsingContext> BrowsingContext::Get(uint64_t aId) {
   if (BrowsingContextMap<WeakPtr>::Ptr abc = sBrowsingContexts->lookup(aId)) {
     return do_AddRef(abc->value().get());
   }
@@ -109,7 +108,8 @@ CanonicalBrowsingContext* BrowsingContext::Canonical() {
   return CanonicalBrowsingContext::Cast(this);
 }
 
- already_AddRefed<BrowsingContext> BrowsingContext::Create(
+
+already_AddRefed<BrowsingContext> BrowsingContext::Create(
     BrowsingContext* aParent, BrowsingContext* aOpener, const nsAString& aName,
     Type aType) {
   MOZ_DIAGNOSTIC_ASSERT(!aParent || aParent->mType == aType);
@@ -136,7 +136,8 @@ CanonicalBrowsingContext* BrowsingContext::Canonical() {
   return context.forget();
 }
 
- already_AddRefed<BrowsingContext> BrowsingContext::CreateFromIPC(
+
+already_AddRefed<BrowsingContext> BrowsingContext::CreateFromIPC(
     BrowsingContext* aParent, BrowsingContext* aOpener, const nsAString& aName,
     uint64_t aId, ContentParent* aOriginProcess) {
   MOZ_DIAGNOSTIC_ASSERT(aOriginProcess || XRE_IsContentProcess(),
@@ -546,43 +547,9 @@ NS_IMPL_CYCLE_COLLECTION_TRACE_WRAPPERCACHE(BrowsingContext)
 NS_IMPL_CYCLE_COLLECTION_ROOT_NATIVE(BrowsingContext, AddRef)
 NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(BrowsingContext, Release)
 
-class RemoteLocationProxy
-    : public RemoteObjectProxy<BrowsingContext::LocationProxy,
-                               Location_Binding::sCrossOriginAttributes,
-                               Location_Binding::sCrossOriginMethods> {
- public:
-  typedef RemoteObjectProxy Base;
-
-  constexpr RemoteLocationProxy()
-      : RemoteObjectProxy(prototypes::id::Location) {}
-
-  void NoteChildren(JSObject* aProxy,
-                    nsCycleCollectionTraversalCallback& aCb) const override {
-    auto location =
-        static_cast<BrowsingContext::LocationProxy*>(GetNative(aProxy));
-    CycleCollectionNoteChild(aCb, location->GetBrowsingContext(),
-                             "js::GetObjectPrivate(obj)->GetBrowsingContext()");
-  }
-};
-
-static const RemoteLocationProxy sSingleton;
-
-
-
-
-template <>
-const js::Class RemoteLocationProxy::Base::sClass =
-    PROXY_CLASS_DEF("Proxy", JSCLASS_HAS_RESERVED_SLOTS(2));
-
 void BrowsingContext::Location(JSContext* aCx,
                                JS::MutableHandle<JSObject*> aLocation,
-                               ErrorResult& aError) {
-  aError.MightThrowJSException();
-  sSingleton.GetProxyObject(aCx, &mLocation, aLocation);
-  if (!aLocation) {
-    aError.StealExceptionFromJSContext(aCx);
-  }
-}
+                               OOMReporter& aError) {}
 
 void BrowsingContext::Close(CallerType aCallerType, ErrorResult& aError) {
   
@@ -704,28 +671,6 @@ void BrowsingContext::Transaction::Commit(BrowsingContext* aBrowsingContext) {
   }
 
   Apply(aBrowsingContext);
-}
-
-void BrowsingContext::LocationProxy::SetHref(const nsAString& aHref,
-                                             nsIPrincipal& aSubjectPrincipal,
-                                             ErrorResult& aError) {
-  nsPIDOMWindowOuter* win = GetBrowsingContext()->GetDOMWindow();
-  if (!win || !win->GetLocation()) {
-    aError.Throw(NS_ERROR_FAILURE);
-    return;
-  }
-  win->GetLocation()->SetHref(aHref, aSubjectPrincipal, aError);
-}
-
-void BrowsingContext::LocationProxy::Replace(const nsAString& aUrl,
-                                             nsIPrincipal& aSubjectPrincipal,
-                                             ErrorResult& aError) {
-  nsPIDOMWindowOuter* win = GetBrowsingContext()->GetDOMWindow();
-  if (!win || !win->GetLocation()) {
-    aError.Throw(NS_ERROR_FAILURE);
-    return;
-  }
-  win->GetLocation()->Replace(aUrl, aSubjectPrincipal, aError);
 }
 
 }  
