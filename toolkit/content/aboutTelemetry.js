@@ -394,6 +394,10 @@ var PingPicker = {
       }
     }
 
+    
+    const originSnapshot = Telemetry.getOriginSnapshot(false );
+    ping.payload.origins = originSnapshot;
+
     displayPingData(ping, true);
   },
 
@@ -1832,6 +1836,34 @@ var Events = {
   },
 };
 
+var Origins = {
+  render(aOrigins) {
+    let originSection = document.getElementById("origins");
+    removeAllChildNodes(originSection);
+
+    const headings = [
+      "about-telemetry-origin-origin",
+      "about-telemetry-origin-count",
+    ];
+
+    let hasData = false;
+    for (let [metric, origins] of Object.entries(aOrigins || {})) {
+      if (!Object.entries(origins).length) {
+        continue;
+      }
+      hasData = true;
+      const metricHeader = document.createElement("caption");
+      metricHeader.appendChild(document.createTextNode(metric));
+
+      const table = GenericTable.render(Object.entries(origins), headings);
+      table.appendChild(metricHeader);
+      originSection.appendChild(table);
+    }
+
+    setHasData("origin-telemetry-section", hasData);
+  },
+};
+
 
 
 
@@ -1850,10 +1882,15 @@ function setHasData(aSectionID, aHasData) {
 
 
 
-function setupPageHeader() {
+function setupServerOwnerBranding() {
   let serverOwner = Preferences.get(PREF_TELEMETRY_SERVER_OWNER, "Mozilla");
-  let subtitleElement = document.getElementById("page-subtitle");
-  document.l10n.setAttributes(subtitleElement, "about-telemetry-page-subtitle", {telemetryServerOwner: serverOwner});
+  const elements = [
+    [document.getElementById("page-subtitle"), "about-telemetry-page-subtitle"],
+    [document.getElementById("origins-explanation"), "about-telemetry-origins-explanation"],
+  ];
+  for (const [elt, l10nName] of elements) {
+    document.l10n.setAttributes(elt, l10nName, {telemetryServerOwner: serverOwner});
+  }
 }
 
 function displayProcessesSelector(selectedSection) {
@@ -2133,7 +2170,7 @@ function onLoad() {
   Telemetry.scalarAdd("telemetry.about_telemetry_pageload", 1);
 
   
-  setupPageHeader();
+  setupServerOwnerBranding();
 
   
   setupListeners();
@@ -2516,6 +2553,9 @@ function displayRichPingData(ping, updatePayloadList) {
   CapturedStacks.render(payload);
 
   LateWritesSingleton.renderLateWrites(payload.lateWrites);
+
+  
+  Origins.render(payload.origins);
 
   
   SimpleMeasurements.render(payload);
