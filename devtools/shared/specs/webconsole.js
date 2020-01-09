@@ -4,7 +4,7 @@
 
 "use strict";
 
-const {types, generateActorSpec, RetVal, Option} = require("devtools/shared/protocol");
+const {types, generateActorSpec, RetVal, Option, Arg} = require("devtools/shared/protocol");
 
 types.addDictType("console.traits", {
   evaluateJSAsync: "boolean",
@@ -96,21 +96,47 @@ const webconsoleSpecPrototype = {
   },
 
   methods: {
+    
+
+
+
+
+
+
+
     startListeners: {
       request: {
-        listeners: Option(0, "array:string"),
+        listeners: Arg(0, "array:string"),
       },
       response: RetVal("console.startlisteners"),
     },
+    
+
+
+
+
+
+
+
+
+
     stopListeners: {
       request: {
-        listeners: Option(0, "nullable:array:string"),
+        listeners: Arg(0, "nullable:array:string"),
       },
       response: RetVal("array:string"),
     },
+    
+
+
+
+
+
+
+
     getCachedMessages: {
       request: {
-        messageTypes: Option(0, "array:string"),
+        messageTypes: Arg(0, "array:string"),
       },
       
       
@@ -141,33 +167,70 @@ const webconsoleSpecPrototype = {
       },
       response: RetVal("console.evaluatejsasync"),
     },
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     autocomplete: {
       request: {
-        text: Option(0, "string"),
-        cursor: Option(0, "nullable:number"),
-        frameActor: Option(0, "nullable:string"),
-        selectedNodeActor: Option(0, "nullable:string"),
+        text: Arg(0, "string"),
+        cursor: Arg(1, "nullable:number"),
+        frameActor: Arg(2, "nullable:string"),
+        selectedNodeActor: Arg(3, "nullable:string"),
+        authorizedEvaluations: Arg(4, "nullable:json"),
       },
       response: RetVal("console.autocomplete"),
     },
+    
+
+
     clearMessagesCache: {
       oneway: true,
     },
+    
+
+
+
+
+
     getPreferences: {
       request: {
-        preferences: Option(0, "array:string"),
+        preferences: Arg(0, "array:string"),
       },
       response: RetVal("json"),
     },
+    
+
+
+
+
+
     setPreferences: {
       request: {
-        preferences: Option(0, "json"),
+        preferences: Arg(0, "json"),
       },
       response: RetVal("json"),
     },
+    
+
+
+
+
+
     sendHTTPRequest: {
       request: {
-        request: Option(0, "json"),
+        request: Arg(0, "json"),
       },
       response: RetVal("json"),
     },

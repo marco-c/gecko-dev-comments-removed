@@ -172,20 +172,6 @@ class WebConsoleClient extends FrontClassWithSpec(webconsoleSpec) {
 
 
 
-  getCachedMessages(messageTypes) {
-    return super.getCachedMessages({ messageTypes });
-  }
-
-  
-
-
-
-
-
-
-
-
-
 
 
 
@@ -272,74 +258,6 @@ class WebConsoleClient extends FrontClassWithSpec(webconsoleSpec) {
         "No response handler for an evaluateJSAsync result (resultID: " +
                                     packet.resultID + ")");
     }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  autocomplete(
-    string,
-    cursor,
-    frameActor,
-    selectedNodeActor,
-    authorizedEvaluations
-  ) {
-    const options = {
-      text: string,
-      cursor,
-      frameActor,
-      selectedNodeActor,
-      authorizedEvaluations,
-    };
-    return super.autocomplete(options);
-  }
-
-  
-
-
-
-
-
-  clearMessagesCache() {
-    return super.clearMessagesCache();
-  }
-
-  
-
-
-
-
-
-
-
-  getPreferences(preferences) {
-    return super.getPreferences({ preferences });
-  }
-
-  
-
-
-
-
-
-
-
-  setPreferences(preferences) {
-    return super.setPreferences({ preferences });
   }
 
   
@@ -530,36 +448,10 @@ class WebConsoleClient extends FrontClassWithSpec(webconsoleSpec) {
 
 
 
-  sendHTTPRequest(data) {
-    return super.sendHTTPRequest({ request: data });
-  }
-
-  
-
-
-
-
-
-
-
 
 
   startListeners(listeners) {
-    return super.startListeners({ listeners });
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  stopListeners(listeners) {
-    return super.stopListeners({ listeners });
+    return super.startListeners(listeners);
   }
 
   
