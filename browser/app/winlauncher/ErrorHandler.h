@@ -44,6 +44,8 @@ struct StaticXREAppData;
 
 void SetLauncherErrorAppData(const StaticXREAppData& aAppData);
 
+void SetLauncherErrorForceEventLog();
+
 }  
 
 #endif  
