@@ -729,6 +729,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   RefPtr<GenericNonExclusivePromise> GetAllowedToPlayPromise();
 
+  bool GetShowPosterFlag() const { return mShowPoster; }
+
  protected:
   virtual ~HTMLMediaElement();
 

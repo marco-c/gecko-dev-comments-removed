@@ -202,7 +202,7 @@ void TextTrackManager::AddCues(TextTrack* aTextTrack) {
     for (uint32_t i = 0; i < cueList->Length(); ++i) {
       mNewCues->AddCue(*cueList->IndexedGetter(i, dummy));
     }
-    TimeMarchesOn();
+    MaybeRunTimeMarchesOn();
   }
 }
 
@@ -226,7 +226,7 @@ void TextTrackManager::RemoveTextTrack(TextTrack* aTextTrack,
     for (uint32_t i = 0; i < removeCueList->Length(); ++i) {
       mNewCues->RemoveCue(*((*removeCueList)[i]));
     }
-    TimeMarchesOn();
+    MaybeRunTimeMarchesOn();
   }
 }
 
@@ -281,7 +281,7 @@ void TextTrackManager::NotifyCueAdded(TextTrackCue& aCue) {
   if (mNewCues) {
     mNewCues->AddCue(aCue);
   }
-  TimeMarchesOn();
+  MaybeRunTimeMarchesOn();
   ReportTelemetryForCue();
 }
 
@@ -290,7 +290,7 @@ void TextTrackManager::NotifyCueRemoved(TextTrackCue& aCue) {
   if (mNewCues) {
     mNewCues->RemoveCue(aCue);
   }
-  TimeMarchesOn();
+  MaybeRunTimeMarchesOn();
   DispatchUpdateCueDisplay();
 }
 
@@ -819,7 +819,7 @@ void TextTrackManager::TimeMarchesOn() {
 void TextTrackManager::NotifyCueUpdated(TextTrackCue* aCue) {
   
   WEBVTT_LOG("NotifyCueUpdated, cue=%p", aCue);
-  TimeMarchesOn();
+  MaybeRunTimeMarchesOn();
   
   
   
@@ -862,6 +862,19 @@ bool TextTrackManager::IsLoaded() {
 
 bool TextTrackManager::IsShutdown() const {
   return (mShutdown || !sParserWrapper);
+}
+
+void TextTrackManager::MaybeRunTimeMarchesOn() {
+  MOZ_ASSERT(mMediaElement);
+  
+  
+  
+  
+  
+  if (mMediaElement->GetShowPosterFlag()) {
+    return;
+  }
+  TimeMarchesOn();
 }
 
 }  

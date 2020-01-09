@@ -155,6 +155,10 @@ class TextTrackManager final : public nsIDOMEventListener {
   
   bool mCueTelemetryReported;
 
+  
+  
+  void MaybeRunTimeMarchesOn();
+
   class ShutdownObserverProxy final : public nsIObserver {
     NS_DECL_ISUPPORTS
 
