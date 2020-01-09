@@ -1426,7 +1426,17 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
       GeneratorKind generatorKind, FunctionAsyncKind asyncKind, bool tryAnnexB,
       Directives inheritedDirectives, Directives* newDirectives);
 
-  bool matchOrInsertSemicolon();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool matchOrInsertSemicolon(Modifier modifier = TokenStream::SlashIsRegExp);
 
   bool noteDeclaredName(HandlePropertyName name, DeclarationKind kind,
                         TokenPos pos);
