@@ -84,6 +84,14 @@ class URLManifestItem(ManifestItem):
 
     @property
     def url(self):
+        
+        if self._url[0] == "/":
+            
+            
+            
+            return self._url
+        if self.url_base == "/":
+            return "/" + self._url
         return urljoin(self.url_base, self._url)
 
     @property
@@ -126,6 +134,7 @@ class TestharnessTest(URLManifestItem):
             return self._extras["script_metadata"]
         else:
             
+            
             return self._source_file.script_metadata
 
     def meta_key(self):
@@ -135,7 +144,7 @@ class TestharnessTest(URLManifestItem):
         return (self.timeout, self.testdriver, self.jsshell, script_metadata)
 
     def to_json(self):
-        rv = URLManifestItem.to_json(self)
+        rv = super(TestharnessTest, self).to_json()
         if self.timeout is not None:
             rv[-1]["timeout"] = self.timeout
         if self.testdriver:
@@ -184,7 +193,7 @@ class RefTestBase(URLManifestItem):
         return (self.timeout, self.viewport_size, self.dpi)
 
     def to_json(self):
-        rv = [self.url, self.references, {}]
+        rv = [self._url, self.references, {}]
         extras = rv[-1]
         if self.timeout is not None:
             extras["timeout"] = self.timeout
@@ -253,7 +262,7 @@ class WebDriverSpecTest(URLManifestItem):
         return self._extras.get("timeout")
 
     def to_json(self):
-        rv = URLManifestItem.to_json(self)
+        rv = super(WebDriverSpecTest, self).to_json()
         if self.timeout is not None:
             rv[-1]["timeout"] = self.timeout
         return rv
