@@ -124,6 +124,7 @@ add_task(async function test_terminate() {
   let promise2 = worker.post("throwError", ["error message"]);
   
   await Promise.resolve();
+  await Promise.resolve();
 
   worker.terminate();
 
