@@ -413,7 +413,7 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-  searchLogins(count, matchData) {
+  searchLogins(matchData) {
     let realMatchData = {};
     let options = {};
     
@@ -436,7 +436,6 @@ LoginManagerStorage_mozStorage.prototype = {
     
     logins = this._decryptLogins(logins);
 
-    count.value = logins.length; 
     return logins;
   },
 

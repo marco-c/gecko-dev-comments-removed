@@ -235,7 +235,7 @@ add_task(function test_modifyLogin_nsIProperyBag_metainfo_duplicate() {
 
 add_task(function test_searchLogins_metainfo() {
   
-  let logins = Services.logins.searchLogins({}, newPropertyBag({
+  let logins = Services.logins.searchLogins(newPropertyBag({
     guid: gLoginMetaInfo1.guid,
   }));
   Assert.equal(logins.length, 1);
@@ -243,7 +243,7 @@ add_task(function test_searchLogins_metainfo() {
   assertMetaInfoEqual(foundLogin, gLoginMetaInfo1);
 
   
-  logins = Services.logins.searchLogins({}, newPropertyBag({
+  logins = Services.logins.searchLogins(newPropertyBag({
     timePasswordChanged: gLoginMetaInfo2.timePasswordChanged,
   }));
   Assert.equal(logins.length, 1);
@@ -251,7 +251,7 @@ add_task(function test_searchLogins_metainfo() {
   assertMetaInfoEqual(foundLogin, gLoginMetaInfo2);
 
   
-  logins = Services.logins.searchLogins({}, newPropertyBag({
+  logins = Services.logins.searchLogins(newPropertyBag({
     guid: gLoginMetaInfo3.guid,
     timePasswordChanged: gLoginMetaInfo3.timePasswordChanged,
   }));

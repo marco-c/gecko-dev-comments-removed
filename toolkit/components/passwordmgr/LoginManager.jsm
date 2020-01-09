@@ -379,7 +379,7 @@ LoginManager.prototype = {
 
 
 
-  searchLogins(count, matchData) {
+  searchLogins(matchData) {
     log.debug("Searching for logins");
 
     matchData.QueryInterface(Ci.nsIPropertyBag2);
@@ -393,7 +393,7 @@ LoginManager.prototype = {
       }
     }
 
-    return this._storage.searchLogins(count, matchData);
+    return this._storage.searchLogins(matchData);
   },
 
 

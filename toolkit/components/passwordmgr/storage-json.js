@@ -264,7 +264,7 @@ this.LoginManagerStorage_json.prototype = {
 
 
 
-  searchLogins(count, matchData) {
+  searchLogins(matchData) {
     let realMatchData = {};
     let options = {};
     
@@ -287,7 +287,6 @@ this.LoginManagerStorage_json.prototype = {
     
     logins = this._decryptLogins(logins);
 
-    count.value = logins.length; 
     return logins;
   },
 

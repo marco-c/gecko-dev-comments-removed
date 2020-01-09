@@ -179,7 +179,7 @@ var LoginHelper = {
 
 
   searchLoginsWithObject(aSearchOptions) {
-    return Services.logins.searchLogins({}, this.newPropertyBag(aSearchOptions));
+    return Services.logins.searchLogins(this.newPropertyBag(aSearchOptions));
   },
 
   

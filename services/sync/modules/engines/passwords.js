@@ -199,7 +199,7 @@ PasswordStore.prototype = {
     let prop = this._newPropertyBag();
     prop.setPropertyAsAUTF8String("guid", id);
 
-    let logins = Services.logins.searchLogins({}, prop);
+    let logins = Services.logins.searchLogins(prop);
     await Async.promiseYield(); 
 
     if (logins.length > 0) {
