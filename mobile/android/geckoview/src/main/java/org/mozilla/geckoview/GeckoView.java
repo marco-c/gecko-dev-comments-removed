@@ -465,7 +465,7 @@ public class GeckoView extends FrameLayout {
             
             
             
-            mRuntime.configurationChanged(newConfig);
+            mRuntime.orientationChanged(newConfig.orientation);
         }
     }
 

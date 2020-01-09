@@ -11,7 +11,6 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ServiceInfo;
-import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -443,10 +442,9 @@ public final class GeckoRuntime implements Parcelable {
 
 
     @UiThread
-    public void configurationChanged(Configuration newConfig) {
+    public void orientationChanged(int newOrientation) {
         ThreadUtils.assertOnUiThread();
-        GeckoScreenOrientation.getInstance().update(newConfig.orientation);
-        GeckoSystemStateListener.getInstance().updateNightMode(newConfig.uiMode);
+        GeckoScreenOrientation.getInstance().update(newOrientation);
     }
 
     @Override 
