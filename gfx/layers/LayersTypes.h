@@ -409,9 +409,29 @@ MOZ_DEFINE_ENUM_CLASS_WITH_BASE(ScrollDirection, uint32_t, (
 ));
 
 MOZ_DEFINE_ENUM_CLASS_WITH_BASE(CompositionPayloadType, uint8_t, (
+  
+
+
+
+
   eKeyPress,
+
+  
+
+
+
   eAPZScroll,
+
+  
+
+
+
   eAPZPinchZoom,
+
+  
+
+
+
   eContentPaint
 ));
 
