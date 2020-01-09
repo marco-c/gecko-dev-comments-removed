@@ -23,8 +23,9 @@ config = {
         'gittool.py': [os.path.join(external_tools_path, 'gittool.py')],
         'python2.7': "python2.7",
     },
+    'avoid_avx2': True,
     'dump_syms_binary': 'dump_syms',
-    'arch': 'arm',
+    'arch': 'x86_64',
     'min_sdk': 16,
     'operating_system': 'android',
     'partial_env': {
