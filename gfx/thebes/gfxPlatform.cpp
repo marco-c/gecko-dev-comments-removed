@@ -566,6 +566,9 @@ static void WebRenderDebugPrefChangeCallback(const char* aPrefName, void*) {
   GFX_WEBRENDER_DEBUG(".picture-caching", 1 << 15)
   GFX_WEBRENDER_DEBUG(".texture-cache.disable-shrink", 1 << 16)
   GFX_WEBRENDER_DEBUG(".primitives", 1 << 17)
+  
+  
+  GFX_WEBRENDER_DEBUG(".small-screen", 1 << 19)
 #undef GFX_WEBRENDER_DEBUG
 
   gfx::gfxVars::SetWebRenderDebugFlags(flags);
