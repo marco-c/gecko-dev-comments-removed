@@ -1,3 +1,0 @@
-w = new Worker("rsf_csp_worker.js");
-
-w.onmessage = parent.handler;

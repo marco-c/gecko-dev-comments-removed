@@ -282,35 +282,6 @@ LoadInfo::LoadInfo(
     }
   }
 
-  
-  
-  if (!mEnforceSRI) {
-    
-    
-    
-    if (aLoadingPrincipal) {
-      nsCOMPtr<nsIContentSecurityPolicy> csp;
-      aLoadingPrincipal->GetCsp(getter_AddRefs(csp));
-      uint32_t externalType =
-          nsContentUtils::InternalContentPolicyTypeToExternal(
-              aContentPolicyType);
-      
-      if (csp) {
-        csp->RequireSRIForType(externalType, &mEnforceSRI);
-      }
-      
-      
-      
-      if (!mEnforceSRI && nsContentUtils::IsPreloadType(aContentPolicyType)) {
-        nsCOMPtr<nsIContentSecurityPolicy> preloadCSP;
-        aLoadingPrincipal->GetPreloadCsp(getter_AddRefs(preloadCSP));
-        if (preloadCSP) {
-          preloadCSP->RequireSRIForType(externalType, &mEnforceSRI);
-        }
-      }
-    }
-  }
-
   mOriginAttributes = mLoadingPrincipal->OriginAttributesRef();
 
   

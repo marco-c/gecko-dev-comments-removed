@@ -55,10 +55,6 @@ void CSP_LogMessage(const nsAString& aMessage, const nsAString& aSourceName,
 #define STYLE_NONCE_VIOLATION_OBSERVER_TOPIC "Inline Style had invalid nonce"
 #define SCRIPT_HASH_VIOLATION_OBSERVER_TOPIC "Inline Script had invalid hash"
 #define STYLE_HASH_VIOLATION_OBSERVER_TOPIC "Inline Style had invalid hash"
-#define REQUIRE_SRI_SCRIPT_VIOLATION_OBSERVER_TOPIC \
-  "Missing required Subresource Integrity for Script"
-#define REQUIRE_SRI_STYLE_VIOLATION_OBSERVER_TOPIC \
-  "Missing required Subresource Integrity for Style"
 
 
 
@@ -87,7 +83,6 @@ static const char* CSPStrDirectives[] = {
     "upgrade-insecure-requests",  
     "child-src",                  
     "block-all-mixed-content",    
-    "require-sri-for",            
     "sandbox",                    
     "worker-src"                  
 };
@@ -110,14 +105,13 @@ inline CSPDirective CSP_StringToCSPDirective(const nsAString& aDir) {
   return nsIContentSecurityPolicy::NO_DIRECTIVE;
 }
 
-#define FOR_EACH_CSP_KEYWORD(MACRO)             \
-  MACRO(CSP_SELF, "'self'")                     \
-  MACRO(CSP_UNSAFE_INLINE, "'unsafe-inline'")   \
-  MACRO(CSP_UNSAFE_EVAL, "'unsafe-eval'")       \
-  MACRO(CSP_NONE, "'none'")                     \
-  MACRO(CSP_NONCE, "'nonce-")                   \
-  MACRO(CSP_REQUIRE_SRI_FOR, "require-sri-for") \
-  MACRO(CSP_REPORT_SAMPLE, "'report-sample'")   \
+#define FOR_EACH_CSP_KEYWORD(MACRO)           \
+  MACRO(CSP_SELF, "'self'")                   \
+  MACRO(CSP_UNSAFE_INLINE, "'unsafe-inline'") \
+  MACRO(CSP_UNSAFE_EVAL, "'unsafe-eval'")     \
+  MACRO(CSP_NONE, "'none'")                   \
+  MACRO(CSP_NONCE, "'nonce-")                 \
+  MACRO(CSP_REPORT_SAMPLE, "'report-sample'") \
   MACRO(CSP_STRICT_DYNAMIC, "'strict-dynamic'")
 
 enum CSPKeyword {
@@ -609,26 +603,6 @@ class nsUpgradeInsecureDirective : public nsCSPDirective {
 
 
 
-class nsRequireSRIForDirective : public nsCSPDirective {
- public:
-  explicit nsRequireSRIForDirective(CSPDirective aDirective);
-  ~nsRequireSRIForDirective();
-
-  void toString(nsAString& outStr) const override;
-
-  void addType(nsContentPolicyType aType) { mTypes.AppendElement(aType); }
-  bool hasType(nsContentPolicyType aType) const;
-  bool restrictsContentType(nsContentPolicyType aType) const override;
-  bool allows(enum CSPKeyword aKeyword, const nsAString& aHashOrNonce,
-              bool aParserCreated) const override;
-  void getDirName(nsAString& outStr) const override;
-
- private:
-  nsTArray<nsContentPolicyType> mTypes;
-};
-
-
-
 class nsCSPPolicy {
  public:
   nsCSPPolicy();
@@ -676,8 +650,6 @@ class nsCSPPolicy {
   void getDirectiveAsString(CSPDirective aDir, nsAString& outDirective) const;
 
   uint32_t getSandboxFlags() const;
-
-  bool requireSRIForType(nsContentPolicyType aContentType);
 
   inline uint32_t getNumDirectives() const { return mDirectives.Length(); }
 
