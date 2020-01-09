@@ -292,6 +292,7 @@ nsWindowWatcher::OpenWindow(mozIDOMWindowProxy* aParent, const char* aUrl,
                              true, argv,
                              false,
                              false,
+                             false,
                              nullptr, aResult);
 }
 
@@ -347,6 +348,7 @@ nsWindowWatcher::OpenWindow2(mozIDOMWindowProxy* aParent, const char* aUrl,
                              bool aCalledFromScript, bool aDialog,
                              bool aNavigate, nsISupports* aArguments,
                              bool aIsPopupSpam, bool aForceNoOpener,
+                             bool aForceNoReferrer,
                              nsDocShellLoadState* aLoadState,
                              mozIDOMWindowProxy** aResult) {
   nsCOMPtr<nsIArray> argv = ConvertArgsToArray(aArguments);
@@ -366,7 +368,8 @@ nsWindowWatcher::OpenWindow2(mozIDOMWindowProxy* aParent, const char* aUrl,
 
   return OpenWindowInternal(aParent, aUrl, aName, aFeatures, aCalledFromScript,
                             dialog, aNavigate, argv, aIsPopupSpam,
-                            aForceNoOpener, aLoadState, aResult);
+                            aForceNoOpener, aForceNoReferrer, aLoadState,
+                            aResult);
 }
 
 
@@ -575,7 +578,10 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     mozIDOMWindowProxy* aParent, const char* aUrl, const char* aName,
     const char* aFeatures, bool aCalledFromJS, bool aDialog, bool aNavigate,
     nsIArray* aArgv, bool aIsPopupSpam, bool aForceNoOpener,
-    nsDocShellLoadState* aLoadState, mozIDOMWindowProxy** aResult) {
+    bool aForceNoReferrer, nsDocShellLoadState* aLoadState,
+    mozIDOMWindowProxy** aResult) {
+  MOZ_ASSERT_IF(aForceNoReferrer, aForceNoOpener);
+
   nsresult rv = NS_OK;
   bool isNewToplevelWindow = false;
   bool windowIsNew = false;
@@ -758,7 +764,8 @@ nsresult nsWindowWatcher::OpenWindowInternal(
         rv = provider->ProvideWindow(
             aParent, chromeFlags, aCalledFromJS, sizeSpec.PositionSpecified(),
             sizeSpec.SizeSpecified(), uriToLoad, name, features, aForceNoOpener,
-            aLoadState, &windowIsNew, getter_AddRefs(newWindow));
+            aForceNoReferrer, aLoadState, &windowIsNew,
+            getter_AddRefs(newWindow));
 
         if (NS_SUCCEEDED(rv)) {
           GetWindowTreeItem(newWindow, getter_AddRefs(newDocShellItem));
@@ -1076,20 +1083,22 @@ nsresult nsWindowWatcher::OpenWindowInternal(
                "nsWindowWatcher: triggeringPrincipal required");
 #endif
 
-    
+    if (!aForceNoReferrer) {
+      
 
 
 
 
 
-    RefPtr<Document> doc = GetEntryDocument();
-    if (!doc && parentWindow) {
-      doc = parentWindow->GetExtantDoc();
-    }
-    if (doc) {
-      nsCOMPtr<nsIReferrerInfo> referrerInfo =
-          new ReferrerInfo(doc->GetDocumentURI(), doc->GetReferrerPolicy());
-      loadState->SetReferrerInfo(referrerInfo);
+      RefPtr<Document> doc = GetEntryDocument();
+      if (!doc && parentWindow) {
+        doc = parentWindow->GetExtantDoc();
+      }
+      if (doc) {
+        nsCOMPtr<nsIReferrerInfo> referrerInfo =
+            new ReferrerInfo(doc->GetDocumentURI(), doc->GetReferrerPolicy());
+        loadState->SetReferrerInfo(referrerInfo);
+      }
     }
   }
 
