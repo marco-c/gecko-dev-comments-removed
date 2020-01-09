@@ -5,7 +5,7 @@
 
 
 
-requestLongerTimeout(2);
+requestLongerTimeout(4);
 
 const URL = "about:blank";
 const TEST_URL = "http://test2.example.org/";
