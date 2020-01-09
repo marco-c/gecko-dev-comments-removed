@@ -481,7 +481,7 @@ typedef BrowsingContext::Children BrowsingContextChildren;
 
 namespace ipc {
 template <>
-struct IPDLParamTraits<dom::BrowsingContext> {
+struct IPDLParamTraits<dom::BrowsingContext*> {
   static void Write(IPC::Message* aMsg, IProtocol* aActor,
                     dom::BrowsingContext* aParam);
   static bool Read(const IPC::Message* aMsg, PickleIterator* aIter,

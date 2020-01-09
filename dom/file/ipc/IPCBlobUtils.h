@@ -258,7 +258,7 @@ namespace ipc {
 
 
 template <>
-struct IPDLParamTraits<mozilla::dom::BlobImpl> {
+struct IPDLParamTraits<mozilla::dom::BlobImpl*> {
   static void Write(IPC::Message* aMsg, IProtocol* aActor,
                     mozilla::dom::BlobImpl* aParam);
   static bool Read(const IPC::Message* aMsg, PickleIterator* aIter,

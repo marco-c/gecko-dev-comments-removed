@@ -384,7 +384,7 @@ struct ParamTraits<mozilla::plugins::NPRemoteWindow> {
 
 #ifdef XP_MACOSX
 template <>
-struct ParamTraits<NPNSString> {
+struct ParamTraits<NPNSString*> {
   
   
   static void Write(Message* aMsg, NPNSString* aParam) {

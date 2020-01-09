@@ -14,7 +14,7 @@
 namespace IPC {
 
 template <>
-struct ParamTraits<nsIDOMGeoPositionCoords> {
+struct ParamTraits<nsIDOMGeoPositionCoords*> {
   
   static void Write(Message* aMsg, nsIDOMGeoPositionCoords* aParam) {
     bool isNull = !aParam;
@@ -89,7 +89,7 @@ struct ParamTraits<nsIDOMGeoPositionCoords> {
 };
 
 template <>
-struct ParamTraits<nsIDOMGeoPosition> {
+struct ParamTraits<nsIDOMGeoPosition*> {
   
   static void Write(Message* aMsg, nsIDOMGeoPosition* aParam) {
     bool isNull = !aParam;
