@@ -409,23 +409,31 @@ int GetGtkHeaderBarButtonLayout(WidgetNodeType* aButtonLayout,
 
   
   
+  bool reversedButtonsPlacement = strstr(decorationLayout, ":menu") != nullptr;
+
+  
+  
+  
   int activeButtonNums = 0;
   if (aButtonLayout) {
+    if (reversedButtonsPlacement &&
+        strstr(decorationLayout, "close") != nullptr) {
+      aButtonLayout[activeButtonNums++] = MOZ_GTK_HEADER_BAR_BUTTON_CLOSE;
+    }
     if (strstr(decorationLayout, "minimize") != nullptr) {
       aButtonLayout[activeButtonNums++] = MOZ_GTK_HEADER_BAR_BUTTON_MINIMIZE;
     }
     if (strstr(decorationLayout, "maximize") != nullptr) {
       aButtonLayout[activeButtonNums++] = MOZ_GTK_HEADER_BAR_BUTTON_MAXIMIZE;
     }
-    if (strstr(decorationLayout, "close") != nullptr) {
+    if (!reversedButtonsPlacement &&
+        strstr(decorationLayout, "close") != nullptr) {
       aButtonLayout[activeButtonNums++] = MOZ_GTK_HEADER_BAR_BUTTON_CLOSE;
     }
   }
 
-  
-  
   if (aReversedButtonsPlacement) {
-    *aReversedButtonsPlacement = strstr(decorationLayout, ":menu") != nullptr;
+    *aReversedButtonsPlacement = reversedButtonsPlacement;
   }
 
   return activeButtonNums;
