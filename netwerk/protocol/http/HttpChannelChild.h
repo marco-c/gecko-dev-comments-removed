@@ -215,6 +215,10 @@ class HttpChannelChild final : public PHttpChannelChild,
                                  const nsAString& aContentType) override;
 
  private:
+  
+  
+  nsresult AsyncOpenInternal(nsIStreamListener* aListener);
+
   nsresult AsyncCallImpl(void (HttpChannelChild::*funcPtr)(),
                          nsRunnableMethod<HttpChannelChild>** retval);
 

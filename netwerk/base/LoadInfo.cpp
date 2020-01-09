@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/LoadInfo.h"
 
@@ -90,6 +90,7 @@ LoadInfo::LoadInfo(
       mIsThirdPartyContext(false),
       mIsDocshellReload(false),
       mSendCSPViolationEvents(true),
+      mRequestBlockingReason(BLOCKING_REASON_NONE),
       mForcePreflight(false),
       mIsPreflight(false),
       mLoadTriggeredFromExternal(false),
@@ -101,36 +102,36 @@ LoadInfo::LoadInfo(
   MOZ_ASSERT(mTriggeringPrincipal);
 
 #ifdef DEBUG
-  // TYPE_DOCUMENT loads initiated by javascript tests will go through
-  // nsIOService and use the wrong constructor.  Don't enforce the
-  // !TYPE_DOCUMENT check in those cases
+  
+  
+  
   bool skipContentTypeCheck = false;
   skipContentTypeCheck =
       Preferences::GetBool("network.loadinfo.skip_type_assertion");
 #endif
 
-  // This constructor shouldn't be used for TYPE_DOCUMENT loads that don't
-  // have a loadingPrincipal
+  
+  
   MOZ_ASSERT(skipContentTypeCheck || mLoadingPrincipal ||
              mInternalContentPolicyType != nsIContentPolicy::TYPE_DOCUMENT);
 
-  // We should only get an explicit controller for subresource requests.
+  
   MOZ_DIAGNOSTIC_ASSERT(aController.isNothing() ||
                         !nsContentUtils::IsNonSubresourceInternalPolicyType(
                             mInternalContentPolicyType));
 
-  // TODO(bug 1259873): Above, we initialize mIsThirdPartyContext to false
-  // meaning that consumers of LoadInfo that don't pass a context or pass a
-  // context from which we can't find a window will default to assuming that
-  // they're 1st party. It would be nice if we could default "safe" and assume
-  // that we are 3rd party until proven otherwise.
+  
+  
+  
+  
+  
 
-  // if consumers pass both, aLoadingContext and aLoadingPrincipal
-  // then the loadingPrincipal must be the same as the node's principal
+  
+  
   MOZ_ASSERT(!aLoadingContext || !aLoadingPrincipal ||
              aLoadingContext->NodePrincipal() == aLoadingPrincipal);
 
-  // if the load is sandboxed, we can not also inherit the principal
+  
   if (mSecurityFlags & nsILoadInfo::SEC_SANDBOXED) {
     mForceInheritPrincipalDropped =
         (mSecurityFlags & nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL);
@@ -141,18 +142,18 @@ LoadInfo::LoadInfo(
       nsContentUtils::InternalContentPolicyTypeToExternal(aContentPolicyType);
 
   if (aLoadingContext) {
-    // Ensure that all network requests for a window client have the ClientInfo
-    // properly set.  Workers must currently pass the loading ClientInfo
-    // explicitly. We allow main thread requests to explicitly pass the value as
-    // well.
+    
+    
+    
+    
     if (mClientInfo.isNothing()) {
       mClientInfo = aLoadingContext->OwnerDoc()->GetClientInfo();
     }
 
-    // For subresource loads set the service worker based on the calling
-    // context's controller.  Workers must currently pass the controller in
-    // explicitly.  We allow main thread requests to explicitly pass the value
-    // as well, but otherwise extract from the loading context here.
+    
+    
+    
+    
     if (mController.isNothing() &&
         !nsContentUtils::IsNonSubresourceInternalPolicyType(
             mInternalContentPolicyType)) {
@@ -175,11 +176,11 @@ LoadInfo::LoadInfo(
       if (innerWindow) {
         mTopLevelPrincipal = innerWindow->GetTopLevelPrincipal();
 
-        // The top-level-storage-area-principal is not null only for the first
-        // level of iframes (null for top-level contexts, and null for
-        // sub-iframes). If we are loading a sub-document resource, we must
-        // calculate what the top-level-storage-area-principal will be for the
-        // new context.
+        
+        
+        
+        
+        
         if (externalType != nsIContentPolicy::TYPE_SUBDOCUMENT) {
           mTopLevelStorageAreaPrincipal =
               innerWindow->GetTopLevelStorageAreaPrincipal();
@@ -190,8 +191,8 @@ LoadInfo::LoadInfo(
             mTopLevelStorageAreaPrincipal = innerWindow->GetPrincipal();
           }
 
-          // If this is the first level iframe, innerWindow is our top-level
-          // principal.
+          
+          
           if (!mTopLevelPrincipal) {
             mTopLevelPrincipal = innerWindow->GetPrincipal();
           }
@@ -200,8 +201,8 @@ LoadInfo::LoadInfo(
         mDocumentHasLoaded = innerWindow->IsDocumentLoaded();
 
         if (innerWindow->IsFrame()) {
-          // For resources within iframes, we actually want the
-          // top-level document's flag, not the iframe document's.
+          
+          
           mDocumentHasLoaded = false;
           nsGlobalWindowOuter* topOuter =
               innerWindow->GetScriptableTopInternal();
@@ -215,8 +216,8 @@ LoadInfo::LoadInfo(
         }
       }
 
-      // Let's inherit the cookie behavior and permission from the parent
-      // document.
+      
+      
       mCookieSettings = aLoadingContext->OwnerDoc()->CookieSettings();
     }
 
@@ -229,13 +230,13 @@ LoadInfo::LoadInfo(
     mDocumentHasUserInteracted =
         aLoadingContext->OwnerDoc()->UserHasInteracted();
 
-    // When the element being loaded is a frame, we choose the frame's window
-    // for the window ID and the frame element's window as the parent
-    // window. This is the behavior that Chrome exposes to add-ons.
-    // NB: If the frameLoaderOwner doesn't have a frame loader, then the load
-    // must be coming from an object (such as a plugin) that's loaded into it
-    // instead of a document being loaded. In that case, treat this object like
-    // any other non-document-loading element.
+    
+    
+    
+    
+    
+    
+    
     RefPtr<nsFrameLoaderOwner> frameLoaderOwner =
         do_QueryObject(aLoadingContext);
     RefPtr<nsFrameLoader> fl =
@@ -253,10 +254,10 @@ LoadInfo::LoadInfo(
       }
     }
 
-    // if the document forces all requests to be upgraded from http to https,
-    // then we should do that for all requests. If it only forces preloads to be
-    // upgraded then we should enforce upgrade insecure requests only for
-    // preloads.
+    
+    
+    
+    
     mUpgradeInsecureRequests =
         aLoadingContext->OwnerDoc()->GetUpgradeInsecureRequests(false) ||
         (nsContentUtils::IsPreloadType(mInternalContentPolicyType) &&
@@ -266,8 +267,8 @@ LoadInfo::LoadInfo(
       nsCOMPtr<nsIURI> uri;
       mLoadingPrincipal->GetURI(getter_AddRefs(uri));
       if (uri) {
-        // Checking https not secure context as http://localhost can't be
-        // upgraded
+        
+        
         bool isHttpsScheme;
         nsresult rv = uri->SchemeIs("https", &isHttpsScheme);
         if (NS_SUCCEEDED(rv) && isHttpsScheme) {
@@ -279,7 +280,7 @@ LoadInfo::LoadInfo(
         }
       }
     }
-    // if owner doc has content signature, we enforce SRI
+    
     nsCOMPtr<nsIChannel> channel = aLoadingContext->OwnerDoc()->GetChannel();
     if (channel) {
       nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
@@ -289,8 +290,8 @@ LoadInfo::LoadInfo(
 
   mOriginAttributes = mLoadingPrincipal->OriginAttributesRef();
 
-  // We need to do this after inheriting the document's origin attributes
-  // above, in case the loading principal ends up being the system principal.
+  
+  
   if (aLoadingContext) {
     nsCOMPtr<nsILoadContext> loadContext =
         aLoadingContext->OwnerDoc()->GetLoadContext();
@@ -305,9 +306,9 @@ LoadInfo::LoadInfo(
     }
   }
 
-  // For chrome docshell, the mPrivateBrowsingId remains 0 even its
-  // UsePrivateBrowsing() is true, so we only update the mPrivateBrowsingId in
-  // origin attributes if the type of the docshell is content.
+  
+  
+  
   if (aLoadingContext) {
     nsCOMPtr<nsIDocShell> docShell = aLoadingContext->OwnerDoc()->GetDocShell();
     if (docShell) {
@@ -319,10 +320,10 @@ LoadInfo::LoadInfo(
   }
 }
 
-/* Constructor takes an outer window, but no loadingNode or loadingPrincipal.
- * This constructor should only be used for TYPE_DOCUMENT loads, since they
- * have a null loadingNode and loadingPrincipal.
- */
+
+
+
+
 LoadInfo::LoadInfo(nsPIDOMWindowOuter* aOuterWindow,
                    nsIPrincipal* aTriggeringPrincipal,
                    nsISupports* aContextForTopLevelLoad,
@@ -352,9 +353,10 @@ LoadInfo::LoadInfo(nsPIDOMWindowOuter* aOuterWindow,
       mBrowsingContextID(0),
       mFrameBrowsingContextID(0),
       mInitialSecurityCheckDone(false),
-      mIsThirdPartyContext(false),  // NB: TYPE_DOCUMENT implies !third-party.
+      mIsThirdPartyContext(false),  
       mIsDocshellReload(false),
       mSendCSPViolationEvents(true),
+      mRequestBlockingReason(BLOCKING_REASON_NONE),
       mForcePreflight(false),
       mIsPreflight(false),
       mLoadTriggeredFromExternal(false),
@@ -362,25 +364,25 @@ LoadInfo::LoadInfo(nsPIDOMWindowOuter* aOuterWindow,
       mDocumentHasUserInteracted(false),
       mDocumentHasLoaded(false),
       mIsFromProcessingFrameAttributes(false) {
-  // Top-level loads are never third-party
-  // Grab the information we can out of the window.
+  
+  
   MOZ_ASSERT(aOuterWindow);
   MOZ_ASSERT(mTriggeringPrincipal);
 
-  // if the load is sandboxed, we can not also inherit the principal
+  
   if (mSecurityFlags & nsILoadInfo::SEC_SANDBOXED) {
     mForceInheritPrincipalDropped =
         (mSecurityFlags & nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL);
     mSecurityFlags &= ~nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL;
   }
 
-  // NB: Ignore the current inner window since we're navigating away from it.
+  
   mOuterWindowID = aOuterWindow->WindowID();
   RefPtr<BrowsingContext> bc = aOuterWindow->GetBrowsingContext();
   mBrowsingContextID = bc ? bc->Id() : 0;
 
-  // TODO We can have a parent without a frame element in some cases dealing
-  // with the hidden window.
+  
+  
   nsCOMPtr<nsPIDOMWindowOuter> parent = aOuterWindow->GetScriptableParent();
   mParentOuterWindowID = parent ? parent->WindowID() : 0;
   mTopOuterWindowID = FindTopOuterWindowID(aOuterWindow);
@@ -389,11 +391,11 @@ LoadInfo::LoadInfo(nsPIDOMWindowOuter* aOuterWindow,
       nsGlobalWindowInner::Cast(aOuterWindow->GetCurrentInnerWindow());
   if (innerWindow) {
     mTopLevelPrincipal = innerWindow->GetTopLevelPrincipal();
-    // mTopLevelStorageAreaPrincipal is always null for top-level document
-    // loading.
+    
+    
   }
 
-  // get the docshell from the outerwindow, and then get the originattributes
+  
   nsCOMPtr<nsIDocShell> docShell = aOuterWindow->GetDocShell();
   MOZ_ASSERT(docShell);
   mOriginAttributes = nsDocShell::Cast(docShell)->GetOriginAttributes();
@@ -410,9 +412,9 @@ LoadInfo::LoadInfo(nsPIDOMWindowOuter* aOuterWindow,
   }
 #endif
 
-  // Let's take the current cookie behavior and current cookie permission
-  // for the documents' loadInfo. Note that for any other loadInfos,
-  // cookieBehavior will be BEHAVIOR_REJECT for security reasons.
+  
+  
+  
   mCookieSettings = CookieSettings::Create();
 }
 
@@ -426,9 +428,9 @@ LoadInfo::LoadInfo(const LoadInfo& rhs)
       mResultPrincipalURI(rhs.mResultPrincipalURI),
       mCookieSettings(rhs.mCookieSettings),
       mClientInfo(rhs.mClientInfo),
-      // mReservedClientSource must be handled specially during redirect
-      // mReservedClientInfo must be handled specially during redirect
-      // mInitialClientInfo must be handled specially during redirect
+      
+      
+      
       mController(rhs.mController),
       mPerformanceStorage(rhs.mPerformanceStorage),
       mLoadingContext(rhs.mLoadingContext),
@@ -466,11 +468,12 @@ LoadInfo::LoadInfo(const LoadInfo& rhs)
       mAncestorPrincipals(rhs.mAncestorPrincipals),
       mAncestorOuterWindowIDs(rhs.mAncestorOuterWindowIDs),
       mCorsUnsafeHeaders(rhs.mCorsUnsafeHeaders),
+      mRequestBlockingReason(rhs.mRequestBlockingReason),
       mForcePreflight(rhs.mForcePreflight),
       mIsPreflight(rhs.mIsPreflight),
       mLoadTriggeredFromExternal(rhs.mLoadTriggeredFromExternal),
-      // mServiceWorkerTaintingSynthesized must be handled specially during
-      // redirect
+      
+      
       mServiceWorkerTaintingSynthesized(false),
       mDocumentHasUserInteracted(rhs.mDocumentHasUserInteracted),
       mDocumentHasLoaded(rhs.mDocumentHasLoaded),
@@ -507,7 +510,8 @@ LoadInfo::LoadInfo(
     const nsTArray<nsCString>& aCorsUnsafeHeaders, bool aForcePreflight,
     bool aIsPreflight, bool aLoadTriggeredFromExternal,
     bool aServiceWorkerTaintingSynthesized, bool aDocumentHasUserInteracted,
-    bool aDocumentHasLoaded, const nsAString& aCspNonce)
+    bool aDocumentHasLoaded, const nsAString& aCspNonce,
+    uint32_t aRequestBlockingReason)
     : mLoadingPrincipal(aLoadingPrincipal),
       mTriggeringPrincipal(aTriggeringPrincipal),
       mPrincipalToInherit(aPrincipalToInherit),
@@ -549,6 +553,7 @@ LoadInfo::LoadInfo(
       mAncestorPrincipals(std::move(aAncestorPrincipals)),
       mAncestorOuterWindowIDs(aAncestorOuterWindowIDs),
       mCorsUnsafeHeaders(aCorsUnsafeHeaders),
+      mRequestBlockingReason(aRequestBlockingReason),
       mForcePreflight(aForcePreflight),
       mIsPreflight(aIsPreflight),
       mLoadTriggeredFromExternal(aLoadTriggeredFromExternal),
@@ -557,7 +562,7 @@ LoadInfo::LoadInfo(
       mDocumentHasLoaded(aDocumentHasLoaded),
       mCspNonce(aCspNonce),
       mIsFromProcessingFrameAttributes(false) {
-  // Only top level TYPE_DOCUMENT loads can have a null loadingPrincipal
+  
   MOZ_ASSERT(mLoadingPrincipal ||
              aContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT);
   MOZ_ASSERT(mTriggeringPrincipal);
@@ -573,7 +578,7 @@ void LoadInfo::ComputeIsThirdPartyContext(nsPIDOMWindowOuter* aOuterWindow) {
       nsContentUtils::InternalContentPolicyTypeToExternal(
           mInternalContentPolicyType);
   if (type == nsIContentPolicy::TYPE_DOCUMENT) {
-    // Top-level loads are never third-party.
+    
     mIsThirdPartyContext = false;
     return;
   }
@@ -694,8 +699,8 @@ nsINode* LoadInfo::LoadingNode() {
 }
 
 already_AddRefed<nsISupports> LoadInfo::ContextForTopLevelLoad() {
-  // Most likely you want to query LoadingNode() instead of
-  // ContextForTopLevelLoad() if this assertion fires.
+  
+  
   MOZ_ASSERT(mInternalContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT,
              "should only query this context for top level document loads");
   nsCOMPtr<nsISupports> context = do_QueryReferent(mContextForTopLevelLoad);
@@ -767,9 +772,9 @@ already_AddRefed<nsICookieSettings> CreateCookieSettings(
     return CookieSettings::Create();
   }
 
-  // These contentPolictTypes require a real CookieSettings because favicon and
-  // save-as requests must send cookies. Anything else should not send/receive
-  // cookies.
+  
+  
+  
   if (aContentPolicyType == nsIContentPolicy::TYPE_INTERNAL_IMAGE_FAVICON ||
       aContentPolicyType == nsIContentPolicy::TYPE_SAVEAS_DOWNLOAD) {
     return CookieSettings::Create();
@@ -778,7 +783,7 @@ already_AddRefed<nsICookieSettings> CreateCookieSettings(
   return CookieSettings::CreateBlockingAll();
 }
 
-}  // namespace
+}  
 
 NS_IMETHODIMP
 LoadInfo::GetCookieSettings(nsICookieSettings** aCookieSettings) {
@@ -794,7 +799,7 @@ LoadInfo::GetCookieSettings(nsICookieSettings** aCookieSettings) {
 NS_IMETHODIMP
 LoadInfo::SetCookieSettings(nsICookieSettings* aCookieSettings) {
   MOZ_ASSERT(aCookieSettings);
-  // We allow the overwrite of CookieSettings.
+  
   mCookieSettings = aCookieSettings;
   return NS_OK;
 }
@@ -1060,16 +1065,16 @@ LoadInfo::GetScriptableOriginAttributes(
 
 NS_IMETHODIMP
 LoadInfo::ResetPrincipalToInheritToNullPrincipal() {
-  // take the originAttributes from the LoadInfo and create
-  // a new NullPrincipal using those origin attributes.
+  
+  
   nsCOMPtr<nsIPrincipal> newNullPrincipal =
       NullPrincipal::Create(mOriginAttributes);
 
   mPrincipalToInherit = newNullPrincipal;
 
-  // setting SEC_FORCE_INHERIT_PRINCIPAL_OVERRULE_OWNER will overrule
-  // any non null owner set on the channel and will return the principal
-  // form the loadinfo instead.
+  
+  
+  
   mSecurityFlags |= SEC_FORCE_INHERIT_PRINCIPAL_OVERRULE_OWNER;
 
   return NS_OK;
@@ -1102,10 +1107,10 @@ nsresult LoadInfo::SetOriginAttributes(
 
 NS_IMETHODIMP
 LoadInfo::SetInitialSecurityCheckDone(bool aInitialSecurityCheckDone) {
-  // Indicates whether the channel was ever evaluated by the
-  // ContentSecurityManager. Once set to true, this flag must
-  // remain true throughout the lifetime of the channel.
-  // Setting it to anything else than true will be discarded.
+  
+  
+  
+  
   MOZ_ASSERT(aInitialSecurityCheckDone,
              "aInitialSecurityCheckDone must be true");
   mInitialSecurityCheckDone =
@@ -1260,7 +1265,7 @@ NS_IMETHODIMP
 LoadInfo::MaybeIncreaseTainting(uint32_t aTainting) {
   NS_ENSURE_ARG(aTainting <= TAINTING_OPAQUE);
 
-  // Skip if the tainting has been set by the service worker.
+  
   if (mServiceWorkerTaintingSynthesized) {
     return NS_OK;
   }
@@ -1276,7 +1281,7 @@ void LoadInfo::SynthesizeServiceWorkerTainting(LoadTainting aTainting) {
   MOZ_DIAGNOSTIC_ASSERT(aTainting <= LoadTainting::Opaque);
   mTainting = aTainting;
 
-  // Flag to prevent the tainting from being increased.
+  
   mServiceWorkerTaintingSynthesized = true;
 }
 
@@ -1351,6 +1356,17 @@ LoadInfo::SetResultPrincipalURI(nsIURI* aURI) {
   return NS_OK;
 }
 
+NS_IMETHODIMP
+LoadInfo::SetRequestBlockingReason(uint32_t aReason) {
+  mRequestBlockingReason = aReason;
+  return NS_OK;
+}
+NS_IMETHODIMP
+LoadInfo::GetRequestBlockingReason(uint32_t* aReason) {
+  *aReason = mRequestBlockingReason;
+  return NS_OK;
+}
+
 void LoadInfo::SetClientInfo(const ClientInfo& aClientInfo) {
   mClientInfo.emplace(aClientInfo);
 }
@@ -1366,8 +1382,8 @@ void LoadInfo::GiveReservedClientSource(
 
 UniquePtr<ClientSource> LoadInfo::TakeReservedClientSource() {
   if (mReservedClientSource) {
-    // If the reserved ClientInfo was set due to a ClientSource being present,
-    // then clear that info object when the ClientSource is taken.
+    
+    
     mReservedClientInfo.reset();
   }
   return std::move(mReservedClientSource);
@@ -1375,8 +1391,8 @@ UniquePtr<ClientSource> LoadInfo::TakeReservedClientSource() {
 
 void LoadInfo::SetReservedClientInfo(const ClientInfo& aClientInfo) {
   MOZ_DIAGNOSTIC_ASSERT(mInitialClientInfo.isNothing());
-  // Treat assignments of the same value as a no-op.  The emplace below
-  // will normally assert when overwriting an existing value.
+  
+  
   if (mReservedClientInfo.isSome() &&
       mReservedClientInfo.ref() == aClientInfo) {
     return;
@@ -1386,7 +1402,7 @@ void LoadInfo::SetReservedClientInfo(const ClientInfo& aClientInfo) {
 
 void LoadInfo::OverrideReservedClientInfoInParent(
     const ClientInfo& aClientInfo) {
-  // This should only be called to handle redirects in the parent process.
+  
   MOZ_ASSERT(XRE_GetProcessType() == GeckoProcessType_Default);
 
   mInitialClientInfo.reset();
@@ -1401,8 +1417,8 @@ const Maybe<ClientInfo>& LoadInfo::GetReservedClientInfo() {
 void LoadInfo::SetInitialClientInfo(const ClientInfo& aClientInfo) {
   MOZ_DIAGNOSTIC_ASSERT(!mReservedClientSource);
   MOZ_DIAGNOSTIC_ASSERT(mReservedClientInfo.isNothing());
-  // Treat assignments of the same value as a no-op.  The emplace below
-  // will normally assert when overwriting an existing value.
+  
+  
   if (mInitialClientInfo.isSome() && mInitialClientInfo.ref() == aClientInfo) {
     return;
   }
@@ -1443,5 +1459,5 @@ LoadInfo::SetCspEventListener(nsICSPEventListener* aCSPEventListener) {
   return NS_OK;
 }
 
-}  // namespace net
-}  // namespace mozilla
+}  
+}  

@@ -196,6 +196,9 @@ CSPService::ShouldLoad(nsIURI *aContentLocation, nsILoadInfo *aLoadInfo,
       
       
       if (NS_CP_REJECTED(*aDecision)) {
+        NS_SetRequestBlockingReason(
+            aLoadInfo, nsILoadInfo::BLOCKING_REASON_CONTENT_POLICY_PRELOAD);
+
         return NS_OK;
       }
     }
@@ -213,6 +216,12 @@ CSPService::ShouldLoad(nsIURI *aContentLocation, nsILoadInfo *aLoadInfo,
                          nullptr,  
                          aLoadInfo->GetSendCSPViolationEvents(), cspNonce,
                          aDecision);
+
+    if (NS_CP_REJECTED(*aDecision)) {
+      NS_SetRequestBlockingReason(
+          aLoadInfo, nsILoadInfo::BLOCKING_REASON_CONTENT_POLICY_GENERAL);
+    }
+
     NS_ENSURE_SUCCESS(rv, rv);
   }
   return NS_OK;
