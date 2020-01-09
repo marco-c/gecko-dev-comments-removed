@@ -9959,12 +9959,11 @@ Maybe<MotionPathData> nsLayoutUtils::ResolveMotionPath(const nsIFrame* aFrame) {
     return Nothing();
   }
 
-  
-  
-  float distance = 0.0;
-  float angle = 0.0;
+  gfx::Float angle = 0.0;
   Point point;
   if (display->mOffsetPath.IsPath()) {
+    const Span<const StylePathCommand>& path =
+        display->mOffsetPath.AsPath()._0.AsSpan();
     
     
     
@@ -9978,16 +9977,36 @@ Maybe<MotionPathData> nsLayoutUtils::ResolveMotionPath(const nsIFrame* aFrame) {
         gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget();
     RefPtr<PathBuilder> builder =
         drawTarget->CreatePathBuilder(FillRule::FILL_WINDING);
-    RefPtr<gfx::Path> gfxPath =
-        SVGPathData::BuildPath(display->mOffsetPath.AsPath()._0.AsSpan(),
-                               builder, NS_STYLE_STROKE_LINECAP_BUTT, 0.0);
+    RefPtr<gfx::Path> gfxPath = SVGPathData::BuildPath(
+        path, builder, NS_STYLE_STROKE_LINECAP_BUTT, 0.0);
     if (!gfxPath) {
       return Nothing();
     }
-    float pathLength = gfxPath->ComputeLength();
-    float computedDistance = distance * pathLength;
+
+    
+    
+    
+    
+    gfx::Float pathLength = gfxPath->ComputeLength();
+    gfx::Float usedDistance =
+      display->mOffsetDistance.ResolveToCSSPixels(CSSCoord(pathLength));
+    if (!path.empty() && path.rbegin()->IsClosePath()) {
+      
+      
+      
+      usedDistance = pathLength > 0.0 ? fmod(usedDistance, pathLength) : 0.0;
+      
+      
+      if (usedDistance < 0.0) {
+        usedDistance += pathLength;
+      }
+    } else {
+      
+      
+      usedDistance = clamped(usedDistance, 0.0f, pathLength);
+    }
     Point tangent;
-    point = gfxPath->ComputePointAtLength(computedDistance, &tangent);
+    point = gfxPath->ComputePointAtLength(usedDistance, &tangent);
     
     
     
