@@ -2512,7 +2512,6 @@ impl PrimitiveStore {
 
                 
                 let transform = prim_context.spatial_node.world_content_transform.to_transform();
-                let prim_offset = prim_instance.prim_origin.to_vector() - prim_data.offset;
 
                 
                 
@@ -2520,7 +2519,7 @@ impl PrimitiveStore {
                 
                 let run = &mut self.text_runs[*run_index];
                 run.prepare_for_render(
-                    prim_offset,
+                    prim_data.offset,
                     &prim_data.font,
                     &prim_data.glyphs,
                     frame_context.device_pixel_scale,
