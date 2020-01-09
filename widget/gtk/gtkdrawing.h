@@ -604,8 +604,11 @@ const ToolbarButtonGTKMetrics* GetToolbarButtonMetrics(
 
 
 
+
+
 int GetGtkHeaderBarButtonLayout(WidgetNodeType* aButtonLayout,
-                                int aMaxButtonNums);
+                                int aMaxButtonNums,
+                                bool* aReversedButtonsPlacement);
 
 
 

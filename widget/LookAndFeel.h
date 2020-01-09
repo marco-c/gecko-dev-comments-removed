@@ -452,6 +452,12 @@ class LookAndFeel {
 
 
 
+    eIntID_GTKCSDReversedPlacement,
+
+    
+
+
+
     eIntID_SystemUsesDarkTheme,
 
     
