@@ -258,23 +258,36 @@ const AnimationProperty* KeyframeEffect::GetEffectiveAnimationOfProperty(
 }
 
 bool KeyframeEffect::HasEffectiveAnimationOfPropertySet(
-    const nsCSSPropertyIDSet& aPropertySet, const EffectSet& aEffect) const {
-  bool ret = false;
+    const nsCSSPropertyIDSet& aPropertySet, const EffectSet& aEffectSet) const {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  bool result = false;
+
   for (const AnimationProperty& property : mProperties) {
     if (!aPropertySet.HasProperty(property.mProperty)) {
       continue;
     }
 
-    
-    
-    
-    
-    if (!IsEffectiveProperty(aEffect, property.mProperty)) {
+    if (IsEffectiveProperty(aEffectSet, property.mProperty)) {
+      result = true;
+    } else if (nsCSSPropertyIDSet::TransformLikeProperties().HasProperty(
+                   property.mProperty)) {
       return false;
     }
-    ret = true;
   }
-  return ret;
+
+  return result;
 }
 
 nsCSSPropertyIDSet KeyframeEffect::GetPropertiesForCompositor(

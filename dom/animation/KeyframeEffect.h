@@ -194,6 +194,7 @@ class KeyframeEffect : public AnimationEffect {
   
   
   
+  
   bool HasEffectiveAnimationOfProperty(nsCSSPropertyID aProperty,
                                        const EffectSet& aEffect) const {
     return GetEffectiveAnimationOfProperty(aProperty, aEffect) != nullptr;
@@ -205,8 +206,20 @@ class KeyframeEffect : public AnimationEffect {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   bool HasEffectiveAnimationOfPropertySet(
-      const nsCSSPropertyIDSet& aPropertySet, const EffectSet& aEffect) const;
+      const nsCSSPropertyIDSet& aPropertySet,
+      const EffectSet& aEffectSet) const;
 
   
   
