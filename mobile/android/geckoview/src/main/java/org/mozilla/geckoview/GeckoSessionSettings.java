@@ -213,7 +213,16 @@ public final class GeckoSessionSettings implements Parcelable {
     public static final int USER_AGENT_MODE_VR = 2;
 
     
+    
+
+
+
+
     public static final int VIEWPORT_MODE_MOBILE = 0;
+    
+
+
+
     public static final int VIEWPORT_MODE_DESKTOP = 1;
 
     public static class Key<T> {
