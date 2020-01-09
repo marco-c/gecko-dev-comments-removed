@@ -308,7 +308,7 @@ impl SpatialNode {
                         
                         source_transform
                             .pre_translate(&scroll_offset)
-                            .post_translate(-scroll_offset)
+                            .post_translate(&-scroll_offset)
                     }
                     ReferenceFrameKind::Perspective { scrolling_relative_to: None } |
                     ReferenceFrameKind::Transform => source_transform,
@@ -323,7 +323,7 @@ impl SpatialNode {
                 
                 
                 let relative_transform = resolved_transform
-                    .post_translate(state.parent_accumulated_scroll_offset)
+                    .post_translate(&state.parent_accumulated_scroll_offset)
                     .to_transform()
                     .with_destination::<LayoutPixel>();
 
