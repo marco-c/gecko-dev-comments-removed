@@ -20,8 +20,11 @@ using namespace js::jit;
 static EnterJitStatus JS_HAZ_JSNATIVE_CALLER EnterJit(JSContext* cx,
                                                       RunState& state,
                                                       uint8_t* code) {
-  MOZ_ASSERT(state.script()->hasBaselineScript());
+  
+  
   MOZ_ASSERT(code);
+  MOZ_ASSERT(code != cx->runtime()->jitRuntime()->interpreterStub().value);
+
   MOZ_ASSERT(IsBaselineEnabled(cx));
 
   if (!CheckRecursionLimit(cx)) {
@@ -55,7 +58,11 @@ static EnterJitStatus JS_HAZ_JSNATIVE_CALLER EnterJit(JSContext* cx,
       if (numActualArgs > BASELINE_MAX_ARGS_LENGTH) {
         return EnterJitStatus::NotEntered;
       }
-      code = script->baselineScript()->method()->raw();
+      if (script->hasBaselineScript()) {
+        code = script->baselineScript()->method()->raw();
+      } else {
+        code = cx->runtime()->jitRuntime()->baselineInterpreter().codeRaw();
+      }
     }
 
     constructing = state.asInvoke()->constructing();
@@ -133,9 +140,14 @@ EnterJitStatus js::jit::MaybeEnterJit(JSContext* cx, RunState& state) {
   do {
     
     
-    
-    if (script->hasBaselineScript()) {
-      break;
+    if (JitOptions.baselineInterpreter) {
+      if (script->types()) {
+        break;
+      }
+    } else {
+      if (script->hasBaselineScript()) {
+        break;
+      }
     }
 
     script->incWarmUpCounter();
