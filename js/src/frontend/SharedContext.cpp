@@ -163,8 +163,7 @@ FunctionBox::FunctionBox(JSContext* cx, TraceListNode* traceListHead,
       isSetter_(fun->isSetter()),
       isMethod_(fun->isMethod()),
       kind_(fun->kind()),
-      explicitName_(fun->explicitName())
-{
+      explicitName_(fun->explicitName()) {
   
   
   
@@ -195,7 +194,8 @@ void FunctionBox::initStandaloneFunction(Scope* enclosingScope) {
   thisBinding_ = ThisBinding::Function;
 }
 
-void FunctionBox::initWithEnclosingParseContext(ParseContext* enclosing, JSFunction* fun,
+void FunctionBox::initWithEnclosingParseContext(ParseContext* enclosing,
+                                                JSFunction* fun,
                                                 FunctionSyntaxKind kind) {
   SharedContext* sc = enclosing->sc();
   useAsm = sc->isFunctionBox() && sc->asFunctionBox()->useAsmOrInsideUseAsm();

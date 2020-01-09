@@ -188,15 +188,12 @@ class Zone : public JS::shadow::Zone,
     DiscardBaselineCode
   };
 
-  enum ShouldDiscardJitScripts : bool {
-    KeepJitScripts = false,
-    DiscardJitScripts
-  };
+  enum ShouldReleaseTypes : bool { KeepTypes = false, ReleaseTypes };
 
   void discardJitCode(
       js::FreeOp* fop,
       ShouldDiscardBaselineCode discardBaselineCode = DiscardBaselineCode,
-      ShouldDiscardJitScripts discardJitScripts = KeepJitScripts);
+      ShouldReleaseTypes releaseTypes = KeepTypes);
 
   void addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
                               size_t* typePool, size_t* regexpZone,

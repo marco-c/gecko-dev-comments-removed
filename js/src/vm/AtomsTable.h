@@ -46,8 +46,8 @@ struct AtomHasher {
                                       const Lookup& lookup);
 };
 
-using AtomSet = JS::GCHashSet<WeakHeapPtr<JSAtom*>, AtomHasher,
-                              SystemAllocPolicy>;
+using AtomSet =
+    JS::GCHashSet<WeakHeapPtr<JSAtom*>, AtomHasher, SystemAllocPolicy>;
 
 
 
