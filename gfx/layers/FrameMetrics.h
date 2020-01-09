@@ -511,8 +511,12 @@ struct FrameMetrics {
   
   
   
+  
+  
+  
   static void KeepLayoutViewportEnclosingVisualViewport(
-      const CSSRect& aVisualViewport, CSSRect& aLayoutViewport);
+      const CSSRect& aVisualViewport, const CSSRect& aScrollableRect,
+      CSSRect& aLayoutViewport);
 
  private:
   

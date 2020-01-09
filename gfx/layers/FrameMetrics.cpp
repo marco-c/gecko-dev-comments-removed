@@ -18,12 +18,13 @@ void FrameMetrics::RecalculateLayoutViewportOffset() {
     return;
   }
   KeepLayoutViewportEnclosingVisualViewport(GetVisualViewport(),
-                                            mLayoutViewport);
+                                            mScrollableRect, mLayoutViewport);
 }
 
 
 void FrameMetrics::KeepLayoutViewportEnclosingVisualViewport(
-    const CSSRect& aVisualViewport, CSSRect& aLayoutViewport) {
+    const CSSRect& aVisualViewport, const CSSRect& aScrollableRect,
+    CSSRect& aLayoutViewport) {
   
   
   
@@ -77,6 +78,10 @@ void FrameMetrics::KeepLayoutViewportEnclosingVisualViewport(
                               aLayoutViewport.YMost());
     }
   }
+
+  
+  
+  aLayoutViewport = aLayoutViewport.MoveInsideAndClamp(aScrollableRect);
 }
 
 void ScrollMetadata::SetUsesContainerScrolling(bool aValue) {
