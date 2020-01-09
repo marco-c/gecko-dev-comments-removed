@@ -39,6 +39,7 @@ import io
 import sys
 import tarfile
 import tempfile
+from collections import namedtuple
 from contextlib import closing
 from functools import partial, total_ordering
 from itertools import chain, groupby, tee
@@ -106,10 +107,35 @@ def readRegistry(registry):
     extlangMappings = {}
     extlangSubtags = []
 
+    
+    SpecialCase = namedtuple("SpecialCase", ["Type", "Subtag", "Prefix", "Preferred_Value"])
+    knownSpecialCases = {
+        SpecialCase("variant", "arevela", "hy", None): "hy",
+        SpecialCase("variant", "arevmda", "hy", None): "hyw",
+        SpecialCase("variant", "heploc", "ja-Latn-hepburn", "alalc97"): "ja-Latn-alalc97",
+    }
+
+    
+    
+    
+    specialCaseRE = re.compile("Preferred tag is (?P<preferred>.+)")
+
     for record in readRegistryRecord(registry):
         if "File-Date" in record:
             fileDate = record["File-Date"]
             continue
+
+        
+        if "Comments" in record:
+            match = specialCaseRE.match(record["Comments"])
+            if match:
+                replacement = knownSpecialCases[record["Type"],
+                                                record["Subtag"],
+                                                record["Prefix"],
+                                                record.get("Preferred-Value")]
+                if replacement != match.group("preferred"):
+                    raise Exception("Unexpected replacement value for {}".format(record))
+                record["Preferred-Value"] = replacement
 
         if record["Type"] == "grandfathered":
             
@@ -182,8 +208,12 @@ def readRegistry(registry):
             raise Exception("Conflict: extlang with lang mapping: " + extlang)
 
     
-    assert variantMappings["ja-Latn-hepburn-heploc"] == "alalc97"
-    variantMappings["ja-Latn-hepburn-heploc"] = "ja-Latn-alalc97"
+    for elem in knownSpecialCases:
+        tag = "{}-{}".format(elem.Prefix, elem.Subtag)
+        assert elem.Type == "variant", "Unexpected non-variant special case"
+        assert tag in variantMappings, "{} not found in variant mappings".format(tag)
+        assert variantMappings[tag] == knownSpecialCases[elem], \
+            "{} does not map to {}".format(tag, knownSpecialCases[elem])
 
     
     
@@ -305,7 +335,7 @@ def writeMappingsFunction(println, variantMappings, redundantMappings, extlangMa
                 continue
 
             if kind == Subtag.ExtLang:
-                assert extlangIndex in [1, 2, 3],\
+                assert extlangIndex in [1, 2, 3], \
                     "Language-Tag permits no more than three extlang subtags"
                 cond.append('tag.extlang{} === "{}"'.format(extlangIndex, subtag))
                 extlangIndex += 1
@@ -397,7 +427,7 @@ def writeMappingsFunction(println, variantMappings, redundantMappings, extlangMa
         assert preferred_kind != Subtag.ExtLang
         extlangIndex = 1
         while tag_kind == Subtag.ExtLang:
-            assert extlangIndex in [1, 2, 3],\
+            assert extlangIndex in [1, 2, 3], \
                 "Language-Tag permits no more than three extlang subtags"
             println3(u"tag.extlang{} = undefined;".format(extlangIndex))
             extlangIndex += 1
@@ -505,7 +535,7 @@ def writeMappingsFunction(println, variantMappings, redundantMappings, extlangMa
         println(u'      case "{}":'.format(lang))
         isFirstLanguageTag = True
         for tag in sorted(tag for tag in langTagMappings if language(tag) == lang):
-            assert not isinstance(langTagMappings[tag], dict),\
+            assert not isinstance(langTagMappings[tag], dict), \
                 "only supports complete language tags"
             emitCompare(tag, langTagMappings[tag], isFirstLanguageTag)
             isFirstLanguageTag = False
