@@ -17,12 +17,18 @@ class LineBreaker {
  public:
   NS_INLINE_DECL_REFCOUNTING(LineBreaker)
 
-  enum {
-    
-    kWordBreak_Normal = 0,    
-    kWordBreak_KeepAll = 1,   
-    kWordBreak_BreakAll = 2,  
-    kWordBreak_Anywhere = 3   
+  enum class WordBreak : uint8_t {
+    Normal = 0,    
+    BreakAll = 1,  
+    KeepAll = 2    
+  };
+
+  enum class Strictness : uint8_t {
+    Auto = 0,
+    Loose = 1,
+    Normal = 2,
+    Strict = 3,
+    Anywhere = 4
   };
 
   static already_AddRefed<LineBreaker> Create();
@@ -38,9 +44,11 @@ class LineBreaker {
   
   
   void GetJISx4051Breaks(const char16_t* aText, uint32_t aLength,
-                         uint8_t aWordBreak, uint8_t* aBreakBefore);
+                         WordBreak aWordBreak, Strictness aLevel,
+                         uint8_t* aBreakBefore);
   void GetJISx4051Breaks(const uint8_t* aText, uint32_t aLength,
-                         uint8_t aWordBreak, uint8_t* aBreakBefore);
+                         WordBreak aWordBreak, Strictness aLevel,
+                         uint8_t* aBreakBefore);
 
  private:
   ~LineBreaker() {}

@@ -177,7 +177,7 @@ class nsLineBreaker {
 
 
 
-  void SetWordBreak(uint8_t aMode) {
+  void SetWordBreak(mozilla::intl::LineBreaker::WordBreak aMode) {
     
     if (aMode != mWordBreak && !mCurrentWord.IsEmpty()) {
       nsresult rv = FlushCurrentWord();
@@ -187,11 +187,30 @@ class nsLineBreaker {
       
       
       
-      if (mWordBreak == mozilla::intl::LineBreaker::kWordBreak_BreakAll) {
+      if (mWordBreak == mozilla::intl::LineBreaker::WordBreak::BreakAll) {
         mBreakHere = true;
       }
     }
     mWordBreak = aMode;
+  }
+
+  
+
+
+
+
+  void SetStrictness(mozilla::intl::LineBreaker::Strictness aMode) {
+    if (aMode != mStrictness && !mCurrentWord.IsEmpty()) {
+      nsresult rv = FlushCurrentWord();
+      if (NS_FAILED(rv)) {
+        NS_WARNING("FlushCurrentWord failed, line-breaks may be wrong");
+      }
+      
+      if (mStrictness == mozilla::intl::LineBreaker::Strictness::Anywhere) {
+        mBreakHere = true;
+      }
+    }
+    mStrictness = aMode;
   }
 
  private:
@@ -239,7 +258,9 @@ class nsLineBreaker {
   
   bool mBreakHere;
   
-  uint8_t mWordBreak;
+  mozilla::intl::LineBreaker::WordBreak mWordBreak;
+  
+  mozilla::intl::LineBreaker::Strictness mStrictness;
 };
 
 #endif 
