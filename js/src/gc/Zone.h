@@ -545,7 +545,7 @@ class Zone : public JS::shadow::Zone,
   }
 
   
-  js::gc::HeapUsage usage;
+  js::gc::HeapSize zoneSize;
 
   
   js::gc::ZoneHeapThreshold threshold;

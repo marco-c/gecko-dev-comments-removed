@@ -828,7 +828,7 @@ void js::Nursery::collect(JS::gcreason::Reason reason) {
   
   
   
-  if (rt->gc.usage.gcBytes() >= tunables().gcMaxBytes()) {
+  if (rt->gc.heapSize.gcBytes() >= tunables().gcMaxBytes()) {
     disable();
   }
   

@@ -842,12 +842,12 @@ static_assert(
 
 
 
-class HeapUsage {
+class HeapSize {
   
 
 
 
-  HeapUsage* const parent_;
+  HeapSize* const parent_;
 
   
 
@@ -861,7 +861,7 @@ class HeapUsage {
       gcBytes_;
 
  public:
-  explicit HeapUsage(HeapUsage* parent) : parent_(parent), gcBytes_(0) {}
+  explicit HeapSize(HeapSize* parent) : parent_(parent), gcBytes_(0) {}
 
   size_t gcBytes() const { return gcBytes_; }
 
@@ -880,7 +880,7 @@ class HeapUsage {
   }
 
   
-  void adopt(HeapUsage& other) {
+  void adopt(HeapSize& other) {
     gcBytes_ += other.gcBytes_;
     other.gcBytes_ = 0;
   }
