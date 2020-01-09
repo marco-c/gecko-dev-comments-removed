@@ -884,9 +884,10 @@ void BrowserParent::ResumeLoad(uint64_t aPendingSwitchID) {
 }
 
 void BrowserParent::InitRendering() {
-  MOZ_ASSERT(!mRenderFrame.IsInitialized());
+  if (mRenderFrame.IsInitialized()) {
+    return;
+  }
   mRenderFrame.Initialize(this);
-  MOZ_ASSERT(mRenderFrame.IsInitialized());
 
   layers::LayersId layersId = mRenderFrame.GetLayersId();
   AddBrowserParentToTable(layersId, this);
@@ -906,13 +907,16 @@ void BrowserParent::MaybeShowFrame() {
   frameLoader->MaybeShowFrame();
 }
 
-void BrowserParent::Show(const ScreenIntSize& size, bool aParentIsActive) {
+bool BrowserParent::Show(const ScreenIntSize& size, bool aParentIsActive) {
   mDimensions = size;
   if (mIsDestroyed) {
-    return;
+    return false;
   }
 
   MOZ_ASSERT(mRenderFrame.IsInitialized());
+  if (!mRenderFrame.AttachLayerManager()) {
+    return false;
+  }
 
   nsCOMPtr<nsISupports> container = mFrameElement->OwnerDoc()->GetContainer();
   nsCOMPtr<nsIBaseWindow> baseWindow = do_QueryInterface(container);
@@ -921,6 +925,7 @@ void BrowserParent::Show(const ScreenIntSize& size, bool aParentIsActive) {
   mSizeMode = mainWidget ? mainWidget->SizeMode() : nsSizeMode_Normal;
 
   Unused << SendShow(size, GetShowInfo(), aParentIsActive, mSizeMode);
+  return true;
 }
 
 mozilla::ipc::IPCResult BrowserParent::RecvSetDimensions(const uint32_t& aFlags,
@@ -2121,8 +2126,14 @@ mozilla::ipc::IPCResult BrowserParent::RecvOnWindowedPluginKeyEvent(
 
 mozilla::ipc::IPCResult BrowserParent::RecvRequestFocus(const bool& aCanRaise) {
   LOGBROWSERFOCUS(("RecvRequestFocus %p, aCanRaise: %d", this, aCanRaise));
-  if (BrowserBridgeParent* bridgeParent = GetBrowserBridgeParent()) {
+  BrowserBridgeParent* bridgeParent = GetBrowserBridgeParent();
+  if (bridgeParent) {
     mozilla::Unused << bridgeParent->SendRequestFocus(aCanRaise);
+    return IPC_OK();
+  }
+
+  nsCOMPtr<nsIFocusManager> fm = nsFocusManager::GetFocusManager();
+  if (!fm) {
     return IPC_OK();
   }
 
@@ -2130,7 +2141,11 @@ mozilla::ipc::IPCResult BrowserParent::RecvRequestFocus(const bool& aCanRaise) {
     return IPC_OK();
   }
 
-  nsContentUtils::RequestFrameFocus(*mFrameElement, aCanRaise);
+  uint32_t flags = nsIFocusManager::FLAG_NOSCROLL;
+  if (aCanRaise) flags |= nsIFocusManager::FLAG_RAISE;
+
+  RefPtr<Element> element = mFrameElement;
+  fm->SetFocus(element, flags);
   return IPC_OK();
 }
 
