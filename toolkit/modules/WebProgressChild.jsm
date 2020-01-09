@@ -28,7 +28,9 @@ class WebProgressChild {
     this.inLoadURI = false;
 
     
-    let notifyCode = Ci.nsIWebProgress.NOTIFY_ALL & ~Ci.nsIWebProgress.NOTIFY_CONTENT_BLOCKING;
+    let notifyCode = Ci.nsIWebProgress.NOTIFY_ALL &
+                        ~Ci.nsIWebProgress.NOTIFY_CONTENT_BLOCKING &
+                        ~Ci.nsIWebProgress.NOTIFY_STATUS;
 
     this._filter = Cc["@mozilla.org/appshell/component/browser-status-filter;1"]
                      .createInstance(Ci.nsIWebProgress);
@@ -174,18 +176,6 @@ class WebProgressChild {
     }
 
     this._send("Content:LocationChange", json);
-  }
-
-  
-  
-  
-  onStatusChange(aWebProgress, aRequest, aStatus, aMessage) {
-    let json = this._setupJSON(aWebProgress, aRequest);
-
-    json.status = aStatus;
-    json.message = aMessage;
-
-    this._send("Content:StatusChange", json);
   }
 
   getSecInfoAsString() {

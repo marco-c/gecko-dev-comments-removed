@@ -433,7 +433,6 @@ MessageManagerTunnel.prototype = {
     "Content:ProgressChange",
     "Content:SecurityChange",
     "Content:StateChange",
-    "Content:StatusChange",
     
     "DOMTitleChanged",
     "ImageDocumentLoaded",
