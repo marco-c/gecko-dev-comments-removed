@@ -1428,8 +1428,16 @@ bool KeyframeEffect::CanAnimateTransformOnCompositor(
   
   
   
-  if (aFrame->Combines3DTransformWithAncestors() ||
-      aFrame->StyleDisplay()->mTransformStyle ==
+  
+  
+  const nsIFrame* primaryFrame =
+      nsLayoutUtils::GetPrimaryFrameFromStyleFrame(aFrame);
+
+  
+  
+  
+  if (primaryFrame->Combines3DTransformWithAncestors() ||
+      primaryFrame->StyleDisplay()->mTransformStyle ==
           NS_STYLE_TRANSFORM_STYLE_PRESERVE_3D) {
     aPerformanceWarning =
         AnimationPerformanceWarning::Type::TransformPreserve3D;
@@ -1439,14 +1447,14 @@ bool KeyframeEffect::CanAnimateTransformOnCompositor(
   
   
   
-  if (aFrame->BackfaceIsHidden()) {
+  if (primaryFrame->BackfaceIsHidden()) {
     aPerformanceWarning =
         AnimationPerformanceWarning::Type::TransformBackfaceVisibilityHidden;
     return false;
   }
   
   
-  if (aFrame->IsSVGTransformed()) {
+  if (primaryFrame->IsSVGTransformed()) {
     aPerformanceWarning = AnimationPerformanceWarning::Type::TransformSVG;
     return false;
   }
