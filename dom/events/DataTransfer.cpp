@@ -651,6 +651,11 @@ void DataTransfer::GetExternalClipboardFormats(const int32_t& aWhichClipboard,
                                                const bool& aPlainTextOnly,
                                                nsTArray<nsCString>* aResult) {
   MOZ_ASSERT(aResult);
+
+  
+  
+  
+
   nsCOMPtr<nsIClipboard> clipboard =
       do_GetService("@mozilla.org/widget/clipboard;1");
   if (!clipboard || aWhichClipboard < 0) {
@@ -695,6 +700,10 @@ void DataTransfer::GetExternalTransferableFormats(
   MOZ_ASSERT(aResult);
 
   aResult->Clear();
+
+  
+  
+  
 
   AutoTArray<nsCString, 10> flavors;
   aTransferable->FlavorsTransferableCanExport(flavors);
