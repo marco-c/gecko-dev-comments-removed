@@ -559,21 +559,6 @@ class nsPresContext : public nsISupports,
 
   float EffectiveTextZoom() const { return mEffectiveTextZoom; }
 
-  
-
-
-
-
-
-  int32_t MinFontSize(nsAtom* aLanguage, bool* aNeedsToCache = nullptr) const {
-    const auto* prefs =
-        Document()->GetFontPrefsForLang(aLanguage, aNeedsToCache);
-    if (aNeedsToCache && *aNeedsToCache) {
-      return 0;
-    }
-    return prefs->mMinimumFontSize;
-  }
-
   float GetFullZoom() { return mFullZoom; }
   
 
