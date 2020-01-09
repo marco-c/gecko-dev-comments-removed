@@ -10,7 +10,7 @@ use api::{PicturePixel, RasterPixel, WorldPixel, WorldRect, ImageFormat, ImageDe
 use api::{DebugFlags, DeviceHomogeneousVector, DeviceVector2D};
 use box_shadow::{BLUR_SAMPLE_SCALE};
 use clip::{ClipChainId, ClipChainNode, ClipItem, ClipStore, ClipDataStore, ClipChainStack};
-use clip_scroll_tree::{ROOT_SPATIAL_NODE_INDEX, ClipScrollTree, SpatialNodeIndex, CoordinateSystemId};
+use clip_scroll_tree::{ROOT_SPATIAL_NODE_INDEX, ClipScrollTree, SpatialNodeIndex, CoordinateSystemId, VisibleFace};
 use debug_colors;
 use device::TextureFilter;
 use euclid::{size2, vec3, TypedPoint2D, TypedScale, TypedSize2D};
@@ -22,7 +22,7 @@ use frame_builder::{FrameBuildingContext, FrameBuildingState, PictureState, Pict
 use gpu_cache::{GpuCache, GpuCacheAddress, GpuCacheHandle};
 use gpu_types::{TransformPalette, UvRectKind};
 use plane_split::{Clipper, Polygon, Splitter};
-use prim_store::{PictureIndex, PrimitiveInstance, SpaceMapper, VisibleFace, PrimitiveInstanceKind};
+use prim_store::{PictureIndex, PrimitiveInstance, SpaceMapper, PrimitiveInstanceKind};
 use prim_store::{get_raster_rects, PrimitiveScratchBuffer, VectorKey, PointKey};
 use prim_store::{OpacityBindingStorage, ImageInstanceStorage, OpacityBindingIndex, RectangleKey};
 use print_tree::PrintTreePrinter;
@@ -786,14 +786,17 @@ impl TileCache {
             self.tile_dimensions(frame_context.config.testing);
 
         
-        let scroll_transform = frame_context.clip_scroll_tree.get_relative_transform(
-            ROOT_SPATIAL_NODE_INDEX,
-            self.spatial_node_index,
-        ).expect("bug: unable to get scroll transform");
-        let scroll_offset = WorldVector2D::new(
-            scroll_transform.m41,
-            scroll_transform.m42,
-        );
+        let scroll_offset_point = frame_context.clip_scroll_tree
+            .get_relative_transform(
+                self.spatial_node_index,
+                ROOT_SPATIAL_NODE_INDEX,
+            )
+            .expect("bug: unable to get scroll transform")
+            .flattened
+            .inverse_project_2d_origin()
+            .unwrap_or_else(LayoutPoint::zero);
+
+        let scroll_offset = WorldVector2D::new(scroll_offset_point.x, scroll_offset_point.y);
         let scroll_delta = match self.scroll_offset {
             Some(prev) => prev - scroll_offset,
             None => WorldVector2D::zero(),
@@ -1430,15 +1433,34 @@ impl TileCache {
             let mut transform_spatial_nodes: Vec<SpatialNodeIndex> = tile.transforms.drain().collect();
             transform_spatial_nodes.sort();
             for spatial_node_index in transform_spatial_nodes {
-                let xf = frame_context.clip_scroll_tree.get_relative_transform(
-                    self.spatial_node_index,
-                    spatial_node_index,
-                ).expect("BUG: unable to get relative transform");
+                
+                
+                let inverse_origin = if self.spatial_node_index >= spatial_node_index {
+                    frame_context.clip_scroll_tree
+                        .get_relative_transform(
+                            self.spatial_node_index,
+                            spatial_node_index,
+                        )
+                        .expect("BUG: unable to get relative transform")
+                        .flattened
+                        .transform_point2d(&LayoutPoint::zero())
+                } else {
+                    frame_context.clip_scroll_tree
+                        .get_relative_transform(
+                            spatial_node_index,
+                            self.spatial_node_index,
+                        )
+                        .expect("BUG: unable to get relative transform")
+                        .flattened
+                        .inverse_project_2d_origin()
+                };
                 
                 
                 
                 
-                let key = xf.transform_point2d(&LayoutPoint::zero()).unwrap_or(LayoutPoint::zero()).round();
+                let key = inverse_origin
+                    .unwrap_or_else(LayoutPoint::zero)
+                    .round();
                 tile.descriptor.transforms.push(key.into());
             }
 
@@ -2670,9 +2692,9 @@ impl PicturePrimitive {
             
             
             let establishes_raster_root = frame_context.clip_scroll_tree
-                .get_relative_transform(parent_raster_node_index, surface_spatial_node_index)
+                .get_relative_transform(surface_spatial_node_index, parent_raster_node_index)
                 .expect("BUG: unable to get relative transform")
-                .has_perspective_component();
+                .is_perspective;
 
             let surface = SurfaceInfo::new(
                 surface_spatial_node_index,
@@ -2914,17 +2936,10 @@ impl PicturePrimitive {
                 
                 
                 
-                let mut device_rect = clipped
+                let device_rect = clipped
                     .inflate(inflation_factor, inflation_factor)
                     .intersection(&unclipped.to_i32())
                     .unwrap();
-                
-                
-                
-                device_rect.size = RenderTask::adjusted_blur_source_size(
-                    device_rect.size,
-                    blur_std_deviation,
-                );
 
                 let uv_rect_kind = calculate_uv_rect_kind(
                     &pic_rect,
@@ -2963,7 +2978,7 @@ impl PicturePrimitive {
             PictureCompositeMode::Filter(FilterOp::DropShadow(offset, blur_radius, color)) => {
                 let blur_std_deviation = blur_radius * frame_context.device_pixel_scale.0;
                 let blur_range = (blur_std_deviation * BLUR_SAMPLE_SCALE).ceil() as i32;
-                let rounded_std_dev = blur_std_deviation.round();
+
                 
                 
                 
@@ -2972,13 +2987,10 @@ impl PicturePrimitive {
                 
                 
                 
-                let mut device_rect = clipped.inflate(blur_range, blur_range)
-                        .intersection(&unclipped.to_i32())
-                        .unwrap();
-                device_rect.size = RenderTask::adjusted_blur_source_size(
-                    device_rect.size,
-                    rounded_std_dev,
-                );
+                let device_rect = clipped
+                    .inflate(blur_range, blur_range)
+                    .intersection(&unclipped.to_i32())
+                    .unwrap();
 
                 let uv_rect_kind = calculate_uv_rect_kind(
                     &pic_rect,
@@ -3002,7 +3014,7 @@ impl PicturePrimitive {
                 let picture_task_id = frame_state.render_tasks.add(picture_task);
 
                 let blur_render_task = RenderTask::new_blur(
-                    rounded_std_dev,
+                    blur_std_deviation.round(),
                     picture_task_id,
                     frame_state.render_tasks,
                     RenderTargetKind::Color,
