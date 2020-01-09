@@ -722,27 +722,45 @@ var AddonTestUtils = {
 
 
 
-
-
-
   async loadBlocklistData(dir, prefix) {
+    let loadedData = {};
+    for (let fileSuffix of ["extensions", "plugins"]) {
+      const fileName = `${prefix}-${fileSuffix}.json`;
+      let jsonStr = await OS.File.read(OS.Path.join(dir.path, fileName), {encoding: "UTF-8"}).catch(() => {});
+      if (!jsonStr) {
+         continue;
+      }
+      this.info(`Loaded ${fileName}`);
+
+      loadedData[fileSuffix] = JSON.parse(jsonStr);
+    }
+    return this.loadBlocklistRawData(loadedData);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  async loadBlocklistRawData(data) {
     const bsPass = ChromeUtils.import("resource://gre/modules/Blocklist.jsm", null);
     const blocklistMapping = {
       "extensions": bsPass.ExtensionBlocklistRS,
       "plugins": bsPass.PluginBlocklistRS,
     };
 
-    for (const [fileSuffix, blocklistObj] of Object.entries(blocklistMapping)) {
-      const fileName = `${prefix}-${fileSuffix}.json`;
-      let jsonStr = await OS.File.read(OS.Path.join(dir.path, fileName), {encoding: "UTF-8"}).catch(() => {});
-      if (!jsonStr) {
+    for (const [dataProp, blocklistObj] of Object.entries(blocklistMapping)) {
+      let newData = data[dataProp];
+      if (!newData) {
         continue;
       }
-      this.info(`Loading ${fileName}`);
-
-      let newData = JSON.parse(jsonStr);
       if (!Array.isArray(newData)) {
-        throw new Error("Expected an array of new items to put in the " + fileSuffix + " blocklist!");
+        throw new Error("Expected an array of new items to put in the " + dataProp + " blocklist!");
       }
       for (let item of newData) {
         if (!item.id) {

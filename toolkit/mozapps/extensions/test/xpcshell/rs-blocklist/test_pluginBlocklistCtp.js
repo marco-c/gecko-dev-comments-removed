@@ -49,9 +49,81 @@ var PLUGINS = [{
   blocklisted: false,
 }];
 
+const BLOCKLIST_DATA = {
+  ctp: [
+    {
+      "matchName": "^test_plugin_0",
+      "versionRange": [
+        {
+          "maxVersion": "*",
+          "minVersion": "0",
+          "severity": "0",
+          "vulnerabilityStatus": "0",
+        },
+      ],
+    },
+    {
+      "matchName": "^test_plugin_1",
+      "versionRange": [
+        {
+          "maxVersion": "*",
+          "minVersion": "0",
+          "severity": "0",
+          "vulnerabilityStatus": "1",
+        },
+      ],
+    },
+    {
+      "matchName": "^test_plugin_2",
+      "versionRange": [
+        {
+          "maxVersion": "*",
+          "minVersion": "0",
+          "severity": "0",
+          "vulnerabilityStatus": "2",
+        },
+      ],
+    },
+    {
+      "matchName": "^test_plugin_3",
+      "versionRange": [
+        {
+          "maxVersion": "*",
+          "minVersion": "0",
+          "vulnerabilityStatus": "2",
+        },
+      ],
+    },
+    {
+      "matchName": "^test_plugin_4",
+      "versionRange": [
+        {
+          "maxVersion": "*",
+          "minVersion": "0",
+          "severity": "1",
+          "vulnerabilityStatus": "2",
+        },
+      ],
+    },
+  ],
+  ctpUndo: [
+    {
+      "matchName": "^Test Plug-in",
+      "versionRange": [
+        {
+          "maxVersion": "*",
+          "minVersion": "0",
+          "severity": "0",
+          "vulnerabilityStatus": "2",
+        },
+      ],
+    },
+  ],
+};
+
 async function updateBlocklist(file) {
   let blocklistUpdated = TestUtils.topicObserved("plugin-blocklist-updated");
-  AddonTestUtils.loadBlocklistData(do_get_file("../data/"), file);
+  AddonTestUtils.loadBlocklistRawData({plugins: BLOCKLIST_DATA[file]});
   return blocklistUpdated;
 }
 
@@ -64,7 +136,7 @@ add_task(async function setup() {
 });
 
 add_task(async function basic() {
-  await updateBlocklist("test_pluginBlocklistCtp");
+  await updateBlocklist("ctp");
   var {blocklist} = Services;
 
   Assert.equal(await blocklist.getPluginBlocklistState(PLUGINS[0], "1", "1.9"),
@@ -107,7 +179,7 @@ add_task(async function test_is_not_clicktoplay() {
 
 
 add_task(async function test_is_clicktoplay() {
-  await updateBlocklist("test_pluginBlocklistCtpUndo");
+  await updateBlocklist("ctpUndo");
   var plugin = get_test_plugin();
   var blocklistState = await Blocklist.getPluginBlocklistState(plugin, "1", "1.9");
   Assert.equal(blocklistState, Ci.nsIBlocklistService.STATE_VULNERABLE_NO_UPDATE);
@@ -116,7 +188,7 @@ add_task(async function test_is_clicktoplay() {
 
 
 add_task(async function test_is_not_clicktoplay2() {
-  await updateBlocklist("test_pluginBlocklistCtp");
+  await updateBlocklist("ctp");
   var plugin = get_test_plugin();
   var blocklistState = await Blocklist.getPluginBlocklistState(plugin, "1", "1.9");
   Assert.notEqual(blocklistState, Ci.nsIBlocklistService.STATE_VULNERABLE_UPDATE_AVAILABLE);
@@ -126,7 +198,7 @@ add_task(async function test_is_not_clicktoplay2() {
 
 
 add_task(async function test_disable_blocklist() {
-  await updateBlocklist("test_pluginBlocklistCtpUndo");
+  await updateBlocklist("ctpUndo");
   var plugin = get_test_plugin();
   var blocklistState = await Blocklist.getPluginBlocklistState(plugin, "1", "1.9");
   Assert.equal(blocklistState, Ci.nsIBlocklistService.STATE_VULNERABLE_NO_UPDATE);

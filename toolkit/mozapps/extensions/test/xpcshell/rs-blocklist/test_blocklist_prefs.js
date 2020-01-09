@@ -5,6 +5,47 @@
 
 
 
+const BLOCKLIST_DATA = [
+  {
+    guid: "block1@tests.mozilla.org",
+    versionRange: [
+      {
+        severity: "1",
+        targetApplication: [
+          {
+            guid: "xpcshell@tests.mozilla.org",
+            maxVersion: "2.*",
+            minVersion: "1",
+          },
+        ],
+      },
+    ],
+    prefs: [
+      "test.blocklist.pref1",
+      "test.blocklist.pref2",
+    ],
+  },
+  {
+    guid: "block2@tests.mozilla.org",
+    versionRange: [
+      {
+        severity: "3",
+        targetApplication: [
+          {
+            guid: "xpcshell@tests.mozilla.org",
+            maxVersion: "2.*",
+            minVersion: "1",
+          },
+        ],
+      },
+    ],
+    prefs: [
+      "test.blocklist.pref3",
+      "test.blocklist.pref4",
+    ],
+  },
+];
+
 add_task(async function setup() {
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1");
 
@@ -47,7 +88,7 @@ add_task(async function setup() {
 
 
 add_task(async function test_blocks() {
-  await AddonTestUtils.loadBlocklistData(do_get_file("../data/"), "test_blocklist_prefs_1");
+  await AddonTestUtils.loadBlocklistRawData({extensions: BLOCKLIST_DATA});
 
   
   let [a1, a2] = await AddonManager.getAddonsByIDs(["block1@tests.mozilla.org",
