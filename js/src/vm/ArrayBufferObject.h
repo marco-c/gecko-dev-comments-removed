@@ -371,8 +371,7 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
   bool addView(JSContext* cx, JSObject* view);
 
   void setNewData(FreeOp* fop, BufferContents newContents, OwnsState ownsState);
-  void changeContents(JSContext* cx, BufferContents newContents,
-                      OwnsState ownsState);
+  void changeContents(JSContext* cx, BufferContents newContents);
 
   
   

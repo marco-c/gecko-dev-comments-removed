@@ -572,13 +572,12 @@ void ArrayBufferObject::changeViewContents(JSContext* cx,
 
 
 void ArrayBufferObject::changeContents(JSContext* cx,
-                                       BufferContents newContents,
-                                       OwnsState ownsState) {
+                                       BufferContents newContents) {
   MOZ_RELEASE_ASSERT(!isWasm());
 
   
   uint8_t* oldDataPointer = dataPointer();
-  setNewData(cx->runtime()->defaultFreeOp(), newContents, ownsState);
+  setNewData(cx->runtime()->defaultFreeOp(), newContents, OwnsData);
 
   
   auto& innerViews = ObjectRealm::get(this).innerViews.get();
@@ -989,7 +988,7 @@ bool js::CreateWasmBuffer(JSContext* cx, const wasm::Limits& memory,
       return false;
     }
 
-    buffer->changeContents(cx, BufferContents::createMalloced(data), OwnsData);
+    buffer->changeContents(cx, BufferContents::createMalloced(data));
   }
 
   buffer->setIsPreparedForAsmJS();
