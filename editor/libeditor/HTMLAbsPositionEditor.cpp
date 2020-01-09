@@ -343,8 +343,6 @@ nsresult HTMLEditor::ShowGrabberInternal(Element& aElement) {
   
   MOZ_ASSERT(mAbsolutelyPositionedObject);
 
-  mHasShownGrabber = true;
-
   
   rv = RefreshGrabberInternal();
   if (NS_WARN_IF(NS_FAILED(rv))) {

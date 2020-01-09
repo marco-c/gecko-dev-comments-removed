@@ -413,8 +413,6 @@ nsresult HTMLEditor::ShowResizersInternal(Element& aResizedElement) {
 
     MOZ_ASSERT(mResizedObject == &aResizedElement);
 
-    mHasShownResizers = true;
-
     
     
     aResizedElement.SetAttr(kNameSpaceID_None, nsGkAtoms::_moz_resizing,
@@ -622,7 +620,6 @@ nsresult HTMLEditor::OnMouseDown(int32_t aClientX, int32_t aClientY,
     
     
     aEvent->PreventDefault();
-    mResizerUsedCount++;
     mOriginalX = aClientX;
     mOriginalY = aClientY;
     return StartResizing(aTarget);
@@ -636,7 +633,6 @@ nsresult HTMLEditor::OnMouseDown(int32_t aClientX, int32_t aClientY,
 
     
     
-    mGrabberUsedCount++;
     mOriginalX = aClientX;
     mOriginalY = aClientY;
     return GrabberClicked();
