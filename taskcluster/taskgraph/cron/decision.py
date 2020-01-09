@@ -43,15 +43,6 @@ def make_decision_task(params, root, symbol, arguments=[]):
         params['repository_url'],
         params['head_rev'])
 
-    slugids = {}
-
-    def as_slugid(name):
-        
-        name = name[0]
-        if name not in slugids:
-            slugids[name] = slugid.nice()
-        return slugids[name]
-
     
     
     
@@ -78,7 +69,7 @@ def make_decision_task(params, root, symbol, arguments=[]):
             'quoted_args': ' '.join(pipes.quote(a) for a in arguments),
         },
         'now': current_json_time(),
-        'as_slugid': as_slugid,
+        'ownTaskId': slugid.nice(),
     }
 
     rendered = jsone.render(taskcluster_yml, context)
