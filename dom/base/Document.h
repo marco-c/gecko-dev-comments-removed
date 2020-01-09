@@ -647,6 +647,13 @@ class Document : public nsINode,
 
 
 
+
+  nsCString GetBaseDomain() const { return mBaseDomain; }
+
+  
+
+
+
   void SetDocumentURI(nsIURI* aURI);
 
   
@@ -3819,6 +3826,9 @@ class Document : public nsINode,
   nsCOMPtr<nsIURI> mChromeXHRDocURI;
   nsCOMPtr<nsIURI> mDocumentBaseURI;
   nsCOMPtr<nsIURI> mChromeXHRDocBaseURI;
+
+  
+  nsCString mBaseDomain;
 
   
   RefPtr<mozilla::URLExtraData> mCachedURLData;
