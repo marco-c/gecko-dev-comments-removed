@@ -3,6 +3,9 @@
 
 
 
+
+
+
 "use strict";
 
 
@@ -68,11 +71,32 @@ class DomTree extends Component {
       "id": "value",
     }];
 
+    let onDOMNodeMouseOver;
+    let onDOMNodeMouseOut;
+    const toolbox = DomProvider.getToolbox();
+    if (toolbox) {
+      onDOMNodeMouseOver = async (grip, options = {}) => {
+        await toolbox.initInspector();
+        if (!toolbox.highlighter) {
+          return null;
+        }
+        const nodeFront = await toolbox.walker.gripToNodeFront(grip);
+        return toolbox.highlighter.highlight(nodeFront, options);
+      };
+      onDOMNodeMouseOut = (forceHide = false) => {
+        return toolbox.highlighter
+          ? toolbox.highlighter.unhighlight(forceHide)
+          : null;
+      };
+    }
+
     
     
     
     const renderValue = props => {
       return Rep(Object.assign({}, props, {
+        onDOMNodeMouseOver,
+        onDOMNodeMouseOut,
         defaultRep: Grip,
         cropLimit: 50,
       }));
