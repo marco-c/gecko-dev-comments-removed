@@ -518,7 +518,7 @@ static inline Corner operator++(Corner& aCorner) {
 }
 
 
-enum HalfCorner : uint8_t {
+enum HalfCorner {
   
   eCornerTopLeftX = 0,
   eCornerTopLeftY = 1,

@@ -88,16 +88,6 @@ impl BorderCornerRadius {
 
 impl BorderRadius {
     
-    pub fn zero() -> Self {
-        Self {
-            top_left: BorderCornerRadius::zero(),
-            top_right: BorderCornerRadius::zero(),
-            bottom_right: BorderCornerRadius::zero(),
-            bottom_left: BorderCornerRadius::zero(),
-        }
-    }
-
-    
     pub fn all_zero(&self) -> bool {
         fn all(corner: &BorderCornerRadius) -> bool {
             fn is_zero(l: &NonNegativeLengthPercentage) -> bool {
