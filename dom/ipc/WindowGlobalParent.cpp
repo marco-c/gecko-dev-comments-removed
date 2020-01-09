@@ -193,6 +193,14 @@ void WindowGlobalParent::ReceiveRawMessage(
   }
 }
 
+const nsAString& WindowGlobalParent::GetRemoteType() {
+  if (RefPtr<BrowserParent> browserParent = GetRemoteTab()) {
+    return browserParent->Manager()->GetRemoteType();
+  }
+
+  return VoidString();
+}
+
 already_AddRefed<JSWindowActorParent> WindowGlobalParent::GetActor(
     const nsAString& aName, ErrorResult& aRv) {
   if (mIPCClosed) {
@@ -206,22 +214,8 @@ already_AddRefed<JSWindowActorParent> WindowGlobalParent::GetActor(
   }
 
   
-  
-  RefPtr<JSWindowActorService> actorSvc = JSWindowActorService::GetSingleton();
-  if (!actorSvc) {
-    return nullptr;
-  }
-
-  nsAutoString remoteType;
-  if (RefPtr<BrowserParent> browserParent = GetRemoteTab()) {
-    remoteType = browserParent->Manager()->GetRemoteType();
-  } else {
-    remoteType = VoidString();
-  }
-
   JS::RootedObject obj(RootingCx());
-  actorSvc->ConstructActor(aName,  true, mBrowsingContext,
-                           mDocumentURI, remoteType, &obj, aRv);
+  ConstructActor(aName, &obj, aRv);
   if (aRv.Failed()) {
     return nullptr;
   }
@@ -327,16 +321,19 @@ nsISupports* WindowGlobalParent::GetParentObject() {
   return xpc::NativeGlobal(xpc::PrivilegedJunkScope());
 }
 
+NS_IMPL_CYCLE_COLLECTION_INHERITED(WindowGlobalParent, WindowGlobalActor,
+                                   mFrameLoader, mBrowsingContext,
+                                   mWindowActors)
+
+NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN_INHERITED(WindowGlobalParent,
+                                               WindowGlobalActor)
+NS_IMPL_CYCLE_COLLECTION_TRACE_END
+
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(WindowGlobalParent)
-  NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
-  NS_INTERFACE_MAP_ENTRY(nsISupports)
-NS_INTERFACE_MAP_END
+NS_INTERFACE_MAP_END_INHERITING(WindowGlobalActor)
 
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(WindowGlobalParent, mFrameLoader,
-                                      mBrowsingContext, mWindowActors)
-
-NS_IMPL_CYCLE_COLLECTING_ADDREF(WindowGlobalParent)
-NS_IMPL_CYCLE_COLLECTING_RELEASE(WindowGlobalParent)
+NS_IMPL_ADDREF_INHERITED(WindowGlobalParent, WindowGlobalActor)
+NS_IMPL_RELEASE_INHERITED(WindowGlobalParent, WindowGlobalActor)
 
 }  
 }  

@@ -1,8 +1,8 @@
-/* -*- Mode: C++; c-basic-offset: 2; indent-tabs-mode: nil; tab-width: 8 -*- */
-/* vim: set sw=2 ts=8 et tw=80 ft=cpp : */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/dom/WindowGlobalChild.h"
 
@@ -54,12 +54,12 @@ already_AddRefed<WindowGlobalChild> WindowGlobalChild::Create(
   RefPtr<nsDocShell> docshell = nsDocShell::Cast(aWindow->GetDocShell());
   MOZ_ASSERT(docshell);
 
-  // Initalize our WindowGlobalChild object.
+  
   RefPtr<dom::BrowsingContext> bc = docshell->GetBrowsingContext();
 
-  // When creating a new window global child we also need to look at the
-  // channel's Cross-Origin-Opener-Policy and set it on the browsing context
-  // so it's available in the parent process.
+  
+  
+  
   nsCOMPtr<nsIHttpChannelInternal> chan =
       do_QueryInterface(aWindow->GetDocument()->GetChannel());
   nsILoadInfo::CrossOriginOpenerPolicy policy;
@@ -69,8 +69,8 @@ already_AddRefed<WindowGlobalChild> WindowGlobalChild::Create(
 
   RefPtr<WindowGlobalChild> wgc = new WindowGlobalChild(aWindow, bc);
 
-  // If we have already closed our browsing context, return a pre-closed
-  // WindowGlobalChild actor.
+  
+  
   if (bc->GetClosed()) {
     wgc->ActorDestroy(FailedConstructor);
     return wgc.forget();
@@ -79,26 +79,26 @@ already_AddRefed<WindowGlobalChild> WindowGlobalChild::Create(
   WindowGlobalInit init(principal, aWindow->GetDocumentURI(), bc,
                         wgc->mInnerWindowId, wgc->mOuterWindowId);
 
-  // Send the link constructor over PInProcessChild or PBrowser.
+  
   if (XRE_IsParentProcess()) {
     InProcessChild* ipc = InProcessChild::Singleton();
     if (!ipc) {
       return nullptr;
     }
 
-    // Note: ref is released in DeallocPWindowGlobalChild
+    
     ipc->SendPWindowGlobalConstructor(do_AddRef(wgc).take(), init);
   } else {
     RefPtr<BrowserChild> browserChild =
         BrowserChild::GetFrom(static_cast<mozIDOMWindow*>(aWindow));
     MOZ_ASSERT(browserChild);
 
-    // Note: ref is released in DeallocPWindowGlobalChild
+    
     browserChild->SendPWindowGlobalConstructor(do_AddRef(wgc).take(), init);
   }
   wgc->mIPCClosed = false;
 
-  // Register this WindowGlobal in the gWindowGlobalParentsById map.
+  
   if (!gWindowGlobalChildById) {
     gWindowGlobalChildById = new WGCByIdMap();
     ClearOnShutdown(&gWindowGlobalChildById);
@@ -110,7 +110,7 @@ already_AddRefed<WindowGlobalChild> WindowGlobalChild::Create(
   return wgc.forget();
 }
 
-/* static */
+
 already_AddRefed<WindowGlobalChild> WindowGlobalChild::GetByInnerWindowId(
     uint64_t aInnerWindowId) {
   if (!gWindowGlobalChildById) {
@@ -139,9 +139,9 @@ already_AddRefed<BrowserChild> WindowGlobalChild::GetBrowserChild() {
 }
 
 void WindowGlobalChild::Destroy() {
-  // Perform async IPC shutdown unless we're not in-process, and our
-  // BrowserChild is in the process of being destroyed, which will destroy us as
-  // well.
+  
+  
+  
   RefPtr<BrowserChild> browserChild = GetBrowserChild();
   if (!browserChild || !browserChild->IsDestroyed()) {
     SendDestroy();
@@ -157,8 +157,8 @@ static nsresult ChangeFrameRemoteness(WindowGlobalChild* aWgc,
                                       BrowserBridgeChild** aBridge) {
   MOZ_ASSERT(XRE_IsContentProcess(), "This doesn't make sense in the parent");
 
-  // Get the target embedder's FrameLoaderOwner, and make sure we're in the
-  // right place.
+  
+  
   RefPtr<Element> embedderElt = aBc->GetEmbedderElement();
   if (!embedderElt) {
     return NS_ERROR_NOT_AVAILABLE;
@@ -173,7 +173,7 @@ static nsresult ChangeFrameRemoteness(WindowGlobalChild* aWgc,
 
   MOZ_ASSERT(nsContentUtils::IsSafeToRunScript());
 
-  // Actually perform the remoteness swap.
+  
   RemotenessOptions options;
   options.mRemoteType.Construct(aRemoteType);
   options.mPendingSwitchID.Construct(aPendingSwitchId);
@@ -184,8 +184,8 @@ static nsresult ChangeFrameRemoteness(WindowGlobalChild* aWgc,
     return error.StealNSResult();
   }
 
-  // Make sure we successfully created either an in-process nsDocShell or a
-  // cross-process BrowserBridgeChild. If we didn't, produce an error.
+  
+  
   RefPtr<nsFrameLoader> frameLoader = flo->GetFrameLoader();
   if (NS_WARN_IF(!frameLoader)) {
     return NS_ERROR_FAILURE;
@@ -221,7 +221,7 @@ IPCResult WindowGlobalChild::RecvChangeFrameRemoteness(
   nsresult rv = ChangeFrameRemoteness(this, aBc, aRemoteType, aPendingSwitchId,
                                       getter_AddRefs(bbc));
 
-  // To make the type system happy, we've gotta do some gymnastics.
+  
   aResolver(Tuple<const nsresult&, PBrowserBridgeChild*>(rv, bbc));
   return IPC_OK();
 }
@@ -243,6 +243,18 @@ void WindowGlobalChild::ReceiveRawMessage(const JSWindowActorMessageMeta& aMeta,
   }
 }
 
+nsIURI* WindowGlobalChild::GetDocumentURI() {
+  return mWindowGlobal->GetDocumentURI();
+}
+
+const nsAString& WindowGlobalChild::GetRemoteType() {
+  if (XRE_IsContentProcess()) {
+    return ContentChild::GetSingleton()->GetRemoteType();
+  }
+
+  return VoidString();
+}
+
 already_AddRefed<JSWindowActorChild> WindowGlobalChild::GetActor(
     const nsAString& aName, ErrorResult& aRv) {
   if (mIPCClosed) {
@@ -250,34 +262,19 @@ already_AddRefed<JSWindowActorChild> WindowGlobalChild::GetActor(
     return nullptr;
   }
 
-  // Check if this actor has already been created, and return it if it has.
+  
   if (mWindowActors.Contains(aName)) {
     return do_AddRef(mWindowActors.GetWeak(aName));
   }
 
-  // Otherwise, we want to create a new instance of this actor. Call into the
-  // JSWindowActorService to trigger construction.
-  RefPtr<JSWindowActorService> actorSvc = JSWindowActorService::GetSingleton();
-  if (!actorSvc) {
-    return nullptr;
-  }
-
-  nsAutoString remoteType;
-  if (XRE_IsContentProcess()) {
-    remoteType = ContentChild::GetSingleton()->GetRemoteType();
-  } else {
-    remoteType = VoidString();
-  }
-
+  
   JS::RootedObject obj(RootingCx());
-  actorSvc->ConstructActor(aName, /* aChildSide */ false, mBrowsingContext,
-                           mWindowGlobal->GetDocumentURI(), remoteType, &obj,
-                           aRv);
+  ConstructActor(aName, &obj, aRv);
   if (aRv.Failed()) {
     return nullptr;
   }
 
-  // Unwrap our actor to a JSWindowActorChild object.
+  
   RefPtr<JSWindowActorChild> actor;
   if (NS_FAILED(UNWRAP_OBJECT(JSWindowActorChild, &obj, actor))) {
     return nullptr;
@@ -294,7 +291,7 @@ void WindowGlobalChild::ActorDestroy(ActorDestroyReason aWhy) {
   mIPCClosed = true;
   gWindowGlobalChildById->Remove(mInnerWindowId);
 
-  // Destroy our JSWindowActors, and reject any pending queries.
+  
   nsRefPtrHashtable<nsStringHashKey, JSWindowActorChild> windowActors;
   mWindowActors.SwapElements(windowActors);
   for (auto iter = windowActors.Iter(); !iter.Done(); iter.Next()) {
@@ -316,11 +313,19 @@ nsISupports* WindowGlobalChild::GetParentObject() {
   return xpc::NativeGlobal(xpc::PrivilegedJunkScope());
 }
 
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(WindowGlobalChild, mWindowGlobal,
-                                      mBrowsingContext, mWindowActors)
+NS_IMPL_CYCLE_COLLECTION_INHERITED(WindowGlobalChild, WindowGlobalActor,
+                                   mWindowGlobal, mBrowsingContext,
+                                   mWindowActors)
 
-NS_IMPL_CYCLE_COLLECTION_ROOT_NATIVE(WindowGlobalChild, AddRef)
-NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(WindowGlobalChild, Release)
+NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN_INHERITED(WindowGlobalChild,
+                                               WindowGlobalActor)
+NS_IMPL_CYCLE_COLLECTION_TRACE_END
 
-}  // namespace dom
-}  // namespace mozilla
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(WindowGlobalChild)
+NS_INTERFACE_MAP_END_INHERITING(WindowGlobalActor)
+
+NS_IMPL_ADDREF_INHERITED(WindowGlobalChild, WindowGlobalActor)
+NS_IMPL_RELEASE_INHERITED(WindowGlobalChild, WindowGlobalActor)
+
+}  
+}  

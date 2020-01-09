@@ -13,13 +13,86 @@
 #include "nsRefPtrHashtable.h"
 #include "nsString.h"
 #include "nsTArray.h"
+#include "mozilla/dom/JSWindowActor.h"
+
+#include "nsIObserver.h"
+#include "nsIDOMEventListener.h"
+#include "mozilla/EventListenerManager.h"
+#include "mozilla/extensions/WebExtensionContentScript.h"
 
 namespace mozilla {
 namespace dom {
 struct WindowActorOptions;
 class JSWindowActorInfo;
-class JSWindowActorProtocol;
 class EventTarget;
+
+
+
+
+
+
+
+
+
+class JSWindowActorProtocol final : public nsIObserver,
+                                    public nsIDOMEventListener {
+ public:
+  NS_DECL_NSIOBSERVER
+  NS_DECL_NSIDOMEVENTLISTENER
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(JSWindowActorProtocol, nsIObserver)
+
+  static already_AddRefed<JSWindowActorProtocol> FromIPC(
+      const JSWindowActorInfo& aInfo);
+  JSWindowActorInfo ToIPC();
+
+  static already_AddRefed<JSWindowActorProtocol> FromWebIDLOptions(
+      const nsAString& aName, const WindowActorOptions& aOptions,
+      ErrorResult& aRv);
+
+  struct Sided {
+    nsCString mModuleURI;
+  };
+
+  struct ParentSide : public Sided {};
+
+  struct EventDecl {
+    nsString mName;
+    EventListenerFlags mFlags;
+    Optional<bool> mPassive;
+  };
+
+  struct ChildSide : public Sided {
+    nsTArray<EventDecl> mEvents;
+    nsTArray<nsCString> mObservers;
+  };
+
+  const ParentSide& Parent() const { return mParent; }
+  const ChildSide& Child() const { return mChild; }
+
+  void RegisterListenersFor(EventTarget* aRoot);
+  void UnregisterListenersFor(EventTarget* aRoot);
+  void AddObservers();
+  void RemoveObservers();
+  bool Matches(BrowsingContext* aBrowsingContext, nsIURI* aURI,
+               const nsAString& aRemoteType);
+
+ private:
+  explicit JSWindowActorProtocol(const nsAString& aName) : mName(aName) {}
+  extensions::MatchPatternSet* GetURIMatcher();
+  ~JSWindowActorProtocol() = default;
+
+  nsString mName;
+  bool mAllFrames = false;
+  bool mIncludeChrome = false;
+  nsTArray<nsString> mMatches;
+  nsTArray<nsString> mRemoteTypes;
+
+  ParentSide mParent;
+  ChildSide mChild;
+
+  RefPtr<extensions::MatchPatternSet> mURIMatcher;
+};
 
 class JSWindowActorService final {
  public:
@@ -41,18 +114,12 @@ class JSWindowActorService final {
   void GetJSWindowActorInfos(nsTArray<JSWindowActorInfo>& aInfos);
 
   
-  
-  
-  void ConstructActor(const nsAString& aName, bool aParentSide,
-                      BrowsingContext* aBrowsingContext, nsIURI* aURI,
-                      const nsString& aRemoteType,
-                      JS::MutableHandleObject aActor, ErrorResult& aRv);
-
-  
   void RegisterWindowRoot(EventTarget* aRoot);
 
   
   static void UnregisterWindowRoot(EventTarget* aRoot);
+
+  already_AddRefed<JSWindowActorProtocol> GetProtocol(const nsAString& aName);
 
  private:
   JSWindowActorService();
