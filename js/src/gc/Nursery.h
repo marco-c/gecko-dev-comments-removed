@@ -166,13 +166,16 @@ class Nursery {
   
   
   
-  unsigned maxChunkCount() const { return maxChunkCount_; }
+  unsigned maxChunkCount() const {
+    MOZ_ASSERT(capacity());
+    return JS_HOWMANY(capacity(), NurseryChunkUsableSize);
+  }
 
   bool exists() const { return chunkCountLimit() != 0; }
 
   void enable();
   void disable();
-  bool isEnabled() const { return maxChunkCount() != 0; }
+  bool isEnabled() const { return capacity() != 0; }
 
   void enableStrings();
   void disableStrings();
@@ -324,7 +327,8 @@ class Nursery {
   
   
   size_t spaceToEnd(unsigned chunkCount) const;
-  size_t capacity() const { return spaceToEnd(maxChunkCount()); }
+
+  size_t capacity() const { return capacity_; }
   size_t lazyCapacity() const { return spaceToEnd(allocatedChunkCount()); }
 
   
@@ -336,6 +340,7 @@ class Nursery {
   }
   MOZ_ALWAYS_INLINE size_t freeSpace() const {
     MOZ_ASSERT(currentEnd_ - position_ <= NurseryChunkUsableSize);
+    MOZ_ASSERT(currentChunk_ < maxChunkCount());
     return (currentEnd_ - position_) +
            (maxChunkCount() - currentChunk_ - 1) * NurseryChunkUsableSize;
   }
@@ -423,7 +428,8 @@ class Nursery {
 
 
 
-  unsigned maxChunkCount_;
+
+  size_t capacity_;
 
   
 
