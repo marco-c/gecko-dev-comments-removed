@@ -4461,6 +4461,14 @@ void ScrollFrameHelper::ScrollToRestoredPosition() {
   
   
   
+  nsPoint layoutRestorePos = GetScrollRange().ClampPoint(mRestorePos);
+
+  
+  
+  
+  
+  
+  
   nsPoint logicalLayoutScrollPos = GetLogicalScrollPosition();
 
   
@@ -4470,28 +4478,31 @@ void ScrollFrameHelper::ScrollToRestoredPosition() {
     
     
     if (mRestorePos != mLastPos  ||
-        mRestorePos != logicalLayoutScrollPos) {
+        layoutRestorePos != logicalLayoutScrollPos) {
       LoadingState state = GetPageLoadingState();
       if (state == LoadingState::Stopped && !NS_SUBTREE_DIRTY(mOuter)) {
         return;
       }
-      nsPoint scrollToPos = mRestorePos;
+      nsPoint visualScrollToPos = mRestorePos;
+      nsPoint layoutScrollToPos = layoutRestorePos;
       if (!IsPhysicalLTR()) {
         
-        scrollToPos.x -=
+        visualScrollToPos.x -=
+            (GetVisualViewportSize().width - mScrolledFrame->GetRect().width);
+        layoutScrollToPos.x -=
             (GetVisualViewportSize().width - mScrolledFrame->GetRect().width);
       }
       AutoWeakFrame weakFrame(mOuter);
       
       
-      ScrollToWithOrigin(scrollToPos, nsIScrollableFrame::INSTANT,
+      ScrollToWithOrigin(layoutScrollToPos, nsIScrollableFrame::INSTANT,
                          nsGkAtoms::restore, nullptr);
       if (!weakFrame.IsAlive()) {
         return;
       }
       if (mIsRoot && mOuter->PresContext()->IsRootContentDocument()) {
         mOuter->PresShell()->SetPendingVisualScrollUpdate(
-            scrollToPos, FrameMetrics::eRestore);
+            visualScrollToPos, FrameMetrics::eRestore);
       }
       if (state == LoadingState::Loading || NS_SUBTREE_DIRTY(mOuter)) {
         
