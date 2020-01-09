@@ -289,7 +289,8 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
 
 
   void AudioContextOperationCompleted(MediaStream* aStream, void* aPromise,
-                                      dom::AudioContextOperation aOperation);
+                                      dom::AudioContextOperation aOperation,
+                                      dom::AudioContextOperationFlags aFlags);
 
   
 
@@ -298,7 +299,8 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
   void ApplyAudioContextOperationImpl(MediaStream* aDestinationStream,
                                       const nsTArray<MediaStream*>& aStreams,
                                       dom::AudioContextOperation aOperation,
-                                      void* aPromise);
+                                      void* aPromise,
+                                      dom::AudioContextOperationFlags aSource);
 
   
 

@@ -15,6 +15,7 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/dom/TypedArray.h"
 #include "mozilla/RelativeTimeline.h"
+#include "mozilla/TypedEnumBits.h"
 #include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
@@ -118,6 +119,15 @@ class StateChangeTask final : public Runnable {
 };
 
 enum class AudioContextOperation { Suspend, Resume, Close };
+
+
+
+
+
+
+enum class AudioContextOperationFlags { None, SendStateChange };
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(AudioContextOperationFlags);
+
 struct AudioContextOptions;
 
 class AudioContext final : public DOMEventTargetHelper,
@@ -333,9 +343,9 @@ class AudioContext final : public DOMEventTargetHelper,
 
   nsTArray<MediaStream*> GetAllStreams() const;
 
-  void ResumeInternal();
-  void SuspendInternal(void* aPromise);
-  void CloseInternal(void* aPromise);
+  void ResumeInternal(AudioContextOperationFlags aFlags);
+  void SuspendInternal(void* aPromise, AudioContextOperationFlags aFlags);
+  void CloseInternal(void* aPromise, AudioContextOperationFlags aFlags);
 
   
   
@@ -399,8 +409,6 @@ class AudioContext final : public DOMEventTargetHelper,
 
   
   bool mSuspendedByContent;
-  
-  bool mSuspendedByChrome;
 
   
   
