@@ -305,6 +305,7 @@ MediaDecoder::MediaDecoder(MediaDecoderInit& aInit)
       mIsElementInTree(false),
       mForcedHidden(false),
       mHasSuspendTaint(aInit.mHasSuspendTaint),
+      mIsCloningVisually(false),
       mPlaybackRate(aInit.mPlaybackRate),
       mLogicallySeeking(false, "MediaDecoder::mLogicallySeeking"),
       INIT_MIRROR(mBuffered, TimeIntervals()),
@@ -989,6 +990,14 @@ void MediaDecoder::UpdateVideoDecodeMode() {
   }
 
   
+  if (mIsCloningVisually) {
+    LOG("UpdateVideoDecodeMode(), set Normal because the element is cloning "
+        "itself visually to another video container.");
+    mDecoderStateMachine->SetVideoDecodeMode(VideoDecodeMode::Normal);
+    return;
+  }
+
+  
   if (!mIsElementInTree) {
     LOG("UpdateVideoDecodeMode(), set Normal because the element is not in "
         "tree.");
@@ -1044,6 +1053,13 @@ void MediaDecoder::SetIsBackgroundVideoDecodingAllowed(bool aAllowed) {
 bool MediaDecoder::HasSuspendTaint() const {
   MOZ_ASSERT(NS_IsMainThread());
   return mHasSuspendTaint;
+}
+
+void MediaDecoder::SetCloningVisually(bool aIsCloningVisually) {
+  if (mIsCloningVisually != aIsCloningVisually) {
+    mIsCloningVisually = aIsCloningVisually;
+    UpdateVideoDecodeMode();
+  }
 }
 
 bool MediaDecoder::IsMediaSeekable() {

@@ -308,6 +308,8 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   
   bool HasSuspendTaint() const;
 
+  void SetCloningVisually(bool aIsCloningVisually);
+
   void UpdateVideoDecodeMode();
 
   void SetIsBackgroundVideoDecodingAllowed(bool aAllowed);
@@ -561,6 +563,10 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   
   
   bool mHasSuspendTaint;
+
+  
+  
+  bool mIsCloningVisually;
 
   MediaDecoderOwner::NextFrameStatus mNextFrameStatus =
       MediaDecoderOwner::NEXT_FRAME_UNAVAILABLE;
