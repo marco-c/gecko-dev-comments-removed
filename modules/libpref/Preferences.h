@@ -33,6 +33,8 @@ class nsPrefBranch;
 
 namespace mozilla {
 
+void UnloadPrefsModule();
+
 
 
 
