@@ -15,9 +15,6 @@ add_task(async function init() {
   registerCleanupFunction(async function() {
     let engine = Services.search.getEngineByName("Test");
     await Services.search.removeEngine(engine);
-    
-    gURLBar.handleRevert();
-    await UrlbarTestUtils.promisePopupClose(window, () => gURLBar.blur());
   });
 
   

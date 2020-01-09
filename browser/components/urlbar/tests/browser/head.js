@@ -26,3 +26,9 @@ Services.scriptloader.loadSubScript(
   this);
 
 const {sinon} = ChromeUtils.import("resource://testing-common/Sinon.jsm");
+
+registerCleanupFunction(async () => {
+  
+  
+  await UrlbarTestUtils.promisePopupClose(window);
+});

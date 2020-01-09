@@ -19,9 +19,6 @@ add_task(async function prepare() {
     
     
     await PlacesUtils.history.clear();
-
-    
-    await UrlbarTestUtils.promisePopupClose(window);
   });
 
   

@@ -34,8 +34,6 @@ add_task(async function init() {
     await Services.search.setDefault(oldDefaultEngine);
 
     await PlacesUtils.history.clear();
-    
-    await UrlbarTestUtils.promisePopupClose(window);
   });
 });
 
