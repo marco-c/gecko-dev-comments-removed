@@ -1236,7 +1236,6 @@ class ContentParent final : public PContentParent,
 
   LifecycleState mLifecycleState;
 
-  bool mShuttingDown;
   bool mIsForBrowser;
 
   
