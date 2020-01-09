@@ -75,10 +75,10 @@ function run_test() {
 
   
   
-  
-  
-  var interfaces = foo.getInterfaces({});
-  Assert.equal(interfaces, Ci.nsIClassInfo.number);
+  var interfaces = foo.interfaces;
+  Assert.ok(Array.isArray(interfaces));
+  Assert.equal(interfaces.length, 1);
+  Assert.ok(interfaces[0].equals(Ci.nsIClassInfo))
 
   
   Assert.ok((contractID + "2") in Cc);
