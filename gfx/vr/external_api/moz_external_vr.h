@@ -34,7 +34,7 @@ enum class GamepadCapabilityFlags : uint16_t;
 #endif  
 namespace gfx {
 
-static const int32_t kVRExternalVersion = 8;
+static const int32_t kVRExternalVersion = 7;
 
 
 
@@ -346,7 +346,6 @@ struct VRLayer_Stereo_Immersive {
   uint64_t inputFrameId;
   VRLayerEyeRect leftEyeRect;
   VRLayerEyeRect rightEyeRect;
-  IntSize_POD textureSize;
 };
 
 struct VRLayerState {
