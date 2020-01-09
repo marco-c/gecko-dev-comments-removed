@@ -17,7 +17,9 @@ use cssparser::Parser;
 use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
 use nsstring::nsCString;
 use servo_arc::Arc;
+use std::collections::HashMap;
 use std::fmt::{self, Write};
+use std::sync::RwLock;
 use style_traits::{CssWriter, ParseError, ToCss};
 
 
@@ -81,6 +83,20 @@ impl CssUrlData {
     }
 }
 
+#[cfg(debug_assertions)]
+impl Drop for CssUrlData {
+    fn drop(&mut self) {
+        assert!(
+            !URL_VALUE_TABLE
+                .read()
+                .unwrap()
+                .contains_key(&CssUrlDataKey(self as *mut _ as *const _)),
+            "All CssUrlData objects used as keys in URL_VALUE_TABLE should be \
+             from shared memory style sheets, and so should never be dropped",
+        );
+    }
+}
+
 impl Parse for CssUrl {
     fn parse<'i, 't>(
         context: &ParserContext,
@@ -105,14 +121,44 @@ impl MallocSizeOf for CssUrl {
 }
 
 
+#[derive(Hash, PartialEq, Eq)]
+struct CssUrlDataKey(*const CssUrlData);
+
+unsafe impl Sync for CssUrlDataKey {}
+unsafe impl Send for CssUrlDataKey {}
+
+
+#[derive(Clone, Debug)]
+pub enum URLValueSource {
+    
+    URLValue(RefPtr<URLValue>),
+    
+    
+    
+    CORSMode(CORSMode),
+}
+
+
 #[derive(Clone, Debug, SpecifiedValueInfo, ToCss)]
 pub struct SpecifiedUrl {
     
     pub url: CssUrl,
     
     
+    
+    
+    
     #[css(skip)]
-    pub url_value: RefPtr<URLValue>,
+    url_value: Box<URLValueSource>,
+}
+
+fn make_url_value(url: &CssUrl, cors_mode: CORSMode) -> RefPtr<URLValue> {
+    unsafe {
+        let ptr = bindings::Gecko_URLValue_Create(url.0.clone().into_strong(), cors_mode);
+        
+        debug_assert!(!ptr.is_null());
+        RefPtr::from_addrefed(ptr)
+    }
 }
 
 impl SpecifiedUrl {
@@ -122,12 +168,7 @@ impl SpecifiedUrl {
     }
 
     fn from_css_url_with_cors(url: CssUrl, cors: CORSMode) -> Self {
-        let url_value = unsafe {
-            let ptr = bindings::Gecko_URLValue_Create(url.0.clone().into_strong(), cors);
-            
-            debug_assert!(!ptr.is_null());
-            RefPtr::from_addrefed(ptr)
-        };
+        let url_value = Box::new(URLValueSource::URLValue(make_url_value(&url, cors)));
         Self { url, url_value }
     }
 
@@ -140,6 +181,45 @@ impl SpecifiedUrl {
         use crate::gecko_bindings::structs::root::mozilla::CORSMode_CORS_ANONYMOUS;
         Self::from_css_url_with_cors(url, CORSMode_CORS_ANONYMOUS)
     }
+
+    fn with_url_value<F, T>(&self, f: F) -> T
+    where
+        F: FnOnce(&RefPtr<URLValue>) -> T,
+    {
+        match *self.url_value {
+            URLValueSource::URLValue(ref r) => f(r),
+            URLValueSource::CORSMode(cors_mode) => {
+                {
+                    let guard = URL_VALUE_TABLE.read().unwrap();
+                    if let Some(r) = guard.get(&(CssUrlDataKey(&*self.url.0 as *const _))) {
+                        return f(r);
+                    }
+                }
+                let mut guard = URL_VALUE_TABLE.write().unwrap();
+                let r = guard
+                    .entry(CssUrlDataKey(&*self.url.0 as *const _))
+                    .or_insert_with(|| make_url_value(&self.url, cors_mode));
+                f(r)
+            },
+        }
+    }
+
+    
+    pub fn clone_url_value(&self) -> RefPtr<URLValue> {
+        self.with_url_value(RefPtr::clone)
+    }
+
+    
+    pub fn url_value_ptr(&self) -> *mut URLValue {
+        self.with_url_value(RefPtr::get)
+    }
+}
+
+
+
+
+pub fn shutdown() {
+    URL_VALUE_TABLE.write().unwrap().clear();
 }
 
 impl Parse for SpecifiedUrl {
@@ -165,7 +245,7 @@ impl MallocSizeOf for SpecifiedUrl {
         
         
         
-        n += unsafe { bindings::Gecko_URLValue_SizeOfIncludingThis(self.url_value.get()) };
+        n += unsafe { bindings::Gecko_URLValue_SizeOfIncludingThis(self.url_value_ptr()) };
         n
     }
 }
@@ -258,7 +338,8 @@ impl ToCss for ComputedUrl {
     where
         W: Write,
     {
-        serialize_computed_url(&self.0.url_value, dest, bindings::Gecko_GetComputedURLSpec)
+        self.0
+            .with_url_value(|r| serialize_computed_url(r, dest, bindings::Gecko_GetComputedURLSpec))
     }
 }
 
@@ -267,12 +348,20 @@ impl ComputedUrl {
     pub unsafe fn from_url_value(url_value: RefPtr<URLValue>) -> Self {
         let css_url = &*url_value.mCssUrl.mRawPtr;
         let url = CssUrl(CssUrlData::as_arc(&css_url).clone_arc());
-        ComputedUrl(SpecifiedUrl { url, url_value })
+        ComputedUrl(SpecifiedUrl {
+            url,
+            url_value: Box::new(URLValueSource::URLValue(url_value)),
+        })
+    }
+
+    
+    pub fn clone_url_value(&self) -> RefPtr<URLValue> {
+        self.0.clone_url_value()
     }
 
     
     pub fn url_value_ptr(&self) -> *mut URLValue {
-        self.0.url_value.get()
+        self.0.url_value_ptr()
     }
 }
 
@@ -285,11 +374,9 @@ impl ToCss for ComputedImageUrl {
     where
         W: Write,
     {
-        serialize_computed_url(
-            &(self.0).0.url_value,
-            dest,
-            bindings::Gecko_GetComputedImageURLSpec,
-        )
+        (self.0).0.with_url_value(|r| {
+            serialize_computed_url(r, dest, bindings::Gecko_GetComputedImageURLSpec)
+        })
     }
 }
 
@@ -299,11 +386,27 @@ impl ComputedImageUrl {
         let url_value = image_request.mImageValue.to_safe();
         let css_url = &*url_value.mCssUrl.mRawPtr;
         let url = CssUrl(CssUrlData::as_arc(&css_url).clone_arc());
-        ComputedImageUrl(SpecifiedImageUrl(SpecifiedUrl { url, url_value }))
+        ComputedImageUrl(SpecifiedImageUrl(SpecifiedUrl {
+            url,
+            url_value: Box::new(URLValueSource::URLValue(url_value)),
+        }))
+    }
+
+    
+    pub fn clone_url_value(&self) -> RefPtr<URLValue> {
+        (self.0).0.clone_url_value()
     }
 
     
     pub fn url_value_ptr(&self) -> *mut URLValue {
-        (self.0).0.url_value.get()
+        (self.0).0.url_value_ptr()
     }
+}
+
+lazy_static! {
+    /// A table mapping CssUrlData objects to their lazily created Gecko
+    /// URLValue objects.
+    static ref URL_VALUE_TABLE: RwLock<HashMap<CssUrlDataKey, RefPtr<URLValue>>> = {
+        Default::default()
+    };
 }
