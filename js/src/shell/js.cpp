@@ -92,7 +92,7 @@
 #include "js/CompileOptions.h"
 #include "js/ContextOptions.h"  
 #include "js/Debug.h"
-#include "js/Equality.h"  
+#include "js/Equality.h"                 
 #include "js/experimental/SourceHook.h"  
 #include "js/GCVector.h"
 #include "js/Initialization.h"
@@ -5100,6 +5100,12 @@ static bool BinParse(JSContext* cx, unsigned argc, Value* vp) {
 
   
 
+  
+  enum {
+    Multipart,
+    Context,
+  } mode = Multipart;
+
   if (args.length() >= 2) {
     if (!args[1].isObject()) {
       const char* typeName = InformalValueTypeName(args[1]);
@@ -5121,7 +5127,11 @@ static bool BinParse(JSContext* cx, unsigned argc, Value* vp) {
         return false;
       }
       
-      if (!StringEqualsAscii(linearFormat, "multipart")) {
+      if (StringEqualsAscii(linearFormat, "multipart")) {
+        mode = Multipart;
+      } else if (StringEqualsAscii(linearFormat, "context")) {
+        mode = Context;
+      } else {
         UniqueChars printable = JS_EncodeStringToUTF8(cx, linearFormat);
         if (!printable) {
           return false;
@@ -5156,7 +5166,9 @@ static bool BinParse(JSContext* cx, unsigned argc, Value* vp) {
   Directives directives(false);
   GlobalSharedContext globalsc(cx, ScopeKind::Global, directives, false);
 
-  auto parseFunc = ParseBinASTData<frontend::BinASTTokenReaderMultipart>;
+  auto parseFunc = mode == Multipart
+                       ? ParseBinASTData<frontend::BinASTTokenReaderMultipart>
+                       : ParseBinASTData<frontend::BinASTTokenReaderContext>;
   if (!parseFunc(cx, buf_data, buf_length, &globalsc, usedNames, options,
                  sourceObj)) {
     return false;
@@ -8684,8 +8696,11 @@ static const JSFunctionSpecWithHelp shell_functions[] = {
 #if defined(JS_BUILD_BINAST)
 
 JS_FN_HELP("parseBin", BinParse, 1, 0,
-"parseBin(arraybuffer)",
-"  Parses a Binary AST, potentially throwing."),
+"parseBin(arraybuffer, [options])",
+"  Parses a Binary AST, potentially throwing. If present, |options| may\n"
+"  have properties saying how the passed |arraybuffer| should be handled:\n"
+"      format: the format of the BinAST file\n"
+"        (\"multipart\" or \"context\")"),
 
 #endif 
 
