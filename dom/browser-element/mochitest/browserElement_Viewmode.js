@@ -4,6 +4,8 @@
 
 "use strict";
 
+
+
 SimpleTest.waitForExplicitFinish();
 browserElementTestHelpers.setEnabledPref(true);
 browserElementTestHelpers.addPermission();
@@ -68,4 +70,3 @@ function runTest() {
 }
 
 window.addEventListener("testready", runTest);
-

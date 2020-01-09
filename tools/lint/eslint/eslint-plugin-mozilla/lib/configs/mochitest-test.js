@@ -10,6 +10,7 @@ module.exports = {
   "globals": {
     
     "SpecialPowers": false,
+    "XPCNativeWrapper": false,
   },
 
   "overrides": [{

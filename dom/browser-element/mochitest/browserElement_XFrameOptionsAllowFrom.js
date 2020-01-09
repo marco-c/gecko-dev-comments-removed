@@ -4,6 +4,8 @@
 
 "use strict";
 
+
+
 SimpleTest.waitForExplicitFinish();
 browserElementTestHelpers.setEnabledPref(true);
 browserElementTestHelpers.addPermission();
@@ -27,8 +29,6 @@ function arrayBuffersEqual(a, b) {
 }
 
 function runTest() {
-  var count = 0;
-
   var iframe = document.createElement("iframe");
   iframe.setAttribute("mozbrowser", "true");
   iframe.height = "1000px";

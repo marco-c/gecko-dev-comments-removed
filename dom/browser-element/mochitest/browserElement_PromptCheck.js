@@ -10,6 +10,8 @@
 
 "use strict";
 
+
+
 SimpleTest.waitForExplicitFinish();
 browserElementTestHelpers.setEnabledPref(true);
 browserElementTestHelpers.addPermission();
@@ -37,6 +39,7 @@ function runTest() {
     }
   });
 
+  
   iframe.src =
     'data:text/html,<html><body><script>\
       addEventListener("load", function() { \
@@ -48,6 +51,7 @@ function runTest() {
        }); \
      }); \
      </scr' + "ipt></body></html>";
+   
 }
 
 

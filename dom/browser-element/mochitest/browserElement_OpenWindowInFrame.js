@@ -10,6 +10,9 @@
 
 
 "use strict";
+
+
+
 SimpleTest.waitForExplicitFinish();
 browserElementTestHelpers.setEnabledPref(true);
 browserElementTestHelpers.addPermission();

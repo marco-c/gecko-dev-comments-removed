@@ -2,6 +2,9 @@
 
 
 "use strict";
+
+
+
 SimpleTest.waitForExplicitFinish();
 SimpleTest.requestFlakyTimeout("testing mozbrowser data: navigation is blocked");
 

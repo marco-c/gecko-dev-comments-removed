@@ -294,8 +294,6 @@ BrowserElementAuthPrompt.prototype = {
       return;
 
     let prompt = this._asyncPrompts[hashKey];
-    let [hostname, httpRealm] = this._getAuthTarget(prompt.channel,
-                                                    prompt.authInfo);
 
     this._asyncPromptInProgress.set(prompt.browserElementParent, true);
     prompt.inProgress = true;
@@ -570,16 +568,14 @@ var BrowserElementPromptService = {
 
     
     if (!this._browserFramesPrefEnabled()) {
-      var prefs = Cc["@mozilla.org/preferences-service;1"].getService(Ci.nsIPrefBranch);
-      prefs.addObserver(BROWSER_FRAMES_ENABLED_PREF, this,  true);
+      Services.prefs.addObserver(BROWSER_FRAMES_ENABLED_PREF, this,  true);
       return;
     }
 
     this._initialized = true;
     this._browserElementParentMap = new WeakMap();
 
-    var os = Cc["@mozilla.org/observer-service;1"].getService(Ci.nsIObserverService);
-    os.addObserver(this, "outer-window-destroyed",  true);
+    Services.obs.addObserver(this, "outer-window-destroyed",  true);
 
     
     var contractID = "@mozilla.org/prompter;1";
@@ -644,12 +640,7 @@ var BrowserElementPromptService = {
   },
 
   _browserFramesPrefEnabled() {
-    var prefs = Cc["@mozilla.org/preferences-service;1"].getService(Ci.nsIPrefBranch);
-    try {
-      return prefs.getBoolPref(BROWSER_FRAMES_ENABLED_PREF);
-    } catch (e) {
-      return false;
-    }
+    return Services.prefs.getBoolPref(BROWSER_FRAMES_ENABLED_PREF, false);
   },
 
   observe(subject, topic, data) {

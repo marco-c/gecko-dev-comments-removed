@@ -5,6 +5,9 @@
 
 
 "use strict";
+
+
+
 SimpleTest.waitForExplicitFinish();
 browserElementTestHelpers.setEnabledPref(true);
 browserElementTestHelpers.addPermission();
@@ -55,4 +58,3 @@ addEventListener("testready", function() {
     ["browser.safebrowsing.malware.enabled", false],
   ]}, runTest);
 });
-

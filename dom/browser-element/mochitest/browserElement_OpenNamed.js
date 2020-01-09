@@ -5,6 +5,9 @@
 
 
 "use strict";
+
+
+
 SimpleTest.waitForExplicitFinish();
 browserElementTestHelpers.setEnabledPref(true);
 browserElementTestHelpers.addPermission();
@@ -23,9 +26,9 @@ function runTest() {
     is(popupFrame.getAttribute("name"), "OpenNamed");
 
     
-    popupFrame.addEventListener("mozbrowsershowmodalprompt", function(e) {
+    popupFrame.addEventListener("mozbrowsershowmodalprompt", function(f) {
       ok(gotPopup, "Got openwindow event before showmodalprompt event.");
-      is(e.detail.message, "success: loaded");
+      is(f.detail.message, "success: loaded");
       SimpleTest.executeSoon(test2);
     }, {once: true});
 
