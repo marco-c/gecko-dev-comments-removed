@@ -180,7 +180,7 @@ HistoryStore.prototype = {
     let failed = [];
     let toAdd = [];
     let toRemove = [];
-    await Async.yieldingForEach(records, async (record) => {
+    for await (let record of Async.yieldingIterator(records)) {
       if (record.deleted) {
         toRemove.push(record);
       } else {
@@ -198,7 +198,7 @@ HistoryStore.prototype = {
           failed.push(record.id);
         }
       }
-    });
+    }
     if (toAdd.length || toRemove.length) {
       
       
@@ -221,7 +221,7 @@ HistoryStore.prototype = {
           
           
           
-          await Async.yieldingForEach(toRemove, async (record) => {
+          for await (let record of Async.yieldingIterator(toRemove)) {
             try {
               await this.remove(record);
             } catch (ex) {
@@ -232,7 +232,7 @@ HistoryStore.prototype = {
               this._log.trace("The record that failed", record);
               failed.push(record.id);
             }
-          });
+          }
         }
         for (let chunk of this._generateChunks(toAdd)) {
           
