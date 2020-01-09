@@ -5,11 +5,8 @@
 
 
 
-"use strict";
 
-const {XPCOMUtils} = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+"use strict";
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   AddonManager: "resource://gre/modules/AddonManager.jsm",
@@ -26,6 +23,15 @@ function hasPermission(addon, permission) {
   return !!(addon.permissions & PERMISSION_MASKS[permission]);
 }
 
+
+
+
+
+
+
+
+let loadViewFn;
+
 let _templates = {};
 
 
@@ -40,6 +46,19 @@ function importTemplate(name) {
     return document.importNode(template.content, true);
   }
   throw new Error(`Unknown template: ${name}`);
+}
+
+function nl2br(text) {
+  let frag = document.createDocumentFragment();
+  let hasAppended = false;
+  for (let part of text.split("\n")) {
+    if (hasAppended) {
+      frag.appendChild(document.createElement("br"));
+    }
+    frag.appendChild(new Text(part));
+    hasAppended = true;
+  }
+  return frag;
 }
 
 class PanelList extends HTMLElement {
@@ -213,6 +232,122 @@ class PanelItem extends HTMLElement {
 }
 customElements.define("panel-item", PanelItem);
 
+class AddonDetails extends HTMLElement {
+  constructor() {
+    super();
+    this.hasConnected = false;
+  }
+
+  connectedCallback() {
+    if (!this.hasConnected) {
+      this.hasConnected = true;
+      this.render();
+      this.addEventListener("click", this);
+    }
+  }
+
+  setAddon(addon) {
+    this.addon = addon;
+  }
+
+  handleEvent(e) {
+    if (e.type == "click" && e.target.getAttribute("action") == "contribute") {
+      openURL(this.addon.contributionURL);
+    }
+  }
+
+  render() {
+    let {addon} = this;
+    if (!addon) {
+      throw new Error("addon-details must be initialized by setAddon");
+    }
+
+    this.appendChild(importTemplate("addon-details"));
+
+    
+    let description = this.querySelector(".addon-detail-description");
+    if (addon.getFullDescription) {
+      description.appendChild(addon.getFullDescription(document));
+    } else if (addon.fullDescription) {
+      description.appendChild(nl2br(addon.fullDescription));
+    }
+
+    
+    if (!addon.contributionURL) {
+      this.querySelector(".addon-detail-contribute").remove();
+    }
+
+    
+    let creatorRow = this.querySelector(".addon-detail-row-author");
+    if (addon.creator) {
+      let creator;
+      if (addon.creator.url) {
+        creator = document.createElement("a");
+        creator.href = addon.creator.url;
+        creator.target = "_blank";
+        creator.textContent = addon.creator.name;
+      } else {
+        creator = new Text(addon.creator.name);
+      }
+      creatorRow.appendChild(creator);
+    } else {
+      creatorRow.remove();
+    }
+
+    
+    let version = this.querySelector(".addon-detail-row-version");
+    if (addon.version && !/@personas\.mozilla\.org/.test(addon.id)) {
+      version.appendChild(new Text(addon.version));
+    } else {
+      version.remove();
+    }
+
+    
+    let updateDate = this.querySelector(".addon-detail-row-lastUpdated");
+    if (addon.updateDate) {
+      let lastUpdated = addon.updateDate.toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+      updateDate.appendChild(new Text(lastUpdated));
+    } else {
+      updateDate.remove();
+    }
+
+    
+    let homepageRow = this.querySelector(".addon-detail-row-homepage");
+    if (addon.homepageURL) {
+      let homepageURL = homepageRow.querySelector("a");
+      homepageURL.href = addon.homepageURL;
+      homepageURL.textContent = addon.homepageURL;
+    } else {
+      homepageRow.remove();
+    }
+
+    
+    let ratingRow = this.querySelector(".addon-detail-row-rating");
+    if (addon.averageRating) {
+      let stars = ratingRow.querySelectorAll(".addon-detail-rating-star");
+      for (let i = 0; i < stars.length; i++) {
+        let fill = "";
+        if (addon.averageRating > i) {
+          fill = addon.averageRating > i + 0.5 ? "full" : "half";
+        }
+        stars[i].setAttribute("fill", fill);
+      }
+      let reviews = ratingRow.querySelector("a");
+      reviews.href = addon.reviewURL;
+      document.l10n.setAttributes(reviews, "addon-detail-reviews-link", {
+        numberOfReviews: addon.reviewCount,
+      });
+    } else {
+      ratingRow.remove();
+    }
+  }
+}
+customElements.define("addon-details", AddonDetails);
+
 
 
 
@@ -224,15 +359,33 @@ customElements.define("panel-item", PanelItem);
 class AddonCard extends HTMLElement {
   constructor() {
     super();
-    this.connected = false;
+    this.hasRendered = false;
   }
 
   connectedCallback() {
-    if (this.connected) {
-      return;
+    
+    if (this.hasRendered) {
+      this.update();
+    } else {
+      this.render();
     }
-    this.connected = true;
-    this.render();
+    this.registerListener();
+  }
+
+  disconnectedCallback() {
+    this.removeListener();
+  }
+
+  get expanded() {
+    return this.hasAttribute("expanded");
+  }
+
+  set expanded(val) {
+    if (val) {
+      this.setAttribute("expanded", "true");
+    } else {
+      this.removeAttribute("expanded");
+    }
   }
 
   
@@ -245,12 +398,34 @@ class AddonCard extends HTMLElement {
     this.addon = addon;
   }
 
+  registerListener() {
+    AddonManager.addAddonListener(this);
+  }
+
+  removeListener() {
+    AddonManager.removeAddonListener(this);
+  }
+
+  onDisabled(addon) {
+    if (addon.id == this.addon.id) {
+      this.update();
+    }
+  }
+
+  onEnabled(addon) {
+    if (addon.id == this.addon.id) {
+      this.update();
+    }
+  }
+
   
 
 
 
   update() {
     let {addon, card} = this;
+
+    
     let icon;
     if (addon.type == "plugin") {
       icon = PLUGIN_ICON_URL;
@@ -258,11 +433,26 @@ class AddonCard extends HTMLElement {
       icon = AddonManager.getPreferredIconURL(addon, 32, window);
     }
     card.querySelector(".addon-icon").src = icon;
-    card.querySelector(".addon-name").textContent = addon.name;
+
+    
+    let name = card.querySelector(".addon-name");
+    if (addon.isActive) {
+      name.textContent = addon.name;
+      name.removeAttribute("data-l10n-id");
+    } else {
+      document.l10n.setAttributes(name, "addon-name-disabled", {
+        name: addon.name,
+      });
+    }
+
+    
     card.querySelector(".addon-description").textContent = addon.description;
+
+    
     let removeButton = card.querySelector('[action="remove"]');
     removeButton.hidden = !hasPermission(addon, "uninstall");
 
+    
     let disableButton = card.querySelector('[action="toggle-disabled"]');
     let disableAction = addon.userDisabled ? "enable" : "disable";
     document.l10n.setAttributes(
@@ -270,8 +460,23 @@ class AddonCard extends HTMLElement {
     disableButton.hidden = !hasPermission(addon, disableAction);
 
     
+    
     let separator = card.querySelector("panel-item-separator");
-    separator.hidden = removeButton.hidden && disableButton.hidden;
+    separator.hidden = this.expanded ||
+      removeButton.hidden && disableButton.hidden;
+
+    
+    card.querySelector('[action="expand"]').hidden = this.expanded;
+
+    this.sendEvent("update");
+  }
+
+  expand() {
+    if (!this.hasRendered) {
+      this.expanded = true;
+    } else {
+      throw new Error("expand() is only supported before render()");
+    }
   }
 
   render() {
@@ -289,12 +494,13 @@ class AddonCard extends HTMLElement {
     this.update();
 
     let panel = this.card.querySelector("panel-list");
-
     let moreOptionsButton = this.card.querySelector('[action="more-options"]');
+
     
     moreOptionsButton.addEventListener("mousedown", (e) => {
       panel.toggle(e);
     });
+
     
     moreOptionsButton.addEventListener("click", (e) => {
       if (e.mozInputSource == MouseEvent.MOZ_SOURCE_KEYBOARD) {
@@ -328,10 +534,28 @@ class AddonCard extends HTMLElement {
             }
           }
           break;
+        case "expand":
+          loadViewFn("detail", this.addon.id);
+          break;
       }
     });
 
+    if (this.expanded) {
+      let details = document.createElement("addon-details");
+      details.setAddon(this.addon);
+      this.card.appendChild(details);
+    } else {
+      
+      this.addEventListener("dblclick", (e) => {
+        
+        if (e.target.tagName != "BUTTON") {
+          loadViewFn("detail", this.addon.id);
+        }
+      });
+    }
+
     this.appendChild(this.card);
+    this.hasRendered = true;
   }
 
   sendEvent(name, detail) {
@@ -356,15 +580,10 @@ customElements.define("addon-card", AddonCard);
 class AddonList extends HTMLElement {
   constructor() {
     super();
-    this.connected = false;
     this.sections = [];
   }
 
   async connectedCallback() {
-    if (this.connected) {
-      return;
-    }
-    this.connected = true;
     
     
     this.registerListener();
@@ -374,7 +593,6 @@ class AddonList extends HTMLElement {
 
   disconnectedCallback() {
     
-    this.connected = false;
     this.textContent = "";
     this.removeListener();
   }
@@ -519,7 +737,6 @@ class AddonList extends HTMLElement {
     if (card) {
       let sectionIndex = this.sections.findIndex(s => s.filterFn(addon));
       if (sectionIndex != -1) {
-        card.update();
         
         
         if (card.parentNode.getAttribute("section") != sectionIndex) {
@@ -527,8 +744,6 @@ class AddonList extends HTMLElement {
           this.insertCardInto(card, sectionIndex);
           this.updateSectionIfEmpty(oldSection);
           this.sendEvent("move", {id: addon.id});
-        } else {
-          this.sendEvent("update", {id: addon.id});
         }
       } else {
         this.removeAddon(addon);
@@ -624,14 +839,34 @@ class ListView {
   }
 }
 
+class DetailView {
+  constructor({param, root}) {
+    this.id = param;
+    this.root = root;
+  }
+
+  async render() {
+    let addon = await AddonManager.getAddonByID(this.id);
+    let card = document.createElement("addon-card");
+    card.setAddon(addon);
+    card.expand();
+
+    
+    card.addEventListener("remove", () => loadViewFn("list", addon.type));
+
+    this.root.appendChild(card);
+  }
+}
+
 
 let root = null;
 
 
 
 
-function initialize() {
+function initialize(opts) {
   root = document.getElementById("main");
+  loadViewFn = opts.loadViewFn;
   window.addEventListener("unload", () => {
     
     
@@ -647,6 +882,8 @@ function initialize() {
 async function show(type, param) {
   if (type == "list") {
     await new ListView({param, root}).render();
+  } else if (type == "detail") {
+    await new DetailView({param, root}).render();
   }
 }
 
