@@ -33,7 +33,7 @@ pub use super::specified::{AlignSelf, JustifySelf};
 
 
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, ToCss)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, ToCss, ToResolvedValue)]
 pub struct JustifyItems {
     
     

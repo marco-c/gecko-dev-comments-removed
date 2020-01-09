@@ -1,17 +1,17 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+//! Generic types for CSS values in SVG
 
 use crate::parser::{Parse, ParserContext};
 use crate::values::{Either, None_};
 use cssparser::Parser;
 use style_traits::{ParseError, StyleParseErrorKind};
 
-
-
-
+/// An SVG paint value
+///
+/// <https://www.w3.org/TR/SVG2/painting.html#SpecifyingPaint>
 #[animation(no_bound(UrlPaintServer))]
 #[derive(
     Animate,
@@ -24,20 +24,21 @@ use style_traits::{ParseError, StyleParseErrorKind};
     ToAnimatedValue,
     ToComputedValue,
     ToCss,
+    ToResolvedValue,
     ToShmem,
 )]
 pub struct SVGPaint<ColorType, UrlPaintServer> {
-    
+    /// The paint source
     pub kind: SVGPaintKind<ColorType, UrlPaintServer>,
-    
+    /// The fallback color. It would be empty, the `none` keyword or <color>.
     pub fallback: Option<Either<ColorType, None_>>,
 }
 
-
-
-
-
-
+/// An SVG paint value without the fallback
+///
+/// Whereas the spec only allows PaintServer
+/// to have a fallback, Gecko lets the context
+/// properties have a fallback as well.
 #[animation(no_bound(UrlPaintServer))]
 #[derive(
     Animate,
@@ -51,25 +52,26 @@ pub struct SVGPaint<ColorType, UrlPaintServer> {
     ToAnimatedZero,
     ToComputedValue,
     ToCss,
+    ToResolvedValue,
     ToShmem,
 )]
 pub enum SVGPaintKind<ColorType, UrlPaintServer> {
-    
+    /// `none`
     #[animation(error)]
     None,
-    
+    /// `<color>`
     Color(ColorType),
-    
+    /// `url(...)`
     #[animation(error)]
     PaintServer(UrlPaintServer),
-    
+    /// `context-fill`
     ContextFill,
-    
+    /// `context-stroke`
     ContextStroke,
 }
 
 impl<ColorType, UrlPaintServer> SVGPaintKind<ColorType, UrlPaintServer> {
-    
+    /// Parse a keyword value only
     fn parse_ident<'i, 't>(input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
         try_match_ident_ignore_ascii_case! { input,
             "none" => Ok(SVGPaintKind::None),
@@ -79,9 +81,9 @@ impl<ColorType, UrlPaintServer> SVGPaintKind<ColorType, UrlPaintServer> {
     }
 }
 
-
-
-
+/// Parse SVGPaint's fallback.
+/// fallback is keyword(none), Color or empty.
+/// <https://svgwg.org/svg2-draft/painting.html#SpecifyingPaint>
 fn parse_fallback<'i, 't, ColorType: Parse>(
     context: &ParserContext,
     input: &mut Parser<'i, 't>,
@@ -130,7 +132,7 @@ impl<ColorType: Parse, UrlPaintServer: Parse> Parse for SVGPaint<ColorType, UrlP
     }
 }
 
-
+/// An SVG length value supports `context-value` in addition to length.
 #[derive(
     Animate,
     Clone,
@@ -144,17 +146,18 @@ impl<ColorType: Parse, UrlPaintServer: Parse> Parse for SVGPaint<ColorType, UrlP
     ToAnimatedZero,
     ToComputedValue,
     ToCss,
+    ToResolvedValue,
     ToShmem,
 )]
 pub enum SVGLength<L> {
-    
+    /// `<length> | <percentage> | <number>`
     LengthPercentage(L),
-    
+    /// `context-value`
     #[animation(error)]
     ContextValue,
 }
 
-
+/// Generic value for stroke-dasharray.
 #[derive(
     Clone,
     Debug,
@@ -165,18 +168,19 @@ pub enum SVGLength<L> {
     ToAnimatedZero,
     ToComputedValue,
     ToCss,
+    ToResolvedValue,
     ToShmem,
 )]
 pub enum SVGStrokeDashArray<L> {
-    
+    /// `[ <length> | <percentage> | <number> ]#`
     #[css(comma)]
     Values(#[css(if_empty = "none", iterable)] Vec<L>),
-    
+    /// `context-value`
     ContextValue,
 }
 
-
-
+/// An SVG opacity value accepts `context-{fill,stroke}-opacity` in
+/// addition to opacity value.
 #[derive(
     Animate,
     Clone,
@@ -190,15 +194,16 @@ pub enum SVGStrokeDashArray<L> {
     ToAnimatedZero,
     ToComputedValue,
     ToCss,
+    ToResolvedValue,
     ToShmem,
 )]
 pub enum SVGOpacity<OpacityType> {
-    
+    /// `<opacity-value>`
     Opacity(OpacityType),
-    
+    /// `context-fill-opacity`
     #[animation(error)]
     ContextFillOpacity,
-    
+    /// `context-stroke-opacity`
     #[animation(error)]
     ContextStrokeOpacity,
 }

@@ -37,6 +37,7 @@ pub type InitialLetter = GenericInitialLetter<CSSFloat, CSSInteger>;
     PartialEq,
     ToAnimatedValue,
     ToAnimatedZero,
+    ToResolvedValue,
 )]
 pub struct LetterSpacing(pub Length);
 
@@ -102,7 +103,7 @@ impl ToComputedValue for specified::WordSpacing {
 
 pub type LineHeight = GenericLineHeight<NonNegativeNumber, NonNegativeLength>;
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToResolvedValue)]
 
 
 
@@ -155,7 +156,7 @@ impl ToCss for TextOverflow {
 
 
 
-#[derive(Clone, Copy, Debug, Default, MallocSizeOf, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, MallocSizeOf, PartialEq, ToResolvedValue)]
 pub struct TextDecorationsInEffect {
     
     pub underline: bool,
@@ -193,7 +194,7 @@ impl TextDecorationsInEffect {
 }
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss, ToResolvedValue)]
 pub enum TextEmphasisStyle {
     
     Keyword(TextEmphasisKeywordValue),
@@ -204,7 +205,7 @@ pub enum TextEmphasisStyle {
 }
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss, ToResolvedValue)]
 pub struct TextEmphasisKeywordValue {
     
     pub fill: TextEmphasisFillMode,

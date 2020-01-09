@@ -15,7 +15,7 @@ use std::ops::Deref;
 
 
 #[derive(
-    Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss, ToShmem,
+    Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss, ToResolvedValue, ToShmem,
 )]
 pub struct CounterPair<Integer> {
     
@@ -34,6 +34,7 @@ pub struct CounterPair<Integer> {
     SpecifiedValueInfo,
     ToComputedValue,
     ToCss,
+    ToResolvedValue,
     ToShmem,
 )]
 pub struct CounterIncrement<I>(Counters<I>);
@@ -65,6 +66,7 @@ impl<I> Deref for CounterIncrement<I> {
     SpecifiedValueInfo,
     ToComputedValue,
     ToCss,
+    ToResolvedValue,
     ToShmem,
 )]
 pub struct CounterSetOrReset<I>(Counters<I>);
@@ -90,7 +92,15 @@ impl<I> Deref for CounterSetOrReset<I> {
 
 
 #[derive(
-    Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss, ToShmem,
+    Clone,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
 )]
 pub struct Counters<I>(#[css(iterable, if_empty = "none")] Box<[CounterPair<I>]>);
 
@@ -123,7 +133,16 @@ fn is_decimal(counter_type: &CounterStyleType) -> bool {
 
 
 #[derive(
-    Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss, ToShmem,
+    Clone,
+    Debug,
+    Eq,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
 )]
 pub enum Content<ImageUrl> {
     
@@ -147,7 +166,16 @@ impl<ImageUrl> Content<ImageUrl> {
 
 
 #[derive(
-    Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss, ToShmem,
+    Clone,
+    Debug,
+    Eq,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
 )]
 pub enum ContentItem<ImageUrl> {
     

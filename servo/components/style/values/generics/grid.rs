@@ -19,7 +19,15 @@ use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
 
 
 #[derive(
-    Clone, Debug, Default, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToShmem,
+    Clone,
+    Debug,
+    Default,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
 )]
 pub struct GridLine<Integer> {
     
@@ -164,6 +172,7 @@ impl Parse for GridLine<specified::Integer> {
     SpecifiedValueInfo,
     ToComputedValue,
     ToCss,
+    ToResolvedValue,
     ToShmem,
 )]
 pub enum TrackKeyword {
@@ -185,6 +194,7 @@ pub enum TrackKeyword {
     SpecifiedValueInfo,
     ToComputedValue,
     ToCss,
+    ToResolvedValue,
     ToShmem,
 )]
 pub enum TrackBreadth<L> {
@@ -211,7 +221,7 @@ impl<L> TrackBreadth<L> {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToShmem)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToResolvedValue, ToShmem)]
 pub enum TrackSize<L> {
     
     Breadth(TrackBreadth<L>),
@@ -369,7 +379,7 @@ where
 
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss, ToShmem)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss, ToResolvedValue, ToShmem)]
 pub enum RepeatCount<Integer> {
     
     Number(Integer),
@@ -404,7 +414,7 @@ impl Parse for RepeatCount<specified::Integer> {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToShmem)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToResolvedValue, ToShmem)]
 #[css(function = "repeat")]
 pub struct TrackRepeat<L, I> {
     
@@ -501,6 +511,7 @@ impl<L: Clone> TrackRepeat<L, specified::Integer> {
     SpecifiedValueInfo,
     ToComputedValue,
     ToCss,
+    ToResolvedValue,
     ToShmem,
 )]
 pub enum TrackListValue<LengthPercentage, Integer> {
@@ -513,7 +524,7 @@ pub enum TrackListValue<LengthPercentage, Integer> {
 
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToShmem)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem)]
 pub enum TrackListType {
     
     
@@ -535,7 +546,7 @@ pub enum TrackListType {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToShmem)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToShmem, ToResolvedValue)]
 pub struct TrackList<LengthPercentage, Integer> {
     
     
@@ -609,7 +620,15 @@ impl<L: ToCss, I: ToCss> ToCss for TrackList<L, I> {
 
 
 #[derive(
-    Clone, Debug, Default, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToShmem,
+    Clone,
+    Debug,
+    Default,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
 )]
 pub struct LineNameList {
     
@@ -724,6 +743,7 @@ impl ToCss for LineNameList {
     SpecifiedValueInfo,
     ToComputedValue,
     ToCss,
+    ToResolvedValue,
     ToShmem,
 )]
 pub enum GridTemplateComponent<L, I> {
@@ -733,6 +753,7 @@ pub enum GridTemplateComponent<L, I> {
     TrackList(
         #[animation(field_bound)]
         #[compute(field_bound)]
+        #[resolve(field_bound)]
         #[shmem(field_bound)]
         TrackList<L, I>,
     ),

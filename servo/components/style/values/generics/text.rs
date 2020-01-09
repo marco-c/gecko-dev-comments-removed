@@ -1,15 +1,15 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+//! Generic types for text properties.
 
 use crate::parser::ParserContext;
 use crate::values::animated::ToAnimatedZero;
 use cssparser::Parser;
 use style_traits::ParseError;
 
-
+/// A generic value for the `initial-letter` property.
 #[derive(
     Clone,
     Copy,
@@ -19,42 +19,43 @@ use style_traits::ParseError;
     SpecifiedValueInfo,
     ToComputedValue,
     ToCss,
+    ToResolvedValue,
     ToShmem,
 )]
 pub enum InitialLetter<Number, Integer> {
-    
+    /// `normal`
     Normal,
-    
+    /// `<number> <integer>?`
     Specified(Number, Option<Integer>),
 }
 
 impl<N, I> InitialLetter<N, I> {
-    
+    /// Returns `normal`.
     #[inline]
     pub fn normal() -> Self {
         InitialLetter::Normal
     }
 }
 
-
+/// A generic spacing value for the `letter-spacing` and `word-spacing` properties.
 #[derive(
     Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem,
 )]
 pub enum Spacing<Value> {
-    
+    /// `normal`
     Normal,
-    
+    /// `<value>`
     Value(Value),
 }
 
 impl<Value> Spacing<Value> {
-    
+    /// Returns `normal`.
     #[inline]
     pub fn normal() -> Self {
         Spacing::Normal
     }
 
-    
+    /// Parses.
     #[inline]
     pub fn parse_with<'i, 't, F>(
         context: &ParserContext,
@@ -79,7 +80,7 @@ fn line_height_moz_block_height_enabled(context: &ParserContext) -> bool {
     }
 }
 
-
+/// A generic value for the `line-height` property.
 #[derive(
     Animate,
     Clone,
@@ -92,19 +93,20 @@ fn line_height_moz_block_height_enabled(context: &ParserContext) -> bool {
     ToAnimatedValue,
     ToCss,
     ToShmem,
+    ToResolvedValue,
     Parse,
 )]
 #[repr(C, u8)]
 pub enum GenericLineHeight<N, L> {
-    
+    /// `normal`
     Normal,
-    
+    /// `-moz-block-height`
     #[cfg(feature = "gecko")]
     #[parse(condition = "line_height_moz_block_height_enabled")]
     MozBlockHeight,
-    
+    /// `<number>`
     Number(N),
-    
+    /// `<length-percentage>`
     Length(L),
 }
 
@@ -118,7 +120,7 @@ impl<N, L> ToAnimatedZero for LineHeight<N, L> {
 }
 
 impl<N, L> LineHeight<N, L> {
-    
+    /// Returns `normal`.
     #[inline]
     pub fn normal() -> Self {
         LineHeight::Normal

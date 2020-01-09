@@ -58,6 +58,7 @@ pub enum PositionComponent<S> {
     SpecifiedValueInfo,
     ToComputedValue,
     ToCss,
+    ToResolvedValue,
     ToShmem,
 )]
 #[allow(missing_docs)]
@@ -79,6 +80,7 @@ pub enum X {
     SpecifiedValueInfo,
     ToComputedValue,
     ToCss,
+    ToResolvedValue,
     ToShmem,
 )]
 #[allow(missing_docs)]
@@ -445,6 +447,7 @@ impl ToCss for LegacyPosition {
     SpecifiedValueInfo,
     ToComputedValue,
     ToCss,
+    ToResolvedValue,
     ToShmem,
 )]
 
@@ -467,6 +470,7 @@ pub enum AutoFlow {
     SpecifiedValueInfo,
     ToComputedValue,
     ToCss,
+    ToResolvedValue,
     ToShmem,
 )]
 
@@ -567,8 +571,7 @@ impl From<GridAutoFlow> for u8 {
     }
 }
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[derive(Clone, Debug, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss, ToShmem)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss, ToResolvedValue, ToShmem)]
 
 pub struct TemplateAreas {
     
@@ -675,7 +678,7 @@ impl Parse for TemplateAreas {
 
 
 #[derive(
-    Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss, ToShmem,
+    Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss, ToResolvedValue, ToShmem,
 )]
 pub struct TemplateAreasArc(#[ignore_malloc_size_of = "Arc"] pub Arc<TemplateAreas>);
 
@@ -690,8 +693,7 @@ impl Parse for TemplateAreasArc {
     }
 }
 
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[derive(Clone, Debug, PartialEq, SpecifiedValueInfo, ToShmem)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToShmem)]
 
 
 pub struct NamedArea {

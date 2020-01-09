@@ -40,7 +40,7 @@ pub use crate::values::specified::font::{XLang, XTextZoom};
 
 
 
-#[derive(Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf, PartialEq, ToCss)]
+#[derive(Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf, PartialEq, ToCss, ToResolvedValue)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 pub struct FontWeight(pub Number);
 
@@ -74,6 +74,7 @@ impl ToAnimatedValue for FontWeight {
     PartialEq,
     ToAnimatedZero,
     ToCss,
+    ToResolvedValue,
 )]
 
 pub struct FontSize {
@@ -174,7 +175,7 @@ impl ToAnimatedValue for FontSize {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, ToResolvedValue)]
 #[cfg_attr(feature = "servo", derive(Hash, MallocSizeOf))]
 
 pub struct FontFamily {
@@ -221,7 +222,7 @@ impl ToCss for FontFamily {
     }
 }
 
-#[derive(Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToShmem)]
+#[derive(Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToResolvedValue, ToShmem)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 
 pub struct FamilyName {
@@ -264,7 +265,7 @@ impl ToCss for FamilyName {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToShmem)]
+#[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToResolvedValue, ToShmem)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 
 
@@ -279,7 +280,7 @@ pub enum FontFamilyNameSyntax {
     Identifiers,
 }
 
-#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToCss)]
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToCss, ToResolvedValue)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize, Hash))]
 
 pub enum SingleFontFamily {
@@ -294,7 +295,7 @@ pub enum SingleFontFamily {
 
 
 
-#[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq, Parse, ToCss)]
+#[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq, Parse, ToCss, ToResolvedValue)]
 #[repr(u8)]
 #[allow(missing_docs)]
 pub enum GenericFontFamily {
@@ -384,7 +385,7 @@ impl SingleFontFamily {
 }
 
 #[cfg(feature = "servo")]
-#[derive(Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToResolvedValue)]
 
 pub struct FontFamilyList(Box<[SingleFontFamily]>);
 
@@ -546,7 +547,7 @@ impl<'a> Iterator for FontFamilyNameIter<'a> {
 }
 
 
-#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf, PartialEq, ToCss)]
+#[derive(Animate, Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf, PartialEq, ToCss, ToResolvedValue)]
 pub enum FontSizeAdjust {
     #[animation(error)]
     
@@ -627,7 +628,7 @@ pub type FontVariationSettings = FontSettings<VariationValue<Number>>;
 
 
 
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToResolvedValue)]
 #[repr(C)]
 pub struct FontLanguageOverride(pub u32);
 
@@ -733,7 +734,7 @@ impl ToComputedValue for specified::MozScriptLevel {
 
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss, ToResolvedValue)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 pub struct FontStyleAngle(pub Angle);
 
@@ -830,7 +831,7 @@ impl ToCss for FontStyle {
 
 
 
-#[derive(Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf, PartialEq, ToCss)]
+#[derive(Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf, PartialEq, ToCss, ToResolvedValue)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 pub struct FontStretch(pub NonNegativePercentage);
 
