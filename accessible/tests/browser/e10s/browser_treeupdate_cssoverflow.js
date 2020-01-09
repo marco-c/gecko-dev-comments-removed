@@ -47,7 +47,11 @@ addAccessibleTask(`
   testAccessibleTree(container, tree);
 
   
-  tree = { SECTION: [ ] };
+  tree = {
+    SECTION: [ 
+      { SECTION: [] } 
+    ]
+  };
   testAccessibleTree(container2, tree);
 
   onReorder = waitForEvent(EVENT_REORDER, id2);
