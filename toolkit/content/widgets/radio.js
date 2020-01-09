@@ -6,7 +6,7 @@
 
 
 
-{
+(() => {
 class MozRadiogroup extends MozElements.BaseControl {
   constructor() {
     super();
@@ -115,7 +115,17 @@ class MozRadiogroup extends MozElements.BaseControl {
       return;
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    this.ignoreRadioChildConstruction = true;
     this.init();
+    this.ignoreRadioChildConstruction = false;
     if (!this.value) {
       this.selectedIndex = 0;
     }
@@ -150,12 +160,24 @@ class MozRadiogroup extends MozElements.BaseControl {
 
 
 
-
-
-  radioChildConstructed(child) {
+  radioAttached(child) {
+    if (this.ignoreRadioChildConstruction) {
+      return;
+    }
     if (!this._radioChildren || !this._radioChildren.includes(child)) {
       this.init();
     }
+  }
+
+  
+
+
+
+
+
+  radioUnattached(child) {
+    
+    this._radioChildren = null;
   }
 
   set value(val) {
@@ -348,24 +370,25 @@ class MozRadiogroup extends MozElements.BaseControl {
     if (this._radioChildren)
       return this._radioChildren;
 
-    var radioChildren = [];
-
+    let radioChildren = [];
     if (this.hasChildNodes()) {
-      return this._radioChildren = [...this.querySelectorAll("radio")]
-        .filter(r => r.control == this);
-    }
-
-    
-    const XUL_NS = "http://www.mozilla.org/keymaster/" +
-      "gatekeeper/there.is.only.xul";
-
-    var elems = this.ownerDocument.getElementsByAttribute("group", this.id);
-    for (var i = 0; i < elems.length; i++) {
-      if ((elems[i].namespaceURI == XUL_NS) &&
-        (elems[i].localName == "radio")) {
-        radioChildren.push(elems[i]);
+      for (let radio of this.querySelectorAll("radio")) {
+        customElements.upgrade(radio);
+        if (radio.control == this) {
+          radioChildren.push(radio);
+        }
+      }
+    } else {
+      const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+      for (let radio of this.ownerDocument.getElementsByAttribute("group", this.id)) {
+        if ((radio.namespaceURI == XUL_NS) &&
+            (radio.localName == "radio")) {
+          customElements.upgrade(radio);
+          radioChildren.push(radio);
+        }
       }
     }
+
     return this._radioChildren = radioChildren;
   }
 
@@ -393,4 +416,109 @@ MozXULElement.implementCustomInterface(MozRadiogroup, [
 ]);
 
 customElements.define("radiogroup", MozRadiogroup);
+
+let gRadioFrag = null;
+function getRadioFragment() {
+  if (!gRadioFrag) {
+    gRadioFrag = MozXULElement.parseXULToFragment(`
+    <image class="radio-check"></image>
+    <hbox class="radio-label-box" align="center" flex="1">
+      <image class="radio-icon"></image>
+      <label class="radio-label" flex="1"></label>
+    </hbox>
+    `);
+  }
+  return document.importNode(gRadioFrag, true);
 }
+
+class MozRadio extends MozElements.BaseText {
+  static get inheritedAttributes() {
+    return {
+      ".radio-check": "disabled,selected",
+      ".radio-label": "text=label,accesskey,crop",
+      ".radio-icon": "src",
+    };
+  }
+
+  constructor() {
+    super();
+    this.addEventListener("click", (event) => {
+      if (!this.disabled)
+        this.control.selectedItem = this;
+    });
+
+    this.addEventListener("mousedown", (event) => {
+      if (!this.disabled)
+        this.control.focusedItem = this;
+    });
+  }
+
+  connectedCallback() {
+    if (this.delayConnectedCallback()) {
+      return;
+    }
+
+    if (!this.connectedOnce) {
+      this.connectedOnce = true;
+      
+      if (!this.firstElementChild) {
+        this.appendChild(getRadioFragment());
+        this.initializeAttributeInheritance();
+      }
+    }
+
+    var control = this._control = this.control;
+    if (control) {
+      control.radioAttached(this);
+    }
+  }
+
+  disconnectedCallback() {
+    if (this.control) {
+      this.control.radioUnattached(this);
+    }
+    this._control = null;
+  }
+
+  set value(val) {
+    this.setAttribute("value", val);
+  }
+
+  get value() {
+    return this.getAttribute("value");
+  }
+
+  get selected() {
+    return this.hasAttribute("selected");
+  }
+
+  get radioGroup() {
+    return this.control;
+  }
+
+  get control() {
+    if (this._control) {
+      return this._control;
+    }
+
+    var radiogroup = this.closest("radiogroup");
+    if (radiogroup) {
+      return radiogroup;
+    }
+
+    var group = this.getAttribute("group");
+    if (!group) {
+      return null;
+    }
+
+    var parent = this.ownerDocument.getElementById(group);
+    if (!parent || parent.localName != "radiogroup") {
+      parent = null;
+    }
+    return parent;
+  }
+}
+
+MozXULElement.implementCustomInterface(MozRadio, [Ci.nsIDOMXULSelectControlItemElement]);
+customElements.define("radio", MozRadio);
+})();
