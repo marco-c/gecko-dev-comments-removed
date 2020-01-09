@@ -2902,6 +2902,22 @@ void InitUsageForOrigin(const nsACString& aOrigin, int64_t aUsage) {
   gUsages->Put(aOrigin, aUsage);
 }
 
+bool GetUsageForOrigin(const nsACString& aOrigin, int64_t& aUsage) {
+  AssertIsOnIOThread();
+
+  if (gUsages) {
+    int64_t usage;
+    if (gUsages->Get(aOrigin, &usage)) {
+      MOZ_ASSERT(usage >= 0);
+
+      aUsage = usage;
+      return true;
+    }
+  }
+
+  return false;
+}
+
 void UpdateUsageForOrigin(const nsACString& aOrigin, int64_t aUsage) {
   AssertIsOnIOThread();
   MOZ_ASSERT(gUsages);
@@ -6696,7 +6712,18 @@ nsresult PrepareDatastoreOp::DatabaseWork() {
   QuotaManager* quotaManager = QuotaManager::Get();
   MOZ_ASSERT(quotaManager);
 
-  nsresult rv;
+  
+  nsresult rv = quotaManager->EnsureStorageIsInitialized();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  
+  
+  rv = quotaManager->EnsureTemporaryStorageIsInitialized();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   if (!gArchivedOrigins) {
     rv = LoadArchivedOrigins();
@@ -6711,14 +6738,20 @@ nsresult PrepareDatastoreOp::DatabaseWork() {
   
   
   
-  nsCOMPtr<nsIFile> directoryEntry;
-  rv = quotaManager->EnsureOriginIsInitialized(
-      PERSISTENCE_TYPE_DEFAULT, mSuffix, mGroup, mOrigin,
-       !mForPreload || hasDataForMigration,
-      getter_AddRefs(directoryEntry));
-  if (rv == NS_ERROR_NOT_AVAILABLE) {
+  
+  int64_t usage;
+  if (mForPreload && !GetUsageForOrigin(mOrigin, usage) &&
+      !hasDataForMigration) {
     return DatabaseNotAvailable();
   }
+
+  
+  
+  
+  nsCOMPtr<nsIFile> directoryEntry;
+  rv = quotaManager->EnsureOriginIsInitialized(PERSISTENCE_TYPE_DEFAULT,
+                                               mSuffix, mGroup, mOrigin,
+                                               getter_AddRefs(directoryEntry));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -6739,18 +6772,7 @@ nsresult PrepareDatastoreOp::DatabaseWork() {
   rv = EnsureDirectoryEntry(directoryEntry,
                              hasDataForMigration,
                              true);
-  if (rv == NS_ERROR_NOT_AVAILABLE) {
-    if (mForPreload) {
-      
-      
-      
-      return DatabaseNotAvailable();
-    }
-
-    
-    
-    
-  } else if (NS_WARN_IF(NS_FAILED(rv))) {
+  if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
@@ -6771,14 +6793,7 @@ nsresult PrepareDatastoreOp::DatabaseWork() {
   rv = EnsureDirectoryEntry(directoryEntry,
                              hasDataForMigration,
                              false, &alreadyExisted);
-  if (rv == NS_ERROR_NOT_AVAILABLE) {
-    if (mForPreload) {
-      
-      
-      
-      return DatabaseNotAvailable();
-    }
-  } else if (NS_WARN_IF(NS_FAILED(rv))) {
+  if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
@@ -6787,7 +6802,7 @@ nsresult PrepareDatastoreOp::DatabaseWork() {
     DebugOnly<bool> hasUsage = gUsages->Get(mOrigin, &mUsage);
     MOZ_ASSERT(hasUsage);
   } else {
-    MOZ_ASSERT(!mForPreload);
+    
 
     if (!hasDataForMigration) {
       
@@ -6998,7 +7013,7 @@ nsresult PrepareDatastoreOp::EnsureDirectoryEntry(nsIFile* aEntry,
       if (aAlreadyExisted) {
         *aAlreadyExisted = false;
       }
-      return NS_ERROR_NOT_AVAILABLE;
+      return NS_OK;
     }
 
     if (aIsDirectory) {
@@ -8291,12 +8306,10 @@ nsresult QuotaClient::GetUsageForOrigin(PersistenceType aPersistenceType,
   
   
 
-  if (gUsages) {
-    int64_t usage;
-    if (gUsages->Get(aOrigin, &usage)) {
-      MOZ_ASSERT(usage >= 0);
-      aUsageInfo->AppendToDatabaseUsage(usage);
-    }
+  int64_t usage;
+  if (mozilla::dom::GetUsageForOrigin(aOrigin, usage)) {
+    MOZ_ASSERT(usage >= 0);
+    aUsageInfo->AppendToDatabaseUsage(usage);
   }
 
   return NS_OK;
