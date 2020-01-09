@@ -4720,6 +4720,7 @@ pref("signon.schemeUpgrades",               false);
 
 pref("signon.masterPasswordReprompt.timeout_ms", 900000); 
 pref("signon.showAutoCompleteFooter", false);
+pref("signon.showAutoCompleteOrigins", false);
 
 
 pref("browser.formfill.debug",            false);

@@ -40,6 +40,7 @@
 }
 
 
+#PopupAutoComplete > richlistbox > richlistitem[originaltype="loginWithOrigin"] > .login-wrapper > .ac-site-icon,
 #PopupAutoComplete > richlistbox > richlistitem[originaltype="login"] > .ac-site-icon {
   display: initial;
   list-style-image: url(chrome://browser/skin/login.svg);
@@ -47,10 +48,47 @@
   fill: GrayText;
 }
 
+#PopupAutoComplete > richlistbox > richlistitem[originaltype="loginWithOrigin"][selected] > .login-wrapper > .ac-site-icon,
 #PopupAutoComplete > richlistbox > richlistitem[originaltype="login"] > .ac-site-icon[selected] {
   fill: HighlightText;
 }
 
+
+#PopupAutoComplete > richlistbox > richlistitem[originaltype="loginWithOrigin"] {
+  height: auto;
+  padding: 4px;
+}
+
+#PopupAutoComplete > richlistbox > richlistitem[originaltype="loginWithOrigin"] > .login-wrapper {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  margin: 0;
+}
+
+#PopupAutoComplete > richlistbox > richlistitem[originaltype="loginWithOrigin"] > .login-wrapper > .ac-site-icon {
+  margin-inline-start: auto;
+  margin-inline-end: 4px;
+}
+
+#PopupAutoComplete > richlistbox > richlistitem[originaltype="loginWithOrigin"] > .login-wrapper > .login-text {
+  
+  flex: 1;
+  
+  min-width: 0;
+  width: 0;
+}
+
+#PopupAutoComplete > richlistbox > richlistitem[originaltype="loginWithOrigin"] > .login-wrapper > .login-text > .login-row {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#PopupAutoComplete > richlistbox > richlistitem[originaltype="loginWithOrigin"] > .login-wrapper > .login-text > .login-origin {
+  padding-top: 2px !important;
+  opacity: .6;
+}
 
 
 #PopupAutoComplete > richlistbox > richlistitem[originaltype="insecureWarning"] {

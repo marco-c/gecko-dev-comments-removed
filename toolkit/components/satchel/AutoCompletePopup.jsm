@@ -37,7 +37,8 @@ var AutoCompleteResultView = {
 
   getLabelAt(index) {
     
-    return "";
+    
+    return this.results[index].comment;
   },
 
   getCommentAt(index) {
