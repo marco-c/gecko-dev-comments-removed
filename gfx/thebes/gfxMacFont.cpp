@@ -195,8 +195,6 @@ bool gfxMacFont::ShapeText(DrawTarget* aDrawTarget, const char16_t* aText,
     return false;
   }
 
-  bool ok = false;
-
   
   
   auto macFontEntry = static_cast<MacOSFontEntry*>(GetFontEntry());
@@ -205,34 +203,33 @@ bool gfxMacFont::ShapeText(DrawTarget* aDrawTarget, const char16_t* aText,
     if (!mCoreTextShaper) {
       mCoreTextShaper = MakeUnique<gfxCoreTextShaper>(this);
     }
-    ok = mCoreTextShaper->ShapeText(aDrawTarget, aText, aOffset, aLength,
-                                    aScript, aVertical, aRounding, aShapedText);
-    if (ok) {
+    if (mCoreTextShaper->ShapeText(aDrawTarget, aText, aOffset, aLength,
+                                   aScript, aVertical, aRounding,
+                                   aShapedText)) {
       PostShapingFixup(aDrawTarget, aText, aOffset, aLength, aVertical,
                        aShapedText);
+
+      if (macFontEntry->HasTrackingTable()) {
+        
+        
+        float trackSize = GetAdjustedSize() *
+                          aShapedText->GetAppUnitsPerDevUnit() /
+                          AppUnitsPerCSSPixel();
+        float tracking =
+            macFontEntry->TrackingForCSSPx(trackSize) * mFUnitsConvFactor;
+        
+        
+        
+        
+        aShapedText->AdjustAdvancesForSyntheticBold(tracking, aOffset, aLength);
+      }
+
+      return true;
     }
   }
 
-  if (!ok) {
-    ok = gfxFont::ShapeText(aDrawTarget, aText, aOffset, aLength, aScript,
+  return gfxFont::ShapeText(aDrawTarget, aText, aOffset, aLength, aScript,
                             aVertical, aRounding, aShapedText);
-  }
-
-  if (ok && macFontEntry->HasTrackingTable()) {
-    
-    
-    float trackSize = GetAdjustedSize() * aShapedText->GetAppUnitsPerDevUnit() /
-                      AppUnitsPerCSSPixel();
-    float tracking =
-        macFontEntry->TrackingForCSSPx(trackSize) * mFUnitsConvFactor;
-    
-    
-    
-    
-    aShapedText->AdjustAdvancesForSyntheticBold(tracking, aOffset, aLength);
-  }
-
-  return ok;
 }
 
 bool gfxMacFont::SetupCairoFont(DrawTarget* aDrawTarget) {
