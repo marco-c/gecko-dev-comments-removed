@@ -2171,11 +2171,17 @@ VARCACHE_PREF(
 )
 
 
+#ifdef NIGHTLY_BUILD
+# define PREF_VALUE 604800 // 7 days
+#else
+# define PREF_VALUE 0
+#endif
 VARCACHE_PREF(
   "privacy.documentCookies.maxage",
    privacy_documentCookies_maxage,
-  uint32_t, 0 
+  uint32_t, PREF_VALUE 
 )
+#undef PREF_VALUE
 
 
 VARCACHE_PREF(
