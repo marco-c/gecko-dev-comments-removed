@@ -239,11 +239,27 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
     CGScopeList& scopeList() { return scopeList_; }
     const CGScopeList& scopeList() const { return scopeList_; }
 
+    
+
+    CGNumberList& numberList() { return numberList_; }
+    const CGNumberList& numberList() const { return numberList_; }
+
+    CGObjectList& objectList() { return objectList_; }
+    const CGObjectList& objectList() const { return objectList_; }
+
    private:
     
 
     
     CGScopeList scopeList_;
+
+    
+
+    
+    CGNumberList numberList_;
+
+    
+    CGObjectList objectList_;
   };
 
   PerScriptData perScriptData_;
@@ -310,9 +326,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   EmitterScope* innermostEmitterScopeNoCheck() const {
     return innermostEmitterScope_;
   }
-
-  CGNumberList numberList; 
-  CGObjectList objectList; 
 
   
   
