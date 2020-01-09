@@ -315,7 +315,7 @@ class DwarfCUToModule: public dwarf2reader::RootDIEHandler {
   
   
   
-  void AssignLinesToFunctions();
+  void AssignLinesToFunctions(const LineToModuleHandler::FileMap &files);
 
   
   

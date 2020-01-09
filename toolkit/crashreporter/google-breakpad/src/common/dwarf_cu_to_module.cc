@@ -1095,9 +1095,113 @@ inline bool within(const T &item, Module::Address address) {
   
   return address - item.address < item.size;
 }
+
+
+
+
+
+
+
+
+
+
+
+vector<Module::Line> MergeLines(const vector<Module::Line>& inlines,
+                                const vector<Module::Line>& lines) {
+  vector<Module::Line> merged_lines;
+  vector<Module::Line>::const_iterator orig_lines = lines.begin();
+  vector<Module::Line>::const_iterator inline_lines = inlines.begin();
+  vector<Module::Line>::const_iterator orig_end = lines.end();
+  vector<Module::Line>::const_iterator inline_end = inlines.end();
+
+  while (true) {
+    if (orig_lines == orig_end) {
+      break;
+    }
+
+    if (inline_lines == inline_end) {
+      merged_lines.push_back(*orig_lines);
+      ++orig_lines;
+      continue;
+    }
+
+    
+    
+    
+    
+
+    
+    if (orig_lines->address < inline_lines->address) {
+      merged_lines.push_back(*orig_lines);
+      ++orig_lines;
+      continue;
+    }
+
+    
+    
+    if (orig_lines->address == inline_lines->address) {
+      auto start = orig_lines + 1;
+      while ((start->address - inline_lines->address) < inline_lines->size
+             && start != orig_end) {
+        ++start;
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      merged_lines.push_back(*inline_lines);
+      auto overlapped = start - 1;
+      if (within(*overlapped, inline_lines->address + inline_lines->size)) {
+        
+        Module::Line rest;
+        rest.address = inline_lines->address + inline_lines->size;
+        rest.size = overlapped->address + overlapped->size - rest.address;
+        rest.file = overlapped->file;
+        rest.number = overlapped->number;
+        merged_lines.push_back(rest);
+      }
+
+      ++inline_lines;
+      orig_lines = start;
+      continue;
+    }
+
+    
+    
+    if (orig_lines->address > inline_lines->address) {
+      ++inline_lines;
+      continue;
+    }
+  }
+
+  return merged_lines;
+}
 }
 
-void DwarfCUToModule::AssignLinesToFunctions() {
+void DwarfCUToModule::AssignLinesToFunctions(const LineToModuleHandler::FileMap &files) {
   vector<Module::Function *> *functions = &cu_context_->functions;
   WarningReporter *reporter = cu_context_->reporter;
 
@@ -1116,6 +1220,30 @@ void DwarfCUToModule::AssignLinesToFunctions() {
   std::sort(functions->begin(), functions->end(),
             Module::Function::CompareByAddress);
   std::sort(lines_.begin(), lines_.end(), Module::Line::CompareByAddress);
+
+  
+  vector<Module::Line> inlines;
+
+  for (const auto& range : cu_context_->file_context->file_private_->inlined_ranges) {
+    auto f = files.find(range.call_file_);
+    if (f == files.end()) {
+      
+      continue;
+    }
+
+    Module::Line line;
+    line.address = range.range_.address;
+    line.size = range.range_.size;
+    line.number = range.call_line_;
+    line.file = f->second;
+    inlines.push_back(line);
+  }
+  std::sort(inlines.begin(), inlines.end(), Module::Line::CompareByAddress);
+
+  if (!inlines.empty()) {
+    vector<Module::Line> merged_lines = MergeLines(inlines, lines_);
+    lines_ = std::move(merged_lines);
+  }
 
   
   
@@ -1308,7 +1436,7 @@ void DwarfCUToModule::Finish() {
   vector<Module::Function *> *functions = &cu_context_->functions;
 
   
-  AssignLinesToFunctions();
+  AssignLinesToFunctions(files);
 
   
   
