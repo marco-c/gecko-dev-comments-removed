@@ -600,6 +600,14 @@ VARCACHE_PREF(
 
 
 
+VARCACHE_PREF(
+  "dom.file.createInChild",
+   dom_file_createInChild,
+  RelaxedAtomicBool, false
+)
+
+
+
 
 
 #ifdef ANDROID
