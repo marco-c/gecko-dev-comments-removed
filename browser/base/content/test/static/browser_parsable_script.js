@@ -5,6 +5,9 @@
 
 
 
+
+requestLongerTimeout(2);
+
 const kWhitelist = new Set([
   /browser\/content\/browser\/places\/controller.js$/,
 ]);
