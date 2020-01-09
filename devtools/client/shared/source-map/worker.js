@@ -6912,6 +6912,7 @@ const {
   getAllGeneratedLocations,
   getOriginalLocation,
   getOriginalSourceText,
+  getGeneratedRangesForOriginal,
   getFileGeneratedRange,
   hasMappedSource,
   clearSourceMaps,
@@ -6938,6 +6939,7 @@ self.onmessage = workerHandler({
   getOriginalLocation,
   getOriginalSourceText,
   getOriginalStackFrames,
+  getGeneratedRangesForOriginal,
   getFileGeneratedRange,
   hasMappedSource,
   applySourceMap,
@@ -7230,6 +7232,113 @@ async function getOriginalSourceText(originalSource) {
   };
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+const GENERATED_MAPPINGS = new WeakMap();
+async function getGeneratedRangesForOriginal(sourceId, url, mergeUnmappedRegions = false) {
+  assert(isOriginalId(sourceId), "Source is not an original source");
+
+  const map = await getSourceMap(originalToGeneratedId(sourceId));
+  if (!map) {
+    return [];
+  }
+
+  if (!COMPUTED_SPANS.has(map)) {
+    COMPUTED_SPANS.add(map);
+    map.computeColumnSpans();
+  }
+
+  const cachedGeneratedMappingsForOriginal = GENERATED_MAPPINGS.get(map);
+  if (cachedGeneratedMappingsForOriginal) {
+    return cachedGeneratedMappingsForOriginal;
+  }
+
+  
+  
+  let currentGroup = [];
+  const originalGroups = [currentGroup];
+  map.eachMapping(mapping => {
+    if (mapping.source === url) {
+      currentGroup.push({
+        start: {
+          line: mapping.generatedLine,
+          column: mapping.generatedColumn
+        },
+        end: {
+          line: mapping.generatedLine,
+          
+          
+          column: mapping.lastGeneratedColumn + 1
+        }
+      });
+    } else if (typeof mapping.source === "string" && currentGroup.length > 0) {
+      
+      
+      currentGroup = [];
+      originalGroups.push(currentGroup);
+    }
+  }, null, SourceMapConsumer.GENERATED_ORDER);
+
+  const generatedMappingsForOriginal = [];
+  if (mergeUnmappedRegions) {
+    
+    
+    
+    for (const group of originalGroups) {
+      if (group.length > 0) {
+        generatedMappingsForOriginal.push({
+          start: group[0].start,
+          end: group[group.length - 1].end
+        });
+      }
+    }
+  } else {
+    let lastEntry;
+    for (const group of originalGroups) {
+      lastEntry = null;
+      for (const { start, end } of group) {
+        const lastEnd = lastEntry ? wrappedMappingPosition(lastEntry.end) : null;
+
+        
+        
+        if (lastEntry && lastEnd && lastEnd.line === start.line && lastEnd.column === start.column) {
+          lastEntry.end = end;
+        } else {
+          const newEntry = { start, end };
+          generatedMappingsForOriginal.push(newEntry);
+          lastEntry = newEntry;
+        }
+      }
+    }
+  }
+
+  GENERATED_MAPPINGS.set(map, generatedMappingsForOriginal);
+  return generatedMappingsForOriginal;
+}
+
+function wrappedMappingPosition(pos) {
+  if (pos.column !== Infinity) {
+    return pos;
+  }
+
+  
+  
+  return {
+    line: pos.line + 1,
+    column: 0
+  };
+}
+
 async function getFileGeneratedRange(originalSource) {
   assert(isOriginalId(originalSource.id), "Source is not an original source");
 
@@ -7291,6 +7400,7 @@ module.exports = {
   getAllGeneratedLocations,
   getOriginalLocation,
   getOriginalSourceText,
+  getGeneratedRangesForOriginal,
   getFileGeneratedRange,
   applySourceMap,
   clearSourceMaps,
