@@ -890,6 +890,19 @@ public class GeckoSession implements Parcelable {
 
 
 
+
+
+
+
+    @AnyThread
+    public static @NonNull String getDefaultUserAgent() {
+        return BuildConfig.USER_AGENT_GECKOVIEW_MOBILE;
+    }
+
+    
+
+
+
     @UiThread
     public @Nullable PermissionDelegate getPermissionDelegate() {
         ThreadUtils.assertOnUiThread();
