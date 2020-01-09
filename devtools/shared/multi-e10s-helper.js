@@ -5,6 +5,13 @@
 "use strict";
 
 const Services = require("Services");
+const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
+
+XPCOMUtils.defineLazyServiceGetter(
+  this, "swm",
+  "@mozilla.org/serviceworkers/manager;1",
+  "nsIServiceWorkerManager"
+);
 
 
 
@@ -39,11 +46,19 @@ function removeMultiE10sListener(listener) {
   Services.prefs.removeObserver(MULTI_OPTOUT_PREF, listener);
 }
 
+
+
+
 function isMultiE10s() {
   const isE10s = Services.appinfo.browserTabsRemoteAutostart;
   const processCount = Services.appinfo.maxWebProcessCount;
+  const multiE10s =  isE10s && processCount > 1;
+  const isNewSWImplementation = swm.isParentInterceptEnabled();
 
-  return isE10s && processCount > 1;
+  
+  
+  const canDebugSW = isNewSWImplementation || !multiE10s;
+  return !canDebugSW;
 }
 
 module.exports = {
