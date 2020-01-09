@@ -13,6 +13,7 @@ use std::{i32, f32, fmt, ptr};
 use std::borrow::Cow;
 use std::os::raw::c_void;
 use std::sync::Arc;
+use std::mem::replace;
 
 
 
@@ -61,6 +62,14 @@ pub trait VecHelper<T> {
     
     
     fn entry(&mut self, index: usize) -> VecEntry<T>;
+
+    
+    fn take(&mut self) -> Self;
+
+    
+    
+    
+    fn take_and_preallocate(&mut self) -> Self;
 }
 
 impl<T> VecHelper<T> for Vec<T> {
@@ -84,6 +93,19 @@ impl<T> VecHelper<T> for Vec<T> {
             assert_eq!(index, self.len());
             VecEntry::Vacant(self.alloc())
         }
+    }
+
+    fn take(&mut self) -> Self {
+        replace(self, Vec::new())
+    }
+
+    fn take_and_preallocate(&mut self) -> Self {
+        let len = self.len();
+        if len == 0 {
+            self.clear();
+            return Vec::new();
+        }
+        replace(self, Vec::with_capacity(len + 8))
     }
 }
 
