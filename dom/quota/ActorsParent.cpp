@@ -2034,7 +2034,7 @@ void GetJarPrefix(bool aInIsolatedMozBrowser, nsACString& aJarPrefix) {
   
   
   
-  aJarPrefix.AppendInt(nsIScriptSecurityManager::NO_APP_ID);
+  aJarPrefix.AppendInt(0);  
   aJarPrefix.Append('+');
   aJarPrefix.Append(aInIsolatedMozBrowser ? 't' : 'f');
   aJarPrefix.Append('+');

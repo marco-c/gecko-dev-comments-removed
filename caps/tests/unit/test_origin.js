@@ -104,20 +104,6 @@ function run_test() {
   Assert.equal(exampleOrg_firstPartyDomain.origin, "http://example.org^firstPartyDomain=example.org");
 
   
-  try {
-    let binaryStream = Cc["@mozilla.org/binaryoutputstream;1"].
-                       createInstance(Ci.nsIObjectOutputStream);
-    let pipe = Cc["@mozilla.org/pipe;1"].createInstance(Ci.nsIPipe);
-    pipe.init(false, false, 0, 0xffffffff, null);
-    binaryStream.setOutputStream(pipe.outputStream);
-    binaryStream.writeCompoundObject(simplePrin, Ci.nsISupports, true); 
-    binaryStream.close();
-  } catch (e) {
-    Assert.ok(true);
-  }
-
-
-  
   var exampleOrg_userContext = ssm.createCodebasePrincipal(makeURI("http://example.org"), {userContextId: 42});
   checkOriginAttributes(exampleOrg_userContext, { userContextId: 42 }, "^userContextId=42");
   Assert.equal(exampleOrg_userContext.origin, "http://example.org^userContextId=42");
