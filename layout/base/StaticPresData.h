@@ -22,7 +22,6 @@ struct LangGroupFontPrefs {
       : mLangGroup(nullptr),
         mMinimumFontSize(0),
         mDefaultVariableFont(),
-        mDefaultFixedFont(StyleGenericFontFamily::MozFixed, 0),
         mDefaultSerifFont(StyleGenericFontFamily::Serif, 0),
         mDefaultSansSerifFont(StyleGenericFontFamily::SansSerif, 0),
         mDefaultMonospaceFont(StyleGenericFontFamily::Monospace, 0),
@@ -73,21 +72,11 @@ struct LangGroupFontPrefs {
 
 
 
-
-
-
-
-
-
-
-
   const nsFont* GetDefaultFont(StyleGenericFontFamily aFamily) const {
     switch (aFamily) {
       
       case StyleGenericFontFamily::None:
         return &mDefaultVariableFont;
-      case StyleGenericFontFamily::MozFixed:
-        return &mDefaultFixedFont;
       
       case StyleGenericFontFamily::Serif:
         return &mDefaultSerifFont;
@@ -109,7 +98,6 @@ struct LangGroupFontPrefs {
   nsStaticAtom* mLangGroup;
   nscoord mMinimumFontSize;
   nsFont mDefaultVariableFont;
-  nsFont mDefaultFixedFont;
   nsFont mDefaultSerifFont;
   nsFont mDefaultSansSerifFont;
   nsFont mDefaultMonospaceFont;

@@ -303,37 +303,14 @@ pub enum GenericFontFamily {
     None,
     Serif,
     SansSerif,
+    #[parse(aliases = "-moz-fixed")]
     Monospace,
     Cursive,
     Fantasy,
     
-    
-    
-    #[cfg(feature = "gecko")]
-    MozFixed,
-    
     #[css(skip)]
     #[cfg(feature = "gecko")]
     MozEmoji,
-}
-
-
-impl ToCss for GenericFontFamily {
-    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
-    where
-        W: fmt::Write,
-    {
-        dest.write_str(match *self {
-            GenericFontFamily::MozEmoji |
-            GenericFontFamily::Default => return Ok(()),
-            GenericFontFamily::MozFixed |
-            GenericFontFamily::Monospace => "monospace",
-            GenericFontFamily::Serif => "serif",
-            GenericFontFamily::SansSerif => "sans-serif",
-            GenericFontFamily::Cursive => "cursive",
-            GenericFontFamily::Fantasy => "fantasy",
-        })
-    }
 }
 
 impl SingleFontFamily {

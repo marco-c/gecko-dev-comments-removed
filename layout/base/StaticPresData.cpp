@@ -40,7 +40,6 @@ StaticPresData::StaticPresData() {
 
 static const char* const kGenericFont[] = {
   ".variable.",
-  ".fixed.",
   ".serif.",
   ".sans-serif.",
   ".monospace.",
@@ -52,7 +51,6 @@ static const char* const kGenericFont[] = {
 
 enum {
   eDefaultFont_Variable,
-  eDefaultFont_Fixed,
   eDefaultFont_Serif,
   eDefaultFont_SansSerif,
   eDefaultFont_Monospace,
@@ -93,7 +91,7 @@ void LangGroupFontPrefs::Initialize(nsStaticAtom* aLangGroupAtom) {
   aLangGroupAtom->ToUTF8String(langGroup);
 
   mDefaultVariableFont.size = nsPresContext::CSSPixelsToAppUnits(16);
-  mDefaultFixedFont.size = nsPresContext::CSSPixelsToAppUnits(13);
+  mDefaultMonospaceFont.size = nsPresContext::CSSPixelsToAppUnits(13);
 
   nsAutoCString pref;
 
@@ -107,7 +105,6 @@ void LangGroupFontPrefs::Initialize(nsStaticAtom* aLangGroupAtom) {
   
   nsFont* fontTypes[] = {
     &mDefaultVariableFont,
-    &mDefaultFixedFont,
     &mDefaultSerifFont,
     &mDefaultSansSerifFont,
     &mDefaultMonospaceFont,
@@ -167,14 +164,7 @@ void LangGroupFontPrefs::Initialize(nsStaticAtom* aLangGroupAtom) {
         }
       }
     } else {
-      if (eType == eDefaultFont_Monospace) {
-        
-        
-        
-        
-        
-        mDefaultMonospaceFont.size = mDefaultFixedFont.size;
-      } else if (eType != eDefaultFont_Fixed) {
+      if (eType != eDefaultFont_Monospace) {
         
         
         
