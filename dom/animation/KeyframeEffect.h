@@ -98,6 +98,9 @@ struct AnimationProperty {
   bool operator!=(const AnimationProperty& aOther) const {
     return !(*this == aOther);
   }
+
+  void SetPerformanceWarning(const AnimationPerformanceWarning& aWarning,
+                             const Element* aElement);
 };
 
 struct ElementPropertyTransition;
@@ -286,7 +289,7 @@ class KeyframeEffect : public AnimationEffect {
   
   
   
-  void SetPerformanceWarning(nsCSSPropertyID aProperty,
+  void SetPerformanceWarning(const nsCSSPropertyIDSet& aPropertySet,
                              const AnimationPerformanceWarning& aWarning);
 
   

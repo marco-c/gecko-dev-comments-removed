@@ -185,7 +185,7 @@ class EffectCompositor {
   
   
   static void SetPerformanceWarning(
-      const nsIFrame* aFrame, nsCSSPropertyID aProperty,
+      const nsIFrame* aFrame, const nsCSSPropertyIDSet& aPropertySet,
       const AnimationPerformanceWarning& aWarning);
 
   
