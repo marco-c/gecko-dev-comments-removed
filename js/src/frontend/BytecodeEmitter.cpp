@@ -4680,6 +4680,17 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitTry(TryNode* tryNode) {
 }
 
 MOZ_MUST_USE bool BytecodeEmitter::emitGoSub(JumpList* jump) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
   if (!emit1(JSOP_FALSE)) {
     return false;
   }
@@ -4689,7 +4700,7 @@ MOZ_MUST_USE bool BytecodeEmitter::emitGoSub(JumpList* jump) {
     return false;
   }
 
-  if (!emitJump(JSOP_GOSUB, jump)) {
+  if (!emitJumpNoFallthrough(JSOP_GOSUB, jump)) {
     return false;
   }
 
@@ -4699,7 +4710,9 @@ MOZ_MUST_USE bool BytecodeEmitter::emitGoSub(JumpList* jump) {
   }
 
   SET_RESUMEINDEX(bytecodeSection().code(off), resumeIndex);
-  return true;
+
+  JumpTarget target;
+  return emitJumpTarget(&target);
 }
 
 bool BytecodeEmitter::emitIf(TernaryNode* ifNode) {
