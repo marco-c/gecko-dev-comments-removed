@@ -16,11 +16,11 @@
 #include "nsITransactionListener.h"  
 #include "nscore.h"                  
 
+class nsCommandManager;
 class nsIDocShell;
 class nsITransaction;
 class nsITransactionManager;
 class nsPIDOMWindowOuter;
-class nsPICommandUpdater;
 
 namespace mozilla {
 
@@ -69,7 +69,7 @@ class ComposerCommandsUpdater final : public nsIDocumentStateListener,
   nsresult UpdateOneCommand(const char* aCommand);
   nsresult UpdateCommandGroup(const nsAString& aCommandGroup);
 
-  already_AddRefed<nsPICommandUpdater> GetCommandUpdater();
+  nsCommandManager* GetCommandManager();
 
   nsresult PrimeUpdateTimer();
   void TimerCallback();
