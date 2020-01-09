@@ -263,16 +263,13 @@ function tunnelToInnerBrowser(outer, inner) {
       const { detail } = event;
       event.preventDefault();
       const uri = Services.io.newURI(detail.url);
-      let flags = Ci.nsIBrowserDOMWindow.OPEN_NEWTAB;
-      if (detail.forceNoReferrer) {
-        flags |= Ci.nsIBrowserDOMWindow.OPEN_NO_REFERRER;
-      }
       
       
       
       
       browserWindow.browserDOMWindow
-        .openURI(uri, null, flags, Ci.nsIBrowserDOMWindow.OPEN_NEW,
+        .openURI(uri, null, Ci.nsIBrowserDOMWindow.OPEN_NEWTAB,
+                 Ci.nsIBrowserDOMWindow.OPEN_NEW,
                  outer.contentPrincipal);
     },
 
