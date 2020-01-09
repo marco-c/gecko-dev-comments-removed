@@ -33,10 +33,7 @@ DebuggerPanel.prototype = {
       threadClient: this.toolbox.threadClient,
       tabTarget: this.toolbox.target,
       debuggerClient: this.toolbox.target.client,
-      workers: {
-        sourceMaps: this.toolbox.sourceMapService,
-        evaluationsParser: this.toolbox.parserService
-      },
+      sourceMaps: this.toolbox.sourceMapService,
       panel: this
     });
 
@@ -163,6 +160,10 @@ DebuggerPanel.prototype = {
   selectSource(sourceId, line, column) {
     const cx = this._selectors.getContext(this._getState());
     return this._actions.selectSource(cx, sourceId, { line, column });
+  },
+
+  canLoadSource(sourceId) {
+    return this._selectors.canLoadSource(this._getState(), sourceId);
   },
 
   getSourceByActorId(sourceId) {
