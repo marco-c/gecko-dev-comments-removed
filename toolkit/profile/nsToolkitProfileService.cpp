@@ -1057,6 +1057,7 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
 
         bool exists;
         rv = compat->Exists(&exists);
+        NS_ENSURE_SUCCESS(rv, rv);
 
         
         
