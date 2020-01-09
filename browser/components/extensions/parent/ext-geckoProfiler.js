@@ -3,13 +3,11 @@
 "use strict";
 
 var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-XPCOMUtils.defineLazyGlobalGetters(this, ["TextEncoder", "TextDecoder"]);
 
 ChromeUtils.defineModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
-ChromeUtils.defineModuleGetter(this, "Subprocess", "resource://gre/modules/Subprocess.jsm");
+ChromeUtils.defineModuleGetter(this, "ProfilerGetSymbols", "resource://app/modules/ProfilerGetSymbols.jsm");
 
 const PREF_ASYNC_STACK = "javascript.options.asyncstack";
-const PREF_GET_SYMBOL_RULES = "extensions.geckoProfiler.getSymbolRules";
 
 const ASYNC_STACKS_ENABLED = Services.prefs.getBoolPref(PREF_ASYNC_STACK, false);
 
@@ -17,247 +15,13 @@ var {
   ExtensionError,
 } = ExtensionUtils;
 
-const parseSym = data => {
-  const worker = new ChromeWorker("resource://app/modules/ParseBreakpadSymbols-worker.js");
-  const promise = new Promise((resolve, reject) => {
-    worker.onmessage = (e) => {
-      if (e.data.error) {
-        reject(e.data.error);
-      } else {
-        resolve(e.data.result);
-      }
-    };
-  });
-  worker.postMessage(data, data.textBuffer ? [data.textBuffer.buffer] : []);
-  return promise;
-};
-
-class NMParser {
-  constructor() {
-    this._worker = new ChromeWorker("resource://app/modules/ParseNMSymbols-worker.js");
-  }
-
-  consume(buffer) {
-    this._worker.postMessage({buffer}, [buffer]);
-  }
-
-  finish() {
-    const promise = new Promise((resolve, reject) => {
-      this._worker.onmessage = (e) => {
-        if (e.data.error) {
-          reject(e.data.error);
-        } else {
-          resolve(e.data.result);
-        }
-      };
-    });
-    this._worker.postMessage({
-      finish: true,
-    });
-    return promise;
-  }
-}
-
-const joinBuffers = function(buffers) {
-  const byteLengthSum =
-    buffers.reduce((accum, buffer) => accum + buffer.byteLength, 0);
-  const joinedBuffer = new Uint8Array(byteLengthSum);
-  let offset = 0;
-  for (const buffer of buffers) {
-    joinedBuffer.set(new Uint8Array(buffer), offset);
-    offset += buffer.byteLength;
-  }
-  return joinedBuffer;
-};
-
-const readAllData = async function(pipe, processData) {
-  let data;
-  while ((data = await pipe.read()) && data.byteLength) {
-    processData(data);
-  }
-};
-
-const spawnProcess = async function(name, cmdArgs, processData, stdin = null) {
-  const opts = {
-    command: await Subprocess.pathSearch(name),
-    arguments: cmdArgs,
-  };
-  const proc = await Subprocess.call(opts);
-
-  if (stdin) {
-    const encoder = new TextEncoder("utf-8");
-    proc.stdin.write(encoder.encode(stdin));
-    proc.stdin.close();
-  }
-
-  await readAllData(proc.stdout, processData);
-  return proc.exitCode;
-};
-
-const runCommandAndGetOutputAsString = async function(command, cmdArgs) {
-  const opts = {
-    command,
-    arguments: cmdArgs,
-    stderr: "pipe",
-  };
-  const proc = await Subprocess.call(opts);
-  const chunks = [];
-  await readAllData(proc.stdout, data => chunks.push(data));
-  return (new TextDecoder()).decode(joinBuffers(chunks));
-};
-
-const getSymbolsFromNM = async function(path, arch) {
-  const parser = new NMParser();
-
-  const args = [path];
-  if (Services.appinfo.OS === "Darwin") {
-    args.unshift("-arch", arch);
-  }
-
-  const exitCode = await spawnProcess("nm", args, data => parser.consume(data));
-  if (exitCode === 69) {
-    throw new ExtensionError("Symbolication requires the Xcode command line tools to be installed " +
-                             "and the license accepted. Please run the following from the command " +
-                             "line to accept the xcode license:\n\n" +
-                             "sudo xcodebuild -license");
-  }
-  if (Services.appinfo.OS !== "Darwin") {
-    
-    await spawnProcess("nm", ["-D", ...args], data => parser.consume(data));
-  }
-  return parser.finish();
-};
-
-const getEnvVarCaseInsensitive = function(env, name) {
-  for (const [varname, value] of Object.entries(env)) {
-    if (varname.toLowerCase() == name.toLowerCase()) {
-      return value;
-    }
-  }
-  return undefined;
-};
-
-const findPotentialMSDIAPaths = async function(env) {
-  
-  
-  
-  
-  
-  
-  
-  
-  const programFilesX86Path =
-    getEnvVarCaseInsensitive(env, "ProgramFiles(x86)") ||
-    getEnvVarCaseInsensitive(env, "ProgramFiles");
-  if (programFilesX86Path) {
-    
-    
-    
-    const vswherePath = OS.Path.join(programFilesX86Path,
-                                     "Microsoft Visual Studio", "Installer",
-                                     "vswhere.exe");
-    const args = [
-      "-products", "*",
-      "-latest",
-      "-requires", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
-      "-property", "installationPath",
-      "-format", "value",
-    ];
-    try {
-      const vsInstallationPath =
-        (await runCommandAndGetOutputAsString(vswherePath, args)).trim();
-      if (vsInstallationPath) {
-        const diaSDKPath = OS.Path.join(vsInstallationPath, "DIA SDK");
-        return [
-          OS.Path.join(diaSDKPath, "bin"),
-          OS.Path.join(diaSDKPath, "bin", "amd64"),
-        ];
-      }
-    } catch (e) {
-      
-      
-      
-    }
-  }
-  
-  
-  return [];
-};
-
-const getSymbolsUsingWindowsDumpSyms = async function(dumpSymsPath, debugPath) {
-  const env = Subprocess.getEnvironment();
-  const extraPaths = await findPotentialMSDIAPaths(env);
-  const existingPaths = env.PATH ? env.PATH.split(";") : [];
-  env.PATH = existingPaths.concat(extraPaths).join(";");
-  const opts = {
-    command: dumpSymsPath,
-    arguments: [debugPath],
-    environment: env,
-    stderr: "pipe",
-  };
-  const proc = await Subprocess.call(opts);
-  const chunks = [];
-  await readAllData(proc.stdout, data => chunks.push(data));
-  const textBuffer = joinBuffers(chunks);
-  if (textBuffer.byteLength === 0) {
-    throw new Error("did not receive any stdout from dump_syms.exe");
-  }
-  return parseSym({textBuffer});
-};
-
-const pathComponentsForSymbolFile = (debugName, breakpadId) => {
-  const symName = debugName.replace(/(\.pdb)?$/, ".sym");
-  return [debugName, breakpadId, symName];
-};
-
-const getContainingObjdirDist = path => {
-  let curPath = path;
-  let curPathBasename = OS.Path.basename(curPath);
-  while (curPathBasename) {
-    if (curPathBasename === "dist") {
-      return curPath;
-    }
-    const parentDirPath = OS.Path.dirname(curPath);
-    if (curPathBasename === "bin") {
-      return parentDirPath;
-    }
-    curPath = parentDirPath;
-    curPathBasename = OS.Path.basename(curPath);
-  }
-  return null;
-};
-
-const filePathForSymFileInObjDir = (binaryPath, debugName, breakpadId) => {
-  
-  
-  const objDirDist = getContainingObjdirDist(binaryPath);
-  if (!objDirDist) {
-    return null;
-  }
-  return OS.Path.join(objDirDist,
-                      "crashreporter-symbols",
-                      ...pathComponentsForSymbolFile(debugName, breakpadId));
-};
-
-const dumpSymsPathInObjDir = binaryPath => {
-  
-  
-  const objDirDist = getContainingObjdirDist(binaryPath);
-  if (!objDirDist) {
-    return null;
-  }
-  return OS.Path.join(objDirDist, "host", "bin", "dump_syms.exe");
-};
-
 const symbolCache = new Map();
 
 const primeSymbolStore = libs => {
-  for (const {debugName, debugPath, breakpadId, path, arch} of libs) {
-    symbolCache.set(`${debugName}/${breakpadId}`, {path, debugPath, arch});
+  for (const {path, debugName, debugPath, breakpadId} of libs) {
+    symbolCache.set(`${debugName}/${breakpadId}`, {path, debugPath});
   }
 };
-
-let previouslySuccessfulDumpSymsPath = null;
 
 const isRunningObserver = {
   _observers: new Set(),
@@ -374,69 +138,14 @@ this.geckoProfiler = class extends ExtensionAPI {
               "process - Services.profiler.sharedLibraries only knows about libraries in the parent process.");
           }
 
-          const {path, debugPath, arch} = cachedLibInfo;
+          const {path, debugPath} = cachedLibInfo;
           if (!OS.Path.split(path).absolute) {
             throw new Error(
               `Services.profiler.sharedLibraries did not contain an absolute path for the library ${debugName} ${breakpadId}, ` +
               "so symbols for this library can not be obtained.");
           }
 
-          const symbolRules = Services.prefs.getCharPref(PREF_GET_SYMBOL_RULES, "localBreakpad");
-
-          
-          
-          
-          
-          
-          
-          for (const rule of symbolRules.split(",")) {
-            try {
-              switch (rule) {
-                case "localBreakpad":
-                  const filepath = filePathForSymFileInObjDir(path, debugName, breakpadId);
-                  if (filepath) {
-                    
-                    
-                    
-                    return await parseSym({filepath});
-                  }
-                  break;
-                case "nm":
-                  return await getSymbolsFromNM(path, arch);
-                case "dump_syms.exe":
-                  let dumpSymsPath = dumpSymsPathInObjDir(path);
-                  if (!dumpSymsPath && previouslySuccessfulDumpSymsPath) {
-                    
-                    
-                    
-                    
-                    dumpSymsPath = previouslySuccessfulDumpSymsPath;
-                  }
-                  if (dumpSymsPath) {
-                    const result =
-                      await getSymbolsUsingWindowsDumpSyms(dumpSymsPath, debugPath);
-                    previouslySuccessfulDumpSymsPath = dumpSymsPath;
-                    return result;
-                  }
-                  break;
-              }
-            } catch (e) {
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              if (e instanceof ExtensionError) {
-                throw e;
-              }
-            }
-          }
-
-          throw new Error(`Ran out of options to get symbols from library ${debugName} ${breakpadId}.`);
+          return ProfilerGetSymbols.getSymbolTable(path, debugPath, breakpadId);
         },
 
         onRunning: new EventManager({
