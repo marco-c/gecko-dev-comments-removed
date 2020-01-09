@@ -1,0 +1,49 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+testWithBigIntTypedArrayConstructors(function(TA) {
+  var sample = new TA(2);
+
+  sample.constructor = {};
+  sample.constructor[Symbol.species] = Array;
+
+  assert.throws(TypeError, function() {
+    sample.map(function() {});
+  });
+});
+
+reportCompare(0, 0);
