@@ -771,6 +771,9 @@ class MOZ_STACK_CLASS nsFrameConstructorState {
   ~nsFrameConstructorState();
 
   
+  void ProcessFrameInsertionsForAllLists();
+
+  
   
   
   
@@ -967,14 +970,7 @@ nsFrameConstructorState::nsFrameConstructorState(
 
 nsFrameConstructorState::~nsFrameConstructorState() {
   MOZ_COUNT_DTOR(nsFrameConstructorState);
-  ProcessFrameInsertions(mTopLayerFixedItems, nsIFrame::kFixedList);
-  ProcessFrameInsertions(mTopLayerAbsoluteItems, nsIFrame::kAbsoluteList);
-  ProcessFrameInsertions(mFloatedItems, nsIFrame::kFloatList);
-  ProcessFrameInsertions(mAbsoluteItems, nsIFrame::kAbsoluteList);
-  ProcessFrameInsertions(mFixedItems, nsIFrame::kFixedList);
-#ifdef MOZ_XUL
-  ProcessFrameInsertions(mPopupItems, nsIFrame::kPopupList);
-#endif
+  ProcessFrameInsertionsForAllLists();
   for (int32_t i = mGeneratedTextNodesWithInitializer.Count() - 1; i >= 0;
        --i) {
     mGeneratedTextNodesWithInitializer[i]->DeleteProperty(
@@ -989,6 +985,17 @@ nsFrameConstructorState::~nsFrameConstructorState() {
     } while (!mPendingBindings.isEmpty());
     mCurrentPendingBindingInsertionPoint = nullptr;
   }
+}
+
+void nsFrameConstructorState::ProcessFrameInsertionsForAllLists() {
+  ProcessFrameInsertions(mTopLayerFixedItems, nsIFrame::kFixedList);
+  ProcessFrameInsertions(mTopLayerAbsoluteItems, nsIFrame::kAbsoluteList);
+  ProcessFrameInsertions(mFloatedItems, nsIFrame::kFloatList);
+  ProcessFrameInsertions(mAbsoluteItems, nsIFrame::kAbsoluteList);
+  ProcessFrameInsertions(mFixedItems, nsIFrame::kFixedList);
+#ifdef MOZ_XUL
+  ProcessFrameInsertions(mPopupItems, nsIFrame::kPopupList);
+#endif
 }
 
 void nsFrameConstructorState::PushAbsoluteContainingBlock(
@@ -10912,6 +10919,11 @@ bool nsCSSFrameConstructor::MaybeRecreateForColumnSpan(
     PROFILER_TRACING("Layout",
                      "Reframe multi-column after constructing frame list",
                      LAYOUT, TRACING_EVENT);
+
+    
+    
+    
+    aState.ProcessFrameInsertionsForAllLists();
     aFrameList.DestroyFrames();
     RecreateFramesForContent(
         GetMultiColumnContainingBlockFor(aParentFrame)->GetContent(),

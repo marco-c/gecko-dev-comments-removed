@@ -1904,6 +1904,10 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   
   
   
+  
+  
+  
+  
   bool MaybeRecreateForColumnSpan(nsFrameConstructorState& aState,
                                   nsContainerFrame* aParentFrame,
                                   nsFrameList& aFrameList,
