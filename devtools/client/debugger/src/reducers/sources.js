@@ -888,6 +888,22 @@ export function getSourceActorsForSource(
   return getSourceActors(state, actors);
 }
 
+export function canLoadSource(state: OuterState, sourceId: string) {
+  
+  
+  const source = getSource(state, sourceId);
+  if (!source) {
+    return false;
+  }
+
+  if (isOriginalSource(source)) {
+    return true;
+  }
+
+  const actors = getSourceActorsForSource(state, sourceId);
+  return actors.length != 0;
+}
+
 export function getBreakpointPositions(
   state: OuterState
 ): BreakpointPositionsMap {
