@@ -9,8 +9,6 @@
 
 
 
-const {escaped} = ChromeUtils.import("resource://testing-common/AddonTestUtils.jsm", null);
-
 const env = Cc["@mozilla.org/process/environment;1"].getService(Ci.nsIEnvironment);
 
 
@@ -215,6 +213,44 @@ function createElement(test, opts) {
 
   return {elem, srcElem, src};
 }
+
+
+
+
+
+
+
+
+function escapeXML(str) {
+  let replacements = {"&": "&amp;", '"': "&quot;", "'": "&apos;", "<": "&lt;", ">": "&gt;"};
+  return String(str).replace(/[&"''<>]/g, m => replacements[m]);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function escaped(strings, ...values) {
+  let result = [];
+
+  for (let [i, string] of strings.entries()) {
+    result.push(string);
+    if (i < values.length) {
+      result.push(escapeXML(values[i]));
+    }
+  }
+
+  return result.join("");
+}
+
 
 
 
