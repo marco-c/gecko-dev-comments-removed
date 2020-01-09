@@ -383,7 +383,7 @@ class InnerWindowReference {
     
     
     
-    if (this.contentWindow) {
+    if (this.contentWindow && !Cu.isDeadWrapper(this.contentWindow)) {
       this.contentWindow.removeEventListener("pagehide", this, {mozSystemGroup: true});
       this.contentWindow.removeEventListener("pageshow", this, {mozSystemGroup: true});
     }
