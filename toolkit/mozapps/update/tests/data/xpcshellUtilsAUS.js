@@ -1155,25 +1155,35 @@ function checkUpdateManager(aStatusFileState, aHasActiveUpdate,
 
 
 
-
 async function waitForUpdateXMLFiles(aActiveUpdateExists = false, aUpdatesExists = true) {
-  let file = getUpdateDirFile(FILE_ACTIVE_UPDATE_XML_TMP);
-  await TestUtils.waitForCondition(() => (!file.exists()),
-    "Waiting for file to be deleted, path: " + file.path);
+  function areFilesStabilized() {
+    let file = getUpdateDirFile(FILE_ACTIVE_UPDATE_XML_TMP);
+    if (file.exists()) {
+      debugDump("file exists, Path: " + file.path);
+      return false;
+    }
+    file = getUpdateDirFile(FILE_UPDATES_XML_TMP);
+    if (file.exists()) {
+      debugDump("file exists, Path: " + file.path);
+      return false;
+    }
+    file = getUpdateDirFile(FILE_ACTIVE_UPDATE_XML);
+    if (file.exists() != aActiveUpdateExists) {
+      debugDump("file exists should equal: " + aActiveUpdateExists +
+                ", Path: " + file.path);
+      return false;
+    }
+    file = getUpdateDirFile(FILE_UPDATES_XML);
+    if (file.exists() != aUpdatesExists) {
+      debugDump("file exists should equal: " + aActiveUpdateExists +
+                ", Path: " + file.path);
+      return false;
+    }
+    return true;
+  }
 
-  file = getUpdateDirFile(FILE_UPDATES_XML_TMP);
-  await TestUtils.waitForCondition(() => (!file.exists()),
-    "Waiting for file to be deleted, path: " + file.path);
-
-  file = getUpdateDirFile(FILE_ACTIVE_UPDATE_XML);
-  await TestUtils.waitForCondition(() => (file.exists() == aActiveUpdateExists),
-    "Waiting for file to be deleted, path: " + file.path);
-
-  file = getUpdateDirFile(FILE_UPDATES_XML);
-  await TestUtils.waitForCondition(() => (file.exists() == aUpdatesExists),
-    "Waiting for file to be deleted, path: " + file.path);
-
-  executeSoon(waitForUpdateXMLFilesFinished);
+  await TestUtils.waitForCondition(() => (areFilesStabilized()),
+    "Waiting for update xml files to stabilize");
 }
 
 

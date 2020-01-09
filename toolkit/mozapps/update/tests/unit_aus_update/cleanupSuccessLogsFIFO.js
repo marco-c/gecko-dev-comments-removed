@@ -3,7 +3,7 @@
 
 
 
-function run_test() {
+async function run_test() {
   setupTestCommon();
 
   debugDump("testing update logs are first in first out deleted");
@@ -29,14 +29,9 @@ function run_test() {
             "there should not be an active update");
   Assert.equal(gUpdateManager.updateCount, 1,
                "the update manager update count" + MSG_SHOULD_EQUAL);
-  executeSoon(waitForUpdateXMLFiles);
-}
+  await waitForUpdateXMLFiles();
 
-
-
-
-function waitForUpdateXMLFilesFinished() {
-  let log = getUpdateDirFile(FILE_UPDATE_LOG);
+  log = getUpdateDirFile(FILE_UPDATE_LOG);
   Assert.ok(!log.exists(), MSG_SHOULD_NOT_EXIST);
 
   log = getUpdateDirFile(FILE_LAST_UPDATE_LOG);

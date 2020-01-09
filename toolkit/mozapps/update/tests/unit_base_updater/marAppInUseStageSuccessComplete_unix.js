@@ -62,20 +62,14 @@ function waitForHelperExitFinished() {
 
 
 
-function checkPostUpdateAppLogFinished() {
+async function checkPostUpdateAppLogFinished() {
   checkAppBundleModTime();
   checkSymLinks();
   standardInit();
   checkPostUpdateRunningFile(true);
   checkFilesAfterUpdateSuccess(getApplyDirFile);
   checkUpdateLogContents(LOG_REPLACE_SUCCESS, false, true);
-  executeSoon(waitForUpdateXMLFiles);
-}
-
-
-
-
-function waitForUpdateXMLFilesFinished() {
+  await waitForUpdateXMLFiles();
   checkUpdateManager(STATE_NONE, false, STATE_SUCCEEDED, 0, 1);
   checkCallbackLog();
 }

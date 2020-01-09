@@ -45,17 +45,11 @@ function check_test_helper_pt1_1() {
 
 
 
-function downloadListenerStop() {
+async function downloadListenerStop() {
   Assert.equal(gStatusResult, Cr.NS_ERROR_UNEXPECTED,
                "the download status result" + MSG_SHOULD_EQUAL);
   gAUS.removeDownloadListener(downloadListener);
   
-  executeSoon(waitForUpdateXMLFiles);
-}
-
-
-
-
-function waitForUpdateXMLFilesFinished() {
+  await waitForUpdateXMLFiles();
   stop_httpserver(doTestFinish);
 }

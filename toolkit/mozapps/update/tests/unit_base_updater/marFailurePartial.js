@@ -29,19 +29,13 @@ function setupUpdaterTestFinished() {
 
 
 
-function runUpdateFinished() {
+async function runUpdateFinished() {
   checkAppBundleModTime();
   standardInit();
   checkPostUpdateRunningFile(false);
   checkFilesAfterUpdateFailure(getApplyDirFile);
   checkUpdateLogContents(LOG_PARTIAL_FAILURE);
-  executeSoon(waitForUpdateXMLFiles);
-}
-
-
-
-
-function waitForUpdateXMLFilesFinished() {
+  await waitForUpdateXMLFiles();
   checkUpdateManager(STATE_NONE, false, STATE_FAILED,
                      LOADSOURCE_ERROR_WRONG_SIZE, 1);
   checkCallbackLog();

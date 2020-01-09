@@ -3,7 +3,7 @@
 
 
 
-function run_test() {
+async function run_test() {
   setupTestCommon();
 
   debugDump("testing removal of an active update for a channel that is not " +
@@ -31,13 +31,8 @@ function run_test() {
                "the first update errorCode" + MSG_SHOULD_EQUAL);
   Assert.equal(update.statusText, getString("statusFailed"),
                "the first update statusText " + MSG_SHOULD_EQUAL);
-  executeSoon(waitForUpdateXMLFiles);
-}
+  await waitForUpdateXMLFiles();
 
-
-
-
-function waitForUpdateXMLFilesFinished() {
   let dir = getUpdateDirFile(DIR_PATCH);
   Assert.ok(dir.exists(), MSG_SHOULD_EXIST);
 

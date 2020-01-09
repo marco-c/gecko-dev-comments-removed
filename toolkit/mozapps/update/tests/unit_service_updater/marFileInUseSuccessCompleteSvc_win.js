@@ -45,19 +45,13 @@ function waitForHelperExitFinished() {
 
 
 
-function checkPostUpdateAppLogFinished() {
+async function checkPostUpdateAppLogFinished() {
   standardInit();
   checkPostUpdateRunningFile(true);
   checkFilesAfterUpdateSuccess(getApplyDirFile, false, true);
   checkUpdateLogContains(ERR_BACKUP_DISCARD);
   checkUpdateLogContains(STATE_SUCCEEDED + "\n" + CALL_QUIT);
-  executeSoon(waitForUpdateXMLFiles);
-}
-
-
-
-
-function waitForUpdateXMLFilesFinished() {
+  await waitForUpdateXMLFiles();
   checkUpdateManager(STATE_NONE, false, STATE_SUCCEEDED, 0, 1);
   checkCallbackLog();
 }

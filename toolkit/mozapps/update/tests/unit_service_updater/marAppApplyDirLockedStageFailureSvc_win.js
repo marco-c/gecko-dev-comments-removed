@@ -31,19 +31,13 @@ function setupUpdaterTestFinished() {
 
 
 
-function stageUpdateFinished() {
+async function stageUpdateFinished() {
   removeUpdateInProgressLockFile(getGREBinDir());
   checkPostUpdateRunningFile(false);
   checkFilesAfterUpdateFailure(getApplyDirFile);
   checkUpdateLogContains(PERFORMING_STAGED_UPDATE);
   checkUpdateLogContains(ERR_UPDATE_IN_PROGRESS);
-  executeSoon(() => waitForUpdateXMLFiles(true, false));
-}
-
-
-
-
-function waitForUpdateXMLFilesFinished() {
+  await waitForUpdateXMLFiles(true, false);
   checkUpdateManager(STATE_AFTER_STAGE, true, STATE_AFTER_STAGE, 0, 0);
   waitForFilesInUse();
 }
