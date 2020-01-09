@@ -454,7 +454,7 @@ TimeoutManager::TimeoutManager(nsGlobalWindowInner& aWindow,
       mTimeouts(*this),
       mTimeoutIdCounter(1),
       mNextFiringId(InvalidFiringId + 1),
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+#ifdef DEBUG
       mFiringIndex(0),
       mLastFiringIndex(-1),
 #endif
@@ -563,7 +563,7 @@ nsresult TimeoutManager::SetTimeout(nsITimeoutHandler* aHandler,
   }
 
   RefPtr<Timeout> timeout = new Timeout();
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+#ifdef DEBUG
   timeout->mFiringIndex = -1;
 #endif
   timeout->mWindow = &mWindow;
@@ -899,7 +899,7 @@ void TimeoutManager::RunTimeout(const TimeStamp& aNow,
       
       
       
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+#ifdef DEBUG
       if (timeout->mFiringIndex == -1) {
         timeout->mFiringIndex = mFiringIndex++;
       }
@@ -939,8 +939,8 @@ void TimeoutManager::RunTimeout(const TimeStamp& aNow,
           continue;
         }
 
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-        MOZ_DIAGNOSTIC_ASSERT(timeout->mFiringIndex > mLastFiringIndex);
+#ifdef DEBUG
+        MOZ_ASSERT(timeout->mFiringIndex > mLastFiringIndex);
         mLastFiringIndex = timeout->mFiringIndex;
 #endif
         
@@ -1068,7 +1068,7 @@ bool TimeoutManager::RescheduleTimeout(Timeout* aTimeout,
   TimeStamp firingTime = aLastCallbackTime + nextInterval;
   TimeDuration delay = firingTime - aCurrentNow;
 
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+#ifdef DEBUG
   aTimeout->mFiringIndex = -1;
 #endif
   
