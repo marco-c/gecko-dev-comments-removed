@@ -77,19 +77,11 @@ class GeckoViewNavigationChild extends GeckoViewChildModule {
   }
 
   
-  shouldLoadURI(aDocShell, aURI, aReferrer, aHasPostData, aTriggeringPrincipal) {
+  shouldLoadURI(aDocShell, aURI, aReferrer, aHasPostData, aTriggeringPrincipal, aCsp) {
     debug `shouldLoadURI ${aURI.displaySpec}`;
 
-    
-    
-    
-    
-    
-    
-    
-
     if (!E10SUtils.shouldLoadURI(aDocShell, aURI, aReferrer, aHasPostData)) {
-      E10SUtils.redirectLoad(aDocShell, aURI, aReferrer, aTriggeringPrincipal, false);
+      E10SUtils.redirectLoad(aDocShell, aURI, aReferrer, aTriggeringPrincipal, false, null, aCsp);
       return false;
     }
 
@@ -103,9 +95,9 @@ class GeckoViewNavigationChild extends GeckoViewChildModule {
   }
 
   
-  reloadInFreshProcess(aDocShell, aURI, aReferrer, aTriggeringPrincipal, aLoadFlags) {
+  reloadInFreshProcess(aDocShell, aURI, aReferrer, aTriggeringPrincipal, aLoadFlags, aCsp) {
     debug `reloadInFreshProcess ${aURI.displaySpec}`;
-    E10SUtils.redirectLoad(aDocShell, aURI, aReferrer, aTriggeringPrincipal, true, aLoadFlags);
+    E10SUtils.redirectLoad(aDocShell, aURI, aReferrer, aTriggeringPrincipal, true, aLoadFlags, aCsp);
     return true;
   }
 
