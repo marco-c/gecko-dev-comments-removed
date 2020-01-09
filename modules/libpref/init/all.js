@@ -1624,6 +1624,7 @@ pref("network.protocol-handler.external.vbscript", false);
 pref("network.protocol-handler.external.javascript", false);
 pref("network.protocol-handler.external.data", false);
 pref("network.protocol-handler.external.ms-help", false);
+pref("network.protocol-handler.external.res", false);
 pref("network.protocol-handler.external.shell", false);
 pref("network.protocol-handler.external.vnd.ms.radio", false);
 #ifdef XP_MACOSX
@@ -1880,7 +1881,6 @@ pref("network.http.tcp_keepalive.long_lived_idle_time", 600);
 
 pref("network.http.enforce-framing.http1", false); 
 pref("network.http.enforce-framing.soft", true);
-pref("network.http.enforce-framing.strict_chunked_encoding", true);
 
 
 pref("network.http.max_response_header_size", 393216);
@@ -5153,6 +5153,7 @@ pref("extensions.webextensions.keepUuidOnUninstall", false);
 pref("extensions.webextensions.identity.redirectDomain", "extensions.allizom.org");
 pref("extensions.webextensions.restrictedDomains", "accounts-static.cdn.mozilla.net,accounts.firefox.com,addons.cdn.mozilla.net,addons.mozilla.org,api.accounts.firefox.com,content.cdn.mozilla.net,discovery.addons.mozilla.org,install.mozilla.org,oauth.accounts.firefox.com,profile.accounts.firefox.com,support.mozilla.org,sync.services.mozilla.com");
 
+pref("extensions.webextensions.themes.icons.enabled", false);
 pref("extensions.webextensions.remote", false);
 
 
@@ -5181,7 +5182,7 @@ pref("extensions.webextensions.enablePerformanceCounters", true);
 
 
 
-pref("extensions.webextensions.performanceCountersMaxAge", 5000);
+pref("extensions.webextensions.performanceCountersMaxAge", 1000);
 
 
 pref("extensions.htmlaboutaddons.enabled", false);
@@ -6030,10 +6031,3 @@ pref("dom.sidebar.enabled", true);
 
 
 pref("fission.rebuild_frameloaders_on_remoteness_change", true);
-
-
-
-
-
-pref("toolkit.legacyUserProfileCustomizations.stylesheets", false);
-
