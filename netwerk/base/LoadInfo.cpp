@@ -189,6 +189,12 @@ LoadInfo::LoadInfo(
                        !nsContentUtils::IsInPrivateBrowsing(doc))) {
             mTopLevelStorageAreaPrincipal = innerWindow->GetPrincipal();
           }
+
+          
+          
+          if (!mTopLevelPrincipal) {
+            mTopLevelPrincipal = innerWindow->GetPrincipal();
+          }
         }
 
         mDocumentHasLoaded = innerWindow->IsDocumentLoaded();

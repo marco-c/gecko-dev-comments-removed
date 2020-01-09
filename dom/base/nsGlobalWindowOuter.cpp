@@ -476,8 +476,9 @@ class nsOuterWindowProxy : public MaybeCrossOriginObject<js::Wrapper> {
 
 
 
-  bool getOwnEnumerablePropertyKeys(JSContext* cx, JS::Handle<JSObject*> proxy,
-                                    JS::MutableHandleVector<jsid> props) const override;
+  bool getOwnEnumerablePropertyKeys(
+      JSContext* cx, JS::Handle<JSObject*> proxy,
+      JS::MutableHandleVector<jsid> props) const override;
 
   
 
@@ -733,9 +734,9 @@ bool nsOuterWindowProxy::definePropertySameOrigin(
   return true;
 }
 
-bool nsOuterWindowProxy::ownPropertyKeys(JSContext* cx,
-                                         JS::Handle<JSObject*> proxy,
-                                         JS::MutableHandleVector<jsid> props) const {
+bool nsOuterWindowProxy::ownPropertyKeys(
+    JSContext* cx, JS::Handle<JSObject*> proxy,
+    JS::MutableHandleVector<jsid> props) const {
   
   if (!AppendIndexedPropertyNames(proxy, props)) {
     return false;
@@ -938,7 +939,8 @@ bool nsOuterWindowProxy::set(JSContext* cx, JS::Handle<JSObject*> proxy,
 }
 
 bool nsOuterWindowProxy::getOwnEnumerablePropertyKeys(
-    JSContext* cx, JS::Handle<JSObject*> proxy, JS::MutableHandleVector<jsid> props) const {
+    JSContext* cx, JS::Handle<JSObject*> proxy,
+    JS::MutableHandleVector<jsid> props) const {
   
   
   
@@ -1401,6 +1403,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(nsGlobalWindowOuter)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mLocalStorage)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSuspendedDoc)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocumentPrincipal)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocumentStoragePrincipal)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDoc)
 
   
@@ -1427,6 +1430,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsGlobalWindowOuter)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mLocalStorage)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mSuspendedDoc)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocumentPrincipal)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocumentStoragePrincipal)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDoc)
 
   
@@ -1894,6 +1898,8 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
                                              bool aForceReuseInnerWindow) {
   MOZ_ASSERT(mDocumentPrincipal == nullptr,
              "mDocumentPrincipal prematurely set!");
+  MOZ_ASSERT(mDocumentStoragePrincipal == nullptr,
+             "mDocumentStoragePrincipal prematurely set!");
   MOZ_ASSERT(aDocument);
 
   
@@ -2446,6 +2452,7 @@ void nsGlobalWindowOuter::DetachFromDocShell() {
 
     
     mDocumentPrincipal = mDoc->NodePrincipal();
+    mDocumentStoragePrincipal = mDoc->EffectiveStoragePrincipal();
     mDocumentURI = mDoc->GetDocumentURI();
 
     
@@ -2756,6 +2763,29 @@ nsIPrincipal* nsGlobalWindowOuter::GetPrincipal() {
 
   if (objPrincipal) {
     return objPrincipal->GetPrincipal();
+  }
+
+  return nullptr;
+}
+
+nsIPrincipal* nsGlobalWindowOuter::GetEffectiveStoragePrincipal() {
+  if (mDoc) {
+    
+    return mDoc->EffectiveStoragePrincipal();
+  }
+
+  if (mDocumentStoragePrincipal) {
+    return mDocumentStoragePrincipal;
+  }
+
+  
+  
+
+  nsCOMPtr<nsIScriptObjectPrincipal> objPrincipal =
+      do_QueryInterface(GetParentInternal());
+
+  if (objPrincipal) {
+    return objPrincipal->GetEffectiveStoragePrincipal();
   }
 
   return nullptr;

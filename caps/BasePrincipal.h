@@ -169,6 +169,8 @@ class BasePrincipal : public nsJSPrincipals {
   already_AddRefed<BasePrincipal>
   CloneStrippingUserContextIdAndFirstPartyDomain();
 
+  already_AddRefed<BasePrincipal> CloneForcingFirstPartyDomain(nsIURI* aURI);
+
   
   
   extensions::WebExtensionPolicy* ContentScriptAddonPolicy();
