@@ -516,22 +516,6 @@ JSObject* NewCallObject(JSContext* cx, HandleShape shape,
   return obj;
 }
 
-JSObject* NewSingletonCallObject(JSContext* cx, HandleShape shape) {
-  JSObject* obj = CallObject::createSingleton(cx, shape);
-  if (!obj) {
-    return nullptr;
-  }
-
-  
-  
-  
-  MOZ_ASSERT(!IsInsideNursery(obj),
-             "singletons are created in the tenured heap");
-  cx->runtime()->gc.storeBuffer().putWholeCell(obj);
-
-  return obj;
-}
-
 JSObject* NewStringObject(JSContext* cx, HandleString str) {
   return StringObject::create(cx, str);
 }

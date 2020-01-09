@@ -188,12 +188,6 @@ IonBuilder::IonBuilder(JSContext* analysisContext, CompileRealm* realm,
 void IonBuilder::clearForBackEnd() {
   MOZ_ASSERT(!analysisContext);
   baselineFrame_ = nullptr;
-
-  
-  
-  
-  
-  envCoordinateNameCache.purge();
 }
 
 mozilla::GenericErrorResult<AbortReason> IonBuilder::abort(AbortReason r) {
@@ -1990,9 +1984,6 @@ AbortReasonOr<Ok> IonBuilder::inspectOpcode(JSOp op) {
     case JSOP_ARGUMENTS:
       return jsop_arguments();
 
-    case JSOP_RUNONCE:
-      return jsop_runonce();
-
     case JSOP_REST:
       return jsop_rest();
 
@@ -2532,6 +2523,7 @@ AbortReasonOr<Ok> IonBuilder::inspectOpcode(JSOp op) {
       
       break;
 
+    case JSOP_UNUSED71:
     case JSOP_UNUSED151:
     case JSOP_LIMIT:
       break;
@@ -5032,13 +5024,7 @@ AbortReasonOr<MInstruction*> IonBuilder::createCallObject(MDefinition* callee,
   current->add(templateCst);
 
   
-  
-  MNewCallObjectBase* callObj;
-  if (script()->treatAsRunOnce() || templateObj->isSingleton()) {
-    callObj = MNewSingletonCallObject::New(alloc(), templateCst);
-  } else {
-    callObj = MNewCallObject::New(alloc(), templateCst);
-  }
+  MNewCallObject* callObj = MNewCallObject::New(alloc(), templateCst);
   current->add(callObj);
 
   
@@ -7780,9 +7766,7 @@ AbortReasonOr<Ok> IonBuilder::getStaticName(bool* emitted,
   bool isGlobalLexical =
       staticObject->is<LexicalEnvironmentObject>() &&
       staticObject->as<LexicalEnvironmentObject>().isGlobal();
-  MOZ_ASSERT(isGlobalLexical || staticObject->is<GlobalObject>() ||
-             staticObject->is<CallObject>() ||
-             staticObject->is<ModuleEnvironmentObject>());
+  MOZ_ASSERT(isGlobalLexical || staticObject->is<GlobalObject>());
   MOZ_ASSERT(staticObject->isSingleton());
 
   
@@ -7897,8 +7881,7 @@ AbortReasonOr<Ok> IonBuilder::setStaticName(JSObject* staticObject,
   bool isGlobalLexical =
       staticObject->is<LexicalEnvironmentObject>() &&
       staticObject->as<LexicalEnvironmentObject>().isGlobal();
-  MOZ_ASSERT(isGlobalLexical || staticObject->is<GlobalObject>() ||
-             staticObject->is<CallObject>());
+  MOZ_ASSERT(isGlobalLexical || staticObject->is<GlobalObject>());
 
   MDefinition* value = current->peek(-1);
 
@@ -8089,21 +8072,13 @@ AbortReasonOr<Ok> IonBuilder::jsop_getimport(PropertyName* name) {
   ModuleEnvironmentObject* targetEnv;
   MOZ_ALWAYS_TRUE(env->lookupImport(NameToId(name), &targetEnv, &shape));
 
-  PropertyName* localName =
-      JSID_TO_STRING(shape->propid())->asAtom().asPropertyName();
-  bool emitted = false;
-  MOZ_TRY(getStaticName(&emitted, targetEnv, localName));
+  TypeSet::ObjectKey* staticKey = TypeSet::ObjectKey::get(targetEnv);
+  TemporaryTypeSet* types = bytecodeTypes(pc);
+  BarrierKind barrier = PropertyReadNeedsTypeBarrier(
+      analysisContext, alloc(), constraints(), staticKey, name, types,
+       true);
 
-  if (!emitted) {
-    
-    TypeSet::ObjectKey* staticKey = TypeSet::ObjectKey::get(targetEnv);
-    TemporaryTypeSet* types = bytecodeTypes(pc);
-    BarrierKind barrier = PropertyReadNeedsTypeBarrier(
-        analysisContext, alloc(), constraints(), staticKey, name, types,
-         true);
-
-    MOZ_TRY(loadStaticSlot(targetEnv, barrier, types, shape->slot()));
-  }
+  MOZ_TRY(loadStaticSlot(targetEnv, barrier, types, shape->slot()));
 
   
   
@@ -10096,12 +10071,6 @@ uint32_t IonBuilder::getUnboxedOffset(TemporaryTypeSet* types, jsid id,
   }
 
   return offset;
-}
-
-AbortReasonOr<Ok> IonBuilder::jsop_runonce() {
-  MRunOncePrologue* ins = MRunOncePrologue::New(alloc());
-  current->add(ins);
-  return resumeAfter(ins);
 }
 
 AbortReasonOr<Ok> IonBuilder::jsop_not() {
@@ -13089,60 +13058,6 @@ MDefinition* IonBuilder::walkEnvironmentChain(unsigned hops) {
   return env;
 }
 
-bool IonBuilder::hasStaticEnvironmentObject(JSObject** pcall) {
-  JSScript* outerScript = EnvironmentCoordinateFunctionScript(script(), pc);
-  if (!outerScript || !outerScript->treatAsRunOnce()) {
-    return false;
-  }
-
-  TypeSet::ObjectKey* funKey =
-      TypeSet::ObjectKey::get(outerScript->functionNonDelazifying());
-  if (funKey->hasFlags(constraints(), OBJECT_FLAG_RUNONCE_INVALIDATED)) {
-    return false;
-  }
-
-  
-  
-  
-  
-
-  
-  
-  
-
-  MDefinition* envDef = current->getSlot(info().environmentChainSlot());
-  envDef->setImplicitlyUsedUnchecked();
-
-  JSObject* environment = script()->functionNonDelazifying()->environment();
-  while (environment && !environment->is<GlobalObject>()) {
-    if (environment->is<CallObject>() &&
-        environment->as<CallObject>().callee().nonLazyScript() == outerScript) {
-      MOZ_ASSERT(environment->isSingleton());
-      *pcall = environment;
-      return true;
-    }
-    environment = environment->enclosingEnvironment();
-  }
-
-  
-  
-  
-  
-
-  if (script() == outerScript && baselineFrame_ && info().osrPc()) {
-    JSObject* singletonScope = baselineFrame_->singletonEnvChain;
-    if (singletonScope && singletonScope->is<CallObject>() &&
-        singletonScope->as<CallObject>().callee().nonLazyScript() ==
-            outerScript) {
-      MOZ_ASSERT(singletonScope->isSingleton());
-      *pcall = singletonScope;
-      return true;
-    }
-  }
-
-  return true;
-}
-
 MDefinition* IonBuilder::getAliasedVar(EnvironmentCoordinate ec) {
   MDefinition* obj = walkEnvironmentChain(ec.hops());
 
@@ -13163,17 +13078,6 @@ MDefinition* IonBuilder::getAliasedVar(EnvironmentCoordinate ec) {
 }
 
 AbortReasonOr<Ok> IonBuilder::jsop_getaliasedvar(EnvironmentCoordinate ec) {
-  JSObject* call = nullptr;
-  if (hasStaticEnvironmentObject(&call) && call) {
-    PropertyName* name =
-        EnvironmentCoordinateName(envCoordinateNameCache, script(), pc);
-    bool emitted = false;
-    MOZ_TRY(getStaticName(&emitted, call, name, takeLexicalCheck()));
-    if (emitted) {
-      return Ok();
-    }
-  }
-
   
   MDefinition* load = takeLexicalCheck();
   if (!load) {
@@ -13186,34 +13090,6 @@ AbortReasonOr<Ok> IonBuilder::jsop_getaliasedvar(EnvironmentCoordinate ec) {
 }
 
 AbortReasonOr<Ok> IonBuilder::jsop_setaliasedvar(EnvironmentCoordinate ec) {
-  JSObject* call = nullptr;
-  if (hasStaticEnvironmentObject(&call)) {
-    uint32_t depth = current->stackDepth() + 1;
-    if (depth > current->nslots()) {
-      if (!current->increaseSlots(depth - current->nslots())) {
-        return abort(AbortReason::Alloc);
-      }
-    }
-    MDefinition* value = current->pop();
-    PropertyName* name =
-        EnvironmentCoordinateName(envCoordinateNameCache, script(), pc);
-
-    if (call) {
-      
-      
-      pushConstant(ObjectValue(*call));
-      current->push(value);
-      return setStaticName(call, name);
-    }
-
-    
-    
-    MDefinition* obj = walkEnvironmentChain(ec.hops());
-    current->push(obj);
-    current->push(value);
-    return jsop_setprop(name);
-  }
-
   MDefinition* rval = current->peek(-1);
   MDefinition* obj = walkEnvironmentChain(ec.hops());
 

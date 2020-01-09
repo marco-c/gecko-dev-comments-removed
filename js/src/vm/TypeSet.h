@@ -191,10 +191,6 @@ enum : uint32_t {
 
   
 
-
-
-  OBJECT_FLAG_RUNONCE_INVALIDATED = 0x00200000,
-
   
 
 

@@ -304,15 +304,7 @@ inline void SetAliasedVarOperation(JSContext* cx, JSScript* script,
                                    EnvironmentCoordinate ec, const Value& val,
                                    MaybeCheckTDZ checkTDZ) {
   MOZ_ASSERT_IF(checkTDZ, !IsUninitializedLexical(obj.aliasedBinding(ec)));
-
-  
-  
-  PropertyName* name =
-      obj.isSingleton() ? EnvironmentCoordinateName(
-                              cx->caches().envCoordinateNameCache, script, pc)
-                        : nullptr;
-
-  obj.setAliasedBinding(cx, ec, name, val);
+  obj.setAliasedBinding(cx, ec, val);
 }
 
 inline bool SetNameOperation(JSContext* cx, JSScript* script, jsbytecode* pc,

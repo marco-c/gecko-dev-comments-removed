@@ -2417,17 +2417,9 @@ bool BytecodeEmitter::emitFunctionScript(CodeNode* funNode,
 
 
 
-
-
-
-
   if (isRunOnceLambda()) {
     script->setTreatAsRunOnce();
     MOZ_ASSERT(!script->hasRunOnce());
-
-    if (!emit1(JSOP_RUNONCE)) {
-      return false;
-    }
   }
 
   setFunctionBodyEndPos(body->pn_pos);

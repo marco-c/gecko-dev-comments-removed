@@ -32,14 +32,9 @@ extern Shape* EnvironmentCoordinateToEnvironmentShape(JSScript* script,
                                                       jsbytecode* pc);
 
 
-extern PropertyName* EnvironmentCoordinateName(
-    EnvironmentCoordinateNameCache& cache, JSScript* script, jsbytecode* pc);
 
-
-extern JSScript* EnvironmentCoordinateFunctionScript(JSScript* script,
-                                                     jsbytecode* pc);
-
-
+extern PropertyName* EnvironmentCoordinateNameSlow(JSScript* script,
+                                                   jsbytecode* pc);
 
 
 
@@ -264,8 +259,7 @@ class EnvironmentObject : public NativeObject {
   
   static const uint32_t ENCLOSING_ENV_SLOT = 0;
 
-  inline void setAliasedBinding(JSContext* cx, uint32_t slot,
-                                PropertyName* name, const Value& v);
+  inline void setAliasedBinding(JSContext* cx, uint32_t slot, const Value& v);
 
   void setEnclosingEnvironment(JSObject* enclosing) {
     setReservedSlot(ENCLOSING_ENV_SLOT, ObjectOrNullValue(enclosing));
@@ -295,7 +289,7 @@ class EnvironmentObject : public NativeObject {
   }
 
   inline void setAliasedBinding(JSContext* cx, EnvironmentCoordinate ec,
-                                PropertyName* name, const Value& v);
+                                const Value& v);
 
   inline void setAliasedBinding(JSContext* cx, const BindingIter& bi,
                                 const Value& v);
@@ -327,12 +321,6 @@ class CallObject : public EnvironmentObject {
 
   static CallObject* create(JSContext* cx, HandleShape shape,
                             HandleObjectGroup group);
-
-  
-
-
-
-  static CallObject* createSingleton(JSContext* cx, HandleShape shape);
 
   static CallObject* createTemplateObject(JSContext* cx, HandleScript script,
                                           HandleObject enclosing,
