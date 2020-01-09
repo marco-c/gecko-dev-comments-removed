@@ -36,8 +36,12 @@ def run_clang_format(hooktype, changedFiles):
     if "commit" in hooktype:
         
         subprocess.call(clang_format_cmd)
+
         
-        vcs.add_remove_files(" ".join(changedFiles))
+        
+        for f in changedFiles:
+            vcs.add_remove_files(f)
+
         return False
     print("warning: '{}' is not a valid clang-format hooktype".format(hooktype))
     return False
