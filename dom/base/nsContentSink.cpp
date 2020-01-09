@@ -297,7 +297,8 @@ nsresult nsContentSink::ProcessHeaderData(nsAtom* aHeader,
 
   mDocument->SetHeaderData(aHeader, aValue);
 
-  if (aHeader == nsGkAtoms::setcookie) {
+  if (aHeader == nsGkAtoms::setcookie &&
+      StaticPrefs::dom_metaElement_setCookie_allowed()) {
     
     
     
@@ -796,7 +797,8 @@ nsresult nsContentSink::ProcessMETATag(nsIContent* aContent) {
 
     
     
-    if (nsGkAtoms::setcookie->Equals(header) && mDocument->IsCookieAverse()) {
+    if (nsGkAtoms::setcookie->Equals(header) && mDocument->IsCookieAverse() &&
+        StaticPrefs::dom_metaElement_setCookie_allowed()) {
       return NS_OK;
     }
 
