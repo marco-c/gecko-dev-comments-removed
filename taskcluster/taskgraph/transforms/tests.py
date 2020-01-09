@@ -28,7 +28,10 @@ from taskgraph.util.schema import (
     optionally_keyed_by,
     Schema,
 )
-from taskgraph.util.taskcluster import get_artifact_path
+from taskgraph.util.taskcluster import (
+    get_artifact_path,
+    get_index_url,
+)
 from mozbuild.schedules import INCLUSIVE_COMPONENTS
 
 from taskgraph.util.perfile import perfile_number_of_chunks
@@ -329,6 +332,7 @@ test_description_schema = Schema({
         
         
         Optional('build-artifact-name'): basestring,
+        Optional('installer-url'): basestring,
 
         
         
@@ -441,7 +445,7 @@ test_description_schema = Schema({
     
     Optional('target'): optionally_keyed_by(
         'test-platform',
-        Any(basestring, None),
+        Any(basestring, None, {'index': basestring, 'name': basestring}),
     ),
 
     
@@ -470,15 +474,17 @@ def set_defaults(config, tests):
             
             test['mozharness']['tooltool-downloads'] = 'internal'
             test['mozharness']['actions'] = ['get-secrets']
-            
-            test['e10s'] = False
+
+            if not any(app in test['test-name'] for app in ('geckoview', 'refbrow')):
+                
+                test['e10s'] = False
+
             
             
             test['loopback-video'] = True
         else:
             
             test['mozharness']['set-moz-node-path'] = True
-            test.setdefault('e10s', True)
 
         
         if test['test-platform'].startswith('linux') and test['suite'] not in ['talos', 'raptor']:
@@ -495,8 +501,8 @@ def set_defaults(config, tests):
         else:
             test.setdefault('webrender', False)
 
+        test.setdefault('e10s', True)
         test.setdefault('try-name', test['test-name'])
-
         test.setdefault('os-groups', [])
         test.setdefault('run-as-administrator', False)
         test.setdefault('chunks', 1)
@@ -593,8 +599,6 @@ def set_target(config, tests):
         if 'target' in test:
             resolve_keyed_by(test, 'target', item_name=test['test-name'])
             target = test['target']
-            if target and 'geckoview' in target:
-                test['e10s'] = True
         if not target:
             if build_platform.startswith('macosx'):
                 target = 'target.dmg'
@@ -604,7 +608,14 @@ def set_target(config, tests):
                 target = 'target.zip'
             else:
                 target = 'target.tar.bz2'
-        test['mozharness']['build-artifact-name'] = get_artifact_path(test, target)
+
+        if isinstance(target, dict):
+            
+            index_url = get_index_url(target['index'])
+            installer_url = '{}/artifacts/public/{}'.format(index_url, target['name'])
+            test['mozharness']['installer-url'] = installer_url
+        else:
+            test['mozharness']['build-artifact-name'] = get_artifact_path(test, target)
 
         yield test
 
