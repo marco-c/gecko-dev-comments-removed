@@ -159,7 +159,7 @@ class WidgetMouseEventBase : public WidgetInputEvent {
   uint16_t mInputSource;
 
   
-  nsString region;
+  nsString mRegion;
 
   bool IsLeftButtonPressed() const { return !!(mButtons & eLeftButtonFlag); }
   bool IsRightButtonPressed() const { return !!(mButtons & eRightButtonFlag); }
