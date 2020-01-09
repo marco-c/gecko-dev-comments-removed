@@ -91,7 +91,7 @@ function certToFilename(cert) {
 
   
   filename = filename.replace(/\s/g, "")
-                     .replace(/\./g, "")
+                     .replace(/\./g, "_")
                      .replace(/\\/g, "")
                      .replace(/\//g, "");
 
