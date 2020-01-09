@@ -17,6 +17,7 @@
 #include "vm/JSContext-inl.h"
 
 namespace js {
+namespace jit {
 
 inline StackTypeSet* JitScript::thisTypes(const AutoSweepJitScript& sweep,
                                           JSScript* script) {
@@ -97,9 +98,10 @@ inline bool JitScript::typesNeedsSweep(Zone* zone) const {
 }
 
 }  
+}  
 
 inline bool JSScript::ensureHasJitScript(JSContext* cx,
-                                         js::AutoKeepJitScripts&) {
+                                         js::jit::AutoKeepJitScripts&) {
   return jitScript() || createJitScript(cx);
 }
 

@@ -1523,7 +1523,7 @@ bool ObjectGroup::setAllocationSiteObjectGroup(JSContext* cx,
 
 
 
-    JitScript::MonitorBytecodeType(cx, script, pc, ObjectValue(*obj));
+    jit::JitScript::MonitorBytecodeType(cx, script, pc, ObjectValue(*obj));
   } else {
     ObjectGroup* group = allocationSiteGroup(cx, script, pc, key);
     if (!group) {

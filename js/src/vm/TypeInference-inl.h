@@ -588,19 +588,18 @@ inline void MarkObjectStateChange(JSContext* cx, JSObject* obj) {
   }
 }
 
- inline void JitScript::MonitorBytecodeType(JSContext* cx,
-                                                        JSScript* script,
-                                                        jsbytecode* pc,
-                                                        StackTypeSet* types,
-                                                        const js::Value& rval) {
+ inline void jit::JitScript::MonitorBytecodeType(
+    JSContext* cx, JSScript* script, jsbytecode* pc, StackTypeSet* types,
+    const js::Value& rval) {
   TypeSet::Type type = TypeSet::GetValueType(rval);
   if (!types->hasType(type)) {
     MonitorBytecodeTypeSlow(cx, script, pc, types, type);
   }
 }
 
- inline void JitScript::MonitorAssign(JSContext* cx,
-                                                  HandleObject obj, jsid id) {
+ inline void jit::JitScript::MonitorAssign(JSContext* cx,
+                                                       HandleObject obj,
+                                                       jsid id) {
   if (!obj->isSingleton()) {
     
 
@@ -626,9 +625,9 @@ inline void MarkObjectStateChange(JSContext* cx, JSObject* obj) {
   }
 }
 
- inline void JitScript::MonitorThisType(JSContext* cx,
-                                                    JSScript* script,
-                                                    TypeSet::Type type) {
+ inline void jit::JitScript::MonitorThisType(JSContext* cx,
+                                                         JSScript* script,
+                                                         TypeSet::Type type) {
   cx->check(script, type);
 
   JitScript* jitScript = script->jitScript();
@@ -648,16 +647,15 @@ inline void MarkObjectStateChange(JSContext* cx, JSObject* obj) {
   }
 }
 
- inline void JitScript::MonitorThisType(JSContext* cx,
-                                                    JSScript* script,
-                                                    const js::Value& value) {
+ inline void jit::JitScript::MonitorThisType(
+    JSContext* cx, JSScript* script, const js::Value& value) {
   MonitorThisType(cx, script, TypeSet::GetValueType(value));
 }
 
- inline void JitScript::MonitorArgType(JSContext* cx,
-                                                   JSScript* script,
-                                                   unsigned arg,
-                                                   TypeSet::Type type) {
+ inline void jit::JitScript::MonitorArgType(JSContext* cx,
+                                                        JSScript* script,
+                                                        unsigned arg,
+                                                        TypeSet::Type type) {
   cx->check(script->compartment(), type);
 
   JitScript* jitScript = script->jitScript();
@@ -677,10 +675,8 @@ inline void MarkObjectStateChange(JSContext* cx, JSObject* obj) {
   }
 }
 
- inline void JitScript::MonitorArgType(JSContext* cx,
-                                                   JSScript* script,
-                                                   unsigned arg,
-                                                   const js::Value& value) {
+ inline void jit::JitScript::MonitorArgType(
+    JSContext* cx, JSScript* script, unsigned arg, const js::Value& value) {
   MonitorArgType(cx, script, arg, TypeSet::GetValueType(value));
 }
 
@@ -1296,7 +1292,7 @@ inline AutoSweepJitScript::AutoSweepJitScript(JSScript* script)
       jitScript_(script->jitScript())
 #endif
 {
-  if (JitScript* jitScript = script->jitScript()) {
+  if (jit::JitScript* jitScript = script->jitScript()) {
     Zone* zone = script->zone();
     if (jitScript->typesNeedsSweep(zone)) {
       jitScript->sweepTypes(*this, zone);
