@@ -399,6 +399,20 @@ var gMainPane = {
       }
     }
 
+    let drmInfoURL =
+      Services.urlFormatter.formatURLPref("app.support.baseURL") + "drm-content";
+    document.getElementById("playDRMContentLink").setAttribute("href", drmInfoURL);
+    let emeUIEnabled = Services.prefs.getBoolPref("browser.eme.ui.enabled");
+    
+    if (navigator.platform.toLowerCase().startsWith("win")) {
+      emeUIEnabled = emeUIEnabled && parseFloat(Services.sysinfo.get("version")) >= 6;
+    }
+    if (!emeUIEnabled) {
+      
+      
+      document.getElementById("drmGroup").setAttribute("style", "display: none !important");
+    }
+
     if (AppConstants.MOZ_DEV_EDITION) {
       let uAppData = OS.Constants.Path.userApplicationDataDir;
       let ignoreSeparateProfile = OS.Path.join(uAppData, "ignore-dev-edition-profile");
@@ -572,6 +586,8 @@ var gMainPane = {
 
     
     Services.obs.notifyObservers(window, "main-pane-loaded");
+
+    this.setInitialized();
   },
 
   preInit() {
@@ -580,6 +596,7 @@ var gMainPane = {
       
       
       window.addEventListener("pageshow", async () => {
+        await this.initialized;
         try {
           this._initListEventHandlers();
           this._loadData();
@@ -2483,6 +2500,10 @@ var gMainPane = {
     return currentDirPref.value;
   },
 };
+
+gMainPane.initialized = new Promise(res => {
+  gMainPane.setInitialized = res;
+});
 
 
 
