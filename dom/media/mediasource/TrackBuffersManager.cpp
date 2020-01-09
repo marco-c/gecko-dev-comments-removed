@@ -1630,6 +1630,24 @@ void TrackBuffersManager::ProcessFrames(TrackBuffer& aSamples,
     aTrackData.mLastParsedEndTime = TimeUnit();
   }
 
+  auto addToSamples = [&](MediaRawData* aSample,
+                          const TimeInterval& aInterval) {
+    aSample->mTime = aInterval.mStart;
+    aSample->mDuration = aInterval.Length();
+    aSample->mTrackInfo = trackBuffer.mLastInfo;
+    samplesRange += aInterval;
+    sizeNewSamples += aSample->ComputedSizeOfIncludingThis();
+    samples.AppendElement(aSample);
+  };
+
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<MediaRawData> previouslyDroppedSample;
   for (auto& sample : aSamples) {
     const TimeUnit sampleEndTime = sample->GetEndTime();
     if (sampleEndTime > aTrackData.mLastParsedEndTime) {
@@ -1646,6 +1664,7 @@ void TrackBuffersManager::ProcessFrames(TrackBuffer& aSamples,
       
       
       if (!sample->mKeyframe) {
+        previouslyDroppedSample = nullptr;
         continue;
       }
       
@@ -1734,6 +1753,7 @@ void TrackBuffersManager::ProcessFrames(TrackBuffer& aSamples,
       CheckSequenceDiscontinuity(presentationTimestamp);
 
       if (!sample->mKeyframe) {
+        previouslyDroppedSample = nullptr;
         continue;
       }
       if (appendMode == SourceBufferAppendMode::Sequence) {
@@ -1793,8 +1813,10 @@ void TrackBuffersManager::ProcessFrames(TrackBuffer& aSamples,
                    intersection.mStart.ToMicroseconds(),
                    intersection.mEnd.ToMicroseconds());
         sampleInterval = intersection;
-        sample->mDuration = intersection.Length();
       } else {
+        sample->mOriginalPresentationWindow = Some(sampleInterval);
+        sample->mTimecode = decodeTimestamp;
+        previouslyDroppedSample = sample;
         MSE_DEBUGV("frame [%" PRId64 ",%" PRId64
                    "] outside appendWindow [%" PRId64 ",%" PRId64 "] dropping",
                    sampleInterval.mStart.ToMicroseconds(),
@@ -1816,13 +1838,23 @@ void TrackBuffersManager::ProcessFrames(TrackBuffer& aSamples,
         continue;
       }
     }
+    if (previouslyDroppedSample) {
+      MSE_DEBUGV("Adding silent frame");
+      
+      
+      
+      
+      
+      TimeInterval previouslyDroppedSampleInterval =
+          TimeInterval(sampleInterval.mStart,
+                       sampleInterval.mStart + TimeUnit::FromMicroseconds(1));
+      addToSamples(previouslyDroppedSample, previouslyDroppedSampleInterval);
+      previouslyDroppedSample = nullptr;
+      sampleInterval.mStart += previouslyDroppedSampleInterval.Length();
+    }
 
-    samplesRange += sampleInterval;
-    sizeNewSamples += sample->ComputedSizeOfIncludingThis();
-    sample->mTime = sampleInterval.mStart;
     sample->mTimecode = decodeTimestamp;
-    sample->mTrackInfo = trackBuffer.mLastInfo;
-    samples.AppendElement(sample);
+    addToSamples(sample, sampleInterval);
 
     
 
