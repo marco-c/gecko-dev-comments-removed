@@ -44,9 +44,6 @@ class gfxTextPerfMetrics;
 typedef struct FT_LibraryRec_* FT_Library;
 
 namespace mozilla {
-namespace gl {
-class SkiaGLGlue;
-}  
 namespace layers {
 class FrameStats;
 }
@@ -275,15 +272,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   bool SupportsAzureContentForType(mozilla::gfx::BackendType aType) {
     return BackendTypeBit(aType) & mContentBackendBitmask;
   }
-
-  
-  
-  
-  
-  
-  
-  virtual bool AllowOpenGLCanvas();
-  virtual void InitializeSkiaCacheLimits();
 
   static bool AsyncPanZoomEnabled();
 
@@ -615,13 +603,9 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
   mozilla::layers::DiagnosticTypes GetLayerDiagnosticTypes();
 
-  mozilla::gl::SkiaGLGlue* GetSkiaGLGlue();
-  void PurgeSkiaGPUCache();
   static void PurgeSkiaFontCache();
 
   static bool UsesOffMainThreadCompositing();
-
-  bool HasEnoughTotalSystemMemoryForSkiaGL();
 
   
 
@@ -934,7 +918,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   nsTArray<mozilla::layers::FrameStats> mFrameStats;
 
   RefPtr<mozilla::gfx::DrawEventRecorder> mRecorder;
-  RefPtr<mozilla::gl::SkiaGLGlue> mSkiaGlue;
 
   
   

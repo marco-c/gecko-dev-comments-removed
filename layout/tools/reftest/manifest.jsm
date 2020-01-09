@@ -426,13 +426,12 @@ function BuildConditionSandbox(aURL) {
     var info = gfxInfo.getInfo();
     var canvasBackend = readGfxInfo(info, "AzureCanvasBackend");
     var contentBackend = readGfxInfo(info, "AzureContentBackend");
-    var canvasAccelerated = readGfxInfo(info, "AzureCanvasAccelerated");
 
     sandbox.gpuProcess = gfxInfo.usingGPUProcess;
     sandbox.azureCairo = canvasBackend == "cairo";
     sandbox.azureSkia = canvasBackend == "skia";
     sandbox.skiaContent = contentBackend == "skia";
-    sandbox.azureSkiaGL = canvasAccelerated; 
+    sandbox.azureSkiaGL = false;
     
     sandbox.contentSameGfxBackendAsCanvas = contentBackend == canvasBackend
                                             || (contentBackend == "none" && canvasBackend == "cairo");
