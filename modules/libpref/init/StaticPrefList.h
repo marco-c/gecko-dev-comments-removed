@@ -501,17 +501,11 @@ VARCACHE_PREF(
 
 
 
-#ifdef EARLY_BETA_OR_EARLIER
-#define PREF_VALUE true
-#else
-#define PREF_VALUE false
-#endif
 VARCACHE_PREF(
   "dom.targetBlankNoOpener.enabled",
    dom_targetBlankNoOpener_enabled,
-  bool, PREF_VALUE
+  bool, true
 )
-#undef PREF_VALUE
 
 VARCACHE_PREF(
   "dom.disable_open_during_load",
@@ -533,16 +527,6 @@ VARCACHE_PREF(
 VARCACHE_PREF(
   "dom.clearSiteData.enabled",
    dom_clearSiteData_enabled,
-  bool, true
-)
-
-
-
-
-
-VARCACHE_PREF(
-  "extensions.allowPrivateBrowsingByDefault",
-   extensions_allowPrivateBrowsingByDefault,
   bool, true
 )
 
