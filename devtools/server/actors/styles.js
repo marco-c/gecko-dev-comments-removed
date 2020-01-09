@@ -966,6 +966,14 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
 });
 exports.PageStyleActor = PageStyleActor;
 
+const SUPPORTED_RULE_TYPES = [
+  CSSRule.STYLE_RULE,
+  CSSRule.SUPPORTS_RULE,
+  CSSRule.KEYFRAME_RULE,
+  CSSRule.KEYFRAMES_RULE,
+  CSSRule.MEDIA_RULE,
+];
+
 
 
 
@@ -990,9 +998,7 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
       this.type = item.type;
       this.rawRule = item;
       this._computeRuleIndex();
-      if ((this.type === CSSRule.STYLE_RULE ||
-           this.type === CSSRule.KEYFRAME_RULE) &&
-          this.rawRule.parentStyleSheet) {
+      if (SUPPORTED_RULE_TYPES.includes(this.type) && this.rawRule.parentStyleSheet) {
         this.line = InspectorUtils.getRelativeRuleLine(this.rawRule);
         this.column = InspectorUtils.getRuleColumn(this.rawRule);
         this._parentSheet = this.rawRule.parentStyleSheet;
@@ -1371,9 +1377,7 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
 
   getAuthoredCssText: function() {
-    if (!this.canSetRuleText ||
-        (this.type !== CSSRule.STYLE_RULE &&
-         this.type !== CSSRule.KEYFRAME_RULE)) {
+    if (!this.canSetRuleText || !SUPPORTED_RULE_TYPES.includes(this.type)) {
       return Promise.resolve("");
     }
 
@@ -1381,9 +1385,7 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
       return Promise.resolve(this.authoredText);
     }
 
-    const parentStyleSheet =
-        this.pageStyle._sheetRef(this._parentSheet);
-    return parentStyleSheet.getText().then((longStr) => {
+    return this.sheetActor.getText().then((longStr) => {
       const cssText = longStr.str;
       const {text} = getRuleText(cssText, this.line, this.column);
 
@@ -1391,6 +1393,47 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
       this.authoredText = text;
       return this.authoredText;
     });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  getRuleText: async function() {
+    if (this.type === ELEMENT_STYLE) {
+      return Promise.resolve(this.rawNode.getAttribute("style"));
+    }
+
+    if (!SUPPORTED_RULE_TYPES.includes(this.type)) {
+      return Promise.resolve("");
+    }
+
+    const ruleBodyText = await this.getAuthoredCssText();
+    const { str: stylesheetText } = await this.sheetActor.getText();
+    const [start, end] = getSelectorOffsets(stylesheetText, this.line, this.column);
+    const selectorText = stylesheetText.substring(start, end);
+
+    
+    const typeName = CSSRuleTypeName[this.type];
+
+    let text;
+    
+    
+    if (typeName) {
+      text = `${typeName}${selectorText} {${ruleBodyText}}`;
+    } else {
+      text = `${selectorText} {${ruleBodyText}}`;
+    }
+
+    return text;
   },
 
   
