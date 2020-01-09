@@ -95,26 +95,24 @@ class WidgetMouseEventBase : public WidgetInputEvent {
 
  protected:
   WidgetMouseEventBase()
-      : mButton(0),
+      : mPressure(0),
+        mButton(0),
         mButtons(0),
-        mPressure(0),
-        mHitCluster(false)
-        
-        
-        ,
-        mInputSource( 1) {}
+        mInputSource( 1),
+        mHitCluster(false) {}
+  
+  
 
   WidgetMouseEventBase(bool aIsTrusted, EventMessage aMessage,
                        nsIWidget* aWidget, EventClassID aEventClassID)
       : WidgetInputEvent(aIsTrusted, aMessage, aWidget, aEventClassID),
+        mPressure(0),
         mButton(0),
         mButtons(0),
-        mPressure(0),
-        mHitCluster(false)
-        
-        
-        ,
-        mInputSource( 1) {}
+        mInputSource( 1),
+        mHitCluster(false) {}
+  
+  
 
  public:
   virtual WidgetMouseEventBase* AsMouseEventBase() override { return this; }
@@ -122,6 +120,12 @@ class WidgetMouseEventBase : public WidgetInputEvent {
   virtual WidgetEvent* Duplicate() const override {
     MOZ_CRASH("WidgetMouseEventBase must not be most-subclass");
   }
+
+  
+  nsString mRegion;
+
+  
+  float mPressure;
 
   enum buttonType {
     eNoButton = -1,
@@ -151,15 +155,10 @@ class WidgetMouseEventBase : public WidgetInputEvent {
   int16_t mButtons;
 
   
-  float mPressure;
-  
-  bool mHitCluster;
-
-  
   uint16_t mInputSource;
 
   
-  nsString mRegion;
+  bool mHitCluster;
 
   bool IsLeftButtonPressed() const { return !!(mButtons & eLeftButtonFlag); }
   bool IsRightButtonPressed() const { return !!(mButtons & eRightButtonFlag); }
