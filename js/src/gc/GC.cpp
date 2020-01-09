@@ -7954,6 +7954,7 @@ void GCRuntime::onOutOfMallocMemory() {
 
   
   decommitTask.join();
+  nursery().joinDecommitTask();
 
   
   sweepTask.join();
