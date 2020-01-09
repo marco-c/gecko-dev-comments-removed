@@ -12,6 +12,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   GeckoViewTelemetryController: "resource://gre/modules/GeckoViewTelemetryController.jsm",
   L10nRegistry: "resource://gre/modules/L10nRegistry.jsm",
   Preferences: "resource://gre/modules/Preferences.jsm",
+  SafeBrowsing: "resource://gre/modules/SafeBrowsing.jsm",
   Services: "resource://gre/modules/Services.jsm",
 });
 
@@ -124,6 +125,10 @@ GeckoViewStartup.prototype = {
         L10nRegistry.registerSource(greSource);
 
         ChromeUtils.import("resource://gre/modules/NotificationDB.jsm");
+
+        
+        
+        SafeBrowsing.init();
 
         
         EventDispatcher.instance.registerListener(this,
