@@ -969,11 +969,7 @@ pref("security.certerrors.permanentOverride", true);
 pref("browser.privatebrowsing.autostart", false);
 
 
-#ifdef EARLY_BETA_OR_EARLIER
 pref("browser.privatebrowsing.searchUI", true);
-#else
-pref("browser.privatebrowsing.searchUI", false);
-#endif
 
 
 pref("browser.bookmarks.editDialog.showForNewBookmarks", true);
