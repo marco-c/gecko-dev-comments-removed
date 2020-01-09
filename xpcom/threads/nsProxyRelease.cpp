@@ -17,3 +17,14 @@ namespace detail {
 }
 
 }  
+
+extern "C" {
+
+
+
+void NS_ProxyReleaseISupports(const char* aName, nsIEventTarget* aTarget,
+                              nsISupports* aDoomed, bool aAlwaysProxy) {
+  NS_ProxyRelease(aName, aTarget, dont_AddRef(aDoomed), aAlwaysProxy);
+}
+
+}  
