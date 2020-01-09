@@ -1,11 +1,11 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set sw=2 ts=8 et tw=80 : */
 
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
+// HttpLog.h should generally be included first
 #include "HttpLog.h"
 
 #include "nsHttp.h"
@@ -157,9 +157,9 @@ void InterceptStreamListener::Cleanup() {
   mContext = nullptr;
 }
 
-
-
-
+//-----------------------------------------------------------------------------
+// HttpChannelChild
+//-----------------------------------------------------------------------------
 
 HttpChannelChild::HttpChannelChild()
     : HttpAsyncAborter<HttpChannelChild>(this),
@@ -196,14 +196,14 @@ HttpChannelChild::HttpChannelChild()
   mChannelCreationTime = PR_Now();
   mChannelCreationTimestamp = TimeStamp::Now();
   mLastStatusReported =
-      mChannelCreationTimestamp;  
+      mChannelCreationTimestamp;  // in case we enable the profiler after Init()
   mAsyncOpenTime = TimeStamp::Now();
   mEventQ = new ChannelEventQueue(static_cast<nsIHttpChannel*>(this));
 
-  
-  
-  
-  
+  // Ensure that the cookie service is initialized before the first
+  // IPC HTTP channel is created.
+  // We require that the parent cookie service actor exists while
+  // processing HTTP responses.
   RefPtr<CookieServiceChild> cookieService = CookieServiceChild::GetSingleton();
 }
 
@@ -215,15 +215,15 @@ HttpChannelChild::~HttpChannelChild() {
 
 void HttpChannelChild::ReleaseMainThreadOnlyReferences() {
   if (NS_IsMainThread()) {
-    
-    
+    // Already on main thread, let dtor to
+    // take care of releasing references
     return;
   }
 
   nsTArray<nsCOMPtr<nsISupports>> arrayToRelease;
   arrayToRelease.AppendElement(mRedirectChannelChild.forget());
 
-  
+  // To solve multiple inheritence of nsISupports in InterceptStreamListener
   nsCOMPtr<nsIStreamListener> listener = mInterceptListener.forget();
   arrayToRelease.AppendElement(listener.forget());
 
@@ -232,9 +232,9 @@ void HttpChannelChild::ReleaseMainThreadOnlyReferences() {
 
   NS_DispatchToMainThread(new ProxyReleaseRunnable(std::move(arrayToRelease)));
 }
-
-
-
+//-----------------------------------------------------------------------------
+// HttpChannelChild::nsISupports
+//-----------------------------------------------------------------------------
 
 NS_IMPL_ADDREF(HttpChannelChild)
 
@@ -244,7 +244,7 @@ NS_IMETHODIMP_(MozExternalRefCountType) HttpChannelChild::Release() {
     nsresult rv = NS_DispatchToMainThread(NewNonOwningRunnableMethod(
         "HttpChannelChild::Release", this, &HttpChannelChild::Release));
 
-    
+    // Continue Release procedure if failed to dispatch to main thread.
     if (!NS_WARN_IF(NS_FAILED(rv))) {
       return count - 1;
     }
@@ -254,20 +254,20 @@ NS_IMETHODIMP_(MozExternalRefCountType) HttpChannelChild::Release() {
   MOZ_ASSERT(int32_t(count) >= 0, "dup release");
   NS_LOG_RELEASE(this, count, "HttpChannelChild");
 
-  
-  
-  
-  
+  // Normally we Send_delete in OnStopRequest, but when we need to retain the
+  // remote channel for security info IPDL itself holds 1 reference, so we
+  // Send_delete when refCnt==1.  But if !mIPCOpen, then there's nobody to send
+  // to, so we fall through.
   if (mKeptAlive && count == 1 && mIPCOpen) {
     mKeptAlive = false;
-    
-    
+    // We send a message to the parent, which calls SendDelete, and then the
+    // child calling Send__delete__() to finally drop the refcount to 0.
     TrySendDeletingChannel();
     return 1;
   }
 
   if (count == 0) {
-    mRefCnt = 1; 
+    mRefCnt = 1; /* stabilize */
     delete this;
     return 0;
   }
@@ -295,9 +295,9 @@ NS_INTERFACE_MAP_BEGIN(HttpChannelChild)
   NS_INTERFACE_MAP_ENTRY_CONCRETE(HttpChannelChild)
 NS_INTERFACE_MAP_END_INHERITING(HttpBaseChannel)
 
-
-
-
+//-----------------------------------------------------------------------------
+// HttpChannelChild::PHttpChannelChild
+//-----------------------------------------------------------------------------
 
 void HttpChannelChild::AddIPDLReference() {
   MOZ_ASSERT(!mIPCOpen, "Attempt to retain more than one IPDL reference");
@@ -320,8 +320,8 @@ void HttpChannelChild::OnBackgroundChildReady(
   {
     MutexAutoLock lock(mBgChildMutex);
 
-    
-    
+    // mBgChild might be removed or replaced while the original background
+    // channel is inited on STS thread.
     if (mBgChild != aBgChild) {
       return;
     }
@@ -334,9 +334,9 @@ void HttpChannelChild::OnBackgroundChildReady(
 void HttpChannelChild::OnBackgroundChildDestroyed(
     HttpBackgroundChannelChild* aBgChild) {
   LOG(("HttpChannelChild::OnBackgroundChildDestroyed [this=%p]\n", this));
-  
-  
-  
+  // This function might be called during shutdown phase, so OnSocketThread()
+  // might return false even on STS thread. Use IsOnCurrentThreadInfallible()
+  // to get correct information.
   MOZ_ASSERT(gSocketTransportService);
   MOZ_ASSERT(gSocketTransportService->IsOnCurrentThreadInfallible());
 
@@ -344,8 +344,8 @@ void HttpChannelChild::OnBackgroundChildDestroyed(
   {
     MutexAutoLock lock(mBgChildMutex);
 
-    
-    
+    // mBgChild might be removed or replaced while the original background
+    // channel is destroyed on STS thread.
     if (aBgChild != mBgChild) {
       return;
     }
@@ -475,8 +475,8 @@ mozilla::ipc::IPCResult HttpChannelChild::RecvOnStartRequest(
     const ResourceTimingStruct& aTiming) {
   AUTO_PROFILER_LABEL("HttpChannelChild::RecvOnStartRequest", NETWORK);
   LOG(("HttpChannelChild::RecvOnStartRequest [this=%p]\n", this));
-  
-  
+  // mFlushedForDiversion and mDivertingToParent should NEVER be set at this
+  // stage, as they are set in the listener's OnStartRequest.
   MOZ_RELEASE_ASSERT(
       !mFlushedForDiversion,
       "mFlushedForDiversion should be unset before OnStartRequest!");
@@ -494,11 +494,11 @@ mozilla::ipc::IPCResult HttpChannelChild::RecvOnStartRequest(
       altDataLen, aApplyConversion, aTiming));
 
   {
-    
-    
-    
-    
-    
+    // Child's mEventQ is to control the execution order of the IPC messages
+    // from both main thread IPDL and PBackground IPDL.
+    // To guarantee the ordering, PBackground IPC messages that are sent after
+    // OnStartRequest will be throttled until OnStartRequest hits the Child's
+    // mEventQ.
     MutexAutoLock lock(mBgChildMutex);
 
     if (mBgChild) {
@@ -527,8 +527,8 @@ void HttpChannelChild::OnStartRequest(
     const bool& aApplyConversion, const ResourceTimingStruct& aTiming) {
   LOG(("HttpChannelChild::OnStartRequest [this=%p]\n", this));
 
-  
-  
+  // mFlushedForDiversion and mDivertingToParent should NEVER be set at this
+  // stage, as they are set in the listener's OnStartRequest.
   MOZ_RELEASE_ASSERT(
       !mFlushedForDiversion,
       "mFlushedForDiversion should be unset before OnStartRequest!");
@@ -540,7 +540,7 @@ void HttpChannelChild::OnStartRequest(
     mStatus = channelStatus;
   }
 
-  
+  // Cookies headers should not be visible to the child process
   MOZ_ASSERT(!requestHeaders.HasHeader(nsHttp::Cookie));
   MOZ_ASSERT(!nsHttpResponseHead(responseHead).HasHeader(nsHttp::Set_Cookie));
 
@@ -552,7 +552,7 @@ void HttpChannelChild::OnStartRequest(
                                        getter_AddRefs(mSecurityInfo));
     MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv),
                           "Deserializing security info should not fail");
-    Unused << rv;  
+    Unused << rv;  // So we don't get an unused error in release builds.
   }
 
   ipc::MergeParentLoadInfoForwarder(loadInfoForwarder, mLoadInfo);
@@ -577,13 +577,13 @@ void HttpChannelChild::OnStartRequest(
 
   mCacheKey = cacheKey;
 
-  
+  // replace our request headers with what actually got sent in the parent
   mRequestHead.SetHeaders(requestHeaders);
 
-  
-  
-  
-  
+  // Note: this is where we would notify "http-on-examine-response" observers.
+  // We have deliberately disabled this for child processes (see bug 806753)
+  //
+  // gHttpHandler->OnExamineResponse(this);
 
   mTracingEnabled = false;
 
@@ -649,7 +649,7 @@ void HttpChannelChild::DoOnStartRequest(nsIRequest* aRequest,
                                         nsISupports* aContext) {
   LOG(("HttpChannelChild::DoOnStartRequest [this=%p]\n", this));
 
-  
+  // In theory mListener should not be null, but in practice sometimes it is.
   MOZ_ASSERT(mListener);
   if (!mListener) {
     Cancel(NS_ERROR_FAILURE);
@@ -675,10 +675,10 @@ void HttpChannelChild::DoOnStartRequest(nsIRequest* aRequest,
       mLoadGroup->RemoveRequest(this, nullptr, mStatus);
     }
 
-    
-    
-    
-    
+    // If the response has been synthesized in the child, then we are going
+    // be getting OnDataAvailable and OnStopRequest from the synthetic
+    // stream pump.  We need to forward these back to the parent diversion
+    // listener.
     if (mSynthesizedResponse) {
       mListener = new SyntheticDiversionListener(this);
     }
@@ -781,7 +781,7 @@ void HttpChannelChild::OnTransportAndData(const nsresult& channelStatus,
     mStatus = channelStatus;
   }
 
-  
+  // For diversion to parent, just SendDivertOnDataAvailable.
   if (mDivertingToParent) {
     MOZ_ASSERT(NS_IsMainThread());
     MOZ_RELEASE_ASSERT(
@@ -802,8 +802,8 @@ void HttpChannelChild::OnTransportAndData(const nsresult& channelStatus,
         MakeUnique<MaybeDivertOnDataHttpEvent>(this, data, offset, count));
   }
 
-  
-  
+  // Hold queue lock throughout all three calls, else we might process a later
+  // necko msg in between them.
   AutoEventEnqueuer ensureSerialDispatch(mEventQ);
 
   int64_t progressMax;
@@ -813,10 +813,10 @@ void HttpChannelChild::OnTransportAndData(const nsresult& channelStatus,
 
   const int64_t progress = offset + count;
 
-  
-  
-  
-  
+  // OnTransportAndData will be run on retargeted thread if applicable, however
+  // OnStatus/OnProgress event can only be fired on main thread. We need to
+  // dispatch the status/progress event handling back to main thread with the
+  // appropriate event target for networking.
   if (NS_IsMainThread()) {
     DoOnStatus(this, transportStatus);
     DoOnProgress(this, progress, progressMax);
@@ -836,13 +836,13 @@ void HttpChannelChild::OnTransportAndData(const nsresult& channelStatus,
     MOZ_ASSERT(NS_SUCCEEDED(rv));
   }
 
-  
-  
-  
-  
-  
-  
-  
+  // OnDataAvailable
+  //
+  // NOTE: the OnDataAvailable contract requires the client to read all the data
+  // in the inputstream.  This code relies on that ('data' will go away after
+  // this function).  Apparently the previous, non-e10s behavior was to actually
+  // support only reading part of the data, allowing later calls to read the
+  // rest.
   nsCOMPtr<nsIInputStream> stringStream;
   nsresult rv = NS_NewByteInputStream(getter_AddRefs(stringStream), data.get(),
                                       count, NS_ASSIGNMENT_DEPEND);
@@ -860,7 +860,7 @@ void HttpChannelChild::OnTransportAndData(const nsresult& channelStatus,
       if (NS_IsMainThread()) {
         Unused << SendBytesRead(mUnreportBytesRead);
       } else {
-        
+        // PHttpChannel connects to the main thread
         RefPtr<HttpChannelChild> self = this;
         int32_t bytesRead = mUnreportBytesRead;
         nsCOMPtr<nsIEventTarget> neckoTarget = GetNeckoTarget();
@@ -881,15 +881,15 @@ void HttpChannelChild::OnTransportAndData(const nsresult& channelStatus,
 
 bool HttpChannelChild::NeedToReportBytesRead() {
   if (mCacheNeedToReportBytesReadInitialized) {
-    
-    
-    
-    
+    // No need to send SendRecvBytes when diversion starts since the parent
+    // process will suspend for diversion triggered in during OnStrartRequest at
+    // child side, which is earlier. Parent will take over the flow control
+    // after the diverting starts. Sending |SendBytesRead| is redundant.
     return mNeedToReportBytesRead && !mDivertingToParent;
   }
 
-  
-  
+  // Might notify parent for partial cache, and the IPC message is ignored by
+  // parent.
   int64_t contentLength = -1;
   if (gHttpHandler->SendWindowSize() == 0 || mIsFromCache ||
       NS_FAILED(GetContentLength(&contentLength)) ||
@@ -907,19 +907,19 @@ void HttpChannelChild::DoOnStatus(nsIRequest* aRequest, nsresult status) {
 
   if (mCanceled) return;
 
-  
+  // cache the progress sink so we don't have to query for it each time.
   if (!mProgressSink) GetCallback(mProgressSink);
 
-  
-  
+  // Temporary fix for bug 1116124
+  // See 1124971 - Child removes LOAD_BACKGROUND flag from channel
   if (status == NS_OK) return;
 
-  
-  
+  // block status/progress after Cancel or OnStopRequest has been called,
+  // or if channel has LOAD_BACKGROUND set.
   if (mProgressSink && NS_SUCCEEDED(mStatus) && mIsPending &&
       !(mLoadFlags & LOAD_BACKGROUND)) {
-    
-    
+    // OnStatus
+    //
     MOZ_ASSERT(status == NS_NET_STATUS_RECEIVING_FROM ||
                status == NS_NET_STATUS_READING);
 
@@ -937,15 +937,15 @@ void HttpChannelChild::DoOnProgress(nsIRequest* aRequest, int64_t progress,
 
   if (mCanceled) return;
 
-  
+  // cache the progress sink so we don't have to query for it each time.
   if (!mProgressSink) GetCallback(mProgressSink);
 
-  
-  
+  // block status/progress after Cancel or OnStopRequest has been called,
+  // or if channel has LOAD_BACKGROUND set.
   if (mProgressSink && NS_SUCCEEDED(mStatus) && mIsPending &&
       !(mLoadFlags & LOAD_BACKGROUND)) {
-    
-    
+    // OnProgress
+    //
     if (progress > 0) {
       mProgressSink->OnProgress(aRequest, nullptr, progress, progressMax);
     }
@@ -1064,12 +1064,12 @@ void HttpChannelChild::OnStopRequest(
   mTransactionTimings.responseStart = timing.responseStart;
   mTransactionTimings.responseEnd = timing.responseEnd;
 
-  
-  
-  
-  
-  
-  
+  // Do not overwrite or adjust the original mAsyncOpenTime by timing.fetchStart
+  // We must use the original child process time in order to account for child
+  // side work and IPC transit overhead.
+  // XXX: This depends on TimeStamp being equivalent across processes.
+  // This is true for modern hardware but for older platforms it is not always
+  // true.
 
   mRedirectStartTimeStamp = timing.redirectStart;
   mRedirectEndTimeStamp = timing.redirectEnd;
@@ -1095,22 +1095,22 @@ void HttpChannelChild::OnStopRequest(
 
   DoPreOnStopRequest(channelStatus);
 
-  {  
-    
-    
+  {  // We must flush the queue before we Send__delete__
+    // (although we really shouldn't receive any msgs after OnStop),
+    // so make sure this goes out of scope before then.
     AutoEventEnqueuer ensureSerialDispatch(mEventQ);
 
     DoOnStopRequest(this, channelStatus, mListenerContext);
-    
+    // DoOnStopRequest() calls ReleaseListeners()
   }
 
-  
-  
-  
-  
-  
-  
-  
+  // If unknownDecoder is involved and the received content is short we will
+  // know whether we need to divert to parent only after OnStopRequest of the
+  // listeners chain is called in DoOnStopRequest. At that moment
+  // unknownDecoder will call OnStartRequest of the real listeners of the
+  // channel including the OnStopRequest of UrlLoader which decides whether we
+  // need to divert to parent.
+  // If we are diverting to parent we should not do a cleanup.
   if (mDivertingToParent) {
     LOG(
         ("HttpChannelChild::OnStopRequest  - We are diverting to parent, "
@@ -1120,27 +1120,27 @@ void HttpChannelChild::OnStopRequest(
 
   CleanupBackgroundChannel();
 
-  
-  
-  
-  
-  
+  // If there is a possibility we might want to write alt data to the cache
+  // entry, we keep the channel alive. We still send the DocumentChannelCleanup
+  // message but request the cache entry to be kept by the parent.
+  // If the channel has failed, the cache entry is in a non-writtable state and
+  // we want to release it to not block following consumers.
   if (NS_SUCCEEDED(channelStatus) && !mPreferredCachedAltDataTypes.IsEmpty()) {
     mKeptAlive = true;
-    SendDocumentChannelCleanup(false);  
+    SendDocumentChannelCleanup(false);  // don't clear cache entry
     return;
   }
 
   if (mLoadFlags & LOAD_DOCUMENT_URI) {
-    
-    
+    // Keep IPDL channel open, but only for updating security info.
+    // If IPDL is already closed, then do nothing.
     if (mIPCOpen) {
       mKeptAlive = true;
       SendDocumentChannelCleanup(true);
     }
   } else {
-    
-    
+    // The parent process will respond by sending a DeleteSelf message and
+    // making sure not to send any more messages after that.
     TrySendDeletingChannel();
   }
 }
@@ -1165,13 +1165,13 @@ void HttpChannelChild::DoPreOnStopRequest(nsresult aStatus) {
 void HttpChannelChild::CollectOMTTelemetry() {
   MOZ_ASSERT(NS_IsMainThread());
 
-  
-  
+  // Only collect telemetry for HTTP channel that is loaded successfully and
+  // completely.
   if (mCanceled || NS_FAILED(mStatus)) {
     return;
   }
 
-  
+  // Use content policy type to accumulate data by usage.
   nsContentPolicyType type = mLoadInfo ? mLoadInfo->InternalContentPolicyType()
                                        : nsIContentPolicy::TYPE_OTHER;
 
@@ -1188,9 +1188,9 @@ void HttpChannelChild::DoOnStopRequest(nsIRequest* aRequest,
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!mIsPending);
 
-  
-  
-  
+  // NB: We use aChannelStatus here instead of mStatus because if there was an
+  // nsCORSListenerProxy on this request, it will override the tracking
+  // protection's return value.
   if (UrlClassifierFeatureFactory::IsClassifierBlockingErrorCode(
           aChannelStatus) ||
       aChannelStatus == NS_ERROR_MALWARE_URI ||
@@ -1215,21 +1215,21 @@ void HttpChannelChild::DoOnStopRequest(nsIRequest* aRequest,
 
   MOZ_ASSERT(!mOnStopRequestCalled, "We should not call OnStopRequest twice");
 
-  
+  // In theory mListener should not be null, but in practice sometimes it is.
   MOZ_ASSERT(mListener);
   if (mListener) {
     mListener->OnStopRequest(aRequest, aContext, mStatus);
   }
   mOnStopRequestCalled = true;
 
-  
+  // notify "http-on-stop-connect" observers
   gHttpHandler->OnStopRequest(this);
 
   ReleaseListeners();
 
-  
-  
-  
+  // If a preferred alt-data type was set, the parent would hold a reference to
+  // the cache entry in case the child calls openAlternativeOutputStream().
+  // (see nsHttpChannel::OnStopRequest)
   if (!mPreferredCachedAltDataTypes.IsEmpty()) {
     mAltDataCacheEntryAvailable = mCacheEntryAvailable;
   }
@@ -1268,14 +1268,14 @@ void HttpChannelChild::OnProgress(const int64_t& progress,
 
   if (mCanceled) return;
 
-  
+  // cache the progress sink so we don't have to query for it each time.
   if (!mProgressSink) {
     GetCallback(mProgressSink);
   }
 
   AutoEventEnqueuer ensureSerialDispatch(mEventQ);
 
-  
+  // Block socket status event after Cancel or OnStopRequest has been called.
   if (mProgressSink && NS_SUCCEEDED(mStatus) && mIsPending) {
     if (progress > 0) {
       mProgressSink->OnProgress(this, nullptr, progress, progressMax);
@@ -1307,13 +1307,13 @@ void HttpChannelChild::OnStatus(const nsresult& status) {
 
   if (mCanceled) return;
 
-  
+  // cache the progress sink so we don't have to query for it each time.
   if (!mProgressSink) GetCallback(mProgressSink);
 
   AutoEventEnqueuer ensureSerialDispatch(mEventQ);
 
-  
-  
+  // block socket status event after Cancel or OnStopRequest has been called,
+  // or if channel has LOAD_BACKGROUND set
   if (mProgressSink && NS_SUCCEEDED(mStatus) && mIsPending &&
       !(mLoadFlags & LOAD_BACKGROUND)) {
     nsAutoCString host;
@@ -1341,13 +1341,13 @@ mozilla::ipc::IPCResult HttpChannelChild::RecvFailedAsyncOpen(
   return IPC_OK();
 }
 
-
-
-
+// We need to have an implementation of this function just so that we can keep
+// all references to mCallOnResume of type HttpChannelChild:  it's not OK in C++
+// to set a member function ptr to a base class function.
 void HttpChannelChild::HandleAsyncAbort() {
   HttpAsyncAborter<HttpChannelChild>::HandleAsyncAbort();
 
-  
+  // Ignore all the messages from background channel after channel aborted.
   CleanupBackgroundChannel();
 }
 
@@ -1356,16 +1356,16 @@ void HttpChannelChild::FailedAsyncOpen(const nsresult& status) {
        static_cast<uint32_t>(status)));
   MOZ_ASSERT(NS_IsMainThread());
 
-  
-  
-  
+  // Might be called twice in race condition in theory.
+  // (one by RecvFailedAsyncOpen, another by
+  // HttpBackgroundChannelChild::ActorFailed)
   if (NS_WARN_IF(NS_FAILED(mStatus))) {
     return;
   }
 
   mStatus = status;
 
-  
+  // We're already being called from IPDL, therefore already "async"
   HandleAsyncAbort();
 
   if (mIPCOpen) {
@@ -1452,7 +1452,7 @@ void HttpChannelChild::OverrideRunnable::OverrideWithSynthesizedResponse() {
 
 NS_IMETHODIMP
 HttpChannelChild::OverrideRunnable::Run() {
-  
+  // Check to see if the channel was canceled in the middle of the redirect.
   nsresult rv = NS_OK;
   Unused << mChannel->GetStatus(&rv);
   if (NS_FAILED(rv)) {
@@ -1469,11 +1469,11 @@ HttpChannelChild::OverrideRunnable::Run() {
 
   bool ret = mChannel->Redirect3Complete(this);
 
-  
-  
-  
-  
-  
+  // If the method returns false, it means the IPDL connection is being
+  // asyncly torn down and reopened, and OverrideWithSynthesizedResponse
+  // will be called later from FinishInterceptedRedirect. This object will
+  // be assigned to HttpChannelChild::mOverrideRunnable in order to do so.
+  // If it is true, we can call the method right now.
   if (ret) {
     OverrideWithSynthesizedResponse();
   }
@@ -1482,19 +1482,19 @@ HttpChannelChild::OverrideRunnable::Run() {
 }
 
 mozilla::ipc::IPCResult HttpChannelChild::RecvFinishInterceptedRedirect() {
-  
+  // Hold a ref to this to keep it from being deleted by Send__delete__()
   RefPtr<HttpChannelChild> self(this);
   Send__delete__(this);
 
   {
-    
-    
+    // Reset the event target since the IPC actor is about to be destroyed.
+    // Following channel event should be handled on main thread.
     MutexAutoLock lock(mEventTargetMutex);
     mNeckoTarget = nullptr;
   }
 
-  
-  
+  // The IPDL connection was torn down by a interception logic in
+  // CompleteRedirectSetup, and we need to call FinishInterceptedRedirect.
   nsCOMPtr<nsIEventTarget> neckoTarget = GetNeckoTarget();
   MOZ_ASSERT(neckoTarget);
 
@@ -1580,13 +1580,13 @@ mozilla::ipc::IPCResult HttpChannelChild::RecvRedirect1Begin(
     const nsHttpResponseHead& responseHead,
     const nsCString& securityInfoSerialization, const uint64_t& channelId,
     const NetAddr& oldPeerAddr) {
-  
+  // TODO: handle security info
   LOG(("HttpChannelChild::RecvRedirect1Begin [this=%p]\n", this));
-  
-  
+  // We set peer address of child to the old peer,
+  // Then it will be updated to new peer in OnStartRequest
   mPeerAddr = oldPeerAddr;
 
-  
+  // Cookies headers should not be visible to the child process
   MOZ_ASSERT(!nsHttpResponseHead(responseHead).HasHeader(nsHttp::Set_Cookie));
 
   mEventQ->RunOrEnqueue(new Redirect1Event(
@@ -1610,13 +1610,13 @@ nsresult HttpChannelChild::SetupRedirect(nsIURI* uri,
   nsCOMPtr<nsILoadInfo> redirectLoadInfo =
       CloneLoadInfoForRedirect(uri, redirectFlags);
   rv = NS_NewChannelInternal(getter_AddRefs(newChannel), uri, redirectLoadInfo,
-                             nullptr,  
-                             nullptr,  
-                             nullptr,  
+                             nullptr,  // PerformanceStorage
+                             nullptr,  // aLoadGroup
+                             nullptr,  // aCallbacks
                              nsIRequest::LOAD_NORMAL, ioService);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
+  // We won't get OnStartRequest, set cookies here.
   mResponseHead = new nsHttpResponseHead(*responseHead);
 
   bool rewriteToGET = HttpBaseChannel::ShouldRewriteRedirectToGET(
@@ -1631,20 +1631,20 @@ nsresult HttpChannelChild::SetupRedirect(nsIURI* uri,
     bool shouldUpgrade = false;
     auto channelChild = static_cast<HttpChannelChild*>(httpChannelChild.get());
     if (mShouldInterceptSubsequentRedirect) {
-      
-      
-      
+      // In the case where there was a synthesized response that caused a
+      // redirection, we must force the new channel to intercept the request in
+      // the parent before a network transaction is initiated.
       rv = httpChannelChild->ForceIntercepted(false, false);
     } else if (mRedirectMode == nsIHttpChannelInternal::REDIRECT_MODE_MANUAL &&
                ((redirectFlags & (nsIChannelEventSink::REDIRECT_TEMPORARY |
                                   nsIChannelEventSink::REDIRECT_PERMANENT)) !=
                 0) &&
                channelChild->ShouldInterceptURI(uri, shouldUpgrade)) {
-      
-      
-      
-      
-      
+      // In the case where the redirect mode is manual, we need to check whether
+      // the post-redirect channel needs to be intercepted.  If that is the
+      // case, force the new channel to intercept the request in the parent
+      // similar to the case above, but also remember that ShouldInterceptURI()
+      // returned true to avoid calling it a second time.
       rv = httpChannelChild->ForceIntercepted(true, shouldUpgrade);
     }
     MOZ_ASSERT(NS_SUCCEEDED(rv));
@@ -1690,7 +1690,7 @@ void HttpChannelChild::Redirect1Begin(
     MOZ_ALWAYS_SUCCEEDS(newChannel->SetLoadFlags(newLoadFlags));
 
     if (mRedirectChannelChild) {
-      
+      // Set the channelId allocated in parent to the child instance
       nsCOMPtr<nsIHttpChannel> httpChannel =
           do_QueryInterface(mRedirectChannelChild);
       if (httpChannel) {
@@ -1715,13 +1715,13 @@ void HttpChannelChild::BeginNonIPCRedirect(
     bool aResponseRedirected) {
   LOG(("HttpChannelChild::BeginNonIPCRedirect [this=%p]\n", this));
 
-  
-  
+  // This method is only used by child-side service workers.  It should not be
+  // used by new code.  We want to remove it in the future.
   MOZ_DIAGNOSTIC_ASSERT(mSynthesizedResponse);
 
-  
-  
-  
+  // If the response has been redirected, propagate all the URLs to content.
+  // Thus, the exact value of the redirect flag does not matter as long as it's
+  // not REDIRECT_INTERNAL.
   const uint32_t redirectFlag = aResponseRedirected
                                     ? nsIChannelEventSink::REDIRECT_TEMPORARY
                                     : nsIChannelEventSink::REDIRECT_INTERNAL;
@@ -1731,11 +1731,11 @@ void HttpChannelChild::BeginNonIPCRedirect(
                               getter_AddRefs(newChannel));
 
   if (NS_SUCCEEDED(rv)) {
-    
-    
-    
-    
-    
+    // Ensure that the new channel shares the original channel's security
+    // information, since it won't be provided via IPC. In particular, if the
+    // target of this redirect is a synthesized response that has its own
+    // security info, the pre-redirect channel has already received it and it
+    // must be propagated to the post-redirect channel.
     nsCOMPtr<nsIHttpChannelChild> channelChild = do_QueryInterface(newChannel);
     if (mSecurityInfo && channelChild) {
       HttpChannelChild* httpChannelChild =
@@ -1743,12 +1743,12 @@ void HttpChannelChild::BeginNonIPCRedirect(
       httpChannelChild->OverrideSecurityInfoForNonIPCRedirect(mSecurityInfo);
     }
 
-    
-    
-    
-    
-    
-    
+    // Normally we don't propagate the LoadInfo's service worker tainting
+    // synthesis flag on redirect.  A real redirect normally will want to allow
+    // normal tainting to proceed from its starting taint.  For this particular
+    // redirect, though, we are performing a redirect to communicate the URL of
+    // the service worker synthetic response itself.  This redirect still
+    // represents the synthetic response, so we must preserve the flag.
     if (mLoadInfo && mLoadInfo->GetServiceWorkerTaintingSynthesized()) {
       nsCOMPtr<nsILoadInfo> newChannelLoadInfo;
       Unused << newChannel->GetLoadInfo(getter_AddRefs(newChannelLoadInfo));
@@ -1807,18 +1807,22 @@ void HttpChannelChild::ProcessFlushedForDiversion() {
   mEventQ->RunOrEnqueue(new HttpFlushedForDiversionEvent(this), true);
 }
 
-void HttpChannelChild::ProcessNotifyTrackingProtectionDisabled() {
-  LOG(("HttpChannelChild::ProcessNotifyTrackingProtectionDisabled [this=%p]\n",
-       this));
+void HttpChannelChild::ProcessNotifyChannelClassifierProtectionDisabled(
+    uint32_t aAcceptedReason) {
+  LOG(
+      ("HttpChannelChild::ProcessNotifyChannelClassifierProtectionDisabled "
+       "[this=%p aAcceptedReason=%" PRIu32 "]\n",
+       this, aAcceptedReason));
   MOZ_ASSERT(OnSocketThread());
 
   RefPtr<HttpChannelChild> self = this;
   nsCOMPtr<nsIEventTarget> neckoTarget = GetNeckoTarget();
   neckoTarget->Dispatch(
       NS_NewRunnableFunction(
-          "UrlClassifierCommon::NotifyTrackingProtectionDisabled",
-          [self]() {
-            UrlClassifierCommon::NotifyTrackingProtectionDisabled(self);
+          "AntiTrackingCommon::NotifyChannelClassifierProtectionDisabled",
+          [self, aAcceptedReason]() {
+            UrlClassifierCommon::NotifyChannelClassifierProtectionDisabled(
+                self, aAcceptedReason);
           }),
       NS_DISPATCH_NORMAL);
 }
@@ -1881,13 +1885,13 @@ void HttpChannelChild::FlushedForDiversion() {
   LOG(("HttpChannelChild::FlushedForDiversion [this=%p]\n", this));
   MOZ_RELEASE_ASSERT(mDivertingToParent);
 
-  
-  
-  
+  // Once this is set, it should not be unset before HttpChannelChild is taken
+  // down. After it is set, no OnStart/OnData/OnStop callbacks should be
+  // received from the parent channel, nor dequeued from the ChannelEventQueue.
   mFlushedForDiversion = true;
 
-  
-  
+  // If we're synthesized, it's up to the SyntheticDiversionListener to invoke
+  // SendDivertComplete after it has sent the DivertOnStopRequestMessage.
   if (!mSynthesizedResponse) {
     SendDivertComplete();
   }
@@ -1912,8 +1916,8 @@ void HttpChannelChild::ProcessDivertMessages() {
   MOZ_ASSERT(OnSocketThread());
   MOZ_RELEASE_ASSERT(mDivertingToParent);
 
-  
-  
+  // DivertTo() has been called on parent, so we can now start sending queued
+  // IPDL messages back to parent listener.
   nsCOMPtr<nsIEventTarget> neckoTarget = GetNeckoTarget();
   MOZ_ASSERT(neckoTarget);
   nsresult rv =
@@ -1924,11 +1928,11 @@ void HttpChannelChild::ProcessDivertMessages() {
   MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv));
 }
 
-
-
-
-
-
+// Returns true if has actually completed the redirect and cleaned up the
+// channel, or false the interception logic kicked in and we need to asyncly
+// call FinishInterceptedRedirect and CleanupRedirectingChannel.
+// The argument is an optional OverrideRunnable that we pass to the redirected
+// channel.
 bool HttpChannelChild::Redirect3Complete(OverrideRunnable* aRunnable) {
   LOG(("HttpChannelChild::Redirect3Complete [this=%p]\n", this));
   MOZ_ASSERT(NS_IsMainThread());
@@ -1937,7 +1941,7 @@ bool HttpChannelChild::Redirect3Complete(OverrideRunnable* aRunnable) {
   nsCOMPtr<nsIHttpChannelChild> chan = do_QueryInterface(mRedirectChannelChild);
   RefPtr<HttpChannelChild> httpChannelChild =
       static_cast<HttpChannelChild*>(chan.get());
-  
+  // Chrome channel has been AsyncOpen'd.  Reflect this in child.
   if (mRedirectChannelChild) {
     if (httpChannelChild) {
       httpChannelChild->mOverrideRunnable = aRunnable;
@@ -1948,8 +1952,8 @@ bool HttpChannelChild::Redirect3Complete(OverrideRunnable* aRunnable) {
   }
 
   if (!httpChannelChild || !httpChannelChild->mShouldParentIntercept) {
-    
-    
+    // The redirect channel either isn't a HttpChannelChild, or the interception
+    // logic wasn't triggered, so we can clean it up right here.
     CleanupRedirectingChannel(rv);
     if (httpChannelChild) {
       httpChannelChild->mOverrideRunnable = nullptr;
@@ -1966,7 +1970,7 @@ mozilla::ipc::IPCResult HttpChannelChild::RecvCancelRedirected() {
 }
 
 void HttpChannelChild::CleanupRedirectingChannel(nsresult rv) {
-  
+  // Redirecting to new channel: shut this down and init new channel
   if (mLoadGroup) mLoadGroup->RemoveRequest(this, nullptr, NS_BINDING_ABORTED);
 
   if (NS_SUCCEEDED(rv)) {
@@ -1982,7 +1986,7 @@ void HttpChannelChild::CleanupRedirectingChannel(nsresult rv) {
     NS_WARNING("CompleteRedirectSetup failed, HttpChannelChild already open?");
   }
 
-  
+  // Release ref to new channel.
   mRedirectChannelChild = nullptr;
 
   if (mInterceptListener) {
@@ -1992,9 +1996,9 @@ void HttpChannelChild::CleanupRedirectingChannel(nsresult rv) {
   ReleaseListeners();
 }
 
-
-
-
+//-----------------------------------------------------------------------------
+// HttpChannelChild::nsIChildChannel
+//-----------------------------------------------------------------------------
 
 NS_IMETHODIMP
 HttpChannelChild::ConnectParent(uint32_t registrarId) {
@@ -2022,13 +2026,13 @@ HttpChannelChild::ConnectParent(uint32_t registrarId) {
 
   HttpBaseChannel::SetDocshellUserAgentOverride();
 
-  
-  
+  // The socket transport in the chrome process now holds a logical ref to us
+  // until OnStopRequest, or we do a redirect, or we hit an IPDL error.
   AddIPDLReference();
 
-  
-  
-  
+  // This must happen before the constructor message is sent. Otherwise messages
+  // from the parent could arrive quickly and be delivered to the wrong event
+  // target.
   SetEventTarget();
 
   HttpChannelConnectArgs connectArgs(registrarId, mShouldParentIntercept);
@@ -2081,56 +2085,56 @@ HttpChannelChild::CompleteRedirectSetup(nsIStreamListener* listener,
   NS_ENSURE_TRUE(!mWasOpened, NS_ERROR_ALREADY_OPENED);
 
   if (mShouldParentIntercept) {
-    
-    
-    
-    
+    // This is a redirected channel, and the corresponding parent channel has
+    // started AsyncOpen but was intercepted and suspended. We must tear it down
+    // and start fresh - we will intercept the child channel this time, before
+    // creating a new parent channel unnecessarily.
 
-    
-    
-    
-    
-    
-    
-    
-    
+    // Since this method is called from RecvRedirect3Complete which itself is
+    // called from either OnRedirectVerifyCallback via OverrideRunnable, or from
+    // RecvRedirect3Complete. The order of events must always be:
+    //  1. Teardown the IPDL connection
+    //  2. AsyncOpen the connection again
+    //  3. Cleanup the redirecting channel (the one calling Redirect3Complete)
+    //  4. [optional] Call OverrideWithSynthesizedResponse on the redirected
+    //  channel if the call came from OverrideRunnable.
     mInterceptedRedirectListener = listener;
     mInterceptedRedirectContext = aContext;
 
-    
-    
-    
+    // This will send a message to the parent notifying it that we are closing
+    // down. After closing the IPC channel, we will proceed to execute
+    // FinishInterceptedRedirect() which AsyncOpen's the channel again.
     SendFinishInterceptedRedirect();
 
-    
-    
+    // XXX valentin: The interception logic should be rewritten to avoid
+    // calling AsyncOpen on the channel _after_ we call Send__delete__()
     return NS_OK;
   }
 
-  
-
-
-
-
-
+  /*
+   * No need to check for cancel: we don't get here if nsHttpChannel canceled
+   * before AsyncOpen(); if it's canceled after that, OnStart/Stop will just
+   * get called with error code as usual.  So just setup mListener and make the
+   * channel reflect AsyncOpen'ed state.
+   */
 
   mIsPending = true;
   mWasOpened = true;
   mListener = listener;
   mListenerContext = aContext;
 
-  
+  // add ourselves to the load group.
   if (mLoadGroup) mLoadGroup->AddRequest(this, nullptr);
 
-  
-  
-  
+  // We already have an open IPDL connection to the parent. If on-modify-request
+  // listeners or load group observers canceled us, let the parent handle it
+  // and send it back to us naturally.
   return NS_OK;
 }
 
-
-
-
+//-----------------------------------------------------------------------------
+// HttpChannelChild::nsIAsyncVerifyRedirectCallback
+//-----------------------------------------------------------------------------
 
 NS_IMETHODIMP
 HttpChannelChild::OnRedirectVerifyCallback(nsresult result) {
@@ -2147,18 +2151,18 @@ HttpChannelChild::OnRedirectVerifyCallback(nsresult result) {
       do_QueryInterface(mRedirectChannelChild);
 
   if (NS_SUCCEEDED(result) && !mRedirectChannelChild) {
-    
-    
-    
-    
-    
-    
+    // mRedirectChannelChild doesn't exist means we're redirecting to a protocol
+    // that doesn't implement nsIChildChannel. The redirect result should be set
+    // as failed by veto listeners and shouldn't enter this condition. As the
+    // last resort, we synthesize the error result as NS_ERROR_DOM_BAD_URI here
+    // to let nsHttpChannel::ContinueProcessResponse2 know it's redirecting to
+    // another protocol and throw an error.
     LOG(("  redirecting to a protocol that doesn't implement nsIChildChannel"));
     result = NS_ERROR_DOM_BAD_URI;
   }
 
   if (newHttpChannel) {
-    
+    // Must not be called until after redirect observers called.
     newHttpChannel->SetOriginalURI(mOriginalURI);
 
     rv = newHttpChannel->GetReferrerPolicy(&referrerPolicy);
@@ -2175,8 +2179,8 @@ HttpChannelChild::OnRedirectVerifyCallback(nsresult result) {
         do_QueryInterface(mRedirectChannelChild);
     RefPtr<HttpChannelChild> redirectedChannel =
         static_cast<HttpChannelChild*>(httpChannelChild.get());
-    
-    
+    // redirectChannel will be NULL if mRedirectChannelChild isn't a
+    // nsIHttpChannelChild (it could be a DataChannelChild).
 
     RefPtr<InterceptStreamListener> streamListener =
         new InterceptStreamListener(redirectedChannel, mListenerContext);
@@ -2211,17 +2215,17 @@ HttpChannelChild::OnRedirectVerifyCallback(nsresult result) {
     newHttpChannelChild->GetClientSetCorsPreflightParameters(corsPreflightArgs);
   }
 
-  
-
+  /* If the redirect was canceled, bypass OMR and send an empty API
+   * redirect URI */
   SerializeURI(nullptr, redirectURI);
 
   if (NS_SUCCEEDED(result)) {
-    
-    
-    
-    
-    
-    
+    // Note: this is where we would notify "http-on-modify-response" observers.
+    // We have deliberately disabled this for child processes (see bug 806753)
+    //
+    // After we verify redirect, nsHttpChannel may hit the network: must give
+    // "http-on-modify-request" observers the chance to cancel before that.
+    // base->CallOnModifyRequestObservers();
 
     nsCOMPtr<nsIHttpChannelInternal> newHttpChannelInternal =
         do_QueryInterface(mRedirectChannelChild);
@@ -2230,8 +2234,8 @@ HttpChannelChild::OnRedirectVerifyCallback(nsresult result) {
       rv = newHttpChannelInternal->GetApiRedirectToURI(
           getter_AddRefs(apiRedirectURI));
       if (NS_SUCCEEDED(rv) && apiRedirectURI) {
-        
-
+        /* If there was an API redirect of this channel, we need to send it
+         * up here, since it can't be sent via SendAsyncOpen. */
         SerializeURI(apiRedirectURI, redirectURI);
       }
     }
@@ -2268,9 +2272,9 @@ HttpChannelChild::OnRedirectVerifyCallback(nsresult result) {
   return NS_OK;
 }
 
-
-
-
+//-----------------------------------------------------------------------------
+// HttpChannelChild::nsIRequest
+//-----------------------------------------------------------------------------
 
 NS_IMETHODIMP
 HttpChannelChild::Cancel(nsresult status) {
@@ -2281,22 +2285,22 @@ HttpChannelChild::Cancel(nsresult status) {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (!mCanceled) {
-    
-    
+    // If this cancel occurs before nsHttpChannel has been set up, AsyncOpen
+    // is responsible for cleaning up.
     mCanceled = true;
     mStatus = status;
     if (RemoteChannelExists()) {
       SendCancel(status);
     }
 
-    
-    
+    // If the channel is intercepted and already pumping, then just
+    // cancel the pump.  This will call OnStopRequest().
     if (mSynthesizedResponsePump) {
       mSynthesizedResponsePump->Cancel(status);
     }
 
-    
-    
+    // If we are canceled while intercepting, but not yet pumping, then
+    // we must call AsyncAbort() to trigger OnStopRequest().
     else if (mInterceptListener) {
       mInterceptListener->Cleanup();
       mInterceptListener = nullptr;
@@ -2315,9 +2319,9 @@ HttpChannelChild::Suspend() {
   NS_ENSURE_TRUE(RemoteChannelExists() || mInterceptListener,
                  NS_ERROR_NOT_AVAILABLE);
 
-  
-  
-  
+  // SendSuspend only once, when suspend goes from 0 to 1.
+  // Don't SendSuspend at all if we're diverting callbacks to the parent;
+  // suspend will be called at the correct time in the parent itself.
   if (!mSuspendCount++ && !mDivertingToParent) {
     if (RemoteChannelExists()) {
       SendSuspend();
@@ -2344,10 +2348,10 @@ HttpChannelChild::Resume() {
 
   nsresult rv = NS_OK;
 
-  
-  
-  
-  
+  // SendResume only once, when suspend count drops to 0.
+  // Don't SendResume at all if we're diverting callbacks to the parent (unless
+  // suspend was sent earlier); otherwise, resume will be called at the correct
+  // time in the parent itself.
   if (!--mSuspendCount && (!mDivertingToParent || mSuspendSent)) {
     if (RemoteChannelExists()) {
       SendResume();
@@ -2374,9 +2378,9 @@ HttpChannelChild::Resume() {
   return rv;
 }
 
-
-
-
+//-----------------------------------------------------------------------------
+// HttpChannelChild::nsIChannel
+//-----------------------------------------------------------------------------
 
 NS_IMETHODIMP
 HttpChannelChild::GetSecurityInfo(nsISupports** aSecurityInfo) {
@@ -2400,9 +2404,9 @@ HttpChannelChild::AsyncOpen(nsIStreamListener* listener,
   LogCallingScriptLocation(this);
 
   if (!mLoadGroup && !mCallbacks) {
-    
-    
-    
+    // If no one called SetLoadGroup or SetNotificationCallbacks, the private
+    // state has not been updated on PrivateBrowsingChannel (which we derive
+    // from) Hence, we have to call UpdatePrivateBrowsing() here
     UpdatePrivateBrowsing();
   }
 
@@ -2435,8 +2439,8 @@ HttpChannelChild::AsyncOpen(nsIStreamListener* listener,
   }
 #endif
 
-  
-  
+  // Port checked in parent, but duplicate here so we can return with error
+  // immediately
   nsresult rv;
   rv = NS_CheckPortSafety(mURI);
   if (NS_FAILED(rv)) {
@@ -2452,15 +2456,15 @@ HttpChannelChild::AsyncOpen(nsIStreamListener* listener,
   rv = AddCookiesToRequest();
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 
-  
-  
-  
-  
+  //
+  // NOTE: From now on we must return NS_OK; all errors must be handled via
+  // OnStart/OnStopRequest
+  //
 
-  
-  
-  
-  
+  // We notify "http-on-opening-request" observers in the child
+  // process so that devtools can capture a stack trace at the
+  // appropriate spot.  See bug 806753 for some information about why
+  // other http-* notifications are disabled in child processes.
   gHttpHandler->OnOpeningRequest(this);
 
   mLastStatusReported = TimeStamp::Now();
@@ -2474,17 +2478,17 @@ HttpChannelChild::AsyncOpen(nsIStreamListener* listener,
   mListener = listener;
   mListenerContext = aContext;
 
-  
+  // add ourselves to the load group.
   if (mLoadGroup) mLoadGroup->AddRequest(this, nullptr);
 
   if (mCanceled) {
-    
-    
-    
+    // We may have been canceled already, either by on-modify-request
+    // listeners or by load group observers; in that case, don't create IPDL
+    // connection. See nsHttpChannel::AsyncOpen().
     return NS_OK;
   }
 
-  
+  // Set user agent override from docshell
   HttpBaseChannel::SetDocshellUserAgentOverride();
 
   MOZ_ASSERT_IF(mPostRedirectChannelShouldUpgrade,
@@ -2526,12 +2530,12 @@ HttpChannelChild::AsyncOpen(nsIStreamListener* listener,
     }
 
     if (state == TrackingDummyChannel::eAsyncNeeded) {
-      
+      // The async callback will be executed eventually.
       return NS_OK;
     }
 
     MOZ_ASSERT(state == TrackingDummyChannel::eStorageDenied);
-    
+    // Fall through
   }
 
   return ContinueAsyncOpen();
@@ -2549,8 +2553,8 @@ HttpChannelChild::AsyncOpen2(nsIStreamListener* aListener) {
   return AsyncOpen(listener, nullptr);
 }
 
-
-
+// Assigns an nsIEventTarget to our IPDL actor so that IPC messages are sent to
+// the correct DocGroup/TabGroup.
 void HttpChannelChild::SetEventTarget() {
   nsCOMPtr<nsILoadInfo> loadInfo;
   GetLoadInfo(getter_AddRefs(loadInfo));
@@ -2599,8 +2603,8 @@ already_AddRefed<nsIEventTarget> HttpChannelChild::GetODATarget() {
 nsresult HttpChannelChild::ContinueAsyncOpen() {
   nsCString appCacheClientId;
   if (mInheritApplicationCache) {
-    
-    
+    // Pick up an application cache from the notification
+    // callbacks if available
     nsCOMPtr<nsIApplicationCacheContainer> appCacheContainer;
     GetCallback(appCacheContainer);
 
@@ -2614,9 +2618,9 @@ nsresult HttpChannelChild::ContinueAsyncOpen() {
     }
   }
 
-  
-  
-  
+  //
+  // Send request to the chrome process...
+  //
 
   mozilla::dom::TabChild* tabChild = nullptr;
   nsCOMPtr<nsITabChild> iTabChild;
@@ -2628,8 +2632,8 @@ nsresult HttpChannelChild::ContinueAsyncOpen() {
     return NS_ERROR_ILLEGAL_VALUE;
   }
 
-  
-  
+  // This id identifies the inner window's top-level document,
+  // which changes on every new load or navigation.
   uint64_t contentWindowId = 0;
   TimeStamp navigationStartTimeStamp;
   if (tabChild) {
@@ -2648,8 +2652,8 @@ nsresult HttpChannelChild::ContinueAsyncOpen() {
   SetTopLevelContentWindowId(contentWindowId);
 
   HttpChannelOpenArgs openArgs;
-  
-  
+  // No access to HttpChannelOpenArgs members, but they each have a
+  // function with the struct name that returns a ref.
   SerializeURI(mURI, openArgs.uri());
   SerializeURI(mOriginalURI, openArgs.original());
   SerializeURI(mDocumentURI, openArgs.doc());
@@ -2685,7 +2689,7 @@ nsresult HttpChannelChild::ContinueAsyncOpen() {
   OptionalCorsPreflightArgs optionalCorsPreflightArgs;
   GetClientSetCorsPreflightParameters(optionalCorsPreflightArgs);
 
-  
+  // NB: This call forces us to cache mTopWindowURI if we haven't already.
   nsCOMPtr<nsIURI> uri;
   GetTopWindowURI(mURI, getter_AddRefs(uri));
 
@@ -2759,13 +2763,13 @@ nsresult HttpChannelChild::ContinueAsyncOpen() {
 
   openArgs.navigationStartTimeStamp() = navigationStartTimeStamp;
 
-  
-  
-  
+  // This must happen before the constructor message is sent. Otherwise messages
+  // from the parent could arrive quickly and be delivered to the wrong event
+  // target.
   SetEventTarget();
 
-  
-  
+  // The socket transport in the chrome process now holds a logical ref to us
+  // until OnStopRequest, or we do a redirect, or we hit an IPDL error.
   AddIPDLReference();
 
   PBrowserOrId browser = cc->GetBrowserOrId(tabChild);
@@ -2779,10 +2783,10 @@ nsresult HttpChannelChild::ContinueAsyncOpen() {
 
     MOZ_RELEASE_ASSERT(gSocketTransportService);
 
-    
-    
-    
-    
+    // Service worker might use the same HttpChannelChild to do async open
+    // twice. Need to disconnect with previous background channel before
+    // creating the new one, to prevent receiving further notification
+    // from it.
     if (mBgChild) {
       RefPtr<HttpBackgroundChannelChild> prevBgChild = mBgChild.forget();
       gSocketTransportService->Dispatch(
@@ -2818,16 +2822,16 @@ nsresult HttpChannelChild::ContinueAsyncOpen() {
   return NS_OK;
 }
 
-
-
-
+//-----------------------------------------------------------------------------
+// HttpChannelChild::nsIHttpChannel
+//-----------------------------------------------------------------------------
 
 NS_IMETHODIMP
 HttpChannelChild::SetReferrerWithPolicy(nsIURI* referrer,
                                         uint32_t referrerPolicy) {
   ENSURE_CALLED_BEFORE_CONNECT();
 
-  
+  // remove old referrer if any, loop backwards
   for (int i = mClientSetRequestHeaders.Length() - 1; i >= 0; --i) {
     if (NS_LITERAL_CSTRING("Referer").Equals(
             mClientSetRequestHeaders[i].mHeader)) {
@@ -2874,13 +2878,13 @@ HttpChannelChild::SetEmptyRequestHeader(const nsACString& aHeader) {
 
 NS_IMETHODIMP
 HttpChannelChild::RedirectTo(nsIURI* newURI) {
-  
+  // disabled until/unless addons run in child or something else needs this
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
 HttpChannelChild::UpgradeToSecure() {
-  
+  // disabled until/unless addons run in child or something else needs this
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
@@ -2890,18 +2894,18 @@ HttpChannelChild::GetProtocolVersion(nsACString& aProtocolVersion) {
   return NS_OK;
 }
 
-
-
-
+//-----------------------------------------------------------------------------
+// HttpChannelChild::nsIHttpChannelInternal
+//-----------------------------------------------------------------------------
 
 NS_IMETHODIMP
 HttpChannelChild::SetupFallbackChannel(const char* aFallbackKey) {
   DROP_DEAD();
 }
 
-
-
-
+//-----------------------------------------------------------------------------
+// HttpChannelChild::nsICacheInfoChannel
+//-----------------------------------------------------------------------------
 
 NS_IMETHODIMP
 HttpChannelChild::GetCacheTokenFetchCount(int32_t* _retval) {
@@ -3061,7 +3065,7 @@ HttpChannelChild::GetAlternativeDataType(nsACString& aType) {
     return mSynthesizedCacheInfo->GetAlternativeDataType(aType);
   }
 
-  
+  // Must be called during or after OnStartRequest
   if (!mAfterOnStartRequestBegun) {
     return NS_ERROR_NOT_AVAILABLE;
   }
@@ -3133,9 +3137,9 @@ mozilla::ipc::IPCResult HttpChannelChild::RecvOriginalCacheInputStreamAvailable(
   return IPC_OK();
 }
 
-
-
-
+//-----------------------------------------------------------------------------
+// HttpChannelChild::nsIResumableChannel
+//-----------------------------------------------------------------------------
 
 NS_IMETHODIMP
 HttpChannelChild::ResumeAt(uint64_t startPos, const nsACString& entityID) {
@@ -3147,11 +3151,11 @@ HttpChannelChild::ResumeAt(uint64_t startPos, const nsACString& entityID) {
   return NS_OK;
 }
 
+// GetEntityID is shared in HttpBaseChannel
 
-
-
-
-
+//-----------------------------------------------------------------------------
+// HttpChannelChild::nsISupportsPriority
+//-----------------------------------------------------------------------------
 
 NS_IMETHODIMP
 HttpChannelChild::SetPriority(int32_t aPriority) {
@@ -3164,9 +3168,9 @@ HttpChannelChild::SetPriority(int32_t aPriority) {
   return NS_OK;
 }
 
-
-
-
+//-----------------------------------------------------------------------------
+// HttpChannelChild::nsIClassOfService
+//-----------------------------------------------------------------------------
 NS_IMETHODIMP
 HttpChannelChild::SetClassFlags(uint32_t inFlags) {
   if (mClassOfService == inFlags) {
@@ -3207,16 +3211,16 @@ HttpChannelChild::ClearClassFlags(uint32_t inFlags) {
   return NS_OK;
 }
 
-
-
-
+//-----------------------------------------------------------------------------
+// HttpChannelChild::nsIProxiedChannel
+//-----------------------------------------------------------------------------
 
 NS_IMETHODIMP
 HttpChannelChild::GetProxyInfo(nsIProxyInfo** aProxyInfo) { DROP_DEAD(); }
 
-
-
-
+//-----------------------------------------------------------------------------
+// HttpChannelChild::nsIApplicationCacheContainer
+//-----------------------------------------------------------------------------
 
 NS_IMETHODIMP
 HttpChannelChild::GetApplicationCache(nsIApplicationCache** aApplicationCache) {
@@ -3231,9 +3235,9 @@ HttpChannelChild::SetApplicationCache(nsIApplicationCache* aApplicationCache) {
   return NS_OK;
 }
 
-
-
-
+//-----------------------------------------------------------------------------
+// HttpChannelChild::nsIApplicationCacheChannel
+//-----------------------------------------------------------------------------
 
 NS_IMETHODIMP
 HttpChannelChild::GetApplicationCacheForWrite(
@@ -3246,7 +3250,7 @@ HttpChannelChild::SetApplicationCacheForWrite(
     nsIApplicationCache* aApplicationCache) {
   NS_ENSURE_TRUE(!mWasOpened, NS_ERROR_ALREADY_OPENED);
 
-  
+  // Child channels are not intended to be used for cache writes
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
@@ -3286,9 +3290,9 @@ HttpChannelChild::MarkOfflineCacheEntryAsForeign() {
   return NS_OK;
 }
 
-
-
-
+//-----------------------------------------------------------------------------
+// HttpChannelChild::nsIHttpChannelChild
+//-----------------------------------------------------------------------------
 
 NS_IMETHODIMP HttpChannelChild::AddCookiesToRequest() {
   HttpBaseChannel::AddCookiesToRequest();
@@ -3323,17 +3327,17 @@ HttpChannelChild::RemoveCorsPreflightCacheEntry(nsIURI* aURI,
     return rv;
   }
   bool result = false;
-  
-  
+  // Be careful to not attempt to send a message to the parent after the
+  // actor has been destroyed.
   if (mIPCOpen) {
     result = SendRemoveCorsPreflightCacheEntry(uri, principalInfo);
   }
   return result ? NS_OK : NS_ERROR_FAILURE;
 }
 
-
-
-
+//-----------------------------------------------------------------------------
+// HttpChannelChild::nsIDivertableChannel
+//-----------------------------------------------------------------------------
 NS_IMETHODIMP
 HttpChannelChild::DivertToParent(ChannelDiverterChild** aChild) {
   LOG(("HttpChannelChild::DivertToParent [this=%p]\n", this));
@@ -3344,22 +3348,22 @@ HttpChannelChild::DivertToParent(ChannelDiverterChild** aChild) {
 
   nsresult rv = NS_OK;
 
-  
-  
-  
+  // If the channel was intercepted, then we likely do not have an IPC actor
+  // yet.  We need one, though, in order to have a parent side to divert to.
+  // Therefore, create the actor just in time for us to suspend and divert it.
   if (mSynthesizedResponse && !RemoteChannelExists()) {
     mSuspendParentAfterSynthesizeResponse = true;
     rv = ContinueAsyncOpen();
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  
-  
+  // We must fail DivertToParent() if there's no parent end of the channel (and
+  // won't be!) due to early failure.
   if (NS_FAILED(mStatus) && !RemoteChannelExists()) {
     return mStatus;
   }
 
-  
+  // Once this is set, it should not be unset before the child is taken down.
   mDivertingToParent = true;
 
   rv = Suspend();
@@ -3419,9 +3423,9 @@ HttpChannelChild::GetDivertingToParent(bool* aDiverting) {
   return NS_OK;
 }
 
-
-
-
+//-----------------------------------------------------------------------------
+// HttpChannelChild::nsIThreadRetargetableRequest
+//-----------------------------------------------------------------------------
 
 NS_IMETHODIMP
 HttpChannelChild::RetargetDeliveryTo(nsIEventTarget* aNewTarget) {
@@ -3439,8 +3443,8 @@ HttpChannelChild::RetargetDeliveryTo(nsIEventTarget* aNewTarget) {
     return NS_OK;
   }
 
-  
-  
+  // Ensure that |mListener| and any subsequent listeners can be retargeted
+  // to another thread.
   nsresult rv = NS_OK;
   nsCOMPtr<nsIThreadRetargetableStreamListener> retargetableListener =
       do_QueryInterface(mListener, &rv);
@@ -3486,18 +3490,18 @@ void HttpChannelChild::ResetInterception() {
   }
   mInterceptListener = nullptr;
 
-  
-  
+  // The chance to intercept any further requests associated with this channel
+  // (such as redirects) has passed.
   if (mRedirectMode != nsIHttpChannelInternal::REDIRECT_MODE_MANUAL) {
     mLoadFlags |= LOAD_BYPASS_SERVICE_WORKER;
   }
 
-  
+  // If the channel has already been aborted or canceled, just stop.
   if (NS_FAILED(mStatus)) {
     return;
   }
 
-  
+  // Continue with the original cross-process request
   nsresult rv = ContinueAsyncOpen();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     Unused << Cancel(rv);
@@ -3507,13 +3511,13 @@ void HttpChannelChild::ResetInterception() {
 void HttpChannelChild::TrySendDeletingChannel() {
   AUTO_PROFILER_LABEL("HttpChannelChild::TrySendDeletingChannel", NETWORK);
   if (!mDeletingChannelSent.compareExchange(false, true)) {
-    
+    // SendDeletingChannel is already sent.
     return;
   }
 
   if (NS_IsMainThread()) {
     if (NS_WARN_IF(!mIPCOpen)) {
-      
+      // IPC actor is detroyed already, do not send more messages.
       return;
     }
 
@@ -3587,9 +3591,9 @@ void HttpChannelChild::CancelOnMainThread(nsresult aRv) {
   }
 
   mEventQ->Suspend();
-  
-  
-  
+  // Cancel is expected to preempt any other channel events, thus we put this
+  // event in the front of mEventQ to make sure nsIStreamListener not receiving
+  // any ODA/OnStopRequest callbacks.
   UniquePtr<ChannelEvent> cancelEvent = MakeUnique<CancelEvent>(this, aRv);
   mEventQ->PrependEvent(cancelEvent);
   mEventQ->Resume();
@@ -3604,14 +3608,14 @@ void HttpChannelChild::OverrideWithSynthesizedResponse(
   MOZ_ASSERT(NS_IsMainThread());
   nsresult rv = NS_OK;
   auto autoCleanup = MakeScopeExit([&] {
-    
+    // Auto-cancel on failure.  Do this first to get mStatus set, if necessary.
     if (NS_FAILED(rv)) {
       Cancel(rv);
     }
 
-    
-    
-    
+    // If we early exit before taking ownership of the body, then automatically
+    // invoke the callback.  This could be due to an error or because we're not
+    // going to consume it due to a redirect, etc.
     if (aSynthesizedCallback) {
       aSynthesizedCallback->BodyComplete(mStatus);
     }
@@ -3623,8 +3627,8 @@ void HttpChannelChild::OverrideWithSynthesizedResponse(
 
   mInterceptListener = aStreamListener;
 
-  
-  
+  // Intercepted responses should already be decoded.  If its a redirect,
+  // however, we want to respect the encoding of the final result instead.
   if (!nsHttpChannel::WillRedirect(aResponseHead)) {
     SetApplyConversion(false);
   }
@@ -3641,9 +3645,9 @@ void HttpChannelChild::OverrideWithSynthesizedResponse(
   }
 
   if (nsHttpChannel::WillRedirect(mResponseHead)) {
-    
-    
-    
+    // Normally we handle redirect limits in the parent process.  The way
+    // e10s synthesized redirects work, however, the parent process does not
+    // get an accurate redirect count.  Therefore we need to enforce it here.
     rv = CheckRedirectLimit(nsIChannelEventSink::REDIRECT_TEMPORARY);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       Cancel(rv);
@@ -3655,18 +3659,18 @@ void HttpChannelChild::OverrideWithSynthesizedResponse(
       mInterceptListener->Cleanup();
       mInterceptListener = nullptr;
     }
-    
+    // Continue with the original cross-process request
     rv = ContinueAsyncOpen();
     return;
   }
 
-  
-  
-  
-  
-  
-  
-  
+  // For progress we trust the content-length for the "maximum" size.
+  // We can't determine the full size from the stream itself since we
+  // only receive the data incrementally.  We can't trust Available()
+  // here.
+  // TODO: We could implement an nsIFixedLengthInputStream interface and
+  //       QI to it here.  This would let us determine the total length
+  //       for streams that support it.  See bug 1388774.
   rv = GetContentLength(&mSynthesizedStreamLength);
   if (NS_FAILED(rv)) {
     mSynthesizedStreamLength = -1;
@@ -3684,14 +3688,14 @@ void HttpChannelChild::OverrideWithSynthesizedResponse(
   rv = mSynthesizedResponsePump->AsyncRead(aStreamListener, nullptr);
   NS_ENSURE_SUCCESS_VOID(rv);
 
-  
-  
-  
+  // The pump is started, so take ownership of the body callback.  We
+  // clear the argument to avoid auto-completing it via the ScopeExit
+  // lambda.
   mSynthesizedCallback = aSynthesizedCallback;
   aSynthesizedCallback = nullptr;
 
-  
-  
+  // if this channel has been suspended previously, the pump needs to be
+  // correspondingly suspended now that it exists.
   for (uint32_t i = 0; i < mSuspendCount; i++) {
     rv = mSynthesizedResponsePump->Suspend();
     NS_ENSURE_SUCCESS_VOID(rv);
@@ -3772,12 +3776,12 @@ mozilla::ipc::IPCResult HttpChannelChild::RecvAttachStreamFilter(
 mozilla::ipc::IPCResult HttpChannelChild::RecvCancelDiversion() {
   MOZ_ASSERT(NS_IsMainThread());
 
-  
-  
-  
-  
-  
-  
+  // This method is a very special case for cancellation of a diverted
+  // intercepted channel.  Normally we would go through the mEventQ in order to
+  // serialize event execution in the face of sync XHR and now background
+  // channels.  However, similar to how CancelOnMainThread describes, Cancel()
+  // pre-empts everything.  (And frankly, we want this stack frame on the stack
+  // if a crash happens.)
   Cancel(NS_ERROR_ABORT);
   return IPC_OK();
 }
@@ -3785,9 +3789,9 @@ mozilla::ipc::IPCResult HttpChannelChild::RecvCancelDiversion() {
 void HttpChannelChild::ActorDestroy(ActorDestroyReason aWhy) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  
-  
-  
+  // OnStartRequest might be dropped if IPDL is destroyed abnormally
+  // and BackgroundChild might have pending IPC messages.
+  // Clean up BackgroundChild at this time to prevent memleak.
   if (aWhy != Deletion) {
     CleanupBackgroundChannel();
   }
@@ -3856,5 +3860,5 @@ nsresult HttpChannelChild::CrossProcessRedirectFinished(nsresult aStatus) {
   return NS_OK;
 }
 
-}  
-}  
+}  // namespace net
+}  // namespace mozilla

@@ -49,22 +49,22 @@ LazyLogModule UrlClassifierCommon::sLog("nsChannelClassifier");
   return BasePrincipal::Cast(loadingPrincipal)->AddonAllowsLoad(aURI, true);
 }
 
- void UrlClassifierCommon::NotifyTrackingProtectionDisabled(
-    nsIChannel* aChannel) {
+ void
+UrlClassifierCommon::NotifyChannelClassifierProtectionDisabled(
+    nsIChannel* aChannel, uint32_t aEvent) {
   
   nsCOMPtr<nsIParentChannel> parentChannel;
   NS_QueryNotificationCallbacks(aChannel, parentChannel);
   if (parentChannel) {
     
     
-    parentChannel->NotifyTrackingProtectionDisabled();
+    parentChannel->NotifyChannelClassifierProtectionDisabled(aEvent);
     return;
   }
 
   nsCOMPtr<nsIURI> uriBeingLoaded =
       AntiTrackingCommon::MaybeGetDocumentURIBeingLoaded(aChannel);
-  NotifyChannelBlocked(aChannel, uriBeingLoaded,
-                       nsIWebProgressListener::STATE_LOADED_TRACKING_CONTENT);
+  NotifyChannelBlocked(aChannel, uriBeingLoaded, aEvent);
 }
 
  void UrlClassifierCommon::NotifyChannelBlocked(
@@ -157,7 +157,29 @@ LazyLogModule UrlClassifierCommon::sLog("nsChannelClassifier");
     
     
     
-    UrlClassifierCommon::NotifyTrackingProtectionDisabled(aChannel);
+
+    uint32_t event = 0;
+    switch (aBlockingPurpose) {
+      case AntiTrackingCommon::eTrackingProtection:
+        MOZ_FALLTHROUGH;
+      case AntiTrackingCommon::eTrackingAnnotations:
+        event = nsIWebProgressListener::STATE_LOADED_TRACKING_CONTENT;
+        break;
+
+      case AntiTrackingCommon::eFingerprinting:
+        
+        break;
+
+      case AntiTrackingCommon::eCryptomining:
+        
+        break;
+
+      default:
+        MOZ_CRASH("Invalidate blocking purpose.");
+    }
+
+    UrlClassifierCommon::NotifyChannelClassifierProtectionDisabled(aChannel,
+                                                                   event);
 
     return false;
   }

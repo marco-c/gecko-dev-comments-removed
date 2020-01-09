@@ -29,7 +29,8 @@ DataChannelParent::SetParentListener(HttpChannelParentListener *aListener) {
 }
 
 NS_IMETHODIMP
-DataChannelParent::NotifyTrackingProtectionDisabled() {
+DataChannelParent::NotifyChannelClassifierProtectionDisabled(
+    uint32_t aAcceptedReason) {
   
   return NS_OK;
 }

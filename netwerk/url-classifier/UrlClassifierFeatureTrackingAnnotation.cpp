@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "UrlClassifierFeatureTrackingAnnotation.h"
 
@@ -45,8 +45,8 @@ static void SetIsTrackingResourceHelper(nsIChannel* aChannel,
   nsCOMPtr<nsIParentChannel> parentChannel;
   NS_QueryNotificationCallbacks(aChannel, parentChannel);
   if (parentChannel) {
-    
-    
+    // This channel is a parent-process proxy for a child process
+    // request. We should notify the child process as well.
     parentChannel->NotifyTrackingResource(aIsThirdParty);
   }
 
@@ -75,15 +75,15 @@ static void LowerPriorityHelper(nsIChannel* aChannel) {
           cosFlags & (nsIClassOfService::UrgentStart |
                       nsIClassOfService::Leader | nsIClassOfService::Unblocked);
 
-      
-      
-      
+      // Requests not allowed to be tailed are usually those with higher
+      // prioritization.  That overweights being a tracker: don't throttle
+      // them when not in background.
       if (!(cosFlags & nsIClassOfService::TailForbidden)) {
         cos->AddClassFlags(nsIClassOfService::Throttleable);
       }
     } else {
-      
-      
+      // Yes, we even don't want to evaluate the isBlockingResource when tailing
+      // is off see bug 1395525.
 
       cos->AddClassFlags(nsIClassOfService::Throttleable);
     }
@@ -107,7 +107,7 @@ static void LowerPriorityHelper(nsIChannel* aChannel) {
   }
 }
 
-}  
+}  // namespace
 
 UrlClassifierFeatureTrackingAnnotation::UrlClassifierFeatureTrackingAnnotation()
     : UrlClassifierFeatureBase(
@@ -120,11 +120,11 @@ UrlClassifierFeatureTrackingAnnotation::UrlClassifierFeatureTrackingAnnotation()
           NS_LITERAL_CSTRING(TABLE_ANNOTATION_WHITELIST_PREF),
           NS_LITERAL_CSTRING(URLCLASSIFIER_TRACKING_ANNOTATION_SKIP_URLS)) {}
 
- const char* UrlClassifierFeatureTrackingAnnotation::Name() {
+/* static */ const char* UrlClassifierFeatureTrackingAnnotation::Name() {
   return TRACKING_ANNOTATION_FEATURE_NAME;
 }
 
- void UrlClassifierFeatureTrackingAnnotation::MaybeInitialize() {
+/* static */ void UrlClassifierFeatureTrackingAnnotation::MaybeInitialize() {
   MOZ_ASSERT(XRE_IsParentProcess());
   UC_LOG(("UrlClassifierFeatureTrackingAnnotation: MaybeInitialize"));
 
@@ -134,7 +134,7 @@ UrlClassifierFeatureTrackingAnnotation::UrlClassifierFeatureTrackingAnnotation()
   }
 }
 
- void UrlClassifierFeatureTrackingAnnotation::MaybeShutdown() {
+/* static */ void UrlClassifierFeatureTrackingAnnotation::MaybeShutdown() {
   UC_LOG(("UrlClassifierFeatureTrackingAnnotation: MaybeShutdown"));
 
   if (gFeatureTrackingAnnotation) {
@@ -143,7 +143,7 @@ UrlClassifierFeatureTrackingAnnotation::UrlClassifierFeatureTrackingAnnotation()
   }
 }
 
- already_AddRefed<UrlClassifierFeatureTrackingAnnotation>
+/* static */ already_AddRefed<UrlClassifierFeatureTrackingAnnotation>
 UrlClassifierFeatureTrackingAnnotation::MaybeCreate(nsIChannel* aChannel) {
   MOZ_ASSERT(aChannel);
 
@@ -167,7 +167,7 @@ UrlClassifierFeatureTrackingAnnotation::MaybeCreate(nsIChannel* aChannel) {
   return self.forget();
 }
 
- already_AddRefed<nsIUrlClassifierFeature>
+/* static */ already_AddRefed<nsIUrlClassifierFeature>
 UrlClassifierFeatureTrackingAnnotation::GetIfNameMatches(
     const nsACString& aName) {
   if (!aName.EqualsLiteral(TRACKING_ANNOTATION_FEATURE_NAME)) {
@@ -189,7 +189,7 @@ UrlClassifierFeatureTrackingAnnotation::ProcessChannel(nsIChannel* aChannel,
   NS_ENSURE_ARG_POINTER(aChannel);
   NS_ENSURE_ARG_POINTER(aShouldContinue);
 
-  
+  // This is not a blocking feature.
   *aShouldContinue = true;
 
   nsCOMPtr<nsIURI> chanURI;
@@ -213,11 +213,12 @@ UrlClassifierFeatureTrackingAnnotation::ProcessChannel(nsIChannel* aChannel,
   SetIsTrackingResourceHelper(aChannel, isThirdPartyWithTopLevelWinURI);
 
   if (isThirdPartyWithTopLevelWinURI) {
-    
-    
-    
-    
-    UrlClassifierCommon::NotifyTrackingProtectionDisabled(aChannel);
+    // Even with TP disabled, we still want to show the user that there
+    // are unblocked trackers on the site, so notify the UI that we loaded
+    // tracking content. UI code can treat this notification differently
+    // depending on whether TP is enabled or disabled.
+    UrlClassifierCommon::NotifyChannelClassifierProtectionDisabled(
+        aChannel, nsIWebProgressListener::STATE_LOADED_TRACKING_CONTENT);
 
     if (StaticPrefs::privacy_trackingprotection_lower_network_priority()) {
       LowerPriorityHelper(aChannel);
@@ -242,5 +243,5 @@ UrlClassifierFeatureTrackingAnnotation::GetURIByListType(
   return UrlClassifierCommon::CreatePairwiseWhiteListURI(aChannel, aURI);
 }
 
-}  
-}  
+}  // namespace net
+}  // namespace mozilla

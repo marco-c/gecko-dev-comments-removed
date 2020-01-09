@@ -29,7 +29,8 @@ FileChannelParent::SetParentListener(HttpChannelParentListener *aListener) {
 }
 
 NS_IMETHODIMP
-FileChannelParent::NotifyTrackingProtectionDisabled() {
+FileChannelParent::NotifyChannelClassifierProtectionDisabled(
+    uint32_t aAcceptedReason) {
   
   return NS_OK;
 }
