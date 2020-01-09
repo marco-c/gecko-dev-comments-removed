@@ -2,6 +2,8 @@
 
 
 
+from __future__ import absolute_import
+
 from mozpack.files import FileFinder
 from mozpack.mozjar import (
     JarReaderError,

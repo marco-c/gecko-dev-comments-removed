@@ -2,6 +2,8 @@
 
 
 
+from __future__ import absolute_import
+
 import mozunit
 import unittest
 from mozpack.packager.formats import (

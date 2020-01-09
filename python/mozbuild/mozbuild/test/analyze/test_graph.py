@@ -2,6 +2,8 @@
 
 
 
+from __future__ import absolute_import
+
 import unittest
 import sqlite3 as lite
 import mozunit
