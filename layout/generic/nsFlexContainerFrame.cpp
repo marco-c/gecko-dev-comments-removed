@@ -3627,7 +3627,7 @@ void FlexboxAxisTracker::InitAxesFromLegacyProps(
 void FlexboxAxisTracker::InitAxesFromModernProps(
     const nsFlexContainerFrame* aFlexContainer) {
   const nsStylePosition* stylePos = aFlexContainer->StylePosition();
-  uint32_t flexDirection = stylePos->mFlexDirection;
+  StyleFlexDirection flexDirection = stylePos->mFlexDirection;
 
   
   
@@ -3640,22 +3640,22 @@ void FlexboxAxisTracker::InitAxesFromModernProps(
 
   
   switch (flexDirection) {
-    case NS_STYLE_FLEX_DIRECTION_ROW:
+    case StyleFlexDirection::Row:
       mMainAxis = inlineDimension;
       mIsRowOriented = true;
       mIsMainAxisReversed = false;
       break;
-    case NS_STYLE_FLEX_DIRECTION_ROW_REVERSE:
+    case StyleFlexDirection::RowReverse:
       mMainAxis = GetReverseAxis(inlineDimension);
       mIsRowOriented = true;
       mIsMainAxisReversed = true;
       break;
-    case NS_STYLE_FLEX_DIRECTION_COLUMN:
+    case StyleFlexDirection::Column:
       mMainAxis = blockDimension;
       mIsRowOriented = false;
       mIsMainAxisReversed = false;
       break;
-    case NS_STYLE_FLEX_DIRECTION_COLUMN_REVERSE:
+    case StyleFlexDirection::ColumnReverse:
       mMainAxis = GetReverseAxis(blockDimension);
       mIsRowOriented = false;
       mIsMainAxisReversed = true;
@@ -3667,8 +3667,8 @@ void FlexboxAxisTracker::InitAxesFromModernProps(
   
   
   
-  if (flexDirection == NS_STYLE_FLEX_DIRECTION_COLUMN ||
-      flexDirection == NS_STYLE_FLEX_DIRECTION_COLUMN_REVERSE) {
+  if (flexDirection == StyleFlexDirection::Column ||
+      flexDirection == StyleFlexDirection::ColumnReverse) {
     mCrossAxis = inlineDimension;
   } else {
     mCrossAxis = blockDimension;
@@ -4447,8 +4447,8 @@ bool nsFlexContainerFrame::IsItemInlineAxisMainAxis(nsIFrame* aFrame) {
   
   auto flexDirection = flexContainer->StylePosition()->mFlexDirection;
   bool flexContainerIsRowOriented =
-      flexDirection == NS_STYLE_FLEX_DIRECTION_ROW ||
-      flexDirection == NS_STYLE_FLEX_DIRECTION_ROW_REVERSE;
+      flexDirection == StyleFlexDirection::Row ||
+      flexDirection == StyleFlexDirection::RowReverse;
 
   
   

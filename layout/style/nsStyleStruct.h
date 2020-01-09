@@ -1291,7 +1291,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
   uint8_t mSpecifiedJustifyItems;
   uint8_t mJustifyItems;
   uint8_t mJustifySelf;
-  uint8_t mFlexDirection;  
+  mozilla::StyleFlexDirection mFlexDirection;  
   uint8_t mFlexWrap;       
   uint8_t mObjectFit;      
   int32_t mOrder;
