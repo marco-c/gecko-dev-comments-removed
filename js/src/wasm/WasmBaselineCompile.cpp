@@ -10360,7 +10360,7 @@ bool BaseCompiler::emitTableGrow() {
   Nothing delta;
   Nothing initValue;
   uint32_t tableIndex;
-  if (!iter_.readTableGrow(&tableIndex, &delta, &initValue)) {
+  if (!iter_.readTableGrow(&tableIndex, &initValue, &delta)) {
     return false;
   }
   if (deadCode_) {
