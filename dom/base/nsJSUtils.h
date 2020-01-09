@@ -231,10 +231,10 @@ class nsJSUtils {
   
   
   
-  static bool GetScopeChainForXBL(JSContext* aCx,
-                                  mozilla::dom::Element* aBoundElement,
-                                  const nsXBLPrototypeBinding& aProtoBinding,
-                                  JS::MutableHandleVector<JSObject*> aScopeChain);
+  static bool GetScopeChainForXBL(
+      JSContext* aCx, mozilla::dom::Element* aBoundElement,
+      const nsXBLPrototypeBinding& aProtoBinding,
+      JS::MutableHandleVector<JSObject*> aScopeChain);
 
   static void ResetTimeZone();
 };

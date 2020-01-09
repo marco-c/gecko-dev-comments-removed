@@ -32,24 +32,16 @@ class MOZ_IS_SMARTPTR_TO_REFCOUNTED OwningNonNull {
   }
 
   
-  operator T&() const {
-    return ref();
-  }
+  operator T&() const { return ref(); }
 
-  operator T*() const {
-    return get();
-  }
+  operator T*() const { return get(); }
 
   
   explicit operator bool() const = delete;
 
-  T* operator->() const {
-    return get();
-  }
+  T* operator->() const { return get(); }
 
-  T& operator*() const {
-    return ref();
-  }
+  T& operator*() const { return ref(); }
 
   OwningNonNull<T>& operator=(T* aValue) {
     init(aValue);

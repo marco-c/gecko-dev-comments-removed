@@ -643,9 +643,9 @@ void SetMediaPluginSandbox(const char* aFilePath) {
   files->Add("/sys/devices/system/cpu/cpu0/tsc_freq_khz");
   files->Add("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
   files->Add("/proc/cpuinfo");  
-#  ifdef __i386__
+#ifdef __i386__
   files->Add("/proc/self/auxv");  
-#  endif
+#endif
 
   
   SetCurrentProcessSandbox(GetMediaSandboxPolicy(files));

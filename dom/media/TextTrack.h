@@ -110,10 +110,9 @@ class TextTrack final : public DOMEventTargetHelper {
   
   
   
-  void GetCurrentCuesAndOtherCues(
-    RefPtr<TextTrackCueList>& aCurrentCues,
-    RefPtr<TextTrackCueList>& aOtherCues,
-    const media::TimeInterval& aInterval) const;
+  void GetCurrentCuesAndOtherCues(RefPtr<TextTrackCueList>& aCurrentCues,
+                                  RefPtr<TextTrackCueList>& aOtherCues,
+                                  const media::TimeInterval& aInterval) const;
 
  private:
   ~TextTrack();

@@ -454,7 +454,6 @@ nsScriptSecurityManager::GetChannelURIPrincipal(nsIChannel* aChannel,
 
 
 
-
 NS_IMPL_ISUPPORTS(nsScriptSecurityManager, nsIScriptSecurityManager)
 
 

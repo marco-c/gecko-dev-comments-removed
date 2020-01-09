@@ -733,7 +733,7 @@ class FunctionCompiler {
     
     MWasmLoadRef* load =
         MWasmLoadRef::New(alloc(), base, AliasSet::WasmTableElement,
-                           false);
+                          false);
     curBlock_->add(load);
     return load;
   }

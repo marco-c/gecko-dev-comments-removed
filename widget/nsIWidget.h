@@ -743,7 +743,7 @@ class nsIWidget : public nsISupports {
 
 
 
-  virtual void LockAspectRatio(bool aShouldLock) {};
+  virtual void LockAspectRatio(bool aShouldLock){};
 
   
 

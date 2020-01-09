@@ -145,7 +145,6 @@ class ADTSTrackDemuxer : public MediaTrackDemuxer,
   
   
   media::TimeUnit mPreRoll;
-
 };
 
 }  

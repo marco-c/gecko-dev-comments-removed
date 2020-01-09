@@ -16,7 +16,7 @@
 
 #include "frontend/BinAST-macros.h"
 #include "frontend/BinASTRuntimeSupport.h"
-#include "frontend/BytecodeCompiler.h" 
+#include "frontend/BytecodeCompiler.h"  
 
 #include "js/Result.h"
 

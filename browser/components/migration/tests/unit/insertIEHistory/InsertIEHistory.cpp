@@ -8,8 +8,9 @@
 
 
 
-#include <urlhist.h> 
-#include <shlguid.h> 
+
+#include <urlhist.h>  
+#include <shlguid.h>  
 
 int main(int argc, char** argv) {
   HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
@@ -19,14 +20,16 @@ int main(int argc, char** argv) {
   }
   IUrlHistoryStg* ieHist;
 
-  hr = ::CoCreateInstance(CLSID_CUrlHistory, nullptr, CLSCTX_INPROC_SERVER,
-                          IID_IUrlHistoryStg, reinterpret_cast<void**>(&ieHist));
+  hr =
+      ::CoCreateInstance(CLSID_CUrlHistory, nullptr, CLSCTX_INPROC_SERVER,
+                         IID_IUrlHistoryStg, reinterpret_cast<void**>(&ieHist));
   if (FAILED(hr)) return -2;
 
   hr = ieHist->AddUrl(L"http://www.mozilla.org/1", L"Mozilla HTTP Test", 0);
   if (FAILED(hr)) return -3;
 
-  hr = ieHist->AddUrl(L"https://www.mozilla.org/2", L"Mozilla HTTPS Test 🦊", 0);
+  hr = ieHist->AddUrl(L"https://www.mozilla.org/2", L"Mozilla HTTPS Test 🦊",
+                      0);
   if (FAILED(hr)) return -4;
 
   CoUninitialize();

@@ -105,6 +105,7 @@ class EffectCompositor {
 
   
   
+  
   void ClearRestyleRequestsFor(dom::Element* aElement);
 
   

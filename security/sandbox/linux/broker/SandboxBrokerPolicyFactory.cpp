@@ -370,7 +370,7 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory() {
     }
   }
 
-#  ifdef DEBUG
+#ifdef DEBUG
   char* bloatLog = PR_GetEnv("XPCOM_MEM_BLOAT_LOG");
   
   
@@ -384,7 +384,7 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory() {
       policy->AddPrefix(rdwrcr, bloatStr.get());
     }
   }
-#  endif
+#endif
 
   
   
@@ -394,20 +394,20 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory() {
   }
   policy->AddPath(SandboxBroker::MAY_CONNECT, bumblebeeSocket);
 
-#  if defined(MOZ_WIDGET_GTK)
+#if defined(MOZ_WIDGET_GTK)
   
   
-#    if defined(MOZ_WAYLAND)
+#  if defined(MOZ_WAYLAND)
   if (GDK_IS_X11_DISPLAY(gdk_display_get_default())) {
     policy->AddPrefix(SandboxBroker::MAY_CONNECT, "/tmp/.X11-unix/X");
   }
-#    else
+#  else
   policy->AddPrefix(SandboxBroker::MAY_CONNECT, "/tmp/.X11-unix/X");
-#    endif
+#  endif
   if (const auto xauth = PR_GetEnv("XAUTHORITY")) {
     policy->AddPath(rdonly, xauth);
   }
-#  endif
+#endif
 
   mCommonContentPolicy.reset(policy);
 }
@@ -510,12 +510,12 @@ UniquePtr<SandboxBroker::Policy> SandboxBrokerPolicyFactory::GetContentPolicy(
   bool allowPulse = false;
   bool allowAlsa = false;
   if (level < 4) {
-#  ifdef MOZ_PULSEAUDIO
+#ifdef MOZ_PULSEAUDIO
     allowPulse = true;
-#  endif
-#  ifdef MOZ_ALSA
+#endif
+#ifdef MOZ_ALSA
     allowAlsa = true;
-#  endif
+#endif
   }
 
   if (allowAlsa) {
@@ -529,7 +529,7 @@ UniquePtr<SandboxBroker::Policy> SandboxBrokerPolicyFactory::GetContentPolicy(
     AddSharedMemoryPaths(policy.get(), aPid);
   }
 
-#  ifdef MOZ_WIDGET_GTK
+#ifdef MOZ_WIDGET_GTK
   if (const auto userDir = g_get_user_runtime_dir()) {
     
     
@@ -544,7 +544,7 @@ UniquePtr<SandboxBroker::Policy> SandboxBrokerPolicyFactory::GetContentPolicy(
       policy->AddPath(rdonly, pulsePath.get());
     }
   }
-#  endif  
+#endif  
 
   if (allowPulse) {
     

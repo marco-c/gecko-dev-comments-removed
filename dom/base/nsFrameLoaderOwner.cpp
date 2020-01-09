@@ -50,6 +50,5 @@ void nsFrameLoaderOwner::ChangeRemoteness(
   
   (new AsyncEventDispatcher(owner, NS_LITERAL_STRING("XULFrameLoaderCreated"),
                             CanBubble::eYes, ChromeOnlyDispatch::eYes))
-    ->RunDOMEventWhenSafe();
-
+      ->RunDOMEventWhenSafe();
 }

@@ -297,9 +297,9 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     ".mhtml",  
     ".mim",    
     
-    ".mmc",  
+    ".mmc",           
     ".mobileconfig",  
-    ".mof",  
+    ".mof",           
     
     
     

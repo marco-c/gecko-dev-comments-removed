@@ -28,7 +28,7 @@ class Compartment;
 class Realm;
 class Zone;
 
-} 
+}  
 
 namespace JS {
 
@@ -294,6 +294,6 @@ extern JS_PUBLIC_API RealmBehaviors& RealmBehaviorsRef(Realm* realm);
 
 extern JS_PUBLIC_API RealmBehaviors& RealmBehaviorsRef(JSContext* cx);
 
-} 
+}  
 
-#endif 
+#endif  

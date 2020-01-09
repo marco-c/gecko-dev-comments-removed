@@ -159,8 +159,7 @@ static bool EnumerateExtraProperties(JSContext* cx, HandleObject obj,
     
     
     bool enumerable = true;
-    if (!Enumerate<true>(cx, obj, id, enumerable, flags, visited,
-                                       props)) {
+    if (!Enumerate<true>(cx, obj, id, enumerable, flags, visited, props)) {
       return false;
     }
   }

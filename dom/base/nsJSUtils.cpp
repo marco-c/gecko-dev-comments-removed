@@ -559,9 +559,10 @@ bool nsJSUtils::GetScopeChainForElement(
 }
 
 
-bool nsJSUtils::GetScopeChainForXBL(JSContext* aCx, Element* aElement,
-                                    const nsXBLPrototypeBinding& aProtoBinding,
-                                    JS::MutableHandleVector<JSObject*> aScopeChain) {
+bool nsJSUtils::GetScopeChainForXBL(
+    JSContext* aCx, Element* aElement,
+    const nsXBLPrototypeBinding& aProtoBinding,
+    JS::MutableHandleVector<JSObject*> aScopeChain) {
   if (!aElement) {
     return true;
   }

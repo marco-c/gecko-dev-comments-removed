@@ -307,9 +307,9 @@ enum TypeCode {
 
 
 struct FieldInfo {
-  HeapPtr<JSObject*> mType;   
-  size_t mIndex;              
-  size_t mOffset;             
+  HeapPtr<JSObject*> mType;  
+  size_t mIndex;             
+  size_t mOffset;            
 
   void trace(JSTracer* trc) { TraceEdge(trc, &mType, "fieldType"); }
 };

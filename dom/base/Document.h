@@ -7,12 +7,12 @@
 #define mozilla_dom_Document_h___
 
 #include "mozilla/EventStates.h"  
-#include "mozilla/FlushType.h"  
-#include "mozilla/Pair.h"       
-#include "nsAutoPtr.h"          
-#include "nsCOMArray.h"         
-#include "nsCompatibility.h"    
-#include "nsCOMPtr.h"           
+#include "mozilla/FlushType.h"    
+#include "mozilla/Pair.h"         
+#include "nsAutoPtr.h"            
+#include "nsCOMArray.h"           
+#include "nsCompatibility.h"      
+#include "nsCOMPtr.h"             
 #include "nsICookieSettings.h"
 #include "nsGkAtoms.h"  
 #include "nsIApplicationCache.h"

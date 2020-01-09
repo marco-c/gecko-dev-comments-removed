@@ -69,7 +69,7 @@ using mozilla::ipc::FileDescriptor;
 
 
 static const char sStaticFileExtensions[][5] = {
-  
+    
   "bmp",
   "gif",
   "ico",
@@ -77,7 +77,7 @@ static const char sStaticFileExtensions[][5] = {
   "jpg",
   "png",
   "svg",
-  
+    
 };
 
 namespace mozilla {

@@ -1110,7 +1110,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleList {
  public:
   RefPtr<RawServoQuotes> mQuotes;
   nsRect mImageRegion;  
-  mozilla::StyleMozListReversed mMozListReversed; 
+  mozilla::StyleMozListReversed
+      mMozListReversed;  
 };
 
 struct nsStyleGridLine {
@@ -1879,8 +1880,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
   mozilla::StyleOverflowClipBox mOverflowClipBoxInline;
   mozilla::StyleResize mResize;
   mozilla::StyleOrient mOrient;
-  uint8_t mIsolation;           
-  uint8_t mTopLayer;            
+  uint8_t mIsolation;  
+  uint8_t mTopLayer;   
   
   
   

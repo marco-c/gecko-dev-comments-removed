@@ -42,6 +42,7 @@ namespace {
 
 void AppendMemoryStorageTag(nsAutoCString& key) {
   
+  
   key.Append('\x7f');
   key.Append(',');
 }

@@ -59,6 +59,7 @@ typedef uint32_t GLenum;
 #define GL_VERSION 0x1F02
 
 
+
 #define GLX_RENDERER_VENDOR_ID_MESA                            0x8183
 #define GLX_RENDERER_DEVICE_ID_MESA                            0x8184
 #define GLX_RENDERER_VERSION_MESA                              0x8185
@@ -71,6 +72,7 @@ typedef uint32_t GLenum;
 #define GLX_RENDERER_OPENGL_ES_PROFILE_VERSION_MESA            0x818C
 #define GLX_RENDERER_OPENGL_ES2_PROFILE_VERSION_MESA           0x818D
 #define GLX_RENDERER_ID_MESA                                   0x818E
+
 
 namespace mozilla {
 namespace widget {
@@ -217,9 +219,9 @@ void glxtest() {
   
   enum { bufsize = 2048 };
   char buf[bufsize];
-  const GLubyte* versionString = glGetString(GL_VERSION);
-  const GLubyte* vendorString = glGetString(GL_VENDOR);
-  const GLubyte* rendererString = glGetString(GL_RENDERER);
+  const GLubyte *versionString = glGetString(GL_VERSION);
+  const GLubyte *vendorString = glGetString(GL_VENDOR);
+  const GLubyte *rendererString = glGetString(GL_RENDERER);
 
   if (!versionString || !vendorString || !rendererString)
     fatal_error("glGetString returned null");
@@ -232,15 +234,22 @@ void glxtest() {
     fatal_error("GL strings length too large for buffer size");
 
   
-  typedef Bool (*PFNGLXQUERYCURRENTRENDERERINTEGERMESAPROC) (int attribute, unsigned int* value);
-  PFNGLXQUERYCURRENTRENDERERINTEGERMESAPROC glXQueryCurrentRendererIntegerMESAProc =
-    cast<PFNGLXQUERYCURRENTRENDERERINTEGERMESAPROC>(glXGetProcAddress("glXQueryCurrentRendererIntegerMESA"));
+  typedef Bool (*PFNGLXQUERYCURRENTRENDERERINTEGERMESAPROC)(
+      int attribute, unsigned int *value);
+  PFNGLXQUERYCURRENTRENDERERINTEGERMESAPROC
+  glXQueryCurrentRendererIntegerMESAProc =
+      cast<PFNGLXQUERYCURRENTRENDERERINTEGERMESAPROC>(
+          glXGetProcAddress("glXQueryCurrentRendererIntegerMESA"));
   if (glXQueryCurrentRendererIntegerMESAProc) {
     unsigned int vendorId, deviceId, accelerated, videoMemoryMB;
-    glXQueryCurrentRendererIntegerMESAProc(GLX_RENDERER_VENDOR_ID_MESA, &vendorId);
-    glXQueryCurrentRendererIntegerMESAProc(GLX_RENDERER_DEVICE_ID_MESA, &deviceId);
-    glXQueryCurrentRendererIntegerMESAProc(GLX_RENDERER_ACCELERATED_MESA, &accelerated);
-    glXQueryCurrentRendererIntegerMESAProc(GLX_RENDERER_VIDEO_MEMORY_MESA, &videoMemoryMB);
+    glXQueryCurrentRendererIntegerMESAProc(GLX_RENDERER_VENDOR_ID_MESA,
+                                           &vendorId);
+    glXQueryCurrentRendererIntegerMESAProc(GLX_RENDERER_DEVICE_ID_MESA,
+                                           &deviceId);
+    glXQueryCurrentRendererIntegerMESAProc(GLX_RENDERER_ACCELERATED_MESA,
+                                           &accelerated);
+    glXQueryCurrentRendererIntegerMESAProc(GLX_RENDERER_VIDEO_MEMORY_MESA,
+                                           &videoMemoryMB);
 
     
     vendorId &= 0xFFFF;
@@ -259,11 +268,11 @@ void glxtest() {
   }
 
   
-  typedef const char * (* PFNGLXGETSCREENDRIVERPROC) (Display *dpy, int scrNum);
+  typedef const char *(*PFNGLXGETSCREENDRIVERPROC)(Display * dpy, int scrNum);
   PFNGLXGETSCREENDRIVERPROC glXGetScreenDriverProc =
-    cast<PFNGLXGETSCREENDRIVERPROC>(glXGetProcAddress("glXGetScreenDriver"));
+      cast<PFNGLXGETSCREENDRIVERPROC>(glXGetProcAddress("glXGetScreenDriver"));
   if (glXGetScreenDriverProc) {
-    const char* driDriver = glXGetScreenDriverProc(dpy, DefaultScreen(dpy));
+    const char *driDriver = glXGetScreenDriverProc(dpy, DefaultScreen(dpy));
     if (driDriver) {
       length += snprintf(buf + length, bufsize, "DRI_DRIVER\n%s\n", driDriver);
       if (length >= bufsize)
