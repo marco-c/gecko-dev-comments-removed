@@ -558,6 +558,10 @@ extern JS_FRIEND_API bool CompartmentHasLiveGlobal(JS::Compartment* comp);
 
 
 
+extern JS_FRIEND_API bool IsSharableCompartment(JS::Compartment* comp);
+
+
+
 
 
 
@@ -596,7 +600,7 @@ struct Object {
   JS::Value* slots;
   void* _1;
 
-  static constexpr size_t MAX_FIXED_SLOTS = 16;
+  static const size_t MAX_FIXED_SLOTS = 16;
 
   size_t numFixedSlots() const {
     return (shape->immutableFlags & Shape::FIXED_SLOTS_MASK) >>

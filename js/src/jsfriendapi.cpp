@@ -1131,6 +1131,26 @@ JS_FRIEND_API JS::Realm* js::GetAnyRealmInZone(JS::Zone* zone) {
   return realm.get();
 }
 
+JS_FRIEND_API bool js::IsSharableCompartment(JS::Compartment* comp) {
+  
+  
+  
+  if (comp->nukedOutgoingWrappers) {
+    return false;
+  }
+
+  
+  
+  
+  
+  if (!CompartmentHasLiveGlobal(comp)) {
+    return false;
+  }
+
+  
+  return true;
+}
+
 void JS::ObjectPtr::finalize(JSRuntime* rt) {
   if (IsIncrementalBarrierNeeded(rt->mainContextFromOwnThread())) {
     IncrementalPreWriteBarrier(value);
