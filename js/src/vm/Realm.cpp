@@ -1037,3 +1037,53 @@ JS_PUBLIC_API JSObject* JS::GetRealmIteratorPrototype(JSContext* cx) {
   CHECK_THREAD(cx);
   return GlobalObject::getOrCreateIteratorPrototype(cx, cx->global());
 }
+
+JS_PUBLIC_API Realm* JS::GetFunctionRealm(JSContext* cx, HandleObject objArg) {
+  
+  
+
+  CHECK_THREAD(cx);
+  cx->check(objArg);
+
+  RootedObject obj(cx, objArg);
+  while (true) {
+    obj = CheckedUnwrapStatic(obj);
+    if (!obj) {
+      ReportAccessDenied(cx);
+      return nullptr;
+    }
+
+    
+    MOZ_ASSERT(IsCallable(obj));
+
+    
+    
+    if (obj->is<JSFunction>()) {
+      JSFunction* fun = &obj->as<JSFunction>();
+      if (!fun->isBoundFunction()) {
+        return fun->realm();
+      }
+
+      obj = fun->getBoundFunctionTarget();
+      continue;
+    }
+
+    
+    if (IsScriptedProxy(obj)) {
+      
+      JSObject* proxyTarget = GetProxyTargetObject(obj);
+      if (!proxyTarget) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                  JSMSG_PROXY_REVOKED);
+        return nullptr;
+      }
+
+      
+      obj = proxyTarget;
+      continue;
+    }
+
+    
+    return cx->realm();
+  }
+}
