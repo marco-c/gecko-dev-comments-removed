@@ -10,6 +10,7 @@ var EXPORTED_SYMBOLS = ["KeyPressEventModelCheckerChild"];
 
 const {ActorChild} = ChromeUtils.import("resource://gre/modules/ActorChild.jsm");
 const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 class KeyPressEventModelCheckerChild extends ActorChild {
   
@@ -68,7 +69,16 @@ class KeyPressEventModelCheckerChild extends ActorChild {
     try {
       let {author, version} =
           new tinyMCEObject.plugins.CursorTargetPlugin().getInfo();
-      return author === "Atlassian" && version === "1.0";
+      
+      
+      
+      if (author !== "Atlassian") {
+        return false;
+      }
+      let isOldVersion = version === "1.0";
+      Services.telemetry.keyedScalarAdd("dom.event.confluence_load_count",
+                                        isOldVersion ? "old" : "new", 1);
+      return isOldVersion;
     } catch (e) {
       return false;
     }
