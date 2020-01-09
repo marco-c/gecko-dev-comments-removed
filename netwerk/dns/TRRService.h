@@ -62,13 +62,15 @@ class TRRService : public nsIObserver,
   nsresult ReadPrefs(const char *name);
   void GetPrefBranch(nsIPrefBranch **result);
   void MaybeConfirm();
+  void MaybeConfirm_locked();
 
   bool mInitialized;
   Atomic<uint32_t, Relaxed> mMode;
   Atomic<uint32_t, Relaxed> mTRRBlacklistExpireTime;
   Atomic<uint32_t, Relaxed> mTRRTimeout;
 
-  Mutex mLock;             
+  Mutex mLock;
+
   nsCString mPrivateURI;   
   nsCString mPrivateCred;  
   nsCString mConfirmationNS;
@@ -87,6 +89,9 @@ class TRRService : public nsIObserver,
   Atomic<uint32_t, Relaxed>
       mDisableAfterFails;  
 
+  
+  
+  
   
   RefPtr<DataStorage> mTRRBLStorage;
   Atomic<bool, Relaxed> mClearTRRBLStorage;
