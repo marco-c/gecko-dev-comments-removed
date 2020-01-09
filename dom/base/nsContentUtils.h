@@ -309,6 +309,9 @@ class nsContentUtils {
   static bool ShouldResistFingerprinting(Document* aDoc);
 
   
+  static bool UseStandinsForNativeColors();
+
+  
   
   
   

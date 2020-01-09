@@ -102,11 +102,6 @@ uint8_t gNotifySubDocInvalidationData;
 
 
 
-constexpr char kUseStandinsForNativeColors[] =
-    "ui.use_standins_for_native_colors";
-
-
-
 
 
 
@@ -277,7 +272,6 @@ static const char* gExactCallbackPrefs[] = {
     "layout.css.devPixelsPerPx",
     "nglayout.debug.paint_flashing",
     "nglayout.debug.paint_flashing_chrome",
-    kUseStandinsForNativeColors,
     "intl.accept_languages",
     nullptr,
 };
@@ -376,16 +370,10 @@ void nsPresContext::GetDocumentColorPreferences() {
   bool isChromeDocShell = false;
   static int32_t sDocumentColorsSetting;
   static bool sDocumentColorsSettingPrefCached = false;
-  static bool sUseStandinsForNativeColors = false;
   if (!sDocumentColorsSettingPrefCached) {
     sDocumentColorsSettingPrefCached = true;
     Preferences::AddIntVarCache(&sDocumentColorsSetting,
                                 "browser.display.document_color_use", 0);
-
-    
-    
-    Preferences::AddBoolVarCache(&sUseStandinsForNativeColors,
-                                 kUseStandinsForNativeColors);
   }
 
   dom::Document* doc = mDocument->GetDisplayDocument();
@@ -415,7 +403,7 @@ void nsPresContext::GetDocumentColorPreferences() {
         !Preferences::GetBool("browser.display.use_system_colors", false);
   }
 
-  if (sUseStandinsForNativeColors) {
+  if (nsContentUtils::UseStandinsForNativeColors()) {
     
     
     mDefaultColor = LookAndFeel::GetColorUsingStandins(
