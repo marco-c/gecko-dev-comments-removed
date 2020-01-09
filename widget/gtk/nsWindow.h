@@ -606,6 +606,9 @@ class nsWindow final : public nsBaseWidget {
   void ForceTitlebarRedraw();
 
   
+  GtkWindow* GetPopupParentWindow();
+
+  
 
 
 

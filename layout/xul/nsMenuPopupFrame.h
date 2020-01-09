@@ -545,6 +545,11 @@ class nsMenuPopupFrame final : public nsBoxFrame,
  public:
   bool ShouldFollowAnchor(nsRect& aRect);
 
+  
+  
+  
+  nsIWidget* GetParentMenuWidget();
+
  protected:
   nsString mIncrementalString;  
 
