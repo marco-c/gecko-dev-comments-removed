@@ -2503,6 +2503,12 @@ nsresult HTMLEditRules::WillDeleteSelection(
     if (wsType == WSType::special || wsType == WSType::br ||
         visNode->IsHTMLElement(nsGkAtoms::hr)) {
       
+      if (visNode == wsObj.GetEditingHost()) {
+        *aHandled = true;
+        return NS_OK;
+      }
+
+      
       if (visNode->IsHTMLElement(nsGkAtoms::br) &&
           !HTMLEditorRef().IsVisibleBRElement(visNode)) {
         rv = MOZ_KnownLive(HTMLEditorRef()).DeleteNodeWithTransaction(*visNode);

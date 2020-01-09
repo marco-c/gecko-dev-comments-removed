@@ -316,6 +316,8 @@ class MOZ_STACK_CLASS WSRunObject final {
   
   MOZ_CAN_RUN_SCRIPT nsresult AdjustWhitespace();
 
+  Element* GetEditingHost() const { return mEditingHost; }
+
  protected:
   
   
@@ -508,6 +510,9 @@ class MOZ_STACK_CLASS WSRunObject final {
   
   EditorDOMPoint mScanStartPoint;
   EditorDOMPoint mScanEndPoint;
+
+  
+  RefPtr<Element> mEditingHost;
 
   
   
