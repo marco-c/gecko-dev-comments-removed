@@ -247,6 +247,12 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
 
 
+  static bool IsUserInteractionEvent(const WidgetEvent* aEvent);
+
+  
+
+
+
 
 
 

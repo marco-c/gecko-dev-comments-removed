@@ -220,7 +220,7 @@ nsIFrame* TouchManager::SuppressInvalidPointsAndGetTargetedFrame(
 }
 
 bool TouchManager::PreHandleEvent(WidgetEvent* aEvent, nsEventStatus* aStatus,
-                                  bool& aTouchIsNew, bool& aIsHandlingUserInput,
+                                  bool& aTouchIsNew,
                                   nsCOMPtr<nsIContent>& aCurrentEventContent) {
   MOZ_DIAGNOSTIC_ASSERT(aEvent->IsTrusted());
 
@@ -228,7 +228,6 @@ bool TouchManager::PreHandleEvent(WidgetEvent* aEvent, nsEventStatus* aStatus,
   
   switch (aEvent->mMessage) {
     case eTouchStart: {
-      aIsHandlingUserInput = true;
       WidgetTouchEvent* touchEvent = aEvent->AsTouchEvent();
       
       
@@ -335,9 +334,6 @@ bool TouchManager::PreHandleEvent(WidgetEvent* aEvent, nsEventStatus* aStatus,
       break;
     }
     case eTouchEnd:
-      aIsHandlingUserInput = true;
-      
-      MOZ_FALLTHROUGH;
     case eTouchCancel: {
       
       

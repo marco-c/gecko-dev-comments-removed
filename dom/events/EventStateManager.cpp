@@ -4042,6 +4042,36 @@ class MOZ_STACK_CLASS ESMEventCB : public EventDispatchingCallback {
 };
 
 
+bool EventStateManager::IsUserInteractionEvent(const WidgetEvent* aEvent) {
+  if (!aEvent->IsTrusted()) {
+    return false;
+  }
+
+  switch (aEvent->mMessage) {
+    
+    case eKeyPress:
+    case eKeyDown:
+    case eKeyUp:
+      
+      
+      
+      return aEvent->AsKeyboardEvent()->CanTreatAsUserInput();
+    
+    case eMouseDown:
+    case eMouseUp:
+    
+    case ePointerDown:
+    case ePointerUp:
+    
+    case eTouchStart:
+    case eTouchEnd:
+      return true;
+    default:
+      return false;
+  }
+}
+
+
 bool EventStateManager::IsHandlingUserInput() {
   return sUserInputEventDepth > 0;
 }

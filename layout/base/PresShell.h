@@ -2569,14 +2569,9 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-
-
-
-
     MOZ_CAN_RUN_SCRIPT
     bool PrepareToDispatchEvent(WidgetEvent* aEvent,
-                                nsEventStatus* aEventStatus,
-                                bool* aIsUserInteraction, bool* aTouchIsNew);
+                                nsEventStatus* aEventStatus, bool* aTouchIsNew);
 
     
 
