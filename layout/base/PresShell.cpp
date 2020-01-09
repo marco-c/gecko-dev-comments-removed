@@ -10921,7 +10921,15 @@ void PresShell::SetIsUnderHiddenEmbedderElement(
     
     for (BrowsingContext* child : bc->GetChildren()) {
       Element* embedderElement = child->GetEmbedderElement();
-      MOZ_ASSERT(embedderElement);
+      if (!embedderElement) {
+        
+        
+        
+        
+        
+        
+        continue;
+      }
 
       bool embedderFrameIsHidden = true;
       if (auto embedderFrame = embedderElement->GetPrimaryFrame()) {
