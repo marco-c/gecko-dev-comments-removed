@@ -486,17 +486,13 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   MOZ_MUST_USE bool emitFunctionScript(CodeNode* funNode,
                                        TopLevelFunction isTopLevel);
 
-  
-  
-  void checkTypeSet(JSOp op);
-
   void updateDepth(ptrdiff_t target);
   MOZ_MUST_USE bool updateLineNumberNotes(uint32_t offset);
   MOZ_MUST_USE bool updateSourceCoordNotes(uint32_t offset);
 
   JSOp strictifySetNameOp(JSOp op);
 
-  MOZ_MUST_USE bool emitCheck(ptrdiff_t delta, ptrdiff_t* offset);
+  MOZ_MUST_USE bool emitCheck(JSOp op, ptrdiff_t delta, ptrdiff_t* offset);
 
   
   MOZ_MUST_USE bool emit1(JSOp op);
