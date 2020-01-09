@@ -556,6 +556,11 @@ var LoginManagerContent = {
 
 
         fillsByRootElement: new WeakMap(),
+        
+
+
+        lastSubmittedValuesByRootElement: new WeakMap(),
+        loginFormRootElements: new WeakSet(),
       };
       this.loginFormStateByDocument.set(document, loginFormState);
     }
@@ -1072,6 +1077,25 @@ var LoginManagerContent = {
                             { name: oldPasswordField.name,
                               value: oldPasswordField.value } :
                             null;
+
+    let usernameValue = usernameField ? usernameField.value : null;
+    let formLikeRoot = FormLikeFactory.findRootForField(newPasswordField);
+    let state = this.stateForDocument(doc);
+    let lastSubmittedValues = state.lastSubmittedValuesByRootElement.get(formLikeRoot);
+    if (lastSubmittedValues) {
+      if (lastSubmittedValues.username == usernameValue &&
+          lastSubmittedValues.password == newPasswordField.value) {
+        log("(form submission ignored -- already submitted with the same username and password)");
+        return;
+      }
+    }
+
+    
+    
+    state.lastSubmittedValuesByRootElement.set(formLikeRoot, {
+      username: usernameValue,
+      password: newPasswordField.value,
+    });
 
     
     let openerTopWindowID = null;
