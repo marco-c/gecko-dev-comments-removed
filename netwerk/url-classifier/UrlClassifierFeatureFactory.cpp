@@ -7,6 +7,7 @@
 #include "mozilla/net/UrlClassifierFeatureFactory.h"
 
 
+#include "UrlClassifierFeatureCryptominingAnnotation.h"
 #include "UrlClassifierFeatureCryptominingProtection.h"
 #include "UrlClassifierFeatureFingerprintingAnnotation.h"
 #include "UrlClassifierFeatureFingerprintingProtection.h"
@@ -29,6 +30,7 @@ void UrlClassifierFeatureFactory::Shutdown() {
     return;
   }
 
+  UrlClassifierFeatureCryptominingAnnotation::MaybeShutdown();
   UrlClassifierFeatureCryptominingProtection::MaybeShutdown();
   UrlClassifierFeatureFingerprintingAnnotation::MaybeShutdown();
   UrlClassifierFeatureFingerprintingProtection::MaybeShutdown();
@@ -66,13 +68,19 @@ void UrlClassifierFeatureFactory::GetFeaturesFromChannel(
   }
 
   
-  feature = UrlClassifierFeatureFingerprintingAnnotation::MaybeCreate(aChannel);
+  feature = UrlClassifierFeatureTrackingProtection::MaybeCreate(aChannel);
   if (feature) {
     aFeatures.AppendElement(feature);
   }
 
   
-  feature = UrlClassifierFeatureTrackingProtection::MaybeCreate(aChannel);
+  feature = UrlClassifierFeatureCryptominingAnnotation::MaybeCreate(aChannel);
+  if (feature) {
+    aFeatures.AppendElement(feature);
+  }
+
+  
+  feature = UrlClassifierFeatureFingerprintingAnnotation::MaybeCreate(aChannel);
   if (feature) {
     aFeatures.AppendElement(feature);
   }
@@ -109,6 +117,12 @@ UrlClassifierFeatureFactory::GetFeatureByName(const nsACString& aName) {
   }
 
   nsCOMPtr<nsIUrlClassifierFeature> feature;
+
+  
+  feature = UrlClassifierFeatureCryptominingAnnotation::GetIfNameMatches(aName);
+  if (feature) {
+    return feature.forget();
+  }
 
   
   feature = UrlClassifierFeatureCryptominingProtection::GetIfNameMatches(aName);
@@ -169,8 +183,15 @@ void UrlClassifierFeatureFactory::GetFeatureNames(nsTArray<nsCString>& aArray) {
     return;
   }
 
-  
   nsAutoCString name;
+
+  
+  name.Assign(UrlClassifierFeatureCryptominingAnnotation::Name());
+  if (!name.IsEmpty()) {
+    aArray.AppendElement(name);
+  }
+
+  
   name.Assign(UrlClassifierFeatureCryptominingProtection::Name());
   if (!name.IsEmpty()) {
     aArray.AppendElement(name);

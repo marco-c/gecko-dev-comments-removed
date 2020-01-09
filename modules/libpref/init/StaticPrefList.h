@@ -2021,13 +2021,18 @@ VARCACHE_PREF(
 )
 
 
-# define PREF_VALUE false
 VARCACHE_PREF(
   "privacy.trackingprotection.cryptomining.enabled",
    privacy_trackingprotection_cryptomining_enabled,
-  bool, PREF_VALUE
+  bool, false
 )
-#undef PREF_VALUE
+
+
+VARCACHE_PREF(
+  "privacy.trackingprotection.cryptomining.annotate.enabled",
+   privacy_trackingprotection_cryptomining_annotate_enabled,
+  bool, false
+)
 
 
 
