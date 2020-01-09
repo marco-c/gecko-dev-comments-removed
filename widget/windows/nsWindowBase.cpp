@@ -100,8 +100,21 @@ bool nsWindowBase::InjectTouchPoint(uint32_t aId, LayoutDeviceIntPoint& aPoint,
   info.rcContact.left = info.pointerInfo.ptPixelLocation.x - 2;
   info.rcContact.right = info.pointerInfo.ptPixelLocation.x + 2;
 
-  if (!sInjectTouchFuncPtr(1, &info)) {
-    WinUtils::Log("InjectTouchInput failure. GetLastError=%d", GetLastError());
+  for (int i = 0; i < 3; i++) {
+    if (sInjectTouchFuncPtr(1, &info)) {
+      break;
+    }
+    DWORD error = GetLastError();
+    if (error == ERROR_NOT_READY && i < 2) {
+      
+      
+      
+      
+      
+      ::Sleep(i);
+      continue;
+    }
+    WinUtils::Log("InjectTouchInput failure. GetLastError=%d", error);
     return false;
   }
   return true;
