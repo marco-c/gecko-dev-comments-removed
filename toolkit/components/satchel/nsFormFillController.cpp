@@ -592,9 +592,21 @@ NS_IMETHODIMP
 nsFormFillController::OnSearchComplete() { return NS_OK; }
 
 NS_IMETHODIMP
-nsFormFillController::OnTextEntered(Event* aEvent, bool* aPrevent) {
+nsFormFillController::OnTextEntered(Event* aEvent, bool itemWasSelected,
+                                    bool* aPrevent) {
   NS_ENSURE_ARG(aPrevent);
   NS_ENSURE_TRUE(mFocusedInput, NS_OK);
+
+  
+
+
+
+
+
+  if (!itemWasSelected) {
+    return NS_OK;
+  }
+
   
 
   IgnoredErrorResult ignored;
