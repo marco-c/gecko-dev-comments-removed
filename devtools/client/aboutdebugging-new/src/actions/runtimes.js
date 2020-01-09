@@ -145,6 +145,7 @@ function createThisFirefoxRuntime() {
     const thisFirefoxRuntime = {
       id: RUNTIMES.THIS_FIREFOX,
       isConnecting: false,
+      isConnectionFailed: false,
       isUnknown: false,
       name: l10n.getString("about-debugging-this-firefox-runtime-name"),
       type: RUNTIMES.THIS_FIREFOX,
@@ -304,6 +305,7 @@ function updateNetworkRuntimes(locations) {
         connectionParameters: { host, port: parseInt(port, 10) },
       },
       isConnecting: false,
+      isConnectionFailed: false,
       isUnknown: false,
       name: location,
       type: RUNTIMES.NETWORK,
@@ -325,6 +327,7 @@ function updateUSBRuntimes(adbRuntimes) {
         deviceName: adbRuntime.deviceName,
       },
       isConnecting: false,
+      isConnectionFailed: false,
       isUnknown: adbRuntime.isUnknown(),
       name: adbRuntime.shortName,
       type: RUNTIMES.USB,
@@ -370,12 +373,15 @@ function updateRemoteRuntimes(runtimes, type) {
     
     
     
+    
     runtimes.forEach(runtime => {
       const existingRuntime = findRuntimeById(runtime.id, getState().runtimes);
       const isConnectionValid = existingRuntime && existingRuntime.runtimeDetails &&
         !existingRuntime.runtimeDetails.clientWrapper.isClosed();
       runtime.runtimeDetails = isConnectionValid ? existingRuntime.runtimeDetails : null;
       runtime.isConnecting = existingRuntime ? existingRuntime.isConnecting : false;
+      runtime.isConnectionFailed =
+        existingRuntime ? existingRuntime.isConnectionFailed : false;
     });
 
     const existingRuntimes = getAllRuntimes(getState().runtimes);

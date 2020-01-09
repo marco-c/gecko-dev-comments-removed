@@ -164,6 +164,11 @@ p, h1 {
 }
 
 
+.word-wrap-anywhere {
+  word-wrap: anywhere;
+}
+
+
 
 
 
