@@ -2070,7 +2070,7 @@ extern JS_PUBLIC_API JSObject* JS_NewExternalArrayBuffer(
 
 
 
-extern JS_PUBLIC_API JSObject* JS_NewArrayBufferWithExternalContents(
+extern JS_PUBLIC_API JSObject* JS_NewArrayBufferWithUserOwnedContents(
     JSContext* cx, size_t nbytes, void* contents);
 
 

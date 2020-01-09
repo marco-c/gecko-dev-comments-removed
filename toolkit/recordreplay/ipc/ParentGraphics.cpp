@@ -167,7 +167,7 @@ void UpdateGraphicsInUIProcess(const PaintMessage* aMsg) {
   
   JS::RootedObject bufferObject(cx);
   bufferObject =
-      JS_NewArrayBufferWithExternalContents(cx, width * height * 4, memory);
+      JS_NewArrayBufferWithUserOwnedContents(cx, width * height * 4, memory);
   MOZ_RELEASE_ASSERT(bufferObject);
 
   JS::RootedValue buffer(cx, ObjectValue(*bufferObject));
