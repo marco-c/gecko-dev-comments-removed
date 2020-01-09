@@ -69,7 +69,7 @@ class nsTextControlFrame final : public nsContainerFrame,
   bool GetNaturalBaselineBOffset(mozilla::WritingMode aWM,
                                  BaselineSharingGroup aBaselineGroup,
                                  nscoord* aBaseline) const override {
-    if (!IsSingleLineTextControl()) {
+    if (StyleDisplay()->IsContainLayout() || !IsSingleLineTextControl()) {
       return false;
     }
     NS_ASSERTION(mFirstBaseline != NS_INTRINSIC_ISIZE_UNKNOWN,

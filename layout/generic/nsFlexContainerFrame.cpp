@@ -4555,7 +4555,6 @@ void nsFlexContainerFrame::DoFlexLayout(
       aReflowInput.mStyleDisplay->IsContainLayout()) {
     
     
-    
     AddStateBits(NS_STATE_FLEX_SYNTHESIZE_BASELINE);
   } else {
     RemoveStateBits(NS_STATE_FLEX_SYNTHESIZE_BASELINE);
@@ -4919,7 +4918,8 @@ void nsFlexContainerFrame::DoFlexLayout(
       
       
       
-      if (!itemNeedsReflow && aHasLineClampEllipsis && GetLineClampValue() == 0) {
+      if (!itemNeedsReflow && aHasLineClampEllipsis &&
+          GetLineClampValue() == 0) {
         item->BlockFrame()->ClearLineClampEllipsis();
       }
 
