@@ -55,7 +55,6 @@ module.exports = {
   }, {
     
     "files": [
-      "accessible/tests/mochitest/events.js",
       "browser/actors/ContextMenuChild.jsm",
       "browser/base/content/**",
       "browser/components/customizableui/**",

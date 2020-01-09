@@ -1970,7 +1970,10 @@ var gA11yEventObserver =
       
       Services.obs.removeObserver(this, "accessible-event");
       
-      throw "[accessible/events.js, gA11yEventObserver.observe] This is expected if a previous test has been aborted... Initial exception was: [ " + ex + " ]";
+      throw new Error(
+        "[accessible/events.js, gA11yEventObserver.observe] This is expected " +
+        `if a previous test has been aborted... Initial exception was: [ ${ex} ]`
+      );
     }
     var listenersArray = gA11yEventListeners[event.eventType];
 
