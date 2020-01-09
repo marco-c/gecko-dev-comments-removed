@@ -1192,13 +1192,7 @@ const browsingContextTargetPrototype = {
     }
     const windowUtils = this.window.windowUtils;
 
-    
-    
-    
-    if (Debugger.recordReplayProcessKind() != "Middleman") {
-      windowUtils.suppressEventHandling(true);
-    }
-
+    windowUtils.suppressEventHandling(true);
     windowUtils.suspendTimeouts();
   },
 
@@ -1212,9 +1206,7 @@ const browsingContextTargetPrototype = {
     }
     const windowUtils = this.window.windowUtils;
     windowUtils.resumeTimeouts();
-    if (Debugger.recordReplayProcessKind() != "Middleman") {
-      windowUtils.suppressEventHandling(false);
-    }
+    windowUtils.suppressEventHandling(false);
   },
 
   _changeTopLevelDocument(window) {
