@@ -135,6 +135,9 @@ bool testGCAllocatorUp(const size_t PageSize) {
   
   CHECK(positionIsCorrect("x--xx--xx-oox---", stagingArea, chunkPool,
                           tempChunks, UseLastDitchAllocator));
+  
+  CHECK(positionIsCorrect("x--xx--xoo------", stagingArea, chunkPool,
+                          tempChunks, UseLastDitchAllocator));
 
   
   while (--tempChunks >= 0) {
@@ -184,6 +187,9 @@ bool testGCAllocatorDown(const size_t PageSize) {
                           tempChunks));
   
   CHECK(positionIsCorrect("---xoo-xx--xx--x", stagingArea, chunkPool,
+                          tempChunks, UseLastDitchAllocator));
+  
+  CHECK(positionIsCorrect("------oox--xx--x", stagingArea, chunkPool,
                           tempChunks, UseLastDitchAllocator));
 
   

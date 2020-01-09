@@ -158,12 +158,11 @@ static void* MapAlignedPagesLastDitch(size_t length, size_t alignment);
 
 #ifdef JS_64BIT
 static void* MapAlignedPagesRandom(size_t length, size_t alignment);
-void* TestMapAlignedPagesLastDitch(size_t, size_t) { return nullptr; }
-#else
+#endif
+
 void* TestMapAlignedPagesLastDitch(size_t length, size_t alignment) {
   return MapAlignedPagesLastDitch(length, alignment);
 }
-#endif
 
 
 
@@ -425,28 +424,45 @@ void* MapAlignedPages(size_t length, size_t alignment) {
   }
 #endif
 
+  
+  
   void* region = MapMemory(length);
   if (OffsetFromAligned(region, alignment) == 0) {
     return region;
   }
 
+  
+  
   void* retainedRegion;
-  TryToAlignChunk(&region, &retainedRegion, length, alignment);
+  if (TryToAlignChunk(&region, &retainedRegion, length, alignment)) {
+    MOZ_ASSERT(region && OffsetFromAligned(region, alignment) == 0);
+    MOZ_ASSERT(!retainedRegion);
+    return region;
+  }
+
+  
+  
   if (retainedRegion) {
     UnmapInternal(retainedRegion, length);
   }
+
+  
+  
   if (region) {
-    if (OffsetFromAligned(region, alignment) == 0) {
-      return region;
-    }
+    MOZ_ASSERT(OffsetFromAligned(region, alignment) != 0);
     UnmapInternal(region, length);
   }
 
+  
+  
   region = MapAlignedPagesSlow(length, alignment);
   if (!region) {
+    
+    
     region = MapAlignedPagesLastDitch(length, alignment);
   }
 
+  
   MOZ_ASSERT(OffsetFromAligned(region, alignment) == 0);
   return region;
 }
@@ -510,6 +526,7 @@ static void* MapAlignedPagesRandom(size_t length, size_t alignment) {
     }
     void* retainedRegion = nullptr;
     if (TryToAlignChunk<false>(&region, &retainedRegion, length, alignment)) {
+      MOZ_ASSERT(region && OffsetFromAligned(region, alignment) == 0);
       MOZ_ASSERT(!retainedRegion);
       return region;
     }
@@ -590,6 +607,7 @@ static void* MapAlignedPagesLastDitch(size_t length, size_t alignment) {
   }
   for (; attempt < MaxLastDitchAttempts; ++attempt) {
     if (TryToAlignChunk(&region, tempMaps + attempt, length, alignment)) {
+      MOZ_ASSERT(region && OffsetFromAligned(region, alignment) == 0);
       MOZ_ASSERT(!tempMaps[attempt]);
       break;  
     }
@@ -705,6 +723,12 @@ static bool TryToAlignChunk(void** aRegion, void** aRetainedRegion,
     
     retainedRegion = regionStart;
     regionStart = MapMemory(length);
+    
+    result = OffsetFromAligned(regionStart, alignment) == 0;
+    if (result) {
+      UnmapInternal(retainedRegion, length);
+      retainedRegion = nullptr;
+    }
   }
 
   *aRegion = regionStart;
