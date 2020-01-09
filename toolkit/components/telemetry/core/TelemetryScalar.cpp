@@ -169,8 +169,8 @@ struct DynamicScalarInfo : BaseScalarInfo {
                     const nsTArray<nsCString>& aStores)
       : BaseScalarInfo(
             aKind,
-            aRecordOnRelease ? nsITelemetry::DATASET_RELEASE_CHANNEL_OPTOUT
-                             : nsITelemetry::DATASET_RELEASE_CHANNEL_OPTIN,
+            aRecordOnRelease ? nsITelemetry::DATASET_ALL_CHANNELS
+                             : nsITelemetry::DATASET_PRERELEASE_CHANNELS,
             RecordedProcessType::All, aKeyed, GetCurrentProduct(), aBuiltin),
         mDynamicName(aName),
         mDynamicExpiration(aExpired) {
@@ -3672,8 +3672,7 @@ void TelemetryScalar::AddDynamicScalarDefinitions(
 
   
   for (auto def : aDefs) {
-    bool recordOnRelease =
-        def.dataset == nsITelemetry::DATASET_RELEASE_CHANNEL_OPTOUT;
+    bool recordOnRelease = def.dataset == nsITelemetry::DATASET_ALL_CHANNELS;
     dynamicStubs.AppendElement(DynamicScalarInfo{def.type,
                                                  recordOnRelease,
                                                  def.expired,
@@ -3733,7 +3732,7 @@ nsresult TelemetryScalar::SerializeScalars(mozilla::JSONWriter& aWriter) {
     
     
     nsresult rv = internal_GetScalarSnapshot(
-        locker, scalarsToReflect, nsITelemetry::DATASET_RELEASE_CHANNEL_OPTIN,
+        locker, scalarsToReflect, nsITelemetry::DATASET_PRERELEASE_CHANNELS,
         false, 
         NS_LITERAL_CSTRING("main"));
     if (NS_FAILED(rv)) {
@@ -3784,7 +3783,7 @@ nsresult TelemetryScalar::SerializeKeyedScalars(mozilla::JSONWriter& aWriter) {
     
     nsresult rv = internal_GetKeyedScalarSnapshot(
         locker, keyedScalarsToReflect,
-        nsITelemetry::DATASET_RELEASE_CHANNEL_OPTIN, false, 
+        nsITelemetry::DATASET_PRERELEASE_CHANNELS, false, 
         NS_LITERAL_CSTRING("main"));
     if (NS_FAILED(rv)) {
       return rv;
