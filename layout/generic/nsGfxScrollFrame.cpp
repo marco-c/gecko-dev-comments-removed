@@ -3742,7 +3742,8 @@ void ScrollFrameHelper::MaybeAddTopLayerItems(nsDisplayListBuilder* aBuilder,
         
         
         nsDisplayWrapList* wrapList = MakeDisplayItem<nsDisplayWrapList>(
-            aBuilder, viewportFrame, &topLayerList);
+            aBuilder, viewportFrame, &topLayerList,
+            aBuilder->CurrentActiveScrolledRoot(), false, 2);
         wrapList->SetOverrideZIndex(
             std::numeric_limits<decltype(wrapList->ZIndex())>::max());
         aLists.PositionedDescendants()->AppendToTop(wrapList);

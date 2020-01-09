@@ -919,6 +919,17 @@ bool nsIFrame::HasDisplayItem(uint32_t aKey) {
   return false;
 }
 
+void nsIFrame::DiscardItems() {
+  DisplayItemArray* items = GetProperty(DisplayItems());
+  if (!items) {
+    return;
+  }
+
+  for (nsDisplayItem* i : *items) {
+    i->SetDontReuse();
+  }
+}
+
 void nsIFrame::RemoveDisplayItemDataForDeletion() {
   
   
@@ -3425,12 +3436,15 @@ static nsDisplayItem* WrapInWrapList(nsDisplayListBuilder* aBuilder,
 
   
   
-  bool needsWrapList = item->GetAbove() || item->Frame() != aFrame;
+  
+  
+  bool needsWrapList =
+      item->GetAbove() || item->Frame() != aFrame || item->GetChildren();
 
   
   
   
-  if (!needsWrapList && (!aBuilder->IsPartialUpdate() || aBuiltContainerItem)) {
+  if (aBuiltContainerItem || (!aBuilder->IsPartialUpdate() && !needsWrapList)) {
     aList->RemoveBottom();
     return item;
   }
@@ -3444,14 +3458,16 @@ static nsDisplayItem* WrapInWrapList(nsDisplayListBuilder* aBuilder,
     
     
     
+    
     if (needsWrapList) {
-      aBuilder->MarkFrameModifiedDuringBuilding(aFrame);
+      aFrame->DiscardItems();
     } else {
       aList->RemoveBottom();
       return item;
     }
   }
 
+  
   
   
   
