@@ -701,6 +701,12 @@ class Selection final : public nsSupportsWeakReference,
 
 
 
+  void SelectFramesInAllRanges(nsPresContext* aPresContext);
+
+  
+
+
+
 
   nsresult GetTableSelectionType(nsRange* aRange,
                                  TableSelection* aTableSelectionType);
