@@ -3803,6 +3803,9 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
   
   
   
+  
+  
+  
   RootedValue onFulfilled(
       cx,
       Int32Value(done ? PromiseHandlerAsyncFromSyncIteratorValueUnwrapDone
@@ -3815,10 +3818,11 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
   
   
   
+  
   auto extra = [](Handle<PromiseReactionRecord*> reaction) {};
   if (!InternalAwait(cx, value, resultPromise, onFulfilled, onRejected,
                      extra)) {
-    return false;
+    return AbruptRejectPromise(cx, args, resultPromise, nullptr);
   }
 
   
