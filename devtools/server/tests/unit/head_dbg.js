@@ -653,8 +653,8 @@ function waitForEvent(client, type, predicate) {
 
 
 
-function executeOnNextTickAndWaitForPause(action, client) {
-  const paused = waitForPause(client);
+function executeOnNextTickAndWaitForPause(action, threadClient) {
+  const paused = waitForPause(threadClient);
   executeSoon(action);
   return paused;
 }
@@ -688,8 +688,8 @@ function interrupt(threadClient) {
 
 
 
-function resumeAndWaitForPause(client, threadClient) {
-  const paused = waitForPause(client);
+function resumeAndWaitForPause(threadClient) {
+  const paused = waitForPause(threadClient);
   return resume(threadClient).then(() => paused);
 }
 
@@ -700,10 +700,9 @@ function resumeAndWaitForPause(client, threadClient) {
 
 
 
-
-function stepIn(client, threadClient) {
+function stepIn(threadClient) {
   dumpn("Stepping in.");
-  const paused = waitForPause(client);
+  const paused = waitForPause(threadClient);
   return threadClient.stepIn()
     .then(() => paused);
 }
@@ -715,11 +714,10 @@ function stepIn(client, threadClient) {
 
 
 
-
-function stepOver(client, threadClient) {
+function stepOver(threadClient) {
   dumpn("Stepping over.");
   return threadClient.stepOver()
-    .then(() => waitForPause(client));
+    .then(() => waitForPause(threadClient));
 }
 
 
@@ -730,10 +728,10 @@ function stepOver(client, threadClient) {
 
 
 
-function stepOut(client, threadClient) {
+function stepOut(threadClient) {
   dumpn("Stepping out.");
   return threadClient.stepOut()
-    .then(() => waitForPause(client));
+    .then(() => waitForPause(threadClient));
 }
 
 

@@ -8,14 +8,14 @@
 
 
 
-add_task(threadClientTest(async ({ threadClient, debuggee, client }) => {
+add_task(threadClientTest(async ({ threadClient, debuggee }) => {
   
   
   await getSources(threadClient);
 
   const packet = await executeOnNextTickAndWaitForPause(() => {
     evalCode(debuggee);
-  }, client);
+  }, threadClient);
   const source = await getSourceById(
     threadClient,
     packet.frame.where.actor
