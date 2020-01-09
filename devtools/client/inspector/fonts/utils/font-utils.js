@@ -43,7 +43,7 @@ module.exports = {
 
 
   getUnitFromValue(value) {
-    if (typeof value !== "string") {
+    if (typeof value !== "string" || isNaN(parseFloat(value))) {
       return null;
     }
 
