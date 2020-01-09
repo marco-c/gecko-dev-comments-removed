@@ -968,7 +968,7 @@ pref("gfx.webrender.dl.dump-parent", false);
 pref("gfx.webrender.dl.dump-content", false);
 pref("gfx.webrender.picture-caching", true);
 
-#ifdef NIGHTLY_BUILD
+#ifdef EARLY_BETA_OR_EARLIER
 pref("performance.adjust_to_machine", true);
 #else
 pref("performance.adjust_to_machine", false);
@@ -2682,7 +2682,7 @@ pref("csp.overrule_about_uris_without_csp_whitelist", false);
 pref("csp.skip_about_page_has_csp_assert", false);
 
 pref("security.allow_eval_with_system_principal", false);
-pref("security.uris_using_eval_with_system_principal", "autocomplete.xml,redux.js,react-redux.js,content-task.js,content-task.js,tree.xml,dialog.xml,preferencesbindings.js,wizard.xml,lodash.js,jszip.js,ajv-4.1.1.js,updates.js,setup,jsol.js,parent_utils.js");
+pref("security.uris_using_eval_with_system_principal", "autocomplete.xml,redux.js,react-redux.js,content-task.js,content-task.js,tree.xml,dialog.xml,preferencesbindings.js,wizard.xml,lodash.js,jszip.js,ajv-4.1.1.js,updates.js,setup,jsol.js,parent_utils.js,chrometask_chromescript");
 #endif
 
 
