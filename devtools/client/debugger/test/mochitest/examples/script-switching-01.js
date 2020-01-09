@@ -1,6 +1,9 @@
 
 
 
+
+function a() {}
 function firstCall() {
+  a();
   secondCall();
 }

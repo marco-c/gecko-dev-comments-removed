@@ -30,14 +30,6 @@
   overflow-anchor: none;
 }
 
-.theme-dark {
-  --theme-conditional-breakpoint-color: #9fa4a9;
-}
-
-.theme-light {
-  --theme-conditional-breakpoint-color: var(--theme-body-color);
-}
-
 
 
 
