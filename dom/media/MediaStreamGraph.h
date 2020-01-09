@@ -656,13 +656,13 @@ class SourceMediaStream : public MediaStream {
   
   
   
-  
   nsresult OpenAudioInput(CubebUtils::AudioDeviceID aID,
                           AudioDataListener* aListener);
   
-  void CloseAudioInput(Maybe<CubebUtils::AudioDeviceID>& aID,
-                       AudioDataListener* aListener);
+  void CloseAudioInput(Maybe<CubebUtils::AudioDeviceID>& aID);
 
+  
+  void Destroy() override;
   
   void DestroyImpl() override;
 
