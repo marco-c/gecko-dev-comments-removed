@@ -2460,7 +2460,19 @@ bool BytecodeEmitter::emitInitializeInstanceFields() {
     return true;
   }
 
-  if (!emitGetName(cx->names().dotInitializers)) {
+  PropOpEmitter poe(this, PropOpEmitter::Kind::Get,
+                    PropOpEmitter::ObjKind::Other);
+  if (!poe.prepareForObj()) {
+    return false;
+  }
+
+  
+  if (!emitGetName(cx->names().dotThis)) {
+    
+    return false;
+  }
+
+  if (!poe.emitGet(cx->names().dotInitializers)) {
     
     return false;
   }
@@ -8008,9 +8020,18 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
     
     
 
-    NameOpEmitter noe(this, cx->names().dotInitializers,
-                      NameOpEmitter::Kind::Initialize);
-    if (!noe.prepareForRhs()) {
+    PropOpEmitter poe(this, PropOpEmitter::Kind::SimpleAssignment,
+                      PropOpEmitter::ObjKind::Other);
+    if (!poe.prepareForObj()) {
+      return false;
+    }
+
+    if (!emit1(JSOP_DUP)) {
+      
+      return false;
+    }
+
+    if (!poe.prepareForRhs()) {
       return false;
     }
 
@@ -8041,7 +8062,7 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
       }
     }
 
-    if (!noe.emitAssignment()) {
+    if (!poe.emitAssignment(cx->names().dotInitializers)) {
       
       return false;
     }
