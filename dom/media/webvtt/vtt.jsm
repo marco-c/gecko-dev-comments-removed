@@ -1084,14 +1084,25 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
     return parseContent(window, cuetext, PARSE_CONTENT_MODE.DOCUMENT_FRAGMENT);
   };
 
+  function clearAllCuesDiv(overlay) {
+    while (overlay.firstChild) {
+      overlay.firstChild.remove();
+    }
+  }
+
+  
+  
+  
   
   
   
   
   
   WebVTT.processCues = function(window, cues, overlay, controls) {
-    if (!window || !cues || !overlay) {
-      return null;
+    if (!cues) {
+      LOG(`Abort processing because no cue.`);
+      clearAllCuesDiv(overlay);
+      return;
     }
 
     let controlBar, controlBarShown;
@@ -1123,14 +1134,12 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
 
     
     if (!shouldCompute(cues)) {
+      LOG(`Abort processing because no need to compute cues' display state.`);
       return;
     }
     overlay.lastControlBarShownStatus = controlBarShown;
 
-    
-    while (overlay.firstChild) {
-      overlay.firstChild.remove();
-    }
+    clearAllCuesDiv(overlay);
     let rootOfCues = window.document.createElement("div");
     rootOfCues.style.position = "absolute";
     rootOfCues.style.left = "0";
