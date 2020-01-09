@@ -20,8 +20,6 @@ add_task(async function test() {
 
   let db = Services.storage.openDatabase(GetPermissionsFile(profile));
   db.schemaVersion = 4;
-  db.executeSimpleSQL("DROP TABLE moz_perms");
-  db.executeSimpleSQL("DROP TABLE moz_hosts");
 
   db.executeSimpleSQL(
     "CREATE TABLE moz_hosts (" +
@@ -160,9 +158,6 @@ add_task(async function test() {
   
   await PlacesTestUtils.addVisits(Services.io.newURI("https://foo.com/some/other/subdirectory"));
   await PlacesTestUtils.addVisits(Services.io.newURI("ftp://some.subdomain.of.foo.com:8000/some/subdirectory"));
-
-  
-  Services.obs.notifyObservers(null, "testonly-reload-permissions-from-disk", "");
 
   
   for (let permission of Services.perms.enumerator) {

@@ -20,8 +20,6 @@ add_task(function test() {
 
   let db = Services.storage.openDatabase(GetPermissionsFile(profile));
   db.schemaVersion = 6;
-  db.executeSimpleSQL("DROP TABLE moz_perms");
-  db.executeSimpleSQL("DROP TABLE moz_hosts");
 
   
 
@@ -95,9 +93,6 @@ add_task(function test() {
   ];
 
   let found = expected.map((it) => 0);
-
-  
-  Services.obs.notifyObservers(null, "testonly-reload-permissions-from-disk", "");
 
   
   for (let permission of Services.perms.enumerator) {

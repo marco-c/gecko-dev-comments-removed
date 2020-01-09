@@ -50,10 +50,6 @@
 
 static mozilla::StaticRefPtr<nsPermissionManager> gPermissionManager;
 
-
-
-static bool gIsShuttingDown = false;
-
 using namespace mozilla;
 using namespace mozilla::dom;
 
@@ -288,6 +284,27 @@ already_AddRefed<nsIPrincipal> GetNextSubDomainPrincipal(
 
   return principal.forget();
 }
+
+class ClearOriginDataObserver final : public nsIObserver {
+  ~ClearOriginDataObserver() {}
+
+ public:
+  NS_DECL_ISUPPORTS
+
+  
+  NS_IMETHOD
+  Observe(nsISupports* aSubject, const char* aTopic,
+          const char16_t* aData) override {
+    MOZ_ASSERT(!nsCRT::strcmp(aTopic, "clear-origin-attributes-data"));
+
+    nsCOMPtr<nsIPermissionManager> permManager =
+        do_GetService("@mozilla.org/permissionmanager;1");
+    return permManager->RemovePermissionsWithAttributes(
+        nsDependentString(aData));
+  }
+};
+
+NS_IMPL_ISUPPORTS(ClearOriginDataObserver, nsIObserver)
 
 class MOZ_STACK_CLASS UpgradeHostToOriginHelper {
  public:
@@ -821,7 +838,7 @@ NS_IMETHODIMP
 CloseDatabaseListener::Complete(nsresult, nsISupports*) {
   
   RefPtr<nsPermissionManager> manager = mManager.forget();
-  if (mRebuildOnSuccess && !gIsShuttingDown) {
+  if (mRebuildOnSuccess && !manager->mIsShuttingDown) {
     return manager->InitDB(true);
   }
   return NS_OK;
@@ -880,9 +897,12 @@ NS_IMETHODIMP DeleteFromMozHostListener::HandleCompletion(uint16_t aReason) {
 }
 
 
-void nsPermissionManager::Startup() {
-  nsCOMPtr<nsIPermissionManager> permManager =
-      do_GetService("@mozilla.org/permissionmanager;1");
+void nsPermissionManager::ClearOriginDataObserverInit() {
+  nsCOMPtr<nsIObserverService> observerService =
+      mozilla::services::GetObserverService();
+  observerService->AddObserver(new ClearOriginDataObserver(),
+                               "clear-origin-attributes-data",
+                                false);
 }
 
 
@@ -903,7 +923,7 @@ NS_IMPL_ISUPPORTS(nsPermissionManager, nsIPermissionManager, nsIObserver,
                   nsISupportsWeakReference)
 
 nsPermissionManager::nsPermissionManager()
-    : mMemoryOnlyDB(false), mLargestID(0) {}
+    : mMemoryOnlyDB(false), mLargestID(0), mIsShuttingDown(false) {}
 
 nsPermissionManager::~nsPermissionManager() {
   
@@ -927,10 +947,6 @@ already_AddRefed<nsIPermissionManager>
 nsPermissionManager::GetXPCOMSingleton() {
   if (gPermissionManager) {
     return do_AddRef(gPermissionManager);
-  }
-
-  if (gIsShuttingDown) {
-    return nullptr;
   }
 
   
@@ -986,9 +1002,6 @@ nsresult nsPermissionManager::Init() {
   if (observerService) {
     observerService->AddObserver(this, "profile-before-change", true);
     observerService->AddObserver(this, "profile-do-change", true);
-    observerService->AddObserver(this, "testonly-reload-permissions-from-disk",
-                                 true);
-    observerService->AddObserver(this, "clear-origin-attributes-data", true);
   }
 
   
@@ -2674,25 +2687,12 @@ NS_IMETHODIMP nsPermissionManager::Observe(nsISupports* aSubject,
   if (!nsCRT::strcmp(aTopic, "profile-before-change")) {
     
     
-    gIsShuttingDown = true;
+    mIsShuttingDown = true;
     RemoveAllFromMemory();
     CloseDB(false);
   } else if (!nsCRT::strcmp(aTopic, "profile-do-change")) {
     
     InitDB(false);
-  } else if (!nsCRT::strcmp(aTopic, "testonly-reload-permissions-from-disk")) {
-    
-    
-    
-    
-    
-    
-    
-    RemoveAllFromMemory();
-    CloseDB(false);
-    InitDB(false);
-  } else if (!nsCRT::strcmp(aTopic, "clear-origin-attributes-data")) {
-    return RemovePermissionsWithAttributes(nsDependentString(someData));
   }
 
   return NS_OK;
