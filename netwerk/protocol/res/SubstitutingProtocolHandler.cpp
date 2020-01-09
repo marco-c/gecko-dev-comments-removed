@@ -478,7 +478,7 @@ nsresult SubstitutingProtocolHandler::SetSubstitutionWithFlags(
   
   nsAutoCString newBase;
   rv = ResolveURI(baseURI, newBase);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_FAILED(rv)) return rv;
 
   nsCOMPtr<nsIURI> newBaseURI;
   rv =
