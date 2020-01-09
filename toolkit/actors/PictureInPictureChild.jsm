@@ -9,6 +9,7 @@ var EXPORTED_SYMBOLS = ["PictureInPictureChild"];
 const {ActorChild} = ChromeUtils.import("resource://gre/modules/ActorChild.jsm");
 
 var gWeakVideo = null;
+var gWeakPlayerContent = null;
 
 class PictureInPictureChild extends ActorChild {
   handleEvent(event) {
@@ -22,22 +23,56 @@ class PictureInPictureChild extends ActorChild {
     }
   }
 
-  togglePictureInPicture(video) {
+  get weakVideo() {
+    if (gWeakVideo) {
+      return gWeakVideo.get();
+    }
+    return null;
+  }
+
+  get weakPlayerContent() {
+    if (gWeakPlayerContent) {
+      return gWeakPlayerContent.get();
+    }
+    return null;
+  }
+
+  async togglePictureInPicture(video) {
     if (this.inPictureInPicture(video)) {
-      this.closePictureInPicture(video);
+      await this.closePictureInPicture();
     } else {
+      if (this.weakVideo) {
+        
+        
+        
+        await this.closePictureInPicture();
+      }
+
       this.requestPictureInPicture(video);
     }
   }
 
   inPictureInPicture(video) {
-    return gWeakVideo && gWeakVideo.get() === video;
+    return this.weakVideo === video;
   }
 
-  closePictureInPicture() {
+  async closePictureInPicture() {
+
     this.mm.sendAsyncMessage("PictureInPicture:Close", {
       browingContextId: this.docShell.browsingContext.id,
     });
+
+    if (this.weakPlayerContent) {
+      await new Promise(resolve => {
+        this.weakPlayerContent.addEventListener("unload", resolve,
+                                                { once: true });
+      });
+      
+      
+      
+      
+      gWeakPlayerContent = null;
+    }
   }
 
   requestPictureInPicture(video) {
@@ -58,13 +93,13 @@ class PictureInPictureChild extends ActorChild {
   }
 
   async setupPlayer() {
-    if (!gWeakVideo) {
-      this.closePictureInPicture();
-    }
-
-    let originatingVideo = gWeakVideo.get();
+    let originatingVideo = this.weakVideo;
     if (!originatingVideo) {
-      this.closePictureInPicture();
+      
+      
+      
+      await this.closePictureInPicture();
+      return;
     }
 
     let webProgress = this.mm
@@ -114,5 +149,7 @@ class PictureInPictureChild extends ActorChild {
       }
       gWeakVideo = null;
     }, { once: true });
+
+    gWeakPlayerContent = Cu.getWeakReference(this.content);
   }
 }
