@@ -4,8 +4,8 @@
 
 
 
-#ifndef frontend_BinSource_macros_h
-#define frontend_BinSource_macros_h
+#ifndef frontend_BinAST_macros_h
+#define frontend_BinAST_macros_h
 
 #include "vm/JSContext.h"
 
