@@ -1050,6 +1050,7 @@ var PlacesUtils = {
 
 
 
+
   unwrapNodes: function PU_unwrapNodes(blob, type) {
     
     var nodes = [];
@@ -1079,7 +1080,8 @@ var PlacesUtils = {
             } catch (ex) {}
           }
           
-          if (Services.io.newURI(uriString)) {
+          let uri = Services.io.newURI(uriString);
+          if (Services.io.newURI(uriString) && uri.scheme != "place") {
             nodes.push({ uri: uriString,
                          title: titleString ? titleString : uriString,
                          type: this.TYPE_X_MOZ_URL });
@@ -1093,13 +1095,17 @@ var PlacesUtils = {
           let uriString = parts[i];
           
           
-          if (uriString.substr(0, 1) == "\x23")
-            continue;
           
-          if (uriString != "" && Services.io.newURI(uriString))
+          if (uriString.substr(0, 1) == "\x23" || uriString == "") {
+            continue;
+          }
+          
+          let uri = Services.io.newURI(uriString);
+          if (uri.scheme != "place") {
             nodes.push({ uri: uriString,
                          title: uriString,
                          type: this.TYPE_X_MOZ_URL });
+          }
         }
         break;
       }
