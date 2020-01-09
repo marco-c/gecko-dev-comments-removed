@@ -214,17 +214,11 @@ bool HTMLTrackElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
 
 void HTMLTrackElement::SetSrc(const nsAString& aSrc, ErrorResult& aError) {
   SetHTMLAttr(nsGkAtoms::src, aSrc, aError);
-  uint16_t oldReadyState = ReadyState();
   SetReadyState(TextTrackReadyState::NotLoaded);
   if (!mMediaParent) {
     return;
   }
-  if (mTrack && (oldReadyState != TextTrackReadyState::NotLoaded)) {
-    
-    mMediaParent->RemoveTextTrack(mTrack);
-    
-    CreateTextTrack();
-  }
+
   
   mListener = nullptr;
   if (mChannel) {
@@ -233,6 +227,16 @@ void HTMLTrackElement::SetSrc(const nsAString& aSrc, ErrorResult& aError) {
   }
 
   MaybeDispatchLoadResource();
+}
+
+void HTMLTrackElement::MaybeClearAllCues() {
+  
+  
+  
+  if (!mTrack) {
+    return;
+  }
+  mTrack->ClearAllCues();
 }
 
 
@@ -461,6 +465,18 @@ void HTMLTrackElement::NotifyShutdown() {
   }
   mChannel = nullptr;
   mListener = nullptr;
+}
+
+nsresult HTMLTrackElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
+                                        const nsAttrValue* aValue,
+                                        const nsAttrValue* aOldValue,
+                                        nsIPrincipal* aMaybeScriptedPrincipal,
+                                        bool aNotify) {
+  if (aNameSpaceID == kNameSpaceID_None && aName == nsGkAtoms::src) {
+    MaybeClearAllCues();
+  }
+  return nsGenericHTMLElement::AfterSetAttr(
+      aNameSpaceID, aName, aValue, aOldValue, aMaybeScriptedPrincipal, aNotify);
 }
 
 }  
