@@ -12,6 +12,11 @@
 #include "prtypes.h"
 
 
+#ifndef __has_builtin
+#define __has_builtin(x) 0
+#endif
+
+
 #if defined(HAVE_LONG_LONG)
 
 
@@ -29,10 +34,15 @@
 
 
 
+#if defined(IS_LITTLE_ENDIAN)
 #if defined(_MSC_VER)
 
 #pragma intrinsic(_byteswap_uint64)
 #define FREEBL_HTONLL(x) _byteswap_uint64(x)
+
+#elif __has_builtin(__builtin_bswap64)
+
+#define FREEBL_HTONLL(x) __builtin_bswap64(x)
 
 #elif defined(__GNUC__) && (defined(__x86_64__) || defined(__x86_64))
 
@@ -47,5 +57,9 @@ PRUint64 swap8b(PRUint64 x);
 #define FREEBL_HTONLL(x) swap8b(x)
 
 #endif 
+
+#else 
+#define FREEBL_HTONLL(x) (x)
+#endif
 
 #endif 

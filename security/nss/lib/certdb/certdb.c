@@ -1314,6 +1314,17 @@ CERT_DupCertificate(CERTCertificate *c)
     return c;
 }
 
+SECStatus
+CERT_GetCertificateDer(const CERTCertificate *c, SECItem *der)
+{
+    if (!c || !der) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return SECFailure;
+    }
+    *der = c->derCert;
+    return SECSuccess;
+}
+
 
 
 

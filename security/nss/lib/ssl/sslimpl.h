@@ -1736,6 +1736,14 @@ PRBool ssl_IsResumptionTokenUsable(sslSocket *ss, sslSessionID *sid);
 
 
 
+PK11SymKey *ssl_unwrapSymKey(PK11SymKey *wrapKey,
+                             CK_MECHANISM_TYPE wrapType, SECItem *param,
+                             SECItem *wrappedKey,
+                             CK_MECHANISM_TYPE target, CK_ATTRIBUTE_TYPE operation,
+                             int keySize, CK_FLAGS keyFlags, void *pinArg);
+
+
+
 SECStatus SSLExp_SetResumptionTokenCallback(PRFileDesc *fd,
                                             SSLResumptionTokenCallback cb,
                                             void *ctx);

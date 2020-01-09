@@ -92,23 +92,32 @@ CheckX86CPUSupport()
 #endif 
 
 
-#if (defined(__aarch64__) || defined(__arm__)) && !defined(__ANDROID__)
+#if defined(__aarch64__) || defined(__arm__)
 #ifndef __has_include
 #define __has_include(x) 0
 #endif
 #if (__has_include(<sys/auxv.h>) || defined(__linux__)) && \
     defined(__GNUC__) && __GNUC__ >= 2 && defined(__ELF__)
+
+#if !defined(__ANDROID__)
 #include <sys/auxv.h>
+#endif
 extern unsigned long getauxval(unsigned long type) __attribute__((weak));
 #else
 static unsigned long (*getauxval)(unsigned long) = NULL;
-#define AT_HWCAP2 0
-#define AT_HWCAP 0
 #endif 
+
+#ifndef AT_HWCAP2
+#define AT_HWCAP2 26
+#endif
+#ifndef AT_HWCAP
+#define AT_HWCAP 16
+#endif
+
 #endif 
 
 
-#if defined(__aarch64__) && !defined(__ANDROID__)
+#if defined(__aarch64__)
 
 #ifndef HWCAP_AES
 #define HWCAP_AES (1 << 3)
@@ -140,7 +149,7 @@ CheckARMSupport()
 }
 #endif 
 
-#if defined(__arm__) && !defined(__ANDROID__)
+#if defined(__arm__)
 
 
 
@@ -165,19 +174,54 @@ CheckARMSupport()
 #define HWCAP2_SHA2 (1 << 3)
 #endif
 
+PRBool
+GetNeonSupport()
+{
+    char *disable_arm_neon = PR_GetEnvSecure("NSS_DISABLE_ARM_NEON");
+    if (disable_arm_neon) {
+        return PR_FALSE;
+    }
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+    
+    
+    
+    return PR_TRUE;
+#elif !defined(__ANDROID__)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (getauxval) {
+        return (getauxval(AT_HWCAP) & HWCAP_NEON);
+    }
+#endif 
+    return PR_FALSE;
+}
+
 void
 CheckARMSupport()
 {
-    char *disable_arm_neon = PR_GetEnvSecure("NSS_DISABLE_ARM_NEON");
     char *disable_hw_aes = PR_GetEnvSecure("NSS_DISABLE_HW_AES");
     if (getauxval) {
+        
+        
+        
+        
+        
+        
         long hwcaps = getauxval(AT_HWCAP2);
         arm_aes_support_ = hwcaps & HWCAP2_AES && disable_hw_aes == NULL;
         arm_pmull_support_ = hwcaps & HWCAP2_PMULL;
         arm_sha1_support_ = hwcaps & HWCAP2_SHA1;
         arm_sha2_support_ = hwcaps & HWCAP2_SHA2;
-        arm_neon_support_ = hwcaps & HWCAP_NEON && disable_arm_neon == NULL;
     }
+    arm_neon_support_ = GetNeonSupport();
 }
 #endif 
 
@@ -262,7 +306,7 @@ FreeblInit(void)
 {
 #ifdef NSS_X86_OR_X64
     CheckX86CPUSupport();
-#elif (defined(__aarch64__) || defined(__arm__)) && !defined(__ANDROID__)
+#elif (defined(__aarch64__) || defined(__arm__))
     CheckARMSupport();
 #endif
     return PR_SUCCESS;

@@ -859,92 +859,77 @@ static CK_RV
 sftk_updateMacs(PLArenaPool *arena, SFTKDBHandle *handle,
                 CK_OBJECT_HANDLE id, SECItem *newKey)
 {
-    CK_ATTRIBUTE authAttrs[] = {
-        { CKA_MODULUS, NULL, 0 },
-        { CKA_PUBLIC_EXPONENT, NULL, 0 },
-        { CKA_CERT_SHA1_HASH, NULL, 0 },
-        { CKA_CERT_MD5_HASH, NULL, 0 },
-        { CKA_TRUST_SERVER_AUTH, NULL, 0 },
-        { CKA_TRUST_CLIENT_AUTH, NULL, 0 },
-        { CKA_TRUST_EMAIL_PROTECTION, NULL, 0 },
-        { CKA_TRUST_CODE_SIGNING, NULL, 0 },
-        { CKA_TRUST_STEP_UP_APPROVED, NULL, 0 },
-        { CKA_NSS_OVERRIDE_EXTENSIONS, NULL, 0 },
-    };
-    CK_ULONG authAttrCount = sizeof(authAttrs) / sizeof(CK_ATTRIBUTE);
-    unsigned int i, count;
     SFTKDBHandle *keyHandle = handle;
     SDB *keyTarget = NULL;
-
-    id &= SFTK_OBJ_ID_MASK;
-
     if (handle->type != SFTK_KEYDB_TYPE) {
         keyHandle = handle->peerDB;
     }
-
     if (keyHandle == NULL) {
         return CKR_OK;
     }
-
     
     keyTarget = SFTK_GET_SDB(keyHandle);
     if ((keyTarget->sdb_flags & SDB_HAS_META) == 0) {
         return CKR_OK;
     }
 
-    
+    id &= SFTK_OBJ_ID_MASK;
 
+    CK_ATTRIBUTE_TYPE authAttrTypes[] = {
+        CKA_MODULUS,
+        CKA_PUBLIC_EXPONENT,
+        CKA_CERT_SHA1_HASH,
+        CKA_CERT_MD5_HASH,
+        CKA_TRUST_SERVER_AUTH,
+        CKA_TRUST_CLIENT_AUTH,
+        CKA_TRUST_EMAIL_PROTECTION,
+        CKA_TRUST_CODE_SIGNING,
+        CKA_TRUST_STEP_UP_APPROVED,
+        CKA_NSS_OVERRIDE_EXTENSIONS,
+    };
+    const CK_ULONG authAttrTypeCount = sizeof(authAttrTypes) / sizeof(authAttrTypes[0]);
 
-    (void)sftkdb_GetAttributeValue(handle, id, authAttrs, authAttrCount);
-    count = 0;
     
-    for (i = 0; i < authAttrCount; i++) {
-        if ((authAttrs[i].ulValueLen == -1) || (authAttrs[i].ulValueLen == 0)) {
+    
+    unsigned int i;
+    for (i = 0; i < authAttrTypeCount; i++) {
+        CK_ATTRIBUTE authAttr = { authAttrTypes[i], NULL, 0 };
+        CK_RV rv = sftkdb_GetAttributeValue(handle, id, &authAttr, 1);
+        if (rv != CKR_OK) {
             continue;
         }
-        count++;
-        authAttrs[i].pValue = PORT_ArenaAlloc(arena, authAttrs[i].ulValueLen);
-        if (authAttrs[i].pValue == NULL) {
-            break;
-        }
-    }
-
-    
-    if (count == 0) {
-        return CKR_OK;
-    }
-
-    (void)sftkdb_GetAttributeValue(handle, id, authAttrs, authAttrCount);
-    
-
-    
-
-    for (i = 0; i < authAttrCount; i++) {
-        SECItem *signText;
-        SECItem plainText;
-        SECStatus rv;
-
-        if ((authAttrs[i].ulValueLen == -1) || (authAttrs[i].ulValueLen == 0)) {
+        if ((authAttr.ulValueLen == -1) || (authAttr.ulValueLen == 0)) {
             continue;
         }
-
-        if (authAttrs[i].ulValueLen == sizeof(CK_ULONG) &&
-            sftkdb_isULONGAttribute(authAttrs[i].type)) {
-            CK_ULONG value = *(CK_ULONG *)authAttrs[i].pValue;
-            sftk_ULong2SDBULong(authAttrs[i].pValue, value);
-            authAttrs[i].ulValueLen = SDB_ULONG_SIZE;
+        authAttr.pValue = PORT_ArenaAlloc(arena, authAttr.ulValueLen);
+        if (authAttr.pValue == NULL) {
+            return CKR_HOST_MEMORY;
         }
-
-        plainText.data = authAttrs[i].pValue;
-        plainText.len = authAttrs[i].ulValueLen;
-        rv = sftkdb_SignAttribute(arena, newKey, id,
-                                  authAttrs[i].type, &plainText, &signText);
-        if (rv != SECSuccess) {
+        rv = sftkdb_GetAttributeValue(handle, id, &authAttr, 1);
+        if (rv != CKR_OK) {
+            return rv;
+        }
+        if ((authAttr.ulValueLen == -1) || (authAttr.ulValueLen == 0)) {
             return CKR_GENERAL_ERROR;
         }
-        rv = sftkdb_PutAttributeSignature(handle, keyTarget, id,
-                                          authAttrs[i].type, signText);
-        if (rv != SECSuccess) {
+        
+        
+        if (authAttr.ulValueLen == sizeof(CK_ULONG) &&
+            sftkdb_isULONGAttribute(authAttr.type)) {
+            CK_ULONG value = *(CK_ULONG *)authAttr.pValue;
+            sftk_ULong2SDBULong(authAttr.pValue, value);
+            authAttr.ulValueLen = SDB_ULONG_SIZE;
+        }
+        SECItem *signText;
+        SECItem plainText;
+        plainText.data = authAttr.pValue;
+        plainText.len = authAttr.ulValueLen;
+        if (sftkdb_SignAttribute(arena, newKey, id, authAttr.type, &plainText,
+                                 &signText) != SECSuccess) {
+            return CKR_GENERAL_ERROR;
+        }
+        if (sftkdb_PutAttributeSignature(handle, keyTarget, id, authAttr.type,
+                                         signText) != SECSuccess) {
             return CKR_GENERAL_ERROR;
         }
     }
@@ -956,110 +941,64 @@ static CK_RV
 sftk_updateEncrypted(PLArenaPool *arena, SFTKDBHandle *keydb,
                      CK_OBJECT_HANDLE id, SECItem *newKey)
 {
-    CK_RV crv = CKR_OK;
-    CK_RV crv2;
-    CK_ATTRIBUTE *first, *last;
-    CK_ATTRIBUTE privAttrs[] = {
-        { CKA_VALUE, NULL, 0 },
-        { CKA_PRIVATE_EXPONENT, NULL, 0 },
-        { CKA_PRIME_1, NULL, 0 },
-        { CKA_PRIME_2, NULL, 0 },
-        { CKA_EXPONENT_1, NULL, 0 },
-        { CKA_EXPONENT_2, NULL, 0 },
-        { CKA_COEFFICIENT, NULL, 0 }
+    CK_ATTRIBUTE_TYPE privAttrTypes[] = {
+        CKA_VALUE,
+        CKA_PRIVATE_EXPONENT,
+        CKA_PRIME_1,
+        CKA_PRIME_2,
+        CKA_EXPONENT_1,
+        CKA_EXPONENT_2,
+        CKA_COEFFICIENT,
     };
-    CK_ULONG privAttrCount = sizeof(privAttrs) / sizeof(CK_ATTRIBUTE);
-    unsigned int i, count;
+    const CK_ULONG privAttrCount = sizeof(privAttrTypes) / sizeof(privAttrTypes[0]);
 
     
-
-
-
     
-
-    crv2 = sftkdb_GetAttributeValue(keydb, id, privAttrs, privAttrCount);
-
-    
-
-
-    first = last = NULL;
+    unsigned int i;
     for (i = 0; i < privAttrCount; i++) {
         
-
-
-
-
-
-        if ((privAttrs[i].ulValueLen == -1) || (privAttrs[i].ulValueLen == 0)) {
-            if (!first)
-                continue;
-            if (!last) {
-                
-                last = &privAttrs[i - 1];
-            }
+        CK_ATTRIBUTE privAttr = { privAttrTypes[i], NULL, 0 };
+        CK_RV crv = sftkdb_GetAttributeValue(keydb, id, &privAttr, 1);
+        if (crv != CKR_OK) {
             continue;
         }
-        if (!first) {
-            first = &privAttrs[i];
+        if ((privAttr.ulValueLen == -1) || (privAttr.ulValueLen == 0)) {
+            continue;
         }
-        if (last) {
-            
-
-            crv = CKR_GENERAL_ERROR;
-            break;
+        privAttr.pValue = PORT_ArenaAlloc(arena, privAttr.ulValueLen);
+        if (privAttr.pValue == NULL) {
+            return CKR_HOST_MEMORY;
         }
-        privAttrs[i].pValue = PORT_ArenaAlloc(arena, privAttrs[i].ulValueLen);
-        if (privAttrs[i].pValue == NULL) {
-            crv = CKR_HOST_MEMORY;
-            break;
+        crv = sftkdb_GetAttributeValue(keydb, id, &privAttr, 1);
+        if (crv != CKR_OK) {
+            return crv;
         }
-    }
-    if (first == NULL) {
-        
-        return crv2;
-    }
-    if (last == NULL) {
-        last = &privAttrs[privAttrCount - 1];
-    }
-    if (crv != CKR_OK) {
-        return crv;
-    }
-    
-    count = (last - first) + 1;
-    crv = sftkdb_GetAttributeValue(keydb, id, first, count);
-    if (crv != CKR_OK) {
-        return crv;
-    }
-
-    
-
-
-    for (i = 0; i < count; i++) {
-        SECItem plainText;
-        SECItem *result;
-        SECStatus rv;
-
-        plainText.data = first[i].pValue;
-        plainText.len = first[i].ulValueLen;
-        rv = sftkdb_EncryptAttribute(arena, newKey, &plainText, &result);
-        if (rv != SECSuccess) {
+        if ((privAttr.ulValueLen == -1) || (privAttr.ulValueLen == 0)) {
             return CKR_GENERAL_ERROR;
         }
-        first[i].pValue = result->data;
-        first[i].ulValueLen = result->len;
+        SECItem plainText;
+        SECItem *result;
+        plainText.data = privAttr.pValue;
+        plainText.len = privAttr.ulValueLen;
+        if (sftkdb_EncryptAttribute(arena, newKey, &plainText, &result) != SECSuccess) {
+            return CKR_GENERAL_ERROR;
+        }
+        privAttr.pValue = result->data;
+        privAttr.ulValueLen = result->len;
         
         PORT_Memset(plainText.data, 0, plainText.len);
+
+        
+        CK_OBJECT_HANDLE newId = id & SFTK_OBJ_ID_MASK;
+        keydb->newKey = newKey;
+        crv = (*keydb->db->sdb_SetAttributeValue)(keydb->db, newId, &privAttr, 1);
+        keydb->newKey = NULL;
+        if (crv != CKR_OK) {
+            return crv;
+        }
     }
 
-    
-
-
-    id &= SFTK_OBJ_ID_MASK;
-    keydb->newKey = newKey;
-    crv = (*keydb->db->sdb_SetAttributeValue)(keydb->db, id, first, count);
-    keydb->newKey = NULL;
-
-    return crv;
+    return CKR_OK;
 }
 
 static CK_RV

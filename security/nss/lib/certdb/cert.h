@@ -219,6 +219,12 @@ extern CERTCertificate *CERT_DupCertificate(CERTCertificate *c);
 
 
 
+extern SECStatus CERT_GetCertificateDer(const CERTCertificate *c, SECItem *der);
+
+
+
+
+
 
 
 

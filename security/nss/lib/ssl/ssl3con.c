@@ -8625,6 +8625,45 @@ loser:
     return SECFailure;
 }
 
+
+
+PK11SymKey *
+ssl_unwrapSymKey(PK11SymKey *wrapKey,
+                 CK_MECHANISM_TYPE wrapType, SECItem *param,
+                 SECItem *wrappedKey,
+                 CK_MECHANISM_TYPE target, CK_ATTRIBUTE_TYPE operation,
+                 int keySize, CK_FLAGS keyFlags, void *pinArg)
+{
+    PK11SymKey *unwrappedKey;
+
+    
+    unwrappedKey = PK11_UnwrapSymKeyWithFlags(wrapKey, wrapType, param,
+                                              wrappedKey, target, operation, keySize,
+                                              keyFlags);
+    if (!unwrappedKey) {
+        PK11SlotInfo *targetSlot = PK11_GetBestSlot(target, pinArg);
+        PK11SymKey *newWrapKey;
+
+        
+
+
+        if (targetSlot == NULL) {
+            return NULL;
+        }
+        newWrapKey = PK11_MoveSymKey(targetSlot, CKA_UNWRAP, 0,
+                                     PR_FALSE, wrapKey);
+        PK11_FreeSlot(targetSlot);
+        if (newWrapKey == NULL) {
+            return NULL;
+        }
+        unwrappedKey = PK11_UnwrapSymKeyWithFlags(newWrapKey, wrapType, param,
+                                                  wrappedKey, target, operation, keySize,
+                                                  keyFlags);
+        PK11_FreeSymKey(newWrapKey);
+    }
+    return unwrappedKey;
+}
+
 static SECStatus
 ssl3_UnwrapMasterSecretServer(sslSocket *ss, sslSessionID *sid, PK11SymKey **ms)
 {
@@ -8646,12 +8685,14 @@ ssl3_UnwrapMasterSecretServer(sslSocket *ss, sslSessionID *sid, PK11SymKey **ms)
         keyFlags = CKF_SIGN | CKF_VERIFY;
     }
 
-    
-    *ms = PK11_UnwrapSymKeyWithFlags(wrapKey, sid->u.ssl3.masterWrapMech,
-                                     NULL, &wrappedMS, CKM_SSL3_MASTER_KEY_DERIVE,
-                                     CKA_DERIVE, SSL3_MASTER_SECRET_LENGTH, keyFlags);
+    *ms = ssl_unwrapSymKey(wrapKey, sid->u.ssl3.masterWrapMech, NULL,
+                           &wrappedMS, CKM_SSL3_MASTER_KEY_DERIVE,
+                           CKA_DERIVE, SSL3_MASTER_SECRET_LENGTH,
+                           keyFlags, ss->pkcs11PinArg);
     PK11_FreeSymKey(wrapKey);
     if (!*ms) {
+        SSL_TRC(10, ("%d: SSL3[%d]: server wrapping key found, but couldn't unwrap MasterSecret. wrapMech=0x%0lx",
+                     SSL_GETPID(), ss->fd, sid->u.ssl3.masterWrapMech));
         return SECFailure;
     }
     return SECSuccess;
@@ -11874,7 +11915,7 @@ ssl3_HandleHandshake(sslSocket *ss, sslBuffer *origBuf)
             if (ss->ssl3.hs.msg_len > MAX_HANDSHAKE_MSG_LEN) {
                 (void)ssl3_DecodeError(ss);
                 PORT_SetError(SSL_ERROR_RX_MALFORMED_HANDSHAKE);
-                return SECFailure;
+                goto loser;
             }
 #undef MAX_HANDSHAKE_MSG_LEN
 
@@ -11899,7 +11940,7 @@ ssl3_HandleHandshake(sslSocket *ss, sslBuffer *origBuf)
             ss->ssl3.hs.msg_len = 0;
             ss->ssl3.hs.header_bytes = 0;
             if (rv != SECSuccess) {
-                return rv;
+                goto loser;
             }
         } else {
             
@@ -11912,7 +11953,7 @@ ssl3_HandleHandshake(sslSocket *ss, sslBuffer *origBuf)
             rv = sslBuffer_Grow(&ss->ssl3.hs.msg_body, ss->ssl3.hs.msg_len);
             if (rv != SECSuccess) {
                 
-                return SECFailure;
+                goto loser;
             }
 
             PORT_Memcpy(ss->ssl3.hs.msg_body.buf + ss->ssl3.hs.msg_body.len,
@@ -11932,7 +11973,7 @@ ssl3_HandleHandshake(sslSocket *ss, sslBuffer *origBuf)
                 ss->ssl3.hs.msg_len = 0;
                 ss->ssl3.hs.header_bytes = 0;
                 if (rv != SECSuccess) {
-                    return rv;
+                    goto loser;
                 }
             } else {
                 PORT_Assert(buf.len == 0);
@@ -11943,6 +11984,17 @@ ssl3_HandleHandshake(sslSocket *ss, sslBuffer *origBuf)
 
     origBuf->len = 0; 
     return SECSuccess;
+
+loser : {
+    
+    unsigned int consumed = origBuf->len - buf.len;
+    PORT_Assert(consumed == buf.buf - origBuf->buf);
+    if (consumed > 0) {
+        memmove(origBuf->buf, origBuf->buf + consumed, buf.len);
+        origBuf->len = buf.len;
+    }
+}
+    return SECFailure;
 }
 
 
