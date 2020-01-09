@@ -192,7 +192,8 @@ void nsXBLBinding::BindAnonymousContent(nsIContent* aAnonParent,
     
     
     if (doc && doc->IsXULDocument()) {
-      doc->AsXULDocument()->AddSubtreeToDocument(child);
+      MOZ_ASSERT(!child->IsXULElement(nsGkAtoms::linkset),
+                 "Linkset not allowed in XBL.");
     }
 #endif
   }

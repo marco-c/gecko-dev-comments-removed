@@ -405,82 +405,14 @@ nsresult XULDocument::OnPrototypeLoadDone(bool aResumeWalk) {
   return rv;
 }
 
-void XULDocument::ContentAppended(nsIContent* aFirstNewContent) {
-  NS_ASSERTION(aFirstNewContent->OwnerDoc() == this, "unexpected doc");
-
-  
-  nsCOMPtr<nsIMutationObserver> kungFuDeathGrip(this);
-
-  
-  for (nsIContent* cur = aFirstNewContent; cur; cur = cur->GetNextSibling()) {
-    AddSubtreeToDocument(cur);
-  }
-}
-
-void XULDocument::ContentInserted(nsIContent* aChild) {
-  NS_ASSERTION(aChild->OwnerDoc() == this, "unexpected doc");
-
-  
-  nsCOMPtr<nsIMutationObserver> kungFuDeathGrip(this);
-
-  AddSubtreeToDocument(aChild);
-}
-
-void XULDocument::ContentRemoved(nsIContent* aChild,
-                                 nsIContent* aPreviousSibling) {
-  
-  
-}
 
 
 
 
-
-
-void XULDocument::AddElementToDocumentPost(Element* aElement) {
-  if (aElement == GetRootElement()) {
-    ResetDocumentDirection();
-  }
-
-  if (aElement->IsXULElement(nsGkAtoms::link)) {
-    LocalizationLinkAdded(aElement);
-  } else if (aElement->IsXULElement(nsGkAtoms::linkset)) {
-    OnL10nResourceContainerParsed();
-  }
-}
 
 void XULDocument::InitialDocumentTranslationCompleted() {
   mPendingInitialTranslation = false;
   MaybeDoneWalking();
-}
-
-void XULDocument::AddSubtreeToDocument(nsIContent* aContent) {
-  MOZ_ASSERT(aContent->GetComposedDoc() == this, "Element not in doc!");
-
-  
-  
-  
-  
-  
-  if (MOZ_UNLIKELY(!aContent->IsInUncomposedDoc())) {
-    MOZ_ASSERT(aContent->IsInShadowTree());
-    return;
-  }
-
-  
-  Element* aElement = Element::FromNode(aContent);
-  if (!aElement) {
-    return;
-  }
-
-  
-  for (nsIContent* child = aElement->GetLastChild(); child;
-       child = child->GetPreviousSibling()) {
-    AddSubtreeToDocument(child);
-  }
-
-  
-  AddElementToDocumentPost(aElement);
 }
 
 
@@ -707,6 +639,8 @@ nsresult XULDocument::PrepareToWalk() {
   rv = AppendChildTo(root, false);
   if (NS_FAILED(rv)) return rv;
 
+  ResetDocumentDirection();
+
   
   
   BlockOnload();
@@ -795,6 +729,12 @@ nsresult XULDocument::InsertXMLStylesheetPI(const nsXULPrototypePI* aProtoPI,
   return NS_OK;
 }
 
+void XULDocument::CloseElement(Element* aElement) {
+  if (aElement->IsXULElement(nsGkAtoms::linkset)) {
+    aElement->DoneAddingChildren(false);
+  }
+}
+
 nsresult XULDocument::ResumeWalk() {
   
   
@@ -827,10 +767,7 @@ nsresult XULDocument::ResumeWalk() {
       if (indx >= (int32_t)proto->mChildren.Length()) {
         if (element) {
           
-          
-          
-          AddElementToDocumentPost(element->AsElement());
-
+          CloseElement(element->AsElement());
           if (element->NodeInfo()->Equals(nsGkAtoms::style,
                                           kNameSpaceID_XHTML) ||
               element->NodeInfo()->Equals(nsGkAtoms::style, kNameSpaceID_SVG)) {
@@ -880,8 +817,7 @@ nsresult XULDocument::ResumeWalk() {
             if (NS_FAILED(rv)) return rv;
           } else {
             
-            
-            AddElementToDocumentPost(child);
+            CloseElement(child);
           }
         } break;
 

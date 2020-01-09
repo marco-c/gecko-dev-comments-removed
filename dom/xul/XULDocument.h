@@ -79,15 +79,6 @@ class XULDocument final : public XMLDocument,
   virtual void InitialDocumentTranslationCompleted() override;
 
   
-  NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED
-  NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED
-  NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED
-
-  
-
-
-  void AddSubtreeToDocument(nsIContent* aContent);
-  
 
 
 
@@ -139,7 +130,7 @@ class XULDocument final : public XMLDocument,
                                   nsIPrincipal* aDocumentPrincipal,
                                   nsIParser** aResult);
 
-  void AddElementToDocumentPost(Element* aElement);
+  void CloseElement(Element* aElement);
 
   static void DirectionChanged(const char* aPrefName, XULDocument* aData);
 
