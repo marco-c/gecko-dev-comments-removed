@@ -150,10 +150,17 @@ typedef struct _nsCocoaWindowList {
 - (void)sendToplevelDeactivateEvents;
 @end
 
-@class ToolbarWindow;
+@interface TitlebarGradientView : NSView
+@end
 
 
 @interface ToolbarWindow : BaseWindow {
+  
+  
+  
+  
+  TitlebarGradientView* mTitlebarGradientView;  
+
   CGFloat mUnifiedToolbarHeight;
   CGFloat mSheetAttachmentPosition;
   NSRect mWindowButtonsRect;
@@ -171,6 +178,7 @@ typedef struct _nsCocoaWindowList {
 - (void)placeFullScreenButton:(NSRect)aRect;
 - (NSPoint)windowButtonsPositionWithDefaultPosition:(NSPoint)aDefaultPosition;
 - (NSPoint)fullScreenButtonPositionWithDefaultPosition:(NSPoint)aDefaultPosition;
+- (void)windowMainStateChanged;
 @end
 
 class nsCocoaWindow final : public nsBaseWidget, public nsPIWidgetCocoa {
