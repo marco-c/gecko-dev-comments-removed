@@ -3569,8 +3569,16 @@ PRStatus _MD_CreateFileMap(PRFileMap *fmap, PRInt64 size)
     }
     if (fmap->prot == PR_PROT_READONLY) {
         fmap->md.prot = PROT_READ;
-#ifdef OSF1V4_MAP_PRIVATE_BUG
+#if defined(OSF1V4_MAP_PRIVATE_BUG) || defined(DARWIN) || defined(ANDROID)
         
+
+
+
+
+
+
+
+
 
 
 
