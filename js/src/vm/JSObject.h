@@ -33,6 +33,10 @@ namespace gc {
 class RelocationOverlay;
 }  
 
+namespace jit {
+class CacheIRCompiler;
+}
+
 
 
 class GlobalObject;
@@ -76,18 +80,10 @@ bool SetImmutablePrototype(JSContext* cx, JS::HandleObject obj,
 
 
 
-
-
-
-
-
-
-
-
 class JSObject : public js::gc::Cell {
  protected:
   js::GCPtrObjectGroup group_;
-  void* shapeOrExpando_;
+  void* shape_;
 
  private:
   friend class js::Shape;
@@ -164,6 +160,24 @@ class JSObject : public js::gc::Cell {
 
   inline js::Shape* maybeShape() const;
   inline js::Shape* ensureShape(JSContext* cx);
+
+  void initShape(js::Shape* shape) {
+    
+    
+    MOZ_ASSERT(zone() == shape->zone());
+    shapeRef().init(shape);
+  }
+  void setShape(js::Shape* shape) {
+    MOZ_ASSERT(zone() == shape->zone());
+    shapeRef() = shape;
+  }
+  js::Shape* shape() const { return shapeRef(); }
+
+  void traceShape(JSTracer* trc) { TraceEdge(trc, shapePtr(), "shape"); }
+
+  static JSObject* fromShapeFieldPointer(uintptr_t p) {
+    return reinterpret_cast<JSObject*>(p - JSObject::offsetOfShape());
+  }
 
   enum GenerateShape { GENERATE_NONE, GENERATE_SHAPE };
 
@@ -558,13 +572,27 @@ class JSObject : public js::gc::Cell {
   
   
   
+  MOZ_ALWAYS_INLINE const js::GCPtrShape& shapeRef() const {
+    return *reinterpret_cast<const js::GCPtrShape*>(&(this->shape_));
+  }
+  MOZ_ALWAYS_INLINE js::GCPtrShape& shapeRef() {
+    return *reinterpret_cast<js::GCPtrShape*>(&(this->shape_));
+  }
+
+  
+  MOZ_ALWAYS_INLINE js::GCPtrShape* shapePtr() {
+    return reinterpret_cast<js::GCPtrShape*>(&(this->shape_));
+  }
+
+  
+  
+  
   
   friend class js::jit::MacroAssembler;
+  friend class js::jit::CacheIRCompiler;
 
   static constexpr size_t offsetOfGroup() { return offsetof(JSObject, group_); }
-  static constexpr size_t offsetOfShapeOrExpando() {
-    return offsetof(JSObject, shapeOrExpando_);
-  }
+  static constexpr size_t offsetOfShape() { return offsetof(JSObject, shape_); }
 
  private:
   JSObject() = delete;

@@ -4401,7 +4401,6 @@ bool SetPropIRGenerator::tryAttachAddSlotStub(HandleObjectGroup oldGroup,
   
   
   
-  MOZ_ASSERT(obj->is<ShapedObject>());
   writer.guardGroup(objId, oldGroup);
 
   
