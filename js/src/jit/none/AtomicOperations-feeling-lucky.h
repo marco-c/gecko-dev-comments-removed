@@ -100,6 +100,15 @@
 
 
 
+inline bool js::jit::AtomicOperations::Initialize() {
+  
+  return true;
+}
+
+inline void js::jit::AtomicOperations::ShutDown() {
+  
+}
+
 #ifdef GNUC_COMPATIBLE
 
 inline bool js::jit::AtomicOperations::hasAtomic8() {
