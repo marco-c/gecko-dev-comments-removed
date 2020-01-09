@@ -675,6 +675,10 @@ async function sanitizeOnShutdown(progress) {
   }
 
   
+  progress.advancement = "get-principals";
+  let principals = await getAllPrincipals(progress);
+
+  
   
   
   
@@ -700,8 +704,8 @@ async function sanitizeOnShutdown(progress) {
                                 Ci.nsICookieService.ACCEPT_NORMALLY) == Ci.nsICookieService.ACCEPT_SESSION) {
     log("Session-only configuration detected");
     progress.advancement = "session-only";
-    let principals = await getAllPrincipals(progress);
     await maybeSanitizeSessionPrincipals(progress, principals);
+    return;
   }
 
   progress.advancement = "session-permission";
@@ -721,8 +725,8 @@ async function sanitizeOnShutdown(progress) {
     log("Custom session cookie permission detected for: " + permission.principal.URI.spec);
 
     
-    let principals = await getAllPrincipals(progress, permission.principal.URI);
-    await maybeSanitizeSessionPrincipals(progress, principals);
+    let selectedPrincipals = extractMatchingPrincipals(principals, permission.principal.URI);
+    await maybeSanitizeSessionPrincipals(progress, selectedPrincipals);
   }
 
   if (Sanitizer.shouldSanitizeNewTabContainer) {
@@ -742,9 +746,7 @@ async function sanitizeOnShutdown(progress) {
 }
 
 
-
-
-async function getAllPrincipals(progress, matchUri = null) {
+async function getAllPrincipals(progress) {
   progress.step = "principals-quota-manager";
   let principals = await new Promise(resolve => {
     quotaManagerService.getUsage(request => {
@@ -759,11 +761,7 @@ async function getAllPrincipals(progress, matchUri = null) {
       for (let item of request.result) {
         let principal = Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(item.origin);
         let uri = principal.URI;
-        if (!isSupportedURI(uri)) {
-          continue;
-        }
-
-        if (!matchUri || Services.eTLD.hasRootDomain(matchUri.host, uri.host)) {
+        if (isSupportedURI(uri)) {
           list.push(principal);
         }
       }
@@ -775,11 +773,8 @@ async function getAllPrincipals(progress, matchUri = null) {
   let serviceWorkers = serviceWorkerManager.getAllRegistrations();
   for (let i = 0; i < serviceWorkers.length; i++) {
     let sw = serviceWorkers.queryElementAt(i, Ci.nsIServiceWorkerRegistrationInfo);
-    let uri = sw.principal.URI;
     
-    if (!matchUri || Services.eTLD.hasRootDomain(matchUri.host, uri.host)) {
-      principals.push(sw.principal);
-    }
+    principals.push(sw.principal);
   }
 
   
@@ -787,9 +782,7 @@ async function getAllPrincipals(progress, matchUri = null) {
   let enumerator = Services.cookies.enumerator;
   let hosts = new Set();
   for (let cookie of enumerator) {
-    if (!matchUri || Services.eTLD.hasRootDomain(matchUri.host, cookie.rawHost)) {
-      hosts.add(cookie.rawHost + ChromeUtils.originAttributesToSuffix(cookie.originAttributes));
-    }
+    hosts.add(cookie.rawHost + ChromeUtils.originAttributesToSuffix(cookie.originAttributes));
   }
 
   progress.step = "principals-host-cookie";
@@ -802,6 +795,13 @@ async function getAllPrincipals(progress, matchUri = null) {
 
   progress.step = "total-principals:" + principals.length;
   return principals;
+}
+
+
+function extractMatchingPrincipals(principals, matchUri) {
+  return principals.filter(principal => {
+    return Services.eTLD.hasRootDomain(matchUri.host, principal.URI.host);
+  });
 }
 
 
