@@ -20,6 +20,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import org.mozilla.gecko.EventDispatcher;
+import org.mozilla.gecko.GeckoFontScaleListener;
 import org.mozilla.gecko.util.GeckoBundle;
 
 @AnyThread
@@ -151,6 +152,19 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
         public @NonNull Builder consoleOutput(boolean enabled) {
             getSettings().mConsoleOutput.set(enabled);
+            return this;
+        }
+
+        
+
+
+
+
+
+
+
+        public @NonNull Builder automaticFontSizeAdjustment(boolean enabled) {
+            getSettings().setAutomaticFontSizeAdjustment(enabled);
             return this;
         }
 
@@ -577,6 +591,32 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
     public boolean getConsoleOutputEnabled() {
         return mConsoleOutput.get();
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+    public @NonNull GeckoRuntimeSettings setAutomaticFontSizeAdjustment(boolean enabled) {
+        GeckoFontScaleListener.getInstance().setEnabled(enabled);
+        return this;
+    }
+
+    
+
+
+
+
+
+    public boolean getAutomaticFontSizeAdjustment() {
+        return GeckoFontScaleListener.getInstance().getEnabled();
     }
 
     
