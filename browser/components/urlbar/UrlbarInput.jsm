@@ -579,11 +579,8 @@ class UrlbarInput {
 
 
 
-
-
   startQuery({
     allowAutofill = true,
-    lastKey = null,
     searchString = null,
     resetSearchState = true,
     allowEmptyInput = true,
@@ -613,7 +610,6 @@ class UrlbarInput {
     this.lastQueryContextPromise = this.controller.startQuery(new UrlbarQueryContext({
       allowAutofill,
       isPrivate: this.isPrivate,
-      lastKey,
       maxResults: UrlbarPrefs.get("maxRichResults"),
       muxer: "UnifiedComplete",
       providers: ["UnifiedComplete"],
@@ -1358,11 +1354,9 @@ class UrlbarInput {
     let allowAutofill =
       this._maybeAutofillOnInput(value, deletedAutofilledSubstring);
 
-    
     this.startQuery({
       searchString: value,
       allowAutofill,
-      lastKey: null,
       resetSearchState: false,
     });
   }
