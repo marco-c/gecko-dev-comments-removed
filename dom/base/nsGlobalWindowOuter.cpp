@@ -5361,98 +5361,128 @@ void nsGlobalWindowOuter::NotifyContentBlockingEvent(unsigned aEvent,
   nsCOMPtr<Document> doc = docShell->GetDocument();
   NS_ENSURE_TRUE_VOID(doc);
 
-  
-  
-  
-  
-  if (!SameLoadingURI(doc, aChannel) &&
-      aEvent == nsIWebProgressListener::STATE_BLOCKED_TRACKING_CONTENT) {
-    return;
+  nsCOMPtr<nsIURI> uri(aURIHint);
+  nsCOMPtr<nsIChannel> channel(aChannel);
+
+  static bool prefInitialized = false;
+  if (!prefInitialized) {
+    Preferences::AddBoolVarCache(
+        &gSyncContentBlockingNotifications,
+        "dom.testing.sync-content-blocking-notifications", false);
+    prefInitialized = true;
   }
 
-  
-  
-  uint32_t event = 0;
-  nsCOMPtr<nsISecureBrowserUI> securityUI;
-  docShell->GetSecurityUI(getter_AddRefs(securityUI));
-  if (!securityUI) {
-    return;
-  }
-  securityUI->GetContentBlockingEvent(&event);
-  nsAutoCString origin;
-  nsContentUtils::GetASCIIOrigin(aURIHint, origin);
+  nsCOMPtr<nsIRunnable> func = NS_NewRunnableFunction(
+      "NotifyContentBlockingEventDelayed",
+      [doc, docShell, uri, channel, aEvent, aBlocked]() {
+        
+        
+        
+        
+        if (!SameLoadingURI(doc, channel) &&
+            aEvent == nsIWebProgressListener::STATE_BLOCKED_TRACKING_CONTENT) {
+          return;
+        }
 
-  bool blockedValue = aBlocked;
-  bool unblocked = false;
-  if (aEvent == nsIWebProgressListener::STATE_BLOCKED_TRACKING_CONTENT) {
-    doc->SetHasTrackingContentBlocked(aBlocked, origin);
-    if (!aBlocked) {
-      unblocked = !doc->GetHasTrackingContentBlocked();
-    }
-  } else if (aEvent == nsIWebProgressListener::STATE_LOADED_TRACKING_CONTENT) {
-    doc->SetHasTrackingContentLoaded(aBlocked, origin);
-    if (!aBlocked) {
-      unblocked = !doc->GetHasTrackingContentLoaded();
-    }
-  } else if (aEvent ==
-             nsIWebProgressListener::STATE_COOKIES_BLOCKED_BY_PERMISSION) {
-    doc->SetHasCookiesBlockedByPermission(aBlocked, origin);
-    if (!aBlocked) {
-      unblocked = !doc->GetHasCookiesBlockedByPermission();
-    }
-  } else if (aEvent == nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER) {
-    doc->SetHasTrackingCookiesBlocked(aBlocked, origin);
-    if (!aBlocked) {
-      unblocked = !doc->GetHasTrackingCookiesBlocked();
-    }
-  } else if (aEvent == nsIWebProgressListener::STATE_COOKIES_BLOCKED_ALL) {
-    doc->SetHasAllCookiesBlocked(aBlocked, origin);
-    if (!aBlocked) {
-      unblocked = !doc->GetHasAllCookiesBlocked();
-    }
-  } else if (aEvent == nsIWebProgressListener::STATE_COOKIES_BLOCKED_FOREIGN) {
-    doc->SetHasForeignCookiesBlocked(aBlocked, origin);
-    if (!aBlocked) {
-      unblocked = !doc->GetHasForeignCookiesBlocked();
-    }
-  } else if (aEvent == nsIWebProgressListener::STATE_COOKIES_LOADED) {
-    MOZ_ASSERT(!aBlocked,
-               "We don't expected to see blocked STATE_COOKIES_LOADED");
-    
-    
-    
-    blockedValue = !aBlocked;
-    doc->SetHasCookiesLoaded(blockedValue, origin);
-    if (!aBlocked) {
-      unblocked = !doc->GetHasCookiesLoaded();
-    }
-  } else {
-    
-  }
-  const uint32_t oldEvent = event;
-  if (blockedValue) {
-    event |= aEvent;
-  } else if (unblocked) {
-    event &= ~aEvent;
-  }
+        
+        
+        uint32_t event = 0;
+        nsCOMPtr<nsISecureBrowserUI> securityUI;
+        docShell->GetSecurityUI(getter_AddRefs(securityUI));
+        if (!securityUI) {
+          return;
+        }
+        securityUI->GetContentBlockingEvent(&event);
+        nsAutoCString origin;
+        nsContentUtils::GetASCIIOrigin(uri, origin);
 
-  if (event == oldEvent
+        bool blockedValue = aBlocked;
+        bool unblocked = false;
+        if (aEvent == nsIWebProgressListener::STATE_BLOCKED_TRACKING_CONTENT) {
+          doc->SetHasTrackingContentBlocked(aBlocked, origin);
+          if (!aBlocked) {
+            unblocked = !doc->GetHasTrackingContentBlocked();
+          }
+        } else if (aEvent ==
+                   nsIWebProgressListener::STATE_LOADED_TRACKING_CONTENT) {
+          doc->SetHasTrackingContentLoaded(aBlocked, origin);
+          if (!aBlocked) {
+            unblocked = !doc->GetHasTrackingContentLoaded();
+          }
+        } else if (aEvent == nsIWebProgressListener::
+                                 STATE_COOKIES_BLOCKED_BY_PERMISSION) {
+          doc->SetHasCookiesBlockedByPermission(aBlocked, origin);
+          if (!aBlocked) {
+            unblocked = !doc->GetHasCookiesBlockedByPermission();
+          }
+        } else if (aEvent ==
+                   nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER) {
+          doc->SetHasTrackingCookiesBlocked(aBlocked, origin);
+          if (!aBlocked) {
+            unblocked = !doc->GetHasTrackingCookiesBlocked();
+          }
+        } else if (aEvent ==
+                   nsIWebProgressListener::STATE_COOKIES_BLOCKED_ALL) {
+          doc->SetHasAllCookiesBlocked(aBlocked, origin);
+          if (!aBlocked) {
+            unblocked = !doc->GetHasAllCookiesBlocked();
+          }
+        } else if (aEvent ==
+                   nsIWebProgressListener::STATE_COOKIES_BLOCKED_FOREIGN) {
+          doc->SetHasForeignCookiesBlocked(aBlocked, origin);
+          if (!aBlocked) {
+            unblocked = !doc->GetHasForeignCookiesBlocked();
+          }
+        } else if (aEvent == nsIWebProgressListener::STATE_COOKIES_LOADED) {
+          MOZ_ASSERT(!aBlocked,
+                     "We don't expected to see blocked STATE_COOKIES_LOADED");
+          
+          
+          
+          blockedValue = !aBlocked;
+          doc->SetHasCookiesLoaded(blockedValue, origin);
+          if (!aBlocked) {
+            unblocked = !doc->GetHasCookiesLoaded();
+          }
+        } else {
+          
+        }
+        const uint32_t oldEvent = event;
+        if (blockedValue) {
+          event |= aEvent;
+        } else if (unblocked) {
+          event &= ~aEvent;
+        }
+
+        if (event == oldEvent
 #ifdef ANDROID
-      
-      
-      
-      
-      
-      
-      && aEvent != nsIWebProgressListener::STATE_BLOCKED_TRACKING_CONTENT
+            
+            
+            
+            
+            
+            
+            && aEvent != nsIWebProgressListener::STATE_BLOCKED_TRACKING_CONTENT
 #endif
-  ) {
-    
+        ) {
+          
+          
+          return;
+        }
+
+        nsDocShell::Cast(docShell)->nsDocLoader::OnContentBlockingEvent(channel,
+                                                                        event);
+      });
+  nsresult rv;
+  if (gSyncContentBlockingNotifications) {
+    rv = func->Run();
+  } else {
+    rv = NS_DispatchToCurrentThreadQueue(func.forget(), 100,
+                                         EventQueuePriority::Idle);
+  }
+  if (NS_WARN_IF(NS_FAILED(rv))) {
     return;
   }
-
-  nsDocShell::Cast(docShell)->nsDocLoader::OnContentBlockingEvent(aChannel,
-                                                                  event);
 }
 
 
