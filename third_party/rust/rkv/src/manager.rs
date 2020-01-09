@@ -8,6 +8,7 @@
 
 
 
+use lazy_static::lazy_static;
 use std::collections::BTreeMap;
 
 use std::io::{
@@ -32,9 +33,9 @@ use std::sync::{
 
 use url::Url;
 
-use error::StoreError;
+use crate::error::StoreError;
 
-use Rkv;
+use crate::Rkv;
 
 
 
@@ -121,10 +122,8 @@ impl Manager {
 
 #[cfg(test)]
 mod tests {
-    extern crate tempfile;
-
-    use self::tempfile::Builder;
     use std::fs;
+    use tempfile::Builder;
 
     use super::*;
 

@@ -8,19 +8,15 @@
 
 
 
-extern crate rkv;
-extern crate tempfile;
-
 use rkv::{
     Manager,
     Rkv,
 };
-
-use self::tempfile::Builder;
-
-use std::fs;
-
-use std::sync::Arc;
+use std::{
+    fs,
+    sync::Arc,
+};
+use tempfile::Builder;
 
 #[test]
 

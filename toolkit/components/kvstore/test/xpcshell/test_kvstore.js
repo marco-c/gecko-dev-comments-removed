@@ -26,13 +26,13 @@ add_task(async function getService() {
 
 add_task(async function getOrCreate() {
   const databaseDir = await makeDatabaseDir("getOrCreate");
-  const defaultDatabase = await KeyValueService.getOrCreate(databaseDir);
-  Assert.ok(defaultDatabase);
+  const database = await KeyValueService.getOrCreate(databaseDir, "db");
+  Assert.ok(database);
 });
 
 add_task(async function putGetHasDelete() {
   const databaseDir = await makeDatabaseDir("putGetHasDelete");
-  const database = await KeyValueService.getOrCreate(databaseDir);
+  const database = await KeyValueService.getOrCreate(databaseDir, "db");
 
   
   
@@ -93,7 +93,7 @@ add_task(async function putGetHasDelete() {
 
 add_task(async function largeNumbers() {
   const databaseDir = await makeDatabaseDir("largeNumbers");
-  const database = await KeyValueService.getOrCreate(databaseDir);
+  const database = await KeyValueService.getOrCreate(databaseDir, "db");
 
   const MAX_INT_VARIANT = Math.pow(2, 31) - 1;
   const MIN_DOUBLE_VARIANT = Math.pow(2, 31);
@@ -115,7 +115,7 @@ add_task(async function largeNumbers() {
 
 add_task(async function extendedCharacterKey() {
   const databaseDir = await makeDatabaseDir("extendedCharacterKey");
-  const database = await KeyValueService.getOrCreate(databaseDir);
+  const database = await KeyValueService.getOrCreate(databaseDir, "db");
 
   
 
@@ -139,42 +139,30 @@ add_task(async function getOrCreateNamedDatabases() {
   let barDB = await KeyValueService.getOrCreate(databaseDir, "bar");
   Assert.ok(barDB, "retrieval of second named database works");
 
-  let defaultDB = await KeyValueService.getOrCreate(databaseDir);
-  Assert.ok(defaultDB, "retrieval of default database works");
+  let bazDB = await KeyValueService.getOrCreate(databaseDir, "baz");
+  Assert.ok(bazDB, "retrieval of third named database works");
 
   
-  await defaultDB.put("key", 1);
+  await bazDB.put("key", 1);
   Assert.ok(!(await fooDB.has("key")), "the foo DB still doesn't have the key");
   await fooDB.put("key", 2);
   Assert.ok(!(await barDB.has("key")), "the bar DB still doesn't have the key");
   await barDB.put("key", 3);
-  Assert.strictEqual(await defaultDB.get("key", 0), 1, "the default DB has its KV pair");
+  Assert.strictEqual(await bazDB.get("key", 0), 1, "the baz DB has its KV pair");
   Assert.strictEqual(await fooDB.get("key", 0), 2, "the foo DB has its KV pair");
   Assert.strictEqual(await barDB.get("key", 0), 3, "the bar DB has its KV pair");
 
   
-  await defaultDB.delete("key");
+  await bazDB.delete("key");
   Assert.strictEqual(await fooDB.get("key", 0), 2, "the foo DB still has its KV pair");
   await fooDB.delete("key");
   Assert.strictEqual(await barDB.get("key", 0), 3, "the bar DB still has its KV pair");
   await barDB.delete("key");
-
-  
-  
-
-  
-  
-  
-  await Assert.rejects(defaultDB.put("foo", 5), /LmdbError\(Incompatible\)/);
-
-  
-  
-  await Assert.rejects(defaultDB.get("foo"), /DataError\(UnknownType\(0\)\)/);
 });
 
 add_task(async function enumeration() {
   const databaseDir = await makeDatabaseDir("enumeration");
-  const database = await KeyValueService.getOrCreate(databaseDir);
+  const database = await KeyValueService.getOrCreate(databaseDir, "db");
 
   await database.put("int-key", 1234);
   await database.put("double-key", 56.78);

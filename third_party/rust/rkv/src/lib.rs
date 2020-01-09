@@ -166,21 +166,14 @@
 
 
 
+
+
+
+
+
+
+
 #![allow(dead_code)]
-
-#[macro_use]
-extern crate arrayref;
-#[macro_use]
-extern crate failure;
-#[macro_use]
-extern crate lazy_static;
-
-extern crate bincode;
-extern crate lmdb;
-extern crate ordered_float;
-extern crate serde; 
-extern crate url;
-extern crate uuid;
 
 pub use lmdb::{
     DatabaseFlags,
@@ -191,34 +184,50 @@ pub use lmdb::{
 
 mod env;
 pub mod error;
-mod integer;
 mod manager;
 mod readwrite;
+pub mod store;
 pub mod value;
 
-pub use env::Rkv;
+pub use lmdb::{
+    Cursor,
+    Database,
+    Iter as LmdbIter,
+    RoCursor,
+    Stat,
+};
 
-pub use error::{
+pub use self::readwrite::{
+    Reader,
+    Writer,
+};
+pub use self::store::integer::{
+    IntegerStore,
+    PrimitiveInt,
+};
+pub use self::store::integermulti::MultiIntegerStore;
+pub use self::store::multi::MultiStore;
+pub use self::store::single::SingleStore;
+pub use self::store::Options as StoreOptions;
+
+pub use self::env::Rkv;
+
+pub use self::error::{
     DataError,
     StoreError,
 };
 
-pub use integer::{
-    IntegerReader,
-    IntegerStore,
-    IntegerWriter,
-    PrimitiveInt,
-};
+pub use self::manager::Manager;
 
-pub use manager::Manager;
-
-pub use readwrite::{
-    Reader,
-    Store,
-    Writer,
-};
-
-pub use value::{
+pub use self::value::{
     OwnedValue,
     Value,
 };
+
+fn read_transform(val: Result<&[u8], lmdb::Error>) -> Result<Option<Value>, StoreError> {
+    match val {
+        Ok(bytes) => Value::from_tagged_slice(bytes).map(Some).map_err(StoreError::DataError),
+        Err(lmdb::Error::NotFound) => Ok(None),
+        Err(e) => Err(StoreError::LmdbError(e)),
+    }
+}

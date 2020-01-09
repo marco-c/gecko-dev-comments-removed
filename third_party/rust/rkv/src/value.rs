@@ -8,19 +8,19 @@
 
 
 
-use ordered_float::OrderedFloat;
-
+use arrayref::array_ref;
 use bincode::{
     deserialize,
     serialize,
 };
+use ordered_float::OrderedFloat;
 
 use uuid::{
     Bytes,
     Uuid,
 };
 
-use error::DataError;
+use crate::error::DataError;
 
 
 
@@ -46,6 +46,7 @@ impl Type {
         Type::from_primitive(tag).ok_or_else(|| DataError::UnknownType(tag))
     }
 
+    #[allow(clippy::wrong_self_convention)]
     pub fn to_tag(self) -> u8 {
         self as u8
     }
@@ -95,7 +96,7 @@ pub enum Value<'s> {
     Blob(&'s [u8]),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum OwnedValue {
     Bool(bool),
     U64(u64),
@@ -158,7 +159,8 @@ impl<'s> Value<'s> {
                 
                 unreachable!()
             },
-        }.map_err(|e| DataError::DecodingError {
+        }
+        .map_err(|e| DataError::DecodingError {
             value_type: t,
             err: e,
         })
@@ -178,7 +180,8 @@ impl<'s> Value<'s> {
                 
                 serialize(&(Type::Uuid.to_tag(), v))
             },
-        }.map_err(DataError::EncodingError)
+        }
+        .map_err(DataError::EncodingError)
     }
 }
 

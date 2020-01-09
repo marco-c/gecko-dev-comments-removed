@@ -1,0 +1,65 @@
+
+
+
+
+
+
+
+extern crate core;
+extern crate std;
+
+use self::std::prelude::v1::*;
+use self::std::cell::Cell;
+use self::std::sync::Once;
+pub use self::std::sync::ONCE_INIT;
+
+
+pub struct Lazy<T: Sync>(Cell<Option<T>>, Once);
+
+impl<T: Sync> Lazy<T> {
+    pub const INIT: Self = Lazy(Cell::new(None), ONCE_INIT);
+
+    #[inline(always)]
+    pub fn get<F>(&'static self, f: F) -> &T
+    where
+        F: FnOnce() -> T,
+    {
+        self.1.call_once(|| {
+            self.0.set(Some(f()));
+        });
+
+        
+        
+        unsafe {
+            match *self.0.as_ptr() {
+                Some(ref x) => x,
+                None => {
+                    debug_assert!(false, "attempted to derefence an uninitialized lazy static. This is a bug");
+
+                    unreachable_unchecked()
+                },
+            }
+        }
+    }
+}
+
+unsafe impl<T: Sync> Sync for Lazy<T> {}
+
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __lazy_static_create {
+    ($NAME:ident, $T:ty) => {
+        static $NAME: $crate::lazy::Lazy<$T> = $crate::lazy::Lazy::INIT;
+    };
+}
+
+
+
+
+
+
+
+unsafe fn unreachable_unchecked() -> ! {
+    enum Void {}
+    match std::mem::uninitialized::<Void>() {}
+}

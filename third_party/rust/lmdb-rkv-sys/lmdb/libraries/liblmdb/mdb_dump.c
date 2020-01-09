@@ -1,16 +1,16 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* mdb_dump.c - memory-mapped database dump tool */
+/*
+ * Copyright 2011-2018 Howard Chu, Symas Corp.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted only as authorized by the OpenLDAP
+ * Public License.
+ *
+ * A copy of this license is available in the file LICENSE in the
+ * top-level directory of the distribution or, alternatively, at
+ * <http://www.OpenLDAP.org/license.html>.
+ */
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -91,7 +91,7 @@ static void byte(MDB_val *v)
 	putchar('\n');
 }
 
-
+/* Dump in BDB-compatible format */
 static int dumpit(MDB_txn *txn, MDB_dbi dbi, char *name)
 {
 	MDB_cursor *mc;
@@ -174,14 +174,14 @@ int main(int argc, char *argv[])
 		usage(prog);
 	}
 
-	
-
-
-
-
-
-
-
+	/* -a: dump main DB and all subDBs
+	 * -s: dump only the named subDB
+	 * -n: use NOSUBDIR flag on env_open
+	 * -p: use printable characters
+	 * -f: write to file instead of stdout
+	 * -V: print version and exit
+	 * (default) dump only the main DB
+	 */
 	while ((i = getopt(argc, argv, "af:lnps:V")) != EOF) {
 		switch(i) {
 		case 'V':
@@ -190,7 +190,7 @@ int main(int argc, char *argv[])
 			break;
 		case 'l':
 			list = 1;
-			;
+			/*FALLTHROUGH*/;
 		case 'a':
 			if (subname)
 				usage(prog);
