@@ -17,15 +17,12 @@ const { assert, dumpn } = DevToolsUtils;
 const { threadSpec } = require("devtools/shared/specs/script");
 
 loader.lazyRequireGetter(this, "findCssSelector", "devtools/shared/inspector/css-logic", true);
-loader.lazyRequireGetter(this, "BreakpointActor", "devtools/server/actors/breakpoint", true);
-loader.lazyRequireGetter(this, "setBreakpointAtEntryPoints", "devtools/server/actors/breakpoint", true);
 loader.lazyRequireGetter(this, "EnvironmentActor", "devtools/server/actors/environment", true);
 loader.lazyRequireGetter(this, "SourceActorStore", "devtools/server/actors/utils/source-actor-store", true);
 loader.lazyRequireGetter(this, "BreakpointActorMap", "devtools/server/actors/utils/breakpoint-actor-map", true);
 loader.lazyRequireGetter(this, "PauseScopedObjectActor", "devtools/server/actors/pause-scoped", true);
 loader.lazyRequireGetter(this, "EventLoopStack", "devtools/server/actors/utils/event-loop", true);
 loader.lazyRequireGetter(this, "FrameActor", "devtools/server/actors/frame", true);
-loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 loader.lazyRequireGetter(this, "throttle", "devtools/shared/throttle", true);
 
 
@@ -62,7 +59,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     this._threadLifetimePool = null;
     this._parentClosed = false;
     this._scripts = null;
-    this._pauseOnDOMEvents = null;
     this._xhrBreakpoints = [];
     this._observingNetwork = false;
 
@@ -77,15 +73,10 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
     
     
-    this._hiddenBreakpoints = new Map();
-
-    
-    
     this._onLoadBreakpointURLs = new Set();
 
     this.global = global;
 
-    this._allEventsListener = this._allEventsListener.bind(this);
     this.onNewSourceEvent = this.onNewSourceEvent.bind(this);
     this.onUpdatedSourceEvent = this.onUpdatedSourceEvent.bind(this);
 
@@ -95,9 +86,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     this.onNewScript = this.onNewScript.bind(this);
     this.objectGrip = this.objectGrip.bind(this);
     this.pauseObjectGrip = this.pauseObjectGrip.bind(this);
-    this._onWindowReady = this._onWindowReady.bind(this);
     this._onOpeningRequest = this._onOpeningRequest.bind(this);
-    EventEmitter.on(this._parent, "window-ready", this._onWindowReady);
 
     if (Services.obs) {
       
@@ -228,7 +217,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     this._xhrBreakpoints = [];
     this._updateNetworkObserver();
 
-    EventEmitter.off(this._parent, "window-ready", this._onWindowReady);
     this.sources.off("newSource", this.onNewSourceEvent);
     this.sources.off("updatedSource", this.onUpdatedSourceEvent);
     this.clearDebuggees();
@@ -863,33 +851,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   
 
 
-
-
-
-  _maybeListenToEvents: function(request) {
-    
-    const events = request.pauseOnDOMEvents;
-    if (this.global && events &&
-        (events == "*" ||
-        (Array.isArray(events) && events.length))) {
-      this._pauseOnDOMEvents = events;
-      Services.els.addListenerForAllEvents(this.global, this._allEventsListener, true);
-    }
-  },
-
-  
-
-
-
-  _onWindowReady: function() {
-    this._maybeListenToEvents({
-      pauseOnDOMEvents: this._pauseOnDOMEvents,
-    });
-  },
-
-  
-
-
   onResume: function(request) {
     if (this._state !== "paused") {
       return {
@@ -934,7 +895,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
         this._options.pauseOnExceptions = request.pauseOnExceptions;
         this._options.ignoreCaughtExceptions = request.ignoreCaughtExceptions;
         this.maybePauseOnExceptions();
-        this._maybeListenToEvents(request);
       }
 
       
@@ -1010,107 +970,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   maybePauseOnExceptions: function() {
     if (this._options.pauseOnExceptions) {
       this.dbg.onExceptionUnwind = this.onExceptionUnwind.bind(this);
-    }
-  },
-
-  
-
-
-
-
-
-
-
-
-  _allEventsListener: function(event) {
-    if (this._pauseOnDOMEvents == "*" ||
-        this._pauseOnDOMEvents.includes(event.type)) {
-      for (const listener of this._getAllEventListeners(event.target)) {
-        if (event.type == listener.type || this._pauseOnDOMEvents == "*") {
-          this._breakOnEnter(listener.script);
-        }
-      }
-    }
-  },
-
-  
-
-
-
-
-
-
-
-  _getAllEventListeners: function(eventTarget) {
-    const targets = Services.els.getEventTargetChainFor(eventTarget, true);
-    const listeners = [];
-
-    for (const target of targets) {
-      const handlers = Services.els.getListenerInfoFor(target);
-      for (const handler of handlers) {
-        
-        
-        
-        if (!handler || !handler.listenerObject || !handler.type) {
-          continue;
-        }
-        
-        const l = Object.create(null);
-        l.type = handler.type;
-        const listener = handler.listenerObject;
-        let listenerDO = this.globalDebugObject.makeDebuggeeValue(listener);
-        
-        if (!listenerDO.callable) {
-          
-          
-          if (!listenerDO.unwrap()) {
-            continue;
-          }
-          let heDesc;
-          while (!heDesc && listenerDO) {
-            heDesc = listenerDO.getOwnPropertyDescriptor("handleEvent");
-            listenerDO = listenerDO.proto;
-          }
-          if (heDesc && heDesc.value) {
-            listenerDO = heDesc.value;
-          }
-        }
-        
-        
-        while (listenerDO.isBoundFunction) {
-          listenerDO = listenerDO.boundTargetFunction;
-        }
-        l.script = listenerDO.script;
-        
-        
-        if (!l.script) {
-          continue;
-        }
-        listeners.push(l);
-      }
-    }
-    return listeners;
-  },
-
-  
-
-
-
-  _breakOnEnter: function(script) {
-    const offsets = script.getAllOffsets();
-    for (let line = 0, n = offsets.length; line < n; line++) {
-      if (offsets[line]) {
-        
-        
-        const actor = new BreakpointActor(this);
-        this.threadLifetimePool.addActor(actor);
-
-        const scripts = this.dbg.findScripts({ source: script.source, line: line });
-        const entryPoints = findEntryPointsForLine(scripts, line);
-        setBreakpointAtEntryPoints(actor, entryPoints);
-        this._hiddenBreakpoints.set(actor.actorID, actor);
-        break;
-      }
     }
   },
 
@@ -1431,20 +1290,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     this.dbg.replayingOnPopFrame = undefined;
     this.dbg.onExceptionUnwind = undefined;
     this._clearSteppingHooks();
-
-    
-    
-    
-    if (!isWorker &&
-        this.global &&
-        !this.dbg.replaying &&
-        !this.global.toString().includes("Sandbox")) {
-      Services.els.removeListenerForAllEvents(this.global, this._allEventsListener, true);
-      for (const [, bp] of this._hiddenBreakpoints) {
-        bp.delete();
-      }
-      this._hiddenBreakpoints.clear();
-    }
 
     this._state = "paused";
 
@@ -2085,30 +1930,6 @@ this.reportError = function(error, prefix = "") {
   oldReportError(msg);
   dumpn(msg);
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function findEntryPointsForLine(scripts, line) {
-  const entryPoints = [];
-  for (const script of scripts) {
-    const offsets = script.getLineOffsets(line);
-    if (offsets.length) {
-      entryPoints.push({ script, offsets });
-    }
-  }
-  return entryPoints;
-}
 
 function findPausePointForLocation(pausePoints, location) {
   const { generatedLine: line, generatedColumn: column } = location;

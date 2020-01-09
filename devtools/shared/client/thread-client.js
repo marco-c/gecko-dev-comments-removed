@@ -53,7 +53,6 @@ ThreadClient.prototype = {
 
   _pauseOnExceptions: false,
   _ignoreCaughtExceptions: false,
-  _pauseOnDOMEvents: null,
 
   _actor: null,
   get actor() {
@@ -103,9 +102,6 @@ ThreadClient.prototype = {
       }
       if (this._ignoreCaughtExceptions) {
         packet.ignoreCaughtExceptions = this._ignoreCaughtExceptions;
-      }
-      if (this._pauseOnDOMEvents) {
-        packet.pauseOnDOMEvents = this._pauseOnDOMEvents;
       }
       return packet;
     },
@@ -305,37 +301,6 @@ ThreadClient.prototype = {
 
     onResponse();
     return promise.resolve();
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  pauseOnDOMEvents: function(events, onResponse = noop) {
-    this._pauseOnDOMEvents = events;
-    
-    
-    
-    if (this.paused) {
-      DevToolsUtils.executeSoon(() => onResponse({}));
-      return {};
-    }
-    return this.interrupt(response => {
-      
-      if (response.error) {
-        onResponse(response);
-        return response;
-      }
-      return this.resume(onResponse);
-    });
   },
 
   

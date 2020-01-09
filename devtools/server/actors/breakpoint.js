@@ -206,9 +206,7 @@ const BreakpointActor = ActorClassWithSpec(breakpointSpec, {
     const reason = {};
     const { condition, logValue } = this.options || {};
 
-    if (this.threadActor._hiddenBreakpoints.has(this.actorID)) {
-      reason.type = "pauseOnDOMEvents";
-    } else if (!condition && !logValue) {
+    if (!condition && !logValue) {
       reason.type = "breakpoint";
       
       reason.actors = [ this.actorID ];
