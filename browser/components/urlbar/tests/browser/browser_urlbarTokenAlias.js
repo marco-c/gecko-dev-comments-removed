@@ -229,9 +229,7 @@ add_task(async function clickAndFillAlias() {
   }
 
   
-  await UrlbarTestUtils.promisePopupClose(window, () => {
-    EventUtils.synthesizeMouseAtCenter(testEngineItem, {});
-  });
+  EventUtils.synthesizeMouseAtCenter(testEngineItem, {});
 
   
   await promiseSearchComplete();
@@ -285,9 +283,7 @@ add_task(async function enterAndFillAlias() {
 
   
   EventUtils.synthesizeKey("KEY_ArrowDown", { repeat: index });
-  await UrlbarTestUtils.promisePopupClose(window, () => {
-    EventUtils.synthesizeKey("KEY_Enter");
-  });
+  EventUtils.synthesizeKey("KEY_Enter");
 
   
   await promiseSearchComplete();
