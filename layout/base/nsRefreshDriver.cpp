@@ -1773,7 +1773,23 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
     
     
     
-    StopTimer();
+    
+    
+    if (!XRE_IsContentProcess() || !presShell || mTestControllingRefreshes ||
+        !mPresContext->Document()->IsTopLevelContentDocument() || mThrottled ||
+        gfxPlatform::IsInLayoutAsapMode()) {
+      StopTimer();
+    } else if (mPresContext->Document()->GetReadyStateEnum() <
+                   Document::READYSTATE_COMPLETE &&
+               !mPresContext->HadContentfulPaint()) {
+      if (mInitialTimerRunningLimit.IsNull()) {
+        mInitialTimerRunningLimit =
+            TimeStamp::Now() + TimeDuration::FromSeconds(4.0f);
+        
+      } else if (mInitialTimerRunningLimit < TimeStamp::Now()) {
+        StopTimer();
+      }
+    }
     return;
   }
 
