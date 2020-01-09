@@ -1593,6 +1593,12 @@ void XMLHttpRequestWorker::MaybeDispatchPrematureAbortEvents(ErrorResult& aRv) {
       return;
     }
 
+    
+    if (!mProxy) {
+      aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+      return;
+    }
+
     mProxy->mSeenLoadStart = false;
   }
 }
