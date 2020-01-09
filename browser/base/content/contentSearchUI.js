@@ -81,8 +81,8 @@ ContentSearchUIController.prototype = {
       URL.revokeObjectURL(this._defaultEngine.icon);
     }
     let icon;
-    if (engine.iconBuffer) {
-      icon = this._getFaviconURIFromBuffer(engine.iconBuffer);
+    if (engine.iconData) {
+      icon = this._getFaviconURIFromIconData(engine.iconData);
     } else {
       icon = "chrome://mozapps/skin/places/defaultFavicon.svg";
     }
@@ -699,8 +699,14 @@ ContentSearchUIController.prototype = {
   },
 
   
-  _getFaviconURIFromBuffer(buffer) {
-    let blob = new Blob([buffer]);
+  
+  _getFaviconURIFromIconData(data) {
+    if (typeof(data) == "string") {
+      return data;
+    }
+
+    
+    let blob = new Blob([data]);
     return URL.createObjectURL(blob);
   },
 
@@ -875,8 +881,8 @@ ContentSearchUIController.prototype = {
       button.setAttribute("class", "contentSearchOneOffItem");
       let img = document.createElementNS(HTML_NS, "img");
       let uri;
-      if (engine.iconBuffer) {
-        uri = this._getFaviconURIFromBuffer(engine.iconBuffer);
+      if (engine.iconData) {
+        uri = this._getFaviconURIFromIconData(engine.iconData);
       } else {
         uri = this._getImageURIForCurrentResolution(
           "chrome://browser/skin/search-engine-placeholder.png");

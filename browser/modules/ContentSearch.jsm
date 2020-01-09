@@ -24,6 +24,8 @@ const OUTBOUND_MESSAGE = INBOUND_MESSAGE;
 const MAX_LOCAL_SUGGESTIONS = 3;
 const MAX_SUGGESTIONS = 6;
 
+const HANDOFF_TO_AWESOMEBAR_PREF = "browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar";
+
 
 
 
@@ -328,25 +330,21 @@ var ContentSearch = {
     return true;
   },
 
-  async currentStateObj(uriFlag = false) {
+  async currentStateObj() {
     let state = {
       engines: [],
       currentEngine: await this._currentEngineObj(),
     };
-    if (uriFlag) {
-      state.currentEngine.iconBuffer = Services.search.defaultEngine.getIconURLBySize(16, 16);
-    }
+
     let pref = Services.prefs.getCharPref("browser.search.hiddenOneOffs");
     let hiddenList = pref ? pref.split(",") : [];
     for (let engine of await Services.search.getVisibleEngines()) {
       let uri = engine.getIconURLBySize(16, 16);
-      let iconBuffer = uri;
-      if (!uriFlag) {
-        iconBuffer = await this._arrayBufferFromDataURI(uri);
-      }
+      let iconData = await this._maybeConvertURIToArrayBuffer(uri);
+
       state.engines.push({
         name: engine.name,
-        iconBuffer,
+        iconData,
         hidden: hiddenList.includes(engine.name),
         identifier: engine.identifier,
       });
@@ -517,15 +515,33 @@ var ContentSearch = {
     let obj = {
       name: engine.name,
       placeholder,
-      iconBuffer: await this._arrayBufferFromDataURI(favicon),
+      iconData: await this._maybeConvertURIToArrayBuffer(favicon),
     };
     return obj;
   },
 
-  _arrayBufferFromDataURI(uri) {
+  _maybeConvertURIToArrayBuffer(uri) {
     if (!uri) {
       return Promise.resolve(null);
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!uri.startsWith("data:") &&
+        Services.prefs.getBoolPref(HANDOFF_TO_AWESOMEBAR_PREF)) {
+      return Promise.resolve(uri);
+    }
+
     return new Promise(resolve => {
       let xhr = new XMLHttpRequest();
       xhr.open("GET", uri, true);
