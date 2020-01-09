@@ -64,7 +64,7 @@ class ChangesContextMenu {
       
       menu.append(new MenuItem({
         label: getStr("changes.contextmenu.copyRule"),
-        click: () => this._onCopyRule(ruleId),
+        click: () => this._onCopyRule(ruleId, true),
       }));
 
       
