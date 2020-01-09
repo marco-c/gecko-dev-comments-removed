@@ -683,7 +683,7 @@ void AudioContext::Shutdown() {
   
   if (!mIsDisconnecting) {
     if (!mIsOffline) {
-      RefPtr<Promise> ignored = Close(IgnoreErrors());
+      CloseInternal(nullptr);
     }
 
     for (auto p : mPromiseGripArray) {
@@ -1106,6 +1106,12 @@ already_AddRefed<Promise> AudioContext::Close(ErrorResult& aRv) {
 
   mPromiseGripArray.AppendElement(promise);
 
+  CloseInternal(promise);
+
+  return promise.forget();
+}
+
+void AudioContext::CloseInternal(void* aPromise) {
   
   
   AudioNodeStream* ds = DestinationStream();
@@ -1118,11 +1124,9 @@ already_AddRefed<Promise> AudioContext::Close(ErrorResult& aRv) {
       streams = GetAllStreams();
     }
     Graph()->ApplyAudioContextOperation(ds, streams,
-                                        AudioContextOperation::Close, promise);
+                                        AudioContextOperation::Close, aPromise);
   }
   mCloseCalled = true;
-
-  return promise.forget();
 }
 
 void AudioContext::RegisterNode(AudioNode* aNode) {

@@ -334,6 +334,7 @@ class AudioContext final : public DOMEventTargetHelper,
 
   void ResumeInternal();
   void SuspendInternal(void* aPromise);
+  void CloseInternal(void* aPromise);
 
   
   
