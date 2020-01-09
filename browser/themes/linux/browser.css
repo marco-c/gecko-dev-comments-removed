@@ -269,12 +269,6 @@ menuitem.bookmark-item {
 
 
 
-.notification-anchor-icon:-moz-focusring {
-  outline: 1px dotted -moz-DialogText;
-}
-
-
-
 %include ../shared/translation/infobar.inc.css
 
 notification[value="translation"] {
