@@ -20,7 +20,7 @@ XPCOMUtils.defineLazyServiceGetter(this, "Favicons",
 
 
 
-this.Target = class {
+class Target {
   constructor(browser) {
     this.browser = browser;
     this.debugger = new TargetListener(this);

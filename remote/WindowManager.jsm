@@ -41,7 +41,7 @@ XPCOMUtils.defineLazyGetter(this, "log", Log.get);
 
 
 
-this.WindowObserver = class {
+class WindowObserver {
   
 
 
@@ -96,7 +96,7 @@ this.WindowObserver = class {
 
 
 
-this.TabObserver = class {
+class TabObserver {
   
 
 
@@ -156,7 +156,7 @@ this.TabObserver = class {
 
 
 
-this.BrowserObserver = class {
+class BrowserObserver {
   constructor() {
     EventEmitter.decorate(this);
   }
@@ -243,4 +243,4 @@ function isWindowIncluded(boundary, target) {
   return isWindowIncluded(boundary, parent);
 }
 
-this.WindowManager = {isWindowIncluded};
+var WindowManager = {isWindowIncluded};

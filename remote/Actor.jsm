@@ -18,7 +18,7 @@ XPCOMUtils.defineLazyGetter(this, "log", Log.get);
 
 
 
-this.RemoteAgentActorChild = class extends ActorChild {
+class RemoteAgentActorChild extends ActorChild {
   get browsingContext() {
     return this.docShell.browsingContext;
   }
@@ -37,7 +37,7 @@ this.RemoteAgentActorChild = class extends ActorChild {
 
 
 
-this.MessageChannelActorChild = class extends RemoteAgentActorChild {
+class MessageChannelActorChild extends RemoteAgentActorChild {
   constructor(dispatcher) {
     super(dispatcher);
     this.name = `RemoteAgent:${this.constructor.name}`;
