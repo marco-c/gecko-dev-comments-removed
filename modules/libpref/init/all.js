@@ -232,6 +232,9 @@ pref("dom.keyboardevent.keypress.hack.dispatch_non_printable_keys", "");
 pref("dom.keyboardevent.keypress.hack.use_legacy_keycode_and_charcode", "");
 
 
+pref("dom.inputevent.data.enabled", true);
+
+
 pref("dom.inputevent.inputtype.enabled", true);
 
 
