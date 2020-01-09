@@ -192,7 +192,7 @@ void LayerActivityTracker::NotifyExpired(LayerActivity* aObject) {
     
     
     if (f->PresContext()->GetContainerWeak()) {
-      f->SchedulePaint(nsIFrame::PAINT_DEFAULT, false);
+      f->SchedulePaint();
     }
     f->RemoveStateBits(NS_FRAME_HAS_LAYER_ACTIVITY_PROPERTY);
     f->DeleteProperty(LayerActivityProperty());
