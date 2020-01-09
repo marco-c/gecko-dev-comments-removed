@@ -116,7 +116,7 @@ LauncherVoidResult LauncherRegistryInfo::ReflectTelemetryPrefToRegistry(
 }
 
 LauncherResult<LauncherRegistryInfo::ProcessType> LauncherRegistryInfo::Check(
-    const ProcessType aDesiredType) {
+    const ProcessType aDesiredType, const CheckOption aOption) {
   LauncherResult<Disposition> disposition = Open();
   if (disposition.isErr()) {
     return LAUNCHER_ERROR_FROM_RESULT(disposition);
@@ -194,6 +194,12 @@ LauncherResult<LauncherRegistryInfo::ProcessType> LauncherRegistryInfo::Check(
     
     MOZ_ASSERT(typeToRunAs == ProcessType::Launcher);
     
+  }
+
+  
+  
+  if (aOption == CheckOption::Force) {
+    typeToRunAs = aDesiredType;
   }
 
   LauncherVoidResult wroteTimestamp = Ok();
