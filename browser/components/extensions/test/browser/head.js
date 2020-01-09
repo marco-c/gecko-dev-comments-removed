@@ -672,7 +672,7 @@ async function startIncognitoMonitorExtension() {
   return extension;
 }
 
-async function getIncognitoWindow(url) {
+async function getIncognitoWindow(url = "about:privatebrowsing") {
   
   
 
