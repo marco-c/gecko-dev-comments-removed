@@ -13,16 +13,7 @@
 
 
 
-
-
-
-
-
-
-
-
-
-#![doc(html_root_url = "https://docs.rs/serde_derive/1.0.80")]
+#![doc(html_root_url = "https://docs.rs/serde_derive/1.0.88")]
 #![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
 #![cfg_attr(feature = "cargo-clippy", deny(clippy, clippy_pedantic))]
 
@@ -34,6 +25,7 @@
         needless_pass_by_value,
         redundant_field_names,
         too_many_arguments,
+        trivially_copy_pass_by_ref,
         used_underscore_binding,
     )
 )]
@@ -48,9 +40,9 @@
         indexing_slicing,
         items_after_statements,
         match_same_arms,
+        module_name_repetitions,
         similar_names,
         single_match_else,
-        stutter,
         unseparated_literal_suffix,
         use_self,
     )
@@ -77,6 +69,7 @@ mod bound;
 mod fragment;
 
 mod de;
+mod dummy;
 mod pretend;
 mod ser;
 mod try;
@@ -85,7 +78,7 @@ mod try;
 pub fn derive_serialize(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     ser::expand_derive_serialize(&input)
-        .unwrap_or_else(compile_error)
+        .unwrap_or_else(to_compile_errors)
         .into()
 }
 
@@ -93,12 +86,11 @@ pub fn derive_serialize(input: TokenStream) -> TokenStream {
 pub fn derive_deserialize(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     de::expand_derive_deserialize(&input)
-        .unwrap_or_else(compile_error)
+        .unwrap_or_else(to_compile_errors)
         .into()
 }
 
-fn compile_error(message: String) -> proc_macro2::TokenStream {
-    quote! {
-        compile_error!(#message);
-    }
+fn to_compile_errors(errors: Vec<syn::Error>) -> proc_macro2::TokenStream {
+    let compile_errors = errors.iter().map(syn::Error::to_compile_error);
+    quote!(#(#compile_errors)*)
 }
