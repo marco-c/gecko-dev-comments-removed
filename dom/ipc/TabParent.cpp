@@ -18,6 +18,7 @@
 #include "mozilla/dom/DataTransfer.h"
 #include "mozilla/dom/DataTransferItemList.h"
 #include "mozilla/dom/Event.h"
+#include "mozilla/dom/FrameCrashedEvent.h"
 #include "mozilla/dom/indexedDB/ActorsParent.h"
 #include "mozilla/dom/IPCBlobUtils.h"
 #include "mozilla/dom/PaymentRequestParent.h"
@@ -149,15 +150,8 @@ namespace dom {
 
 TabParent::LayerToTabParentTable* TabParent::sLayerToTabParentTable = nullptr;
 
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(TabParent)
-  NS_INTERFACE_MAP_ENTRY(nsITabParent)
-  NS_INTERFACE_MAP_ENTRY(nsIAuthPromptProvider)
-  NS_INTERFACE_MAP_ENTRY(nsISupportsWeakReference)
-  NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsITabParent)
-NS_INTERFACE_MAP_END
-NS_IMPL_CYCLE_COLLECTION(TabParent, mFrameElement, mBrowserDOMWindow, mLoadContext, mFrameLoader, mBrowsingContext)
-NS_IMPL_CYCLE_COLLECTING_ADDREF(TabParent)
-NS_IMPL_CYCLE_COLLECTING_RELEASE(TabParent)
+NS_IMPL_ISUPPORTS(TabParent, nsITabParent, nsIAuthPromptProvider,
+                  nsISupportsWeakReference)
 
 TabParent::TabParent(ContentParent* aManager, const TabId& aTabId,
                      const TabContext& aContext,
@@ -474,18 +468,27 @@ void TabParent::ActorDestroy(ActorDestroyReason why) {
         
         
         if (currentFrameLoader == frameLoader) {
+          nsString eventName;
           MessageChannel* channel = GetIPCChannel();
           if (channel && !channel->DoBuildIDsMatch()) {
-            nsContentUtils::DispatchTrustedEvent(
-                frameElement->OwnerDoc(), frameElement,
-                NS_LITERAL_STRING("oop-browser-buildid-mismatch"),
-                CanBubble::eYes, Cancelable::eYes);
+            eventName = NS_LITERAL_STRING("oop-browser-buildid-mismatch");
           } else {
-            nsContentUtils::DispatchTrustedEvent(
-                frameElement->OwnerDoc(), frameElement,
-                NS_LITERAL_STRING("oop-browser-crashed"), CanBubble::eYes,
-                Cancelable::eYes);
+            eventName = NS_LITERAL_STRING("oop-browser-crashed");
           }
+
+          dom::FrameCrashedEventInit init;
+          init.mBubbles = true;
+          init.mCancelable = true;
+          init.mBrowsingContextId = mBrowsingContext->Id();
+
+          RefPtr<dom::FrameCrashedEvent> event =
+              dom::FrameCrashedEvent::Constructor(frameElement->OwnerDoc(),
+                                                  eventName, init);
+          event->SetTrusted(true);
+          event->WidgetEventPtr()->mFlags.mOnlyChromeDispatch = true;
+          event->WidgetEventPtr()->mFlags.mBubbles = true;
+          EventDispatcher::DispatchDOMEvent(frameElement, nullptr, event,
+                                            nullptr, nullptr);
         }
       }
     }
@@ -1941,7 +1944,7 @@ mozilla::ipc::IPCResult TabParent::RecvRequestFocus(const bool& aCanRaise) {
   uint32_t flags = nsIFocusManager::FLAG_NOSCROLL;
   if (aCanRaise) flags |= nsIFocusManager::FLAG_RAISE;
 
-  nsCOMPtr<Element> element = mFrameElement;
+  RefPtr<Element> element = mFrameElement;
   fm->SetFocus(element, flags);
   return IPC_OK();
 }
@@ -2646,8 +2649,7 @@ already_AddRefed<nsFrameLoader> TabParent::GetFrameLoader(
     RefPtr<nsFrameLoader> fl = mFrameLoader;
     return fl.forget();
   }
-  nsCOMPtr<Element> frameElement(mFrameElement);
-  RefPtr<nsFrameLoaderOwner> frameLoaderOwner = do_QueryObject(frameElement);
+  RefPtr<nsFrameLoaderOwner> frameLoaderOwner = do_QueryObject(mFrameElement);
   return frameLoaderOwner ? frameLoaderOwner->GetFrameLoader() : nullptr;
 }
 
