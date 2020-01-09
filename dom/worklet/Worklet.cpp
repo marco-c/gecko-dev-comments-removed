@@ -327,6 +327,7 @@ ExecutionRunnable::Run() {
   
   
   
+  
   if (!NS_IsMainThread()) {
     RunOnWorkletThread();
     return NS_DispatchToMainThread(this);
@@ -339,11 +340,7 @@ ExecutionRunnable::Run() {
 void ExecutionRunnable::RunOnWorkletThread() {
   WorkletThread::EnsureCycleCollectedJSContext(mParentRuntime);
 
-  AutoJSAPI jsapi;
-  jsapi.Init();
-
-  RefPtr<WorkletGlobalScope> globalScope =
-      mWorkletImpl->CreateGlobalScope(jsapi.cx());
+  WorkletGlobalScope* globalScope = mWorkletImpl->GetGlobalScope();
   MOZ_ASSERT(globalScope);
 
   AutoEntryScript aes(globalScope, "Worklet");

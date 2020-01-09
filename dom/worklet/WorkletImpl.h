@@ -74,7 +74,7 @@ class WorkletImpl {
   void NotifyWorkletFinished();
 
   
-  already_AddRefed<dom::WorkletGlobalScope> CreateGlobalScope(JSContext* aCx);
+  dom::WorkletGlobalScope* GetGlobalScope();
 
   
 
@@ -93,6 +93,9 @@ class WorkletImpl {
   
   RefPtr<dom::WorkletThread> mWorkletThread;
   bool mTerminated;
+
+  
+  RefPtr<dom::WorkletGlobalScope> mGlobalScope;
 };
 
 }  
