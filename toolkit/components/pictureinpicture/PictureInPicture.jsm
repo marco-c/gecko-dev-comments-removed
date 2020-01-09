@@ -135,14 +135,14 @@ var PictureInPicture = {
         
         
         resultWidth = MAX_WIDTH;
-        resultHeight = Math.floor(MAX_WIDTH / aspectRatio);
+        resultHeight = Math.round(MAX_WIDTH / aspectRatio);
       } else {
         
         
         
         
         resultHeight = MAX_HEIGHT;
-        resultWidth = Math.floor(MAX_HEIGHT * aspectRatio);
+        resultWidth = Math.round(MAX_HEIGHT * aspectRatio);
       }
     }
 
@@ -153,7 +153,7 @@ var PictureInPicture = {
     let pipLeft = screenWidth.value - resultWidth;
     let pipTop = screenHeight.value - resultHeight;
     let features = `${PLAYER_FEATURES},top=${pipTop},left=${pipLeft},` +
-                   `width=${resultWidth},height=${resultHeight}`;
+                   `outerWidth=${resultWidth},outerHeight=${resultHeight}`;
 
     let pipWindow =
       Services.ww.openWindow(parentWin, PLAYER_URI, null, features, null);
