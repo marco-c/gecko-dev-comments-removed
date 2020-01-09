@@ -562,9 +562,22 @@ void CacheIOThread::LoopOneLevel(uint32_t aLevel) {
     }
   }
 
-  if (returnEvents)
-    mEventQueue[aLevel].InsertElementsAt(0, events.Elements() + index,
-                                         length - index);
+  if (returnEvents) {
+    
+    
+    
+
+    
+    
+    events.RemoveElementsAt(0, index);
+    
+    
+    if (!events.AppendElements(std::move(mEventQueue[aLevel]))) {
+      MOZ_CRASH("Can't allocate memory for cache IO thread queue");
+    }
+    
+    events.SwapElements(mEventQueue[aLevel]);
+  }
 }
 
 bool CacheIOThread::EventsPending(uint32_t aLastLevel) {
