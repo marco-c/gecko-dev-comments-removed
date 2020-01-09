@@ -52,6 +52,7 @@
 #endif
 
 using namespace mozilla;
+using mozilla::dom::BrowsingContext;
 using mozilla::intl::LocaleService;
 
 
@@ -461,12 +462,16 @@ nsAppShellService::CreateWindowlessBrowser(bool aIsChrome,
   NS_ENSURE_SUCCESS(rv, rv);
 
   
+  RefPtr<BrowsingContext> browsingContext =
+      BrowsingContext::Create(nullptr, nullptr, EmptyString(),
+                              aIsChrome ? BrowsingContext::Type::Chrome
+                                        : BrowsingContext::Type::Content);
+
+  
 
 
   nsCOMPtr<nsIWebBrowser> browser =
-      nsWebBrowser::Create(stub, widget, OriginAttributes(), nullptr,
-                           aIsChrome ? nsIDocShellTreeItem::typeChromeWrapper
-                                     : nsIDocShellTreeItem::typeContentWrapper);
+      nsWebBrowser::Create(stub, widget, OriginAttributes(), browsingContext);
 
   if (NS_WARN_IF(!browser)) {
     NS_ERROR("Couldn't create instance of nsWebBrowser!");

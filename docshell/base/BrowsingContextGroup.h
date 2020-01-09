@@ -43,6 +43,9 @@ class BrowsingContextGroup final : public nsWrapperCache {
   void Subscribe(ContentParent* aOriginProcess);
   void Unsubscribe(ContentParent* aOriginProcess);
 
+  
+  void EnsureSubscribed(ContentParent* aProcess);
+
   ContentParents::Iterator ContentParentsIter() { return mSubscribers.Iter(); }
 
   
