@@ -6,12 +6,8 @@ use std::str::CharIndices;
 
 
 fn acceptable_arg_character(c: char) -> bool {
-    c.is_alphanumeric() || c == '.' || c == '-' || c == '<' || c == '>' || c == '='
+    c.is_alphanumeric() || c == '.' || c == '-'
 }
-
-
-
-
 
 
 pub fn parse_function(s: &str) -> (&str, Vec<&str>, &str) {
