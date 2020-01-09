@@ -616,6 +616,16 @@ class PresShell final : public nsIPresShell,
       }
       nsIContent* GetFrameContent() const;
 
+      
+
+
+
+
+
+
+
+      bool MaybeRetargetToActiveDocument(WidgetGUIEvent* aGUIEvent);
+
       RefPtr<PresShell> mPresShell;
       nsIFrame* mFrame;
       nsCOMPtr<nsIContent> mContent;

@@ -6633,31 +6633,8 @@ nsresult PresShell::EventHandler::HandleEvent(nsIFrame* aFrame,
     
     
     
-    
-    
-    
-    
-    if (EventStateManager* activeESM =
-            EventStateManager::GetActiveEventStateManager()) {
-      if (aGUIEvent->mClass == ePointerEventClass ||
-          aGUIEvent->HasMouseEventMessage()) {
-        if (activeESM != eventTargetData.GetEventStateManager()) {
-          if (nsPresContext* activeContext = activeESM->GetPresContext()) {
-            if (nsIPresShell* activeShell = activeContext->GetPresShell()) {
-              if (nsContentUtils::ContentIsCrossDocDescendantOf(
-                      activeShell->GetDocument(),
-                      eventTargetData.GetDocument())) {
-                eventTargetData.SetPresShellAndFrame(
-                    static_cast<PresShell*>(activeShell),
-                    activeShell->GetRootFrame());
-              }
-            }
-          }
-        }
-      }
-    }
-
-    if (NS_WARN_IF(!eventTargetData.mFrame)) {
+    if (eventTargetData.MaybeRetargetToActiveDocument(aGUIEvent) &&
+        NS_WARN_IF(!eventTargetData.mFrame)) {
       return NS_OK;
     }
 
@@ -10772,4 +10749,34 @@ void PresShell::EventHandler::EventTargetData::SetContentForEventFromFrame(
 
 nsIContent* PresShell::EventHandler::EventTargetData::GetFrameContent() const {
   return mFrame ? mFrame->GetContent() : nullptr;
+}
+
+bool PresShell::EventHandler::EventTargetData::MaybeRetargetToActiveDocument(
+    WidgetGUIEvent* aGUIEvent) {
+  MOZ_ASSERT(aGUIEvent);
+  MOZ_ASSERT(mFrame);
+  MOZ_ASSERT(mPresShell);
+  MOZ_ASSERT(!mContent, "Doesn't support to retarget the content");
+
+  
+  
+  if (EventStateManager* activeESM =
+          EventStateManager::GetActiveEventStateManager()) {
+    if (aGUIEvent->mClass == ePointerEventClass ||
+        aGUIEvent->HasMouseEventMessage()) {
+      if (activeESM != GetEventStateManager()) {
+        if (nsPresContext* activeContext = activeESM->GetPresContext()) {
+          if (nsIPresShell* activeShell = activeContext->GetPresShell()) {
+            if (nsContentUtils::ContentIsCrossDocDescendantOf(
+                    activeShell->GetDocument(), GetDocument())) {
+              SetPresShellAndFrame(static_cast<PresShell*>(activeShell),
+                                   activeShell->GetRootFrame());
+              return true;
+            }
+          }
+        }
+      }
+    }
+  }
+  return false;
 }
