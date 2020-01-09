@@ -51,15 +51,7 @@ class Animation : public DOMEventTargetHelper,
 
  public:
   explicit Animation(nsIGlobalObject* aGlobal)
-      : DOMEventTargetHelper(aGlobal),
-        mPlaybackRate(1.0),
-        mAnimationIndex(sNextAnimationIndex++),
-        mCachedChildIndex(-1),
-        mPendingState(PendingState::NotPending),
-        mFinishedAtLastComposeStyle(false),
-        mIsRelevant(false),
-        mFinishedIsResolved(false),
-        mSyncWithGeometricAnimations(false) {}
+      : DOMEventTargetHelper(aGlobal), mAnimationIndex(sNextAnimationIndex++) {}
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(Animation, DOMEventTargetHelper)
@@ -527,7 +519,7 @@ class Animation : public DOMEventTargetHelper,
   Nullable<TimeDuration> mHoldTime;             
   Nullable<TimeDuration> mPendingReadyTime;     
   Nullable<TimeDuration> mPreviousCurrentTime;  
-  double mPlaybackRate;
+  double mPlaybackRate = 1.0;
   Maybe<double> mPendingPlaybackRate;
 
   
@@ -554,7 +546,7 @@ class Animation : public DOMEventTargetHelper,
 
   
   
-  int32_t mCachedChildIndex;
+  int32_t mCachedChildIndex = -1;
 
   
   
@@ -563,23 +555,23 @@ class Animation : public DOMEventTargetHelper,
   
   
   enum class PendingState : uint8_t { NotPending, PlayPending, PausePending };
-  PendingState mPendingState;
+  PendingState mPendingState = PendingState::NotPending;
 
-  bool mFinishedAtLastComposeStyle;
+  bool mFinishedAtLastComposeStyle = false;
   
   
-  bool mIsRelevant;
-
-  
-  
-  
-  
-  bool mFinishedIsResolved;
+  bool mIsRelevant = false;
 
   
   
   
-  bool mSyncWithGeometricAnimations;
+  
+  bool mFinishedIsResolved = false;
+
+  
+  
+  
+  bool mSyncWithGeometricAnimations = false;
 
   RefPtr<MicroTaskRunnable> mFinishNotificationTask;
 
