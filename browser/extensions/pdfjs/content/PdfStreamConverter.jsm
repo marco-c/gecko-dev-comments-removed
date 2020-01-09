@@ -277,18 +277,18 @@ class ChromeActions {
 
       var listener = {
         extListener: null,
-        onStartRequest(aRequest, aContext) {
+        onStartRequest(aRequest) {
           var loadContext = self.domWindow.docShell
                                 .QueryInterface(Ci.nsILoadContext);
           this.extListener = extHelperAppSvc.doContent(
             (data.isAttachment ? "application/octet-stream" :
                                  "application/pdf"),
             aRequest, loadContext, false);
-          this.extListener.onStartRequest(aRequest, aContext);
+          this.extListener.onStartRequest(aRequest);
         },
-        onStopRequest(aRequest, aContext, aStatusCode) {
+        onStopRequest(aRequest, aStatusCode) {
           if (this.extListener) {
-            this.extListener.onStopRequest(aRequest, aContext, aStatusCode);
+            this.extListener.onStopRequest(aRequest, aStatusCode);
           }
           
           if (sendResponse) {
@@ -860,7 +860,7 @@ PdfStreamConverter.prototype = {
   },
 
   
-  onStartRequest(aRequest, aContext) {
+  onStartRequest(aRequest) {
     
     var isHttpRequest = false;
     try {
@@ -939,19 +939,19 @@ PdfStreamConverter.prototype = {
     
     
     var proxy = {
-      onStartRequest(request, context) {
-        listener.onStartRequest(aRequest, aContext);
+      onStartRequest(request) {
+        listener.onStartRequest(aRequest);
       },
       onDataAvailable(request, context, inputStream, offset, count) {
-        listener.onDataAvailable(aRequest, aContext, inputStream,
+        listener.onDataAvailable(aRequest, null, inputStream,
                                  offset, count);
       },
-      onStopRequest(request, context, statusCode) {
+      onStopRequest(request, statusCode) {
         var domWindow = getDOMWindow(channel, resourcePrincipal);
         if (!Components.isSuccessCode(statusCode) || !domWindow) {
           
           
-          listener.onStopRequest(aRequest, context, statusCode);
+          listener.onStopRequest(aRequest, statusCode);
           return;
         }
         var actions;
@@ -971,7 +971,7 @@ PdfStreamConverter.prototype = {
           var findEventManager = new FindEventManager(domWindow);
           findEventManager.bind();
         }
-        listener.onStopRequest(aRequest, aContext, statusCode);
+        listener.onStopRequest(aRequest, statusCode);
 
         if (domWindow.frameElement) {
           var isObjectEmbed = domWindow.frameElement.tagName !== "IFRAME" ||
@@ -999,7 +999,7 @@ PdfStreamConverter.prototype = {
   },
 
   
-  onStopRequest(aRequest, aContext, aStatusCode) {
+  onStopRequest(aRequest, aStatusCode) {
     if (!this.dataListener) {
       
       return;

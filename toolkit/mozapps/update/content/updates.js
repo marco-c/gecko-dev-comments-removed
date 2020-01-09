@@ -941,7 +941,7 @@ var gDownloadingPage = {
 
 
 
-  onStartRequest(request, context) {
+  onStartRequest(request) {
     
     
     if (this._paused)
@@ -1017,7 +1017,7 @@ var gDownloadingPage = {
 
 
 
-  onStopRequest(request, context, status) {
+  onStopRequest(request, status) {
     this._downloadProgress.setAttribute("value", "100");
 
     var u = gUpdates.update;

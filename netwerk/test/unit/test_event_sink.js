@@ -52,7 +52,7 @@ var eventsink = {
 var listener = {
   expectSinkCall: true,
 
-  onStartRequest: function test_onStartR(request, ctx) {
+  onStartRequest: function test_onStartR(request) {
     try {
       
       
@@ -83,7 +83,7 @@ var listener = {
     do_throw("Should not get any data!");
   },
 
-  onStopRequest: function test_onStopR(request, ctx, status) {
+  onStopRequest: function test_onStopR(request, status) {
     if (this._iteration <= 2) {
       run_test_continued();
     } else {

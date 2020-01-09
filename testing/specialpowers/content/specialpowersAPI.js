@@ -2119,7 +2119,7 @@ SpecialPowersAPI.prototype = {
       let listener = {
         httpStatus: 0,
 
-        onStartRequest(request, context) {
+        onStartRequest(request) {
           request.QueryInterface(Ci.nsIHttpChannel);
           this.httpStatus = request.responseStatus;
         },
@@ -2128,7 +2128,7 @@ SpecialPowersAPI.prototype = {
           new BinaryInputStream(stream).readByteArray(count);
         },
 
-        onStopRequest(request, context, status) {
+        onStopRequest(request, status) {
          
 
 
