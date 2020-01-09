@@ -1,17 +1,23 @@
-let sampleRate = 44100.0;
+
+let sampleRate = 32768;
 
 
 let numberOfTests = 100;
 
 
-let duration = 0.01;
+let duration = Math.floor(0.01 * sampleRate) / sampleRate;
 
 
 
-let timeStep = duration + .005;
+let grainGap = Math.floor(0.005 * sampleRate) / sampleRate;
 
 
-let grainOffsetStep = 0.001;
+
+let timeStep = duration + grainGap;
+
+
+
+let grainOffsetStep = Math.floor(0.001 * sampleRate) / sampleRate;
 
 
 let renderTime = (numberOfTests + 1) * timeStep;
