@@ -159,6 +159,11 @@ def _parse_one(testcase, terms, xul_tester):
         elif parts[pos] == 'slow':
             testcase.slow = True
             pos += 1
+        elif parts[pos].startswith('slow-if'):
+            cond = parts[pos][len('slow-if('):-1]
+            if xul_tester.test(cond):
+                testcase.slow = True
+            pos += 1
         elif parts[pos] == 'silentfail':
             
             if xul_tester.test("xulRuntime.OS == 'Darwin'"):
