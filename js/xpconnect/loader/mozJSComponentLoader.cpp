@@ -856,22 +856,16 @@ nsresult mozJSComponentLoader::ObjectForLocation(
       
       
       auto buf = map.get<char>();
-      if (reuseGlobal) {
-        CompileUtf8ForNonSyntacticScope(cx, options, buf.get(), map.size(),
-                                        &script);
-      } else {
-        CompileUtf8(cx, options, buf.get(), map.size(), &script);
-      }
+      script = reuseGlobal ? CompileUtf8ForNonSyntacticScope(
+                                 cx, options, buf.get(), map.size())
+                           : CompileUtf8(cx, options, buf.get(), map.size());
     } else {
       nsCString str;
       MOZ_TRY_VAR(str, ReadScript(aInfo));
 
-      if (reuseGlobal) {
-        CompileUtf8ForNonSyntacticScope(cx, options, str.get(), str.Length(),
-                                        &script);
-      } else {
-        CompileUtf8(cx, options, str.get(), str.Length(), &script);
-      }
+      script = reuseGlobal ? CompileUtf8ForNonSyntacticScope(
+                                 cx, options, str.get(), str.Length())
+                           : CompileUtf8(cx, options, str.get(), str.Length());
     }
     
     
