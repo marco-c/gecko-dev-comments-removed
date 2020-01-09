@@ -842,14 +842,6 @@ class nsPresContext : public nsISupports,
                                uint32_t ruleTypeMask) const;
 
   
-  bool UseDocumentColors() const {
-    MOZ_ASSERT(mUseDocumentColors || !(IsChrome() || IsChromeOriginImage()),
-               "We should never have a chrome doc or image that can't use its "
-               "colors.");
-    return mUseDocumentColors;
-  }
-
-  
   void SetPaintFlashing(bool aPaintFlashing) {
     mPaintFlashing = aPaintFlashing;
     mPaintFlashingInitialized = true;
@@ -1227,7 +1219,6 @@ class nsPresContext : public nsISupports,
   unsigned mHasPendingInterrupt : 1;
   unsigned mPendingInterruptFromTest : 1;
   unsigned mInterruptsEnabled : 1;
-  unsigned mUseDocumentColors : 1;
   unsigned mSendAfterPaintToContent : 1;
   unsigned mUseFocusColors : 1;
   unsigned mFocusRingOnAnything : 1;
