@@ -1297,6 +1297,8 @@ class ScriptLoaderRunnable final : public nsIRunnable, public nsINamed {
       
       
       
+      
+      
       rv = mWorkerPrivate->SetPrincipalsOnMainThread(
           responsePrincipal, responsePrincipal, loadGroup);
       MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));

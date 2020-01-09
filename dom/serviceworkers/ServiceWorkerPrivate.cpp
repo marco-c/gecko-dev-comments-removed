@@ -1729,6 +1729,10 @@ nsresult ServiceWorkerPrivate::SpawnWorkerIfNeeded(WakeUpReason aWhy,
   }
   info.mLoadingPrincipal = info.mPrincipal;
 
+  
+  
+  info.mStoragePrincipal = info.mPrincipal;
+
   info.mStorageAccess =
       nsContentUtils::StorageAllowedForServiceWorker(info.mPrincipal);
 
