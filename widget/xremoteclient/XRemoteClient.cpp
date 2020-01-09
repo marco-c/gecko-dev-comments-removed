@@ -6,6 +6,7 @@
 
 
 
+#include "nsDebug.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Sprintf.h"
@@ -139,11 +140,12 @@ static int HandleBadWindow(Display *display, XErrorEvent *event) {
 }
 
 nsresult XRemoteClient::SendCommandLine(const char *aProgram,
-                                        const char *aUsername,
                                         const char *aProfile, int32_t argc,
                                         char **argv,
                                         const char *aDesktopStartupID,
                                         char **aResponse, bool *aWindowFound) {
+  NS_ENSURE_TRUE(aProgram, NS_ERROR_INVALID_ARG);
+
   MOZ_LOG(sRemoteLm, LogLevel::Debug, ("XRemoteClient::SendCommandLine"));
 
   *aWindowFound = false;
@@ -152,7 +154,7 @@ nsresult XRemoteClient::SendCommandLine(const char *aProgram,
   
   sOldHandler = XSetErrorHandler(HandleBadWindow);
 
-  Window w = FindBestWindow(aProgram, aUsername, aProfile);
+  Window w = FindBestWindow(aProgram, aProfile);
 
   nsresult rv = NS_OK;
 
@@ -374,7 +376,6 @@ nsresult XRemoteClient::GetLock(Window aWindow, bool *aDestroyed) {
 }
 
 Window XRemoteClient::FindBestWindow(const char *aProgram,
-                                     const char *aUsername,
                                      const char *aProfile) {
   Window root = RootWindowOfScreen(DefaultScreenOfDisplay(mDisplay));
   Window bestWindow = 0;
@@ -423,39 +424,29 @@ Window XRemoteClient::FindBestWindow(const char *aProgram,
     if (status != Success || type == None) continue;
 
     
-    
-    
-    
-    if (aProgram && strcmp(aProgram, "any")) {
-      Unused << XGetWindowProperty(
-          mDisplay, w, mMozProgramAtom, 0, (65536 / sizeof(long)), False,
-          XA_STRING, &type, &format, &nitems, &bytesafter, &data_return);
+    Unused << XGetWindowProperty(
+        mDisplay, w, mMozProgramAtom, 0, (65536 / sizeof(long)), False,
+        XA_STRING, &type, &format, &nitems, &bytesafter, &data_return);
 
-      
-      
-      if (data_return) {
-        if (strcmp(aProgram, (const char *)data_return)) {
-          XFree(data_return);
-          continue;
-        }
-
-        
+    
+    
+    if (data_return) {
+      if (strcmp(aProgram, (const char *)data_return)) {
         XFree(data_return);
-      } else {
-        
-        
         continue;
       }
+
+      
+      XFree(data_return);
+    } else {
+      
+      
+      continue;
     }
 
     
     
-    const char *username;
-    if (aUsername) {
-      username = aUsername;
-    } else {
-      username = PR_GetEnv("LOGNAME");
-    }
+    const char *username = PR_GetEnv("LOGNAME");
 
     if (username) {
       Unused << XGetWindowProperty(
