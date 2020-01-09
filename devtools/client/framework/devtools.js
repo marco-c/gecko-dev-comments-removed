@@ -457,7 +457,9 @@ DevTools.prototype = {
         await toolbox.switchHost(hostType);
       }
 
-      if (toolId != null && toolbox.currentToolId != toolId) {
+      if (toolId != null) {
+        
+        
         await toolbox.selectTool(toolId, reason);
       }
 
