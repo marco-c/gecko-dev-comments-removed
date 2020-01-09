@@ -1,16 +1,16 @@
 
 
 
-user_pref("app.normandy.api_url", "https://%(server)s/selfsupport-dummy/");
-user_pref("browser.safebrowsing.downloads.remote.url", "https://%(server)s/safebrowsing-dummy");
-user_pref("browser.search.geoip.url", "https://%(server)s/geoip-dummy");
-user_pref("extensions.systemAddon.update.url", "http://%(server)s/dummy-system-addons.xml");
+user_pref("app.normandy.api_url", "https://localhost/selfsupport-dummy/");
+user_pref("browser.safebrowsing.downloads.remote.url", "https://localhost/safebrowsing-dummy");
+user_pref("browser.search.geoip.url", "https://localhost/geoip-dummy");
+user_pref("extensions.systemAddon.update.url", "http://localhost/dummy-system-addons.xml");
 
 
 user_pref("geo.provider.testing", true);
 user_pref("media.gmp-manager.updateEnabled", false);
-user_pref("media.gmp-manager.url.override", "http://%(server)s/dummy-gmp-manager.xml");
-user_pref("toolkit.telemetry.server", "https://%(server)s/telemetry-dummy");
+user_pref("media.gmp-manager.url.override", "http://localhost/dummy-gmp-manager.xml");
+user_pref("toolkit.telemetry.server", "https://localhost/telemetry-dummy");
 
 
 
