@@ -203,25 +203,19 @@ static bool HasCounters(const nsStyleContent& aStyle) {
          aStyle.CounterSetCount();
 }
 
-
-
-
-
-
-static bool GeneratesListItemIncrement(const nsIFrame* aFrame) {
-  if (aFrame->StyleDisplay()->mDisplay != StyleDisplay::ListItem) {
-    return false;
-  }
-  
-  
-  if (aFrame->Style()->GetPseudoType() != PseudoStyleType::NotPseudo) {
-    return false;
-  }
-  return true;
-}
-
 bool nsCounterManager::AddCounterChanges(nsIFrame* aFrame) {
-  const bool requiresListItemIncrement = GeneratesListItemIncrement(aFrame);
+  
+  
+  
+  
+  
+  
+  
+  
+  const bool requiresListItemIncrement =
+      aFrame->StyleDisplay()->mDisplay == StyleDisplay::ListItem &&
+      !aFrame->Style()->IsAnonBox();
+
   const nsStyleContent* styleContent = aFrame->StyleContent();
 
   if (!requiresListItemIncrement && !HasCounters(*styleContent)) {
