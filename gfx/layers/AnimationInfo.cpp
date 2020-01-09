@@ -203,8 +203,14 @@ void AnimationInfo::EnumerateGenerationOnFrame(
     }
 
     for (auto displayItem : LayerAnimationInfo::sDisplayItemTypes) {
+      
+      
+      const nsIFrame* frameToQuery =
+          displayItem == DisplayItemType::TYPE_TRANSFORM
+              ? nsLayoutUtils::GetPrimaryFrameFromStyleFrame(aFrame)
+              : aFrame;
       RefPtr<WebRenderAnimationData> animationData =
-          GetWebRenderUserData<WebRenderAnimationData>(aFrame,
+          GetWebRenderUserData<WebRenderAnimationData>(frameToQuery,
                                                        (uint32_t)displayItem);
       Maybe<uint64_t> generation;
       if (animationData) {

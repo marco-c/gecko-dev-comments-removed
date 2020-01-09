@@ -1450,6 +1450,13 @@ nsIFrame* nsLayoutUtils::GetPrimaryFrameFromStyleFrame(nsIFrame* aStyleFrame) {
 }
 
 
+const nsIFrame* nsLayoutUtils::GetPrimaryFrameFromStyleFrame(
+    const nsIFrame* aStyleFrame) {
+  return nsLayoutUtils::GetPrimaryFrameFromStyleFrame(
+      const_cast<nsIFrame*>(aStyleFrame));
+}
+
+
 bool nsLayoutUtils::IsPrimaryStyleFrame(const nsIFrame* aFrame) {
   if (aFrame->IsTableWrapperFrame()) {
     return false;
