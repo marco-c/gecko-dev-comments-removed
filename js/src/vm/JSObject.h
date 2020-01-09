@@ -449,12 +449,6 @@ class JSObject : public js::gc::Cell {
   
 
 
-
-  static const uint32_t ITER_CLASS_NFIXED_SLOTS = 1;
-
-  
-
-
   MOZ_ALWAYS_INLINE bool isCallable() const;
   MOZ_ALWAYS_INLINE bool isConstructor() const;
   MOZ_ALWAYS_INLINE JSNative callHook() const;

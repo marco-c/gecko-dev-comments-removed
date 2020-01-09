@@ -2377,7 +2377,8 @@ bool IonCacheIRCompiler::emitGuardAndGetIterator() {
 
   
   masm.movePtr(ImmGCPtr(iterobj), output);
-  masm.loadObjPrivate(output, JSObject::ITER_CLASS_NFIXED_SLOTS, niScratch);
+  masm.loadObjPrivate(output, PropertyIteratorObject::NUM_FIXED_SLOTS,
+                      niScratch);
 
   
   masm.branchIfNativeIteratorNotReusable(niScratch, failure->label());

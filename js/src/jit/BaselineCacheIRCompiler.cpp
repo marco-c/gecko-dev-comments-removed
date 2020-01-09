@@ -1981,7 +1981,8 @@ bool BaselineCacheIRCompiler::emitGuardAndGetIterator() {
 
   
   masm.loadPtr(iterAddr, output);
-  masm.loadObjPrivate(output, JSObject::ITER_CLASS_NFIXED_SLOTS, niScratch);
+  masm.loadObjPrivate(output, PropertyIteratorObject::NUM_FIXED_SLOTS,
+                      niScratch);
 
   
   masm.branchIfNativeIteratorNotReusable(niScratch, failure->label());
