@@ -68,11 +68,21 @@ add_task(async function testLazyTabs() {
     ok(tabs[i].multiselected, `Tab ${i} should be multiselected`);
   }
 
+  let tabsMoved = new Promise(resolve => {
+    
+    
+    
+    let i = 0;
+    window.addEventListener("TabClose", async function listener() {
+      await Promise.resolve();
+      if (++i == numTabs) {
+        window.removeEventListener("TabClose", listener);
+        resolve();
+      }
+    });
+  });
   let newWindow = gBrowser.replaceTabsWithWindow(tabs[0]);
-
-  await TestUtils.waitForCondition(() => newWindow.gBrowser, `Wait for gBrowser`);
-  await TestUtils.waitForCondition(() => newWindow.gBrowser.visibleTabs.length == numTabs,
-    `Wait for all ${numTabs} tabs to get moved to the new window`);
+  await tabsMoved;
   tabs = newWindow.gBrowser.tabs;
 
   isnot(tabs[0].linkedPanel, "", `Tab 0 should continue not being lazy`);
