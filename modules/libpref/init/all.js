@@ -5581,7 +5581,7 @@ pref("network.trr.custom_uri", "");
 
 pref("network.trr.wait-for-portal", false);
 #else
-pref("network.trr.wait-for-portal", true);
+pref("network.trr.wait-for-portal", false);
 #endif
 
 pref("network.trr.allow-rfc1918", false);
