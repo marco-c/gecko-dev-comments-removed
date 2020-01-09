@@ -127,7 +127,7 @@ task_description_schema = Schema({
 
         
         'type': Any('generic', 'nightly', 'l10n', 'nightly-with-multi-l10n',
-                    'release', 'nightly-l10n', 'shippable'),
+                    'release', 'nightly-l10n', 'shippable', 'shippable-l10n'),
 
         
         

@@ -80,7 +80,7 @@ l10n_description_schema = schema.extend({
         Required('job-name'): _by_platform(basestring),
 
         
-        Optional('type'): basestring,
+        Optional('type'): _by_platform(basestring),
     },
     
     Required('description'): _by_platform(basestring),
@@ -245,6 +245,7 @@ def handle_keyed_by(config, jobs):
         "mozharness.script",
         "treeherder.tier",
         "treeherder.platform",
+        "index.type",
         "index.product",
         "index.job-name",
         "when.files-changed",
