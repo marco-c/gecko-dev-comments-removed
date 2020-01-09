@@ -2572,15 +2572,9 @@ void WorkerPrivate::DoRunLoop(JSContext* aCx) {
     {
       MutexAutoLock lock(mMutex);
 
-      
-      
-      
-      
-      
       while (mControlQueue.IsEmpty() &&
              !(debuggerRunnablesPending = !mDebuggerQueue.IsEmpty()) &&
-             !(normalRunnablesPending = NS_HasPendingEvents(mThread)) &&
-             !(mStatus != Running && !HasActiveHolders())) {
+             !(normalRunnablesPending = NS_HasPendingEvents(mThread))) {
         WaitForWorkerEvents();
       }
 
