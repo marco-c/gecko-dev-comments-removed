@@ -1055,6 +1055,8 @@ pref("security.sandbox.gmp.win32k-disable", false);
 
 pref("security.sandbox.content.mac.earlyinit", true);
 
+pref("security.sandbox.rdd.mac.earlyinit", true);
+
 
 
 

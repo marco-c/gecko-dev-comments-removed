@@ -90,6 +90,16 @@ class RDDProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   
   void KillProcess();
 
+#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
+  
+  
+  
+  static void StaticFillMacSandboxInfo(MacSandboxInfo& aInfo);
+
+  
+  static MacSandboxType GetMacSandboxType();
+#endif
+
  private:
   ~RDDProcessHost();
 
@@ -107,6 +117,16 @@ class RDDProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   void KillHard(const char* aReason);
 
   void DestroyProcess();
+
+#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
+  static bool sLaunchWithMacSandbox;
+
+  
+  bool IsMacSandboxLaunchEnabled() override { return sLaunchWithMacSandbox; }
+
+  
+  void FillMacSandboxInfo(MacSandboxInfo& aInfo) override;
+#endif
 
   DISALLOW_COPY_AND_ASSIGN(RDDProcessHost);
 

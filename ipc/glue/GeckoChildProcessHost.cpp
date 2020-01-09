@@ -39,6 +39,7 @@
 #include "mozilla/ipc/EnvironmentMap.h"
 #include "mozilla/Omnijar.h"
 #include "mozilla/RecordReplay.h"
+#include "mozilla/RDDProcessHost.h"
 #include "mozilla/Scoped.h"
 #include "mozilla/Services.h"
 #include "mozilla/SharedThreadPool.h"
@@ -1436,6 +1437,9 @@ bool GeckoChildProcessHost::StartMacSandbox(int aArgc, char** aArgv,
       
       
       sandboxType = MacSandboxType_Content;
+      break;
+    case GeckoProcessType_RDD:
+      sandboxType = RDDProcessHost::GetMacSandboxType();
       break;
     default:
       return true;

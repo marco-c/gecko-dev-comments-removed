@@ -31,6 +31,7 @@
 #  include "mozilla/Sandbox.h"
 #  include "nsMacUtilsImpl.h"
 #  include <Carbon/Carbon.h>  
+#  include "RDDProcessHost.h"
 #endif
 
 #include "nsDebugImpl.h"
@@ -95,25 +96,14 @@ void CGSShutdownServerConnections();
 static void StartRDDMacSandbox() {
   
   
-  
-  CGSShutdownServerConnections();
-
-  
-  
   CGError result = CGSSetDenyWindowServerConnections(true);
   MOZ_DIAGNOSTIC_ASSERT(result == kCGErrorSuccess);
 #  if !MOZ_DIAGNOSTIC_ASSERT_ENABLED
   Unused << result;
 #  endif
 
-  nsAutoCString appPath;
-  nsMacUtilsImpl::GetAppPath(appPath);
-
   MacSandboxInfo info;
-  info.type = MacSandboxType_Utility;
-  info.shouldLog = Preferences::GetBool("security.sandbox.logging.enabled") ||
-                   PR_GetEnv("MOZ_SANDBOX_LOGGING");
-  info.appPath.assign(appPath.get());
+  RDDProcessHost::StaticFillMacSandboxInfo(info);
 
   std::string err;
   bool rv = mozilla::StartMacSandbox(info, err);
@@ -125,11 +115,18 @@ static void StartRDDMacSandbox() {
 #endif
 
 mozilla::ipc::IPCResult RDDParent::RecvInit(
-    const Maybe<FileDescriptor>& aBrokerFd) {
+    const Maybe<FileDescriptor>& aBrokerFd, bool aStartMacSandbox) {
   Unused << SendInitComplete();
 #if defined(MOZ_SANDBOX)
 #  if defined(XP_MACOSX)
-  StartRDDMacSandbox();
+  
+  
+  
+  CGSShutdownServerConnections();
+
+  if (aStartMacSandbox) {
+    StartRDDMacSandbox();
+  }
 #  elif defined(XP_LINUX)
   int fd = -1;
   if (aBrokerFd.isSome()) {
