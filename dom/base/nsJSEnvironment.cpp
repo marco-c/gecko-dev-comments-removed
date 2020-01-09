@@ -1723,7 +1723,6 @@ void nsJSContext::EndCycleCollectionCallback(CycleCollectorResults& aResults) {
 
 
 bool InterSliceGCRunnerFired(TimeStamp aDeadline, void* aData) {
-  nsJSContext::KillInterSliceGCRunner();
   MOZ_ASSERT(sActiveIntersliceGCBudget > 0);
   
   
@@ -1775,8 +1774,12 @@ bool InterSliceGCRunnerFired(TimeStamp aDeadline, void* aData) {
 
 void GCTimerFired(nsITimer* aTimer, void* aClosure) {
   nsJSContext::KillGCTimer();
-  nsJSContext::KillInterSliceGCRunner();
   if (sShuttingDown) {
+    nsJSContext::KillInterSliceGCRunner();
+    return;
+  }
+
+  if (sInterSliceGCRunner) {
     return;
   }
 
@@ -1786,7 +1789,7 @@ void GCTimerFired(nsITimer* aTimer, void* aClosure) {
         return InterSliceGCRunnerFired(aDeadline, aClosure);
       },
       "GCTimerFired::InterSliceGCRunnerFired", NS_INTERSLICE_GC_DELAY,
-      sActiveIntersliceGCBudget, false, [] { return sShuttingDown; },
+      sActiveIntersliceGCBudget, true, [] { return sShuttingDown; },
       TaskCategory::GarbageCollection);
 }
 
@@ -2241,15 +2244,18 @@ static void DOMGCSliceCallback(JSContext* aCx, JS::GCProgress aProgress,
       sGCUnnotifiedTotalTime +=
           aDesc.lastSliceEnd(aCx) - aDesc.lastSliceStart(aCx);
 
-      
-      nsJSContext::KillInterSliceGCRunner();
-      if (!sShuttingDown && !aDesc.isComplete_) {
+      if (sShuttingDown || aDesc.isComplete_) {
+        nsJSContext::KillInterSliceGCRunner();
+      } else if (!sInterSliceGCRunner) {
+        
+        
+        
         sInterSliceGCRunner = IdleTaskRunner::Create(
             [](TimeStamp aDeadline) {
               return InterSliceGCRunnerFired(aDeadline, nullptr);
             },
             "DOMGCSliceCallback::InterSliceGCRunnerFired",
-            NS_INTERSLICE_GC_DELAY, sActiveIntersliceGCBudget, false,
+            NS_INTERSLICE_GC_DELAY, sActiveIntersliceGCBudget, true,
             [] { return sShuttingDown; }, TaskCategory::GarbageCollection);
       }
 
