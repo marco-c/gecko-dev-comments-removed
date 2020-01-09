@@ -3676,7 +3676,7 @@ Element* Document::GetCurrentScript() {
 void Document::ReleaseCapture() const {
   
   
-  nsCOMPtr<nsINode> node = nsIPresShell::GetCapturingContent();
+  nsCOMPtr<nsINode> node = PresShell::GetCapturingContent();
   if (node && nsContentUtils::CanCallerAccess(node)) {
     PresShell::ReleaseCapturingContent();
   }
