@@ -2544,14 +2544,11 @@ nsresult Document::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
     }
   }
 
-  
-  if (!mLoadedAsData) {
-    nsresult rv = InitCSP(aChannel);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
+  nsresult rv = InitCSP(aChannel);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   
-  nsresult rv = InitFeaturePolicy(aChannel);
+  rv = InitFeaturePolicy(aChannel);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -2649,6 +2646,11 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
     return NS_OK;
   }
 
+  
+  if (mLoadedAsData) {
+    return NS_OK;
+  }
+
   nsAutoCString tCspHeaderValue, tCspROHeaderValue;
 
   nsCOMPtr<nsIHttpChannel> httpChannel;
@@ -2671,6 +2673,20 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
   
   nsCOMPtr<nsIPrincipal> principal = NodePrincipal();
   auto addonPolicy = BasePrincipal::Cast(principal)->AddonPolicy();
+
+  
+  
+  
+  
+  
+  
+  
+  if (principal->IsSystemPrincipal()) {
+    return NS_OK;
+  }
+  nsCOMPtr<nsIContentSecurityPolicy> csp;
+  rv = principal->EnsureCSP(this, getter_AddRefs(csp));
+  NS_ENSURE_SUCCESS(rv, rv);
 
   
   bool applySignedContentCSP = false;
@@ -2696,10 +2712,6 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
 
   MOZ_LOG(gCspPRLog, LogLevel::Debug,
           ("Document is an add-on or CSP header specified %p", this));
-
-  nsCOMPtr<nsIContentSecurityPolicy> csp;
-  rv = principal->EnsureCSP(this, getter_AddRefs(csp));
-  NS_ENSURE_SUCCESS(rv, rv);
 
   
   if (addonPolicy) {
