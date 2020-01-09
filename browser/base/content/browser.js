@@ -6186,7 +6186,7 @@ function middleMousePaste(event) {
   
   clipboard = clipboard.replace(/\s*\n\s*/g, "");
 
-  clipboard = stripUnsafeProtocolOnPaste(clipboard);
+  clipboard = UrlbarUtils.stripUnsafeProtocolOnPaste(clipboard);
 
   
   
@@ -6225,23 +6225,6 @@ function middleMousePaste(event) {
   if (event instanceof Event) {
     event.stopPropagation();
   }
-}
-
-function stripUnsafeProtocolOnPaste(pasteData) {
-  
-  
-  while (true) {
-    let scheme = "";
-    try {
-      scheme = Services.io.extractScheme(pasteData);
-    } catch (ex) { }
-    if (scheme != "javascript") {
-      break;
-    }
-
-    pasteData = pasteData.substring(pasteData.indexOf(":") + 1);
-  }
-  return pasteData;
 }
 
 

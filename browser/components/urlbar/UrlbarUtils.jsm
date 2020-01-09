@@ -295,6 +295,29 @@ var UrlbarUtils = {
       
     }
   },
+
+  
+
+
+
+
+
+  stripUnsafeProtocolOnPaste(pasteData) {
+    while (true) {
+      let scheme = "";
+      try {
+        scheme = Services.io.extractScheme(pasteData);
+      } catch (ex) {
+        
+      }
+      if (scheme != "javascript") {
+        break;
+      }
+
+      pasteData = pasteData.substring(pasteData.indexOf(":") + 1);
+    }
+    return pasteData;
+  },
 };
 
 
