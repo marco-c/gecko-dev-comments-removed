@@ -33,7 +33,7 @@ using namespace mozilla;
 
 
 
-#if defined(XP_LINUX) && defined(__clang__)
+#if !defined(XP_WIN) && defined(__clang__)
 #  define __gcov_flush __custom_llvm_gcov_flush
 #endif
 
