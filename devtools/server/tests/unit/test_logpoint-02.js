@@ -27,6 +27,16 @@ function run_test() {
 }
 
 function test_simple_breakpoint() {
+  const rootActor = gClient.transport._serverConnection.rootActor;
+  const threadActor = rootActor._parameters.tabList._targetActors[0].threadActor;
+
+  let lastMessage;
+  threadActor._parent._consoleActor = {
+    onConsoleAPICall(message) {
+      lastMessage = message;
+    },
+  };
+
   gThreadClient.addOneTimeListener("paused", async function(event, packet) {
     const source = await getSourceById(
       gThreadClient,
@@ -36,7 +46,7 @@ function test_simple_breakpoint() {
     
     gThreadClient.setBreakpoint({
       sourceUrl: source.url,
-      line: 5,
+      line: 4,
     }, { logValue: "a", condition: "a === 5" });
 
     
@@ -44,9 +54,7 @@ function test_simple_breakpoint() {
   });
 
   
-  
-  Cu.evalInSandbox("var console = { log: v => { this.logValue = v } };\n" + 
-                   "debugger;\n" + 
+  Cu.evalInSandbox("debugger;\n" + 
                    "var a = 1;\n" +  
                    "while (a < 10) {\n" + 
                    "  a++;\n" + 
@@ -57,6 +65,6 @@ function test_simple_breakpoint() {
                    1);
   
 
-  Assert.equal(gDebuggee.logValue, 5);
+  Assert.equal(lastMessage.arguments[0], 5);
   finishClient(gClient);
 }
