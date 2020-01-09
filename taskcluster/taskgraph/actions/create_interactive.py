@@ -51,7 +51,7 @@ task. You may need to wait for it to begin running.
 
 SCOPE_WHITELIST = [
     
-    re.compile(r'^secrets:get:project/taskcluster/gecko/hgfingerprint$'),
+    re.compile(r'^secrets:get:project/taskcluster/gecko/(hgfingerprint|hgmointernal)$'),
     
     re.compile(r'^docker-worker:relengapi-proxy:tooltool.download.public$'),
     

@@ -149,6 +149,7 @@ def support_vcs_checkout(config, job, taskdesc, sparse=False):
     
     
     taskdesc['scopes'].append('secrets:get:project/taskcluster/gecko/hgfingerprint')
+    taskdesc['scopes'].append('secrets:get:project/taskcluster/gecko/hgmointernal')
 
     
     if job['worker']['implementation'] in ('docker-worker',):
