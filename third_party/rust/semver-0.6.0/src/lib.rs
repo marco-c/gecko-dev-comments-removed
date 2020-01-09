@@ -165,10 +165,6 @@
 extern crate semver_parser;
 
 
-#[cfg(feature = "serde")]
-extern crate serde;
-
-
 
 
 pub use version::{Version, Identifier, SemVerError};
