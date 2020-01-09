@@ -7,6 +7,7 @@
 #include "gc/Allocator.h"
 
 #include "mozilla/DebugOnly.h"
+#include "mozilla/TimeStamp.h"
 
 #include "gc/GCInternals.h"
 #include "gc/GCTrace.h"
@@ -21,6 +22,9 @@
 #include "gc/Heap-inl.h"
 #include "gc/PrivateIterators-inl.h"
 #include "vm/JSObject-inl.h"
+
+using mozilla::TimeDuration;
+using mozilla::TimeStamp;
 
 using namespace js;
 using namespace gc;
@@ -268,19 +272,15 @@ T* GCRuntime::tryNewTenuredThing(JSContext* cx, AllocKind kind,
     
     t = reinterpret_cast<T*>(refillFreeListFromAnyThread(cx, kind));
 
-    if (MOZ_UNLIKELY(!t && allowGC)) {
-      if (!cx->helperThread()) {
-        
-        
-        
-        JS::PrepareForFullGC(cx);
-        cx->runtime()->gc.gc(GC_SHRINK, JS::GCReason::LAST_DITCH);
-        cx->runtime()->gc.waitBackgroundSweepOrAllocEnd();
-
+    if (MOZ_UNLIKELY(!t)) {
+      if (allowGC && cx->runtime()->gc.lastDitchGC(cx)) {
         t = tryNewTenuredThing<T, NoGC>(cx, kind, thingSize);
       }
       if (!t) {
-        ReportOutOfMemory(cx);
+        if (allowGC) {
+          ReportOutOfMemory(cx);
+        }
+        return nullptr;
       }
     }
   }
@@ -292,6 +292,30 @@ T* GCRuntime::tryNewTenuredThing(JSContext* cx, AllocKind kind,
   
   cx->noteTenuredAlloc();
   return t;
+}
+
+bool GCRuntime::lastDitchGC(JSContext* cx) {
+  
+  
+  
+
+  if (cx->helperThread()) {
+    return false;
+  }
+
+  if (!lastLastDitchTime.IsNull() &&
+      TimeStamp::Now() - lastLastDitchTime <= tunables.minLastDitchGCPeriod()) {
+    return false;
+  }
+
+  JS::PrepareForFullGC(cx);
+  gc(GC_SHRINK, JS::GCReason::LAST_DITCH);
+  waitBackgroundAllocEnd();
+  waitBackgroundFreeEnd();
+
+  lastLastDitchTime = mozilla::TimeStamp::Now();
+
+  return true;
 }
 
 template <AllowGC allowGC>
