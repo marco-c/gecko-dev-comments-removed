@@ -9724,6 +9724,7 @@ GeneralParser<ParseHandler, Unit>::propertyOrMethodName(
   
   
   
+  
 
   TokenKind ltok;
   if (!tokenStream.getToken(&ltok, TokenStream::SlashIsInvalid)) {
@@ -9798,18 +9799,8 @@ GeneralParser<ParseHandler, Unit>::propertyOrMethodName(
     return propName;
   }
 
-  if (propertyNameContext == PropertyNameInClass &&
-      (tt == TokenKind::Semi || tt == TokenKind::Assign)) {
-    if (isGenerator || isAsync || isGetter || isSetter) {
-      error(JSMSG_BAD_PROP_ID);
-      return null();
-    }
-    anyChars.ungetToken();
-    *propType = PropertyType::Field;
-    return propName;
-  }
-
-  if (TokenKindIsPossibleIdentifierName(ltok) &&
+  if (propertyNameContext != PropertyNameInClass &&
+      TokenKindIsPossibleIdentifierName(ltok) &&
       (tt == TokenKind::Comma || tt == TokenKind::RightCurly ||
        tt == TokenKind::Assign)) {
     if (isGenerator || isAsync || isGetter || isSetter) {
@@ -9839,6 +9830,16 @@ GeneralParser<ParseHandler, Unit>::propertyOrMethodName(
     } else {
       *propType = PropertyType::Method;
     }
+    return propName;
+  }
+
+  if (propertyNameContext == PropertyNameInClass) {
+    if (isGenerator || isAsync || isGetter || isSetter) {
+      error(JSMSG_BAD_PROP_ID);
+      return null();
+    }
+    anyChars.ungetToken();
+    *propType = PropertyType::Field;
     return propName;
   }
 
