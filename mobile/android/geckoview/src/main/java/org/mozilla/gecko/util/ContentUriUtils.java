@@ -131,7 +131,8 @@ public class ContentUriUtils {
 
 
 
-    public static @Nullable String getTempFilePathFromContentUri(Context context, Uri contentUri) {
+    public static @Nullable String getTempFilePathFromContentUri(final Context context,
+                                                                 final Uri contentUri) {
         
         final String fileName = FileUtils.getFileNameFromContentUri(context, contentUri);
         final File folder = new File(context.getCacheDir(), FileUtils.CONTENT_TEMP_DIRECTORY);
@@ -159,8 +160,8 @@ public class ContentUriUtils {
 
 
 
-    private static String getDataColumn(Context context, Uri uri, String selection,
-                                        String[] selectionArgs) {
+    private static String getDataColumn(final Context context, final Uri uri,
+                                        final String selection, final String[] selectionArgs) {
         final String column = "_data";
         final String[] projection = {
                 column
@@ -181,7 +182,7 @@ public class ContentUriUtils {
 
 
 
-    public static boolean isExternalStorageDocument(Uri uri) {
+    public static boolean isExternalStorageDocument(final Uri uri) {
         return "com.android.externalstorage.documents".equals(uri.getAuthority());
     }
 
@@ -190,7 +191,7 @@ public class ContentUriUtils {
 
 
 
-    public static boolean isDownloadsDocument(Uri uri) {
+    public static boolean isDownloadsDocument(final Uri uri) {
         return "com.android.providers.downloads.documents".equals(uri.getAuthority());
     }
 
@@ -199,7 +200,7 @@ public class ContentUriUtils {
 
 
 
-    public static boolean isMediaDocument(Uri uri) {
+    public static boolean isMediaDocument(final Uri uri) {
         return "com.android.providers.media.documents".equals(uri.getAuthority());
     }
 
@@ -207,7 +208,7 @@ public class ContentUriUtils {
 
 
 
-    public static boolean isGooglePhotosUri(Uri uri) {
+    public static boolean isGooglePhotosUri(final Uri uri) {
         return "com.google.android.apps.photos.content".equals(uri.getAuthority());
     }
 }

@@ -20,19 +20,19 @@ final class SamplePool {
         private final List<Sample> mRecycledSamples = new ArrayList<>();
         private final boolean mBufferless;
 
-        private Impl(String name, boolean bufferless) {
+        private Impl(final String name, final boolean bufferless) {
             mName = name;
             mBufferless = bufferless;
         }
 
-        private void setDefaultBufferSize(int size) {
+        private void setDefaultBufferSize(final int size) {
             if (mBufferless) {
                 throw new IllegalStateException("Setting buffer size of a bufferless pool is not allowed");
             }
             mDefaultBufferSize = size;
         }
 
-        private synchronized Sample obtain(int size) {
+        private synchronized Sample obtain(final int size) {
             if (!mRecycledSamples.isEmpty()) {
                 return mRecycledSamples.remove(0);
             }
@@ -44,7 +44,7 @@ final class SamplePool {
             }
         }
 
-        private Sample allocateSharedMemorySample(int size) {
+        private Sample allocateSharedMemorySample(final int size) {
             SharedMemory shm = null;
             try {
                 shm = new SharedMemory(mNextId++, Math.max(size, mDefaultBufferSize));
@@ -55,7 +55,7 @@ final class SamplePool {
             return Sample.create(shm);
         }
 
-        private synchronized void recycle(Sample recycled) {
+        private synchronized void recycle(final Sample recycled) {
             if (mBufferless || recycled.buffer.capacity() >= mDefaultBufferSize) {
                 mRecycledSamples.add(recycled);
             } else {
@@ -80,38 +80,38 @@ final class SamplePool {
     private final Impl mInputs;
     private final Impl mOutputs;
 
-     SamplePool(String name, boolean renderToSurface) {
+     SamplePool(final String name, final boolean renderToSurface) {
         mInputs = new Impl(name + " input sample pool", false);
         
         mOutputs = new Impl(name + " output sample pool", renderToSurface);
     }
 
-     void setInputBufferSize(int size) {
+     void setInputBufferSize(final int size) {
         mInputs.setDefaultBufferSize(size);
     }
 
-     void setOutputBufferSize(int size) {
+     void setOutputBufferSize(final int size) {
         mOutputs.setDefaultBufferSize(size);
     }
 
-     Sample obtainInput(int size) {
+     Sample obtainInput(final int size) {
         Sample input = mInputs.obtain(size);
         input.info.set(0, 0, 0, 0);
         return input;
     }
 
-     Sample obtainOutput(MediaCodec.BufferInfo info) {
+     Sample obtainOutput(final MediaCodec.BufferInfo info) {
         Sample output = mOutputs.obtain(info.size);
         output.info.set(0, info.size, info.presentationTimeUs, info.flags);
         return output;
     }
 
-     void recycleInput(Sample sample) {
+     void recycleInput(final Sample sample) {
         sample.cryptoInfo = null;
         mInputs.recycle(sample);
     }
 
-     void recycleOutput(Sample sample) {
+     void recycleOutput(final Sample sample) {
         mOutputs.recycle(sample);
     }
 

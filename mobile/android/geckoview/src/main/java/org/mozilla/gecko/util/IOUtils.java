@@ -30,7 +30,7 @@ public class IOUtils {
         
         private byte[] consumedData;
 
-        public ConsumedInputStream(int consumedLength, byte[] consumedData) {
+        public ConsumedInputStream(final int consumedLength, final byte[] consumedData) {
             this.consumedLength = consumedLength;
             this.consumedData = consumedData;
         }
@@ -59,7 +59,7 @@ public class IOUtils {
 
 
 
-    public static ConsumedInputStream readFully(InputStream iStream, int bufferSize) {
+    public static ConsumedInputStream readFully(final InputStream iStream, final int bufferSize) {
         
         byte[] buffer = new byte[bufferSize];
 
@@ -100,21 +100,21 @@ public class IOUtils {
 
 
 
-    public static byte[] truncateBytes(byte[] bytes, int length) {
+    public static byte[] truncateBytes(final byte[] bytes, final int length) {
         byte[] newBytes = new byte[length];
         System.arraycopy(bytes, 0, newBytes, 0, length);
 
         return newBytes;
     }
 
-    public static void safeStreamClose(Closeable stream) {
+    public static void safeStreamClose(final Closeable stream) {
         try {
             if (stream != null)
                 stream.close();
         } catch (IOException e) { }
     }
 
-    public static void copy(InputStream in, OutputStream out) throws IOException {
+    public static void copy(final InputStream in, final OutputStream out) throws IOException {
         byte[] buffer = new byte[4096];
         int len;
 

@@ -63,7 +63,7 @@ public final class SysInfo {
     private static int readCPUCount() {
         class CpuFilter implements FileFilter {
             @Override
-            public boolean accept(File pathname) {
+            public boolean accept(final File pathname) {
                 return Pattern.matches("cpu[0-9]+", pathname.getName());
             }
         }
@@ -81,7 +81,8 @@ public final class SysInfo {
 
 
 
-    private static boolean matchMemText(byte[] buffer, int index, int bufferLength, byte[] text) {
+    private static boolean matchMemText(final byte[] buffer, final int index,
+                                        final int bufferLength, final byte[] text) {
         final int N = text.length;
         if ((index + N) >= bufferLength) {
             return false;
@@ -104,7 +105,7 @@ public final class SysInfo {
 
 
 
-    private static int extractMemValue(byte[] buffer, int offset, int length) {
+    private static int extractMemValue(final byte[] buffer, final int offset, final int length) {
         if (offset >= length) {
             return 0;
         }

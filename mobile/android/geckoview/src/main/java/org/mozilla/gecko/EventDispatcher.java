@@ -92,7 +92,7 @@ public final class EventDispatcher extends JNIObject {
         mAttachedToGecko = (state == ATTACHED);
     }
 
-    private void dispose(boolean force) {
+    private void dispose(final boolean force) {
         final Handler geckoHandler = ThreadUtils.sGeckoHandler;
         if (geckoHandler == null) {
             return;
@@ -475,12 +475,12 @@ public final class EventDispatcher extends JNIObject {
         }
 
         @Override 
-        public void sendSuccess(Object response) {
+        public void sendSuccess(final Object response) {
             makeCallback( true, response);
         }
 
         @Override 
-        public void sendError(Object response) {
+        public void sendError(final Object response) {
             makeCallback( false, response);
         }
     }
