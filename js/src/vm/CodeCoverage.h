@@ -126,15 +126,6 @@ class LCovRuntime {
   void init();
 
   
-  bool isEnabled() const {
-    static bool isEnabled_ = ([]() {
-      const char* outDir = getenv("JS_CODE_COVERAGE_OUTPUT_DIR");
-      return outDir && *outDir != 0;
-    })();
-    return isEnabled_;
-  }
-
-  
   
   void writeLCovResult(LCovRealm& realm);
 
@@ -165,6 +156,15 @@ class LCovRuntime {
   
   bool isEmpty_;
 };
+
+extern void InitLCov();
+
+extern void EnableLCov();
+
+inline bool IsLCovEnabled() {
+  extern bool gLCovIsEnabled;
+  return gLCovIsEnabled;
+}
 
 }  
 }  

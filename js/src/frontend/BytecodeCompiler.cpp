@@ -417,7 +417,7 @@ bool BytecodeCompiler::canLazilyParse() const {
   return options.canLazilyParse &&
          !cx->realm()->behaviors().disableLazyParsing() &&
          !cx->realm()->behaviors().discardSource() && !options.sourceIsLazy &&
-         !cx->lcovEnabled() &&
+         !coverage::IsLCovEnabled() &&
          
          
          

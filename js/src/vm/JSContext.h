@@ -287,7 +287,6 @@ struct JSContext : public JS::RootingContext,
     return runtime_->jitSupportsUnalignedAccesses;
   }
   bool jitSupportsSimd() const { return runtime_->jitSupportsSimd; }
-  bool lcovEnabled() const { return runtime_->lcovOutput().isEnabled(); }
 
   
 
