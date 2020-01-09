@@ -2759,7 +2759,7 @@ void gfxPlatform::InitWebRenderConfig() {
           WebRenderDebugPrefChangeCallback, WR_DEBUG_PREF);
     }
   }
-#if defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID)
+#if defined(MOZ_WIDGET_GTK)
   else if (gfxConfig::IsEnabled(Feature::HW_COMPOSITING)) {
     
     
