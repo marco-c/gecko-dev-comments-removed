@@ -131,6 +131,10 @@ const runtime = {
   isUnknown: PropTypes.bool.isRequired,
 
   
+  
+  isUnplugged: PropTypes.bool.isRequired,
+
+  
   name: PropTypes.string.isRequired,
 
   

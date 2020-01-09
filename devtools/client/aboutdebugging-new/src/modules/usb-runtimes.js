@@ -41,6 +41,28 @@ class UnknownUsbRuntime {
 
 
 
+class UnpluggedUsbRuntime {
+  constructor(deviceId, deviceName) {
+    this.id = deviceId + "|unplugged";
+    this.deviceId = deviceId;
+    this.deviceName = deviceName;
+    this.shortName = "Unplugged runtime";
+    this.socketPath = null;
+    this.isUnknown = true;
+    this.isUnplugged = true;
+  }
+}
+
+
+
+
+
+const devices = new Map();
+
+
+
+
+
 function addUSBRuntimesObserver(listener) {
   adb.registerListener(listener);
 }
@@ -56,7 +78,22 @@ async function getUSBRuntimes() {
     .filter(d => !runtimeDevices.includes(d.id))
     .map(d => new UnknownUsbRuntime(d));
 
-  return runtimes.concat(unknownRuntimes);
+  
+  const allRuntimes = runtimes.concat(unknownRuntimes);
+  for (const runtime of allRuntimes) {
+    devices.set(runtime.deviceId, runtime.deviceName);
+  }
+
+  
+  const currentDevices = allRuntimes.map(r => r.deviceId);
+  const knownDevices = [...devices.keys()];
+  const unpluggedDevices = knownDevices.filter(id => !currentDevices.includes(id));
+  const unpluggedRuntimes = unpluggedDevices.map(deviceId => {
+    const deviceName = devices.get(deviceId);
+    return new UnpluggedUsbRuntime(deviceId, deviceName);
+  });
+
+  return allRuntimes.concat(unpluggedRuntimes);
 }
 exports.getUSBRuntimes = getUSBRuntimes;
 
