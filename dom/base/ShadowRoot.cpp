@@ -457,7 +457,7 @@ void ShadowRoot::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
   if (!aVisitor.mEvent->mFlags.mComposed) {
     nsCOMPtr<nsIContent> originalTarget =
         do_QueryInterface(aVisitor.mEvent->mOriginalTarget);
-    if (originalTarget->GetContainingShadow() == this) {
+    if (originalTarget && originalTarget->GetContainingShadow() == this) {
       
       
       
