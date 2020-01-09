@@ -7,7 +7,7 @@
 import generate from "@babel/generator";
 import * as t from "@babel/types";
 
-import { hasNode } from "./utils/ast";
+import { hasNode, replaceNode } from "./utils/ast";
 import { isTopLevel } from "./utils/helpers";
 
 function hasTopLevelAwait(ast: Object): boolean {
@@ -19,19 +19,157 @@ function hasTopLevelAwait(ast: Object): boolean {
   return hasAwait;
 }
 
-function wrapExpressionFromAst(ast): string {
+
+function translateDeclarationIntoAssignment(node: Object): Object[] {
+  return node.declarations.reduce((acc, declaration) => {
+    
+    if (!declaration.init) {
+      return acc;
+    }
+    acc.push(
+      t.expressionStatement(
+        t.assignmentExpression("=", declaration.id, declaration.init)
+      )
+    );
+    return acc;
+  }, []);
+}
+
+
+
+
+
+function addReturnNode(ast: Object): Object {
   const statements = ast.program.body;
   const lastStatement = statements[statements.length - 1];
-  const body = statements
+  return statements
     .slice(0, -1)
     .concat(t.returnStatement(lastStatement.expression));
+}
 
-  const newAst = t.expressionStatement(
+function getDeclarations(node: Object) {
+  const { kind, declarations } = node;
+  const declaratorNodes = declarations.reduce((acc, d) => {
+    const declarators = getVariableDeclarators(d.id);
+    return acc.concat(declarators);
+  }, []);
+
+  
+  
+  
+  return t.variableDeclaration(
+    kind === "const" ? "let" : kind,
+    declaratorNodes
+  );
+}
+
+function getVariableDeclarators(node: Object): Object[] | Object {
+  if (t.isIdentifier(node)) {
+    return t.variableDeclarator(t.identifier(node.name));
+  }
+
+  if (t.isObjectProperty(node)) {
+    return getVariableDeclarators(node.value);
+  }
+  if (t.isRestElement(node)) {
+    return getVariableDeclarators(node.argument);
+  }
+
+  if (t.isAssignmentPattern(node)) {
+    return getVariableDeclarators(node.left);
+  }
+
+  if (t.isArrayPattern(node)) {
+    return node.elements.reduce(
+      (acc, element) => acc.concat(getVariableDeclarators(element)),
+      []
+    );
+  }
+  if (t.isObjectPattern(node)) {
+    return node.properties.reduce(
+      (acc, property) => acc.concat(getVariableDeclarators(property)),
+      []
+    );
+  }
+  return [];
+}
+
+
+
+
+
+function addTopDeclarationNodes(ast: Object, declarationNodes: Object[]) {
+  const statements = [];
+  declarationNodes.forEach(declarationNode => {
+    statements.push(getDeclarations(declarationNode));
+  });
+  statements.push(ast);
+  return t.program(statements);
+}
+
+
+
+
+
+
+
+
+function translateDeclarationsIntoAssignment(
+  ast: Object
+): { newAst: Object, declarations: Node[] } {
+  const declarations = [];
+  t.traverse(ast, (node, ancestors) => {
+    const parent = ancestors[ancestors.length - 1];
+
+    if (
+      t.isWithStatement(node) ||
+      !isTopLevel(ancestors) ||
+      t.isAssignmentExpression(node) ||
+      !t.isVariableDeclaration(node) ||
+      t.isForStatement(parent.node) ||
+      !Array.isArray(node.declarations) ||
+      node.declarations.length === 0
+    ) {
+      return;
+    }
+
+    const newNodes = translateDeclarationIntoAssignment(node);
+    replaceNode(ancestors, newNodes);
+    declarations.push(node);
+  });
+
+  return {
+    newAst: ast,
+    declarations
+  };
+}
+
+
+
+
+
+
+
+
+
+
+
+function wrapExpressionFromAst(ast: Object): string {
+  
+  
+  let { newAst, declarations } = translateDeclarationsIntoAssignment(ast);
+  const body = addReturnNode(newAst);
+
+  
+  newAst = t.expressionStatement(
     t.callExpression(
       t.arrowFunctionExpression([], t.blockStatement(body), true),
       []
     )
   );
+
+  
+  newAst = addTopDeclarationNodes(newAst, declarations);
 
   return generate(newAst).code;
 }
