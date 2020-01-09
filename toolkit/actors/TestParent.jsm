@@ -1,0 +1,17 @@
+
+
+
+
+"use strict";
+
+var EXPORTED_SYMBOLS = ["TestParent"];
+
+class TestParent extends JSWindowActorParent {
+  constructor() {
+    super();
+  }
+
+  show() {
+    return "TestParent";
+  }
+}
