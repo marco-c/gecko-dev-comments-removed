@@ -368,7 +368,7 @@ function checkMiscPrefixed(opcode, expect_failure) {
 
 
 
-checkMiscPrefixed([0x0a, 0x00], false); 
+checkMiscPrefixed([0x0a, 0x00, 0x00], false); 
 checkMiscPrefixed([0x0b, 0x00], false); 
 checkMiscPrefixed([0x0b, 0x80, 0x00], false); 
 checkMiscPrefixed([0x13], true);        
