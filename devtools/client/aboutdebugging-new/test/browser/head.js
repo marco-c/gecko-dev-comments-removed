@@ -132,6 +132,18 @@ function waitForDispatch(store, type) {
 
 
 
+async function selectThisFirefoxPage(doc, store) {
+  info("Select This Firefox page");
+  doc.location.hash = "#/runtime/this-firefox";
+  info("Wait for requests to settle");
+  await waitForRequestsToSettle(store);
+  info("Wait for runtime page to be rendered");
+  await waitUntil(() => doc.querySelector(".js-runtime-page"));
+}
+
+
+
+
 async function selectConnectPage(doc) {
   const sidebarItems = doc.querySelectorAll(".js-sidebar-item");
   const connectSidebarItem = [...sidebarItems].find(element => {
