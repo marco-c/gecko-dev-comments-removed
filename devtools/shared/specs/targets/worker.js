@@ -32,7 +32,8 @@ const workerTargetSpec = generateActorSpec({
   events: {
     
     
-    close: {
+    
+    "worker-close": {
       type: "close",
     },
     

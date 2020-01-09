@@ -5,23 +5,26 @@
 
 const {workerTargetSpec} = require("devtools/shared/specs/targets/worker");
 const { FrontClassWithSpec, registerFront } = require("devtools/shared/protocol");
+const { TargetMixin } = require("./target-mixin");
 
 loader.lazyRequireGetter(this, "ThreadClient", "devtools/shared/client/thread-client");
 
-class WorkerTargetFront extends FrontClassWithSpec(workerTargetSpec) {
+class WorkerTargetFront extends
+  TargetMixin(FrontClassWithSpec(workerTargetSpec)) {
   constructor(client) {
     super(client);
 
     this.thread = null;
     this.traits = {};
 
-    
-    this.client = client;
-
     this._isClosed = false;
 
-    this.destroy = this.destroy.bind(this);
-    this.on("close", this.destroy);
+    
+    
+    
+    
+    
+    this.once("worker-close", this.destroy.bind(this));
   }
 
   form(json) {
@@ -30,7 +33,7 @@ class WorkerTargetFront extends FrontClassWithSpec(workerTargetSpec) {
     
     
     this.targetForm = json;
-    this.url = json.url;
+    this._url = json.url;
     this.type = json.type;
     this.scope = json.scope;
     this.fetch = json.fetch;
@@ -41,31 +44,35 @@ class WorkerTargetFront extends FrontClassWithSpec(workerTargetSpec) {
   }
 
   destroy() {
-    this.off("close", this.destroy);
     this._isClosed = true;
 
     if (this.thread) {
       this.client.unregisterClient(this.thread);
+      this.thread = null;
     }
-
-    this.unmanage(this);
 
     super.destroy();
   }
 
   async attach() {
-    const response = await super.attach();
+    if (this._attach) {
+      return this._attach;
+    }
+    this._attach = (async () => {
+      const response = await super.attach();
 
-    this.url = response.url;
+      this._url = response.url;
 
-    
-    
-    const connectResponse = await this.connect({});
-    
-    this.targetForm.consoleActor = connectResponse.consoleActor;
-    this.threadActor = connectResponse.threadActor;
+      
+      
+      const connectResponse = await this.connect({});
+      
+      this.targetForm.consoleActor = connectResponse.consoleActor;
+      this.threadActor = connectResponse.threadActor;
 
-    return response;
+      return this.attachConsole();
+    })();
+    return this._attach;
   }
 
   async detach() {
@@ -111,4 +118,4 @@ class WorkerTargetFront extends FrontClassWithSpec(workerTargetSpec) {
 }
 
 exports.WorkerTargetFront = WorkerTargetFront;
-registerFront(WorkerTargetFront);
+registerFront(exports.WorkerTargetFront);

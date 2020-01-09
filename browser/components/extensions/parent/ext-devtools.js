@@ -102,7 +102,7 @@ global.getToolboxEvalOptions = function(context) {
   }
 
   
-  options.toolboxConsoleActorID = toolbox.target.form.consoleActor;
+  options.toolboxConsoleActorID = toolbox.target.activeConsole.actor;
 
   return options;
 };
