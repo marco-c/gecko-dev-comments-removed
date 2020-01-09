@@ -7864,11 +7864,6 @@ bool nsDisplayTransform::CreateWebRenderCommands(
     
     
     transformForSC = nullptr;
-
-    
-    
-    
-    position.Round();
   }
 
   uint64_t animationsId = AddAnimationsForWebRender(
@@ -9281,6 +9276,14 @@ bool nsDisplayFilters::CreateWebRenderCSSFilters(
   
   
   const nsTArray<nsStyleFilter>& filters = mFrame->StyleEffects()->mFilters;
+
+  
+  
+  if (filters.Length() > gfxPrefs::WebRenderMaxFilterOpsPerChain()) {
+    return true;
+  }
+  wrFilters.SetCapacity(filters.Length());
+
   for (const nsStyleFilter& filter : filters) {
     switch (filter.GetType()) {
       case NS_STYLE_FILTER_BRIGHTNESS:

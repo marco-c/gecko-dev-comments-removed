@@ -15,6 +15,7 @@
 #include "gfx2DGlue.h"
 #include "gfxContext.h"
 #include "gfxPlatform.h"
+#include "gfxPrefs.h"
 #include "gfxUtils.h"
 #include "mozilla/gfx/Helpers.h"
 #include "mozilla/gfx/PatternHelpers.h"
@@ -118,6 +119,13 @@ bool nsFilterInstance::BuildWebRenderFilters(nsIFrame* aFilteredFrame,
 
   if (!instance.IsInitialized()) {
     return false;
+  }
+
+  
+  
+  if (instance.mFilterDescription.mPrimitives.Length() >
+      gfxPrefs::WebRenderMaxFilterOpsPerChain()) {
+    return true;
   }
 
   Maybe<IntRect> finalClip;
