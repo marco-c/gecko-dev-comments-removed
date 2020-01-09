@@ -69,8 +69,6 @@ pref("ui.caretBlinkCount", 10);
 
 
 pref("browser.cache.disk.enable", true);
-pref("browser.cache.disk.capacity", 20480); 
-pref("browser.cache.disk.max_entry_size", 4096); 
 pref("browser.cache.disk.smart_size.enabled", true);
 
 pref("browser.cache.memory.enable", true);
