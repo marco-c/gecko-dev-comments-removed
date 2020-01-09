@@ -483,10 +483,10 @@ void VRService::PullState(mozilla::gfx::VRBrowserState& aState) {
   
 
 #if defined(MOZ_WIDGET_ANDROID)
-  if (pthread_mutex_lock((pthread_mutex_t*)&(mExternalShmem->browserMutex)) ==
+  if (pthread_mutex_lock((pthread_mutex_t*)&(mExternalShmem->geckoMutex)) ==
       0) {
-    memcpy(&aState, &tmp.browserState, sizeof(VRBrowserState));
-    pthread_mutex_unlock((pthread_mutex_t*)&(mExternalShmem->browserMutex));
+    memcpy(&aState, &tmp.geckoState, sizeof(VRBrowserState));
+    pthread_mutex_unlock((pthread_mutex_t*)&(mExternalShmem->geckoMutex));
   }
 #else
   bool status = true;
@@ -496,12 +496,12 @@ void VRService::PullState(mozilla::gfx::VRBrowserState& aState) {
 #endif  
   if (status) {
     VRExternalShmem tmp;
-    if (mAPIShmem->browserGenerationA != mBrowserGeneration) {
+    if (mAPIShmem->geckoGenerationA != mBrowserGeneration) {
       memcpy(&tmp, mAPIShmem, sizeof(VRExternalShmem));
-      if (tmp.browserGenerationA == tmp.browserGenerationB &&
-          tmp.browserGenerationA != 0 && tmp.browserGenerationA != -1) {
-        memcpy(&aState, &tmp.browserState, sizeof(VRBrowserState));
-        mBrowserGeneration = tmp.browserGenerationA;
+      if (tmp.geckoGenerationA == tmp.geckoGenerationB &&
+          tmp.geckoGenerationA != 0 && tmp.geckoGenerationA != -1) {
+        memcpy(&aState, &tmp.geckoState, sizeof(VRBrowserState));
+        mBrowserGeneration = tmp.geckoGenerationA;
       }
     }
   }
