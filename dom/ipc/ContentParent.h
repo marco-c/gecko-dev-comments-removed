@@ -32,6 +32,7 @@
 #include "nsHashKeys.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsIObserver.h"
+#include "nsIRemoteTab.h"
 #include "nsIThreadInternal.h"
 #include "nsIDOMGeoPositionCallback.h"
 #include "nsIDOMGeoPositionErrorCallback.h"
@@ -109,6 +110,7 @@ class MemoryReport;
 class TabContext;
 class GetFilesHelper;
 class MemoryReportRequestHost;
+struct CancelContentJSOptions;
 
 #define NS_CONTENTPARENT_IID                         \
   {                                                  \
@@ -591,7 +593,10 @@ class ContentParent final : public PContentParent,
                                    bool aForceRepaint,
                                    const layers::LayersObserverEpoch& aEpoch);
 
-  void CancelContentJSExecutionIfRunning(BrowserParent* aBrowserParent);
+  void CancelContentJSExecutionIfRunning(
+      BrowserParent* aBrowserParent,
+      nsIRemoteTab::NavigationType aNavigationType,
+      const CancelContentJSOptions& aCancelContentJSOptions);
 
   
   
