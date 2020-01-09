@@ -60,11 +60,56 @@ class nsPrintJob final : public nsIObserver,
   NS_DECL_NSIWEBPROGRESSLISTENER
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsresult Initialize(nsIDocumentViewerPrint* aDocViewerPrint,
+                      nsIDocShell* aDocShell,
+                      mozilla::dom::Document* aOriginalDoc, float aScreenDPI);
+
+  
+  
+
+  
+
+
+
   nsresult Print(nsIPrintSettings* aPrintSettings,
                  nsIWebProgressListener* aWebProgressListener);
+
+  
+
+
+
+
+
+
+
+
+
   nsresult PrintPreview(mozilla::dom::Document* aSourceDoc,
                         nsIPrintSettings* aPrintSettings,
                         nsIWebProgressListener* aWebProgressListener);
+
   bool IsDoingPrint() const { return mIsDoingPrinting; }
   bool IsDoingPrintPreview() const { return mIsDoingPrintPreview; }
   bool IsFramesetDocument() const;
@@ -83,10 +128,6 @@ class nsPrintJob final : public nsIObserver,
 
   void Destroy();
   void DestroyPrintingData();
-
-  nsresult Initialize(nsIDocumentViewerPrint* aDocViewerPrint,
-                      nsIDocShell* aDocShell, mozilla::dom::Document* aDocument,
-                      float aScreenDPI);
 
   nsresult GetSeqFrameAndCountPages(nsIFrame*& aSeqFrame, int32_t& aCount);
 
@@ -196,11 +237,11 @@ class nsPrintJob final : public nsIObserver,
 
   nsresult CommonPrint(bool aIsPrintPreview, nsIPrintSettings* aPrintSettings,
                        nsIWebProgressListener* aWebProgressListener,
-                       mozilla::dom::Document* aDoc);
+                       mozilla::dom::Document* aSourceDoc);
 
   nsresult DoCommonPrint(bool aIsPrintPreview, nsIPrintSettings* aPrintSettings,
                          nsIWebProgressListener* aWebProgressListener,
-                         mozilla::dom::Document* aDoc);
+                         mozilla::dom::Document* aSourceDoc);
 
   void FirePrintCompletionEvent();
 
@@ -231,10 +272,17 @@ class nsPrintJob final : public nsIObserver,
 
   void PageDone(nsresult aResult);
 
-  RefPtr<mozilla::dom::Document> mDocument;
-  nsCOMPtr<nsIDocumentViewerPrint> mDocViewerPrint;
+  
+  
+  
+  
+  
+  RefPtr<mozilla::dom::Document> mOriginalDoc;
 
+  
+  nsCOMPtr<nsIDocumentViewerPrint> mDocViewerPrint;
   nsWeakPtr mDocShell;
+
   WeakFrame mPageSeqFrame;
 
   

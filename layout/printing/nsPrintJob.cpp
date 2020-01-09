@@ -534,16 +534,21 @@ void nsPrintJob::DestroyPrintingData() { mPrt = nullptr; }
 
 
 nsresult nsPrintJob::Initialize(nsIDocumentViewerPrint* aDocViewerPrint,
-                                nsIDocShell* aDocShell, Document* aDocument,
+                                nsIDocShell* aDocShell, Document* aOriginalDoc,
                                 float aScreenDPI) {
   NS_ENSURE_ARG_POINTER(aDocViewerPrint);
   NS_ENSURE_ARG_POINTER(aDocShell);
-  NS_ENSURE_ARG_POINTER(aDocument);
+  NS_ENSURE_ARG_POINTER(aOriginalDoc);
 
   mDocViewerPrint = aDocViewerPrint;
   mDocShell = do_GetWeakReference(aDocShell);
-  mDocument = aDocument;
   mScreenDPI = aScreenDPI;
+
+  
+  
+  
+  
+  mOriginalDoc = aOriginalDoc;
 
   return NS_OK;
 }
@@ -625,14 +630,14 @@ static void DumpLayoutData(const char* aTitleStr, const char* aURLStr,
 nsresult nsPrintJob::CommonPrint(bool aIsPrintPreview,
                                  nsIPrintSettings* aPrintSettings,
                                  nsIWebProgressListener* aWebProgressListener,
-                                 Document* aDoc) {
+                                 Document* aSourceDoc) {
   
   
   
   
 
   nsresult rv = DoCommonPrint(aIsPrintPreview, aPrintSettings,
-                              aWebProgressListener, aDoc);
+                              aWebProgressListener, aSourceDoc);
   if (NS_FAILED(rv)) {
     if (aIsPrintPreview) {
       mIsCreatingPrintPreview = false;
@@ -653,7 +658,7 @@ nsresult nsPrintJob::CommonPrint(bool aIsPrintPreview,
 nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
                                    nsIPrintSettings* aPrintSettings,
                                    nsIWebProgressListener* aWebProgressListener,
-                                   Document* aDoc) {
+                                   Document* aSourceDoc) {
   nsresult rv;
 
   if (aIsPrintPreview) {
@@ -753,7 +758,7 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
 
     nsAutoScriptBlocker scriptBlocker;
     printData->mPrintObject = MakeUnique<nsPrintObject>();
-    rv = printData->mPrintObject->Init(docShell, aDoc, aIsPrintPreview);
+    rv = printData->mPrintObject->Init(docShell, aSourceDoc, aIsPrintPreview);
     NS_ENSURE_SUCCESS(rv, rv);
 
     NS_ENSURE_TRUE(
@@ -847,7 +852,7 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
         nsPIDOMWindowOuter* domWin = nullptr;
         
         if (!aIsPrintPreview) {
-          domWin = mDocument->GetWindow();
+          domWin = mOriginalDoc->GetWindow();
           NS_ENSURE_TRUE(domWin, NS_ERROR_FAILURE);
         }
 
@@ -1035,7 +1040,7 @@ nsresult nsPrintJob::Print(nsIPrintSettings* aPrintSettings,
   
   Document* doc = mPrtPreview && mPrtPreview->mPrintObject
                       ? mPrtPreview->mPrintObject->mDocument
-                      : mDocument;
+                      : mOriginalDoc;
 
   return CommonPrint(false, aPrintSettings, aWebProgressListener, doc);
 }
@@ -1209,7 +1214,7 @@ void nsPrintJob::ShowPrintProgress(bool aIsForPrinting, bool& aDoNotify) {
     nsCOMPtr<nsIPrintingPromptService> printPromptService(
         do_GetService(kPrintingPromptService));
     if (printPromptService) {
-      nsPIDOMWindowOuter* domWin = mDocument->GetWindow();
+      nsPIDOMWindowOuter* domWin = mOriginalDoc->GetWindow();
       if (!domWin) return;
 
       nsCOMPtr<nsIDocShell> docShell = domWin->GetDocShell();
@@ -2611,14 +2616,14 @@ static bool DocHasPrintCallbackCanvas(Document* aDoc) {
 
 
 bool nsPrintJob::HasPrintCallbackCanvas() {
-  if (!mDocument) {
+  if (!mOriginalDoc) {
     return false;
   }
   
   bool result = false;
-  DocHasPrintCallbackCanvas(mDocument, static_cast<void*>(&result));
+  DocHasPrintCallbackCanvas(mOriginalDoc, static_cast<void*>(&result));
   
-  return result || DocHasPrintCallbackCanvas(mDocument);
+  return result || DocHasPrintCallbackCanvas(mOriginalDoc);
 }
 
 
@@ -2817,7 +2822,7 @@ already_AddRefed<nsPIDOMWindowOuter> nsPrintJob::FindFocusedDOMWindow() const {
   nsIFocusManager* fm = nsFocusManager::GetFocusManager();
   NS_ENSURE_TRUE(fm, nullptr);
 
-  nsPIDOMWindowOuter* window = mDocument->GetWindow();
+  nsPIDOMWindowOuter* window = mOriginalDoc->GetWindow();
   NS_ENSURE_TRUE(window, nullptr);
 
   nsCOMPtr<nsPIDOMWindowOuter> rootWindow = window->GetPrivateRoot();
@@ -3164,7 +3169,6 @@ void nsPrintJob::TurnScriptingOn(bool aDoTurnOn) {
     return;
   }
 
-  NS_ASSERTION(mDocument, "We MUST have a document.");
   
 
   for (uint32_t i = 0; i < printData->mPrintDocList.Length(); i++) {
