@@ -5,9 +5,12 @@
 
 var EXPORTED_SYMBOLS = ["ChromeMigrationUtils"];
 
-const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
-const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
+ChromeUtils.import("resource://gre/modules/osfile.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
+
+const S100NS_FROM1601TO1970 = 0x19DB1DED53E8000;
+const S100NS_PER_MS = 10;
 
 var ChromeMigrationUtils = {
   _extensionVersionDirectoryNames: {},
@@ -269,5 +272,30 @@ var ChromeMigrationUtils = {
 
     this._extensionVersionDirectoryNames[path] = entries;
     return entries;
+  },
+
+  
+
+
+
+
+
+
+
+
+  chromeTimeToDate(aTime) {
+    return new Date((aTime * S100NS_PER_MS - S100NS_FROM1601TO1970) / 10000);
+  },
+
+  
+
+
+
+
+
+
+
+  dateToChromeTime(aDate) {
+    return (aDate * 10000 + S100NS_FROM1601TO1970) / S100NS_PER_MS;
   },
 };
