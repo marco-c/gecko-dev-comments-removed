@@ -338,15 +338,21 @@ int32_t Element::TabIndex() {
   return TabIndexDefault();
 }
 
-void Element::Focus(mozilla::ErrorResult& aError) {
+void Element::Focus(const FocusOptions& aOptions, ErrorResult& aError) {
   nsFocusManager* fm = nsFocusManager::GetFocusManager();
+  
+  
+  
+  
   
   
   if (fm) {
     if (fm->CanSkipFocus(this)) {
       fm->NeedsFlushBeforeEventHandling(this);
     } else {
-      aError = fm->SetFocus(this, nsIFocusManager::FLAG_BYELEMENTFOCUS);
+      aError = fm->SetFocus(
+          this, nsIFocusManager::FLAG_BYELEMENTFOCUS |
+                    nsFocusManager::FocusOptionsToFocusManagerFlags(aOptions));
     }
   }
 }

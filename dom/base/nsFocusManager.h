@@ -29,6 +29,7 @@ class nsPIDOMWindowOuter;
 namespace mozilla {
 namespace dom {
 class Element;
+struct FocusOptions;
 class TabParent;
 }  
 }  
@@ -166,6 +167,9 @@ class nsFocusManager final : public nsIFocusManager,
                                        nsIContent* aStart, int32_t aType,
                                        bool aNoParentTraversal,
                                        nsIContent** aNextContent);
+
+  static uint32_t FocusOptionsToFocusManagerFlags(
+      const mozilla::dom::FocusOptions& aOptions);
 
   
 

@@ -253,7 +253,7 @@ class Element : public FragmentOrElement {
   
 
 
-  virtual void Focus(mozilla::ErrorResult& aError);
+  virtual void Focus(const FocusOptions& aOptions, ErrorResult& aError);
 
   
 

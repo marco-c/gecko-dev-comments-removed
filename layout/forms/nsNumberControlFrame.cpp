@@ -289,7 +289,10 @@ class FocusTextField : public Runnable {
 
   NS_IMETHOD Run() override {
     if (mNumber->AsElement()->State().HasState(NS_EVENT_STATE_FOCUS)) {
-      HTMLInputElement::FromNode(mTextField)->Focus(IgnoreErrors());
+      
+      
+      FocusOptions options;
+      HTMLInputElement::FromNode(mTextField)->Focus(options, IgnoreErrors());
     }
 
     return NS_OK;
@@ -532,7 +535,11 @@ void nsNumberControlFrame::HandleFocusEvent(WidgetEvent* aEvent) {
   if (aEvent->mOriginalTarget != mTextField) {
     
     RefPtr<HTMLInputElement> textField = HTMLInputElement::FromNode(mTextField);
-    textField->Focus(IgnoreErrors());
+
+    
+    
+    FocusOptions options;
+    textField->Focus(options, IgnoreErrors());
   }
 }
 
