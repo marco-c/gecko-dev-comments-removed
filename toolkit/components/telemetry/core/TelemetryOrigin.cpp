@@ -8,6 +8,7 @@
 #include "TelemetryOrigin.h"
 
 #include "nsDataHashtable.h"
+#include "nsIObserverService.h"
 #include "nsIXULAppInfo.h"
 #include "TelemetryCommon.h"
 #include "TelemetryOriginEnums.h"
@@ -15,8 +16,11 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/Base64.h"
 #include "mozilla/dom/PrioEncoder.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/Services.h"
 #include "mozilla/StaticMutex.h"
 
+#include <cmath>
 #include <type_traits>
 
 using mozilla::ErrorResult;
@@ -80,6 +84,9 @@ class OriginMetricIDHashKey : public PLDHashEntryHdr {
 
 
 
+
+
+
 namespace {
 
 
@@ -111,6 +118,20 @@ typedef nsDataHashtable<OriginMetricIDHashKey, nsTArray<bool>> IdToBoolsMap;
 
 static nsCString gBatchID;
 #define CANARY_BATCH_ID "decaffcoffee"
+
+
+
+static uint32_t gPrioDataCount = 0;
+
+
+
+
+
+
+
+
+
+static uint32_t gPrioDatasPerMetric;
 
 }  
 
@@ -178,6 +199,9 @@ void TelemetryOrigin::InitializeGlobalState() {
       "doubleclick.de",
       "fb.com",
   });
+
+  gPrioDatasPerMetric = ceil(static_cast<double>(gOriginsList->Length()) /
+                             PrioEncoder::gNumBooleans);
 
   gOriginToIndexMap = new OriginToIndexMap(gOriginsList->Length());
   for (size_t i = 0; i < gOriginsList->Length(); ++i) {
@@ -249,8 +273,31 @@ nsresult TelemetryOrigin::RecordOrigin(OriginMetricID aId,
     return NS_OK;
   }
 
+  if (!gMetricToOriginsMap->Contains(aId)) {
+    
+    
+    gPrioDataCount += gPrioDatasPerMetric;
+  }
+
   auto& originArray = gMetricToOriginsMap->GetOrInsert(aId);
+
+  if (originArray.Contains(aOrigin)) {
+    
+    
+    gPrioDataCount += gPrioDatasPerMetric;
+  }
+
   originArray.AppendElement(aOrigin);
+
+  static uint32_t sPrioPingLimit =
+      mozilla::Preferences::GetUint("toolkit.telemetry.prioping.dataLimit", 10);
+  if (gPrioDataCount >= sPrioPingLimit) {
+    nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
+    if (os) {
+      os->NotifyObservers(nullptr, "origin-telemetry-storage-limit-reached",
+                          nullptr);
+    }
+  }
 
   return NS_OK;
 }
@@ -277,6 +324,7 @@ nsresult TelemetryOrigin::GetOriginSnapshot(bool aClear, JSContext* aCx,
       
 
       gMetricToOriginsMap->SwapElements(copy);
+      gPrioDataCount = 0;
     } else {
       auto iter = gMetricToOriginsMap->ConstIter();
       for (; !iter.Done(); iter.Next()) {
@@ -410,6 +458,7 @@ nsresult TelemetryOrigin::GetEncodedOriginSnapshot(
   if (aClear) {
     StaticMutexAutoLock lock(gTelemetryOriginMutex);
     gMetricToOriginsMap->Clear();
+    gPrioDataCount = 0;
   }
 
   aSnapshot.setObject(*prioDataArray);
