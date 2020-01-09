@@ -136,8 +136,8 @@ class UrlbarController {
     }
 
     if (queryContext.lastResultCount == 0) {
-      if (queryContext.autofillValue) {
-        this.input.autofill(queryContext.autofillValue);
+      if (queryContext.results.length && queryContext.results[0].autofill) {
+        this.input.setValueFromResult(queryContext.results[0]);
       }
       
       
@@ -273,7 +273,7 @@ class UrlbarController {
     switch (reason) {
       case "resultsadded": {
         
-        if (resultIndex == 0 && (context.preselected || context.autofillValue)) {
+        if ((resultIndex == 0 && context.preselected) || result.autofill) {
           if (result.type == UrlbarUtils.RESULT_TYPE.SEARCH) {
             
             if (UrlbarPrefs.get("suggest.searches") &&
@@ -281,7 +281,7 @@ class UrlbarController {
               let engine = Services.search.defaultEngine;
               UrlbarUtils.setupSpeculativeConnection(engine, this.browserWindow);
             }
-          } else if (context.autofillValue) {
+          } else if (result.autofill) {
             UrlbarUtils.setupSpeculativeConnection(url, this.browserWindow);
           }
         }

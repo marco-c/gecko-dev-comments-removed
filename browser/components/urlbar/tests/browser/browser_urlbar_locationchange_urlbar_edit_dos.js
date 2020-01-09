@@ -27,6 +27,11 @@ async function checkURLBarValueStays(browser) {
 }
 
 add_task(async function() {
+  
+  
+  await SpecialPowers.pushPrefEnv({ set: [
+    ["browser.urlbar.autoFill", false],
+  ]});
   await BrowserTestUtils.withNewTab({
     gBrowser,
     url: TEST_URL,

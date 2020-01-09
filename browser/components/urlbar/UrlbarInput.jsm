@@ -368,29 +368,14 @@ class UrlbarInput {
 
 
   setValueFromResult(result) {
-    let val;
-    switch (result.type) {
-      case UrlbarUtils.RESULT_TYPE.SEARCH:
-        val = result.payload.suggestion || result.payload.query;
-        break;
-      case UrlbarUtils.RESULT_TYPE.OMNIBOX:
-        val = result.payload.content;
-        break;
-      default: {
-        val = result.payload.url;
-        let uri;
-        try {
-          uri = Services.io.newURI(val);
-        } catch (ex) {}
-        if (uri) {
-          val = this.window.losslessDecodeURI(uri);
-        }
-        break;
-      }
+    if (result.autofill) {
+      this._setValueFromResultAutofill(result);
+    } else {
+      this.value = this._valueFromResultPayload(result);
     }
-    this.value = val;
+
     
-    this.window.gBrowser.userTypedValue = val;
+    this.window.gBrowser.userTypedValue = this.value;
 
     
     switch (result.type) {
@@ -485,27 +470,6 @@ class UrlbarInput {
 
   
 
-
-
-
-
-
-
-
-
-  autofill(value) {
-    if (!value.toLocaleLowerCase()
-        .startsWith(this.textValue.toLocaleLowerCase())) {
-      return;
-    }
-    let len = this.textValue.length;
-    this.value = this.textValue + value.substring(len);
-    this.selectionStart = len;
-    this.selectionEnd = value.length;
-  }
-
-  
-
   get focused() {
     return this.textbox.getAttribute("focused") == "true";
   }
@@ -547,6 +511,30 @@ class UrlbarInput {
   }
 
   
+
+  _setValueFromResultAutofill(result) {
+    this.value = result.autofill.value;
+    this.selectionStart = result.autofill.selectionStart;
+    this.selectionEnd = result.autofill.selectionEnd;
+  }
+
+  _valueFromResultPayload(result) {
+    switch (result.type) {
+      case UrlbarUtils.RESULT_TYPE.SEARCH:
+        return result.payload.suggestion || result.payload.query;
+      case UrlbarUtils.RESULT_TYPE.OMNIBOX:
+        return result.payload.content;
+    }
+
+    try {
+      let uri = Services.io.newURI(result.payload.url);
+      if (uri) {
+        return this.window.losslessDecodeURI(uri);
+      }
+    } catch (ex) {}
+
+    return "";
+  }
 
   _updateTextOverflow() {
     if (!this._overflowing) {
