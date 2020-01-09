@@ -56,7 +56,15 @@ class RuntimeInfo extends PureComponent {
             className: "runtime-info__subtitle",
           },
           deviceName
-        ) : null
+        ) : null,
+      dom.button(
+        {
+          className: "default-button runtime-info__action",
+          
+          disabled: true,
+        },
+        "Disconnect"
+      )
     );
   }
 }

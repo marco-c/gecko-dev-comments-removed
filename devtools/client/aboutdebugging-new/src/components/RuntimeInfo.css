@@ -20,9 +20,9 @@
 
   grid-column-gap: var(--main-heading-icon-gap);
   grid-template-areas:
-  "icon title"
-  "icon subtitle";
-  grid-template-columns: var(--main-heading-icon-size) 1fr;
+  "icon title    action"
+  "icon subtitle action";
+  grid-template-columns: var(--main-heading-icon-size) 1fr max-content;
   grid-template-rows: 1fr max-content;
 
   margin-block-end: calc(var(--base-unit) * 5);
@@ -36,4 +36,11 @@
 }
 .runtime-info__subtitle {
   grid-area: subtitle;
+}
+.runtime-info__action {
+  align-self: start;
+  
+
+  font-size: var(--base-font-size);
+  grid-area: action;
 }
