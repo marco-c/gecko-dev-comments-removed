@@ -789,6 +789,16 @@ VariablesView.prototype = {
   
 
 
+  _copyItem: function() {
+    const item = this.getFocusedItem();
+    clipboardHelper.copyString(
+      item._nameString + item.separatorStr + item._valueString
+    );
+  },
+
+  
+
+
   _onViewKeyDown: function(e) {
     const item = this.getFocusedItem();
 
@@ -797,12 +807,8 @@ VariablesView.prototype = {
 
     switch (e.keyCode) {
       case KeyCodes.DOM_VK_C:
-        
         if (e.ctrlKey || e.metaKey) {
-          const item = this.getFocusedItem();
-          clipboardHelper.copyString(
-            item._nameString + item.separatorStr + item._valueString
-          );
+          this._copyItem();
         }
         return;
 
