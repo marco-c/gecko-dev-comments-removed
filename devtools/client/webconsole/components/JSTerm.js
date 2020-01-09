@@ -506,6 +506,7 @@ class JSTerm extends Component {
 
 
 
+  
   async _executeResultCallback(response) {
     if (!this.webConsoleUI) {
       return null;
@@ -578,6 +579,7 @@ class JSTerm extends Component {
 
     return null;
   }
+  
 
   screenshotNotify(results) {
     const wrappedResults = results.map(message => ({ message, type: "logMessage" }));

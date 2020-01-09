@@ -270,6 +270,7 @@ define(function(require, exports, module) {
 
     
 
+    
     onKeyDown(event) {
       if (!SUPPORTED_KEYS.includes(event.key)) {
         return;
@@ -352,6 +353,7 @@ define(function(require, exports, module) {
       this.treeRef.current.focus();
       event.preventDefault();
     }
+    
 
     onClickRow(nodePath, event) {
       const onClickRow = this.props.onClickRow;

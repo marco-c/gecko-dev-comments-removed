@@ -539,6 +539,7 @@ function parseNamedDeclarations(isCssPropertyKnown, inputString,
 
 
 
+
 function parsePseudoClassesAndAttributes(value) {
   if (!value) {
     throw new Error("empty input string");
@@ -624,6 +625,7 @@ function parsePseudoClassesAndAttributes(value) {
 
   return result;
 }
+
 
 
 

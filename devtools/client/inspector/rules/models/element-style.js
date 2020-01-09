@@ -274,6 +274,7 @@ class ElementStyle {
 
 
 
+  
   updateDeclarations(pseudo = "") {
     
     
@@ -376,6 +377,7 @@ class ElementStyle {
       }
     }
   }
+  
 
   
 

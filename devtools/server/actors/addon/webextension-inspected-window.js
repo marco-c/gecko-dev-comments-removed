@@ -463,6 +463,7 @@ var WebExtensionInspectedWindowActor = protocol.ActorClassWithSpec(
 
 
 
+    
     eval(callerInfo, expression, options, customTargetWindow) {
       const window = customTargetWindow || this.window;
       options = options || {};
@@ -639,6 +640,7 @@ var WebExtensionInspectedWindowActor = protocol.ActorClassWithSpec(
 
       return {value: evalResult};
     },
+    
   }
 );
 

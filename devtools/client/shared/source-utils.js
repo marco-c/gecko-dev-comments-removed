@@ -270,6 +270,7 @@ function isContentScheme(location, i = 0) {
   }
 }
 
+
 function isChromeScheme(location, i = 0) {
   const firstChar = location.charCodeAt(i);
 
@@ -315,6 +316,7 @@ function isChromeScheme(location, i = 0) {
       return false;
   }
 }
+
 
 function isWASM(location, i = 0) {
   return (
