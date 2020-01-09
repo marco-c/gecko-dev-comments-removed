@@ -164,7 +164,12 @@ ThirdPartyUtil::IsThirdPartyWindow(mozIDOMWindowProxy* aWindow, nsIURI* aURI,
     
     
     parent = current->GetScriptableParent();
-    if (SameCOMIdentity(parent, current)) {
+    
+    
+    
+    
+    
+    if (parent == current) {
       
       *aResult = false;
       return NS_OK;
