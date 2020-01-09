@@ -1,5 +1,20 @@
 
-'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -16,4 +31,4 @@
 
 $DONOTEVALUATE();
 
-async(a, a) => { }
+0, (a, a) => { };

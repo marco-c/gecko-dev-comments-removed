@@ -19,20 +19,16 @@
 
 
 
+
+
+
+
+
+
+
+
+
 const testData = [
-  
-
-  
-  
-  {
-    tag: "en-GB-oed",
-    options: {
-      region: "US",
-      calendar: "gregory",
-    },
-    canonical: "en-US-oxendict-u-ca-gregory",
-  },
-
   
   {
     tag: "en-GB-oxendict",
@@ -41,50 +37,6 @@ const testData = [
       calendar: "gregory",
     },
     canonical: "en-US-oxendict-u-ca-gregory",
-  },
-
-  
-
-  
-  
-  {
-    tag: "no-bok",
-    options: {
-      region: "NO",
-      calendar: "gregory",
-    },
-    canonical: "nb-NO-u-ca-gregory",
-  },
-
-  {
-    tag: "no-bok",
-    options: {
-      region: "SE",
-      calendar: "gregory",
-    },
-    canonical: "nb-SE-u-ca-gregory",
-  },
-
-  
-  
-  {
-    tag: "no-bok-NO",
-    options: {
-      region: "SE",
-      calendar: "gregory",
-    },
-    canonical: "no-bok-SE-u-ca-gregory",
-  },
-
-  
-  
-  {
-    tag: "no-bok-SE",
-    options: {
-      region: "NO",
-      calendar: "gregory",
-    },
-    canonical: "no-bok-NO-u-ca-gregory",
   },
 ];
 
@@ -95,5 +47,15 @@ for (const {tag, options, canonical} of testData) {
     `new Intl.Locale("${tag}", ${options}).toString() returns "${canonical}"`
   );
 }
+
+assert.throws(RangeError, () =>
+    new Intl.Locale("no-bok", {region: "NO", calendar: "gregory"}));
+assert.throws(RangeError, () =>
+    new Intl.Locale("no-bok", {region: "SE", calendar: "gregory"}));
+assert.throws(RangeError, () =>
+    new Intl.Locale("no-bok-NO", {region: "SE", calendar: "gregory"}));
+assert.throws(RangeError, () =>
+    new Intl.Locale("no-bok-SE", {region: "NO", calendar: "gregory"}));
+
 
 reportCompare(0, 0);

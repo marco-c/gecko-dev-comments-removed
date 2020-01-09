@@ -22,43 +22,7 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 const testData = [
-    
-    {
-        tag: "i-default",
-        options: {
-            language: "fr",
-            script: "Cyrl",
-            region: "DE",
-            numberingSystem: "latn",
-        },
-        canonical: "fr-Cyrl-DE-u-nu-latn",
-    },
-
-    
-    {
-        tag: "en-gb-oed",
-        options: {
-            language: "fr",
-            script: "Cyrl",
-            region: "US",
-            numberingSystem: "latn",
-        },
-        canonical: "fr-Cyrl-US-oxendict-u-nu-latn",
-    },
-
     
     {
         tag: "cel-gaulish",
@@ -92,5 +56,15 @@ for (const {tag, options, canonical} of testData) {
         assert.sameValue(loc[name], value);
     }
 }
+
+assert.throws(RangeError, () =>
+    new Intl.Locale("i-default",
+      {language: "fr", script: "Cyrl", region: "DE", numberingSystem: "latn"}
+      ));
+
+assert.throws(RangeError, () =>
+    new Intl.Locale("en-gb-oed",
+      {language: "fr", script: "Cyrl", region: "US", numberingSystem: "latn"}
+      ));
 
 reportCompare(0, 0);

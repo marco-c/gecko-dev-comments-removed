@@ -22,6 +22,13 @@
 
 
 
+
+
+
+
+
+
+
 assert.sameValue(
   new Intl.Locale('en', {language: undefined}).toString(),
   'en',
@@ -34,10 +41,6 @@ assert.sameValue(
   `new Intl.Locale('en-US', {language: undefined}).toString() returns "en-US"`
 );
 
-assert.sameValue(
-  new Intl.Locale('en-els', {language: undefined}).toString(),
-  'en-els',
-  `new Intl.Locale('en-els', {language: undefined}).toString() returns "en-els"`
-);
+assert.throws(RangeError, () => new Intl.Locale('en-els', {language: undefined}));
 
 reportCompare(0, 0);

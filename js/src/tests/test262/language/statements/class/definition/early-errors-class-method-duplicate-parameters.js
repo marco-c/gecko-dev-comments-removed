@@ -12,8 +12,18 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 $DONOTEVALUATE();
 
 class Foo {
-  async foo(a, a) { }
+  foo(a, a) { }
 }

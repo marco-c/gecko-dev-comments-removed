@@ -25,11 +25,6 @@
 
 
 
-var loc = new Intl.Locale("i-default");
-assert.sameValue(loc.baseName, "i-default"); 
-assert.sameValue(loc.language, "i-default");
-assert.sameValue(loc.script, undefined);
-assert.sameValue(loc.region, undefined);
 
 
 var loc = new Intl.Locale("cel-gaulish");
@@ -39,10 +34,9 @@ assert.sameValue(loc.script, undefined);
 assert.sameValue(loc.region, undefined);
 
 
-var loc = new Intl.Locale("zh-min");
-assert.sameValue(loc.baseName, "zh-min"); 
-assert.sameValue(loc.language, "zh-min");
-assert.sameValue(loc.script, undefined);
-assert.sameValue(loc.region, undefined);
+assert.throws(RangeError, () => new Intl.Locale("zh-min"));
+
+assert.throws(RangeError, () => new Intl.Locale("i-default"));
+
 
 reportCompare(0, 0);

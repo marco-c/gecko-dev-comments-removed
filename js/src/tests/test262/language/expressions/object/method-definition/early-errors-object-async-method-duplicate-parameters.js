@@ -22,7 +22,8 @@
 
 
 
+
 $DONOTEVALUATE();
 ({
-  foo(a, a) { }
+  async foo(a, a) { }
 })
