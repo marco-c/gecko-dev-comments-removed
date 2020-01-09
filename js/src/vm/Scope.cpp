@@ -1577,14 +1577,17 @@ void BindingIter::init(WasmFunctionScope::Data& data) {
        data.trailingNames.start(), data.length);
 }
 
-PositionalFormalParameterIter::PositionalFormalParameterIter(JSScript* script)
-    : BindingIter(script) {
+PositionalFormalParameterIter::PositionalFormalParameterIter(Scope* scope)
+    : BindingIter(scope) {
   
-  if (script->bodyScope()->is<FunctionScope>()) {
-    init(script->bodyScope()->as<FunctionScope>().data(),  0);
+  if (scope->is<FunctionScope>()) {
+    init(scope->as<FunctionScope>().data(),  0);
   }
   settle();
 }
+
+PositionalFormalParameterIter::PositionalFormalParameterIter(JSScript* script)
+    : PositionalFormalParameterIter(script->bodyScope()) { }
 
 void js::DumpBindings(JSContext* cx, Scope* scopeArg) {
   RootedScope scope(cx, scopeArg);
