@@ -15,6 +15,7 @@
 
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Move.h"
+#include "mozilla/dom/TreeOrderedArray.h"
 #include "mozilla/net/ReferrerPolicy.h"
 
 #include "nsCOMPtr.h"
@@ -120,16 +121,21 @@ class IdentifierMapEntry : public PLDHashEntryHdr {
 
 
 
-  Element* GetIdElement();
+  Element* GetIdElement() { return mIdContentList->SafeElementAt(0); }
+
   
 
 
   const nsTArray<Element*>& GetIdElements() const { return mIdContentList; }
+
   
 
 
 
-  Element* GetImageIdElement();
+  Element* GetImageIdElement() {
+    return mImageElement ? mImageElement.get() : GetIdElement();
+  }
+
   
 
 
@@ -192,9 +198,7 @@ class IdentifierMapEntry : public PLDHashEntryHdr {
                            bool aImageOnly = false);
 
   AtomOrString mKey;
-  
-  
-  AutoTArray<Element*, 1> mIdContentList;
+  dom::TreeOrderedArray<Element> mIdContentList;
   RefPtr<nsBaseContentList> mNameContentList;
   nsAutoPtr<nsTHashtable<ChangeCallbackEntry> > mChangeCallbacks;
   RefPtr<Element> mImageElement;
