@@ -321,7 +321,7 @@ class OSXBootstrapper(BaseBootstrapper):
 
         
         
-        self.check_output([self.brew, 'tap', 'caskroom/versions'])
+        self.check_output([self.brew, 'tap', 'homebrew/cask-versions'])
 
         
         return self._ensure_homebrew_packages(casks, extra_brew_args=['cask'])
