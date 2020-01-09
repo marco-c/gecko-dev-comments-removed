@@ -6891,15 +6891,15 @@ bool GeneralParser<ParseHandler, Unit>::classMember(
 template <class ParseHandler, typename Unit>
 bool GeneralParser<ParseHandler, Unit>::finishClassConstructor(
     const ParseContext::ClassStatement& classStmt, HandlePropertyName className,
-    uint32_t classStartOffset, uint32_t classEndOffset, size_t numFields,
-    ListNodeType& classMembers) {
+    HasHeritage hasHeritage, uint32_t classStartOffset, uint32_t classEndOffset,
+    size_t numFields, ListNodeType& classMembers) {
   
   
   
   if (classStmt.constructorBox == nullptr && numFields > 0) {
     
     FunctionNodeType synthesizedCtor =
-        synthesizeConstructor(className, classStartOffset);
+        synthesizeConstructor(className, classStartOffset, hasHeritage);
     if (!synthesizedCtor) {
       return false;
     }
@@ -6938,12 +6938,6 @@ bool GeneralParser<ParseHandler, Unit>::finishClassConstructor(
       if (numFields > 0) {
         ctorbox->function()->lazyScript()->setHasThisBinding();
       }
-
-      
-      
-      
-      FieldInitializers fieldInfo(numFields);
-      ctorbox->function()->lazyScript()->setFieldInitializers(fieldInfo);
     }
   }
 
@@ -7086,8 +7080,9 @@ GeneralParser<ParseHandler, Unit>::classDefinition(
     }
 
     classEndOffset = pos().end;
-    if (!finishClassConstructor(classStmt, className, classStartOffset,
-                                classEndOffset, numFields, classMembers)) {
+    if (!finishClassConstructor(classStmt, className, hasHeritage,
+                                classStartOffset, classEndOffset, numFields,
+                                classMembers)) {
       return null();
     }
 
@@ -7140,8 +7135,11 @@ GeneralParser<ParseHandler, Unit>::classDefinition(
 template <class ParseHandler, typename Unit>
 typename ParseHandler::FunctionNodeType
 GeneralParser<ParseHandler, Unit>::synthesizeConstructor(
-    HandleAtom className, uint32_t classNameOffset) {
-  FunctionSyntaxKind functionSyntaxKind = FunctionSyntaxKind::ClassConstructor;
+    HandleAtom className, uint32_t classNameOffset, HasHeritage hasHeritage) {
+  FunctionSyntaxKind functionSyntaxKind =
+      hasHeritage == HasHeritage::Yes
+          ? FunctionSyntaxKind::DerivedClassConstructor
+          : FunctionSyntaxKind::ClassConstructor;
 
   
   RootedFunction fun(cx_, newFunction(className, functionSyntaxKind,
@@ -7207,6 +7205,42 @@ GeneralParser<ParseHandler, Unit>::synthesizeConstructor(
   bool canSkipLazyClosedOverBindings = handler_.canSkipLazyClosedOverBindings();
   if (!pc_->declareFunctionThis(usedNames_, canSkipLazyClosedOverBindings)) {
     return null();
+  }
+
+  if (hasHeritage == HasHeritage::Yes) {
+    NameNodeType thisName = newThisName();
+    if (!thisName) {
+      return null();
+    }
+
+    UnaryNodeType superBase =
+        handler_.newSuperBase(thisName, synthesizedBodyPos);
+    if (!superBase) {
+      return null();
+    }
+
+    ListNodeType arguments = handler_.newArguments(synthesizedBodyPos);
+    if (!arguments) {
+      return null();
+    }
+
+    CallNodeType superCall = handler_.newSuperCall(superBase, arguments, false);
+    if (!superCall) {
+      return null();
+    }
+
+    BinaryNodeType setThis = handler_.newSetThis(thisName, superCall);
+    if (!setThis) {
+      return null();
+    }
+
+    UnaryNodeType exprStatement =
+        handler_.newExprStatement(setThis, synthesizedBodyPos.end);
+    if (!exprStatement) {
+      return null();
+    }
+
+    handler_.addStatementToList(stmtList, exprStatement);
   }
 
   auto initializerBody = finishLexicalScope(lexicalScope, stmtList);
