@@ -86,6 +86,8 @@ class StaticPrefs {
   
   
   
+  
+  
 
  public:
   
@@ -113,7 +115,10 @@ class StaticPrefs {
                "Non-atomic static pref '" str                      \
                "' being accessed on background thread by setter"); \
     sVarCache_##id = aValue;                                       \
-  }
+  }                                                                \
+  static const char* Get##id##PrefName() { return str; }           \
+  static StripAtomic<cpp_type> Get##id##PrefDefault() { return default_value; }
+
 #include "mozilla/StaticPrefList.h"
 #undef PREF
 #undef VARCACHE_PREF
