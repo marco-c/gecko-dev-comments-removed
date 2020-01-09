@@ -171,10 +171,10 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     
     ".applescript",
     
-    ".appref-ms",    
+    ".appref-ms",  
     
     
-    ".as",   
+    ".as",  
     
     ".asx",  
     
@@ -197,13 +197,13 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     ".cfg",        
     ".chi",        
     
-    ".class",      
+    ".class",  
     
     
-    ".command",    
-    ".cpgz",       
-    ".cpi",        
-                   
+    ".command",  
+    ".cpgz",     
+    ".cpi",      
+                 
     
     
     
@@ -236,7 +236,7 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     ".eml",         
     
     
-    ".fon",     
+    ".fon",  
     
     ".gadget",  
     
@@ -245,7 +245,7 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     ".gzip",  
     ".hfs",   
     
-    ".hqx",   
+    ".hqx",  
     
     ".htm", ".html",
     ".htt",  
@@ -253,7 +253,7 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     ".img",      
     ".imgpart",  
     
-    ".ini",      
+    ".ini",  
     
     
     ".iso",  
@@ -293,20 +293,18 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     
     
     
-    ".mht",       
-    ".mhtml",     
-    ".mim",       
+    ".mht",    
+    ".mhtml",  
+    ".mim",    
     
     ".mmc",  
     ".mof",  
     
     
     
-    ".mpkg",     
+    ".mpkg",  
     
-    ".msg",      
-    
-    
+    ".msg",  
     
     
     
@@ -314,9 +312,11 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     
     
     
-    ".ndif",     
     
-    ".ocx",   
+    
+    ".ndif",  
+    
+    ".ocx",  
     
     ".osas",  
     ".osax",  
@@ -331,7 +331,7 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     ".partial",  
     ".pax",      
     
-    ".pdf",      
+    ".pdf",  
     
     ".pet",  
     
@@ -339,16 +339,16 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     ".pl",   
     
     
-    ".pot",     
-    ".potm",    
-    ".potx",    
-    ".ppam",    
-    ".pps",     
-    ".ppsm",    
-    ".ppsx",    
-    ".ppt",     
-    ".pptm",    
-    ".pptx",    
+    ".pot",   
+    ".potm",  
+    ".potx",  
+    ".ppam",  
+    ".pps",   
+    ".ppsm",  
+    ".ppsx",  
+    ".ppt",   
+    ".pptm",  
+    ".pptx",  
     
     
     ".ps1",     
@@ -358,12 +358,12 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     ".psc1",    
     ".psc2",    
     
-    ".pup",     
-    ".py",      
-    ".pyc",     
-    ".pyd",     
-    ".pyo",     
-    ".pyw",     
+    ".pup",  
+    ".py",   
+    ".pyc",  
+    ".pyd",  
+    ".pyo",  
+    ".pyw",  
     
     
     
@@ -396,7 +396,7 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     
     
     
-    ".rb",    
+    ".rb",  
     
     ".rels",  
     
@@ -404,28 +404,28 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     ".rtf",  
     
     
-    ".scpt",               
-    ".scptd",              
+    ".scpt",   
+    ".scptd",  
     
     
-    ".search-ms",          
-    ".seplugin",           
+    ".search-ms",  
+    ".seplugin",   
     
-    ".sh",                 
-    ".shar",               
+    ".sh",    
+    ".shar",  
     
     
-    ".sht",                
-    ".shtm",               
-    ".shtml",              
-    ".sldm",               
-    ".sldx",               
-    ".slk",                
-    ".slp",                
-    ".smi",                
-    ".sparsebundle",       
-    ".sparseimage",        
-    ".spl",                
+    ".sht",           
+    ".shtm",          
+    ".shtml",         
+    ".sldm",          
+    ".sldx",          
+    ".slk",           
+    ".slp",           
+    ".smi",           
+    ".sparsebundle",  
+    ".sparseimage",   
+    ".spl",           
     
     ".svg",
     ".swf",   
@@ -455,9 +455,9 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     
     
     
-    ".vhd",       
-    ".vhdx",      
-    ".vmdk",      
+    ".vhd",   
+    ".vhdx",  
+    ".vmdk",  
     
     
     
@@ -1746,21 +1746,17 @@ static nsresult AppendSegmentToString(nsIInputStream* inputStream,
 }
 
 NS_IMETHODIMP
-PendingLookup::OnDataAvailable(nsIRequest* aRequest,
-                               nsIInputStream* aStream, uint64_t offset,
-                               uint32_t count) {
+PendingLookup::OnDataAvailable(nsIRequest* aRequest, nsIInputStream* aStream,
+                               uint64_t offset, uint32_t count) {
   uint32_t read;
   return aStream->ReadSegments(AppendSegmentToString, &mResponse, count, &read);
 }
 
 NS_IMETHODIMP
-PendingLookup::OnStartRequest(nsIRequest* aRequest) {
-  return NS_OK;
-}
+PendingLookup::OnStartRequest(nsIRequest* aRequest) { return NS_OK; }
 
 NS_IMETHODIMP
-PendingLookup::OnStopRequest(nsIRequest* aRequest,
-                             nsresult aResult) {
+PendingLookup::OnStopRequest(nsIRequest* aRequest, nsresult aResult) {
   NS_ENSURE_STATE(mCallback);
 
   if (aResult != NS_ERROR_NET_TIMEOUT) {
@@ -1853,9 +1849,8 @@ nsresult PendingLookup::OnStopRequestInternal(nsIRequest* aRequest,
   Accumulate(mozilla::Telemetry::APPLICATION_REPUTATION_SERVER_VERDICT,
              std::min<uint32_t>(response.verdict(), 7));
   const char* ext = GetFileExt(mFileName);
-  AccumulateCategoricalKeyed(
-      nsCString(ext),
-      VerdictToLabel(std::min<uint32_t>(response.verdict(), 7)));
+  AccumulateCategoricalKeyed(nsCString(ext), VerdictToLabel(std::min<uint32_t>(
+                                                 response.verdict(), 7)));
   switch (response.verdict()) {
     case safe_browsing::ClientDownloadResponse::DANGEROUS:
       aVerdict = nsIApplicationReputationService::VERDICT_DANGEROUS;

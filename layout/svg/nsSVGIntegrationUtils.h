@@ -38,6 +38,7 @@ struct WrFiltersHolder {
   nsTArray<mozilla::wr::FilterOp> filters;
   nsTArray<mozilla::wr::WrFilterData> filter_datas;
   
+  
   nsTArray<nsTArray<float>> values;
 };
 

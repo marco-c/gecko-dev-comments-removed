@@ -170,8 +170,8 @@ enum class Op {
   TeeLocal = 0x22,
   GetGlobal = 0x23,
   SetGlobal = 0x24,
-  TableGet = 0x25,              
-  TableSet = 0x26,              
+  TableGet = 0x25,  
+  TableSet = 0x26,  
 
   
   I32Load = 0x28,

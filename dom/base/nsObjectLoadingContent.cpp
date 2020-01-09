@@ -524,8 +524,9 @@ void nsObjectLoadingContent::SetupFrameLoader(int32_t aJSPluginId) {
       do_QueryInterface(static_cast<nsIImageLoadingContent*>(this));
   NS_ASSERTION(thisContent, "must be a content");
 
-  mFrameLoader = nsFrameLoader::Create(thisContent->AsElement(),
-                                        nullptr, mNetworkCreated);
+  mFrameLoader =
+      nsFrameLoader::Create(thisContent->AsElement(),
+                             nullptr, mNetworkCreated);
   MOZ_ASSERT(mFrameLoader, "nsFrameLoader::Create failed");
 }
 
@@ -1056,8 +1057,8 @@ nsObjectLoadingContent::OnDataAvailable(nsIRequest* aRequest,
   if (mFinalListener) {
     
     nsCOMPtr<nsIStreamListener> listenerGrip(mFinalListener);
-    return listenerGrip->OnDataAvailable(aRequest, aInputStream,
-                                         aOffset, aCount);
+    return listenerGrip->OnDataAvailable(aRequest, aInputStream, aOffset,
+                                         aCount);
   }
 
   
@@ -2156,7 +2157,9 @@ nsresult nsObjectLoadingContent::LoadObject(bool aNotify, bool aForceLoad,
       break;
     case eType_FakePlugin:
       
-      MOZ_CRASH("Shouldn't reach here! This means there's a fakeplugin trying to be loaded.");
+      MOZ_CRASH(
+          "Shouldn't reach here! This means there's a fakeplugin trying to be "
+          "loaded.");
   }
 
   

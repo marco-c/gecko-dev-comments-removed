@@ -842,6 +842,7 @@ bool GLContext::InitImpl() {
         mMaxTextureSize = std::min(mMaxTextureSize, 4096);
         mMaxCubeMapTextureSize = std::min(mMaxCubeMapTextureSize, 512);
         
+        
         mMaxRenderbufferSize = std::min(mMaxRenderbufferSize, 4096);
         mNeedsTextureSizeChecks = true;
       } else if (mVendor == GLVendor::NVIDIA) {
@@ -890,8 +891,7 @@ bool GLContext::InitImpl() {
     }
 #endif
 #if MOZ_WIDGET_ANDROID
-    if (Renderer() == GLRenderer::SGX540 &&
-        jni::GetAPIVersion() <= 15) {
+    if (Renderer() == GLRenderer::SGX540 && jni::GetAPIVersion() <= 15) {
       
       
       

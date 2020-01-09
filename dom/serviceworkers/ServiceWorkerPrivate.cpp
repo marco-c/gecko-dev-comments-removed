@@ -660,7 +660,8 @@ class LifeCycleEventWatcher final : public ExtendableEventCallback {
     mCallback->SetResult(aResult);
     
     
-    nsresult rv = mWorkerRef->Private()->DispatchToMainThreadForMessaging(mCallback);
+    nsresult rv =
+        mWorkerRef->Private()->DispatchToMainThreadForMessaging(mCallback);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       MOZ_CRASH("Failed to dispatch life cycle event handler.");
     }

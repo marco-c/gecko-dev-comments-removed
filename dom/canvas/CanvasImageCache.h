@@ -33,7 +33,8 @@ class CanvasImageCache {
 
   static void NotifyDrawImage(dom::Element* aImage,
                               dom::HTMLCanvasElement* aCanvas,
-                              SourceSurface* aSource, const gfx::IntSize& aSize);
+                              SourceSurface* aSource,
+                              const gfx::IntSize& aSize);
 
   
 

@@ -66,8 +66,7 @@ class PSMContentDownloaderParent : public PPSMContentDownloaderParent,
   
   
   
-  NS_IMETHOD OnStopRequest(nsIRequest *request,
-                           nsresult code) override;
+  NS_IMETHOD OnStopRequest(nsIRequest *request, nsresult code) override;
 
   mozilla::ipc::IPCResult RecvDivertToParentUsing(
       mozilla::net::PChannelDiverterParent *diverter);

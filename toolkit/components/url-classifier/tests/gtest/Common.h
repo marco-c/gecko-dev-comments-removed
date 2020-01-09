@@ -11,7 +11,7 @@ namespace mozilla {
 namespace safebrowsing {
 class Classifier;
 class LookupCacheV4;
-}
+}  
 }  
 
 typedef nsCString _Fragment;

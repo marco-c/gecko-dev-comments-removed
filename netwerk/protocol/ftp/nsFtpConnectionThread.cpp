@@ -1801,8 +1801,7 @@ nsFtpState::OnStartRequest(nsIRequest *request) {
 }
 
 NS_IMETHODIMP
-nsFtpState::OnStopRequest(nsIRequest *request,
-                          nsresult status) {
+nsFtpState::OnStopRequest(nsIRequest *request, nsresult status) {
   mUploadRequest = nullptr;
 
   

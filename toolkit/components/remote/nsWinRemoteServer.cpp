@@ -232,22 +232,21 @@ LRESULT CALLBACK WindowProc(HWND msgWindow, UINT msg, WPARAM wp, LPARAM lp) {
   return DefWindowProc(msgWindow, msg, wp, lp);
 }
 
-nsresult nsWinRemoteServer::Startup(const char* aAppName,
-    const char* aProfileName) {
-
+nsresult nsWinRemoteServer::Startup(const char *aAppName,
+                                    const char *aProfileName) {
   nsString className;
   BuildClassName(aAppName, aProfileName, className);
 
-  WNDCLASSW classStruct = {0,                           
-                           &WindowProc,                 
-                           0,                           
-                           0,                           
-                           0,                           
-                           0,                           
-                           0,                           
-                           0,                           
-                           0,                           
-                           className.get()};            
+  WNDCLASSW classStruct = {0,                 
+                           &WindowProc,       
+                           0,                 
+                           0,                 
+                           0,                 
+                           0,                 
+                           0,                 
+                           0,                 
+                           0,                 
+                           className.get()};  
 
   
   NS_ENSURE_TRUE(::RegisterClassW(&classStruct), NS_ERROR_FAILURE);

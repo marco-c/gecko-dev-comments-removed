@@ -640,8 +640,7 @@ nsIncrementalDownload::OnStartRequest(nsIRequest *request) {
 }
 
 NS_IMETHODIMP
-nsIncrementalDownload::OnStopRequest(nsIRequest *request,
-                                     nsresult status) {
+nsIncrementalDownload::OnStopRequest(nsIRequest *request, nsresult status) {
   
   
   if (status == NS_ERROR_DOWNLOAD_NOT_PARTIAL) return NS_OK;

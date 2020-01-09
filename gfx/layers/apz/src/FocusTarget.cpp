@@ -7,13 +7,13 @@
 #include "mozilla/layers/FocusTarget.h"
 
 #include "mozilla/dom/BrowserBridgeChild.h"  
-#include "mozilla/dom/EventTarget.h"     
-#include "mozilla/dom/TabParent.h"       
-#include "mozilla/EventDispatcher.h"     
-#include "mozilla/layout/RenderFrame.h"  
-#include "nsIContentInlines.h"           
-#include "nsIPresShell.h"                
-#include "nsLayoutUtils.h"               
+#include "mozilla/dom/EventTarget.h"         
+#include "mozilla/dom/TabParent.h"           
+#include "mozilla/EventDispatcher.h"         
+#include "mozilla/layout/RenderFrame.h"      
+#include "nsIContentInlines.h"               
+#include "nsIPresShell.h"                    
+#include "nsLayoutUtils.h"                   
 
 #define ENABLE_FT_LOGGING 0
 

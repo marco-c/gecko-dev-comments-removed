@@ -16,7 +16,7 @@
 #  include "KeychainSecret.h"  
 
 #  include "nsCocoaFeatures.h"
-#endif                         
+#endif  
 
 extern LazyLogModule gPIPNSSLog;
 

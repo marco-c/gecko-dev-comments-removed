@@ -31,7 +31,7 @@ class WindowsDllPatcherBase {
       int8_t offset = (int8_t)(origFn[1]);
       uintptr_t abstarget = origFn.GetAddress() + 2 + offset;
 
-#if defined(_M_X64)
+#  if defined(_M_X64)
       
       
       
@@ -41,7 +41,7 @@ class WindowsDllPatcherBase {
           return redirectFn;
         }
       }
-#endif
+#  endif
 
       if (offset <= 0) {
         
@@ -59,14 +59,14 @@ class WindowsDllPatcherBase {
       return EnsureTargetIsAccessible(std::move(origFn), abstarget);
     }
 
-#if defined(_M_IX86)
+#  if defined(_M_IX86)
     
     
     if (origFn[0] == 0xff && origFn[1] == 0x25) {
       uintptr_t abstarget = (origFn + 2).template ChasePointer<uintptr_t*>();
       return EnsureTargetIsAccessible(std::move(origFn), abstarget);
     }
-#elif defined(_M_X64)
+#  elif defined(_M_X64)
     
     
     if (origFn[0] == 0x48 && origFn[1] == 0xff && origFn[2] == 0x25) {
@@ -79,7 +79,7 @@ class WindowsDllPatcherBase {
       uintptr_t abstarget = (origFn + 1).ReadDisp32AsAbsolute();
       return EnsureTargetIsAccessible(std::move(origFn), abstarget);
     }
-#endif
+#  endif
 #endif  
 
     return origFn;

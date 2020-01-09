@@ -57,9 +57,7 @@ struct ExternalImageKeyPair {
 
 WindowId NewWindowId();
 
-inline DebugFlags NewDebugFlags(uint32_t aFlags) {
-  return {aFlags};
-}
+inline DebugFlags NewDebugFlags(uint32_t aFlags) { return {aFlags}; }
 
 inline Maybe<wr::ImageFormat> SurfaceFormatToImageFormat(
     gfx::SurfaceFormat aFormat) {

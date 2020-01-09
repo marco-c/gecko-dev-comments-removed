@@ -142,7 +142,8 @@ void VideoFrameContainer::SetCurrentFrames(const VideoSegment& aSegment) {
 
     if (frame->GetForceBlack()) {
       if (!mBlackImage) {
-        RefPtr<Image> blackImage = GetImageContainer()->CreatePlanarYCbCrImage();
+        RefPtr<Image> blackImage =
+            GetImageContainer()->CreatePlanarYCbCrImage();
         if (blackImage) {
           
           

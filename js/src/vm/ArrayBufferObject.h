@@ -170,7 +170,7 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
 
   
   static constexpr size_t MaxInlineBytes =
-    (NativeObject::MAX_FIXED_SLOTS - RESERVED_SLOTS) * sizeof(JS::Value);
+      (NativeObject::MAX_FIXED_SLOTS - RESERVED_SLOTS) * sizeof(JS::Value);
 
  public:
   enum OwnsState {

@@ -1763,8 +1763,8 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
-  std::pair<CodeOffset, uint32_t>
-  wasmReserveStackChecked(uint32_t amount, wasm::BytecodeOffset trapOffset);
+  std::pair<CodeOffset, uint32_t> wasmReserveStackChecked(
+      uint32_t amount, wasm::BytecodeOffset trapOffset);
 
   
   

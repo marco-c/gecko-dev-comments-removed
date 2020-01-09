@@ -61,8 +61,8 @@ LauncherVoidResult LauncherRegistryInfo::ReflectPrefToRegistry(
     return LAUNCHER_ERROR_FROM_RESULT(curEnabledState);
   }
 
-  bool isCurrentlyEnabled = curEnabledState.unwrap() !=
-    EnabledState::ForceDisabled;
+  bool isCurrentlyEnabled =
+      curEnabledState.unwrap() != EnabledState::ForceDisabled;
   if (isCurrentlyEnabled == aEnable) {
     
     

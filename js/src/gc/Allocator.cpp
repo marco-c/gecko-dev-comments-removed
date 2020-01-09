@@ -26,8 +26,9 @@ using namespace js;
 using namespace gc;
 
 template <AllowGC allowGC >
-JSObject* js::AllocateObject(JSContext* cx, AllocKind kind, size_t nDynamicSlots,
-                             InitialHeap heap, const Class* clasp) {
+JSObject* js::AllocateObject(JSContext* cx, AllocKind kind,
+                             size_t nDynamicSlots, InitialHeap heap,
+                             const Class* clasp) {
   MOZ_ASSERT(IsObjectAllocKind(kind));
   size_t thingSize = Arena::thingSize(kind);
 
@@ -75,16 +76,14 @@ JSObject* js::AllocateObject(JSContext* cx, AllocKind kind, size_t nDynamicSlots
   return GCRuntime::tryNewTenuredObject<allowGC>(cx, kind, thingSize,
                                                  nDynamicSlots);
 }
-template JSObject* js::AllocateObject<NoGC>(JSContext* cx,
-                                            gc::AllocKind kind,
+template JSObject* js::AllocateObject<NoGC>(JSContext* cx, gc::AllocKind kind,
                                             size_t nDynamicSlots,
                                             gc::InitialHeap heap,
                                             const Class* clasp);
-template JSObject* js::AllocateObject<CanGC>(JSContext* cx,
-                                               gc::AllocKind kind,
-                                               size_t nDynamicSlots,
-                                               gc::InitialHeap heap,
-                                               const Class* clasp);
+template JSObject* js::AllocateObject<CanGC>(JSContext* cx, gc::AllocKind kind,
+                                             size_t nDynamicSlots,
+                                             gc::InitialHeap heap,
+                                             const Class* clasp);
 
 
 

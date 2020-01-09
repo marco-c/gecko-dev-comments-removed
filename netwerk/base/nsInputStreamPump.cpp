@@ -551,8 +551,8 @@ uint32_t nsInputStreamPump::OnStateTransfer() {
       
       
       RecursiveMutexAutoUnlock unlock(mMutex);
-      rv = mListener->OnDataAvailable(this, mAsyncStream,
-                                      mStreamOffset, odaAvail);
+      rv = mListener->OnDataAvailable(this, mAsyncStream, mStreamOffset,
+                                      odaAvail);
     }
 
     

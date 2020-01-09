@@ -90,8 +90,7 @@ ExternalHelperAppChild::OnStartRequest(nsIRequest *request) {
 }
 
 NS_IMETHODIMP
-ExternalHelperAppChild::OnStopRequest(nsIRequest *request,
-                                      nsresult status) {
+ExternalHelperAppChild::OnStopRequest(nsIRequest *request, nsresult status) {
   
   if (mHandler) {
     nsresult rv = mHandler->OnStopRequest(request, status);

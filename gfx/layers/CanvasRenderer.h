@@ -45,7 +45,7 @@ struct CanvasInitializeData final {
   void* mDidTransCallbackData = nullptr;
 
   
-  gfx::IntSize mSize = {0,0};
+  gfx::IntSize mSize = {0, 0};
 
   
   bool mHasAlpha = false;

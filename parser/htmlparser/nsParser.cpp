@@ -1330,8 +1330,7 @@ nsresult nsParser::OnDataAvailable(nsIRequest* request,
 
 
 
-nsresult nsParser::OnStopRequest(nsIRequest* request,
-                                 nsresult status) {
+nsresult nsParser::OnStopRequest(nsIRequest* request, nsresult status) {
   nsresult rv = NS_OK;
 
   CParserContext* pc = mParserContext;

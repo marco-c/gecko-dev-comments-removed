@@ -172,9 +172,10 @@ static bool RegisterExecutableMemory(void* p, size_t bytes, size_t pageSize) {
   
   
   
-  r->unwindInfo.codeWords = 1; 
-  r->unwindInfo.unwindCodes[0] = 0b00000001; 
-  r->unwindInfo.unwindCodes[1] = 0b11100100; 
+  r->unwindInfo.codeWords = 1;  
+  r->unwindInfo.unwindCodes[0] =
+      0b00000001;  
+  r->unwindInfo.unwindCodes[1] = 0b11100100;  
 
   uint32_t* thunk = (uint32_t*)r->thunk;
   uint16_t* addr = (uint16_t*)&handler;

@@ -30,8 +30,7 @@ class Linker {
  public:
   
   explicit Linker(MacroAssembler& masm, const char* name)
-      : masm(masm), afc(name)
-  {
+      : masm(masm), afc(name) {
     masm.finish();
   }
 

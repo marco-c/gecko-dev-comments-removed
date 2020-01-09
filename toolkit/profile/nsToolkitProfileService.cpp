@@ -793,7 +793,8 @@ nsresult nsToolkitProfileService::GetProfileDescriptor(
   return NS_OK;
 }
 
-nsresult nsToolkitProfileService::CreateDefaultProfile(nsIToolkitProfile** aResult) {
+nsresult nsToolkitProfileService::CreateDefaultProfile(
+    nsIToolkitProfile** aResult) {
   
   nsAutoCString name;
   if (mUseDevEditionProfile) {
@@ -903,7 +904,8 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
     GetProfileByDir(lf, localDir, getter_AddRefs(profile));
 
     if (profile && mIsFirstRun && mUseDedicatedProfile) {
-      if (profile == (mUseDevEditionProfile ? mDevEditionDefault : mNormalDefault)) {
+      if (profile ==
+          (mUseDevEditionProfile ? mDevEditionDefault : mNormalDefault)) {
         
         
         
@@ -914,6 +916,7 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
           mCurrent = profile;
         } else {
           if (aIsResetting) {
+            
             
             
             *aProfile = nullptr;

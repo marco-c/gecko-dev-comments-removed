@@ -23,9 +23,10 @@
 namespace js {
 namespace wasm {
 
-bool GenerateStackmapEntriesForTrapExit(
-    const ValTypeVector& args, const MachineState& trapExitLayout,
-    const size_t trapExitLayoutNumWords,  ExitStubMapVector* extras) {
+bool GenerateStackmapEntriesForTrapExit(const ValTypeVector& args,
+                                        const MachineState& trapExitLayout,
+                                        const size_t trapExitLayoutNumWords,
+                                        ExitStubMapVector* extras) {
   MOZ_ASSERT(extras->empty());
 
   
@@ -43,7 +44,7 @@ bool GenerateStackmapEntriesForTrapExit(
     }
 
     size_t offsetFromTop =
-       reinterpret_cast<size_t>(trapExitLayout.address(i->gpr()));
+        reinterpret_cast<size_t>(trapExitLayout.address(i->gpr()));
 
     
     
@@ -66,8 +67,8 @@ void EmitWasmPreBarrierGuard(MacroAssembler& masm, Register tls,
                              Label* skipBarrier) {
   
   masm.loadPtr(
-    Address(tls, offsetof(TlsData, addressOfNeedsIncrementalBarrier)),
-    scratch);
+      Address(tls, offsetof(TlsData, addressOfNeedsIncrementalBarrier)),
+      scratch);
   masm.branchTest32(Assembler::Zero, Address(scratch, 0), Imm32(0x1),
                     skipBarrier);
 
@@ -93,7 +94,8 @@ void EmitWasmPreBarrierCall(MacroAssembler& masm, Register tls,
   masm.call(scratch);
 }
 
-void EmitWasmPostBarrierGuard(MacroAssembler& masm, const Maybe<Register>& object,
+void EmitWasmPostBarrierGuard(MacroAssembler& masm,
+                              const Maybe<Register>& object,
                               Register otherScratch, Register setValue,
                               Label* skipBarrier) {
   

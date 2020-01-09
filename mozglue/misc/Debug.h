@@ -17,13 +17,13 @@
 
 #include <io.h>
 #if defined(XP_WIN)
-#include <windows.h>
+#  include <windows.h>
 #endif  
 #include "mozilla/Attributes.h"
 #include "mozilla/Sprintf.h"
 
 #if defined(MOZILLA_INTERNAL_API)
-#error Do not include this file from XUL sources.
+#  error Do not include this file from XUL sources.
 #endif
 
 

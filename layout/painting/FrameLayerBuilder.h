@@ -490,8 +490,7 @@ class FrameLayerBuilder : public layers::LayerUserData {
 
 
   static void EnumerateGenerationForDedicatedLayers(
-      const nsIFrame* aFrame,
-      const AnimationGenerationCallback& aCallback);
+      const nsIFrame* aFrame, const AnimationGenerationCallback& aCallback);
 
   
 

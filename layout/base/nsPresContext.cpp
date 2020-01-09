@@ -414,8 +414,7 @@ void nsPresContext::AppUnitsPerDevPixelChanged() {
     mDeviceContext->FlushFontCache();
   }
 
-  MediaFeatureValuesChanged({RestyleHint::RecascadeSubtree(),
-                             NS_STYLE_HINT_REFLOW,
+  MediaFeatureValuesChanged({eRestyle_ForceDescendants, NS_STYLE_HINT_REFLOW,
                              MediaFeatureChangeReason::ResolutionChange});
 
   mCurAppUnitsPerDevPixel = mDeviceContext->AppUnitsPerDevPixel();
@@ -544,7 +543,7 @@ void nsPresContext::UpdateAfterPreferencesChanged() {
 
   
   
-  RebuildAllStyleData(hint, RestyleHint::RestyleSubtree());
+  RebuildAllStyleData(hint, eRestyle_Subtree);
 }
 
 nsresult nsPresContext::Init(nsDeviceContext* aDeviceContext) {
@@ -730,7 +729,7 @@ void nsPresContext::DoChangeCharSet(NotNull<const Encoding*> aCharSet) {
   
   
   
-  RebuildAllStyleData(NS_STYLE_HINT_REFLOW, RestyleHint::RecascadeSubtree());
+  RebuildAllStyleData(NS_STYLE_HINT_REFLOW, eRestyle_ForceDescendants);
 }
 
 void nsPresContext::UpdateCharSet(NotNull<const Encoding*> aCharSet) {
@@ -947,8 +946,7 @@ void nsPresContext::UpdateEffectiveTextZoom() {
 
   
   
-  MediaFeatureValuesChanged({RestyleHint::RecascadeSubtree(),
-                             NS_STYLE_HINT_REFLOW,
+  MediaFeatureValuesChanged({eRestyle_ForceDescendants, NS_STYLE_HINT_REFLOW,
                              MediaFeatureChangeReason::ZoomChange});
 }
 
@@ -1343,7 +1341,7 @@ void nsPresContext::SysColorChangedInternal() {
 
   
   
-  RebuildAllStyleData(nsChangeHint(0), RestyleHint{0});
+  RebuildAllStyleData(nsChangeHint(0), nsRestyleHint(0));
 }
 
 void nsPresContext::RefreshSystemMetrics() {
@@ -1358,7 +1356,7 @@ void nsPresContext::RefreshSystemMetrics() {
   
   
   MediaFeatureValuesChangedAllDocuments({
-      RestyleHint::RecascadeSubtree(),
+      eRestyle_ForceDescendants,
       NS_STYLE_HINT_REFLOW,
       MediaFeatureChangeReason::SystemMetricsChange,
   });
@@ -1454,12 +1452,11 @@ void nsPresContext::StopEmulatingMedium() {
 }
 
 void nsPresContext::ContentLanguageChanged() {
-  PostRebuildAllStyleDataEvent(nsChangeHint(0),
-                               RestyleHint::RecascadeSubtree());
+  PostRebuildAllStyleDataEvent(nsChangeHint(0), eRestyle_ForceDescendants);
 }
 
 void nsPresContext::RebuildAllStyleData(nsChangeHint aExtraHint,
-                                        RestyleHint aRestyleHint) {
+                                        nsRestyleHint aRestyleHint) {
   if (!mShell) {
     
     return;
@@ -1484,7 +1481,7 @@ void nsPresContext::RebuildAllStyleData(nsChangeHint aExtraHint,
 }
 
 void nsPresContext::PostRebuildAllStyleDataEvent(nsChangeHint aExtraHint,
-                                                 RestyleHint aRestyleHint) {
+                                                 nsRestyleHint aRestyleHint) {
   if (!mShell) {
     
     return;
@@ -1643,7 +1640,8 @@ bool nsPresContext::HasAuthorSpecifiedRules(const nsIFrame* aFrame,
   }
 
   auto* set = PresShell()->StyleSet()->RawSet();
-  return Servo_HasAuthorSpecifiedRules(set, aFrame->Style(), elem, aRuleTypeMask);
+  return Servo_HasAuthorSpecifiedRules(set, aFrame->Style(), elem,
+                                       aRuleTypeMask);
 }
 
 gfxUserFontSet* nsPresContext::GetUserFontSet() {
@@ -1660,7 +1658,7 @@ void nsPresContext::UserFontSetUpdated(gfxUserFontEntry* aUpdatedFont) {
   
   if (!aUpdatedFont) {
     PostRebuildAllStyleDataEvent(NS_STYLE_HINT_REFLOW,
-                                 RestyleHint::RecascadeSubtree());
+                                 eRestyle_ForceDescendants);
     return;
   }
 
@@ -1669,8 +1667,7 @@ void nsPresContext::UserFontSetUpdated(gfxUserFontEntry* aUpdatedFont) {
   
   
   if (UsesExChUnits()) {
-    PostRebuildAllStyleDataEvent(nsChangeHint(0),
-                                 RestyleHint::RecascadeSubtree());
+    PostRebuildAllStyleDataEvent(nsChangeHint(0), eRestyle_ForceDescendants);
   }
 
   
@@ -1717,7 +1714,7 @@ void nsPresContext::FlushCounterStyles() {
     bool changed = mCounterStyleManager->NotifyRuleChanged();
     if (changed) {
       PresShell()->NotifyCounterStylesAreDirty();
-      PostRebuildAllStyleDataEvent(NS_STYLE_HINT_REFLOW, RestyleHint{0});
+      PostRebuildAllStyleDataEvent(NS_STYLE_HINT_REFLOW, nsRestyleHint(0));
       RefreshDriver()->AddPostRefreshObserver(
           new CounterStyleCleaner(RefreshDriver(), mCounterStyleManager));
     }
@@ -1746,7 +1743,7 @@ void nsPresContext::EnsureSafeToHandOutCSSRules() {
     return;
   }
 
-  RebuildAllStyleData(nsChangeHint(0), RestyleHint::RestyleSubtree());
+  RebuildAllStyleData(nsChangeHint(0), eRestyle_Subtree);
 }
 
 void nsPresContext::FireDOMPaintEvent(

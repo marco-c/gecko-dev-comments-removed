@@ -311,7 +311,6 @@ NS_IMETHODIMP nsExtProtocolChannel::GetLoadInfo(nsILoadInfo **aLoadInfo) {
 }
 
 NS_IMETHODIMP nsExtProtocolChannel::SetLoadInfo(nsILoadInfo *aLoadInfo) {
-  MOZ_RELEASE_ASSERT(aLoadInfo, "loadinfo can't be null");
   mLoadInfo = aLoadInfo;
   return NS_OK;
 }
@@ -436,8 +435,8 @@ NS_IMETHODIMP nsExtProtocolChannel::OnStopRequest(nsIRequest *aRequest,
 }
 
 NS_IMETHODIMP nsExtProtocolChannel::OnDataAvailable(
-    nsIRequest *aRequest, nsIInputStream *aInputStream,
-    uint64_t aOffset, uint32_t aCount) {
+    nsIRequest *aRequest, nsIInputStream *aInputStream, uint64_t aOffset,
+    uint32_t aCount) {
   
   MOZ_CRASH("No data expected from external protocol channel");
   return NS_ERROR_UNEXPECTED;

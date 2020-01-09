@@ -258,17 +258,17 @@ static inline size_t StackArgAreaSizeUnaligned(const T& argTypes) {
 }
 
 static inline size_t StackArgAreaSizeUnaligned(
-                         const SymbolicAddressSignature& saSig) {
+    const SymbolicAddressSignature& saSig) {
   
   
   
   class MOZ_STACK_CLASS ItemsAndLength {
     const MIRType* items_;
     size_t length_;
+
    public:
     ItemsAndLength(const MIRType* items, size_t length)
-      : items_(items), length_(length)
-    {}
+        : items_(items), length_(length) {}
     size_t length() const { return length_; }
     MIRType operator[](size_t i) const { return items_[i]; }
   };
@@ -276,14 +276,15 @@ static inline size_t StackArgAreaSizeUnaligned(
   
   
   
-  MOZ_ASSERT(saSig.numArgs < sizeof(saSig.argTypes) / sizeof(saSig.argTypes[0]));
-  MOZ_ASSERT(saSig.argTypes[saSig.numArgs] == MIRType::None);
+  MOZ_ASSERT(saSig.numArgs <
+             sizeof(saSig.argTypes) / sizeof(saSig.argTypes[0]));
+  MOZ_ASSERT(saSig.argTypes[saSig.numArgs] == MIRType::None );
 
   ItemsAndLength itemsAndLength(saSig.argTypes, saSig.numArgs);
 
   ABIArgIter<ItemsAndLength> i(itemsAndLength);
   while (!i.done()) {
-     i++;
+    i++;
   }
   return i.stackBytesConsumedSoFar();
 }
@@ -304,7 +305,7 @@ static inline size_t StackArgAreaSizeAligned(const T& argTypes) {
 
 MOZ_MUST_USE bool GenerateStackmapEntriesForTrapExit(
     const ValTypeVector& args, const MachineState& trapExitLayout,
-    const size_t trapExitLayoutNumWords,  ExitStubMapVector* extras);
+    const size_t trapExitLayoutNumWords, ExitStubMapVector* extras);
 
 
 
@@ -356,7 +357,8 @@ void EmitWasmPreBarrierCall(MacroAssembler& masm, Register tls,
 
 
 
-void EmitWasmPostBarrierGuard(MacroAssembler& masm, const Maybe<Register>& object,
+void EmitWasmPostBarrierGuard(MacroAssembler& masm,
+                              const Maybe<Register>& object,
                               Register otherScratch, Register setValue,
                               Label* skipBarrier);
 
