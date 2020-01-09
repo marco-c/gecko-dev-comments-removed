@@ -125,48 +125,73 @@ function ensureStorage() {
 
 
 function migrateStorage(storage) {
-  if (storage.data.__version == 2) {
+  if (storage.data.__version == 3) {
     return;
   }
-  const newData = {
-    __version: 2,
-    experiments: {},
-  };
-  for (let [expName, experiment] of Object.entries(storage.data)) {
-    if (expName == "__version") {
-      continue;
+
+  
+  const oldVersion = storage.data.__version || 1;
+
+  if (oldVersion == 1) {
+    
+    storage.data = {
+      __version: 2,
+      experiments: storage.data,
+    };
+
+    
+    const oldExperiments = storage.data.experiments;
+    const v2Experiments = {};
+
+    for (let [expName, experiment] of Object.entries(oldExperiments)) {
+      if (expName == "__version") {
+        continue;
+      }
+
+      const {
+        name,
+        branch,
+        expired,
+        lastSeen,
+        preferenceName,
+        preferenceValue,
+        preferenceType,
+        previousPreferenceValue,
+        preferenceBranchType,
+        experimentType,
+      } = experiment;
+      const newExperiment = {
+        name,
+        branch,
+        expired,
+        lastSeen,
+        preferences: {
+          [preferenceName]: {
+            preferenceBranchType,
+            preferenceType,
+            preferenceValue,
+            previousPreferenceValue,
+          },
+        },
+        experimentType,
+      };
+      v2Experiments[expName] = newExperiment;
+    }
+    storage.data.experiments = v2Experiments;
+  }
+  if (oldVersion <= 2) {
+    
+    for (const experiment of Object.values(storage.data.experiments)) {
+      if (!experiment.actionName) {
+        
+        
+        experiment.actionName = "SinglePreferenceExperimentAction";
+      }
     }
 
-    const {
-      name,
-      branch,
-      expired,
-      lastSeen,
-      preferenceName,
-      preferenceValue,
-      preferenceType,
-      previousPreferenceValue,
-      preferenceBranchType,
-      experimentType,
-    } = experiment;
-    const newExperiment = {
-      name,
-      branch,
-      expired,
-      lastSeen,
-      preferences: {
-        [preferenceName]: {
-          preferenceBranchType,
-          preferenceType,
-          preferenceValue,
-          previousPreferenceValue,
-        },
-      },
-      experimentType,
-    };
-    newData.experiments[expName] = newExperiment;
+    
+    storage.data.__version = 3;
   }
-  storage.data = newData;
 }
 
 const log = LogManager.getLogger("preference-experiments");
