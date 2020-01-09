@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+var gGfxUtils = {
+  _isRecording: false,
+  
+
+
+  toggleWindowRecording() {
+    window.windowUtils.setCompositionRecording(!this._isRecording);
+    this._isRecording = !this._isRecording;
+  },
+  
+
+
+  webrenderCapture() {
+    window.windowUtils.wrCapture();
+  },
+};

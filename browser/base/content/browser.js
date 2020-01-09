@@ -141,8 +141,8 @@ XPCOMUtils.defineLazyScriptGetter(this, "gEditItemOverlay",
 XPCOMUtils.defineLazyScriptGetter(this, "SearchOneOffs",
                                   "chrome://browser/content/search/search-one-offs.js");
 if (AppConstants.NIGHTLY_BUILD) {
-  XPCOMUtils.defineLazyScriptGetter(this, "gWebRender",
-                                    "chrome://browser/content/browser-webrender.js");
+  XPCOMUtils.defineLazyScriptGetter(this, "gGfxUtils",
+                                    "chrome://browser/content/browser-graphics-utils.js");
 }
 
 XPCOMUtils.defineLazyScriptGetter(this, "pktUI", "chrome://pocket/content/main.js");
@@ -1832,7 +1832,7 @@ var gBrowserInit = {
       } else {
         
         
-        loadOneOrMoreURIs(uriToLoad, Services.scriptSecurityManager.getSystemPrincipal(), null);
+        loadOneOrMoreURIs(uriToLoad, Services.scriptSecurityManager.getSystemPrincipal());
       }
     });
   },
@@ -2308,7 +2308,7 @@ function BrowserHome(aEvent) {
     if (isInitialPage(homePage)) {
       gBrowser.selectedBrowser.initialPageLoadedFromUserAction = homePage;
     }
-    loadOneOrMoreURIs(homePage, Services.scriptSecurityManager.getSystemPrincipal(), null);
+    loadOneOrMoreURIs(homePage, Services.scriptSecurityManager.getSystemPrincipal());
     if (isBlankPageURL(homePage)) {
       focusAndSelectUrlBar();
     } else {
@@ -2328,7 +2328,6 @@ function BrowserHome(aEvent) {
     gBrowser.loadTabs(urls, {
       inBackground: loadInBackground,
       triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
-      csp: null,
     });
     break;
   case "window":
@@ -2346,7 +2345,7 @@ function BrowserHome(aEvent) {
   }
 }
 
-function loadOneOrMoreURIs(aURIString, aTriggeringPrincipal, aCsp) {
+function loadOneOrMoreURIs(aURIString, aTriggeringPrincipal) {
   
   if (window.location.href != AppConstants.BROWSER_CHROME_URL) {
     window.openDialog(AppConstants.BROWSER_CHROME_URL, "_blank", "all,dialog=no", aURIString);
@@ -2360,7 +2359,6 @@ function loadOneOrMoreURIs(aURIString, aTriggeringPrincipal, aCsp) {
       inBackground: false,
       replace: true,
       triggeringPrincipal: aTriggeringPrincipal,
-      csp: aCsp,
     });
   } catch (e) {
   }
@@ -2557,19 +2555,6 @@ function loadURI(uri, referrerInfo, postData, allowThirdPartyFixup,
                  triggeringPrincipal, allowInheritPrincipal = false, csp = null) {
   if (!triggeringPrincipal) {
     throw new Error("Must load with a triggering Principal");
-  }
-
-  
-  
-  
-  if (AppConstants.EARLY_BETA_OR_EARLIER) {
-    
-    
-    
-    
-    if (!triggeringPrincipal.isSystemPrincipal && triggeringPrincipal.csp && !csp) {
-      throw new Error("If Principal has CSP then we need an explicit CSP");
-    }
   }
 
   try {
@@ -3731,10 +3716,6 @@ var browserDragAndDrop = {
     return Services.droppedLinkHandler.getTriggeringPrincipal(aEvent);
   },
 
-  getCSP(aEvent) {
-    return Services.droppedLinkHandler.getCSP(aEvent);
-  },
-
   validateURIsForDrop(aEvent, aURIsCount, aURIs) {
     return Services.droppedLinkHandler.validateURIsForDrop(aEvent,
                                                            aURIsCount,
@@ -3812,7 +3793,6 @@ var newTabButtonObserver = {
     let shiftKey = aEvent.shiftKey;
     let links = browserDragAndDrop.dropLinks(aEvent);
     let triggeringPrincipal = browserDragAndDrop.getTriggeringPrincipal(aEvent);
-    let csp = browserDragAndDrop.getCSP(aEvent);
 
     if (links.length >= Services.prefs.getIntPref("browser.tabs.maxOpenBeforeWarn")) {
       
@@ -3834,7 +3814,6 @@ var newTabButtonObserver = {
           postData: data.postData,
           allowThirdPartyFixup: true,
           triggeringPrincipal,
-          csp,
         });
       }
     }
@@ -3849,7 +3828,6 @@ var newWindowButtonObserver = {
   async onDrop(aEvent) {
     let links = browserDragAndDrop.dropLinks(aEvent);
     let triggeringPrincipal = browserDragAndDrop.getTriggeringPrincipal(aEvent);
-    let csp = browserDragAndDrop.getCSP(aEvent);
 
     if (links.length >= Services.prefs.getIntPref("browser.tabs.maxOpenBeforeWarn")) {
       
@@ -3871,7 +3849,6 @@ var newWindowButtonObserver = {
           postData: data.postData,
           allowThirdPartyFixup: true,
           triggeringPrincipal,
-          csp,
         });
       }
     }
@@ -4289,7 +4266,7 @@ const BrowserSearch = {
 
 
 
-  _loadSearch(searchText, useNewTab, purpose, triggeringPrincipal, csp) {
+  _loadSearch(searchText, useNewTab, purpose, triggeringPrincipal) {
     if (!triggeringPrincipal) {
       throw new Error("Required argument triggeringPrincipal missing within _loadSearch");
     }
@@ -4312,8 +4289,7 @@ const BrowserSearch = {
                { postData: submission.postData,
                  inBackground,
                  relatedToCurrent: true,
-                 triggeringPrincipal,
-                 csp });
+                 triggeringPrincipal });
 
     return engine;
   },
@@ -4324,8 +4300,8 @@ const BrowserSearch = {
 
 
 
-  loadSearchFromContext(terms, triggeringPrincipal, csp) {
-    let engine = BrowserSearch._loadSearch(terms, true, "contextmenu", triggeringPrincipal, csp);
+  loadSearchFromContext(terms, triggeringPrincipal) {
+    let engine = BrowserSearch._loadSearch(terms, true, "contextmenu", triggeringPrincipal);
     if (engine) {
       BrowserSearch.recordSearchInTelemetry(engine, "contextmenu");
     }
@@ -6451,7 +6427,6 @@ function middleMousePaste(event) {
                  { ignoreButton: true,
                    allowInheritPrincipal: data.mayInheritPrincipal,
                    triggeringPrincipal: gBrowser.selectedBrowser.contentPrincipal,
-                   csp: gBrowser.selectedBrowser.csp,
                  });
     }
   });
