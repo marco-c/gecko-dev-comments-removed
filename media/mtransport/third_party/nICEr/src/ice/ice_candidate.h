@@ -65,6 +65,7 @@ struct nr_ice_candidate_ {
   nr_transport_addr addr;             
 
   nr_transport_addr base;             
+  char *mdns_addr;                    
   char *foundation;                   
   UINT4 priority;                     
   nr_ice_stun_server *stun_server;
