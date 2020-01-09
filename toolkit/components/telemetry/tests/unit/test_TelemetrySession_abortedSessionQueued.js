@@ -9,7 +9,7 @@
 
 
 
-ChromeUtils.import("resource://services-common/utils.js");
+ChromeUtils.import("resource://services-common/utils.js", this);
 ChromeUtils.import("resource://gre/modules/TelemetryStorage.jsm", this);
 ChromeUtils.import("resource://gre/modules/Services.jsm", this);
 
