@@ -1619,7 +1619,7 @@ PeerConnectionImpl::AddIceCandidate(
 
   STAMP_TIMECARD(mTimeCard, "Add Ice Candidate");
 
-  CSFLogDebug(LOGTAG, "AddIceCandidate: %s", aCandidate);
+  CSFLogDebug(LOGTAG, "AddIceCandidate: %s %s", aCandidate, aUfrag);
 
   
   
@@ -1641,7 +1641,7 @@ PeerConnectionImpl::AddIceCandidate(
     level = Some(aLevel.Value());
   }
   nsresult res = mJsepSession->AddRemoteIceCandidate(aCandidate, aMid, level,
-                                                     &transportId);
+                                                     aUfrag, &transportId);
 
   if (NS_SUCCEEDED(res)) {
     
