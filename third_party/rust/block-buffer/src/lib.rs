@@ -8,7 +8,6 @@ use byteorder::{ByteOrder, BE};
 use byte_tools::zero;
 use block_padding::{Padding, PadError};
 use generic_array::{GenericArray, ArrayLength};
-use core::slice;
 
 
 #[derive(Clone, Default)]
@@ -22,8 +21,6 @@ unsafe fn cast<N: ArrayLength<u8>>(block: &[u8]) -> &GenericArray<u8, N> {
     debug_assert_eq!(block.len(), N::to_usize());
     &*(block.as_ptr() as *const GenericArray<u8, N>)
 }
-
-
 
 impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
     
@@ -54,43 +51,6 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
         self.buffer[self.pos..self.pos+input.len()].copy_from_slice(input);
         self.pos += input.len();
     }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     
     
