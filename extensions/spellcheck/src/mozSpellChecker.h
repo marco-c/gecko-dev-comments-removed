@@ -62,6 +62,7 @@ class mozSpellChecker final {
 
 
 
+
   nsresult CheckWord(const nsAString& aWord, bool* aIsMisspelled,
                      nsTArray<nsString>* aSuggestions);
 
