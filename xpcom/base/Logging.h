@@ -210,7 +210,7 @@ void log_print(const LogModule* aModule, LogLevel aLevel, const char* aFmt, ...)
 
 #if MOZ_LOGGING_ENABLED
 #  define MOZ_LOG_TEST(_module, _level) \
-    mozilla::detail::log_test(_module, _level)
+    MOZ_UNLIKELY(mozilla::detail::log_test(_module, _level))
 #else
 
 
