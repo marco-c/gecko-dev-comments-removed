@@ -474,11 +474,11 @@ var gPrivacyPane = {
     
     
     for (let pref of CONTENT_BLOCKING_PREFS) {
-      Preferences.get(pref).on("change", gPrivacyPane.notifyUserToReload);
+      Preferences.get(pref).on("change", gPrivacyPane.maybeNotifyUserToReload);
     }
-    Preferences.get("urlclassifier.trackingTable").on("change", gPrivacyPane.notifyUserToReload);
+    Preferences.get("urlclassifier.trackingTable").on("change", gPrivacyPane.maybeNotifyUserToReload);
     for (let button of document.querySelectorAll(".reload-tabs-button")) {
-      button.addEventListener("command", gPrivacyPane.reloadAllTabs);
+      button.addEventListener("command", gPrivacyPane.reloadAllOtherTabs);
     }
 
     let cryptoMinersOption = document.getElementById("contentBlockingCryptominersOption");
@@ -1123,19 +1123,40 @@ var gPrivacyPane = {
   
 
 
-  reloadAllTabs() {
+  reloadAllOtherTabs() {
+    let activeWindow = window.BrowserWindowTracker.getTopWindow();
+    let selectedPrefTab = activeWindow.gBrowser.selectedTab;
     for (let win of window.BrowserWindowTracker.orderedWindows) {
       let tabbrowser = win.gBrowser;
-      tabbrowser.reloadTabs(tabbrowser.tabs);
+      let tabsToReload = [...tabbrowser.tabs];
+      if (win == activeWindow ) {
+        tabsToReload = tabsToReload.filter(tab => tab !== selectedPrefTab);
+      }
+      tabbrowser.reloadTabs(tabsToReload);
+    }
+    for (let notification of document.querySelectorAll(".reload-tabs")) {
+      notification.hidden = true;
     }
   },
 
   
 
 
-  notifyUserToReload() {
-    for (let notification of document.querySelectorAll(".reload-tabs")) {
-      notification.hidden = false;
+
+  maybeNotifyUserToReload() {
+    let shouldShow = false;
+    if (window.BrowserWindowTracker.orderedWindows.length > 1) {
+      shouldShow = true;
+    } else {
+      let tabbrowser = window.BrowserWindowTracker.getTopWindow().gBrowser;
+      if (tabbrowser.tabs.length > 1) {
+        shouldShow = true;
+      }
+    }
+    if (shouldShow) {
+      for (let notification of document.querySelectorAll(".reload-tabs")) {
+        notification.hidden = false;
+      }
     }
   },
 
