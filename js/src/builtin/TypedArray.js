@@ -66,6 +66,42 @@ function IsTypedArrayEnsuringArrayBuffer(arg) {
 
 
 
+
+
+
+
+function TypedArraySpeciesConstructor(obj) {
+    
+    assert(IsObject(obj), "not passed an object");
+
+    
+    var ctor = obj.constructor;
+
+    
+    if (ctor === undefined)
+        return _ConstructorForTypedArray(obj);
+
+    
+    if (!IsObject(ctor))
+        ThrowTypeError(JSMSG_NOT_NONNULL_OBJECT, "object's 'constructor' property");
+
+    
+    var s = ctor[std_species];
+
+    
+    if (s === undefined || s === null)
+        return _ConstructorForTypedArray(obj);
+
+    
+    if (IsConstructor(s))
+        return s;
+
+    
+    ThrowTypeError(JSMSG_NOT_CONSTRUCTOR, "@@species property of object's constructor");
+}
+
+
+
 function ValidateTypedArray(obj, error) {
     if (IsObject(obj)) {
         
@@ -133,10 +169,7 @@ function TypedArraySpeciesCreateWithLength(exemplar, length) {
     
 
     
-    var defaultConstructor = _ConstructorForTypedArray(exemplar);
-
-    
-    var C = SpeciesConstructor(exemplar, defaultConstructor);
+    var C = TypedArraySpeciesConstructor(exemplar);
 
     
     return TypedArrayCreateWithLength(C, length);
@@ -148,10 +181,7 @@ function TypedArraySpeciesCreateWithBuffer(exemplar, buffer, byteOffset, length)
     
 
     
-    var defaultConstructor = _ConstructorForTypedArray(exemplar);
-
-    
-    var C = SpeciesConstructor(exemplar, defaultConstructor);
+    var C = TypedArraySpeciesConstructor(exemplar);
 
     
     return TypedArrayCreateWithBuffer(C, buffer, byteOffset, length);
