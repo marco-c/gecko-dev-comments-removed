@@ -3193,14 +3193,6 @@ class nsContentUtils {
 
 
 
-  static bool SkipCursorMoveForSameValueSet() {
-    return sSkipCursorMoveForSameValueSet;
-  }
-
-  
-
-
-
   static bool GetUserIsInteracting();
 
   
@@ -3433,7 +3425,6 @@ class nsContentUtils {
 
   static bool sIsHandlingKeyBoardEvent;
   static bool sAllowXULXBL_for_file;
-  static bool sSkipCursorMoveForSameValueSet;
   static bool sRequestIdleCallbackEnabled;
   static bool sTailingEnabled;
   static bool sShowInputPlaceholderOnFocus;

@@ -41,6 +41,7 @@
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/HTMLTextAreaElement.h"
 #include "mozilla/dom/Text.h"
+#include "mozilla/StaticPrefs.h"
 #include "nsNumberControlFrame.h"
 #include "nsFrameSelection.h"
 #include "mozilla/ErrorResult.h"
@@ -2431,7 +2432,7 @@ bool nsTextEditorState::SetValue(const nsAString& aValue,
     
     
     if (!mValue->Equals(newValue) ||
-        !nsContentUtils::SkipCursorMoveForSameValueSet()) {
+        !StaticPrefs::dom_input_skip_cursor_move_for_same_value_set()) {
       if (!mValue->Assign(newValue, fallible)) {
         return false;
       }

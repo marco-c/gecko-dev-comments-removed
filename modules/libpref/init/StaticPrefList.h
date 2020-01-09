@@ -245,6 +245,14 @@ VARCACHE_PREF(
 
 
 VARCACHE_PREF(
+  "dom.input.skip_cursor_move_for_same_value_set",
+   dom_input_skip_cursor_move_for_same_value_set,
+  bool, true
+)
+
+
+
+VARCACHE_PREF(
   "dom.webcomponents.shadowdom.report_usage",
    dom_webcomponents_shadowdom_report_usage,
   bool, false
