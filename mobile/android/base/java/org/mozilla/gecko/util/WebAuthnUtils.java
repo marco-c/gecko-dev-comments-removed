@@ -8,7 +8,6 @@ package org.mozilla.gecko.util;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.ActivityHandlerHelper;
 import org.mozilla.gecko.WebAuthnTokenManager;
 import org.mozilla.gecko.GeckoActivityMonitor;
@@ -25,7 +24,6 @@ import android.util.Base64;
 import com.google.android.gms.fido.Fido;
 import com.google.android.gms.fido.common.Transport;
 import com.google.android.gms.fido.fido2.Fido2PendingIntent;
-import com.google.android.gms.fido.fido2.Fido2ApiClient;
 import com.google.android.gms.fido.fido2.Fido2PrivilegedApiClient;
 import com.google.android.gms.fido.fido2.api.common.Algorithm;
 import com.google.android.gms.fido.fido2.api.common.Attachment;
@@ -92,6 +90,9 @@ public class WebAuthnUtils
 
         PublicKeyCredentialCreationOptions.Builder requestBuilder =
             new PublicKeyCredentialCreationOptions.Builder();
+
+        Fido2PrivilegedApiClient fidoClient = 
+            Fido.getFido2PrivilegedApiClient(currentActivity.getApplicationContext());
 
         List<PublicKeyCredentialParameters> params =
             new ArrayList<PublicKeyCredentialParameters>();
@@ -182,28 +183,7 @@ public class WebAuthnUtils
                 .setOrigin(origin)
                 .build();
 
-        Task<Fido2PendingIntent> result;
-
-        if (AppConstants.MOZILLA_OFFICIAL) {
-            
-            
-            
-            Fido2PrivilegedApiClient fidoClient =
-                Fido.getFido2PrivilegedApiClient(currentActivity.getApplicationContext());
-
-            result = fidoClient.getRegisterIntent(browserOptions);
-        } else {
-            
-            
-            
-            
-            
-            
-            Fido2ApiClient fidoClient =
-                Fido.getFido2ApiClient(currentActivity.getApplicationContext());
-
-            result = fidoClient.getRegisterIntent(requestOptions);
-        }
+        Task<Fido2PendingIntent> result = fidoClient.getRegisterIntent(browserOptions);
 
         result.addOnSuccessListener(new OnSuccessListener<Fido2PendingIntent>() {
             @Override
@@ -303,6 +283,9 @@ public class WebAuthnUtils
                                     getTransportsForByte(cred.mTransports)));
         }
 
+        Fido2PrivilegedApiClient fidoClient = 
+            Fido.getFido2PrivilegedApiClient(currentActivity.getApplicationContext());
+
         AuthenticationExtensions.Builder extBuilder =
             new AuthenticationExtensions.Builder();
         if (extensions.containsKey("fidoAppId")) {
@@ -327,21 +310,7 @@ public class WebAuthnUtils
                 .setOrigin(origin)
                 .build();
 
-
-        Task<Fido2PendingIntent> result;
-        
-        
-        if (AppConstants.MOZILLA_OFFICIAL) {
-            Fido2PrivilegedApiClient fidoClient =
-                Fido.getFido2PrivilegedApiClient(currentActivity.getApplicationContext());
-
-            result = fidoClient.getSignIntent(browserOptions);
-        } else {
-            Fido2ApiClient fidoClient =
-                Fido.getFido2ApiClient(currentActivity.getApplicationContext());
-
-            result = fidoClient.getSignIntent(requestOptions);
-        }
+        Task<Fido2PendingIntent> result = fidoClient.getSignIntent(browserOptions);
 
         result.addOnSuccessListener(new OnSuccessListener<Fido2PendingIntent>() {
             @Override
