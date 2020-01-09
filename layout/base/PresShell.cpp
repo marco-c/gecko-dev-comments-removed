@@ -7644,77 +7644,33 @@ nsresult PresShell::EventHandler::HandleEventInternal(
     return NS_OK;
   }
 
-  bool touchIsNew = false;
-  bool isHandlingUserInput = false;
-
   if (mPresShell->mCurrentEventContent && aEvent->IsTargetedAtFocusedWindow()) {
     nsFocusManager* fm = nsFocusManager::GetFocusManager();
     if (fm) {
+      
       fm->FlushBeforeEventHandlingIfNeeded(mPresShell->mCurrentEventContent);
     }
   }
 
-  
-  if (aEvent->IsTrusted()) {
-    if (aEvent->IsUserAction()) {
-      mPresShell->mHasHandledUserInput = true;
-    }
+  bool isHandlingUserInput = PrepareToDispatchEvent(aEvent);
 
-    switch (aEvent->mMessage) {
-      case eKeyPress:
-      case eKeyDown:
-      case eKeyUp: {
-        WidgetKeyboardEvent* keyboardEvent = aEvent->AsKeyboardEvent();
-        MaybeHandleKeyboardEventBeforeDispatch(keyboardEvent);
-        
-        
-        
-        isHandlingUserInput = keyboardEvent->CanTreatAsUserInput();
-        break;
-      }
-      case eMouseDown:
-      case eMouseUp:
-      case ePointerDown:
-      case ePointerUp:
-        isHandlingUserInput = true;
-        break;
-
-      case eMouseMove:
-        nsIPresShell::AllowMouseCapture(
-            EventStateManager::GetActiveEventStateManager() == manager);
-        break;
-
-      case eDrop: {
-        nsCOMPtr<nsIDragSession> session = nsContentUtils::GetDragSession();
-        if (session) {
-          bool onlyChromeDrop = false;
-          session->GetOnlyChromeDrop(&onlyChromeDrop);
-          if (onlyChromeDrop) {
-            aEvent->mFlags.mOnlyChromeDispatch = true;
-          }
-        }
-        break;
-      }
-
-      default:
-        break;
-    }
-
-    RecordEventPreparationPerformance(aEvent);
-
-    if (!mPresShell->mTouchManager.PreHandleEvent(
-            aEvent, aEventStatus, touchIsNew, isHandlingUserInput,
-            mPresShell->mCurrentEventContent)) {
-      return NS_OK;
-    }
-  }
-
-  
-  
   
   
   if (aEvent->mMessage == eContextMenu &&
       !PrepareToDispatchContextMenuEvent(aEvent)) {
+    return NS_OK;
+  }
+
+  
+  
+  RecordEventPreparationPerformance(aEvent);
+
+  
+  
+  bool touchIsNew = false;
+  if (!mPresShell->mTouchManager.PreHandleEvent(
+          aEvent, aEventStatus, touchIsNew, isHandlingUserInput,
+          mPresShell->mCurrentEventContent)) {
     return NS_OK;
   }
 
@@ -7849,10 +7805,63 @@ nsresult PresShell::EventHandler::HandleEventInternal(
   return rv;
 }
 
+bool PresShell::EventHandler::PrepareToDispatchEvent(WidgetEvent* aEvent) {
+  if (!aEvent->IsTrusted()) {
+    return false;
+  }
+
+  if (aEvent->IsUserAction()) {
+    mPresShell->mHasHandledUserInput = true;
+  }
+
+  switch (aEvent->mMessage) {
+    case eKeyPress:
+    case eKeyDown:
+    case eKeyUp: {
+      WidgetKeyboardEvent* keyboardEvent = aEvent->AsKeyboardEvent();
+      MaybeHandleKeyboardEventBeforeDispatch(keyboardEvent);
+      
+      
+      
+      return keyboardEvent->CanTreatAsUserInput();
+    }
+    case eMouseDown:
+    case eMouseUp:
+    case ePointerDown:
+    case ePointerUp:
+      return true;
+
+    case eMouseMove: {
+      bool allowCapture = EventStateManager::GetActiveEventStateManager() &&
+                          GetPresContext() &&
+                          GetPresContext()->EventStateManager() ==
+                              EventStateManager::GetActiveEventStateManager();
+      nsIPresShell::AllowMouseCapture(allowCapture);
+      return false;
+    }
+    case eDrop: {
+      nsCOMPtr<nsIDragSession> session = nsContentUtils::GetDragSession();
+      if (session) {
+        bool onlyChromeDrop = false;
+        session->GetOnlyChromeDrop(&onlyChromeDrop);
+        if (onlyChromeDrop) {
+          aEvent->mFlags.mOnlyChromeDispatch = true;
+        }
+      }
+      return false;
+    }
+
+    default:
+      return false;
+  }
+}
+
 bool PresShell::EventHandler::PrepareToDispatchContextMenuEvent(
     WidgetEvent* aEvent) {
   MOZ_ASSERT(aEvent);
   MOZ_ASSERT(aEvent->mMessage == eContextMenu);
+
+  
 
   WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent();
   if (mouseEvent->IsContextMenuKeyEvent() &&
@@ -7928,6 +7937,10 @@ void PresShell::EventHandler::RecordEventPreparationPerformance(
     const WidgetEvent* aEvent) {
   MOZ_ASSERT(aEvent);
 
+  if (!aEvent->IsTrusted()) {
+    return;
+  }
+
   switch (aEvent->mMessage) {
     case eKeyPress:
     case eKeyDown:
@@ -7986,6 +7999,9 @@ void PresShell::EventHandler::RecordEventPreparationPerformance(
 
 void PresShell::EventHandler::RecordEventHandlingResponsePerformance(
     const WidgetEvent* aEvent) {
+  
+  
+
   if (!Telemetry::CanRecordBase() || aEvent->mTimeStamp.IsNull() ||
       aEvent->mTimeStamp <= mPresShell->mLastOSWake ||
       !aEvent->AsInputEvent()) {

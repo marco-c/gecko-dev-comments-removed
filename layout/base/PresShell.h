@@ -1091,6 +1091,17 @@ class PresShell final : public nsIPresShell,
 
 
 
+
+
+    MOZ_CAN_RUN_SCRIPT
+    bool PrepareToDispatchEvent(WidgetEvent* aEvent);
+
+    
+
+
+
+
+
     MOZ_CAN_RUN_SCRIPT
     void MaybeHandleKeyboardEventBeforeDispatch(
         WidgetKeyboardEvent* aKeyboardEvent);
