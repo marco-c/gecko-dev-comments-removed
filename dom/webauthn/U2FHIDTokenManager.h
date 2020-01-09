@@ -8,7 +8,7 @@
 #define mozilla_dom_U2FHIDTokenManager_h
 
 #include "mozilla/dom/U2FTokenTransport.h"
-#include "u2f-hid-rs/src/u2fhid-capi.h"
+#include "authenticator/src/u2fhid-capi.h"
 
 
 
