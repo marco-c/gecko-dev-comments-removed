@@ -16,6 +16,7 @@
 #include "gfxFontConstants.h"
 #include "gfxPlatform.h"
 #include "gfxFontFamilyList.h"
+#include "SharedFontList.h"
 
 #include "nsIMemoryReporter.h"
 #include "mozilla/Attributes.h"
@@ -173,6 +174,28 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   gfxFontEntry* FindFontForFamily(const nsACString& aFamily,
                                   const gfxFontStyle* aStyle);
 
+  mozilla::fontlist::FontList* SharedFontList() const {
+    return mSharedFontList.get();
+  }
+
+  
+  
+  
+  
+  void ShareFontListShmBlockToProcess(
+      uint32_t aGeneration, uint32_t aIndex,  uint32_t aPid,
+       void* aOut);
+
+  void SetCharacterMap(uint32_t aGeneration,
+                       const mozilla::fontlist::Pointer& aFacePtr,
+                       const gfxSparseBitSet& aMap);
+
+  MOZ_MUST_USE bool InitializeFamily(mozilla::fontlist::Family* aFamily) {
+    
+    return false;
+  }
+  void InitializeFamily(uint32_t aGeneration, uint32_t aFamilyIndex);
+
   
 
   void AddOtherFamilyName(gfxFontFamily* aFamilyEntry,
@@ -184,6 +207,20 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
                          const nsCString& aPostscriptName);
 
   bool NeedFullnamePostscriptNames() { return mExtraNames != nullptr; }
+
+  
+
+
+
+  virtual bool ReadFaceNames(mozilla::fontlist::Family* aFamily,
+                             mozilla::fontlist::Face* aFace, nsCString& aPSName,
+                             nsCString& aFullName) {
+    return false;
+  }
+
+  
+  void InitOtherFamilyNames(bool aDeferOtherFamilyNamesLoading);
+  void InitOtherFamilyNames(uint32_t aGeneration, bool aDefer);
 
   
 
@@ -236,6 +273,11 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   virtual void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
                                       FontListSizes* aSizes) const;
 
+  mozilla::fontlist::Pointer GetShmemCharMap(const gfxSparseBitSet* aCharMap) {
+    
+    return mozilla::fontlist::Pointer::Null();
+  }
+
   
   
   gfxCharacterMap* FindCharMap(gfxCharacterMap* aCmap);
@@ -265,6 +307,15 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   virtual void AddGenericFonts(mozilla::StyleGenericFontFamily aGenericType,
                                nsAtom* aLanguage,
                                nsTArray<FamilyAndGeneric>& aFamilyList);
+
+  
+
+
+
+
+
+  gfxFontEntry* GetOrCreateFontEntry(mozilla::fontlist::Face* aFace,
+                                     const mozilla::fontlist::Family* aFamily);
 
   PrefFontList* GetPrefFontsLangGroup(
       mozilla::StyleGenericFontFamily aGenericType, eFontPrefLang aPrefLang);
@@ -449,7 +500,6 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   gfxFontFamily* CheckFamily(gfxFontFamily* aFamily);
 
   
-  void InitOtherFamilyNames(bool aDeferOtherFamilyNamesLoading);
   void InitOtherFamilyNamesInternal(bool aDeferOtherFamilyNamesLoading);
   void CancelInitOtherFamilyNamesTask();
 
@@ -502,6 +552,12 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
                                           PrefFontList* aFontFamilies);
 
   virtual nsresult InitFontListForPlatform() = 0;
+
+  virtual gfxFontEntry* CreateFontEntry(
+      mozilla::fontlist::Face* aFace,
+      const mozilla::fontlist::Family* aFamily) {
+    return nullptr;
+  }
 
   void ApplyWhitelist();
 
@@ -596,6 +652,11 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
 
   nsTArray<uint32_t> mCJKPrefLangs;
   nsTArray<mozilla::StyleGenericFontFamily> mDefaultGenericsLangGroup;
+
+  mozilla::UniquePtr<mozilla::fontlist::FontList> mSharedFontList;
+
+  nsRefPtrHashtable<nsPtrHashKey<mozilla::fontlist::Face>, gfxFontEntry>
+      mFontEntries;
 
   bool mFontFamilyWhitelistActive;
 };

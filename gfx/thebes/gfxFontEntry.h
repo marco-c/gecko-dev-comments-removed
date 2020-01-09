@@ -682,19 +682,16 @@ inline bool gfxFontEntry::SupportsBold() {
 
 struct GlobalFontMatch {
   GlobalFontMatch(const uint32_t aCharacter, const gfxFontStyle& aStyle)
-      : mStyle(aStyle),
-        mCh(aCharacter),
-        mCount(0),
-        mCmapsTested(0),
-        mMatchDistance(INFINITY) {}
+      : mStyle(aStyle), mCh(aCharacter) {}
 
   RefPtr<gfxFontEntry> mBestMatch;       
   RefPtr<gfxFontFamily> mMatchedFamily;  
-  const gfxFontStyle& mStyle;            
-  const uint32_t mCh;                    
-  uint32_t mCount;                       
-  uint32_t mCmapsTested;                 
-  float mMatchDistance;                  
+  mozilla::fontlist::Family* mMatchedSharedFamily = nullptr;
+  const gfxFontStyle& mStyle;       
+  const uint32_t mCh;               
+  uint32_t mCount = 0;              
+  uint32_t mCmapsTested = 0;        
+  float mMatchDistance = INFINITY;  
 };
 
 class gfxFontFamily {
