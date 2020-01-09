@@ -10,7 +10,7 @@
 #include "GPUParent.h"
 
 #if defined(XP_WIN)
-#  include "mozilla/mscom/MainThreadRuntime.h"
+#  include "mozilla/mscom/ProcessRuntime.h"
 #endif
 
 namespace mozilla {
@@ -33,7 +33,7 @@ class GPUProcessImpl final : public ipc::ProcessChild {
 
 #if defined(XP_WIN)
   
-  mozilla::mscom::MainThreadRuntime mCOMRuntime;
+  mozilla::mscom::ProcessRuntime mCOMRuntime;
 #endif
 };
 
