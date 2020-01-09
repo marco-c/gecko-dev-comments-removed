@@ -4070,7 +4070,7 @@ bool wasm::IonCompileFunctions(const ModuleEnvironment& env, LifoAlloc& lifo,
 
     
     {
-      jit::SpewBeginFunction(&mir, nullptr);
+      jit::SpewBeginWasmFunction(&mir, func.index);
       jit::AutoSpewEndFunction spewEndFunction(&mir);
 
       if (!OptimizeMIR(&mir)) {
