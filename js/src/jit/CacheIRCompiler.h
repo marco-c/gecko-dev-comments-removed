@@ -884,6 +884,12 @@ class MOZ_RAII CacheIRCompiler {
     MOZ_ASSERT(stubFieldPolicy_ == StubFieldPolicy::Constant);
     return jsid::fromRawBits(readStubWord(offset, StubField::Type::Id));
   }
+
+ public:
+  
+  
+  
+  static const uint32_t MAX_ARGS_SPREAD_LENGTH = 16;
 };
 
 

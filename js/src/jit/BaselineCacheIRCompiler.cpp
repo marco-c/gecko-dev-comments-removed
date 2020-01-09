@@ -64,6 +64,8 @@ class MOZ_RAII BaselineCacheIRCompiler : public CacheIRCompiler {
 
   void pushCallArguments(Register argcReg, Register scratch, bool isJitCall,
                          bool isConstructing);
+  void pushSpreadCallArguments(Register argcReg, Register scratch,
+                               bool isJitCall, bool isConstructing);
 
   enum class NativeCallType { Native, ClassHook };
   bool emitCallNativeShared(NativeCallType callType);
@@ -2433,6 +2435,38 @@ bool BaselineCacheIRCompiler::emitCallStringObjectConcatResult() {
   return true;
 }
 
+bool BaselineCacheIRCompiler::emitGuardAndUpdateSpreadArgc() {
+  JitSpew(JitSpew_Codegen, __FUNCTION__);
+  Register argcReg = allocator.useRegister(masm, reader.int32OperandId());
+  AutoScratchRegister scratch(allocator, masm);
+  bool isConstructing = reader.readBool();
+
+  FailurePath* failure;
+  if (!addFailurePath(&failure)) {
+    return false;
+  }
+
+  masm.unboxObject(Address(masm.getStackPointer(),
+                           isConstructing * sizeof(Value) + ICStackValueOffset),
+                   argcReg);
+  masm.loadPtr(Address(argcReg, NativeObject::offsetOfElements()), scratch);
+  masm.load32(Address(scratch, ObjectElements::offsetOfLength()), scratch);
+
+  
+  
+  static_assert(CacheIRCompiler::MAX_ARGS_SPREAD_LENGTH <= ARGS_LENGTH_MAX,
+                "maximum arguments length for optimized stub should be <= "
+                "ARGS_LENGTH_MAX");
+  masm.branch32(Assembler::Above, argcReg,
+                Imm32(CacheIRCompiler::MAX_ARGS_SPREAD_LENGTH),
+                failure->label());
+
+  
+  
+  masm.move32(scratch, argcReg);
+  return true;
+}
+
 void BaselineCacheIRCompiler::pushCallArguments(Register argcReg,
                                                 Register scratch,
                                                 bool isJitCall,
@@ -2490,6 +2524,60 @@ void BaselineCacheIRCompiler::pushCallArguments(Register argcReg,
   masm.bind(&done);
 }
 
+void BaselineCacheIRCompiler::pushSpreadCallArguments(Register argcReg,
+                                                      Register scratch,
+                                                      bool isJitCall,
+                                                      bool isConstructing) {
+  
+  AutoScratchRegister startReg(allocator, masm);
+  masm.unboxObject(Address(masm.getStackPointer(),
+                           (isConstructing * sizeof(Value)) + STUB_FRAME_SIZE),
+                   startReg);
+  masm.loadPtr(Address(startReg, NativeObject::offsetOfElements()), startReg);
+
+  
+  
+  if (isJitCall) {
+    Register alignReg = argcReg;
+    if (isConstructing) {
+      
+      alignReg = scratch;
+      masm.computeEffectiveAddress(Address(argcReg, 1), alignReg);
+    }
+    masm.alignJitStackBasedOnNArgs(alignReg);
+  }
+
+  
+  if (isConstructing) {
+    masm.pushValue(Address(BaselineFrameReg, STUB_FRAME_SIZE));
+  }
+
+  
+  Register endReg = scratch;
+  masm.movePtr(argcReg, endReg);
+  static_assert(sizeof(Value) == 8, "Value must be 8 bytes");
+  masm.lshiftPtr(Imm32(3), endReg);
+  masm.addPtr(startReg, endReg);
+
+  
+  Label copyDone;
+  Label copyStart;
+  masm.bind(&copyStart);
+  masm.branchPtr(Assembler::Equal, endReg, startReg, &copyDone);
+  masm.subPtr(Imm32(sizeof(Value)), endReg);
+  masm.pushValue(Address(endReg, 0));
+  masm.jump(&copyStart);
+  masm.bind(&copyDone);
+
+  
+  masm.pushValue(
+      Address(BaselineFrameReg,
+              STUB_FRAME_SIZE + (1 + isConstructing) * sizeof(Value)));
+  masm.pushValue(
+      Address(BaselineFrameReg,
+              STUB_FRAME_SIZE + (2 + isConstructing) * sizeof(Value)));
+}
+
 bool BaselineCacheIRCompiler::emitCallNativeShared(NativeCallType callType) {
   AutoOutputRegister output(*this);
   AutoScratchRegisterMaybeOutput scratch(allocator, masm, output);
@@ -2497,6 +2585,7 @@ bool BaselineCacheIRCompiler::emitCallNativeShared(NativeCallType callType) {
   Register calleeReg = allocator.useRegister(masm, reader.objOperandId());
   Register argcReg = allocator.useRegister(masm, reader.int32OperandId());
   bool maybeCrossRealm = reader.readBool();
+  bool isSpread = reader.readBool();
 
   
   bool isConstructing = false;
@@ -2512,10 +2601,12 @@ bool BaselineCacheIRCompiler::emitCallNativeShared(NativeCallType callType) {
     masm.switchToObjectRealm(calleeReg, scratch);
   }
 
-  
-  
-  
-  pushCallArguments(argcReg, scratch,  false, isConstructing);
+  if (isSpread) {
+    pushSpreadCallArguments(argcReg, scratch,  false,
+                            isConstructing);
+  } else {
+    pushCallArguments(argcReg, scratch,  false, isConstructing);
+  }
 
   
   
@@ -2607,6 +2698,7 @@ bool BaselineCacheIRCompiler::emitCallScriptedFunction() {
   Register calleeReg = allocator.useRegister(masm, reader.objOperandId());
   Register argcReg = allocator.useRegister(masm, reader.int32OperandId());
   bool maybeCrossRealm = reader.readBool();
+  bool isSpread = reader.readBool();
 
   
   bool isConstructing = false;
@@ -2625,10 +2717,12 @@ bool BaselineCacheIRCompiler::emitCallScriptedFunction() {
   
   MOZ_ASSERT(!isConstructing);
 
-  
-  
-  
-  pushCallArguments(argcReg, scratch,  true, isConstructing);
+  if (isSpread) {
+    pushSpreadCallArguments(argcReg, scratch,  true,
+                            isConstructing);
+  } else {
+    pushCallArguments(argcReg, scratch,  true, isConstructing);
+  }
 
   
   

@@ -3873,11 +3873,45 @@ bool DoSpreadCallFallback(JSContext* cx, BaselineFrame* frame,
   RootedValue newTarget(cx, constructing ? vp[3] : NullValue());
 
   
+  if (stub->state().maybeTransition()) {
+    stub->discardStubs(cx);
+  }
+
+  
   bool handled = false;
   if (op != JSOP_SPREADEVAL && op != JSOP_STRICTSPREADEVAL &&
-      !TryAttachCallStub(cx, stub, script, pc, op, 1, vp, constructing, true,
-                         false, &handled)) {
-    return false;
+      stub->state().canAttachStub()) {
+    
+    RootedArrayObject aobj(cx, &arr.toObject().as<ArrayObject>());
+    MOZ_ASSERT(aobj->length() == aobj->getDenseInitializedLength());
+
+    CallIRGenerator gen(cx, script, pc, op, stub->state().mode(), 1, callee,
+                        thisv,
+                        HandleValueArray::fromMarkedLocation(
+                            aobj->length(), aobj->getDenseElements()));
+    if (gen.tryAttachStub()) {
+      ICStub* newStub = AttachBaselineCacheIRStub(
+          cx, gen.writerRef(), gen.cacheKind(), gen.cacheIRStubKind(), script,
+          stub, &handled);
+
+      if (newStub) {
+        JitSpew(JitSpew_BaselineIC, "  Attached Spread Call CacheIR stub");
+
+        
+        if (gen.cacheIRStubKind() == BaselineCacheIRStubKind::Updated) {
+          SetUpdateStubData(newStub->toCacheIR_Updated(), gen.typeCheckInfo());
+        }
+      }
+    }
+
+    
+    
+    if (!handled) {
+      if (!TryAttachCallStub(cx, stub, script, pc, op, 1, vp, constructing,
+                             true, false, &handled)) {
+        return false;
+      }
+    }
   }
 
   if (!SpreadCallOperation(cx, script, pc, thisv, callee, arr, newTarget,

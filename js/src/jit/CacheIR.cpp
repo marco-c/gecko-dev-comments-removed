@@ -5239,6 +5239,10 @@ bool CallIRGenerator::tryAttachIsSuspendedGenerator() {
 bool CallIRGenerator::tryAttachSpecialCaseCallNative(HandleFunction callee) {
   MOZ_ASSERT(callee->isNative());
 
+  if (op_ != JSOP_CALL && op_ != JSOP_CALL_IGNORES_RV) {
+    return false;
+  }
+
   if (callee->native() == js::intrinsic_StringSplitString) {
     if (tryAttachStringSplit()) {
       return true;
@@ -5264,6 +5268,19 @@ bool CallIRGenerator::tryAttachSpecialCaseCallNative(HandleFunction callee) {
   return false;
 }
 
+uint32_t CallIRGenerator::calleeStackSlot(bool isSpread, bool isConstructing) {
+  
+  
+  
+  
+  
+  
+  
+  
+
+  return 1 + (isSpread ? 1 : argc_) + isConstructing;
+}
+
 bool CallIRGenerator::tryAttachCallScripted(HandleFunction calleeFunc) {
   if (JitOptions.disableCacheIRCalls) {
     return false;
@@ -5277,9 +5294,7 @@ bool CallIRGenerator::tryAttachCallScripted(HandleFunction calleeFunc) {
 
   bool isConstructing = IsConstructorCallPC(pc_);
 
-  
-  
-  MOZ_ASSERT(!IsSpreadCallPC(pc_));
+  bool isSpread = IsSpreadCallPC(pc_);
 
   
   if (isConstructing && !calleeFunc->isConstructor()) {
@@ -5320,7 +5335,8 @@ bool CallIRGenerator::tryAttachCallScripted(HandleFunction calleeFunc) {
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  ValOperandId calleeValId = writer.loadStackValue(argc_ + 1);
+  uint32_t calleeSlot = calleeStackSlot(isSpread, isConstructing);
+  ValOperandId calleeValId = writer.loadStackValue(calleeSlot);
   ObjOperandId calleeObjId = writer.guardIsObject(calleeValId);
 
   
@@ -5329,8 +5345,13 @@ bool CallIRGenerator::tryAttachCallScripted(HandleFunction calleeFunc) {
   
   writer.guardFunctionHasJitEntry(calleeObjId, isConstructing);
 
+  
+  if (isSpread) {
+    writer.guardAndUpdateSpreadArgc(argcId, isConstructing);
+  }
+
   bool isCrossRealm = cx_->realm() != calleeFunc->realm();
-  writer.callScriptedFunction(calleeObjId, argcId, isCrossRealm);
+  writer.callScriptedFunction(calleeObjId, argcId, isCrossRealm, isSpread);
   writer.typeMonitorResult();
 
   cacheIRStubKind_ = BaselineCacheIRStubKind::Monitored;
@@ -5343,6 +5364,12 @@ bool CallIRGenerator::tryAttachCallNative(HandleFunction calleeFunc) {
   MOZ_ASSERT(mode_ == ICState::Mode::Specialized);
   MOZ_ASSERT(calleeFunc->isNative());
 
+  bool isSpread = IsSpreadCallPC(pc_);
+
+  bool isConstructing = IsConstructorCallPC(pc_);
+  
+  MOZ_ASSERT(!isConstructing);
+
   
   if (tryAttachSpecialCaseCallNative(calleeFunc)) {
     return true;
@@ -5352,24 +5379,21 @@ bool CallIRGenerator::tryAttachCallNative(HandleFunction calleeFunc) {
   }
 
   
-  
-  
-  
-  
-  
-  
-
-  
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  ValOperandId calleeValId = writer.loadStackValue(argc_ + 1);
+  uint32_t calleeSlot = calleeStackSlot(isSpread, isConstructing);
+  ValOperandId calleeValId = writer.loadStackValue(calleeSlot);
   ObjOperandId calleeObjId = writer.guardIsObject(calleeValId);
 
   
   writer.guardSpecificObject(calleeObjId, calleeFunc);
 
-  writer.callNativeFunction(calleeObjId, argcId, op_, calleeFunc);
+  
+  if (isSpread) {
+    writer.guardAndUpdateSpreadArgc(argcId, isConstructing);
+  }
+  writer.callNativeFunction(calleeObjId, argcId, op_, calleeFunc, isSpread);
   writer.typeMonitorResult();
 
   cacheIRStubKind_ = BaselineCacheIRStubKind::Monitored;
@@ -5383,11 +5407,11 @@ bool CallIRGenerator::tryAttachCallHook(HandleObject calleeObj) {
     return false;
   }
 
-  bool isSpread = IsSpreadCallPC(pc_);
-  if (op_ == JSOP_FUNAPPLY || isSpread) {
+  if (op_ == JSOP_FUNAPPLY) {
     return false;
   }
 
+  bool isSpread = IsSpreadCallPC(pc_);
   bool isConstructing = IsConstructorCallPC(pc_);
   JSNative hook =
       isConstructing ? calleeObj->constructHook() : calleeObj->callHook();
@@ -5402,13 +5426,19 @@ bool CallIRGenerator::tryAttachCallHook(HandleObject calleeObj) {
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  ValOperandId calleeValId = writer.loadStackValue(argc_ + 1);
+  uint32_t calleeSlot = calleeStackSlot(isSpread, isConstructing);
+  ValOperandId calleeValId = writer.loadStackValue(calleeSlot);
   ObjOperandId calleeObjId = writer.guardIsObject(calleeValId);
 
   
   writer.guardAnyClass(calleeObjId, calleeObj->getClass());
 
-  writer.callClassHook(calleeObjId, argcId, hook);
+  
+  if (isSpread) {
+    writer.guardAndUpdateSpreadArgc(argcId, isConstructing);
+  }
+
+  writer.callClassHook(calleeObjId, argcId, hook, isSpread);
   writer.typeMonitorResult();
 
   cacheIRStubKind_ = BaselineCacheIRStubKind::Monitored;
@@ -5424,6 +5454,7 @@ bool CallIRGenerator::tryAttachStub() {
   switch (op_) {
     case JSOP_CALL:
     case JSOP_CALL_IGNORES_RV:
+    case JSOP_SPREADCALL:
       break;
     default:
       return false;
