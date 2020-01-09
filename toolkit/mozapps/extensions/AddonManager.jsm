@@ -3901,6 +3901,32 @@ AMTelemetry = {
     });
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  recordReportEvent({addonId, addonType, errorType, reportEntryPoint}) {
+    this.recordEvent({
+      method: "report",
+      object: reportEntryPoint,
+      value: addonId,
+      extra: this.formatExtraVars({
+        addon_type: addonType,
+        error_type: errorType,
+      }),
+    });
+  },
+
   recordEvent({method, object, value, extra}) {
     if (typeof value != "string") {
       
