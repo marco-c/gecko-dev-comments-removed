@@ -9643,6 +9643,50 @@ typename ParseHandler::Node GeneralParser<ParseHandler, Unit>::propertyName(
     YieldHandling yieldHandling, PropertyNameContext propertyNameContext,
     const Maybe<DeclarationKind>& maybeDecl, ListNodeType propList,
     PropertyType* propType, MutableHandleAtom propAtom) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
   TokenKind ltok;
   if (!tokenStream.getToken(&ltok, TokenStream::SlashIsInvalid)) {
     return null();
@@ -9651,25 +9695,11 @@ typename ParseHandler::Node GeneralParser<ParseHandler, Unit>::propertyName(
   MOZ_ASSERT(ltok != TokenKind::RightCurly,
              "caller should have handled TokenKind::RightCurly");
 
+  
   bool isGenerator = false;
   bool isAsync = false;
 
   if (ltok == TokenKind::Async) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     TokenKind tt = TokenKind::Eof;
@@ -9692,6 +9722,7 @@ typename ParseHandler::Node GeneralParser<ParseHandler, Unit>::propertyName(
     }
   }
 
+  
   propAtom.set(nullptr);
   Node propName;
   switch (ltok) {
@@ -9738,6 +9769,7 @@ typename ParseHandler::Node GeneralParser<ParseHandler, Unit>::propertyName(
       }
 
       propAtom.set(anyChars.currentName());
+
       
       if (isGenerator || isAsync ||
           !(ltok == TokenKind::Get || ltok == TokenKind::Set)) {
@@ -9803,6 +9835,8 @@ typename ParseHandler::Node GeneralParser<ParseHandler, Unit>::propertyName(
     }
   }
 
+  
+  
   TokenKind tt;
   if (!tokenStream.getToken(&tt)) {
     return null();
