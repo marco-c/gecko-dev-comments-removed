@@ -242,6 +242,11 @@ class UrlbarEventBufferer {
       return false;
     }
 
+    if (DEFERRED_KEY_CODES.has(event.keyCode) &&
+        this.input.controller.keyEventMovesCaret(event)) {
+      return false;
+    }
+
     
     
     if (this._lastQuery.startDate + DEFERRING_TIMEOUT_MS <= Cu.now()) {

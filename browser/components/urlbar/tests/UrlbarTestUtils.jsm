@@ -196,6 +196,15 @@ var UrlbarTestUtils = {
     let urlbar = getUrlbarAbstraction(win);
     return urlbar.promisePopupClose(closeFn);
   },
+
+  
+
+
+
+  isPopupOpen(win) {
+    let urlbar = getUrlbarAbstraction(win);
+    return urlbar.isPopupOpen();
+  },
 };
 
 
@@ -478,9 +487,10 @@ class UrlbarAbstraction {
     } else {
       this.closePopup();
     }
-    if (!this.quantumbar) {
-      return BrowserTestUtils.waitForPopupEvent(this.urlbar.popup, "hidden");
-    }
-    return BrowserTestUtils.waitForPopupEvent(this.urlbar.view.panel, "hidden");
+    return BrowserTestUtils.waitForPopupEvent(this.panel, "hidden");
+  }
+
+  isPopupOpen() {
+    return this.panel.state == "open" || this.panel.state == "showing";
   }
 }
