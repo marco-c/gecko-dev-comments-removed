@@ -53,9 +53,11 @@ requestLongerTimeout(10);
 add_task(async function setupTestCommon() {
   await SpecialPowers.pushPrefEnv({
     set: [
+      [PREF_APP_UPDATE_BADGEWAITTIME, 1800],
       [PREF_APP_UPDATE_DOWNLOAD_ATTEMPTS, 0],
       [PREF_APP_UPDATE_DOWNLOAD_MAXATTEMPTS, 2],
       [PREF_APP_UPDATE_LOG, gDebugTest],
+      [PREF_APP_UPDATE_PROMPTWAITTIME, 3600],
       [PREF_APP_UPDATE_SERVICE_ENABLED, false],
       
       
@@ -65,6 +67,7 @@ add_task(async function setupTestCommon() {
 
   setUpdateTimerPrefs();
   removeUpdateFiles(true);
+  UpdateListener.reset();
   AppMenuNotifications.removeNotification(/.*/);
   
   
@@ -79,6 +82,7 @@ registerCleanupFunction(async () => {
   gEnv.set("MOZ_TEST_SKIP_UPDATE_STAGE", "");
   gEnv.set("MOZ_TEST_SLOW_SKIP_UPDATE_STAGE", "");
   UpdateListener.reset();
+  AppMenuNotifications.removeNotification(/.*/);
   reloadUpdateManagerData(true);
   
   removeUpdateFiles(true);
@@ -519,11 +523,7 @@ function getPatchOfType(type) {
 
 
 
-
-
-
-
-function runDoorhangerUpdateTest(updateParams, checkAttempts, steps) {
+function runDoorhangerUpdateTest(params, steps) {
   function processDoorhangerStep(step) {
     if (typeof(step) == "function") {
       return step();
@@ -531,18 +531,8 @@ function runDoorhangerUpdateTest(updateParams, checkAttempts, steps) {
 
     const {notificationId, button, checkActiveUpdate, pageURLs} = step;
     return (async function() {
-      await TestUtils.waitForCondition(() =>
-        (PanelUI.notificationPanel.state == "open"),
-        "Waiting on PanelUI.notificationPanel.state to equal open",
-        undefined, 200
-      ).catch(e => {
-        
-        
-        
-        logTestInfo(e);
-      });
-      is(PanelUI.notificationPanel.state, "open",
-         "The PanelUI.notificationPanel.state should equal open");
+      await BrowserTestUtils.waitForEvent(PanelUI.notificationPanel,
+                                          "popupshown");
       const shownNotificationId = AppMenuNotifications.activeNotification.id;
       is(shownNotificationId, notificationId,
          "The right notification showed up.");
@@ -580,23 +570,24 @@ function runDoorhangerUpdateTest(updateParams, checkAttempts, steps) {
       set: [
         [PREF_APP_UPDATE_DISABLEDFORTESTING, false],
         [PREF_APP_UPDATE_IDLETIME, 0],
-        [PREF_APP_UPDATE_URL_MANUAL, URL_MANUAL_UPDATE],
         [PREF_APP_UPDATE_URL_DETAILS, gDetailsURL],
+        [PREF_APP_UPDATE_URL_MANUAL, URL_MANUAL_UPDATE],
       ],
     });
 
     await setupTestUpdater();
 
+    let queryString = params.queryString ? params.queryString : "";
     let updateURL = URL_HTTP_UPDATE_SJS + "?detailsURL=" + gDetailsURL +
-                    updateParams + getVersionParams();
+                    queryString + getVersionParams();
     setUpdateURL(updateURL);
 
-    if (checkAttempts) {
+    if (params.checkAttempts) {
       
       executeSoon(() => {
         (async function() {
           gAUS.checkForBackgroundUpdates();
-          for (var i = 0; i < checkAttempts - 1; i++) {
+          for (var i = 0; i < params.checkAttempts - 1; i++) {
             await waitForEvent("update-error", "check-attempt-failed");
             gAUS.checkForBackgroundUpdates();
           }
@@ -605,6 +596,7 @@ function runDoorhangerUpdateTest(updateParams, checkAttempts, steps) {
     } else {
       
       writeStatusFile(STATE_FAILED_CRC_ERROR);
+      writeUpdatesToXMLFile(getLocalUpdatesXMLString(params.updates), true);
       reloadUpdateManagerData();
       testPostUpdateProcessing();
     }
