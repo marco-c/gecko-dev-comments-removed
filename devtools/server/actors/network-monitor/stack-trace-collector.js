@@ -43,8 +43,8 @@ StackTraceCollector.prototype = {
     }
   },
 
-  _saveStackTrace(id, stacktrace) {
-    if (this.stacktracesById.has(id)) {
+  _saveStackTrace(channel, stacktrace) {
+    if (this.stacktracesById.has(channel.channelId)) {
       
       
       
@@ -52,27 +52,15 @@ StackTraceCollector.prototype = {
     }
     for (const { messageManager } of this.netmonitors) {
       messageManager.sendAsyncMessage("debug:request-stack-available", {
-        channelId: id,
+        channelId: channel.channelId,
         stacktrace: stacktrace && stacktrace.length > 0,
       });
     }
-    this.stacktracesById.set(id, stacktrace);
+    this.stacktracesById.set(channel.channelId, stacktrace);
   },
 
   observe(subject, topic, data) {
-    let channel, id;
-    try {
-      channel = subject.QueryInterface(Ci.nsIHttpChannel);
-      id = channel.channelId;
-    } catch (e) {
-      
-      
-      
-      
-      
-      channel = subject.QueryInterface(Ci.nsIWebSocketChannel);
-      id = channel.URI.spec;
-    }
+    const channel = subject.QueryInterface(Ci.nsIHttpChannel);
 
     if (!matchRequest(channel, this.filters)) {
       return;
@@ -133,7 +121,7 @@ StackTraceCollector.prototype = {
         throw new Error("Unexpected observe() topic");
     }
 
-    this._saveStackTrace(id, stacktrace);
+    this._saveStackTrace(channel, stacktrace);
   },
 
   
@@ -149,7 +137,7 @@ StackTraceCollector.prototype = {
     const oldId = oldChannel.channelId;
     const stacktrace = this.stacktracesById.get(oldId);
     if (stacktrace) {
-      this._saveStackTrace(newChannel.channelId, stacktrace);
+      this._saveStackTrace(newChannel, stacktrace);
     }
   },
 
