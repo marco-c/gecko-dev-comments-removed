@@ -458,7 +458,6 @@ struct BaselineScript final {
                                            uint32_t idx);
   void removeDependentWasmImport(wasm::Instance& instance, uint32_t idx);
   void unlinkDependentWasmImports(FreeOp* fop);
-  void clearDependentWasmImports();
 
   
   
@@ -524,9 +523,6 @@ struct BaselineScript final {
     }
 
     pendingBuilder_ = builder;
-
-    
-    clearDependentWasmImports();
 
     script->updateJitCodeRaw(rt);
   }

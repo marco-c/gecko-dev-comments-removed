@@ -183,13 +183,6 @@ bool Instance::callImport(JSContext* cx, uint32_t funcImportIndex,
   
   
   
-  if (script->baselineScript()->hasPendingIonBuilder()) {
-    return true;
-  }
-
-  
-  
-  
   
   
   
@@ -998,8 +991,7 @@ void Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
                                         gc::Cell** location) {
   MOZ_ASSERT(SASigPostBarrier.failureMode == FailureMode::Infallible);
   MOZ_ASSERT(location);
-  TlsContext.get()->runtime()->gc.storeBuffer().putCell(
-      reinterpret_cast<JSObject**>(location));
+  TlsContext.get()->runtime()->gc.storeBuffer().putCell(location);
 }
 
  void Instance::postBarrierFiltering(Instance* instance,
@@ -1009,8 +1001,7 @@ void Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
   if (*location == nullptr || !gc::IsInsideNursery(*location)) {
     return;
   }
-  TlsContext.get()->runtime()->gc.storeBuffer().putCell(
-      reinterpret_cast<JSObject**>(location));
+  TlsContext.get()->runtime()->gc.storeBuffer().putCell(location);
 }
 
 

@@ -542,22 +542,13 @@ void JS::DeletePolicy<js::jit::BaselineScript>::operator()(
                           const_cast<BaselineScript*>(script));
 }
 
-void BaselineScript::clearDependentWasmImports() {
+void BaselineScript::unlinkDependentWasmImports(FreeOp* fop) {
   
   
   if (dependentWasmImports_) {
     for (DependentWasmImport& dep : *dependentWasmImports_) {
       dep.instance->deoptimizeImportExit(dep.importIndex);
     }
-    dependentWasmImports_->clear();
-  }
-}
-
-void BaselineScript::unlinkDependentWasmImports(FreeOp* fop) {
-  
-  
-  clearDependentWasmImports();
-  if (dependentWasmImports_) {
     fop->delete_(dependentWasmImports_);
     dependentWasmImports_ = nullptr;
   }
