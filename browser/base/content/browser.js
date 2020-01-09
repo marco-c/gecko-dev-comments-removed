@@ -5091,6 +5091,9 @@ var XULBrowserWindow = {
     }
 
     ContentBlocking.onContentBlockingEvent(this._event, aWebProgress, aIsSimulated);
+    
+    
+    
     gBrowser.selectedBrowser.updateSecurityUIForContentBlockingEvent(aEvent);
   },
 
@@ -5461,6 +5464,14 @@ const AccessibilityRefreshBlocker = {
 };
 
 var TabsProgressListener = {
+  onContentBlockingEvent(aBrowser, aWebProgress, aRequest, aEvent) {
+    
+    
+    if (aBrowser != gBrowser.selectedBrowser) {
+      aBrowser.updateSecurityUIForContentBlockingEvent(aEvent);
+    }
+  },
+
   onStateChange(aBrowser, aWebProgress, aRequest, aStateFlags, aStatus) {
     
     if (aWebProgress.isTopLevel && (!aRequest.originalURI || aRequest.originalURI.scheme != "about")) {
