@@ -3807,14 +3807,16 @@ bool DoCallFallback(JSContext* cx, BaselineFrame* frame, ICCall_Fallback* stub,
   }
 
   bool canAttachStub = stub->state().canAttachStub();
+  bool isFirstStub = stub->numOptimizedStubs() == 0;
   bool handled = false;
+  bool deferred = false;
 
   
   
   if (canAttachStub) {
     HandleValueArray args = HandleValueArray::fromMarkedLocation(argc, vp + 2);
     CallIRGenerator gen(cx, script, pc, op, stub->state().mode(), argc, callee,
-                        callArgs.thisv(), newTarget, args);
+                        callArgs.thisv(), newTarget, args, isFirstStub);
     switch (gen.tryAttachStub()) {
       case AttachDecision::NoAction:
         break;
@@ -3835,11 +3837,13 @@ bool DoCallFallback(JSContext* cx, BaselineFrame* frame, ICCall_Fallback* stub,
       case AttachDecision::TemporarilyUnoptimizable:
         handled = true;
         break;
+      case AttachDecision::Deferred:
+        deferred = true;
     }
 
     
     
-    if (!handled) {
+    if (!handled && !deferred) {
       bool createSingleton =
           ObjectGroup::useSingletonForNewObject(cx, script, pc);
       if (!TryAttachCallStub(cx, stub, script, pc, op, argc, vp, constructing,
@@ -3890,6 +3894,34 @@ bool DoCallFallback(JSContext* cx, BaselineFrame* frame, ICCall_Fallback* stub,
   }
   canAttachStub = stub->state().canAttachStub();
 
+  if (deferred && canAttachStub) {
+    HandleValueArray args = HandleValueArray::fromMarkedLocation(argc, vp + 2);
+    CallIRGenerator gen(cx, script, pc, op, stub->state().mode(), argc, callee,
+                        callArgs.thisv(), newTarget, args, isFirstStub);
+    switch (gen.tryAttachDeferredStub(res)) {
+      case AttachDecision::Attach: {
+        ICStub* newStub = AttachBaselineCacheIRStub(
+            cx, gen.writerRef(), gen.cacheKind(), gen.cacheIRStubKind(), script,
+            stub, &handled);
+        if (newStub) {
+          JitSpew(JitSpew_BaselineIC, "  Attached Call CacheIR stub");
+
+          
+          if (gen.cacheIRStubKind() == BaselineCacheIRStubKind::Updated) {
+            SetUpdateStubData(newStub->toCacheIR_Updated(),
+                              gen.typeCheckInfo());
+          }
+        }
+      } break;
+      case AttachDecision::NoAction:
+        break;
+      case AttachDecision::TemporarilyUnoptimizable:
+      case AttachDecision::Deferred:
+        MOZ_ASSERT_UNREACHABLE("Impossible attach decision");
+        break;
+    }
+  }
+
   if (!handled && canAttachStub && !constructing) {
     
     
@@ -3934,6 +3966,7 @@ bool DoSpreadCallFallback(JSContext* cx, BaselineFrame* frame,
 
   
   bool handled = false;
+  bool isFirstStub = stub->numOptimizedStubs() == 0;
   if (op != JSOP_SPREADEVAL && op != JSOP_STRICTSPREADEVAL &&
       stub->state().canAttachStub()) {
     
@@ -3943,7 +3976,7 @@ bool DoSpreadCallFallback(JSContext* cx, BaselineFrame* frame,
     HandleValueArray args = HandleValueArray::fromMarkedLocation(
         aobj->length(), aobj->getDenseElements());
     CallIRGenerator gen(cx, script, pc, op, stub->state().mode(), 1, callee,
-                        thisv, newTarget, args);
+                        thisv, newTarget, args, isFirstStub);
     switch (gen.tryAttachStub()) {
       case AttachDecision::NoAction:
         break;
@@ -3964,6 +3997,9 @@ bool DoSpreadCallFallback(JSContext* cx, BaselineFrame* frame,
       } break;
       case AttachDecision::TemporarilyUnoptimizable:
         handled = true;
+        break;
+      case AttachDecision::Deferred:
+        MOZ_ASSERT_UNREACHABLE("No deferred optimizations for spread calls");
         break;
     }
 

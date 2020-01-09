@@ -4678,7 +4678,7 @@ CallIRGenerator::CallIRGenerator(JSContext* cx, HandleScript script,
                                  jsbytecode* pc, JSOp op, ICState::Mode mode,
                                  uint32_t argc, HandleValue callee,
                                  HandleValue thisval, HandleValue newTarget,
-                                 HandleValueArray args)
+                                 HandleValueArray args, bool isFirstStub)
     : IRGenerator(cx, script, pc, CacheKind::Call, mode),
       op_(op),
       argc_(argc),
@@ -4687,7 +4687,8 @@ CallIRGenerator::CallIRGenerator(JSContext* cx, HandleScript script,
       newTarget_(newTarget),
       args_(args),
       typeCheckInfo_(cx,  true),
-      cacheIRStubKind_(BaselineCacheIRStubKind::Regular) {}
+      cacheIRStubKind_(BaselineCacheIRStubKind::Regular),
+      isFirstStub_(isFirstStub) {}
 
 AttachDecision CallIRGenerator::tryAttachStringSplit() {
   
@@ -4697,9 +4698,8 @@ AttachDecision CallIRGenerator::tryAttachStringSplit() {
 
   
   
-  
-  if (args_[0].toString()->isAtom() && args_[1].toString()->isAtom()) {
-    return AttachDecision::NoAction;
+  if (isOptimizableConstStringSplit()) {
+    return AttachDecision::Deferred;
   }
 
   
@@ -4902,6 +4902,8 @@ AttachDecision CallIRGenerator::tryAttachIsSuspendedGenerator() {
   
 
   MOZ_ASSERT(argc_ == 1);
+
+  Int32OperandId argcId(writer.setInputOperandId(0));
 
   
   
@@ -5528,6 +5530,129 @@ AttachDecision CallIRGenerator::tryAttachStub() {
     return tryAttachCallNative(calleeFunc);
   }
 
+  return AttachDecision::NoAction;
+}
+
+bool CallIRGenerator::isOptimizableConstStringSplit() {
+  
+  if (!isFirstStub_) {
+    return false;
+  }
+
+  
+  if (argc_ != 2 || !args_[0].isString() || !args_[1].isString()) {
+    return false;
+  }
+
+  
+  if (!args_[0].toString()->isAtom() || !args_[1].toString()->isAtom()) {
+    return false;
+  }
+
+  
+  RootedFunction calleeFunc(cx_, &callee_.toObject().as<JSFunction>());
+  if (calleeFunc->realm() != cx_->realm()) {
+    return false;
+  }
+
+  
+  if (!calleeFunc->isNative() ||
+      calleeFunc->native() != js::intrinsic_StringSplitString) {
+    return false;
+  }
+
+  
+  
+  
+  
+  return true;
+}
+
+AttachDecision CallIRGenerator::tryAttachConstStringSplit(HandleValue result) {
+  if (!isOptimizableConstStringSplit()) {
+    return AttachDecision::NoAction;
+  }
+
+  RootedString str(cx_, args_[0].toString());
+  RootedString sep(cx_, args_[1].toString());
+  RootedArrayObject resultObj(cx_, &result.toObject().as<ArrayObject>());
+  uint32_t initLength = resultObj->getDenseInitializedLength();
+  MOZ_ASSERT(initLength == resultObj->length(),
+             "string-split result is a fully initialized array");
+
+  
+  RootedArrayObject arrObj(cx_);
+  arrObj = NewFullyAllocatedArrayTryReuseGroup(cx_, resultObj, initLength,
+                                               TenuredObject);
+  if (!arrObj) {
+    cx_->clearPendingException();
+    return AttachDecision::NoAction;
+  }
+  arrObj->ensureDenseInitializedLength(cx_, 0, initLength);
+
+  
+  if (initLength > 0) {
+    
+    
+    AddTypePropertyId(cx_, arrObj, JSID_VOID, TypeSet::StringType());
+
+    for (uint32_t i = 0; i < initLength; i++) {
+      JSAtom* str =
+          js::AtomizeString(cx_, resultObj->getDenseElement(i).toString());
+      if (!str) {
+        cx_->clearPendingException();
+        return AttachDecision::NoAction;
+      }
+      arrObj->initDenseElement(i, StringValue(str));
+    }
+  }
+
+  Int32OperandId argcId(writer.setInputOperandId(0));
+
+  
+  ValOperandId calleeValId =
+      writer.loadArgumentFixedSlot(ArgumentKind::Callee, 2);
+  ObjOperandId calleeObjId = writer.guardIsObject(calleeValId);
+  writer.guardSpecificNativeFunction(calleeObjId, intrinsic_StringSplitString);
+
+  
+  ValOperandId strValId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, 2);
+  StringOperandId strStringId = writer.guardIsString(strValId);
+  writer.guardSpecificAtom(strStringId, &str->asAtom());
+
+  
+  ValOperandId sepValId = writer.loadArgumentFixedSlot(ArgumentKind::Arg1, 2);
+  StringOperandId sepStringId = writer.guardIsString(sepValId);
+  writer.guardSpecificAtom(sepStringId, &sep->asAtom());
+
+  writer.callConstStringSplitResult(arrObj);
+
+  writer.typeMonitorResult();
+  cacheIRStubKind_ = BaselineCacheIRStubKind::Monitored;
+
+  trackAttached("Const string split");
+
+  return AttachDecision::Attach;
+}
+
+AttachDecision CallIRGenerator::tryAttachDeferredStub(HandleValue result) {
+  AutoAssertNoPendingException aanpe(cx_);
+
+  
+  MOZ_ASSERT(op_ == JSOP_CALL || op_ == JSOP_CALL_IGNORES_RV);
+
+  
+  MOZ_ASSERT(mode_ == ICState::Mode::Specialized);
+
+  
+  RootedFunction calleeFunc(cx_, &callee_.toObject().as<JSFunction>());
+  MOZ_ASSERT(calleeFunc->isNative());
+
+  if (calleeFunc->native() == js::intrinsic_StringSplitString) {
+    return tryAttachConstStringSplit(result);
+  }
+
+  MOZ_ASSERT_UNREACHABLE("Unexpected deferred function");
   return AttachDecision::NoAction;
 }
 
