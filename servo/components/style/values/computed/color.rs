@@ -12,13 +12,13 @@ use std::fmt;
 use style_traits::{CssWriter, ToCss};
 
 
+pub type RGBAColor = RGBA;
+
+
 pub type ColorPropertyValue = RGBA;
 
 
-pub type MozFontSmoothingBackgroundColor = RGBA;
-
-
-pub type Color = GenericColor<RGBA>;
+pub type Color = GenericColor<RGBAColor>;
 
 impl Color {
     

@@ -15,7 +15,7 @@
 #include "gfxFontVariations.h"
 #include "mozilla/FontPropertyTypes.h"
 #include "mozilla/RefPtr.h"  
-#include "mozilla/StyleColorInlines.h" 
+#include "nsColor.h"         
 #include "nsCoord.h"         
 #include "nsTArray.h"        
 
@@ -51,8 +51,7 @@ struct nsFont {
 
   
   
-  mozilla::StyleRGBA fontSmoothingBackgroundColor =
-      mozilla::StyleRGBA::Transparent();
+  nscolor fontSmoothingBackgroundColor = NS_RGBA(0, 0, 0, 0);
 
   
   

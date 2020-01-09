@@ -461,8 +461,17 @@ static void SetAnimatable(nsCSSPropertyID aProperty,
     case eCSSProperty_background_color: {
       
       
-      nscolor foreground =
-          aFrame->Style()->GetVisitedDependentColor(&nsStyleColor::mColor);
+      nscolor foreground;
+      if (aFrame->Style()->RelevantLinkVisited()) {
+        if (ComputedStyle* styleIfVisited =
+                aFrame->Style()->GetStyleIfVisited()) {
+          foreground = styleIfVisited->StyleColor()->mColor;
+        } else {
+          foreground = aFrame->Style()->StyleColor()->mColor;
+        }
+      } else {
+        foreground = aFrame->Style()->StyleColor()->mColor;
+      }
       aAnimatable = aAnimationValue.GetColor(foreground);
       break;
     }
