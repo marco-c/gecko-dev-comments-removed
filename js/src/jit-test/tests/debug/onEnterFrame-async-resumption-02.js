@@ -17,8 +17,7 @@ let errw = gw.makeDebuggeeValue(g.err);
 
 
 
-
-for (let when = 0; when < 3; when++) {
+for (let when = 0; when < 2; when++) {
     let hits = 0;
     dbg.onEnterFrame = frame => {
         return hits++ < when ? undefined : {throw: errw};

@@ -3569,7 +3569,7 @@ static MOZ_MUST_USE bool InternalAwait(JSContext* cx, HandleValue value,
 }
 
 
-MOZ_MUST_USE bool js::AsyncFunctionAwait(
+MOZ_MUST_USE JSObject* js::AsyncFunctionAwait(
     JSContext* cx, Handle<AsyncFunctionGeneratorObject*> genObj,
     HandleValue value) {
   
@@ -3582,7 +3582,10 @@ MOZ_MUST_USE bool js::AsyncFunctionAwait(
   auto extra = [&](Handle<PromiseReactionRecord*> reaction) {
     reaction->setIsAsyncFunction(genObj);
   };
-  return InternalAwait(cx, value, nullptr, onFulfilled, onRejected, extra);
+  if (!InternalAwait(cx, value, nullptr, onFulfilled, onRejected, extra)) {
+    return nullptr;
+  }
+  return genObj->promise();
 }
 
 
@@ -4825,11 +4828,24 @@ static MOZ_MUST_USE bool IsTopMostAsyncFunctionCall(JSContext* cx) {
   }
   MOZ_ASSERT(iter.calleeTemplate()->isAsync());
 
+#ifdef DEBUG
+  bool isGenerator = iter.calleeTemplate()->isGenerator();
+#endif
+
   ++iter;
 
   
   
   if (iter.done()) {
+    return false;
+  }
+  
+  
+  
+  
+  
+  if (!iter.isFunctionFrame()) {
+    MOZ_ASSERT(!isGenerator);
     return false;
   }
   if (!iter.calleeTemplate()) {

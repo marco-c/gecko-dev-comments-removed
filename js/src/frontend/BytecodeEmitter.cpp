@@ -6389,6 +6389,17 @@ bool BytecodeEmitter::emitAwaitInScope(EmitterScope& currentScope) {
     return false;
   }
 
+  if (sc->asFunctionBox()->needsPromiseResult()) {
+    if (!emitGetDotGeneratorInScope(currentScope)) {
+      
+      return false;
+    }
+    if (!emit1(JSOP_ASYNCAWAIT)) {
+      
+      return false;
+    }
+  }
+
   if (!emitGetDotGeneratorInScope(currentScope)) {
     
     return false;
@@ -8494,6 +8505,18 @@ bool BytecodeEmitter::emitFunctionFormalParameters(ListNode* paramsBody) {
   bool hasParameterExprs = funbox->hasParameterExprs;
   bool hasRest = funbox->hasRest();
 
+  
+  
+  
+  
+  
+  Maybe<TryEmitter> rejectTryCatch;
+  if (hasParameterExprs && funbox->needsPromiseResult()) {
+    if (!emitAsyncFunctionRejectPrologue(rejectTryCatch)) {
+      return false;
+    }
+  }
+
   uint16_t argSlot = 0;
   for (ParseNode* arg = paramsBody->head(); arg != funBody;
        arg = arg->pn_next, argSlot++) {
@@ -8605,6 +8628,12 @@ bool BytecodeEmitter::emitFunctionFormalParameters(ListNode* paramsBody) {
     }
   }
 
+  if (rejectTryCatch) {
+    if (!emitAsyncFunctionRejectEpilogue(*rejectTryCatch)) {
+      return false;
+    }
+  }
+
   return true;
 }
 
@@ -8648,6 +8677,14 @@ bool BytecodeEmitter::emitInitializeFunctionSpecialNames() {
   if (funbox->hasThisBinding()) {
     if (!emitInitializeFunctionSpecialName(this, cx->names().dotThis,
                                            JSOP_FUNCTIONTHIS)) {
+      return false;
+    }
+  }
+
+  
+  if (funbox->needsPromiseResult()) {
+    if (!emitInitializeFunctionSpecialName(this, cx->names().dotGenerator,
+                                           JSOP_GENERATOR)) {
       return false;
     }
   }
@@ -8793,43 +8830,6 @@ bool BytecodeEmitter::emitAsyncFunctionRejectEpilogue(TryEmitter& tryCatch) {
     
     return false;
   }
-
-  
-  if (!emit1(JSOP_DUP)) {
-    
-    return false;
-  }
-  if (!emit1(JSOP_UNDEFINED)) {
-    
-    return false;
-  }
-  if (!emit1(JSOP_STRICTEQ)) {
-    
-    return false;
-  }
-
-  InternalIfEmitter ifGeneratorIsUndef(this);
-  if (!ifGeneratorIsUndef.emitThen()) {
-    
-    return false;
-  }
-
-  if (!emit1(JSOP_POP)) {
-    
-    return false;
-  }
-  if (!emit1(JSOP_THROW)) {
-    
-    return false;
-  }
-
-  this->stackDepth += 2;  
-
-  if (!ifGeneratorIsUndef.emitEnd()) {
-    
-    return false;
-  }
-
   if (!emit2(JSOP_ASYNCRESOLVE, uint8_t(AsyncFunctionResolveKind::Reject))) {
     
     return false;

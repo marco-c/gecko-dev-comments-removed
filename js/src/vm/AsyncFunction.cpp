@@ -61,9 +61,6 @@ using mozilla::Maybe;
   return true;
 }
 
-static MOZ_MUST_USE bool AsyncFunctionStart(
-    JSContext* cx, Handle<AsyncFunctionGeneratorObject*> generator);
-
 #define UNWRAPPED_ASYNC_WRAPPED_SLOT 1
 #define WRAPPED_ASYNC_UNWRAPPED_SLOT 0
 
@@ -82,26 +79,7 @@ static bool WrappedAsyncFunction(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  RootedValue generatorVal(cx);
-  if (Call(cx, unwrappedVal, args.thisv(), args2, &generatorVal)) {
-    
-    if (!generatorVal.isObject() ||
-        !generatorVal.toObject().is<AsyncFunctionGeneratorObject>()) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_UNEXPECTED_TYPE, "return value",
-                                JS::InformalValueTypeName(generatorVal));
-      return false;
-    }
-
-    
-    Rooted<AsyncFunctionGeneratorObject*> generator(
-        cx, &generatorVal.toObject().as<AsyncFunctionGeneratorObject>());
-    if (!AsyncFunctionStart(cx, generator)) {
-      return false;
-    }
-
-    
-    args.rval().setObject(*generator->promise());
+  if (Call(cx, unwrappedVal, args.thisv(), args2, args.rval())) {
     return true;
   }
 
@@ -203,12 +181,10 @@ static bool AsyncFunctionResume(JSContext* cx,
     }
   }
 
-  
-  
-  
-  if (generator->isClosed() || !generator->isSuspended()) {
-    return true;
-  }
+  MOZ_ASSERT(!generator->isClosed(),
+             "closed generator when resuming async function");
+  MOZ_ASSERT(generator->isSuspended(),
+             "non-suspended generator when resuming async function");
 
   
   HandlePropertyName funName = kind == ResumeKind::Normal
@@ -225,21 +201,12 @@ static bool AsyncFunctionResume(JSContext* cx,
     return false;
   }
 
-  if (generator->isClosed()) {
-    MOZ_ASSERT(generatorOrValue.isObject());
-    MOZ_ASSERT(&generatorOrValue.toObject() == resultPromise);
-    return true;
-  }
+  MOZ_ASSERT_IF(generator->isClosed(), generatorOrValue.isObject());
+  MOZ_ASSERT_IF(generator->isClosed(),
+                &generatorOrValue.toObject() == resultPromise);
+  MOZ_ASSERT_IF(!generator->isClosed(), generator->isAfterAwait());
 
-  MOZ_ASSERT(generator->isAfterAwait());
-  return AsyncFunctionAwait(cx, generator, generatorOrValue);
-}
-
-
-static MOZ_MUST_USE bool AsyncFunctionStart(
-    JSContext* cx, Handle<AsyncFunctionGeneratorObject*> generator) {
-  return AsyncFunctionResume(cx, generator, ResumeKind::Normal,
-                             UndefinedHandleValue);
+  return true;
 }
 
 
@@ -320,6 +287,9 @@ AsyncFunctionGeneratorObject* AsyncFunctionGeneratorObject::create(
     return nullptr;
   }
   obj->initFixedSlot(PROMISE_SLOT, ObjectValue(*resultPromise));
+
+  
+  obj->setResumeIndex(AbstractGeneratorObject::RESUME_INDEX_RUNNING);
 
   return obj;
 }

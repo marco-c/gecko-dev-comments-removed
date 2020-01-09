@@ -1624,8 +1624,17 @@
  \
     MACRO(JSOP_POW, 150, "pow", "**", 1, 2, 1, JOF_BYTE|JOF_IC) \
     
+
+
+
+
+
+
+
+
+
  \
-    MACRO(JSOP_UNUSED151, 151, "unused151", NULL, 1, 0, 0, JOF_BYTE) \
+    MACRO(JSOP_ASYNCAWAIT, 151, "async-await", NULL, 1, 2, 1, JOF_BYTE) \
     
 
 

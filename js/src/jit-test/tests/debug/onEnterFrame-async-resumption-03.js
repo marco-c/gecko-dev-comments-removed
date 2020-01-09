@@ -27,4 +27,3 @@ function test(when) {
 
 
 test(1);  
-test(2);  

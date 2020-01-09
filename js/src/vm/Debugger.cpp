@@ -1598,7 +1598,10 @@ static void AdjustGeneratorResumptionValue(JSContext* cx,
                                            AbstractFramePtr frame,
                                            ResumeMode& resumeMode,
                                            MutableHandleValue vp) {
-  if (resumeMode != ResumeMode::Return || !frame || !frame.isFunctionFrame()) {
+  if (resumeMode != ResumeMode::Return && resumeMode != ResumeMode::Throw) {
+    return;
+  }
+  if (!frame || !frame.isFunctionFrame()) {
     return;
   }
 
@@ -1614,7 +1617,13 @@ static void AdjustGeneratorResumptionValue(JSContext* cx,
   
   
   
+  
   if (frame.callee()->isGenerator()) {
+    
+    if (resumeMode == ResumeMode::Throw) {
+      return;
+    }
+
     
     Rooted<AbstractGeneratorObject*> genObj(
         cx, GetGeneratorObjectForFrame(cx, frame));
@@ -1641,26 +1650,42 @@ static void AdjustGeneratorResumptionValue(JSContext* cx,
     
     if (AbstractGeneratorObject* genObj =
             GetGeneratorObjectForFrame(cx, frame)) {
+      
+      
+      if (resumeMode == ResumeMode::Throw) {
+        return;
+      }
+
       Rooted<AsyncFunctionGeneratorObject*> asyncGenObj(
           cx, &genObj->as<AsyncFunctionGeneratorObject>());
 
       
-      if (!asyncGenObj->isBeforeInitialYield()) {
-        JSObject* promise = AsyncFunctionResolve(
-            cx, asyncGenObj, vp, AsyncFunctionResolveKind::Fulfill);
-        if (!promise) {
-          getAndClearExceptionThenThrow();
-          return;
-        }
-        vp.setObject(*promise);
+      JSObject* promise = AsyncFunctionResolve(
+          cx, asyncGenObj, vp, AsyncFunctionResolveKind::Fulfill);
+      if (!promise) {
+        getAndClearExceptionThenThrow();
+        return;
       }
+      vp.setObject(*promise);
 
       
       asyncGenObj->setClosed();
     } else {
       
+
       
       
+      JSObject* promise = resumeMode == ResumeMode::Throw
+                              ? PromiseObject::unforgeableReject(cx, vp)
+                              : PromiseObject::unforgeableResolve(cx, vp);
+      if (!promise) {
+        getAndClearExceptionThenThrow();
+        return;
+      }
+      vp.setObject(*promise);
+
+      
+      resumeMode = ResumeMode::Return;
     }
   }
 }

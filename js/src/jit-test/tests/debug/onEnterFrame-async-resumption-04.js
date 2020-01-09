@@ -17,7 +17,7 @@ let dbg = new Debugger(g);
 dbg.onEnterFrame = frame => {
     if (!("hits" in frame)) {
         frame.hits = 1;
-    } else if (++frame.hits == 3) {
+    } else if (++frame.hits === 2) {
         
         
         return {throw: "fit"};
