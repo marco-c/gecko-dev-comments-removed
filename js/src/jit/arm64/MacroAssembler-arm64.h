@@ -1842,6 +1842,9 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
   
   void writeDataRelocation(ImmGCPtr ptr, BufferOffset load) {
     if (ptr.value) {
+      if (gc::IsInsideNursery(ptr.value)) {
+        embedsNurseryPointers_ = true;
+      }
       dataRelocations_.writeUnsigned(load.getOffset());
     }
   }
