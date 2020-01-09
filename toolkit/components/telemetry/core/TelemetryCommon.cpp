@@ -114,7 +114,8 @@ void LogToBrowserConsole(uint32_t aLogLevel, const nsAString& aMsg) {
 
   nsCOMPtr<nsIScriptError> error(do_CreateInstance(NS_SCRIPTERROR_CONTRACTID));
   error->Init(aMsg, EmptyString(), EmptyString(), 0, 0, aLogLevel,
-              "chrome javascript", false );
+              "chrome javascript", false ,
+              true );
   console->LogMessage(error);
 }
 

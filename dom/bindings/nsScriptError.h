@@ -55,6 +55,8 @@ class nsScriptErrorBase : public nsIScriptError {
 
   static bool ComputeIsFromPrivateWindow(nsGlobalWindowInner* aWindow);
 
+  static bool ComputeIsFromChromeContext(nsGlobalWindowInner* aWindow);
+
  protected:
   virtual ~nsScriptErrorBase();
 
@@ -86,6 +88,7 @@ class nsScriptErrorBase : public nsIScriptError {
   
   mozilla::Atomic<bool> mInitializedOnMainThread;
   bool mIsFromPrivateWindow;
+  bool mIsFromChromeContext;
 };
 
 class nsScriptError final : public nsScriptErrorBase {

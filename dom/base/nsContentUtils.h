@@ -1025,7 +1025,8 @@ class nsContentUtils {
 
   static void LogSimpleConsoleError(const nsAString& aErrorText,
                                     const char* classification,
-                                    bool aFromPrivateWindow);
+                                    bool aFromPrivateWindow,
+                                    bool aFromChromeContext);
 
   
 

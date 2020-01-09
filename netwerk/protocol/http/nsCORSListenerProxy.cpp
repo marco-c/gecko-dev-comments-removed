@@ -103,6 +103,13 @@ static void LogBlockedRequest(nsIRequest* aRequest, const char* aProperty,
     privateBrowsing = nsContentUtils::IsInPrivateBrowsing(loadGroup);
   }
 
+  bool fromChromeContext = false;
+  if (channel) {
+    nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
+    fromChromeContext =
+        nsContentUtils::IsSystemPrincipal(loadInfo->TriggeringPrincipal());
+  }
+
   
   
   uint64_t innerWindowID = nsContentUtils::GetInnerWindowID(aRequest);
@@ -116,7 +123,7 @@ static void LogBlockedRequest(nsIRequest* aRequest, const char* aProperty,
     }
   }
   nsCORSListenerProxy::LogBlockedCORSRequest(innerWindowID, privateBrowsing,
-                                             msg, category);
+                                             fromChromeContext, msg, category);
 }
 
 
@@ -1518,6 +1525,7 @@ nsresult nsCORSListenerProxy::StartCORSPreflight(
 
 void nsCORSListenerProxy::LogBlockedCORSRequest(uint64_t aInnerWindowID,
                                                 bool aPrivateBrowsing,
+                                                bool aFromChromeContext,
                                                 const nsAString& aMessage,
                                                 const nsACString& aCategory) {
   nsresult rv = NS_OK;
@@ -1555,7 +1563,8 @@ void nsCORSListenerProxy::LogBlockedCORSRequest(uint64_t aInnerWindowID,
                            0,              
                            0,              
                            nsIScriptError::warningFlag, category.get(),
-                           aPrivateBrowsing);
+                           aPrivateBrowsing,
+                           aFromChromeContext);  
   }
   if (NS_FAILED(rv)) {
     NS_WARNING(

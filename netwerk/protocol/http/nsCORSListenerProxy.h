@@ -68,6 +68,7 @@ class nsCORSListenerProxy final : public nsIStreamListener,
   
   static void LogBlockedCORSRequest(uint64_t aInnerWindowID,
                                     bool aPrivateBrowsing,
+                                    bool aFromChromeContext,
                                     const nsAString& aMessage,
                                     const nsACString& aCategory);
 

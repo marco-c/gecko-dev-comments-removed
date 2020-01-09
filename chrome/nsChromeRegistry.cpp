@@ -80,10 +80,10 @@ void nsChromeRegistry::LogMessageWithContext(nsIURI* aURL, uint32_t aLineNumber,
   nsCString spec;
   if (aURL) aURL->GetSpec(spec);
 
-  rv = error->Init(NS_ConvertUTF8toUTF16(formatted.get()),
-                   NS_ConvertUTF8toUTF16(spec), EmptyString(), aLineNumber, 0,
-                   flags, "chrome registration",
-                   false );
+  rv = error->Init(
+      NS_ConvertUTF8toUTF16(formatted.get()), NS_ConvertUTF8toUTF16(spec),
+      EmptyString(), aLineNumber, 0, flags, "chrome registration",
+      false , true );
 
   if (NS_FAILED(rv)) return;
 
