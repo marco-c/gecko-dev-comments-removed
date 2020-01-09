@@ -648,7 +648,7 @@ static void UnhookTextRunFromFrames(gfxTextRun* aTextRun,
 static void InvalidateFrameDueToGlyphsChanged(nsIFrame* aFrame) {
   MOZ_ASSERT(aFrame);
 
-  nsIPresShell* shell = aFrame->PresShell();
+  PresShell* presShell = aFrame->PresShell();
   for (nsIFrame* f = aFrame; f;
        f = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(f)) {
     f->InvalidateFrame();
@@ -668,7 +668,7 @@ static void InvalidateFrameDueToGlyphsChanged(nsIFrame* aFrame) {
       
       
       
-      shell->FrameNeedsReflow(f, nsIPresShell::eResize, NS_FRAME_IS_DIRTY);
+      presShell->FrameNeedsReflow(f, nsIPresShell::eResize, NS_FRAME_IS_DIRTY);
     }
   }
 }

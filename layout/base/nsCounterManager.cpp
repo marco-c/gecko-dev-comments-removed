@@ -9,6 +9,7 @@
 #include "nsCounterManager.h"
 
 #include "mozilla/Likely.h"
+#include "mozilla/PresShell.h"
 #include "mozilla/WritingModes.h"
 #include "nsBulletFrame.h"  
 #include "nsContentUtils.h"

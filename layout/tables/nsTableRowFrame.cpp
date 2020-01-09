@@ -3,11 +3,11 @@
 
 
 
-#include "mozilla/Maybe.h"
-
 #include "nsTableRowFrame.h"
+
+#include "mozilla/Maybe.h"
+#include "mozilla/PresShell.h"
 #include "nsTableRowGroupFrame.h"
-#include "nsIPresShell.h"
 #include "nsPresContext.h"
 #include "mozilla/ComputedStyle.h"
 #include "nsStyleConsts.h"

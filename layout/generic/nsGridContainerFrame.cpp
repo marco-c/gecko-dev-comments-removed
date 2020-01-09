@@ -6511,12 +6511,13 @@ void nsGridContainerFrame::NoteNewChildren(ChildListID aListID,
   MOZ_ASSERT(supportedLists.contains(aListID), "unexpected child list");
 #endif
 
-  nsIPresShell* shell = PresShell();
+  mozilla::PresShell* presShell = PresShell();
   for (auto pif = GetPrevInFlow(); pif; pif = pif->GetPrevInFlow()) {
     if (aListID == kPrincipalList) {
       pif->AddStateBits(NS_STATE_GRID_DID_PUSH_ITEMS);
     }
-    shell->FrameNeedsReflow(pif, nsIPresShell::eTreeChange, NS_FRAME_IS_DIRTY);
+    presShell->FrameNeedsReflow(pif, nsIPresShell::eTreeChange,
+                                NS_FRAME_IS_DIRTY);
   }
 }
 
@@ -6739,11 +6740,11 @@ nsGridContainerFrame* nsGridContainerFrame::GetGridFrameWithComputedInfo(
       
       AutoWeakFrame weakFrameRef(aFrame);
 
-      nsIPresShell* shell = gridFrame->PresShell();
+      mozilla::PresShell* presShell = gridFrame->PresShell();
       gridFrame->AddStateBits(NS_STATE_GRID_GENERATE_COMPUTED_VALUES);
-      shell->FrameNeedsReflow(gridFrame, nsIPresShell::eResize,
-                              NS_FRAME_IS_DIRTY);
-      shell->FlushPendingNotifications(FlushType::Layout);
+      presShell->FrameNeedsReflow(gridFrame, nsIPresShell::eResize,
+                                  NS_FRAME_IS_DIRTY);
+      presShell->FlushPendingNotifications(FlushType::Layout);
 
       
       

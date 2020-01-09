@@ -612,7 +612,7 @@ class nsIFrame : public nsQueryFrame {
 
   nsPresContext* PresContext() const { return mPresContext; }
 
-  nsIPresShell* PresShell() const { return PresContext()->PresShell(); }
+  mozilla::PresShell* PresShell() const { return PresContext()->PresShell(); }
 
   
 
@@ -3807,8 +3807,8 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  void AddPaintedPresShell(nsIPresShell* shell) {
-    PaintedPresShellList()->AppendElement(do_GetWeakReference(shell));
+  void AddPaintedPresShell(mozilla::PresShell* aPresShell) {
+    PaintedPresShellList()->AppendElement(do_GetWeakReference(aPresShell));
   }
 
   
@@ -4648,9 +4648,9 @@ class MOZ_NONHEAP_CLASS AutoWeakFrame {
 
   operator nsIFrame*() { return mFrame; }
 
-  void Clear(nsIPresShell* aShell) {
-    if (aShell) {
-      aShell->RemoveAutoWeakFrame(this);
+  void Clear(mozilla::PresShell* aPresShell) {
+    if (aPresShell) {
+      aPresShell->RemoveAutoWeakFrame(this);
     }
     mFrame = nullptr;
     mPrev = nullptr;
@@ -4720,9 +4720,9 @@ class MOZ_HEAP_CLASS WeakFrame {
   nsIFrame* operator->() { return mFrame; }
   operator nsIFrame*() { return mFrame; }
 
-  void Clear(nsIPresShell* aShell) {
-    if (aShell) {
-      aShell->RemoveWeakFrame(this);
+  void Clear(mozilla::PresShell* aPresShell) {
+    if (aPresShell) {
+      aPresShell->RemoveWeakFrame(this);
     }
     mFrame = nullptr;
   }

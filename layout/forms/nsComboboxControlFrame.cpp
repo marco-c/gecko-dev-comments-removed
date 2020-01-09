@@ -514,10 +514,10 @@ class nsAsyncResize : public Runnable {
           static_cast<nsComboboxControlFrame*>(mFrame.GetFrame());
       static_cast<nsListControlFrame*>(combo->mDropdownFrame)
           ->SetSuppressScrollbarUpdate(true);
-      nsCOMPtr<nsIPresShell> shell = mFrame->PresShell();
-      shell->FrameNeedsReflow(combo->mDropdownFrame, nsIPresShell::eResize,
-                              NS_FRAME_IS_DIRTY);
-      shell->FlushPendingNotifications(FlushType::Layout);
+      RefPtr<PresShell> presShell = mFrame->PresShell();
+      presShell->FrameNeedsReflow(combo->mDropdownFrame, nsIPresShell::eResize,
+                                  NS_FRAME_IS_DIRTY);
+      presShell->FlushPendingNotifications(FlushType::Layout);
       if (mFrame.IsAlive()) {
         combo = static_cast<nsComboboxControlFrame*>(mFrame.GetFrame());
         static_cast<nsListControlFrame*>(combo->mDropdownFrame)
@@ -1268,8 +1268,8 @@ nsIFrame* nsComboboxControlFrame::CreateFrameForDisplayNode() {
   MOZ_ASSERT(mDisplayContent);
 
   
-  nsIPresShell* shell = PresShell();
-  ServoStyleSet* styleSet = shell->StyleSet();
+  mozilla::PresShell* presShell = PresShell();
+  ServoStyleSet* styleSet = presShell->StyleSet();
 
   
   RefPtr<ComputedStyle> computedStyle;
@@ -1281,11 +1281,11 @@ nsIFrame* nsComboboxControlFrame::CreateFrameForDisplayNode() {
       styleSet->ResolveStyleForText(mDisplayContent, mComputedStyle);
 
   
-  mDisplayFrame = new (shell) nsComboboxDisplayFrame(computedStyle, this);
+  mDisplayFrame = new (presShell) nsComboboxDisplayFrame(computedStyle, this);
   mDisplayFrame->Init(mContent, this, nullptr);
 
   
-  nsIFrame* textFrame = NS_NewTextFrame(shell, textComputedStyle);
+  nsIFrame* textFrame = NS_NewTextFrame(presShell, textComputedStyle);
 
   
   textFrame->Init(mDisplayContent, mDisplayFrame, nullptr);

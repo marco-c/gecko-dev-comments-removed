@@ -10,6 +10,7 @@
 
 #include "gfxContext.h"
 #include "nsDisplayList.h"
+#include "mozilla/PresShell.h"
 #include "mozilla/dom/Document.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsIObjectLoadingContent.h"

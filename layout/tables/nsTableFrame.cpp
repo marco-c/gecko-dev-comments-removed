@@ -689,7 +689,7 @@ void nsTableFrame::AppendAnonymousColFrames(
   MOZ_ASSERT(aColType != eColAnonymousCol, "Shouldn't happen");
   MOZ_ASSERT(aNumColsToAdd > 0, "We should be adding _something_.");
 
-  nsIPresShell* shell = PresShell();
+  mozilla::PresShell* presShell = PresShell();
 
   
   nsFrameList newColFrames;
@@ -702,13 +702,13 @@ void nsTableFrame::AppendAnonymousColFrames(
     
     nsIContent* iContent = aColGroupFrame->GetContent();
     RefPtr<ComputedStyle> computedStyle =
-        shell->StyleSet()->ResolveNonInheritingAnonymousBoxStyle(
+        presShell->StyleSet()->ResolveNonInheritingAnonymousBoxStyle(
             PseudoStyleType::tableCol);
     
     NS_ASSERTION(iContent, "null content in CreateAnonymousColFrames");
 
     
-    nsIFrame* colFrame = NS_NewTableColFrame(shell, computedStyle);
+    nsIFrame* colFrame = NS_NewTableColFrame(presShell, computedStyle);
     ((nsTableColFrame*)colFrame)->SetColType(aColType);
     colFrame->Init(iContent, aColGroupFrame, nullptr);
 
@@ -2696,7 +2696,7 @@ void nsTableFrame::RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame) {
       aListID == kColGroupList || mozilla::StyleDisplay::TableColumnGroup !=
                                       aOldFrame->StyleDisplay()->mDisplay,
       "Wrong list name; use kColGroupList iff colgroup");
-  nsIPresShell* shell = PresShell();
+  mozilla::PresShell* presShell = PresShell();
   nsTableFrame* lastParent = nullptr;
   while (aOldFrame) {
     nsIFrame* oldFrameNextContinuation = aOldFrame->GetNextContinuation();
@@ -2713,8 +2713,8 @@ void nsTableFrame::RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame) {
         parent->SetFullBCDamageArea();
       }
       parent->SetGeometryDirty();
-      shell->FrameNeedsReflow(parent, nsIPresShell::eTreeChange,
-                              NS_FRAME_HAS_DIRTY_CHILDREN);
+      presShell->FrameNeedsReflow(parent, nsIPresShell::eTreeChange,
+                                  NS_FRAME_HAS_DIRTY_CHILDREN);
       lastParent = parent;
     }
   }
