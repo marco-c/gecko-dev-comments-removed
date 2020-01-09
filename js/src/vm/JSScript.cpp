@@ -4527,7 +4527,7 @@ bool JSScript::hasBreakpointsAt(jsbytecode* pc) {
 
   
   
-  uint32_t noteLength = bce->notes().length() + 1;
+  uint32_t noteLength = bce->bytecodeSection().notes().length() + 1;
 
   
   if (!script->createSharedScriptData(cx, codeLength, noteLength, natoms)) {
