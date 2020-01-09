@@ -6,6 +6,10 @@
 async function testSteps() {
   const url = "http://example.com";
 
+  info("Setting pref");
+
+  Services.prefs.setBoolPref("dom.storage.snapshot_reusing", false);
+
   const items = [
     { key: "key1", value: "value1" },
     { key: "key2", value: "value2" },
@@ -19,214 +23,306 @@ async function testSteps() {
     { key: "key10", value: "value10" },
   ];
 
-  function getPartialPrefill() {
-    let size = 0;
-    for (let i = 0; i < items.length / 2; i++) {
-      let item = items[i];
-      size += item.key.length + item.value.length;
+  let sizeOfOneKey;
+  let sizeOfOneValue;
+  let sizeOfOneItem;
+  let sizeOfKeys = 0;
+  let sizeOfItems = 0;
+
+  for (let i = 0; i < items.length; i++) {
+    let item = items[i];
+    let sizeOfKey = item.key.length;
+    let sizeOfValue = item.value.length;
+    let sizeOfItem = sizeOfKey + sizeOfValue;
+    if (i == 0) {
+      sizeOfOneKey = sizeOfKey;
+      sizeOfOneValue = sizeOfValue;
+      sizeOfOneItem = sizeOfItem;
     }
-    return size;
+    sizeOfKeys += sizeOfKey;
+    sizeOfItems += sizeOfItem;
   }
 
+  info("Size of one key is " + sizeOfOneKey);
+  info("Size of one value is " + sizeOfOneValue);
+  info("Size of one item is " + sizeOfOneItem);
+  info("Size of keys is " + sizeOfKeys);
+  info("Size of items is " + sizeOfItems);
+
   const prefillValues = [
-    0,                   
-    getPartialPrefill(), 
-    -1,                  
+    
+    0,
+    
+    sizeOfOneKey - 1,
+    
+    sizeOfOneKey + 1,
+    
+    sizeOfOneItem,
+    
+    2 * sizeOfOneItem,
+    
+    3 * sizeOfOneItem,
+    
+    4 * sizeOfOneItem,
+    
+    sizeOfKeys,
+    
+    sizeOfKeys + sizeOfOneValue - 1,
+    
+    sizeOfKeys + sizeOfOneValue,
+    
+    
+    sizeOfKeys + sizeOfOneValue + 1,
+    
+    sizeOfKeys + 2 * sizeOfOneValue,
+    
+    sizeOfKeys + 3 * sizeOfOneValue,
+    
+    sizeOfKeys + 4 * sizeOfOneValue,
+    
+    sizeOfKeys + 5 * sizeOfOneValue,
+    
+    sizeOfKeys + 6 * sizeOfOneValue,
+    
+    sizeOfKeys + 7 * sizeOfOneValue,
+    
+    sizeOfKeys + 8 * sizeOfOneValue,
+    
+    sizeOfKeys + 9 * sizeOfOneValue,
+    
+    sizeOfItems,
+    
+    -1,
   ];
 
-  info("Setting pref");
-
-  Services.prefs.setBoolPref("dom.storage.snapshot_reusing", false);
-
   for (let prefillValue of prefillValues) {
-    info("Setting prefill value");
+    info("Setting prefill value to " + prefillValue);
 
     Services.prefs.setIntPref("dom.storage.snapshot_prefill", prefillValue);
 
-    info("Getting storage");
+    const gradualPrefillValues = [
+      
+      0,
+      
+      sizeOfOneKey - 1,
+      
+      
+      sizeOfOneKey + 1,
+      
+      sizeOfOneItem,
+      
+      2 * sizeOfOneItem,
+      
+      3 * sizeOfOneItem,
+      
+      4 * sizeOfOneItem,
+      
+      5 * sizeOfOneItem,
+      
+      6 * sizeOfOneItem,
+      
+      7 * sizeOfOneItem,
+      
+      8 * sizeOfOneItem,
+      
+      9 * sizeOfOneItem,
+      
+      sizeOfItems,
+      
+      -1,
+    ];
 
-    let storage = getLocalStorage(getPrincipal(url));
+    for (let gradualPrefillValue of gradualPrefillValues) {
+      info("Setting gradual prefill value to " + gradualPrefillValue);
 
-    
+      Services.prefs.setIntPref("dom.storage.snapshot_gradual_prefill",
+                                gradualPrefillValue);
 
-    info("Adding data");
+      info("Getting storage");
 
-    for (let item of items) {
-      storage.setItem(item.key, item.value);
+      let storage = getLocalStorage(getPrincipal(url));
+
+      
+
+      info("Adding data");
+
+      for (let item of items) {
+        storage.setItem(item.key, item.value);
+      }
+
+      info("Saving key order");
+
+      
+      let savedKeys = Object.keys(storage);
+
+      
+      for (let i = 0; i < savedKeys.length; i++) {
+        is(storage.key(i), savedKeys[i], "Correct key");
+      }
+
+      info("Returning to event loop");
+
+      
+      await returnToEventLoop();
+
+      
+
+      info("Verifying length");
+
+      is(storage.length, items.length, "Correct length");
+
+      info("Verifying key order");
+
+      let keys = Object.keys(storage);
+
+      is(keys.length, savedKeys.length);
+
+      for (let i = 0; i < keys.length; i++) {
+        is(keys[i], savedKeys[i], "Correct key");
+      }
+
+      info("Verifying values");
+
+      for (let item of items) {
+        is(storage.getItem(item.key), item.value, "Correct value");
+      }
+
+      info("Returning to event loop");
+
+      await returnToEventLoop();
+
+      
+
+      
+      storage.getItem("key2");
+
+      
+      storage.removeItem("key5");
+      storage.setItem("key5", "value5");
+      storage.removeItem("key5");
+      storage.setItem("key11", "value11");
+      storage.setItem("key5", "value5");
+
+      items.push({ key: "key11", value: "value11" });
+
+      info("Verifying length");
+
+      is(storage.length, items.length, "Correct length");
+
+      
+      
+      savedKeys = Object.keys(storage);
+
+      info("Verifying values");
+
+      for (let item of items) {
+        is(storage.getItem(item.key), item.value, "Correct value");
+      }
+
+      storage.removeItem("key11");
+
+      items.pop();
+
+      info("Returning to event loop");
+
+      await returnToEventLoop();
+
+      
+
+      
+      info("Verifying length");
+
+      is(storage.length, items.length, "Correct length");
+
+      info("Verifying values");
+
+      for (let item of items) {
+        is(storage.getItem(item.key), item.value, "Correct value");
+      }
+
+      is(storage.getItem("key11"), null, "Correct value");
+
+      info("Returning to event loop");
+
+      await returnToEventLoop();
+
+      
+
+      
+      info("Saving key order");
+
+      savedKeys = Object.keys(storage);
+
+      
+      info("Verifying length");
+
+      is(storage.length, items.length, "Correct length");
+
+      info("Verifying values");
+
+      for (let item of items) {
+        is(storage.getItem(item.key), item.value, "Correct value");
+      }
+
+      is(storage.getItem("key11"), null, "Correct value");
+
+      info("Returning to event loop");
+
+      await returnToEventLoop();
+
+      
+      info("Verifying unknown item");
+
+      is(storage.getItem("key11"), null, "Correct value");
+
+      info("Verifying unknown item again");
+
+      is(storage.getItem("key11"), null, "Correct value");
+
+      info("Returning to event loop");
+
+      await returnToEventLoop();
+
+      
+
+      
+      info("Saving key order");
+
+      savedKeys = Object.keys(storage);
+
+      await returnToEventLoop();
+
+      
+
+      
+      info("Getting values");
+
+      for (let i = items.length - 1; i >= 0; i--) {
+        let item = items[i];
+        storage.getItem(item.key);
+      }
+
+      info("Verifying key order");
+
+      keys = Object.keys(storage);
+
+      is(keys.length, savedKeys.length);
+
+      for (let i = 0; i < keys.length; i++) {
+        is(keys[i], savedKeys[i], "Correct key");
+      }
+
+      await returnToEventLoop();
+
+      
+
+      info("Clearing");
+
+      storage.clear();
+
+      info("Returning to event loop");
+
+      await returnToEventLoop();
     }
-
-    info("Saving key order");
-
-    
-    let savedKeys = Object.keys(storage);
-
-    
-    for (let i = 0; i < savedKeys.length; i++) {
-      is(storage.key(i), savedKeys[i], "Correct key");
-    }
-
-    info("Returning to event loop");
-
-    
-    await returnToEventLoop();
-
-    
-
-    info("Verifying length");
-
-    is(storage.length, items.length, "Correct length");
-
-    info("Verifying key order");
-
-    let keys = Object.keys(storage);
-
-    is(keys.length, savedKeys.length);
-
-    for (let i = 0; i < keys.length; i++) {
-      is(keys[i], savedKeys[i], "Correct key");
-    }
-
-    info("Verifying values");
-
-    for (let item of items) {
-      is(storage.getItem(item.key), item.value, "Correct value");
-    }
-
-    info("Returning to event loop");
-
-    await returnToEventLoop();
-
-    
-
-    
-    storage.getItem("key2");
-
-    
-    storage.removeItem("key5");
-    storage.setItem("key5", "value5");
-    storage.removeItem("key5");
-    storage.setItem("key11", "value11");
-    storage.setItem("key5", "value5");
-
-    items.push({ key: "key11", value: "value11" });
-
-    info("Verifying length");
-
-    is(storage.length, items.length, "Correct length");
-
-    
-    
-    savedKeys = Object.keys(storage);
-
-    info("Verifying values");
-
-    for (let item of items) {
-      is(storage.getItem(item.key), item.value, "Correct value");
-    }
-
-    storage.removeItem("key11");
-
-    items.pop();
-
-    info("Returning to event loop");
-
-    await returnToEventLoop();
-
-    
-
-    
-    info("Verifying length");
-
-    is(storage.length, items.length, "Correct length");
-
-    info("Verifying values");
-
-    for (let item of items) {
-      is(storage.getItem(item.key), item.value, "Correct value");
-    }
-
-    is(storage.getItem("key11"), null, "Correct value");
-
-    info("Returning to event loop");
-
-    await returnToEventLoop();
-
-    
-
-    
-    info("Saving key order");
-
-    savedKeys = Object.keys(storage);
-
-    
-    info("Verifying length");
-
-    is(storage.length, items.length, "Correct length");
-
-    info("Verifying values");
-
-    for (let item of items) {
-      is(storage.getItem(item.key), item.value, "Correct value");
-    }
-
-    is(storage.getItem("key11"), null, "Correct value");
-
-    info("Returning to event loop");
-
-    await returnToEventLoop();
-
-    
-    info("Verifying unknown item");
-
-    is(storage.getItem("key11"), null, "Correct value");
-
-    info("Verifying unknown item again");
-
-    is(storage.getItem("key11"), null, "Correct value");
-
-    info("Returning to event loop");
-
-    await returnToEventLoop();
-
-    
-
-    
-    info("Saving key order");
-
-    savedKeys = Object.keys(storage);
-
-    await returnToEventLoop();
-
-    
-
-    
-    info("Getting values");
-
-    for (let i = items.length - 1; i >= 0; i--) {
-      let item = items[i];
-      storage.getItem(item.key);
-    }
-
-    info("Verifying key order");
-
-    keys = Object.keys(storage);
-
-    is(keys.length, savedKeys.length);
-
-    for (let i = 0; i < keys.length; i++) {
-      is(keys[i], savedKeys[i], "Correct key");
-    }
-
-    await returnToEventLoop();
-
-    
-
-    info("Clearing");
-
-    storage.clear();
-
-    info("Returning to event loop");
-
-    await returnToEventLoop();
   }
 }

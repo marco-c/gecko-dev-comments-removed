@@ -135,24 +135,71 @@ add_task(async function() {
     key8: "initial8",
   };
 
-  function getPartialPrefill() {
-    let size = 0;
-    let entries = Object.entries(initialState);
-    for (let i = 0; i < entries.length / 2; i++) {
-      let entry = entries[i];
-      size += entry[0].length + entry[1].length;
+  let sizeOfOneKey;
+  let sizeOfOneValue;
+  let sizeOfOneItem;
+  let sizeOfKeys = 0;
+  let sizeOfItems = 0;
+
+  let entries = Object.entries(initialState);
+  for (let i = 0; i < entries.length; i++) {
+    let entry = entries[i];
+    let sizeOfKey = entry[0].length;
+    let sizeOfValue = entry[1].length;
+    let sizeOfItem = sizeOfKey + sizeOfValue;
+    if (i == 0) {
+      sizeOfOneKey = sizeOfKey;
+      sizeOfOneValue = sizeOfValue;
+      sizeOfOneItem = sizeOfItem;
     }
-    return size;
+    sizeOfKeys += sizeOfKey;
+    sizeOfItems += sizeOfItem;
   }
 
+  info("Size of one key is " + sizeOfOneKey);
+  info("Size of one value is " + sizeOfOneValue);
+  info("Size of one item is " + sizeOfOneItem);
+  info("Size of keys is " + sizeOfKeys);
+  info("Size of items is " + sizeOfItems);
+
   const prefillValues = [
-    0,                   
-    getPartialPrefill(), 
-    -1,                  
+    
+    0,
+    
+    sizeOfOneKey - 1,
+    
+    sizeOfOneKey + 1,
+    
+    sizeOfOneItem,
+    
+    2 * sizeOfOneItem,
+    
+    sizeOfKeys,
+    
+    sizeOfKeys + sizeOfOneValue - 1,
+    
+    sizeOfKeys + sizeOfOneValue,
+    
+    
+    sizeOfKeys + sizeOfOneValue + 1,
+    
+    sizeOfKeys + 2 * sizeOfOneValue,
+    
+    sizeOfKeys + 3 * sizeOfOneValue,
+    
+    sizeOfKeys + 4 * sizeOfOneValue,
+    
+    sizeOfKeys + 5 * sizeOfOneValue,
+    
+    sizeOfKeys + 6 * sizeOfOneValue,
+    
+    sizeOfItems,
+    
+    -1,
   ];
 
   for (let prefillValue of prefillValues) {
-    info("Setting prefill value");
+    info("Setting prefill value to " + prefillValue);
 
     await SpecialPowers.pushPrefEnv({
       set: [
@@ -160,209 +207,247 @@ add_task(async function() {
       ],
     });
 
-    info("Stage 1");
-
-    const setRemoveMutations1 = [
-      ["key0", "setRemove10"],
-      ["key1", "setRemove11"],
-      ["key2", null],
-      ["key3", "setRemove13"],
-      ["key4", "setRemove14"],
-      ["key5", "setRemove15"],
-      ["key6", "setRemove16"],
-      ["key7", "setRemove17"],
-      ["key8", null],
-      ["key9", "setRemove19"],
+    const gradualPrefillValues = [
+      
+      0,
+      
+      sizeOfOneKey - 1,
+      
+      
+      sizeOfOneKey + 1,
+      
+      sizeOfOneItem,
+      
+      2 * sizeOfOneItem,
+      
+      3 * sizeOfOneItem,
+      
+      4 * sizeOfOneItem,
+      
+      5 * sizeOfOneItem,
+      
+      6 * sizeOfOneItem,
+      
+      sizeOfItems,
+      
+      -1,
     ];
 
-    const setRemoveState1 = {
-      key0: "setRemove10",
-      key1: "setRemove11",
-      key3: "setRemove13",
-      key4: "setRemove14",
-      key5: "setRemove15",
-      key6: "setRemove16",
-      key7: "setRemove17",
-      key9: "setRemove19",
-    };
+    for (let gradualPrefillValue of gradualPrefillValues) {
+      info("Setting gradual prefill value to " + gradualPrefillValue);
 
-    const setRemoveMutations2 = [
-      ["key0", "setRemove20"],
-      ["key1", null],
-      ["key2", "setRemove22"],
-      ["key3", "setRemove23"],
-      ["key4", "setRemove24"],
-      ["key5", "setRemove25"],
-      ["key6", "setRemove26"],
-      ["key7", null],
-      ["key8", "setRemove28"],
-      ["key9", "setRemove29"],
-    ];
+      await SpecialPowers.pushPrefEnv({
+        set: [
+          ["dom.storage.snapshot_gradual_prefill", gradualPrefillValue],
+        ],
+      });
 
-    const setRemoveState2 = {
-      key0: "setRemove20",
-      key2: "setRemove22",
-      key3: "setRemove23",
-      key4: "setRemove24",
-      key5: "setRemove25",
-      key6: "setRemove26",
-      key8: "setRemove28",
-      key9: "setRemove29",
-    };
+      info("Stage 1");
 
-    
-    
-    await beginExplicitSnapshot(writerTab1);
-    await applyMutations(writerTab1, initialMutations);
-    await endExplicitSnapshot(writerTab1);
+      const setRemoveMutations1 = [
+        ["key0", "setRemove10"],
+        ["key1", "setRemove11"],
+        ["key2", null],
+        ["key3", "setRemove13"],
+        ["key4", "setRemove14"],
+        ["key5", "setRemove15"],
+        ["key6", "setRemove16"],
+        ["key7", "setRemove17"],
+        ["key8", null],
+        ["key9", "setRemove19"],
+      ];
 
-    
-    
-    await beginExplicitSnapshot(writerTab1);
-    await beginExplicitSnapshot(writerTab2);
-    await beginExplicitSnapshot(readerTab1);
+      const setRemoveState1 = {
+        key0: "setRemove10",
+        key1: "setRemove11",
+        key3: "setRemove13",
+        key4: "setRemove14",
+        key5: "setRemove15",
+        key6: "setRemove16",
+        key7: "setRemove17",
+        key9: "setRemove19",
+      };
 
-    
-    
-    
-    await applyMutations(writerTab1, setRemoveMutations1);
-    await endExplicitSnapshot(writerTab1);
+      const setRemoveMutations2 = [
+        ["key0", "setRemove20"],
+        ["key1", null],
+        ["key2", "setRemove22"],
+        ["key3", "setRemove23"],
+        ["key4", "setRemove24"],
+        ["key5", "setRemove25"],
+        ["key6", "setRemove26"],
+        ["key7", null],
+        ["key8", "setRemove28"],
+        ["key9", "setRemove29"],
+      ];
 
-    
-    
-    
-    await beginExplicitSnapshot(readerTab2);
+      const setRemoveState2 = {
+        key0: "setRemove20",
+        key2: "setRemove22",
+        key3: "setRemove23",
+        key4: "setRemove24",
+        key5: "setRemove25",
+        key6: "setRemove26",
+        key8: "setRemove28",
+        key9: "setRemove29",
+      };
 
-    
-    
-    
-    await applyMutations(writerTab2, setRemoveMutations2);
-    await endExplicitSnapshot(writerTab2);
+      
+      
+      
+      await beginExplicitSnapshot(writerTab1);
+      await applyMutations(writerTab1, initialMutations);
+      await endExplicitSnapshot(writerTab1);
 
-    
-    await verifyState(readerTab1, initialState);
-    await endExplicitSnapshot(readerTab1);
+      
+      
+      await beginExplicitSnapshot(writerTab1);
+      await beginExplicitSnapshot(writerTab2);
+      await beginExplicitSnapshot(readerTab1);
 
-    
-    
-    await verifyState(readerTab2, setRemoveState1);
-    await endExplicitSnapshot(readerTab2);
+      
+      
+      
+      await applyMutations(writerTab1, setRemoveMutations1);
+      await endExplicitSnapshot(writerTab1);
 
-    
-    
-    
-    await beginExplicitSnapshot(readerTab1);
-    await verifyState(readerTab1, setRemoveState2);
-    await endExplicitSnapshot(readerTab1);
+      
+      
+      
+      await beginExplicitSnapshot(readerTab2);
 
-    info("Stage 2");
+      
+      
+      
+      await applyMutations(writerTab2, setRemoveMutations2);
+      await endExplicitSnapshot(writerTab2);
 
-    const setRemoveClearMutations1 = [
-      ["key0", "setRemoveClear10"],
-      ["key1", null],
-      [null, null],
-    ];
+      
+      await verifyState(readerTab1, initialState);
+      await endExplicitSnapshot(readerTab1);
 
-    const setRemoveClearState1 = {
-    };
+      
+      
+      await verifyState(readerTab2, setRemoveState1);
+      await endExplicitSnapshot(readerTab2);
 
-    const setRemoveClearMutations2 = [
-      ["key8", null],
-      ["key9", "setRemoveClear29"],
-      [null, null],
-    ];
+      
+      
+      
+      await beginExplicitSnapshot(readerTab1);
+      await verifyState(readerTab1, setRemoveState2);
+      await endExplicitSnapshot(readerTab1);
 
-    const setRemoveClearState2 = {
-    };
+      info("Stage 2");
 
-    
-    
-    await beginExplicitSnapshot(writerTab1);
-    await applyMutations(writerTab1, initialMutations);
-    await endExplicitSnapshot(writerTab1);
+      const setRemoveClearMutations1 = [
+        ["key0", "setRemoveClear10"],
+        ["key1", null],
+        [null, null],
+      ];
 
-    await beginExplicitSnapshot(writerTab1);
-    await beginExplicitSnapshot(writerTab2);
-    await beginExplicitSnapshot(readerTab1);
+      const setRemoveClearState1 = {
+      };
 
-    await applyMutations(writerTab1, setRemoveClearMutations1);
-    await endExplicitSnapshot(writerTab1);
+      const setRemoveClearMutations2 = [
+        ["key8", null],
+        ["key9", "setRemoveClear29"],
+        [null, null],
+      ];
 
-    await beginExplicitSnapshot(readerTab2);
+      const setRemoveClearState2 = {
+      };
 
-    await applyMutations(writerTab2, setRemoveClearMutations2);
-    await endExplicitSnapshot(writerTab2);
+      
+      
+      await beginExplicitSnapshot(writerTab1);
+      await applyMutations(writerTab1, initialMutations);
+      await endExplicitSnapshot(writerTab1);
 
-    await verifyState(readerTab1, initialState);
-    await endExplicitSnapshot(readerTab1);
+      await beginExplicitSnapshot(writerTab1);
+      await beginExplicitSnapshot(writerTab2);
+      await beginExplicitSnapshot(readerTab1);
 
-    await verifyState(readerTab2, setRemoveClearState1);
-    await endExplicitSnapshot(readerTab2);
+      await applyMutations(writerTab1, setRemoveClearMutations1);
+      await endExplicitSnapshot(writerTab1);
 
-    await beginExplicitSnapshot(readerTab1);
-    await verifyState(readerTab1, setRemoveClearState2);
-    await endExplicitSnapshot(readerTab1);
+      await beginExplicitSnapshot(readerTab2);
 
-    info("Stage 3");
+      await applyMutations(writerTab2, setRemoveClearMutations2);
+      await endExplicitSnapshot(writerTab2);
 
-    const changeOrderMutations = [
-      ["key1", null],
-      ["key2", null],
-      ["key3", null],
-      ["key5", null],
-      ["key6", null],
-      ["key7", null],
-      ["key8", null],
-      ["key8", "initial8"],
-      ["key7", "initial7"],
-      ["key6", "initial6"],
-      ["key5", "initial5"],
-      ["key3", "initial3"],
-      ["key2", "initial2"],
-      ["key1", "initial1"],
-    ];
+      await verifyState(readerTab1, initialState);
+      await endExplicitSnapshot(readerTab1);
 
-    
-    
-    await beginExplicitSnapshot(writerTab1);
-    await applyMutations(writerTab1, initialMutations);
-    await endExplicitSnapshot(writerTab1);
+      await verifyState(readerTab2, setRemoveClearState1);
+      await endExplicitSnapshot(readerTab2);
 
-    
-    
-    
-    await beginExplicitSnapshot(readerTab1);
-    await beginExplicitSnapshot(writerTab1);
-    await beginExplicitSnapshot(readerTab2);
+      await beginExplicitSnapshot(readerTab1);
+      await verifyState(readerTab1, setRemoveClearState2);
+      await endExplicitSnapshot(readerTab1);
 
-    
-    
-    let tab1Keys = await getKeys(readerTab1);
-    await endExplicitSnapshot(readerTab1);
+      info("Stage 3");
 
-    
-    
-    
-    
-    await applyMutations(writerTab1, changeOrderMutations);
-    await endExplicitSnapshot(writerTab1);
+      const changeOrderMutations = [
+        ["key1", null],
+        ["key2", null],
+        ["key3", null],
+        ["key5", null],
+        ["key6", null],
+        ["key7", null],
+        ["key8", null],
+        ["key8", "initial8"],
+        ["key7", "initial7"],
+        ["key6", "initial6"],
+        ["key5", "initial5"],
+        ["key3", "initial3"],
+        ["key2", "initial2"],
+        ["key1", "initial1"],
+      ];
 
-    
-    
-    let tab2Keys = await getKeys(readerTab2);
-    await endExplicitSnapshot(readerTab2);
+      
+      
+      
+      await beginExplicitSnapshot(writerTab1);
+      await applyMutations(writerTab1, initialMutations);
+      await endExplicitSnapshot(writerTab1);
 
-    
-    is(tab2Keys.length, tab1Keys.length, "Correct keys length");
-    for (let i = 0; i < tab2Keys.length; i++) {
-      is(tab2Keys[i], tab1Keys[i], "Correct key");
+      
+      
+      
+      await beginExplicitSnapshot(readerTab1);
+      await beginExplicitSnapshot(writerTab1);
+      await beginExplicitSnapshot(readerTab2);
+
+      
+      
+      let tab1Keys = await getKeys(readerTab1);
+      await endExplicitSnapshot(readerTab1);
+
+      
+      
+      
+      
+      await applyMutations(writerTab1, changeOrderMutations);
+      await endExplicitSnapshot(writerTab1);
+
+      
+      
+      let tab2Keys = await getKeys(readerTab2);
+      await endExplicitSnapshot(readerTab2);
+
+      
+      is(tab2Keys.length, tab1Keys.length, "Correct keys length");
+      for (let i = 0; i < tab2Keys.length; i++) {
+        is(tab2Keys[i], tab1Keys[i], "Correct key");
+      }
+
+      
+      
+      await beginExplicitSnapshot(readerTab1);
+      await verifyState(readerTab1, initialState);
+      await endExplicitSnapshot(readerTab1);
     }
-
-    
-    
-    await beginExplicitSnapshot(readerTab1);
-    await verifyState(readerTab1, initialState);
-    await endExplicitSnapshot(readerTab1);
   }
 
   
