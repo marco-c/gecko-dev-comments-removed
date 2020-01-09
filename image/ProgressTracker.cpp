@@ -155,6 +155,31 @@ class AsyncNotifyRunnable : public Runnable {
   nsTArray<RefPtr<IProgressObserver>> mObservers;
 };
 
+ProgressTracker::MediumHighRunnable::MediumHighRunnable(
+    already_AddRefed<AsyncNotifyRunnable>&& aEvent)
+    : PrioritizableRunnable(std::move(aEvent),
+                            nsIRunnablePriority::PRIORITY_MEDIUMHIGH) {}
+
+void ProgressTracker::MediumHighRunnable::AddObserver(
+    IProgressObserver* aObserver) {
+  static_cast<AsyncNotifyRunnable*>(mRunnable.get())->AddObserver(aObserver);
+}
+
+void ProgressTracker::MediumHighRunnable::RemoveObserver(
+    IProgressObserver* aObserver) {
+  static_cast<AsyncNotifyRunnable*>(mRunnable.get())->RemoveObserver(aObserver);
+}
+
+
+already_AddRefed<ProgressTracker::MediumHighRunnable>
+ProgressTracker::MediumHighRunnable::Create(
+    already_AddRefed<AsyncNotifyRunnable>&& aEvent) {
+  MOZ_ASSERT(NS_IsMainThread());
+  RefPtr<ProgressTracker::MediumHighRunnable> event(
+      new ProgressTracker::MediumHighRunnable(std::move(aEvent)));
+  return event.forget();
+}
+
 void ProgressTracker::Notify(IProgressObserver* aObserver) {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -173,13 +198,11 @@ void ProgressTracker::Notify(IProgressObserver* aObserver) {
   
   
   
-  AsyncNotifyRunnable* runnable =
-      static_cast<AsyncNotifyRunnable*>(mRunnable.get());
-
-  if (runnable) {
-    runnable->AddObserver(aObserver);
+  if (mRunnable) {
+    mRunnable->AddObserver(aObserver);
   } else {
-    mRunnable = new AsyncNotifyRunnable(this, aObserver);
+    RefPtr<AsyncNotifyRunnable> ev = new AsyncNotifyRunnable(this, aObserver);
+    mRunnable = ProgressTracker::MediumHighRunnable::Create(ev.forget());
     mEventTarget->Dispatch(mRunnable, NS_DISPATCH_NORMAL);
   }
 }
@@ -463,11 +486,8 @@ bool ProgressTracker::RemoveObserver(IProgressObserver* aObserver) {
 
   
   
-  AsyncNotifyRunnable* runnable =
-      static_cast<AsyncNotifyRunnable*>(mRunnable.get());
-
-  if (aObserver->NotificationsDeferred() && runnable) {
-    runnable->RemoveObserver(aObserver);
+  if (aObserver->NotificationsDeferred() && mRunnable) {
+    mRunnable->RemoveObserver(aObserver);
     aObserver->ClearPendingNotify();
   }
 

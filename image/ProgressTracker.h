@@ -209,7 +209,21 @@ class ProgressTracker : public mozilla::SupportsWeakPtr<ProgressTracker> {
   void FireFailureNotification();
 
   
-  nsCOMPtr<nsIRunnable> mRunnable;
+  
+  class MediumHighRunnable final : public PrioritizableRunnable {
+    explicit MediumHighRunnable(already_AddRefed<AsyncNotifyRunnable>&& aEvent);
+    virtual ~MediumHighRunnable() = default;
+
+   public:
+    void AddObserver(IProgressObserver* aObserver);
+    void RemoveObserver(IProgressObserver* aObserver);
+
+    static already_AddRefed<MediumHighRunnable> Create(
+        already_AddRefed<AsyncNotifyRunnable>&& aEvent);
+  };
+
+  
+  RefPtr<MediumHighRunnable> mRunnable;
 
   
   mutable Mutex mMutex;
