@@ -2966,13 +2966,19 @@ void nsIFrame::BuildDisplayListForStackingContext(
   bool hasOverrideDirtyRect = false;
   
   
-  if (HasOverrideDirtyRegion() && !aBuilder->InInvalidSubtree() &&
-      !IsFrameModified()) {
-    nsDisplayListBuilder::DisplayListBuildingData* data =
-        GetProperty(nsDisplayListBuilder::DisplayListBuildingRect());
-    if (data) {
-      dirtyRect = data->mDirtyRect.Intersect(visibleRect);
-      hasOverrideDirtyRect = true;
+  
+  
+  
+  if (aBuilder->IsPartialUpdate() && !aBuilder->InInvalidSubtree() &&
+      !IsFrameModified() && IsFixedPosContainingBlock()) {
+    dirtyRect = nsRect();
+    if (HasOverrideDirtyRegion()) {
+      nsDisplayListBuilder::DisplayListBuildingData* data =
+          GetProperty(nsDisplayListBuilder::DisplayListBuildingRect());
+      if (data) {
+        dirtyRect = data->mDirtyRect.Intersect(visibleRect);
+        hasOverrideDirtyRect = true;
+      }
     }
   }
 
