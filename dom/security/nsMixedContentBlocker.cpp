@@ -301,19 +301,7 @@ nsMixedContentBlocker::AsyncOnChannelRedirect(
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  nsCOMPtr<nsILoadInfo> loadInfo;
-  rv = aOldChannel->GetLoadInfo(getter_AddRefs(loadInfo));
-  NS_ENSURE_SUCCESS(rv, rv);
-  if (!loadInfo) {
-    
-    
-    
-    
-    
-    
-    return NS_OK;
-  }
-
+  nsCOMPtr<nsILoadInfo> loadInfo = aOldChannel->GetLoadInfo();
   nsCOMPtr<nsIPrincipal> requestingPrincipal = loadInfo->LoadingPrincipal();
 
   
