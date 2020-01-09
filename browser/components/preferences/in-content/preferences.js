@@ -46,9 +46,7 @@ function register_module(categoryName, categoryObject) {
       let template = document.getElementById("template-" + categoryName);
       if (template) {
         
-        
-        let frag = MozXULElement.parseXULToFragment(template.firstChild.data);
-
+        let frag = template.content;
         await document.l10n.translateFragment(frag);
 
         
