@@ -5810,8 +5810,6 @@ bool GeneralParser<ParseHandler, Unit>::forHeadStart(
         return false;
       }
     }
-
-    handler_.adjustGetToSet(*forInitialPart);
   } else if (handler_.isPropertyAccess(*forInitialPart)) {
     
   } else if (handler_.isFunctionCall(*forInitialPart)) {
@@ -8423,8 +8421,6 @@ typename ParseHandler::Node GeneralParser<ParseHandler, Unit>::assignExpr(
         return null();
       }
     }
-
-    handler_.adjustGetToSet(lhs);
   } else if (handler_.isPropertyAccess(lhs)) {
     
   } else if (handler_.isFunctionCall(lhs)) {
