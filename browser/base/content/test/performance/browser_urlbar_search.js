@@ -2,6 +2,7 @@
 
 
 
+requestLongerTimeout(5);
 
 
 
@@ -13,19 +14,13 @@
 
 
 
-const EXPECTED_REFLOWS_FIRST_OPEN = [
-  {
-    stack: [
-      "_openPanel@resource:///modules/UrlbarView.jsm",
-      "onQueryResults@resource:///modules/UrlbarView.jsm",
-      "_notify@resource:///modules/UrlbarController.jsm",
-      "receiveResults@resource:///modules/UrlbarController.jsm",
-      "notifyResults@resource:///modules/UrlbarProvidersManager.jsm",
-      "add@resource:///modules/UrlbarProvidersManager.jsm",
-      "onSearchResult@resource:///modules/UrlbarProviderUnifiedComplete.jsm",
-    ],
-  },
-  {
+
+const EXPECTED_REFLOWS_FIRST_OPEN = [];
+if (AppConstants.platform != "macosx" &&
+    (AppConstants.DEBUG ||
+     AppConstants.platform == "linux" ||
+     AppConstants.isPlatformAndVersionAtLeast("win", "10"))) {
+  EXPECTED_REFLOWS_FIRST_OPEN.push({
     stack: [
       "__rebuild@chrome://browser/content/search/search-one-offs.js",
       
@@ -39,31 +34,165 @@ const EXPECTED_REFLOWS_FIRST_OPEN = [
 
 
 
-
-
     ],
+  });
+}
+EXPECTED_REFLOWS_FIRST_OPEN.push(
+  {
+    stack: [
+      "_handleOverflow@chrome://global/content/elements/autocomplete-richlistitem.js",
+      "handleOverUnderflow@chrome://global/content/elements/autocomplete-richlistitem.js",
+      "_reuseAcItem@chrome://global/content/elements/autocomplete-richlistitem.js",
+      "_appendCurrentResult@chrome://global/content/bindings/autocomplete.xml",
+      "_invalidate@chrome://global/content/bindings/autocomplete.xml",
+      "invalidate@chrome://global/content/bindings/autocomplete.xml",
+    ],
+    maxCount: 36, 
   },
-];
 
+  {
+    stack: [
+      "_handleOverflow@chrome://global/content/elements/autocomplete-richlistitem.js",
+      "handleOverUnderflow@chrome://global/content/elements/autocomplete-richlistitem.js",
+      "_openAutocompletePopup@chrome://browser/content/urlbarBindings.xml",
+      "openAutocompletePopup@chrome://browser/content/urlbarBindings.xml",
+      "openPopup@chrome://global/content/bindings/autocomplete.xml",
+      "set_popupOpen@chrome://global/content/bindings/autocomplete.xml",
+    ],
+    maxCount: 6, 
+  },
 
-const EXPECTED_REFLOWS_SECOND_OPEN = [
-  
-  
   
   {
     stack: [
-      "_openPanel@resource:///modules/UrlbarView.jsm",
-      "onQueryResults@resource:///modules/UrlbarView.jsm",
-      "_notify@resource:///modules/UrlbarController.jsm",
-      "receiveResults@resource:///modules/UrlbarController.jsm",
-      "notifyResults@resource:///modules/UrlbarProvidersManager.jsm",
-      "add@resource:///modules/UrlbarProvidersManager.jsm",
-      "onSearchResult@resource:///modules/UrlbarProviderUnifiedComplete.jsm",
+      "_openAutocompletePopup@chrome://browser/content/urlbarBindings.xml",
+      "openAutocompletePopup@chrome://browser/content/urlbarBindings.xml",
+      "openPopup@chrome://global/content/bindings/autocomplete.xml",
+      "set_popupOpen@chrome://global/content/bindings/autocomplete.xml",
+    ],
+  }
+);
+
+
+const EXPECTED_REFLOWS_SECOND_OPEN = [
+  {
+    stack: [
+      "_handleOverflow@chrome://global/content/elements/autocomplete-richlistitem.js",
+      "handleOverUnderflow@chrome://global/content/elements/autocomplete-richlistitem.js",
+      "_reuseAcItem@chrome://global/content/elements/autocomplete-richlistitem.js",
+      "_appendCurrentResult@chrome://global/content/bindings/autocomplete.xml",
+      "_invalidate@chrome://global/content/bindings/autocomplete.xml",
+      "invalidate@chrome://global/content/bindings/autocomplete.xml",
+    ],
+    maxCount: 24, 
+  },
+
+  
+  {
+    stack: [
+      "_openAutocompletePopup@chrome://browser/content/urlbarBindings.xml",
+      "openAutocompletePopup@chrome://browser/content/urlbarBindings.xml",
+      "openPopup@chrome://global/content/bindings/autocomplete.xml",
+      "set_popupOpen@chrome://global/content/bindings/autocomplete.xml",
     ],
   },
 ];
 
-add_task(async function quantumbar() {
-  await runUrlbarTest(false, false, EXPECTED_REFLOWS_FIRST_OPEN,
-                      EXPECTED_REFLOWS_SECOND_OPEN);
+const SEARCH_TERM = "urlbar-reflows-" + Date.now();
+
+add_task(async function setup() {
+  await addDummyHistoryEntries(SEARCH_TERM);
+});
+
+
+
+
+
+
+add_task(async function() {
+  let win = await prepareSettledWindow();
+
+  let URLBar = win.gURLBar;
+  let popup = URLBar.popup;
+
+  URLBar.focus();
+  URLBar.value = SEARCH_TERM;
+  let testFn = async function() {
+    let oldInvalidate = popup.invalidate.bind(popup);
+    let oldResultsAdded = popup.onResultsAdded.bind(popup);
+    let oldSetTimeout = win.setTimeout;
+
+    
+    
+    
+    
+    popup.invalidate = (reason) => {
+      dirtyFrame(win);
+      oldInvalidate(reason);
+    };
+
+    popup.onResultsAdded = () => {
+      dirtyFrame(win);
+      oldResultsAdded();
+    };
+
+    win.setTimeout = (fn, ms) => {
+      return oldSetTimeout(() => {
+        dirtyFrame(win);
+        fn();
+      }, ms);
+    };
+
+    URLBar.controller.startSearch(URLBar.value);
+    await BrowserTestUtils.waitForEvent(URLBar.popup, "popupshown");
+    await BrowserTestUtils.waitForCondition(() => {
+      return URLBar.controller.searchStatus >=
+        Ci.nsIAutoCompleteController.STATUS_COMPLETE_NO_MATCH;
+    });
+    let matchCount = URLBar.popup.matchCount;
+    await BrowserTestUtils.waitForCondition(() => {
+      return URLBar.popup.richlistbox.children.length == matchCount;
+    });
+
+    URLBar.controller.stopSearch();
+    
+    
+    
+    
+    
+    
+    await new Promise(resolve => win.requestIdleCallback(resolve, { timeout: 1000 }));
+
+    let hiddenPromise = BrowserTestUtils.waitForEvent(URLBar.popup, "popuphidden");
+    EventUtils.synthesizeKey("VK_ESCAPE", {}, win);
+    await hiddenPromise;
+  };
+
+  let dropmarkerRect = document.getAnonymousElementByAttribute(gURLBar,
+    "anonid", "historydropmarker").getBoundingClientRect();
+  let textBoxRect = document.getAnonymousElementByAttribute(gURLBar,
+    "anonid", "moz-input-box").getBoundingClientRect();
+  let expectedRects = {
+    filter: rects => rects.filter(r => !(
+      
+      (r.x1 >= textBoxRect.left && r.x2 <= textBoxRect.right &&
+       r.y1 >= textBoxRect.top && r.y2 <= textBoxRect.bottom) ||
+      
+      
+      (r.x1 >= dropmarkerRect.left - 1 && r.x2 <= dropmarkerRect.right + 1 &&
+       r.y1 >= dropmarkerRect.top && r.y2 <= dropmarkerRect.bottom)
+      
+      
+    )),
+  };
+
+  info("First opening");
+  await withPerfObserver(testFn, {expectedReflows: EXPECTED_REFLOWS_FIRST_OPEN,
+                                  frames: expectedRects}, win);
+
+  info("Second opening");
+  await withPerfObserver(testFn, {expectedReflows: EXPECTED_REFLOWS_SECOND_OPEN,
+                                  frames: expectedRects}, win);
+
+  await BrowserTestUtils.closeWindow(win);
 });
