@@ -126,6 +126,12 @@ nsSVGFilterFrame* nsSVGFilterInstance::GetFilterFrame(nsIFrame* aTargetFrame) {
   if (aTargetFrame) {
     RefPtr<URLAndReferrerInfo> urlExtraReferrer =
         SVGObserverUtils::GetFilterURI(aTargetFrame, mFilter);
+
+    
+    if (!urlExtraReferrer) {
+      return nullptr;
+    }
+
     url = urlExtraReferrer->GetURI();
   } else {
     url = mFilter.GetURL()->ResolveLocalRef(mTargetContent);
