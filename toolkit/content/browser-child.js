@@ -8,9 +8,6 @@ const {WebProgressChild} = ChromeUtils.import("resource://gre/modules/WebProgres
 
 this.WebProgress = new WebProgressChild(this);
 
-
-this.beginSendingWebProgressEventsToParent();
-
 addEventListener("DOMTitleChanged", function(aEvent) {
   if (!aEvent.isTrusted || aEvent.target.defaultView != content)
     return;
