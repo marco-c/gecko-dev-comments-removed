@@ -7236,11 +7236,32 @@ nsIFrame* PresShell::EventHandler::ComputeRootFrameToHandleEvent(
   MOZ_ASSERT(aIsCapturingContentIgnored);
   MOZ_ASSERT(aIsCaptureRetargeted);
 
+  nsIFrame* rootFrameToHandleEvent = ComputeRootFrameToHandleEventWithPopup(
+      aFrameForPresShell, aGUIEvent, aCapturingContent,
+      aIsCapturingContentIgnored);
+  nsIContent* capturingContent =
+      *aIsCapturingContentIgnored ? nullptr : aCapturingContent;
+  if (capturingContent) {
+    bool capturingContentIgnored = false;
+    rootFrameToHandleEvent = ComputeRootFrameToHandleEventWithCapturingContent(
+        rootFrameToHandleEvent, capturingContent, &capturingContentIgnored,
+        aIsCaptureRetargeted);
+    *aIsCapturingContentIgnored |= capturingContentIgnored;
+  }
+  return rootFrameToHandleEvent;
+}
+
+nsIFrame* PresShell::EventHandler::ComputeRootFrameToHandleEventWithPopup(
+    nsIFrame* aRootFrameToHandleEvent, WidgetGUIEvent* aGUIEvent,
+    nsIContent* aCapturingContent, bool* aIsCapturingContentIgnored) {
+  MOZ_ASSERT(aRootFrameToHandleEvent);
+  MOZ_ASSERT(aGUIEvent);
+  MOZ_ASSERT(aIsCapturingContentIgnored);
+
   nsIContent* capturingContent = aCapturingContent;
   *aIsCapturingContentIgnored = false;
-  *aIsCaptureRetargeted = false;
 
-  nsPresContext* framePresContext = aFrameForPresShell->PresContext();
+  nsPresContext* framePresContext = aRootFrameToHandleEvent->PresContext();
   nsPresContext* rootPresContext = framePresContext->GetRootPresContext();
   NS_ASSERTION(rootPresContext == GetPresContext()->GetRootPresContext(),
                "How did we end up outside the connected "
@@ -7256,7 +7277,7 @@ nsIFrame* PresShell::EventHandler::ComputeRootFrameToHandleEvent(
   }
   
   
-  nsIFrame* rootFrameToHandleEvent = aFrameForPresShell;
+  nsIFrame* rootFrameToHandleEvent = aRootFrameToHandleEvent;
   if (popupFrame && !nsContentUtils::ContentIsCrossDocDescendantOf(
                         framePresContext->GetPresShell()->GetDocument(),
                         popupFrame->GetContent())) {
@@ -7265,7 +7286,7 @@ nsIFrame* PresShell::EventHandler::ComputeRootFrameToHandleEvent(
     
     
     if (framePresContext == rootPresContext &&
-        aFrameForPresShell == FrameConstructor()->GetRootFrame()) {
+        aRootFrameToHandleEvent == FrameConstructor()->GetRootFrame()) {
       rootFrameToHandleEvent = popupFrame;
     } else if (capturingContent &&
                nsContentUtils::ContentIsDescendantOf(
@@ -7273,48 +7294,61 @@ nsIFrame* PresShell::EventHandler::ComputeRootFrameToHandleEvent(
       rootFrameToHandleEvent = popupFrame;
     }
   }
+  return rootFrameToHandleEvent;
+}
 
-  if (capturingContent) {
-    
-    
-    
-    
-    bool vis;
-    nsCOMPtr<nsIBaseWindow> baseWin =
-        do_QueryInterface(GetPresContext()->GetContainerWeak());
-    if (baseWin && NS_SUCCEEDED(baseWin->GetVisibility(&vis)) && vis) {
-      *aIsCaptureRetargeted = gCaptureInfo.mRetargetToElement;
-      if (!*aIsCaptureRetargeted) {
-        
-        
-        NS_ASSERTION(capturingContent->GetComposedDoc() == GetDocument(),
-                     "Unexpected document");
-        nsIFrame* captureFrame = capturingContent->GetPrimaryFrame();
-        if (captureFrame) {
-          if (capturingContent->IsHTMLElement(nsGkAtoms::select)) {
-            
-            
-            nsIFrame* childFrame =
-                captureFrame->GetChildList(nsIFrame::kSelectPopupList)
-                    .FirstChild();
-            if (childFrame) {
-              captureFrame = childFrame;
-            }
-          }
+nsIFrame*
+PresShell::EventHandler::ComputeRootFrameToHandleEventWithCapturingContent(
+    nsIFrame* aRootFrameToHandleEvent, nsIContent* aCapturingContent,
+    bool* aIsCapturingContentIgnored, bool* aIsCaptureRetargeted) {
+  MOZ_ASSERT(aRootFrameToHandleEvent);
+  MOZ_ASSERT(aCapturingContent);
+  MOZ_ASSERT(aIsCapturingContentIgnored);
+  MOZ_ASSERT(aIsCaptureRetargeted);
 
+  *aIsCapturingContentIgnored = false;
+  *aIsCaptureRetargeted = false;
+
+  nsIFrame* rootFrameToHandleEvent = aRootFrameToHandleEvent;
+
+  
+  
+  
+  
+  bool vis;
+  nsCOMPtr<nsIBaseWindow> baseWin =
+      do_QueryInterface(GetPresContext()->GetContainerWeak());
+  if (baseWin && NS_SUCCEEDED(baseWin->GetVisibility(&vis)) && vis) {
+    *aIsCaptureRetargeted = gCaptureInfo.mRetargetToElement;
+    if (!*aIsCaptureRetargeted) {
+      
+      
+      NS_ASSERTION(aCapturingContent->GetComposedDoc() == GetDocument(),
+                   "Unexpected document");
+      nsIFrame* captureFrame = aCapturingContent->GetPrimaryFrame();
+      if (captureFrame) {
+        if (aCapturingContent->IsHTMLElement(nsGkAtoms::select)) {
           
           
-          nsIScrollableFrame* scrollFrame = do_QueryFrame(captureFrame);
-          if (scrollFrame) {
-            rootFrameToHandleEvent = scrollFrame->GetScrolledFrame();
+          nsIFrame* childFrame =
+              captureFrame->GetChildList(nsIFrame::kSelectPopupList)
+                  .FirstChild();
+          if (childFrame) {
+            captureFrame = childFrame;
           }
         }
+
+        
+        
+        nsIScrollableFrame* scrollFrame = do_QueryFrame(captureFrame);
+        if (scrollFrame) {
+          rootFrameToHandleEvent = scrollFrame->GetScrolledFrame();
+        }
       }
-    } else {
-      ClearMouseCapture(nullptr);
-      capturingContent = nullptr;
-      *aIsCapturingContentIgnored = true;
     }
+  } else {
+    ClearMouseCapture(nullptr);
+    *aIsCapturingContentIgnored = true;
   }
   return rootFrameToHandleEvent;
 }
