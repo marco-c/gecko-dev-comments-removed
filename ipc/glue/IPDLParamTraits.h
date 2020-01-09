@@ -104,9 +104,8 @@ struct IPDLParamTraits<nsTArray<T>> {
   
   
   
-  
   static inline void Write(IPC::Message* aMsg, IProtocol* aActor,
-                           nsTArray<T>& aParam) {
+                           nsTArray<T>&& aParam) {
     WriteInternal(aMsg, aActor, aParam);
   }
 
@@ -163,7 +162,7 @@ struct IPDLParamTraits<nsTArray<T>> {
       aMsg->WriteBytes(aParam.Elements(), pickledLength.value());
     } else {
       for (uint32_t index = 0; index < length; index++) {
-        WriteIPDLParam(aMsg, aActor, aParam.Elements()[index]);
+        WriteIPDLParam(aMsg, aActor, std::move(aParam.Elements()[index]));
       }
     }
   }

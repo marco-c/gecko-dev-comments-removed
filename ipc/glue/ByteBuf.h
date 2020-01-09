@@ -71,7 +71,7 @@ struct ParamTraits<mozilla::ipc::ByteBuf> {
 
   
   
-  static void Write(Message* aMsg, paramType& aParam) {
+  static void Write(Message* aMsg, paramType&& aParam) {
     WriteParam(aMsg, aParam.mLen);
     
     aMsg->WriteBytesZeroCopy(aParam.mData, aParam.mLen, aParam.mCapacity);

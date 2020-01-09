@@ -580,6 +580,16 @@ def _cxxTypeCanMoveSend(ipdltype):
 
 
 def _cxxTypeNeedsMove(ipdltype):
+    if _cxxTypeNeedsMoveForSend(ipdltype):
+        return True
+
+    if ipdltype.isIPDL():
+        return ipdltype.isArray() or ipdltype.isEndpoint()
+
+    return False
+
+
+def _cxxTypeNeedsMoveForSend(ipdltype):
     if ipdltype.isUniquePtr():
         return True
 
@@ -587,10 +597,9 @@ def _cxxTypeNeedsMove(ipdltype):
         return ipdltype.isMoveonly()
 
     if ipdltype.isIPDL():
-        if ipdltype.isMaybe():
+        if ipdltype.isMaybe() or ipdltype.isArray():
             return _cxxTypeNeedsMove(ipdltype.basetype)
-        return (ipdltype.isArray() or
-                ipdltype.isShmem() or
+        return (ipdltype.isShmem() or
                 ipdltype.isByteBuf() or
                 ipdltype.isEndpoint())
 
@@ -1796,9 +1805,11 @@ class _ParamTraits():
                                  args=[ExprLiteral.String(reason)]))
 
     @classmethod
-    def write(cls, var, msgvar, actor):
+    def write(cls, var, msgvar, actor, ipdltype=None):
         
         
+        if ipdltype and _cxxTypeNeedsMoveForSend(ipdltype):
+            var = ExprMove(var)
         return ExprCall(ExprVar('WriteIPDLParam'), args=[msgvar, actor, var])
 
     @classmethod
@@ -1811,7 +1822,7 @@ class _ParamTraits():
             block.addstmt(_abortIfFalse(var, 'NULL actor value passed to non-nullable param'))
 
         block.addstmts([
-            StmtExpr(cls.write(var, msgvar, actor)),
+            StmtExpr(cls.write(var, msgvar, actor, ipdltype)),
             Whitespace('// Sentinel = ' + repr(sentinelKey) + '\n', indent=True),
             StmtExpr(ExprCall(ExprSelect(msgvar, '->', 'WriteSentinel'),
                               args=[ExprLiteral.Int(hashfunc(sentinelKey))]))
