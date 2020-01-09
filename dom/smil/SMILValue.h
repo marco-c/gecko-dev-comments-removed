@@ -32,8 +32,8 @@ class SMILValue {
   const SMILValue& operator=(const SMILValue& aVal);
 
   
-  SMILValue(SMILValue&& aVal) noexcept;
-  SMILValue& operator=(SMILValue&& aVal) noexcept;
+  SMILValue(SMILValue&& aVal);
+  SMILValue& operator=(SMILValue&& aVal);
 
   
   

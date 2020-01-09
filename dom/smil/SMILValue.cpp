@@ -42,7 +42,7 @@ const SMILValue& SMILValue::operator=(const SMILValue& aVal) {
 }
 
 
-SMILValue::SMILValue(SMILValue&& aVal) noexcept
+SMILValue::SMILValue(SMILValue&& aVal)
     : mU(aVal.mU),  
                     
       mType(aVal.mType) {
@@ -51,7 +51,7 @@ SMILValue::SMILValue(SMILValue&& aVal) noexcept
   aVal.mType = SMILNullType::Singleton();
 }
 
-SMILValue& SMILValue::operator=(SMILValue&& aVal) noexcept {
+SMILValue& SMILValue::operator=(SMILValue&& aVal) {
   if (!IsNull()) {
     
     DestroyAndCheckPostcondition();
