@@ -206,6 +206,9 @@ class Tree extends Component {
       onActivate: PropTypes.func,
 
       
+      shown: PropTypes.any,
+
+      
       
       preventNavigationOnArrowRight: PropTypes.bool,
 
@@ -277,6 +280,7 @@ class Tree extends Component {
     window.addEventListener("resize", this._onResize);
     this._autoExpand();
     this._updateHeight();
+    this._scrollItemIntoView();
   }
 
   componentWillReceiveProps(nextProps) {
@@ -293,8 +297,21 @@ class Tree extends Component {
            mouseDown === nextState.mouseDown;
   }
 
+  componentDidUpdate() {
+    this._scrollItemIntoView();
+  }
+
   componentWillUnmount() {
     window.removeEventListener("resize", this._onResize);
+  }
+
+  _scrollItemIntoView() {
+    const { shown } = this.props;
+    if (!shown) {
+      return;
+    }
+
+    this._scrollIntoView(shown);
   }
 
   _autoExpand() {
