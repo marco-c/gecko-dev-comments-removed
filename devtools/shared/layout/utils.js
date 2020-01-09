@@ -915,10 +915,15 @@ exports.getUntransformedQuad = getUntransformedQuad;
 
 
 
-function findGridParentContainerForNode(node) {
+
+
+
+function findFlexOrGridParentContainerForNode(node, type) {
   const doc = node.ownerDocument;
   const win = doc.defaultView;
   const treeWalker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_ELEMENT);
+  const flexType = type === "flex";
+  const gridType = type === "grid";
   let currentNode = null;
 
   treeWalker.currentNode = node;
@@ -930,7 +935,11 @@ function findGridParentContainerForNode(node) {
         break;
       }
 
-      if (displayType.includes("grid")) {
+      if (flexType && displayType.includes("flex")) {
+        if (isNodeAFlexItemInContainer(node, currentNode)) {
+          return currentNode;
+        }
+      } else if (gridType && displayType.includes("grid")) {
         return currentNode;
       } else if (displayType === "contents") {
         
@@ -945,7 +954,39 @@ function findGridParentContainerForNode(node) {
 
   return null;
 }
-exports.findGridParentContainerForNode = findGridParentContainerForNode;
+exports.findFlexOrGridParentContainerForNode = findFlexOrGridParentContainerForNode;
+
+
+
+
+
+
+
+
+
+
+
+
+function isNodeAFlexItemInContainer(supposedItem, container) {
+  const doc = container.ownerDocument;
+  const win = doc.defaultView;
+  const containerDisplayType = win.getComputedStyle(container).display;
+
+  if (containerDisplayType.includes("flex")) {
+    const containerFlex = container.getAsFlexContainer();
+
+    for (const line of containerFlex.getLines()) {
+      for (const item of line.getItems()) {
+        if (item.node === supposedItem) {
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+}
+exports.isNodeAFlexItemInContainer = isNodeAFlexItemInContainer;
 
 
 
