@@ -7264,6 +7264,8 @@ nsHttpChannel::HasCrossOriginOpenerPolicyMismatch(bool *aMismatch) {
   nsILoadInfo::CrossOriginOpenerPolicy resultPolicy =
       GetCrossOriginOpenerPolicy(head);
 
+  mLoadInfo->SetOpenerPolicy(resultPolicy);
+
   
   if (!mTopWindowPrincipal) {
     GetTopWindowPrincipal(getter_AddRefs(mTopWindowPrincipal));

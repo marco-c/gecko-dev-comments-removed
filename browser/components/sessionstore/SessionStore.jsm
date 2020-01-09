@@ -2315,7 +2315,8 @@ var SessionStoreInternal = {
   
   
   onExamineResponse(aChannel) {
-    if (!E10SUtils.useHttpResponseProcessSelection()) {
+    if (!E10SUtils.useHttpResponseProcessSelection() &&
+        !E10SUtils.useCrossOriginOpenerPolicy()) {
       return;
     }
 
@@ -2364,7 +2365,9 @@ var SessionStoreInternal = {
                                                          useRemoteTabs,
                                                          browser.remoteType,
                                                          currentPrincipal);
-    if (browser.remoteType == remoteType) {
+    if (browser.remoteType == remoteType &&
+        (!E10SUtils.useCrossOriginOpenerPolicy() ||
+         !aChannel.hasCrossOriginOpenerPolicyMismatch())) {
       return; 
     }
 
