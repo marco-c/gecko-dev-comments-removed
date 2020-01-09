@@ -3746,6 +3746,9 @@ void ScrollFrameHelper::MaybeAddTopLayerItems(nsDisplayListBuilder* aBuilder,
       nsDisplayList topLayerList;
       viewportFrame->BuildDisplayListForTopLayer(aBuilder, &topLayerList);
       if (!topLayerList.IsEmpty()) {
+        nsDisplayListBuilder::AutoBuildingDisplayList buildingDisplayList(
+            aBuilder, viewportFrame);
+
         
         
         nsDisplayWrapList* wrapList = MakeDisplayItem<nsDisplayWrapList>(
