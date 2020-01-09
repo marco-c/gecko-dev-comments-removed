@@ -642,7 +642,7 @@ function mainThreadFetch(urlIn, aOptions = { loadFromCache: true,
 
 
 
-function newChannelForURL(url, { policy, window, principal }) {
+function newChannelForURL(url, { policy, window, principal }, recursing = false) {
   const securityFlags = Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL;
 
   let uri;
@@ -690,10 +690,16 @@ function newChannelForURL(url, { policy, window, principal }) {
     return NetUtil.newChannel(channelOptions);
   } catch (e) {
     
+    if (recursing) {
+      throw e;
+    }
+
     
     
     
-    return newChannelForURL("file://" + url, { policy, window, principal });
+    
+    return newChannelForURL("file://" + url, { policy, window, principal },
+                             true);
   }
 }
 
