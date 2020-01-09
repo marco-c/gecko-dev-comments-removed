@@ -93,6 +93,11 @@ TEST(GfxWidgets, Versioning) {
   ASSERT_TRUE(mozilla::Version("42.0a1") < mozilla::Version("42.0.5"));
   ASSERT_TRUE(mozilla::Version("42.0b7") < mozilla::Version("42.0.5"));
   ASSERT_TRUE(mozilla::Version("") == mozilla::Version("0"));
+  ASSERT_TRUE(mozilla::Version("1b1b") == mozilla::Version("1b1b"));
+  ASSERT_TRUE(mozilla::Version("1b1b") < mozilla::Version("1b1c"));
+  ASSERT_TRUE(mozilla::Version("1b1b") < mozilla::Version("1b1d"));
+  ASSERT_TRUE(mozilla::Version("1b1c") > mozilla::Version("1b1b"));
+  ASSERT_TRUE(mozilla::Version("1b1d") > mozilla::Version("1b1b"));
 
   
   
