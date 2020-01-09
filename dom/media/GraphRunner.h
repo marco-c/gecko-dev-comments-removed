@@ -65,11 +65,19 @@ class GraphRunner {
   GraphTime mStateEnd;
   
   bool mStillProcessing;
+
+  enum class ThreadState {
+    Wait,      
+               
+               
+               
+    Run,       
+    Shutdown,  
+  };
   
-  bool mShutdown;
   
-  
-  bool mStarted;
+  ThreadState mThreadState;
+
   
   PRThread* const mThread;
 
