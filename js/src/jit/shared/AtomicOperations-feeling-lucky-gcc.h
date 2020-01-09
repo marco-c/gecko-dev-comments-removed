@@ -52,39 +52,25 @@
 
 
 
-#if defined(__ppc__) || defined(__PPC__)
-#  define GNUC_COMPATIBLE
+#if defined(JS_SIMULATOR_ARM64) || defined(JS_SIMULATOR_ARM)
+
+
+
+#  define HAS_64BIT_ATOMICS
+#  define HAS_64BIT_LOCKFREE
 #endif
 
 #if defined(__ppc64__) || defined(__PPC64__) || defined(__ppc64le__) || \
     defined(__PPC64LE__)
 #  define HAS_64BIT_ATOMICS
 #  define HAS_64BIT_LOCKFREE
-#  define GNUC_COMPATIBLE
 #endif
 
 #ifdef __sparc__
-#  define GNUC_COMPATIBLE
 #  ifdef __LP64__
 #    define HAS_64BIT_ATOMICS
 #    define HAS_64BIT_LOCKFREE
 #  endif
-#endif
-
-#ifdef __alpha__
-#  define GNUC_COMPATIBLE
-#endif
-
-#ifdef __hppa__
-#  define GNUC_COMPATIBLE
-#endif
-
-#ifdef __sh__
-#  define GNUC_COMPATIBLE
-#endif
-
-#ifdef __s390__
-#  define GNUC_COMPATIBLE
 #endif
 
 
