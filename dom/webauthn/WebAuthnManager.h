@@ -117,9 +117,10 @@ class WebAuthnManager final : public WebAuthnManagerBase, public AbortFollower {
   virtual ~WebAuthnManager();
 
   
-  void ClearTransaction();
-  
   void RejectTransaction(const nsresult& aError);
+
+  
+  void ClearTransaction();
 
   
   Maybe<WebAuthnTransaction> mTransaction;

@@ -142,9 +142,10 @@ class U2F final : public WebAuthnManagerBase, public nsWrapperCache {
                                           nsMainThreadPtrHandle<C>& aCb);
 
   
-  void ClearTransaction();
-  
   MOZ_CAN_RUN_SCRIPT void RejectTransaction(const nsresult& aError);
+
+  
+  void ClearTransaction();
 
   nsString mOrigin;
 
