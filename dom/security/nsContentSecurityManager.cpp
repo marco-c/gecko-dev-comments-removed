@@ -784,7 +784,8 @@ static void AssertSystemPrincipalMustNotLoadRemoteDocuments(
   static bool recvdPrefValue = false;
   if (!recvdPrefValue) {
     nsAutoCString discoveryURLString;
-    Preferences::GetCString("extensions.webservice.discoverURL", discoveryURLString);
+    Preferences::GetCString("extensions.webservice.discoverURL",
+                            discoveryURLString);
     
     
     nsCOMPtr<nsIURI> discoveryURL;
