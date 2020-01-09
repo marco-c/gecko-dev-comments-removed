@@ -87,14 +87,12 @@ BrowserCLH.prototype = {
           module: "resource://gre/modules/LoginManagerParent.jsm",
           mm: [
             
-            
             "RemoteLogins:findLogins",
             "RemoteLogins:findRecipes",
             "RemoteLogins:onFormSubmit",
             "RemoteLogins:autoCompleteLogins",
             "RemoteLogins:removeLogin",
             "RemoteLogins:insecureLoginFormPresent",
-            
             
           ],
         });

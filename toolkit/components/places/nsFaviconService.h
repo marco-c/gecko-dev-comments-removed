@@ -27,7 +27,7 @@
 
 
 
-extern const uint16_t gFaviconSizes[7];
+static uint16_t sFaviconSizes[7] = {192, 144, 96, 64, 48, 32, 16};
 
 
 class mozIStorageStatementCallback;

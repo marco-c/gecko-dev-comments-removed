@@ -46,11 +46,6 @@ void Init();
 
 
 
-void ShutdownTelemetry();
-
-
-
-
 
 
 
