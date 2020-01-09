@@ -1009,11 +1009,7 @@ pref("dom.ipc.plugins.sandbox-level.flash", 0);
 
 
 
-#if defined(_ARM64_)
-pref("security.sandbox.content.level", 2);
-#else
 pref("security.sandbox.content.level", 5);
-#endif
 
 
 
