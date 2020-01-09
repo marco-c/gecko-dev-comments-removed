@@ -2670,12 +2670,23 @@ static bool testingFunc_inJit(JSContext* cx, unsigned argc, Value* vp) {
     return ReturnStringCopy(cx, args, "Baseline is disabled.");
   }
 
-  JSScript* script = cx->currentScript();
-  if (script && script->getWarmUpResetCount() >= 20) {
-    return ReturnStringCopy(
-        cx, args, "Compilation is being repeatedly prevented. Giving up.");
+  
+  FrameIter iter(cx);
+  MOZ_ASSERT(!iter.done());
+
+  if (iter.hasScript()) {
+    
+    
+    if (iter.isJSJit()) {
+      iter.script()->resetWarmUpResetCounter();
+    } else if (iter.script()->getWarmUpResetCount() >= 20) {
+      return ReturnStringCopy(
+          cx, args, "Compilation is being repeatedly prevented. Giving up.");
+    }
   }
 
+  
+  MOZ_ASSERT_IF(iter.isJSJit(), cx->currentlyRunningInJit());
   args.rval().setBoolean(cx->currentlyRunningInJit());
   return true;
 }
@@ -2687,29 +2698,22 @@ static bool testingFunc_inIon(JSContext* cx, unsigned argc, Value* vp) {
     return ReturnStringCopy(cx, args, "Ion is disabled.");
   }
 
-  if (cx->activation()->hasWasmExitFP()) {
-    
-    
-    args.rval().setBoolean(false);
-    return true;
-  }
+  
+  FrameIter iter(cx);
+  MOZ_ASSERT(!iter.done());
 
-  ScriptFrameIter iter(cx);
-  if (!iter.done() && iter.isIon()) {
+  if (iter.hasScript()) {
     
-    jit::JSJitFrameIter jitIter(cx->activation()->asJit());
-    ++jitIter;
-    jitIter.script()->resetWarmUpResetCounter();
-  } else {
     
-    JSScript* script = cx->currentScript();
-    if (script && script->getWarmUpResetCount() >= 20) {
+    if (iter.isIon()) {
+      iter.script()->resetWarmUpResetCounter();
+    } else if (iter.script()->getWarmUpResetCount() >= 20) {
       return ReturnStringCopy(
           cx, args, "Compilation is being repeatedly prevented. Giving up.");
     }
   }
 
-  args.rval().setBoolean(!iter.done() && iter.isIon());
+  args.rval().setBoolean(iter.isIon());
   return true;
 }
 
