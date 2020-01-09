@@ -465,13 +465,22 @@ already_AddRefed<BasePrincipal> BasePrincipal::CloneForcingFirstPartyDomain(
   
   attrs.SetFirstPartyDomain(false, aURI, true );
 
+  return CloneForcingOriginAttributes(attrs);
+}
+
+already_AddRefed<BasePrincipal> BasePrincipal::CloneForcingOriginAttributes(
+    const OriginAttributes& aOriginAttributes) {
+  if (NS_WARN_IF(!IsCodebasePrincipal())) {
+    return nullptr;
+  }
+
   nsAutoCString originNoSuffix;
   nsresult rv = GetOriginNoSuffix(originNoSuffix);
   NS_ENSURE_SUCCESS(rv, nullptr);
 
   nsIURI* uri = static_cast<ContentPrincipal*>(this)->mCodebase;
   RefPtr<ContentPrincipal> copy = new ContentPrincipal();
-  rv = copy->Init(uri, attrs, originNoSuffix);
+  rv = copy->Init(uri, aOriginAttributes, originNoSuffix);
   NS_ENSURE_SUCCESS(rv, nullptr);
 
   return copy.forget();
