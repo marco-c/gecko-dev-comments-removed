@@ -3112,13 +3112,16 @@ nsIFrame* nsCSSFrameConstructor::ConstructFieldSetFrame(
 
       contentFrame =
           NS_NewBlockFormattingContext(mPresShell, fieldsetContentStyle);
-      contentFrameTop = InitAndWrapInColumnSetFrameIfNeeded(
-          aState, content, parent, contentFrame, fieldsetContentStyle);
-      if (contentFrame != contentFrameTop) {
-        
+      if (fieldsetContentStyle->StyleColumn()->IsColumnContainerStyle()) {
+        contentFrameTop = BeginBuildingColumns(
+            aState, content, parent, contentFrame, fieldsetContentStyle);
         if (absPosContainer) {
           absPosContainer = contentFrameTop;
         }
+      } else {
+        
+        InitAndRestoreFrame(aState, content, parent, contentFrame);
+        contentFrameTop = contentFrame;
       }
 
       break;
@@ -3155,6 +3158,8 @@ nsIFrame* nsCSSFrameConstructor::ConstructFieldSetFrame(
       childItems.RemoveFrame(child);
       
       fieldsetKids.InsertFrame(fieldsetFrame, nullptr, child);
+      
+      child->RemoveStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR);
       if (scrollFrame) {
         StickyScrollContainer::NotifyReparentedFrameAcrossScrollFrameBoundary(
             child, contentFrame);
@@ -3163,12 +3168,31 @@ nsIFrame* nsCSSFrameConstructor::ConstructFieldSetFrame(
     }
   }
 
+  if (!StaticPrefs::layout_css_column_span_enabled() ||
+      !MayNeedToCreateColumnSpanSiblings(contentFrame, childItems)) {
+    
+    contentFrame->SetInitialChildList(kPrincipalList, childItems);
+  } else {
+    
+    
+    nsFrameList initialNonColumnSpanKids =
+        childItems.Split([](nsIFrame* f) { return f->IsColumnSpan(); });
+    contentFrame->SetInitialChildList(kPrincipalList, initialNonColumnSpanKids);
+
+    if (childItems.NotEmpty()) {
+      nsFrameList columnSpanSiblings = CreateColumnSpanSiblings(
+          aState, contentFrame, childItems,
+          
+          
+          nullptr);
+      FinishBuildingColumns(aState, contentFrameTop, contentFrame,
+                            columnSpanSiblings);
+    }
+  }
+
   if (isScrollable) {
     FinishBuildingScrollFrame(scrollFrame, contentFrameTop);
   }
-
-  
-  contentFrame->SetInitialChildList(kPrincipalList, childItems);
 
   
   fieldsetFrame->SetInitialChildList(kPrincipalList, fieldsetKids);
@@ -3336,6 +3360,7 @@ static bool IsFrameForFieldSet(nsIFrame* aFrame) {
   auto pseudo = aFrame->Style()->GetPseudoType();
   if (pseudo == PseudoStyleType::fieldsetContent ||
       pseudo == PseudoStyleType::scrolledContent ||
+      pseudo == PseudoStyleType::columnSet ||
       pseudo == PseudoStyleType::columnContent) {
     return IsFrameForFieldSet(aFrame->GetParent());
   }
