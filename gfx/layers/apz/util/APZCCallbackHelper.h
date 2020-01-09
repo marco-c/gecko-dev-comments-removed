@@ -167,7 +167,7 @@ class APZCCallbackHelper {
 
   static UniquePtr<DisplayportSetListener> SendSetTargetAPZCNotification(
       nsIWidget* aWidget, mozilla::dom::Document* aDocument,
-      const WidgetGUIEvent& aEvent, const LayersId& aLayersId,
+      const WidgetGUIEvent& aEvent, const ScrollableLayerGuid& aGuid,
       uint64_t aInputBlockId);
 
   
