@@ -117,6 +117,7 @@ AutofillProfileAutoCompleteSearch.prototype = {
                           FormAutofill.isAutofillAddressesEnabled :
                           FormAutofill.isAutofillCreditCardsEnabled;
     let AutocompleteResult = isAddressField ? AddressResult : CreditCardResult;
+    let isFormAutofillSearch = true;
     let pendingSearchResult = null;
 
     ProfileAutocomplete.lastProfileAutoCompleteFocusedInput = activeInput;
@@ -128,6 +129,7 @@ AutofillProfileAutoCompleteSearch.prototype = {
     if (!searchPermitted || !savedFieldNames.has(activeFieldDetail.fieldName) ||
         (!isInputAutofilled && filledRecordGUID) || (isAddressField &&
         allFieldNames.filter(field => savedFieldNames.has(field)).length < FormAutofillUtils.AUTOFILL_FIELDS_THRESHOLD)) {
+      isFormAutofillSearch = false;
       if (activeInput.autocomplete == "off") {
         
         pendingSearchResult = new AutocompleteResult("", "", [], [], {});
@@ -173,11 +175,15 @@ AutofillProfileAutoCompleteSearch.prototype = {
 
     Promise.resolve(pendingSearchResult).then((result) => {
       listener.onSearchResult(this, result);
-      ProfileAutocomplete.lastProfileAutoCompleteResult = result;
       
       
-      
-      autocompleteController.resetInternalState();
+      if (isFormAutofillSearch) {
+        ProfileAutocomplete.lastProfileAutoCompleteResult = result;
+        
+        
+        
+        autocompleteController.resetInternalState();
+      }
     });
   },
 
