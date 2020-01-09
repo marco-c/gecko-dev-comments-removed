@@ -314,7 +314,8 @@ void nsAuthGSSAPI::Reset() {
   mComplete = false;
 }
 
- void nsAuthGSSAPI::Shutdown() {
+
+void nsAuthGSSAPI::Shutdown() {
   if (gssLibrary) {
     PR_UnloadLibrary(gssLibrary);
     gssLibrary = nullptr;
