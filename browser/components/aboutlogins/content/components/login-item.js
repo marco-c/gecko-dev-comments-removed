@@ -2,9 +2,9 @@
 
 
 
-import ReflectedFluentElement from "chrome://browser/content/aboutlogins/components/reflected-fluent-element.js";
 
-export default class LoginItem extends ReflectedFluentElement {
+
+class LoginItem extends ReflectedFluentElement {
   constructor() {
     super();
     this._login = {};

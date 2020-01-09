@@ -2,7 +2,7 @@
 
 
 
-export default class ReflectedFluentElement extends HTMLElement {
+class ReflectedFluentElement extends HTMLElement {
   _isReflectedAttributePresent(attr) {
     return this.constructor.reflectedFluentIDs.includes(attr.name);
   }
