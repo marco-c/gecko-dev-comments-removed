@@ -538,7 +538,7 @@ void ArrayBufferObject::setNewData(FreeOp* fop, BufferContents newContents) {
     releaseData(fop);
   }
 
-  setDataPointer(newContents, OwnsData);
+  setDataPointer(newContents);
 }
 
 
@@ -1057,10 +1057,9 @@ void ArrayBufferObject::releaseData(FreeOp* fop) {
   }
 }
 
-void ArrayBufferObject::setDataPointer(BufferContents contents,
-                                       OwnsState ownsData) {
+void ArrayBufferObject::setDataPointer(BufferContents contents) {
   setFixedSlot(DATA_SLOT, PrivateValue(contents.data()));
-  setOwnsData(ownsData);
+  setOwnsData(OwnsData);
   setFlags((flags() & ~KIND_MASK) | contents.kind());
 
   if (isExternal()) {
@@ -1152,7 +1151,7 @@ static void CheckStealPreconditions(Handle<ArrayBufferObject*> buffer,
 
   
   BufferContents detachedContents = BufferContents::createNoData();
-  oldBuf->setDataPointer(detachedContents, OwnsData);
+  oldBuf->setDataPointer(detachedContents);
 
   
   ArrayBufferObject::detach(cx, oldBuf, detachedContents);
@@ -1383,7 +1382,7 @@ ArrayBufferObject* ArrayBufferObject::createFromNewRawBuffer(
   buffer->setFirstView(nullptr);
 
   auto contents = BufferContents::createWasm(rawBuffer->dataPointer());
-  buffer->setDataPointer(contents, OwnsData);
+  buffer->setDataPointer(contents);
 
   cx->updateMallocCounter(initialSize);
 
@@ -1403,7 +1402,7 @@ ArrayBufferObject* ArrayBufferObject::createFromNewRawBuffer(
         
         
         BufferContents newContents = BufferContents::createNoData();
-        buffer->setDataPointer(newContents, OwnsData);
+        buffer->setDataPointer(newContents);
 
         
         ArrayBufferObject::detach(cx, buffer, newContents);
@@ -1470,7 +1469,7 @@ ArrayBufferObject::extractStructuredCloneContents(
 
       
       BufferContents newContents = BufferContents::createNoData();
-      buffer->setDataPointer(newContents, OwnsData);
+      buffer->setDataPointer(newContents);
 
       
       ArrayBufferObject::detach(cx, buffer, newContents);
