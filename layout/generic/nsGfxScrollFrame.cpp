@@ -2676,11 +2676,42 @@ bool ScrollFrameHelper::GetDisplayPortAtLastApproximateFrameVisibilityUpdate(
 
 void ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange,
                                      nsAtom* aOrigin) {
+  
   if (aOrigin == nullptr) {
     
     
     
     aOrigin = nsGkAtoms::other;
+  }
+
+  
+  
+  
+  
+  if (aOrigin == nsGkAtoms::relative &&
+      (mLastScrollOrigin && mLastScrollOrigin != nsGkAtoms::relative &&
+       mLastScrollOrigin != nsGkAtoms::apz)) {
+    aOrigin = nsGkAtoms::other;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool isScrollOriginDowngrade =
+      nsLayoutUtils::CanScrollOriginClobberApz(mLastScrollOrigin) &&
+      !nsLayoutUtils::CanScrollOriginClobberApz(aOrigin);
+  bool allowScrollOriginChange =
+      mAllowScrollOriginDowngrade && isScrollOriginDowngrade;
+
+  if (allowScrollOriginChange) {
+    mLastScrollOrigin = aOrigin;
+    mAllowScrollOriginDowngrade = false;
   }
 
   nsPresContext* presContext = mOuter->PresContext();
@@ -2690,6 +2721,7 @@ void ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange,
   gfxSize scale =
       FrameLayerBuilder::GetPaintedLayerScaleForFrame(mScrolledFrame);
   nsPoint curPos = GetScrollPosition();
+
   nsPoint alignWithPos = mScrollPosForLayerPixelAlignment == nsPoint(-1, -1)
                              ? curPos
                              : mScrollPosForLayerPixelAlignment;
@@ -2742,21 +2774,8 @@ void ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange,
   
   
   
-  if (aOrigin == nsGkAtoms::relative &&
-      (mLastScrollOrigin && mLastScrollOrigin != nsGkAtoms::relative &&
-       mLastScrollOrigin != nsGkAtoms::apz)) {
-    aOrigin = nsGkAtoms::other;
-  }
-
   
-  
-  
-  
-  
-  bool isScrollOriginDowngrade =
-      nsLayoutUtils::CanScrollOriginClobberApz(mLastScrollOrigin) &&
-      !nsLayoutUtils::CanScrollOriginClobberApz(aOrigin);
-  bool allowScrollOriginChange =
+  allowScrollOriginChange =
       mAllowScrollOriginDowngrade || !isScrollOriginDowngrade;
 
   if (allowScrollOriginChange) {
