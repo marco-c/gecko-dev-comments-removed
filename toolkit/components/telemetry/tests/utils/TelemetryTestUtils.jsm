@@ -57,13 +57,16 @@ var TelemetryTestUtils = {
 
 
 
-  getParentProcessScalars(aChannel, aKeyed = false, aClear = false) {
+
+
+  getProcessScalars(aProcessName, aKeyed = false, aClear = false,
+      aChannel = Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN) {
     const extended = aChannel == Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN;
     const currentExtended = Services.telemetry.canRecordExtended;
     Services.telemetry.canRecordExtended = extended;
     const scalars = aKeyed ?
-      Services.telemetry.getSnapshotForKeyedScalars("main", aClear).parent :
-      Services.telemetry.getSnapshotForScalars("main", aClear).parent;
+      Services.telemetry.getSnapshotForKeyedScalars("main", aClear)[aProcessName] :
+      Services.telemetry.getSnapshotForScalars("main", aClear)[aProcessName];
     Services.telemetry.canRecordExtended = currentExtended;
     return scalars || {};
   },

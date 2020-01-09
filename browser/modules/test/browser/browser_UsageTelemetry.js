@@ -20,8 +20,7 @@ Services.obs.notifyObservers(null, TELEMETRY_SUBSESSION_TOPIC);
 
 
 let checkScalars = (countsObject) => {
-  const scalars = TelemetryTestUtils.getParentProcessScalars(
-    Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN);
+  const scalars = TelemetryTestUtils.getProcessScalars("parent");
 
   
   TelemetryTestUtils.assertScalar(scalars, MAX_CONCURRENT_TABS, countsObject.maxTabs,
