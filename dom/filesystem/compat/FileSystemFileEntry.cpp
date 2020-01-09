@@ -32,8 +32,7 @@ class FileCallbackRunnable final : public Runnable {
     RefPtr<File> file = File::Create(mFile->GetParentObject(), mFile->Impl());
     MOZ_ASSERT(file);
 
-    
-    MOZ_KnownLive(mCallback)->Call(*file);
+    mCallback->Call(*file);
     return NS_OK;
   }
 

@@ -33,9 +33,7 @@ EntryCallbackRunnable::EntryCallbackRunnable(FileSystemEntryCallback* aCallback,
 
 NS_IMETHODIMP
 EntryCallbackRunnable::Run() {
-  
-  
-  MOZ_KnownLive(mCallback)->Call(MOZ_KnownLive(*mEntry));
+  mCallback->Call(*mEntry);
   return NS_OK;
 }
 
@@ -54,8 +52,7 @@ ErrorCallbackRunnable::ErrorCallbackRunnable(nsIGlobalObject* aGlobalObject,
 NS_IMETHODIMP
 ErrorCallbackRunnable::Run() {
   RefPtr<DOMException> exception = DOMException::Create(mError);
-  
-  MOZ_KnownLive(mCallback)->Call(*exception);
+  mCallback->Call(*exception);
   return NS_OK;
 }
 
@@ -68,8 +65,7 @@ EmptyEntriesCallbackRunnable::EmptyEntriesCallbackRunnable(
 NS_IMETHODIMP
 EmptyEntriesCallbackRunnable::Run() {
   Sequence<OwningNonNull<FileSystemEntry>> sequence;
-  
-  MOZ_KnownLive(mCallback)->Call(sequence);
+  mCallback->Call(sequence);
   return NS_OK;
 }
 
@@ -192,8 +188,7 @@ void GetEntryHelper::CompleteOperation(JSObject* aObj) {
 
     RefPtr<FileSystemFileEntry> entry = new FileSystemFileEntry(
         mParentEntry->GetParentObject(), file, mParentEntry, mFileSystem);
-    
-    MOZ_KnownLive(mSuccessCallback)->Call(*entry);
+    mSuccessCallback->Call(*entry);
     return;
   }
 
@@ -207,8 +202,7 @@ void GetEntryHelper::CompleteOperation(JSObject* aObj) {
 
   RefPtr<FileSystemDirectoryEntry> entry = new FileSystemDirectoryEntry(
       mParentEntry->GetParentObject(), directory, mParentEntry, mFileSystem);
-  
-  MOZ_KnownLive(mSuccessCallback)->Call(*entry);
+  mSuccessCallback->Call(*entry);
 }
 
 void GetEntryHelper::ContinueRunning(JSObject* aObj) {
