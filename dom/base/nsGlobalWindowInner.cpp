@@ -2600,7 +2600,12 @@ BarProp* nsGlobalWindowInner::GetScrollbars(ErrorResult& aError) {
 }
 
 bool nsGlobalWindowInner::GetClosed(ErrorResult& aError) {
-  FORWARD_TO_OUTER_OR_THROW(GetClosedOuter, (), aError, false);
+  
+  
+  
+  
+  
+  FORWARD_TO_OUTER(GetClosedOuter, (), true);
 }
 
 nsDOMWindowList* nsGlobalWindowInner::GetFrames() {
