@@ -529,6 +529,8 @@ var gShutdownInProgress = false;
 var gPluginPageListener = null;
 var gBrowserUpdated = null;
 
+var AMTelemetry;
+
 
 
 
@@ -696,6 +698,9 @@ var AddonManagerInternal = {
         return;
 
       this.recordTimestamp("AMI_startup_begin");
+
+      
+      AMTelemetry.init();
 
       
       for (let provider in this.telemetryDetails)
@@ -3506,8 +3511,16 @@ var AddonManager = {
 
 
 
-var AMTelemetry = {
+AMTelemetry = {
   telemetrySetupDone: false,
+
+  init() {
+    
+    
+    
+    
+    Services.telemetry.setEventRecordingEnabled("addonsManager", true);
+  },
 
   
   
@@ -3518,8 +3531,6 @@ var AMTelemetry = {
     }
 
     this.telemetrySetupDone = true;
-
-    Services.telemetry.setEventRecordingEnabled("addonsManager", true);
 
     Services.obs.addObserver(this, "addon-install-origin-blocked");
     Services.obs.addObserver(this, "addon-install-disabled");
