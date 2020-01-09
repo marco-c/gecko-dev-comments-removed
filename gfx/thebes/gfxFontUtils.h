@@ -964,6 +964,13 @@ class gfxFontUtils {
   static void GetVariationInstances(
       gfxFontEntry* aFontEntry, nsTArray<gfxFontVariationInstance>& aInstances);
 
+  
+  
+  static void ReadOtherFamilyNamesForFace(
+      const nsACString& aFamilyName, const char* aNameData,
+      uint32_t aDataLength, nsTArray<nsCString>& aOtherFamilyNames,
+      bool useFullName);
+
  protected:
   friend struct MacCharsetMappingComparator;
 

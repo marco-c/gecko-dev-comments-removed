@@ -783,13 +783,6 @@ class gfxFontFamily {
   virtual void ReadOtherFamilyNames(gfxPlatformFontList* aPlatformFontList);
 
   
-  
-  static void ReadOtherFamilyNamesForFace(
-      const nsACString& aFamilyName, const char* aNameData,
-      uint32_t aDataLength, nsTArray<nsCString>& aOtherFamilyNames,
-      bool useFullName);
-
-  
   void SetOtherFamilyNamesInitialized() { mOtherFamilyNamesInitialized = true; }
 
   
