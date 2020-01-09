@@ -158,7 +158,8 @@ AgileReference::Resolve(REFIID aIid, void** aOutInterface) const {
   return originalInterface->QueryInterface(aIid, aOutInterface);
 }
 
- IGlobalInterfaceTable* AgileReference::ObtainGit() {
+
+IGlobalInterfaceTable* AgileReference::ObtainGit() {
   
   
   static IGlobalInterfaceTable* sGit = []() -> IGlobalInterfaceTable* {

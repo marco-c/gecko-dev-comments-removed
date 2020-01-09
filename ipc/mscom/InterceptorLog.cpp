@@ -249,7 +249,8 @@ bool Logger::VariantToString(const VARIANT& aVariant, nsACString& aOut,
   }
 }
 
- double Logger::GetElapsedTime() {
+
+double Logger::GetElapsedTime() {
   TimeStamp ts = TimeStamp::Now();
   TimeDuration duration = ts - TimeStamp::ProcessCreation();
   return duration.ToMicroseconds();
@@ -481,15 +482,17 @@ static bool MaybeCreateLog(const char* aEnvVarName) {
 namespace mozilla {
 namespace mscom {
 
- bool InterceptorLog::Init() {
+
+bool InterceptorLog::Init() {
   static const bool isEnabled = MaybeCreateLog("MOZ_MSCOM_LOG_BASENAME");
   return isEnabled;
 }
 
- void InterceptorLog::QI(HRESULT aResult, IUnknown* aTarget,
-                                     REFIID aIid, IUnknown* aInterface,
-                                     const TimeDuration* aOverheadDuration,
-                                     const TimeDuration* aGeckoDuration) {
+
+void InterceptorLog::QI(HRESULT aResult, IUnknown* aTarget, REFIID aIid,
+                        IUnknown* aInterface,
+                        const TimeDuration* aOverheadDuration,
+                        const TimeDuration* aGeckoDuration) {
   if (!sLogger) {
     return;
   }
@@ -497,18 +500,20 @@ namespace mscom {
                  aGeckoDuration);
 }
 
- void InterceptorLog::CaptureFrame(ICallFrame* aCallFrame,
-                                               IUnknown* aTargetInterface,
-                                               nsACString& aCapturedFrame) {
+
+void InterceptorLog::CaptureFrame(ICallFrame* aCallFrame,
+                                  IUnknown* aTargetInterface,
+                                  nsACString& aCapturedFrame) {
   if (!sLogger) {
     return;
   }
   sLogger->CaptureFrame(aCallFrame, aTargetInterface, aCapturedFrame);
 }
 
- void InterceptorLog::Event(const nsACString& aCapturedFrame,
-                                        const TimeDuration& aOverheadDuration,
-                                        const TimeDuration& aGeckoDuration) {
+
+void InterceptorLog::Event(const nsACString& aCapturedFrame,
+                           const TimeDuration& aOverheadDuration,
+                           const TimeDuration& aGeckoDuration) {
   if (!sLogger) {
     return;
   }

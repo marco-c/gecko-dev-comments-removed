@@ -229,8 +229,9 @@ class MOZ_RAII LogEvent final {
 namespace mozilla {
 namespace mscom {
 
- HRESULT MainThreadHandoff::Create(
-    IHandlerProvider* aHandlerProvider, IInterceptorSink** aOutput) {
+
+HRESULT MainThreadHandoff::Create(IHandlerProvider* aHandlerProvider,
+                                  IInterceptorSink** aOutput) {
   RefPtr<MainThreadHandoff> handoff(new MainThreadHandoff(aHandlerProvider));
   return handoff->QueryInterface(IID_IInterceptorSink, (void**)aOutput);
 }

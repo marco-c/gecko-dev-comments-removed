@@ -17,8 +17,9 @@ using base::ProcessHandle;
 
 namespace mozilla {
 
- CrossProcessSemaphore* CrossProcessSemaphore::Create(
-    const char*, uint32_t aInitialValue) {
+
+CrossProcessSemaphore* CrossProcessSemaphore::Create(const char*,
+                                                     uint32_t aInitialValue) {
   
   
   
@@ -30,7 +31,8 @@ namespace mozilla {
   return new CrossProcessSemaphore(semaphore);
 }
 
- CrossProcessSemaphore* CrossProcessSemaphore::Create(
+
+CrossProcessSemaphore* CrossProcessSemaphore::Create(
     CrossProcessSemaphoreHandle aHandle) {
   DWORD flags;
   if (!::GetHandleInformation(aHandle, &flags)) {

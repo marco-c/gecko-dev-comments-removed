@@ -64,7 +64,8 @@ class IPCStreamSourceParent final : public PParentToChildStreamParent,
 
 }  
 
- PParentToChildStreamParent* IPCStreamSource::Create(
+
+PParentToChildStreamParent* IPCStreamSource::Create(
     nsIAsyncInputStream* aInputStream, dom::ContentParent* aManager) {
   MOZ_ASSERT(aInputStream);
   MOZ_ASSERT(aManager);
@@ -86,7 +87,8 @@ class IPCStreamSourceParent final : public PParentToChildStreamParent,
   return source;
 }
 
- PParentToChildStreamParent* IPCStreamSource::Create(
+
+PParentToChildStreamParent* IPCStreamSource::Create(
     nsIAsyncInputStream* aInputStream, PBackgroundParent* aManager) {
   MOZ_ASSERT(aInputStream);
   MOZ_ASSERT(aManager);
@@ -105,8 +107,8 @@ class IPCStreamSourceParent final : public PParentToChildStreamParent,
   return source;
 }
 
- IPCStreamSource* IPCStreamSource::Cast(
-    PParentToChildStreamParent* aActor) {
+
+IPCStreamSource* IPCStreamSource::Cast(PParentToChildStreamParent* aActor) {
   MOZ_ASSERT(aActor);
   return static_cast<IPCStreamSourceParent*>(aActor);
 }
@@ -167,7 +169,8 @@ void DeallocPChildToParentStreamParent(PChildToParentStreamParent* aActor) {
   delete aActor;
 }
 
- IPCStreamDestination* IPCStreamDestination::Cast(
+
+IPCStreamDestination* IPCStreamDestination::Cast(
     PChildToParentStreamParent* aActor) {
   MOZ_ASSERT(aActor);
   return static_cast<IPCStreamDestinationParent*>(aActor);

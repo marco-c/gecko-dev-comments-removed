@@ -58,7 +58,8 @@ static mozilla::StaticAutoPtr<BackgroundMTAData> sMTAData;
 namespace mozilla {
 namespace mscom {
 
- nsCOMPtr<nsIThread> EnsureMTA::GetMTAThread() {
+
+nsCOMPtr<nsIThread> EnsureMTA::GetMTAThread() {
   if (!sMTAData) {
     sMTAData = new BackgroundMTAData();
     ClearOnShutdown(&sMTAData, ShutdownPhase::ShutdownThreads);

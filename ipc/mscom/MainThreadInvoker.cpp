@@ -96,7 +96,8 @@ namespace mscom {
 
 HANDLE MainThreadInvoker::sMainThread = nullptr;
 
- bool MainThreadInvoker::InitStatics() {
+
+bool MainThreadInvoker::InitStatics() {
   nsCOMPtr<nsIThread> mainThread;
   nsresult rv = ::NS_GetMainThread(getter_AddRefs(mainThread));
   if (NS_FAILED(rv)) {

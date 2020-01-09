@@ -31,7 +31,8 @@ ProcessChild::ProcessChild(ProcessId aParentPid)
 
 ProcessChild::~ProcessChild() { gProcessChild = nullptr; }
 
- void ProcessChild::QuickExit() {
+
+void ProcessChild::QuickExit() {
 #ifdef XP_WIN
   
   

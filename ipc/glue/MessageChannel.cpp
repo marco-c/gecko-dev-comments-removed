@@ -1143,7 +1143,8 @@ bool MessageChannel::MaybeInterceptSpecialIOMessage(const Message& aMsg) {
   return false;
 }
 
- bool MessageChannel::IsAlwaysDeferred(const Message& aMsg) {
+
+bool MessageChannel::IsAlwaysDeferred(const Message& aMsg) {
   
   
   return aMsg.nested_level() != IPC::Message::NESTED_INSIDE_CPOW &&
