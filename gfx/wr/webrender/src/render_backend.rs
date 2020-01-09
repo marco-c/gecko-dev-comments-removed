@@ -1416,7 +1416,8 @@ impl RenderBackend {
 
         
         let build_frame = (render_frame && !doc.frame_is_valid) ||
-            self.resource_cache.requires_frame_build();
+            self.resource_cache.requires_frame_build() &&
+            doc.frame_builder.is_some();
 
         
         

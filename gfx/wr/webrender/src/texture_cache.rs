@@ -611,13 +611,6 @@ impl TextureCache {
 
     
     fn clear_kind(&mut self, kind: EntryKind) {
-        
-        
-        
-        if self.debug_flags.contains(DebugFlags::TEXTURE_CACHE_DBG_DISABLE_SHRINK) {
-            return;
-        }
-
         let mut per_doc_data = mem::replace(&mut self.per_doc_data, FastHashMap::default());
         for (&_, doc_data) in per_doc_data.iter_mut() {
             let entry_handles = mem::replace(
@@ -650,9 +643,6 @@ impl TextureCache {
     }
 
     fn clear_shared(&mut self) {
-        if self.debug_flags.contains(DebugFlags::TEXTURE_CACHE_DBG_DISABLE_SHRINK) {
-            return;
-        }
         self.unset_doc_data();
         self.clear_kind(EntryKind::Shared);
         self.shared_textures.clear(&mut self.pending_updates);
