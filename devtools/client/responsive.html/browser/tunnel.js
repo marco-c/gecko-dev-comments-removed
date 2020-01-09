@@ -175,8 +175,15 @@ function tunnelToInnerBrowser(outer, inner) {
       
       
       outer.setAttribute("remote", "true");
-      outer.setAttribute("remoteType", inner.remoteType);
       outer.construct();
+
+      Object.defineProperty(outer, "remoteType", {
+        get() {
+          return inner.remoteType;
+        },
+        configurable: true,
+        enumerable: true,
+      });
 
       
       if (!outer.isRemoteBrowser) {
