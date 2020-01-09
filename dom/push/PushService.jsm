@@ -733,8 +733,12 @@ var PushService = {
   
 
 
-  receivedBroadcastMessage(message) {
-    pushBroadcastService.receivedBroadcastMessage(message.broadcasts)
+
+
+
+
+  receivedBroadcastMessage(message, context) {
+    pushBroadcastService.receivedBroadcastMessage(message.broadcasts, context)
       .catch(e => {
         console.error(e);
       });
