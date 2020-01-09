@@ -58,7 +58,7 @@ class SVGOrientSMILType : public SMILType {
 
  private:
   
-  constexpr SVGOrientSMILType() {}
+  constexpr SVGOrientSMILType() = default;
 };
 
 }  

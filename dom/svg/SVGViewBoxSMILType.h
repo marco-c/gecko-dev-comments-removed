@@ -38,7 +38,7 @@ class SVGViewBoxSMILType : public SMILType {
 
  private:
   
-  constexpr SVGViewBoxSMILType() {}
+  constexpr SVGViewBoxSMILType() = default;
 };
 
 }  

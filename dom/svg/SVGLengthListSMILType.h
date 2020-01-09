@@ -91,7 +91,7 @@ class SVGLengthListSMILType : public SMILType {
 
  private:
   
-  constexpr SVGLengthListSMILType() {}
+  constexpr SVGLengthListSMILType() = default;
 };
 
 }  

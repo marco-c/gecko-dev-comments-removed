@@ -37,8 +37,8 @@ class SVGPointList {
   friend class DOMSVGPoint;
 
  public:
-  SVGPointList() {}
-  ~SVGPointList() {}
+  SVGPointList() = default;
+  ~SVGPointList() = default;
 
   
   

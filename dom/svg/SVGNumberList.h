@@ -37,8 +37,8 @@ class SVGNumberList {
   friend class SVGAnimatedNumberList;
 
  public:
-  SVGNumberList() {}
-  ~SVGNumberList() {}
+  SVGNumberList() = default;
+  ~SVGNumberList() = default;
 
   
   

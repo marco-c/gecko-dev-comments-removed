@@ -45,7 +45,7 @@ class SVGNumberListSMILType : public SMILType {
 
  private:
   
-  constexpr SVGNumberListSMILType() {}
+  constexpr SVGNumberListSMILType() = default;
 };
 
 }  

@@ -48,7 +48,7 @@ class SVGPathSegListSMILType : public SMILType {
 
  private:
   
-  constexpr SVGPathSegListSMILType() {}
+  constexpr SVGPathSegListSMILType() = default;
 };
 
 }  

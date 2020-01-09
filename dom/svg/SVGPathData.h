@@ -91,8 +91,8 @@ class SVGPathData {
  public:
   typedef const float* const_iterator;
 
-  SVGPathData() {}
-  ~SVGPathData() {}
+  SVGPathData() = default;
+  ~SVGPathData() = default;
 
   
   

@@ -32,8 +32,8 @@ class SVGTransformList {
   friend class dom::DOMSVGTransform;
 
  public:
-  SVGTransformList() {}
-  ~SVGTransformList() {}
+  SVGTransformList() = default;
+  ~SVGTransformList() = default;
 
   
   

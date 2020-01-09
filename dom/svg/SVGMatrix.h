@@ -63,7 +63,7 @@ class SVGMatrix final : public nsWrapperCache {
 
 
   
-  SVGMatrix() {}
+  SVGMatrix() = default;
 
   explicit SVGMatrix(const gfxMatrix& aMatrix) : mMatrix(aMatrix) {}
 
@@ -103,7 +103,7 @@ class SVGMatrix final : public nsWrapperCache {
   already_AddRefed<SVGMatrix> SkewY(float angle, ErrorResult& rv);
 
  private:
-  ~SVGMatrix() {}
+  ~SVGMatrix() = default;
 
   void SetMatrix(const gfxMatrix& aMatrix) {
     if (mTransform) {

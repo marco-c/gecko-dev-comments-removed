@@ -41,7 +41,7 @@ class SVGIntegerPairSMILType : public SMILType {
 
  private:
   
-  constexpr SVGIntegerPairSMILType() {}
+  constexpr SVGIntegerPairSMILType() = default;
 };
 
 }  

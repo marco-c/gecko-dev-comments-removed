@@ -73,7 +73,7 @@ struct SVGPathTraversalState {
 
 class SVGPathSegUtils {
  private:
-  SVGPathSegUtils() {}  
+  SVGPathSegUtils() = default;  
 
  public:
   static void GetValueAsString(const float* aSeg, nsAString& aValue);

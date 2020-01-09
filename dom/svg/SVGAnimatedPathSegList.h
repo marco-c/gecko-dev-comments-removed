@@ -44,7 +44,7 @@ class SVGAnimatedPathSegList final {
   friend class DOMSVGPathSegList;
 
  public:
-  SVGAnimatedPathSegList() {}
+  SVGAnimatedPathSegList() = default;
 
   
 

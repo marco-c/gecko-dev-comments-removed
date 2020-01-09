@@ -71,7 +71,7 @@ class SVGMotionSMILType : public SMILType {
 
  private:
   
-  constexpr SVGMotionSMILType() {}
+  constexpr SVGMotionSMILType() = default;
 };
 
 }  

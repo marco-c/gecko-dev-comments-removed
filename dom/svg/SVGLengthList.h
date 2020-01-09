@@ -39,8 +39,8 @@ class SVGLengthList {
   friend class SVGAnimatedLengthList;
 
  public:
-  SVGLengthList() {}
-  ~SVGLengthList() {}
+  SVGLengthList() = default;
+  ~SVGLengthList() = default;
 
   
   

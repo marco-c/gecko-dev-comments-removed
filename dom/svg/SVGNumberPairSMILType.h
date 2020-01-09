@@ -38,7 +38,7 @@ class SVGNumberPairSMILType : public SMILType {
 
  private:
   
-  constexpr SVGNumberPairSMILType() {}
+  constexpr SVGNumberPairSMILType() = default;
 };
 
 }  

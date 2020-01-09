@@ -116,7 +116,7 @@ class SVGTransformListSMILType : public SMILType {
 
  private:
   
-  constexpr SVGTransformListSMILType() {}
+  constexpr SVGTransformListSMILType() = default;
 };
 
 }  

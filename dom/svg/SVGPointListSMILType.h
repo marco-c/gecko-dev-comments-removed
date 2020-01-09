@@ -45,7 +45,7 @@ class SVGPointListSMILType : public SMILType {
 
  private:
   
-  constexpr SVGPointListSMILType() {}
+  constexpr SVGPointListSMILType() = default;
 };
 
 }  
