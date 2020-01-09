@@ -3001,6 +3001,13 @@ nsRect nsLayoutUtils::TransformFrameRectToAncestor(
 
   if (text) {
     result = ToRect(text->TransformFrameRectFromTextChild(aRect, aFrame));
+
+    
+    
+    float devPixelPerCSSPixel =
+        1.f * AppUnitsPerCSSPixel() / srcAppUnitsPerDevPixel;
+    result.Scale(devPixelPerCSSPixel);
+
     result = TransformGfxRectToAncestor(
         text, result, aAncestor, nullptr, aMatrixCache,
         aStopAtStackingContextAndDisplayPortAndOOFFrame, aOutAncestor);
