@@ -1291,6 +1291,22 @@ add_task(async function test_newer_remote_moves() {
     dateAdded: now - 5000,
     modified: now / 1000,
   }, {
+    id: "folderDDDDDD",
+    parentid: "menu",
+    type: "folder",
+    title: "D",
+    dateAdded: now - 5000,
+    modified: now / 1000,
+    children: ["bookmarkGGGG"],
+  }, {
+    id: "folderFFFFFF",
+    parentid: "toolbar",
+    type: "folder",
+    title: "F",
+    children: [],
+    dateAdded: now - 5000,
+    modified: now / 1000,
+  }, {
     
     id: "bookmarkGGGG",
     parentid: "folderDDDDDD",
@@ -1375,30 +1391,7 @@ add_task(async function test_newer_remote_moves() {
         title: BookmarksToolbarTitle,
       },
     },
-    
-    
-    
-    
-    
-    
-    
-    
-    folderFFFFFF: {
-      tombstone: false,
-      counter: 1,
-      synced: false,
-      cleartext: {
-        id: "folderFFFFFF",
-        type: "folder",
-        parentid: "toolbar",
-        hasDupe: true,
-        parentName: BookmarksToolbarTitle,
-        dateAdded: now - 5000,
-        children: [],
-        title: "F",
-      },
-    },
-  }, "Should only reupload local roots and F");
+  }, "Should only reupload local roots");
 
   await assertLocalTree(PlacesUtils.bookmarks.rootGuid, {
     guid: PlacesUtils.bookmarks.rootGuid,
@@ -1718,6 +1711,14 @@ add_task(async function test_newer_local_moves() {
     type: "folder",
     title: "D",
     children: ["bookmarkGGGG"],
+    dateAdded: now - 5000,
+    modified: now / 1000 - 2.5,
+  }, {
+    id: "folderFFFFFF",
+    parentid: "toolbar",
+    type: "folder",
+    title: "F",
+    children: [],
     dateAdded: now - 5000,
     modified: now / 1000 - 2.5,
   }, {

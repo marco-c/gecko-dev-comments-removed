@@ -1270,7 +1270,7 @@ SyncEngine.prototype = {
 
     
     
-    for (let ids of PlacesSyncUtils.chunkArray(idsToBackfill, this.guidFetchBatchSize)) {
+    for (let [, ids] of PlacesSyncUtils.chunkArray(idsToBackfill, this.guidFetchBatchSize)) {
       backfilledItems.ids = ids;
 
       let {response, records} = await backfilledItems.getBatched(this.downloadBatchSize);
