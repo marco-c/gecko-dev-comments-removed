@@ -61,8 +61,12 @@ var Policy = {
 
 
 var TelemetryScheduler = {
+  
   _lastDailyPingTime: 0,
+  
   _lastSessionCheckpointTime: 0,
+  
+  _lastPeriodicPingTime: 0,
 
   _log: null,
 
@@ -86,6 +90,7 @@ var TelemetryScheduler = {
     
     let now = Policy.now();
     this._lastDailyPingTime = now.getTime();
+    this._lastPeriodicPingTime = now.getTime();
     this._lastSessionCheckpointTime = now.getTime();
     this._rescheduleTimeout();
 
@@ -153,11 +158,11 @@ var TelemetryScheduler = {
       Policy.setSchedulerTickTimeout(() => this._onSchedulerTick(), timeout);
   },
 
-  _sentDailyPingToday(nowDate) {
+  _sentPingToday(pingTime, nowDate) {
     
     const todayDate = TelemetryUtils.truncateToDays(nowDate);
     
-    return (this._lastDailyPingTime >= todayDate.getTime());
+    return (pingTime >= todayDate.getTime());
   },
 
   
@@ -167,7 +172,7 @@ var TelemetryScheduler = {
 
   _isDailyPingDue(nowDate) {
     
-    if (this._sentDailyPingToday(nowDate)) {
+    if (this._sentPingToday(this._lastDailyPingTime, nowDate)) {
       this._log.trace("_isDailyPingDue - already sent one today");
       return false;
     }
@@ -180,6 +185,22 @@ var TelemetryScheduler = {
     }
 
     this._log.trace("_isDailyPingDue - is due");
+    return true;
+  },
+
+  
+
+
+
+
+  _isPeriodicPingDue(nowDate) {
+    
+    if (this._sentPingToday(this._lastPeriodicPingTime, nowDate)) {
+      this._log.trace("_isPeriodicPingDue - already sent one today");
+      return false;
+    }
+
+    this._log.trace("_isPeriodicPingDue - is due");
     return true;
   },
 
@@ -307,6 +328,14 @@ var TelemetryScheduler = {
 
     
     const shouldSendDaily = this._isDailyPingDue(nowDate);
+    
+    const shouldSendPeriodic = this._isPeriodicPingDue(nowDate);
+
+    if (shouldSendPeriodic) {
+      this._log.trace("_schedulerTickLogic - Periodic ping due.");
+      this._lastPeriodicPingTime = now;
+      
+    }
 
     if (shouldSendDaily) {
       this._log.trace("_schedulerTickLogic - Daily ping due.");
