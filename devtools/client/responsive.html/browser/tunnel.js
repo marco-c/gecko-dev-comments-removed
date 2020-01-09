@@ -208,7 +208,8 @@ function tunnelToInnerBrowser(outer, inner) {
       
       const tab = gBrowser.getTabForBrowser(outer);
       const filteredProgressListener = gBrowser._tabFilters.get(tab);
-      outer.webProgress.addProgressListener(filteredProgressListener);
+      outer.webProgress.addProgressListener(filteredProgressListener,
+                                            Ci.nsIWebProgress.NOTIFY_ALL);
 
       
       
