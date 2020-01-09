@@ -2,8 +2,6 @@
 
 
 
-
-
 import { workerUtils } from "devtools-utils";
 const { WorkerDispatcher } = workerUtils;
 

@@ -4,15 +4,11 @@
 
 
 
-
-
 import getMatches from "./get-matches";
 
-import type { Source } from "../../types";
-
-export function findSourceMatches(source: Source, queryText: string): Object[] {
+export function findSourceMatches(source, queryText) {
   const { id, loadedState, text } = source;
-  if (loadedState != "loaded" || typeof text != "string" || queryText == "") {
+  if (loadedState != "loaded" || !text || queryText == "") {
     return [];
   }
 

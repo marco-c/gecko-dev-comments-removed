@@ -2,8 +2,6 @@
 
 
 
-
-
 import { memoize } from "lodash";
 
 const defaultUrl = {
@@ -23,10 +21,10 @@ const defaultUrl = {
   username: ""
 };
 
-export const parse = memoize(function parse(url: string): any {
+export const parse = memoize(function parse(url: string) {
   try {
     const urlObj = new URL(url);
-    (urlObj: any).path = urlObj.pathname + urlObj.search;
+    urlObj.path = urlObj.pathname + urlObj.search;
     return urlObj;
   } catch (err) {
     

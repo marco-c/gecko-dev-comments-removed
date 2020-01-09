@@ -2,8 +2,6 @@
 
 
 
-
-
 import React, { Component } from "react";
 
 import ColumnBreakpoint from "./ColumnBreakpoint";
@@ -19,15 +17,13 @@ import type { Source } from "../../types";
 
 import type { ColumnBreakpoint as ColumnBreakpointType } from "../../selectors/visibleColumnBreakpoints";
 
-type Props = {
-  editor: Object,
-  selectedSource: Source,
-  columnBreakpoints: ColumnBreakpointType[],
-  breakpointActions: BreakpointItemActions
-};
-
-class ColumnBreakpoints extends Component<Props> {
-  props: Props;
+class ColumnBreakpoints extends Component {
+  props: {
+    editor: Object,
+    selectedSource: Source,
+    columnBreakpoints: ColumnBreakpointType[],
+    breakpointActions: BreakpointItemActions
+  };
 
   render() {
     const {

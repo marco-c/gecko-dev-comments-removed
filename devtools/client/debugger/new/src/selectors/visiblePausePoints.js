@@ -2,14 +2,10 @@
 
 
 
-
-
 import { getSelectedSource } from "../reducers/sources";
 import { getPausePoints } from "../reducers/ast";
 
-import type { State } from "../reducers/types";
-
-export function getVisiblePausePoints(state: State) {
+export function getVisiblePausePoints(state) {
   const source = getSelectedSource(state);
   if (!source) {
     return null;

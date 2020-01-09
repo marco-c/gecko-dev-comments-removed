@@ -2,13 +2,10 @@
 
 
 
-
-
-export function mockPendingBreakpoint(overrides: Object = {}) {
+export function mockPendingBreakpoint(overrides = {}) {
   const { sourceUrl, line, column, condition, disabled, hidden } = overrides;
   return {
     location: {
-      sourceId: "",
       sourceUrl: sourceUrl || "http://localhost:8000/examples/bar.js",
       line: line || 5,
       column: column || undefined
@@ -31,16 +28,8 @@ export function mockPendingBreakpoint(overrides: Object = {}) {
   };
 }
 
-export function generateBreakpoint(
-  filename: string,
-  line: number = 5,
-  column: number = 0
-) {
+export function generateBreakpoint(filename, line = 5, column) {
   return {
-    id: "breakpoint",
-    loading: false,
-    originalText: "",
-    text: "",
     location: {
       sourceUrl: `http://localhost:8000/examples/${filename}`,
       sourceId: `${filename}/originalSource`,
@@ -53,9 +42,8 @@ export function generateBreakpoint(
       line,
       column
     },
-    astLocation: undefined,
     options: {
-      condition: "",
+      condition: null,
       hidden: false
     },
     disabled: false

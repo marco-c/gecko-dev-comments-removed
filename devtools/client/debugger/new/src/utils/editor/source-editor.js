@@ -7,10 +7,7 @@
 
 
 
-
-
 const CodeMirror = require("codemirror");
-
 
 require("codemirror/lib/codemirror.css");
 require("codemirror/mode/javascript/javascript");

@@ -1,11 +1,9 @@
-
-
-
-
-
-
 import { getTokenLocation } from ".";
 import { isEqual } from "lodash";
+
+
+
+
 
 function isInvalidTarget(target: HTMLElement) {
   if (!target || !target.innerText) {
@@ -52,7 +50,7 @@ function invalidLeaveTarget(target: ?HTMLElement) {
   return false;
 }
 
-export function onMouseOver(codeMirror: any) {
+export function onMouseOver(codeMirror) {
   let prevTokenPos = null;
 
   function onMouseLeave(event) {
@@ -71,7 +69,7 @@ export function onMouseOver(codeMirror: any) {
     });
   }
 
-  return (enterEvent: any) => {
+  return enterEvent => {
     const { target } = enterEvent;
 
     if (isInvalidTarget(target)) {

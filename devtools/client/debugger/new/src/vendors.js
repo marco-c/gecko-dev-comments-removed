@@ -15,10 +15,7 @@
 
 
 
-
-
 import * as devtoolsComponents from "devtools-components";
-
 import * as devtoolsConfig from "devtools-config";
 import * as devtoolsContextmenu from "devtools-contextmenu";
 import * as devtoolsEnvironment from "devtools-environment";

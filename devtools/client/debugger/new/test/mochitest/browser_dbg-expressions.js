@@ -9,7 +9,6 @@
 
 
 
-
 function getLabel(dbg, index) {
   return findElement(dbg, "expressionNode", index).innerText;
 }

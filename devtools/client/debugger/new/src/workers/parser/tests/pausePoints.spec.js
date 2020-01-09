@@ -27,7 +27,7 @@ cases(
     
     
     const nodes = convertToList((getPausePoints(source.id): any));
-    expect(formatPausePoints(source.text || "", nodes)).toMatchSnapshot();
+    expect(formatPausePoints(source.text, nodes)).toMatchSnapshot();
   },
   [
     { name: "control-flow", file: "control-flow" },

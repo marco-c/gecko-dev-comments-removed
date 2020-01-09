@@ -2,16 +2,12 @@
 
 
 
-
-
-
 global.Worker = require("workerjs");
 
 import path from "path";
 
 import { readFileSync } from "fs";
 import Enzyme from "enzyme";
-
 import Adapter from "enzyme-adapter-react-16";
 import { setupHelper } from "../utils/dbg";
 import { prefs } from "../utils/prefs";
@@ -69,8 +65,7 @@ function formatException(reason, p) {
 
 beforeAll(() => {
   startSourceMapWorker(
-    path.join(rootPath, "node_modules/devtools-source-map/src/worker.js"),
-    ""
+    path.join(rootPath, "node_modules/devtools-source-map/src/worker.js")
   );
   startPrettyPrintWorker(
     path.join(rootPath, "src/workers/pretty-print/worker.js")

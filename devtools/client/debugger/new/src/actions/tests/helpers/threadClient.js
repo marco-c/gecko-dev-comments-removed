@@ -2,16 +2,7 @@
 
 
 
-
-
-import { makeBreakpointActorId } from "../../../utils/breakpoint";
-
-import type {
-  SourceLocation,
-  SourceActor,
-  SourceActorLocation,
-  BreakpointOptions
-} from "../../../types";
+import { makeBreakpointId } from "../../../utils/breakpoint";
 
 function createSource(name) {
   name = name.replace(/\..*$/, "");
@@ -40,22 +31,16 @@ const sources = [
 ];
 
 export const simpleMockThreadClient = {
-  getBreakpointByLocation: (jest.fn(): any),
-  setBreakpoint: (location: SourceActorLocation, _condition: string) =>
+  getBreakpointByLocation: jest.fn(),
+  setBreakpoint: (location, _condition) =>
     Promise.resolve({ id: "hi", actualLocation: location }),
 
-  removeBreakpoint: (_id: string) => Promise.resolve(),
+  removeBreakpoint: _id => Promise.resolve(),
 
-  setBreakpointOptions: (
-    _id: string,
-    _location: SourceActorLocation,
-    _options: BreakpointOptions,
-    _noSliding: boolean
-  ) => Promise.resolve({ sourceId: "a", line: 5 }),
+  setBreakpointOptions: (_id, _location, _options, _noSliding) =>
+    Promise.resolve({ sourceId: "a", line: 5 }),
   setPausePoints: () => Promise.resolve({}),
-  sourceContents: ({
-    source
-  }: SourceActor): Promise<{| source: any, contentType: ?string |}> =>
+  sourceContents: ({ source }) =>
     new Promise((resolve, reject) => {
       if (sources.includes(source)) {
         resolve(createSource(source));
@@ -68,18 +53,17 @@ export const simpleMockThreadClient = {
 
 function generateCorrectingThreadClient(offset = 0) {
   return {
-    getBreakpointByLocation: (jest.fn(): any),
-    setBreakpoint: (location: SourceActorLocation, condition: string) => {
+    getBreakpointByLocation: jest.fn(),
+    setBreakpoint: (location, condition) => {
       const actualLocation = { ...location, line: location.line + offset };
 
       return Promise.resolve({
-        id: makeBreakpointActorId(location),
+        id: makeBreakpointId(location),
         actualLocation,
         condition
       });
     },
-    sourceContents: ({ source }: SourceActor) =>
-      Promise.resolve(createSource(source))
+    sourceContents: ({ source }) => Promise.resolve(createSource(source))
   };
 }
 
@@ -88,10 +72,7 @@ function generateCorrectingThreadClient(offset = 0) {
 
 
 
-export function simulateCorrectThreadClient(
-  offset: number,
-  location: SourceLocation
-) {
+export function simulateCorrectThreadClient(offset, location) {
   const correctedThreadClient = generateCorrectingThreadClient(offset);
   const offsetLine = { line: location.line + offset };
   const correctedLocation = { ...location, ...offsetLine };
@@ -100,9 +81,7 @@ export function simulateCorrectThreadClient(
 
 
 export const sourceThreadClient = {
-  sourceContents: function({
-    source
-  }: SourceActor): Promise<{| source: any, contentType: ?string |}> {
+  sourceContents: function({ source }) {
     return new Promise((resolve, reject) => {
       if (sources.includes(source)) {
         resolve(createSource(source));

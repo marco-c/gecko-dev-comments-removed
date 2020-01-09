@@ -2,22 +2,20 @@
 
 
 
-
-
 import { connect } from "../../utils/connect";
 import { Component } from "react";
 import { getSelectedSource, getEmptyLines } from "../../selectors";
 import type { Source } from "../../types";
 import { toEditorLine } from "../../utils/editor";
 
-type Props = {
+type props = {
   selectedSource: Source,
   editor: Object,
   emptyLines: Object
 };
 
-class EmptyLines extends Component<Props> {
-  props: Props;
+class EmptyLines extends Component {
+  props: props;
 
   disableEmptyLines: Function;
 
@@ -65,9 +63,6 @@ class EmptyLines extends Component<Props> {
 
 const mapStateToProps = state => {
   const selectedSource = getSelectedSource(state);
-  if (!selectedSource) {
-    throw new Error("no selectedSource");
-  }
   const foundEmptyLines = getEmptyLines(state, selectedSource.id);
 
   return {

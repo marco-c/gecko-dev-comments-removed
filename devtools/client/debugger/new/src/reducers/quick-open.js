@@ -7,8 +7,6 @@
 
 
 
-
-
 import makeRecord from "../utils/makeRecord";
 import { parseQuickOpenQuery } from "../utils/quick-open";
 import type { Action } from "../actions/types";
@@ -16,13 +14,13 @@ import type { Record } from "../utils/makeRecord";
 
 export type QuickOpenType = "sources" | "functions" | "goto" | "gotoSource";
 
-export type QuickOpenState = {
+type QuickOpenState = {
   enabled: boolean,
   query: string,
   searchType: QuickOpenType
 };
 
-export const createQuickOpenState: () => Record<QuickOpenState> = makeRecord({
+export const createQuickOpenState = makeRecord({
   enabled: false,
   query: "",
   searchType: "sources"

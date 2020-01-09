@@ -2,12 +2,9 @@
 
 
 
-
-
 import { originalToGeneratedId, isOriginalId } from "devtools-source-map";
 import { getSelectedFrame } from "../reducers/pause";
 import { getSelectedLocation } from "../reducers/sources";
-import type { State } from "../reducers/types";
 
 function getGeneratedId(sourceId) {
   if (isOriginalId(sourceId)) {
@@ -21,7 +18,7 @@ function getGeneratedId(sourceId) {
 
 
 
-export function isSelectedFrameVisible(state: State) {
+export function isSelectedFrameVisible(state) {
   const selectedLocation = getSelectedLocation(state);
   const selectedFrame = getSelectedFrame(state);
 
