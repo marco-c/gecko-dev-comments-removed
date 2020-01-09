@@ -3,6 +3,8 @@
 
 
 
+
+
 const MASTER_PASSWORD = "omgsecret!";
 const TESTS_DIR = "/tests/toolkit/components/passwordmgr/test/";
 
@@ -34,6 +36,25 @@ function $_(formNum, name) {
   }
 
   return element;
+}
+
+
+
+
+
+function checkAutoCompleteResults(actualValues, expectedValues, hostname, msg) {
+  
+  let footerResult = actualValues[actualValues.length - 1];
+  ok(footerResult.includes("View Saved Logins"), "the footer text is shown correctly");
+  ok(footerResult.includes(hostname), "the footer has the correct hostname attribute");
+
+  if (actualValues.length == 0) {
+    info("Only the footer is present in the popup");
+    return;
+  }
+
+  
+  checkArrayValues(actualValues.slice(0, -1), expectedValues, msg);
 }
 
 
