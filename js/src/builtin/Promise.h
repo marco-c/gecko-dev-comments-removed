@@ -543,9 +543,21 @@ class OffThreadPromiseRuntimeState {
 
   
   Mutex mutex_;
-  ConditionVariable allCanceled_;
+
+  
+  
   OffThreadPromiseTaskSet live_;
+
+  
+  
+  
+  
+  
+  ConditionVariable allCanceled_;
   size_t numCanceled_;
+
+  
+  
   DispatchableFifo internalDispatchQueue_;
   ConditionVariable internalDispatchQueueAppended_;
   bool internalDispatchQueueClosed_;
