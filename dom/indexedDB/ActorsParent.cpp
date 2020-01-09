@@ -9500,7 +9500,7 @@ void DatabaseConnection::FinishWriteTransaction() {
 nsresult DatabaseConnection::StartSavepoint() {
   AssertIsOnConnectionThread();
   MOZ_ASSERT(mStorageConnection);
-  MOZ_ASSERT(mUpdateRefcountFunction);
+  MOZ_DIAGNOSTIC_ASSERT(mUpdateRefcountFunction);
   MOZ_ASSERT(mInWriteTransaction);
 
   AUTO_PROFILER_LABEL("DatabaseConnection::StartSavepoint", DOM);
@@ -10062,12 +10062,14 @@ nsresult DatabaseConnection::AutoSavepoint::Start(
   MOZ_ASSERT(connection);
   connection->AssertIsOnConnectionThread();
 
+#ifndef NIGHTLY_BUILD
   
   
   if (!connection->GetUpdateRefcountFunction()) {
     NS_WARNING("The connection was closed for some reasons!");
     return NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
   }
+#endif
 
   MOZ_ASSERT(!mConnection);
   MOZ_ASSERT(!mDEBUGTransaction);
@@ -17159,7 +17161,8 @@ nsresult Maintenance::DirectoryWork() {
         
         
         rv = quotaManager->EnsureOriginIsInitialized(
-            persistenceType, suffix, group, origin, getter_AddRefs(directory));
+            persistenceType, suffix, group, origin,
+             true, getter_AddRefs(directory));
 
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
@@ -19868,7 +19871,8 @@ nsresult OpenDatabaseOp::DoDatabaseWork() {
   nsCOMPtr<nsIFile> dbDirectory;
 
   nsresult rv = quotaManager->EnsureOriginIsInitialized(
-      persistenceType, mSuffix, mGroup, mOrigin, getter_AddRefs(dbDirectory));
+      persistenceType, mSuffix, mGroup, mOrigin,
+       true, getter_AddRefs(dbDirectory));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
