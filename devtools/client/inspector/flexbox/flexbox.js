@@ -18,7 +18,6 @@ loader.lazyRequireGetter(this, "parseURL", "devtools/client/shared/source-utils"
 loader.lazyRequireGetter(this, "asyncStorage", "devtools/shared/async-storage");
 
 const FLEXBOX_COLOR = "#9400FF";
-const TELEMETRY_ELEMENT_TYPE_DISPLAYED = "DEVTOOLS_FLEXINSPECTOR_ELEMENT_TYPE_DISPLAYED";
 
 class FlexboxInspector {
   constructor(inspector, window) {
@@ -434,28 +433,6 @@ class FlexboxInspector {
 
 
 
-  sendTelemetryProbes(isContainerInfoShown, isItemInfoShown) {
-    const { telemetry } = this.inspector;
-
-    
-    
-    
-    let elementType = isContainerInfoShown ? "container" : "item";
-    if (isContainerInfoShown && isItemInfoShown) {
-      elementType = "both";
-    }
-
-    telemetry.getHistogramById(TELEMETRY_ELEMENT_TYPE_DISPLAYED).add(elementType);
-  }
-
-  
-
-
-
-
-
-
-
 
 
 
@@ -505,10 +482,6 @@ class FlexboxInspector {
         highlighted,
         initiatedByMarkupViewSelection,
       }));
-
-      const isContainerInfoShown = !flexContainer.flexItemShown || !!flexItemContainer;
-      const isItemInfoShown = !!flexContainer.flexItemShown || !!flexItemContainer;
-      this.sendTelemetryProbes(isContainerInfoShown, isItemInfoShown);
     } catch (e) {
       
       
