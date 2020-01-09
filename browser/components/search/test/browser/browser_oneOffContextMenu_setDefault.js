@@ -1,5 +1,7 @@
 "use strict";
 
+const {UrlbarTestUtils} = ChromeUtils.import("resource://testing-common/UrlbarTestUtils.jsm");
+
 const TEST_ENGINE_NAME = "Foo";
 const TEST_ENGINE_BASENAME = "testEngine.xml";
 const SEARCHBAR_BASE_ID = "searchbar-engine-one-off-item-";
@@ -10,7 +12,7 @@ const urlbar = document.getElementById("urlbar");
 const searchPopup = document.getElementById("PopupSearchAutoComplete");
 const urlbarPopup = document.getElementById("PopupAutoCompleteRichResult");
 const searchOneOff = searchPopup.oneOffButtons;
-const urlBarOneOff = urlbarPopup.oneOffSearchButtons;
+const urlBarOneOff = UrlbarTestUtils.getOneOffSearchButtons(window);
 
 var originalEngine;
 
@@ -95,7 +97,10 @@ add_task(async function test_urlBarChangeEngine() {
   Assert.equal(oneOffButton.image, defaultEngine.iconURI.spec,
                "Should now have the original engine's uri for the image");
 
-  await promiseClosePopup(urlbarPopup);
+  await UrlbarTestUtils.promisePopupClose(window);
+
+  
+  await EventUtils.synthesizeNativeMouseMove(urlbarPopup);
 });
 
 
@@ -132,20 +137,18 @@ function promisedefaultEngineChanged() {
 
 
 async function openPopupAndGetEngineButton(isSearch, popup, oneOffInstance, baseId) {
-  
-  let promise = promiseEvent(popup, "popupshown");
   info("Opening panel");
 
   
   if (isSearch) {
     
-    EventUtils.synthesizeMouseAtCenter(searchIcon, {});
-  } else {
+    let promise = promiseEvent(popup, "popupshown");
     
-    urlbar.focus();
-    EventUtils.sendString("a");
+    EventUtils.synthesizeMouseAtCenter(searchIcon, {});
+    await promise;
+  } else {
+    await UrlbarTestUtils.promiseAutocompleteResultPopup(window, "a", waitForFocus);
   }
-  await promise;
 
   const contextMenu = oneOffInstance.contextMenuPopup;
   const oneOffButtons = oneOffInstance.buttons;
@@ -166,7 +169,7 @@ async function openPopupAndGetEngineButton(isSearch, popup, oneOffInstance, base
                "Should have the correct id");
 
   
-  promise = BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
+  let promise = BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
   EventUtils.synthesizeMouseAtCenter(oneOffButton, {
     type: "contextmenu",
     button: 2,
