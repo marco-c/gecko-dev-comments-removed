@@ -17,6 +17,7 @@ from mozpack.chrome.manifest import parse_manifest
 import mozpack.path as mozpath
 from manifest_handler import ChromeManifestHandler
 
+
 class LcovRecord(object):
     __slots__ = ("test_name",
                  "source_file",
@@ -30,6 +31,7 @@ class LcovRecord(object):
                  "lines",
                  "line_count",
                  "covered_line_count")
+
     def __init__(self):
         self.functions = {}
         self.function_exec_counts = {}
@@ -71,6 +73,7 @@ class LcovRecord(object):
         self.covered_line_count = len([c for c, _ in self.lines.values() if c])
         self.branch_count = len(self.branches)
         self.covered_branch_count = len([c for c in self.branches.values() if c])
+
 
 class RecordRewriter(object):
     
@@ -164,7 +167,8 @@ class RecordRewriter(object):
     def rewrite_record(self, record, pp_info):
         
         
-        self._current_pp_info = dict([(tuple([int(l) for l in k.split(',')]), v) for k, v in pp_info.items()])
+        self._current_pp_info = dict(
+            [(tuple([int(l) for l in k.split(',')]), v) for k, v in pp_info.items()])
         self._ranges = sorted(self._current_pp_info.keys())
         self._additions = {}
         self._rewrite_lines(record)
@@ -177,6 +181,7 @@ class RecordRewriter(object):
         for r in generated_records:
             r.resummarize()
         return generated_records
+
 
 class LcovFile(object):
     
@@ -404,6 +409,7 @@ class LcovFile(object):
 class UrlFinderError(Exception):
     pass
 
+
 class UrlFinder(object):
     
     
@@ -580,7 +586,8 @@ class UrlFinder(object):
                     return url_obj.path, None
 
                 dir_parts = parts[0].rsplit(app_name + '/', 1)
-                url = mozpath.normpath(mozpath.join(self.topobjdir, 'dist', 'bin', dir_parts[1].lstrip('/'), parts[1].lstrip('/')))
+                url = mozpath.normpath(mozpath.join(self.topobjdir, 'dist',
+                                                    'bin', dir_parts[1].lstrip('/'), parts[1].lstrip('/')))
             elif '.xpi!' in url:
                 
                 
@@ -590,7 +597,8 @@ class UrlFinder(object):
                     addon_name = addon_name[:-len('-test@mozilla.org')]
                 elif addon_name.endswith('@mozilla.org'):
                     addon_name = addon_name[:-len('@mozilla.org')]
-                url = mozpath.normpath(mozpath.join(self.topobjdir, 'dist', 'xpi-stage', addon_name, parts[1].lstrip('/')))
+                url = mozpath.normpath(mozpath.join(self.topobjdir, 'dist',
+                                                    'xpi-stage', addon_name, parts[1].lstrip('/')))
         elif url_obj.scheme == 'file' and os.path.isabs(url_obj.path):
             path = url_obj.path
             if not os.path.isfile(path):
@@ -606,6 +614,7 @@ class UrlFinder(object):
         result = self.find_files(url)
         self._final_mapping[url] = result
         return result
+
 
 class LcovFileRewriter(object):
     
@@ -693,6 +702,7 @@ def main():
             files.append(f)
 
     rewriter.rewrite_files(files, args.output_file, args.output_suffix)
+
 
 if __name__ == '__main__':
     main()

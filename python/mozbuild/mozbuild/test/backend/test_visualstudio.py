@@ -41,7 +41,7 @@ class TestVisualStudioBackend(BackendTester):
         els = d.getElementsByTagName('NMakeForcedIncludes')
         self.assertEqual(len(els), 1)
         self.assertEqual(els[0].firstChild.nodeValue,
-            '$(TopObjDir)\\dist\\include\\mozilla-config.h')
+                         '$(TopObjDir)\\dist\\include\\mozilla-config.h')
 
         
         els = d.getElementsByTagName('NMakeIncludeSearchPath')

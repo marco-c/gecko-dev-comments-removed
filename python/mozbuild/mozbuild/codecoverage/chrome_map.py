@@ -26,6 +26,8 @@ from manifest_handler import ChromeManifestHandler
 
 
 _line_comment_re = re.compile('^//@line (\d+) "(.+)"$')
+
+
 def generate_pp_info(path, topsrcdir):
     with open(path) as fh:
         
@@ -54,6 +56,8 @@ def generate_pp_info(path, topsrcdir):
             finish_section(count + 2)
 
         return section_info
+
+
 
 
 

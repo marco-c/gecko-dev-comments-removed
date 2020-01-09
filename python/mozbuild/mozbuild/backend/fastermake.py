@@ -134,10 +134,12 @@ class FasterMakeBackend(CommonBackend, PartialBackend):
 
         elif isinstance(obj, GeneratedFile):
             if obj.outputs:
-                first_output = mozpath.relpath(mozpath.join(obj.objdir, obj.outputs[0]), self.environment.topobjdir)
+                first_output = mozpath.relpath(mozpath.join(
+                    obj.objdir, obj.outputs[0]), self.environment.topobjdir)
                 for o in obj.outputs[1:]:
                     fullpath = mozpath.join(obj.objdir, o)
-                    self._generated_files_map[mozpath.relpath(fullpath, self.environment.topobjdir)] = first_output
+                    self._generated_files_map[mozpath.relpath(
+                        fullpath, self.environment.topobjdir)] = first_output
             
             
             
@@ -194,7 +196,6 @@ class FasterMakeBackend(CommonBackend, PartialBackend):
             mk.create_rule([target]).add_dependencies(
                 '$(TOPOBJDIR)/%s' % d for d in deps)
 
-
         
         python_deps = [
             '$(TOPSRCDIR)/python/mozbuild/mozbuild/action/l10n_merge.py',
@@ -208,7 +209,8 @@ class FasterMakeBackend(CommonBackend, PartialBackend):
             for (merge, ref_file, l10n_file) in deps:
                 rule = mk.create_rule([merge]).add_dependencies(
                     [ref_file, l10n_file] + python_deps)
-                rule.add_commands(['$(PYTHON) -m mozbuild.action.l10n_merge --output {} --ref-file {} --l10n-file {}'.format(merge, ref_file, l10n_file)])
+                rule.add_commands(
+                    ['$(PYTHON) -m mozbuild.action.l10n_merge --output {} --ref-file {} --l10n-file {}'.format(merge, ref_file, l10n_file)])
                 
                 mk.create_rule([l10n_file])
 
