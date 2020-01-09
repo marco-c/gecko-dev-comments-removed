@@ -110,6 +110,8 @@ const PREFERENCES = {
   
   SHOW_HIDDEN_ADDONS: "devtools.aboutdebugging.showHiddenAddons",
   
+  TEMPORARY_EXTENSION_PATH: "devtools.aboutdebugging.tmpExtDirPath",
+  
   XPINSTALL_ENABLED: "xpinstall.enabled",
 };
 
