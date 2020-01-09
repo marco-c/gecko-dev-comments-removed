@@ -7825,7 +7825,7 @@ nsHttpChannel::OnStopRequest(nsIRequest* request, nsresult status) {
   
   
   int32_t nsprError = -1 * NS_ERROR_GET_CODE(status);
-  if (mozilla::psm::IsNSSErrorCode(nsprError)) {
+  if (mozilla::psm::IsNSSErrorCode(nsprError) && IsHTTPS()) {
     gIOService->RecheckCaptivePortal();
   }
 
