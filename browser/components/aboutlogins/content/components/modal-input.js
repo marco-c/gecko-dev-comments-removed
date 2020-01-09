@@ -2,9 +2,9 @@
 
 
 
+import ReflectedFluentElement from "chrome://browser/content/aboutlogins/components/reflected-fluent-element.js";
 
-
-class ModalInput extends ReflectedFluentElement {
+export default class ModalInput extends ReflectedFluentElement {
   static get LOCKED_PASSWORD_DISPLAY() {
     return "••••••••";
   }

@@ -2,7 +2,7 @@
 
 
 
-class LoginListItem extends HTMLElement {
+export default class LoginListItem extends HTMLElement {
   constructor(login) {
     super();
     this._login = login;

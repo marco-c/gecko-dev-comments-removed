@@ -2,9 +2,9 @@
 
 
 
+import ReflectedFluentElement from "chrome://browser/content/aboutlogins/components/reflected-fluent-element.js";
 
-
-class LoginFilter extends ReflectedFluentElement {
+export default class LoginFilter extends ReflectedFluentElement {
   connectedCallback() {
     if (this.children.length) {
       return;
