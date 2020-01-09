@@ -150,6 +150,30 @@ typedef struct {
   unsigned int crop_left;      
   unsigned int crop_right;     
   unsigned int alpha_mode;     
+  unsigned int matrix_coefficients;      
+  unsigned int range;                    
+  unsigned int transfer_characteristics; 
+  unsigned int primaries;                
+  double primary_r_chromacity_x;         
+
+  double primary_r_chromacity_y;         
+
+  double primary_g_chromacity_x;         
+
+  double primary_g_chromacity_y;         
+
+  double primary_b_chromacity_x;         
+
+  double primary_b_chromacity_y;         
+
+  double white_point_chromaticity_x;     
+
+  double white_point_chromaticity_y;     
+
+  double luminance_max;                  
+
+  double luminance_min;                  
+
 } nestegg_video_params;
 
 
