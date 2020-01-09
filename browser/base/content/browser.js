@@ -4000,7 +4000,6 @@ const BrowserSearch = {
 
     let focusUrlBarIfSearchFieldIsNotActive = function(aSearchBar) {
       if (!aSearchBar || document.activeElement != aSearchBar.textbox.inputField) {
-        focusAndSelectUrlBar(true);
         
         gURLBar.typeRestrictToken(UrlbarTokenizer.RESTRICT.SEARCH);
       }
