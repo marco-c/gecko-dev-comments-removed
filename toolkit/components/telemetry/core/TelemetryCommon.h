@@ -26,9 +26,13 @@ enum class RecordedProcessType : uint16_t {
   Gpu = (1 << GeckoProcessType_GPU),
   Socket = (1 << GeckoProcessType_Socket),
   AllChildren = 0xFFFF - 1,  
+                             
   All = 0xFFFF               
 };
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(RecordedProcessType);
+static_assert(static_cast<uint16_t>(RecordedProcessType::Main) == 1,
+              "Main process type must be equal to 1 to allow easy matching in "
+              "CanRecordInProcess");
 
 enum class SupportedProduct : uint8_t {
   Firefox = (1 << 0),
