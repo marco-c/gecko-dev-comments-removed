@@ -1622,11 +1622,7 @@ nsresult NS_NewURI(
     nsIIOService*
         ioService )  
 {
-  nsresult rv;
-  nsCOMPtr<nsIIOService> grip;
-  rv = net_EnsureIOService(&ioService, grip);
-  if (ioService) rv = ioService->NewURI(spec, charset, baseURI, result);
-  return rv;
+  return NS_NewURIOnAnyThread(result, spec, charset, baseURI, ioService);
 }
 
 nsresult NS_NewURI(
