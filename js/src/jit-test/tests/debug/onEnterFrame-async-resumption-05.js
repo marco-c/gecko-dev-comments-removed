@@ -20,19 +20,13 @@ dbg.onEnterFrame = frame => {
 
         
         
-        
         resumption = frame.eval(`(function* f2() { hit2 = true; })()`);
         assertEq(resumption.return.class, "Generator");
         return resumption;
     }
 };
 
-let error;
-try {
-    g.f(0);
-} catch (e) {
-    error = e;
-}
+let it = g.f(0);
 assertEq(hits, 1);
-assertEq(error instanceof g.Error, true);
+assertEq(gw.makeDebuggeeValue(it), resumption.return);
 assertEq(g.hit2, false);

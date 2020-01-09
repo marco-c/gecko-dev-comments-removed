@@ -3643,7 +3643,7 @@ bool js::InitFunctionEnvironmentObjects(JSContext* cx, AbstractFramePtr frame) {
   
   if (callee->needsNamedLambdaEnvironment()) {
     NamedLambdaObject* declEnv;
-    if (callee->isAsync()) {
+    if (callee->isAsync() && !callee->isGenerator()) {
       
       
       RootedFunction fun(cx, GetWrappedAsyncFunction(callee));

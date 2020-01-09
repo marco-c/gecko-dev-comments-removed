@@ -8,6 +8,7 @@
 #define vm_AsyncIteration_h
 
 #include "builtin/Promise.h"
+#include "js/Class.h"
 #include "vm/GeneratorObject.h"
 #include "vm/JSContext.h"
 #include "vm/JSObject.h"
@@ -15,36 +16,7 @@
 
 namespace js {
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-JSObject* WrapAsyncGeneratorWithProto(JSContext* cx, HandleFunction unwrapped,
-                                      HandleObject proto);
-
-
-
-JSObject* WrapAsyncGenerator(JSContext* cx, HandleFunction unwrapped);
-
-
-bool IsWrappedAsyncGenerator(JSFunction* fun);
-
-
-JSFunction* GetWrappedAsyncGenerator(JSFunction* unwrapped);
-
-
-JSFunction* GetUnwrappedAsyncGenerator(JSFunction* wrapped);
+class AsyncGeneratorObject;
 
 
 MOZ_MUST_USE bool AsyncGeneratorAwaitedFulfilled(
@@ -66,8 +38,6 @@ MOZ_MUST_USE bool AsyncGeneratorYieldReturnAwaitedFulfilled(
 MOZ_MUST_USE bool AsyncGeneratorYieldReturnAwaitedRejected(
     JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
     HandleValue reason);
-
-class AsyncGeneratorObject;
 
 
 
@@ -128,14 +98,11 @@ class AsyncGeneratorRequest : public NativeObject {
   }
 };
 
-class AsyncGeneratorObject : public NativeObject {
+class AsyncGeneratorObject : public AbstractGeneratorObject {
  private:
   enum AsyncGeneratorObjectSlots {
     
-    Slot_State = 0,
-
-    
-    Slot_Generator,
+    Slot_State = AbstractGeneratorObject::RESERVED_SLOTS,
 
     
     
@@ -183,8 +150,6 @@ class AsyncGeneratorObject : public NativeObject {
   }
   void setState(State state_) { setFixedSlot(Slot_State, Int32Value(state_)); }
 
-  void setGenerator(const Value& value) { setFixedSlot(Slot_Generator, value); }
-
   
   
   
@@ -221,8 +186,7 @@ class AsyncGeneratorObject : public NativeObject {
  public:
   static const Class class_;
 
-  static AsyncGeneratorObject* create(JSContext* cx, HandleFunction asyncGen,
-                                      HandleValue generatorVal);
+  static AsyncGeneratorObject* create(JSContext* cx, HandleFunction asyncGen);
 
   bool isSuspendedStart() const { return state() == State_SuspendedStart; }
   bool isSuspendedYield() const { return state() == State_SuspendedYield; }
@@ -239,13 +203,6 @@ class AsyncGeneratorObject : public NativeObject {
   void setAwaitingYieldReturn() { setState(State_AwaitingYieldReturn); }
   void setAwaitingReturn() { setState(State_AwaitingReturn); }
   void setCompleted() { setState(State_Completed); }
-
-  JS::Value generatorVal() const { return getFixedSlot(Slot_Generator); }
-  AsyncGeneratorGeneratorObject* generatorObj() const {
-    return &getFixedSlot(Slot_Generator)
-                .toObject()
-                .as<AsyncGeneratorGeneratorObject>();
-  }
 
   static MOZ_MUST_USE bool enqueueRequest(
       JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,

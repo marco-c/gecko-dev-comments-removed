@@ -18,8 +18,6 @@
 #include "js/RootingAPI.h"           
 #include "vm/BytecodeUtil.h"         
 #include "vm/JSAtom.h"               
-#include "vm/JSFunction.h"           
-#include "vm/JSScript.h"             
 #include "vm/NativeObject.h"         
 #include "vm/Scope.h"                
 
@@ -244,8 +242,7 @@ class MOZ_STACK_CLASS PropertyEmitter {
       const mozilla::Maybe<uint32_t>& keyPos, Kind kind = Kind::Prototype);
   MOZ_MUST_USE bool prepareForComputedPropValue();
 
-  MOZ_MUST_USE bool emitInitHomeObject(
-      FunctionAsyncKind kind = FunctionAsyncKind::SyncFunction);
+  MOZ_MUST_USE bool emitInitHomeObject(bool isAsyncNonGenerator = false);
 
   
   

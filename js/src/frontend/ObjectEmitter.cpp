@@ -228,15 +228,14 @@ bool PropertyEmitter::prepareForComputedPropValue() {
 }
 
 bool PropertyEmitter::emitInitHomeObject(
-    FunctionAsyncKind kind ) {
+    bool isAsyncNonGenerator ) {
   MOZ_ASSERT(propertyState_ == PropertyState::PropValue ||
              propertyState_ == PropertyState::IndexValue ||
              propertyState_ == PropertyState::ComputedValue);
 
   
 
-  bool isAsync = kind == FunctionAsyncKind::AsyncFunction;
-  if (isAsync) {
+  if (isAsyncNonGenerator) {
     
     if (!bce_->emit1(JSOP_SWAP)) {
       
@@ -255,7 +254,7 @@ bool PropertyEmitter::emitInitHomeObject(
   
   
   
-  if (!bce_->emitDupAt(1 + isIndexOrComputed_ + isAsync)) {
+  if (!bce_->emitDupAt(1 + isIndexOrComputed_ + isAsyncNonGenerator)) {
     
     
     
@@ -266,7 +265,7 @@ bool PropertyEmitter::emitInitHomeObject(
     
     return false;
   }
-  if (isAsync) {
+  if (isAsyncNonGenerator) {
     if (!bce_->emit1(JSOP_POP)) {
       
       return false;
