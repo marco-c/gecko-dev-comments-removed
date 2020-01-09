@@ -6515,14 +6515,14 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     }
   }
 
-  
-  
-  
-  
-  if (textOverflow.isSome()) {
-    aLists.PositionedDescendants()->AppendToTop(&textOverflow->GetMarkers());
-  }
   linesDisplayListCollection.MoveTo(aLists);
+
+  if (textOverflow.isSome()) {
+    
+    
+    
+    aLists.Content()->AppendToTop(&textOverflow->GetMarkers());
+  }
 
   if (HasOutsideBullet()) {
     
