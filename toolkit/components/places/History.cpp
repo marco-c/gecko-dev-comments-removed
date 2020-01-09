@@ -561,6 +561,9 @@ class NotifyManyVisitsObservers : public Runnable {
     }
   }
 
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   NS_IMETHOD Run() override {
     MOZ_ASSERT(NS_IsMainThread(), "This should be called on the main thread");
 
