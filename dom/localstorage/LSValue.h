@@ -17,32 +17,83 @@ namespace dom {
 
 
 
+
 class LSValue final {
   friend struct IPC::ParamTraits<LSValue>;
 
-  nsString mBuffer;
+  nsCString mBuffer;
+  uint32_t mUTF16Length;
 
  public:
-  LSValue() {}
+  LSValue() : mUTF16Length(0) {}
 
-  explicit LSValue(const nsAString& aBuffer) : mBuffer(aBuffer) {}
+  explicit LSValue(const nsACString& aBuffer, uint32_t aUTF16Length)
+      : mBuffer(aBuffer), mUTF16Length(aUTF16Length) {}
+
+  explicit LSValue(const nsAString& aBuffer) : mUTF16Length(aBuffer.Length()) {
+    if (aBuffer.IsVoid()) {
+      mBuffer.SetIsVoid(true);
+    } else {
+      CopyUTF16toUTF8(aBuffer, mBuffer);
+    }
+  }
 
   bool IsVoid() const { return mBuffer.IsVoid(); }
 
   void SetIsVoid(bool aVal) { mBuffer.SetIsVoid(aVal); }
 
+  
+
+
+
+
+
   uint32_t Length() const { return mBuffer.Length(); }
+
+  
+
+
+
+  uint32_t UTF16Length() const { return mUTF16Length; }
 
   bool Equals(const LSValue& aOther) const {
     return mBuffer == aOther.mBuffer &&
-           mBuffer.IsVoid() == aOther.mBuffer.IsVoid();
+           mBuffer.IsVoid() == aOther.mBuffer.IsVoid() &&
+           mUTF16Length == aOther.mUTF16Length;
   }
 
   bool operator==(const LSValue& aOther) const { return Equals(aOther); }
 
   bool operator!=(const LSValue& aOther) const { return !Equals(aOther); }
 
-  operator const nsString&() const { return mBuffer; }
+  operator const nsCString&() const { return mBuffer; }
+
+  operator Span<const char>() const { return mBuffer; }
+
+  class Converter {
+    nsString mBuffer;
+
+   public:
+    explicit Converter(const LSValue& aValue) {
+      if (aValue.mBuffer.IsVoid()) {
+        mBuffer.SetIsVoid(true);
+      } else {
+        CopyUTF8toUTF16(aValue.mBuffer, mBuffer);
+      }
+    }
+    Converter(Converter&& aOther) : mBuffer(aOther.mBuffer) {}
+    ~Converter() {}
+
+    operator const nsString&() const { return mBuffer; }
+
+   private:
+    Converter() = delete;
+    Converter(const Converter&) = delete;
+    Converter& operator=(const Converter&) = delete;
+    Converter& operator=(const Converter&&) = delete;
+  };
+
+  Converter AsString() const { return Converter(const_cast<LSValue&>(*this)); }
 };
 
 const LSValue& VoidLSValue();

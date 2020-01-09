@@ -140,8 +140,8 @@ mozilla::ipc::IPCResult LSObserverChild::RecvObserve(
     return IPC_FAIL_NO_REASON(this);
   }
 
-  Storage::NotifyChange( nullptr, principal, aKey, aOldValue,
-                        aNewValue,
+  Storage::NotifyChange( nullptr, principal, aKey,
+                        aOldValue.AsString(), aNewValue.AsString(),
                          kLocalStorageType, aDocumentURI,
                          !!aPrivateBrowsingId,
                          true);
