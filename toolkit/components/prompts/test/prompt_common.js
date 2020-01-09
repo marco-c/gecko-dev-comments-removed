@@ -24,19 +24,31 @@ function onloadPromiseFor(id) {
   });
 }
 
-function handlePrompt(state, action) {
+
+
+
+
+
+
+
+
+function handlePromptWithoutChecks(action) {
   return new Promise(resolve => {
     gChromeScript.addMessageListener("promptHandled", function handled(msg) {
       gChromeScript.removeMessageListener("promptHandled", handled);
-      checkPromptState(msg.promptState, state);
-      resolve(true);
+      resolve(msg.promptState);
     });
     gChromeScript.sendAsyncMessage("handlePrompt", { action, isTabModal});
   });
 }
 
+async function handlePrompt(state, action) {
+  let actualState = await handlePromptWithoutChecks(action);
+  checkPromptState(actualState, state);
+}
+
 function checkPromptState(promptState, expectedState) {
-    info(`checkPromptState: ${expectedState.msg}`);
+    info(`checkPromptState: Expected: ${expectedState.msg}`);
     
     is(promptState.msg, expectedState.msg, "Checking expected message");
     if (isOSX && !isTabModal)
