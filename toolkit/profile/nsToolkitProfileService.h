@@ -79,7 +79,7 @@ class nsToolkitProfileService final : public nsIToolkitProfileService {
                                 nsIToolkitProfile** aProfile, bool* aDidCreate);
   nsresult CreateResetProfile(nsIToolkitProfile** aNewProfile);
   nsresult ApplyResetProfile(nsIToolkitProfile* aOldProfile);
-  void RecordStartupTelemetry();
+  void CompleteStartup();
 
  private:
   friend class nsToolkitProfile;
@@ -143,6 +143,7 @@ class nsToolkitProfileService final : public nsIToolkitProfileService {
   
   bool mCreatedAlternateProfile;
   nsString mStartupReason;
+  bool mMaybeLockProfile;
 
   static nsToolkitProfileService* gService;
 

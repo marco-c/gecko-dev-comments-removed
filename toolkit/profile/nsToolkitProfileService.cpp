@@ -304,7 +304,8 @@ nsToolkitProfileService::nsToolkitProfileService()
       mUseDedicatedProfile(false),
 #endif
       mCreatedAlternateProfile(false),
-      mStartupReason(NS_LITERAL_STRING("unknown")) {
+      mStartupReason(NS_LITERAL_STRING("unknown")),
+      mMaybeLockProfile(false) {
 #ifdef MOZ_DEV_EDITION
   mUseDevEditionProfile = true;
 #endif
@@ -313,13 +314,30 @@ nsToolkitProfileService::nsToolkitProfileService()
 
 nsToolkitProfileService::~nsToolkitProfileService() { gService = nullptr; }
 
-void nsToolkitProfileService::RecordStartupTelemetry() {
+void nsToolkitProfileService::CompleteStartup() {
   if (!mStartupProfileSelected) {
     return;
   }
 
   ScalarSet(mozilla::Telemetry::ScalarID::STARTUP_PROFILE_SELECTION_REASON,
             mStartupReason);
+
+  if (mMaybeLockProfile) {
+    nsCOMPtr<nsIToolkitShellService> shell =
+        do_GetService(NS_TOOLKITSHELLSERVICE_CONTRACTID);
+    if (!shell) {
+      return;
+    }
+
+    bool isDefaultApp;
+    nsresult rv = shell->IsDefaultApplication(&isDefaultApp);
+    NS_ENSURE_SUCCESS_VOID(rv);
+
+    if (isDefaultApp) {
+      mInstallData.SetString(mInstallHash.get(), "Locked", "1");
+      Flush();
+    }
+  }
 }
 
 
@@ -457,28 +475,17 @@ bool nsToolkitProfileService::MaybeMakeDefaultDedicatedProfile(
   
   SetDefaultProfile(aProfile);
 
-  bool isDefaultApp = false;
-
-  nsCOMPtr<nsIToolkitShellService> shell =
-      do_GetService(NS_TOOLKITSHELLSERVICE_CONTRACTID);
-  if (shell) {
-    rv = shell->IsDefaultApplication(&isDefaultApp);
-    
-    
-    if (NS_FAILED(rv)) {
-      isDefaultApp = false;
-    }
-  }
-
-  if (!isDefaultApp) {
-    
-    
-    
-    mInstallData.DeleteString(mInstallHash.get(), "Locked");
-  }
+  
+  
+  
+  mInstallData.DeleteString(mInstallHash.get(), "Locked");
 
   
   Flush();
+
+  
+  
+  mMaybeLockProfile = true;
 
   return true;
 }
@@ -818,7 +825,7 @@ nsToolkitProfileService::SelectStartupProfile(
   
   
   if (NS_SUCCEEDED(rv)) {
-    RecordStartupTelemetry();
+    CompleteStartup();
   }
 
   return rv;
@@ -1118,6 +1125,18 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
   }
 
   mStartupReason = NS_LITERAL_STRING("default");
+
+  
+  if (mUseDedicatedProfile) {
+    nsCString locked;
+    rv = mInstallData.GetString(mInstallHash.get(), "Locked", locked);
+    if (NS_FAILED(rv) || !locked.EqualsLiteral("1")) {
+      
+      
+      
+      mMaybeLockProfile = true;
+    }
+  }
 
   
   mCurrent->GetRootDir(aRootDir);
