@@ -197,7 +197,15 @@
         }
     };
 
-    window.test_driver_internal = {
+    var manual = {
+        
+
+
+
+
+
+        in_automation: false,
+
         
 
 
@@ -206,7 +214,13 @@
 
 
         click: function(element, coords) {
-            return Promise.reject(new Error("unimplemented"));
+            if (this.in_automation) {
+                return Promise.reject(new Error('Not implemented'));
+            }
+
+            return new Promise(function(resolve, reject) {
+                element.addEventListener("click", resolve);
+            });
         },
 
         
@@ -216,8 +230,37 @@
 
 
 
+
         send_keys: function(element, keys) {
-            return Promise.reject(new Error("unimplemented"));
+            if (this.in_automation) {
+                return Promise.reject(new Error('Not implemented'));
+            }
+
+            return new Promise(function(resolve, reject) {
+                var seen = "";
+
+                function remove() {
+                    element.removeEventListener("keydown", onKeyDown);
+                }
+
+                function onKeyDown(event) {
+                    if (event.key.length > 1) {
+                        return;
+                    }
+
+                    seen += event.key;
+
+                    if (keys.indexOf(seen) !== 0) {
+                        reject(new Error("Unexpected key sequence: " + seen));
+                        remove();
+                    } else if (seen === keys) {
+                        resolve();
+                        remove();
+                    }
+                }
+
+                element.addEventListener("keydown", onKeyDown);
+            });
         },
 
         
@@ -240,4 +283,7 @@
             return Promise.reject(new Error("unimplemented"));
         }
     };
+
+    window.test_driver_internal = Object.create(manual);
+
 })();
