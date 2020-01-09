@@ -1718,14 +1718,17 @@ EnvironmentCache.prototype = {
       profile: { 
         model: getSysinfoProperty("profileHDDModel", null),
         revision: getSysinfoProperty("profileHDDRevision", null),
+        type: getSysinfoProperty("profileHDDType", null),
       },
       binary:  { 
         model: getSysinfoProperty("binHDDModel", null),
         revision: getSysinfoProperty("binHDDRevision", null),
+        type: getSysinfoProperty("binHDDType", null),
       },
       system:  { 
         model: getSysinfoProperty("winHDDModel", null),
         revision: getSysinfoProperty("winHDDRevision", null),
+        type: getSysinfoProperty("winHDDType", null),
       },
     };
   },
