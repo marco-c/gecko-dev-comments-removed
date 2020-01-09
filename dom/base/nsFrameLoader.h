@@ -59,7 +59,7 @@ class ProcessMessageManager;
 class Promise;
 class TabParent;
 class MutableTabContext;
-class RemoteFrameChild;
+class BrowserBridgeChild;
 
 namespace ipc {
 class StructuredCloneData;
@@ -286,7 +286,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
 
 
-  mozilla::dom::RemoteFrameChild* GetRemoteFrameChild() const;
+  mozilla::dom::BrowserBridgeChild* GetBrowserBridgeChild() const;
 
   
 
@@ -455,7 +455,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
   uint64_t mChildID;
 
   
-  RefPtr<mozilla::dom::RemoteFrameChild> mRemoteFrameChild;
+  RefPtr<mozilla::dom::BrowserBridgeChild> mBrowserBridgeChild;
 
   
   mozilla::ScreenIntSize mLazySize;
