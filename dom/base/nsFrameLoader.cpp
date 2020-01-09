@@ -220,6 +220,11 @@ nsFrameLoader::~nsFrameLoader() {
   MOZ_RELEASE_ASSERT(mDestroyCalled);
 }
 
+static nsAtom* TypeAttrName(Element* aOwnerContent) {
+  return aOwnerContent->IsXULElement() ? nsGkAtoms::type
+                                       : nsGkAtoms::mozframetype;
+}
+
 static void GetFrameName(Element* aOwnerContent, nsAString& aFrameName) {
   int32_t namespaceID = aOwnerContent->GetNameSpaceID();
   if (namespaceID == kNameSpaceID_XHTML && !aOwnerContent->IsInHTMLDocument()) {
@@ -232,6 +237,54 @@ static void GetFrameName(Element* aOwnerContent, nsAString& aFrameName) {
       aOwnerContent->GetAttr(kNameSpaceID_None, nsGkAtoms::id, aFrameName);
     }
   }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static bool IsTopContent(BrowsingContext* aParent, Element* aOwner) {
+  nsCOMPtr<nsIMozBrowserFrame> mozbrowser = aOwner->GetAsMozBrowserFrame();
+
+  if (aParent->IsContent()) {
+    
+    
+    
+    
+    return (mozbrowser && mozbrowser->GetReallyIsBrowser()) ||
+           (aOwner->IsXULElement() &&
+            aOwner->AttrValueIs(kNameSpaceID_None, nsGkAtoms::remote,
+                                nsGkAtoms::_true, eCaseMatters));
+  }
+
+  
+  
+  
+  return (mozbrowser && mozbrowser->GetMozbrowser()) ||
+         (aOwner->AttrValueIs(kNameSpaceID_None, TypeAttrName(aOwner),
+                              nsGkAtoms::content, eIgnoreCase));
 }
 
 static already_AddRefed<BrowsingContext> CreateBrowsingContext(
@@ -261,28 +314,13 @@ static already_AddRefed<BrowsingContext> CreateBrowsingContext(
   nsAutoString frameName;
   GetFrameName(aOwner, frameName);
 
-  
-  bool isContent =
-      parentContext->IsContent() ||
-      aOwner->AttrValueIs(
-          kNameSpaceID_None,
-          aOwner->IsXULElement() ? nsGkAtoms::type : nsGkAtoms::mozframetype,
-          nsGkAtoms::content, eIgnoreCase);
-
-  
-  
-  nsCOMPtr<nsIMozBrowserFrame> mozbrowser = aOwner->GetAsMozBrowserFrame();
-  if (!isContent && mozbrowser) {
-    mozbrowser->GetMozbrowser(&isContent);
+  if (IsTopContent(parentContext, aOwner)) {
+    
+    return BrowsingContext::Create(nullptr, aOpener, frameName,
+                                   BrowsingContext::Type::Content);
   }
 
-  
-  
-  if (isContent && !parentContext->IsContent()) {
-    parentContext = nullptr;
-  }
-
-  BrowsingContext::Type type = isContent ? BrowsingContext::Type::Content
+  auto type = parentContext->IsContent() ? BrowsingContext::Type::Content
                                          : BrowsingContext::Type::Chrome;
 
   return BrowsingContext::Create(parentContext, aOpener, frameName, type);
@@ -728,7 +766,7 @@ void nsFrameLoader::AddTreeItemToTreeOwner(nsIDocShellTreeItem* aItem,
   MOZ_ASSERT(mOwnerContent, "Must have owning content");
 
   MOZ_DIAGNOSTIC_ASSERT(
-      CheckDocShellType(mOwnerContent, aItem, TypeAttrName()),
+      CheckDocShellType(mOwnerContent, aItem, TypeAttrName(mOwnerContent)),
       "Correct ItemType should be set when creating BrowsingContext");
 
   if (mIsTopLevelContent) {
@@ -2982,12 +3020,13 @@ void nsFrameLoader::AttributeChanged(mozilla::dom::Element* aElement,
                                      const nsAttrValue* aOldValue) {
   MOZ_ASSERT(mObservingOwnerContent);
 
-  if (aNameSpaceID != kNameSpaceID_None ||
-      (aAttribute != TypeAttrName() && aAttribute != nsGkAtoms::primary)) {
+  if (aElement != mOwnerContent) {
     return;
   }
 
-  if (aElement != mOwnerContent) {
+  if (aNameSpaceID != kNameSpaceID_None ||
+      (aAttribute != TypeAttrName(aElement) &&
+       aAttribute != nsGkAtoms::primary)) {
     return;
   }
 
@@ -3032,7 +3071,7 @@ void nsFrameLoader::AttributeChanged(mozilla::dom::Element* aElement,
 #endif
 
   parentTreeOwner->ContentShellRemoved(GetDocShell());
-  if (aElement->AttrValueIs(kNameSpaceID_None, TypeAttrName(),
+  if (aElement->AttrValueIs(kNameSpaceID_None, TypeAttrName(aElement),
                             nsGkAtoms::content, eIgnoreCase)) {
     parentTreeOwner->ContentShellAdded(GetDocShell(), is_primary);
   }
