@@ -4466,26 +4466,51 @@ static nscoord ContentContribution(
     nscoord aMinSizeClamp = NS_MAXSIZE, uint32_t aFlags = 0) {
   nsIFrame* child = aGridItem.mFrame;
 
-  
-  
   nscoord extraMargin = 0;
   nsGridContainerFrame::Subgrid* subgrid = nullptr;
-  if (child->GetParent() != aState.mFrame &&
-      (aGridItem.mState[aAxis] & ItemState::eEdgeBits)) {
+  if (child->GetParent() != aState.mFrame) {
+    
+    
     auto* subgridFrame = child->GetParent();
     subgrid = subgridFrame->GetProperty(Subgrid::Prop());
-    LogicalMargin mbp = SubgridAccumulatedMarginBorderPadding(
-        subgridFrame, subgrid, aCBWM, aAxis);
-    auto state = aGridItem.mState[aAxis];
-    if (state & ItemState::eStartEdge) {
-      extraMargin += mbp.Start(aAxis, aCBWM);
+    const auto itemEdgeBits = aGridItem.mState[aAxis] & ItemState::eEdgeBits;
+    if (itemEdgeBits) {
+      LogicalMargin mbp = SubgridAccumulatedMarginBorderPadding(
+          subgridFrame, subgrid, aCBWM, aAxis);
+      if (itemEdgeBits & ItemState::eStartEdge) {
+        extraMargin += mbp.Start(aAxis, aCBWM);
+      }
+      if (itemEdgeBits & ItemState::eEndEdge) {
+        extraMargin += mbp.End(aAxis, aCBWM);
+      }
     }
-    if (state & ItemState::eEndEdge) {
-      extraMargin += mbp.End(aAxis, aCBWM);
+    
+    
+    
+    if (itemEdgeBits != ItemState::eEdgeBits) {
+      auto subgridAxis = aCBWM.IsOrthogonalTo(subgridFrame->GetWritingMode())
+                              ? GetOrthogonalAxis(aAxis) : aAxis;
+      auto& gapStyle = subgridAxis == eLogicalAxisBlock ?
+          subgridFrame->StylePosition()->mRowGap :
+          subgridFrame->StylePosition()->mColumnGap;
+      if (!gapStyle.IsNormal()) {
+        auto subgridExtent =
+            subgridAxis == eLogicalAxisBlock ? subgrid->mGridRowEnd
+                                             : subgrid->mGridColEnd;
+        if (subgridExtent > 1) {
+          nscoord subgridGap =
+              nsLayoutUtils::ResolveGapToLength(gapStyle, NS_UNCONSTRAINEDSIZE);
+          auto& tracks = aAxis == eLogicalAxisBlock ? aState.mRows : aState.mCols;
+          auto gapDelta = subgridGap - tracks.mGridGap;
+          if (!itemEdgeBits) {
+            extraMargin += gapDelta;
+          } else {
+            extraMargin += gapDelta / 2;
+          }
+        }
+      }
     }
   }
-
-  
 
   PhysicalAxis axis(aCBWM.PhysicalAxis(aAxis));
   nscoord size = nsLayoutUtils::IntrinsicForAxis(
@@ -5588,23 +5613,73 @@ void nsGridContainerFrame::Tracks::StretchFlexibleTracks(
 void nsGridContainerFrame::Tracks::AlignJustifyContent(
     const nsStylePosition* aStyle, WritingMode aWM, nscoord aContentSize,
     bool aIsSubgriddedAxis) {
+  const bool isAlign = mAxis == eLogicalAxisBlock;
+  
+  
+  
+  if (MOZ_UNLIKELY(aIsSubgriddedAxis)) {
+    auto& gap = isAlign ? aStyle->mRowGap : aStyle->mColumnGap;
+    if (gap.IsNormal()) {
+      return;
+    }
+    auto len = mSizes.Length();
+    if (len <= 1) {
+      return;
+    }
+    
+    
+    nsTArray<nscoord> gapDeltas;
+    const size_t numGaps = len - 1;
+    gapDeltas.SetLength(numGaps);
+    for (size_t i = 0; i < numGaps; ++i) {
+      TrackSize& sz1 = mSizes[i];
+      TrackSize& sz2 = mSizes[i + 1];
+      nscoord currentGap = sz2.mPosition - (sz1.mPosition + sz1.mBase);
+      gapDeltas[i] = mGridGap - currentGap;
+    }
+    
+    
+    nscoord currentPos = mSizes[0].mPosition;
+    nscoord lastHalfDelta(0);
+    for (size_t i = 0; i < numGaps; ++i) {
+      TrackSize& sz = mSizes[i];
+      nscoord delta = gapDeltas[i];
+      nscoord halfDelta;
+      nscoord roundingError = NSCoordDivRem(delta, 2, &halfDelta);
+      auto newSize = sz.mBase - (halfDelta + roundingError) - lastHalfDelta;
+      lastHalfDelta = halfDelta;
+      if (newSize >= 0) {
+        sz.mBase = newSize;
+        sz.mPosition = currentPos;
+        currentPos += newSize + mGridGap;
+      } else {
+        sz.mBase = nscoord(0);
+        sz.mPosition = currentPos + newSize;
+        currentPos = sz.mPosition + mGridGap;
+      }
+    }
+    auto& lastTrack = mSizes.LastElement();
+    auto newSize = lastTrack.mBase - lastHalfDelta;
+    if (newSize >= 0) {
+      lastTrack.mBase = newSize;
+      lastTrack.mPosition = currentPos;
+    } else {
+      lastTrack.mBase = nscoord(0);
+      lastTrack.mPosition = currentPos + newSize;
+    }
+    return;
+  }
+
   if (mSizes.IsEmpty()) {
     return;
   }
 
-  const bool isAlign = mAxis == eLogicalAxisBlock;
   auto valueAndFallback =
       isAlign ? aStyle->mAlignContent : aStyle->mJustifyContent;
   bool overflowSafe;
   auto alignment =
       ::GetAlignJustifyValue(valueAndFallback, aWM, isAlign, &overflowSafe);
   if (alignment == NS_STYLE_ALIGN_NORMAL) {
-    if (aIsSubgriddedAxis) {
-      auto& gap = isAlign ? aStyle->mRowGap : aStyle->mColumnGap;
-      if (gap.IsNormal()) {
-        return;
-      }
-    }
     MOZ_ASSERT(valueAndFallback == NS_STYLE_ALIGN_NORMAL,
                "*-content:normal cannot be specified with explicit fallback");
     alignment = NS_STYLE_ALIGN_STRETCH;
@@ -5616,10 +5691,14 @@ void nsGridContainerFrame::Tracks::AlignJustifyContent(
   nscoord space;
   if (alignment != NS_STYLE_ALIGN_START) {
     nscoord trackSizeSum = 0;
-    for (const TrackSize& sz : mSizes) {
-      trackSizeSum += sz.mBase;
-      if (sz.mState & TrackSize::eAutoMaxSizing) {
-        ++numAutoTracks;
+    if (aIsSubgriddedAxis) {
+      numAutoTracks = mSizes.Length();
+    } else {
+      for (const TrackSize& sz : mSizes) {
+        trackSizeSum += sz.mBase;
+        if (sz.mState & TrackSize::eAutoMaxSizing) {
+          ++numAutoTracks;
+        }
       }
     }
     space = aContentSize - trackSizeSum - SumOfGridGaps();
@@ -7032,20 +7111,17 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
 
   if (!prevInFlow) {
     const auto& rowSizes = gridReflowInput.mRows.mSizes;
-    if (computedBSize == NS_AUTOHEIGHT &&
-        stylePos->mRowGap.IsLengthPercentage() &&
-        stylePos->mRowGap.AsLengthPercentage().HasPercent()) {
-      
-      gridReflowInput.mRows.mGridGap =
-          nsLayoutUtils::ResolveGapToLength(stylePos->mRowGap, bSize);
-    }
     if (!IsRowSubgrid()) {
       
+      if (computedBSize == NS_AUTOHEIGHT &&
+          stylePos->mRowGap.IsLengthPercentage() &&
+          stylePos->mRowGap.AsLengthPercentage().HasPercent()) {
+        
+        gridReflowInput.mRows.mGridGap =
+          nsLayoutUtils::ResolveGapToLength(stylePos->mRowGap, bSize);
+      }
       gridReflowInput.mRows.AlignJustifyContent(stylePos, wm, bSize, false);
-    } else if (!rowSizes.IsEmpty()) {
-      gridReflowInput.mRows.mGridGap =
-        nsLayoutUtils::ResolveGapToLength(stylePos->mRowGap, bSize);
-      gridReflowInput.mRows.AlignJustifyContent(stylePos, wm, bSize, true);
+    } else {
       if (computedBSize == NS_AUTOHEIGHT) {
         bSize = gridReflowInput.mRows.GridLineEdge(rowSizes.Length(),
                                                    GridLineSide::BeforeGridGap);
