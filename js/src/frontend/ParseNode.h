@@ -626,7 +626,7 @@ static inline bool IsMethodDefinitionKind(FunctionSyntaxKind kind) {
 }
 
 class ParseNode {
-  ParseNodeKind pn_type; 
+  const ParseNodeKind pn_type; 
 
   
   
@@ -671,10 +671,6 @@ class ParseNode {
   ParseNodeKind getKind() const {
     MOZ_ASSERT(pn_type < ParseNodeKind::Limit);
     return pn_type;
-  }
-  void setKind(ParseNodeKind kind) {
-    MOZ_ASSERT(kind < ParseNodeKind::Limit);
-    pn_type = kind;
   }
   bool isKind(ParseNodeKind kind) const { return getKind() == kind; }
 
