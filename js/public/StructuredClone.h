@@ -439,7 +439,7 @@ class MOZ_NON_MEMMOVABLE JS_PUBLIC_API JSStructuredCloneData {
     ownTransferables_ = policy;
   }
 
-  MOZ_MUST_USE bool Init(size_t initialCapacity = 0) {
+  bool Init(size_t initialCapacity = 0) {
     return bufList_.Init(0, initialCapacity);
   }
 
@@ -458,24 +458,23 @@ class MOZ_NON_MEMMOVABLE JS_PUBLIC_API JSStructuredCloneData {
 
   const Iterator Start() const { return bufList_.Iter(); }
 
-  MOZ_MUST_USE bool Advance(Iterator& iter, size_t distance) const {
+  bool Advance(Iterator& iter, size_t distance) const {
     return iter.AdvanceAcrossSegments(bufList_, distance);
   }
 
-  MOZ_MUST_USE bool ReadBytes(Iterator& iter, char* buffer, size_t size) const {
+  bool ReadBytes(Iterator& iter, char* buffer, size_t size) const {
     return bufList_.ReadBytes(iter, buffer, size);
   }
 
   
-  MOZ_MUST_USE bool AppendBytes(const char* data, size_t size) {
+  bool AppendBytes(const char* data, size_t size) {
     MOZ_ASSERT(scope_ != JS::StructuredCloneScope::Unassigned);
     return bufList_.WriteBytes(data, size);
   }
 
   
   
-  MOZ_MUST_USE bool UpdateBytes(Iterator& iter, const char* data,
-                                size_t size) const {
+  bool UpdateBytes(Iterator& iter, const char* data, size_t size) const {
     MOZ_ASSERT(scope_ != JS::StructuredCloneScope::Unassigned);
     while (size > 0) {
       size_t remaining = iter.RemainingInSegment();
@@ -525,7 +524,7 @@ class MOZ_NON_MEMMOVABLE JS_PUBLIC_API JSStructuredCloneData {
   }
 
   
-  MOZ_MUST_USE bool Append(const JSStructuredCloneData& other) {
+  bool Append(const JSStructuredCloneData& other) {
     MOZ_ASSERT(scope_ == other.scope());
     return other.ForEachDataChunk(
         [&](const char* data, size_t size) { return AppendBytes(data, size); });
