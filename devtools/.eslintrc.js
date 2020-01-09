@@ -106,22 +106,6 @@ module.exports = {
       "strict": "off",
     }
   }, {
-    "files": [
-    ],
-    "rules": {
-      "consistent-return": "off",
-      "max-len": "off",
-      "mozilla/no-aArgs": "off",
-      "mozilla/var-only-at-top-level": "off",
-      "no-redeclare": "off",
-      "no-return-assign": "off",
-      "no-shadow": "off",
-      "no-undef": "off",
-      "no-unused-vars": "off",
-      "no-useless-call": "off",
-      "strict": "off",
-    }
-  }, {
     
     "files": [
       "**/head*.js",
