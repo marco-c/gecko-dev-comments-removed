@@ -302,17 +302,19 @@ RegisteredProxy::RegisteredProxy(ITypeLib* aTypeLib)
   AddToRegistry(this);
 }
 
-RegisteredProxy::~RegisteredProxy() {
-  DeleteFromRegistry(this);
+void RegisteredProxy::Clear() {
   if (mTypeLib) {
     mTypeLib->lpVtbl->Release(mTypeLib);
+    mTypeLib = nullptr;
   }
   if (mClassObject) {
     
     
     auto cleanupFn = [&]() -> void {
       ::CoRevokeClassObject(mRegCookie);
+      mRegCookie = 0;
       mClassObject->lpVtbl->Release(mClassObject);
+      mClassObject = nullptr;
     };
 #if defined(MOZILLA_INTERNAL_API)
     
@@ -327,14 +329,32 @@ RegisteredProxy::~RegisteredProxy() {
   }
   if (mModule) {
     ::FreeLibrary(reinterpret_cast<HMODULE>(mModule));
+    mModule = 0;
   }
 }
 
-RegisteredProxy::RegisteredProxy(RegisteredProxy&& aOther) {
+RegisteredProxy::~RegisteredProxy() {
+  DeleteFromRegistry(this);
+  Clear();
+}
+
+RegisteredProxy::RegisteredProxy(RegisteredProxy&& aOther)
+    : mModule(0),
+      mClassObject(nullptr),
+      mRegCookie(0),
+      mTypeLib(nullptr)
+#if defined(MOZILLA_INTERNAL_API)
+      ,
+      mIsRegisteredInMTA(false)
+#endif  
+{
   *this = std::forward<RegisteredProxy>(aOther);
+  AddToRegistry(this);
 }
 
 RegisteredProxy& RegisteredProxy::operator=(RegisteredProxy&& aOther) {
+  Clear();
+
   mModule = aOther.mModule;
   aOther.mModule = 0;
   mClassObject = aOther.mClassObject;
@@ -343,6 +363,11 @@ RegisteredProxy& RegisteredProxy::operator=(RegisteredProxy&& aOther) {
   aOther.mRegCookie = 0;
   mTypeLib = aOther.mTypeLib;
   aOther.mTypeLib = nullptr;
+
+#if defined(MOZILLA_INTERNAL_API)
+  mIsRegisteredInMTA = aOther.mIsRegisteredInMTA;
+#endif  
+
   return *this;
 }
 
