@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:set ts=2 sw=2 sts=2 et cindent: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "nsPACMan.h"
 
@@ -22,7 +22,7 @@
 #include "mozilla/Result.h"
 #include "mozilla/ResultExtensions.h"
 
-//-----------------------------------------------------------------------------
+
 
 namespace mozilla {
 namespace net {
@@ -34,30 +34,30 @@ LazyLogModule gProxyLog("proxy");
 #define MOZ_WPAD_URL "http://wpad/wpad.dat"
 #define MOZ_DHCP_WPAD_OPTION 252
 
-// The PAC thread does evaluations of both PAC files and
-// nsISystemProxySettings because they can both block the calling thread and we
-// don't want that on the main thread
 
-// Check to see if the underlying request was not an error page in the case of
-// a HTTP request.  For other types of channels, just return true.
+
+
+
+
+
 static bool HttpRequestSucceeded(nsIStreamLoader *loader) {
   nsCOMPtr<nsIRequest> request;
   loader->GetRequest(getter_AddRefs(request));
 
-  bool result = true;  // default to assuming success
+  bool result = true;  
 
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(request);
   if (httpChannel) {
-    // failsafe
+    
     Unused << httpChannel->GetRequestSucceeded(&result);
   }
 
   return result;
 }
 
-// Read preference setting of extra JavaScript context heap size.
-// PrefService tends to be run on main thread, where ProxyAutoConfig runs on
-// ProxyResolution thread, so it's read here and passed to ProxyAutoConfig.
+
+
+
 static uint32_t GetExtraJSContextHeapSize() {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -79,8 +79,8 @@ static uint32_t GetExtraJSContextHeapSize() {
   return extraSize < 0 ? 0 : extraSize;
 }
 
-// Read network proxy type from preference
-// Used to verify that the preference is WPAD in nsPACMan::ConfigureWPAD
+
+
 nsresult GetNetworkProxyTypeFromPref(int32_t *type) {
   *type = 0;
   nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
@@ -98,11 +98,11 @@ nsresult GetNetworkProxyTypeFromPref(int32_t *type) {
   return NS_OK;
 }
 
-//-----------------------------------------------------------------------------
 
-// The ExecuteCallback runnable is triggered by
-// nsPACManCallback::OnQueryComplete on the Main thread when its completion is
-// discovered on the pac thread
+
+
+
+
 
 class ExecuteCallback final : public Runnable {
  public:
@@ -128,11 +128,11 @@ class ExecuteCallback final : public Runnable {
   nsCString mPACURL;
 };
 
-//-----------------------------------------------------------------------------
 
-// The PAC thread must be deleted from the main thread, this class
-// acts as a proxy to do that, as the PACMan is reference counted
-// and might be destroyed on either thread
+
+
+
+
 
 class ShutdownThread final : public Runnable {
  public:
@@ -149,7 +149,7 @@ class ShutdownThread final : public Runnable {
   nsCOMPtr<nsIThread> mThread;
 };
 
-// Dispatch this to wait until the PAC thread shuts down.
+
 
 class WaitForThreadShutdown final : public Runnable {
  public:
@@ -169,11 +169,11 @@ class WaitForThreadShutdown final : public Runnable {
   RefPtr<nsPACMan> mPACMan;
 };
 
-//-----------------------------------------------------------------------------
 
-// PACLoadComplete allows the PAC thread to tell the main thread that
-// the javascript PAC file has been installed (perhaps unsuccessfully)
-// and that there is no reason to queue executions anymore
+
+
+
+
 
 class PACLoadComplete final : public Runnable {
  public:
@@ -191,10 +191,10 @@ class PACLoadComplete final : public Runnable {
   RefPtr<nsPACMan> mPACMan;
 };
 
-//-----------------------------------------------------------------------------
 
-// ConfigureWPADComplete allows the PAC thread to tell the main thread that
-// the URL for the PAC file has been found
+
+
+
 class ConfigureWPADComplete final : public Runnable {
  public:
   ConfigureWPADComplete(nsPACMan *aPACMan, const nsACString &aPACURISpec)
@@ -214,16 +214,16 @@ class ConfigureWPADComplete final : public Runnable {
   nsCString mPACURISpec;
 };
 
-//-----------------------------------------------------------------------------
 
-// ExecutePACThreadAction is used to proxy actions from the main
-// thread onto the PAC thread. There are 4 options: process the queue,
-// cancel the queue, query DHCP for the PAC option
-// and setup the javascript context with a new PAC file
+
+
+
+
+
 
 class ExecutePACThreadAction final : public Runnable {
  public:
-  // by default we just process the queue
+  
   explicit ExecutePACThreadAction(nsPACMan *aPACMan)
       : Runnable("net::ExecutePACThreadAction"),
         mPACMan(aPACMan),
@@ -298,7 +298,7 @@ class ExecutePACThreadAction final : public Runnable {
   bool mShutdown;
 };
 
-//-----------------------------------------------------------------------------
+
 
 PendingPACQuery::PendingPACQuery(nsPACMan *pacMan, nsIURI *uri,
                                  nsPACManCallback *callback,
@@ -342,10 +342,10 @@ PendingPACQuery::Run() {
   return NS_OK;
 }
 
-//-----------------------------------------------------------------------------
+
 
 static bool sThreadLocalSetup = false;
-static uint32_t sThreadLocalIndex = 0xdeadbeef;  // out of range
+static uint32_t sThreadLocalIndex = 0xdeadbeef;  
 
 static const char *kPACIncludePath =
     "network.proxy.autoconfig_url.include_path";
@@ -394,11 +394,11 @@ void nsPACMan::Shutdown() {
   CancelExistingLoad();
 
   if (mPACThread) {
-    PostCancelPendingQ(NS_ERROR_ABORT, /*aShutdown =*/true);
+    PostCancelPendingQ(NS_ERROR_ABORT, true);
 
-    // Shutdown is initiated from an observer. We don't want to block the
-    // observer service on thread shutdown so we post a shutdown runnable that
-    // will run after we return instead.
+    
+    
+    
     RefPtr<WaitForThreadShutdown> runnable = new WaitForThreadShutdown(this);
     Dispatch(runnable.forget());
   }
@@ -416,8 +416,8 @@ nsresult nsPACMan::DispatchToPAC(already_AddRefed<nsIRunnable> aEvent,
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  // Lazily create the PAC thread. This method is main-thread only so we don't
-  // have to worry about threading issues here.
+  
+  
   if (!mPACThread) {
     MOZ_TRY(NS_NewNamedThread("ProxyResolution", getter_AddRefs(mPACThread)));
   }
@@ -432,7 +432,7 @@ nsresult nsPACMan::AsyncGetProxyForURI(nsIURI *uri, nsPACManCallback *callback,
   MOZ_ASSERT(NS_IsMainThread(), "wrong thread");
   if (mShutdown) return NS_ERROR_NOT_AVAILABLE;
 
-  // Maybe Reload PAC
+  
   if (!mPACURISpec.IsEmpty() && !mScheduledReload.IsNull() &&
       TimeStamp::Now() > mScheduledReload) {
     LOG(("nsPACMan::AsyncGetProxyForURI reload as scheduled\n"));
@@ -444,7 +444,7 @@ nsresult nsPACMan::AsyncGetProxyForURI(nsIURI *uri, nsPACManCallback *callback,
       new PendingPACQuery(this, uri, callback, mainThreadResponse);
 
   if (IsPACURI(uri)) {
-    // deal with this directly instead of queueing it
+    
     query->Complete(NS_OK, EmptyCString());
     return NS_OK;
   }
@@ -460,7 +460,7 @@ nsresult nsPACMan::PostQuery(PendingPACQuery *query) {
     return NS_OK;
   }
 
-  // add a reference to the query while it is in the pending list
+  
   RefPtr<PendingPACQuery> addref(query);
   mPendingQ.insertBack(addref.forget().take());
   ProcessPendingQ();
@@ -486,18 +486,18 @@ nsresult nsPACMan::LoadPACFromURI(const nsACString &aSpec,
 
   mLoader = loader;
   mPACURIRedirectSpec.Truncate();
-  mNormalPACURISpec.Truncate();  // set at load time
+  mNormalPACURISpec.Truncate();  
   if (aResetLoadFailureCount) {
     mLoadFailureCount = 0;
   }
   mAutoDetect = aSpec.IsEmpty();
   mPACURISpec.Assign(aSpec);
 
-  // reset to Null
+  
   mScheduledReload = TimeStamp();
 
-  // if we're on the main thread here so we can get hold of prefs,
-  // we check that we have WPAD preffed on if we're auto-detecting
+  
+  
   if (mAutoDetect && NS_IsMainThread()) {
     nsresult rv = GetNetworkProxyTypeFromPref(&mProxyConfigType);
     if (NS_FAILED(rv)) {
@@ -510,11 +510,11 @@ nsresult nsPACMan::LoadPACFromURI(const nsACString &aSpec,
       return NS_BINDING_ABORTED;
     }
   }
-  // Since we might get called from nsProtocolProxyService::Init, we need to
-  // post an event back to the main thread before we try to use the IO service.
-  //
-  // But, we need to flag ourselves as loading, so that we queue up any PAC
-  // queries the enter between now and when we actually load the PAC file.
+  
+  
+  
+  
+  
 
   if (!mLoadPending) {
     nsCOMPtr<nsIRunnable> runnable = NewRunnableMethod(
@@ -570,12 +570,12 @@ nsresult nsPACMan::ConfigureWPAD(nsACString &aSpec) {
   }
 
   if (aSpec.IsEmpty()) {
-    // We diverge from the WPAD spec here in that we don't walk the
-    // hosts's FQDN, stripping components until we hit a TLD.  Doing so
-    // is dangerous in the face of an incomplete list of TLDs, and TLDs
-    // get added over time.  We could consider doing only a single
-    // substitution of the first component, if that proves to help
-    // compatibility.
+    
+    
+    
+    
+    
+    
     aSpec.AssignLiteral(MOZ_WPAD_URL);
   }
   return NS_OK;
@@ -590,7 +590,7 @@ void nsPACMan::StartLoading() {
   MOZ_ASSERT(NS_IsMainThread(), "wrong thread");
   mLoadPending = false;
 
-  // CancelExistingLoad was called...
+  
   if (!mLoader) {
     PostCancelPendingQ(NS_ERROR_ABORT);
     return;
@@ -616,20 +616,20 @@ void nsPACMan::StartLoading() {
 void nsPACMan::ContinueLoadingAfterPACUriKnown() {
   MOZ_ASSERT(NS_IsMainThread(), "wrong thread");
 
-  // CancelExistingLoad was called...
+  
   if (!mLoader) {
     PostCancelPendingQ(NS_ERROR_ABORT);
     return;
   }
   if (NS_SUCCEEDED(mLoader->Init(this, nullptr))) {
-    // Always hit the origin server when loading PAC.
+    
     nsCOMPtr<nsIIOService> ios = do_GetIOService();
     if (ios) {
       nsCOMPtr<nsIChannel> channel;
       nsCOMPtr<nsIURI> pacURI;
       NS_NewURI(getter_AddRefs(pacURI), mPACURISpec);
 
-      // NOTE: This results in GetProxyForURI being called
+      
       if (pacURI) {
         nsresult rv = pacURI->GetSpec(mNormalPACURISpec);
         MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv));
@@ -637,9 +637,10 @@ void nsPACMan::ContinueLoadingAfterPACUriKnown() {
                       nsContentUtils::GetSystemPrincipal(),
                       nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
                       nsIContentPolicy::TYPE_OTHER,
-                      nullptr,  // PerformanceStorage,
-                      nullptr,  // aLoadGroup
-                      nullptr,  // aCallbacks
+                      nullptr,  
+                      nullptr,  
+                      nullptr,  
+                      nullptr,  
                       nsIRequest::LOAD_NORMAL, ios);
       } else {
         LOG(("nsPACMan::StartLoading Failed pacspec uri conversion %s\n",
@@ -659,8 +660,8 @@ void nsPACMan::ContinueLoadingAfterPACUriKnown() {
 }
 
 void nsPACMan::OnLoadFailure() {
-  int32_t minInterval = 5;    // 5 seconds
-  int32_t maxInterval = 300;  // 5 minutes
+  int32_t minInterval = 5;    
+  int32_t maxInterval = 300;  
 
   nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
   if (prefs) {
@@ -670,7 +671,7 @@ void nsPACMan::OnLoadFailure() {
                       &maxInterval);
   }
 
-  int32_t interval = minInterval << mLoadFailureCount++;  // seconds
+  int32_t interval = minInterval << mLoadFailureCount++;  
   if (!interval || interval > maxInterval) interval = maxInterval;
 
   mScheduledReload = TimeStamp::Now() + TimeDuration::FromSeconds(interval);
@@ -678,8 +679,8 @@ void nsPACMan::OnLoadFailure() {
   LOG(("OnLoadFailure: retry in %d seconds (%d fails)\n", interval,
        mLoadFailureCount));
 
-  // while we wait for the retry queued members should try direct
-  // even if that means fast failure.
+  
+  
   PostCancelPendingQ(NS_ERROR_NOT_AVAILABLE);
 }
 
@@ -725,17 +726,17 @@ void nsPACMan::ProcessPendingQ() {
   if (mShutdown) {
     mPAC.Shutdown();
   } else {
-    // do GC while the thread has nothing pending
+    
     mPAC.GC();
   }
 }
 
-// returns true if progress was made by shortening the queue
+
 bool nsPACMan::ProcessPending() {
   if (mPendingQ.isEmpty()) return false;
 
-  // queue during normal load, but if we are retrying a failed load then
-  // fast fail the queries
+  
+  
   if (mInProgress || (IsLoading() && !mLoadFailureCount)) return false;
 
   RefPtr<PendingPACQuery> query(dont_AddRef(mPendingQ.popFirst()));
@@ -750,7 +751,7 @@ bool nsPACMan::ProcessPending() {
   mInProgress = true;
   nsAutoCString PACURI;
 
-  // first we need to consider the system proxy changing the pac url
+  
   if (mSystemProxySettings &&
       NS_SUCCEEDED(mSystemProxySettings->GetPACURI(PACURI)) &&
       !PACURI.IsEmpty() && !PACURI.Equals(mPACURISpec)) {
@@ -759,8 +760,8 @@ bool nsPACMan::ProcessPending() {
     completed = true;
   }
 
-  // now try the system proxy settings for this particular url if
-  // PAC was not specified
+  
+  
   if (!completed && mSystemProxySettings && PACURI.IsEmpty() &&
       NS_SUCCEEDED(mSystemProxySettings->GetProxyForURI(
           query->mSpec, query->mScheme, query->mHost, query->mPort,
@@ -770,7 +771,7 @@ bool nsPACMan::ProcessPending() {
     completed = true;
   }
 
-  // the systemproxysettings didn't complete the resolution. try via PAC
+  
   if (!completed) {
     nsresult status =
         mPAC.GetProxyForURI(query->mSpec, query->mHost, pacString);
@@ -791,10 +792,10 @@ nsPACMan::OnStreamComplete(nsIStreamLoader *loader, nsISupports *context,
                            const uint8_t *data) {
   MOZ_ASSERT(NS_IsMainThread(), "wrong thread");
   if (mLoader != loader) {
-    // If this happens, then it means that LoadPACFromURI was called more
-    // than once before the initial call completed.  In this case, status
-    // should be NS_ERROR_ABORT, and if so, then we know that we can and
-    // should delay any processing.
+    
+    
+    
+    
     LOG(("OnStreamComplete: called more than once\n"));
     if (status == NS_ERROR_ABORT) return NS_OK;
   }
@@ -802,7 +803,7 @@ nsPACMan::OnStreamComplete(nsIStreamLoader *loader, nsISupports *context,
   LOG(("OnStreamComplete: entry\n"));
 
   if (NS_SUCCEEDED(status) && HttpRequestSucceeded(loader)) {
-    // Get the URI spec used to load this PAC script.
+    
     nsAutoCString pacURI;
     {
       nsCOMPtr<nsIRequest> request;
@@ -815,10 +816,10 @@ nsPACMan::OnStreamComplete(nsIStreamLoader *loader, nsISupports *context,
       }
     }
 
-    // We succeeded in loading the pac file using a bunch of interfaces that are
-    // main thread only.  Unfortunately, we have to initialize the instance of
-    // the PAC evaluator (NS_PROXYAUTOCONFIG_CONTRACTID) on the PAC thread,
-    // because that's where it will be used.
+    
+    
+    
+    
     RefPtr<ExecutePACThreadAction> pending = new ExecutePACThreadAction(this);
     pending->SetupPAC(reinterpret_cast<const char *>(data), dataLen, pacURI,
                       GetExtraJSContextHeapSize());
@@ -826,12 +827,12 @@ nsPACMan::OnStreamComplete(nsIStreamLoader *loader, nsISupports *context,
 
     LOG(("OnStreamComplete: process the PAC contents\n"));
 
-    // Even if the PAC file could not be parsed, we did succeed in loading the
-    // data for it.
+    
+    
     mLoadFailureCount = 0;
   } else {
-    // We were unable to load the PAC file (presumably because of a network
-    // failure).  Try again a little later.
+    
+    
     LOG(("OnStreamComplete: unable to load PAC, retry later\n"));
     OnLoadFailure();
   }
@@ -846,7 +847,7 @@ nsPACMan::OnStreamComplete(nsIStreamLoader *loader, nsISupports *context,
 
 NS_IMETHODIMP
 nsPACMan::GetInterface(const nsIID &iid, void **result) {
-  // In case loading the PAC file requires authentication.
+  
   if (iid.Equals(NS_GET_IID(nsIAuthPrompt))) {
     nsCOMPtr<nsIPromptFactory> promptFac =
         do_GetService("@mozilla.org/prompter;1");
@@ -855,7 +856,7 @@ nsPACMan::GetInterface(const nsIID &iid, void **result) {
                                 reinterpret_cast<void **>(result));
   }
 
-  // In case loading the PAC file results in a redirect.
+  
   if (iid.Equals(NS_GET_IID(nsIChannelEventSink))) {
     NS_ADDREF_THIS();
     *result = static_cast<nsIChannelEventSink *>(this);
@@ -881,11 +882,11 @@ nsPACMan::AsyncOnChannelRedirect(nsIChannel *oldChannel, nsIChannel *newChannel,
   LOG(("nsPACMan redirect from original %s to redirected %s\n",
        mPACURISpec.get(), mPACURIRedirectSpec.get()));
 
-  // do not update mPACURISpec - that needs to stay as the
-  // configured URI so that we can determine when the config changes.
-  // However do track the most recent URI in the redirect change
-  // as mPACURIRedirectSpec so that URI can be allowed to bypass
-  // the proxy and actually fetch the pac file.
+  
+  
+  
+  
+  
 
   callback->OnRedirectVerifyCallback(NS_OK);
   return NS_OK;
@@ -897,5 +898,5 @@ nsresult nsPACMan::Init(nsISystemProxySettings *systemProxySettings) {
   return NS_OK;
 }
 
-}  // namespace net
-}  // namespace mozilla
+}  
+}  

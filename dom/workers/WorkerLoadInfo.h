@@ -19,6 +19,7 @@
 
 class nsIChannel;
 class nsIContentSecurityPolicy;
+class nsICookieSettings;
 class nsILoadGroup;
 class nsIPrincipal;
 class nsIRunnable;
@@ -49,6 +50,9 @@ struct WorkerLoadInfoData {
   
   nsCOMPtr<nsIPrincipal> mLoadingPrincipal;
   nsCOMPtr<nsIPrincipal> mPrincipal;
+
+  
+  nsCOMPtr<nsICookieSettings> mCookieSettings;
 
   nsCOMPtr<nsIScriptContext> mScriptContext;
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
