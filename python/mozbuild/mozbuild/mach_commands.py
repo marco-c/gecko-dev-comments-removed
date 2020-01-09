@@ -3495,7 +3495,10 @@ class StaticAnalysis(MachCommandBase):
                         
                         if e.output:
                             
-                            patches[original_path] = e.output.replace(target_file, original_path)
+                            relative_path = os.path.relpath(original_path, self.topsrcdir)
+                            patch = e.output.replace(target_file, relative_path)
+                            patch = patch.replace(original_path, relative_path)
+                            patches[original_path] = patch
 
             if output_format == 'json':
                 output = json.dumps(patches, indent=4)
