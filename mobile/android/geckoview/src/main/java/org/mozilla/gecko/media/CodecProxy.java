@@ -412,6 +412,18 @@ public final class CodecProxy {
         return true;
     }
 
+    
+    
+    
+    
+    @WrapForJNI
+    public void disposeOutput(final Sample sample) {
+        if (mOutputSurface != null) {
+            mSurfaceOutputs.remove(sample);
+        }
+        sample.dispose();
+    }
+
      void reportError(final boolean fatal) {
         mCallbacks.reportError(fatal);
     }
