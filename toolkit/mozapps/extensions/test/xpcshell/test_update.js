@@ -1,14 +1,14 @@
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/
+ */
 
+// This verifies that add-on update checks work
 
-
-
-
-
-
+// The test extension uses an insecure update url.
 Services.prefs.setBoolPref(PREF_EM_CHECK_UPDATE_SECURITY, false);
 
-
-
+// This test requires lightweight themes update to be enabled even if the app
+// doesn't support lightweight themes.
 Services.prefs.setBoolPref("lightweightThemes.update.enabled", true);
 
 const updateFile = "test_update.json";
@@ -70,7 +70,7 @@ add_task(async function setup() {
   await promiseStartupManager();
 });
 
-
+// Verify that an update is available and can be installed.
 add_task(async function test_apply_update() {
   await promiseInstallWebExtension({
     manifest: {
@@ -122,7 +122,7 @@ add_task(async function test_apply_update() {
   equal(install.existingAddon, a1);
   equal(install.releaseNotesURI.spec, "http://example.com/updateInfo.xhtml");
 
-  
+  // Verify that another update check returns the same AddonInstall
   let {updateAvailable: install2} = await AddonTestUtils.promiseFindAddonUpdates(a1);
 
   installs = await AddonManager.getAllInstalls();
@@ -144,8 +144,8 @@ add_task(async function test_apply_update() {
   ensure_test_completed();
   equal(install.state, AddonManager.STATE_DOWNLOADED);
 
-  
-  
+  // Continue installing the update.
+  // Verify that another update check returns no new update
   let {updateAvailable} = await AddonTestUtils.promiseFindAddonUpdates(install.existingAddon);
 
   ok(!updateAvailable, "Should find no available updates when one is already downloading");
@@ -171,8 +171,8 @@ add_task(async function test_apply_update() {
 
   await AddonTestUtils.loadAddonsList(true);
 
-  
-  
+  // Grab the current time so we can check the mtime of the add-on below
+  // without worrying too much about how long other tests take.
   let startupTime = Date.now();
 
   ok(isExtensionInBootstrappedList(profileDir, "addon1@tests.mozilla.org"));
@@ -186,12 +186,8 @@ add_task(async function test_apply_update() {
   notEqual(a1.syncGUID, null);
   equal(originalSyncGUID, a1.syncGUID);
 
-  
-  let testURI = a1.getResourceURI();
-  if (testURI instanceof Ci.nsIJARURI) {
-    testURI = testURI.JARFile;
-  }
-  let testFile = testURI.QueryInterface(Ci.nsIFileURL).file;
+  // Make sure that the extension lastModifiedTime was updated.
+  let testFile = getAddonFile(a1);
   let difference = testFile.lastModifiedTime - startupTime;
   ok(Math.abs(difference) < MAX_TIME_DIFFERENCE);
 
@@ -199,7 +195,7 @@ add_task(async function test_apply_update() {
   await a1.uninstall();
 });
 
-
+// Check that an update check finds compatibility updates and applies them
 add_task(async function test_compat_update() {
   await promiseInstallWebExtension({
     manifest: {
@@ -240,7 +236,7 @@ add_task(async function test_compat_update() {
   await a2.uninstall();
 });
 
-
+// Checks that we see no compatibility information when there is none.
 add_task(async function test_no_compat() {
   gAppInfo.platformVersion = "5";
   await promiseRestartManager("5");
@@ -273,8 +269,8 @@ add_task(async function test_no_compat() {
   ok(!result.updateAvailable, "Should not have seen a version update");
 });
 
-
-
+// Checks that compatibility info for future apps are detected but don't make
+// the item compatibile.
 add_task(async function test_future_compat() {
   let a3 = await AddonManager.getAddonByID("addon3@tests.mozilla.org");
   notEqual(a3, null);
@@ -303,7 +299,7 @@ add_task(async function test_future_compat() {
   await a3.uninstall();
 });
 
-
+// Test that background update checks work
 add_task(async function test_background_update() {
   await promiseInstallWebExtension({
     manifest: {
@@ -561,7 +557,7 @@ const PARAM_ADDONS = {
 
 const PARAM_IDS = Object.keys(PARAM_ADDONS);
 
-
+// Verify the parameter escaping in update urls.
 add_task(async function test_params() {
   let blocklistAddons = new Map();
   for (let [id, options] of Object.entries(PARAM_ADDONS)) {
@@ -600,8 +596,8 @@ add_task(async function test_params() {
 
   let addons = await getAddons(PARAM_IDS);
   for (let [id, options] of Object.entries(PARAM_ADDONS)) {
-    
-    
+    // Having an onUpdateAvailable callback in the listener automagically adds
+    // UPDATE_TYPE_NEWVERSION to the update type flags in the request.
     let listener = options.compatOnly ? {} : {onUpdateAvailable() {}};
 
     addons.get(id).findUpdates(listener, ...options.updateType);
@@ -635,8 +631,8 @@ add_task(async function test_params() {
   await mockBlocklist.unregister();
 });
 
-
-
+// Tests that if a manifest claims compatibility then the add-on will be
+// seen as compatible regardless of what the update payload says.
 add_task(async function test_manifest_compat() {
   await promiseInstallWebExtension({
     manifest: {
@@ -657,8 +653,8 @@ add_task(async function test_manifest_compat() {
   ok(a4.isActive, "addon4 is active");
   ok(a4.isCompatible, "addon4 is compatible");
 
-  
-  
+  // Test that a normal update check won't decrease a targetApplication's
+  // maxVersion but an update check for a new application will.
   await AddonTestUtils.promiseFindAddonUpdates(
     a4, AddonManager.UPDATE_WHEN_PERIODIC_UPDATE);
   ok(a4.isActive, "addon4 is active");
@@ -672,10 +668,10 @@ add_task(async function test_manifest_compat() {
   await a4.uninstall();
 });
 
-
-
+// Test that the background update check doesn't update an add-on that isn't
+// allowed to update automatically.
 add_task(async function test_no_auto_update() {
-  
+  // Have an add-on there that will be updated so we see some events from it
   await promiseInstallWebExtension({
     manifest: {
       name: "Test Addon 1",
@@ -705,8 +701,8 @@ add_task(async function test_no_auto_update() {
   let a8 = await AddonManager.getAddonByID("addon8@tests.mozilla.org");
   a8.applyBackgroundUpdates = AddonManager.AUTOUPDATE_DISABLE;
 
-  
-  
+  // The background update check will find updates for both add-ons but only
+  // proceed to install one of them.
   let listener;
   await new Promise(resolve => {
     listener = {
@@ -767,8 +763,8 @@ add_task(async function test_no_auto_update() {
   await a8.uninstall();
 });
 
-
-
+// Test that the update check returns nothing for addons in locked install
+// locations.
 add_task(async function run_test_locked_install() {
   const lockedDir = gProfD.clone();
   lockedDir.append("locked_extensions");

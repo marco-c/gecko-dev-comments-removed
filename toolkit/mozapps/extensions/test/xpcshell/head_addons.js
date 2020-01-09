@@ -445,6 +445,21 @@ function do_get_expected_addon_name(aId) {
 
 
 
+function getAddonFile(addon) {
+  let uri = addon.getResourceURI("");
+  if (uri instanceof Ci.nsIJARURI) {
+    uri = uri.JARFile;
+  }
+  return uri.QueryInterface(Ci.nsIFileURL).file;
+}
+
+
+
+
+
+
+
+
 
 
 

@@ -118,8 +118,8 @@ add_task(async function test_1() {
 
   
   let uri = a1.getResourceURI("install.rdf");
-  if (uri.schemeIs("jar"))
-    uri = a1.getResourceURI();
+  if (uri instanceof Ci.nsIJARURI)
+    uri = uri.JARFile;
 
   let fstream = Cc["@mozilla.org/network/file-input-stream;1"].
                 createInstance(Ci.nsIFileInputStream);
@@ -161,8 +161,8 @@ add_task(async function test_2() {
 
   
   let uri = a1.getResourceURI("install.rdf");
-  if (uri.schemeIs("jar"))
-    uri = a1.getResourceURI();
+  if (uri instanceof Ci.nsIJARURI)
+    uri = uri.JARFile;
 
   let fstream = Cc["@mozilla.org/network/file-input-stream;1"].
                 createInstance(Ci.nsIFileInputStream);
