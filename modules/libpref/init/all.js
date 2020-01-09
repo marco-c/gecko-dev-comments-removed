@@ -5287,7 +5287,6 @@ pref("alerts.useSystemBackend", true);
 #endif
 
 
-pref("full-screen-api.allow-trusted-requests-only", true);
 
 pref("full-screen-api.ignore-widgets", false);
 pref("full-screen-api.pointer-lock.enabled", true);
