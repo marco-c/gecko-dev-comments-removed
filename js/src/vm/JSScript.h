@@ -54,8 +54,10 @@ class SourceText;
 namespace js {
 
 namespace jit {
+class AutoKeepJitScripts;
 struct BaselineScript;
 struct IonScriptCounts;
+class JitScript;
 }  
 
 #define ION_DISABLED_SCRIPT ((js::jit::IonScript*)0x1)
@@ -64,7 +66,6 @@ struct IonScriptCounts;
 
 #define BASELINE_DISABLED_SCRIPT ((js::jit::BaselineScript*)0x1)
 
-class AutoKeepJitScripts;
 class AutoSweepJitScript;
 class BreakpointSite;
 class Debugger;
@@ -74,7 +75,6 @@ class ModuleObject;
 class RegExpObject;
 class SourceCompressionTask;
 class Shape;
-class JitScript;
 
 namespace frontend {
 struct BytecodeEmitter;
@@ -1741,7 +1741,7 @@ class JSScript : public js::gc::TenuredCell {
 
  private:
   
-  js::JitScript* jitScript_ = nullptr;
+  js::jit::JitScript* jitScript_ = nullptr;
 
   
   js::GCPtr<js::ScriptSourceObject*> sourceObject_ = {};
@@ -2593,10 +2593,10 @@ class JSScript : public js::gc::TenuredCell {
   bool isTopLevel() { return code() && !functionNonDelazifying(); }
 
   
-  inline bool ensureHasJitScript(JSContext* cx, js::AutoKeepJitScripts&);
+  inline bool ensureHasJitScript(JSContext* cx, js::jit::AutoKeepJitScripts&);
 
   bool hasJitScript() const { return jitScript_ != nullptr; }
-  js::JitScript* jitScript() { return jitScript_; }
+  js::jit::JitScript* jitScript() { return jitScript_; }
 
   void maybeReleaseJitScript();
 

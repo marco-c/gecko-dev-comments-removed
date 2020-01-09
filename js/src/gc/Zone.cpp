@@ -196,7 +196,7 @@ void Zone::sweepWeakMaps() {
 
 void Zone::discardJitCode(FreeOp* fop,
                           ShouldDiscardBaselineCode discardBaselineCode,
-                          ShouldReleaseTypes releaseTypes) {
+                          ShouldDiscardJitScripts discardJitScripts) {
   if (!jitZone()) {
     return;
   }
@@ -205,11 +205,11 @@ void Zone::discardJitCode(FreeOp* fop,
     return;
   }
 
-  if (discardBaselineCode || releaseTypes) {
+  if (discardBaselineCode || discardJitScripts) {
 #ifdef DEBUG
     
     for (auto script = cellIter<JSScript>(); !script.done(); script.next()) {
-      if (JitScript* jitScript = script.unbarrieredGet()->jitScript()) {
+      if (jit::JitScript* jitScript = script.unbarrieredGet()->jitScript()) {
         MOZ_ASSERT(!jitScript->active());
       }
     }
@@ -251,11 +251,11 @@ void Zone::discardJitCode(FreeOp* fop,
     
     
     
-    if (releaseTypes) {
+    if (discardJitScripts) {
       script->maybeReleaseJitScript();
     }
 
-    if (JitScript* jitScript = script->jitScript()) {
+    if (jit::JitScript* jitScript = script->jitScript()) {
       
       
       if (discardBaselineCode) {
