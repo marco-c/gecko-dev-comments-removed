@@ -43,6 +43,8 @@
 #include "nsAutoPtr.h"
 #include "nsIMutableArray.h"
 #include "nsIRedirectHistoryEntry.h"
+#include "nsOSHelperAppService.h"
+#include "nsOSHelperAppServiceChild.h"
 
 
 #include "nsIHandlerService.h"
@@ -105,6 +107,7 @@
 #  include "FennecJNIWrappers.h"
 #endif
 
+#include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ipc/URIUtils.h"
 
@@ -572,6 +575,32 @@ static const nsDefaultMimeTypeEntry nonDecodableExtensions[] = {
     {APPLICATION_ZIP, "zip"},
     {APPLICATION_COMPRESS, "z"},
     {APPLICATION_GZIP, "svgz"}};
+
+static StaticRefPtr<nsExternalHelperAppService> sExtHelperAppSvcSingleton;
+
+
+
+
+
+
+
+already_AddRefed<nsExternalHelperAppService>
+nsExternalHelperAppService::GetSingleton() {
+  if (!sExtHelperAppSvcSingleton) {
+#ifdef XP_MACOSX
+    if (XRE_IsParentProcess()) {
+      sExtHelperAppSvcSingleton = new nsOSHelperAppService();
+    } else {
+      sExtHelperAppSvcSingleton = new nsOSHelperAppServiceChild();
+    }
+#else
+    sExtHelperAppSvcSingleton = new nsOSHelperAppService();
+#endif 
+    ClearOnShutdown(&sExtHelperAppSvcSingleton);
+  }
+
+  return do_AddRef(sExtHelperAppSvcSingleton);
+}
 
 NS_IMPL_ISUPPORTS(nsExternalHelperAppService, nsIExternalHelperAppService,
                   nsPIExternalAppLauncher, nsIExternalProtocolService,
@@ -2483,7 +2512,11 @@ NS_IMETHODIMP nsExternalHelperAppService::GetFromTypeAndExtension(
 
   
   bool found;
-  *_retval = GetMIMEInfoFromOS(typeToUse, aFileExt, &found).take();
+  nsresult rv = GetMIMEInfoFromOS(typeToUse, aFileExt, &found, _retval);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
   LOG(("OS gave back 0x%p - found: %i\n", *_retval, found));
   
   if (!*_retval) return NS_ERROR_OUT_OF_MEMORY;
@@ -2491,7 +2524,6 @@ NS_IMETHODIMP nsExternalHelperAppService::GetFromTypeAndExtension(
   
   
   
-  nsresult rv;
   nsCOMPtr<nsIHandlerService> handlerSvc =
       do_GetService(NS_HANDLERSERVICE_CONTRACTID);
   if (handlerSvc) {
@@ -2796,7 +2828,17 @@ bool nsExternalHelperAppService::GetTypeFromExtras(const nsACString& aExtension,
 bool nsExternalHelperAppService::GetMIMETypeFromOSForExtension(
     const nsACString& aExtension, nsACString& aMIMEType) {
   bool found = false;
-  nsCOMPtr<nsIMIMEInfo> mimeInfo =
-      GetMIMEInfoFromOS(EmptyCString(), aExtension, &found);
-  return found && mimeInfo && NS_SUCCEEDED(mimeInfo->GetMIMEType(aMIMEType));
+  nsCOMPtr<nsIMIMEInfo> mimeInfo;
+  nsresult rv = GetMIMEInfoFromOS(EmptyCString(), aExtension, &found,
+                                  getter_AddRefs(mimeInfo));
+  return NS_SUCCEEDED(rv) && found && mimeInfo &&
+         NS_SUCCEEDED(mimeInfo->GetMIMEType(aMIMEType));
+}
+
+nsresult nsExternalHelperAppService::GetMIMEInfoFromOS(
+    const nsACString& aMIMEType, const nsACString& aFileExt, bool* aFound,
+    nsIMIMEInfo** aMIMEInfo) {
+  *aMIMEInfo = nullptr;
+  *aFound = false;
+  return NS_ERROR_NOT_IMPLEMENTED;
 }
