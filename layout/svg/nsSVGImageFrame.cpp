@@ -125,7 +125,8 @@ nsresult nsSVGImageFrame::AttributeChanged(int32_t aNameSpaceID,
           nsChangeHint_InvalidateRenderingObservers);
       nsSVGUtils::ScheduleReflowSVG(this);
       return NS_OK;
-    } else if (aAttribute == nsGkAtoms::preserveAspectRatio) {
+    }
+    if (aAttribute == nsGkAtoms::preserveAspectRatio) {
       
       
       
