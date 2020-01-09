@@ -196,6 +196,11 @@ void LayerManagerMLGPU::EndTransaction(const TimeStamp& aTimeStamp,
     return;
   }
 
+  if (!mDevice->IsValid()) {
+    
+    return;
+  }
+
   mCompositionStartTime = TimeStamp::Now();
 
   IntSize windowSize = mWidget->GetClientSize().ToUnknownSize();
