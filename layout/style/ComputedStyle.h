@@ -42,10 +42,6 @@ void Gecko_ComputedStyle_Destroy(mozilla::ComputedStyle*);
 
 namespace mozilla {
 
-namespace dom {
-class Document;
-}
-
 enum class CSSPseudoElementType : uint8_t;
 class ComputedStyle;
 
@@ -223,10 +219,38 @@ class ComputedStyle {
     mCachedInheritingStyles.Insert(aStyle);
   }
 
-#define STYLE_STRUCT(name_)                                              \
-  inline const nsStyle##name_* Style##name_() const MOZ_NONNULL_RETURN { \
-    return mSource.GetStyle##name_();                                    \
-  }
+
+
+
+
+
+
+
+#define STYLE_STRUCT(name_) \
+  inline const nsStyle##name_* Style##name_() MOZ_NONNULL_RETURN;
+#include "nsStyleStructList.h"
+#undef STYLE_STRUCT
+
+  
+
+
+
+
+
+
+#define STYLE_STRUCT(name_) \
+  inline const nsStyle##name_* ThreadsafeStyle##name_();
+#include "nsStyleStructList.h"
+#undef STYLE_STRUCT
+
+
+
+
+
+
+
+
+#define STYLE_STRUCT(name_) inline const nsStyle##name_* PeekStyle##name_();
 #include "nsStyleStructList.h"
 #undef STYLE_STRUCT
 
@@ -247,8 +271,8 @@ class ComputedStyle {
 
 
 
-  nsChangeHint CalcStyleDifference(const ComputedStyle& aNewContext,
-                                   uint32_t* aEqualStructs) const;
+  nsChangeHint CalcStyleDifference(ComputedStyle* aNewContext,
+                                   uint32_t* aEqualStructs);
 
  public:
   
@@ -274,11 +298,7 @@ class ComputedStyle {
   
 
 
-
-
-
-  inline void StartImageLoads(dom::Document&,
-                              const ComputedStyle* aOldStyle = nullptr);
+  inline void StartBackgroundImageLoads();
 
 #ifdef DEBUG
   void List(FILE* out, int32_t aIndent);
@@ -287,11 +307,24 @@ class ComputedStyle {
 #endif
 
   
+
+
+
+  inline void ResolveSameStructsAs(const ComputedStyle* aOther);
+
+  
   
   
   void AddSizeOfIncludingThis(nsWindowSizes& aSizes, size_t* aCVsSize) const;
 
  protected:
+  bool HasRequestedStruct(StyleStructID aID) const {
+    return mRequestedStructs & StyleStructConstants::BitFor(aID);
+  }
+
+  void SetRequestedStruct(StyleStructID aID) {
+    mRequestedStructs |= StyleStructConstants::BitFor(aID);
+  }
 
   
   
@@ -306,10 +339,24 @@ class ComputedStyle {
   
   CachedInheritingStyles mCachedInheritingStyles;
 
+
+#define STYLE_STRUCT_INHERITED(name_) \
+  template <bool aComputeData>        \
+  const nsStyle##name_* DoGetStyle##name_();
+#define STYLE_STRUCT_RESET(name_) \
+  template <bool aComputeData>    \
+  const nsStyle##name_* DoGetStyle##name_();
+
+#include "nsStyleStructList.h"
+#undef STYLE_STRUCT_RESET
+#undef STYLE_STRUCT_INHERITED
+
   
   
   const RefPtr<nsAtom> mPseudoTag;
 
+  
+  uint32_t mRequestedStructs = 0;
   const Bit mBits;
   const CSSPseudoElementType mPseudoType;
 };

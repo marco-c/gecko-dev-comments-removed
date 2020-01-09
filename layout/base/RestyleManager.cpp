@@ -54,7 +54,6 @@
 #endif
 
 using mozilla::layers::AnimationInfo;
-using mozilla::layout::ScrollAnchorContainer;
 
 using namespace mozilla::dom;
 using namespace mozilla::layers;
@@ -2440,7 +2439,7 @@ struct RestyleManager::TextPostTraversalState {
     if (mShouldComputeHints) {
       mShouldComputeHints = false;
       uint32_t equalStructs;
-      mComputedHint = oldStyle->CalcStyleDifference(aNewStyle, &equalStructs);
+      mComputedHint = oldStyle->CalcStyleDifference(&aNewStyle, &equalStructs);
       mComputedHint = NS_RemoveSubsumedHints(
           mComputedHint, mParentRestyleState.ChangesHandledFor(aTextFrame));
     }
@@ -2546,7 +2545,7 @@ static void UpdateOneAdditionalComputedStyle(nsIFrame* aFrame, uint32_t aIndex,
 
   uint32_t equalStructs;  
   nsChangeHint childHint =
-      aOldContext.CalcStyleDifference(*newStyle, &equalStructs);
+      aOldContext.CalcStyleDifference(newStyle, &equalStructs);
   if (!aFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
     childHint = NS_RemoveSubsumedHints(childHint,
                                        aRestyleState.ChangesHandledFor(aFrame));
@@ -2797,8 +2796,7 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
     
     
     
-    upToDateContext->StartImageLoads(*mPresContext->Document(),
-                                     oldOrDisplayContentsStyle);
+    upToDateContext->ResolveSameStructsAs(oldOrDisplayContentsStyle);
 
     
     
