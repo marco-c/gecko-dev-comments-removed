@@ -25,8 +25,11 @@ class TimeoutExecutor;
 
 
 class TimeoutManager final {
+ private:
+  struct Timeouts;
+
  public:
-  explicit TimeoutManager(nsGlobalWindowInner& aWindow);
+  TimeoutManager(nsGlobalWindowInner& aWindow, uint32_t aMaxIdleDeferMS);
   ~TimeoutManager();
   TimeoutManager(const TimeoutManager& rhs) = delete;
   void operator=(const TimeoutManager& rhs) = delete;
@@ -36,15 +39,21 @@ class TimeoutManager final {
   static uint32_t GetNestingLevel() { return sNestingLevel; }
   static void SetNestingLevel(uint32_t aLevel) { sNestingLevel = aLevel; }
 
-  bool HasTimeouts() const { return !mTimeouts.IsEmpty(); }
+  bool HasTimeouts() const {
+    return !mTimeouts.IsEmpty() || !mIdleTimeouts.IsEmpty();
+  }
 
   nsresult SetTimeout(nsITimeoutHandler* aHandler, int32_t interval,
                       bool aIsInterval, mozilla::dom::Timeout::Reason aReason,
                       int32_t* aReturn);
   void ClearTimeout(int32_t aTimerId, mozilla::dom::Timeout::Reason aReason);
+  bool ClearTimeoutInternal(int32_t aTimerId,
+                            mozilla::dom::Timeout::Reason aReason,
+                            bool aIsIdle);
 
   
-  void RunTimeout(const TimeStamp& aNow, const TimeStamp& aTargetDeadline);
+  void RunTimeout(const TimeStamp& aNow, const TimeStamp& aTargetDeadline,
+                  bool aProcessIdle);
 
   void ClearAllTimeouts();
   uint32_t GetTimeoutId(mozilla::dom::Timeout::Reason aReason);
@@ -81,6 +90,7 @@ class TimeoutManager final {
   
   template <class Callable>
   void ForEachUnorderedTimeout(Callable c) {
+    mIdleTimeouts.ForEach(c);
     mTimeouts.ForEach(c);
   }
 
@@ -93,6 +103,8 @@ class TimeoutManager final {
 
   static const uint32_t InvalidFiringId;
 
+  void SetLoading(bool value);
+
  private:
   void MaybeStartThrottleTimeout();
 
@@ -100,6 +112,8 @@ class TimeoutManager final {
   bool RescheduleTimeout(mozilla::dom::Timeout* aTimeout,
                          const TimeStamp& aLastCallbackTime,
                          const TimeStamp& aCurrentNow);
+
+  void MoveIdleToActive();
 
   bool IsBackground() const;
 
@@ -141,6 +155,7 @@ class TimeoutManager final {
     Timeout* GetLast() { return mTimeoutList.getLast(); }
     bool IsEmpty() const { return mTimeoutList.isEmpty(); }
     void InsertFront(Timeout* aTimeout) { mTimeoutList.insertFront(aTimeout); }
+    void InsertBack(Timeout* aTimeout) { mTimeoutList.insertBack(aTimeout); }
     void Clear() { mTimeoutList.clear(); }
 
     template <class Callable>
@@ -183,11 +198,17 @@ class TimeoutManager final {
   
   RefPtr<TimeoutExecutor> mExecutor;
   
+  RefPtr<TimeoutExecutor> mIdleExecutor;
+  
   Timeouts mTimeouts;
   uint32_t mTimeoutIdCounter;
   uint32_t mNextFiringId;
   AutoTArray<uint32_t, 2> mFiringIdStack;
   mozilla::dom::Timeout* mRunningTimeout;
+
+  
+  
+  Timeouts mIdleTimeouts;
 
   
   uint32_t mIdleCallbackTimeoutCounter;
@@ -199,6 +220,8 @@ class TimeoutManager final {
   bool mThrottleTimeouts;
   bool mThrottleTrackingTimeouts;
   bool mBudgetThrottleTimeouts;
+
+  bool mIsLoading;
 
   static uint32_t sNestingLevel;
 };

@@ -170,8 +170,12 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   inline bool IsTopInnerWindow() const;
 
   
+  
   inline bool IsLoading() const;
   inline bool IsHandlingResizeEvent() const;
+
+  
+  void SetActiveLoadingState(bool aIsActiveLoading);
 
   bool AddAudioContext(mozilla::dom::AudioContext* aAudioContext);
   void RemoveAudioContext(mozilla::dom::AudioContext* aAudioContext);

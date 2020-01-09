@@ -45,6 +45,8 @@ class Timeout final : public LinkedListElement<RefPtr<Timeout>> {
   
   const TimeStamp& When() const;
 
+  const TimeStamp& SubmitTime() const;
+
   
   const TimeDuration& TimeRemaining() const;
 
@@ -57,6 +59,11 @@ class Timeout final : public LinkedListElement<RefPtr<Timeout>> {
 
   
   TimeDuration mTimeRemaining;
+
+  
+  
+  
+  TimeStamp mSubmitTime;
 
   ~Timeout() = default;
 

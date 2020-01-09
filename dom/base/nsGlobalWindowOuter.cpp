@@ -2056,6 +2056,12 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
       newInnerGlobal = newInnerWindow->GetWrapperPreserveColor();
     } else {
       newInnerWindow = nsGlobalWindowInner::Create(this, thisChrome);
+      if (StaticPrefs::dom_timeout_defer_during_load()) {
+        
+        newInnerWindow->SetActiveLoadingState(
+            aDocument->GetReadyStateEnum() ==
+            Document::ReadyState::READYSTATE_LOADING);
+      }
 
       
       

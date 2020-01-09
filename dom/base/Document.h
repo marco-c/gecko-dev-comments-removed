@@ -1903,6 +1903,11 @@ class Document : public nsINode,
   void SetReadyStateInternal(ReadyState rs);
   ReadyState GetReadyStateEnum() { return mReadyState; }
 
+  void SetAncestorLoading(bool aAncestorIsLoading);
+  void NotifyLoading(const bool& aCurrentParentIsLoading,
+                     bool aNewParentIsLoading, const ReadyState& aCurrentState,
+                     ReadyState aNewState);
+
   
   
   void ContentStateChanged(nsIContent* aContent,
@@ -4115,6 +4120,9 @@ class Document : public nsINode,
 
   
   ReadyState mReadyState;
+
+  
+  bool mAncestorIsLoading;
 
 #ifdef MOZILLA_INTERNAL_API
   
