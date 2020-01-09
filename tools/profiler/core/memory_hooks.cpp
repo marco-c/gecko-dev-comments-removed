@@ -214,9 +214,6 @@ void install_memory_counter(bool aInstall) {
       return;
     }
   }
-  if (aInstall) {
-    sCounter->Clear();
-  }
   
   jemalloc_replace_dynamic(aInstall ? replace_init : nullptr);
 }
