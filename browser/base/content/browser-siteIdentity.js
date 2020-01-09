@@ -232,6 +232,13 @@ var gIdentityHandler = {
                                           "security.insecure_connection_text.pbmode.enabled");
     return this._insecureConnectionTextPBModeEnabled;
   },
+  get _protectionsPanelEnabled() {
+    delete this._protectionsPanelEnabled;
+    XPCOMUtils.defineLazyPreferenceGetter(this, "_protectionsPanelEnabled",
+                                          "browser.protections_panel.enabled",
+                                          false);
+    return this._protectionsPanelEnabled;
+  },
 
   
 
@@ -832,6 +839,14 @@ var gIdentityHandler = {
 
 
   handleIdentityButtonEvent(event) {
+    
+    
+    if (this._protectionsPanelEnabled &&
+        event.originalTarget.id == "tracking-protection-icon-animatable-image") {
+      gProtectionsHandler.handleProtectionsButtonEvent(event);
+      return;
+    }
+
     event.stopPropagation();
 
     if ((event.type == "click" && event.button != 0) ||

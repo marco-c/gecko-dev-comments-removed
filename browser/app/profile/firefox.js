@@ -1639,6 +1639,11 @@ pref("browser.contentblocking.maxIntroCount", 5);
 
 pref("browser.contentblocking.introDelaySeconds", 1800);
 
+
+#ifdef NIGHTLY_BUILD
+pref("browser.protections_panel.enabled", true);
+#endif
+
 pref("privacy.trackingprotection.introURL", "https://www.mozilla.org/%LOCALE%/firefox/%VERSION%/content-blocking/start/");
 
 
