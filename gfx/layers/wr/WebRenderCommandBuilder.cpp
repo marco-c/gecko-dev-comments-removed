@@ -98,6 +98,11 @@ struct BlobItemData {
   Matrix mMatrix;  
   RefPtr<BasicLayerManager> mLayerManager;
 
+  
+  
+  
+  std::vector<RefPtr<SourceSurface>> mExternalSurfaces;
+
   IntRect mImageRect;
   LayerIntPoint mGroupOffset;
 
@@ -206,9 +211,11 @@ struct Grouper {
 
   
   void PaintContainerItem(DIGroup* aGroup, nsDisplayItem* aItem,
-                          const IntRect& aItemBounds, nsDisplayList* aChildren,
-                          gfxContext* aContext,
-                          WebRenderDrawEventRecorder* aRecorder);
+                          BlobItemData* aData, const IntRect& aItemBounds,
+                          nsDisplayList* aChildren, gfxContext* aContext,
+                          WebRenderDrawEventRecorder* aRecorder,
+                          RenderRootStateManager* aRootManager,
+                          wr::IpcResourceUpdateQueue& aResources);
 
   
   void ConstructGroups(nsDisplayListBuilder* aDisplayListBuilder,
@@ -304,7 +311,6 @@ struct DIGroup {
   
   IntRect mClippedImageBounds;
   Maybe<mozilla::Pair<wr::RenderRoot, wr::BlobImageKey>> mKey;
-  std::vector<RefPtr<SourceSurface>> mExternalSurfaces;
   std::vector<RefPtr<ScaledFont>> mFonts;
 
   DIGroup()
@@ -680,25 +686,22 @@ struct DIGroup {
     GP("mInvalidRect: %d %d %d %d\n", mInvalidRect.x, mInvalidRect.y,
        mInvalidRect.width, mInvalidRect.height);
 
+    RenderRootStateManager* rootManager =
+        aWrManager->GetRenderRootStateManager(aBuilder.GetRenderRoot());
     bool empty = aStartItem == aEndItem;
     if (empty) {
-      ClearImageKey(
-          aWrManager->GetRenderRootStateManager(aBuilder.GetRenderRoot()),
-          true);
+      ClearImageKey(rootManager, true);
       return;
     }
 
-    PaintItemRange(aGrouper, aStartItem, aEndItem, context, recorder);
+    PaintItemRange(aGrouper, aStartItem, aEndItem, context, recorder,
+                   rootManager, aResources);
 
     
     
     
     wr::OpacityType opacity = wr::OpacityType::HasAlphaChannel;
 
-    TakeExternalSurfaces(
-        recorder, mExternalSurfaces,
-        aWrManager->GetRenderRootStateManager(aBuilder.GetRenderRoot()),
-        aResources);
     bool hasItems = recorder->Finish();
     GP("%d Finish\n", hasItems);
     if (!validFonts) {
@@ -770,11 +773,14 @@ struct DIGroup {
 
   void PaintItemRange(Grouper* aGrouper, nsDisplayItem* aStartItem,
                       nsDisplayItem* aEndItem, gfxContext* aContext,
-                      WebRenderDrawEventRecorder* aRecorder) {
+                      WebRenderDrawEventRecorder* aRecorder,
+                      RenderRootStateManager* aRootManager,
+                      wr::IpcResourceUpdateQueue& aResources) {
     LayerIntSize size = mLayerBounds.Size();
     for (nsDisplayItem* item = aStartItem; item != aEndItem;
          item = item->GetAbove()) {
-      IntRect bounds = ItemBounds(item);
+      BlobItemData* data = GetBlobItemData(item);
+      IntRect bounds = data->mRect;
       auto bottomRight = bounds.BottomRight();
 
       GP("Trying %s %p-%d %d %d %d %d\n", item->Name(), item->Frame(),
@@ -822,8 +828,9 @@ struct DIGroup {
       nsDisplayList* children = item->GetChildren();
       if (children) {
         GP("doing children in EndGroup\n");
-        aGrouper->PaintContainerItem(this, item, bounds, children, aContext,
-                                     aRecorder);
+        aGrouper->PaintContainerItem(this, item, data, bounds, children,
+                                     aContext, aRecorder, aRootManager,
+                                     aResources);
       } else {
         nsPaintedDisplayItem* paintedItem = item->AsPaintedDisplayItem();
         if (dirty && paintedItem &&
@@ -848,6 +855,8 @@ struct DIGroup {
           }
 
           paintedItem->Paint(aGrouper->mDisplayListBuilder, aContext);
+          TakeExternalSurfaces(aRecorder, data->mExternalSurfaces, aRootManager,
+                               aResources);
 
           if (currentClip.HasClip()) {
             aContext->Restore();
@@ -895,9 +904,12 @@ static BlobItemData* GetBlobItemDataForGroup(nsDisplayItem* aItem,
 }
 
 void Grouper::PaintContainerItem(DIGroup* aGroup, nsDisplayItem* aItem,
+                                 BlobItemData* aData,
                                  const IntRect& aItemBounds,
                                  nsDisplayList* aChildren, gfxContext* aContext,
-                                 WebRenderDrawEventRecorder* aRecorder) {
+                                 WebRenderDrawEventRecorder* aRecorder,
+                                 RenderRootStateManager* aRootManager,
+                                 wr::IpcResourceUpdateQueue& aResources) {
   switch (aItem->GetType()) {
     case DisplayItemType::TYPE_TRANSFORM: {
       DisplayItemClip currentClip = aItem->GetClip();
@@ -922,12 +934,14 @@ void Grouper::PaintContainerItem(DIGroup* aGroup, nsDisplayItem* aItem,
           data->mLayerManager->BeginTransaction();
           data->mLayerManager->EndTransaction(
               FrameLayerBuilder::DrawPaintedLayer, mDisplayListBuilder);
+          TakeExternalSurfaces(aRecorder, data->mExternalSurfaces, aRootManager,
+                               aResources);
           aContext->GetDrawTarget()->FlushItem(aItemBounds);
         }
       } else {
         aContext->Multiply(ThebesMatrix(trans2d));
         aGroup->PaintItemRange(this, aChildren->GetBottom(), nullptr, aContext,
-                               aRecorder);
+                               aRecorder, aRootManager, aResources);
       }
 
       if (currentClip.HasClip()) {
@@ -950,7 +964,7 @@ void Grouper::PaintContainerItem(DIGroup* aGroup, nsDisplayItem* aItem,
          aItem->GetPerFrameKey());
       aContext->GetDrawTarget()->FlushItem(aItemBounds);
       aGroup->PaintItemRange(this, aChildren->GetBottom(), nullptr, aContext,
-                             aRecorder);
+                             aRecorder, aRootManager, aResources);
       aContext->GetDrawTarget()->PopLayer();
       GP("endGroup %s %p-%d\n", aItem->Name(), aItem->Frame(),
          aItem->GetPerFrameKey());
@@ -967,7 +981,7 @@ void Grouper::PaintContainerItem(DIGroup* aGroup, nsDisplayItem* aItem,
          aItem->GetPerFrameKey());
       aContext->GetDrawTarget()->FlushItem(aItemBounds);
       aGroup->PaintItemRange(this, aChildren->GetBottom(), nullptr, aContext,
-                             aRecorder);
+                             aRecorder, aRootManager, aResources);
       aContext->GetDrawTarget()->PopLayer();
       GP("endGroup %s %p-%d\n", aItem->Name(), aItem->Frame(),
          aItem->GetPerFrameKey());
@@ -981,7 +995,7 @@ void Grouper::PaintContainerItem(DIGroup* aGroup, nsDisplayItem* aItem,
          aItem->GetPerFrameKey());
       aContext->GetDrawTarget()->FlushItem(aItemBounds);
       aGroup->PaintItemRange(this, aChildren->GetBottom(), nullptr, aContext,
-                             aRecorder);
+                             aRecorder, aRootManager, aResources);
       aContext->GetDrawTarget()->PopLayer();
       GP("endGroup %s %p-%d\n", aItem->Name(), aItem->Frame(),
          aItem->GetPerFrameKey());
@@ -999,10 +1013,13 @@ void Grouper::PaintContainerItem(DIGroup* aGroup, nsDisplayItem* aItem,
                  aItem->GetPerFrameKey());
               aContext->GetDrawTarget()->FlushItem(aItemBounds);
               aGroup->PaintItemRange(this, aChildren->GetBottom(), nullptr,
-                                     aContext, aRecorder);
+                                     aContext, aRecorder, aRootManager,
+                                     aResources);
               GP("endGroup %s %p-%d\n", aItem->Name(), aItem->Frame(),
                  aItem->GetPerFrameKey());
             });
+        TakeExternalSurfaces(aRecorder, aData->mExternalSurfaces, aRootManager,
+                             aResources);
         aContext->GetDrawTarget()->FlushItem(aItemBounds);
       }
       break;
@@ -1019,6 +1036,8 @@ void Grouper::PaintContainerItem(DIGroup* aGroup, nsDisplayItem* aItem,
         if (data->mLayerManager->InTransaction()) {
           data->mLayerManager->AbortTransaction();
         }
+        TakeExternalSurfaces(aRecorder, data->mExternalSurfaces, aRootManager,
+                             aResources);
         aContext->GetDrawTarget()->FlushItem(aItemBounds);
       }
       break;
@@ -1026,7 +1045,7 @@ void Grouper::PaintContainerItem(DIGroup* aGroup, nsDisplayItem* aItem,
 
     default:
       aGroup->PaintItemRange(this, aChildren->GetBottom(), nullptr, aContext,
-                             aRecorder);
+                             aRecorder, aRootManager, aResources);
       break;
   }
 }
@@ -1157,7 +1176,6 @@ static bool IsItemProbablyActive(nsDisplayItem* aItem,
     }
     case DisplayItemType::TYPE_WRAP_LIST:
     case DisplayItemType::TYPE_CONTAINER:
-    case DisplayItemType::TYPE_MASK:
     case DisplayItemType::TYPE_PERSPECTIVE: {
       if (aItem->GetChildren()) {
         return HasActiveChildren(*aItem->GetChildren(), aDisplayListBuilder);
@@ -2257,10 +2275,6 @@ WebRenderCommandBuilder::GenerateFallbackData(
         }
       }
       recorder->FlushItem(IntRect({0, 0}, dtSize.ToUnknownSize()));
-      TakeExternalSurfaces(
-          recorder, fallbackData->mExternalSurfaces,
-          mManager->GetRenderRootStateManager(aBuilder.GetRenderRoot()),
-          aResources);
       recorder->Finish();
 
       if (!validFonts) {
@@ -2278,6 +2292,10 @@ WebRenderCommandBuilder::GenerateFallbackData(
         if (!aResources.AddBlobImage(key, descriptor, bytes)) {
           return nullptr;
         }
+        TakeExternalSurfaces(
+            recorder, fallbackData->mExternalSurfaces,
+            mManager->GetRenderRootStateManager(aBuilder.GetRenderRoot()),
+            aResources);
         fallbackData->SetBlobImageKey(key);
         fallbackData->SetFonts(fonts);
       } else {
@@ -2477,10 +2495,6 @@ Maybe<wr::ImageMask> WebRenderCommandBuilder::BuildWrMaskImage(
     }
 
     recorder->FlushItem(IntRect(0, 0, size.width, size.height));
-    TakeExternalSurfaces(
-        recorder, maskData->mExternalSurfaces,
-        mManager->GetRenderRootStateManager(aBuilder.GetRenderRoot()),
-        aResources);
     recorder->Finish();
 
     if (!validFonts) {
@@ -2502,6 +2516,10 @@ Maybe<wr::ImageMask> WebRenderCommandBuilder::BuildWrMaskImage(
     maskData->ClearImageKey();
     maskData->mBlobKey = Some(key);
     maskData->mFonts = fonts;
+    TakeExternalSurfaces(
+        recorder, maskData->mExternalSurfaces,
+        mManager->GetRenderRootStateManager(aBuilder.GetRenderRoot()),
+        aResources);
     if (paintFinished) {
       maskData->mItemRect = itemRect;
       maskData->mMaskOffset = maskOffset;
