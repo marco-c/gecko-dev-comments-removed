@@ -5399,32 +5399,35 @@ var PopupBlockerObserver = {
     Services.perms.addFromPrincipal(principal, "popup", aAllow
                        ? Ci.nsIPermissionManager.ALLOW_ACTION
                        : Ci.nsIPermissionManager.DENY_ACTION);
-    dump("Allowing popups for: " + currentURI);
   },
 
   showPopupsForSite: function showPopupsForSite() {
     let uri = BrowserApp.selectedBrowser.currentURI;
-    let {blockedPopups} = BrowserApp.selectedBrowser;
-    if (blockedPopups) {
-      for (let i = 0; i < blockedPopups.length; ++i) {
-        let popupURIspec = blockedPopups[i].popupWindowURIspec;
+    BrowserApp.selectedBrowser.retrieveListOfBlockedPopups().then(blockedPopups => {
+      if (blockedPopups) {
+        for (let i = 0; i < blockedPopups.length; ++i) {
+          let popupURIspec = blockedPopups[i].popupWindowURIspec;
 
-        
-        
-        
-        
-        
-        if (popupURIspec == "" || popupURIspec == "about:blank" || popupURIspec == uri.spec)
-          continue;
+          
+          
+          
+          
+          
+          if (popupURIspec == "" || popupURIspec == "about:blank" || popupURIspec == uri.spec)
+            continue;
 
-        let popupFeatures = blockedPopups[i].popupWindowFeatures;
-        let popupName = blockedPopups[i].popupWindowName;
+          let popupFeatures = blockedPopups[i].popupWindowFeatures;
+          let popupName = blockedPopups[i].popupWindowName;
 
-        let parent = BrowserApp.selectedTab;
-        let isPrivate = PrivateBrowsingUtils.isBrowserPrivate(parent.browser);
-        BrowserApp.addTab(popupURIspec, { parentId: parent.id, isPrivate: isPrivate });
+          let parent = BrowserApp.selectedTab;
+          let isPrivate = PrivateBrowsingUtils.isBrowserPrivate(parent.browser);
+          BrowserApp.addTab(popupURIspec, {
+            parentId: parent.id,
+            isPrivate: isPrivate,
+          });
+        }
       }
-    }
+    });
   },
 };
 
