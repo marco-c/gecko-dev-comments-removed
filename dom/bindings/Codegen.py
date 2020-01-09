@@ -4575,6 +4575,22 @@ def recordKeyDeclType(recordType):
     return CGGeneric(recordKeyType(recordType))
 
 
+def initializerForType(type):
+    """
+    Get the right initializer for the given type for a data location where we
+    plan to then initialize it from a JS::Value.  Some types need to always be
+    initialized even before we start the JS::Value-to-IDL-value conversion.
+
+    Returns a string or None if no initialization is needed.
+    """
+    if type.isObject():
+        return "nullptr"
+    
+    
+    
+    return None
+
+
 
 
 
@@ -4882,6 +4898,12 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
             "passedToJSImpl": "${passedToJSImpl}"
         })
 
+        elementInitializer = initializerForType(elementType)
+        if elementInitializer is None:
+            elementInitializer = ""
+        else:
+            elementInitializer = elementInitializer + ", "
+
         
         templateBody = fill(
             """
@@ -4902,7 +4924,7 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
               if (done${nestingLevel}) {
                 break;
               }
-              ${elementType}* slotPtr${nestingLevel} = arr${nestingLevel}.AppendElement(mozilla::fallible);
+              ${elementType}* slotPtr${nestingLevel} = arr${nestingLevel}.AppendElement(${elementInitializer}mozilla::fallible);
               if (!slotPtr${nestingLevel}) {
                 JS_ReportOutOfMemory(cx);
                 $*{exceptionCode}
@@ -4917,6 +4939,7 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
             arrayRef=arrayRef,
             elementType=elementInfo.declType.define(),
             elementConversion=elementConversion,
+            elementInitializer=elementInitializer,
             nestingLevel=str(nestingLevel))
 
         templateBody = wrapObjectTemplate(templateBody, type,
@@ -6493,6 +6516,8 @@ class CGArgumentConverter(CGThing):
             rooterDecl = ""
         replacer["elemType"] = typeConversion.declType.define()
 
+        replacer["elementInitializer"] = initializerForType(self.argument.type) or ""
+
         
         variadicConversion = string.Template(
             "${seqType} ${declName};\n" +
@@ -6504,7 +6529,8 @@ class CGArgumentConverter(CGThing):
                     return false;
                   }
                   for (uint32_t variadicArg = ${index}; variadicArg < ${argc}; ++variadicArg) {
-                    ${elemType}& slot = *${declName}.AppendElement(mozilla::fallible);
+                    // OK to do infallible append here, since we ensured capacity already.
+                    ${elemType}& slot = *${declName}.AppendElement(${elementInitializer});
                 """)
         ).substitute(replacer)
 
@@ -14030,8 +14056,9 @@ class CGDictionary(CGThing):
     def getMemberInitializer(self, memberInfo):
         """
         Get the right initializer for the member.  Most members don't need one,
-        but we need to pre-initialize 'any' and 'object' that have a default
-        value, so they're safe to trace at all times.
+        but we need to pre-initialize 'object' that have a default value or are
+        required (and hence are not inside Optional), so they're safe to trace
+        at all times.  And we can optimize a bit for dictionary-typed members.
         """
         member, _ = memberInfo
         if member.canHaveMissingValue():
@@ -14040,15 +14067,13 @@ class CGDictionary(CGThing):
             
             return None
         type = member.type
-        if type.isObject():
-            return "nullptr"
         if type.isDictionary():
             
             
             
             
             return CGDictionary.getNonInitializingCtorArg()
-        return None
+        return initializerForType(type)
 
     def getMemberSourceDescription(self, member):
         return ("'%s' member of %s" %
