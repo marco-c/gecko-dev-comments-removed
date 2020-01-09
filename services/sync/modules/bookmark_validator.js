@@ -240,9 +240,9 @@ async function detectCycles(records) {
   let currentPath = [];
   let cycles = [];
   let seenEver = new Set();
-  const yieldState = Async.yieldState();
-
-  const traverse = async (node) => {
+  const maybeYield = Async.jankYielder();
+  const traverse = async node => {
+    await maybeYield();
     if (pathLookup.has(node)) {
       let cycleStart = currentPath.lastIndexOf(node);
       let cyclePath = currentPath.slice(cycleStart).map(n => n.id);
@@ -261,17 +261,18 @@ async function detectCycles(records) {
     if (children.length) {
       pathLookup.add(node);
       currentPath.push(node);
-      await Async.yieldingForEach(children, traverse, yieldState);
+      for (let child of children) {
+        await traverse(child);
+      }
       currentPath.pop();
       pathLookup.delete(node);
     }
   };
-
-  await Async.yieldingForEach(records, async (record) => {
+  for (let record of records) {
     if (!seenEver.has(record)) {
       await traverse(record);
     }
-  }, yieldState);
+  }
 
   return cycles;
 }
@@ -296,7 +297,7 @@ class ServerRecordInspection {
     this._orphans = new Map();
     this._multipleParents = new Map();
 
-    this.yieldState = Async.yieldState();
+    this.maybeYield = Async.jankYielder();
   }
 
   static async create(records) {
@@ -350,10 +351,11 @@ class ServerRecordInspection {
     this.serverRecords = records;
     let rootChildren = [];
 
-    await Async.yieldingForEach(this.serverRecords, async (record) => {
+    for (let record of this.serverRecords) {
+      await this.maybeYield();
       if (!record.id) {
         ++this.problemData.missingIDs;
-        return;
+        continue;
       }
 
       if (record.deleted) {
@@ -361,7 +363,7 @@ class ServerRecordInspection {
       }
       if (this.idToRecord.has(record.id)) {
         this.problemData.duplicates.push(record.id);
-        return;
+        continue;
       }
 
       this.idToRecord.set(record.id, record);
@@ -375,7 +377,7 @@ class ServerRecordInspection {
       }
 
       if (!record.children) {
-        return;
+        continue;
       }
 
       if (record.type != "folder") {
@@ -383,7 +385,7 @@ class ServerRecordInspection {
         
         
         if (!record.children.length) {
-          return;
+          continue;
         }
         
         this.problemData.childrenOnNonFolder.push(record.id);
@@ -411,13 +413,12 @@ class ServerRecordInspection {
       
       
       record.childGUIDs = record.children;
-
-      await Async.yieldingForEach(record.childGUIDs, id => {
+      for (let id of record.childGUIDs) {
+        await this.maybeYield();
         this.noteParent(id, record.id);
-      }, this.yieldState);
-
+      }
       record.children = [];
-    }, this.yieldState);
+    }
 
     
     this.deletedRecords = Array.from(this.deletedIds,
@@ -454,9 +455,10 @@ class ServerRecordInspection {
 
   
   async _linkParentIDs() {
-    await Async.yieldingForEach(this.idToRecord, ([id, record]) => {
+    for (let [id, record] of this.idToRecord) {
+      await this.maybeYield();
       if (record == this.root || record.deleted) {
-        return false;
+        continue;
       }
 
       
@@ -464,17 +466,17 @@ class ServerRecordInspection {
       let parent = this.idToRecord.get(parentID);
       if (!parentID || !parent) {
         this._noteOrphan(id, parentID);
-        return false;
+        continue;
       }
 
       record.parent = parent;
 
       if (parent.deleted) {
         this.problemData.deletedParents.push(id);
-        return true;
+        return;
       } else if (parent.type != "folder") {
         this.problemData.parentNotFolder.push(record.id);
-        return true;
+        return;
       }
 
       if (parent.id !== "place" || this.problemData.rootOnServer) {
@@ -491,45 +493,49 @@ class ServerRecordInspection {
       
       
       
-      return false;
-    }, this.yieldState);
+    }
   }
 
   
   
   async _linkChildren() {
     
-    await Async.yieldingForEach(this.folder, async (folder) => {
+    for (let folder of this.folders) {
+      await this.maybeYield();
+
       folder.children = [];
       folder.unfilteredChildren = [];
 
       let idsThisFolder = new Set();
 
-      await Async.yieldingForEach(folder.childGUIDs, async (childID) => {
+      for (let i = 0; i < folder.childGUIDs.length; ++i) {
+        await this.maybeYield();
+        let childID = folder.childGUIDs[i];
+
         let child = this.idToRecord.get(childID);
 
         if (!child) {
           this.problemData.missingChildren.push({ parent: folder.id, child: childID });
-          return;
+          continue;
         }
 
         if (child.deleted) {
           this.problemData.deletedChildren.push({ parent: folder.id, child: childID });
-          return;
+          continue;
         }
 
         if (child.parentid != folder.id) {
           this.noteMismatch(childID, folder.id);
-          return;
+          continue;
         }
 
         if (idsThisFolder.has(childID)) {
           
-          return;
+          continue;
         }
         folder.children.push(child);
-      }, this.yieldState);
-    }, this.yieldState);
+      }
+    }
   }
 
   
@@ -538,34 +544,31 @@ class ServerRecordInspection {
   
   async _findOrphans() {
     let seen = new Set([this.root.id]);
-
-    const inCycle = await Async.yieldingForEach(Utils.walkTree(this.root), ([node]) => {
+    for (let [node] of Utils.walkTree(this.root)) {
+      await this.maybeYield();
       if (seen.has(node.id)) {
         
         
-        return true;
+        return;
       }
       seen.add(node.id);
-
-      return false;
-    }, this.yieldState);
-
-    if (inCycle) {
-      return;
     }
 
-    await Async.yieldingForEach(this.liveRecords, (record, i) => {
+    for (let i = 0; i < this.liveRecords.length; ++i) {
+      await this.maybeYield();
+      let record = this.liveRecords[i];
       if (!seen.has(record.id)) {
         
         
         
         this._noteOrphan(record.id);
       }
-    }, this.yieldState);
+    }
 
-    await Async.yieldingForEach(this._orphans, ([id, parent]) => {
+    for (const [id, parent] of this._orphans) {
+      await this.maybeYield();
       this.problemData.orphans.push({id, parent});
-    }, this.yieldState);
+    }
   }
 
   async _finish() {
@@ -594,7 +597,7 @@ class ServerRecordInspection {
 
 class BookmarkValidator {
   constructor() {
-    this.yieldState = Async.yieldState();
+    this.maybeYield = Async.jankYielder();
   }
 
   async canValidate() {
@@ -602,9 +605,10 @@ class BookmarkValidator {
   }
 
   async _followQueries(recordsByQueryId) {
-    await Async.yieldingForEach(recordsByQueryId.values(), entry => {
+    for (let entry of recordsByQueryId.values()) {
+      await this.maybeYield();
       if (entry.type !== "query" && (!entry.bmkUri || !entry.bmkUri.startsWith(QUERY_PROTOCOL))) {
-        return;
+        continue;
       }
       let params = new URLSearchParams(entry.bmkUri.slice(QUERY_PROTOCOL.length));
       
@@ -612,7 +616,7 @@ class BookmarkValidator {
       let excludeQueries = params.get("excludeQueries");
       if (excludeQueries === "1" || excludeQueries === "true") {
         
-        return;
+        continue;
       }
       entry.concreteItems = [];
       let queryIds = params.getAll("folder");
@@ -622,7 +626,7 @@ class BookmarkValidator {
           entry.concreteItems.push(concreteItem);
         }
       }
-    }, this.yieldState);
+    }
   }
 
   async createClientRecordsFromTree(clientTree) {
@@ -636,8 +640,8 @@ class BookmarkValidator {
     
     let recordsByQueryId = new Map();
     let syncedRoots = SYNCED_ROOTS;
-
     const traverse = async (treeNode, synced) => {
+      await this.maybeYield();
       if (!synced) {
         synced = syncedRoots.includes(treeNode.guid);
       }
@@ -699,18 +703,15 @@ class BookmarkValidator {
         if (!treeNode.children) {
           treeNode.children = [];
         }
-
-        await Async.yieldingForEach(treeNode.children, async (child) => {
+        for (let child of treeNode.children) {
           await traverse(child, synced);
           child.parent = treeNode;
-          child.parentId = guid;
+          child.parentid = guid;
           treeNode.childGUIDs.push(child.guid);
-        }, this.yieldState);
+        }
       }
     };
-
-    await Async.yieldingForEach(clientTree, item => traverse(item, false), this.yieldState);
-
+    await traverse(clientTree, false);
     clientTree.id = "places";
     await this._followQueries(recordsByQueryId);
     return records;
@@ -765,22 +766,23 @@ class BookmarkValidator {
 
   async _computeUnifiedRecordMap(serverRecords, clientRecords) {
     let allRecords = new Map();
-    await Async.yieldingForEach(serverRecords, sr => {
+    for (let sr of serverRecords) {
+      await this.maybeYield();
       if (sr.fake) {
-        return;
+        continue;
       }
       allRecords.set(sr.id, {client: null, server: sr});
-    }, this.yieldState);
+    }
 
-    await Async.yieldingForEach(clientRecords, cr => {
+    for (let cr of clientRecords) {
+      await this.maybeYield();
       let unified = allRecords.get(cr.id);
       if (!unified) {
         allRecords.set(cr.id, {client: cr, server: null});
       } else {
         unified.client = cr;
       }
-    }, this.yieldState);
-
+    }
     return allRecords;
   }
 
@@ -900,11 +902,11 @@ class BookmarkValidator {
     let allRecords = await this._computeUnifiedRecordMap(serverRecords, clientRecords);
 
     let serverDeleted = new Set(inspectionInfo.deletedRecords.map(r => r.id));
-
-    await Async.yieldingForEach(allRecords, ([id, {client, server}]) => {
+    for (let [id, {client, server}] of allRecords) {
+      await this.maybeYield();
       if (!client || !server) {
         this._recordMissing(problemData, id, client, server, serverDeleted);
-        return;
+        continue;
       }
       if (server && client && client.ignored) {
         problemData.serverUnexpected.push(id);
@@ -917,8 +919,7 @@ class BookmarkValidator {
       if (structuralDifferences.length) {
         problemData.structuralDifferences.push({ id, differences: structuralDifferences });
       }
-    }, this.yieldState);
-
+    }
     return inspectionInfo;
   }
 
@@ -933,10 +934,11 @@ class BookmarkValidator {
       throw result.response;
     }
     let cleartexts = [];
-    await Async.yieldingForEach(result.records, async (record) => {
+    for (let record of result.records) {
+      await this.maybeYield();
       await record.decrypt(collectionKey);
       cleartexts.push(record.cleartext);
-    }, this.yieldState);
+    }
     return cleartexts;
   }
 
