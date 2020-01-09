@@ -181,6 +181,11 @@ var gEnvXPCOMMemLeakLog;
 var gEnvDyldLibraryPath;
 var gEnvLdLibraryPath;
 
+const DATA_URI_SPEC = Services.io.newFileURI(do_get_file("", false)).spec;
+
+
+load("shared.js");
+
 
 
 
@@ -198,10 +203,6 @@ var gDebugTestLog = false;
 var gTestsToLog = [];
 var gRealDump;
 var gFOS;
-
-const DATA_URI_SPEC = Services.io.newFileURI(do_get_file("../data", false)).spec;
-
-Services.scriptloader.loadSubScript(DATA_URI_SPEC + "shared.js", this);
 
 ChromeUtils.defineModuleGetter(this, "MockRegistrar",
                                "resource://testing-common/MockRegistrar.jsm");

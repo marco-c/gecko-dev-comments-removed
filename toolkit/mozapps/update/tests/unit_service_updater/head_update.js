@@ -5,7 +5,7 @@
 const IS_SERVICE_TEST = true;
 
 
-load("../data/xpcshellUtilsAUS.js");
+load("xpcshellUtilsAUS.js");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",

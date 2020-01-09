@@ -5,4 +5,4 @@
 const IS_SERVICE_TEST = false;
 
 
-load("../data/xpcshellUtilsAUS.js");
+load("xpcshellUtilsAUS.js");
