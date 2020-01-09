@@ -1273,6 +1273,7 @@ pub enum PrimitiveInstanceKind {
         
         data_handle: PictureDataHandle,
         pic_index: PictureIndex,
+        segment_instance_index: SegmentInstanceIndex,
     },
     
     TextRun {
@@ -1824,6 +1825,17 @@ impl PrimitiveStore {
                     let pic = &self.pictures[pic_index.0];
 
                     
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    prim_instance.prim_origin = pic.local_rect.origin;
+
+                    
                     match pic.raster_config {
                         Some(_) => {
                             frame_state.clip_chain_stack.pop_surface();
@@ -2286,7 +2298,7 @@ impl PrimitiveStore {
         }
 
         match prim_instance.kind {
-            PrimitiveInstanceKind::Picture { pic_index, .. } => {
+            PrimitiveInstanceKind::Picture { pic_index, segment_instance_index, .. } => {
                 let pic = &mut self.pictures[pic_index.0];
                 let prim_info = &scratch.prim_info[prim_instance.visibility_info.0 as usize];
                 if pic.prepare_for_render(
@@ -2307,6 +2319,29 @@ impl PrimitiveStore {
                             &prim_info.combined_local_clip_rect,
                             frame_context.screen_world_rect,
                             plane_split_anchor,
+                        );
+                    }
+
+                    
+                    
+                    
+                    
+                    if pic.can_use_segments() {
+                        write_segment(
+                            segment_instance_index,
+                            frame_state,
+                            &mut scratch.segments,
+                            &mut scratch.segment_instances,
+                            |request| {
+                                request.push(PremultipliedColorF::WHITE);
+                                request.push(PremultipliedColorF::WHITE);
+                                request.push([
+                                    -1.0,       
+                                    0.0,
+                                    0.0,
+                                    0.0,
+                                ]);
+                            }
                         );
                     }
                 } else {
@@ -2622,11 +2657,17 @@ impl PrimitiveStore {
                     frame_context.scene_properties,
                 );
 
-                write_segment(*segment_instance_index, frame_state, scratch, |request| {
-                    prim_data.kind.write_prim_gpu_blocks(
-                        request,
-                    );
-                });
+                write_segment(
+                    *segment_instance_index,
+                    frame_state,
+                    &mut scratch.segments,
+                    &mut scratch.segment_instances,
+                    |request| {
+                        prim_data.kind.write_prim_gpu_blocks(
+                            request,
+                        );
+                    }
+                );
             }
             PrimitiveInstanceKind::YuvImage { data_handle, segment_instance_index, .. } => {
                 let yuv_image_data = &mut data_stores.yuv_image[*data_handle];
@@ -2635,9 +2676,15 @@ impl PrimitiveStore {
                 
                 yuv_image_data.kind.update(&mut yuv_image_data.common, frame_state);
 
-                write_segment(*segment_instance_index, frame_state, scratch, |request| {
-                    yuv_image_data.kind.write_prim_gpu_blocks(request);
-                });
+                write_segment(
+                    *segment_instance_index,
+                    frame_state,
+                    &mut scratch.segments,
+                    &mut scratch.segment_instances,
+                    |request| {
+                        yuv_image_data.kind.write_prim_gpu_blocks(request);
+                    }
+                );
             }
             PrimitiveInstanceKind::Image { data_handle, image_instance_index, .. } => {
                 let prim_data = &mut data_stores.image[*data_handle];
@@ -2736,9 +2783,15 @@ impl PrimitiveStore {
                     }
                 }
 
-                write_segment(image_instance.segment_instance_index, frame_state, scratch, |request| {
-                    image_data.write_prim_gpu_blocks(request);
-                });
+                write_segment(
+                    image_instance.segment_instance_index,
+                    frame_state,
+                    &mut scratch.segments,
+                    &mut scratch.segment_instances,
+                    |request| {
+                        image_data.write_prim_gpu_blocks(request);
+                    },
+                );
             }
             PrimitiveInstanceKind::LinearGradient { data_handle, gradient_index, .. } => {
                 let prim_data = &mut data_stores.linear_grad[*data_handle];
@@ -2915,15 +2968,16 @@ impl PrimitiveStore {
 fn write_segment<F>(
     segment_instance_index: SegmentInstanceIndex,
     frame_state: &mut FrameBuildingState,
-    scratch: &mut PrimitiveScratchBuffer,
+    segments: &mut SegmentStorage,
+    segment_instances: &mut SegmentInstanceStorage,
     f: F,
 ) where F: Fn(&mut GpuDataRequest) {
     debug_assert_ne!(segment_instance_index, SegmentInstanceIndex::INVALID);
     if segment_instance_index != SegmentInstanceIndex::UNUSED {
-        let segment_instance = &mut scratch.segment_instances[segment_instance_index];
+        let segment_instance = &mut segment_instances[segment_instance_index];
 
         if let Some(mut request) = frame_state.gpu_cache.request(&mut segment_instance.gpu_cache_handle) {
-            let segments = &scratch.segments[segment_instance.segments_range];
+            let segments = &segments[segment_instance.segments_range];
 
             f(&mut request);
 
@@ -3176,10 +3230,11 @@ impl PrimitiveInstance {
         segments_store: &mut SegmentStorage,
         segment_instances_store: &mut SegmentInstanceStorage,
     ) {
-        let prim_data = &data_stores.as_common_data(self);
-        let prim_local_rect = LayoutRect::new(
+        
+        
+        let mut prim_local_rect = LayoutRect::new(
             self.prim_origin,
-            prim_data.prim_size,
+            data_stores.as_common_data(self).prim_size,
         );
 
         let segment_instance_index = match self.kind {
@@ -3203,7 +3258,28 @@ impl PrimitiveInstance {
                 }
                 &mut image_instance.segment_instance_index
             }
-            PrimitiveInstanceKind::Picture { .. } |
+            PrimitiveInstanceKind::Picture { ref mut segment_instance_index, pic_index, .. } => {
+                let pic = &mut prim_store.pictures[pic_index.0];
+
+                
+                if pic.can_use_segments() {
+                    
+                    
+                    
+                    if !pic.segments_are_valid {
+                        *segment_instance_index = SegmentInstanceIndex::INVALID;
+                        pic.segments_are_valid = true;
+                    }
+
+                    
+                    
+                    prim_local_rect = pic.local_rect;
+
+                    segment_instance_index
+                } else {
+                    return;
+                }
+            }
             PrimitiveInstanceKind::TextRun { .. } |
             PrimitiveInstanceKind::NormalBorder { .. } |
             PrimitiveInstanceKind::ImageBorder { .. } |
@@ -3274,7 +3350,6 @@ impl PrimitiveInstance {
         device_pixel_scale: DevicePixelScale,
     ) -> bool {
         let segments = match self.kind {
-            PrimitiveInstanceKind::Picture { .. } |
             PrimitiveInstanceKind::TextRun { .. } |
             PrimitiveInstanceKind::Clear { .. } |
             PrimitiveInstanceKind::LineDecoration { .. } => {
@@ -3291,6 +3366,18 @@ impl PrimitiveInstance {
 
                 let segment_instance = &segment_instances_store[segment_instance_index];
 
+                &segments_store[segment_instance.segments_range]
+            }
+            PrimitiveInstanceKind::Picture { segment_instance_index, .. } => {
+                
+                
+                
+                if segment_instance_index == SegmentInstanceIndex::UNUSED ||
+                   segment_instance_index == SegmentInstanceIndex::INVALID {
+                    return false;
+                }
+
+                let segment_instance = &segment_instances_store[segment_instance_index];
                 &segments_store[segment_instance.segments_range]
             }
             PrimitiveInstanceKind::YuvImage { segment_instance_index, .. } |

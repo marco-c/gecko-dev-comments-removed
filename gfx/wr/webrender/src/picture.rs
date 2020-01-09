@@ -2199,6 +2199,12 @@ pub struct PicturePrimitive {
     pub local_rect: LayoutRect,
 
     
+    
+    
+    
+    pub segments_are_valid: bool,
+
+    
     pub local_clip_rect: LayoutRect,
 
     
@@ -2231,6 +2237,25 @@ impl PicturePrimitive {
         }
 
         pt.end_level();
+    }
+
+    
+    pub fn can_use_segments(&self) -> bool {
+        match self.raster_config {
+            
+            
+            
+            Some(RasterConfig { composite_mode: PictureCompositeMode::MixBlend(..), .. }) |
+            Some(RasterConfig { composite_mode: PictureCompositeMode::Filter(..), .. }) |
+            Some(RasterConfig { composite_mode: PictureCompositeMode::ComponentTransferFilter(..), .. }) |
+            Some(RasterConfig { composite_mode: PictureCompositeMode::TileCache { .. }, ..}) |
+            None => {
+                false
+            }
+            Some(RasterConfig { composite_mode: PictureCompositeMode::Blit(reason), ..}) => {
+                reason == BlitReason::CLIP
+            }
+        }
     }
 
     fn resolve_scene_properties(&mut self, properties: &SceneProperties) -> bool {
@@ -2314,6 +2339,7 @@ impl PicturePrimitive {
             local_clip_rect,
             tile_cache,
             options,
+            segments_are_valid: false,
         }
     }
 
@@ -2806,6 +2832,9 @@ impl PicturePrimitive {
                 if let PictureCompositeMode::Filter(FilterOp::DropShadow(..)) = raster_config.composite_mode {
                     gpu_cache.invalidate(&self.extra_gpu_data_handle);
                 }
+                
+                
+                self.segments_are_valid = false;
                 self.local_rect = surface_rect;
             }
 
