@@ -158,7 +158,8 @@ class MOZ_RAII FallbackStubAllocator {
 
 }  
 
-bool JitScript::initICEntries(JSContext* cx, JSScript* script) {
+bool JitScript::initICEntriesAndBytecodeTypeMap(JSContext* cx,
+                                                JSScript* script) {
   MOZ_ASSERT(cx->realm()->jitRealm());
   MOZ_ASSERT(jit::IsBaselineEnabled(cx));
 
@@ -216,11 +217,23 @@ bool JitScript::initICEntries(JSContext* cx, JSScript* script) {
     }
   }
 
-  jsbytecode const* pcEnd = script->codeEnd();
+  
+  uint32_t typeMapIndex = 0;
+  uint32_t* const typeMap = bytecodeTypeMap();
 
   
+  
+  jsbytecode const* pcEnd = script->codeEnd();
   for (jsbytecode* pc = script->code(); pc < pcEnd; pc = GetNextPc(pc)) {
     JSOp op = JSOp(*pc);
+
+    
+    
+    if ((CodeSpec[op].format & JOF_TYPESET) &&
+        typeMapIndex < JSScript::MaxBytecodeTypeSets) {
+      typeMap[typeMapIndex] = script->pcToOffset(pc);
+      typeMapIndex++;
+    }
 
     
     MOZ_ASSERT_IF(BytecodeIsJumpTarget(op), GET_ICINDEX(pc) == icEntryIndex);
@@ -501,6 +514,7 @@ bool JitScript::initICEntries(JSContext* cx, JSScript* script) {
 
   
   MOZ_ASSERT(icEntryIndex == numICEntries());
+  MOZ_ASSERT(typeMapIndex == script->numBytecodeTypeSets());
 
   return true;
 }
