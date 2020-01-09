@@ -150,9 +150,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   
   mozilla::Maybe<uint32_t> mainOffset_ = {};
 
-  
-  const FieldInitializers fieldInitializers_;
-
  public:
   
   JumpTarget lastTarget = {-1 - ptrdiff_t(JSOP_JUMPTARGET_LENGTH)};
@@ -179,7 +176,8 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   EmitterScope* innermostEmitterScope_ = nullptr;
   TDZCheckCache* innermostTDZCheckCache = nullptr;
 
-  const FieldInitializers& getFieldInitializers() { return fieldInitializers_; }
+  
+  FieldInitializers fieldInitializers_;
 
 #ifdef DEBUG
   bool unstableEmitterScope = false;
@@ -256,10 +254,9 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
  private:
   
-  BytecodeEmitter(
-      BytecodeEmitter* parent, SharedContext* sc, HandleScript script,
-      Handle<LazyScript*> lazyScript, uint32_t lineNum, EmitterMode emitterMode,
-      FieldInitializers fieldInitializers = FieldInitializers::Invalid());
+  BytecodeEmitter(BytecodeEmitter* parent, SharedContext* sc,
+                  HandleScript script, Handle<LazyScript*> lazyScript,
+                  uint32_t lineNum, EmitterMode emitterMode);
 
   void initFromBodyPosition(TokenPos bodyPosition);
 
@@ -273,59 +270,53 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
                                const ListNode* argsList);
 
  public:
-  BytecodeEmitter(
-      BytecodeEmitter* parent, BCEParserHandle* parser, SharedContext* sc,
-      HandleScript script, Handle<LazyScript*> lazyScript, uint32_t lineNum,
-      EmitterMode emitterMode = Normal,
-      FieldInitializers fieldInitializers = FieldInitializers::Invalid());
+  BytecodeEmitter(BytecodeEmitter* parent, BCEParserHandle* parser,
+                  SharedContext* sc, HandleScript script,
+                  Handle<LazyScript*> lazyScript, uint32_t lineNum,
+                  EmitterMode emitterMode = Normal);
 
-  BytecodeEmitter(
-      BytecodeEmitter* parent, const EitherParser& parser, SharedContext* sc,
-      HandleScript script, Handle<LazyScript*> lazyScript, uint32_t lineNum,
-      EmitterMode emitterMode = Normal,
-      FieldInitializers fieldInitializers = FieldInitializers::Invalid());
+  BytecodeEmitter(BytecodeEmitter* parent, const EitherParser& parser,
+                  SharedContext* sc, HandleScript script,
+                  Handle<LazyScript*> lazyScript, uint32_t lineNum,
+                  EmitterMode emitterMode = Normal);
 
   template <typename Unit>
-  BytecodeEmitter(
-      BytecodeEmitter* parent, Parser<FullParseHandler, Unit>* parser,
-      SharedContext* sc, HandleScript script, Handle<LazyScript*> lazyScript,
-      uint32_t lineNum, EmitterMode emitterMode = Normal,
-      FieldInitializers fieldInitializers = FieldInitializers::Invalid())
+  BytecodeEmitter(BytecodeEmitter* parent,
+                  Parser<FullParseHandler, Unit>* parser, SharedContext* sc,
+                  HandleScript script, Handle<LazyScript*> lazyScript,
+                  uint32_t lineNum, EmitterMode emitterMode = Normal)
       : BytecodeEmitter(parent, EitherParser(parser), sc, script, lazyScript,
-                        lineNum, emitterMode, fieldInitializers) {}
+                        lineNum, emitterMode) {}
 
   
   
-  BytecodeEmitter(
-      BytecodeEmitter* parent, BCEParserHandle* parser, SharedContext* sc,
-      HandleScript script, Handle<LazyScript*> lazyScript,
-      TokenPos bodyPosition, EmitterMode emitterMode = Normal,
-      FieldInitializers fieldInitializers = FieldInitializers::Invalid())
+  BytecodeEmitter(BytecodeEmitter* parent, BCEParserHandle* parser,
+                  SharedContext* sc, HandleScript script,
+                  Handle<LazyScript*> lazyScript, TokenPos bodyPosition,
+                  EmitterMode emitterMode = Normal)
       : BytecodeEmitter(parent, parser, sc, script, lazyScript,
                         parser->errorReporter().lineAt(bodyPosition.begin),
-                        emitterMode, fieldInitializers) {
+                        emitterMode) {
     initFromBodyPosition(bodyPosition);
   }
 
-  BytecodeEmitter(
-      BytecodeEmitter* parent, const EitherParser& parser, SharedContext* sc,
-      HandleScript script, Handle<LazyScript*> lazyScript,
-      TokenPos bodyPosition, EmitterMode emitterMode = Normal,
-      FieldInitializers fieldInitializers = FieldInitializers::Invalid())
+  BytecodeEmitter(BytecodeEmitter* parent, const EitherParser& parser,
+                  SharedContext* sc, HandleScript script,
+                  Handle<LazyScript*> lazyScript, TokenPos bodyPosition,
+                  EmitterMode emitterMode = Normal)
       : BytecodeEmitter(parent, parser, sc, script, lazyScript,
                         parser.errorReporter().lineAt(bodyPosition.begin),
-                        emitterMode, fieldInitializers) {
+                        emitterMode) {
     initFromBodyPosition(bodyPosition);
   }
 
   template <typename Unit>
-  BytecodeEmitter(
-      BytecodeEmitter* parent, Parser<FullParseHandler, Unit>* parser,
-      SharedContext* sc, HandleScript script, Handle<LazyScript*> lazyScript,
-      TokenPos bodyPosition, EmitterMode emitterMode = Normal,
-      FieldInitializers fieldInitializers = FieldInitializers::Invalid())
+  BytecodeEmitter(BytecodeEmitter* parent,
+                  Parser<FullParseHandler, Unit>* parser, SharedContext* sc,
+                  HandleScript script, Handle<LazyScript*> lazyScript,
+                  TokenPos bodyPosition, EmitterMode emitterMode = Normal)
       : BytecodeEmitter(parent, EitherParser(parser), sc, script, lazyScript,
-                        bodyPosition, emitterMode, fieldInitializers) {}
+                        bodyPosition, emitterMode) {}
 
   MOZ_MUST_USE bool init();
 
@@ -603,9 +594,8 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
                                      JSOp op);
   MOZ_MUST_USE bool emitRegExp(uint32_t index);
 
-  MOZ_NEVER_INLINE MOZ_MUST_USE bool emitFunction(
-      FunctionNode* funNode, bool needsProto = false,
-      ListNode* classContentsIfConstructor = nullptr);
+  MOZ_NEVER_INLINE MOZ_MUST_USE bool emitFunction(FunctionNode* funNode,
+                                                  bool needsProto = false);
   MOZ_NEVER_INLINE MOZ_MUST_USE bool emitObject(ListNode* objNode);
 
   MOZ_MUST_USE bool replaceNewInitWithNewObject(JSObject* obj,
@@ -619,8 +609,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   FieldInitializers setupFieldInitializers(ListNode* classMembers);
   MOZ_MUST_USE bool emitCreateFieldKeys(ListNode* obj);
   MOZ_MUST_USE bool emitCreateFieldInitializers(ListNode* obj);
-  const FieldInitializers& findFieldInitializersForCall();
-  MOZ_MUST_USE bool emitInitializeInstanceFields();
 
   
   
