@@ -519,16 +519,6 @@ VARCACHE_PREF(
 
 
 VARCACHE_PREF(
-  "dom.clearSiteData.enabled",
-   dom_clearSiteData_enabled,
-  bool, true
-)
-
-
-
-
-
-VARCACHE_PREF(
   "extensions.allowPrivateBrowsingByDefault",
    extensions_allowPrivateBrowsingByDefault,
   bool, true
