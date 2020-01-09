@@ -75,11 +75,15 @@ export function connect(url: string, actor: string, canRewind: boolean) {
 
 
 export function navigated() {
-  return async function({ dispatch, getState, client }: ThunkArgs) {
+  return async function({ dispatch, getState, client, onReload }: ThunkArgs) {
+    
+    
+    
     await waitForMs(100);
     if (Object.keys(getSources(getState())).length == 0) {
       const sources = await client.fetchSources();
       dispatch(newSources(sources));
     }
+    onReload();
   };
 }

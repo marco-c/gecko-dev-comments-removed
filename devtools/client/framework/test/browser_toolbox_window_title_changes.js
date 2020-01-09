@@ -20,6 +20,7 @@ function test() {
   const NAME_3 = "Toolbox test for title update";
 
   let toolbox;
+  let panel;
 
   addTab(URL_1).then(async function() {
     let target = await TargetFactory.forTab(gBrowser.selectedTab);
@@ -39,25 +40,29 @@ function test() {
       .then(checkTitle.bind(null, NAME_1, URL_1, "toolbox undocked"))
 
     
-      .then(() => {
+      .then(async () => {
         const onTitleChanged = waitForTitleChange(toolbox);
-        toolbox.selectTool(TOOL_ID_2);
+        panel = await toolbox.selectTool(TOOL_ID_2);
         return onTitleChanged;
       })
       .then(checkTitle.bind(null, NAME_1, URL_1, "tool changed"))
 
     
-      .then(function() {
+      .then(async function() {
         const onTitleChanged = waitForTitleChange(toolbox);
+        const waitForReloaded = panel.once("reloaded");
         BrowserTestUtils.loadURI(gBrowser, URL_2);
+        await waitForReloaded;
         return onTitleChanged;
       })
       .then(checkTitle.bind(null, NAME_2, URL_2, "url changed"))
 
     
-      .then(() => {
+      .then(async () => {
         const onTitleChanged = waitForTitleChange(toolbox);
+        const waitForReloaded = panel.once("reloaded");
         BrowserTestUtils.loadURI(gBrowser, URL_3);
+        await waitForReloaded;
         return onTitleChanged;
       })
       .then(checkTitle.bind(null, NAME_3, URL_3, "url changed"))
