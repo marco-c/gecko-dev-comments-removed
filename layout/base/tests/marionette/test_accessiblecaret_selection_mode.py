@@ -4,10 +4,17 @@
 
 
 import re
+import sys
+import os
 
+
+sys.path.append(os.path.dirname(__file__))
+
+from selection import (
+    SelectionManager,
+)
 from marionette_driver.by import By
 from marionette_driver.legacy_actions import Actions
-from marionette_driver.selection import SelectionManager
 from marionette_harness.marionette_test import (
     MarionetteTestCase,
     SkipTest,
