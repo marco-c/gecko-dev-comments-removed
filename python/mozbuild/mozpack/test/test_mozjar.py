@@ -2,7 +2,7 @@
 
 
 
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 from mozpack.files import FileFinder
 from mozpack.mozjar import (

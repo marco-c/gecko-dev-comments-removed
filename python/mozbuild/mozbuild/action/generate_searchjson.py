@@ -2,7 +2,7 @@
 
 
 
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import sys
 import json
@@ -28,7 +28,7 @@ else:
 
 def validateDefault(key):
     if key not in searchinfo["default"]:
-        print >>sys.stderr, "Error: Missing default %s in list.json" % (key)
+        print("Error: Missing default %s in list.json" % (key), file=sys.stderr)
         sys.exit(1)
 
 
