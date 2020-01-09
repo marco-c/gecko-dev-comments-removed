@@ -33,7 +33,7 @@ void TestUniquePtrIPCParent::Main() {
   
   UniquePtr<DummyStruct> b = MakeUnique<DummyStruct>(1);
 
-  if (!SendTestSendReference(b)) {
+  if (!SendTestSendReference(std::move(b))) {
     fail("failed sending UniquePtr by reference");
   }
   if (b) {

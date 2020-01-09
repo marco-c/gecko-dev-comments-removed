@@ -68,7 +68,7 @@ bool GMPSharedMemManager::MgrDeallocShmem(GMPSharedMem::GMPMemoryClasses aClass,
   
   
   if (GetGmpFreelist(aClass).Length() > 10) {
-    Dealloc(GetGmpFreelist(aClass)[0]);
+    Dealloc(std::move(GetGmpFreelist(aClass)[0]));
     GetGmpFreelist(aClass).RemoveElementAt(0);
     
     mData->mGmpAllocated[aClass]--;

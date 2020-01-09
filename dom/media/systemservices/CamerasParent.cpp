@@ -278,14 +278,15 @@ int CamerasParent::DeliverFrameOverIPC(CaptureEngine capEng, uint32_t aStreamId,
     
     memcpy(shMemBuff.GetBytes(), altbuffer, aProps.bufferSize());
 
-    if (!SendDeliverFrame(capEng, aStreamId, shMemBuff.Get(), aProps)) {
+    if (!SendDeliverFrame(capEng, aStreamId, std::move(shMemBuff.Get()),
+                          aProps)) {
       return -1;
     }
   } else {
     MOZ_ASSERT(buffer.Valid());
     
     
-    if (!SendDeliverFrame(capEng, aStreamId, buffer.Get(), aProps)) {
+    if (!SendDeliverFrame(capEng, aStreamId, std::move(buffer.Get()), aProps)) {
       return -1;
     }
   }

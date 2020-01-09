@@ -671,7 +671,7 @@ mozilla::ipc::IPCResult ChromiumCDMChild::RecvDecrypt(
   
   MOZ_ASSERT(!HasShmemOfSize(outputShmemSize));
   ipc::Shmem shmem = buffer->ExtractShmem();
-  if (SendDecrypted(aId, cdm::kSuccess, shmem)) {
+  if (SendDecrypted(aId, cdm::kSuccess, std::move(shmem))) {
     
     
     autoDeallocateOutputShmem.release();
@@ -820,7 +820,7 @@ void ChromiumCDMChild::ReturnOutput(WidevineVideoFrame& aFrame) {
   CDMBuffer* base = reinterpret_cast<CDMBuffer*>(aFrame.FrameBuffer());
   if (base->AsShmemBuffer()) {
     ipc::Shmem shmem = base->AsShmemBuffer()->ExtractShmem();
-    Unused << SendDecodedShmem(output, shmem);
+    Unused << SendDecodedShmem(output, std::move(shmem));
   } else {
     MOZ_ASSERT(base->AsArrayBuffer());
     Unused << SendDecodedData(output, base->AsArrayBuffer()->ExtractBuffer());

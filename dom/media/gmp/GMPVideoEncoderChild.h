@@ -39,7 +39,7 @@ class GMPVideoEncoderChild : public PGMPVideoEncoderChild,
   
   bool Alloc(size_t aSize, Shmem::SharedMemory::SharedMemoryType aType,
              Shmem* aMem) override;
-  void Dealloc(Shmem& aMem) override;
+  void Dealloc(Shmem&& aMem) override;
 
  private:
   virtual ~GMPVideoEncoderChild();

@@ -31,7 +31,8 @@ void TestShmemParent::Main() {
   memcpy(unsafeptr, "Hello!", sizeof("Hello!"));
 
   Shmem unsafecopy = unsafe;
-  if (!SendGive(mem, unsafe, size)) fail("can't send Give()");
+  if (!SendGive(std::move(mem), std::move(unsafe), size))
+    fail("can't send Give()");
 
   
   
@@ -91,7 +92,8 @@ mozilla::ipc::IPCResult TestShmemChild::RecvGive(Shmem&& mem, Shmem&& unsafe,
   memcpy(unsafeptr, "And yourself!", sizeof("And yourself!"));
 
   Shmem unsafecopy = unsafe;
-  if (!SendTake(mem, unsafe, expectedSize)) fail("can't send Take()");
+  if (!SendTake(std::move(mem), std::move(unsafe), expectedSize))
+    fail("can't send Take()");
 
   
   char uc1 = *unsafeptr;
