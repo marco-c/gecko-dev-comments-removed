@@ -14,6 +14,7 @@ const {
   isBeforePseudoElement,
   isNativeAnonymous,
 } = require("devtools/shared/layout/utils");
+const Debugger = require("Debugger");
 
 
 const JQUERY_LIVE_REGEX = /return typeof \w+.*.event\.triggered[\s\S]*\.event\.(dispatch|handle).*arguments/;
@@ -747,6 +748,18 @@ class EventCollector {
 
 
 
+  get chromeEnabled() {
+    if (typeof this._chromeEnabled === "undefined") {
+      this._chromeEnabled = Services.prefs.getBoolPref("devtools.chrome.enabled");
+    }
+
+    return this._chromeEnabled;
+  }
+
+  
+
+
+
 
 
 
@@ -762,7 +775,18 @@ class EventCollector {
 
   getEventListeners(node) {
     const listenerArray = [];
-    const dbg = new Debugger();
+    let dbg;
+    if (!this.chromeEnabled) {
+      dbg = new Debugger();
+    } else {
+      
+      
+      
+      
+      
+      const ChromeDebugger = require("ChromeDebugger");
+      dbg = new ChromeDebugger();
+    }
 
     for (const collector of this.eventCollectors) {
       const listeners = collector.getListeners(node);

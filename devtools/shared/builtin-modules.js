@@ -13,10 +13,13 @@
 
 
 
-const { Cu, CC, Cc, Ci } = require("chrome");
+const { Cu, Cc, Ci } = require("chrome");
 const promise = require("resource://gre/modules/Promise.jsm").Promise;
 const jsmScope = require("resource://devtools/shared/Loader.jsm");
 const { Services } = require("resource://gre/modules/Services.jsm");
+
+const systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
+
 
 const {
   console,
@@ -32,26 +35,14 @@ const {
 
 
 
-const {
-  atob,
-  btoa,
-  Blob,
-  ChromeUtils,
-  CSS,
-  CSSRule,
-  DOMParser,
-  Element,
-  Event,
-  FileReader,
-  FormData,
-  indexedDB,
-  InspectorUtils,
-  Node,
-  TextDecoder,
-  TextEncoder,
-  URL,
-  XMLHttpRequest,
-} = Cu.Sandbox(CC("@mozilla.org/systemprincipal;1", "nsIPrincipal")(), {
+const debuggerSandbox = Cu.Sandbox(systemPrincipal, {
+  
+  
+  
+  
+  
+  invisibleToDebugger: true,
+
   wantGlobalProperties: [
     "atob",
     "btoa",
@@ -73,6 +64,27 @@ const {
     "XMLHttpRequest",
   ],
 });
+
+const {
+  atob,
+  btoa,
+  Blob,
+  ChromeUtils,
+  CSS,
+  CSSRule,
+  DOMParser,
+  Element,
+  Event,
+  FileReader,
+  FormData,
+  indexedDB,
+  InspectorUtils,
+  Node,
+  TextDecoder,
+  TextEncoder,
+  URL,
+  XMLHttpRequest,
+} = debuggerSandbox;
 
 
 
@@ -237,6 +249,12 @@ defineLazyGetter(exports.modules, "Debugger", () => {
   const { addDebuggerToGlobal } = ChromeUtils.import("resource://gre/modules/jsdebugger.jsm");
   addDebuggerToGlobal(global);
   return global.Debugger;
+});
+
+defineLazyGetter(exports.modules, "ChromeDebugger", () => {
+  const { addDebuggerToGlobal } = ChromeUtils.import("resource://gre/modules/jsdebugger.jsm");
+  addDebuggerToGlobal(debuggerSandbox);
+  return debuggerSandbox.Debugger;
 });
 
 defineLazyGetter(exports.modules, "RecordReplayControl", () => {
