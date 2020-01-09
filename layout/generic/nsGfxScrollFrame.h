@@ -711,6 +711,9 @@ class ScrollFrameHelper : public nsIReflowCallback {
   
   bool mIsUsingMinimumScaleSize : 1;
 
+  
+  bool mMinimumScaleSizeChanged : 1;
+
   mozilla::layout::ScrollVelocityQueue mVelocityQueue;
 
  protected:

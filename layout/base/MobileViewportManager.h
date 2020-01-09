@@ -75,6 +75,13 @@ class MobileViewportManager final : public nsIDOMEventListener,
     return mDisplaySize;
   };
 
+  
+
+
+
+  void ShrinkToDisplaySizeIfNeeded(nsViewportInfo& aViewportInfo,
+                                   const mozilla::ScreenIntSize& aDisplaySize);
+
  private:
   ~MobileViewportManager();
 
@@ -132,13 +139,6 @@ class MobileViewportManager final : public nsIDOMEventListener,
 
   mozilla::ScreenIntSize GetCompositionSize(
       const mozilla::ScreenIntSize& aDisplaySize) const;
-
-  
-
-
-
-  void ShrinkToDisplaySizeIfNeeded(nsViewportInfo& aViewportInfo,
-                                   const mozilla::ScreenIntSize& aDisplaySize);
 
   RefPtr<mozilla::dom::Document> mDocument;
   

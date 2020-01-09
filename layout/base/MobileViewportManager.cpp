@@ -392,7 +392,7 @@ void MobileViewportManager::UpdateResolution(
     
     
     
-    if (mIsFirstPaint && !mRestoreResolution &&
+    if (!mRestoreResolution && !mPresShell->IsResolutionUpdatedByApz() &&
         !aViewportInfo.IsDefaultZoomValid()) {
       if (zoom != intrinsicScale) {
         newZoom = Some(intrinsicScale);
