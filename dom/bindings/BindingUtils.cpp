@@ -3435,7 +3435,12 @@ static inline prototypes::ID GetProtoIdForNewtarget(
 }
 
 bool GetDesiredProto(JSContext* aCx, const JS::CallArgs& aCallArgs,
+                     prototypes::id::ID aProtoId,
+                     CreateInterfaceObjectsMethod aCreator,
                      JS::MutableHandle<JSObject*> aDesiredProto) {
+  
+  
+  
   MOZ_ASSERT(aCallArgs.isConstructing(), "How did we end up here?");
 
   
@@ -3448,6 +3453,7 @@ bool GetDesiredProto(JSContext* aCx, const JS::CallArgs& aCallArgs,
   
   
   JS::Rooted<JSObject*> newTarget(aCx, &aCallArgs.newTarget().toObject());
+  MOZ_ASSERT(JS::IsCallable(newTarget));
   JS::Rooted<JSObject*> originalNewTarget(aCx, newTarget);
   
   
@@ -3482,18 +3488,36 @@ bool GetDesiredProto(JSContext* aCx, const JS::CallArgs& aCallArgs,
   
   
   
+  
   JS::Rooted<JS::Value> protoVal(aCx);
   if (!JS_GetProperty(aCx, originalNewTarget, "prototype", &protoVal)) {
     return false;
   }
 
-  if (!protoVal.isObject()) {
-    aDesiredProto.set(nullptr);
+  if (protoVal.isObject()) {
+    aDesiredProto.set(&protoVal.toObject());
     return true;
   }
 
-  aDesiredProto.set(&protoVal.toObject());
-  return true;
+  
+  
+  JS::Rooted<JS::Realm*> realm(aCx, JS::GetFunctionRealm(aCx, newTarget));
+  if (!realm) {
+    return false;
+  }
+
+  {
+    
+    
+    JSAutoRealm ar(aCx, JS::GetRealmGlobalOrNull(realm));
+    aDesiredProto.set(
+        GetPerInterfaceObjectHandle(aCx, aProtoId, aCreator, true));
+    if (!aDesiredProto) {
+      return false;
+    }
+  }
+
+  return MaybeWrapObject(aCx, aDesiredProto);
 }
 
 namespace {
@@ -3716,33 +3740,11 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
 
   
   JS::Rooted<JSObject*> desiredProto(aCx);
-  if (!GetDesiredProto(aCx, args, &desiredProto)) {
+  if (!GetDesiredProto(aCx, args, aProtoId, aCreator, &desiredProto)) {
     return false;
   }
 
-  
-  if (!desiredProto) {
-    
-    
-    
-    
-    
-    
-    
-    {
-      JSAutoRealm ar(aCx, newTarget);
-      desiredProto = GetPerInterfaceObjectHandle(aCx, aProtoId, aCreator, true);
-      if (!desiredProto) {
-        return false;
-      }
-    }
-
-    
-    
-    if (!JS_WrapObject(aCx, &desiredProto)) {
-      return false;
-    }
-  }
+  MOZ_ASSERT(desiredProto, "How could we not have a prototype by now?");
 
   
   
