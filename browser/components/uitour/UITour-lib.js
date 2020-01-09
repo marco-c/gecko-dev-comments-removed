@@ -30,14 +30,6 @@ if (typeof Mozilla == "undefined") {
     Mozilla.UITour = {};
   }
 
-  var themeIntervalId = null;
-  function _stopCyclingThemes() {
-    if (themeIntervalId) {
-      clearInterval(themeIntervalId);
-      themeIntervalId = null;
-    }
-  }
-
   function _sendEvent(action, data) {
     var event = new CustomEvent("mozUITour", {
       bubbles: true,
@@ -304,88 +296,6 @@ if (typeof Mozilla == "undefined") {
 
   Mozilla.UITour.hideInfo = function() {
     _sendEvent("hideInfo");
-  };
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  Mozilla.UITour.previewTheme = function(theme) {
-    _stopCyclingThemes();
-
-    _sendEvent("previewTheme", {
-      theme: JSON.stringify(theme),
-    });
-  };
-
-  
-
-
-
-
-  Mozilla.UITour.resetTheme = function() {
-    _stopCyclingThemes();
-
-    _sendEvent("resetTheme");
-  };
-
-  
-
-
-
-
-
-
-
-
-
-
-  Mozilla.UITour.cycleThemes = function(themes, delay, callback) {
-    _stopCyclingThemes();
-
-    if (!delay) {
-      delay = Mozilla.UITour.DEFAULT_THEME_CYCLE_DELAY;
-    }
-
-    function nextTheme() {
-      var theme = themes.shift();
-      themes.push(theme);
-
-      _sendEvent("previewTheme", {
-        theme: JSON.stringify(theme),
-        state: true,
-      });
-
-      callback(theme);
-    }
-
-    themeIntervalId = setInterval(nextTheme, delay);
-    nextTheme();
   };
 
   
