@@ -58,22 +58,6 @@ nsEffectiveTLDService::~nsEffectiveTLDService() {
   gService = nullptr;
 }
 
-
-already_AddRefed<nsEffectiveTLDService> nsEffectiveTLDService::GetInstance() {
-  if (gService) {
-    return do_AddRef(gService);
-  }
-  nsCOMPtr<nsIEffectiveTLDService> tldService =
-      do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
-  if (!tldService) {
-    return nullptr;
-  }
-  MOZ_ASSERT(
-      gService,
-      "gService must have been initialized in nsEffectiveTLDService::Init");
-  return do_AddRef(gService);
-}
-
 MOZ_DEFINE_MALLOC_SIZE_OF(EffectiveTLDServiceMallocSizeOf)
 
 
@@ -110,11 +94,12 @@ nsEffectiveTLDService::GetPublicSuffix(nsIURI *aURI,
                                        nsACString &aPublicSuffix) {
   NS_ENSURE_ARG_POINTER(aURI);
 
+  nsCOMPtr<nsIURI> innerURI = NS_GetInnermostURI(aURI);
+  NS_ENSURE_ARG_POINTER(innerURI);
+
   nsAutoCString host;
-  nsresult rv = NS_GetInnermostURIHost(aURI, host);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
+  nsresult rv = innerURI->GetAsciiHost(host);
+  if (NS_FAILED(rv)) return rv;
 
   return GetBaseDomainInternal(host, 0, aPublicSuffix);
 }
@@ -128,11 +113,12 @@ nsEffectiveTLDService::GetBaseDomain(nsIURI *aURI, uint32_t aAdditionalParts,
   NS_ENSURE_ARG_POINTER(aURI);
   NS_ENSURE_TRUE(((int32_t)aAdditionalParts) >= 0, NS_ERROR_INVALID_ARG);
 
+  nsCOMPtr<nsIURI> innerURI = NS_GetInnermostURI(aURI);
+  NS_ENSURE_ARG_POINTER(innerURI);
+
   nsAutoCString host;
-  nsresult rv = NS_GetInnermostURIHost(aURI, host);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
+  nsresult rv = innerURI->GetAsciiHost(host);
+  if (NS_FAILED(rv)) return rv;
 
   return GetBaseDomainInternal(host, aAdditionalParts + 1, aBaseDomain);
 }
@@ -204,15 +190,16 @@ nsresult nsEffectiveTLDService::GetBaseDomainInternal(nsCString &aHostname,
     return NS_ERROR_INVALID_ARG;
 
   
+  PRNetAddr addr;
+  PRStatus result = PR_StringToNetAddr(aHostname.get(), &addr);
+  if (result == PR_SUCCESS) return NS_ERROR_HOST_IS_IP_ADDRESS;
+
+  
   
   Maybe<TldCache::Entry> entry;
   if (aAdditionalParts == 1 && NS_IsMainThread()) {
     auto p = mMruTable.Lookup(aHostname);
     if (p) {
-      if (NS_FAILED(p.Data().mResult)) {
-        return p.Data().mResult;
-      }
-
       
       aBaseDomain = p.Data().mBaseDomain;
       if (trailingDot) {
@@ -223,19 +210,6 @@ nsresult nsEffectiveTLDService::GetBaseDomainInternal(nsCString &aHostname,
     }
 
     entry = Some(p);
-  }
-
-  
-  PRNetAddr addr;
-  PRStatus result = PR_StringToNetAddr(aHostname.get(), &addr);
-  if (result == PR_SUCCESS) {
-    
-    if (entry) {
-      entry->Set(TLDCacheEntry{aHostname, EmptyCString(),
-                               NS_ERROR_HOST_IS_IP_ADDRESS});
-    }
-
-    return NS_ERROR_HOST_IS_IP_ADDRESS;
   }
 
   
@@ -251,15 +225,7 @@ nsresult nsEffectiveTLDService::GetBaseDomainInternal(nsCString &aHostname,
     
     
     
-    if (*currDomain == '.') {
-      
-      if (entry) {
-        entry->Set(
-            TLDCacheEntry{aHostname, EmptyCString(), NS_ERROR_INVALID_ARG});
-      }
-
-      return NS_ERROR_INVALID_ARG;
-    }
+    if (*currDomain == '.') return NS_ERROR_INVALID_ARG;
 
     
     const int result = mGraph.Lookup(Substring(currDomain, end));
@@ -321,21 +287,13 @@ nsresult nsEffectiveTLDService::GetBaseDomainInternal(nsCString &aHostname,
     }
   }
 
-  if (aAdditionalParts != 0) {
-    
-    if (entry) {
-      entry->Set(TLDCacheEntry{aHostname, EmptyCString(),
-                               NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS});
-    }
-
-    return NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS;
-  }
+  if (aAdditionalParts != 0) return NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS;
 
   aBaseDomain = Substring(iter, end);
 
   
   if (entry) {
-    entry->Set(TLDCacheEntry{aHostname, nsCString(aBaseDomain), NS_OK});
+    entry->Set(TLDCacheEntry{aHostname, nsCString(aBaseDomain)});
   }
 
   
