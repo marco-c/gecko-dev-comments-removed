@@ -1405,6 +1405,12 @@ mozilla::ipc::IPCResult ContentChild::RecvRequestPerformanceMetrics(
   return IPC_OK();
 }
 
+#if defined(XP_MACOSX)
+extern "C" {
+void CGSShutdownServerConnections();
+};
+#endif
+
 mozilla::ipc::IPCResult ContentChild::RecvInitRendering(
     Endpoint<PCompositorManagerChild>&& aCompositor,
     Endpoint<PImageBridgeChild>&& aImageBridge,
@@ -1434,6 +1440,16 @@ mozilla::ipc::IPCResult ContentChild::RecvInitRendering(
     return GetResultForRenderingInitFailure(aVRBridge.OtherPid());
   }
   VideoDecoderManagerChild::InitForContent(std::move(aVideoManager));
+
+#if defined(XP_MACOSX) && !defined(MOZ_SANDBOX)
+  
+  
+  
+  
+  
+  CGSShutdownServerConnections();
+#endif
+
   return IPC_OK();
 }
 
@@ -1502,19 +1518,23 @@ mozilla::ipc::IPCResult ContentChild::RecvReinitRenderingForDeviceReset() {
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
 extern "C" {
 CGError CGSSetDenyWindowServerConnections(bool);
-void CGSShutdownServerConnections();
 };
 
 static bool StartMacOSContentSandbox() {
-  int sandboxLevel = GetEffectiveContentSandboxLevel();
-  if (sandboxLevel < 1) {
-    return false;
-  }
-
+  
+  
+  
+  
+  
   
   
   
   CGSShutdownServerConnections();
+
+  int sandboxLevel = GetEffectiveContentSandboxLevel();
+  if (sandboxLevel < 1) {
+    return false;
+  }
 
   
   

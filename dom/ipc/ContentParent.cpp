@@ -2589,7 +2589,9 @@ void ContentParent::InitInternal(ProcessPriority aInitialPriority) {
   
   
   
+#  if !defined(XP_MACOSX)
   shouldSandbox = IsContentSandboxEnabled();
+#  endif
 
 #  ifdef XP_LINUX
   if (shouldSandbox) {
