@@ -375,8 +375,8 @@ var SessionStore = {
     return SessionStoreInternal.getSessionHistory(tab, updatedCallback);
   },
 
-  undoCloseById(aClosedId) {
-    return SessionStoreInternal.undoCloseById(aClosedId);
+  undoCloseById(aClosedId, aIncludePrivate) {
+    return SessionStoreInternal.undoCloseById(aClosedId, aIncludePrivate);
   },
 
   resetBrowserToLazyState(tab) {
@@ -2689,7 +2689,6 @@ var SessionStoreInternal = {
     if (!(aIndex in this._closedWindows)) {
       throw Components.Exception("Invalid index: not in the closed windows", Cr.NS_ERROR_INVALID_ARG);
     }
-
     
     let state = { windows: this._removeClosedWindow(aIndex) };
     delete state.windows[0].closedAt; 
@@ -2831,7 +2830,9 @@ var SessionStoreInternal = {
 
 
 
-  undoCloseById(aClosedId) {
+
+
+  undoCloseById(aClosedId, aIncludePrivate = true) {
     
     for (let i = 0, l = this._closedWindows.length; i < l; i++) {
       if (this._closedWindows[i].closedId == aClosedId) {
@@ -2841,6 +2842,9 @@ var SessionStoreInternal = {
 
     
     for (let window of Services.wm.getEnumerator("navigator:browser")) {
+      if (!aIncludePrivate && PrivateBrowsingUtils.isWindowPrivate(window)) {
+        continue;
+      }
       let windowState = this._windows[window.__SSi];
       if (windowState) {
         for (let j = 0, l = windowState._closedTabs.length; j < l; j++) {
