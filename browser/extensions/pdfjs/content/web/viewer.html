@@ -28,6 +28,13 @@
 
 
 <base href="resource://pdf.js/web/">
+<script>
+  (function() {
+    if (typeof ReadableStream === "undefined") {
+      document.write("<script src=\"../build/streams_polyfill.js\"><\/script>");
+    }
+  })();
+</script>
 <script src="../build/pdf.js"></script>
 
 
