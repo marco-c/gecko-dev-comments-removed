@@ -6521,22 +6521,13 @@ nsresult PresShell::EventHandler::HandleEvent(nsIFrame* aFrame,
   }
 
   if (!aDontRetargetEvents) {
-    RefPtr<Document> retargetEventDoc;
-    if (!GetRetargetEventDocument(aGUIEvent,
-                                  getter_AddRefs(retargetEventDoc))) {
-      return NS_OK;  
-    }
-
-    if (retargetEventDoc) {
-      nsIFrame* frame =
-          GetFrameForHandlingEventWith(aGUIEvent, retargetEventDoc, aFrame);
-      if (!frame) {
-        return NS_OK;  
-      }
-      if (frame != aFrame) {
-        nsCOMPtr<nsIPresShell> shell = frame->PresContext()->GetPresShell();
-        return shell->HandleEvent(frame, aGUIEvent, true, aEventStatus);
-      }
+    
+    
+    nsresult rv = NS_OK;
+    if (MaybeHandleEventWithAnotherPresShell(aFrame, aGUIEvent, aEventStatus,
+                                             &rv)) {
+      
+      return rv;
     }
   }
 
@@ -7218,6 +7209,48 @@ nsIFrame* PresShell::EventHandler::GetFrameForHandlingEventWith(
 
   
   return GetNearestFrameContainingPresShell(retargetPresShell);
+}
+
+bool PresShell::EventHandler::MaybeHandleEventWithAnotherPresShell(
+    nsIFrame* aFrameForPresShell, WidgetGUIEvent* aGUIEvent,
+    nsEventStatus* aEventStatus, nsresult* aRv) {
+  MOZ_ASSERT(aGUIEvent);
+  MOZ_ASSERT(aEventStatus);
+  MOZ_ASSERT(aRv);
+
+  *aRv = NS_OK;
+
+  RefPtr<Document> retargetEventDoc;
+  if (!GetRetargetEventDocument(aGUIEvent, getter_AddRefs(retargetEventDoc))) {
+    
+    
+    return true;
+  }
+
+  
+  
+  if (!retargetEventDoc) {
+    return false;
+  }
+
+  nsIFrame* frame = GetFrameForHandlingEventWith(aGUIEvent, retargetEventDoc,
+                                                 aFrameForPresShell);
+  if (!frame) {
+    
+    
+    return true;
+  }
+
+  
+  
+  if (frame == aFrameForPresShell) {
+    return false;
+  }
+
+  
+  nsCOMPtr<nsIPresShell> shell = frame->PresContext()->GetPresShell();
+  *aRv = shell->HandleEvent(frame, aGUIEvent, true, aEventStatus);
+  return true;
 }
 
 Document* PresShell::GetPrimaryContentDocument() {

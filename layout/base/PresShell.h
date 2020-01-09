@@ -616,6 +616,28 @@ class PresShell final : public nsIPresShell,
                                            Document* aRetargetDocument,
                                            nsIFrame* aFrameForPresShell);
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    MOZ_CAN_RUN_SCRIPT
+    bool MaybeHandleEventWithAnotherPresShell(nsIFrame* aFrameForPresShell,
+                                              WidgetGUIEvent* aGUIEvent,
+                                              nsEventStatus* aEventStatus,
+                                              nsresult* aRv);
+
     MOZ_CAN_RUN_SCRIPT
     nsresult RetargetEventToParent(WidgetGUIEvent* aGUIEvent,
                                    nsEventStatus* aEventStatus);
