@@ -7399,6 +7399,9 @@ bool nsIFrame::UpdateOverflow() {
   nsOverflowAreas overflowAreas(rect, rect);
 
   if (!ComputeCustomOverflow(overflowAreas)) {
+    
+    
+    
     return false;
   }
 
@@ -7419,7 +7422,12 @@ bool nsIFrame::UpdateOverflow() {
     return true;
   }
 
-  return false;
+  
+  
+  
+  
+  
+  return Combines3DTransformWithAncestors();
 }
 
 

@@ -139,16 +139,6 @@ class OverflowChangedTracker {
       
       if (overflowChanged) {
         nsIFrame* parent = frame->GetParent();
-        while (parent && parent != mSubtreeRoot &&
-               parent->FrameMaintainsOverflow() &&
-               parent->Combines3DTransformWithAncestors()) {
-          
-          
-          parent = parent->GetParent();
-          MOZ_ASSERT(parent,
-                     "Root frame should never return true for "
-                     "Combines3DTransformWithAncestors");
-        }
 
         
         
