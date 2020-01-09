@@ -939,12 +939,8 @@ this.tabs = class extends ExtensionAPI {
                 gBrowser.pinTab(newTab);
               }
               gBrowser.moveTabTo(newTab, nativeTab._tPos + 1);
-            }, {once: true});
 
-            newTab.addEventListener("SSTabRestored", function() {
-              
               gBrowser.selectedTab = newTab;
-
               resolve(tabManager.convert(newTab));
             }, {once: true});
           });
