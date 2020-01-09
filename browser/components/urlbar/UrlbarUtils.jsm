@@ -102,7 +102,7 @@ var UrlbarUtils = {
 
   
   ICON: {
-    DEFAULT: Ci.nsIFaviconService.FAVICON_DEFAULT_URL,
+    
     SEARCH_GLASS: "chrome://browser/skin/search-glass.svg",
   },
 
@@ -363,6 +363,10 @@ var UrlbarUtils = {
     return pasteData;
   },
 };
+
+XPCOMUtils.defineLazyGetter(UrlbarUtils.ICON, "DEFAULT", () => {
+  return PlacesUtils.favicons.defaultFavicon.spec;
+});
 
 
 
