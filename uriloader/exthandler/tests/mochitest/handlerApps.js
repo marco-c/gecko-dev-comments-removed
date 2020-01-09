@@ -8,15 +8,14 @@ var testURI = "webcal://127.0.0.1/rheeeeet.html";
 const Cc = SpecialPowers.Cc;
 
 function test() {
-
   
   var webHandler = Cc["@mozilla.org/uriloader/web-handler-app;1"].
     createInstance(SpecialPowers.Ci.nsIWebHandlerApp);
   webHandler.name = "Test Web Handler App";
   webHandler.uriTemplate =
-      "https://example.com/tests/uriloader/exthandler/tests/mochitest/" + 
+      "https://example.com/tests/uriloader/exthandler/tests/mochitest/" +
       "handlerApp.xhtml?uri=%s";
-  
+
   
   var ioService = Cc["@mozilla.org/network/io-service;1"].
     getService(SpecialPowers.Ci.nsIIOService);
@@ -25,7 +24,7 @@ function test() {
   
   var newWindow = window.open("", "handlerWindow", "height=300,width=300");
   var windowContext = SpecialPowers.wrap(newWindow).docShell;
- 
+
   webHandler.launchWithURI(uri, windowContext);
 
   
@@ -34,7 +33,7 @@ function test() {
 
   
   webHandler.launchWithURI(uri);
-  
+
   
   ok(true, "webHandler launchWithURI (new window/tab) test started");
 
@@ -42,7 +41,7 @@ function test() {
   var localHandler = Cc["@mozilla.org/uriloader/local-handler-app;1"].
     createInstance(SpecialPowers.Ci.nsILocalHandlerApp);
   localHandler.name = "Test Local Handler App";
-  
+
   
   var osString = Cc["@mozilla.org/xre/app-info;1"].
                  getService(SpecialPowers.Ci.nsIXULRuntime).OS;
@@ -53,8 +52,7 @@ function test() {
     var windowsDir = dirSvc.getFile("WinD", {});
     var exe = windowsDir.clone().QueryInterface(SpecialPowers.Ci.nsIFile);
     exe.appendRelativePath("SYSTEM32\\HOSTNAME.EXE");
-
-  } else if (osString == "Darwin") { 
+  } else if (osString == "Darwin") {
     var localAppsDir = dirSvc.getFile("LocApp", {});
     exe = localAppsDir.clone();
     exe.append("iCal.app"); 
@@ -88,16 +86,15 @@ function test() {
   
   
   if (osString == "NOTDarwin") {
-
     var killall = Cc["@mozilla.org/file/local;1"].
                   createInstance(SpecialPowers.Ci.nsIFile);
     killall.initWithPath("/usr/bin/killall");
-  
+
     var process = Cc["@mozilla.org/process/util;1"].
                   createInstance(SpecialPowers.Ci.nsIProcess);
     process.init(killall);
-    
-    var args = ['iCal'];
+
+    var args = ["iCal"];
     process.run(false, args, args.length);
   }
 

@@ -14,10 +14,10 @@ function run_test() {
 
   const protoSvc = Cc["@mozilla.org/uriloader/external-protocol-service;1"].
                    getService(Ci.nsIExternalProtocolService);
-  
+
   const prefSvc = Cc["@mozilla.org/preferences-service;1"].
                   getService(Ci.nsIPrefService);
-                  
+
   const ioService = Cc["@mozilla.org/network/io-service;1"].
                     getService(Ci.nsIIOService);
 
@@ -25,7 +25,7 @@ function run_test() {
               getService(Ci.nsIEnvironment);
 
   const rootPrefBranch = prefSvc.getBranch("");
-  
+
   let noMailto = false;
   if (mozinfo.os == "win") {
     
@@ -116,7 +116,7 @@ function run_test() {
 
   
   var haveDefaultHandlersVersion = false;
-  try { 
+  try {
     
     
     
@@ -126,17 +126,17 @@ function run_test() {
     haveDefaultHandlersVersion = true;
   } catch (ex) {}
 
-  const kExternalWarningDefault = 
+  const kExternalWarningDefault =
     "network.protocol-handler.warn-external-default";
   prefSvc.setBoolPref(kExternalWarningDefault, true);
 
   
-  
+
   
   var protoInfo = protoSvc.getProtocolHandlerInfo("x-moz-rheet");
   Assert.equal(protoInfo.preferredAction, protoInfo.alwaysAsk);
   Assert.ok(protoInfo.alwaysAskBeforeHandling);
-  
+
   
   
   const kExternalWarningPrefPrefix = "network.protocol-handler.warn-external.";
@@ -144,7 +144,7 @@ function run_test() {
   protoInfo = protoSvc.getProtocolHandlerInfo("http");
   Assert.equal(0, protoInfo.possibleApplicationHandlers.length);
   Assert.ok(!protoInfo.alwaysAskBeforeHandling);
-  
+
   
   
   prefSvc.setBoolPref(kExternalWarningPrefPrefix + "http", true);
@@ -183,7 +183,6 @@ function run_test() {
       Assert.ok(protoInfo.alwaysAskBeforeHandling);
     else
       Assert.ok(!protoInfo.alwaysAskBeforeHandling);
-
   } else {
     Assert.equal(0, protoInfo.possibleApplicationHandlers.length);
     Assert.ok(protoInfo.alwaysAskBeforeHandling);
@@ -361,7 +360,7 @@ function run_test() {
 
   var localApp2 = Cc["@mozilla.org/uriloader/local-handler-app;1"].
                   createInstance(Ci.nsILocalHandlerApp);
-  
+
   localApp2.executable = executable;
 
   localApp.clearParameters();
@@ -395,11 +394,11 @@ function run_test() {
   Assert.ok(!localApp2.equals(localApp));
 
   var str;
-  str = localApp.getParameter(0)
+  str = localApp.getParameter(0);
   Assert.equal(str, "-test1");
-  str = localApp.getParameter(1)
+  str = localApp.getParameter(1);
   Assert.equal(str, "-test2");
-  str = localApp.getParameter(2)
+  str = localApp.getParameter(2);
   Assert.equal(str, "-test3");
 
   
@@ -433,7 +432,7 @@ function run_test() {
 
   
   if (mozinfo.os != "win" && mozinfo.os != "mac") {
-    env.set('PERSONAL_MAILCAP', do_get_file('mailcap').path);
+    env.set("PERSONAL_MAILCAP", do_get_file("mailcap").path);
     handlerInfo = mimeSvc.getFromTypeAndExtension("text/plain", null);
     Assert.equal(handlerInfo.preferredAction, Ci.nsIHandlerInfo.useSystemDefault);
     Assert.equal(handlerInfo.defaultDescription, "sed");

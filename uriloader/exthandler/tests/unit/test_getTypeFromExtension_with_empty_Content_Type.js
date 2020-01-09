@@ -37,7 +37,7 @@ function run_test() {
     function makeForwardingFunction(functionName) {
       return function() {
         return aWrappedObject[functionName].apply(aWrappedObject, arguments);
-      }
+      };
     }
 
     
@@ -59,7 +59,7 @@ function run_test() {
 
     
 
-    open: function(aRootKey, aRelPath, aMode) {
+    open(aRootKey, aRelPath, aMode) {
       
       this._rootKey = aRootKey;
       this._relPath = aRelPath;
@@ -68,7 +68,7 @@ function run_test() {
       return this._wrappedObject.open(aRootKey, aRelPath, aMode);
     },
 
-    openChild: function(aRelPath, aMode) {
+    openChild(aRelPath, aMode) {
       
       var innerKey = this._wrappedObject.openChild(aRelPath, aMode);
       var key = new MockWindowsRegKey(innerKey);
@@ -79,7 +79,7 @@ function run_test() {
       return key;
     },
 
-    createChild: function(aRelPath, aMode) {
+    createChild(aRelPath, aMode) {
       
       var innerKey = this._wrappedObject.createChild(aRelPath, aMode);
       var key = new MockWindowsRegKey(innerKey);
@@ -98,7 +98,7 @@ function run_test() {
       return this._wrappedObject.valueCount;
     },
 
-    readStringValue: function(aName) {
+    readStringValue(aName) {
       
       if (this._rootKey == Ci.nsIWindowsRegKey.ROOT_KEY_CLASSES_ROOT &&
           this._relPath.toLowerCase() == ".txt" &&
@@ -108,7 +108,7 @@ function run_test() {
 
       
       return this._wrappedObject.readStringValue(aName);
-    }
+    },
   };
 
   
@@ -125,7 +125,7 @@ function run_test() {
 
   function registerMockWindowsRegKeyFactory() {
     mockWindowsRegKeyFactory = {
-      createInstance: function(aOuter, aIid) {
+      createInstance(aOuter, aIid) {
         if (aOuter != null)
           throw Cr.NS_ERROR_NO_AGGREGATION;
 
@@ -133,7 +133,7 @@ function run_test() {
         var key = new MockWindowsRegKey(innerKey);
 
         return key.QueryInterface(aIid);
-      }
+      },
     };
 
     
