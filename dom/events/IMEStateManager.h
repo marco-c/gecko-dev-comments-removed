@@ -80,6 +80,12 @@ class IMEStateManager {
   
 
 
+
+  static void OnFocusMovedBetweenBrowsers(TabParent* aBlur, TabParent* aFocus);
+
+  
+
+
   static void WidgetDestroyed(nsIWidget* aWidget);
 
   

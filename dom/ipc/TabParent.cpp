@@ -137,6 +137,9 @@ LazyLogModule gBrowserFocusLog("BrowserFocus");
   MOZ_LOG(gBrowserFocusLog, mozilla::LogLevel::Debug, args)
 
 
+StaticAutoPtr<nsTArray<TabParent*>> TabParent::sFocusStack;
+
+
 
 #define NOTIFY_FLAG_SHIFT 16
 
@@ -352,6 +355,7 @@ void TabParent::RemoveWindowListeners() {
 }
 
 void TabParent::DestroyInternal() {
+  PopFocus(this);
   IMEStateManager::OnTabParentDestroying(this);
 
   RemoveWindowListeners();
@@ -838,12 +842,14 @@ void TabParent::HandleAccessKey(const WidgetKeyboardEvent& aEvent,
 void TabParent::Activate() {
   LOGBROWSERFOCUS(("Activate %p", this));
   if (!mIsDestroyed) {
+    PushFocus(this);  
     Unused << Manager()->SendActivate(this);
   }
 }
 
 void TabParent::Deactivate() {
   LOGBROWSERFOCUS(("Deactivate %p", this));
+  PopFocus(this);  
   if (!mIsDestroyed) {
     Unused << Manager()->SendDeactivate(this);
   }
@@ -2303,6 +2309,105 @@ bool TabParent::SendPasteTransferable(
     const uint32_t& aContentPolicyType) {
   return PBrowserParent::SendPasteTransferable(
       aDataTransfer, aIsPrivateData, aRequestingPrincipal, aContentPolicyType);
+}
+
+
+void TabParent::InitializeStatics() {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  sFocusStack = new nsTArray<TabParent*>();
+  ClearOnShutdown(&sFocusStack);
+}
+
+
+TabParent* TabParent::GetFocused() {
+  if (!sFocusStack) {
+    return nullptr;
+  }
+  if (sFocusStack->IsEmpty()) {
+    return nullptr;
+  }
+  return sFocusStack->LastElement();
+}
+
+
+void TabParent::PushFocus(TabParent* aTabParent) {
+  if (!sFocusStack) {
+    MOZ_ASSERT_UNREACHABLE("PushFocus when not initialized");
+    return;
+  }
+  if (!aTabParent->GetBrowserBridgeParent()) {
+    
+    if (!sFocusStack->IsEmpty()) {
+      
+      
+      
+      
+      
+      LOGBROWSERFOCUS(
+          ("PushFocus for top-level Web content needs to clear the stack %p",
+           aTabParent));
+      PopFocus(sFocusStack->ElementAt(0));
+    }
+    MOZ_ASSERT(sFocusStack->IsEmpty());
+  } else {
+    
+    
+    
+    
+    if (sFocusStack->IsEmpty()) {
+      LOGBROWSERFOCUS(
+          ("PushFocus for out-of-process iframe ignored with empty stack %p",
+           aTabParent));
+      return;
+    }
+    nsCOMPtr<nsIWidget> webRootWidget = sFocusStack->ElementAt(0)->GetWidget();
+    nsCOMPtr<nsIWidget> iframeWigdet = aTabParent->GetWidget();
+    if (webRootWidget != iframeWigdet) {
+      LOGBROWSERFOCUS(
+          ("PushFocus for out-of-process iframe ignored with mismatching "
+           "top-level content %p",
+           aTabParent));
+      return;
+    }
+  }
+  if (sFocusStack->Contains(aTabParent)) {
+    MOZ_ASSERT_UNREACHABLE(
+        "Trying to push a TabParent that is already on the stack");
+    return;
+  }
+  TabParent* old = GetFocused();
+  sFocusStack->AppendElement(aTabParent);
+  MOZ_ASSERT(GetFocused() == aTabParent);
+  LOGBROWSERFOCUS(("PushFocus changed focus to %p", aTabParent));
+  IMEStateManager::OnFocusMovedBetweenBrowsers(old, aTabParent);
+}
+
+
+void TabParent::PopFocus(TabParent* aTabParent) {
+  if (!sFocusStack) {
+    MOZ_ASSERT_UNREACHABLE("PopFocus when not initialized");
+    return;
+  }
+  
+  
+  
+  
+  
+  
+  auto pos = sFocusStack->LastIndexOf(aTabParent);
+  if (pos == nsTArray<TabParent*>::NoIndex) {
+    LOGBROWSERFOCUS(("PopFocus not on stack %p", aTabParent));
+    return;
+  }
+  auto len = sFocusStack->Length();
+  auto itemsToPop = len - pos;
+  LOGBROWSERFOCUS(("PopFocus pops %zu items %p", itemsToPop, aTabParent));
+  while (pos < sFocusStack->Length()) {
+    TabParent* popped = sFocusStack->PopLastElement();
+    TabParent* focused = GetFocused();
+    LOGBROWSERFOCUS(("PopFocus changed focus to %p", focused));
+    IMEStateManager::OnFocusMovedBetweenBrowsers(popped, focused);
+  }
 }
 
 

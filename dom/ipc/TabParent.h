@@ -472,6 +472,15 @@ class TabParent final : public PBrowserParent,
                              const IPC::Principal& aRequestingPrincipal,
                              const uint32_t& aContentPolicyType);
 
+  
+  static void InitializeStatics();
+
+  
+
+
+
+  static TabParent* GetFocused();
+
   static TabParent* GetFrom(nsFrameLoader* aFrameLoader);
 
   static TabParent* GetFrom(nsITabParent* aTabParent);
@@ -779,6 +788,13 @@ class TabParent final : public PBrowserParent,
                                   TabParent* aTabParent);
 
   static void RemoveTabParentFromTable(layers::LayersId aLayersId);
+
+  
+  static StaticAutoPtr<nsTArray<TabParent*>> sFocusStack;
+
+  static void PushFocus(TabParent* aTabParent);
+
+  static void PopFocus(TabParent* aTabParent);
 
   layout::RenderFrame mRenderFrame;
   LayersObserverEpoch mLayerTreeEpoch;
