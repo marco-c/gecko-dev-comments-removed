@@ -52,6 +52,9 @@ class OverflowChangedTracker {
 
 
   void AddFrame(nsIFrame* aFrame, ChangeKind aChangeKind) {
+    MOZ_ASSERT(
+        aFrame->FrameMaintainsOverflow(),
+        "Why add a frame that doesn't maintain overflow to the tracker?");
     uint32_t depth = aFrame->GetDepthInFrameTree();
     Entry* entry = nullptr;
     if (!mEntryList.empty()) {
@@ -137,6 +140,7 @@ class OverflowChangedTracker {
       if (overflowChanged) {
         nsIFrame* parent = frame->GetParent();
         while (parent && parent != mSubtreeRoot &&
+               parent->FrameMaintainsOverflow() &&
                parent->Combines3DTransformWithAncestors()) {
           
           
@@ -145,7 +149,11 @@ class OverflowChangedTracker {
                      "Root frame should never return true for "
                      "Combines3DTransformWithAncestors");
         }
-        if (parent && parent != mSubtreeRoot) {
+
+        
+        
+        if (parent && parent != mSubtreeRoot &&
+            parent->FrameMaintainsOverflow()) {
           Entry* parentEntry =
               mEntryList.find(Entry(parent, entry->mDepth - 1));
           if (parentEntry) {
