@@ -29,6 +29,12 @@ class SinglePreferenceExperimentAction extends PreferenceExperimentAction {
     } = recipe.arguments;
 
     const newArguments = {
+      
+      
+      
+      
+      userFacingName: "temp-name",
+      userFacingDescription: "temp-description",
       ...remainingArguments,
       branches: branches.map(branch => {
         const { value, ...branchProps } = branch;
@@ -51,6 +57,9 @@ class SinglePreferenceExperimentAction extends PreferenceExperimentAction {
     if (!valid) {
       throw new Error(`Transformed arguments do not match schema. Original arguments: ${JSON.stringify(recipe.arguments)}, new arguments: ${JSON.stringify(newArguments)}, schema: ${JSON.stringify(multiprefSchema)}`);
     }
+
+    validatedArguments.userFacingName = null;
+    validatedArguments.userFacingDescription = null;
 
     recipe.arguments = validatedArguments;
 

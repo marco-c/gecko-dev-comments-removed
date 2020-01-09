@@ -56,6 +56,14 @@
 
 
 
+
+
+
+
+
+
+
+
 "use strict";
 
 ChromeUtils.defineModuleGetter(this, "Services", "resource://gre/modules/Services.jsm");
@@ -383,6 +391,8 @@ var PreferenceExperiments = {
     branch,
     preferences,
     experimentType = "exp",
+    userFacingName = null,
+    userFacingDescription = null,
   }) {
     log.debug(`PreferenceExperiments.start(${name}, ${branch})`);
 
@@ -457,6 +467,8 @@ var PreferenceExperiments = {
       lastSeen: new Date().toJSON(),
       preferences,
       experimentType,
+      userFacingName,
+      userFacingDescription,
     };
 
     store.data.experiments[name] = experiment;
