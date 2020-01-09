@@ -36,6 +36,7 @@
 #include "mozpkix/Result.h"
 #include "mozpkix/pkix.h"
 #include "mozpkix/pkixnss.h"
+#include "mozpkix/pkixutil.h"
 #include "prerror.h"
 #include "secerr.h"
 
@@ -97,7 +98,52 @@ NSSCertDBTrustDomain::NSSCertDBTrustDomain(
 #endif
       mOCSPStaplingStatus(CertVerifier::OCSP_STAPLING_NEVER_CHECKED),
       mSCTListFromCertificate(),
-      mSCTListFromOCSPStapling() {}
+      mSCTListFromOCSPStapling() {
+}
+
+
+
+
+
+
+
+
+
+
+bool NSSCertDBTrustDomain::ShouldSkipSelfSignedNonTrustAnchor(Input certDER) {
+  BackCert cert(certDER, EndEntityOrCA::MustBeCA, nullptr);
+  if (cert.Init() != Success) {
+    return false;  
+  }
+  
+  if (!InputsAreEqual(cert.GetSubject(), cert.GetIssuer())) {
+    return false;
+  }
+  TrustLevel trust;
+  if (GetCertTrust(EndEntityOrCA::MustBeCA, CertPolicyId::anyPolicy, certDER,
+                   trust) != Success) {
+    return false;
+  }
+  
+  
+  if (trust != TrustLevel::InheritsTrust) {
+    return false;
+  }
+  uint8_t digestBuf[MAX_DIGEST_SIZE_IN_BYTES];
+  pkix::der::PublicKeyAlgorithm publicKeyAlg;
+  SignedDigest signature;
+  if (DigestSignedData(*this, cert.GetSignedData(), digestBuf, publicKeyAlg,
+                       signature) != Success) {
+    return false;
+  }
+  if (VerifySignedDigest(*this, publicKeyAlg, signature,
+                         cert.GetSubjectPublicKeyInfo()) != Success) {
+    return false;
+  }
+  
+  
+  return true;
+}
 
 Result NSSCertDBTrustDomain::FindIssuer(Input encodedIssuerName,
                                         IssuerChecker& checker, Time) {
@@ -193,6 +239,9 @@ Result NSSCertDBTrustDomain::FindIssuer(Input encodedIssuerName,
   }
 
   for (Input candidate : rootCandidates) {
+    if (ShouldSkipSelfSignedNonTrustAnchor(candidate)) {
+      continue;
+    }
     bool keepGoing;
     Result rv = checker.Check(candidate, nameConstraintsInputPtr, keepGoing);
     if (rv != Success) {
