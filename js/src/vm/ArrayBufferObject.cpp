@@ -1259,32 +1259,30 @@ ArrayBufferObject* ArrayBufferObject::createForContents(
   size_t reservedSlots = JSCLASS_RESERVED_SLOTS(&class_);
 
   size_t nslots = reservedSlots;
-  if (true) {
-    if (contents.kind() == USER_OWNED) {
-      
-    } else if (contents.kind() == EXTERNAL) {
-      
-      
-      size_t freeInfoSlots = JS_HOWMANY(sizeof(FreeInfo), sizeof(Value));
-      MOZ_ASSERT(reservedSlots + freeInfoSlots <= NativeObject::MAX_FIXED_SLOTS,
-                 "FreeInfo must fit in inline slots");
-      nslots += freeInfoSlots;
+  if (contents.kind() == USER_OWNED) {
+    
+  } else if (contents.kind() == EXTERNAL) {
+    
+    
+    size_t freeInfoSlots = JS_HOWMANY(sizeof(FreeInfo), sizeof(Value));
+    MOZ_ASSERT(reservedSlots + freeInfoSlots <= NativeObject::MAX_FIXED_SLOTS,
+               "FreeInfo must fit in inline slots");
+    nslots += freeInfoSlots;
+  } else {
+    
+    size_t nAllocated = nbytes;
+    if (contents.kind() == MAPPED) {
+      nAllocated = JS_ROUNDUP(nbytes, js::gc::SystemPageSize());
     } else {
-      
-      size_t nAllocated = nbytes;
-      if (contents.kind() == MAPPED) {
-        nAllocated = JS_ROUNDUP(nbytes, js::gc::SystemPageSize());
-      } else {
-        MOZ_ASSERT(contents.kind() == MALLOCED,
-                   "should have handled all possible callers' kinds");
-      }
-
-      
-      
-      
-      
-      cx->updateMallocCounter(nAllocated);
+      MOZ_ASSERT(contents.kind() == MALLOCED,
+                 "should have handled all possible callers' kinds");
     }
+
+    
+    
+    
+    
+    cx->updateMallocCounter(nAllocated);
   }
 
   MOZ_ASSERT(!(class_.flags & JSCLASS_HAS_PRIVATE));
