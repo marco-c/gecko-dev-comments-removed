@@ -6,7 +6,6 @@
 
 import { isConsole } from "../utils/preview";
 import { findBestMatchExpression } from "../utils/ast";
-import { PROMISE } from "./utils/middleware/promise";
 import { getExpressionFromCoords } from "../utils/editor/get-expression";
 import { isOriginal } from "../utils/source";
 import { isTesting } from "devtools-environment";
@@ -84,77 +83,75 @@ export function setPreview(
   target: HTMLElement
 ) {
   return async ({ dispatch, getState, client, sourceMaps }: ThunkArgs) => {
-    await dispatch({
+    if (getPreview(getState())) {
+      dispatch(clearPreview(cx));
+    }
+
+    const source = getSelectedSource(getState());
+    if (!source) {
+      return;
+    }
+
+    const thread = getCurrentThread(getState());
+    const selectedFrame = getSelectedFrame(getState(), thread);
+
+    if (location && isOriginal(source)) {
+      const mapResult = await dispatch(getMappedExpression(expression));
+      if (mapResult) {
+        expression = mapResult.expression;
+      }
+    }
+
+    if (!selectedFrame) {
+      return;
+    }
+
+    const { result } = await client.evaluateInFrame(expression, {
+      frameId: selectedFrame.id,
+      thread
+    });
+
+    
+    
+    
+    
+    if (result === null) {
+      return;
+    }
+
+    
+    
+    if (result.class && result.class.includes("InvisibleToDebugger")) {
+      return;
+    }
+
+    const root = {
+      name: expression,
+      path: expression,
+      contents: { value: result }
+    };
+    const properties = await client.loadObjectProperties(root);
+
+    
+    
+    
+    if (!target.matches(":hover") && !isTesting()) {
+      return;
+    }
+
+    dispatch({
       type: "SET_PREVIEW",
       cx,
-      [PROMISE]: (async function() {
-        if (getPreview(getState())) {
-          dispatch(clearPreview(cx));
-        }
-
-        const source = getSelectedSource(getState());
-        if (!source) {
-          return;
-        }
-
-        const thread = getCurrentThread(getState());
-        const selectedFrame = getSelectedFrame(getState(), thread);
-
-        if (location && isOriginal(source)) {
-          const mapResult = await dispatch(getMappedExpression(expression));
-          if (mapResult) {
-            expression = mapResult.expression;
-          }
-        }
-
-        if (!selectedFrame) {
-          return;
-        }
-
-        const { result } = await client.evaluateInFrame(expression, {
-          frameId: selectedFrame.id,
-          thread
-        });
-
-        
-        
-        
-        
-        if (result === null) {
-          return;
-        }
-
-        
-        
-        if (result.class && result.class.includes("InvisibleToDebugger")) {
-          return;
-        }
-
-        const root = {
-          name: expression,
-          path: expression,
-          contents: { value: result }
-        };
-        const properties = await client.loadObjectProperties(root);
-
-        
-        
-        
-        if (!target.matches(":hover") && !isTesting()) {
-          return;
-        }
-
-        return {
-          expression,
-          result,
-          properties,
-          root,
-          location,
-          tokenPos,
-          cursorPos,
-          target
-        };
-      })()
+      value: {
+        expression,
+        result,
+        properties,
+        root,
+        location,
+        tokenPos,
+        cursorPos,
+        target
+      }
     });
   };
 }
@@ -168,7 +165,7 @@ export function clearPreview(cx: Context) {
 
     return dispatch(
       ({
-        type: "CLEAR_SELECTION",
+        type: "CLEAR_PREVIEW",
         cx
       }: Action)
     );
