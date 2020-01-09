@@ -451,7 +451,7 @@ RESTRequest.prototype = {
     this._deferred.resolve(this.response);
   },
 
-  onDataAvailable(channel, cb, stream, off, count) {
+  onDataAvailable(channel, stream, off, count) {
     
     try {
       channel.QueryInterface(Ci.nsIHttpChannel);

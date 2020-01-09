@@ -104,7 +104,7 @@ STDMETHODIMP nsDataObj::CStream::QueryInterface(REFIID refiid,
 
 NS_IMETHODIMP
 nsDataObj::CStream::OnDataAvailable(
-    nsIRequest* aRequest, nsISupports* aContext, nsIInputStream* aInputStream,
+    nsIRequest* aRequest, nsIInputStream* aInputStream,
     uint64_t aOffset,  
     uint32_t aCount)   
 {
