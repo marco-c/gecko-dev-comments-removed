@@ -31,9 +31,12 @@ var UrlbarTokenizer = {
   REGEXP_USERINFO_INVALID_CHARS: /[^\w.~%!$&'()*+,;=:-]/,
   REGEXP_HOSTPORT_INVALID_CHARS: /[^\[\]A-Z0-9.:-]/i,
   REGEXP_HOSTPORT_IP_LIKE: /^[a-f0-9\.\[\]:]+$/i,
-  REGEXP_HOSTPORT_INVALID_IP: /\.{2,}|\d{5,}|\d{4,}(?![:\]])|^\.|\.$|^(\d+\.){4,}\d+$|^\d+$/,
+  
+  REGEXP_HOSTPORT_INVALID_IP: /\.{2,}|\d{5,}|\d{4,}(?![:\]])|^\.|^(\d+\.){4,}\d+$|^\d{4,}$/,
+  
   REGEXP_HOSTPORT_IPV4: /^(\d{1,3}\.){3,}\d{1,3}(:\d+)?$/,
-  REGEXP_HOSTPORT_IPV6: /^[0-9A-F:\[\]]{1,4}$/i,
+  
+  REGEXP_HOSTPORT_IPV6: /^\[([0-9a-f]{0,4}:){0,7}[0-9a-f]{0,4}\]?$/i,
   REGEXP_COMMON_EMAIL: /^[\w!#$%&'*+\/=?^`{|}~-]+@[\[\]A-Z0-9.-]+$/i,
 
   TYPE: {
