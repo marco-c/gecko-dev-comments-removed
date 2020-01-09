@@ -4756,9 +4756,7 @@ bool nsTableFrame::BCRecalcNeeded(ComputedStyle* aOldComputedStyle,
   
   
 
-  const nsStyleBorder* oldStyleData = aOldComputedStyle->PeekStyleBorder();
-  if (!oldStyleData) return false;
-
+  const nsStyleBorder* oldStyleData = aOldComputedStyle->StyleBorder();
   const nsStyleBorder* newStyleData = aNewComputedStyle->StyleBorder();
   nsChangeHint change = newStyleData->CalcDifference(*oldStyleData);
   if (!change) return false;
@@ -7698,14 +7696,7 @@ void nsTableFrame::AppendDirectlyOwnedAnonBoxes(
   
   uint32_t equalStructs;  
   nsChangeHint wrapperHint =
-      aWrapperFrame->Style()->CalcStyleDifference(newStyle, &equalStructs);
-
-  
-  
-  MOZ_ASSERT(!ServoStyleSet::IsInServoTraversal(),
-             "if we can get in here from style worker threads, then we need "
-             "a ResolveSameStructsAs call to ensure structs are cached on "
-             "aNewComputedStyle");
+      aWrapperFrame->Style()->CalcStyleDifference(*newStyle, &equalStructs);
 
   if (wrapperHint) {
     aRestyleState.ChangeList().AppendChange(

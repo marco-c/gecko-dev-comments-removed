@@ -892,12 +892,8 @@ void nsTextBoxFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
     return;
   }
 
-  const nsStyleText* oldTextStyle = aOldComputedStyle->PeekStyleText();
-  
-  
-  
-  if (!oldTextStyle ||
-      oldTextStyle->mTextTransform != StyleText()->mTextTransform) {
+  const nsStyleText* oldTextStyle = aOldComputedStyle->StyleText();
+  if (oldTextStyle->mTextTransform != StyleText()->mTextTransform) {
     RecomputeTitle();
     UpdateAccessTitle();
   }

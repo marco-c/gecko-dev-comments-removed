@@ -382,12 +382,6 @@ void ViewportFrame::UpdateStyle(ServoRestyleState& aRestyleState) {
       aRestyleState.StyleSet().ResolveInheritingAnonymousBoxStyle(pseudo,
                                                                   nullptr);
 
-  
-  
-  
-  
-  newStyle->ResolveSameStructsAs(Style());
-
   MOZ_ASSERT(!GetNextContinuation(), "Viewport has continuations?");
   SetComputedStyle(newStyle);
 
