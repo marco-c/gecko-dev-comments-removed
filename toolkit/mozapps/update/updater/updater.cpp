@@ -2445,7 +2445,7 @@ static void UpdateThreadFunc(void *param) {
 #  else
                      NS_T("%s/update-settings.ini"),
 #  endif
-                     gWorkingDirPath);
+                     gInstallDirPath);
         MARChannelStringTable MARStrings;
         if (ReadMARChannelIDs(updateSettingsPath, &MARStrings) != OK) {
           
@@ -2526,6 +2526,7 @@ static void UpdateThreadFunc(void *param) {
     } else {
       WriteStatusFile(rv);
     }
+    LOG(("failed: %d", rv));
 #ifdef TEST_UPDATER
     
     putenv(const_cast<char *>("MOZ_TEST_PROCESS_UPDATES="));
