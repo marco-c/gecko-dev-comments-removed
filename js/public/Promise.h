@@ -499,7 +499,7 @@ extern JS_PUBLIC_API bool SetPromiseUserInputEventHandlingState(
 
 
 extern JS_PUBLIC_API JSObject* GetWaitForAllPromise(
-    JSContext* cx, const JS::AutoObjectVector& promises);
+    JSContext* cx, JS::HandleObjectVector promises);
 
 
 

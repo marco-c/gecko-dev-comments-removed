@@ -45,7 +45,7 @@ BEGIN_TEST(test_cloneScript) {
     options.setFileAndLine(__FILE__, 1);
 
     JS::RootedFunction fun(cx);
-    JS::AutoObjectVector emptyScopeChain(cx);
+    JS::RootedObjectVector emptyScopeChain(cx);
     CHECK(JS::CompileFunctionUtf8(cx, emptyScopeChain, options, "f", 0, nullptr,
                                   source, strlen(source), &fun));
     CHECK(obj = JS_GetFunctionObject(fun));
@@ -116,7 +116,7 @@ BEGIN_TEST(test_cloneScriptWithPrincipals) {
     options.setFileAndLine(__FILE__, 1);
 
     JS::RootedFunction fun(cx);
-    JS::AutoObjectVector emptyScopeChain(cx);
+    JS::RootedObjectVector emptyScopeChain(cx);
     CHECK(JS::CompileFunctionUtf8(cx, emptyScopeChain, options, "f",
                                   mozilla::ArrayLength(argnames), argnames,
                                   source, strlen(source), &fun));

@@ -57,7 +57,7 @@ class nsJSUtils {
   static uint64_t GetCurrentlyRunningCodeInnerWindowID(JSContext* aContext);
 
   static nsresult CompileFunction(mozilla::dom::AutoJSAPI& jsapi,
-                                  JS::AutoObjectVector& aScopeChain,
+                                  JS::HandleVector<JSObject*> aScopeChain,
                                   JS::CompileOptions& aOptions,
                                   const nsACString& aName, uint32_t aArgCount,
                                   const char** aArgArray,
@@ -80,7 +80,7 @@ class nsJSUtils {
     JS::Rooted<JS::Value> mRetValue;
 
     
-    JS::AutoObjectVector mScopeChain;
+    JS::RootedVector<JSObject*> mScopeChain;
 
     
     JS::Rooted<JSScript*> mScript;
@@ -142,7 +142,7 @@ class nsJSUtils {
     }
 
     
-    void SetScopeChain(const JS::AutoObjectVector& aScopeChain);
+    void SetScopeChain(JS::HandleVector<JSObject*> aScopeChain);
 
     
     
@@ -221,9 +221,9 @@ class nsJSUtils {
 
   
   
-  static bool GetScopeChainForElement(JSContext* aCx,
-                                      mozilla::dom::Element* aElement,
-                                      JS::AutoObjectVector& aScopeChain);
+  static bool GetScopeChainForElement(
+      JSContext* aCx, mozilla::dom::Element* aElement,
+      JS::MutableHandleVector<JSObject*> aScopeChain);
 
   
   
@@ -234,7 +234,7 @@ class nsJSUtils {
   static bool GetScopeChainForXBL(JSContext* aCx,
                                   mozilla::dom::Element* aBoundElement,
                                   const nsXBLPrototypeBinding& aProtoBinding,
-                                  JS::AutoObjectVector& aScopeChain);
+                                  JS::MutableHandleVector<JSObject*> aScopeChain);
 
   static void ResetTimeZone();
 };

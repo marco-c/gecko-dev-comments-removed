@@ -2418,7 +2418,7 @@ void Debugger::slowPathOnNewGlobalObject(JSContext* cx,
   
   
   
-  AutoObjectVector watchers(cx);
+  RootedObjectVector watchers(cx);
   for (auto& dbg : cx->runtime()->onNewGlobalObjectWatchers()) {
     MOZ_ASSERT(dbg.observesNewGlobalObject());
     JSObject* obj = dbg.object;
@@ -5253,7 +5253,7 @@ class MOZ_STACK_CLASS Debugger::ObjectQuery {
       : objects(cx), cx(cx), dbg(dbg), className(cx) {}
 
   
-  AutoObjectVector objects;
+  RootedObjectVector objects;
 
   
   JS::CompartmentSet debuggeeCompartments;
@@ -5465,7 +5465,7 @@ bool Debugger::findObjects(JSContext* cx, unsigned argc, Value* vp) {
 bool Debugger::findAllGlobals(JSContext* cx, unsigned argc, Value* vp) {
   THIS_DEBUGGER(cx, argc, vp, "findAllGlobals", args, dbg);
 
-  AutoObjectVector globals(cx);
+  RootedObjectVector globals(cx);
 
   {
     
@@ -9345,7 +9345,7 @@ static bool DebuggerGenericEval(JSContext* cx,
       }
     }
 
-    AutoObjectVector envChain(cx);
+    RootedObjectVector envChain(cx);
     if (!envChain.append(nenv)) {
       return false;
     }
@@ -13089,8 +13089,8 @@ JS_PUBLIC_API bool JS::dbg::IsDebugger(JSObject& obj) {
          js::Debugger::fromJSObject(unwrapped) != nullptr;
 }
 
-JS_PUBLIC_API bool JS::dbg::GetDebuggeeGlobals(JSContext* cx, JSObject& dbgObj,
-                                               AutoObjectVector& vector) {
+JS_PUBLIC_API bool JS::dbg::GetDebuggeeGlobals(
+    JSContext* cx, JSObject& dbgObj, MutableHandleObjectVector vector) {
   MOZ_ASSERT(IsDebugger(dbgObj));
   
   js::Debugger* dbg = js::Debugger::fromJSObject(CheckedUnwrapStatic(&dbgObj));
@@ -13265,7 +13265,7 @@ JS_PUBLIC_API bool FireOnGarbageCollectionHookRequired(JSContext* cx) {
 
 JS_PUBLIC_API bool FireOnGarbageCollectionHook(
     JSContext* cx, JS::dbg::GarbageCollectionEvent::Ptr&& data) {
-  AutoObjectVector triggered(cx);
+  RootedObjectVector triggered(cx);
 
   {
     

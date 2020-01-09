@@ -2460,7 +2460,7 @@ extern JS_FRIEND_API bool ExecuteInJSMEnvironment(JSContext* cx,
 
 extern JS_FRIEND_API bool ExecuteInJSMEnvironment(
     JSContext* cx, JS::HandleScript script, JS::HandleObject jsmEnv,
-    JS::AutoObjectVector& targetObj);
+    JS::HandleObjectVector targetObj);
 
 
 

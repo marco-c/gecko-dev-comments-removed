@@ -1886,7 +1886,7 @@ extern JS_PUBLIC_API JSObject* CloneFunctionObject(JSContext* cx,
 
 
 extern JS_PUBLIC_API JSObject* CloneFunctionObject(
-    JSContext* cx, HandleObject funobj, AutoObjectVector& scopeChain);
+    JSContext* cx, HandleObject funobj, HandleObjectVector scopeChain);
 
 }  
 

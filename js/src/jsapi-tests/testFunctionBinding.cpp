@@ -22,7 +22,7 @@ BEGIN_TEST(test_functionBinding) {
 
   
   const char s1chars[] = "return (typeof s1) == 'undefined';";
-  JS::AutoObjectVector emptyScopeChain(cx);
+  JS::RootedObjectVector emptyScopeChain(cx);
   CHECK(JS::CompileFunctionUtf8(cx, emptyScopeChain, options, "s1", 0, nullptr,
                                 s1chars, strlen(s1chars), &fun));
   CHECK(fun);

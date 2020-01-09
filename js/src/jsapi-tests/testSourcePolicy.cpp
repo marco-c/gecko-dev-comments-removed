@@ -27,7 +27,7 @@ BEGIN_TEST(testBug795104) {
   CHECK(JS::EvaluateUtf8(cx, opts, s, strLen, &unused));
 
   JS::RootedFunction fun(cx);
-  JS::AutoObjectVector emptyScopeChain(cx);
+  JS::RootedObjectVector emptyScopeChain(cx);
 
   
   

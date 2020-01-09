@@ -295,7 +295,7 @@ JS_PUBLIC_API bool IsDebugger(JSObject& obj);
 
 
 JS_PUBLIC_API bool GetDebuggeeGlobals(JSContext* cx, JSObject& dbgObj,
-                                      AutoObjectVector& vector);
+                                      MutableHandleObjectVector vector);
 
 
 

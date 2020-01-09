@@ -2029,7 +2029,7 @@ static JSObject* InitInt64Class(JSContext* cx, HandleObject parent,
   return prototype;
 }
 
-static void AttachProtos(JSObject* proto, const AutoObjectVector& protos) {
+static void AttachProtos(JSObject* proto, HandleObjectVector protos) {
   
   
   
@@ -2102,7 +2102,7 @@ static bool InitTypeClasses(JSContext* cx, HandleObject ctypesObj) {
   
   
   
-  AutoObjectVector protos(cx);
+  RootedObjectVector protos(cx);
   if (!protos.resize(CTYPEPROTO_SLOTS)) {
     return false;
   }

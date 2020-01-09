@@ -83,12 +83,12 @@ extern JS_PUBLIC_API bool JS_ExecuteScript(JSContext* cx,
 
 
 extern JS_PUBLIC_API bool JS_ExecuteScript(JSContext* cx,
-                                           JS::AutoVector<JSObject*>& envChain,
+                                           JS::HandleObjectVector envChain,
                                            JS::Handle<JSScript*> script,
                                            JS::MutableHandle<JS::Value> rval);
 
 extern JS_PUBLIC_API bool JS_ExecuteScript(JSContext* cx,
-                                           JS::AutoVector<JSObject*>& envChain,
+                                           JS::HandleObjectVector envChain,
                                            JS::Handle<JSScript*> script);
 
 namespace JS {
@@ -107,7 +107,7 @@ extern JS_PUBLIC_API bool CloneAndExecuteScript(JSContext* cx,
 
 
 extern JS_PUBLIC_API bool CloneAndExecuteScript(JSContext* cx,
-                                                AutoVector<JSObject*>& envChain,
+                                                HandleObjectVector envChain,
                                                 Handle<JSScript*> script,
                                                 MutableHandle<Value> rval);
 
@@ -124,8 +124,7 @@ extern JS_PUBLIC_API bool Evaluate(JSContext* cx,
 
 
 
-extern JS_PUBLIC_API bool Evaluate(JSContext* cx,
-                                   AutoVector<JSObject*>& envChain,
+extern JS_PUBLIC_API bool Evaluate(JSContext* cx, HandleObjectVector envChain,
                                    const ReadOnlyCompileOptions& options,
                                    SourceText<char16_t>& srcBuf,
                                    MutableHandle<Value> rval);
@@ -256,7 +255,7 @@ extern JS_PUBLIC_API bool CompileUtf8ForNonSyntacticScope(
 
 
 extern JS_PUBLIC_API bool CompileFunction(JSContext* cx,
-                                          AutoVector<JSObject*>& envChain,
+                                          HandleObjectVector envChain,
                                           const ReadOnlyCompileOptions& options,
                                           const char* name, unsigned nargs,
                                           const char* const* argnames,
@@ -267,7 +266,7 @@ extern JS_PUBLIC_API bool CompileFunction(JSContext* cx,
 
 
 extern JS_PUBLIC_API bool CompileFunctionUtf8(
-    JSContext* cx, AutoVector<JSObject*>& envChain,
+    JSContext* cx, HandleObjectVector envChain,
     const ReadOnlyCompileOptions& options, const char* name, unsigned nargs,
     const char* const* argnames, const char* utf8, size_t length,
     MutableHandle<JSFunction*> fun);

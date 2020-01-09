@@ -958,8 +958,8 @@ nsresult EventListenerManager::CompileEventHandlerInternal(
   
   
   
-  JS::AutoObjectVector scopeChain(cx);
-  if (!nsJSUtils::GetScopeChainForElement(cx, element, scopeChain)) {
+  JS::RootedVector<JSObject*> scopeChain(cx);
+  if (!nsJSUtils::GetScopeChainForElement(cx, element, &scopeChain)) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
 

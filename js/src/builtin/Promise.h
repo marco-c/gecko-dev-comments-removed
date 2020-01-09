@@ -183,8 +183,8 @@ class PromiseObject : public NativeObject {
 
 
 
-MOZ_MUST_USE JSObject* GetWaitForAllPromise(
-    JSContext* cx, const JS::AutoObjectVector& promises);
+MOZ_MUST_USE JSObject* GetWaitForAllPromise(JSContext* cx,
+                                            JS::HandleObjectVector promises);
 
 
 
