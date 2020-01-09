@@ -178,6 +178,9 @@ this.CrashManager.prototype = Object.freeze({
   PROCESS_TYPE_GPU: "gpu",
 
   
+  PROCESS_TYPE_VR: "vr",
+
+  
   PROCESS_TYPE_RDD: "rdd",
 
   
@@ -467,6 +470,7 @@ this.CrashManager.prototype = Object.freeze({
       
       if (processType === this.PROCESS_TYPE_CONTENT ||
           processType === this.PROCESS_TYPE_GPU ||
+          processType === this.PROCESS_TYPE_VR ||
           processType === this.PROCESS_TYPE_RDD ||
           processType === this.PROCESS_TYPE_SOCKET) {
         this._sendCrashPing(id, processType, date, metadata);
