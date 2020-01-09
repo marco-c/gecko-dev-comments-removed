@@ -7369,30 +7369,41 @@ bool BytecodeEmitter::emitCallOrNew(
   }
 
   ParseNode* coordNode = callNode;
-  if (op == JSOP_CALL || op == JSOP_SPREADCALL || op == JSOP_FUNCALL ||
-      op == JSOP_FUNAPPLY) {
-    
-    
-    
-    coordNode = argsList;
-
+  if (op == JSOP_CALL || op == JSOP_SPREADCALL) {
     switch (calleeNode->getKind()) {
-      case ParseNodeKind::DotExpr:
+      case ParseNodeKind::DotExpr: {
         
         
-        
-        
-        
-        
-        
-        
-        
-        
-        coordNode = &calleeNode->as<PropertyAccess>().key();
+        bool simpleDotChain = false;
+        for (ParseNode* cur = calleeNode; cur->isKind(ParseNodeKind::DotExpr);
+             cur = &cur->as<PropertyAccess>().expression()) {
+          PropertyAccess* prop = &cur->as<PropertyAccess>();
+          ParseNode* left = &prop->expression();
+          
+          if (left->isKind(ParseNodeKind::Name) ||
+              left->isKind(ParseNodeKind::ThisExpr) ||
+              left->isKind(ParseNodeKind::SuperBase)) {
+            simpleDotChain = true;
+          }
+        }
+
+        if (!simpleDotChain) {
+          
+          
+          
+          
+          
+          
+          
+          
+          coordNode = &calleeNode->as<PropertyAccess>().key();
+        }
         break;
-      case ParseNodeKind::Name:
+      }
+      case ParseNodeKind::ElemExpr:
         
-        coordNode = calleeNode;
+        
+        coordNode = argsList;
         break;
       default:
         break;
