@@ -876,7 +876,8 @@ NS_IMPL_ISUPPORTS(ExternalResourceMap::PendingLoad, nsIStreamListener,
                   nsIRequestObserver)
 
 NS_IMETHODIMP
-ExternalResourceMap::PendingLoad::OnStartRequest(nsIRequest* aRequest) {
+ExternalResourceMap::PendingLoad::OnStartRequest(nsIRequest* aRequest,
+                                                 nsISupports* aContext) {
   ExternalResourceMap& map = mDisplayDocument->ExternalResourceMap();
   if (map.HaveShutDown()) {
     return NS_BINDING_ABORTED;
@@ -898,7 +899,7 @@ ExternalResourceMap::PendingLoad::OnStartRequest(nsIRequest* aRequest) {
     return rv2;
   }
 
-  return mTargetListener->OnStartRequest(aRequest);
+  return mTargetListener->OnStartRequest(aRequest, aContext);
 }
 
 nsresult ExternalResourceMap::PendingLoad::SetupViewer(
@@ -981,6 +982,7 @@ nsresult ExternalResourceMap::PendingLoad::SetupViewer(
 
 NS_IMETHODIMP
 ExternalResourceMap::PendingLoad::OnDataAvailable(nsIRequest* aRequest,
+                                                  nsISupports* aContext,
                                                   nsIInputStream* aStream,
                                                   uint64_t aOffset,
                                                   uint32_t aCount) {
@@ -989,18 +991,19 @@ ExternalResourceMap::PendingLoad::OnDataAvailable(nsIRequest* aRequest,
   if (mDisplayDocument->ExternalResourceMap().HaveShutDown()) {
     return NS_BINDING_ABORTED;
   }
-  return mTargetListener->OnDataAvailable(aRequest, aStream, aOffset,
+  return mTargetListener->OnDataAvailable(aRequest, aContext, aStream, aOffset,
                                           aCount);
 }
 
 NS_IMETHODIMP
 ExternalResourceMap::PendingLoad::OnStopRequest(nsIRequest* aRequest,
+                                                nsISupports* aContext,
                                                 nsresult aStatus) {
   
   if (mTargetListener) {
     nsCOMPtr<nsIStreamListener> listener;
     mTargetListener.swap(listener);
-    return listener->OnStopRequest(aRequest, aStatus);
+    return listener->OnStopRequest(aRequest, aContext, aStatus);
   }
 
   return NS_OK;
@@ -1165,22 +1168,9 @@ void Document::SelectorCache::NotifyExpired(SelectorCacheKey* aSelector) {
   delete aSelector;
 }
 
-struct Document::FrameRequest {
-  FrameRequest(FrameRequestCallback& aCallback, int32_t aHandle)
-      : mCallback(&aCallback), mHandle(aHandle) {}
-
-  
-  
-  operator const RefPtr<FrameRequestCallback>&() const { return mCallback; }
-
-  
-  
-  bool operator==(int32_t aHandle) const { return mHandle == aHandle; }
-  bool operator<(int32_t aHandle) const { return mHandle < aHandle; }
-
-  RefPtr<FrameRequestCallback> mCallback;
-  int32_t mHandle;
-};
+Document::FrameRequest::FrameRequest(FrameRequestCallback& aCallback,
+                                     int32_t aHandle)
+    : mCallback(&aCallback), mHandle(aHandle) {}
 
 
 
@@ -1243,6 +1233,7 @@ Document::Document(const char* aContentType)
       mHasHadDefaultView(false),
       mStyleSheetChangeEventsEnabled(false),
       mIsSrcdocDocument(false),
+      mDidDocumentOpen(false),
       mHasDisplayDocument(false),
       mFontFaceSetDirty(true),
       mDidFireDOMContentLoaded(true),
@@ -1281,9 +1272,10 @@ Document::Document(const char* aContentType)
       mHasReportedShadowDOMUsage(false),
       mDocTreeHadAudibleMedia(false),
       mDocTreeHadPlayRevoked(false),
+#ifdef DEBUG
+      mWillReparent(false),
+#endif
       mHasDelayedRefreshEvent(false),
-      mLoadEventFiring(false),
-      mSkipLoadEventAfterClose(false),
       mPendingFullscreenRequests(0),
       mXMLDeclarationBits(0),
       mOnloadBlockCount(0),
@@ -1980,6 +1972,17 @@ void Document::Reset(nsIChannel* aChannel, nsILoadGroup* aLoadGroup) {
     
     NS_GetFinalChannelURI(aChannel, getter_AddRefs(uri));
 
+    bool isWyciwyg = false;
+    uri->SchemeIs("wyciwyg", &isWyciwyg);
+    if (isWyciwyg) {
+      nsCOMPtr<nsIURI> cleanURI;
+      nsresult rv =
+          nsContentUtils::RemoveWyciwygScheme(uri, getter_AddRefs(cleanURI));
+      if (NS_SUCCEEDED(rv)) {
+        uri = cleanURI;
+      }
+    }
+
     nsIScriptSecurityManager* securityManager =
         nsContentUtils::GetSecurityManager();
     if (securityManager) {
@@ -2043,8 +2046,20 @@ bool PrincipalAllowsL10n(nsIPrincipal* principal) {
   return hasFlags;
 }
 
-void Document::DisconnectNodeTree() {
-  
+void Document::ResetToURI(nsIURI* aURI, nsILoadGroup* aLoadGroup,
+                          nsIPrincipal* aPrincipal) {
+  MOZ_ASSERT(aURI, "Null URI passed to ResetToURI");
+
+  MOZ_LOG(gDocumentLeakPRLog, LogLevel::Debug,
+          ("DOCUMENT %p ResetToURI %s", this, aURI->GetSpecOrDefault().get()));
+
+  mSecurityInfo = nullptr;
+
+  nsCOMPtr<nsILoadGroup> group = do_QueryReferent(mDocumentLoadGroup);
+  if (!aLoadGroup || group != aLoadGroup) {
+    mDocumentLoadGroup = nullptr;
+  }
+
   
   
   delete mSubDocuments;
@@ -2079,23 +2094,6 @@ void Document::DisconnectNodeTree() {
                "After removing all children, there should be no root elem");
   }
   mInUnlinkOrDeletion = oldVal;
-}
-
-void Document::ResetToURI(nsIURI* aURI, nsILoadGroup* aLoadGroup,
-                          nsIPrincipal* aPrincipal) {
-  MOZ_ASSERT(aURI, "Null URI passed to ResetToURI");
-
-  MOZ_LOG(gDocumentLeakPRLog, LogLevel::Debug,
-          ("DOCUMENT %p ResetToURI %s", this, aURI->GetSpecOrDefault().get()));
-
-  mSecurityInfo = nullptr;
-
-  nsCOMPtr<nsILoadGroup> group = do_QueryReferent(mDocumentLoadGroup);
-  if (!aLoadGroup || group != aLoadGroup) {
-    mDocumentLoadGroup = nullptr;
-  }
-
-  DisconnectNodeTree();
 
   
   ResetStylesheetsToURI(aURI);
@@ -3662,9 +3660,9 @@ void Document::UpdateFrameRequestCallbackSchedulingState(
   mFrameRequestCallbacksScheduled = shouldBeScheduled;
 }
 
-void Document::TakeFrameRequestCallbacks(FrameRequestCallbackList& aCallbacks) {
-  aCallbacks.AppendElements(mFrameRequestCallbacks);
-  mFrameRequestCallbacks.Clear();
+void Document::TakeFrameRequestCallbacks(nsTArray<FrameRequest>& aCallbacks) {
+  MOZ_ASSERT(aCallbacks.IsEmpty());
+  aCallbacks.SwapElements(mFrameRequestCallbacks);
   
   
   mFrameRequestCallbacksScheduled = false;
@@ -4386,6 +4384,18 @@ void Document::SetScriptGlobalObject(
     mLayoutHistoryState = nullptr;
     SetScopeObject(aScriptGlobalObject);
     mHasHadDefaultView = true;
+#ifdef DEBUG
+    if (!mWillReparent) {
+      
+      
+      JSObject* obj = GetWrapperPreserveColor();
+      if (obj) {
+        JSObject* newScope = aScriptGlobalObject->GetGlobalJSObject();
+        NS_ASSERTION(JS::GetNonCCWObjectGlobal(obj) == newScope,
+                     "Wrong scope, this is really bad!");
+      }
+    }
+#endif
 
     if (mAllowDNSPrefetch) {
       nsCOMPtr<nsIDocShell> docShell(mDocumentContainer);
@@ -8146,8 +8156,7 @@ void Document::NotifyLoading(const bool& aCurrentParentIsLoading,
   }
 }
 
-void Document::SetReadyStateInternal(ReadyState rs,
-                                     bool updateTimingInformation) {
+void Document::SetReadyStateInternal(ReadyState rs) {
   if (rs == READYSTATE_UNINITIALIZED) {
     
     
@@ -8156,12 +8165,12 @@ void Document::SetReadyStateInternal(ReadyState rs,
     return;
   }
 
-  if (updateTimingInformation && READYSTATE_LOADING == rs) {
+  if (READYSTATE_LOADING == rs) {
     mLoadingTimeStamp = mozilla::TimeStamp::Now();
   }
   NotifyLoading(mAncestorIsLoading, mAncestorIsLoading, mReadyState, rs);
   mReadyState = rs;
-  if (updateTimingInformation && mTiming) {
+  if (mTiming) {
     switch (rs) {
       case READYSTATE_LOADING:
         mTiming->NotifyDOMLoading(Document::GetDocumentURI());
@@ -8189,9 +8198,7 @@ void Document::SetReadyStateInternal(ReadyState rs,
     }
   }
 
-  if (updateTimingInformation) {
-    RecordNavigationTiming(rs);
-  }
+  RecordNavigationTiming(rs);
 
   RefPtr<AsyncEventDispatcher> asyncDispatcher =
       new AsyncEventDispatcher(this, NS_LITERAL_STRING("readystatechange"),

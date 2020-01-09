@@ -594,7 +594,7 @@ class Document : public nsINode,
                                      nsIStreamListener** aDocListener,
                                      bool aReset,
                                      nsIContentSink* aSink = nullptr) = 0;
-  void StopDocumentLoad();
+  virtual void StopDocumentLoad();
 
   virtual void SetSuppressParserErrorElement(bool aSuppress) {}
   virtual bool SuppressParserErrorElement() { return false; }
@@ -833,7 +833,7 @@ class Document : public nsINode,
   
 
 
-  void SetDocumentCharacterSet(NotNull<const Encoding*> aEncoding);
+  virtual void SetDocumentCharacterSet(NotNull<const Encoding*> aEncoding);
 
   int32_t GetDocumentCharacterSetSource() const { return mCharacterSetSource; }
 
@@ -1396,6 +1396,8 @@ class Document : public nsINode,
 
   nsresult GetSrcdocData(nsAString& aSrcdocData);
 
+  bool DidDocumentOpen() { return mDidDocumentOpen; }
+
   already_AddRefed<mozilla::dom::AnonymousContent> InsertAnonymousContent(
       mozilla::dom::Element& aElement, mozilla::ErrorResult& aError);
   void RemoveAnonymousContent(mozilla::dom::AnonymousContent& aContent,
@@ -1556,11 +1558,6 @@ class Document : public nsINode,
 
 
   already_AddRefed<nsPIWindowRoot> GetWindowRoot();
-
-  
-
-
-  void DisconnectNodeTree();
 
  private:
   class SelectorCacheKey {
@@ -2004,12 +2001,7 @@ class Document : public nsINode,
     READYSTATE_INTERACTIVE = 3,
     READYSTATE_COMPLETE = 4
   };
-  
-  
-  
-  
-  void SetReadyStateInternal(ReadyState rs,
-                             bool updateTimingInformation = true);
+  void SetReadyStateInternal(ReadyState rs);
   ReadyState GetReadyStateEnum() { return mReadyState; }
 
   void SetAncestorLoading(bool aAncestorIsLoading);
@@ -2704,29 +2696,6 @@ class Document : public nsINode,
   
 
 
-  void SetLoadEventFiring(bool aFiring) { mLoadEventFiring = aFiring; }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  bool SkipLoadEventAfterClose() {
-    bool skip = mSkipLoadEventAfterClose;
-    mSkipLoadEventAfterClose = false;
-    return skip;
-  }
-
-  
-
-
   void IncrementIgnoreDestructiveWritesCounter() {
     ++mIgnoreDestructiveWritesCounter;
   }
@@ -2953,16 +2922,27 @@ class Document : public nsINode,
 
   SVGSVGElement* GetSVGRootElement() const;
 
+  struct FrameRequest {
+    FrameRequest(FrameRequestCallback& aCallback, int32_t aHandle);
+
+    
+    
+    bool operator==(int32_t aHandle) const { return mHandle == aHandle; }
+    bool operator<(int32_t aHandle) const { return mHandle < aHandle; }
+
+    RefPtr<FrameRequestCallback> mCallback;
+    int32_t mHandle;
+  };
+
   nsresult ScheduleFrameRequestCallback(FrameRequestCallback& aCallback,
                                         int32_t* aHandle);
   void CancelFrameRequestCallback(int32_t aHandle);
 
-  typedef nsTArray<RefPtr<FrameRequestCallback>> FrameRequestCallbackList;
   
 
 
 
-  void TakeFrameRequestCallbacks(FrameRequestCallbackList& aCallbacks);
+  void TakeFrameRequestCallbacks(nsTArray<FrameRequest>& aCallbacks);
 
   
 
@@ -4131,6 +4111,11 @@ class Document : public nsINode,
   
   
   
+  bool mDidDocumentOpen : 1;
+
+  
+  
+  
   
   bool mHasDisplayDocument : 1;
 
@@ -4237,24 +4222,16 @@ class Document : public nsINode,
   
   bool mDocTreeHadPlayRevoked : 1;
 
+#ifdef DEBUG
+ public:
+  bool mWillReparent : 1;
+
+ protected:
+#endif
+
   
   
   bool mHasDelayedRefreshEvent : 1;
-
-  
-  
-  
-  
-  
-  bool mLoadEventFiring : 1;
-
-  
-  
-  
-  
-  
-  
-  bool mSkipLoadEventAfterClose : 1;
 
   uint8_t mPendingFullscreenRequests;
 
@@ -4413,8 +4390,6 @@ class Document : public nsINode,
   nsPIDOMWindowInner* mWindow;
 
   nsCOMPtr<nsIDocumentEncoder> mCachedEncoder;
-
-  struct FrameRequest;
 
   nsTArray<FrameRequest> mFrameRequestCallbacks;
 
