@@ -16,7 +16,8 @@ module.exports = {
     "json", 
     "promise", 
     "react", 
-    "react-hooks" 
+    "react-hooks", 
+    "fetch-options", 
   ],
   "settings": {
     "react": {
@@ -25,11 +26,15 @@ module.exports = {
   },
   "extends": [
     "eslint:recommended",
-    "plugin:mozilla/recommended" 
+    "plugin:mozilla/recommended", 
+    "plugin:mozilla/browser-test",
+    "plugin:mozilla/mochitest-test",
+    "plugin:mozilla/xpcshell-test"
   ],
   "globals": {
     
-    "RPMSendAsyncMessage": true
+    "RPMSendAsyncMessage": true,
+    "NewTabPagePreloading": true,
   },
   "overrides": [{
     
@@ -46,6 +51,8 @@ module.exports = {
   }],
   "rules": {
     "react-hooks/rules-of-hooks": 2,
+
+    "fetch-options/no-fetch-credentials": 2,
 
     "promise/catch-or-return": 2,
     "promise/param-names": 2,

@@ -1,79 +1,85 @@
-import {createSelector} from "reselect";
-
-export const selectLayoutRender = createSelector(
-  
-  
-  [
-    state => state.DiscoveryStream.layout,
-    state => state.DiscoveryStream.feeds,
-    state => state.DiscoveryStream.spocs,
-  ],
+export const selectLayoutRender = (state, rickRollCache) => {
+  const {layout, feeds, spocs} = state;
+  let spocIndex = 0;
+  let bufferRollCache = [];
 
   
   
-  function layoutRender(layout, feeds, spocs) {
-    let spocIndex = 0;
+  const isFirstRun = !rickRollCache.length;
 
-    function maybeInjectSpocs(data, spocsConfig) {
-      if (data &&
-          spocsConfig && spocsConfig.positions && spocsConfig.positions.length &&
-          spocs.data.spocs && spocs.data.spocs.length) {
-        const recommendations = [...data.recommendations];
-        for (let position of spocsConfig.positions) {
-          let rickRoll = Math.random();
-          if (spocs.data.spocs[spocIndex] && rickRoll <= spocsConfig.probability) {
-            recommendations.splice(position.index, 0, spocs.data.spocs[spocIndex++]);
-          }
+  function maybeInjectSpocs(data, spocsConfig) {
+    if (data &&
+        spocsConfig && spocsConfig.positions && spocsConfig.positions.length &&
+        spocs.data.spocs && spocs.data.spocs.length) {
+      const recommendations = [...data.recommendations];
+      for (let position of spocsConfig.positions) {
+        
+        let rickRoll;
+        if (isFirstRun) {
+          rickRoll = Math.random();
+          rickRollCache.push(rickRoll);
+        } else {
+          rickRoll = rickRollCache.shift();
+          bufferRollCache.push(rickRoll);
         }
 
-        return {
+        if (spocs.data.spocs[spocIndex] && rickRoll <= spocsConfig.probability) {
+          recommendations.splice(position.index, 0, spocs.data.spocs[spocIndex++]);
+        }
+      }
+
+      return {
+        ...data,
+        recommendations,
+      };
+    }
+
+    return data;
+  }
+
+  const positions = {};
+
+  return layout.map(row => ({
+    ...row,
+
+    
+    
+    components: row.components.map(component => {
+      if (!component.feed || !feeds.data[component.feed.url]) {
+        return component;
+      }
+
+      positions[component.type] = positions[component.type] || 0;
+
+      let {data} = feeds.data[component.feed.url];
+
+      if (component && component.properties && component.properties.offset) {
+        data = {
           ...data,
-          recommendations,
+          recommendations: data.recommendations.slice(component.properties.offset),
         };
       }
 
-      return data;
-    }
+      data = maybeInjectSpocs(data, component.spocs);
 
-    const positions = {};
+      
+      if (!rickRollCache.length) {
+        rickRollCache.push(...bufferRollCache);
+      }
 
-    return layout.map(row => ({
-      ...row,
+      let items = 0;
+      if (component.properties && component.properties.items) {
+        items = Math.min(component.properties.items, data.recommendations.length);
+      }
 
       
       
-      components: row.components.map(component => {
-        if (!component.feed || !feeds.data[component.feed.url]) {
-          return component;
-        }
+      
+      for (let i = 0; i < items; i++) {
+        data.recommendations[i].pos = positions[component.type]++;
+      }
 
-        positions[component.type] = positions[component.type] || 0;
-
-        let {data} = feeds.data[component.feed.url];
-
-        if (component && component.properties && component.properties.offset) {
-          data = {
-            ...data,
-            recommendations: data.recommendations.slice(component.properties.offset),
-          };
-        }
-
-        data = maybeInjectSpocs(data, component.spocs);
-
-        let items = 0;
-        if (component.properties && component.properties.items) {
-          items = Math.min(component.properties.items, data.recommendations.length);
-        }
-
-        
-        
-        
-        for (let i = 0; i < items; i++) {
-          data.recommendations[i].pos = positions[component.type]++;
-        }
-
-        return {...component, data};
-      }),
-    }));
-  }
-);
+      return {...component, data};
+    }),
+  }));
+};
