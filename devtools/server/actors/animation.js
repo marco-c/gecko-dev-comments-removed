@@ -692,27 +692,6 @@ exports.AnimationsActor = protocol.ActorClassWithSpec(animationsSpec, {
     }
   },
 
-  
-
-
-
-
-
-
-
-
-  getAllAnimations: function(rootNode, traverseFrames) {
-    if (!traverseFrames) {
-      return rootNode.getAnimations({subtree: true});
-    }
-
-    let animations = [];
-    for (const {document} of this.targetActor.windows) {
-      animations = [...animations, ...document.getAnimations({subtree: true})];
-    }
-    return animations;
-  },
-
   onWillNavigate: function({isTopLevel}) {
     if (isTopLevel) {
       this.stopAnimationPlayerUpdates();
