@@ -3,6 +3,8 @@
 
 
 
+from __future__ import absolute_import
+
 import json
 import os
 import posixpath
@@ -283,9 +285,9 @@ class CodeCoverageMixin(SingleTestMixin):
         dirs = self.query_abs_dirs()
 
         sys.path.append(dirs['abs_test_install_dir'])
-        sys.path.append(os.path.join(dirs['abs_test_install_dir'], 'mozbuild/codecoverage'))
+        sys.path.append(os.path.join(dirs['abs_test_install_dir'], 'mozbuild'))
 
-        from lcov_rewriter import LcovFileRewriter
+        from codecoverage.lcov_rewriter import LcovFileRewriter
         jsvm_files = [os.path.join(jsvm_dir, e) for e in os.listdir(jsvm_dir)]
         rewriter = LcovFileRewriter(os.path.join(self.grcov_dir, 'chrome-map.json'))
         rewriter.rewrite_files(jsvm_files, jsvm_output_file, '')
