@@ -14,13 +14,14 @@ add_task(async function() {
   
   dbg.client.waitForWorkers(true);
 
+  await selectSource(dbg, "simple-worker.js");
   await addBreakpoint(dbg, workerSource, 1);
   invokeInTab("startWorker");
   await waitForPaused(dbg, "simple-worker.js");
 
   
   assertPausedAtSourceAndLine(dbg, workerSource.id, 1);
-  await removeBreakpoint(dbg, workerSource.id, 1);
+  await removeBreakpoint(dbg, workerSource.id, 1, 12);
   await resume(dbg);
 
   
@@ -31,5 +32,5 @@ add_task(async function() {
 
   
   assertPausedAtSourceAndLine(dbg, workerSource.id, 10);
-  await removeBreakpoint(dbg, workerSource.id, 10);
+  await removeBreakpoint(dbg, workerSource.id, 10, 2);
 });
