@@ -146,6 +146,14 @@ class Nursery {
 
   static const size_t SubChunkStep = gc::ArenaSize;
 
+  
+
+
+
+  static const size_t SubChunkLimit = 192 * 1024;
+  static_assert(SubChunkLimit % SubChunkStep == 0,
+                "The limit should be a multiple of the step");
+
   struct alignas(gc::CellAlignBytes) CellAlignedByte {
     char byte;
   };
@@ -173,7 +181,7 @@ class Nursery {
   
   unsigned maxChunkCount() const {
     MOZ_ASSERT(capacity());
-    return JS_HOWMANY(capacity(), gc::ChunkSize);
+    return JS_HOWMANY(capacity(), NurseryChunkUsableSize);
   }
 
   bool exists() const { return chunkCountLimit() != 0; }
@@ -331,12 +339,12 @@ class Nursery {
   size_t spaceToEnd(unsigned chunkCount) const;
 
   size_t capacity() const {
-    MOZ_ASSERT(capacity_ <= chunkCountLimit() * gc::ChunkSize);
+    MOZ_ASSERT(capacity_ >= SubChunkLimit || capacity_ == 0);
+    MOZ_ASSERT(capacity_ <= chunkCountLimit() * NurseryChunkUsableSize);
     return capacity_;
   }
   size_t committed() const { return spaceToEnd(allocatedChunkCount()); }
 
-  
   
   
   
@@ -349,7 +357,7 @@ class Nursery {
     MOZ_ASSERT(currentEnd_ - position_ <= NurseryChunkUsableSize);
     MOZ_ASSERT(currentChunk_ < maxChunkCount());
     return (currentEnd_ - position_) +
-           (maxChunkCount() - currentChunk_ - 1) * gc::ChunkSize;
+           (maxChunkCount() - currentChunk_ - 1) * NurseryChunkUsableSize;
   }
 
 #ifdef JS_GC_ZEAL
@@ -622,8 +630,6 @@ class Nursery {
 
   
   void maybeResizeNursery(JS::GCReason reason);
-  bool maybeResizeExact(JS::GCReason reason);
-  size_t roundSize(size_t size) const;
   void growAllocableSpace(size_t newCapacity);
   void shrinkAllocableSpace(size_t newCapacity);
   void minimizeAllocableSpace();
