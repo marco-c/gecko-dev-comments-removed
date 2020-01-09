@@ -1,14 +1,14 @@
-"use strict";
 
-const TEST_PATH = getRootDirectory(gTestPath)
-  .replace("chrome://mochitests/content", "https://example.org");
+
+
+"use strict";
 
 
 
 
 
 add_task(async function() {
-  let baseURL = `${TEST_PATH}dummy_page.html`;
+  let baseURL = `${TEST_BASE_URL}dummy_page.html`;
   let url = baseURL + "#foo";
   await BrowserTestUtils.withNewTab({ gBrowser, url }, async function(browser) {
     let identityBox = document.getElementById("identity-box");
@@ -95,7 +95,7 @@ add_task(async function() {
   
   gBrowser.removePreloadedBrowser();
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:newtab");
-  let url = `${TEST_PATH}dummy_page.html#foo`;
+  let url = `${TEST_BASE_URL}dummy_page.html#foo`;
   gURLBar.value = url;
   gURLBar.select();
   EventUtils.sendKey("return");

@@ -1,8 +1,9 @@
+
+
+
 "use strict";
 
-const TEST_PATH = getRootDirectory(gTestPath)
-  .replace("chrome://mochitests/content", "http://www.example.com");
-const TEST_URL = `${TEST_PATH}file_urlbar_edit_dos.html`;
+const TEST_URL = `${TEST_BASE_URL}file_urlbar_edit_dos.html`;
 
 async function checkURLBarValueStays(browser) {
   gURLBar.select();
