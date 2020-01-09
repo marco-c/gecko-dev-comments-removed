@@ -40,7 +40,7 @@
 
 
 
-#if UTF_SIZE==8
+#if defined(UTF_SIZE) && UTF_SIZE==8
 # error reimplement ubidi_writeReordered() for UTF-8, see comment above
 #endif
 

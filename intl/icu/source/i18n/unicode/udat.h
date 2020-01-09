@@ -488,19 +488,19 @@ typedef enum UDateFormatStyle {
 
 
 
-#define JP_ERA_2019_ROOT                "Qqqq"
+#define JP_ERA_2019_ROOT                "Reiwa"
 
 
 
 
 
-#define JP_ERA_2019_JA                  "\\uFF31\\uFF31"
+#define JP_ERA_2019_JA                  "\\u4EE4\\u548C"
 
 
 
 
 
-#define JP_ERA_2019_NARROW              "Q"
+#define JP_ERA_2019_NARROW              "R"
 #endif  
 
 

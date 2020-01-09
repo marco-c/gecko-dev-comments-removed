@@ -79,6 +79,7 @@ public:
 
 
 
+
     inline int32_t getCurrentEraIndex() const {
         return currentEra;
     }

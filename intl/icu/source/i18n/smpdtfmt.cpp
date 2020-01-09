@@ -3885,6 +3885,42 @@ SimpleDateFormat::applyPattern(const UnicodeString& pattern)
 {
     fPattern = pattern;
     parsePattern();
+
+    
+    
+    if (fCalendar != nullptr && uprv_strcmp(fCalendar->getType(),"japanese") == 0 &&
+            uprv_strcmp(fLocale.getLanguage(),"ja") == 0) {
+        if (fDateOverride==UnicodeString(u"y=jpanyear") && !fHasHanYearChar) {
+            
+            
+            if (fSharedNumberFormatters) {
+                freeSharedNumberFormatters(fSharedNumberFormatters);
+                fSharedNumberFormatters = NULL;
+            }
+            fDateOverride.setToBogus(); 
+        } else if (fDateOverride.isBogus() && fHasHanYearChar) {
+            
+            
+            umtx_lock(LOCK());
+            if (fSharedNumberFormatters == NULL) {
+                fSharedNumberFormatters = allocSharedNumberFormatters();
+            }
+            umtx_unlock(LOCK());
+            if (fSharedNumberFormatters != NULL) {
+                Locale ovrLoc(fLocale.getLanguage(),fLocale.getCountry(),fLocale.getVariant(),"numbers=jpanyear");
+                UErrorCode status = U_ZERO_ERROR;
+                const SharedNumberFormat *snf = createSharedNumberFormat(ovrLoc, status);
+                if (U_SUCCESS(status)) {
+                    
+                    
+                    UDateFormatField patternCharIndex = DateFormatSymbols::getPatternCharIndex(u'y');
+                    SharedObject::copyPtr(snf, fSharedNumberFormatters[patternCharIndex]);
+                    snf->deleteIfZeroRefCount();
+                    fDateOverride.setTo(u"y=jpanyear", -1); 
+                }
+            }
+        }
+    }
 }
 
 

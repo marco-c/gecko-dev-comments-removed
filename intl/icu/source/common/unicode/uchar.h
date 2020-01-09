@@ -60,7 +60,7 @@ U_CDECL_BEGIN
 
 
 
-#define U_UNICODE_VERSION "12.0"
+#define U_UNICODE_VERSION "12.1"
 
 
 

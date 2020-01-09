@@ -12,7 +12,7 @@
 
 #include "unicode/utypes.h"
 
-#if U_LOCAL_SERVICE_HOOK
+#if defined(U_LOCAL_SERVICE_HOOK) && U_LOCAL_SERVICE_HOOK
 
 
 

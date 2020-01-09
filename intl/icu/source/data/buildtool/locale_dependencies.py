@@ -3,7 +3,7 @@
 
 
 data = {
-    "cldrVersion": "35",
+    "cldrVersion": "35.1",
     "aliases": {
         "ars": "ar_SA",
         "az_AZ": "az_Latn_AZ",

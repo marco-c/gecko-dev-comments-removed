@@ -250,7 +250,7 @@ int32_t JapaneseCalendar::handleGetLimit(UCalendarDateFields field, ELimitType l
         if (limitType == UCAL_LIMIT_MINIMUM || limitType == UCAL_LIMIT_GREATEST_MINIMUM) {
             return 0;
         }
-        return gCurrentEra;
+        return gJapaneseEraRules->getNumberOfEras() - 1; 
     case UCAL_YEAR:
         {
             switch (limitType) {
@@ -282,7 +282,7 @@ int32_t JapaneseCalendar::getActualMaximum(UCalendarDateFields field, UErrorCode
         if (U_FAILURE(status)) {
             return 0; 
         }
-        if (era == gCurrentEra) {
+        if (era == gJapaneseEraRules->getNumberOfEras() - 1) { 
             
             return handleGetLimit(UCAL_YEAR, UCAL_LIMIT_MAXIMUM);
         } else {
