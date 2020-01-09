@@ -4910,25 +4910,34 @@ static void DropStringWrappers(JSRuntime* rt) {
 
 bool Compartment::findSweepGroupEdges() {
   Zone* source = zone();
-  for (js::WrapperMap::Enum e(crossCompartmentWrappers); !e.empty();
-       e.popFront()) {
+  for (WrapperMap::Enum e(crossCompartmentWrappers); !e.empty(); e.popFront()) {
     CrossCompartmentKey& key = e.front().mutableKey();
     MOZ_ASSERT(!key.is<JSString*>());
 
-    
-    
-    
-
-    if (key.is<JSObject*>() &&
-        key.as<JSObject*>()->asTenured().isMarkedBlack()) {
-      
-      
+    Zone* target = key.zone();
+    if (!target->isGCMarking()) {
       continue;
     }
 
-    Zone* target =
-        key.applyToWrapped([](auto tp) { return (*tp)->asTenured().zone(); });
-    if (!target->isGCMarking()) {
+    
+    
+    
+    if (key.isDebuggerKey()) {
+      if (!source->addSweepGroupEdgeTo(target) ||
+          !target->addSweepGroupEdgeTo(source)) {
+        return false;
+      }
+      continue;
+    }
+
+    
+    
+    
+
+    
+    
+    if (key.is<JSObject*>() &&
+        key.as<JSObject*>()->asTenured().isMarkedBlack()) {
       continue;
     }
 
@@ -4953,8 +4962,7 @@ bool Zone::findSweepGroupEdges(Zone* atomsZone) {
     }
   }
 
-  return WeakMapBase::findSweepGroupEdges(this) &&
-         Debugger::findSweepGroupEdges(this);
+  return WeakMapBase::findSweepGroupEdges(this);
 }
 
 bool GCRuntime::findSweepGroupEdges() {
@@ -4963,7 +4971,8 @@ bool GCRuntime::findSweepGroupEdges() {
       return false;
     }
   }
-  return true;
+
+  return Debugger::findSweepGroupEdges(rt);
 }
 
 void GCRuntime::groupZonesForSweeping(JS::GCReason reason) {
