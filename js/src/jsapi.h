@@ -2025,6 +2025,9 @@ JS_PUBLIC_API void JS_SetAllNonReservedSlotsToUndefined(JSContext* cx,
 
 
 
+
+
+
 extern JS_PUBLIC_API JSObject* JS_NewArrayBufferWithContents(JSContext* cx,
                                                              size_t nbytes,
                                                              void* contents);
@@ -2064,6 +2067,19 @@ using BufferContentsFreeFunc = void (*)(void* contents, void* userData);
 extern JS_PUBLIC_API JSObject* JS_NewExternalArrayBuffer(
     JSContext* cx, size_t nbytes, void* contents,
     JS::BufferContentsFreeFunc freeFunc, void* freeUserData = nullptr);
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
