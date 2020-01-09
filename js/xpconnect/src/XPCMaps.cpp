@@ -21,7 +21,9 @@ using namespace mozilla;
 
 
 static PLDHashNumber HashIIDPtrKey(const void* key) {
-  return HashGeneric(*((uintptr_t*)key));
+  uintptr_t v;
+  memcpy(&v, key, sizeof(v));
+  return HashGeneric(v);
 }
 
 static bool MatchIIDPtrKey(const PLDHashEntryHdr* entry, const void* key) {
