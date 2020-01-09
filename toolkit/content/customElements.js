@@ -90,7 +90,7 @@ MozElements.MozElementMixin = Base => class MozElement extends Base {
 
 
   attributeChangedCallback(name, oldValue, newValue) {
-    if (!this.isConnectedAndReady || oldValue === newValue || !this.inheritedAttributesCache) {
+    if (oldValue === newValue || !this.inheritedAttributesCache) {
       return;
     }
 
