@@ -9,6 +9,17 @@ const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
 
 
+exports.classes = {
+  
+  name: PropTypes.string,
+
+  
+  isApplied: PropTypes.bool,
+};
+
+
+
+
 const declaration = exports.declaration = {
   
   computedProperties: PropTypes.arrayOf(PropTypes.shape({
