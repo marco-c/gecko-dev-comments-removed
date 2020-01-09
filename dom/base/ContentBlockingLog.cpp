@@ -22,6 +22,9 @@ namespace mozilla {
 namespace dom {
 
 
+NS_NAMED_LITERAL_CSTRING(kDummyOriginHash, "PAGELOAD");
+
+
 
 static constexpr double kRatioReportUser = 0.01;
 
@@ -111,6 +114,12 @@ void ContentBlockingLog::ReportLog() {
     return;
   }
   LOG("ContentBlockingLog::ReportLog [this=%p]", this);
+  const bool testMode =
+      StaticPrefs::telemetry_origin_telemetry_test_mode_enabled();
+  OriginMetricID metricId =
+      testMode ? OriginMetricID::ContentBlocking_Blocked_TestOnly
+               : OriginMetricID::ContentBlocking_Blocked;
+  ReportOriginSingleHash(metricId, kDummyOriginHash);
 
   for (const auto& originEntry : mLog) {
     if (!originEntry.mData) {
@@ -126,12 +135,9 @@ void ContentBlockingLog::ReportLog() {
 
       const bool isBlocked = logEntry.mBlocked;
       Maybe<StorageAccessGrantedReason> reason = logEntry.mReason;
-      const bool testMode =
-          StaticPrefs::telemetry_origin_telemetry_test_mode_enabled();
 
-      OriginMetricID metricId =
-          testMode ? OriginMetricID::ContentBlocking_Blocked_TestOnly
-                   : OriginMetricID::ContentBlocking_Blocked;
+      metricId = testMode ? OriginMetricID::ContentBlocking_Blocked_TestOnly
+                          : OriginMetricID::ContentBlocking_Blocked;
       if (!isBlocked) {
         MOZ_ASSERT(reason.isSome());
         switch (reason.value()) {
