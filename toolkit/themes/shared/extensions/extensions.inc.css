@@ -155,6 +155,11 @@ button.warning {
 
 
 
+#categories {
+  
+  padding: 1px;
+}
+
 #categories > .category[disabled] {
   overflow: hidden;
   height: 0;
