@@ -416,11 +416,7 @@ void AudioSink::NotifyAudioNeeded() {
     mFramesParsed += data->Frames();
 
     if (mConverter->InputConfig() != mConverter->OutputConfig()) {
-      
-      
       AlignedAudioBuffer buffer(data->MoveableData());
-      buffer.SetLength(size_t(data->Frames()) * data->mChannels);
-
       AlignedAudioBuffer convertedData =
           mConverter->Process(AudioSampleBuffer(std::move(buffer))).Forget();
       data = CreateAudioFromBuffer(std::move(convertedData), data);

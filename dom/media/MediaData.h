@@ -296,7 +296,7 @@ class MediaData {
 
   media::TimeUnit GetEndTime() const { return mTime + mDuration; }
 
-  bool AdjustForStartTime(int64_t aStartTime) {
+  virtual bool AdjustForStartTime(int64_t aStartTime) {
     mTime = mTime - media::TimeUnit::FromMicroseconds(aStartTime);
     return !mTime.IsNegative();
   }
@@ -341,6 +341,7 @@ class AudioData : public MediaData {
         mChannels(aChannels),
         mChannelMap(aChannelMap),
         mRate(aRate),
+        mOriginalTime(aTime),
         mAudioData(std::move(aData)),
         mFrames(mAudioData.Length() / aChannels) {}
 
@@ -348,16 +349,22 @@ class AudioData : public MediaData {
   static const char* sTypeName;
 
   
-  Span<AudioDataValue> Data() const {
-    return MakeSpan(mAudioData.Data(), mAudioData.Length());
-  }
+  Span<AudioDataValue> Data() const;
 
   
   uint32_t Frames() const { return mFrames; }
 
   
   
-  AlignedAudioBuffer MoveableData() { return std::move(mAudioData); }
+  
+  
+  
+  
+  bool SetTrimWindow(const media::TimeInterval& aTrim);
+
+  
+  
+  AlignedAudioBuffer MoveableData();
 
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
@@ -367,6 +374,8 @@ class AudioData : public MediaData {
   
   
   bool IsAudible() const;
+
+  bool AdjustForStartTime(int64_t aStartTime) override;
 
   const uint32_t mChannels;
   
@@ -384,10 +393,14 @@ class AudioData : public MediaData {
   ~AudioData() {}
 
  private:
+  AudioDataValue* GetAdjustedData() const;
+  media::TimeUnit mOriginalTime;
   
   AlignedAudioBuffer mAudioData;
+  Maybe<media::TimeInterval> mTrimWindow;
   
-  const uint32_t mFrames;
+  uint32_t mFrames;
+  size_t mDataOffset = 0;
 };
 
 namespace layers {
