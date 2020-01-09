@@ -117,7 +117,12 @@ class WebConsoleUI {
 
 
 
-  clearOutput(clearStorage) {
+
+
+  clearOutput(clearStorage, event) {
+    if (event) {
+      event.preventDefault();
+    }
     if (this.wrapper) {
       this.wrapper.dispatchMessagesClear();
     }
@@ -262,12 +267,14 @@ class WebConsoleUI {
 
     let clearShortcut;
     if (AppConstants.platform === "macosx") {
+      const alternativaClearShortcut = l10n.getStr("webconsole.clear.alternativeKeyOSX");
+      shortcuts.on(alternativaClearShortcut, event => this.clearOutput(true, event));
       clearShortcut = l10n.getStr("webconsole.clear.keyOSX");
     } else {
       clearShortcut = l10n.getStr("webconsole.clear.key");
     }
 
-    shortcuts.on(clearShortcut, () => this.clearOutput(true));
+    shortcuts.on(clearShortcut, event => this.clearOutput(true, event));
 
     if (this.isBrowserConsole) {
       
