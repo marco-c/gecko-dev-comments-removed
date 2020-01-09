@@ -677,6 +677,56 @@ class BrowserParent final : public PBrowserParent,
   mozilla::ipc::IPCResult RecvQueryVisitedState(
       InfallibleTArray<URIParams>&& aURIs);
 
+ private:
+  void SuppressDisplayport(bool aEnabled);
+
+  void DestroyInternal();
+
+  void SetRenderLayersInternal(bool aEnabled, bool aForceRepaint);
+
+  already_AddRefed<nsFrameLoader> GetFrameLoader(
+      bool aUseCachedFrameLoaderAfterDestroy = false) const;
+
+  void TryCacheDPIAndScale();
+
+  bool AsyncPanZoomEnabled() const;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  void ApzAwareEventRoutingToChild(ScrollableLayerGuid* aOutTargetGuid,
+                                   uint64_t* aOutInputBlockId,
+                                   nsEventStatus* aOutApzResponse);
+
+  
+  
+  
+  bool QueryDropLinksForVerification();
+
+ private:
+  
+  
+  typedef nsDataHashtable<nsUint64HashKey, BrowserParent*>
+      LayerToBrowserParentTable;
+  static LayerToBrowserParentTable* sLayerToBrowserParentTable;
+
+  static void AddBrowserParentToTable(layers::LayersId aLayersId,
+                                      BrowserParent* aBrowserParent);
+
+  static void RemoveBrowserParentFromTable(layers::LayersId aLayersId);
+
+  
+  static StaticAutoPtr<nsTArray<BrowserParent*>> sFocusStack;
+
+  static void PushFocus(BrowserParent* aBrowserParent);
+
+  static void PopFocus(BrowserParent* aBrowserParent);
+
   ContentCacheInParent mContentCache;
 
   nsIntRect mRect;
@@ -690,35 +740,10 @@ class BrowserParent final : public PBrowserParent,
   LayoutDeviceIntPoint mClientOffset;
   LayoutDeviceIntPoint mChromeOffset;
 
- private:
-  void SuppressDisplayport(bool aEnabled);
-
-  void DestroyInternal();
-
-  void SetRenderLayersInternal(bool aEnabled, bool aForceRepaint);
-
-  already_AddRefed<nsFrameLoader> GetFrameLoader(
-      bool aUseCachedFrameLoaderAfterDestroy = false) const;
-
   RefPtr<ContentParent> mManager;
-  void TryCacheDPIAndScale();
-
-  bool AsyncPanZoomEnabled() const;
 
   
   bool mDocShellIsActive;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  void ApzAwareEventRoutingToChild(ScrollableLayerGuid* aOutTargetGuid,
-                                   uint64_t* aOutInputBlockId,
-                                   nsEventStatus* aOutApzResponse);
 
   
   
@@ -794,34 +819,11 @@ class BrowserParent final : public PBrowserParent,
 
   bool mHasContentOpener;
 
-  
-  
-  
-  bool QueryDropLinksForVerification();
   nsTArray<nsString> mVerifyDropLinks;
 
 #ifdef DEBUG
   int32_t mActiveSupressDisplayportCount;
 #endif
-
- private:
-  
-  
-  typedef nsDataHashtable<nsUint64HashKey, BrowserParent*>
-      LayerToBrowserParentTable;
-  static LayerToBrowserParentTable* sLayerToBrowserParentTable;
-
-  static void AddBrowserParentToTable(layers::LayersId aLayersId,
-                                      BrowserParent* aBrowserParent);
-
-  static void RemoveBrowserParentFromTable(layers::LayersId aLayersId);
-
-  
-  static StaticAutoPtr<nsTArray<BrowserParent*>> sFocusStack;
-
-  static void PushFocus(BrowserParent* aBrowserParent);
-
-  static void PopFocus(BrowserParent* aBrowserParent);
 
   layout::RenderFrame mRenderFrame;
   LayersObserverEpoch mLayerTreeEpoch;
