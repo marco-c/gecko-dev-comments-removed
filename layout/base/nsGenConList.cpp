@@ -117,7 +117,10 @@ bool nsGenConList::NodeAfter(const nsGenConNode* aNode1,
 
   int32_t cmp = nsLayoutUtils::DoCompareTreePosition(content1, content2,
                                                      pseudoType1, -pseudoType2);
-  MOZ_ASSERT(cmp != 0, "same content, different frames");
+  
+  
+  MOZ_ASSERT(cmp != 0 || content1->GetParent()->GetXBLBinding(),
+             "same content, different frames");
   return cmp > 0;
 }
 
