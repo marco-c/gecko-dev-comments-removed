@@ -62,6 +62,12 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   
   
+  
+  
+  void NotifyStartDelayedAutoplayMedia();
+
+  
+  
   bool ValidateTransaction(const Transaction& aTransaction,
                            ContentParent* aSource);
 

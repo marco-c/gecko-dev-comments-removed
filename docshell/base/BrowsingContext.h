@@ -247,6 +247,8 @@ class BrowsingContext : public nsWrapperCache,
 
   JSObject* WrapObject(JSContext* aCx);
 
+  void StartDelayedAutoplayMediaComponents();
+
   
 
 
@@ -396,6 +398,9 @@ class BrowsingContext : public nsWrapperCache,
       MOZ_RELEASE_ASSERT(opener && opener->Group() == Group());
     }
   }
+
+  
+  void DidSetIsActivatedByUserGesture(ContentParent* aSource);
 
   
   const Type mType;

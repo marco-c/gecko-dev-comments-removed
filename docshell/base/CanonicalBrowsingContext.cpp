@@ -10,6 +10,11 @@
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/dom/ContentProcessManager.h"
 
+extern mozilla::LazyLogModule gAutoplayPermissionLog;
+
+#define AUTOPLAY_LOG(msg, ...) \
+  MOZ_LOG(gAutoplayPermissionLog, LogLevel::Debug, (msg, ##__VA_ARGS__))
+
 namespace mozilla {
 namespace dom {
 
@@ -117,6 +122,26 @@ void CanonicalBrowsingContext::Traverse(
 void CanonicalBrowsingContext::Unlink() {
   CanonicalBrowsingContext* tmp = this;
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mWindowGlobals);
+}
+
+void CanonicalBrowsingContext::NotifyStartDelayedAutoplayMedia() {
+  if (!mCurrentWindowGlobal) {
+    return;
+  }
+
+  
+  
+  
+  NotifyUserGestureActivation();
+  AUTOPLAY_LOG("NotifyStartDelayedAutoplayMedia for chrome bc 0x%08" PRIx64,
+               Id());
+  StartDelayedAutoplayMediaComponents();
+  
+  
+  for (auto iter = Group()->ContentParentsIter(); !iter.Done(); iter.Next()) {
+    auto entry = iter.Get();
+    Unused << entry->GetKey()->SendStartDelayedAutoplayMediaComponents(this);
+  }
 }
 
 }  
