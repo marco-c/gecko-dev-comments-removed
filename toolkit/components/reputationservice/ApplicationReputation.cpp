@@ -162,7 +162,7 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     
     
     
-    
+    ".action",  
     
     
     
@@ -193,6 +193,7 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     ".bz2",        
     ".bzip2",      
     ".cab",        
+    ".caction",    
     ".cdr",        
     ".cfg",        
     ".chi",        
@@ -200,10 +201,11 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     ".class",  
     
     
-    ".command",  
-    ".cpgz",     
-    ".cpi",      
-                 
+    ".command",        
+    ".configprofile",  
+    ".cpgz",           
+    ".cpi",            
+                       
     
     
     
@@ -213,6 +215,7 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     ".dart",        
     ".dc42",        
     ".deb",         
+    ".definition",  
     ".desktop",     
     ".dex",         
     ".dht",         
@@ -232,6 +235,7 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     ".dotx",        
     ".drv",         
     ".dvdr",        
+    ".dylib",       
     ".efi",         
     ".eml",         
     
@@ -255,6 +259,7 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     
     ".ini",  
     
+    ".internetconnect",  
     
     ".iso",  
     
@@ -315,7 +320,8 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     
     
     
-    ".ndif",  
+    ".ndif",            
+    ".networkconnect",  
     
     ".ocx",  
     
@@ -411,6 +417,7 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     
     ".search-ms",  
     ".seplugin",   
+    ".service",    
     
     ".sh",    
     ".shar",  
@@ -474,9 +481,10 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     
     
     
-    ".website",  
-    ".wim",      
-    
+    ".website",   
+    ".wflow",     
+    ".wim",       
+    ".workflow",  
     
     
     
