@@ -469,19 +469,16 @@ enum class AlignmentContext {
 
 
 
-
-
-
 struct IntrinsicSize {
-  nsStyleCoord width, height;
+  Maybe<nscoord> width;
+  Maybe<nscoord> height;
 
-  IntrinsicSize() : width(eStyleUnit_None), height(eStyleUnit_None) {}
+  IntrinsicSize() = default;
+
   IntrinsicSize(nscoord aWidth, nscoord aHeight)
-      : width(aWidth, nsStyleCoord::CoordConstructor),
-        height(aHeight, nsStyleCoord::CoordConstructor) {}
+      : width(Some(aWidth)), height(Some(aHeight)) {}
 
-  IntrinsicSize(const IntrinsicSize& rhs)
-      : width(rhs.width), height(rhs.height) {}
+  IntrinsicSize(const IntrinsicSize& rhs) = default;
   IntrinsicSize& operator=(const IntrinsicSize& rhs) {
     width = rhs.width;
     height = rhs.height;
