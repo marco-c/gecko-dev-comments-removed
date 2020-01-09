@@ -433,8 +433,11 @@ class UrlbarInput {
     
     
     
+    
+    
     let enableAutofill =
       UrlbarPrefs.get("autoFill") &&
+      this.selectionEnd == searchString.length &&
       (!this._lastSearchString ||
        !this._lastSearchString.startsWith(searchString));
     this._lastSearchString = searchString;

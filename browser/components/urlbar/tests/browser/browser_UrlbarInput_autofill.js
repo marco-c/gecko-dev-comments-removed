@@ -7,7 +7,7 @@
 
 "use strict";
 
-add_task(async function test() {
+add_task(async function setValueFromResult() {
   gURLBar.setValueFromResult({
     autofill: {
       value: "foobar",
@@ -22,4 +22,33 @@ add_task(async function test() {
     "The start of the selection should be correct");
   Assert.equal(gURLBar.selectionEnd, "foobar".length,
     "The end of the selection should be correct");
+});
+
+add_task(async function noAutofillWhenCaretNotAtEnd() {
+  gURLBar.focus();
+
+  
+  
+  EventUtils.sendString("blah");
+
+  
+  await PlacesUtils.history.clear();
+  await PlacesTestUtils.addVisits([{
+    uri: "http://example.com/",
+  }]);
+
+  
+  gURLBar.inputField.value = "xample.com";
+
+  
+  gURLBar.selectionStart = 0;
+  gURLBar.selectionEnd = 0;
+  EventUtils.sendString("e");
+
+  
+  let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
+  Assert.ok(!result.autofill, "The first result should not be autofill");
+
+  await UrlbarTestUtils.promisePopupClose(window);
+  await PlacesUtils.history.clear();
 });

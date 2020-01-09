@@ -66,6 +66,7 @@ var UrlbarTestUtils = {
 
 
 
+
   async waitForAutocompleteResultAt(win, index) {
     let urlbar = getUrlbarAbstraction(win);
     return urlbar.promiseResultAt(index);
@@ -92,6 +93,8 @@ var UrlbarTestUtils = {
   },
 
   
+
+
 
 
 
