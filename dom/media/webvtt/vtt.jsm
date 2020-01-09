@@ -519,7 +519,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
         PARSE_CONTENT_MODE.PSUEDO_CUE : PARSE_CONTENT_MODE.NORMAL_CUE);
       this.div.appendChild(this.cueDiv);
 
-      this.fontSize = this._getFontSize(containerBox.height);
+      this.fontSize = this._getFontSize(containerBox);
       
       
       if (supportPseudo) {
@@ -545,13 +545,13 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
 
 
 
-    _getFontSize(renderingAreaHeight) {
+    _getFontSize(containerBox) {
       
       
       
       
       
-      return renderingAreaHeight * 0.05 + "px";
+      return containerBox.height * 0.05 + "px";
     }
 
     _applyNonPseudoCueStyles() {
