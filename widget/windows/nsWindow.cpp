@@ -360,9 +360,6 @@ static const int32_t kGlassMarginAdjustment = 2;
 static const int32_t kResizableBorderMinSize = 3;
 
 
-static bool gIsPointerEventsEnabled = false;
-
-
 
 
 
@@ -650,10 +647,6 @@ nsWindow::nsWindow(bool aIsChildWindow)
     if (mPointerEvents.ShouldEnableInkCollector()) {
       InkCollector::sInkCollector = new InkCollector();
     }
-
-    Preferences::AddBoolVarCache(&gIsPointerEventsEnabled,
-                                 "dom.w3c_pointer_events.enabled",
-                                 gIsPointerEventsEnabled);
   }  
 
   mIdleService = nullptr;
