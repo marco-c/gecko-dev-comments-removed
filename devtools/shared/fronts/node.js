@@ -129,12 +129,7 @@ class NodeFront extends FrontClassWithSpec(nodeSpec) {
   }
 
   
-  form(form, detail, ctx) {
-    if (detail === "actorid") {
-      this.actorID = form;
-      return;
-    }
-
+  form(form, ctx) {
     
     if (form.shortValue) {
       

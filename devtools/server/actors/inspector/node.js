@@ -97,11 +97,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
   },
 
   
-  form: function(detail) {
-    if (detail === "actorid") {
-      return this.actorID;
-    }
-
+  form: function() {
     const parentNode = this.walker.parentNode(this);
     const inlineTextChild = this.walker.inlineTextChild(this);
     const shadowRoot = isShadowRoot(this.rawNode);

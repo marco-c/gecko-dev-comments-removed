@@ -114,7 +114,7 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
     return this.inspector.targetActor.window;
   },
 
-  form: function(detail) {
+  form: function() {
     
     
     const CSS = this.inspector.targetActor.window.CSS;
@@ -1164,11 +1164,7 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
     return "[StyleRuleActor for " + this.rawRule + "]";
   },
 
-  form: function(detail) {
-    if (detail === "actorid") {
-      return this.actorID;
-    }
-
+  form: function() {
     const form = {
       actor: this.actorID,
       type: this.type,
