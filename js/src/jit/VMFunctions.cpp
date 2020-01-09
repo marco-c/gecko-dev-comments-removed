@@ -462,7 +462,9 @@ bool ArrayPopDense(JSContext* cx, HandleObject obj, MutableHandleValue rval) {
   
   rval.set(argv[0]);
   if (rval.isUndefined()) {
-    TypeScript::MonitorBytecodeType(cx, rval);
+    jsbytecode* pc;
+    JSScript* script = cx->currentScript(&pc);
+    TypeScript::MonitorBytecodeType(cx, script, pc, rval);
   }
   return true;
 }
@@ -526,7 +528,9 @@ bool ArrayShiftDense(JSContext* cx, HandleObject obj, MutableHandleValue rval) {
   
   rval.set(argv[0]);
   if (rval.isUndefined()) {
-    TypeScript::MonitorBytecodeType(cx, rval);
+    jsbytecode* pc;
+    JSScript* script = cx->currentScript(&pc);
+    TypeScript::MonitorBytecodeType(cx, script, pc, rval);
   }
   return true;
 }
@@ -685,7 +689,9 @@ bool GetIntrinsicValue(JSContext* cx, HandlePropertyName name,
   
   
   
-  TypeScript::MonitorBytecodeType(cx, rval);
+  jsbytecode* pc;
+  JSScript* script = cx->currentScript(&pc);
+  TypeScript::MonitorBytecodeType(cx, script, pc, rval);
 
   return true;
 }
