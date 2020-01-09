@@ -3,6 +3,10 @@
 
 
 
+const TEST_BENCHMARK = "benchmark";
+const TEST_PAGE_LOAD = "pageload";
+
+
 var perfData = window.performance;
 var gRetryCounter = 0;
 
@@ -63,7 +67,7 @@ function raptorContentHandler() {
 }
 
 function setup(settings) {
-  if (settings.type != "pageload") {
+  if (settings.type != TEST_PAGE_LOAD) {
     return;
   }
 
