@@ -529,8 +529,19 @@ CSSIntPoint Event::GetScreenCoords(nsPresContext* aPresContext,
     return CSSIntPoint(aPoint.x, aPoint.y);
   }
 
+  
+  
+  
+  
+  
+  LayoutDevicePoint floatPoint(aPoint);
+  LayoutDevicePoint topLevelPoint =
+      guiEvent->mWidget->WidgetToTopLevelWidgetTransform().TransformPoint(
+          floatPoint);
+  LayoutDeviceIntPoint rounded = RoundedToInt(topLevelPoint);
+
   nsPoint pt = LayoutDevicePixel::ToAppUnits(
-      aPoint,
+      rounded,
       aPresContext->DeviceContext()->AppUnitsPerDevPixelAtUnitFullZoom());
 
   if (PresShell* presShell = aPresContext->GetPresShell()) {
@@ -539,7 +550,7 @@ CSSIntPoint Event::GetScreenCoords(nsPresContext* aPresContext,
   }
 
   pt += LayoutDevicePixel::ToAppUnits(
-      guiEvent->mWidget->WidgetToScreenOffset(),
+      guiEvent->mWidget->TopLevelWidgetToScreenOffset(),
       aPresContext->DeviceContext()->AppUnitsPerDevPixelAtUnitFullZoom());
 
   return CSSPixel::FromAppUnitsRounded(pt);

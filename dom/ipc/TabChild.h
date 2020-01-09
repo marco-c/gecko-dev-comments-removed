@@ -312,6 +312,9 @@ class TabChild final : public TabChildBase,
   virtual mozilla::ipc::IPCResult RecvSizeModeChanged(
       const nsSizeMode& aSizeMode) override;
 
+  virtual mozilla::ipc::IPCResult RecvChildToParentMatrix(
+      const mozilla::gfx::Matrix4x4& aMatrix) override;
+
   mozilla::ipc::IPCResult RecvActivate();
 
   mozilla::ipc::IPCResult RecvDeactivate();
@@ -639,6 +642,10 @@ class TabChild final : public TabChildBase,
 
   
   
+  mozilla::LayoutDeviceToLayoutDeviceMatrix4x4 GetChildToParentConversionMatrix() const;
+
+  
+  
   
   
   
@@ -904,6 +911,8 @@ class TabChild final : public TabChildBase,
   uint32_t mPendingDocShellBlockers;
 
   WindowsHandle mWidgetNativeData;
+
+  Maybe<LayoutDeviceToLayoutDeviceMatrix4x4> mChildToParentConversionMatrix;
 
   
   

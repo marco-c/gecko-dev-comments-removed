@@ -1349,6 +1349,26 @@ class nsIWidget : public nsISupports {
 
 
 
+  virtual LayoutDeviceIntPoint TopLevelWidgetToScreenOffset() {
+    return WidgetToScreenOffset();
+  }
+
+  
+
+
+
+
+
+
+  virtual mozilla::LayoutDeviceToLayoutDeviceMatrix4x4
+  WidgetToTopLevelWidgetTransform() {
+    return mozilla::LayoutDeviceToLayoutDeviceMatrix4x4();
+  }
+
+  
+
+
+
 
   virtual LayoutDeviceIntSize ClientToWindowSize(
       const LayoutDeviceIntSize& aClientSize) = 0;
