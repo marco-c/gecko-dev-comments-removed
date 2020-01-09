@@ -22,15 +22,20 @@ namespace widget {
 static nsTArray<CommandInt>* gCurrentCommands = nullptr;
 static bool gHandled = false;
 
+inline void AddCommand(Command aCommand) {
+  MOZ_ASSERT(gCurrentCommands);
+  gCurrentCommands->AppendElement(static_cast<CommandInt>(aCommand));
+}
+
 
 static void copy_clipboard_cb(GtkWidget* w, gpointer user_data) {
-  gCurrentCommands->AppendElement(CommandCopy);
+  AddCommand(Command::Copy);
   g_signal_stop_emission_by_name(w, "copy_clipboard");
   gHandled = true;
 }
 
 static void cut_clipboard_cb(GtkWidget* w, gpointer user_data) {
-  gCurrentCommands->AppendElement(CommandCut);
+  AddCommand(Command::Cut);
   g_signal_stop_emission_by_name(w, "cut_clipboard");
   gHandled = true;
 }
@@ -42,18 +47,24 @@ static void cut_clipboard_cb(GtkWidget* w, gpointer user_data) {
 
 static const Command sDeleteCommands[][2] = {
     
-    {CommandDeleteCharBackward, CommandDeleteCharForward},       
-    {CommandDeleteWordBackward, CommandDeleteWordForward},       
-    {CommandDeleteWordBackward, CommandDeleteWordForward},       
-    {CommandDeleteToBeginningOfLine, CommandDeleteToEndOfLine},  
-    {CommandDeleteToBeginningOfLine, CommandDeleteToEndOfLine},  
-    {CommandDeleteToBeginningOfLine,
-     CommandDeleteToEndOfLine},  
-    {CommandDeleteToBeginningOfLine, CommandDeleteToEndOfLine},  
+    
+    {Command::DeleteCharBackward, Command::DeleteCharForward},
+    
+    {Command::DeleteWordBackward, Command::DeleteWordForward},
+    
+    {Command::DeleteWordBackward, Command::DeleteWordForward},
+    
+    {Command::DeleteToBeginningOfLine, Command::DeleteToEndOfLine},
+    
+    {Command::DeleteToBeginningOfLine, Command::DeleteToEndOfLine},
+    
+    {Command::DeleteToBeginningOfLine, Command::DeleteToEndOfLine},
+    
+    {Command::DeleteToBeginningOfLine, Command::DeleteToEndOfLine},
     
     
     
-    {CommandDoNothing, CommandDoNothing}  
+    {Command::DoNothing, Command::DoNothing}  
 };
 
 static void delete_from_cursor_cb(GtkWidget* w, GtkDeleteType del_type,
@@ -91,31 +102,31 @@ static void delete_from_cursor_cb(GtkWidget* w, GtkDeleteType del_type,
     
     
     if (forward) {
-      gCurrentCommands->AppendElement(CommandWordNext);
-      gCurrentCommands->AppendElement(CommandWordPrevious);
+      AddCommand(Command::WordNext);
+      AddCommand(Command::WordPrevious);
     } else {
-      gCurrentCommands->AppendElement(CommandWordPrevious);
-      gCurrentCommands->AppendElement(CommandWordNext);
+      AddCommand(Command::WordPrevious);
+      AddCommand(Command::WordNext);
     }
   } else if (del_type == GTK_DELETE_DISPLAY_LINES ||
              del_type == GTK_DELETE_PARAGRAPHS) {
     
     
     if (forward) {
-      gCurrentCommands->AppendElement(CommandBeginLine);
+      AddCommand(Command::BeginLine);
     } else {
-      gCurrentCommands->AppendElement(CommandEndLine);
+      AddCommand(Command::EndLine);
     }
   }
 
   Command command = sDeleteCommands[del_type][forward];
-  if (!command) {
-    return;  
+  if (command == Command::DoNothing) {
+    return;
   }
 
   unsigned int absCount = Abs(count);
   for (unsigned int i = 0; i < absCount; ++i) {
-    gCurrentCommands->AppendElement(command);
+    AddCommand(command);
   }
 }
 
@@ -125,35 +136,35 @@ static const Command sMoveCommands[][2][2] = {
     
     
     {
-     {CommandCharPrevious, CommandCharNext},
-     {CommandSelectCharPrevious, CommandSelectCharNext}},
+     {Command::CharPrevious, Command::CharNext},
+     {Command::SelectCharPrevious, Command::SelectCharNext}},
     {
-     {CommandCharPrevious, CommandCharNext},
-     {CommandSelectCharPrevious, CommandSelectCharNext}},
+     {Command::CharPrevious, Command::CharNext},
+     {Command::SelectCharPrevious, Command::SelectCharNext}},
     {
-     {CommandWordPrevious, CommandWordNext},
-     {CommandSelectWordPrevious, CommandSelectWordNext}},
+     {Command::WordPrevious, Command::WordNext},
+     {Command::SelectWordPrevious, Command::SelectWordNext}},
     {
-     {CommandLinePrevious, CommandLineNext},
-     {CommandSelectLinePrevious, CommandSelectLineNext}},
+     {Command::LinePrevious, Command::LineNext},
+     {Command::SelectLinePrevious, Command::SelectLineNext}},
     {
-     {CommandBeginLine, CommandEndLine},
-     {CommandSelectBeginLine, CommandSelectEndLine}},
+     {Command::BeginLine, Command::EndLine},
+     {Command::SelectBeginLine, Command::SelectEndLine}},
     {
-     {CommandLinePrevious, CommandLineNext},
-     {CommandSelectLinePrevious, CommandSelectLineNext}},
+     {Command::LinePrevious, Command::LineNext},
+     {Command::SelectLinePrevious, Command::SelectLineNext}},
     {
-     {CommandBeginLine, CommandEndLine},
-     {CommandSelectBeginLine, CommandSelectEndLine}},
+     {Command::BeginLine, Command::EndLine},
+     {Command::SelectBeginLine, Command::SelectEndLine}},
     {
-     {CommandMovePageUp, CommandMovePageDown},
-     {CommandSelectPageUp, CommandSelectPageDown}},
+     {Command::MovePageUp, Command::MovePageDown},
+     {Command::SelectPageUp, Command::SelectPageDown}},
     {
-     {CommandMoveTop, CommandMoveBottom},
-     {CommandSelectTop, CommandSelectBottom}},
+     {Command::MoveTop, Command::MoveBottom},
+     {Command::SelectTop, Command::SelectBottom}},
     {
-     {CommandDoNothing, CommandDoNothing},
-     {CommandDoNothing, CommandDoNothing}}};
+     {Command::DoNothing, Command::DoNothing},
+     {Command::DoNothing, Command::DoNothing}}};
 
 static void move_cursor_cb(GtkWidget* w, GtkMovementStep step, gint count,
                            gboolean extend_selection, gpointer user_data) {
@@ -171,25 +182,25 @@ static void move_cursor_cb(GtkWidget* w, GtkMovementStep step, gint count,
   }
 
   Command command = sMoveCommands[step][extend_selection][forward];
-  if (!command) {
-    return;  
+  if (command == Command::DoNothing) {
+    return;
   }
 
   unsigned int absCount = Abs(count);
   for (unsigned int i = 0; i < absCount; ++i) {
-    gCurrentCommands->AppendElement(command);
+    AddCommand(command);
   }
 }
 
 static void paste_clipboard_cb(GtkWidget* w, gpointer user_data) {
-  gCurrentCommands->AppendElement(CommandPaste);
+  AddCommand(Command::Paste);
   g_signal_stop_emission_by_name(w, "paste_clipboard");
   gHandled = true;
 }
 
 
 static void select_all_cb(GtkWidget* w, gboolean select, gpointer user_data) {
-  gCurrentCommands->AppendElement(CommandSelectAll);
+  AddCommand(Command::SelectAll);
   g_signal_stop_emission_by_name(w, "select_all");
   gHandled = true;
 }
