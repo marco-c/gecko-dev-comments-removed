@@ -3041,10 +3041,14 @@ nsresult Selection::ScrollIntoView(SelectionRegion aRegion,
                                    nsIPresShell::ScrollAxis aVertical,
                                    nsIPresShell::ScrollAxis aHorizontal,
                                    int32_t aFlags) {
-  if (!mFrameSelection) return NS_OK;  
+  if (!mFrameSelection) {
+    return NS_OK;
+  }
 
   nsIPresShell* presShell = mFrameSelection->GetShell();
-  if (!presShell) return NS_OK;
+  if (!presShell || !presShell->GetDocument()) {
+    return NS_OK;
+  }
 
   if (mFrameSelection->GetBatching()) return NS_OK;
 
@@ -3063,7 +3067,7 @@ nsresult Selection::ScrollIntoView(SelectionRegion aRegion,
   
   
   if (aFlags & Selection::SCROLL_DO_FLUSH) {
-    presShell->FlushPendingNotifications(FlushType::Layout);
+    presShell->GetDocument()->FlushPendingNotifications(FlushType::Layout);
 
     
     presShell = mFrameSelection ? mFrameSelection->GetShell() : nullptr;
