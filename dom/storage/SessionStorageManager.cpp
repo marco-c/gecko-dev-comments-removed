@@ -6,8 +6,10 @@
 
 #include "SessionStorageManager.h"
 
+#include "mozilla/dom/ContentChild.h"
 #include "SessionStorage.h"
 #include "SessionStorageCache.h"
+#include "SessionStorageObserver.h"
 #include "StorageUtils.h"
 
 namespace mozilla {
@@ -25,6 +27,30 @@ SessionStorageManager::SessionStorageManager() {
 
   if (observer) {
     observer->AddSink(this);
+  }
+
+  if (!XRE_IsParentProcess() && NextGenLocalStorageEnabled()) {
+    
+    
+    
+    mObserver = SessionStorageObserver::Get();
+
+    if (!mObserver) {
+      ContentChild* contentActor = ContentChild::GetSingleton();
+      MOZ_ASSERT(contentActor);
+
+      RefPtr<SessionStorageObserver> observer = new SessionStorageObserver();
+
+      SessionStorageObserverChild* actor =
+          new SessionStorageObserverChild(observer);
+
+      MOZ_ALWAYS_TRUE(
+          contentActor->SendPSessionStorageObserverConstructor(actor));
+
+      observer->SetActor(actor);
+
+      mObserver = std::move(observer);
+    }
   }
 }
 
