@@ -8953,22 +8953,35 @@ bool nsDisplayText::CreateWebRenderCommands(
     mozilla::wr::IpcResourceUpdateQueue& aResources,
     const StackingContextHelper& aSc, RenderRootStateManager* aManager,
     nsDisplayListBuilder* aDisplayListBuilder) {
-  if (mBounds.IsEmpty()) {
+  auto* f = static_cast<nsTextFrame*>(mFrame);
+  auto appUnitsPerDevPixel = f->PresContext()->AppUnitsPerDevPixel();
+
+  nsRect bounds = f->WebRenderBounds() + ToReferenceFrame();
+  
+  bounds.Inflate(appUnitsPerDevPixel);
+
+  if (bounds.IsEmpty()) {
     return true;
   }
 
-  auto appUnitsPerDevPixel = Frame()->PresContext()->AppUnitsPerDevPixel();
   gfx::Point deviceOffset =
-      LayoutDevicePoint::FromAppUnits(mBounds.TopLeft(), appUnitsPerDevPixel)
+      LayoutDevicePoint::FromAppUnits(bounds.TopLeft(), appUnitsPerDevPixel)
           .ToUnknownPoint();
 
-  nsRect visible = GetPaintRect();
-  visible.Inflate(3 * appUnitsPerDevPixel);
-
-  visible = visible.Intersect(mBounds);
+  
+  
+  
+  
+  
+  
+  if (!(IsSelected() || f->StyleText()->GetTextShadow())) {
+    nsRect visible = GetPaintRect();
+    visible.Inflate(3 * appUnitsPerDevPixel);
+    bounds = bounds.Intersect(visible);
+  }
 
   RefPtr<gfxContext> textDrawer = aBuilder.GetTextContext(
-      aResources, aSc, aManager, this, visible, deviceOffset);
+      aResources, aSc, aManager, this, bounds, deviceOffset);
 
   RenderToContext(textDrawer, aDisplayListBuilder, true);
 
