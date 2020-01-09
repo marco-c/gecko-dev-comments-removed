@@ -3091,9 +3091,16 @@ static MOZ_MUST_USE bool PerformPromiseRace(
 }
 
 
+
+
+
+
+
 static MOZ_MUST_USE JSObject* CommonStaticResolveRejectImpl(
     JSContext* cx, HandleValue thisVal, HandleValue argVal,
     ResolutionMode mode) {
+  
+  
   
   if (!thisVal.isObject()) {
     const char* msg = mode == ResolveMode ? "Receiver of Promise.resolve call"
@@ -3104,6 +3111,8 @@ static MOZ_MUST_USE JSObject* CommonStaticResolveRejectImpl(
   }
   RootedObject C(cx, &thisVal.toObject());
 
+  
+  
   
   if (mode == ResolveMode && argVal.isObject()) {
     RootedObject xObj(cx, &argVal.toObject());
@@ -3123,10 +3132,13 @@ static MOZ_MUST_USE JSObject* CommonStaticResolveRejectImpl(
       }
     }
     if (isPromise) {
+      
       RootedValue ctorVal(cx);
       if (!GetProperty(cx, xObj, xObj, cx->names().constructor, &ctorVal)) {
         return nullptr;
       }
+
+      
       if (ctorVal == thisVal) {
         return xObj;
       }
@@ -3134,11 +3146,16 @@ static MOZ_MUST_USE JSObject* CommonStaticResolveRejectImpl(
   }
 
   
+  
+  
   Rooted<PromiseCapability> capability(cx);
   if (!NewPromiseCapability(cx, C, &capability, true)) {
     return nullptr;
   }
 
+  
+  
+  
   
   if (!RunResolutionFunction(
           cx, mode == ResolveMode ? capability.resolve() : capability.reject(),
@@ -3532,6 +3549,8 @@ MOZ_MUST_USE bool js::AsyncFunctionReturned(
 
 
 
+
+
 template <typename T>
 static MOZ_MUST_USE bool InternalAwait(JSContext* cx, HandleValue value,
                                        HandleObject resultPromise,
@@ -3548,6 +3567,7 @@ static MOZ_MUST_USE bool InternalAwait(JSContext* cx, HandleValue value,
   }
 
   
+  
   if (!ResolvePromiseInternal(cx, promise, value)) {
     return false;
   }
@@ -3561,13 +3581,14 @@ static MOZ_MUST_USE bool InternalAwait(JSContext* cx, HandleValue value,
   if (!reaction) {
     return false;
   }
-
-  
   extraStep(reaction);
 
   
   return PerformPromiseThenWithReaction(cx, promise, reaction);
 }
+
+
+
 
 
 MOZ_MUST_USE JSObject* js::AsyncFunctionAwait(
@@ -3590,6 +3611,7 @@ MOZ_MUST_USE JSObject* js::AsyncFunctionAwait(
 }
 
 
+
 MOZ_MUST_USE bool js::AsyncGeneratorAwait(
     JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
     HandleValue value) {
@@ -3609,6 +3631,7 @@ MOZ_MUST_USE bool js::AsyncGeneratorAwait(
 
 
 
+
 bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
                                      CompletionKind completionKind) {
   
@@ -3621,6 +3644,7 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
     return false;
   }
 
+  
   
   if (!thisVal.isObject() ||
       !thisVal.toObject().is<AsyncFromSyncIteratorObject>()) {
@@ -3635,6 +3659,7 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
       return false;
     }
 
+    
     
     if (!RejectPromiseInternal(cx, resultPromise, badGeneratorError)) {
       return false;
@@ -3657,10 +3682,14 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
     func.set(asyncIter->nextMethod());
   } else if (completionKind == CompletionKind::Return) {
     
+    
+    
     if (!GetProperty(cx, iter, iter, cx->names().return_, &func)) {
       return AbruptRejectPromise(cx, args, resultPromise, nullptr);
     }
 
+    
+    
     
     if (func.isNullOrUndefined()) {
       
@@ -3671,6 +3700,7 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
 
       RootedValue resultVal(cx, ObjectValue(*resultObj));
 
+      
       
       if (!ResolvePromiseInternal(cx, resultPromise, resultVal)) {
         return AbruptRejectPromise(cx, args, resultPromise, nullptr);
@@ -3683,12 +3713,18 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
   } else {
     
     MOZ_ASSERT(completionKind == CompletionKind::Throw);
+
+    
+    
     if (!GetProperty(cx, iter, iter, cx->names().throw_, &func)) {
       return AbruptRejectPromise(cx, args, resultPromise, nullptr);
     }
 
     
+    
+    
     if (func.isNullOrUndefined()) {
+      
       
       if (!RejectPromiseInternal(cx, resultPromise, args.get(0))) {
         return AbruptRejectPromise(cx, args, resultPromise, nullptr);
@@ -3702,12 +3738,22 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
 
   
   
+  
+  
+  
+  
   RootedValue iterVal(cx, ObjectValue(*iter));
   RootedValue resultVal(cx);
   if (!Call(cx, func, iterVal, args.get(0), &resultVal)) {
     return AbruptRejectPromise(cx, args, resultPromise, nullptr);
   }
 
+  
+  
+  
+  
+  
+  
   
   
   if (!resultVal.isObject()) {
@@ -3731,7 +3777,11 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
 
   
   
+  
+  
+  
 
+  
   
   RootedValue doneVal(cx);
   if (!GetProperty(cx, resultObj, resultObj, cx->names().done, &doneVal)) {
@@ -3740,11 +3790,16 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
   bool done = ToBoolean(doneVal);
 
   
+  
   RootedValue value(cx);
   if (!GetProperty(cx, resultObj, resultObj, cx->names().value, &value)) {
     return AbruptRejectPromise(cx, args, resultPromise, nullptr);
   }
 
+  
+  
+  
+  
   
   RootedValue onFulfilled(
       cx,
@@ -3752,6 +3807,14 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
                       : PromiseHandlerAsyncFromSyncIteratorValueUnwrapNotDone));
   RootedValue onRejected(cx, Int32Value(PromiseHandlerThrower));
 
+  
+  
+  
+  
+  
+  
+  
+  
   
   auto extra = [](Handle<PromiseReactionRecord*> reaction) {};
   if (!InternalAwait(cx, value, resultPromise, onFulfilled, onRejected,
@@ -3788,13 +3851,18 @@ MOZ_MUST_USE bool js::AsyncGeneratorReject(
 }
 
 
+
+
+
 static MOZ_MUST_USE bool AsyncGeneratorResumeNext(
-    JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
+    JSContext* cx, Handle<AsyncGeneratorObject*> unwrappedGenerator,
     ResumeNextKind kind,
     HandleValue valueOrException_ ,
     bool done ) {
   RootedValue valueOrException(cx, valueOrException_);
 
+  
+  
   while (true) {
     switch (kind) {
       case ResumeNextKind::Enqueue:
@@ -3805,13 +3873,14 @@ static MOZ_MUST_USE bool AsyncGeneratorResumeNext(
         HandleValue exception = valueOrException;
 
         
+        
+        
+        MOZ_ASSERT(!unwrappedGenerator->isQueueEmpty());
 
         
-        MOZ_ASSERT(!asyncGenObj->isQueueEmpty());
-
         
         AsyncGeneratorRequest* request =
-            AsyncGeneratorObject::dequeueRequest(cx, asyncGenObj);
+            AsyncGeneratorObject::dequeueRequest(cx, unwrappedGenerator);
         if (!request) {
           return false;
         }
@@ -3819,13 +3888,15 @@ static MOZ_MUST_USE bool AsyncGeneratorResumeNext(
         
         Rooted<PromiseObject*> resultPromise(cx, request->promise());
 
-        asyncGenObj->cacheRequest(request);
+        unwrappedGenerator->cacheRequest(request);
 
+        
         
         if (!RejectPromiseInternal(cx, resultPromise, exception)) {
           return false;
         }
 
+        
         
         break;
       }
@@ -3834,13 +3905,14 @@ static MOZ_MUST_USE bool AsyncGeneratorResumeNext(
         HandleValue value = valueOrException;
 
         
+        
+        
+        MOZ_ASSERT(!unwrappedGenerator->isQueueEmpty());
 
         
-        MOZ_ASSERT(!asyncGenObj->isQueueEmpty());
-
         
         AsyncGeneratorRequest* request =
-            AsyncGeneratorObject::dequeueRequest(cx, asyncGenObj);
+            AsyncGeneratorObject::dequeueRequest(cx, unwrappedGenerator);
         if (!request) {
           return false;
         }
@@ -3848,7 +3920,7 @@ static MOZ_MUST_USE bool AsyncGeneratorResumeNext(
         
         Rooted<PromiseObject*> resultPromise(cx, request->promise());
 
-        asyncGenObj->cacheRequest(request);
+        unwrappedGenerator->cacheRequest(request);
 
         
         JSObject* resultObj = CreateIterResultObject(cx, value, done);
@@ -3859,34 +3931,39 @@ static MOZ_MUST_USE bool AsyncGeneratorResumeNext(
         RootedValue resultValue(cx, ObjectValue(*resultObj));
 
         
+        
         if (!ResolvePromiseInternal(cx, resultPromise, resultValue)) {
           return false;
         }
 
+        
         
         break;
       }
     }
 
     
+    
+    
+    
+    MOZ_ASSERT(!unwrappedGenerator->isExecuting());
 
     
-    MOZ_ASSERT(!asyncGenObj->isExecuting());
-
-    
-    if (asyncGenObj->isAwaitingYieldReturn() ||
-        asyncGenObj->isAwaitingReturn()) {
+    if (unwrappedGenerator->isAwaitingYieldReturn() ||
+        unwrappedGenerator->isAwaitingReturn()) {
       return true;
     }
 
     
-    if (asyncGenObj->isQueueEmpty()) {
+    
+    if (unwrappedGenerator->isQueueEmpty()) {
       return true;
     }
 
+    
     
     Rooted<AsyncGeneratorRequest*> request(
-        cx, AsyncGeneratorObject::peekRequest(asyncGenObj));
+        cx, AsyncGeneratorObject::peekRequest(unwrappedGenerator));
     if (!request) {
       return false;
     }
@@ -3897,46 +3974,74 @@ static MOZ_MUST_USE bool AsyncGeneratorResumeNext(
     
     if (completionKind != CompletionKind::Normal) {
       
-      if (asyncGenObj->isSuspendedStart()) {
-        asyncGenObj->setCompleted();
+      if (unwrappedGenerator->isSuspendedStart()) {
+        
+        
+        unwrappedGenerator->setCompleted();
       }
 
       
-      if (asyncGenObj->isCompleted()) {
+      if (unwrappedGenerator->isCompleted()) {
         RootedValue value(cx, request->completionValue());
 
         
         if (completionKind == CompletionKind::Return) {
           
-          asyncGenObj->setAwaitingReturn();
+          
+          unwrappedGenerator->setAwaitingReturn();
 
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
           
           static constexpr int32_t ResumeNextReturnFulfilled =
               PromiseHandlerAsyncGeneratorResumeNextReturnFulfilled;
           static constexpr int32_t ResumeNextReturnRejected =
               PromiseHandlerAsyncGeneratorResumeNextReturnRejected;
-
           RootedValue onFulfilled(cx, Int32Value(ResumeNextReturnFulfilled));
           RootedValue onRejected(cx, Int32Value(ResumeNextReturnRejected));
 
           
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
           auto extra = [&](Handle<PromiseReactionRecord*> reaction) {
-            reaction->setIsAsyncGenerator(asyncGenObj);
+            reaction->setIsAsyncGenerator(unwrappedGenerator);
           };
           return InternalAwait(cx, value, nullptr, onFulfilled, onRejected,
                                extra);
         }
 
         
+
+        
         MOZ_ASSERT(completionKind == CompletionKind::Throw);
 
         
+        
+        
         kind = ResumeNextKind::Reject;
         valueOrException.set(value);
-        
         continue;
       }
-    } else if (asyncGenObj->isCompleted()) {
+    } else if (unwrappedGenerator->isCompleted()) {
+      
       
       kind = ResumeNextKind::Resolve;
       valueOrException.setUndefined();
@@ -3945,11 +4050,12 @@ static MOZ_MUST_USE bool AsyncGeneratorResumeNext(
     }
 
     
-    MOZ_ASSERT(asyncGenObj->isSuspendedStart() ||
-               asyncGenObj->isSuspendedYield());
+    MOZ_ASSERT(unwrappedGenerator->isSuspendedStart() ||
+               unwrappedGenerator->isSuspendedYield());
 
     
-    asyncGenObj->setExecuting();
+    
+    unwrappedGenerator->setExecuting();
 
     RootedValue argument(cx, request->completionValue());
 
@@ -3958,7 +4064,7 @@ static MOZ_MUST_USE bool AsyncGeneratorResumeNext(
       
       
       
-      asyncGenObj->setAwaitingYieldReturn();
+      unwrappedGenerator->setAwaitingYieldReturn();
 
       static constexpr int32_t YieldReturnAwaitedFulfilled =
           PromiseHandlerAsyncGeneratorYieldReturnAwaitedFulfilled;
@@ -3969,14 +4075,15 @@ static MOZ_MUST_USE bool AsyncGeneratorResumeNext(
       RootedValue onRejected(cx, Int32Value(YieldReturnAwaitedRejected));
 
       auto extra = [&](Handle<PromiseReactionRecord*> reaction) {
-        reaction->setIsAsyncGenerator(asyncGenObj);
+        reaction->setIsAsyncGenerator(unwrappedGenerator);
       };
       return InternalAwait(cx, argument, nullptr, onFulfilled, onRejected,
                            extra);
     }
 
     
-    return AsyncGeneratorResume(cx, asyncGenObj, completionKind, argument);
+    return AsyncGeneratorResume(cx, unwrappedGenerator, completionKind,
+                                argument);
   }
 }
 
@@ -4238,21 +4345,29 @@ static MOZ_MUST_USE bool PerformPromiseThenWithoutSettleHandlers(
   return PerformPromiseThenWithReaction(cx, promise, reaction);
 }
 
+
+
 static MOZ_MUST_USE bool PerformPromiseThenWithReaction(
-    JSContext* cx, Handle<PromiseObject*> promise,
+    JSContext* cx, Handle<PromiseObject*> unwrappedPromise,
     Handle<PromiseReactionRecord*> reaction) {
-  JS::PromiseState state = promise->state();
-  int32_t flags = promise->flags();
+  
+  JS::PromiseState state = unwrappedPromise->state();
+  int32_t flags = unwrappedPromise->flags();
   if (state == JS::PromiseState::Pending) {
     
     
     
     
-    if (!AddPromiseReaction(cx, promise, reaction)) {
+    
+    
+    
+    
+    if (!AddPromiseReaction(cx, unwrappedPromise, reaction)) {
       return false;
     }
   }
 
+  
   
   else {
     
@@ -4260,7 +4375,8 @@ static MOZ_MUST_USE bool PerformPromiseThenWithReaction(
                   state == JS::PromiseState::Rejected);
 
     
-    RootedValue valueOrReason(cx, promise->valueOrReason());
+    
+    RootedValue valueOrReason(cx, unwrappedPromise->valueOrReason());
 
     
     
@@ -4269,11 +4385,15 @@ static MOZ_MUST_USE bool PerformPromiseThenWithReaction(
     }
 
     
+    
     if (state == JS::PromiseState::Rejected &&
         !(flags & PROMISE_FLAG_HANDLED)) {
-      cx->runtime()->removeUnhandledRejectedPromise(cx, promise);
+      cx->runtime()->removeUnhandledRejectedPromise(cx, unwrappedPromise);
     }
 
+    
+    
+    
     
     if (!EnqueuePromiseReactionJob(cx, reaction, valueOrReason, state)) {
       return false;
@@ -4281,15 +4401,14 @@ static MOZ_MUST_USE bool PerformPromiseThenWithReaction(
   }
 
   
-  promise->setFixedSlot(PromiseSlot_Flags,
-                        Int32Value(flags | PROMISE_FLAG_HANDLED));
+  unwrappedPromise->setFixedSlot(PromiseSlot_Flags,
+                                 Int32Value(flags | PROMISE_FLAG_HANDLED));
 
-  
   return true;
 }
 
 static MOZ_MUST_USE bool AddPromiseReaction(
-    JSContext* cx, Handle<PromiseObject*> promise,
+    JSContext* cx, Handle<PromiseObject*> unwrappedPromise,
     Handle<PromiseReactionRecord*> reaction) {
   MOZ_RELEASE_ASSERT(reaction->is<PromiseReactionRecord>());
   RootedValue reactionVal(cx, ObjectValue(*reaction));
@@ -4300,12 +4419,13 @@ static MOZ_MUST_USE bool AddPromiseReaction(
   
   
   mozilla::Maybe<AutoRealm> ar;
-  if (promise->compartment() != cx->compartment()) {
-    ar.emplace(cx, promise);
+  if (unwrappedPromise->compartment() != cx->compartment()) {
+    ar.emplace(cx, unwrappedPromise);
     if (!cx->compartment()->wrap(cx, &reactionVal)) {
       return false;
     }
   }
+  Handle<PromiseObject*> promise = unwrappedPromise;
 
   
   RootedValue reactionsVal(cx, promise->reactions());
