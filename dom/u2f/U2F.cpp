@@ -516,15 +516,13 @@ void U2F::RejectTransaction(const nsresult& aError) {
   if (transaction.HasRegisterCallback()) {
     RegisterResponse response;
     response.mErrorCode.Construct(static_cast<uint32_t>(code));
-    
-    ExecuteCallback(response, MOZ_KnownLive(transaction.GetRegisterCallback()));
+    ExecuteCallback(response, transaction.GetRegisterCallback());
   }
 
   if (transaction.HasSignCallback()) {
     SignResponse response;
     response.mErrorCode.Construct(static_cast<uint32_t>(code));
-    
-    ExecuteCallback(response, MOZ_KnownLive(transaction.GetSignCallback()));
+    ExecuteCallback(response, transaction.GetSignCallback());
   }
 }
 

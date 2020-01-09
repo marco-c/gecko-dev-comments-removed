@@ -233,7 +233,8 @@ class PromiseJobRunnable final : public MicroTaskRunnable {
       AutoHandlingUserInputStatePusher userInpStatePusher(
           mPropagateUserInputEventHandling, nullptr, doc);
 
-      mCallback->Call("promise callback");
+      
+      MOZ_KnownLive(mCallback)->Call("promise callback");
       aAso.CheckForInterrupt();
     }
     

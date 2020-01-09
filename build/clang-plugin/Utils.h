@@ -280,49 +280,30 @@ inline bool typeIsRefPtr(QualType Q) {
 
 
 
-inline const Stmt *MaybeSkipOneTrivial(const Stmt *s) {
-    if (!s) {
-      return nullptr;
-    }
-    if (auto *ewc = dyn_cast<ExprWithCleanups>(s)) {
-      return ewc->getSubExpr();
-    }
-    if (auto *mte = dyn_cast<MaterializeTemporaryExpr>(s)) {
-      return mte->GetTemporaryExpr();
-    }
-    if (auto *bte = dyn_cast<CXXBindTemporaryExpr>(s)) {
-      return bte->getSubExpr();
-    }
-    if (auto *ce = dyn_cast<CastExpr>(s)) {
-      s = ce->getSubExpr();
-    }
-    if (auto *pe = dyn_cast<ParenExpr>(s)) {
-      s = pe->getSubExpr();
-    }
-    
-    return s;
-}
-
 inline const Stmt *IgnoreTrivials(const Stmt *s) {
   while (true) {
-    const Stmt* newS = MaybeSkipOneTrivial(s);
-    if (newS == s) {
-      return newS;
+    if (!s) {
+      return nullptr;
+    } else if (auto *ewc = dyn_cast<ExprWithCleanups>(s)) {
+      s = ewc->getSubExpr();
+    } else if (auto *mte = dyn_cast<MaterializeTemporaryExpr>(s)) {
+      s = mte->GetTemporaryExpr();
+    } else if (auto *bte = dyn_cast<CXXBindTemporaryExpr>(s)) {
+      s = bte->getSubExpr();
+    } else if (auto *ce = dyn_cast<CastExpr>(s)) {
+      s = ce->getSubExpr();
+    } else if (auto *pe = dyn_cast<ParenExpr>(s)) {
+      s = pe->getSubExpr();
+    } else {
+      break;
     }
-    s = newS;
   }
 
-  
-  return nullptr;
+  return s;
 }
 
 inline const Expr *IgnoreTrivials(const Expr *e) {
   return cast_or_null<Expr>(IgnoreTrivials(static_cast<const Stmt *>(e)));
-}
-
-
-inline const Expr *MaybeSkipOneTrivial(const Expr *e) {
-  return cast_or_null<Expr>(MaybeSkipOneTrivial(static_cast<const Stmt *>(e)));
 }
 
 const FieldDecl *getBaseRefCntMember(QualType T);

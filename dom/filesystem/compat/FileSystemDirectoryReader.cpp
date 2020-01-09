@@ -87,7 +87,8 @@ class PromiseHandler final : public PromiseNativeHandler {
       sequence[i] = entry;
     }
 
-    mSuccessCallback->Call(sequence);
+    
+    MOZ_KnownLive(mSuccessCallback)->Call(sequence);
   }
 
   virtual void RejectedCallback(JSContext* aCx,
