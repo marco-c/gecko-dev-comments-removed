@@ -1676,6 +1676,7 @@ static nsLineBox* FindLineClampTarget(nsBlockFrame*& aFrame,
     
     
     if (line->IsEmpty()) {
+      iter.Next();
       continue;
     }
 
