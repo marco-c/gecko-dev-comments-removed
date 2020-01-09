@@ -466,6 +466,13 @@ KeyPath KeyPath::DeserializeFromString(const nsAString& aString) {
       keyPath.mStrings.AppendElement(tokenizer.nextToken());
     }
 
+    if (tokenizer.separatorAfterCurrentToken()) {
+      
+      
+      
+      keyPath.mStrings.AppendElement(nsString{});
+    }
+
     return keyPath;
   }
 
