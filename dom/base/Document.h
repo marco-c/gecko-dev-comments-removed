@@ -2888,6 +2888,14 @@ class Document : public nsINode,
 
 
 
+  void SetStateObjectFrom(Document* aDocument) {
+    SetStateObject(aDocument->mStateObjectContainer);
+  }
+
+  
+
+
+
 
 
   DocumentTheme GetDocumentLWTheme();
