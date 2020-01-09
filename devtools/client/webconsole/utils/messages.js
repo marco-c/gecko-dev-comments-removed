@@ -245,11 +245,9 @@ function transformPageErrorPacket(packet) {
   const messageSource = matchesCSS ? MESSAGE_SOURCE.CSS
                                   : MESSAGE_SOURCE.JAVASCRIPT;
   return new ConsoleMessage({
-    innerWindowID: pageError.innerWindowID,
     source: messageSource,
     type: MESSAGE_TYPE.LOG,
     level,
-    category: pageError.category,
     messageText: pageError.errorMessage,
     stacktrace: pageError.stacktrace ? pageError.stacktrace : null,
     frame,
@@ -430,79 +428,10 @@ function isPacketPrivate(packet) {
   );
 }
 
-function createWarningGroupMessage(id, type, firstMessage) {
-  let messageText;
-  if (type === MESSAGE_TYPE.CONTENT_BLOCKING_GROUP) {
-    messageText = l10n.getStr("webconsole.group.contentBlocked");
-  }
-  return new ConsoleMessage({
-    id,
-    level: MESSAGE_LEVEL.WARN,
-    source: MESSAGE_SOURCE.CONSOLE_FRONTEND,
-    type,
-    messageText,
-    timeStamp: firstMessage.timeStamp,
-    innerWindowID: firstMessage.innerWindowID,
-  });
-}
-
-
-
-
-
-
-function getWarningGroupType(message) {
-  if (isContentBlockingMessage(message)) {
-    return MESSAGE_TYPE.CONTENT_BLOCKING_GROUP;
-  }
-  return null;
-}
-
-
-
-
-
-
-
-
-function getParentWarningGroupMessageId(message) {
-  return `${message.type}-${message.innerWindowID}`;
-}
-
-
-
-
-
-
-function isWarningGroup(message) {
-  return message.type === MESSAGE_TYPE.CONTENT_BLOCKING_GROUP
-   || message.type === MESSAGE_TYPE.CORS_GROUP
-   || message.type === MESSAGE_TYPE.CSP_GROUP;
-}
-
-
-
-
-
-
-function isContentBlockingMessage(message) {
-  const {category} = message;
-  return category == "cookieBlockedPermission" ||
-    category == "cookieBlockedTracker" ||
-    category == "cookieBlockedAll" ||
-    category == "cookieBlockedForeign" ||
-    category == "Tracking Protection";
-}
-
 module.exports = {
-  createWarningGroupMessage,
   getInitialMessageCountForViewport,
-  getParentWarningGroupMessageId,
-  getWarningGroupType,
-  isContentBlockingMessage,
   isGroupType,
   isPacketPrivate,
-  isWarningGroup,
   l10n,
   prepareMessage,
   
