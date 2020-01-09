@@ -99,7 +99,7 @@ struct RefCountedChild : public RefCountedBase {
   virtual void method_test3() override; 
 };
 
-void RefCountedChild::method_test3() { 
+void RefCountedChild::method_test3() {
   test(); 
 }
 
