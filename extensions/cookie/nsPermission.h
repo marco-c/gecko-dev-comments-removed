@@ -23,6 +23,12 @@ class nsPermission : public nsIPermission {
                                                uint32_t aExpireType,
                                                int64_t aExpireTime);
 
+  
+  
+  
+  static already_AddRefed<nsIPrincipal> ClonePrincipalForPermission(
+      nsIPrincipal* aPrincipal);
+
  protected:
   nsPermission(nsIPrincipal* aPrincipal, const nsACString& aType,
                uint32_t aCapability, uint32_t aExpireType, int64_t aExpireTime);
