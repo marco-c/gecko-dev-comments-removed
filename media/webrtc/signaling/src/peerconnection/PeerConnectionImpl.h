@@ -133,7 +133,7 @@ class RTCStatsQuery {
   RTCStatsQuery(RTCStatsQuery&& aOrig) = default;
   ~RTCStatsQuery();
 
-  nsAutoPtr<mozilla::dom::RTCStatsReportInternal> report;
+  std::unique_ptr<mozilla::dom::RTCStatsReportInternal> report;
   
   mozilla::TimeStamp iceStartTime;
 
@@ -203,6 +203,8 @@ class PeerConnectionImpl final
       
       
       override;
+
+  const RefPtr<MediaTransportHandler> GetTransportHandler() const;
 
   
   const RefPtr<PeerConnectionMedia>& media() const {
@@ -631,6 +633,7 @@ class PeerConnectionImpl final
 
   bool mForceIceTcp;
   RefPtr<PeerConnectionMedia> mMedia;
+  RefPtr<MediaTransportHandler> mTransportHandler;
 
   
   mozilla::UniquePtr<PCUuidGenerator> mUuidGen;

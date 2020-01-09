@@ -15,6 +15,7 @@
 #include "PeerConnectionImpl.h"
 #include "mozIGeckoMediaPluginService.h"
 #include "nsIRunnable.h"
+#include "MediaTransportHandler.h"  
 
 namespace mozilla {
 class PeerConnectionCtxObserver;
@@ -50,6 +51,10 @@ class PeerConnectionCtx {
 
   static void UpdateNetworkState(bool online);
 
+  RefPtr<MediaTransportHandler> GetTransportHandler() const {
+    return mTransportHandler;
+  }
+
   
   friend class PeerConnectionImpl;
   friend class PeerConnectionWrapper;
@@ -66,7 +71,8 @@ class PeerConnectionCtx {
   
   std::map<const std::string, PeerConnectionImpl*> mPeerConnections;
 
-  PeerConnectionCtx() : mGMPReady(false) {}
+  PeerConnectionCtx()
+      : mGMPReady(false), mTransportHandler(MediaTransportHandler::Create()) {}
   
   PeerConnectionCtx(const PeerConnectionCtx& other) = delete;
   void operator=(const PeerConnectionCtx& other) = delete;
@@ -94,6 +100,9 @@ class PeerConnectionCtx {
   nsCOMPtr<mozIGeckoMediaPluginService> mGMPService;
   bool mGMPReady;
   nsTArray<nsCOMPtr<nsIRunnable>> mQueuedJSEPOperations;
+
+  
+  RefPtr<MediaTransportHandler> mTransportHandler;
 
   static PeerConnectionCtx* gInstance;
 

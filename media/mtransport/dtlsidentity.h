@@ -7,6 +7,7 @@
 #define dtls_identity_h__
 
 #include <string>
+#include <vector>
 
 #include "m_cpp_utils.h"
 #include "mozilla/Move.h"
@@ -14,11 +15,42 @@
 #include "nsISupportsImpl.h"
 #include "ScopedNSSTypes.h"
 #include "sslt.h"
+#include "nsTArray.h"
 
 
 
 
 namespace mozilla {
+
+class DtlsDigest {
+ public:
+  const static size_t kMaxDtlsDigestLength = HASH_LENGTH_MAX;
+  explicit DtlsDigest(const std::string& algorithm)
+      : algorithm_(algorithm) {}
+  DtlsDigest(const std::string& algorithm,
+             const std::vector<uint8_t>& value)
+      : algorithm_(algorithm), value_(value) {
+    MOZ_ASSERT(value.size() <= kMaxDtlsDigestLength);
+  }
+  ~DtlsDigest() = default;
+
+  bool operator!=(const DtlsDigest& rhs) const {
+    return !operator==(rhs);
+  }
+
+  bool operator==(const DtlsDigest& rhs) const {
+    if (algorithm_ != rhs.algorithm_) {
+      return false;
+    }
+
+    return value_ == rhs.value_;
+  }
+
+  std::string algorithm_;
+  std::vector<uint8_t> value_;
+};
+
+typedef std::vector<DtlsDigest> DtlsDigestList;
 
 class DtlsIdentity final {
  public:
@@ -31,24 +63,29 @@ class DtlsIdentity final {
 
   
   
+  
+  nsresult Serialize(nsTArray<uint8_t>* aKeyDer, nsTArray<uint8_t>* aCertDer);
+  static RefPtr<DtlsIdentity> Deserialize(const nsTArray<uint8_t>& aKeyDer,
+                                          const nsTArray<uint8_t>& aCertDer,
+                                          SSLKEAType authType);
+
+  
+  
   static RefPtr<DtlsIdentity> Generate();
 
   
   
-  const UniqueCERTCertificate &cert() const { return cert_; }
-  const UniqueSECKEYPrivateKey &privkey() const { return private_key_; }
+  const UniqueCERTCertificate& cert() const { return cert_; }
+  const UniqueSECKEYPrivateKey& privkey() const { return private_key_; }
   
   
   
   
   SSLKEAType auth_type() const { return auth_type_; }
 
-  nsresult ComputeFingerprint(const std::string algorithm, uint8_t *digest,
-                              size_t size, size_t *digest_length) const;
-  static nsresult ComputeFingerprint(const UniqueCERTCertificate &cert,
-                                     const std::string algorithm,
-                                     uint8_t *digest, size_t size,
-                                     size_t *digest_length);
+  nsresult ComputeFingerprint(DtlsDigest* digest) const;
+  static nsresult ComputeFingerprint(const UniqueCERTCertificate& cert,
+                                     DtlsDigest* digest);
 
   static const std::string DEFAULT_HASH_ALGORITHM;
   enum { HASH_ALGORITHM_MAX_LENGTH = 64 };

@@ -8,169 +8,120 @@
 #include "mozilla/RefPtr.h"
 #include "nsISupportsImpl.h"
 #include "sigslot.h"
-#include "transportlayer.h"  
+#include "transportlayer.h"      
+#include "dtlsidentity.h"  
 #include "mozilla/dom/PeerConnectionImplEnumsBinding.h"
+#include "mozilla/dom/RTCConfigurationBinding.h"
 #include "nricectx.h"               
 #include "nsDOMNavigationTiming.h"  
-
-
-#include "signaling/src/peerconnection/PeerConnectionImpl.h"
+#include "signaling/src/common/CandidateInfo.h"
 
 #include "nsString.h"
 
-#include <map>
 #include <string>
 #include <set>
 #include <vector>
 
 namespace mozilla {
-class DtlsIdentity;  
+class DtlsIdentity;
 class NrIceCtx;
 class NrIceMediaStream;
 class NrIceResolver;
-class SdpFingerprintAttributeList;  
 class TransportFlow;
 class RTCStatsQuery;
 
 namespace dom {
-struct RTCConfiguration;
 struct RTCStatsReportInternal;
-}  
+}
 
-
-class MediaTransportBase {
+class MediaTransportHandler {
  public:
-  virtual void SendPacket(const std::string& aTransportId,
-                          MediaPacket& aPacket) = 0;
-
-  virtual TransportLayer::State GetState(const std::string& aTransportId,
-                                         bool aRtcp) const = 0;
-  sigslot::signal2<const std::string&, MediaPacket&> SignalPacketReceived;
-  sigslot::signal2<const std::string&, MediaPacket&> SignalEncryptedSending;
-  sigslot::signal2<const std::string&, TransportLayer::State> SignalStateChange;
-  sigslot::signal2<const std::string&, TransportLayer::State>
-      SignalRtcpStateChange;
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaTransportBase)
-
- protected:
-  virtual ~MediaTransportBase() {}
-};
-
-class MediaTransportHandler : public MediaTransportBase,
-                              public sigslot::has_slots<> {
- public:
-  MediaTransportHandler();
-  nsresult Init(const std::string& aName,
-                const dom::RTCConfiguration& aConfiguration);
-  void Destroy();
-
   
   
-  void SetProxyServer(NrSocketProxyConfig&& aProxyConfig);
-
-  void EnsureProvisionalTransport(const std::string& aTransportId,
-                                  const std::string& aLocalUfrag,
-                                  const std::string& aLocalPwd,
-                                  size_t aComponentCount);
-
-  
-  
-  
-  
-  void StartIceGathering(bool aDefaultRouteOnly,
-                         
-                         
-                         
-                         const nsTArray<NrIceStunAddr>& aStunAddrs);
-
-  void ActivateTransport(const std::string& aTransportId,
-                         const std::string& aLocalUfrag,
-                         const std::string& aLocalPwd, size_t aComponentCount,
-                         const std::string& aUfrag,
-                         const std::string& aPassword,
-                         const std::vector<std::string>& aCandidateList,
-                         
-                         RefPtr<DtlsIdentity> aDtlsIdentity, bool aDtlsClient,
-                         
-                         const SdpFingerprintAttributeList& aFingerprints,
-                         bool aPrivacyRequested);
-
-  void RemoveTransportsExcept(const std::set<std::string>& aTransportIds);
-
-  void StartIceChecks(bool aIsControlling, bool aIsOfferer,
-                      const std::vector<std::string>& aIceOptions);
-
-  void AddIceCandidate(const std::string& aTransportId,
-                       const std::string& aCandidate);
-
-  void UpdateNetworkState(bool aOnline);
-
-  void SendPacket(const std::string& aTransportId,
-                  MediaPacket& aPacket) override;
-
-  
-  
-  TransportLayer::State GetState(const std::string& aTransportId,
-                                 bool aRtcp) const override;
-
-  RefPtr<RTCStatsQueryPromise> GetIceStats(UniquePtr<RTCStatsQuery>&& aQuery);
+  static already_AddRefed<MediaTransportHandler> Create();
 
   typedef MozPromise<dom::Sequence<nsString>, nsresult, true> IceLogPromise;
 
-  static RefPtr<IceLogPromise> GetIceLog(const nsCString& aPattern);
+  
+  
+  
+  virtual RefPtr<IceLogPromise> GetIceLog(const nsCString& aPattern) = 0;
+  virtual void ClearIceLog() = 0;
+  virtual void EnterPrivateMode() = 0;
+  virtual void ExitPrivateMode() = 0;
 
-  static void ClearIceLog();
-
-  static void EnterPrivateMode();
-  static void ExitPrivateMode();
+  virtual nsresult Init(const std::string& aName,
+                        const nsTArray<dom::RTCIceServer>& aIceServers,
+                        dom::RTCIceTransportPolicy aIcePolicy) = 0;
+  virtual void Destroy() = 0;
 
   
-  struct CandidateInfo {
-    std::string mCandidate;
-    std::string mDefaultHostRtp;
-    uint16_t mDefaultPortRtp = 0;
-    std::string mDefaultHostRtcp;
-    uint16_t mDefaultPortRtcp = 0;
-  };
+  
+  virtual void SetProxyServer(NrSocketProxyConfig&& aProxyConfig) = 0;
+
+  virtual void EnsureProvisionalTransport(const std::string& aTransportId,
+                                          const std::string& aLocalUfrag,
+                                          const std::string& aLocalPwd,
+                                          size_t aComponentCount) = 0;
+
+  
+  
+  
+  
+  virtual void StartIceGathering(bool aDefaultRouteOnly,
+                                 
+                                 
+                                 const nsTArray<NrIceStunAddr>& aStunAddrs) = 0;
+
+  virtual void ActivateTransport(
+      const std::string& aTransportId, const std::string& aLocalUfrag,
+      const std::string& aLocalPwd, size_t aComponentCount,
+      const std::string& aUfrag, const std::string& aPassword,
+      const nsTArray<uint8_t>& aKeyDer, const nsTArray<uint8_t>& aCertDer,
+      SSLKEAType aAuthType, bool aDtlsClient,
+      const DtlsDigestList& aDigests, bool aPrivacyRequested) = 0;
+
+  virtual void RemoveTransportsExcept(
+      const std::set<std::string>& aTransportIds) = 0;
+
+  virtual void StartIceChecks(bool aIsControlling, bool aIsOfferer,
+                              const std::vector<std::string>& aIceOptions) = 0;
+
+  virtual void SendPacket(const std::string& aTransportId,
+                          MediaPacket&& aPacket) = 0;
+
+  virtual void AddIceCandidate(const std::string& aTransportId,
+                               const std::string& aCandidate) = 0;
+
+  virtual void UpdateNetworkState(bool aOnline) = 0;
+
+  virtual TransportLayer::State GetState(const std::string& aTransportId,
+                                         bool aRtcp) const = 0;
+
+  
+  typedef MozPromise<std::unique_ptr<dom::RTCStatsReportInternal>, nsresult,
+                     true>
+      StatsPromise;
+  virtual RefPtr<StatsPromise> GetIceStats(
+      const std::string& aTransportId, DOMHighResTimeStamp aNow,
+      std::unique_ptr<dom::RTCStatsReportInternal>&& aReport) = 0;
 
   sigslot::signal2<const std::string&, const CandidateInfo&> SignalCandidate;
   sigslot::signal1<const std::string&> SignalAlpnNegotiated;
   sigslot::signal1<dom::PCImplIceGatheringState> SignalGatheringStateChange;
   sigslot::signal1<dom::PCImplIceConnectionState> SignalConnectionStateChange;
 
- private:
-  RefPtr<TransportFlow> CreateTransportFlow(
-      const std::string& aTransportId, bool aIsRtcp,
-      RefPtr<DtlsIdentity> aDtlsIdentity, bool aDtlsClient,
-      
-      const SdpFingerprintAttributeList& aFingerprints, bool aPrivacyRequested);
+  sigslot::signal2<const std::string&, MediaPacket&> SignalPacketReceived;
+  sigslot::signal2<const std::string&, MediaPacket&> SignalEncryptedSending;
+  sigslot::signal2<const std::string&, TransportLayer::State> SignalStateChange;
+  sigslot::signal2<const std::string&, TransportLayer::State>
+      SignalRtcpStateChange;
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaTransportHandler)
 
-  struct Transport {
-    RefPtr<TransportFlow> mFlow;
-    RefPtr<TransportFlow> mRtcpFlow;
-  };
-
-  void OnGatheringStateChange(NrIceCtx* aIceCtx,
-                              NrIceCtx::GatheringState aState);
-  void OnConnectionStateChange(NrIceCtx* aIceCtx,
-                               NrIceCtx::ConnectionState aState);
-  void OnCandidateFound(NrIceMediaStream* aStream,
-                        const std::string& aCandidate);
-  void OnStateChange(TransportLayer* aLayer, TransportLayer::State);
-  void OnRtcpStateChange(TransportLayer* aLayer, TransportLayer::State);
-  void PacketReceived(TransportLayer* aLayer, MediaPacket& aPacket);
-  void EncryptedPacketSending(TransportLayer* aLayer, MediaPacket& aPacket);
-  RefPtr<TransportFlow> GetTransportFlow(const std::string& aId,
-                                         bool aIsRtcp) const;
-  void GetIceStats(const NrIceMediaStream& aStream, DOMHighResTimeStamp aNow,
-                   dom::RTCStatsReportInternal* aReport) const;
-
-  ~MediaTransportHandler() override;
-  RefPtr<NrIceCtx> mIceCtx;
-  RefPtr<NrIceResolver> mDNSResolver;
-  std::map<std::string, Transport> mTransports;
-  bool mProxyOnly = false;
+ protected:
+  virtual ~MediaTransportHandler() = default;
 };
+
 }  
 
 #endif  

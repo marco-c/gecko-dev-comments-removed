@@ -389,6 +389,7 @@ void DataChannelConnection::DestroyOnSTS(struct socket *aMasterSocket,
 #endif
 
   disconnect_all();
+  mTransportHandler = nullptr;
 
   
   
@@ -400,7 +401,6 @@ void DataChannelConnection::DestroyOnSTS(struct socket *aMasterSocket,
 }
 
 void DataChannelConnection::DestroyOnSTSFinal() {
-  mTransportHandler = nullptr;
   sDataChannelShutdown->CreateConnectionShutdown(this);
 }
 
@@ -847,8 +847,8 @@ void DataChannelConnection::SctpDtlsInput(const std::string &aTransportId,
 
 void DataChannelConnection::SendPacket(nsAutoPtr<MediaPacket> packet) {
   
-  if (!mTransportId.empty()) {
-    mTransportHandler->SendPacket(mTransportId, *packet);
+  if (!mTransportId.empty() && mTransportHandler) {
+    mTransportHandler->SendPacket(mTransportId, std::move(*packet));
   }
 }
 
