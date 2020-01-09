@@ -19,6 +19,7 @@ import org.mozilla.gecko.menu.GeckoMenuInflater;
 import org.mozilla.gecko.menu.MenuPanel;
 import org.mozilla.gecko.mma.MmaDelegate;
 import org.mozilla.gecko.notifications.NotificationHelper;
+import org.mozilla.gecko.search.SearchWidgetProvider;
 import org.mozilla.gecko.util.IntentUtils;
 import org.mozilla.gecko.mozglue.SafeIntent;
 import org.mozilla.gecko.mozglue.GeckoLoader;
@@ -1462,7 +1463,15 @@ public abstract class GeckoApp extends GeckoActivity
 
 
 
+
+
     protected void loadStartupTab(final int flags, String action) {
+        final SearchWidgetProvider.InputType input = getWidgetInputType(getIntent());
+        if (input != null) {
+            Tabs.getInstance().loadUrl("about:home", flags);
+            return;
+        }
+
         if (!mShouldRestore || Intent.ACTION_VIEW.equals(action)) {
             if (mLastSessionCrashed) {
                 
@@ -1490,6 +1499,14 @@ public abstract class GeckoApp extends GeckoActivity
         }
 
         Tabs.getInstance().loadUrlWithIntentExtras(url, intent, flags);
+    }
+
+    protected SearchWidgetProvider.InputType getWidgetInputType(final Intent intent) {
+        final Intent searchIntent = intent != null ? intent : getIntent();
+        if (searchIntent == null) {
+            return null;
+        }
+        return (SearchWidgetProvider.InputType) searchIntent.getSerializableExtra(SearchWidgetProvider.INPUT_TYPE_KEY);
     }
 
     protected String getIntentURI(SafeIntent intent) {
