@@ -59,6 +59,7 @@
 #include "mozilla/dom/TabGroup.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/dom/ChildSHistory.h"
+#include "mozilla/dom/nsCSPContext.h"
 #include "mozilla/dom/LoadURIOptionsBinding.h"
 
 #include "mozilla/net/ReferrerPolicy.h"
@@ -9912,34 +9913,9 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
   
   nsCOMPtr<nsIContentSecurityPolicy> csp;
   aLoadState->TriggeringPrincipal()->GetCsp(getter_AddRefs(csp));
-
 #ifdef DEBUG
-  {
-    
-    
-    
-    uint32_t principalCSPCount = 0;
-    if (csp) {
-      csp->GetPolicyCount(&principalCSPCount);
-    }
-
-    nsCOMPtr<nsIContentSecurityPolicy> argsCSP = aLoadState->Csp();
-    uint32_t argCSPCount = 0;
-    if (argsCSP) {
-      argsCSP->GetPolicyCount(&argCSPCount);
-    }
-
-    MOZ_ASSERT(principalCSPCount == argCSPCount,
-               "Different PolicyCount for CSP as arg and Principal");
-
-    nsAutoString principalPolicyStr, argPolicyStr;
-    for (uint32_t i = 0; i < principalCSPCount; ++i) {
-      csp->GetPolicyString(i, principalPolicyStr);
-      argsCSP->GetPolicyString(i, argPolicyStr);
-      MOZ_ASSERT(principalPolicyStr.Equals(argPolicyStr),
-                 "Different PolicyStr for CSP as arg and Principal");
-    }
-  }
+  nsCOMPtr<nsIContentSecurityPolicy> argsCSP = aLoadState->Csp();
+  MOZ_ASSERT(nsCSPContext::Equals(csp, argsCSP));
 #endif
 
   if (csp) {
