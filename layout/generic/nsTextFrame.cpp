@@ -6693,7 +6693,7 @@ static void DrawTextRun(const gfxTextRun* aTextRun,
         return;
       }
       params.drawMode |= DrawMode::GLYPH_STROKE;
-      if (gfxPrefs::PaintOrderEnabled()) {
+      if (StaticPrefs::PaintOrderEnabled()) {
         
         
         uint32_t paintOrder = aFrame->StyleSVG()->mPaintOrder;

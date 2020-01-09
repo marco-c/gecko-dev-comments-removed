@@ -22,21 +22,6 @@ TEST(GfxPrefs, Singleton)
   ASSERT_TRUE(gfxPrefs::SingletonExists());
 }
 
-TEST(GfxPrefs, LiveValues)
-{
-  gfxPrefs::GetSingleton();
-  ASSERT_TRUE(gfxPrefs::SingletonExists());
-
-  
-  ASSERT_FALSE(gfxPrefs::LayersDumpTexture());
-
-  
-  ASSERT_TRUE(gfxPrefs::LayerScopePort() == 23456);
-
-  
-  ASSERT_TRUE(gfxPrefs::MSAALevel() == 2);
-}
-
 TEST(GfxPrefs, OnceValues)
 {
   gfxPrefs::GetSingleton();
@@ -46,13 +31,13 @@ TEST(GfxPrefs, OnceValues)
   ASSERT_TRUE(gfxPrefs::WorkAroundDriverBugs());
 
   
-  ASSERT_FALSE(gfxPrefs::LayersDump());
+  ASSERT_FALSE(gfxPrefs::UseApitrace());
 
   
   ASSERT_TRUE(gfxPrefs::APZMaxVelocityQueueSize() == 5);
 
   
-  ASSERT_TRUE(gfxPrefs::APZMaxVelocity() == -1.0f);
+  ASSERT_TRUE(gfxPrefs::APZCurveFunctionX1() == 0.0f);
 }
 
 TEST(GfxPrefs, Set)
@@ -61,25 +46,18 @@ TEST(GfxPrefs, Set)
   ASSERT_TRUE(gfxPrefs::SingletonExists());
 
   
-  ASSERT_FALSE(gfxPrefs::LayersDump());
-  gfxPrefs::SetLayersDump(true);
-  ASSERT_TRUE(gfxPrefs::LayersDump());
-  gfxPrefs::SetLayersDump(false);
-  ASSERT_FALSE(gfxPrefs::LayersDump());
+  ASSERT_FALSE(gfxPrefs::UseApitrace());
+  gfxPrefs::SetUseApitrace(true);
+  ASSERT_TRUE(gfxPrefs::UseApitrace());
+  gfxPrefs::SetUseApitrace(false);
+  ASSERT_FALSE(gfxPrefs::UseApitrace());
 
   
-  ASSERT_FALSE(gfxPrefs::LayersDumpTexture());
-  gfxPrefs::SetLayersDumpTexture(true);
-  ASSERT_TRUE(gfxPrefs::LayersDumpTexture());
-  gfxPrefs::SetLayersDumpTexture(false);
-  ASSERT_FALSE(gfxPrefs::LayersDumpTexture());
-
-  
-  ASSERT_TRUE(gfxPrefs::APZMaxVelocity() == -1.0f);
-  gfxPrefs::SetAPZMaxVelocity(1.75f);
-  ASSERT_TRUE(gfxPrefs::APZMaxVelocity() == 1.75f);
-  gfxPrefs::SetAPZMaxVelocity(-1.0f);
-  ASSERT_TRUE(gfxPrefs::APZMaxVelocity() == -1.0f);
+  ASSERT_TRUE(gfxPrefs::APZCurveFunctionX1() == 0.0f);
+  gfxPrefs::SetAPZCurveFunctionX1(1.75f);
+  ASSERT_TRUE(gfxPrefs::APZCurveFunctionX1() == 1.75f);
+  gfxPrefs::SetAPZCurveFunctionX1(0.0f);
+  ASSERT_TRUE(gfxPrefs::APZCurveFunctionX1() == 0.0f);
 }
 
 

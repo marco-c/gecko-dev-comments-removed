@@ -162,7 +162,7 @@ void PaintThread::QueuePaintTask(UniquePtr<PaintTask>&& aTask) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aTask);
 
-  if (gfxPrefs::LayersOMTPDumpCapture() && aTask->mCapture) {
+  if (StaticPrefs::LayersOMTPDumpCapture() && aTask->mCapture) {
     aTask->mCapture->Dump();
   }
 
@@ -207,7 +207,7 @@ void PaintThread::AsyncPaintTask(CompositorBridgeChild* aBridge,
     target->Flush();
   }
 
-  if (gfxPrefs::LayersOMTPReleaseCaptureOnMainThread()) {
+  if (StaticPrefs::LayersOMTPReleaseCaptureOnMainThread()) {
     
     
     

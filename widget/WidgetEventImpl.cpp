@@ -3,7 +3,6 @@
 
 
 
-#include "gfxPrefs.h"
 #include "mozilla/BasicEvents.h"
 #include "mozilla/ContentEvents.h"
 #include "mozilla/EventStateManager.h"
@@ -11,6 +10,7 @@
 #include "mozilla/MiscEvents.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/TouchEvents.h"
 #include "mozilla/dom/KeyboardEventBinding.h"
@@ -656,12 +656,12 @@ bool WidgetMouseEvent::IsMiddleClickPasteEnabled() {
 
 double WidgetWheelEvent::ComputeOverriddenDelta(double aDelta,
                                                 bool aIsForVertical) {
-  if (!gfxPrefs::MouseWheelHasRootScrollDeltaOverride()) {
+  if (!StaticPrefs::MouseWheelHasRootScrollDeltaOverride()) {
     return aDelta;
   }
   int32_t intFactor = aIsForVertical
-                          ? gfxPrefs::MouseWheelRootScrollVerticalFactor()
-                          : gfxPrefs::MouseWheelRootScrollHorizontalFactor();
+                          ? StaticPrefs::MouseWheelRootScrollVerticalFactor()
+                          : StaticPrefs::MouseWheelRootScrollHorizontalFactor();
   
   
   if (intFactor <= 100) {

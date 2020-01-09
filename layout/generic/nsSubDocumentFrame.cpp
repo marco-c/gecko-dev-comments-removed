@@ -11,10 +11,9 @@
 
 #include "nsSubDocumentFrame.h"
 
-#include "gfxPrefs.h"
-
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/StaticPrefs.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLFrameElement.h"
 #include "mozilla/layout/RenderFrame.h"
@@ -427,7 +426,7 @@ void nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
           aBuilder, &copyOfVisible, &copyOfDirty,
            true);
 
-      if (!gfxPrefs::LayoutUseContainersForRootFrames() ||
+      if (!StaticPrefs::LayoutUseContainersForRootFrames() ||
           !aBuilder->IsPaintingToWindow()) {
         haveDisplayPort = false;
       }
@@ -608,7 +607,7 @@ void nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   
   
   if (!aBuilder->IsForEventDelivery() &&
-      gfxPrefs::LayoutUseContainersForRootFrames() &&
+      StaticPrefs::LayoutUseContainersForRootFrames() &&
       !nsLayoutUtils::NeedsPrintPreviewBackground(presContext)) {
     nsRect bounds =
         GetContentRectRelativeToSelf() + aBuilder->ToReferenceFrame(this);

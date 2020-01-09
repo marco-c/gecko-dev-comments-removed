@@ -72,7 +72,7 @@ TEST_F(ImageSurfaceCache, Factor2) {
 
   
   
-  int32_t threshold = gfxPrefs::ImageCacheFactor2ThresholdSurfaces();
+  int32_t threshold = StaticPrefs::ImageCacheFactor2ThresholdSurfaces();
   ASSERT_TRUE(threshold >= 0);
 
   

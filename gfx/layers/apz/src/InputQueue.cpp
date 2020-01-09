@@ -82,7 +82,7 @@ nsEventStatus InputQueue::ReceiveTouchInput(
   if (aEvent.mType == MultiTouchInput::MULTITOUCH_START) {
     nsTArray<TouchBehaviorFlags> currentBehaviors;
     bool haveBehaviors = false;
-    if (!gfxPrefs::TouchActionEnabled()) {
+    if (!StaticPrefs::TouchActionEnabled()) {
       haveBehaviors = true;
     } else if (mActiveTouchBlock) {
       haveBehaviors =
@@ -114,7 +114,7 @@ nsEventStatus InputQueue::ReceiveTouchInput(
           aTarget, InputBlockState::TargetConfirmationState::eConfirmed,
           nullptr ,
           false );
-      if (gfxPrefs::TouchActionEnabled()) {
+      if (StaticPrefs::TouchActionEnabled()) {
         block->SetAllowedTouchBehaviors(currentBehaviors);
       }
       INPQ_LOG("block %p tagged as fast-motion\n", block);
@@ -318,7 +318,7 @@ nsEventStatus InputQueue::ReceiveKeyboardInput(
 
   
   
-  return gfxPrefs::APZKeyboardPassiveListeners()
+  return StaticPrefs::APZKeyboardPassiveListeners()
              ? nsEventStatus_eConsumeDoDefault
              : nsEventStatus_eConsumeNoDefault;
 }
@@ -551,7 +551,7 @@ void InputQueue::ScheduleMainThreadTimeout(
   RefPtr<Runnable> timeoutTask = NewRunnableMethod<uint64_t>(
       "layers::InputQueue::MainThreadTimeout", this,
       &InputQueue::MainThreadTimeout, aBlock->GetBlockId());
-  int32_t timeout = gfxPrefs::APZContentResponseTimeout();
+  int32_t timeout = StaticPrefs::APZContentResponseTimeout();
   if (timeout == 0) {
     
     

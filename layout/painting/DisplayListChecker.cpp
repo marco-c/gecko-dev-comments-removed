@@ -82,7 +82,7 @@ class DisplayListBlueprint {
                        unsigned& aIndex);
 
   std::vector<DisplayItemBlueprint> mItems;
-  const bool mVerifyOrder = gfxPrefs::LayoutVerifyRetainDisplayListOrder();
+  const bool mVerifyOrder = StaticPrefs::LayoutVerifyRetainDisplayListOrder();
 };
 
 
