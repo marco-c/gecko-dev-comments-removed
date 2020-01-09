@@ -1093,7 +1093,8 @@ static bool TrackUnhandledRejections(JSContext* cx, JS::HandleObject promise,
                               &deleted)) {
         return false;
       }
-      MOZ_ASSERT(deleted);
+      
+      
       break;
   }
 
