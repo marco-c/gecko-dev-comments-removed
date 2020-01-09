@@ -272,6 +272,8 @@ static inline uint64_t GetNumberInRange(uint64_t minNum, uint64_t maxNum) {
 }
 
 #  ifndef XP_WIN
+static inline uint64_t FindAddressLimitInner(size_t highBit, size_t tries);
+
 
 
 
@@ -287,70 +289,59 @@ static inline uint64_t GetNumberInRange(uint64_t minNum, uint64_t maxNum) {
 
 
 static size_t FindAddressLimit() {
+  
+  uint64_t low = 31;
+  uint64_t highestSeen = (UINT64_C(1) << 32) - allocGranularity - 1;
+
+  
+  uint64_t high = 47;
+  for (; high >= std::max(low, UINT64_C(46)); --high) {
+    highestSeen = std::max(FindAddressLimitInner(high, 4), highestSeen);
+    low = mozilla::FloorLog2(highestSeen);
+  }
+  
+  while (high - 1 > low) {
+    uint64_t middle = low + (high - low) / 2;
+    highestSeen = std::max(FindAddressLimitInner(middle, 4), highestSeen);
+    low = mozilla::FloorLog2(highestSeen);
+    if (highestSeen < (UINT64_C(1) << middle)) {
+      high = middle;
+    }
+  }
+  
+  do {
+    high = low + 1;
+    highestSeen = std::max(FindAddressLimitInner(high, 8), highestSeen);
+    low = mozilla::FloorLog2(highestSeen);
+  } while (low >= high);
+
+  
+  return low + 1;
+}
+
+static inline uint64_t FindAddressLimitInner(size_t highBit, size_t tries) {
   const size_t length = allocGranularity;  
 
-  void* address;
-  uint64_t startRaw, endRaw, start, end, desired, actual;
-
-  
-  size_t low = 31;
-  uint64_t highestSeen = (UINT64_C(1) << 32) - length - 1;
-
-  
-  size_t high = 47;
-  startRaw = UINT64_C(1) << high;
-  endRaw = 2 * startRaw - length - 1;
-  start = (startRaw + length - 1) / length;
-  end = (endRaw - (length - 1)) / length;
-
-  for (size_t tries = 0; tries < 4; ++tries) {
-    desired = length * GetNumberInRange(start, end);
-    address = MapMemoryAtFuzzy(reinterpret_cast<void*>(desired), length);
-    actual = uint64_t(address);
+  uint64_t highestSeen = 0;
+  uint64_t startRaw = UINT64_C(1) << highBit;
+  uint64_t endRaw = 2 * startRaw - length - 1;
+  uint64_t start = (startRaw + length - 1) / length;
+  uint64_t end = (endRaw - (length - 1)) / length;
+  for (size_t i = 0; i < tries; ++i) {
+    uint64_t desired = length * GetNumberInRange(start, end);
+    void* address = MapMemoryAtFuzzy(reinterpret_cast<void*>(desired), length);
+    uint64_t actual = uint64_t(address);
     if (address) {
       UnmapInternal(address, length);
     }
-    if (actual >= startRaw) {
-      return high + 1;  
-    }
     if (actual > highestSeen) {
       highestSeen = actual;
-      low = mozilla::FloorLog2(highestSeen);
-    }
-  }
-
-  
-  while (high - 1 > low) {
-    size_t middle = low + (high - low) / 2;
-    startRaw = UINT64_C(1) << middle;
-    endRaw = 2 * startRaw - length - 1;
-    start = (startRaw + length - 1) / length;
-    end = (endRaw - (length - 1)) / length;
-
-    for (size_t tries = 0; tries < 4; ++tries) {
-      desired = length * GetNumberInRange(start, end);
-      address = MapMemoryAtFuzzy(reinterpret_cast<void*>(desired), length);
-      actual = uint64_t(address);
-      if (address) {
-        UnmapInternal(address, length);
-      }
-      if (actual > highestSeen) {
-        highestSeen = actual;
-        low = mozilla::FloorLog2(highestSeen);
-      }
       if (actual >= startRaw) {
         break;
       }
     }
-
-    
-    if (actual < startRaw) {
-      high = middle;
-    }
   }
-
-  
-  return std::min(low + 1, size_t(47));
+  return highestSeen;
 }
 #  endif  
 
