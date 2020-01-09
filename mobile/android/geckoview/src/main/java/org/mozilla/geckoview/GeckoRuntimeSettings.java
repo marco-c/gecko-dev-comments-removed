@@ -84,6 +84,19 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
+
+        public @NonNull Builder configFilePath(final @Nullable String configFilePath) {
+            getSettings().mConfigFilePath = configFilePath;
+            return this;
+        }
+
+        
+
+
+
+
+
+
         public @NonNull Builder javaScriptEnabled(final boolean flag) {
             getSettings().mJavaScript.set(flag);
             return this;
@@ -330,6 +343,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
      boolean mUseContentProcess;
      String[] mArgs;
      Bundle mExtras;
+     String mConfigFilePath;
 
      ContentBlocking.Settings mContentBlocking;
 
@@ -412,6 +426,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
         mScreenHeightOverride = settings.mScreenHeightOverride;
         mCrashHandler = settings.mCrashHandler;
         mRequestedLocales = settings.mRequestedLocales;
+        mConfigFilePath = settings.mConfigFilePath;
     }
 
      void commit() {
@@ -444,6 +459,18 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
     public @NonNull Bundle getExtras() {
         return mExtras;
+    }
+
+    
+
+
+
+
+
+
+
+    public @Nullable String getConfigFilePath() {
+        return mConfigFilePath;
     }
 
     
@@ -822,6 +849,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
         out.writeInt(mScreenHeightOverride);
         out.writeString(mCrashHandler != null ? mCrashHandler.getName() : null);
         out.writeStringArray(mRequestedLocales);
+        out.writeString(mConfigFilePath);
     }
 
     
@@ -851,6 +879,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
         }
 
         mRequestedLocales = source.createStringArray();
+        mConfigFilePath = source.readString();
     }
 
     public static final Parcelable.Creator<GeckoRuntimeSettings> CREATOR
