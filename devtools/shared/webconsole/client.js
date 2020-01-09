@@ -701,7 +701,7 @@ WebConsoleClient.prototype = {
 
 
 
-  detach: function(onResponse) {
+  destroy: function() {
     this._client.removeListener("evaluationResult", this.onEvaluationResult);
     this._client.removeListener("networkEvent", this.onNetworkEvent);
     this._client.removeListener("networkEventUpdate",
@@ -714,7 +714,6 @@ WebConsoleClient.prototype = {
     this.pendingEvaluationResults = null;
     this.clearNetworkRequests();
     this._networkRequests = null;
-    onResponse();
   },
 
   clearNetworkRequests: function() {
