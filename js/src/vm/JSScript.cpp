@@ -3530,6 +3530,14 @@ void JSScript::initFromFunctionBox(HandleScript script,
 
 bool JSScript::fullyInitFromEmitter(JSContext* cx, HandleScript script,
                                     frontend::BytecodeEmitter* bce) {
+  MOZ_ASSERT(!script->data_, "JSScript already initialized");
+
+  
+  
+  
+  auto scriptDataGuard =
+      mozilla::MakeScopeExit([&] { script->freeScriptData(); });
+
   
   MOZ_ASSERT(bce->atomIndices->count() <= INDEX_LIMIT);
   MOZ_ASSERT(bce->objectList.length <= INDEX_LIMIT);
@@ -3561,11 +3569,6 @@ bool JSScript::fullyInitFromEmitter(JSContext* cx, HandleScript script,
   if (!script->createSharedScriptData(cx, codeLength, nsrcnotes, natoms)) {
     return false;
   }
-
-  
-  
-  
-  
 
   jsbytecode* code = script->code();
   PodCopy<jsbytecode>(code, bce->code().begin(), codeLength);
@@ -3632,6 +3635,7 @@ bool JSScript::fullyInitFromEmitter(JSContext* cx, HandleScript script,
   script->assertValidJumpTargets();
 #endif
 
+  scriptDataGuard.release();
   return true;
 }
 
