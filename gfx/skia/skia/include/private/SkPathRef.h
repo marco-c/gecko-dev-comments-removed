@@ -562,6 +562,7 @@ private:
     friend class PathRefTest_Private;
     friend class ForceIsRRect_Private; 
     friend class SkPath;
+    friend class SkPathPriv;
 };
 
 #endif
