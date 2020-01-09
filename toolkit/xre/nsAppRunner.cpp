@@ -3788,6 +3788,8 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
   SetShutdownChecks();
 
   
+  
+#ifndef FUZZING
 #ifdef DEBUG
   mozilla::Telemetry::InitIOReporting(gAppData->xreDirectory);
 #else
@@ -3798,6 +3800,7 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
       mozilla::Telemetry::InitIOReporting(gAppData->xreDirectory);
     }
   }
+#endif 
 #endif 
 
 #if defined(XP_WIN)
