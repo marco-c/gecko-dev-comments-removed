@@ -96,8 +96,6 @@ const PAGE_TYPES = {
 
 const PREFERENCES = {
   
-  NETWORK_ENABLED: "devtools.aboutdebugging.network",
-  
   PROCESS_DEBUGGING_ENABLED: "devtools.aboutdebugging.process-debugging",
   
   SHOW_SYSTEM_ADDONS: "devtools.aboutdebugging.showSystemAddons",

@@ -2,10 +2,6 @@
 
 
 
-.connect-page__disabled-section {
-  color: var(--grey-40);
-}
-
 .connect-page__breather {
   margin-block-start: calc(var(--base-unit) * 6);
 }
