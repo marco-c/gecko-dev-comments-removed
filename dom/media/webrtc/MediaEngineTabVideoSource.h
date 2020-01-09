@@ -11,6 +11,10 @@
 
 namespace mozilla {
 
+namespace layers {
+class ImageContainer;
+}
+
 class MediaEngineTabVideoSource : public MediaEngineSource {
  public:
   MediaEngineTabVideoSource();
@@ -105,8 +109,8 @@ class MediaEngineTabVideoSource : public MediaEngineSource {
   int32_t mViewportWidth = 0;
   int32_t mViewportHeight = 0;
   int32_t mTimePerFrame = 0;
-  UniquePtr<unsigned char[]> mData;
-  size_t mDataSize = 0;
+  RefPtr<layers::ImageContainer> mImageContainer;
+
   nsCOMPtr<nsPIDOMWindowOuter> mWindow;
   
   bool mBlackedoutWindow = false;
@@ -120,8 +124,7 @@ class MediaEngineTabVideoSource : public MediaEngineSource {
   RefPtr<SourceMediaStream> mStream;
   TrackID mTrackID = TRACK_NONE;
   
-  RefPtr<layers::SourceSurfaceImage> mImage;
-  gfx::IntSize mImageSize;
+  RefPtr<layers::Image> mImage;
   nsCOMPtr<nsITimer> mTimer;
   Mutex mMutex;
   nsCOMPtr<nsITabSource> mTabSource;
