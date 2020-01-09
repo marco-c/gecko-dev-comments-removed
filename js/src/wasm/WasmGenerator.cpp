@@ -378,7 +378,7 @@ bool ModuleGenerator::init(Metadata* maybeAsmJSMetadata) {
           addOrMerge(ExportedFunc(funcIndex, false));
         }
         break;
-      case TableKind::TypedFunction:
+      case TableKind::AsmJS:
         
         break;
       case TableKind::AnyRef:

@@ -1956,7 +1956,10 @@ struct Limits {
 
 
 
-enum class TableKind { FuncRef, AnyRef, TypedFunction };
+
+
+
+enum class TableKind { AnyRef, FuncRef, AsmJS };
 
 struct TableDesc {
   TableKind kind;
