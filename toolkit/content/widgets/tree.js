@@ -304,16 +304,9 @@
       });
     }
 
-    markTreeDirty() {
-      this.parentNode.parentNode._columnsDirty = true;
-    }
-
     connectedCallback() {
       if (this.delayConnectedCallback()) {
         return;
-      }
-      if (!this.isRunningDelayedConnectedCallback) {
-        this.markTreeDirty();
       }
 
       this.textContent = "";
@@ -945,26 +938,24 @@
     }
 
     _ensureColumnOrder() {
-      if (!this._columnsDirty)
-        return;
-
       if (this.columns) {
         
         
         var cols = [];
-        var i;
-        for (var col = this.columns.getFirstColumn(); col; col = col.getNext())
-          cols.push(col.element);
-        for (i = 0; i < cols.length; ++i)
-          cols[i].setAttribute("ordinal", (i * 2) + 1);
 
+        for (let col = this.columns.getFirstColumn(); col; col = col.getNext()) {
+          cols.push(col.element);
+        }
+        for (let i = 0; i < cols.length; ++i) {
+          cols[i].setAttribute("ordinal", (i * 2) + 1);
+        }
         
         
         var splitters = this.getElementsByTagName("splitter");
-        for (i = 0; i < splitters.length; ++i)
+        for (let i = 0; i < splitters.length; ++i) {
           splitters[i].setAttribute("ordinal", (i + 1) * 2);
+        }
       }
-      this._columnsDirty = false;
     }
 
     _reorderColumn(aColMove, aColBefore, aBefore) {
