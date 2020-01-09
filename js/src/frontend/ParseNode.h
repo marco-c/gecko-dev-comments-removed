@@ -92,8 +92,8 @@ class BigIntBox;
   F(NullExpr, NullLiteral)                                                   \
   F(RawUndefinedExpr, RawUndefinedLiteral)                                   \
   F(ThisExpr, UnaryNode)                                                     \
-  F(Function, CodeNode)                                                      \
-  F(Module, CodeNode)                                                        \
+  F(Function, FunctionNode)                                                  \
+  F(Module, ModuleNode)                                                      \
   F(IfStmt, TernaryNode)                                                     \
   F(SwitchStmt, SwitchStatement)                                             \
   F(Case, CaseClause)                                                        \
@@ -523,17 +523,17 @@ inline bool IsTypeofKind(ParseNodeKind kind) {
 
 
 
-
 enum ParseNodeArity {
-  PN_NULLARY, 
-  PN_UNARY,   
-  PN_BINARY,  
-  PN_TERNARY, 
-  PN_CODE,    
-  PN_LIST,    
-  PN_NAME,    
-  PN_FIELD,   
-  PN_NUMBER,  
+  PN_NULLARY,  
+  PN_UNARY,    
+  PN_BINARY,   
+  PN_TERNARY,  
+  PN_FUNCTION, 
+  PN_MODULE,   
+  PN_LIST,     
+  PN_NAME,     
+  PN_FIELD,    
+  PN_NUMBER,   
 #ifdef ENABLE_BIGINT
   PN_BIGINT, 
 #endif
@@ -555,7 +555,8 @@ enum ParseNodeArity {
   MACRO(PropertyByValue, PropertyByValueType, asPropertyByValue)             \
   MACRO(SwitchStatement, SwitchStatementType, asSwitchStatement)             \
                                                                              \
-  MACRO(CodeNode, CodeNodeType, asCode)                                      \
+  MACRO(FunctionNode, FunctionNodeType, asFunction)                          \
+  MACRO(ModuleNode, ModuleNodeType, asModule)                                \
                                                                              \
   MACRO(LexicalScopeNode, LexicalScopeNodeType, asLexicalScope)              \
                                                                              \
@@ -730,10 +731,15 @@ class ParseNode {
     } regexp;
     struct {
      private:
-      friend class CodeNode;
-      FunctionBox* funbox; 
-      ParseNode* body;     
-    } code;
+      friend class FunctionNode;
+      FunctionBox* funbox;
+      ParseNode* body;
+    } function;
+    struct {
+     private:
+      friend class ModuleNode;
+      ParseNode* body;
+    } module;
     struct {
      private:
       friend class LexicalScopeNode;
@@ -1463,35 +1469,31 @@ inline bool ParseNode::isForLoopDeclaration() const {
   return false;
 }
 
-class CodeNode : public ParseNode {
+class FunctionNode : public ParseNode {
  public:
-  CodeNode(ParseNodeKind kind, JSOp op, const TokenPos& pos)
-      : ParseNode(kind, op, pos) {
-    MOZ_ASSERT(kind == ParseNodeKind::Function ||
-               kind == ParseNodeKind::Module);
-    MOZ_ASSERT_IF(kind == ParseNodeKind::Module, op == JSOP_NOP);
+  FunctionNode(JSOp op, const TokenPos& pos)
+      : ParseNode(ParseNodeKind::Function, op, pos) {
     MOZ_ASSERT(op == JSOP_NOP ||           
                op == JSOP_LAMBDA_ARROW ||  
                op == JSOP_LAMBDA);         
-    MOZ_ASSERT(!pn_u.code.body);
-    MOZ_ASSERT(!pn_u.code.funbox);
-    MOZ_ASSERT(is<CodeNode>());
+    MOZ_ASSERT(!pn_u.function.body);
+    MOZ_ASSERT(!pn_u.function.funbox);
+    MOZ_ASSERT(is<FunctionNode>());
   }
 
   static bool test(const ParseNode& node) {
-    bool match = node.isKind(ParseNodeKind::Function) ||
-                 node.isKind(ParseNodeKind::Module);
-    MOZ_ASSERT_IF(match, node.isArity(PN_CODE));
+    bool match = node.isKind(ParseNodeKind::Function);
+    MOZ_ASSERT_IF(match, node.isArity(PN_FUNCTION));
     return match;
   }
 
-  static constexpr ParseNodeArity arity() { return PN_CODE; }
+  static constexpr ParseNodeArity arity() { return PN_FUNCTION; }
 
   template <typename Visitor>
   bool accept(Visitor& visitor) {
     
-    if (pn_u.code.body) {
-      if (!visitor.visit(pn_u.code.body)) {
+    if (pn_u.function.body) {
+      if (!visitor.visit(pn_u.function.body)) {
         return false;
       }
     }
@@ -1502,21 +1504,50 @@ class CodeNode : public ParseNode {
   void dump(GenericPrinter& out, int indent);
 #endif
 
-  FunctionBox* funbox() const { return pn_u.code.funbox; }
+  FunctionBox* funbox() const { return pn_u.function.funbox; }
 
   ListNode* body() const {
-    return pn_u.code.body ? &pn_u.code.body->as<ListNode>() : nullptr;
+    return pn_u.function.body ? &pn_u.function.body->as<ListNode>() : nullptr;
   }
 
-  void setFunbox(FunctionBox* funbox) { pn_u.code.funbox = funbox; }
+  void setFunbox(FunctionBox* funbox) { pn_u.function.funbox = funbox; }
 
-  void setBody(ListNode* body) { pn_u.code.body = body; }
+  void setBody(ListNode* body) { pn_u.function.body = body; }
 
   bool functionIsHoisted() const {
-    MOZ_ASSERT(isKind(ParseNodeKind::Function));
     MOZ_ASSERT(isOp(JSOP_LAMBDA) || isOp(JSOP_LAMBDA_ARROW) || isOp(JSOP_NOP));
     return isOp(JSOP_NOP);
   }
+};
+
+class ModuleNode : public ParseNode {
+ public:
+  explicit ModuleNode(const TokenPos& pos)
+      : ParseNode(ParseNodeKind::Module, JSOP_NOP, pos) {
+    MOZ_ASSERT(!pn_u.module.body);
+    MOZ_ASSERT(is<ModuleNode>());
+  }
+
+  static bool test(const ParseNode& node) {
+    bool match = node.isKind(ParseNodeKind::Module);
+    MOZ_ASSERT_IF(match, node.isArity(PN_MODULE));
+    return match;
+  }
+
+  static constexpr ParseNodeArity arity() { return PN_MODULE; }
+
+  template <typename Visitor>
+  bool accept(Visitor& visitor) {
+    return visitor.visit(pn_u.module.body);
+  }
+
+#ifdef DEBUG
+  void dump(GenericPrinter& out, int indent);
+#endif
+
+  ListNode* body() const { return &pn_u.module.body->as<ListNode>(); }
+
+  void setBody(ListNode* body) { pn_u.module.body = body; }
 };
 
 class NumericLiteral : public ParseNode {
@@ -1977,7 +2008,7 @@ class ClassMethod : public BinaryNode {
 
   ParseNode& name() const { return *left(); }
 
-  CodeNode& method() const { return right()->as<CodeNode>(); }
+  FunctionNode& method() const { return right()->as<FunctionNode>(); }
 
   bool isStatic() const { return pn_u.binary.isStatic; }
 };
@@ -2270,7 +2301,7 @@ static inline bool IsMethodDefinitionKind(FunctionSyntaxKind kind) {
 static inline ParseNode* FunctionFormalParametersList(ParseNode* fn,
                                                       unsigned* numFormals) {
   MOZ_ASSERT(fn->isKind(ParseNodeKind::Function));
-  ListNode* argsBody = fn->as<CodeNode>().body();
+  ListNode* argsBody = fn->as<FunctionNode>().body();
   MOZ_ASSERT(argsBody->isKind(ParseNodeKind::ParamsBody));
   *numFormals = argsBody->count();
   if (*numFormals > 0 && argsBody->last()->is<LexicalScopeNode>() &&
