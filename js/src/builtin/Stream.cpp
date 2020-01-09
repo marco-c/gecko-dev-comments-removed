@@ -3470,6 +3470,28 @@ bool ReadableByteStreamController::constructor(JSContext* cx, unsigned argc,
 
 
 
+class MOZ_RAII AutoClearUnderlyingSource {
+  Rooted<ReadableStreamController*> controller_;
+
+ public:
+  AutoClearUnderlyingSource(JSContext* cx, ReadableStreamController* controller)
+      : controller_(cx, controller) {}
+
+  ~AutoClearUnderlyingSource() {
+    if (controller_) {
+      ReadableStreamController::clearUnderlyingSource(
+          controller_,  false);
+    }
+  }
+
+  void reset() {
+    controller_ = nullptr;
+  }
+};
+
+
+
+
 
 static MOZ_MUST_USE bool SetUpExternalReadableByteStreamController(
     JSContext* cx, Handle<ReadableStream*> stream,
@@ -3480,6 +3502,8 @@ static MOZ_MUST_USE bool SetUpExternalReadableByteStreamController(
   if (!controller) {
     return false;
   }
+
+  AutoClearUnderlyingSource autoClear(cx, controller);
 
   
   MOZ_ASSERT(!stream->hasController());
@@ -3556,6 +3580,7 @@ static MOZ_MUST_USE bool SetUpExternalReadableByteStreamController(
     return false;
   }
 
+  autoClear.reset();
   return true;
 }
 
