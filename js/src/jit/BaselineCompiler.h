@@ -697,8 +697,14 @@ class BaselineInterpreterHandler {
 using BaselineInterpreterCodeGen = BaselineCodeGen<BaselineInterpreterHandler>;
 
 class BaselineInterpreterGenerator final : private BaselineInterpreterCodeGen {
+  
+  js::Vector<uint32_t, 0, SystemAllocPolicy> debugTrapOffsets_;
+
  public:
   explicit BaselineInterpreterGenerator(JSContext* cx);
+
+ private:
+  MOZ_MUST_USE bool emitDebugTrap();
 };
 
 }  
