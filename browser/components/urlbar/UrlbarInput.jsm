@@ -139,6 +139,13 @@ class UrlbarInput {
     
     
     
+    if (!this.window.toolbar.visible || this.hasAttribute("readonly")) {
+      return;
+    }
+
+    
+    
+    
     
     this.eventBufferer = new UrlbarEventBufferer(this);
 
@@ -208,7 +215,10 @@ class UrlbarInput {
 
 
   formatValue() {
-    this.valueFormatter.update();
+    
+    if (this.editor) {
+      this.valueFormatter.update();
+    }
   }
 
   

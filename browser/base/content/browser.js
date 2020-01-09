@@ -194,13 +194,16 @@ XPCOMUtils.defineLazyGetter(this, "gURLBar", () => gURLBarHandler.urlbar);
 
 
 var gURLBarHandler = {
+  toggleQuantumBarAttribute() {
+    this.textbox = document.getElementById("urlbar");
+    this.textbox.setAttribute("quantumbar", this.quantumbar);
+  },
+
   
 
 
   get urlbar() {
     if (!this._urlbar) {
-      this.textbox = document.getElementById("urlbar");
-      this._updateBinding();
       if (this.quantumbar) {
         this._urlbar = new UrlbarInput({textbox: this.textbox});
         if (this._lastValue) {
@@ -213,6 +216,18 @@ var gURLBarHandler = {
       gBrowser.tabContainer.addEventListener("TabSelect", this._urlbar);
     }
     return this._urlbar;
+  },
+
+  
+
+
+
+
+
+  formatValue() {
+    if (typeof this.textbox.formatValue == "function") {
+      this.textbox.formatValue();
+    }
   },
 
   
@@ -1349,6 +1364,9 @@ var gBrowserInit = {
   },
 
   onBeforeInitialXULLayout() {
+    
+    gURLBarHandler.toggleQuantumBarAttribute();
+
     
     if (Services.prefs.getBoolPref("privacy.resistFingerprinting")) {
       
@@ -5183,7 +5201,7 @@ var XULBrowserWindow = {
 
     
     
-    gURLBar.formatValue();
+    gURLBarHandler.formatValue();
 
     try {
       uri = Services.uriFixup.createExposableURI(uri);
