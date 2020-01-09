@@ -499,6 +499,11 @@ class PresShell final : public nsIPresShell,
     PresShell::SetCapturingContent(nullptr, CaptureFlags::None);
   }
 
+  
+  
+  
+  void EndPaint();
+
  private:
   ~PresShell();
 

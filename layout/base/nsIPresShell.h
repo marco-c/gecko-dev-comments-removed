@@ -1446,6 +1446,7 @@ class nsIPresShell : public nsStubDocumentObserver {
   struct VisualScrollUpdate {
     nsPoint mVisualScrollOffset;
     FrameMetrics::ScrollOffsetUpdateType mUpdateType;
+    bool mAcknowledged = false;
   };
 
   
@@ -1461,9 +1462,8 @@ class nsIPresShell : public nsStubDocumentObserver {
   void ScrollToVisual(const nsPoint& aVisualViewportOffset,
                       FrameMetrics::ScrollOffsetUpdateType aUpdateType,
                       mozilla::ScrollMode aMode);
-  void ClearPendingVisualScrollUpdate() {
-    mPendingVisualScrollUpdate = mozilla::Nothing();
-  }
+  void AcknowledgePendingVisualScrollUpdate();
+  void ClearPendingVisualScrollUpdate();
   const mozilla::Maybe<VisualScrollUpdate>& GetPendingVisualScrollUpdate()
       const {
     return mPendingVisualScrollUpdate;
