@@ -1652,8 +1652,13 @@ void BuildTextRunsScanner::FlushFrames(bool aFlushLineBreaks,
 }
 
 void BuildTextRunsScanner::FlushLineBreaks(gfxTextRun* aTrailingTextRun) {
+  
+  
+  
+  bool inWord = mLineBreaker.InWord();
   bool trailingLineBreak;
   nsresult rv = mLineBreaker.Reset(&trailingLineBreak);
+  mLineBreaker.SetWordContinuation(inWord);
   
   
   
@@ -1979,6 +1984,22 @@ void BuildTextRunsScanner::ScanFrame(nsIFrame* aFrame) {
       mCurrentRunContextInfo = mNextRunContextInfo;
     }
     return;
+  }
+
+  if (frameType == LayoutFrameType::Placeholder &&
+      aFrame->HasAnyStateBits(PLACEHOLDER_FOR_ABSPOS |
+                              PLACEHOLDER_FOR_FIXEDPOS)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    FlushFrames(true, false);
   }
 
   FrameTextTraversal traversal = CanTextCrossFrameBoundary(aFrame);

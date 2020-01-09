@@ -213,6 +213,20 @@ class nsLineBreaker {
     mStrictness = aMode;
   }
 
+  
+
+
+
+  bool InWord() const { return !mCurrentWord.IsEmpty(); }
+
+  
+
+
+
+  void SetWordContinuation(bool aContinuation) {
+    mWordContinuation = aContinuation;
+  }
+
  private:
   
   
@@ -262,6 +276,11 @@ class nsLineBreaker {
   mozilla::intl::LineBreaker::WordBreak mWordBreak;
   
   mozilla::intl::LineBreaker::Strictness mStrictness;
+  
+  
+  
+  
+  bool mWordContinuation;
 };
 
 #endif 
