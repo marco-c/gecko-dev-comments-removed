@@ -352,17 +352,7 @@ void nsTableColGroupFrame::Reflow(nsPresContext* aPresContext,
 
 void nsTableColGroupFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                             const nsDisplayListSet& aLists) {
-  if (IsVisibleForPainting()) {
-    
-    
-    
-
-    
-    if (StyleEffects()->mBoxShadow) {
-      aLists.BorderBackground()->AppendNewToTop<nsDisplayBoxShadowOuter>(
-          aBuilder, this);
-    }
-  }
+  DisplayOutsetBoxShadow(aBuilder, aLists.BorderBackground());
 
   
   AutoTArray<uint32_t, 1> colIdx;
@@ -388,17 +378,7 @@ void nsTableColGroupFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     }
   }
 
-  if (IsVisibleForPainting()) {
-    
-    
-    
-
-    
-    if (StyleEffects()->mBoxShadow) {
-      aLists.BorderBackground()->AppendNewToTop<nsDisplayBoxShadowInner>(
-          aBuilder, this);
-    }
-  }
+  DisplayInsetBoxShadow(aBuilder, aLists.BorderBackground());
 
   DisplayOutline(aBuilder, aLists);
 

@@ -222,10 +222,7 @@ void nsFieldSetFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   
   if (!(GetStateBits() & NS_FRAME_IS_OVERFLOW_CONTAINER) &&
       IsVisibleForPainting()) {
-    if (!StyleEffects()->mBoxShadow.IsEmpty()) {
-      aLists.BorderBackground()->AppendNewToTop<nsDisplayBoxShadowOuter>(
-          aBuilder, this);
-    }
+    DisplayOutsetBoxShadowUnconditional(aBuilder, aLists.BorderBackground());
 
     nsDisplayBackgroundImage::AppendBackgroundItemsToTop(
         aBuilder, this, VisualBorderRectRelativeToSelf(),

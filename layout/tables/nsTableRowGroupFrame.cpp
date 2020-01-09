@@ -277,17 +277,7 @@ void nsTableRowGroupFrame::PaintCellBackgroundsForColumns(
 
 void nsTableRowGroupFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                             const nsDisplayListSet& aLists) {
-  if (IsVisibleForPainting()) {
-    
-    
-    
-
-    
-    if (StyleEffects()->mBoxShadow) {
-      aLists.BorderBackground()->AppendNewToTop<nsDisplayBoxShadowOuter>(
-          aBuilder, this);
-    }
-  }
+  DisplayOutsetBoxShadow(aBuilder, aLists.BorderBackground());
 
   for (nsTableRowFrame* row = GetFirstRow(); row; row = row->GetNextRow()) {
     if (!aBuilder->GetDirtyRect().Intersects(
@@ -298,17 +288,7 @@ void nsTableRowGroupFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                       row->GetNormalPosition());
   }
 
-  if (IsVisibleForPainting()) {
-    
-    
-    
-
-    
-    if (StyleEffects()->mBoxShadow) {
-      aLists.BorderBackground()->AppendNewToTop<nsDisplayBoxShadowInner>(
-          aBuilder, this);
-    }
-  }
+  DisplayInsetBoxShadow(aBuilder, aLists.BorderBackground());
 
   DisplayOutline(aBuilder, aLists);
 

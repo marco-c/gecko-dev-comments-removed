@@ -533,6 +533,32 @@ class nsFrame : public nsBox {
   
 
 
+  void DisplayInsetBoxShadowUnconditional(nsDisplayListBuilder* aBuilder,
+                                          nsDisplayList* aList);
+
+  
+
+
+
+  void DisplayInsetBoxShadow(nsDisplayListBuilder* aBuilder,
+                             nsDisplayList* aList);
+
+  
+
+
+  void DisplayOutsetBoxShadowUnconditional(nsDisplayListBuilder* aBuilder,
+                                           nsDisplayList* aList);
+
+  
+
+
+
+  void DisplayOutsetBoxShadow(nsDisplayListBuilder* aBuilder,
+                              nsDisplayList* aList);
+
+  
+
+
 
 
 
