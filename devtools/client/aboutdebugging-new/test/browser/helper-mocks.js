@@ -43,6 +43,8 @@ class Mocks {
       this.emitUSBUpdate();
     };
 
+    this.adbMock.adb.isProcessStarted = () => true;
+
     
     this._observerMock = addObserverMock(this.adbMock.adb);
 

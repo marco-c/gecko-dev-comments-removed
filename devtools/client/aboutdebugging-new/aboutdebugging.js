@@ -70,7 +70,11 @@ const AboutDebugging = {
     await this.onNetworkLocationsUpdated();
 
     
-    const onAdbRuntimesReady = adb.once("runtime-list-ready");
+
+    
+    
+    const isProcessStarted = await adb.isProcessStarted();
+    const onAdbRuntimesReady = isProcessStarted ? adb.once("runtime-list-ready") : null;
     addUSBRuntimesObserver(this.onUSBRuntimesUpdated);
     await onAdbRuntimesReady;
 
