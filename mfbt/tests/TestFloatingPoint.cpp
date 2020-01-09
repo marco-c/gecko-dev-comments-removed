@@ -7,6 +7,7 @@
 #include "mozilla/Compiler.h"
 #include "mozilla/FloatingPoint.h"
 
+#include <cmath>  
 #include <float.h>
 #include <math.h>
 
@@ -28,6 +29,8 @@ using mozilla::NumbersAreIdentical;
 using mozilla::PositiveInfinity;
 using mozilla::SpecificNaN;
 using mozilla::UnspecifiedNaN;
+using std::exp2;
+using std::exp2f;
 
 #define A(a) MOZ_RELEASE_ASSERT(a)
 
@@ -310,23 +313,19 @@ static void TestDoublesPredicates() {
 
   
   
-  
-  
-  
-  A(pow(2.0, -1075.0) == 0.0 ||
-    (MOZ_IS_MSVC && pow(2.0, -1075.0) == pow(2.0, -1074.0)));
+  A(exp2(-1075.0) == 0.0);
+  A(exp2(-1074.0) != 0.0);
 
-  A(pow(2.0, -1074.0) != 0.0);
-  A(!NumberIsInt32(pow(2.0, -1074.0), &i));
-  A(!NumberIsInt32(2 * pow(2.0, -1074.0), &i));
+  A(!NumberIsInt32(exp2(-1074.0), &i));
+  A(!NumberIsInt32(2 * exp2(-1074.0), &i));
   A(!NumberIsInt32(0.5, &i));
-  A(1.0 - pow(2.0, -54.0) == 1.0);
-  A(1.0 - pow(2.0, -53.0) != 1.0);
-  A(!NumberIsInt32(1.0 - pow(2.0, -53.0), &i));
-  A(!NumberIsInt32(1.0 - pow(2.0, -52.0), &i));
-  A(1.0 + pow(2.0, -53.0) == 1.0f);
-  A(1.0 + pow(2.0, -52.0) != 1.0f);
-  A(!NumberIsInt32(1.0 + pow(2.0, -52.0), &i));
+  A(1.0 - exp2(-54.0) == 1.0);
+  A(1.0 - exp2(-53.0) != 1.0);
+  A(!NumberIsInt32(1.0 - exp2(-53.0), &i));
+  A(!NumberIsInt32(1.0 - exp2(-52.0), &i));
+  A(1.0 + exp2(-53.0) == 1.0f);
+  A(1.0 + exp2(-52.0) != 1.0f);
+  A(!NumberIsInt32(1.0 + exp2(-52.0), &i));
   A(!NumberIsInt32(1.5f, &i));
   A(!NumberIsInt32(-double(2147483649), &i));
   A(!NumberIsInt32(double(2147483648), &i));
@@ -628,28 +627,28 @@ static void TestIsFloat32Representable() {
 
   
   
-  
-  
-  
-  A(pow(2.0, -1075.0) == 0.0 ||
-    (MOZ_IS_MSVC && pow(2.0, -1075.0) == pow(2.0, -1074.0)));
-
-  A(powf(2.0f, -150.0f) == 0.0);
-  A(powf(2.0f, -149.0f) != 0.0);
+  A(exp2(-1075.0) == 0.0);
+  A(exp2(-1074.0) != 0.0);
 
   for (double littleExp = -1074.0; littleExp < -149.0; littleExp++) {
     
-    A(!IsFloat32Representable(pow(2.0, littleExp)));
+    
+    A(!IsFloat32Representable(exp2(littleExp)));
   }
 
   
+  
+  A(exp2f(-150.0f) == 0.0);
+  A(exp2f(-149.0f) != 0.0);
+
+  
   for (double exponent = -149.0; exponent < 128.0; exponent++) {
-    A(IsFloat32Representable(pow(2.0, exponent)));
+    A(IsFloat32Representable(exp2(exponent)));
   }
 
   
   for (double bigExp = 128.0; bigExp < 1024.0; bigExp++) {
-    A(!IsFloat32Representable(pow(2.0, bigExp)));
+    A(!IsFloat32Representable(exp2(bigExp)));
   }
 
   
@@ -660,11 +659,11 @@ static void TestIsFloat32Representable() {
   
   
   
-  double oneTooSmall = pow(2.0, -150.0);
+  double oneTooSmall = exp2(-150.0);
   for (double denormExp = -149.0;
        denormExp < 1 - double(FloatingPoint<double>::kExponentBias) + 1;
        denormExp++) {
-    double baseDenorm = pow(2.0, denormExp);
+    double baseDenorm = exp2(denormExp);
     double tooWide = baseDenorm + oneTooSmall;
     A(!IsFloat32Representable(tooWide));
 
