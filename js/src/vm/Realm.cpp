@@ -691,11 +691,7 @@ static bool AddLazyFunctionsForRealm(JSContext* cx,
   for (auto i = cx->zone()->cellIter<JSObject>(kind); !i.done(); i.next()) {
     JSFunction* fun = &i->as<JSFunction>();
 
-    
-    
-    
-    if (gc::IsAboutToBeFinalizedUnbarriered(&fun) ||
-        fun->realm() != cx->realm()) {
+    if (fun->realm() != cx->realm()) {
       continue;
     }
 
@@ -858,11 +854,8 @@ void Realm::clearScriptNames() { scriptNameMap.reset(); }
 
 void Realm::clearBreakpointsIn(FreeOp* fop, js::Debugger* dbg,
                                HandleObject handler) {
-  for (auto iter = zone()->cellIter<JSScript>(); !iter.done(); iter.next()) {
-    JSScript* script = iter;
-    if (gc::IsAboutToBeFinalizedUnbarriered(&script)) {
-      continue;
-    }
+  for (auto script = zone()->cellIter<JSScript>(); !script.done();
+       script.next()) {
     if (script->realm() == this && script->hasAnyBreakpointsOrStepMode()) {
       script->clearBreakpointsIn(fop, dbg, handler);
     }
