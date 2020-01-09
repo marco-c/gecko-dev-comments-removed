@@ -374,10 +374,6 @@ pub struct ColorRenderTarget {
     
     
     pub used_rect: DeviceIntRect,
-    
-    
-    
-    batch_builder: BatchBuilder,
 }
 
 impl RenderTarget for ColorRenderTarget {
@@ -396,7 +392,6 @@ impl RenderTarget for ColorRenderTarget {
             alpha_tasks: Vec::new(),
             screen_size,
             used_rect: DeviceIntRect::zero(),
-            batch_builder: BatchBuilder::new(),
         }
     }
 
@@ -436,15 +431,24 @@ impl RenderTarget for ColorRenderTarget {
                         Some(target_rect)
                     };
 
-                    let mut alpha_batch_builder = AlphaBatchBuilder::new(
+                    
+                    
+                    
+                    
+                    
+                    let alpha_batch_builder = AlphaBatchBuilder::new(
                         self.screen_size,
                         ctx.break_advanced_blend_batches,
                         *task_id,
+                        render_tasks.get_task_address(*task_id),
                     );
 
-                    self.batch_builder.add_pic_to_batch(
+                    let mut batch_builder = BatchBuilder::new(
+                        alpha_batch_builder,
+                    );
+
+                    batch_builder.add_pic_to_batch(
                         pic,
-                        &mut alpha_batch_builder,
                         ctx,
                         gpu_cache,
                         render_tasks,
@@ -454,6 +458,8 @@ impl RenderTarget for ColorRenderTarget {
                         pic_task.root_spatial_node_index,
                         z_generator,
                     );
+
+                    let alpha_batch_builder = batch_builder.finalize();
 
                     alpha_batch_builder.build(
                         &mut self.alpha_batch_containers,
