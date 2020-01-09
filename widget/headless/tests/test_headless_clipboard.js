@@ -1,6 +1,7 @@
 
 
 "use strict";
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 function getString(clipboard) {
   var str = "";
@@ -29,8 +30,7 @@ function getString(clipboard) {
 }
 
 add_task(async function test_clipboard() {
-  let clipboard = Cc["@mozilla.org/widget/clipboard;1"]
-                  .getService(Ci.nsIClipboard);
+  let clipboard = Services.clipboard;
 
   
   const data = "random number: " + Math.random();
