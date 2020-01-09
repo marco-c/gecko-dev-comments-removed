@@ -192,8 +192,8 @@ def set_variables(event):
 
 def include_job(job):
     
+    
     if (os.environ["GITHUB_PULL_REQUEST"] == "false" and
-        os.environ["GITHUB_BRANCH"] == "master" and
         job == "run-all"):
         return True
 
