@@ -26,7 +26,6 @@
 #include "mozilla/dom/TabChild.h"
 #include "mozilla/Components.h"
 #include "mozilla/Logging.h"
-#include "xpcpublic.h"
 
 NS_IMPL_ISUPPORTS(nsContentSecurityManager, nsIContentSecurityManager,
                   nsIChannelEventSink)
@@ -751,47 +750,6 @@ static void DebugDoContentSecurityCheck(nsIChannel* aChannel,
   }
 }
 
-#if defined(DEBUG) || defined(FUZZING)
-
-
-static void AssertSystemPrincipalMustNotLoadRemoteDocuments(
-    nsIChannel* aChannel) {
-  nsCOMPtr<nsILoadInfo> loadInfo;
-  aChannel->GetLoadInfo((getter_AddRefs(loadInfo)));
-
-  
-  if (!nsContentUtils::IsSystemPrincipal(loadInfo->LoadingPrincipal())) {
-    return;
-  }
-  nsContentPolicyType contentPolicyType =
-      loadInfo->GetExternalContentPolicyType();
-  if ((contentPolicyType != nsIContentPolicy::TYPE_DOCUMENT) &&
-      (contentPolicyType != nsIContentPolicy::TYPE_SUBDOCUMENT)) {
-    return;
-  }
-  nsCOMPtr<nsIURI> finalURI;
-  NS_GetFinalChannelURI(aChannel, getter_AddRefs(finalURI));
-  
-  if (!nsContentUtils::SchemeIs(finalURI, "http") &&
-      !nsContentUtils::SchemeIs(finalURI, "https") &&
-      !nsContentUtils::SchemeIs(finalURI, "ftp")) {
-    return;
-  }
-  if (xpc::IsInAutomation()) {
-    bool disallowSystemPrincipalRemoteDocuments = Preferences::GetBool(
-        "security.disallow_non_local_systemprincipal_in_tests");
-    if (disallowSystemPrincipalRemoteDocuments) {
-      
-      NS_ASSERTION(false, "SystemPrincipal must not load remote documents.");
-      return;
-    }
-    
-    return;
-  }
-  MOZ_ASSERT(false, "SystemPrincipal must not load remote documents.");
-}
-#endif
-
 
 
 
@@ -817,10 +775,6 @@ nsresult nsContentSecurityManager::doContentSecurityCheck(
   if (MOZ_UNLIKELY(MOZ_LOG_TEST(sCSMLog, LogLevel::Debug))) {
     DebugDoContentSecurityCheck(aChannel, loadInfo);
   }
-
-#if defined(DEBUG) || defined(FUZZING)
-  AssertSystemPrincipalMustNotLoadRemoteDocuments(aChannel);
-#endif
 
   
   
