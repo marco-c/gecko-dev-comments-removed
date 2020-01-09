@@ -531,6 +531,8 @@ nsresult nsComponentManagerImpl::Init() {
     
     nsLayoutModuleInitialize();
 
+    mJSLoaderReady = true;
+
     
     
     
