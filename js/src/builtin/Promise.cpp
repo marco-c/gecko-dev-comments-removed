@@ -1434,8 +1434,7 @@ static MOZ_MUST_USE bool TriggerPromiseReactions(JSContext* cx,
 
 
 static MOZ_MUST_USE bool DefaultResolvingPromiseReactionJob(
-    JSContext* cx, Handle<PromiseReactionRecord*> reaction,
-    MutableHandleValue rval) {
+    JSContext* cx, Handle<PromiseReactionRecord*> reaction) {
   MOZ_ASSERT(reaction->targetState() != JS::PromiseState::Pending);
 
   Rooted<PromiseObject*> promiseToResolve(cx,
@@ -1472,100 +1471,97 @@ static MOZ_MUST_USE bool DefaultResolvingPromiseReactionJob(
                                                    : ReactionRecordSlot_Resolve;
   RootedObject callee(cx, reaction->getFixedSlot(hookSlot).toObjectOrNull());
   RootedObject promiseObj(cx, reaction->promise());
-  if (!RunResolutionFunction(cx, callee, handlerResult, resolutionMode,
-                             promiseObj)) {
-    return false;
-  }
-
-  rval.setUndefined();
-  return true;
+  return RunResolutionFunction(cx, callee, handlerResult, resolutionMode,
+                               promiseObj);
 }
 
 static MOZ_MUST_USE bool AsyncFunctionPromiseReactionJob(
-    JSContext* cx, Handle<PromiseReactionRecord*> reaction,
-    MutableHandleValue rval) {
+    JSContext* cx, Handle<PromiseReactionRecord*> reaction) {
   MOZ_ASSERT(reaction->isAsyncFunction());
 
-  RootedValue handlerVal(cx, reaction->handler());
+  int32_t handler = reaction->handler().toInt32();
   RootedValue argument(cx, reaction->handlerArg());
   Rooted<AsyncFunctionGeneratorObject*> generator(
       cx, reaction->asyncFunctionGenerator());
 
-  int32_t handlerNum = handlerVal.toInt32();
+  
+  
 
-  
-  
-  if (handlerNum == PromiseHandlerAsyncFunctionAwaitedFulfilled) {
-    if (!AsyncFunctionAwaitedFulfilled(cx, generator, argument)) {
-      return false;
-    }
-  } else {
-    MOZ_ASSERT(handlerNum == PromiseHandlerAsyncFunctionAwaitedRejected);
-    if (!AsyncFunctionAwaitedRejected(cx, generator, argument)) {
-      return false;
-    }
+  if (handler == PromiseHandlerAsyncFunctionAwaitedFulfilled) {
+    return AsyncFunctionAwaitedFulfilled(cx, generator, argument);
   }
 
-  rval.setUndefined();
-  return true;
+  MOZ_ASSERT(handler == PromiseHandlerAsyncFunctionAwaitedRejected);
+  return AsyncFunctionAwaitedRejected(cx, generator, argument);
 }
 
 static MOZ_MUST_USE bool AsyncGeneratorPromiseReactionJob(
-    JSContext* cx, Handle<PromiseReactionRecord*> reaction,
-    MutableHandleValue rval) {
+    JSContext* cx, Handle<PromiseReactionRecord*> reaction) {
   MOZ_ASSERT(reaction->isAsyncGenerator());
 
-  RootedValue handlerVal(cx, reaction->handler());
+  int32_t handler = reaction->handler().toInt32();
   RootedValue argument(cx, reaction->handlerArg());
   Rooted<AsyncGeneratorObject*> asyncGenObj(cx, reaction->asyncGenerator());
 
-  int32_t handlerNum = handlerVal.toInt32();
+  
+  
 
-  
-  
-  if (handlerNum == PromiseHandlerAsyncGeneratorAwaitedFulfilled) {
+  switch (handler) {
     
-    if (!AsyncGeneratorAwaitedFulfilled(cx, asyncGenObj, argument)) {
-      return false;
-    }
-  } else if (handlerNum == PromiseHandlerAsyncGeneratorAwaitedRejected) {
     
-    if (!AsyncGeneratorAwaitedRejected(cx, asyncGenObj, argument)) {
-      return false;
+    case PromiseHandlerAsyncGeneratorAwaitedFulfilled: {
+      return AsyncGeneratorAwaitedFulfilled(cx, asyncGenObj, argument);
     }
-  } else if (handlerNum ==
-             PromiseHandlerAsyncGeneratorResumeNextReturnFulfilled) {
-    asyncGenObj->setCompleted();
+
     
-    if (!AsyncGeneratorResolve(cx, asyncGenObj, argument, true)) {
-      return false;
-    }
-  } else if (handlerNum ==
-             PromiseHandlerAsyncGeneratorResumeNextReturnRejected) {
-    asyncGenObj->setCompleted();
     
-    if (!AsyncGeneratorReject(cx, asyncGenObj, argument)) {
-      return false;
+    case PromiseHandlerAsyncGeneratorAwaitedRejected: {
+      return AsyncGeneratorAwaitedRejected(cx, asyncGenObj, argument);
     }
-  } else if (handlerNum ==
-             PromiseHandlerAsyncGeneratorYieldReturnAwaitedFulfilled) {
-    asyncGenObj->setExecuting();
+
     
-    if (!AsyncGeneratorYieldReturnAwaitedFulfilled(cx, asyncGenObj, argument)) {
-      return false;
-    }
-  } else {
-    MOZ_ASSERT(handlerNum ==
-               PromiseHandlerAsyncGeneratorYieldReturnAwaitedRejected);
-    asyncGenObj->setExecuting();
     
-    if (!AsyncGeneratorYieldReturnAwaitedRejected(cx, asyncGenObj, argument)) {
-      return false;
+    case PromiseHandlerAsyncGeneratorResumeNextReturnFulfilled: {
+      
+      asyncGenObj->setCompleted();
+
+      
+      return AsyncGeneratorResolve(cx, asyncGenObj, argument, true);
     }
+
+    
+    
+    case PromiseHandlerAsyncGeneratorResumeNextReturnRejected: {
+      
+      asyncGenObj->setCompleted();
+
+      
+      return AsyncGeneratorReject(cx, asyncGenObj, argument);
+    }
+
+    
+    
+    case PromiseHandlerAsyncGeneratorYieldReturnAwaitedFulfilled: {
+      asyncGenObj->setExecuting();
+
+      
+      return AsyncGeneratorYieldReturnAwaitedFulfilled(cx, asyncGenObj,
+                                                       argument);
+    }
+
+    
+    
+    case PromiseHandlerAsyncGeneratorYieldReturnAwaitedRejected: {
+      asyncGenObj->setExecuting();
+
+      
+      return AsyncGeneratorYieldReturnAwaitedRejected(cx, asyncGenObj,
+                                                      argument);
+    }
+
+    default:
+      MOZ_CRASH("Bad handler in AsyncGeneratorPromiseReactionJob");
   }
-
-  rval.setUndefined();
-  return true;
 }
 
 
@@ -1585,6 +1581,9 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   RootedFunction job(cx, &args.callee().as<JSFunction>());
+
+  
+  args.rval().setUndefined();
 
   RootedObject reactionObj(
       cx, &job->getExtendedSlot(ReactionJobSlot_ReactionRecord).toObject());
@@ -1614,13 +1613,13 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp) {
   Handle<PromiseReactionRecord*> reaction =
       reactionObj.as<PromiseReactionRecord>();
   if (reaction->isDefaultResolvingHandler()) {
-    return DefaultResolvingPromiseReactionJob(cx, reaction, args.rval());
+    return DefaultResolvingPromiseReactionJob(cx, reaction);
   }
   if (reaction->isAsyncFunction()) {
-    return AsyncFunctionPromiseReactionJob(cx, reaction, args.rval());
+    return AsyncFunctionPromiseReactionJob(cx, reaction);
   }
   if (reaction->isAsyncGenerator()) {
-    return AsyncGeneratorPromiseReactionJob(cx, reaction, args.rval());
+    return AsyncGeneratorPromiseReactionJob(cx, reaction);
   }
   if (reaction->isDebuggerDummy()) {
     return true;
@@ -1678,13 +1677,8 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp) {
                                                    : ReactionRecordSlot_Resolve;
   RootedObject callee(cx, reaction->getFixedSlot(hookSlot).toObjectOrNull());
   RootedObject promiseObj(cx, reaction->promise());
-  if (!RunResolutionFunction(cx, callee, handlerResult, resolutionMode,
-                             promiseObj)) {
-    return false;
-  }
-
-  args.rval().setUndefined();
-  return true;
+  return RunResolutionFunction(cx, callee, handlerResult, resolutionMode,
+                               promiseObj);
 }
 
 
