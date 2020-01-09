@@ -60,7 +60,7 @@ for (let v of VALUES)
         `(module
            (import $glob "m" "g" (global anyref))
            (func (export "f") (result anyref)
-             (get_global $glob)))`,
+             (global.get $glob)))`,
         {m:{g}});
     assertEq(ins.exports.f(), v);
 }
@@ -74,7 +74,7 @@ for (let v of VALUES)
         `(module
            (import $glob "m" "g" (global (mut anyref)))
            (func (export "f") (param $v anyref)
-             (set_global $glob (get_local $v))))`,
+             (global.set $glob (local.get $v))))`,
         {m:{g}});
     ins.exports.f(v);
     assertEq(g.value, v);
@@ -112,7 +112,7 @@ for (let v of VALUES)
         `(module
            (import $t "m" "t" (table 10 anyref))
            (func (export "f") (param $v anyref)
-             (table.set $t (i32.const 3) (get_local $v))))`,
+             (table.set $t (i32.const 3) (local.get $v))))`,
         {m:{t}});
     ins.exports.f(v);
     assertEq(t.get(3), v);
@@ -147,7 +147,7 @@ for (let v of VALUES)
            (func (export "test_returner") (result anyref)
              (call $returner))
            (func (export "test_receiver") (param $v anyref)
-             (call $receiver (get_local $v))))`,
+             (call $receiver (local.get $v))))`,
         {m:{returner, receiver}});
     assertEq(ins.exports.test_returner(), v);
     ins.exports.test_receiver(v);
