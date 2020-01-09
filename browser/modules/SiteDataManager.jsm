@@ -3,11 +3,6 @@
 const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-ChromeUtils.defineModuleGetter(this, "OfflineAppCacheHelper",
-                               "resource://gre/modules/offlineAppCache.jsm");
-ChromeUtils.defineModuleGetter(this, "ServiceWorkerCleanUp",
-                               "resource://gre/modules/ServiceWorkerCleanUp.jsm");
-
 var EXPORTED_SYMBOLS = [
   "SiteDataManager",
 ];
@@ -326,6 +321,23 @@ var SiteDataManager = {
   },
 
   
+  
+  _getDeletablePermissions() {
+    let perms = [];
+    let enumerator = Services.perms.enumerator;
+
+    while (enumerator.hasMoreElements()) {
+      let permission = enumerator.getNext().QueryInterface(Ci.nsIPermission);
+      if (permission.type == "persistent-storage" ||
+          permission.type == "storage-access") {
+        perms.push(permission);
+      }
+    }
+
+    return perms;
+  },
+
+  
 
 
 
@@ -333,34 +345,27 @@ var SiteDataManager = {
 
 
   async remove(hosts) {
-    
-    await this._getQuotaUsage();
-    this._updateAppCache();
-
-    let unknownHost = "";
+    let perms = this._getDeletablePermissions();
     let promises = [];
     for (let host of hosts) {
-      let site = this._sites.get(host);
-      if (site) {
-        
-        Services.obs.notifyObservers(null, "extension:purge-localStorage", host);
-        Services.obs.notifyObservers(null, "browser:purge-sessionStorage", host);
-        this._removePermission(site);
-        this._removeAppCache(site);
-        this._removeCookies(site);
-        promises.push(ServiceWorkerCleanUp.removeFromHost(host));
-        promises.push(this._removeQuotaUsage(site));
-      } else {
-        unknownHost = host;
-        break;
+      promises.push(new Promise(function(resolve) {
+        Services.clearData.deleteDataFromHost(host, true,
+          Ci.nsIClearDataService.CLEAR_COOKIES |
+          Ci.nsIClearDataService.CLEAR_DOM_STORAGES |
+          Ci.nsIClearDataService.CLEAR_SECURITY_SETTINGS |
+          Ci.nsIClearDataService.CLEAR_PLUGIN_DATA |
+          Ci.nsIClearDataService.CLEAR_EME |
+          Ci.nsIClearDataService.CLEAR_ALL_CACHES, resolve);
+      }));
+
+      for (let perm of perms) {
+        if (Services.eTLD.hasRootDomain(perm.principal.URI.host, host)) {
+          Services.perms.removePermission(perm);
+        }
       }
     }
 
     await Promise.all(promises);
-
-    if (unknownHost) {
-      throw `SiteDataManager: removing unknown site of ${unknownHost}`;
-    }
 
     return this.updateSites();
   },
@@ -405,15 +410,19 @@ var SiteDataManager = {
 
 
   async removeAll() {
-    this.removeCache();
+    await this.removeCache();
     return this.removeSiteData();
   },
 
   
 
 
+
+
   removeCache() {
-    Services.cache2.clear();
+    return new Promise(function(resolve) {
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL_CACHES, resolve);
+    });
   },
 
   
@@ -422,37 +431,20 @@ var SiteDataManager = {
 
 
 
-
-
-
-
-
   async removeSiteData() {
-    
-    Services.obs.notifyObservers(null, "extension:purge-localStorage");
+    await new Promise(function(resolve) {
+      Services.clearData.deleteData(
+        Ci.nsIClearDataService.CLEAR_COOKIES |
+        Ci.nsIClearDataService.CLEAR_DOM_STORAGES |
+        Ci.nsIClearDataService.CLEAR_SECURITY_SETTINGS |
+        Ci.nsIClearDataService.CLEAR_EME |
+        Ci.nsIClearDataService.CLEAR_PLUGIN_DATA, resolve);
+    });
 
-    Services.cookies.removeAll();
-    OfflineAppCacheHelper.clear();
-
-    await ServiceWorkerCleanUp.removeAll();
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    this._sites.clear();
-    await this._getQuotaUsage();
-    let promises = [];
-    for (let site of this._sites.values()) {
-      this._removePermission(site);
-      promises.push(this._removeQuotaUsage(site));
+    for (let permission of this._getDeletablePermissions()) {
+      Services.perms.removePermission(permission);
     }
-    return Promise.all(promises).then(() => this.updateSites());
+
+    return this.updateSites();
   },
 };
