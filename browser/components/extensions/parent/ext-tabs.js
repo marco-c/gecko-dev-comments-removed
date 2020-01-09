@@ -869,6 +869,13 @@ this.tabs = class extends ExtensionAPI {
             if (nativeTab.ownerGlobal == window && gBrowser.tabs.length === 1) {
               continue;
             }
+            
+            
+            if (nativeTab.ownerGlobal != window &&
+                PrivateBrowsingUtils.isBrowserPrivate(window.gBrowser) !=
+                PrivateBrowsingUtils.isBrowserPrivate(nativeTab.ownerGlobal.gBrowser)) {
+              continue;
+            }
 
             let insertionPoint = indexMap.get(window) || moveProperties.index;
             
