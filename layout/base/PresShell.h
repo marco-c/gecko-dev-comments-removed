@@ -678,6 +678,23 @@ class PresShell final : public nsIPresShell,
 
 
 
+
+
+
+
+    MOZ_CAN_RUN_SCRIPT
+    bool ComputeEventTargetFrameAndPresShellAtEventPoint(
+        nsIFrame* aRootFrameToHandleEvent, WidgetGUIEvent* aGUIEvent,
+        EventTargetData* aEventTargetData);
+
+    
+
+
+
+
+
+
+
     bool MaybeDiscardEvent(WidgetGUIEvent* aGUIEvent);
 
     
