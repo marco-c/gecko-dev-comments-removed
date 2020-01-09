@@ -123,19 +123,6 @@ JSObject* DOMProxyHandler::GetAndClearExpandoObject(JSObject* obj) {
     if (v.isUndefined()) {
       return nullptr;
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    JS::ExposeValueToActiveJS(v);
     expandoAndGeneration->expando = UndefinedValue();
   }
 
