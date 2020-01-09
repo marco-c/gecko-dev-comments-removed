@@ -1358,35 +1358,35 @@ EnvironmentCache.prototype = {
 
 
   _isDefaultBrowser() {
-    let isDefault = (service, ...args) => {
-      try {
-        return !!service.isDefaultBrowser(...args);
-      } catch (ex) {
-        this._log.error("_isDefaultBrowser - Could not determine if default browser", ex);
-        return null;
-      }
-    };
-
     if (!("@mozilla.org/browser/shell-service;1" in Cc)) {
       this._log.info("_isDefaultBrowser - Could not obtain browser shell service");
       return null;
     }
 
+    let shellService;
     try {
-      let { shellService } = ChromeUtils.import("resource:///modules/ShellService.jsm", {});
-      
-      return isDefault(shellService, false, true);
+      let scope = {};
+      ChromeUtils.import("resource:///modules/ShellService.jsm", scope);
+      shellService = scope.ShellService;
     } catch (ex) {
       this._log.error("_isDefaultBrowser - Could not obtain shell service JSM");
     }
 
+    if (!shellService) {
+      try {
+        shellService = Cc["@mozilla.org/browser/shell-service;1"]
+                         .getService(Ci.nsIShellService);
+      } catch (ex) {
+        this._log.error("_isDefaultBrowser - Could not obtain shell service", ex);
+        return null;
+      }
+    }
+
     try {
-      let shellService = Cc["@mozilla.org/browser/shell-service;1"]
-                            .getService(Ci.nsIShellService);
-    
-      return isDefault(shellService, true);
+      
+      return !!shellService.isDefaultBrowser(false, true);
     } catch (ex) {
-      this._log.error("_isDefaultBrowser - Could not obtain shell service", ex);
+      this._log.error("_isDefaultBrowser - Could not determine if default browser", ex);
       return null;
     }
   },
