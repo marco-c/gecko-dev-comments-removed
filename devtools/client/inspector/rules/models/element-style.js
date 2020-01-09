@@ -20,49 +20,50 @@ loader.lazyRequireGetter(this, "isCssVariable", "devtools/shared/fronts/css-prop
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function ElementStyle(element, ruleView, store, pageStyle, showUserAgentStyles) {
-  this.element = element;
-  this.ruleView = ruleView;
-  this.store = store || {};
-  this.pageStyle = pageStyle;
-  this.showUserAgentStyles = showUserAgentStyles;
-  this.rules = [];
-  this.cssProperties = this.ruleView.cssProperties;
-  this.variables = new Map();
-
+class ElementStyle {
   
-  
-  if (!("userProperties" in this.store)) {
-    this.store.userProperties = new UserProperties();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  constructor(element, ruleView, store, pageStyle, showUserAgentStyles) {
+    this.element = element;
+    this.ruleView = ruleView;
+    this.store = store || {};
+    this.pageStyle = pageStyle;
+    this.showUserAgentStyles = showUserAgentStyles;
+    this.rules = [];
+    this.cssProperties = this.ruleView.cssProperties;
+    this.variables = new Map();
+
+    
+    
+    if (!("userProperties" in this.store)) {
+      this.store.userProperties = new UserProperties();
+    }
+
+    if (!("disabled" in this.store)) {
+      this.store.disabled = new WeakMap();
+    }
+
+    this.onStyleSheetUpdated = this.onStyleSheetUpdated.bind(this);
+
+    if (this.ruleView.isNewRulesView) {
+      this.pageStyle.on("stylesheet-updated", this.onStyleSheetUpdated);
+    }
   }
 
-  if (!("disabled" in this.store)) {
-    this.store.disabled = new WeakMap();
-  }
-
-  this.onStyleSheetUpdated = this.onStyleSheetUpdated.bind(this);
-
-  if (this.ruleView.isNewRulesView) {
-    this.pageStyle.on("stylesheet-updated", this.onStyleSheetUpdated);
-  }
-}
-
-ElementStyle.prototype = {
-  destroy: function() {
+  destroy() {
     if (this.destroyed) {
       return;
     }
@@ -78,17 +79,17 @@ ElementStyle.prototype = {
     if (this.ruleView.isNewRulesView) {
       this.pageStyle.off("stylesheet-updated", this.onStyleSheetUpdated);
     }
-  },
+  }
 
   
 
 
 
-  _changed: function() {
+  _changed() {
     if (this.onChanged) {
       this.onChanged();
     }
-  },
+  }
 
   
 
@@ -97,7 +98,7 @@ ElementStyle.prototype = {
 
 
 
-  populate: function() {
+  populate() {
     const populated = this.pageStyle.getApplied(this.element, {
       inherited: true,
       matchedSelectors: true,
@@ -140,7 +141,7 @@ ElementStyle.prototype = {
     });
     this.populated = populated;
     return this.populated;
-  },
+  }
 
   
 
@@ -149,9 +150,9 @@ ElementStyle.prototype = {
 
 
 
-  getRule: function(id) {
+  getRule(id) {
     return this.rules.find(rule => rule.domRule.actorID === id);
-  },
+  }
 
   
 
@@ -159,7 +160,7 @@ ElementStyle.prototype = {
 
 
 
-  getUsedFontFamilies: function() {
+  getUsedFontFamilies() {
     return new Promise((resolve, reject) => {
       this.ruleView.styleWindow.requestIdleCallback(async () => {
         try {
@@ -171,16 +172,16 @@ ElementStyle.prototype = {
         }
       });
     });
-  },
+  }
 
   
 
 
-  _sortRulesForPseudoElement: function() {
+  _sortRulesForPseudoElement() {
     this.rules = this.rules.sort((a, b) => {
       return (a.pseudoElement || "z") > (b.pseudoElement || "z");
     });
-  },
+  }
 
   
 
@@ -193,7 +194,7 @@ ElementStyle.prototype = {
 
 
 
-  _maybeAddRule: function(options, existingRules) {
+  _maybeAddRule(options, existingRules) {
     
     
     if (options.system ||
@@ -226,19 +227,19 @@ ElementStyle.prototype = {
 
     this.rules.push(rule);
     return true;
-  },
+  }
 
   
 
 
-  markOverriddenAll: function() {
+  markOverriddenAll() {
     this.variables.clear();
     this.markOverridden();
 
     for (const pseudo of this.cssProperties.pseudoElements) {
       this.markOverridden(pseudo);
     }
-  },
+  }
 
   
 
@@ -248,7 +249,7 @@ ElementStyle.prototype = {
 
 
 
-  markOverridden: function(pseudo = "") {
+  markOverridden(pseudo = "") {
     
     
     
@@ -343,7 +344,7 @@ ElementStyle.prototype = {
         textProp.updateEditor();
       }
     }
-  },
+  }
 
   
 
@@ -353,7 +354,7 @@ ElementStyle.prototype = {
 
 
 
-  addNewDeclaration: function(ruleId, value) {
+  addNewDeclaration(ruleId, value) {
     const rule = this.getRule(ruleId);
     if (!rule) {
       return;
@@ -366,7 +367,7 @@ ElementStyle.prototype = {
     }
 
     this._addMultipleDeclarations(rule, declarationsToAdd);
-  },
+  }
 
   
 
@@ -375,7 +376,7 @@ ElementStyle.prototype = {
 
   async addNewRule() {
     await this.pageStyle.addNewRule(this.element, this.element.pseudoClassLocks);
-  },
+  }
 
   
 
@@ -388,7 +389,7 @@ ElementStyle.prototype = {
 
 
 
-  modifyDeclarationName: async function(ruleID, declarationId, name) {
+  async modifyDeclarationName(ruleID, declarationId, name) {
     const rule = this.getRule(ruleID);
     if (!rule) {
       return;
@@ -411,7 +412,7 @@ ElementStyle.prototype = {
     if (!declaration.enabled) {
       await declaration.setEnabled(true);
     }
-  },
+  }
 
   
 
@@ -424,14 +425,14 @@ ElementStyle.prototype = {
 
 
 
-  _addMultipleDeclarations: function(rule, declarationsToAdd, siblingDeclaration = null) {
+  _addMultipleDeclarations(rule, declarationsToAdd, siblingDeclaration = null) {
     for (const { commentOffsets, name, value, priority } of declarationsToAdd) {
       const isCommented = Boolean(commentOffsets);
       const enabled = !isCommented;
       siblingDeclaration = rule.createProperty(name, value, priority, enabled,
         siblingDeclaration);
     }
-  },
+  }
 
   
 
@@ -448,7 +449,7 @@ ElementStyle.prototype = {
 
 
 
-  _getValueAndExtraProperties: function(value) {
+  _getValueAndExtraProperties(value) {
     
     
     
@@ -478,7 +479,7 @@ ElementStyle.prototype = {
       declarationsToAdd,
       firstValue,
     };
-  },
+  }
 
   
 
@@ -491,7 +492,7 @@ ElementStyle.prototype = {
 
 
 
-  modifyDeclarationValue: async function(ruleId, declarationId, value) {
+  async modifyDeclarationValue(ruleId, declarationId, value) {
     const rule = this.getRule(ruleId);
     if (!rule) {
       return;
@@ -519,7 +520,7 @@ ElementStyle.prototype = {
     }
 
     this._addMultipleDeclarations(rule, declarationsToAdd, declaration);
-  },
+  }
 
   
 
@@ -529,7 +530,7 @@ ElementStyle.prototype = {
 
 
 
-  modifySelector: async function(ruleId, selector) {
+  async modifySelector(ruleId, selector) {
     try {
       const rule = this.getRule(ruleId);
       if (!rule) {
@@ -586,7 +587,7 @@ ElementStyle.prototype = {
     } catch (e) {
       console.error(e);
     }
-  },
+  }
 
   
 
@@ -596,7 +597,7 @@ ElementStyle.prototype = {
 
 
 
-  toggleDeclaration: function(ruleId, declarationId) {
+  toggleDeclaration(ruleId, declarationId) {
     const rule = this.getRule(ruleId);
     if (!rule) {
       return;
@@ -608,7 +609,7 @@ ElementStyle.prototype = {
     }
 
     declaration.setEnabled(!declaration.enabled);
-  },
+  }
 
   
 
@@ -620,7 +621,7 @@ ElementStyle.prototype = {
 
 
 
-  _updatePropertyOverridden: function(prop) {
+  _updatePropertyOverridden(prop) {
     let overridden = true;
     let dirty = false;
 
@@ -636,7 +637,7 @@ ElementStyle.prototype = {
     dirty = (!!prop.overridden !== overridden) || dirty;
     prop.overridden = overridden;
     return dirty;
-  },
+  }
 
  
 
@@ -647,15 +648,15 @@ ElementStyle.prototype = {
 
 
 
-  getVariable: function(name) {
+  getVariable(name) {
     return this.variables.get(name);
-  },
+  }
 
   
 
 
 
-  onStyleSheetUpdated: async function() {
+  async onStyleSheetUpdated() {
     
     const promises = [];
     for (const rule of this.rules) {
@@ -667,7 +668,7 @@ ElementStyle.prototype = {
     await Promise.all(promises);
     await this.populate();
     this._changed();
-  },
-};
+  }
+}
 
 module.exports = ElementStyle;

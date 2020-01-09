@@ -19,6 +19,8 @@ loader.lazyRequireGetter(this, "escapeCSSComment", "devtools/shared/css/parsing-
 
 
 
+class TextProperty {
+  
 
 
 
@@ -36,22 +38,20 @@ loader.lazyRequireGetter(this, "escapeCSSComment", "devtools/shared/css/parsing-
 
 
 
-function TextProperty(rule, name, value, priority, enabled = true,
-                      invisible = false) {
-  this.id = name + "_" + generateUUID().toString();
-  this.rule = rule;
-  this.name = name;
-  this.value = value;
-  this.priority = priority;
-  this.enabled = !!enabled;
-  this.invisible = invisible;
-  this.cssProperties = this.rule.elementStyle.ruleView.cssProperties;
-  this.panelDoc = this.rule.elementStyle.ruleView.inspector.panelDoc;
+  constructor(rule, name, value, priority, enabled = true, invisible = false) {
+    this.id = name + "_" + generateUUID().toString();
+    this.rule = rule;
+    this.name = name;
+    this.value = value;
+    this.priority = priority;
+    this.enabled = !!enabled;
+    this.invisible = invisible;
+    this.cssProperties = this.rule.elementStyle.ruleView.cssProperties;
+    this.panelDoc = this.rule.elementStyle.ruleView.inspector.panelDoc;
 
-  this.updateComputed();
-}
+    this.updateComputed();
+  }
 
-TextProperty.prototype = {
   get computedProperties() {
     return this.computed
       .filter(computed => computed.name !== this.name)
@@ -63,7 +63,7 @@ TextProperty.prototype = {
           value: computed.value,
         };
       });
-  },
+  }
 
   
 
@@ -72,22 +72,22 @@ TextProperty.prototype = {
 
   get isKnownProperty() {
     return this.cssProperties.isKnown(this.name);
-  },
+  }
 
   
 
 
 
-  updateEditor: function() {
+  updateEditor() {
     if (this.editor) {
       this.editor.update();
     }
-  },
+  }
 
   
 
 
-  updateComputed: function() {
+  updateComputed() {
     if (!this.name) {
       return;
     }
@@ -115,7 +115,7 @@ TextProperty.prototype = {
         priority: dummyStyle.getPropertyPriority(prop),
       });
     }
-  },
+  }
 
   
 
@@ -124,7 +124,7 @@ TextProperty.prototype = {
 
 
 
-  set: function(prop) {
+  set(prop) {
     let changed = false;
     for (const item of ["name", "value", "priority", "enabled"]) {
       if (this[item] !== prop[item]) {
@@ -136,9 +136,9 @@ TextProperty.prototype = {
     if (changed) {
       this.updateEditor();
     }
-  },
+  }
 
-  setValue: function(value, priority, force = false) {
+  setValue(value, priority, force = false) {
     const store = this.rule.elementStyle.store;
 
     if (this.editor && value !== this.editor.committed.value || force) {
@@ -147,7 +147,7 @@ TextProperty.prototype = {
 
     return this.rule.setPropertyValue(this, value, priority)
       .then(() => this.updateEditor());
-  },
+  }
 
   
 
@@ -156,14 +156,14 @@ TextProperty.prototype = {
 
 
 
-  updateValue: function(value) {
+  updateValue(value) {
     if (value !== this.value) {
       this.value = value;
       this.updateEditor();
     }
-  },
+  }
 
-  setName: async function(name) {
+  async setName(name) {
     if (name !== this.name && this.editor) {
       const store = this.rule.elementStyle.store;
       store.userProperties.setProperty(this.rule.domRule, name,
@@ -172,21 +172,21 @@ TextProperty.prototype = {
 
     await this.rule.setPropertyName(this, name);
     this.updateEditor();
-  },
+  }
 
-  setEnabled: function(value) {
+  setEnabled(value) {
     this.rule.setPropertyEnabled(this, value);
     this.updateEditor();
-  },
+  }
 
-  remove: function() {
+  remove() {
     this.rule.removeProperty(this);
-  },
+  }
 
   
 
 
-  stringifyProperty: function() {
+  stringifyProperty() {
     
     let declaration = this.name + ": " + this.editor.valueSpan.textContent +
       ";";
@@ -197,7 +197,7 @@ TextProperty.prototype = {
     }
 
     return declaration;
-  },
+  }
 
   
 
@@ -205,7 +205,7 @@ TextProperty.prototype = {
 
 
 
-  isValid: function() {
+  isValid() {
     const selfIndex = this.rule.textProps.indexOf(this);
 
     
@@ -217,14 +217,14 @@ TextProperty.prototype = {
     }
 
     return this.rule.domRule.declarations[selfIndex].isValid;
-  },
+  }
 
   
 
 
 
 
-  isNameValid: function() {
+  isNameValid() {
     const selfIndex = this.rule.textProps.indexOf(this);
 
     
@@ -241,7 +241,7 @@ TextProperty.prototype = {
     return (this.rule.domRule.declarations[selfIndex].isNameValid !== undefined)
       ? this.rule.domRule.declarations[selfIndex].isNameValid
       : true;
-  },
-};
+  }
+}
 
 module.exports = TextProperty;
