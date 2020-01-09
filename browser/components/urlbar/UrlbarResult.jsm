@@ -140,7 +140,26 @@ class UrlbarResult {
 
 
 
+
+
+
+
+
+
+
+
+
   static payloadAndSimpleHighlights(tokens, payloadInfo) {
+    if ((!payloadInfo.title || (payloadInfo.title && !payloadInfo.title[0])) &&
+        payloadInfo.url && typeof payloadInfo.url[0] == "string") {
+      
+      
+      payloadInfo.title = payloadInfo.title || ["", true];
+      try {
+        payloadInfo.title[0] = new URL(payloadInfo.url[0]).host;
+      } catch (e) {}
+    }
+
     let entries = Object.entries(payloadInfo);
     return [
       entries.reduce((payload, [name, [val, _]]) => {
