@@ -7,7 +7,7 @@
 #include "RenderViewMLGPU.h"
 #include "ContainerLayerMLGPU.h"
 #include "FrameBuilder.h"
-#include "gfxPrefs.h"
+#include "mozilla/StaticPrefs.h"
 #include "LayersHelpers.h"
 #include "LayersLogging.h"
 #include "MLGDevice.h"
@@ -74,7 +74,7 @@ RenderViewMLGPU::RenderViewMLGPU(FrameBuilder* aBuilder,
       mCurrentMaskRectBufferIndex(kInvalidResourceIndex),
       mCurrentDepthMode(MLGDepthTestMode::Disabled),
       mNextSortIndex(1),
-      mUseDepthBuffer(gfxPrefs::AdvancedLayersEnableDepthBuffer()),
+      mUseDepthBuffer(StaticPrefs::AdvancedLayersEnableDepthBuffer()),
       mDepthBufferNeedsClear(false) {
   if (aParent) {
     aParent->AddChild(this);
@@ -188,7 +188,7 @@ bool RenderViewMLGPU::UpdateVisibleRegion(ItemInfo& aItem) {
   
   
   if (mUseDepthBuffer || !aItem.translation ||
-      !gfxPrefs::AdvancedLayersEnableCPUOcclusion()) {
+      !StaticPrefs::AdvancedLayersEnableCPUOcclusion()) {
     
     
     

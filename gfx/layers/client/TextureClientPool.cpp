@@ -9,8 +9,7 @@
 #include "mozilla/layers/CompositableForwarder.h"
 #include "mozilla/layers/TextureForwarder.h"
 #include "mozilla/layers/TiledContentClient.h"
-
-#include "gfxPrefs.h"
+#include "mozilla/StaticPrefs.h"
 
 #include "nsComponentManagerUtils.h"
 
@@ -142,7 +141,7 @@ void TextureClientPool::AllocateTextureClient() {
   }
 
   RefPtr<TextureClient> newClient;
-  if (gfxPrefs::ForceShmemTiles()) {
+  if (StaticPrefs::ForceShmemTiles()) {
     
     newClient = TextureClient::CreateForRawBufferAccess(
         mSurfaceAllocator, mFormat, mSize, gfx::BackendType::NONE, mBackend,

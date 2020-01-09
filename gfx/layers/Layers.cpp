@@ -17,11 +17,11 @@
 #include "UnitTransforms.h"  
 #include "gfxEnv.h"
 #include "gfxPlatform.h"  
-#include "gfxPrefs.h"
 #include "gfxUtils.h"  
 #include "gfx2DGlue.h"
 #include "mozilla/DebugOnly.h"  
 #include "mozilla/IntegerPrintfMacros.h"
+#include "mozilla/StaticPrefs.h"
 #include "mozilla/Telemetry.h"  
 #include "mozilla/ToString.h"
 #include "mozilla/gfx/2D.h"        
@@ -139,7 +139,7 @@ already_AddRefed<ImageContainer> LayerManager::CreateImageContainer(
 }
 
 bool LayerManager::AreComponentAlphaLayersEnabled() {
-  return gfxPrefs::ComponentAlphaEnabled();
+  return StaticPrefs::ComponentAlphaEnabled();
 }
 
 
