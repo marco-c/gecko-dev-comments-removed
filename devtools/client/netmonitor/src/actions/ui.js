@@ -3,7 +3,7 @@
 
 
 "use strict";
-
+const Services = require("Services");
 const {
   ACTIVITY_TYPE,
   OPEN_NETWORK_DETAILS,
@@ -19,6 +19,8 @@ const {
 } = require("../constants");
 
 const { getDisplayedRequests } = require("../selectors/index");
+
+const DEVTOOLS_DISABLE_CACHE_PREF = "devtools.cache.disabled";
 
 
 
@@ -87,6 +89,13 @@ function disableBrowserCache(disabled) {
 function openStatistics(connector, open) {
   if (open) {
     connector.triggerActivity(ACTIVITY_TYPE.RELOAD.WITH_CACHE_ENABLED);
+  } else if (Services.prefs.getBoolPref(DEVTOOLS_DISABLE_CACHE_PREF)) {
+    
+    
+    
+    
+    
+    connector.triggerActivity(ACTIVITY_TYPE.DISABLE_CACHE);
   }
   return {
     type: OPEN_STATISTICS,
