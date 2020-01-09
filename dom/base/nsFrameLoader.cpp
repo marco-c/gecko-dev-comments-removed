@@ -1063,15 +1063,10 @@ bool nsFrameLoader::ShowRemoteFrame(const ScreenIntSize& size,
       return true;
     }
 
-    RenderFrame* rf =
-        mBrowserParent ? mBrowserParent->GetRenderFrame() : nullptr;
-
-    if (!rf || !rf->AttachLayerManager()) {
-      
+    if (!mBrowserParent->Show(
+            size, ParentWindowIsActive(mOwnerContent->OwnerDoc()))) {
       return false;
     }
-
-    mBrowserParent->Show(size, ParentWindowIsActive(mOwnerContent->OwnerDoc()));
     mRemoteBrowserShown = true;
 
     nsCOMPtr<nsIObserverService> os = services::GetObserverService();

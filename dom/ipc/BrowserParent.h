@@ -463,10 +463,7 @@ class BrowserParent final : public PBrowserParent,
   void InitRendering();
   void MaybeShowFrame();
 
-  
-  
-  
-  void Show(const ScreenIntSize& aSize, bool aParentIsActive);
+  bool Show(const ScreenIntSize& aSize, bool aParentIsActive);
 
   void UpdateDimensions(const nsIntRect& aRect, const ScreenIntSize& aSize);
 
