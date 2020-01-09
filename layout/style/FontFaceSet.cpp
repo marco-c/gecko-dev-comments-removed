@@ -212,8 +212,6 @@ void FontFaceSet::ParseFontShorthandForMatching(
   float stretch;
   float weight;
 
-  
-  
   RefPtr<URLExtraData> url = ServoCSSParser::GetURLExtraData(mDocument);
   if (!ServoCSSParser::ParseFontShorthandForMatching(aFont, url, aFamilyList,
                                                      style, stretch, weight)) {
