@@ -4245,9 +4245,7 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
       flagFile, &cachesOK, &isDowngrade, lastVersion);
 
 #ifdef MOZ_BLOCK_PROFILE_DOWNGRADE
-  
-  
-  if (!CheckArg("allow-downgrade") && isDowngrade) {
+  if (isDowngrade && !CheckArg("allow-downgrade")) {
     rv = CheckDowngrade(mProfD, mProfLD, mProfileName, mNativeApp, mProfileSvc,
                         lastVersion);
     if (rv == NS_ERROR_LAUNCHED_CHILD_PROCESS || rv == NS_ERROR_ABORT) {
