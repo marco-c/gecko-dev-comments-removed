@@ -550,6 +550,10 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   MOZ_MUST_USE nsresult RedirectToInterceptedChannel();
 
+  
+  
+  void SetCachedContentType();
+
  private:
   
   
