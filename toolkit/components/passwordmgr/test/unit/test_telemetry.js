@@ -125,7 +125,8 @@ add_task(function test_initialize() {
 
 add_task(function test_logins_statistics() {
   
-  for (let repeating of [false, true]) {
+  for (let pass of [1, 2]) {
+    info(`pass ${pass}`);
     triggerStatisticsCollection();
 
     
