@@ -2,8 +2,7 @@
 
 
 
-const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
 
 var gSetBackground = {
   _position: AppConstants.platform == "macosx" ? "STRETCH" : "",
