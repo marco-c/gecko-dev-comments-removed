@@ -4,6 +4,13 @@
 
 
 
+"use strict";
+
+
+
+
+
+
 requestLongerTimeout(2);
 
 const TEST_PATH = getRootDirectory(gTestPath)
@@ -14,9 +21,6 @@ const TEST_URL_BASES = [
 ];
 
 const RESTRICT_TOKEN_OPENPAGE = "%";
-
-var gController = Cc["@mozilla.org/autocomplete/controller;1"].
-                  getService(Ci.nsIAutoCompleteController);
 
 var gTabCounter = 0;
 
@@ -158,58 +162,38 @@ function ensure_opentabs_match_db() {
     }
   }
 
-  return new Promise(resolve => {
-    checkAutocompleteResults(tabs, resolve);
-  });
+  return checkAutocompleteResults(tabs);
 }
 
-function checkAutocompleteResults(aExpected, aCallback) {
-  gController.input = {
-    timeout: 10,
-    textValue: "",
-    searches: ["unifiedcomplete"],
-    searchParam: "enable-actions",
-    popupOpen: false,
-    minResultsForPopup: 0,
-    invalidate() {},
-    disableAutoComplete: false,
-    completeDefaultIndex: false,
-    get popup() { return this; },
-    onSearchBegin() {},
-    onSearchComplete() {
-      info("Found " + gController.matchCount + " matches.");
-      
-      for (let i = 0; i < gController.matchCount; i++) {
-        if (gController.getStyleAt(i).includes("heuristic")) {
-          info("Skip heuristic match");
-          continue;
-        }
-        let action = gURLBar.popup.input._parseActionUrl(gController.getValueAt(i));
-        let uri = action.params.url;
-
-        info("Search for '" + uri + "' in open tabs.");
-        let expected = uri in aExpected;
-        ok(expected, uri + " was found in autocomplete, was " + (expected ? "" : "not ") + "expected");
-        
-        delete aExpected[uri];
-      }
-
-      
-      for (let entry in aExpected) {
-        ok(false, "'" + entry + "' should be found in autocomplete");
-      }
-
-      executeSoon(aCallback);
-    },
-    setSelectedIndex() {},
-    get searchCount() { return this.searches.length; },
-    getSearchAt(aIndex) { return this.searches[aIndex]; },
-    QueryInterface: ChromeUtils.generateQI([
-      Ci.nsIAutoCompleteInput,
-      Ci.nsIAutoCompletePopup,
-    ]),
-  };
-
+async function checkAutocompleteResults(expected) {
   info("Searching open pages.");
-  gController.startSearch(RESTRICT_TOKEN_OPENPAGE);
+  await promiseAutocompleteResultPopup(RESTRICT_TOKEN_OPENPAGE);
+
+  let resultCount = UrlbarTestUtils.getResultCount(window);
+  for (let i = 0; i < resultCount; i++) {
+    let result = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
+    if (result.heuristic) {
+      info("Skip heuristic match");
+      continue;
+    }
+
+    Assert.equal(result.type, UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+      "Should have a tab switch result");
+
+    let url = result.url;
+    if (!UrlbarPrefs.get("quantumbar")) {
+      url = PlacesUtils.parseActionUrl(url).params.url;
+    }
+
+    info(`Search for ${url} in open tabs.`);
+    let inExpected = url in expected;
+    Assert.ok(inExpected, `${url} was found in autocomplete, was ${inExpected ? "" : "not "} expected`);
+    
+    delete expected[url];
+  }
+
+  
+  for (let entry in expected) {
+    Assert.ok(!entry, `Should have been found in autocomplete`);
+  }
 }

@@ -1,0 +1,58 @@
+
+
+
+"use strict";
+
+
+
+
+
+var gOriginalEngine;
+var gEngine;
+var gRestyleSearchesPref = "browser.urlbar.restyleSearches";
+
+registerCleanupFunction(async () => {
+  Services.prefs.clearUserPref(gRestyleSearchesPref);
+  await Services.search.setDefault(gOriginalEngine);
+  await Services.search.removeEngine(gEngine);
+  return PlacesUtils.history.clear();
+});
+
+add_task(async function() {
+  Services.prefs.setBoolPref(gRestyleSearchesPref, true);
+
+  
+  
+  await EventUtils.synthesizeNativeMouseMove(document.documentElement, 0, 0);
+});
+
+add_task(async function() {
+  await Services.search.addEngineWithDetails("SearchEngine", "", "", "",
+    "GET", "http://s.example.com/search");
+  gEngine = Services.search.getEngineByName("SearchEngine");
+  gEngine.addParam("q", "{searchTerms}", null);
+  gOriginalEngine = await Services.search.getDefault();
+  await Services.search.setDefault(gEngine);
+
+  await PlacesTestUtils.addVisits({
+    uri: "http://s.example.com/search?q=foobar&client=1",
+    title: "Foo - SearchEngine Search",
+  });
+
+  await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:mozilla");
+
+  
+  
+  await promiseAutocompleteResultPopup("foo");
+  let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 1);
+
+  Assert.equal(result.type, UrlbarUtils.RESULT_TYPE.SEARCH);
+  Assert.equal(result.displayed.title, "foobar");
+
+  let bundle = Services.strings.createBundle("chrome://global/locale/autocomplete.properties");
+  Assert.equal(result.displayed.action,
+    bundle.formatStringFromName("searchWithEngine", ["SearchEngine"], 1),
+    "Should have the correct action text");
+
+  gBrowser.removeCurrentTab();
+});

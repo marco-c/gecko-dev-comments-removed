@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 
 
 
@@ -25,17 +27,17 @@ function assertSelected(index) {
 
   
   
-  is(gURLBar.popup.oneOffSearchButtons.selectedButton, null,
+  Assert.equal(UrlbarTestUtils.getOneOffSearchButtons(window).selectedButton, null,
      "A result is selected, so the one-offs should not have a selection");
 }
 
 function assertSelected_one_off(index) {
-  is(gURLBar.popup.oneOffSearchButtons.selectedButtonIndex, index,
+  Assert.equal(UrlbarTestUtils.getOneOffSearchButtons(window).selectedButtonIndex, index,
      "Expected one-off button should be selected");
 
   
   
-  is(gURLBar.popup.richlistbox.selectedIndex, -1,
+  Assert.equal(UrlbarTestUtils.getSelectedIndex(window), -1,
      "A one-off is selected, so the listbox should not have a selection");
 }
 
@@ -74,8 +76,8 @@ add_task(async function() {
   assertSelected_one_off(0);
 
   info("Key Down numButtons-1 should select the last one-off");
-  let numButtons =
-    gURLBar.popup.oneOffSearchButtons.getSelectableButtons(true).length;
+  let numButtons = UrlbarTestUtils.getOneOffSearchButtons(window)
+    .getSelectableButtons(true).length;
   repeat(numButtons - 1, () => EventUtils.synthesizeKey("KEY_ArrowDown"));
   assertSelected_one_off(numButtons - 1);
 
