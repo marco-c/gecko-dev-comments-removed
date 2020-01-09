@@ -1796,6 +1796,12 @@ static JS::RealmCreationOptions& SelectZone(
 
   if (aNewInner->GetOuterWindow()) {
     nsGlobalWindowOuter* top = aNewInner->GetTopInternal();
+    if (top == aNewInner->GetOuterWindow()) {
+      
+      
+      
+      return aOptions.setNewCompartmentAndZone();
+    }
 
     
     if (top && top->GetGlobalJSObject()) {
