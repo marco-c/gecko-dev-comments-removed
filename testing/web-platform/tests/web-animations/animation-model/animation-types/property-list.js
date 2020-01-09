@@ -1218,7 +1218,7 @@ const gCSSProperties = {
     
     types: [
       'dasharray',
-      { type: 'discrete', options: [ [ 'none', '10, 20' ] ] }
+      { type: 'discrete', options: [ [ 'none', '10px, 20px' ] ] }
     ]
   },
   'stroke-dashoffset': {
