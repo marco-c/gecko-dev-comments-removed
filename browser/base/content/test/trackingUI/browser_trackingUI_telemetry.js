@@ -56,24 +56,22 @@ add_task(async function testShieldHistogram() {
   is(getShieldCounts()[0], 1, "Page loads without tracking");
 
   await promiseTabLoadEvent(tab, TRACKING_PAGE);
-  
-  
-  
-  
-  
-  todo_is(getShieldCounts()[0], 1, "FIXME: TOTAL PAGE LOADS WITHOUT TRACKING IS DOUBLE COUNTING");
+  is(getShieldCounts()[0], 2, "Adds one more page load");
+  is(getShieldCounts()[2], 1, "Counts one instance of the shield being shown");
 
   info("Disable TP for the page (which reloads the page)");
   let tabReloadPromise = promiseTabLoadEvent(tab);
   document.querySelector("#tracking-action-unblock").doCommand();
   await tabReloadPromise;
-  todo_is(getShieldCounts()[0], 1, "FIXME: TOTAL PAGE LOADS WITHOUT TRACKING IS DOUBLE COUNTING");
+  is(getShieldCounts()[0], 3, "Adds one more page load");
+  is(getShieldCounts()[1], 1, "Counts one instance of the shield being crossed out");
 
   info("Re-enable TP for the page (which reloads the page)");
   tabReloadPromise = promiseTabLoadEvent(tab);
   document.querySelector("#tracking-action-block").doCommand();
   await tabReloadPromise;
-  todo_is(getShieldCounts()[0], 1, "FIXME: TOTAL PAGE LOADS WITHOUT TRACKING IS DOUBLE COUNTING");
+  is(getShieldCounts()[0], 4, "Adds one more page load");
+  is(getShieldCounts()[2], 2, "Adds one more instance of the shield being shown");
 
   gBrowser.removeCurrentTab();
 
