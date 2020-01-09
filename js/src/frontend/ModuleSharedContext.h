@@ -16,9 +16,6 @@
 #include "vm/Scope.h"                
 
 namespace js {
-
-class ModuleBuilder;
-
 namespace frontend {
 
 class MOZ_STACK_CLASS ModuleSharedContext : public SharedContext {

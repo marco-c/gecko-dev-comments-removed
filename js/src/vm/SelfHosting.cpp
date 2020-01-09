@@ -36,7 +36,6 @@
 #include "builtin/SelfHostingDefines.h"
 #include "builtin/TypedObject.h"
 #include "builtin/WeakMapObject.h"
-#include "frontend/BytecodeCompiler.h"  
 #include "gc/Marking.h"
 #include "gc/Policy.h"
 #include "jit/AtomicOperations.h"

@@ -15,6 +15,7 @@
 #include <stddef.h>  
 #include <stdint.h>  
 
+#include "frontend/EitherParser.h"  
 #include "frontend/ParseContext.h"  
 #include "frontend/SharedContext.h"  
 #include "js/CompileOptions.h"  
@@ -30,8 +31,6 @@ class JSObject;
 namespace js {
 
 namespace frontend {
-
-class EitherParser;
 
 template <typename Unit>
 class SourceAwareCompiler;

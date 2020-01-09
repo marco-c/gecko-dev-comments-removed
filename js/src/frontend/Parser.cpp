@@ -48,7 +48,6 @@
 #include "vm/JSContext.h"
 #include "vm/JSFunction.h"
 #include "vm/JSScript.h"
-#include "vm/ModuleBuilder.h"  
 #include "vm/RegExpObject.h"
 #include "vm/StringType.h"
 #include "wasm/AsmJS.h"
@@ -2108,17 +2107,6 @@ JSAtom* ParserBase::prefixAccessorName(PropertyType propType,
 }
 
 template <class ParseHandler, typename Unit>
-void GeneralParser<ParseHandler, Unit>::setFunctionStartAtCurrentToken(
-    FunctionBox* funbox) const {
-  uint32_t bufStart = anyChars.currentToken().pos.begin;
-
-  uint32_t startLine, startColumn;
-  tokenStream.computeLineAndColumn(bufStart, &startLine, &startColumn);
-
-  funbox->setStart(bufStart, startLine, startColumn);
-}
-
-template <class ParseHandler, typename Unit>
 bool GeneralParser<ParseHandler, Unit>::functionArguments(
     YieldHandling yieldHandling, FunctionSyntaxKind kind,
     FunctionNodeType funNode) {
@@ -2182,7 +2170,7 @@ bool GeneralParser<ParseHandler, Unit>::functionArguments(
 
     
     
-    setFunctionStartAtCurrentToken(funbox);
+    tokenStream.setFunctionStart(funbox);
   } else {
     
     
@@ -2297,7 +2285,7 @@ bool GeneralParser<ParseHandler, Unit>::functionArguments(
           }
 
           if (parenFreeArrow) {
-            setFunctionStartAtCurrentToken(funbox);
+            tokenStream.setFunctionStart(funbox);
           }
 
           RootedPropertyName name(cx_, bindingIdentifier(yieldHandling));
@@ -2913,10 +2901,6 @@ FunctionNode* Parser<FullParseHandler, Unit>::standaloneLazyFunction(
   return funNode;
 }
 
-void ParserBase::setFunctionEndFromCurrentToken(FunctionBox* funbox) const {
-  funbox->setEnd(anyChars.currentToken().pos.end);
-}
-
 template <class ParseHandler, typename Unit>
 bool GeneralParser<ParseHandler, Unit>::functionFormalParametersAndBody(
     InHandling inHandling, YieldHandling yieldHandling,
@@ -3057,7 +3041,7 @@ bool GeneralParser<ParseHandler, Unit>::functionFormalParametersAndBody(
       return false;
     }
 
-    setFunctionEndFromCurrentToken(funbox);
+    funbox->setEnd(anyChars);
   } else {
     MOZ_ASSERT(kind == FunctionSyntaxKind::Arrow);
 
@@ -3065,7 +3049,7 @@ bool GeneralParser<ParseHandler, Unit>::functionFormalParametersAndBody(
       return false;
     }
 
-    setFunctionEndFromCurrentToken(funbox);
+    funbox->setEnd(anyChars);
 
     if (kind == FunctionSyntaxKind::Statement) {
       if (!matchOrInsertSemicolon()) {
@@ -7166,7 +7150,7 @@ GeneralParser<ParseHandler, Unit>::synthesizeConstructor(
   }
   funbox->initWithEnclosingParseContext(pc_, functionSyntaxKind);
   handler_.setFunctionBox(funNode, funbox);
-  setFunctionEndFromCurrentToken(funbox);
+  funbox->setEnd(anyChars);
 
   
   SourceParseContext funpc(this, funbox,  nullptr);
@@ -7183,7 +7167,7 @@ GeneralParser<ParseHandler, Unit>::synthesizeConstructor(
   }
   handler_.setFunctionFormalParametersAndBody(funNode, argsbody);
   funbox->function()->setArgCount(0);
-  setFunctionStartAtCurrentToken(funbox);
+  tokenStream.setFunctionStart(funbox);
 
   pc_->functionScope().useAsVarScope(pc_);
 
@@ -7357,7 +7341,7 @@ GeneralParser<ParseHandler, Unit>::fieldInitializerOpt(
 
   
   handler_.setEndPosition(funNode, wholeInitializerPos.end);
-  setFunctionEndFromCurrentToken(funbox);
+  funbox->setEnd(anyChars);
 
   
   ListNodeType argsbody =
