@@ -22,12 +22,20 @@ struct FrameStatisticsData {
 
   
   
-  
-  uint64_t mPresentedFrames = 0;
+  uint64_t mDroppedDecodedFrames = 0;
 
   
   
-  uint64_t mDroppedFrames = 0;
+  uint64_t mDroppedSinkFrames = 0;
+
+  
+  
+  uint64_t mDroppedCompositorFrames = 0;
+
+  
+  
+  
+  uint64_t mPresentedFrames = 0;
 
   
   
@@ -39,18 +47,24 @@ struct FrameStatisticsData {
   uint64_t mInterKeyFrameMax_us = 0;
 
   FrameStatisticsData() = default;
-  FrameStatisticsData(uint64_t aParsed, uint64_t aDecoded, uint64_t aDropped,
-                      uint64_t aPresented)
+  FrameStatisticsData(uint64_t aParsed, uint64_t aDecoded, uint64_t aPresented,
+                      uint64_t aDroppedDecodedFrames,
+                      uint64_t aDroppedSinkFrames,
+                      uint64_t aDroppedCompositorFrames)
       : mParsedFrames(aParsed),
         mDecodedFrames(aDecoded),
-        mPresentedFrames(aPresented),
-        mDroppedFrames(aDropped) {}
+        mDroppedDecodedFrames(aDroppedDecodedFrames),
+        mDroppedSinkFrames(aDroppedSinkFrames),
+        mDroppedCompositorFrames(aDroppedCompositorFrames),
+        mPresentedFrames(aPresented) {}
 
   void Accumulate(const FrameStatisticsData& aStats) {
     mParsedFrames += aStats.mParsedFrames;
     mDecodedFrames += aStats.mDecodedFrames;
     mPresentedFrames += aStats.mPresentedFrames;
-    mDroppedFrames += aStats.mDroppedFrames;
+    mDroppedDecodedFrames += aStats.mDroppedDecodedFrames;
+    mDroppedSinkFrames += aStats.mDroppedSinkFrames;
+    mDroppedCompositorFrames += aStats.mDroppedCompositorFrames;
     mInterKeyframeSum_us += aStats.mInterKeyframeSum_us;
     mInterKeyframeCount += aStats.mInterKeyframeCount;
     
@@ -99,9 +113,18 @@ class FrameStatistics {
 
   
   
+  uint64_t GetTotalFrames() const {
+    ReentrantMonitorAutoEnter mon(mReentrantMonitor);
+    return mFrameStatisticsData.mPresentedFrames + GetDroppedFrames();
+  }
+
+  
+  
   uint64_t GetDroppedFrames() const {
     ReentrantMonitorAutoEnter mon(mReentrantMonitor);
-    return mFrameStatisticsData.mDroppedFrames;
+    return mFrameStatisticsData.mDroppedDecodedFrames +
+           mFrameStatisticsData.mDroppedSinkFrames +
+           mFrameStatisticsData.mDroppedCompositorFrames;
   }
 
   
