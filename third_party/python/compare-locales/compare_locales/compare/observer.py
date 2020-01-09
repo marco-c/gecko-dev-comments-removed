@@ -158,11 +158,13 @@ class ObserverList(Observer):
         }
         for observer in self.observers:
             for loc, lst in summaries.items():
-                lst.append(observer.summary.get(loc))
+                
+                
+                lst.append(observer.summary.get(loc, {}))
         if len(self.observers) > 1:
             
             for loc, lst in summaries.items():
-                lst.append(self.summary.get(loc))
+                lst.append(self.summary.get(loc, {}))
         
         for summarylist in summaries.values():
             for summary in summarylist:
