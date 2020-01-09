@@ -417,6 +417,8 @@ MessageManagerTunnel.prototype = {
     "SessionStore:flush",
     "SessionStore:restoreHistory",
     "SessionStore:restoreTabContent",
+    
+    "FullZoom",
   ],
 
   INNER_TO_OUTER_MESSAGES: [
