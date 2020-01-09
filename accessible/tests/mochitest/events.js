@@ -157,8 +157,10 @@ function waitForImageMap(aImageMapID, aTestFunc) {
   waveOverImageMap(aImageMapID);
 
   var imageMapAcc = getAccessible(aImageMapID);
-  if (imageMapAcc.firstChild)
-    return aTestFunc();
+  if (imageMapAcc.firstChild) {
+    aTestFunc();
+    return;
+  }
 
   waitForEvent(EVENT_REORDER, imageMapAcc, aTestFunc);
 }
@@ -319,6 +321,7 @@ function eventQueue(aEventType) {
   
 
 
+  
   this.processNextInvoker = function eventQueue_processNextInvoker() {
     
     if (this.mNextInvokerStatus == kInvokerCanceled) {
@@ -486,6 +489,7 @@ function eventQueue(aEventType) {
   
 
 
+  
   this.handleEvent = function eventQueue_handleEvent(aEvent) {
     var invoker = this.getInvoker();
     if (!invoker) 
@@ -1953,6 +1957,7 @@ var gA11yEventApplicantsCount = 0;
 
 var gA11yEventObserver =
 {
+  
   observe: function observe(aSubject, aTopic, aData) {
     if (aTopic != "accessible-event")
       return;

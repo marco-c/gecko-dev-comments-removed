@@ -126,9 +126,8 @@ var Utils = {
           }
         } catch (e) {
           Logger.debug("Failed to get a string from a bundle for", string);
-        } finally {
-          return str;
         }
+        return str;
       },
     };
     return this.stringBundle;
@@ -275,6 +274,7 @@ var Utils = {
         return value;
       }
     }
+    return undefined;
   },
 
   getLandmarkName: function getLandmarkName(aAccessible) {
@@ -308,7 +308,7 @@ var Utils = {
   matchRoles: function matchRoles(aAccessible, aRoles) {
     let roles = this.getAttributes(aAccessible)["xml-roles"];
     if (!roles) {
-      return;
+      return undefined;
     }
 
     

@@ -157,8 +157,10 @@ function addA11yLoadEvent(aFunc, aWindow) {
         var accDoc = getAccessible(targetDocument);
         var state = {};
         accDoc.getState(state, {});
-        if (state.value & STATE_BUSY)
-          return waitForDocLoad();
+        if (state.value & STATE_BUSY) {
+          waitForDocLoad();
+          return;
+        }
 
         window.setTimeout(aFunc, 0);
       },
@@ -374,6 +376,7 @@ function testElm(aID, aTreeObj) {
 
 
 const kSkipTreeFullCheck = 1;
+
 
 
 
@@ -745,6 +748,7 @@ function getAccessibleDOMNodeID(accessible) {
     
     return accessible.id;
   } catch (e) {  }
+  return null;
 }
 
 
