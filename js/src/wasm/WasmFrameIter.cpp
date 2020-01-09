@@ -458,7 +458,7 @@ static void GenerateCallablePrologue(MacroAssembler& masm, uint32_t* entry) {
 #else
   {
 #  if defined(JS_CODEGEN_ARM)
-    AutoForbidPools afp(&masm,  7);
+    AutoForbidPoolsAndNops afp(&masm,  7);
 
     *entry = masm.currentOffset();
 
@@ -528,7 +528,7 @@ static void GenerateCallableEpilogue(MacroAssembler& masm, unsigned framePushed,
 #else
   
 #  if defined(JS_CODEGEN_ARM)
-  AutoForbidPools afp(&masm,  7);
+  AutoForbidPoolsAndNops afp(&masm,  7);
 #  endif
 
   
@@ -697,7 +697,7 @@ void wasm::GenerateJitEntryPrologue(MacroAssembler& masm, Offsets* offsets) {
 
   {
 #if defined(JS_CODEGEN_ARM)
-    AutoForbidPools afp(&masm,  2);
+    AutoForbidPoolsAndNops afp(&masm,  2);
     offsets->begin = masm.currentOffset();
     MOZ_ASSERT(BeforePushRetAddr == 0);
     masm.push(lr);
@@ -705,7 +705,7 @@ void wasm::GenerateJitEntryPrologue(MacroAssembler& masm, Offsets* offsets) {
     offsets->begin = masm.currentOffset();
     masm.push(ra);
 #elif defined(JS_CODEGEN_ARM64)
-    AutoForbidPools afp(&masm,  3);
+    AutoForbidPoolsAndNops afp(&masm,  3);
     offsets->begin = masm.currentOffset();
     MOZ_ASSERT(BeforePushRetAddr == 0);
     

@@ -1148,7 +1148,7 @@ void CodeGeneratorARM::emitTableSwitchDispatch(MTableSwitch* mir,
   
   
   
-  AutoForbidPools afp(&masm, 1 + 1 + cases);
+  AutoForbidPoolsAndNops afp(&masm, 1 + 1 + cases);
   masm.ma_ldr(DTRAddr(pc, DtrRegImmShift(index, LSL, 2)), pc, Offset,
               Assembler::NotSigned);
   masm.ma_b(defaultcase);

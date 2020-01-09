@@ -4695,7 +4695,7 @@ class BaseCompiler final : public BaseCompilerInterface {
     
     
     
-    AutoForbidPools afp(&masm,  5);
+    AutoForbidPoolsAndNops afp(&masm,  5);
 
     ScratchI32 scratch(*this);
 
