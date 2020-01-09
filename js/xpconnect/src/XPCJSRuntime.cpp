@@ -2250,7 +2250,7 @@ class XPCJSRuntimeStats : public JS::RuntimeStats {
       RootedObject global(cx, JS::GetRealmGlobalOrNull(realm));
       if (global) {
         RefPtr<nsGlobalWindowInner> window;
-        if (NS_SUCCEEDED(UNWRAP_OBJECT(Window, global, window))) {
+        if (NS_SUCCEEDED(UNWRAP_NON_WRAPPER_OBJECT(Window, global, window))) {
           
           
           if (mTopWindowPaths->Get(window->WindowID(), &extras->pathPrefix))
@@ -2278,7 +2278,7 @@ class XPCJSRuntimeStats : public JS::RuntimeStats {
     RootedObject global(cx, JS::GetRealmGlobalOrNull(realm));
     if (global) {
       RefPtr<nsGlobalWindowInner> window;
-      if (NS_SUCCEEDED(UNWRAP_OBJECT(Window, global, window))) {
+      if (NS_SUCCEEDED(UNWRAP_NON_WRAPPER_OBJECT(Window, global, window))) {
         
         
         if (mWindowPaths->Get(window->WindowID(), &extras->jsPathPrefix)) {

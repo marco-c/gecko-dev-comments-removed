@@ -2989,9 +2989,14 @@ class CGCollectJSONAttributesMethod(CGAbstractMethod):
         ret += 'return true;\n'
 
         if needUnwrappedObj:
+            
+            
+            
+            
+            assert not self.descriptor.isMaybeCrossOriginObject()
             ret= fill(
                 """
-                JS::Rooted<JSObject*> unwrappedObj(cx, js::CheckedUnwrap(obj));
+                JS::Rooted<JSObject*> unwrappedObj(cx, js::CheckedUnwrapStatic(obj));
                 if (!unwrappedObj) {
                   // How did that happen?  We managed to get called with that
                   // object as "this"!  Just give up on sanity.
@@ -4371,7 +4376,8 @@ class CastableObjectUnwrapper():
         return fill(
             """
             {
-              nsresult rv = UnwrapObject<${protoID}, ${type}>(${mutableSource}, ${target});
+              // Our JSContext should be in the right global to do unwrapping in.
+              nsresult rv = UnwrapObject<${protoID}, ${type}>(${mutableSource}, ${target}, cx);
               if (NS_FAILED(rv)) {
                 $*{codeOnFailure}
               }
@@ -5505,7 +5511,7 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
                   aRv.ThrowTypeError<MSG_NOT_OBJECT>(NS_LITERAL_STRING("${sourceDescription}"));
                   return nullptr;
                 }
-                JSObject* unwrappedVal = js::CheckedUnwrap(&$${val}.toObject());
+                JSObject* unwrappedVal = js::CheckedUnwrapStatic(&$${val}.toObject());
                 if (!unwrappedVal) {
                   // A slight lie, but not much of one, for a dead object wrapper.
                   aRv.ThrowTypeError<MSG_NOT_OBJECT>(NS_LITERAL_STRING("${sourceDescription}"));
@@ -7749,9 +7755,14 @@ class CGPerSignatureCall(CGThing):
                              idlNode.getExtendedAttribute("StoreInSlot")):
             
             
+            
+            
+            assert not descriptor.isMaybeCrossOriginObject()
+            
+            
             cgThings.append(CGGeneric(dedent(
                 """
-                JS::Rooted<JSObject*> unwrappedObj(cx, js::CheckedUnwrap(obj));
+                JS::Rooted<JSObject*> unwrappedObj(cx, js::CheckedUnwrapStatic(obj));
                 // Caller should have ensured that "obj" can be unwrapped already.
                 MOZ_DIAGNOSTIC_ASSERT(unwrappedObj);
                 """)))
@@ -7826,7 +7837,9 @@ class CGPerSignatureCall(CGThing):
             xraySteps.append(
                 CGGeneric(fill(
                     """
-                    ${obj} = js::CheckedUnwrap(${obj});
+                    // Since our object is an Xray, we can just CheckedUnwrapStatic:
+                    // we know Xrays have no dynamic unwrap behavior.
+                    ${obj} = js::CheckedUnwrapStatic(${obj});
                     if (!${obj}) {
                       return false;
                     }

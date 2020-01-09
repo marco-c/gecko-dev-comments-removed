@@ -1599,7 +1599,7 @@ nsXPCComponents_Utils::ImportGlobalProperties(HandleValue aPropertyList,
 
   
   nsGlobalWindowInner* win;
-  if (NS_SUCCEEDED(UNWRAP_OBJECT(Window, &global, win))) {
+  if (NS_SUCCEEDED(UNWRAP_NON_WRAPPER_OBJECT(Window, global, win))) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 

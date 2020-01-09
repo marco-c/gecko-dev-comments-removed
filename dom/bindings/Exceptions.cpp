@@ -42,9 +42,11 @@ static void ThrowExceptionValueIfSafe(JSContext* aCx,
   JS::Rooted<JSObject*> exnObj(aCx, &exnVal.toObject());
   MOZ_ASSERT(js::IsObjectInContextCompartment(exnObj, aCx),
              "exnObj needs to be in the right compartment for the "
-             "CheckedUnwrap thing to make sense");
+             "CheckedUnwrapDynamic thing to make sense");
 
-  if (js::CheckedUnwrap(exnObj)) {
+  
+  
+  if (js::CheckedUnwrapDynamic(exnObj, aCx)) {
     
     
     JS_SetPendingException(aCx, exnVal);
