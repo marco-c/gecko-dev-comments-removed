@@ -449,7 +449,8 @@ class Document : public nsINode,
   Document& operator=(const Document&) = delete;
 
  public:
-  typedef dom::ExternalResourceMap::ExternalResourceLoad ExternalResourceLoad;
+  typedef mozilla::dom::ExternalResourceMap::ExternalResourceLoad
+      ExternalResourceLoad;
   typedef net::ReferrerPolicy ReferrerPolicyEnum;
 
   MOZ_DECLARE_WEAKREFERENCE_TYPENAME(Document)
@@ -484,26 +485,28 @@ class Document : public nsINode,
   }
 
   void SetCurrentRadioButton(const nsAString& aName,
-                             HTMLInputElement* aRadio) final {
+                             mozilla::dom::HTMLInputElement* aRadio) final {
     DocumentOrShadowRoot::SetCurrentRadioButton(aName, aRadio);
   }
 
-  HTMLInputElement* GetCurrentRadioButton(const nsAString& aName) final {
+  mozilla::dom::HTMLInputElement* GetCurrentRadioButton(
+      const nsAString& aName) final {
     return DocumentOrShadowRoot::GetCurrentRadioButton(aName);
   }
 
   NS_IMETHOD
   GetNextRadioButton(const nsAString& aName, const bool aPrevious,
-                     HTMLInputElement* aFocusedRadio,
-                     HTMLInputElement** aRadioOut) final {
+                     mozilla::dom::HTMLInputElement* aFocusedRadio,
+                     mozilla::dom::HTMLInputElement** aRadioOut) final {
     return DocumentOrShadowRoot::GetNextRadioButton(aName, aPrevious,
                                                     aFocusedRadio, aRadioOut);
   }
-  void AddToRadioGroup(const nsAString& aName, HTMLInputElement* aRadio) final {
+  void AddToRadioGroup(const nsAString& aName,
+                       mozilla::dom::HTMLInputElement* aRadio) final {
     DocumentOrShadowRoot::AddToRadioGroup(aName, aRadio);
   }
   void RemoveFromRadioGroup(const nsAString& aName,
-                            HTMLInputElement* aRadio) final {
+                            mozilla::dom::HTMLInputElement* aRadio) final {
     DocumentOrShadowRoot::RemoveFromRadioGroup(aName, aRadio);
   }
   uint32_t GetRequiredRadioCount(const nsAString& aName) const final {
@@ -524,9 +527,9 @@ class Document : public nsINode,
   nsIPrincipal* GetPrincipal() final { return NodePrincipal(); }
 
   
-  void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
-  EventListenerManager* GetOrCreateListenerManager() override;
-  EventListenerManager* GetExistingListenerManager() const override;
+  void GetEventTargetParent(mozilla::EventChainPreVisitor& aVisitor) override;
+  mozilla::EventListenerManager* GetOrCreateListenerManager() override;
+  mozilla::EventListenerManager* GetExistingListenerManager() const override;
 
   
   
@@ -606,7 +609,8 @@ class Document : public nsINode,
   nsresult InsertChildBefore(nsIContent* aKid, nsIContent* aBeforeThis,
                              bool aNotify) override;
   void RemoveChildNode(nsIContent* aKid, bool aNotify) final;
-  nsresult Clone(dom::NodeInfo* aNodeInfo, nsINode** aResult) const override {
+  nsresult Clone(mozilla::dom::NodeInfo* aNodeInfo,
+                 nsINode** aResult) const override {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
   nsresult CloneDocHelper(Document* clone) const;
@@ -810,7 +814,7 @@ class Document : public nsINode,
 
 
 
-  URLExtraData* DefaultStyleAttrURLData();
+  mozilla::URLExtraData* DefaultStyleAttrURLData();
 
   
 
@@ -1000,7 +1004,9 @@ class Document : public nsINode,
   
 
 
-  ContentBlockingLog* GetContentBlockingLog() { return &mContentBlockingLog; }
+  mozilla::dom::ContentBlockingLog* GetContentBlockingLog() {
+    return &mContentBlockingLog;
+  }
 
   
 
@@ -1320,17 +1326,19 @@ class Document : public nsINode,
   
 
 
-  DocumentType* GetDoctype() const;
+  mozilla::dom::DocumentType* GetDoctype() const;
 
   
 
 
   Element* GetRootElement() const;
 
-  Selection* GetSelection(ErrorResult& aRv);
+  mozilla::dom::Selection* GetSelection(mozilla::ErrorResult& aRv);
 
-  already_AddRefed<Promise> HasStorageAccess(ErrorResult& aRv);
-  already_AddRefed<Promise> RequestStorageAccess(ErrorResult& aRv);
+  already_AddRefed<mozilla::dom::Promise> HasStorageAccess(
+      mozilla::ErrorResult& aRv);
+  already_AddRefed<mozilla::dom::Promise> RequestStorageAccess(
+      mozilla::ErrorResult& aRv);
 
   
 
@@ -1351,7 +1359,7 @@ class Document : public nsINode,
 
 
 
-  nsViewportInfo GetViewportInfo(const ScreenIntSize& aDisplaySize);
+  nsViewportInfo GetViewportInfo(const mozilla::ScreenIntSize& aDisplaySize);
 
   
 
@@ -1390,9 +1398,10 @@ class Document : public nsINode,
 
   nsresult GetSrcdocData(nsAString& aSrcdocData);
 
-  already_AddRefed<AnonymousContent> InsertAnonymousContent(
-      Element& aElement, ErrorResult& aError);
-  void RemoveAnonymousContent(AnonymousContent& aContent, ErrorResult& aError);
+  already_AddRefed<mozilla::dom::AnonymousContent> InsertAnonymousContent(
+      mozilla::dom::Element& aElement, mozilla::ErrorResult& aError);
+  void RemoveAnonymousContent(mozilla::dom::AnonymousContent& aContent,
+                              mozilla::ErrorResult& aError);
   
 
 
@@ -1400,16 +1409,16 @@ class Document : public nsINode,
 
 
   Element* GetAnonRootIfInAnonymousContentContainer(nsINode* aNode) const;
-  nsTArray<RefPtr<AnonymousContent>>& GetAnonymousContents() {
+  nsTArray<RefPtr<mozilla::dom::AnonymousContent>>& GetAnonymousContents() {
     return mAnonymousContents;
   }
 
-  TimeStamp GetPageUnloadingEventTimeStamp() const {
+  mozilla::TimeStamp GetPageUnloadingEventTimeStamp() const {
     if (!mParentDocument) {
       return mPageUnloadingEventTimeStamp;
     }
 
-    TimeStamp parentTimeStamp(
+    mozilla::TimeStamp parentTimeStamp(
         mParentDocument->GetPageUnloadingEventTimeStamp());
     if (parentTimeStamp.IsNull()) {
       return mPageUnloadingEventTimeStamp;
@@ -1445,9 +1454,9 @@ class Document : public nsINode,
   
   void ResolveScheduledSVGPresAttrs();
 
-  Maybe<ClientInfo> GetClientInfo() const;
-  Maybe<ClientState> GetClientState() const;
-  Maybe<ServiceWorkerDescriptor> GetController() const;
+  mozilla::Maybe<mozilla::dom::ClientInfo> GetClientInfo() const;
+  mozilla::Maybe<mozilla::dom::ClientState> GetClientState() const;
+  mozilla::Maybe<mozilla::dom::ServiceWorkerDescriptor> GetController() const;
 
   
   
@@ -1522,7 +1531,7 @@ class Document : public nsINode,
 
   void DispatchContentLoadedEvents();
 
-  void DispatchPageTransition(EventTarget* aDispatchTarget,
+  void DispatchPageTransition(mozilla::dom::EventTarget* aDispatchTarget,
                               const nsAString& aType, bool aPersisted,
                               bool aOnlySystemGroup = false);
 
@@ -1535,12 +1544,12 @@ class Document : public nsINode,
 
   void SetPageUnloadingEventTimeStamp() {
     MOZ_ASSERT(!mPageUnloadingEventTimeStamp);
-    mPageUnloadingEventTimeStamp = TimeStamp::NowLoRes();
+    mPageUnloadingEventTimeStamp = mozilla::TimeStamp::NowLoRes();
   }
 
   void CleanUnloadEventsTimeStamp() {
     MOZ_ASSERT(mPageUnloadingEventTimeStamp);
-    mPageUnloadingEventTimeStamp = TimeStamp();
+    mPageUnloadingEventTimeStamp = mozilla::TimeStamp();
   }
 
   
@@ -1610,8 +1619,8 @@ class Document : public nsINode,
 
   SelectorCache& GetSelectorCache() {
     if (!mSelectorCache) {
-      mSelectorCache =
-          MakeUnique<SelectorCache>(EventTargetFor(TaskCategory::Other));
+      mSelectorCache = mozilla::MakeUnique<SelectorCache>(
+          EventTargetFor(mozilla::TaskCategory::Other));
     }
     return *mSelectorCache;
   }
@@ -1623,7 +1632,7 @@ class Document : public nsINode,
   Element* GetHtmlChildElement(nsAtom* aTag);
   
   
-  HTMLBodyElement* GetBodyElement();
+  mozilla::dom::HTMLBodyElement* GetBodyElement();
   
   
   Element* GetHeadElement() { return GetHtmlChildElement(nsGkAtoms::head); }
@@ -1631,20 +1640,20 @@ class Document : public nsINode,
   
   nsGenericHTMLElement* GetBody();
   
-  void SetBody(nsGenericHTMLElement* aBody, ErrorResult& rv);
+  void SetBody(nsGenericHTMLElement* aBody, mozilla::ErrorResult& rv);
   
-  HTMLSharedElement* GetHead();
+  mozilla::dom::HTMLSharedElement* GetHead();
 
   
 
 
 
 
-  StyleSheetList* StyleSheets() {
+  mozilla::dom::StyleSheetList* StyleSheets() {
     return &DocumentOrShadowRoot::EnsureDOMStyleSheets();
   }
 
-  void InsertSheetAt(size_t aIndex, StyleSheet&);
+  void InsertSheetAt(size_t aIndex, mozilla::StyleSheet&);
 
   
 
@@ -1654,8 +1663,8 @@ class Document : public nsINode,
 
 
 
-  void UpdateStyleSheets(nsTArray<RefPtr<StyleSheet>>& aOldSheets,
-                         nsTArray<RefPtr<StyleSheet>>& aNewSheets);
+  void UpdateStyleSheets(nsTArray<RefPtr<mozilla::StyleSheet>>& aOldSheets,
+                         nsTArray<RefPtr<mozilla::StyleSheet>>& aNewSheets);
 
   
 
@@ -1663,7 +1672,7 @@ class Document : public nsINode,
 
 
 
-  void AddStyleSheet(StyleSheet* aSheet) {
+  void AddStyleSheet(mozilla::StyleSheet* aSheet) {
     MOZ_ASSERT(aSheet);
     InsertSheetAt(SheetCount(), *aSheet);
   }
@@ -1671,13 +1680,14 @@ class Document : public nsINode,
   
 
 
-  void RemoveStyleSheet(StyleSheet* aSheet);
+  void RemoveStyleSheet(mozilla::StyleSheet* aSheet);
 
   
 
 
 
-  void SetStyleSheetApplicableState(StyleSheet* aSheet, bool aApplicable);
+  void SetStyleSheetApplicableState(mozilla::StyleSheet* aSheet,
+                                    bool aApplicable);
 
   enum additionalSheetType {
     eAgentSheet,
@@ -1689,10 +1699,10 @@ class Document : public nsINode,
   nsresult LoadAdditionalStyleSheet(additionalSheetType aType,
                                     nsIURI* aSheetURI);
   nsresult AddAdditionalStyleSheet(additionalSheetType aType,
-                                   StyleSheet* aSheet);
+                                   mozilla::StyleSheet* aSheet);
   void RemoveAdditionalStyleSheet(additionalSheetType aType, nsIURI* sheetURI);
 
-  StyleSheet* GetFirstAdditionalAuthorSheet() {
+  mozilla::StyleSheet* GetFirstAdditionalAuthorSheet() {
     return mAdditionalSheets[eAuthorSheet].SafeElementAt(0);
   }
 
@@ -1707,18 +1717,20 @@ class Document : public nsINode,
 
   template <typename T>
   size_t FindDocStyleSheetInsertionPoint(const nsTArray<T>& aDocSheets,
-                                         const StyleSheet& aSheet);
+                                         const mozilla::StyleSheet& aSheet);
 
   
 
 
-  css::Loader* CSSLoader() const { return mCSSLoader; }
+  mozilla::css::Loader* CSSLoader() const { return mCSSLoader; }
 
   
 
 
 
-  css::ImageLoader* StyleImageLoader() const { return mStyleImageLoader; }
+  mozilla::css::ImageLoader* StyleImageLoader() const {
+    return mStyleImageLoader;
+  }
 
   
 
@@ -1812,7 +1824,7 @@ class Document : public nsINode,
   
 
 
-  dom::ScriptLoader* ScriptLoader() { return mScriptLoader; }
+  mozilla::dom::ScriptLoader* ScriptLoader() { return mScriptLoader; }
 
   
 
@@ -1869,7 +1881,7 @@ class Document : public nsINode,
 
 
 
-  nsresult RemoteFrameFullscreenChanged(Element* aFrameElement);
+  nsresult RemoteFrameFullscreenChanged(mozilla::dom::Element* aFrameElement);
 
   
 
@@ -1947,17 +1959,18 @@ class Document : public nsINode,
 
   
 
-  void SetCurrentOrientation(OrientationType aType, uint16_t aAngle) {
+  void SetCurrentOrientation(mozilla::dom::OrientationType aType,
+                             uint16_t aAngle) {
     mCurrentOrientationType = aType;
     mCurrentOrientationAngle = aAngle;
   }
 
   uint16_t CurrentOrientationAngle() const { return mCurrentOrientationAngle; }
-  OrientationType CurrentOrientationType() const {
+  mozilla::dom::OrientationType CurrentOrientationType() const {
     return mCurrentOrientationType;
   }
-  void SetOrientationPendingPromise(Promise* aPromise);
-  Promise* GetOrientationPendingPromise() const {
+  void SetOrientationPendingPromise(mozilla::dom::Promise* aPromise);
+  mozilla::dom::Promise* GetOrientationPendingPromise() const {
     return mOrientationPendingPromise;
   }
 
@@ -2011,32 +2024,28 @@ class Document : public nsINode,
 
   
   
-  void ContentStateChanged(nsIContent* aContent, EventStates aStateMask);
+  void ContentStateChanged(nsIContent* aContent,
+                           mozilla::EventStates aStateMask);
 
   
   
   
-  void DocumentStatesChanged(EventStates aStateMask);
+  void DocumentStatesChanged(mozilla::EventStates aStateMask);
 
   
   
-  void StyleRuleChanged(StyleSheet* aStyleSheet, css::Rule* aStyleRule);
-  void StyleRuleAdded(StyleSheet* aStyleSheet, css::Rule* aStyleRule);
-  void StyleRuleRemoved(StyleSheet* aStyleSheet, css::Rule* aStyleRule);
-
-  
-
-
-
-  void FlushPendingNotifications(FlushType aType);
+  void StyleRuleChanged(mozilla::StyleSheet* aStyleSheet,
+                        mozilla::css::Rule* aStyleRule);
+  void StyleRuleAdded(mozilla::StyleSheet* aStyleSheet,
+                      mozilla::css::Rule* aStyleRule);
+  void StyleRuleRemoved(mozilla::StyleSheet* aStyleSheet,
+                        mozilla::css::Rule* aStyleRule);
 
   
 
 
 
-
-
-  void FlushPendingNotifications(ChangesToFlush aFlush);
+  void FlushPendingNotifications(mozilla::FlushType aType);
 
   
 
@@ -2044,7 +2053,15 @@ class Document : public nsINode,
 
 
 
-  void FlushExternalResources(FlushType aType);
+  void FlushPendingNotifications(mozilla::ChangesToFlush aFlush);
+
+  
+
+
+
+
+
+  void FlushExternalResources(mozilla::FlushType aType);
 
   
   void UpdateSVGUseElementShadowTrees() {
@@ -2304,7 +2321,8 @@ class Document : public nsINode,
 
 
 
-  virtual void OnPageShow(bool aPersisted, EventTarget* aDispatchStartTarget,
+  virtual void OnPageShow(bool aPersisted,
+                          mozilla::dom::EventTarget* aDispatchStartTarget,
                           bool aOnlySystemGroup = false);
 
   
@@ -2320,7 +2338,8 @@ class Document : public nsINode,
 
 
 
-  void OnPageHide(bool aPersisted, EventTarget* aDispatchStartTarget,
+  void OnPageHide(bool aPersisted,
+                  mozilla::dom::EventTarget* aDispatchStartTarget,
                   bool aOnlySystemGroup = false);
 
   
@@ -2330,10 +2349,10 @@ class Document : public nsINode,
   
 
 
-  void AddStyleRelevantLink(Link* aLink) {
+  void AddStyleRelevantLink(mozilla::dom::Link* aLink) {
     NS_ASSERTION(aLink, "Passing in a null link.  Expect crashes RSN!");
 #ifdef DEBUG
-    nsPtrHashKey<Link>* entry = mStyledLinks.GetEntry(aLink);
+    nsPtrHashKey<mozilla::dom::Link>* entry = mStyledLinks.GetEntry(aLink);
     NS_ASSERTION(!entry, "Document already knows about this Link!");
     mStyledLinksCleared = false;
 #endif
@@ -2346,10 +2365,10 @@ class Document : public nsINode,
 
 
 
-  void ForgetLink(Link* aLink) {
+  void ForgetLink(mozilla::dom::Link* aLink) {
     NS_ASSERTION(aLink, "Passing in a null link.  Expect crashes RSN!");
 #ifdef DEBUG
-    nsPtrHashKey<Link>* entry = mStyledLinks.GetEntry(aLink);
+    nsPtrHashKey<mozilla::dom::Link>* entry = mStyledLinks.GetEntry(aLink);
     NS_ASSERTION(entry || mStyledLinksCleared,
                  "Document knows nothing about this Link!");
 #endif
@@ -2370,17 +2389,19 @@ class Document : public nsINode,
 
 
 
-  already_AddRefed<BoxObject> GetBoxObjectFor(Element* aElement,
-                                              ErrorResult& aRv);
+  already_AddRefed<mozilla::dom::BoxObject> GetBoxObjectFor(
+      mozilla::dom::Element* aElement, mozilla::ErrorResult& aRv);
 
   
 
 
 
-  already_AddRefed<MediaQueryList> MatchMedia(const nsAString& aMediaQueryList,
-                                              CallerType aCallerType);
+  already_AddRefed<mozilla::dom::MediaQueryList> MatchMedia(
+      const nsAString& aMediaQueryList, mozilla::dom::CallerType aCallerType);
 
-  LinkedList<MediaQueryList>& MediaQueryLists() { return mDOMMediaQueryLists; }
+  mozilla::LinkedList<mozilla::dom::MediaQueryList>& MediaQueryLists() {
+    return mDOMMediaQueryLists;
+  }
 
   
 
@@ -2555,7 +2576,7 @@ class Document : public nsINode,
 
   void EnumerateExternalResources(SubDocEnumFunc aCallback, void* aData);
 
-  dom::ExternalResourceMap& ExternalResourceMap() {
+  mozilla::dom::ExternalResourceMap& ExternalResourceMap() {
     return mExternalResourceMap;
   }
 
@@ -2635,20 +2656,20 @@ class Document : public nsINode,
   
   
   
-  SMILAnimationController* GetAnimationController();
+  mozilla::SMILAnimationController* GetAnimationController();
 
   
   
   
   
-  PendingAnimationTracker* GetPendingAnimationTracker() {
+  mozilla::PendingAnimationTracker* GetPendingAnimationTracker() {
     return mPendingAnimationTracker;
   }
 
   
   
   
-  PendingAnimationTracker* GetOrCreatePendingAnimationTracker();
+  mozilla::PendingAnimationTracker* GetOrCreatePendingAnimationTracker();
 
   
 
@@ -2681,7 +2702,7 @@ class Document : public nsINode,
 
 
 
-  void AddSuspendedChannelEventQueue(net::ChannelEventQueue* aQueue);
+  void AddSuspendedChannelEventQueue(mozilla::net::ChannelEventQueue* aQueue);
 
   void SetHasDelayedRefreshEvent() { mHasDelayedRefreshEvent = true; }
 
@@ -2839,7 +2860,7 @@ class Document : public nsINode,
 
 
 
-  void PreloadStyle(nsIURI* aURI, const Encoding* aEncoding,
+  void PreloadStyle(nsIURI* aURI, const mozilla::Encoding* aEncoding,
                     const nsAString& aCrossOriginAttr,
                     ReferrerPolicyEnum aReferrerPolicy,
                     const nsAString& aIntegrity);
@@ -2853,7 +2874,7 @@ class Document : public nsINode,
 
 
   nsresult LoadChromeSheetSync(nsIURI* aURI, bool aIsAgentSheet,
-                               RefPtr<StyleSheet>* aSheet);
+                               RefPtr<mozilla::StyleSheet>* aSheet);
 
   
 
@@ -2867,7 +2888,7 @@ class Document : public nsINode,
   
 
 
-  void MaybePreconnect(nsIURI* uri, CORSMode aCORSMode);
+  void MaybePreconnect(nsIURI* uri, mozilla::CORSMode aCORSMode);
 
   enum DocumentTheme {
     Doc_Theme_Uninitialized,  
@@ -2910,7 +2931,7 @@ class Document : public nsINode,
 
 
 
-  EventStates GetDocumentState() const { return mDocumentState; }
+  mozilla::EventStates GetDocumentState() const { return mDocumentState; }
 
   nsISupports* GetCurrentContentSink();
 
@@ -2931,7 +2952,7 @@ class Document : public nsINode,
   using DocumentOrShadowRoot::GetElementsByTagNameNS;
 
   DocumentTimeline* Timeline();
-  LinkedList<DocumentTimeline>& Timelines() { return mTimelines; }
+  mozilla::LinkedList<DocumentTimeline>& Timelines() { return mTimelines; }
 
   void GetAnimations(nsTArray<RefPtr<Animation>>& aAnimations);
 
@@ -2958,7 +2979,7 @@ class Document : public nsINode,
   
   bool InUnlinkOrDeletion() { return mInUnlinkOrDeletion; }
 
-  dom::ImageTracker* ImageTracker();
+  mozilla::dom::ImageTracker* ImageTracker();
 
   
   
@@ -3126,8 +3147,8 @@ class Document : public nsINode,
   
   nsIGlobalObject* GetParentObject() const { return GetScopeObject(); }
   static already_AddRefed<Document> Constructor(const GlobalObject& aGlobal,
-                                                ErrorResult& rv);
-  DOMImplementation* GetImplementation(ErrorResult& rv);
+                                                mozilla::ErrorResult& rv);
+  DOMImplementation* GetImplementation(mozilla::ErrorResult& rv);
   MOZ_MUST_USE nsresult GetURL(nsString& retval) const;
   MOZ_MUST_USE nsresult GetDocumentURI(nsString& retval) const;
   
@@ -3170,30 +3191,30 @@ class Document : public nsINode,
   already_AddRefed<nsTextNode> CreateEmptyTextNode() const;
   already_AddRefed<Comment> CreateComment(const nsAString& aData) const;
   already_AddRefed<ProcessingInstruction> CreateProcessingInstruction(
-      const nsAString& target, const nsAString& data, ErrorResult& rv) const;
+      const nsAString& target, const nsAString& data,
+      mozilla::ErrorResult& rv) const;
   already_AddRefed<nsINode> ImportNode(nsINode& aNode, bool aDeep,
-                                       ErrorResult& rv) const;
-  nsINode* AdoptNode(nsINode& aNode, ErrorResult& rv);
+                                       mozilla::ErrorResult& rv) const;
+  nsINode* AdoptNode(nsINode& aNode, mozilla::ErrorResult& rv);
   already_AddRefed<Event> CreateEvent(const nsAString& aEventType,
                                       CallerType aCallerType,
-                                      ErrorResult& rv) const;
-  already_AddRefed<nsRange> CreateRange(ErrorResult& rv);
-  already_AddRefed<NodeIterator> CreateNodeIterator(nsINode& aRoot,
-                                                    uint32_t aWhatToShow,
-                                                    NodeFilter* aFilter,
-                                                    ErrorResult& rv) const;
+                                      mozilla::ErrorResult& rv) const;
+  already_AddRefed<nsRange> CreateRange(mozilla::ErrorResult& rv);
+  already_AddRefed<NodeIterator> CreateNodeIterator(
+      nsINode& aRoot, uint32_t aWhatToShow, NodeFilter* aFilter,
+      mozilla::ErrorResult& rv) const;
   already_AddRefed<TreeWalker> CreateTreeWalker(nsINode& aRoot,
                                                 uint32_t aWhatToShow,
                                                 NodeFilter* aFilter,
-                                                ErrorResult& rv) const;
+                                                mozilla::ErrorResult& rv) const;
   
   already_AddRefed<CDATASection> CreateCDATASection(const nsAString& aData,
-                                                    ErrorResult& rv);
+                                                    mozilla::ErrorResult& rv);
   already_AddRefed<Attr> CreateAttribute(const nsAString& aName,
-                                         ErrorResult& rv);
+                                         mozilla::ErrorResult& rv);
   already_AddRefed<Attr> CreateAttributeNS(const nsAString& aNamespaceURI,
                                            const nsAString& aQualifiedName,
-                                           ErrorResult& rv);
+                                           mozilla::ErrorResult& rv);
   void GetInputEncoding(nsAString& aInputEncoding) const;
   already_AddRefed<Location> GetLocation() const;
   void GetReferrer(nsAString& aReferrer) const;
@@ -3201,7 +3222,7 @@ class Document : public nsINode,
   void GetReadyState(nsAString& aReadyState) const;
 
   void GetTitle(nsAString& aTitle);
-  void SetTitle(const nsAString& aTitle, ErrorResult& rv);
+  void SetTitle(const nsAString& aTitle, mozilla::ErrorResult& rv);
   void GetDir(nsAString& aDirection) const;
   void SetDir(const nsAString& aDirection);
   nsIHTMLCollection* Images();
@@ -3214,13 +3235,14 @@ class Document : public nsINode,
     return GetFuncStringContentList<nsCachableElementsByNameNodeList>(
         this, MatchNameAttribute, nullptr, UseExistingNameString, aName);
   }
-  Nullable<WindowProxyHolder> GetDefaultView() const;
+  mozilla::dom::Nullable<mozilla::dom::WindowProxyHolder> GetDefaultView()
+      const;
   Element* GetActiveElement();
-  bool HasFocus(ErrorResult& rv) const;
+  bool HasFocus(mozilla::ErrorResult& rv) const;
   nsIHTMLCollection* Applets();
   nsIHTMLCollection* Anchors();
-  TimeStamp LastFocusTime() const;
-  void SetLastFocusTime(const TimeStamp& aFocusTime);
+  mozilla::TimeStamp LastFocusTime() const;
+  void SetLastFocusTime(const mozilla::TimeStamp& aFocusTime);
   
   bool MozSyntheticDocument() const { return IsSyntheticDocument(); }
   Element* GetCurrentScript();
@@ -3249,7 +3271,9 @@ class Document : public nsINode,
 
 #ifdef MOZILLA_INTERNAL_API
   bool Hidden() const { return mVisibilityState != VisibilityState::Visible; }
-  dom::VisibilityState VisibilityState() const { return mVisibilityState; }
+  mozilla::dom::VisibilityState VisibilityState() const {
+    return mVisibilityState;
+  }
 #endif
   void GetSelectedStyleSheetSet(nsAString& aSheetSet);
   void SetSelectedStyleSheetSet(const nsAString& aSheetSet);
@@ -3293,28 +3317,30 @@ class Document : public nsINode,
                                           const nsAString& aAttrValue);
   Element* GetBindingParent(nsINode& aNode);
   void LoadBindingDocument(const nsAString& aURI,
-                           nsIPrincipal& aSubjectPrincipal, ErrorResult& rv);
+                           nsIPrincipal& aSubjectPrincipal,
+                           mozilla::ErrorResult& rv);
   XPathExpression* CreateExpression(const nsAString& aExpression,
                                     XPathNSResolver* aResolver,
-                                    ErrorResult& rv);
+                                    mozilla::ErrorResult& rv);
   nsINode* CreateNSResolver(nsINode& aNodeResolver);
   already_AddRefed<XPathResult> Evaluate(
       JSContext* aCx, const nsAString& aExpression, nsINode& aContextNode,
       XPathNSResolver* aResolver, uint16_t aType, JS::Handle<JSObject*> aResult,
-      ErrorResult& rv);
+      mozilla::ErrorResult& rv);
   
-  already_AddRefed<Touch> CreateTouch(nsGlobalWindowInner* aView,
-                                      EventTarget* aTarget, int32_t aIdentifier,
-                                      int32_t aPageX, int32_t aPageY,
-                                      int32_t aScreenX, int32_t aScreenY,
-                                      int32_t aClientX, int32_t aClientY,
-                                      int32_t aRadiusX, int32_t aRadiusY,
-                                      float aRotationAngle, float aForce);
-  already_AddRefed<TouchList> CreateTouchList();
-  already_AddRefed<TouchList> CreateTouchList(
-      Touch& aTouch, const Sequence<OwningNonNull<Touch>>& aTouches);
-  already_AddRefed<TouchList> CreateTouchList(
-      const Sequence<OwningNonNull<Touch>>& aTouches);
+  already_AddRefed<Touch> CreateTouch(
+      nsGlobalWindowInner* aView, mozilla::dom::EventTarget* aTarget,
+      int32_t aIdentifier, int32_t aPageX, int32_t aPageY, int32_t aScreenX,
+      int32_t aScreenY, int32_t aClientX, int32_t aClientY, int32_t aRadiusX,
+      int32_t aRadiusY, float aRotationAngle, float aForce);
+  already_AddRefed<mozilla::dom::TouchList> CreateTouchList();
+  already_AddRefed<mozilla::dom::TouchList> CreateTouchList(
+      mozilla::dom::Touch& aTouch,
+      const mozilla::dom::Sequence<mozilla::OwningNonNull<mozilla::dom::Touch>>&
+          aTouches);
+  already_AddRefed<mozilla::dom::TouchList> CreateTouchList(
+      const mozilla::dom::Sequence<mozilla::OwningNonNull<mozilla::dom::Touch>>&
+          aTouches);
 
   void SetStyleSheetChangeEventsEnabled(bool aValue) {
     mStyleSheetChangeEventsEnabled = aValue;
@@ -3324,18 +3350,19 @@ class Document : public nsINode,
     return mStyleSheetChangeEventsEnabled;
   }
 
-  already_AddRefed<Promise> BlockParsing(Promise& aPromise,
-                                         const BlockParsingOptions& aOptions,
-                                         ErrorResult& aRv);
+  already_AddRefed<mozilla::dom::Promise> BlockParsing(
+      mozilla::dom::Promise& aPromise,
+      const mozilla::dom::BlockParsingOptions& aOptions,
+      mozilla::ErrorResult& aRv);
 
   already_AddRefed<nsIURI> GetMozDocumentURIIfNotForErrorPages();
 
-  Promise* GetDocumentReadyForIdle(ErrorResult& aRv);
+  mozilla::dom::Promise* GetDocumentReadyForIdle(mozilla::ErrorResult& aRv);
 
   nsIDOMXULCommandDispatcher* GetCommandDispatcher();
   bool HasXULBroadcastManager() const { return mXULBroadcastManager; };
   void InitializeXULBroadcastManager();
-  XULBroadcastManager* GetXULBroadcastManager() const {
+  mozilla::dom::XULBroadcastManager* GetXULBroadcastManager() const {
     return mXULBroadcastManager;
   }
   already_AddRefed<nsINode> GetPopupNode();
@@ -3360,13 +3387,13 @@ class Document : public nsINode,
 
 
 
-  inline SVGDocument* AsSVGDocument();
+  inline mozilla::dom::SVGDocument* AsSVGDocument();
 
   
 
 
 
-  inline XULDocument* AsXULDocument();
+  inline mozilla::dom::XULDocument* AsXULDocument();
 
   
 
@@ -3388,10 +3415,10 @@ class Document : public nsINode,
   gfxUserFontSet* GetUserFontSet();
   void FlushUserFontSet();
   void MarkUserFontSetDirty();
-  FontFaceSet* GetFonts() { return mFontFaceSet; }
+  mozilla::dom::FontFaceSet* GetFonts() { return mFontFaceSet; }
 
   
-  FontFaceSet* Fonts();
+  mozilla::dom::FontFaceSet* Fonts();
 
   bool DidFireDOMContentLoaded() const { return mDidFireDOMContentLoaded; }
 
@@ -3412,7 +3439,7 @@ class Document : public nsINode,
   void ReportUseCounters(
       UseCounterReportKind aKind = UseCounterReportKind::eDefault);
 
-  void SetDocumentUseCounter(UseCounter aUseCounter) {
+  void SetDocumentUseCounter(mozilla::UseCounter aUseCounter) {
     if (!mUseCounters[aUseCounter]) {
       mUseCounters[aUseCounter] = true;
     }
@@ -3422,9 +3449,9 @@ class Document : public nsINode,
     return mStyleUseCounters.get();
   }
 
-  void SetPageUseCounter(UseCounter aUseCounter);
+  void SetPageUseCounter(mozilla::UseCounter aUseCounter);
 
-  void SetDocumentAndPageUseCounter(UseCounter aUseCounter) {
+  void SetDocumentAndPageUseCounter(mozilla::UseCounter aUseCounter) {
     SetDocumentUseCounter(aUseCounter);
     SetPageUseCounter(aUseCounter);
   }
@@ -3439,7 +3466,7 @@ class Document : public nsINode,
 
   
   
-  DocumentAutoplayPolicy AutoplayPolicy() const;
+  mozilla::dom::DocumentAutoplayPolicy AutoplayPolicy() const;
 
   
   
@@ -3469,15 +3496,17 @@ class Document : public nsINode,
   void ReportHasScrollLinkedEffect();
   bool HasScrollLinkedEffect() const { return mHasScrollLinkedEffect; }
 
-  DocGroup* GetDocGroup() const;
+  mozilla::dom::DocGroup* GetDocGroup() const;
 
-  void AddIntersectionObserver(DOMIntersectionObserver* aObserver) {
+  void AddIntersectionObserver(
+      mozilla::dom::DOMIntersectionObserver* aObserver) {
     MOZ_ASSERT(!mIntersectionObservers.Contains(aObserver),
                "Intersection observer already in the list");
     mIntersectionObservers.PutEntry(aObserver);
   }
 
-  void RemoveIntersectionObserver(DOMIntersectionObserver* aObserver) {
+  void RemoveIntersectionObserver(
+      mozilla::dom::DOMIntersectionObserver* aObserver) {
     mIntersectionObservers.RemoveEntry(aObserver);
   }
 
@@ -3490,14 +3519,14 @@ class Document : public nsINode,
   void NotifyIntersectionObservers();
 
   
-  nsresult Dispatch(TaskCategory aCategory,
+  nsresult Dispatch(mozilla::TaskCategory aCategory,
                     already_AddRefed<nsIRunnable>&& aRunnable) final;
 
   virtual nsISerialEventTarget* EventTargetFor(
-      TaskCategory aCategory) const override;
+      mozilla::TaskCategory aCategory) const override;
 
-  virtual AbstractThread* AbstractMainThreadFor(
-      TaskCategory aCategory) override;
+  virtual mozilla::AbstractThread* AbstractMainThreadFor(
+      mozilla::TaskCategory aCategory) override;
 
   
   
@@ -3507,7 +3536,7 @@ class Document : public nsINode,
 
   
   
-  FlashClassification DocumentFlashClassification();
+  mozilla::dom::FlashClassification DocumentFlashClassification();
 
   
 
@@ -3521,7 +3550,7 @@ class Document : public nsINode,
 
 
 
-  DocumentL10n* GetL10n();
+  mozilla::dom::DocumentL10n* GetL10n();
 
   
 
@@ -3574,7 +3603,14 @@ class Document : public nsINode,
   virtual void InitialDocumentTranslationCompleted();
 
  protected:
-  RefPtr<DocumentL10n> mDocumentL10n;
+  RefPtr<mozilla::dom::DocumentL10n> mDocumentL10n;
+
+  
+
+
+
+
+  virtual bool UseWidthDeviceWidthFallbackViewport() const;
 
  private:
   void InitializeLocalization(nsTArray<nsString>& aResourceIds);
@@ -3583,7 +3619,7 @@ class Document : public nsINode,
                                          const nsAString& aHeightString,
                                          const nsAString& aScaleString);
 
-  FlashClassification DocumentFlashClassificationInternal();
+  mozilla::dom::FlashClassification DocumentFlashClassificationInternal();
 
   nsTArray<nsString> mL10nResources;
 
@@ -3674,7 +3710,7 @@ class Document : public nsINode,
     mAllowPaymentRequest = aAllowPaymentRequest;
   }
 
-  FeaturePolicy* Policy() const;
+  mozilla::dom::FeaturePolicy* Policy() const;
 
   bool ModuleScriptsEnabled();
 
@@ -3698,7 +3734,7 @@ class Document : public nsINode,
   void SetDocTreeHadAudibleMedia();
   void SetDocTreeHadPlayRevoked();
 
-  dom::XPathEvaluator* XPathEvaluator();
+  mozilla::dom::XPathEvaluator* XPathEvaluator();
 
   void MaybeInitializeFinalizeFrameLoaders();
 
@@ -3740,7 +3776,7 @@ class Document : public nsINode,
   void UpdateVisibilityState();
 
   
-  dom::VisibilityState ComputeVisibilityState() const;
+  mozilla::dom::VisibilityState ComputeVisibilityState() const;
 
   
   
@@ -3751,31 +3787,33 @@ class Document : public nsINode,
   
   bool ApplyFullscreen(UniquePtr<FullscreenRequest>);
 
-  bool GetUseCounter(UseCounter aUseCounter) {
+  bool GetUseCounter(mozilla::UseCounter aUseCounter) {
     return mUseCounters[aUseCounter];
   }
 
-  void SetChildDocumentUseCounter(UseCounter aUseCounter) {
+  void SetChildDocumentUseCounter(mozilla::UseCounter aUseCounter) {
     if (!mChildDocumentUseCounters[aUseCounter]) {
       mChildDocumentUseCounters[aUseCounter] = true;
     }
   }
 
-  bool GetChildDocumentUseCounter(UseCounter aUseCounter) {
+  bool GetChildDocumentUseCounter(mozilla::UseCounter aUseCounter) {
     return mChildDocumentUseCounters[aUseCounter];
   }
 
-  void UpdateDocumentStates(EventStates);
+  void UpdateDocumentStates(mozilla::EventStates);
 
   void RemoveDocStyleSheetsFromStyleSets();
   void RemoveStyleSheetsFromStyleSets(
-      const nsTArray<RefPtr<StyleSheet>>& aSheets, SheetType aType);
+      const nsTArray<RefPtr<mozilla::StyleSheet>>& aSheets,
+      mozilla::SheetType aType);
   void ResetStylesheetsToURI(nsIURI* aURI);
-  void FillStyleSet(ServoStyleSet* aStyleSet);
-  void AddStyleSheetToStyleSets(StyleSheet* aSheet);
-  void RemoveStyleSheetFromStyleSets(StyleSheet* aSheet);
-  void NotifyStyleSheetAdded(StyleSheet* aSheet, bool aDocumentSheet);
-  void NotifyStyleSheetRemoved(StyleSheet* aSheet, bool aDocumentSheet);
+  void FillStyleSet(mozilla::ServoStyleSet* aStyleSet);
+  void AddStyleSheetToStyleSets(mozilla::StyleSheet* aSheet);
+  void RemoveStyleSheetFromStyleSets(mozilla::StyleSheet* aSheet);
+  void NotifyStyleSheetAdded(mozilla::StyleSheet* aSheet, bool aDocumentSheet);
+  void NotifyStyleSheetRemoved(mozilla::StyleSheet* aSheet,
+                               bool aDocumentSheet);
   void NotifyStyleSheetApplicableStateChanged();
   
   
@@ -3842,7 +3880,7 @@ class Document : public nsINode,
       nsIPresShell* aOldShell = nullptr);
 
   
-  bool IsPotentiallyScrollable(HTMLBodyElement* aBody);
+  bool IsPotentiallyScrollable(mozilla::dom::HTMLBodyElement* aBody);
 
   
   Document* GetSameTypeParentDocument();
@@ -3852,8 +3890,9 @@ class Document : public nsINode,
   void MaybeStoreUserInteractionAsPermission();
 
   
-  static bool MatchNameAttribute(Element* aElement, int32_t aNamespaceID,
-                                 nsAtom* aAtom, void* aData);
+  static bool MatchNameAttribute(mozilla::dom::Element* aElement,
+                                 int32_t aNamespaceID, nsAtom* aAtom,
+                                 void* aData);
   static void* UseExistingNameString(nsINode* aRootNode, const nsString* aName);
 
   void MaybeResolveReadyForIdle();
@@ -3871,7 +3910,7 @@ class Document : public nsINode,
   nsCString mBaseDomain;
 
   
-  RefPtr<URLExtraData> mCachedURLData;
+  RefPtr<mozilla::URLExtraData> mCachedURLData;
 
   nsWeakPtr mDocumentLoadGroup;
 
@@ -3883,7 +3922,7 @@ class Document : public nsINode,
   bool mUpgradeInsecureRequests;
   bool mUpgradeInsecurePreloads;
 
-  WeakPtr<nsDocShell> mDocumentContainer;
+  mozilla::WeakPtr<nsDocShell> mDocumentContainer;
 
   NotNull<const Encoding*> mCharacterSet;
   int32_t mCharacterSetSource;
@@ -3892,25 +3931,26 @@ class Document : public nsINode,
   Document* mParentDocument;
 
   
-  Element* mCachedRootElement;
+  mozilla::dom::Element* mCachedRootElement;
 
   
   
   nsNodeInfoManager* mNodeInfoManager;
-  RefPtr<css::Loader> mCSSLoader;
-  RefPtr<css::ImageLoader> mStyleImageLoader;
+  RefPtr<mozilla::css::Loader> mCSSLoader;
+  RefPtr<mozilla::css::ImageLoader> mStyleImageLoader;
   RefPtr<nsHTMLStyleSheet> mAttrStyleSheet;
   RefPtr<nsHTMLCSSStyleSheet> mStyleAttrStyleSheet;
 
   
-  RefPtr<dom::ImageTracker> mImageTracker;
+  RefPtr<mozilla::dom::ImageTracker> mImageTracker;
 
   
   
   
   ShadowRootSet mComposedShadowRoots;
 
-  using SVGUseElementSet = nsTHashtable<nsPtrHashKey<SVGUseElement>>;
+  using SVGUseElementSet =
+      nsTHashtable<nsPtrHashKey<mozilla::dom::SVGUseElement>>;
 
   
   
@@ -3925,7 +3965,7 @@ class Document : public nsINode,
   nsAutoPtr<nsTHashtable<nsPtrHashKey<nsISupports>>> mActivityObservers;
 
   
-  nsTHashtable<nsPtrHashKey<Link>> mStyledLinks;
+  nsTHashtable<nsPtrHashKey<mozilla::dom::Link>> mStyledLinks;
 #ifdef DEBUG
   
   
@@ -3938,13 +3978,14 @@ class Document : public nsINode,
   
   static const size_t kSegmentSize = 128;
 
-  typedef SegmentedVector<nsCOMPtr<Link>, kSegmentSize, InfallibleAllocPolicy>
+  typedef mozilla::SegmentedVector<nsCOMPtr<mozilla::dom::Link>, kSegmentSize,
+                                   InfallibleAllocPolicy>
       LinksToUpdateList;
 
   LinksToUpdateList mLinksToUpdate;
 
   
-  RefPtr<SMILAnimationController> mAnimationController;
+  RefPtr<mozilla::SMILAnimationController> mAnimationController;
 
   
   nsPropertyTable mPropertyTable;
@@ -3962,17 +4003,17 @@ class Document : public nsINode,
   RefPtr<nsContentList> mAnchors;
 
   
-  RefPtr<FontFaceSet> mFontFaceSet;
+  RefPtr<mozilla::dom::FontFaceSet> mFontFaceSet;
 
   
   
-  TimeStamp mLastFocusTime;
+  mozilla::TimeStamp mLastFocusTime;
 
-  EventStates mDocumentState;
+  mozilla::EventStates mDocumentState;
 
-  RefPtr<Promise> mReadyForIdle;
+  RefPtr<mozilla::dom::Promise> mReadyForIdle;
 
-  RefPtr<FeaturePolicy> mFeaturePolicy;
+  RefPtr<mozilla::dom::FeaturePolicy> mFeaturePolicy;
 
   
   bool mBidiEnabled : 1;
@@ -4252,8 +4293,14 @@ class Document : public nsINode,
   
   bool mAncestorIsLoading;
 
+#ifdef MOZILLA_INTERNAL_API
   
-  dom::VisibilityState mVisibilityState;
+  mozilla::dom::VisibilityState mVisibilityState;
+  static_assert(sizeof(mozilla::dom::VisibilityState) == sizeof(uint8_t),
+                "Error size of mVisibilityState and mDummy");
+#else
+  uint8_t mDummy;
+#endif
 
   enum Type {
     eUnknown,  
@@ -4350,7 +4397,7 @@ class Document : public nsINode,
 
   
   
-  nsTArray<RefPtr<net::ChannelEventQueue>> mSuspendedQueues;
+  nsTArray<RefPtr<mozilla::net::ChannelEventQueue>> mSuspendedQueues;
 
   RefPtr<EventListener> mSuppressedEventListener;
 
@@ -4401,28 +4448,28 @@ class Document : public nsINode,
 
   uint32_t mInSyncOperationCount;
 
-  UniquePtr<dom::XPathEvaluator> mXPathEvaluator;
+  UniquePtr<mozilla::dom::XPathEvaluator> mXPathEvaluator;
 
   nsTArray<RefPtr<AnonymousContent>> mAnonymousContents;
 
   uint32_t mBlockDOMContentLoaded;
 
   
-  LinkedList<MediaQueryList> mDOMMediaQueryLists;
+  mozilla::LinkedList<mozilla::dom::MediaQueryList> mDOMMediaQueryLists;
 
   
   nsTObserverArray<nsIDocumentObserver*> mObservers;
 
   
-  std::bitset<eUseCounter_Count> mUseCounters;
+  std::bitset<mozilla::eUseCounter_Count> mUseCounters;
   
-  std::bitset<eUseCounter_Count> mChildDocumentUseCounters;
+  std::bitset<mozilla::eUseCounter_Count> mChildDocumentUseCounters;
   
   
-  std::bitset<eUseCounter_Count> mNotifiedPageForUseCounter;
+  std::bitset<mozilla::eUseCounter_Count> mNotifiedPageForUseCounter;
 
   
-  UniquePtr<StyleUseCounters> mStyleUseCounters;
+  mozilla::UniquePtr<StyleUseCounters> mStyleUseCounters;
 
   
   bool mUserHasInteracted;
@@ -4432,9 +4479,9 @@ class Document : public nsINode,
   
   bool mHasUserInteractionTimerScheduled;
 
-  TimeStamp mPageUnloadingEventTimeStamp;
+  mozilla::TimeStamp mPageUnloadingEventTimeStamp;
 
-  RefPtr<DocGroup> mDocGroup;
+  RefPtr<mozilla::dom::DocGroup> mDocGroup;
 
   
   
@@ -4444,7 +4491,7 @@ class Document : public nsINode,
   
   
   
-  ContentBlockingLog mContentBlockingLog;
+  mozilla::dom::ContentBlockingLog mContentBlockingLog;
 
   
   
@@ -4504,11 +4551,11 @@ class Document : public nsINode,
 
   
   
-  FlashClassification mFlashClassification;
+  mozilla::dom::FlashClassification mFlashClassification;
 
   
   
-  Maybe<bool> mIsThirdPartyForFlashClassifier;
+  mozilla::Maybe<bool> mIsThirdPartyForFlashClassifier;
 
   nsRevocableEventPtr<nsRunnableMethod<Document, void, false>>
       mPendingTitleChangeEvent;
@@ -4516,7 +4563,7 @@ class Document : public nsINode,
   RefPtr<nsDOMNavigationTiming> mTiming;
 
   
-  TimeStamp mLoadingTimeStamp;
+  mozilla::TimeStamp mLoadingTimeStamp;
 
   nsWeakPtr mAutoFocusElement;
 
@@ -4531,7 +4578,8 @@ class Document : public nsINode,
   nsWeakPtr mScopeObject;
 
   
-  nsTHashtable<nsPtrHashKey<DOMIntersectionObserver>> mIntersectionObservers;
+  nsTHashtable<nsPtrHashKey<mozilla::dom::DOMIntersectionObserver>>
+      mIntersectionObservers;
 
   
   
@@ -4542,39 +4590,40 @@ class Document : public nsINode,
   
   nsWeakPtr mFullscreenRoot;
 
-  RefPtr<DOMImplementation> mDOMImplementation;
+  RefPtr<mozilla::dom::DOMImplementation> mDOMImplementation;
 
   RefPtr<nsContentList> mImageMaps;
 
   
-  nsTHashtable<nsPtrHashKey<HTMLImageElement>> mResponsiveContent;
+  nsTHashtable<nsPtrHashKey<mozilla::dom::HTMLImageElement>> mResponsiveContent;
 
   
   nsTHashtable<nsPtrHashKey<nsIObjectLoadingContent>> mPlugins;
 
-  RefPtr<DocumentTimeline> mDocumentTimeline;
-  LinkedList<DocumentTimeline> mTimelines;
+  RefPtr<mozilla::dom::DocumentTimeline> mDocumentTimeline;
+  mozilla::LinkedList<mozilla::dom::DocumentTimeline> mTimelines;
 
-  RefPtr<dom::ScriptLoader> mScriptLoader;
+  RefPtr<mozilla::dom::ScriptLoader> mScriptLoader;
 
-  nsRefPtrHashtable<nsPtrHashKey<nsIContent>, BoxObject>* mBoxObjectTable;
+  nsRefPtrHashtable<nsPtrHashKey<nsIContent>, mozilla::dom::BoxObject>*
+      mBoxObjectTable;
 
   
   
-  RefPtr<PendingAnimationTracker> mPendingAnimationTracker;
+  RefPtr<mozilla::PendingAnimationTracker> mPendingAnimationTracker;
 
   
   
   RefPtr<Document> mTemplateContentsOwner;
 
-  dom::ExternalResourceMap mExternalResourceMap;
+  mozilla::dom::ExternalResourceMap mExternalResourceMap;
 
   
   
-  RefPtr<Promise> mOrientationPendingPromise;
+  RefPtr<mozilla::dom::Promise> mOrientationPendingPromise;
 
   uint16_t mCurrentOrientationAngle;
-  OrientationType mCurrentOrientationType;
+  mozilla::dom::OrientationType mCurrentOrientationType;
 
   nsTArray<RefPtr<nsFrameLoader>> mInitializableFrameLoaders;
   nsTArray<nsCOMPtr<nsIRunnable>> mFrameLoaderFinalizers;
@@ -4588,22 +4637,23 @@ class Document : public nsINode,
 
   
   
-  LayoutDeviceToScreenScale mScaleMinFloat;
-  LayoutDeviceToScreenScale mScaleMaxFloat;
-  LayoutDeviceToScreenScale mScaleFloat;
-  CSSToLayoutDeviceScale mPixelRatio;
+  mozilla::LayoutDeviceToScreenScale mScaleMinFloat;
+  mozilla::LayoutDeviceToScreenScale mScaleMaxFloat;
+  mozilla::LayoutDeviceToScreenScale mScaleFloat;
+  mozilla::CSSToLayoutDeviceScale mPixelRatio;
 
-  CSSCoord mMinWidth;
-  CSSCoord mMaxWidth;
-  CSSCoord mMinHeight;
-  CSSCoord mMaxHeight;
+  mozilla::CSSCoord mMinWidth;
+  mozilla::CSSCoord mMaxWidth;
+  mozilla::CSSCoord mMinHeight;
+  mozilla::CSSCoord mMaxHeight;
 
-  RefPtr<EventListenerManager> mListenerManager;
+  RefPtr<mozilla::EventListenerManager> mListenerManager;
 
   nsCOMPtr<nsIRunnable> mMaybeEndOutermostXBLUpdateRunner;
   nsCOMPtr<nsIRequest> mOnloadBlocker;
 
-  nsTArray<RefPtr<StyleSheet>> mAdditionalSheets[AdditionalSheetTypeCount];
+  nsTArray<RefPtr<mozilla::StyleSheet>>
+      mAdditionalSheets[AdditionalSheetTypeCount];
 
   
   nsString mLastStyleSheetSet;
@@ -4650,8 +4700,8 @@ class Document : public nsINode,
   nsCOMPtr<nsIDOMXULCommandDispatcher>
       mCommandDispatcher;  
 
-  RefPtr<XULBroadcastManager> mXULBroadcastManager;
-  RefPtr<XULPersist> mXULPersist;
+  RefPtr<mozilla::dom::XULBroadcastManager> mXULBroadcastManager;
+  RefPtr<mozilla::dom::XULPersist> mXULPersist;
 
   
   
