@@ -1288,8 +1288,7 @@ var gViewController = {
                       
                       
                       
-                      
-                      if (!allowPrivateBrowsingByDefault && aAddon.incognito !== "not_allowed") {
+                      if (aAddon.permissions & AddonManager.PERM_CAN_CHANGE_PRIVATEBROWSING_ACCESS) {
                         Services.obs.notifyObservers({
                           addon: aAddon, target,
                         }, "webextension-install-notify");

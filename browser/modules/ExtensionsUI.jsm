@@ -146,8 +146,7 @@ var ExtensionsUI = {
             
             
             
-            
-            if (!allowPrivateBrowsingByDefault && addon.incognito !== "not_allowed") {
+            if (addon.permissions & AddonManager.PERM_CAN_CHANGE_PRIVATEBROWSING_ACCESS) {
               this.showInstallNotification(browser, addon);
             }
           }
