@@ -105,6 +105,27 @@ const NO_FLAGS = 0;
 
 
 
+function stringToArray(s) {
+  let a = [];
+  for (let i = 0; i < s.length; i++) {
+    a.push(s.charCodeAt(i));
+  }
+  return a;
+}
+
+
+function arrayToString(a) {
+  let s = "";
+  for (let b of a) {
+    s += String.fromCharCode(b);
+  }
+  return s;
+}
+
+
+
+
+
 
 
 
