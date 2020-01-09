@@ -111,7 +111,7 @@ function run_test() {
   }
 
   
-  Services.obs.notifyObservers(null, "testonly-reload-permissions-from-disk", "");
+  Services.obs.notifyObservers(null, "testonly-reload-permissions-from-disk");
 
   let earliestNow = Number(Date.now());
   

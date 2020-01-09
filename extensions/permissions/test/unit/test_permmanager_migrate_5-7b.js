@@ -66,11 +66,11 @@ add_task(function test() {
     return {
       id: thisId,
       host: origin,
-      type: type,
-      permission: permission,
-      expireType: expireType,
-      expireTime: expireTime,
-      modificationTime: modificationTime
+      type,
+      permission,
+      expireType,
+      expireTime,
+      modificationTime
     };
   }
 
@@ -103,7 +103,7 @@ add_task(function test() {
   let found = expected.map((it) => 0);
 
   
-  Services.obs.notifyObservers(null, "testonly-reload-permissions-from-disk", "");
+  Services.obs.notifyObservers(null, "testonly-reload-permissions-from-disk");
 
   
   for (let permission of Services.perms.enumerator) {
@@ -136,7 +136,7 @@ add_task(function test() {
 
   
   {
-    let db = Services.storage.openDatabase(GetPermissionsFile(profile));
+    db = Services.storage.openDatabase(GetPermissionsFile(profile));
     Assert.ok(db.tableExists("moz_perms"));
     Assert.ok(db.tableExists("moz_hosts"));
     Assert.ok(!db.tableExists("moz_hosts_is_backup"));

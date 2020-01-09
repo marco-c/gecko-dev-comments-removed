@@ -88,12 +88,12 @@ add_task(async function test() {
 
     return {
       id: thisId,
-      origin: origin,
-      type: type,
-      permission: permission,
-      expireType: expireType,
-      expireTime: expireTime,
-      modificationTime: modificationTime
+      origin,
+      type,
+      permission,
+      expireType,
+      expireTime,
+      modificationTime
     };
   }
 
@@ -118,14 +118,14 @@ add_task(async function test() {
 
     return {
       id: thisId,
-      host: host,
-      type: type,
-      permission: permission,
-      expireType: expireType,
-      expireTime: expireTime,
-      modificationTime: modificationTime,
-      appId: appId,
-      isInBrowserElement: isInBrowserElement
+      host,
+      type,
+      permission,
+      expireType,
+      expireTime,
+      modificationTime,
+      appId,
+      isInBrowserElement
     };
   }
 
@@ -216,7 +216,7 @@ add_task(async function test() {
   await PlacesTestUtils.addVisits(Services.io.newURI("ftp://some.subdomain.of.foo.com:8000/some/subdirectory"));
 
   
-  Services.obs.notifyObservers(null, "testonly-reload-permissions-from-disk", "");
+  Services.obs.notifyObservers(null, "testonly-reload-permissions-from-disk");
 
   
   for (let permission of Services.perms.enumerator) {
@@ -249,7 +249,7 @@ add_task(async function test() {
 
   
   {
-    let db = Services.storage.openDatabase(GetPermissionsFile(profile));
+    db = Services.storage.openDatabase(GetPermissionsFile(profile));
     Assert.ok(db.tableExists("moz_perms"));
     Assert.ok(db.tableExists("moz_hosts"));
     Assert.ok(!db.tableExists("moz_hosts_is_backup"));
