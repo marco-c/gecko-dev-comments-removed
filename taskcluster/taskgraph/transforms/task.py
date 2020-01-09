@@ -1289,69 +1289,6 @@ def build_always_optimized_payload(config, task, task_def):
     task_def['payload'] = {}
 
 
-@payload_builder('native-engine', schema={
-    Required('os'): Any('macosx', 'linux'),
-
-    
-    Required('max-run-time'): int,
-
-    
-    Optional('context'): basestring,
-
-    
-    
-    Optional('reboot'):
-    Any('always', 'on-exception', 'on-failure'),
-
-    
-    Optional('command'): [taskref_or_string],
-
-    
-    Optional('env'): {basestring: taskref_or_string},
-
-    
-    Optional('artifacts'): [{
-        
-        Required('type'): Any('file', 'directory'),
-
-        
-        Required('path'): basestring,
-
-        
-        
-        Required('name'): basestring,
-    }],
-    
-    Optional('skip-artifacts'): bool,
-})
-def build_macosx_engine_payload(config, task, task_def):
-    worker = task['worker']
-
-    
-    
-    worker.setdefault('env', {})['TASKCLUSTER_ROOT_URL'] = get_root_url()
-
-    artifacts = map(lambda artifact: {
-        'name': artifact['name'],
-        'path': artifact['path'],
-        'type': artifact['type'],
-        'expires': task_def['expires'],
-    }, worker.get('artifacts', []))
-
-    task_def['payload'] = {
-        'context': worker['context'],
-        'command': worker['command'],
-        'env': worker['env'],
-        'artifacts': artifacts,
-        'maxRunTime': worker['max-run-time'],
-    }
-    if worker.get('reboot'):
-        task_def['payload'] = worker['reboot']
-
-    if task.get('needs-sccache'):
-        raise Exception('needs-sccache not supported in native-engine')
-
-
 @payload_builder('script-engine-autophone', schema={
     Required('os'): Any('macosx', 'linux'),
 
@@ -1417,7 +1354,7 @@ def set_defaults(config, tasks):
         task.setdefault('needs-sccache', False)
 
         worker = task['worker']
-        if worker['implementation'] in ('docker-worker', 'docker-engine'):
+        if worker['implementation'] in ('docker-worker',):
             worker.setdefault('relengapi-proxy', False)
             worker.setdefault('chain-of-trust', False)
             worker.setdefault('taskcluster-proxy', False)
@@ -1813,8 +1750,6 @@ def build_task(config, tasks):
         
         if task['worker']['implementation'] in (
             'generic-worker',
-            'docker-engine',
-            'native-engine',
             'docker-worker',
         ):
             payload = task_def.get('payload')
