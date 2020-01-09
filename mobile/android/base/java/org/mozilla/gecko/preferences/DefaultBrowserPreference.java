@@ -23,6 +23,10 @@ public class DefaultBrowserPreference extends LinkPreference {
         super(context, attrs, defStyle);
     }
 
+    
+
+
+
     @Override
     protected void onClick() {
         if (GeckoPreferences.PREFS_DEFAULT_BROWSER.equals(getKey()) && AppConstants.Versions.feature24Plus) {

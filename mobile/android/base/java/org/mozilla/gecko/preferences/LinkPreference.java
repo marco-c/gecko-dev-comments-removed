@@ -27,9 +27,6 @@ class LinkPreference extends Preference {
         mUrl = url;
     }
 
-    
-
-
     @Override
     protected void onClick() {
         Tabs.getInstance().loadUrlInTab(mUrl);
