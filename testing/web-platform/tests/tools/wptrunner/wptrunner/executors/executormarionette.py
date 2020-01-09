@@ -897,7 +897,8 @@ class InternalRefTestImplementation(RefTestImplementation):
                 
                 
                 handles = self.executor.protocol.marionette.window_handles
-                self.executor.protocol.marionette.switch_to_window(handles[0])
+                if handles:
+                    self.executor.protocol.marionette.switch_to_window(handles[0])
         except Exception as e:
             
             self.logger.warning(traceback.format_exc(e))
