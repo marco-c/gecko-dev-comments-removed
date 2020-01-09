@@ -5,11 +5,17 @@
 
 
 import { PROMISE } from "../utils/middleware/promise";
-import { getSource, getSourcesEpoch } from "../../selectors";
+import {
+  getSource,
+  getGeneratedSource,
+  getSourcesEpoch
+} from "../../selectors";
 import { setBreakpointPositions } from "../breakpoints";
 
+import { prettyPrintSource } from "./prettyPrint";
+
 import * as parser from "../../workers/parser";
-import { isLoaded, isOriginal } from "../../utils/source";
+import { isLoaded, isOriginal, isPretty } from "../../utils/source";
 import { Telemetry } from "devtools-modules";
 
 import type { ThunkArgs } from "../types";
@@ -30,16 +36,14 @@ async function loadSource(
   text: string,
   contentType: string
 }> {
+  if (isPretty(source) && isOriginal(source)) {
+    const generatedSource = getGeneratedSource(state, source);
+    return prettyPrintSource(sourceMaps, source, generatedSource);
+  }
+
   if (isOriginal(source)) {
     const result = await sourceMaps.getOriginalSourceText(source);
     if (!result) {
-      
-      
-      
-      if (source.isPrettyPrinted) {
-        return null;
-      }
-
       
       
       
