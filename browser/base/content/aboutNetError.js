@@ -84,7 +84,6 @@ function setupAdvancedButton() {
 
   
   document.getElementById("advancedButton").addEventListener("click", togglePanelVisibility);
-  document.getElementById("moreInformationButton").addEventListener("click", togglePanelVisibility);
 
   function togglePanelVisibility() {
     toggleDisplay(panel);
