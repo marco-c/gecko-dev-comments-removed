@@ -158,6 +158,7 @@ nsCookiePermission::CanSetCookie(nsIURI *aURI, nsIChannel *aChannel,
 
   uint32_t perm;
   mPermMgr->TestPermission(aURI, kPermissionType, &perm);
+  bool isThirdParty = false;
   switch (perm) {
     case nsICookiePermission::ACCESS_SESSION:
       *aIsSession = true;
@@ -171,8 +172,36 @@ nsCookiePermission::CanSetCookie(nsIURI *aURI, nsIChannel *aChannel,
       *aResult = false;
       break;
 
+    case nsICookiePermission::ACCESS_ALLOW_FIRST_PARTY_ONLY:
+      mThirdPartyUtil->IsThirdPartyChannel(aChannel, aURI, &isThirdParty);
+      
+      if (isThirdParty) *aResult = false;
+      break;
+
+    case nsICookiePermission::ACCESS_LIMIT_THIRD_PARTY:
+      mThirdPartyUtil->IsThirdPartyChannel(aChannel, aURI, &isThirdParty);
+      
+      if (isThirdParty) {
+        nsresult rv;
+        nsCOMPtr<nsICookieManager> cookieManager =
+            do_GetService(NS_COOKIEMANAGER_CONTRACTID, &rv);
+        if (NS_FAILED(rv)) {
+          *aResult = false;
+          break;
+        }
+        uint32_t priorCookieCount = 0;
+        nsAutoCString hostFromURI;
+        aURI->GetHost(hostFromURI);
+        cookieManager->CountCookiesFromHost(hostFromURI, &priorCookieCount);
+        *aResult = priorCookieCount != 0;
+      }
+      break;
+
     default:
       
+      
+      NS_ASSERTION(perm == nsIPermissionManager::UNKNOWN_ACTION,
+                   "unknown permission");
 
       
       
