@@ -1831,6 +1831,11 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   
   Pair<nsString, RefPtr<AudioDeviceInfo>> mSink;
+
+  
+  
+  
+  bool mShowPoster;
 };
 
 
