@@ -478,9 +478,6 @@ pref("browser.tabs.showAudioPlayingIcon", true);
 pref("browser.tabs.delayHidingAudioPlayingIconMS", 3000);
 
 
-pref("browser.tabs.newanimations", false);
-
-
 #if defined(NIGHTLY_BUILD) && !defined(MOZ_ASAN)
 pref("browser.tabs.remote.separatePrivilegedContentProcess", true);
 #endif
@@ -1056,6 +1053,8 @@ pref("security.sandbox.gmp.win32k-disable", false);
 
 
 pref("security.sandbox.content.mac.earlyinit", true);
+
+pref("security.sandbox.rdd.mac.earlyinit", true);
 
 
 
@@ -1832,6 +1831,10 @@ pref("toolkit.coverage.endpoint.base", "https://coverage.mozilla.org");
 
 #if defined(NIGHTLY_BUILD)
 pref("prio.enabled", true);
+#endif
+
+#if defined(NIGHTLY_BUILD)
+pref("toolkit.telemetry.prioping.enabled", true);
 #endif
 
 
