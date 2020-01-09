@@ -6,6 +6,7 @@
 
 #include "ColumnSetWrapperFrame.h"
 
+#include "mozilla/ColumnUtils.h"
 #include "mozilla/PresShell.h"
 #include "nsContentUtils.h"
 #include "nsIFrame.h"
@@ -147,6 +148,74 @@ void ColumnSetWrapperFrame::MarkIntrinsicISizesDirty() {
   for (nsIFrame* f = FirstContinuation(); f; f = f->GetNextContinuation()) {
     f->RemoveStateBits(NS_BLOCK_NEEDS_BIDI_RESOLUTION);
   }
+}
+
+nscoord ColumnSetWrapperFrame::GetMinISize(gfxContext* aRenderingContext) {
+  nscoord iSize = 0;
+  DISPLAY_MIN_INLINE_SIZE(this, iSize);
+
+  if (StyleDisplay()->IsContainSize()) {
+    
+    
+    
+    
+    const nsStyleColumn* colStyle = StyleColumn();
+    if (colStyle->mColumnWidth.IsLength()) {
+      
+      
+      
+      
+      iSize = 0;
+    } else {
+      MOZ_ASSERT(colStyle->mColumnCount != nsStyleColumn::kColumnCountAuto,
+                 "column-count and column-width can't both be auto!");
+      
+      
+      
+      const nscoord colGap =
+          ColumnUtils::GetColumnGap(this, NS_UNCONSTRAINEDSIZE);
+      iSize = ColumnUtils::IntrinsicISize(colStyle->mColumnCount, colGap, 0);
+    }
+  } else {
+    for (nsIFrame* f : PrincipalChildList()) {
+      iSize = std::max(iSize, f->GetMinISize(aRenderingContext));
+    }
+  }
+
+  return iSize;
+}
+
+nscoord ColumnSetWrapperFrame::GetPrefISize(gfxContext* aRenderingContext) {
+  nscoord iSize = 0;
+  DISPLAY_PREF_INLINE_SIZE(this, iSize);
+
+  if (StyleDisplay()->IsContainSize()) {
+    const nsStyleColumn* colStyle = StyleColumn();
+    nscoord colISize;
+    if (colStyle->mColumnWidth.IsLength()) {
+      colISize =
+          ColumnUtils::ClampUsedColumnWidth(colStyle->mColumnWidth.AsLength());
+    } else {
+      MOZ_ASSERT(colStyle->mColumnCount != nsStyleColumn::kColumnCountAuto,
+                 "column-count and column-width can't both be auto!");
+      colISize = 0;
+    }
+
+    
+    const uint32_t numColumns =
+        colStyle->mColumnCount == nsStyleColumn::kColumnCountAuto
+            ? 1
+            : colStyle->mColumnCount;
+    const nscoord colGap =
+        ColumnUtils::GetColumnGap(this, NS_UNCONSTRAINEDSIZE);
+    iSize = ColumnUtils::IntrinsicISize(numColumns, colGap, colISize);
+  } else {
+    for (nsIFrame* f : PrincipalChildList()) {
+      iSize = std::max(iSize, f->GetPrefISize(aRenderingContext));
+    }
+  }
+
+  return iSize;
 }
 
 #ifdef DEBUG
