@@ -626,7 +626,14 @@ class ScriptSource {
   
   
   
+  
+  
+  
+  
+  
+  
   bool sourceRetrievable_ : 1;
+
   bool hasIntroductionOffset_ : 1;
   bool containsAsmJS_ : 1;
 
@@ -869,30 +876,6 @@ class ScriptSource {
   }
 
  private:
-  struct SourceCharSizeMatcher {
-    template <template <typename C> class Data, typename Unit>
-    uint8_t operator()(const Data<Unit>& data) {
-      static_assert(std::is_same<Unit, mozilla::Utf8Unit>::value ||
-                        std::is_same<Unit, char16_t>::value,
-                    "should only have UTF-8 or UTF-16 source char");
-      return sizeof(Unit);
-    }
-
-    uint8_t operator()(const BinAST&) {
-      MOZ_CRASH("BinAST source has no source-char size");
-      return 0;
-    }
-
-    uint8_t operator()(const Missing&) {
-      MOZ_CRASH("missing source has no source-char size");
-      return 0;
-    }
-  };
-
- public:
-  uint8_t sourceCharSize() const { return data.match(SourceCharSizeMatcher()); }
-
- private:
   struct UncompressedLengthMatcher {
     template <typename Unit>
     size_t operator()(const Uncompressed<Unit>& u) {
@@ -916,34 +899,6 @@ class ScriptSource {
   size_t length() const {
     MOZ_ASSERT(hasSourceText() || hasBinASTSource());
     return data.match(UncompressedLengthMatcher());
-  }
-
- private:
-  struct CompressedLengthOrZeroMatcher {
-    template <typename Unit>
-    size_t operator()(const Uncompressed<Unit>&) {
-      return 0;
-    }
-
-    template <typename Unit>
-    size_t operator()(const Compressed<Unit>& c) {
-      return c.raw.length();
-    }
-
-    size_t operator()(const BinAST&) {
-      MOZ_CRASH("trying to get compressed length for BinAST data");
-      return 0;
-    }
-
-    size_t operator()(const Missing&) {
-      MOZ_CRASH("missing source data");
-      return 0;
-    }
-  };
-
- public:
-  size_t compressedLengthOrZero() const {
-    return data.match(CompressedLengthOrZeroMatcher());
   }
 
   JSFlatString* substring(JSContext* cx, size_t start, size_t stop);
@@ -1012,8 +967,9 @@ class ScriptSource {
 
 
 
-  MOZ_MUST_USE bool setBinASTSource(JSContext* cx, UniqueChars&& buf,
-                                    size_t len);
+  MOZ_MUST_USE bool initializeBinAST(
+      JSContext* cx, UniqueChars&& buf, size_t len,
+      UniquePtr<frontend::BinASTSourceMetadata> metadata);
 
   const uint8_t* binASTSource();
 
@@ -1151,8 +1107,8 @@ class ScriptSource {
 
  private:
   template <XDRMode mode>
-  static MOZ_MUST_USE XDRResult xdrDataMember(XDRState<mode>* xdr,
-                                              ScriptSource* ss);
+  static MOZ_MUST_USE XDRResult xdrData(XDRState<mode>* const xdr,
+                                        ScriptSource* const ss);
 
  public:
   template <XDRMode mode>
