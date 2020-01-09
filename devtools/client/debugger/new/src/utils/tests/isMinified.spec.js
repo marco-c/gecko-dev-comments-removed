@@ -2,11 +2,15 @@
 
 
 
+
+
 import { isMinified } from "../isMinified";
+import { makeMockSource } from "../test-mockup";
 
 describe("isMinified", () => {
   it("no indents", () => {
-    const source = { id: "no-indents", text: "function base(boo) {\n}" };
+    const source = makeMockSource();
+    source.text = "function base(boo) {\n}";
     expect(isMinified(source)).toBe(true);
   });
 });

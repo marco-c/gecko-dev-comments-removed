@@ -2,10 +2,15 @@
 
 
 
+
+
 import { isVisible } from "../ui";
 
 describe("ui", () => {
   it("should return #mount width", () => {
+    if (!document.body) {
+      throw new Error("no document body");
+    }
     document.body.innerHTML = "<div id='mount'></div>";
     expect(isVisible()).toBeGreaterThanOrEqual(0);
   });

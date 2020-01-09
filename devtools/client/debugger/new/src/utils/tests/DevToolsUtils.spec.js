@@ -2,6 +2,8 @@
 
 
 
+
+
 import { reportException, executeSoon } from "../DevToolsUtils.js";
 
 describe("DevToolsUtils", () => {
@@ -11,18 +13,18 @@ describe("DevToolsUtils", () => {
     });
 
     it("calls console.error", () => {
-      reportException("caller", "you broke it");
+      reportException("caller", ["you broke it"]);
       expect(console.error).toBeCalled();
     });
 
     it("returns a description of caller and exception text", () => {
-      const who = {},
+      const who = "who",
         exception = "this is an error",
         msgTxt = " threw an exception: ";
 
-      reportException(who, exception);
+      reportException(who, [exception]);
 
-      expect(console.error).toBeCalledWith(`${who}${msgTxt}`, exception);
+      expect(console.error).toBeCalledWith(`${who}${msgTxt}`, [exception]);
     });
   });
 

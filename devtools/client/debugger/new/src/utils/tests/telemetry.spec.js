@@ -2,6 +2,8 @@
 
 
 
+
+
 jest.mock("devtools-modules", () => {
   function MockTelemetry() {}
   MockTelemetry.prototype.recordEvent = jest.fn();

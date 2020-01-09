@@ -2,6 +2,8 @@
 
 
 
+
+
 jest.mock("devtools-environment", () => ({
   isFirefox: jest.fn()
 }));
@@ -12,14 +14,14 @@ import { scrollList } from "../result-list.js";
 describe("scrollList", () => {
   it("just returns if element not found", () => {
     const li = document.createElement("li");
-    scrollList([li]);
+    scrollList([li], 1);
   });
 
   it("calls scrollIntoView if Firefox", () => {
     const ul = document.createElement("ul");
     const li = document.createElement("li");
 
-    li.scrollIntoView = jest.fn();
+    (li: any).scrollIntoView = jest.fn();
     ul.appendChild(li);
     isFirefox.mockImplementation(() => true);
 

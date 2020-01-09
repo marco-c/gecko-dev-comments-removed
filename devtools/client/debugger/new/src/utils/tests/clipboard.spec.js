@@ -2,6 +2,8 @@
 
 
 
+
+
 import { copyToTheClipboard } from "../clipboard";
 
 let clipboardTestCopyString, expectedCopyEvent;

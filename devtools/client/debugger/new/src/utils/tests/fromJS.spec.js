@@ -2,6 +2,8 @@
 
 
 
+
+
 import fromJS from "../fromJS";
 
 const preview = {

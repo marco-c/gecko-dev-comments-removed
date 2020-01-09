@@ -2,6 +2,8 @@
 
 
 
+
+
 import cases from "jest-in-case";
 import { parseQuickOpenQuery, parseLineColumn } from "../quick-open";
 

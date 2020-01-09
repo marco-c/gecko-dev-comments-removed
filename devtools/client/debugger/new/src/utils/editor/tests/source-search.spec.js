@@ -2,6 +2,8 @@
 
 
 
+
+
 import {
   find,
   searchSourceForHighlight,
@@ -83,7 +85,7 @@ describe("source-search", () => {
         overlay: null,
         results: []
       };
-      find(ctx, null, true, modifiers);
+      find(ctx, "", true, modifiers);
       expect(ctx.cm.removeOverlay).toHaveBeenCalledWith(null);
       ctx.cm.removeOverlay.mockClear();
       ctx.cm.state.search.query = "bar";
