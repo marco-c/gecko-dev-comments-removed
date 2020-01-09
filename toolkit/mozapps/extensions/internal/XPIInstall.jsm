@@ -3659,7 +3659,7 @@ var XPIInstall = {
     
     let pkg = {
       rootURI: baseURL,
-      filePath: baseURL,
+      filePath: baseURL.spec,
       file: null,
       verifySignedState() {
         return {
