@@ -100,8 +100,8 @@ public final class MediaDrmProxy {
                               int sessionMessageType,
                               byte[] request);
 
-       void onSessionError(byte[] sessionId,
-                           String message);
+        void onSessionError(byte[] sessionId,
+                            String message);
 
         
         

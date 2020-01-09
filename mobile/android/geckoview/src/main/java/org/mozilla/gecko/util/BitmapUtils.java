@@ -168,70 +168,70 @@ public final class BitmapUtils {
     }
 
     public static @ColorInt int getDominantColorCustomImplementation(
-        final Bitmap source, final boolean applyThreshold, final @ColorInt int defaultColor) {
-      if (source == null) {
-          return defaultColor;
-      }
-
-      
-      
-      int[] colorBins = new int[36];
-
-      
-      
-      int maxBin = -1;
-
-      
-      
-      float[] sumHue = new float[36];
-      float[] sumSat = new float[36];
-      float[] sumVal = new float[36];
-      float[] hsv = new float[3];
-
-      int height = source.getHeight();
-      int width = source.getWidth();
-      int[] pixels = new int[width * height];
-      source.getPixels(pixels, 0, width, 0, 0, width, height);
-      for (int row = 0; row < height; row++) {
-        for (int col = 0; col < width; col++) {
-          int c = pixels[col + row * width];
-          
-          if (Color.alpha(c) < 128)
-            continue;
-
-          Color.colorToHSV(c, hsv);
-
-          
-          if (applyThreshold && (hsv[1] <= 0.35f || hsv[2] <= 0.35f))
-            continue;
-
-          
-          int bin = (int) Math.floor(hsv[0] / 10.0f);
-
-          
-          sumHue[bin] = sumHue[bin] + hsv[0];
-          sumSat[bin] = sumSat[bin] + hsv[1];
-          sumVal[bin] = sumVal[bin] + hsv[2];
-
-          
-          colorBins[bin]++;
-
-          
-          if (maxBin < 0 || colorBins[bin] > colorBins[maxBin])
-            maxBin = bin;
+            final Bitmap source, final boolean applyThreshold, final @ColorInt int defaultColor) {
+        if (source == null) {
+            return defaultColor;
         }
-      }
 
-      
-      if (maxBin < 0) {
-          return defaultColor;
-      }
+        
+        
+        int[] colorBins = new int[36];
 
-      
-      hsv[0] = sumHue[maxBin] / colorBins[maxBin];
-      hsv[1] = sumSat[maxBin] / colorBins[maxBin];
-      hsv[2] = sumVal[maxBin] / colorBins[maxBin];
-      return Color.HSVToColor(hsv);
+        
+        
+        int maxBin = -1;
+
+        
+        
+        float[] sumHue = new float[36];
+        float[] sumSat = new float[36];
+        float[] sumVal = new float[36];
+        float[] hsv = new float[3];
+
+        int height = source.getHeight();
+        int width = source.getWidth();
+        int[] pixels = new int[width * height];
+        source.getPixels(pixels, 0, width, 0, 0, width, height);
+        for (int row = 0; row < height; row++) {
+            for (int col = 0; col < width; col++) {
+                int c = pixels[col + row * width];
+                
+                if (Color.alpha(c) < 128)
+                    continue;
+
+                Color.colorToHSV(c, hsv);
+
+                
+                if (applyThreshold && (hsv[1] <= 0.35f || hsv[2] <= 0.35f))
+                    continue;
+
+                
+                int bin = (int) Math.floor(hsv[0] / 10.0f);
+
+                
+                sumHue[bin] = sumHue[bin] + hsv[0];
+                sumSat[bin] = sumSat[bin] + hsv[1];
+                sumVal[bin] = sumVal[bin] + hsv[2];
+
+                
+                colorBins[bin]++;
+
+                
+                if (maxBin < 0 || colorBins[bin] > colorBins[maxBin])
+                    maxBin = bin;
+            }
+        }
+
+        
+        if (maxBin < 0) {
+            return defaultColor;
+        }
+
+        
+        hsv[0] = sumHue[maxBin] / colorBins[maxBin];
+        hsv[1] = sumSat[maxBin] / colorBins[maxBin];
+        hsv[2] = sumVal[maxBin] / colorBins[maxBin];
+        return Color.HSVToColor(hsv);
     }
 
     

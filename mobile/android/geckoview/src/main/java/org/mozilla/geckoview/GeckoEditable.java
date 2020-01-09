@@ -544,60 +544,60 @@ import android.view.inputmethod.EditorInfo;
 
     private void icPerformAction(final Action action) throws RemoteException {
         switch (action.mType) {
-        case Action.TYPE_EVENT:
-        case Action.TYPE_SET_HANDLER:
-            mFocusedChild.onImeSynchronize();
-            break;
+            case Action.TYPE_EVENT:
+            case Action.TYPE_SET_HANDLER:
+                mFocusedChild.onImeSynchronize();
+                break;
 
-        case Action.TYPE_SET_SPAN: {
-            final boolean needUpdate = (action.mSpanFlags & Spanned.SPAN_INTERMEDIATE) == 0 &&
-                                       ((action.mSpanFlags & Spanned.SPAN_COMPOSING) != 0 ||
-                                        action.mSpanObject == Selection.SELECTION_START ||
-                                        action.mSpanObject == Selection.SELECTION_END);
+            case Action.TYPE_SET_SPAN: {
+                final boolean needUpdate = (action.mSpanFlags & Spanned.SPAN_INTERMEDIATE) == 0 &&
+                        ((action.mSpanFlags & Spanned.SPAN_COMPOSING) != 0 ||
+                                action.mSpanObject == Selection.SELECTION_START ||
+                                action.mSpanObject == Selection.SELECTION_END);
 
-            action.mSequence = TextUtils.substring(
-                    mText.getShadowText(), action.mStart, action.mEnd);
+                action.mSequence = TextUtils.substring(
+                        mText.getShadowText(), action.mStart, action.mEnd);
 
-            mNeedUpdateComposition |= needUpdate;
-            if (needUpdate) {
-                icMaybeSendComposition(mText.getShadowText(), SEND_COMPOSITION_NOTIFY_GECKO |
-                                                              SEND_COMPOSITION_KEEP_CURRENT);
+                mNeedUpdateComposition |= needUpdate;
+                if (needUpdate) {
+                    icMaybeSendComposition(mText.getShadowText(), SEND_COMPOSITION_NOTIFY_GECKO |
+                            SEND_COMPOSITION_KEEP_CURRENT);
+                }
+
+                mFocusedChild.onImeSynchronize();
+                break;
             }
+            case Action.TYPE_REMOVE_SPAN: {
+                final boolean needUpdate = (action.mSpanFlags & Spanned.SPAN_INTERMEDIATE) == 0 &&
+                        (action.mSpanFlags & Spanned.SPAN_COMPOSING) != 0;
 
-            mFocusedChild.onImeSynchronize();
-            break;
-        }
-        case Action.TYPE_REMOVE_SPAN: {
-            final boolean needUpdate = (action.mSpanFlags & Spanned.SPAN_INTERMEDIATE) == 0 &&
-                                       (action.mSpanFlags & Spanned.SPAN_COMPOSING) != 0;
+                mNeedUpdateComposition |= needUpdate;
+                if (needUpdate) {
+                    icMaybeSendComposition(mText.getShadowText(), SEND_COMPOSITION_NOTIFY_GECKO |
+                            SEND_COMPOSITION_KEEP_CURRENT);
+                }
 
-            mNeedUpdateComposition |= needUpdate;
-            if (needUpdate) {
-                icMaybeSendComposition(mText.getShadowText(), SEND_COMPOSITION_NOTIFY_GECKO |
-                                                              SEND_COMPOSITION_KEEP_CURRENT);
+                mFocusedChild.onImeSynchronize();
+                break;
             }
-
-            mFocusedChild.onImeSynchronize();
-            break;
-        }
-        case Action.TYPE_REPLACE_TEXT:
-            
-            
-            mNeedSync = true;
-
-            
-            
-            if (!icMaybeSendComposition(
-                    action.mSequence, SEND_COMPOSITION_USE_ENTIRE_TEXT)) {
+            case Action.TYPE_REPLACE_TEXT:
                 
-                sendCharKeyEvents(action);
-            }
-            mFocusedChild.onImeReplaceText(
-                    action.mStart, action.mEnd, action.mSequence.toString());
-            break;
+                
+                mNeedSync = true;
 
-        default:
-            throw new IllegalStateException("Action not processed");
+                
+                
+                if (!icMaybeSendComposition(
+                        action.mSequence, SEND_COMPOSITION_USE_ENTIRE_TEXT)) {
+                    
+                    sendCharKeyEvents(action);
+                }
+                mFocusedChild.onImeReplaceText(
+                        action.mStart, action.mEnd, action.mSequence.toString());
+                break;
+
+            default:
+                throw new IllegalStateException("Action not processed");
         }
     }
 
@@ -1137,79 +1137,79 @@ import android.view.inputmethod.EditorInfo;
                           getConstantName(Action.class, "TYPE_", action.mType) + ")");
         }
         switch (action.mType) {
-        case Action.TYPE_REPLACE_TEXT: {
-            final Spanned currentText = mText.getCurrentText();
-            final int actionNewEnd = action.mStart + action.mSequence.length();
-            if (mLastTextChangeStart > mLastTextChangeNewEnd ||
-                mLastTextChangeNewEnd > currentText.length() ||
-                action.mStart < mLastTextChangeStart || actionNewEnd > mLastTextChangeNewEnd) {
-                
-                break;
-            }
-
-            int indexInText = TextUtils.indexOf(currentText, action.mSequence,
-                                                action.mStart, mLastTextChangeNewEnd);
-            if (indexInText < 0 && action.mStart != mLastTextChangeStart) {
-                final String changedText = TextUtils.substring(
-                        currentText, mLastTextChangeStart, actionNewEnd);
-                indexInText = changedText.lastIndexOf(action.mSequence.toString());
-                if (indexInText >= 0) {
-                    indexInText += mLastTextChangeStart;
+            case Action.TYPE_REPLACE_TEXT: {
+                final Spanned currentText = mText.getCurrentText();
+                final int actionNewEnd = action.mStart + action.mSequence.length();
+                if (mLastTextChangeStart > mLastTextChangeNewEnd ||
+                        mLastTextChangeNewEnd > currentText.length() ||
+                        action.mStart < mLastTextChangeStart || actionNewEnd > mLastTextChangeNewEnd) {
+                    
+                    break;
                 }
-            }
-            if (indexInText < 0) {
-                
-                break;
-            }
 
-            final int selStart = Selection.getSelectionStart(currentText);
-            final int selEnd = Selection.getSelectionEnd(currentText);
-
-            
-            
-            mText.currentReplace(indexInText,
-                                 indexInText + action.mSequence.length(),
-                                 action.mSequence);
-            
-            mText.currentSetSelection(selStart, selEnd);
-
-            
-            
-            
-            
-            
-            mIgnoreSelectionChange = !mLastTextChangeReplacedSelection;
-            break;
-        }
-
-        case Action.TYPE_SET_SPAN:
-            final int len = mText.getCurrentText().length();
-            if (action.mStart > len || action.mEnd > len ||
-                    !TextUtils.substring(mText.getCurrentText(), action.mStart,
-                                         action.mEnd).equals(action.mSequence)) {
-                if (DEBUG) {
-                    Log.d(LOGTAG, "discarding stale set span call");
+                int indexInText = TextUtils.indexOf(currentText, action.mSequence,
+                        action.mStart, mLastTextChangeNewEnd);
+                if (indexInText < 0 && action.mStart != mLastTextChangeStart) {
+                    final String changedText = TextUtils.substring(
+                            currentText, mLastTextChangeStart, actionNewEnd);
+                    indexInText = changedText.lastIndexOf(action.mSequence.toString());
+                    if (indexInText >= 0) {
+                        indexInText += mLastTextChangeStart;
+                    }
                 }
+                if (indexInText < 0) {
+                    
+                    break;
+                }
+
+                final int selStart = Selection.getSelectionStart(currentText);
+                final int selEnd = Selection.getSelectionEnd(currentText);
+
+                
+                
+                mText.currentReplace(indexInText,
+                        indexInText + action.mSequence.length(),
+                        action.mSequence);
+                
+                mText.currentSetSelection(selStart, selEnd);
+
+                
+                
+                
+                
+                
+                mIgnoreSelectionChange = !mLastTextChangeReplacedSelection;
                 break;
             }
-            if ((action.mSpanObject == Selection.SELECTION_START ||
-                 action.mSpanObject == Selection.SELECTION_END) &&
-                (action.mStart < mLastTextChangeStart && action.mEnd < mLastTextChangeStart ||
-                 action.mStart > mLastTextChangeOldEnd && action.mEnd > mLastTextChangeOldEnd)) {
-                
-                
-                mLastTextChangeReplacedSelection = false;
-            }
-            mText.currentSetSpan(action.mSpanObject, action.mStart, action.mEnd, action.mSpanFlags);
-            break;
 
-        case Action.TYPE_REMOVE_SPAN:
-            mText.currentRemoveSpan(action.mSpanObject);
-            break;
+            case Action.TYPE_SET_SPAN:
+                final int len = mText.getCurrentText().length();
+                if (action.mStart > len || action.mEnd > len ||
+                        !TextUtils.substring(mText.getCurrentText(), action.mStart,
+                                action.mEnd).equals(action.mSequence)) {
+                    if (DEBUG) {
+                        Log.d(LOGTAG, "discarding stale set span call");
+                    }
+                    break;
+                }
+                if ((action.mSpanObject == Selection.SELECTION_START ||
+                        action.mSpanObject == Selection.SELECTION_END) &&
+                        (action.mStart < mLastTextChangeStart && action.mEnd < mLastTextChangeStart ||
+                                action.mStart > mLastTextChangeOldEnd && action.mEnd > mLastTextChangeOldEnd)) {
+                    
+                    
+                    mLastTextChangeReplacedSelection = false;
+                }
+                mText.currentSetSpan(action.mSpanObject, action.mStart, action.mEnd, action.mSpanFlags);
+                break;
 
-        case Action.TYPE_SET_HANDLER:
-            geckoSetIcHandler(action.mHandler);
-            break;
+            case Action.TYPE_REMOVE_SPAN:
+                mText.currentRemoveSpan(action.mSpanObject);
+                break;
+
+            case Action.TYPE_SET_HANDLER:
+                geckoSetIcHandler(action.mHandler);
+                break;
         }
     }
 
@@ -1830,12 +1830,12 @@ import android.view.inputmethod.EditorInfo;
             final String str = obj.toString();
             sb.append('"');
             for (int i = 0; i < str.length(); i++) {
-              final char chr = str.charAt(i);
-              if (chr >= 0x20 && chr <= 0x7e) {
-                sb.append(chr);
-              } else {
-                sb.append(getPrintableChar(chr));
-              }
+                final char chr = str.charAt(i);
+                if (chr >= 0x20 && chr <= 0x7e) {
+                    sb.append(chr);
+                } else {
+                    sb.append(getPrintableChar(chr));
+                }
             }
             sb.append('"');
         } else if (obj.getClass().isArray()) {
