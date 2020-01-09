@@ -407,16 +407,27 @@ const AccessibleActor = ActorClassWithSpec(accessibleSpec, {
 
 
   async audit() {
-    
-    
-    
-    const [ contrastRatio ] = await Promise.all([
-      this._getContrastRatio(),
-    ]);
+    if (this._auditing) {
+      return this._auditing;
+    }
 
-    return this.isDefunct ? null : {
+    
+    
+    
+    this._auditing = Promise.all([
+      this._getContrastRatio(),
+    ]).then(([
       contrastRatio,
-    };
+    ]) => {
+      const audit = this.isDefunct ? null : {
+        contrastRatio,
+      };
+
+      this._auditing = null;
+      return audit;
+    });
+
+    return this._auditing;
   },
 
   snapshot() {
