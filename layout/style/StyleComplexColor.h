@@ -10,124 +10,41 @@
 #define mozilla_StyleComplexColor_h_
 
 #include "nsColor.h"
-
-class nsIFrame;
+#include "mozilla/ServoStyleConsts.h"
 
 namespace mozilla {
 
-class ComputedStyle;
+using StyleComplexColor = StyleColor;
 
+template<>
+inline StyleColor StyleColor::FromColor(nscolor aColor) {
+  return StyleColor::Numeric({NS_GET_R(aColor), NS_GET_G(aColor),
+                              NS_GET_B(aColor), NS_GET_A(aColor)});
+}
 
+template<>
+inline StyleColor StyleColor::Black() {
+  return FromColor(NS_RGB(0, 0, 0));
+}
 
+template<>
+inline StyleColor StyleColor::White() {
+  return FromColor(NS_RGB(255, 255, 255));
+}
 
+template<>
+inline StyleColor StyleColor::Transparent() {
+  return FromColor(NS_RGBA(0, 0, 0, 0));
+}
 
+template<>
+nscolor StyleComplexColor::CalcColor(nscolor aForegroundColor) const;
 
+template<>
+nscolor StyleComplexColor::CalcColor(const ComputedStyle&) const;
 
-
-
-
-class StyleComplexColor final {
- public:
-  static StyleComplexColor FromColor(nscolor aColor) {
-    return {aColor, 0, eNumeric};
-  }
-  static StyleComplexColor CurrentColor() {
-    return {NS_RGBA(0, 0, 0, 0), 1, eForeground};
-  }
-  static StyleComplexColor Auto() { return {NS_RGBA(0, 0, 0, 0), 1, eAuto}; }
-
-  static StyleComplexColor Black() {
-    return StyleComplexColor::FromColor(NS_RGB(0, 0, 0));
-  }
-  static StyleComplexColor White() {
-    return StyleComplexColor::FromColor(NS_RGB(255, 255, 255));
-  }
-  static StyleComplexColor Transparent() {
-    return StyleComplexColor::FromColor(NS_RGBA(0, 0, 0, 0));
-  }
-
-  bool IsAuto() const { return mTag == eAuto; }
-  bool IsCurrentColor() const { return mTag == eForeground; }
-
-  bool operator==(const StyleComplexColor& aOther) const {
-    if (mTag != aOther.mTag) {
-      return false;
-    }
-
-    switch (mTag) {
-      case eAuto:
-      case eForeground:
-        return true;
-      case eNumeric:
-        return mColor == aOther.mColor;
-      case eComplex:
-        return (mBgRatio == aOther.mBgRatio && mFgRatio == aOther.mFgRatio &&
-                mColor == aOther.mColor);
-      default:
-        MOZ_ASSERT_UNREACHABLE("Unexpected StyleComplexColor type.");
-        return false;
-    }
-  }
-
-  bool operator!=(const StyleComplexColor& aOther) const {
-    return !(*this == aOther);
-  }
-
-  
-
-
-  bool MaybeTransparent() const;
-
-  
-
-
-
-  nscolor CalcColor(nscolor aForegroundColor) const;
-
-  
-
-
-
-  nscolor CalcColor(mozilla::ComputedStyle* aStyle) const;
-
-  
-
-
-
-  nscolor CalcColor(const nsIFrame* aFrame) const;
-
- private:
-  enum Tag : uint8_t {
-    
-    
-    
-    
-    eAuto,
-    
-    eNumeric,
-    
-    
-    eForeground,
-    
-    
-    
-    eComplex,
-  };
-
-  StyleComplexColor(nscolor aColor, float aFgRatio, Tag aTag)
-      : mColor(aColor),
-        mBgRatio(1.f - aFgRatio),
-        mFgRatio(aFgRatio),
-        mTag(aTag) {
-    MOZ_ASSERT(mTag != eNumeric || aFgRatio == 0.);
-    MOZ_ASSERT(!(mTag == eAuto || mTag == eForeground) || aFgRatio == 1.);
-  }
-
-  nscolor mColor;
-  float mBgRatio;
-  float mFgRatio;
-  Tag mTag;
-};
+template<>
+nscolor StyleComplexColor::CalcColor(const nsIFrame*) const;
 
 }  
 
