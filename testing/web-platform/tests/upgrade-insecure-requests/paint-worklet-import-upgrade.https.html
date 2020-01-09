@@ -2,7 +2,7 @@
 <html>
 <head>
 
-<title>Upgrade Insecure Requests: iframe.</title>
+<title>Upgrade Insecure Requests: paint-worklet.</title>
 <script src="/resources/testharness.js"></script>
 <script src="/resources/testharnessreport.js"></script>
 <script src="./support/testharness-helper.sub.js"></script>
@@ -12,8 +12,8 @@
 </head>
 <body>
 <script>
-const tests = generateTests(ResourceType.FRAME, false);
-tests.forEach(test => testMap['iframe'](test));
+const tests = generateModuleImportTests(ResourceType.WORKLET, false);
+tests.forEach(test => testMap['paint-worklet'](test));
 </script>
 </body>
 </html>
