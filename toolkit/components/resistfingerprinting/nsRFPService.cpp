@@ -677,19 +677,20 @@ nsresult nsRFPService::GetSpoofedUserAgent(nsACString& userAgent,
   uint32_t firefoxVersion = appVersion.ToInteger(&rv);
   NS_ENSURE_SUCCESS(rv, rv);
 
+#ifdef DEBUG
   
   
   
   if (!strcmp(NS_STRINGIFY(MOZ_UPDATE_CHANNEL), "esr")) {
-    MOZ_ASSERT(((firefoxVersion % 7) == 4),
-               "Please udpate ESR version formula in nsRFPService.cpp");
+    MOZ_ASSERT(((firefoxVersion % 8) == 4),
+               "Please update ESR version formula in nsRFPService.cpp");
   }
+#endif  
 
   
   
   
-  
-  uint32_t spoofedVersion = firefoxVersion - ((firefoxVersion - 4) % 7);
+  uint32_t spoofedVersion = firefoxVersion - ((firefoxVersion - 4) % 8);
   const char* spoofedOS = isForHTTPHeader ? SPOOFED_HTTP_UA_OS : SPOOFED_UA_OS;
   userAgent.Assign(nsPrintfCString(
       "Mozilla/5.0 (%s; rv:%d.0) Gecko/%s Firefox/%d.0", spoofedOS,
