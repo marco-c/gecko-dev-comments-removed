@@ -1293,9 +1293,9 @@ PlacesToolbar.prototype = {
     
     
     
-    if (this._overFolder.elt && this._overFolder.elt.lastElementChild) {
-      if (!this._overFolder.elt.lastElementChild.hasAttribute("dragover")) {
-        this._overFolder.elt.lastElementChild.hidePopup();
+    if (this._overFolder.elt && this._overFolder.elt.menupopup) {
+      if (!this._overFolder.elt.menupopup.hasAttribute("dragover")) {
+        this._overFolder.elt.menupopup.hidePopup();
       }
       this._overFolder.elt.removeAttribute("dragover");
       this._overFolder.elt = null;
@@ -1435,7 +1435,7 @@ PlacesToolbar.prototype = {
       
       
       
-      this._overFolder.elt.lastElementChild.setAttribute("autoopened", "true");
+      this._overFolder.elt.menupopup.setAttribute("autoopened", "true");
       this._overFolder.elt.open = true;
       this._overFolder.openTimer = null;
     } else if (aTimer == this._overFolder.closeTimer) {
