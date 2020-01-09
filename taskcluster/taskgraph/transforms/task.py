@@ -50,14 +50,6 @@ def _run_task_suffix():
     return hash_path(RUN_TASK)[0:20]
 
 
-def _compute_geckoview_version(app_version, moz_build_date):
-    """Geckoview version string that matches geckoview gradle configuration"""
-    
-    version_without_milestone = re.sub(r'a[0-9]', '', app_version, 1)
-    parts = version_without_milestone.split('.')
-    return "%s.%s.%s" % (parts[0], parts[1], moz_build_date)
-
-
 
 task_description_schema = Schema({
     
@@ -135,8 +127,7 @@ task_description_schema = Schema({
 
         
         'type': Any('generic', 'nightly', 'l10n', 'nightly-with-multi-l10n',
-                    'release', 'nightly-l10n', 'shippable', 'shippable-l10n',
-                    'android-nightly', 'android-nightly-with-multi-l10n'),
+                    'release', 'nightly-l10n', 'shippable', 'shippable-l10n'),
 
         
         
@@ -288,10 +279,6 @@ V2_L10N_TEMPLATES = [
     "index.{trust-domain}.v2.{project}.pushlog-id.{pushlog_id}.{product}-l10n.{job-name}.{locale}",
     "index.{trust-domain}.v2.{project}.latest.{product}-l10n.{job-name}.{locale}",
 ]
-
-
-
-V2_GECKOVIEW_RELEASE = "index.{trust-domain}.v2.{project}.geckoview-version.{geckoview-version}.{product}.{job-name}"  
 
 
 TREEHERDER_ROUTE_ROOT = 'tc-treeherder'
@@ -1641,39 +1628,6 @@ def add_nightly_l10n_index_routes(config, task, force_locale=None):
     for locale in locales:
         for tpl in V2_NIGHTLY_L10N_TEMPLATES:
             routes.append(tpl.format(locale=locale, **subs))
-
-    return task
-
-
-def add_geckoview_index_routes(config, task):
-    routes = task.setdefault('routes', [])
-    geckoview_version = _compute_geckoview_version(
-        config.params['app_version'],
-        config.params['moz_build_date']
-    )
-
-    subs = {
-        'trust-domain': config.graph_config['trust-domain'],
-        'geckoview-version': geckoview_version,
-        'job-name': task.get('index')['job-name']
-    }
-    routes.append(V2_GECKOVIEW_RELEASE.format(**subs))
-
-    return task
-
-
-@index_builder('android-nightly')
-def add_android_nightly_index_routes(config, task):
-    task = add_generic_index_routes(config, task)
-    task = add_geckoview_index_routes(config, task)
-
-    return task
-
-
-@index_builder('android-nightly-with-multi-l10n')
-def add_android_nightly_multi_index_routes(config, task):
-    task = add_nightly_multi_index_routes(config, task)
-    task = add_android_nightly_index_routes(config, task)
 
     return task
 
