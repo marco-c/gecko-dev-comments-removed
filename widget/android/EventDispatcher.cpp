@@ -15,6 +15,12 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/dom/ScriptSettings.h"
 
+
+#if defined(__clang__)
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wc++2a-compat"
+#endif
+
 namespace mozilla {
 namespace widget {
 
@@ -1032,3 +1038,7 @@ nsresult EventDispatcher::UnboxBundle(JSContext* aCx, jni::Object::Param aData,
 
 }  
 }  
+
+#if defined(__clang__)
+#  pragma clang diagnostic pop
+#endif
