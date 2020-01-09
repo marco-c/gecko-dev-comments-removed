@@ -2136,9 +2136,6 @@ nsresult nsXULPrototypeScript::Compile(
   
   options.setSourceIsLazy(mOutOfLine);
   JS::Rooted<JSObject*> scope(cx, JS::CurrentGlobalOrNull(cx));
-  if (scope) {
-    JS::ExposeObjectToActiveJS(scope);
-  }
 
   if (aOffThreadReceiver && JS::CanCompileOffThread(cx, options, aTextLength)) {
     if (!JS::CompileOffThread(cx, options, srcBuf,

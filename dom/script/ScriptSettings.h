@@ -214,6 +214,9 @@ class MOZ_STACK_CLASS AutoJSAPI : protected ScriptSettingsStackEntry {
   
   
   
+  
+  
+  
   MOZ_MUST_USE bool Init(nsIGlobalObject* aGlobalObject);
 
   
@@ -311,11 +314,17 @@ class MOZ_STACK_CLASS AutoJSAPI : protected ScriptSettingsStackEntry {
 
 
 
+
 class MOZ_STACK_CLASS AutoEntryScript : public AutoJSAPI {
  public:
+  
+  
   AutoEntryScript(nsIGlobalObject* aGlobalObject, const char* aReason,
                   bool aIsMainThread = NS_IsMainThread());
 
+  
+  
+  
   
   
   

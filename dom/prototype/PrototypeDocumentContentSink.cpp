@@ -987,9 +987,6 @@ nsresult PrototypeDocumentContentSink::ExecuteScript(
   JS::Rooted<JSObject*> global(cx, JS::CurrentGlobalOrNull(cx));
   NS_ENSURE_TRUE(xpc::Scriptability::Get(global).Allowed(), NS_OK);
 
-  JS::ExposeObjectToActiveJS(global);
-  JSAutoRealm ar(cx, global);
-
   
   
   
