@@ -24,19 +24,21 @@ class FileCallbackRunnable final : public Runnable {
     MOZ_ASSERT(aFile);
   }
 
-  NS_IMETHOD
-  Run() override {
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD Run() override {
     
 
     RefPtr<File> file = File::Create(mFile->GetParentObject(), mFile->Impl());
     MOZ_ASSERT(file);
 
-    mCallback->Call(*file);
+    
+    MOZ_KnownLive(mCallback)->Call(*file);
     return NS_OK;
   }
 
  private:
-  RefPtr<FileCallback> mCallback;
+  const RefPtr<FileCallback> mCallback;
   RefPtr<File> mFile;
 };
 
