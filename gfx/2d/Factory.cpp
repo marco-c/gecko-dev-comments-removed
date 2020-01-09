@@ -67,6 +67,8 @@
 #  include FT_FREETYPE_H
 #endif
 #include "MainThreadUtils.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs.h"
 
 #if defined(MOZ_LOGGING)
 GFX2D_API mozilla::LogModule* GetGFX2DLog() {
@@ -189,7 +191,8 @@ namespace mozilla {
 namespace gfx {
 
 
-int32_t LoggingPrefs::sGfxLogLevel = LOG_DEFAULT;
+
+Atomic<int32_t> LoggingPrefs::sGfxLogLevel(LOG_DEFAULT);
 
 #ifdef MOZ_ENABLE_FREETYPE
 FT_Library Factory::mFTLibrary = nullptr;
@@ -214,9 +217,18 @@ DrawEventRecorder* Factory::mRecorder;
 
 mozilla::gfx::Config* Factory::sConfig = nullptr;
 
+static void PrefChanged(const char* aPref, void*) {
+  mozilla::gfx::LoggingPrefs::sGfxLogLevel =
+      Preferences::GetInt(StaticPrefs::GetGfxLoggingLevelPrefName(),
+                          StaticPrefs::GetGfxLoggingLevelPrefDefault());
+}
+
 void Factory::Init(const Config& aConfig) {
   MOZ_ASSERT(!sConfig);
   sConfig = new Config(aConfig);
+  Preferences::RegisterCallback(
+      PrefChanged,
+      nsDependentCString(StaticPrefs::GetGfxLoggingLevelPrefName()));
 }
 
 void Factory::ShutDown() {
