@@ -3345,8 +3345,8 @@ bool Parser<SyntaxParseHandler, Unit>::asmJS(ListNodeType list) {
   return false;
 }
 
-template <>
-bool Parser<FullParseHandler, char16_t>::asmJS(ListNodeType list) {
+template <typename Unit>
+bool Parser<FullParseHandler, Unit>::asmJS(ListNodeType list) {
   
   disableSyntaxParser();
 
@@ -3381,14 +3381,6 @@ bool Parser<FullParseHandler, char16_t>::asmJS(ListNodeType list) {
     return false;
   }
 
-  return true;
-}
-
-template <>
-bool Parser<FullParseHandler, Utf8Unit>::asmJS(ListNodeType list) {
-  
-  
-  
   return true;
 }
 
