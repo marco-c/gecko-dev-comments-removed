@@ -90,45 +90,6 @@ this.VideoControlsWidget = class {
   static isPictureInPictureVideo(someVideo) {
     return someVideo.isCloningElementVisually;
   }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static shouldShowPictureInPictureToggle(prefs, someVideo) {
-    if (prefs["media.videocontrols.picture-in-picture.video-toggle.always-show"]) {
-      return true;
-    }
-
-    const MIN_VIDEO_LENGTH = 45; 
-    if (someVideo.duration < MIN_VIDEO_LENGTH) {
-      return false;
-    }
-
-    const MIN_VIDEO_DIMENSION = 160; 
-    if (someVideo.videoWidth < MIN_VIDEO_DIMENSION ||
-        someVideo.videoHeight < MIN_VIDEO_DIMENSION) {
-      return false;
-    }
-
-    if (!someVideo.mozHasAudio) {
-      return false;
-    }
-
-    return true;
-  }
 };
 
 this.VideoControlsImplWidget = class {
@@ -316,13 +277,10 @@ this.VideoControlsImplWidget = class {
           this.setShowPictureInPictureMessage(true);
         }
 
-        if (this.video.readyState >= this.video.HAVE_METADATA) {
-          
-          
-          
-          
-          
-          this.updatePictureInPictureToggleDisplay();
+        if (!this.pipToggleEnabled ||
+            this.isShowingPictureInPictureMessage ||
+            this.isAudioOnly) {
+          this.pictureInPictureToggleButton.setAttribute("hidden", true);
         }
 
         let adjustableControls = [
@@ -430,17 +388,6 @@ this.VideoControlsImplWidget = class {
         
         
         this.updateVolumeControls();
-      },
-
-      updatePictureInPictureToggleDisplay() {
-        if (this.pipToggleEnabled &&
-            !this.isShowingPictureInPictureMessage &&
-            !this.isAudioOnly &&
-            VideoControlsWidget.shouldShowPictureInPictureToggle(this.prefs, this.video)) {
-          this.pictureInPictureToggleButton.removeAttribute("hidden");
-        } else {
-          this.pictureInPictureToggleButton.setAttribute("hidden", true);
-        }
       },
 
       setupNewLoadState() {
@@ -597,7 +544,6 @@ this.VideoControlsImplWidget = class {
               this.muteButton.setAttribute("disabled", "true");
             }
             this.adjustControlSize();
-            this.updatePictureInPictureToggleDisplay();
             break;
           case "loadeddata":
             this.firstFrameShown = true;
@@ -2629,19 +2575,6 @@ this.NoControlsDesktopImplWidget = class {
             }
             break;
           }
-          case "loadedmetadata": {
-            this.updatePictureInPictureToggleDisplay();
-            break;
-          }
-        }
-      },
-
-      updatePictureInPictureToggleDisplay() {
-        if (this.pipToggleEnabled &&
-            VideoControlsWidget.shouldShowPictureInPictureToggle(this.prefs, this.video)) {
-          this.pictureInPictureToggleButton.removeAttribute("hidden");
-        } else {
-          this.pictureInPictureToggleButton.setAttribute("hidden", true);
         }
       },
 
@@ -2661,28 +2594,19 @@ this.NoControlsDesktopImplWidget = class {
           this.videocontrols.setAttribute("inDOMFullscreen", true);
         }
 
-        if (this.video.readyState >= this.video.HAVE_METADATA) {
-          
-          
-          
-          
-          
-          this.updatePictureInPictureToggleDisplay();
+        if (!this.pipToggleEnabled) {
+          this.pictureInPictureToggleButton.setAttribute("hidden", true);
         }
 
         this.document.addEventListener("fullscreenchange", this, {
           capture: true,
         });
-
-        this.video.addEventListener("loadedmetadata", this);
       },
 
       terminate() {
         this.document.removeEventListener("fullscreenchange", this, {
           capture: true,
         });
-
-        this.video.removeEventListener("loadedmetadata", this);
       },
 
       get pipToggleEnabled() {
