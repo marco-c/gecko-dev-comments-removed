@@ -1711,6 +1711,28 @@ WebConsoleActor.prototype =
 
 
 
+
+
+  async unblockRequest({ filter }) {
+    if (this.netmonitors) {
+      for (const { messageManager } of this.netmonitors) {
+        messageManager.sendAsyncMessage("debug:unblock-request", {
+          filter,
+        });
+      }
+    }
+
+    return {};
+  },
+
+  
+
+
+
+
+
+
+
   onFileActivity: function(fileURI) {
     const packet = {
       from: this.actorID,
@@ -1855,6 +1877,7 @@ WebConsoleActor.prototype.requestTypes =
   setPreferences: WebConsoleActor.prototype.setPreferences,
   sendHTTPRequest: WebConsoleActor.prototype.sendHTTPRequest,
   blockRequest: WebConsoleActor.prototype.blockRequest,
+  unblockRequest: WebConsoleActor.prototype.unblockRequest,
 };
 
 exports.WebConsoleActor = WebConsoleActor;

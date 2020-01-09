@@ -675,6 +675,21 @@ NetworkObserver.prototype = {
 
 
 
+  unblockRequest(filter) {
+    if (!filter || !filter.url) {
+      
+      
+      return;
+    }
+
+    this.blockedURLs.delete(filter.url);
+  },
+
+  
+
+
+
+
 
 
 

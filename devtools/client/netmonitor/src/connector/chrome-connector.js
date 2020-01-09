@@ -98,6 +98,15 @@ class ChromeConnector {
     
   }
 
+  
+
+
+
+
+  unblockRequest(filter) {
+    
+  }
+
   setPreferences() {
     
   }

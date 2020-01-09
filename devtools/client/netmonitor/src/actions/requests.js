@@ -96,6 +96,22 @@ function blockSelectedRequestURL(connector) {
 
 
 
+function unblockSelectedRequestURL(connector) {
+  return (dispatch, getState) => {
+    const selected = getSelectedRequest(getState());
+
+    if (!selected) {
+      return;
+    }
+
+    const { url } = selected;
+    connector.unblockRequest({ url });
+  };
+}
+
+
+
+
 
 function removeSelectedCustomRequest() {
   return {
@@ -126,5 +142,6 @@ module.exports = {
   removeSelectedCustomRequest,
   sendCustomRequest,
   toggleRecording,
+  unblockSelectedRequestURL,
   updateRequest,
 };
