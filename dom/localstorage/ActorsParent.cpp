@@ -1600,7 +1600,8 @@ class ConnectionThread final {
 
 
 
-class Datastore final {
+class Datastore final
+    : public SupportsCheckedUnsafePtr<CheckIf<DiagnosticAssertEnabled>> {
   RefPtr<DirectoryLock> mDirectoryLock;
   RefPtr<Connection> mConnection;
   RefPtr<QuotaObject> mQuotaObject;
@@ -2729,7 +2730,22 @@ typedef nsTArray<CheckedUnsafePtr<PrepareDatastoreOp>> PrepareDatastoreOpArray;
 
 StaticAutoPtr<PrepareDatastoreOpArray> gPrepareDatastoreOps;
 
-typedef nsDataHashtable<nsCStringHashKey, Datastore*> DatastoreHashtable;
+
+class nsCStringHashKeyDM : public nsCStringHashKey {
+ public:
+  explicit nsCStringHashKeyDM(const nsCStringHashKey::KeyTypePointer aKey)
+      : nsCStringHashKey(aKey) {}
+  enum { ALLOW_MEMMOVE = false };
+};
+
+
+
+
+typedef std::conditional<DiagnosticAssertEnabled::value, nsCStringHashKeyDM,
+                         nsCStringHashKey>::type DatastoreHashKey;
+
+typedef nsDataHashtable<DatastoreHashKey, CheckedUnsafePtr<Datastore>>
+    DatastoreHashtable;
 
 StaticAutoPtr<DatastoreHashtable> gDatastores;
 
