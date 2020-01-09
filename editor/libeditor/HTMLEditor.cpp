@@ -3603,23 +3603,31 @@ nsresult HTMLEditor::SelectEntireDocument() {
     return NS_ERROR_NULL_POINTER;
   }
 
+  RefPtr<Element> rootElement = GetRoot();
+  if (NS_WARN_IF(!rootElement)) {
+    return NS_ERROR_NOT_INITIALIZED;
+  }
+
   
   RefPtr<TextEditRules> rules(mRules);
 
   
+  
   if (rules->DocumentIsEmpty()) {
-    
-    Element* rootElement = GetRoot();
-
-    
     nsresult rv = SelectionRefPtr()->Collapse(rootElement, 0);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-    return NS_OK;
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "Failed to move caret to start of the editor root element");
+    return rv;
   }
 
-  return EditorBase::SelectEntireDocument();
+  
+  ErrorResult error;
+  SelectionRefPtr()->SelectAllChildren(*rootElement, error);
+  NS_WARNING_ASSERTION(
+      !error.Failed(),
+      "Failed to select all children of the editor root element");
+  return error.StealNSResult();
 }
 
 nsresult HTMLEditor::SelectAllInternal() {

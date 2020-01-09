@@ -1816,6 +1816,7 @@ class EditorBase : public nsIEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   virtual nsresult SelectAllInternal();
 
   nsresult DetermineCurrentDirection();
@@ -1860,7 +1861,8 @@ class EditorBase : public nsIEditor,
   
 
 
-  virtual nsresult SelectEntireDocument();
+  MOZ_CAN_RUN_SCRIPT
+  virtual nsresult SelectEntireDocument() = 0;
 
   
 
