@@ -418,7 +418,6 @@ pub enum ScrollSnapAlignKeyword {
 
 
 #[allow(missing_docs)]
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue)]
 #[repr(C)]
 pub struct ScrollSnapAlign {
