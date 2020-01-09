@@ -754,10 +754,6 @@ static bool LaunchProgram(const XP_CHAR* aProgramPath,
   if (pid == -1) {
     return false;
   } else if (pid == 0) {
-    
-    
-    unsetenv("LD_LIBRARY_PATH");
-
     Unused << execl(aProgramPath, aProgramPath, aMinidumpPath, nullptr);
     _exit(1);
   }
