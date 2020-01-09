@@ -40,12 +40,6 @@ function stageUpdateFinished() {
   checkUpdateLogContains(ERR_ENSURE_COPY);
   
   runUpdate(STATE_FAILED_WRITE_ERROR, false, 1, false);
-}
-
-
-
-
-function runUpdateFinished() {
   waitForHelperExit();
 }
 

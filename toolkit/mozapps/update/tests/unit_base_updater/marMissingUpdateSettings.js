@@ -23,17 +23,11 @@ function run_test() {
 
 
 
-function setupUpdaterTestFinished() {
+async function setupUpdaterTestFinished() {
   
   
-  runUpdate(STATE_FAILED_UPDATE_SETTINGS_FILE_CHANNEL, false, (USE_EXECV ? 0 : 1),
-            false);
-}
-
-
-
-
-async function runUpdateFinished() {
+  runUpdate(STATE_FAILED_UPDATE_SETTINGS_FILE_CHANNEL,
+            false, (USE_EXECV ? 0 : 1), false);
   standardInit();
   checkPostUpdateRunningFile(false);
   checkFilesAfterUpdateFailure(getApplyDirFile);

@@ -40,12 +40,6 @@ function stageUpdateFinished() {
   checkUpdateLogContents(LOG_PARTIAL_SUCCESS, true);
   
   runUpdate(STATE_AFTER_RUNUPDATE, true, 1, true);
-}
-
-
-
-
-function runUpdateFinished() {
   waitForHelperExit();
 }
 

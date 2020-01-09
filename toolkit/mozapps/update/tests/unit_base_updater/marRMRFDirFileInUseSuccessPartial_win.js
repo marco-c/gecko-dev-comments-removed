@@ -25,12 +25,6 @@ function setupUpdaterTestFinished() {
 
 function waitForHelperSleepFinished() {
   runUpdate(STATE_SUCCEEDED, false, 0, true);
-}
-
-
-
-
-function runUpdateFinished() {
   waitForHelperExit();
 }
 

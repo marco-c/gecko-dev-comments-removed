@@ -20,12 +20,6 @@ function run_test() {
 
 function setupUpdaterTestFinished() {
   runUpdate(STATE_SUCCEEDED, false, 0, true);
-}
-
-
-
-
-function runUpdateFinished() {
   checkFilesAfterUpdateSuccess(getApplyDirFile, false, false);
 
   

@@ -36,12 +36,6 @@ function stageUpdateFinished() {
   checkUpdateLogContents(LOG_COMPLETE_SUCCESS, true);
   
   runUpdate(STATE_SUCCEEDED, true, 0, true);
-}
-
-
-
-
-function runUpdateFinished() {
   checkPostUpdateAppLog();
 }
 

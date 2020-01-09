@@ -19,17 +19,11 @@ function run_test() {
 
 
 
-function setupUpdaterTestFinished() {
+async function setupUpdaterTestFinished() {
   
   
-  runUpdate(STATE_FAILED_LOADSOURCE_ERROR_WRONG_SIZE, false, (USE_EXECV ? 0 : 1),
-            true);
-}
-
-
-
-
-async function runUpdateFinished() {
+  runUpdate(STATE_FAILED_LOADSOURCE_ERROR_WRONG_SIZE,
+            false, (USE_EXECV ? 0 : 1), true);
   checkAppBundleModTime();
   standardInit();
   checkPostUpdateRunningFile(false);

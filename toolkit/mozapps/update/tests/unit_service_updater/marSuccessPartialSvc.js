@@ -22,14 +22,8 @@ function run_test() {
 
 
 
-function setupUpdaterTestFinished() {
+async function setupUpdaterTestFinished() {
   runUpdate(STATE_SUCCEEDED, false, 0, true);
-}
-
-
-
-
-async function runUpdateFinished() {
   checkAppBundleModTime();
   standardInit();
   checkPostUpdateRunningFile(false);

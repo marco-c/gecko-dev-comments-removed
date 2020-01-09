@@ -36,12 +36,6 @@ function stageUpdateFinished() {
   checkUpdateLogContents(LOG_PARTIAL_SUCCESS, true, false, true);
   
   runUpdate(STATE_SUCCEEDED, true, 0, true);
-}
-
-
-
-
-function runUpdateFinished() {
   checkPostUpdateAppLog();
 }
 

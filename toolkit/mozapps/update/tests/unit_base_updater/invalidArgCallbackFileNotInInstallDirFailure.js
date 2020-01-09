@@ -21,15 +21,9 @@ function run_test() {
 
 
 
-function setupUpdaterTestFinished() {
+async function setupUpdaterTestFinished() {
   let path = getTestDirFile(FILE_HELPER_BIN).path;
   runUpdate(STATE_AFTER_RUNUPDATE, false, 1, true, null, null, null, path);
-}
-
-
-
-
-async function runUpdateFinished() {
   standardInit();
   checkPostUpdateRunningFile(false);
   checkFilesAfterUpdateFailure(getApplyDirFile);

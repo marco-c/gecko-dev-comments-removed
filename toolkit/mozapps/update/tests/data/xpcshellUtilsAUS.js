@@ -1740,7 +1740,7 @@ function runUpdate(aExpectedStatus, aSwitchApp, aExpectedExitValue, aCheckSvcLog
                    aPatchDirPath, aInstallDirPath, aApplyToDirPath,
                    aCallbackPath) {
   let isInvalidArgTest = !!aPatchDirPath || !!aInstallDirPath ||
-                         !!aApplyToDirPath || aCallbackPath;
+                         !!aApplyToDirPath || !!aCallbackPath;
 
   let svcOriginalLog;
   if (IS_SERVICE_TEST) {
@@ -1849,8 +1849,6 @@ function runUpdate(aExpectedStatus, aSwitchApp, aExpectedExitValue, aCheckSvcLog
                       "contain the successful launch string");
     }
   }
-
-  executeSoon(runUpdateFinished);
 }
 
 

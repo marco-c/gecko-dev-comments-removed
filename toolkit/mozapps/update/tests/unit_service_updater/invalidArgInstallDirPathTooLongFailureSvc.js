@@ -26,7 +26,7 @@ function run_test() {
 
 
 
-function setupUpdaterTestFinished() {
+async function setupUpdaterTestFinished() {
   let path = "123456789";
   if (AppConstants.platform == "win") {
     path = "\\" + path;
@@ -38,12 +38,6 @@ function setupUpdaterTestFinished() {
   }
 
   runUpdate(STATE_AFTER_RUNUPDATE, false, 1, true, null, path, null, null);
-}
-
-
-
-
-async function runUpdateFinished() {
   standardInit();
   checkPostUpdateRunningFile(false);
   checkFilesAfterUpdateFailure(getApplyDirFile);

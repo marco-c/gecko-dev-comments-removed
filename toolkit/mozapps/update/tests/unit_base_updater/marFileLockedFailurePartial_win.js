@@ -26,12 +26,6 @@ function setupUpdaterTestFinished() {
 
 function waitForHelperSleepFinished() {
   runUpdate(STATE_FAILED_READ_ERROR, false, 1, true);
-}
-
-
-
-
-function runUpdateFinished() {
   waitForHelperExit();
 }
 

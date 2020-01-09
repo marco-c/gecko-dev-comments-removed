@@ -27,14 +27,8 @@ function run_test() {
 
 
 
-function setupUpdaterTestFinished() {
+async function setupUpdaterTestFinished() {
   runUpdate(STATE_AFTER_RUNUPDATE, false, 1, true, null, null, "test", null);
-}
-
-
-
-
-async function runUpdateFinished() {
   standardInit();
   checkPostUpdateRunningFile(false);
   checkFilesAfterUpdateFailure(getApplyDirFile);

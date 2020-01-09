@@ -24,17 +24,11 @@ function run_test() {
 
 
 
-function setupUpdaterTestFinished() {
+async function setupUpdaterTestFinished() {
   
   
-  runUpdate(STATE_FAILED_MAR_CHANNEL_MISMATCH_ERROR, false, (USE_EXECV ? 0 : 1),
-            false);
-}
-
-
-
-
-async function runUpdateFinished() {
+  runUpdate(STATE_FAILED_MAR_CHANNEL_MISMATCH_ERROR,
+            false, (USE_EXECV ? 0 : 1), false);
   standardInit();
   checkPostUpdateRunningFile(false);
   checkFilesAfterUpdateFailure(getApplyDirFile);
