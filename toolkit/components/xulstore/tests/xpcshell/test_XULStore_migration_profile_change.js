@@ -1,10 +1,13 @@
 "use strict";
 
+const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 const {FileUtils} = ChromeUtils.import("resource://gre/modules/FileUtils.jsm");
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-add_task(async function test_get_values() {
+add_task({
+  skip_if: () => !AppConstants.MOZ_NEW_XULSTORE,
+}, async function test_get_values() {
   
   
   

@@ -12,6 +12,11 @@
 
 const EXPORTED_SYMBOLS = ["XULStore"];
 
+
+
+
+
+
 const xulStore = Cc["@mozilla.org/xul/xulstore;1"].getService(Ci.nsIXULStore);
 
 
