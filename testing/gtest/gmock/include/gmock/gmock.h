@@ -33,6 +33,7 @@
 
 
 
+
 #ifndef GMOCK_INCLUDE_GMOCK_GMOCK_H_
 #define GMOCK_INCLUDE_GMOCK_GMOCK_H_
 
@@ -59,8 +60,8 @@
 #include "gmock/gmock-cardinalities.h"
 #include "gmock/gmock-generated-actions.h"
 #include "gmock/gmock-generated-function-mockers.h"
-#include "gmock/gmock-generated-nice-strict.h"
 #include "gmock/gmock-generated-matchers.h"
+#include "gmock/gmock-generated-nice-strict.h"
 #include "gmock/gmock-matchers.h"
 #include "gmock/gmock-more-actions.h"
 #include "gmock/gmock-more-matchers.h"
@@ -71,6 +72,7 @@ namespace testing {
 
 GMOCK_DECLARE_bool_(catch_leaked_mocks);
 GMOCK_DECLARE_string_(verbose);
+GMOCK_DECLARE_int32_(default_mock_behavior);
 
 
 

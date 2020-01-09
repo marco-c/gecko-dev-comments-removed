@@ -57,6 +57,7 @@
 
 
 
+
 #ifndef GMOCK_INCLUDE_GMOCK_GMOCK_SPEC_BUILDERS_H_
 #define GMOCK_INCLUDE_GMOCK_GMOCK_SPEC_BUILDERS_H_
 
@@ -65,17 +66,19 @@
 #include <sstream>
 #include <string>
 #include <vector>
-
-#if GTEST_HAS_EXCEPTIONS
-# include <stdexcept>  
-#endif
-
 #include "gmock/gmock-actions.h"
 #include "gmock/gmock-cardinalities.h"
 #include "gmock/gmock-matchers.h"
 #include "gmock/internal/gmock-internal-utils.h"
 #include "gmock/internal/gmock-port.h"
 #include "gtest/gtest.h"
+
+#if GTEST_HAS_EXCEPTIONS
+# include <stdexcept>  
+#endif
+
+GTEST_DISABLE_MSC_WARNINGS_PUSH_(4251 \
+)
 
 namespace testing {
 
@@ -148,15 +151,13 @@ class GTEST_API_ UntypedFunctionMockerBase {
   
   
   virtual UntypedActionResultHolderBase* UntypedPerformDefaultAction(
-      const void* untyped_args,
-      const string& call_description) const = 0;
+      void* untyped_args, const std::string& call_description) const = 0;
 
   
   
   
   virtual UntypedActionResultHolderBase* UntypedPerformAction(
-      const void* untyped_action,
-      const void* untyped_args) const = 0;
+      const void* untyped_action, void* untyped_args) const = 0;
 
   
   
@@ -211,9 +212,8 @@ class GTEST_API_ UntypedFunctionMockerBase {
   
   
   
-  UntypedActionResultHolderBase* UntypedInvokeWith(
-      const void* untyped_args)
-          GTEST_LOCK_EXCLUDED_(g_gmock_mutex);
+  UntypedActionResultHolderBase* UntypedInvokeWith(void* untyped_args)
+      GTEST_LOCK_EXCLUDED_(g_gmock_mutex);
 
  protected:
   typedef std::vector<const void*> UntypedOnCallSpecs;
@@ -237,6 +237,14 @@ class GTEST_API_ UntypedFunctionMockerBase {
   
   UntypedOnCallSpecs untyped_on_call_specs_;
 
+  
+  
+  
+  
+  
+  
+  
+  
   
   UntypedExpectations untyped_expectations_;
 };  
@@ -263,12 +271,14 @@ class UntypedOnCallSpecBase {
   };
 
   
-  void AssertSpecProperty(bool property, const string& failure_message) const {
+  void AssertSpecProperty(bool property,
+                          const std::string& failure_message) const {
     Assert(property, file_, line_, failure_message);
   }
 
   
-  void ExpectSpecProperty(bool property, const string& failure_message) const {
+  void ExpectSpecProperty(bool property,
+                          const std::string& failure_message) const {
     Expect(property, file_, line_, failure_message);
   }
 
@@ -362,7 +372,6 @@ enum CallReaction {
   kAllow,
   kWarn,
   kFail,
-  kDefault = kWarn  
 };
 
 }  
@@ -690,7 +699,7 @@ GTEST_API_ extern ThreadLocal<Sequence*> g_gmock_implicit_sequence;
 class GTEST_API_ ExpectationBase {
  public:
   
-  ExpectationBase(const char* file, int line, const string& source_text);
+  ExpectationBase(const char* file, int line, const std::string& source_text);
 
   virtual ~ExpectationBase();
 
@@ -738,12 +747,14 @@ class GTEST_API_ ExpectationBase {
   virtual Expectation GetHandle() = 0;
 
   
-  void AssertSpecProperty(bool property, const string& failure_message) const {
+  void AssertSpecProperty(bool property,
+                          const std::string& failure_message) const {
     Assert(property, file_, line_, failure_message);
   }
 
   
-  void ExpectSpecProperty(bool property, const string& failure_message) const {
+  void ExpectSpecProperty(bool property,
+                          const std::string& failure_message) const {
     Expect(property, file_, line_, failure_message);
   }
 
@@ -845,7 +856,7 @@ class GTEST_API_ ExpectationBase {
   
   const char* file_;          
   int line_;                  
-  const string source_text_;  
+  const std::string source_text_;  
   
   bool cardinality_specified_;
   Cardinality cardinality_;            
@@ -880,8 +891,8 @@ class TypedExpectation : public ExpectationBase {
   typedef typename Function<F>::ArgumentMatcherTuple ArgumentMatcherTuple;
   typedef typename Function<F>::Result Result;
 
-  TypedExpectation(FunctionMockerBase<F>* owner,
-                   const char* a_file, int a_line, const string& a_source_text,
+  TypedExpectation(FunctionMockerBase<F>* owner, const char* a_file, int a_line,
+                   const std::string& a_source_text,
                    const ArgumentMatcherTuple& m)
       : ExpectationBase(a_file, a_line, a_source_text),
         owner_(owner),
@@ -1240,7 +1251,7 @@ class TypedExpectation : public ExpectationBase {
 
 GTEST_API_ void LogWithLocation(testing::internal::LogSeverity severity,
                                 const char* file, int line,
-                                const string& message);
+                                const std::string& message);
 
 template <typename F>
 class MockSpec {
@@ -1251,15 +1262,16 @@ class MockSpec {
 
   
   
-  explicit MockSpec(internal::FunctionMockerBase<F>* function_mocker)
-      : function_mocker_(function_mocker) {}
+  MockSpec(internal::FunctionMockerBase<F>* function_mocker,
+           const ArgumentMatcherTuple& matchers)
+      : function_mocker_(function_mocker), matchers_(matchers) {}
 
   
   
   internal::OnCallSpec<F>& InternalDefaultActionSetAt(
       const char* file, int line, const char* obj, const char* call) {
     LogWithLocation(internal::kInfo, file, line,
-        string("ON_CALL(") + obj + ", " + call + ") invoked");
+                    std::string("ON_CALL(") + obj + ", " + call + ") invoked");
     return function_mocker_->AddNewOnCallSpec(file, line, matchers_);
   }
 
@@ -1267,19 +1279,23 @@ class MockSpec {
   
   internal::TypedExpectation<F>& InternalExpectedAt(
       const char* file, int line, const char* obj, const char* call) {
-    const string source_text(string("EXPECT_CALL(") + obj + ", " + call + ")");
+    const std::string source_text(std::string("EXPECT_CALL(") + obj + ", " +
+                                  call + ")");
     LogWithLocation(internal::kInfo, file, line, source_text + " invoked");
     return function_mocker_->AddNewExpectation(
         file, line, source_text, matchers_);
   }
 
+  
+  
+  
+  MockSpec<F>& operator()(const internal::WithoutMatchers&, void* const) {
+    return *this;
+  }
+
  private:
   template <typename Function>
   friend class internal::FunctionMocker;
-
-  void SetMatchers(const ArgumentMatcherTuple& matchers) {
-    matchers_ = matchers;
-  }
 
   
   internal::FunctionMockerBase<F>* const function_mocker_;
@@ -1344,11 +1360,7 @@ class ReferenceOrValueWrapper<T&> {
 
 
 
-
-#ifdef _MSC_VER
-# pragma warning(push)          // Saves the current warning state.
-# pragma warning(disable:4355)  // Temporarily disables warning 4355.
-#endif  
+GTEST_DISABLE_MSC_WARNINGS_PUSH_(4355)
 
 
 
@@ -1388,19 +1400,20 @@ class ActionResultHolder : public UntypedActionResultHolderBase {
   template <typename F>
   static ActionResultHolder* PerformDefaultAction(
       const FunctionMockerBase<F>* func_mocker,
-      const typename Function<F>::ArgumentTuple& args,
-      const string& call_description) {
-    return new ActionResultHolder(Wrapper(
-        func_mocker->PerformDefaultAction(args, call_description)));
+      typename RvalueRef<typename Function<F>::ArgumentTuple>::type args,
+      const std::string& call_description) {
+    return new ActionResultHolder(Wrapper(func_mocker->PerformDefaultAction(
+        internal::move(args), call_description)));
   }
 
   
   
   template <typename F>
-  static ActionResultHolder*
-  PerformAction(const Action<F>& action,
-                const typename Function<F>::ArgumentTuple& args) {
-    return new ActionResultHolder(Wrapper(action.Perform(args)));
+  static ActionResultHolder* PerformAction(
+      const Action<F>& action,
+      typename RvalueRef<typename Function<F>::ArgumentTuple>::type args) {
+    return new ActionResultHolder(
+        Wrapper(action.Perform(internal::move(args))));
   }
 
  private:
@@ -1428,9 +1441,9 @@ class ActionResultHolder<void> : public UntypedActionResultHolderBase {
   template <typename F>
   static ActionResultHolder* PerformDefaultAction(
       const FunctionMockerBase<F>* func_mocker,
-      const typename Function<F>::ArgumentTuple& args,
-      const string& call_description) {
-    func_mocker->PerformDefaultAction(args, call_description);
+      typename RvalueRef<typename Function<F>::ArgumentTuple>::type args,
+      const std::string& call_description) {
+    func_mocker->PerformDefaultAction(internal::move(args), call_description);
     return new ActionResultHolder;
   }
 
@@ -1439,8 +1452,8 @@ class ActionResultHolder<void> : public UntypedActionResultHolderBase {
   template <typename F>
   static ActionResultHolder* PerformAction(
       const Action<F>& action,
-      const typename Function<F>::ArgumentTuple& args) {
-    action.Perform(args);
+      typename RvalueRef<typename Function<F>::ArgumentTuple>::type args) {
+    action.Perform(internal::move(args));
     return new ActionResultHolder;
   }
 
@@ -1459,7 +1472,7 @@ class FunctionMockerBase : public UntypedFunctionMockerBase {
   typedef typename Function<F>::ArgumentTuple ArgumentTuple;
   typedef typename Function<F>::ArgumentMatcherTuple ArgumentMatcherTuple;
 
-  FunctionMockerBase() : current_spec_(this) {}
+  FunctionMockerBase() {}
 
   
   
@@ -1495,14 +1508,16 @@ class FunctionMockerBase : public UntypedFunctionMockerBase {
   
   
   
-  Result PerformDefaultAction(const ArgumentTuple& args,
-                              const string& call_description) const {
+  Result PerformDefaultAction(
+      typename RvalueRef<typename Function<F>::ArgumentTuple>::type args,
+      const std::string& call_description) const {
     const OnCallSpec<F>* const spec =
         this->FindOnCallSpec(args);
     if (spec != NULL) {
-      return spec->GetAction().Perform(args);
+      return spec->GetAction().Perform(internal::move(args));
     }
-    const string message = call_description +
+    const std::string message =
+        call_description +
         "\n    The mock function has no default action "
         "set, and its return type has no default value set.";
 #if GTEST_HAS_EXCEPTIONS
@@ -1521,11 +1536,11 @@ class FunctionMockerBase : public UntypedFunctionMockerBase {
   
   
   virtual UntypedActionResultHolderBase* UntypedPerformDefaultAction(
-      const void* untyped_args,  
-      const string& call_description) const {
-    const ArgumentTuple& args =
-        *static_cast<const ArgumentTuple*>(untyped_args);
-    return ResultHolder::PerformDefaultAction(this, args, call_description);
+      void* untyped_args,  
+      const std::string& call_description) const {
+    ArgumentTuple* args = static_cast<ArgumentTuple*>(untyped_args);
+    return ResultHolder::PerformDefaultAction(this, internal::move(*args),
+                                              call_description);
   }
 
   
@@ -1533,13 +1548,12 @@ class FunctionMockerBase : public UntypedFunctionMockerBase {
   
   
   virtual UntypedActionResultHolderBase* UntypedPerformAction(
-      const void* untyped_action, const void* untyped_args) const {
+      const void* untyped_action, void* untyped_args) const {
     
     
     const Action<F> action = *static_cast<const Action<F>*>(untyped_action);
-    const ArgumentTuple& args =
-        *static_cast<const ArgumentTuple*>(untyped_args);
-    return ResultHolder::PerformAction(action, args);
+    ArgumentTuple* args = static_cast<ArgumentTuple*>(untyped_args);
+    return ResultHolder::PerformAction(action, internal::move(*args));
   }
 
   
@@ -1579,10 +1593,14 @@ class FunctionMockerBase : public UntypedFunctionMockerBase {
   
   
   
-  Result InvokeWith(const ArgumentTuple& args)
-        GTEST_LOCK_EXCLUDED_(g_gmock_mutex) {
+  Result InvokeWith(
+      typename RvalueRef<typename Function<F>::ArgumentTuple>::type args)
+      GTEST_LOCK_EXCLUDED_(g_gmock_mutex) {
+    
+    
+    void* untyped_args = const_cast<void*>(static_cast<const void*>(&args));
     scoped_ptr<ResultHolder> holder(
-        DownCast_<ResultHolder*>(this->UntypedInvokeWith(&args)));
+        DownCast_<ResultHolder*>(this->UntypedInvokeWith(untyped_args)));
     return holder->Unwrap();
   }
 
@@ -1598,16 +1616,16 @@ class FunctionMockerBase : public UntypedFunctionMockerBase {
   }
 
   
-  TypedExpectation<F>& AddNewExpectation(
-      const char* file,
-      int line,
-      const string& source_text,
-      const ArgumentMatcherTuple& m)
-          GTEST_LOCK_EXCLUDED_(g_gmock_mutex) {
+  TypedExpectation<F>& AddNewExpectation(const char* file, int line,
+                                         const std::string& source_text,
+                                         const ArgumentMatcherTuple& m)
+      GTEST_LOCK_EXCLUDED_(g_gmock_mutex) {
     Mock::RegisterUseByOnCallOrExpectCall(MockObject(), file, line);
     TypedExpectation<F>* const expectation =
         new TypedExpectation<F>(this, file, line, source_text, m);
     const linked_ptr<ExpectationBase> untyped_expectation(expectation);
+    
+    
     untyped_expectations_.push_back(untyped_expectation);
 
     
@@ -1618,10 +1636,6 @@ class FunctionMockerBase : public UntypedFunctionMockerBase {
 
     return *expectation;
   }
-
-  
-  
-  MockSpec<F>& current_spec() { return current_spec_; }
 
  private:
   template <typename Func> friend class TypedExpectation;
@@ -1715,6 +1729,8 @@ class FunctionMockerBase : public UntypedFunctionMockerBase {
       const ArgumentTuple& args) const
           GTEST_EXCLUSIVE_LOCK_REQUIRED_(g_gmock_mutex) {
     g_gmock_mutex.AssertHeld();
+    
+    
     for (typename UntypedExpectations::const_reverse_iterator it =
              untyped_expectations_.rbegin();
          it != untyped_expectations_.rend(); ++it) {
@@ -1767,10 +1783,6 @@ class FunctionMockerBase : public UntypedFunctionMockerBase {
 
   
   
-  MockSpec<F> current_spec_;
-
-  
-  
   
   
   
@@ -1784,9 +1796,7 @@ class FunctionMockerBase : public UntypedFunctionMockerBase {
   GTEST_DISALLOW_COPY_AND_ASSIGN_(FunctionMockerBase);
 };  
 
-#ifdef _MSC_VER
-# pragma warning(pop)  // Restores the warning state.
-#endif  
+GTEST_DISABLE_MSC_WARNINGS_POP_()  
 
 
 
@@ -1796,7 +1806,7 @@ class FunctionMockerBase : public UntypedFunctionMockerBase {
 
 
 
-void ReportUninterestingCall(CallReaction reaction, const string& msg);
+void ReportUninterestingCall(CallReaction reaction, const std::string& msg);
 
 }  
 
@@ -1831,17 +1841,78 @@ inline Expectation::Expectation(internal::ExpectationBase& exp)
 
 }  
 
+GTEST_DISABLE_MSC_WARNINGS_POP_()  
 
 
 
 
-#define GMOCK_ON_CALL_IMPL_(obj, call) \
-    ((obj).gmock_##call).InternalDefaultActionSetAt(__FILE__, __LINE__, \
-                                                    #obj, #call)
-#define ON_CALL(obj, call) GMOCK_ON_CALL_IMPL_(obj, call)
 
-#define GMOCK_EXPECT_CALL_IMPL_(obj, call) \
-    ((obj).gmock_##call).InternalExpectedAt(__FILE__, __LINE__, #obj, #call)
-#define EXPECT_CALL(obj, call) GMOCK_EXPECT_CALL_IMPL_(obj, call)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define GMOCK_ON_CALL_IMPL_(mock_expr, Setter, call)                          \
+  ((mock_expr).gmock_##call)(::testing::internal::GetWithoutMatchers(), NULL) \
+      .Setter(__FILE__, __LINE__, #mock_expr, #call)
+
+#define ON_CALL(obj, call) \
+  GMOCK_ON_CALL_IMPL_(obj, InternalDefaultActionSetAt, call)
+
+#define EXPECT_CALL(obj, call) \
+  GMOCK_ON_CALL_IMPL_(obj, InternalExpectedAt, call)
 
 #endif  

@@ -33,6 +33,7 @@
 
 
 
+
 #ifndef GMOCK_INCLUDE_GMOCK_GMOCK_ACTIONS_H_
 #define GMOCK_INCLUDE_GMOCK_GMOCK_ACTIONS_H_
 
@@ -46,9 +47,10 @@
 #include "gmock/internal/gmock-internal-utils.h"
 #include "gmock/internal/gmock-port.h"
 
-#if GTEST_HAS_STD_TYPE_TRAITS_  
+#if GTEST_LANG_CXX11  
+#include <functional>
 #include <type_traits>
-#endif
+#endif  
 
 namespace testing {
 
@@ -96,7 +98,7 @@ struct BuiltInDefaultValueGetter<T, false> {
 template <typename T>
 class BuiltInDefaultValue {
  public:
-#if GTEST_HAS_STD_TYPE_TRAITS_
+#if GTEST_LANG_CXX11
   
   static bool Exists() {
     return ::std::is_default_constructible<T>::value;
@@ -359,14 +361,20 @@ class Action {
 
   
   
-  Action() : impl_(NULL) {}
+  Action() {}
 
+#if GTEST_LANG_CXX11
   
+  
+  
+  template <typename G,
+            typename = typename ::std::enable_if<
+                ::std::is_constructible<::std::function<F>, G>::value>::type>
+  Action(G&& fun) : fun_(::std::forward<G>(fun)) {}  
+#endif
+
   
   explicit Action(ActionInterface<F>* impl) : impl_(impl) {}
-
-  
-  Action(const Action& action) : impl_(action.impl_) {}
 
   
   
@@ -376,7 +384,13 @@ class Action {
   explicit Action(const Action<Func>& action);
 
   
-  bool IsDoDefault() const { return impl_.get() == NULL; }
+  bool IsDoDefault() const {
+#if GTEST_LANG_CXX11
+    return impl_ == nullptr && fun_ == nullptr;
+#else
+    return impl_ == NULL;
+#endif
+  }
 
   
   
@@ -384,14 +398,15 @@ class Action {
   
   
   
-  Result Perform(const ArgumentTuple& args) const {
-    internal::Assert(
-        !IsDoDefault(), __FILE__, __LINE__,
-        "You are using DoDefault() inside a composite action like "
-        "DoAll() or WithArgs().  This is not supported for technical "
-        "reasons.  Please instead spell out the default action, or "
-        "assign the default action to an Action variable and use "
-        "the variable in various places.");
+  Result Perform(ArgumentTuple args) const {
+    if (IsDoDefault()) {
+      internal::IllegalDoDefault(__FILE__, __LINE__);
+    }
+#if GTEST_LANG_CXX11
+    if (fun_ != nullptr) {
+      return internal::Apply(fun_, ::std::move(args));
+    }
+#endif
     return impl_->Perform(args);
   }
 
@@ -399,6 +414,18 @@ class Action {
   template <typename F1, typename F2>
   friend class internal::ActionAdaptor;
 
+  template <typename G>
+  friend class Action;
+
+  
+  
+  
+  
+  
+  
+#if GTEST_LANG_CXX11
+  ::std::function<F> fun_;
+#endif
   internal::linked_ptr<ActionInterface<F> > impl_;
 };
 
@@ -505,6 +532,9 @@ struct ByMoveWrapper {
   explicit ByMoveWrapper(T value) : payload(internal::move(value)) {}
   T payload;
 };
+
+
+
 
 
 
@@ -749,7 +779,7 @@ class DoDefaultAction {
   
   
   template <typename F>
-  operator Action<F>() const { return Action<F>(NULL); }
+  operator Action<F>() const { return Action<F>(); }  
 };
 
 
@@ -883,6 +913,28 @@ class InvokeMethodWithoutArgsAction {
   const MethodPtr method_ptr_;
 
   GTEST_DISALLOW_ASSIGN_(InvokeMethodWithoutArgsAction);
+};
+
+
+template <typename CallbackType>
+class InvokeCallbackWithoutArgsAction {
+ public:
+  
+  explicit InvokeCallbackWithoutArgsAction(CallbackType* callback)
+      : callback_(callback) {
+    callback->CheckIsRepeatable();  
+  }
+
+  
+  
+  
+  template <typename Result, typename ArgumentTuple>
+  Result Perform(const ArgumentTuple&) const { return callback_->Run(); }
+
+ private:
+  const internal::linked_ptr<CallbackType> callback_;
+
+  GTEST_DISALLOW_ASSIGN_(InvokeCallbackWithoutArgsAction);
 };
 
 
@@ -1052,7 +1104,13 @@ typedef internal::IgnoredValue Unused;
 template <typename To>
 template <typename From>
 Action<To>::Action(const Action<From>& from)
-    : impl_(new internal::ActionAdaptor<To, From>(from)) {}
+    :
+#if GTEST_LANG_CXX11
+      fun_(from.fun_),
+#endif
+      impl_(from.impl_ == NULL ? NULL
+                               : new internal::ActionAdaptor<To, From>(from)) {
+}
 
 
 
@@ -1202,4 +1260,4 @@ inline internal::ReferenceWrapper<T> ByRef(T& l_value) {
 
 }  
 
-#endif  
+#endif

@@ -32,7 +32,6 @@
 
 
 
-
 #include "gmock/gmock-cardinalities.h"
 
 #include <limits.h>
@@ -92,7 +91,7 @@ class BetweenCardinalityImpl : public CardinalityInterface {
 };
 
 
-inline internal::string FormatTimes(int n) {
+inline std::string FormatTimes(int n) {
   if (n == 1) {
     return "once";
   } else if (n == 2) {

@@ -35,13 +35,13 @@
 
 
 
+
 #ifndef GMOCK_INCLUDE_GMOCK_INTERNAL_GMOCK_INTERNAL_UTILS_H_
 #define GMOCK_INCLUDE_GMOCK_INTERNAL_GMOCK_INTERNAL_UTILS_H_
 
 #include <stdio.h>
 #include <ostream>  
 #include <string>
-
 #include "gmock/internal/gmock-generated-internal-utils.h"
 #include "gmock/internal/gmock-port.h"
 #include "gtest/gtest.h"
@@ -51,9 +51,21 @@ namespace internal {
 
 
 
+#ifdef _MSC_VER
+# pragma warning(push)
+# pragma warning(disable:4100)
+# pragma warning(disable:4805)
+#endif
 
 
-GTEST_API_ string ConvertIdentifierNameToWords(const char* id_name);
+
+GTEST_API_ std::string JoinAsTuple(const Strings& fields);
+
+
+
+
+
+GTEST_API_ std::string ConvertIdentifierNameToWords(const char* id_name);
 
 
 
@@ -114,8 +126,10 @@ struct LinkedPtrLessThan {
 
 
 #ifdef __GNUC__
+#if !defined(__WCHAR_UNSIGNED__)
 
 # define GMOCK_HAS_SIGNED_WCHAR_T_ 1
+#endif
 #endif
 
 
@@ -267,7 +281,7 @@ class FailureReporterInterface {
 
   
   virtual void ReportFailure(FailureType type, const char* file, int line,
-                             const string& message) = 0;
+                             const std::string& message) = 0;
 };
 
 
@@ -279,7 +293,7 @@ GTEST_API_ FailureReporterInterface* GetFailureReporter();
 
 
 inline void Assert(bool condition, const char* file, int line,
-                   const string& msg) {
+                   const std::string& msg) {
   if (!condition) {
     GetFailureReporter()->ReportFailure(FailureReporterInterface::kFatal,
                                         file, line, msg);
@@ -292,7 +306,7 @@ inline void Assert(bool condition, const char* file, int line) {
 
 
 inline void Expect(bool condition, const char* file, int line,
-                   const string& msg) {
+                   const std::string& msg) {
   if (!condition) {
     GetFailureReporter()->ReportFailure(FailureReporterInterface::kNonfatal,
                                         file, line, msg);
@@ -328,9 +342,23 @@ GTEST_API_ bool LogIsVisible(LogSeverity severity);
 
 
 
-GTEST_API_ void Log(LogSeverity severity,
-                    const string& message,
+GTEST_API_ void Log(LogSeverity severity, const std::string& message,
                     int stack_frames_to_skip);
+
+
+
+
+
+
+
+class WithoutMatchers {
+ private:
+  WithoutMatchers() {}
+  friend GTEST_API_ WithoutMatchers GetWithoutMatchers();
+};
+
+
+GTEST_API_ WithoutMatchers GetWithoutMatchers();
 
 
 
@@ -504,8 +532,44 @@ struct RemoveConstFromKey<std::pair<const K, V> > {
 template <bool kValue>
 struct BooleanConstant {};
 
+
+
+GTEST_API_ void IllegalDoDefault(const char* file, int line);
+
+#if GTEST_LANG_CXX11
+
+template <size_t... Is> struct int_pack { typedef int_pack type; };
+
+template <class Pack, size_t I> struct append;
+template <size_t... Is, size_t I>
+struct append<int_pack<Is...>, I> : int_pack<Is..., I> {};
+
+template <size_t C>
+struct make_int_pack : append<typename make_int_pack<C - 1>::type, C - 1> {};
+template <> struct make_int_pack<0> : int_pack<> {};
+
+template <typename F, typename Tuple, size_t... Idx>
+auto ApplyImpl(F&& f, Tuple&& args, int_pack<Idx...>) -> decltype(
+    std::forward<F>(f)(std::get<Idx>(std::forward<Tuple>(args))...)) {
+  return std::forward<F>(f)(std::get<Idx>(std::forward<Tuple>(args))...);
+}
+
+
+template <typename F, typename Tuple>
+auto Apply(F&& f, Tuple&& args)
+    -> decltype(ApplyImpl(std::forward<F>(f), std::forward<Tuple>(args),
+                          make_int_pack<std::tuple_size<Tuple>::value>())) {
+  return ApplyImpl(std::forward<F>(f), std::forward<Tuple>(args),
+                   make_int_pack<std::tuple_size<Tuple>::value>());
+}
+#endif
+
+
+#ifdef _MSC_VER
+# pragma warning(pop)
+#endif
+
 }  
 }  
 
 #endif  
-

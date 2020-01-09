@@ -38,6 +38,7 @@
 
 
 
+
 #ifndef GMOCK_INCLUDE_GMOCK_INTERNAL_GMOCK_GENERATED_INTERNAL_UTILS_H_
 #define GMOCK_INCLUDE_GMOCK_INTERNAL_GMOCK_GENERATED_INTERNAL_UTILS_H_
 
@@ -90,42 +91,48 @@ struct MatcherTuple< ::testing::tuple<A1, A2, A3> > {
 
 template <typename A1, typename A2, typename A3, typename A4>
 struct MatcherTuple< ::testing::tuple<A1, A2, A3, A4> > {
-  typedef ::testing::tuple<Matcher<A1>, Matcher<A2>, Matcher<A3>,
-      Matcher<A4> > type;
+  typedef ::testing::tuple<Matcher<A1>, Matcher<A2>, Matcher<A3>, Matcher<A4> >
+      type;
 };
 
 template <typename A1, typename A2, typename A3, typename A4, typename A5>
 struct MatcherTuple< ::testing::tuple<A1, A2, A3, A4, A5> > {
   typedef ::testing::tuple<Matcher<A1>, Matcher<A2>, Matcher<A3>, Matcher<A4>,
-      Matcher<A5> > type;
+                           Matcher<A5> >
+      type;
 };
 
 template <typename A1, typename A2, typename A3, typename A4, typename A5,
     typename A6>
 struct MatcherTuple< ::testing::tuple<A1, A2, A3, A4, A5, A6> > {
   typedef ::testing::tuple<Matcher<A1>, Matcher<A2>, Matcher<A3>, Matcher<A4>,
-      Matcher<A5>, Matcher<A6> > type;
+                           Matcher<A5>, Matcher<A6> >
+      type;
 };
 
 template <typename A1, typename A2, typename A3, typename A4, typename A5,
     typename A6, typename A7>
 struct MatcherTuple< ::testing::tuple<A1, A2, A3, A4, A5, A6, A7> > {
   typedef ::testing::tuple<Matcher<A1>, Matcher<A2>, Matcher<A3>, Matcher<A4>,
-      Matcher<A5>, Matcher<A6>, Matcher<A7> > type;
+                           Matcher<A5>, Matcher<A6>, Matcher<A7> >
+      type;
 };
 
 template <typename A1, typename A2, typename A3, typename A4, typename A5,
     typename A6, typename A7, typename A8>
 struct MatcherTuple< ::testing::tuple<A1, A2, A3, A4, A5, A6, A7, A8> > {
   typedef ::testing::tuple<Matcher<A1>, Matcher<A2>, Matcher<A3>, Matcher<A4>,
-      Matcher<A5>, Matcher<A6>, Matcher<A7>, Matcher<A8> > type;
+                           Matcher<A5>, Matcher<A6>, Matcher<A7>, Matcher<A8> >
+      type;
 };
 
 template <typename A1, typename A2, typename A3, typename A4, typename A5,
     typename A6, typename A7, typename A8, typename A9>
 struct MatcherTuple< ::testing::tuple<A1, A2, A3, A4, A5, A6, A7, A8, A9> > {
   typedef ::testing::tuple<Matcher<A1>, Matcher<A2>, Matcher<A3>, Matcher<A4>,
-      Matcher<A5>, Matcher<A6>, Matcher<A7>, Matcher<A8>, Matcher<A9> > type;
+                           Matcher<A5>, Matcher<A6>, Matcher<A7>, Matcher<A8>,
+                           Matcher<A9> >
+      type;
 };
 
 template <typename A1, typename A2, typename A3, typename A4, typename A5,
@@ -133,8 +140,9 @@ template <typename A1, typename A2, typename A3, typename A4, typename A5,
 struct MatcherTuple< ::testing::tuple<A1, A2, A3, A4, A5, A6, A7, A8, A9,
     A10> > {
   typedef ::testing::tuple<Matcher<A1>, Matcher<A2>, Matcher<A3>, Matcher<A4>,
-      Matcher<A5>, Matcher<A6>, Matcher<A7>, Matcher<A8>, Matcher<A9>,
-      Matcher<A10> > type;
+                           Matcher<A5>, Matcher<A6>, Matcher<A7>, Matcher<A8>,
+                           Matcher<A9>, Matcher<A10> >
+      type;
 };
 
 

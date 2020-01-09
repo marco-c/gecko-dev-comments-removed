@@ -34,7 +34,6 @@
 
 
 
-
 #include "gmock/internal/gmock-internal-utils.h"
 
 #include <ctype.h>
@@ -49,10 +48,29 @@ namespace internal {
 
 
 
+GTEST_API_ std::string JoinAsTuple(const Strings& fields) {
+  switch (fields.size()) {
+    case 0:
+      return "";
+    case 1:
+      return fields[0];
+    default:
+      std::string result = "(" + fields[0];
+      for (size_t i = 1; i < fields.size(); i++) {
+        result += ", ";
+        result += fields[i];
+      }
+      result += ")";
+      return result;
+  }
+}
 
 
-GTEST_API_ string ConvertIdentifierNameToWords(const char* id_name) {
-  string result;
+
+
+
+GTEST_API_ std::string ConvertIdentifierNameToWords(const char* id_name) {
+  std::string result;
   char prev_char = '\0';
   for (const char* p = id_name; *p != '\0'; prev_char = *(p++)) {
     
@@ -76,7 +94,7 @@ GTEST_API_ string ConvertIdentifierNameToWords(const char* id_name) {
 class GoogleTestFailureReporter : public FailureReporterInterface {
  public:
   virtual void ReportFailure(FailureType type, const char* file, int line,
-                             const string& message) {
+                             const std::string& message) {
     AssertHelper(type == kFatal ?
                  TestPartResult::kFatalFailure :
                  TestPartResult::kNonFatalFailure,
@@ -128,8 +146,7 @@ GTEST_API_ bool LogIsVisible(LogSeverity severity) {
 
 
 
-GTEST_API_ void Log(LogSeverity severity,
-                    const string& message,
+GTEST_API_ void Log(LogSeverity severity, const std::string& message,
                     int stack_frames_to_skip) {
   if (!LogIsVisible(severity))
     return;
@@ -168,6 +185,18 @@ GTEST_API_ void Log(LogSeverity severity,
              ::testing::UnitTest::GetInstance(), actual_to_skip);
   }
   std::cout << ::std::flush;
+}
+
+GTEST_API_ WithoutMatchers GetWithoutMatchers() { return WithoutMatchers(); }
+
+GTEST_API_ void IllegalDoDefault(const char* file, int line) {
+  internal::Assert(
+      false, file, line,
+      "You are using DoDefault() inside a composite action like "
+      "DoAll() or WithArgs().  This is not supported for technical "
+      "reasons.  Please instead spell out the default action, or "
+      "assign the default action to an Action variable and use "
+      "the variable in various places.");
 }
 
 }  

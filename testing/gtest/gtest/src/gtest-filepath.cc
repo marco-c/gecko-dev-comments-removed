@@ -27,13 +27,11 @@
 
 
 
-
-
-#include "gtest/gtest-message.h"
 #include "gtest/internal/gtest-filepath.h"
-#include "gtest/internal/gtest-port.h"
 
 #include <stdlib.h>
+#include "gtest/internal/gtest-port.h"
+#include "gtest/gtest-message.h"
 
 #if GTEST_OS_WINDOWS_MOBILE
 # include <windows.h>
@@ -48,6 +46,8 @@
 # include <climits>  
 #endif  
 
+#include "gtest/internal/gtest-string.h"
+
 #if GTEST_OS_WINDOWS
 # define GTEST_PATH_MAX_ _MAX_PATH
 #elif defined(PATH_MAX)
@@ -57,8 +57,6 @@
 #else
 # define GTEST_PATH_MAX_ _POSIX_PATH_MAX
 #endif  
-
-#include "gtest/internal/gtest-string.h"
 
 namespace testing {
 namespace internal {

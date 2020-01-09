@@ -35,6 +35,7 @@
 
 
 
+
 #ifndef GMOCK_INCLUDE_GMOCK_GMOCK_CARDINALITIES_H_
 #define GMOCK_INCLUDE_GMOCK_GMOCK_CARDINALITIES_H_
 
@@ -42,6 +43,9 @@
 #include <ostream>  
 #include "gmock/internal/gmock-port.h"
 #include "gtest/gtest.h"
+
+GTEST_DISABLE_MSC_WARNINGS_PUSH_(4251 \
+)
 
 namespace testing {
 
@@ -143,5 +147,7 @@ inline Cardinality MakeCardinality(const CardinalityInterface* c) {
 }
 
 }  
+
+GTEST_DISABLE_MSC_WARNINGS_POP_()  
 
 #endif  

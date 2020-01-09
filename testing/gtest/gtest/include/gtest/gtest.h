@@ -48,6 +48,7 @@
 
 
 
+
 #ifndef GTEST_INCLUDE_GTEST_GTEST_H_
 #define GTEST_INCLUDE_GTEST_GTEST_H_
 
@@ -66,6 +67,9 @@
 #include "gtest/gtest-typed-test.h"
 #include "mozilla/Attributes.h"
 
+GTEST_DISABLE_MSC_WARNINGS_PUSH_(4251 \
+)
+
 
 
 
@@ -82,6 +86,15 @@
 
 
 namespace testing {
+
+
+
+#ifdef _MSC_VER
+# pragma warning(push)
+# pragma warning(disable:4805)
+# pragma warning(disable:4100)
+#endif
+
 
 
 
@@ -106,6 +119,10 @@ GTEST_DECLARE_string_(filter);
 
 
 
+GTEST_DECLARE_bool_(install_failure_signal_handler);
+
+
+
 GTEST_DECLARE_bool_(list_tests);
 
 
@@ -115,6 +132,9 @@ GTEST_DECLARE_string_(output);
 
 
 GTEST_DECLARE_bool_(print_time);
+
+
+GTEST_DECLARE_bool_(print_utf8);
 
 
 GTEST_DECLARE_int32_(random_seed);
@@ -144,6 +164,10 @@ GTEST_DECLARE_bool_(throw_on_failure);
 
 GTEST_DECLARE_string_(stream_result_to);
 
+#if GTEST_USE_OWN_FLAGFILE_FLAG_
+GTEST_DECLARE_string_(flagfile);
+#endif  
+
 
 const int kMaxStackTraceDepth = 100;
 
@@ -161,6 +185,7 @@ class TestEventListenersAccessor;
 class TestEventRepeater;
 class UnitTestRecordPropertyTestHelper;
 class WindowsDeathTest;
+class FuchsiaDeathTest;
 class UnitTestImpl* GetUnitTestImpl();
 void ReportFailureInUnknownLocation(TestPartResult::Type result_type,
                                     const std::string& message);
@@ -260,7 +285,9 @@ class GTEST_API_ AssertionResult {
   
   AssertionResult(const AssertionResult& other);
 
+#if defined(_MSC_VER) && _MSC_VER < 1910
   GTEST_DISABLE_MSC_WARNINGS_PUSH_(4800 )
+#endif
 
   
   
@@ -277,7 +304,9 @@ class GTEST_API_ AssertionResult {
            = NULL)
       : success_(success) {}
 
+#if defined(_MSC_VER) && _MSC_VER < 1910
   GTEST_DISABLE_MSC_WARNINGS_POP_()
+#endif
 
   
   AssertionResult& operator=(AssertionResult other) {
@@ -345,6 +374,15 @@ GTEST_API_ AssertionResult AssertionFailure();
 
 
 GTEST_API_ AssertionResult AssertionFailure(const Message& msg);
+
+}  
+
+
+
+
+#include "gtest/gtest_pred_impl.h"
+
+namespace testing {
 
 
 
@@ -553,7 +591,6 @@ class GTEST_API_ TestResult {
 
   
   
-  
   const TestPartResult& GetTestPartResult(int i) const;
 
   
@@ -570,6 +607,7 @@ class GTEST_API_ TestResult {
   friend class internal::TestResultAccessor;
   friend class internal::UnitTestImpl;
   friend class internal::WindowsDeathTest;
+  friend class internal::FuchsiaDeathTest;
 
   
   const std::vector<TestPartResult>& test_part_results() const {
@@ -677,6 +715,9 @@ class GTEST_API_ TestInfo {
   int line() const { return location_.line; }
 
   
+  bool is_in_another_shard() const { return is_in_another_shard_; }
+
+  
   
   
   
@@ -698,8 +739,7 @@ class GTEST_API_ TestInfo {
   bool is_reportable() const {
     
     
-    
-    return matches_filter_;
+    return matches_filter_ && !is_in_another_shard_;
   }
 
   
@@ -763,6 +803,7 @@ class GTEST_API_ TestInfo {
   bool is_disabled_;                
   bool matches_filter_;             
                                     
+  bool is_in_another_shard_;        
   internal::TestFactoryBase* const factory_;  
                                               
 
@@ -987,6 +1028,18 @@ class Environment {
   virtual Setup_should_be_spelled_SetUp* Setup() { return NULL; }
 };
 
+#if GTEST_HAS_EXCEPTIONS
+
+
+class GTEST_API_ AssertionException
+    : public internal::GoogleTestFailureException {
+ public:
+  explicit AssertionException(const TestPartResult& result)
+      : GoogleTestFailureException(result) {}
+};
+
+#endif  
+
 
 
 class TestEventListener {
@@ -1014,6 +1067,8 @@ class TestEventListener {
   
   virtual void OnTestStart(const TestInfo& test_info) = 0;
 
+  
+  
   
   virtual void OnTestPartResult(const TestPartResult& test_part_result) = 0;
 
@@ -1181,14 +1236,12 @@ class GTEST_API_ UnitTest {
   
   int random_seed() const;
 
-#if GTEST_HAS_PARAM_TEST
   
   
   
   
   internal::ParameterizedTestCaseRegistry& parameterized_test_registry()
       GTEST_LOCK_EXCLUDED_(mutex_);
-#endif  
 
   
   int successful_test_case_count() const;
@@ -1290,9 +1343,9 @@ class GTEST_API_ UnitTest {
 
   
   
+  friend class ScopedTrace;
   friend class Test;
   friend class internal::AssertHelper;
-  friend class internal::ScopedTrace;
   friend class internal::StreamingListenerTest;
   friend class internal::UnitTestRecordPropertyTestHelper;
   friend Environment* AddGlobalTestEnvironment(Environment* env);
@@ -1389,11 +1442,9 @@ AssertionResult CmpHelperEQ(const char* lhs_expression,
                             const char* rhs_expression,
                             const T1& lhs,
                             const T2& rhs) {
-GTEST_DISABLE_MSC_WARNINGS_PUSH_(4389 )
   if (lhs == rhs) {
     return AssertionSuccess();
   }
-GTEST_DISABLE_MSC_WARNINGS_POP_()
 
   return CmpHelperEQFailure(lhs_expression, rhs_expression, lhs, rhs);
 }
@@ -1707,7 +1758,6 @@ class GTEST_API_ AssertHelper {
 
 }  
 
-#if GTEST_HAS_PARAM_TEST
 
 
 
@@ -1784,8 +1834,6 @@ template <typename T>
 class TestWithParam : public Test, public WithParamInterface<T> {
 };
 
-#endif  
-
 
 
 
@@ -1858,21 +1906,17 @@ class TestWithParam : public Test, public WithParamInterface<T> {
 
 
 #define EXPECT_TRUE(condition) \
-  GTEST_TEST_BOOLEAN_((condition), #condition, false, true, \
+  GTEST_TEST_BOOLEAN_(condition, #condition, false, true, \
                       GTEST_NONFATAL_FAILURE_)
 #define EXPECT_FALSE(condition) \
   GTEST_TEST_BOOLEAN_(!(condition), #condition, true, false, \
                       GTEST_NONFATAL_FAILURE_)
 #define ASSERT_TRUE(condition) \
-  GTEST_TEST_BOOLEAN_((condition), #condition, false, true, \
+  GTEST_TEST_BOOLEAN_(condition, #condition, false, true, \
                       GTEST_FATAL_FAILURE_)
 #define ASSERT_FALSE(condition) \
   GTEST_TEST_BOOLEAN_(!(condition), #condition, true, false, \
                       GTEST_FATAL_FAILURE_)
-
-
-
-#include "gtest/gtest_pred_impl.h"
 
 
 
@@ -2112,10 +2156,66 @@ GTEST_API_ AssertionResult DoubleLE(const char* expr1, const char* expr2,
 
 
 
+class GTEST_API_ ScopedTrace {
+ public:
+  
+  
+
+  
+  
+  template <typename T>
+  ScopedTrace(const char* file, int line, const T& message) {
+    PushTrace(file, line, (Message() << message).GetString());
+  }
+
+  
+  ScopedTrace(const char* file, int line, const char* message) {
+    PushTrace(file, line, message ? message : "(null)");
+  }
+
+#if GTEST_HAS_GLOBAL_STRING
+  ScopedTrace(const char* file, int line, const ::string& message) {
+    PushTrace(file, line, message);
+  }
+#endif
+
+  ScopedTrace(const char* file, int line, const std::string& message) {
+    PushTrace(file, line, message);
+  }
+
+  
+  
+  
+  
+  ~ScopedTrace();
+
+ private:
+  void PushTrace(const char* file, int line, std::string message);
+
+  GTEST_DISALLOW_COPY_AND_ASSIGN_(ScopedTrace);
+} GTEST_ATTRIBUTE_UNUSED_;  
+                            
+                            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #define SCOPED_TRACE(message) \
-  ::testing::internal::ScopedTrace GTEST_CONCAT_TOKEN_(gtest_trace_, __LINE__)(\
-    __FILE__, __LINE__, ::testing::Message() << (message))
+  ::testing::ScopedTrace GTEST_CONCAT_TOKEN_(gtest_trace_, __LINE__)(\
+    __FILE__, __LINE__, (message))
+
 
 
 
@@ -2218,6 +2318,14 @@ bool StaticAssertTypeEq() {
   GTEST_TEST_(test_fixture, test_name, test_fixture, \
               ::testing::internal::GetTypeId<test_fixture>())
 
+
+
+GTEST_API_ std::string TempDir();
+
+#ifdef _MSC_VER
+#  pragma warning(pop)
+#endif
+
 }  
 
 
@@ -2234,4 +2342,6 @@ inline int RUN_ALL_TESTS() {
   return ::testing::UnitTest::GetInstance()->Run();
 }
 
-#endif
+GTEST_DISABLE_MSC_WARNINGS_POP_()  
+
+#endif  

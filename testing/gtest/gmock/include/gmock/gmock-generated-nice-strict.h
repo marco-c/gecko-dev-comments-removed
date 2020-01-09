@@ -64,10 +64,6 @@
 
 
 
-
-
-
-
 #ifndef GMOCK_INCLUDE_GMOCK_GMOCK_GENERATED_NICE_STRICT_H_
 #define GMOCK_INCLUDE_GMOCK_GMOCK_GENERATED_NICE_STRICT_H_
 
@@ -79,13 +75,33 @@ namespace testing {
 template <class MockClass>
 class NiceMock : public MockClass {
  public:
-  
-  
-  NiceMock() {
+  NiceMock() : MockClass() {
     ::testing::Mock::AllowUninterestingCalls(
         internal::ImplicitCast_<MockClass*>(this));
   }
 
+#if GTEST_LANG_CXX11
+  
+  
+  
+  
+
+  
+  
+  template <typename A>
+  explicit NiceMock(A&& arg) : MockClass(std::forward<A>(arg)) {
+    ::testing::Mock::AllowUninterestingCalls(
+        internal::ImplicitCast_<MockClass*>(this));
+  }
+
+  template <typename A1, typename A2, typename... An>
+  NiceMock(A1&& arg1, A2&& arg2, An&&... args)
+      : MockClass(std::forward<A1>(arg1), std::forward<A2>(arg2),
+                  std::forward<An>(args)...) {
+    ::testing::Mock::AllowUninterestingCalls(
+        internal::ImplicitCast_<MockClass*>(this));
+  }
+#else
   
   
   template <typename A1>
@@ -163,7 +179,9 @@ class NiceMock : public MockClass {
         internal::ImplicitCast_<MockClass*>(this));
   }
 
-  virtual ~NiceMock() {
+#endif  
+
+  ~NiceMock() {
     ::testing::Mock::UnregisterCallReaction(
         internal::ImplicitCast_<MockClass*>(this));
   }
@@ -175,13 +193,33 @@ class NiceMock : public MockClass {
 template <class MockClass>
 class NaggyMock : public MockClass {
  public:
-  
-  
-  NaggyMock() {
+  NaggyMock() : MockClass() {
     ::testing::Mock::WarnUninterestingCalls(
         internal::ImplicitCast_<MockClass*>(this));
   }
 
+#if GTEST_LANG_CXX11
+  
+  
+  
+  
+
+  
+  
+  template <typename A>
+  explicit NaggyMock(A&& arg) : MockClass(std::forward<A>(arg)) {
+    ::testing::Mock::WarnUninterestingCalls(
+        internal::ImplicitCast_<MockClass*>(this));
+  }
+
+  template <typename A1, typename A2, typename... An>
+  NaggyMock(A1&& arg1, A2&& arg2, An&&... args)
+      : MockClass(std::forward<A1>(arg1), std::forward<A2>(arg2),
+                  std::forward<An>(args)...) {
+    ::testing::Mock::WarnUninterestingCalls(
+        internal::ImplicitCast_<MockClass*>(this));
+  }
+#else
   
   
   template <typename A1>
@@ -259,7 +297,9 @@ class NaggyMock : public MockClass {
         internal::ImplicitCast_<MockClass*>(this));
   }
 
-  virtual ~NaggyMock() {
+#endif  
+
+  ~NaggyMock() {
     ::testing::Mock::UnregisterCallReaction(
         internal::ImplicitCast_<MockClass*>(this));
   }
@@ -271,13 +311,33 @@ class NaggyMock : public MockClass {
 template <class MockClass>
 class StrictMock : public MockClass {
  public:
-  
-  
-  StrictMock() {
+  StrictMock() : MockClass() {
     ::testing::Mock::FailUninterestingCalls(
         internal::ImplicitCast_<MockClass*>(this));
   }
 
+#if GTEST_LANG_CXX11
+  
+  
+  
+  
+
+  
+  
+  template <typename A>
+  explicit StrictMock(A&& arg) : MockClass(std::forward<A>(arg)) {
+    ::testing::Mock::FailUninterestingCalls(
+        internal::ImplicitCast_<MockClass*>(this));
+  }
+
+  template <typename A1, typename A2, typename... An>
+  StrictMock(A1&& arg1, A2&& arg2, An&&... args)
+      : MockClass(std::forward<A1>(arg1), std::forward<A2>(arg2),
+                  std::forward<An>(args)...) {
+    ::testing::Mock::FailUninterestingCalls(
+        internal::ImplicitCast_<MockClass*>(this));
+  }
+#else
   
   
   template <typename A1>
@@ -355,7 +415,9 @@ class StrictMock : public MockClass {
         internal::ImplicitCast_<MockClass*>(this));
   }
 
-  virtual ~StrictMock() {
+#endif  
+
+  ~StrictMock() {
     ::testing::Mock::UnregisterCallReaction(
         internal::ImplicitCast_<MockClass*>(this));
   }
