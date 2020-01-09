@@ -13,6 +13,7 @@
 #include "mozilla/EndianUtils.h"
 #include "mozilla/Pair.h"
 #include "mozilla/ResultExtensions.h"
+#include "mozilla/ScopeExit.h"
 #include "VideoUtils.h"
 
 extern mozilla::LazyLogModule gMediaDemuxerLog;
@@ -82,8 +83,7 @@ Result<bool, nsresult> FrameParser::Parse(BufferReader* aReader,
     
     
     const size_t prevReaderOffset = aReader->Offset();
-    uint32_t tagSize;
-    MOZ_TRY_VAR(tagSize, mID3Parser.Parse(aReader));
+    const uint32_t tagSize = mID3Parser.Parse(aReader).unwrapOr(0);
     if (!!tagSize) {
       
       const uint32_t skipSize = tagSize - ID3Parser::ID3Header::SIZE;
@@ -356,7 +356,10 @@ Result<bool, nsresult> FrameParser::VBRHeader::ParseXing(
   };
 
   MOZ_ASSERT(aReader);
+
+  
   const size_t prevReaderOffset = aReader->Offset();
+  auto scopeExit = MakeScopeExit([&] { aReader->Seek(prevReaderOffset); });
 
   
   for (auto res = aReader->PeekU32();
@@ -402,7 +405,6 @@ Result<bool, nsresult> FrameParser::VBRHeader::ParseXing(
     mScale = Some(scale);
   }
 
-  aReader->Seek(prevReaderOffset);
   return mType == XING;
 }
 
@@ -421,7 +423,10 @@ Result<bool, nsresult> FrameParser::VBRHeader::ParseVBRI(
   if (sync.isOk()) {  
     MOZ_ASSERT((sync.unwrap() & 0xFFE0) == 0xFFE0);
   }
+
+  
   const size_t prevReaderOffset = aReader->Offset();
+  auto scopeExit = MakeScopeExit([&] { aReader->Seek(prevReaderOffset); });
 
   
   if (aReader->Remaining() > MIN_FRAME_SIZE) {
@@ -433,11 +438,9 @@ Result<bool, nsresult> FrameParser::VBRHeader::ParseVBRI(
       MOZ_TRY_VAR(frames, aReader->ReadU32());
       mNumAudioFrames = Some(frames);
       mType = VBRI;
-      aReader->Seek(prevReaderOffset);
       return true;
     }
   }
-  aReader->Seek(prevReaderOffset);
   return false;
 }
 
