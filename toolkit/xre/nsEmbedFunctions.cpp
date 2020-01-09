@@ -88,6 +88,7 @@
 #include "GMPProcessChild.h"
 #include "mozilla/gfx/GPUProcessImpl.h"
 #include "mozilla/net/SocketProcessImpl.h"
+#include "mozilla/IOInterposer.h"
 
 #include "GeckoProfiler.h"
 
@@ -363,6 +364,12 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
     setASanReporterPath(asanReporterPath);
   }
 #endif
+
+  
+  
+  
+  
+  IOInterposer::Init();
 
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)
   
@@ -760,6 +767,10 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
 
       
       uiMessageLoop.MessageLoop::Run();
+
+      
+      
+      IOInterposer::Clear();
 
       
       
