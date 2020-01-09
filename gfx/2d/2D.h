@@ -343,6 +343,8 @@ class SourceSurface : public external::AtomicRefCounted<SourceSurface> {
 
   virtual SurfaceType GetType() const = 0;
   virtual IntSize GetSize() const = 0;
+  
+
   virtual IntRect GetRect() const { return IntRect(IntPoint(0, 0), GetSize()); }
   virtual SurfaceFormat GetFormat() const = 0;
 
