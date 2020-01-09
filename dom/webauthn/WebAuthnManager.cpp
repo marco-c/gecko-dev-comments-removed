@@ -18,6 +18,10 @@
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/PBackgroundChild.h"
 
+#ifdef OS_WIN
+#include "WinWebAuthnManager.h"
+#endif
+
 using namespace mozilla::ipc;
 
 namespace mozilla {
@@ -224,13 +228,12 @@ already_AddRefed<Promise> WebAuthnManager::MakeCredential(
   
   
   
-  {
-    CryptoBuffer userId;
-    userId.Assign(aOptions.mUser.mId);
-    if (userId.Length() > 64) {
-      promise->MaybeReject(NS_ERROR_DOM_TYPE_ERR);
-      return promise.forget();
-    }
+
+  CryptoBuffer userId;
+  userId.Assign(aOptions.mUser.mId);
+  if (userId.Length() > 64) {
+    promise->MaybeReject(NS_ERROR_DOM_TYPE_ERR);
+    return promise.forget();
   }
 
   
@@ -270,6 +273,7 @@ already_AddRefed<Promise> WebAuthnManager::MakeCredential(
   
   
   nsTArray<PublicKeyCredentialParameters> acceptableParams;
+  nsTArray<CoseAlg> coseAlgos;
   for (size_t a = 0; a < aOptions.mPubKeyCredParams.Length(); ++a) {
     
     
@@ -293,6 +297,7 @@ already_AddRefed<Promise> WebAuthnManager::MakeCredential(
       promise->MaybeReject(NS_ERROR_OUT_OF_MEMORY);
       return promise.forget();
     }
+    coseAlgos.AppendElement(aOptions.mPubKeyCredParams[a].mAlg);
   }
 
   
@@ -355,32 +360,55 @@ already_AddRefed<Promise> WebAuthnManager::MakeCredential(
   const AttestationConveyancePreference& attestation = aOptions.mAttestation;
 
   
-  bool requirePlatformAttachment =
-      attachment.WasPassed() &&
-      attachment.Value() == AuthenticatorAttachment::Platform;
+  WebAuthnMaybeAuthenticatorAttachment authenticatorAttachment(
+      WebAuthnMaybeAuthenticatorAttachment::Tnull_t);
+  if (attachment.WasPassed()) {
+    authenticatorAttachment = WebAuthnMaybeAuthenticatorAttachment(
+        static_cast<uint8_t>(attachment.Value()));
+  }
 
   
-  bool requireUserVerification =
-      selection.mUserVerification == UserVerificationRequirement::Required;
-
-  
-  
-  bool requestDirectAttestation =
-      attestation == AttestationConveyancePreference::Direct;
+  uint8_t userVerificationRequirement =
+      static_cast<uint8_t>(selection.mUserVerification);
 
   
   WebAuthnAuthenticatorSelection authSelection(selection.mRequireResidentKey,
-                                               requireUserVerification,
-                                               requirePlatformAttachment);
+                                               userVerificationRequirement,
+                                               authenticatorAttachment);
 
-  WebAuthnMakeCredentialExtraInfo extra(extensions, authSelection,
-                                        requestDirectAttestation);
+  
+  uint8_t attestationConveyancePreference = static_cast<uint8_t>(attestation);
+
+  nsString rpIcon;
+  if (aOptions.mRp.mIcon.WasPassed()) {
+    rpIcon = aOptions.mRp.mIcon.Value();
+  }
+
+  nsString userIcon;
+  if (aOptions.mUser.mIcon.WasPassed()) {
+    userIcon = aOptions.mUser.mIcon.Value();
+  }
+
+  WebAuthnMakeCredentialRpInfo rpInfo(aOptions.mRp.mName, rpIcon);
+
+  WebAuthnMakeCredentialUserInfo userInfo(
+      userId, aOptions.mUser.mName, userIcon, aOptions.mUser.mDisplayName);
+
+  WebAuthnMakeCredentialExtraInfo extra(rpInfo, userInfo, coseAlgos, extensions,
+                                        authSelection,
+                                        attestationConveyancePreference);
 
   WebAuthnMakeCredentialInfo info(origin, NS_ConvertUTF8toUTF16(rpId),
                                   challenge, clientDataJSON, adjustedTimeout,
                                   excludeList, extra);
 
+#ifdef OS_WIN
+  if (!WinWebAuthnManager::AreWebAuthNApisAvailable()) {
+    ListenForVisibilityEvents();
+  }
+#else
   ListenForVisibilityEvents();
+#endif
 
   AbortSignal* signal = nullptr;
   if (aSignal.WasPassed()) {
@@ -498,6 +526,9 @@ already_AddRefed<Promise> WebAuthnManager::GetAssertion(
           if (t == AuthenticatorTransport::Ble) {
             transports |= U2F_AUTHENTICATOR_TRANSPORT_BLE;
           }
+          if (t == AuthenticatorTransport::Internal) {
+            transports |= CTAP_AUTHENTICATOR_TRANSPORT_INTERNAL;
+          }
         }
         c.transports() = transports;
       }
@@ -512,8 +543,8 @@ already_AddRefed<Promise> WebAuthnManager::GetAssertion(
   }
 
   
-  bool requireUserVerification =
-      aOptions.mUserVerification == UserVerificationRequirement::Required;
+  uint8_t userVerificationRequirement =
+      static_cast<uint8_t>(aOptions.mUserVerification);
 
   
   
@@ -546,16 +577,22 @@ already_AddRefed<Promise> WebAuthnManager::GetAssertion(
     }
 
     
-    extensions.AppendElement(WebAuthnExtensionAppId(appIdHash));
+    extensions.AppendElement(WebAuthnExtensionAppId(appIdHash, appId));
   }
 
-  WebAuthnGetAssertionExtraInfo extra(extensions, requireUserVerification);
+  WebAuthnGetAssertionExtraInfo extra(extensions, userVerificationRequirement);
 
   WebAuthnGetAssertionInfo info(origin, NS_ConvertUTF8toUTF16(rpId), challenge,
                                 clientDataJSON, adjustedTimeout, allowList,
                                 extra);
 
+#ifdef OS_WIN
+  if (!WinWebAuthnManager::AreWebAuthNApisAvailable()) {
+    ListenForVisibilityEvents();
+  }
+#else
   ListenForVisibilityEvents();
+#endif
 
   AbortSignal* signal = nullptr;
   if (aSignal.WasPassed()) {

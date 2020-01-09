@@ -9,6 +9,10 @@
 #include "mozilla/dom/WebAuthenticationBinding.h"
 #include "nsCycleCollectionParticipant.h"
 
+#ifdef OS_WIN
+#include "WinWebAuthnManager.h"
+#endif
+
 namespace mozilla {
 namespace dom {
 
@@ -82,20 +86,29 @@ PublicKeyCredential::IsUserVerifyingPlatformAuthenticatorAvailable(
     return nullptr;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifdef OS_WIN
+
+  if (WinWebAuthnManager::IsUserVerifyingPlatformAuthenticatorAvailable()) {
+    promise->MaybeResolve(true);
+  }
+
+#endif
+
   return promise.forget();
 }
 
