@@ -325,6 +325,18 @@ class nsLayoutUtils {
 
 
 
+
+
+
+
+
+
+  static void NotifyPaintSkipTransaction(ViewID aScrollId);
+
+  
+
+
+
   static mozilla::layout::FrameChildListID GetChildListNameFor(
       nsIFrame* aChildFrame);
 
