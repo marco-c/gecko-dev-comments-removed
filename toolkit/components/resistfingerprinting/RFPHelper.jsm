@@ -370,11 +370,20 @@ class _RFPHelper {
         let containerWidth = browserContainer.clientWidth;
         let containerHeight = browserContainer.clientHeight;
 
+        
+        
+        
+        
+        let findBar = browserContainer.getElementsByClassName("findbar-container");
+        let findBarOffset = findBar.length ? findBar[0].clientHeight + 1 : 0;
+        let devtools = browserContainer.getElementsByClassName("devtools-toolbox-bottom-iframe");
+        let devtoolsOffset = devtools.length ? devtools[0].clientHeight + 1 : 0;
+
         return {
           contentWidth,
           contentHeight,
           containerWidth,
-          containerHeight,
+          containerHeight: containerHeight - findBarOffset - devtoolsOffset,
         };
       });
 
