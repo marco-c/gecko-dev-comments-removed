@@ -170,11 +170,22 @@ function assertTelemetryRecorded(events) {
   Assert.deepEqual(relatedEvents, events, "The events are recorded correctly");
 }
 
-function selectLocale(localeCode, available, dialogDoc) {
+async function selectLocale(localeCode, available, selected, dialogDoc) {
   let [locale] = Array.from(available.menupopup.children)
     .filter(item => item.value == localeCode);
   available.selectedItem = locale;
+
+  
+  let added = waitForMutation(
+    selected,
+    {childList: true},
+    target => Array.from(target.children).some(el => el.value == localeCode));
+
+  
   dialogDoc.getElementById("add").doCommand();
+
+  
+  await added;
 }
 
 async function openDialog(doc, search = false) {
@@ -255,13 +266,7 @@ add_task(async function testDisabledBrowserLanguages() {
   assertAvailableLocales(available, ["fr", "pl"]);
 
   
-  selectLocale("pl", available, dialogDoc);
-
-  
-  await waitForMutation(
-    selected,
-    {childList: true},
-    target => selected.itemCount == 3);
+  await selectLocale("pl", available, selected, dialogDoc);
   assertLocaleOrder(selected, "pl,en-US,he");
 
   
@@ -277,7 +282,6 @@ add_task(async function testDisabledBrowserLanguages() {
   await Promise.all(addons.map(addon => addon.uninstall()));
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 
-  
   assertTelemetryRecorded([
     ["manage", "main", dialogId],
     ["search", "dialog", dialogId],
@@ -402,8 +406,8 @@ add_task(async function testAddAndRemoveSelectedLanguages() {
   assertAvailableLocales(available, ["fr", "pl", "he"]);
 
   
-  selectLocale("pl", available, dialogDoc);
-  selectLocale("fr", available, dialogDoc);
+  await selectLocale("pl", available, selected, dialogDoc);
+  await selectLocale("fr", available, selected, dialogDoc);
 
   assertLocaleOrder(selected, "fr,pl,en-US");
   assertAvailableLocales(available, ["he"]);
@@ -415,7 +419,7 @@ add_task(async function testAddAndRemoveSelectedLanguages() {
   assertAvailableLocales(available, ["fr", "pl", "he"]);
 
   
-  selectLocale("he", available, dialogDoc);
+  await selectLocale("he", available, selected, dialogDoc);
   assertLocaleOrder(selected, "he,en-US");
   assertAvailableLocales(available, ["pl", "fr"]);
 
@@ -502,14 +506,7 @@ add_task(async function testInstallFromAMO() {
   is(dicts.length, 0, "There are no installed dictionaries");
 
   
-  selectLocale("pl", available, dialogDoc);
-
-  
-  let selectedLocales = dialogDoc.getElementById("selectedLocales");
-  await waitForMutation(
-    selectedLocales,
-    {childList: true},
-    target => selectedLocales.itemCount == 2);
+  await selectLocale("pl", available, selected, dialogDoc);
 
   let langpack = await AddonManager.getAddonByID(langpackId("pl"));
   Assert.deepEqual(
@@ -569,7 +566,6 @@ add_task(async function testInstallFromAMO() {
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 
   ok(installId, "The langpack has an installId");
-  
   assertTelemetryRecorded([
     
     ["search", "main", firstDialogId],
