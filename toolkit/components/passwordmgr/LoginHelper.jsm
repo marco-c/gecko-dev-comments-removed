@@ -672,6 +672,10 @@ var LoginHelper = {
 
     let acFieldName = element.getAutocompleteInfo().fieldName;
     if (!(acFieldName == "username" ||
+          
+          acFieldName == "email" ||
+          acFieldName == "tel" ||
+          acFieldName == "tel-national" ||
           acFieldName == "off" ||
           acFieldName == "on" ||
           acFieldName == "")) {
