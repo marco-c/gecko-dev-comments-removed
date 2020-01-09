@@ -210,9 +210,7 @@ struct BarrierMethods<jsid> {
 
 
 template <typename F, typename... Args>
-auto DispatchTyped(F f, const jsid& id, Args&&... args)
-    -> decltype(f(static_cast<JSString*>(nullptr),
-                  std::forward<Args>(args)...)) {
+auto DispatchTyped(F f, const jsid& id, Args&&... args) {
   if (JSID_IS_STRING(id)) {
     return f(JSID_TO_STRING(id), std::forward<Args>(args)...);
   }

@@ -347,9 +347,7 @@ class JS_FRIEND_API GCCellPtr {
 
 
 template <typename F, typename... Args>
-auto DispatchTyped(F f, GCCellPtr thing, Args&&... args)
-    -> decltype(f(static_cast<JSObject*>(nullptr),
-                  std::forward<Args>(args)...)) {
+auto DispatchTyped(F f, GCCellPtr thing, Args&&... args) {
   switch (thing.kind()) {
 #define JS_EXPAND_DEF(name, type, _) \
   case JS::TraceKind::name:          \
