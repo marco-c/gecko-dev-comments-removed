@@ -323,25 +323,24 @@ void Family::SearchAllFontsForChar(FontList* aList,
       ++charMapsLoaded;
     }
     
+    
+    
     if (!charmap || charmap->test(aMatchData->mCh)) {
       double distance = WSSDistance(face, aMatchData->mStyle);
       if (distance < aMatchData->mMatchDistance) {
         
         
-        if (!charmap) {
-          aList->LoadCharMapFor(*face, this);
-          charmap = static_cast<const SharedBitSet*>(
-              face->mCharacterMap.ToPtr(aList));
-          if (charmap) {
-            ++charMapsLoaded;
-          }
-          if (!charmap || !charmap->test(aMatchData->mCh)) {
-            continue;
-          }
+        
+        
+        RefPtr<gfxFontEntry> fe = gfxPlatformFontList::PlatformFontList()
+            ->GetOrCreateFontEntry(face, this);
+        if (!fe) {
+          continue;
         }
-        aMatchData->mBestMatch =
-            gfxPlatformFontList::PlatformFontList()->GetOrCreateFontEntry(face,
-                                                                          this);
+        if (!charmap && !fe->HasCharacter(aMatchData->mCh)) {
+          continue;
+        }
+        aMatchData->mBestMatch = fe;
         aMatchData->mMatchDistance = distance;
         aMatchData->mMatchedSharedFamily = this;
       }
@@ -603,15 +602,6 @@ Pointer FontList::Alloc(uint32_t aSize) {
   }
 
   return Pointer(blockIndex, curAlloc);
-}
-
-void FontList::LoadCharMapFor(Face& aFace, const Family* aFamily) {
-  RefPtr<gfxFontEntry> fe =
-      gfxPlatformFontList::PlatformFontList()->GetOrCreateFontEntry(&aFace,
-                                                                    aFamily);
-  if (fe) {
-    fe->ReadCMAP();
-  }
 }
 
 void FontList::SetFamilyNames(const nsTArray<Family::InitData>& aFamilies) {

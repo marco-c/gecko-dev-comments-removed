@@ -213,8 +213,15 @@ class gfxFontEntry {
     if (mShmemCharacterMap) {
       return mShmemCharacterMap->test(ch);
     }
-    if (mCharacterMap && mCharacterMap->test(ch)) {
-      return true;
+    if (mCharacterMap) {
+      if (mShmemFace && TrySetShmemCharacterMap()) {
+        
+        mCharacterMap = nullptr;
+        return mShmemCharacterMap->test(ch);
+      }
+      if (mCharacterMap->test(ch)) {
+        return true;
+      }
     }
     return TestCharacterMap(ch);
   }
@@ -526,6 +533,11 @@ class gfxFontEntry {
 
   
   virtual bool TestCharacterMap(uint32_t aCh);
+
+  
+  
+  
+  bool TrySetShmemCharacterMap();
 
   
   
