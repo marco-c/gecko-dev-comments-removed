@@ -12,6 +12,8 @@ import shlex
 
 logger = logging.getLogger(__name__)
 
+TRY_DELIMITER = 'try:'
+
 
 
 BUILD_TYPE_ALIASES = {
