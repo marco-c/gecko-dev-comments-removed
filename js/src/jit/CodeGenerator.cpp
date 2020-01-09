@@ -12419,10 +12419,6 @@ void CodeGenerator::emitIsCallableOrConstructor(Register object,
 
   
   
-  masm.branchTestClassIsProxy(true, output, failure);
-
-  
-  
   
   
   
@@ -12441,6 +12437,11 @@ void CodeGenerator::emitIsCallableOrConstructor(Register object,
   masm.jump(&done);
 
   masm.bind(&notFunction);
+
+  
+  
+  masm.branchTestClassIsProxy(true, output, failure);
+
   masm.branchPtr(Assembler::NonZero, Address(output, offsetof(js::Class, cOps)),
                  ImmPtr(nullptr), &hasCOps);
   masm.move32(Imm32(0), output);
