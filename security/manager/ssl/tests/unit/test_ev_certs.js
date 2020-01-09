@@ -245,7 +245,7 @@ add_task(async function oneCRLTests() {
   Services.prefs.setIntPref("security.onecrl.maximum_staleness_in_seconds",
                             108000);
   
-  Services.prefs.setIntPref("services.settings.security.onecrl.checked",
+  Services.prefs.setIntPref("services.blocklist.onecrl.checked",
                             Math.floor(Date.now() / 1000) - 1);
   Services.prefs.setIntPref(
     "app.update.lastUpdateTime.blocklist-background-update-timer",
@@ -269,7 +269,7 @@ add_task(async function oneCRLTests() {
   Services.prefs.setIntPref("security.onecrl.maximum_staleness_in_seconds",
                             108000);
   
-  Services.prefs.setIntPref("services.settings.security.onecrl.checked",
+  Services.prefs.setIntPref("services.blocklist.onecrl.checked",
                             Math.floor(Date.now() / 1000) - 108080);
   Services.prefs.setIntPref(
     "app.update.lastUpdateTime.blocklist-background-update-timer",
@@ -300,14 +300,14 @@ add_task(async function oneCRLTests() {
   Services.prefs.setIntPref("security.onecrl.maximum_staleness_in_seconds",
                             108000);
   
-  Services.prefs.setIntPref("services.settings.security.onecrl.checked",
+  Services.prefs.setIntPref("services.blocklist.onecrl.checked",
                             Math.floor(Date.now() / 1000) - 1);
   await ensureOneCRLSkipsOCSPForIntermediates("anyPolicy-int-path");
   await ensureOneCRLSkipsOCSPForIntermediates("no-ocsp-int-path");
   await ensureOneCRLSkipsOCSPForIntermediates("test-oid-path");
 
   Services.prefs.clearUserPref("security.onecrl.maximum_staleness_in_seconds");
-  Services.prefs.clearUserPref("services.settings.security.onecrl.checked");
+  Services.prefs.clearUserPref("services.blocklist.onecrl.checked");
   Services.prefs.clearUserPref(
     "app.update.lastUpdateTime.blocklist-background-update-timer");
 });
