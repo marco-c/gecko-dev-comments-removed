@@ -327,6 +327,25 @@ void WrapperFactory::PrepareForWrapping(JSContext* cx, HandleObject scope,
   retObj.set(waive ? WaiveXray(cx, obj) : obj);
 }
 
+
+
+
+
+
+static bool CompartmentsMayHaveHadTransparentCCWs(
+    CompartmentPrivate* private1, CompartmentPrivate* private2) {
+  auto& info1 = private1->originInfo;
+  auto& info2 = private2->originInfo;
+
+  if (!info1.SiteRef().Equals(info2.SiteRef())) {
+    return false;
+  }
+
+  return info1.GetPrincipalIgnoringDocumentDomain()->FastEquals(
+             info2.GetPrincipalIgnoringDocumentDomain()) ||
+         (info1.HasChangedDocumentDomain() && info2.HasChangedDocumentDomain());
+}
+
 #ifdef DEBUG
 static void DEBUG_CheckUnwrapSafety(HandleObject obj,
                                     const js::Wrapper* handler,
@@ -361,7 +380,25 @@ static void DEBUG_CheckUnwrapSafety(HandleObject obj,
       
       
       
-      MOZ_ASSERT(handler->hasSecurityPolicy());
+      
+      
+      
+      
+      CompartmentPrivate* originCompartmentPrivate =
+          CompartmentPrivate::Get(originComp);
+      CompartmentPrivate* targetCompartmentPrivate =
+          CompartmentPrivate::Get(target);
+      if (!originCompartmentPrivate->wantXrays &&
+          !targetCompartmentPrivate->wantXrays &&
+          CompartmentsMayHaveHadTransparentCCWs(originCompartmentPrivate,
+                                                targetCompartmentPrivate)) {
+        
+        
+        MOZ_ASSERT(handler == &CrossCompartmentWrapper::singleton ||
+                   handler == &CrossOriginObjectWrapper::singleton);
+      } else {
+        MOZ_ASSERT(handler->hasSecurityPolicy());
+      }
     } else {
       
       
@@ -467,6 +504,10 @@ JSObject* WrapperFactory::Rewrap(JSContext* cx, HandleObject existing,
 
   
   
+  bool isTransparentWrapperDueToDocumentDomain = false;
+
+  
+  
   
 
   
@@ -524,6 +565,19 @@ JSObject* WrapperFactory::Rewrap(JSContext* cx, HandleObject existing,
   
   
   
+  else if (originSubsumesTarget == targetSubsumesOrigin &&
+           !originCompartmentPrivate->wantXrays &&
+           !targetCompartmentPrivate->wantXrays &&
+           CompartmentsMayHaveHadTransparentCCWs(originCompartmentPrivate,
+                                                 targetCompartmentPrivate)) {
+    isTransparentWrapperDueToDocumentDomain = true;
+    wrapper = &CrossCompartmentWrapper::singleton;
+  }
+
+  
+  
+  
+  
   
   
   else {
@@ -552,7 +606,8 @@ JSObject* WrapperFactory::Rewrap(JSContext* cx, HandleObject existing,
     wrapper = SelectWrapper(securityWrapper, xrayType, waiveXrays, obj);
   }
 
-  if (!targetSubsumesOrigin && !originRealmPrivate->forcePermissiveCOWs) {
+  if (!targetSubsumesOrigin && !originRealmPrivate->forcePermissiveCOWs &&
+      !isTransparentWrapperDueToDocumentDomain) {
     
     
     
