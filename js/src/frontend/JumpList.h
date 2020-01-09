@@ -60,6 +60,9 @@ struct JumpTarget {
 };
 
 struct JumpList {
+  
+  static const ptrdiff_t END_OF_LIST_DELTA = 0;
+
   JumpList() {}
   
   ptrdiff_t offset = -1;
