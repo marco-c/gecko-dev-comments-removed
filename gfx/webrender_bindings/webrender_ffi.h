@@ -47,7 +47,9 @@ void gecko_profiler_end_marker(const char* name);
   macro(linear_grad);                      \
   macro(radial_grad);                      \
   macro(picture);                          \
-  macro(text_run);
+  macro(text_run);                         \
+  macro(filterdata);
+
 
 
 namespace mozilla {
