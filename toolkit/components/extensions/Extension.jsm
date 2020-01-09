@@ -1913,8 +1913,7 @@ class Extension extends ExtensionData {
       
       if (!allowPrivateBrowsingByDefault && this.manifest.incognito !== "not_allowed" &&
           !this.permissions.has(PRIVATE_ALLOWED_PERMISSION)) {
-        if ((this.isPrivileged && !this.addonData.temporarilyInstalled) ||
-            (PrivateBrowsingUtils.permanentPrivateBrowsing && this.startupReason == "ADDON_INSTALL")) {
+        if (this.isPrivileged && !this.addonData.temporarilyInstalled) {
           
           
           ExtensionPermissions.add(this.id, {permissions: [PRIVATE_ALLOWED_PERMISSION], origins: []});
@@ -1947,6 +1946,17 @@ class Extension extends ExtensionData {
 
       
       
+      if (PrivateBrowsingUtils.permanentPrivateBrowsing && !this.privateBrowsingAllowed) {
+        this.state = "Startup: Cancelled: (not running in permenant private browsing mode)";
+
+        this.policy.active = false;
+
+        this.cleanupGeneratedFile();
+        return;
+      }
+
+      
+      
       
       
       this.emit("startup", this);
@@ -1967,7 +1977,6 @@ class Extension extends ExtensionData {
 
       Management.emit("ready", this);
       this.emit("ready");
-      ExtensionTelemetry.extensionStartup.stopwatchFinish(this);
 
       this.state = "Startup: Complete";
     } catch (errors) {
@@ -1985,6 +1994,8 @@ class Extension extends ExtensionData {
       this.cleanupGeneratedFile();
 
       throw errors;
+    } finally {
+      ExtensionTelemetry.extensionStartup.stopwatchFinish(this);
     }
   }
 
