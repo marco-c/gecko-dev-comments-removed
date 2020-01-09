@@ -64,6 +64,16 @@ namespace js {
 
 
 
+
+
+
+
+
+
+
+
+
+
 class alignas(uintptr_t) JitScript final {
   friend class ::JSScript;
 
