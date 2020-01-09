@@ -339,7 +339,8 @@ html|input.urlbar-input {
 
 
 
-#PopupAutoCompleteRichResult {
+#PopupAutoCompleteRichResult,
+#urlbar-results {
   margin-top: 1px;
 }
 
