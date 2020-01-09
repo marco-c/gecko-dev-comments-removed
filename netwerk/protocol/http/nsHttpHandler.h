@@ -437,6 +437,10 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
 
   void EnsureUAOverridesInit();
 
+  
+  
+  void MaybeEnableSpeculativeConnect();
+
  private:
   
   nsMainThreadPtrHandle<nsIIOService> mIOService;
@@ -450,6 +454,10 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
 
   
   RefPtr<nsHttpConnectionMgr> mConnMgr;
+
+  
+  
+  nsCOMPtr<nsIThread> mBackgroundThread;
 
   
   
@@ -599,10 +607,6 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
 
   
   
-  bool mSpeculativeConnectEnabled;
-
-  
-  
   bool mRequestTokenBucketEnabled;
   uint16_t mRequestTokenBucketMinParallelism;
   uint32_t mRequestTokenBucketHz;     
@@ -640,6 +644,10 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
 
   
   float mFocusedWindowTransactionRatio;
+
+  
+  
+  Atomic<bool, Relaxed> mSpeculativeConnectEnabled;
 
   Atomic<bool, Relaxed> mUseFastOpen;
   Atomic<bool, Relaxed> mFastOpenSupported;
