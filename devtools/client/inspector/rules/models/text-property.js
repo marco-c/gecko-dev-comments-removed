@@ -232,6 +232,19 @@ class TextProperty {
     return this.rule.domRule.declarations[selfIndex].isValid;
   }
 
+  isUsed() {
+    const selfIndex = this.rule.textProps.indexOf(this);
+    const declarations = this.rule.domRule.declarations;
+
+    
+    
+    if (!declarations || !declarations[selfIndex] || !declarations[selfIndex].isUsed) {
+      return { used: true };
+    }
+
+    return declarations[selfIndex].isUsed;
+  }
+
   
 
 

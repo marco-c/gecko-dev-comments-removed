@@ -701,7 +701,7 @@ RuleEditor.prototype = {
       rules.splice(oldIndex, 1);
       rules.splice(newRuleIndex, 0, newRule);
       elementStyle._changed();
-      elementStyle.markOverriddenAll();
+      elementStyle.onRuleUpdated();
 
       
       

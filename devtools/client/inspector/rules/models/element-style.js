@@ -4,6 +4,7 @@
 
 "use strict";
 
+const Services = require("Services");
 const promise = require("promise");
 const Rule = require("devtools/client/inspector/rules/models/rule");
 const UserProperties = require("devtools/client/inspector/rules/models/user-properties");
@@ -14,6 +15,8 @@ loader.lazyRequireGetter(this, "parseDeclarations", "devtools/shared/css/parsing
 loader.lazyRequireGetter(this, "parseNamedDeclarations", "devtools/shared/css/parsing-utils", true);
 loader.lazyRequireGetter(this, "parseSingleValue", "devtools/shared/css/parsing-utils", true);
 loader.lazyRequireGetter(this, "isCssVariable", "devtools/shared/fronts/css-properties", true);
+
+const PREF_INACTIVE_CSS_ENABLED = "devtools.inspector.inactive.css.enabled";
 
 
 
@@ -63,6 +66,13 @@ class ElementStyle {
       this.ruleView.inspector.styleChangeTracker.on("style-changed", this.onRefresh);
       this.ruleView.selection.on("pseudoclass", this.onRefresh);
     }
+  }
+
+  get unusedCssEnabled() {
+    if (!this._unusedCssEnabled) {
+      this._unusedCssEnabled = Services.prefs.getBoolPref(PREF_INACTIVE_CSS_ENABLED);
+    }
+    return this._unusedCssEnabled;
   }
 
   destroy() {
@@ -125,7 +135,7 @@ class ElementStyle {
       }
 
       
-      this.markOverriddenAll();
+      this.onRuleUpdated();
 
       this._sortRulesForPseudoElement();
 
@@ -244,12 +254,12 @@ class ElementStyle {
   
 
 
-  markOverriddenAll() {
+  onRuleUpdated() {
     this.variables.clear();
-    this.markOverridden();
+    this.updateDeclarations();
 
     for (const pseudo of this.cssProperties.pseudoElements) {
-      this.markOverridden(pseudo);
+      this.updateDeclarations(pseudo);
     }
   }
 
@@ -261,7 +271,9 @@ class ElementStyle {
 
 
 
-  markOverridden(pseudo = "") {
+
+
+  updateDeclarations(pseudo = "") {
     
     
     
@@ -349,11 +361,17 @@ class ElementStyle {
     
     
     
+    
     for (const textProp of textProps) {
       
       
       if (this._updatePropertyOverridden(textProp)) {
         textProp.updateEditor();
+      }
+
+      
+      if (textProp.editor && this.unusedCssEnabled) {
+        textProp.editor.updatePropertyState();
       }
     }
   }
@@ -582,7 +600,8 @@ class ElementStyle {
       this.rules.splice(newIndex === -1 ? oldIndex : newIndex, 0, newRule);
 
       
-      this.markOverriddenAll();
+      
+      this.onRuleUpdated();
 
       
       
@@ -594,7 +613,6 @@ class ElementStyle {
         this.rules.splice(newIndex, 1);
         this.rules.splice(oldIndex, 0, newRule);
       }
-
       this._changed();
     } catch (e) {
       console.error(e);
