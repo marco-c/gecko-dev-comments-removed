@@ -13,7 +13,9 @@ const TAB_URL = URL_ROOT + "resources/service-workers/push-sw.html";
 
 add_task(async function() {
   await enableServiceWorkerDebugging();
-  const { document, tab } = await openAboutDebugging({ enableWorkerUpdates: true });
+  const { document, tab, window } =
+    await openAboutDebugging({ enableWorkerUpdates: true });
+  await selectThisFirefoxPage(document, window.AboutDebugging.store);
 
   
   const swTab = await addTab(TAB_URL);

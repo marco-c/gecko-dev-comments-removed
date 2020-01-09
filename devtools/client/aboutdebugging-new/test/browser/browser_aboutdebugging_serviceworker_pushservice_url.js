@@ -19,7 +19,9 @@ add_task(async function() {
   info("Mock the push service");
   mockPushService(FAKE_ENDPOINT);
 
-  const { document, tab } = await openAboutDebugging({ enableWorkerUpdates: true });
+  const { document, tab, window } =
+    await openAboutDebugging({ enableWorkerUpdates: true });
+  await selectThisFirefoxPage(document, window.AboutDebugging.store);
 
   
   const swTab = await addTab(TAB_URL);

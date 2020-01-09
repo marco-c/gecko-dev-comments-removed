@@ -18,7 +18,9 @@ const SW_URL = URL_ROOT + "resources/service-workers/empty-sw.js";
 add_task(async function() {
   await enableServiceWorkerDebugging();
 
-  const { document, tab } = await openAboutDebugging({ enableWorkerUpdates: true });
+  const { document, tab, window } =
+    await openAboutDebugging({ enableWorkerUpdates: true });
+  await selectThisFirefoxPage(document, window.AboutDebugging.store);
 
   
   const swTab = await addTab(SW_TAB_URL);

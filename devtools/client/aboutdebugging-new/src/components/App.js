@@ -137,17 +137,12 @@ class App extends PureComponent {
         path: "/runtime/:runtimeId",
         render: routeProps => this.renderRuntime(routeProps),
       }),
-      Route({
-        path: "/",
-        exact: true,
-        
-        render: routeProps => this.renderRuntime(routeProps),
-      }),
+      
       
       
       
       Route({
-        render: () => Redirect({ to: "/"}),
+        render: () => Redirect({ to: "/connect"}),
       })
     );
   }
