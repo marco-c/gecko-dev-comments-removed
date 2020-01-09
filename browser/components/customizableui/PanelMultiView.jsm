@@ -1667,9 +1667,14 @@ var PanelView = class extends AssociatedToNode {
         
         
         
+        
+        
+        
         button.doCommand();
-        let clickEvent = new event.target.ownerGlobal.MouseEvent("click", {"bubbles": true});
-        button.dispatchEvent(clickEvent);
+        let dispEvent = new event.target.ownerGlobal.MouseEvent("mousedown", {"bubbles": true});
+        button.dispatchEvent(dispEvent);
+        dispEvent = new event.target.ownerGlobal.MouseEvent("click", {"bubbles": true});
+        button.dispatchEvent(dispEvent);
         this._doingKeyboardActivation = false;
         break;
       }
