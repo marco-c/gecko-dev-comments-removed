@@ -292,7 +292,8 @@ static const size_t MaxMallocBytes = 128 * 1024 * 1024;
 
 
 
-static const size_t GCMinNurseryBytes = 192 * 1024;
+
+static const size_t GCMinNurseryBytes = 256 * 1024;
 
 
 static const float AllocThresholdFactor = 0.9f;
