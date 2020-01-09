@@ -1734,11 +1734,6 @@ class JSScript : public js::gc::TenuredCell {
     HasDebugScript = 1 << 6,
 
     
-    HasFreezeConstraints = 1 << 7,
-
-    
-    
-    TypesGeneration = 1 << 8,
 
     
     
@@ -2116,13 +2111,6 @@ class JSScript : public js::gc::TenuredCell {
   }
   bool hasScriptName();
 
-  bool hasFreezeConstraints() const {
-    return hasFlag(MutableFlags::HasFreezeConstraints);
-  }
-  void setHasFreezeConstraints() {
-    setFlag(MutableFlags::HasFreezeConstraints);
-  }
-
   bool warnedAboutUndefinedProp() const {
     return hasFlag(MutableFlags::WarnedAboutUndefinedProp);
   }
@@ -2213,15 +2201,6 @@ class JSScript : public js::gc::TenuredCell {
 
   bool argsObjAliasesFormals() const {
     return needsArgsObj() && hasMappedArgsObj();
-  }
-
-  uint32_t typesGeneration() const {
-    return uint32_t(hasFlag(MutableFlags::TypesGeneration));
-  }
-
-  void setTypesGeneration(uint32_t generation) {
-    MOZ_ASSERT(generation <= 1);
-    setFlag(MutableFlags::TypesGeneration, bool(generation));
   }
 
   void setDoNotRelazify(bool b) { setFlag(MutableFlags::DoNotRelazify, b); }
@@ -2419,12 +2398,10 @@ class JSScript : public js::gc::TenuredCell {
 
   
   inline bool ensureHasTypes(JSContext* cx, js::AutoKeepTypeScripts&);
-  inline bool typesNeedsSweep() const;
 
   js::TypeScript* types() { return types_; }
 
   void maybeReleaseTypes();
-  void sweepTypes(const js::AutoSweepTypeScript& sweep);
 
   inline js::GlobalObject& global() const;
   inline bool hasGlobal(const js::GlobalObject* global) const;

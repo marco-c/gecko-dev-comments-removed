@@ -31,6 +31,7 @@
 namespace js {
 
 class TypeConstraint;
+class TypeScript;
 class TypeZone;
 class CompilerConstraintList;
 class HeapTypeSetKey;
@@ -87,7 +88,8 @@ class MOZ_RAII AutoSweepObjectGroup : public AutoSweepBase {
 
 class MOZ_RAII AutoSweepTypeScript : public AutoSweepBase {
 #ifdef DEBUG
-  JSScript* script_;
+  Zone* zone_;
+  TypeScript* typeScript_;
 #endif
 
  public:
@@ -95,7 +97,8 @@ class MOZ_RAII AutoSweepTypeScript : public AutoSweepBase {
 #ifdef DEBUG
   inline ~AutoSweepTypeScript();
 
-  JSScript* script() const { return script_; }
+  TypeScript* typeScript() const { return typeScript_; }
+  Zone* zone() const { return zone_; }
 #endif
 };
 
@@ -222,7 +225,14 @@ class TypeScript {
 
   
   
-  bool active_;
+  bool active_ : 1;
+
+  
+  
+  bool typesGeneration_ : 1;
+
+  
+  bool hasFreezeConstraints_ : 1;
 
   
   StackTypeSet typeArray_[1];
@@ -235,17 +245,35 @@ class TypeScript {
     return const_cast<StackTypeSet*>(typeArray_);
   }
 
+  uint32_t typesGeneration() const { return uint32_t(typesGeneration_); }
+  void setTypesGeneration(uint32_t generation) {
+    MOZ_ASSERT(generation <= 1);
+    typesGeneration_ = generation;
+  }
+
  public:
   TypeScript(JSScript* script, ICScriptPtr&& icScript, uint32_t numTypeSets);
 
+  bool hasFreezeConstraints(const js::AutoSweepTypeScript& sweep) const {
+    MOZ_ASSERT(sweep.typeScript() == this);
+    return hasFreezeConstraints_;
+  }
+  void setHasFreezeConstraints(const js::AutoSweepTypeScript& sweep) {
+    MOZ_ASSERT(sweep.typeScript() == this);
+    hasFreezeConstraints_ = true;
+  }
+
+  inline bool typesNeedsSweep(Zone* zone) const;
+  void sweepTypes(const js::AutoSweepTypeScript& sweep, Zone* zone);
+
   RecompileInfoVector& inlinedCompilations(
       const js::AutoSweepTypeScript& sweep) {
-    MOZ_ASSERT(sweep.script()->types() == this);
+    MOZ_ASSERT(sweep.typeScript() == this);
     return inlinedCompilations_;
   }
   MOZ_MUST_USE bool addInlinedCompilation(const js::AutoSweepTypeScript& sweep,
                                           RecompileInfo info) {
-    MOZ_ASSERT(sweep.script()->types() == this);
+    MOZ_ASSERT(sweep.typeScript() == this);
     if (!inlinedCompilations_.empty() && inlinedCompilations_.back() == info) {
       return true;
     }
@@ -267,7 +295,7 @@ class TypeScript {
 
   
   StackTypeSet* typeArray(const js::AutoSweepTypeScript& sweep) {
-    MOZ_ASSERT(sweep.script()->types() == this);
+    MOZ_ASSERT(sweep.typeScript() == this);
     return typeArrayDontCheckGeneration();
   }
 
