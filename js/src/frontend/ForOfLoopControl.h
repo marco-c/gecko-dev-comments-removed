@@ -7,14 +7,17 @@
 #ifndef frontend_ForOfLoopControl_h
 #define frontend_ForOfLoopControl_h
 
-#include "mozilla/Attributes.h"
-#include "mozilla/Maybe.h"
+#include "mozilla/Attributes.h"  
+#include "mozilla/Maybe.h"       
 
-#include <stdint.h>
+#include <stddef.h>  
+#include <stdint.h>  
 
-#include "frontend/BytecodeControlStructures.h"
-#include "frontend/TryEmitter.h"
-#include "vm/Iteration.h"
+#include "jsapi.h"  
+
+#include "frontend/BytecodeControlStructures.h"  
+#include "frontend/TryEmitter.h"                 
+#include "vm/Iteration.h"                        
 
 namespace js {
 namespace frontend {

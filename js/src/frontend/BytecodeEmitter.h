@@ -9,23 +9,42 @@
 #ifndef frontend_BytecodeEmitter_h
 #define frontend_BytecodeEmitter_h
 
-#include "mozilla/Attributes.h"
-#include "mozilla/Span.h"
+#include "mozilla/Assertions.h"  
+#include "mozilla/Attributes.h"  
+#include "mozilla/Maybe.h"  
+#include "mozilla/Span.h"   
 
-#include "ds/InlineTable.h"
-#include "frontend/BCEParserHandle.h"
+#include <stddef.h>  
+#include <stdint.h>  
+
+#include "jsapi.h"  
+
+#include "frontend/BCEParserHandle.h"            
+#include "frontend/BytecodeControlStructures.h"  
 #include "frontend/BytecodeSection.h"  
-#include "frontend/DestructuringFlavor.h"
-#include "frontend/EitherParser.h"
-#include "frontend/JumpList.h"
-#include "frontend/NameFunctions.h"
-#include "frontend/ParseNode.h"
-#include "frontend/SharedContext.h"
-#include "frontend/SourceNotes.h"
-#include "frontend/ValueUsage.h"
-#include "vm/BytecodeUtil.h"
-#include "vm/Interpreter.h"
-#include "vm/Iteration.h"
+#include "frontend/DestructuringFlavor.h"  
+#include "frontend/EitherParser.h"         
+#include "frontend/ErrorReporter.h"        
+#include "frontend/FullParseHandler.h"     
+#include "frontend/JumpList.h"             
+#include "frontend/NameAnalysisTypes.h"    
+#include "frontend/NameCollections.h"      
+#include "frontend/ParseNode.h"      
+#include "frontend/Parser.h"         
+#include "frontend/SharedContext.h"  
+#include "frontend/SourceNotes.h"    
+#include "frontend/TokenStream.h"    
+#include "frontend/ValueUsage.h"     
+#include "js/RootingAPI.h"           
+#include "js/TypeDecls.h"            
+#include "vm/BigIntType.h"           
+#include "vm/BytecodeUtil.h"         
+#include "vm/Interpreter.h"          
+#include "vm/Iteration.h"            
+#include "vm/JSFunction.h"           
+#include "vm/JSScript.h"  
+#include "vm/Runtime.h"     
+#include "vm/StringType.h"  
 
 namespace js {
 namespace frontend {
@@ -48,10 +67,10 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   BytecodeEmitter* const parent = nullptr;
 
   
-  Rooted<JSScript*> script;
+  JS::Rooted<JSScript*> script;
 
   
-  Rooted<LazyScript*> lazyScript;
+  JS::Rooted<LazyScript*> lazyScript;
 
  private:
   BytecodeSection bytecodeSection_;
@@ -148,8 +167,9 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
  private:
   
   BytecodeEmitter(
-      BytecodeEmitter* parent, SharedContext* sc, HandleScript script,
-      Handle<LazyScript*> lazyScript, uint32_t lineNum, EmitterMode emitterMode,
+      BytecodeEmitter* parent, SharedContext* sc, JS::Handle<JSScript*> script,
+      JS::Handle<LazyScript*> lazyScript, uint32_t lineNum,
+      EmitterMode emitterMode,
       FieldInitializers fieldInitializers = FieldInitializers::Invalid());
 
   void initFromBodyPosition(TokenPos bodyPosition);
@@ -166,21 +186,22 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
  public:
   BytecodeEmitter(
       BytecodeEmitter* parent, BCEParserHandle* parser, SharedContext* sc,
-      HandleScript script, Handle<LazyScript*> lazyScript, uint32_t lineNum,
-      EmitterMode emitterMode = Normal,
+      JS::Handle<JSScript*> script, JS::Handle<LazyScript*> lazyScript,
+      uint32_t lineNum, EmitterMode emitterMode = Normal,
       FieldInitializers fieldInitializers = FieldInitializers::Invalid());
 
   BytecodeEmitter(
       BytecodeEmitter* parent, const EitherParser& parser, SharedContext* sc,
-      HandleScript script, Handle<LazyScript*> lazyScript, uint32_t lineNum,
-      EmitterMode emitterMode = Normal,
+      JS::Handle<JSScript*> script, JS::Handle<LazyScript*> lazyScript,
+      uint32_t lineNum, EmitterMode emitterMode = Normal,
       FieldInitializers fieldInitializers = FieldInitializers::Invalid());
 
   template <typename Unit>
   BytecodeEmitter(
       BytecodeEmitter* parent, Parser<FullParseHandler, Unit>* parser,
-      SharedContext* sc, HandleScript script, Handle<LazyScript*> lazyScript,
-      uint32_t lineNum, EmitterMode emitterMode = Normal,
+      SharedContext* sc, JS::Handle<JSScript*> script,
+      JS::Handle<LazyScript*> lazyScript, uint32_t lineNum,
+      EmitterMode emitterMode = Normal,
       FieldInitializers fieldInitializers = FieldInitializers::Invalid())
       : BytecodeEmitter(parent, EitherParser(parser), sc, script, lazyScript,
                         lineNum, emitterMode, fieldInitializers) {}
@@ -189,7 +210,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   
   BytecodeEmitter(
       BytecodeEmitter* parent, BCEParserHandle* parser, SharedContext* sc,
-      HandleScript script, Handle<LazyScript*> lazyScript,
+      JS::Handle<JSScript*> script, JS::Handle<LazyScript*> lazyScript,
       TokenPos bodyPosition, EmitterMode emitterMode = Normal,
       FieldInitializers fieldInitializers = FieldInitializers::Invalid())
       : BytecodeEmitter(parent, parser, sc, script, lazyScript,
@@ -200,7 +221,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
   BytecodeEmitter(
       BytecodeEmitter* parent, const EitherParser& parser, SharedContext* sc,
-      HandleScript script, Handle<LazyScript*> lazyScript,
+      JS::Handle<JSScript*> script, JS::Handle<LazyScript*> lazyScript,
       TokenPos bodyPosition, EmitterMode emitterMode = Normal,
       FieldInitializers fieldInitializers = FieldInitializers::Invalid())
       : BytecodeEmitter(parent, parser, sc, script, lazyScript,
@@ -212,8 +233,9 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   template <typename Unit>
   BytecodeEmitter(
       BytecodeEmitter* parent, Parser<FullParseHandler, Unit>* parser,
-      SharedContext* sc, HandleScript script, Handle<LazyScript*> lazyScript,
-      TokenPos bodyPosition, EmitterMode emitterMode = Normal,
+      SharedContext* sc, JS::Handle<JSScript*> script,
+      JS::Handle<LazyScript*> lazyScript, TokenPos bodyPosition,
+      EmitterMode emitterMode = Normal,
       FieldInitializers fieldInitializers = FieldInitializers::Invalid())
       : BytecodeEmitter(parent, EitherParser(parser), sc, script, lazyScript,
                         bodyPosition, emitterMode, fieldInitializers) {}
@@ -646,7 +668,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   MOZ_MUST_USE bool emitDefault(ParseNode* defaultExpr, ParseNode* pattern);
 
   MOZ_MUST_USE bool emitAnonymousFunctionWithName(ParseNode* node,
-                                                  HandleAtom name);
+                                                  JS::Handle<JSAtom*> name);
 
   MOZ_MUST_USE bool emitAnonymousFunctionWithComputedName(
       ParseNode* node, FunctionPrefixKind prefixKind);
@@ -743,7 +765,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
   MOZ_MUST_USE bool emitClass(
       ClassNode* classNode, ClassNameKind nameKind = ClassNameKind::BindingName,
-      HandleAtom nameForAnonymousClass = nullptr);
+      JS::Handle<JSAtom*> nameForAnonymousClass = nullptr);
   MOZ_MUST_USE bool emitSuperElemOperands(
       PropertyByValue* elem, EmitElemOption opts = EmitElemOption::Get);
   MOZ_MUST_USE bool emitSuperGetElem(PropertyByValue* elem,

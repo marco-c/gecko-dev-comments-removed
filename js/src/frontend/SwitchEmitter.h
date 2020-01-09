@@ -7,21 +7,22 @@
 #ifndef frontend_SwitchEmitter_h
 #define frontend_SwitchEmitter_h
 
-#include "mozilla/Attributes.h"
-#include "mozilla/Maybe.h"
+#include "mozilla/Assertions.h"  
+#include "mozilla/Attributes.h"  
+#include "mozilla/Maybe.h"       
 
-#include <stddef.h>
-#include <stdint.h>
+#include <stddef.h>  
+#include <stdint.h>  
 
-#include "frontend/BytecodeControlStructures.h"
-#include "frontend/EmitterScope.h"
-#include "frontend/JumpList.h"
-#include "frontend/TDZCheckCache.h"
-#include "gc/Rooting.h"
-#include "js/AllocPolicy.h"
-#include "js/Value.h"
-#include "js/Vector.h"
-#include "vm/Scope.h"
+#include "frontend/BytecodeControlStructures.h"  
+#include "frontend/EmitterScope.h"               
+#include "frontend/JumpList.h"                   
+#include "frontend/TDZCheckCache.h"              
+#include "gc/Rooting.h"                          
+#include "js/AllocPolicy.h"                      
+#include "js/Value.h"                            
+#include "js/Vector.h"                           
+#include "vm/Scope.h"                            
 
 namespace js {
 namespace frontend {

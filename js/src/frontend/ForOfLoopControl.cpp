@@ -6,9 +6,13 @@
 
 #include "frontend/ForOfLoopControl.h"
 
-#include "frontend/BytecodeEmitter.h"
-#include "frontend/EmitterScope.h"
-#include "frontend/IfEmitter.h"
+#include "jsapi.h"  
+
+#include "frontend/BytecodeEmitter.h"  
+#include "frontend/EmitterScope.h"     
+#include "frontend/IfEmitter.h"        
+#include "vm/JSScript.h"               
+#include "vm/Opcodes.h"                
 
 using namespace js;
 using namespace js::frontend;

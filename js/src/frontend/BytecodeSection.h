@@ -26,8 +26,6 @@
 #include "vm/JSScript.h"               
 #include "vm/Opcodes.h"                
 
-struct JSContext;
-
 namespace js {
 
 class Scope;

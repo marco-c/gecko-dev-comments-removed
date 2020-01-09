@@ -9,6 +9,7 @@
 #include "mozilla/Assertions.h"  
 
 #include "frontend/BytecodeEmitter.h"  
+#include "vm/BytecodeUtil.h"           
 #include "vm/Opcodes.h"                
 
 using namespace js;

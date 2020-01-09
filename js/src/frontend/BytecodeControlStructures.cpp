@@ -6,9 +6,10 @@
 
 #include "frontend/BytecodeControlStructures.h"
 
-#include "frontend/BytecodeEmitter.h"
-#include "frontend/EmitterScope.h"
-#include "vm/Opcodes.h"
+#include "frontend/BytecodeEmitter.h"  
+#include "frontend/EmitterScope.h"     
+#include "frontend/SourceNotes.h"      
+#include "vm/Opcodes.h"                
 
 using namespace js;
 using namespace js::frontend;

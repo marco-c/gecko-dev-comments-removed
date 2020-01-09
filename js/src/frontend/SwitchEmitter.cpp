@@ -6,16 +6,21 @@
 
 #include "frontend/SwitchEmitter.h"
 
-#include "mozilla/Span.h"
+#include "mozilla/Assertions.h"  
+#include "mozilla/Span.h"        
 
-#include "jsutil.h"
+#include <algorithm>  
 
-#include "frontend/BytecodeEmitter.h"
-#include "frontend/SharedContext.h"
-#include "frontend/SourceNotes.h"
-#include "vm/BytecodeUtil.h"
-#include "vm/Opcodes.h"
-#include "vm/Runtime.h"
+#include "jstypes.h"  
+#include "jsutil.h"  
+
+#include "frontend/BytecodeEmitter.h"  
+#include "frontend/SharedContext.h"    
+#include "frontend/SourceNotes.h"      
+#include "js/TypeDecls.h"              
+#include "vm/BytecodeUtil.h"  
+#include "vm/Opcodes.h"       
+#include "vm/Runtime.h"       
 
 using namespace js;
 using namespace js::frontend;

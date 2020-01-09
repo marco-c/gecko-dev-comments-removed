@@ -10,10 +10,11 @@
 #include "mozilla/Attributes.h"  
 #include "mozilla/Maybe.h"       
 
+#include <stddef.h>  
+
 #include "frontend/BytecodeControlStructures.h"  
 #include "frontend/JumpList.h"                   
-
-class JSAtom;
+#include "js/TypeDecls.h"                        
 
 namespace js {
 namespace frontend {

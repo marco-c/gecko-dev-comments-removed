@@ -6,9 +6,13 @@
 
 #include "frontend/TryEmitter.h"
 
-#include "frontend/BytecodeEmitter.h"
-#include "frontend/SourceNotes.h"
-#include "vm/Opcodes.h"
+#include "mozilla/Assertions.h"  
+
+#include "frontend/BytecodeEmitter.h"  
+#include "frontend/SharedContext.h"    
+#include "frontend/SourceNotes.h"      
+#include "vm/JSScript.h"               
+#include "vm/Opcodes.h"                
 
 using namespace js;
 using namespace js::frontend;

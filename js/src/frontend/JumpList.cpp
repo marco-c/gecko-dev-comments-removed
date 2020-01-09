@@ -6,7 +6,9 @@
 
 #include "frontend/JumpList.h"
 
-#include "vm/BytecodeUtil.h"
+#include "mozilla/Assertions.h"  
+
+#include "vm/BytecodeUtil.h"  
 
 using namespace js;
 using namespace js::frontend;
