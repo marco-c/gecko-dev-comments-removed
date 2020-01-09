@@ -86,6 +86,17 @@ class nsEditingSession final : public nsIEditingSession,
   void RemoveListenersAndControllers(nsPIDOMWindowOuter* aWindow,
                                      mozilla::HTMLEditor* aHTMLEditor);
 
+  
+
+
+  nsresult DisableJSAndPlugins(nsIDocShell& aDocShell);
+
+  
+
+
+
+  nsresult RestoreJSAndPlugins(nsPIDOMWindowOuter* aWindow);
+
  protected:
   bool mDoneSetup;  
 
