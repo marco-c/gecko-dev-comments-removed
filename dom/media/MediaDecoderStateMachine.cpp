@@ -2160,7 +2160,7 @@ MediaDecoderStateMachine::StateObject::SetSeekingState(
 }
 
 void MediaDecoderStateMachine::StateObject::SetDecodingState() {
-  if (mMaster->mLooping && mMaster->mSeamlessLoopingAllowed) {
+  if (mMaster->IsInSeamlessLooping()) {
     SetState<LoopingDecodingState>();
     return;
   }
@@ -2278,8 +2278,10 @@ void MediaDecoderStateMachine::DecodingState::Enter() {
 
   
   
+  
+  
   if (!mMaster->IsVideoDecoding() && !mMaster->IsAudioDecoding() &&
-      !mMaster->mLooping) {
+      !mMaster->IsInSeamlessLooping()) {
     SetState<CompletedState>();
     return;
   }
@@ -3935,6 +3937,10 @@ void MediaDecoderStateMachine::AdjustByLooping(media::TimeUnit& aTime) const {
       mAudioDecodedDuration.ref().IsPositive()) {
     aTime = aTime % mAudioDecodedDuration.ref();
   }
+}
+
+bool MediaDecoderStateMachine::IsInSeamlessLooping() const {
+  return mLooping && mSeamlessLoopingAllowed;
 }
 
 }  
