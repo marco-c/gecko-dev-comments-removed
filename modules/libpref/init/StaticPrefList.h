@@ -5403,6 +5403,18 @@ VARCACHE_PREF(
   RelaxedAtomicInt32, 0
 )
 
+VARCACHE_PREF(
+  "network.cookie.sameSite.laxByDefault",
+   network_cookie_sameSite_laxByDefault,
+  bool, false
+)
+
+VARCACHE_PREF(
+  "network.cookie.sameSite.noneRequiresSecure",
+   network_cookie_sameSite_noneRequiresSecure,
+  bool, false
+)
+
 
 VARCACHE_PREF(
   Live,
