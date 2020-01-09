@@ -115,6 +115,17 @@ int RunGTestFunc(int* argc, char** argv) {
 #ifdef XP_WIN
   mozilla::ipc::windows::InitUIThread();
 #endif
+#ifdef ANDROID
+  
+  
+  
+  
+  
+  
+  
+  char* path = PR_GetEnv("MOZ_GTEST_CWD");
+  chdir(path);
+#endif
   nsCOMPtr<nsICrashReporter> crashreporter;
   char* crashreporterStr = PR_GetEnv("MOZ_CRASHREPORTER");
   if (crashreporterStr && !strcmp(crashreporterStr, "1")) {
