@@ -629,7 +629,7 @@ class SSLTunnel:
                     "%s:%s:%s:%s\n" %
                     (option, loc.host, loc.port, self.sslPort))
 
-    def buildConfig(self, locations):
+    def buildConfig(self, locations, public=None):
         """Create the ssltunnel configuration file"""
         configFd, self.configFile = tempfile.mkstemp(
             prefix="ssltunnel", suffix=".cfg")
@@ -640,7 +640,17 @@ class SSLTunnel:
             config.write(
                 "websocketserver:%s:%s\n" %
                 (self.webServer, self.webSocketPort))
-            config.write("listen:*:%s:pgoserver\n" % self.sslPort)
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            listen_address = "*" if public else "127.0.0.1"
+            config.write("listen:%s:%s:pgoserver\n" % (listen_address, self.sslPort))
 
             for loc in locations:
                 if loc.scheme == "https" and "nocert" not in loc.options:
@@ -1163,7 +1173,7 @@ class MochitestDesktop(object):
             self.log.error("runtests.py | Timed out while waiting for "
                            "websocket/process bridge startup.")
 
-    def startServers(self, options, debuggerInfo):
+    def startServers(self, options, debuggerInfo, public=None):
         
         
         self.webServer = options.webServer
@@ -1188,7 +1198,7 @@ class MochitestDesktop(object):
         self.sslTunnel = SSLTunnel(
             options,
             logger=self.log)
-        self.sslTunnel.buildConfig(self.locations)
+        self.sslTunnel.buildConfig(self.locations, public=public)
         self.sslTunnel.start()
 
         
