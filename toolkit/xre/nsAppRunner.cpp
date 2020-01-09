@@ -404,12 +404,6 @@ static MOZ_FORMAT_PRINTF(2, 3) void Output(bool isError, const char* fmt, ...) {
   va_end(ap);
 }
 
-enum RemoteResult {
-  REMOTE_NOT_FOUND = 0,
-  REMOTE_FOUND = 1,
-  REMOTE_ARG_BAD = 2
-};
-
 
 
 
@@ -1544,44 +1538,6 @@ static inline void DumpVersion() {
   }
   printf("\n");
 }
-
-#if defined(MOZ_WIDGET_GTK)
-static RemoteResult StartRemoteClient(const char* aDesktopStartupID,
-                                      nsCString& program, const char* profile) {
-  nsAutoPtr<nsRemoteClient> client;
-
-  bool useX11Remote = GDK_IS_X11_DISPLAY(gdk_display_get_default());
-
-#  if defined(MOZ_ENABLE_DBUS)
-  if (!useX11Remote) {
-    client = new nsDBusRemoteClient();
-  }
-#  endif
-  if (useX11Remote) {
-    client = new nsXRemoteClient();
-  }
-
-  nsresult rv = client ? client->Init() : NS_ERROR_FAILURE;
-  if (NS_FAILED(rv)) return REMOTE_NOT_FOUND;
-
-  nsCString response;
-  bool success = false;
-  rv = client->SendCommandLine(program.get(), profile, gArgc, gArgv,
-                               aDesktopStartupID, getter_Copies(response),
-                               &success);
-  
-  if (!success) return REMOTE_NOT_FOUND;
-
-  
-  
-  if (response.EqualsLiteral("500 command not parseable"))
-    return REMOTE_ARG_BAD;
-
-  if (NS_FAILED(rv)) return REMOTE_NOT_FOUND;
-
-  return REMOTE_FOUND;
-}
-#endif  
 
 void XRE_InitOmnijar(nsIFile* greOmni, nsIFile* appOmni) {
   mozilla::Omnijar::Init(greOmni, appOmni);
@@ -3953,54 +3909,60 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
   }
 
   if (!newInstance) {
-    nsAutoCString program(gAppData->remotingName);
-    ToLowerCase(program);
+    mRemoteService = new nsRemoteService();
+    if (mRemoteService) {
+      nsAutoCString program(gAppData->remotingName);
+      ToLowerCase(program);
 
-    const char* profile = nullptr;
-    
-    
-    CheckArg("p", &profile, CheckArgFlag::None);
+      const char* profile = nullptr;
+      
+      
+      CheckArg("p", &profile, CheckArgFlag::None);
 
-    nsCOMPtr<nsIFile> mutexDir;
-    rv = GetSpecialSystemDirectory(OS_TemporaryDirectory,
-                                   getter_AddRefs(mutexDir));
-    if (NS_SUCCEEDED(rv)) {
-      nsAutoCString mutexPath = program;
-      if (profile) {
-        mutexPath.Append(NS_LITERAL_CSTRING("_") + nsDependentCString(profile));
+      nsCOMPtr<nsIFile> mutexDir;
+      rv = GetSpecialSystemDirectory(OS_TemporaryDirectory,
+                                     getter_AddRefs(mutexDir));
+      if (NS_SUCCEEDED(rv)) {
+        nsAutoCString mutexPath = program;
+        if (profile) {
+          mutexPath.Append(NS_LITERAL_CSTRING("_") +
+                           nsDependentCString(profile));
+        }
+        mutexDir->AppendNative(mutexPath);
+
+        rv = mutexDir->Create(nsIFile::DIRECTORY_TYPE, 0700);
+        if (NS_SUCCEEDED(rv) || rv == NS_ERROR_FILE_ALREADY_EXISTS) {
+          mRemoteLockDir = mutexDir;
+        }
       }
-      mutexDir->AppendNative(mutexPath);
 
-      rv = mutexDir->Create(nsIFile::DIRECTORY_TYPE, 0700);
-      if (NS_SUCCEEDED(rv) || rv == NS_ERROR_FILE_ALREADY_EXISTS) {
-        mRemoteLockDir = mutexDir;
+      if (mRemoteLockDir) {
+        const TimeStamp epoch = mozilla::TimeStamp::Now();
+        do {
+          rv = mRemoteLock.Lock(mRemoteLockDir, nullptr);
+          if (NS_SUCCEEDED(rv)) break;
+          sched_yield();
+        } while ((TimeStamp::Now() - epoch) <
+                 TimeDuration::FromSeconds(MOZ_XREMOTE_START_TIMEOUT_SEC));
+        if (NS_FAILED(rv)) {
+          NS_WARNING("Cannot lock XRemote start mutex");
+        }
       }
-    }
 
-    if (mRemoteLockDir) {
-      const TimeStamp epoch = mozilla::TimeStamp::Now();
-      do {
-        rv = mRemoteLock.Lock(mRemoteLockDir, nullptr);
-        if (NS_SUCCEEDED(rv)) break;
-        sched_yield();
-      } while ((TimeStamp::Now() - epoch) <
-               TimeDuration::FromSeconds(MOZ_XREMOTE_START_TIMEOUT_SEC));
-      if (NS_FAILED(rv)) {
-        NS_WARNING("Cannot lock XRemote start mutex");
+      
+      
+      const char* desktopStartupIDPtr =
+          mDesktopStartupID.IsEmpty() ? nullptr : mDesktopStartupID.get();
+
+      RemoteResult rr =
+          mRemoteService->StartClient(desktopStartupIDPtr, program, profile);
+      if (rr == REMOTE_FOUND) {
+        *aExitFlag = true;
+        return 0;
       }
-    }
-
-    
-    const char* desktopStartupIDPtr =
-        mDesktopStartupID.IsEmpty() ? nullptr : mDesktopStartupID.get();
-
-    RemoteResult rr = StartRemoteClient(desktopStartupIDPtr, program, profile);
-    if (rr == REMOTE_FOUND) {
-      *aExitFlag = true;
-      return 0;
-    }
-    if (rr == REMOTE_ARG_BAD) {
-      return 1;
+      if (rr == REMOTE_ARG_BAD) {
+        return 1;
+      }
     }
   }
 #endif
@@ -4628,11 +4590,8 @@ nsresult XREMain::XRE_mainRun() {
 #if defined(MOZ_WIDGET_GTK)
     
     
-    if (!mDisableRemote) {
-      mRemoteService = new nsRemoteService();
-    }
     if (mRemoteService) {
-      mRemoteService->Startup(mAppData->remotingName, mProfileName.get());
+      mRemoteService->StartupServer(mAppData->remotingName, mProfileName.get());
     }
     if (mRemoteLockDir) {
       mRemoteLock.Unlock();
@@ -4843,7 +4802,7 @@ int XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig) {
 #if defined(MOZ_WIDGET_GTK)
     
     if (mRemoteService) {
-      mRemoteService->Shutdown();
+      mRemoteService->ShutdownServer();
     }
 #endif 
   }
