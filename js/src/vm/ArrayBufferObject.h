@@ -406,8 +406,13 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
   bool isPreparedForAsmJS() const { return flags() & FOR_ASMJS; }
 
   
-  static MOZ_MUST_USE bool prepareForAsmJS(JSContext* cx,
-                                           Handle<ArrayBufferObject*> buffer);
+
+  
+
+
+
+  MOZ_MUST_USE bool prepareForAsmJS();
+
   size_t wasmMappedSize() const;
   mozilla::Maybe<uint32_t> wasmMaxSize() const;
   static MOZ_MUST_USE bool wasmGrowToSizeInPlace(

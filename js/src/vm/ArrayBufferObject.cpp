@@ -863,50 +863,50 @@ bool js::CreateWasmBuffer(JSContext* cx, const wasm::Limits& memory,
                                                              maxSize, buffer);
 }
 
-
-
-
-
- bool ArrayBufferObject::prepareForAsmJS(
-    JSContext* cx, Handle<ArrayBufferObject*> buffer) {
-  MOZ_ASSERT(buffer->byteLength() % wasm::PageSize == 0,
+bool ArrayBufferObject::prepareForAsmJS() {
+  MOZ_ASSERT(byteLength() % wasm::PageSize == 0,
              "prior size checking should have guaranteed page-size multiple");
-  MOZ_ASSERT(buffer->byteLength() > 0,
+  MOZ_ASSERT(byteLength() > 0,
              "prior size checking should have excluded empty buffers");
-  MOZ_ASSERT(!buffer->isNoData(),
-             "size checking should have excluded detached or empty buffers");
 
-  static_assert(wasm::PageSize > MaxInlineBytes,
-                "inline data must be too small to be a page size multiple");
-  MOZ_ASSERT(!buffer->isInlineData(),
-             "inline-data buffers are implicitly excluded by size checks");
+  switch (bufferKind()) {
+    case MALLOCED:
+    case MAPPED:
+    case EXTERNAL:
+      
+      setIsPreparedForAsmJS();
+      return true;
 
-  
-  
+    case INLINE_DATA:
+      static_assert(wasm::PageSize > MaxInlineBytes,
+                    "inline data must be too small to be a page size multiple");
+      MOZ_ASSERT_UNREACHABLE(
+          "inline-data buffers should be implicitly excluded by size checks");
+      return false;
 
-  
-  if (buffer->isWasm()) {
-    MOZ_ASSERT(!buffer->isPreparedForAsmJS());
-    return false;
+    case NO_DATA:
+      MOZ_ASSERT_UNREACHABLE(
+          "size checking should have excluded detached or empty buffers");
+      return false;
+
+    
+    
+    
+    
+    
+    case USER_OWNED:
+    
+    case WASM:
+      MOZ_ASSERT(!isPreparedForAsmJS());
+      return false;
+
+    case BAD1:
+      MOZ_ASSERT_UNREACHABLE("invalid bufferKind() encountered");
+      return false;
   }
 
-  
-  
-  
-  
-  
-  
-  if (buffer->hasUserOwnedData()) {
-    MOZ_ASSERT(!buffer->isPreparedForAsmJS());
-    return false;
-  }
-
-  MOZ_ASSERT(buffer->isMalloced() || buffer->isMapped() ||
-             buffer->isExternal());
-
-  
-  buffer->setIsPreparedForAsmJS();
-  return true;
+  MOZ_ASSERT_UNREACHABLE("non-exhaustive kind-handling switch?");
+  return false;
 }
 
 ArrayBufferObject::BufferContents ArrayBufferObject::createMappedContents(
