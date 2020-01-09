@@ -12,6 +12,7 @@
 
 
 #include "mozilla/dom/CryptoBuffer.h"
+#include "mozilla/dom/WebAuthenticationBinding.h"
 
 namespace mozilla {
 namespace dom {
@@ -59,6 +60,17 @@ nsresult BuildTransactionHashes(const nsCString& aRpId,
                                  CryptoBuffer& aClientDataHash);
 
 }  
+}  
+
+namespace IPC {
+
+template <>
+struct ParamTraits<mozilla::dom::AuthenticatorAttachment>
+    : public ContiguousEnumSerializer<
+          mozilla::dom::AuthenticatorAttachment,
+          mozilla::dom::AuthenticatorAttachment::Platform,
+          mozilla::dom::AuthenticatorAttachment::EndGuard_> {};
+
 }  
 
 #endif  
