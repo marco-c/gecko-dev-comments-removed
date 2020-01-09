@@ -160,30 +160,6 @@ var Async = {
     return false;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-  async* yieldingIterator(iterable, yieldEvery = 50) {
-    const yieldState = typeof yieldEvery === "number" ? Async.yieldState(yieldEvery) : yieldEvery;
-
-    for (const item of iterable) {
-      yield item;
-
-      if (yieldState.shouldYield()) {
-        await Async.promiseYield();
-        Async.checkAppReady();
-      }
-    }
-  },
-
   asyncQueueCaller(log) {
     return new AsyncQueueCaller(log);
   },
