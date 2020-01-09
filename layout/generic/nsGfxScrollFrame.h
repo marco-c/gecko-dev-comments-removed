@@ -227,6 +227,7 @@ class ScrollFrameHelper : public nsIReflowCallback {
 
 
 
+
   nsRect GetVisualOptimalViewingRect() const;
 
   
