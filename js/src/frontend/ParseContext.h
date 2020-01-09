@@ -562,6 +562,12 @@ class ParseContext : public Nestable<ParseContext> {
   
   bool atModuleLevel() { return atBodyLevel() && sc_->isModuleContext(); }
 
+  
+  
+  
+  
+  bool atTopLevel() { return atBodyLevel() && sc_->isTopLevelContext(); }
+
   void setIsStandaloneFunctionBody() { isStandaloneFunctionBody_ = true; }
 
   bool isStandaloneFunctionBody() const { return isStandaloneFunctionBody_; }
