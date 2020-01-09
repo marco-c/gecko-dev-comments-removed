@@ -385,7 +385,6 @@ class DOMEventCollector extends MainEventCollector {
 
 
 class JQueryEventCollector extends MainEventCollector {
-  
   getListeners(node, {checkOnly} = {}) {
     const jQuery = this.getJQuery(node);
     const handlers = [];
@@ -472,14 +471,12 @@ class JQueryEventCollector extends MainEventCollector {
     }
     return handlers;
   }
-  
 }
 
 
 
 
 class JQueryLiveEventCollector extends MainEventCollector {
-  
   getListeners(node, {checkOnly} = {}) {
     const jQuery = this.getJQuery(node);
     const handlers = [];
@@ -572,7 +569,6 @@ class JQueryLiveEventCollector extends MainEventCollector {
     }
     return handlers;
   }
-  
 
   normalizeListener(handlerDO) {
     function isFunctionInProxy(funcDO) {
@@ -870,7 +866,6 @@ class EventCollector {
 
 
 
-  
   processHandlerForEvent(listenerArray, listener, dbg) {
     let globalDO;
 
@@ -1018,7 +1013,6 @@ class EventCollector {
       }
     }
   }
-  
 }
 
 exports.EventCollector = EventCollector;

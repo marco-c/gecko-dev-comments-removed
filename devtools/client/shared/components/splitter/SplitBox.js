@@ -199,7 +199,6 @@ class SplitBox extends Component {
 
   
 
-  
   render() {
     const { endPanelControl, splitterSize, vert } = this.state;
     const { startPanel, endPanel, minSize, maxSize } = this.props;
@@ -291,7 +290,6 @@ class SplitBox extends Component {
       )
     );
   }
-  
 }
 
 module.exports = SplitBox;

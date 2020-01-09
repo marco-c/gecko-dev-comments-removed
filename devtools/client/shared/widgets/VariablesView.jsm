@@ -799,7 +799,6 @@ VariablesView.prototype = {
   
 
 
-  
   _onViewKeyDown: function(e) {
     const item = this.getFocusedItem();
 
@@ -890,7 +889,6 @@ VariablesView.prototype = {
         item._onAddProperty(e);
     }
   },
-  
 
   
 
@@ -2795,7 +2793,6 @@ Variable.prototype = extend(Scope.prototype, {
 
 
 
-  
   _setAttributes: function() {
     const ownerView = this.ownerView;
     if (ownerView.preventDescriptorModifiers) {
@@ -2853,7 +2850,6 @@ Variable.prototype = extend(Scope.prototype, {
       target.setAttribute("pseudo-item", "");
     }
   },
-  
 
   
 

@@ -103,7 +103,6 @@ exports.getCustomTreeMapDisplays = function() {
 
 
 
-
 exports.getStatusText = function(state) {
   assert(state, "Must have a state");
 
@@ -179,8 +178,6 @@ exports.getStatusText = function(state) {
 
 
 
-
-
 exports.getStatusTextFull = function(state) {
   assert(!!state, "Must have a state");
 
@@ -248,7 +245,6 @@ exports.getStatusTextFull = function(state) {
       return "";
   }
 };
-
 
 
 

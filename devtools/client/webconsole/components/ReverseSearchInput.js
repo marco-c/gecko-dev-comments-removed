@@ -68,7 +68,6 @@ class ReverseSearchInput extends Component {
     }
   }
 
-  
   onInputKeyDown(event) {
     const {
       keyCode,
@@ -128,7 +127,6 @@ class ReverseSearchInput extends Component {
       }
     }
   }
-  
 
   renderSearchInformation() {
     const {

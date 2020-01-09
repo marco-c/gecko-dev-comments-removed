@@ -48,7 +48,6 @@ function naturalSortCaseInsensitive(a, b) {
 
 
 
-
 function naturalSort(a, b, insensitive) {
   
   const i = function(s) {
@@ -105,4 +104,3 @@ function naturalSort(a, b, insensitive) {
   }
   return null;
 }
-

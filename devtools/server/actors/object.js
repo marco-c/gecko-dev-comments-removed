@@ -329,7 +329,6 @@ const proto = {
 
 
 
-  
   _findSafeGetterValues: function(ownProperties, limit = 0) {
     const safeGetterValues = Object.create(null);
     let obj = this.obj;
@@ -433,7 +432,6 @@ const proto = {
 
     return safeGetterValues;
   },
-  
 
   
 

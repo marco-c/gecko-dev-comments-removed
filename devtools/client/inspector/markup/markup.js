@@ -895,7 +895,6 @@ MarkupView.prototype = {
   
 
 
-  
   _onShortcut(name, event) {
     if (this._isInputOrTextarea(event.target)) {
       return;
@@ -1025,7 +1024,6 @@ MarkupView.prototype = {
     event.stopPropagation();
     event.preventDefault();
   },
-  
 
   
 

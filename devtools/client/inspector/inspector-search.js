@@ -213,7 +213,6 @@ SelectorAutocompleter.prototype = {
 
 
 
-  
   get state() {
     if (!this.searchBox || !this.searchBox.value) {
       return null;
@@ -307,7 +306,6 @@ SelectorAutocompleter.prototype = {
     }
     return this._state;
   },
-  
 
   
 

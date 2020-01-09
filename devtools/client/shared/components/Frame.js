@@ -106,7 +106,6 @@ class Frame extends Component {
     };
   }
 
-  
   render() {
     let frame, isSourceMapped;
     const {
@@ -251,7 +250,6 @@ class Frame extends Component {
 
     return dom.span(attributes, ...elements);
   }
-  
 }
 
 module.exports = Frame;

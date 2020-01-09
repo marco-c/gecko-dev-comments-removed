@@ -478,7 +478,6 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     this.viewport = { left, right, top, bottom, padding };
   }
 
-  
   handleEvent(event, id) {
     
     if (this.areShapesHidden()) {
@@ -578,7 +577,6 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
         break;
     }
   }
-  
 
   
 
@@ -1706,7 +1704,6 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 
 
-  
   getInsetPointAt(pageX, pageY) {
     const { top, left, right, bottom } = this.coordinates;
     const zoom = getCurrentZoom(this.win);
@@ -1744,7 +1741,6 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
     return "";
   }
-  
 
   
 

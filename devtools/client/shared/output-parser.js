@@ -654,7 +654,6 @@ OutputParser.prototype = {
 
 
 
-  
   _addPolygonPointNodes: function(coords, container) {
     const tokenStream = getCSSLexer(coords);
     let token = tokenStream.nextToken();
@@ -759,7 +758,6 @@ OutputParser.prototype = {
     }
     return container;
   },
-  
 
   
 
@@ -771,7 +769,6 @@ OutputParser.prototype = {
 
 
 
-  
   _addCirclePointNodes: function(coords, container) {
     const tokenStream = getCSSLexer(coords);
     let token = tokenStream.nextToken();
@@ -877,7 +874,6 @@ OutputParser.prototype = {
     }
     return container;
   },
-  
 
   
 
@@ -889,7 +885,6 @@ OutputParser.prototype = {
 
 
 
-  
   _addEllipsePointNodes: function(coords, container) {
     const tokenStream = getCSSLexer(coords);
     let token = tokenStream.nextToken();
@@ -1005,7 +1000,6 @@ OutputParser.prototype = {
     }
     return container;
   },
-  
 
   
 
@@ -1016,7 +1010,6 @@ OutputParser.prototype = {
 
 
 
-  
   _addInsetPointNodes: function(coords, container) {
     const insetPoints = ["top", "right", "bottom", "left"];
     const tokenStream = getCSSLexer(coords);
@@ -1130,7 +1123,6 @@ OutputParser.prototype = {
 
     return container;
   },
-  
 
   
 

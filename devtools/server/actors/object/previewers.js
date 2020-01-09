@@ -355,7 +355,6 @@ function wrappedPrimitivePreviewer(className, classObj, objectActor, grip, rawOb
   return true;
 }
 
-
 function GenericObject(objectActor, grip, rawObj, specialStringBehavior = false) {
   const {obj, hooks} = objectActor;
   if (grip.preview || grip.displayString || hooks.getGripDepth() > 1) {
@@ -443,7 +442,6 @@ function GenericObject(objectActor, grip, rawObj, specialStringBehavior = false)
 
   return true;
 }
-
 
 
 previewers.Object = [
@@ -674,7 +672,6 @@ previewers.Object = [
     return true;
   },
 
-  
   function DOMEvent({obj, hooks}, grip, rawObj) {
     if (isWorker || !rawObj || !Event.isInstance(rawObj)) {
       return false;
@@ -761,7 +758,6 @@ previewers.Object = [
 
     return true;
   },
-  
 
   function DOMException({obj, hooks}, grip, rawObj) {
     if (isWorker || !rawObj || obj.class !== "DOMException") {

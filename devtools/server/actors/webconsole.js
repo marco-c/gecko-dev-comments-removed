@@ -534,7 +534,6 @@ WebConsoleActor.prototype =
 
 
 
-  
   startListeners: async function(request) {
     const startedListeners = [];
     const window = !this.parentActor.isRootActor ? this.window : null;
@@ -693,7 +692,6 @@ WebConsoleActor.prototype =
       traits: this.traits,
     };
   },
-  
 
   
 
@@ -987,7 +985,6 @@ WebConsoleActor.prototype =
 
 
 
-  
   evaluateJS: function(request) {
     const input = request.text;
     const timestamp = Date.now();
@@ -1157,7 +1154,6 @@ WebConsoleActor.prototype =
       notes: errorNotes,
     };
   },
-  
 
   
 

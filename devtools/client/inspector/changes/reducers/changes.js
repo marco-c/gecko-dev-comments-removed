@@ -199,7 +199,6 @@ const reducers = {
 
 
 
-  
   [TRACK_CHANGE](state, { change }) {
     const defaults = {
       selector: null,
@@ -352,7 +351,6 @@ const reducers = {
 
     return state;
   },
-  
 
   [RESET_CHANGES](state) {
     return INITIAL_STATE;

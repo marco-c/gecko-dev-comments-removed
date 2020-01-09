@@ -105,7 +105,6 @@ function cloneState(state) {
 
 
 
-
 function addMessage(newMessage, state, filtersState, prefsState, uiState) {
   const {
     messagesById,
@@ -275,8 +274,6 @@ function addMessage(newMessage, state, filtersState, prefsState, uiState) {
 
   return state;
 }
-
-
 
 function messages(state = MessageState(), action, filtersState, prefsState, uiState) {
   const {
@@ -544,7 +541,6 @@ function messages(state = MessageState(), action, filtersState, prefsState, uiSt
 
   return state;
 }
-
 
 
 

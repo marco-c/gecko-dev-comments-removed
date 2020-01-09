@@ -113,7 +113,6 @@ class FlexItemSizingProperties extends PureComponent {
     );
   }
 
-  
   renderFlexibilitySection(flexItemSizing, mainFinalSize, properties, computedStyle) {
     const {
       mainDeltaSize,
@@ -184,7 +183,6 @@ class FlexItemSizingProperties extends PureComponent {
       )
     );
   }
-  
 
   renderMinimumSizeSection(flexItemSizing, properties, dimension) {
     const { clampState, mainMinSize, mainDeltaSize } = flexItemSizing;

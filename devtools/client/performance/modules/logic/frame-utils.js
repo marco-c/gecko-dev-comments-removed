@@ -35,7 +35,6 @@ const gFrameData = new WeakMap();
 
 
 
-
 function parseLocation(location, fallbackLine, fallbackColumn) {
   
 
@@ -183,7 +182,6 @@ function parseLocation(location, fallbackLine, fallbackColumn) {
 
   return { functionName, fileName, host, port, url, line, column };
 }
-
 
 
 

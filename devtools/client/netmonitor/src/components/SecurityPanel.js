@@ -119,7 +119,6 @@ class SecurityPanel extends Component {
     );
   }
 
-  
   render() {
     const { openLink, request } = this.props;
     const { securityInfo, url } = request;
@@ -233,7 +232,6 @@ class SecurityPanel extends Component {
       })
     );
   }
-  
 }
 
 module.exports = SecurityPanel;

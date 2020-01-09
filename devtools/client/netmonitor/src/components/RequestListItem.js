@@ -186,7 +186,6 @@ class RequestListItem extends Component {
     }
   }
 
-  
   render() {
     const {
       blocked,
@@ -285,7 +284,6 @@ class RequestListItem extends Component {
       )
     );
   }
-  
 }
 
 module.exports = RequestListItem;

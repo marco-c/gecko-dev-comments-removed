@@ -38,7 +38,6 @@ class SummaryGraph extends PureComponent {
     this.props.selectAnimation(this.props.animation);
   }
 
-  
   getTitleText(state) {
     const getTime =
       time => getFormatStr("player.timeLabel", numberWithDecimals(time / 1000, 2));
@@ -137,7 +136,6 @@ class SummaryGraph extends PureComponent {
 
     return text;
   }
-  
 
   render() {
     const {
