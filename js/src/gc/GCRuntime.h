@@ -233,8 +233,6 @@ class ZoneList {
 };
 
 class GCRuntime {
-  friend GCMarker::MarkQueueProgress GCMarker::processMarkQueue();
-
  public:
   explicit GCRuntime(JSRuntime* rt);
   MOZ_MUST_USE bool init(uint32_t maxbytes, uint32_t maxNurseryBytes);
@@ -257,7 +255,9 @@ class GCRuntime {
   uint32_t getParameter(JSGCParamKey key, const AutoLockGC& lock);
 
   MOZ_MUST_USE bool triggerGC(JS::GCReason reason);
-  void maybeAllocTriggerZoneGC(Zone* zone);
+  
+  
+  void maybeAllocTriggerZoneGC(Zone* zone, size_t nbytes = 0);
   
   bool triggerZoneGC(Zone* zone, JS::GCReason reason, size_t usedBytes,
                      size_t thresholdBytes);
@@ -405,9 +405,6 @@ class GCRuntime {
   void setFullCompartmentChecks(bool enable);
 
   JS::Zone* getCurrentSweepGroup() { return currentSweepGroup; }
-  unsigned getCurrentSweepGroupIndex() {
-    return state() == State::Sweep ? sweepGroupIndex : 0;
-  }
 
   uint64_t gcNumber() const { return number; }
 
@@ -653,7 +650,7 @@ class GCRuntime {
   void endSweepPhase(bool lastGC);
   bool allCCVisibleZonesWereCollected() const;
   void sweepZones(FreeOp* fop, bool destroyingRuntime);
-  void decommitFreeArenasWithoutUnlocking(const AutoLockGC& lock);
+  void decommitAllWithoutUnlocking(const AutoLockGC& lock);
   void startDecommit();
   void queueZonesAndStartBackgroundSweep(ZoneList& zones);
   void sweepFromBackgroundThread(AutoLockHelperThreadState& lock);

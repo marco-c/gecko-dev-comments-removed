@@ -937,7 +937,7 @@ bool Chunk::decommitOneFreeArena(JSRuntime* rt, AutoLockGC& lock) {
   return ok;
 }
 
-void Chunk::decommitFreeArenasWithoutUnlocking(const AutoLockGC& lock) {
+void Chunk::decommitAllArenasWithoutUnlocking(const AutoLockGC& lock) {
   for (size_t i = 0; i < ArenasPerChunk; ++i) {
     if (decommittedArenas.get(i) || arenas[i].allocated()) {
       continue;
@@ -3414,7 +3414,7 @@ bool GCRuntime::triggerGC(JS::GCReason reason) {
   return true;
 }
 
-void GCRuntime::maybeAllocTriggerZoneGC(Zone* zone) {
+void GCRuntime::maybeAllocTriggerZoneGC(Zone* zone, size_t nbytes) {
   if (!CurrentThreadCanAccessRuntime(rt)) {
     
     MOZ_ASSERT(zone->usedByHelperThread() || zone->isAtomsZone());
@@ -3423,7 +3423,7 @@ void GCRuntime::maybeAllocTriggerZoneGC(Zone* zone) {
 
   MOZ_ASSERT(!JS::RuntimeHeapIsCollecting());
 
-  size_t usedBytes = zone->totalBytes();
+  size_t usedBytes = zone->totalBytes();  
   size_t thresholdBytes = zone->threshold.gcTriggerBytes();
 
   if (usedBytes >= thresholdBytes) {
@@ -3443,10 +3443,11 @@ void GCRuntime::maybeAllocTriggerZoneGC(Zone* zone) {
 
   if (usedBytes >= igcThresholdBytes) {
     
-    if (zone->gcDelayBytes < ArenaSize) {
+    
+    if (zone->gcDelayBytes < nbytes) {
       zone->gcDelayBytes = 0;
     } else {
-      zone->gcDelayBytes -= ArenaSize;
+      zone->gcDelayBytes -= nbytes;
     }
 
     if (!zone->gcDelayBytes) {
@@ -3454,7 +3455,7 @@ void GCRuntime::maybeAllocTriggerZoneGC(Zone* zone) {
       
       
       
-      triggerZoneGC(zone, JS::GCReason::ALLOC_TRIGGER, usedBytes,
+      triggerZoneGC(zone, JS::GCReason::INCREMENTAL_ALLOC_TRIGGER, usedBytes,
                     igcThresholdBytes);
 
       
@@ -3541,11 +3542,11 @@ void GCRuntime::triggerFullGCForAtoms(JSContext* cx) {
 
 
 
-void GCRuntime::decommitFreeArenasWithoutUnlocking(const AutoLockGC& lock) {
+void GCRuntime::decommitAllWithoutUnlocking(const AutoLockGC& lock) {
   MOZ_ASSERT(emptyChunks(lock).count() == 0);
   for (ChunkPool::Iter chunk(availableChunks(lock)); !chunk.done();
        chunk.next()) {
-    chunk->decommitFreeArenasWithoutUnlocking(lock);
+    chunk->decommitAllArenasWithoutUnlocking(lock);
   }
   MOZ_ASSERT(availableChunks(lock).verify());
 }
@@ -4847,7 +4848,7 @@ void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
   for (gc::WeakKeyTable::Range r = savedWeakKeys.all(); !r.empty();
        r.popFront()) {
     AutoEnterOOMUnsafeRegion oomUnsafe;
-    Zone* zone = gc::TenuredCell::fromPointer(r.front().key)->zone();
+    Zone* zone = gc::TenuredCell::fromPointer(r.front().key.asCell())->zone();
     if (!zone->gcWeakKeys().put(std::move(r.front().key),
                                 std::move(r.front().value))) {
       oomUnsafe.crash("restoring weak keys table for validator");
@@ -5038,47 +5039,11 @@ bool Zone::findSweepGroupEdges(Zone* atomsZone) {
   return WeakMapBase::findSweepGroupEdges(this);
 }
 
-static bool AddEdgesForMarkQueue(GCMarker& marker) {
-#ifdef DEBUG
-  
-  
-  
-  
-  
-  
-  
-  
-  JS::Zone* prevZone = nullptr;
-  for (size_t i = 0; i < marker.markQueue.length(); i++) {
-    Value val = marker.markQueue[i].get().unbarrieredGet();
-    if (!val.isObject()) {
-      continue;
-    }
-    JSObject* obj = &val.toObject();
-    JS::Zone* zone = obj->zone();
-    if (!zone->isGCMarking()) {
-      continue;
-    }
-    if (prevZone && prevZone != zone) {
-      if (!prevZone->addSweepGroupEdgeTo(zone)) {
-        return false;
-      }
-    }
-    prevZone = zone;
-  }
-#endif
-  return true;
-}
-
 bool GCRuntime::findSweepGroupEdges() {
   for (GCZonesIter zone(rt); !zone.done(); zone.next()) {
     if (!zone->findSweepGroupEdges(atomsZone)) {
       return false;
     }
-  }
-
-  if (!AddEdgesForMarkQueue(marker)) {
-    return false;
   }
 
   return Debugger::findSweepGroupEdges(rt);
@@ -5117,13 +5082,10 @@ void GCRuntime::groupZonesForSweeping(JS::GCReason reason) {
   }
 
 #ifdef DEBUG
-  unsigned idx = sweepGroupIndex;
   for (Zone* head = currentSweepGroup; head; head = head->nextGroup()) {
     for (Zone* zone = head; zone; zone = zone->nextNodeInGroup()) {
       MOZ_ASSERT(zone->isGCMarking());
-      zone->gcSweepGroupIndex = idx;
     }
-    idx++;
   }
 
   MOZ_ASSERT_IF(!isIncremental, !currentSweepGroup->nextGroup());
@@ -5800,6 +5762,10 @@ IncrementalProgress GCRuntime::beginSweepingSweepGroup(FreeOp* fop,
     if (zone->isAtomsZone()) {
       sweepingAtoms = true;
     }
+
+#ifdef DEBUG
+    zone->gcLastSweepGroupIndex = sweepGroupIndex;
+#endif
   }
 
   validateIncrementalMarking();
@@ -6024,11 +5990,6 @@ IncrementalProgress GCRuntime::markUntilBudgetExhausted(
 
   
   gcstats::AutoPhase ap(stats(), phase);
-
-  if (marker.processMarkQueue() == GCMarker::QueueYielded) {
-    return NotFinished;
-  }
-
   return marker.markUntilBudgetExhausted(sliceBudget) ? Finished : NotFinished;
 }
 
@@ -6883,6 +6844,7 @@ void GCRuntime::finishCollection() {
   for (ZonesIter zone(rt, WithAtoms); !zone.done(); zone.next()) {
     if (zone->isCollecting()) {
       zone->changeGCState(Zone::Finished, Zone::NoGC);
+      zone->gcDelayBytes = 0;
       zone->notifyObservingDebuggers();
     }
 
@@ -6967,6 +6929,7 @@ GCRuntime::IncrementalResult GCRuntime::resetIncrementalGC(
       for (GCZonesIter zone(rt); !zone.done(); zone.next()) {
         zone->setNeedsIncrementalBarrier(false);
         zone->changeGCState(Zone::MarkBlackOnly, Zone::NoGC);
+        zone->gcDelayBytes = 0;
         zone->arenas.unmarkPreMarkedFreeCells();
       }
 
@@ -7149,12 +7112,6 @@ void GCRuntime::incrementalSlice(SliceBudget& budget, JS::GCReason reason,
       MOZ_ASSERT(!lastMarkSlice);
       rootsRemoved = false;
 
-#ifdef DEBUG
-      for (ZonesIter zone(rt, WithAtoms); !zone.done(); zone.next()) {
-        zone->gcSweepGroupIndex = 0;
-      }
-#endif
-
       incrementalState = State::MarkRoots;
 
       MOZ_FALLTHROUGH;
@@ -7282,9 +7239,11 @@ void GCRuntime::incrementalSlice(SliceBudget& budget, JS::GCReason reason,
       MOZ_FALLTHROUGH;
 
     case State::Compact:
+      MOZ_ASSERT(nursery().isEmpty());
+      storeBuffer().checkEmpty();
+
       if (isCompacting) {
         MOZ_ASSERT(nursery().isEmpty());
-        storeBuffer().checkEmpty();
         if (!startedCompacting) {
           beginCompactPhase();
         }
@@ -7494,7 +7453,7 @@ static void ScheduleZones(GCRuntime* gc) {
   }
 }
 
-static void UnScheduleZones(GCRuntime* gc) {
+static void UnscheduleZones(GCRuntime* gc) {
   for (ZonesIter zone(gc->rt, WithAtoms); !zone.done(); zone.next()) {
     zone->unscheduleGC();
   }
@@ -7628,11 +7587,11 @@ bool GCRuntime::shouldCollectNurseryForSlice(bool nonincrementalByAPI,
   switch (incrementalState) {
     case State::NotActive:
     case State::Sweep:
+    case State::Finalize:
     case State::Compact:
+    case State::Decommit:
       return true;
     case State::Mark:
-    case State::Finalize:
-    case State::Decommit:
       return (nonincrementalByAPI || budget.isUnlimited() || lastMarkSlice ||
               nursery().shouldCollect() || hasIncrementalTwoSliceZealMode());
     case State::Finish:
@@ -7772,13 +7731,6 @@ void GCRuntime::collect(bool nonincrementalByAPI, SliceBudget budget,
   AutoStopVerifyingBarriers av(rt, IsShutdownGC(reason));
   AutoEnqueuePendingParseTasksAfterGC aept(*this);
 
-#ifdef DEBUG
-  if (IsShutdownGC(reason)) {
-    marker.markQueue.clear();
-    marker.queuePos = 0;
-  }
-#endif
-
   bool repeat;
   do {
     IncrementalResult cycleResult =
@@ -7838,7 +7790,7 @@ void GCRuntime::collect(bool nonincrementalByAPI, SliceBudget budget,
 #endif
   stats().writeLogMessage("GC ending in state %s", StateName(incrementalState));
 
-  UnScheduleZones(this);
+  UnscheduleZones(this);
 }
 
 js::AutoEnqueuePendingParseTasksAfterGC::
@@ -7954,7 +7906,6 @@ void GCRuntime::onOutOfMallocMemory() {
 
   
   decommitTask.join();
-  nursery().joinDecommitTask();
 
   
   sweepTask.join();
@@ -7974,7 +7925,7 @@ void GCRuntime::onOutOfMallocMemory(const AutoLockGC& lock) {
   
   
   
-  decommitFreeArenasWithoutUnlocking(lock);
+  decommitAllWithoutUnlocking(lock);
 }
 
 void GCRuntime::minorGC(JS::GCReason reason, gcstats::PhaseKind phase) {
