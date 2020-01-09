@@ -483,6 +483,11 @@ void AutoJSAPI::ReportException() {
       errorGlobal = xpc::PrivilegedJunkScope();
     } else {
       errorGlobal = GetCurrentThreadWorkerGlobal();
+      if (!errorGlobal) {
+        
+        
+        errorGlobal = GetCurrentThreadWorkerDebuggerGlobal();
+      }
     }
   }
   MOZ_ASSERT(JS_IsGlobalObject(errorGlobal));
