@@ -127,7 +127,7 @@ task_description_schema = Schema({
 
         
         'type': Any('generic', 'nightly', 'l10n', 'nightly-with-multi-l10n',
-                    'release', 'nightly-l10n'),
+                    'release', 'nightly-l10n', 'shippable'),
 
         
         
@@ -1456,6 +1456,12 @@ def add_nightly_index_routes(config, task):
     
     task = add_l10n_index_routes(config, task, force_locale="en-US")
 
+    return task
+
+
+@index_builder('shippable')
+def add_shippable_index_routes(config, task):
+    
     return task
 
 
