@@ -36,7 +36,16 @@ inline double NumberMod(double a, double b) {
   if (b == 0) {
     return JS::GenericNaN();
   }
-  return fmod(a, b);
+  double r = fmod(a, b);
+#if defined(XP_WIN)
+  
+  
+  
+  if (mozilla::IsPositiveZero(r) && mozilla::IsNegative(a)) {
+    return -0.0;
+  }
+#endif
+  return r;
 }
 
 }  
