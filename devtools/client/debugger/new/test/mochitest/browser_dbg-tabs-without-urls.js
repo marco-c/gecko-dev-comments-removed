@@ -24,4 +24,11 @@ add_task(async function() {
   
   await reload(dbg, "simple1", "simple2");
   is(countTabs(dbg), 2);
+
+  
+  
+  
+  
+  await selectSource(dbg, "simple1");
+  await selectSource(dbg, "simple2");
 });
