@@ -310,6 +310,13 @@ add_task(async function testFullDetails() {
 
   
   row = rows.shift();
+  ok(row.classList.contains("addon-detail-help-row"), "There's a help row");
+  ok(!row.hidden, "The help row is shown");
+  is(doc.l10n.getAttributes(row).id, "addon-detail-private-browsing-help",
+     "The help row is for private browsing");
+
+  
+  row = rows.shift();
   checkLabel(row, "author");
   let link = row.querySelector("a");
   checkLink(link, "http://example.com/me", "The creator");
@@ -401,8 +408,16 @@ add_task(async function testMinimalExtension() {
   let row = rows.shift();
   checkLabel(row, "updates");
 
+  
   row = rows.shift();
   checkLabel(row, "private-browsing");
+
+  
+  row = rows.shift();
+  ok(row.classList.contains("addon-detail-help-row"), "There's a help row");
+  ok(!row.hidden, "The help row is shown");
+  is(doc.l10n.getAttributes(row).id, "addon-detail-private-browsing-help",
+     "The help row is for private browsing");
 
   
   row = rows.shift();

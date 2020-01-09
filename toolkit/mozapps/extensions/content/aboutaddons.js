@@ -749,6 +749,9 @@ class AddonDetails extends HTMLElement {
         .querySelector('a[data-l10n-name="learn-more"]');
       learnMore.href = SUPPORT_URL + "extensions-pb";
     } else {
+      
+      pbRow.nextElementSibling.remove();
+      
       pbRow.remove();
     }
 
