@@ -4417,11 +4417,21 @@ void ScrollFrameHelper::ScrollToRestoredPosition() {
   
 
   
-  if (GetLogicalVisualViewportOffset() == mLastPos) {
+  
+  
+  
+  
+  
+  nsPoint logicalLayoutScrollPos = GetLogicalScrollPosition();
+
+  
+  if (GetLogicalVisualViewportOffset() == mLastPos ||
+      logicalLayoutScrollPos == mLastPos) {
     
     
     
-    if (mRestorePos != mLastPos ) {
+    if (mRestorePos != mLastPos  ||
+        mRestorePos != logicalLayoutScrollPos) {
       LoadingState state = GetPageLoadingState();
       if (state == LoadingState::Stopped && !NS_SUBTREE_DIRTY(mOuter)) {
         return;
