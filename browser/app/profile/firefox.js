@@ -1696,7 +1696,7 @@ pref("dom.ipc.cpows.forbid-unsafe-from-browser", true);
 
 pref("dom.ipc.processHangMonitor", true);
 
-#if defined(NIGHTLY_BUILD) && defined(XP_WIN)
+#if defined(XP_WIN)
 
 pref("dom.ipc.processPriorityManager.enabled", true);
 #endif
