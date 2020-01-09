@@ -96,6 +96,9 @@ class TRRService : public nsIObserver,
   RefPtr<DataStorage> mTRRBLStorage;
   Atomic<bool, Relaxed> mClearTRRBLStorage;
 
+  
+  nsTHashtable<nsCStringHashKey> mExcludedDomains;
+
   enum ConfirmationState {
     CONFIRM_INIT = 0,
     CONFIRM_TRYING = 1,
