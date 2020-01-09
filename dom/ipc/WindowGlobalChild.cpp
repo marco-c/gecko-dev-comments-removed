@@ -60,8 +60,8 @@ already_AddRefed<WindowGlobalChild> WindowGlobalChild::Create(
 
   RefPtr<WindowGlobalChild> wgc = new WindowGlobalChild(aWindow, bc);
 
-  WindowGlobalInit init(principal, bc, wgc->mInnerWindowId,
-                        wgc->mOuterWindowId);
+  WindowGlobalInit init(principal, aWindow->GetDocumentURI(), bc,
+                        wgc->mInnerWindowId, wgc->mOuterWindowId);
 
   
   if (XRE_IsParentProcess()) {
@@ -91,8 +91,6 @@ already_AddRefed<WindowGlobalChild> WindowGlobalChild::Create(
   MOZ_RELEASE_ASSERT(!entry, "Duplicate WindowGlobalChild entry for ID!");
   entry.OrInsert([&] { return wgc; });
 
-  
-  wgc->SendUpdateDocumentURI(aWindow->GetDocumentURI());
   return wgc.forget();
 }
 
