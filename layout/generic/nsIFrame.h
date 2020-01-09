@@ -1992,22 +1992,28 @@ class nsIFrame : public nsQueryFrame {
   void AssociateImage(const nsStyleImage& aImage, nsPresContext* aPresContext,
                       uint32_t aImageLoaderFlags);
 
+  enum class AllowCustomCursorImage {
+    No,
+    Yes,
+  };
+
   
+
+
 
 
 
 
   struct MOZ_STACK_CLASS Cursor {
-    nsCOMPtr<imgIContainer> mContainer;
     mozilla::StyleCursorKind mCursor = mozilla::StyleCursorKind::Auto;
-    bool mHaveHotspot = false;
-    bool mLoading = false;
-    float mHotspotX = 0.0f, mHotspotY = 0.0f;
+    AllowCustomCursorImage mAllowCustomCursor = AllowCustomCursorImage::Yes;
+    RefPtr<mozilla::ComputedStyle> mStyle;
   };
+
   
 
 
-  virtual nsresult GetCursor(const nsPoint& aPoint, Cursor& aCursor) = 0;
+  virtual mozilla::Maybe<Cursor> GetCursor(const nsPoint&);
 
   
 

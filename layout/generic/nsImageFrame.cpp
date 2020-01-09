@@ -2303,29 +2303,26 @@ nsresult nsImageFrame::HandleEvent(nsPresContext* aPresContext,
                                              aEventStatus);
 }
 
-nsresult nsImageFrame::GetCursor(const nsPoint& aPoint,
-                                 nsIFrame::Cursor& aCursor) {
-  if (nsImageMap* map = GetImageMap()) {
-    nsIntPoint p;
-    TranslateEventCoords(aPoint, p);
-    nsCOMPtr<nsIContent> area = map->GetArea(p.x, p.y);
-    if (area) {
-      
-      
-      
-      
-      
-      RefPtr<ComputedStyle> areaStyle =
-          PresShell()->StyleSet()->ResolveStyleFor(area->AsElement(),
-                                                   LazyComputeBehavior::Allow);
-      FillCursorInformationFromStyle(areaStyle->StyleUI(), aCursor);
-      if (StyleCursorKind::Auto == aCursor.mCursor) {
-        aCursor.mCursor = StyleCursorKind::Default;
-      }
-      return NS_OK;
-    }
+Maybe<nsIFrame::Cursor> nsImageFrame::GetCursor(const nsPoint& aPoint) {
+  nsImageMap* map = GetImageMap();
+  if (!map) {
+    return nsFrame::GetCursor(aPoint);
   }
-  return nsFrame::GetCursor(aPoint, aCursor);
+  nsIntPoint p;
+  TranslateEventCoords(aPoint, p);
+  nsCOMPtr<nsIContent> area = map->GetArea(p.x, p.y);
+  if (!area) {
+    return nsFrame::GetCursor(aPoint);
+  }
+
+  
+  RefPtr<ComputedStyle> areaStyle = PresShell()->StyleSet()->ResolveStyleFor(
+      area->AsElement(), LazyComputeBehavior::Allow);
+  StyleCursorKind kind = areaStyle->StyleUI()->mCursor;
+  if (kind == StyleCursorKind::Auto) {
+    kind = StyleCursorKind::Default;
+  }
+  return Some(Cursor{kind, AllowCustomCursorImage::Yes, std::move(areaStyle)});
 }
 
 nsresult nsImageFrame::AttributeChanged(int32_t aNameSpaceID,

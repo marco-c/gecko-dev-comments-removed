@@ -5135,22 +5135,20 @@ void nsIFrame::AssociateImage(const nsStyleImage& aImage,
   loader->AssociateRequestToFrame(req, this, aImageLoaderFlags);
 }
 
-nsresult nsFrame::GetCursor(const nsPoint& aPoint, nsIFrame::Cursor& aCursor) {
-  FillCursorInformationFromStyle(StyleUI(), aCursor);
-  if (StyleCursorKind::Auto == aCursor.mCursor) {
+Maybe<nsIFrame::Cursor> nsIFrame::GetCursor(const nsPoint&) {
+  StyleCursorKind kind = StyleUI()->mCursor;
+  if (kind == StyleCursorKind::Auto) {
     
-    aCursor.mCursor = (mContent && mContent->IsEditable())
-                          ? StyleCursorKind::Text
-                          : StyleCursorKind::Default;
+    kind = (mContent && mContent->IsEditable()) ? StyleCursorKind::Text
+                                                : StyleCursorKind::Default;
   }
-  if (StyleCursorKind::Text == aCursor.mCursor &&
-      GetWritingMode().IsVertical()) {
+  if (kind == StyleCursorKind::Text && GetWritingMode().IsVertical()) {
     
     
-    aCursor.mCursor = StyleCursorKind::VerticalText;
+    kind = StyleCursorKind::VerticalText;
   }
 
-  return NS_OK;
+  return Some(Cursor{kind, AllowCustomCursorImage::Yes});
 }
 
 
@@ -9748,35 +9746,6 @@ uint8_t nsIFrame::VerticalAlignEnum() const {
   }
 
   return eInvalidVerticalAlign;
-}
-
-
-void nsFrame::FillCursorInformationFromStyle(const nsStyleUI* ui,
-                                             nsIFrame::Cursor& aCursor) {
-  aCursor.mCursor = ui->mCursor;
-  aCursor.mHaveHotspot = false;
-  aCursor.mLoading = false;
-  aCursor.mHotspotX = aCursor.mHotspotY = 0.0f;
-
-  for (const nsCursorImage& item : ui->mCursorImages) {
-    uint32_t status;
-    imgRequestProxy* req = item.GetImage();
-    if (!req || NS_FAILED(req->GetImageStatus(&status))) {
-      continue;
-    }
-    if (!(status & imgIRequest::STATUS_LOAD_COMPLETE)) {
-      
-      
-      aCursor.mLoading = true;
-    } else if (!(status & imgIRequest::STATUS_ERROR)) {
-      
-      req->GetImage(getter_AddRefs(aCursor.mContainer));
-      aCursor.mHaveHotspot = item.mHaveHotspot;
-      aCursor.mHotspotX = item.mHotspotX;
-      aCursor.mHotspotY = item.mHotspotY;
-      break;
-    }
-  }
 }
 
 NS_IMETHODIMP
