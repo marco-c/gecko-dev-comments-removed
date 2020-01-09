@@ -98,7 +98,11 @@ pub use self::GenericTransformOrigin as TransformOrigin;
 impl<H, V, D> TransformOrigin<H, V, D> {
     
     pub fn new(horizontal: H, vertical: V, depth: D) -> Self {
-        Self { horizontal, vertical, depth }
+        Self {
+            horizontal,
+            vertical,
+            depth,
+        }
     }
 }
 
