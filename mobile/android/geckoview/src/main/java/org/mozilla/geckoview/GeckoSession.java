@@ -133,6 +133,7 @@ public class GeckoSession implements Parcelable {
     private int mWidth;
     private int mHeight; 
     private int mClientHeight; 
+    private int mFixedBottomOffset; 
     private float mViewportLeft;
     private float mViewportTop;
     private float mViewportZoom = 1.0f;
@@ -4750,6 +4751,15 @@ public class GeckoSession implements Parcelable {
         onWindowBoundsChanged();
     }
 
+     void setFixedBottomOffset(int offset) {
+        mFixedBottomOffset = offset;
+
+        if (mCompositorReady) {
+            mCompositor.setFixedBottomOffset(mFixedBottomOffset);
+        }
+    }
+
+
      void onCompositorAttached() {
         if (DEBUG) {
             ThreadUtils.assertOnUiThread();
@@ -4870,6 +4880,8 @@ public class GeckoSession implements Parcelable {
         if (mToolbar != null) {
             mToolbar.onCompositorReady();
         }
+
+        mCompositor.setFixedBottomOffset(mFixedBottomOffset);
     }
 
      void updateOverscrollVelocity(final float x, final float y) {
