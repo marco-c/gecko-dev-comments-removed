@@ -1,7 +1,7 @@
 
 
 
-const gBaseURL = "https://example.com/browser/browser/base/content/test/general/";
+const gBaseURL = "https://example.com/browser/browser/base/content/test/contextMenu/";
 
 add_task(async function() {
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, gBaseURL + "subtst_contextmenu.html");
