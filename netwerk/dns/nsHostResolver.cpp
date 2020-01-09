@@ -297,7 +297,6 @@ AddrHostRecord::AddrHostRecord(const nsHostKey &key)
 AddrHostRecord::~AddrHostRecord() {
   mCallbacks.clear();
   Telemetry::Accumulate(Telemetry::DNS_BLACKLIST_COUNT, mBlacklistedCount);
-  delete addr_info;
 }
 
 bool AddrHostRecord::Blacklisted(NetAddr *aQuery) {
@@ -1009,9 +1008,6 @@ nsresult nsHostResolver::ResolveHost(const nsACString &aHost, uint16_t type,
             
             MutexAutoLock lock(addrRec->addr_info_lock);
 
-            
-            
-            
             addrRec->addr_info = nullptr;
             if (unspecRec->negative) {
               rec->negative = unspecRec->negative;
@@ -1691,9 +1687,7 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookup(
   RefPtr<AddrHostRecord> addrRec = do_QueryObject(rec);
   MOZ_ASSERT(addrRec);
 
-  
-  
-  nsAutoPtr<AddrInfo> newRRSet(aNewRRSet);
+  RefPtr<AddrInfo> newRRSet(aNewRRSet);
 
   bool trrResult = newRRSet && newRRSet->IsTRR();
 
@@ -1748,7 +1742,7 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookup(
       
       
       MOZ_ASSERT(!addrRec->mFirstTRR && newRRSet);
-      addrRec->mFirstTRR = newRRSet;  
+      addrRec->mFirstTRR.swap(newRRSet);  
       MOZ_ASSERT(addrRec->mFirstTRR && !newRRSet);
 
       if (addrRec->mDidCallbacks || addrRec->mResolverMode == MODE_SHADOW) {
@@ -1774,7 +1768,7 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookup(
         if (NS_SUCCEEDED(status)) {
           merge_rrset(newRRSet, addrRec->mFirstTRR);
         } else {
-          newRRSet = addrRec->mFirstTRR;  
+          newRRSet.swap(addrRec->mFirstTRR);  
         }
         addrRec->mFirstTRR = nullptr;
       }
@@ -1823,7 +1817,7 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookup(
   
   if (!mShutdown && !(trrResult && addrRec->mResolverMode == MODE_SHADOW)) {
     MutexAutoLock lock(addrRec->addr_info_lock);
-    nsAutoPtr<AddrInfo> old_addr_info;
+    RefPtr<AddrInfo> old_addr_info;
     if (different_rrset(addrRec->addr_info, newRRSet)) {
       LOG(("nsHostResolver record %p new gencnt\n", addrRec.get()));
       old_addr_info = addrRec->addr_info;
@@ -2038,7 +2032,7 @@ void nsHostResolver::ThreadFunc() {
   nsResState rs;
 #endif
   RefPtr<AddrHostRecord> rec;
-  AddrInfo *ai = nullptr;
+  RefPtr<AddrInfo> ai;
 
   do {
     if (!rec) {
@@ -2059,10 +2053,12 @@ void nsHostResolver::ThreadFunc() {
     TimeDuration inQueue = startTime - rec->mNativeStart;
     uint32_t ms = static_cast<uint32_t>(inQueue.ToMilliseconds());
     Telemetry::Accumulate(Telemetry::DNS_NATIVE_QUEUING, ms);
-    nsresult status = GetAddrInfo(rec->host, rec->af, rec->flags, &ai, getTtl);
+    nsresult status =
+        GetAddrInfo(rec->host, rec->af, rec->flags, getter_AddRefs(ai), getTtl);
 #if defined(RES_RETRY_ON_FAILURE)
     if (NS_FAILED(status) && rs.Reset()) {
-      status = GetAddrInfo(rec->host, rec->af, rec->flags, &ai, getTtl);
+      status = GetAddrInfo(rec->host, rec->af, rec->flags, getter_AddRefs(ai),
+                           getTtl);
     }
 #endif
 
