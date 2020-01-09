@@ -900,7 +900,11 @@ var gIdentityHandler = {
   },
 
   observe(subject, topic, data) {
-    if (topic == "perm-changed") {
+    
+    
+    if (topic == "perm-changed" && subject &&
+        SitePermissions.listPermissions().includes(
+          subject.QueryInterface(Ci.nsIPermission).type)) {
       this.refreshIdentityBlock();
     }
   },
