@@ -1249,33 +1249,33 @@ static void AddSubtreeToOverflowTracker(
 }
 
 static void StyleChangeReflow(nsIFrame* aFrame, nsChangeHint aHint) {
-  nsIPresShell::IntrinsicDirty dirtyType;
+  IntrinsicDirty dirtyType;
   if (aHint & nsChangeHint_ClearDescendantIntrinsics) {
     NS_ASSERTION(aHint & nsChangeHint_ClearAncestorIntrinsics,
                  "Please read the comments in nsChangeHint.h");
     NS_ASSERTION(aHint & nsChangeHint_NeedDirtyReflow,
                  "ClearDescendantIntrinsics requires NeedDirtyReflow");
-    dirtyType = nsIPresShell::eStyleChange;
+    dirtyType = IntrinsicDirty::StyleChange;
   } else if ((aHint & nsChangeHint_UpdateComputedBSize) &&
              aFrame->HasAnyStateBits(
                  NS_FRAME_DESCENDANT_INTRINSIC_ISIZE_DEPENDS_ON_BSIZE)) {
-    dirtyType = nsIPresShell::eStyleChange;
+    dirtyType = IntrinsicDirty::StyleChange;
   } else if (aHint & nsChangeHint_ClearAncestorIntrinsics) {
-    dirtyType = nsIPresShell::eTreeChange;
+    dirtyType = IntrinsicDirty::TreeChange;
   } else if ((aHint & nsChangeHint_UpdateComputedBSize) &&
              HasBoxAncestor(aFrame)) {
     
     
-    dirtyType = nsIPresShell::eTreeChange;
+    dirtyType = IntrinsicDirty::TreeChange;
   } else {
-    dirtyType = nsIPresShell::eResize;
+    dirtyType = IntrinsicDirty::Resize;
   }
 
   nsFrameState dirtyBits;
   if (aFrame->GetStateBits() & NS_FRAME_FIRST_REFLOW) {
     dirtyBits = nsFrameState(0);
   } else if ((aHint & nsChangeHint_NeedDirtyReflow) ||
-             dirtyType == nsIPresShell::eStyleChange) {
+             dirtyType == IntrinsicDirty::StyleChange) {
     dirtyBits = NS_FRAME_IS_DIRTY;
   } else {
     dirtyBits = NS_FRAME_HAS_DIRTY_CHILDREN;
@@ -1283,13 +1283,13 @@ static void StyleChangeReflow(nsIFrame* aFrame, nsChangeHint aHint) {
 
   
   
-  if (dirtyType == nsIPresShell::eResize && !dirtyBits) return;
+  if (dirtyType == IntrinsicDirty::Resize && !dirtyBits) return;
 
-  nsIPresShell::ReflowRootHandling rootHandling;
+  ReflowRootHandling rootHandling;
   if (aHint & nsChangeHint_ReflowChangesSizeOrPosition) {
-    rootHandling = nsIPresShell::ePositionOrSizeChange;
+    rootHandling = ReflowRootHandling::PositionOrSizeChange;
   } else {
-    rootHandling = nsIPresShell::eNoPositionOrSizeChange;
+    rootHandling = ReflowRootHandling::NoPositionOrSizeChange;
   }
 
   do {

@@ -1846,7 +1846,7 @@ void Accessible::DispatchClickEvent(nsIContent* aContent,
   
   presShell->ScrollContentIntoView(aContent, nsIPresShell::ScrollAxis(),
                                    nsIPresShell::ScrollAxis(),
-                                   nsIPresShell::SCROLL_OVERFLOW_HIDDEN);
+                                   ScrollFlags::ScrollOverflowHidden);
 
   AutoWeakFrame frame = aContent->GetPrimaryFrame();
   if (!frame) return;

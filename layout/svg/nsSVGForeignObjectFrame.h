@@ -8,18 +8,14 @@
 #define NSSVGFOREIGNOBJECTFRAME_H__
 
 #include "mozilla/Attributes.h"
+#include "mozilla/PresShellForwards.h"
 #include "nsAutoPtr.h"
 #include "nsContainerFrame.h"
-#include "nsIPresShell.h"  
 #include "nsSVGDisplayableFrame.h"
 #include "nsRegion.h"
 #include "nsSVGUtils.h"
 
 class gfxContext;
-
-namespace mozilla {
-class PresShell;
-}  
 
 class nsSVGForeignObjectFrame final : public nsContainerFrame,
                                       public nsSVGDisplayableFrame {
@@ -92,7 +88,7 @@ class nsSVGForeignObjectFrame final : public nsContainerFrame,
  protected:
   
   void DoReflow();
-  void RequestReflow(nsIPresShell::IntrinsicDirty aType);
+  void RequestReflow(mozilla::IntrinsicDirty aType);
 
   
   bool IsDisabled() const { return mRect.width <= 0 || mRect.height <= 0; }

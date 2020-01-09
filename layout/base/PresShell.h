@@ -369,7 +369,7 @@ class PresShell final : public nsIPresShell,
 
   MOZ_CAN_RUN_SCRIPT
   nsresult GoToAnchor(const nsAString& aAnchorName, bool aScroll,
-                      uint32_t aAdditionalScrollFlags = 0);
+                      ScrollFlags aAdditionalScrollFlags = ScrollFlags::None);
 
   
 
@@ -412,9 +412,13 @@ class PresShell final : public nsIPresShell,
 
 
 
+
+
+
   MOZ_CAN_RUN_SCRIPT
   nsresult ScrollContentIntoView(nsIContent* aContent, ScrollAxis aVertical,
-                                 ScrollAxis aHorizontal, uint32_t aFlags);
+                                 ScrollAxis aHorizontal,
+                                 ScrollFlags aScrollFlags);
 
   
 

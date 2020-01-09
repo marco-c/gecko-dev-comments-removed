@@ -1,10 +1,10 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
+/* rendering object for list-item bullets */
 
 #include "nsBulletFrame.h"
 
@@ -78,14 +78,14 @@ CounterStyle* nsBulletFrame::ResolveCounterStyle() {
 
 void nsBulletFrame::DestroyFrom(nsIFrame* aDestructRoot,
                                 PostDestroyData& aPostDestroyData) {
-  
+  // Stop image loading first.
   DeregisterAndCancelImageRequest();
 
   if (mListener) {
     mListener->SetFrame(nullptr);
   }
 
-  
+  // Let base class do the rest
   nsFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
 }
 
@@ -101,7 +101,7 @@ bool nsBulletFrame::IsSelfEmpty() {
   return StyleList()->mCounterStyle.IsNone();
 }
 
-
+/* virtual */
 void nsBulletFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
   nsFrame::DidSetComputedStyle(aOldComputedStyle);
 
@@ -116,7 +116,7 @@ void nsBulletFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
     bool needNewRequest = true;
 
     if (mImageRequest) {
-      
+      // Reload the image, maybe...
       nsCOMPtr<nsIURI> oldURI;
       mImageRequest->GetURI(getter_AddRefs(oldURI));
       nsCOMPtr<nsIURI> newURI;
@@ -135,27 +135,27 @@ void nsBulletFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
       newRequest->SyncClone(mListener, PresContext()->Document(),
                             getter_AddRefs(newRequestClone));
 
-      
-      
-      
+      // Deregister the old request. We wait until after Clone is done in case
+      // the old request and the new request are the same underlying image
+      // accessed via different URLs.
       DeregisterAndCancelImageRequest();
 
-      
+      // Register the new request.
       mImageRequest = std::move(newRequestClone);
-      RegisterImageRequest( false);
+      RegisterImageRequest(/* aKnownToBeAnimated = */ false);
 
-      
-      
+      // Image bullets can affect the layout of the page, so boost the image
+      // load priority.
       mImageRequest->BoostPriority(imgIRequest::CATEGORY_SIZE_QUERY);
     }
   } else {
-    
+    // No image request on the new ComputedStyle.
     DeregisterAndCancelImageRequest();
   }
 
 #ifdef ACCESSIBILITY
-  
-  
+  // Update the list bullet accessible. If old style list isn't available then
+  // no need to update the accessible tree because it's not created yet.
   if (aOldComputedStyle) {
     nsAccessibilityService* accService = nsIPresShell::AccService();
     if (accService) {
@@ -288,38 +288,38 @@ class BulletRenderer final {
       nsDisplayListBuilder* aDisplayListBuilder);
 
  private:
-  
-  
+  // mImage and mDest are the properties for list-style-image.
+  // mImage is the image content and mDest is the image position.
   RefPtr<imgIContainer> mImage;
   nsRect mDest;
 
-  
-  
-  
-  
-  
-  
-  
+  // Some bullet types are stored as a rect (in device pixels) instead of a Path
+  // to allow generating proper WebRender commands. When webrender is disabled
+  // the Path is lazily created for these items before painting.
+  // TODO: The size of this structure doesn't seem to be an issue since it has
+  // so many fields that are specific to a bullet style or another, but if it
+  // becomes one we can easily store mDest and mPathRect into the same memory
+  // location since they are never used by the same bullet types.
   LayoutDeviceRect mPathRect;
 
-  
-  
+  // mColor indicate the color of list-style. Both text and path type would use
+  // this member.
   nscolor mColor;
 
-  
-  
-  
+  // mPath record the path of the list-style for later drawing.
+  // Included following types: square, circle, disc, disclosure open and
+  // disclosure closed.
   RefPtr<Path> mPath;
 
-  
-  
+  // mText, mFontMertrics, mPoint, mFont and mGlyphs are for other
+  // list-style-type which can be drawed by text.
   nsString mText;
   RefPtr<nsFontMetrics> mFontMetrics;
   nsPoint mPoint;
   RefPtr<ScaledFont> mFont;
   nsTArray<layers::GlyphArray> mGlyphs;
 
-  
+  // Store the type of list-style-type.
   int32_t mListStyleType;
 };
 
@@ -355,7 +355,7 @@ ImgDrawResult BulletRenderer::Paint(gfxContext& aRenderingContext, nsPoint aPt,
     return nsLayoutUtils::DrawSingleImage(
         aRenderingContext, aFrame->PresContext(), mImage, filter, mDest,
         aDirtyRect,
-         Nothing(), aFlags);
+        /* no SVGImageContext */ Nothing(), aFlags);
   }
 
   if (IsPathType()) {
@@ -617,8 +617,8 @@ bool nsDisplayBullet::CreateWebRenderCommands(
     const StackingContextHelper& aSc,
     mozilla::layers::RenderRootStateManager* aManager,
     nsDisplayListBuilder* aDisplayListBuilder) {
-  
-  
+  // FIXME: avoid needing to make this target if we're drawing text
+  // (non-trivial refactor of all this code)
   RefPtr<gfxContext> screenRefCtx = gfxContext::CreateOrNull(
       gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget().get());
   Maybe<BulletRenderer> br =
@@ -681,8 +681,8 @@ Maybe<BulletRenderer> nsBulletFrame::CreateBulletRenderer(
           return Some(br);
         }
       } else {
-        
-        
+        // Boost the load priority further now that we know we want to display
+        // the bullet image.
         mImageRequest->BoostPriority(imgIRequest::CATEGORY_DISPLAY);
       }
     }
@@ -711,12 +711,12 @@ Maybe<BulletRenderer> nsBulletFrame::CreateBulletRenderer(
       nsRect rect(aPt, mRect.Size());
       rect.Deflate(padding);
 
-      
-      
-      
-      
-      
-      
+      // Snap the height and the width of the rectangle to device pixels,
+      // and then center the result within the original rectangle, so that
+      // all square bullets at the same font size have the same visual
+      // size (bug 376690).
+      // FIXME: We should really only do this if we're not transformed
+      // (like gfxContext::UserToDevicePixelSnapped does).
       nsPresContext* pc = PresContext();
       nsRect snapRect(rect.x, rect.y,
                       pc->RoundAppUnitsToNearestDevPixels(rect.width),
@@ -751,7 +751,7 @@ Maybe<BulletRenderer> nsBulletFrame::CreateBulletRenderer(
 
       RefPtr<PathBuilder> builder = drawTarget->CreatePathBuilder();
       if (isDown) {
-        
+        // to bottom
         builder->MoveTo(NSPointToPoint(rect.TopLeft(), appUnitsPerDevPixel));
         builder->LineTo(NSPointToPoint(rect.TopRight(), appUnitsPerDevPixel));
         builder->LineTo(NSPointToPoint(
@@ -759,14 +759,14 @@ Maybe<BulletRenderer> nsBulletFrame::CreateBulletRenderer(
       } else {
         bool isLR = isVertical ? wm.IsVerticalLR() : wm.IsBidiLTR();
         if (isLR) {
-          
+          // to right
           builder->MoveTo(NSPointToPoint(rect.TopLeft(), appUnitsPerDevPixel));
           builder->LineTo(NSPointToPoint(
               (rect.TopRight() + rect.BottomRight()) / 2, appUnitsPerDevPixel));
           builder->LineTo(
               NSPointToPoint(rect.BottomLeft(), appUnitsPerDevPixel));
         } else {
-          
+          // to left
           builder->MoveTo(NSPointToPoint(rect.TopRight(), appUnitsPerDevPixel));
           builder->LineTo(
               NSPointToPoint(rect.BottomRight(), appUnitsPerDevPixel));
@@ -862,7 +862,7 @@ void nsBulletFrame::GetListItemText(CounterStyle* aStyle,
   if (aWritingMode.IsBidiLTR() != isRTL) {
     aResult.Append(counter);
   } else {
-    
+    // RLM = 0x200f, LRM = 0x200e
     char16_t mark = isRTL ? 0x200f : 0x200e;
     aResult.Append(mark);
     aResult.Append(counter);
@@ -883,7 +883,7 @@ void nsBulletFrame::GetDesiredSize(nsPresContext* aCX,
                                    ReflowOutput& aMetrics,
                                    float aFontSizeInflation,
                                    LogicalMargin* aPadding) {
-  
+  // Reset our padding.  If we need it, we'll set it below.
   WritingMode wm = GetWritingMode();
   aPadding->SizeTo(wm, 0, 0, 0, 0);
   LogicalSize finalSize(wm);
@@ -900,7 +900,7 @@ void nsBulletFrame::GetDesiredSize(nsPresContext* aCX,
     mImageRequest->GetImageStatus(&status);
     if (status & imgIRequest::STATUS_SIZE_AVAILABLE &&
         !(status & imgIRequest::STATUS_ERROR)) {
-      
+      // auto size the image
       finalSize.ISize(wm) = mIntrinsicSize.ISize(wm);
       aMetrics.SetBlockStartAscent(finalSize.BSize(wm) =
                                        mIntrinsicSize.BSize(wm));
@@ -914,12 +914,12 @@ void nsBulletFrame::GetDesiredSize(nsPresContext* aCX,
     }
   }
 
-  
-  
-  
-  
-  
-  
+  // If we're getting our desired size and don't have an image, reset
+  // mIntrinsicSize to (0,0).  Otherwise, if we used to have an image, it
+  // changed, and the new one is coming in, but we're reflowing before it's
+  // fully there, we'll end up with mIntrinsicSize not matching our size, but
+  // won't trigger a reflow in OnStartContainer (because mIntrinsicSize will
+  // match the image size).
   mIntrinsicSize.SizeTo(wm, 0, 0);
 
   nscoord bulletSize;
@@ -981,12 +981,12 @@ void nsBulletFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
   float inflation = nsLayoutUtils::FontSizeInflationFor(this);
   SetFontSizeInflation(inflation);
 
-  
+  // Get the base size
   GetDesiredSize(aPresContext, aReflowInput.mRenderingContext, aMetrics,
                  inflation, &mPadding);
 
-  
-  
+  // Add in the border and padding; split the top/bottom between the
+  // ascent and descent to make things look nice
   WritingMode wm = aReflowInput.GetWritingMode();
   const LogicalMargin& bp = aReflowInput.ComputedLogicalBorderPadding();
   mPadding.BStart(wm) += NSToCoordRound(bp.BStart(wm) * inflation);
@@ -1001,16 +1001,16 @@ void nsBulletFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
   aMetrics.SetBlockStartAscent(aMetrics.BlockStartAscent() +
                                linePadding.BStart(lineWM));
 
-  
-  
-  
-  
+  // XXX this is a bit of a hack, we're assuming that no glyphs used for bullets
+  // overflow their font-boxes. It'll do for now; to fix it for real, we really
+  // should rewrite all the text-handling code here to use gfxTextRun (bug
+  // 397294).
   aMetrics.SetOverflowAreasToDesiredBounds();
 
   NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aMetrics);
 }
 
-
+/* virtual */
 nscoord nsBulletFrame::GetMinISize(gfxContext* aRenderingContext) {
   WritingMode wm = GetWritingMode();
   ReflowOutput reflowOutput(wm);
@@ -1022,7 +1022,7 @@ nscoord nsBulletFrame::GetMinISize(gfxContext* aRenderingContext) {
   return reflowOutput.ISize(wm);
 }
 
-
+/* virtual */
 nscoord nsBulletFrame::GetPrefISize(gfxContext* aRenderingContext) {
   WritingMode wm = GetWritingMode();
   ReflowOutput metrics(wm);
@@ -1033,9 +1033,9 @@ nscoord nsBulletFrame::GetPrefISize(gfxContext* aRenderingContext) {
   return metrics.ISize(wm);
 }
 
-
-
-
+// If a bullet has zero size and is "ignorable" from its styling, we behave
+// as if it doesn't exist, from a line-breaking/isize-computation perspective.
+// Otherwise, we use the default implementation, same as nsFrame.
 static inline bool IsIgnoreable(const nsIFrame* aFrame, nscoord aISize) {
   if (aISize != nscoord(0)) {
     return false;
@@ -1044,7 +1044,7 @@ static inline bool IsIgnoreable(const nsIFrame* aFrame, nscoord aISize) {
   return listStyle->mCounterStyle.IsNone() && !listStyle->GetListStyleImage();
 }
 
-
+/* virtual */
 void nsBulletFrame::AddInlineMinISize(gfxContext* aRenderingContext,
                                       nsIFrame::InlineMinISizeData* aData) {
   nscoord isize = nsLayoutUtils::IntrinsicForContainer(
@@ -1054,7 +1054,7 @@ void nsBulletFrame::AddInlineMinISize(gfxContext* aRenderingContext,
   }
 }
 
-
+/* virtual */
 void nsBulletFrame::AddInlinePrefISize(gfxContext* aRenderingContext,
                                        nsIFrame::InlinePrefISizeData* aData) {
   nscoord isize = nsLayoutUtils::IntrinsicForContainer(
@@ -1074,35 +1074,35 @@ nsBulletFrame::Notify(imgIRequest* aRequest, int32_t aType,
   }
 
   if (aType == imgINotificationObserver::FRAME_UPDATE) {
-    
-    
-    
-    
+    // The image has changed.
+    // Invalidate the entire content area. Maybe it's not optimal but it's
+    // simple and always correct, and I'll be a stunned mullet if it ever
+    // matters for performance
     InvalidateFrame();
   }
 
   if (aType == imgINotificationObserver::IS_ANIMATED) {
-    
-    
+    // Register the image request with the refresh driver now that we know it's
+    // animated.
     if (aRequest == mImageRequest) {
-      RegisterImageRequest( true);
+      RegisterImageRequest(/* aKnownToBeAnimated = */ true);
     }
   }
 
   if (aType == imgINotificationObserver::LOAD_COMPLETE) {
-    
-    
-    
+    // Unconditionally start decoding for now.
+    // XXX(seth): We eventually want to decide whether to do this based on
+    // visibility. We should get that for free from bug 1091236.
     nsCOMPtr<imgIContainer> container;
     aRequest->GetImage(getter_AddRefs(container));
     if (container) {
-      
+      // Retrieve the intrinsic size of the image.
       int32_t width = 0;
       int32_t height = 0;
       container->GetWidth(&width);
       container->GetHeight(&height);
 
-      
+      // Request a decode at that size.
       container->RequestDecodeForSize(
           IntSize(width, height), imgIContainer::DECODE_FLAGS_DEFAULT |
                                       imgIContainer::FLAG_HIGH_QUALITY_SCALING);
@@ -1153,20 +1153,20 @@ nsresult nsBulletFrame::OnSizeAvailable(imgIRequest* aRequest,
   if (mIntrinsicSize != newsize) {
     mIntrinsicSize = newsize;
 
-    
-    
+    // Now that the size is available (or an error occurred), trigger
+    // a reflow of the bullet frame.
     mozilla::PresShell* presShell = presContext->GetPresShell();
     if (presShell) {
-      presShell->FrameNeedsReflow(this, nsIPresShell::eStyleChange,
+      presShell->FrameNeedsReflow(this, IntrinsicDirty::StyleChange,
                                   NS_FRAME_IS_DIRTY);
     }
   }
 
-  
+  // Handle animations
   aImage->SetAnimationMode(presContext->ImageAnimationMode());
-  
-  
-  
+  // Ensure the animation (if any) is started. Note: There is no
+  // corresponding call to Decrement for this. This Increment will be
+  // 'cleaned up' by the Request when it is destroyed, but only then.
   aRequest->IncrementAnimationConsumers();
 
   return NS_OK;
@@ -1229,10 +1229,10 @@ nscoord nsBulletFrame::GetListStyleAscent() const {
   if (list->mCounterStyle.IsAnonymous()) {
     return fm->MaxAscent();
   }
-  
-  
-  
-  
+  // NOTE(emilio): @counter-style can override most of the styles from this
+  // list, and we still return the changed ascent. Do we care about that?
+  //
+  // https://github.com/w3c/csswg-drafts/issues/3584
   nsAtom* style = list->mCounterStyle.AsAtom();
   if (style == nsGkAtoms::disc || style == nsGkAtoms::circle ||
       style == nsGkAtoms::square) {
@@ -1298,8 +1298,8 @@ void nsBulletFrame::GetSpokenText(nsAString& aText) {
 
 void nsBulletFrame::RegisterImageRequest(bool aKnownToBeAnimated) {
   if (mImageRequest) {
-    
-    
+    // mRequestRegistered is a bitfield; unpack it temporarily so we can take
+    // the address.
     bool isRequestRegistered = mRequestRegistered;
 
     if (aKnownToBeAnimated) {
@@ -1316,17 +1316,17 @@ void nsBulletFrame::RegisterImageRequest(bool aKnownToBeAnimated) {
 
 void nsBulletFrame::DeregisterAndCancelImageRequest() {
   if (mImageRequest) {
-    
-    
+    // mRequestRegistered is a bitfield; unpack it temporarily so we can take
+    // the address.
     bool isRequestRegistered = mRequestRegistered;
 
-    
+    // Deregister our image request from the refresh driver.
     nsLayoutUtils::DeregisterImageRequest(PresContext(), mImageRequest,
                                           &isRequestRegistered);
 
     mRequestRegistered = isRequestRegistered;
 
-    
+    // Cancel the image request and forget about it.
     mImageRequest->CancelAndForgetObserver(NS_ERROR_FAILURE);
     mImageRequest = nullptr;
   }

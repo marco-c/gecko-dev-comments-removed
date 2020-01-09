@@ -271,7 +271,7 @@ void nsGridRowLeafLayout::DirtyRows(nsIFrame* aBox, nsBoxLayoutState& aState) {
     
     
     
-    aState.PresShell()->FrameNeedsReflow(aBox, nsIPresShell::eTreeChange,
+    aState.PresShell()->FrameNeedsReflow(aBox, IntrinsicDirty::TreeChange,
                                          NS_FRAME_IS_DIRTY);
   }
 }

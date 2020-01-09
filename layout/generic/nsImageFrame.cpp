@@ -711,7 +711,7 @@ nsresult nsImageFrame::OnSizeAvailable(imgIRequest* aRequest,
     
     
     if (!(mState & IMAGE_SIZECONSTRAINED)) {
-      PresShell()->FrameNeedsReflow(this, nsIPresShell::eStyleChange,
+      PresShell()->FrameNeedsReflow(this, IntrinsicDirty::StyleChange,
                                     NS_FRAME_IS_DIRTY);
     } else {
       
@@ -792,7 +792,7 @@ void nsImageFrame::ResponsiveContentDensityChanged() {
     return;
   }
 
-  PresShell()->FrameNeedsReflow(this, nsIPresShell::eStyleChange,
+  PresShell()->FrameNeedsReflow(this, IntrinsicDirty::StyleChange,
                                 NS_FRAME_IS_DIRTY);
 }
 
@@ -825,7 +825,7 @@ void nsImageFrame::NotifyNewCurrentRequest(imgIRequest* aRequest,
   if (GotInitialReflow()) {
     if (intrinsicSizeChanged) {
       if (!(mState & IMAGE_SIZECONSTRAINED)) {
-        PresShell()->FrameNeedsReflow(this, nsIPresShell::eStyleChange,
+        PresShell()->FrameNeedsReflow(this, IntrinsicDirty::StyleChange,
                                       NS_FRAME_IS_DIRTY);
       } else {
         
@@ -2346,7 +2346,7 @@ nsresult nsImageFrame::AttributeChanged(int32_t aNameSpaceID,
     return rv;
   }
   if (nsGkAtoms::alt == aAttribute) {
-    PresShell()->FrameNeedsReflow(this, nsIPresShell::eStyleChange,
+    PresShell()->FrameNeedsReflow(this, IntrinsicDirty::StyleChange,
                                   NS_FRAME_IS_DIRTY);
   }
 

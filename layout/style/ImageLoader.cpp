@@ -609,7 +609,7 @@ void ImageLoader::RequestReflowOnFrame(FrameWithFlags* aFwf,
 
   
   nsIFrame* parent = frame->GetInFlowParent();
-  parent->PresShell()->FrameNeedsReflow(parent, nsIPresShell::eStyleChange,
+  parent->PresShell()->FrameNeedsReflow(parent, IntrinsicDirty::StyleChange,
                                         NS_FRAME_IS_DIRTY);
 
   

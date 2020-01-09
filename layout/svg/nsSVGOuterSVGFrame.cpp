@@ -128,7 +128,7 @@ void nsSVGOuterSVGFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
           
           
           embeddingFrame->PresShell()->FrameNeedsReflow(
-              embeddingFrame, nsIPresShell::eStyleChange, NS_FRAME_IS_DIRTY);
+              embeddingFrame, IntrinsicDirty::StyleChange, NS_FRAME_IS_DIRTY);
         }
       }
     }
@@ -702,13 +702,13 @@ nsresult nsSVGOuterSVGFrame::AttributeChanged(int32_t aNameSpaceID,
           
           
           embeddingFrame->PresShell()->FrameNeedsReflow(
-              embeddingFrame, nsIPresShell::eStyleChange, NS_FRAME_IS_DIRTY);
+              embeddingFrame, IntrinsicDirty::StyleChange, NS_FRAME_IS_DIRTY);
         }
         
       } else {
         
         
-        PresShell()->FrameNeedsReflow(this, nsIPresShell::eStyleChange,
+        PresShell()->FrameNeedsReflow(this, IntrinsicDirty::StyleChange,
                                       NS_FRAME_IS_DIRTY);
       }
     }

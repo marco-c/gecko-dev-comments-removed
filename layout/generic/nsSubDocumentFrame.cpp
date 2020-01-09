@@ -867,8 +867,8 @@ nsresult nsSubDocumentFrame::AttributeChanged(int32_t aNameSpaceID,
   } else if (aAttribute == nsGkAtoms::showresizer) {
     nsIFrame* rootFrame = GetSubdocumentRootFrame();
     if (rootFrame) {
-      rootFrame->PresShell()->FrameNeedsReflow(rootFrame, nsIPresShell::eResize,
-                                               NS_FRAME_IS_DIRTY);
+      rootFrame->PresShell()->FrameNeedsReflow(
+          rootFrame, IntrinsicDirty::Resize, NS_FRAME_IS_DIRTY);
     }
   } else if (aAttribute == nsGkAtoms::marginwidth ||
              aAttribute == nsGkAtoms::marginheight) {
@@ -1183,12 +1183,12 @@ void nsSubDocumentFrame::EndSwapDocShells(nsIFrame* aOther) {
   
   
   if (weakThis.IsAlive()) {
-    PresShell()->FrameNeedsReflow(this, nsIPresShell::eTreeChange,
+    PresShell()->FrameNeedsReflow(this, IntrinsicDirty::TreeChange,
                                   NS_FRAME_IS_DIRTY);
     InvalidateFrameSubtree();
   }
   if (weakOther.IsAlive()) {
-    other->PresShell()->FrameNeedsReflow(other, nsIPresShell::eTreeChange,
+    other->PresShell()->FrameNeedsReflow(other, IntrinsicDirty::TreeChange,
                                          NS_FRAME_IS_DIRTY);
     other->InvalidateFrameSubtree();
   }

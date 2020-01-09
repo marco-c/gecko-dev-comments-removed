@@ -2604,7 +2604,7 @@ ImgDrawResult nsTreeBodyFrame::PaintTreeBody(gfxContext& aRenderingContext,
   if (oldPageCount != mPageLength ||
       mHorzWidth != CalcHorzWidth(GetScrollParts())) {
     
-    PresShell()->FrameNeedsReflow(this, nsIPresShell::eResize,
+    PresShell()->FrameNeedsReflow(this, IntrinsicDirty::Resize,
                                   NS_FRAME_IS_DIRTY);
   }
 #ifdef DEBUG

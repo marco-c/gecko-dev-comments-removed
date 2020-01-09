@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsMeterFrame.h"
 
@@ -49,13 +49,13 @@ void nsMeterFrame::DestroyFrom(nsIFrame* aDestructRoot,
 
 nsresult nsMeterFrame::CreateAnonymousContent(
     nsTArray<ContentInfo>& aElements) {
-  
+  // Get the NodeInfoManager and tag necessary to create the meter bar div.
   nsCOMPtr<Document> doc = mContent->GetComposedDoc();
 
-  
+  // Create the div.
   mBarDiv = doc->CreateHTMLElement(nsGkAtoms::div);
 
-  
+  // Associate ::-moz-meter-bar pseudo-element to the anonymous child.
   mBarDiv->SetPseudoElementType(PseudoStyleType::mozMeterBar);
 
   aElements.AppendElement(mBarDiv);
@@ -105,7 +105,7 @@ void nsMeterFrame::Reflow(nsPresContext* aPresContext,
   ConsiderChildOverflow(aDesiredSize.mOverflowAreas, barFrame);
   FinishAndStoreOverflow(&aDesiredSize);
 
-  aStatus.Reset();  
+  aStatus.Reset();  // This type of frame can't be split.
 
   NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aDesiredSize);
 }
@@ -124,7 +124,7 @@ void nsMeterFrame::ReflowBarFrame(nsIFrame* aBarFrame,
   nscoord xoffset = aReflowInput.ComputedPhysicalBorderPadding().left;
   nscoord yoffset = aReflowInput.ComputedPhysicalBorderPadding().top;
 
-  
+  // NOTE: Introduce a new function getPosition in the content part ?
   HTMLMeterElement* meterElement = static_cast<HTMLMeterElement*>(GetContent());
 
   double max = meterElement->Max();
@@ -140,9 +140,9 @@ void nsMeterFrame::ReflowBarFrame(nsIFrame* aBarFrame,
     xoffset += aReflowInput.ComputedWidth() - size;
   }
 
-  
+  // The bar position is *always* constrained.
   if (vertical) {
-    
+    // We want the bar to begin at the bottom.
     yoffset += aReflowInput.ComputedHeight() - size;
 
     size -= reflowInput.ComputedPhysicalMargin().TopBottom() +
@@ -175,7 +175,7 @@ nsresult nsMeterFrame::AttributeChanged(int32_t aNameSpaceID,
        aAttribute == nsGkAtoms::min)) {
     nsIFrame* barFrame = mBarDiv->GetPrimaryFrame();
     NS_ASSERTION(barFrame, "The meter frame should have a child with a frame!");
-    PresShell()->FrameNeedsReflow(barFrame, nsIPresShell::eResize,
+    PresShell()->FrameNeedsReflow(barFrame, IntrinsicDirty::Resize,
                                   NS_FRAME_IS_DIRTY);
     InvalidateFrame();
   }
@@ -193,12 +193,12 @@ LogicalSize nsMeterFrame::ComputeAutoSize(
 
   const WritingMode wm = GetWritingMode();
   LogicalSize autoSize(wm);
-  autoSize.BSize(wm) = autoSize.ISize(wm) = fontMet->Font().size;  
+  autoSize.BSize(wm) = autoSize.ISize(wm) = fontMet->Font().size;  // 1em
 
   if (ResolvedOrientationIsVertical() == wm.IsVertical()) {
-    autoSize.ISize(wm) *= 5;  
+    autoSize.ISize(wm) *= 5;  // 5em
   } else {
-    autoSize.BSize(wm) *= 5;  
+    autoSize.BSize(wm) *= 5;  // 5em
   }
 
   return autoSize.ConvertTo(aWM, wm);
@@ -208,11 +208,11 @@ nscoord nsMeterFrame::GetMinISize(gfxContext* aRenderingContext) {
   RefPtr<nsFontMetrics> fontMet =
       nsLayoutUtils::GetFontMetricsForFrame(this, 1.0f);
 
-  nscoord minISize = fontMet->Font().size;  
+  nscoord minISize = fontMet->Font().size;  // 1em
 
   if (ResolvedOrientationIsVertical() == GetWritingMode().IsVertical()) {
-    
-    minISize *= 5;  
+    // The orientation is inline
+    minISize *= 5;  // 5em
   }
 
   return minISize;
@@ -225,10 +225,10 @@ nscoord nsMeterFrame::GetPrefISize(gfxContext* aRenderingContext) {
 bool nsMeterFrame::ShouldUseNativeStyle() const {
   nsIFrame* barFrame = mBarDiv->GetPrimaryFrame();
 
-  
-  
-  
-  
+  // Use the native style if these conditions are satisfied:
+  // - both frames use the native appearance;
+  // - neither frame has author specified rules setting the border or the
+  //   background.
   return StyleDisplay()->mAppearance == StyleAppearance::Meter &&
          !PresContext()->HasAuthorSpecifiedRules(
              this,

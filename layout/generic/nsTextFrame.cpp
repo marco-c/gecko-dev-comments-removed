@@ -655,14 +655,14 @@ static void InvalidateFrameDueToGlyphsChanged(nsIFrame* aFrame) {
         f->GetStateBits() & NS_FRAME_IS_NONDISPLAY) {
       auto svgTextFrame = static_cast<SVGTextFrame*>(
           nsLayoutUtils::GetClosestFrameOfType(f, LayoutFrameType::SVGText));
-      svgTextFrame->ScheduleReflowSVGNonDisplayText(nsIPresShell::eResize);
+      svgTextFrame->ScheduleReflowSVGNonDisplayText(IntrinsicDirty::Resize);
     } else {
       
       
       
       
       
-      presShell->FrameNeedsReflow(f, nsIPresShell::eResize, NS_FRAME_IS_DIRTY);
+      presShell->FrameNeedsReflow(f, IntrinsicDirty::Resize, NS_FRAME_IS_DIRTY);
     }
   }
 }
@@ -4794,7 +4794,7 @@ nsresult nsTextFrame::CharacterDataChanged(
       textFrame->mReflowRequestedForCharDataChange = true;
       if (!areAncestorsAwareOfReflowRequest) {
         
-        presShell->FrameNeedsReflow(textFrame, nsIPresShell::eStyleChange,
+        presShell->FrameNeedsReflow(textFrame, IntrinsicDirty::StyleChange,
                                     NS_FRAME_IS_DIRTY);
       } else {
         
@@ -7201,7 +7201,7 @@ void nsTextFrame::SetSelectedRange(uint32_t aStart, uint32_t aEnd,
       if (didHaveOverflowingSelection ||
           (aSelected && f->CombineSelectionUnderlineRect(presContext, r))) {
         presContext->PresShell()->FrameNeedsReflow(
-            f, nsIPresShell::eStyleChange, NS_FRAME_IS_DIRTY);
+            f, IntrinsicDirty::StyleChange, NS_FRAME_IS_DIRTY);
       }
     }
     
