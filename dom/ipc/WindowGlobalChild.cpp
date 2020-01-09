@@ -60,6 +60,13 @@ already_AddRefed<WindowGlobalChild> WindowGlobalChild::Create(
 
   RefPtr<WindowGlobalChild> wgc = new WindowGlobalChild(aWindow, bc);
 
+  
+  
+  if (bc->GetClosed()) {
+    wgc->ActorDestroy(FailedConstructor);
+    return wgc.forget();
+  }
+
   WindowGlobalInit init(principal, aWindow->GetDocumentURI(), bc,
                         wgc->mInnerWindowId, wgc->mOuterWindowId);
 
