@@ -10757,25 +10757,39 @@ bool PresShell::EventHandler::EventTargetData::MaybeRetargetToActiveDocument(
   MOZ_ASSERT(mPresShell);
   MOZ_ASSERT(!mContent, "Doesn't support to retarget the content");
 
-  
-  
-  if (EventStateManager* activeESM =
-          EventStateManager::GetActiveEventStateManager()) {
-    if (aGUIEvent->mClass == ePointerEventClass ||
-        aGUIEvent->HasMouseEventMessage()) {
-      if (activeESM != GetEventStateManager()) {
-        if (nsPresContext* activeContext = activeESM->GetPresContext()) {
-          if (nsIPresShell* activeShell = activeContext->GetPresShell()) {
-            if (nsContentUtils::ContentIsCrossDocDescendantOf(
-                    activeShell->GetDocument(), GetDocument())) {
-              SetPresShellAndFrame(static_cast<PresShell*>(activeShell),
-                                   activeShell->GetRootFrame());
-              return true;
-            }
-          }
-        }
-      }
-    }
+  EventStateManager* activeESM =
+      EventStateManager::GetActiveEventStateManager();
+  if (!activeESM) {
+    return false;
   }
-  return false;
+
+  if (aGUIEvent->mClass != ePointerEventClass &&
+      !aGUIEvent->HasMouseEventMessage()) {
+    return false;
+  }
+
+  if (activeESM == GetEventStateManager()) {
+    return false;
+  }
+
+  nsPresContext* activePresContext = activeESM->GetPresContext();
+  if (!activePresContext) {
+    return false;
+  }
+
+  nsIPresShell* activePresShell = activePresContext->GetPresShell();
+  if (!activePresShell) {
+    return false;
+  }
+
+  
+  
+  if (!nsContentUtils::ContentIsCrossDocDescendantOf(
+          activePresShell->GetDocument(), GetDocument())) {
+    return false;
+  }
+
+  SetPresShellAndFrame(static_cast<PresShell*>(activePresShell),
+                       activePresShell->GetRootFrame());
+  return true;
 }
