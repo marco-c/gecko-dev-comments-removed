@@ -289,6 +289,7 @@ static bool PreprocessValue(JSContext* cx, HandleObject holder, KeyType key,
 
   
   
+  
   if (vp.isObject() || vp.isBigInt()) {
     RootedValue toJSON(cx);
     RootedObject obj(cx, JS::ToObject(cx, vp));
@@ -296,7 +297,7 @@ static bool PreprocessValue(JSContext* cx, HandleObject holder, KeyType key,
       return false;
     }
 
-    if (!GetProperty(cx, obj, obj, cx->names().toJSON, &toJSON)) {
+    if (!GetProperty(cx, obj, vp, cx->names().toJSON, &toJSON)) {
       return false;
     }
 
