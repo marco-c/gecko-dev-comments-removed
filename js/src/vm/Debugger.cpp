@@ -1676,7 +1676,7 @@ static void AdjustGeneratorResumptionValue(JSContext* cx,
     
     
     
-    if (!frame.callee()->isAsync()) {
+    if (!genObj->is<AsyncGeneratorObject>()) {
       JSObject* pair = CreateIterResultObject(cx, vp, true);
       if (!pair) {
         getAndClearExceptionThenThrow();
@@ -1687,6 +1687,12 @@ static void AdjustGeneratorResumptionValue(JSContext* cx,
 
     
     genObj->setClosed();
+
+    
+    
+    if (genObj->is<AsyncGeneratorObject>()) {
+      genObj->as<AsyncGeneratorObject>().setCompleted();
+    }
   } else if (frame.callee()->isAsync()) {
     if (AbstractGeneratorObject* genObj =
             GetGeneratorObjectForFrame(cx, frame)) {
@@ -2083,7 +2089,7 @@ ResumeMode Debugger::fireEnterFrame(JSContext* cx, MutableHandleValue vp) {
   
   if (iter.hasScript() && *iter.pc() == JSOP_AFTERYIELD) {
     auto* genObj = GetGeneratorObjectForFrame(cx, iter.abstractFramePtr());
-    MOZ_ASSERT(genObj->isRunning() || genObj->isClosing());
+    MOZ_ASSERT(genObj->isRunning());
   }
 #endif
 
