@@ -10,6 +10,7 @@
 #include "nsFrameLoader.h"
 #include "nsFrameLoaderOwner.h"
 #include "nsQueryObject.h"
+#include "nsIDocShellTreeOwner.h"
 
 using namespace mozilla::ipc;
 
@@ -40,13 +41,36 @@ already_AddRefed<BrowserBridgeChild> BrowserBridgeChild::Create(
   RefPtr<TabChild> tabChild = TabChild::GetFrom(docShell);
   MOZ_DIAGNOSTIC_ASSERT(tabChild);
 
+  uint32_t chromeFlags = 0;
+
+  nsCOMPtr<nsIDocShellTreeOwner> treeOwner;
+  if (docShell) {
+    docShell->GetTreeOwner(getter_AddRefs(treeOwner));
+  }
+  if (treeOwner) {
+    nsCOMPtr<nsIWebBrowserChrome> wbc = do_GetInterface(treeOwner);
+    if (wbc) {
+      wbc->GetChromeFlags(&chromeFlags);
+    }
+  }
+
+  
+  
+  nsCOMPtr<nsILoadContext> loadContext = do_QueryInterface(docShell);
+  if (loadContext && loadContext->UsePrivateBrowsing()) {
+    chromeFlags |= nsIWebBrowserChrome::CHROME_PRIVATE_WINDOW;
+  }
+  if (docShell->GetAffectPrivateSessionLifetime()) {
+    chromeFlags |= nsIWebBrowserChrome::CHROME_PRIVATE_LIFETIME;
+  }
+
   RefPtr<BrowserBridgeChild> browserBridge =
       new BrowserBridgeChild(aFrameLoader, aBrowsingContext);
   
   tabChild->SendPBrowserBridgeConstructor(
       do_AddRef(browserBridge).take(),
       PromiseFlatString(aContext.PresentationURL()), aRemoteType,
-      aBrowsingContext);
+      aBrowsingContext, chromeFlags);
   browserBridge->mIPCOpen = true;
 
   return browserBridge.forget();
