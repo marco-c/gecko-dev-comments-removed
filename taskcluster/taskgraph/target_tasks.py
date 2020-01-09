@@ -206,12 +206,6 @@ def target_tasks_ash(full_task_graph, parameters, graph_config):
         if task.attributes.get('unittest_suite'):
             if not task.attributes.get('e10s'):
                 return False
-            
-            if task.attributes.get('unittest_suite') == 'talos':
-                return False
-            
-            if task.attributes.get('unittest_suite') == 'raptor':
-                return False
         
         if task.attributes['kind'] == 'upload-symbols':
             return False
