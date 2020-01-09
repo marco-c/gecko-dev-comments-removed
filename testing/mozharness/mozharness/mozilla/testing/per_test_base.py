@@ -139,9 +139,6 @@ class SingleTestMixin(FetchesMixin):
                 
                 
                 
-                ('mochitest-browser-chrome', 'clipboard'): 'mochitest-browser-chrome-clipboard',
-                ('mochitest-chrome', 'clipboard'): 'mochitest-chrome-clipboard',
-                ('mochitest-plain', 'clipboard'): 'mochitest-plain-clipboard',
                 ('mochitest-browser-chrome', 'devtools'): 'mochitest-devtools-chrome',
                 ('mochitest-browser-chrome', 'screenshots'): 'mochitest-browser-chrome-screenshots',  
                 ('mochitest-plain', 'media'): 'mochitest-media',
