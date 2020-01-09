@@ -2914,10 +2914,17 @@ impl PicturePrimitive {
                 
                 
                 
-                let device_rect = clipped
+                let mut device_rect = clipped
                     .inflate(inflation_factor, inflation_factor)
                     .intersection(&unclipped.to_i32())
                     .unwrap();
+                
+                
+                
+                device_rect.size = RenderTask::adjusted_blur_source_size(
+                    device_rect.size,
+                    blur_std_deviation,
+                );
 
                 let uv_rect_kind = calculate_uv_rect_kind(
                     &pic_rect,
