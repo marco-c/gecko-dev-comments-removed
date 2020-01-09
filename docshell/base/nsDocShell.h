@@ -398,6 +398,7 @@ class nsDocShell final : public nsDocLoader,
 
 
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   nsresult InternalLoad(nsDocShellLoadState* aLoadState,
                         nsIDocShell** aDocShell, nsIRequest** aRequest);
 
@@ -562,6 +563,7 @@ class nsDocShell final : public nsDocLoader,
                                   nsIURILoader* aURILoader,
                                   uint32_t aOpenFlags);
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult ScrollToAnchor(bool aCurHasRef, bool aNewHasRef,
                           nsACString& aNewHash, uint32_t aLoadType);
 
@@ -921,6 +923,7 @@ class nsDocShell final : public nsDocLoader,
   
   
   
+  MOZ_CAN_RUN_SCRIPT
   nsresult MaybeHandleSameDocumentNavigation(nsDocShellLoadState* aLoadState,
                                              bool* aWasSameDocument);
 

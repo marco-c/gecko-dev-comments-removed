@@ -362,6 +362,29 @@ class PresShell final : public nsIPresShell,
                                            nsIContent* aContent);
   static PresShell* GetShellForTouchEvent(WidgetGUIEvent* aEvent);
 
+  
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT
+  nsresult GoToAnchor(const nsAString& aAnchorName, bool aScroll,
+                      uint32_t aAdditionalScrollFlags = 0);
+
+  
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult ScrollToAnchor();
+
  private:
   ~PresShell();
 
@@ -1391,12 +1414,16 @@ class PresShell final : public nsIPresShell,
   
   nsCOMPtr<nsIContent> mPointerEventTarget;
 
-  int32_t mActiveSuppressDisplayport;
+  nsCOMPtr<nsIContent> mLastAnchorScrolledTo;
 
   
   uint64_t mAPZFocusSequenceNumber;
   
   FocusTarget mAPZFocusTarget;
+
+  nscoord mLastAnchorScrollPositionY = 0;
+
+  int32_t mActiveSuppressDisplayport;
 
   bool mDocumentLoading : 1;
   bool mNoDelayedMouseEvents : 1;
