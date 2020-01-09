@@ -31,16 +31,15 @@ add_task(async () => {
   Assert.equal(profileData.profiles.length, 2, "Should have the right number of profiles.");
 
   
-  if (AppConstants.MOZ_DEV_EDITION) {
-    profileData.profiles.reverse();
-  }
+  
+  let expectedName = AppConstants.MOZ_DEV_EDITION ? `${DEDICATED_NAME}-1` : DEDICATED_NAME;
 
   let profile = profileData.profiles[0];
   Assert.equal(profile.name, PROFILE_DEFAULT, "Should have the right name.");
   Assert.equal(profile.path, defaultProfile.leafName, "Should be the original default profile.");
   Assert.ok(profile.default, "Should be marked as the old-style default.");
   profile = profileData.profiles[1];
-  Assert.equal(profile.name, DEDICATED_NAME, "Should have the right name.");
+  Assert.equal(profile.name, expectedName, "Should have the right name.");
   Assert.notEqual(profile.path, defaultProfile.leafName, "Should not be the original default profile.");
   Assert.ok(!profile.default, "Should not be marked as the old-style default.");
 
@@ -53,5 +52,5 @@ add_task(async () => {
   Assert.ok(didCreate, "Should have created a new profile.");
   Assert.ok(service.createdAlternateProfile, "Should have created an alternate profile.");
   Assert.ok(!selectedProfile.rootDir.equals(defaultProfile), "Should be using the right directory.");
-  Assert.equal(selectedProfile.name, DEDICATED_NAME);
+  Assert.equal(selectedProfile.name, expectedName);
 });
