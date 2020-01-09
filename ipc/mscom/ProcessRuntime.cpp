@@ -19,8 +19,9 @@
 #include "mozilla/WindowsVersion.h"
 #include "nsWindowsHelpers.h"
 
-#if defined(MOZILLA_INTERNAL_API)
+#if defined(MOZILLA_INTERNAL_API) && defined(MOZ_SANDBOX)
 #  include "mozilla/mscom/EnsureMTA.h"
+#  include "mozilla/sandboxTarget.h"
 #  include "nsThreadManager.h"
 #endif  
 
@@ -43,7 +44,7 @@ ProcessRuntime::ProcessRuntime(GeckoProcessType aProcessType)
       mActCtxRgn(a11y::Compatibility::GetActCtxResourceId())
 #endif  
 {
-#if defined(MOZILLA_INTERNAL_API)
+#if defined(MOZILLA_INTERNAL_API) && defined(MOZ_SANDBOX)
   
   
   
@@ -58,9 +59,56 @@ ProcessRuntime::ProcessRuntime(GeckoProcessType aProcessType)
       return;
     }
 
-    EnsureMTA([this]() -> void { InitInsideApartment(); });
+    
+    
+    HANDLE rawCurThreadImpToken;
+    if (!::OpenThreadToken(::GetCurrentThread(), TOKEN_DUPLICATE | TOKEN_QUERY,
+                           FALSE, &rawCurThreadImpToken)) {
+      mInitResult = HRESULT_FROM_WIN32(::GetLastError());
+      return;
+    }
+    nsAutoHandle curThreadImpToken(rawCurThreadImpToken);
+
+#if defined(DEBUG)
+    
+    
+    DWORD len;
+    TOKEN_TYPE tokenType;
+    MOZ_ASSERT(::GetTokenInformation(rawCurThreadImpToken, TokenType,
+                                     &tokenType, sizeof(tokenType), &len) &&
+               len == sizeof(tokenType) && tokenType == TokenImpersonation);
+#endif  
+
+    
+    HANDLE rawMtaThreadImpToken = nullptr;
+    if (!::DuplicateToken(rawCurThreadImpToken, SecurityImpersonation,
+                          &rawMtaThreadImpToken)) {
+      mInitResult = HRESULT_FROM_WIN32(::GetLastError());
+      return;
+    }
+    nsAutoHandle mtaThreadImpToken(rawMtaThreadImpToken);
+
+    SandboxTarget::Instance()->RegisterSandboxStartCallback([]() -> void {
+      EnsureMTA([]() -> void {
+        
+        MOZ_RELEASE_ASSERT(::RevertToSelf(),
+                           "mscom::ProcessRuntime RevertToSelf failed");
+      }, EnsureMTA::Option::ForceDispatch);
+    });
+
+    
+    EnsureMTA([this, rawMtaThreadImpToken]() -> void {
+      if (!::SetThreadToken(nullptr, rawMtaThreadImpToken)) {
+        mInitResult = HRESULT_FROM_WIN32(::GetLastError());
+        return;
+      }
+
+      InitInsideApartment();
+    }, EnsureMTA::Option::ForceDispatch);
+
     return;
   }
+
 #endif  
 
   
