@@ -49,6 +49,10 @@ class ServiceWorkerRegistrationProxy final
   void StopListeningOnMainThread();
 
   
+  class DelayedUpdate;
+  RefPtr<DelayedUpdate> mDelayedUpdate;
+
+  
   void UpdateState(
       const ServiceWorkerRegistrationDescriptor& aDescriptor) override;
 
