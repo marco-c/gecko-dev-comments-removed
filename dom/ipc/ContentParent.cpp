@@ -1148,6 +1148,8 @@ TabParent* ContentParent::CreateBrowser(const TabContext& aContext,
     }
   }
 
+  aBrowsingContext->SetEmbedderElement(aFrameElement);
+
   
   
   aBrowsingContext->Group()->EnsureSubscribed(constructorSender);
