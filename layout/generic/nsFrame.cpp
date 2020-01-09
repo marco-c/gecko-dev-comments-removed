@@ -3404,6 +3404,15 @@ static nsDisplayItem* WrapInWrapList(nsDisplayListBuilder* aBuilder,
 
   
   
+  
+  
+  if (!item->GetAbove() && item->Frame() == aFrame && aFrame->PrincipalChildList().IsEmpty()) {
+    aList->RemoveBottom();
+    return item;
+  }
+
+  
+  
   return MakeDisplayItem<nsDisplayWrapList>(aBuilder, aFrame, aList,
                                             aContainerASR, true);
 }
