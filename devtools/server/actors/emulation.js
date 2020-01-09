@@ -177,6 +177,30 @@ const EmulationActor = protocol.ActorClassWithSpec(emulationSpec, {
 
   _previousTouchEventsOverride: undefined,
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  setElementPickerState(state) {
+    this.touchSimulator.setElementPickerState(state);
+  },
+
   setTouchEventsOverride(flag) {
     if (this.getTouchEventsOverride() == flag) {
       return false;

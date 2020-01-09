@@ -73,7 +73,23 @@ TouchSimulator.prototype = {
     this.enabled = false;
   },
 
+  
+
+
+
+
+
+
+  setElementPickerState(state) {
+    this._isPicking = state;
+  },
+
   handleEvent(evt) {
+    
+    if (this._isPicking) {
+      return;
+    }
+
     
     
     
