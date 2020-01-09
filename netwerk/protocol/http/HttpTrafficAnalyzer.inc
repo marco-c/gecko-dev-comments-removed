@@ -11,90 +11,90 @@
 
 
 
-DEFINE_CATEGORY(NormalFirstParty, 0)
+DEFINE_CATEGORY(N1, 0)
 
 
 
-DEFINE_CATEGORY(NormalThirdPartyOther, 1)
+DEFINE_CATEGORY(N3Oth, 1)
 
 
 
-DEFINE_CATEGORY(NormalThirdPartyContentLeader, 2)
+DEFINE_CATEGORY(N3BasicLead, 2)
 
 
 
-DEFINE_CATEGORY(NormalThirdPartyContentBackground, 3)
+DEFINE_CATEGORY(N3BasicBg, 3)
 
 
 
-DEFINE_CATEGORY(NormalThirdPartyContentOther, 4)
+DEFINE_CATEGORY(N3BasicOth, 4)
 
 
 
-DEFINE_CATEGORY(NormalThirdPartyBasicLeader, 5)
+DEFINE_CATEGORY(N3ContentLead, 5)
 
 
 
-DEFINE_CATEGORY(NormalThirdPartyBasicBackground, 6)
+DEFINE_CATEGORY(N3ContentBg, 6)
 
 
 
-DEFINE_CATEGORY(NormalThirdPartyBasicOther, 7)
+DEFINE_CATEGORY(N3ContentOth, 7)
 
 
 
-DEFINE_CATEGORY(NormalThirdPartyFingerprintingLeader, 8)
+DEFINE_CATEGORY(N3FpLead, 8)
 
 
 
-DEFINE_CATEGORY(NormalThirdPartyFingerprintingBackground, 9)
+DEFINE_CATEGORY(N3FpBg, 9)
 
 
 
-DEFINE_CATEGORY(NormalThirdPartyFingerprintingOther, 10)
+DEFINE_CATEGORY(N3FpOth, 10)
 
 
-DEFINE_CATEGORY(PrivateFirstParty, 11)
+DEFINE_CATEGORY(P1, 11)
 
 
 
-DEFINE_CATEGORY(PrivateThirdPartyOther, 12)
+DEFINE_CATEGORY(P3Oth, 12)
 
 
 
-DEFINE_CATEGORY(PrivateThirdPartyContentLeader, 13)
 
+DEFINE_CATEGORY(P3ContentLead, 13)
 
 
-DEFINE_CATEGORY(PrivateThirdPartyContentBackground, 14)
 
 
+DEFINE_CATEGORY(P3ContentBg, 14)
 
-DEFINE_CATEGORY(PrivateThirdPartyContentOther, 15)
 
 
 
+DEFINE_CATEGORY(P3ContentOth, 15)
 
-DEFINE_CATEGORY(PrivateThirdPartyBasicLeader, 16)
 
 
+DEFINE_CATEGORY(P3BasicLead, 16)
 
 
-DEFINE_CATEGORY(PrivateThirdPartyBasicBackground, 17)
 
+DEFINE_CATEGORY(P3BasicBg, 17)
 
 
 
-DEFINE_CATEGORY(PrivateThirdPartyBasicOther, 18)
+DEFINE_CATEGORY(P3BasicOth, 18)
 
 
 
-DEFINE_CATEGORY(PrivateThirdPartyFingerprintingLeader, 19)
+DEFINE_CATEGORY(P3FpLead, 19)
 
 
 
-DEFINE_CATEGORY(PrivateThirdPartyFingerprintingBackground, 20)
+DEFINE_CATEGORY(P3FpBg, 20)
 
 
 
-DEFINE_CATEGORY(PrivateThirdPartyFingerprintingOther, 21)
+DEFINE_CATEGORY(P3FpOth, 21)
