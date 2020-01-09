@@ -25,7 +25,7 @@ var columns_hiertree =
 
 
 
-function testtag_tree(treeid, treerowinfoid, seltype, columnstype, testid) {
+async function testtag_tree(treeid, treerowinfoid, seltype, columnstype, testid) {
   
   
   function preventDefault(event) {
@@ -48,6 +48,7 @@ function testtag_tree(treeid, treerowinfoid, seltype, columnstype, testid) {
 
   
 
+  await testtag_tree_treecolpicker(tree, columnInfo, testid);
   testtag_tree_columns(tree, columnInfo, testid);
   testtag_tree_TreeSelection(tree, testid, multiple);
   testtag_tree_TreeSelection_UI(tree, testid, multiple);
@@ -118,6 +119,34 @@ function testtag_tree(treeid, treerowinfoid, seltype, columnstype, testid) {
   document.removeEventListener("keypress", preventDefault);
 
   SimpleTest.finish();
+}
+
+async function testtag_tree_treecolpicker(tree, expectedColumns, testid) {
+  testid += " ";
+
+  async function showAndHideTreecolpicker() {
+    let treecolpicker = tree.querySelector("treecolpicker");
+    let treecolpickerMenupopup = treecolpicker.querySelector("menupopup");
+    await new Promise(resolve => {
+      treecolpickerMenupopup.addEventListener("popupshown", resolve, { once: true });
+      treecolpicker.click();
+    });
+    let menuitems = treecolpicker.querySelectorAll("menuitem");
+    
+    is(menuitems.length - 1, expectedColumns.length, testid + "Same number of columns");
+    for (var c = 0; c < expectedColumns.length; c++) {
+      is(menuitems[c].textContent, expectedColumns[c].label, testid + "treecolpicker menu matches");
+      ok(!menuitems[c].querySelector("label").hidden, testid + "label not hidden");
+    }
+    await new Promise(resolve => {
+      treecolpickerMenupopup.addEventListener("popuphidden", resolve, { once: true });
+      treecolpickerMenupopup.hidePopup();
+    });
+  }
+
+  
+  await showAndHideTreecolpicker();
+  await showAndHideTreecolpicker();
 }
 
 function testtag_tree_columns(tree, expectedColumns, testid) {
