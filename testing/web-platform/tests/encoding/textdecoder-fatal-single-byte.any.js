@@ -1,6 +1,7 @@
 
 
 
+
 var singleByteEncodings = [
      {encoding: 'IBM866', bad: []},
      {encoding: 'ISO-8859-2', bad: []},
