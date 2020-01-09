@@ -6,16 +6,8 @@
 
 
 
-:root:-moz-lwtheme {
-  --toolbar-non-lwt-bgcolor: var(--toolbar-bgcolor);
-  --toolbar-non-lwt-textcolor: var(--lwt-text-color);
-  --toolbar-non-lwt-bgimage: none;
-}
-
 :root:-moz-lwtheme-brighttext {
   
-
   --autocomplete-popup-background: #2A2A2E !important;
   --autocomplete-popup-highlight-background: #0060DF;
 }
-
