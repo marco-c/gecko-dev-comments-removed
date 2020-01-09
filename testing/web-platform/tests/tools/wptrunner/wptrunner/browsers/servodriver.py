@@ -7,6 +7,7 @@ from mozprocess import ProcessHandler
 from tools.serve.serve import make_hosts_file
 
 from .base import Browser, require_arg, get_free_port, browser_command, ExecutorBrowser
+from .base import get_timeout_multiplier   
 from ..executors import executor_kwargs as base_executor_kwargs
 from ..executors.executorservodriver import (ServoWebDriverTestharnessExecutor,  
                                              ServoWebDriverRefTestExecutor)  
@@ -25,6 +26,7 @@ __wptrunner__ = {
     "executor_kwargs": "executor_kwargs",
     "env_extras": "env_extras",
     "env_options": "env_options",
+    "timeout_multiplier": "get_timeout_multiplier",
     "update_properties": "update_properties",
 }
 
