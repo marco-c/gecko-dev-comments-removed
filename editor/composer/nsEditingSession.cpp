@@ -13,13 +13,13 @@
 #include "mozilla/mozalloc.h"                 
 #include "mozilla/PresShell.h"                
 #include "nsAString.h"
+#include "nsCommandManager.h"         
 #include "nsComponentManagerUtils.h"  
 #include "nsContentUtils.h"
 #include "nsDebug.h"  
 #include "nsEditingSession.h"
 #include "nsError.h"               
 #include "nsIChannel.h"            
-#include "nsICommandManager.h"     
 #include "nsIContentViewer.h"      
 #include "nsIController.h"         
 #include "nsIControllerContext.h"  
@@ -42,7 +42,6 @@
 #include "nsIWebNavigation.h"            
 #include "nsIWebProgress.h"              
 #include "nsLiteralString.h"             
-#include "nsPICommandUpdater.h"          
 #include "nsPIDOMWindow.h"               
 #include "nsPresContext.h"               
 #include "nsReadableUtils.h"             
@@ -753,12 +752,8 @@ nsEditingSession::OnLocationChange(nsIWebProgress* aWebProgress,
   nsIDocShell* docShell = piWindow->GetDocShell();
   NS_ENSURE_TRUE(docShell, NS_ERROR_FAILURE);
 
-  nsCOMPtr<nsICommandManager> commandManager = docShell->GetCommandManager();
-  nsCOMPtr<nsPICommandUpdater> commandUpdater =
-      do_QueryInterface(commandManager);
-  NS_ENSURE_TRUE(commandUpdater, NS_ERROR_FAILURE);
-
-  return commandUpdater->CommandStatusChanged("obs_documentLocationChanged");
+  RefPtr<nsCommandManager> commandManager = docShell->GetCommandManager();
+  return commandManager->CommandStatusChanged("obs_documentLocationChanged");
 }
 
 
