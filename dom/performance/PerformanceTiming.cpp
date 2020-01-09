@@ -267,11 +267,7 @@ bool PerformanceTimingData::CheckAllowedOrigin(nsIHttpChannel* aResourceChannel,
   }
 
   
-  nsCOMPtr<nsILoadInfo> loadInfo;
-  aResourceChannel->GetLoadInfo(getter_AddRefs(loadInfo));
-  if (!loadInfo) {
-    return false;
-  }
+  nsCOMPtr<nsILoadInfo> loadInfo = aResourceChannel->LoadInfo();
 
   
   if (loadInfo->GetExternalContentPolicyType() ==

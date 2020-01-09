@@ -83,55 +83,48 @@ nsresult nsBaseChannel::Redirect(nsIChannel *newChannel, uint32_t redirectFlags,
 
   
   
-  if (mLoadInfo) {
-    nsSecurityFlags secFlags = mLoadInfo->GetSecurityFlags() &
-                               ~nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL;
-    nsCOMPtr<nsILoadInfo> newLoadInfo =
-        static_cast<mozilla::net::LoadInfo *>(mLoadInfo.get())
-            ->CloneWithNewSecFlags(secFlags);
+  nsSecurityFlags secFlags =
+      mLoadInfo->GetSecurityFlags() & ~nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL;
+  nsCOMPtr<nsILoadInfo> newLoadInfo =
+      static_cast<mozilla::net::LoadInfo *>(mLoadInfo.get())
+          ->CloneWithNewSecFlags(secFlags);
 
-    nsCOMPtr<nsIPrincipal> uriPrincipal;
-    nsIScriptSecurityManager *sm = nsContentUtils::GetSecurityManager();
-    sm->GetChannelURIPrincipal(this, getter_AddRefs(uriPrincipal));
-    bool isInternalRedirect =
-        (redirectFlags & (nsIChannelEventSink::REDIRECT_INTERNAL |
-                          nsIChannelEventSink::REDIRECT_STS_UPGRADE));
+  nsCOMPtr<nsIPrincipal> uriPrincipal;
+  nsIScriptSecurityManager *sm = nsContentUtils::GetSecurityManager();
+  sm->GetChannelURIPrincipal(this, getter_AddRefs(uriPrincipal));
+  bool isInternalRedirect =
+      (redirectFlags & (nsIChannelEventSink::REDIRECT_INTERNAL |
+                        nsIChannelEventSink::REDIRECT_STS_UPGRADE));
 
-    
-    
-    nsCOMPtr<nsIRedirectHistoryEntry> entry =
-        new nsRedirectHistoryEntry(uriPrincipal, nullptr, EmptyCString());
+  
+  
+  nsCOMPtr<nsIRedirectHistoryEntry> entry =
+      new nsRedirectHistoryEntry(uriPrincipal, nullptr, EmptyCString());
 
-    newLoadInfo->AppendRedirectHistoryEntry(entry, isInternalRedirect);
+  newLoadInfo->AppendRedirectHistoryEntry(entry, isInternalRedirect);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    nsCOMPtr<nsIURI> resultPrincipalURI;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIURI> resultPrincipalURI;
 
-    nsCOMPtr<nsILoadInfo> existingLoadInfo = newChannel->GetLoadInfo();
-    if (existingLoadInfo) {
-      existingLoadInfo->GetResultPrincipalURI(
-          getter_AddRefs(resultPrincipalURI));
-    }
-    if (!resultPrincipalURI) {
-      newChannel->GetOriginalURI(getter_AddRefs(resultPrincipalURI));
-    }
-
-    newLoadInfo->SetResultPrincipalURI(resultPrincipalURI);
-
-    newChannel->SetLoadInfo(newLoadInfo);
-  } else {
-    
-    
-    newChannel->SetLoadInfo(nullptr);
+  nsCOMPtr<nsILoadInfo> existingLoadInfo = newChannel->LoadInfo();
+  if (existingLoadInfo) {
+    existingLoadInfo->GetResultPrincipalURI(getter_AddRefs(resultPrincipalURI));
   }
+  if (!resultPrincipalURI) {
+    newChannel->GetOriginalURI(getter_AddRefs(resultPrincipalURI));
+  }
+
+  newLoadInfo->SetResultPrincipalURI(resultPrincipalURI);
+
+  newChannel->SetLoadInfo(newLoadInfo);
 
   
   if (mPrivateBrowsingOverriden) {

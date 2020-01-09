@@ -33,11 +33,7 @@ LazyLogModule UrlClassifierCommon::sLog("nsChannelClassifier");
 
  bool UrlClassifierCommon::AddonMayLoad(nsIChannel* aChannel,
                                                     nsIURI* aURI) {
-  nsCOMPtr<nsILoadInfo> channelLoadInfo = aChannel->GetLoadInfo();
-  if (!channelLoadInfo) {
-    return false;
-  }
-
+  nsCOMPtr<nsILoadInfo> channelLoadInfo = aChannel->LoadInfo();
   
   
   

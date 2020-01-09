@@ -269,10 +269,8 @@ LoadInfo::LoadInfo(
     
     nsCOMPtr<nsIChannel> channel = aLoadingContext->OwnerDoc()->GetChannel();
     if (channel) {
-      nsCOMPtr<nsILoadInfo> loadInfo = channel->GetLoadInfo();
-      if (loadInfo) {
-        mEnforceSRI = loadInfo->GetVerifySignedContent();
-      }
+      nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
+      mEnforceSRI = loadInfo->GetVerifySignedContent();
     }
   }
 

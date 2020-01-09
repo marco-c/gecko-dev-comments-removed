@@ -188,13 +188,11 @@ nsPrefetchNode::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext) {
 
   
   
-  nsCOMPtr<nsILoadInfo> loadInfo = httpChannel->GetLoadInfo();
-  if (loadInfo) {
-    mShouldFireLoadEvent =
-        loadInfo->GetTainting() == LoadTainting::Opaque ||
-        (loadInfo->GetTainting() == LoadTainting::CORS &&
-         (NS_FAILED(httpChannel->GetStatus(&rv)) || NS_FAILED(rv)));
-  }
+  nsCOMPtr<nsILoadInfo> loadInfo = httpChannel->LoadInfo();
+  mShouldFireLoadEvent =
+      loadInfo->GetTainting() == LoadTainting::Opaque ||
+      (loadInfo->GetTainting() == LoadTainting::CORS &&
+       (NS_FAILED(httpChannel->GetStatus(&rv)) || NS_FAILED(rv)));
 
   
   bool requestSucceeded;

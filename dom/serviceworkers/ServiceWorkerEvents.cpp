@@ -45,7 +45,6 @@
 #include "mozilla/dom/Response.h"
 #include "mozilla/dom/WorkerScope.h"
 #include "mozilla/dom/WorkerPrivate.h"
-#include "mozilla/net/NeckoChannelParams.h"
 
 #include "js/Conversions.h"
 #include "js/TypeDecls.h"
@@ -273,9 +272,9 @@ class StartResponse final : public Runnable {
     nsresult rv = mChannel->GetChannel(getter_AddRefs(underlyingChannel));
     NS_ENSURE_SUCCESS(rv, rv);
     NS_ENSURE_TRUE(underlyingChannel, NS_ERROR_UNEXPECTED);
-    nsCOMPtr<nsILoadInfo> loadInfo = underlyingChannel->GetLoadInfo();
+    nsCOMPtr<nsILoadInfo> loadInfo = underlyingChannel->LoadInfo();
 
-    if (!loadInfo || !CSPPermitsResponse(loadInfo)) {
+    if (!CSPPermitsResponse(loadInfo)) {
       mChannel->CancelInterception(NS_ERROR_CONTENT_BLOCKED);
       return NS_OK;
     }
@@ -320,7 +319,7 @@ class StartResponse final : public Runnable {
         !outerChannel->PreferredAlternativeDataTypes().IsEmpty()) {
       
       preferredAltDataType.Assign(
-          outerChannel->PreferredAlternativeDataTypes()[0].type());
+          mozilla::Get<0>(outerChannel->PreferredAlternativeDataTypes()[0]));
     }
 
     

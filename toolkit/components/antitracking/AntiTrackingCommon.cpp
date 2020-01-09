@@ -1272,12 +1272,7 @@ bool AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(
       ("Computing whether channel %p has access to URI %s", aChannel, _spec),
       channelURI);
 
-  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->GetLoadInfo();
-  if (!loadInfo) {
-    LOG(("No loadInfo, bail out early"));
-    return true;
-  }
-
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
   
   
   

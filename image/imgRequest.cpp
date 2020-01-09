@@ -1200,7 +1200,7 @@ imgRequest::OnRedirectVerifyCallback(nsresult result) {
     
     
     
-    nsCOMPtr<nsILoadInfo> loadInfo = mChannel->GetLoadInfo();
+    nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
     bool upgradeInsecureRequests =
         loadInfo ? loadInfo->GetUpgradeInsecureRequests() ||
                        loadInfo->GetBrowserUpgradeInsecureRequests()

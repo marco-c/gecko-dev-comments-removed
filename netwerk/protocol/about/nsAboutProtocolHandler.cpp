@@ -204,22 +204,20 @@ nsAboutProtocolHandler::NewChannel(nsIURI *uri, nsILoadInfo *aLoadInfo,
       
       
       
-      nsCOMPtr<nsILoadInfo> loadInfo = (*result)->GetLoadInfo();
+      nsCOMPtr<nsILoadInfo> loadInfo = (*result)->LoadInfo();
       if (aLoadInfo != loadInfo) {
-        if (loadInfo) {
-          NS_ASSERTION(false,
-                       "nsIAboutModule->newChannel(aURI, aLoadInfo) needs to "
-                       "set LoadInfo");
-          const char16_t *params[] = {
-              u"nsIAboutModule->newChannel(aURI)",
-              u"nsIAboutModule->newChannel(aURI, aLoadInfo)"};
-          nsContentUtils::ReportToConsole(
-              nsIScriptError::warningFlag,
-              NS_LITERAL_CSTRING("Security by Default"),
-              nullptr,  
-              nsContentUtils::eNECKO_PROPERTIES, "APIDeprecationWarning",
-              params, mozilla::ArrayLength(params));
-        }
+        NS_ASSERTION(false,
+                     "nsIAboutModule->newChannel(aURI, aLoadInfo) needs to "
+                     "set LoadInfo");
+        const char16_t *params[] = {
+            u"nsIAboutModule->newChannel(aURI)",
+            u"nsIAboutModule->newChannel(aURI, aLoadInfo)"};
+        nsContentUtils::ReportToConsole(
+            nsIScriptError::warningFlag,
+            NS_LITERAL_CSTRING("Security by Default"),
+            nullptr,  
+            nsContentUtils::eNECKO_PROPERTIES, "APIDeprecationWarning", params,
+            mozilla::ArrayLength(params));
         (*result)->SetLoadInfo(aLoadInfo);
       }
 

@@ -331,7 +331,7 @@ bool nsNodeInfoManager::InternalSVGEnabled() {
     nsCOMPtr<nsIChannel> channel = mDocument->GetChannel();
     
     if (channel) {
-      loadInfo = channel->GetLoadInfo();
+      loadInfo = channel->LoadInfo();
     }
   }
   bool conclusion =

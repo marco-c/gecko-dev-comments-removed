@@ -1293,12 +1293,10 @@ class HTMLMediaElement::ChannelLoader final {
     }
 
     if (setAttrs) {
-      nsCOMPtr<nsILoadInfo> loadInfo = channel->GetLoadInfo();
-      if (loadInfo) {
-        
-        Unused << loadInfo->SetOriginAttributes(
-            triggeringPrincipal->OriginAttributesRef());
-      }
+      nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
+      
+      Unused << loadInfo->SetOriginAttributes(
+          triggeringPrincipal->OriginAttributesRef());
     }
 
     nsCOMPtr<nsIClassOfService> cos(do_QueryInterface(channel));

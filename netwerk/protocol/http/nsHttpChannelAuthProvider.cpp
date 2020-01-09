@@ -899,47 +899,44 @@ bool nsHttpChannelAuthProvider::BlockPrompt(bool proxyAuth) {
   }
 
   nsCOMPtr<nsIChannel> chan = do_QueryInterface(mAuthChannel);
-  nsCOMPtr<nsILoadInfo> loadInfo;
-  chan->GetLoadInfo(getter_AddRefs(loadInfo));
+  nsCOMPtr<nsILoadInfo> loadInfo = chan->LoadInfo();
 
   
   bool topDoc = true;
   bool xhr = false;
   bool nonWebContent = false;
 
-  if (loadInfo) {
-    if (loadInfo->GetExternalContentPolicyType() !=
-        nsIContentPolicy::TYPE_DOCUMENT) {
-      topDoc = false;
-    }
+  if (loadInfo->GetExternalContentPolicyType() !=
+      nsIContentPolicy::TYPE_DOCUMENT) {
+    topDoc = false;
+  }
 
-    if (!topDoc) {
-      nsCOMPtr<nsIPrincipal> triggeringPrinc = loadInfo->TriggeringPrincipal();
-      if (nsContentUtils::IsSystemPrincipal(triggeringPrinc)) {
-        nonWebContent = true;
+  if (!topDoc) {
+    nsCOMPtr<nsIPrincipal> triggeringPrinc = loadInfo->TriggeringPrincipal();
+    if (nsContentUtils::IsSystemPrincipal(triggeringPrinc)) {
+      nonWebContent = true;
+    }
+  }
+
+  if (loadInfo->GetExternalContentPolicyType() ==
+      nsIContentPolicy::TYPE_XMLHTTPREQUEST) {
+    xhr = true;
+  }
+
+  if (!topDoc && !xhr) {
+    nsCOMPtr<nsIURI> topURI;
+    Unused << chanInternal->GetTopWindowURI(getter_AddRefs(topURI));
+
+    if (!topURI) {
+      
+      nsCOMPtr<nsIPrincipal> loadingPrinc = loadInfo->LoadingPrincipal();
+      if (loadingPrinc) {
+        loadingPrinc->GetURI(getter_AddRefs(topURI));
       }
     }
 
-    if (loadInfo->GetExternalContentPolicyType() ==
-        nsIContentPolicy::TYPE_XMLHTTPREQUEST) {
-      xhr = true;
-    }
-
-    if (!topDoc && !xhr) {
-      nsCOMPtr<nsIURI> topURI;
-      Unused << chanInternal->GetTopWindowURI(getter_AddRefs(topURI));
-
-      if (!topURI) {
-        
-        nsCOMPtr<nsIPrincipal> loadingPrinc = loadInfo->LoadingPrincipal();
-        if (loadingPrinc) {
-          loadingPrinc->GetURI(getter_AddRefs(topURI));
-        }
-      }
-
-      if (!NS_SecurityCompareURIs(topURI, mURI, true)) {
-        mCrossOrigin = true;
-      }
+    if (!NS_SecurityCompareURIs(topURI, mURI, true)) {
+      mCrossOrigin = true;
     }
   }
 
