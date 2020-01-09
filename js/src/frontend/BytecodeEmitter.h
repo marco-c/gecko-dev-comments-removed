@@ -223,12 +223,18 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
     
 
-    size_t numICEntries() const { return numICEntries_; }
-    void incrementNumICEntries() { numICEntries_++; }
-    void setNumICEntries(size_t entries) { numICEntries_ = entries; }
+    uint32_t numICEntries() const { return numICEntries_; }
+    void incrementNumICEntries() {
+      MOZ_ASSERT(numICEntries_ != UINT32_MAX, "Shouldn't overflow");
+      numICEntries_++;
+    }
+    void setNumICEntries(uint32_t entries) { numICEntries_ = entries; }
 
     uint32_t numTypeSets() const { return numTypeSets_; }
-    void incrementNumTypeSets() { numTypeSets_++; }
+    void incrementNumTypeSets() {
+      MOZ_ASSERT(numTypeSets_ != UINT32_MAX, "Shouldn't overflow");
+      numTypeSets_++;
+    }
 
    private:
     
@@ -303,7 +309,8 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
     
 
     
-    size_t numICEntries_ = 0;
+    
+    uint32_t numICEntries_ = 0;
 
     
     uint32_t numTypeSets_ = 0;
@@ -800,7 +807,8 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   }
   MOZ_MUST_USE bool emitGetName(NameNode* name);
 
-  MOZ_MUST_USE bool emitTDZCheckIfNeeded(JSAtom* name, const NameLocation& loc);
+  MOZ_MUST_USE bool emitTDZCheckIfNeeded(HandleAtom name,
+                                         const NameLocation& loc);
 
   MOZ_MUST_USE bool emitNameIncDec(UnaryNode* incDec);
 

@@ -14,7 +14,7 @@
 using namespace js;
 using namespace js::frontend;
 
-bool LabelEmitter::emitLabel(JSAtom* name) {
+bool LabelEmitter::emitLabel(HandleAtom name) {
   MOZ_ASSERT(state_ == State::Start);
 
   
