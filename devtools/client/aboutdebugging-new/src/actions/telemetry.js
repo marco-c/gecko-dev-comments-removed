@@ -1,0 +1,23 @@
+
+
+
+
+"use strict";
+
+const {
+  TELEMETRY_RECORD,
+} = require("../constants");
+
+
+
+
+
+function recordTelemetryEvent(method, details) {
+  return (dispatch, getState) => {
+    dispatch({ type: TELEMETRY_RECORD, method, details });
+  };
+}
+
+module.exports = {
+  recordTelemetryEvent,
+};
