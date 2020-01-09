@@ -476,6 +476,13 @@ VARCACHE_PREF(
 
 
 VARCACHE_PREF(
+  "dom.enable_resource_timing",
+   dom_enable_resource_timing,
+  bool, true
+)
+
+
+VARCACHE_PREF(
   "browser.measurement.render_anims_and_video_solid",
   browser_measurement_render_anims_and_video_solid,
   RelaxedAtomicBool, false
