@@ -3,7 +3,7 @@
 
 
 function openFirstBreakpointContextMenu(dbg) {
-  rightClickElement(dbg, "breakpointItem", 3);
+  rightClickElement(dbg, "breakpointItem", 2);
 }
 
 
