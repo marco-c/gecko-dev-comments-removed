@@ -191,7 +191,7 @@ pref("xpinstall.signatures.required", true);
 
 pref("extensions.autoDisableScopes", 15);
 
-pref("extensions.enabledScopes", 1);
+pref("extensions.enabledScopes", 5);
 pref("extensions.autoupdate.enabled", true);
 pref("extensions.autoupdate.interval", 86400);
 pref("extensions.update.enabled", true);
