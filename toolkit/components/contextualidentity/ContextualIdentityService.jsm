@@ -425,7 +425,17 @@ _ContextualIdentityService.prototype = {
 
     let userContextId = tab.getAttribute("usercontextid");
     let identity = this.getPublicIdentityFromId(userContextId);
-    tab.setAttribute("data-identity-color", identity ? identity.color : "");
+
+    let prefix = "identity-color-";
+    
+    for (let className of tab.classList) {
+      if (className.startsWith(prefix)) {
+        tab.classList.remove(className);
+      }
+    }
+    if (identity && identity.color) {
+      tab.classList.add(prefix + identity.color);
+    }
   },
 
   countContainerTabs(userContextId = 0) {
