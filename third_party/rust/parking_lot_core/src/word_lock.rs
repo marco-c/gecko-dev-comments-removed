@@ -5,13 +5,15 @@
 
 
 
-use crate::spinwait::SpinWait;
-use crate::thread_parker::ThreadParker;
-use core::{
-    cell::Cell,
-    mem, ptr,
-    sync::atomic::{fence, AtomicUsize, Ordering},
-};
+use std::sync::atomic::{fence, AtomicUsize, Ordering};
+use std::ptr;
+use std::mem;
+use std::cell::Cell;
+use std::thread::LocalKey;
+#[cfg(not(feature = "nightly"))]
+use std::panic;
+use spinwait::SpinWait;
+use thread_parker::ThreadParker;
 
 struct ThreadData {
     parker: ThreadParker,
@@ -34,9 +36,7 @@ struct ThreadData {
 }
 
 impl ThreadData {
-    #[inline]
     fn new() -> ThreadData {
-        assert!(mem::align_of::<ThreadData>() > !QUEUE_MASK);
         ThreadData {
             parker: ThreadParker::new(),
             queue_tail: Cell::new(ptr::null()),
@@ -47,27 +47,30 @@ impl ThreadData {
 }
 
 
-#[inline]
-fn with_thread_data<F, T>(f: F) -> T
-where
-    F: FnOnce(&ThreadData) -> T,
-{
-    let mut thread_data_ptr = ptr::null();
+unsafe fn get_thread_data(local: &mut Option<ThreadData>) -> &ThreadData {
     
     
-    if !ThreadParker::IS_CHEAP_TO_CONSTRUCT {
-        thread_local!(static THREAD_DATA: ThreadData = ThreadData::new());
-        if let Ok(tls_thread_data) = THREAD_DATA.try_with(|x| x as *const ThreadData) {
-            thread_data_ptr = tls_thread_data;
-        }
+    #[cfg(feature = "nightly")]
+    fn try_get_tls(key: &'static LocalKey<ThreadData>) -> Option<*const ThreadData> {
+        key.try_with(|x| x as *const ThreadData).ok()
     }
-    
-    let mut thread_data_storage = None;
-    if thread_data_ptr.is_null() {
-        thread_data_ptr = thread_data_storage.get_or_insert_with(ThreadData::new);
+    #[cfg(not(feature = "nightly"))]
+    fn try_get_tls(key: &'static LocalKey<ThreadData>) -> Option<*const ThreadData> {
+        panic::catch_unwind(|| key.with(|x| x as *const ThreadData)).ok()
     }
 
-    f(unsafe { &*thread_data_ptr })
+    
+    
+    if !cfg!(windows) && !cfg!(all(feature = "nightly", target_os = "linux")) {
+        thread_local!(static THREAD_DATA: ThreadData = ThreadData::new());
+        if let Some(tls) = try_get_tls(&THREAD_DATA) {
+            return &*tls;
+        }
+    }
+
+    
+    *local = Some(ThreadData::new());
+    local.as_ref().unwrap()
 }
 
 const LOCKED_BIT: usize = 1;
@@ -81,14 +84,16 @@ pub struct WordLock {
 }
 
 impl WordLock {
-    pub const INIT: WordLock = WordLock {
-        state: AtomicUsize::new(0),
-    };
+    #[inline]
+    pub fn new() -> WordLock {
+        WordLock {
+            state: AtomicUsize::new(0),
+        }
+    }
 
     #[inline]
-    pub fn lock(&self) {
-        if self
-            .state
+    pub unsafe fn lock(&self) {
+        if self.state
             .compare_exchange_weak(0, LOCKED_BIT, Ordering::Acquire, Ordering::Relaxed)
             .is_ok()
         {
@@ -97,11 +102,10 @@ impl WordLock {
         self.lock_slow();
     }
 
-    
     #[inline]
     pub unsafe fn unlock(&self) {
         let state = self.state.fetch_sub(LOCKED_BIT, Ordering::Release);
-        if state.is_queue_locked() || state.queue_head().is_null() {
+        if state & QUEUE_LOCKED_BIT != 0 || state & QUEUE_MASK == 0 {
             return;
         }
         self.unlock_slow();
@@ -109,12 +113,12 @@ impl WordLock {
 
     #[cold]
     #[inline(never)]
-    fn lock_slow(&self) {
+    unsafe fn lock_slow(&self) {
         let mut spinwait = SpinWait::new();
         let mut state = self.state.load(Ordering::Relaxed);
         loop {
             
-            if !state.is_locked() {
+            if state & LOCKED_BIT == 0 {
                 match self.state.compare_exchange_weak(
                     state,
                     state | LOCKED_BIT,
@@ -128,62 +132,55 @@ impl WordLock {
             }
 
             
-            if state.queue_head().is_null() && spinwait.spin() {
+            if state & QUEUE_MASK == 0 && spinwait.spin() {
                 state = self.state.load(Ordering::Relaxed);
                 continue;
             }
 
             
-            state = with_thread_data(|thread_data| {
-                
-                
-                #[allow(unused_unsafe)]
-                unsafe {
-                    thread_data.parker.prepare_park();
-                }
+            let mut thread_data = None;
+            let thread_data = get_thread_data(&mut thread_data);
+            assert!(mem::align_of_val(thread_data) > !QUEUE_MASK);
+            thread_data.parker.prepare_park();
 
-                
-                let queue_head = state.queue_head();
-                if queue_head.is_null() {
-                    thread_data.queue_tail.set(thread_data);
-                    thread_data.prev.set(ptr::null());
-                } else {
-                    thread_data.queue_tail.set(ptr::null());
-                    thread_data.prev.set(ptr::null());
-                    thread_data.next.set(queue_head);
-                }
-                if let Err(x) = self.state.compare_exchange_weak(
-                    state,
-                    state.with_queue_head(thread_data),
-                    Ordering::Release,
-                    Ordering::Relaxed,
-                ) {
-                    return x;
-                }
+            
+            let queue_head = (state & QUEUE_MASK) as *const ThreadData;
+            if queue_head.is_null() {
+                thread_data.queue_tail.set(thread_data);
+                thread_data.prev.set(ptr::null());
+            } else {
+                thread_data.queue_tail.set(ptr::null());
+                thread_data.prev.set(ptr::null());
+                thread_data.next.set(queue_head);
+            }
+            if let Err(x) = self.state.compare_exchange_weak(
+                state,
+                (state & !QUEUE_MASK) | thread_data as *const _ as usize,
+                Ordering::Release,
+                Ordering::Relaxed,
+            ) {
+                state = x;
+                continue;
+            }
 
-                
-                
-                #[allow(unused_unsafe)]
-                unsafe {
-                    thread_data.parker.park();
-                }
+            
+            thread_data.parker.park();
 
-                
-                spinwait.reset();
-                self.state.load(Ordering::Relaxed)
-            });
+            
+            spinwait.reset();
+            self.state.load(Ordering::Relaxed);
         }
     }
 
     #[cold]
     #[inline(never)]
-    fn unlock_slow(&self) {
+    unsafe fn unlock_slow(&self) {
         let mut state = self.state.load(Ordering::Relaxed);
         loop {
             
             
             
-            if state.is_queue_locked() || state.queue_head().is_null() {
+            if state & QUEUE_LOCKED_BIT != 0 || state & QUEUE_MASK == 0 {
                 return;
             }
 
@@ -204,31 +201,27 @@ impl WordLock {
             
             
             
-            let queue_head = state.queue_head();
+            let queue_head = (state & QUEUE_MASK) as *const ThreadData;
             let mut queue_tail;
             let mut current = queue_head;
             loop {
-                queue_tail = unsafe { (*current).queue_tail.get() };
+                queue_tail = (*current).queue_tail.get();
                 if !queue_tail.is_null() {
                     break;
                 }
-                unsafe {
-                    let next = (*current).next.get();
-                    (*next).prev.set(current);
-                    current = next;
-                }
+                let next = (*current).next.get();
+                (*next).prev.set(current);
+                current = next;
             }
 
             
             
-            unsafe {
-                (*queue_head).queue_tail.set(queue_tail);
-            }
+            (*queue_head).queue_tail.set(queue_tail);
 
             
             
             
-            if state.is_locked() {
+            if state & LOCKED_BIT != 0 {
                 match self.state.compare_exchange_weak(
                     state,
                     state & !QUEUE_LOCKED_BIT,
@@ -245,7 +238,7 @@ impl WordLock {
             }
 
             
-            let new_tail = unsafe { (*queue_tail).prev.get() };
+            let new_tail = (*queue_tail).prev.get();
             if new_tail.is_null() {
                 loop {
                     match self.state.compare_exchange_weak(
@@ -261,7 +254,7 @@ impl WordLock {
                     
                     
                     
-                    if state.queue_head().is_null() {
+                    if state & QUEUE_MASK == 0 {
                         continue;
                     } else {
                         
@@ -270,9 +263,7 @@ impl WordLock {
                     }
                 }
             } else {
-                unsafe {
-                    (*queue_head).queue_tail.set(new_tail);
-                }
+                (*queue_head).queue_tail.set(new_tail);
                 self.state.fetch_and(!QUEUE_LOCKED_BIT, Ordering::Release);
             }
 
@@ -280,39 +271,8 @@ impl WordLock {
             
             
             
-            unsafe {
-                (*queue_tail).parker.unpark_lock().unpark();
-            }
+            (*queue_tail).parker.unpark_lock().unpark();
             break;
         }
-    }
-}
-
-trait LockState {
-    fn is_locked(self) -> bool;
-    fn is_queue_locked(self) -> bool;
-    fn queue_head(self) -> *const ThreadData;
-    fn with_queue_head(self, thread_data: *const ThreadData) -> Self;
-}
-
-impl LockState for usize {
-    #[inline]
-    fn is_locked(self) -> bool {
-        self & LOCKED_BIT != 0
-    }
-
-    #[inline]
-    fn is_queue_locked(self) -> bool {
-        self & QUEUE_LOCKED_BIT != 0
-    }
-
-    #[inline]
-    fn queue_head(self) -> *const ThreadData {
-        (self & QUEUE_MASK) as *const ThreadData
-    }
-
-    #[inline]
-    fn with_queue_head(self, thread_data: *const ThreadData) -> Self {
-        (self & !QUEUE_MASK) | thread_data as *const _ as usize
     }
 }

@@ -5,20 +5,21 @@
 
 
 
-use crate::{deadlock, util};
-#[cfg(has_sized_atomics)]
-use core::sync::atomic::AtomicU8;
-#[cfg(not(has_sized_atomics))]
-use core::sync::atomic::AtomicUsize as AtomicU8;
-use core::{sync::atomic::Ordering, time::Duration};
+use std::sync::atomic::Ordering;
+#[cfg(feature = "nightly")]
+use std::sync::atomic::{ATOMIC_U8_INIT, AtomicU8};
+#[cfg(feature = "nightly")]
+type U8 = u8;
+#[cfg(not(feature = "nightly"))]
+use std::sync::atomic::AtomicUsize as AtomicU8;
+#[cfg(not(feature = "nightly"))]
+use std::sync::atomic::ATOMIC_USIZE_INIT as ATOMIC_U8_INIT;
+#[cfg(not(feature = "nightly"))]
+type U8 = usize;
+use deadlock;
 use lock_api::{GuardNoSend, RawMutex as RawMutexTrait, RawMutexFair, RawMutexTimed};
 use parking_lot_core::{self, ParkResult, SpinWait, UnparkResult, UnparkToken, DEFAULT_PARK_TOKEN};
-use std::time::Instant;
-
-#[cfg(has_sized_atomics)]
-type U8 = u8;
-#[cfg(not(has_sized_atomics))]
-type U8 = usize;
+use std::time::{Duration, Instant};
 
 
 
@@ -38,7 +39,7 @@ pub struct RawMutex {
 
 unsafe impl RawMutexTrait for RawMutex {
     const INIT: RawMutex = RawMutex {
-        state: AtomicU8::new(0),
+        state: ATOMIC_U8_INIT,
     };
 
     type GuardMarker = GuardNoSend;
@@ -82,7 +83,7 @@ unsafe impl RawMutexTrait for RawMutex {
         unsafe { deadlock::release_resource(self as *const _ as usize) };
         if self
             .state
-            .compare_exchange(LOCKED_BIT, 0, Ordering::Release, Ordering::Relaxed)
+            .compare_exchange_weak(LOCKED_BIT, 0, Ordering::Release, Ordering::Relaxed)
             .is_ok()
         {
             return;
@@ -97,7 +98,7 @@ unsafe impl RawMutexFair for RawMutex {
         unsafe { deadlock::release_resource(self as *const _ as usize) };
         if self
             .state
-            .compare_exchange(LOCKED_BIT, 0, Ordering::Release, Ordering::Relaxed)
+            .compare_exchange_weak(LOCKED_BIT, 0, Ordering::Release, Ordering::Relaxed)
             .is_ok()
         {
             return;
@@ -143,7 +144,7 @@ unsafe impl RawMutexTimed for RawMutex {
         {
             true
         } else {
-            self.lock_slow(util::to_deadline(timeout))
+            self.lock_slow(Some(Instant::now() + timeout))
         };
         if result {
             unsafe { deadlock::acquire_resource(self as *const _ as usize) };
@@ -263,6 +264,15 @@ impl RawMutex {
     #[cold]
     #[inline(never)]
     fn unlock_slow(&self, force_fair: bool) {
+        
+        if self
+            .state
+            .compare_exchange(LOCKED_BIT, 0, Ordering::Release, Ordering::Relaxed)
+            .is_ok()
+        {
+            return;
+        }
+
         
         
         unsafe {

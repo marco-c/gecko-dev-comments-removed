@@ -5,10 +5,7 @@
 
 
 
-use core::{
-    ptr,
-    sync::atomic::{AtomicPtr, AtomicUsize, Ordering},
-};
+use std::sync::atomic::{AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
 use std::time::Instant;
 
 mod keyed_event;
@@ -19,23 +16,16 @@ enum Backend {
     WaitAddress(waitaddress::WaitAddress),
 }
 
-static BACKEND: AtomicPtr<Backend> = AtomicPtr::new(ptr::null_mut());
-
 impl Backend {
-    #[inline]
-    fn get() -> &'static Backend {
+    unsafe fn get() -> &'static Backend {
+        static BACKEND: AtomicUsize = ATOMIC_USIZE_INIT;
+
         
-        let backend_ptr = BACKEND.load(Ordering::Acquire);
-        if !backend_ptr.is_null() {
-            return unsafe { &*backend_ptr };
+        let backend = BACKEND.load(Ordering::Acquire);
+        if backend != 0 {
+            return &*(backend as *const Backend);
         };
 
-        Backend::create()
-    }
-
-    #[cold]
-    #[inline(never)]
-    fn create() -> &'static Backend {
         
         let backend;
         if let Some(waitaddress) = waitaddress::WaitAddress::create() {
@@ -50,20 +40,13 @@ impl Backend {
         }
 
         
-        let backend_ptr = Box::into_raw(Box::new(backend));
-        match BACKEND.compare_exchange(
-            ptr::null_mut(),
-            backend_ptr,
-            Ordering::Release,
-            Ordering::Relaxed,
-        ) {
-            Ok(_) => unsafe { &*backend_ptr },
-            Err(global_backend_ptr) => {
-                unsafe {
-                    
-                    Box::from_raw(backend_ptr);
-                    &*global_backend_ptr
-                }
+        let backend = Box::into_raw(Box::new(backend));
+        match BACKEND.compare_exchange(0, backend as usize, Ordering::Release, Ordering::Relaxed) {
+            Ok(_) => &*(backend as *const Backend),
+            Err(x) => {
+                
+                Box::from_raw(backend);
+                &*(x as *const Backend)
             }
         }
     }
@@ -76,22 +59,18 @@ pub struct ThreadParker {
 }
 
 impl ThreadParker {
-    pub const IS_CHEAP_TO_CONSTRUCT: bool = true;
-
-    #[inline]
     pub fn new() -> ThreadParker {
         
         
         
         ThreadParker {
             key: AtomicUsize::new(0),
-            backend: Backend::get(),
+            backend: unsafe { Backend::get() },
         }
     }
 
     
-    #[inline]
-    pub fn prepare_park(&self) {
+    pub unsafe fn prepare_park(&self) {
         match *self.backend {
             Backend::KeyedEvent(ref x) => x.prepare_park(&self.key),
             Backend::WaitAddress(ref x) => x.prepare_park(&self.key),
@@ -100,8 +79,7 @@ impl ThreadParker {
 
     
     
-    #[inline]
-    pub fn timed_out(&self) -> bool {
+    pub unsafe fn timed_out(&self) -> bool {
         match *self.backend {
             Backend::KeyedEvent(ref x) => x.timed_out(&self.key),
             Backend::WaitAddress(ref x) => x.timed_out(&self.key),
@@ -110,7 +88,6 @@ impl ThreadParker {
 
     
     
-    #[inline]
     pub unsafe fn park(&self) {
         match *self.backend {
             Backend::KeyedEvent(ref x) => x.park(&self.key),
@@ -121,7 +98,6 @@ impl ThreadParker {
     
     
     
-    #[inline]
     pub unsafe fn park_until(&self, timeout: Instant) -> bool {
         match *self.backend {
             Backend::KeyedEvent(ref x) => x.park_until(&self.key, timeout),
@@ -132,7 +108,6 @@ impl ThreadParker {
     
     
     
-    #[inline]
     pub unsafe fn unpark_lock(&self) -> UnparkHandle {
         match *self.backend {
             Backend::KeyedEvent(ref x) => UnparkHandle::KeyedEvent(x.unpark_lock(&self.key)),
@@ -152,38 +127,10 @@ pub enum UnparkHandle {
 impl UnparkHandle {
     
     
-    #[inline]
     pub unsafe fn unpark(self) {
         match self {
             UnparkHandle::KeyedEvent(x) => x.unpark(),
             UnparkHandle::WaitAddress(x) => x.unpark(),
         }
-    }
-}
-
-
-#[inline]
-pub fn thread_yield() {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    extern "system" {
-        fn Sleep(a: winapi::shared::minwindef::DWORD);
-    }
-    unsafe {
-        
-        
-        
-        Sleep(0);
     }
 }

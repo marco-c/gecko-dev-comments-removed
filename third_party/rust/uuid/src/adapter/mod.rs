@@ -18,9 +18,6 @@ use prelude::*;
 
 mod core_support;
 
-#[cfg(feature = "serde")]
-pub mod compact;
-
 
 
 
@@ -233,11 +230,12 @@ fn encode<'a>(
             
             
             let hyphens_before = if hyphens { group } else { 0 };
+
             for idx in BYTE_POSITIONS[group]..BYTE_POSITIONS[group + 1] {
                 let b = bytes[idx];
                 let out_idx = hyphens_before + 2 * idx;
 
-                buffer[out_idx] = hex[(b >> 4) as usize];
+                buffer[out_idx + 0] = hex[(b >> 4) as usize];
                 buffer[out_idx + 1] = hex[(b & 0b1111) as usize];
             }
 
@@ -317,7 +315,10 @@ impl Hyphenated {
     
     
     
-    pub fn encode_lower<'buf>(&self, buffer: &'buf mut [u8]) -> &'buf mut str {
+    pub(crate) fn encode_lower<'buf>(
+        &self,
+        buffer: &'buf mut [u8],
+    ) -> &'buf mut str {
         encode(buffer, 0, &self.0, true, false)
     }
 
@@ -363,7 +364,10 @@ impl Hyphenated {
     
     
     
-    pub fn encode_upper<'buf>(&self, buffer: &'buf mut [u8]) -> &'buf mut str {
+    pub(crate) fn encode_upper<'buf>(
+        &self,
+        buffer: &'buf mut [u8],
+    ) -> &'buf mut str {
         encode(buffer, 0, &self.0, true, true)
     }
 }
@@ -438,7 +442,10 @@ impl<'a> HyphenatedRef<'a> {
     
     
     
-    pub fn encode_lower<'buf>(&self, buffer: &'buf mut [u8]) -> &'buf mut str {
+    pub(crate) fn encode_lower<'buf>(
+        &self,
+        buffer: &'buf mut [u8],
+    ) -> &'buf mut str {
         encode(buffer, 0, self.0, true, false)
     }
 
@@ -487,7 +494,10 @@ impl<'a> HyphenatedRef<'a> {
     
     
     
-    pub fn encode_upper<'buf>(&self, buffer: &'buf mut [u8]) -> &'buf mut str {
+    pub(crate) fn encode_upper<'buf>(
+        &self,
+        buffer: &'buf mut [u8],
+    ) -> &'buf mut str {
         encode(buffer, 0, self.0, true, true)
     }
 }
@@ -559,7 +569,10 @@ impl Simple {
     
     
     
-    pub fn encode_lower<'buf>(&self, buffer: &'buf mut [u8]) -> &'buf mut str {
+    pub(crate) fn encode_lower<'buf>(
+        &self,
+        buffer: &'buf mut [u8],
+    ) -> &'buf mut str {
         encode(buffer, 0, &self.0, false, false)
     }
 
@@ -602,7 +615,10 @@ impl Simple {
     
     
     
-    pub fn encode_upper<'buf>(&self, buffer: &'buf mut [u8]) -> &'buf mut str {
+    pub(crate) fn encode_upper<'buf>(
+        &self,
+        buffer: &'buf mut [u8],
+    ) -> &'buf mut str {
         encode(buffer, 0, &self.0, false, true)
     }
 }
@@ -674,7 +690,10 @@ impl<'a> SimpleRef<'a> {
     
     
     
-    pub fn encode_lower<'buf>(&self, buffer: &'buf mut [u8]) -> &'buf mut str {
+    pub(crate) fn encode_lower<'buf>(
+        &self,
+        buffer: &'buf mut [u8],
+    ) -> &'buf mut str {
         encode(buffer, 0, self.0, false, false)
     }
 
@@ -717,7 +736,10 @@ impl<'a> SimpleRef<'a> {
     
     
     
-    pub fn encode_upper<'buf>(&self, buffer: &'buf mut [u8]) -> &'buf mut str {
+    pub(crate) fn encode_upper<'buf>(
+        &self,
+        buffer: &'buf mut [u8],
+    ) -> &'buf mut str {
         encode(buffer, 0, self.0, false, true)
     }
 }
@@ -791,7 +813,10 @@ impl Urn {
     
     
     
-    pub fn encode_lower<'buf>(&self, buffer: &'buf mut [u8]) -> &'buf mut str {
+    pub(crate) fn encode_lower<'buf>(
+        &self,
+        buffer: &'buf mut [u8],
+    ) -> &'buf mut str {
         buffer[..9].copy_from_slice(b"urn:uuid:");
         encode(buffer, 9, &self.0, true, false)
     }
@@ -840,7 +865,10 @@ impl Urn {
     
     
     
-    pub fn encode_upper<'buf>(&self, buffer: &'buf mut [u8]) -> &'buf mut str {
+    pub(crate) fn encode_upper<'buf>(
+        &self,
+        buffer: &'buf mut [u8],
+    ) -> &'buf mut str {
         buffer[..9].copy_from_slice(b"urn:uuid:");
         encode(buffer, 9, &self.0, true, true)
     }
@@ -915,7 +943,10 @@ impl<'a> UrnRef<'a> {
     
     
     
-    pub fn encode_lower<'buf>(&self, buffer: &'buf mut [u8]) -> &'buf mut str {
+    pub(crate) fn encode_lower<'buf>(
+        &self,
+        buffer: &'buf mut [u8],
+    ) -> &'buf mut str {
         buffer[..9].copy_from_slice(b"urn:uuid:");
         encode(buffer, 9, self.0, true, false)
     }
@@ -964,7 +995,10 @@ impl<'a> UrnRef<'a> {
     
     
     
-    pub fn encode_upper<'buf>(&self, buffer: &'buf mut [u8]) -> &'buf mut str {
+    pub(crate) fn encode_upper<'buf>(
+        &self,
+        buffer: &'buf mut [u8],
+    ) -> &'buf mut str {
         buffer[..9].copy_from_slice(b"urn:uuid:");
         encode(buffer, 9, self.0, true, true)
     }

@@ -85,11 +85,13 @@
 
 #![no_std]
 #![warn(missing_docs)]
-#![warn(rust_2018_idioms)]
 #![cfg_attr(feature = "nightly", feature(const_fn))]
 
 #[macro_use]
 extern crate scopeguard;
+
+#[cfg(feature = "owning_ref")]
+extern crate owning_ref;
 
 
 pub struct GuardSend(());
@@ -98,10 +100,10 @@ pub struct GuardSend(());
 pub struct GuardNoSend(*mut ());
 
 mod mutex;
-pub use crate::mutex::*;
+pub use mutex::*;
 
 mod remutex;
-pub use crate::remutex::*;
+pub use remutex::*;
 
 mod rwlock;
-pub use crate::rwlock::*;
+pub use rwlock::*;

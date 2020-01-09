@@ -5,26 +5,12 @@
 
 
 
-#[cfg(any(target_os = "macos", target_os = "ios"))]
-use core::ptr;
-use core::{
-    cell::{Cell, UnsafeCell},
-    mem,
-};
+use std::cell::{Cell, UnsafeCell};
+use std::time::{Duration, Instant};
 use libc;
-use std::{
-    thread,
-    time::{Duration, Instant},
-};
-
-
-
-#[cfg(all(target_arch = "x86_64", target_pointer_width = "32"))]
-#[allow(non_camel_case_types)]
-type tv_nsec_t = i64;
-#[cfg(not(all(target_arch = "x86_64", target_pointer_width = "32")))]
-#[allow(non_camel_case_types)]
-type tv_nsec_t = libc::c_long;
+use std::mem;
+#[cfg(any(target_os = "macos", target_os = "ios"))]
+use std::ptr;
 
 
 pub struct ThreadParker {
@@ -35,9 +21,6 @@ pub struct ThreadParker {
 }
 
 impl ThreadParker {
-    pub const IS_CHEAP_TO_CONSTRUCT: bool = false;
-
-    #[inline]
     pub fn new() -> ThreadParker {
         ThreadParker {
             should_park: Cell::new(false),
@@ -49,10 +32,8 @@ impl ThreadParker {
 
     
     #[cfg(any(target_os = "macos", target_os = "ios", target_os = "android"))]
-    #[inline]
     unsafe fn init(&self) {}
     #[cfg(not(any(target_os = "macos", target_os = "ios", target_os = "android")))]
-    #[inline]
     unsafe fn init(&self) {
         let mut attr: libc::pthread_condattr_t = mem::uninitialized();
         let r = libc::pthread_condattr_init(&mut attr);
@@ -66,7 +47,6 @@ impl ThreadParker {
     }
 
     
-    #[inline]
     pub unsafe fn prepare_park(&self) {
         self.should_park.set(true);
         if !self.initialized.get() {
@@ -77,7 +57,6 @@ impl ThreadParker {
 
     
     
-    #[inline]
     pub unsafe fn timed_out(&self) -> bool {
         
         
@@ -92,7 +71,6 @@ impl ThreadParker {
 
     
     
-    #[inline]
     pub unsafe fn park(&self) {
         let r = libc::pthread_mutex_lock(self.mutex.get());
         debug_assert_eq!(r, 0);
@@ -107,7 +85,6 @@ impl ThreadParker {
     
     
     
-    #[inline]
     pub unsafe fn park_until(&self, timeout: Instant) -> bool {
         let r = libc::pthread_mutex_lock(self.mutex.get());
         debug_assert_eq!(r, 0);
@@ -143,7 +120,6 @@ impl ThreadParker {
     
     
     
-    #[inline]
     pub unsafe fn unpark_lock(&self) -> UnparkHandle {
         let r = libc::pthread_mutex_lock(self.mutex.get());
         debug_assert_eq!(r, 0);
@@ -155,7 +131,6 @@ impl ThreadParker {
 }
 
 impl Drop for ThreadParker {
-    #[inline]
     fn drop(&mut self) {
         
         
@@ -188,7 +163,6 @@ pub struct UnparkHandle {
 impl UnparkHandle {
     
     
-    #[inline]
     pub unsafe fn unpark(self) {
         (*self.thread_parker).should_park.set(false);
 
@@ -204,20 +178,18 @@ impl UnparkHandle {
 
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
-#[inline]
-fn timespec_now() -> libc::timespec {
-    let mut now: libc::timeval = unsafe { mem::uninitialized() };
-    let r = unsafe { libc::gettimeofday(&mut now, ptr::null_mut()) };
+unsafe fn timespec_now() -> libc::timespec {
+    let mut now: libc::timeval = mem::uninitialized();
+    let r = libc::gettimeofday(&mut now, ptr::null_mut());
     debug_assert_eq!(r, 0);
     libc::timespec {
         tv_sec: now.tv_sec,
-        tv_nsec: now.tv_usec as tv_nsec_t * 1000,
+        tv_nsec: now.tv_usec as libc::c_long * 1000,
     }
 }
 #[cfg(not(any(target_os = "macos", target_os = "ios")))]
-#[inline]
-fn timespec_now() -> libc::timespec {
-    let mut now: libc::timespec = unsafe { mem::uninitialized() };
+unsafe fn timespec_now() -> libc::timespec {
+    let mut now: libc::timespec = mem::uninitialized();
     let clock = if cfg!(target_os = "android") {
         
         
@@ -225,22 +197,21 @@ fn timespec_now() -> libc::timespec {
     } else {
         libc::CLOCK_MONOTONIC
     };
-    let r = unsafe { libc::clock_gettime(clock, &mut now) };
+    let r = libc::clock_gettime(clock, &mut now);
     debug_assert_eq!(r, 0);
     now
 }
 
 
 
-#[inline]
-fn timeout_to_timespec(timeout: Duration) -> Option<libc::timespec> {
+unsafe fn timeout_to_timespec(timeout: Duration) -> Option<libc::timespec> {
     
     if timeout.as_secs() > libc::time_t::max_value() as u64 {
         return None;
     }
 
     let now = timespec_now();
-    let mut nsec = now.tv_nsec + timeout.subsec_nanos() as tv_nsec_t;
+    let mut nsec = now.tv_nsec + timeout.subsec_nanos() as libc::c_long;
     let mut sec = now.tv_sec.checked_add(timeout.as_secs() as libc::time_t);
     if nsec >= 1_000_000_000 {
         nsec -= 1_000_000_000;
@@ -251,9 +222,4 @@ fn timeout_to_timespec(timeout: Duration) -> Option<libc::timespec> {
         tv_nsec: nsec,
         tv_sec: sec,
     })
-}
-
-#[inline]
-pub fn thread_yield() {
-    thread::yield_now();
 }

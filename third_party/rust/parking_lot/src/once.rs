@@ -5,21 +5,21 @@
 
 
 
-use crate::util::UncheckedOptionExt;
-#[cfg(has_sized_atomics)]
-use core::sync::atomic::AtomicU8;
-#[cfg(not(has_sized_atomics))]
-use core::sync::atomic::AtomicUsize as AtomicU8;
-use core::{
-    fmt, mem,
-    sync::atomic::{fence, Ordering},
-};
-use parking_lot_core::{self, SpinWait, DEFAULT_PARK_TOKEN, DEFAULT_UNPARK_TOKEN};
-
-#[cfg(has_sized_atomics)]
+use std::sync::atomic::{fence, Ordering};
+#[cfg(feature = "nightly")]
+use std::sync::atomic::{ATOMIC_U8_INIT, AtomicU8};
+#[cfg(feature = "nightly")]
 type U8 = u8;
-#[cfg(not(has_sized_atomics))]
+#[cfg(not(feature = "nightly"))]
+use std::sync::atomic::AtomicUsize as AtomicU8;
+#[cfg(not(feature = "nightly"))]
+use std::sync::atomic::ATOMIC_USIZE_INIT as ATOMIC_U8_INIT;
+#[cfg(not(feature = "nightly"))]
 type U8 = usize;
+use parking_lot_core::{self, SpinWait, DEFAULT_PARK_TOKEN, DEFAULT_UNPARK_TOKEN};
+use std::fmt;
+use std::mem;
+use util::UncheckedOptionExt;
 
 const DONE_BIT: U8 = 1;
 const POISON_BIT: U8 = 2;
@@ -91,11 +91,22 @@ impl OnceState {
 
 pub struct Once(AtomicU8);
 
+
+pub const ONCE_INIT: Once = Once(ATOMIC_U8_INIT);
+
 impl Once {
     
+    #[cfg(feature = "nightly")]
     #[inline]
     pub const fn new() -> Once {
-        Once(AtomicU8::new(0))
+        Once(ATOMIC_U8_INIT)
+    }
+
+    
+    #[cfg(not(feature = "nightly"))]
+    #[inline]
+    pub fn new() -> Once {
+        Once(ATOMIC_U8_INIT)
     }
 
     
@@ -212,7 +223,7 @@ impl Once {
     
     #[cold]
     #[inline(never)]
-    fn call_once_slow(&self, ignore_poison: bool, f: &mut dyn FnMut(OnceState)) {
+    fn call_once_slow(&self, ignore_poison: bool, f: &mut FnMut(OnceState)) {
         let mut spinwait = SpinWait::new();
         let mut state = self.0.load(Ordering::Relaxed);
         loop {
@@ -333,7 +344,7 @@ impl Default for Once {
 }
 
 impl fmt::Debug for Once {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Once")
             .field("state", &self.state())
             .finish()
@@ -342,14 +353,15 @@ impl fmt::Debug for Once {
 
 #[cfg(test)]
 mod tests {
-    use crate::Once;
+    #[cfg(feature = "nightly")]
     use std::panic;
     use std::sync::mpsc::channel;
     use std::thread;
+    use {Once, ONCE_INIT};
 
     #[test]
     fn smoke_once() {
-        static O: Once = Once::new();
+        static O: Once = ONCE_INIT;
         let mut a = 0;
         O.call_once(|| a += 1);
         assert_eq!(a, 1);
@@ -359,7 +371,7 @@ mod tests {
 
     #[test]
     fn stampede_once() {
-        static O: Once = Once::new();
+        static O: Once = ONCE_INIT;
         static mut RUN: bool = false;
 
         let (tx, rx) = channel();
@@ -393,9 +405,10 @@ mod tests {
         }
     }
 
+    #[cfg(feature = "nightly")]
     #[test]
     fn poison_bad() {
-        static O: Once = Once::new();
+        static O: Once = ONCE_INIT;
 
         
         let t = panic::catch_unwind(|| {
@@ -421,9 +434,10 @@ mod tests {
         O.call_once(|| {});
     }
 
+    #[cfg(feature = "nightly")]
     #[test]
     fn wait_for_force_to_finish() {
-        static O: Once = Once::new();
+        static O: Once = ONCE_INIT;
 
         
         let t = panic::catch_unwind(|| {
@@ -461,8 +475,14 @@ mod tests {
 
     #[test]
     fn test_once_debug() {
-        static O: Once = Once::new();
+        static O: Once = ONCE_INIT;
 
         assert_eq!(format!("{:?}", O), "Once { state: New }");
+        assert_eq!(
+            format!("{:#?}", O),
+            "Once {
+    state: New
+}"
+        );
     }
 }

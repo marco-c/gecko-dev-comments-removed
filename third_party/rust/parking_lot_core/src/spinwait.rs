@@ -5,8 +5,53 @@
 
 
 
-use crate::thread_parker;
+#[cfg(unix)]
+use libc;
+#[cfg(windows)]
+use winapi;
+#[cfg(not(any(windows, unix)))]
+use std::thread;
 use std::sync::atomic::spin_loop_hint;
+
+
+#[cfg(windows)]
+#[inline]
+fn thread_yield() {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    extern "system" {
+        fn Sleep(a: winapi::shared::minwindef::DWORD);
+    }
+    unsafe {
+        
+        
+        
+        Sleep(0);
+    }
+}
+#[cfg(unix)]
+#[inline]
+fn thread_yield() {
+    unsafe {
+        libc::sched_yield();
+    }
+}
+#[cfg(not(any(windows, unix)))]
+#[inline]
+fn thread_yield() {
+    thread::yield_now();
+}
 
 
 
@@ -18,7 +63,6 @@ fn cpu_relax(iterations: u32) {
 }
 
 
-#[derive(Default)]
 pub struct SpinWait {
     counter: u32,
 }
@@ -26,8 +70,8 @@ pub struct SpinWait {
 impl SpinWait {
     
     #[inline]
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new() -> SpinWait {
+        SpinWait { counter: 0 }
     }
 
     
@@ -46,14 +90,14 @@ impl SpinWait {
     
     #[inline]
     pub fn spin(&mut self) -> bool {
-        if self.counter >= 10 {
+        if self.counter >= 20 {
             return false;
         }
         self.counter += 1;
-        if self.counter <= 3 {
-            cpu_relax(1 << self.counter);
+        if self.counter <= 10 {
+            cpu_relax(4 << self.counter);
         } else {
-            thread_parker::thread_yield();
+            thread_yield();
         }
         true
     }
@@ -69,6 +113,13 @@ impl SpinWait {
         if self.counter > 10 {
             self.counter = 10;
         }
-        cpu_relax(1 << self.counter);
+        cpu_relax(4 << self.counter);
+    }
+}
+
+impl Default for SpinWait {
+    #[inline]
+    fn default() -> SpinWait {
+        SpinWait::new()
     }
 }

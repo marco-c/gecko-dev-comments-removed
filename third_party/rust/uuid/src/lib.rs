@@ -106,14 +106,6 @@
 
 
 
-
-
-
-
-
-
-
-
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "const_fn", feature(const_fn))]
 #![deny(
@@ -124,7 +116,7 @@
 #![doc(
     html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
     html_favicon_url = "https://www.rust-lang.org/favicon.ico",
-    html_root_url = "https://docs.rs/uuid/0.7.4"
+    html_root_url = "https://docs.rs/uuid"
 )]
 
 #[cfg(feature = "byteorder")]
@@ -139,25 +131,17 @@ extern crate rand;
 extern crate serde;
 #[cfg(all(feature = "serde", test))]
 extern crate serde_test;
-#[cfg(all(feature = "serde", test))]
-#[macro_use]
-extern crate serde_derive;
 #[cfg(feature = "sha1")]
 extern crate sha1;
 #[cfg(feature = "slog")]
 #[cfg_attr(test, macro_use)]
 extern crate slog;
-#[cfg(feature = "winapi")]
-extern crate winapi;
 
 pub mod adapter;
-pub mod builder;
 pub mod parser;
 pub mod prelude;
 #[cfg(feature = "v1")]
 pub mod v1;
-
-pub use builder::Builder;
 
 mod core_support;
 #[cfg(feature = "serde")]
@@ -170,41 +154,12 @@ mod std_support;
 mod test_util;
 #[cfg(feature = "u128")]
 mod u128_support;
-#[cfg(all(
-    feature = "v3",
-    any(
-        not(target_arch = "wasm32"),
-        all(
-            target_arch = "wasm32",
-            any(feature = "stdweb", feature = "wasm-bindgen")
-        )
-    )
-))]
+#[cfg(feature = "v3")]
 mod v3;
-#[cfg(all(
-    feature = "v4",
-    any(
-        not(target_arch = "wasm32"),
-        all(
-            target_arch = "wasm32",
-            any(feature = "stdweb", feature = "wasm-bindgen")
-        )
-    )
-))]
+#[cfg(feature = "v4")]
 mod v4;
-#[cfg(all(
-    feature = "v5",
-    any(
-        not(target_arch = "wasm32"),
-        all(
-            target_arch = "wasm32",
-            any(feature = "stdweb", feature = "wasm-bindgen")
-        )
-    )
-))]
+#[cfg(feature = "v5")]
 mod v5;
-#[cfg(all(windows, feature = "winapi"))]
-mod winapi_support;
 
 
 pub type Bytes = [u8; 16];
@@ -216,38 +171,6 @@ pub type Bytes = [u8; 16];
 pub struct BytesError {
     expected: usize,
     found: usize,
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub enum Error {
-    
-    
-    
-    
-    
-    
-    Bytes(BytesError),
-
-    
-    
-    
-    
-    
-    
-    Parse(parser::ParseError),
 }
 
 
@@ -285,7 +208,7 @@ pub enum Variant {
 }
 
 
-#[derive(Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Uuid(Bytes);
 
 impl BytesError {
@@ -323,7 +246,10 @@ impl BytesError {
     #[cfg(feature = "const_fn")]
     #[inline]
     pub const fn new(expected: usize, found: usize) -> Self {
-        BytesError { expected, found }
+        BytesError {
+            expected: expected,
+            found: found,
+        }
     }
 
     
@@ -515,63 +441,6 @@ impl Uuid {
     
     
     
-    pub fn from_fields_le(
-        d1: u32,
-        d2: u16,
-        d3: u16,
-        d4: &[u8],
-    ) -> Result<Uuid, BytesError> {
-        const D4_LEN: usize = 8;
-
-        let len = d4.len();
-
-        if len != D4_LEN {
-            return Err(BytesError::new(D4_LEN, len));
-        }
-
-        Ok(Uuid::from_bytes([
-            d1 as u8,
-            (d1 >> 8) as u8,
-            (d1 >> 16) as u8,
-            (d1 >> 24) as u8,
-            (d2) as u8,
-            (d2 >> 8) as u8,
-            d3 as u8,
-            (d3 >> 8) as u8,
-            d4[0],
-            d4[1],
-            d4[2],
-            d4[3],
-            d4[4],
-            d4[5],
-            d4[6],
-            d4[7],
-        ]))
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -601,11 +470,76 @@ impl Uuid {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[cfg(not(feature = "const_fn"))]
     pub fn from_bytes(bytes: Bytes) -> Uuid {
         Uuid(bytes)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     #[cfg(feature = "const_fn")]
     pub const fn from_bytes(bytes: Bytes) -> Uuid {
@@ -633,10 +567,7 @@ impl Uuid {
     
     
     
-    #[deprecated(
-        since = "0.7.2",
-        note = "please use the `uuid::Builder` instead to set the variant and version"
-    )]
+    
     pub fn from_random_bytes(bytes: Bytes) -> Uuid {
         let mut uuid = Uuid::from_bytes(bytes);
         uuid.set_variant(Variant::RFC4122);
@@ -746,6 +677,7 @@ impl Uuid {
     
     
     
+    
     pub fn as_fields(&self) -> (u32, u16, u16, &[u8; 8]) {
         let d1 = u32::from(self.as_bytes()[0]) << 24
             | u32::from(self.as_bytes()[1]) << 16
@@ -782,32 +714,28 @@ impl Uuid {
     
     
     
-    
-    
-    pub fn to_fields_le(&self) -> (u32, u16, u16, &[u8; 8]) {
-        let d1 = u32::from(self.as_bytes()[0])
-            | u32::from(self.as_bytes()[1]) << 8
-            | u32::from(self.as_bytes()[2]) << 16
-            | u32::from(self.as_bytes()[3]) << 24;
-
-        let d2 =
-            u16::from(self.as_bytes()[4]) | u16::from(self.as_bytes()[5]) << 8;
-
-        let d3 =
-            u16::from(self.as_bytes()[6]) | u16::from(self.as_bytes()[7]) << 8;
-
-        let d4: &[u8; 8] =
-            unsafe { &*(self.as_bytes()[8..16].as_ptr() as *const [u8; 8]) };
-        (d1, d2, d3, d4)
-    }
-
-    
-    
     #[cfg(feature = "const_fn")]
     pub const fn as_bytes(&self) -> &Bytes {
         &self.0
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     #[cfg(not(feature = "const_fn"))]
@@ -995,7 +923,6 @@ impl Uuid {
     pub fn is_nil(&self) -> bool {
         self.as_bytes().iter().all(|&b| b == 0)
     }
-
     
     
     
@@ -1022,7 +949,7 @@ impl Uuid {
     
     
     
-    pub fn encode_buffer() -> [u8; adapter::Urn::LENGTH] {
+    pub(crate) fn encode_buffer() -> [u8; adapter::Urn::LENGTH] {
         [0; adapter::Urn::LENGTH]
     }
 }
@@ -1265,14 +1192,20 @@ mod tests {
 
         
         assert!(Uuid::parse_str("00000000000000000000000000000000").is_ok());
-        assert!(Uuid::parse_str("67e55044-10b1-426f-9247-bb680e5fe0c8").is_ok());
-        assert!(Uuid::parse_str("F9168C5E-CEB2-4faa-B6BF-329BF39FA1E4").is_ok());
+        assert!(
+            Uuid::parse_str("67e55044-10b1-426f-9247-bb680e5fe0c8").is_ok()
+        );
+        assert!(
+            Uuid::parse_str("F9168C5E-CEB2-4faa-B6BF-329BF39FA1E4").is_ok()
+        );
         assert!(Uuid::parse_str("67e5504410b1426f9247bb680e5fe0c8").is_ok());
-        assert!(Uuid::parse_str("01020304-1112-2122-3132-414243444546").is_ok());
-        assert!(Uuid::parse_str(
-            "urn:uuid:67e55044-10b1-426f-9247-bb680e5fe0c8"
-        )
-        .is_ok());
+        assert!(
+            Uuid::parse_str("01020304-1112-2122-3132-414243444546").is_ok()
+        );
+        assert!(
+            Uuid::parse_str("urn:uuid:67e55044-10b1-426f-9247-bb680e5fe0c8")
+                .is_ok()
+        );
 
         
         let nil = Uuid::nil();
@@ -1426,20 +1359,6 @@ mod tests {
     }
 
     #[test]
-    fn test_from_fields_le() {
-        let d1: u32 = 0xa4a3a2a1;
-        let d2: u16 = 0xb2b1;
-        let d3: u16 = 0xc2c1;
-        let d4 = [0xd1, 0xd2, 0xd3, 0xd4, 0xd5, 0xd6, 0xd7, 0xd8];
-
-        let u = Uuid::from_fields_le(d1, d2, d3, &d4).unwrap();
-
-        let expected = "a1a2a3a4b1b2c1c2d1d2d3d4d5d6d7d8";
-        let result = u.to_simple().to_string();
-        assert_eq!(result, expected);
-    }
-
-    #[test]
     fn test_as_fields() {
         let u = test_util::new();
         let (d1, d2, d3, d4) = u.as_fields();
@@ -1464,38 +1383,6 @@ mod tests {
         assert_eq!(d1_in, d1_out);
         assert_eq!(d2_in, d2_out);
         assert_eq!(d3_in, d3_out);
-        assert_eq!(d4_in, d4_out);
-    }
-
-    #[test]
-    fn test_fields_le_roundtrip() {
-        let d1_in: u32 = 0xa4a3a2a1;
-        let d2_in: u16 = 0xb2b1;
-        let d3_in: u16 = 0xc2c1;
-        let d4_in = &[0xd1, 0xd2, 0xd3, 0xd4, 0xd5, 0xd6, 0xd7, 0xd8];
-
-        let u = Uuid::from_fields_le(d1_in, d2_in, d3_in, d4_in).unwrap();
-        let (d1_out, d2_out, d3_out, d4_out) = u.to_fields_le();
-
-        assert_eq!(d1_in, d1_out);
-        assert_eq!(d2_in, d2_out);
-        assert_eq!(d3_in, d3_out);
-        assert_eq!(d4_in, d4_out);
-    }
-
-    #[test]
-    fn test_fields_le_are_actually_le() {
-        let d1_in: u32 = 0xa1a2a3a4;
-        let d2_in: u16 = 0xb1b2;
-        let d3_in: u16 = 0xc1c2;
-        let d4_in = &[0xd1, 0xd2, 0xd3, 0xd4, 0xd5, 0xd6, 0xd7, 0xd8];
-
-        let u = Uuid::from_fields(d1_in, d2_in, d3_in, d4_in).unwrap();
-        let (d1_out, d2_out, d3_out, d4_out) = u.to_fields_le();
-
-        assert_eq!(d1_in, d1_out.swap_bytes());
-        assert_eq!(d2_in, d2_out.swap_bytes());
-        assert_eq!(d3_in, d3_out.swap_bytes());
         assert_eq!(d4_in, d4_out);
     }
 
@@ -1549,7 +1436,6 @@ mod tests {
     }
 
     #[test]
-    #[allow(deprecated)]
     fn test_from_random_bytes() {
         let b = [
             0xa1, 0xa2, 0xa3, 0xa4, 0xb1, 0xb2, 0xc1, 0xc2, 0xd1, 0xd2, 0xd3,
