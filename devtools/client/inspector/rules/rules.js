@@ -31,6 +31,8 @@ const {createChild, promiseWarn} = require("devtools/client/inspector/shared/uti
 const {debounce} = require("devtools/shared/debounce");
 const EventEmitter = require("devtools/shared/event-emitter");
 
+loader.lazyRequireGetter(this, "flashElementOn", "devtools/client/inspector/markup/utils", true);
+loader.lazyRequireGetter(this, "flashElementOff", "devtools/client/inspector/markup/utils", true);
 loader.lazyRequireGetter(this, "ClassListPreviewer", "devtools/client/inspector/rules/views/class-list-previewer");
 loader.lazyRequireGetter(this, "StyleInspectorMenu", "devtools/client/inspector/shared/style-inspector-menu");
 loader.lazyRequireGetter(this, "AutocompletePopup", "devtools/client/shared/autocomplete-popup");
@@ -41,6 +43,7 @@ const HTML_NS = "http://www.w3.org/1999/xhtml";
 const PREF_UA_STYLES = "devtools.inspector.showUserAgentStyles";
 const PREF_DEFAULT_COLOR_UNIT = "devtools.defaultColorUnit";
 const FILTER_CHANGED_TIMEOUT = 150;
+const REMOVE_FLASH_ELEMENT_DURATION = 500;
 
 
 const FILTER_PROP_RE = /\s*([^:\s]*)\s*:\s*(.*?)\s*;?$/;
@@ -123,6 +126,8 @@ function CssRuleView(inspector, document, store) {
   this._onTogglePseudoClassPanel = this._onTogglePseudoClassPanel.bind(this);
   this._onTogglePseudoClass = this._onTogglePseudoClass.bind(this);
   this._onToggleClassPanel = this._onToggleClassPanel.bind(this);
+  this.highlightElementRule = this.highlightElementRule.bind(this);
+  this.highlightProperty = this.highlightProperty.bind(this);
 
   const doc = this.styleDocument;
   this.element = doc.getElementById("ruleview-container-focusable");
@@ -1051,6 +1056,8 @@ CssRuleView.prototype = {
     });
 
     if (isPseudo) {
+      container.id = "pseudo-elements-container";
+      twisty.id = "pseudo-elements-header-twisty";
       this._toggleContainerVisibility(twisty, container, isPseudo,
         this.showPseudoElements);
     }
@@ -1607,6 +1614,170 @@ CssRuleView.prototype = {
       event.preventDefault();
       event.stopPropagation();
     }
+  },
+
+  
+
+
+
+
+
+  _flashElement(element) {
+    flashElementOn(element);
+    flashElementOff(element);
+
+    if (this._removeFlashOutTimer) {
+      clearTimeout(this._removeFlashOutTimer);
+      this._removeFlashOutTimer = null;
+    }
+
+    
+    
+    this._removeFlashOutTimer = setTimeout(() => {
+      element.classList.remove("flash-out");
+      
+      this.emit("scrolled-to-element");
+    }, REMOVE_FLASH_ELEMENT_DURATION);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  _scrollToElement(rule, declaration, scrollBehavior = "smooth") {
+    let elementToScrollTo = rule;
+
+    if (declaration) {
+      const { offsetTop, offsetHeight } = declaration;
+      
+      
+      const distance = (offsetTop + offsetHeight) - rule.offsetTop;
+
+      if (this.element.parentNode.offsetHeight <= distance) {
+        elementToScrollTo = declaration;
+      }
+    }
+
+    elementToScrollTo.scrollIntoView({ behavior: scrollBehavior });
+  },
+
+  
+
+
+  _togglePseudoElementRuleContainer() {
+    const container = this.styleDocument.getElementById("pseudo-elements-container");
+    const twisty = this.styleDocument.getElementById("pseudo-elements-header-twisty");
+    this._toggleContainerVisibility(twisty, container, true, true);
+  },
+
+  
+
+
+
+
+
+  highlightElementRule: function(ruleId) {
+    let scrollBehavior = "smooth";
+
+    const rule = this.rules.find(r => r.domRule.actorID === ruleId);
+
+    if (!rule) {
+      return;
+    }
+
+    if (rule.domRule.actorID === ruleId) {
+      
+      if (!this.inspector.is3PaneModeEnabled) {
+        this.inspector.sidebar.select("ruleview");
+      }
+
+      if (rule.pseudoElement.length && !this.showPseudoElements) {
+        scrollBehavior = "auto";
+        this._togglePseudoElementRuleContainer();
+      }
+
+      const { editor: { element } } = rule;
+
+      
+      this._scrollToElement(element, null, scrollBehavior);
+      this._flashElement(element);
+    }
+  },
+
+  
+
+
+
+
+
+
+
+  highlightProperty: function(name) {
+    for (const rule of this.rules) {
+      for (const textProp of rule.textProps) {
+        if (textProp.overridden || textProp.invisible || !textProp.enabled) {
+          continue;
+        }
+
+        const { editor: { selectorText } } = rule;
+        let scrollBehavior = "smooth";
+
+        
+        if (textProp.name === name) {
+          
+          if (!this.inspector.is3PaneModeEnabled) {
+            this.inspector.sidebar.select("ruleview");
+          }
+
+          
+          
+          if (rule.pseudoElement.length && !this.showPseudoElements) {
+            
+            
+            scrollBehavior = "auto";
+            this._togglePseudoElementRuleContainer();
+          }
+
+          
+          
+          this._scrollToElement(selectorText, textProp.editor.element, scrollBehavior);
+          this._flashElement(textProp.editor.element);
+
+          return true;
+        }
+
+        
+        for (const computed of textProp.computed) {
+          if (computed.name === name) {
+            if (!this.inspector.is3PaneModeEnabled) {
+              this.inspector.sidebar.select("ruleview");
+            }
+
+            if (textProp.rule.pseudoElement.length && !this.showPseudoElements) {
+              scrollBehavior = "auto";
+              this._togglePseudoElementRuleContainer();
+            }
+
+            
+            textProp.editor.expandForFilter();
+
+            this._scrollToElement(selectorText, computed.element, scrollBehavior);
+            this._flashElement(computed.element);
+
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
   },
 };
 
