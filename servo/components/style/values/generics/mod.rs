@@ -215,7 +215,19 @@ pub struct GreaterThanOrEqualToOne<T>(pub T);
 
 
 #[allow(missing_docs)]
-#[derive(Clone, ComputeSquaredDistance, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToAnimatedValue, ToAnimatedZero, ToComputedValue, ToCss)]
+#[derive(
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToCss,
+)]
 #[css(function = "rect", comma)]
 pub struct ClipRect<LengthOrAuto> {
     pub top: LengthOrAuto,

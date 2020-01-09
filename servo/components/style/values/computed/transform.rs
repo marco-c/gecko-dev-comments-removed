@@ -592,9 +592,7 @@ impl Translate {
     
     pub fn from_transform_operation(operation: &TransformOperation) -> Translate {
         match *operation {
-            generic::TransformOperation::Translate(tx, ty) => {
-                generic::Translate::Translate(tx, ty)
-            },
+            generic::TransformOperation::Translate(tx, ty) => generic::Translate::Translate(tx, ty),
             generic::TransformOperation::Translate3D(tx, ty, tz) => {
                 generic::Translate::Translate3D(tx, ty, tz)
             },

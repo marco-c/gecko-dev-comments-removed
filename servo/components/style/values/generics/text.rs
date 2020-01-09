@@ -29,9 +29,7 @@ impl<N, I> InitialLetter<N, I> {
 }
 
 
-#[derive(
-    Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss,
-)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
 pub enum Spacing<Value> {
     
     Normal,
