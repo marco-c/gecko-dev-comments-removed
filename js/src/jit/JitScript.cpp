@@ -18,6 +18,7 @@
 #include "vm/TypeInference-inl.h"
 
 using namespace js;
+using namespace js::jit;
 
 static void FillBytecodeTypeMap(JSScript* script, uint32_t* bytecodeMap) {
   uint32_t added = 0;
@@ -35,28 +36,28 @@ static void FillBytecodeTypeMap(JSScript* script, uint32_t* bytecodeMap) {
 }
 
 static size_t NumTypeSets(JSScript* script) {
-  size_t num = script->numBytecodeTypeSets() + 1 ;
-  if (JSFunction* fun = script->functionNonDelazifying()) {
-    num += fun->nargs();
-  }
-
-  
   
   static_assert(JSScript::MaxBytecodeTypeSets == UINT16_MAX,
                 "JSScript typesets should have safe range to avoid overflow");
   static_assert(JSFunction::NArgsBits == 16,
                 "JSFunction nargs should have safe range to avoid overflow");
 
+  size_t num = script->numBytecodeTypeSets() + 1 ;
+  if (JSFunction* fun = script->functionNonDelazifying()) {
+    num += fun->nargs();
+  }
+
   return num;
 }
 
-JitScript::JitScript(JSScript* script, ICScriptPtr&& icScript,
-                     uint32_t numTypeSets)
-    : icScript_(std::move(icScript)), numTypeSets_(numTypeSets) {
+JitScript::JitScript(JSScript* script, uint32_t typeSetOffset,
+                     uint32_t bytecodeTypeMapOffset)
+    : typeSetOffset_(typeSetOffset),
+      bytecodeTypeMapOffset_(bytecodeTypeMapOffset) {
   setTypesGeneration(script->zone()->types.generation);
 
   StackTypeSet* array = typeArrayDontCheckGeneration();
-  for (unsigned i = 0; i < numTypeSets; i++) {
+  for (uint32_t i = 0, len = numTypeSets(); i < len; i++) {
     new (&array[i]) StackTypeSet();
   }
 
@@ -84,38 +85,52 @@ bool JSScript::createJitScript(JSContext* cx) {
     return true;
   }
 
-  UniquePtr<jit::ICScript> icScript(jit::ICScript::create(cx, this));
-  if (!icScript) {
+  size_t numTypeSets = NumTypeSets(this);
+
+  static_assert(sizeof(JitScript) % sizeof(uintptr_t) == 0,
+                "Trailing arrays must be aligned properly");
+  static_assert(sizeof(ICEntry) % sizeof(uintptr_t) == 0,
+                "Trailing arrays must be aligned properly");
+  static_assert(sizeof(StackTypeSet) % sizeof(uintptr_t) == 0,
+                "Trailing arrays must be aligned properly");
+
+  
+  CheckedInt<uint32_t> allocSize = sizeof(JitScript);
+  allocSize += CheckedInt<uint32_t>(numICEntries()) * sizeof(ICEntry);
+  allocSize += CheckedInt<uint32_t>(numTypeSets) * sizeof(StackTypeSet);
+  allocSize += CheckedInt<uint32_t>(numBytecodeTypeSets()) * sizeof(uint32_t);
+  if (!allocSize.isValid()) {
+    ReportAllocationOverflow(cx);
     return false;
   }
+
+  void* raw = cx->pod_malloc<uint8_t>(allocSize.value());
+  MOZ_ASSERT(uintptr_t(raw) % alignof(JitScript) == 0);
+  if (!raw) {
+    return false;
+  }
+
+  uint32_t typeSetOffset = sizeof(JitScript) + numICEntries() * sizeof(ICEntry);
+  uint32_t bytecodeTypeMapOffset =
+      typeSetOffset + numTypeSets * sizeof(StackTypeSet);
+  UniquePtr<JitScript> jitScript(
+      new (raw) JitScript(this, typeSetOffset, bytecodeTypeMapOffset));
+
+  
+  MOZ_ASSERT(jitScript->numICEntries() == numICEntries());
+  MOZ_ASSERT(jitScript->numTypeSets() == numTypeSets);
 
   
   auto prepareForDestruction = mozilla::MakeScopeExit(
-      [&] { icScript->prepareForDestruction(cx->zone()); });
+      [&] { jitScript->prepareForDestruction(cx->zone()); });
 
-  size_t numTypeSets = NumTypeSets(this);
-  size_t bytecodeTypeMapEntries = numBytecodeTypeSets();
-
-  
-  
-  static_assert(sizeof(JitScript) ==
-                    sizeof(StackTypeSet) + offsetof(JitScript, typeArray_),
-                "typeArray_ must be last member of JitScript");
-  size_t allocSize =
-      (offsetof(JitScript, typeArray_) + numTypeSets * sizeof(StackTypeSet) +
-       bytecodeTypeMapEntries * sizeof(uint32_t));
-
-  auto jitScript =
-      reinterpret_cast<JitScript*>(cx->pod_malloc<uint8_t>(allocSize));
-  if (!jitScript) {
+  if (!jitScript->initICEntries(cx, this)) {
     return false;
   }
 
-  prepareForDestruction.release();
-
   MOZ_ASSERT(!jitScript_);
-  jitScript_ =
-      new (jitScript) JitScript(this, std::move(icScript), numTypeSets);
+  prepareForDestruction.release();
+  jitScript_ = jitScript.release();
 
   
   
@@ -123,19 +138,19 @@ bool JSScript::createJitScript(JSContext* cx) {
 
 #ifdef DEBUG
   AutoSweepJitScript sweep(this);
-  StackTypeSet* typeArray = jitScript->typeArrayDontCheckGeneration();
+  StackTypeSet* typeArray = jitScript_->typeArrayDontCheckGeneration();
   for (unsigned i = 0; i < numBytecodeTypeSets(); i++) {
     InferSpew(ISpewOps, "typeSet: %sT%p%s bytecode%u %p",
               InferSpewColor(&typeArray[i]), &typeArray[i],
               InferSpewColorReset(), i, this);
   }
-  StackTypeSet* thisTypes = jitScript->thisTypes(sweep, this);
+  StackTypeSet* thisTypes = jitScript_->thisTypes(sweep, this);
   InferSpew(ISpewOps, "typeSet: %sT%p%s this %p", InferSpewColor(thisTypes),
             thisTypes, InferSpewColorReset(), this);
   unsigned nargs =
       functionNonDelazifying() ? functionNonDelazifying()->nargs() : 0;
   for (unsigned i = 0; i < nargs; i++) {
-    StackTypeSet* types = jitScript->argTypes(sweep, this, i);
+    StackTypeSet* types = jitScript_->argTypes(sweep, this, i);
     InferSpew(ISpewOps, "typeSet: %sT%p%s arg%u %p", InferSpewColor(types),
               types, InferSpewColorReset(), i, this);
   }
@@ -158,8 +173,7 @@ void JSScript::maybeReleaseJitScript() {
 }
 
 void JitScript::destroy(Zone* zone) {
-  icScript_->prepareForDestruction(zone);
-
+  prepareForDestruction(zone);
   js_delete(this);
 }
 

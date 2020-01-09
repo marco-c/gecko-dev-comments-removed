@@ -1073,7 +1073,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
 
   const uint32_t pcOff = script->pcToOffset(pc);
   BaselineScript* baselineScript = script->baselineScript();
-  ICScript* icScript = script->icScript();
+  JitScript* jitScript = script->jitScript();
 
 #ifdef DEBUG
   uint32_t expectedDepth;
@@ -1136,7 +1136,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
       
       
       
-      ICEntry& icEntry = icScript->icEntryFromPCOffset(pcOff);
+      ICEntry& icEntry = jitScript->icEntryFromPCOffset(pcOff);
       ICFallbackStub* fallbackStub = icEntry.firstStub()->getChainFallback();
       if (fallbackStub->isMonitoredFallback()) {
         enterMonitorChain = true;
@@ -1153,7 +1153,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
     builder.setResumeFramePtr(prevFramePtr);
 
     if (enterMonitorChain) {
-      ICEntry& icEntry = icScript->icEntryFromPCOffset(pcOff);
+      ICEntry& icEntry = jitScript->icEntryFromPCOffset(pcOff);
       ICFallbackStub* fallbackStub = icEntry.firstStub()->getChainFallback();
       MOZ_ASSERT(fallbackStub->isMonitoredFallback());
       JitSpew(JitSpew_BaselineBailouts, "      [TYPE-MONITOR CHAIN]");
@@ -1337,7 +1337,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
 
   
   
-  ICEntry& icEntry = icScript->icEntryFromPCOffset(pcOff);
+  ICEntry& icEntry = jitScript->icEntryFromPCOffset(pcOff);
   MOZ_ASSERT(IsInlinableFallback(icEntry.firstStub()->getChainFallback()));
 
   RetAddrEntry& retAddrEntry =

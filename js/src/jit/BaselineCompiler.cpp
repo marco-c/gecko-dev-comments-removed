@@ -553,7 +553,7 @@ bool BaselineCompilerCodeGen::emitNextIC() {
   
   const ICEntry* entry;
   do {
-    entry = &script->icScript()->icEntry(handler.icEntryIndex());
+    entry = &script->jitScript()->icEntry(handler.icEntryIndex());
     handler.moveToNextICEntry();
   } while (entry->pcOffset() < pcOffset);
 
@@ -1112,9 +1112,8 @@ void BaselineInterpreterCodeGen::emitInitFrameFields() {
 
   
   masm.loadPtr(Address(scratch1, JSScript::offsetOfJitScript()), scratch2);
-  masm.loadPtr(Address(scratch2, JitScript::offsetOfICScript()), scratch2);
-  masm.computeEffectiveAddress(Address(scratch2, ICScript::offsetOfICEntries()),
-                               scratch2);
+  masm.computeEffectiveAddress(
+      Address(scratch2, JitScript::offsetOfICEntries()), scratch2);
   masm.storePtr(scratch2, frame.addressOfInterpreterICEntry());
 
   
@@ -6266,9 +6265,8 @@ bool BaselineInterpreterCodeGen::emit_JSOP_JUMPTARGET() {
   
   loadScript(scratch2);
   masm.loadPtr(Address(scratch2, JSScript::offsetOfJitScript()), scratch2);
-  masm.loadPtr(Address(scratch2, JitScript::offsetOfICScript()), scratch2);
   masm.computeEffectiveAddress(
-      BaseIndex(scratch2, scratch1, TimesOne, ICScript::offsetOfICEntries()),
+      BaseIndex(scratch2, scratch1, TimesOne, JitScript::offsetOfICEntries()),
       scratch2);
   masm.storePtr(scratch2, frame.addressOfInterpreterICEntry());
   return true;

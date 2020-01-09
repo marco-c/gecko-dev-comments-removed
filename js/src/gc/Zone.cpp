@@ -255,16 +255,14 @@ void Zone::discardJitCode(FreeOp* fop,
       script->maybeReleaseJitScript();
     }
 
-    
-    
-    
-    
-    if (discardBaselineCode && script->hasICScript()) {
-      script->icScript()->purgeOptimizedStubs(script);
-    }
-
-    
     if (JitScript* jitScript = script->jitScript()) {
+      
+      
+      if (discardBaselineCode) {
+        jitScript->purgeOptimizedStubs(script);
+      }
+
+      
       jitScript->resetActive();
     }
   }
@@ -527,10 +525,11 @@ void MemoryTracker::adopt(MemoryTracker& other) {
 
 static const char* MemoryUseName(MemoryUse use) {
   switch (use) {
-#define DEFINE_CASE(Name) \
-    case MemoryUse::Name: return #Name;
-JS_FOR_EACH_MEMORY_USE(DEFINE_CASE)
-#undef DEFINE_CASE
+#  define DEFINE_CASE(Name) \
+    case MemoryUse::Name:   \
+      return #Name;
+    JS_FOR_EACH_MEMORY_USE(DEFINE_CASE)
+#  undef DEFINE_CASE
   }
 
   MOZ_CRASH("Unknown memory use");
@@ -551,8 +550,7 @@ MemoryTracker::~MemoryTracker() {
 
   fprintf(stderr, "Missing calls to JS::RemoveAssociatedMemory:\n");
   for (auto r = map.all(); !r.empty(); r.popFront()) {
-    fprintf(stderr, "  %p 0x%zx %s\n", r.front().key().cell,
-            r.front().value(),
+    fprintf(stderr, "  %p 0x%zx %s\n", r.front().key().cell, r.front().value(),
             MemoryUseName(r.front().key().use));
   }
 
