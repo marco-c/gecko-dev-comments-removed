@@ -271,9 +271,15 @@ class nsFrameList {
 
   bool NotEmpty() const { return nullptr != mFirstChild; }
 
+  
+
+
+
+
   bool ContainsFrame(const nsIFrame* aFrame) const;
 
   
+
 
 
 
