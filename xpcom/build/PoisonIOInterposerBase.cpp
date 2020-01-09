@@ -19,7 +19,7 @@
 #endif
 
 
-#if defined(XP_WIN32)
+#if defined(XP_WIN)
 #  include <io.h>
 inline intptr_t FileDescriptorToHandle(int aFd) { return _get_osfhandle(aFd); }
 #else

@@ -72,7 +72,7 @@ inline nscoord NSCoordMulDiv(nscoord aMult1, nscoord aMult2, nscoord aDiv) {
 }
 
 inline nscoord NSToCoordRound(float aValue) {
-#if defined(XP_WIN32) && defined(_M_IX86) && !defined(__GNUC__) && \
+#if defined(XP_WIN) && defined(_M_IX86) && !defined(__GNUC__) && \
     !defined(__clang__)
   return NS_lroundup30(aValue);
 #else
@@ -81,7 +81,7 @@ inline nscoord NSToCoordRound(float aValue) {
 }
 
 inline nscoord NSToCoordRound(double aValue) {
-#if defined(XP_WIN32) && defined(_M_IX86) && !defined(__GNUC__) && \
+#if defined(XP_WIN) && defined(_M_IX86) && !defined(__GNUC__) && \
     !defined(__clang__)
   return NS_lroundup30((float)aValue);
 #else

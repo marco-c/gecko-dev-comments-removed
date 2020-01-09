@@ -23,7 +23,7 @@
 #include "nsString.h"
 #include "prio.h"
 
-#if defined(XP_WIN32)
+#if defined(XP_WIN)
 #  ifdef WIN32_LEAN_AND_MEAN
 #    undef WIN32_LEAN_AND_MEAN
 #  endif
@@ -142,7 +142,7 @@ void RenameAdditionalHangMinidump(nsIFile* aDumpFile,
                                   const nsIFile* aOwnerDumpFile,
                                   const nsACString& aDumpFileProcessType);
 
-#ifdef XP_WIN32
+#ifdef XP_WIN
 nsresult WriteMinidumpForException(EXCEPTION_POINTERS* aExceptionInfo);
 #endif
 #ifdef XP_LINUX
@@ -247,7 +247,7 @@ bool CreateAdditionalChildMinidump(ProcessHandle childPid,
                                    nsIFile* parentMinidump,
                                    const nsACString& name);
 
-#if defined(XP_WIN32) || defined(XP_MACOSX)
+#if defined(XP_WIN) || defined(XP_MACOSX)
 
 const char* GetChildNotificationPipe();
 
@@ -275,7 +275,7 @@ void UnregisterInjectorCallback(DWORD processID);
 #  endif
 
 
-#  if defined(XP_WIN32)
+#  if defined(XP_WIN)
 bool SetRemoteExceptionHandler(const nsACString& crashPipe,
                                uintptr_t aCrashTimeAnnotationFile);
 #  else

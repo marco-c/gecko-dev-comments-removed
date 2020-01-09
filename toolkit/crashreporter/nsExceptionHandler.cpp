@@ -30,7 +30,7 @@
 #include "ThreadAnnotation.h"
 #include "private/pprio.h"
 
-#if defined(XP_WIN32)
+#if defined(XP_WIN)
 #  ifdef WIN32_LEAN_AND_MEAN
 #    undef WIN32_LEAN_AND_MEAN
 #  endif
@@ -121,7 +121,7 @@ using mozilla::ipc::CrashReporterClient;
 
 namespace CrashReporter {
 
-#ifdef XP_WIN32
+#ifdef XP_WIN
 typedef wchar_t XP_CHAR;
 typedef std::wstring xpstring;
 #  define XP_TEXT(x) L##x
@@ -859,7 +859,7 @@ bool MinidumpCallback(
     const XP_CHAR* dump_path, const XP_CHAR* minidump_id,
 #endif
     void* context,
-#ifdef XP_WIN32
+#ifdef XP_WIN
     EXCEPTION_POINTERS* exinfo, MDRawAssertionInfo* assertion,
 #endif
     bool succeeded) {
@@ -1108,7 +1108,7 @@ static size_t EnsureTrailingSlash(XP_CHAR* aBuf, size_t aBufLen) {
 }
 #endif
 
-#if defined(XP_WIN32)
+#if defined(XP_WIN)
 
 static size_t BuildTempPath(wchar_t* aBuf, size_t aBufLen) {
   
@@ -1445,7 +1445,7 @@ nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force ) {
   }
 #  endif  
 
-#  ifdef XP_WIN32
+#  ifdef XP_WIN
   crashReporterPath =
       reinterpret_cast<wchar_t*>(ToNewUnicode(crashReporterPath_temp));
 #  else
@@ -1476,7 +1476,7 @@ nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force ) {
 #endif  
 
   
-#if defined(XP_WIN32)
+#if defined(XP_WIN)
   nsString tempPath;
 #else
   nsCString tempPath;
@@ -1485,7 +1485,7 @@ nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force ) {
     return NS_ERROR_FAILURE;
   }
 
-#ifdef XP_WIN32
+#ifdef XP_WIN
   ReserveBreakpadVM();
 
   
@@ -1530,7 +1530,7 @@ nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force ) {
       Filter,
 #endif
       MinidumpCallback, nullptr,
-#ifdef XP_WIN32
+#ifdef XP_WIN
       google_breakpad::ExceptionHandler::HANDLER_ALL, GetMinidumpType(),
       (const wchar_t*)nullptr, nullptr);
 #else
@@ -1621,7 +1621,7 @@ bool GetMinidumpPath(nsAString& aPath) {
 nsresult SetMinidumpPath(const nsAString& aPath) {
   if (!gExceptionHandler) return NS_ERROR_NOT_INITIALIZED;
 
-#ifdef XP_WIN32
+#ifdef XP_WIN
   gExceptionHandler->set_dump_path(
       std::wstring(char16ptr_t(aPath.BeginReading())));
 #elif defined(XP_LINUX)
@@ -1748,7 +1748,7 @@ static nsresult SetupCrashReporterDirectory(nsIFile* aAppDataDirectory,
     return NS_ERROR_FAILURE;
   }
 
-#if defined(XP_WIN32)
+#if defined(XP_WIN)
   SetEnvironmentVariableW(aEnvVarName, directoryPath->c_str());
 #else
   setenv(aEnvVarName, directoryPath->c_str(),  1);
@@ -1812,7 +1812,7 @@ nsresult SetupExtraData(nsIFile* aAppDataDirectory,
   NS_ENSURE_SUCCESS(rv, rv);
   memset(lastCrashTimeFilename, 0, sizeof(lastCrashTimeFilename));
 
-#if defined(XP_WIN32)
+#if defined(XP_WIN)
   nsAutoString filename;
   rv = lastCrashFile->GetPath(filename);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -2120,7 +2120,7 @@ static bool GetAnnotation(CrashReporter::Annotation key, nsACString& data) {
 nsresult RegisterAppMemory(void* ptr, size_t length) {
   if (!GetEnabled()) return NS_ERROR_NOT_INITIALIZED;
 
-#if defined(XP_LINUX) || defined(XP_WIN32)
+#if defined(XP_LINUX) || defined(XP_WIN)
   gExceptionHandler->RegisterAppMemory(ptr, length);
   return NS_OK;
 #else
@@ -2131,7 +2131,7 @@ nsresult RegisterAppMemory(void* ptr, size_t length) {
 nsresult UnregisterAppMemory(void* ptr) {
   if (!GetEnabled()) return NS_ERROR_NOT_INITIALIZED;
 
-#if defined(XP_LINUX) || defined(XP_WIN32)
+#if defined(XP_LINUX) || defined(XP_WIN)
   gExceptionHandler->UnregisterAppMemory(ptr);
   return NS_OK;
 #else
@@ -2211,7 +2211,7 @@ nsresult SetRestartArgs(int argc, char** argv) {
   return NS_OK;
 }
 
-#ifdef XP_WIN32
+#ifdef XP_WIN
 nsresult WriteMinidumpForException(EXCEPTION_POINTERS* aExceptionInfo) {
   if (!gExceptionHandler) return NS_ERROR_NOT_INITIALIZED;
 
@@ -2246,7 +2246,7 @@ nsresult AppendObjCExceptionInfoToAppNotes(void* inException) {
 
 static nsresult PrefSubmitReports(bool* aSubmitReports, bool writePref) {
   nsresult rv;
-#if defined(XP_WIN32)
+#if defined(XP_WIN)
   
 
 
@@ -3374,7 +3374,7 @@ static bool PairedDumpCallback(
     const XP_CHAR* dump_path, const XP_CHAR* minidump_id,
 #endif
     void* context,
-#ifdef XP_WIN32
+#ifdef XP_WIN
     EXCEPTION_POINTERS* , MDRawAssertionInfo* ,
 #endif
     bool succeeded) {
@@ -3401,7 +3401,7 @@ static bool PairedDumpCallbackExtra(
     const XP_CHAR* dump_path, const XP_CHAR* minidump_id,
 #endif
     void* context,
-#ifdef XP_WIN32
+#ifdef XP_WIN
     EXCEPTION_POINTERS* , MDRawAssertionInfo* ,
 #endif
     bool succeeded) {
@@ -3412,7 +3412,7 @@ static bool PairedDumpCallbackExtra(
       dump_path, minidump_id,
 #endif
       context,
-#ifdef XP_WIN32
+#ifdef XP_WIN
       nullptr, nullptr,
 #endif
       succeeded);
@@ -3486,7 +3486,7 @@ bool TakeMinidump(nsIFile** aResult, bool aMoveToPending) {
           true,
 #endif
           PairedDumpCallback, static_cast<void*>(aResult)
-#ifdef XP_WIN32
+#ifdef XP_WIN
                                   ,
           GetMinidumpType()
 #endif
@@ -3529,7 +3529,7 @@ bool CreateMinidumpsAndPair(ProcessHandle aTargetPid,
   if (!google_breakpad::ExceptionHandler::WriteMinidumpForChild(
           aTargetPid, targetThread, dump_path, PairedDumpCallbackExtra,
           static_cast<void*>(&targetMinidump)
-#ifdef XP_WIN32
+#ifdef XP_WIN
               ,
           GetMinidumpType()
 #endif
@@ -3549,7 +3549,7 @@ bool CreateMinidumpsAndPair(ProcessHandle aTargetPid,
             true,
 #endif
             PairedDumpCallback, static_cast<void*>(&incomingDump)
-#ifdef XP_WIN32
+#ifdef XP_WIN
                                     ,
             GetMinidumpType()
 #endif
@@ -3601,7 +3601,7 @@ bool CreateAdditionalChildMinidump(ProcessHandle childPid,
   if (!google_breakpad::ExceptionHandler::WriteMinidumpForChild(
           childPid, childThread, dump_path, PairedDumpCallback,
           static_cast<void*>(&childMinidump)
-#ifdef XP_WIN32
+#ifdef XP_WIN
               ,
           GetMinidumpType()
 #endif

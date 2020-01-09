@@ -31,7 +31,7 @@ inline int32_t NS_lround(double aNum) {
 
 
 
-#if defined(XP_WIN32) && defined(_M_IX86) && !defined(__GNUC__) && \
+#if defined(XP_WIN) && defined(_M_IX86) && !defined(__GNUC__) && \
     !defined(__clang__)
 inline int32_t NS_lroundup30(float x) {
   

@@ -52,7 +52,7 @@ void LogTerm();
 
 
 
-#if defined(XP_WIN32)
+#if defined(XP_WIN)
 
 #  define XPCOM_SEARCH_KEY "PATH"
 #  define GRE_CONF_NAME "gre.config"
