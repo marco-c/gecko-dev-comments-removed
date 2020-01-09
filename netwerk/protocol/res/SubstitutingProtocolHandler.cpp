@@ -348,22 +348,14 @@ nsresult SubstitutingProtocolHandler::NewURI(const nsACString& aSpec,
   rv = uri->GetHost(host);
   if (NS_FAILED(rv)) return rv;
 
-  uint32_t flags;
-  rv = GetSubstitutionFlags(host, &flags);
-  if (NS_FAILED(rv)) {
-    
-    
-    uri.forget(aResult);
-    return NS_OK;
+  
+  
+  if (host.EqualsLiteral("android")) {
+    return ResolveJARURI(uri, aResult);
   }
 
-  if (flags & nsISubstitutingProtocolHandler::RESOLVE_JAR_URI) {
-    rv = ResolveJARURI(uri, aResult);
-  } else {
-    uri.forget(aResult);
-  }
-
-  return rv;
+  uri.forget(aResult);
+  return NS_OK;
 }
 
 nsresult SubstitutingProtocolHandler::ResolveJARURI(nsIURL* aURL,
@@ -387,9 +379,9 @@ nsresult SubstitutingProtocolHandler::ResolveJARURI(nsIURL* aURL,
   if (!jarURI) {
     
     
-    *aResult = aURL;
-    NS_ADDREF(*aResult);
-    return rv;
+    nsCOMPtr<nsIURI> url = aURL;
+    url.forget(aResult);
+    return NS_OK;
   }
 
   nsCOMPtr<nsIJARURI> result = new SubstitutingJARURI(aURL, jarURI);
