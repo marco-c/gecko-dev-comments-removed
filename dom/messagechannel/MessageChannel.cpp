@@ -78,6 +78,14 @@ already_AddRefed<MessageChannel> MessageChannel::Constructor(
   channel->mPort1->UnshippedEntangle(channel->mPort2);
   channel->mPort2->UnshippedEntangle(channel->mPort1);
 
+  
+  nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(aGlobal);
+  if (window && !window->GetDocShell()) {
+    
+    
+    channel->mPort1->CloseForced();
+  }
+
   return channel.forget();
 }
 
