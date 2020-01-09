@@ -26,56 +26,6 @@ BrowserBridgeChild::BrowserBridgeChild(nsFrameLoader* aFrameLoader,
 
 BrowserBridgeChild::~BrowserBridgeChild() {}
 
-already_AddRefed<BrowserBridgeChild> BrowserBridgeChild::Create(
-    nsFrameLoader* aFrameLoader, const TabContext& aContext,
-    const nsString& aRemoteType, BrowsingContext* aBrowsingContext) {
-  MOZ_ASSERT(XRE_IsContentProcess());
-
-  
-  RefPtr<Element> owner = aFrameLoader->GetOwnerContent();
-  MOZ_DIAGNOSTIC_ASSERT(owner);
-
-  nsCOMPtr<nsIDocShell> docShell = do_GetInterface(owner->GetOwnerGlobal());
-  MOZ_DIAGNOSTIC_ASSERT(docShell);
-
-  RefPtr<BrowserChild> browserChild = BrowserChild::GetFrom(docShell);
-  MOZ_DIAGNOSTIC_ASSERT(browserChild);
-
-  uint32_t chromeFlags = 0;
-
-  nsCOMPtr<nsIDocShellTreeOwner> treeOwner;
-  if (docShell) {
-    docShell->GetTreeOwner(getter_AddRefs(treeOwner));
-  }
-  if (treeOwner) {
-    nsCOMPtr<nsIWebBrowserChrome> wbc = do_GetInterface(treeOwner);
-    if (wbc) {
-      wbc->GetChromeFlags(&chromeFlags);
-    }
-  }
-
-  
-  
-  nsCOMPtr<nsILoadContext> loadContext = do_QueryInterface(docShell);
-  if (loadContext && loadContext->UsePrivateBrowsing()) {
-    chromeFlags |= nsIWebBrowserChrome::CHROME_PRIVATE_WINDOW;
-  }
-  if (docShell->GetAffectPrivateSessionLifetime()) {
-    chromeFlags |= nsIWebBrowserChrome::CHROME_PRIVATE_LIFETIME;
-  }
-
-  RefPtr<BrowserBridgeChild> browserBridge =
-      new BrowserBridgeChild(aFrameLoader, aBrowsingContext);
-  
-  browserChild->SendPBrowserBridgeConstructor(
-      do_AddRef(browserBridge).take(),
-      PromiseFlatString(aContext.PresentationURL()), aRemoteType,
-      aBrowsingContext, chromeFlags);
-  browserBridge->mIPCOpen = true;
-
-  return browserBridge.forget();
-}
-
 void BrowserBridgeChild::UpdateDimensions(const nsIntRect& aRect,
                                           const mozilla::ScreenIntSize& aSize) {
   MOZ_DIAGNOSTIC_ASSERT(mIPCOpen);
@@ -159,11 +109,22 @@ IPCResult BrowserBridgeChild::RecvSetLayersId(
 mozilla::ipc::IPCResult BrowserBridgeChild::RecvRequestFocus(
     const bool& aCanRaise) {
   
+  nsCOMPtr<nsIFocusManager> fm = nsFocusManager::GetFocusManager();
+  if (!fm) {
+    return IPC_OK();
+  }
+
   RefPtr<Element> owner = mFrameLoader->GetOwnerContent();
   if (!owner) {
     return IPC_OK();
   }
-  nsContentUtils::RequestFrameFocus(*owner, aCanRaise);
+
+  uint32_t flags = nsIFocusManager::FLAG_NOSCROLL;
+  if (aCanRaise) {
+    flags |= nsIFocusManager::FLAG_RAISE;
+  }
+
+  fm->SetFocus(owner, flags);
   return IPC_OK();
 }
 
@@ -176,7 +137,8 @@ mozilla::ipc::IPCResult BrowserBridgeChild::RecvMoveFocus(
   }
 
   RefPtr<Element> owner = mFrameLoader->GetOwnerContent();
-  if (!owner) {
+
+  if (!owner || !owner->OwnerDoc()) {
     return IPC_OK();
   }
 
