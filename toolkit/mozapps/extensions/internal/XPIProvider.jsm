@@ -293,7 +293,7 @@ function canRunInSafeMode(aAddon) {
 
   
   
-  return location.isTemporary || location.isSystem;
+  return location.isTemporary || location.isSystem || location.isBuiltin;
 }
 
 

@@ -1060,3 +1060,21 @@ async function setInitialState(addon, initialState) {
     await addon.enable();
   }
 }
+
+async function installBuiltinExtension(extensionData) {
+  let xpi = await AddonTestUtils.createTempWebExtensionFile(extensionData);
+
+  
+  
+  
+  let base = Services.io.newURI(`jar:file:${xpi.path}!/`);
+  let resProto = Services.io.getProtocolHandler("resource")
+                         .QueryInterface(Ci.nsIResProtocolHandler);
+  resProto.setSubstitution("ext-test", base);
+
+  let id = extensionData.manifest.applications.gecko.id;
+  let wrapper = ExtensionTestUtils.expectExtension(id);
+  await AddonManager.installBuiltinAddon("resource://ext-test/");
+  await wrapper.awaitStartup();
+  return wrapper;
+}
