@@ -6,7 +6,6 @@
 
 #include "ISurfaceAllocator.h"
 
-#include "gfxPrefs.h"
 #include "mozilla/layers/ImageBridgeParent.h"  
 #include "mozilla/layers/TextureHost.h"        
 #include "mozilla/layers/TextureForwarder.h"

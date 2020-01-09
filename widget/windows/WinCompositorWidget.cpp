@@ -4,7 +4,7 @@
 
 
 #include "WinCompositorWidget.h"
-#include "gfxPrefs.h"
+
 #include "mozilla/gfx/DeviceManagerDx.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/layers/Compositor.h"

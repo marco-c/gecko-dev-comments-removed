@@ -35,6 +35,7 @@ const { getComputedStyle } = require("./markup");
 
 
 
+
 const CANVAS_SIZE = 4096;
 
 

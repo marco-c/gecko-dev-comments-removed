@@ -14,7 +14,7 @@
 #include "RenderTrace.h"        
 #include "gfx2DGlue.h"          
 #include "gfxPlatform.h"        
-#include "gfxPrefs.h"
+
 
 #include "ipc/IPCMessageUtils.h"  
 #include "IPDLActor.h"

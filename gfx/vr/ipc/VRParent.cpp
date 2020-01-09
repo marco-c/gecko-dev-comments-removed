@@ -128,7 +128,6 @@ void VRParent::ActorDestroy(ActorDestroyReason aWhy) {
 #endif
   gfxVars::Shutdown();
   gfxConfig::Shutdown();
-  gfxPrefs::DestroySingleton();
   CrashReporterClient::DestroySingleton();
   
   
@@ -164,8 +163,6 @@ bool VRParent::Init(base::ProcessId aParentPid, const char* aParentBuildID,
   
   CrashReporterClient::InitSingleton(this);
 
-  
-  gfxPrefs::GetSingleton();
   gfxConfig::Init();
   gfxVars::Initialize();
 #if defined(XP_WIN)

@@ -4,7 +4,6 @@
 
 
 
-#include "gfxPrefs.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/Maybe.h"

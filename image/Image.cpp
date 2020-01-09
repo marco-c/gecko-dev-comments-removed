@@ -4,7 +4,7 @@
 
 
 #include "Image.h"
-#include "gfxPrefs.h"
+
 #include "Layers.h"  
 #include "nsRefreshDriver.h"
 #include "nsContentUtils.h"
