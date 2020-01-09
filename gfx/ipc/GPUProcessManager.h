@@ -179,6 +179,7 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
  private:
   
   void OnXPCOMShutdown();
+  void OnPreferenceChange(const char16_t* aData);
 
   bool CreateContentCompositorManager(
       base::ProcessId aOtherProcess,
@@ -277,6 +278,10 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   uint64_t mProcessToken;
   GPUChild* mGPUChild;
   RefPtr<VsyncBridgeChild> mVsyncBridge;
+  
+  
+  
+  nsTArray<mozilla::dom::Pref> mQueuedPrefs;
 };
 
 }  
