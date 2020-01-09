@@ -10,7 +10,6 @@ Services.scriptloader.loadSubScript(
 
 
 
-
 add_task(async function() {
   
   const mocks = new Mocks();
@@ -24,6 +23,8 @@ add_task(async function() {
   info("Checking This Firefox");
   ok(!document.querySelector(".js-connection-prompt-toggle-button"),
     "This Firefox does not contain the connection prompt button");
+  ok(!document.querySelector(".js-profile-runtime-button"),
+    "This Firefox does not contain the profile runtime button");
 
   info("Checking a USB runtime");
   mocks.emitUSBUpdate();
@@ -31,6 +32,8 @@ add_task(async function() {
   await selectRuntime("Fancy Phone", "Lorem ipsum", document);
   ok(!!document.querySelector(".js-connection-prompt-toggle-button"),
     "Runtime contains the connection prompt button");
+  ok(!!document.querySelector(".js-profile-runtime-button"),
+    "Remote runtime contains the profile runtime button");
 
   await removeTab(tab);
 });
