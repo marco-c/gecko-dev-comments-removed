@@ -1227,17 +1227,18 @@ def _escape_char(c):
     return six.text_type(c.encode('unicode_escape'))
 
 
-
-
-_INDENTED_REPR_TABLE = {
-    c: e
-    for c, e in map(lambda x: (x, _escape_char(x)),
-                    map(unichr, range(128)))
-    if c != e
-}
-
-_INDENTED_REPR_RE = re.compile(
-    '([' + ''.join(_INDENTED_REPR_TABLE.values()) + ']+)')
+if six.PY2:  
+    
+    
+    _INDENTED_REPR_TABLE = {
+        c: e
+        for c, e in map(lambda x: (x, _escape_char(x)),
+                        map(unichr, range(128)))
+        if c != e
+    }
+    
+    _INDENTED_REPR_RE = re.compile(
+        '([' + ''.join(_INDENTED_REPR_TABLE.values()) + ']+)')
 
 
 def indented_repr(o, indent=4):
@@ -1246,6 +1247,8 @@ def indented_repr(o, indent=4):
     One notable difference with repr is that the returned representation
     assumes `from __future__ import unicode_literals`.
     '''
+    if six.PY3:
+        raise NotImplementedError("indented_repr is not yet supported on py3")
     one_indent = ' ' * indent
 
     def recurse_indented_repr(o, level):
