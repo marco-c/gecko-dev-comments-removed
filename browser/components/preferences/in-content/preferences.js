@@ -420,25 +420,3 @@ function maybeDisplayPoliciesNotice() {
     document.getElementById("policies-container").removeAttribute("hidden");
   }
 }
-
-
-
-
-
-
-
-
-
-async function getAvailableLocales() {
-  let {availableLocales, defaultLocale, lastFallbackLocale} = Services.locale;
-  
-  
-  if (defaultLocale != lastFallbackLocale) {
-    let lastFallbackId = `langpack-${lastFallbackLocale}@firefox.mozilla.org`;
-    let lastFallbackInstalled = await AddonManager.getAddonByID(lastFallbackId);
-    if (!lastFallbackInstalled) {
-      return availableLocales.filter(locale => locale != lastFallbackLocale);
-    }
-  }
-  return availableLocales;
-}

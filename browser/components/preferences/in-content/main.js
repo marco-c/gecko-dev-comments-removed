@@ -784,7 +784,7 @@ var gMainPane = {
 
 
   async setBrowserLocales(selected) {
-    let available = await getAvailableLocales();
+    let available = Services.locale.availableLocales;
     let localeNames = Services.intl.getLocaleDisplayNames(undefined, available);
     let locales = available.map((code, i) => ({code, name: localeNames[i]}));
     locales.sort((a, b) => a.name > b.name);
