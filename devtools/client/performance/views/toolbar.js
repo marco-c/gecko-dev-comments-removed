@@ -2,14 +2,21 @@
 
 
 
-
-
 "use strict";
 
+const EVENTS = require("../events");
+const { TIMELINE_BLUEPRINT } = require("../modules/markers");
+const { MarkerBlueprintUtils } = require("../modules/marker-blueprint-utils");
+
+const { OptionsView } = require("devtools/client/shared/options-view");
+const EventEmitter = require("devtools/shared/event-emitter");
+
+const BRANCH_NAME = "devtools.performance.ui.";
 
 
 
-var ToolbarView = {
+
+const ToolbarView = {
   
 
 
@@ -158,3 +165,5 @@ var ToolbarView = {
 };
 
 EventEmitter.decorate(ToolbarView);
+
+exports.ToolbarView = window.ToolbarView = ToolbarView;

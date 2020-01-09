@@ -2,14 +2,22 @@
 
 
 
-
-
 "use strict";
 
+const { extend } = require("devtools/shared/extend");
+
+const EVENTS = require("../events");
+const { ThreadNode } = require("../modules/logic/tree-model");
+const { CallView } = require("../modules/widgets/tree-view");
+const { DetailsSubview } = require("./details-abstract-subview");
+
+const RecordingUtils = require("devtools/shared/performance/recording-utils");
+const EventEmitter = require("devtools/shared/event-emitter");
 
 
 
-var MemoryCallTreeView = extend(DetailsSubview, {
+
+const MemoryCallTreeView = extend(DetailsSubview, {
 
   rerenderPrefs: [
     "invert-call-tree",
@@ -58,7 +66,7 @@ var MemoryCallTreeView = extend(DetailsSubview, {
 
   _onLink: function(treeItem) {
     const { url, line } = treeItem.frame.getInfo();
-    gToolbox.viewSourceInDebugger(url, line).then(success => {
+    PerformanceController.toolbox.viewSourceInDebugger(url, line).then(success => {
       if (success) {
         this.emit(EVENTS.SOURCE_SHOWN_IN_JS_DEBUGGER);
       } else {
@@ -128,3 +136,5 @@ var MemoryCallTreeView = extend(DetailsSubview, {
 });
 
 EventEmitter.decorate(MemoryCallTreeView);
+
+exports.MemoryCallTreeView = MemoryCallTreeView;

@@ -3,15 +3,23 @@
 
 
 
-
-
 "use strict";
 
+const EVENTS = require("../events");
+
+const { WaterfallView } = require("./details-waterfall");
+const { JsCallTreeView } = require("./details-js-call-tree");
+const { JsFlameGraphView } = require("./details-js-flamegraph");
+const { MemoryCallTreeView } = require("./details-memory-call-tree");
+const { MemoryFlameGraphView } = require("./details-memory-flamegraph");
+
+const EventEmitter = require("devtools/shared/event-emitter");
 
 
 
 
-var DetailsView = {
+
+const DetailsView = {
   
 
 
@@ -261,3 +269,6 @@ var DetailsView = {
 
 
 EventEmitter.decorate(DetailsView);
+
+exports.DetailsView = DetailsView;
+

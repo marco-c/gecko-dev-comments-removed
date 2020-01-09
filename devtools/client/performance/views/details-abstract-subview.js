@@ -2,14 +2,15 @@
 
 
 
-
-
 "use strict";
 
+const { setNamedTimeout, clearNamedTimeout } = require("devtools/client/shared/widgets/view-helpers");
+const EVENTS = require("../events");
 
 
 
-var DetailsSubview = {
+
+const DetailsSubview = {
   
 
 
@@ -192,3 +193,5 @@ var DetailsSubview = {
     }
   },
 };
+
+exports.DetailsSubview = DetailsSubview;

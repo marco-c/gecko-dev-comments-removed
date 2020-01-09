@@ -24,9 +24,10 @@ add_task(async function() {
     PerformanceController,
     DetailsView,
     MemoryFlameGraphView,
-    RecordingUtils,
-    FlameGraphUtils,
   } = panel.panelWin;
+
+  const { FlameGraphUtils } = require("devtools/client/shared/widgets/FlameGraph");
+  const RecordingUtils = require("devtools/shared/performance/recording-utils");
 
   
   Services.prefs.setBoolPref(UI_ENABLE_ALLOCATIONS_PREF, true);

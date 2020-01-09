@@ -1,114 +1,30 @@
 
 
 
+
 "use strict";
 
+const { PrefObserver } = require("devtools/client/shared/prefs");
 
 
+const EVENTS = require("devtools/client/performance/events");
 
-var BrowserLoaderModule = {};
-ChromeUtils.import("resource://devtools/client/shared/browser-loader.js", BrowserLoaderModule);
-var { loader, require } = BrowserLoaderModule.BrowserLoader({
-  baseURI: "resource://devtools/client/performance/",
-  window,
-});
-
-var { ViewHelpers, WidgetMethods, setNamedTimeout, clearNamedTimeout } = require("devtools/client/shared/widgets/view-helpers");
-var { PrefObserver } = require("devtools/client/shared/prefs");
-
-const { extend } = require("devtools/shared/extend");
+const Services = require("Services");
+const EventEmitter = require("devtools/shared/event-emitter");
+const flags = require("devtools/shared/flags");
 
 
-var Promise = require("Promise");
-
-
-var EVENTS = require("devtools/client/performance/events");
-Object.defineProperty(this, "EVENTS", {
-  value: EVENTS,
-  enumerable: true,
-  writable: false,
-});
-
-
-
-
-var React = require("devtools/client/shared/vendor/react");
-var ReactDOM = require("devtools/client/shared/vendor/react-dom");
-var Waterfall = React.createFactory(require("devtools/client/performance/components/Waterfall"));
-var JITOptimizationsView = React.createFactory(require("devtools/client/performance/components/JITOptimizations"));
-var RecordingControls = React.createFactory(require("devtools/client/performance/components/RecordingControls"));
-var RecordingButton = React.createFactory(require("devtools/client/performance/components/RecordingButton"));
-var RecordingList = React.createFactory(require("devtools/client/performance/components/RecordingList"));
-var RecordingListItem = React.createFactory(require("devtools/client/performance/components/RecordingListItem"));
-
-var Services = require("Services");
-var promise = require("promise");
-var EventEmitter = require("devtools/shared/event-emitter");
-var DevToolsUtils = require("devtools/shared/DevToolsUtils");
-var flags = require("devtools/shared/flags");
-var system = require("devtools/shared/system");
+const { PerformanceTelemetry } = require("devtools/client/performance/modules/logic/telemetry");
+const { PerformanceView } = require("./performance-view");
+const { DetailsView } = require("./views/details");
+const { RecordingsView } = require("./views/recordings");
+const { ToolbarView } = require("./views/toolbar");
 
 
 
 
 
-
-var { L10N } = require("devtools/client/performance/modules/global");
-var { PerformanceTelemetry } = require("devtools/client/performance/modules/logic/telemetry");
-var { TIMELINE_BLUEPRINT } = require("devtools/client/performance/modules/markers");
-var RecordingUtils = require("devtools/shared/performance/recording-utils");
-var PerformanceUtils = require("devtools/client/performance/modules/utils");
-var { OptimizationsGraph, GraphsController } = require("devtools/client/performance/modules/widgets/graphs");
-var { MarkerDetails } = require("devtools/client/performance/modules/widgets/marker-details");
-var { MarkerBlueprintUtils } = require("devtools/client/performance/modules/marker-blueprint-utils");
-var WaterfallUtils = require("devtools/client/performance/modules/logic/waterfall-utils");
-var FrameUtils = require("devtools/client/performance/modules/logic/frame-utils");
-var { CallView } = require("devtools/client/performance/modules/widgets/tree-view");
-var { ThreadNode } = require("devtools/client/performance/modules/logic/tree-model");
-var { FrameNode } = require("devtools/client/performance/modules/logic/tree-model");
-
-
-
-
-var { OptionsView } = require("devtools/client/shared/options-view");
-var { FlameGraph, FlameGraphUtils } = require("devtools/client/shared/widgets/FlameGraph");
-var { TreeWidget } = require("devtools/client/shared/widgets/TreeWidget");
-var { SideMenuWidget } = require("resource://devtools/client/shared/widgets/SideMenuWidget.jsm");
-
-
-var BRANCH_NAME = "devtools.performance.ui.";
-
-
-
-
-
-var gToolbox, gTarget, gFront;
-
-
-
-
-
-
-var startupPerformance = async function() {
-  await PerformanceController.initialize();
-  await PerformanceView.initialize();
-  PerformanceController.enableFrontEventListeners();
-};
-
-
-
-
-var shutdownPerformance = async function() {
-  await PerformanceController.destroy();
-  await PerformanceView.destroy();
-  PerformanceController.disableFrontEventListeners();
-};
-
-
-
-
-
-var PerformanceController = {
+const PerformanceController = {
   _recordings: [],
   _currentRecording: null,
 
@@ -116,7 +32,11 @@ var PerformanceController = {
 
 
 
-  async initialize() {
+  async initialize(toolbox, target, front) {
+    this.toolbox = toolbox;
+    this.target = target;
+    this.front = front;
+
     this._telemetry = new PerformanceTelemetry(this);
     this.startRecording = this.startRecording.bind(this);
     this.stopRecording = this.stopRecording.bind(this);
@@ -189,20 +109,20 @@ var PerformanceController = {
 
 
   enableFrontEventListeners: function() {
-    gFront.on("profiler-status", this._onProfilerStatus);
-    gFront.on("recording-started", this._onRecordingStarted);
-    gFront.on("recording-stopping", this._onRecordingStopping);
-    gFront.on("recording-stopped", this._onRecordingStopped);
+    this.front.on("profiler-status", this._onProfilerStatus);
+    this.front.on("recording-started", this._onRecordingStarted);
+    this.front.on("recording-stopping", this._onRecordingStopping);
+    this.front.on("recording-stopped", this._onRecordingStopped);
   },
 
   
 
 
   disableFrontEventListeners: function() {
-    gFront.off("profiler-status", this._onProfilerStatus);
-    gFront.off("recording-started", this._onRecordingStarted);
-    gFront.off("recording-stopping", this._onRecordingStopping);
-    gFront.off("recording-stopped", this._onRecordingStopped);
+    this.front.off("profiler-status", this._onProfilerStatus);
+    this.front.off("recording-started", this._onRecordingStarted);
+    this.front.off("recording-stopping", this._onRecordingStopping);
+    this.front.off("recording-stopped", this._onRecordingStopped);
   },
 
   
@@ -251,16 +171,16 @@ var PerformanceController = {
 
 
   async canCurrentlyRecord() {
-    const hasActor = await gTarget.hasActor("performance");
+    const hasActor = await this.target.hasActor("performance");
     if (!hasActor) {
       return true;
     }
     const actorCanCheck =
-      await gTarget.actorHasMethod("performance", "canCurrentlyRecord");
+      await this.target.actorHasMethod("performance", "canCurrentlyRecord");
     if (!actorCanCheck) {
       return true;
     }
-    return (await gFront.canCurrentlyRecord()).success;
+    return (await this.front.canCurrentlyRecord()).success;
   },
 
   
@@ -280,7 +200,7 @@ var PerformanceController = {
       sampleFrequency: this.getPref("profiler-sample-frequency"),
     };
 
-    const recordingStarted = await gFront.startRecording(options);
+    const recordingStarted = await this.front.startRecording(options);
 
     
     
@@ -298,7 +218,7 @@ var PerformanceController = {
 
   async stopRecording() {
     const recording = this.getLatestManualRecording();
-    await gFront.stopRecording(recording);
+    await this.front.stopRecording(recording);
     this.emit(EVENTS.BACKEND_READY_AFTER_RECORDING_STOP);
   },
 
@@ -356,7 +276,7 @@ var PerformanceController = {
 
 
   async importRecording(file) {
-    const recording = await gFront.importRecording(file);
+    const recording = await this.front.importRecording(file);
     this._addRecordingIfUnknown(recording);
 
     this.emit(EVENTS.RECORDING_IMPORTED, recording);
@@ -447,7 +367,7 @@ var PerformanceController = {
 
 
   getBufferUsageForRecording: function(recording) {
-    return gFront.getBufferUsageForRecording(recording);
+    return this.front.getBufferUsageForRecording(recording);
   },
 
   
@@ -468,7 +388,7 @@ var PerformanceController = {
 
 
   getTraits: function() {
-    return gFront.traits;
+    return this.front.traits;
   },
 
   
@@ -577,14 +497,4 @@ var PerformanceController = {
 
 
 EventEmitter.decorate(PerformanceController);
-
-
-
-
-
-function $(selector, target = document) {
-  return target.querySelector(selector);
-}
-function $$(selector, target = document) {
-  return target.querySelectorAll(selector);
-}
+exports.PerformanceController = PerformanceController;

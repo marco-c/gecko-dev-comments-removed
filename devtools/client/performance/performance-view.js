@@ -2,8 +2,24 @@
 
 
 
-
 "use strict";
+
+const EventEmitter = require("devtools/shared/event-emitter");
+
+const React = require("devtools/client/shared/vendor/react");
+const ReactDOM = require("devtools/client/shared/vendor/react-dom");
+
+const RecordingControls = React.createFactory(require("devtools/client/performance/components/RecordingControls"));
+const RecordingButton = React.createFactory(require("devtools/client/performance/components/RecordingButton"));
+
+const EVENTS = require("./events");
+const PerformanceUtils = require("./modules/utils");
+const { DetailsView } = require("./views/details");
+const { OverviewView } = require("./views/overview");
+const { RecordingsView } = require("./views/recordings");
+const { ToolbarView } = require("./views/toolbar");
+
+const { L10N } = require("./modules/global");
 
 
 
@@ -412,3 +428,5 @@ var PerformanceView = {
 
 
 EventEmitter.decorate(PerformanceView);
+
+exports.PerformanceView = PerformanceView;

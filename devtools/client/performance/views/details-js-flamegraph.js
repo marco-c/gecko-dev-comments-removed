@@ -2,15 +2,23 @@
 
 
 
-
-
 "use strict";
 
+const { extend } = require("devtools/shared/extend");
+
+const EVENTS = require("../events");
+const { L10N } = require("../modules/global");
+const { DetailsSubview } = require("./details-abstract-subview");
+
+const { FlameGraph, FlameGraphUtils } = require("devtools/client/shared/widgets/FlameGraph");
+
+const EventEmitter = require("devtools/shared/event-emitter");
 
 
 
 
-var JsFlameGraphView = extend(DetailsSubview, {
+
+const JsFlameGraphView = extend(DetailsSubview, {
 
   shouldUpdateWhileMouseIsActive: true,
 
@@ -123,3 +131,5 @@ var JsFlameGraphView = extend(DetailsSubview, {
 });
 
 EventEmitter.decorate(JsFlameGraphView);
+
+exports.JsFlameGraphView = JsFlameGraphView;

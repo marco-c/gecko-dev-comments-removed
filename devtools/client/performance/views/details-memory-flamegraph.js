@@ -2,15 +2,22 @@
 
 
 
-
-
 "use strict";
 
+const { FlameGraph, FlameGraphUtils } = require("devtools/client/shared/widgets/FlameGraph");
+const { extend } = require("devtools/shared/extend");
+const RecordingUtils = require("devtools/shared/performance/recording-utils");
+const EventEmitter = require("devtools/shared/event-emitter");
+
+const EVENTS = require("../events");
+const { DetailsSubview } = require("./details-abstract-subview");
+const { L10N } = require("../modules/global");
 
 
 
 
-var MemoryFlameGraphView = extend(DetailsSubview, {
+
+const MemoryFlameGraphView = extend(DetailsSubview, {
 
   shouldUpdateWhileMouseIsActive: true,
 
@@ -120,3 +127,5 @@ var MemoryFlameGraphView = extend(DetailsSubview, {
 });
 
 EventEmitter.decorate(MemoryFlameGraphView);
+
+exports.MemoryFlameGraphView = MemoryFlameGraphView;

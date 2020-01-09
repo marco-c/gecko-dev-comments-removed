@@ -2,12 +2,16 @@
 
 
 
-
 "use strict";
 
 
 
 
+
+const EVENTS = require("../events");
+const { GraphsController } = require("../modules/widgets/graphs");
+
+const EventEmitter = require("devtools/shared/event-emitter");
 
 
 const OVERVIEW_UPDATE_INTERVAL = 200;
@@ -29,8 +33,7 @@ const GRAPH_REQUIREMENTS = {
 
 
 
-var OverviewView = {
-
+const OverviewView = {
   
 
 
@@ -420,3 +423,6 @@ function OverviewViewOnStateChange(fn) {
 
 
 EventEmitter.decorate(OverviewView);
+
+exports.OverviewView = OverviewView;
+
