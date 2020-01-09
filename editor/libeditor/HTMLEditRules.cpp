@@ -8654,6 +8654,15 @@ nsresult HTMLEditRules::ApplyBlockStyle(
 
   nsCOMPtr<Element> curBlock;
   for (auto& curNode : aNodeArray) {
+    if (NS_WARN_IF(!curNode->GetParent())) {
+      
+      
+      
+      curBlock = nullptr;
+      newBlock = nullptr;
+      continue;
+    }
+
     EditorDOMPoint atCurNode(curNode);
 
     
@@ -8681,6 +8690,12 @@ nsresult HTMLEditRules::ApplyBlockStyle(
       if (NS_WARN_IF(!newBlock)) {
         return NS_ERROR_FAILURE;
       }
+      
+      
+      
+      if (NS_WARN_IF(newBlock->GetParentNode() != atCurNode.GetContainer())) {
+        return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
+      }
       continue;
     }
 
@@ -8707,15 +8722,28 @@ nsresult HTMLEditRules::ApplyBlockStyle(
       if (NS_WARN_IF(splitNodeResult.Failed())) {
         return splitNodeResult.Rv();
       }
+      
+      
+      
+      
+      if (NS_WARN_IF(atCurNode.HasChildMovedFromContainer())) {
+        return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
+      }
+      EditorDOMPoint splitPoint = splitNodeResult.SplitPoint();
       RefPtr<Element> theBlock =
           MOZ_KnownLive(HTMLEditorRef())
-              .CreateNodeWithTransaction(aBlockTag,
-                                         splitNodeResult.SplitPoint());
+              .CreateNodeWithTransaction(aBlockTag, splitPoint);
       if (NS_WARN_IF(!CanHandleEditAction())) {
         return NS_ERROR_EDITOR_DESTROYED;
       }
       if (NS_WARN_IF(!theBlock)) {
         return NS_ERROR_FAILURE;
+      }
+      
+      
+      
+      if (NS_WARN_IF(theBlock->GetParentNode() != splitPoint.GetContainer())) {
+        return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
       }
       
       mNewBlock = theBlock;
@@ -8746,14 +8774,27 @@ nsresult HTMLEditRules::ApplyBlockStyle(
       if (NS_WARN_IF(splitNodeResult.Failed())) {
         return splitNodeResult.Rv();
       }
+      
+      
+      
+      
+      if (NS_WARN_IF(atCurNode.HasChildMovedFromContainer())) {
+        return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
+      }
+      EditorDOMPoint splitPoint = splitNodeResult.SplitPoint();
       curBlock = MOZ_KnownLive(HTMLEditorRef())
-                     .CreateNodeWithTransaction(aBlockTag,
-                                                splitNodeResult.SplitPoint());
+                     .CreateNodeWithTransaction(aBlockTag, splitPoint);
       if (NS_WARN_IF(!CanHandleEditAction())) {
         return NS_ERROR_EDITOR_DESTROYED;
       }
       if (NS_WARN_IF(!curBlock)) {
         return NS_ERROR_FAILURE;
+      }
+      
+      
+      
+      if (NS_WARN_IF(curBlock->GetParentNode() != splitPoint.GetContainer())) {
+        return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
       }
       
       mNewBlock = curBlock;
@@ -8786,22 +8827,38 @@ nsresult HTMLEditRules::ApplyBlockStyle(
 
       
       if (!curBlock) {
-        AutoEditorDOMPointOffsetInvalidator lockChild(atCurNode);
-
         SplitNodeResult splitNodeResult =
             MaybeSplitAncestorsForInsertWithTransaction(aBlockTag, atCurNode);
         if (NS_WARN_IF(splitNodeResult.Failed())) {
           return splitNodeResult.Rv();
         }
+        
+        
+        
+        
+        if (NS_WARN_IF(atCurNode.HasChildMovedFromContainer())) {
+          return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
+        }
+        EditorDOMPoint splitPoint = splitNodeResult.SplitPoint();
         curBlock = MOZ_KnownLive(HTMLEditorRef())
-                       .CreateNodeWithTransaction(aBlockTag,
-                                                  splitNodeResult.SplitPoint());
+                       .CreateNodeWithTransaction(aBlockTag, splitPoint);
         if (NS_WARN_IF(!CanHandleEditAction())) {
           return NS_ERROR_EDITOR_DESTROYED;
         }
         if (NS_WARN_IF(!curBlock)) {
           return NS_ERROR_FAILURE;
         }
+        
+        
+        
+        if (NS_WARN_IF(curBlock->GetParentNode() !=
+                       splitPoint.GetContainer())) {
+          return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
+        }
+
+        
+        atCurNode.Set(curNode);
+
         
         mNewBlock = curBlock;
         

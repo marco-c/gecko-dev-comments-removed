@@ -501,6 +501,10 @@ class EditorDOMPointBase final {
     return true;
   }
 
+  bool HasChildMovedFromContainer() const {
+    return mChild && mChild->GetParentNode() != mParent;
+  }
+
   bool IsStartOfContainer() const {
     
     
