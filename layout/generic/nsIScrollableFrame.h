@@ -570,8 +570,9 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
   
 
 
-  virtual const ScrollAnchorContainer* GetAnchor() const = 0;
-  virtual ScrollAnchorContainer* GetAnchor() = 0;
+
+  virtual const ScrollAnchorContainer* Anchor() const = 0;
+  virtual ScrollAnchorContainer* Anchor() = 0;
 };
 
 #endif
