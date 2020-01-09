@@ -4982,12 +4982,6 @@ bool CallIRGenerator::tryAttachArrayPush() {
   RootedArrayObject thisarray(cx_, &thisobj->as<ArrayObject>());
 
   
-  AutoSweepObjectGroup sweep(thisobj->group());
-  if (thisobj->group()->maybePreliminaryObjects(sweep)) {
-    return false;
-  }
-
-  
   if (!CanAttachAddElement(thisarray,  false)) {
     return false;
   }
