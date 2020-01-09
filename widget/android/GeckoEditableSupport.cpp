@@ -1051,6 +1051,9 @@ void GeckoEditableSupport::OnImeReplaceText(int32_t aStart, int32_t aEnd,
 
 bool GeckoEditableSupport::DoReplaceText(int32_t aStart, int32_t aEnd,
                                          jni::String::Param aText) {
+  ALOGIME("IME: IME_REPLACE_TEXT: text=\"%s\"",
+          NS_ConvertUTF16toUTF8(aText->ToString()).get());
+
   
   
   
@@ -1297,6 +1300,7 @@ bool GeckoEditableSupport::DoUpdateComposition(int32_t aStart, int32_t aEnd,
   }
   mDispatcher->SetPendingComposition(string, mIMERanges);
   mDispatcher->FlushPendingComposition(status);
+  mIMEActiveCompositionCount++;
   mIMERanges->Clear();
   return true;
 }
@@ -1438,13 +1442,16 @@ nsresult GeckoEditableSupport::NotifyIME(
       
       
       
-      if (!(--mIMEActiveCompositionCount) && mIMEDelaySynchronizeReply) {
-        FlushIMEChanges();
-      }
-
-      
-      if (mIMEMonitorCursor) {
-        UpdateCompositionRects();
+      if (mIsRemote) {
+        OnNotifyIMEOfCompositionEventHandled();
+      } else {
+        
+        
+        
+        RefPtr<GeckoEditableSupport> self(this);
+        nsAppShell::PostEvent([this, self] {
+          OnNotifyIMEOfCompositionEventHandled();
+        });
       }
       break;
     }
@@ -1453,6 +1460,21 @@ nsresult GeckoEditableSupport::NotifyIME(
       break;
   }
   return NS_OK;
+}
+
+void GeckoEditableSupport::OnNotifyIMEOfCompositionEventHandled()
+{
+  
+  
+  mIMEActiveCompositionCount = 0;
+  if (mIMEDelaySynchronizeReply) {
+    FlushIMEChanges();
+  }
+
+  
+  if (mIMEMonitorCursor) {
+    UpdateCompositionRects();
+  }
 }
 
 void GeckoEditableSupport::OnRemovedFrom(

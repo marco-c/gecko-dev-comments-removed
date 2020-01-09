@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "WebRenderAPI.h"
 
@@ -18,10 +18,10 @@
 
 #define WRDL_LOG(...)
 
+//#define WRDL_LOG(...) printf_stderr("WRDL(%p): " __VA_ARGS__)
 
-
-
-
+//#define WRDL_LOG(...) if (XRE_IsContentProcess()) printf_stderr("WRDL(%p): "
+//__VA_ARGS__)
 
 namespace mozilla {
 namespace wr {
@@ -60,8 +60,8 @@ class NewRenderer : public RendererEvent {
     UniquePtr<RenderCompositor> compositor =
         RenderCompositor::Create(std::move(mCompositorWidget));
     if (!compositor) {
-      
-      
+      // RenderCompositor::Create puts a message into gfxCriticalNote if it is
+      // nullptr
       return;
     }
 
@@ -69,7 +69,7 @@ class NewRenderer : public RendererEvent {
     *mUseDComp = compositor->UseDComp();
     *mUseTripleBuffering = compositor->UseTripleBuffering();
 
-    bool supportLowPriorityTransactions = true;  
+    bool supportLowPriorityTransactions = true;  // TODO only for main windows.
     wr::Renderer* wrRenderer = nullptr;
     if (!wr_window_new(
             aWindowId, mSize.width, mSize.height,
@@ -82,7 +82,7 @@ class NewRenderer : public RendererEvent {
             aRenderThread.ThreadPool().Raw(), &WebRenderMallocSizeOf,
             &WebRenderMallocEnclosingSizeOf, mDocHandle, &wrRenderer,
             mMaxTextureSize)) {
-      
+      // wr_window_new puts a message into gfxCriticalNote if it returns false
       return;
     }
     MOZ_ASSERT(wrRenderer);
@@ -241,7 +241,7 @@ void TransactionWrapper::UpdatePinchZoom(float aZoom) {
   wr_transaction_pinch_zoom(mTxn, aZoom);
 }
 
- already_AddRefed<WebRenderAPI> WebRenderAPI::Create(
+/*static*/ already_AddRefed<WebRenderAPI> WebRenderAPI::Create(
     layers::CompositorBridgeParent* aBridge,
     RefPtr<widget::CompositorWidget>&& aWidget, const wr::WrWindowId& aWindowId,
     LayoutDeviceIntSize aSize) {
@@ -258,9 +258,9 @@ void TransactionWrapper::UpdatePinchZoom(float aZoom) {
   bool useTripleBuffering = false;
   layers::SyncHandle syncHandle = 0;
 
-  
-  
-  
+  // Dispatch a synchronous task because the DocumentHandle object needs to be
+  // created on the render thread. If need be we could delay waiting on this
+  // task until the next time we need to access the DocumentHandle object.
   layers::SynchronousTask task("Create Renderer");
   auto event = MakeUnique<NewRenderer>(
       &docHandle, aBridge, &maxTextureSize, &useANGLE, &useDComp,
@@ -286,7 +286,7 @@ already_AddRefed<WebRenderAPI> WebRenderAPI::Clone() {
   RefPtr<WebRenderAPI> renderApi =
       new WebRenderAPI(docHandle, mId, mMaxTextureSize, mUseANGLE, mUseDComp,
                        mUseTripleBuffering, mSyncHandle);
-  renderApi->mRootApi = this;  
+  renderApi->mRootApi = this;  // Hold root api
   renderApi->mRootDocumentApi = this;
   return renderApi.forget();
 }
@@ -374,7 +374,7 @@ void WebRenderAPI::Readback(const TimeStamp& aStartTime, gfx::IntSize size,
 
     virtual void Run(RenderThread& aRenderThread, WindowId aWindowId) override {
       aRenderThread.UpdateAndRender(aWindowId, VsyncId(), mStartTime,
-                                     true, Some(mSize),
+                                    /* aRender */ true, Some(mSize),
                                     Some(mBuffer), false);
       layers::AutoCompleteTask complete(mTask);
     }
@@ -385,15 +385,15 @@ void WebRenderAPI::Readback(const TimeStamp& aStartTime, gfx::IntSize size,
     const Range<uint8_t>& mBuffer;
   };
 
-  
+  // Disable debug flags during readback. See bug 1436020.
   UpdateDebugFlags(0);
 
   layers::SynchronousTask task("Readback");
   auto event = MakeUnique<Readback>(&task, aStartTime, size, buffer);
-  
-  
-  
-  
+  // This event will be passed from wr_backend thread to renderer thread. That
+  // implies that all frame data have been processed when the renderer runs this
+  // read-back event. Then, we could make sure this read-back event gets the
+  // latest result.
   RunOnRenderThread(std::move(event));
 
   task.Wait();
@@ -422,9 +422,9 @@ void WebRenderAPI::Pause() {
 
   layers::SynchronousTask task("Pause");
   auto event = MakeUnique<PauseEvent>(&task);
-  
-  
-  
+  // This event will be passed from wr_backend thread to renderer thread. That
+  // implies that all frame data have been processed when the renderer runs this
+  // event.
   RunOnRenderThread(std::move(event));
 
   task.Wait();
@@ -452,9 +452,9 @@ bool WebRenderAPI::Resume() {
   bool result = false;
   layers::SynchronousTask task("Resume");
   auto event = MakeUnique<ResumeEvent>(&task, &result);
-  
-  
-  
+  // This event will be passed from wr_backend thread to renderer thread. That
+  // implies that all frame data have been processed when the renderer runs this
+  // event.
   RunOnRenderThread(std::move(event));
 
   task.Wait();
@@ -493,17 +493,17 @@ void WebRenderAPI::WaitFlushed() {
 
   layers::SynchronousTask task("WaitFlushed");
   auto event = MakeUnique<WaitFlushedEvent>(&task);
-  
-  
-  
+  // This event will be passed from wr_backend thread to renderer thread. That
+  // implies that all frame data have been processed when the renderer runs this
+  // event.
   RunOnRenderThread(std::move(event));
 
   task.Wait();
 }
 
 void WebRenderAPI::Capture() {
-  uint8_t bits = 3;                 
-  const char* path = "wr-capture";  
+  uint8_t bits = 3;                 // TODO: get from JavaScript
+  const char* path = "wr-capture";  // TODO: get from JavaScript
   wr_api_capture(mDocHandle, path, bits);
 }
 
@@ -676,7 +676,7 @@ Maybe<wr::WrSpatialId> DisplayListBuilder::PushStackingContext(
     const wr::LayoutRect& aBounds, const wr::WrStackingContextClip& aClip,
     const WrAnimationProperty* aAnimation, const float* aOpacity,
     const gfx::Matrix4x4* aTransform, wr::TransformStyle aTransformStyle,
-    const gfx::Matrix4x4* aPerspective, const wr::MixBlendMode& aMixBlendMode,
+    const wr::ReferenceFrameKind aReferenceFrameKind, const wr::MixBlendMode& aMixBlendMode,
     const nsTArray<wr::FilterOp>& aFilters, bool aIsBackfaceVisible,
     const wr::RasterSpace& aRasterSpace) {
   MOZ_ASSERT(mClipChainLeaf.isNothing(),
@@ -687,20 +687,13 @@ Maybe<wr::WrSpatialId> DisplayListBuilder::PushStackingContext(
     matrix = ToLayoutTransform(*aTransform);
   }
   const wr::LayoutTransform* maybeTransform = aTransform ? &matrix : nullptr;
-  wr::LayoutTransform perspective;
-  if (aPerspective) {
-    perspective = ToLayoutTransform(*aPerspective);
-  }
-
-  const wr::LayoutTransform* maybePerspective =
-      aPerspective ? &perspective : nullptr;
   WRDL_LOG("PushStackingContext b=%s t=%s\n", mWrState,
            Stringify(aBounds).c_str(),
            aTransform ? Stringify(*aTransform).c_str() : "none");
 
   auto spatialId = wr_dp_push_stacking_context(
       mWrState, aBounds, mCurrentSpaceAndClipChain.space, &aClip, aAnimation,
-      aOpacity, maybeTransform, aTransformStyle, maybePerspective,
+      aOpacity, maybeTransform, aTransformStyle, aReferenceFrameKind,
       aMixBlendMode, aFilters.Elements(), aFilters.Length(), aIsBackfaceVisible,
       aRasterSpace);
 
@@ -797,9 +790,9 @@ wr::WrSpaceAndClip DisplayListBuilder::DefineScrollLayer(
     return it->second;
   }
 
-  
+  // We haven't defined aViewId before, so let's define it now.
   wr::WrSpaceAndClip defaultParent = wr::RootScrollNode();
-  
+  // Note: we are currently ignoring the clipId on the stack here
   defaultParent.space = mCurrentSpaceAndClipChain.space;
 
   auto spaceAndClip = wr_dp_define_scroll_layer(
@@ -837,7 +830,7 @@ void DisplayListBuilder::PushRoundedRect(const wr::LayoutRect& aBounds,
 
   AutoTArray<wr::ComplexClipRegion, 1> clips;
   clips.AppendElement(wr::SimpleRadii(aBounds, aBounds.size.width / 2));
-  
+  // TODO: use `mCurrentSpaceAndClipChain.clip_chain` as a parent?
   auto clipId = DefineClip(Nothing(), aBounds, &clips, nullptr);
   auto spaceAndClip = WrSpaceAndClip{mCurrentSpaceAndClipChain.space, clipId};
 
@@ -1120,8 +1113,8 @@ already_AddRefed<gfxContext> DisplayListBuilder::GetTextContext(
   return tmp.forget();
 }
 
-}  
-}  
+}  // namespace wr
+}  // namespace mozilla
 
 extern "C" {
 
@@ -1129,9 +1122,9 @@ void wr_transaction_notification_notified(uintptr_t aHandler,
                                           mozilla::wr::Checkpoint aWhen) {
   auto handler = reinterpret_cast<mozilla::wr::NotificationHandler*>(aHandler);
   handler->Notify(aWhen);
-  
-  
+  // TODO: it would be better to get a callback when the object is destroyed on
+  // the rust side and delete then.
   delete handler;
 }
 
-}  
+}  // extern C

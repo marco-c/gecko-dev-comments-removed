@@ -637,8 +637,7 @@ class ContentChild final : public PContentChild,
 
   
   virtual PURLClassifierChild* AllocPURLClassifierChild(
-      const Principal& aPrincipal, const bool& aUseTrackingProtection,
-      bool* aSuccess) override;
+      const Principal& aPrincipal, bool* aSuccess) override;
   virtual bool DeallocPURLClassifierChild(PURLClassifierChild* aActor) override;
 
   
