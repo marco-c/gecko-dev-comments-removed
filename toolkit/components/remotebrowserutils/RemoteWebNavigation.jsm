@@ -55,25 +55,30 @@ RemoteWebNavigation.prototype = {
   canGoBack: false,
   canGoForward: false,
   goBack() {
-    this._browser.frameLoader.tabParent.maybeCancelContentJSExecution();
+    this._browser.frameLoader.tabParent.maybeCancelContentJSExecution(
+      Ci.nsITabParent.NAVIGATE_BACK);
     this._sendMessage("WebNavigation:GoBack", {});
   },
   goForward() {
-    this._browser.frameLoader.tabParent.maybeCancelContentJSExecution();
+    this._browser.frameLoader.tabParent.maybeCancelContentJSExecution(
+      Ci.nsITabParent.NAVIGATE_FORWARD);
     this._sendMessage("WebNavigation:GoForward", {});
   },
   gotoIndex(aIndex) {
-    this._browser.frameLoader.tabParent.maybeCancelContentJSExecution();
+    this._browser.frameLoader.tabParent.maybeCancelContentJSExecution(
+      Ci.nsITabParent.NAVIGATE_INDEX, {index: aIndex});
     this._sendMessage("WebNavigation:GotoIndex", {index: aIndex});
   },
   loadURI(aURI, aLoadURIOptions) {
+    let uri;
+
     
     
     
     
     if (aURI.startsWith("http:") || aURI.startsWith("https:")) {
       try {
-        let uri = makeURI(aURI);
+        uri = makeURI(aURI);
         let principal = aLoadURIOptions.triggeringPrincipal;
         
         
@@ -92,7 +97,8 @@ RemoteWebNavigation.prototype = {
       }
     }
 
-    this._browser.frameLoader.tabParent.maybeCancelContentJSExecution();
+    this._browser.frameLoader.tabParent.maybeCancelContentJSExecution(
+      Ci.nsITabParent.NAVIGATE_URL, {uri});
     this._sendMessage("WebNavigation:LoadURI", {
       uri: aURI,
       flags: aLoadURIOptions.loadFlags,
