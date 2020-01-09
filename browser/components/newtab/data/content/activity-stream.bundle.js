@@ -1958,7 +1958,7 @@ function safeURI(url) {
 
  (function(module) {
 
-module.exports = {"title":"EOYSnippet","description":"Fundraising Snippet","version":"1.0.0","type":"object","definitions":{"plainText":{"description":"Plain text (no HTML allowed)","type":"string"},"richText":{"description":"Text with HTML subset allowed: i, b, u, strong, em, br","type":"string"},"link_url":{"description":"Target for links or buttons","type":"string","format":"uri"}},"properties":{"donation_form_url":{"type":"string","description":"Url to the donation form."},"currency_code":{"type":"string","description":"The code for the currency. Examle gbp, cad, usd.","default":"usd"},"locale":{"type":"string","description":"String for the locale code.","default":"en-US"},"text":{"allOf":[{"$ref":"#/definitions/richText"},{"description":"Main body text of snippet. HTML subset allowed: i, b, u, strong, em, br"}]},"text_color":{"type":"string","description":"Modify the text message color"},"background_color":{"type":"string","description":"Snippet background color."},"highlight_color":{"type":"string","description":"Paragraph em highlight color."},"donation_amount_first":{"type":"number","description":"First button amount."},"donation_amount_second":{"type":"number","description":"Second button amount."},"donation_amount_third":{"type":"number","description":"Third button amount."},"donation_amount_fourth":{"type":"number","description":"Fourth button amount."},"selected_button":{"type":"string","description":"Default donation_amount_second. Donation amount button that's selected by default.","default":"donation_amount_second"},"icon":{"type":"string","description":"Snippet icon. 64x64px. SVG or PNG preferred."},"title_icon":{"type":"string","description":"Small icon that shows up before the title / text. 16x16px. SVG or PNG preferred. Grayscale."},"button_label":{"allOf":[{"$ref":"#/definitions/plainText"},{"description":"Text for a button next to main snippet text that links to button_url. Requires button_url."}]},"button_color":{"type":"string","description":"The text color of the button. Valid CSS color."},"button_background_color":{"type":"string","description":"The background color of the button. Valid CSS color."},"block_button_text":{"type":"string","description":"Tooltip text used for dismiss button."},"monthly_checkbox_label_text":{"type":"string","description":"Label text for monthly checkbox.","default":"Make my donation monthly"},"test":{"type":"string","description":"Different styles for the snippet. Options are bold and takeover."},"do_not_autoblock":{"type":"boolean","description":"Used to prevent blocking the snippet after the CTA (link or button) has been clicked"},"links":{"additionalProperties":{"url":{"allOf":[{"$ref":"#/definitions/link_url"},{"description":"The url where the link points to."}]},"metric":{"type":"string","description":"Custom event name sent with telemetry event."},"args":{"type":"string","description":"Additional parameters for link action, example which specific menu the button should open"}}}},"additionalProperties":false,"required":["text","donation_form_url","donation_amount_first","donation_amount_second","donation_amount_third","donation_amount_fourth","button_label","currency_code"],"dependencies":{"button_color":["button_label"],"button_background_color":["button_label"]}};
+module.exports = {"title":"EOYSnippet","description":"Fundraising Snippet","version":"1.0.0","type":"object","definitions":{"plainText":{"description":"Plain text (no HTML allowed)","type":"string"},"richText":{"description":"Text with HTML subset allowed: i, b, u, strong, em, br","type":"string"},"link_url":{"description":"Target for links or buttons","type":"string","format":"uri"}},"properties":{"donation_form_url":{"type":"string","description":"Url to the donation form."},"currency_code":{"type":"string","description":"The code for the currency. Examle gbp, cad, usd.","default":"usd"},"locale":{"type":"string","description":"String for the locale code.","default":"en-US"},"text":{"allOf":[{"$ref":"#/definitions/richText"},{"description":"Main body text of snippet. HTML subset allowed: i, b, u, strong, em, br"}]},"text_color":{"type":"string","description":"Modify the text message color"},"background_color":{"type":"string","description":"Snippet background color."},"highlight_color":{"type":"string","description":"Paragraph em highlight color."},"donation_amount_first":{"type":"number","description":"First button amount."},"donation_amount_second":{"type":"number","description":"Second button amount."},"donation_amount_third":{"type":"number","description":"Third button amount."},"donation_amount_fourth":{"type":"number","description":"Fourth button amount."},"selected_button":{"type":"string","description":"Default donation_amount_second. Donation amount button that's selected by default.","default":"donation_amount_second"},"icon":{"type":"string","description":"Snippet icon. 64x64px. SVG or PNG preferred."},"title":{"allOf":[{"$ref":"#/definitions/plainText"},{"description":"Snippet title displayed before snippet text"}]},"title_icon":{"type":"string","description":"Small icon that shows up before the title / text. 16x16px. SVG or PNG preferred. Grayscale."},"button_label":{"allOf":[{"$ref":"#/definitions/plainText"},{"description":"Text for a button next to main snippet text that links to button_url. Requires button_url."}]},"button_color":{"type":"string","description":"The text color of the button. Valid CSS color."},"button_background_color":{"type":"string","description":"The background color of the button. Valid CSS color."},"block_button_text":{"type":"string","description":"Tooltip text used for dismiss button."},"monthly_checkbox_label_text":{"type":"string","description":"Label text for monthly checkbox.","default":"Make my donation monthly"},"test":{"type":"string","description":"Different styles for the snippet. Options are bold and takeover."},"do_not_autoblock":{"type":"boolean","description":"Used to prevent blocking the snippet after the CTA (link or button) has been clicked"},"links":{"additionalProperties":{"url":{"allOf":[{"$ref":"#/definitions/link_url"},{"description":"The url where the link points to."}]},"metric":{"type":"string","description":"Custom event name sent with telemetry event."},"args":{"type":"string","description":"Additional parameters for link action, example which specific menu the button should open"}}}},"additionalProperties":false,"required":["text","donation_form_url","donation_amount_first","donation_amount_second","donation_amount_third","donation_amount_fourth","button_label","currency_code"],"dependencies":{"button_color":["button_label"],"button_background_color":["button_label"]}};
 
  }),
 
@@ -2238,7 +2238,7 @@ __webpack_require__.r(__webpack_exports__);
  var react_redux__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_4__);
  var content_src_components_DarkModeMessage_DarkModeMessage__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(29);
  var content_src_components_DiscoveryStreamBase_DiscoveryStreamBase__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(55);
- var content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(34);
+ var content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(37);
  var content_src_components_ManualMigration_ManualMigration__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(45);
  var common_PrerenderData_jsm__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(46);
  var react__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(10);
@@ -2390,15 +2390,6 @@ class BaseContent extends react__WEBPACK_IMPORTED_MODULE_10___default.a.PureComp
     this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].UserEvent({ event: "OPEN_NEWTAB_PREFS" }));
   }
 
-  disableDarkTheme() {
-    
-    
-    const bodyClassNames = global.document.body.classList;
-    if (!bodyClassNames.contains("force-light-theme")) {
-      bodyClassNames.add("force-light-theme");
-    }
-  }
-
   render() {
     const { props } = this;
     const { App } = props;
@@ -2409,10 +2400,6 @@ class BaseContent extends react__WEBPACK_IMPORTED_MODULE_10___default.a.PureComp
     const noSectionsEnabled = !prefs["feeds.topsites"] && props.Sections.filter(section => section.enabled).length === 0;
     const isDiscoveryStream = props.DiscoveryStream.config && props.DiscoveryStream.config.enabled;
     const searchHandoffEnabled = prefs["improvesearch.handoffToAwesomebar"];
-
-    if (isDiscoveryStream) {
-      this.disableDarkTheme();
-    }
 
     const outerClassName = ["outer-wrapper", isDiscoveryStream && "ds-outer-wrapper-search-alignment", isDiscoveryStream && "ds-outer-wrapper-breakpoint-override", shouldBeFixedToTop && "fixed-to-top", prefs.showSearch && this.state.fixedSearch && !noSectionsEnabled && "fixed-search", prefs.showSearch && noSectionsEnabled && "only-search"].filter(v => v).join(" ");
 
@@ -3876,6 +3863,415 @@ const DarkModeMessage = Object(react_redux__WEBPACK_IMPORTED_MODULE_1__["connect
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "_LinkMenu", function() { return _LinkMenu; });
+ __webpack_require__.d(__webpack_exports__, "LinkMenu", function() { return LinkMenu; });
+ var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
+ var react_redux__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(24);
+ var react_redux__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_1__);
+ var content_src_components_ContextMenu_ContextMenu__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(31);
+ var react_intl__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(5);
+ var react_intl__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_3__);
+ var content_src_lib_link_menu_options__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(32);
+ var react__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(10);
+ var react__WEBPACK_IMPORTED_MODULE_5___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_5__);
+
+
+
+
+
+
+
+const DEFAULT_SITE_MENU_OPTIONS = ["CheckPinTopSite", "EditTopSite", "Separator", "OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl"];
+
+class _LinkMenu extends react__WEBPACK_IMPORTED_MODULE_5___default.a.PureComponent {
+  getOptions() {
+    const { props } = this;
+    const { site, index, source, isPrivateBrowsingEnabled, siteInfo, platform } = props;
+
+    
+    const propOptions = !site.isDefault || site.searchTopSite ? props.options : DEFAULT_SITE_MENU_OPTIONS;
+
+    const options = propOptions.map(o => content_src_lib_link_menu_options__WEBPACK_IMPORTED_MODULE_4__["LinkMenuOptions"][o](site, index, source, isPrivateBrowsingEnabled, siteInfo, platform)).map(option => {
+      const { action, impression, id, string_id, type, userEvent } = option;
+      if (!type && id) {
+        option.label = props.intl.formatMessage({ id: string_id || id });
+        option.onClick = () => {
+          props.dispatch(action);
+          if (userEvent) {
+            const userEventData = Object.assign({
+              event: userEvent,
+              source,
+              action_position: index
+            }, siteInfo);
+            props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].UserEvent(userEventData));
+          }
+          if (impression && props.shouldSendImpressionStats) {
+            props.dispatch(impression);
+          }
+        };
+      }
+      return option;
+    });
+
+    
+    
+    
+    options[0].first = true;
+    options[options.length - 1].last = true;
+    return options;
+  }
+
+  render() {
+    return react__WEBPACK_IMPORTED_MODULE_5___default.a.createElement(content_src_components_ContextMenu_ContextMenu__WEBPACK_IMPORTED_MODULE_2__["ContextMenu"], {
+      onUpdate: this.props.onUpdate,
+      onShow: this.props.onShow,
+      options: this.getOptions() });
+  }
+}
+
+const getState = state => ({ isPrivateBrowsingEnabled: state.Prefs.values.isPrivateBrowsingEnabled, platform: state.Prefs.values.platform });
+const LinkMenu = Object(react_redux__WEBPACK_IMPORTED_MODULE_1__["connect"])(getState)(Object(react_intl__WEBPACK_IMPORTED_MODULE_3__["injectIntl"])(_LinkMenu));
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+(function(global) { __webpack_require__.d(__webpack_exports__, "ContextMenu", function() { return ContextMenu; });
+ __webpack_require__.d(__webpack_exports__, "ContextMenuItem", function() { return ContextMenuItem; });
+ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(10);
+ var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+
+
+class ContextMenu extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureComponent {
+  constructor(props) {
+    super(props);
+    this.hideContext = this.hideContext.bind(this);
+    this.onShow = this.onShow.bind(this);
+    this.onClick = this.onClick.bind(this);
+  }
+
+  hideContext() {
+    this.props.onUpdate(false);
+  }
+
+  onShow() {
+    if (this.props.onShow) {
+      this.props.onShow();
+    }
+  }
+
+  componentDidMount() {
+    this.onShow();
+    setTimeout(() => {
+      global.addEventListener("click", this.hideContext);
+    }, 0);
+  }
+
+  componentWillUnmount() {
+    global.removeEventListener("click", this.hideContext);
+  }
+
+  onClick(event) {
+    
+    
+    
+    event.stopPropagation();
+  }
+
+  render() {
+    return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(
+      "span",
+      { className: "context-menu", onClick: this.onClick },
+      react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(
+        "ul",
+        { role: "menu", className: "context-menu-list" },
+        this.props.options.map((option, i) => option.type === "separator" ? react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("li", { key: i, className: "separator" }) : option.type !== "empty" && react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(ContextMenuItem, { key: i, option: option, hideContext: this.hideContext }))
+      )
+    );
+  }
+}
+
+class ContextMenuItem extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureComponent {
+  constructor(props) {
+    super(props);
+    this.onClick = this.onClick.bind(this);
+    this.onKeyDown = this.onKeyDown.bind(this);
+  }
+
+  onClick() {
+    this.props.hideContext();
+    this.props.option.onClick();
+  }
+
+  onKeyDown(event) {
+    const { option } = this.props;
+    switch (event.key) {
+      case "Tab":
+        
+        
+        
+        if (event.shiftKey && option.first || !event.shiftKey && option.last) {
+          this.props.hideContext();
+        }
+        break;
+      case "Enter":
+        this.props.hideContext();
+        option.onClick();
+        break;
+    }
+  }
+
+  render() {
+    const { option } = this.props;
+    return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(
+      "li",
+      { role: "menuitem", className: "context-menu-item" },
+      react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(
+        "a",
+        { onClick: this.onClick, onKeyDown: this.onKeyDown, tabIndex: "0", className: option.disabled ? "disabled" : "" },
+        option.icon && react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("span", { className: `icon icon-spacer icon-${option.icon}` }),
+        option.label
+      )
+    );
+  }
+}
+}.call(this, __webpack_require__(1)))
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "GetPlatformString", function() { return GetPlatformString; });
+ __webpack_require__.d(__webpack_exports__, "LinkMenuOptions", function() { return LinkMenuOptions; });
+ var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
+
+
+const _OpenInPrivateWindow = site => ({
+  id: "menu_action_open_private_window",
+  icon: "new-window-private",
+  action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
+    type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].OPEN_PRIVATE_WINDOW,
+    data: { url: site.url, referrer: site.referrer }
+  }),
+  userEvent: "OPEN_PRIVATE_WINDOW"
+});
+
+const GetPlatformString = platform => {
+  switch (platform) {
+    case "win":
+      return "menu_action_show_file_windows";
+    case "macosx":
+      return "menu_action_show_file_mac_os";
+    case "linux":
+      return "menu_action_show_file_linux";
+    default:
+      return "menu_action_show_file_default";
+  }
+};
+
+
+
+
+
+
+const LinkMenuOptions = {
+  Separator: () => ({ type: "separator" }),
+  EmptyItem: () => ({ type: "empty" }),
+  RemoveBookmark: site => ({
+    id: "menu_action_remove_bookmark",
+    icon: "bookmark-added",
+    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].DELETE_BOOKMARK_BY_ID,
+      data: site.bookmarkGuid
+    }),
+    userEvent: "BOOKMARK_DELETE"
+  }),
+  AddBookmark: site => ({
+    id: "menu_action_bookmark",
+    icon: "bookmark-hollow",
+    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].BOOKMARK_URL,
+      data: { url: site.url, title: site.title, type: site.type }
+    }),
+    userEvent: "BOOKMARK_ADD"
+  }),
+  OpenInNewWindow: site => ({
+    id: "menu_action_open_new_window",
+    icon: "new-window",
+    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].OPEN_NEW_WINDOW,
+      data: {
+        referrer: site.referrer,
+        typedBonus: site.typedBonus,
+        url: site.url
+      }
+    }),
+    userEvent: "OPEN_NEW_WINDOW"
+  }),
+  BlockUrl: (site, index, eventSource) => ({
+    id: "menu_action_dismiss",
+    icon: "dismiss",
+    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].BLOCK_URL,
+      data: { url: site.open_url || site.url, pocket_id: site.pocket_id }
+    }),
+    impression: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].ImpressionStats({
+      source: eventSource,
+      block: 0,
+      tiles: [{ id: site.guid, pos: index }]
+    }),
+    userEvent: "BLOCK"
+  }),
+
+  
+  
+  WebExtDismiss: (site, index, eventSource) => ({
+    id: "menu_action_webext_dismiss",
+    string_id: "menu_action_dismiss",
+    icon: "dismiss",
+    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].WebExtEvent(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].WEBEXT_DISMISS, {
+      source: eventSource,
+      url: site.url,
+      action_position: index
+    })
+  }),
+  DeleteUrl: (site, index, eventSource, isEnabled, siteInfo) => ({
+    id: "menu_action_delete",
+    icon: "delete",
+    action: {
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].DIALOG_OPEN,
+      data: {
+        onConfirm: [common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({ type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].DELETE_HISTORY_URL, data: { url: site.url, pocket_id: site.pocket_id, forceBlock: site.bookmarkGuid } }), common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].UserEvent(Object.assign({ event: "DELETE", source: eventSource, action_position: index }, siteInfo))],
+        eventSource,
+        body_string_id: ["confirm_history_delete_p1", "confirm_history_delete_notice_p2"],
+        confirm_button_string_id: "menu_action_delete",
+        cancel_button_string_id: "topsites_form_cancel_button",
+        icon: "modal-delete"
+      }
+    },
+    userEvent: "DIALOG_OPEN"
+  }),
+  ShowFile: (site, index, eventSource, isEnabled, siteInfo, platform) => ({
+    id: GetPlatformString(platform),
+    icon: "search",
+    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].SHOW_DOWNLOAD_FILE,
+      data: { url: site.url }
+    })
+  }),
+  OpenFile: site => ({
+    id: "menu_action_open_file",
+    icon: "open-file",
+    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].OPEN_DOWNLOAD_FILE,
+      data: { url: site.url }
+    })
+  }),
+  CopyDownloadLink: site => ({
+    id: "menu_action_copy_download_link",
+    icon: "copy",
+    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].COPY_DOWNLOAD_LINK,
+      data: { url: site.url }
+    })
+  }),
+  GoToDownloadPage: site => ({
+    id: "menu_action_go_to_download_page",
+    icon: "download",
+    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].OPEN_LINK,
+      data: { url: site.referrer }
+    }),
+    disabled: !site.referrer
+  }),
+  RemoveDownload: site => ({
+    id: "menu_action_remove_download",
+    icon: "delete",
+    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].REMOVE_DOWNLOAD_FILE,
+      data: { url: site.url }
+    })
+  }),
+  PinTopSite: ({ url, searchTopSite, label }, index) => ({
+    id: "menu_action_pin",
+    icon: "pin",
+    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].TOP_SITES_PIN,
+      data: {
+        site: Object.assign({
+          url
+        }, searchTopSite && { searchTopSite, label }),
+        index
+      }
+    }),
+    userEvent: "PIN"
+  }),
+  UnpinTopSite: site => ({
+    id: "menu_action_unpin",
+    icon: "unpin",
+    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].TOP_SITES_UNPIN,
+      data: { site: { url: site.url } }
+    }),
+    userEvent: "UNPIN"
+  }),
+  SaveToPocket: (site, index, eventSource) => ({
+    id: "menu_action_save_to_pocket",
+    icon: "pocket-save",
+    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].SAVE_TO_POCKET,
+      data: { site: { url: site.url, title: site.title } }
+    }),
+    impression: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].ImpressionStats({
+      source: eventSource,
+      pocket: 0,
+      tiles: [{ id: site.guid, pos: index }]
+    }),
+    userEvent: "SAVE_TO_POCKET"
+  }),
+  DeleteFromPocket: site => ({
+    id: "menu_action_delete_pocket",
+    icon: "delete",
+    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].DELETE_FROM_POCKET,
+      data: { pocket_id: site.pocket_id }
+    }),
+    userEvent: "DELETE_FROM_POCKET"
+  }),
+  ArchiveFromPocket: site => ({
+    id: "menu_action_archive_pocket",
+    icon: "check",
+    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].ARCHIVE_FROM_POCKET,
+      data: { pocket_id: site.pocket_id }
+    }),
+    userEvent: "ARCHIVE_FROM_POCKET"
+  }),
+  EditTopSite: (site, index) => ({
+    id: "edit_topsites_button_text",
+    icon: "edit",
+    action: {
+      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].TOP_SITES_EDIT,
+      data: { index }
+    }
+  }),
+  CheckBookmark: site => site.bookmarkGuid ? LinkMenuOptions.RemoveBookmark(site) : LinkMenuOptions.AddBookmark(site),
+  CheckPinTopSite: (site, index) => site.isPinned ? LinkMenuOptions.UnpinTopSite(site) : LinkMenuOptions.PinTopSite(site, index),
+  CheckSavedToPocket: (site, index) => site.pocket_id ? LinkMenuOptions.DeleteFromPocket(site) : LinkMenuOptions.SaveToPocket(site, index),
+  CheckBookmarkOrArchive: site => site.pocket_id ? LinkMenuOptions.ArchiveFromPocket(site) : LinkMenuOptions.CheckBookmark(site),
+  OpenInPrivateWindow: (site, index, eventSource, isEnabled) => isEnabled ? _OpenInPrivateWindow(site) : LinkMenuOptions.EmptyItem()
+};
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
 (function(global) { __webpack_require__.d(__webpack_exports__, "INTERSECTION_RATIO", function() { return INTERSECTION_RATIO; });
  __webpack_require__.d(__webpack_exports__, "ImpressionStats", function() { return ImpressionStats; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
@@ -4043,19 +4439,19 @@ __webpack_require__.r(__webpack_exports__);
 (function(global) { __webpack_require__.d(__webpack_exports__, "_TopSites", function() { return _TopSites; });
  __webpack_require__.d(__webpack_exports__, "TopSites", function() { return TopSites; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(32);
- var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(33);
- var content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(38);
+ var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(35);
+ var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(36);
+ var content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(40);
  var react_redux__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(24);
  var react_redux__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_4__);
  var react_intl__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(5);
  var react_intl__WEBPACK_IMPORTED_MODULE_5___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_5__);
  var react__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(10);
  var react__WEBPACK_IMPORTED_MODULE_6___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_6__);
- var _SearchShortcutsForm__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(40);
+ var _SearchShortcutsForm__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(42);
  var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(59);
  var _TopSiteForm__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(61);
- var _TopSite__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(41);
+ var _TopSite__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(43);
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 
@@ -4274,11 +4670,11 @@ __webpack_require__.r(__webpack_exports__);
  var react_intl__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5);
  var react_intl__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_0__);
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2);
- var content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(34);
+ var content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(37);
  var react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(10);
  var react__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_3__);
- var content_src_components_SectionMenu_SectionMenu__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(35);
- var content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(37);
+ var content_src_components_SectionMenu_SectionMenu__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(38);
+ var content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(39);
 
 
 
@@ -4626,12 +5022,12 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "_SectionMenu", function() { return _SectionMenu; });
  __webpack_require__.d(__webpack_exports__, "SectionMenu", function() { return SectionMenu; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var content_src_components_ContextMenu_ContextMenu__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(36);
+ var content_src_components_ContextMenu_ContextMenu__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(31);
  var react_intl__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5);
  var react_intl__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_2__);
  var react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(10);
  var react__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_3__);
- var content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(37);
+ var content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(39);
 
 
 
@@ -4688,105 +5084,6 @@ class _SectionMenu extends react__WEBPACK_IMPORTED_MODULE_3___default.a.PureComp
 }
 
 const SectionMenu = Object(react_intl__WEBPACK_IMPORTED_MODULE_2__["injectIntl"])(_SectionMenu);
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-(function(global) { __webpack_require__.d(__webpack_exports__, "ContextMenu", function() { return ContextMenu; });
- __webpack_require__.d(__webpack_exports__, "ContextMenuItem", function() { return ContextMenuItem; });
- var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(10);
- var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
-
-
-class ContextMenu extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureComponent {
-  constructor(props) {
-    super(props);
-    this.hideContext = this.hideContext.bind(this);
-    this.onClick = this.onClick.bind(this);
-  }
-
-  hideContext() {
-    this.props.onUpdate(false);
-  }
-
-  componentDidMount() {
-    setTimeout(() => {
-      global.addEventListener("click", this.hideContext);
-    }, 0);
-  }
-
-  componentWillUnmount() {
-    global.removeEventListener("click", this.hideContext);
-  }
-
-  onClick(event) {
-    
-    
-    
-    event.stopPropagation();
-  }
-
-  render() {
-    return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(
-      "span",
-      { className: "context-menu", onClick: this.onClick },
-      react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(
-        "ul",
-        { role: "menu", className: "context-menu-list" },
-        this.props.options.map((option, i) => option.type === "separator" ? react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("li", { key: i, className: "separator" }) : option.type !== "empty" && react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(ContextMenuItem, { key: i, option: option, hideContext: this.hideContext }))
-      )
-    );
-  }
-}
-
-class ContextMenuItem extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureComponent {
-  constructor(props) {
-    super(props);
-    this.onClick = this.onClick.bind(this);
-    this.onKeyDown = this.onKeyDown.bind(this);
-  }
-
-  onClick() {
-    this.props.hideContext();
-    this.props.option.onClick();
-  }
-
-  onKeyDown(event) {
-    const { option } = this.props;
-    switch (event.key) {
-      case "Tab":
-        
-        
-        
-        if (event.shiftKey && option.first || !event.shiftKey && option.last) {
-          this.props.hideContext();
-        }
-        break;
-      case "Enter":
-        this.props.hideContext();
-        option.onClick();
-        break;
-    }
-  }
-
-  render() {
-    const { option } = this.props;
-    return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(
-      "li",
-      { role: "menuitem", className: "context-menu-item" },
-      react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(
-        "a",
-        { onClick: this.onClick, onKeyDown: this.onKeyDown, tabIndex: "0", className: option.disabled ? "disabled" : "" },
-        option.icon && react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("span", { className: `icon icon-spacer icon-${option.icon}` }),
-        option.label
-      )
-    );
-  }
-}
-}.call(this, __webpack_require__(1)))
 
  }),
 
@@ -4885,7 +5182,7 @@ const SectionMenuOptions = {
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "ComponentPerfTimer", function() { return ComponentPerfTimer; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var common_PerfService_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(39);
+ var common_PerfService_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(41);
  var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(10);
  var react__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
 
@@ -5199,7 +5496,7 @@ __webpack_require__.r(__webpack_exports__);
  var react_intl__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_1__);
  var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(10);
  var react__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
- var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(32);
+ var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(35);
 
 
 
@@ -5381,8 +5678,8 @@ __webpack_require__.r(__webpack_exports__);
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
  var react_intl__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
  var react_intl__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_1__);
- var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(32);
- var content_src_components_LinkMenu_LinkMenu__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(42);
+ var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(35);
+ var content_src_components_LinkMenu_LinkMenu__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(30);
  var react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(10);
  var react__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_4__);
  var content_src_lib_screenshot_utils__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(44);
@@ -5916,307 +6213,6 @@ const TopSiteList = Object(react_intl__WEBPACK_IMPORTED_MODULE_1__["injectIntl"]
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, "_LinkMenu", function() { return _LinkMenu; });
- __webpack_require__.d(__webpack_exports__, "LinkMenu", function() { return LinkMenu; });
- var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var react_redux__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(24);
- var react_redux__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_1__);
- var content_src_components_ContextMenu_ContextMenu__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(36);
- var react_intl__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(5);
- var react_intl__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_3__);
- var content_src_lib_link_menu_options__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(43);
- var react__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(10);
- var react__WEBPACK_IMPORTED_MODULE_5___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_5__);
-
-
-
-
-
-
-
-const DEFAULT_SITE_MENU_OPTIONS = ["CheckPinTopSite", "EditTopSite", "Separator", "OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl"];
-
-class _LinkMenu extends react__WEBPACK_IMPORTED_MODULE_5___default.a.PureComponent {
-  getOptions() {
-    const { props } = this;
-    const { site, index, source, isPrivateBrowsingEnabled, siteInfo, platform } = props;
-
-    
-    const propOptions = !site.isDefault || site.searchTopSite ? props.options : DEFAULT_SITE_MENU_OPTIONS;
-
-    const options = propOptions.map(o => content_src_lib_link_menu_options__WEBPACK_IMPORTED_MODULE_4__["LinkMenuOptions"][o](site, index, source, isPrivateBrowsingEnabled, siteInfo, platform)).map(option => {
-      const { action, impression, id, string_id, type, userEvent } = option;
-      if (!type && id) {
-        option.label = props.intl.formatMessage({ id: string_id || id });
-        option.onClick = () => {
-          props.dispatch(action);
-          if (userEvent) {
-            const userEventData = Object.assign({
-              event: userEvent,
-              source,
-              action_position: index
-            }, siteInfo);
-            props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].UserEvent(userEventData));
-          }
-          if (impression && props.shouldSendImpressionStats) {
-            props.dispatch(impression);
-          }
-        };
-      }
-      return option;
-    });
-
-    
-    
-    
-    options[0].first = true;
-    options[options.length - 1].last = true;
-    return options;
-  }
-
-  render() {
-    return react__WEBPACK_IMPORTED_MODULE_5___default.a.createElement(content_src_components_ContextMenu_ContextMenu__WEBPACK_IMPORTED_MODULE_2__["ContextMenu"], {
-      onUpdate: this.props.onUpdate,
-      options: this.getOptions() });
-  }
-}
-
-const getState = state => ({ isPrivateBrowsingEnabled: state.Prefs.values.isPrivateBrowsingEnabled, platform: state.Prefs.values.platform });
-const LinkMenu = Object(react_redux__WEBPACK_IMPORTED_MODULE_1__["connect"])(getState)(Object(react_intl__WEBPACK_IMPORTED_MODULE_3__["injectIntl"])(_LinkMenu));
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, "GetPlatformString", function() { return GetPlatformString; });
- __webpack_require__.d(__webpack_exports__, "LinkMenuOptions", function() { return LinkMenuOptions; });
- var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
-
-
-const _OpenInPrivateWindow = site => ({
-  id: "menu_action_open_private_window",
-  icon: "new-window-private",
-  action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
-    type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].OPEN_PRIVATE_WINDOW,
-    data: { url: site.url, referrer: site.referrer }
-  }),
-  userEvent: "OPEN_PRIVATE_WINDOW"
-});
-
-const GetPlatformString = platform => {
-  switch (platform) {
-    case "win":
-      return "menu_action_show_file_windows";
-    case "macosx":
-      return "menu_action_show_file_mac_os";
-    case "linux":
-      return "menu_action_show_file_linux";
-    default:
-      return "menu_action_show_file_default";
-  }
-};
-
-
-
-
-
-
-const LinkMenuOptions = {
-  Separator: () => ({ type: "separator" }),
-  EmptyItem: () => ({ type: "empty" }),
-  RemoveBookmark: site => ({
-    id: "menu_action_remove_bookmark",
-    icon: "bookmark-added",
-    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
-      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].DELETE_BOOKMARK_BY_ID,
-      data: site.bookmarkGuid
-    }),
-    userEvent: "BOOKMARK_DELETE"
-  }),
-  AddBookmark: site => ({
-    id: "menu_action_bookmark",
-    icon: "bookmark-hollow",
-    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
-      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].BOOKMARK_URL,
-      data: { url: site.url, title: site.title, type: site.type }
-    }),
-    userEvent: "BOOKMARK_ADD"
-  }),
-  OpenInNewWindow: site => ({
-    id: "menu_action_open_new_window",
-    icon: "new-window",
-    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
-      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].OPEN_NEW_WINDOW,
-      data: {
-        referrer: site.referrer,
-        typedBonus: site.typedBonus,
-        url: site.url
-      }
-    }),
-    userEvent: "OPEN_NEW_WINDOW"
-  }),
-  BlockUrl: (site, index, eventSource) => ({
-    id: "menu_action_dismiss",
-    icon: "dismiss",
-    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
-      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].BLOCK_URL,
-      data: { url: site.open_url || site.url, pocket_id: site.pocket_id }
-    }),
-    impression: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].ImpressionStats({
-      source: eventSource,
-      block: 0,
-      tiles: [{ id: site.guid, pos: index }]
-    }),
-    userEvent: "BLOCK"
-  }),
-
-  
-  
-  WebExtDismiss: (site, index, eventSource) => ({
-    id: "menu_action_webext_dismiss",
-    string_id: "menu_action_dismiss",
-    icon: "dismiss",
-    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].WebExtEvent(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].WEBEXT_DISMISS, {
-      source: eventSource,
-      url: site.url,
-      action_position: index
-    })
-  }),
-  DeleteUrl: (site, index, eventSource, isEnabled, siteInfo) => ({
-    id: "menu_action_delete",
-    icon: "delete",
-    action: {
-      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].DIALOG_OPEN,
-      data: {
-        onConfirm: [common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({ type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].DELETE_HISTORY_URL, data: { url: site.url, pocket_id: site.pocket_id, forceBlock: site.bookmarkGuid } }), common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].UserEvent(Object.assign({ event: "DELETE", source: eventSource, action_position: index }, siteInfo))],
-        eventSource,
-        body_string_id: ["confirm_history_delete_p1", "confirm_history_delete_notice_p2"],
-        confirm_button_string_id: "menu_action_delete",
-        cancel_button_string_id: "topsites_form_cancel_button",
-        icon: "modal-delete"
-      }
-    },
-    userEvent: "DIALOG_OPEN"
-  }),
-  ShowFile: (site, index, eventSource, isEnabled, siteInfo, platform) => ({
-    id: GetPlatformString(platform),
-    icon: "search",
-    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
-      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].SHOW_DOWNLOAD_FILE,
-      data: { url: site.url }
-    })
-  }),
-  OpenFile: site => ({
-    id: "menu_action_open_file",
-    icon: "open-file",
-    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
-      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].OPEN_DOWNLOAD_FILE,
-      data: { url: site.url }
-    })
-  }),
-  CopyDownloadLink: site => ({
-    id: "menu_action_copy_download_link",
-    icon: "copy",
-    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
-      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].COPY_DOWNLOAD_LINK,
-      data: { url: site.url }
-    })
-  }),
-  GoToDownloadPage: site => ({
-    id: "menu_action_go_to_download_page",
-    icon: "download",
-    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
-      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].OPEN_LINK,
-      data: { url: site.referrer }
-    }),
-    disabled: !site.referrer
-  }),
-  RemoveDownload: site => ({
-    id: "menu_action_remove_download",
-    icon: "delete",
-    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
-      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].REMOVE_DOWNLOAD_FILE,
-      data: { url: site.url }
-    })
-  }),
-  PinTopSite: ({ url, searchTopSite, label }, index) => ({
-    id: "menu_action_pin",
-    icon: "pin",
-    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
-      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].TOP_SITES_PIN,
-      data: {
-        site: Object.assign({
-          url
-        }, searchTopSite && { searchTopSite, label }),
-        index
-      }
-    }),
-    userEvent: "PIN"
-  }),
-  UnpinTopSite: site => ({
-    id: "menu_action_unpin",
-    icon: "unpin",
-    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
-      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].TOP_SITES_UNPIN,
-      data: { site: { url: site.url } }
-    }),
-    userEvent: "UNPIN"
-  }),
-  SaveToPocket: (site, index, eventSource) => ({
-    id: "menu_action_save_to_pocket",
-    icon: "pocket-save",
-    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
-      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].SAVE_TO_POCKET,
-      data: { site: { url: site.url, title: site.title } }
-    }),
-    impression: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].ImpressionStats({
-      source: eventSource,
-      pocket: 0,
-      tiles: [{ id: site.guid, pos: index }]
-    }),
-    userEvent: "SAVE_TO_POCKET"
-  }),
-  DeleteFromPocket: site => ({
-    id: "menu_action_delete_pocket",
-    icon: "delete",
-    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
-      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].DELETE_FROM_POCKET,
-      data: { pocket_id: site.pocket_id }
-    }),
-    userEvent: "DELETE_FROM_POCKET"
-  }),
-  ArchiveFromPocket: site => ({
-    id: "menu_action_archive_pocket",
-    icon: "check",
-    action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
-      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].ARCHIVE_FROM_POCKET,
-      data: { pocket_id: site.pocket_id }
-    }),
-    userEvent: "ARCHIVE_FROM_POCKET"
-  }),
-  EditTopSite: (site, index) => ({
-    id: "edit_topsites_button_text",
-    icon: "edit",
-    action: {
-      type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].TOP_SITES_EDIT,
-      data: { index }
-    }
-  }),
-  CheckBookmark: site => site.bookmarkGuid ? LinkMenuOptions.RemoveBookmark(site) : LinkMenuOptions.AddBookmark(site),
-  CheckPinTopSite: (site, index) => site.isPinned ? LinkMenuOptions.UnpinTopSite(site) : LinkMenuOptions.PinTopSite(site, index),
-  CheckSavedToPocket: (site, index) => site.pocket_id ? LinkMenuOptions.DeleteFromPocket(site) : LinkMenuOptions.SaveToPocket(site, index),
-  CheckBookmarkOrArchive: site => site.pocket_id ? LinkMenuOptions.ArchiveFromPocket(site) : LinkMenuOptions.CheckBookmark(site),
-  OpenInPrivateWindow: (site, index, eventSource, isEnabled) => isEnabled ? _OpenInPrivateWindow(site) : LinkMenuOptions.EmptyItem()
-};
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
 (function(global) { __webpack_require__.d(__webpack_exports__, "ScreenshotUtils", function() { return ScreenshotUtils; });
 
 
@@ -6684,8 +6680,8 @@ __webpack_require__.r(__webpack_exports__);
  var content_src_components_Card_Card__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(60);
  var react_intl__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5);
  var react_intl__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_2__);
- var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(33);
- var content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(38);
+ var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(36);
+ var content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(40);
  var react_redux__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(24);
  var react_redux__WEBPACK_IMPORTED_MODULE_5___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_5__);
  var content_src_components_MoreRecommendations_MoreRecommendations__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(50);
@@ -6693,7 +6689,7 @@ __webpack_require__.r(__webpack_exports__);
  var react__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(10);
  var react__WEBPACK_IMPORTED_MODULE_8___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_8__);
  var content_src_components_Topics_Topics__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(52);
- var content_src_components_TopSites_TopSites__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(31);
+ var content_src_components_TopSites_TopSites__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(34);
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 
@@ -7146,7 +7142,7 @@ class Topics extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureComponent 
 __webpack_require__.r(__webpack_exports__);
 (function(global) { __webpack_require__.d(__webpack_exports__, "DetectUserSessionStart", function() { return DetectUserSessionStart; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var common_PerfService_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(39);
+ var common_PerfService_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(41);
 
 
 
@@ -7246,11 +7242,99 @@ function enableASRouterContent(store, asrouterContent) {
 var Actions = __webpack_require__(2);
 
 
-var ImpressionStats = __webpack_require__(30);
+var external_ReactIntl_ = __webpack_require__(5);
+
+
+var LinkMenu = __webpack_require__(30);
 
 
 var external_React_ = __webpack_require__(10);
 var external_React_default = __webpack_require__.n(external_React_);
+
+
+
+
+
+
+class DSLinkMenu_DSLinkMenu extends external_React_default.a.PureComponent {
+  constructor(props) {
+    super(props);
+    this.state = {
+      activeCard: null,
+      showContextMenu: false
+    };
+    this.onMenuButtonClick = this.onMenuButtonClick.bind(this);
+    this.onMenuUpdate = this.onMenuUpdate.bind(this);
+    this.onMenuShow = this.onMenuShow.bind(this);
+    this.contextMenuButtonRef = external_React_default.a.createRef();
+  }
+
+  onMenuButtonClick(event) {
+    event.preventDefault();
+    this.setState({
+      activeCard: this.props.index,
+      showContextMenu: true
+    });
+  }
+
+  onMenuUpdate(showContextMenu) {
+    if (!showContextMenu) {
+      const dsLinkMenuHostDiv = this.contextMenuButtonRef.current.parentElement;
+      dsLinkMenuHostDiv.parentElement.classList.remove("active", "last-item");
+    }
+    this.setState({ showContextMenu });
+  }
+
+  onMenuShow() {
+    const dsLinkMenuHostDiv = this.contextMenuButtonRef.current.parentElement;
+    if (window.scrollMaxX > 0) {
+      dsLinkMenuHostDiv.parentElement.classList.add("last-item");
+    }
+    dsLinkMenuHostDiv.parentElement.classList.add("active");
+  }
+
+  render() {
+    const { index, dispatch } = this.props;
+    const isContextMenuOpen = this.state.showContextMenu && this.state.activeCard === index;
+    const TOP_STORIES_SOURCE = "TOP_STORIES";
+    const TOP_STORIES_CONTEXT_MENU_OPTIONS = ["OpenInNewWindow", "OpenInPrivateWindow"];
+    const title = this.props.title || this.props.source;
+
+    return external_React_default.a.createElement(
+      "div",
+      null,
+      external_React_default.a.createElement(
+        "button",
+        { ref: this.contextMenuButtonRef,
+          className: "context-menu-button icon",
+          title: this.props.intl.formatMessage({ id: "context_menu_title" }),
+          onClick: this.onMenuButtonClick },
+        external_React_default.a.createElement(
+          "span",
+          { className: "sr-only" },
+          external_React_default.a.createElement(external_ReactIntl_["FormattedMessage"], { id: "context_menu_button_sr", values: { title } })
+        )
+      ),
+      isContextMenuOpen && external_React_default.a.createElement(LinkMenu["LinkMenu"], {
+        dispatch: dispatch,
+        index: index,
+        source: TOP_STORIES_SOURCE,
+        onUpdate: this.onMenuUpdate,
+        onShow: this.onMenuShow,
+        options: TOP_STORIES_CONTEXT_MENU_OPTIONS,
+        site: {
+          referrer: "https://getpocket.com/recommendations",
+          title: this.props.title,
+          type: this.props.type,
+          url: this.props.url
+        } })
+    );
+  }
+}
+
+const DSLinkMenu = Object(external_ReactIntl_["injectIntl"])(DSLinkMenu_DSLinkMenu);
+
+var ImpressionStats = __webpack_require__(33);
 
 
 
@@ -7315,6 +7399,7 @@ class SafeAnchor_SafeAnchor extends external_React_default.a.PureComponent {
 
 
 
+
 class DSCard_DSCard extends external_React_default.a.PureComponent {
   constructor(props) {
     super(props);
@@ -7340,59 +7425,71 @@ class DSCard_DSCard extends external_React_default.a.PureComponent {
 
   render() {
     return external_React_default.a.createElement(
-      SafeAnchor_SafeAnchor,
-      {
-        className: "ds-card",
-        dispatch: this.props.dispatch,
-        onLinkClick: this.onLinkClick,
-        url: this.props.url },
+      "div",
+      { className: "ds-card" },
       external_React_default.a.createElement(
-        "div",
-        { className: "img-wrapper" },
-        external_React_default.a.createElement("div", { className: "img", style: { backgroundImage: `url(${this.props.image_src}` } })
-      ),
-      external_React_default.a.createElement(
-        "div",
-        { className: "meta" },
+        SafeAnchor_SafeAnchor,
+        {
+          className: "ds-card-link",
+          dispatch: this.props.dispatch,
+          onLinkClick: this.onLinkClick,
+          url: this.props.url },
         external_React_default.a.createElement(
           "div",
-          { className: "info-wrap" },
-          external_React_default.a.createElement(
-            "header",
-            { className: "title" },
-            this.props.title
-          ),
-          this.props.excerpt && external_React_default.a.createElement(
-            "p",
-            { className: "excerpt" },
-            this.props.excerpt
-          )
+          { className: "img-wrapper" },
+          external_React_default.a.createElement("div", { className: "img", style: { backgroundImage: `url(${this.props.image_src}` } })
         ),
         external_React_default.a.createElement(
-          "p",
-          null,
-          this.props.context && external_React_default.a.createElement(
-            "span",
-            null,
+          "div",
+          { className: "meta" },
+          external_React_default.a.createElement(
+            "div",
+            { className: "info-wrap" },
             external_React_default.a.createElement(
-              "span",
-              { className: "context" },
-              this.props.context
+              "header",
+              { className: "title" },
+              this.props.title
             ),
-            external_React_default.a.createElement("br", null)
+            this.props.excerpt && external_React_default.a.createElement(
+              "p",
+              { className: "excerpt" },
+              this.props.excerpt
+            )
           ),
           external_React_default.a.createElement(
-            "span",
-            { className: "source" },
-            this.props.source
+            "p",
+            null,
+            this.props.context && external_React_default.a.createElement(
+              "span",
+              null,
+              external_React_default.a.createElement(
+                "span",
+                { className: "context" },
+                this.props.context
+              ),
+              external_React_default.a.createElement("br", null)
+            ),
+            external_React_default.a.createElement(
+              "span",
+              { className: "source" },
+              this.props.source
+            )
           )
-        )
+        ),
+        external_React_default.a.createElement(ImpressionStats["ImpressionStats"], {
+          campaignId: this.props.campaignId,
+          rows: [{ id: this.props.id, pos: this.props.pos }],
+          dispatch: this.props.dispatch,
+          source: this.props.type })
       ),
-      external_React_default.a.createElement(ImpressionStats["ImpressionStats"], {
-        campaignId: this.props.campaignId,
-        rows: [{ id: this.props.id, pos: this.props.pos }],
+      external_React_default.a.createElement(DSLinkMenu, {
+        index: this.props.index,
         dispatch: this.props.dispatch,
-        source: this.props.type })
+        intl: this.props.intl,
+        url: this.props.url,
+        title: this.props.title,
+        source: this.props.source,
+        type: this.props.type })
     );
   }
 }
@@ -7492,6 +7589,7 @@ class DSMessage_DSMessage extends external_React_default.a.PureComponent {
 
 
 
+
 class List_ListItem extends external_React_default.a.PureComponent {
   
   
@@ -7570,7 +7668,15 @@ class List_ListItem extends external_React_default.a.PureComponent {
           rows: [{ id: this.props.id, pos: this.props.pos }],
           dispatch: this.props.dispatch,
           source: this.props.type })
-      )
+      ),
+      external_React_default.a.createElement(DSLinkMenu, {
+        index: this.props.index,
+        dispatch: this.props.dispatch,
+        intl: this.props.intl,
+        url: this.props.url,
+        title: this.props.title,
+        source: this.props.source,
+        type: this.props.type })
     );
   }
 }
@@ -7623,6 +7729,7 @@ _List.defaultProps = {
 };
 
 const List = Object(external_ReactRedux_["connect"])(state => ({ DiscoveryStream: state.DiscoveryStream }))(_List);
+
 
 
 
@@ -7697,49 +7804,61 @@ class Hero_Hero extends external_React_default.a.PureComponent {
         "div",
         { className: `ds-hero ds-hero-${this.props.border}` },
         external_React_default.a.createElement(
-          SafeAnchor_SafeAnchor,
-          {
-            className: "wrapper",
-            dispatch: this.props.dispatch,
-            onLinkClick: this.onLinkClick,
-            url: heroRec.url },
+          "div",
+          { className: "ds-hero-item" },
           external_React_default.a.createElement(
-            "div",
-            { className: "img-wrapper" },
-            external_React_default.a.createElement("div", { className: "img", style: { backgroundImage: `url(${heroRec.image_src})` } })
-          ),
-          external_React_default.a.createElement(
-            "div",
-            { className: "meta" },
+            SafeAnchor_SafeAnchor,
+            {
+              className: "wrapper",
+              dispatch: this.props.dispatch,
+              onLinkClick: this.onLinkClick,
+              url: heroRec.url },
             external_React_default.a.createElement(
               "div",
-              { className: "header-and-excerpt" },
+              { className: "img-wrapper" },
+              external_React_default.a.createElement("div", { className: "img", style: { backgroundImage: `url(${heroRec.image_src})` } })
+            ),
+            external_React_default.a.createElement(
+              "div",
+              { className: "meta" },
               external_React_default.a.createElement(
-                "header",
-                null,
-                heroRec.title
+                "div",
+                { className: "header-and-excerpt" },
+                external_React_default.a.createElement(
+                  "header",
+                  null,
+                  heroRec.title
+                ),
+                external_React_default.a.createElement(
+                  "p",
+                  { className: "excerpt" },
+                  heroRec.excerpt
+                )
               ),
-              external_React_default.a.createElement(
+              heroRec.context ? external_React_default.a.createElement(
                 "p",
-                { className: "excerpt" },
-                heroRec.excerpt
+                { className: "context" },
+                heroRec.context
+              ) : external_React_default.a.createElement(
+                "p",
+                { className: "source" },
+                heroRec.domain
               )
             ),
-            heroRec.context ? external_React_default.a.createElement(
-              "p",
-              { className: "context" },
-              heroRec.context
-            ) : external_React_default.a.createElement(
-              "p",
-              { className: "source" },
-              heroRec.domain
-            )
+            external_React_default.a.createElement(ImpressionStats["ImpressionStats"], {
+              campaignId: heroRec.campaignId,
+              rows: [{ id: heroRec.id, pos: heroRec.pos }],
+              dispatch: this.props.dispatch,
+              source: this.props.type })
           ),
-          external_React_default.a.createElement(ImpressionStats["ImpressionStats"], {
-            campaignId: heroRec.campaignId,
-            rows: [{ id: heroRec.id, pos: heroRec.pos }],
+          external_React_default.a.createElement(DSLinkMenu, {
+            index: this.props.index,
             dispatch: this.props.dispatch,
-            source: this.props.type })
+            intl: this.props.intl,
+            url: heroRec.url,
+            title: heroRec.title,
+            source: heroRec.domain,
+            type: this.props.type })
         ),
         external_React_default.a.createElement(
           "div",
@@ -8022,7 +8141,7 @@ function layoutRender(layout, feeds, spocs) {
   }));
 });
 
-var TopSites = __webpack_require__(31);
+var TopSites = __webpack_require__(34);
 
 
 
@@ -12323,10 +12442,10 @@ const cardContextTypes = {
 var external_ReactRedux_ = __webpack_require__(24);
 
 
-var link_menu_options = __webpack_require__(43);
+var link_menu_options = __webpack_require__(32);
 
 
-var LinkMenu = __webpack_require__(42);
+var LinkMenu = __webpack_require__(30);
 
 
 var external_React_ = __webpack_require__(10);
@@ -12661,7 +12780,7 @@ var external_React_ = __webpack_require__(10);
 var external_React_default = __webpack_require__.n(external_React_);
 
 
-var TopSitesConstants = __webpack_require__(32);
+var TopSitesConstants = __webpack_require__(35);
 
 
 
@@ -12739,7 +12858,7 @@ TopSiteFormInput_TopSiteFormInput.defaultProps = {
   validationError: false
 };
 
-var TopSite = __webpack_require__(41);
+var TopSite = __webpack_require__(43);
 
 
  __webpack_require__.d(__webpack_exports__, "TopSiteForm", function() { return TopSiteForm_TopSiteForm; });
