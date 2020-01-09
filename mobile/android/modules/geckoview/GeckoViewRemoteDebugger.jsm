@@ -52,15 +52,6 @@ var GeckoViewRemoteDebugger = {
     
     
     
-    Services.prefs.setBoolPref("marionette.enabled", false);
-
-    
-    Services.prefs.setBoolPref("marionette.prefs.recommended", false);
-
-    
-    
-    
-    
     
     
     Services.tm.dispatchToMainThread(() => {
@@ -104,8 +95,6 @@ var GeckoViewRemoteDebugger = {
 
     const portOrPath = packageName + "firefox-debugger-socket";
     this._usbDebugger.start(portOrPath);
-
-    Services.prefs.setBoolPref("marionette.enabled", true);
   },
 
   onDisable() {
@@ -116,8 +105,6 @@ var GeckoViewRemoteDebugger = {
     debug `onDisable`;
     this._isEnabled = false;
     this._usbDebugger.stop();
-
-    Services.prefs.setBoolPref("marionette.enabled", false);
   },
 };
 
