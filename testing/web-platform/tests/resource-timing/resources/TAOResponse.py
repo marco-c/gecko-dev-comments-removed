@@ -13,6 +13,9 @@ def main(request, response):
     elif tao == 'null':
     
         response.headers.set('Timing-Allow-Origin', 'null')
+    elif tao == 'Null':
+    
+        response.headers.set('Timing-Allow-Origin', 'Null')
     elif tao == 'origin':
     
         response.headers.set('Timing-Allow-Origin', origin)
