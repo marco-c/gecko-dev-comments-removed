@@ -183,12 +183,6 @@ popupnotification {
 
 
 
-checkbox {
-  -moz-binding: url("chrome://global/content/bindings/checkbox.xml#checkbox");
-}
-
-
-
 radiogroup {
   -moz-box-orient: vertical;
 }

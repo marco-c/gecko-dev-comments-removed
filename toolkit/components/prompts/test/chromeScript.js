@@ -165,7 +165,7 @@ function dismissSelect(ui, action) {
 function dismissPrompt(ui, action) {
   if (action.setCheckbox) {
     
-    ui.checkbox.setChecked(true);
+    ui.checkbox.checked = true;
     ui.checkbox.doCommand();
   }
 
