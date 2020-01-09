@@ -511,7 +511,6 @@ describe("CFRPageActions", () => {
         sandbox.spy(pageAction, "hide");
         CFRPageActions.RecommendationMap.set(fakeBrowser, {});
         secondaryAction.callback();
-        assert.calledOnce(pageAction.hide);
         
         assert.calledWith(dispatchStub, {
           type: "DOORHANGER_TELEMETRY",
@@ -524,7 +523,8 @@ describe("CFRPageActions", () => {
           },
         });
         
-        assert.isFalse(CFRPageActions.RecommendationMap.has(fakeBrowser));
+        assert.isTrue(CFRPageActions.RecommendationMap.has(fakeBrowser));
+        assert.notCalled(pageAction.hide);
       });
       it("should send right telemetry for BLOCK secondary action", async () => {
         await pageAction._handleClick();
@@ -553,13 +553,12 @@ describe("CFRPageActions", () => {
       });
       it("should send right telemetry for MANAGE secondary action", async () => {
         await pageAction._handleClick();
-        const blockAction = global.PopupNotifications.show.firstCall.args[5][2]; 
+        const manageAction = global.PopupNotifications.show.firstCall.args[5][2]; 
 
-        assert.deepEqual(blockAction.label, {value: "Secondary Button 3", attributes: {accesskey: "g"}});
+        assert.deepEqual(manageAction.label, {value: "Secondary Button 3", attributes: {accesskey: "g"}});
         sandbox.spy(pageAction, "hide");
         CFRPageActions.RecommendationMap.set(fakeBrowser, {});
-        blockAction.callback();
-        assert.calledOnce(pageAction.hide);
+        manageAction.callback();
         
         assert.calledWith(dispatchStub, {
           type: "DOORHANGER_TELEMETRY",
@@ -572,7 +571,8 @@ describe("CFRPageActions", () => {
           },
         });
         
-        assert.isFalse(CFRPageActions.RecommendationMap.has(fakeBrowser));
+        assert.isTrue(CFRPageActions.RecommendationMap.has(fakeBrowser));
+        assert.notCalled(pageAction.hide);
       });
       it("should call PopupNotifications.show with the right arguments", async () => {
         await pageAction._handleClick();
@@ -644,6 +644,26 @@ describe("CFRPageActions", () => {
         fakeBrowser.documentURI.host = someOtherFakeHost;
         assert.isTrue(CFRPageActions.RecommendationMap.has(fakeBrowser));
         CFRPageActions.updatePageActions(fakeBrowser);
+        assert.calledOnce(PageAction.prototype.hide);
+        assert.isFalse(CFRPageActions.RecommendationMap.has(fakeBrowser));
+      });
+      it("should not call `delete` if retain is true", () => {
+        savedRec.retain = true;
+        fakeBrowser.documentURI.host = "subdomain.mozilla.com";
+        assert.isTrue(CFRPageActions.RecommendationMap.has(fakeBrowser));
+
+        CFRPageActions.updatePageActions(fakeBrowser);
+        assert.propertyVal(savedRec, "retain", false);
+        assert.calledOnce(PageAction.prototype.hide);
+        assert.isTrue(CFRPageActions.RecommendationMap.has(fakeBrowser));
+      });
+      it("should call `delete` if retain is false", () => {
+        savedRec.retain = false;
+        fakeBrowser.documentURI.host = "subdomain.mozilla.com";
+        assert.isTrue(CFRPageActions.RecommendationMap.has(fakeBrowser));
+
+        CFRPageActions.updatePageActions(fakeBrowser);
+        assert.propertyVal(savedRec, "retain", false);
         assert.calledOnce(PageAction.prototype.hide);
         assert.isFalse(CFRPageActions.RecommendationMap.has(fakeBrowser));
       });

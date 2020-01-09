@@ -92,14 +92,14 @@ this.PrefsFeed = class PrefsFeed {
     let searchTopSiteExperimentPrefValue = Services.prefs.getBoolPref(
       "browser.newtabpage.activity-stream.improvesearch.topSiteSearchShortcuts");
     values["improvesearch.topSiteSearchShortcuts"] = searchTopSiteExperimentPrefValue;
-    this._prefMap.set("improvesearch.topSiteSearchShortcuts", searchTopSiteExperimentPrefValue);
+    this._prefMap.set("improvesearch.topSiteSearchShortcuts", {value: searchTopSiteExperimentPrefValue});
 
     
     
     let handoffToAwesomebarPrefValue = Services.prefs.getBoolPref(
       "browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar");
     values["improvesearch.handoffToAwesomebar"] = handoffToAwesomebarPrefValue;
-    this._prefMap.set("improvesearch.handoffToAwesomebar", handoffToAwesomebarPrefValue);
+    this._prefMap.set("improvesearch.handoffToAwesomebar", {value: handoffToAwesomebarPrefValue});
 
     
     this.store.dispatch(ac.BroadcastToContent({type: at.PREFS_INITIAL_VALUES, data: values}));
