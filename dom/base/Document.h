@@ -4244,13 +4244,6 @@ class Document : public nsINode,
   
   bool mDocTreeHadPlayRevoked : 1;
 
-#ifdef DEBUG
- public:
-  bool mWillReparent : 1;
-
- protected:
-#endif
-
   
   
   bool mHasDelayedRefreshEvent : 1;
