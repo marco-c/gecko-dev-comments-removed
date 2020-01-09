@@ -36,7 +36,7 @@ var PLUGINS = [{
 add_task(async function checkBlocklistSeverities() {
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9");
 
-  copyBlocklistToProfile(do_get_file("data/test_bug514327_1.xml"));
+  copyBlocklistToProfile(do_get_file("../data/test_bug514327_1.xml"));
 
   var {blocklist} = Services;
 

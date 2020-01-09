@@ -6,9 +6,10 @@
 
 
 
+
 var gTestserver = AddonTestUtils.createHttpServer({hosts: ["example.com"]});
 gPort = gTestserver.identity.primaryPort;
-gTestserver.registerDirectory("/data/", do_get_file("data"));
+gTestserver.registerDirectory("/data/", do_get_file("../data"));
 
 function load_blocklist(file) {
   Services.prefs.setCharPref("extensions.blocklist.url", "http://localhost:" +
@@ -32,15 +33,13 @@ async function run_test() {
   gfxInfo.fireTestProcess();
 
   
-  gfxInfo.spoofDriverVersion("8.52.322.2201");
-  gfxInfo.spoofVendorID("0xabcd");
-  gfxInfo.spoofDeviceID("0x1234");
-
-  
   switch (Services.appinfo.OS) {
     case "WINNT":
+      gfxInfo.spoofVendorID("0xabcd");
+      gfxInfo.spoofDeviceID("0x1234");
+      gfxInfo.spoofDriverVersion("8.52.322.2202");
       
-      gfxInfo.spoofOSVersion(0x60002);
+      gfxInfo.spoofOSVersion(0x60001);
       break;
     case "Linux":
       
@@ -48,13 +47,13 @@ async function run_test() {
       return;
     case "Darwin":
       
-      gfxInfo.spoofOSVersion(0x1090);
-      break;
-    case "Android":
-      
-      
       do_test_finished();
       return;
+    case "Android":
+      gfxInfo.spoofVendorID("abcd");
+      gfxInfo.spoofDeviceID("wxyz");
+      gfxInfo.spoofDriverVersion("6");
+      break;
   }
 
   do_test_pending();
@@ -63,13 +62,11 @@ async function run_test() {
   await promiseStartupManager();
 
   function checkBlacklist() {
-    if (Services.appinfo.OS == "WINNT") {
-      var status = gfxInfo.getFeatureStatus(Ci.nsIGfxInfo.FEATURE_DIRECT2D);
-      Assert.equal(status, Ci.nsIGfxInfo.FEATURE_BLOCKED_DRIVER_VERSION);
-    } else if (Services.appinfo.OS == "Darwin") {
-      status = gfxInfo.getFeatureStatus(Ci.nsIGfxInfo.FEATURE_OPENGL_LAYERS);
-      Assert.equal(status, Ci.nsIGfxInfo.FEATURE_BLOCKED_DRIVER_VERSION);
-    }
+    var status = gfxInfo.getFeatureStatus(Ci.nsIGfxInfo.FEATURE_DIRECT2D);
+    Assert.equal(status, Ci.nsIGfxInfo.FEATURE_STATUS_OK);
+
+    status = gfxInfo.getFeatureStatus(Ci.nsIGfxInfo.FEATURE_DIRECT3D_9_LAYERS);
+    Assert.equal(status, Ci.nsIGfxInfo.FEATURE_STATUS_OK);
 
     do_test_finished();
   }
@@ -80,5 +77,5 @@ async function run_test() {
     executeSoon(checkBlacklist);
   }, "blocklist-data-gfxItems");
 
-  load_blocklist("test_gfxBlacklist_OSVersion.xml");
+  load_blocklist("test_gfxBlacklist.xml");
 }

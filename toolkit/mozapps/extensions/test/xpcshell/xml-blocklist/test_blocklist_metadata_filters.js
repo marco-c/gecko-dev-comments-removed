@@ -7,11 +7,13 @@
 
 const URI_EXTENSION_BLOCKLIST_DIALOG = "chrome://mozapps/content/extensions/blocklist.xul";
 
-var testserver = createHttpServer({hosts: ["example.com"]});
+var testserver = AddonTestUtils.createHttpServer({hosts: ["example.com"]});
 gPort = testserver.identity.primaryPort;
 
-testserver.registerDirectory("/data/", do_get_file("data"));
+testserver.registerDirectory("/data/", do_get_file("../data"));
 
+const profileDir = gProfD.clone();
+profileDir.append("extensions");
 
 
 
@@ -40,6 +42,7 @@ function load_blocklist(aFile) {
   return new Promise(resolve => {
     Services.obs.addObserver(function observer() {
       Services.obs.removeObserver(observer, "blocklist-updated");
+
       resolve();
     }, "blocklist-updated");
 
@@ -51,6 +54,7 @@ function load_blocklist(aFile) {
   });
 }
 
+
 add_task(async function setup() {
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1");
 
@@ -59,53 +63,58 @@ add_task(async function setup() {
   
   await promiseInstallWebExtension({
     manifest: {
-      name: "Blocked add-on-1 with to-be-reset prefs",
+      name: "Mozilla Corp.",
       version: "1.0",
       applications: {gecko: {id: "block1@tests.mozilla.org"}},
     },
   });
+
+  
   await promiseInstallWebExtension({
     manifest: {
-      name: "Blocked add-on-2 with to-be-reset prefs",
+      name: "Moz-addon",
       version: "1.0",
-      applications: {gecko: {id: "block2@tests.mozilla.org"}},
+      homepage_url: "https://www.extension.dangerous.com/",
+      applications: {
+        gecko: {
+          id: "block2@tests.mozilla.org",
+          update_url: "https://www.extension.dangerous.com/update.json",
+        },
+      },
     },
   });
 
   
-  Services.prefs.setIntPref("test.blocklist.pref1", 15);
-  Services.prefs.setIntPref("test.blocklist.pref2", 15);
-  Services.prefs.setBoolPref("test.blocklist.pref3", true);
-  Services.prefs.setBoolPref("test.blocklist.pref4", true);
-
-
   
-  let [a1, a2] = await AddonManager.getAddonsByIDs(["block1@tests.mozilla.org",
-                                                    "block2@tests.mozilla.org"]);
+  await promiseInstallWebExtension({
+    manifest: {
+      name: "Moz-addon",
+      version: "1.0",
+      homepage_url: "https://www.extension.dangerous.com/",
+      applications: {
+        gecko: {
+          id: "block3@tests.mozilla.org",
+          update_url: "https://www.extension.dangerous.com/update.json",
+        },
+      },
+    },
+  });
+
+  let [a1, a2, a3] = await AddonManager.getAddonsByIDs(["block1@tests.mozilla.org",
+                                                        "block2@tests.mozilla.org",
+                                                        "block3@tests.mozilla.org"]);
   Assert.equal(a1.blocklistState, Ci.nsIBlocklistService.STATE_NOT_BLOCKED);
   Assert.equal(a2.blocklistState, Ci.nsIBlocklistService.STATE_NOT_BLOCKED);
-
-  Assert.equal(Services.prefs.getIntPref("test.blocklist.pref1"), 15);
-  Assert.equal(Services.prefs.getIntPref("test.blocklist.pref2"), 15);
-  Assert.equal(Services.prefs.getBoolPref("test.blocklist.pref3"), true);
-  Assert.equal(Services.prefs.getBoolPref("test.blocklist.pref4"), true);
+  Assert.equal(a3.blocklistState, Ci.nsIBlocklistService.STATE_NOT_BLOCKED);
 });
 
-
 add_task(async function test_blocks() {
-  await load_blocklist("test_blocklist_prefs_1.xml");
+  await load_blocklist("test_blocklist_metadata_filters_1.xml");
 
-  
-  let [a1, a2] = await AddonManager.getAddonsByIDs(["block1@tests.mozilla.org",
-                                                    "block2@tests.mozilla.org"]);
-  Assert.notEqual(a1, null);
+  let [a1, a2, a3] = await AddonManager.getAddonsByIDs(["block1@tests.mozilla.org",
+                                                        "block2@tests.mozilla.org",
+                                                        "block3@tests.mozilla.org"]);
   Assert.equal(a1.blocklistState, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
-  Assert.notEqual(a2, null);
   Assert.equal(a2.blocklistState, Ci.nsIBlocklistService.STATE_BLOCKED);
-
-  
-  Assert.equal(Services.prefs.prefHasUserValue("test.blocklist.pref1"), false);
-  Assert.equal(Services.prefs.prefHasUserValue("test.blocklist.pref2"), false);
-  Assert.equal(Services.prefs.prefHasUserValue("test.blocklist.pref3"), false);
-  Assert.equal(Services.prefs.prefHasUserValue("test.blocklist.pref4"), false);
+  Assert.equal(a3.blocklistState, Ci.nsIBlocklistService.STATE_NOT_BLOCKED);
 });

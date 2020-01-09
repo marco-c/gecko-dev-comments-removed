@@ -36,7 +36,7 @@ add_task(async function checkBlocklistForRegexes() {
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9");
 
   
-  copyBlocklistToProfile(do_get_file("data/test_bug468528.xml"));
+  copyBlocklistToProfile(do_get_file("../data/test_bug468528.xml"));
 
   var {blocklist} = Services;
 

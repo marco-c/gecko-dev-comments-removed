@@ -9,7 +9,7 @@
 
 var gTestserver = AddonTestUtils.createHttpServer({hosts: ["example.com"]});
 gPort = gTestserver.identity.primaryPort;
-gTestserver.registerDirectory("/data/", do_get_file("data"));
+gTestserver.registerDirectory("/data/", do_get_file("../data"));
 
 function load_blocklist(file) {
   Services.prefs.setCharPref("extensions.blocklist.url", "http://localhost:" +
@@ -35,9 +35,9 @@ async function run_test() {
   
   switch (Services.appinfo.OS) {
     case "WINNT":
-      gfxInfo.spoofVendorID("0xabcd");
+      gfxInfo.spoofVendorID("0xabab");
       gfxInfo.spoofDeviceID("0x1234");
-      gfxInfo.spoofDriverVersion("8.52.322.2202");
+      gfxInfo.spoofDriverVersion("8.52.322.2201");
       
       gfxInfo.spoofOSVersion(0x60001);
       break;
@@ -50,8 +50,8 @@ async function run_test() {
       do_test_finished();
       return;
     case "Android":
-      gfxInfo.spoofVendorID("abcd");
-      gfxInfo.spoofDeviceID("wxyz");
+      gfxInfo.spoofVendorID("abab");
+      gfxInfo.spoofDeviceID("ghjk");
       gfxInfo.spoofDriverVersion("6");
       break;
   }
@@ -65,6 +65,7 @@ async function run_test() {
     var status = gfxInfo.getFeatureStatus(Ci.nsIGfxInfo.FEATURE_DIRECT2D);
     Assert.equal(status, Ci.nsIGfxInfo.FEATURE_STATUS_OK);
 
+    
     status = gfxInfo.getFeatureStatus(Ci.nsIGfxInfo.FEATURE_DIRECT3D_9_LAYERS);
     Assert.equal(status, Ci.nsIGfxInfo.FEATURE_STATUS_OK);
 

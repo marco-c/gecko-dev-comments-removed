@@ -6,7 +6,7 @@
 const URI_EXTENSION_BLOCKLIST_DIALOG = "chrome://mozapps/content/extensions/blocklist.xul";
 
 var gTestserver = AddonTestUtils.createHttpServer({hosts: ["example.com"]});
-gTestserver.registerDirectory("/data/", do_get_file("data"));
+gTestserver.registerDirectory("/data/", do_get_file("../data"));
 
 
 const PREF_BLOCKLIST_ITEM_URL = "extensions.blocklist.itemURL";
@@ -77,7 +77,7 @@ var ADDONS = [{
 
 
 
-copyBlocklistToProfile(do_get_file("data/bug455906_start.xml"));
+copyBlocklistToProfile(do_get_file("../data/bug455906_start.xml"));
 
 var PLUGINS = [
   

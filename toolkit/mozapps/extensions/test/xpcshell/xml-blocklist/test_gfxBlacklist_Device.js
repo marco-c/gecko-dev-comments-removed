@@ -9,7 +9,7 @@
 
 var gTestserver = AddonTestUtils.createHttpServer({hosts: ["example.com"]});
 gPort = gTestserver.identity.primaryPort;
-gTestserver.registerDirectory("/data/", do_get_file("data"));
+gTestserver.registerDirectory("/data/", do_get_file("../data"));
 
 function load_blocklist(file) {
   Services.prefs.setCharPref("extensions.blocklist.url", "http://localhost:" +
@@ -36,23 +36,23 @@ async function run_test() {
   switch (Services.appinfo.OS) {
     case "WINNT":
       gfxInfo.spoofVendorID("0xabcd");
-      gfxInfo.spoofDeviceID("0x1234");
+      gfxInfo.spoofDeviceID("0x9876");
       gfxInfo.spoofDriverVersion("8.52.322.2201");
       
       gfxInfo.spoofOSVersion(0x60001);
       break;
     case "Linux":
       gfxInfo.spoofVendorID("0xabcd");
-      gfxInfo.spoofDeviceID("0x1234");
+      gfxInfo.spoofDeviceID("0x9876");
       break;
     case "Darwin":
       gfxInfo.spoofVendorID("0xabcd");
-      gfxInfo.spoofDeviceID("0x1234");
+      gfxInfo.spoofDeviceID("0x9876");
       gfxInfo.spoofOSVersion(0x1090);
       break;
     case "Android":
       gfxInfo.spoofVendorID("abcd");
-      gfxInfo.spoofDeviceID("asdf");
+      gfxInfo.spoofDeviceID("aabb");
       gfxInfo.spoofDriverVersion("5");
       break;
   }
@@ -64,10 +64,12 @@ async function run_test() {
 
   function checkBlacklist() {
     var status = gfxInfo.getFeatureStatus(Ci.nsIGfxInfo.FEATURE_DIRECT2D);
-    Assert.equal(status, Ci.nsIGfxInfo.FEATURE_BLOCKED_DRIVER_VERSION);
+    Assert.equal(status, Ci.nsIGfxInfo.FEATURE_STATUS_OK);
 
-    
     status = gfxInfo.getFeatureStatus(Ci.nsIGfxInfo.FEATURE_DIRECT3D_9_LAYERS);
+    Assert.equal(status, Ci.nsIGfxInfo.FEATURE_STATUS_OK);
+
+    status = gfxInfo.getFeatureStatus(Ci.nsIGfxInfo.FEATURE_CANVAS2D_ACCELERATION);
     Assert.equal(status, Ci.nsIGfxInfo.FEATURE_STATUS_OK);
 
     do_test_finished();

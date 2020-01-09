@@ -9,7 +9,7 @@
 
 var gTestserver = AddonTestUtils.createHttpServer({hosts: ["example.com"]});
 gPort = gTestserver.identity.primaryPort;
-gTestserver.registerDirectory("/data/", do_get_file("data"));
+gTestserver.registerDirectory("/data/", do_get_file("../data"));
 
 function load_blocklist(file) {
   Services.prefs.setCharPref("extensions.blocklist.url", "http://localhost:" +
@@ -33,7 +33,7 @@ async function run_test() {
   gfxInfo.fireTestProcess();
 
   
-  gfxInfo.spoofDriverVersion("8.52.322.2202");
+  gfxInfo.spoofDriverVersion("8.52.322.2201");
   gfxInfo.spoofVendorID("0xabcd");
   gfxInfo.spoofDeviceID("0x1234");
 
@@ -41,13 +41,14 @@ async function run_test() {
   switch (Services.appinfo.OS) {
     case "WINNT":
       
-      gfxInfo.spoofOSVersion(0x60002);
+      gfxInfo.spoofOSVersion(0x60001);
       break;
     case "Linux":
       
       do_test_finished();
       return;
     case "Darwin":
+      
       gfxInfo.spoofOSVersion(0x1080);
       break;
     case "Android":
