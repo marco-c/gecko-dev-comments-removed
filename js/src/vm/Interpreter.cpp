@@ -4002,7 +4002,7 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
     CASE(JSOP_GENERATOR) {
       MOZ_ASSERT(!cx->isExceptionPending());
       MOZ_ASSERT(REGS.stackDepth() == 0);
-      JSObject* obj = GeneratorObject::create(cx, REGS.fp());
+      JSObject* obj = AbstractGeneratorObject::create(cx, REGS.fp());
       if (!obj) {
         goto error;
       }
@@ -4016,7 +4016,8 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
       ReservedRooted<JSObject*> obj(&rootObject0, &REGS.sp[-1].toObject());
       POP_RETURN_VALUE();
       MOZ_ASSERT(REGS.stackDepth() == 0);
-      if (!GeneratorObject::initialSuspend(cx, obj, REGS.fp(), REGS.pc)) {
+      if (!AbstractGeneratorObject::initialSuspend(cx, obj, REGS.fp(),
+                                                   REGS.pc)) {
         goto error;
       }
       goto successful_return_continuation;
@@ -4027,9 +4028,9 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
       MOZ_ASSERT(!cx->isExceptionPending());
       MOZ_ASSERT(REGS.fp()->isFunctionFrame());
       ReservedRooted<JSObject*> obj(&rootObject0, &REGS.sp[-1].toObject());
-      if (!GeneratorObject::normalSuspend(cx, obj, REGS.fp(), REGS.pc,
-                                          REGS.spForStackDepth(0),
-                                          REGS.stackDepth() - 2)) {
+      if (!AbstractGeneratorObject::normalSuspend(cx, obj, REGS.fp(), REGS.pc,
+                                                  REGS.spForStackDepth(0),
+                                                  REGS.stackDepth() - 2)) {
         goto error;
       }
 
@@ -4041,15 +4042,14 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
 
     CASE(JSOP_RESUME) {
       {
-        Rooted<GeneratorObject*> gen(
-            cx, &REGS.sp[-2].toObject().as<GeneratorObject>());
+        Rooted<AbstractGeneratorObject*> gen(
+            cx, &REGS.sp[-2].toObject().as<AbstractGeneratorObject>());
         ReservedRooted<Value> val(&rootValue0, REGS.sp[-1]);
         
         
 
-        GeneratorObject::ResumeKind resumeKind =
-            GeneratorObject::getResumeKind(REGS.pc);
-        if (!GeneratorObject::resume(cx, activation, gen, val)) {
+        auto resumeKind = AbstractGeneratorObject::getResumeKind(REGS.pc);
+        if (!AbstractGeneratorObject::resume(cx, activation, gen, val)) {
           goto error;
         }
 
@@ -4083,10 +4083,10 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
         }
 
         switch (resumeKind) {
-          case GeneratorObject::NEXT:
+          case AbstractGeneratorObject::NEXT:
             break;
-          case GeneratorObject::THROW:
-          case GeneratorObject::RETURN:
+          case AbstractGeneratorObject::THROW:
+          case AbstractGeneratorObject::RETURN:
             MOZ_ALWAYS_FALSE(GeneratorThrowOrReturn(cx, activation.regs().fp(),
                                                     gen, val, resumeKind));
             goto error;
@@ -4107,7 +4107,7 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
     CASE(JSOP_FINALYIELDRVAL) {
       ReservedRooted<JSObject*> gen(&rootObject0, &REGS.sp[-1].toObject());
       REGS.sp--;
-      GeneratorObject::finalSuspend(gen);
+      AbstractGeneratorObject::finalSuspend(gen);
       goto successful_return_continuation;
     }
 
@@ -4408,7 +4408,7 @@ bool js::GetProperty(JSContext* cx, HandleValue v, HandlePropertyName name,
 
   
   
-  if (v.isPrimitive() && !v.isNullOrUndefined()) {
+  if (v.isPrimitive() && !v.isNullOrUndefined() && !v.isBigInt()) {
     NativeObject* proto;
     if (v.isNumber()) {
       proto = GlobalObject::getOrCreateNumberPrototype(cx, cx->global());
@@ -4416,8 +4416,6 @@ bool js::GetProperty(JSContext* cx, HandleValue v, HandlePropertyName name,
       proto = GlobalObject::getOrCreateStringPrototype(cx, cx->global());
     } else if (v.isBoolean()) {
       proto = GlobalObject::getOrCreateBooleanPrototype(cx, cx->global());
-    } else if (v.isBigInt()) {
-      proto = GlobalObject::getOrCreateBigIntPrototype(cx, cx->global());
     } else {
       MOZ_ASSERT(v.isSymbol());
       proto = GlobalObject::getOrCreateSymbolPrototype(cx, cx->global());

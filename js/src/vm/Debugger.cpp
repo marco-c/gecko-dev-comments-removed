@@ -733,7 +733,7 @@ bool Debugger::getFrame(JSContext* cx, const FrameIter& iter,
     
     
     
-    Rooted<GeneratorObject*> genObj(cx);
+    Rooted<AbstractGeneratorObject*> genObj(cx);
     GeneratorWeakMap::AddPtr gp;
     if (referent.isGeneratorFrame()) {
       {
@@ -800,7 +800,8 @@ bool Debugger::getFrame(JSContext* cx, const FrameIter& iter,
   return true;
 }
 
-bool Debugger::addGeneratorFrame(JSContext* cx, Handle<GeneratorObject*> genObj,
+bool Debugger::addGeneratorFrame(JSContext* cx,
+                                 Handle<AbstractGeneratorObject*> genObj,
                                  HandleDebuggerFrame frameObj) {
   GeneratorWeakMap::AddPtr p = generatorFrames.lookupForAdd(genObj);
   if (p) {
@@ -925,7 +926,8 @@ bool Debugger::hasAnyLiveHooks(JSRuntime* rt) const {
   MOZ_ASSERT(frame.isGeneratorFrame());
   MOZ_ASSERT(frame.isDebuggee());
 
-  Rooted<GeneratorObject*> genObj(cx, GetGeneratorObjectForFrame(cx, frame));
+  Rooted<AbstractGeneratorObject*> genObj(
+      cx, GetGeneratorObjectForFrame(cx, frame));
   MOZ_ASSERT(genObj);
 
   
@@ -970,16 +972,16 @@ static void DebuggerFrame_maybeDecrementFrameScriptStepModeCount(
 
 class MOZ_RAII AutoSetGeneratorRunning {
   int32_t resumeIndex_;
-  Rooted<GeneratorObject*> genObj_;
+  Rooted<AbstractGeneratorObject*> genObj_;
 
  public:
-  AutoSetGeneratorRunning(JSContext* cx, Handle<GeneratorObject*> genObj)
+  AutoSetGeneratorRunning(JSContext* cx,
+                          Handle<AbstractGeneratorObject*> genObj)
       : resumeIndex_(0), genObj_(cx, genObj) {
     if (genObj) {
       if (!genObj->isClosed() && genObj->isSuspended()) {
         
-        resumeIndex_ =
-            genObj->getFixedSlot(GeneratorObject::RESUME_INDEX_SLOT).toInt32();
+        resumeIndex_ = genObj->resumeIndex();
         genObj->setRunning();
       } else {
         
@@ -992,8 +994,7 @@ class MOZ_RAII AutoSetGeneratorRunning {
   ~AutoSetGeneratorRunning() {
     if (genObj_) {
       MOZ_ASSERT(genObj_->isRunning());
-      genObj_->setFixedSlot(GeneratorObject::RESUME_INDEX_SLOT,
-                            Int32Value(resumeIndex_));
+      genObj_->setResumeIndex(resumeIndex_);
     }
   }
 };
@@ -1010,7 +1011,7 @@ class MOZ_RAII AutoSetGeneratorRunning {
 
   
   bool suspending = false;
-  Rooted<GeneratorObject*> genObj(cx);
+  Rooted<AbstractGeneratorObject*> genObj(cx);
   if (frame.isGeneratorFrame()) {
     
     
@@ -1126,7 +1127,8 @@ class MOZ_RAII AutoSetGeneratorRunning {
 }
 
  bool Debugger::slowPathOnNewGenerator(
-    JSContext* cx, AbstractFramePtr frame, Handle<GeneratorObject*> genObj) {
+    JSContext* cx, AbstractFramePtr frame,
+    Handle<AbstractGeneratorObject*> genObj) {
   
   
   
@@ -1606,7 +1608,8 @@ static void AdjustGeneratorResumptionValue(JSContext* cx,
     
     
     
-    Rooted<GeneratorObject*> genObj(cx, GetGeneratorObjectForFrame(cx, frame));
+    Rooted<AbstractGeneratorObject*> genObj(
+        cx, GetGeneratorObjectForFrame(cx, frame));
     if (genObj) {
       
       
@@ -1968,8 +1971,7 @@ ResumeMode Debugger::fireEnterFrame(JSContext* cx, MutableHandleValue vp) {
 #if DEBUG
   
   if (iter.hasScript() && *iter.pc() == JSOP_DEBUGAFTERYIELD) {
-    GeneratorObject* genObj =
-        GetGeneratorObjectForFrame(cx, iter.abstractFramePtr());
+    auto* genObj = GetGeneratorObjectForFrame(cx, iter.abstractFramePtr());
     MOZ_ASSERT(genObj->isRunning() || genObj->isClosing());
   }
 #endif
@@ -4325,7 +4327,7 @@ void Debugger::removeDebuggeeGlobal(FreeOp* fop, GlobalObject* global,
   
   if (!global->zone()->isGCSweeping()) {
     generatorFrames.removeIf([global](JSObject* key) {
-      GeneratorObject& genObj = key->as<GeneratorObject>();
+      auto& genObj = key->as<AbstractGeneratorObject>();
       return genObj.isClosed() || &genObj.callee().global() == global;
     });
   }
@@ -7559,7 +7561,7 @@ bool Debugger::observesWasm(wasm::Instance* instance) const {
 
     if (!suspending && frame.isGeneratorFrame()) {
       
-      GeneratorObject* genObj = GetGeneratorObjectForFrame(cx, frame);
+      auto* genObj = GetGeneratorObjectForFrame(cx, frame);
       if (GeneratorWeakMap::Ptr p = dbg->generatorFrames.lookup(genObj)) {
         dbg->generatorFrames.remove(p);
       }

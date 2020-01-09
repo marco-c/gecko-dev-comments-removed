@@ -792,7 +792,7 @@ void FrameIsDebuggeeCheck(BaselineFrame* frame) {
 }
 
 JSObject* CreateGenerator(JSContext* cx, BaselineFrame* frame) {
-  return GeneratorObject::create(cx, frame);
+  return AbstractGeneratorObject::create(cx, frame);
 }
 
 bool NormalSuspend(JSContext* cx, HandleObject obj, BaselineFrame* frame,
@@ -820,19 +820,19 @@ bool NormalSuspend(JSContext* cx, HandleObject obj, BaselineFrame* frame,
 
   MOZ_ASSERT(exprStack.length() == stackDepth - 1);
 
-  return GeneratorObject::normalSuspend(cx, obj, frame, pc, exprStack.begin(),
-                                        stackDepth - 1);
+  return AbstractGeneratorObject::normalSuspend(
+      cx, obj, frame, pc, exprStack.begin(), stackDepth - 1);
 }
 
 bool FinalSuspend(JSContext* cx, HandleObject obj, jsbytecode* pc) {
   MOZ_ASSERT(*pc == JSOP_FINALYIELDRVAL);
-  GeneratorObject::finalSuspend(obj);
+  AbstractGeneratorObject::finalSuspend(obj);
   return true;
 }
 
 bool InterpretResume(JSContext* cx, HandleObject obj, HandleValue val,
                      HandlePropertyName kind, MutableHandleValue rval) {
-  MOZ_ASSERT(obj->is<GeneratorObject>());
+  MOZ_ASSERT(obj->is<AbstractGeneratorObject>());
 
   FixedInvokeArgs<3> args(cx);
 
@@ -862,8 +862,8 @@ bool DebugAfterYield(JSContext* cx, BaselineFrame* frame, jsbytecode* pc,
 }
 
 bool GeneratorThrowOrReturn(JSContext* cx, BaselineFrame* frame,
-                            Handle<GeneratorObject*> genObj, HandleValue arg,
-                            uint32_t resumeKind) {
+                            Handle<AbstractGeneratorObject*> genObj,
+                            HandleValue arg, uint32_t resumeKind) {
   
   
   
@@ -881,7 +881,7 @@ bool GeneratorThrowOrReturn(JSContext* cx, BaselineFrame* frame,
     return false;
   }
   if (mustReturn) {
-    resumeKind = GeneratorObject::RETURN;
+    resumeKind = AbstractGeneratorObject::RETURN;
   }
 
   MOZ_ALWAYS_FALSE(

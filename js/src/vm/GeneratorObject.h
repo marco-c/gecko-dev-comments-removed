@@ -15,7 +15,7 @@
 
 namespace js {
 
-class GeneratorObject : public NativeObject {
+class AbstractGeneratorObject : public NativeObject {
  public:
   
   
@@ -32,8 +32,6 @@ class GeneratorObject : public NativeObject {
   };
 
   enum ResumeKind { NEXT, THROW, RETURN };
-
-  static const Class class_;
 
  private:
   static bool suspend(JSContext* cx, HandleObject obj, AbstractFramePtr frame,
@@ -61,7 +59,7 @@ class GeneratorObject : public NativeObject {
   static JSObject* create(JSContext* cx, AbstractFramePtr frame);
 
   static bool resume(JSContext* cx, InterpreterActivation& activation,
-                     Handle<GeneratorObject*> genObj, HandleValue arg);
+                     Handle<AbstractGeneratorObject*> genObj, HandleValue arg);
 
   static bool initialSuspend(JSContext* cx, HandleObject obj,
                              AbstractFramePtr frame, jsbytecode* pc) {
@@ -165,6 +163,9 @@ class GeneratorObject : public NativeObject {
     setFixedSlot(RESUME_INDEX_SLOT, Int32Value(resumeIndex));
     MOZ_ASSERT(isSuspended());
   }
+  void setResumeIndex(int32_t resumeIndex) {
+    setFixedSlot(RESUME_INDEX_SLOT, Int32Value(resumeIndex));
+  }
   uint32_t resumeIndex() const {
     MOZ_ASSERT(isSuspended());
     return getFixedSlot(RESUME_INDEX_SLOT).toInt32();
@@ -200,20 +201,30 @@ class GeneratorObject : public NativeObject {
   }
 };
 
+class GeneratorObject : public AbstractGeneratorObject {
+ public:
+  enum { RESERVED_SLOTS = AbstractGeneratorObject::RESERVED_SLOTS };
+
+  static const Class class_;
+};
+
 bool GeneratorThrowOrReturn(JSContext* cx, AbstractFramePtr frame,
-                            Handle<GeneratorObject*> obj, HandleValue val,
-                            uint32_t resumeKind);
+                            Handle<AbstractGeneratorObject*> obj,
+                            HandleValue val, uint32_t resumeKind);
 
 
 
 
 
 
-GeneratorObject* GetGeneratorObjectForFrame(JSContext* cx,
-                                            AbstractFramePtr frame);
+AbstractGeneratorObject* GetGeneratorObjectForFrame(JSContext* cx,
+                                                    AbstractFramePtr frame);
 
 void SetGeneratorClosed(JSContext* cx, AbstractFramePtr frame);
 
 }  
+
+template <>
+bool JSObject::is<js::AbstractGeneratorObject>() const;
 
 #endif 
