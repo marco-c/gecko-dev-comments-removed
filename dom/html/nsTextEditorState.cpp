@@ -1932,14 +1932,6 @@ void nsTextEditorState::UnbindFromFrame(nsTextControlFrame* aFrame) {
 
   
   
-  
-  if (mTextListener && mTextEditor && mEditorInitialized &&
-      mTextEditor->IsInEditSubAction()) {
-    mTextListener->OnEditActionHandled();
-  }
-
-  
-  
   nsAutoString value;
   GetValue(value, true);
 
