@@ -156,8 +156,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
   int32_t stackDepth; 
 
-  unsigned emitLevel; 
-
   uint32_t bodyScopeIndex; 
 
   EmitterScope* varEmitterScope;

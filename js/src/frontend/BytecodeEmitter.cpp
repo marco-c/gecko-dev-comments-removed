@@ -109,7 +109,6 @@ BytecodeEmitter::BytecodeEmitter(BytecodeEmitter* parent, SharedContext* sc,
       maxFixedSlots(0),
       maxStackDepth(0),
       stackDepth(0),
-      emitLevel(0),
       bodyScopeIndex(UINT32_MAX),
       varEmitterScope(nullptr),
       innermostNestableControl(nullptr),
@@ -2363,7 +2362,12 @@ bool BytecodeEmitter::emitScript(ParseNode* body) {
 
     switchToMain();
 
-    if (!emitLexicalScopeBody(scope->scopeBody())) {
+    ParseNode* scopeBody = scope->scopeBody();
+    if (!emitLexicalScopeBody(scopeBody, EMIT_LINENOTE)) {
+      return false;
+    }
+
+    if (!updateSourceCoordNotes(scopeBody->pn_pos.end)) {
       return false;
     }
 
@@ -2382,10 +2386,10 @@ bool BytecodeEmitter::emitScript(ParseNode* body) {
     if (!emitTree(body)) {
       return false;
     }
-  }
 
-  if (!updateSourceCoordNotes(body->pn_pos.end)) {
-    return false;
+    if (!updateSourceCoordNotes(body->pn_pos.end)) {
+      return false;
+    }
   }
 
   if (!emit1(JSOP_RETRVAL)) {
@@ -4485,20 +4489,6 @@ bool BytecodeEmitter::emitCallSiteObject(CallSiteNode* callSiteObj) {
   return emitObjectPairOp(objbox1, objbox2, JSOP_CALLSITEOBJ);
 }
 
-namespace {
-
-class EmitLevelManager {
-  BytecodeEmitter* bce;
-
- public:
-  explicit EmitLevelManager(BytecodeEmitter* bce) : bce(bce) {
-    bce->emitLevel++;
-  }
-  ~EmitLevelManager() { bce->emitLevel--; }
-};
-
-} 
-
 bool BytecodeEmitter::emitCatch(BinaryNode* catchClause) {
   
   MOZ_ASSERT(innermostNestableControl->is<TryFinallyControl>());
@@ -4723,8 +4713,8 @@ bool BytecodeEmitter::emitHoistedFunctionsInList(ListNode* stmtList) {
   return true;
 }
 
-bool BytecodeEmitter::emitLexicalScopeBody(ParseNode* body,
-                                           EmitLineNumberNote emitLineNote) {
+bool BytecodeEmitter::emitLexicalScopeBody(
+    ParseNode* body, EmitLineNumberNote emitLineNote ) {
   if (body->isKind(ParseNodeKind::StatementList) &&
       body->as<ListNode>().hasTopLevelFunctionDeclarations()) {
     
@@ -8616,8 +8606,6 @@ bool BytecodeEmitter::emitTree(
     return false;
   }
 
-  EmitLevelManager elm(this);
-
   
 
 
@@ -9131,12 +9119,6 @@ bool BytecodeEmitter::emitTree(
       MOZ_ASSERT(0);
   }
 
-  
-  if (emitLevel == 1) {
-    if (!updateSourceCoordNotes(pn->pn_pos.end)) {
-      return false;
-    }
-  }
   return true;
 }
 
