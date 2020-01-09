@@ -8,6 +8,7 @@
 #include "DecoderData.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/EndianUtils.h"
+#include "mozilla/Telemetry.h"
 #include "VideoUtils.h"
 
 
@@ -40,13 +41,6 @@ mozilla::Result<mozilla::Ok, nsresult> CryptoFile::DoUpdate(
   return mozilla::Ok();
 }
 
-bool MP4AudioInfo::IsValid() const {
-  return mChannels > 0 && mRate > 0 &&
-         
-         (!mMimeType.EqualsLiteral("audio/mp4a-latm") || mProfile > 0 ||
-          mExtendedProfile > 0);
-}
-
 static MediaResult UpdateTrackProtectedInfo(mozilla::TrackInfo& aConfig,
                                             const Mp4parseSinfInfo& aSinf) {
   if (aSinf.is_encrypted != 0) {
@@ -72,40 +66,91 @@ static MediaResult UpdateTrackProtectedInfo(mozilla::TrackInfo& aConfig,
   return NS_OK;
 }
 
-MediaResult MP4AudioInfo::Update(const Mp4parseTrackInfo* track,
-                                 const Mp4parseTrackAudioInfo* audio) {
-  MOZ_DIAGNOSTIC_ASSERT(audio->sample_info_count > 0,
-                        "Must have at least one audio sample info");
-  if (audio->sample_info_count == 0) {
-    return MediaResult(
-        NS_ERROR_DOM_MEDIA_METADATA_ERR,
-        RESULT_DETAIL("Got 0 audio sample info while updating audio track"));
-  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename Mp4ParseTrackAudioOrVideoInfo>
+static MediaResult VerifyAudioOrVideoInfoAndRecordTelemetry(
+    Mp4ParseTrackAudioOrVideoInfo* audioOrVideoInfo) {
+  Telemetry::Accumulate(
+      Telemetry::MEDIA_MP4_PARSE_NUM_SAMPLE_DESCRIPTION_ENTRIES,
+      audioOrVideoInfo->sample_info_count);
 
   bool hasCrypto = false;
-  Mp4parseCodec codecType = audio->sample_info[0].codec_type;
-  for (uint32_t i = 0; i < audio->sample_info_count; i++) {
-    if (audio->sample_info[0].codec_type != codecType) {
-      
-      return MediaResult(
-          NS_ERROR_DOM_MEDIA_METADATA_ERR,
-          RESULT_DETAIL(
-              "Multiple codecs encountered while updating audio track"));
+  bool hasMultipleCodecs = false;
+  bool hasMultipleCrypto = false;
+  Mp4parseCodec codecType = audioOrVideoInfo->sample_info[0].codec_type;
+  for (uint32_t i = 0; i < audioOrVideoInfo->sample_info_count; i++) {
+    if (audioOrVideoInfo->sample_info[0].codec_type != codecType) {
+      hasMultipleCodecs = true;
     }
 
     
-    if (audio->sample_info[i].protected_data.is_encrypted) {
+    if (audioOrVideoInfo->sample_info[i].protected_data.is_encrypted) {
       if (hasCrypto) {
-        
-        return MediaResult(
-            NS_ERROR_DOM_MEDIA_METADATA_ERR,
-            RESULT_DETAIL(
-                "Multiple crypto info encountered while updating audio track"));
+        hasMultipleCrypto = true;
       }
+      hasCrypto = true;
+    }
+  }
+
+  Telemetry::Accumulate(
+      Telemetry::
+          MEDIA_MP4_PARSE_SAMPLE_DESCRIPTION_ENTRIES_HAVE_MULTIPLE_CODECS,
+      hasMultipleCodecs);
+
+  Telemetry::Accumulate(
+      Telemetry::
+          MEDIA_MP4_PARSE_SAMPLE_DESCRIPTION_ENTRIES_HAVE_MULTIPLE_CRYPTO,
+      hasMultipleCrypto);
+
+  if (audioOrVideoInfo->sample_info_count == 0) {
+    return MediaResult(
+        NS_ERROR_DOM_MEDIA_METADATA_ERR,
+        RESULT_DETAIL("Got 0 sample info while verifying track."));
+  }
+
+  if (hasMultipleCodecs) {
+    
+    return MediaResult(
+        NS_ERROR_DOM_MEDIA_METADATA_ERR,
+        RESULT_DETAIL("Multiple codecs encountered while verifying track."));
+  }
+
+  if (hasMultipleCrypto) {
+    
+    return MediaResult(
+        NS_ERROR_DOM_MEDIA_METADATA_ERR,
+        RESULT_DETAIL(
+            "Multiple crypto info encountered while verifying track."));
+  }
+  return NS_OK;
+}
+
+MediaResult MP4AudioInfo::Update(const Mp4parseTrackInfo* track,
+                                 const Mp4parseTrackAudioInfo* audio) {
+  auto rv = VerifyAudioOrVideoInfoAndRecordTelemetry(audio);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  Mp4parseCodec codecType = audio->sample_info[0].codec_type;
+  for (uint32_t i = 0; i < audio->sample_info_count; i++) {
+    if (audio->sample_info[i].protected_data.is_encrypted) {
       auto rv =
           UpdateTrackProtectedInfo(*this, audio->sample_info[i].protected_data);
       NS_ENSURE_SUCCESS(rv, rv);
-      hasCrypto = true;
+      break;
     }
   }
 
@@ -158,40 +203,25 @@ MediaResult MP4AudioInfo::Update(const Mp4parseTrackInfo* track,
   return NS_OK;
 }
 
+bool MP4AudioInfo::IsValid() const {
+  return mChannels > 0 && mRate > 0 &&
+         
+         (!mMimeType.EqualsLiteral("audio/mp4a-latm") || mProfile > 0 ||
+          mExtendedProfile > 0);
+}
+
 MediaResult MP4VideoInfo::Update(const Mp4parseTrackInfo* track,
                                  const Mp4parseTrackVideoInfo* video) {
-  MOZ_DIAGNOSTIC_ASSERT(video->sample_info_count > 0,
-                        "Must have at least one video sample info");
-  if (video->sample_info_count == 0) {
-    return MediaResult(
-        NS_ERROR_DOM_MEDIA_METADATA_ERR,
-        RESULT_DETAIL("Got 0 audio sample info while updating video track"));
-  }
+  auto rv = VerifyAudioOrVideoInfoAndRecordTelemetry(video);
+  NS_ENSURE_SUCCESS(rv, rv);
 
-  bool hasCrypto = false;
   Mp4parseCodec codecType = video->sample_info[0].codec_type;
   for (uint32_t i = 0; i < video->sample_info_count; i++) {
-    if (video->sample_info[0].codec_type != codecType) {
-      
-      return MediaResult(
-          NS_ERROR_DOM_MEDIA_METADATA_ERR,
-          RESULT_DETAIL(
-              "Multiple codecs encountered while updating video track"));
-    }
-
-    
     if (video->sample_info[i].protected_data.is_encrypted) {
-      if (hasCrypto) {
-        
-        return MediaResult(
-            NS_ERROR_DOM_MEDIA_METADATA_ERR,
-            RESULT_DETAIL(
-                "Multiple crypto info encountered while updating video track"));
-      }
       auto rv =
           UpdateTrackProtectedInfo(*this, video->sample_info[i].protected_data);
       NS_ENSURE_SUCCESS(rv, rv);
-      hasCrypto = true;
+      break;
     }
   }
 
