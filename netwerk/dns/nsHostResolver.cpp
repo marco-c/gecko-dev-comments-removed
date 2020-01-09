@@ -44,6 +44,7 @@
 #include "mozilla/Telemetry.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs.h"
 
 using namespace mozilla;
 using namespace mozilla::net;
@@ -801,7 +802,8 @@ void nsHostResolver::Shutdown() {
 
   
   
-  mResolverThreads->ShutdownWithTimeout(20 * 1000);
+  mResolverThreads->ShutdownWithTimeout(
+      StaticPrefs::network_dns_resolver_shutdown_timeout_ms());
 
   {
     mozilla::DebugOnly<nsresult> rv = GetAddrInfoShutdown();

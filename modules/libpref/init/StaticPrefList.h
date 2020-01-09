@@ -2072,6 +2072,13 @@ VARCACHE_PREF(
 )
 
 
+VARCACHE_PREF(
+  "network.dns.resolver_shutdown_timeout_ms",
+   network_dns_resolver_shutdown_timeout_ms,
+   uint32_t, 2000
+)
+
+
 
 
 
