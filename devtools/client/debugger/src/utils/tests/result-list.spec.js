@@ -5,7 +5,7 @@
 
 
 jest.mock("devtools-environment", () => ({
-  isFirefox: jest.fn()
+  isFirefox: jest.fn(),
 }));
 
 import { isFirefox } from "devtools-environment";

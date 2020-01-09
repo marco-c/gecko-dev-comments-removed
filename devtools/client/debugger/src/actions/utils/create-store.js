@@ -29,7 +29,7 @@ type ReduxStoreOptions = {
   history?: Array<Object>,
   middleware?: Function[],
   log?: boolean,
-  timing?: boolean
+  timing?: boolean,
 };
 
 
@@ -55,7 +55,7 @@ const configureStore = (opts: ReduxStoreOptions = {}) => {
     
     
     
-    waitUntilService
+    waitUntilService,
   ];
 
   if (opts.history) {

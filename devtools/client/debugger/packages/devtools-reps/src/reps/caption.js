@@ -14,7 +14,7 @@ const { wrapRender } = require("./rep-utils");
 
 
 Caption.propTypes = {
-  object: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired
+  object: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
 };
 
 function Caption(props) {

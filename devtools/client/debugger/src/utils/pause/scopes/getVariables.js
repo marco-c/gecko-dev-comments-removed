@@ -17,7 +17,7 @@ type VarAndBindingsPairs = Array<VarAndBindingsPair>;
 
 type ScopeBindingsWrapper = {
   variables: ScopeBindings,
-  arguments: BindingContents[]
+  arguments: BindingContents[],
 };
 
 
@@ -42,7 +42,7 @@ export function getBindingVariables(
     return {
       name,
       path: `${parentName}/${name}`,
-      contents
+      contents,
     };
   });
 }

@@ -15,7 +15,7 @@ type MemoizableActionParams<Args, Result> = {
   hasValue: (args: Args, thunkArgs: ThunkArgs) => boolean,
   getValue: (args: Args, thunkArgs: ThunkArgs) => Result,
   createKey: (args: Args, thunkArgs: ThunkArgs) => string,
-  action: (args: Args, thunkArgs: ThunkArgs) => Promise<Result>
+  action: (args: Args, thunkArgs: ThunkArgs) => Promise<Result>,
 };
 
 
@@ -49,7 +49,7 @@ export function memoizeableAction<Args, Result>(
     getValue,
     createKey,
     action,
-    exitEarly
+    exitEarly,
   }: MemoizableActionParams<Args, Result>
 ): MemoizedAction<Args, Result> {
   const requests = new Map();

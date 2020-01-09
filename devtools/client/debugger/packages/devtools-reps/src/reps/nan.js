@@ -22,5 +22,5 @@ function supportsObject(object, noGrip = false) {
 
 module.exports = {
   rep: wrapRender(NaNRep),
-  supportsObject
+  supportsObject,
 };

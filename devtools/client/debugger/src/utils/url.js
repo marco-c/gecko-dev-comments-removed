@@ -20,7 +20,7 @@ const defaultUrl = {
   search: "",
   
   searchParams: {},
-  username: ""
+  username: "",
 };
 
 export const parse = memoize(function parse(url: string): any {

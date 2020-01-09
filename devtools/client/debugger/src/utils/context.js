@@ -30,7 +30,7 @@ import { getThreadContext } from "../selectors";
 export type NavigateContext = {|
   
   
-  +navigateCounter: number
+  +navigateCounter: number,
 |};
 
 
@@ -47,7 +47,7 @@ export type ThreadContext = {|
 
   
   
-  +isPaused: boolean
+  +isPaused: boolean,
 |};
 
 export type Context = NavigateContext | ThreadContext;

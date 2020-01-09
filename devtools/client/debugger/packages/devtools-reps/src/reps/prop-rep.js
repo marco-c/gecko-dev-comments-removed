@@ -27,7 +27,7 @@ PropRep.propTypes = {
   
   
   
-  suppressQuotes: PropTypes.bool
+  suppressQuotes: PropTypes.bool,
 };
 
 
@@ -57,7 +57,7 @@ function PropRep(props) {
       className: "nodeName",
       object: name,
       mode: mode || MODE.TINY,
-      defaultRep: Grip
+      defaultRep: Grip,
     });
   }
 
@@ -65,11 +65,11 @@ function PropRep(props) {
     key,
     span(
       {
-        className: "objectEqual"
+        className: "objectEqual",
       },
       equal
     ),
-    Rep({ ...props })
+    Rep({ ...props }),
   ];
 }
 

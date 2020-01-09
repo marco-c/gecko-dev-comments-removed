@@ -8,7 +8,7 @@ const {
   isGrip,
   cropString,
   cropMultipleLines,
-  wrapRender
+  wrapRender,
 } = require("./rep-utils");
 const { MODE } = require("./constants");
 const nodeConstants = require("../shared/dom-node-constants");
@@ -21,7 +21,7 @@ const { span } = dom;
 CommentNode.propTypes = {
   object: PropTypes.object.isRequired,
   
-  mode: PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key]))
+  mode: PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
 };
 
 function CommentNode(props) {
@@ -37,7 +37,7 @@ function CommentNode(props) {
   return span(
     {
       className: "objectBox theme-comment",
-      "data-link-actor-id": object.actor
+      "data-link-actor-id": object.actor,
     },
     `<!-- ${textContent} -->`
   );
@@ -56,5 +56,5 @@ function supportsObject(object, noGrip = false) {
 
 module.exports = {
   rep: wrapRender(CommentNode),
-  supportsObject
+  supportsObject,
 };

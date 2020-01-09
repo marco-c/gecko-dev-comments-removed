@@ -67,7 +67,7 @@ export function recordEvent(eventName: string, fields: {} = {}) {
   
   telemetry.recordEvent(eventName, "debugger", null, {
     session_id: sessionId,
-    ...fields
+    ...fields,
   });
   
 

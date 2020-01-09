@@ -5,5 +5,5 @@
 import Tree from "./src/tree";
 
 module.exports = {
-  Tree
+  Tree,
 };

@@ -15,7 +15,7 @@ const { span } = dom;
 
 
 ObjectWithURL.propTypes = {
-  object: PropTypes.object.isRequired
+  object: PropTypes.object.isRequired,
 };
 
 function ObjectWithURL(props) {
@@ -23,7 +23,7 @@ function ObjectWithURL(props) {
   return span(
     {
       "data-link-actor-id": grip.actor,
-      className: `objectBox objectBox-${getType(grip)}`
+      className: `objectBox objectBox-${getType(grip)}`,
     },
     getTitle(grip),
     span({ className: "objectPropValue" }, getDescription(grip))
@@ -54,5 +54,5 @@ function supportsObject(grip, noGrip = false) {
 
 module.exports = {
   rep: wrapRender(ObjectWithURL),
-  supportsObject
+  supportsObject,
 };

@@ -7,9 +7,9 @@ const toolbox = require("devtools-launchpad/index");
 const serve = require("express-static");
 const config = require("../config");
 
-let webpackConfig = require("../webpack.config");
+const webpackConfig = require("../webpack.config");
 
-let { app } = toolbox.startDevServer(config, webpackConfig, __dirname);
+const { app } = toolbox.startDevServer(config, webpackConfig, __dirname);
 
 
 app.use(
@@ -21,5 +21,7 @@ app.use(
 
 app.use(
   "/devtools-components/images/",
-  serve(path.join(__dirname, "../../../node_modules/devtools-components/src/images"))
+  serve(
+    path.join(__dirname, "../../../node_modules/devtools-components/src/images")
+  )
 );

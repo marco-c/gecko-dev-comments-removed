@@ -7,11 +7,11 @@ const MC_PATH = "resource://devtools/client/debugger/images/";
 const EXPRESS_PATH = "/devtools-components/images/";
 
 function mapUrlProduction(url, type) {
-  return url.replace("/images/arrow.svg", MC_PATH + "arrow.svg");
+  return url.replace("/images/arrow.svg", `${MC_PATH}arrow.svg`);
 }
 
 function mapUrlDevelopment(url) {
-  return url.replace("/images/arrow.svg", EXPRESS_PATH + "arrow.svg");
+  return url.replace("/images/arrow.svg", `${EXPRESS_PATH}arrow.svg`);
 }
 
 module.exports = ({ file, options, env }) => {
@@ -25,13 +25,13 @@ module.exports = ({ file, options, env }) => {
   
   if (env === "production") {
     return {
-      plugins: [mapUrl(mapUrlProduction)]
+      plugins: [mapUrl(mapUrlProduction)],
     };
   }
 
   
   
   return {
-    plugins: [mapUrl(mapUrlDevelopment)]
+    plugins: [mapUrl(mapUrlDevelopment)],
   };
 };
