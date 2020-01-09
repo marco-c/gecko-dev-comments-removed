@@ -394,6 +394,26 @@ class EffectCompositeOrderComparator {
 };
 }  
 
+static void ComposeSortedEffects(
+    const nsTArray<KeyframeEffect*>& aSortedEffects,
+    const EffectSet* aEffectSet, EffectCompositor::CascadeLevel aCascadeLevel,
+    RawServoAnimationValueMap* aAnimationValues) {
+  
+  
+  
+  nsCSSPropertyIDSet propertiesToSkip;
+  if (aEffectSet) {
+    propertiesToSkip =
+        aCascadeLevel == EffectCompositor::CascadeLevel::Animations
+            ? aEffectSet->PropertiesForAnimationsLevel().Inverse()
+            : aEffectSet->PropertiesForAnimationsLevel();
+  }
+
+  for (KeyframeEffect* effect : aSortedEffects) {
+    effect->GetAnimation()->ComposeStyle(*aAnimationValues, propertiesToSkip);
+  }
+}
+
 bool EffectCompositor::GetServoAnimationRule(
     const dom::Element* aElement, PseudoStyleType aPseudoType,
     CascadeLevel aCascadeLevel, RawServoAnimationValueMap* aAnimationValues) {
@@ -417,18 +437,63 @@ bool EffectCompositor::GetServoAnimationRule(
   }
   sortedEffectList.Sort(EffectCompositeOrderComparator());
 
-  
-  
-  
-  const nsCSSPropertyIDSet propertiesToSkip =
-      aCascadeLevel == CascadeLevel::Animations
-          ? effectSet->PropertiesForAnimationsLevel().Inverse()
-          : effectSet->PropertiesForAnimationsLevel();
-  for (KeyframeEffect* effect : sortedEffectList) {
-    effect->GetAnimation()->ComposeStyle(*aAnimationValues, propertiesToSkip);
-  }
+  ComposeSortedEffects(sortedEffectList, effectSet, aCascadeLevel,
+                       aAnimationValues);
 
   MOZ_ASSERT(effectSet == EffectSet::GetEffectSet(aElement, aPseudoType),
+             "EffectSet should not change while composing style");
+
+  return true;
+}
+
+bool EffectCompositor::ComposeServoAnimationRuleForEffect(
+    KeyframeEffect& aEffect, CascadeLevel aCascadeLevel,
+    RawServoAnimationValueMap* aAnimationValues) {
+  MOZ_ASSERT(aAnimationValues);
+  MOZ_ASSERT(mPresContext && mPresContext->IsDynamic(),
+             "Should not be in print preview");
+
+  Maybe<NonOwningAnimationTarget> target = aEffect.GetTarget();
+  if (!target) {
+    return false;
+  }
+
+  
+  
+  if (!nsContentUtils::GetPresShellForContent(target->mElement)) {
+    return false;
+  }
+
+  
+  
+  
+  
+  EffectCompositor::MaybeUpdateCascadeResults(target->mElement,
+                                              target->mPseudoType);
+
+  EffectSet* effectSet =
+      EffectSet::GetEffectSet(target->mElement, target->mPseudoType);
+
+  
+  
+  auto comparator = EffectCompositeOrderComparator();
+  nsTArray<KeyframeEffect*> sortedEffectList(effectSet ? effectSet->Count() + 1
+                                                       : 1);
+  if (effectSet) {
+    for (KeyframeEffect* effect : *effectSet) {
+      if (comparator.LessThan(effect, &aEffect)) {
+        sortedEffectList.AppendElement(effect);
+      }
+    }
+    sortedEffectList.Sort(comparator);
+  }
+  sortedEffectList.AppendElement(&aEffect);
+
+  ComposeSortedEffects(sortedEffectList, effectSet, aCascadeLevel,
+                       aAnimationValues);
+
+  MOZ_ASSERT(effectSet ==
+                 EffectSet::GetEffectSet(target->mElement, target->mPseudoType),
              "EffectSet should not change while composing style");
 
   return true;

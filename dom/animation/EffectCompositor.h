@@ -40,6 +40,7 @@ struct NonOwningAnimationTarget;
 namespace dom {
 class Animation;
 class Element;
+class KeyframeEffect;
 }  
 
 class EffectCompositor {
@@ -123,10 +124,20 @@ class EffectCompositor {
   
   
   
+  
   bool GetServoAnimationRule(const dom::Element* aElement,
                              PseudoStyleType aPseudoType,
                              CascadeLevel aCascadeLevel,
                              RawServoAnimationValueMap* aAnimationValues);
+
+  
+  
+  
+  
+  
+  bool ComposeServoAnimationRuleForEffect(
+      dom::KeyframeEffect& aEffect, CascadeLevel aCascadeLevel,
+      RawServoAnimationValueMap* aAnimationValues);
 
   bool HasPendingStyleUpdates() const;
 

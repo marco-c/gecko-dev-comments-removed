@@ -5,7 +5,9 @@
 
 
 #include "Animation.h"
+
 #include "AnimationUtils.h"
+#include "mozAutoDocUpdate.h"
 #include "mozilla/dom/AnimationBinding.h"
 #include "mozilla/dom/AnimationPlaybackEvent.h"
 #include "mozilla/dom/Document.h"
@@ -14,10 +16,13 @@
 #include "mozilla/AnimationEventDispatcher.h"
 #include "mozilla/AnimationTarget.h"
 #include "mozilla/AutoRestore.h"
-#include "mozilla/Maybe.h"          
-#include "mozilla/TypeTraits.h"     
-#include "nsAnimationManager.h"     
-#include "nsDOMMutationObserver.h"  
+#include "mozilla/DeclarationBlock.h"
+#include "mozilla/Maybe.h"       
+#include "mozilla/TypeTraits.h"  
+#include "nsAnimationManager.h"  
+#include "nsComputedDOMStyle.h"
+#include "nsDOMMutationObserver.h"    
+#include "nsDOMCSSAttrDeclaration.h"  
 #include "nsThreadUtils.h"  
 #include "nsTransitionManager.h"      
 #include "PendingAnimationTracker.h"  
@@ -611,6 +616,103 @@ void Animation::Persist() {
     UpdateEffect(PostRestyleMode::IfNeeded);
     PostUpdate();
   }
+}
+
+
+void Animation::CommitStyles(ErrorResult& aRv) {
+  if (!mEffect) {
+    return;
+  }
+
+  
+  
+  RefPtr<KeyframeEffect> keyframeEffect = mEffect->AsKeyframeEffect();
+  if (!keyframeEffect) {
+    return;
+  }
+
+  Maybe<NonOwningAnimationTarget> target = keyframeEffect->GetTarget();
+  if (!target) {
+    return;
+  }
+
+  if (target->mPseudoType != PseudoStyleType::NotPseudo) {
+    aRv.Throw(NS_ERROR_DOM_NO_MODIFICATION_ALLOWED_ERR);
+    return;
+  }
+
+  
+  nsCOMPtr<nsStyledElement> styledElement = do_QueryInterface(target->mElement);
+  if (!styledElement) {
+    aRv.Throw(NS_ERROR_DOM_NO_MODIFICATION_ALLOWED_ERR);
+    return;
+  }
+
+  
+  
+  if (Document* doc = target->mElement->GetComposedDoc()) {
+    doc->FlushPendingNotifications(FlushType::Style);
+  }
+  if (!target->mElement->IsRendered()) {
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    return;
+  }
+
+  nsPresContext* presContext =
+      nsContentUtils::GetContextForContent(target->mElement);
+  if (!presContext) {
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    return;
+  }
+
+  
+  UniquePtr<RawServoAnimationValueMap> animationValues =
+      Servo_AnimationValueMap_Create().Consume();
+  if (!presContext->EffectCompositor()->ComposeServoAnimationRuleForEffect(
+          *keyframeEffect, CascadeLevel(), animationValues.get())) {
+    NS_WARNING("Failed to compose animation style to commit");
+    return;
+  }
+
+  
+  
+  
+  
+  mozAutoDocUpdate autoUpdate(target->mElement->OwnerDoc(), true);
+
+  
+  RefPtr<DeclarationBlock> declarationBlock;
+  if (auto* existing = target->mElement->GetInlineStyleDeclaration()) {
+    declarationBlock = existing->EnsureMutable();
+  } else {
+    declarationBlock = new DeclarationBlock();
+    declarationBlock->SetDirty();
+  }
+
+  
+  bool changed = false;
+  nsCSSPropertyIDSet properties = keyframeEffect->GetPropertySet();
+  for (nsCSSPropertyID property : properties) {
+    RefPtr<RawServoAnimationValue> computedValue =
+        Servo_AnimationValueMap_GetValue(animationValues.get(), property)
+            .Consume();
+    if (computedValue) {
+      changed |= Servo_DeclarationBlock_SetPropertyToAnimationValue(
+          declarationBlock->Raw(), computedValue);
+    }
+  }
+
+  if (!changed) {
+    return;
+  }
+
+  
+  MutationClosureData closureData;
+  closureData.mClosure = nsDOMCSSAttributeDeclaration::MutationClosureFunction;
+  closureData.mElement = target->mElement;
+
+  target->mElement->InlineStyleDeclarationWillChange(closureData);
+  target->mElement->SetInlineStyleDeclaration(*declarationBlock, closureData);
 }
 
 

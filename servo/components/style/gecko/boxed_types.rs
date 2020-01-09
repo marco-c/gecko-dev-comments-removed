@@ -5,11 +5,21 @@
 
 
 use crate::gecko_bindings::sugar::ownership::{HasBoxFFI, HasFFI, HasSimpleFFI};
+use crate::properties::animated_properties::AnimationValueMap;
 use to_shmem::SharedMemoryBuilder;
 
 
 
 
+
+#[cfg(feature = "gecko")]
+unsafe impl HasFFI for AnimationValueMap {
+    type FFIType = crate::gecko_bindings::bindings::RawServoAnimationValueMap;
+}
+#[cfg(feature = "gecko")]
+unsafe impl HasSimpleFFI for AnimationValueMap {}
+#[cfg(feature = "gecko")]
+unsafe impl HasBoxFFI for AnimationValueMap {}
 
 #[cfg(feature = "gecko")]
 unsafe impl HasFFI for SharedMemoryBuilder {

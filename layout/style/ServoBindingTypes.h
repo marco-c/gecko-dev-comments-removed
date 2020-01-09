@@ -173,8 +173,6 @@ SERVO_ARC_TYPE(ComputedStyle, mozilla::ComputedStyle)
 
 
 
-
 struct RawServoAnimationValueTable;
-struct RawServoAnimationValueMap;
 
 #endif  
