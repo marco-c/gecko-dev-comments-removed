@@ -248,7 +248,7 @@ DefaultJitOptions::DefaultJitOptions() {
 #endif
 
   
-  SET_DEFAULT(disableUnboxedObjects, false);
+  SET_DEFAULT(disableUnboxedObjects, true);
 
   
   
