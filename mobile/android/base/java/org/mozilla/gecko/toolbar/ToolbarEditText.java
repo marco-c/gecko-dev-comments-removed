@@ -322,8 +322,17 @@ public class ToolbarEditText extends CustomEditText
             beginSettingAutocomplete();
 
             
-            if (pathStart != -1) {
+            
+            
+            
+            
+            if (pathStart != -1 &&
+                    !TextUtils.regionMatches(text, pathStart,
+                            result, pathStart, autoCompleteStart - pathStart)) {
                 text.replace(pathStart, autoCompleteStart, result, pathStart, autoCompleteStart);
+                if (InputMethods.needsRestartOnReplaceRemove(mContext)) {
+                    InputMethods.restartInput(mContext, this);
+                }
             }
 
             
@@ -489,7 +498,7 @@ public class ToolbarEditText extends CustomEditText
             @Override
             public boolean setComposingText(final CharSequence text, final int newCursorPosition) {
                 if (removeAutocompleteOnComposing(text)) {
-                    if (InputMethods.needsRemoveAutocompleteHack(mContext)) {
+                    if (InputMethods.needsRestartOnReplaceRemove(mContext)) {
                         InputMethods.restartInput(mContext, ToolbarEditText.this);
                     }
                     return false;
