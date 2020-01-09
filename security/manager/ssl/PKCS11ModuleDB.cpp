@@ -7,8 +7,6 @@
 #include "PKCS11ModuleDB.h"
 
 #include "ScopedNSSTypes.h"
-#include "mozilla/Telemetry.h"
-#include "nsCRTGlue.h"
 #include "nsIMutableArray.h"
 #include "nsNSSCertHelper.h"
 #include "nsNSSComponent.h"
@@ -64,32 +62,6 @@ PKCS11ModuleDB::DeleteModule(const nsAString& aModuleName) {
 }
 
 
-
-
-
-
-
-
-
-
-void GetModuleNameForTelemetry( const SECMODModule* module,
-                                nsString& result) {
-  result.Truncate();
-  if (module->dllName) {
-    result.AssignASCII(module->dllName);
-    int32_t separatorIndex = result.RFind(FILE_PATH_SEPARATOR);
-    if (separatorIndex != kNotFound) {
-      result = Substring(result, separatorIndex + 1);
-    }
-  } else {
-    result.AssignASCII(module->commonName);
-  }
-  if (result.Length() >= 70) {
-    result.Truncate(69);
-  }
-}
-
-
 NS_IMETHODIMP
 PKCS11ModuleDB::AddModule(const nsAString& aModuleName,
                           const nsAString& aLibraryFullPath,
@@ -130,23 +102,6 @@ PKCS11ModuleDB::AddModule(const nsAString& aModuleName,
                                       fullPath.get(), mechFlags, cipherFlags);
   if (srv != SECSuccess) {
     return NS_ERROR_FAILURE;
-  }
-
-  UniqueSECMODModule module(SECMOD_FindModule(moduleNameNormalized.get()));
-  if (!module) {
-    return NS_ERROR_FAILURE;
-  }
-
-  nsAutoString scalarKey;
-  GetModuleNameForTelemetry(module.get(), scalarKey);
-  
-  
-  
-  
-  
-  if (scalarKey.Length() > 0) {
-    Telemetry::ScalarSet(Telemetry::ScalarID::SECURITY_PKCS11_MODULES_LOADED,
-                         scalarKey, true);
   }
   return NS_OK;
 }

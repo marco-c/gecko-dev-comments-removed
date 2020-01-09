@@ -9,7 +9,6 @@
 #include "EnterpriseRoots.h"
 #include "ExtendedValidation.h"
 #include "NSSCertDBTrustDomain.h"
-#include "PKCS11ModuleDB.h"
 #include "ScopedNSSTypes.h"
 #include "SharedSSLState.h"
 #include "cert.h"
@@ -1791,28 +1790,6 @@ nsresult nsNSSComponent::InitializeNSS() {
 
   if (PK11_IsFIPS()) {
     Telemetry::Accumulate(Telemetry::FIPS_ENABLED, true);
-  }
-
-  
-  
-  
-  {  
-    AutoSECMODListReadLock lock;
-    for (SECMODModuleList* list = SECMOD_GetDefaultModuleList(); list;
-         list = list->next) {
-      nsAutoString scalarKey;
-      GetModuleNameForTelemetry(list->module, scalarKey);
-      
-      
-      
-      
-      
-      if (scalarKey.Length() > 0) {
-        Telemetry::ScalarSet(
-            Telemetry::ScalarID::SECURITY_PKCS11_MODULES_LOADED, scalarKey,
-            true);
-      }
-    }
   }
 
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("NSS Initialization done\n"));
