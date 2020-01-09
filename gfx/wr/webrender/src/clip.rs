@@ -16,9 +16,8 @@ use gpu_cache::{GpuCache, GpuCacheHandle, ToGpuBlocks};
 use gpu_types::{BoxShadowStretchMode};
 use image::{self, Repetition};
 use intern;
-use internal_types::FastHashSet;
 use prim_store::{ClipData, ImageMaskData, SpaceMapper, VisibleMaskImageTile};
-use prim_store::{PointKey, PrimitiveInstance, SizeKey, RectangleKey};
+use prim_store::{PointKey, SizeKey, RectangleKey};
 use render_task::to_cache_size;
 use resource_cache::{ImageRequest, ResourceCache};
 use std::{cmp, u32};
@@ -436,7 +435,6 @@ pub struct ClipStore {
     pub clip_chain_nodes: Vec<ClipChainNode>,
     clip_node_instances: Vec<ClipNodeInstance>,
     clip_node_info: Vec<ClipNodeInfo>,
-    clip_node_collectors: Vec<ClipNodeCollector>,
 }
 
 
@@ -471,13 +469,58 @@ impl ClipChainInstance {
     }
 }
 
+
+
+
+pub struct ClipChainStack {
+    
+    
+    
+    
+    
+    pub stack: Vec<Vec<ClipChainId>>,
+}
+
+impl ClipChainStack {
+    pub fn new() -> Self {
+        ClipChainStack {
+            stack: vec![vec![]],
+        }
+    }
+
+    
+    pub fn push_clip(&mut self, clip_chain_id: ClipChainId) {
+        self.stack.last_mut().unwrap().push(clip_chain_id);
+    }
+
+    
+    pub fn pop_clip(&mut self) {
+        self.stack.last_mut().unwrap().pop().unwrap();
+    }
+
+    
+    
+    pub fn push_surface(&mut self) {
+        self.stack.push(Vec::new());
+    }
+
+    
+    pub fn pop_surface(&mut self) {
+        self.stack.pop().unwrap();
+    }
+
+    
+    pub fn current_clips(&self) -> &[ClipChainId] {
+        self.stack.last().unwrap()
+    }
+}
+
 impl ClipStore {
     pub fn new() -> Self {
         ClipStore {
             clip_chain_nodes: Vec::new(),
             clip_node_instances: Vec::new(),
             clip_node_info: Vec::new(),
-            clip_node_collectors: Vec::new(),
         }
     }
 
@@ -512,27 +555,9 @@ impl ClipStore {
 
     
     
-    
-    
-    
-    
-    
-    pub fn push_raster_root(&mut self, spatial_node_index: SpatialNodeIndex) {
-        self.clip_node_collectors.push(
-            ClipNodeCollector::new(spatial_node_index),
-        );
-    }
-
-    
-    pub fn pop_raster_root(&mut self) -> ClipNodeCollector {
-        self.clip_node_collectors.pop().unwrap()
-    }
-
-    
-    
     pub fn build_clip_chain_instance(
         &mut self,
-        prim_instance: &PrimitiveInstance,
+        clip_chains: &[ClipChainId],
         local_prim_rect: LayoutRect,
         local_prim_clip_rect: LayoutRect,
         spatial_node_index: SpatialNodeIndex,
@@ -543,7 +568,6 @@ impl ClipStore {
         resource_cache: &mut ResourceCache,
         device_pixel_scale: DevicePixelScale,
         world_rect: &WorldRect,
-        clip_node_collector: Option<&ClipNodeCollector>,
         clip_data_store: &mut ClipDataStore,
     ) -> Option<ClipChainInstance> {
         let mut local_clip_rect = local_prim_clip_rect;
@@ -552,50 +576,13 @@ impl ClipStore {
         
 
         self.clip_node_info.clear();
-        let mut current_clip_chain_id = prim_instance.clip_chain_id;
 
-        
-        while current_clip_chain_id != ClipChainId::NONE {
-            let clip_chain_node = &self.clip_chain_nodes[current_clip_chain_id.0 as usize];
+        for clip_chain_root in clip_chains {
+            let mut current_clip_chain_id = *clip_chain_root;
 
             
-            
-            match self.clip_node_collectors.iter_mut().find(|c| {
-                clip_chain_node.spatial_node_index < c.spatial_node_index
-            }) {
-                Some(collector) => {
-                    collector.insert(current_clip_chain_id);
-                }
-                None => {
-                    if prim_instance.is_chased() {
-                        println!("\t\tclip node (from chain) {:?} at {:?}",
-                            clip_chain_node.spatial_node_index, clip_chain_node.local_pos);
-                    }
-                    if !add_clip_node_to_current_chain(
-                        clip_chain_node,
-                        spatial_node_index,
-                        &mut local_clip_rect,
-                        &mut self.clip_node_info,
-                        clip_data_store,
-                        clip_scroll_tree,
-                    ) {
-                        return None;
-                    }
-                }
-            }
-
-            current_clip_chain_id = clip_chain_node.parent_clip_chain_id;
-        }
-
-        
-        
-        if let Some(clip_node_collector) = clip_node_collector {
-            for clip_chain_id in &clip_node_collector.clips {
-                let clip_chain_node = &self.clip_chain_nodes[clip_chain_id.0 as usize];
-                if prim_instance.is_chased() {
-                    println!("\t\tclip node (from collector) {:?} at {:?}",
-                        clip_chain_node.spatial_node_index, clip_chain_node.local_pos);
-                }
+            while current_clip_chain_id != ClipChainId::NONE {
+                let clip_chain_node = &self.clip_chain_nodes[current_clip_chain_id.0 as usize];
 
                 if !add_clip_node_to_current_chain(
                     clip_chain_node,
@@ -607,6 +594,8 @@ impl ClipStore {
                 ) {
                     return None;
                 }
+
+                current_clip_chain_id = clip_chain_node.parent_clip_chain_id;
             }
         }
 
@@ -671,10 +660,6 @@ impl ClipStore {
                         gpu_cache,
                         resource_cache,
                     );
-
-                    if prim_instance.is_chased() {
-                        println!("\t\tpartial {:?}", node.item);
-                    }
 
                     
                     
@@ -1284,32 +1269,6 @@ pub fn project_inner_rect(
         WorldPoint::new(xs[1], ys[1]),
         WorldSize::new(xs[2] - xs[1], ys[2] - ys[1]),
     ))
-}
-
-
-
-#[derive(Debug, MallocSizeOf)]
-pub struct ClipNodeCollector {
-    spatial_node_index: SpatialNodeIndex,
-    clips: FastHashSet<ClipChainId>,
-}
-
-impl ClipNodeCollector {
-    pub fn new(
-        spatial_node_index: SpatialNodeIndex,
-    ) -> Self {
-        ClipNodeCollector {
-            spatial_node_index,
-            clips: FastHashSet::default(),
-        }
-    }
-
-    pub fn insert(
-        &mut self,
-        clip_chain_id: ClipChainId,
-    ) {
-        self.clips.insert(clip_chain_id);
-    }
 }
 
 

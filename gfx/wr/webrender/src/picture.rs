@@ -9,7 +9,7 @@ use api::{DevicePixelScale, RasterRect, RasterSpace, ColorF, ImageKey, DirtyRect
 use api::{PicturePixel, RasterPixel, WorldPixel, WorldRect, ImageFormat, ImageDescriptor, WorldVector2D, LayoutPoint};
 use api::{DebugFlags, DeviceHomogeneousVector, DeviceVector2D};
 use box_shadow::{BLUR_SAMPLE_SCALE};
-use clip::{ClipChainId, ClipChainNode, ClipItem};
+use clip::{ClipChainId, ClipChainNode, ClipItem, ClipStore, ClipDataStore, ClipChainStack};
 use clip_scroll_tree::{ROOT_SPATIAL_NODE_INDEX, ClipScrollTree, SpatialNodeIndex, CoordinateSystemId};
 use debug_colors;
 use device::TextureFilter;
@@ -1023,6 +1023,7 @@ impl TileCache {
     pub fn update_prim_dependencies(
         &mut self,
         prim_instance: &PrimitiveInstance,
+        clip_chain_stack: &ClipChainStack,
         prim_rect: LayoutRect,
         clip_scroll_tree: &ClipScrollTree,
         data_stores: &DataStores,
@@ -1145,109 +1146,118 @@ impl TileCache {
             .intersection(&prim_instance.local_clip_rect)
             .unwrap_or(LayoutRect::zero());
 
-        let mut current_clip_chain_id = prim_instance.clip_chain_id;
-        while current_clip_chain_id != ClipChainId::NONE {
-            let clip_chain_node = &clip_chain_nodes[current_clip_chain_id.0 as usize];
-            let clip_node = &data_stores.clip[clip_chain_node.handle];
+        
+        
+        
+        
+        
+        for clip_stack in &clip_chain_stack.stack {
+            for clip_chain_id in clip_stack {
+                let mut current_clip_chain_id = *clip_chain_id;
+                while current_clip_chain_id != ClipChainId::NONE {
+                    let clip_chain_node = &clip_chain_nodes[current_clip_chain_id.0 as usize];
+                    let clip_node = &data_stores.clip[clip_chain_node.handle];
 
-            
-            
-            if current_clip_chain_id == self.root_clip_chain_id {
-                current_clip_chain_id = clip_chain_node.parent_clip_chain_id;
-                continue;
-            }
+                    
+                    
+                    if current_clip_chain_id == self.root_clip_chain_id {
+                        current_clip_chain_id = clip_chain_node.parent_clip_chain_id;
+                        continue;
+                    }
 
-            self.map_local_to_world.set_target_spatial_node(
-                clip_chain_node.spatial_node_index,
-                clip_scroll_tree,
-            );
-
-            
-            
-            
-            let add_to_clip_deps = match clip_node.item {
-                ClipItem::Rectangle(size, ClipMode::Clip) => {
-                    let clip_spatial_node = &clip_scroll_tree.spatial_nodes[clip_chain_node.spatial_node_index.0 as usize];
-
-                    let local_clip_rect = LayoutRect::new(
-                        clip_chain_node.local_pos,
-                        size,
+                    self.map_local_to_world.set_target_spatial_node(
+                        clip_chain_node.spatial_node_index,
+                        clip_scroll_tree,
                     );
 
-                    if clip_spatial_node.coordinate_system_id == CoordinateSystemId(0) {
-                        
-                        
-                        match self.map_local_to_world.map(&local_clip_rect) {
-                            Some(clip_world_rect) => {
-                                
-                                
-                                
-                                
-                                world_clip_rect = world_clip_rect
-                                    .intersection(&clip_world_rect)
-                                    .unwrap_or(WorldRect::zero());
+                    
+                    
+                    
+                    let add_to_clip_deps = match clip_node.item {
+                        ClipItem::Rectangle(size, ClipMode::Clip) => {
+                            let clip_spatial_node = &clip_scroll_tree.spatial_nodes[clip_chain_node.spatial_node_index.0 as usize];
 
+                            let local_clip_rect = LayoutRect::new(
+                                clip_chain_node.local_pos,
+                                size,
+                            );
+
+                            if clip_spatial_node.coordinate_system_id == CoordinateSystemId(0) {
                                 
                                 
-                                if clip_chain_node.spatial_node_index == prim_instance.spatial_node_index {
-                                    culling_rect = culling_rect.intersection(&local_clip_rect).unwrap_or(LayoutRect::zero());
+                                match self.map_local_to_world.map(&local_clip_rect) {
+                                    Some(clip_world_rect) => {
+                                        
+                                        
+                                        
+                                        
+                                        world_clip_rect = world_clip_rect
+                                            .intersection(&clip_world_rect)
+                                            .unwrap_or(WorldRect::zero());
 
-                                    false
-                                } else if !clip_scroll_tree.is_same_or_child_of(
-                                    clip_chain_node.spatial_node_index,
-                                    self.spatial_node_index,
-                                ) {
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    world_clips.push((
-                                        clip_world_rect.into(),
-                                        clip_chain_node.spatial_node_index,
-                                    ));
+                                        
+                                        
+                                        if clip_chain_node.spatial_node_index == prim_instance.spatial_node_index {
+                                            culling_rect = culling_rect.intersection(&local_clip_rect).unwrap_or(LayoutRect::zero());
 
-                                    false
-                                } else {
-                                    true
+                                            false
+                                        } else if !clip_scroll_tree.is_same_or_child_of(
+                                            clip_chain_node.spatial_node_index,
+                                            self.spatial_node_index,
+                                        ) {
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            
+                                            world_clips.push((
+                                                clip_world_rect.into(),
+                                                clip_chain_node.spatial_node_index,
+                                            ));
+
+                                            false
+                                        } else {
+                                            true
+                                        }
+                                    }
+                                    None => {
+                                        true
+                                    }
                                 }
-                            }
-                            None => {
+                            } else {
                                 true
                             }
                         }
-                    } else {
-                        true
+                        ClipItem::Rectangle(_, ClipMode::ClipOut) |
+                        ClipItem::RoundedRectangle(..) |
+                        ClipItem::Image { .. } |
+                        ClipItem::BoxShadow(..) => {
+                            true
+                        }
+                    };
+
+                    if add_to_clip_deps {
+                        clip_chain_uids.push(clip_chain_node.handle.uid());
+
+                        
+                        
+                        if clip_chain_node.spatial_node_index != self.spatial_node_index {
+                            clip_spatial_nodes.insert(clip_chain_node.spatial_node_index);
+                        }
+
+                        let local_clip_rect = LayoutRect::new(
+                            clip_chain_node.local_pos,
+                            LayoutSize::zero(),
+                        );
+                        if let Some(world_clip_rect) = self.map_local_to_world.map(&local_clip_rect) {
+                            clip_vertices.push(world_clip_rect.origin);
+                        }
                     }
-                }
-                ClipItem::Rectangle(_, ClipMode::ClipOut) |
-                ClipItem::RoundedRectangle(..) |
-                ClipItem::Image { .. } |
-                ClipItem::BoxShadow(..) => {
-                    true
-                }
-            };
 
-            if add_to_clip_deps {
-                clip_chain_uids.push(clip_chain_node.handle.uid());
-
-                
-                
-                if clip_chain_node.spatial_node_index != self.spatial_node_index {
-                    clip_spatial_nodes.insert(clip_chain_node.spatial_node_index);
-                }
-
-                let local_clip_rect = LayoutRect::new(
-                    clip_chain_node.local_pos,
-                    LayoutSize::zero(),
-                );
-                if let Some(world_clip_rect) = self.map_local_to_world.map(&local_clip_rect) {
-                    clip_vertices.push(world_clip_rect.origin);
+                    current_clip_chain_id = clip_chain_node.parent_clip_chain_id;
                 }
             }
-
-            current_clip_chain_id = clip_chain_node.parent_clip_chain_id;
         }
 
         if include_clip_rect {
@@ -1574,6 +1584,8 @@ impl<'a> PictureUpdateState<'a> {
         picture_primitives: &mut [PicturePrimitive],
         frame_context: &FrameBuildingContext,
         gpu_cache: &mut GpuCache,
+        clip_store: &ClipStore,
+        clip_data_store: &ClipDataStore,
     ) {
         let mut state = PictureUpdateState {
             surfaces,
@@ -1584,9 +1596,12 @@ impl<'a> PictureUpdateState<'a> {
 
         state.update(
             pic_index,
+            ClipChainId::NONE,
             picture_primitives,
             frame_context,
             gpu_cache,
+            clip_store,
+            clip_data_store,
         );
 
         if !state.are_raster_roots_assigned {
@@ -1650,25 +1665,34 @@ impl<'a> PictureUpdateState<'a> {
     fn update(
         &mut self,
         pic_index: PictureIndex,
+        clip_chain_id: ClipChainId,
         picture_primitives: &mut [PicturePrimitive],
         frame_context: &FrameBuildingContext,
         gpu_cache: &mut GpuCache,
+        clip_store: &ClipStore,
+        clip_data_store: &ClipDataStore,
     ) {
-        if let Some(children) = picture_primitives[pic_index.0].pre_update(
+        if let Some(prim_list) = picture_primitives[pic_index.0].pre_update(
+            clip_chain_id,
             self,
             frame_context,
+            clip_store,
+            clip_data_store,
         ) {
-            for child_pic_index in &children {
+            for (child_pic_index, clip_chain_id) in &prim_list.pictures {
                 self.update(
                     *child_pic_index,
+                    *clip_chain_id,
                     picture_primitives,
                     frame_context,
                     gpu_cache,
+                    clip_store,
+                    clip_data_store,
                 );
             }
 
             picture_primitives[pic_index.0].post_update(
-                children,
+                prim_list,
                 self,
                 frame_context,
                 gpu_cache,
@@ -1701,7 +1725,7 @@ impl<'a> PictureUpdateState<'a> {
             None => fallback_raster_spatial_node,
         };
 
-        for child_pic_index in &picture.prim_list.pictures {
+        for (child_pic_index, _) in &picture.prim_list.pictures {
             self.assign_raster_roots(*child_pic_index, picture_primitives, new_fallback);
         }
     }
@@ -1792,6 +1816,18 @@ pub struct RasterConfig {
     pub establishes_raster_root: bool,
 }
 
+bitflags! {
+    /// A set of flags describing why a picture may need a backing surface.
+    pub struct BlitReason: u32 {
+        /// Mix-blend-mode on a child that requires isolation.
+        const ISOLATE = 1;
+        /// Clip node that _might_ require a surface.
+        const CLIP = 2;
+        /// Preserve-3D requires a surface for plane-splitting.
+        const PRESERVE3D = 4;
+    }
+}
+
 
 
 #[allow(dead_code)]
@@ -1803,7 +1839,7 @@ pub enum PictureCompositeMode {
     Filter(FilterOp),
     
     
-    Blit,
+    Blit(BlitReason),
     
     TileCache {
         clear_color: ColorF,
@@ -1906,7 +1942,7 @@ impl ClusterIndex {
 
 
 
-pub type PictureList = SmallVec<[PictureIndex; 4]>;
+pub type PictureList = SmallVec<[(PictureIndex, ClipChainId); 4]>;
 
 
 
@@ -1954,7 +1990,7 @@ impl PrimitiveList {
             
             let is_pic = match prim_instance.kind {
                 PrimitiveInstanceKind::Picture { pic_index, .. } => {
-                    pictures.push(pic_index);
+                    pictures.push((pic_index, prim_instance.clip_chain_id));
                     true
                 }
                 _ => {
@@ -2134,7 +2170,7 @@ impl PicturePrimitive {
         pt.add_item(format!("raster_config: {:?}", self.raster_config));
         pt.add_item(format!("requested_composite_mode: {:?}", self.requested_composite_mode));
 
-        for index in &self.prim_list.pictures {
+        for (index, _) in &self.prim_list.pictures {
             pictures[index.0].print(pictures, *index, pt);
         }
 
@@ -2494,9 +2530,12 @@ impl PicturePrimitive {
     
     fn pre_update(
         &mut self,
+        clip_chain_id: ClipChainId,
         state: &mut PictureUpdateState,
         frame_context: &FrameBuildingContext,
-    ) -> Option<PictureList> {
+        clip_store: &ClipStore,
+        clip_data_store: &ClipDataStore,
+    ) -> Option<PrimitiveList> {
         
         self.raster_config = None;
 
@@ -2514,6 +2553,52 @@ impl PicturePrimitive {
         
         let actual_composite_mode = match self.requested_composite_mode {
             Some(PictureCompositeMode::Filter(filter)) if filter.is_noop() => None,
+            Some(PictureCompositeMode::Blit(reason)) if reason == BlitReason::CLIP => {
+                
+                
+                
+                
+
+                
+                let mut apply_clip_to_picture = false;
+                let mut current_clip_chain_id = clip_chain_id;
+
+                
+                
+                while current_clip_chain_id != ClipChainId::NONE {
+                    let clip_chain_node = &clip_store.clip_chain_nodes[current_clip_chain_id.0 as usize];
+                    let clip_node = &clip_data_store[clip_chain_node.handle];
+
+                    match clip_node.item {
+                        ClipItem::Rectangle(_, ClipMode::Clip) => {
+                            
+                            
+                            
+                            
+                            
+                            
+                        }
+                        ClipItem::Rectangle(_, ClipMode::ClipOut) |
+                        ClipItem::RoundedRectangle(..) |
+                        ClipItem::Image { .. } |
+                        ClipItem::BoxShadow(..) => {
+                            
+                            apply_clip_to_picture = true;
+                            break;
+                        }
+                    }
+
+                    current_clip_chain_id = clip_chain_node.parent_clip_chain_id;
+                }
+
+                
+                
+                if apply_clip_to_picture {
+                    Some(PictureCompositeMode::Blit(reason))
+                } else {
+                    None
+                }
+            }
             mode => mode,
         };
 
@@ -2566,18 +2651,21 @@ impl PicturePrimitive {
             });
         }
 
-        Some(mem::replace(&mut self.prim_list.pictures, SmallVec::new()))
+        Some(mem::replace(&mut self.prim_list, PrimitiveList::empty()))
     }
 
     
     
     fn post_update(
         &mut self,
-        child_pictures: PictureList,
+        prim_list: PrimitiveList,
         state: &mut PictureUpdateState,
         frame_context: &FrameBuildingContext,
         gpu_cache: &mut GpuCache,
     ) {
+        
+        self.prim_list = prim_list;
+
         
         state.pop_picture();
 
@@ -2636,9 +2724,6 @@ impl PicturePrimitive {
                 surface.rect = surface.rect.union(&cluster_rect);
             }
         }
-
-        
-        self.prim_list.pictures = child_pictures;
 
         
         
@@ -2973,7 +3058,7 @@ impl PicturePrimitive {
                 surfaces[surface_index.0].tasks.push(render_task_id);
                 PictureSurface::RenderTask(render_task_id)
             }
-            PictureCompositeMode::Blit => {
+            PictureCompositeMode::Blit(_) => {
                 
                 
                 let supports_snapping = match self.context_3d {

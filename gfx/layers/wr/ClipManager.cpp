@@ -356,22 +356,11 @@ Maybe<wr::WrClipChainId> ClipManager::DefineClipChain(
     CLIP_LOG("cache[%p] <= %zu\n", chain, clipId.id);
   }
 
-  
-  Maybe<wr::WrClipChainId> parentChainId;
-  if (!mItemClipStack.empty()) {
-    parentChainId = mItemClipStack.top().mClipChainId;
+  if (clipIds.IsEmpty()) {
+    return Nothing();
   }
 
-  
-  
-  
-  Maybe<wr::WrClipChainId> chainId;
-  if (clipIds.Length() > 0) {
-    chainId = Some(mBuilder->DefineClipChain(parentChainId, clipIds));
-  } else {
-    chainId = parentChainId;
-  }
-  return chainId;
+  return Some(mBuilder->DefineClipChain(clipIds));
 }
 
 ClipManager::~ClipManager() {
