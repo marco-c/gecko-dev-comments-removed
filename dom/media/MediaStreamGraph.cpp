@@ -2518,7 +2518,8 @@ bool SourceMediaStream::PullNewData(GraphTime aDesiredUpToTime) {
     if (t <= current) {
       continue;
     }
-    if (!track.mPullingEnabled) {
+    if (!track.mPullingEnabled &&
+        track.mData->GetType() == MediaSegment::AUDIO) {
       if (streamPullingEnabled) {
         LOG(LogLevel::Verbose,
             ("%p: Pulling disabled for track but enabled for stream, append "
@@ -2541,6 +2542,67 @@ bool SourceMediaStream::PullNewData(GraphTime aDesiredUpToTime) {
     }
   }
   return true;
+}
+
+
+
+
+
+
+
+
+
+
+static void MoveToSegment(SourceMediaStream* aStream, MediaSegment* aIn,
+                          MediaSegment* aOut, StreamTime aCurrentTime,
+                          StreamTime aDesiredUpToTime) {
+  MOZ_ASSERT(aIn->GetType() == aOut->GetType());
+  MOZ_ASSERT(aOut->GetDuration() >= aCurrentTime);
+  if (aIn->GetType() == MediaSegment::AUDIO) {
+    aOut->AppendFrom(aIn);
+  } else {
+    VideoSegment* in = static_cast<VideoSegment*>(aIn);
+    VideoSegment* out = static_cast<VideoSegment*>(aOut);
+    for (VideoSegment::ConstChunkIterator c(*in); !c.IsEnded(); c.Next()) {
+      MOZ_ASSERT(!c->mTimeStamp.IsNull());
+      VideoChunk* last = out->GetLastChunk();
+      if (!last || last->mTimeStamp.IsNull()) {
+        
+        
+        out->AppendFrame(do_AddRef(c->mFrame.GetImage()),
+                         c->mFrame.GetIntrinsicSize(),
+                         c->mFrame.GetPrincipalHandle(),
+                         c->mFrame.GetForceBlack(), c->mTimeStamp);
+        if (c->GetDuration() > 0) {
+          out->ExtendLastFrameBy(c->GetDuration());
+        }
+        continue;
+      }
+
+      
+
+      if (c->mTimeStamp < last->mTimeStamp) {
+        
+        
+        out->Clear();
+        out->AppendNullData(aCurrentTime);
+      }
+
+      
+      out->AppendFrame(do_AddRef(c->mFrame.GetImage()),
+                       c->mFrame.GetIntrinsicSize(),
+                       c->mFrame.GetPrincipalHandle(),
+                       c->mFrame.GetForceBlack(), c->mTimeStamp);
+      if (c->GetDuration() > 0) {
+        out->ExtendLastFrameBy(c->GetDuration());
+      }
+    }
+    if (out->GetDuration() < aDesiredUpToTime) {
+      out->ExtendLastFrameBy(aDesiredUpToTime - out->GetDuration());
+    }
+    in->Clear();
+  }
+  MOZ_ASSERT(aIn->GetDuration() == 0, "aIn must be consumed");
 }
 
 void SourceMediaStream::ExtractPendingInput(GraphTime aCurrentTime,
@@ -2570,43 +2632,34 @@ void SourceMediaStream::ExtractPendingInput(GraphTime aCurrentTime,
       b.mListener->NotifyQueuedChanges(GraphImpl(), offset, *data->mData);
     }
     if (data->mCommands & SourceMediaStream::TRACK_CREATE) {
-      MediaSegment* segment = data->mData.forget();
+      MediaSegment* segment = data->mData->CreateEmptyClone();
       LOG(LogLevel::Debug,
           ("%p: SourceMediaStream %p creating track %d, start %" PRId64
            ", initial end %" PRId64,
            GraphImpl(), this, data->mID, int64_t(streamCurrentTime),
            int64_t(segment->GetDuration())));
 
-      segment->InsertNullDataAtStart(streamCurrentTime);
+      segment->AppendNullData(streamCurrentTime);
+      MoveToSegment(this, data->mData, segment, streamCurrentTime,
+                    streamDesiredUpToTime);
       data->mEndOfFlushedData += segment->GetDuration();
       mTracks.AddTrack(data->mID, streamCurrentTime, segment);
-      
-      
-      data->mData = segment->CreateEmptyClone();
       data->mCommands &= ~SourceMediaStream::TRACK_CREATE;
     } else {
-      MediaSegment* dest = mTracks.FindTrack(data->mID)->GetSegment();
+      StreamTracks::Track* track = mTracks.FindTrack(data->mID);
+      MediaSegment* dest = track->GetSegment();
       LOG(LogLevel::Verbose,
           ("%p: SourceMediaStream %p track %d, advancing end from %" PRId64
            " to %" PRId64,
            GraphImpl(), this, data->mID, int64_t(dest->GetDuration()),
            int64_t(dest->GetDuration() + data->mData->GetDuration())));
       data->mEndOfFlushedData += data->mData->GetDuration();
-      dest->AppendFrom(data->mData);
+      MoveToSegment(this, data->mData, dest, streamCurrentTime,
+                    streamDesiredUpToTime);
     }
     if (data->mCommands & SourceMediaStream::TRACK_END) {
       mTracks.FindTrack(data->mID)->SetEnded();
       mUpdateTracks.RemoveElementAt(i);
-    } else if (!data->mPullingEnabled &&
-               data->mData->GetType() == MediaSegment::VIDEO) {
-      
-      
-      
-      
-      VideoSegment* segment = static_cast<VideoSegment*>(
-          mTracks.FindTrack(data->mID)->GetSegment());
-      StreamTime missingTime = streamDesiredUpToTime - segment->GetDuration();
-      segment->ExtendLastFrameBy(missingTime);
     }
   }
 
