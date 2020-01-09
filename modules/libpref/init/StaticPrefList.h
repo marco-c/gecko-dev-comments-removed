@@ -470,6 +470,14 @@ VARCACHE_PREF(
 #undef PREF_VALUE
 
 
+
+VARCACHE_PREF(
+  "dom.delay.block_external_protocol_in_iframes",
+   dom_delay_block_external_protocol_in_iframes,
+  uint32_t, 10 
+)
+
+
 VARCACHE_PREF(
   "dom.block_multiple_popups",
    dom_block_multiple_popups,
