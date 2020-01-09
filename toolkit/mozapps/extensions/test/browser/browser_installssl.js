@@ -107,14 +107,6 @@ function run_install_tests(callback) {
 }
 
 
-function addCertOverrides() {
-  addCertOverride("nocert.example.com", Ci.nsICertOverrideService.ERROR_MISMATCH);
-  addCertOverride("self-signed.example.com", Ci.nsICertOverrideService.ERROR_UNTRUSTED);
-  addCertOverride("untrusted.example.com", Ci.nsICertOverrideService.ERROR_UNTRUSTED);
-  addCertOverride("expired.example.com", Ci.nsICertOverrideService.ERROR_TIME);
-}
-
-
 
 add_test(function() {
   
@@ -241,10 +233,14 @@ add_test(function() {
 });
 
 
+add_test(() => {
+  addCertOverrides().then(run_next_test);
+});
+
+
 
 add_test(function() {
   Services.prefs.clearUserPref(PREF_INSTALL_REQUIREBUILTINCERTS);
-  addCertOverrides();
 
   
   add_install_test(HTTP, null, SUCCESS);
