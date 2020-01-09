@@ -70,12 +70,38 @@ const MozElementMixin = Base => class MozElement extends Base {
       attrName = split[1];
       attrNewName = split[0];
     }
+    let hasAttr = this.hasAttribute(attrName);
+    let attrValue = this.getAttribute(attrName);
 
+    
+    
+    
+    if (!this._inheritedAttributesMap) {
+      this._inheritedAttributesMap = new WeakMap();
+    }
+    if (!this._inheritedAttributesMap.has(child)) {
+      this._inheritedAttributesMap.set(child, {});
+    }
+    let lastInheritedAttributes = this._inheritedAttributesMap.get(child);
+
+    if ((hasAttr && attrValue === lastInheritedAttributes[attrName]) ||
+        (!hasAttr && !lastInheritedAttributes.hasOwnProperty(attrName))) {
+      
+      return;
+    }
+
+    
+    if (hasAttr) {
+      lastInheritedAttributes[attrName] = attrValue;
+    } else {
+      delete lastInheritedAttributes[attrName];
+    }
+
+    
     if (attrNewName === "text") {
-      child.textContent =
-        this.hasAttribute(attrName) ? this.getAttribute(attrName) : "";
-    } else if (this.hasAttribute(attrName)) {
-      child.setAttribute(attrNewName, this.getAttribute(attrName));
+      child.textContent = hasAttr ? attrValue : "";
+    } else if (hasAttr) {
+      child.setAttribute(attrNewName, attrValue);
     } else {
       child.removeAttribute(attrNewName);
     }
