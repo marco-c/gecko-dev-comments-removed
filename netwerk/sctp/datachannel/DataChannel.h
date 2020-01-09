@@ -20,7 +20,7 @@
 #include "nsThreadUtils.h"
 #include "nsTArray.h"
 #include "nsDeque.h"
-#include "nsIInputStream.h"
+#include "mozilla/dom/Blob.h"
 #include "mozilla/Mutex.h"
 #include "DataChannelProtocol.h"
 #include "DataChannelListener.h"
@@ -245,10 +245,12 @@ class DataChannelConnection final : public net::NeckoTargetHolder
                              const nsACString& protocol, uint16_t stream,
                              bool unordered, uint16_t prPolicy,
                              uint32_t prValue);
-  bool SendBufferedMessages(nsTArray<nsAutoPtr<BufferedOutgoingMsg>>& buffer);
-  int SendMsgInternal(OutgoingMsg& msg);
+  bool SendBufferedMessages(nsTArray<nsAutoPtr<BufferedOutgoingMsg>>& buffer,
+                            size_t* aWritten);
+  int SendMsgInternal(OutgoingMsg& msg, size_t* aWritten);
   int SendMsgInternalOrBuffer(nsTArray<nsAutoPtr<BufferedOutgoingMsg>>& buffer,
-                              OutgoingMsg& msg, bool& buffered);
+                              OutgoingMsg& msg, bool& buffered,
+                              size_t* aWritten);
   int SendDataMsgInternalOrBuffer(DataChannel& channel, const uint8_t* data,
                                   size_t len, uint32_t ppid);
   int SendDataMsg(DataChannel& channel, const uint8_t* data, size_t len,
@@ -378,8 +380,8 @@ class DataChannel {
         mFlags(flags),
         mId(0),
         mIsRecvBinary(false),
-        mBufferedThreshold(0)  
-        ,
+        mBufferedThreshold(0),  
+        mBufferedAmount(0),
         mMainThreadEventTarget(connection->GetNeckoTarget()) {
     NS_ASSERTION(mConnection, "NULL connection");
   }
@@ -415,7 +417,7 @@ class DataChannel {
   void SendBinaryMsg(const nsACString& aMsg, ErrorResult& aRv);
 
   
-  void SendBinaryStream(nsIInputStream* aBlob, ErrorResult& aRv);
+  void SendBinaryBlob(dom::Blob& aBlob, ErrorResult& aRv);
 
   uint16_t GetType() { return mPrPolicy; }
 
@@ -427,23 +429,13 @@ class DataChannel {
     return !(mFlags & DATA_CHANNEL_FLAGS_OUT_OF_ORDER_ALLOWED);
   }
 
+  void IncrementBufferedAmount(uint32_t aSize, ErrorResult& aRv);
+  void DecrementBufferedAmount(uint32_t aSize);
+
   
   uint32_t GetBufferedAmount() {
-    if (!mConnection) {
-      return 0;
-    }
-
-    MutexAutoLock lock(mConnection->mLock);
-    size_t buffered = GetBufferedAmountLocked();
-
-#if (SIZE_MAX > UINT32_MAX)
-    if (buffered >
-        UINT32_MAX) {  
-      buffered = UINT32_MAX;
-    }
-#endif
-
-    return buffered;
+    MOZ_ASSERT(NS_IsMainThread());
+    return mBufferedAmount;
   }
 
   
@@ -480,7 +472,6 @@ class DataChannel {
   friend class DataChannelConnection;
 
   nsresult AddDataToBinaryMsg(const char* data, uint32_t size);
-  size_t GetBufferedAmountLocked() const;
   bool EnsureValidStream(ErrorResult& aRv);
 
   RefPtr<DataChannelConnection> mConnection;
@@ -494,6 +485,9 @@ class DataChannel {
   uint32_t mId;
   bool mIsRecvBinary;
   size_t mBufferedThreshold;
+  
+  
+  size_t mBufferedAmount;
   nsCString mRecvBuffer;
   nsTArray<nsAutoPtr<BufferedOutgoingMsg>>
       mBufferedData;  
@@ -514,8 +508,6 @@ class DataChannelOnMessageAvailable : public Runnable {
     ON_CHANNEL_CLOSED,
     ON_DATA_STRING,
     ON_DATA_BINARY,
-    BUFFER_LOW_THRESHOLD,
-    NO_LONGER_BUFFERED,
   }; 
 
   DataChannelOnMessageAvailable(
@@ -561,9 +553,7 @@ class DataChannelOnMessageAvailable : public Runnable {
       case ON_DATA_STRING:
       case ON_DATA_BINARY:
       case ON_CHANNEL_OPEN:
-      case ON_CHANNEL_CLOSED:
-      case BUFFER_LOW_THRESHOLD:
-      case NO_LONGER_BUFFERED: {
+      case ON_CHANNEL_CLOSED: {
         MutexAutoLock lock(mChannel->mListenerLock);
         if (!mChannel->mListener) {
           DATACHANNEL_LOG((
@@ -584,12 +574,6 @@ class DataChannelOnMessageAvailable : public Runnable {
             break;
           case ON_CHANNEL_CLOSED:
             mChannel->mListener->OnChannelClosed(mChannel->mContext);
-            break;
-          case BUFFER_LOW_THRESHOLD:
-            mChannel->mListener->OnBufferLow(mChannel->mContext);
-            break;
-          case NO_LONGER_BUFFERED:
-            mChannel->mListener->NotBuffered(mChannel->mContext);
             break;
         }
         break;

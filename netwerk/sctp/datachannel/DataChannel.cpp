@@ -1145,7 +1145,7 @@ int DataChannelConnection::SendControlMessage(const uint8_t* data, uint32_t len,
 #endif
   OutgoingMsg msg(info, data, (size_t)len);
   bool buffered;
-  int error = SendMsgInternalOrBuffer(mBufferedControl, msg, buffered);
+  int error = SendMsgInternalOrBuffer(mBufferedControl, msg, buffered, nullptr);
 
   
   if (!error && buffered && !mPendingType) {
@@ -1240,7 +1240,7 @@ bool DataChannelConnection::SendDeferredMessages() {
   
   if (!mBufferedControl.IsEmpty() &&
       (mSendInterleaved || mPendingType == PENDING_DCEP)) {
-    if (SendBufferedMessages(mBufferedControl)) {
+    if (SendBufferedMessages(mBufferedControl, nullptr)) {
       return true;
     }
 
@@ -1265,34 +1265,16 @@ bool DataChannelConnection::SendDeferredMessages() {
       continue;
     }
 
-    size_t bufferedAmount = channel->GetBufferedAmountLocked();
-    size_t threshold = channel->mBufferedThreshold;
-    bool wasOverThreshold = bufferedAmount >= threshold;
-
     
     
     
     
     
     
-    blocked = SendBufferedMessages(channel->mBufferedData);
-    bufferedAmount = channel->GetBufferedAmountLocked();
-
-    
-    if (wasOverThreshold && bufferedAmount < threshold) {
-      LOG(("%s: sending BUFFER_LOW_THRESHOLD for %s/%s: %u", __FUNCTION__,
-           channel->mLabel.get(), channel->mProtocol.get(), channel->mStream));
-      Dispatch(do_AddRef(new DataChannelOnMessageAvailable(
-          DataChannelOnMessageAvailable::BUFFER_LOW_THRESHOLD, this, channel)));
-    }
-
-    if (bufferedAmount == 0) {
-      
-      
-      LOG(("%s: sending NO_LONGER_BUFFERED for %s/%s: %u", __FUNCTION__,
-           channel->mLabel.get(), channel->mProtocol.get(), channel->mStream));
-      Dispatch(do_AddRef(new DataChannelOnMessageAvailable(
-          DataChannelOnMessageAvailable::NO_LONGER_BUFFERED, this, channel)));
+    size_t written = 0;
+    blocked = SendBufferedMessages(channel->mBufferedData, &written);
+    if (written) {
+      channel->DecrementBufferedAmount(written);
     }
 
     
@@ -1314,10 +1296,10 @@ bool DataChannelConnection::SendDeferredMessages() {
 
 
 bool DataChannelConnection::SendBufferedMessages(
-    nsTArray<nsAutoPtr<BufferedOutgoingMsg>>& buffer) {
+    nsTArray<nsAutoPtr<BufferedOutgoingMsg>>& buffer, size_t* aWritten) {
   do {
     
-    int error = SendMsgInternal(*buffer[0]);
+    int error = SendMsgInternal(*buffer[0], aWritten);
     switch (error) {
       case 0:
         buffer.RemoveElementAt(0);
@@ -2561,7 +2543,7 @@ request_error_cleanup:
 
 
 
-int DataChannelConnection::SendMsgInternal(OutgoingMsg& msg) {
+int DataChannelConnection::SendMsgInternal(OutgoingMsg& msg, size_t* aWritten) {
   auto& info = msg.GetInfo().sendv_sndinfo;
   int error;
 
@@ -2598,6 +2580,10 @@ int DataChannelConnection::SendMsgInternal(OutgoingMsg& msg) {
     if (written < 0) {
       error = errno;
       goto out;
+    }
+
+    if (aWritten) {
+      *aWritten += written;
     }
     LOG(("Sent buffer (written=%zu, len=%zu, left=%zu)", (size_t)written,
          length, left - (size_t)written));
@@ -2642,7 +2628,7 @@ out:
 
 int DataChannelConnection::SendMsgInternalOrBuffer(
     nsTArray<nsAutoPtr<BufferedOutgoingMsg>>& buffer, OutgoingMsg& msg,
-    bool& buffered) {
+    bool& buffered, size_t* aWritten) {
   NS_WARNING_ASSERTION(msg.GetLength() > 0, "Length is 0?!");
 
   int error = 0;
@@ -2666,7 +2652,7 @@ int DataChannelConnection::SendMsgInternalOrBuffer(
   
   mLock.AssertCurrentThreadOwns();
   if (buffer.IsEmpty() && (mSendInterleaved || !mPendingType)) {
-    error = SendMsgInternal(msg);
+    error = SendMsgInternal(msg, aWritten);
     switch (error) {
       case 0:
         break;
@@ -2739,7 +2725,12 @@ int DataChannelConnection::SendDataMsgInternalOrBuffer(DataChannel& channel,
   OutgoingMsg msg(info, data, len);
   MutexAutoLock lock(mLock);
   bool buffered;
-  int error = SendMsgInternalOrBuffer(channel.mBufferedData, msg, buffered);
+  size_t written = 0;
+  int error =
+      SendMsgInternalOrBuffer(channel.mBufferedData, msg, buffered, &written);
+  if (written) {
+    channel.DecrementBufferedAmount(written);
+  }
 
   
   if (!error && buffered && !mPendingType) {
@@ -3127,12 +3118,45 @@ void DataChannel::SendErrnoToErrorResult(int error, ErrorResult& aRv) {
   }
 }
 
+void DataChannel::IncrementBufferedAmount(uint32_t aSize, ErrorResult& aRv) {
+  ASSERT_WEBRTC(NS_IsMainThread());
+  if (mBufferedAmount > UINT32_MAX - aSize) {
+    aRv.Throw(NS_ERROR_FILE_TOO_BIG);
+    return;
+  }
+
+  mBufferedAmount += aSize;
+}
+
+void DataChannel::DecrementBufferedAmount(uint32_t aSize) {
+  mMainThreadEventTarget->Dispatch(NS_NewRunnableFunction(
+      "DataChannel::DecrementBufferedAmount",
+      [this, self = RefPtr<DataChannel>(this), aSize] {
+        MOZ_ASSERT(aSize <= mBufferedAmount);
+        bool wasLow = mBufferedAmount <= mBufferedThreshold;
+        mBufferedAmount -= aSize;
+        if (!wasLow && mBufferedAmount <= mBufferedThreshold) {
+          LOG(("%s: sending BUFFER_LOW_THRESHOLD for %s/%s: %u", __FUNCTION__,
+               mLabel.get(), mProtocol.get(), mStream));
+          mListener->OnBufferLow(mContext);
+        }
+        if (mBufferedAmount == 0) {
+          LOG(("%s: sending NO_LONGER_BUFFERED for %s/%s: %u", __FUNCTION__,
+               mLabel.get(), mProtocol.get(), mStream));
+          mListener->NotBuffered(mContext);
+        }
+      }));
+}
+
 void DataChannel::SendMsg(const nsACString& aMsg, ErrorResult& aRv) {
   if (!EnsureValidStream(aRv)) {
     return;
   }
 
   SendErrnoToErrorResult(mConnection->SendMsg(mStream, aMsg), aRv);
+  if (!aRv.Failed()) {
+    IncrementBufferedAmount(aMsg.Length(), aRv);
+  }
 }
 
 void DataChannel::SendBinaryMsg(const nsACString& aMsg, ErrorResult& aRv) {
@@ -3141,14 +3165,39 @@ void DataChannel::SendBinaryMsg(const nsACString& aMsg, ErrorResult& aRv) {
   }
 
   SendErrnoToErrorResult(mConnection->SendBinaryMsg(mStream, aMsg), aRv);
+  if (!aRv.Failed()) {
+    IncrementBufferedAmount(aMsg.Length(), aRv);
+  }
 }
 
-void DataChannel::SendBinaryStream(nsIInputStream* aBlob, ErrorResult& aRv) {
+void DataChannel::SendBinaryBlob(dom::Blob& aBlob, ErrorResult& aRv) {
   if (!EnsureValidStream(aRv)) {
     return;
   }
 
-  SendErrnoToErrorResult(mConnection->SendBlob(mStream, aBlob), aRv);
+  uint64_t msgLength = aBlob.GetSize(aRv);
+  if (aRv.Failed()) {
+    return;
+  }
+
+  if (msgLength > UINT32_MAX) {
+    aRv.Throw(NS_ERROR_FILE_TOO_BIG);
+    return;
+  }
+
+  
+  
+  
+  nsCOMPtr<nsIInputStream> msgStream;
+  aBlob.CreateInputStream(getter_AddRefs(msgStream), aRv);
+  if (NS_WARN_IF(aRv.Failed())) {
+    return;
+  }
+
+  SendErrnoToErrorResult(mConnection->SendBlob(mStream, msgStream), aRv);
+  if (!aRv.Failed()) {
+    IncrementBufferedAmount(msgLength, aRv);
+  }
 }
 
 dom::Nullable<uint16_t> DataChannel::GetMaxPacketLifeTime() const {
@@ -3191,22 +3240,6 @@ void DataChannel::AppReady() {
   mQueuedMessages.Compact();
   
   
-}
-
-size_t DataChannel::GetBufferedAmountLocked() const {
-  size_t buffered = 0;
-
-  for (auto& msg : mBufferedData) {
-    buffered += msg->GetLeft();
-  }
-  
-  
-  
-  
-  
-  
-
-  return buffered;
 }
 
 uint32_t DataChannel::GetBufferedAmountLowThreshold() {
