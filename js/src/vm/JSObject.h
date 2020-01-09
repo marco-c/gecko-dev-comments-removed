@@ -80,6 +80,7 @@ bool SetImmutablePrototype(JSContext* cx, JS::HandleObject obj,
 
 
 
+
 class JSObject : public js::gc::Cell {
  protected:
   js::GCPtrObjectGroup group_;
@@ -157,9 +158,6 @@ class JSObject : public js::gc::Cell {
 
   JS::Compartment* compartment() const { return group_->compartment(); }
   JS::Compartment* maybeCompartment() const { return compartment(); }
-
-  inline js::Shape* maybeShape() const;
-  inline js::Shape* ensureShape(JSContext* cx);
 
   void initShape(js::Shape* shape) {
     

@@ -1471,7 +1471,7 @@ bool JSObject::setFlags(JSContext* cx, HandleObject obj, BaseShape::Flag flags,
     return true;
   }
 
-  Shape* existingShape = obj->ensureShape(cx);
+  Shape* existingShape = obj->shape();
   if (!existingShape) {
     return false;
   }
@@ -1499,10 +1499,7 @@ bool JSObject::setFlags(JSContext* cx, HandleObject obj, BaseShape::Flag flags,
     return false;
   }
 
-  
-  
   obj->as<JSObject>().setShape(newShape);
-
   return true;
 }
 
