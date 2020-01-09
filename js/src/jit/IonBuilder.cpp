@@ -14255,7 +14255,7 @@ MInstruction* IonBuilder::setInitializedLength(MDefinition* obj, size_t count) {
 
   
   
-  MInstruction* elements = MElements::New(alloc(), obj,  false);
+  MInstruction* elements = MElements::New(alloc(), obj);
   current->add(elements);
   MInstruction* res = MSetInitializedLength::New(
       alloc(), elements, constant(Int32Value(count - 1)));

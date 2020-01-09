@@ -6932,10 +6932,8 @@ class MSlots : public MUnaryInstruction, public SingleObjectPolicy::Data {
 
 
 class MElements : public MUnaryInstruction, public SingleObjectPolicy::Data {
-  bool unboxed_;
-
-  explicit MElements(MDefinition* object, bool unboxed = false)
-      : MUnaryInstruction(classOpcode, object), unboxed_(unboxed) {
+  explicit MElements(MDefinition* object)
+      : MUnaryInstruction(classOpcode, object) {
     setResultType(MIRType::Elements);
     setMovable();
   }
@@ -6945,10 +6943,8 @@ class MElements : public MUnaryInstruction, public SingleObjectPolicy::Data {
   TRIVIAL_NEW_WRAPPERS
   NAMED_OPERANDS((0, object))
 
-  bool unboxed() const { return unboxed_; }
   bool congruentTo(const MDefinition* ins) const override {
-    return congruentIfOperandsEqual(ins) &&
-           ins->toElements()->unboxed() == unboxed();
+    return congruentIfOperandsEqual(ins);
   }
   AliasSet getAliasSet() const override {
     return AliasSet::Load(AliasSet::ObjectFields);
@@ -11958,7 +11954,7 @@ class MWasmLoadRef : public MUnaryInstruction,
   AliasSet::Flag aliasSet_;
 
   explicit MWasmLoadRef(MDefinition* valueAddr, AliasSet::Flag aliasSet)
-      : MUnaryInstruction(classOpcode, valueAddr), aliasSet_(aliasSet) {
+      : MUnaryInstruction(classOpcode, valueAddr) {
     MOZ_ASSERT(valueAddr->type() == MIRType::Pointer);
     setResultType(MIRType::RefOrNull);
     setMovable();
