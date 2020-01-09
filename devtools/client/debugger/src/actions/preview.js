@@ -3,6 +3,7 @@
 
 
 
+
 import { isConsole } from "../utils/preview";
 import { findBestMatchExpression } from "../utils/ast";
 import { PROMISE } from "./utils/middleware/promise";
@@ -117,9 +118,18 @@ export function setPreview(
           return;
         }
 
+        const root = {
+          name: expression,
+          path: expression,
+          contents: { value: result }
+        };
+        const properties = await client.loadObjectProperties(root);
+
         return {
           expression,
           result,
+          properties,
+          root,
           location,
           tokenPos,
           cursorPos

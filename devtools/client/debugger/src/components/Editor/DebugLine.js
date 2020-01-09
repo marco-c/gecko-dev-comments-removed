@@ -3,7 +3,7 @@
 
 
 
-import { Component } from "react";
+import { PureComponent } from "react";
 import {
   toEditorPosition,
   getDocument,
@@ -39,7 +39,7 @@ function isDocumentReady(source, frame) {
   return frame && isLoaded(source) && hasDocument(frame.location.sourceId);
 }
 
-export class DebugLine extends Component<Props> {
+export class DebugLine extends PureComponent<Props> {
   debugExpression: null;
 
   componentDidMount() {

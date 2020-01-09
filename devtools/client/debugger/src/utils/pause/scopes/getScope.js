@@ -3,6 +3,7 @@
 
 
 
+
 import { objectInspector } from "devtools-reps";
 import { getBindingVariables } from "./getVariables";
 import { getFramePopVariables, getThisVariable } from "./utils";

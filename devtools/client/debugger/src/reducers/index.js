@@ -24,8 +24,10 @@ import projectTextSearch from "./project-text-search";
 import quickOpen from "./quick-open";
 import sourceTree from "./source-tree";
 import debuggee from "./debuggee";
-import { objectInspector } from "devtools-reps";
 import eventListenerBreakpoints from "./event-listeners";
+
+
+import { objectInspector } from "devtools-reps";
 
 export default {
   expressions,

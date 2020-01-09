@@ -2,6 +2,8 @@
 
 
 
+
+
 const { MODE } = require("./reps/constants");
 const { REPS, getRep } = require("./reps/rep");
 const objectInspector = require("./object-inspector");
@@ -23,3 +25,10 @@ module.exports = {
   getGripPreviewItems,
   objectInspector
 };
+
+export type {
+  RdpGrip,
+  GripProperties,
+  Node,
+  Grip
+} from "./object-inspector/types";
