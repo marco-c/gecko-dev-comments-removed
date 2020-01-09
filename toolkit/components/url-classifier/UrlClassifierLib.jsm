@@ -6,9 +6,6 @@
 
 
 
-const G_GDEBUG = false;
-
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const PREF_DISABLE_TEST_BACKOFF = "browser.safebrowsing.provider.test.disableBackoff";
@@ -186,6 +183,7 @@ RequestBackoff.prototype.isErrorStatus = function(status) {
 
 
 
+
 function RequestBackoffV4(maxRequests, requestPeriod,
                           provider = null) {
   let rand = Math.random();
@@ -208,7 +206,6 @@ var lib = this;
 function UrlClassifierLib() {
   this.wrappedJSObject = lib;
 }
-UrlClassifierLib.prototype.classID = Components.ID("{26a4a019-2827-4a89-a85c-5931a678823a}");
 UrlClassifierLib.prototype.QueryInterface = ChromeUtils.generateQI([]);
 
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory([UrlClassifierLib]);
+var EXPORTED_SYMBOLS = ["UrlClassifierLib"];

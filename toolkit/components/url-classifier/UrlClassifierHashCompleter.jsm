@@ -845,18 +845,10 @@ HashCompleterRequest.prototype = {
   },
 };
 
-
-
-
-function unUrlsafeBase64(aStr) {
-  return !aStr ? "" : aStr.replace(/-/g, "+")
-                          .replace(/_/g, "/");
-}
-
 function errorWithStack() {
   let err = new Error();
   err.value = Cr.NS_ERROR_FAILURE;
   return err;
 }
 
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory([HashCompleter]);
+var EXPORTED_SYMBOLS = ["HashCompleter"];

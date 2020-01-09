@@ -2,7 +2,6 @@
 
 
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
@@ -697,17 +696,8 @@ function Init() {
 }
 
 function RegistrationData() {
+  Init();
+  return new PROT_ListManager();
 }
-RegistrationData.prototype = {
-    classID: Components.ID("{ca168834-cc00-48f9-b83c-fd018e58cae3}"),
-    _xpcom_factory: {
-        createInstance(outer, iid) {
-            if (outer != null)
-                throw Cr.NS_ERROR_NO_AGGREGATION;
-            Init();
-            return (new PROT_ListManager()).QueryInterface(iid);
-        },
-    },
-};
 
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory([RegistrationData]);
+var EXPORTED_SYMBOLS = ["RegistrationData"];
