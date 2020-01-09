@@ -34,6 +34,13 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
                                       "media.webvtt.pseudo.enabled", false);
 
 (function(global) {
+  var DEBUG_LOG = false;
+
+  function LOG(message) {
+    if (DEBUG_LOG) {
+      dump("[vtt] " + message + "\n");
+    }
+  }
 
   var _objCreate = Object.create || (function() {
     function F() {}
@@ -800,20 +807,30 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
     }
 
     
+    getBoxInfoInChars() {
+      return `top=${this.top}, bottom=${this.bottom}, left=${this.left}, ` +
+             `right=${this.right}, width=${this.width}, height=${this.height}`;
+    }
+
+    
     
     
     move(axis, toMove) {
       switch (axis) {
       case "+x":
+        LOG(`box's left moved from ${this.left} to ${this.left + toMove}`);
         this.left += toMove;
         break;
       case "-x":
+        LOG(`box's left moved from ${this.left} to ${this.left - toMove}`);
         this.left -= toMove;
         break;
       case "+y":
+        LOG(`box's top moved from ${this.top} to ${this.top + toMove}`);
         this.top += toMove;
         break;
       case "-y":
+        LOG(`box's top moved from ${this.top} to ${this.top - toMove}`);
         this.top -= toMove;
         break;
       }
@@ -1137,6 +1154,8 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
     let regionNodeBoxes = {};
     let regionNodeBox;
 
+    LOG(`=== processCues ===`);
+
     for (let i = 0; i < cues.length; i++) {
       cue = cues[i];
       if (cue.region != null) {
@@ -1183,6 +1202,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
           
           cue.displayState = styleBox.div;
           boxPositions.push(cueBox);
+          LOG(`cue ${i}, ` + cueBox.getBoxInfoInChars());
         }
       }
     }
