@@ -38,7 +38,7 @@ namespace dom {
 
 
 class MaybeCrossOriginObjectMixins {
- protected:
+ public:
   
 
 
@@ -46,9 +46,9 @@ class MaybeCrossOriginObjectMixins {
 
 
 
-  static bool IsPlatformObjectSameOrigin(JSContext* cx,
-                                         JS::Handle<JSObject*> obj);
+  static bool IsPlatformObjectSameOrigin(JSContext* cx, JSObject* obj);
 
+ protected:
   
 
 
