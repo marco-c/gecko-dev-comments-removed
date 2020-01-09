@@ -61,6 +61,16 @@ function makeDebuggeeValueIfNeeded(obj, value) {
 
 
 
+function unwrapDebuggeeValue(value) {
+  if (value && typeof value == "object") {
+    return value.unsafeDereference();
+  }
+  return value;
+}
+
+
+
+
 
 function createValueGrip(value, pool, makeObjectGrip) {
   switch (typeof value) {
@@ -232,6 +242,7 @@ function getStorageLength(object) {
 module.exports = {
   getPromiseState,
   makeDebuggeeValueIfNeeded,
+  unwrapDebuggeeValue,
   createValueGrip,
   stringIsLong,
   isTypedArray,

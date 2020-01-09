@@ -767,7 +767,7 @@ errorOnFlag(exports, "wantVerbose");
 
 
 
-function callPropertyOnObject(object, name) {
+function callPropertyOnObject(object, name, ...args) {
   
   let descriptor;
   let proto = object;
@@ -787,7 +787,7 @@ function callPropertyOnObject(object, name) {
   }
 
   
-  const result = value.call(object);
+  const result = value.call(object, ...args);
   if (result === null) {
     throw new Error("Code was terminated.");
   }
@@ -812,13 +812,3 @@ function* makeDebuggeeIterator(object) {
 }
 
 exports.makeDebuggeeIterator = makeDebuggeeIterator;
-
-
-
-
-
-function getTopWindow(win) {
-  return win.windowRoot ? win.windowRoot.ownerGlobal : win.top;
-}
-
-exports.getTopWindow = getTopWindow;
