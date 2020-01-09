@@ -11,7 +11,6 @@
 
 
 
-
 Object.defineProperty(RegExp.prototype, Symbol.matchAll, {
   get() {
     throw new Test262Error();

@@ -21,7 +21,6 @@
 
 
 
-
 assert.sameValue(RegExp.prototype[Symbol.matchAll].name, '[Symbol.matchAll]');
 
 verifyNotEnumerable(RegExp.prototype[Symbol.matchAll], 'name');

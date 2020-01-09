@@ -13,7 +13,6 @@
 
 
 
-
 var obj = {
   valueOf() {
     $ERROR('This method should not be invoked.');

@@ -23,7 +23,6 @@
 
 
 
-
 var regexp = /\w/;
 var str = '*a*b';
 var iter = regexp[Symbol.matchAll](str);

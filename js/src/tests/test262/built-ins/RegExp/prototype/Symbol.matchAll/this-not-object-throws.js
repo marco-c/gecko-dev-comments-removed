@@ -10,7 +10,6 @@
 
 
 
-
 var thisValue;
 var callMatchAll = function() {
   RegExp.prototype[Symbol.matchAll].call(thisValue, '');

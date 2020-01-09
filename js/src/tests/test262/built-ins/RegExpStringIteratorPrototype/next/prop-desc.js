@@ -16,7 +16,6 @@
 
 
 
-
 var RegExpStringIteratorProto = Object.getPrototypeOf(/./[Symbol.matchAll](''));
 
 assert.sameValue(typeof RegExpStringIteratorProto.next, 'function');

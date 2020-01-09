@@ -13,7 +13,6 @@
 
 
 
-
 RegExp.prototype[Symbol.matchAll] = function() {
   throw new Test262Error();
 };

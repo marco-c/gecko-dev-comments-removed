@@ -21,7 +21,6 @@
 
 
 
-
 function TestWithRegExpExec(exec) {
   RegExp.prototype.exec = exec;
 

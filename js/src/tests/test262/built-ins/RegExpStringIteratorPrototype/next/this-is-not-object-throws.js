@@ -10,7 +10,6 @@
 
 
 
-
 var RegExpStringIteratorProto = Object.getPrototypeOf(/./[Symbol.matchAll](''));
 
 var thisValue;

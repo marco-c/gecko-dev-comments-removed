@@ -17,7 +17,6 @@
 
 
 
-
 var internalCount = 0;
 Object.defineProperty(RegExp.prototype, Symbol.match, {
   get: function() {

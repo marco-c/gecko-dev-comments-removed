@@ -14,7 +14,6 @@
 
 
 
-
 var str = 'a*b';
 var obj = {
   toString() {

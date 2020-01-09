@@ -16,7 +16,6 @@
 
 
 
-
 var regexp = /\w/;
 Object.defineProperty(regexp, 'flags', {
   value: {

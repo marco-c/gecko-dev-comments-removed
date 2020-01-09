@@ -15,7 +15,6 @@
 
 
 
-
 assert.sameValue(typeof RegExp.prototype[Symbol.matchAll], 'function');
 
 verifyNotEnumerable(RegExp.prototype, Symbol.matchAll);

@@ -11,7 +11,6 @@
 
 
 
-
 assert.sameValue(typeof Symbol.matchAll, 'symbol');
 verifyNotEnumerable(Symbol, 'matchAll');
 verifyNotWritable(Symbol, 'matchAll');

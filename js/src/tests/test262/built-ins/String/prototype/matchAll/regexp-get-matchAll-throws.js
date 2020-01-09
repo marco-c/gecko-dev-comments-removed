@@ -13,7 +13,6 @@
 
 
 
-
 var regexp = /./;
 Object.defineProperty(regexp, Symbol.matchAll, {
   get() {

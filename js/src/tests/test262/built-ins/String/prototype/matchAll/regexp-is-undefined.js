@@ -20,7 +20,6 @@
 
 
 
-
 var str = 'a';
 
 assert.compareIterator(str.matchAll(undefined), [

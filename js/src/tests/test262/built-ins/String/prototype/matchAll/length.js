@@ -23,7 +23,6 @@
 
 
 
-
 assert.sameValue(String.prototype.matchAll.length, 1);
 
 verifyNotEnumerable(String.prototype.matchAll, 'length');

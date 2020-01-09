@@ -18,7 +18,6 @@
 
 
 
-
 var regexp = /./g;
 regexp.lastIndex = {
   valueOf() {

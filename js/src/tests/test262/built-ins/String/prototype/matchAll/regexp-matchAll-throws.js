@@ -11,7 +11,6 @@
 
 
 
-
 var regexp = /./;
 regexp[Symbol.matchAll] = function() {
   throw new Test262Error();

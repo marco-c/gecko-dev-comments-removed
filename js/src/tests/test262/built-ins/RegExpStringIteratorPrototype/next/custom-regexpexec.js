@@ -19,7 +19,6 @@
 
 
 
-
 var regexp = /./g;
 var str = 'abc';
 var iter = regexp[Symbol.matchAll](str);

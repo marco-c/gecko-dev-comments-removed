@@ -9,7 +9,6 @@
 
 
 
-
 var matchAll = String.prototype.matchAll;
 
 assert.sameValue(typeof matchAll, 'function');

@@ -15,7 +15,6 @@
 
 
 
-
 var obj = {
   get [Symbol.match]() {
     throw new Test262Error();

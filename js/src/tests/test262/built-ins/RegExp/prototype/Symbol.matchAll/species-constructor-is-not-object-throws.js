@@ -21,7 +21,6 @@
 
 
 
-
 var regexp = /./;
 
 function callMatchAll() { regexp[Symbol.matchAll](''); }

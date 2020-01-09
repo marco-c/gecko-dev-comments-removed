@@ -24,7 +24,6 @@
 
 
 
-
 function TestWithConstructor(ctor) {
   var regexp = /\w/g;
   regexp.constructor = {

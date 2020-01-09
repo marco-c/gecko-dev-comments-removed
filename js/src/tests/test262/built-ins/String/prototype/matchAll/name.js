@@ -21,7 +21,6 @@
 
 
 
-
 assert.sameValue(String.prototype.matchAll.name, 'matchAll');
 
 verifyNotEnumerable(String.prototype.matchAll, 'name');

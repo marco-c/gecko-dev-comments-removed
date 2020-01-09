@@ -24,7 +24,6 @@
 
 
 
-
 var regexp = /./;
 var speciesConstructor = {};
 regexp.constructor = speciesConstructor;

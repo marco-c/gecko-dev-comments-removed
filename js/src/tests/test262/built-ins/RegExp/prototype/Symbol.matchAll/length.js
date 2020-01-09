@@ -23,7 +23,6 @@
 
 
 
-
 assert.sameValue(RegExp.prototype[Symbol.matchAll].length, 1);
 
 verifyNotEnumerable(RegExp.prototype[Symbol.matchAll], 'length');
