@@ -451,7 +451,8 @@ function* getRawDataChunked(outerStream, maxRead = WebRequestUpload.MAX_RAW_BYTE
 
     
     
-    if (unbuffered instanceof Ci.nsIFileInputStream) {
+    if ((unbuffered instanceof Ci.nsIFileInputStream) ||
+        (unbuffered instanceof Ci.mozIIPCBlobInputStream)) {
       
       yield {file: "<file>"};
       continue;
