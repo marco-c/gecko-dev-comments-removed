@@ -730,6 +730,15 @@ class TaskCache(CacheManager):
         
         tree = tree.split('/')[1] if '/' in tree else tree
 
+        
+        
+        
+        if not job.startswith('android-'):
+            if job.endswith('-pgo') or job in ('macosx64-opt', 'linux-opt'):
+                tree += '.shippable'
+            if job.endswith('-pgo'):
+                job = job.replace('-pgo', '-opt')
+
         namespace = 'gecko.v2.{tree}.revision.{rev}.{product}.{job}'.format(
             rev=rev,
             tree=tree,
