@@ -63,6 +63,8 @@ class IPCBlobInputStream final : public nsIAsyncInputStream,
 
   void LengthReady(int64_t aLength);
 
+  void SerializeInternal(mozilla::ipc::InputStreamParams& aParams);
+
   
   nsIInputStream* GetInternalStream() const override {
     if (mRemoteStream) {

@@ -55,6 +55,11 @@ class PartiallySeekableInputStream final : public nsISeekableStream,
 
   void Init();
 
+  template <typename M>
+  void SerializeInternal(mozilla::ipc::InputStreamParams& aParams,
+                         FileDescriptorArray& aFileDescriptors,
+                         bool aDelayedStart, M* aManager);
+
   nsCOMPtr<nsIInputStream> mInputStream;
 
   

@@ -20,9 +20,36 @@ class FileDescriptor;
 
 class InputStreamHelper {
  public:
+  
+  
+  
+  
+  
+  
+  
   static void SerializeInputStream(nsIInputStream* aInputStream,
                                    InputStreamParams& aParams,
-                                   nsTArray<FileDescriptor>& aFileDescriptors);
+                                   nsTArray<FileDescriptor>& aFileDescriptors,
+                                   bool aDelayedStart,
+                                   mozilla::dom::nsIContentChild* aManager);
+
+  static void SerializeInputStream(nsIInputStream* aInputStream,
+                                   InputStreamParams& aParams,
+                                   nsTArray<FileDescriptor>& aFileDescriptors,
+                                   bool aDelayedStart,
+                                   PBackgroundChild* aManager);
+
+  static void SerializeInputStream(nsIInputStream* aInputStream,
+                                   InputStreamParams& aParams,
+                                   nsTArray<FileDescriptor>& aFileDescriptors,
+                                   bool aDelayedStart,
+                                   mozilla::dom::nsIContentParent* aManager);
+
+  static void SerializeInputStream(nsIInputStream* aInputStream,
+                                   InputStreamParams& aParams,
+                                   nsTArray<FileDescriptor>& aFileDescriptors,
+                                   bool aDelayedStart,
+                                   PBackgroundParent* aManager);
 
   static already_AddRefed<nsIInputStream> DeserializeInputStream(
       const InputStreamParams& aParams,
