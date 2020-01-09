@@ -331,26 +331,5 @@ function restart(safeMode) {
 }
 
 window.addEventListener("DOMContentLoaded", function() {
-  
-  
-  
-  try {
-    let changed = false;
-    for (let profile of [...ProfileService.profiles]) {
-      if (!profile.rootDir.exists() || !profile.rootDir.isDirectory()) {
-        profile.remove(false);
-        changed = true;
-      }
-    }
-
-    if (changed) {
-      ProfileService.flush();
-    }
-  } catch (e) {
-    
-    
-    Cu.reportError(e);
-  }
-
   refreshUI();
 }, {once: true});
