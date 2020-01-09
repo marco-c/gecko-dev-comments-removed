@@ -46,7 +46,7 @@ class CPU {
   
   template <typename T>
   static T SetPointerTag(T pointer, uint64_t tag) {
-    VIXL_ASSERT(IsUintN(kAddressTagWidth, tag));
+    VIXL_ASSERT(is_uintn(kAddressTagWidth, tag));
 
     
     
