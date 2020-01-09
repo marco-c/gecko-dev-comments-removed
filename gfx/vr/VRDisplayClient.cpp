@@ -83,7 +83,7 @@ void VRDisplayClient::MakePresentationGenerationCurrent() {
 }
 
 void VRDisplayClient::FireEvents() {
-  VRManagerChild* vm = VRManagerChild::Get();
+  RefPtr<VRManagerChild> vm = VRManagerChild::Get();
   
   bool isPresenting = (mDisplayInfo.mPresentingGroups & kVRGroupContent) != 0;
 

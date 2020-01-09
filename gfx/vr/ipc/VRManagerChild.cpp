@@ -387,7 +387,9 @@ void VRManagerChild::RunFrameRequestCallbacks() {
   callbacks.AppendElements(mFrameRequestCallbacks);
   mFrameRequestCallbacks.Clear();
   for (auto& callback : callbacks) {
-    callback.mCallback->Call(timeStamp);
+    
+    
+    MOZ_KnownLive(callback.mCallback)->Call(timeStamp);
   }
 }
 
