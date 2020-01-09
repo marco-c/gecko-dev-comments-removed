@@ -5,7 +5,6 @@
 
 
 #include "ImageUtils.h"
-#include "ImageBitmapUtils.h"
 #include "ImageContainer.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/dom/ImageBitmapBinding.h"
