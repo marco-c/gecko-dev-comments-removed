@@ -19,7 +19,8 @@ pref("devtools.debugger.auto-black-box", true);
 pref("devtools.debugger.workers", false);
 
 
-pref("devtools.debugger.prefs-schema-version", "1.0.0");
+
+pref("devtools.debugger.prefs-schema-version", "1.0.9");
 pref("devtools.debugger.ui.panes-workers-and-sources-width", 200);
 pref("devtools.debugger.ui.panes-instruments-width", 300);
 pref("devtools.debugger.ui.panes-visible-on-startup", false);
