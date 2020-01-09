@@ -31,8 +31,8 @@ class nsPIDOMWindowInner;
 namespace mozilla {
 
 namespace ipc {
-class ContentSecurityPolicy;
 class PrincipalInfo;
+class CSPInfo;
 }  
 
 namespace dom {
@@ -59,6 +59,13 @@ struct WorkerLoadInfoData {
   nsCOMPtr<nsIScriptContext> mScriptContext;
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
   nsCOMPtr<nsIContentSecurityPolicy> mCSP;
+  
+  
+  
+  
+  
+  nsAutoPtr<mozilla::ipc::CSPInfo> mCSPInfo;
+
   nsCOMPtr<nsIChannel> mChannel;
   nsCOMPtr<nsILoadGroup> mLoadGroup;
 
@@ -97,8 +104,6 @@ struct WorkerLoadInfoData {
   nsAutoPtr<mozilla::ipc::PrincipalInfo> mStoragePrincipalInfo;
   nsCString mDomain;
   nsString mOrigin;  
-
-  nsTArray<mozilla::ipc::ContentSecurityPolicy> mCSPInfos;
 
   nsString mServiceWorkerCacheName;
   Maybe<ServiceWorkerDescriptor> mServiceWorkerDescriptor;
@@ -143,15 +148,16 @@ struct WorkerLoadInfo : WorkerLoadInfoData {
 
   WorkerLoadInfo& operator=(WorkerLoadInfo&& aOther) = default;
 
-  nsresult SetPrincipalsOnMainThread(nsIPrincipal* aPrincipal,
-                                     nsIPrincipal* aStoragePrincipal,
-                                     nsILoadGroup* aLoadGroup);
+  nsresult SetPrincipalsAndCSPOnMainThread(nsIPrincipal* aPrincipal,
+                                           nsIPrincipal* aStoragePrincipal,
+                                           nsILoadGroup* aLoadGroup,
+                                           nsIContentSecurityPolicy* aCSP);
 
   nsresult GetPrincipalsAndLoadGroupFromChannel(
       nsIChannel* aChannel, nsIPrincipal** aPrincipalOut,
       nsIPrincipal** aStoragePrincipalOut, nsILoadGroup** aLoadGroupOut);
 
-  nsresult SetPrincipalsFromChannel(nsIChannel* aChannel);
+  nsresult SetPrincipalsAndCSPFromChannel(nsIChannel* aChannel);
 
   bool FinalChannelPrincipalIsValid(nsIChannel* aChannel);
 

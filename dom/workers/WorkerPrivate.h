@@ -683,14 +683,6 @@ class WorkerPrivate : public RelativeTimeline {
     return *mLoadInfo.mPrincipalInfo;
   }
 
-  
-  
-  
-  
-  const nsTArray<mozilla::ipc::ContentSecurityPolicy>& GetCSPInfos() const {
-    return mLoadInfo.mCSPInfos;
-  }
-
   const mozilla::ipc::PrincipalInfo& GetEffectiveStoragePrincipalInfo() const {
     return *mLoadInfo.mStoragePrincipalInfo;
   }
@@ -714,6 +706,12 @@ class WorkerPrivate : public RelativeTimeline {
 
   nsresult SetCSPFromHeaderValues(const nsACString& aCSPHeaderValue,
                                   const nsACString& aCSPReportOnlyHeaderValue);
+
+  void StoreCSPOnClient();
+
+  const mozilla::ipc::CSPInfo& GetCSPInfo() const {
+    return *mLoadInfo.mCSPInfo;
+  }
 
   void SetReferrerPolicyFromHeaderValue(
       const nsACString& aReferrerPolicyHeaderValue);
@@ -807,11 +805,12 @@ class WorkerPrivate : public RelativeTimeline {
 
   void CycleCollect(bool aDummy);
 
-  nsresult SetPrincipalsOnMainThread(nsIPrincipal* aPrincipal,
-                                     nsIPrincipal* aStoragePrincipal,
-                                     nsILoadGroup* aLoadGroup);
+  nsresult SetPrincipalsAndCSPOnMainThread(nsIPrincipal* aPrincipal,
+                                           nsIPrincipal* aStoragePrincipal,
+                                           nsILoadGroup* aLoadGroup,
+                                           nsIContentSecurityPolicy* aCsp);
 
-  nsresult SetPrincipalsFromChannel(nsIChannel* aChannel);
+  nsresult SetPrincipalsAndCSPFromChannel(nsIChannel* aChannel);
 
   bool FinalChannelPrincipalIsValid(nsIChannel* aChannel);
 

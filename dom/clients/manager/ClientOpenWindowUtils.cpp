@@ -171,31 +171,10 @@ nsresult OpenWindow(const ClientOpenWindowArgs& aArgs,
       PrincipalInfoToPrincipal(aArgs.principalInfo());
   MOZ_DIAGNOSTIC_ASSERT(principal);
 
-  
-  
   nsCOMPtr<nsIContentSecurityPolicy> csp;
-  if (!aArgs.cspInfos().IsEmpty()) {
-    csp = new nsCSPContext();
-    csp->SetRequestContext(nullptr, principal);
-    for (const mozilla::ipc::ContentSecurityPolicy& policy : aArgs.cspInfos()) {
-      nsresult rv = csp->AppendPolicy(policy.policy(), policy.reportOnlyFlag(),
-                                      policy.deliveredViaMetaTagFlag());
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-    }
+  if (aArgs.cspInfo().isSome()) {
+    csp = CSPInfoToCSP(aArgs.cspInfo().ref(), nullptr);
   }
-
-#ifdef DEBUG
-  if (principal && !principal->GetIsNullPrincipal()) {
-    
-    
-    
-    nsCOMPtr<nsIContentSecurityPolicy> principalCSP;
-    principal->GetCsp(getter_AddRefs(principalCSP));
-    MOZ_ASSERT(nsCSPContext::Equals(csp, principalCSP));
-  }
-#endif
 
   
   if (XRE_IsContentProcess()) {
