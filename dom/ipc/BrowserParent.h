@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_tabs_BrowserParent_h
-#define mozilla_tabs_BrowserParent_h
+#ifndef mozilla_dom_BrowserParent_h
+#define mozilla_dom_BrowserParent_h
 
 #include "js/TypeDecls.h"
 #include "LiveResizeListener.h"
