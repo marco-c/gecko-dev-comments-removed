@@ -191,10 +191,7 @@ class AccessibilityTree extends Component {
           if (event.target.classList.contains("theme-twisty")) {
             this.toggle(nodePath);
           }
-
-          this.selectRow(
-            this.rows.find(row => row.props.member.path === nodePath),
-            { preventAutoScroll: true });
+          this.selectRow(event.currentTarget);
         },
         onContextMenuTree: hasContextMenu && function(e) {
           

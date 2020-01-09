@@ -181,76 +181,14 @@ function compareBadges(badges, expected = []) {
 
 
 
-
-function closestScrolledParent(node) {
-  if (node == null) {
-    return null;
-  }
-
-  if (node.scrollHeight > node.clientHeight) {
-    return node;
-  }
-
-  return closestScrolledParent(node.parentNode);
-}
-
-
-
-
-
-
-
-
-
-
-
-function isVisible(element) {
-  const { top, bottom } = element.getBoundingClientRect();
-  const scrolledParent = closestScrolledParent(element.parentNode);
-  const scrolledParentRect = scrolledParent ? scrolledParent.getBoundingClientRect() :
-                                              null;
-  return !scrolledParent ||
-         (top >= scrolledParentRect.top && bottom <= scrolledParentRect.bottom);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-function checkSelected(row, expected) {
-  if (!expected) {
-    return true;
-  }
-
-  if (row.classList.contains("selected") !== expected) {
-    return false;
-  }
-
-  return isVisible(row);
-}
-
-
-
-
-
-
 async function checkTreeState(doc, expected) {
   info("Checking tree state.");
   const hasExpectedStructure = await BrowserTestUtils.waitForCondition(() =>
-    [...doc.querySelectorAll(".treeRow")].every((row, i) => {
-      const { role, name, badges, selected } = expected[i];
-      return row.querySelector(".treeLabelCell").textContent === role &&
-        row.querySelector(".treeValueCell").textContent === name &&
-        compareBadges(row.querySelector(".badges"), badges) &&
-        checkSelected(row, selected);
-    }), "Wait for the right tree update.");
+    [...doc.querySelectorAll(".treeRow")].every((row, i) =>
+      row.querySelector(".treeLabelCell").textContent === expected[i].role &&
+      row.querySelector(".treeValueCell").textContent === expected[i].name &&
+      compareBadges(row.querySelector(".badges"), expected[i].badges)),
+    "Wait for the right tree update.");
 
   ok(hasExpectedStructure, "Tree structure is correct.");
 }
