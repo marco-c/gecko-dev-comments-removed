@@ -1065,6 +1065,18 @@ class DrawTarget : public external::AtomicRefCounted<DrawTarget> {
 
 
 
+
+  virtual void FillRoundedRect(const RoundedRect &aRect,
+                               const Pattern &aPattern,
+                               const DrawOptions &aOptions = DrawOptions());
+
+  
+
+
+
+
+
+
   virtual void StrokeRect(const Rect &aRect, const Pattern &aPattern,
                           const StrokeOptions &aStrokeOptions = StrokeOptions(),
                           const DrawOptions &aOptions = DrawOptions()) = 0;
