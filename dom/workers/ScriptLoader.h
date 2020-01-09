@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_dom_workers_scriptloader_h__
 #define mozilla_dom_workers_scriptloader_h__
@@ -26,6 +26,7 @@ namespace dom {
 
 struct WorkerLoadInfo;
 class WorkerPrivate;
+class SerializedStackHolder;
 
 enum WorkerScriptType { WorkerScript, DebuggerScript };
 
@@ -45,15 +46,19 @@ nsresult ChannelFromScriptURLWorkerThread(JSContext* aCx,
 void ReportLoadError(ErrorResult& aRv, nsresult aLoadResult,
                      const nsAString& aScriptURL);
 
-void LoadMainScript(WorkerPrivate* aWorkerPrivate, const nsAString& aScriptURL,
+void LoadMainScript(WorkerPrivate* aWorkerPrivate,
+                    UniquePtr<SerializedStackHolder> aOriginStack,
+                    const nsAString& aScriptURL,
                     WorkerScriptType aWorkerScriptType, ErrorResult& aRv);
 
-void Load(WorkerPrivate* aWorkerPrivate, const nsTArray<nsString>& aScriptURLs,
+void Load(WorkerPrivate* aWorkerPrivate,
+          UniquePtr<SerializedStackHolder> aOriginStack,
+          const nsTArray<nsString>& aScriptURLs,
           WorkerScriptType aWorkerScriptType, ErrorResult& aRv);
 
-}  
+}  // namespace workerinternals
 
-}  
-}  
+}  // namespace dom
+}  // namespace mozilla
 
-#endif 
+#endif /* mozilla_dom_workers_scriptloader_h__ */

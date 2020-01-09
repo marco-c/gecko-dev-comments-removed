@@ -103,8 +103,8 @@ class CompileDebuggerScriptRunnable final : public WorkerDebuggerRunnable {
 
     ErrorResult rv;
     JSAutoRealm ar(aCx, global);
-    workerinternals::LoadMainScript(aWorkerPrivate, mScriptURL, DebuggerScript,
-                                    rv);
+    workerinternals::LoadMainScript(aWorkerPrivate, nullptr, mScriptURL,
+                                    DebuggerScript, rv);
     rv.WouldReportJSException();
     
     
