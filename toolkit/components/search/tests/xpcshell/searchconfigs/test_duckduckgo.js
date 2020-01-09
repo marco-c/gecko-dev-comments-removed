@@ -13,11 +13,6 @@ const test = new SearchConfigTest({
       
     ],
   },
-  domains: {
-    "duckduckgo.com": {
-      included: [{}],
-    },
-  },
 });
 
 add_task(async function setup() {

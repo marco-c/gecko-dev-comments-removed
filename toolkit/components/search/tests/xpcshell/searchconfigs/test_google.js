@@ -29,11 +29,6 @@ const test = new SearchConfigTest({
       
     ],
   },
-  domains: {
-    "google.com": {
-      included: [{}],
-    },
-  },
 });
 
 add_task(async function setup() {
