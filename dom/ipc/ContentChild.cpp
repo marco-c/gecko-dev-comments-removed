@@ -672,6 +672,11 @@ bool ContentChild::Init(MessageLoop* aIOLoop, base::ProcessId aParentPid,
   
   if (recordreplay::IsMiddleman()) {
     SetMiddlemanIPCChannel(recordreplay::parent::ChannelToUIProcess());
+
+    
+    
+    
+    ActorConnected();
   }
 
   if (!Open(aChannel, aParentPid, aIOLoop)) {
