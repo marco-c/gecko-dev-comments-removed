@@ -26,6 +26,12 @@
 
 
 
+
+
+
+
+
+
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 ChromeUtils.defineModuleGetter(this, "IndexedDB", "resource://gre/modules/IndexedDB.jsm");
@@ -194,6 +200,15 @@ var AddonStudies = {
   async add(study) {
     const db = await getDatabase();
     return getStore(db, "readwrite").add(study);
+  },
+
+  
+
+
+
+  async update(study) {
+    const db = await getDatabase();
+    return getStore(db, "readwrite").put(study);
   },
 
   
