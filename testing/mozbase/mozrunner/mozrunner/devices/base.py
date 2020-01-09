@@ -1,9 +1,10 @@
-
-
-
-
 from __future__ import absolute_import, print_function
 
+
+from ConfigParser import (
+    ConfigParser,
+    RawConfigParser
+)
 import datetime
 import os
 import posixpath
@@ -12,7 +13,6 @@ import tempfile
 import time
 
 from mozdevice import ADBHost, ADBError
-from six.moves.configparser import ConfigParser, RawConfigParser
 
 
 class Device(object):
