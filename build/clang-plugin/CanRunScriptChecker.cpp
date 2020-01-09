@@ -112,6 +112,10 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
           unless(declRefExpr(to(parmVarDecl()))),
           
           
+          
+          unless(declRefExpr(to(varDecl(isConstexpr())))),
+          
+          
           unless(cxxDefaultArgExpr(isNullDefaultArg())),
           
           unless(cxxNullPtrLiteralExpr()),
@@ -130,7 +134,12 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
                   
                   
                   ignoreTrivials(declRefExpr(to(parmVarDecl()))),
-                  cxxThisExpr()
+                  cxxThisExpr(),
+                  
+                  
+                  
+                  
+                  ignoreTrivials(declRefExpr(to(varDecl(isConstexpr()))))
                 )
               )
             )
