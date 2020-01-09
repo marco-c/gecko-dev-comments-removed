@@ -387,7 +387,7 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
   
   
   
-  std::unordered_set<uint64_t> mActiveAnimations;
+  std::unordered_map<uint64_t, wr::Epoch> mActiveAnimations;
   std::unordered_map<uint64_t, RefPtr<WebRenderImageHost>> mAsyncCompositables;
   std::unordered_map<uint64_t, CompositableTextureHostRef> mTextureHosts;
   std::unordered_map<uint64_t, wr::ExternalImageId> mSharedSurfaceIds;
