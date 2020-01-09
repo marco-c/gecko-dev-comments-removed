@@ -3,6 +3,8 @@
 
 
 
+
+
 import cases from "jest-in-case";
 import {
   formatPausePoints,
@@ -21,7 +23,10 @@ cases(
       : getSource(file, type);
 
     setSource(source);
-    const nodes = convertToList(getPausePoints(source.id));
+
+    
+    
+    const nodes = convertToList((getPausePoints(source.id): any));
     expect(formatPausePoints(source.text, nodes)).toMatchSnapshot();
   },
   [

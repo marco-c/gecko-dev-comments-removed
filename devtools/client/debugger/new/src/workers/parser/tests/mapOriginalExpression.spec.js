@@ -2,6 +2,8 @@
 
 
 
+
+
 import mapExpression from "../mapExpression";
 import { format } from "prettier";
 
@@ -11,7 +13,7 @@ const formatOutput = output =>
   });
 
 const mapOriginalExpression = (expression, mappings) =>
-  mapExpression(expression, mappings, null, false, false).expression;
+  mapExpression(expression, mappings, [], false, false).expression;
 
 describe("mapOriginalExpression", () => {
   it("simple", () => {

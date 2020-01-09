@@ -2,6 +2,8 @@
 
 
 
+
+
 import {
   createStore,
   selectors,
@@ -34,7 +36,13 @@ describe("navigation", () => {
       fetchWorkers: () => Promise.resolve([]),
       getMainThread: () => "FakeThread"
     });
-    await dispatch(actions.connect("http://test.com/foo"));
+    await dispatch(
+      actions.connect(
+        "http://test.com/foo",
+        "actor",
+        false
+      )
+    );
     expect(selectors.getDebuggeeUrl(getState())).toEqual("http://test.com/foo");
   });
 

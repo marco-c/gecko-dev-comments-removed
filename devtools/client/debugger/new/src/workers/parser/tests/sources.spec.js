@@ -2,6 +2,8 @@
 
 
 
+
+
 import { hasSource, getSource, setSource, clearSources } from "../sources";
 
 import type { Source } from "../../../types";
@@ -12,6 +14,8 @@ describe("sources", () => {
     const source: Source = {
       id: sourceId,
       url: "http://example.org/some.source.js",
+      introductionUrl: "",
+      relativeUrl: "",
       isBlackBoxed: false,
       isPrettyPrinted: false,
       isWasm: false,

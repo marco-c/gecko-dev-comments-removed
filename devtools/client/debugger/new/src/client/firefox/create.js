@@ -29,7 +29,9 @@ export function createFrame(thread: ThreadId, frame: FramePacket): ?Frame {
   }
 
   
-  const actor = frame.where.source ? frame.where.source.actor : frame.where.actor;
+  const actor = frame.where.source
+    ? frame.where.source.actor
+    : frame.where.actor;
 
   const location = {
     sourceId: clientCommands.getSourceForActor(actor),

@@ -2,12 +2,16 @@
 
 
 
+
+
 import {
   actions,
   selectors,
   createStore,
   makeSource
 } from "../../utils/test-head";
+
+import { makeMockFrame } from "../../utils/test-mockup";
 
 const mockThreadClient = {
   evaluateInFrame: (script, { frameId }) =>
@@ -55,7 +59,7 @@ describe("expressions", () => {
   it("should not add empty expressions", () => {
     const { dispatch, getState } = createStore(mockThreadClient);
 
-    dispatch(actions.addExpression());
+    dispatch(actions.addExpression((undefined: any)));
     dispatch(actions.addExpression(""));
 
     expect(selectors.getExpressions(getState()).size).toBe(0);
@@ -139,24 +143,19 @@ describe("expressions", () => {
 
     await dispatch(actions.autocomplete("to", 2));
 
-    expect(
-      selectors.getAutocompleteMatchset(getState(), "to")
-    ).toMatchSnapshot();
+    expect(selectors.getAutocompleteMatchset(getState())).toMatchSnapshot();
   });
 });
 
 async function createFrames(dispatch) {
-  const sourceId = "example.js";
-  const frame = {
-    id: "2",
-    location: { sourceId, line: 3 }
-  };
+  const frame = makeMockFrame();
 
   await dispatch(actions.newSource(makeSource("example.js")));
 
   await dispatch(
     actions.paused({
       thread: "UnknownThread",
+      frame,
       frames: [frame],
       why: { type: "just because" }
     })

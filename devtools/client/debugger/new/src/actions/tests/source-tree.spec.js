@@ -2,6 +2,8 @@
 
 
 
+
+
 import { actions, selectors, createStore } from "../../utils/test-head";
 const { getExpandedState } = selectors;
 
@@ -10,7 +12,7 @@ describe("source tree", () => {
     const { dispatch, getState } = createStore();
     const expandedState = new Set(["foo", "bar"]);
 
-    expect(getExpandedState(getState())).toEqual(undefined);
+    expect(getExpandedState(getState(), "FakeThread")).toEqual(undefined);
     dispatch(actions.setExpandedState("FakeThread", expandedState));
     expect(getExpandedState(getState(), "FakeThread")).toEqual(expandedState);
   });

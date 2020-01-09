@@ -2,13 +2,25 @@
 
 
 
+
+
 import { setupCommands, clientCommands } from "../commands";
 
 function makeThreadCLient(resp) {
-  return {
+  
+  
+  return ({
     pauseGrip: () => ({
       getPrototypeAndProperties: async () => resp
     })
+  }: any);
+}
+
+function makeDependencies() {
+  return {
+    debuggerClient: (null: any),
+    supportsWasm: true,
+    tabTarget: (null: any)
   };
 }
 
@@ -21,8 +33,8 @@ describe("firefox commands", () => {
         safeGetterValues: {}
       });
 
-      setupCommands({ threadClient });
-      const props = await getProperties({});
+      setupCommands({ ...makeDependencies(), threadClient });
+      const props = await getProperties("", { actor: "" });
       expect(props).toMatchSnapshot();
     });
 
@@ -36,8 +48,8 @@ describe("firefox commands", () => {
         safeGetterValues: {}
       });
 
-      setupCommands({ threadClient });
-      const props = await getProperties({});
+      setupCommands({ ...makeDependencies(), threadClient });
+      const props = await getProperties("", { actor: "" });
       expect(props).toMatchSnapshot();
     });
 
@@ -53,8 +65,8 @@ describe("firefox commands", () => {
         }
       });
 
-      setupCommands({ threadClient });
-      const props = await getProperties({});
+      setupCommands({ ...makeDependencies(), threadClient });
+      const props = await getProperties("", { actor: "" });
       expect(props).toMatchSnapshot();
     });
 
@@ -69,8 +81,8 @@ describe("firefox commands", () => {
         }
       });
 
-      setupCommands({ threadClient });
-      const props = await getProperties({});
+      setupCommands({ ...makeDependencies(), threadClient });
+      const props = await getProperties("", { actor: "" });
       expect(props).toMatchSnapshot();
     });
   });
