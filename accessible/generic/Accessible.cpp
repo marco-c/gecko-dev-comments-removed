@@ -2414,6 +2414,12 @@ Accessible* Accessible::CurrentItem() const {
     dom::Document* DOMDoc = mContent->OwnerDoc();
     dom::Element* activeDescendantElm = DOMDoc->GetElementById(id);
     if (activeDescendantElm) {
+      if (nsContentUtils::ContentIsDescendantOf(mContent,
+                                                activeDescendantElm)) {
+        
+        return nullptr;
+      }
+
       DocAccessible* document = Document();
       if (document) return document->GetAccessible(activeDescendantElm);
     }
