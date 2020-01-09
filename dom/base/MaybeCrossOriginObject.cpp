@@ -439,12 +439,19 @@ JSObject* MaybeCrossOriginObject<Base>::enumerate(
   
   
   
+  
+  
   JS::Rooted<JSObject*> self(cx, proxy);
   if (!MaybeWrapObject(cx, &self)) {
     return nullptr;
   }
 
-  return js::BaseProxyHandler::enumerate(cx, self);
+  js::AutoIdVector props(cx);
+  if (!js::GetPropertyKeys(cx, self, 0, &props)) {
+    return nullptr;
+  }
+
+  return js::EnumeratedIdVectorToIterator(cx, self, props);
 }
 
 
