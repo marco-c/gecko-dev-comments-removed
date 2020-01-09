@@ -133,12 +133,12 @@ class ComputedOffsetComparator {
 
 
 static void GetKeyframeListFromKeyframeSequence(JSContext* aCx,
-                                                Document* aDocument,
+                                                dom::Document* aDocument,
                                                 JS::ForOfIterator& aIterator,
                                                 nsTArray<Keyframe>& aResult,
                                                 ErrorResult& aRv);
 
-static bool ConvertKeyframeSequence(JSContext* aCx, Document* aDocument,
+static bool ConvertKeyframeSequence(JSContext* aCx, dom::Document* aDocument,
                                     JS::ForOfIterator& aIterator,
                                     nsTArray<Keyframe>& aResult);
 
@@ -157,7 +157,7 @@ static bool AppendValueAsString(JSContext* aCx, nsTArray<nsString>& aValues,
 
 static Maybe<PropertyValuePair> MakePropertyValuePair(
     nsCSSPropertyID aProperty, const nsAString& aStringValue,
-    Document* aDocument);
+    dom::Document* aDocument);
 
 static bool HasValidOffsets(const nsTArray<Keyframe>& aKeyframes);
 
@@ -175,11 +175,11 @@ static void BuildSegmentsFromValueEntries(
     nsTArray<AnimationProperty>& aResult);
 
 static void GetKeyframeListFromPropertyIndexedKeyframe(
-    JSContext* aCx, Document* aDocument, JS::Handle<JS::Value> aValue,
+    JSContext* aCx, dom::Document* aDocument, JS::Handle<JS::Value> aValue,
     nsTArray<Keyframe>& aResult, ErrorResult& aRv);
 
 static bool HasImplicitKeyframeValues(const nsTArray<Keyframe>& aKeyframes,
-                                      Document* aDocument);
+                                      dom::Document* aDocument);
 
 static void DistributeRange(const Range<Keyframe>& aRange);
 
@@ -190,7 +190,7 @@ static void DistributeRange(const Range<Keyframe>& aRange);
 
 
  nsTArray<Keyframe> KeyframeUtils::GetKeyframesFromObject(
-    JSContext* aCx, Document* aDocument, JS::Handle<JSObject*> aFrames,
+    JSContext* aCx, dom::Document* aDocument, JS::Handle<JSObject*> aFrames,
     ErrorResult& aRv) {
   MOZ_ASSERT(!aRv.Failed());
 
@@ -224,7 +224,7 @@ static void DistributeRange(const Range<Keyframe>& aRange);
     return keyframes;
   }
 
-  if (!Document::AreWebAnimationsImplicitKeyframesEnabled(aCx, nullptr) &&
+  if (!dom::Document::AreWebAnimationsImplicitKeyframesEnabled(aCx, nullptr) &&
       HasImplicitKeyframeValues(keyframes, aDocument)) {
     keyframes.Clear();
     aRv.Throw(NS_ERROR_DOM_ANIM_MISSING_PROPS_ERR);
@@ -340,7 +340,7 @@ KeyframeUtils::GetAnimationPropertiesFromKeyframes(
 
 
 static void GetKeyframeListFromKeyframeSequence(JSContext* aCx,
-                                                Document* aDocument,
+                                                dom::Document* aDocument,
                                                 JS::ForOfIterator& aIterator,
                                                 nsTArray<Keyframe>& aResult,
                                                 ErrorResult& aRv) {
@@ -375,7 +375,7 @@ static void GetKeyframeListFromKeyframeSequence(JSContext* aCx,
 
 
 
-static bool ConvertKeyframeSequence(JSContext* aCx, Document* aDocument,
+static bool ConvertKeyframeSequence(JSContext* aCx, dom::Document* aDocument,
                                     JS::ForOfIterator& aIterator,
                                     nsTArray<Keyframe>& aResult) {
   JS::Rooted<JS::Value> value(aCx);
@@ -589,7 +589,7 @@ static bool AppendValueAsString(JSContext* aCx, nsTArray<nsString>& aValues,
 
 static void ReportInvalidPropertyValueToConsole(
     nsCSSPropertyID aProperty, const nsAString& aInvalidPropertyValue,
-    Document* aDoc) {
+    dom::Document* aDoc) {
   const nsString& invalidValue = PromiseFlatString(aInvalidPropertyValue);
   const NS_ConvertASCIItoUTF16 propertyName(
       nsCSSProps::GetStringValue(aProperty));
@@ -612,7 +612,7 @@ static void ReportInvalidPropertyValueToConsole(
 
 static Maybe<PropertyValuePair> MakePropertyValuePair(
     nsCSSPropertyID aProperty, const nsAString& aStringValue,
-    Document* aDocument) {
+    dom::Document* aDocument) {
   MOZ_ASSERT(aDocument);
   Maybe<PropertyValuePair> result;
 
@@ -942,7 +942,7 @@ static void BuildSegmentsFromValueEntries(
 
 
 static void GetKeyframeListFromPropertyIndexedKeyframe(
-    JSContext* aCx, Document* aDocument, JS::Handle<JS::Value> aValue,
+    JSContext* aCx, dom::Document* aDocument, JS::Handle<JS::Value> aValue,
     nsTArray<Keyframe>& aResult, ErrorResult& aRv) {
   MOZ_ASSERT(aValue.isObject());
   MOZ_ASSERT(aResult.IsEmpty());
@@ -1144,7 +1144,7 @@ static void GetKeyframeListFromPropertyIndexedKeyframe(
 
 
 static bool HasImplicitKeyframeValues(const nsTArray<Keyframe>& aKeyframes,
-                                      Document* aDocument) {
+                                      dom::Document* aDocument) {
   
   
   
