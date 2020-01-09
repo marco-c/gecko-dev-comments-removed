@@ -152,6 +152,7 @@ Inspector.prototype = {
       this._getPageStyle(),
       this._getDefaultSelection(),
       this._getAccessibilityFront(),
+      this._getChangesFront(),
     ]);
 
     return this._deferredOpen();
@@ -240,16 +241,6 @@ Inspector.prototype = {
   
 
 
-  _supportsChangesPanel() {
-    
-    
-    
-    return this._target.hasActor("changes");
-  },
-
-  
-
-
 
 
 
@@ -267,14 +258,6 @@ Inspector.prototype = {
     
     if (this._defaultNode) {
       this.selection.setNodeFront(this._defaultNode, { reason: "inspector-open" });
-    }
-
-    if (this._supportsChangesPanel()) {
-      
-      
-      
-      this.changesFront = await this.toolbox.target.getFront("changes");
-      this.changesFront.start();
     }
 
     
@@ -330,6 +313,15 @@ Inspector.prototype = {
   _getAccessibilityFront: async function() {
     this.accessibilityFront = await this.target.getFront("accessibility");
     return this.accessibilityFront;
+  },
+
+  _getChangesFront: async function() {
+    
+    
+    
+    this.changesFront = await this.toolbox.target.getFront("changes");
+    this.changesFront.start();
+    return this.changesFront;
   },
 
   _getDefaultSelection: function() {
@@ -890,6 +882,10 @@ Inspector.prototype = {
         title: INSPECTOR_L10N.getStr("inspector.sidebar.computedViewTitle"),
       },
       {
+        id: "changesview",
+        title: INSPECTOR_L10N.getStr("inspector.sidebar.changesViewTitle"),
+      },
+      {
         id: "fontinspector",
         title: INSPECTOR_L10N.getStr("inspector.sidebar.fontInspectorTitle"),
       },
@@ -898,15 +894,6 @@ Inspector.prototype = {
         title: INSPECTOR_L10N.getStr("inspector.sidebar.animationInspectorTitle"),
       },
     ];
-
-    if (this._supportsChangesPanel()) {
-      
-      
-      sidebarPanels.splice(2, 0, {
-        id: "changesview",
-        title: INSPECTOR_L10N.getStr("inspector.sidebar.changesViewTitle"),
-      });
-    }
 
     if (Services.prefs.getBoolPref("devtools.inspector.new-rulesview.enabled")) {
       sidebarPanels.push({
