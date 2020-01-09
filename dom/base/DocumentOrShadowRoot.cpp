@@ -361,8 +361,7 @@ void DocumentOrShadowRoot::NodesFromRect(float aX, float aY, float aTopSize,
                                          float aRightSize, float aBottomSize,
                                          float aLeftSize,
                                          bool aIgnoreRootScrollFrame,
-                                         bool aFlushLayout,
-                                         bool aOnlyVisible,
+                                         bool aFlushLayout, bool aOnlyVisible,
                                          nsTArray<RefPtr<nsINode>>& aReturn) {
   
   

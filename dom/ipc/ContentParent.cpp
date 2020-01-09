@@ -1187,8 +1187,9 @@ TabParent* ContentParent::CreateBrowser(const TabContext& aContext,
     aBrowsingContext->Canonical()->SetOwnerProcessId(
         constructorSender->ChildID());
 
-    RefPtr<TabParent> tabParent = new TabParent(
-        constructorSender, tabId, aContext, aBrowsingContext->Canonical(), chromeFlags);
+    RefPtr<TabParent> tabParent =
+        new TabParent(constructorSender, tabId, aContext,
+                      aBrowsingContext->Canonical(), chromeFlags);
 
     
     

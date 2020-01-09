@@ -4292,7 +4292,8 @@ void MacroAssembler::patchFarJump(CodeOffset farJump, uint32_t targetOffset) {
 }
 
 CodeOffset MacroAssembler::nopPatchableToCall(const wasm::CallSiteDesc& desc) {
-  AutoForbidPoolsAndNops afp(this,  1);
+  AutoForbidPoolsAndNops afp(this,
+                              1);
   CodeOffset offset(currentOffset());
   ma_nop();
   append(desc, CodeOffset(currentOffset()));

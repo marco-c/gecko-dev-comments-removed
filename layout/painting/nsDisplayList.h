@@ -1722,9 +1722,7 @@ class nsDisplayListBuilder {
     return false;
   }
 
-  void RebuildAllItemsInCurrentSubtree() {
-    mDirtyRect = mVisibleRect;
-  }
+  void RebuildAllItemsInCurrentSubtree() { mDirtyRect = mVisibleRect; }
 
   
 

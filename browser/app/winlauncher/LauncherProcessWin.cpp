@@ -41,10 +41,9 @@
 
 
 
-static mozilla::LauncherVoidResult PostCreationSetup(const wchar_t* aFullImagePath,
-                                                     HANDLE aChildProcess,
-                                                     HANDLE aChildMainThread,
-                                                     const bool aIsSafeMode) {
+static mozilla::LauncherVoidResult PostCreationSetup(
+    const wchar_t* aFullImagePath, HANDLE aChildProcess,
+    HANDLE aChildMainThread, const bool aIsSafeMode) {
   
   
   
@@ -332,9 +331,8 @@ Maybe<int> LauncherMain(int& argc, wchar_t* argv[],
   nsAutoHandle process(pi.hProcess);
   nsAutoHandle mainThread(pi.hThread);
 
-  LauncherVoidResult setupResult =
-      PostCreationSetup(argv[0], process.get(), mainThread.get(),
-                        isSafeMode.value());
+  LauncherVoidResult setupResult = PostCreationSetup(
+      argv[0], process.get(), mainThread.get(), isSafeMode.value());
   if (setupResult.isErr()) {
     HandleLauncherError(setupResult);
     ::TerminateProcess(process.get(), 1);

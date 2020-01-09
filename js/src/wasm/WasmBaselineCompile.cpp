@@ -4695,7 +4695,8 @@ class BaseCompiler final : public BaseCompilerInterface {
     
     
     
-    AutoForbidPoolsAndNops afp(&masm,  5);
+    AutoForbidPoolsAndNops afp(&masm,
+                                5);
 
     ScratchI32 scratch(*this);
 
@@ -4728,7 +4729,8 @@ class BaseCompiler final : public BaseCompilerInterface {
 
     masm.branchToComputedAddress(BaseIndex(scratch, switchValue, ScalePointer));
 #elif defined(JS_CODEGEN_ARM64)
-    AutoForbidPoolsAndNops afp(&masm,  4);
+    AutoForbidPoolsAndNops afp(&masm,
+                                4);
 
     ScratchI32 scratch(*this);
 

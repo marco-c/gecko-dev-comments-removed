@@ -2321,7 +2321,8 @@ class AutoForbidPoolsAndNops : public AutoForbidNops {
   
   
   
-  AutoForbidPoolsAndNops(Assembler* masm, size_t maxInst) : AutoForbidNops(masm) {
+  AutoForbidPoolsAndNops(Assembler* masm, size_t maxInst)
+      : AutoForbidNops(masm) {
     masm_->enterNoPool(maxInst);
   }
 

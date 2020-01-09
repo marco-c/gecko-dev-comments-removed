@@ -20,7 +20,7 @@ namespace mozilla {
 namespace dom {
 class Document;
 class Selection;
-}
+}  
 
 class SelectionChangeEventDispatcher final {
  public:

@@ -18,7 +18,7 @@ struct RawServoFontFaceRule;
 namespace mozilla {
 enum class StyleOrigin : uint8_t;
 struct LangGroupFontPrefs;
-}
+}  
 
 
 struct nsFontFaceRuleContainer {
