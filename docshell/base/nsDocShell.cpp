@@ -8903,36 +8903,11 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
     return NS_OK;
   }
 
-
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  {
-    bool inherits;
-
-    if (aLoadState->LoadType() != LOAD_NORMAL_EXTERNAL &&
-        !aLoadState->PrincipalToInherit() &&
-        (aLoadState->HasLoadFlags(INTERNAL_LOAD_FLAGS_INHERIT_PRINCIPAL)) &&
-        NS_SUCCEEDED(nsContentUtils::URIInheritsSecurityContext(
-            aLoadState->URI(), &inherits)) &&
-        inherits) {
-      aLoadState->SetPrincipalToInherit(GetInheritedPrincipal(true));
-    }
-    
-    
-    
+  if (aLoadState->SourceDocShell() &&
+      aLoadState->SourceDocShell()->IsSandboxedFrom(this)) {
+    return NS_ERROR_DOM_INVALID_ACCESS_ERR;
   }
 
   
@@ -8974,9 +8949,33 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
 
   
   
-  if (aLoadState->SourceDocShell() &&
-      aLoadState->SourceDocShell()->IsSandboxedFrom(this)) {
-    return NS_ERROR_DOM_INVALID_ACCESS_ERR;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  {
+    bool inherits;
+
+    if (aLoadState->LoadType() != LOAD_NORMAL_EXTERNAL &&
+        !aLoadState->PrincipalToInherit() &&
+        (aLoadState->HasLoadFlags(INTERNAL_LOAD_FLAGS_INHERIT_PRINCIPAL)) &&
+        NS_SUCCEEDED(nsContentUtils::URIInheritsSecurityContext(
+            aLoadState->URI(), &inherits)) &&
+        inherits) {
+      aLoadState->SetPrincipalToInherit(GetInheritedPrincipal(true));
+    }
+    
+    
+    
   }
 
   
