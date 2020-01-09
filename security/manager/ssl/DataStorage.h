@@ -115,10 +115,7 @@ class DataStorage : public nsIObserver {
   
   
   
-  
-  nsresult Init(
-       bool& aDataWillPersist,
-      const InfallibleTArray<mozilla::dom::DataStorageItem>* aItems = nullptr);
+  nsresult Init(const InfallibleTArray<mozilla::dom::DataStorageItem>* aItems);
   
   
   
@@ -186,8 +183,7 @@ class DataStorage : public nsIObserver {
 
   void WaitForReady();
   nsresult AsyncWriteData(const MutexAutoLock& aProofOfLock);
-  nsresult AsyncReadData(bool& aHaveProfileDir,
-                         const MutexAutoLock& aProofOfLock);
+  nsresult AsyncReadData(const MutexAutoLock& aProofOfLock);
   nsresult AsyncSetTimer(const MutexAutoLock& aProofOfLock);
   nsresult DispatchShutdownTimer(const MutexAutoLock& aProofOfLock);
 
