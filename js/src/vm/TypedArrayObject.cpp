@@ -382,9 +382,24 @@ class TypedArrayObjectTemplate : public TypedArrayObject {
 
   static TypedArrayObject* makeTypedInstance(JSContext* cx,
                                              CreateSingleton createSingleton,
+                                             HandleObjectGroup group,
                                              gc::AllocKind allocKind) {
     if (createSingleton == CreateSingleton::Yes) {
+      MOZ_ASSERT(!group);
       return newBuiltinClassInstance(cx, allocKind, SingletonObject);
+    }
+
+    if (group) {
+      MOZ_ASSERT(group->clasp() == instanceClass());
+      NewObjectKind newKind = GenericObject;
+      {
+        AutoSweepObjectGroup sweep(group);
+        if (group->shouldPreTenure(sweep)) {
+          newKind = TenuredObject;
+        }
+      }
+      return NewObjectWithGroup<TypedArrayObject>(cx, group, allocKind,
+                                                  newKind);
     }
 
     jsbytecode* pc;
@@ -406,7 +421,7 @@ class TypedArrayObjectTemplate : public TypedArrayObject {
   static TypedArrayObject* makeInstance(
       JSContext* cx, Handle<ArrayBufferObjectMaybeShared*> buffer,
       CreateSingleton createSingleton, uint32_t byteOffset, uint32_t len,
-      HandleObject proto) {
+      HandleObject proto, HandleObjectGroup group = nullptr) {
     MOZ_ASSERT(len < INT32_MAX / BYTES_PER_ELEMENT);
 
     gc::AllocKind allocKind =
@@ -427,9 +442,10 @@ class TypedArrayObjectTemplate : public TypedArrayObject {
     AutoSetNewObjectMetadata metadata(cx);
     Rooted<TypedArrayObject*> obj(cx);
     if (proto && proto != checkProto) {
+      MOZ_ASSERT(!group);
       obj = makeProtoInstance(cx, proto, allocKind);
     } else {
-      obj = makeTypedInstance(cx, createSingleton, allocKind);
+      obj = makeTypedInstance(cx, createSingleton, group, allocKind);
     }
     if (!obj || !obj->init(cx, buffer, byteOffset, len, BYTES_PER_ELEMENT)) {
       return nullptr;
@@ -446,6 +462,7 @@ class TypedArrayObjectTemplate : public TypedArrayObject {
     bool fitsInline = nbytes <= INLINE_BUFFER_LIMIT;
     gc::AllocKind allocKind = !fitsInline ? gc::GetGCObjectKind(instanceClass())
                                           : AllocKindForLazyBuffer(nbytes);
+    MOZ_ASSERT(allocKind >= gc::GetGCObjectKind(instanceClass()));
 
     AutoSetNewObjectMetadata metadata(cx);
     jsbytecode* pc;
@@ -550,6 +567,15 @@ class TypedArrayObjectTemplate : public TypedArrayObject {
     initTypedArrayData(obj, len, buf, allocKind);
 
     return obj;
+  }
+
+  static TypedArrayObject* makeTypedArrayWithTemplate(
+      JSContext* cx, TypedArrayObject* templateObj, HandleObject array) {
+    MOZ_ASSERT(!IsWrapper(array));
+    MOZ_ASSERT(!array->is<ArrayBufferObjectMaybeShared>());
+
+    RootedObjectGroup group(cx, templateObj->group());
+    return fromArray(cx, array, nullptr, group);
   }
 
   
@@ -881,14 +907,17 @@ class TypedArrayObjectTemplate : public TypedArrayObject {
                                   uint32_t count,
                                   MutableHandle<ArrayBufferObject*> buffer);
 
-  static JSObject* fromArray(JSContext* cx, HandleObject other,
-                             HandleObject proto = nullptr);
+  static TypedArrayObject* fromArray(JSContext* cx, HandleObject other,
+                                     HandleObject proto = nullptr,
+                                     HandleObjectGroup group = nullptr);
 
-  static JSObject* fromTypedArray(JSContext* cx, HandleObject other,
-                                  bool isWrapped, HandleObject proto);
+  static TypedArrayObject* fromTypedArray(JSContext* cx, HandleObject other,
+                                          bool isWrapped, HandleObject proto,
+                                          HandleObjectGroup group);
 
-  static JSObject* fromObject(JSContext* cx, HandleObject other,
-                              HandleObject proto);
+  static TypedArrayObject* fromObject(JSContext* cx, HandleObject other,
+                                      HandleObject proto,
+                                      HandleObjectGroup group);
 
   static const NativeType getIndex(TypedArrayObject* tarray, uint32_t index) {
     MOZ_ASSERT(index < tarray->length());
@@ -924,6 +953,24 @@ TypedArrayObject* js::TypedArrayCreateWithTemplate(JSContext* cx,
   case Scalar::N:                                                            \
     return TypedArrayObjectTemplate<T>::makeTypedArrayWithTemplate(cx, tobj, \
                                                                    len);
+    JS_FOR_EACH_TYPED_ARRAY(CREATE_TYPED_ARRAY)
+#undef CREATE_TYPED_ARRAY
+    default:
+      MOZ_CRASH("Unsupported TypedArray type");
+  }
+}
+
+TypedArrayObject* js::TypedArrayCreateWithTemplate(JSContext* cx,
+                                                   HandleObject templateObj,
+                                                   HandleObject array) {
+  MOZ_ASSERT(templateObj->is<TypedArrayObject>());
+  TypedArrayObject* tobj = &templateObj->as<TypedArrayObject>();
+
+  switch (tobj->type()) {
+#define CREATE_TYPED_ARRAY(T, N)                                             \
+  case Scalar::N:                                                            \
+    return TypedArrayObjectTemplate<T>::makeTypedArrayWithTemplate(cx, tobj, \
+                                                                   array);
     JS_FOR_EACH_TYPED_ARRAY(CREATE_TYPED_ARRAY)
 #undef CREATE_TYPED_ARRAY
     default:
@@ -1025,27 +1072,29 @@ static JSObject* GetBufferSpeciesConstructor(
 }
 
 template <typename T>
- JSObject* TypedArrayObjectTemplate<T>::fromArray(
-    JSContext* cx, HandleObject other, HandleObject proto ) {
+ TypedArrayObject* TypedArrayObjectTemplate<T>::fromArray(
+    JSContext* cx, HandleObject other, HandleObject proto ,
+    HandleObjectGroup group ) {
   
   
   if (other->is<TypedArrayObject>()) {
-    return fromTypedArray(cx, other,  false, proto);
+    return fromTypedArray(cx, other,  false, proto, group);
   }
 
   if (other->is<WrapperObject>() &&
       UncheckedUnwrap(other)->is<TypedArrayObject>()) {
-    return fromTypedArray(cx, other,  true, proto);
+    return fromTypedArray(cx, other,  true, proto, group);
   }
 
-  return fromObject(cx, other, proto);
+  return fromObject(cx, other, proto, group);
 }
 
 
 
 template <typename T>
- JSObject* TypedArrayObjectTemplate<T>::fromTypedArray(
-    JSContext* cx, HandleObject other, bool isWrapped, HandleObject proto) {
+ TypedArrayObject* TypedArrayObjectTemplate<T>::fromTypedArray(
+    JSContext* cx, HandleObject other, bool isWrapped, HandleObject proto,
+    HandleObjectGroup group) {
   
   MOZ_ASSERT_IF(!isWrapped, other->is<TypedArrayObject>());
   MOZ_ASSERT_IF(isWrapped, other->is<WrapperObject>() &&
@@ -1123,8 +1172,8 @@ template <typename T>
 
   
   Rooted<TypedArrayObject*> obj(
-      cx,
-      makeInstance(cx, buffer, CreateSingleton::No, 0, elementLength, proto));
+      cx, makeInstance(cx, buffer, CreateSingleton::No, 0, elementLength, proto,
+                       group));
   if (!obj) {
     return nullptr;
   }
@@ -1165,8 +1214,9 @@ static MOZ_ALWAYS_INLINE bool IsOptimizableInit(JSContext* cx,
 
 
 template <typename T>
- JSObject* TypedArrayObjectTemplate<T>::fromObject(
-    JSContext* cx, HandleObject other, HandleObject proto) {
+ TypedArrayObject* TypedArrayObjectTemplate<T>::fromObject(
+    JSContext* cx, HandleObject other, HandleObject proto,
+    HandleObjectGroup group) {
   
 
   
@@ -1191,7 +1241,8 @@ template <typename T>
     }
 
     Rooted<TypedArrayObject*> obj(
-        cx, makeInstance(cx, buffer, CreateSingleton::No, 0, len, proto));
+        cx,
+        makeInstance(cx, buffer, CreateSingleton::No, 0, len, proto, group));
     if (!obj) {
       return nullptr;
     }
@@ -1266,7 +1317,7 @@ template <typename T>
   }
 
   Rooted<TypedArrayObject*> obj(
-      cx, makeInstance(cx, buffer, CreateSingleton::No, 0, len, proto));
+      cx, makeInstance(cx, buffer, CreateSingleton::No, 0, len, proto, group));
   if (!obj) {
     return nullptr;
   }
@@ -1290,18 +1341,46 @@ bool TypedArrayConstructor(JSContext* cx, unsigned argc, Value* vp) {
   return false;
 }
 
+template <typename T>
+static bool GetTemplateObjectForNative(JSContext* cx, HandleValue arg,
+                                       MutableHandleObject res) {
+  if (arg.isInt32()) {
+    uint32_t len = 0;
+    if (arg.toInt32() >= 0) {
+      len = arg.toInt32();
+    }
+
+    size_t nbytes;
+    if (!js::CalculateAllocSize<T>(len, &nbytes)) {
+      return true;
+    }
+
+    if (nbytes >= TypedArrayObject::SINGLETON_BYTE_LENGTH) {
+      return true;
+    }
+
+    res.set(TypedArrayObjectTemplate<T>::makeTemplateObject(cx, len));
+    return !!res;
+  }
+
+  if (arg.isObject() && !IsWrapper(&arg.toObject()) &&
+      !arg.toObject().is<ArrayBufferObjectMaybeShared>()) {
+    
+    
+    uint32_t len = 0;
+    res.set(TypedArrayObjectTemplate<T>::makeTemplateObject(cx, len));
+    return !!res;
+  }
+
+  return true;
+}
+
  bool TypedArrayObject::GetTemplateObjectForNative(
-    JSContext* cx, Native native, uint32_t len, MutableHandleObject res) {
+    JSContext* cx, Native native, HandleValue arg, MutableHandleObject res) {
   MOZ_ASSERT(!res);
-#define CHECK_TYPED_ARRAY_CONSTRUCTOR(T, N)                              \
-  if (native == &TypedArrayObjectTemplate<T>::class_constructor) {       \
-    size_t nbytes;                                                       \
-    if (!js::CalculateAllocSize<T>(len, &nbytes)) return true;           \
-                                                                         \
-    if (nbytes < TypedArrayObject::SINGLETON_BYTE_LENGTH) {              \
-      res.set(TypedArrayObjectTemplate<T>::makeTemplateObject(cx, len)); \
-      return !!res;                                                      \
-    }                                                                    \
+#define CHECK_TYPED_ARRAY_CONSTRUCTOR(T, N)                        \
+  if (native == &TypedArrayObjectTemplate<T>::class_constructor) { \
+    return ::GetTemplateObjectForNative<T>(cx, arg, res);          \
   }
   JS_FOR_EACH_TYPED_ARRAY(CHECK_TYPED_ARRAY_CONSTRUCTOR)
 #undef CHECK_TYPED_ARRAY_CONSTRUCTOR
