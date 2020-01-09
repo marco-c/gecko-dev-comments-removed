@@ -145,6 +145,7 @@ class StructuredSpewer {
   
   
   bool outputInitializationAttempted_;
+
   Fprinter output_;
   mozilla::Maybe<JSONPrinter> json_;
 
@@ -165,7 +166,9 @@ class StructuredSpewer {
   
   
   
-  void ensureInitializationAttempted();
+  
+  
+  bool ensureInitializationAttempted();
 
   void tryToInitializeOutput(const char* path);
 
