@@ -1844,4 +1844,4 @@ pref("browser.engagement.recent_visited_origins.expiry", 86400);
 
 pref("browser.aboutConfig.showWarning", true);
 
-pref("browser.toolbars.keyboard_navigation", false);
+pref("browser.toolbars.keyboard_navigation", true);

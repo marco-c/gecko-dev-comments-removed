@@ -12,6 +12,18 @@ function test() {
   SpecialPowers.pushPrefEnv({"set": [["accessibility.tabfocus", 7]]}).then(setup);
 }
 
+
+
+function focusNotificationAnchor(anchor) {
+  let urlbarContainer = anchor.closest("#urlbar-container");
+  urlbarContainer.querySelector("toolbartabstop").focus();
+  const identityBox = urlbarContainer.querySelector("#identity-box");
+  is(document.activeElement, identityBox, "Identity box is focused.");
+  while (document.activeElement !== anchor) {
+    EventUtils.synthesizeKey("ArrowRight");
+  }
+}
+
 var tests = [
   
   
@@ -68,8 +80,7 @@ var tests = [
     onShown(popup) {
       checkPopup(popup, this.notifyObj);
       let anchor = document.getElementById(this.notifyObj.anchorID);
-      anchor.focus();
-      is(document.activeElement, anchor);
+      focusNotificationAnchor(anchor);
       EventUtils.sendString(" ");
       is(document.activeElement, popup.children[0].closebutton);
       this.notification.remove();
@@ -109,7 +120,7 @@ var tests = [
 
       
       let anchor = document.getElementById(notifyObj1.anchorID);
-      anchor.focus();
+      focusNotificationAnchor(anchor);
       is(document.activeElement, anchor);
       opened = waitForNotificationPanel();
       EventUtils.sendString(" ");
@@ -120,7 +131,7 @@ var tests = [
 
       
       anchor = document.getElementById(notifyObj2.anchorID);
-      anchor.focus();
+      focusNotificationAnchor(anchor);
       is(document.activeElement, anchor);
       opened = waitForNotificationPanel();
       EventUtils.sendString(" ");

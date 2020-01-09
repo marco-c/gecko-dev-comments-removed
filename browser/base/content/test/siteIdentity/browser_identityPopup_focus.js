@@ -1,6 +1,16 @@
 
 
 
+
+async function focusIdentityBox() {
+  gURLBar.inputField.focus();
+  is(document.activeElement, gURLBar.inputField, "urlbar should be focused");
+  const focused = BrowserTestUtils.waitForEvent(gIdentityHandler._identityBox, "focus");
+  EventUtils.synthesizeKey("VK_TAB", {shiftKey: true});
+  await focused;
+}
+
+
 add_task(async function testIdentityPopupFocusClick() {
   await SpecialPowers.pushPrefEnv({"set": [["accessibility.tabfocus", 7]]});
   await BrowserTestUtils.withNewTab("https://example.com", async function() {
@@ -15,9 +25,7 @@ add_task(async function testIdentityPopupFocusClick() {
 add_task(async function testIdentityPopupFocusKeyboard() {
   await SpecialPowers.pushPrefEnv({"set": [["accessibility.tabfocus", 7]]});
   await BrowserTestUtils.withNewTab("https://example.com", async function() {
-    let focused = BrowserTestUtils.waitForEvent(gIdentityHandler._identityBox, "focus");
-    gIdentityHandler._identityBox.focus();
-    await focused;
+    await focusIdentityBox();
     let shown = BrowserTestUtils.waitForEvent(gIdentityHandler._identityPopup, "popupshown");
     EventUtils.sendString(" ");
     await shown;
@@ -31,9 +39,7 @@ add_task(async function testSiteSecurityTabOrder() {
   await SpecialPowers.pushPrefEnv({"set": [["accessibility.tabfocus", 7]]});
   await BrowserTestUtils.withNewTab("https://example.com", async function() {
     
-    let focused = BrowserTestUtils.waitForEvent(gIdentityHandler._identityBox, "focus");
-    gIdentityHandler._identityBox.focus();
-    await focused;
+    await focusIdentityBox();
     let shown = BrowserTestUtils.waitForEvent(gIdentityHandler._identityPopup, "popupshown");
     EventUtils.sendString(" ");
     await shown;
@@ -48,7 +54,7 @@ add_task(async function testSiteSecurityTabOrder() {
     
     let backButton = gIdentityHandler._identityPopup.querySelector(".subviewbutton-back");
     
-    focused = BrowserTestUtils.waitForEvent(gIdentityHandler._identityPopup, "focusin");
+    let focused = BrowserTestUtils.waitForEvent(gIdentityHandler._identityPopup, "focusin");
     EventUtils.sendKey("tab");
     await focused;
     is(Services.focus.focusedElement, backButton);
