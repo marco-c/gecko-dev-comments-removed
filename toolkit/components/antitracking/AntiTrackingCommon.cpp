@@ -183,10 +183,16 @@ int32_t CookiesBehavior(Document* aTopLevelDocument,
 
   
   
-  if (BasePrincipal::Cast(aTopLevelDocument->NodePrincipal())->AddonPolicy()) {
+  
+  
+  
+  if (StaticPrefs::extensions_cookiesBehavior_overrideOnTopLevel() &&
+      BasePrincipal::Cast(aTopLevelDocument->NodePrincipal())->AddonPolicy()) {
     return nsICookieService::BEHAVIOR_ACCEPT;
   }
 
+  
+  
   if (BasePrincipal::Cast(a3rdPartyDocument->NodePrincipal())->AddonPolicy()) {
     return nsICookieService::BEHAVIOR_ACCEPT;
   }
@@ -203,10 +209,15 @@ int32_t CookiesBehavior(nsILoadInfo* aLoadInfo,
 
   
   
-  if (BasePrincipal::Cast(aTopLevelPrincipal)->AddonPolicy()) {
+  
+  
+  
+  if (StaticPrefs::extensions_cookiesBehavior_overrideOnTopLevel() &&
+      BasePrincipal::Cast(aTopLevelPrincipal)->AddonPolicy()) {
     return nsICookieService::BEHAVIOR_ACCEPT;
   }
 
+  
   
   bool is3rdPartyMozExt = false;
   if (NS_SUCCEEDED(

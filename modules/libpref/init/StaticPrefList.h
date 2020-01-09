@@ -591,6 +591,14 @@ VARCACHE_PREF(
 
 
 
+VARCACHE_PREF(
+  "extensions.cookiesBehavior.overrideOnTopLevel",
+   extensions_cookiesBehavior_overrideOnTopLevel,
+  bool, false
+)
+
+
+
 
 
 VARCACHE_PREF(
