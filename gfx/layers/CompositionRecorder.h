@@ -20,9 +20,6 @@ class DataSourceSurface;
 
 namespace layers {
 
-
-
-
 class RecordedFrame {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RecordedFrame)
@@ -43,32 +40,14 @@ class RecordedFrame {
 
 
 
-
-
-
-
-
-
-class CompositionRecorder {
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CompositionRecorder)
-
+class CompositionRecorder final {
  public:
   explicit CompositionRecorder(TimeStamp aRecordingStart);
+  ~CompositionRecorder();
 
-  
+  void RecordFrame(RecordedFrame* aFrame);
 
-
-  virtual void RecordFrame(RecordedFrame* aFrame);
-
-  
-
-
-  virtual void WriteCollectedFrames();
-
- protected:
-  virtual ~CompositionRecorder() = default;
-
-  void ClearCollectedFrames();
+  void WriteCollectedFrames();
 
  private:
   nsTArray<RefPtr<RecordedFrame>> mCollectedFrames;
