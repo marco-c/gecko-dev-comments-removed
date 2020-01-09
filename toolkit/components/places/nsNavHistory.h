@@ -60,7 +60,7 @@
 #define MOBILE_BOOKMARKS_PREF "browser.bookmarks.showMobileBookmarks"
 
 
-#define MOBILE_BOOKMARKS_VIRTUAL_GUID "mobile____v"
+#define MOBILE_BOOKMARKS_VIRTUAL_GUID "mobile_____v"
 
 #define ROOT_GUID "root________"
 #define MENU_ROOT_GUID "menu________"
