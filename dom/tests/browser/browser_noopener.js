@@ -97,7 +97,7 @@ async function doAllTests() {
 
 
 
-requestLongerTimeout(25);
+requestLongerTimeout(30);
 
 add_task(async function prepare() {
   await SpecialPowers.pushPrefEnv({set: [["dom.window.open.noreferrer.enabled", true]]});
