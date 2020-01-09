@@ -13,7 +13,6 @@
 #include "nsCacheEntry.h"
 #include "nsThreadUtils.h"
 #include "nsICacheListener.h"
-#include "nsIMemoryReporter.h"
 
 #include "prthread.h"
 #include "nsIObserver.h"
@@ -26,8 +25,6 @@
 
 class nsCacheRequest;
 class nsCacheProfilePrefObserver;
-class nsDiskCacheDevice;
-class nsMemoryCacheDevice;
 class nsOfflineCacheDevice;
 class nsCacheServiceAutoLock;
 class nsITimer;
@@ -60,15 +57,13 @@ class nsNotifyDoomListener : public mozilla::Runnable {
 
 
 
-class nsCacheService final : public nsICacheServiceInternal,
-                             public nsIMemoryReporter {
+class nsCacheService final : public nsICacheServiceInternal {
   virtual ~nsCacheService();
 
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSICACHESERVICE
   NS_DECL_NSICACHESERVICEINTERNAL
-  NS_DECL_NSIMEMORYREPORTER
 
   nsCacheService();
 
@@ -168,23 +163,9 @@ class nsCacheService final : public nsICacheServiceInternal,
   static void OnProfileShutdown();
   static void OnProfileChanged();
 
-  static void SetDiskCacheEnabled(bool enabled);
-  
-  static void SetDiskCacheCapacity(int32_t capacity);
-  
-  
-  static void SetDiskCacheMaxEntrySize(int32_t maxSize);
-  
-  
-  static void SetMemoryCacheMaxEntrySize(int32_t maxSize);
-
   static void SetOfflineCacheEnabled(bool enabled);
   
   static void SetOfflineCacheCapacity(int32_t capacity);
-
-  static void SetMemoryCache();
-
-  static void SetCacheCompressionLevel(int32_t level);
 
   static void MoveOrRemoveDiskCache(nsIFile *aOldCacheDir,
                                     nsIFile *aNewCacheDir,
@@ -220,7 +201,6 @@ class nsCacheService final : public nsICacheServiceInternal,
   friend class nsProcessRequestEvent;
   friend class nsBlockOnCacheThreadEvent;
   friend class nsDoomEvent;
-  friend class nsDiskCacheMap;
   friend class nsAsyncDoomEvent;
   friend class nsCacheEntryDescriptor;
 
@@ -306,12 +286,8 @@ class nsCacheService final : public nsICacheServiceInternal,
   bool mInitialized;
   bool mClearingEntries;
 
-  bool mEnableMemoryDevice;
-  bool mEnableDiskDevice;
   bool mEnableOfflineDevice;
 
-  nsMemoryCacheDevice *mMemoryDevice;
-  nsDiskCacheDevice *mDiskDevice;
   nsOfflineCacheDevice *mOfflineDevice;
 
   nsRefPtrHashtable<nsStringHashKey, nsOfflineCacheDevice>
