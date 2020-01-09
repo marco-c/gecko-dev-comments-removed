@@ -144,7 +144,7 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
           tab.linkedBrowser.remoteType == "privileged") {
         debug(`Tab must flip away from the privileged content process ` +
               `on navigation`);
-        gBrowser.updateBrowserRemoteness(tab.linkedBrowser, true, {
+        gBrowser.updateBrowserRemoteness(tab.linkedBrowser, {
           remoteType: requiredRemoteType,
         });
       }
@@ -229,7 +229,9 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       
       
       debug("Flip original tab to remote false");
-      gBrowser.updateBrowserRemoteness(tab.linkedBrowser, false);
+      gBrowser.updateBrowserRemoteness(tab.linkedBrowser, {
+        remoteType: E10SUtils.NOT_REMOTE,
+      });
 
       
       
@@ -301,7 +303,7 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       
       
       
-      gBrowser.updateBrowserRemoteness(tab.linkedBrowser, true, {
+      gBrowser.updateBrowserRemoteness(tab.linkedBrowser, {
         remoteType: contentBrowser.remoteType,
       });
 
