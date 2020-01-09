@@ -7502,6 +7502,12 @@ bool nsCSSFrameConstructor::ContentRemoved(nsIContent* aChild,
   }
 
   if (childFrame) {
+    if (aFlags == REMOVE_FOR_RECONSTRUCTION) {
+      
+      
+      CaptureStateForFramesOf(aChild, mTempFrameTreeState);
+    }
+
     InvalidateCanvasIfNeeded(mPresShell, aChild);
 
     
@@ -8654,10 +8660,6 @@ void nsCSSFrameConstructor::RecreateFramesForContent(
   MOZ_ASSERT(aContent->GetParentNode());
 
   
-  
-  CaptureStateForFramesOf(aContent, mTempFrameTreeState);
-
-  
   nsIContent* nextSibling = aContent->IsRootOfAnonymousSubtree()
                                 ? nullptr
                                 : aContent->GetNextSibling();
@@ -8693,7 +8695,6 @@ bool nsCSSFrameConstructor::DestroyFramesFor(Element* aElement) {
                                 ? nullptr
                                 : aElement->GetNextSibling();
 
-  CaptureStateForFramesOf(aElement, mTempFrameTreeState);
   return ContentRemoved(aElement, nextSibling, REMOVE_FOR_RECONSTRUCTION);
 }
 
