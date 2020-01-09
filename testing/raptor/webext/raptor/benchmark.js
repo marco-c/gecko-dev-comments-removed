@@ -5,7 +5,7 @@
 
 
 function receiveMessage(event) {
-  console.log("raptor benchmark-relay received message");
+  console.log("raptor benchmark received message");
   console.log(event.data);
   
   
@@ -22,5 +22,5 @@ function sendResult(_type, _value) {
   });
 }
 
-console.log("raptor benchmark-relay content loaded");
+console.log("raptor benchmark content loaded");
 window.addEventListener("message", receiveMessage);
