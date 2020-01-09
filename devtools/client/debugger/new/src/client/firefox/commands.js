@@ -166,27 +166,32 @@ function locationKey(location) {
   return `${(sourceUrl: any)}:${(sourceId: any)}:${line}:${(column: any)}`;
 }
 
-function* getAllThreadClients() {
-  yield threadClient;
-  for (const { thread } of (Object.values(workerClients): any)) {
-    yield thread;
-  }
-}
-
 async function setBreakpoint(
   location: BreakpointLocation,
   options: BreakpointOptions
 ) {
   breakpoints[locationKey(location)] = { location, options };
-  for (const thread of getAllThreadClients()) {
-    await thread.setBreakpoint(location, options);
+  await threadClient.setBreakpoint(location, options);
+
+  
+  
+  
+  
+  
+  
+  for (const { thread } of (Object.values(workerClients): any)) {
+    thread.setBreakpoint(location, options);
   }
 }
 
 async function removeBreakpoint(location: BreakpointLocation) {
   delete breakpoints[locationKey(location)];
-  for (const thread of getAllThreadClients()) {
-    await thread.removeBreakpoint(location);
+  await threadClient.removeBreakpoint(location);
+
+  
+  
+  for (const { thread } of (Object.values(workerClients): any)) {
+    thread.removeBreakpoint(location);
   }
 }
 
