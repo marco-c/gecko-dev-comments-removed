@@ -47,13 +47,14 @@ class VirtualenvManager(object):
     """Contains logic for managing virtualenvs for building the tree."""
 
     def __init__(self, topsrcdir, topobjdir, virtualenv_path, log_handle,
-        manifest_path):
+                 manifest_path):
         """Create a new manager.
 
         Each manager is associated with a source directory, a path where you
         want the virtualenv to be created, and a handle to write output to.
         """
-        assert os.path.isabs(manifest_path), "manifest_path must be an absolute path: %s" % (manifest_path)
+        assert os.path.isabs(
+            manifest_path), "manifest_path must be an absolute path: %s" % (manifest_path)
         self.topsrcdir = topsrcdir
         self.topobjdir = topobjdir
         self.virtualenv_root = virtualenv_path
@@ -71,7 +72,7 @@ class VirtualenvManager(object):
     def virtualenv_script_path(self):
         """Path to virtualenv's own populator script."""
         return os.path.join(self.topsrcdir, 'third_party', 'python',
-            'virtualenv', 'virtualenv.py')
+                            'virtualenv', 'virtualenv.py')
 
     @property
     def bin_path(self):
@@ -127,7 +128,7 @@ class VirtualenvManager(object):
 
         
         if not os.path.exists(self.virtualenv_root) or \
-            not os.path.exists(self.activate_path):
+                not os.path.exists(self.activate_path):
 
             return False
 
@@ -198,12 +199,12 @@ class VirtualenvManager(object):
         env.pop('PYTHONDONTWRITEBYTECODE', None)
 
         args = [python, self.virtualenv_script_path,
-            
-            
-            
-            
-            '--no-download',
-            self.virtualenv_root]
+                
+                
+                
+                
+                '--no-download',
+                self.virtualenv_root]
 
         result = self._log_process_output(args, env=env)
 
@@ -279,7 +280,7 @@ class VirtualenvManager(object):
                 assert len(package) >= 2
 
                 self.call_setup(os.path.join(self.topsrcdir, package[1]),
-                    package[2:])
+                                package[2:])
 
                 return True
 
@@ -330,9 +331,9 @@ class VirtualenvManager(object):
                     handle_package(package[1:])
                     return True
                 except:
-                    print('Error processing command. Ignoring', \
-                        'because optional. (%s)' % ':'.join(package),
-                        file=self.log_handle)
+                    print('Error processing command. Ignoring',
+                          'because optional. (%s)' % ':'.join(package),
+                          file=self.log_handle)
                     return False
 
             if package[0] in ('windows', '!windows'):
@@ -376,7 +377,7 @@ class VirtualenvManager(object):
         
         
         IGNORE_ENV_VARIABLES = ('CC', 'CXX', 'CFLAGS', 'CXXFLAGS', 'LDFLAGS',
-            'PYTHONDONTWRITEBYTECODE')
+                                'PYTHONDONTWRITEBYTECODE')
 
         try:
             old_target = os.environ.get('MACOSX_DEPLOYMENT_TARGET', None)
@@ -405,13 +406,13 @@ class VirtualenvManager(object):
             
             
             if sys.platform in ('win32', 'cygwin') and \
-                'VS90COMNTOOLS' not in os.environ:
+                    'VS90COMNTOOLS' not in os.environ:
 
                 warnings.warn('Hacking environment to allow binary Python '
-                    'extensions to build. You can make this warning go away '
-                    'by installing Visual Studio 2008. You can download the '
-                    'Express Edition installer from '
-                    'http://go.microsoft.com/?linkid=7729279')
+                              'extensions to build. You can make this warning go away '
+                              'by installing Visual Studio 2008. You can download the '
+                              'Express Edition installer from '
+                              'http://go.microsoft.com/?linkid=7729279')
 
                 
                 
@@ -476,7 +477,7 @@ class VirtualenvManager(object):
         
 
         args = [self.python_path, __file__, 'populate', self.topsrcdir,
-            self.topobjdir, self.virtualenv_root, self.manifest_path]
+                self.topobjdir, self.virtualenv_root, self.manifest_path]
 
         result = self._log_process_output(args, cwd=self.topsrcdir)
 
@@ -672,7 +673,7 @@ if __name__ == '__main__':
         topsrcdir, topobjdir, virtualenv_path, manifest_path = sys.argv[2:]
 
     manager = VirtualenvManager(topsrcdir, topobjdir, virtualenv_path,
-        sys.stdout, manifest_path)
+                                sys.stdout, manifest_path)
 
     if populate:
         manager.populate()

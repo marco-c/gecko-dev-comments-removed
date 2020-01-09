@@ -55,6 +55,7 @@ def process_define_file(output, input):
                         
                         
                         
+
                         def define_for_name(name, val):
                             define = "#define {name} {val}".format(name=name, val=val)
                             if name in ('WINVER', '_WIN32_WINNT'):
