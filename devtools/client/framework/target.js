@@ -87,31 +87,6 @@ exports.TargetFactory = {
     return client.mainRoot.getTab({ tab });
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  forRemoteTab: function({ activeTab, client, chrome }) {
-    const target = activeTab;
-    if (chrome) {
-      target.forceChrome();
-    }
-    const targetPromise = target.attach().then(() => target);
-    targetPromise.catch(e => {
-      console.error("Exception while attaching target", e);
-    });
-    return targetPromise;
-  },
-
   forWorker: function(workerTargetFront) {
     return workerTargetFront;
   },

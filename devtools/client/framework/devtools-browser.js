@@ -328,13 +328,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
     const client = new DebuggerClient(transport);
 
     await client.connect();
-    const front = await client.mainRoot.getProcess(processId);
-    const options = {
-      activeTab: front,
-      client,
-      chrome: true,
-    };
-    const target = await TargetFactory.forRemoteTab(options);
+    const target = await client.mainRoot.getProcess(processId);
     
     
     
