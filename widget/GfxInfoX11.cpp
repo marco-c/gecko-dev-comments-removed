@@ -274,9 +274,11 @@ void GfxInfo::GetData() {
     }
   } else if (glVendor.EqualsLiteral("NVIDIA Corporation")) {
     CopyUTF16toUTF8(GfxDriverInfo::GetDeviceVendor(VendorNVIDIA), mVendorId);
+    mDriverVendor.AssignLiteral("nvidia/unknown");
     
   } else if (glVendor.EqualsLiteral("ATI Technologies Inc.")) {
     CopyUTF16toUTF8(GfxDriverInfo::GetDeviceVendor(VendorATI), mVendorId);
+    mDriverVendor.AssignLiteral("ati/unknown");
     
   } else {
     NS_WARNING("Failed to detect GL vendor!");
