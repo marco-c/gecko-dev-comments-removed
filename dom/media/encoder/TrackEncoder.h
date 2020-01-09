@@ -167,7 +167,9 @@ class TrackEncoder {
 
   
   uint32_t mInitCounter;
-  StreamTime mNotInitDuration;
+
+  
+
 
   bool mSuspended;
 
@@ -190,6 +192,7 @@ class AudioTrackEncoder : public TrackEncoder {
       : TrackEncoder(aTrackRate),
         mChannels(0),
         mSamplingRate(0),
+        mNotInitDuration(0),
         mAudioBitrate(0) {}
 
   
@@ -317,8 +320,9 @@ class AudioTrackEncoder : public TrackEncoder {
 
   AudioSegment mOutgoingBuffer;
 
-  uint32_t mAudioBitrate;
+  StreamTime mNotInitDuration;
 
+  uint32_t mAudioBitrate;
 };
 
 enum class FrameDroppingMode {
@@ -336,12 +340,12 @@ class VideoTrackEncoder : public TrackEncoder {
 
 
 
-  void Suspend(TimeStamp aTime);
+  void Suspend(const TimeStamp& aTime);
 
   
 
 
-  void Resume(TimeStamp aTime);
+  void Resume(const TimeStamp& aTime);
 
   
 
@@ -374,7 +378,7 @@ class VideoTrackEncoder : public TrackEncoder {
 
 
 
-  void Init(const VideoSegment& aSegment, StreamTime aDuration);
+  void Init(const VideoSegment& aSegment, const TimeStamp& aTime);
 
   StreamTime SecondsToMediaTime(double aS) const {
     NS_ASSERTION(0 <= aS && aS <= TRACK_TICKS_MAX / TRACK_RATE_MAX,
@@ -382,7 +386,11 @@ class VideoTrackEncoder : public TrackEncoder {
     return mTrackRate * aS;
   }
 
-  void SetStartOffset(StreamTime aStartOffset);
+  
+
+
+
+  void SetStartOffset(const TimeStamp& aStartOffset);
 
   void Cancel() override;
 
@@ -396,18 +404,7 @@ class VideoTrackEncoder : public TrackEncoder {
 
 
 
-
-
-
-
-
-  void AdvanceBlockedInput(StreamTime aDuration);
-
-  
-
-
-
-  void AdvanceCurrentTime(StreamTime aDuration);
+  void AdvanceCurrentTime(const TimeStamp& aTime);
 
   
 
@@ -481,9 +478,11 @@ class VideoTrackEncoder : public TrackEncoder {
   
 
 
-  StreamTime mCurrentTime;
+
+  TimeStamp mCurrentTime;
 
   
+
 
 
 

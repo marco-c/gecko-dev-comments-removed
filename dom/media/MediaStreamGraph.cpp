@@ -2563,7 +2563,7 @@ void SourceMediaStream::ExtractPendingInput(GraphTime aCurrentTime,
       
       data->mData = segment->CreateEmptyClone();
       data->mCommands &= ~SourceMediaStream::TRACK_CREATE;
-    } else if (data->mData->GetDuration() > 0) {
+    } else {
       MediaSegment* dest = mTracks.FindTrack(data->mID)->GetSegment();
       LOG(LogLevel::Verbose,
           ("%p: SourceMediaStream %p track %d, advancing end from %" PRId64
@@ -2774,21 +2774,53 @@ void SourceMediaStream::AddDirectTrackListenerImpl(
   
   AudioSegment bufferedAudio;
   VideoSegment bufferedVideo;
+  if (isAudio) {
+    
+    MediaSegment& trackSegment = *track->GetSegment();
+    if (mTracks.GetForgottenDuration() < trackSegment.GetDuration()) {
+      bufferedAudio.AppendSlice(trackSegment, mTracks.GetForgottenDuration(),
+                                trackSegment.GetDuration());
+    }
+
+    if (TrackData* updateData = FindDataForTrack(aTrackID)) {
+      bufferedAudio.AppendSlice(*updateData->mData, 0,
+                                updateData->mData->GetDuration());
+    }
+  } else {
+    
+    
+    VideoSegment& trackSegment =
+        static_cast<VideoSegment&>(*track->GetSegment());
+    for (VideoSegment::ConstChunkIterator iter(trackSegment); !iter.IsEnded();
+         iter.Next()) {
+      if (iter->IsNull()) {
+        continue;
+      }
+      MOZ_ASSERT(!iter->mTimeStamp.IsNull());
+      bufferedVideo.AppendFrame(do_AddRef(iter->mFrame.GetImage()), 1,
+                                iter->mFrame.GetIntrinsicSize(),
+                                iter->mFrame.GetPrincipalHandle(),
+                                iter->mFrame.GetForceBlack(), iter->mTimeStamp);
+    }
+
+    if (TrackData* updateData = FindDataForTrack(aTrackID)) {
+      VideoSegment& video = static_cast<VideoSegment&>(*updateData->mData);
+      for (VideoSegment::ConstChunkIterator iter(video); !iter.IsEnded();
+           iter.Next()) {
+        if (iter->IsNull()) {
+          continue;
+        }
+        bufferedVideo.AppendFrame(
+            do_AddRef(iter->mFrame.GetImage()), 1,
+            iter->mFrame.GetIntrinsicSize(), iter->mFrame.GetPrincipalHandle(),
+            iter->mFrame.GetForceBlack(), iter->mTimeStamp);
+      }
+    }
+  }
+
   MediaSegment& bufferedData = isAudio
                                    ? static_cast<MediaSegment&>(bufferedAudio)
                                    : static_cast<MediaSegment&>(bufferedVideo);
-
-  MediaSegment& trackSegment = *track->GetSegment();
-  if (mTracks.GetForgottenDuration() < trackSegment.GetDuration()) {
-    bufferedData.AppendSlice(trackSegment, mTracks.GetForgottenDuration(),
-                             trackSegment.GetDuration());
-  }
-
-  if (TrackData* updateData = FindDataForTrack(aTrackID)) {
-    bufferedData.AppendSlice(*updateData->mData, 0,
-                             updateData->mData->GetDuration());
-  }
-
   if (bufferedData.GetDuration() != 0) {
     listener->NotifyRealtimeTrackData(Graph(), 0, bufferedData);
   }
