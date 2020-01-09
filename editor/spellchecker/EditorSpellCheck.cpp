@@ -409,7 +409,7 @@ EditorSpellCheck::GetNextMisspelledWord(nsAString& aNextMisspelledWord) {
   
   RefPtr<mozSpellChecker> spellChecker(mSpellChecker);
   return spellChecker->NextMisspelledWord(aNextMisspelledWord,
-                                          &mSuggestedWordList);
+                                          mSuggestedWordList);
 }
 
 NS_IMETHODIMP

@@ -24,8 +24,9 @@ class mozEnglishWordUtils final {
 
 
 
-  nsresult FindNextWord(const char16_t* word, uint32_t length, uint32_t offset,
-                        int32_t* begin, int32_t* end);
+
+  bool FindNextWord(const nsAString& aWord, uint32_t offset, int32_t* begin,
+                    int32_t* end);
 
  protected:
   virtual ~mozEnglishWordUtils();

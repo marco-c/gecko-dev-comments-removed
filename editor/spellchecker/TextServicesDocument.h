@@ -117,7 +117,7 @@ class TextServicesDocument final : public nsIEditActionListener {
 
 
 
-  nsresult GetCurrentTextBlock(nsString* aStr);
+  nsresult GetCurrentTextBlock(nsAString& aStr);
 
   
 
@@ -211,7 +211,7 @@ class TextServicesDocument final : public nsIEditActionListener {
 
 
   MOZ_CAN_RUN_SCRIPT
-  nsresult InsertText(const nsString* aText);
+  nsresult InsertText(const nsAString& aText);
 
   
 
@@ -289,7 +289,7 @@ class TextServicesDocument final : public nsIEditActionListener {
   static nsresult CreateOffsetTable(nsTArray<OffsetEntry*>* aOffsetTable,
                                     FilteredContentIterator* aFilteredIter,
                                     IteratorStatus* aIteratorStatus,
-                                    nsRange* aIterRange, nsString* aStr);
+                                    nsRange* aIterRange, nsAString* aStr);
   static nsresult ClearOffsetTable(nsTArray<OffsetEntry*>* aOffsetTable);
 
   static nsresult NodeHasOffsetEntry(nsTArray<OffsetEntry*>* aOffsetTable,

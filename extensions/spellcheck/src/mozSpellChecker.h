@@ -53,7 +53,7 @@ class mozSpellChecker final {
 
   MOZ_CAN_RUN_SCRIPT
   nsresult NextMisspelledWord(nsAString& aWord,
-                              nsTArray<nsString>* aSuggestions);
+                              nsTArray<nsString>& aSuggestions);
 
   
 
