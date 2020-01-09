@@ -373,15 +373,7 @@ impl ToComputedValue for Color {
     type ComputedValue = ComputedColor;
 
     fn to_computed_value(&self, context: &Context) -> ComputedColor {
-        let result = self.to_computed_color(Some(context)).unwrap();
-        if !result.is_numeric() {
-            if let Some(longhand) = context.for_non_inherited_property {
-                if longhand.stores_complex_colors_lossily() {
-                    context.rule_cache_conditions.borrow_mut().set_uncacheable();
-                }
-            }
-        }
-        result
+        self.to_computed_color(Some(context)).unwrap()
     }
 
     fn from_computed_value(computed: &ComputedColor) -> Self {
@@ -395,35 +387,31 @@ impl ToComputedValue for Color {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
-pub struct RGBAColor(pub Color);
 
-impl Parse for RGBAColor {
+
+
+
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
+pub struct MozFontSmoothingBackgroundColor(pub Color);
+
+impl Parse for MozFontSmoothingBackgroundColor {
     fn parse<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        Color::parse(context, input).map(RGBAColor)
+        Color::parse(context, input).map(MozFontSmoothingBackgroundColor)
     }
 }
 
-impl ToComputedValue for RGBAColor {
+impl ToComputedValue for MozFontSmoothingBackgroundColor {
     type ComputedValue = RGBA;
 
     fn to_computed_value(&self, context: &Context) -> RGBA {
-        self.0
-            .to_computed_value(context)
-            .to_rgba(context.style().get_color().clone_color())
+        self.0.to_computed_value(context).to_rgba(RGBA::transparent())
     }
 
     fn from_computed_value(computed: &RGBA) -> Self {
-        RGBAColor(Color::rgba(*computed))
-    }
-}
-
-impl From<Color> for RGBAColor {
-    fn from(color: Color) -> RGBAColor {
-        RGBAColor(color)
+        MozFontSmoothingBackgroundColor(Color::rgba(*computed))
     }
 }
 
