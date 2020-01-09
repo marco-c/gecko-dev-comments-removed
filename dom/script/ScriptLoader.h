@@ -27,6 +27,7 @@
 #include "mozilla/MozPromise.h"
 #include "mozilla/net/ReferrerPolicy.h"
 #include "mozilla/StaticPrefs.h"
+#include "mozilla/Utf8.h"  
 #include "mozilla/Vector.h"
 
 class nsIURI;
@@ -195,6 +196,11 @@ class ScriptLoader final : public nsISupports {
 
 
 
+
+
+
+
+
   static nsresult ConvertToUTF16(nsIChannel* aChannel, const uint8_t* aData,
                                  uint32_t aLength,
                                  const nsAString& aHintCharset,
@@ -215,6 +221,31 @@ class ScriptLoader final : public nsISupports {
     }
     return rv;
   };
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static nsresult ConvertToUTF8(nsIChannel* aChannel, const uint8_t* aData,
+                                uint32_t aLength, const nsAString& aHintCharset,
+                                Document* aDocument, Utf8Unit*& aBufOut,
+                                size_t& aLengthOut);
 
   
 
