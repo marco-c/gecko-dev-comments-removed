@@ -1888,6 +1888,12 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+  int32_t ZIndex() const;
+
+  
+
+
+
 
 
 

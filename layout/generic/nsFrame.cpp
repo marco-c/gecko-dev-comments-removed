@@ -3844,8 +3844,15 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
     
     nsDisplayListCollection pseudoStack(aBuilder);
 
+    
+    
+    
+    
+    
+    bool mayBeSorted = isPositioned && (ZIndex() != 0);
+
     aBuilder->BuildCompositorHitTestInfoIfNeeded(
-        child, pseudoStack.BorderBackground(), differentAGR || isPositioned);
+        child, pseudoStack.BorderBackground(), differentAGR || mayBeSorted);
 
     aBuilder->AdjustWindowDraggingRegion(child);
     nsDisplayListBuilder::AutoContainerASRTracker contASRTracker(aBuilder);
@@ -3855,6 +3862,16 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
     if (aBuilder->DisplayCaret(child, pseudoStack.Content())) {
       builtContainerItem = false;
     }
+
+    
+    
+    
+    
+    if (mayBeSorted) {
+      aBuilder->SetCompositorHitTestInfo(
+          nsRect(), CompositorHitTestFlags::eVisibleToHitTest);
+    }
+
     wrapListASR = contASRTracker.GetContainerASR();
 
     list.AppendToTop(pseudoStack.BorderBackground());
@@ -9298,6 +9315,20 @@ void nsIFrame::ComputePreserve3DChildrenOverflow(
       }
     }
   }
+}
+
+int32_t nsIFrame::ZIndex() const {
+  if (!IsAbsPosContainingBlock() && !IsFlexOrGridItem()) {
+    return 0;
+  }
+
+  const nsStylePosition* position = StylePosition();
+  if (position->mZIndex.IsInteger()) {
+    return position->mZIndex.AsInteger();
+  }
+  MOZ_ASSERT(position->mZIndex.IsAuto());
+  
+  return 0;
 }
 
 bool nsIFrame::IsScrollAnchor(ScrollAnchorContainer** aOutContainer) {
