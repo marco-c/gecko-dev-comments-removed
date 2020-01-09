@@ -376,6 +376,9 @@ class ModuleInfo {
 
 function createBrowser() {
   const browser = window.browser = document.createElement("browser");
+  
+  browser.permanentKey = {};
+
   browser.setAttribute("type", "content");
   browser.setAttribute("primary", "true");
   browser.setAttribute("flex", "1");
