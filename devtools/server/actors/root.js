@@ -122,8 +122,6 @@ RootActor.prototype = {
     
     storageInspectorReadOnly: true,
     
-    conditionalBreakpoints: true,
-    
     
     debuggerSourceActors: true,
     

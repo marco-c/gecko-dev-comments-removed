@@ -59,66 +59,28 @@ BreakpointClient.prototype = {
   
 
 
-  hasCondition: function() {
-    const root = this._client.mainRoot;
-    
-    
-    if (root.traits.conditionalBreakpoints) {
-      return "condition" in this;
-    }
-    return "conditionalExpression" in this;
-  },
-
-  
-
-
-
-
-
-
-  getCondition: function() {
-    const root = this._client.mainRoot;
-    if (root.traits.conditionalBreakpoints) {
-      return this.condition;
-    }
-    return this.conditionalExpression;
-  },
-
-  
-
-
   setCondition: function(gThreadClient, condition) {
     const root = this._client.mainRoot;
     const deferred = promise.defer();
 
-    if (root.traits.conditionalBreakpoints) {
-      const info = {
-        line: this.location.line,
-        column: this.location.column,
-        condition: condition,
-      };
+    const info = {
+      line: this.location.line,
+      column: this.location.column,
+      condition: condition,
+    };
 
-      
-      
-      this.remove(response => {
-        if (response && response.error) {
-          deferred.reject(response);
-          return;
-        }
-
-        deferred.resolve(this.source.setBreakpoint(info).then(([, newBreakpoint]) => {
-          return newBreakpoint;
-        }));
-      });
-    } else {
-      
-      if (condition === "") {
-        delete this.conditionalExpression;
-      } else {
-        this.conditionalExpression = condition;
+    
+    
+    this.remove(response => {
+      if (response && response.error) {
+        deferred.reject(response);
+        return;
       }
-      deferred.resolve(this);
-    }
+
+      deferred.resolve(this.source.setBreakpoint(info).then(([, newBreakpoint]) => {
+        return newBreakpoint;
+      }));
+    });
 
     return deferred.promise;
   },
