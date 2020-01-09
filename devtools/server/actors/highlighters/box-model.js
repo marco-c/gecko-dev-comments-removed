@@ -5,6 +5,7 @@
 "use strict";
 
 const { AutoRefreshHighlighter } = require("./auto-refresh");
+const Services = require("Services");
 const {
   CanvasFrameAnonymousContentHelper,
   createNode,
@@ -33,6 +34,9 @@ const BOX_MODEL_SIDES = ["top", "right", "bottom", "left"];
 const GUIDE_STROKE_WIDTH = 1;
 
 const PSEUDO_CLASSES = [":hover", ":active", ":focus", ":focus-within"];
+
+const FLEXBOX_HIGHLIGHTER_ENABLED_PREF = "devtools.inspector.flexboxHighlighter.enabled";
+const FLEXBOX_HIGHLIGHTER_COMBINE_PREF = "devtools.inspector.flexboxHighlighter.combine";
 
 
 
@@ -115,6 +119,22 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
 
     const { pageListenerTarget } = highlighterEnv;
     pageListenerTarget.addEventListener("pagehide", this.onPageHide);
+  }
+
+  
+
+
+
+
+
+  get showCombinedFlexboxHighlighter() {
+    if (typeof this._showCombinedFlexboxHighlighter === "undefined") {
+      this._showCombinedFlexboxHighlighter =
+        Services.prefs.getBoolPref(FLEXBOX_HIGHLIGHTER_ENABLED_PREF) &&
+        Services.prefs.getBoolPref(FLEXBOX_HIGHLIGHTER_COMBINE_PREF);
+    }
+
+    return this._showCombinedFlexboxHighlighter;
   }
 
   _buildMarkup() {
@@ -371,7 +391,9 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
       this._hide();
     }
 
-    this._updateFlexboxHighlighter();
+    if (this.showCombinedFlexboxHighlighter) {
+      this._updateFlexboxHighlighter();
+    }
 
     setIgnoreLayoutChanges(false, this.highlighterEnv.window.document.documentElement);
 
