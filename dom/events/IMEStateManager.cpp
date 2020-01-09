@@ -20,6 +20,7 @@
 #include "mozilla/Unused.h"
 #include "mozilla/dom/BrowserBridgeChild.h"
 #include "mozilla/dom/HTMLFormElement.h"
+#include "mozilla/dom/HTMLTextAreaElement.h"
 #include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/dom/TabParent.h"
 
@@ -28,6 +29,7 @@
 
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
+#include "nsFocusManager.h"
 #include "nsIContent.h"
 #include "mozilla/dom/Document.h"
 #include "nsIForm.h"
@@ -1179,6 +1181,51 @@ void IMEStateManager::SetInputContextForChildProcess(
   SetInputContext(widget, aInputContext, aAction);
 }
 
+static bool IsNextFocusableElementTextOrNumberControl(Element* aInputContent) {
+  nsFocusManager* fm = nsFocusManager::GetFocusManager();
+  if (!fm) {
+    return false;
+  }
+  nsCOMPtr<nsIContent> nextContent;
+  nsresult rv = fm->DetermineElementToMoveFocus(
+      aInputContent->OwnerDoc()->GetWindow(), aInputContent,
+      nsIFocusManager::MOVEFOCUS_FORWARD, true, getter_AddRefs(nextContent));
+  if (NS_WARN_IF(NS_FAILED(rv)) || !nextContent) {
+    return false;
+  }
+  nextContent = nextContent->FindFirstNonChromeOnlyAccessContent();
+  nsCOMPtr<nsIFormControl> nextControl = do_QueryInterface(nextContent);
+  if (!nextControl || !nextControl->IsTextOrNumberControl(false)) {
+    return false;
+  }
+
+  
+  nsGenericHTMLElement* nextElement =
+      nsGenericHTMLElement::FromNodeOrNull(nextContent);
+  if (!nextElement) {
+    return false;
+  }
+  bool focusable = false;
+  nextElement->IsHTMLFocusable(false, &focusable, nullptr);
+  if (!focusable) {
+    return false;
+  }
+
+  
+  if (nextElement->IsHTMLElement(nsGkAtoms::textarea)) {
+    HTMLTextAreaElement* textAreaElement =
+        HTMLTextAreaElement::FromNodeOrNull(nextElement);
+    return !textAreaElement->ReadOnly();
+  }
+
+  
+  MOZ_DIAGNOSTIC_ASSERT(nextElement->IsHTMLElement(nsGkAtoms::input));
+
+  HTMLInputElement* inputElement =
+      HTMLInputElement::FromNodeOrNull(nextElement);
+  return !inputElement->ReadOnly();
+}
+
 static void GetActionHint(nsIContent& aContent, nsAString& aActionHint) {
   aContent.AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::moz_action_hint,
                                 aActionHint);
@@ -1197,36 +1244,58 @@ static void GetActionHint(nsIContent& aContent, nsAString& aActionHint) {
   
   
   bool willSubmit = false;
+  bool isLastElement = false;
   nsCOMPtr<nsIFormControl> control(do_QueryInterface(inputContent));
   Element* formElement = nullptr;
-  nsCOMPtr<nsIForm> form;
   if (control) {
     formElement = control->GetFormElement();
     
-    if ((form = do_QueryInterface(formElement)) &&
-        form->GetDefaultSubmitElement()) {
-      willSubmit = true;
-      
-    } else if (formElement && formElement->IsHTMLElement(nsGkAtoms::form)) {
-      HTMLFormElement* htmlForm = static_cast<HTMLFormElement*>(formElement);
-      
-      if (!htmlForm->ImplicitSubmissionIsDisabled() ||
-          
-          htmlForm->IsLastActiveElement(control)) {
+    if (formElement) {
+      HTMLFormElement* htmlForm = nullptr;
+      if (formElement->IsHTMLElement(nsGkAtoms::form)) {
+        htmlForm = HTMLFormElement::FromNodeOrNull(formElement);
+        if (htmlForm->IsLastActiveElement(control)) {
+          isLastElement = true;
+        }
+      }
+
+      nsCOMPtr<nsIForm> form = do_QueryInterface(formElement);
+      if (form && form->GetDefaultSubmitElement()) {
         willSubmit = true;
+        
+      } else if (htmlForm) {
+        
+        if (!htmlForm->ImplicitSubmissionIsDisabled() ||
+            
+            isLastElement) {
+          willSubmit = true;
+        }
+      }
+    }
+
+    if (!isLastElement && formElement) {
+      
+      
+      if (IsNextFocusableElementTextOrNumberControl(
+              inputContent->AsElement())) {
+        
+        
+        aActionHint.AssignLiteral("next");
+        return;
       }
     }
   }
 
-  if (willSubmit) {
-    if (control->ControlType() == NS_FORM_INPUT_SEARCH) {
-      aActionHint.AssignLiteral("search");
-    } else {
-      aActionHint.AssignLiteral("go");
-    }
-  } else if (formElement) {
-    aActionHint.AssignLiteral("next");
+  if (!willSubmit) {
+    return;
   }
+
+  if (control->ControlType() == NS_FORM_INPUT_SEARCH) {
+    aActionHint.AssignLiteral("search");
+    return;
+  }
+
+  aActionHint.AssignLiteral("go");
 }
 
 
