@@ -1777,6 +1777,7 @@ impl YamlFrameReader {
             mix_blend_mode,
             &filters,
             raster_space,
+             false,
         );
 
         if !yaml["items"].is_badvalue() {

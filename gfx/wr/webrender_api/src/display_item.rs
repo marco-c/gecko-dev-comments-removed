@@ -552,6 +552,8 @@ pub struct StackingContext {
     pub mix_blend_mode: MixBlendMode,
     pub clip_id: Option<ClipId>,
     pub raster_space: RasterSpace,
+    
+    pub cache_tiles: bool,
 } 
 
 

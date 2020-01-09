@@ -365,7 +365,6 @@ impl<'a> DisplayListFlattener<'a> {
             prim_list,
             main_scroll_root,
             LayoutRect::max_rect(),
-            &self.clip_store,
             Some(tile_cache),
         ));
 
@@ -452,6 +451,7 @@ impl<'a> DisplayListFlattener<'a> {
             TransformStyle::Flat,
             true,
             true,
+            false,
             ROOT_SPATIAL_NODE_INDEX,
             ClipChainId::NONE,
             RasterSpace::Screen,
@@ -642,6 +642,7 @@ impl<'a> DisplayListFlattener<'a> {
             stacking_context.transform_style,
             is_backface_visible,
             false,
+            stacking_context.cache_tiles,
             spatial_node_index,
             clip_chain_id,
             stacking_context.raster_space,
@@ -1213,6 +1214,7 @@ impl<'a> DisplayListFlattener<'a> {
         transform_style: TransformStyle,
         is_backface_visible: bool,
         is_pipeline_root: bool,
+        create_tile_cache: bool,
         spatial_node_index: SpatialNodeIndex,
         clip_chain_id: ClipChainId,
         requested_raster_space: RasterSpace,
@@ -1225,9 +1227,6 @@ impl<'a> DisplayListFlattener<'a> {
             None
         };
 
-        let create_tile_cache = is_pipeline_root &&
-                                self.sc_stack.len() == 2;
-
         // Get the transform-style of the parent stacking context,
         // which determines if we *might* need to draw this on
         // an intermediate surface for plane splitting purposes.
@@ -1238,7 +1237,6 @@ impl<'a> DisplayListFlattener<'a> {
                 let extra_instance = sc.cut_flat_item_sequence(
                     &mut self.prim_store,
                     &mut self.interners,
-                    &self.clip_store,
                 );
                 (sc.is_3d(), extra_instance)
             },
@@ -1389,7 +1387,6 @@ impl<'a> DisplayListFlattener<'a> {
                 ),
                 stacking_context.spatial_node_index,
                 max_clip,
-                &self.clip_store,
                 None,
             ))
         );
@@ -1436,7 +1433,6 @@ impl<'a> DisplayListFlattener<'a> {
                     ),
                     stacking_context.spatial_node_index,
                     max_clip,
-                    &self.clip_store,
                     None,
                 ))
             );
@@ -1471,7 +1467,6 @@ impl<'a> DisplayListFlattener<'a> {
                     ),
                     stacking_context.spatial_node_index,
                     max_clip,
-                    &self.clip_store,
                     None,
                 ))
             );
@@ -1514,7 +1509,6 @@ impl<'a> DisplayListFlattener<'a> {
                     ),
                     stacking_context.spatial_node_index,
                     max_clip,
-                    &self.clip_store,
                     None,
                 ))
             );
@@ -1850,7 +1844,6 @@ impl<'a> DisplayListFlattener<'a> {
                                 ),
                                 pending_shadow.clip_and_scroll.spatial_node_index,
                                 max_clip,
-                                &self.clip_store,
                                 None,
                             ))
                         );
@@ -2579,8 +2572,8 @@ impl FlattenedStackingContext {
             return false;
         }
 
-        // If the pipelines are different, we care for purposes of selecting tile caches
-        if self.pipeline_id != parent.pipeline_id {
+        // If this stacking context gets picture caching, we need it.
+        if self.create_tile_cache {
             return false;
         }
 
@@ -2594,7 +2587,6 @@ impl FlattenedStackingContext {
         &mut self,
         prim_store: &mut PrimitiveStore,
         interners: &mut Interners,
-        clip_store: &ClipStore,
     ) -> Option<PrimitiveInstance> {
         if !self.is_3d() || self.primitives.is_empty() {
             return None
@@ -2622,7 +2614,6 @@ impl FlattenedStackingContext {
                 ),
                 self.spatial_node_index,
                 LayoutRect::max_rect(),
-                clip_store,
                 None,
             ))
         );
