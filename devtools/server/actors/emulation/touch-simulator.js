@@ -8,6 +8,8 @@
 
 const { Services } = require("resource://gre/modules/Services.jsm");
 
+loader.lazyRequireGetter(this, "InspectorUtils", "InspectorUtils");
+
 var systemAppOrigin = (function() {
   let systemOrigin = "_";
   try {
@@ -22,6 +24,8 @@ var systemAppOrigin = (function() {
 
 var threshold = Services.prefs.getIntPref("ui.dragThresholdX", 25);
 var delay = Services.prefs.getIntPref("ui.click_hold_context_menus.delay", 500);
+
+const kStateHover = 0x00000004; 
 
 function TouchSimulator(simulatorTarget) {
   this.simulatorTarget = simulatorTarget;
@@ -145,6 +149,12 @@ TouchSimulator.prototype = {
       case "mouseleave":
         
         evt.stopPropagation();
+        evt.preventDefault();
+
+        
+        
+        
+        InspectorUtils.removeContentState(evt.target, kStateHover);
         break;
 
       case "mousedown":
