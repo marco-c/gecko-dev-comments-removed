@@ -2107,6 +2107,17 @@ JSAtom* ParserBase::prefixAccessorName(PropertyType propType,
 }
 
 template <class ParseHandler, typename Unit>
+void GeneralParser<ParseHandler, Unit>::setFunctionStartAtCurrentToken(
+    FunctionBox* funbox) const {
+  uint32_t bufStart = anyChars.currentToken().pos.begin;
+
+  uint32_t startLine, startColumn;
+  tokenStream.computeLineAndColumn(bufStart, &startLine, &startColumn);
+
+  funbox->setStart(bufStart, startLine, startColumn);
+}
+
+template <class ParseHandler, typename Unit>
 bool GeneralParser<ParseHandler, Unit>::functionArguments(
     YieldHandling yieldHandling, FunctionSyntaxKind kind,
     FunctionNodeType funNode) {
@@ -2170,7 +2181,7 @@ bool GeneralParser<ParseHandler, Unit>::functionArguments(
 
     
     
-    tokenStream.setFunctionStart(funbox);
+    setFunctionStartAtCurrentToken(funbox);
   } else {
     
     
@@ -2285,7 +2296,7 @@ bool GeneralParser<ParseHandler, Unit>::functionArguments(
           }
 
           if (parenFreeArrow) {
-            tokenStream.setFunctionStart(funbox);
+            setFunctionStartAtCurrentToken(funbox);
           }
 
           RootedPropertyName name(cx_, bindingIdentifier(yieldHandling));
@@ -7167,7 +7178,7 @@ GeneralParser<ParseHandler, Unit>::synthesizeConstructor(
   }
   handler_.setFunctionFormalParametersAndBody(funNode, argsbody);
   funbox->function()->setArgCount(0);
-  tokenStream.setFunctionStart(funbox);
+  setFunctionStartAtCurrentToken(funbox);
 
   pc_->functionScope().useAsVarScope(pc_);
 
