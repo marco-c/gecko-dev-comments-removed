@@ -2,15 +2,45 @@
 
 
 
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
+import hashlib
 import os
+from mozbuild.base import MozbuildObject
+
+here = os.path.join(os.path.dirname(__file__))
 
 
-def get_state_dir():
+def get_state_dir(srcdir=False):
     """Obtain path to a directory to hold state.
+
+    Args:
+        srcdir (bool): If True, return a state dir specific to the current
+            srcdir instead of the global state dir (default: False)
 
     Returns:
         A path to the state dir (str)
     """
-    return os.environ.get('MOZBUILD_STATE_PATH', os.path.expanduser('~/.mozbuild'))
+    state_dir = os.environ.get('MOZBUILD_STATE_PATH', os.path.expanduser('~/.mozbuild'))
+    if not srcdir:
+        return state_dir
+
+    srcdir = os.path.abspath(MozbuildObject.from_environment(cwd=here).topsrcdir)
+    
+    
+    srcdir_hash = hashlib.sha256(srcdir).hexdigest()[:12]
+
+    state_dir = os.path.join(state_dir, 'srcdirs', '{}-{}'.format(
+        os.path.basename(srcdir), srcdir_hash))
+
+    if not os.path.isdir(state_dir):
+        
+        
+        print('Creating local state directory: %s' % state_dir)
+        os.makedirs(state_dir, mode=0o770)
+        
+        
+        with open(os.path.join(state_dir, 'topsrcdir.txt'), 'w') as fh:
+            fh.write(srcdir)
+
+    return state_dir
