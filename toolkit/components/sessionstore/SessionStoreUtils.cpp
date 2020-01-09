@@ -1018,8 +1018,14 @@ static void ReadAllEntriesFromStorage(
   if (!doc) {
     return;
   }
+
   nsCOMPtr<nsIPrincipal> principal = doc->NodePrincipal();
   if (!principal) {
+    return;
+  }
+
+  nsCOMPtr<nsIPrincipal> storagePrincipal = doc->EffectiveStoragePrincipal();
+  if (!storagePrincipal) {
     return;
   }
 
@@ -1036,8 +1042,8 @@ static void ReadAllEntriesFromStorage(
     return;
   }
   RefPtr<Storage> storage;
-  storageManager->GetStorage(aWindow->GetCurrentInnerWindow(), principal, false,
-                             getter_AddRefs(storage));
+  storageManager->GetStorage(aWindow->GetCurrentInnerWindow(), principal,
+                             storagePrincipal, false, getter_AddRefs(storage));
   if (!storage) {
     return;
   }
@@ -1165,8 +1171,8 @@ void SessionStoreUtils::RestoreSessionStorage(
     
     
     
-    storageManager->CreateStorage(nullptr, principal, EmptyString(), false,
-                                  getter_AddRefs(storage));
+    storageManager->CreateStorage(nullptr, principal, principal, EmptyString(),
+                                  false, getter_AddRefs(storage));
     if (!storage) {
       continue;
     }
