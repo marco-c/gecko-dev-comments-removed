@@ -460,6 +460,9 @@ bool nsLayoutUtils::IsAnimationLoggingEnabled() {
 }
 
 bool nsLayoutUtils::AreRetainedDisplayListsEnabled() {
+#ifdef MOZ_WIDGET_ANDROID
+  return gfxPrefs::LayoutRetainDisplayList();;
+#else
   if (XRE_IsContentProcess()) {
     return gfxPrefs::LayoutRetainDisplayList();
   }
@@ -470,6 +473,7 @@ bool nsLayoutUtils::AreRetainedDisplayListsEnabled() {
 
   
   return false;
+#endif
 }
 
 bool nsLayoutUtils::DisplayRootHasRetainedDisplayListBuilder(nsIFrame* aFrame) {
