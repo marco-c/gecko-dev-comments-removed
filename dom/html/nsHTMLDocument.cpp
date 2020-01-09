@@ -1017,23 +1017,21 @@ Document* nsHTMLDocument::Open(const Optional<nsAString>& ,
 
   
   
+  
+  
+  
+  
+  
+  if (mParser && !mParser->HasNonzeroScriptNestingLevel()) {
+    
+    IgnoreOpensDuringUnload ignoreOpenGuard(this);
+    mParser->Terminate();
+    MOZ_RELEASE_ASSERT(!mParser, "mParser should have been null'd out");
+  }
+
+  
+  
   if (mParser || mParserAborted) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     return this;
   }
 
@@ -1322,6 +1320,8 @@ void nsHTMLDocument::WriteCommon(const nsAString& aText, bool aNewlineTerminate,
           mDocumentURI);
       return;
     }
+    
+    
     
     
     IgnoreOpensDuringUnload ignoreOpenGuard(this);
