@@ -967,22 +967,21 @@ class RTCPeerConnection {
   }
 
   async _validateIdentity(sdp, origin) {
-    let expectedIdentity;
-
     
     
     
     let p = (async () => {
+      
+      await this._lastIdentityValidation;
       try {
-        await this._lastIdentityValidation;
-        let msg = await this._remoteIdp.verifyIdentityFromSDP(sdp, origin);
-        expectedIdentity = this._impl.peerIdentity;
+        const msg = await this._remoteIdp.verifyIdentityFromSDP(sdp, origin);
         
-        if (expectedIdentity && (!msg || msg.identity !== expectedIdentity)) {
+        if (this._impl.peerIdentity && (!msg || msg.identity !== this._impl.peerIdentity)) {
           throw new this._win.DOMException(
-            "Peer Identity mismatch, expected: " + expectedIdentity,
+            "Peer Identity mismatch, expected: " + this._impl.peerIdentity,
             "IncompatibleSessionDescriptionError");
         }
+
         if (msg) {
           
           this._impl.peerIdentity = msg.identity;
@@ -1005,7 +1004,7 @@ class RTCPeerConnection {
     this._lastIdentityValidation = p.catch(() => {});
 
     
-    if (expectedIdentity) {
+    if (this._impl.peerIdentity) {
       await p;
     }
   }
