@@ -79,6 +79,11 @@ namespace net {
   aFeatures.AppendElements(flashFeatures);
 }
 
+ void UrlClassifierFeatureFactory::GetFeaturesNoChannel(
+    nsTArray<RefPtr<nsIUrlClassifierFeature>>& aFeatures) {
+  UrlClassifierFeatureNoChannel::MaybeCreate(aFeatures);
+}
+
 
 nsIUrlClassifierFeature*
 UrlClassifierFeatureFactory::GetFeatureLoginReputation() {
