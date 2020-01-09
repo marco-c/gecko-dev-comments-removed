@@ -7,8 +7,8 @@
 
 
 {
-const MozXULMenuElement = MozElementMixin(XULMenuElement);
-const MenuBaseControl = BaseControlMixin(MozXULMenuElement);
+const MozXULMenuElement = MozElements.MozElementMixin(XULMenuElement);
+const MenuBaseControl = MozElements.BaseControlMixin(MozXULMenuElement);
 
 class MozMenuList extends MenuBaseControl {
   constructor() {

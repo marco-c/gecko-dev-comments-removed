@@ -7,7 +7,7 @@
 
 
 {
-const MozPopupElement = MozElementMixin(XULPopupElement);
+const MozPopupElement = MozElements.MozElementMixin(XULPopupElement);
 MozElements.MozAutocompleteRichlistboxPopup = class MozAutocompleteRichlistboxPopup extends MozPopupElement {
   constructor() {
     super();
