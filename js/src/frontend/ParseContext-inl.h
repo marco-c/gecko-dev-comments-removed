@@ -137,6 +137,40 @@ ParseContext::checkContinueStatement(PropertyName* label) {
   }
 }
 
+template <typename DeclaredNamePtrT>
+inline void RedeclareVar(DeclaredNamePtrT ptr, DeclarationKind kind) {
+#ifdef DEBUG
+  DeclarationKind declaredKind = ptr->value()->kind();
+  MOZ_ASSERT(DeclarationKindIsVar(declaredKind));
+#endif
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (kind == DeclarationKind::BodyLevelFunction) {
+    MOZ_ASSERT(declaredKind != DeclarationKind::VarForAnnexBLexicalFunction);
+    ptr->value()->alterKind(kind);
+  }
+}
+
 }  
 }  
 

@@ -417,32 +417,8 @@ bool ParseContext::tryDeclareVarHelper(HandlePropertyName name,
     if (AddDeclaredNamePtr p = scope->lookupDeclaredNameForAdd(name)) {
       DeclarationKind declaredKind = p->value()->kind();
       if (DeclarationKindIsVar(declaredKind)) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if (dryRunOption == NotDryRun &&
-            kind == DeclarationKind::BodyLevelFunction) {
-          MOZ_ASSERT(declaredKind !=
-                     DeclarationKind::VarForAnnexBLexicalFunction);
-          p->value()->alterKind(kind);
+        if (dryRunOption == NotDryRun) {
+          RedeclareVar(p, kind);
         }
       } else if (!DeclarationKindIsParameter(declaredKind)) {
         
