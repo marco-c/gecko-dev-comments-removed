@@ -536,6 +536,7 @@ Toolbox.prototype = {
       this._addShortcuts();
       this._addKeysToWindow();
       this._addHostListeners();
+      this._addChromeEventHandlerEvents();
       this._registerOverlays();
 
       this._componentMount.addEventListener("keypress", this._onToolbarArrowKeypress);
@@ -1013,8 +1014,6 @@ Toolbox.prototype = {
   },
 
   _addHostListeners: function() {
-    this.doc.addEventListener("keypress", this._splitConsoleOnKeypress);
-    this.doc.addEventListener("focus", this._onFocus, true);
     this.win.addEventListener("unload", this.destroy);
     this.win.addEventListener("message", this._onBrowserMessage, true);
   },
@@ -1022,8 +1021,6 @@ Toolbox.prototype = {
   _removeHostListeners: function() {
     
     if (this.doc) {
-      this.doc.removeEventListener("keypress", this._splitConsoleOnKeypress);
-      this.doc.removeEventListener("focus", this._onFocus, true);
       this.win.removeEventListener("unload", this.destroy);
       this.win.removeEventListener("message", this._onBrowserMessage, true);
     }
@@ -2649,6 +2646,9 @@ Toolbox.prototype = {
       return null;
     }
 
+    
+    this._removeChromeEventHandlerEvents();
+
     this.emit("host-will-change", hostType);
 
     
@@ -2673,6 +2673,9 @@ Toolbox.prototype = {
     this._addKeysToWindow();
 
     
+    this._addChromeEventHandlerEvents();
+
+    
     
     this.focusTool(this.currentToolId, true);
 
@@ -2680,6 +2683,43 @@ Toolbox.prototype = {
     this.telemetry.getHistogramById(HOST_HISTOGRAM).add(this._getTelemetryHostId());
 
     this.component.setCurrentHostType(hostType);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  _addChromeEventHandlerEvents: function() {
+    if (!this.win || !this.win.docShell) {
+      return;
+    }
+
+    
+    
+    
+    
+    this._chromeEventHandler = this.win.docShell.chromeEventHandler;
+
+    this._chromeEventHandler.addEventListener("keypress", this._splitConsoleOnKeypress);
+    this._chromeEventHandler.addEventListener("focus", this._onFocus, true);
+  },
+
+  _removeChromeEventHandlerEvents: function() {
+    if (!this._chromeEventHandler) {
+      return;
+    }
+
+    this._chromeEventHandler.removeEventListener("keypress",
+      this._splitConsoleOnKeypress);
+    this._chromeEventHandler.removeEventListener("focus", this._onFocus, true);
+
+    this._chromeEventHandler = null;
   },
 
   
@@ -3090,6 +3130,7 @@ Toolbox.prototype = {
         }, console.error)
         .then(() => {
           this._removeHostListeners();
+          this._removeChromeEventHandlerEvents();
 
           
           
