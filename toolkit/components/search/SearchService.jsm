@@ -6,25 +6,30 @@
 
 
 const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const {PromiseUtils} = ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
-const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  AppConstants: "resource://gre/modules/AppConstants.jsm",
   AddonManager: "resource://gre/modules/AddonManager.jsm",
+  clearTimeout: "resource://gre/modules/Timer.jsm",
   DeferredTask: "resource://gre/modules/DeferredTask.jsm",
+  ExtensionParent: "resource://gre/modules/ExtensionParent.jsm",
+  getVerificationHash: "resource://gre/modules/SearchEngine.jsm",
   OS: "resource://gre/modules/osfile.jsm",
+  RemoteSettings: "resource://services-settings/remote-settings.js",
   SearchEngine: "resource://gre/modules/SearchEngine.jsm",
   SearchStaticData: "resource://gre/modules/SearchStaticData.jsm",
+  Services: "resource://gre/modules/Services.jsm",
   setTimeout: "resource://gre/modules/Timer.jsm",
-  clearTimeout: "resource://gre/modules/Timer.jsm",
-  ExtensionParent: "resource://gre/modules/ExtensionParent.jsm",
-  RemoteSettings: "resource://services-settings/remote-settings.js",
 });
 
 const BROWSER_SEARCH_PREF = "browser.search.";
 
-XPCOMUtils.defineLazyPreferenceGetter(this, "loggingEnabled", BROWSER_SEARCH_PREF + "log", false);
+XPCOMUtils.defineLazyPreferenceGetter(this, "loggingEnabled",
+  BROWSER_SEARCH_PREF + "log", false);
+XPCOMUtils.defineLazyPreferenceGetter(this, "gGeoSpecificDefaultsEnabled",
+  BROWSER_SEARCH_PREF + "geoSpecificDefaults", false);
+
 
 
 XPCOMUtils.defineLazyGetter(this, "distroID", () => {
@@ -108,11 +113,6 @@ const DEFAULT_TAG = "default";
 
 
 
-const SEARCH_LOG_PREFIX = "*** Search: ";
-
-
-
-
 
 const SETTINGS_IGNORELIST_KEY = "hijack-blocklists";
 
@@ -121,7 +121,7 @@ const SETTINGS_IGNORELIST_KEY = "hijack-blocklists";
 
 function LOG(text) {
   if (loggingEnabled) {
-    dump(SEARCH_LOG_PREFIX + text + "\n");
+    dump("*** Search: " + text + "\n");
     Services.console.logStringMessage(text);
   }
 }
@@ -215,11 +215,6 @@ function isPartnerBuild() {
 }
 
 
-function geoSpecificDefaultsEnabled() {
-  return Services.prefs.getBoolPref("browser.search.geoSpecificDefaults", false);
-}
-
-
 function isUSTimezone() {
   
   
@@ -247,7 +242,7 @@ var ensureKnownRegion = async function(ss) {
       
       
       await fetchRegion(ss);
-    } else if (geoSpecificDefaultsEnabled()) {
+    } else if (gGeoSpecificDefaultsEnabled) {
       
       let expired = (ss.getGlobalAttr("searchDefaultExpir") || 0) <= Date.now();
       
@@ -405,7 +400,7 @@ function fetchRegion(ss) {
         resolve();
       };
 
-      if (result && geoSpecificDefaultsEnabled()) {
+      if (result && gGeoSpecificDefaultsEnabled) {
         fetchRegionDefault(ss).then(callback).catch(err => {
           Cu.reportError(err);
           callback();
@@ -560,31 +555,6 @@ var fetchRegionDefault = (ss) => new Promise(resolve => {
   request.send();
 });
 
-function getVerificationHash(name) {
-  let disclaimer = "By modifying this file, I agree that I am doing so " +
-    "only within $appName itself, using official, user-driven search " +
-    "engine selection processes, and in a way which does not circumvent " +
-    "user consent. I acknowledge that any attempt to change this file " +
-    "from outside of $appName is a malicious act, and will be responded " +
-    "to accordingly.";
-
-  let salt = OS.Path.basename(OS.Constants.Path.profileDir) + name +
-             disclaimer.replace(/\$appName/g, Services.appinfo.name);
-
-  let converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"]
-                    .createInstance(Ci.nsIScriptableUnicodeConverter);
-  converter.charset = "UTF-8";
-
-  
-  let data = converter.convertToByteArray(salt, {});
-  let hasher = Cc["@mozilla.org/security/hash;1"]
-                 .createInstance(Ci.nsICryptoHash);
-  hasher.init(hasher.SHA256);
-  hasher.update(data, data.length);
-
-  return hasher.finish(true);
-}
-
 
 
 
@@ -627,30 +597,6 @@ function makeChannel(url) {
 
 
 
-function getDir(key, iface) {
-  if (!key)
-    FAIL("getDir requires a directory key!");
-
-  return Services.dirsvc.get(key, iface || Ci.nsIFile);
-}
-
-
-
-
-
-
-function getLocale() {
-  return Services.locale.requestedLocale;
-}
-
-
-
-
-
-
-
-
-
 
 function getLocalizedPref(prefName, defaultValue) {
   try {
@@ -659,30 +605,6 @@ function getLocalizedPref(prefName, defaultValue) {
   } catch (ex) {}
 
   return defaultValue;
-}
-
-
-
-
-
-
-
-
-
-
-function sanitizeName(name) {
-  const maxLength = 60;
-  const minLength = 1;
-  var result = name.toLowerCase();
-  result = result.replace(/\s+/g, "-");
-  result = result.replace(/[^-a-z0-9]/g, "");
-
-  
-  if (result.length < minLength)
-    result = Math.random().toString(36).replace(/^.*\./, "");
-
-  
-  return result.substring(0, maxLength);
 }
 
 
@@ -1013,7 +935,7 @@ SearchService.prototype = {
       this._batchTask.disarm();
 
     let cache = {};
-    let locale = getLocale();
+    let locale = Services.locale.requestedLocale;
     let buildID = Services.appinfo.platformBuildID;
     let appVersion = Services.appinfo.version;
 
@@ -1068,8 +990,8 @@ SearchService.prototype = {
     let distDirs = [];
     let locations;
     try {
-      locations = getDir(NS_APP_DISTRIBUTION_SEARCH_DIR_LIST,
-                         Ci.nsISimpleEnumerator);
+      locations = Services.dirsvc.get(NS_APP_DISTRIBUTION_SEARCH_DIR_LIST,
+                                      Ci.nsISimpleEnumerator);
     } catch (e) {
       
       
@@ -1116,7 +1038,7 @@ SearchService.prototype = {
     let buildID = Services.appinfo.platformBuildID;
     let rebuildCache = !cache.engines ||
                        cache.version != CACHE_VERSION ||
-                       cache.locale != getLocale() ||
+                       cache.locale != Services.locale.requestedLocale ||
                        cache.buildID != buildID ||
                        cache.visibleDefaultEngines.length != this._visibleDefaultEngines.length ||
                        this._visibleDefaultEngines.some(notInCacheVisibleEngines);
@@ -1337,7 +1259,7 @@ SearchService.prototype = {
         throw new Error("no engine in the file");
       
       if (json.appVersion != Services.appinfo.version &&
-          geoSpecificDefaultsEnabled() &&
+          gGeoSpecificDefaultsEnabled &&
           json.metaData) {
         json.metaData.searchDefaultExpir = 0;
       }
@@ -1460,7 +1382,10 @@ SearchService.prototype = {
 
   _loadEngineFromCache(json) {
     try {
-      let engine = new SearchEngine(json._shortName, json._readOnly == undefined);
+      let engine = new SearchEngine({
+        name: json._shortName,
+        readOnly: json._readOnly == undefined,
+      });
       engine._initWithJSON(json);
       this._addEngineToStore(engine);
     } catch (ex) {
@@ -1504,7 +1429,10 @@ SearchService.prototype = {
       try {
         let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
         file.initWithPath(osfile.path);
-        addedEngine = new SearchEngine(file, false);
+        addedEngine = new SearchEngine({
+          fileURI: file,
+          readOnly: false,
+        });
         await addedEngine._initFromFile(file);
         engines.push(addedEngine);
       } catch (ex) {
@@ -1530,7 +1458,10 @@ SearchService.prototype = {
       try {
         LOG("_loadFromChromeURLs: loading engine from chrome url: " + url);
         let uri = Services.io.newURI(APP_SEARCH_PREFIX + url + ".xml");
-        let engine = new SearchEngine(uri, true);
+        let engine = new SearchEngine({
+          uri,
+          readOnly: true,
+        });
         await engine._initFromURI(uri);
         
         
@@ -2060,7 +1991,11 @@ SearchService.prototype = {
       }
     }
 
-    let newEngine = new SearchEngine(sanitizeName(name), isBuiltin);
+    let newEngine = new SearchEngine({
+      name,
+      readOnly: isBuiltin,
+      sanitizeName: true,
+    });
     newEngine._initFromMetadata(name, params);
     newEngine._loadPath = "[other]addEngineWithDetails";
     if (params.extensionID) {
@@ -2173,8 +2108,10 @@ SearchService.prototype = {
     await this.init(true);
     let errCode;
     try {
-      var uri = makeURI(engineURL);
-      var engine = new SearchEngine(uri, false);
+      var engine = new SearchEngine({
+        uri: engineURL,
+        readOnly: false,
+      });
       engine._setIcon(iconURL, false);
       engine._confirm = confirm;
       if (extensionID) {
@@ -2186,7 +2123,7 @@ SearchService.prototype = {
           
           engine._installCallback = null;
         };
-        engine._initFromURIAndLoad(uri);
+        engine._initFromURIAndLoad(engineURL);
       });
       if (errCode) {
         throw errCode;
@@ -2928,7 +2865,10 @@ var engineUpdateService = {
       }
 
       ULOG("updating " + engine.name + " from " + updateURI.spec);
-      testEngine = new SearchEngine(updateURI, false);
+      testEngine = new SearchEngine({
+        uri: updateURI,
+        readOnly: false,
+      });
       testEngine._engineToUpdate = engine;
       testEngine._initFromURIAndLoad(updateURI);
     } else {
