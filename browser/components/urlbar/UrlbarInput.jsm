@@ -98,6 +98,9 @@ class UrlbarInput {
     this._untrimmedValue = "";
 
     
+    this._enableAutofillPlaceholder = true;
+
+    
     const METHODS = ["addEventListener", "removeEventListener",
       "setAttribute", "hasAttribute", "removeAttribute", "getAttribute",
       "select"];
@@ -506,6 +509,7 @@ class UrlbarInput {
     this.window.gBrowser.userTypedValue = this.value;
 
     
+    
     if (result) {
       switch (result.type) {
         case UrlbarUtils.RESULT_TYPE.TAB_SWITCH:
@@ -518,6 +522,38 @@ class UrlbarInput {
     }
 
     return !!canonizedUrl;
+  }
+
+  
+
+
+
+
+
+
+
+  autofillFirstResult(result) {
+    if (!result.autofill) {
+      return;
+    }
+
+    let isPlaceholderSelected =
+      this.selectionEnd == this._autofillPlaceholder.length &&
+      this.selectionStart == this._lastSearchString.length &&
+      this._autofillPlaceholder.toLocaleLowerCase()
+        .startsWith(this._lastSearchString.toLocaleLowerCase());
+
+    
+    
+    
+    if (!isPlaceholderSelected &&
+        (this.selectionStart != this.selectionEnd ||
+         this.selectionEnd != this._lastSearchString.length)) {
+      return;
+    }
+
+    let { value, selectionStart, selectionEnd } = result.autofill;
+    this._autofillValue(value, selectionStart, selectionEnd);
   }
 
   
@@ -747,7 +783,8 @@ class UrlbarInput {
           .startsWith(value.toLocaleLowerCase())) {
       this._autofillPlaceholder = "";
     } else if (this._autofillPlaceholder &&
-               this.selectionEnd == this.value.length) {
+               this.selectionEnd == this.value.length &&
+               this._enableAutofillPlaceholder) {
       let autofillValue =
         value + this._autofillPlaceholder.substring(value.length);
       this._autofillValue(autofillValue, value.length, autofillValue.length);

@@ -22,7 +22,12 @@ add_task(async function test_switchToTab_url() {
   let tabSelectPromise = BrowserTestUtils.waitForEvent(gBrowser.tabContainer,
     "TabSelect", false, event => event.target == baseTab);
 
-  await UrlbarTestUtils.promiseAutocompleteResultPopup(window, TEST_URL, waitForFocus, true);
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    waitForFocus,
+    value: TEST_URL,
+    fireInputEvent: true,
+  });
   
   await UrlbarTestUtils.waitForAutocompleteResultAt(window, 1);
 

@@ -42,18 +42,32 @@ var UrlbarTestUtils = {
 
 
 
-  async promiseAutocompleteResultPopup(win, inputText, waitForFocus, fireInputEvent = false) {
-    let urlbar = getUrlbarAbstraction(win);
+
+
+
+  async promiseAutocompleteResultPopup({
+    window,
+    value,
+    waitForFocus,
+    fireInputEvent = false,
+    selectionStart = -1,
+    selectionEnd = -1,
+  } = {}) {
+    let urlbar = getUrlbarAbstraction(window);
     let restoreAnimationsFn = urlbar.disableAnimations();
-    await new Promise(resolve => waitForFocus(resolve, win));
+    await new Promise(resolve => waitForFocus(resolve, window));
     let lastSearchString = urlbar.lastSearchString;
     urlbar.focus();
-    urlbar.value = inputText;
+    urlbar.value = value;
+    if (selectionStart >= 0 && selectionEnd >= 0) {
+      urlbar.selectionEnd = selectionEnd;
+      urlbar.selectionStart = selectionStart;
+    }
     if (fireInputEvent) {
       
       urlbar.fireInputEvent();
     } else {
-      win.gURLBar.setAttribute("pageproxystate", "invalid");
+      window.gURLBar.setAttribute("pageproxystate", "invalid");
     }
     
     
@@ -63,11 +77,11 @@ var UrlbarTestUtils = {
     
     
     if (!fireInputEvent ||
-        inputText == lastSearchString ||
-        (!urlbar.quantumbar && !inputText)) {
-      urlbar.startSearch(inputText);
+        value == lastSearchString ||
+        (!urlbar.quantumbar && !value)) {
+      urlbar.startSearch(value, selectionStart, selectionEnd);
     }
-    return this.promiseSearchComplete(win, restoreAnimationsFn);
+    return this.promiseSearchComplete(window, restoreAnimationsFn);
   },
 
   
@@ -339,9 +353,13 @@ class UrlbarAbstraction {
     return this.oneOffSearchButtons.style.display != "none";
   }
 
-  startSearch(text) {
+  startSearch(text, selectionStart = -1, selectionEnd = -1) {
     if (this.quantumbar) {
       this.urlbar.value = text;
+      if (selectionStart >= 0 && selectionEnd >= 0) {
+        this.urlbar.selectionEnd = selectionEnd;
+        this.urlbar.selectionStart = selectionStart;
+      }
       this.urlbar.setAttribute("pageproxystate", "invalid");
       this.urlbar.startQuery();
     } else {
