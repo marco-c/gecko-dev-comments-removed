@@ -8,6 +8,7 @@
 #define frontend_BytecodeCompiler_h
 
 #include "mozilla/Maybe.h"
+#include "mozilla/Utf8.h"  
 
 #include "NamespaceImports.h"
 
@@ -124,12 +125,19 @@ MOZ_MUST_USE bool CompileLazyBinASTFunction(JSContext* cx,
 ModuleObject* CompileModule(JSContext* cx,
                             const JS::ReadOnlyCompileOptions& options,
                             JS::SourceText<char16_t>& srcBuf);
+ModuleObject* CompileModule(JSContext* cx,
+                            const JS::ReadOnlyCompileOptions& options,
+                            JS::SourceText<mozilla::Utf8Unit>& srcBuf);
 
 
 
 ModuleObject* ParseModule(JSContext* cx,
                           const JS::ReadOnlyCompileOptions& options,
                           JS::SourceText<char16_t>& srcBuf,
+                          ScriptSourceObject** sourceObjectOut);
+ModuleObject* ParseModule(JSContext* cx,
+                          const JS::ReadOnlyCompileOptions& options,
+                          JS::SourceText<mozilla::Utf8Unit>& srcBuf,
                           ScriptSourceObject** sourceObjectOut);
 
 
