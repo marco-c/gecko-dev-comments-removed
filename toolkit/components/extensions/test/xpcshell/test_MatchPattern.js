@@ -158,6 +158,16 @@ add_task(async function test_MatchPattern_matches() {
   fail({url: "unknown-scheme://foo", pattern: ["unknown-scheme:foo"], options: {restrictSchemes: false}});
   fail({url: "unknown-scheme:foo", pattern: ["unknown-scheme://foo"], options: {restrictSchemes: false}});
   fail({url: "unknown-scheme:foo", pattern: ["unknown-scheme://*"], options: {restrictSchemes: false}});
+
+  
+  pass({url: "http://[::1]/", pattern: ["http://[::1]/"]});
+  pass({url: "http://[2a03:4000:6:310e:216:3eff:fe53:99b]/", pattern: ["http://[2a03:4000:6:310e:216:3eff:fe53:99b]/"]});
+  fail({url: "http://[2:4:6:3:2:3:f:b]/", pattern: ["http://[2a03:4000:6:310e:216:3eff:fe53:99b]/"]});
+
+  
+  
+  pass({url: "http://[::1]/", pattern: ["http://::1/"]});
+  pass({url: "http://[2a03:4000:6:310e:216:3eff:fe53:99b]/", pattern: ["http://2a03:4000:6:310e:216:3eff:fe53:99b/"]});
 });
 
 add_task(async function test_MatchPattern_overlaps() {
