@@ -159,7 +159,7 @@ class nsFilterInstance {
                    const gfxMatrix& aPaintTransform,
                    const nsRegion* aPostFilterDirtyRegion = nullptr,
                    const nsRegion* aPreFilterDirtyRegion = nullptr,
-                   const nsRect* aOverridePreFilterVisualOverflowRect = nullptr,
+                   const nsRect* aPreFilterVisualOverflowRectOverride = nullptr,
                    const gfxRect* aOverrideBBox = nullptr);
 
   
@@ -227,7 +227,7 @@ class nsFilterInstance {
 
 
 
-  void BuildSourcePaint(SourceInfo* aPrimitive, imgDrawingParams& aImgParams);
+  void BuildSourcePaint(SourceInfo* aSource, imgDrawingParams& aImgParams);
 
   
 

@@ -176,7 +176,7 @@ class nsSVGUtils {
 
 
   static nsRect GetPostFilterVisualOverflowRect(nsIFrame* aFrame,
-                                                const nsRect& aUnfilteredRect);
+                                                const nsRect& aPreFilterRect);
 
   
 
@@ -235,7 +235,8 @@ class nsSVGUtils {
 
   static float UserSpace(SVGElement* aSVGElement,
                          const SVGAnimatedLength* aLength);
-  static float UserSpace(nsIFrame* aFrame, const SVGAnimatedLength* aLength);
+  static float UserSpace(nsIFrame* aNonSVGContext,
+                         const SVGAnimatedLength* aLength);
   static float UserSpace(const mozilla::dom::UserSpaceMetrics& aMetrics,
                          const SVGAnimatedLength* aLength);
 
@@ -599,10 +600,8 @@ class nsSVGUtils {
 
 
 
-
-
-
-  static gfxMatrix GetTransformMatrixInUserSpace(const nsIFrame* aFrame);
+  static gfxMatrix GetTransformMatrixInUserSpace(const nsIFrame* aFrame,
+                                                 const nsIFrame* aAncestor);
 };
 
 #endif

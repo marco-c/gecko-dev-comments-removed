@@ -251,7 +251,7 @@ class SVGObserverUtils {
 
 
   static nsSVGPaintServerFrame* GetAndObservePaintServer(
-      nsIFrame* aPaintedFrame, nsStyleSVGPaint nsStyleSVG::*aPaint);
+      nsIFrame* aTargetFrame, nsStyleSVGPaint nsStyleSVG::*aPaint);
 
   
 

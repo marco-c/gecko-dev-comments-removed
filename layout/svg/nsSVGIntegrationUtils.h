@@ -141,7 +141,7 @@ class nsSVGIntegrationUtils final {
 
 
   static nsRect GetRequiredSourceForInvalidArea(nsIFrame* aFrame,
-                                                const nsRect& aDamageRect);
+                                                const nsRect& aDirtyRect);
 
   
 

@@ -123,7 +123,7 @@ class SVGGeometryFrame : public nsFrame, public nsSVGDisplayableFrame {
 
 
 
-  void PaintMarkers(gfxContext& aContext, const gfxMatrix& aMatrix,
+  void PaintMarkers(gfxContext& aContext, const gfxMatrix& aTransform,
                     imgDrawingParams& aImgParams);
 };
 }  

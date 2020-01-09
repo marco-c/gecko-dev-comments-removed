@@ -53,7 +53,7 @@ class SVGLength {
 
 
 
-  bool SetValueFromString(const nsAString &aValue);
+  bool SetValueFromString(const nsAString &aString);
 
   
 

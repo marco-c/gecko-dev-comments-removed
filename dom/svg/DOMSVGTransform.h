@@ -54,7 +54,7 @@ class DOMSVGTransform final : public nsWrapperCache {
   
 
 
-  explicit DOMSVGTransform(const SVGTransform& aMatrix);
+  explicit DOMSVGTransform(const SVGTransform& aTransform);
 
   
 
