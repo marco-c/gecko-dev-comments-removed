@@ -853,8 +853,12 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
       }
       return Allow();
     }
-    if (mBroker) {
+
+    
+    
+    if (!BelowLevel(2)) {
       
+      MOZ_RELEASE_ASSERT(mBroker != nullptr);
       switch (sysno) {
         case __NR_open:
           return Trap(OpenTrap, mBroker);
@@ -891,6 +895,7 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
       }
     } else {
       
+      MOZ_ASSERT(!mBroker);
       switch (sysno) {
         case __NR_open:
         case __NR_openat:
