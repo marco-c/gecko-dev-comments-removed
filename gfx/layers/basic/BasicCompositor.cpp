@@ -1060,21 +1060,21 @@ void BasicCompositor::TryToEndRemoteDrawing(bool aForceToEnd) {
   if (mRenderTarget->mDrawTarget != mDrawTarget || mFullWindowRenderTarget) {
     RefPtr<SourceSurface> source;
 
+    
+    
+    IntPoint srcOffset = mTarget ? mTargetBounds.TopLeft() : IntPoint();
+    IntPoint dstOffset = mRenderTarget->GetOrigin();
+
     if (mRenderTarget->mDrawTarget != mDrawTarget) {
       source = mWidget->EndBackBufferDrawing();
-
-      
-      
-      nsIntPoint offset = mTarget ? mTargetBounds.TopLeft() : nsIntPoint();
 
       
       
       
       for (auto iter = mInvalidRegion.RectIter(); !iter.Done(); iter.Next()) {
         const LayoutDeviceIntRect& r = iter.Get();
-        mDrawTarget->CopySurface(source,
-                                 r.ToUnknownRect() - mRenderTarget->GetOrigin(),
-                                 r.TopLeft().ToUnknownPoint() - offset);
+        mDrawTarget->CopySurface(source, r.ToUnknownRect() - srcOffset,
+                                 r.TopLeft().ToUnknownPoint() - dstOffset);
       }
     } else {
       source = mRenderTarget->mDrawTarget->Snapshot();
@@ -1084,7 +1084,8 @@ void BasicCompositor::TryToEndRemoteDrawing(bool aForceToEnd) {
       for (auto iter = mInvalidRegion.RectIter(); !iter.Done(); iter.Next()) {
         const LayoutDeviceIntRect& r = iter.Get();
         mFullWindowRenderTarget->mDrawTarget->CopySurface(
-            source, r.ToUnknownRect(), r.TopLeft().ToUnknownPoint());
+            source, r.ToUnknownRect() - srcOffset,
+            r.TopLeft().ToUnknownPoint() - dstOffset);
       }
 
       mFullWindowRenderTarget->mDrawTarget->Flush();
