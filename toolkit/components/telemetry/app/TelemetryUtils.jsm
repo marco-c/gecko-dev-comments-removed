@@ -58,6 +58,9 @@ var TelemetryUtils = {
     EventPingMaximumFrequency: "toolkit.telemetry.eventping.maximumFrequency",
 
     
+    EcosystemTelemetryEnabled: "toolkit.telemetry.ecosystemtelemetry.enabled",
+
+    
     LogLevel: "toolkit.telemetry.log.level",
     LogDump: "toolkit.telemetry.log.dump",
 
