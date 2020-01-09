@@ -706,6 +706,16 @@ class ContextMenuChild extends ActorChild {
       return;
     }
 
+    const isAboutDevtoolsToolbox =
+          this.content.document.documentURI.startsWith("about:devtools-toolbox");
+    const editFlags = SpellCheckHelper.isEditable(node, this.content);
+
+    if (isAboutDevtoolsToolbox && (editFlags & SpellCheckHelper.TEXTINPUT) === 0) {
+      
+      context.shouldDisplay = false;
+      return;
+    }
+
     
     
     context.bgImageURL          = "";
@@ -764,7 +774,6 @@ class ContextMenuChild extends ActorChild {
     context.shouldInitInlineSpellCheckerUINoChildren = false;
     context.shouldInitInlineSpellCheckerUIWithChildren = false;
 
-    let editFlags = SpellCheckHelper.isEditable(context.target, this.content);
     this._setContextForNodesNoChildren(editFlags);
     this._setContextForNodesWithChildren(editFlags);
 
@@ -774,6 +783,16 @@ class ContextMenuChild extends ActorChild {
       
       timeStamp: context.timeStamp,
     };
+
+    if (isAboutDevtoolsToolbox) {
+      
+      context.inAboutDevtoolsToolbox = true;
+      context.canSpellCheck = false;
+      context.inTabBrowser = false;
+      context.inFrame = false;
+      context.inSrcdocFrame = false;
+      context.onSpellcheckable = false;
+    }
   }
 
   
