@@ -7967,62 +7967,68 @@ nsresult PresShell::EventHandler::HandleEventInternal(
       }
     }
   }
+  RecordEventHandlingResponsePerformance(aEvent);
+  return rv;
+}
 
-  if (Telemetry::CanRecordBase() && !aEvent->mTimeStamp.IsNull() &&
-      aEvent->mTimeStamp > mPresShell->mLastOSWake && aEvent->AsInputEvent()) {
-    TimeStamp now = TimeStamp::Now();
-    double millis = (now - aEvent->mTimeStamp).ToMilliseconds();
-    Telemetry::Accumulate(Telemetry::INPUT_EVENT_RESPONSE_MS, millis);
-    if (GetDocument() &&
-        GetDocument()->GetReadyStateEnum() != Document::READYSTATE_COMPLETE) {
-      Telemetry::Accumulate(Telemetry::LOAD_INPUT_EVENT_RESPONSE_MS, millis);
-    }
-
-    if (!sLastInputProcessed || sLastInputProcessed < aEvent->mTimeStamp) {
-      if (sLastInputProcessed) {
-        
-        
-        double lastMillis =
-            (sLastInputProcessed - sLastInputCreated).ToMilliseconds();
-        Telemetry::Accumulate(Telemetry::INPUT_EVENT_RESPONSE_COALESCED_MS,
-                              lastMillis);
-
-        if (MOZ_UNLIKELY(!PresShell::sProcessInteractable)) {
-          
-          
-          
-          
-          
-          if (XRE_IsContentProcess() && GetDocument() &&
-              GetDocument()->IsTopLevelContentDocument()) {
-            switch (GetDocument()->GetReadyStateEnum()) {
-              case Document::READYSTATE_INTERACTIVE:
-              case Document::READYSTATE_COMPLETE:
-                PresShell::sProcessInteractable = true;
-                break;
-              default:
-                break;
-            }
-          }
-        }
-        if (MOZ_LIKELY(PresShell::sProcessInteractable)) {
-          Telemetry::Accumulate(Telemetry::INPUT_EVENT_RESPONSE_POST_STARTUP_MS,
-                                lastMillis);
-        } else {
-          Telemetry::Accumulate(Telemetry::INPUT_EVENT_RESPONSE_STARTUP_MS,
-                                lastMillis);
-        }
-      }
-      sLastInputCreated = aEvent->mTimeStamp;
-    } else if (aEvent->mTimeStamp < sLastInputCreated) {
-      
-      
-      sLastInputCreated = aEvent->mTimeStamp;
-    }
-    sLastInputProcessed = now;
+void PresShell::EventHandler::RecordEventHandlingResponsePerformance(
+    const WidgetEvent* aEvent) {
+  if (!Telemetry::CanRecordBase() || aEvent->mTimeStamp.IsNull() ||
+      aEvent->mTimeStamp <= mPresShell->mLastOSWake ||
+      !aEvent->AsInputEvent()) {
+    return;
   }
 
-  return rv;
+  TimeStamp now = TimeStamp::Now();
+  double millis = (now - aEvent->mTimeStamp).ToMilliseconds();
+  Telemetry::Accumulate(Telemetry::INPUT_EVENT_RESPONSE_MS, millis);
+  if (GetDocument() &&
+      GetDocument()->GetReadyStateEnum() != Document::READYSTATE_COMPLETE) {
+    Telemetry::Accumulate(Telemetry::LOAD_INPUT_EVENT_RESPONSE_MS, millis);
+  }
+
+  if (!sLastInputProcessed || sLastInputProcessed < aEvent->mTimeStamp) {
+    if (sLastInputProcessed) {
+      
+      
+      double lastMillis =
+          (sLastInputProcessed - sLastInputCreated).ToMilliseconds();
+      Telemetry::Accumulate(Telemetry::INPUT_EVENT_RESPONSE_COALESCED_MS,
+                            lastMillis);
+
+      if (MOZ_UNLIKELY(!PresShell::sProcessInteractable)) {
+        
+        
+        
+        
+        
+        if (XRE_IsContentProcess() && GetDocument() &&
+            GetDocument()->IsTopLevelContentDocument()) {
+          switch (GetDocument()->GetReadyStateEnum()) {
+            case Document::READYSTATE_INTERACTIVE:
+            case Document::READYSTATE_COMPLETE:
+              PresShell::sProcessInteractable = true;
+              break;
+            default:
+              break;
+          }
+        }
+      }
+      if (MOZ_LIKELY(PresShell::sProcessInteractable)) {
+        Telemetry::Accumulate(Telemetry::INPUT_EVENT_RESPONSE_POST_STARTUP_MS,
+                              lastMillis);
+      } else {
+        Telemetry::Accumulate(Telemetry::INPUT_EVENT_RESPONSE_STARTUP_MS,
+                              lastMillis);
+      }
+    }
+    sLastInputCreated = aEvent->mTimeStamp;
+  } else if (aEvent->mTimeStamp < sLastInputCreated) {
+    
+    
+    sLastInputCreated = aEvent->mTimeStamp;
+  }
+  sLastInputProcessed = now;
 }
 
 
