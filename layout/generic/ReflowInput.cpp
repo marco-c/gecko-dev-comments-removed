@@ -687,7 +687,7 @@ void ReflowInput::InitResizeFlags(nsPresContext* aPresContext,
     
     
     SetBResize(mCBReflowInput->IsBResizeForWM(wm));
-  } else if (mCBReflowInput && !nsLayoutUtils::GetAsBlock(mFrame)) {
+  } else if (mCBReflowInput && !mFrame->IsBlockFrameOrSubclass()) {
     
     
     
@@ -1445,7 +1445,7 @@ void ReflowInput::CalculateHypotheticalPosition(
   
   
   nsBlockFrame* blockFrame =
-      nsLayoutUtils::GetAsBlock(containingBlock->GetContentInsertionFrame());
+      do_QueryFrame(containingBlock->GetContentInsertionFrame());
   if (blockFrame) {
     
     

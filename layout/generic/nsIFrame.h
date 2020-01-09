@@ -2888,13 +2888,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-
-
-
-
-
-
-  bool IsBlockFrameOrSubclass();
+  bool IsBlockFrameOrSubclass() const;
 
   
 

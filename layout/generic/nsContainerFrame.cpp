@@ -1651,7 +1651,7 @@ nsIFrame* nsContainerFrame::PullNextInFlowChild(
     return;
   }
 
-  nsBlockFrame* ourBlock = nsLayoutUtils::GetAsBlock(aOurLineContainer);
+  nsBlockFrame* ourBlock = do_QueryFrame(aOurLineContainer);
   NS_ASSERTION(ourBlock, "Not a block, but broke vertically?");
 
   while (true) {
@@ -1778,7 +1778,7 @@ bool nsContainerFrame::RenumberFrameAndDescendants(int32_t* aOrdinal,
   if (mozilla::StyleDisplay::ListItem == display->mDisplay) {
     
     
-    nsBlockFrame* listItem = nsLayoutUtils::GetAsBlock(kid);
+    nsBlockFrame* listItem = do_QueryFrame(kid);
     if (listItem) {
       nsBulletFrame* bullet = listItem->GetBullet();
       if (bullet) {
