@@ -99,7 +99,8 @@ namespace TelemetryIPCAccumulator = mozilla::TelemetryIPCAccumulator;
 
 namespace {
 
-const uint32_t kEventCount = mozilla::Telemetry::EventID::EventCount;
+const uint32_t kEventCount =
+      static_cast<uint32_t>(mozilla::Telemetry::EventID::EventCount);
 
 
 const uint32_t kExpiredEventId = std::numeric_limits<uint32_t>::max();
