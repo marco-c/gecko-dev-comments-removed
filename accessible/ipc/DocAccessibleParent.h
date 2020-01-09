@@ -10,6 +10,7 @@
 #include "nsAccessibilityService.h"
 #include "mozilla/a11y/PDocAccessibleParent.h"
 #include "mozilla/a11y/ProxyAccessible.h"
+#include "mozilla/Tuple.h"
 #include "nsClassHashtable.h"
 #include "nsHashKeys.h"
 #include "nsISupportsImpl.h"
@@ -213,6 +214,13 @@ class DocAccessibleParent : public ProxyAccessible,
   virtual mozilla::ipc::IPCResult RecvBatch(
       const uint64_t& aBatchType, nsTArray<BatchData>&& aData) override;
 #endif
+
+  
+
+
+
+
+  Tuple<DocAccessibleParent*, uint64_t> GetRemoteEmbedder();
 
  private:
   ~DocAccessibleParent() {
