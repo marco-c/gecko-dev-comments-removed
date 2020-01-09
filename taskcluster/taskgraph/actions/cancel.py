@@ -22,7 +22,7 @@ from .registry import register_callback_action
     order=350,
     context=[{}]
 )
-def cancel_action(parameters, graph_config, input, task_group_id, task_id, task):
+def cancel_action(parameters, graph_config, input, task_group_id, task_id):
     
     
     cancel_task(task_id, use_proxy=True)
