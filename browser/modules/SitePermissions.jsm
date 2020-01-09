@@ -148,15 +148,23 @@ const GloballyBlockedPermissions = {
       entry[prePath] = {};
     }
 
+    if (entry[prePath][id]) {
+      return;
+    }
     entry[prePath][id] = true;
 
+    
     
     
     browser.addProgressListener({
       QueryInterface: ChromeUtils.generateQI([Ci.nsIWebProgressListener,
                                               Ci.nsISupportsWeakReference]),
       onLocationChange(aWebProgress, aRequest, aLocation, aFlags) {
-        if (aWebProgress.isTopLevel) {
+        let hasLeftPage = aLocation.prePath != prePath ||
+            !(aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT);
+        let isReload = !!(aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_RELOAD);
+
+        if (aWebProgress.isTopLevel && (hasLeftPage || isReload)) {
           GloballyBlockedPermissions.remove(browser, id, prePath);
           browser.removeProgressListener(this);
         }
