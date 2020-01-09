@@ -2276,12 +2276,7 @@ var SessionStoreInternal = {
     }
   },
 
-  
-
-
-
-
-  async _doProcessSwitch(aBrowser, aRemoteType, aChannel, aSwitchId) {
+  async _doTabProcessSwitch(aBrowser, aRemoteType, aChannel, aSwitchId) {
     debug(`[process-switch]: performing switch from ${aBrowser.remoteType} to ${aRemoteType}`);
 
     
@@ -2313,6 +2308,27 @@ var SessionStoreInternal = {
   },
 
   
+
+
+
+
+  async _doProcessSwitch(aBrowsingContext, aRemoteType, aChannel, aSwitchId) {
+    
+    
+
+    
+    
+    
+    if (aBrowsingContext.embedderElement) {
+      return this._doTabProcessSwitch(aBrowsingContext.embedderElement,
+                                      aRemoteType, aChannel, aSwitchId);
+    }
+
+    let wg = aBrowsingContext.embedderWindowGlobal;
+    return wg.changeFrameRemoteness(aBrowsingContext, aRemoteType, aSwitchId);
+  },
+
+  
   
   onMayChangeProcess(aChannel) {
     if (!E10SUtils.useHttpResponseProcessSelection() &&
@@ -2325,17 +2341,28 @@ var SessionStoreInternal = {
     }
 
     
-    let cpType = aChannel.loadInfo.externalContentPolicyType;
-    let toplevel = cpType == Ci.nsIContentPolicy.TYPE_DOCUMENT;
-    if (!toplevel) {
-      debug(`[process-switch]: non-toplevel - ignoring`);
-      return;
+    let browsingContext;
+    let cp = aChannel.loadInfo.externalContentPolicyType;
+    if (cp == Ci.nsIContentPolicy.TYPE_DOCUMENT) {
+      browsingContext = aChannel.loadInfo.browsingContext;
+    } else {
+      browsingContext = aChannel.loadInfo.frameBrowsingContext;
+
+      let top = browsingContext.top;
+      if (!top.embedderElement) {
+        debug(`[process-switch]: no embedder for top - ignoring`);
+        return;
+      }
+
+      let docShell = top.embedderElement.ownerGlobal.docShell;
+      let loadContext = docShell.QueryInterface(Ci.nsILoadContext);
+
+      if (!loadContext.useRemoteSubframes) {
+        debug(`[process-switch]: remote subframes disabled - ignoring`);
+        return;
+      }
     }
 
-    
-    let browsingContext = toplevel
-        ? aChannel.loadInfo.browsingContext
-        : aChannel.loadInfo.frameBrowsingContext;
     if (!browsingContext) {
       debug(`[process-switch]: no BrowsingContext - ignoring`);
       return;
@@ -2348,41 +2375,29 @@ var SessionStoreInternal = {
     }
 
     
-    let parentChannel;
-    try {
-      parentChannel = aChannel.notificationCallbacks
-                              .getInterface(Ci.nsIParentChannel);
-    } catch (e) {
-      debug(`[process-switch]: No nsIParentChannel callback - ignoring`);
+    
+    
+    if (browsingContext.embedderElement) {
+      let tabbrowser = browsingContext.embedderElement.ownerGlobal.gBrowser;
+      if (!tabbrowser) {
+        debug(`[process-switch]: cannot find tabbrowser for loading tab - ignoring`);
+        return;
+      }
+
+      let tab = tabbrowser.getTabForBrowser(browsingContext.embedderElement);
+      if (!tab) {
+        debug(`[process-switch]: not a normal tab, so cannot swap processes - ignoring`);
+        return;
+      }
+    } else if (!browsingContext.parent) {
+      debug(`[process-switch] no parent or in-process embedder element - ignoring`);
       return;
     }
 
     
-    let tabParent;
-    try {
-      tabParent = parentChannel.QueryInterface(Ci.nsIInterfaceRequestor)
-                               .getInterface(Ci.nsITabParent);
-    } catch (e) {
-      debug(`[process-switch]: No nsITabParent for channel - ignoring`);
-      return;
-    }
-
-    
-    let browser = tabParent.ownerElement;
-    if (!browser) {
-      debug(`[process-switch]: TabParent has no ownerElement - ignoring`);
-      return;
-    }
-
-    let tabbrowser = browser.ownerGlobal.gBrowser;
-    if (!tabbrowser) {
-      debug(`[process-switch]: cannot find tabbrowser for loading tab - ignoring`);
-      return;
-    }
-
-    let tab = tabbrowser.getTabForBrowser(browser);
-    if (!tab) {
-      debug(`[process-switch]: not a normal tab, so cannot swap processes - ignoring`);
+    let currentRemoteType = browsingContext.currentRemoteType;
+    if (currentRemoteType == E10SUtils.NOT_REMOTE) {
+      debug(`[process-switch]: currently not remote - ignoring`);
       return;
     }
 
@@ -2391,9 +2406,9 @@ var SessionStoreInternal = {
       Services.scriptSecurityManager.getChannelResultPrincipal(aChannel);
     let remoteType = E10SUtils.getRemoteTypeForPrincipal(resultPrincipal,
                                                          true,
-                                                         browser.remoteType,
+                                                         currentRemoteType,
                                                          currentPrincipal);
-    if (browser.remoteType == remoteType &&
+    if (currentRemoteType == remoteType &&
         (!E10SUtils.useCrossOriginOpenerPolicy() ||
          !aChannel.hasCrossOriginOpenerPolicyMismatch())) {
       debug(`[process-switch]: type (${remoteType}) is compatible - ignoring`);
@@ -2401,7 +2416,7 @@ var SessionStoreInternal = {
     }
 
     if (remoteType == E10SUtils.NOT_REMOTE ||
-        browser.remoteType == E10SUtils.NOT_REMOTE) {
+        currentRemoteType == E10SUtils.NOT_REMOTE) {
       debug(`[process-switch]: non-remote source/target - ignoring`);
       return;
     }
@@ -2411,7 +2426,7 @@ var SessionStoreInternal = {
     
     
     let identifier = ++this._switchIdMonotonic;
-    let tabPromise = this._doProcessSwitch(browser, remoteType,
+    let tabPromise = this._doProcessSwitch(browsingContext, remoteType,
                                            aChannel, identifier);
     aChannel.switchProcessTo(tabPromise, identifier);
   },
