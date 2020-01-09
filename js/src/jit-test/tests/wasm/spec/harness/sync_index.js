@@ -1,18 +1,18 @@
-/*
- * Copyright 2017 WebAssembly Community Group participants
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
-*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 'use strict';
 
@@ -23,9 +23,9 @@ let testNum = (function() {
     }
 })();
 
-// WPT's assert_throw uses a list of predefined, hardcoded known errors. Since
-// it is not aware of the WebAssembly error types (yet), implement our own
-// version.
+
+
+
 function assertThrows(func, err) {
     let caught = false;
     try {
@@ -37,18 +37,18 @@ function assertThrows(func, err) {
     assert_true(caught, testNum() + "assertThrows must catch any error.")
 }
 
-/******************************************************************************
-***************************** WAST HARNESS ************************************
-******************************************************************************/
 
-// For assertions internal to our test harness.
+
+
+
+
 function _assert(x) {
     if (!x) {
         throw new Error(`Assertion failure: ${x}`);
     }
 }
 
-// A simple sum type that can either be a valid Value or an Error.
+
 function Result(type, maybeValue) {
     this.value = maybeValue;
     this.type = type;
@@ -64,14 +64,14 @@ Result.prototype.isError = function() { return this.type === Result.ERROR; }
 
 const EXPECT_INVALID = false;
 
-/* DATA **********************************************************************/
+
 
 let $$;
 
-// Default imports.
+
 var registry = {};
 
-// Resets the registry between two different WPT tests.
+
 function reinitializeRegistry() {
     if (typeof WebAssembly === 'undefined')
         return;
@@ -86,7 +86,7 @@ function reinitializeRegistry() {
         global_i32: 666,
         global_f32: 666,
         global_f64: 666,
-        table: new WebAssembly.Table({initial: 10, maximum: 20, element: 'anyfunc'}),
+        table: new WebAssembly.Table({initial: 10, maximum: 20, element: 'funcref'}),
         memory: new WebAssembly.Memory({initial: 1, maximum: 2})
     };
     let handler = {
@@ -99,7 +99,7 @@ function reinitializeRegistry() {
 
 reinitializeRegistry();
 
-/* WAST POLYFILL *************************************************************/
+
 
 function binary(bytes) {
     let buffer = new ArrayBuffer(bytes.length);
@@ -110,9 +110,9 @@ function binary(bytes) {
     return buffer;
 }
 
-/**
- * Returns a compiled module, or throws if there was an error at compilation.
- */
+
+
+
 function module(bytes, valid = true) {
     let buffer = binary(bytes);
     let validated;
@@ -124,7 +124,7 @@ function module(bytes, valid = true) {
     }
 
     if (validated !== valid) {
-        // Try to get a more precise error message from the WebAssembly.CompileError.
+        
         try {
             new WebAssembly.Module(buffer);
         } catch (e) {
@@ -155,7 +155,7 @@ function uniqueTest(func, desc) {
 function assert_invalid(bytes) {
     uniqueTest(() => {
         try {
-            module(bytes, /* valid */ false);
+            module(bytes,  false);
             throw new Error('did not fail');
         } catch(e) {
             assert_true(e instanceof WebAssembly.CompileError, "expected invalid failure:");

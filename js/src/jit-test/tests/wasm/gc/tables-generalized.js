@@ -92,7 +92,7 @@ assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
        (table 10 anyref)
        (elem (i32.const 0) $f1))`)),
                    WebAssembly.CompileError,
-                   /only tables of 'anyfunc' may have element segments/);
+                   /only tables of 'funcref' may have element segments/);
 
 
 
@@ -105,7 +105,7 @@ assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
        (func
          (table.init 0 (i32.const 0) (i32.const 0) (i32.const 0))))`)),
                    WebAssembly.CompileError,
-                   /only tables of 'anyfunc' may have element segments/);
+                   /only tables of 'funcref' may have element segments/);
 
 
 
@@ -114,7 +114,7 @@ assertErrorMessage(
     `(module
        (gc_feature_opt_in 3)
        (import "m" "t" (table 10 anyref)))`)),
-                                   {m:{t: new WebAssembly.Table({element:"anyfunc", initial:10})}}),
+                                   {m:{t: new WebAssembly.Table({element:"funcref", initial:10})}}),
     WebAssembly.LinkError,
     /imported table type mismatch/);
 
@@ -128,7 +128,7 @@ assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
        (func (result i32)
          (call_indirect $t (i32.const 37))))`)),
                    WebAssembly.CompileError,
-                   /indirect calls must go through a table of 'anyfunc'/);
+                   /indirect calls must go through a table of 'funcref'/);
 
 
 
@@ -198,7 +198,7 @@ assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
 
 assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
     `(module
-       (table 10 anyfunc)
+       (table 10 funcref)
        (func (export "f") (param i32)
          (drop (table.get (get_local 0)))))`)),
                    WebAssembly.CompileError,
@@ -207,7 +207,7 @@ assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
 assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
     `(module
        (gc_feature_opt_in 3)
-       (table 10 anyfunc)
+       (table 10 funcref)
        (func (export "f") (param i32)
          (drop (table.get (get_local 0)))))`)),
                    WebAssembly.CompileError,
@@ -274,7 +274,7 @@ assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
 assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
     `(module
       (gc_feature_opt_in 3)
-      (table 10 anyfunc)
+      (table 10 funcref)
       (func (export "f") (param anyref)
        (table.set (i32.const 0) (get_local 0))))`)),
                    WebAssembly.CompileError,
@@ -342,7 +342,7 @@ assertEq(ins.exports.t.length, 20)
 assertErrorMessage(() => wasmEvalText(
     `(module
       (gc_feature_opt_in 3)     ;; Required because of the 'anyref' null value below
-      (table $t 2 anyfunc)
+      (table $t 2 funcref)
       (func $f
        (drop (table.grow (i32.const 1) (ref.null)))))`),
                    WebAssembly.CompileError,
@@ -399,7 +399,7 @@ for (let visibility of ['', '(export "t")', '(import "m" "t")']) {
 {
     let ins = wasmEvalText(
         `(module
-          (table (export "t") 2 anyfunc)
+          (table (export "t") 2 funcref)
           (func (export "f") (result i32)
            (table.size)))`);
     assertEq(ins.exports.f(), 2);
@@ -436,7 +436,7 @@ let VALUES = [null,
 }
 
 {
-    let t = new WebAssembly.Table({element:"anyfunc", initial:0});
+    let t = new WebAssembly.Table({element:"funcref", initial:0});
     let ins = wasmEvalText(
         `(module
            (func (export "f") (param i32) (result i32)

@@ -3,7 +3,7 @@
 
 
 
-var tbl = new WebAssembly.Table({initial:1, element:"anyfunc"});
+var tbl = new WebAssembly.Table({initial:1, element:"funcref"});
 
 new WebAssembly.Instance(new WebAssembly.Module(wasmTextToBinary(`(module
     (func $iloop
@@ -11,12 +11,12 @@ new WebAssembly.Instance(new WebAssembly.Module(wasmTextToBinary(`(module
             br $top
         end
     )
-    (import "imports" "tbl" (table 1 anyfunc))
+    (import "imports" "tbl" (table 1 funcref))
     (elem (i32.const 0) $iloop)
 )`)), {imports:{tbl}});
 
 var outer = new WebAssembly.Instance(new WebAssembly.Module(wasmTextToBinary(`(module
-    (import "imports" "tbl" (table 1 anyfunc))
+    (import "imports" "tbl" (table 1 funcref))
     (type $v2v (func))
     (func (export "run")
         i32.const 0
