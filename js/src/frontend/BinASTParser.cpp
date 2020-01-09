@@ -3227,7 +3227,7 @@ JS::Result<Ok> BinASTParser<Tok>::parseInterfaceFunctionExpressionContents(
   
   
   
-  if (pc_->functionBox()->function()->isNamedLambda() &&
+  if (pc_->functionBox()->isNamedLambda() &&
       isFunctionNameCaptured) {
     captureFunctionName();
   }

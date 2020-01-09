@@ -419,6 +419,9 @@ void FunctionBox::trace(JSTracer* trc) {
   if (enclosingScope_) {
     TraceRoot(trc, &enclosingScope_, "funbox-enclosingScope");
   }
+  if (explicitName_) {
+    TraceRoot(trc, &explicitName_, "funbox-explicitName");
+  }
 }
 
 bool js::frontend::IsAnonymousFunctionDefinition(ParseNode* pn) {
@@ -428,7 +431,7 @@ bool js::frontend::IsAnonymousFunctionDefinition(ParseNode* pn) {
   
   
   if (pn->is<FunctionNode>() &&
-      !pn->as<FunctionNode>().funbox()->function()->explicitName()) {
+      !pn->as<FunctionNode>().funbox()->explicitName()) {
     return true;
   }
 

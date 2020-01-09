@@ -156,7 +156,15 @@ FunctionBox::FunctionBox(JSContext* cx, TraceListNode* traceListHead,
       needsHomeObject_(false),
       isDerivedClassConstructor_(false),
       hasThisBinding_(false),
-      hasInnerFunctions_(false) {
+      hasInnerFunctions_(false),
+      isArrow_(fun->isArrow()),
+      isNamedLambda_(fun->isNamedLambda()),
+      isGetter_(fun->isGetter()),
+      isSetter_(fun->isSetter()),
+      isMethod_(fun->isMethod()),
+      kind_(fun->kind()),
+      explicitName_(fun->explicitName())
+{
   
   
   
@@ -245,7 +253,7 @@ void FunctionBox::initFieldInitializer(ParseContext* enclosing,
 }
 
 void FunctionBox::initWithEnclosingScope(Scope* enclosingScope) {
-  if (!function()->isArrow()) {
+  if (!isArrow()) {
     allowNewTarget_ = true;
     allowSuperProperty_ = function()->allowSuperProperty();
 
