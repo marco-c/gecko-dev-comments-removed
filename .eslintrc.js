@@ -87,7 +87,6 @@ module.exports = {
   }, {
     
     "files": [
-      "tools/leak-gauge/leak-gauge.html",
       "xpcom/tests/unit/test_iniParser.js",
     ],
     "rules": {
