@@ -1036,8 +1036,9 @@ class nsDocShell final : public nsDocLoader,
   
   
 
-  nsIDocShellTreeOwner* mTreeOwner;                
-  mozilla::dom::EventTarget* mChromeEventHandler;  
+  nsIDocShellTreeOwner* mTreeOwner;  
+
+  RefPtr<mozilla::dom::EventTarget> mChromeEventHandler;
 
   nsIntPoint mDefaultScrollbarPref;  
 
