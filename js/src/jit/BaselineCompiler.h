@@ -261,7 +261,6 @@ class BaselineCodeGen {
   Handler handler;
 
   JSContext* cx;
-  JSScript* script;
   StackMacroAssembler masm;
   bool ionCompileable_;
 
@@ -289,14 +288,6 @@ class BaselineCodeGen {
   BaselineCodeGen(JSContext* cx, TempAllocator& alloc, JSScript* script,
                   HandlerArgs&&... args);
 
-  JSFunction* function() const {
-    
-    
-    return script->functionNonDelazifying();
-  }
-
-  ModuleObject* module() const { return script->module(); }
-
   template <typename T>
   void pushArg(const T& t) {
     masm.Push(t);
@@ -320,6 +311,20 @@ class BaselineCodeGen {
   void pushUint16BytecodeOperandArg();
 
   void loadResumeIndexBytecodeOperand(Register dest);
+
+  
+  void loadScript(Register dest);
+
+  
+  void jumpToResumeEntry(Register resumeIndex, Register scratch1,
+                         Register scratch2);
+
+  
+  void loadGlobalLexicalEnvironment(Register dest);
+  void pushGlobalLexicalEnvironmentValue(ValueOperand scratch);
+
+  
+  void loadGlobalThisValue(ValueOperand dest);
 
   void prepareVMCall();
 
@@ -348,6 +353,19 @@ class BaselineCodeGen {
   MOZ_MUST_USE bool emitDebugInstrumentation(const F& ifDebuggee) {
     return emitDebugInstrumentation(ifDebuggee, mozilla::Maybe<F>());
   }
+
+  
+  
+  template <typename F1, typename F2>
+  MOZ_MUST_USE bool emitTestScriptFlag(JSScript::ImmutableFlags flag,
+                                       const F1& ifSet, const F2& ifNotSet,
+                                       Register scratch);
+
+  
+  template <typename F>
+  MOZ_MUST_USE bool emitTestScriptFlag(JSScript::ImmutableFlags flag,
+                                       bool value, const F& emit,
+                                       Register scratch);
 
   MOZ_MUST_USE bool emitCheckThis(ValueOperand val, bool reinit = false);
   void emitLoadReturnValue(ValueOperand val);
@@ -454,6 +472,18 @@ class BaselineCompilerHandler {
 
   bool isDefinitelyLastOp() const { return pc_ == script_->lastPC(); }
 
+  JSScript* script() const { return script_; }
+  JSScript* maybeScript() const { return script_; }
+
+  JSFunction* function() const {
+    
+    
+    return script_->functionNonDelazifying();
+  }
+  JSFunction* maybeFunction() const { return function(); }
+
+  ModuleObject* module() const { return script_->module(); }
+
   void setCompileDebugInstrumentation() { compileDebugInstrumentation_ = true; }
   bool compileDebugInstrumentation() const {
     return compileDebugInstrumentation_;
@@ -513,7 +543,7 @@ class BaselineCompiler final : private BaselineCompilerCodeGen {
   
   static const unsigned EARLY_STACK_CHECK_SLOT_COUNT = 128;
   bool needsEarlyStackCheck() const {
-    return script->nslots() > EARLY_STACK_CHECK_SLOT_COUNT;
+    return handler.script()->nslots() > EARLY_STACK_CHECK_SLOT_COUNT;
   }
 
  public:
@@ -586,6 +616,8 @@ class BaselineInterpreterHandler {
   
   jsbytecode* maybePC() const { return nullptr; }
   bool isDefinitelyLastOp() const { return false; }
+  JSScript* maybeScript() const { return nullptr; }
+  JSFunction* maybeFunction() const { return nullptr; }
 
   
   

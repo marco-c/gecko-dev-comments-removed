@@ -1615,6 +1615,8 @@ class JSScript : public js::gc::TenuredCell {
   
   
   
+  
+ public:
   enum class ImmutableFlags : uint32_t {
     
     NoScriptRval = 1 << 0,
@@ -1687,6 +1689,8 @@ class JSScript : public js::gc::TenuredCell {
     
     TrackRecordReplayProgress = 1 << 23,
   };
+
+ private:
   
   
   uint32_t immutableFlags_ = 0;
@@ -1855,9 +1859,12 @@ class JSScript : public js::gc::TenuredCell {
 
   
 
+ public:
   MOZ_MUST_USE bool hasFlag(ImmutableFlags flag) const {
     return immutableFlags_ & uint32_t(flag);
   }
+
+ private:
   void setFlag(ImmutableFlags flag) { immutableFlags_ |= uint32_t(flag); }
   void setFlag(ImmutableFlags flag, bool b) {
     if (b) {
@@ -2201,6 +2208,9 @@ class JSScript : public js::gc::TenuredCell {
 
   static constexpr size_t offsetOfMutableFlags() {
     return offsetof(JSScript, mutableFlags_);
+  }
+  static size_t offsetOfImmutableFlags() {
+    return offsetof(JSScript, immutableFlags_);
   }
 
   bool hasAnyIonScript() const { return hasIonScript(); }
