@@ -1033,14 +1033,15 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
 }
 
 
-nsresult nsPrintJob::Print(nsIPrintSettings* aPrintSettings,
+nsresult nsPrintJob::Print(Document* aSourceDoc,
+                           nsIPrintSettings* aPrintSettings,
                            nsIWebProgressListener* aWebProgressListener) {
   
   
   
   Document* doc = mPrtPreview && mPrtPreview->mPrintObject
-                      ? mPrtPreview->mPrintObject->mDocument
-                      : mOriginalDoc;
+                      ? mPrtPreview->mPrintObject->mDocument.get()
+                      : aSourceDoc;
 
   return CommonPrint(false, aPrintSettings, aWebProgressListener, doc);
 }

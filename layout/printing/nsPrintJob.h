@@ -93,7 +93,8 @@ class nsPrintJob final : public nsIObserver,
 
 
 
-  nsresult Print(nsIPrintSettings* aPrintSettings,
+  nsresult Print(mozilla::dom::Document* aSourceDoc,
+                 nsIPrintSettings* aPrintSettings,
                  nsIWebProgressListener* aWebProgressListener);
 
   
