@@ -55,10 +55,6 @@ async function showErrorPage(doc, errorMessage) {
 
   
   await onLoad;
-
-  
-  document.title = L10N.getStr("toolbox.debugTargetInfo.tabTitleError");
-
   const mountEl = doc.querySelector("#toolbox-error-mount");
   const element = DebugTargetErrorPage({
     errorMessage,
