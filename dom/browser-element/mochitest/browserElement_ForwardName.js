@@ -11,15 +11,15 @@ browserElementTestHelpers.setEnabledPref(true);
 browserElementTestHelpers.addPermission();
 
 function runTest() {
-  var iframe = document.createElement('iframe');
-  iframe.setAttribute('mozbrowser', 'true');
-  iframe.setAttribute('name', 'foo');
+  var iframe = document.createElement("iframe");
+  iframe.setAttribute("mozbrowser", "true");
+  iframe.setAttribute("name", "foo");
 
   iframe.addEventListener("mozbrowseropenwindow", function(e) {
-    ok(false, 'Got mozbrowseropenwindow, but should not have.');
+    ok(false, "Got mozbrowseropenwindow, but should not have.");
   });
 
-  iframe.addEventListener('mozbrowserlocationchange', function(e) {
+  iframe.addEventListener("mozbrowserlocationchange", function(e) {
     ok(true, "Got locationchange to " + e.detail.url);
     if (e.detail.url.endsWith("ForwardName.html#finish")) {
       SimpleTest.finish();
@@ -28,8 +28,8 @@ function runTest() {
 
   
   
-  iframe.addEventListener('mozbrowsershowmodalprompt', function(e) {
-    ok(e.detail.message.startsWith('success:'), e.detail.message);
+  iframe.addEventListener("mozbrowsershowmodalprompt", function(e) {
+    ok(e.detail.message.startsWith("success:"), e.detail.message);
   });
 
   document.body.appendChild(iframe);
@@ -37,7 +37,7 @@ function runTest() {
   
   
   
-  iframe.src = 'file_browserElement_ForwardName.html';
+  iframe.src = "file_browserElement_ForwardName.html";
 }
 
-addEventListener('testready', runTest);
+addEventListener("testready", runTest);

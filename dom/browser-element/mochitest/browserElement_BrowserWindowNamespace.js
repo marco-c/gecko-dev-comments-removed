@@ -12,46 +12,45 @@ browserElementTestHelpers.setEnabledPref(true);
 browserElementTestHelpers.addPermission();
 
 function runTest() {
-  var iframe1 = document.createElement('iframe');
-  iframe1.setAttribute('mozbrowser', 'true');
+  var iframe1 = document.createElement("iframe");
+  iframe1.setAttribute("mozbrowser", "true");
 
   
   
   
 
-  iframe1.addEventListener('mozbrowseropenwindow', function(e) {
+  iframe1.addEventListener("mozbrowseropenwindow", function(e) {
     ok(true, "Got first mozbrowseropenwindow event.");
     document.body.appendChild(e.detail.frameElement);
 
-    e.detail.frameElement.addEventListener('mozbrowserlocationchange', function(e) {
+    e.detail.frameElement.addEventListener("mozbrowserlocationchange", function(e) {
       if (e.detail.url == "http://example.com/#2") {
         ok(true, "Got locationchange to http://example.com/#2");
         SimpleTest.finish();
-      }
-      else {
+      } else {
         ok(true, "Got locationchange to " + e.detail.url);
       }
     });
 
     SimpleTest.executeSoon(function() {
-      var iframe2 = document.createElement('iframe');
+      var iframe2 = document.createElement("iframe");
       
       
       
       SpecialPowers.wrap(iframe2).presetOpenerWindow(iframe1.contentWindow);
-      iframe2.setAttribute('mozbrowser', 'true');
+      iframe2.setAttribute("mozbrowser", "true");
 
-      iframe2.addEventListener('mozbrowseropenwindow', function(e) {
+      iframe2.addEventListener("mozbrowseropenwindow", function(e) {
         ok(false, "Got second mozbrowseropenwindow event.");
       });
 
       document.body.appendChild(iframe2);
-      iframe2.src = 'file_browserElement_BrowserWindowNamespace.html#2';
+      iframe2.src = "file_browserElement_BrowserWindowNamespace.html#2";
     });
   });
 
   document.body.appendChild(iframe1);
-  iframe1.src = 'file_browserElement_BrowserWindowNamespace.html#1';
+  iframe1.src = "file_browserElement_BrowserWindowNamespace.html#1";
 }
 
-addEventListener('testready', runTest);
+addEventListener("testready", runTest);

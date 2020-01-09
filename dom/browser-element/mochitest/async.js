@@ -41,7 +41,7 @@
         }
         
         if (func.constructor.name !== "GeneratorFunction") {
-          gen = (function*() {
+          gen = (function* () {
             return func.apply(self, functionArgs);
           }());
         } else {
