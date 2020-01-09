@@ -16,6 +16,7 @@
 #include "mozilla/layers/FocusTarget.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/ServoStyleSet.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "nsContentUtils.h"  
 #include "nsCRT.h"
@@ -576,6 +577,17 @@ class PresShell final : public nsIPresShell,
                                    nsIContent** aTargetContent,
                                    nsIContent* aOverrideClickTarget);
 
+    
+
+
+
+    static inline void OnPresShellDestroy(Document* aDocument) {
+      if (sLastKeyDownEventTargetElement &&
+          sLastKeyDownEventTargetElement->OwnerDoc() == aDocument) {
+        sLastKeyDownEventTargetElement = nullptr;
+      }
+    }
+
    private:
     static bool InZombieDocument(nsIContent* aContent);
     static nsIFrame* GetNearestFrameContainingPresShell(
@@ -974,6 +986,17 @@ class PresShell final : public nsIPresShell,
 
 
 
+    Element* ComputeFocusedEventTargetElement(WidgetGUIEvent* aGUIEvent);
+
+    
+
+
+
+
+
+
+
+
 
 
     MOZ_CAN_RUN_SCRIPT
@@ -1070,6 +1093,7 @@ class PresShell final : public nsIPresShell,
     OwningNonNull<PresShell> mPresShell;
     static TimeStamp sLastInputCreated;
     static TimeStamp sLastInputProcessed;
+    static StaticRefPtr<Element> sLastKeyDownEventTargetElement;
   };
 
   

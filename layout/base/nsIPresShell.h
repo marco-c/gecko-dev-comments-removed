@@ -2051,8 +2051,6 @@ class nsIPresShell : public nsStubDocumentObserver {
 
   uint32_t mPresShellId;
 
-  static nsIContent* gKeyDownTarget;
-
   
   
   uint32_t mFontSizeInflationEmPerLine;
