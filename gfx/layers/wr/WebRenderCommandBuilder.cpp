@@ -96,17 +96,13 @@ struct BlobItemData {
 
   
   Matrix mMatrix;  
-  Matrix4x4Flagged mTransform;  
-                                
-  float mOpacity;  
-                   
   RefPtr<BasicLayerManager> mLayerManager;
 
   IntRect mImageRect;
   LayerIntPoint mGroupOffset;
 
   BlobItemData(DIGroup* aGroup, nsDisplayItem* aItem)
-      : mUsed(false), mGroup(aGroup), mOpacity(0.0) {
+      : mUsed(false), mGroup(aGroup) {
     mInvalid = false;
     mInvalidRegion = false;
     mEmpty = false;
@@ -254,34 +250,10 @@ static bool IsContainerLayerItem(nsDisplayItem* aItem) {
 
 #include <sstream>
 
-bool UpdateContainerLayerPropertiesAndDetectChange(
+bool DetectContainerLayerPropertiesBoundsChange(
     nsDisplayItem* aItem, BlobItemData* aData,
     nsDisplayItemGeometry& aGeometry) {
-  bool changed = false;
   switch (aItem->GetType()) {
-    case DisplayItemType::TYPE_TRANSFORM: {
-      auto transformItem = static_cast<nsDisplayTransform*>(aItem);
-      Matrix4x4Flagged trans = transformItem->GetTransform();
-      changed = aData->mTransform != trans;
-
-      if (changed) {
-        std::stringstream ss;
-        
-        
-        
-      }
-
-      aData->mTransform = trans;
-      break;
-    }
-    case DisplayItemType::TYPE_OPACITY: {
-      auto opacityItem = static_cast<nsDisplayOpacity*>(aItem);
-      float opacity = opacityItem->GetOpacity();
-      changed = aData->mOpacity != opacity;
-      aData->mOpacity = opacity;
-      GP("UpdateContainerLayerPropertiesAndDetectChange Opacity\n");
-      break;
-    }
     case DisplayItemType::TYPE_MASK:
     case DisplayItemType::TYPE_FILTER: {
       
@@ -293,7 +265,7 @@ bool UpdateContainerLayerPropertiesAndDetectChange(
       break;
   }
 
-  return changed || !aGeometry.mBounds.IsEqualEdges(aData->mGeometry->mBounds);
+  return !aGeometry.mBounds.IsEqualEdges(aData->mGeometry->mBounds);
 }
 
 struct DIGroup {
@@ -547,7 +519,7 @@ struct DIGroup {
               aItem->AllocateGeometry(aBuilder));
           
           
-          if (UpdateContainerLayerPropertiesAndDetectChange(aItem, aData,
+          if (DetectContainerLayerPropertiesBoundsChange(aItem, aData,
                                                             *geometry)) {
             nsRect clippedBounds = clip.ApplyNonRoundedIntersection(
                 geometry->ComputeInvalidationRegion());
@@ -558,7 +530,7 @@ struct DIGroup {
             InvalidateRect(aData->mRect.Intersect(mImageBounds));
             aData->mRect = transformedRect.Intersect(mClippedImageBounds);
             InvalidateRect(aData->mRect);
-            GP("UpdateContainerLayerPropertiesAndDetectChange change\n");
+            GP("DetectContainerLayerPropertiesBoundsChange change\n");
           } else if (!aData->mImageRect.IsEqualEdges(mClippedImageBounds)) {
             
             nsRect clippedBounds = clip.ApplyNonRoundedIntersection(
