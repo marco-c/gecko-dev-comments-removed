@@ -223,7 +223,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     return "[WalkerActor " + this.actorID + "]";
   },
 
-  getDocumentWalker: function(node, whatToShow, skipTo) {
+  getAnonymousDocumentWalker: function(node, whatToShow, skipTo) {
     
     const filter = this.showAllAnonymousContent
                     ? allAnonymousContentTreeWalkerFilter
@@ -233,11 +233,23 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       {whatToShow, filter, skipTo, showAnonymousContent: true});
   },
 
-  getNonAnonymousWalker: function(node, whatToShow, skipTo) {
+  getNonAnonymousDocumentWalker: function(node, whatToShow, skipTo) {
     const nodeFilter = standardTreeWalkerFilter;
 
     return new DocumentWalker(node, this.rootWin,
       {whatToShow, nodeFilter, skipTo, showAnonymousContent: false});
+  },
+
+  
+
+
+
+  getDocumentWalker: function(node, whatToShow, skipTo) {
+    try {
+      return this.getAnonymousDocumentWalker(node, whatToShow, skipTo);
+    } catch (e) {
+      return this.getNonAnonymousDocumentWalker(node, whatToShow, skipTo);
+    }
   },
 
   destroy: function() {
@@ -502,14 +514,14 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       
       
       const walker = isDirectShadowHostChild(node.rawNode)
-        ? this.getNonAnonymousWalker(node.rawNode)
-        : this.getDocumentWalker(node.rawNode);
+        ? this.getNonAnonymousDocumentWalker(node.rawNode)
+        : this.getAnonymousDocumentWalker(node.rawNode);
       parent = walker.parentNode();
     } catch (e) {
       
       
       
-      const walker = this.getNonAnonymousWalker(node.rawNode);
+      const walker = this.getNonAnonymousDocumentWalker(node.rawNode);
       parent = walker.parentNode();
     }
 
@@ -532,18 +544,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       return undefined;
     }
 
-    let walker;
-    try {
-      
-      
-      
-      walker = this.getDocumentWalker(rawNode);
-    } catch (e) {
-      
-      
-      walker = this.getNonAnonymousWalker(rawNode);
-    }
-
+    const walker = this.getDocumentWalker(rawNode);
     const firstChild = walker.firstChild();
 
     
@@ -789,7 +790,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
         
         
         
-        return this.getNonAnonymousWalker(documentWalkerNode, whatToShow, skipTo);
+        return this.getNonAnonymousDocumentWalker(documentWalkerNode, whatToShow, skipTo);
       }
       return this.getDocumentWalker(documentWalkerNode, whatToShow, skipTo);
     };
