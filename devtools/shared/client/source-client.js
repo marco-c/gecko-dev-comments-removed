@@ -181,7 +181,6 @@ SourceClient.prototype = {
   setBreakpoint: function({ line, column, condition, noSliding }) {
     
     const doSetBreakpoint = callback => {
-      const root = this._client.mainRoot;
       const location = {
         line,
         column,
