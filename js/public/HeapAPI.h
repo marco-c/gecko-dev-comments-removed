@@ -550,6 +550,12 @@ extern JS_PUBLIC_API void IncrementalPreWriteBarrier(JSObject* obj);
 
 
 
+extern JS_PUBLIC_API void IncrementalPreWriteBarrier(GCCellPtr thing);
+
+
+
+
+
 extern JS_PUBLIC_API void IncrementalReadBarrier(GCCellPtr thing);
 
 
