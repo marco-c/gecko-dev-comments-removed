@@ -191,24 +191,48 @@ dbg.onNewScript = function(script) {
   installPendingHandlers();
 };
 
-const gConsoleObjectProperties = new Map();
 
-function shouldSaveConsoleProperty({ desc }) {
+
+
+
+
+
+
+
+
+
+function snapshotObjectProperty({ name, desc }) {
   
-  
-  
-  
-  
-  
-  
-  return "value" in desc && !isNonNullObject(desc.value);
+  if ("value" in desc && !convertedValueIsObject(desc.value)) {
+    return { name, desc };
+  }
+  return { name, desc: { value: "<unavailable>" } };
 }
 
-function saveConsoleObjectProperties(obj) {
-  if (obj instanceof Debugger.Object) {
-    const properties = getObjectProperties(obj).filter(shouldSaveConsoleProperty);
-    gConsoleObjectProperties.set(obj, properties);
-  }
+function makeObjectSnapshot(object) {
+  assert(object instanceof Debugger.Object);
+
+  
+  
+  
+  
+  return {
+    kind: "Object",
+    callable: object.callable,
+    isBoundFunction: object.isBoundFunction,
+    isArrowFunction: object.isArrowFunction,
+    isGeneratorFunction: object.isGeneratorFunction,
+    isAsyncFunction: object.isAsyncFunction,
+    class: object.class,
+    name: object.name,
+    displayName: object.displayName,
+    parameterNames: object.parameterNames,
+    isProxy: object.isProxy,
+    isExtensible: object.isExtensible(),
+    isSealed: object.isSealed(),
+    isFrozen: object.isFrozen(),
+    properties: getObjectProperties(object).map(snapshotObjectProperty),
+  };
 }
 
 
@@ -281,26 +305,14 @@ Services.obs.addObserver({
 
     
     if (apiMessage.arguments) {
-      contents.arguments = apiMessage.arguments.map(makeDebuggeeValue);
-      contents.arguments.forEach(saveConsoleObjectProperties);
+      contents.arguments = apiMessage.arguments.map(v => {
+        return convertValue(makeDebuggeeValue(v), { snapshot: true });
+      });
     }
 
     newConsoleMessage("ConsoleAPI", null, contents);
   },
 }, "console-api-log-event");
-
-function convertConsoleMessage(contents) {
-  const result = {};
-  for (const id in contents) {
-    if (id == "arguments" && contents.messageType == "ConsoleAPI") {
-      
-      result.arguments = contents.arguments.map(convertValue);
-    } else {
-      result[id] = contents[id];
-    }
-  }
-  return result;
-}
 
 
 
@@ -469,25 +481,33 @@ function getObjectId(obj) {
 }
 
 
-function convertValue(value) {
+function convertValue(value, options) {
   if (value instanceof Debugger.Object) {
-    return { object: getObjectId(value) };
-  } else if (value === undefined ||
-             value == Infinity ||
-             value == -Infinity ||
-             Object.is(value, NaN) ||
-             Object.is(value, -0)) {
-      return { special: "" + value };
+    if (options && options.snapshot) {
+      return { snapshot: makeObjectSnapshot(value) };
     }
+    return { object: getObjectId(value) };
+  }
+  if (value === undefined ||
+      value == Infinity ||
+      value == -Infinity ||
+      Object.is(value, NaN) ||
+      Object.is(value, -0)) {
+    return { special: "" + value };
+  }
   return value;
 }
 
-function convertCompletionValue(value) {
+function convertedValueIsObject(value) {
+  return isNonNullObject(value) && "object" in value;
+}
+
+function convertCompletionValue(value, options) {
   if ("return" in value) {
-    return { return: convertValue(value.return) };
+    return { return: convertValue(value.return, options) };
   }
   if ("throw" in value) {
-    return { throw: convertValue(value.throw) };
+    return { throw: convertValue(value.throw, options) };
   }
   throw new Error("Unexpected completion value");
 }
@@ -693,15 +713,6 @@ const gRequestHandlers = {
     return getObjectProperties(object);
   },
 
-  getObjectPropertiesForConsole(request) {
-    const object = gPausedObjects.getObject(request.id);
-    const properties = gConsoleObjectProperties.get(object);
-    if (!properties) {
-      throw new Error("Console object properties not saved");
-    }
-    return properties;
-  },
-
   objectProxyData(request) {
     if (!RecordReplayControl.maybeDivergeFromRecording()) {
       return { exception: "Recording divergence in unwrapObject" };
@@ -794,7 +805,7 @@ const gRequestHandlers = {
 
     const frame = scriptFrameForIndex(request.index);
     const rv = frame.eval(request.text, request.options);
-    return convertCompletionValue(rv);
+    return convertCompletionValue(rv, request.convertOptions);
   },
 
   popFrameResult(request) {
@@ -802,11 +813,11 @@ const gRequestHandlers = {
   },
 
   findConsoleMessages(request) {
-    return gConsoleMessages.map(convertConsoleMessage);
+    return gConsoleMessages;
   },
 
   getNewConsoleMessage(request) {
-    return convertConsoleMessage(gConsoleMessages[gConsoleMessages.length - 1]);
+    return gConsoleMessages[gConsoleMessages.length - 1];
   },
 
   currentExecutionPoint(request) {
