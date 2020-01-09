@@ -79,7 +79,7 @@ class MarionetteTest(MachCommandBase):
             del kwargs["test_objects"]
 
         
-        if "fennec" in kwargs.get("app"):
+        if kwargs.get("app") == "fennec":
             kwargs["e10s"] = False
 
         if not kwargs.get("binary") and conditions.is_firefox(self):
