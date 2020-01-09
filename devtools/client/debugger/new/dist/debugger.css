@@ -2717,6 +2717,10 @@ menuseparator {
   fill-opacity: 0.5;
 }
 
+.img.column-marker {
+  background-image: url("resource://devtools/client/debugger/new/images/column-marker.svg");
+}
+
 
 
 
