@@ -20,6 +20,7 @@
 #include "mozilla/net/MozURL.h"
 #include "mozIStorageConnection.h"
 #include "mozIStorageStatement.h"
+#include "mozIThirdPartyUtil.h"
 #include "mozStorageHelper.h"
 #include "nsCOMPtr.h"
 #include "nsCRT.h"
@@ -2493,9 +2494,30 @@ nsresult ReadResponse(mozIStorageConnection* aConn, EntryId aEntryId,
 
     
     nsTArray<mozilla::ipc::ContentSecurityPolicy> policies;
+
+    nsCString baseDomain;
+    if (url->Scheme() == "file") {
+      
+      
+      baseDomain = origin;
+    } else {
+      nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil =
+          do_GetService(THIRDPARTYUTIL_CONTRACTID);
+      if (!thirdPartyUtil) {
+        return NS_ERROR_FAILURE;
+      }
+
+      rv = thirdPartyUtil->GetBaseDomainFromSchemeHost(url->Scheme(),
+                                                       url->Host(), baseDomain);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+    }
+
     aSavedResponseOut->mValue.principalInfo() =
         Some(mozilla::ipc::ContentPrincipalInfo(
-            attrs, origin, specNoSuffix, Nothing(), std::move(policies)));
+            attrs, origin, specNoSuffix, Nothing(), std::move(policies),
+            baseDomain));
   }
 
   bool nullPadding = false;
