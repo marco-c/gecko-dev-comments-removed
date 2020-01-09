@@ -307,6 +307,12 @@ bool CallerGetterImpl(JSContext* cx, const CallArgs& args) {
       return true;
     }
 
+    if (JS_IsDeadWrapper(callerObj)) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_DEAD_OBJECT);
+      return false;
+    }
+
     JSFunction* callerFun = &callerObj->as<JSFunction>();
     if (IsWrappedAsyncFunction(callerFun)) {
       callerFun = GetUnwrappedAsyncFunction(callerFun);
@@ -337,62 +343,12 @@ bool CallerSetterImpl(JSContext* cx, const CallArgs& args) {
 
   
   
-  
-  
-  RootedFunction fun(cx, &args.thisv().toObject().as<JSFunction>());
-  if (!CallerRestrictions(cx, fun)) {
+
+  if (!CallerGetterImpl(cx, args)) {
     return false;
   }
 
-  
   args.rval().setUndefined();
-
-  
-  
-  
-  
-
-  NonBuiltinScriptFrameIter iter(cx);
-  if (!AdvanceToActiveCallLinear(cx, iter, fun)) {
-    return true;
-  }
-
-  ++iter;
-  while (!iter.done() && iter.isEvalFrame()) {
-    ++iter;
-  }
-
-  if (iter.done() || !iter.isFunctionFrame()) {
-    return true;
-  }
-
-  RootedObject caller(cx, iter.callee(cx));
-  
-  
-  
-  
-  if (!cx->compartment()->wrap(cx, &caller)) {
-    cx->clearPendingException();
-    return true;
-  }
-
-  
-  
-  JSObject* callerObj = CheckedUnwrap(caller);
-  if (!callerObj) {
-    return true;
-  }
-
-  JSFunction* callerFun = &callerObj->as<JSFunction>();
-  MOZ_ASSERT(!callerFun->isBuiltin(),
-             "non-builtin iterator returned a builtin?");
-
-  if (callerFun->strict()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_CALLER_IS_STRICT);
-    return false;
-  }
-
   return true;
 }
 
