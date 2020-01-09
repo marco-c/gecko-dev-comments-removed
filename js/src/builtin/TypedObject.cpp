@@ -1541,10 +1541,23 @@ void OutlineTypedObject::setOwnerAndData(JSObject* owner, uint8_t* data) {
   owner_ = owner;
   data_ = data;
 
-  
-  
-  if (owner && !IsInsideNursery(this) && IsInsideNursery(owner)) {
-    owner->storeBuffer()->putWholeCell(this);
+  if (owner) {
+    if (!IsInsideNursery(this) && IsInsideNursery(owner)) {
+      
+      
+      owner->storeBuffer()->putWholeCell(this);
+    } else if (IsInsideNursery(this) && !IsInsideNursery(owner)) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      storeBuffer()->putWholeCell(owner);
+    }
   }
 }
 
