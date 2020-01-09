@@ -6513,30 +6513,9 @@ nsresult PresShell::EventHandler::HandleEvent(nsIFrame* aFrame,
 
   mPresShell->RecordMouseLocation(aGUIEvent);
 
-  if (PresShell::AccessibleCaretEnabled(GetDocument()->GetDocShell())) {
+  if (MaybeHandleEventWithAccessibleCaret(aGUIEvent, aEventStatus)) {
     
-    
-    nsCOMPtr<nsPIDOMWindowOuter> window = GetFocusedDOMWindowInOurWindow();
-    RefPtr<Document> retargetEventDoc =
-        window ? window->GetExtantDoc() : nullptr;
-    nsCOMPtr<nsIPresShell> presShell =
-        retargetEventDoc ? retargetEventDoc->GetShell() : nullptr;
-
-    RefPtr<AccessibleCaretEventHub> eventHub =
-        presShell ? presShell->GetAccessibleCaretEventHub() : nullptr;
-    if (eventHub && *aEventStatus != nsEventStatus_eConsumeNoDefault) {
-      
-      
-      
-      
-      *aEventStatus = eventHub->HandleEvent(aGUIEvent);
-      if (*aEventStatus == nsEventStatus_eConsumeNoDefault) {
-        
-        
-        aGUIEvent->mFlags.mMultipleActionsPrevented = true;
-        return NS_OK;
-      }
-    }
+    return NS_OK;
   }
 
   if (!nsContentUtils::IsSafeToRunScript() &&
@@ -7143,6 +7122,39 @@ nsresult PresShell::EventHandler::HandleEvent(nsIFrame* aFrame,
   }
 
   return rv;
+}
+
+bool PresShell::EventHandler::MaybeHandleEventWithAccessibleCaret(
+    WidgetGUIEvent* aGUIEvent, nsEventStatus* aEventStatus) {
+  MOZ_ASSERT(aGUIEvent);
+  MOZ_ASSERT(aEventStatus);
+
+  if (AccessibleCaretEnabled(GetDocument()->GetDocShell())) {
+    
+    
+    nsCOMPtr<nsPIDOMWindowOuter> window = GetFocusedDOMWindowInOurWindow();
+    RefPtr<Document> retargetEventDoc =
+        window ? window->GetExtantDoc() : nullptr;
+    nsCOMPtr<nsIPresShell> presShell =
+        retargetEventDoc ? retargetEventDoc->GetShell() : nullptr;
+
+    RefPtr<AccessibleCaretEventHub> eventHub =
+        presShell ? presShell->GetAccessibleCaretEventHub() : nullptr;
+    if (eventHub && *aEventStatus != nsEventStatus_eConsumeNoDefault) {
+      
+      
+      
+      
+      *aEventStatus = eventHub->HandleEvent(aGUIEvent);
+      if (*aEventStatus == nsEventStatus_eConsumeNoDefault) {
+        
+        
+        aGUIEvent->mFlags.mMultipleActionsPrevented = true;
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 Document* PresShell::GetPrimaryContentDocument() {

@@ -715,6 +715,19 @@ class PresShell final : public nsIPresShell,
 
 
 
+    MOZ_CAN_RUN_SCRIPT
+    bool MaybeHandleEventWithAccessibleCaret(WidgetGUIEvent* aGUIEvent,
+                                             nsEventStatus* aEventStatus);
+
+    
+
+
+
+
+
+
+
+
 
 
     MOZ_CAN_RUN_SCRIPT
