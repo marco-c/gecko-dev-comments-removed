@@ -24,7 +24,6 @@ class nsPermission : public nsIPermission {
 
   
   
-  
   static already_AddRefed<nsIPrincipal> ClonePrincipalForPermission(
       nsIPrincipal* aPrincipal);
 

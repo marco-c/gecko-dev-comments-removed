@@ -164,8 +164,7 @@ nsresult GetOriginFromPrincipal(nsIPrincipal* aPrincipal, nsACString& aOrigin) {
   attrs.mPrivateBrowsingId = 0;
 
   
-  attrs.StripAttributes(mozilla::OriginAttributes::STRIP_USER_CONTEXT_ID |
-                        mozilla::OriginAttributes::STRIP_FIRST_PARTY_DOMAIN);
+  attrs.StripAttributes(mozilla::OriginAttributes::STRIP_USER_CONTEXT_ID);
 
   attrs.CreateSuffix(suffix);
   aOrigin.Append(suffix);
@@ -186,8 +185,7 @@ nsresult GetPrincipalFromOrigin(const nsACString& aOrigin,
   attrs.mPrivateBrowsingId = 0;
 
   
-  attrs.StripAttributes(mozilla::OriginAttributes::STRIP_USER_CONTEXT_ID |
-                        mozilla::OriginAttributes::STRIP_FIRST_PARTY_DOMAIN);
+  attrs.StripAttributes(mozilla::OriginAttributes::STRIP_USER_CONTEXT_ID);
 
   nsCOMPtr<nsIURI> uri;
   nsresult rv = NS_NewURI(getter_AddRefs(uri), originNoSuffix);
@@ -279,8 +277,7 @@ already_AddRefed<nsIPrincipal> GetNextSubDomainPrincipal(
   mozilla::OriginAttributes attrs = aPrincipal->OriginAttributesRef();
 
   
-  attrs.StripAttributes(mozilla::OriginAttributes::STRIP_USER_CONTEXT_ID |
-                        mozilla::OriginAttributes::STRIP_FIRST_PARTY_DOMAIN);
+  attrs.StripAttributes(mozilla::OriginAttributes::STRIP_USER_CONTEXT_ID);
 
   nsCOMPtr<nsIPrincipal> principal =
       mozilla::BasePrincipal::CreateCodebasePrincipal(newURI, attrs);
@@ -3332,8 +3329,7 @@ void nsPermissionManager::GetKeyForOrigin(const nsACString& aOrigin,
   attrs.mPrivateBrowsingId = 0;
 
   
-  attrs.StripAttributes(OriginAttributes::STRIP_USER_CONTEXT_ID |
-                        OriginAttributes::STRIP_FIRST_PARTY_DOMAIN);
+  attrs.StripAttributes(OriginAttributes::STRIP_USER_CONTEXT_ID);
 
 #ifdef DEBUG
   
