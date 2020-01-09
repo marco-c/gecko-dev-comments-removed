@@ -5179,10 +5179,17 @@ void nsContentUtils::TriggerLink(nsIContent* aContent,
       fileName.SetIsVoid(true);  
     }
 
+    
+    
+    
+    nsCOMPtr<nsIPrincipal> triggeringPrincipal = aContent->NodePrincipal();
+    nsCOMPtr<nsIContentSecurityPolicy> csp;
+    triggeringPrincipal->GetCsp(getter_AddRefs(csp));
+
     handler->OnLinkClick(
         aContent, aLinkURI, fileName.IsVoid() ? aTargetSpec : EmptyString(),
         fileName, nullptr, nullptr, EventStateManager::IsHandlingUserInput(),
-        aIsTrusted, aContent->NodePrincipal());
+        aIsTrusted, triggeringPrincipal, csp);
   }
 }
 
@@ -9815,6 +9822,15 @@ nsContentUtils::LookupCustomElementDefinition(Document* aDoc, nsAtom* aNameAtom,
   
   
   
+  nsCOMPtr<nsIContentSecurityPolicy> csp;
+  if (triggeringPrincipal) {
+    rv = triggeringPrincipal->GetCsp(getter_AddRefs(csp));
+    NS_ENSURE_SUCCESS(rv, false);
+  }
+
+  
+  
+  
   nsLoadFlags channelLoadFlags;
   aChannel->GetLoadFlags(&channelLoadFlags);
 
@@ -9829,7 +9845,7 @@ nsContentUtils::LookupCustomElementDefinition(Document* aDoc, nsAtom* aNameAtom,
   
   bool reloadSucceeded = false;
   rv = wbc3->ReloadInFreshProcess(docShell, uri, referrer, triggeringPrincipal,
-                                  webnavLoadFlags, &reloadSucceeded);
+                                  webnavLoadFlags, csp, &reloadSucceeded);
   NS_ENSURE_SUCCESS(rv, false);
 
   return reloadSucceeded;

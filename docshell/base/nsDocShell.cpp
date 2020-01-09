@@ -3916,6 +3916,7 @@ nsresult nsDocShell::LoadURI(const nsAString& aURI,
   loadState->SetHeadersStream(aLoadURIOptions.mHeaders);
   loadState->SetBaseURI(aLoadURIOptions.mBaseURI);
   loadState->SetTriggeringPrincipal(aLoadURIOptions.mTriggeringPrincipal);
+  loadState->SetCsp(aLoadURIOptions.mCsp);
   loadState->SetForceAllowDataURI(forceAllowDataURI);
 
   if (fixupInfo) {
@@ -4558,6 +4559,13 @@ nsDocShell::Reload(uint32_t aReloadFlags) {
     bool loadReplace = false;
 
     nsIPrincipal* triggeringPrincipal = doc->NodePrincipal();
+    
+    
+    
+    nsCOMPtr<nsIContentSecurityPolicy> csp;
+    rv = doc->NodePrincipal()->GetCsp(getter_AddRefs(csp));
+    NS_ENSURE_SUCCESS(rv, rv);
+
     nsAutoString contentTypeHint;
     doc->GetContentType(contentTypeHint);
 
@@ -4600,6 +4608,7 @@ nsDocShell::Reload(uint32_t aReloadFlags) {
     loadState->SetLoadReplace(loadReplace);
     loadState->SetTriggeringPrincipal(triggeringPrincipal);
     loadState->SetPrincipalToInherit(triggeringPrincipal);
+    loadState->SetCsp(csp);
     loadState->SetLoadFlags(flags);
     loadState->SetTypeHint(NS_ConvertUTF16toUTF8(contentTypeHint));
     loadState->SetLoadType(loadType);
@@ -5790,13 +5799,21 @@ nsDocShell::ForceRefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal,
     principal = doc->NodePrincipal();
   }
   loadState->SetTriggeringPrincipal(principal);
+  
+  
+  
+  nsCOMPtr<nsIContentSecurityPolicy> csp;
+  nsresult rv = principal->GetCsp(getter_AddRefs(csp));
+  NS_ENSURE_SUCCESS(rv, rv);
+  loadState->SetCsp(csp);
+
   loadState->SetPrincipalIsExplicit(true);
 
   
 
 
   bool equalUri = false;
-  nsresult rv = aURI->Equals(mCurrentURI, &equalUri);
+  rv = aURI->Equals(mCurrentURI, &equalUri);
   if (NS_SUCCEEDED(rv) && (!equalUri) && aMetaRefresh &&
       aDelay <= REFRESH_REDIRECT_TIMER) {
     
@@ -6350,7 +6367,7 @@ nsDocShell::OnStateChange(nsIWebProgress* aProgress, nsIRequest* aRequest,
         
         
         
-        AddToSessionHistory(uri, wcwgChannel, nullptr, nullptr, false,
+        AddToSessionHistory(uri, wcwgChannel, nullptr, nullptr, nullptr, false,
                             getter_AddRefs(mLSHE));
         SetCurrentURI(uri, aRequest, true, 0);
         
@@ -6855,6 +6872,13 @@ nsresult nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
 
           LoadURIOptions loadURIOptions;
           loadURIOptions.mTriggeringPrincipal = triggeringPrincipal;
+          
+          
+          
+          nsCOMPtr<nsIContentSecurityPolicy> csp;
+          nsresult rv = triggeringPrincipal->GetCsp(getter_AddRefs(csp));
+          NS_ENSURE_SUCCESS(rv, rv);
+          loadURIOptions.mCsp = csp;
           loadURIOptions.mPostData = newPostData;
           return LoadURI(newSpecW, loadURIOptions);
         }
@@ -8079,7 +8103,7 @@ nsresult nsDocShell::CreateContentViewer(const nsACString& aContentType,
     if (failedURI) {
       errorOnLocationChangeNeeded =
           OnNewURI(failedURI, failedChannel, triggeringPrincipal, nullptr,
-                   mLoadType, false, false, false);
+                   mLoadType, nullptr, false, false, false);
     }
 
     
@@ -8737,6 +8761,7 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState,
       
       
       loadState->SetTriggeringPrincipal(aLoadState->TriggeringPrincipal());
+      loadState->SetCsp(aLoadState->Csp());
       loadState->SetInheritPrincipal(
           aLoadState->HasLoadFlags(INTERNAL_LOAD_FLAGS_INHERIT_PRINCIPAL));
       
@@ -8942,12 +8967,21 @@ nsresult nsDocShell::MaybeHandleSameDocumentNavigation(
 
 
   nsCOMPtr<nsIPrincipal> newURITriggeringPrincipal, newURIPrincipalToInherit;
+  nsCOMPtr<nsIContentSecurityPolicy> newCsp;
   if (mOSHE) {
     newURITriggeringPrincipal = mOSHE->GetTriggeringPrincipal();
     newURIPrincipalToInherit = mOSHE->GetPrincipalToInherit();
+    newCsp = mOSHE->GetCsp();
   } else {
     newURITriggeringPrincipal = aLoadState->TriggeringPrincipal();
     newURIPrincipalToInherit = doc->NodePrincipal();
+    
+    
+    
+    
+    
+    nsresult rv = doc->NodePrincipal()->GetCsp(getter_AddRefs(newCsp));
+    NS_ENSURE_SUCCESS(rv, rv);
   }
   
   
@@ -8958,7 +8992,7 @@ nsresult nsDocShell::MaybeHandleSameDocumentNavigation(
   
   
   OnNewURI(aLoadState->URI(), nullptr, newURITriggeringPrincipal,
-           newURIPrincipalToInherit, mLoadType, true, true, true);
+           newURIPrincipalToInherit, mLoadType, newCsp, true, true, true);
 
   nsCOMPtr<nsIInputStream> postData;
   uint32_t cacheKey = 0;
@@ -9327,7 +9361,7 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
     }
     rv = browserChrome3->ShouldLoadURI(
         this, aLoadState->URI(), referrer, !!aLoadState->PostDataStream(),
-        aLoadState->TriggeringPrincipal(), &shouldLoad);
+        aLoadState->TriggeringPrincipal(), aLoadState->Csp(), &shouldLoad);
     if (NS_SUCCEEDED(rv) && !shouldLoad) {
       return NS_OK;
     }
@@ -9914,6 +9948,36 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
   
   nsCOMPtr<nsIContentSecurityPolicy> csp;
   aLoadState->TriggeringPrincipal()->GetCsp(getter_AddRefs(csp));
+
+#ifdef DEBUG
+  {
+    
+    
+    
+    uint32_t principalCSPCount = 0;
+    if (csp) {
+      csp->GetPolicyCount(&principalCSPCount);
+    }
+
+    nsCOMPtr<nsIContentSecurityPolicy> argsCSP = aLoadState->Csp();
+    uint32_t argCSPCount = 0;
+    if (argsCSP) {
+      argsCSP->GetPolicyCount(&argCSPCount);
+    }
+
+    MOZ_ASSERT(principalCSPCount == argCSPCount,
+               "Different PolicyCount for CSP as arg and Principal");
+
+    nsAutoString principalPolicyStr, argPolicyStr;
+    for (uint32_t i = 0; i < principalCSPCount; ++i) {
+      csp->GetPolicyString(i, principalPolicyStr);
+      argsCSP->GetPolicyString(i, argPolicyStr);
+      MOZ_ASSERT(principalPolicyStr.Equals(argPolicyStr),
+                 "Different PolicyStr for CSP as arg and Principal");
+    }
+  }
+#endif
+
   if (csp) {
     bool upgradeInsecureRequests = false;
     csp->GetUpgradeInsecureRequests(&upgradeInsecureRequests);
@@ -10544,6 +10608,7 @@ void nsDocShell::SetupReferrerInfoFromChannel(nsIChannel* aChannel) {
 bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
                           nsIPrincipal* aTriggeringPrincipal,
                           nsIPrincipal* aPrincipalToInherit, uint32_t aLoadType,
+                          nsIContentSecurityPolicy* aCsp,
                           bool aFireOnLocationChange, bool aAddToGlobalHistory,
                           bool aCloneSHChildren) {
   MOZ_ASSERT(aURI, "uri is null");
@@ -10719,7 +10784,7 @@ bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
 
 
       (void)AddToSessionHistory(aURI, aChannel, aTriggeringPrincipal,
-                                aPrincipalToInherit, aCloneSHChildren,
+                                aPrincipalToInherit, aCsp, aCloneSHChildren,
                                 getter_AddRefs(mLSHE));
     }
   } else if (mSessionHistory && mLSHE && mURIResultedInDocument) {
@@ -10805,7 +10870,7 @@ bool nsDocShell::OnLoadingSite(nsIChannel* aChannel, bool aFireOnLocationChange,
   NS_ENSURE_TRUE(uri, false);
 
   
-  return OnNewURI(uri, aChannel, nullptr, nullptr, mLoadType,
+  return OnNewURI(uri, aChannel, nullptr, nullptr, mLoadType, nullptr,
                   aFireOnLocationChange, aAddToGlobalHistory, false);
 }
 
@@ -11012,9 +11077,15 @@ nsDocShell::AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
 
     
     
+    
+    nsCOMPtr<nsIContentSecurityPolicy> csp;
+    document->NodePrincipal()->GetCsp(getter_AddRefs(csp));
+
+    
+    
     rv = AddToSessionHistory(newURI, nullptr,
                              document->NodePrincipal(),  
-                             nullptr, true, getter_AddRefs(newSHEntry));
+                             nullptr, csp, true, getter_AddRefs(newSHEntry));
     NS_ENSURE_SUCCESS(rv, rv);
 
     NS_ENSURE_TRUE(newSHEntry, NS_ERROR_FAILURE);
@@ -11187,6 +11258,7 @@ bool nsDocShell::ShouldAddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel) {
 nsresult nsDocShell::AddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel,
                                          nsIPrincipal* aTriggeringPrincipal,
                                          nsIPrincipal* aPrincipalToInherit,
+                                         nsIContentSecurityPolicy* aCsp,
                                          bool aCloneChildren,
                                          nsISHEntry** aNewEntry) {
   MOZ_ASSERT(aURI, "uri is null");
@@ -11253,6 +11325,7 @@ nsresult nsDocShell::AddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel,
   uint32_t cacheKey = 0;
   nsCOMPtr<nsIPrincipal> triggeringPrincipal = aTriggeringPrincipal;
   nsCOMPtr<nsIPrincipal> principalToInherit = aPrincipalToInherit;
+  nsCOMPtr<nsIContentSecurityPolicy> csp = aCsp;
   bool expired = false;
   bool discardLayoutState = false;
   nsCOMPtr<nsICacheInfoChannel> cacheChannel;
@@ -11292,6 +11365,14 @@ nsresult nsDocShell::AddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel,
     if (!triggeringPrincipal) {
       triggeringPrincipal = loadInfo->TriggeringPrincipal();
     }
+    if (!csp && triggeringPrincipal) {
+      
+      
+      
+      
+      
+      triggeringPrincipal->GetCsp(getter_AddRefs(csp));
+    }
 
     loadInfo->GetResultPrincipalURI(getter_AddRefs(resultPrincipalURI));
 
@@ -11321,7 +11402,7 @@ nsresult nsDocShell::AddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel,
                 cacheKey,             
                 mContentTypeHint,     
                 triggeringPrincipal,  
-                principalToInherit, mHistoryID, mDynamicallyCreated);
+                principalToInherit, csp, mHistoryID, mDynamicallyCreated);
 
   entry->SetOriginalURI(originalURI);
   entry->SetResultPrincipalURI(resultPrincipalURI);
@@ -11439,6 +11520,7 @@ nsresult nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType) {
   aEntry->GetContentType(contentType);
   nsCOMPtr<nsIPrincipal> triggeringPrincipal = aEntry->GetTriggeringPrincipal();
   nsCOMPtr<nsIPrincipal> principalToInherit = aEntry->GetPrincipalToInherit();
+  nsCOMPtr<nsIContentSecurityPolicy> csp = aEntry->GetCsp();
   nsCOMPtr<nsIReferrerInfo> referrerInfo = aEntry->GetReferrerInfo();
 
   
@@ -11532,6 +11614,7 @@ nsresult nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType) {
   loadState->SetFirstParty(true);
   loadState->SetSrcdocData(srcdoc);
   loadState->SetBaseURI(baseURI);
+  loadState->SetCsp(csp);
 
   rv = InternalLoad(loadState,
                     nullptr,   
@@ -12346,7 +12429,8 @@ class OnLinkClickEvent : public Runnable {
                    nsIInputStream* aPostDataStream,
                    nsIInputStream* aHeadersDataStream, bool aNoOpenerImplied,
                    bool aIsUserTriggered, bool aIsTrusted,
-                   nsIPrincipal* aTriggeringPrincipal);
+                   nsIPrincipal* aTriggeringPrincipal,
+                   nsIContentSecurityPolicy* aCsp);
 
   NS_IMETHOD Run() override {
     nsAutoPopupStatePusher popupStatePusher(mPopupState);
@@ -12362,7 +12446,7 @@ class OnLinkClickEvent : public Runnable {
       mHandler->OnLinkClickSync(mContent, mURI, mTargetSpec, mFileName,
                                 mPostDataStream, mHeadersDataStream,
                                 mNoOpenerImplied, nullptr, nullptr,
-                                mIsUserTriggered, mTriggeringPrincipal);
+                                mIsUserTriggered, mTriggeringPrincipal, mCsp);
     }
     return NS_OK;
   }
@@ -12380,16 +12464,15 @@ class OnLinkClickEvent : public Runnable {
   bool mIsUserTriggered;
   bool mIsTrusted;
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
+  nsCOMPtr<nsIContentSecurityPolicy> mCsp;
 };
 
-OnLinkClickEvent::OnLinkClickEvent(nsDocShell* aHandler, nsIContent* aContent,
-                                   nsIURI* aURI, const nsAString& aTargetSpec,
-                                   const nsAString& aFileName,
-                                   nsIInputStream* aPostDataStream,
-                                   nsIInputStream* aHeadersDataStream,
-                                   bool aNoOpenerImplied, bool aIsUserTriggered,
-                                   bool aIsTrusted,
-                                   nsIPrincipal* aTriggeringPrincipal)
+OnLinkClickEvent::OnLinkClickEvent(
+    nsDocShell* aHandler, nsIContent* aContent, nsIURI* aURI,
+    const nsAString& aTargetSpec, const nsAString& aFileName,
+    nsIInputStream* aPostDataStream, nsIInputStream* aHeadersDataStream,
+    bool aNoOpenerImplied, bool aIsUserTriggered, bool aIsTrusted,
+    nsIPrincipal* aTriggeringPrincipal, nsIContentSecurityPolicy* aCsp)
     : mozilla::Runnable("OnLinkClickEvent"),
       mHandler(aHandler),
       mURI(aURI),
@@ -12402,16 +12485,15 @@ OnLinkClickEvent::OnLinkClickEvent(nsDocShell* aHandler, nsIContent* aContent,
       mNoOpenerImplied(aNoOpenerImplied),
       mIsUserTriggered(aIsUserTriggered),
       mIsTrusted(aIsTrusted),
-      mTriggeringPrincipal(aTriggeringPrincipal) {}
+      mTriggeringPrincipal(aTriggeringPrincipal),
+      mCsp(aCsp) {}
 
 NS_IMETHODIMP
-nsDocShell::OnLinkClick(nsIContent* aContent, nsIURI* aURI,
-                        const nsAString& aTargetSpec,
-                        const nsAString& aFileName,
-                        nsIInputStream* aPostDataStream,
-                        nsIInputStream* aHeadersDataStream,
-                        bool aIsUserTriggered, bool aIsTrusted,
-                        nsIPrincipal* aTriggeringPrincipal) {
+nsDocShell::OnLinkClick(
+    nsIContent* aContent, nsIURI* aURI, const nsAString& aTargetSpec,
+    const nsAString& aFileName, nsIInputStream* aPostDataStream,
+    nsIInputStream* aHeadersDataStream, bool aIsUserTriggered, bool aIsTrusted,
+    nsIPrincipal* aTriggeringPrincipal, nsIContentSecurityPolicy* aCsp) {
 #ifndef ANDROID
   MOZ_ASSERT(aTriggeringPrincipal, "Need a valid triggeringPrincipal");
 #endif
@@ -12452,10 +12534,10 @@ nsDocShell::OnLinkClick(nsIContent* aContent, nsIURI* aURI,
     target = aTargetSpec;
   }
 
-  nsCOMPtr<nsIRunnable> ev =
-      new OnLinkClickEvent(this, aContent, aURI, target, aFileName,
-                           aPostDataStream, aHeadersDataStream, noOpenerImplied,
-                           aIsUserTriggered, aIsTrusted, aTriggeringPrincipal);
+  nsCOMPtr<nsIRunnable> ev = new OnLinkClickEvent(
+      this, aContent, aURI, target, aFileName, aPostDataStream,
+      aHeadersDataStream, noOpenerImplied, aIsUserTriggered, aIsTrusted,
+      aTriggeringPrincipal, aCsp);
   return DispatchToTabGroup(TaskCategory::UI, ev.forget());
 }
 
@@ -12466,14 +12548,12 @@ static bool IsElementAnchorOrArea(nsIContent* aContent) {
 }
 
 NS_IMETHODIMP
-nsDocShell::OnLinkClickSync(nsIContent* aContent, nsIURI* aURI,
-                            const nsAString& aTargetSpec,
-                            const nsAString& aFileName,
-                            nsIInputStream* aPostDataStream,
-                            nsIInputStream* aHeadersDataStream,
-                            bool aNoOpenerImplied, nsIDocShell** aDocShell,
-                            nsIRequest** aRequest, bool aIsUserTriggered,
-                            nsIPrincipal* aTriggeringPrincipal) {
+nsDocShell::OnLinkClickSync(
+    nsIContent* aContent, nsIURI* aURI, const nsAString& aTargetSpec,
+    const nsAString& aFileName, nsIInputStream* aPostDataStream,
+    nsIInputStream* aHeadersDataStream, bool aNoOpenerImplied,
+    nsIDocShell** aDocShell, nsIRequest** aRequest, bool aIsUserTriggered,
+    nsIPrincipal* aTriggeringPrincipal, nsIContentSecurityPolicy* aCsp) {
   
   if (aDocShell) {
     *aDocShell = nullptr;
@@ -12523,6 +12603,14 @@ nsDocShell::OnLinkClickSync(nsIContent* aContent, nsIURI* aURI,
   
   nsCOMPtr<nsIPrincipal> triggeringPrincipal =
       aTriggeringPrincipal ? aTriggeringPrincipal : aContent->NodePrincipal();
+
+  nsCOMPtr<nsIContentSecurityPolicy> csp = aCsp;
+  if (!csp) {
+    
+    
+    
+    aContent->NodePrincipal()->GetCsp(getter_AddRefs(csp));
+  }
 
   uint32_t flags = INTERNAL_LOAD_FLAGS_NONE;
   if (IsElementAnchorOrArea(aContent)) {
@@ -12635,6 +12723,7 @@ nsDocShell::OnLinkClickSync(nsIContent* aContent, nsIURI* aURI,
   loadState->SetReferrerInfo(referrerInfo);
   loadState->SetTriggeringPrincipal(triggeringPrincipal);
   loadState->SetPrincipalToInherit(aContent->NodePrincipal());
+  loadState->SetCsp(csp);
   loadState->SetLoadFlags(flags);
   loadState->SetTarget(aTargetSpec);
   loadState->SetTypeHint(NS_ConvertUTF16toUTF8(typeHint));

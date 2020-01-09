@@ -10,6 +10,7 @@
 #include "mozilla/EventForwards.h"
 
 class nsIContent;
+class nsIContentSecurityPolicy;
 class nsIDocShell;
 class nsIInputStream;
 class nsIRequest;
@@ -43,15 +44,26 @@ class nsILinkHandler : public nsISupports {
 
 
 
+
+
+
+
+
   NS_IMETHOD OnLinkClick(nsIContent* aContent, nsIURI* aURI,
                          const nsAString& aTargetSpec,
                          const nsAString& aFileName,
                          nsIInputStream* aPostDataStream,
                          nsIInputStream* aHeadersDataStream,
                          bool aIsUserTriggered, bool aIsTrusted,
-                         nsIPrincipal* aTriggeringPrincipal) = 0;
+                         nsIPrincipal* aTriggeringPrincipal,
+                         nsIContentSecurityPolicy* aCsp) = 0;
 
   
+
+
+
+
+
 
 
 
@@ -77,7 +89,8 @@ class nsILinkHandler : public nsISupports {
       nsIInputStream* aHeadersDataStream = 0, bool aNoOpenerImplied = false,
       nsIDocShell** aDocShell = 0, nsIRequest** aRequest = 0,
       bool aIsUserTriggered = false,
-      nsIPrincipal* aTriggeringPrincipal = nullptr) = 0;
+      nsIPrincipal* aTriggeringPrincipal = nullptr,
+      nsIContentSecurityPolicy* aCsp = nullptr) = 0;
 
   
 

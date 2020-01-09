@@ -443,10 +443,15 @@ NS_IMETHODIMP nsPluginInstanceOwner::GetURL(
         NullPrincipal::CreateWithInheritedAttributes(content->NodePrincipal());
   }
 
+  
+  
+  nsCOMPtr<nsIContentSecurityPolicy> csp;
+  content->NodePrincipal()->GetCsp(getter_AddRefs(csp));
+
   rv = lh->OnLinkClick(content, uri, unitarget, VoidString(), aPostStream,
                        headersDataStream,
                         false,
-                        true, triggeringPrincipal);
+                        true, triggeringPrincipal, csp);
 
   return rv;
 }

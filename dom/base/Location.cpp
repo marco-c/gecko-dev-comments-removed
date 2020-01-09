@@ -151,6 +151,15 @@ already_AddRefed<nsDocShellLoadState> Location::CheckURL(
 
   loadState->SetTriggeringPrincipal(triggeringPrincipal);
 
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIContentSecurityPolicy> csp;
+  triggeringPrincipal->GetCsp(getter_AddRefs(csp));
+  loadState->SetCsp(csp);
+
   if (sourceURI) {
     nsCOMPtr<nsIReferrerInfo> referrerInfo =
         new ReferrerInfo(sourceURI, referrerPolicy);

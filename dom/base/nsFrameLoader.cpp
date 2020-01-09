@@ -396,6 +396,13 @@ nsresult nsFrameLoader::ReallyStartLoadingInternal() {
     loadState->SetTriggeringPrincipal(mOwnerContent->NodePrincipal());
   }
 
+  
+  
+  
+  nsCOMPtr<nsIContentSecurityPolicy> csp;
+  loadState->TriggeringPrincipal()->GetCsp(getter_AddRefs(csp));
+  loadState->SetCsp(csp);
+
   nsCOMPtr<nsIURI> referrer;
 
   nsAutoString srcdoc;

@@ -200,6 +200,27 @@ ContentAreaDropListener.prototype =
 
   },
 
+  getCSP: function(aEvent)
+  {
+    let sourceNode = aEvent.dataTransfer.mozSourceNode;
+    if (sourceNode &&
+        (sourceNode.localName !== "browser" ||
+         sourceNode.namespaceURI !== "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul")) {
+      
+      
+      
+      
+      
+      
+      if (sourceNode.nodePrincipal) {
+        
+        
+        return sourceNode.nodePrincipal.csp;
+      }
+    }
+    return null;
+  },
+
   canDropLink: function(aEvent, aAllowSameDocument)
   {
     if (this._eventTargetIsDisabled(aEvent))

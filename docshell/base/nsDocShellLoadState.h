@@ -13,6 +13,7 @@
 #include "nsDocShellLoadTypes.h"
 #include "mozilla/net/ReferrerPolicy.h"
 
+class nsIContentSecurityPolicy;
 class nsIInputStream;
 class nsISHEntry;
 class nsIURI;
@@ -77,6 +78,10 @@ class nsDocShellLoadState final {
   nsIPrincipal* TriggeringPrincipal() const;
 
   void SetTriggeringPrincipal(nsIPrincipal* aTriggeringPrincipal);
+
+  nsIContentSecurityPolicy* Csp() const;
+
+  void SetCsp(nsIContentSecurityPolicy* aCsp);
 
   bool InheritPrincipal() const;
 
@@ -225,6 +230,13 @@ class nsDocShellLoadState final {
   
   
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
+
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIContentSecurityPolicy> mCsp;
 
   
   

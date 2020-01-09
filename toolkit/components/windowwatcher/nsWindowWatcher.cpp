@@ -1084,6 +1084,15 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     }
   }
 
+  
+  
+  if (subjectPrincipal && loadState) {
+    nsCOMPtr<nsIContentSecurityPolicy> csp;
+    rv = subjectPrincipal->GetCsp(getter_AddRefs(csp));
+    NS_ENSURE_SUCCESS(rv, rv);
+    loadState->SetCsp(csp);
+  }
+
   if (isNewToplevelWindow) {
     
     

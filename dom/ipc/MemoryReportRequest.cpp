@@ -4,7 +4,9 @@
 
 
 
+#include "nsMemoryReporterManager.h"
 #include "MemoryReportRequest.h"
+#include "mozilla/ipc/FileDescriptorUtils.h"
 
 namespace mozilla {
 namespace dom {

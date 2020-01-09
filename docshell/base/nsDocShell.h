@@ -217,14 +217,16 @@ class nsDocShell final : public nsDocLoader,
                          nsIInputStream* aPostDataStream,
                          nsIInputStream* aHeadersDataStream,
                          bool aIsUserTriggered, bool aIsTrusted,
-                         nsIPrincipal* aTriggeringPrincipal) override;
+                         nsIPrincipal* aTriggeringPrincipal,
+                         nsIContentSecurityPolicy* aCsp) override;
   NS_IMETHOD OnLinkClickSync(
       nsIContent* aContent, nsIURI* aURI, const nsAString& aTargetSpec,
       const nsAString& aFileName, nsIInputStream* aPostDataStream = 0,
       nsIInputStream* aHeadersDataStream = 0, bool aNoOpenerImplied = false,
       nsIDocShell** aDocShell = 0, nsIRequest** aRequest = 0,
       bool aIsUserTriggered = false,
-      nsIPrincipal* aTriggeringPrincipal = nullptr) override;
+      nsIPrincipal* aTriggeringPrincipal = nullptr,
+      nsIContentSecurityPolicy* aCsp = nullptr) override;
   NS_IMETHOD OnOverLink(nsIContent* aContent, nsIURI* aURI,
                         const nsAString& aTargetSpec) override;
   NS_IMETHOD OnLeaveLink() override;
@@ -502,10 +504,15 @@ class nsDocShell final : public nsDocLoader,
   
   
   
-
+  
+  
+  
+  
+  
   nsresult AddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel,
                                nsIPrincipal* aTriggeringPrincipal,
                                nsIPrincipal* aPrincipalToInherit,
+                               nsIContentSecurityPolicy* aCsp,
                                bool aCloneChildren, nsISHEntry** aNewEntry);
 
   nsresult AddChildSHEntryToParent(nsISHEntry* aNewEntry, int32_t aChildOffset,
@@ -570,11 +577,16 @@ class nsDocShell final : public nsDocLoader,
   
   
   
+  
+  
+  
+  
+  
   bool OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
                 nsIPrincipal* aTriggeringPrincipal,
                 nsIPrincipal* aPrincipalToInherit, uint32_t aLoadType,
-                bool aFireOnLocationChange, bool aAddToGlobalHistory,
-                bool aCloneSHChildren);
+                nsIContentSecurityPolicy* aCsp, bool aFireOnLocationChange,
+                bool aAddToGlobalHistory, bool aCloneSHChildren);
 
   
   
