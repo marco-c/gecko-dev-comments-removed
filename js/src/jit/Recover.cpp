@@ -1355,7 +1355,7 @@ bool RCreateThisWithTemplate::recover(JSContext* cx,
   RootedObject templateObject(cx, &iter.read().toObject());
 
   
-  JSObject* resultObject = NewObjectOperationWithTemplate(cx, templateObject);
+  JSObject* resultObject = CreateThisWithTemplate(cx, templateObject);
   if (!resultObject) {
     return false;
   }

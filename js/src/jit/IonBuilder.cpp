@@ -5179,6 +5179,9 @@ MDefinition* IonBuilder::createThisScriptedSingleton(JSFunction* target) {
   if (templateObject->staticPrototype() != proto) {
     return nullptr;
   }
+  if (templateObject->nonCCWRealm() != target->realm()) {
+    return nullptr;
+  }
 
   TypeSet::ObjectKey* templateObjectKey =
       TypeSet::ObjectKey::get(templateObject->group());
@@ -5223,6 +5226,9 @@ MDefinition* IonBuilder::createThisScriptedBaseline(MDefinition* callee) {
   }
   if (!templateObject->is<PlainObject>() &&
       !templateObject->is<UnboxedPlainObject>()) {
+    return nullptr;
+  }
+  if (templateObject->nonCCWRealm() != target->realm()) {
     return nullptr;
   }
 
@@ -5284,7 +5290,7 @@ MDefinition* IonBuilder::createThisScriptedBaseline(MDefinition* callee) {
 MDefinition* IonBuilder::createThis(JSFunction* target, MDefinition* callee,
                                     MDefinition* newTarget) {
   
-  if (!target || target->realm() != script()->realm()) {
+  if (!target) {
     if (MDefinition* createThis = createThisScriptedBaseline(callee)) {
       return createThis;
     }
