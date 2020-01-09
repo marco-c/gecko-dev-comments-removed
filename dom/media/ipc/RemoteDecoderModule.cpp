@@ -27,6 +27,9 @@ using dom::ContentChild;
 using namespace ipc;
 using namespace layers;
 
+RemoteDecoderModule::RemoteDecoderModule()
+    : mManagerThread(RemoteDecoderManagerChild::GetManagerThread()) {}
+
 bool RemoteDecoderModule::SupportsMimeType(
     const nsACString& aMimeType, DecoderDoctorDiagnostics* aDiagnostics) const {
   bool supports = false;
@@ -46,20 +49,52 @@ bool RemoteDecoderModule::SupportsMimeType(
   return supports;
 }
 
-already_AddRefed<MediaDataDecoder> RemoteDecoderModule::CreateAudioDecoder(
-    const CreateDecoderParams& aParams) {
-  if (XRE_IsContentProcess()) {
-    ContentChild* contentChild = ContentChild::GetSingleton();
-    contentChild->LaunchRDDProcess();
+void RemoteDecoderModule::LaunchRDDProcessIfNeeded() {
+  if (!XRE_IsContentProcess()) {
+    return;
   }
 
-  if (!RemoteDecoderManagerChild::GetManagerThread()) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool needsLaunch = true;
+  if (mManagerThread) {
+    RefPtr<Runnable> task = NS_NewRunnableFunction(
+        "RemoteDecoderModule::LaunchRDDProcessIfNeeded-CheckSend", [&]() {
+          if (RemoteDecoderManagerChild::GetSingleton()) {
+            needsLaunch = !RemoteDecoderManagerChild::GetSingleton()->CanSend();
+          }
+        });
+    SyncRunnable::DispatchToThread(mManagerThread, task);
+  }
+
+  if (needsLaunch) {
+    ContentChild::GetSingleton()->LaunchRDDProcess();
+    mManagerThread = RemoteDecoderManagerChild::GetManagerThread();
+  }
+}
+
+already_AddRefed<MediaDataDecoder> RemoteDecoderModule::CreateAudioDecoder(
+    const CreateDecoderParams& aParams) {
+  LaunchRDDProcessIfNeeded();
+
+  if (!mManagerThread) {
     return nullptr;
   }
 
   RefPtr<RemoteAudioDecoderChild> child = new RemoteAudioDecoderChild();
   RefPtr<RemoteMediaDataDecoder> object = new RemoteMediaDataDecoder(
-      child, RemoteDecoderManagerChild::GetManagerThread(),
+      child, mManagerThread,
       RemoteDecoderManagerChild::GetManagerAbstractThread());
 
   MediaResult result(NS_OK);
@@ -67,8 +102,7 @@ already_AddRefed<MediaDataDecoder> RemoteDecoderModule::CreateAudioDecoder(
       "RemoteDecoderModule::CreateAudioDecoder", [&, child]() {
         result = child->InitIPDL(aParams.AudioConfig(), aParams.mOptions);
       });
-  SyncRunnable::DispatchToThread(RemoteDecoderManagerChild::GetManagerThread(),
-                                 task);
+  SyncRunnable::DispatchToThread(mManagerThread, task);
 
   if (NS_FAILED(result)) {
     if (aParams.mError) {
@@ -82,18 +116,15 @@ already_AddRefed<MediaDataDecoder> RemoteDecoderModule::CreateAudioDecoder(
 
 already_AddRefed<MediaDataDecoder> RemoteDecoderModule::CreateVideoDecoder(
     const CreateDecoderParams& aParams) {
-  if (XRE_IsContentProcess()) {
-    ContentChild* contentChild = ContentChild::GetSingleton();
-    contentChild->LaunchRDDProcess();
-  }
+  LaunchRDDProcessIfNeeded();
 
-  if (!RemoteDecoderManagerChild::GetManagerThread()) {
+  if (!mManagerThread) {
     return nullptr;
   }
 
   RefPtr<RemoteVideoDecoderChild> child = new RemoteVideoDecoderChild();
   RefPtr<RemoteMediaDataDecoder> object = new RemoteMediaDataDecoder(
-      child, RemoteDecoderManagerChild::GetManagerThread(),
+      child, mManagerThread,
       RemoteDecoderManagerChild::GetManagerAbstractThread());
 
   MediaResult result(NS_OK);
@@ -102,8 +133,7 @@ already_AddRefed<MediaDataDecoder> RemoteDecoderModule::CreateVideoDecoder(
         result = child->InitIPDL(aParams.VideoConfig(), aParams.mRate.mValue,
                                  aParams.mOptions);
       });
-  SyncRunnable::DispatchToThread(RemoteDecoderManagerChild::GetManagerThread(),
-                                 task);
+  SyncRunnable::DispatchToThread(mManagerThread, task);
 
   if (NS_FAILED(result)) {
     if (aParams.mError) {
