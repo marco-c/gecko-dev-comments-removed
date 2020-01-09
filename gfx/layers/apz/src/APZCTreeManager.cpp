@@ -3049,15 +3049,59 @@ already_AddRefed<AsyncPanZoomController> APZCTreeManager::CommonAncestor(
 LayerToParentLayerMatrix4x4 APZCTreeManager::ComputeTransformForNode(
     const HitTestingTreeNode* aNode) const {
   mTreeLock.AssertCurrentThreadIn();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if (AsyncPanZoomController* apzc = aNode->GetApzc()) {
     
     
     AutoApplyAsyncTestAttributes testAttributeApplier(apzc);
     
     
+    AsyncTransformComponents components =
+        mUsingAsyncZoomContainer && apzc->IsRootContent()
+            ? AsyncTransformComponents{AsyncTransformComponent::eScroll}
+            : ScrollAndZoom;
     return aNode->GetTransform() *
            CompleteAsyncTransform(apzc->GetCurrentAsyncTransformWithOverscroll(
-               AsyncPanZoomController::eForHitTesting));
+               AsyncPanZoomController::eForHitTesting, components));
+  } else if (aNode->IsAsyncZoomContainer()) {
+    if (AsyncPanZoomController* rootContent =
+            FindRootContentApzcForLayersId(aNode->GetLayersId())) {
+      return aNode->GetTransform() *
+             CompleteAsyncTransform(
+                 rootContent->GetCurrentAsyncTransformWithOverscroll(
+                     AsyncPanZoomController::eForHitTesting,
+                     {AsyncTransformComponent::eZoom}));
+    }
+  } else if (mUsingAsyncZoomContainer &&
+             aNode->GetFixedPosTarget() !=
+                 ScrollableLayerGuid::NULL_SCROLL_ID) {
+    if (AsyncPanZoomController* rootContent =
+            FindRootContentApzcForLayersId(aNode->GetLayersId())) {
+      if (aNode->GetFixedPosTarget() == rootContent->GetGuid().mScrollId) {
+        return aNode->GetTransform() *
+               CompleteAsyncTransform(
+                   rootContent->GetCurrentAsyncViewportRelativeTransform(
+                       AsyncPanZoomController::eForHitTesting));
+      }
+    }
   } else if (aNode->IsScrollThumbNode()) {
     
     
