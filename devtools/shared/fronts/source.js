@@ -18,7 +18,7 @@ const { FrontClassWithSpec, registerFront } = require("devtools/shared/protocol"
 
 
 
-class SourceClient extends FrontClassWithSpec(sourceSpec) {
+class SourceFront extends FrontClassWithSpec(sourceSpec) {
   constructor(client, form, activeThread) {
     super(client);
     this._url = form.url;
@@ -96,5 +96,5 @@ class SourceClient extends FrontClassWithSpec(sourceSpec) {
   }
 }
 
-exports.SourceClient = SourceClient;
-registerFront(SourceClient);
+exports.SourceFront = SourceFront;
+registerFront(SourceFront);

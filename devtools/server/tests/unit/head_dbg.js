@@ -744,9 +744,9 @@ function getFrames(threadClient, first, count) {
 
 
 
-async function blackBox(sourceClient, range = null) {
-  dumpn("Black boxing source: " + sourceClient.actor);
-  const pausedInSource = await sourceClient.blackBox(range);
+async function blackBox(sourceFront, range = null) {
+  dumpn("Black boxing source: " + sourceFront.actor);
+  const pausedInSource = await sourceFront.blackBox(range);
   ok(true, "blackBox didn't throw");
   return pausedInSource;
 }
@@ -757,9 +757,9 @@ async function blackBox(sourceClient, range = null) {
 
 
 
-async function unBlackBox(sourceClient, range = null) {
-  dumpn("Un-black boxing source: " + sourceClient.actor);
-  await sourceClient.unblackBox(range);
+async function unBlackBox(sourceFront, range = null) {
+  dumpn("Un-black boxing source: " + sourceFront.actor);
+  await sourceFront.unblackBox(range);
   ok(true, "unblackBox didn't throw");
 }
 
@@ -770,9 +770,9 @@ async function unBlackBox(sourceClient, range = null) {
 
 
 
-function getSourceContent(sourceClient) {
-  dumpn("Getting source content for " + sourceClient.actor);
-  return sourceClient.source();
+function getSourceContent(sourceFront) {
+  dumpn("Getting source content for " + sourceFront.actor);
+  return sourceFront.source();
 }
 
 
@@ -872,8 +872,8 @@ async function setupTestFromUrl(url) {
   loadSubScript(sourceUrl, global);
   const { source } = await promise;
 
-  const sourceClient = threadClient.source(source);
-  return { global, debuggerClient, threadClient, sourceClient };
+  const sourceFront = threadClient.source(source);
+  return { global, debuggerClient, threadClient, sourceFront };
 }
 
 

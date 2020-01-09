@@ -58,8 +58,8 @@ function test_source() {
 
       Assert.ok(!!source);
 
-      const sourceClient = gThreadClient.source(source);
-      response = await sourceClient.getBreakpointPositions();
+      const sourceFront = gThreadClient.source(source);
+      response = await sourceFront.getBreakpointPositions();
       Assert.ok(!!response);
       Assert.deepEqual(
         response,
@@ -84,7 +84,7 @@ function test_source() {
         }]
       );
 
-      response = await sourceClient.getBreakpointPositionsCompressed();
+      response = await sourceFront.getBreakpointPositionsCompressed();
       Assert.ok(!!response);
       Assert.deepEqual(
         response,
