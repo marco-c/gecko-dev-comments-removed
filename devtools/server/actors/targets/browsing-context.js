@@ -998,6 +998,8 @@ const browsingContextTargetPrototype = {
         continue;
       }
       
+      docShell.QueryInterface(Ci.nsIWebNavigation);
+      
       
       const sheets =
         InspectorUtils.getAllStyleSheets(docShell.document,  true);
