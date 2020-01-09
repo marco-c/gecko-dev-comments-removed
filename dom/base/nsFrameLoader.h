@@ -151,8 +151,12 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
 
 
+
+
+
+
   nsresult LoadURI(nsIURI* aURI, nsIPrincipal* aTriggeringPrincipal,
-                   bool aOriginalSrc);
+                   nsIContentSecurityPolicy* aCsp, bool aOriginalSrc);
 
   
 
@@ -347,7 +351,8 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
   void ApplySandboxFlags(uint32_t sandboxFlags);
 
-  void GetURL(nsString& aURL, nsIPrincipal** aTriggeringPrincipal);
+  void GetURL(nsString& aURL, nsIPrincipal** aTriggeringPrincipal,
+              nsIContentSecurityPolicy** aCsp);
 
   
   nsresult GetWindowDimensions(nsIntRect& aRect);
@@ -441,6 +446,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
   RefPtr<nsDocShell> mDocShell;
   nsCOMPtr<nsIURI> mURIToLoad;
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
+  nsCOMPtr<nsIContentSecurityPolicy> mCsp;
   mozilla::dom::Element* mOwnerContent;  
 
   

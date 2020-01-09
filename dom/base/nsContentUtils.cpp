@@ -1992,8 +1992,15 @@ nsIPrincipal* nsContentUtils::GetAttrTriggeringPrincipal(
 
   
   
-  if (!aAttrValue.IsEmpty() &&
-      IsAbsoluteURL(NS_ConvertUTF16toUTF8(aAttrValue))) {
+  
+  if (aAttrValue.IsEmpty() ||
+      !IsAbsoluteURL(NS_ConvertUTF16toUTF8(aAttrValue))) {
+    return contentPrin;
+  }
+
+  
+  
+  if (BasePrincipal::Cast(aSubjectPrincipal)->OverridesCSP(contentPrin)) {
     return aSubjectPrincipal;
   }
 
