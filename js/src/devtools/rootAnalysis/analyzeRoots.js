@@ -980,7 +980,45 @@ function processBodies(functionName)
 
     var missingExpectedHazard = annotations.has("Expect Hazards");
 
-    for (var variable of functionBodies[0].DefineVariable) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const ignoreVars = new Set();
+    if (functionName.match(/mozilla::dom::/)) {
+        const vars = functionBodies[0].DefineVariable.filter(
+            v => v.Type.Kind == 'CSU' && v.Variable.Kind == 'Local'
+        ).map(
+            v => [ v.Variable.Name[0], v.Type.Name ]
+        );
+
+        const holders = vars.filter(([n, t]) => n.match(/^arg\d+_holder$/) && t.match(/Argument\b/));
+        for (const [holder,] of holders) {
+            ignoreVars.add(holder); 
+            ignoreVars.add(holder.replace("_holder", "")); 
+        }
+    }
+
+    for (const variable of functionBodies[0].DefineVariable) {
         var name;
         if (variable.Variable.Kind == "This")
             name = "this";
@@ -988,6 +1026,9 @@ function processBodies(functionName)
             name = "<returnvalue>";
         else
             name = variable.Variable.Name[0];
+
+        if (ignoreVars.has(name))
+            continue;
 
         if (isRootedType(variable.Type)) {
             if (!variableLiveAcrossGC(suppressed, variable.Variable)) {
