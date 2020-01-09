@@ -160,9 +160,11 @@ void nsSubDocumentFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 
 void nsSubDocumentFrame::PropagateIsUnderHiddenEmbedderElementToSubView(
     bool aIsUnderHiddenEmbedderElement) {
-  
-  
-  
+  if (mFrameLoader && mFrameLoader->IsRemoteFrame()) {
+    mFrameLoader->SendIsUnderHiddenEmbedderElement(
+        aIsUnderHiddenEmbedderElement);
+    return;
+  }
 
   if (!mInnerView) {
     return;
