@@ -17,7 +17,7 @@ use crate::values::generics::length::{
 use crate::values::generics::NonNegative;
 use crate::values::specified::calc::CalcNode;
 use crate::values::specified::NonNegativeNumber;
-use crate::values::{Auto, CSSFloat, Either, Normal};
+use crate::values::{CSSFloat, Either, Normal};
 use crate::Zero;
 use app_units::Au;
 use cssparser::{Parser, Token};
@@ -728,9 +728,6 @@ impl NonNegativeLength {
 }
 
 
-pub type NonNegativeLengthOrAuto = Either<NonNegativeLength, Auto>;
-
-
 
 
 
@@ -995,7 +992,25 @@ impl NonNegativeLengthPercentage {
 pub type LengthOrNormal = Either<Length, Normal>;
 
 
-pub type LengthOrAuto = Either<Length, Auto>;
+pub type LengthOrAuto = generics::LengthPercentageOrAuto<Length>;
+
+impl LengthOrAuto {
+    
+    
+    #[inline]
+    pub fn parse_quirky<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+        allow_quirks: AllowQuirks,
+    ) -> Result<Self, ParseError<'i>> {
+        Self::parse_with(context, input, |context, input| {
+            Length::parse_quirky(context, input, allow_quirks)
+        })
+    }
+}
+
+
+pub type NonNegativeLengthOrAuto = generics::LengthPercentageOrAuto<NonNegativeLength>;
 
 
 pub type LengthOrNumber = GenericLengthOrNumber<Length, Number>;
