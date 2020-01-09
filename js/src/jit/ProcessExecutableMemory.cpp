@@ -88,8 +88,6 @@ JS_FRIEND_API void js::SetJitExceptionHandler(JitExceptionHandler handler) {
 
 
 
-
-
 struct UnwindInfo {
   uint32_t functionLength : 18;
   uint32_t version : 2;
@@ -97,9 +95,7 @@ struct UnwindInfo {
   uint32_t packedEpilog : 1;
   uint32_t epilogCount : 5;
   uint32_t codeWords : 5;
-  uint16_t extEpilogCount;
-  uint8_t extCodeWords;
-  uint8_t reserved;
+  uint8_t unwindCodes[4];
   uint32_t exceptionHandler;
 };
 static const unsigned ThunkLength = 20;
@@ -172,6 +168,13 @@ static bool RegisterExecutableMemory(void* p, size_t bytes, size_t pageSize) {
   memset(&r->unwindInfo, 0, sizeof(r->unwindInfo));
   r->unwindInfo.hasExceptionHandler = true;
   r->unwindInfo.exceptionHandler = offsetof(ExceptionHandlerRecord, thunk);
+
+  
+  
+  
+  r->unwindInfo.codeWords = 1; 
+  r->unwindInfo.unwindCodes[0] = 0b00000001; 
+  r->unwindInfo.unwindCodes[1] = 0b11100100; 
 
   uint32_t* thunk = (uint32_t*)r->thunk;
   uint16_t* addr = (uint16_t*)&handler;
