@@ -115,9 +115,18 @@ impl ArgAssigner for Args {
         }
 
         
-        if ty.is_float() && self.fpr_used < self.fpr_limit {
-            let reg = FPR.unit(self.fpr_used);
-            self.fpr_used += 1;
+        let fpr_offset = if self.call_conv == CallConv::WindowsFastcall {
+            
+            
+            
+            debug_assert_eq!(self.fpr_limit, self.gpr.len());
+            &mut self.gpr_used
+        } else {
+            &mut self.fpr_used
+        };
+        if ty.is_float() && *fpr_offset < self.fpr_limit {
+            let reg = FPR.unit(*fpr_offset);
+            *fpr_offset += 1;
             return ArgumentLoc::Reg(reg).into();
         }
 

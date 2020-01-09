@@ -54,10 +54,15 @@ impl FuncTranslator {
     pub fn translate<FE: FuncEnvironment + ?Sized>(
         &mut self,
         code: &[u8],
+        code_offset: usize,
         func: &mut ir::Function,
         environ: &mut FE,
     ) -> WasmResult<()> {
-        self.translate_from_reader(BinaryReader::new(code), func, environ)
+        self.translate_from_reader(
+            BinaryReader::new_with_offset(code, code_offset),
+            func,
+            environ,
+        )
     }
 
     
@@ -224,9 +229,7 @@ fn parse_function_body<FE: FuncEnvironment + ?Sized>(
 fn cur_srcloc(reader: &BinaryReader) -> ir::SourceLoc {
     
     
-    
-    
-    ir::SourceLoc::new(reader.current_position() as u32)
+    ir::SourceLoc::new(reader.original_position() as u32)
 }
 
 #[cfg(test)]
@@ -270,7 +273,7 @@ mod tests {
         ctx.func.signature.returns.push(ir::AbiParam::new(I32));
 
         trans
-            .translate(&BODY, &mut ctx.func, &mut runtime.func_env())
+            .translate(&BODY, 0, &mut ctx.func, &mut runtime.func_env())
             .unwrap();
         debug!("{}", ctx.func.display(None));
         ctx.verify(&flags).unwrap();
@@ -308,7 +311,7 @@ mod tests {
         ctx.func.signature.returns.push(ir::AbiParam::new(I32));
 
         trans
-            .translate(&BODY, &mut ctx.func, &mut runtime.func_env())
+            .translate(&BODY, 0, &mut ctx.func, &mut runtime.func_env())
             .unwrap();
         debug!("{}", ctx.func.display(None));
         ctx.verify(&flags).unwrap();
@@ -354,7 +357,7 @@ mod tests {
         ctx.func.signature.returns.push(ir::AbiParam::new(I32));
 
         trans
-            .translate(&BODY, &mut ctx.func, &mut runtime.func_env())
+            .translate(&BODY, 0, &mut ctx.func, &mut runtime.func_env())
             .unwrap();
         debug!("{}", ctx.func.display(None));
         ctx.verify(&flags).unwrap();

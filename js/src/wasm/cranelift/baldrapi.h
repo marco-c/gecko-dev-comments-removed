@@ -100,6 +100,7 @@ struct CraneliftFuncCompileInput {
   const uint8_t* bytecode;
   size_t bytecodeSize;
   uint32_t index;
+  uint32_t offset_in_module;
 
   
   explicit inline CraneliftFuncCompileInput(const js::wasm::FuncCompileInput&);

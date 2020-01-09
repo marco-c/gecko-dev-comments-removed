@@ -343,7 +343,11 @@ pub trait ModuleEnvironment<'data> {
     
     
     
-    fn define_function_body(&mut self, body_bytes: &'data [u8]) -> WasmResult<()>;
+    fn define_function_body(
+        &mut self,
+        body_bytes: &'data [u8],
+        body_offset: usize,
+    ) -> WasmResult<()>;
 
     
     
