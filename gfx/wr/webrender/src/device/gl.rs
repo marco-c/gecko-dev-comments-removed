@@ -1004,7 +1004,7 @@ pub struct Device {
 
 
 #[derive(Clone, Copy)]
-pub enum DrawTarget<'a> {
+pub enum DrawTarget {
     
     
     Default {
@@ -1016,11 +1016,19 @@ pub enum DrawTarget<'a> {
     
     Texture {
         
-        texture: &'a Texture,
+        dimensions: DeviceIntSize,
         
         layer: LayerIndex,
         
         with_depth: bool,
+        
+        blit_workaround_buffer: Option<(RBOId, FBOId)>,
+        
+        fbo_id: FBOId,
+        
+        id: gl::GLuint,
+        
+        target: gl::GLuint,
     },
     
     External {
@@ -1029,7 +1037,7 @@ pub enum DrawTarget<'a> {
     },
 }
 
-impl<'a> DrawTarget<'a> {
+impl DrawTarget {
     pub fn new_default(size: DeviceIntSize) -> Self {
         let total_size = FramebufferIntSize::from_untyped(&size.to_untyped());
         DrawTarget::Default {
@@ -1046,11 +1054,33 @@ impl<'a> DrawTarget<'a> {
         }
     }
 
+    pub fn from_texture(
+        texture: &Texture,
+        layer: usize,
+        with_depth: bool,
+    ) -> Self {
+        let fbo_id = if with_depth {
+            texture.fbos_with_depth[layer]
+        } else {
+            texture.fbos[layer]
+        };
+
+        DrawTarget::Texture {
+            dimensions: texture.get_dimensions(),
+            fbo_id,
+            with_depth,
+            layer,
+            blit_workaround_buffer: texture.blit_workaround_buffer,
+            id: texture.id,
+            target: texture.target,
+        }
+    }
+
     
     pub fn dimensions(&self) -> DeviceIntSize {
         match *self {
             DrawTarget::Default { total_size, .. } => DeviceIntSize::from_untyped(&total_size.to_untyped()),
-            DrawTarget::Texture { texture, .. } => texture.get_dimensions(),
+            DrawTarget::Texture { dimensions, .. } => dimensions,
             DrawTarget::External { size, .. } => DeviceIntSize::from_untyped(&size.to_untyped()),
         }
     }
@@ -1101,15 +1131,13 @@ impl<'a> DrawTarget<'a> {
 
 
 #[derive(Clone, Copy)]
-pub enum ReadTarget<'a> {
+pub enum ReadTarget {
     
     Default,
     
     Texture {
         
-        texture: &'a Texture,
-        
-        layer: LayerIndex,
+        fbo_id: FBOId,
     },
     
     External {
@@ -1117,12 +1145,23 @@ pub enum ReadTarget<'a> {
     },
 }
 
-impl<'a> From<DrawTarget<'a>> for ReadTarget<'a> {
-    fn from(t: DrawTarget<'a>) -> Self {
+impl ReadTarget {
+    pub fn from_texture(
+        texture: &Texture,
+        layer: usize,
+    ) -> Self {
+        ReadTarget::Texture {
+            fbo_id: texture.fbos[layer],
+        }
+    }
+}
+
+impl From<DrawTarget> for ReadTarget {
+    fn from(t: DrawTarget) -> Self {
         match t {
             DrawTarget::Default { .. } => ReadTarget::Default,
-            DrawTarget::Texture { texture, layer, .. } =>
-                ReadTarget::Texture { texture, layer },
+            DrawTarget::Texture { fbo_id, .. } =>
+                ReadTarget::Texture { fbo_id },
             DrawTarget::External { fbo, .. } =>
                 ReadTarget::External { fbo },
         }
@@ -1507,7 +1546,7 @@ impl Device {
     pub fn bind_read_target(&mut self, target: ReadTarget) {
         let fbo_id = match target {
             ReadTarget::Default => self.default_read_fbo,
-            ReadTarget::Texture { texture, layer } => texture.fbos[layer],
+            ReadTarget::Texture { fbo_id } => fbo_id,
             ReadTarget::External { fbo } => fbo,
         };
 
@@ -1541,16 +1580,12 @@ impl Device {
     ) {
         let (fbo_id, rect, depth_available) = match target {
             DrawTarget::Default { rect, .. } => (self.default_draw_fbo, rect, true),
-            DrawTarget::Texture { texture, layer, with_depth } => {
+            DrawTarget::Texture { dimensions, fbo_id, with_depth, .. } => {
                 let rect = FramebufferIntRect::new(
                     FramebufferIntPoint::zero(),
-                    FramebufferIntSize::from_untyped(&texture.get_dimensions().to_untyped()),
+                    FramebufferIntSize::from_untyped(&dimensions.to_untyped()),
                 );
-                if with_depth {
-                    (texture.fbos_with_depth[layer], rect, true)
-                } else {
-                    (texture.fbos[layer], rect, false)
-                }
+                (fbo_id, rect, with_depth)
             },
             DrawTarget::External { fbo, size } => (fbo, size.into(), false),
         };
@@ -1940,9 +1975,9 @@ impl Device {
             );
             for layer in 0..src.layer_count.min(dst.layer_count) as LayerIndex {
                 self.blit_render_target(
-                    ReadTarget::Texture { texture: src, layer },
+                    ReadTarget::from_texture(src, layer),
                     rect,
-                    DrawTarget::Texture { texture: dst, layer, with_depth: false },
+                    DrawTarget::from_texture(dst, layer, false),
                     rect,
                     TextureFilter::Linear
                 );
@@ -2139,11 +2174,11 @@ impl Device {
         self.bind_read_target(src_target);
 
         match dest_target {
-            DrawTarget::Texture { texture, layer, .. } if layer != 0 &&
+            DrawTarget::Texture { layer, blit_workaround_buffer, dimensions, id, target, .. } if layer != 0 &&
                 !self.capabilities.supports_blit_to_texture_array =>
             {
                 
-                let (_rbo, fbo) = texture.blit_workaround_buffer.expect("Blit workaround buffer has not been initialized.");
+                let (_rbo, fbo) = blit_workaround_buffer.expect("Blit workaround buffer has not been initialized.");
 
                 
                 self.bind_draw_target_impl(fbo);
@@ -2166,14 +2201,18 @@ impl Device {
                         dest_rect.size.width.abs(),
                         dest_rect.size.height.abs(),
                     ),
-                ).intersection(&texture.size.into()).unwrap_or(DeviceIntRect::zero());
+                ).intersection(&dimensions.into()).unwrap_or(DeviceIntRect::zero());
 
                 self.bind_read_target_impl(fbo);
-                self.bind_texture(DEFAULT_TEXTURE, texture);
+                self.bind_texture_impl(
+                    DEFAULT_TEXTURE,
+                    id,
+                    target,
+                );
 
                 
                 self.gl.copy_tex_sub_image_3d(
-                    texture.target, 0,
+                    target, 0,
                     dest_bounds.origin.x, dest_bounds.origin.y,
                     layer as _,
                     dest_bounds.origin.x, dest_bounds.origin.y,
