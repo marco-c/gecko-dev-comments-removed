@@ -7,7 +7,7 @@
 
 namespace mozilla {
 
-#if defined(__arm__)
+#if defined(__arm__) && defined(__ANDROID__)
 
 
 
