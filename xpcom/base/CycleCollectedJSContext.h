@@ -9,6 +9,7 @@
 
 #include <queue>
 
+#include "mozilla/Attributes.h"
 #include "mozilla/DeferredFinalize.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/mozalloc.h"
@@ -75,7 +76,7 @@ class MicroTaskRunnable {
  public:
   MicroTaskRunnable() = default;
   NS_INLINE_DECL_REFCOUNTING(MicroTaskRunnable)
-  virtual void Run(AutoSlowOperation& aAso) = 0;
+  MOZ_CAN_RUN_SCRIPT virtual void Run(AutoSlowOperation& aAso) = 0;
   virtual bool Suppressed() { return false; }
 
  protected:
@@ -166,7 +167,16 @@ class CycleCollectedJSContext
 
  public:
   
+  
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   virtual void BeforeProcessTask(bool aMightBlock);
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   virtual void AfterProcessTask(uint32_t aRecursionDepth);
 
   
@@ -196,6 +206,7 @@ class CycleCollectedJSContext
   
   void EnterMicroTask() { ++mMicroTaskLevel; }
 
+  MOZ_CAN_RUN_SCRIPT
   void LeaveMicroTask() {
     if (--mMicroTaskLevel == 0) {
       PerformMicroTaskCheckPoint();
@@ -208,8 +219,10 @@ class CycleCollectedJSContext
 
   void SetMicroTaskLevel(uint32_t aLevel) { mMicroTaskLevel = aLevel; }
 
+  MOZ_CAN_RUN_SCRIPT
   bool PerformMicroTaskCheckPoint(bool aForce = false);
 
+  MOZ_CAN_RUN_SCRIPT
   void PerformDebuggerMicroTaskCheckpoint();
 
   bool IsInStableOrMetaStableState() const { return mDoingStableStates; }
@@ -243,6 +256,10 @@ class CycleCollectedJSContext
   bool enqueuePromiseJob(JSContext* cx, JS::HandleObject promise,
                          JS::HandleObject job, JS::HandleObject allocationSite,
                          JS::HandleObject incumbentGlobal) override;
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void runJobs(JSContext* cx) override;
   bool empty() const override;
   class SavedMicroTaskQueue;
@@ -292,7 +309,7 @@ class MOZ_STACK_CLASS nsAutoMicroTask {
       ccjs->EnterMicroTask();
     }
   }
-  ~nsAutoMicroTask() {
+  MOZ_CAN_RUN_SCRIPT ~nsAutoMicroTask() {
     CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get();
     if (ccjs) {
       ccjs->LeaveMicroTask();

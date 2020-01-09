@@ -894,7 +894,11 @@ void WorkerDebuggerGlobalScope::LoadSubScript(
 }
 
 void WorkerDebuggerGlobalScope::EnterEventLoop() {
-  mWorkerPrivate->EnterDebuggerEventLoop();
+  
+  
+  
+  
+  MOZ_KnownLive(mWorkerPrivate)->EnterDebuggerEventLoop();
 }
 
 void WorkerDebuggerGlobalScope::LeaveEventLoop() {

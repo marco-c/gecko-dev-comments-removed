@@ -9,6 +9,7 @@
 
 #include "nscore.h"
 #include "nsXPCOM.h"
+#include "mozilla/Attributes.h"
 
 
 
@@ -30,6 +31,7 @@ namespace mozilla {
 
 
 
+MOZ_CAN_RUN_SCRIPT
 nsresult ShutdownXPCOM(nsIServiceManager* aServMgr);
 
 void SetICUMemoryFunctions();

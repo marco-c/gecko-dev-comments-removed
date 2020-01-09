@@ -9,6 +9,7 @@
 
 #include "nscore.h"
 #include "nsXPCOMCID.h"
+#include "mozilla/Attributes.h"
 
 #ifdef __cplusplus
 #  define DECL_CLASS(c) class c
@@ -93,7 +94,11 @@ NS_InitMinimalXPCOM();
 
 
 
-XPCOM_API(nsresult) NS_ShutdownXPCOM(nsIServiceManager* aServMgr);
+
+
+
+XPCOM_API(MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult)
+NS_ShutdownXPCOM(nsIServiceManager* aServMgr);
 
 
 

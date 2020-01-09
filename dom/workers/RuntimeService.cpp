@@ -35,6 +35,7 @@
 #include "mozilla/AntiTrackingCommon.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Atomics.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/CycleCollectedJSRuntime.h"
 #include "mozilla/Telemetry.h"
@@ -931,7 +932,10 @@ class WorkerJSContext final : public mozilla::CycleCollectedJSContext {
     SetTargetedMicroTaskRecursionDepth(2);
   }
 
-  ~WorkerJSContext() {
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY ~WorkerJSContext() {
     MOZ_COUNT_DTOR_INHERITED(WorkerJSContext, CycleCollectedJSContext);
     JSContext* cx = MaybeContext();
     if (!cx) {
@@ -2215,6 +2219,9 @@ bool LogViolationDetailsRunnable::MainThreadRun() {
   return true;
 }
 
+
+
+MOZ_CAN_RUN_SCRIPT_BOUNDARY
 NS_IMETHODIMP
 WorkerThreadPrimaryRunnable::Run() {
   AUTO_PROFILER_LABEL_DYNAMIC_LOSSY_NSSTRING(
@@ -2291,7 +2298,11 @@ WorkerThreadPrimaryRunnable::Run() {
       PROFILER_SET_JS_CONTEXT(cx);
 
       {
-        mWorkerPrivate->DoRunLoop(cx);
+        
+        
+        
+        
+        MOZ_KnownLive(mWorkerPrivate)->DoRunLoop(cx);
         
         
         MOZ_ASSERT(!JS_IsExceptionPending(cx));
