@@ -655,12 +655,38 @@ Instance::tableCopy(Instance* instance, uint32_t dstOffset, uint32_t srcOffset,
     }
   } else {
     
-    CheckedU32 lenMinus1 = CheckedU32(len - 1);
-    CheckedU32 highestDstOffset = CheckedU32(dstOffset) + lenMinus1;
-    CheckedU32 highestSrcOffset = CheckedU32(srcOffset) + lenMinus1;
-    if (highestDstOffset.isValid() && highestSrcOffset.isValid() &&
-        highestDstOffset.value() < dstTableLen &&
-        highestSrcOffset.value() < srcTableLen) {
+    bool mustTrap = false;
+
+    
+    
+    uint64_t highestDstOffset = uint64_t(dstOffset) + (len - 1);
+    uint64_t highestSrcOffset = uint64_t(srcOffset) + (len - 1);
+
+    bool copyDown =
+      srcOffset < dstOffset && dstOffset < highestSrcOffset;
+
+    if (highestDstOffset >= dstTableLen || highestSrcOffset >= srcTableLen) {
+      
+      
+      if (copyDown) {
+        
+        
+        len = 0;
+      } else {
+        
+        
+        uint64_t srcAvail = srcTableLen < srcOffset ? 0 : srcTableLen - srcOffset;
+        uint64_t dstAvail = dstTableLen < dstOffset ? 0 : dstTableLen - dstOffset;
+        MOZ_ASSERT(len > Min(srcAvail, dstAvail));
+        len = uint32_t(Min(srcAvail, dstAvail));
+      }
+      mustTrap = true;
+    }
+
+    if (len > 0) {
+      
+      
+      
       
       
       if (&srcTable == &dstTable && dstOffset > srcOffset) {
@@ -674,7 +700,9 @@ Instance::tableCopy(Instance* instance, uint32_t dstOffset, uint32_t srcOffset,
           dstTable->copy(*srcTable, dstOffset + i, srcOffset + i);
         }
       }
+    }
 
+    if (!mustTrap) {
       return 0;
     }
   }
@@ -763,7 +791,10 @@ Instance::tableInit(Instance* instance, uint32_t dstOffset, uint32_t srcOffset,
 
   const ElemSegment& seg = *instance->passiveElemSegments_[segIndex];
   MOZ_RELEASE_ASSERT(!seg.active());
+  const uint32_t segLen = seg.length();
+
   const Table& table = *instance->tables()[tableIndex];
+  const uint32_t tableLen = table.length();
 
   
   
@@ -777,18 +808,34 @@ Instance::tableInit(Instance* instance, uint32_t dstOffset, uint32_t srcOffset,
 
   if (len == 0) {
     
-    if (dstOffset < table.length() && srcOffset < seg.length()) {
+    if (dstOffset < tableLen && srcOffset < segLen) {
       return 0;
     }
   } else {
     
-    CheckedU32 lenMinus1 = CheckedU32(len - 1);
-    CheckedU32 highestDstOffset = CheckedU32(dstOffset) + lenMinus1;
-    CheckedU32 highestSrcOffset = CheckedU32(srcOffset) + lenMinus1;
-    if (highestDstOffset.isValid() && highestSrcOffset.isValid() &&
-        highestDstOffset.value() < table.length() &&
-        highestSrcOffset.value() < seg.length()) {
+    bool mustTrap = false;
+
+    
+    
+    uint64_t highestDstOffset = uint64_t(dstOffset) + uint64_t(len - 1);
+    uint64_t highestSrcOffset = uint64_t(srcOffset) + uint64_t(len - 1);
+
+    if (highestDstOffset >= tableLen || highestSrcOffset >= segLen) {
+      
+      
+      
+      uint64_t srcAvail = segLen < srcOffset ? 0 : segLen - srcOffset;
+      uint64_t dstAvail = tableLen < dstOffset ? 0 : tableLen - dstOffset;
+      MOZ_ASSERT(len > Min(srcAvail, dstAvail));
+      len = uint32_t(Min(srcAvail, dstAvail));
+      mustTrap = true;
+    }
+
+    if (len > 0) {
       instance->initElems(tableIndex, seg, dstOffset, srcOffset, len);
+    }
+
+    if (!mustTrap) {
       return 0;
     }
   }
