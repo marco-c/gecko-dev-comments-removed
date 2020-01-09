@@ -2281,15 +2281,17 @@ class nsLayoutUtils {
 
 
 
-  static bool HasAnimationOfProperty(const nsIFrame* aFrame,
-                                     nsCSSPropertyID aProperty);
+
+  static bool HasAnimationOfPropertySet(const nsIFrame* aFrame,
+                                        const nsCSSPropertyIDSet& aPropertySet);
 
   
 
 
 
-  static bool HasAnimationOfProperty(mozilla::EffectSet* aEffectSet,
-                                     nsCSSPropertyID aProperty);
+
+  static bool HasAnimationOfPropertySet(mozilla::EffectSet* aEffectSet,
+                                        const nsCSSPropertyIDSet& aPropertySet);
 
   
 

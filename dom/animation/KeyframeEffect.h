@@ -181,7 +181,7 @@ class KeyframeEffect : public AnimationEffect {
 
   
   
-  bool HasAnimationOfProperty(nsCSSPropertyID aProperty) const;
+  bool HasAnimationOfPropertySet(const nsCSSPropertyIDSet& aPropertySet) const;
 
   
   

@@ -75,6 +75,16 @@ class nsCSSPropertyIDSet {
     return COMPOSITOR_ANIMATABLE_PROPERTY_LIST_LENGTH;
   }
 
+  static constexpr nsCSSPropertyIDSet TransformLikeProperties() {
+    
+    return nsCSSPropertyIDSet{eCSSProperty_transform, eCSSProperty_translate,
+                              eCSSProperty_rotate, eCSSProperty_scale};
+  }
+
+  static constexpr nsCSSPropertyIDSet OpacityProperties() {
+    return nsCSSPropertyIDSet{eCSSProperty_opacity};
+  }
+
   bool Intersects(const nsCSSPropertyIDSet& aOther) const {
     for (size_t i = 0; i < mozilla::ArrayLength(mProperties); ++i) {
       if (mProperties[i] & aOther.mProperties[i]) {

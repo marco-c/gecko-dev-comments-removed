@@ -819,7 +819,8 @@ bool Animation::ShouldBeSynchronizedWithMainThread(
   
   
   if (mSyncWithGeometricAnimations &&
-      keyframeEffect->HasAnimationOfProperty(eCSSProperty_transform)) {
+      keyframeEffect->HasAnimationOfPropertySet(
+          nsCSSPropertyIDSet::TransformLikeProperties())) {
     aPerformanceWarning =
         AnimationPerformanceWarning::Type::TransformWithSyncGeometricAnimations;
     return true;
