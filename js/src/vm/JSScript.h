@@ -1726,14 +1726,10 @@ class JSScript : public js::gc::TenuredCell {
     IsForEval = 1 << 22,
 
     
-    
-    TrackRecordReplayProgress = 1 << 23,
+    IsModule = 1 << 23,
 
     
-    IsModule = 1 << 24,
-
-    
-    NeedsFunctionEnvironmentObjects = 1 << 25,
+    NeedsFunctionEnvironmentObjects = 1 << 24,
   };
 
  private:
@@ -1753,6 +1749,10 @@ class JSScript : public js::gc::TenuredCell {
 
     
     HasBeenCloned = 1 << 2,
+
+    
+    
+    TrackRecordReplayProgress = 1 << 3,
 
     
 
@@ -2800,7 +2800,7 @@ class JSScript : public js::gc::TenuredCell {
   };
 
   bool trackRecordReplayProgress() const {
-    return hasFlag(ImmutableFlags::TrackRecordReplayProgress);
+    return hasFlag(MutableFlags::TrackRecordReplayProgress);
   }
 };
 
