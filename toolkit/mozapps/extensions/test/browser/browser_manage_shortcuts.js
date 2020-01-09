@@ -53,9 +53,6 @@ add_task(async function testUpdatingCommands() {
   
   let doc = gManagerWindow.document;
   let shortcutsLink = doc.getElementById("manage-shortcuts");
-  ok(!shortcutsLink.hidden, "The shortcuts link is visible");
-
-  
   shortcutsLink.click();
   await wait_for_view_load(gManagerWindow);
 
