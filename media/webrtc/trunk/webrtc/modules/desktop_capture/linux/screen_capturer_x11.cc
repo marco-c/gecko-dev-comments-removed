@@ -8,123 +8,37 @@
 
 
 
-#include <string.h>
+#include "modules/desktop_capture/linux/screen_capturer_x11.h"
 
-#include <memory>
-#include <set>
-#include <utility>
+#include <string.h>
 
 #include <X11/extensions/Xdamage.h>
 #include <X11/extensions/Xfixes.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
+#include <memory>
+#include <set>
+#include <utility>
+
 #include "modules/desktop_capture/desktop_capture_options.h"
 #include "modules/desktop_capture/desktop_capturer.h"
 #include "modules/desktop_capture/desktop_frame.h"
+#include "modules/desktop_capture/linux/x_server_pixel_buffer.h"
 #include "modules/desktop_capture/screen_capture_frame_queue.h"
 #include "modules/desktop_capture/screen_capturer_helper.h"
 #include "modules/desktop_capture/shared_desktop_frame.h"
-#include "modules/desktop_capture/x11/x_server_pixel_buffer.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/constructormagic.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/timeutils.h"
 
 namespace webrtc {
-namespace {
 
-
-
-
-
-
-
-
-class ScreenCapturerLinux : public DesktopCapturer,
-                            public SharedXDisplay::XEventHandler {
- public:
-  ScreenCapturerLinux();
-  ~ScreenCapturerLinux() override;
-
-  
-  bool Init(const DesktopCaptureOptions& options);
-
-  
-  void Start(Callback* delegate) override;
-  void CaptureFrame() override;
-  bool GetSourceList(SourceList* sources) override;
-  bool SelectSource(SourceId id) override;
-
- private:
-  Display* display() { return options_.x_display()->display(); }
-
-  
-  bool HandleXEvent(const XEvent& event) override;
-
-  void InitXDamage();
-
-  
-  
-  
-  
-  
-  std::unique_ptr<DesktopFrame> CaptureScreen();
-
-  
-  void ScreenConfigurationChanged();
-
-  
-  
-  
-  
-  
-  void SynchronizeFrame();
-
-  void DeinitXlib();
-
-  DesktopCaptureOptions options_;
-
-  Callback* callback_ = nullptr;
-
-  
-  GC gc_ = nullptr;
-  Window root_window_ = BadValue;
-
-  
-  bool has_xfixes_ = false;
-  int xfixes_event_base_ = -1;
-  int xfixes_error_base_ = -1;
-
-  
-  bool use_damage_ = false;
-  Damage damage_handle_ = 0;
-  int damage_event_base_ = -1;
-  int damage_error_base_ = -1;
-  XserverRegion damage_region_ = 0;
-
-  
-  XServerPixelBuffer x_server_pixel_buffer_;
-
-  
-  
-  ScreenCapturerHelper helper_;
-
-  
-  ScreenCaptureFrameQueue<SharedDesktopFrame> queue_;
-
-  
-  
-  DesktopRegion last_invalid_region_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(ScreenCapturerLinux);
-};
-
-ScreenCapturerLinux::ScreenCapturerLinux() {
+ScreenCapturerX11::ScreenCapturerX11() {
   helper_.SetLogGridSize(4);
 }
 
-ScreenCapturerLinux::~ScreenCapturerLinux() {
+ScreenCapturerX11::~ScreenCapturerX11() {
   options_.x_display()->RemoveEventHandler(ConfigureNotify, this);
   if (use_damage_) {
     options_.x_display()->RemoveEventHandler(
@@ -133,7 +47,7 @@ ScreenCapturerLinux::~ScreenCapturerLinux() {
   DeinitXlib();
 }
 
-bool ScreenCapturerLinux::Init(const DesktopCaptureOptions& options) {
+bool ScreenCapturerX11::Init(const DesktopCaptureOptions& options) {
   options_ = options;
 
   root_window_ = RootWindow(display(), DefaultScreen(display()));
@@ -217,14 +131,14 @@ void ScreenCapturerX11::InitXDamage() {
   RTC_LOG(LS_INFO) << "Using XDamage extension.";
 }
 
-void ScreenCapturerLinux::Start(Callback* callback) {
+void ScreenCapturerX11::Start(Callback* callback) {
   RTC_DCHECK(!callback_);
   RTC_DCHECK(callback);
 
   callback_ = callback;
 }
 
-void ScreenCapturerLinux::CaptureFrame() {
+void ScreenCapturerX11::CaptureFrame() {
   int64_t capture_start_time_nanos = rtc::TimeNanos();
 
   queue_.MoveToNextFrame();
@@ -348,7 +262,7 @@ std::unique_ptr<DesktopFrame> ScreenCapturerX11::CaptureScreen() {
   return std::move(frame);
 }
 
-void ScreenCapturerLinux::ScreenConfigurationChanged() {
+void ScreenCapturerX11::ScreenConfigurationChanged() {
   
   queue_.Reset();
 
