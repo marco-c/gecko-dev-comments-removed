@@ -180,9 +180,14 @@ void MediaEngineWebRTC::EnumerateMicrophoneDevices(
         if (!foundPreferredDevice) {
           foundPreferredDevice = true;
         } else {
+          
+          
+          
+#ifndef XP_WIN
           MOZ_ASSERT(!foundPreferredDevice,
                      "Found more than one preferred audio input device"
                      "while enumerating");
+#endif
         }
 #endif
         aDevices->InsertElementAt(0, device);
