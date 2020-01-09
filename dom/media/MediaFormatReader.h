@@ -22,7 +22,6 @@
 #  include "nsAutoPtr.h"
 #  include "PDMFactory.h"
 #  include "SeekTarget.h"
-#  include "mozilla/dom/MediaDebugInfoBinding.h"
 
 namespace mozilla {
 
@@ -181,7 +180,7 @@ class MediaFormatReader final
 
   
   
-  void GetDebugInfo(dom::MediaFormatReaderDebugInfo& aInfo);
+  void GetMozDebugReaderData(nsACString& aString);
 
   
   

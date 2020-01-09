@@ -70,7 +70,7 @@ class ChannelMediaDecoder
 
   explicit ChannelMediaDecoder(MediaDecoderInit& aInit);
 
-  void GetDebugInfo(dom::MediaDecoderDebugInfo& aInfo);
+  nsCString GetDebugInfo() override;
 
  public:
   

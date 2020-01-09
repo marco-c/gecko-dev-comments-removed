@@ -12,7 +12,6 @@
 #include "mozilla/Mutex.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/TaskQueue.h"
-#include "mozilla/dom/MediaDebugInfoBinding.h"
 
 #include "MediaContainerType.h"
 #include "MediaData.h"
@@ -62,7 +61,7 @@ class SourceBufferTaskQueue {
 
 DDLoggedTypeDeclName(TrackBuffersManager);
 
-class TrackBuffersManager final
+class TrackBuffersManager
     : public DecoderDoctorLifeLogger<TrackBuffersManager> {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(TrackBuffersManager);
@@ -166,12 +165,13 @@ class TrackBuffersManager final
                                            const media::TimeUnit& aFuzz);
 
   void AddSizeOfResources(MediaSourceDecoder::ResourceSizes* aSizes) const;
-  void GetDebugInfo(dom::TrackBuffersManagerDebugInfo& aInfo);
 
  private:
   typedef MozPromise<bool, MediaResult,  true>
       CodedFrameProcessingPromise;
 
+  
+  friend class MediaSourceDemuxer;
   ~TrackBuffersManager();
   
   RefPtr<AppendPromise> DoAppendData(already_AddRefed<MediaByteBuffer> aData,

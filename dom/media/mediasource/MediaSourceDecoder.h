@@ -7,7 +7,6 @@
 #ifndef MOZILLA_MEDIASOURCEDECODER_H_
 #define MOZILLA_MEDIASOURCEDECODER_H_
 
-#include "mozilla/dom/MediaDebugInfoBinding.h"
 #include "MediaDecoder.h"
 #include "mozilla/RefPtr.h"
 
@@ -54,7 +53,7 @@ class MediaSourceDecoder : public MediaDecoder,
 
   
   
-  void GetDebugInfo(dom::MediaSourceDecoderDebugInfo& aInfo);
+  void GetMozDebugReaderData(nsACString& aString) override;
 
   void AddSizeOfResources(ResourceSizes* aSizes) override;
 
