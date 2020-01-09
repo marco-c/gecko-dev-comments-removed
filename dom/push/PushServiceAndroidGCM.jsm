@@ -113,19 +113,26 @@ var PushServiceAndroidGCM = {
     let message = null;
     let headers = null;
 
-    if (data.message && data.enc && (data.enckey || data.cryptokey)) {
-      headers = {
-        encryption_key: data.enckey,
-        crypto_key: data.cryptokey,
-        encryption: data.enc,
-        encoding: data.con,
-      };
+    if (data.message) {
+      if (data.enc && (data.enckey || data.cryptokey)) {
+        headers = {
+          encryption_key: data.enckey,
+          crypto_key: data.cryptokey,
+          encryption: data.enc,
+          encoding: data.con,
+        };
+      } else if (data.con == 'aes128gcm') {
+        headers = {
+          encoding: data.con,
+        };
+      }
       
       message = ChromeUtils.base64URLDecode(data.message, {
         
         padding: "ignore",
       });
     }
+
     return { headers, message };
   },
 
