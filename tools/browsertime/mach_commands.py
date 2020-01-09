@@ -35,56 +35,279 @@ import logging
 import os
 import sys
 
-import mozpack.path as mozpath
 from mach.decorators import CommandArgument, CommandProvider, Command
 from mozbuild.base import MachCommandBase
-from mozbuild.nodeutil import find_node_executable
+import mozpack.path as mozpath
 
-sys.path.append(mozpath.join(os.path.dirname(__file__), '..', '..', 'tools', 'lint', 'eslint'))
-import setup_helper
+
+BROWSERTIME_ROOT = os.path.dirname(__file__)
+
+
+def host_platform():
+    is_64bits = sys.maxsize > 2**32
+
+    if sys.platform.startswith('win'):
+        if is_64bits:
+            return 'win64'
+    elif sys.platform.startswith('linux'):
+        if is_64bits:
+            return 'linux64'
+    elif sys.platform.startswith('darwin'):
+        return 'darwin'
+
+    raise ValueError('sys.platform is not yet supported: {}'.format(sys.platform))
+
+
+
+host_fetches = {
+    'darwin': {
+        'ffmpeg': {
+            'type': 'static-url',
+            'url': 'https://ffmpeg.zeranoe.com/builds/macos64/static/ffmpeg-4.1.1-macos64-static.zip',  
+            
+            'path': 'ffmpeg-4.1.1-macos64-static',
+        },
+        'ImageMagick': {
+            'type': 'static-url',
+            
+            
+            
+            'url': 'https://imagemagick.org/download/binaries/ImageMagick-x86_64-apple-darwin17.7.0.tar.gz',  
+            
+            'path': 'ImageMagick-7.0.8',
+        },
+    },
+    'linux64': {
+        'ffmpeg': {
+            'type': 'static-url',
+            'url': 'https://www.johnvansickle.com/ffmpeg/old-releases/ffmpeg-4.0.3-64bit-static.tar.xz',  
+            
+            'path': 'ffmpeg-4.0.3-64bit-static',
+        },
+        
+        
+        
+        
+        'ImageMagick': {
+            'type': 'static-url',
+            'url': 'https://imagemagick.org/download/binaries/ImageMagick-x86_64-pc-linux-gnu.tar.gz',  
+            
+            'path': 'ImageMagick-6.9.2',
+        },
+    },
+    'win64': {
+        'ffmpeg': {
+            'type': 'static-url',
+            'url': 'https://ffmpeg.zeranoe.com/builds/win64/static/ffmpeg-4.1.1-win64-static.zip',  
+            
+            'path': 'ffmpeg-4.1.1-win64-static',
+        },
+        'ImageMagick': {
+            'type': 'static-url',
+            
+            
+            'url': 'https://ftp.icm.edu.pl/packages/ImageMagick/binaries/ImageMagick-7.0.8-39-portable-Q16-x64.zip',  
+            
+            'path': 'ImageMagick-7.0.8',
+        },
+    },
+}
 
 
 @CommandProvider
 class MachBrowsertime(MachCommandBase):
+    @property
+    def artifact_cache_path(self):
+        r'''Downloaded artifacts will be kept here.'''
+        
+        return mozpath.join(self._mach_context.state_dir, 'cache', 'browsertime')
+
+    @property
+    def state_path(self):
+        r'''Unpacked artifacts will be kept here.'''
+        
+        return mozpath.join(self._mach_context.state_dir, 'browsertime')
+
     def setup(self, should_clobber=False):
+        r'''Install browsertime and visualmetrics.py requirements.'''
+
+        from mozbuild.action.tooltool import unpack_file
+        from mozbuild.artifact_cache import ArtifactCache
+        sys.path.append(mozpath.join(self.topsrcdir, 'tools', 'lint', 'eslint'))
+        import setup_helper
+
+        
+        artifact_cache = ArtifactCache(self.artifact_cache_path,
+                                       log=self.log, skip_cache=False)
+
+        fetches = host_fetches[host_platform()]
+        for tool, fetch in sorted(fetches.items()):
+            archive = artifact_cache.fetch(fetch['url'])
+            
+
+            if fetch.get('unpack', True):
+                cwd = os.getcwd()
+                try:
+                    os.chdir(self.state_path)
+                    self.log(
+                        logging.INFO,
+                        'browsertime',
+                        {'path': archive},
+                        'Unpacking temporary location {path}')
+                    unpack_file(archive)
+                finally:
+                    os.chdir(cwd)
+
+        
         if not setup_helper.check_node_executables_valid():
             return 1
 
-        return setup_helper.package_setup(
-            os.path.dirname(__file__),
+        self.log(
+            logging.INFO,
+            'browsertime',
+            {'package_json': mozpath.join(BROWSERTIME_ROOT, 'package.json')},
+            'Installing browsertime node module from {package_json}')
+        status = setup_helper.package_setup(
+            BROWSERTIME_ROOT,
             'browsertime',
             should_clobber=should_clobber)
 
-    def node(self, args):
+        if status:
+            return status
+
+        return self.check()
+
+    @property
+    def node_path(self):
+        from mozbuild.nodeutil import find_node_executable
         node, _ = find_node_executable()
 
-        
-        
-        
-        
-        path = os.environ.get('PATH', '').split(os.pathsep)
-        node_path = os.path.dirname(node)
-        if node_path not in path:
-            path = [node_path] + path
+        return os.path.abspath(node)
 
+    def node(self, args):
+        r'''Invoke node (interactively) with the given arguments.'''
         return self.run_process(
-            [node] + args,
-            append_env={'PATH': os.pathsep.join(path)},
+            [self.node_path] + args,
+            append_env=self.append_env(),
             pass_thru=True,  
             ensure_exit_code=False,  
             cwd=mozpath.join(self.topsrcdir))
 
-    def bin_path(self):
+    @property
+    def package_path(self):
+        r'''The path to the `browsertime` directory.
+
+        Override the default with the `BROWSERTIME` environment variable.'''
+        override = os.environ.get('BROWSERTIME', None)
+        if override:
+            return override
+
+        return mozpath.join(BROWSERTIME_ROOT, 'node_modules', 'browsertime')
+
+    @property
+    def browsertime_path(self):
+        '''The path to the `browsertime.js` script.'''
         
         
         
         
         return mozpath.join(
-            os.path.dirname(__file__),
-            'node_modules',
-            'browsertime',
+            self.package_path,
             'bin',
             'browsertime.js')
+
+    @property
+    def visualmetrics_path(self):
+        '''The path to the `visualmetrics.py` script.'''
+        return mozpath.join(
+            self.package_path,
+            'vendor',
+            'visualmetrics.py')
+
+    def append_env(self, append_path=True):
+        fetches = host_fetches[host_platform()]
+
+        
+        
+        
+        
+        path = os.environ.get('PATH', '').split(os.pathsep) if append_path else []
+        path_to_ffmpeg = mozpath.join(
+            self.state_path,
+            fetches['ffmpeg']['path'])
+
+        path_to_imagemagick = mozpath.join(
+            self.state_path,
+            fetches['ImageMagick']['path'])
+
+        path = [
+            path_to_ffmpeg if host_platform().startswith('linux') else mozpath.join(path_to_ffmpeg, 'bin'),  
+            self.state_path if host_platform().startswith('win') else mozpath.join(path_to_imagemagick, 'bin'),  
+        ] + path
+
+        
+        
+        
+        
+        node_dir = os.path.dirname(self.node_path)
+        path = [node_dir] + path
+
+        
+        
+        path = [os.path.dirname(self.virtualenv_manager.python_path)] + path
+
+        return {
+            
+            'LD_LIBRARY_PATH': mozpath.join(path_to_imagemagick, 'lib'),
+            'DYLD_LIBRARY_PATH': mozpath.join(path_to_imagemagick, 'lib'),
+            'MAGICK_HOME': path_to_imagemagick,
+            'PATH': os.pathsep.join(path),
+        }
+
+    def _activate_virtualenv(self, *args, **kwargs):
+        MachCommandBase._activate_virtualenv(self, *args, **kwargs)
+
+        try:
+            self.virtualenv_manager.install_pip_package('Pillow==6.0.0')
+        except Exception:
+            print('Could not install Pillow from pip.')
+            return 1
+
+        try:
+            self.virtualenv_manager.install_pip_package('pyssim==0.4')
+        except Exception:
+            print('Could not install pyssim from pip.')
+            return 1
+
+    def check(self):
+        r'''Run `visualmetrics.py --check`.'''
+        self._activate_virtualenv()
+
+        args = ['--check']
+        status = self.run_process(
+            [self.virtualenv_manager.python_path, self.visualmetrics_path] + args,
+            
+            
+            
+            append_env=self.append_env(append_path=host_platform().startswith('linux')),
+            pass_thru=True,
+            ensure_exit_code=False,  
+            cwd=mozpath.join(self.topsrcdir))
+
+        sys.stdout.flush()
+        sys.stderr.flush()
+
+        if status:
+            return status
+
+        
+        self.log_manager.terminal_handler.setLevel(logging.CRITICAL)
+        print('browsertime version:', end=' ')
+
+        sys.stdout.flush()
+        sys.stderr.flush()
+
+        return self.node([self.browsertime_path] + ['--version'])
 
     @Command('browsertime', category='testing',
              description='Run [browsertime](https://github.com/sitespeedio/browsertime) '
@@ -93,13 +316,56 @@ class MachBrowsertime(MachCommandBase):
                      help='Verbose output for what commands the build is running.')
     @CommandArgument('--setup', default=False, action='store_true')
     @CommandArgument('--clobber', default=False, action='store_true')
+    @CommandArgument('--skip-cache', action='store_true',
+                     help='Skip all local caches to force re-fetching remote artifacts.',
+                     default=False)
+    @CommandArgument('--check', default=False, action='store_true')
     @CommandArgument('args', nargs=argparse.REMAINDER)
-    def browsertime(self, args, verbose=False, setup=False, clobber=False):
+    def browsertime(self, args, verbose=False,
+                    setup=False, clobber=False, skip_cache=False,
+                    check=False):
+        self._set_log_level(True)
+
         if setup:
             return self.setup(should_clobber=clobber)
 
-        if not verbose:
-            
-            self.log_manager.terminal_handler.setLevel(logging.CRITICAL)
+        if check:
+            return self.check()
 
-        return self.node([self.bin_path()] + args)
+        self._activate_virtualenv()
+
+        return self.node([self.browsertime_path] + args)
+
+    @Command('visualmetrics', category='testing',
+             description='Run visualmetrics.py')
+    @CommandArgument('video')
+    @CommandArgument('args', nargs=argparse.REMAINDER)
+    def visualmetrics(self, video, args):
+        self._set_log_level(True)
+        self._activate_virtualenv()
+
+        
+        d, base = os.path.split(video)
+        index, _ = os.path.splitext(base)
+
+        
+        args = ['--dir',  
+                mozpath.join(d, 'images', index),
+                '--video',
+                video,
+                '--orange',
+                '--perceptual',
+                '--force',
+                '--renderignore',
+                '5',
+                '--json',
+                '--viewport',
+                '-q',
+                '75',
+                '-vvvv']
+        return self.run_process(
+            [self.visualmetrics_path] + args,
+            append_env=self.append_env(),
+            pass_thru=True,
+            ensure_exit_code=False,  
+            cwd=mozpath.join(self.topsrcdir))
