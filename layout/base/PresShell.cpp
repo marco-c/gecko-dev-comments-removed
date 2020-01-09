@@ -10207,8 +10207,7 @@ void ReflowCountMgr::PaintCount(const char* aName,
 
       
       
-      nsFont font(StyleGenericFontFamily::Serif,
-                  nsPresContext::CSSPixelsToAppUnits(11));
+      nsFont font(eFamily_serif, nsPresContext::CSSPixelsToAppUnits(11));
       nsFontMetrics::Params params;
       params.language = nsGkAtoms::x_western;
       params.textPerf = aPresContext->GetTextPerfMetrics();

@@ -851,8 +851,8 @@ class gfxFontGroup final : public gfxTextRunFactory {
   
   
   
-  gfxFont* GetFirstValidFont(
-      uint32_t aCh = 0x20, mozilla::StyleGenericFontFamily* aGeneric = nullptr);
+  gfxFont* GetFirstValidFont(uint32_t aCh = 0x20,
+                             mozilla::FontFamilyType* aGeneric = nullptr);
 
   
   
@@ -1024,14 +1024,14 @@ class gfxFontGroup final : public gfxTextRunFactory {
     FamilyFace()
         : mFamily(nullptr),
           mFontEntry(nullptr),
-          mGeneric(mozilla::StyleGenericFontFamily::None),
+          mGeneric(mozilla::eFamily_none),
           mFontCreated(false),
           mLoading(false),
           mInvalid(false),
           mCheckForFallbackFaces(false) {}
 
     FamilyFace(gfxFontFamily* aFamily, gfxFont* aFont,
-               mozilla::StyleGenericFontFamily aGeneric)
+               mozilla::FontFamilyType aGeneric)
         : mFamily(aFamily),
           mGeneric(aGeneric),
           mFontCreated(true),
@@ -1046,7 +1046,7 @@ class gfxFontGroup final : public gfxTextRunFactory {
     }
 
     FamilyFace(gfxFontFamily* aFamily, gfxFontEntry* aFontEntry,
-               mozilla::StyleGenericFontFamily aGeneric)
+               mozilla::FontFamilyType aGeneric)
         : mFamily(aFamily),
           mGeneric(aGeneric),
           mFontCreated(false),
@@ -1115,7 +1115,7 @@ class gfxFontGroup final : public gfxTextRunFactory {
       return mFontCreated ? mFont->GetFontEntry() : mFontEntry;
     }
 
-    mozilla::StyleGenericFontFamily Generic() const { return mGeneric; }
+    mozilla::FontFamilyType Generic() const { return mGeneric; }
 
     bool IsUserFontContainer() const {
       return FontEntry()->mIsUserFontContainer;
@@ -1152,7 +1152,7 @@ class gfxFontGroup final : public gfxTextRunFactory {
       gfxFont* MOZ_OWNING_REF mFont;
       gfxFontEntry* MOZ_OWNING_REF mFontEntry;
     };
-    mozilla::StyleGenericFontFamily mGeneric;
+    mozilla::FontFamilyType mGeneric;
     bool mFontCreated : 1;
     bool mLoading : 1;
     bool mInvalid : 1;
@@ -1261,7 +1261,7 @@ class gfxFontGroup final : public gfxTextRunFactory {
 
   
   void AddFamilyToFontList(gfxFontFamily* aFamily,
-                           mozilla::StyleGenericFontFamily aGeneric);
+                           mozilla::FontFamilyType aGeneric);
 };
 
 

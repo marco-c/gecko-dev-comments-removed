@@ -40,6 +40,7 @@ StaticPresData::StaticPresData() {
 
 static const char* const kGenericFont[] = {
   ".variable.",
+  ".fixed.",
   ".serif.",
   ".sans-serif.",
   ".monospace.",
@@ -51,6 +52,7 @@ static const char* const kGenericFont[] = {
 
 enum {
   eDefaultFont_Variable,
+  eDefaultFont_Fixed,
   eDefaultFont_Serif,
   eDefaultFont_SansSerif,
   eDefaultFont_Monospace,
@@ -91,7 +93,7 @@ void LangGroupFontPrefs::Initialize(nsStaticAtom* aLangGroupAtom) {
   aLangGroupAtom->ToUTF8String(langGroup);
 
   mDefaultVariableFont.size = nsPresContext::CSSPixelsToAppUnits(16);
-  mDefaultMonospaceFont.size = nsPresContext::CSSPixelsToAppUnits(13);
+  mDefaultFixedFont.size = nsPresContext::CSSPixelsToAppUnits(13);
 
   nsAutoCString pref;
 
@@ -105,6 +107,7 @@ void LangGroupFontPrefs::Initialize(nsStaticAtom* aLangGroupAtom) {
   
   nsFont* fontTypes[] = {
     &mDefaultVariableFont,
+    &mDefaultFixedFont,
     &mDefaultSerifFont,
     &mDefaultSansSerifFont,
     &mDefaultMonospaceFont,
@@ -138,10 +141,10 @@ void LangGroupFontPrefs::Initialize(nsStaticAtom* aLangGroupAtom) {
       Preferences::GetCString(pref.get(), value);
       if (!value.IsEmpty()) {
         FontFamilyName defaultVariableName = FontFamilyName::Convert(value);
-        StyleGenericFontFamily defaultType = defaultVariableName.mGeneric;
-        NS_ASSERTION(defaultType == StyleGenericFontFamily::Serif ||
-                         defaultType == StyleGenericFontFamily::SansSerif,
-                     "default type must be serif or sans-serif");
+        FontFamilyType defaultType = defaultVariableName.mType;
+        NS_ASSERTION(
+            defaultType == eFamily_serif || defaultType == eFamily_sans_serif,
+            "default type must be serif or sans-serif");
         mDefaultVariableFont.fontlist = FontFamilyList();
         mDefaultVariableFont.fontlist.SetDefaultFontType(defaultType);
         
@@ -152,10 +155,10 @@ void LangGroupFontPrefs::Initialize(nsStaticAtom* aLangGroupAtom) {
         Preferences::GetCString(pref.get(), value);
         if (!value.IsEmpty()) {
           FontFamilyName defaultVariableName = FontFamilyName::Convert(value);
-          StyleGenericFontFamily defaultType = defaultVariableName.mGeneric;
-          NS_ASSERTION(defaultType == StyleGenericFontFamily::Serif ||
-                           defaultType == StyleGenericFontFamily::SansSerif,
-                       "default type must be serif or sans-serif");
+          FontFamilyType defaultType = defaultVariableName.mType;
+          NS_ASSERTION(
+              defaultType == eFamily_serif || defaultType == eFamily_sans_serif,
+              "default type must be serif or sans-serif");
           mDefaultVariableFont.fontlist = FontFamilyList();
           mDefaultVariableFont.fontlist.SetDefaultFontType(defaultType);
           
@@ -164,7 +167,14 @@ void LangGroupFontPrefs::Initialize(nsStaticAtom* aLangGroupAtom) {
         }
       }
     } else {
-      if (eType != eDefaultFont_Monospace) {
+      if (eType == eDefaultFont_Monospace) {
+        
+        
+        
+        
+        
+        mDefaultMonospaceFont.size = mDefaultFixedFont.size;
+      } else if (eType != eDefaultFont_Fixed) {
         
         
         

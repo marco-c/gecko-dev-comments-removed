@@ -301,7 +301,7 @@ class gfxFcPlatformFontList : public gfxPlatformFontList {
   FcConfig* GetLastConfig() const { return mLastConfig; }
 
   
-  void AddGenericFonts(mozilla::StyleGenericFontFamily, nsAtom* aLanguage,
+  void AddGenericFonts(mozilla::FontFamilyType aGenericType, nsAtom* aLanguage,
                        nsTArray<FamilyAndGeneric>& aFamilyList) override;
 
   void ClearLangGroupPrefFonts() override;

@@ -53,12 +53,13 @@ nsSimplePageSequenceFrame::nsSimplePageSequenceFrame(
   nscoord halfInch = PresContext()->CSSTwipsToAppUnits(NS_INCHES_TO_TWIPS(0.5));
   mMargin.SizeTo(halfInch, halfInch, halfInch, halfInch);
 
+  
   mPageData = new nsSharedPageData();
   mPageData->mHeadFootFont =
       *PresContext()
            ->Document()
            ->GetFontPrefsForLang(aStyle->StyleFont()->mLanguage)
-           ->GetDefaultFont(StyleGenericFontFamily::Serif);
+           ->GetDefaultFont(kGenericFont_serif);
   mPageData->mHeadFootFont.size = nsPresContext::CSSPointsToAppUnits(10);
 
   
