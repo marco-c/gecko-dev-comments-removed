@@ -19,10 +19,10 @@ requestLongerTimeout(5);
 
 
 const EXPECTED_REFLOWS_FIRST_OPEN = [];
-if (AppConstants.platform != "macosx" &&
-    (AppConstants.DEBUG ||
-     AppConstants.platform == "linux" ||
-     AppConstants.isPlatformAndVersionAtLeast("win", "10"))) {
+if (AppConstants.platform == "linux" ||
+    AppConstants.platform == "win" ||
+    
+    AppConstants.isPlatformAndVersionAtLeast("macosx", "18")) {
   EXPECTED_REFLOWS_FIRST_OPEN.push({
     stack: [
       "__rebuild@chrome://browser/content/search/search-one-offs.js",
