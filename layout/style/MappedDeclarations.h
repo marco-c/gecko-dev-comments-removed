@@ -179,7 +179,7 @@ class MappedDeclarations final {
 
   
   void SetFontFamily(const nsString& aValue) {
-    Servo_DeclarationBlock_SetFontFamily(mDecl, aValue);
+    Servo_DeclarationBlock_SetFontFamily(mDecl, &aValue);
   }
 
   

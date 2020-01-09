@@ -65,6 +65,14 @@ pub unsafe trait HasBoxFFI: HasSimpleFFI {
     fn into_ffi(self: Box<Self>) -> Owned<Self::FFIType> {
         unsafe { transmute(self) }
     }
+
+    
+    
+    
+    #[inline]
+    unsafe fn drop_ffi(ptr: *mut Self::FFIType) {
+        let _ = Box::from_raw(ptr as *mut Self);
+    }
 }
 
 
@@ -268,14 +276,6 @@ pub struct Owned<GeckoType> {
 }
 
 impl<GeckoType> Owned<GeckoType> {
-    
-    pub fn into_box<ServoType>(self) -> Box<ServoType>
-    where
-        ServoType: HasBoxFFI<FFIType = GeckoType>,
-    {
-        unsafe { transmute(self) }
-    }
-
     
     pub fn maybe(self) -> OwnedOrNull<GeckoType> {
         unsafe { transmute(self) }

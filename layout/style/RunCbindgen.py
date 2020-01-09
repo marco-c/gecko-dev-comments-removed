@@ -7,10 +7,17 @@ import buildconfig
 import mozpack.path as mozpath
 import os
 import subprocess
+import pytoml
+
+
+def _get_crate_name(crate_path):
+    try:
+        with open(mozpath.join(crate_path, "Cargo.toml")) as f:
+          return pytoml.load(f)["package"]["name"]
+    except:
+        return mozpath.basename(crate_path)
 
 CARGO_LOCK = mozpath.join(buildconfig.topsrcdir, "Cargo.lock")
-
-
 
 def generate(output, cbindgen_crate_path, *in_tree_dependencies):
     env = os.environ.copy()
@@ -22,7 +29,7 @@ def generate(output, cbindgen_crate_path, *in_tree_dependencies):
         "--lockfile",
         CARGO_LOCK,
         "--crate",
-        mozpath.basename(cbindgen_crate_path),
+        _get_crate_name(cbindgen_crate_path)
     ], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     stdout, stderr = p.communicate()

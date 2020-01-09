@@ -240,7 +240,7 @@ struct GridTemplateAreasValue final {
 }  
 }  
 
-enum nsCSSUnit {
+enum nsCSSUnit : uint32_t {
   eCSSUnit_Null = 0,     
   eCSSUnit_Auto = 1,     
   eCSSUnit_Inherit = 2,  
