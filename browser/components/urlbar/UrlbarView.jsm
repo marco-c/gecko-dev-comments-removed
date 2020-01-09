@@ -93,7 +93,8 @@ class UrlbarView {
       return val;
     }
 
-    let items = this._rows.children;
+    let items = Array.from(this._rows.children)
+                     .filter(r => r.style.display != "none");
     if (val >= items.length) {
       throw new Error(`UrlbarView: Index ${val} is out of bounds.`);
     }
@@ -144,20 +145,26 @@ class UrlbarView {
 
     let row = this._selected;
 
+    
+    let lastElementChild = this._rows.lastElementChild;
+    while (lastElementChild && lastElementChild.style.display == "none") {
+      lastElementChild = lastElementChild.previousElementSibling;
+    }
+
     if (!row) {
-      this._selectItem(reverse ? this._rows.lastElementChild :
+      this._selectItem(reverse ? lastElementChild :
                                  this._rows.firstElementChild);
       return;
     }
 
     let endReached = reverse ?
       (row == this._rows.firstElementChild) :
-      (row == this._rows.lastElementChild);
+      (row == lastElementChild);
     if (endReached) {
       if (this.allowEmptySelection) {
         row = null;
       } else {
-        row = reverse ? this._rows.lastElementChild :
+        row = reverse ? lastElementChild :
                         this._rows.firstElementChild;
       }
       this._selectItem(row);
@@ -168,6 +175,9 @@ class UrlbarView {
       let next = reverse ? row.previousElementSibling : row.nextElementSibling;
       if (!next) {
         break;
+      }
+      if (next.style.display == "none") {
+        continue;
       }
       row = next;
     }
@@ -387,20 +397,98 @@ class UrlbarView {
     this.panel.openPopup(this.input.textbox, "after_start");
   }
 
-  _updateResults(queryContext) {
-    let results = queryContext.results;
-    let i = 0;
-    for (let row of this._rows.children) {
-      if (i < results.length) {
-        this._updateRow(row, results[i]);
-      } else {
-        row.setAttribute("stale", "true");
-      }
-      i++;
+  
+
+
+
+
+  _resultIsSearchSuggestion(result) {
+    return Boolean(result &&
+                   result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
+                   result.payload.suggestion);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  _rowCanUpdateToResult(rowIndex, result, firstSearchSuggestionIndex,
+                        lastSearchSuggestionIndex) {
+    
+    if (result.heuristic) {
+      return true;
     }
-    for (; i < results.length; i++) {
+    let row = this._rows.children[rowIndex];
+    let resultIsSearchSuggestion = this._resultIsSearchSuggestion(result);
+    
+    if (resultIsSearchSuggestion == this._resultIsSearchSuggestion(row.result)) {
+      return true;
+    }
+    
+    
+    
+    
+    return resultIsSearchSuggestion && rowIndex >= firstSearchSuggestionIndex;
+  }
+
+  _updateResults(queryContext) {
+    
+    
+    
+
+    
+    let firstSearchSuggestionIndex = -1;
+    let lastSearchSuggestionIndex = -1;
+    for (let i = 0; i < this._rows.children.length; ++i) {
+      let row = this._rows.children[i];
+      
+      row.setAttribute("stale", "true");
+      
+      
+      if (row.result.heuristic ||
+          i >= queryContext.maxResults ||
+          !this._resultIsSearchSuggestion(row.result)) {
+        continue;
+      }
+      if (firstSearchSuggestionIndex == -1) {
+        firstSearchSuggestionIndex = i;
+      }
+      lastSearchSuggestionIndex = i;
+    }
+
+    
+    
+    
+    let results = queryContext.results;
+    let resultIndex = 0;
+    
+    for (let rowIndex = 0;
+         rowIndex < this._rows.children.length && resultIndex < results.length;
+         ++rowIndex) {
+      let row = this._rows.children[rowIndex];
+      let result = results[resultIndex];
+      if (this._rowCanUpdateToResult(rowIndex, result,
+                                     firstSearchSuggestionIndex,
+                                     lastSearchSuggestionIndex)) {
+        this._updateRow(row, result);
+        resultIndex++;
+      }
+    }
+    
+    for (; resultIndex < results.length; ++resultIndex) {
       let row = this._createRow();
-      this._updateRow(row, results[i]);
+      this._updateRow(row, results[resultIndex]);
+      
+      
+      if (this._rows.children.length >= queryContext.maxResults) {
+        row.style.display = "none";
+      }
       this._rows.appendChild(row);
     }
   }
@@ -552,6 +640,8 @@ class UrlbarView {
       let next = row.previousElementSibling;
       if (row.hasAttribute("stale")) {
         row.remove();
+      } else {
+        row.style.display = "";
       }
       row = next;
     }
