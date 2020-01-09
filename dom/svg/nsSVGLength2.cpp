@@ -22,6 +22,42 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
+
+
+
+
+class MOZ_RAII AutoChangeLengthNotifier {
+ public:
+  AutoChangeLengthNotifier(
+      nsSVGLength2* aLength, SVGElement* aSVGElement,
+      bool aDoSetAttr = true MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+      : mLength(aLength), mSVGElement(aSVGElement), mDoSetAttr(aDoSetAttr) {
+    MOZ_GUARD_OBJECT_NOTIFIER_INIT;
+    MOZ_ASSERT(mLength, "Expecting non-null length");
+    MOZ_ASSERT(mSVGElement, "Expecting non-null element");
+
+    if (mDoSetAttr) {
+      mEmptyOrOldValue = mSVGElement->WillChangeLength(mLength->mAttrEnum);
+    }
+  }
+
+  ~AutoChangeLengthNotifier() {
+    if (mDoSetAttr) {
+      mSVGElement->DidChangeLength(mLength->mAttrEnum, mEmptyOrOldValue);
+    }
+    if (mLength->mIsAnimated) {
+      mSVGElement->AnimationNeedsResample();
+    }
+  }
+
+ private:
+  nsSVGLength2* const mLength;
+  SVGElement* const mSVGElement;
+  nsAttrValue mEmptyOrOldValue;
+  bool mDoSetAttr;
+  MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
+};
+
 static const nsStaticAtom* const unitMap[] = {
     nullptr, 
     nullptr, 
@@ -231,19 +267,12 @@ void nsSVGLength2::SetBaseValueInSpecifiedUnits(float aValue,
     return;
   }
 
-  nsAttrValue emptyOrOldValue;
-  if (aDoSetAttr) {
-    emptyOrOldValue = aSVGElement->WillChangeLength(mAttrEnum);
-  }
+  AutoChangeLengthNotifier notifier(this, aSVGElement, aDoSetAttr);
+
   mBaseVal = aValue;
   mIsBaseSet = true;
   if (!mIsAnimated) {
     mAnimVal = mBaseVal;
-  } else {
-    aSVGElement->AnimationNeedsResample();
-  }
-  if (aDoSetAttr) {
-    aSVGElement->DidChangeLength(mAttrEnum, emptyOrOldValue);
   }
 }
 
@@ -270,14 +299,12 @@ nsresult nsSVGLength2::ConvertToSpecifiedUnits(uint16_t unitType,
   
   
   
-  nsAttrValue emptyOrOldValue = aSVGElement->WillChangeLength(mAttrEnum);
+  AutoChangeLengthNotifier notifier(this, aSVGElement);
 
   mSpecifiedUnitType = uint8_t(unitType);
   
   
   SetBaseValueInSpecifiedUnits(valueInSpecifiedUnits, aSVGElement, false);
-
-  aSVGElement->DidChangeLength(mAttrEnum, emptyOrOldValue);
 
   return NS_OK;
 }
@@ -294,16 +321,14 @@ nsresult nsSVGLength2::NewValueSpecifiedUnits(uint16_t unitType,
     return NS_OK;
   }
 
-  nsAttrValue emptyOrOldValue = aSVGElement->WillChangeLength(mAttrEnum);
+  AutoChangeLengthNotifier notifier(this, aSVGElement);
+
   mBaseVal = valueInSpecifiedUnits;
   mIsBaseSet = true;
   mSpecifiedUnitType = uint8_t(unitType);
   if (!mIsAnimated) {
     mAnimVal = mBaseVal;
-  } else {
-    aSVGElement->AnimationNeedsResample();
   }
-  aSVGElement->DidChangeLength(mAttrEnum, emptyOrOldValue);
   return NS_OK;
 }
 
@@ -334,22 +359,15 @@ nsresult nsSVGLength2::SetBaseValueString(const nsAString& aValueAsString,
     return NS_OK;
   }
 
-  nsAttrValue emptyOrOldValue;
-  if (aDoSetAttr) {
-    emptyOrOldValue = aSVGElement->WillChangeLength(mAttrEnum);
-  }
+  AutoChangeLengthNotifier notifier(this, aSVGElement, aDoSetAttr);
+
   mBaseVal = value;
   mIsBaseSet = true;
   mSpecifiedUnitType = uint8_t(unitType);
   if (!mIsAnimated) {
     mAnimVal = mBaseVal;
-  } else {
-    aSVGElement->AnimationNeedsResample();
   }
 
-  if (aDoSetAttr) {
-    aSVGElement->DidChangeLength(mAttrEnum, emptyOrOldValue);
-  }
   return NS_OK;
 }
 
