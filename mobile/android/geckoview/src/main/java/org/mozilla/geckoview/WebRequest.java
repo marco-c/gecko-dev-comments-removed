@@ -34,12 +34,6 @@ public class WebRequest extends WebMessage {
 
 
 
-    public final @Nullable ByteBuffer body;
-
-    
-
-
-
 
 
     public final @CacheMode int cacheMode;
@@ -110,12 +104,6 @@ public class WebRequest extends WebMessage {
         method = builder.mMethod;
         cacheMode = builder.mCacheMode;
         referrer = builder.mReferrer;
-
-        if (builder.mBody != null) {
-            body = builder.mBody.asReadOnlyBuffer();
-        } else {
-            body = null;
-        }
     }
 
     
@@ -154,18 +142,9 @@ public class WebRequest extends WebMessage {
             return this;
         }
 
-        
-
-
-
-
-
-
-        public @NonNull Builder body(final @Nullable ByteBuffer buffer) {
-            if (buffer != null && !buffer.isDirect()) {
-                throw new IllegalArgumentException("body must be directly allocated");
-            }
-            mBody = buffer;
+        @Override
+        public @NonNull Builder body(@Nullable ByteBuffer buffer) {
+            super.body(buffer);
             return this;
         }
 
