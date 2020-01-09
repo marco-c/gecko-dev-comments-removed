@@ -238,6 +238,19 @@ HTMLTextFieldAccessible::NativeAttributes() {
     }
   }
 
+  
+  
+  nsAutoString placeholderText;
+  if (mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::placeholder,
+                                     placeholderText)) {
+    nsAutoString name;
+    const_cast<HTMLTextFieldAccessible*>(this)->Name(name);
+    if (!name.Equals(placeholderText)) {
+      nsAccUtils::SetAccAttr(attributes, nsGkAtoms::placeholder,
+                             placeholderText);
+    }
+  }
+
   return attributes.forget();
 }
 
