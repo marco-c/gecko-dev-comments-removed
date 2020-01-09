@@ -13,6 +13,8 @@
 namespace ots {
 
 
+const uint16_t kMaxClassDefValue = 0xFFFF;
+
 struct LookupSubtableParser {
   struct TypeParser {
     uint16_t type;

@@ -37,8 +37,6 @@ const unsigned kGposHeaderSize_1_1 = 14;
 
 const uint16_t kMaxAnchorFormat = 3;
 
-const uint16_t kMaxClassDefValue = 0xFFFF;
-
 
 bool ParseSingleAdjustment(const ots::Font *font,
                            const uint8_t *data, const size_t length);
@@ -395,12 +393,12 @@ bool ParsePairPosFormat2(const ots::Font *font,
   
   if (!ots::ParseClassDefTable(font, data + offset_class_def1,
                                length - offset_class_def1,
-                               num_glyphs, kMaxClassDefValue)) {
+                               num_glyphs, ots::kMaxClassDefValue)) {
     return OTS_FAILURE_MSG("Failed to parse class definition table 1");
   }
   if (!ots::ParseClassDefTable(font, data + offset_class_def2,
                                length - offset_class_def2,
-                               num_glyphs, kMaxClassDefValue)) {
+                               num_glyphs, ots::kMaxClassDefValue)) {
     return OTS_FAILURE_MSG("Failed to parse class definition table 2");
   }
 
