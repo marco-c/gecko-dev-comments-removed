@@ -118,7 +118,7 @@ class StartupCache : public nsIMemoryReporter {
                      uint32_t length);
 
   
-  void InvalidateCache();
+  void InvalidateCache(bool memoryOnly = false);
 
   
   static void IgnoreDiskCache();
