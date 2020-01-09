@@ -40,6 +40,10 @@ async function openTwoTabsAndOpenTabMenu(onTabMenuClicked) {
   await extension.awaitMessage("ready");
 
   
+  
+  gBrowser.selectedTab.focus();
+
+  
   let menu = await openChromeContextMenu("tabContextMenu", ".tabbrowser-tab", window);
   let menuItem = menu.getElementsByAttribute("label", "menu item on tab")[0];
   await closeTabContextMenu(menuItem);
