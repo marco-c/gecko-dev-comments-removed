@@ -492,7 +492,6 @@ var gEventManager = {
 
       
       menuSep.hidden = (countMenuItemsBeforeSep == 0);
-
     });
 
     let addonTooltip = document.getElementById("addonitem-tooltip");
@@ -1677,7 +1676,6 @@ function sortElements(aElements, aSortBy, aAscending) {
     
     
     return 0;
-
   });
 }
 

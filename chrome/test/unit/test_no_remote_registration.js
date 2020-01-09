@@ -118,7 +118,6 @@ function run_test() {
   
   let old_factory = {CID: "", factory: null};
   if (!registrar.isCIDRegistered(XULAppInfoFactory.CID)) {
-
     
     
     

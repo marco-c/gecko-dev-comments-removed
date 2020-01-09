@@ -17,7 +17,6 @@ function run_test() {
 
 
 add_task(async function test_fill_notification_buffer() {
-
   
   
   let watchedDir = OS.Path.join(OS.Constants.Path.profileDir, "filewatcher_playground");

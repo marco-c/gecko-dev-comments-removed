@@ -201,7 +201,6 @@ function unregisterAutoCompleteSearch(aSearch) {
 
 
 function run_test() {
-
   
   var emptySearch = new AutoCompleteSearch("test-empty-search",
                              new AutoCompleteResult([], [], []));
@@ -223,7 +222,6 @@ function run_test() {
   };
 
   input.onSearchComplete = function() {
-
     Assert.equal(numSearchesStarted, 1);
 
     Assert.equal(controller.searchStatus,

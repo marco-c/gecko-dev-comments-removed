@@ -241,7 +241,6 @@ function safeGetState(fetchState) {
     }
     return data;
   } catch (ex) {
-
     
     Promise.reject(ex);
 
@@ -833,7 +832,6 @@ Barrier.prototype = Object.freeze({
     return this._promise = this._wait(options);
   },
   _wait(options) {
-
     
     if (this._isStarted) {
       throw new TypeError("Internal error: already started " + this._name);

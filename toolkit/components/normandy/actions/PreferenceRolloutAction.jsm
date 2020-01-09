@@ -68,7 +68,6 @@ class PreferenceRolloutAction extends BaseAction {
       } else {
         this.log.debug(`No updates to preference rollout ${args.slug}`);
       }
-
     } else { 
       
       if (newRollout.preferences.every(({value, previousValue}) => value === previousValue)) {

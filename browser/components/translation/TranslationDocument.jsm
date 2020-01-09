@@ -564,7 +564,6 @@ function swapTextForItem(item, target) {
     
     
     for (let targetItem of curItem[target]) {
-
       if (targetItem instanceof TranslationItem) {
         
         
@@ -580,7 +579,6 @@ function swapTextForItem(item, target) {
             
             
             targetNode.parentNode == domNode) {
-
           
           
           
@@ -595,7 +593,6 @@ function swapTextForItem(item, target) {
         if (curNode) {
           curNode = getNextSiblingSkippingEmptyTextNodes(curNode);
         }
-
       } else if (targetItem === TranslationItem_NodePlaceholder) {
         
         
@@ -609,7 +606,6 @@ function swapTextForItem(item, target) {
                 curNode.nodeValue.trim() == "")) {
           curNode = curNode.nextSibling;
         }
-
       } else {
         
         

@@ -89,7 +89,6 @@ function fakeIdleNotification(topic) {
 }
 
 function setupTestData() {
-
   Services.startup.interrupted = true;
   let h2 = Telemetry.getHistogramById("TELEMETRY_TEST_COUNT");
   h2.add();
@@ -486,7 +485,6 @@ add_task(async function asyncSetup() {
 
 
 add_task(async function test_expiredHistogram() {
-
   let dummy = Telemetry.getHistogramById("TELEMETRY_TEST_EXPIRED");
 
   dummy.add(1);

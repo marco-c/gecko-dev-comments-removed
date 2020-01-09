@@ -14,7 +14,6 @@
 
 
 
-
 if (window.MozXULElement) {
   return;
 }
@@ -48,7 +47,6 @@ gXULDOMParser.forceEnableXULXBL();
 const MozElements = {};
 
 const MozElementMixin = Base => class MozElement extends Base {
-
   
 
 

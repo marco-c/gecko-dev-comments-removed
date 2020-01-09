@@ -445,7 +445,6 @@ Promise.prototype.then = function(aOnResolve, aOnReject) {
   
   
   if (this[N_INTERNALS].status != STATUS_PENDING) {
-
     
     if (this[N_INTERNALS].witness != null) {
       let [id, witness] = this[N_INTERNALS].witness;
@@ -928,12 +927,10 @@ Handler.prototype = {
         nextStatus = STATUS_RESOLVED;
       }
     } catch (ex) {
-
       
 
       if (ex && typeof ex == "object" && "name" in ex &&
           ERRORS_TO_REPORT.includes(ex.name)) {
-
         
         
         
@@ -948,7 +945,6 @@ Handler.prototype = {
         dump("Full message: " + ex + "\n");
         dump("Full stack: " + (("stack" in ex) ? ex.stack : "not available") + "\n");
         dump("*************************\n");
-
       }
 
       

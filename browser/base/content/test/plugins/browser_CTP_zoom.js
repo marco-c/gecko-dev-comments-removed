@@ -43,7 +43,6 @@ add_task(async function() {
 
 add_task(async function() {
   for (let count = 0; count < 4; count++) {
-
     FullZoom.enlarge();
 
     

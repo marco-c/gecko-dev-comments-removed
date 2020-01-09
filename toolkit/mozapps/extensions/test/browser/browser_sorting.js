@@ -214,7 +214,6 @@ function check_order(aExpectedOrder) {
 
 
 add_test(function() {
-
   check_order([
     "test2@tests.mozilla.org",
     "test4@tests.mozilla.org",

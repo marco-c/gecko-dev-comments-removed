@@ -936,7 +936,6 @@ function makeURLAbsolute(aBase, aUrl) {
 
 
 function openNewTabWith(aURL, aShiftKey, aParams = {}) {
-
   
   
   if (document.documentElement.getAttribute("windowtype") == "navigator:browser")

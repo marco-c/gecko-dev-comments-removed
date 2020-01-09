@@ -52,7 +52,6 @@ ChromeUtils.defineModuleGetter(this, "pktApi",
   "chrome://pocket/content/pktApi.jsm");
 
 var pktUI = (function() {
-
     
 
     
@@ -151,7 +150,6 @@ var pktUI = (function() {
 
 
     function saveAndShowConfirmation(url, title) {
-
         
         if (typeof url !== "undefined" && url.startsWith("about:reader?url=")) {
             url = ReaderMode.getOriginalUrl(url);
@@ -470,7 +468,6 @@ var pktUI = (function() {
             }
             pktUIMessaging.sendResponseMessageToPanel(panelId, _initL10NMessageId, { strings });
         });
-
     }
 
     
@@ -575,7 +572,6 @@ var pktUI = (function() {
 
 
 var pktUIMessaging = (function() {
-
     
 
 
@@ -602,7 +598,6 @@ var pktUIMessaging = (function() {
 
             
             e.target.remove();
-
         }, false, true);
     }
 
@@ -610,7 +605,6 @@ var pktUIMessaging = (function() {
 
 
     function sendMessageToPanel(panelId, messageId, payload) {
-
         if (!isPanelIdValid(panelId)) { return; }
 
         var panelFrame = pktUI.getPanelFrame();

@@ -22,7 +22,6 @@ add_task(async function test_watching_non_existing() {
   
   let watcher = makeWatcher();
   let error = await new Promise((resolve, reject) => {
-
     
     watcher.addPath(notExistingDir, reject, resolve);
 

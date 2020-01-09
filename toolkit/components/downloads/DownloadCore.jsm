@@ -901,7 +901,6 @@ this.Download.prototype = {
       
       if ((this.hasPartialData || this.hasBlockedData) &&
           this.target.partFilePath) {
-
         try {
           let stat = await OS.File.stat(this.target.partFilePath);
 
@@ -2459,7 +2458,6 @@ this.DownloadLegacySaver.prototype = {
       }
 
       await this._checkReputationAndMove(aSetPropertiesFn);
-
     } catch (ex) {
       
       

@@ -47,7 +47,6 @@ function test() {
 
 
 function loadPinningPage() {
-
   BrowserTestUtils.loadURI(gBrowser.selectedBrowser, "https://" + kPinningDomain + kURLPath + "valid").then(function() {
       BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser).then(() => successfulPinningPageListener.handleEvent());
   });

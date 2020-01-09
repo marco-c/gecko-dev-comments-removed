@@ -117,7 +117,6 @@ function expectedArraysToObjs(expectedArrays) {
         sessions: arr[3].sort(), 
         extras: arr[4],
       };
-
     } else if (type === "session") {
       return {
         type: type,

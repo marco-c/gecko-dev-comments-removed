@@ -7,7 +7,6 @@
 
 
 {
-
 class MozRadiogroup extends MozElements.BaseControl {
   constructor() {
     super();
@@ -394,5 +393,4 @@ MozXULElement.implementCustomInterface(MozRadiogroup, [
 ]);
 
 customElements.define("radiogroup", MozRadiogroup);
-
 }

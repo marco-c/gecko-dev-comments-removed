@@ -151,7 +151,6 @@ class GeckoViewSelectionActionChild extends GeckoViewChildModule {
          "releasecaret",
          "taponcaret",
          "updateposition"].includes(reason)) {
-
       const actions = this._actions.filter(
           action => action.predicate.call(this, aEvent));
 
@@ -212,12 +211,10 @@ class GeckoViewSelectionActionChild extends GeckoViewChildModule {
           
         },
       });
-
     } else if (["invisibleselection",
                 "presscaret",
                 "scroll",
                 "visibilitychange"].includes(reason)) {
-
       if (!this._isActive) {
         return;
       }
@@ -235,7 +232,6 @@ class GeckoViewSelectionActionChild extends GeckoViewChildModule {
         type: "GeckoView:HideSelectionAction",
         reason: reason,
       });
-
     } else {
       warn `Unknown reason: ${reason}`;
     }

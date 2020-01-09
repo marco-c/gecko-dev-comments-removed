@@ -7,7 +7,6 @@
 
 
 {
-
 const cachedFragments = {
   get entities() {
     return [
@@ -198,5 +197,4 @@ class MozInputBox extends MozXULElement {
 }
 
 customElements.define("moz-input-box", MozInputBox);
-
 }

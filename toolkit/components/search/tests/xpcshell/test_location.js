@@ -13,7 +13,6 @@ function run_test() {
       let histogram = Services.telemetry.getHistogramById(hid);
       let snapshot = histogram.snapshot();
       deepEqual(snapshot.values, {0: 1, 1: 0}); 
-
     }
 
     

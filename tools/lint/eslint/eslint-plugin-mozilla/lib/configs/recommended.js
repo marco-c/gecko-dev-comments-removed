@@ -329,6 +329,9 @@ module.exports = {
     "object-shorthand": ["error", "always", { "avoidQuotes": true }],
 
     
+    "padded-blocks": ["error", "never"],
+
+    
     
     "quotes": ["error", "double", {
       "allowTemplateLiterals": true,

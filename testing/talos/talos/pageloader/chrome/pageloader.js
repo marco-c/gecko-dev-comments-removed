@@ -230,7 +230,6 @@ function plInit() {
           content.selectedBrowser.messageManager.loadFrameScript("chrome://pageloader/content/lh_hero.js", false, true);
         } else {
           content.selectedBrowser.messageManager.loadFrameScript("chrome://pageloader/content/lh_dummy.js", false, true);
-
         }
         content.selectedBrowser.messageManager.loadFrameScript("chrome://pageloader/content/talos-content.js", false);
         content.selectedBrowser.messageManager.loadFrameScript("resource://talos-powers/TalosContentProfiler.js", false, true);
@@ -607,7 +606,6 @@ function plLoadHandler(evt) {
 
 
 function waitForPainted() {
-
   var utils = gPaintWindow.windowUtils;
 
   if (!utils.isMozAfterPaintPending || !useMozAfterPaint) {

@@ -444,7 +444,6 @@ class AddonInternal {
     
     if (!this.strictCompatibility &&
         (!AddonManager.strictCompatibility || this.type == "dictionary")) {
-
       
       
       let overrides = AddonRepository.getCompatibilityOverridesSync(this.id);

@@ -1,6 +1,5 @@
 
 function run_test() {
-
   test_getElementsByTagName();
   test_getElementsByTagNameNS();
   test_getElementsByAttribute();
@@ -8,7 +7,6 @@ function run_test() {
 
   
   
-
 }
 
 function test_getElementsByTagName() {

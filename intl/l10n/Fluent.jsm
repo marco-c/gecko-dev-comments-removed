@@ -28,7 +28,6 @@
 
 
 class FluentType {
-
   
 
 
@@ -1027,7 +1026,6 @@ class FluentResource extends Map {
 
 
 class FluentBundle {
-
   
 
 

@@ -280,7 +280,6 @@ function promiseMessage(aMessage, aAction) {
 
 function promisePopupNotificationShown(aName, aAction) {
   return new Promise(resolve => {
-
     
     window.focus();
 
@@ -294,13 +293,11 @@ function promisePopupNotificationShown(aName, aAction) {
 
     if (aAction)
       aAction();
-
   });
 }
 
 function promisePopupNotification(aName) {
   return new Promise(resolve => {
-
     waitForCondition(() => PopupNotifications.getNotification(aName),
                      () => {
       ok(!!PopupNotifications.getNotification(aName),
@@ -308,20 +305,17 @@ function promisePopupNotification(aName) {
 
       resolve();
     }, "timeout waiting for popup notification " + aName);
-
   });
 }
 
 function promiseNoPopupNotification(aName) {
   return new Promise(resolve => {
-
     waitForCondition(() => !PopupNotifications.getNotification(aName),
                      () => {
       ok(!PopupNotifications.getNotification(aName),
          aName + " notification removed");
       resolve();
     }, "timeout waiting for popup notification " + aName + " to disappear");
-
   });
 }
 

@@ -37,7 +37,6 @@ function test_removed_mapping(chromeURL, target) {
 }
 
 function testManifest(manifestPath, baseURI) {
-
   
   Components.manager.addBootstrappedManifestLocation(manifestPath);
 

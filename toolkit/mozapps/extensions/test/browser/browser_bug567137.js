@@ -12,7 +12,6 @@ async function test() {
 
   
   utils.openType("plugin", async function() {
-
     
     await close_manager(aWindow);
     aWindow = await open_manager(null);
@@ -22,7 +21,6 @@ async function test() {
 
     
     utils.openType("extension", async function() {
-
       
       await close_manager(aWindow);
       aWindow = await open_manager(null);

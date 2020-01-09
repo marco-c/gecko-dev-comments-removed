@@ -403,7 +403,6 @@ HashCompleterRequest.prototype = {
 
       aCallback();
     });
-
   },
 
   

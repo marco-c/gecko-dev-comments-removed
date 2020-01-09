@@ -2575,7 +2575,6 @@ function displayRichPingData(ping, updatePayloadList) {
 
   
   SimpleMeasurements.render(payload);
-
 }
 
 window.addEventListener("load", onLoad);

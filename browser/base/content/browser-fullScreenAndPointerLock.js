@@ -57,7 +57,6 @@ var PointerlockFsWarning = {
   
   
   show(aOrigin, elementId, timeout, delay) {
-
     if (!this._element) {
       this._element = document.getElementById(elementId);
       
@@ -412,7 +411,6 @@ var FullScreen = {
   },
 
   enterDomFullscreen(aBrowser) {
-
     if (!document.fullscreenElement) {
       return;
     }

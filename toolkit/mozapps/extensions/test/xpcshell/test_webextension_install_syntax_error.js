@@ -6,7 +6,6 @@ add_task(async function setup() {
 });
 
 add_task(async function install_xpi() {
-
   
   let xpi1 = Extension.generateXPI({
     files: {

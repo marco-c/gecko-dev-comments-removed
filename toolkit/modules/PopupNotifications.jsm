@@ -517,7 +517,6 @@ PopupNotifications.prototype = {
 
     if (isActiveBrowser) {
       if (isActiveWindow) {
-
         
         if (options && !options.dismissed && options.autofocus) {
           this.panel.removeAttribute("noautofocus");
@@ -536,7 +535,6 @@ PopupNotifications.prototype = {
           notifications, notification.anchorElement));
         this._notify("backgroundShow");
       }
-
     } else {
       
       this._notify("backgroundShow");
@@ -1246,7 +1244,6 @@ PopupNotifications.prototype = {
         if (notification.options.extraAttr) {
           anchorElm.setAttribute("extraAttr", notification.options.extraAttr);
         }
-
       }
     }
   },

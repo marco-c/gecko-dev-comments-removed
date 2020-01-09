@@ -487,7 +487,6 @@ interaction.uploadFiles = async function(el, paths) {
   if (el.hasAttribute("multiple")) {
     
     files = Array.prototype.slice.call(el.files);
-
   } else if (paths.length > 1) {
     throw new InvalidArgumentError(
         pprint`Element ${el} doesn't accept multiple files`);

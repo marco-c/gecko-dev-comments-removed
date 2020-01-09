@@ -585,7 +585,6 @@ function sync_httpd_setup(handlers) {
 
 
 function track_collections_helper() {
-
   
 
 
@@ -725,7 +724,6 @@ SyncServer.prototype = {
       _("==========================================");
       do_throw(ex);
     }
-
   },
 
   

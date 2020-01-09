@@ -7,7 +7,6 @@
 
 
 {
-
 class MozDeck extends MozXULElement {
   set selectedIndex(val) {
     if (this.selectedIndex == val) return val;
@@ -67,5 +66,4 @@ class MozCommandSet extends MozXULElement {
 }
 
 customElements.define("commandset", MozCommandSet);
-
 }

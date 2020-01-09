@@ -17,7 +17,6 @@ const TELEMETRY_HISTOGRAM_ID = "UPTAKE_REMOTE_CONTENT_RESULT_1";
 
 
 class UptakeTelemetry {
-
   
 
 

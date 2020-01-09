@@ -114,7 +114,6 @@ async function loadSegment(sb, typedArrayOrArrayBuffer) {
 }
 
 async function fetchAndLoad(sb, prefix, chunks, suffix) {
-
   
   const buffers = await Promise.all(chunks.map(c => fetchWithXHR(prefix + c + suffix)));
 
@@ -136,7 +135,6 @@ function loadSegmentAsync(sb, typedArrayOrArrayBuffer) {
 }
 
 function fetchAndLoadAsync(sb, prefix, chunks, suffix) {
-
   
   const buffers = {};
   const fetches = [];

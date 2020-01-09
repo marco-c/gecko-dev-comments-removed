@@ -860,7 +860,6 @@ add_task(async function test_restart_hash() {
   clearListeners();
 
   await install.addon.uninstall();
-
 });
 
 

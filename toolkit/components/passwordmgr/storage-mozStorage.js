@@ -633,7 +633,6 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
   countLogins(hostname, formSubmitURL, httpRealm) {
-
     let _countLoginsHelper = (hostname, formSubmitURL, httpRealm) => {
       
       let [conditions, params] =

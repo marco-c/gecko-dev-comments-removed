@@ -247,7 +247,6 @@ var TPS = {
       }
     } catch (e) {
       this.DumpError("Observer failed", e);
-
     }
   },
 
@@ -639,7 +638,6 @@ var TPS = {
 
 
   async ValidateBookmarks() {
-
     let getServerBookmarkState = async () => {
       let bookmarkEngine = Weave.Service.engineManager.get("bookmarks");
       let collection = bookmarkEngine.itemSource();

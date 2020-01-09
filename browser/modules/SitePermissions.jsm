@@ -493,7 +493,6 @@ var SitePermissions = {
 
 
   set(uri, permissionID, state, scope = this.SCOPE_PERSISTENT, browser = null) {
-
     if (scope == this.SCOPE_GLOBAL && state == this.BLOCK) {
       GloballyBlockedPermissions.set(browser, permissionID);
       browser.dispatchEvent(new browser.ownerGlobal.CustomEvent("PermissionStateChange"));

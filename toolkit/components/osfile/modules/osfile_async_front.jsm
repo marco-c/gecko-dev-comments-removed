@@ -87,7 +87,6 @@ for (let [constProp, dirKey] of [
   ["homeDir", "Home"],
   ["macUserLibDir", "ULibDir"],
   ]) {
-
   if (constProp in SharedAll.Constants.Path) {
     continue;
   }
@@ -286,7 +285,6 @@ var Scheduler = this.Scheduler = {
     this.queue = deferred.promise;
 
     return this._killQueue = (async () => {
-
       await killQueue;
       
       
@@ -356,14 +354,12 @@ var Scheduler = this.Scheduler = {
         this.shutdown = shutdown;
 
         return resources;
-
       } finally {
         
         
         
         deferred.resolve();
       }
-
     })();
   },
 

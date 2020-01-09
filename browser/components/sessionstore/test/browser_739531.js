@@ -23,7 +23,6 @@ function test() {
 
     
     executeSoon(function() {
-
       let tab2;
       let caughtError = false;
       try {

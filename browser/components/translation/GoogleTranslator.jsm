@@ -213,7 +213,6 @@ this.GoogleTranslator.prototype = {
 
       if (newCurSize > MAX_REQUEST_DATA ||
           newChunks > MAX_REQUEST_CHUNKS) {
-
         
         
         

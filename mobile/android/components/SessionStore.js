@@ -1573,7 +1573,6 @@ SessionStore.prototype = {
   },
 
   _sendClosedTabsToJava(aWindow) {
-
     
     if (this._loadState <= STATE_QUITTING) {
       return;

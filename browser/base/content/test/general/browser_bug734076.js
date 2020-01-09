@@ -2,7 +2,6 @@
 
 
 add_task(async function() {
-
   
   
   await SpecialPowers.pushPrefEnv({

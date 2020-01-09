@@ -347,7 +347,6 @@ this.studyEndObserved = function(recipeId) {
 
 this.withSendEventStub = function(testFunction) {
   return async function wrappedTestFunction(...args) {
-
     
     function checkEventMatchesSchema(method, object, value, extra) {
       let match = true;

@@ -282,7 +282,6 @@ this.FxAccountsWebChannelHelpers.prototype = {
 
 
   login(accountData) {
-
     
     
     delete accountData.customizeSync;

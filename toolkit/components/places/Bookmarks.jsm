@@ -1718,7 +1718,6 @@ async function updateBookmark(db, info, item, oldIndex, newParent, syncChangeDel
 function insertBookmark(item, parent) {
   return PlacesUtils.withConnectionWrapper("Bookmarks.jsm: insertBookmark",
     async function(db) {
-
     
     
     let hasExistingGuid = item.hasOwnProperty("guid");
@@ -2267,8 +2266,6 @@ function reorderChildren(parent, orderedChildrenGuids, options) {
       }
 
       if (needReorder) {
-
-
         
         
         children.sort((a, b) => {

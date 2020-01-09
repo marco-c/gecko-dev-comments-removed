@@ -12,7 +12,6 @@ function newURI(url) {
 
 
 add_task(async function testTemporaryPermissionTabURLs() {
-
   
   SpecialPowers.pushPrefEnv({set: [
         ["network.http.phishy-userpass-length", 2048],
@@ -84,6 +83,5 @@ add_task(async function testTemporaryPermissionTabURLs() {
       SitePermissions.clearTemporaryPermissions(browser);
     }
   });
-
 });
 

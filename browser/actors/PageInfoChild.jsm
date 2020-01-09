@@ -292,7 +292,6 @@ class PageInfoChild extends ActorChild {
   
   
   getValueText(node) {
-
     let valueText = "";
     let content = node.ownerGlobal;
 

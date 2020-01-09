@@ -58,7 +58,6 @@ const MANIFESTS_FILE = "manifest-scopes.json";
 
 
 class Manifest {
-
   constructor(browser, manifestUrl) {
     this._manifestUrl = manifestUrl;
     
@@ -141,13 +140,11 @@ class Manifest {
 var Manifests = {
 
   async initialise() {
-
     if (this.started) {
       return this.started;
     }
 
     this.started = (async () => {
-
       
       await OS.File.makeDir(MANIFESTS_DIR, {ignoreExisting: true});
 
@@ -164,7 +161,6 @@ var Manifests = {
       
       
       this.manifestObjs = {};
-
     })();
 
     return this.started;
@@ -191,7 +187,6 @@ var Manifests = {
   
   
   async getManifest(browser, manifestUrl) {
-
     
     await this.initialise();
 

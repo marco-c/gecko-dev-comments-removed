@@ -26,7 +26,6 @@ const LOCAL_WHITELIST_DATA = {
 };
 
 add_task(async function test_setup() {
-
   
   Services.prefs.setBoolPref("browser.safebrowsing.passwords.enabled", true);
   gLoginRep.init();

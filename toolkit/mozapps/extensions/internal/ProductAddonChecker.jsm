@@ -225,7 +225,6 @@ function parseXML(document) {
 
 
 function downloadLocalConfig() {
-
   if (!GMPPrefs.getBool(GMPPrefs.KEY_UPDATE_ENABLED, true)) {
     logger.info("Updates are disabled via media.gmp-manager.updateEnabled");
     return Promise.resolve({usedFallback: true, gmpAddons: []});
@@ -233,7 +232,6 @@ function downloadLocalConfig() {
 
   return Promise.all(LOCAL_GMP_SOURCES.map(conf => {
     return downloadJSON(conf.src).then(addons => {
-
       let platforms = addons.vendors[conf.id].platforms;
       let target = Services.appinfo.OS + "_" + UpdateUtils.ABI;
       let details = null;
@@ -265,7 +263,6 @@ function downloadLocalConfig() {
       };
     });
   })).then(addons => {
-
     
     
     addons = addons.filter(x => x !== false);

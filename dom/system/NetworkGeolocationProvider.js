@@ -309,7 +309,6 @@ WifiGeoPositionProvider.prototype = {
   },
 
   onChange(accessPoints) {
-
     
     this.resetTimer();
 

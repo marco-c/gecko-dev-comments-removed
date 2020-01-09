@@ -1,7 +1,6 @@
 
 
 var PKT_SENDTOMOBILE = (function() {
-
     var width = 350;
     var ctaHeight = 200;
     var confirmHeight = 275;

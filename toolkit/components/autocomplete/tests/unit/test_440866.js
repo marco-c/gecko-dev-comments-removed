@@ -200,7 +200,6 @@ function unregisterAutoCompleteSearch(aSearch) {
 
 
 function run_test() {
-
   
   var emptySearch = new AutoCompleteSearch("test-empty-search",
                              new AutoCompleteResult([], [], []));

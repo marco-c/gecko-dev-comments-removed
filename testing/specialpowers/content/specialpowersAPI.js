@@ -136,7 +136,6 @@ function doApply(fun, invocant, args) {
 }
 
 function wrapPrivileged(obj) {
-
   
   if (!isWrappable(obj))
     return obj;
@@ -155,7 +154,6 @@ function wrapPrivileged(obj) {
 }
 
 function unwrapPrivileged(x) {
-
   
   
   
@@ -644,7 +642,6 @@ SpecialPowersAPI.prototype = {
     if (message.hadError) {
       throw "SpecialPowers.importInMainProcess failed with error " + message.errorMessage;
     }
-
   },
 
   get Services() {

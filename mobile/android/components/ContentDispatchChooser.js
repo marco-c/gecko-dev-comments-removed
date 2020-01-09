@@ -46,13 +46,11 @@ ContentDispatchChooser.prototype =
     } catch (e) {  }
 
     if (!aURI.schemeIs("content")) {
-
       
       
       aHandler = this.protoSvc.getProtocolHandlerInfoFromOS(aURI.spec, {});
 
       if (aHandler.possibleApplicationHandlers.length > 1) {
-
         
         
         aHandler.launchWithURI(aURI, aWindowContext);
@@ -76,7 +74,6 @@ ContentDispatchChooser.prototype =
     EventDispatcher.instance.sendRequestForResult(msg).then(() => {
       
       this._closeBlankWindow(window);
-
     }, (data) => {
       if (data.isFallback) {
         

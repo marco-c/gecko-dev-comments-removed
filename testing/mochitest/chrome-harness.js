@@ -53,7 +53,6 @@ function getResolvedURI(url) {
 
 
 function getChromeDir(resolvedURI) {
-
   var fileHandler = Cc["@mozilla.org/network/protocol;1?name=file"].
                     getService(Ci.nsIFileProtocolHandler);
   var chromeDir = fileHandler.getFileFromURLSpec(resolvedURI.spec);
@@ -77,7 +76,6 @@ function getRootDirectory(path, chromeURI) {
 
 
 function getChromePrePath(path, chromeURI) {
-
   if (chromeURI === undefined) {
     chromeURI = getChromeURI(path);
   }
@@ -251,5 +249,4 @@ function getTestList(params, callback) {
   }
   params = config;
   getTestManifest("http://mochi.test:8888/" + params.manifestFile, params, callback);
-
 }

@@ -2,7 +2,6 @@
 
 
 add_task(async function test_offscreen_text() {
-
   
   
   const linesToGenerate = 155;

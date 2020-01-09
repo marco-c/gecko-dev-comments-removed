@@ -6,7 +6,6 @@
 var TabsInTitlebar;
 
 { 
-
 TabsInTitlebar = {
   init() {
     this._readPref();
@@ -119,7 +118,6 @@ let dragSpaceObserver = {
     }
   },
 };
-
 } 
 
 function onTitlebarMaxClick() {

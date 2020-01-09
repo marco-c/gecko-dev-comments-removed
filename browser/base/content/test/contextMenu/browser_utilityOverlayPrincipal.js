@@ -44,7 +44,6 @@ function test_openUILink_checkPrincipal() {
 
     gBrowser.removeCurrentTab();
     runNextTest();
-
   });
 
   

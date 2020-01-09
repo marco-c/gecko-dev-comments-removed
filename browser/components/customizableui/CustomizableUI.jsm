@@ -1809,7 +1809,6 @@ var CustomizableUIInternal = {
       
       
       
-
     } else if (aEvent.type != "command") { 
       if (aEvent.defaultPrevented || aEvent.button != 0) {
         return;

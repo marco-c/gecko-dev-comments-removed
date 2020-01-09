@@ -310,7 +310,6 @@ TaskImpl.prototype = {
 
 
   _run: function TaskImpl_run(aSendResolved, aSendValue) {
-
     try {
       gCurrentTask = this;
 
@@ -412,17 +411,14 @@ TaskImpl.prototype = {
 
 
   _handleException: function TaskImpl_handleException(aException) {
-
     gCurrentTask = this;
 
     if (aException && typeof aException == "object" && "stack" in aException) {
-
       let stack = aException.stack;
 
       if (gMaintainStack &&
           aException._capturedTaskStack != this._stack &&
           typeof stack == "string") {
-
         
 
         let bottomStack = this._stack;
@@ -440,7 +436,6 @@ TaskImpl.prototype = {
 
       if ("name" in aException &&
           ERRORS_TO_REPORT.includes(aException.name)) {
-
         
         
         

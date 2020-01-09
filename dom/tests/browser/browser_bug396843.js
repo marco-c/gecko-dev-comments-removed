@@ -1,7 +1,6 @@
 
 
 function testInDocument(doc, documentID) {
-
     var allNodes = [];
     var XMLNodes = [];
 

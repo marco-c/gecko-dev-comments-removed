@@ -544,7 +544,6 @@ function updateAboutMemoryFromReporters() {
 
     gMgr.getReports(handleReport, null, displayReports, null,
                     gAnonymize.checked);
-
   } catch (ex) {
     handleException(ex);
   }
@@ -693,7 +692,6 @@ function loadMemoryReportsFromFile(aFilename, aTitleNote, aFn) {
                      loadUsingSystemPrincipal: true,
                    });
     fileChan.asyncOpen2(converter);
-
   } catch (ex) {
     handleException(ex);
   }
@@ -1356,7 +1354,6 @@ function fillInTree(aRoot) {
         aT._nMerged = kid._nMerged;
       }
       assert(!aT._hideKids && !kid._hideKids, "_hideKids set when merging");
-
     } else {
       
       
@@ -1524,13 +1521,11 @@ function appendWarningElements(aP, aHasKnownHeapAllocated,
       "moz_malloc_usable_size() function do not work for this platform " +
       "and/or configuration.  This means that 'heap-unclassified' is not " +
       "shown and the 'explicit' tree shows much less memory than it should.\n\n");
-
   } else if (!aFiltered && !aHasKnownHeapAllocated) {
     appendElementWithText(aP, "p", "",
       "WARNING: the 'heap-allocated' memory reporter does not work for this " +
       "platform and/or configuration. This means that 'heap-unclassified' " +
       "is not shown and the 'explicit' tree shows less memory than it should.\n\n");
-
   } else if (!aFiltered && !aHasMozMallocUsableSize) {
     appendElementWithText(aP, "p", "",
       "WARNING: the moz_malloc_usable_size() function does not work for " +
@@ -1892,14 +1887,12 @@ function expandPathToThisElement(aElement) {
     
     aElement.classList.remove("hidden");
     expandPathToThisElement(aElement.previousSibling); 
-
   } else if (aElement.classList.contains("hasKids")) {
     
     let sepSpan = aElement.childNodes[2];
     assertClassListContains(sepSpan, "mrSep");
     sepSpan.textContent = kShowKidsSep;
     expandPathToThisElement(aElement.parentNode); 
-
   } else {
     assertClassListContains(aElement, "entries");
   }

@@ -8,7 +8,6 @@ const TEST_PAGE = TEST_PATH + "file_broadcastChannel.html";
 
 async function doTest(aBrowser) {
   let response = await ContentTask.spawn(aBrowser, null, async function() {
-
     let displayItem = content.document.getElementById("display");
 
     

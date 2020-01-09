@@ -474,7 +474,6 @@ CollectionKeyManager.prototype = {
   
   
   updateNeeded(info_collections) {
-
     this._log.info("Testing for updateNeeded. Last modified: " + this.lastModified);
 
     
@@ -502,7 +501,6 @@ CollectionKeyManager.prototype = {
   
   
   setContents: function setContents(payload, modified) {
-
     let self = this;
 
     this._log.info("Setting collection keys contents. Our last modified: " +

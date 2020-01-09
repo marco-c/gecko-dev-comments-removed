@@ -786,7 +786,6 @@ class PluginChild extends ActorChild {
 
 
   isWithinFullScreenElement(fullScreenElement, domElement) {
-
     
 
 

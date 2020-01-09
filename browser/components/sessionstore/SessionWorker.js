@@ -161,7 +161,6 @@ var Agent = {
     let data = Encoder.encode(stateString);
 
     try {
-
       if (this.state == STATE_CLEAN || this.state == STATE_EMPTY) {
         
         
@@ -224,7 +223,6 @@ var Agent = {
 
       telemetry.FX_SESSION_RESTORE_WRITE_FILE_MS = Date.now() - startWriteMs;
       telemetry.FX_SESSION_RESTORE_FILE_SIZE_BYTES = fileStat.size;
-
     } catch (ex) {
       
       exn = exn || ex;
@@ -279,7 +277,6 @@ var Agent = {
     }
 
     if (options.performShutdownCleanup && !exn) {
-
       
       
       
@@ -309,7 +306,6 @@ var Agent = {
 
 
   wipe() {
-
     
     let exn = null;
 

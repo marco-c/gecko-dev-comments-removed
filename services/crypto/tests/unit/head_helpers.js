@@ -8,7 +8,6 @@ try {
   Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULAppInfo);
 } catch (ex) {
 
-
 var OS = "XPCShell";
 if (mozinfo.os == "win")
   OS = "WINNT";

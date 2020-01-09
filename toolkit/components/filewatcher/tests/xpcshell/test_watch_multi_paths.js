@@ -21,7 +21,6 @@ function run_test() {
 
 
 add_task(async function test_watch_multi_paths() {
-
   
   
   let resourcesToWatch = 5;

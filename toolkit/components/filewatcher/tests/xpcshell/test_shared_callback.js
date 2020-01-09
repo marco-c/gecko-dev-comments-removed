@@ -17,7 +17,6 @@ function run_test() {
 
 
 add_task(async function test_watch_with_shared_callback() {
-
   
   
   let watchedDirs =

@@ -255,9 +255,6 @@ module.exports = {
     "one-var": "off",
 
     
-    "padded-blocks": ["error", "never"],
-
-    
     "quote-props": "off",
 
     

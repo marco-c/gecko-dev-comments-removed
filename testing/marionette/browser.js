@@ -116,7 +116,6 @@ browser.getTabBrowser = function(window) {
 
 
 browser.Context = class {
-
   
 
 
@@ -530,7 +529,6 @@ browser.Context = class {
       cb();
     }
   }
-
 };
 
 
@@ -548,7 +546,6 @@ browser.Context = class {
 
 
 browser.Windows = class extends Map {
-
   
 
 
@@ -585,7 +582,6 @@ browser.Windows = class extends Map {
     }
     return wref.get();
   }
-
 };
 
 

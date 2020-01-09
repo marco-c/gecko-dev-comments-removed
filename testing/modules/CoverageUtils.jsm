@@ -63,7 +63,6 @@ CoverageCollector.prototype._getLinesCovered = function() {
         currentCoverage[scriptName][key] += count;
       }
     });
-
   });
 
   

@@ -80,7 +80,6 @@ LoginManager.prototype = {
 
 
   init() {
-
     
     this._observer._pwmgr            = this;
 

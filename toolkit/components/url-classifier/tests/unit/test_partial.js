@@ -225,7 +225,6 @@ function testSpecFragments() {
   };
 
   doTest([update], assertions);
-
 }
 
 
@@ -260,7 +259,6 @@ function testMoreSpecFragments() {
   };
 
   doTest([update], assertions);
-
 }
 
 function testFalsePositives() {

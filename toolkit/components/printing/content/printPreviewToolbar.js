@@ -8,7 +8,6 @@
 
 
 customElements.define("printpreview-toolbar", class PrintPreviewToolbar extends MozXULElement {
-
   constructor() {
     super();
     this.disconnectedCallback = this.disconnectedCallback.bind(this);

@@ -159,7 +159,6 @@ Object.defineProperty(JSONPacket.prototype, "object", {
 });
 
 JSONPacket.prototype.read = function(stream, scriptableStream) {
-
   
   this._readData(stream, scriptableStream);
 
@@ -192,7 +191,6 @@ JSONPacket.prototype._readData = function(stream, scriptableStream) {
 };
 
 JSONPacket.prototype.write = function(stream) {
-
   if (this._outgoing === undefined) {
     
     this._outgoing = this.length + ":" + this._data;

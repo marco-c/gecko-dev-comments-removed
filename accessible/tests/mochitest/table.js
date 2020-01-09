@@ -167,7 +167,6 @@ function testTableStruct(aIdentifier, aCellsArray, aColHeaderType,
     for (let colIdx = 0; colIdx < colsCount; colIdx++) {
       let celltype = aCellsArray[rowIdx][colIdx];
       if (celltype & kOrigin) {
-
         
         var rowExtent = table.getRowExtentAt(rowIdx, colIdx);
         let idx;
@@ -239,7 +238,6 @@ function testTableIndexes(aIdentifier, aIdxes) {
          id + ": Can't get cell accessible at row = " + rowIdx + ", column = " + colIdx);
 
       if (idx != -1) {
-
         
         var origRowIdx = rowIdx;
         while (origRowIdx > 0 &&
@@ -285,7 +283,6 @@ function testTableIndexes(aIdentifier, aIdxes) {
            id + ": column  for index " + idx + " is not correct (getRowAndColumnIndicesAt)");
 
         if (cellAcc) {
-
           var cellId = prettyName(cellAcc);
           cellAcc = getAccessible(cellAcc, [nsIAccessibleTableCell]);
 
@@ -308,7 +305,6 @@ function testTableIndexes(aIdentifier, aIdxes) {
           try {
             is(cellAcc.table, tableAcc,
                cellId + ": wrong table accessible for the cell.");
-
           } catch (e) {
             ok(false,
                cellId + ": can't get table accessible from the cell.");
@@ -563,24 +559,20 @@ function testSelectTableColumn(aIdentifier, aColIdx, aCellsArray) {
         if (!(cellState & kSpanned)) {
           
           aCellsArray[rowIdx][colIdx] = true;
-
         } else {
           
           var [origRowIdx, origColIdx] = getOrigRowAndColumn(aCellsArray,
                                                              rowIdx, colIdx);
           aCellsArray[origRowIdx][origColIdx] = true;
         }
-
       } else if (!(cellState & kSpanned)) { 
         if (colIdx > aColIdx) {
           
           
           aCellsArray[rowIdx][colIdx] = false;
-
         } else if (!(aCellsArray[rowIdx][aColIdx] & kColSpanned)) {
           
           aCellsArray[rowIdx][colIdx] = false;
-
         } else {
           
           for (var spannedColIdx = colIdx + 1; spannedColIdx < aColIdx;
@@ -641,7 +633,6 @@ function testSelectTableRow(aIdentifier, aRowIdx, aCellsArray) {
         if (!(cellState & kSpanned)) {
           
           aCellsArray[rowIdx][colIdx] = true;
-
         } else {
           
           var [origRowIdx, origColIdx] = getOrigRowAndColumn(aCellsArray,
@@ -649,17 +640,14 @@ function testSelectTableRow(aIdentifier, aRowIdx, aCellsArray) {
 
           aCellsArray[origRowIdx][origColIdx] = true;
         }
-
       } else if (!(cellState & kSpanned)) { 
         if (rowIdx > aRowIdx) {
           
           
           aCellsArray[rowIdx][colIdx] = false;
-
         } else if (!(aCellsArray[aRowIdx][colIdx] & kRowSpanned)) {
           
           aCellsArray[rowIdx][colIdx] = false;
-
         } else {
           
           for (var spannedRowIdx = rowIdx + 1; spannedRowIdx < aRowIdx;

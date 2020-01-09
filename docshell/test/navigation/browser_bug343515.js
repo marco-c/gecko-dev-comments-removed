@@ -35,7 +35,6 @@ function waitForPageshow(aBrowser, callback) {
 
 
 function test() {
-
   
   waitForExplicitFinish();
 
@@ -178,7 +177,6 @@ function step5() {
 }
 
 function step6() {
-
   
   ok(!ctx.tab0Browser.docShellIsActive, "Tab 0 should be inactive");
   ok(ctx.tab1Browser.docShellIsActive, "Tab 1 should be active");
@@ -240,7 +238,6 @@ function step7() {
 
 
 function allDone() {
-
   
   gBrowser.removeTab(ctx.tab1);
   gBrowser.removeTab(ctx.tab2);

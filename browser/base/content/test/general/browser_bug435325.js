@@ -4,7 +4,6 @@
 
 
 add_task(async function checkSwitchPageToOnlineMode() {
-
   
   Services.io.offline = true;
 

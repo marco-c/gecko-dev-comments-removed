@@ -123,5 +123,4 @@ var TalosPowersParent;
 
   };
   
-
 })();

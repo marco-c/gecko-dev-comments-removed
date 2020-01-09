@@ -41,7 +41,6 @@ function promisePanelOpened() {
   }
 
   return new Promise(resolve => {
-
     
     let originalOnPopupShown = DownloadsPanel.onPopupShown;
     DownloadsPanel.onPopupShown = function() {
@@ -52,7 +51,6 @@ function promisePanelOpened() {
       
       setTimeout(resolve, 0);
     };
-
   });
 }
 

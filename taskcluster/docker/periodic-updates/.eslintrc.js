@@ -71,9 +71,6 @@ module.exports = {
     "no-useless-escape": "error",
 
     
-    "padded-blocks": ["error", "never"],
-
-    
     "semi-spacing": ["error", { "before": false, "after": true }],
 
     

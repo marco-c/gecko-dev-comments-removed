@@ -21,5 +21,4 @@ function run_test() {
     
     tm.spinEventLoopUntilEmpty();
   }
-
 }

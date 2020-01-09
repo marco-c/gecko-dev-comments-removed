@@ -104,7 +104,6 @@ var dirname = function(path, options) {
       return ".";
     }
     return path;
-
   }
 
   

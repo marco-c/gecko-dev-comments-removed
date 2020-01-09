@@ -1105,7 +1105,6 @@ nsContextMenu.prototype = {
       extListener: null,
 
       onStartRequest: function saveLinkAs_onStartRequest(aRequest, aContext) {
-
         
         
         

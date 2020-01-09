@@ -16,7 +16,6 @@ function run_test() {
 
 
 add_task(async function test_null_args_addPath() {
-
   let watcher = makeWatcher();
   let testPath = "someInvalidPath";
 
@@ -49,7 +48,6 @@ add_task(async function test_null_args_addPath() {
 
 
 add_task(async function test_null_args_removePath() {
-
   let watcher = makeWatcher();
   let testPath = "someInvalidPath";
 

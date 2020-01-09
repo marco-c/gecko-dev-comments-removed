@@ -131,7 +131,6 @@ async function doInit(aMode) {
 
 
 async function doTest(aBrowser) {
-
   let argObj = {
     randomSuffix,
     urlPrefix: TEST_DOMAIN + TEST_PATH,

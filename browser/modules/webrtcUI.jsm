@@ -204,7 +204,6 @@ var webrtcUI = {
   
   receiveMessage(aMessage) {
     switch (aMessage.name) {
-
       case "rtcpeer:Request": {
         let params = Object.freeze(Object.assign({
           origin: aMessage.target.contentPrincipal.origin,
@@ -893,7 +892,6 @@ function prompt(aBrowser, aRequest) {
 
   
   if (!PrivateBrowsingUtils.isBrowserPrivate(aBrowser)) {
-
     
     
     

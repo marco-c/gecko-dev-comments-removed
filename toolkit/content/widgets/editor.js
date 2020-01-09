@@ -9,7 +9,6 @@
 {
 
 
-
 class MozEditor extends XULFrameElement {
   connectedCallback() {
     this._editorContentListener = {
@@ -160,5 +159,4 @@ class MozEditor extends XULFrameElement {
 }
 
 customElements.define("editor", MozEditor);
-
 }

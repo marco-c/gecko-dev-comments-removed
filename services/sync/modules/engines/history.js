@@ -116,7 +116,6 @@ HistoryStore.prototype = {
 
   
   async setGUID(uri, guid) {
-
     if (!guid) {
       guid = Utils.makeGUID();
     }
@@ -131,7 +130,6 @@ HistoryStore.prototype = {
   },
 
   async GUIDForUri(uri, create) {
-
     
     let guid;
     try {

@@ -4834,8 +4834,6 @@ var SessionStoreInternal = {
           
           continue;
         }
-
-
       }
       wIndex++;
     }
@@ -4876,7 +4874,6 @@ var SessionStoreInternal = {
 
   _setWindowStateBusyValue:
     function ssi_changeWindowStateBusyValue(aWindow, aValue) {
-
     this._windows[aWindow.__SSi].busy = aValue;
 
     

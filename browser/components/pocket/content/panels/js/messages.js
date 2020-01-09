@@ -2,7 +2,6 @@
 
 
 var pktPanelMessaging = (function() {
-
  function panelIdFromURL(url) {
    var panelId = url.match(/panelId=([\w|\d|\.]*)&?/);
         if (panelId && panelId.length > 1) {
@@ -22,14 +21,11 @@ var pktPanelMessaging = (function() {
 
  function addMessageListener(panelId, messageId, callback) {
    document.addEventListener(panelPrefixedMessageId(panelId, messageId), function(e) {
-
     callback(JSON.parse(e.target.getAttribute("payload"))[0]);
 
     
     
-
     });
-
   }
 
   function removeMessageListener(panelId, messageId, callback) {

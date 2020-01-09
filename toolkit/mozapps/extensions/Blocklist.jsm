@@ -1157,7 +1157,6 @@ var Blocklist = {
 
 
   _getPluginBlocklistState(plugin, pluginEntries, appVersion, toolkitVersion) {
-
     let r = this._getPluginBlocklistEntry(plugin, pluginEntries,
                                           appVersion, toolkitVersion);
     if (!r) {

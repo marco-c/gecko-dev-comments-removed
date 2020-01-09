@@ -116,7 +116,6 @@ var gTests = [
 {
   desc: "getUserMedia camera in a first process + camera in a second process",
   run: async function checkMultiProcessCamera() {
-
     
     let promise = promisePopupNotificationShown("webRTC-shareDevices");
     await promiseRequestDevice(false, true);
@@ -218,7 +217,6 @@ var gTests = [
 {
   desc: "getUserMedia screen sharing in a first process + screen sharing in a second process",
   run: async function checkMultiProcessScreen() {
-
     
     let promise = promisePopupNotificationShown("webRTC-shareDevices");
     await promiseRequestDevice(false, true, null, "screen");

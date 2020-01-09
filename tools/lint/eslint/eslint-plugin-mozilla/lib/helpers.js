@@ -722,7 +722,6 @@ module.exports = {
       
     var dirName = path.dirname(fileName);
     return cwd.slice(0, cwd.length - dirName.length) + fileName;
-
   },
 
   

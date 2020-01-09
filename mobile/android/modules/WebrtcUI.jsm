@@ -241,7 +241,6 @@ var WebrtcUI = {
 
   _addDevicesToOptions: function(aDevices, aType, aOptions) {
     if (aDevices.length) {
-
       
       let list = this._getList(aDevices, aType);
 
@@ -252,7 +251,6 @@ var WebrtcUI = {
           label: Strings.browser.GetStringFromName("getUserMedia." + aType + ".prompt"),
           values: list,
         });
-
       }
     }
   },

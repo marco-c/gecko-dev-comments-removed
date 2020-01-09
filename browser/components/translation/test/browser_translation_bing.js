@@ -26,7 +26,6 @@ add_task(async function setup() {
 
 
 add_task(async function test_bing_translation() {
-
   
   Services.prefs.setCharPref(kClientIdPref, "testClient");
 
@@ -63,7 +62,6 @@ add_task(async function test_bing_translation() {
 
 
 add_task(async function test_handling_out_of_valid_key_error() {
-
   
   Services.prefs.setCharPref(kClientIdPref, "testInactive");
 

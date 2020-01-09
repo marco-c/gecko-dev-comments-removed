@@ -25,7 +25,6 @@ function log(aMsg) {
 }
 
 var NetworkManager = (function NetworkManagerClosure() {
-
   const OK_RESPONSE = 200;
   const PARTIAL_CONTENT_RESPONSE = 206;
 

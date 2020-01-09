@@ -76,7 +76,6 @@ startupRecorder.prototype = {
   },
 
   observe(subject, topic, data) {
-
     if (topic == "app-startup") {
       
       

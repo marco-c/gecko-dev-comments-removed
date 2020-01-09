@@ -31,7 +31,6 @@ var WindowWatcher = {
 
     
     Services.obs.notifyObservers(null, "addon-blocklist-closed");
-
   },
 
   QueryInterface: ChromeUtils.generateQI(["nsIWindowWatcher"]),

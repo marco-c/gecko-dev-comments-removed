@@ -61,7 +61,6 @@ add_task(async function test_windowless_UITour() {
 
   
   await new Promise(resolve => {
-
     
     let browserPromise = createHiddenBrowser(pageURL);
     browserPromise.then(frameInfo => {

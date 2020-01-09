@@ -8,7 +8,6 @@
 
 
 
-
 const FAVICON_DEFAULTS = {
   "about:newtab": "chrome://branding/content/icon32.png",
   "about:home": "chrome://branding/content/icon32.png",
@@ -2430,7 +2429,6 @@ window._gBrowser = {
             ((openerTab &&
               Services.prefs.getBoolPref("browser.tabs.insertRelatedAfterCurrent")) ||
              Services.prefs.getBoolPref("browser.tabs.insertAfterCurrent"))) {
-
           let lastRelatedTab = openerTab && this._lastRelatedTabMap.get(openerTab);
           let previousTab = (lastRelatedTab || openerTab || this.selectedTab);
           if (previousTab.multiselected) {
@@ -5008,7 +5006,6 @@ class TabProgressListener {
       }
     } else if (aStateFlags & Ci.nsIWebProgressListener.STATE_STOP &&
                aStateFlags & Ci.nsIWebProgressListener.STATE_IS_NETWORK) {
-
       let modifiedAttrs = [];
       if (this.mTab.hasAttribute("busy")) {
         this.mTab.removeAttribute("busy");
@@ -5248,7 +5245,6 @@ TabProgressListener.prototype.QueryInterface = ChromeUtils.generateQI(
   ["nsIWebProgressListener",
    "nsIWebProgressListener2",
    "nsISupportsWeakReference"]);
-
 } 
 
 var StatusPanel = {

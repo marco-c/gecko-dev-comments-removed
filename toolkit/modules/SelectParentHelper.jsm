@@ -442,7 +442,6 @@ function populateChildren(menulist, options, selectedIndex, zoom,
   
   if (Services.prefs.getBoolPref("dom.forms.selectSearch") && addSearch
       && element.childElementCount > SEARCH_MINIMUM_ELEMENTS) {
-
     
     let searchbox = element.ownerDocument.createXULElement("textbox");
     searchbox.setAttribute("type", "search");

@@ -62,7 +62,6 @@ function testSimpleSub() {
   };
 
   doTest([addUpdate, subUpdate], assertions);
-
 }
 
 

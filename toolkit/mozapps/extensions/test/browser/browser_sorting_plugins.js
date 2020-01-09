@@ -80,7 +80,6 @@ function check_order(aExpectedOrder) {
 
 
 add_test(function() {
-
   check_order([
     "test5@tests.mozilla.org",
     "test2@tests.mozilla.org",

@@ -45,7 +45,6 @@ function run_test() {
 
     
     if (!registrar.isCIDRegistered(factory.CID)) {
-
       
       
       

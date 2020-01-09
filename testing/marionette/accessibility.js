@@ -98,7 +98,6 @@ accessibility.get = function(strict = false) {
 
 
 accessibility.Checks = class {
-
   
 
 
@@ -440,5 +439,4 @@ accessibility.Checks = class {
 
     throw new ElementNotAccessibleError(message);
   }
-
 };

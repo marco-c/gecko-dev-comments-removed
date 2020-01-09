@@ -379,8 +379,6 @@ module.exports = {
     
     "one-var": "off",
     
-    "padded-blocks": ["error", "never"],
-    
     "prefer-const": ["error", { "destructuring": "all" }],
     
     "quote-props": "off",

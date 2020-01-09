@@ -177,7 +177,6 @@ async function testWindowSizeSetting(aBrowser, aSettingWidth, aSettingHeight,
 
   await ContentTask.spawn(aBrowser, testParams,
     async function(input) {
-
       let win;
       
       await new Promise(resolve => {

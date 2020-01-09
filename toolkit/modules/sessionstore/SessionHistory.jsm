@@ -328,7 +328,6 @@ var SessionHistoryInternal = {
 
 
   deserializeEntry(entry, idMap, docIdentMap) {
-
     var shEntry = Cc["@mozilla.org/browser/session-history-entry;1"].
                   createInstance(Ci.nsISHEntry);
 
