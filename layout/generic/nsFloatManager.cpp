@@ -2281,10 +2281,6 @@ nsFloatManager::FloatInfo::FloatInfo(nsIFrame* aFrame, nscoord aLineLeft,
       
       return;
 
-    case StyleShapeSourceType::URL:
-      MOZ_ASSERT_UNREACHABLE("shape-outside doesn't have URL source type!");
-      return;
-
     case StyleShapeSourceType::Path:
       MOZ_ASSERT_UNREACHABLE("shape-outside doesn't have Path source type!");
       return;

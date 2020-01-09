@@ -54,7 +54,7 @@ bool nsCSSClipPathInstance::HitTestBasicShapeOrPathClip(
   MOZ_ASSERT(type != StyleShapeSourceType::None, "unexpected none value");
   
   
-  if (type == StyleShapeSourceType::URL) {
+  if (type == StyleShapeSourceType::Image) {
     return false;
   }
 

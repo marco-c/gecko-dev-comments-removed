@@ -457,10 +457,10 @@ void nsSVGUtils::DetermineMaskUsage(nsIFrame* aFrame, bool aHandleOpacity,
   
   SVGObserverUtils::GetAndObserveClipPath(firstFrame, &clipPathFrame);
   MOZ_ASSERT(!clipPathFrame ||
-             svgReset->mClipPath.GetType() == StyleShapeSourceType::URL);
+             svgReset->mClipPath.GetType() == StyleShapeSourceType::Image);
 
   switch (svgReset->mClipPath.GetType()) {
-    case StyleShapeSourceType::URL:
+    case StyleShapeSourceType::Image:
       if (clipPathFrame) {
         if (clipPathFrame->IsTrivial()) {
           aUsage.shouldApplyClipPath = true;
