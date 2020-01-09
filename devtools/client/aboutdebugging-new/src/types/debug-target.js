@@ -28,10 +28,6 @@ const workerTargetDetails = {
   
   fetch: PropTypes.string,
   
-  isActive: PropTypes.bool,
-  
-  isRunning: PropTypes.bool,
-  
   registrationFront: PropTypes.object,
   
   scope: PropTypes.string,
