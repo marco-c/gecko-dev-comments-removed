@@ -7,10 +7,20 @@
 var EXPORTED_SYMBOLS = ["RFPHelper"];
 
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 const kPrefResistFingerprinting = "privacy.resistFingerprinting";
 const kPrefSpoofEnglish = "privacy.spoof_english";
 const kTopicHttpOnModifyRequest = "http-on-modify-request";
+
+const kPrefLetterboxing = "privacy.resistFingerprinting.letterboxing";
+const kPrefLetterboxingDimensions =
+  "privacy.resistFingerprinting.letterboxing.dimensions";
+const kTopicDOMWindowOpened = "domwindowopened";
+const kEventLetterboxingSizeUpdate = "Letterboxing:ContentSizeUpdated";
+
+const kDefaultWidthStepping = 200;
+const kDefaultHeightStepping = 100;
 
 class _RFPHelper {
   
@@ -28,8 +38,13 @@ class _RFPHelper {
 
     
     Services.prefs.addObserver(kPrefResistFingerprinting, this);
+    Services.prefs.addObserver(kPrefLetterboxing, this);
+    XPCOMUtils.defineLazyPreferenceGetter(this, "_letterboxingDimensions",
+      kPrefLetterboxingDimensions, "", null, this._parseLetterboxingDimensions);
+
     
     this._handleResistFingerprintingChanged();
+    this._handleLetterboxingPrefChanged();
   }
 
   uninit() {
@@ -40,6 +55,7 @@ class _RFPHelper {
 
     
     Services.prefs.removeObserver(kPrefResistFingerprinting, this);
+    Services.prefs.removeObserver(kPrefLetterboxing, this);
     
     this._removeRFPObservers();
   }
@@ -51,6 +67,36 @@ class _RFPHelper {
         break;
       case kTopicHttpOnModifyRequest:
         this._handleHttpOnModifyRequest(subject, data);
+        break;
+      case kTopicDOMWindowOpened:
+        
+        
+        
+        this._handleDOMWindowOpened(subject);
+        break;
+      default:
+        break;
+    }
+  }
+
+  handleEvent(aMessage) {
+    switch (aMessage.type) {
+      case "TabOpen":
+      {
+        let tab = aMessage.target;
+        this._addOrClearContentMargin(tab.linkedBrowser);
+        break;
+      }
+      default:
+        break;
+    }
+  }
+
+  receiveMessage(aMessage) {
+    switch (aMessage.name) {
+      case kEventLetterboxingSizeUpdate:
+        let win = aMessage.target.ownerGlobal;
+        this._updateMarginsForTabsInWindow(win);
         break;
       default:
         break;
@@ -64,6 +110,9 @@ class _RFPHelper {
         break;
       case kPrefSpoofEnglish:
         this._handleSpoofEnglishChanged();
+        break;
+      case kPrefLetterboxing:
+        this._handleLetterboxingPrefChanged();
         break;
       default:
         break;
@@ -209,6 +258,242 @@ class _RFPHelper {
       return null;
     }
     return httpChannel.getRequestHeader("Accept-Language");
+  }
+
+  
+  
+  
+  
+
+
+
+
+  onLocationChange(aBrowser) {
+    this._addOrClearContentMargin(aBrowser);
+  }
+
+  _handleLetterboxingPrefChanged() {
+    if (Services.prefs.getBoolPref(kPrefLetterboxing, false)) {
+      Services.ww.registerNotification(this);
+      this._attachAllWindows();
+    } else {
+      this._detachAllWindows();
+      Services.ww.unregisterNotification(this);
+    }
+  }
+
+  
+  
+  
+  _parseLetterboxingDimensions(aPrefValue) {
+    if (!aPrefValue || !aPrefValue.match(/^(?:\d+x\d+,\s*)*(?:\d+x\d+)$/)) {
+      if (aPrefValue) {
+        Cu.reportError(`Invalid pref value for ${kPrefLetterboxingDimensions}: ${aPrefValue}`);
+      }
+      return [];
+    }
+
+    return aPrefValue.split(",").map(item => {
+      let sizes = item.split("x").map(size => parseInt(size, 10));
+
+      return {
+        width: sizes[0],
+        height: sizes[1],
+      };
+    });
+  }
+
+  _addOrClearContentMargin(aBrowser) {
+    let tab = aBrowser.getTabBrowser()
+                      .getTabForBrowser(aBrowser);
+
+    
+    if (!aBrowser.isConnected) {
+      return;
+    }
+
+    
+    
+    if (tab.isEmpty || aBrowser.contentPrincipal.isSystemPrincipal) {
+      this._clearContentViewMargin(aBrowser);
+    } else {
+      this._roundContentView(aBrowser);
+    }
+  }
+
+  
+
+
+
+  async _roundContentView(aBrowser) {
+    let win = aBrowser.ownerGlobal;
+    let browserContainer = aBrowser.getTabBrowser()
+                                   .getBrowserContainer(aBrowser);
+
+    let {contentWidth, contentHeight, containerWidth, containerHeight} =
+      await win.promiseDocumentFlushed(() => {
+        let contentWidth = aBrowser.clientWidth;
+        let contentHeight = aBrowser.clientHeight;
+        let containerWidth = browserContainer.clientWidth;
+        let containerHeight = browserContainer.clientHeight;
+
+        return {
+          contentWidth,
+          contentHeight,
+          containerWidth,
+          containerHeight,
+        };
+      });
+
+    let calcMargins = (aWidth, aHeight) => {
+      
+      
+      if (!this._letterboxingDimensions.length) {
+        return {
+          width: (aWidth % kDefaultWidthStepping) / 2,
+          height: (aHeight % kDefaultHeightStepping) / 2,
+        };
+      }
+
+      let matchingArea = aWidth * aHeight;
+      let minWaste = Number.MAX_SAFE_INTEGER;
+      let targetDimensions = undefined;
+
+      
+      for (let dim of this._letterboxingDimensions) {
+        
+        
+        if (dim.width > aWidth || dim.height > aHeight) {
+          continue;
+        }
+
+        let waste = matchingArea - dim.width * dim.height;
+
+        if (waste >= 0 && waste < minWaste) {
+          targetDimensions = dim;
+          minWaste = waste;
+        }
+      }
+
+      let result;
+      
+      
+      
+      if (!targetDimensions) {
+        result = {
+          width: 0,
+          height: 0,
+        };
+      } else {
+        result = {
+          width: (aWidth - targetDimensions.width) / 2,
+          height: (aHeight - targetDimensions.height) / 2,
+        };
+      }
+
+      return result;
+    };
+
+    
+    
+    
+    let margins = calcMargins(containerWidth, containerHeight);
+
+    
+    if (aBrowser.style.margin == `${margins.height}px ${margins.width}px`) {
+      return;
+    }
+
+    win.requestAnimationFrame(() => {
+      
+      
+      
+      aBrowser.style.margin = `${margins.height}px ${margins.width}px`;
+    });
+  }
+
+  _clearContentViewMargin(aBrowser) {
+    aBrowser.ownerGlobal.requestAnimationFrame(() => {
+      aBrowser.style.margin = "";
+    });
+  }
+
+  _updateMarginsForTabsInWindow(aWindow) {
+    let tabBrowser = aWindow.gBrowser;
+
+    for (let tab of tabBrowser.tabs) {
+      let browser = tab.linkedBrowser;
+      this._addOrClearContentMargin(browser);
+    }
+  }
+
+  _attachWindow(aWindow) {
+    aWindow.gBrowser
+           .addTabsProgressListener(this);
+    aWindow.addEventListener("TabOpen", this);
+    aWindow.messageManager
+           .addMessageListener(kEventLetterboxingSizeUpdate, this);
+
+    
+    this._updateMarginsForTabsInWindow(aWindow);
+  }
+
+  _attachAllWindows() {
+    let windowList = Services.wm.getEnumerator("navigator:browser");
+
+    while (windowList.hasMoreElements()) {
+      let win = windowList.getNext();
+
+      if (win.closed || !win.gBrowser) {
+        continue;
+      }
+
+      this._attachWindow(win);
+    }
+  }
+
+  _detachWindow(aWindow) {
+    let tabBrowser = aWindow.gBrowser;
+    tabBrowser.removeTabsProgressListener(this);
+    aWindow.removeEventListener("TabOpen", this);
+    aWindow.messageManager
+           .removeMessageListener(kEventLetterboxingSizeUpdate, this);
+
+    
+    for (let tab of tabBrowser.tabs) {
+      let browser = tab.linkedBrowser;
+      this._clearContentViewMargin(browser);
+    }
+  }
+
+  _detachAllWindows() {
+    let windowList = Services.wm.getEnumerator("navigator:browser");
+
+    while (windowList.hasMoreElements()) {
+      let win = windowList.getNext();
+
+      if (win.closed || !win.gBrowser) {
+        continue;
+      }
+
+      this._detachWindow(win);
+    }
+  }
+
+  _handleDOMWindowOpened(aSubject) {
+    let win = aSubject.QueryInterface(Ci.nsIDOMWindow);
+    let self = this;
+
+    win.addEventListener("load", () => {
+      
+      
+      if (win.document
+             .documentElement
+             .getAttribute("windowtype") !== "navigator:browser") {
+        return;
+      }
+      self._attachWindow(win);
+    }, {once: true});
   }
 }
 
