@@ -4,6 +4,8 @@
 
 
 
+const GENERATED_PASSWORD_LENGTH = 15;
+const GENERATED_PASSWORD_REGEX = /^[a-km-np-zA-HJ-NP-Z2-9]{15}$/;
 
 const MASTER_PASSWORD = "omgsecret!";
 const TESTS_DIR = "/tests/toolkit/components/passwordmgr/test/";
@@ -228,6 +230,7 @@ function promiseFormsProcessed(expectedCount = 1) {
     function onProcessedForm(subject, topic, data) {
       processedCount++;
       if (processedCount == expectedCount) {
+        info(`${processedCount} form(s) processed`);
         SpecialPowers.removeObserver(onProcessedForm, "passwordmgr-processed-form");
         resolve(SpecialPowers.Cu.waiveXrays(subject), data);
       }
