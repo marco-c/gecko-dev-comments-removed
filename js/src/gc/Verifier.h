@@ -18,8 +18,11 @@ namespace gc {
 
 
 
-
-enum class CellColor : uint8_t { White = 0, Gray = 1, Black = 2 };
+enum class CellColor : uint8_t {
+  White = 0,
+  Gray = uint8_t(MarkColor::Gray),
+  Black = uint8_t(MarkColor::Black)
+};
 
 static constexpr CellColor AllCellColors[] = {
   CellColor::White, CellColor::Gray, CellColor::Black
