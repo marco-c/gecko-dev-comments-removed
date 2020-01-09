@@ -140,7 +140,8 @@ class MochitestRunner(MozbuildObject):
             
             
             
-            if len(tests) == 1 and options.keep_open is None and options.flavor == 'plain':
+            flavor = getattr(options, 'flavor', 'plain')
+            if len(tests) == 1 and options.keep_open is None and flavor == 'plain':
                 options.keep_open = True
 
         
