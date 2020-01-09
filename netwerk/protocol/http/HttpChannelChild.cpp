@@ -1401,11 +1401,13 @@ void HttpChannelChild::FailedAsyncOpen(const nsresult& status) {
   
   
   
-  if (NS_WARN_IF(NS_FAILED(mStatus))) {
+  if (mOnStartRequestCalled) {
     return;
   }
 
-  mStatus = status;
+  if (NS_SUCCEEDED(mStatus)) {
+    mStatus = status;
+  }
 
   
   HandleAsyncAbort();
@@ -2566,7 +2568,10 @@ nsresult HttpChannelChild::AsyncOpenInternal(nsIStreamListener* aListener) {
   AssertPrivateBrowsingId();
 #endif
 
-  if (mCanceled) return mStatus;
+  if (mCanceled) {
+    ReleaseListeners();
+    return mStatus;
+  }
 
   NS_ENSURE_TRUE(gNeckoChild != nullptr, NS_ERROR_FAILURE);
   NS_ENSURE_ARG_POINTER(listener);
@@ -2635,7 +2640,8 @@ nsresult HttpChannelChild::AsyncOpenInternal(nsIStreamListener* aListener) {
     
     
     
-    return NS_OK;
+    ReleaseListeners();
+    return mStatus;
   }
 
   
@@ -2687,7 +2693,11 @@ nsresult HttpChannelChild::AsyncOpenInternal(nsIStreamListener* aListener) {
     
   }
 
-  return ContinueAsyncOpen();
+  rv = ContinueAsyncOpen();
+  if (NS_FAILED(rv)) {
+    ReleaseListeners();
+  }
+  return rv;
 }
 
 
