@@ -586,11 +586,15 @@ class RTCPeerConnection {
 
   
   async _queueTaskWithClosedCheck(func) {
-    return new this._win.Promise(resolve => {
+    return new this._win.Promise((resolve, reject) => {
       Services.tm.dispatchToMainThread({ run() {
-        if (!this._closed) {
-          func();
-          resolve();
+        try {
+          if (!this._closed) {
+            func();
+            resolve();
+          }
+        } catch (e) {
+          reject(e);
         }
       }});
     });
@@ -1922,38 +1926,34 @@ class RTCRtpSender {
   }
 
   async _replaceTrack(withTrack) {
-    this._pc._checkClosed();
-
-    if (this._transceiver.stopped) {
-      throw new this._pc._win.DOMException(
-          "Cannot call replaceTrack when transceiver is stopped",
-          "InvalidStateError");
-    }
-
+    let pc = this._pc;
     if (withTrack && (withTrack.kind != this._transceiver.getKind())) {
-      throw new this._pc._win.DOMException(
+      throw new pc._win.DOMException(
           "Cannot replaceTrack with a different kind!",
           "TypeError");
     }
 
-    
-    
-    
-    this._pc._replaceTrackNoRenegotiation(this._transceiverImpl, withTrack);
+    pc._checkClosed();
 
-    let setTrack = () => {
-      this.track = withTrack;
-      this._transceiver.sync();
-    };
+    await pc._chain(async () => {
+      if (this._transceiver.stopped) {
+        throw new pc._win.DOMException(
+            "Cannot call replaceTrack when transceiver is stopped",
+            "InvalidStateError");
+      }
 
-    
-    
-    if (this._transceiver.mid == null) {
-      setTrack();
-    } else {
-      
-      await this._pc._queueTaskWithClosedCheck(setTrack);
-    }
+      await pc._queueTaskWithClosedCheck(() => {
+        
+        try {
+          pc._replaceTrackNoRenegotiation(this._transceiverImpl, withTrack);
+        } catch (e) {
+          throw new pc._win.DOMException("Track could not be replaced without renegotiation",
+                                         "InvalidModificationError");
+        }
+        this.track = withTrack;
+        this._transceiver.sync();
+      });
+    });
   }
 
   setParameters(parameters) {
