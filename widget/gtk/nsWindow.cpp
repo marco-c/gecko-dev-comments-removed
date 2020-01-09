@@ -2935,7 +2935,6 @@ void nsWindow::OnWindowStateEvent(GtkWidget *aWidget,
         !(aEvent->new_window_state & GDK_WINDOW_STATE_FOCUSED);
 
     ForceTitlebarRedraw();
-    return;
   }
 
   
