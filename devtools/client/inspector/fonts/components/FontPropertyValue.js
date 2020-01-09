@@ -11,17 +11,14 @@ const {
 } = require("devtools/client/shared/vendor/react");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
-const { KeyCodes } = require("devtools/client/shared/keycodes");
 
 const { toFixed } = require("../utils/font-utils");
-
-
-const AUTOINCREMENT_DELAY = 1000;
 
 class FontPropertyValue extends PureComponent {
   static get propTypes() {
     return {
-      autoIncrement: PropTypes.bool,
+      
+      allowOverflow: PropTypes.bool,
       className: PropTypes.string,
       defaultValue: PropTypes.number,
       disabled: PropTypes.bool.isRequired,
@@ -45,7 +42,7 @@ class FontPropertyValue extends PureComponent {
 
   static get defaultProps() {
     return {
-      autoIncrement: false,
+      allowOverflow: false,
       className: "",
       minLabel: false,
       maxLabel: false,
@@ -58,8 +55,6 @@ class FontPropertyValue extends PureComponent {
 
   constructor(props) {
     super(props);
-    
-    this.interval = null;
     this.state = {
       
       interactive: false,
@@ -71,36 +66,12 @@ class FontPropertyValue extends PureComponent {
       value: this.props.value,
     };
 
-    this.autoIncrement = this.autoIncrement.bind(this);
     this.onBlur = this.onBlur.bind(this);
     this.onChange = this.onChange.bind(this);
     this.onFocus = this.onFocus.bind(this);
-    this.onKeyDown = this.onKeyDown.bind(this);
-    this.onKeyUp = this.onKeyUp.bind(this);
     this.onMouseDown = this.onMouseDown.bind(this);
-    this.onMouseMove = this.onMouseMove.bind(this);
     this.onMouseUp = this.onMouseUp.bind(this);
     this.onUnitChange = this.onUnitChange.bind(this);
-    this.stopAutoIncrement = this.stopAutoIncrement.bind(this);
-  }
-
-  componentDidUpdate(prevProps, prevState) {
-    
-    if (prevState.interactive && !this.state.interactive) {
-      this.stopAutoIncrement();
-    }
-  }
-
-  componentWillUnmount() {
-    this.stopAutoIncrement();
-  }
-
-  
-
-
-  autoIncrement() {
-    const value = this.props.value + this.props.step * 10;
-    this.updateValue(value);
   }
 
   
@@ -129,22 +100,8 @@ class FontPropertyValue extends PureComponent {
 
 
 
-  isAtUpperBound(value) {
-    return value >= Math.floor(this.props.max);
-  }
-
-  
-
-
-
-
-
-
-
-
-
   isValueValid(value) {
-    const { autoIncrement, min, max } = this.props;
+    const { allowOverflow, min, max } = this.props;
 
     if (typeof value !== "number" || isNaN(value)) {
       return false;
@@ -155,7 +112,7 @@ class FontPropertyValue extends PureComponent {
     }
 
     
-    if (max !== undefined && value > this.props.max && !autoIncrement) {
+    if (max !== undefined && value > this.props.max && !allowOverflow) {
       return false;
     }
 
@@ -248,27 +205,6 @@ class FontPropertyValue extends PureComponent {
     });
   }
 
-  
-
-
-
-
-
-
-
-  onKeyDown(e) {
-    if (this.isAtUpperBound(this.props.value) &&
-        e.keyCode === KeyCodes.DOM_VK_UP || e.keyCode === KeyCodes.DOM_VK_RIGHT) {
-      this.startAutoIncrement();
-    }
-  }
-
-  onKeyUp(e) {
-    if (e.keyCode === KeyCodes.DOM_VK_UP || e.keyCode === KeyCodes.DOM_VK_RIGHT) {
-      this.stopAutoIncrement();
-    }
-  }
-
   onUnitChange(e) {
     this.props.onChange(this.props.name, this.props.value, this.props.unit,
        e.target.value);
@@ -285,38 +221,8 @@ class FontPropertyValue extends PureComponent {
     this.toggleInteractiveState(true);
   }
 
-  
-
-
-
-
-
-
-  onMouseMove(e) {
-    if (this.state.interactive && e.buttons) {
-      this.isAtUpperBound(this.props.value)
-        ? this.startAutoIncrement()
-        : this.stopAutoIncrement();
-    }
-  }
-
   onMouseUp() {
-    this.stopAutoIncrement();
     this.toggleInteractiveState(false);
-  }
-
-  startAutoIncrement() {
-    
-    if (!this.props.autoIncrement || this.interval) {
-      return;
-    }
-
-    this.interval = setInterval(this.autoIncrement, AUTOINCREMENT_DELAY);
-  }
-
-  stopAutoIncrement() {
-    clearInterval(this.interval);
-    this.interval = null;
   }
 
   
@@ -446,10 +352,7 @@ class FontPropertyValue extends PureComponent {
     const range = dom.input(
       {
         ...defaults,
-        onKeyDown: this.onKeyDown,
-        onKeyUp: this.onKeyUp,
         onMouseDown: this.onMouseDown,
-        onMouseMove: this.onMouseMove,
         onMouseUp: this.onMouseUp,
         className: "font-value-slider",
         disabled: this.props.disabled,
@@ -463,7 +366,7 @@ class FontPropertyValue extends PureComponent {
       {
         ...defaults,
         
-        max: this.props.autoIncrement ? null : this.props.max,
+        max: this.props.allowOverflow ? null : this.props.max,
         name: this.props.name,
         className: "font-value-input",
         disabled: this.props.disabled,
