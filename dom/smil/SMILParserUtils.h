@@ -4,8 +4,8 @@
 
 
 
-#ifndef NS_SMILPARSERUTILS_H_
-#define NS_SMILPARSERUTILS_H_
+#ifndef mozilla_SMILParserUtils_h
+#define mozilla_SMILParserUtils_h
 
 #include "nsTArray.h"
 #include "nsStringFwd.h"

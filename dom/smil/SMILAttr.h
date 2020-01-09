@@ -4,8 +4,8 @@
 
 
 
-#ifndef NS_ISMILATTR_H_
-#define NS_ISMILATTR_H_
+#ifndef mozilla_SMILAttr_h
+#define mozilla_SMILAttr_h
 
 #include "nscore.h"
 #include "nsStringFwd.h"

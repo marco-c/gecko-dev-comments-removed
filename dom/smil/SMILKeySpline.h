@@ -4,8 +4,8 @@
 
 
 
-#ifndef NS_SMILKEYSPLINE_H_
-#define NS_SMILKEYSPLINE_H_
+#ifndef mozilla_SMILKeySpline_h
+#define mozilla_SMILKeySpline_h
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/PodOperations.h"

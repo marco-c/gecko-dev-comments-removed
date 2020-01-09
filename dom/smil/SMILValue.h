@@ -4,8 +4,8 @@
 
 
 
-#ifndef NS_SMILVALUE_H_
-#define NS_SMILVALUE_H_
+#ifndef mozilla_SMILValue_h
+#define mozilla_SMILValue_h
 
 #include "mozilla/SMILNullType.h"
 #include "mozilla/SMILType.h"

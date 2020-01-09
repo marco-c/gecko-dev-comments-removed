@@ -4,8 +4,8 @@
 
 
 
-#ifndef NS_SMILFLOATTYPE_H_
-#define NS_SMILFLOATTYPE_H_
+#ifndef mozilla_SMILFloatType_h
+#define mozilla_SMILFloatType_h
 
 #include "mozilla/Attributes.h"
 #include "mozilla/SMILType.h"

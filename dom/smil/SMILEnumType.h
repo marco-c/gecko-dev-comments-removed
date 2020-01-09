@@ -4,8 +4,8 @@
 
 
 
-#ifndef MOZILLA_SMILENUMTYPE_H_
-#define MOZILLA_SMILENUMTYPE_H_
+#ifndef mozilla_SMILEnumType_h
+#define mozilla_SMILEnumType_h
 
 #include "mozilla/Attributes.h"
 #include "mozilla/SMILType.h"

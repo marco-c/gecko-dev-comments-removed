@@ -4,8 +4,8 @@
 
 
 
-#ifndef NS_SMILINSTANCETIME_H_
-#define NS_SMILINSTANCETIME_H_
+#ifndef mozilla_SMILInstanceTime_h
+#define mozilla_SMILInstanceTime_h
 
 #include "nsISupportsImpl.h"
 #include "mozilla/SMILTimeValue.h"

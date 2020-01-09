@@ -6,8 +6,8 @@
 
 
 
-#ifndef NS_SMILCSSVALUETYPE_H_
-#define NS_SMILCSSVALUETYPE_H_
+#ifndef mozilla_SMILCSSValueType_h
+#define mozilla_SMILCSSValueType_h
 
 #include "mozilla/Attributes.h"
 #include "mozilla/SMILType.h"

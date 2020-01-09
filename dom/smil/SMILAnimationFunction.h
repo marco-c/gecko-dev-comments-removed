@@ -4,8 +4,8 @@
 
 
 
-#ifndef NS_SMILANIMATIONFUNCTION_H_
-#define NS_SMILANIMATIONFUNCTION_H_
+#ifndef mozilla_SMILAnimationFunction_h
+#define mozilla_SMILAnimationFunction_h
 
 #include "mozilla/SMILAttr.h"
 #include "mozilla/SMILKeySpline.h"

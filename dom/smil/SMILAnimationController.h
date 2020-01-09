@@ -4,8 +4,8 @@
 
 
 
-#ifndef NS_SMILANIMATIONCONTROLLER_H_
-#define NS_SMILANIMATIONCONTROLLER_H_
+#ifndef mozilla_SMILAnimationController_h
+#define mozilla_SMILAnimationController_h
 
 #include "mozilla/Attributes.h"
 #include "mozilla/SMILCompositorTable.h"

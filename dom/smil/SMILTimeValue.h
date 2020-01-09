@@ -4,8 +4,8 @@
 
 
 
-#ifndef NS_SMILTIMEVALUE_H_
-#define NS_SMILTIMEVALUE_H_
+#ifndef mozilla_SMILTimeValue_h
+#define mozilla_SMILTimeValue_h
 
 #include "mozilla/SMILTypes.h"
 #include "nsDebug.h"

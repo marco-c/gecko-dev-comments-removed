@@ -4,8 +4,8 @@
 
 
 
-#ifndef NS_ISMILTYPE_H_
-#define NS_ISMILTYPE_H_
+#ifndef mozilla_SMILType_h
+#define mozilla_SMILType_h
 
 #include "mozilla/Attributes.h"
 #include "nscore.h"

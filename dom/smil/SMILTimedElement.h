@@ -4,8 +4,8 @@
 
 
 
-#ifndef NS_SMILTIMEDELEMENT_H_
-#define NS_SMILTIMEDELEMENT_H_
+#ifndef mozilla_SMILTimedElement_h
+#define mozilla_SMILTimedElement_h
 
 #include "mozilla/EventForwards.h"
 #include "mozilla/Move.h"

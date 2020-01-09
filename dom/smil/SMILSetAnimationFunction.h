@@ -4,8 +4,8 @@
 
 
 
-#ifndef NS_SMILSETANIMATIONFUNCTION_H_
-#define NS_SMILSETANIMATIONFUNCTION_H_
+#ifndef mozilla_SMILSetAnimationFunction_h
+#define mozilla_SMILSetAnimationFunction_h
 
 #include "mozilla/Attributes.h"
 #include "mozilla/SMILAnimationFunction.h"

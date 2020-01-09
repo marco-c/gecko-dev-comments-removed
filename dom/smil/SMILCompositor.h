@@ -4,8 +4,8 @@
 
 
 
-#ifndef NS_SMILCOMPOSITOR_H_
-#define NS_SMILCOMPOSITOR_H_
+#ifndef mozilla_SMILCompositor_h
+#define mozilla_SMILCompositor_h
 
 #include "mozilla/Move.h"
 #include "mozilla/UniquePtr.h"

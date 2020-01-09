@@ -4,8 +4,8 @@
 
 
 
-#ifndef SMILRepeatCount_h
-#define SMILRepeatCount_h
+#ifndef mozilla_SMILRepeatCount_h
+#define mozilla_SMILRepeatCount_h
 
 #include "nsDebug.h"
 #include <math.h>
@@ -59,4 +59,4 @@ class SMILRepeatCount {
 
 }  
 
-#endif
+#endif  

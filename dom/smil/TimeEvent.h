@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_TimeEvent_h_
-#define mozilla_dom_TimeEvent_h_
+#ifndef mozilla_dom_TimeEvent_h
+#define mozilla_dom_TimeEvent_h
 
 #include "nsDocShell.h"
 #include "mozilla/dom/Event.h"
