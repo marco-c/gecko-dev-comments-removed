@@ -236,10 +236,10 @@ class MOZ_STACK_CLASS WSRunObject final {
 
 
   template <typename PT, typename CT>
-  nsresult InsertText(dom::Document& aDocument,
-                      const nsAString& aStringToInsert,
-                      const EditorDOMPointBase<PT, CT>& aPointToInsert,
-                      EditorRawDOMPoint* aPointAfterInsertedString = nullptr);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  InsertText(dom::Document& aDocument, const nsAString& aStringToInsert,
+             const EditorDOMPointBase<PT, CT>& aPointToInsert,
+             EditorRawDOMPoint* aPointAfterInsertedString = nullptr);
 
   
   

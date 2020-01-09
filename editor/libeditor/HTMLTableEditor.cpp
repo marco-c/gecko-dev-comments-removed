@@ -2203,8 +2203,8 @@ nsresult HTMLEditor::SplitCellIntoColumns(Element* aTable, int32_t aRowIndex,
   
   
   RefPtr<Element> newCellElement;
-  rv = InsertCell(cellData.mElement, cellData.mEffectiveRowSpan, aColSpanRight,
-                  true, false, getter_AddRefs(newCellElement));
+  rv = InsertCell(MOZ_KnownLive(cellData.mElement), cellData.mEffectiveRowSpan,
+                  aColSpanRight, true, false, getter_AddRefs(newCellElement));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -2374,7 +2374,7 @@ HTMLEditor::SwitchTableCellHeaderType(Element* aSourceCell,
   
   
   RefPtr<Element> newCell = ReplaceContainerAndCloneAttributesWithTransaction(
-      *aSourceCell, *newCellName);
+      *aSourceCell, MOZ_KnownLive(*newCellName));
   if (NS_WARN_IF(!newCell)) {
     return NS_ERROR_FAILURE;
   }
