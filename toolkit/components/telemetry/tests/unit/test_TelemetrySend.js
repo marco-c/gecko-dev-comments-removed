@@ -46,6 +46,22 @@ function waitForTimer() {
   });
 }
 
+function sendPing(aSendClientId, aSendEnvironment) {
+  const TEST_PING_TYPE = "test-ping-type";
+
+  if (PingServer.started) {
+    TelemetrySend.setServer("http://localhost:" + PingServer.port);
+  } else {
+    TelemetrySend.setServer("http://doesnotexist");
+  }
+
+  let options = {
+    addClientId: aSendClientId,
+    addEnvironment: aSendEnvironment,
+  };
+  return TelemetryController.submitExternalPing(TEST_PING_TYPE, {}, options);
+}
+
 
 
 function fakePingId(type, number) {
@@ -82,6 +98,11 @@ function histogramValueCount(h) {
 add_task(async function test_setup() {
   
   do_get_profile(true);
+
+  
+  loadAddonManager("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9.2");
+  finishAddonManagerStartup();
+
   
   await setEmptyPrefWatchlist();
   Services.prefs.setBoolPref(TelemetryUtils.Preferences.HealthPingEnabled, true);
@@ -531,6 +552,40 @@ add_task(async function test_sendCheckOverride() {
   
   TelemetrySend.setTestModeEnabled(true);
   Services.prefs.clearUserPref(TelemetryUtils.Preferences.OverrideOfficialCheck);
+});
+
+add_task(async function test_submissionPath() {
+  const PING_FORMAT_VERSION = 4;
+  const TEST_PING_TYPE = "test-ping-type";
+
+  PingServer.start();
+
+  await sendPing(false, false);
+
+  
+  let request = await PingServer.promiseNextRequest();
+
+  
+  let ping = decodeRequestPayload(request);
+  checkPingFormat(ping, TEST_PING_TYPE, false, false);
+
+  let app = ping.application;
+  let pathComponents = [
+    ping.id, ping.type, app.name, app.version, app.channel, app.buildId,
+  ];
+
+  let urlComponents = request.path.split("/");
+
+  for (let i = 0; i < pathComponents.length; i++) {
+    Assert.ok(urlComponents.includes(pathComponents[i]), `Path should include ${pathComponents[i]}`);
+  }
+
+  
+  Assert.notEqual(request.queryString, "");
+
+  
+  let params = request.queryString.split("&");
+  Assert.ok(params.find(p => p == ("v=" + PING_FORMAT_VERSION)));
 });
 
 add_task(async function testCookies() {
