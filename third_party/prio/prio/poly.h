@@ -33,7 +33,7 @@ SECStatus poly_fft(MPArray points_out, const_MPArray points_in,
 
 
 
-SECStatus poly_fft_get_roots(mp_int* roots_out, int n_points,
+SECStatus poly_fft_get_roots(MPArray roots_out, int n_points,
                              const_PrioConfig cfg, bool invert);
 
 
