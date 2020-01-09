@@ -1476,11 +1476,4 @@ inline already_AddRefed<T> do_AddRef(const nsCOMPtr<T>& aObj) {
   return ref.forget();
 }
 
-
-
-template <class T>
-std::ostream& operator<<(std::ostream& aOut, const nsCOMPtr<T>& aObj) {
-  return aOut << aObj.get();
-}
-
 #endif  
