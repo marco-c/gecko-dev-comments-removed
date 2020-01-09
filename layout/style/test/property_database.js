@@ -4001,9 +4001,8 @@ var gCSSProperties = {
     inherited: true,
     type: CSS_TYPE_LONGHAND,
     initial_values: [ "auto" ],
-    other_values: [ "anywhere" ],
-    
-    invalid_values: [ "loose", "normal", "strict" ]
+    other_values: [ "loose", "normal", "strict", "anywhere" ],
+    invalid_values: []
   },
   "line-height": {
     domProp: "lineHeight",

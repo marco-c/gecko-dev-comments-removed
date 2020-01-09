@@ -1024,10 +1024,9 @@ pub enum WordBreak {
 #[allow(missing_docs)]
 pub enum LineBreak {
     Auto,
-    
-    
-    
-    
+    Loose,
+    Normal,
+    Strict,
     Anywhere,
 }
 
