@@ -248,12 +248,7 @@ class TextProperty {
       return true;
     }
 
-    
-    
-    
-    return (this.rule.domRule.declarations[selfIndex].isNameValid !== undefined)
-      ? this.rule.domRule.declarations[selfIndex].isNameValid
-      : true;
+    return this.rule.domRule.declarations[selfIndex].isNameValid;
   }
 }
 
