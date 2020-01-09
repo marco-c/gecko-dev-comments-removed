@@ -138,9 +138,9 @@ nsresult HTMLLabelElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
               
               
               
-              bool byMouse = (mouseEvent->inputSource !=
+              bool byMouse = (mouseEvent->mInputSource !=
                               MouseEvent_Binding::MOZ_SOURCE_KEYBOARD);
-              bool byTouch = (mouseEvent->inputSource ==
+              bool byTouch = (mouseEvent->mInputSource ==
                               MouseEvent_Binding::MOZ_SOURCE_TOUCH);
               fm->SetFocus(content,
                            nsIFocusManager::FLAG_BYMOVEFOCUS |
@@ -192,7 +192,7 @@ bool HTMLLabelElement::PerformAccesskey(bool aKeyCausesActivation,
     
     WidgetMouseEvent event(aIsTrustedEvent, eMouseClick, nullptr,
                            WidgetMouseEvent::eReal);
-    event.inputSource = MouseEvent_Binding::MOZ_SOURCE_KEYBOARD;
+    event.mInputSource = MouseEvent_Binding::MOZ_SOURCE_KEYBOARD;
 
     nsAutoPopupStatePusher popupStatePusher(
         aIsTrustedEvent ? PopupBlocker::openAllowed : PopupBlocker::openAbused);

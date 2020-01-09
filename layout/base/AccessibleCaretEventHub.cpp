@@ -442,7 +442,7 @@ nsEventStatus AccessibleCaretEventHub::HandleMouseEvent(
       aEvent->mMessage == eMouseLongTap) {
     
     
-    mManager->SetLastInputSource(aEvent->inputSource);
+    mManager->SetLastInputSource(aEvent->mInputSource);
   }
 
   switch (aEvent->mMessage) {

@@ -102,7 +102,7 @@ class WidgetMouseEventBase : public WidgetInputEvent {
         
         
         ,
-        inputSource( 1) {}
+        mInputSource( 1) {}
 
   WidgetMouseEventBase(bool aIsTrusted, EventMessage aMessage,
                        nsIWidget* aWidget, EventClassID aEventClassID)
@@ -114,7 +114,7 @@ class WidgetMouseEventBase : public WidgetInputEvent {
         
         
         ,
-        inputSource( 1) {}
+        mInputSource( 1) {}
 
  public:
   virtual WidgetMouseEventBase* AsMouseEventBase() override { return this; }
@@ -156,7 +156,7 @@ class WidgetMouseEventBase : public WidgetInputEvent {
   bool mHitCluster;
 
   
-  uint16_t inputSource;
+  uint16_t mInputSource;
 
   
   nsString region;
@@ -177,7 +177,7 @@ class WidgetMouseEventBase : public WidgetInputEvent {
     mButtons = aEvent.mButtons;
     mPressure = aEvent.mPressure;
     mHitCluster = aEvent.mHitCluster;
-    inputSource = aEvent.inputSource;
+    mInputSource = aEvent.mInputSource;
   }
 
   

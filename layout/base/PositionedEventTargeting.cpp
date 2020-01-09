@@ -581,7 +581,7 @@ nsIFrame* FindFrameTargetedByInputEvent(
   
   
   if (aEvent->mClass == eMouseEventClass && prefs->mTouchOnly &&
-      aEvent->AsMouseEvent()->inputSource !=
+      aEvent->AsMouseEvent()->mInputSource !=
           MouseEvent_Binding::MOZ_SOURCE_TOUCH) {
     PET_LOG("Mouse input event is not from a touch source\n");
     return target;
