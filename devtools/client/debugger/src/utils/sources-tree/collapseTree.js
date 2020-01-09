@@ -19,7 +19,8 @@ function _collapseTree(node: TreeNode, depth: number): TreeNode {
     }
 
     
-    if (depth > 1 && node.contents.length === 1) {
+    
+    if (depth > 2 && node.contents.length === 1) {
       const next = node.contents[0];
       
       if (next.type === "directory") {
