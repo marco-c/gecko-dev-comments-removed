@@ -49,16 +49,12 @@ nsresult NS_NewXULDocument(mozilla::dom::Document** result);
 namespace mozilla {
 namespace dom {
 
-class XULDocument final : public XMLDocument,
-                          public nsIStreamLoaderObserver,
-                          public nsICSSLoaderObserver,
-                          public nsIOffThreadScriptReceiver {
+class XULDocument final : public XMLDocument {
  public:
   XULDocument();
 
   
   NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_NSISTREAMLOADEROBSERVER
 
   
   virtual void Reset(nsIChannel* aChannel, nsILoadGroup* aLoadGroup) override;
@@ -71,33 +67,12 @@ class XULDocument final : public XMLDocument,
                                      nsIStreamListener** aDocListener,
                                      bool aReset = true,
                                      nsIContentSink* aSink = nullptr) override;
+  virtual void EndLoad() override;
 
   virtual void SetContentType(const nsAString& aContentType) override;
 
-  virtual void EndLoad() override;
-
-  virtual void InitialDocumentTranslationCompleted() override;
-
-  
-
-
-
-
-
-
-
-
-
-  nsresult OnPrototypeLoadDone(bool aResumeWalk);
-
   
   virtual nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
-
-  
-  NS_IMETHOD StyleSheetLoaded(mozilla::StyleSheet* aSheet, bool aWasAlternate,
-                              nsresult aStatus) override;
-
-  virtual void EndUpdate() override;
 
   virtual bool IsDocumentRightToLeft() override;
 
@@ -106,12 +81,7 @@ class XULDocument final : public XMLDocument,
 
   void ResetDocumentDirection();
 
-  NS_IMETHOD OnScriptCompileComplete(JSScript* aScript,
-                                     nsresult aStatus) override;
-
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(XULDocument, XMLDocument)
-
-  void TraceProtos(JSTracer* aTrc);
 
  protected:
   virtual ~XULDocument();
@@ -120,17 +90,6 @@ class XULDocument final : public XMLDocument,
   friend nsresult(::NS_NewXULDocument(Document** aResult));
 
   nsresult Init(void) override;
-  nsresult StartLayout(void);
-
-  nsresult PrepareToLoad(nsISupports* aContainer, const char* aCommand,
-                         nsIChannel* aChannel, nsILoadGroup* aLoadGroup,
-                         nsIParser** aResult);
-
-  nsresult PrepareToLoadPrototype(nsIURI* aURI, const char* aCommand,
-                                  nsIPrincipal* aDocumentPrincipal,
-                                  nsIParser** aResult);
-
-  void CloseElement(Element* aElement);
 
   static void DirectionChanged(const char* aPrefName, XULDocument* aData);
 
@@ -141,186 +100,6 @@ class XULDocument final : public XMLDocument,
 
   virtual JSObject* WrapNode(JSContext* aCx,
                              JS::Handle<JSObject*> aGivenProto) override;
-
-  
-  
-  
-  
-  
-  
-  
-
-  XULDocument* mNextSrcLoadWaiter;  
-
-  bool mIsWritingFastLoad;
-  bool mDocumentLoaded;
-  
-
-
-
-
-
-
-  bool mStillWalking;
-
-  uint32_t mPendingSheets;
-
-  
-
-
-
-  class ContextStack {
-   protected:
-    struct Entry {
-      nsXULPrototypeElement* mPrototype;
-      nsIContent* mElement;
-      int32_t mIndex;
-      Entry* mNext;
-    };
-
-    Entry* mTop;
-    int32_t mDepth;
-
-   public:
-    ContextStack();
-    ~ContextStack();
-
-    int32_t Depth() { return mDepth; }
-
-    nsresult Push(nsXULPrototypeElement* aPrototype, nsIContent* aElement);
-    nsresult Pop();
-    nsresult Peek(nsXULPrototypeElement** aPrototype, nsIContent** aElement,
-                  int32_t* aIndex);
-
-    nsresult SetTopIndex(int32_t aIndex);
-  };
-
-  friend class ContextStack;
-  ContextStack mContextStack;
-
-  
-
-
-
-
-  nsresult LoadScript(nsXULPrototypeScript* aScriptProto, bool* aBlock);
-
-  
-
-
-
-  nsresult ExecuteScript(nsXULPrototypeScript* aScript);
-
-  
-
-
-
-  nsresult CreateElementFromPrototype(nsXULPrototypeElement* aPrototype,
-                                      Element** aResult, bool aIsRoot);
-
-  
-
-
-  nsresult AddAttributes(nsXULPrototypeElement* aPrototype, Element* aElement);
-
-  
-
-
-
-
-
-  nsXULPrototypeScript* mCurrentScriptProto;
-
-  
-
-
-
-  bool mOffThreadCompiling;
-
-  
-
-
-
-  char16_t* mOffThreadCompileStringBuf;
-  size_t mOffThreadCompileStringLength;
-
- protected:
-  
-
-
-
-  RefPtr<nsXULPrototypeDocument> mCurrentPrototype;
-
-  
-
-
-
-  nsTArray<RefPtr<nsXULPrototypeDocument> > mPrototypes;
-
-  
-
-
-  nsresult PrepareToWalk();
-
-  
-
-
-
-  nsresult CreateAndInsertPI(const nsXULPrototypePI* aProtoPI, nsINode* aParent,
-                             nsINode* aBeforeThis);
-
-  
-
-
-
-
-
-
-
-
-  nsresult InsertXMLStylesheetPI(const nsXULPrototypePI* aProtoPI,
-                                 nsINode* aParent, nsINode* aBeforeThis,
-                                 nsIContent* aPINode);
-
-  
-
-
-
-  nsresult ResumeWalk();
-
-  
-
-
-
-
-
-  nsresult MaybeDoneWalking();
-
-  
-
-
-
-
-  nsresult DoneWalking();
-
-  class CachedChromeStreamListener : public nsIStreamListener {
-   protected:
-    RefPtr<XULDocument> mDocument;
-    bool mProtoLoaded;
-
-    virtual ~CachedChromeStreamListener();
-
-   public:
-    CachedChromeStreamListener(XULDocument* aDocument, bool aProtoLoaded);
-
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSIREQUESTOBSERVER
-    NS_DECL_NSISTREAMLISTENER
-  };
-
-  friend class CachedChromeStreamListener;
-
-  bool mInitialLayoutComplete;
 
  private:
   

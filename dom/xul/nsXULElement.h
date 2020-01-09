@@ -48,6 +48,7 @@ class StyleRule;
 namespace dom {
 class BoxObject;
 class HTMLIFrameElement;
+class PrototypeDocumentContentSink;
 enum class CallerType : uint32_t;
 }  
 }  
@@ -233,7 +234,8 @@ class nsXULPrototypeScript : public nsXULPrototypeNode {
   uint32_t mLineNo;
   bool mSrcLoading;
   bool mOutOfLine;
-  mozilla::dom::XULDocument* mSrcLoadWaiters;  
+  mozilla::dom::PrototypeDocumentContentSink*
+      mSrcLoadWaiters;  
  private:
   JS::Heap<JSScript*> mScriptObject;
 };
