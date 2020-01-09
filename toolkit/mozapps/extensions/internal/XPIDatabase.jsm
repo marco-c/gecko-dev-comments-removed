@@ -82,6 +82,7 @@ const TOOLKIT_ID                      = "toolkit@mozilla.org";
 
 const KEY_APP_SYSTEM_ADDONS           = "app-system-addons";
 const KEY_APP_SYSTEM_DEFAULTS         = "app-system-defaults";
+const KEY_APP_BUILTINS                = "app-builtin";
 const KEY_APP_SYSTEM_LOCAL            = "app-system-local";
 const KEY_APP_SYSTEM_SHARE            = "app-system-share";
 const KEY_APP_GLOBAL                  = "app-global";
@@ -111,7 +112,8 @@ const PROP_JSON_FIELDS = ["id", "syncGUID", "version", "type",
                           "seen", "dependencies",
                           "userPermissions", "icons", "iconURL",
                           "blocklistState", "blocklistURL", "startupData",
-                          "previewImage", "hidden", "installTelemetryInfo"];
+                          "previewImage", "hidden", "installTelemetryInfo",
+                          "rootURI"];
 
 const LEGACY_TYPES = new Set([
   "extension",
@@ -235,6 +237,7 @@ class AddonInternal {
     this.startupData = null;
     this._hidden = false;
     this.installTelemetryInfo = null;
+    this.rootURI = null;
 
     this.inDatabase = false;
 
@@ -256,10 +259,6 @@ class AddonInternal {
 
       if (this.location) {
         this.addedToDatabase();
-      }
-
-      if (!addonData._sourceBundle) {
-        throw new Error("Expected passed argument to contain a path");
       }
 
       this._sourceBundle = addonData._sourceBundle;
@@ -342,6 +341,7 @@ class AddonInternal {
         return this.signedState == AddonManager.SIGNEDSTATE_SYSTEM;
 
       case KEY_APP_SYSTEM_DEFAULTS:
+      case KEY_APP_BUILTINS:
       case KEY_APP_TEMPORARY:
         
         return true;
@@ -1336,12 +1336,14 @@ this.XPIDatabase = {
       
       let addonDB = new Map();
       await forEach(inputAddons.addons, loadedAddon => {
-        try {
-          loadedAddon._sourceBundle = new nsIFile(loadedAddon.path);
-        } catch (e) {
-          
-          
-          logger.warn("Could not find source bundle for add-on " + loadedAddon.id, e);
+        if (loadedAddon.path) {
+          try {
+            loadedAddon._sourceBundle = new nsIFile(loadedAddon.path);
+          } catch (e) {
+            
+            
+            logger.warn("Could not find source bundle for add-on " + loadedAddon.id, e);
+          }
         }
         loadedAddon.location = XPIStates.getLocation(loadedAddon.location);
 
@@ -2332,6 +2334,7 @@ this.XPIDatabaseReconcile = {
         
         let file = new nsIFile(aAddonState.path);
         aNewAddon = XPIInstall.syncLoadManifestFromFile(file, aLocation);
+        aNewAddon.rootURI = XPIInternal.getURIForResourceInFile(file, "").spec;
       }
       
       if (aNewAddon.id != aId) {
@@ -2427,6 +2430,9 @@ this.XPIDatabaseReconcile = {
       if (!aNewAddon) {
         let file = new nsIFile(aAddonState.path);
         aNewAddon = XPIInstall.syncLoadManifestFromFile(file, aLocation, aOldAddon);
+        aNewAddon.rootURI = XPIInternal.getURIForResourceInFile(file, "").spec;
+      } else if (!aNewAddon.rootURI) {
+        aNewAddon.rootURI = aOldAddon.rootURI;
       }
 
       
@@ -2503,6 +2509,7 @@ this.XPIDatabaseReconcile = {
       try {
         let file = new nsIFile(aAddonState.path);
         manifest = XPIInstall.syncLoadManifestFromFile(file, aLocation);
+        manifest.rootURI = aOldAddon.rootURI;
       } catch (err) {
         
         aOldAddon.brokenManifest = true;
@@ -2548,7 +2555,8 @@ this.XPIDatabaseReconcile = {
 
   isAppBundledLocation(location) {
     return (location.name == KEY_APP_GLOBAL ||
-            location.name == KEY_APP_SYSTEM_DEFAULTS);
+            location.name == KEY_APP_SYSTEM_DEFAULTS ||
+            location.name == KEY_APP_BUILTINS);
   },
 
   
@@ -2608,6 +2616,9 @@ this.XPIDatabaseReconcile = {
     } else {
       newAddon = oldAddon;
     }
+
+    newAddon.rootURI = newAddon.rootURI || xpiState.rootURI;
+
     return newAddon;
   },
 
