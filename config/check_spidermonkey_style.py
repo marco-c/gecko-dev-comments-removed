@@ -250,7 +250,6 @@ def check_style(enable_fixup):
     
     
     
-    
 
     non_js_dirnames = ('mfbt/',
                        'memory/mozalloc/',
