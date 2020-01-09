@@ -66,9 +66,11 @@ class WindowProxyHolder;
 
 
 
-#define MOZ_FOR_EACH_SYNCED_BC_FIELD(declare, ...)        \
-  declare(Name, nsString, nsAString)                   \
-  declare(Closed, bool, bool)                          \
+#define MOZ_FOR_EACH_SYNCED_BC_FIELD(declare, ...)           \
+  declare(Name, nsString, nsAString)                         \
+  declare(Closed, bool, bool)                                \
+  declare(Opener, RefPtr<BrowsingContext>, BrowsingContext*) \
+  declare(IsActivatedByUserGesture, bool, bool)              \
   __VA_ARGS__
 
 
@@ -76,9 +78,9 @@ class WindowProxyHolder;
 #define MOZ_SYNCED_BC_FIELD_ARGUMENT(name, type, atype) \
   transaction->MOZ_SYNCED_BC_FIELD_NAME(name),
 #define MOZ_SYNCED_BC_FIELD_GETTER(name, type, atype) \
-  const type& Get##name() const { return MOZ_SYNCED_BC_FIELD_NAME(name); }
+  type const& Get##name() const { return MOZ_SYNCED_BC_FIELD_NAME(name); }
 #define MOZ_SYNCED_BC_FIELD_SETTER(name, type, atype) \
-  void Set##name(const atype& aValue) {               \
+  void Set##name(atype const& aValue) {               \
     Transaction t;                                    \
     t.MOZ_SYNCED_BC_FIELD_NAME(name).emplace(aValue); \
     t.Commit(this);                                   \
@@ -204,10 +206,6 @@ class BrowsingContext : public nsWrapperCache,
 
   void GetChildren(nsTArray<RefPtr<BrowsingContext>>& aChildren);
 
-  BrowsingContext* GetOpener() const { return mOpener; }
-
-  void SetOpener(BrowsingContext* aOpener);
-
   BrowsingContextGroup* Group() { return mGroup; }
 
   
@@ -240,11 +238,6 @@ class BrowsingContext : public nsWrapperCache,
   
   
   void NotifyResetUserGestureActivation();
-
-  
-  
-  void SetUserGestureActivation();
-  void ResetUserGestureActivation();
 
   
   bool GetUserGestureActivation();
@@ -338,17 +331,12 @@ class BrowsingContext : public nsWrapperCache,
   RefPtr<BrowsingContextGroup> mGroup;
   RefPtr<BrowsingContext> mParent;
   Children mChildren;
-  WeakPtr<BrowsingContext> mOpener;
   nsCOMPtr<nsIDocShell> mDocShell;
   
   
   
   
   JS::Heap<JSObject*> mWindowProxy;
-
-  
-  
-  bool mIsActivatedByUserGesture;
 };
 
 

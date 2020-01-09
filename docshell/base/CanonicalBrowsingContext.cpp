@@ -87,27 +87,6 @@ JSObject* CanonicalBrowsingContext::WrapObject(
   return CanonicalBrowsingContext_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-void CanonicalBrowsingContext::NotifySetUserGestureActivationFromIPC(
-    bool aIsUserGestureActivation) {
-  if (!mCurrentWindowGlobal) {
-    return;
-  }
-
-  if (aIsUserGestureActivation) {
-    SetUserGestureActivation();
-  } else {
-    ResetUserGestureActivation();
-  }
-
-  USER_ACTIVATION_LOG("Chrome browsing context 0x%08" PRIx64
-                      " would notify other browsing contexts for updating "
-                      "user gesture activation flag.",
-                      Id());
-  
-  
-  
-}
-
 void CanonicalBrowsingContext::Traverse(
     nsCycleCollectionTraversalCallback& cb) {
   CanonicalBrowsingContext* tmp = this;
