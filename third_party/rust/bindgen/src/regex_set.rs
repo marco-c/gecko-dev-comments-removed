@@ -1,18 +1,12 @@
 
 
 use regex::RegexSet as RxSet;
-use std::cell::Cell;
 
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct RegexSet {
     items: Vec<String>,
-    
-    
-    matched: Vec<Cell<bool>>,
     set: Option<RxSet>,
-    
-    record_matches: bool,
 }
 
 impl RegexSet {
@@ -26,8 +20,7 @@ impl RegexSet {
     where
         S: AsRef<str>,
     {
-        self.items.push(string.as_ref().to_owned());
-        self.matched.push(Cell::new(false));
+        self.items.push(format!("^{}$", string.as_ref()));
         self.set = None;
     }
 
@@ -38,24 +31,10 @@ impl RegexSet {
 
     
     
-    pub fn unmatched_items(&self) -> impl Iterator<Item = &String> {
-        self.items.iter().enumerate().filter_map(move |(i, item)| {
-            if !self.record_matches || self.matched[i].get() {
-                return None;
-            }
-
-            Some(item)
-        })
-    }
-
     
     
-    
-    
-    pub fn build(&mut self, record_matches: bool) {
-        let items = self.items.iter().map(|item| format!("^{}$", item));
-        self.record_matches = record_matches;
-        self.set = match RxSet::new(items) {
+    pub fn build(&mut self) {
+        self.set = match RxSet::new(&self.items) {
             Ok(x) => Some(x),
             Err(e) => {
                 error!("Invalid regex in {:?}: {:?}", self.items, e);
@@ -70,23 +49,17 @@ impl RegexSet {
         S: AsRef<str>,
     {
         let s = string.as_ref();
-        let set = match self.set {
-            Some(ref set) => set,
-            None => return false,
-        };
+        self.set.as_ref().map(|set| set.is_match(s)).unwrap_or(
+            false,
+        )
+    }
+}
 
-        if !self.record_matches {
-            return set.is_match(s);
+impl Default for RegexSet {
+    fn default() -> Self {
+        RegexSet {
+            items: vec![],
+            set: None,
         }
-
-        let matches = set.matches(s);
-        if !matches.matched_any() {
-            return false;
-        }
-        for i in matches.iter() {
-            self.matched[i].set(true);
-        }
-
-        true
     }
 }
