@@ -195,6 +195,10 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
   
 
 
+  virtual nsMargin GetScrollPadding() const = 0;
+  
+
+
 
 
 

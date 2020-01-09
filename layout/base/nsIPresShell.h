@@ -779,9 +779,14 @@ class nsIPresShell : public nsStubDocumentObserver {
     SCROLL_NO_PARENT_FRAMES = 0x04,
     SCROLL_SMOOTH = 0x08,
     SCROLL_SMOOTH_AUTO = 0x10,
-    SCROLL_SNAP = 0x20
+    SCROLL_SNAP = 0x20,
+    SCROLL_IGNORE_SCROLL_MARGIN_AND_PADDING = 0x40
   };
   
+
+
+
+
 
 
 
