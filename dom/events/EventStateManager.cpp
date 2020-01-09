@@ -1558,8 +1558,7 @@ void EventStateManager::FireContextClick() {
         }
       }
 
-      Document* doc = mGestureDownContent->GetComposedDoc();
-      AutoHandlingUserInputStatePusher userInpStatePusher(true, &event, doc);
+      AutoHandlingUserInputStatePusher userInpStatePusher(true, &event);
 
       
       EventDispatcher::Dispatch(mGestureDownContent, mPresContext, &event,
@@ -6257,36 +6256,13 @@ void EventStateManager::Prefs::Init() {
 
 
 AutoHandlingUserInputStatePusher::AutoHandlingUserInputStatePusher(
-    bool aIsHandlingUserInput, WidgetEvent* aEvent, Document* aDocument)
+    bool aIsHandlingUserInput, WidgetEvent* aEvent)
     : mMessage(aEvent ? aEvent->mMessage : eVoidEvent),
       mIsHandlingUserInput(aIsHandlingUserInput) {
   if (!aIsHandlingUserInput) {
     return;
   }
   EventStateManager::StartHandlingUserInput(mMessage);
-  if (mMessage == eMouseDown) {
-    PresShell::ReleaseCapturingContent();
-    PresShell::AllowMouseCapture(true);
-  }
-  if (!aDocument || !aEvent || !aEvent->IsTrusted()) {
-    return;
-  }
-  if (NeedsToResetFocusManagerMouseButtonHandlingState()) {
-    nsFocusManager* fm = nsFocusManager::GetFocusManager();
-    NS_ENSURE_TRUE_VOID(fm);
-    
-    
-    
-    
-    mMouseButtonEventHandlingDocument =
-        fm->SetMouseButtonHandlingDocument(aDocument);
-  }
-  if (NeedsToUpdateCurrentMouseBtnState()) {
-    WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent();
-    if (mouseEvent) {
-      EventStateManager::sCurrentMouseBtn = mouseEvent->mButton;
-    }
-  }
 }
 
 AutoHandlingUserInputStatePusher::~AutoHandlingUserInputStatePusher() {
@@ -6294,18 +6270,6 @@ AutoHandlingUserInputStatePusher::~AutoHandlingUserInputStatePusher() {
     return;
   }
   EventStateManager::StopHandlingUserInput(mMessage);
-  if (mMessage == eMouseDown) {
-    PresShell::AllowMouseCapture(false);
-  }
-  if (NeedsToResetFocusManagerMouseButtonHandlingState()) {
-    nsFocusManager* fm = nsFocusManager::GetFocusManager();
-    NS_ENSURE_TRUE_VOID(fm);
-    nsCOMPtr<Document> handlingDocument =
-        fm->SetMouseButtonHandlingDocument(mMouseButtonEventHandlingDocument);
-  }
-  if (NeedsToUpdateCurrentMouseBtnState()) {
-    EventStateManager::sCurrentMouseBtn = MouseButton::eNotPressed;
-  }
 }
 
 }  

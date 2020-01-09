@@ -742,8 +742,7 @@ void Accessible::TakeFocus() const {
 
   nsFocusManager* fm = nsFocusManager::GetFocusManager();
   if (fm) {
-    AutoHandlingUserInputStatePusher inputStatePusher(true, nullptr,
-                                                      focusContent->OwnerDoc());
+    AutoHandlingUserInputStatePusher inputStatePusher(true);
     
     RefPtr<Element> element =
         focusContent->IsElement() ? focusContent->AsElement() : nullptr;
