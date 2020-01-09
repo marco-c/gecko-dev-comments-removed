@@ -1193,18 +1193,6 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
   mStartupReason = NS_LITERAL_STRING("default");
 
   
-  if (mUseDedicatedProfile) {
-    nsCString locked;
-    rv = mInstallData.GetString(mInstallHash.get(), "Locked", locked);
-    if (NS_FAILED(rv) || !locked.EqualsLiteral("1")) {
-      
-      
-      
-      mMaybeLockProfile = true;
-    }
-  }
-
-  
   mCurrent->GetRootDir(aRootDir);
   mCurrent->GetLocalDir(aLocalDir);
   NS_ADDREF(*aProfile = mCurrent);
