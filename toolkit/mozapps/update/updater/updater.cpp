@@ -2491,7 +2491,7 @@ static void UpdateThreadFunc(void* param) {
         
         
         
-        const int max_retries = 50;
+        const int max_retries = 300;
         int retries = 0;
         while (retries++ < max_retries) {
 #  ifdef XP_WIN
