@@ -4057,7 +4057,9 @@ SearchService.prototype = {
       shortName: extension.id.split("@")[0],
       description: extension.manifest.description,
       searchForm: searchProvider.search_form,
-      template: searchProvider.search_url,
+      
+      
+      template: decodeURI(searchProvider.search_url),
       searchGetParams: searchProvider.search_url_get_params,
       searchPostParams: searchProvider.search_url_post_params,
       iconURL: searchProvider.favicon_url || preferredIconUrl,
@@ -4065,6 +4067,7 @@ SearchService.prototype = {
       alias: searchProvider.keyword,
       extensionID: extension.id,
       isBuiltin: extension.addonData.builtIn,
+      
       suggestURL: searchProvider.suggest_url,
       suggestPostParams: searchProvider.suggest_url_post_params,
       suggestGetParams: searchProvider.suggest_url_get_params,
