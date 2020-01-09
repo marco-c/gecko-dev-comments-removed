@@ -609,6 +609,8 @@ class ExecuteAsyncScriptRun(object):
             
             
             self.result = False, ("CRASH", None)
+        except errors.NoSuchWindowException:
+            self.result = False, ("CRASH", None)
         except Exception as e:
             message = getattr(e, "message", "")
             if message:
