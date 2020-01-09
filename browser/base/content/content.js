@@ -29,7 +29,7 @@ XPCOMUtils.defineLazyGetter(this, "LoginManagerContent", () => {
 });
 
 
-addMessageListener("RemoteLogins:fillForm", function(message) {
+addMessageListener("PasswordManager:fillForm", function(message) {
   
   message.objects.inputElement = ContextMenuChild.getTarget(global, message, "inputElement");
   LoginManagerContent.receiveMessage(message, content);
