@@ -29,11 +29,15 @@ MOZ_MTLOG_MODULE("sdp")
 nsresult SdpHelper::CopyTransportParams(size_t numComponents,
                                         const SdpMediaSection& oldLocal,
                                         SdpMediaSection* newLocal) {
+  const SdpAttributeList& oldLocalAttrs = oldLocal.GetAttributeList();
   
-  newLocal->SetPort(oldLocal.GetPort());
+  if (!oldLocalAttrs.HasAttribute(SdpAttribute::kBundleOnlyAttribute)) {
+    
+    
+    newLocal->SetPort(oldLocal.GetPort());
+  }
   newLocal->GetConnection() = oldLocal.GetConnection();
 
-  const SdpAttributeList& oldLocalAttrs = oldLocal.GetAttributeList();
   SdpAttributeList& newLocalAttrs = newLocal->GetAttributeList();
 
   
