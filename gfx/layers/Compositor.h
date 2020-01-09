@@ -292,7 +292,8 @@ class Compositor : public TextureSourceProvider {
 
 
 
-  virtual CompositingRenderTarget* GetCurrentRenderTarget() const = 0;
+  virtual already_AddRefed<CompositingRenderTarget> GetCurrentRenderTarget()
+      const = 0;
 
   
 
@@ -300,7 +301,8 @@ class Compositor : public TextureSourceProvider {
 
 
 
-  virtual CompositingRenderTarget* GetWindowRenderTarget() const {
+  virtual already_AddRefed<CompositingRenderTarget> GetWindowRenderTarget()
+      const {
     return nullptr;
   }
 
