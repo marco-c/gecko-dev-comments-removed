@@ -5,7 +5,6 @@ async function idbCheckFunc() {
     factory = indexedDB;
   } catch (ex) {
     
-    
     factory = content.indexedDB;
   }
   try {
@@ -73,7 +72,6 @@ const workerScriptBlob = new Blob([workerScript]);
 
 async function workerCheckDeployer({ srcBlob, workerType }) {
   let worker, port;
-  
   const url = content.URL.createObjectURL(srcBlob);
   if (workerType === "dedicated") {
     worker = new content.Worker(url);
