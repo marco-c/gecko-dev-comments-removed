@@ -34,9 +34,10 @@ namespace layers {
 
 
 class ProfilerScreenshots final {
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ProfilerScreenshots)
+
  public:
   ProfilerScreenshots();
-  ~ProfilerScreenshots();
 
   
 
@@ -75,6 +76,8 @@ class ProfilerScreenshots final {
       const std::function<bool(gfx::DataSourceSurface*)>& aPopulateSurface);
 
  private:
+  ~ProfilerScreenshots();
+
   
 
 

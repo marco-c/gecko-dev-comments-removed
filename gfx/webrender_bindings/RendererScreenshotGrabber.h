@@ -89,7 +89,7 @@ class RendererScreenshotGrabber final {
   
 
 
-  UniquePtr<mozilla::layers::ProfilerScreenshots> mProfilerScreenshots;
+  RefPtr<mozilla::layers::ProfilerScreenshots> mProfilerScreenshots;
 };
 
 }  
