@@ -89,6 +89,7 @@ class UptakeTelemetry {
 
 
 
+
   static report(component, status, extra = {}) {
     const { source } = extra;
 

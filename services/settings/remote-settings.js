@@ -157,7 +157,7 @@ function remoteSettingsFunction() {
 
 
   remoteSettings.pollChanges = async ({ expectedTimestamp, trigger = "manual" } = {}) => {
-    const telemetryArgs = {
+    let telemetryArgs = {
       source: TELEMETRY_SOURCE,
       trigger,
     };
@@ -203,7 +203,10 @@ function remoteSettingsFunction() {
       throw new Error(`Polling for changes failed: ${e.message}.`);
     }
 
-    const {serverTimeMillis, changes, currentEtag, backoffSeconds} = pollResult;
+    const { serverTimeMillis, changes, currentEtag, backoffSeconds, ageSeconds } = pollResult;
+
+    
+    telemetryArgs = { age: ageSeconds, ...telemetryArgs };
 
     
     const reportStatus = changes.length === 0 ? UptakeTelemetry.STATUS.UP_TO_DATE
