@@ -14,25 +14,18 @@
 
 
 
+GECKO_PROCESS_TYPE(Default, "default", Parent)
+GECKO_PROCESS_TYPE(Plugin, "plugin", Plugin)
+GECKO_PROCESS_TYPE(Content, "tab", Content)
+GECKO_PROCESS_TYPE(IPDLUnitTest, "ipdlunittest", IPDLUnitTest)
 
+GECKO_PROCESS_TYPE(GMPlugin, "gmplugin", GMPlugin)
 
+GECKO_PROCESS_TYPE(GPU, "gpu", GPU)
 
+GECKO_PROCESS_TYPE(VR, "vr", VR)
 
+GECKO_PROCESS_TYPE(RDD, "rdd", RDD)
 
-
-
-GECKO_PROCESS_TYPE(Default, "default", Parent, Self)
-GECKO_PROCESS_TYPE(Plugin, "plugin", Plugin, PluginContainer)
-GECKO_PROCESS_TYPE(Content, "tab", Content, Self)
-GECKO_PROCESS_TYPE(IPDLUnitTest, "ipdlunittest", IPDLUnitTest, PluginContainer)
-
-GECKO_PROCESS_TYPE(GMPlugin, "gmplugin", GMPlugin, PluginContainer)
-
-GECKO_PROCESS_TYPE(GPU, "gpu", GPU, Self)
-
-GECKO_PROCESS_TYPE(VR, "vr", VR, Self)
-
-GECKO_PROCESS_TYPE(RDD, "rdd", RDD, Self)
-
-GECKO_PROCESS_TYPE(Socket, "socket", Socket, Self)
-GECKO_PROCESS_TYPE(RemoteSandboxBroker, "sandbox", RemoteSandboxBroker, PluginContainer)
+GECKO_PROCESS_TYPE(Socket, "socket", Socket)
+GECKO_PROCESS_TYPE(RemoteSandboxBroker, "sandbox", RemoteSandboxBroker)
