@@ -474,7 +474,23 @@ class LayerManagerData : public LayerUserData {
     nsIFrame* aFrame) {
   RemoveFrameFromLayerManager(aFrame, aFrame->DisplayItemData());
   aFrame->DisplayItemData().Clear();
-  aFrame->DeleteProperty(WebRenderUserDataProperty::Key());
+
+  
+  
+  
+  
+  
+  
+  
+  WebRenderUserDataTable* userDataTable =
+      aFrame->RemoveProperty(WebRenderUserDataProperty::Key());
+  if (userDataTable) {
+    for (auto iter = userDataTable->Iter(); !iter.Done(); iter.Next()) {
+      iter.UserData()->RemoveFromTable();
+    }
+    delete userDataTable;
+  }
+
 }
 
 

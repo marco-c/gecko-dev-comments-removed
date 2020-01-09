@@ -905,6 +905,22 @@ bool nsIFrame::HasDisplayItem(nsDisplayItem* aItem) {
 }
 
 void nsIFrame::RemoveDisplayItemDataForDeletion() {
+  
+  
+  
+  
+  
+  
+  
+  WebRenderUserDataTable* userDataTable =
+      RemoveProperty(WebRenderUserDataProperty::Key());
+  if (userDataTable) {
+    for (auto iter = userDataTable->Iter(); !iter.Done(); iter.Next()) {
+      iter.UserData()->RemoveFromTable();
+    }
+    delete userDataTable;
+  }
+
   FrameLayerBuilder::RemoveFrameFromLayerManager(this, DisplayItemData());
   DisplayItemData().Clear();
 
