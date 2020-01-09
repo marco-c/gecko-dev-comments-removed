@@ -277,17 +277,6 @@ class nsSVGUtils {
 
 
 
-
-
-
-
-
-  static gfxMatrix GetUserToCanvasTM(nsIFrame* aFrame);
-
-  
-
-
-
   static void NotifyChildrenOfSVGChange(nsIFrame* aFrame, uint32_t aFlags);
 
   static nsRect TransformFrameRectToOuterSVG(const nsRect& aRect,
