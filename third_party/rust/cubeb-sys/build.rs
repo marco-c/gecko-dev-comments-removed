@@ -4,6 +4,7 @@
 
 
 extern crate cmake;
+extern crate gcc;
 extern crate pkg_config;
 
 use std::env;
