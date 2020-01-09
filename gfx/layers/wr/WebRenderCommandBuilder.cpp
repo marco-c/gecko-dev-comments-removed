@@ -824,27 +824,30 @@ struct DIGroup {
         aGrouper->PaintContainerItem(this, item, bounds, children, aContext,
                                      aRecorder);
       } else {
-        
-        
-        if (dirty &&
+        nsPaintedDisplayItem* paintedItem = item->AsPaintedDisplayItem();
+        if (dirty && paintedItem &&
+            
+            
             item->GetType() != DisplayItemType::TYPE_COMPOSITOR_HITTEST_INFO) {
           
           
           
           
-          DisplayItemClip currentClip = item->GetClip();
+          DisplayItemClip currentClip = paintedItem->GetClip();
 
           if (currentClip.HasClip()) {
             aContext->Save();
             currentClip.ApplyTo(aContext, aGrouper->mAppUnitsPerDevPixel);
           }
           aContext->NewPath();
-          GP("painting %s %p-%d\n", item->Name(), item->Frame(),
-             item->GetPerFrameKey());
+          GP("painting %s %p-%d\n", paintedItem->Name(), paintedItem->Frame(),
+             paintedItem->GetPerFrameKey());
           if (aGrouper->mDisplayListBuilder->IsPaintingToWindow()) {
-            item->Frame()->AddStateBits(NS_FRAME_PAINTED_THEBES);
+            paintedItem->Frame()->AddStateBits(NS_FRAME_PAINTED_THEBES);
           }
-          item->Paint(aGrouper->mDisplayListBuilder, aContext);
+
+          paintedItem->Paint(aGrouper->mDisplayListBuilder, aContext);
+
           if (currentClip.HasClip()) {
             aContext->Restore();
           }
@@ -971,9 +974,8 @@ void Grouper::PaintContainerItem(DIGroup* aGroup, nsDisplayItem* aItem,
       break;
     }
     case DisplayItemType::TYPE_BLEND_CONTAINER: {
-      aContext->GetDrawTarget()->PushLayer(false, 1.0,
-                                           nullptr, mozilla::gfx::Matrix(),
-                                           aItemBounds);
+      aContext->GetDrawTarget()->PushLayer(false, 1.0, nullptr,
+                                           mozilla::gfx::Matrix(), aItemBounds);
       GP("beginGroup %s %p-%d\n", aItem->Name(), aItem->Frame(),
          aItem->GetPerFrameKey());
       aContext->GetDrawTarget()->FlushItem(aItemBounds);
@@ -2041,13 +2043,17 @@ static bool PaintItemByDrawTarget(nsDisplayItem* aItem, gfx::DrawTarget* aDT,
     }
 
     default:
+      if (!aItem->AsPaintedDisplayItem()) {
+        break;
+      }
+
       context->SetMatrix(context->CurrentMatrix()
                              .PreScale(aScale.width, aScale.height)
                              .PreTranslate(-aOffset.x, -aOffset.y));
       if (aDisplayListBuilder->IsPaintingToWindow()) {
         aItem->Frame()->AddStateBits(NS_FRAME_PAINTED_THEBES);
       }
-      aItem->Paint(aDisplayListBuilder, context);
+      aItem->AsPaintedDisplayItem()->Paint(aDisplayListBuilder, context);
       isInvalidated = true;
       break;
   }
@@ -2238,7 +2244,8 @@ WebRenderCommandBuilder::GenerateFallbackData(
           aItem, dt, offset, aDisplayListBuilder,
           fallbackData->mBasicLayerManager, scale, highlight);
       if (!isInvalidated) {
-        if (!aItem->GetBuildingRect().IsEqualInterior(fallbackData->mBuildingRect)) {
+        if (!aItem->GetBuildingRect().IsEqualInterior(
+                fallbackData->mBuildingRect)) {
           
           
           isInvalidated = true;
