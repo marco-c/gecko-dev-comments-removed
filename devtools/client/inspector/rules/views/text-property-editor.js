@@ -584,6 +584,17 @@ TextPropertyEditor.prototype = {
     this.expander.style.display = "none";
   },
 
+  get shouldShowComputedExpander() {
+    
+    
+    
+    
+    
+    
+    return this.prop.computed.some(c => c.name !== this.prop.name) &&
+           !this.prop.computed.every(c => !c.value);
+  },
+
   
 
 
@@ -607,8 +618,8 @@ TextPropertyEditor.prototype = {
                                  !this.prop.overridden ||
                                  this.ruleEditor.rule.isUnmatched;
 
-    const showExpander = this.prop.computed.some(c => c.name !== this.prop.name);
-    this.expander.style.display = showExpander ? "inline-block" : "none";
+    this.expander.style.display =
+      this.shouldShowComputedExpander ? "inline-block" : "none";
 
     if (!this.editing &&
         (this.prop.overridden || !this.prop.enabled ||
@@ -626,8 +637,8 @@ TextPropertyEditor.prototype = {
   _updateComputed: function() {
     this.computed.innerHTML = "";
 
-    const showExpander = this.prop.computed.some(c => c.name !== this.prop.name);
-    this.expander.style.display = !this.editing && showExpander ? "inline-block" : "none";
+    this.expander.style.display =
+      !this.editing && this.shouldShowComputedExpander ? "inline-block" : "none";
 
     this._populatedComputed = false;
     if (this.expander.hasAttribute("open")) {
