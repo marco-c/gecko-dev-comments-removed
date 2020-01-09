@@ -3,10 +3,18 @@
 module.exports = {
   "extends": [
     "plugin:mozilla/mochitest-test",
-    "plugin:mozilla/chrome-test"
   ],
+  "globals": {
+    "promptDone": true,
+    "startTest": true,
+    
+    
+    "assert": true,
+    "addMessageListener": true,
+    "sendAsyncMessage": true,
+
+  },
   "rules": {
     "brace-style": ["error", "1tbs", {"allowSingleLine": false}],
-    "no-undef": "off",
   },
 };
