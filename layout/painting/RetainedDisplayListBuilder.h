@@ -118,12 +118,27 @@ struct RetainedDisplayListBuilder {
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(Cached, RetainedDisplayListBuilder)
 
  private:
+  
+
+
+
+
+
+
+
+
+
   bool PreProcessDisplayList(RetainedDisplayList* aList,
                              AnimatedGeometryRoot* aAGR,
+                             PartialUpdateResult& aUpdated,
                              uint32_t aCallerKey = 0,
-                             uint32_t aNestingDepth = 0);
+                             uint32_t aNestingDepth = 0,
+                             bool aKeepLinked = false);
 
   
+
+
+
 
 
 
