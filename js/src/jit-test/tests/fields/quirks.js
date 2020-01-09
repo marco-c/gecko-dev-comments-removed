@@ -8,9 +8,12 @@ class C {
 
 class D {
     x = 5;
-    y = (x += 1);
-    
+    y = (this.x += 1) + 2;
 }
+
+let val = new D();
+assertEq(6, val.x);
+assertEq(8, val.y);
 
 if (typeof reportCompare === "function")
   reportCompare(true, true);
