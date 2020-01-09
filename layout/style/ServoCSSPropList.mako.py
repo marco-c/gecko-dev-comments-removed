@@ -62,34 +62,19 @@ def method(prop):
 
 
 LONGHANDS_NOT_SERIALIZED_WITH_SERVO = [
-    "animation-delay",
-    "animation-duration",
-    "animation-iteration-count",
-    "animation-name",
-    "border-image-width",
+    
     "border-spacing",
-    "border-image-width",
-    "column-count",
-    "column-gap",
+
+    
     "column-rule-width",
-    "display",
-    "fill",
-    "filter",
-    "flex-basis",
-    "flex-grow",
-    "flex-shrink",
+
+    
+    "row-gap",
+    "column-gap",
     "grid-auto-columns",
-    "grid-auto-flow",
     "grid-auto-rows",
-    "grid-column-end",
-    "grid-column-start",
-    "grid-row-end",
-    "grid-row-start",
-    "grid-template-areas",
-    "initial-letter",
-    "marker-end",
-    "marker-mid",
-    "marker-start",
+
+    
     "max-block-size",
     "max-height",
     "max-inline-size",
@@ -98,25 +83,9 @@ LONGHANDS_NOT_SERIALIZED_WITH_SERVO = [
     "min-height",
     "min-inline-size",
     "min-width",
-    "-moz-binding",
-    "-moz-box-flex",
-    "-moz-force-broken-image-icon",
+
+    
     "-moz-osx-font-smoothing",
-    "outline-width",
-    "paint-order",
-    "row-gap",
-    "scroll-snap-points-x",
-    "scroll-snap-points-y",
-    "stroke",
-    "text-emphasis-position",
-    "text-emphasis-style",
-    "text-overflow",
-    "transition-delay",
-    "transition-duration",
-    "transition-property",
-    "vertical-align",
-    "-webkit-text-stroke-width",
-    "will-change",
 ]
 
 def serialized_by_servo(prop):
