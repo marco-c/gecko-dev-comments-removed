@@ -178,6 +178,7 @@ void UiCompositorControllerChild::Destroy() {
 
   if (mIsOpen) {
     
+    mWidget = nullptr;
     PUiCompositorControllerChild::Close();
     mIsOpen = false;
   }
