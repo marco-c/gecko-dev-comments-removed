@@ -33,6 +33,7 @@ typedef void (*NSFuncPtr)();
 #if defined(XP_WIN)
 #  include <windows.h>
 #  include <mbstring.h>
+#  include "mozilla/WindowsVersion.h"
 
 typedef HINSTANCE LibHandleType;
 
@@ -277,6 +278,13 @@ static nsresult XPCOMGlueLoad(const char* aXPCOMFile) {
     if (l == 0 || *buffer == '#') {
       continue;
     }
+#  ifdef XP_WIN
+    
+    
+    if (IsWin10OrLater() && !strncmp(buffer, "api-", 4)) {
+      continue;
+    }
+#  endif
 
     
     if (buffer[l - 1] == '\n') {
