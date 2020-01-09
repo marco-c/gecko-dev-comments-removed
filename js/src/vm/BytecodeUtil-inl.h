@@ -118,6 +118,8 @@ class BytecodeRangeWithPosition : private BytecodeRange {
         sn(script->notes()),
         snpc(script->code()),
         isEntryPoint(false),
+        isBreakpoint(false),
+        seenStepSeparator(false),
         wasArtifactEntryPoint(false) {
     if (!SN_IS_TERMINATOR(sn)) {
       snpc += SN_DELTA(sn);
@@ -168,8 +170,23 @@ class BytecodeRangeWithPosition : private BytecodeRange {
   
   bool frontIsEntryPoint() const { return isEntryPoint; }
 
+  
+  
+  bool frontIsBreakablePoint() const { return isBreakpoint; }
+
+  
+  
+  bool frontIsBreakableStepPoint() const {
+    return isBreakpoint && seenStepSeparator;
+  }
+
  private:
   void updatePosition() {
+    if (isBreakpoint) {
+      isBreakpoint = false;
+      seenStepSeparator = false;
+    }
+
     
     
     jsbytecode* lastLinePC = nullptr;
@@ -189,6 +206,12 @@ class BytecodeRangeWithPosition : private BytecodeRange {
         lineno++;
         column = 0;
         lastLinePC = snpc;
+      } else if (type == SRC_BREAKPOINT) {
+        isBreakpoint = true;
+        lastLinePC = snpc;
+      } else if (type == SRC_STEP_SEP) {
+        seenStepSeparator = true;
+        lastLinePC = snpc;
       }
 
       sn = SN_NEXT(sn);
@@ -202,6 +225,8 @@ class BytecodeRangeWithPosition : private BytecodeRange {
   jssrcnote* sn;
   jsbytecode* snpc;
   bool isEntryPoint;
+  bool isBreakpoint;
+  bool seenStepSeparator;
   bool wasArtifactEntryPoint;
 };
 
