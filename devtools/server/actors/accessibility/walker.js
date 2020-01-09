@@ -482,7 +482,9 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
 
 
 
-  loadTransitionDisablingStyleSheet(win) {
+
+
+  clearStyles(win) {
     if (this._sheetLoaded) {
       return;
     }
@@ -493,6 +495,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     
     loadSheet(win, HIGHLIGHTER_STYLES_SHEET);
     this._sheetLoaded = true;
+    this.hideHighlighter();
   },
 
   
@@ -501,13 +504,34 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
 
 
 
-  removeTransitionDisablingStyleSheet(win) {
+
+
+  restoreStyles(win) {
     if (!this._sheetLoaded) {
       return;
     }
 
+    this.showHighlighter();
     removeSheet(win, HIGHLIGHTER_STYLES_SHEET);
     this._sheetLoaded = false;
+  },
+
+  hideHighlighter() {
+    
+    
+    if (this._highlighter) {
+      const highlighter = this._highlighter.instance;
+      highlighter.hideAccessibleBounds();
+    }
+  },
+
+  showHighlighter() {
+    
+    
+    if (this._highlighter) {
+      const highlighter = this._highlighter.instance;
+      highlighter.showAccessibleBounds();
+    }
   },
 
   

@@ -340,8 +340,36 @@ class XULWindowAccessibleHighlighter {
   
 
 
+
+  hideAccessibleBounds() {
+    if (this.container.hasAttribute("hidden")) {
+      return;
+    }
+
+    this._hideAccessibleBounds();
+    this._shouldRestoreBoundsVisibility = true;
+  }
+
+  
+
+
+
+  showAccessibleBounds() {
+    if (this._shouldRestoreBoundsVisibility) {
+      this._showAccessibleBounds();
+    }
+  }
+
+  
+
+
   _showAccessibleBounds() {
+    this._shouldRestoreBoundsVisibility = null;
     if (this.container) {
+      if (!this.currentNode || !this.highlighterEnv.window) {
+        return;
+      }
+
       this.container.removeAttribute("hidden");
     }
   }
@@ -350,6 +378,7 @@ class XULWindowAccessibleHighlighter {
 
 
   _hideAccessibleBounds() {
+    this._shouldRestoreBoundsVisibility = null;
     if (this.container) {
       this.container.setAttribute("hidden", "true");
     }

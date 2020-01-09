@@ -512,6 +512,13 @@ exports.CustomHighlighterActor = protocol.ActorClassWithSpec(customHighlighterSp
   
 
 
+  get instance() {
+    return this._highlighter;
+  },
+
+  
+
+
 
 
 
