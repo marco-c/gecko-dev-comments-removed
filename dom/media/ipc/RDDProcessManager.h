@@ -64,6 +64,7 @@ class RDDProcessManager final : public RDDProcessHost::Listener {
  private:
   
   void OnXPCOMShutdown();
+  void OnPreferenceChange(const char16_t* aData);
 
   RDDProcessManager();
 
@@ -95,6 +96,10 @@ class RDDProcessManager final : public RDDProcessHost::Listener {
   RDDProcessHost* mProcess;
   uint64_t mProcessToken;
   RDDChild* mRDDChild;
+  
+  
+  
+  nsTArray<mozilla::dom::Pref> mQueuedPrefs;
 };
 
 }  
