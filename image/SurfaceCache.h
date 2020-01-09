@@ -434,6 +434,16 @@ struct SurfaceCache {
 
   static bool IsLegalSize(const IntSize& aSize);
 
+  
+
+
+  static IntSize ClampVectorSize(const IntSize& aSize);
+
+  
+
+
+  static IntSize ClampSize(const ImageKey aImageKey, const IntSize& aSize);
+
  private:
   virtual ~SurfaceCache() = 0;  
 };

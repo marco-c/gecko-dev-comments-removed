@@ -104,9 +104,6 @@ class VectorImage final : public ImageResource, public nsIStreamListener {
       const SVGDrawingParameters& aParams);
 
   
-  bool UseSurfaceCacheForSize(const IntSize& aSize) const;
-
-  
   
   already_AddRefed<SourceSurface> CreateSurface(
       const SVGDrawingParameters& aParams, gfxDrawable* aSVGDrawable,

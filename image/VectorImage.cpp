@@ -17,6 +17,7 @@
 #include "mozilla/dom/SVGSVGElement.h"
 #include "mozilla/dom/SVGDocument.h"
 #include "mozilla/gfx/2D.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/PendingAnimationTracker.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/RefPtr.h"
@@ -755,10 +756,6 @@ VectorImage::GetFrameInternal(const IntSize& aSize,
     return MakeTuple(ImgDrawResult::NOT_READY, aSize, RefPtr<SourceSurface>());
   }
 
-  
-  
-  
-  
   RefPtr<SourceSurface> sourceSurface;
   IntSize decodeSize;
   Tie(sourceSurface, decodeSize) =
@@ -853,8 +850,7 @@ VectorImage::IsImageContainerAvailableAtSize(LayerManager* aManager,
                                              uint32_t aFlags) {
   
   
-  return !aSize.IsEmpty() && UseSurfaceCacheForSize(aSize) &&
-         IsImageContainerAvailable(aManager, aFlags);
+  return !aSize.IsEmpty() && IsImageContainerAvailable(aManager, aFlags);
 }
 
 
@@ -864,10 +860,6 @@ VectorImage::GetImageContainerAtSize(layers::LayerManager* aManager,
                                      const Maybe<SVGImageContext>& aSVGContext,
                                      uint32_t aFlags,
                                      layers::ImageContainer** aOutContainer) {
-  if (!UseSurfaceCacheForSize(aSize)) {
-    return ImgDrawResult::NOT_SUPPORTED;
-  }
-
   Maybe<SVGImageContext> newSVGContext;
   MaybeRestrictSVGContext(newSVGContext, aSVGContext, aFlags);
 
@@ -951,8 +943,12 @@ VectorImage::Draw(gfxContext* aContext, const nsIntSize& aSize,
   
   
   
+  
+  
+  
   if (aContext->GetDrawTarget()->GetBackendType() == BackendType::RECORDING ||
-      !UseSurfaceCacheForSize(aSize)) {
+      (!gfxVars::UseWebRender() &&
+       aSize != SurfaceCache::ClampVectorSize(aSize))) {
     aFlags |= FLAG_BYPASS_SURFACE_CACHE;
   }
 
@@ -1018,24 +1014,6 @@ already_AddRefed<gfxDrawable> VectorImage::CreateSVGDrawable(
 
   RefPtr<gfxDrawable> svgDrawable = new gfxCallbackDrawable(cb, aParams.size);
   return svgDrawable.forget();
-}
-
-bool VectorImage::UseSurfaceCacheForSize(const IntSize& aSize) const {
-  int32_t maxSizeKB = gfxPrefs::ImageCacheMaxRasterizedSVGThresholdKB();
-  if (maxSizeKB <= 0) {
-    return true;
-  }
-
-  if (!SurfaceCache::IsLegalSize(aSize)) {
-    return false;
-  }
-
-  
-  
-  
-  
-  
-  return aSize.width * aSize.height / 1024 <= maxSizeKB;
 }
 
 Tuple<RefPtr<SourceSurface>, IntSize> VectorImage::LookupCachedSurface(

@@ -511,26 +511,8 @@ class ImageSurfaceCache {
   IntSize SuggestedSize(const IntSize& aSize) const {
     IntSize suggestedSize = SuggestedSizeInternal(aSize);
     if (mIsVectorImage) {
-      
-      
-      
-      MOZ_ASSERT(SurfaceCache::IsLegalSize(suggestedSize));
-
-      
-      
-      
-      
-      int32_t maxSizeKB = gfxPrefs::ImageCacheMaxRasterizedSVGThresholdKB();
-      int32_t proposedKB = suggestedSize.width * suggestedSize.height / 256;
-      if (maxSizeKB >= proposedKB) {
-        return suggestedSize;
-      }
-
-      double scale = sqrt(double(maxSizeKB) / proposedKB);
-      suggestedSize.width = int32_t(scale * suggestedSize.width);
-      suggestedSize.height = int32_t(scale * suggestedSize.height);
+      suggestedSize = SurfaceCache::ClampVectorSize(suggestedSize);
     }
-
     return suggestedSize;
   }
 
@@ -964,7 +946,9 @@ class SurfaceCacheImpl final : public nsIMemoryReporter {
     RefPtr<ImageSurfaceCache> cache = GetImageCache(aImageKey);
     if (!cache) {
       
-      return LookupResult(MatchType::NOT_FOUND);
+      return LookupResult(
+          MatchType::NOT_FOUND,
+          SurfaceCache::ClampSize(aImageKey, aSurfaceKey.Size()));
     }
 
     
@@ -983,7 +967,7 @@ class SurfaceCacheImpl final : public nsIMemoryReporter {
 
       if (!surface) {
         return LookupResult(
-            matchType);  
+            matchType, suggestedSize);  
       }
 
       drawableSurface = surface->GetDrawableSurface();
@@ -1645,6 +1629,33 @@ bool SurfaceCache::IsLegalSize(const IntSize& aSize) {
     return false;
   }
   return true;
+}
+
+IntSize SurfaceCache::ClampVectorSize(const IntSize& aSize) {
+  
+  
+  
+  
+  int32_t maxSizeKB = gfxPrefs::ImageCacheMaxRasterizedSVGThresholdKB();
+  if (maxSizeKB <= 0) {
+    return aSize;
+  }
+
+  int32_t proposedKB = int32_t(int64_t(aSize.width) * aSize.height / 256);
+  if (maxSizeKB >= proposedKB) {
+    return aSize;
+  }
+
+  double scale = sqrt(double(maxSizeKB) / proposedKB);
+  return IntSize(int32_t(scale * aSize.width), int32_t(scale * aSize.height));
+}
+
+IntSize SurfaceCache::ClampSize(ImageKey aImageKey, const IntSize& aSize) {
+  if (aImageKey->GetType() != imgIContainer::TYPE_VECTOR) {
+    return aSize;
+  }
+
+  return ClampVectorSize(aSize);
 }
 
 }  
