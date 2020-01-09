@@ -219,7 +219,6 @@ extern const uint32_t ArgLengths[];
   _(GuardAnyClass, Id, Field) /* Guard an arbitrary class */                   \
   _(GuardCompartment, Id, Field, Field)                                        \
   _(GuardIsExtensible, Id)                                                     \
-  _(GuardIsNativeFunction, Id, Word)                                           \
   _(GuardIsNativeObject, Id)                                                   \
   _(GuardIsProxy, Id)                                                          \
   _(GuardHasProxyHandler, Id, Field)                                           \
@@ -228,6 +227,7 @@ extern const uint32_t ArgLengths[];
   _(GuardSpecificAtom, Id, Field)                                              \
   _(GuardSpecificSymbol, Id, Field)                                            \
   _(GuardSpecificInt32Immediate, Id, Int32, Byte)                              \
+  _(GuardSpecificNativeFunction, Id, Word)                                     \
   _(GuardNoDetachedTypedObjects, None)                                         \
   _(GuardMagicValue, Id, Byte)                                                 \
   _(GuardFrameHasNoArgumentsObject, None)                                      \
@@ -248,6 +248,7 @@ extern const uint32_t ArgLengths[];
   _(GuardNoAllocationMetadataBuilder, None)                                    \
   _(GuardObjectGroupNotPretenured, Field)                                      \
   _(GuardFunctionHasJitEntry, Id, Byte)                                        \
+  _(GuardFunctionIsNative, Id)                                                 \
   _(GuardNotClassConstructor, Id)                                              \
   _(LoadObject, Id, Field)                                                     \
   _(LoadProto, Id, Id)                                                         \
@@ -590,6 +591,10 @@ enum class MetaTwoByteKind : uint8_t {
   ClassTemplateObject,
 };
 
+#ifdef JS_SIMULATOR
+bool CallAnyNative(JSContext* cx, unsigned argc, Value* vp);
+#endif
+
 
 class MOZ_RAII CacheIRWriter : public JS::CustomAutoRooter {
   JSContext* cx_;
@@ -890,8 +895,11 @@ class MOZ_RAII CacheIRWriter : public JS::CustomAutoRooter {
     writeOpWithOperandId(CacheOp::GuardAnyClass, obj);
     return addStubField(uintptr_t(clasp), StubField::Type::RawWord);
   }
-  void guardIsNativeFunction(ObjOperandId obj, JSNative nativeFunc) {
-    writeOpWithOperandId(CacheOp::GuardIsNativeFunction, obj);
+  void guardFunctionIsNative(ObjOperandId obj) {
+    writeOpWithOperandId(CacheOp::GuardFunctionIsNative, obj);
+  }
+  void guardSpecificNativeFunction(ObjOperandId obj, JSNative nativeFunc) {
+    writeOpWithOperandId(CacheOp::GuardSpecificNativeFunction, obj);
     writePointer(JS_FUNC_TO_DATA_PTR(void*, nativeFunc));
   }
   void guardIsNativeObject(ObjOperandId obj) {
@@ -1300,6 +1308,27 @@ class MOZ_RAII CacheIRWriter : public JS::CustomAutoRooter {
     
     
     buffer_.writeByte(ignoresReturnValue);
+#endif
+  }
+
+  void callAnyNativeFunction(ObjOperandId calleeId, Int32OperandId argc,
+                             CallFlags flags) {
+    MOZ_ASSERT(!flags.isSameRealm());
+    writeOpWithOperandId(CacheOp::CallNativeFunction, calleeId);
+    writeOperandId(argc);
+    writeCallFlags(flags);
+#ifdef JS_SIMULATOR
+    
+    
+    
+    
+    
+    JSNative target = CallAnyNative;
+    void* rawPtr = JS_FUNC_TO_DATA_PTR(void*, target);
+    void* redirected = Simulator::RedirectNativeFunction(rawPtr, Args_General3);
+    addStubField(uintptr_t(redirected), StubField::Type::RawWord);
+#else
+    buffer_.writeByte( false);
 #endif
   }
 
