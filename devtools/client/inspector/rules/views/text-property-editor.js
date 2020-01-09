@@ -685,7 +685,8 @@ TextPropertyEditor.prototype = {
 
 
   _populateShorthandOverridden: function() {
-    if (this._populatedShorthandOverridden || this.prop.overridden) {
+    if (this._populatedShorthandOverridden || this.prop.overridden ||
+        !this.shouldShowComputedExpander) {
       return;
     }
     this._populatedShorthandOverridden = true;
