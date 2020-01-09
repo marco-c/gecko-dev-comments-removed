@@ -489,7 +489,7 @@ void nsStyleList::TriggerImageLoads(Document& aDocument,
 }
 
 nsChangeHint nsStyleList::CalcDifference(
-    const nsStyleList& aNewData, const nsStyleDisplay* aOldDisplay) const {
+    const nsStyleList& aNewData, const nsStyleDisplay& aOldDisplay) const {
   
   
   if (mQuotes != aNewData.mQuotes &&
@@ -503,7 +503,7 @@ nsChangeHint nsStyleList::CalcDifference(
   
   
   
-  if (aOldDisplay && aOldDisplay->mDisplay == StyleDisplay::ListItem) {
+  if (aOldDisplay.mDisplay == StyleDisplay::ListItem) {
     if (mListStylePosition != aNewData.mListStylePosition) {
       return nsChangeHint_ReconstructFrame;
     }
@@ -1413,7 +1413,7 @@ static bool IsGridTemplateEqual(
 
 nsChangeHint nsStylePosition::CalcDifference(
     const nsStylePosition& aNewData,
-    const nsStyleVisibility* aOldStyleVisibility) const {
+    const nsStyleVisibility& aOldStyleVisibility) const {
   nsChangeHint hint = nsChangeHint(0);
 
   
@@ -1523,23 +1523,13 @@ nsChangeHint nsStylePosition::CalcDifference(
   
   
   
-  
-  
-  
-  
-  if (aOldStyleVisibility) {
-    bool isVertical = WritingMode(aOldStyleVisibility).IsVertical();
-    if (isVertical ? widthChanged : heightChanged) {
-      hint |= nsChangeHint_ReflowHintsForBSizeChange;
-    }
+  bool isVertical = WritingMode(&aOldStyleVisibility).IsVertical();
+  if (isVertical ? widthChanged : heightChanged) {
+    hint |= nsChangeHint_ReflowHintsForBSizeChange;
+  }
 
-    if (isVertical ? heightChanged : widthChanged) {
-      hint |= nsChangeHint_ReflowHintsForISizeChange;
-    }
-  } else {
-    if (widthChanged || heightChanged) {
-      hint |= nsChangeHint_NeutralChange;
-    }
+  if (isVertical ? heightChanged : widthChanged) {
+    hint |= nsChangeHint_ReflowHintsForISizeChange;
   }
 
   

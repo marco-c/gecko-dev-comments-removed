@@ -7947,7 +7947,7 @@ bool nsDisplayTransform::CreateWebRenderCommands(
 
   
   bool animated =
-    ActiveLayerTracker::IsStyleMaybeAnimated(Frame(), eCSSProperty_transform);
+      ActiveLayerTracker::IsStyleMaybeAnimated(Frame(), eCSSProperty_transform);
 
   wr::StackingContextParams params;
   params.mBoundTransform = &newTransformMatrix;
