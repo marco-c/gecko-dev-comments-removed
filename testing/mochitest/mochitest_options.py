@@ -644,6 +644,11 @@ class MochitestArguments(ArgumentContainer):
         if options.flavor is None:
             options.flavor = 'plain'
 
+        for value in ALL_FLAVORS.values():
+            if options.flavor in value['aliases']:
+                options.flavor = value['suite']
+                break
+
         if options.gmp_path is None and options.app and build_obj:
             
             gmp_modules = (
