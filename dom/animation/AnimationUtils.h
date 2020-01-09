@@ -80,9 +80,7 @@ class AnimationUtils {
   
 
 
-
-  static bool EffectSetContainsAnimatedScale(EffectSet& aEffects,
-                                             const nsIFrame* aFrame);
+  static bool FrameHasAnimatedScale(const nsIFrame* aFrame);
 
   
 

@@ -1701,6 +1701,13 @@ bool KeyframeEffect::HasComputedTimingChanged() const {
 }
 
 bool KeyframeEffect::ContainsAnimatedScale(const nsIFrame* aFrame) const {
+  
+  
+  
+  
+  MOZ_ASSERT(aFrame && aFrame->IsFrameOfType(nsIFrame::eSupportsCSSTransforms),
+             "We should be passed a frame that supports transforms");
+
   if (!IsCurrent()) {
     return false;
   }

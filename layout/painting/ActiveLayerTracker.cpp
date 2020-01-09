@@ -555,15 +555,7 @@ bool ActiveLayerTracker::IsScaleSubjectToAnimation(nsIFrame* aFrame) {
     return true;
   }
 
-  
-  
-  EffectSet* effects = EffectSet::GetEffectSet(aFrame);
-  if (effects &&
-      AnimationUtils::EffectSetContainsAnimatedScale(*effects, aFrame)) {
-    return true;
-  }
-
-  return false;
+  return AnimationUtils::FrameHasAnimatedScale(aFrame);
 }
 
 
