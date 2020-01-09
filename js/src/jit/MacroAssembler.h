@@ -593,6 +593,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   CodeOffset callWithABI(wasm::BytecodeOffset offset, wasm::SymbolicAddress fun,
                          MoveOp::Type result = MoveOp::GENERAL);
+  void callDebugWithABI(wasm::SymbolicAddress fun, MoveOp::Type result = MoveOp::GENERAL);
 
  private:
   
