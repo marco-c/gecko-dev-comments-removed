@@ -60,7 +60,7 @@ class MobileViewportManager final : public nsIDOMEventListener,
  public:
   
 
-  void RequestReflow();
+  void RequestReflow(bool aForceAdjustResolution);
 
   
 
