@@ -1744,20 +1744,7 @@ already_AddRefed<DrawTarget> gfxPlatform::CreateOffscreenContentDrawTarget(
     const IntSize& aSize, SurfaceFormat aFormat, bool aFallback) {
   BackendType backend = (aFallback) ? mSoftwareBackend : mContentBackend;
   NS_ASSERTION(backend != BackendType::NONE, "No backend.");
-  RefPtr<DrawTarget> dt = CreateDrawTargetForBackend(backend, aSize, aFormat);
-
-  if (!dt) {
-    return nullptr;
-  }
-
-  
-  
-  
-  dt->ClearRect(Rect());
-  if (!dt->IsValid()) {
-    return nullptr;
-  }
-  return dt.forget();
+  return CreateDrawTargetForBackend(backend, aSize, aFormat);
 }
 
 already_AddRefed<DrawTarget> gfxPlatform::CreateSimilarSoftwareDrawTarget(
