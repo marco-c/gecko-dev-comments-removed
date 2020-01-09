@@ -2,8 +2,6 @@
 
 
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-
 
 
 function RandomSelector() {
@@ -68,5 +66,4 @@ MinTabSelector.prototype = {
   },
 };
 
-var components = [RandomSelector, MinTabSelector];
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory(components);
+var EXPORTED_SYMBOLS = ["RandomSelector", "MinTabSelector"]
