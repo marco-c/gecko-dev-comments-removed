@@ -256,7 +256,16 @@ var ManifestProcessor = {
         property: "lang",
         expectedType: "string", trim: true,
       };
-      return extractor.extractLanguageValue(spec);
+      let tag = extractor.extractValue(spec);
+      
+      
+      
+      
+      
+      
+      
+      
+      return tag;
     }
   },
 };
