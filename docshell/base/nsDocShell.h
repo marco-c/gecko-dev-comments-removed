@@ -590,6 +590,7 @@ class nsDocShell final : public nsDocLoader,
 
   
   
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   nsresult EndPageLoad(nsIWebProgress* aProgress, nsIChannel* aChannel,
                        nsresult aResult);
 

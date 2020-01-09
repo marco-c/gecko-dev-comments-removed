@@ -6578,7 +6578,8 @@ nsresult nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
   
   if (!mEODForCurrentDocument && mContentViewer) {
     mIsExecutingOnLoadHandler = true;
-    mContentViewer->LoadComplete(aStatus);
+    nsCOMPtr<nsIContentViewer> contentViewer = mContentViewer;
+    contentViewer->LoadComplete(aStatus);
     mIsExecutingOnLoadHandler = false;
 
     mEODForCurrentDocument = true;

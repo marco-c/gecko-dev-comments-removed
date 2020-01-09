@@ -531,8 +531,7 @@ nsresult Selection::GetTableCellLocationFromRange(
 
   
   
-  RefPtr<PresShell> presShell = mFrameSelection->GetPresShell();
-  if (presShell) {
+  if (RefPtr<PresShell> presShell = mFrameSelection->GetPresShell()) {
     presShell->FlushPendingNotifications(FlushType::Frames);
 
     

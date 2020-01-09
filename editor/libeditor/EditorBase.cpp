@@ -2938,8 +2938,7 @@ void EditorBase::DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
   aError.SuppressException();
 
   
-  RefPtr<PresShell> presShell = GetPresShell();
-  if (presShell) {
+  if (RefPtr<PresShell> presShell = GetPresShell()) {
     presShell->FlushPendingNotifications(FlushType::Frames);
   }
   NS_WARNING_ASSERTION(!Destroyed(),

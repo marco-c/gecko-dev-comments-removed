@@ -774,8 +774,7 @@ nsresult HTMLEditor::InsertTableRowsWithTransaction(
   
   
   
-  RefPtr<PresShell> presShell = GetPresShell();
-  if (presShell) {
+  if (RefPtr<PresShell> presShell = GetPresShell()) {
     presShell->FlushPendingNotifications(FlushType::Frames);
   }
 

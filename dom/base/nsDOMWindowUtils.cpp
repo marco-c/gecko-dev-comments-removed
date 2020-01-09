@@ -371,7 +371,7 @@ nsDOMWindowUtils::Redraw(uint32_t aCount, uint32_t* aDurationOut) {
 
 NS_IMETHODIMP
 nsDOMWindowUtils::UpdateLayerTree() {
-  if (PresShell* presShell = GetPresShell()) {
+  if (RefPtr<PresShell> presShell = GetPresShell()) {
     
     
     

@@ -515,7 +515,7 @@ class nsFrameSelection final {
 
 
 
-  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   nsresult PhysicalMove(int16_t aDirection, int16_t aAmount, bool aExtend);
 
   

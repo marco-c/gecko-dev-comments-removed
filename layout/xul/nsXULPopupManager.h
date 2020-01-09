@@ -672,6 +672,7 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   ~nsXULPopupManager();
 
   
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   nsMenuPopupFrame* GetPopupFrameForContent(nsIContent* aContent,
                                             bool aShouldFlush);
 
@@ -729,6 +730,7 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
 
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void FirePopupHidingEvent(nsIContent* aPopup, nsIContent* aNextPopup,
                             nsIContent* aLastPopup, nsPresContext* aPresContext,
                             nsPopupType aPopupType, bool aDeselectMenu,

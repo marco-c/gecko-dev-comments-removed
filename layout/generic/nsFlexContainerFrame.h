@@ -197,6 +197,7 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
 
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   static nsFlexContainerFrame* GetFlexFrameWithComputedInfo(nsIFrame* aFrame);
 
   

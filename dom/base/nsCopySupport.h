@@ -15,10 +15,10 @@ class nsINode;
 class nsIImageLoadingContent;
 class nsIContent;
 class nsITransferable;
-class nsIPresShell;
 class nsILoadContext;
 
 namespace mozilla {
+class PresShell;
 namespace dom {
 class Document;
 class Selection;
@@ -95,9 +95,10 @@ class nsCopySupport {
 
 
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   static bool FireClipboardEvent(mozilla::EventMessage aEventMessage,
                                  int32_t aClipboardType,
-                                 nsIPresShell* aPresShell,
+                                 mozilla::PresShell* aPresShell,
                                  mozilla::dom::Selection* aSelection,
                                  bool* aActionTaken = nullptr);
 };

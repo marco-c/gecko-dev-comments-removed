@@ -348,7 +348,7 @@ class nsTreeBodyFrame final : public nsLeafBoxFrame,
                             AutoWeakFrame& aWeakColumnsFrame);
 
   
-  void CheckOverflow(const ScrollParts& aParts);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void CheckOverflow(const ScrollParts& aParts);
 
   
   

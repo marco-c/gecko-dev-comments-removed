@@ -1642,7 +1642,8 @@ nsresult nsPrintJob::ReconstructAndReflow(bool doSetPixelScale) {
       }
     }
 
-    po->mPresShell->FlushPendingNotifications(FlushType::Layout);
+    RefPtr<PresShell> presShell = static_cast<PresShell*>(po->mPresShell.get());
+    presShell->FlushPendingNotifications(FlushType::Layout);
 
     
     
@@ -2290,7 +2291,8 @@ nsresult nsPrintJob::ReflowPrintObject(const UniquePtr<nsPrintObject>& aPO) {
   NS_ASSERTION(aPO->mPresShell, "Presshell should still be here");
 
   
-  aPO->mPresShell->FlushPendingNotifications(FlushType::Layout);
+  RefPtr<PresShell> presShell = static_cast<PresShell*>(aPO->mPresShell.get());
+  presShell->FlushPendingNotifications(FlushType::Layout);
 
   rv = UpdateSelectionAndShrinkPrintObject(aPO.get(), documentIsTopLevel);
   NS_ENSURE_SUCCESS(rv, rv);

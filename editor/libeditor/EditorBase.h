@@ -1348,6 +1348,7 @@ class EditorBase : public nsIEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
                    nsIContent& aNewLeftNode, ErrorResult& aError);
 

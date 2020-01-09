@@ -394,6 +394,7 @@ class SVGTextFrame final : public nsSVGDisplayContainerFrame {
 
 
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   nsresult GetSubStringLengthSlowFallback(nsIContent* aContent,
                                           uint32_t charnum, uint32_t nchars,
                                           float* aResult);

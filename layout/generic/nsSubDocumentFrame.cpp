@@ -904,7 +904,7 @@ class nsHideViewer : public Runnable {
     NS_ASSERTION(mPresShell, "Must have a presshell");
   }
 
-  NS_IMETHOD Run() override {
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD Run() override {
     
     
     
@@ -918,7 +918,7 @@ class nsHideViewer : public Runnable {
     
     
     if (!mPresShell->IsDestroying() && mFrameElement->IsInComposedDoc()) {
-      mPresShell->FlushPendingNotifications(FlushType::Frames);
+      MOZ_KnownLive(mPresShell)->FlushPendingNotifications(FlushType::Frames);
     }
 
     

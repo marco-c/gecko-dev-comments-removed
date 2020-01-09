@@ -654,7 +654,7 @@ static Element* GetElementOrNearestFlattenedTreeParentElement(nsINode* aNode) {
 
 bool nsCopySupport::FireClipboardEvent(EventMessage aEventMessage,
                                        int32_t aClipboardType,
-                                       nsIPresShell* aPresShell,
+                                       PresShell* aPresShell,
                                        Selection* aSelection,
                                        bool* aActionTaken) {
   if (aActionTaken) {
@@ -670,8 +670,10 @@ bool nsCopySupport::FireClipboardEvent(EventMessage aEventMessage,
                    originalEventMessage == ePaste,
                "Invalid clipboard event type");
 
-  nsCOMPtr<nsIPresShell> presShell = aPresShell;
-  if (!presShell) return false;
+  RefPtr<PresShell> presShell = aPresShell;
+  if (!presShell) {
+    return false;
+  }
 
   nsCOMPtr<Document> doc = presShell->GetDocument();
   if (!doc) return false;
@@ -764,7 +766,9 @@ bool nsCopySupport::FireClipboardEvent(EventMessage aEventMessage,
   
   
   presShell->FlushPendingNotifications(FlushType::Frames);
-  if (presShell->IsDestroying()) return false;
+  if (presShell->IsDestroying()) {
+    return false;
+  }
 
   
   

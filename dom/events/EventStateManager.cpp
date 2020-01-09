@@ -5052,7 +5052,8 @@ nsresult EventStateManager::HandleMiddleClickPaste(
   nsCOMPtr<nsIContent> container;
   int32_t offset;
   nsLayoutUtils::GetContainerAndOffsetAtEvent(
-      aPresShell, aMouseEvent, getter_AddRefs(container), &offset);
+      static_cast<PresShell*>(aPresShell), aMouseEvent,
+      getter_AddRefs(container), &offset);
   if (container) {
     
     
@@ -5078,7 +5079,8 @@ nsresult EventStateManager::HandleMiddleClickPaste(
   
   
   
-  if (!nsCopySupport::FireClipboardEvent(ePaste, clipboardType, aPresShell,
+  if (!nsCopySupport::FireClipboardEvent(ePaste, clipboardType,
+                                         static_cast<PresShell*>(aPresShell),
                                          selection)) {
     *aStatus = nsEventStatus_eConsumeNoDefault;
     return NS_OK;

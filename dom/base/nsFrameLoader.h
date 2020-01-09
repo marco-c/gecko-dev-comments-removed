@@ -251,7 +251,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
   
   
   
-  void ForceLayoutIfNecessary();
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void ForceLayoutIfNecessary();
 
   
   

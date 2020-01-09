@@ -1905,17 +1905,18 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
              j && mPresContext && mPresContext->GetPresShell(); --j) {
           
           
-          nsIPresShell* shell = observers[j - 1];
-          if (!mStyleFlushObservers.RemoveElement(shell)) continue;
-
-          nsCOMPtr<nsIPresShell> shellKungFuDeathGrip(shell);
-          shell->mObservingStyleFlushes = false;
-          shell->FlushPendingNotifications(
+          nsIPresShell* rawPresShell = observers[j - 1];
+          if (!mStyleFlushObservers.RemoveElement(rawPresShell)) {
+            continue;
+          }
+          RefPtr<PresShell> presShell = static_cast<PresShell*>(rawPresShell);
+          presShell->mObservingStyleFlushes = false;
+          presShell->FlushPendingNotifications(
               ChangesToFlush(FlushType::Style, false));
           
           
           
-          shell->NotifyFontFaceSetOnRefresh();
+          presShell->NotifyFontFaceSetOnRefresh();
           mNeedToRecomputeVisibility = true;
         }
       }
@@ -1927,19 +1928,20 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
            j && mPresContext && mPresContext->GetPresShell(); --j) {
         
         
-        nsIPresShell* shell = observers[j - 1];
-        if (!mLayoutFlushObservers.RemoveElement(shell)) continue;
-
-        nsCOMPtr<nsIPresShell> shellKungFuDeathGrip(shell);
-        shell->mObservingLayoutFlushes = false;
-        shell->mWasLastReflowInterrupted = false;
-        FlushType flushType = HasPendingAnimations(shell)
+        nsIPresShell* rawPresShell = observers[j - 1];
+        if (!mLayoutFlushObservers.RemoveElement(rawPresShell)) {
+          continue;
+        }
+        RefPtr<PresShell> presShell = static_cast<PresShell*>(rawPresShell);
+        presShell->mObservingLayoutFlushes = false;
+        presShell->mWasLastReflowInterrupted = false;
+        FlushType flushType = HasPendingAnimations(presShell)
                                   ? FlushType::Layout
                                   : FlushType::InterruptibleLayout;
-        shell->FlushPendingNotifications(ChangesToFlush(flushType, false));
+        presShell->FlushPendingNotifications(ChangesToFlush(flushType, false));
         
         
-        shell->NotifyFontFaceSetOnRefresh();
+        presShell->NotifyFontFaceSetOnRefresh();
         mNeedToRecomputeVisibility = true;
       }
     }
