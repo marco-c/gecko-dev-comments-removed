@@ -166,7 +166,8 @@ uint32_t Compatibility::sConsumers = Compatibility::UNKNOWN;
 
 
 
- void Compatibility::InitConsumers() {
+
+void Compatibility::InitConsumers() {
   HMODULE jawsHandle = ::GetModuleHandleW(L"jhook");
   if (jawsHandle) {
     sConsumers |=
@@ -203,7 +204,8 @@ uint32_t Compatibility::sConsumers = Compatibility::UNKNOWN;
     sConsumers &= ~Compatibility::UNKNOWN;
 }
 
- bool Compatibility::HasKnownNonUiaConsumer() {
+
+bool Compatibility::HasKnownNonUiaConsumer() {
   InitConsumers();
   return sConsumers & ~(Compatibility::UNKNOWN | UIAUTOMATION);
 }
