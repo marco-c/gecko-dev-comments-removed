@@ -148,6 +148,19 @@ TabSources.prototype = {
   },
 
   getOrCreateSourceActor(source) {
+    
+    
+    try {
+      source = this._thread.dbg.adoptSource(source);
+    } catch (e) {
+      
+      
+      if (/is in the same compartment as this debugger/.test(e)) {
+        return null;
+      }
+      throw e;
+    }
+
     if (this.hasSourceActor(source)) {
       return this.getSourceActor(source);
     }
