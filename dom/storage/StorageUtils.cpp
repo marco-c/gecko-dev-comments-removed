@@ -119,7 +119,7 @@ nsCString Scheme0Scope(const nsACString& aOriginSuffix,
   }
 
   if (oa.mInIsolatedMozBrowser) {
-    result.AppendInt(nsIScriptSecurityManager::NO_APP_ID);
+    result.AppendInt(0);  
     result.Append(':');
     result.Append(oa.mInIsolatedMozBrowser ? 't' : 'f');
     result.Append(':');
