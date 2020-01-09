@@ -106,7 +106,7 @@ class HitTestingTreeNode {
                       const CSSTransformMatrix& aTransform,
                       const Maybe<ParentLayerIntRegion>& aClipRegion,
                       const EventRegionsOverride& aOverride,
-                      bool aIsBackfaceHidden);
+                      bool aIsBackfaceHidden, bool aIsAsyncZoomContainer);
   bool IsOutsideClip(const ParentLayerPoint& aPoint) const;
 
   
@@ -140,6 +140,8 @@ class HitTestingTreeNode {
   EventRegionsOverride GetEventRegionsOverride() const;
   const CSSTransformMatrix& GetTransform() const;
   const LayerIntRegion& GetVisibleRegion() const;
+
+  bool IsAsyncZoomContainer() const;
 
   
   void Dump(const char* aPrefix = "") const;
@@ -194,6 +196,9 @@ class HitTestingTreeNode {
 
 
   bool mIsBackfaceHidden;
+
+  
+  bool mIsAsyncZoomContainer;
 
   
 

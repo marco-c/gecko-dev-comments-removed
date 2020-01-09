@@ -299,6 +299,12 @@ class MOZ_STACK_CLASS WebRenderScrollDataWrapper {
     return false;
   }
 
+  bool IsAsyncZoomContainer() const {
+    
+    
+    return false;
+  }
+
   const void* GetLayer() const {
     MOZ_ASSERT(IsValid());
     return mLayer;
