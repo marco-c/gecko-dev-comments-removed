@@ -7,28 +7,13 @@
 const Services = require("Services");
 
 const FluentReact = require("devtools/client/shared/vendor/fluent-react");
-const { L10nRegistry, FileSource } =
-  require("resource://gre/modules/L10nRegistry.jsm");
+const { L10nRegistry } = require("resource://gre/modules/L10nRegistry.jsm");
 
 class L10n {
   async init() {
-    
-    
-    
-    if (!L10nRegistry.sources.has("aboutdebugging")) {
-      const temporarySource = new FileSource(
-        "aboutdebugging",
-        ["en-US"],
-        "chrome://devtools/content/aboutdebugging-new/tmp-locale/{locale}/"
-      );
-      L10nRegistry.registerSource(temporarySource);
-    }
-
     const locales = Services.locale.appLocalesAsBCP47;
-    const generator = L10nRegistry.generateBundles(locales, [
-      "aboutdebugging.ftl",
-      "devtools/aboutdebugging.ftl",
-    ]);
+    const generator = L10nRegistry.generateBundles(locales,
+      ["devtools/aboutdebugging.ftl"]);
 
     this._bundles = [];
     for await (const bundle of generator) {
@@ -52,10 +37,6 @@ class L10n {
     
     
     return this._reactLocalization.getString.apply(this._reactLocalization, arguments);
-  }
-
-  destroy() {
-    L10nRegistry.removeSource("aboutdebugging");
   }
 }
 

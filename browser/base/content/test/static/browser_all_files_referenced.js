@@ -172,8 +172,6 @@ var whitelist = [
   
   
   {file: "resource://gre/modules/kvstore.jsm"},
-  {file: "chrome://devtools/content/aboutdebugging-new/tmp-locale/en-US/aboutdebugging.ftl",
-   isFromDevTools: true},
   
   {file: "resource://app/localization/en-US/browser/touchbar/touchbar.ftl",
    platforms: ["linux", "win"]},
