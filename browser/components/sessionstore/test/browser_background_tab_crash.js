@@ -228,12 +228,12 @@ add_task(async function test_preload_crash() {
   }
 
   
-  NewTabPagePreloading.removePreloadedBrowser(window);
+  gBrowser.removePreloadedBrowser();
 
   
-  NewTabPagePreloading.maybeCreatePreloadedBrowser(window);
+  gBrowser._createPreloadBrowser();
 
-  await BrowserTestUtils.crashBrowser(gBrowser.preloadedBrowser, false);
+  await BrowserTestUtils.crashBrowser(gBrowser._preloadedBrowser, false);
 
-  Assert.ok(!gBrowser.preloadedBrowser);
+  Assert.ok(!gBrowser._preloadedBrowser);
 });

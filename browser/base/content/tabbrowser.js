@@ -112,6 +112,8 @@ window._gBrowser = {
 
   _tabForBrowser: new WeakMap(),
 
+  _preloadedBrowser: null,
+
   
 
 
@@ -159,8 +161,6 @@ window._gBrowser = {
 
 
   _windowIsClosing: false,
-
-  preloadedBrowser: null,
 
   
 
@@ -329,7 +329,7 @@ window._gBrowser = {
       sameProcessAsFrameLoader,
       remoteType,
     };
-    let browser = this.createBrowser(createOptions);
+    let browser = this._createBrowser(createOptions);
     browser.setAttribute("primary", "true");
     if (!tabArgument) {
       browser.setAttribute("blank", "true");
@@ -1820,7 +1820,87 @@ window._gBrowser = {
     return false;
   },
 
-  createBrowser({
+  removePreloadedBrowser() {
+    if (!this._isPreloadingEnabled()) {
+      return;
+    }
+
+    let browser = this._getPreloadedBrowser();
+
+    if (browser) {
+      this.getPanel(browser).remove();
+    }
+  },
+
+  _getPreloadedBrowser() {
+    if (!this._isPreloadingEnabled()) {
+      return null;
+    }
+
+    
+    let browser = this._preloadedBrowser;
+
+    
+    this._preloadedBrowser = null;
+
+    
+    
+    
+    
+    
+    
+    if (browser) {
+      browser.setAttribute("preloadedState", "consumed");
+      browser.setAttribute("autocompletepopup", "PopupAutoComplete");
+    }
+
+    return browser;
+  },
+
+  _isPreloadingEnabled() {
+    
+    
+    
+    return Services.prefs.getBoolPref("browser.newtab.preload") &&
+      Services.prefs.getBoolPref("browser.newtabpage.enabled") &&
+      !aboutNewTabService.overridden;
+  },
+
+  _createPreloadBrowser() {
+    
+    
+    if (this._preloadedBrowser || !this._isPreloadingEnabled()) {
+      return;
+    }
+
+    let remoteType =
+      E10SUtils.getRemoteTypeForURI(BROWSER_NEW_TAB_URL,
+        gMultiProcessBrowser);
+    let browser = this._createBrowser({ isPreloadBrowser: true, remoteType });
+    this._preloadedBrowser = browser;
+
+    let panel = this.getPanel(browser);
+    this.tabpanels.appendChild(panel);
+
+    if (remoteType != E10SUtils.NOT_REMOTE) {
+      
+      
+      
+      browser.webProgress;
+    }
+
+    browser.loadURI(BROWSER_NEW_TAB_URL, {
+      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+    });
+    browser.docShellIsActive = false;
+    browser._urlbarFocused = true;
+
+    
+    let tabURI = Services.io.newURI(BROWSER_NEW_TAB_URL);
+    FullZoom.onLocationChange(tabURI, false, browser);
+  },
+
+  _createBrowser({
     isPreloadBrowser,
     name,
     nextTabParentId,
@@ -2075,7 +2155,8 @@ window._gBrowser = {
       }
     }
 
-    let { uriIsAboutBlank, remoteType, usingPreloadedContent } = aTab._browserParams;
+    let { uriIsAboutBlank, remoteType, usingPreloadedContent } =
+    aTab._browserParams;
     delete aTab._browserParams;
     delete aTab._cachedCurrentURI;
 
@@ -2463,11 +2544,14 @@ window._gBrowser = {
 
       
       
+      
+      
       if (aURI == BROWSER_NEW_TAB_URL &&
           !userContextId &&
+          !PrivateBrowsingUtils.isWindowPrivate(window) &&
           !recordExecution &&
           !replayExecution) {
-        b = NewTabPagePreloading.getPreloadedBrowser(window);
+        b = this._getPreloadedBrowser();
         if (b) {
           usingPreloadedContent = true;
         }
@@ -2475,7 +2559,7 @@ window._gBrowser = {
 
       if (!b) {
         
-        b = this.createBrowser({
+        b = this._createBrowser({
           remoteType,
           uriIsAboutBlank,
           userContextId,
@@ -4629,8 +4713,8 @@ window._gBrowser = {
 
       
       
-      if (browser === this.preloadedBrowser) {
-        NewTabPagePreloading.removePreloadedBrowser(window);
+      if (browser === this._preloadedBrowser) {
+        this.removePreloadedBrowser();
         return;
       }
 

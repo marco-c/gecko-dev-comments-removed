@@ -13,7 +13,6 @@ ChromeUtils.import("resource://gre/modules/NotificationDB.jsm");
 XPCOMUtils.defineLazyModuleGetters(this, {
   AddonManager: "resource://gre/modules/AddonManager.jsm",
   AMTelemetry: "resource://gre/modules/AddonManager.jsm",
-  NewTabPagePreloading: "resource:///modules/NewTabPagePreloading.jsm",
   BrowserUsageTelemetry: "resource:///modules/BrowserUsageTelemetry.jsm",
   BrowserUtils: "resource://gre/modules/BrowserUtils.jsm",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
@@ -1891,10 +1890,6 @@ var gBrowserInit = {
       }, 300 * 1000);
     });
 
-    scheduleIdleTask(async () => {
-      NewTabPagePreloading.maybeCreatePreloadedBrowser(window);
-    });
-
     
     
     
@@ -2021,8 +2016,6 @@ var gBrowserInit = {
     }
 
     BrowserSearch.uninit();
-
-    NewTabPagePreloading.removePreloadedBrowser(window);
 
     
     

@@ -30,7 +30,7 @@ async function checkActivityStreamLoads() {
 
 
 add_task(async function checkActivityStreamNotPreloadedLoad() {
-  NewTabPagePreloading.removePreloadedBrowser(window);
+  gBrowser.removePreloadedBrowser();
   await checkActivityStreamLoads();
 });
 
