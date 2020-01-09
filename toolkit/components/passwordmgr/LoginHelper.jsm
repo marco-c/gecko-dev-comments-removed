@@ -60,18 +60,12 @@ var LoginHelper = {
       return this.debug ? "Debug" : "Warn";
     };
 
-    let logger;
-    function getConsole() {
-      if (!logger) {
-        
-        let consoleOptions = {
-          maxLogLevel: getMaxLogLevel(),
-          prefix: aLogPrefix,
-        };
-        logger = console.createInstance(consoleOptions);
-      }
-      return logger;
-    }
+    
+    let consoleOptions = {
+      maxLogLevel: getMaxLogLevel(),
+      prefix: aLogPrefix,
+    };
+    let logger = console.createInstance(consoleOptions);
 
     
     Services.prefs.addObserver("signon.debug", () => {
@@ -81,26 +75,7 @@ var LoginHelper = {
       }
     });
 
-    return {
-      log: (...args) => {
-        if (this.debug) {
-          getConsole().log(...args);
-        }
-      },
-      error: (...args) => {
-        getConsole().error(...args);
-      },
-      debug: (...args) => {
-        if (this.debug) {
-          getConsole().debug(...args);
-        }
-      },
-      warn: (...args) => {
-        if (this.debug) {
-          getConsole().warn(...args);
-        }
-      },
-    };
+    return logger;
   },
 
   
