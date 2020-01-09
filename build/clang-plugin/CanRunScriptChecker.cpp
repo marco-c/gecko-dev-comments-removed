@@ -7,6 +7,13 @@
 
 void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
   auto Refcounted = qualType(hasDeclaration(cxxRecordDecl(isRefCounted())));
+  auto StackSmartPtr =
+    ignoreTrivials(
+      declRefExpr(to(varDecl(hasAutomaticStorageDuration())),
+                  hasType(isSmartPtrToRefCounted())));
+  auto MozKnownLiveCall =
+    callExpr(callee(functionDecl(hasName("MOZ_KnownLive"))));
+
   auto InvalidArg =
       
       ignoreTrivials(expr(
@@ -14,18 +21,21 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
           anyOf(
             hasType(Refcounted),
             hasType(pointsTo(Refcounted)),
-            hasType(references(Refcounted))
+            hasType(references(Refcounted)),
+            hasType(isSmartPtrToRefCounted())
           ),
           
           unless(cxxThisExpr()),
           
-          unless(cxxMemberCallExpr(on(hasType(isSmartPtrToRefCounted())))),
+          unless(StackSmartPtr),
+          
+          unless(cxxMemberCallExpr(on(StackSmartPtr))),
           
           unless(
             allOf(
               cxxOperatorCallExpr(hasOverloadedOperatorName("*")),
               callExpr(allOf(
-                hasAnyArgument(hasType(isSmartPtrToRefCounted())),
+                hasAnyArgument(StackSmartPtr),
                 argumentCountIs(1)
               ))
             )
@@ -33,7 +43,16 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
           
           unless(declRefExpr(to(parmVarDecl()))),
           
-          unless(callExpr(callee(functionDecl(hasName("MOZ_KnownLive"))))),
+          unless(
+            anyOf(
+              MozKnownLiveCall,
+              
+              
+              
+              cxxMemberCallExpr(on(allOf(hasType(isSmartPtrToRefCounted()),
+                                         MozKnownLiveCall)))
+            )
+          ),
           expr().bind("invalidArg")));
 
   auto OptionalInvalidExplicitArg = anyOf(

@@ -196,7 +196,38 @@ MOZ_CAN_RUN_SCRIPT void test_maybe() {
 }
 
 MOZ_CAN_RUN_SCRIPT void test_maybe_2() {
+  
   mozilla::Maybe<RefPtr<RefCountedBase>> safe;
   safe.emplace(new RefCountedBase);
-  (*safe)->method_test();
+  (*safe)->method_test(); 
 }
+
+struct DisallowMemberArgs {
+  RefPtr<RefCountedBase> mRefCounted;
+  MOZ_CAN_RUN_SCRIPT void foo() {
+    mRefCounted->method_test(); 
+  }
+  MOZ_CAN_RUN_SCRIPT void bar() {
+    test2(mRefCounted); 
+  }
+};
+
+struct DisallowMemberArgsWithGet {
+  RefPtr<RefCountedBase> mRefCounted;
+  MOZ_CAN_RUN_SCRIPT void foo() {
+    mRefCounted.get()->method_test(); 
+  }
+  MOZ_CAN_RUN_SCRIPT void bar() {
+    test2(mRefCounted.get()); 
+  }
+};
+
+struct AllowKnownLiveMemberArgs {
+  RefPtr<RefCountedBase> mRefCounted;
+  MOZ_CAN_RUN_SCRIPT void foo() {
+    MOZ_KnownLive(mRefCounted)->method_test();
+  }
+  MOZ_CAN_RUN_SCRIPT void bar() {
+    test2(MOZ_KnownLive(mRefCounted));
+  }
+};
