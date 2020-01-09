@@ -7,7 +7,7 @@
 
 
 use super::{AllowQuirks, Number, Percentage, ToComputedValue};
-use crate::font_metrics::FontMetrics;
+use crate::font_metrics::{FontMetrics, FontMetricsOrientation};
 use crate::parser::{Parse, ParserContext};
 use crate::properties::computed_value_flags::ComputedValueFlags;
 use crate::values::computed::{self, CSSPixelLength, Context};
@@ -133,8 +133,9 @@ impl FontRelativeLength {
         fn query_font_metrics(
             context: &Context,
             base_size: FontBaseSize,
+            orientation: FontMetricsOrientation,
         ) -> FontMetrics {
-            context.font_metrics_provider.query(context, base_size)
+            context.font_metrics_provider.query(context, base_size, orientation)
         }
 
         let reference_font_size = base_size.resolve(context);
@@ -160,7 +161,12 @@ impl FontRelativeLength {
                     context.rule_cache_conditions.borrow_mut().set_uncacheable();
                 }
                 context.builder.add_flags(ComputedValueFlags::DEPENDS_ON_FONT_METRICS);
-                let metrics = query_font_metrics(context, base_size);
+                
+                let metrics = query_font_metrics(
+                    context,
+                    base_size,
+                    FontMetricsOrientation::Horizontal
+                );
                 let reference_size = metrics.x_height.unwrap_or_else(|| {
                     
                     
@@ -177,7 +183,18 @@ impl FontRelativeLength {
                     context.rule_cache_conditions.borrow_mut().set_uncacheable();
                 }
                 context.builder.add_flags(ComputedValueFlags::DEPENDS_ON_FONT_METRICS);
-                let metrics = query_font_metrics(context, base_size);
+                
+                
+                
+                
+                
+                
+                
+                let metrics = query_font_metrics(
+                    context,
+                    base_size,
+                    FontMetricsOrientation::MatchContext,
+                );
                 let reference_size = metrics.zero_advance_measure.unwrap_or_else(|| {
                     
                     
@@ -189,7 +206,8 @@ impl FontRelativeLength {
                     
                     
                     
-                    if context.style().writing_mode.is_vertical() {
+                    let wm = context.style().writing_mode;
+                    if wm.is_vertical() && wm.is_upright() {
                         reference_font_size
                     } else {
                         reference_font_size.scale_by(0.5)

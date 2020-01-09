@@ -21,13 +21,24 @@ pub struct FontMetrics {
 }
 
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum FontMetricsOrientation {
+    
+    
+    MatchContext,
+    
+    Horizontal,
+}
+
+
 pub trait FontMetricsProvider {
     
     fn query(
         &self,
         _context: &crate::values::computed::Context,
         _base_size: crate::values::specified::length::FontBaseSize,
-    ) -> FontMetricsQueryResult {
+        _orientation: FontMetricsOrientation,
+    ) -> FontMetrics {
         Default::default()
     }
 
