@@ -54,6 +54,14 @@ class FreeOp : public JSFreeOp {
   
   void free_(gc::Cell* cell, void* p, size_t nbytes, MemoryUse use);
 
+  
+  
+  
+  
+  
+  
+  
+  
   void freeLater(void* p);
 
   

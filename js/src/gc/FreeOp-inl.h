@@ -34,6 +34,8 @@ inline void FreeOp::freeLater(void* p) {
   
   MOZ_ASSERT(!isDefaultFreeOp());
 
+  
+  
   AutoEnterOOMUnsafeRegion oomUnsafe;
   if (!freeLaterList.append(p)) {
     oomUnsafe.crash("FreeOp::freeLater");
