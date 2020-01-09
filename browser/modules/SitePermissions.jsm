@@ -38,16 +38,29 @@ const TemporaryPermissions = {
 
   
   
-  _get(entry, prePath, id, permission) {
+  _get(entry, baseDomain, id, permission) {
     if (permission == null || permission.timeStamp == null) {
-      delete entry[prePath][id];
+      delete entry[baseDomain][id];
       return null;
     }
     if (permission.timeStamp + SitePermissions.temporaryPermissionExpireTime < Date.now()) {
-      delete entry[prePath][id];
+      delete entry[baseDomain][id];
       return null;
     }
     return {id, state: permission.state, scope: SitePermissions.SCOPE_TEMPORARY};
+  },
+
+  
+  _uriToBaseDomain(uri) {
+    try {
+      return Services.eTLD.getBaseDomain(uri);
+    } catch (error) {
+      if (error.result !== Cr.NS_ERROR_HOST_IS_IP_ADDRESS &&
+          error.result !== Cr.NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS) {
+        throw error;
+      }
+      return uri.host;
+    }
   },
 
   
@@ -59,35 +72,35 @@ const TemporaryPermissions = {
       this._stateByBrowser.set(browser, {});
     }
     let entry = this._stateByBrowser.get(browser);
-    let prePath = browser.currentURI.prePath;
-    if (!entry[prePath]) {
-      entry[prePath] = {};
+    let baseDomain = this._uriToBaseDomain(browser.currentURI);
+    if (!entry[baseDomain]) {
+      entry[baseDomain] = {};
     }
-    entry[prePath][id] = {timeStamp: Date.now(), state};
+    entry[baseDomain][id] = {timeStamp: Date.now(), state};
   },
 
   
   remove(browser, id) {
-    if (!browser) {
+    if (!browser || !this._stateByBrowser.has(browser)) {
       return;
     }
     let entry = this._stateByBrowser.get(browser);
-    let prePath = browser.currentURI.prePath;
-    if (entry && entry[prePath]) {
-      delete entry[prePath][id];
+    let baseDomain = this._uriToBaseDomain(browser.currentURI);
+    if (entry[baseDomain]) {
+      delete entry[baseDomain][id];
     }
   },
 
   
   get(browser, id) {
-    if (!browser || !browser.currentURI) {
+    if (!browser || !browser.currentURI || !this._stateByBrowser.has(browser)) {
       return null;
     }
     let entry = this._stateByBrowser.get(browser);
-    let prePath = browser.currentURI.prePath;
-    if (entry && entry[prePath]) {
-      let permission = entry[prePath][id];
-      return this._get(entry, prePath, id, permission);
+    let baseDomain = this._uriToBaseDomain(browser.currentURI);
+    if (entry[baseDomain]) {
+      let permission = entry[baseDomain][id];
+      return this._get(entry, baseDomain, id, permission);
     }
     return null;
   },
@@ -97,12 +110,15 @@ const TemporaryPermissions = {
   
   getAll(browser) {
     let permissions = [];
+    if (!this._stateByBrowser.has(browser)) {
+      return permissions;
+    }
     let entry = this._stateByBrowser.get(browser);
-    let prePath = browser.currentURI.prePath;
-    if (entry && entry[prePath]) {
-      let timeStamps = entry[prePath];
+    let baseDomain = this._uriToBaseDomain(browser.currentURI);
+    if (entry[baseDomain]) {
+      let timeStamps = entry[baseDomain];
       for (let id of Object.keys(timeStamps)) {
-        let permission = this._get(entry, prePath, id, timeStamps[id]);
+        let permission = this._get(entry, baseDomain, id, timeStamps[id]);
         
         if (permission) {
           permissions.push(permission);
