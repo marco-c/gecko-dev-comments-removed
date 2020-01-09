@@ -715,7 +715,9 @@ class FlexboxHighlighter extends AutoRefreshHighlighter {
 
     
     
-    updateCanvasElement(this.canvas, this._canvasPosition, this.win.devicePixelRatio);
+    updateCanvasElement(this.canvas, this._canvasPosition, this.win.devicePixelRatio, {
+      zoomWindow: this.win,
+    });
 
     
     const { currentMatrix, hasNodeTransformations } =
