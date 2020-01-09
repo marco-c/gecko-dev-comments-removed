@@ -4,10 +4,12 @@
 
 
 #include "nsPageContentFrame.h"
+
+#include "mozilla/PresShell.h"
+
 #include "nsCSSFrameConstructor.h"
 #include "nsPresContext.h"
 #include "nsGkAtoms.h"
-#include "nsIPresShell.h"
 #include "nsSimplePageSequenceFrame.h"
 
 using namespace mozilla;

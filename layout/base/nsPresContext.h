@@ -48,7 +48,6 @@ class nsBidi;
 class nsIPrintSettings;
 class nsDocShell;
 class nsIDocShell;
-class nsIPresShell;
 class nsITheme;
 class nsIContent;
 class nsIFrame;
@@ -78,6 +77,7 @@ class EffectCompositor;
 class Encoding;
 class EventStateManager;
 class CounterStyleManager;
+class PresShell;
 class RestyleManager;
 namespace layers {
 class ContainerLayer;
@@ -158,20 +158,20 @@ class nsPresContext : public nsISupports,
 
 
 
-  void AttachShell(nsIPresShell* aShell);
-  void DetachShell();
+  void AttachPresShell(mozilla::PresShell* aPresShell);
+  void DetachPresShell();
 
   nsPresContextType Type() const { return mType; }
 
   
 
 
-  nsIPresShell* PresShell() const {
-    NS_ASSERTION(mShell, "Null pres shell");
-    return mShell;
+  mozilla::PresShell* PresShell() const {
+    NS_ASSERTION(mPresShell, "Null pres shell");
+    return mPresShell;
   }
 
-  nsIPresShell* GetPresShell() const { return mShell; }
+  mozilla::PresShell* GetPresShell() const { return mPresShell; }
 
   void DispatchCharSetChange(NotNull<const Encoding*> aCharSet);
 
@@ -1097,7 +1097,7 @@ class nsPresContext : public nsISupports,
   nsPresContextType mType;
   
   
-  nsIPresShell* MOZ_NON_OWNING_REF mShell;  
+  mozilla::PresShell* MOZ_NON_OWNING_REF mPresShell;  
   RefPtr<mozilla::dom::Document> mDocument;
   RefPtr<nsDeviceContext> mDeviceContext;  
                                            

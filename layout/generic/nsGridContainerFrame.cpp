@@ -21,6 +21,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/PodOperations.h"  
 #include "mozilla/Poison.h"
+#include "mozilla/PresShell.h"
 #include "nsAbsoluteContainingBlock.h"
 #include "nsAlgorithm.h"  
 #include "nsCSSAnonBoxes.h"

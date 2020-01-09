@@ -3,8 +3,11 @@
 
 
 
-#include "nsTArray.h"
 #include "nsCellMap.h"
+
+#include "mozilla/PresShell.h"
+
+#include "nsTArray.h"
 #include "nsTableFrame.h"
 #include "nsTableCellFrame.h"
 #include "nsTableRowFrame.h"

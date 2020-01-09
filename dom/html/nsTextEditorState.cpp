@@ -1178,8 +1178,7 @@ nsresult nsTextEditorState::BindToFrame(nsTextControlFrame* aFrame) {
   Element* rootNode = aFrame->GetRootNode();
   MOZ_ASSERT(rootNode);
 
-  PresShell* presShell =
-      static_cast<PresShell*>(aFrame->PresContext()->GetPresShell());
+  PresShell* presShell = aFrame->PresContext()->GetPresShell();
   MOZ_ASSERT(presShell);
 
   
@@ -1269,7 +1268,7 @@ nsresult nsTextEditorState::PrepareEditor(const nsAString* aValue) {
   
 
   nsPresContext* presContext = mBoundFrame->PresContext();
-  nsIPresShell* shell = presContext->GetPresShell();
+  PresShell* presShell = presContext->GetPresShell();
 
   
   uint32_t editorFlags = nsIPlaintextEditor::eEditorPlaintextMask;
@@ -1332,7 +1331,7 @@ nsresult nsTextEditorState::PrepareEditor(const nsAString* aValue) {
     
 
     
-    nsCOMPtr<Document> doc = shell->GetDocument();
+    nsCOMPtr<Document> doc = presShell->GetDocument();
     if (NS_WARN_IF(!doc)) {
       return NS_ERROR_FAILURE;
     }

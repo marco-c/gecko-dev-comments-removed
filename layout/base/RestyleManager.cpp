@@ -15,6 +15,7 @@
 #include "mozilla/LayerAnimationInfo.h"
 #include "mozilla/layers/AnimationInfo.h"
 #include "mozilla/layout/ScrollAnchorContainer.h"
+#include "mozilla/PresShell.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/ServoStyleSetInlines.h"
 #include "mozilla/Unused.h"
@@ -2665,7 +2666,7 @@ static ServoPostTraversalFlags SendA11yNotifications(
   }
 
   if (needsNotify) {
-    nsIPresShell* presShell = aPresContext->PresShell();
+    PresShell* presShell = aPresContext->PresShell();
     if (isVisible) {
       accService->ContentRangeInserted(presShell, aElement,
                                        aElement->GetNextSibling());
@@ -3019,7 +3020,7 @@ ServoElementSnapshot& RestyleManager::SnapshotFor(Element& aElement) {
 
 void RestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags) {
   nsPresContext* presContext = PresContext();
-  nsIPresShell* shell = presContext->PresShell();
+  PresShell* presShell = presContext->PresShell();
 
   MOZ_ASSERT(presContext->Document(), "No document?  Pshaw!");
   
@@ -3033,7 +3034,7 @@ void RestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags) {
   MOZ_ASSERT(!nsContentUtils::IsSafeToRunScript(), "Missing a script blocker!");
   MOZ_RELEASE_ASSERT(!mInStyleRefresh, "Reentrant call?");
 
-  if (MOZ_UNLIKELY(!shell->DidInitialize())) {
+  if (MOZ_UNLIKELY(!presShell->DidInitialize())) {
     
     
     
@@ -3043,7 +3044,7 @@ void RestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags) {
   }
 
   
-  nsIPresShell::AutoAssertNoFlush noReentrantFlush(*shell);
+  nsIPresShell::AutoAssertNoFlush noReentrantFlush(*presShell);
 
   
   
