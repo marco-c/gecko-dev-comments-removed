@@ -92,8 +92,10 @@ pub enum TextureSource {
     RenderTaskCache(SavedTargetIndex),
 }
 
-pub const ORTHO_NEAR_PLANE: f32 = -100000.0;
-pub const ORTHO_FAR_PLANE: f32 = 100000.0;
+
+
+pub const ORTHO_NEAR_PLANE: f32 = -(1 << 22) as f32;
+pub const ORTHO_FAR_PLANE: f32 = ((1 << 22) - 1) as f32;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
