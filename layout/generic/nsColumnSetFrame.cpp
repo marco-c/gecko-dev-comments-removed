@@ -816,7 +816,6 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
       child = nullptr;
       break;
     } else {
-      ++columnCount;
       
       
       
@@ -856,7 +855,7 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
         colData.mHasExcessBSize = true;
       }
 
-      if (columnCount >= aConfig.mBalanceColCount) {
+      if (columnCount >= aConfig.mBalanceColCount - 1) {
         
         aStatus.SetNextInFlowNeedsReflow();
         kidNextInFlow->AddStateBits(NS_FRAME_IS_DIRTY);
@@ -884,6 +883,7 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
 
     
     child = child->GetNextSibling();
+    ++columnCount;
 
     if (child) {
       childOrigin.I(wm) += aConfig.mColISize + aConfig.mColGap;
