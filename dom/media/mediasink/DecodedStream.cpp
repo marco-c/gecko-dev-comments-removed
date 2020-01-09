@@ -758,8 +758,10 @@ void DecodedStream::SendVideo(bool aIsSameOrigin,
     if (compensateEOS) {
       VideoSegment endSegment;
       
+      
+      
       auto deviation =
-          FromMicroseconds(sourceStream->StreamTimeToMicroseconds(1));
+          FromMicroseconds(sourceStream->StreamTimeToMicroseconds(1) + 1);
       WriteVideoToMediaStream(
           sourceStream, mData->mLastVideoImage, mData->mNextVideoTime,
           mData->mNextVideoTime + deviation, mData->mLastVideoImageDisplaySize,
