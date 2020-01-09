@@ -17,13 +17,7 @@ async function run_test() {
   
   await setupUpdaterTest(FILE_COMPLETE_MAR, undefined,
                          getApplyDirFile(null, true).path + "/");
-  runUpdateUsingApp(STATE_SUCCEEDED);
-}
-
-
-
-
-async function runUpdateFinished() {
+  await runUpdateUsingApp(STATE_SUCCEEDED);
   checkAppBundleModTime();
   standardInit();
   checkPostUpdateRunningFile(false);

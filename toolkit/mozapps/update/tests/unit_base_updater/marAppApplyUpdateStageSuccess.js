@@ -22,18 +22,12 @@ async function run_test() {
 
 
 
-function stageUpdateFinished() {
+async function stageUpdateFinished() {
   checkPostUpdateRunningFile(false);
   checkFilesAfterUpdateSuccess(getStageDirFile, true);
   checkUpdateLogContents(LOG_COMPLETE_SUCCESS, true);
   
-  runUpdateUsingApp(STATE_SUCCEEDED);
-}
-
-
-
-
-async function runUpdateFinished() {
+  await runUpdateUsingApp(STATE_SUCCEEDED);
   await checkPostUpdateAppLog();
   checkAppBundleModTime();
   standardInit();

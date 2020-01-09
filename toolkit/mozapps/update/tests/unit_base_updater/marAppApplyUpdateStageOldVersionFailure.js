@@ -29,13 +29,7 @@ async function run_test() {
   
   writeVersionFile("0.9");
   
-  runUpdateUsingApp(STATE_AFTER_STAGE);
-}
-
-
-
-
-async function runUpdateFinished() {
+  await runUpdateUsingApp(STATE_AFTER_STAGE);
   standardInit();
   checkPostUpdateRunningFile(false);
   setTestFilesAndDirsForFailure();
