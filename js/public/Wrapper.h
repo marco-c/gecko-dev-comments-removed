@@ -419,15 +419,7 @@ JS_FRIEND_API JSObject* CheckedUnwrapStatic(JSObject* obj);
 
 
 
-
-
-JS_FRIEND_API JSObject* CheckedUnwrap(JSObject* obj,
-                                      bool stopAtWindowProxy = true);
-
-
-
-JS_FRIEND_API JSObject* UnwrapOneChecked(JSObject* obj,
-                                         bool stopAtWindowProxy = true);
+JS_FRIEND_API JSObject* UnwrapOneCheckedStatic(JSObject* obj);
 
 
 
