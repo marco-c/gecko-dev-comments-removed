@@ -44,6 +44,7 @@ class ElementStyle {
     this.ruleView = ruleView;
     this.store = store || {};
     this.pageStyle = pageStyle;
+    this.pseudoElements = [];
     this.showUserAgentStyles = showUserAgentStyles;
     this.rules = [];
     this.cssProperties = this.ruleView.cssProperties;
@@ -82,6 +83,7 @@ class ElementStyle {
     }
 
     this.destroyed = true;
+    this.pseudoElements = [];
 
     for (const rule of this.rules) {
       if (rule.editor) {
@@ -134,6 +136,11 @@ class ElementStyle {
       for (const entry of entries) {
         this._maybeAddRule(entry, existingRules);
       }
+
+      
+      this.pseudoElements = this.rules
+        .filter(r => r.pseudoElement)
+        .map(r => r.pseudoElement);
 
       
       this.onRuleUpdated();
@@ -259,12 +266,19 @@ class ElementStyle {
     this.variables.clear();
     this.updateDeclarations();
 
-    for (const pseudo of this.cssProperties.pseudoElements) {
+    
+    for (const pseudo of this.pseudoElements) {
       this.updateDeclarations(pseudo);
     }
   }
 
   
+
+
+
+
+
+
 
 
 
@@ -282,10 +296,37 @@ class ElementStyle {
     
     
     const textProps = [];
+
     for (const rule of this.rules) {
-      if ((rule.matchedSelectors.length > 0 ||
-           rule.domRule.type === ELEMENT_STYLE) &&
-          rule.pseudoElement === pseudo && !rule.keyframes) {
+      
+      if (rule.keyframes) {
+        continue;
+      }
+
+      
+      
+      
+      
+      const isStyleRule = rule.pseudoElement === "" && rule.matchedSelectors.length > 0;
+
+      
+      
+      
+      
+      
+      
+      
+      const isPseudoElementRule = rule.pseudoElement !== "" &&
+                                  rule.pseudoElement === pseudo;
+
+      const isElementStyle = rule.domRule.type === ELEMENT_STYLE;
+
+      const filterCondition = pseudo === ""
+        ? (isStyleRule || isElementStyle)
+        : isPseudoElementRule;
+
+      
+      if (filterCondition) {
         for (const textProp of rule.textProps.slice(0).reverse()) {
           if (textProp.enabled) {
             textProps.push(textProp);
