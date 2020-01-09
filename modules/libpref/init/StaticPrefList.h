@@ -599,11 +599,17 @@ VARCACHE_PREF(
 
 
 
-
 VARCACHE_PREF(
   "dom.file.createInChild",
    dom_file_createInChild,
   RelaxedAtomicBool, false
+)
+
+
+VARCACHE_PREF(
+  "full-screen-api.enabled",
+   full_screen_api_enabled,
+  bool, false
 )
 
 

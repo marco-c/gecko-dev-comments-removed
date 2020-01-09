@@ -2328,11 +2328,6 @@ class nsContentUtils {
   
 
 
-  static bool IsFullscreenApiEnabled();
-
-  
-
-
   static bool IsUnprefixedFullscreenApiEnabled() {
     return sIsUnprefixedFullscreenApiEnabled;
   }
@@ -3502,7 +3497,6 @@ class nsContentUtils {
 
   static bool sIsHandlingKeyBoardEvent;
   static bool sAllowXULXBL_for_file;
-  static bool sIsFullscreenApiEnabled;
   static bool sIsUnprefixedFullscreenApiEnabled;
   static bool sTrustedFullscreenOnly;
   static bool sIsCutCopyAllowed;

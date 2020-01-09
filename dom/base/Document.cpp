@@ -10678,7 +10678,7 @@ static bool HasFullscreenSubDocument(Document* aDoc) {
 
 
 static const char* GetFullscreenError(Document* aDoc, CallerType aCallerType) {
-  bool apiEnabled = nsContentUtils::IsFullscreenApiEnabled();
+  bool apiEnabled = StaticPrefs::full_screen_api_enabled();
   if (apiEnabled && aCallerType == CallerType::System) {
     
     
