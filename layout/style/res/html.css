@@ -831,13 +831,6 @@ marquee[direction="up"], marquee[direction="down"] {
 }
 
 
-@media print {
-
-  marquee { -moz-binding: none; }
-
-}
-
-
 
 ruby {
   display: ruby;
