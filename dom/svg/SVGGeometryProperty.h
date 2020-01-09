@@ -8,9 +8,11 @@
 #define mozilla_dom_SVGGeometryProperty_SVGGeometryProperty_h
 
 #include "mozilla/dom/SVGElement.h"
-#include "SVGAnimatedLength.h"
 #include "ComputedStyle.h"
+#include "SVGAnimatedLength.h"
+#include "nsGkAtoms.h"
 #include "nsIFrame.h"
+#include "nsSVGImageFrame.h"
 #include <type_traits>
 
 namespace mozilla {
@@ -38,12 +40,24 @@ SVGGEOMETRYPROPERTY_GENERATETAG(Y, LengthPercentNoAuto, Y, nsStyleSVGReset);
 SVGGEOMETRYPROPERTY_GENERATETAG(Cx, LengthPercentNoAuto, X, nsStyleSVGReset);
 SVGGEOMETRYPROPERTY_GENERATETAG(Cy, LengthPercentNoAuto, Y, nsStyleSVGReset);
 SVGGEOMETRYPROPERTY_GENERATETAG(R, LengthPercentNoAuto, XY, nsStyleSVGReset);
-SVGGEOMETRYPROPERTY_GENERATETAG(Width, LengthPercentWidthHeight, X,
-                                nsStylePosition);
-SVGGEOMETRYPROPERTY_GENERATETAG(Height, LengthPercentWidthHeight, Y,
-                                nsStylePosition);
 
 #undef SVGGEOMETRYPROPERTY_GENERATETAG
+
+struct Height;
+struct Width {
+  using ResolverType = ResolverTypes::LengthPercentWidthHeight;
+  constexpr static auto CtxDirection = SVGContentUtils::X;
+  constexpr static auto Getter = &nsStylePosition::mWidth;
+  constexpr static auto SizeGetter = &gfx::Size::width;
+  using CounterPart = Height;
+};
+struct Height {
+  using ResolverType = ResolverTypes::LengthPercentWidthHeight;
+  constexpr static auto CtxDirection = SVGContentUtils::Y;
+  constexpr static auto Getter = &nsStylePosition::mHeight;
+  constexpr static auto SizeGetter = &gfx::Size::height;
+  using CounterPart = Width;
+};
 
 struct Ry;
 struct Rx {
@@ -92,6 +106,45 @@ float ResolveImpl(ComputedStyle const& aStyle, SVGElement* aElement,
   if (value.IsLengthPercentage()) {
     return ResolvePureLengthPercentage<Tag::CtxDirection>(
         aElement, value.AsLengthPercentage());
+  }
+
+  if (aElement->IsSVGElement(nsGkAtoms::image)) {
+    
+    
+    
+
+    auto* f = aElement->GetPrimaryFrame();
+    MOZ_ASSERT(f && f->IsSVGImageFrame());
+    auto* imgf = static_cast<nsSVGImageFrame const*>(f);
+
+    using Other = typename Tag::CounterPart;
+    auto const& valueOther = aStyle.StylePosition()->*Other::Getter;
+
+    gfx::Size intrinsicImageSize;
+    if (!imgf->GetIntrinsicImageSize(intrinsicImageSize)) {
+      
+      return 0.f;
+    }
+
+    if (valueOther.IsLengthPercentage()) {
+      
+      
+
+      float intrinsicLengthOther = intrinsicImageSize.*Other::SizeGetter;
+      if (!intrinsicLengthOther) {
+        
+        return 0.f;
+      }
+
+      float intrinsicLength = intrinsicImageSize.*Tag::SizeGetter,
+            lengthOther = ResolvePureLengthPercentage<Other::CtxDirection>(
+                aElement, valueOther.AsLengthPercentage());
+
+      return intrinsicLength * lengthOther / intrinsicLengthOther;
+    }
+
+    
+    return intrinsicImageSize.*Tag::SizeGetter;
   }
 
   
