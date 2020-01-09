@@ -232,14 +232,11 @@ static BrowsingContextOrigin SimilarOrigin(const Element& aTarget,
 
 void DOMIntersectionObserver::Update(Document* aDocument,
                                      DOMHighResTimeStamp time) {
-  Element* root = nullptr;
-  nsIFrame* rootFrame = nullptr;
   nsRect rootRect;
-
+  nsIFrame* rootFrame = nullptr;
+  Element* root = mRoot;
   if (mRoot) {
-    root = mRoot;
-    rootFrame = root->GetPrimaryFrame();
-    if (rootFrame) {
+    if ((rootFrame = mRoot->GetPrimaryFrame())) {
       nsRect rootRectRelativeToRootFrame;
       if (rootFrame->IsScrollFrame()) {
         
@@ -255,33 +252,28 @@ void DOMIntersectionObserver::Update(Document* aDocument,
       rootRect = nsLayoutUtils::TransformFrameRectToAncestor(
           rootFrame, rootRectRelativeToRootFrame, containingBlock);
     }
-  } else {
-    RefPtr<PresShell> presShell = aDocument->GetPresShell();
-    if (presShell) {
-      rootFrame = presShell->GetRootScrollFrame();
-      if (rootFrame) {
-        nsPresContext* presContext = rootFrame->PresContext();
-        while (!presContext->IsRootContentDocument()) {
-          presContext = presContext->GetParentPresContext();
-          if (!presContext) {
-            break;
-          }
-          nsIFrame* rootScrollFrame =
-              presContext->PresShell()->GetRootScrollFrame();
-          if (rootScrollFrame) {
-            rootFrame = rootScrollFrame;
-          } else {
-            break;
-          }
+  } else if (PresShell* presShell = aDocument->GetPresShell()) {
+    
+    
+    rootFrame = presShell->GetRootScrollFrame();
+    if (rootFrame) {
+      nsPresContext* presContext = rootFrame->PresContext();
+      while (!presContext->IsRootContentDocument()) {
+        presContext = presContext->GetParentPresContext();
+        if (!presContext) {
+          break;
         }
-        root = rootFrame->GetContent()->AsElement();
-        nsIScrollableFrame* scrollFrame = do_QueryFrame(rootFrame);
-        
-        
-        if (scrollFrame) {
-          rootRect = scrollFrame->GetScrollPortRect();
+        nsIFrame* rootScrollFrame =
+            presContext->PresShell()->GetRootScrollFrame();
+        if (rootScrollFrame) {
+          rootFrame = rootScrollFrame;
+        } else {
+          break;
         }
       }
+      root = rootFrame->GetContent()->AsElement();
+      nsIScrollableFrame* scrollFrame = do_QueryFrame(rootFrame);
+      rootRect = scrollFrame->GetScrollPortRect();
     }
   }
 
