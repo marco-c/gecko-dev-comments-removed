@@ -3,7 +3,7 @@
 
 
 use api::{FilterOp, MixBlendMode, PipelineId, PremultipliedColorF, PictureRect, PicturePoint, WorldPoint};
-use api::{DeviceIntRect, DeviceIntSize, DevicePoint, DeviceRect};
+use api::{DeviceIntRect, DeviceIntSize, DevicePoint, DeviceRect, DeviceSize};
 use api::{LayoutRect, PictureToRasterTransform, LayoutPixel, PropertyBinding, PropertyBindingId};
 use api::{DevicePixelScale, RasterRect, RasterSpace, ColorF, ImageKey, WorldSize, ClipMode, LayoutSize};
 use api::{PicturePixel, RasterPixel, WorldPixel, WorldRect, WorldVector2D, LayoutPoint};
@@ -36,7 +36,7 @@ use std::{mem, u16};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use texture_cache::TextureCacheHandle;
 use tiling::RenderTargetKind;
-use util::{ComparableVec, TransformedRectKind, MatrixHelpers, MaxRect};
+use util::{ComparableVec, TransformedRectKind, MatrixHelpers, MaxRect, scale_factors};
 
 
 
@@ -104,7 +104,7 @@ const TILE_SIZE_WIDTH: i32 = 1024;
 const TILE_SIZE_HEIGHT: i32 = 256;
 const TILE_SIZE_TESTING: i32 = 64;
 
-pub const FRAMES_BEFORE_PICTURE_CACHING: usize = 2;
+const FRAMES_BEFORE_PICTURE_CACHING: usize = 2;
 const MAX_DIRTY_RECTS: usize = 3;
 
 
@@ -1535,7 +1535,9 @@ impl TileCache {
                 
                 
                 
-                if tile.same_frames >= FRAMES_BEFORE_PICTURE_CACHING {
+                
+                
+                if tile.same_frames >= FRAMES_BEFORE_PICTURE_CACHING || frame_context.config.testing {
                     
                     if !resource_cache.texture_cache.is_allocated(&tile.handle) {
                         resource_cache.texture_cache.update_picture_cache(
@@ -2927,6 +2929,11 @@ impl PicturePrimitive {
             }
             PictureCompositeMode::Filter(FilterOp::Blur(blur_radius)) => {
                 let blur_std_deviation = blur_radius * device_pixel_scale.0;
+                let scale_factors = scale_factors(&transform);
+                let blur_std_deviation = DeviceSize::new(
+                    blur_std_deviation * scale_factors.0,
+                    blur_std_deviation * scale_factors.1
+                );
                 let inflation_factor = surfaces[raster_config.surface_index.0].inflation_factor;
                 let inflation_factor = (inflation_factor * device_pixel_scale.0).ceil() as i32;
 
@@ -2989,6 +2996,7 @@ impl PicturePrimitive {
                 let blur_std_deviation = blur_radius * device_pixel_scale.0;
                 let blur_range = (blur_std_deviation * BLUR_SAMPLE_SCALE).ceil() as i32;
                 let rounded_std_dev = blur_std_deviation.round();
+                let rounded_std_dev = DeviceSize::new(rounded_std_dev, rounded_std_dev);
                 
                 
                 
