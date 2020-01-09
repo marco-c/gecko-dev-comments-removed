@@ -212,7 +212,6 @@ public final class PrefsHelper {
     private static void callPrefHandler(final PrefHandler handler, final int originalType,
                                         final String pref, final boolean originalBoolVal,
                                         final int intVal, final String originalStrVal) {
-
         
         
         
@@ -289,19 +288,19 @@ public final class PrefsHelper {
 
     public static abstract class PrefHandlerBase implements PrefHandler {
         @Override
-        public void prefValue(String pref, boolean value) {
+        public void prefValue(final String pref, final boolean value) {
             throw new UnsupportedOperationException(
                     "Unhandled boolean pref " + pref + "; wrong type?");
         }
 
         @Override
-        public void prefValue(String pref, int value) {
+        public void prefValue(final String pref, final int value) {
             throw new UnsupportedOperationException(
                     "Unhandled int pref " + pref + "; wrong type?");
         }
 
         @Override
-        public void prefValue(String pref, String value) {
+        public void prefValue(final String pref, final String value) {
             throw new UnsupportedOperationException(
                     "Unhandled String pref " + pref + "; wrong type?");
         }

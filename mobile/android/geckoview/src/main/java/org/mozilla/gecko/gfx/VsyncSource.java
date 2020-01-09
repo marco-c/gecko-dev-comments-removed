@@ -45,7 +45,7 @@ import org.mozilla.gecko.GeckoAppShell;
     private static native void nativeNotifyVsync();
 
     
-    public void doFrame(long frameTimeNanos) {
+    public void doFrame(final long frameTimeNanos) {
         if (mObservingVsync) {
             mChoreographer.postFrameCallback(this);
             nativeNotifyVsync();
@@ -58,7 +58,7 @@ import org.mozilla.gecko.GeckoAppShell;
 
 
     @WrapForJNI
-    public synchronized boolean observeVsync(boolean enable) {
+    public synchronized boolean observeVsync(final boolean enable) {
         if (mObservingVsync != enable) {
             mObservingVsync = enable;
 

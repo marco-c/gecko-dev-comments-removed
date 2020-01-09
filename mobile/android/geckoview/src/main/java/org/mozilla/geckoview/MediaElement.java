@@ -217,7 +217,7 @@ public class MediaElement {
 
 
         public class TimeRange {
-            protected TimeRange(double start, double end) {
+            protected TimeRange(final double start, final double end) {
                 this.start = start;
                 this.end = end;
             }

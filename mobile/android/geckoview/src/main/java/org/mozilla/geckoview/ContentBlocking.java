@@ -41,7 +41,7 @@ public class ContentBlocking {
 
 
 
-            public @NonNull Builder categories(@Category int cat) {
+            public @NonNull Builder categories(final @Category int cat) {
                 getSettings().setCategories(cat);
                 return this;
             }
@@ -53,7 +53,7 @@ public class ContentBlocking {
 
 
 
-            public @NonNull Builder cookieBehavior(@CookieBehavior int behavior) {
+            public @NonNull Builder cookieBehavior(final @CookieBehavior int behavior) {
                 getSettings().setCookieBehavior(behavior);
                 return this;
             }
@@ -65,7 +65,7 @@ public class ContentBlocking {
 
 
 
-            public @NonNull Builder cookieLifetime(@CookieLifetime int lifetime) {
+            public @NonNull Builder cookieLifetime(final @CookieLifetime int lifetime) {
                 getSettings().setCookieLifetime(lifetime);
                 return this;
             }
@@ -163,7 +163,7 @@ public class ContentBlocking {
 
 
         public @NonNull Settings setCookieBehavior(
-                @CookieBehavior int behavior) {
+                final @CookieBehavior int behavior) {
             mCookieBehavior.commit(behavior);
             return this;
         }
@@ -185,7 +185,7 @@ public class ContentBlocking {
 
 
         public @NonNull Settings setCookieLifetime(
-                @CookieLifetime int lifetime) {
+                final @CookieLifetime int lifetime) {
             mCookieLifetime.commit(lifetime);
             return this;
         }
@@ -336,7 +336,7 @@ public class ContentBlocking {
         public final @Category int categories;
 
         public BlockEvent(@NonNull final String uri,
-                                 @Category int categories) {
+                          @Category final int categories) {
             this.uri = uri;
             this.categories = categories;
         }
@@ -384,25 +384,25 @@ public class ContentBlocking {
     private static final String SOCIAL = "social-track-digest256";
     private static final String CONTENT = "content-track-digest256";
 
-     static @Category int sbMalwareToCat(boolean enabled) {
+     static @Category int sbMalwareToCat(final boolean enabled) {
         return enabled ? (SB_MALWARE | SB_UNWANTED | SB_HARMFUL)
                        : NONE;
     }
 
-     static @Category int sbPhishingToCat(boolean enabled) {
+     static @Category int sbPhishingToCat(final boolean enabled) {
         return enabled ? SB_PHISHING
                        : NONE;
     }
 
-     static boolean catToSbMalware(@Category int cat) {
+     static boolean catToSbMalware(@Category final int cat) {
         return (cat & (SB_MALWARE | SB_UNWANTED | SB_HARMFUL)) != 0;
     }
 
-     static boolean catToSbPhishing(@Category int cat) {
+     static boolean catToSbPhishing(@Category final int cat) {
         return (cat & SB_PHISHING) != 0;
     }
 
-     static String catToAtPref(@Category int cat) {
+     static String catToAtPref(@Category final int cat) {
         StringBuilder builder = new StringBuilder();
 
         if ((cat & AT_TEST) != 0) {

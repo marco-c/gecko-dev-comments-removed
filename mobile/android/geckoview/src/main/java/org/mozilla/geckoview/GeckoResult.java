@@ -211,7 +211,7 @@ public class GeckoResult<T> {
 
 
 
-    public GeckoResult(GeckoResult<T> from) {
+    public GeckoResult(final GeckoResult<T> from) {
         this();
         completeFrom(from);
     }
@@ -478,7 +478,7 @@ public class GeckoResult<T> {
 
 
 
-    public synchronized @Nullable T poll(long timeoutMillis) throws Throwable {
+    public synchronized @Nullable T poll(final long timeoutMillis) throws Throwable {
         final long start = SystemClock.uptimeMillis();
         long remaining = timeoutMillis;
         while (!mComplete && remaining > 0) {

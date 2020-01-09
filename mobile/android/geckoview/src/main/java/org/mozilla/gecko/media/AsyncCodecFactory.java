@@ -9,7 +9,7 @@ import android.os.Build;
 import java.io.IOException;
 
 public final class AsyncCodecFactory {
-    public static AsyncCodec create(String name) throws IOException {
+    public static AsyncCodec create(final String name) throws IOException {
         
         
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1
