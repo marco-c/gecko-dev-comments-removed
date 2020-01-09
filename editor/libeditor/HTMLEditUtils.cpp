@@ -37,6 +37,34 @@ bool HTMLEditUtils::IsInlineStyle(nsINode* aNode) {
       nsGkAtoms::sup, nsGkAtoms::font);
 }
 
+bool HTMLEditUtils::IsRemovableInlineStyleElement(Element& aElement) {
+  if (!aElement.IsHTMLElement()) {
+    return false;
+  }
+  
+  if (aElement.IsAnyOfHTMLElements(
+          nsGkAtoms::abbr,  
+          nsGkAtoms::acronym, nsGkAtoms::b,
+          nsGkAtoms::bdi,  
+          nsGkAtoms::bdo, nsGkAtoms::big, nsGkAtoms::cite, nsGkAtoms::code,
+          
+          
+          
+          nsGkAtoms::dfn, nsGkAtoms::em, nsGkAtoms::font, nsGkAtoms::i,
+          nsGkAtoms::ins, nsGkAtoms::kbd,
+          nsGkAtoms::mark,  
+          nsGkAtoms::nobr, nsGkAtoms::q, nsGkAtoms::s, nsGkAtoms::samp,
+          nsGkAtoms::small, nsGkAtoms::span, nsGkAtoms::strike,
+          nsGkAtoms::strong, nsGkAtoms::sub, nsGkAtoms::sup, nsGkAtoms::tt,
+          nsGkAtoms::u, nsGkAtoms::var)) {
+    return true;
+  }
+  
+  nsAutoString tagName;
+  aElement.GetTagName(tagName);
+  return tagName.LowerCaseEqualsASCII("blink");
+}
+
 
 
 
