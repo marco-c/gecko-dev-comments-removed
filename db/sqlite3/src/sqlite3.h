@@ -123,9 +123,9 @@ extern "C" {
 
 
 
-#define SQLITE_VERSION        "3.26.0"
-#define SQLITE_VERSION_NUMBER 3026000
-#define SQLITE_SOURCE_ID      "2018-12-01 12:34:55 bf8c1b2b7a5960c282e543b9c293686dccff272512d08865f4600fb58238b4f9"
+#define SQLITE_VERSION        "3.27.1"
+#define SQLITE_VERSION_NUMBER 3027001
+#define SQLITE_SOURCE_ID      "2019-02-08 13:17:39 0eca3dd3d38b31c92b49ca2d311128b74584714d9e7de895b1a6286ef959a1dd"
 
 
 
@@ -1097,6 +1097,15 @@ struct sqlite3_io_methods {
 
 
 
+
+
+
+
+
+
+
+
+
 #define SQLITE_FCNTL_LOCKSTATE               1
 #define SQLITE_FCNTL_GET_LOCKPROXYFILE       2
 #define SQLITE_FCNTL_SET_LOCKPROXYFILE       3
@@ -1131,6 +1140,7 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_ROLLBACK_ATOMIC_WRITE  33
 #define SQLITE_FCNTL_LOCK_TIMEOUT           34
 #define SQLITE_FCNTL_DATA_VERSION           35
+#define SQLITE_FCNTL_SIZE_LIMIT             36
 
 
 #define SQLITE_GET_LOCKPROXYFILE      SQLITE_FCNTL_GET_LOCKPROXYFILE
@@ -1974,6 +1984,17 @@ struct sqlite3_mem_methods {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 #define SQLITE_CONFIG_SINGLETHREAD  1  /* nil */
 #define SQLITE_CONFIG_MULTITHREAD   2  /* nil */
 #define SQLITE_CONFIG_SERIALIZED    3  /* nil */
@@ -2002,6 +2023,7 @@ struct sqlite3_mem_methods {
 #define SQLITE_CONFIG_STMTJRNL_SPILL      26  /* int nByte */
 #define SQLITE_CONFIG_SMALL_MALLOC        27  /* boolean */
 #define SQLITE_CONFIG_SORTERREF_SIZE      28  /* int nByte */
+#define SQLITE_CONFIG_MEMDB_MAXSIZE       29  /* sqlite3_int64 */
 
 
 
@@ -3408,6 +3430,8 @@ SQLITE_API int sqlite3_open_v2(
 
 
 
+
+
 SQLITE_API const char *sqlite3_uri_parameter(const char *zFilename, const char *zParam);
 SQLITE_API int sqlite3_uri_boolean(const char *zFile, const char *zParam, int bDefault);
 SQLITE_API sqlite3_int64 sqlite3_uri_int64(const char*, const char*, sqlite3_int64);
@@ -3639,8 +3663,13 @@ SQLITE_API int sqlite3_limit(sqlite3*, int id, int newVal);
 
 
 
+
+
+
+
 #define SQLITE_PREPARE_PERSISTENT              0x01
 #define SQLITE_PREPARE_NORMALIZE               0x02
+#define SQLITE_PREPARE_NO_VTAB                 0x04
 
 
 
@@ -11160,10 +11189,6 @@ struct Fts5PhraseIter {
   const unsigned char *a;
   const unsigned char *b;
 };
-
-
-
-
 
 
 
