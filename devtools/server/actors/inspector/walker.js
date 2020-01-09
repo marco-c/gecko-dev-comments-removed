@@ -372,7 +372,9 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
   _onReflows: function(reflows) {
     
     
-    const changes = [];
+    const displayTypeChanges = [];
+    const scrollableStateChanges = [];
+
     for (const [node, actor] of this._refMap) {
       if (Cu.isDeadWrapper(node)) {
         continue;
@@ -383,16 +385,26 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
       if (displayType !== actor.currentDisplayType ||
           isDisplayed !== actor.wasDisplayed) {
-        changes.push(actor);
+        displayTypeChanges.push(actor);
 
         
         actor.currentDisplayType = displayType;
         actor.wasDisplayed = isDisplayed;
       }
+
+      const isScrollable = actor.isScrollable;
+      if (isScrollable !== actor.wasScrollable) {
+        scrollableStateChanges.push(actor);
+        actor.wasScrollable = isScrollable;
+      }
     }
 
-    if (changes.length) {
-      this.emit("display-change", changes);
+    if (displayTypeChanges.length) {
+      this.emit("display-change", displayTypeChanges);
+    }
+
+    if (scrollableStateChanges.length) {
+      this.emit("scrollable-change", scrollableStateChanges);
     }
   },
 

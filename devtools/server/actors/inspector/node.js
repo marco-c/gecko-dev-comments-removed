@@ -30,6 +30,8 @@ loader.lazyRequireGetter(this, "LongStringActor", "devtools/server/actors/string
 loader.lazyRequireGetter(this, "getFontPreviewData", "devtools/server/actors/styles", true);
 loader.lazyRequireGetter(this, "CssLogic", "devtools/server/actors/inspector/css-logic", true);
 loader.lazyRequireGetter(this, "EventParsers", "devtools/server/actors/inspector/event-parsers", true);
+loader.lazyRequireGetter(this, "DocumentWalker", "devtools/server/actors/inspector/document-walker", true);
+loader.lazyRequireGetter(this, "scrollbarTreeWalkerFilter", "devtools/server/actors/inspector/utils", true);
 
 const SUBGRID_ENABLED =
   Services.prefs.getBoolPref("layout.css.grid-template-subgrid-value.enabled");
@@ -52,6 +54,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
     
     this.currentDisplayType = this.displayType;
     this.wasDisplayed = this.isDisplayed;
+    this.wasScrollable = this.isScrollable;
   },
 
   toString: function() {
@@ -117,6 +120,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
       numChildren: this.numChildren,
       inlineTextChild: inlineTextChild ? inlineTextChild.form() : undefined,
       displayType: this.displayType,
+      isScrollable: this.isScrollable,
 
       
       name: this.rawNode.name,
@@ -247,6 +251,22 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
     }
 
     return display;
+  },
+
+  
+
+
+  get isScrollable() {
+    
+    if (this.rawNode.clientHeight === this.rawNode.scrollHeight &&
+        this.rawNode.clientWidth === this.rawNode.scrollWidth) {
+      return false;
+    }
+
+    
+    const walker = new DocumentWalker(this.rawNode, this.rawNode.ownerGlobal,
+                                      { filter: scrollbarTreeWalkerFilter });
+    return !!walker.firstChild();
   },
 
   

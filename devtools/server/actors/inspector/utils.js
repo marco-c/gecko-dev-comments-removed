@@ -106,6 +106,17 @@ function allAnonymousContentTreeWalkerFilter(node) {
 
 
 
+function scrollbarTreeWalkerFilter(node) {
+  if (node.nodeName === "scrollbar" && nodeHasSize(node)) {
+    return nodeFilterConstants.FILTER_ACCEPT;
+  }
+
+  return nodeFilterConstants.FILTER_SKIP;
+}
+
+
+
+
 
 
 function isWhitespaceTextNode(node) {
@@ -313,5 +324,6 @@ module.exports = {
   imageToImageData,
   isNodeDead,
   nodeDocument,
+  scrollbarTreeWalkerFilter,
   standardTreeWalkerFilter,
 };

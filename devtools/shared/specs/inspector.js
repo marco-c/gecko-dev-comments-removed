@@ -77,6 +77,10 @@ const walkerSpec = generateActorSpec({
       type: "display-change",
       nodes: Arg(0, "array:domnode"),
     },
+    "scrollable-change": {
+      type: "scrollable-change",
+      nodes: Arg(0, "array:domnode"),
+    },
     
     
     
