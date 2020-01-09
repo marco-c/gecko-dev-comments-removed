@@ -84,7 +84,8 @@ class MicroTaskRunnable {
 
 class CycleCollectedJSContext
     : dom::PerThreadAtomCache,
-      public LinkedListElement<CycleCollectedJSContext> {
+      public LinkedListElement<CycleCollectedJSContext>,
+      private JS::JobQueue {
   friend class CycleCollectedJSRuntime;
 
  protected:
@@ -231,6 +232,16 @@ class CycleCollectedJSContext
       mUncaughtRejectionObservers;
 
   virtual bool IsSystemCaller() const = 0;
+
+ private:
+  
+  
+  JSObject* getIncumbentGlobal(JSContext* cx) override;
+  bool enqueuePromiseJob(JSContext* cx, JS::HandleObject promise,
+                         JS::HandleObject job, JS::HandleObject allocationSite,
+                         JS::HandleObject incumbentGlobal) override;
+  void runJobs(JSContext* cx) override;
+  bool empty() const override;
 
  private:
   

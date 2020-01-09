@@ -13,42 +13,72 @@
 
 namespace JS {
 
-typedef JSObject* (*GetIncumbentGlobalCallback)(JSContext* cx);
 
-typedef bool (*EnqueuePromiseJobCallback)(JSContext* cx,
-                                          JS::HandleObject promise,
-                                          JS::HandleObject job,
-                                          JS::HandleObject allocationSite,
-                                          JS::HandleObject incumbentGlobal,
-                                          void* data);
+
+
+
+
+
+
+
+
+
+
+
+class JS_PUBLIC_API JobQueue {
+ public:
+  virtual ~JobQueue() = default;
+
+  
+
+
+
+
+
+
+  virtual JSObject* getIncumbentGlobal(JSContext* cx) = 0;
+
+  
+
+
+
+
+  virtual bool enqueuePromiseJob(JSContext* cx, JS::HandleObject promise,
+                                 JS::HandleObject job,
+                                 JS::HandleObject allocationSite,
+                                 JS::HandleObject incumbentGlobal) = 0;
+
+  
+
+
+
+
+
+
+
+
+
+  virtual void runJobs(JSContext* cx) = 0;
+
+  
+
+
+  virtual bool empty() const = 0;
+};
+
+
+
+
+
+
+
+extern JS_PUBLIC_API void SetJobQueue(JSContext* cx, JobQueue* queue);
 
 enum class PromiseRejectionHandlingState { Unhandled, Handled };
 
 typedef void (*PromiseRejectionTrackerCallback)(
     JSContext* cx, JS::HandleObject promise,
     JS::PromiseRejectionHandlingState state, void* data);
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API void SetGetIncumbentGlobalCallback(
-    JSContext* cx, GetIncumbentGlobalCallback callback);
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API void SetEnqueuePromiseJobCallback(
-    JSContext* cx, EnqueuePromiseJobCallback callback, void* data = nullptr);
 
 
 
@@ -349,4 +379,4 @@ extern JS_PUBLIC_API void ShutdownAsyncTasks(JSContext* cx);
 
 }  
 
-#endif  
+#endif

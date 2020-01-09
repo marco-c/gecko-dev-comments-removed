@@ -72,7 +72,41 @@ struct AutoResolving;
 
 struct HelperThread;
 
-using JobQueue = TraceableFifo<JSObject*, 0, SystemAllocPolicy>;
+class InternalJobQueue : public JS::JobQueue {
+ public:
+  explicit InternalJobQueue(JSContext* cx)
+      : queue(cx, SystemAllocPolicy()), draining_(false), interrupted_(false) {}
+  ~InternalJobQueue() = default;
+
+  
+  JSObject* getIncumbentGlobal(JSContext* cx) override;
+  bool enqueuePromiseJob(JSContext* cx, JS::HandleObject promise,
+                         JS::HandleObject job, JS::HandleObject allocationSite,
+                         JS::HandleObject incumbentGlobal) override;
+  void runJobs(JSContext* cx) override;
+  bool empty() const override;
+
+  
+  
+  
+  void interrupt() { interrupted_ = true; }
+
+  
+  
+  JSObject* maybeFront() const;
+
+ private:
+  using Queue = js::TraceableFifo<JSObject*, 0, SystemAllocPolicy>;
+
+  JS::PersistentRooted<Queue> queue;
+
+  
+  
+  bool draining_;
+
+  
+  bool interrupted_;
+};
 
 class AutoLockScriptData;
 
@@ -894,16 +928,21 @@ struct JSContext : public JS::RootingContext,
   js::ThreadData<uintptr_t> jitStackLimitNoInterrupt;
 
   
-  js::ThreadData<JS::GetIncumbentGlobalCallback> getIncumbentGlobalCallback;
-  js::ThreadData<JS::EnqueuePromiseJobCallback> enqueuePromiseJobCallback;
-  js::ThreadData<void*> enqueuePromiseJobCallbackData;
+  
+  
+  
+  
+  
+  
+  js::ThreadData<JS::JobQueue*> jobQueue;
 
   
   
   
-  js::ThreadData<JS::PersistentRooted<js::JobQueue>*> jobQueue;
-  js::ThreadData<bool> drainingJobQueue;
-  js::ThreadData<bool> stopDrainingJobQueue;
+  js::ThreadData<js::UniquePtr<js::InternalJobQueue>> internalJobQueue;
+
+  
+  
   js::ThreadData<bool> canSkipEnqueuingJobs;
 
   js::ThreadData<JS::PromiseRejectionTrackerCallback>
