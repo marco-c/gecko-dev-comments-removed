@@ -635,7 +635,7 @@
 
 
 
-    function EventWatcher(test, watchedNode, eventTypes)
+    function EventWatcher(test, watchedNode, eventTypes, timeoutPromise)
     {
         if (typeof eventTypes == 'string') {
             eventTypes = [eventTypes];
@@ -712,6 +712,27 @@
                 recordedEvents = [];
             }
             return new Promise(function(resolve, reject) {
+                var timeout = test.step_func(function() {
+                    
+                    
+                    if (!waitingFor || waitingFor.resolve !== resolve)
+                        return;
+
+                    
+                    
+                    assert_true(waitingFor.types.length == 0,
+                                'Timed out waiting for ' + waitingFor.types.join(', '));
+                    var result = recordedEvents;
+                    recordedEvents = null;
+                    var resolveFunc = waitingFor.resolve;
+                    waitingFor = null;
+                    resolveFunc(result);
+                });
+
+                if (timeoutPromise) {
+                    timeoutPromise().then(timeout);
+                }
+
                 waitingFor = {
                     types: types,
                     resolve: resolve,
