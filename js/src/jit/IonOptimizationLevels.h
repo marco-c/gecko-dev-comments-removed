@@ -120,13 +120,6 @@ class OptimizationInfo {
 
   
   
-  uint32_t compilerSmallFunctionWarmUpThreshold_;
-
-  
-  static const uint32_t CompilerSmallFunctionWarmupThreshold;
-
-  
-  
   double inliningWarmUpThresholdFactor_;
 
   
@@ -159,7 +152,6 @@ class OptimizationInfo {
         scalarReplacement_(false),
         smallFunctionMaxInlineDepth_(0),
         compilerWarmUpThreshold_(0),
-        compilerSmallFunctionWarmUpThreshold_(0),
         inliningWarmUpThresholdFactor_(0.0),
         inliningRecompileThresholdFactor_(0) {}
 
