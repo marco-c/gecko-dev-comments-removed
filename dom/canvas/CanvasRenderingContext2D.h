@@ -566,8 +566,7 @@ class CanvasRenderingContext2D final : public nsICanvasRenderingContextInternal,
 
   
   bool ParseFilter(const nsAString& aString,
-                   StyleOwnedSlice<StyleFilter>& aFilterChain,
-                   ErrorResult& aError);
+                   nsTArray<nsStyleFilter>& aFilterChain, ErrorResult& aError);
 
   
   bool SetFontInternal(const nsAString& aFont, mozilla::ErrorResult& aError);
@@ -967,7 +966,7 @@ class CanvasRenderingContext2D final : public nsICanvasRenderingContextInternal,
     mozilla::gfx::JoinStyle lineJoin = mozilla::gfx::JoinStyle::MITER_OR_BEVEL;
 
     nsString filterString = nsString(u"none");
-    StyleOwnedSlice<StyleFilter> filterChain;
+    nsTArray<nsStyleFilter> filterChain;
     
     
     nsCOMPtr<nsISupports> autoSVGFiltersObserver;

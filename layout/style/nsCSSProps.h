@@ -290,6 +290,7 @@ class nsCSSProps {
   
   
   static const KTableEntry kShapeRadiusKTable[];
+  static const KTableEntry kFilterFunctionKTable[];
   static const KTableEntry kBoxShadowTypeKTable[];
   static const KTableEntry kCursorKTable[];
   

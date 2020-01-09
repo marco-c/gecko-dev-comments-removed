@@ -51,10 +51,10 @@ class URLAndReferrerInfo {
     MOZ_ASSERT(aURI);
   }
 
-  URLAndReferrerInfo(nsIURI* aURI, const URLExtraData& aExtraData)
+  URLAndReferrerInfo(nsIURI* aURI, URLExtraData* aExtraData)
       : mURI(aURI),
-        mReferrer(aExtraData.GetReferrer()),
-        mReferrerPolicy(aExtraData.GetReferrerPolicy()) {
+        mReferrer(aExtraData->GetReferrer()),
+        mReferrerPolicy(aExtraData->GetReferrerPolicy()) {
     MOZ_ASSERT(aURI);
   }
 
@@ -302,7 +302,7 @@ class SVGObserverUtils {
 
   static already_AddRefed<nsISupports> ObserveFiltersForCanvasContext(
       CanvasRenderingContext2D* aContext, Element* aCanvasElement,
-      Span<const StyleFilter> aFilters);
+      nsTArray<nsStyleFilter>& aFilters);
 
   
 
@@ -403,7 +403,7 @@ class SVGObserverUtils {
 
 
   static already_AddRefed<URLAndReferrerInfo> GetFilterURI(
-      nsIFrame* aFrame, const StyleFilter& aFilter);
+      nsIFrame* aFrame, const nsStyleFilter& aFilter);
 
   
 

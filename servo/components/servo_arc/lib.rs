@@ -90,9 +90,6 @@ const STATIC_REFCOUNT: usize = usize::MAX;
 
 
 
-
-/// cbindgen:derive-eq=false
-/// cbindgen:derive-neq=false
 #[repr(C)]
 pub struct Arc<T: ?Sized> {
     p: ptr::NonNull<ArcInner<T>>,

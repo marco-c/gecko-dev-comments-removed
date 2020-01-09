@@ -12,9 +12,10 @@
 #include "SVGAnimatedNumber.h"
 #include "SVGAnimatedNumberPair.h"
 #include "SVGFilters.h"
-#include "mozilla/ServoStyleConsts.h"
+#include "nsTArray.h"
 
 class nsSVGFilterFrame;
+struct nsStyleFilter;
 
 namespace mozilla {
 namespace dom {
@@ -64,7 +65,6 @@ class SVGFilterElement;
 
 
 class nsSVGFilterInstance {
-  using StyleFilter = mozilla::StyleFilter;
   typedef mozilla::SVGAnimatedNumber SVGAnimatedNumber;
   typedef mozilla::SVGAnimatedNumberPair SVGAnimatedNumberPair;
   typedef mozilla::gfx::Point3D Point3D;
@@ -83,7 +83,7 @@ class nsSVGFilterInstance {
 
 
 
-  nsSVGFilterInstance(const StyleFilter& aFilter, nsIFrame* aTargetFrame,
+  nsSVGFilterInstance(const nsStyleFilter& aFilter, nsIFrame* aTargetFrame,
                       nsIContent* aTargetContent,
                       const UserSpaceMetrics& aMetrics,
                       const gfxRect& aTargetBBox,
@@ -202,7 +202,7 @@ class nsSVGFilterInstance {
   
 
 
-  const StyleFilter& mFilter;
+  const nsStyleFilter& mFilter;
 
   
 
