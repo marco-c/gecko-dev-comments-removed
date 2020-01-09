@@ -241,12 +241,17 @@ this.FirefoxMonitor = {
     EveryWindow.registerCallback(
       this.kNotificationID,
       (win) => {
+        if (this.notificationsByWindow.has(win)) {
+          
+          return;
+        }
+
+        this.notificationsByWindow.set(win, new Set());
+
         
         let DOMWindowUtils = win.windowUtils;
         DOMWindowUtils.loadSheetUsingURIString(this.getURL("privileged/FirefoxMonitor.css"),
                                                DOMWindowUtils.AUTHOR_SHEET);
-
-        this.notificationsByWindow.set(win, new Set());
 
         
         let doc = win.document;
