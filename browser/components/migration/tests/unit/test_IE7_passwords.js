@@ -321,7 +321,7 @@ add_task(async function test_passwordsNotAvailable() {
 
   let migrator = getFirstResourceOfType(MigrationUtils.resourceTypes.PASSWORDS);
   Assert.ok(migrator.exists, "The migrator has to exist");
-  let logins = Services.logins.getAllLogins({});
+  let logins = Services.logins.getAllLogins();
   Assert.equal(logins.length, 0, "There are no logins at the beginning of the test");
 
   let uris = []; 
@@ -330,7 +330,7 @@ add_task(async function test_passwordsNotAvailable() {
      
      
     await migrator._migrateURIs(uris);
-    logins = Services.logins.getAllLogins({});
+    logins = Services.logins.getAllLogins();
     Assert.equal(logins.length, 0,
                  "There are no logins after doing the migration without adding values to the registry");
   }
@@ -346,7 +346,7 @@ add_task(async function test_passwordsAvailable() {
 
   registerCleanupFunction(() => {
     Services.logins.removeAllLogins();
-    logins = Services.logins.getAllLogins({});
+    logins = Services.logins.getAllLogins();
     Assert.equal(logins.length, 0, "There are no logins after the cleanup");
     
     removeAllValues(Storage2Key, hashes);
@@ -363,7 +363,7 @@ add_task(async function test_passwordsAvailable() {
 
   let migrator = getFirstResourceOfType(MigrationUtils.resourceTypes.PASSWORDS);
   Assert.ok(migrator.exists, "The migrator has to exist");
-  let logins = Services.logins.getAllLogins({});
+  let logins = Services.logins.getAllLogins();
   Assert.equal(logins.length, 0, "There are no logins at the beginning of the test");
 
   let uris = []; 
@@ -381,7 +381,7 @@ add_task(async function test_passwordsAvailable() {
     hashes.push(website.hash);
 
     await migrator._migrateURIs(uris);
-    logins = Services.logins.getAllLogins({});
+    logins = Services.logins.getAllLogins();
     
     
     loginCount += website.logins.length;

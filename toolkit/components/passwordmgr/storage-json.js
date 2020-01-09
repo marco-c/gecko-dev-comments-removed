@@ -248,16 +248,13 @@ this.LoginManagerStorage_json.prototype = {
   
 
 
-  getAllLogins(count) {
+  getAllLogins() {
     let [logins, ids] = this._searchLogins({});
 
     
     logins = this._decryptLogins(logins);
 
     this.log("_getAllLogins: returning", logins.length, "logins.");
-    if (count) {
-      count.value = logins.length;
-    } 
     return logins;
   },
 

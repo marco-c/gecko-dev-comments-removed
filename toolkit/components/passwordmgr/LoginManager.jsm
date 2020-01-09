@@ -168,7 +168,7 @@ LoginManager.prototype = {
       return;
     }
 
-    let logins = this.getAllLogins({});
+    let logins = this.getAllLogins();
 
     let usernamePresentHistogram = clearAndGetHistogram("PWMGR_USERNAME_PRESENT");
     let loginLastUsedDaysHistogram = clearAndGetHistogram("PWMGR_LOGIN_LAST_USED_DAYS");
@@ -325,10 +325,9 @@ LoginManager.prototype = {
 
 
 
-
-  getAllLogins(count) {
+  getAllLogins() {
     log.debug("Getting a list of all logins");
-    return this._storage.getAllLogins(count);
+    return this._storage.getAllLogins();
   },
 
 
