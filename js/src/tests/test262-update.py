@@ -21,6 +21,7 @@ from operator import itemgetter
 
 UNSUPPORTED_FEATURES = set([
     "tail-call-optimization",
+    "class-fields-public",
     "class-static-fields-public",
     "class-fields-private",
     "class-static-fields-private",
@@ -42,8 +43,6 @@ FEATURE_CHECK_NEEDED = {
     "Atomics": "!this.hasOwnProperty('Atomics')",
     "BigInt": "!this.hasOwnProperty('BigInt')",
     "SharedArrayBuffer": "!this.hasOwnProperty('SharedArrayBuffer')",
-    
-    "class-fields-public": "(function(){try{eval('c=class{x;}');return(false);}catch{return(true);}})()",
     "dynamic-import": "!xulRuntime.shell",
 }
 RELEASE_OR_BETA = set()
@@ -254,8 +253,8 @@ def convertTestFile(test262parser, testSource, testName, includeSet, strictTests
 
     
     
-    isAsync = "async" in testRec
-    assert b"$DONE" not in testSource or isAsync, "Missing async attribute in: %s" % testName
+    async = "async" in testRec
+    assert b"$DONE" not in testSource or async, "Missing async attribute in: %s" % testName
 
     
     isModule = "module" in testRec
@@ -299,7 +298,7 @@ def convertTestFile(test262parser, testSource, testName, includeSet, strictTests
             if "Atomics" in testRec["features"] and "SharedArrayBuffer" in testRec["features"]:
                 refTestSkipIf.append(("(this.hasOwnProperty('getBuildConfiguration')"
                                       "&&getBuildConfiguration()['arm64-simulator'])",
-                                      "ARM64 Simulator cannot emulate atomics"))
+                                     "ARM64 Simulator cannot emulate atomics"))
 
     
     
@@ -309,7 +308,7 @@ def convertTestFile(test262parser, testSource, testName, includeSet, strictTests
         includeSet.update(testRec["includes"])
 
     
-    if not isNegative and not isAsync:
+    if not isNegative and not async:
         testEpilogue = "reportCompare(0, 0);"
     else:
         testEpilogue = ""
