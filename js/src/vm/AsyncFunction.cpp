@@ -67,8 +67,6 @@ enum class ResumeKind { Normal, Throw };
 
 
 
-
-
 static bool AsyncFunctionResume(JSContext* cx,
                                 Handle<AsyncFunctionGeneratorObject*> generator,
                                 ResumeKind kind, HandleValue valueOrReason) {
@@ -133,24 +131,17 @@ static bool AsyncFunctionResume(JSContext* cx,
 
 
 
-
-
 MOZ_MUST_USE bool js::AsyncFunctionAwaitedFulfilled(
     JSContext* cx, Handle<AsyncFunctionGeneratorObject*> generator,
     HandleValue value) {
-  
-
-  
   return AsyncFunctionResume(cx, generator, ResumeKind::Normal, value);
 }
+
 
 
 MOZ_MUST_USE bool js::AsyncFunctionAwaitedRejected(
     JSContext* cx, Handle<AsyncFunctionGeneratorObject*> generator,
     HandleValue reason) {
-  
-
-  
   return AsyncFunctionResume(cx, generator, ResumeKind::Throw, reason);
 }
 
