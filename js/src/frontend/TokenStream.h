@@ -1821,7 +1821,7 @@ class TokenStart {
 
 
 
-#define JS_COLUMN_DIMENSION_IS_CODE_POINTS 1
+#define JS_COLUMN_DIMENSION_IS_CODE_POINTS 0
 
 template <typename Unit, class AnyCharsAccess>
 class GeneralTokenStreamChars : public SpecializedTokenStreamCharsBase<Unit> {
