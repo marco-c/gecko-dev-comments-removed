@@ -1334,14 +1334,36 @@ var LoginManagerContent = {
       if (!userTriggered) {
         
         
+        let loginOrigin = LoginHelper.getLoginOrigin(form.ownerDocument.documentURI);
+        let formActionOrigin = LoginHelper.getFormActionOrigin(form);
         foundLogins = foundLogins.filter(l => {
-          return LoginHelper.isOriginMatching(l.formSubmitURL,
-                                              LoginHelper.getFormActionOrigin(form),
-                                              {
-                                                schemeUpgrades: LoginHelper.schemeUpgrades,
-                                                acceptWildcardMatch: true,
-                                              });
+          let formActionMatches = LoginHelper.isOriginMatching(l.formSubmitURL,
+                                                               formActionOrigin,
+                                                               {
+                                                                 schemeUpgrades: LoginHelper.schemeUpgrades,
+                                                                 acceptWildcardMatch: true,
+                                                                 acceptDifferentSubdomains: false,
+                                                               });
+          let formOriginMatches = LoginHelper.isOriginMatching(l.hostname,
+                                                               loginOrigin,
+                                                               {
+                                                                 schemeUpgrades: LoginHelper.schemeUpgrades,
+                                                                 acceptWildcardMatch: true,
+                                                                 acceptDifferentSubdomains: false,
+                                                               });
+          return formActionMatches && formOriginMatches;
         });
+
+        
+        
+        foundLogins = LoginHelper.dedupeLogins(foundLogins,
+                                               ["username"],
+                                               [
+                                                 "scheme",
+                                                 "timePasswordChanged",
+                                               ],
+                                               loginOrigin,
+                                               formActionOrigin);
       }
 
       

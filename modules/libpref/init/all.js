@@ -4732,6 +4732,7 @@ pref("signon.storeWhenAutocompleteOff",     true);
 pref("signon.debug",                        false);
 pref("signon.recipes.path",                 "chrome://passwordmgr/content/recipes.json");
 pref("signon.schemeUpgrades",               false);
+pref("signon.includeOtherSubdomainsInLookup", false);
 
 pref("signon.masterPasswordReprompt.timeout_ms", 900000); 
 pref("signon.showAutoCompleteFooter", false);

@@ -420,6 +420,7 @@ LoginManagerStorage_mozStorage.prototype = {
     for (let prop of matchData.enumerator) {
       switch (prop.name) {
         
+        case "acceptDifferentSubdomains":
         case "schemeUpgrades": {
           options[prop.name] = prop.value;
           break;
@@ -450,6 +451,7 @@ LoginManagerStorage_mozStorage.prototype = {
 
   _searchLogins(matchData, aOptions = {
     schemeUpgrades: false,
+    acceptDifferentSubdomains: false,
   }) {
     let conditions = [], params = {};
 

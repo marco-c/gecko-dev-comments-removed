@@ -253,6 +253,7 @@ var LoginHelper = {
   isOriginMatching(aLoginOrigin, aSearchOrigin, aOptions = {
     schemeUpgrades: false,
     acceptWildcardMatch: false,
+    acceptDifferentSubdomains: false,
   }) {
     if (aLoginOrigin == aSearchOrigin) {
       return true;
@@ -266,18 +267,30 @@ var LoginHelper = {
       return true;
     }
 
-    if (aOptions.schemeUpgrades) {
-      try {
-        let loginURI = Services.io.newURI(aLoginOrigin);
-        let searchURI = Services.io.newURI(aSearchOrigin);
-        if (loginURI.scheme == "http" && searchURI.scheme == "https" &&
-            loginURI.hostPort == searchURI.hostPort) {
+    try {
+      let loginURI = Services.io.newURI(aLoginOrigin);
+      let searchURI = Services.io.newURI(aSearchOrigin);
+      let schemeMatches = loginURI.scheme == "http" && searchURI.scheme == "https";
+
+      if (aOptions.acceptDifferentSubdomains) {
+        let loginBaseDomain = Services.eTLD.getBaseDomain(loginURI);
+        let searchBaseDomain = Services.eTLD.getBaseDomain(searchURI);
+        if (loginBaseDomain == searchBaseDomain &&
+            (loginURI.scheme == searchURI.scheme ||
+             (aOptions.schemeUpgrades && schemeMatches))) {
           return true;
         }
-      } catch (ex) {
-        
-        return false;
       }
+
+      if (aOptions.schemeUpgrades &&
+          loginURI.host == searchURI.host &&
+          schemeMatches && loginURI.port == searchURI.port) {
+        return true;
+      }
+    } catch (ex) {
+      
+      
+      return false;
     }
 
     return false;
@@ -455,6 +468,59 @@ var LoginHelper = {
 
 
 
+  shadowHTTPLogins(logins) {
+    
+
+
+
+    let hasHTTPSByHostPortUsername = new Map();
+    for (let login of logins) {
+      let key = this.getUniqueKeyForLogin(login, ["hostPort", "username"]);
+      let hasHTTPSlogin = hasHTTPSByHostPortUsername.get(key) || false;
+      let loginURI = Services.io.newURI(login.hostname);
+      hasHTTPSByHostPortUsername.set(key, loginURI.scheme == "https" || hasHTTPSlogin);
+    }
+
+    return logins.filter((login) => {
+      let key = this.getUniqueKeyForLogin(login, ["hostPort", "username"]);
+      let loginURI = Services.io.newURI(login.hostname);
+      if (loginURI.scheme == "http" && hasHTTPSByHostPortUsername.get(key)) {
+        
+        
+        return false;
+      }
+      return true;
+    });
+  },
+
+  
+
+
+
+
+
+  getUniqueKeyForLogin(login, uniqueKeys) {
+    const KEY_DELIMITER = ":";
+    return uniqueKeys.reduce((prev, key) => {
+      let val = null;
+      if (key == "hostPort") {
+        val = Services.io.newURI(login.hostname).hostPort;
+      } else {
+        val = login[key];
+      }
+
+      return prev + KEY_DELIMITER + val;
+    }, "");
+  },
+
+  
+
+
+
+
+
+
+
 
 
 
@@ -476,11 +542,15 @@ var LoginHelper = {
                resolveBy = ["timeLastUsed"],
                preferredOrigin = undefined,
                preferredFormActionOrigin = undefined) {
-    const KEY_DELIMITER = ":";
-
-    if (!preferredOrigin && resolveBy.includes("scheme")) {
-      throw new Error("dedupeLogins: `preferredOrigin` is required in order to " +
-                      "prefer schemes which match it.");
+    if (!preferredOrigin) {
+      if (resolveBy.includes("scheme")) {
+        throw new Error("dedupeLogins: `preferredOrigin` is required in order to " +
+                        "prefer schemes which match it.");
+      }
+      if (resolveBy.includes("subdomain")) {
+        throw new Error("dedupeLogins: `preferredOrigin` is required in order to " +
+                        "prefer subdomains which match it.");
+      }
     }
 
     let preferredOriginScheme;
@@ -499,11 +569,6 @@ var LoginHelper = {
 
     
     let loginsByKeys = new Map();
-
-    
-    function getKey(login, uniqueKeys) {
-      return uniqueKeys.reduce((prev, key) => prev + KEY_DELIMITER + login[key], "");
-    }
 
     
 
@@ -556,6 +621,21 @@ var LoginHelper = {
             }
             break;
           }
+          case "subdomain": {
+            
+            let existingLoginURI = Services.io.newURI(existingLogin.hostname);
+            let newLoginURI = Services.io.newURI(login.hostname);
+            let preferredOriginURI = Services.io.newURI(preferredOrigin);
+            if (existingLoginURI.hostPort != preferredOriginURI.hostPort &&
+                newLoginURI.hostPort == preferredOriginURI.hostPort) {
+              return true;
+            }
+            if (existingLoginURI.host != preferredOriginURI.host &&
+                newLoginURI.host == preferredOriginURI.host) {
+              return true;
+            }
+            break;
+          }
           case "timeLastUsed":
           case "timePasswordChanged": {
             
@@ -577,7 +657,7 @@ var LoginHelper = {
     }
 
     for (let login of logins) {
-      let key = getKey(login, uniqueKeys);
+      let key = this.getUniqueKeyForLogin(login, uniqueKeys);
 
       if (loginsByKeys.has(key)) {
         if (!isLoginPreferred(loginsByKeys.get(key), login)) {

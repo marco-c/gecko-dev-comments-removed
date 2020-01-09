@@ -25,6 +25,9 @@ XPCOMUtils.defineLazyGetter(this, "log", () => {
   return logger.log.bind(logger);
 });
 
+XPCOMUtils.defineLazyPreferenceGetter(this, "INCLUDE_OTHER_SUBDOMAINS_IN_LOOKUP",
+                                      "signon.includeOtherSubdomainsInLookup", false);
+
 var EXPORTED_SYMBOLS = [ "LoginManagerParent" ];
 
 var LoginManagerParent = {
@@ -51,11 +54,17 @@ var LoginManagerParent = {
   
   _lastMPLoginCancelled: Math.NEGATIVE_INFINITY,
 
-  _searchAndDedupeLogins(formOrigin, actionOrigin, {looseActionOriginMatch} = {}) {
+  _searchAndDedupeLogins(formOrigin,
+                         actionOrigin,
+                         {
+                           looseActionOriginMatch,
+                           acceptDifferentSubdomains,
+                         } = {}) {
     let logins;
     let matchData = {
       hostname: formOrigin,
       schemeUpgrades: LoginHelper.schemeUpgrades,
+      acceptDifferentSubdomains,
     };
     if (!looseActionOriginMatch) {
       matchData.formSubmitURL = actionOrigin;
@@ -73,13 +82,15 @@ var LoginManagerParent = {
       throw e;
     }
 
-    
+    logins = LoginHelper.shadowHTTPLogins(logins);
+
     let resolveBy = [
       "actionOrigin",
       "scheme",
+      "subdomain",
       "timePasswordChanged",
     ];
-    return LoginHelper.dedupeLogins(logins, ["username"], resolveBy, formOrigin, actionOrigin);
+    return LoginHelper.dedupeLogins(logins, ["username", "password"], resolveBy, formOrigin, actionOrigin);
   },
 
   
@@ -242,7 +253,12 @@ var LoginManagerParent = {
     }
 
     
-    let logins = this._searchAndDedupeLogins(formOrigin, actionOrigin, {looseActionOriginMatch: true});
+    let logins = this._searchAndDedupeLogins(formOrigin,
+                                             actionOrigin,
+                                             {
+                                               looseActionOriginMatch: true,
+                                               acceptDifferentSubdomains: INCLUDE_OTHER_SUBDOMAINS_IN_LOOKUP,
+                                             });
 
     log("sendLoginDataToChild:", logins.length, "deduped logins");
     
@@ -298,7 +314,12 @@ var LoginManagerParent = {
       log("Creating new autocomplete search result.");
 
       
-      logins = this._searchAndDedupeLogins(formOrigin, actionOrigin, {looseActionOriginMatch: true});
+      logins = this._searchAndDedupeLogins(formOrigin,
+                                           actionOrigin,
+                                           {
+                                             looseActionOriginMatch: true,
+                                             acceptDifferentSubdomains: INCLUDE_OTHER_SUBDOMAINS_IN_LOOKUP,
+                                           });
     }
 
     let matchingLogins = logins.filter(function(fullMatch) {

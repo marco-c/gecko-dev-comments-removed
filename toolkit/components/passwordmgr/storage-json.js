@@ -271,6 +271,7 @@ this.LoginManagerStorage_json.prototype = {
     for (let prop of matchData.enumerator) {
       switch (prop.name) {
         
+        case "acceptDifferentSubdomains":
         case "schemeUpgrades": {
           options[prop.name] = prop.value;
           break;
@@ -300,6 +301,7 @@ this.LoginManagerStorage_json.prototype = {
 
   _searchLogins(matchData, aOptions = {
     schemeUpgrades: false,
+    acceptDifferentSubdomains: false,
   }) {
     this._store.ensureDataReady();
 
