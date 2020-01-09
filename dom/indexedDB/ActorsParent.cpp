@@ -7838,6 +7838,8 @@ class QuotaClient final : public mozilla::dom::quota::Client {
 
   nsresult UpgradeStorageFrom1_0To2_0(nsIFile* aDirectory) override;
 
+  nsresult UpgradeStorageFrom2_1To2_2(nsIFile* aDirectory) override;
+
   nsresult InitOrigin(PersistenceType aPersistenceType,
                       const nsACString& aGroup, const nsACString& aOrigin,
                       const AtomicBool& aCanceled,
@@ -15911,6 +15913,53 @@ nsresult QuotaClient::UpgradeStorageFrom1_0To2_0(nsIFile* aDirectory) {
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
+  }
+
+  return NS_OK;
+}
+
+nsresult QuotaClient::UpgradeStorageFrom2_1To2_2(nsIFile* aDirectory) {
+  AssertIsOnIOThread();
+  MOZ_ASSERT(aDirectory);
+
+  nsCOMPtr<nsIDirectoryEnumerator> entries;
+  nsresult rv = aDirectory->GetDirectoryEntries(getter_AddRefs(entries));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  nsCOMPtr<nsIFile> file;
+  while (NS_SUCCEEDED((rv = entries->GetNextFile(getter_AddRefs(file)))) &&
+         file) {
+    nsString leafName;
+    rv = file->GetLeafName(leafName);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    bool isDirectory;
+    rv = file->IsDirectory(&isDirectory);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    if (isDirectory) {
+      continue;
+    }
+
+    
+    
+    
+    if (StringEndsWith(leafName, NS_LITERAL_STRING(".tmp"))) {
+      rv = file->Remove(false);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+    }
+  }
+
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
   }
 
   return NS_OK;
