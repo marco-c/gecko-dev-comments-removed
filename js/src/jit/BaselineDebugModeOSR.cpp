@@ -510,10 +510,9 @@ static void PatchBaselineFramesForDebugMode(
             
             
             
-            MOZ_ASSERT(*pc == JSOP_DEBUGAFTERYIELD);
-            recompInfo->resumeAddr =
-                bl->nativeCodeForPC(script, pc + JSOP_DEBUGAFTERYIELD_LENGTH,
-                                    &recompInfo->slotInfo);
+            MOZ_ASSERT(*pc == JSOP_AFTERYIELD);
+            recompInfo->resumeAddr = bl->nativeCodeForPC(
+                script, pc + JSOP_AFTERYIELD_LENGTH, &recompInfo->slotInfo);
             popFrameReg = true;
             break;
 

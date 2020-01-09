@@ -1124,7 +1124,7 @@ bool HandleDebugTrap(JSContext* cx, BaselineFrame* frame, uint8_t* retAddr,
       script->baselineScript()->retAddrEntryFromReturnAddress(retAddr).pc(
           script);
 
-  if (*pc == JSOP_DEBUGAFTERYIELD) {
+  if (*pc == JSOP_AFTERYIELD) {
     
     
     
