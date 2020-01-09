@@ -892,7 +892,7 @@ class MOZ_RAII CacheIRCompiler {
   
   
   
-  static const uint32_t MAX_ARGS_SPREAD_LENGTH = 16;
+  static const uint32_t MAX_ARGS_ARRAY_LENGTH = 16;
 };
 
 
