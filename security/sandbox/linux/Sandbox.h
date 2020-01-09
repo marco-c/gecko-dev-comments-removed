@@ -17,8 +17,8 @@
 
 namespace mozilla {
 
-namespace dom {
-class MaybeFileDesc;
+namespace ipc {
+class FileDescriptor;
 }  
 
 
@@ -46,7 +46,7 @@ struct ContentProcessSandboxParams {
   std::vector<int> mSyscallWhitelist;
 
   static ContentProcessSandboxParams ForThisProcess(
-      const dom::MaybeFileDesc& aBroker);
+      const Maybe<ipc::FileDescriptor>& aBroker);
 };
 
 

@@ -1272,7 +1272,8 @@ void ContentChild::InitXPCOM(
 
 mozilla::ipc::IPCResult ContentChild::RecvRequestMemoryReport(
     const uint32_t& aGeneration, const bool& aAnonymize,
-    const bool& aMinimizeMemoryUsage, const MaybeFileDesc& aDMDFile) {
+    const bool& aMinimizeMemoryUsage,
+    const Maybe<mozilla::ipc::FileDescriptor>& aDMDFile) {
   nsCString process;
   GetProcessName(process);
   AppendProcessId(process);
@@ -1610,7 +1611,7 @@ static bool StartMacOSContentSandbox() {
 #endif
 
 mozilla::ipc::IPCResult ContentChild::RecvSetProcessSandbox(
-    const MaybeFileDesc& aBroker) {
+    const Maybe<mozilla::ipc::FileDescriptor>& aBroker) {
   
   
 #if defined(MOZ_CONTENT_SANDBOX)

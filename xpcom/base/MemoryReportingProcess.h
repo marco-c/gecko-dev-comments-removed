@@ -11,8 +11,8 @@
 #include "nscore.h"
 
 namespace mozilla {
-namespace dom {
-class MaybeFileDesc;
+namespace ipc {
+class FileDescriptor;
 }  
 
 
@@ -29,10 +29,10 @@ class MemoryReportingProcess {
 
   
   
-  virtual bool SendRequestMemoryReport(const uint32_t& aGeneration,
-                                       const bool& aAnonymize,
-                                       const bool& aMinimizeMemoryUsage,
-                                       const dom::MaybeFileDesc& aDMDFile) = 0;
+  virtual bool SendRequestMemoryReport(
+      const uint32_t& aGeneration, const bool& aAnonymize,
+      const bool& aMinimizeMemoryUsage,
+      const Maybe<mozilla::ipc::FileDescriptor>& aDMDFile) = 0;
 
   virtual int32_t Pid() const = 0;
 };

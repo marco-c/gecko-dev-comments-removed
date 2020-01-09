@@ -29,20 +29,20 @@ RDDChild::RDDChild(RDDProcessHost* aHost) : mHost(aHost), mRDDReady(false) {
 RDDChild::~RDDChild() { MOZ_COUNT_DTOR(RDDChild); }
 
 bool RDDChild::Init() {
-  MaybeFileDesc brokerFd = void_t();
+  Maybe<FileDescriptor> brokerFd;
 
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)
   auto policy = SandboxBrokerPolicyFactory::GetUtilityPolicy(OtherPid());
   if (policy != nullptr) {
-    brokerFd = FileDescriptor();
+    brokerFd = Some(FileDescriptor());
     mSandboxBroker =
-        SandboxBroker::Create(std::move(policy), OtherPid(), brokerFd);
+        SandboxBroker::Create(std::move(policy), OtherPid(), brokerFd.ref());
     
     
     if (NS_WARN_IF(mSandboxBroker == nullptr)) {
       return false;
     }
-    MOZ_ASSERT(static_cast<const FileDescriptor&>(brokerFd).IsValid());
+    MOZ_ASSERT(brokerFd.ref().IsValid());
   }
 #endif  
 
@@ -85,7 +85,7 @@ mozilla::ipc::IPCResult RDDChild::RecvInitCrashReporter(
 bool RDDChild::SendRequestMemoryReport(const uint32_t& aGeneration,
                                        const bool& aAnonymize,
                                        const bool& aMinimizeMemoryUsage,
-                                       const MaybeFileDesc& aDMDFile) {
+                                       const Maybe<FileDescriptor>& aDMDFile) {
   mMemoryReportRequest = MakeUnique<MemoryReportRequestHost>(aGeneration);
   Unused << PRDDChild::SendRequestMemoryReport(aGeneration, aAnonymize,
                                                aMinimizeMemoryUsage, aDMDFile);
