@@ -3362,28 +3362,32 @@ bool nsStyleDisplay::TransformChanged(const nsStyleDisplay& aNewData) const {
                               aNewData.mSpecifiedTransform);
 }
 
-void nsStyleDisplay::GenerateCombinedIndividualTransform() {
-  MOZ_ASSERT(!mIndividualTransform);
 
+already_AddRefed<nsCSSValueSharedList>
+nsStyleDisplay::GenerateCombinedIndividualTransform(
+    nsCSSValueSharedList* aTranslate, nsCSSValueSharedList* aRotate,
+    nsCSSValueSharedList* aScale) {
   
   
   AutoTArray<nsCSSValueSharedList*, 3> shareLists;
-  if (mSpecifiedTranslate) {
-    shareLists.AppendElement(mSpecifiedTranslate.get());
-  }
-  if (mSpecifiedRotate) {
-    shareLists.AppendElement(mSpecifiedRotate.get());
-  }
-  if (mSpecifiedScale) {
-    shareLists.AppendElement(mSpecifiedScale.get());
+  if (aTranslate) {
+    shareLists.AppendElement(aTranslate);
   }
 
-  if (shareLists.Length() == 0) {
-    return;
+  if (aRotate) {
+    shareLists.AppendElement(aRotate);
   }
+
+  if (aScale) {
+    shareLists.AppendElement(aScale);
+  }
+
+  if (shareLists.IsEmpty()) {
+    return nullptr;
+  }
+
   if (shareLists.Length() == 1) {
-    mIndividualTransform = shareLists[0];
-    return;
+    return RefPtr<nsCSSValueSharedList>(shareLists[0]).forget();
   }
 
   
@@ -3399,13 +3403,20 @@ void nsStyleDisplay::GenerateCombinedIndividualTransform() {
 
   
   
-  MOZ_ASSERT(valueLists.Length());
+  MOZ_ASSERT(!valueLists.IsEmpty());
 
   for (uint32_t i = 0; i < valueLists.Length() - 1; i++) {
     valueLists[i]->mNext = valueLists[i + 1];
   }
 
-  mIndividualTransform = new nsCSSValueSharedList(valueLists[0]);
+  RefPtr<nsCSSValueSharedList> list = new nsCSSValueSharedList(valueLists[0]);
+  return list.forget();
+}
+
+void nsStyleDisplay::GenerateCombinedIndividualTransform() {
+  MOZ_ASSERT(!mIndividualTransform);
+  mIndividualTransform = GenerateCombinedIndividualTransform(
+      mSpecifiedTranslate, mSpecifiedRotate, mSpecifiedScale);
 }
 
 

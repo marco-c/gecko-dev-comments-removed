@@ -106,10 +106,6 @@ struct AnimationValue {
                                    dom::Element* aElement);
 
   
-  static AnimationValue Opacity(float aOpacity);
-  
-  static AnimationValue Transform(nsCSSValueSharedList& aList);
-  
   
   
   

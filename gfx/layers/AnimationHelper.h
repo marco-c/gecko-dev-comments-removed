@@ -232,13 +232,67 @@ class AnimationHelper {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static SampleResult SampleAnimationForEachNode(
       TimeStamp aPreviousFrameTime, TimeStamp aCurrentFrameTime,
+      const AnimatedValue* aPreviousValue,
       nsTArray<PropertyAnimationGroup>& aPropertyAnimationGroups,
-      RefPtr<RawServoAnimationValue>& aAnimationValue,
-      const AnimatedValue* aPreviousValue);
+      nsTArray<RefPtr<RawServoAnimationValue>>& aAnimationValues);
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -276,7 +330,7 @@ class AnimationHelper {
 
 
   static gfx::Matrix4x4 ServoAnimationValueToMatrix4x4(
-      const RefPtr<RawServoAnimationValue>& aValue,
+      const nsTArray<RefPtr<RawServoAnimationValue>>& aValue,
       const TransformData& aTransformData);
 };
 

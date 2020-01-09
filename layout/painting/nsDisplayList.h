@@ -6721,12 +6721,12 @@ class nsDisplayTransform : public nsDisplayHitTestInfoItem {
     
     
     
-    
-    
     FrameTransformProperties(
+        RefPtr<const nsCSSValueSharedList>&& aIndividualTransform,
         RefPtr<const nsCSSValueSharedList>&& aTransformList,
         const Point3D& aToTransformOrigin)
         : mFrame(nullptr),
+          mIndividualTransformList(std::move(aIndividualTransform)),
           mTransformList(std::move(aTransformList)),
           mToTransformOrigin(aToTransformOrigin) {}
 
