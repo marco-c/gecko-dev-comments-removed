@@ -1333,6 +1333,19 @@ AbortReasonOr<Ok> IonBuilder::addOsrValueTypeBarrier(
     def = barrier;
   }
 
+  
+  
+  
+  switch (type) {
+    case MIRType::Null:
+    case MIRType::Undefined:
+    case MIRType::MagicOptimizedArguments:
+      def->setImplicitlyUsed();
+      break;
+    default:
+      break;
+  }
+
   switch (type) {
     case MIRType::Boolean:
     case MIRType::Int32:
