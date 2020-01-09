@@ -39,7 +39,7 @@
 #include "nsIScriptSecurityManager.h"
 #include "nsIPrincipal.h"
 #include "nsJSUtils.h"
-#include "gfxPrefs.h"
+
 #include "nsIXULRuntime.h"
 #include "GeckoProfiler.h"
 
@@ -994,7 +994,7 @@ static bool ProcessArgs(AutoJSAPI& jsapi, char** argv, int argc,
         JS::SourceText<mozilla::Utf8Unit> srcBuf;
         if (srcBuf.init(cx, argv[i], strlen(argv[i]),
                         JS::SourceOwnership::Borrowed)) {
-          JS::EvaluateDontInflate(cx, opts, srcBuf, &rval);
+          JS::Evaluate(cx, opts, srcBuf, &rval);
         }
 
         isInteractive = false;
@@ -1327,8 +1327,6 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
       return 1;
     }
 
-    
-    gfxPrefs::GetSingleton();
     
     BrowserTabsRemoteAutostart();
 #ifdef XP_WIN

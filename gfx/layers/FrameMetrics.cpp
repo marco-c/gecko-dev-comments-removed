@@ -5,7 +5,7 @@
 
 
 #include "FrameMetrics.h"
-#include "gfxPrefs.h"
+
 #include "nsStyleConsts.h"
 #include "nsStyleStruct.h"
 #include "mozilla/WritingModes.h"
