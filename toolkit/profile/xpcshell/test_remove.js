@@ -2,6 +2,9 @@
 
 
 
+
+
+
 function compareLists(service, knownProfiles) {
   Assert.equal(service.profileCount, knownProfiles.length, "profileCount should be correct.");
   let serviceProfiles = Array.from(service.profiles);

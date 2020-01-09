@@ -3,6 +3,9 @@
 
 
 
+
+
+
 add_task(async () => {
   let hash = xreDirProvider.getInstallHash();
 

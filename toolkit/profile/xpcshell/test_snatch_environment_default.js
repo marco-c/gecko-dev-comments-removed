@@ -4,6 +4,9 @@
 
 
 
+
+
+
 add_task(async () => {
   gIsDefaultApp = true;
 
@@ -50,12 +53,12 @@ add_task(async () => {
   Assert.ok(!didCreate, "Should not have created a new profile.");
   Assert.ok(rootDir.equals(root), "Should have selected the right root dir.");
   Assert.ok(localDir.equals(local), "Should have selected the right local dir.");
-  Assert.ok(profile, "A named profile matches this.");
+  Assert.ok(!!profile, "A named profile matches this.");
   Assert.equal(profile.name, PROFILE_DEFAULT, "The right profile was matched.");
 
   let service = getProfileService();
-  Assert.equal(service.defaultProfile, profile, "Should be the default profile.");
-  Assert.equal(service.currentProfile, profile, "Should be the current profile.");
+  Assert.ok(service.defaultProfile === profile, "Should be the default profile.");
+  Assert.ok(service.currentProfile === profile, "Should be the current profile.");
 
   profileData = readProfilesIni();
   Assert.equal(profileData.profiles[0].name, PROFILE_DEFAULT, "Should be the right profile.");
