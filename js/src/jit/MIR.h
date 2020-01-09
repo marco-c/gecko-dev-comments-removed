@@ -332,21 +332,21 @@ class AliasSet {
  public:
   enum Flag {
     None_ = 0,
-    ObjectFields = 1 << 0,       
-    Element = 1 << 1,            
-                                 
-    UnboxedElement = 1 << 2,     
-                                 
-    DynamicSlot = 1 << 3,        
-    FixedSlot = 1 << 4,          
-    DOMProperty = 1 << 5,        
-    FrameArgument = 1 << 6,      
-    WasmGlobalVar = 1 << 7,      
-    WasmHeap = 1 << 8,           
-    WasmHeapMeta = 1 << 9,       
-                                 
-    TypedArrayLength = 1 << 10,  
-    WasmGlobalCell = 1 << 11,    
+    ObjectFields = 1 << 0,    
+    Element = 1 << 1,         
+                              
+    UnboxedElement = 1 << 2,  
+                              
+    DynamicSlot = 1 << 3,     
+    FixedSlot = 1 << 4,       
+    DOMProperty = 1 << 5,     
+    FrameArgument = 1 << 6,   
+    WasmGlobalVar = 1 << 7,   
+    WasmHeap = 1 << 8,        
+    WasmHeapMeta = 1 << 9,    
+                              
+    TypedArrayLengthOrOffset = 1 << 10,  
+    WasmGlobalCell = 1 << 11,            
     Last = WasmGlobalCell,
     Any = Last | (Last - 1),
 
@@ -362,8 +362,6 @@ class AliasSet {
   explicit AliasSet(uint32_t flags) : flags_(flags) {}
 
  public:
-  static const char* Name(size_t flag);
-
   inline bool isNone() const { return flags_ == None_; }
   uint32_t flags() const { return flags_ & Any; }
   inline bool isStore() const { return !!(flags_ & Store_); }
@@ -7142,7 +7140,31 @@ class MTypedArrayLength : public MUnaryInstruction,
     return congruentIfOperandsEqual(ins);
   }
   AliasSet getAliasSet() const override {
-    return AliasSet::Load(AliasSet::TypedArrayLength);
+    return AliasSet::Load(AliasSet::TypedArrayLengthOrOffset);
+  }
+
+  void computeRange(TempAllocator& alloc) override;
+};
+
+
+class MTypedArrayByteOffset : public MUnaryInstruction,
+                              public SingleObjectPolicy::Data {
+  explicit MTypedArrayByteOffset(MDefinition* obj)
+      : MUnaryInstruction(classOpcode, obj) {
+    setResultType(MIRType::Int32);
+    setMovable();
+  }
+
+ public:
+  INSTRUCTION_HEADER(TypedArrayByteOffset)
+  TRIVIAL_NEW_WRAPPERS
+  NAMED_OPERANDS((0, object))
+
+  bool congruentTo(const MDefinition* ins) const override {
+    return congruentIfOperandsEqual(ins);
+  }
+  AliasSet getAliasSet() const override {
+    return AliasSet::Load(AliasSet::TypedArrayLengthOrOffset);
   }
 
   void computeRange(TempAllocator& alloc) override;

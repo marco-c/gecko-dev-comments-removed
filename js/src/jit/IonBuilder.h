@@ -516,6 +516,10 @@ class IonBuilder : public MIRGenerator,
     return length;
   }
 
+  
+  
+  MInstruction* addTypedArrayByteOffset(MDefinition* obj);
+
   AbortReasonOr<Ok> improveThisTypesForCall();
 
   MDefinition* getCallee();
@@ -783,6 +787,7 @@ class IonBuilder : public MIRGenerator,
   InliningResult inlineIsPossiblyWrappedTypedArray(CallInfo& callInfo);
   InliningResult inlineTypedArrayLength(CallInfo& callInfo);
   InliningResult inlinePossiblyWrappedTypedArrayLength(CallInfo& callInfo);
+  InliningResult inlineTypedArrayByteOffset(CallInfo& callInfo);
   InliningResult inlineSetDisjointTypedElements(CallInfo& callInfo);
 
   
