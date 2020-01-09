@@ -3183,7 +3183,11 @@ Toolbox.prototype = {
   async initPerformance() {
     
     
-    if (!this.target.hasActor("performance")) {
+    
+    
+    const isNewPerfPanel =
+      Services.prefs.getBoolPref("devtools.performance.new-panel-enabled", false);
+    if (isNewPerfPanel || !this.target.hasActor("performance")) {
       return promise.resolve();
     }
 
