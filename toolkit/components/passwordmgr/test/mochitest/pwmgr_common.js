@@ -43,10 +43,17 @@ function $_(formNum, name) {
 
 
 function checkAutoCompleteResults(actualValues, expectedValues, hostname, msg) {
-  
-  let footerResult = actualValues[actualValues.length - 1];
-  ok(footerResult.includes("View Saved Logins"), "the footer text is shown correctly");
-  ok(footerResult.includes(hostname), "the footer has the correct hostname attribute");
+  if (hostname !== null) {
+    
+    let footerResult = actualValues[actualValues.length - 1];
+    ok(footerResult.includes("View Saved Logins"), "the footer text is shown correctly");
+    ok(footerResult.includes(hostname), "the footer has the correct hostname attribute");
+  }
+
+  if (hostname === null) {
+    checkArrayValues(actualValues, expectedValues, msg);
+    return;
+  }
 
   if (actualValues.length == 0) {
     info("Only the footer is present in the popup");

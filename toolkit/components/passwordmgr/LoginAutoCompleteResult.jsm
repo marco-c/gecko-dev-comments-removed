@@ -16,9 +16,12 @@ const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.defineModuleGetter(this, "LoginHelper",
                                "resource://gre/modules/LoginHelper.jsm");
 
+XPCOMUtils.defineLazyServiceGetter(this, "formFillController",
+                                   "@mozilla.org/satchel/form-fill-controller;1",
+                                   Ci.nsIFormFillController);
+
 XPCOMUtils.defineLazyGetter(this, "log", () => {
-  let logger = LoginHelper.createLogger("LoginAutoCompleteResult");
-  return logger.log.bind(logger);
+  return LoginHelper.createLogger("LoginAutoCompleteResult");
 });
 
 
@@ -50,15 +53,32 @@ function LoginAutoCompleteResult(aSearchString, matchingLogins, {isSecure, messa
     return duplicates;
   }
 
-  this._showInsecureFieldWarning = (!isSecure && LoginHelper.showInsecureFieldWarning) ? 1 : 0;
-  this._showAutoCompleteFooter = 0;
-  
-  
-  if (LoginHelper.showAutoCompleteFooter && LoginHelper.enabled) {
+  let hidingFooterOnPWFieldAutoOpened = false;
+  function isFooterEnabled() {
     
     
-    this._showAutoCompleteFooter = (!isPasswordField || !aSearchString) ? 1 : 0;
+    if (!LoginHelper.showAutoCompleteFooter || !LoginHelper.enabled) {
+      return false;
+    }
+
+    
+    
+    if (isPasswordField && aSearchString) {
+      log.debug("Hiding footer: non-empty password field");
+      return false;
+    }
+
+    if (!matchingLogins.length && isPasswordField && formFillController.passwordPopupAutomaticallyOpened) {
+      hidingFooterOnPWFieldAutoOpened = true;
+      log.debug("Hiding footer: no logins and the popup was opened upon focus of the pw. field");
+      return false;
+    }
+
+    return true;
   }
+
+  this._showInsecureFieldWarning = (!isSecure && LoginHelper.showInsecureFieldWarning) ? 1 : 0;
+  this._showAutoCompleteFooter = isFooterEnabled() ? 1 : 0;
   this.searchString = aSearchString;
   this.logins = matchingLogins.sort(loginSort);
   this.matchCount = matchingLogins.length + this._showInsecureFieldWarning + this._showAutoCompleteFooter;
@@ -74,6 +94,11 @@ function LoginAutoCompleteResult(aSearchString, matchingLogins, {isSecure, messa
   if (this.matchCount > 0) {
     this.searchResult = Ci.nsIAutoCompleteResult.RESULT_SUCCESS;
     this.defaultIndex = 0;
+  } else if (hidingFooterOnPWFieldAutoOpened) {
+    
+    
+    this.searchResult = Ci.nsIAutoCompleteResult.RESULT_FAILURE;
+    this.defaultIndex = -1;
   }
 }
 
