@@ -66,6 +66,10 @@
 #  include "mozilla/SandboxLaunch.h"
 #endif
 
+#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
+#  include "nsMacUtilsImpl.h"
+#endif
+
 #include "nsTArray.h"
 #include "nsClassHashtable.h"
 #include "nsHashKeys.h"
@@ -74,6 +78,7 @@
 #include "private/pprio.h"
 
 using mozilla::MonitorAutoLock;
+using mozilla::Preferences;
 using mozilla::StaticMutexAutoLock;
 using mozilla::ipc::GeckoChildProcessHost;
 
@@ -365,6 +370,12 @@ bool GeckoChildProcessHost::SyncLaunch(std::vector<std::string> aExtraOpts,
 
 bool GeckoChildProcessHost::AsyncLaunch(std::vector<std::string> aExtraOpts) {
   PrepareLaunch();
+
+#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
+  if (IsMacSandboxLaunchEnabled()) {
+    AppendMacSandboxParams(aExtraOpts);
+  }
+#endif
 
   MessageLoop* ioLoop = XRE_GetIOMessageLoop();
 
@@ -1381,3 +1392,56 @@ void GeckoChildProcessHost::LaunchAndroidService(
   }
 }
 #endif
+
+#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
+void GeckoChildProcessHost::AppendMacSandboxParams(StringVector& aArgs) {
+  MacSandboxInfo info;
+  FillMacSandboxInfo(info);
+  info.AppendAsParams(aArgs);
+}
+
+
+
+void GeckoChildProcessHost::StaticFillMacSandboxInfo(MacSandboxInfo& aInfo) {
+  aInfo.type = GetDefaultMacSandboxType();
+  aInfo.shouldLog = Preferences::GetBool("security.sandbox.logging.enabled") ||
+                    PR_GetEnv("MOZ_SANDBOX_LOGGING");
+
+  nsAutoCString appPath;
+  if (!nsMacUtilsImpl::GetAppPath(appPath)) {
+    MOZ_CRASH("Failed to get app path");
+  }
+  aInfo.appPath.assign(appPath.get());
+}
+
+void GeckoChildProcessHost::FillMacSandboxInfo(MacSandboxInfo& aInfo) {
+  GeckoChildProcessHost::StaticFillMacSandboxInfo(aInfo);
+}
+
+
+
+
+
+
+
+
+bool GeckoChildProcessHost::StartMacSandbox(int aArgc, char** aArgv,
+                                            std::string& aErrorMessage) {
+  MacSandboxType sandboxType = MacSandboxType_Invalid;
+  switch (XRE_GetProcessType()) {
+    
+    
+    
+    case GeckoProcessType_Content:
+      
+      
+      sandboxType = MacSandboxType_Content;
+      break;
+    default:
+      return true;
+  }
+  return mozilla::StartMacSandboxIfEnabled(sandboxType, aArgc, aArgv,
+                                           aErrorMessage);
+}
+
+#endif 

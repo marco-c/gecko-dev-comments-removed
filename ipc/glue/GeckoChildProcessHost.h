@@ -27,6 +27,13 @@
 #  include "sandboxBroker.h"
 #endif
 
+#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
+#  include "mozilla/Sandbox.h"
+#endif
+
+struct _MacSandboxInfo;
+typedef _MacSandboxInfo MacSandboxInfo;
+
 namespace mozilla {
 namespace ipc {
 
@@ -133,6 +140,24 @@ class GeckoChildProcessHost : public ChildProcessHost {
     sRunSelfAsContentProc = true;
   }
 
+#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
+  
+  
+  
+  static void StaticFillMacSandboxInfo(MacSandboxInfo& aInfo);
+
+  
+  static bool StartMacSandbox(int aArgc, char** aArgv,
+                              std::string& aErrorMessage);
+
+  
+  
+  
+  static MacSandboxType GetDefaultMacSandboxType() {
+    return MacSandboxType_Utility;
+  };
+#endif
+
  protected:
   ~GeckoChildProcessHost();
 
@@ -186,6 +211,21 @@ class GeckoChildProcessHost : public ChildProcessHost {
   RefPtr<HandlePromise::Private> mHandlePromise;
 
   bool OpenPrivilegedHandle(base::ProcessId aPid);
+
+#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
+  
+  
+  
+  virtual bool IsMacSandboxLaunchEnabled() { return false; }
+
+  
+  virtual void FillMacSandboxInfo(MacSandboxInfo& aInfo);
+
+  
+  
+  
+  virtual void AppendMacSandboxParams(StringVector& aArgs);
+#endif
 
  private:
   DISALLOW_EVIL_CONSTRUCTORS(GeckoChildProcessHost);
