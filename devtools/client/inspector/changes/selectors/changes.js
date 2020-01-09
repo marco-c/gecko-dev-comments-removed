@@ -155,6 +155,36 @@ function getChangesStylesheet(state, filter) {
   const { indentUnit, indentWithTabs } = getTabPrefs();
   const indentChar = indentWithTabs ? "\t".repeat(indentUnit) : " ".repeat(indentUnit);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+  function writeSelector(selectors = [], level) {
+    const indent = indentChar.repeat(level);
+    let selectorText;
+    switch (selectors.length) {
+      case 0:
+        selectorText = "";
+        break;
+      case 1:
+        selectorText = `${indent}${selectors[0]}`;
+        break;
+      default:
+        selectorText = `${indent}/* ${selectors[0]} { */\n` +
+                       `${indent}${selectors[selectors.length - 1]}`;
+    }
+
+    return selectorText;
+  }
+
   function writeRule(ruleId, rule, level) {
     
     let ruleBody = rule.children.reduce((str, childRule) => {
@@ -166,7 +196,8 @@ function getChangesStylesheet(state, filter) {
     ruleBody += writeDeclarations(rule.remove, rule.add, level + 1);
 
     const indent = indentChar.repeat(level);
-    return `\n${indent}${rule.selector} {${ruleBody}\n${indent}}`;
+    const selectorText = writeSelector(rule.selectors, level);
+    return `\n${selectorText} {${ruleBody}\n${indent}}`;
   }
 
   function writeDeclarations(remove = [], add = [], level) {
