@@ -91,13 +91,20 @@ add_task(async function testEnterKeyBehaviors() {
     "First button in help view should be a back button");
 
   
+  
+  
+  EventUtils.synthesizeKey("KEY_ArrowUp");
+  focusedElement = document.commandDispatcher.focusedElement;
+  Assert.equal(focusedElement, helpButtons[0],
+    "The Back button should be focused after navigating upward");
   for (let i = helpButtons.length - 1; i >= 0; --i) {
     let button = helpButtons[i];
     if (button.disabled)
       continue;
     EventUtils.synthesizeKey("KEY_ArrowUp");
     focusedElement = document.commandDispatcher.focusedElement;
-    Assert.equal(focusedElement, button, "The first button should be focused after navigating upward");
+    Assert.equal(focusedElement, button,
+      "The previous button should be focused after navigating upward");
   }
 
   
