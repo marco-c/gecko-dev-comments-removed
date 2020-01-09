@@ -860,16 +860,9 @@ impl TileCache {
 
         
         
-        
-        
-        let pic_device_rect = {
-            let unsnapped_world_rect = world_mapper
-                .map(&pic_rect)
-                .expect("bug: unable to map picture rect to world");
-            (unsnapped_world_rect * frame_context.global_device_pixel_scale)
-                .round_out()
-        };
-        let pic_world_rect = pic_device_rect / frame_context.global_device_pixel_scale;
+        let pic_world_rect = world_mapper
+            .map(&pic_rect)
+            .expect("bug: unable to map picture rect to world");
 
         
         
@@ -899,6 +892,7 @@ impl TileCache {
         
         let device_ref_point = world_ref_point * frame_context.global_device_pixel_scale;
         let device_world_rect = frame_context.screen_world_rect * frame_context.global_device_pixel_scale;
+        let pic_device_rect = pic_world_rect * frame_context.global_device_pixel_scale;
         let needed_device_rect = pic_device_rect
             .intersection(&device_world_rect)
             .unwrap_or(device_world_rect);
@@ -1739,6 +1733,7 @@ impl<'a> PictureUpdateState<'a> {
                 prim_list,
                 self,
                 frame_context,
+                gpu_cache,
             );
         }
     }
@@ -2203,15 +2198,7 @@ pub struct PicturePrimitive {
 
     
     
-    
-    
-    pub snapped_local_rect: LayoutRect,
-
-    
-    
-    
-    
-    pub unsnapped_local_rect: LayoutRect,
+    pub local_rect: LayoutRect,
 
     
     
@@ -2236,8 +2223,7 @@ impl PicturePrimitive {
     ) {
         pt.new_level(format!("{:?}", self_index));
         pt.add_item(format!("prim_count: {:?}", self.prim_list.prim_instances.len()));
-        pt.add_item(format!("snapped_local_rect: {:?}", self.snapped_local_rect));
-        pt.add_item(format!("unsnapped_local_rect: {:?}", self.unsnapped_local_rect));
+        pt.add_item(format!("local_rect: {:?}", self.local_rect));
         pt.add_item(format!("spatial_node_index: {:?}", self.spatial_node_index));
         pt.add_item(format!("raster_config: {:?}", self.raster_config));
         pt.add_item(format!("requested_composite_mode: {:?}", self.requested_composite_mode));
@@ -2346,8 +2332,7 @@ impl PicturePrimitive {
             pipeline_id,
             requested_raster_space,
             spatial_node_index,
-            snapped_local_rect: LayoutRect::zero(),
-            unsnapped_local_rect: LayoutRect::zero(),
+            local_rect: LayoutRect::zero(),
             tile_cache,
             options,
             segments_are_valid: false,
@@ -2757,6 +2742,7 @@ impl PicturePrimitive {
         prim_list: PrimitiveList,
         state: &mut PictureUpdateState,
         frame_context: &FrameBuildingContext,
+        gpu_cache: &mut GpuCache,
     ) {
         
         self.prim_list = prim_list;
@@ -2832,7 +2818,19 @@ impl PicturePrimitive {
             
             
             
-            self.unsnapped_local_rect = surface_rect;
+            
+            
+            
+            
+            if self.local_rect != surface_rect {
+                if let PictureCompositeMode::Filter(FilterOp::DropShadow(..)) = raster_config.composite_mode {
+                    gpu_cache.invalidate(&self.extra_gpu_data_handle);
+                }
+                
+                
+                self.segments_are_valid = false;
+                self.local_rect = surface_rect;
+            }
 
             
             if raster_config.establishes_raster_root {
@@ -2906,7 +2904,7 @@ impl PicturePrimitive {
             frame_context.clip_scroll_tree,
         );
 
-        let pic_rect = PictureRect::from_untyped(&self.snapped_local_rect.to_untyped());
+        let pic_rect = PictureRect::from_untyped(&self.local_rect.to_untyped());
 
         let (clipped, unclipped) = match get_raster_rects(
             pic_rect,
@@ -3068,14 +3066,14 @@ impl PicturePrimitive {
                     
                     
                     
-                    let shadow_rect = self.snapped_local_rect.translate(&offset);
+                    let shadow_rect = self.local_rect.translate(&offset);
 
                     
                     request.push(color.premultiplied());
                     request.push(PremultipliedColorF::WHITE);
                     request.push([
-                        self.snapped_local_rect.size.width,
-                        self.snapped_local_rect.size.height,
+                        self.local_rect.size.width,
+                        self.local_rect.size.height,
                         0.0,
                         0.0,
                     ]);
