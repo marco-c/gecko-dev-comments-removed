@@ -33,12 +33,10 @@
 
 
 
-function MutationEventChecker()
-{
+function MutationEventChecker() {
   this.expectedEvents = [];
 
-  this.watchAttr = function(element, attr)
-  {
+  this.watchAttr = function(element, attr) {
     if (this.attr) {
       this.finish();
     }
@@ -50,11 +48,10 @@ function MutationEventChecker()
     this.giveUp         = false;
     this.ignore         = false;
 
-    this.element.addEventListener('DOMAttrModified', this._listener);
-  }
+    this.element.addEventListener("DOMAttrModified", this._listener);
+  };
 
-  this.expect = function()
-  {
+  this.expect = function() {
     if (this.giveUp) {
       return;
     }
@@ -78,17 +75,16 @@ function MutationEventChecker()
     
     var args = Array.prototype.slice.call(arguments);
     
-    if (args.length == 1 && typeof args[0] === 'string' &&
-        args[0].indexOf(' ') > 0) {
-      args = args[0].split(' ');
+    if (args.length == 1 && typeof args[0] === "string" &&
+        args[0].indexOf(" ") > 0) {
+      args = args[0].split(" ");
     }
     
     this.expectedEvents = args.map(this._argToEventId);
-  }
+  };
 
   
-  this.ignoreEvents = function()
-  {
+  this.ignoreEvents = function() {
     
     ok(this.giveUp || this.expectedEvents.length == 0,
       "Going to ignore subsequent events on " + this.attr +
@@ -96,22 +92,20 @@ function MutationEventChecker()
       this._stillExpecting());
 
     this.ignore = true;
-  }
+  };
 
-  this.finish = function()
-  {
+  this.finish = function() {
     
     ok(this.giveUp || this.expectedEvents.length == 0,
       "Finishing listening to " + this.attr +
       " attribute, but we're still expecting the following events: " +
       this._stillExpecting());
 
-    this.element.removeEventListener('DOMAttrModified', this._listener);
+    this.element.removeEventListener("DOMAttrModified", this._listener);
     this.attr = "";
-  }
+  };
 
-  this._receiveEvent = function(e)
-  {
+  this._receiveEvent = function(e) {
     if (this.giveUp || this.ignore) {
       this.oldValue = e.newValue;
       return;
@@ -119,8 +113,8 @@ function MutationEventChecker()
 
     
     if (this.expectedEvents.length == 0) {
-      ok(false, 'Unexpected ' + this._eventToName(e.attrChange) +
-         ' event when none expected on ' + this.attr + ' attribute.');
+      ok(false, "Unexpected " + this._eventToName(e.attrChange) +
+         " event when none expected on " + this.attr + " attribute.");
       return;
     }
 
@@ -128,9 +122,9 @@ function MutationEventChecker()
 
     
     if (e.attrChange != expectedEvent) {
-      ok(false, 'Unexpected ' + this._eventToName(e.attrChange) +
-        ' on ' + this.attr + ' attribute. Expected ' +
-        this._eventToName(expectedEvent) + ' (followed by: ' +
+      ok(false, "Unexpected " + this._eventToName(e.attrChange) +
+        " on " + this.attr + " attribute. Expected " +
+        this._eventToName(expectedEvent) + " (followed by: " +
         this._stillExpecting() + ")");
       
       
@@ -140,8 +134,8 @@ function MutationEventChecker()
 
     
     is(e.target, this.element,
-       'Unexpected node for mutation event on ' + this.attr + ' attribute');
-    is(e.attrName, this.attr, 'Unexpected attribute name for mutation event');
+       "Unexpected node for mutation event on " + this.attr + " attribute");
+    is(e.attrName, this.attr, "Unexpected attribute name for mutation event");
 
     
     
@@ -149,60 +143,57 @@ function MutationEventChecker()
     
     if (e.attrChange == MutationEvent.MODIFICATION) {
       ok(this.element.hasAttribute(this.attr),
-         'Attribute not set after modification');
+         "Attribute not set after modification");
       is(e.prevValue, this.oldValue,
-         'Unexpected old value for modification to ' + this.attr +
-         ' attribute');
+         "Unexpected old value for modification to " + this.attr +
+         " attribute");
       isnot(e.newValue, this.oldValue,
-         'Unexpected new value for modification to ' + this.attr +
-         ' attribute');
+         "Unexpected new value for modification to " + this.attr +
+         " attribute");
     } else if (e.attrChange == MutationEvent.REMOVAL) {
-      ok(!this.element.hasAttribute(this.attr), 'Attribute set after removal');
+      ok(!this.element.hasAttribute(this.attr), "Attribute set after removal");
       is(e.prevValue, this.oldValue,
-         'Unexpected old value for removal of ' + this.attr +
-         ' attribute');
+         "Unexpected old value for removal of " + this.attr +
+         " attribute");
       
       
       
       ok(e.newValue === "",
-         'Unexpected new value for removal of ' + this.attr +
-         ' attribute');
+         "Unexpected new value for removal of " + this.attr +
+         " attribute");
     } else if (e.attrChange == MutationEvent.ADDITION) {
       ok(this.element.hasAttribute(this.attr),
-         'Attribute not set after addition');
+         "Attribute not set after addition");
       
       
       
       ok(e.prevValue === "",
-         'Unexpected old value for addition of ' + this.attr +
-         ' attribute');
-      ok(typeof(e.newValue) == 'string' && e.newValue !== "",
-         'Unexpected new value for addition of ' + this.attr +
-         ' attribute');
+         "Unexpected old value for addition of " + this.attr +
+         " attribute");
+      ok(typeof(e.newValue) == "string" && e.newValue !== "",
+         "Unexpected new value for addition of " + this.attr +
+         " attribute");
     } else {
-      ok(false, 'Unexpected mutation event type: ' + e.attrChange);
+      ok(false, "Unexpected mutation event type: " + e.attrChange);
       this.giveUp = true;
     }
     this.oldValue = e.newValue;
-  }
+  };
   this._listener = this._receiveEvent.bind(this);
 
-  this._stillExpecting = function()
-  {
+  this._stillExpecting = function() {
     if (this.expectedEvents.length == 0) {
       return "(nothing)";
     }
     var eventNames = [];
-    for (var i=0; i < this.expectedEvents.length; i++) {
+    for (var i = 0; i < this.expectedEvents.length; i++) {
       eventNames.push(this._eventToName(this.expectedEvents[i]));
     }
     return eventNames.join(", ");
-  }
+  };
 
-  this._eventToName = function(evtId)
-  {
-    switch (evtId)
-    {
+  this._eventToName = function(evtId) {
+    switch (evtId) {
     case MutationEvent.MODIFICATION:
       return "modification";
     case MutationEvent.ADDITION:
@@ -210,20 +201,18 @@ function MutationEventChecker()
     case MutationEvent.REMOVAL:
       return "removal";
     }
-  }
+  };
 
-  this._argToEventId = function(arg)
-  {
-    if (typeof arg === 'number')
+  this._argToEventId = function(arg) {
+    if (typeof arg === "number")
       return arg;
 
-    if (typeof arg !== 'string') {
+    if (typeof arg !== "string") {
       ok(false, "Unexpected event type: " + arg);
       return 0;
     }
 
-    switch (arg.toLowerCase())
-    {
+    switch (arg.toLowerCase()) {
     case "mod":
     case "modify":
     case "modification":
@@ -241,5 +230,5 @@ function MutationEventChecker()
       ok(false, "Unexpected event name: " + arg);
       return 0;
     }
-  }
+  };
 }
