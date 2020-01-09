@@ -438,6 +438,9 @@ void KeyframeEffect::EnsureBaseStyle(
   if (!aBaseComputedStyle) {
     Element* animatingElement = EffectCompositor::GetElementToRestyle(
         mTarget->mElement, mTarget->mPseudoType);
+    if (!animatingElement) {
+      return;
+    }
     aBaseComputedStyle = aPresContext->StyleSet()->GetBaseContextForElement(
         animatingElement, aComputedStyle);
   }
@@ -1477,10 +1480,15 @@ KeyframeEffect::CreateComputedStyleForAnimationValue(
              "CreateComputedStyleForAnimationValue needs to be called "
              "with a valid ComputedStyle");
 
-  ServoStyleSet* styleSet = aPresContext->StyleSet();
   Element* elementForResolve = EffectCompositor::GetElementToRestyle(
       mTarget->mElement, mTarget->mPseudoType);
-  MOZ_ASSERT(elementForResolve, "The target element shouldn't be null");
+  
+  
+  if (!elementForResolve) {
+    return nullptr;
+  }
+
+  ServoStyleSet* styleSet = aPresContext->StyleSet();
   return styleSet->ResolveServoStyleByAddingAnimation(
       elementForResolve, aBaseComputedStyle, aValue.mServo);
 }
