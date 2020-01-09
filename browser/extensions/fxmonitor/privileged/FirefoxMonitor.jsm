@@ -4,6 +4,17 @@
 
 
 
+ChromeUtils.defineModuleGetter(this, "EveryWindow",
+                               "resource:///modules/EveryWindow.jsm");
+ChromeUtils.defineModuleGetter(this, "PluralForm",
+                               "resource://gre/modules/PluralForm.jsm");
+ChromeUtils.defineModuleGetter(this, "Preferences",
+                               "resource://gre/modules/Preferences.jsm");
+ChromeUtils.defineModuleGetter(this, "RemoteSettings",
+                               "resource://services-settings/remote-settings.js");
+
+const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+
 this.FirefoxMonitor = {
   
   domainMap: new Map(),
@@ -97,11 +108,6 @@ this.FirefoxMonitor = {
     }
 
     this._delayedInited = true;
-
-    
-    Services.scriptloader.loadSubScript(
-      this.getURL("privileged/subscripts/Globals.jsm"));
-
 
     
     
@@ -407,8 +413,6 @@ this.FirefoxMonitor = {
     this.notificationsByWindow.get(win).add(n);
   },
 };
-
-
 
 function PanelUI(doc) {
   this.site = null;
