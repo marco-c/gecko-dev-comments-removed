@@ -539,6 +539,11 @@ var BrowserApp = {
       InitLater(() => SafeBrowsing.init(), window, "SafeBrowsing");
 
       
+      InitLater(() => {
+        Services.obs.notifyObservers(window, "marionette-startup-requested");
+      });
+
+      
       
       
       InitLater(() => {
