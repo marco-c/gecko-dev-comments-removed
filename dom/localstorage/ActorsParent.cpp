@@ -3686,6 +3686,15 @@ void DatastoreWriteOptimizer::ApplyAndReset(
     nsTArray<LSItemInfo>& aOrderedItems) {
   AssertIsOnOwningThread();
 
+  
+  
+  
+  
+  
+  
+  
+  
+
   if (mTruncateInfo) {
     aOrderedItems.Clear();
     mTruncateInfo = nullptr;
@@ -3705,8 +3714,18 @@ void DatastoreWriteOptimizer::ApplyAndReset(
 
         case WriteInfo::UpdateItem: {
           auto updateItemInfo = static_cast<UpdateItemInfo*>(writeInfo);
-          item.value() = updateItemInfo->GetValue();
-          entry.Remove();
+          if (updateItemInfo->UpdateWithMove()) {
+            
+            
+
+            aOrderedItems.RemoveElementAt(index);
+            entry.Data() = new InsertItemInfo(updateItemInfo->SerialNumber(),
+                                              updateItemInfo->GetKey(),
+                                              updateItemInfo->GetValue());
+          } else {
+            item.value() = updateItemInfo->GetValue();
+            entry.Remove();
+          }
           break;
         }
 
@@ -3719,9 +3738,10 @@ void DatastoreWriteOptimizer::ApplyAndReset(
     }
   }
 
-  for (auto iter = mWriteInfos.ConstIter(); !iter.Done(); iter.Next()) {
-    WriteInfo* writeInfo = iter.Data();
+  nsTArray<WriteInfo*> writeInfos;
+  GetSortedWriteInfos(writeInfos);
 
+  for (WriteInfo* writeInfo : writeInfos) {
     MOZ_ASSERT(writeInfo->GetType() == WriteInfo::InsertItem);
 
     auto insertItemInfo = static_cast<InsertItemInfo*>(writeInfo);
@@ -3743,6 +3763,9 @@ nsresult ConnectionWriteOptimizer::Perform(Connection* aConnection,
                                            int64_t& aOutUsage) {
   AssertIsOnConnectionThread();
   MOZ_ASSERT(aConnection);
+
+  
+  
 
   nsresult rv;
 
