@@ -500,8 +500,7 @@ nsresult HTMLEditor::InitRules() {
     
     mRules = new HTMLEditRules();
   }
-  RefPtr<TextEditRules> rules(mRules);
-  return rules->Init(this);
+  return mRules->Init(this);
 }
 
 NS_IMETHODIMP
@@ -1485,8 +1484,7 @@ HTMLEditor::RebuildDocumentFromSource(const nsAString& aSourceString) {
   NS_ENSURE_TRUE(child && child->IsElement(), NS_ERROR_NULL_POINTER);
 
   
-  CloneAttributesWithTransaction(*rootElement,
-                                 MOZ_KnownLive(*child->AsElement()));
+  CloneAttributesWithTransaction(*rootElement, *child->AsElement());
 
   
   return MaybeCollapseSelectionAtFirstEditableNode(false);
@@ -2947,7 +2945,7 @@ HTMLEditor::InsertLinkAroundSelection(Element* aAnchorElement) {
 
       attribute->GetValue(value);
 
-      rv = SetInlinePropertyInternal(*nsGkAtoms::a, MOZ_KnownLive(name), value);
+      rv = SetInlinePropertyInternal(*nsGkAtoms::a, name, value);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -4574,8 +4572,8 @@ nsresult HTMLEditor::CopyLastEditableChildStylesWithTransaction(
     }
     
     
-    lastClonedElement = InsertContainerWithTransaction(*lastClonedElement,
-                                                       MOZ_KnownLive(*tagName));
+    lastClonedElement =
+        InsertContainerWithTransaction(*lastClonedElement, *tagName);
     if (NS_WARN_IF(!lastClonedElement)) {
       return NS_ERROR_FAILURE;
     }

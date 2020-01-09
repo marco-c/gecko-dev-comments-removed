@@ -80,24 +80,16 @@ class TextEditRules : public nsITimerCallback, public nsINamed {
   HTMLEditRules* AsHTMLEditRules();
   const HTMLEditRules* AsHTMLEditRules() const;
 
-  MOZ_CAN_RUN_SCRIPT
   virtual nsresult Init(TextEditor* aTextEditor);
   virtual nsresult SetInitialValue(const nsAString& aValue);
   virtual nsresult DetachEditor();
   virtual nsresult BeforeEdit(EditSubAction aEditSubAction,
                               nsIEditor::EDirection aDirection);
-  MOZ_CAN_RUN_SCRIPT
   virtual nsresult AfterEdit(EditSubAction aEditSubAction,
                              nsIEditor::EDirection aDirection);
-  
-  
-  
-  
-  
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   virtual nsresult WillDoAction(EditSubActionInfo& aInfo, bool* aCancel,
                                 bool* aHandled);
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   virtual nsresult DidDoAction(EditSubActionInfo& aInfo, nsresult aResult);
 
   
@@ -204,7 +196,6 @@ class TextEditRules : public nsITimerCallback, public nsINamed {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult WillSetText(bool* aCancel, bool* aHandled,
                                     const nsAString* inString,
                                     int32_t aMaxLength);
@@ -289,7 +280,6 @@ class TextEditRules : public nsITimerCallback, public nsINamed {
   
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult CreateBogusNodeIfNeeded();
 
   

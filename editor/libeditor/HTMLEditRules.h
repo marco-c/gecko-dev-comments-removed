@@ -78,23 +78,15 @@ class HTMLEditRules : public TextEditRules {
   HTMLEditRules();
 
   
-  MOZ_CAN_RUN_SCRIPT
   virtual nsresult Init(TextEditor* aTextEditor) override;
   virtual nsresult DetachEditor() override;
   virtual nsresult BeforeEdit(EditSubAction aEditSubAction,
                               nsIEditor::EDirection aDirection) override;
-  MOZ_CAN_RUN_SCRIPT
   virtual nsresult AfterEdit(EditSubAction aEditSubAction,
                              nsIEditor::EDirection aDirection) override;
-  
-  
-  
-  
-  
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   virtual nsresult WillDoAction(EditSubActionInfo& aInfo, bool* aCancel,
                                 bool* aHandled) override;
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   virtual nsresult DidDoAction(EditSubActionInfo& aInfo,
                                nsresult aResult) override;
   virtual bool DocumentIsEmpty() override;
@@ -104,13 +96,9 @@ class HTMLEditRules : public TextEditRules {
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult DocumentModified();
 
-  MOZ_CAN_RUN_SCRIPT
   nsresult GetListState(bool* aMixed, bool* aOL, bool* aUL, bool* aDL);
-  MOZ_CAN_RUN_SCRIPT
   nsresult GetListItemState(bool* aMixed, bool* aLI, bool* aDT, bool* aDD);
-  MOZ_CAN_RUN_SCRIPT
   nsresult GetAlignment(bool* aMixed, nsIHTMLEditor::EAlignment* aAlign);
-  MOZ_CAN_RUN_SCRIPT
   nsresult GetParagraphState(bool* aMixed, nsAString& outFormat);
 
   
@@ -186,7 +174,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult WillInsertText(EditSubAction aEditSubAction,
                                        bool* aCancel, bool* aHandled,
                                        const nsAString* inString,
@@ -223,7 +210,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult InsertBRElement(const EditorDOMPoint& aInsertToBreak);
 
   
@@ -329,7 +315,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE EditActionResult
   TryToJoinBlocksWithTransaction(nsIContent& aLeftNode, nsIContent& aRightNode);
 
@@ -342,7 +327,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE EditActionResult MoveBlock(Element& aLeftBlock,
                                           Element& aRightBlock,
                                           int32_t aLeftOffset,
@@ -357,7 +341,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE EditActionResult MoveNodeSmart(nsIContent& aNode,
                                               Element& aDestElement,
                                               int32_t* aInOutDestOffset);
@@ -371,7 +354,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE EditActionResult MoveContents(Element& aElement,
                                              Element& aDestElement,
                                              int32_t* aInOutDestOffset);
@@ -473,7 +455,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult WillRemoveAbsolutePosition(bool* aCancel,
                                                    bool* aHandled);
 
@@ -563,7 +544,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult PrepareToMakeElementAbsolutePosition(
       bool* aHandled, RefPtr<Element>* aTargetElement);
 
@@ -574,7 +554,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult DidAbsolutePosition();
 
   
@@ -585,7 +564,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult AlignInnerBlocks(nsINode& aNode,
                                          const nsAString& aAlignType);
 
@@ -600,7 +578,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult AlignBlockContents(nsINode& aNode,
                                            const nsAString& aAlignType);
 
@@ -615,7 +592,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult AlignContentsAtSelection(const nsAString& aAlignType);
 
   nsresult AppendInnerFormatNodes(nsTArray<OwningNonNull<nsINode>>& aArray,
@@ -701,7 +677,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult ReturnInListItem(Element& aListItem, nsINode& aNode,
                                          int32_t aOffset);
 
@@ -709,7 +684,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult AfterEditInner(EditSubAction aEditSubAction,
                                        nsIEditor::EDirection aDirection);
 
@@ -719,7 +693,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult IndentAroundSelectionWithCSS();
 
   
@@ -728,7 +701,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult IndentAroundSelectionWithHTML();
 
   
@@ -744,7 +716,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE SplitRangeOffFromNodeResult OutdentAroundSelection();
 
   
@@ -764,7 +735,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE SplitRangeOffFromNodeResult
   SplitRangeOffFromBlockAndRemoveMiddleContainer(Element& aBlockElement,
                                                  nsIContent& aStartOfRange,
@@ -806,7 +776,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE SplitRangeOffFromNodeResult
   OutdentPartOfBlock(Element& aBlockElement, nsIContent& aStartOfOutdent,
                      nsIContent& aEndOutdent, bool aIsBlockIndentedWithCSS);
@@ -817,7 +786,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult MakeList(nsAtom& aListType, bool aEntireList,
                                  const nsAString* aBulletType, bool* aCancel,
                                  nsAtom& aItemType);
@@ -836,7 +804,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE CreateElementResult ConvertListType(Element& aListElement,
                                                    nsAtom& aListType,
                                                    nsAtom& aItemType);
@@ -847,7 +814,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult CreateStyleForInsertText(dom::Document& aDocument);
 
   
@@ -935,7 +901,6 @@ class HTMLEditRules : public TextEditRules {
 
 
   enum class TouchContent { no, yes };
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult GetNodesForOperation(
       nsTArray<RefPtr<nsRange>>& aArrayOfRanges,
       nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes,
@@ -948,7 +913,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult
   GetNodesFromPoint(const EditorDOMPoint& aPoint, EditSubAction aEditSubAction,
                     nsTArray<OwningNonNull<nsINode>>& outArrayOfNodes,
@@ -958,19 +922,16 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult
   GetNodesFromSelection(EditSubAction aEditSubAction,
                         nsTArray<OwningNonNull<nsINode>>& outArrayOfNodes,
                         TouchContent aTouchContent);
 
   enum class EntireList { no, yes };
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult
   GetListActionNodes(nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes,
                      EntireList aEntireList, TouchContent aTouchContent);
   void GetDefinitionListItemTypes(Element* aElement, bool* aDT, bool* aDD);
-  MOZ_CAN_RUN_SCRIPT
   nsresult GetParagraphFormatNodes(
       nsTArray<OwningNonNull<nsINode>>& outArrayOfNodes);
   void LookInsideDivBQandList(nsTArray<OwningNonNull<nsINode>>& aNodeArray);
@@ -998,7 +959,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult BustUpInlinesAtBRs(
       nsIContent& aNode, nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes);
 
@@ -1025,7 +985,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   nsresult RemoveBlockStyle(nsTArray<OwningNonNull<nsINode>>& aNodeArray);
 
   
@@ -1044,7 +1003,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult ApplyBlockStyle(
       nsTArray<OwningNonNull<nsINode>>& aNodeArray, nsAtom& aBlockTag);
 
@@ -1057,7 +1015,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult
   MakeBlockquote(nsTArray<OwningNonNull<nsINode>>& aNodeArray);
 
@@ -1103,7 +1060,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult JoinNearestEditableNodesWithTransaction(
       nsIContent& aLeftNode, nsIContent& aRightNode,
       EditorDOMPoint* aNewFirstChildOfRightNode);
@@ -1125,7 +1081,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult PopListItem(nsIContent& aListItem,
                                     bool* aOutOfList = nullptr);
 
@@ -1141,7 +1096,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult RemoveListStructure(Element& aListElement);
 
   
@@ -1262,7 +1216,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult RemoveAlignment(nsINode& aNode,
                                         const nsAString& aAlignType,
                                         bool aDescendantsOnly);
@@ -1292,7 +1245,6 @@ class HTMLEditRules : public TextEditRules {
 
 
   enum class ResetAlignOf { ElementAndDescendants, OnlyDescendants };
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult AlignBlock(Element& aElement,
                                    const nsAString& aAlignType,
                                    ResetAlignOf aResetAlignOf);
@@ -1304,7 +1256,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult IncreaseMarginToIndent(Element& aElement) {
     return ChangeMarginStart(aElement, true);
   }
@@ -1316,7 +1267,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult DecreaseMarginToOutdent(Element& aElement) {
     return ChangeMarginStart(aElement, false);
   }
@@ -1331,7 +1281,6 @@ class HTMLEditRules : public TextEditRules {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE nsresult ChangeMarginStart(Element& aElement, bool aIncrease);
 
   

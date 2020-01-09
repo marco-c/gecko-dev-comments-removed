@@ -2372,15 +2372,13 @@ void EditorBase::CloneAttributesWithTransaction(Element& aDestElement,
     nsAutoString value;
     attr->GetValue(value);
     if (isDestElementInBody) {
-      SetAttributeOrEquivalent(destElement,
-                               MOZ_KnownLive(attr->NodeInfo()->NameAtom()),
-                               value, false);
+      SetAttributeOrEquivalent(destElement, attr->NodeInfo()->NameAtom(), value,
+                               false);
     } else {
       
       
-      SetAttributeOrEquivalent(destElement,
-                               MOZ_KnownLive(attr->NodeInfo()->NameAtom()),
-                               value, true);
+      SetAttributeOrEquivalent(destElement, attr->NodeInfo()->NameAtom(), value,
+                               true);
     }
   }
 }

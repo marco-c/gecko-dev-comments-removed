@@ -495,10 +495,11 @@ already_AddRefed<nsComputedDOMStyle> CSSEditUtils::GetComputedStyle(
 
 nsresult CSSEditUtils::RemoveCSSInlineStyle(nsINode& aNode, nsAtom* aProperty,
                                             const nsAString& aPropertyValue) {
-  OwningNonNull<Element> element(*aNode.AsElement());
+  RefPtr<Element> element = aNode.AsElement();
+  NS_ENSURE_STATE(element);
 
   
-  nsresult rv = RemoveCSSProperty(element, *aProperty, aPropertyValue);
+  nsresult rv = RemoveCSSProperty(*element, *aProperty, aPropertyValue);
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (!element->IsHTMLElement(nsGkAtoms::span) ||
@@ -506,8 +507,7 @@ nsresult CSSEditUtils::RemoveCSSInlineStyle(nsINode& aNode, nsAtom* aProperty,
     return NS_OK;
   }
 
-  OwningNonNull<HTMLEditor> htmlEditor(*mHTMLEditor);
-  return htmlEditor->RemoveContainerWithTransaction(element);
+  return mHTMLEditor->RemoveContainerWithTransaction(*element);
 }
 
 
@@ -847,9 +847,8 @@ nsresult CSSEditUtils::RemoveCSSEquivalentToHTMLStyle(
   
   int32_t count = cssPropertyArray.Length();
   for (int32_t index = 0; index < count; index++) {
-    nsresult rv =
-        RemoveCSSProperty(*aElement, MOZ_KnownLive(*cssPropertyArray[index]),
-                          cssValueArray[index], aSuppressTransaction);
+    nsresult rv = RemoveCSSProperty(*aElement, *cssPropertyArray[index],
+                                    cssValueArray[index], aSuppressTransaction);
     NS_ENSURE_SUCCESS(rv, rv);
   }
   return NS_OK;

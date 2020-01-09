@@ -252,8 +252,7 @@ template <typename PT, typename CT>
 nsresult WSRunObject::InsertText(
     Document& aDocument, const nsAString& aStringToInsert,
     const EditorDOMPointBase<PT, CT>& aPointToInsert,
-    EditorRawDOMPoint* aPointAfterInsertedString)
-    MOZ_CAN_RUN_SCRIPT_FOR_DEFINITION {
+    EditorRawDOMPoint* aPointAfterInsertedString) {
   
   
   
@@ -382,10 +381,8 @@ nsresult WSRunObject::InsertText(
   }
 
   
-  nsresult rv =
-      MOZ_KnownLive(mHTMLEditor)
-          ->InsertTextWithTransaction(aDocument, theString, pointToInsert,
-                                      aPointAfterInsertedString);
+  nsresult rv = mHTMLEditor->InsertTextWithTransaction(
+      aDocument, theString, pointToInsert, aPointAfterInsertedString);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return NS_OK;
   }

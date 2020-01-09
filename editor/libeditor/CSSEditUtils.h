@@ -100,7 +100,6 @@ class CSSEditUtils final {
                           const nsAString& aValue, bool aSuppressTxn = false);
   nsresult SetCSSPropertyPixels(dom::Element& aElement, nsAtom& aProperty,
                                 int32_t aIntValue);
-  MOZ_CAN_RUN_SCRIPT
   nsresult RemoveCSSProperty(dom::Element& aElement, nsAtom& aProperty,
                              const nsAString& aPropertyValue,
                              bool aSuppressTxn = false);
@@ -128,7 +127,6 @@ class CSSEditUtils final {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   nsresult RemoveCSSInlineStyle(nsINode& aNode, nsAtom* aProperty,
                                 const nsAString& aPropertyValue);
 
@@ -260,7 +258,6 @@ class CSSEditUtils final {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   nsresult RemoveCSSEquivalentToHTMLStyle(dom::Element* aElement,
                                           nsAtom* aHTMLProperty,
                                           nsAtom* aAttribute,
