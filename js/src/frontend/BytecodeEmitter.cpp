@@ -1505,7 +1505,7 @@ restart:
     case ParseNodeKind::ExportBatchSpecStmt:  
     case ParseNodeKind::ExportSpecList:       
     case ParseNodeKind::ExportSpec:           
-    case ParseNodeKind::CallSiteObjExpr:   
+    case ParseNodeKind::CallSiteObj:       
     case ParseNodeKind::PosHolder:         
     case ParseNodeKind::SuperBase:         
     case ParseNodeKind::PropertyNameExpr:  
@@ -4497,7 +4497,7 @@ bool ParseNode::getConstantValue(JSContext* cx,
     case ParseNodeKind::RawUndefinedExpr:
       vp.setUndefined();
       return true;
-    case ParseNodeKind::CallSiteObjExpr:
+    case ParseNodeKind::CallSiteObj:
     case ParseNodeKind::ArrayExpr: {
       unsigned count;
       ParseNode* pn;
@@ -4513,7 +4513,7 @@ bool ParseNode::getConstantValue(JSContext* cx,
         allowObjects = DontAllowObjects;
       }
 
-      if (getKind() == ParseNodeKind::CallSiteObjExpr) {
+      if (getKind() == ParseNodeKind::CallSiteObj) {
         count = as<CallSiteNode>().count() - 1;
         pn = as<CallSiteNode>().head()->pn_next;
       } else {
@@ -9379,7 +9379,7 @@ bool BytecodeEmitter::emitTree(
       MOZ_ASSERT(sc->isModuleContext());
       break;
 
-    case ParseNodeKind::CallSiteObjExpr:
+    case ParseNodeKind::CallSiteObj:
       if (!emitCallSiteObject(&pn->as<CallSiteNode>())) {
         return false;
       }

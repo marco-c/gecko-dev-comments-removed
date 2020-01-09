@@ -968,7 +968,7 @@ class NameResolver {
 
       case ParseNodeKind::ImportSpec:        
       case ParseNodeKind::ExportSpec:        
-      case ParseNodeKind::CallSiteObjExpr:   
+      case ParseNodeKind::CallSiteObj:       
       case ParseNodeKind::ClassNames:        
       case ParseNodeKind::PropertyNameExpr:  
         MOZ_CRASH("should have been handled by a parent node");
