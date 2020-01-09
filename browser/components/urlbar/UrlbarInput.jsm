@@ -373,6 +373,9 @@ class UrlbarInput {
       case UrlbarUtils.RESULT_TYPE.OMNIBOX: {
         
         
+        this.handleRevert();
+        
+        
         
         
         
