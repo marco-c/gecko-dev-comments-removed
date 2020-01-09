@@ -22,6 +22,7 @@
 #include "nsCOMPtr.h"
 #include "nsAutoPtr.h"
 #include "xpcpublic.h"
+#include "mozilla/AbstractEventQueue.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Likely.h"
 #include "mozilla/Maybe.h"
@@ -123,8 +124,8 @@ extern nsresult NS_DelayedDispatchToCurrentThread(
 
 
 
-extern nsresult NS_IdleDispatchToCurrentThread(
-    already_AddRefed<nsIRunnable>&& aEvent);
+extern nsresult NS_DispatchToCurrentThreadQueue(
+    already_AddRefed<nsIRunnable>&& aEvent, mozilla::EventQueuePriority aQueue);
 
 
 
@@ -136,9 +137,9 @@ extern nsresult NS_IdleDispatchToCurrentThread(
 
 
 
-extern nsresult NS_IdleDispatchToMainThread(
-    already_AddRefed<nsIRunnable>&& aEvent);
 
+extern nsresult NS_DispatchToMainThreadQueue(
+    already_AddRefed<nsIRunnable>&& aEvent, mozilla::EventQueuePriority aQueue);
 
 
 
@@ -158,13 +159,14 @@ extern nsresult NS_IdleDispatchToMainThread(
 
 
 
-extern nsresult NS_IdleDispatchToCurrentThread(
-    already_AddRefed<nsIRunnable>&& aEvent, uint32_t aTimeout);
 
 
 
 
 
+extern nsresult NS_DispatchToCurrentThreadQueue(
+    already_AddRefed<nsIRunnable>&& aEvent, uint32_t aTimeout,
+    mozilla::EventQueuePriority aQueue);
 
 
 
@@ -173,13 +175,14 @@ extern nsresult NS_IdleDispatchToCurrentThread(
 
 
 
-extern nsresult NS_IdleDispatchToThread(already_AddRefed<nsIRunnable>&& aEvent,
-                                        nsIThread* aThread);
 
 
 
 
 
+extern nsresult NS_DispatchToThreadQueue(already_AddRefed<nsIRunnable>&& aEvent,
+                                         nsIThread* aThread,
+                                         mozilla::EventQueuePriority aQueue);
 
 
 
@@ -197,8 +200,18 @@ extern nsresult NS_IdleDispatchToThread(already_AddRefed<nsIRunnable>&& aEvent,
 
 
 
-extern nsresult NS_IdleDispatchToThread(already_AddRefed<nsIRunnable>&& aEvent,
-                                        uint32_t aTimeout, nsIThread* aThread);
+
+
+
+
+
+
+
+
+
+extern nsresult NS_DispatchToThreadQueue(already_AddRefed<nsIRunnable>&& aEvent,
+                                         uint32_t aTimeout, nsIThread* aThread,
+                                         mozilla::EventQueuePriority aQueue);
 
 #ifndef XPCOM_GLUE_AVOID_NSPR
 

@@ -127,7 +127,8 @@ void IdleTaskRunner::Schedule(bool aAllowIdleDispatch) {
     if (aAllowIdleDispatch) {
       nsCOMPtr<nsIRunnable> runnable = this;
       SetTimerInternal(mDelay);
-      NS_IdleDispatchToCurrentThread(runnable.forget());
+      NS_DispatchToCurrentThreadQueue(runnable.forget(),
+                                      EventQueuePriority::Idle);
     } else {
       if (!mScheduleTimer) {
         nsIEventTarget* target = nullptr;

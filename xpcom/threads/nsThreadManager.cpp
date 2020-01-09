@@ -586,10 +586,12 @@ nsThreadManager::IdleDispatchToMainThread(nsIRunnable* aEvent,
 
   nsCOMPtr<nsIRunnable> event(aEvent);
   if (aTimeout) {
-    return NS_IdleDispatchToThread(event.forget(), aTimeout, mMainThread);
+    return NS_DispatchToThreadQueue(event.forget(), aTimeout, mMainThread,
+                                    EventQueuePriority::Idle);
   }
 
-  return NS_IdleDispatchToThread(event.forget(), mMainThread);
+  return NS_DispatchToThreadQueue(event.forget(), mMainThread,
+                                  EventQueuePriority::Idle);
 }
 
 namespace mozilla {

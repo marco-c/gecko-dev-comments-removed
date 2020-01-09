@@ -16,11 +16,14 @@ using namespace mozilla;
 template <class InnerQueueT>
 PrioritizedEventQueue<InnerQueueT>::PrioritizedEventQueue(
     UniquePtr<InnerQueueT> aHighQueue, UniquePtr<InnerQueueT> aInputQueue,
-    UniquePtr<InnerQueueT> aNormalQueue, UniquePtr<InnerQueueT> aIdleQueue,
+    UniquePtr<InnerQueueT> aNormalQueue,
+    UniquePtr<InnerQueueT> aDeferredTimersQueue,
+    UniquePtr<InnerQueueT> aIdleQueue,
     already_AddRefed<nsIIdlePeriod> aIdlePeriod)
     : mHighQueue(std::move(aHighQueue)),
       mInputQueue(std::move(aInputQueue)),
       mNormalQueue(std::move(aNormalQueue)),
+      mDeferredTimersQueue(std::move(aDeferredTimersQueue)),
       mIdleQueue(std::move(aIdleQueue)),
       mIdlePeriod(aIdlePeriod) {
   static_assert(IsBaseOf<AbstractEventQueue, InnerQueueT>::value,
@@ -49,6 +52,9 @@ void PrioritizedEventQueue<InnerQueueT>::PutEvent(
       break;
     case EventQueuePriority::Normal:
       mNormalQueue->PutEvent(event.forget(), priority, aProofOfLock);
+      break;
+    case EventQueuePriority::DeferredTimers:
+      mDeferredTimersQueue->PutEvent(event.forget(), priority, aProofOfLock);
       break;
     case EventQueuePriority::Idle:
       mIdleQueue->PutEvent(event.forget(), priority, aProofOfLock);
@@ -108,8 +114,6 @@ TimeStamp PrioritizedEventQueue<InnerQueueT>::GetIdleDeadline() {
 template <class InnerQueueT>
 EventQueuePriority PrioritizedEventQueue<InnerQueueT>::SelectQueue(
     bool aUpdateState, const MutexAutoLock& aProofOfLock) {
-  bool highPending = !mHighQueue->IsEmpty(aProofOfLock);
-  bool normalPending = !mNormalQueue->IsEmpty(aProofOfLock);
   size_t inputCount = mInputQueue->Count(aProofOfLock);
 
   if (aUpdateState && mInputQueueState == STATE_ENABLED &&
@@ -135,9 +139,11 @@ EventQueuePriority PrioritizedEventQueue<InnerQueueT>::SelectQueue(
   
   
   
+  
 
   
   EventQueuePriority queue;
+  bool highPending = !mHighQueue->IsEmpty(aProofOfLock);
 
   if (mProcessHighPriorityQueue) {
     queue = EventQueuePriority::High;
@@ -146,9 +152,9 @@ EventQueuePriority PrioritizedEventQueue<InnerQueueT>::SelectQueue(
                                  !mInputHandlingStartTime.IsNull() &&
                                  TimeStamp::Now() > mInputHandlingStartTime))) {
     queue = EventQueuePriority::Input;
-  } else if (normalPending) {
+  } else if (!mNormalQueue->IsEmpty(aProofOfLock)) {
     MOZ_ASSERT(mInputQueueState != STATE_FLUSHING,
-               "Shouldn't consume normal event when flusing input events");
+               "Shouldn't consume normal event when flushing input events");
     queue = EventQueuePriority::Normal;
   } else if (highPending) {
     queue = EventQueuePriority::High;
@@ -157,6 +163,9 @@ EventQueuePriority PrioritizedEventQueue<InnerQueueT>::SelectQueue(
         mInputQueueState != STATE_DISABLED,
         "Shouldn't consume input events when the input queue is disabled");
     queue = EventQueuePriority::Input;
+  } else if (!mDeferredTimersQueue->IsEmpty(aProofOfLock)) {
+    
+    queue = EventQueuePriority::DeferredTimers;
   } else {
     
     queue = EventQueuePriority::Idle;
@@ -213,9 +222,11 @@ already_AddRefed<nsIRunnable> PrioritizedEventQueue<InnerQueueT>::GetEvent(
   }
 
   
-  MOZ_ASSERT(queue == EventQueuePriority::Idle);
+  MOZ_ASSERT(queue == EventQueuePriority::Idle ||
+             queue == EventQueuePriority::DeferredTimers);
 
-  if (mIdleQueue->IsEmpty(aProofOfLock)) {
+  if (mIdleQueue->IsEmpty(aProofOfLock) &&
+      mDeferredTimersQueue->IsEmpty(aProofOfLock)) {
     MOZ_ASSERT(!mHasPendingEventsPromisedIdleEvent);
     return nullptr;
   }
@@ -225,7 +236,11 @@ already_AddRefed<nsIRunnable> PrioritizedEventQueue<InnerQueueT>::GetEvent(
     return nullptr;
   }
 
-  nsCOMPtr<nsIRunnable> event = mIdleQueue->GetEvent(aPriority, aProofOfLock);
+  nsCOMPtr<nsIRunnable> event =
+      mDeferredTimersQueue->GetEvent(aPriority, aProofOfLock);
+  if (!event) {
+    event = mIdleQueue->GetEvent(aPriority, aProofOfLock);
+  }
   if (event) {
     nsCOMPtr<nsIIdleRunnable> idleEvent = do_QueryInterface(event);
     if (idleEvent) {
@@ -250,6 +265,7 @@ bool PrioritizedEventQueue<InnerQueueT>::IsEmpty(
   return mHighQueue->IsEmpty(aProofOfLock) &&
          mInputQueue->IsEmpty(aProofOfLock) &&
          mNormalQueue->IsEmpty(aProofOfLock) &&
+         mDeferredTimersQueue->IsEmpty(aProofOfLock) &&
          mIdleQueue->IsEmpty(aProofOfLock);
 }
 
@@ -268,16 +284,19 @@ bool PrioritizedEventQueue<InnerQueueT>::HasReadyEvent(
     return mNormalQueue->HasReadyEvent(aProofOfLock);
   }
 
-  MOZ_ASSERT(queue == EventQueuePriority::Idle);
+  MOZ_ASSERT(queue == EventQueuePriority::Idle ||
+             queue == EventQueuePriority::DeferredTimers);
 
   
 
-  if (mIdleQueue->IsEmpty(aProofOfLock)) {
+  if (mDeferredTimersQueue->IsEmpty(aProofOfLock) &&
+      mIdleQueue->IsEmpty(aProofOfLock)) {
     return false;
   }
 
   TimeStamp idleDeadline = GetIdleDeadline();
-  if (idleDeadline && mIdleQueue->HasReadyEvent(aProofOfLock)) {
+  if (idleDeadline && (mDeferredTimersQueue->HasReadyEvent(aProofOfLock) ||
+                       mIdleQueue->HasReadyEvent(aProofOfLock))) {
     mHasPendingEventsPromisedIdleEvent = true;
     return true;
   }
