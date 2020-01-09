@@ -1815,8 +1815,6 @@ sftk_GetPubKey(SFTKObject *object, CK_KEY_TYPE key_type,
                     break; 
                 }
 
-                PORT_Assert(pubKey->u.ec.ecParams.name != ECCurve25519);
-
                 
                 if ((pubKey->u.ec.publicValue.data[0] == SEC_ASN1_OCTET_STRING) &&
                     pubKey->u.ec.publicValue.len > keyLen) {
@@ -1827,7 +1825,13 @@ sftk_GetPubKey(SFTKObject *object, CK_KEY_TYPE key_type,
                                                 SEC_ASN1_GET(SEC_OctetStringTemplate),
                                                 &pubKey->u.ec.publicValue);
                     
-                    if ((rv != SECSuccess) || (publicValue.data[0] != EC_POINT_FORM_UNCOMPRESSED) || (publicValue.len != keyLen)) {
+                    if ((rv != SECSuccess) || (publicValue.len != keyLen)) {
+                        crv = CKR_ATTRIBUTE_VALUE_INVALID;
+                        break;
+                    }
+                    
+                    if ((pubKey->u.ec.ecParams.fieldID.type != ec_field_plain) &&
+                        (publicValue.data[0] != EC_POINT_FORM_UNCOMPRESSED)) {
                         crv = CKR_ATTRIBUTE_VALUE_INVALID;
                         break;
                     }

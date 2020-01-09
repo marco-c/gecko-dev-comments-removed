@@ -299,6 +299,17 @@ SSL_IMPORT PRFileDesc *DTLS_ImportFD(PRFileDesc *model, PRFileDesc *fd);
 
 #define SSL_ENABLE_V2_COMPATIBLE_HELLO 38
 
+
+
+
+
+
+
+
+
+
+#define SSL_ENABLE_POST_HANDSHAKE_AUTH 39
+
 #ifdef SSL_DEPRECATED_FUNCTION
 
 SSL_IMPORT SECStatus SSL_Enable(PRFileDesc *fd, int option, PRIntn on);

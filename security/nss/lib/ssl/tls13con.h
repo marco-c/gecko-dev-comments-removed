@@ -131,6 +131,7 @@ SECStatus SSLExp_KeyUpdate(PRFileDesc *fd, PRBool requestUpdate);
 PRBool tls13_MaybeTls13(sslSocket *ss);
 SSLAEADCipher tls13_GetAead(const ssl3BulkCipherDef *cipherDef);
 void tls13_SetSpecRecordVersion(sslSocket *ss, ssl3CipherSpec *spec);
+SECStatus SSLExp_SendCertificateRequest(PRFileDesc *fd);
 
 
 #define LOG_ERROR(ss, prError)                                                     \

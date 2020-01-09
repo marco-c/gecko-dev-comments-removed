@@ -548,7 +548,6 @@ dtls_QueueMessage(sslSocket *ss, SSLContentType ct,
 
 
 
-
 SECStatus
 dtls_StageHandshakeMessage(sslSocket *ss)
 {

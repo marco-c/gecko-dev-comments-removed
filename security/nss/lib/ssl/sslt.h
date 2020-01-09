@@ -43,6 +43,11 @@ typedef enum {
     ssl_ct_ack = 25
 } SSLContentType;
 
+typedef enum {
+    ssl_secret_read = 1,
+    ssl_secret_write = 2,
+} SSLSecretDirection;
+
 typedef struct SSL3StatisticsStr {
     
     long sch_sid_cache_hits;
@@ -328,6 +333,9 @@ typedef struct SSLChannelInfoStr {
 
 #define ssl_preinfo_version (1U << 0)
 #define ssl_preinfo_cipher_suite (1U << 1)
+#define ssl_preinfo_0rtt_cipher_suite (1U << 2)
+
+
 #define ssl_preinfo_all (ssl_preinfo_version | ssl_preinfo_cipher_suite)
 
 typedef struct SSLPreliminaryChannelInfoStr {
@@ -358,6 +366,13 @@ typedef struct SSLPreliminaryChannelInfoStr {
 
 
     PRUint32 maxEarlyDataSize;
+
+    
+    
+
+
+
+    PRUint16 zeroRttCipherSuite;
 
     
 
@@ -408,6 +423,12 @@ typedef struct SSLCipherSuiteInfoStr {
     SSLAuthType authType;
 
     
+    
+
+
+    SSLHashType kdfHash;
+
+    
 
 } SSLCipherSuiteInfo;
 
@@ -450,6 +471,7 @@ typedef enum {
     ssl_tls13_psk_key_exchange_modes_xtn = 45,
     ssl_tls13_ticket_early_data_info_xtn = 46, 
     ssl_tls13_certificate_authorities_xtn = 47,
+    ssl_tls13_post_handshake_auth_xtn = 49,
     ssl_signature_algorithms_cert_xtn = 50,
     ssl_tls13_key_share_xtn = 51,
     ssl_next_proto_nego_xtn = 13172, 

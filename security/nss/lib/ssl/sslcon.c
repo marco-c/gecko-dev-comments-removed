@@ -61,10 +61,6 @@ const char *ssl_version = "SECURITY_VERSION:"
 
 
 
-
-
-
-
 SECStatus
 ssl_GatherRecord1stHandshake(sslSocket *ss)
 {
@@ -82,15 +78,13 @@ ssl_GatherRecord1stHandshake(sslSocket *ss)
     ssl_ReleaseRecvBufLock(ss);
 
     if (rv <= 0) {
-        if (rv == SECWouldBlock) {
-            
-            SSL_TRC(10, ("%d: SSL[%d]: handshake blocked (need %d)",
-                         SSL_GETPID(), ss->fd, ss->gs.remainder));
-            return SECWouldBlock;
-        }
         if (rv == 0) {
             
             PORT_SetError(PR_END_OF_FILE_ERROR);
+        }
+        if (PORT_GetError() == PR_WOULD_BLOCK_ERROR) {
+            SSL_TRC(10, ("%d: SSL[%d]: handshake blocked (need %d)",
+                         SSL_GETPID(), ss->fd, ss->gs.remainder));
         }
         return SECFailure; 
     }

@@ -68,6 +68,8 @@ class DummyPrSocket : public DummyIOLayerMethods {
         write_error_(0) {}
   virtual ~DummyPrSocket() {}
 
+  static PRDescIdentity LayerId();
+
   
   
   ScopedPRFileDesc CreateFD();

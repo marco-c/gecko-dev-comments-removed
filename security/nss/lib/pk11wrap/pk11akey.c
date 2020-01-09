@@ -1677,6 +1677,92 @@ PK11_MakeKEAPubKey(unsigned char *keyData, int length)
     return pubk;
 }
 
+SECStatus
+SECKEY_SetPublicValue(SECKEYPrivateKey *privKey, SECItem *publicValue)
+{
+    SECStatus rv;
+    SECKEYPublicKey pubKey;
+    PLArenaPool *arena;
+    PK11SlotInfo *slot = privKey->pkcs11Slot;
+    CK_OBJECT_HANDLE privKeyID = privKey->pkcs11ID;
+
+    if (privKey == NULL || publicValue == NULL ||
+        publicValue->data == NULL || publicValue->len == 0) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return SECFailure;
+    }
+
+    pubKey.arena = NULL;
+    pubKey.keyType = privKey->keyType;
+    pubKey.pkcs11Slot = NULL;
+    pubKey.pkcs11ID = CK_INVALID_HANDLE;
+    
+
+
+    arena = PORT_NewArena(DER_DEFAULT_CHUNKSIZE);
+    pubKey.arena = arena;
+    if (arena == NULL) {
+        return SECFailure;
+    }
+    rv = SECFailure;
+    switch (privKey->keyType) {
+        default:
+            
+            break;
+        case rsaKey:
+            pubKey.u.rsa.modulus = *publicValue;
+            rv = PK11_ReadAttribute(slot, privKeyID, CKA_PUBLIC_EXPONENT,
+                                    arena, &pubKey.u.rsa.publicExponent);
+            break;
+        case dsaKey:
+            pubKey.u.dsa.publicValue = *publicValue;
+            rv = PK11_ReadAttribute(slot, privKeyID, CKA_PRIME,
+                                    arena, &pubKey.u.dsa.params.prime);
+            if (rv != SECSuccess) {
+                break;
+            }
+            rv = PK11_ReadAttribute(slot, privKeyID, CKA_SUBPRIME,
+                                    arena, &pubKey.u.dsa.params.subPrime);
+            if (rv != SECSuccess) {
+                break;
+            }
+            rv = PK11_ReadAttribute(slot, privKeyID, CKA_BASE,
+                                    arena, &pubKey.u.dsa.params.base);
+            break;
+        case dhKey:
+            pubKey.u.dh.publicValue = *publicValue;
+            rv = PK11_ReadAttribute(slot, privKeyID, CKA_PRIME,
+                                    arena, &pubKey.u.dh.prime);
+            if (rv != SECSuccess) {
+                break;
+            }
+            rv = PK11_ReadAttribute(slot, privKeyID, CKA_BASE,
+                                    arena, &pubKey.u.dh.base);
+            break;
+        case ecKey:
+            pubKey.u.ec.publicValue = *publicValue;
+            pubKey.u.ec.encoding = ECPoint_Undefined;
+            pubKey.u.ec.size = 0;
+            rv = PK11_ReadAttribute(slot, privKeyID, CKA_EC_PARAMS,
+                                    arena, &pubKey.u.ec.DEREncodedParams);
+            break;
+    }
+    if (rv == SECSuccess) {
+        rv = PK11_ImportPublicKey(slot, &pubKey, PR_TRUE);
+    }
+    
+
+
+
+
+
+
+
+    SECKEY_DestroyPublicKey(&pubKey);
+
+    return rv;
+}
+
 
 
 
@@ -1802,12 +1888,6 @@ try_faulty_3des:
                                  nickname, publicValue, isPerm, isPrivate,
                                  key_type, usage, usageCount, wincx);
     if (privKey) {
-        if (privk) {
-            *privk = privKey;
-        } else {
-            SECKEY_DestroyPrivateKey(privKey);
-        }
-        privKey = NULL;
         rv = SECSuccess;
         goto done;
     }
@@ -1837,6 +1917,25 @@ try_faulty_3des:
     rv = SECFailure;
 
 done:
+    if ((rv == SECSuccess) && isPerm) {
+        
+
+
+
+
+
+
+        (void)SECKEY_SetPublicValue(privKey, publicValue);
+    }
+
+    if (privKey) {
+        if (privk) {
+            *privk = privKey;
+        } else {
+            SECKEY_DestroyPrivateKey(privKey);
+        }
+        privKey = NULL;
+    }
     if (crypto_param != NULL) {
         SECITEM_ZfreeItem(crypto_param, PR_TRUE);
     }

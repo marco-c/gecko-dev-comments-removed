@@ -396,7 +396,6 @@ dtls_GatherData(sslSocket *ss, sslGather *gs, int flags)
 
 
 
-
 int
 ssl3_GatherCompleteHandshake(sslSocket *ss, int flags)
 {
@@ -422,12 +421,18 @@ ssl3_GatherCompleteHandshake(sslSocket *ss, int flags)
     PORT_Assert(ss->opt.noLocks || ssl_HaveRecvBufLock(ss));
 
     do {
-        PRBool handleRecordNow = PR_FALSE;
         PRBool processingEarlyData;
 
         ssl_GetSSL3HandshakeLock(ss);
 
         processingEarlyData = ss->ssl3.hs.zeroRttState == ssl_0rtt_accepted;
+
+        
+        if (ss->recordWriteCallback) {
+            ssl_ReleaseSSL3HandshakeLock(ss);
+            PORT_SetError(PR_WOULD_BLOCK_ERROR);
+            return (int)SECFailure;
+        }
 
         
 
@@ -439,81 +444,57 @@ ssl3_GatherCompleteHandshake(sslSocket *ss, int flags)
             return (int)SECFailure;
         }
 
+        ssl_ReleaseSSL3HandshakeLock(ss);
+
         
+        ssl2Gather ssl2gs = { PR_FALSE, 0 };
+        ssl2Gather *ssl2gs_ptr = NULL;
+
+        
+        if (ss->sec.isServer && ss->opt.enableV2CompatibleHello &&
+            ss->ssl3.hs.ws == wait_client_hello) {
+            ssl2gs_ptr = &ssl2gs;
+        }
+
+        
+        if (ss->recvdCloseNotify) {
+            
 
 
+            return 0;
+        }
+
+        if (!IS_DTLS(ss)) {
+            
+
+            rv = ssl3_GatherData(ss, &ss->gs, flags, ssl2gs_ptr);
+        } else {
+            rv = dtls_GatherData(ss, &ss->gs, flags);
+
+            
 
 
-        if (ss->ssl3.hs.msgState.buf) {
-            if (ss->ssl3.hs.msgState.len == 0) {
-                ss->ssl3.hs.msgState.buf = NULL;
-            } else {
-                handleRecordNow = PR_TRUE;
+            if (rv == SECFailure &&
+                (PORT_GetError() == PR_WOULD_BLOCK_ERROR)) {
+                dtls_CheckTimer(ss);
+                
+                PORT_SetError(PR_WOULD_BLOCK_ERROR);
             }
         }
 
-        ssl_ReleaseSSL3HandshakeLock(ss);
+        if (rv <= 0) {
+            return rv;
+        }
 
-        if (handleRecordNow) {
-            
-
-
-
-
-            SSL_DBG(("%d: SSL3[%d]: resuming handshake",
-                     SSL_GETPID(), ss->fd));
-            PORT_Assert(!IS_DTLS(ss));
-            rv = ssl3_HandleNonApplicationData(ss, ssl_ct_handshake,
-                                               0, 0, &ss->gs.buf);
-        } else {
-            
-            ssl2Gather ssl2gs = { PR_FALSE, 0 };
-            ssl2Gather *ssl2gs_ptr = NULL;
-
-            if (ss->sec.isServer && ss->opt.enableV2CompatibleHello &&
-                ss->ssl3.hs.ws == wait_client_hello) {
-                ssl2gs_ptr = &ssl2gs;
-            }
-
-            
-            if (ss->recvdCloseNotify) {
-                
-
-
-                return 0;
-            }
-
-            if (!IS_DTLS(ss)) {
-                
-
-                rv = ssl3_GatherData(ss, &ss->gs, flags, ssl2gs_ptr);
-            } else {
-                rv = dtls_GatherData(ss, &ss->gs, flags);
-
-                
-
-
-                if (rv == SECFailure &&
-                    (PORT_GetError() == PR_WOULD_BLOCK_ERROR)) {
-                    dtls_CheckTimer(ss);
-                    
-                    PORT_SetError(PR_WOULD_BLOCK_ERROR);
-                }
-            }
-
-            if (rv <= 0) {
+        if (ssl2gs.isV2) {
+            rv = ssl3_HandleV2ClientHello(ss, ss->gs.inbuf.buf,
+                                          ss->gs.inbuf.len,
+                                          ssl2gs.padding);
+            if (rv < 0) {
                 return rv;
             }
-
-            if (ssl2gs.isV2) {
-                rv = ssl3_HandleV2ClientHello(ss, ss->gs.inbuf.buf,
-                                              ss->gs.inbuf.len,
-                                              ssl2gs.padding);
-                if (rv < 0) {
-                    return rv;
-                }
-            } else {
-                
+        } else {
+            
 
 
 
@@ -521,11 +502,10 @@ ssl3_GatherCompleteHandshake(sslSocket *ss, int flags)
 
 
 
-                cText.hdr = ss->gs.hdr;
-                cText.hdrLen = ss->gs.hdrLen;
-                cText.buf = &ss->gs.inbuf;
-                rv = ssl3_HandleRecord(ss, &cText);
-            }
+            cText.hdr = ss->gs.hdr;
+            cText.hdrLen = ss->gs.hdrLen;
+            cText.buf = &ss->gs.inbuf;
+            rv = ssl3_HandleRecord(ss, &cText);
         }
         if (rv < 0) {
             return ss->recvdCloseNotify ? 0 : rv;
@@ -575,7 +555,7 @@ ssl3_GatherCompleteHandshake(sslSocket *ss, int flags)
 
             ssl_ReleaseSSL3HandshakeLock(ss);
             PORT_SetError(PR_WOULD_BLOCK_ERROR);
-            return SECWouldBlock;
+            return -1;
         }
         ssl_ReleaseSSL3HandshakeLock(ss);
     } while (keepGoing);
@@ -589,7 +569,6 @@ ssl3_GatherCompleteHandshake(sslSocket *ss, int flags)
     ss->gs.writeOffset = ss->gs.buf.len;
     return 1;
 }
-
 
 
 
@@ -615,4 +594,109 @@ ssl3_GatherAppDataRecord(sslSocket *ss, int flags)
     } while (rv > 0 && ss->gs.buf.len == 0);
 
     return rv;
+}
+
+SECStatus
+SSLExp_RecordLayerData(PRFileDesc *fd, PRUint16 epoch,
+                       SSLContentType contentType,
+                       const PRUint8 *data, unsigned int len)
+{
+    SECStatus rv;
+    sslSocket *ss = ssl_FindSocket(fd);
+    if (!ss) {
+        return SECFailure;
+    }
+    if (IS_DTLS(ss) || data == NULL || len == 0) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return SECFailure;
+    }
+
+    
+
+
+
+
+    ssl_Get1stHandshakeLock(ss);
+    rv = ssl_Do1stHandshake(ss);
+    if (rv != SECSuccess && PORT_GetError() != PR_WOULD_BLOCK_ERROR) {
+        goto early_loser; 
+    }
+
+    
+    if (contentType == ssl_ct_application_data && !ss->firstHsDone) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        goto early_loser;
+    }
+
+    
+    PRErrorCode epochError;
+    ssl_GetSpecReadLock(ss);
+    if (epoch < ss->ssl3.crSpec->epoch) {
+        epochError = SEC_ERROR_INVALID_ARGS; 
+    } else if (epoch > ss->ssl3.crSpec->epoch) {
+        epochError = PR_WOULD_BLOCK_ERROR; 
+    } else {
+        epochError = 0; 
+    }
+    ssl_ReleaseSpecReadLock(ss);
+    if (epochError) {
+        PORT_SetError(epochError);
+        goto early_loser;
+    }
+
+    
+    ssl_Get1stHandshakeLock(ss);
+    rv = ssl_Do1stHandshake(ss);
+    if (rv != SECSuccess && PORT_GetError() != PR_WOULD_BLOCK_ERROR) {
+        ssl_Release1stHandshakeLock(ss);
+        return SECFailure;
+    }
+
+    
+    ssl_GetRecvBufLock(ss);
+    rv = sslBuffer_Append(&ss->gs.buf, data, len);
+    if (rv != SECSuccess) {
+        goto loser;
+    }
+
+    
+
+    if (contentType != ssl_ct_application_data) {
+        rv = ssl3_HandleNonApplicationData(ss, contentType, 0, 0, &ss->gs.buf);
+        if (rv != SECSuccess) {
+            goto loser;
+        }
+    }
+
+    ssl_ReleaseRecvBufLock(ss);
+    ssl_Release1stHandshakeLock(ss);
+    return SECSuccess;
+
+loser:
+    
+    ss->gs.buf.len = 0;
+    ssl_ReleaseRecvBufLock(ss);
+early_loser:
+    ssl_Release1stHandshakeLock(ss);
+    return SECFailure;
+}
+
+SECStatus
+SSLExp_GetCurrentEpoch(PRFileDesc *fd, PRUint16 *readEpoch,
+                       PRUint16 *writeEpoch)
+{
+    sslSocket *ss = ssl_FindSocket(fd);
+    if (!ss) {
+        return SECFailure;
+    }
+
+    ssl_GetSpecReadLock(ss);
+    if (readEpoch) {
+        *readEpoch = ss->ssl3.crSpec->epoch;
+    }
+    if (writeEpoch) {
+        *writeEpoch = ss->ssl3.cwSpec->epoch;
+    }
+    ssl_ReleaseSpecReadLock(ss);
+    return SECSuccess;
 }

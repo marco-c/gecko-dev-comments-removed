@@ -27,35 +27,10 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-int
+SECStatus
 ssl_Do1stHandshake(sslSocket *ss)
 {
-    int rv = SECSuccess;
+    SECStatus rv = SECSuccess;
 
     while (ss->handshake && rv == SECSuccess) {
         PORT_Assert(ss->opt.noLocks || ssl_Have1stHandshakeLock(ss));
@@ -70,10 +45,6 @@ ssl_Do1stHandshake(sslSocket *ss)
     PORT_Assert(ss->opt.noLocks || !ssl_HaveXmitBufLock(ss));
     PORT_Assert(ss->opt.noLocks || !ssl_HaveSSL3HandshakeLock(ss));
 
-    if (rv == SECWouldBlock) {
-        PORT_SetError(PR_WOULD_BLOCK_ERROR);
-        rv = SECFailure;
-    }
     return rv;
 }
 
@@ -106,8 +77,8 @@ ssl_FinishHandshake(sslSocket *ss)
 static SECStatus
 ssl3_AlwaysBlock(sslSocket *ss)
 {
-    PORT_SetError(PR_WOULD_BLOCK_ERROR); 
-    return SECWouldBlock;
+    PORT_SetError(PR_WOULD_BLOCK_ERROR);
+    return SECFailure;
 }
 
 
@@ -400,10 +371,13 @@ SSL_ForceHandshake(PRFileDesc *fd)
         ssl_ReleaseRecvBufLock(ss);
         if (gatherResult > 0) {
             rv = SECSuccess;
-        } else if (gatherResult == 0) {
-            PORT_SetError(PR_END_OF_FILE_ERROR);
-        } else if (gatherResult == SECWouldBlock) {
-            PORT_SetError(PR_WOULD_BLOCK_ERROR);
+        } else {
+            if (gatherResult == 0) {
+                PORT_SetError(PR_END_OF_FILE_ERROR);
+            }
+            
+
+            rv = SECFailure;
         }
     } else {
         PORT_Assert(!ss->firstHsDone);
@@ -515,8 +489,7 @@ DoRecv(sslSocket *ss, unsigned char *out, int len, int flags)
                              SSL_GETPID(), ss->fd));
                 goto done;
             }
-            if ((rv != SECWouldBlock) &&
-                (PR_GetError() != PR_WOULD_BLOCK_ERROR)) {
+            if (PR_GetError() != PR_WOULD_BLOCK_ERROR) {
                 
                 goto done;
             }
@@ -741,7 +714,7 @@ ssl_SecureShutdown(sslSocket *ss, int nsprHow)
 
 
 static SECStatus
-tls13_CheckKeyUpdate(sslSocket *ss, CipherSpecDirection dir)
+tls13_CheckKeyUpdate(sslSocket *ss, SSLSecretDirection dir)
 {
     PRBool keyUpdate;
     ssl3CipherSpec *spec;
@@ -765,7 +738,7 @@ tls13_CheckKeyUpdate(sslSocket *ss, CipherSpecDirection dir)
 
 
     ssl_GetSpecReadLock(ss);
-    if (dir == CipherSpecRead) {
+    if (dir == ssl_secret_read) {
         spec = ss->ssl3.crSpec;
         margin = spec->cipherDef->max_records / 8;
     } else {
@@ -781,10 +754,10 @@ tls13_CheckKeyUpdate(sslSocket *ss, CipherSpecDirection dir)
 
     SSL_TRC(5, ("%d: SSL[%d]: automatic key update at %llx for %s cipher spec",
                 SSL_GETPID(), ss->fd, seqNum,
-                (dir == CipherSpecRead) ? "read" : "write"));
+                (dir == ssl_secret_read) ? "read" : "write"));
     ssl_GetSSL3HandshakeLock(ss);
-    rv = tls13_SendKeyUpdate(ss, (dir == CipherSpecRead) ? update_requested : update_not_requested,
-                             dir == CipherSpecWrite );
+    rv = tls13_SendKeyUpdate(ss, (dir == ssl_secret_read) ? update_requested : update_not_requested,
+                             dir == ssl_secret_write );
     ssl_ReleaseSSL3HandshakeLock(ss);
     return rv;
 }
@@ -829,7 +802,7 @@ ssl_SecureRecv(sslSocket *ss, unsigned char *buf, int len, int flags)
         }
         ssl_Release1stHandshakeLock(ss);
     } else {
-        if (tls13_CheckKeyUpdate(ss, CipherSpecRead) != SECSuccess) {
+        if (tls13_CheckKeyUpdate(ss, ssl_secret_read) != SECSuccess) {
             rv = PR_FAILURE;
         }
     }
@@ -955,7 +928,7 @@ ssl_SecureSend(sslSocket *ss, const unsigned char *buf, int len, int flags)
     }
 
     if (ss->firstHsDone) {
-        if (tls13_CheckKeyUpdate(ss, CipherSpecWrite) != SECSuccess) {
+        if (tls13_CheckKeyUpdate(ss, ssl_secret_write) != SECSuccess) {
             rv = PR_FAILURE;
             goto done;
         }
@@ -1008,6 +981,35 @@ int
 ssl_SecureWrite(sslSocket *ss, const unsigned char *buf, int len)
 {
     return ssl_SecureSend(ss, buf, len, 0);
+}
+
+SECStatus
+SSLExp_RecordLayerWriteCallback(PRFileDesc *fd, SSLRecordWriteCallback cb,
+                                void *arg)
+{
+    sslSocket *ss = ssl_FindSocket(fd);
+    if (!ss) {
+        SSL_DBG(("%d: SSL[%d]: invalid socket for SSL_RecordLayerWriteCallback",
+                 SSL_GETPID(), fd));
+        return SECFailure;
+    }
+    if (IS_DTLS(ss)) {
+        SSL_DBG(("%d: SSL[%d]: DTLS socket for SSL_RecordLayerWriteCallback",
+                 SSL_GETPID(), fd));
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return SECFailure;
+    }
+
+    
+
+
+    ssl_GetSSL3HandshakeLock(ss);
+    ssl_GetXmitBufLock(ss);
+    ss->recordWriteCallback = cb;
+    ss->recordWriteCallbackArg = arg;
+    ssl_ReleaseXmitBufLock(ss);
+    ssl_ReleaseSSL3HandshakeLock(ss);
+    return SECSuccess;
 }
 
 SECStatus
