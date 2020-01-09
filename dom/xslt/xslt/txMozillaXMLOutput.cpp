@@ -812,8 +812,9 @@ nsresult txMozillaXMLOutput::createResultDocument(const nsAString& aName,
 
   
   
-  if (mDocument) {
-    mDocument->SetCompatibilityMode(eCompatibility_FullStandards);
+  nsCOMPtr<nsIHTMLDocument> htmlDoc = do_QueryInterface(mDocument);
+  if (htmlDoc) {
+    htmlDoc->SetCompatibilityMode(eCompatibility_FullStandards);
   }
 
   

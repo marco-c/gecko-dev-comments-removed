@@ -322,7 +322,10 @@ NS_IMETHODIMP
 nsXMLContentSink::OnDocumentCreated(Document* aResultDocument) {
   NS_ENSURE_ARG(aResultDocument);
 
-  aResultDocument->SetDocWriteDisabled(true);
+  nsCOMPtr<nsIHTMLDocument> htmlDoc = do_QueryInterface(aResultDocument);
+  if (htmlDoc) {
+    htmlDoc->SetDocWriteDisabled(true);
+  }
 
   nsCOMPtr<nsIContentViewer> contentViewer;
   mDocShell->GetContentViewer(getter_AddRefs(contentViewer));
@@ -359,7 +362,10 @@ nsXMLContentSink::OnTransformDone(nsresult aResult, Document* aResultDocument) {
   }
   
   mDocument = aResultDocument;
-  aResultDocument->SetDocWriteDisabled(false);
+  nsCOMPtr<nsIHTMLDocument> htmlDoc = do_QueryInterface(mDocument);
+  if (htmlDoc) {
+    htmlDoc->SetDocWriteDisabled(false);
+  }
 
   
   

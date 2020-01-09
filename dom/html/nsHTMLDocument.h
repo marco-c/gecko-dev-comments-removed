@@ -74,6 +74,10 @@ class nsHTMLDocument : public mozilla::dom::Document, public nsIHTMLDocument {
 
  public:
   
+  virtual void SetCompatibilityMode(nsCompatibility aMode) override;
+
+  virtual bool IsWriting() override { return mWriteLevel != uint32_t(0); }
+
   virtual Element* GetUnfocusedKeyEventTarget() override;
 
   nsContentList* GetExistingForms() const { return mForms; }
@@ -91,6 +95,9 @@ class nsHTMLDocument : public mozilla::dom::Document, public nsIHTMLDocument {
   virtual void TearingDownEditor() override;
   virtual void SetIsXHTML(bool aXHTML) override {
     mType = (aXHTML ? eXHTML : eHTML);
+  }
+  virtual void SetDocWriteDisabled(bool aDisabled) override {
+    mDisableDocWrite = aDisabled;
   }
 
   nsresult ChangeContentEditableCount(nsIContent* aElement,
@@ -145,6 +152,16 @@ class nsHTMLDocument : public mozilla::dom::Document, public nsIHTMLDocument {
     }
   }
   void GetSupportedNames(nsTArray<nsString>& aNames);
+  Document* Open(const mozilla::dom::Optional<nsAString>& ,
+                 const nsAString& , mozilla::ErrorResult& aError);
+  mozilla::dom::Nullable<mozilla::dom::WindowProxyHolder> Open(
+      const nsAString& aURL, const nsAString& aName, const nsAString& aFeatures,
+      bool aReplace, mozilla::ErrorResult& rv);
+  void Close(mozilla::ErrorResult& rv);
+  void Write(const mozilla::dom::Sequence<nsString>& aText,
+             mozilla::ErrorResult& rv);
+  void Writeln(const mozilla::dom::Sequence<nsString>& aText,
+               mozilla::ErrorResult& rv);
   void GetDesignMode(nsAString& aDesignMode);
   void SetDesignMode(const nsAString& aDesignMode,
                      nsIPrincipal& aSubjectPrincipal, mozilla::ErrorResult& rv);
@@ -205,10 +222,18 @@ class nsHTMLDocument : public mozilla::dom::Document, public nsIHTMLDocument {
 
   static void DocumentWriteTerminationFunc(nsISupports* aRef);
 
+  void WriteCommon(const nsAString& aText, bool aNewlineTerminate,
+                   mozilla::ErrorResult& aRv);
+  
+  void WriteCommon(const mozilla::dom::Sequence<nsString>& aText,
+                   bool aNewlineTerminate, mozilla::ErrorResult& rv);
+
   
 
 
   bool IsEditingOnAfterFlush();
+
+  void* GenerateParserKey(void);
 
   
   
@@ -266,7 +291,17 @@ class nsHTMLDocument : public mozilla::dom::Document, public nsIHTMLDocument {
   void MaybeDispatchCheckKeyPressEventModelEvent();
 
   
+  
+  
+  
+  uint32_t mWriteLevel;
+
+  
   uint32_t mLoadFlags;
+
+  bool mTooDeepWriteRecursion;
+
+  bool mDisableDocWrite;
 
   bool mWarnedWidthHeight;
 
