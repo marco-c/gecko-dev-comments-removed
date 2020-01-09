@@ -785,11 +785,6 @@ nsJSChannel::SetLoadFlags(nsLoadFlags aLoadFlags) {
   
   
   
-  aLoadFlags &= ~LOAD_CLASSIFY_URI;
-
-  
-  
-  
   
   
 

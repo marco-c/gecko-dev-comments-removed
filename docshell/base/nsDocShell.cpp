@@ -10363,7 +10363,7 @@ nsresult nsDocShell::DoChannelLoad(nsIChannel* aChannel,
   }
 
   if (!aBypassClassifier) {
-    loadFlags |= nsIChannel::LOAD_CLASSIFY_URI;
+    
   }
 
   
