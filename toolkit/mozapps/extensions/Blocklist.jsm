@@ -283,36 +283,18 @@ function getDistributionPrefValue(aPrefName) {
   return Services.prefs.getDefaultBranch(null).getCharPref(aPrefName, "default");
 }
 
+let gLoadingWasTriggered = false;
 
 
 
 
 
 
-var Blocklist = {
+
+var BlocklistXML = {
   _init() {
-    Services.obs.addObserver(this, "xpcom-shutdown");
-
-    gLoggingEnabled = Services.prefs.getBoolPref(PREF_EM_LOGGING_ENABLED, false);
-    gBlocklistEnabled = Services.prefs.getBoolPref(PREF_BLOCKLIST_ENABLED, true);
-    gBlocklistLevel = Math.min(Services.prefs.getIntPref(PREF_BLOCKLIST_LEVEL, DEFAULT_LEVEL),
-                               MAX_BLOCK_LEVEL);
-    Services.prefs.addObserver("extensions.blocklist.", this);
-    Services.prefs.addObserver(PREF_EM_LOGGING_ENABLED, this);
-
-    
-    
-    
-    
-    
-    BlocklistClients.initialize();
-
-    
-    
-    for (let entry of Services.blocklist.pluginQueries.splice(0)) {
-      entry.resolve(this.getPluginBlocklistState(entry.plugin,
-                                                 entry.appVersion,
-                                                 entry.toolkitVersion));
+    if (gLoadingWasTriggered) {
+      this.loadBlocklistAsync();
     }
   },
 
@@ -350,52 +332,23 @@ var Blocklist = {
   },
 
   shutdown() {
-    Services.obs.removeObserver(this, "xpcom-shutdown");
-    Services.prefs.removeObserver("extensions.blocklist.", this);
-    Services.prefs.removeObserver(PREF_EM_LOGGING_ENABLED, this);
   },
 
-  observe(aSubject, aTopic, aData) {
-    switch (aTopic) {
-    case "xpcom-shutdown":
-      this.shutdown();
-      break;
-    case "profile-after-change":
-      
-      
-      
-      this.loadBlocklistAsync();
-      break;
-    case "nsPref:changed":
-      switch (aData) {
-        case PREF_EM_LOGGING_ENABLED:
-          gLoggingEnabled = Services.prefs.getBoolPref(PREF_EM_LOGGING_ENABLED, false);
-          break;
-        case PREF_BLOCKLIST_ENABLED:
-          gBlocklistEnabled = Services.prefs.getBoolPref(PREF_BLOCKLIST_ENABLED, true);
-          
-          
-          
-          
-          let lastUpdate = this._lastUpdate || undefined;
-          let newUpdate = this._lastUpdate = (async () => {
-            await lastUpdate;
-            this._clear();
-            await this.loadBlocklistAsync();
-            await this._blocklistUpdated(null, null);
-            if (newUpdate == this._lastUpdate) {
-              delete this._lastUpdate;
-            }
-          })().catch(Cu.reportError);
-          break;
-        case PREF_BLOCKLIST_LEVEL:
-          gBlocklistLevel = Math.min(Services.prefs.getIntPref(PREF_BLOCKLIST_LEVEL, DEFAULT_LEVEL),
-                                     MAX_BLOCK_LEVEL);
-          this._blocklistUpdated(null, null);
-          break;
+  _onBlocklistEnabledToggle() {
+    
+    
+    
+    
+    let lastUpdate = this._lastUpdate || undefined;
+    let newUpdate = this._lastUpdate = (async () => {
+      await lastUpdate;
+      this._clear();
+      await this.loadBlocklistAsync();
+      await this._blocklistUpdated(null, null);
+      if (newUpdate == this._lastUpdate) {
+        delete this._lastUpdate;
       }
-      break;
-    }
+    })().catch(Cu.reportError);
   },
 
   
@@ -1615,5 +1568,137 @@ BlocklistItemData.prototype = {
     return { minVersion, maxVersion };
   },
 };
+
+let BlocklistRS = {
+  _init() {
+    
+  },
+  isLoaded: true,
+
+  notify() {
+    
+    
+  },
+
+  loadBlocklistAsync() {
+    
+    
+    gLoadingWasTriggered = true;
+  },
+
+  getPluginBlocklistState() {
+  },
+
+  getPluginBlockURL() {
+  },
+
+  getAddonBlocklistState() {
+  },
+
+  getAddonBlocklistEntry() {
+  },
+
+  _blocklistUpdated(oldAddons, oldPlugins) {
+  },
+
+  initializeClients() {
+    BlocklistClients.initialize();
+  },
+};
+
+const kSharedAPIs = [
+  "notify",
+  "loadBlocklistAsync",
+  "getPluginBlockURL",
+  "getPluginBlocklistState",
+  "getAddonBlocklistState",
+  "getAddonBlocklistEntry",
+  "_blocklistUpdated",
+];
+let Blocklist = {
+  _init() {
+    Services.obs.addObserver(this, "xpcom-shutdown");
+    gLoggingEnabled = Services.prefs.getBoolPref(PREF_EM_LOGGING_ENABLED, false);
+    gBlocklistEnabled = Services.prefs.getBoolPref(PREF_BLOCKLIST_ENABLED, true);
+    gBlocklistLevel = Math.min(Services.prefs.getIntPref(PREF_BLOCKLIST_LEVEL, DEFAULT_LEVEL),
+                               MAX_BLOCK_LEVEL);
+    Services.prefs.addObserver("extensions.blocklist.", this);
+    Services.prefs.addObserver(PREF_EM_LOGGING_ENABLED, this);
+
+    
+    
+    
+    
+    
+    BlocklistRS.initializeClients();
+    
+    for (let k of kSharedAPIs) {
+      this[k] = (...args) => this._impl[k](...args);
+    }
+
+    this.onUpdateImplementation();
+
+    
+    
+    for (let entry of Services.blocklist.pluginQueries.splice(0)) {
+      entry.resolve(this.getPluginBlocklistState(entry.plugin,
+                                                 entry.appVersion,
+                                                 entry.toolkitVersion));
+    }
+  },
+  
+  get isLoaded() {
+    return this._impl.isLoaded;
+  },
+
+  onUpdateImplementation() {
+    this._impl = this.useXML ? BlocklistXML : BlocklistRS;
+    this._impl._init();
+  },
+
+  shutdown() {
+    Services.obs.removeObserver(this, "xpcom-shutdown");
+    Services.prefs.removeObserver("extensions.blocklist.", this);
+    Services.prefs.removeObserver(PREF_EM_LOGGING_ENABLED, this);
+  },
+
+  observe(subject, topic, prefName) {
+    switch (topic) {
+      case "xpcom-shutdown":
+        this.shutdown();
+        break;
+      case "profile-after-change":
+        
+        
+        
+        this.loadBlocklistAsync();
+        break;
+      case "nsPref:changed":
+        switch (prefName) {
+          case PREF_EM_LOGGING_ENABLED:
+            gLoggingEnabled = Services.prefs.getBoolPref(PREF_EM_LOGGING_ENABLED, false);
+            break;
+          case PREF_BLOCKLIST_ENABLED:
+            gBlocklistEnabled = Services.prefs.getBoolPref(PREF_BLOCKLIST_ENABLED, true);
+            
+            
+            if (this._impl == BlocklistXML) {
+              this._impl._onBlocklistEnabledToggle();
+            }
+            break;
+          case PREF_BLOCKLIST_LEVEL:
+            gBlocklistLevel = Math.min(Services.prefs.getIntPref(PREF_BLOCKLIST_LEVEL, DEFAULT_LEVEL),
+                                       MAX_BLOCK_LEVEL);
+            this._blocklistUpdated(null, null);
+            break;
+        }
+        break;
+    }
+  },
+};
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  Blocklist, "useXML", "extensions.blocklist.useXML", true,
+  () => Blocklist.onUpdateImplementation());
 
 Blocklist._init();
