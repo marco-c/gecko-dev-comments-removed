@@ -1416,12 +1416,22 @@ class nsContentUtils {
 
 
 
+
+
+
   MOZ_CAN_RUN_SCRIPT
   static nsresult DispatchInputEvent(Element* aEventTarget);
+  struct MOZ_STACK_CLASS InputEventOptions final {
+    InputEventOptions() = default;
+    explicit InputEventOptions(const nsAString& aData) : mData(aData) {}
+
+    nsString mData;
+  };
   MOZ_CAN_RUN_SCRIPT
   static nsresult DispatchInputEvent(Element* aEventTarget,
                                      mozilla::EditorInputType aEditorInputType,
-                                     mozilla::TextEditor* aTextEditor);
+                                     mozilla::TextEditor* aTextEditor,
+                                     const InputEventOptions& aOptions);
 
   
 

@@ -649,6 +649,9 @@ class EditorBase : public nsIEditor,
     const RefPtr<Selection>& SelectionRefPtr() const { return mSelection; }
     EditAction GetEditAction() const { return mEditAction; }
 
+    void SetData(const nsAString& aData) { mData = aData; }
+    const nsString& GetData() const { return mData; }
+
     void SetTopLevelEditSubAction(EditSubAction aEditSubAction,
                                   EDirection aDirection = eNone) {
       mTopLevelEditSubAction = aEditSubAction;
@@ -756,6 +759,9 @@ class EditorBase : public nsIEditor,
     
     RangeUpdater mRangeUpdater;
 
+    
+    nsString mData;
+
     EditAction mEditAction;
     EditSubAction mTopLevelEditSubAction;
     EDirection mDirectionOfTopLevelEditSubAction;
@@ -798,6 +804,14 @@ class EditorBase : public nsIEditor,
   EditAction GetEditAction() const {
     return mEditActionData ? mEditActionData->GetEditAction()
                            : EditAction::eNone;
+  }
+
+  
+
+
+
+  const nsString& GetInputEventData() const {
+    return mEditActionData ? mEditActionData->GetData() : VoidString();
   }
 
   
@@ -1786,9 +1800,11 @@ class EditorBase : public nsIEditor,
 
 
   MOZ_CAN_RUN_SCRIPT
-  void FireInputEvent() { FireInputEvent(GetEditAction()); }
+  void FireInputEvent() {
+    FireInputEvent(GetEditAction(), GetInputEventData());
+  }
   MOZ_CAN_RUN_SCRIPT
-  void FireInputEvent(EditAction aEditAction);
+  void FireInputEvent(EditAction aEditAction, const nsAString& aData);
 
   
 

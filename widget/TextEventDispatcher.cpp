@@ -386,6 +386,9 @@ nsresult TextEventDispatcher::CommitComposition(
   if (message == eCompositionCommit) {
     compositionCommitEvent.mData = *aCommitString;
     
+    
+    compositionCommitEvent.mData.SetIsVoid(false);
+    
     compositionCommitEvent.mData.ReplaceSubstring(NS_LITERAL_STRING("\r\n"),
                                                   NS_LITERAL_STRING("\n"));
     compositionCommitEvent.mData.ReplaceSubstring(NS_LITERAL_STRING("\r"),
@@ -908,6 +911,9 @@ nsresult TextEventDispatcher::PendingComposition::Flush(
     compChangeEvent.AssignEventTime(*aEventTime);
   }
   compChangeEvent.mData = mString;
+  
+  
+  compChangeEvent.mData.SetIsVoid(false);
   if (mClauses) {
     MOZ_ASSERT(!mClauses->IsEmpty(),
                "mClauses must be non-empty array when it's not nullptr");

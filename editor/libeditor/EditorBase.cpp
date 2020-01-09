@@ -2030,7 +2030,8 @@ void EditorBase::NotifyEditorObservers(
   }
 }
 
-void EditorBase::FireInputEvent(EditAction aEditAction) {
+void EditorBase::FireInputEvent(EditAction aEditAction,
+                                const nsAString& aData) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   
@@ -2047,7 +2048,8 @@ void EditorBase::FireInputEvent(EditAction aEditAction) {
   }
   RefPtr<TextEditor> textEditor = AsTextEditor();
   DebugOnly<nsresult> rvIgnored = nsContentUtils::DispatchInputEvent(
-      targetElement, ToInputType(aEditAction), textEditor);
+      targetElement, ToInputType(aEditAction), textEditor,
+      nsContentUtils::InputEventOptions(aData));
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                        "Failed to dispatch input event");
 }
@@ -4818,6 +4820,7 @@ EditorBase::AutoEditActionDataSetter::AutoEditActionDataSetter(
     const EditorBase& aEditorBase, EditAction aEditAction)
     : mEditorBase(const_cast<EditorBase&>(aEditorBase)),
       mParentData(aEditorBase.mEditActionData),
+      mData(VoidString()),
       mTopLevelEditSubAction(EditSubAction::eNone) {
   
   if (mParentData) {

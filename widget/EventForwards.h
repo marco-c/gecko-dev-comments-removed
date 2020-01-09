@@ -130,6 +130,36 @@ enum class EditorInputType : EditorInputTypeType {
 
 #undef NS_DEFINE_INPUTTYPE
 
+
+
+
+
+inline bool IsDataAvailableOnTextEditor(EditorInputType aInputType) {
+  switch (aInputType) {
+    case EditorInputType::eInsertText:
+    case EditorInputType::eInsertCompositionText:
+    case EditorInputType::eInsertFromComposition:  
+      return true;
+    default:
+      return false;
+  }
+}
+
+
+
+
+
+inline bool IsDataAvailableOnHTMLEditor(EditorInputType aInputType) {
+  switch (aInputType) {
+    case EditorInputType::eInsertText:
+    case EditorInputType::eInsertCompositionText:
+    case EditorInputType::eInsertFromComposition:  
+      return true;
+    default:
+      return false;
+  }
+}
+
 #define NS_DEFINE_COMMAND(aName, aCommandStr) , Command##aName
 #define NS_DEFINE_COMMAND_NO_EXEC_COMMAND(aName) , Command##aName
 
