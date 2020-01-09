@@ -486,9 +486,7 @@ nsresult nsXBLService::LoadBindings(Element* aElement, nsIURI* aURL,
     nsAtom* tag = aElement->NodeInfo()->NameAtom();
     MOZ_ASSERT(
         
-        tag == nsGkAtoms::datetimebox ||
-            
-            tag == nsGkAtoms::embed || tag == nsGkAtoms::applet ||
+        tag == nsGkAtoms::embed || tag == nsGkAtoms::applet ||
             tag == nsGkAtoms::object ||
             
             tag == nsGkAtoms::marquee,
