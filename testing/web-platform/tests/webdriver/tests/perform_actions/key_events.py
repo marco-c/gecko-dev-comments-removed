@@ -1,8 +1,9 @@
 
 
 import pytest
+import copy
 
-from tests.perform_actions.support.keys import ALL_EVENTS, Keys
+from tests.perform_actions.support.keys import ALL_EVENTS, Keys, ALTERNATIVE_KEY_NAMES
 from tests.perform_actions.support.refine import filter_dict, get_events, get_keys
 
 
@@ -75,16 +76,24 @@ def test_non_printable_key_sends_events(session, key_reporter, key_chain, key, e
         {"code": code, "key": value, "type": "keyup"},
     ]
 
+    
+    
+    alt_expected = copy.deepcopy(expected)
+    if event in ALTERNATIVE_KEY_NAMES:
+        alt_expected[0]["key"] = ALTERNATIVE_KEY_NAMES[event]
+        alt_expected[2]["key"] = ALTERNATIVE_KEY_NAMES[event]
+
     events = [filter_dict(e, expected[0]) for e in all_events]
     if len(events) > 0 and events[0]["code"] is None:
         
         expected = [filter_dict(e, {"key": "", "type": ""}) for e in expected]
+        alt_expected = [filter_dict(e, {"key": "", "type": ""}) for e in alt_expected]
         events = [filter_dict(e, expected[0]) for e in events]
     if len(events) == 2:
         
-        assert events == [expected[0], expected[2]]
+        assert events == [expected[0], expected[2]] or events == [alt_expected[0], alt_expected[2]]
     else:
-        assert events == expected
+        assert events == expected or events == alt_expected
 
     assert len(get_keys(key_reporter)) == 0
 
@@ -193,13 +202,19 @@ def test_special_key_sends_keydown(session, key_reporter, key_chain, name, expec
     del expected["value"]
 
     
+    alt_expected = copy.deepcopy(expected)
+    if name in ALTERNATIVE_KEY_NAMES:
+        alt_expected["key"] = ALTERNATIVE_KEY_NAMES[name]
+
+    
     assert first_event["type"] == "keydown"
     assert first_event["repeat"] is False
     first_event = filter_dict(first_event, expected)
     if first_event["code"] is None:
         del first_event["code"]
         del expected["code"]
-    assert first_event == expected
+        del alt_expected["code"]
+    assert first_event == expected or first_event == alt_expected
     
     entered_keys = get_keys(key_reporter)
     if len(expected["key"]) == 1:
