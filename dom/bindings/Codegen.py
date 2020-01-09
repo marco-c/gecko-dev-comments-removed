@@ -9132,7 +9132,6 @@ class CGSpecializedGetter(CGAbstractStaticMethod):
                 
                 
                 remoteType = BuiltinTypes[IDLBuiltinType.Types.object]
-                extendedAttributes.append('canOOM')
                 extendedAttributes.remove('infallible')
             prototypeID, _ = PrototypeIDAndDepth(self.descriptor)
             prefix = fill("""
