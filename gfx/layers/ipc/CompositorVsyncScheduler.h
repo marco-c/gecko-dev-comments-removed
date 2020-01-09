@@ -121,6 +121,11 @@ class CompositorVsyncScheduler {
   void PostVRTask(TimeStamp aTimestamp);
 
   
+
+
+  void CancelCurrentVRTask();
+
+  
   
   void Composite(VsyncId aId, TimeStamp aVsyncTimestamp);
 
@@ -159,7 +164,7 @@ class CompositorVsyncScheduler {
   RefPtr<CancelableRunnable> mCurrentCompositeTask;
 
   mozilla::Monitor mCurrentVRTaskMonitor;
-  RefPtr<Runnable> mCurrentVRTask;
+  RefPtr<CancelableRunnable> mCurrentVRTask;
 };
 
 }  
