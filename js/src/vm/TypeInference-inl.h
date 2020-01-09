@@ -587,10 +587,6 @@ inline void MarkObjectStateChange(JSContext* cx, JSObject* obj) {
 }
 
 
-extern void TypeMonitorResult(JSContext* cx, JSScript* script, jsbytecode* pc,
-                              StackTypeSet* types, TypeSet::Type type);
-
-
 
 
 
@@ -669,7 +665,7 @@ inline StackTypeSet* TypeScript::bytecodeTypes(const AutoSweepTypeScript& sweep,
     const js::Value& rval) {
   TypeSet::Type type = TypeSet::GetValueType(rval);
   if (!types->hasType(type)) {
-    TypeMonitorResult(cx, script, pc, types, type);
+    MonitorBytecodeTypeSlow(cx, script, pc, types, type);
   }
 }
 
