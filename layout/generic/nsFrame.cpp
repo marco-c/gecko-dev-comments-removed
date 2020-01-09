@@ -638,6 +638,7 @@ void nsFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   if (aPrevInFlow) {
     mMayHaveOpacityAnimation = aPrevInFlow->MayHaveOpacityAnimation();
     mMayHaveTransformAnimation = aPrevInFlow->MayHaveTransformAnimation();
+    mState |= aPrevInFlow->mState & NS_FRAME_MAY_BE_TRANSFORMED;
   } else if (mContent) {
     
     
@@ -657,22 +658,21 @@ void nsFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
         
         if (IsFrameOfType(eSupportsCSSTransforms)) {
           mMayHaveTransformAnimation = true;
+          AddStateBits(NS_FRAME_MAY_BE_TRANSFORMED);
         } else if (aParent && nsLayoutUtils::GetStyleFrame(aParent) == this) {
           MOZ_ASSERT(
               aParent->IsFrameOfType(eSupportsCSSTransforms),
               "Style frames that don't support transforms should have parents"
               " that do");
           aParent->mMayHaveTransformAnimation = true;
+          aParent->AddStateBits(NS_FRAME_MAY_BE_TRANSFORMED);
         }
       }
     }
   }
 
   const nsStyleDisplay* disp = StyleDisplay();
-  if (disp->HasTransform(this) ||
-      (IsFrameOfType(eSupportsCSSTransforms) &&
-       nsLayoutUtils::HasAnimationOfPropertySet(
-           this, nsCSSPropertyIDSet::TransformLikeProperties()))) {
+  if (disp->HasTransform(this)) {
     
     
     AddStateBits(NS_FRAME_MAY_BE_TRANSFORMED);
