@@ -36,7 +36,16 @@ bool GPUProcessHost::Launch(StringVector aExtraOpts) {
   MOZ_ASSERT(!gfxPlatform::IsHeadless());
 
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)
-  mSandboxLevel = Preferences::GetInt("security.sandbox.gpu.level");
+  
+  
+  
+  
+  
+  if (gfxPrefs::VRProcessEnabled()) {
+    mSandboxLevel = Preferences::GetInt("security.sandbox.gpu.level");
+  } else {
+    mSandboxLevel = 0;
+  }
 #endif
 
   mLaunchPhase = LaunchPhase::Waiting;
