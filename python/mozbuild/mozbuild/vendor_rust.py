@@ -145,7 +145,7 @@ Please commit or stash these changes before vendoring, or re-run with `--ignore-
     RUNTIME_LICENSE_WHITELIST = [
         'Apache-2.0',
         'Apache-2.0 WITH LLVM-exception',
-        'BSD-2-Clause',
+        
         
         
         
@@ -172,6 +172,10 @@ Please commit or stash these changes before vendoring, or re-run with `--ignore-
     
     
     RUNTIME_LICENSE_PACKAGE_WHITELIST = {
+        'BSD-2-Clause': [
+            'arrayref',
+            'Inflector',
+        ],
         'BSD-3-Clause': [
         ]
     }
