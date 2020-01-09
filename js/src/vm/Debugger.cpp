@@ -9932,7 +9932,8 @@ bool DebuggerFrame::argumentsGetter(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-static bool DebuggerFrame_getScript(JSContext* cx, unsigned argc, Value* vp) {
+
+bool DebuggerFrame::getScript(JSContext* cx, unsigned argc, Value* vp) {
   THIS_FRAME(cx, argc, vp, "get script", args, thisobj, frameIter, frame);
   Debugger* debug = Debugger::fromChildJSObject(thisobj);
 
@@ -10149,7 +10150,7 @@ const JSPropertySpec DebuggerFrame::properties_[] = {
     JS_PSG("live", DebuggerFrame::liveGetter, 0),
     JS_PSG("offset", DebuggerFrame::offsetGetter, 0),
     JS_PSG("older", DebuggerFrame::olderGetter, 0),
-    JS_PSG("script", DebuggerFrame_getScript, 0),
+    JS_PSG("script", DebuggerFrame::getScript, 0),
     JS_PSG("this", DebuggerFrame::thisGetter, 0),
     JS_PSG("type", DebuggerFrame::typeGetter, 0),
     JS_PSG("implementation", DebuggerFrame::implementationGetter, 0),
