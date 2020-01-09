@@ -66,7 +66,8 @@ class AddonTargetFront extends FrontClassWithSpec(addonTargetSpec) {
       
       
       const { form } = await super.connect();
-      const front = new BrowsingContextTargetFront(this.client, form);
+      const front = new BrowsingContextTargetFront(this.client, { actor: form.actor });
+      front.form(form);
       this.manage(front);
       return front;
     }

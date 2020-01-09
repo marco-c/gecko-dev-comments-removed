@@ -11,13 +11,17 @@ class ContentProcessTargetFront extends FrontClassWithSpec(contentProcessTargetS
     super(client, form);
 
     this.client = client;
-    this.chromeDebugger = form.chromeDebugger;
-
-    
-    
-    this.targetForm = form;
 
     this.traits = {};
+  }
+
+  form(json) {
+    this.actorID = json.actor;
+
+    
+    
+    this.targetForm = json;
+    this.chromeDebugger = json.chromeDebugger;
   }
 
   attachThread() {

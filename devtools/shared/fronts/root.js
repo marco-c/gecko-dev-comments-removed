@@ -161,12 +161,13 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
     
     
     if (form.actor.includes("contentProcessTarget")) {
-      front = new ContentProcessTargetFront(this._client, form);
+      front = new ContentProcessTargetFront(this._client, { actor: form.actor });
     } else {
       
       
-      front = new BrowsingContextTargetFront(this._client, form);
+      front = new BrowsingContextTargetFront(this._client, { actor: form.actor });
     }
+    front.form(form);
     this.manage(front);
 
     return front;

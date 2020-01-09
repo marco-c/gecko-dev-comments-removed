@@ -1295,8 +1295,6 @@ class Front extends Pool {
     
     if (form) {
       this.actorID = form.actor;
-      form = identityWrite(form);
-      this.form(form);
     }
   }
 
