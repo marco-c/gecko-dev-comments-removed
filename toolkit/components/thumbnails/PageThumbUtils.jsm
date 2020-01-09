@@ -29,9 +29,8 @@ var PageThumbUtils = {
 
 
 
-
   createCanvas(aWindow, aWidth = 0, aHeight = 0) {
-    let doc = (aWindow || Services.appShell.hiddenDOMWindow).document;
+    let doc = aWindow.document;
     let canvas = doc.createElementNS(this.HTML_NAMESPACE, "canvas");
     canvas.mozOpaque = true;
     canvas.imageSmoothingEnabled = true;
