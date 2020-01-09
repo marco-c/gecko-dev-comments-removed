@@ -64,6 +64,8 @@
 #include "nsJSPrincipals.h"
 #include "ExpandedPrincipal.h"
 
+#include "nsITabChild.h"
+
 #if defined(XP_LINUX) && !defined(ANDROID)
 
 #  include <algorithm>
@@ -585,6 +587,8 @@ AutoScriptActivity::~AutoScriptActivity() {
   MOZ_ALWAYS_TRUE(mActive == XPCJSContext::RecordScriptActivity(mOldValue));
 }
 
+mozilla::Atomic<uint64_t> XPCJSContext::gTabIdToCancelContentJS(0);
+
 
 bool XPCJSContext::InterruptCallback(JSContext* cx) {
   
@@ -639,26 +643,6 @@ bool XPCJSContext::InterruptCallback(JSContext* cx) {
   }
 
   
-  if (limit == 0 || duration.ToSeconds() < limit / 2.0) {
-    return true;
-  }
-
-  self->mSlowScriptActualWait += duration;
-
-  
-  
-  
-  if (!self->mSlowScriptSecondHalf) {
-    self->mSlowScriptCheckpoint = TimeStamp::NowLoRes();
-    self->mSlowScriptSecondHalf = true;
-    return true;
-  }
-
-  
-  
-  
-
-  
   
   RootedObject global(cx, JS::CurrentGlobalOrNull(cx));
   RefPtr<nsGlobalWindowInner> win = WindowOrNull(global);
@@ -681,6 +665,40 @@ bool XPCJSContext::InterruptCallback(JSContext* cx) {
     NS_WARNING("No active window");
     return true;
   }
+
+  
+  if (gTabIdToCancelContentJS) {
+    if (nsITabChild* tabChild = win->GetTabChild()) {
+      uint64_t tabId;
+      tabChild->GetTabId(&tabId);
+      if (gTabIdToCancelContentJS == tabId) {
+        
+        win->GetExtantDoc()->GetTopLevelContentDocument()->DisallowBFCaching();
+        gTabIdToCancelContentJS = 0;
+        return false;
+      }
+    }
+  }
+
+  
+  if (limit == 0 || duration.ToSeconds() < limit / 2.0) {
+    return true;
+  }
+
+  self->mSlowScriptActualWait += duration;
+
+  
+  
+  
+  if (!self->mSlowScriptSecondHalf) {
+    self->mSlowScriptCheckpoint = TimeStamp::NowLoRes();
+    self->mSlowScriptSecondHalf = true;
+    return true;
+  }
+
+  
+  
+  
 
   if (win->IsDying()) {
     

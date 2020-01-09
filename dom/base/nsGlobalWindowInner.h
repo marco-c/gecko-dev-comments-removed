@@ -394,6 +394,8 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   already_AddRefed<mozilla::dom::BrowsingContext> GetChildWindow(
       const nsAString& aName);
 
+  inline nsITabChild* GetTabChild() { return mTabChild.get(); }
+
   
   
   
