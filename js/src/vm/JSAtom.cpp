@@ -293,8 +293,8 @@ bool JSRuntime::initializeAtoms(JSContext* cx) {
   ImmutableSymbolPtr* symbols =
       reinterpret_cast<ImmutableSymbolPtr*>(wellKnownSymbols.ref());
   for (size_t i = 0; i < JS::WellKnownSymbolLimit; i++) {
-    JS::Symbol* symbol =
-        JS::Symbol::new_(cx, JS::SymbolCode(i), descriptions[i]);
+    HandlePropertyName description = descriptions[i];
+    JS::Symbol* symbol = JS::Symbol::new_(cx, JS::SymbolCode(i), description);
     if (!symbol) {
       ReportOutOfMemory(cx);
       return false;
@@ -929,7 +929,6 @@ static MOZ_ALWAYS_INLINE JSAtom* AllocateNewAtom(
 
   JSFlatString* flat = MakeFlatStringForAtomization(cx, chars, length);
   if (!flat) {
-    
     
     
     ReportOutOfMemory(cx);
