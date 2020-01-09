@@ -5712,13 +5712,9 @@ mozilla::ipc::IPCResult ContentParent::RecvAttachBrowsingContext(
     
     
     
+    MOZ_DIAGNOSTIC_ASSERT(false,
+                          "Trying to attach to out of process parent context");
 
-    
-    
-    
-    
-    
-    
     MOZ_LOG(BrowsingContext::GetLog(), LogLevel::Warning,
             ("ParentIPC: Trying to attach to out of process parent context "
              "0x%08" PRIx64,
@@ -5731,9 +5727,9 @@ mozilla::ipc::IPCResult ContentParent::RecvAttachBrowsingContext(
     
     
     
+    MOZ_DIAGNOSTIC_ASSERT(false,
+                          "Trying to attach already attached browsing context");
 
-    
-    
     MOZ_LOG(BrowsingContext::GetLog(), LogLevel::Warning,
             ("ParentIPC: Trying to attach already attached 0x%08" PRIx64
              " to 0x%08" PRIx64,
@@ -5765,9 +5761,8 @@ mozilla::ipc::IPCResult ContentParent::RecvDetachBrowsingContext(
     
     
     
+    MOZ_DIAGNOSTIC_ASSERT(false, "Trying to detach out of process context");
 
-    
-    
     MOZ_LOG(BrowsingContext::GetLog(), LogLevel::Warning,
             ("ParentIPC: Trying to detach out of process context 0x%08" PRIx64,
              aContext->Id()));
