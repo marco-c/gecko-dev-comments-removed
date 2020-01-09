@@ -113,7 +113,7 @@ impl Iterator for FloatIterator {
 
 
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum Flag {
     
     IFlags,

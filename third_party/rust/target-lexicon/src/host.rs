@@ -1,4 +1,4 @@
-use {Architecture, BinaryFormat, Environment, OperatingSystem, Triple, Vendor};
+use crate::{Architecture, BinaryFormat, Environment, OperatingSystem, Triple, Vendor};
 
 
 

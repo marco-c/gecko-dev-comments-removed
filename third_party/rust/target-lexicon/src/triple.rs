@@ -1,12 +1,12 @@
 
 
-use parse_error::ParseError;
-use std::borrow::ToOwned;
-use std::fmt;
-use std::str::FromStr;
-use targets::{
+use crate::parse_error::ParseError;
+use crate::targets::{
     default_binary_format, Architecture, BinaryFormat, Environment, OperatingSystem, Vendor,
 };
+use core::fmt;
+use core::str::FromStr;
+use std::borrow::ToOwned;
 
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
@@ -155,16 +155,23 @@ impl fmt::Display for Triple {
 
         write!(f, "{}", self.architecture)?;
         if self.vendor == Vendor::Unknown
-            && self.operating_system == OperatingSystem::Unknown
-            && (self.environment != Environment::Unknown
-                || self.binary_format != implied_binary_format)
+            && ((self.operating_system == OperatingSystem::Linux
+                && (self.environment == Environment::Android
+                    || self.environment == Environment::Androideabi))
+                || self.operating_system == OperatingSystem::Fuchsia
+                || (self.operating_system == OperatingSystem::None_
+                    && (self.architecture == Architecture::Armebv7r
+                        || self.architecture == Architecture::Armv7r
+                        || self.architecture == Architecture::Thumbv6m
+                        || self.architecture == Architecture::Thumbv7em
+                        || self.architecture == Architecture::Thumbv7m
+                        || self.architecture == Architecture::Thumbv8mBase
+                        || self.architecture == Architecture::Thumbv8mMain
+                        || self.architecture == Architecture::Msp430)))
         {
             
-            f.write_str("-none")?;
-        } else if self.operating_system == OperatingSystem::Linux
-            && (self.environment == Environment::Android
-                || self.environment == Environment::Androideabi)
-        {
+            
+            
             
             write!(f, "-{}", self.operating_system)?;
         } else {
@@ -203,16 +210,7 @@ impl FromStr for Triple {
         let mut has_vendor = false;
         let mut has_operating_system = false;
         if let Some(s) = current_part {
-            
-            if s == "none" {
-                has_operating_system = true;
-                has_vendor = true;
-                current_part = parts.next();
-                
-                if current_part.is_none() {
-                    return Err(ParseError::NoneWithoutBinaryFormat);
-                }
-            } else if let Ok(vendor) = Vendor::from_str(s) {
+            if let Ok(vendor) = Vendor::from_str(s) {
                 has_vendor = true;
                 result.vendor = vendor;
                 current_part = parts.next();

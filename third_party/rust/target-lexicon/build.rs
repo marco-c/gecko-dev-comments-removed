@@ -36,7 +36,7 @@ mod parse_error {
     }
 }
 
-use triple::{Endianness, PointerWidth, Triple};
+use self::triple::{Endianness, PointerWidth, Triple};
 
 
 

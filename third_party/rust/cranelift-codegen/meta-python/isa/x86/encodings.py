@@ -631,7 +631,7 @@ X86_64.enc(base.uextend.i32.i16, *r.urm_noflags(0x0f, 0xb7))
 
 
 X86_64.enc(base.uextend.i64.i8, *r.urm_noflags.rex(0x0f, 0xb6))
-X86_64.enc(base.uextend.i64.i8, *r.urm_noflags(0x0f, 0xb6))
+X86_64.enc(base.uextend.i64.i8, *r.urm_noflags_abcd(0x0f, 0xb6))
 
 
 X86_64.enc(base.uextend.i64.i16, *r.urm_noflags.rex(0x0f, 0xb7))
