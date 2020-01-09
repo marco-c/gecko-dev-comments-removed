@@ -70,9 +70,9 @@ class InputObserver : public webrtc::VideoInputFeedBack {
   RefPtr<CamerasParent> mParent;
 };
 
-class CamerasParent final : public PCamerasParent, public nsIObserver {
+class CamerasParent final : public PCamerasParent,
+                            public nsIAsyncShutdownBlocker {
   NS_DECL_THREADSAFE_ISUPPORTS
-  NS_DECL_NSIOBSERVER
 
  public:
   static already_AddRefed<CamerasParent> Create();
@@ -130,8 +130,14 @@ class CamerasParent final : public PCamerasParent, public nsIObserver {
   void CloseEngines();
   void StopIPC();
   void StopVideoCapture();
-  
-  nsresult DispatchToVideoCaptureThread(Runnable* event);
+  nsresult DispatchToVideoCaptureThread(RefPtr<Runnable> event);
+  NS_IMETHOD BlockShutdown(nsIAsyncShutdownClient*) override;
+  NS_IMETHOD GetName(nsAString& aName) override {
+    aName = mName;
+    return NS_OK;
+  }
+  NS_IMETHOD GetState(nsIPropertyBag**) override { return NS_OK; }
+  static nsString GetNewName();
 
   
   
@@ -143,6 +149,7 @@ class CamerasParent final : public PCamerasParent, public nsIObserver {
   static int32_t sNumOfOpenCamerasParentEngines;
   static int32_t sNumOfCamerasParents;
   nsTArray<CallbackHelper*> mCallbacks;
+  nsString mName;
 
   
   ShmemPool mShmemPool;
