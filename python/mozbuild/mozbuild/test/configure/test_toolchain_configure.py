@@ -1526,7 +1526,10 @@ class RustTest(BaseConfigureTest):
         }
 
         self.TARGET = target
-        sandbox = self.get_sandbox(paths, {}, [], environ)
+        
+        
+        sandbox = self.get_sandbox(
+            paths, {}, ['--enable-project=tools/crashreporter'], environ)
 
         
         dep = sandbox._depends[sandbox['c_compiler']]
