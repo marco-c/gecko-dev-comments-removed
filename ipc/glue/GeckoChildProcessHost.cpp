@@ -103,6 +103,7 @@ GeckoChildProcessHost::GeckoChildProcessHost(GeckoProcessType aProcessType,
       mGroupId(u"-"),
 #endif
 #if defined(MOZ_SANDBOX) && defined(XP_WIN)
+      mSandboxBroker(new SandboxBroker()),
       mEnableSandboxLogging(false),
       mSandboxLevel(0),
 #endif
@@ -1076,8 +1077,8 @@ bool GeckoChildProcessHost::PerformAsyncLaunch(
         
         
         
-        mSandboxBroker.SetSecurityLevelForContentProcess(mSandboxLevel,
-                                                         mIsFileContent);
+        mSandboxBroker->SetSecurityLevelForContentProcess(mSandboxLevel,
+                                                          mIsFileContent);
         shouldSandboxCurrentProcess = true;
       }
 #    endif  
@@ -1085,7 +1086,7 @@ bool GeckoChildProcessHost::PerformAsyncLaunch(
     case GeckoProcessType_Plugin:
       if (mSandboxLevel > 0 && !PR_GetEnv("MOZ_DISABLE_NPAPI_SANDBOX")) {
         bool ok =
-            mSandboxBroker.SetSecurityLevelForPluginProcess(mSandboxLevel);
+            mSandboxBroker->SetSecurityLevelForPluginProcess(mSandboxLevel);
         if (!ok) {
           return false;
         }
@@ -1103,7 +1104,7 @@ bool GeckoChildProcessHost::PerformAsyncLaunch(
         
         auto level =
             isWidevine ? SandboxBroker::Restricted : SandboxBroker::LockDown;
-        bool ok = mSandboxBroker.SetSecurityLevelForGMPlugin(level);
+        bool ok = mSandboxBroker->SetSecurityLevelForGMPlugin(level);
         if (!ok) {
           return false;
         }
@@ -1115,7 +1116,7 @@ bool GeckoChildProcessHost::PerformAsyncLaunch(
         
         
         
-        mSandboxBroker.SetSecurityLevelForGPUProcess(mSandboxLevel);
+        mSandboxBroker->SetSecurityLevelForGPUProcess(mSandboxLevel);
         shouldSandboxCurrentProcess = true;
       }
       break;
@@ -1126,7 +1127,7 @@ bool GeckoChildProcessHost::PerformAsyncLaunch(
       break;
     case GeckoProcessType_RDD:
       if (!PR_GetEnv("MOZ_DISABLE_RDD_SANDBOX")) {
-        if (!mSandboxBroker.SetSecurityLevelForRDDProcess()) {
+        if (!mSandboxBroker->SetSecurityLevelForRDDProcess()) {
           return false;
         }
         shouldSandboxCurrentProcess = true;
@@ -1144,7 +1145,7 @@ bool GeckoChildProcessHost::PerformAsyncLaunch(
   if (shouldSandboxCurrentProcess) {
     for (auto it = mAllowedFilesRead.begin(); it != mAllowedFilesRead.end();
          ++it) {
-      mSandboxBroker.AllowReadFile(it->c_str());
+      mSandboxBroker->AllowReadFile(it->c_str());
     }
   }
 #  endif    
@@ -1179,13 +1180,13 @@ bool GeckoChildProcessHost::PerformAsyncLaunch(
   if (shouldSandboxCurrentProcess) {
     
     for (HANDLE h : mLaunchOptions->handles_to_inherit) {
-      mSandboxBroker.AddHandleToShare(h);
+      mSandboxBroker->AddHandleToShare(h);
     }
 
-    if (mSandboxBroker.LaunchApp(cmdLine.program().c_str(),
-                                 cmdLine.command_line_string().c_str(),
-                                 mLaunchOptions->env_map, mProcessType,
-                                 mEnableSandboxLogging, &process)) {
+    if (mSandboxBroker->LaunchApp(cmdLine.program().c_str(),
+                                  cmdLine.command_line_string().c_str(),
+                                  mLaunchOptions->env_map, mProcessType,
+                                  mEnableSandboxLogging, &process)) {
       EnvironmentLog("MOZ_PROCESS_LOG")
           .print("==> process %d launched child process %d (%S)\n",
                  base::GetCurrentProcId(), base::GetProcId(process),
@@ -1207,7 +1208,7 @@ bool GeckoChildProcessHost::PerformAsyncLaunch(
         
         break;
       default:
-        if (!mSandboxBroker.AddTargetPeer(process)) {
+        if (!mSandboxBroker->AddTargetPeer(process)) {
           NS_WARNING("Failed to add child process as target peer.");
         }
         break;

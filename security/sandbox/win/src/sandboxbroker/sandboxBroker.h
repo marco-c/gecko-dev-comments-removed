@@ -13,6 +13,7 @@
 #include "build/build_config.h"
 #include "mozilla/ipc/EnvironmentMap.h"
 #include "nsXULAppAPI.h"
+#include "nsISupportsImpl.h"
 
 namespace sandbox {
 class BrokerServices;
@@ -21,7 +22,50 @@ class TargetPolicy;
 
 namespace mozilla {
 
-class SandboxBroker {
+class AbstractSandboxBroker {
+ public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AbstractSandboxBroker)
+
+  virtual bool LaunchApp(const wchar_t *aPath, const wchar_t *aArguments,
+                         base::EnvironmentMap &aEnvironment,
+                         GeckoProcessType aProcessType,
+                         const bool aEnableLogging, void **aProcessHandle) = 0;
+
+  
+#if defined(MOZ_CONTENT_SANDBOX)
+  virtual void SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
+                                                 bool aIsFileProcess) = 0;
+#endif
+
+  virtual void SetSecurityLevelForGPUProcess(int32_t aSandboxLevel) = 0;
+  virtual bool SetSecurityLevelForRDDProcess() = 0;
+
+  virtual bool SetSecurityLevelForPluginProcess(int32_t aSandboxLevel) = 0;
+  enum SandboxLevel { LockDown, Restricted };
+  virtual bool SetSecurityLevelForGMPlugin(SandboxLevel aLevel) = 0;
+
+  
+  virtual bool AllowReadFile(wchar_t const *file) = 0;
+
+  
+
+
+
+  virtual bool AddTargetPeer(HANDLE aPeerProcess) = 0;
+
+  
+
+
+
+
+
+  virtual void AddHandleToShare(HANDLE aHandle) = 0;
+
+ protected:
+  virtual ~AbstractSandboxBroker() {}
+};
+
+class SandboxBroker : public AbstractSandboxBroker {
  public:
   SandboxBroker();
 
@@ -36,38 +80,37 @@ class SandboxBroker {
   bool LaunchApp(const wchar_t *aPath, const wchar_t *aArguments,
                  base::EnvironmentMap &aEnvironment,
                  GeckoProcessType aProcessType, const bool aEnableLogging,
-                 void **aProcessHandle);
+                 void **aProcessHandle) override;
   virtual ~SandboxBroker();
 
   
 #if defined(MOZ_CONTENT_SANDBOX)
   void SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
-                                         bool aIsFileProcess);
+                                         bool aIsFileProcess) override;
 #endif
 
-  void SetSecurityLevelForGPUProcess(int32_t aSandboxLevel);
-  bool SetSecurityLevelForRDDProcess();
+  void SetSecurityLevelForGPUProcess(int32_t aSandboxLevel) override;
+  bool SetSecurityLevelForRDDProcess() override;
 
-  bool SetSecurityLevelForPluginProcess(int32_t aSandboxLevel);
-  enum SandboxLevel { LockDown, Restricted };
-  bool SetSecurityLevelForGMPlugin(SandboxLevel aLevel);
-
-  
-  bool AllowReadFile(wchar_t const *file);
+  bool SetSecurityLevelForPluginProcess(int32_t aSandboxLevel) override;
+  bool SetSecurityLevelForGMPlugin(SandboxLevel aLevel) override;
 
   
-
-
-
-  bool AddTargetPeer(HANDLE aPeerProcess);
+  bool AllowReadFile(wchar_t const *file) override;
 
   
 
 
 
+  bool AddTargetPeer(HANDLE aPeerProcess) override;
+
+  
 
 
-  void AddHandleToShare(HANDLE aHandle);
+
+
+
+  void AddHandleToShare(HANDLE aHandle) override;
 
   
   void ApplyLoggingPolicy();
