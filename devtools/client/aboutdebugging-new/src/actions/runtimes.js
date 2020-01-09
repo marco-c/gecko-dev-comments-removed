@@ -148,6 +148,11 @@ function connectRuntime(id) {
       
       const runtimeName = runtime.isFenix ? runtime.name : deviceDescription.name;
 
+      
+      
+      const version = runtime.isFenix ?
+        runtime.extra.adbPackageVersion : deviceDescription.version;
+
       const runtimeDetails = {
         clientWrapper,
         compatibilityReport,
@@ -159,7 +164,7 @@ function connectRuntime(id) {
           name: runtimeName,
           os: deviceDescription.os,
           type: runtime.type,
-          version: deviceDescription.version,
+          version,
         },
         isMultiE10s: deviceDescription.isMultiE10s,
         serviceWorkersAvailable,
@@ -386,6 +391,7 @@ function updateUSBRuntimes(adbRuntimes) {
       extra: {
         connectionParameters,
         deviceName: adbRuntime.deviceName,
+        adbPackageVersion: adbRuntime.versionName,
       },
       isConnecting: false,
       isConnectionFailed: false,
