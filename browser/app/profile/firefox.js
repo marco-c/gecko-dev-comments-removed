@@ -1475,10 +1475,16 @@ pref("media.gmp-widevinecdm.enabled", true);
 #endif
 
 
-
 pref("media.autoplay.enabled.user-gestures-needed", true);
 
+#ifdef NIGHTLY_BUILD
+
 pref("media.autoplay.default", 1); 
+#else
+
+pref("media.autoplay.default", 0); 
+#endif
+
 
 #ifdef NIGHTLY_BUILD
 
