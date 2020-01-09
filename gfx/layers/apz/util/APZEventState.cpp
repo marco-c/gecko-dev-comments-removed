@@ -104,6 +104,7 @@ APZEventState::APZEventState(nsIWidget* aWidget,
       mPendingTouchPreventedResponse(false),
       mPendingTouchPreventedBlockId(0),
       mEndTouchIsClick(false),
+      mFirstTouchCancelled(false),
       mTouchEndCancelled(false),
       mLastTouchIdentifier(0) {
   nsresult rv;
@@ -337,6 +338,22 @@ void APZEventState::ProcessTouchEvent(const WidgetTouchEvent& aEvent,
       
       MOZ_ASSERT(aEvent.mFlags.mHandledByAPZ);
 
+      
+      
+      
+      
+      if (mTouchCounter.GetActiveTouchCount() == 0) {
+        mFirstTouchCancelled = isTouchPrevented;
+      } else {
+        if (mFirstTouchCancelled && !isTouchPrevented) {
+          APZES_LOG(
+              "Propagating prevent-default from first-touch for block %" PRIu64
+              "\n",
+              aInputBlockId);
+        }
+        isTouchPrevented |= mFirstTouchCancelled;
+      }
+
       if (isTouchPrevented) {
         mContentReceivedInputBlockCallback(aGuid, aInputBlockId,
                                            isTouchPrevented);
@@ -371,6 +388,11 @@ void APZEventState::ProcessTouchEvent(const WidgetTouchEvent& aEvent,
     default:
       MOZ_ASSERT_UNREACHABLE("Unknown touch event type");
       break;
+  }
+
+  mTouchCounter.Update(aEvent);
+  if (mTouchCounter.GetActiveTouchCount() == 0) {
+    mFirstTouchCancelled = false;
   }
 
   if (sentContentResponse && !isTouchPrevented &&
