@@ -860,12 +860,6 @@ void js::Nursery::collect(JS::GCReason reason) {
   if (rt->gc.heapSize.gcBytes() >= tunables().gcMaxBytes()) {
     disable();
   }
-  
-  
-  
-  if (chunkCountLimit_ == 0) {
-    disable();
-  }
 
   endProfile(ProfileKey::Total);
   rt->gc.incMinorGcNumber();
@@ -1219,6 +1213,14 @@ void js::Nursery::maybeResizeNursery(JS::GCReason reason) {
 }
 
 bool js::Nursery::maybeResizeExact(JS::GCReason reason) {
+  
+  
+  
+  if (tunables().gcMaxNurseryBytes() == 0) {
+    disable();
+    return true;
+  }
+
   
   
   if (gc::IsOOMReason(reason)) {
