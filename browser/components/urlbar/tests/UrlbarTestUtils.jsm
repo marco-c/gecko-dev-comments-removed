@@ -60,10 +60,9 @@ var UrlbarTestUtils = {
     
     
     
-    
-    if (!urlbar.quantumbar ||
-        !fireInputEvent ||
-        inputText == lastSearchString) {
+    if (!fireInputEvent ||
+        inputText == lastSearchString ||
+        (!urlbar.quantumbar && !inputText)) {
       urlbar.startSearch(inputText);
     }
     return this.promiseSearchComplete(win, restoreAnimationsFn);
@@ -324,6 +323,9 @@ class UrlbarAbstraction {
       this.urlbar.value = text;
       this.urlbar.startQuery();
     } else {
+      
+      
+      this.urlbar.controller.resetInternalState();
       this.urlbar.controller.startSearch(text);
     }
   }
@@ -468,7 +470,7 @@ class UrlbarAbstraction {
         separator: element._separator,
         url: element._urlText,
       };
-      if (details.type == UrlbarUtils.RESULT_TYPE.SEARCH) {
+      if (details.type == UrlbarUtils.RESULT_TYPE.SEARCH && action) {
         
         let query = action.params.input;
         let restrictTokens = Object.values(UrlbarTokenizer.RESTRICT);

@@ -29,25 +29,32 @@ var PlacesTestUtils = Object.freeze({
 
 
 
+
+
   async addVisits(placeInfo) {
     let places = [];
     let infos = [];
 
-    if (placeInfo instanceof Ci.nsIURI ||
-        placeInfo instanceof URL ||
-        typeof placeInfo == "string") {
-      places.push({ uri: placeInfo });
-    } else if (Array.isArray(placeInfo)) {
-      places = places.concat(placeInfo);
-    } else if (typeof placeInfo == "object" && placeInfo.uri) {
-      places.push(placeInfo);
+    if (Array.isArray(placeInfo)) {
+      places.push(...placeInfo);
     } else {
-      throw new Error("Unsupported type passed to addVisits");
+      places.push(placeInfo);
     }
 
     
     let lastStoredVisit;
-    for (let place of places) {
+    for (let obj of places) {
+      let place;
+      if (obj instanceof Ci.nsIURI ||
+          obj instanceof URL ||
+          typeof obj == "string") {
+        place = { uri: obj };
+      } else if (typeof obj == "object" && obj.uri) {
+        place = obj;
+      } else {
+        throw new Error("Unsupported type passed to addVisits");
+      }
+
       let info = {url: place.uri};
       let spec = place.uri instanceof Ci.nsIURI ? place.uri.spec : new URL(place.uri).href;
       info.title = "title" in place ? place.title : "test visit for " + spec ;
