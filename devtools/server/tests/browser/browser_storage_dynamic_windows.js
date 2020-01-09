@@ -106,6 +106,14 @@ async function testStores(data, front) {
 function testWindowsBeforeReload(data) {
   for (const storageType in beforeReload) {
     ok(data[storageType], `${storageType} storage actor is present`);
+
+    
+    
+    
+    if (storageType == "indexedDB") {
+      delete data[storageType].hosts.chrome;
+    }
+
     is(Object.keys(data[storageType].hosts).length,
        Object.keys(beforeReload[storageType]).length,
         `Number of hosts for ${storageType} match`);

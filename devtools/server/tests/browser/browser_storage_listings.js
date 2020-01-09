@@ -455,6 +455,11 @@ var testSessionStorageObjects = async function(index, hosts, sessionStorageActor
 };
 
 var testIndexedDB = async function(indexedDBActor) {
+  
+  
+  
+  delete indexedDBActor.hosts.chrome;
+
   is(Object.keys(indexedDBActor.hosts).length, 3,
      "Correct number of host entries for indexed db");
 
