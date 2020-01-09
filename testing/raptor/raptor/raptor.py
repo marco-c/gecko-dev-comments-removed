@@ -139,7 +139,7 @@ class Raptor(object):
         
         self.results_handler = RaptorResultsHandler()
 
-        self.create_browser_profile()
+        self.build_browser_profile()
         self.start_control_server()
 
     @property
@@ -242,15 +242,15 @@ class Raptor(object):
         self.log.info("preferences were configured for the test, however \
                         we currently do not install them on non Firefox browsers.")
 
-    def create_browser_profile(self):
+    def build_browser_profile(self):
         self.profile = create_profile(self.profile_class)
 
         
         with open(os.path.join(self.profile_data_dir, 'profiles.json'), 'r') as fh:
             base_profiles = json.load(fh)['raptor']
 
-        for name in base_profiles:
-            path = os.path.join(self.profile_data_dir, name)
+        for profile in base_profiles:
+            path = os.path.join(self.profile_data_dir, profile)
             self.log.info("Merging profile: {}".format(path))
             self.profile.merge(path)
 
@@ -504,7 +504,7 @@ class RaptorDesktop(Raptor):
             else:
                 
                 
-                self.create_browser_profile()
+                self.build_browser_profile()
 
                 self.run_test_setup(test)
 
@@ -1038,7 +1038,7 @@ class RaptorAndroid(Raptor):
 
                 
                 
-                self.create_browser_profile()
+                self.build_browser_profile()
 
                 if test.get('playback') is not None:
                     
