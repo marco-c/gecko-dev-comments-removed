@@ -467,6 +467,32 @@ var gIdentityHandler = {
     }
   },
 
+  getHostForDisplay() {
+    let host = "";
+
+    try {
+      host = this.getEffectiveHost();
+    } catch (e) {
+      
+    }
+
+    let readerStrippedURI = ReaderMode.getOriginalUrlObjectForDisplay(this._uri.displaySpec);
+    if (readerStrippedURI) {
+      host = readerStrippedURI.host;
+    }
+
+    if (this._pageExtensionPolicy) {
+      host = this._pageExtensionPolicy.name;
+    }
+
+    
+    if (!host) {
+      host = this._uri.specIgnoringRef;
+    }
+
+    return host;
+  },
+
   
 
 
@@ -741,28 +767,8 @@ var gIdentityHandler = {
     
     let supplemental = "";
     let verifier = "";
-    let host = "";
+    let host = this.getHostForDisplay();
     let owner = "";
-
-    try {
-      host = this.getEffectiveHost();
-    } catch (e) {
-      
-    }
-
-    let readerStrippedURI = ReaderMode.getOriginalUrlObjectForDisplay(this._uri.displaySpec);
-    if (readerStrippedURI) {
-      host = readerStrippedURI.host;
-    }
-
-    if (this._pageExtensionPolicy) {
-      host = this._pageExtensionPolicy.name;
-    }
-
-    
-    if (!host) {
-      host = this._uri.specIgnoringRef;
-    }
 
     
     if (this._isSecure || this._isCertUserOverridden) {

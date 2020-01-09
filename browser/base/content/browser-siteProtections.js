@@ -17,6 +17,11 @@ var gProtectionsHandler = {
     delete this._protectionsIconBox;
     return this._protectionsIconBox = document.getElementById("tracking-protection-icon-animatable-box");
   },
+  get _protectionsPopupMainViewHeaderLabel() {
+    delete this._protectionsPopupMainViewHeaderLabel;
+    return this._protectionsPopupMainViewHeaderLabel =
+      document.getElementById("protections-popup-mainView-panel-header-span");
+  },
 
   handleProtectionsButtonEvent(event) {
     event.stopPropagation();
@@ -31,9 +36,21 @@ var gProtectionsHandler = {
     this._protectionsPopup.hidden = false;
 
     
+    this.refreshProtectionsPopup();
+
+    
     PanelMultiView.openPopup(this._protectionsPopup, this._protectionsIconBox, {
       position: "bottomcenter topleft",
       triggerEvent: event,
     }).catch(Cu.reportError);
+  },
+
+  refreshProtectionsPopup() {
+    let host = gIdentityHandler.getHostForDisplay();
+
+    
+    this._protectionsPopupMainViewHeaderLabel.textContent =
+      
+      `Tracking Protections for ${host}`;
   },
 };
