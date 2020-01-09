@@ -276,6 +276,10 @@ class WebrtcVideoConduit
     mAllowSsrcChange = false;
   }
 
+  Maybe<RefPtr<VideoSessionConduit>> AsVideoSessionConduit() override {
+    return Some(RefPtr<VideoSessionConduit>(this));
+  }
+
  private:
   
   WebrtcVideoConduit(const WebrtcVideoConduit&) = delete;
