@@ -429,5 +429,8 @@ JSObject* MaybeCrossOriginObject<Base>::enumerate(
   return js::BaseProxyHandler::enumerate(cx, proxy);
 }
 
+
+template class MaybeCrossOriginObject<js::Wrapper>;
+
 }  
 }  
