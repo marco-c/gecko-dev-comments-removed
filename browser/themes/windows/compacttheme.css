@@ -34,11 +34,6 @@
     }
 
     
-    .tabbrowser-tab {
-      color: var(--lwt-text-color) !important;
-    }
-
-    
 
 
     .tabbrowser-tab:hover > .tab-stack > .tab-background:not([selected=true]):not([multiselected]):-moz-lwtheme-darktext {
@@ -93,6 +88,7 @@
 
   .tabbrowser-tab {
     background-color: var(--lwt-accent-color) !important;
+    color: var(--lwt-text-color) !important;
     border-top: 1px solid var(--tabs-border-color);
     background-clip: padding-box;
   }
