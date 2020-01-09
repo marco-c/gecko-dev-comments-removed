@@ -82,7 +82,7 @@ var test_answer="127.0.0.1";
 var listenerFine = {
   onLookupComplete: function(inRequest, inRecord, inStatus) {
     if (inRequest == listen) {
-      Assert.ok(!inStatus);
+      Assert.equal(inStatus, Cr.NS_OK);
       var answer = inRecord.getNextAddrAsString();
       Assert.equal(answer, test_answer);
       do_test_finished();
@@ -102,7 +102,7 @@ var listenerFine = {
 var listenerFails = {
   onLookupComplete: function(inRequest, inRecord, inStatus) {
     if (inRequest == listen) {
-      Assert.ok(!Components.isSuccessCode(inStatus));
+      Assert.ok(!Components.isSuccessCode(inStatus), `must be failure code: ${inStatus}`);
       do_test_finished();
       run_dns_tests();
     }
@@ -150,6 +150,7 @@ var listen;
 
 function test1()
 {
+  dns.clearCache(true);
   prefs.setIntPref("network.trr.mode", 2); 
   prefs.setCharPref("network.trr.uri", "https://foo.example.com:" + h2Port + "/dns");
   test_answer="127.0.0.1";
@@ -159,6 +160,7 @@ function test1()
 
 function test1b()
 {
+  dns.clearCache(true);
   prefs.setIntPref("network.trr.mode", 3); 
   prefs.setCharPref("network.trr.uri", "https://foo.example.com:" + h2Port + "/dns");
   prefs.clearUserPref("network.trr.bootstrapAddress");
@@ -170,6 +172,7 @@ function test1b()
 
 function test2()
 {
+  
   prefs.setIntPref("network.trr.mode", 3); 
   
   
@@ -181,6 +184,7 @@ function test2()
 
 function test3()
 {
+  dns.clearCache(true);
   prefs.setIntPref("network.trr.mode", 3); 
   prefs.setCharPref("network.trr.uri", "https://foo.example.com:" + h2Port + "/dns-auth");
   prefs.setCharPref("network.trr.credentials", "user:password");
@@ -191,6 +195,7 @@ function test3()
 
 function test4()
 {
+  dns.clearCache(true);
   prefs.setIntPref("network.trr.mode", 3); 
   prefs.setCharPref("network.trr.uri", "https://foo.example.com:" + h2Port + "/dns-auth");
   prefs.setCharPref("network.trr.credentials", "evil:person");
@@ -201,6 +206,7 @@ function test4()
 
 function test5()
 {
+  dns.clearCache(true);
   prefs.setIntPref("network.trr.mode", 3); 
   prefs.setCharPref("network.trr.uri", "https://foo.example.com:" + h2Port + "/dns-push");
   test_answer = "127.0.0.1";
@@ -209,6 +215,7 @@ function test5()
 
 function test5b()
 {
+  
   
   
   prefs.setCharPref("network.trr.uri", "https://foo.example.com:" + h2Port + "/404");
@@ -220,6 +227,7 @@ function test5b()
 
 function test6()
 {
+  dns.clearCache(true);
   prefs.setIntPref("network.trr.mode", 3); 
   prefs.setCharPref("network.trr.uri", "https://foo.example.com:" + h2Port + "/dns-aaaa");
   test_answer = "2020:2020::2020";
@@ -229,6 +237,7 @@ function test6()
 
 function test7()
 {
+  dns.clearCache(true);
   prefs.setIntPref("network.trr.mode", 3); 
   prefs.setCharPref("network.trr.uri", "https://foo.example.com:" + h2Port + "/dns-rfc1918");
   listen = dns.asyncResolve("rfc1918.example.com", 0, listenerFails, mainThread, defaultOriginAttributes);
@@ -237,6 +246,7 @@ function test7()
 
 function test8()
 {
+  dns.clearCache(true);
   prefs.setIntPref("network.trr.mode", 3); 
   prefs.setCharPref("network.trr.uri", "https://foo.example.com:" + h2Port + "/dns-rfc1918");
   prefs.setBoolPref("network.trr.allow-rfc1918", true);
@@ -248,6 +258,7 @@ function test8()
 
 function test8b()
 {
+  dns.clearCache(true);
   prefs.setIntPref("network.trr.mode", 3); 
   prefs.setCharPref("network.trr.uri", "https://foo.example.com:" + h2Port + "/dns-ecs{?dns}");
   prefs.clearUserPref("network.trr.allow-rfc1918");
@@ -260,6 +271,7 @@ function test8b()
 
 function test9()
 {
+  dns.clearCache(true);
   prefs.setIntPref("network.trr.mode", 3); 
   prefs.setCharPref("network.trr.uri", "https://foo.example.com:" + h2Port + "/dns-get");
   prefs.clearUserPref("network.trr.allow-rfc1918");
@@ -273,6 +285,7 @@ function test9()
 
 function test10()
 {
+  dns.clearCache(true);
   prefs.setIntPref("network.trr.mode", 3); 
   prefs.clearUserPref("network.trr.useGET");
   prefs.clearUserPref("network.trr.disable-ECS");
@@ -293,6 +306,7 @@ function test10()
 
 function test10b()
 {
+  dns.clearCache(true);
   print("test confirmationNS, retry until the confirmed NS works");
   prefs.setIntPref("network.trr.mode", 3); 
   
@@ -311,6 +325,7 @@ function test10b()
 
 function test11()
 {
+  dns.clearCache(true);
   prefs.setIntPref("network.trr.mode", 3); 
   prefs.setCharPref("network.trr.confirmationNS", "skip");
   prefs.setCharPref("network.trr.uri", "https://foo.example.com:" + h2Port + "/dns-750ms");
@@ -321,6 +336,7 @@ function test11()
 
 function test12()
 {
+  dns.clearCache(true);
   prefs.setIntPref("network.trr.mode", 2); 
   prefs.setCharPref("network.trr.uri", "https://foo.example.com:" + h2Port + "/dns-ns");
   prefs.clearUserPref("network.trr.request-timeout");
@@ -331,6 +347,7 @@ function test12()
 
 function test13()
 {
+  dns.clearCache(true);
   prefs.setIntPref("network.trr.mode", 2); 
   prefs.setCharPref("network.trr.uri", "https://foo.example.com:" + h2Port + "/404");
   test_answer = "127.0.0.1";
@@ -340,6 +357,7 @@ function test13()
 
 function test14()
 {
+  dns.clearCache(true);
   prefs.setIntPref("network.trr.mode", 4); 
   prefs.setCharPref("network.trr.uri", "https://foo.example.com:" + h2Port + "/404");
   test_answer = "127.0.0.1";
@@ -349,6 +367,7 @@ function test14()
 
 function test15()
 {
+  dns.clearCache(true);
   prefs.setIntPref("network.trr.mode", 4); 
   prefs.setCharPref("network.trr.uri", "https://foo.example.com:" + h2Port + "/dns-750ms");
   prefs.setIntPref("network.trr.request-timeout", 10);
@@ -359,6 +378,7 @@ function test15()
 
 function test16()
 {
+  dns.clearCache(true);
   prefs.setIntPref("network.trr.mode", 2); 
   prefs.setCharPref("network.trr.uri", "https://foo.example.com:" + h2Port + "/dns-750ms");
   prefs.setIntPref("network.trr.request-timeout", 10);
@@ -369,6 +389,7 @@ function test16()
 
 function test17()
 {
+  dns.clearCache(true);
   prefs.setIntPref("network.trr.mode", 3); 
   prefs.setCharPref("network.trr.uri", "https://foo.example.com:" + h2Port + "/dns-cname");
   prefs.clearUserPref("network.trr.request-timeout");
@@ -379,6 +400,7 @@ function test17()
 
 function test18()
 {
+  dns.clearCache(true);
   prefs.setIntPref("network.trr.mode", 3); 
   prefs.setCharPref("network.trr.uri", "https://foo.example.com:" + h2Port + "/dns-cname-loop");
   listen = dns.asyncResolve("test18.example.com", 0, listenerFails, mainThread, defaultOriginAttributes);
@@ -387,6 +409,7 @@ function test18()
 
 function test19()
 {
+  dns.clearCache(true);
   prefs.setIntPref("network.trr.mode", 1); 
   prefs.setCharPref("network.trr.uri", "https://foo.example.com:" + h2Port + "/dns-cname-loop");
   test_answer = "127.0.0.1";
@@ -396,6 +419,7 @@ function test19()
 
 function test20()
 {
+  dns.clearCache(true);
   prefs.setIntPref("network.trr.mode", 2); 
   prefs.setCharPref("network.trr.uri", "https://foo.example.com:" + h2Port + "/dns-cname-loop");
   test_answer = "127.0.0.1";
@@ -405,6 +429,7 @@ function test20()
 
 function test21()
 {
+  dns.clearCache(true);
   prefs.setIntPref("network.trr.mode", 4); 
   prefs.setCharPref("network.trr.uri", "https://foo.example.com:" + h2Port + "/dns-cname-loop");
   test_answer = "127.0.0.1";
@@ -415,6 +440,7 @@ function test21()
 
 function test22()
 {
+  dns.clearCache(true);
   prefs.setIntPref("network.trr.mode", 3); 
   prefs.setCharPref("network.trr.uri", "https://foo.example.com:" + h2Port + "/dns");
   listen = dns.asyncResolve("mismatch.example.com", 0, listenerFails, mainThread, defaultOriginAttributes);
@@ -423,6 +449,7 @@ function test22()
 
 function test23()
 {
+  dns.clearCache(true);
   prefs.setIntPref("network.trr.mode", 3); 
   prefs.setCharPref("network.trr.uri", "https://foo.example.com:" + h2Port + "/dns-cname-a");
   test_answer = "9.8.7.6";
