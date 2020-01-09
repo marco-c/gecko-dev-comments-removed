@@ -76,8 +76,6 @@ class XULDocument final : public XMLDocument,
 
   virtual void EndLoad() override;
 
-  virtual void InitialDocumentTranslationCompleted() override;
-
   
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED
@@ -296,14 +294,6 @@ class XULDocument final : public XMLDocument,
 
 
   nsresult ResumeWalk();
-
-  
-
-
-
-
-
-  nsresult MaybeDoneWalking();
 
   
 

@@ -3425,6 +3425,7 @@ class Document : public nsINode,
 
   void LocalizationLinkRemoved(Element* aLinkElement);
 
+ protected:
   
 
 
@@ -3439,18 +3440,6 @@ class Document : public nsINode,
 
   void TriggerInitialDocumentTranslation();
 
-  
-
-
-
-
-
-
-
-
-  virtual void InitialDocumentTranslationCompleted();
-
- protected:
   RefPtr<mozilla::dom::DocumentL10n> mDocumentL10n;
 
  private:
@@ -4524,13 +4513,9 @@ class Document : public nsINode,
   
   float mSavedResolution;
 
-  bool mPendingInitialTranslation;
-
  public:
   
   js::ExpandoAndGeneration mExpandoAndGeneration;
-
-  bool HasPendingInitialTranslation() { return mPendingInitialTranslation; }
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(Document, NS_IDOCUMENT_IID)

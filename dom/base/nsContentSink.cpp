@@ -1170,8 +1170,7 @@ void nsContentSink::StartLayout(bool aIgnorePendingSheets) {
 
   mDeferredLayoutStart = true;
 
-  if (!aIgnorePendingSheets &&
-      (WaitForPendingSheets() || mDocument->HasPendingInitialTranslation())) {
+  if (!aIgnorePendingSheets && WaitForPendingSheets()) {
     
     return;
   }

@@ -1339,8 +1339,7 @@ Document::Document(const char* aContentType)
       mThrowOnDynamicMarkupInsertionCounter(0),
       mIgnoreOpensDuringUnloadCounter(0),
       mDocLWTheme(Doc_Theme_Uninitialized),
-      mSavedResolution(1.0f),
-      mPendingInitialTranslation(false) {
+      mSavedResolution(1.0f) {
   MOZ_LOG(gDocumentLeakPRLog, LogLevel::Debug, ("DOCUMENT %p created", this));
 
   SetIsInDocument();
@@ -3132,8 +3131,6 @@ void Document::LocalizationLinkAdded(Element* aLinkElement) {
     
     
     mL10nResources.AppendElement(href);
-
-    mPendingInitialTranslation = true;
   }
 }
 
@@ -3176,27 +3173,8 @@ void Document::OnL10nResourceContainerParsed() {
 }
 
 void Document::TriggerInitialDocumentTranslation() {
-  
-  
-  
-  OnL10nResourceContainerParsed();
-
   if (mDocumentL10n) {
     mDocumentL10n->TriggerInitialDocumentTranslation();
-  }
-}
-
-void Document::InitialDocumentTranslationCompleted() {
-  mPendingInitialTranslation = false;
-
-  nsCOMPtr<nsIContentSink> sink;
-  if (mParser) {
-    sink = mParser->GetContentSink();
-  } else {
-    sink = do_QueryReferent(mWeakSink);
-  }
-  if (sink) {
-    sink->InitialDocumentTranslationCompleted();
   }
 }
 
@@ -8163,6 +8141,7 @@ void Document::SetReadyStateInternal(ReadyState rs) {
         mXULPersist->Init();
       }
     }
+    TriggerInitialDocumentTranslation();
   }
 
   RecordNavigationTiming(rs);
