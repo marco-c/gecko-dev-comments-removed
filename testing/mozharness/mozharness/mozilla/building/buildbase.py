@@ -13,7 +13,6 @@ author: Jordan Lund
 import json
 
 import os
-import pprint
 import time
 import uuid
 import copy
@@ -255,13 +254,12 @@ class BuildingConfig(BaseConfig):
         
         all_config_dicts = []
         
-        variant_cfg_file = branch_cfg_file = pool_cfg_file = ''
+        variant_cfg_file = pool_cfg_file = ''
 
         
         
         
 
-        
         
         
         
@@ -282,16 +280,13 @@ class BuildingConfig(BaseConfig):
                 if cf == BuildOptionParser.build_pool_cfg_file:
                     pool_cfg_file = all_config_files[i]
 
-            if cf == BuildOptionParser.branch_cfg_file:
-                branch_cfg_file = all_config_files[i]
-
             if cf == options.build_variant:
                 variant_cfg_file = all_config_files[i]
 
         
         
         
-        for cf in [pool_cfg_file, branch_cfg_file, variant_cfg_file]:
+        for cf in [pool_cfg_file, variant_cfg_file]:
             if cf:
                 all_config_files.remove(cf)
 
@@ -310,14 +305,6 @@ class BuildingConfig(BaseConfig):
                 (variant_cfg_file, parse_config_file(variant_cfg_file))
             )
         config_paths = options.config_paths or ['.']
-        if branch_cfg_file:
-            
-            branch_configs = parse_config_file(branch_cfg_file,
-                                               search_path=config_paths + [DEFAULT_CONFIG_PATH])
-            if branch_configs.get(options.branch or ""):
-                all_config_dicts.append(
-                    (branch_cfg_file, branch_configs[options.branch])
-                )
         if pool_cfg_file:
             
             
@@ -394,7 +381,6 @@ class BuildOptionParser(object):
         'tup': 'builds/releng_sub_%s_configs/%s_tup.py',
     }
     build_pool_cfg_file = 'builds/build_pool_specifics.py'
-    branch_cfg_file = 'builds/branch_specifics.py'
 
     @classmethod
     def _query_pltfrm_and_bits(cls, target_option, options):
@@ -511,8 +497,6 @@ class BuildOptionParser(object):
     @classmethod
     def set_build_branch(cls, option, opt, value, parser):
         
-        
-        parser.values.config_files.append(cls.branch_cfg_file)
         setattr(parser.values, option.dest, value)  
 
     @classmethod
@@ -573,12 +557,7 @@ BUILD_BASE_CONFIG_OPTIONS = [
         "callback": BuildOptionParser.set_build_branch,
         "type": "string",
         "dest": "branch",
-        "help": "This sets the branch we will be building this for."
-                " If this branch is in branch_specifics.py, update our"
-                " config with specific keys/values from that. See"
-                " %s for possibilites" % (
-                    BuildOptionParser.branch_cfg_file,
-                )}],
+        "help": "This sets the branch we will be building this for."}],
     [['--scm-level'], {
         "action": "store",
         "type": "int",
@@ -662,24 +641,12 @@ class BuildScript(AutomationMixin,
                 BuildOptionParser.bits
             )
         build_pool_cfg = BuildOptionParser.build_pool_cfg_file
-        branch_cfg = BuildOptionParser.branch_cfg_file
 
         cfg_match_msg = "Script was run with '%(option)s %(type)s' and \
 '%(type)s' matches a key in '%(type_config_file)s'. Updating self.config with \
 items from that key's value."
-        pf_override_msg = "The branch '%(branch)s' has custom behavior for the \
-platform '%(platform)s'. Updating self.config with the following from \
-'platform_overrides' found in '%(pf_cfg_file)s':"
 
         for i, (target_file, target_dict) in enumerate(cfg_files_and_dicts):
-            if branch_cfg and branch_cfg in target_file:
-                self.info(
-                    cfg_match_msg % {
-                        'option': '--branch',
-                        'type': c['branch'],
-                        'type_config_file': BuildOptionParser.branch_cfg_file
-                    }
-                )
             if build_pool_cfg and build_pool_cfg in target_file:
                 self.info(
                     cfg_match_msg % {
@@ -696,20 +663,6 @@ platform '%(platform)s'. Updating self.config with the following from \
                         'type_config_file': variant_cfg,
                     }
                 )
-        if c.get("platform_overrides"):
-            if c['stage_platform'] in c['platform_overrides'].keys():
-                self.info(
-                    pf_override_msg % {
-                        'branch': c['branch'],
-                        'platform': c['stage_platform'],
-                        'pf_cfg_file': BuildOptionParser.branch_cfg_file
-                    }
-                )
-                branch_pf_overrides = c['platform_overrides'][
-                    c['stage_platform']
-                ]
-                self.info(pprint.pformat(branch_pf_overrides))
-                c.update(branch_pf_overrides)
         self.info('To generate a config file based upon options passed and '
                   'config files used, run script as before but extend options '
                   'with "--dump-config"')
@@ -813,6 +766,7 @@ or run without that action (ie: --no-{action})"
         env['MOZ_BUILD_DATE'] = self.query_buildid()
 
         if self.query_is_nightly() or self.query_is_nightly_promotion():
+            
             
             if c.get('update_channel'):
                 update_channel = c['update_channel']
