@@ -1371,6 +1371,21 @@ nsresult XMLHttpRequestMainThread::Open(const nsACString& aMethod,
   NS_ENSURE_TRUE(mPrincipal, NS_ERROR_NOT_INITIALIZED);
 
   
+  if (!aAsync && responsibleDocument && GetOwner()) {
+    
+    
+    
+    nsCOMPtr<nsIDocShell> shell = responsibleDocument->GetDocShell();
+    if (shell) {
+      bool inUnload = false;
+      shell->GetIsInUnload(&inUnload);
+      if (inUnload) {
+        LogMessage("UseSendBeaconDuringUnloadAndPagehideWarning", GetOwner());
+      }
+    }
+  }
+
+  
   nsAutoCString method;
   nsresult rv = FetchUtil::GetValidRequestMethod(aMethod, method);
   if (NS_WARN_IF(NS_FAILED(rv))) {
