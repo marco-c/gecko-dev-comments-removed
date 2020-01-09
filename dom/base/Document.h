@@ -3564,6 +3564,8 @@ class Document : public nsINode,
   void SetDocTreeHadAudibleMedia();
   void SetDocTreeHadPlayRevoked();
 
+  mozilla::dom::XPathEvaluator* XPathEvaluator();
+
  protected:
   void DoUpdateSVGUseElementShadowTrees();
 
@@ -3692,8 +3694,6 @@ class Document : public nsINode,
   void SetContentTypeInternal(const nsACString& aType);
 
   nsCString GetContentTypeInternal() const { return mContentType; }
-
-  mozilla::dom::XPathEvaluator* XPathEvaluator();
 
   
   
