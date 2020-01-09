@@ -2350,6 +2350,14 @@ void nsFrame::DisplayOutlineUnconditional(nsDisplayListBuilder* aBuilder,
     return;
   }
 
+  if (IsTableColGroupFrame() || IsTableColFrame()) {
+    
+    
+    
+    
+    return;
+  }
+
   aLists.Outlines()->AppendNewToTop<nsDisplayOutline>(aBuilder, this);
 }
 
