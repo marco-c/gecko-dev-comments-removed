@@ -193,9 +193,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   CGResumeOffsetList resumeOffsetList;
 
   
-  size_t numICEntries;
-
-  
   uint32_t numYields;
 
   uint16_t typesetCount; 
@@ -547,7 +544,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   MOZ_MUST_USE bool emitCheckDerivedClassConstructorReturn();
 
   
-  MOZ_MUST_USE bool emitJumpTargetOp(JSOp op, ptrdiff_t* off);
   MOZ_MUST_USE bool emitJumpTarget(JumpTarget* target);
   MOZ_MUST_USE bool emitJumpNoFallthrough(JSOp op, JumpList* jump);
   MOZ_MUST_USE bool emitJump(JSOp op, JumpList* jump);
