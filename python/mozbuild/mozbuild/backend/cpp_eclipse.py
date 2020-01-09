@@ -215,7 +215,7 @@ class CppEclipseBackend(CommonBackend):
         
         
         
-        for f in glob.glob(os.path.join(self._workspace_lang_dir, "*.pdom")):
+        for f in glob.glob(os.path.join(self._workspace_lang_dir, "Gecko.*.pdom")):
             os.remove(f)
 
         noindex_path = os.path.join(self._project_dir, '.settings/org.eclipse.cdt.core.prefs')
