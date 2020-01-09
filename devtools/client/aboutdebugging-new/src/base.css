@@ -44,6 +44,10 @@
   --white-100: #fff; 
 
   
+  --title-20-font-size: 17px;
+  --title-20-font-weight: 600;
+
+  
   --page-width: 664px;
   --base-unit: 4px;
 
@@ -64,7 +68,7 @@
   --alt-heading-icon-gap: var(--base-unit);
   --main-heading-icon-size: calc(var(--base-unit) * 16);
   --main-heading-icon-gap: calc(var(--base-unit) * 3);
-  --main-subheading-icon-size: calc(var(--base-unit) * 5);
+  --main-subheading-icon-size: calc(var(--base-unit) * 4);
   --main-subheading-heading-icon-gap: calc(var(--base-unit) * 2);
 }
 
@@ -166,10 +170,9 @@ p {
 
 
 .main-subheading {
-  margin-block-start: calc(var(--base-unit) * 4);
-  font-weight: 600;
-  font-size: 1.46em; 
-  line-height: 1.3em; 
+  margin-block: calc(var(--base-unit) * 4);
+  font-size: var(--title-20-font-size); 
+  font-weight: var(--title-20-font-weight); 
 
   display: grid;
   grid-template-columns: var(--main-subheading-icon-size) 1fr;

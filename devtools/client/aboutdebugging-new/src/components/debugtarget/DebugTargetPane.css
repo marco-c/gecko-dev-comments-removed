@@ -2,12 +2,24 @@
 
 
 
+
+
+
+
+
+
+.debug-target-pane__heading {
+  grid-template-columns: var(--main-subheading-icon-size) max-content calc(var(--base-unit) * 3);
+  -moz-user-select: none;
+}
+
 .debug-target-pane__icon {
   transition: transform 150ms cubic-bezier(.07, .95, 0, 1);
+  transform: rotate(90deg);
 }
 
 .debug-target-pane__icon--collapsed {
-  transform: rotate(-90deg);
+  transform: rotate(0deg);
 }
 
 .debug-target-pane__title {
