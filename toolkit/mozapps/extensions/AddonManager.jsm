@@ -3514,9 +3514,6 @@ var AMTelemetry = {
     Services.obs.addObserver(this, "addon-install-disabled");
     Services.obs.addObserver(this, "addon-install-blocked");
 
-    Services.obs.addObserver(this, "webextension-permission-prompt");
-    Services.obs.addObserver(this, "webextension-update-permissions");
-
     AddonManager.addInstallListener(this);
     AddonManager.addAddonListener(this);
   },
@@ -3538,35 +3535,6 @@ var AMTelemetry = {
       case "addon-install-disabled": {
         const {installs} = subject.wrappedJSObject;
         this.recordInstallEvent(installs[0], {step: "install_disabled_warning"});
-        break;
-      }
-      case "webextension-permission-prompt": {
-        const {info} = subject.wrappedJSObject;
-        const {permissions, origins} = info.permissions || {permissions: [], origins: []};
-        if (info.type === "sideload") {
-          
-          
-          this.recordManageEvent(info.addon, "sideload_prompt", {
-            num_perms: permissions.length,
-            num_origins: origins.length,
-          });
-        } else {
-          this.recordInstallEvent(info.install, {
-            step: "permissions_prompt",
-            num_perms: permissions.length,
-            num_origins: origins.length,
-          });
-        }
-        break;
-      }
-      case "webextension-update-permissions": {
-        const update = subject.wrappedJSObject;
-        const {permissions, origins} = update.permissions || {permissions: [], origins: []};
-        this.recordInstallEvent(update.install, {
-          step: "permissions_prompt",
-          num_perms: permissions.length,
-          num_origins: origins.length,
-        });
         break;
       }
     }
@@ -3780,7 +3748,6 @@ var AMTelemetry = {
 
 
 
-
   recordInstallEvent(install, extraVars) {
     
     if (!this.telemetrySetupDone) {
@@ -3834,7 +3801,6 @@ var AMTelemetry = {
   },
 
   
-
 
 
 

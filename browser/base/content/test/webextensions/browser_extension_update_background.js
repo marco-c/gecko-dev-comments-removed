@@ -151,6 +151,7 @@ async function backgroundUpdateTest(url, id, checkIconFn) {
   
   tabPromise = BrowserTestUtils.waitForNewTab(gBrowser, "about:addons");
   popupPromise = promisePopupNotificationShown("addon-webext-permissions");
+
   addons.children[0].click();
 
   
@@ -204,9 +205,11 @@ async function backgroundUpdateTest(url, id, checkIconFn) {
     updated_from: "app",
   };
 
+  
+  
   Assert.deepEqual(updateEvents.filter(evt => evt.extra && evt.extra.step === "permissions_prompt"), [
-    {method, object, extra: {...baseExtra, num_perms: "1", num_origins: "1"}},
-    {method, object, extra: {...baseExtra, num_perms: "1", num_origins: "1"}},
+    {method, object, extra: {...baseExtra, num_strings: "1"}},
+    {method, object, extra: {...baseExtra, num_strings: "1"}},
   ], "Got the expected permission_prompts events");
 }
 
