@@ -38,15 +38,6 @@ pub type DeviceHomogeneousVector = HomogeneousVector<f32, DevicePixel>;
 
 
 
-#[derive(Hash, Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
-pub struct FramebufferPixel;
-
-pub type FramebufferIntPoint = TypedPoint2D<i32, FramebufferPixel>;
-pub type FramebufferIntSize = TypedSize2D<i32, FramebufferPixel>;
-pub type FramebufferIntRect = TypedRect<i32, FramebufferPixel>;
-
-
-
 #[derive(Hash, Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub struct PicturePixel;
 

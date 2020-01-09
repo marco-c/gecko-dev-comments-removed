@@ -2,9 +2,9 @@
 
 
 
-use api::{ColorF, BorderStyle, MixBlendMode, PipelineId};
-use api::{DocumentLayer, FilterData, FilterOp, ImageFormat};
-use api::units::*;
+use api::{ColorF, BorderStyle, DeviceIntPoint, DeviceIntRect, DeviceIntSize, DevicePixelScale};
+use api::{DocumentLayer, FilterOp, FilterData, ImageFormat, DevicePoint};
+use api::{MixBlendMode, PipelineId, DeviceRect, LayoutSize, WorldRect};
 use batch::{AlphaBatchBuilder, AlphaBatchContainer, ClipBatcher, resolve_image};
 use clip::ClipStore;
 use clip_scroll_tree::{ClipScrollTree};
@@ -1133,9 +1133,8 @@ impl CompositeOps {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct Frame {
     
-    pub content_origin: DeviceIntPoint,
-    
-    pub framebuffer_rect: FramebufferIntRect,
+    pub window_size: DeviceIntSize,
+    pub inner_rect: DeviceIntRect,
     pub background_color: Option<ColorF>,
     pub layer: DocumentLayer,
     pub passes: Vec<RenderPass>,
