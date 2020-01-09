@@ -176,6 +176,9 @@ class TableUpdateV4 : public TableUpdate {
   nsresult NewFullHashResponse(const Prefix& aPrefix,
                                const CachedFullHashResponse& aResponse);
 
+  
+  void Clear();
+
  private:
   virtual int Tag() const override { return TAG; }
 

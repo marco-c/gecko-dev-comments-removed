@@ -642,6 +642,10 @@ nsresult LookupCacheV4::ApplyUpdate(RefPtr<TableUpdateV4> aTableUpdate,
     return NS_ERROR_UC_UPDATE_WRONG_REMOVAL_INDICES;
   }
 
+  
+  
+  aTableUpdate->Clear();
+
   nsAutoCString sha256;
   crypto->Finish(false, sha256);
   if (aTableUpdate->SHA256().IsEmpty()) {
