@@ -452,6 +452,8 @@ var LoginManagerContent = {
       return;
     }
 
+    this.setupProgressListener(topWindow);
+
     let pwField = event.originalTarget;
     if (pwField.form) {
       
@@ -471,9 +473,6 @@ var LoginManagerContent = {
 
   _processDOMInputPasswordAddedEvent(event, topWindow) {
     let pwField = event.originalTarget;
-    
-    
-    this.setupProgressListener(topWindow);
 
     let formLike = LoginFormFactory.createFromField(pwField);
     log(" _processDOMInputPasswordAddedEvent:", pwField, formLike);
