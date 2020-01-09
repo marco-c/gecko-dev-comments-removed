@@ -112,6 +112,13 @@
 
 
 
+
+
+
+
+
+
+
 use lib::*;
 
 
@@ -154,7 +161,7 @@ macro_rules! declare_error_trait {
             ///
             /// The message should not be capitalized and should not end with a period.
             ///
-            /// ```edition2018
+            /// ```rust
             /// # use std::str::FromStr;
             /// #
             /// # struct IpAddr;
@@ -174,7 +181,7 @@ macro_rules! declare_error_trait {
             ///     where
             ///         D: Deserializer<'de>,
             ///     {
-            ///         let s = String::deserialize(deserializer)?;
+            ///         let s = try!(String::deserialize(deserializer));
             ///         s.parse().map_err(de::Error::custom)
             ///     }
             /// }
@@ -238,16 +245,12 @@ macro_rules! declare_error_trait {
             #[cold]
             fn unknown_variant(variant: &str, expected: &'static [&'static str]) -> Self {
                 if expected.is_empty() {
-                    Error::custom(format_args!(
-                        "unknown variant `{}`, there are no variants",
-                        variant
-                    ))
+                    Error::custom(format_args!("unknown variant `{}`, there are no variants",
+                                               variant))
                 } else {
-                    Error::custom(format_args!(
-                        "unknown variant `{}`, expected {}",
-                        variant,
-                        OneOf { names: expected }
-                    ))
+                    Error::custom(format_args!("unknown variant `{}`, expected {}",
+                                               variant,
+                                               OneOf { names: expected }))
                 }
             }
 
@@ -256,16 +259,12 @@ macro_rules! declare_error_trait {
             #[cold]
             fn unknown_field(field: &str, expected: &'static [&'static str]) -> Self {
                 if expected.is_empty() {
-                    Error::custom(format_args!(
-                        "unknown field `{}`, there are no fields",
-                        field
-                    ))
+                    Error::custom(format_args!("unknown field `{}`, there are no fields",
+                                               field))
                 } else {
-                    Error::custom(format_args!(
-                        "unknown field `{}`, expected {}",
-                        field,
-                        OneOf { names: expected }
-                    ))
+                    Error::custom(format_args!("unknown field `{}`, expected {}",
+                                               field,
+                                               OneOf { names: expected }))
                 }
             }
 
@@ -2192,6 +2191,12 @@ pub trait VariantAccess<'de>: Sized {
     where
         V: Visitor<'de>;
 }
+
+
+
+
+
+
 
 
 

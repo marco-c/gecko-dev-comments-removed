@@ -107,6 +107,13 @@
 
 
 
+
+
+
+
+
+
+
 use lib::*;
 
 mod impls;
@@ -138,7 +145,7 @@ macro_rules! declare_error_trait {
             /// For example, a filesystem [`Path`] may refuse to serialize
             /// itself if it contains invalid UTF-8 data.
             ///
-            /// ```edition2018
+            /// ```rust
             /// # struct Path;
             /// #
             /// # impl Path {
@@ -392,8 +399,18 @@ pub trait Serializer: Sized {
     
     
     
+    
+    
+    
+    
+    
     fn serialize_bool(self, v: bool) -> Result<Self::Ok, Self::Error>;
 
+    
+    
+    
+    
+    
     
     
     
@@ -436,8 +453,18 @@ pub trait Serializer: Sized {
     
     
     
+    
+    
+    
+    
+    
     fn serialize_i16(self, v: i16) -> Result<Self::Ok, Self::Error>;
 
+    
+    
+    
+    
+    
     
     
     
@@ -476,15 +503,23 @@ pub trait Serializer: Sized {
     
     
     
+    
+    
+    
+    
+    
     fn serialize_i64(self, v: i64) -> Result<Self::Ok, Self::Error>;
 
     serde_if_integer128! {
         /// Serialize an `i128` value.
         ///
-        /// ```edition2018
+        /// ```rust
+        /// # #[macro_use]
+        /// # extern crate serde;
+        /// #
         /// # use serde::Serializer;
         /// #
-        /// # serde::__private_serialize!();
+        /// # __private_serialize!();
         /// #
         /// impl Serialize for i128 {
         ///     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -494,6 +529,8 @@ pub trait Serializer: Sized {
         ///         serializer.serialize_i128(*self)
         ///     }
         /// }
+        /// #
+        /// # fn main() {}
         /// ```
         ///
         /// This method is available only on Rust compiler versions >=1.26. The
@@ -504,6 +541,11 @@ pub trait Serializer: Sized {
         }
     }
 
+    
+    
+    
+    
+    
     
     
     
@@ -546,8 +588,18 @@ pub trait Serializer: Sized {
     
     
     
+    
+    
+    
+    
+    
     fn serialize_u16(self, v: u16) -> Result<Self::Ok, Self::Error>;
 
+    
+    
+    
+    
+    
     
     
     
@@ -586,15 +638,23 @@ pub trait Serializer: Sized {
     
     
     
+    
+    
+    
+    
+    
     fn serialize_u64(self, v: u64) -> Result<Self::Ok, Self::Error>;
 
     serde_if_integer128! {
         /// Serialize a `u128` value.
         ///
-        /// ```edition2018
+        /// ```rust
+        /// # #[macro_use]
+        /// # extern crate serde;
+        /// #
         /// # use serde::Serializer;
         /// #
-        /// # serde::__private_serialize!();
+        /// # __private_serialize!();
         /// #
         /// impl Serialize for u128 {
         ///     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -604,6 +664,8 @@ pub trait Serializer: Sized {
         ///         serializer.serialize_u128(*self)
         ///     }
         /// }
+        /// #
+        /// # fn main() {}
         /// ```
         ///
         /// This method is available only on Rust compiler versions >=1.26. The
@@ -614,6 +676,11 @@ pub trait Serializer: Sized {
         }
     }
 
+    
+    
+    
+    
+    
     
     
     
@@ -652,8 +719,18 @@ pub trait Serializer: Sized {
     
     
     
+    
+    
+    
+    
+    
     fn serialize_f64(self, v: f64) -> Result<Self::Ok, Self::Error>;
 
+    
+    
+    
+    
+    
     
     
     
@@ -691,8 +768,18 @@ pub trait Serializer: Sized {
     
     
     
+    
+    
+    
+    
+    
     fn serialize_str(self, v: &str) -> Result<Self::Ok, Self::Error>;
 
+    
+    
+    
+    
+    
     
     
     
@@ -759,8 +846,12 @@ pub trait Serializer: Sized {
     
     
     
+    
+    
     fn serialize_none(self) -> Result<Self::Ok, Self::Error>;
 
+    
+    
     
     
     
@@ -796,6 +887,11 @@ pub trait Serializer: Sized {
     where
         T: Serialize;
 
+    
+    
+    
+    
+    
     
     
     
