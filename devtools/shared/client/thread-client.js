@@ -7,7 +7,6 @@
 
 const promise = require("devtools/shared/deprecated-sync-thenables");
 
-const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const {arg, DebuggerClient} = require("devtools/shared/client/debugger-client");
 const eventSource = require("devtools/shared/client/event-source");
 const {ThreadStateTypes} = require("devtools/shared/client/constants");
@@ -31,7 +30,6 @@ const noop = () => {};
 function ThreadClient(client, actor) {
   this.client = client;
   this._actor = actor;
-  this._frameCache = [];
   this._scriptCache = {};
   this._pauseGrips = {};
   this._threadGrips = {};
@@ -436,88 +434,8 @@ ThreadClient.prototype = {
 
 
 
-  get cachedFrames() {
-    return this._frameCache;
-  },
-
-  
-
-
-  get moreFrames() {
-    return this.paused && (!this._frameCache || this._frameCache.length == 0
-          || !this._frameCache[this._frameCache.length - 1].oldest);
-  },
-
-  
-
-
-
-
   getEnvironment: function(frameId) {
     return this.request({ to: frameId, type: "getEnvironment" });
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-  fillFrames: function(total, callback = noop) {
-    this._assertPaused("fillFrames");
-    if (this._frameCache.length >= total) {
-      return false;
-    }
-
-    const numFrames = this._frameCache.length;
-
-    this.getFrames(numFrames, total - numFrames, (response) => {
-      if (response.error) {
-        callback(response);
-        return;
-      }
-
-      const threadGrips = DevToolsUtils.values(this._threadGrips);
-
-      for (const i in response.frames) {
-        const frame = response.frames[i];
-        if (!frame.where.source) {
-          
-          
-          for (const grip of threadGrips) {
-            if (grip instanceof SourceClient && grip.url === frame.url) {
-              frame.where.source = grip._form;
-            }
-          }
-        }
-
-        this._frameCache[frame.depth] = frame;
-      }
-
-      
-      
-      this.emit("framesadded");
-
-      callback(response);
-    });
-
-    return true;
-  },
-
-  
-
-
-
-  _clearFrames: function() {
-    if (this._frameCache.length > 0) {
-      this._frameCache = [];
-      this.emit("framescleared");
-    }
   },
 
   
@@ -648,7 +566,6 @@ ThreadClient.prototype = {
     
     
     this._lastPausePacket = packet.type === "resumed" ? null : packet;
-    this._clearFrames();
     this._clearPauseGrips();
     packet.type === ThreadStateTypes.detached && this._clearThreadGrips();
     this.client._eventsEnabled && this.emit(packet.type, packet);
