@@ -921,21 +921,13 @@ nsresult nsIOService::NewChannelFromURIWithProxyFlagsInternal(
   rv = handler->DoGetProtocolFlags(aURI, &protoFlags);
   if (NS_FAILED(rv)) return rv;
 
-  
-  
-  
-  
-  
-  
-  
-  
   nsCOMPtr<nsIChannel> channel;
   nsCOMPtr<nsIProxiedProtocolHandler> pph = do_QueryInterface(handler);
   if (pph) {
     rv = pph->NewProxiedChannel2(aURI, nullptr, aProxyFlags, aProxyURI,
                                  aLoadInfo, getter_AddRefs(channel));
   } else {
-    rv = handler->NewChannel2(aURI, aLoadInfo, getter_AddRefs(channel));
+    rv = handler->NewChannel(aURI, aLoadInfo, getter_AddRefs(channel));
   }
   NS_ENSURE_SUCCESS(rv, rv);
 

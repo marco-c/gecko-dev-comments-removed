@@ -76,7 +76,7 @@ PageIconProtocolHandler.prototype = {
              .finalize();
   },
 
-  newChannel2(uri, loadInfo) {
+  newChannel(uri, loadInfo) {
     try {
       
       
@@ -112,10 +112,6 @@ PageIconProtocolHandler.prototype = {
     } catch (ex) {
       return makeDefaultFaviconChannel(uri, loadInfo);
     }
-  },
-
-  newChannel(uri) {
-    return this.newChannel2(uri, null);
   },
 
   allowPort(port, scheme) {
