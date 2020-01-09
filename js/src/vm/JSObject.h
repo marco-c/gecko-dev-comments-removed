@@ -533,6 +533,22 @@ class JSObject : public js::gc::Cell {
   template <class T>
   T& unwrapAs();
 
+  
+
+
+
+
+
+  template <class T>
+  T* maybeUnwrapAs();
+
+  
+
+
+
+  template <class T>
+  T* maybeUnwrapIf();
+
 #if defined(DEBUG) || defined(JS_JITSPEW)
   void dump(js::GenericPrinter& fp) const;
   void dump() const;
@@ -594,7 +610,7 @@ bool JSObject::canUnwrapAs() {
   if (is<T>()) {
     return true;
   }
-  JSObject* obj = js::CheckedUnwrap(this);
+  JSObject* obj = js::CheckedUnwrapStatic(this);
   return obj && obj->is<T>();
 }
 
@@ -610,9 +626,43 @@ T& JSObject::unwrapAs() {
   
   
   JSObject* unwrapped = js::UncheckedUnwrap(this);
-  MOZ_ASSERT(js::CheckedUnwrap(this) == unwrapped,
+  MOZ_ASSERT(js::CheckedUnwrapStatic(this) == unwrapped,
              "check that the security check we skipped really is redundant");
   return unwrapped->as<T>();
+}
+
+template <class T>
+T* JSObject::maybeUnwrapAs() {
+  static_assert(!std::is_convertible<T*, js::Wrapper*>::value,
+                "T can't be a Wrapper type; this function discards wrappers");
+
+  if (is<T>()) {
+    return &as<T>();
+  }
+
+  JSObject* unwrapped = js::CheckedUnwrapStatic(this);
+  if (!unwrapped) {
+    return nullptr;
+  }
+
+  if (MOZ_LIKELY(unwrapped->is<T>())) {
+    return &unwrapped->as<T>();
+  }
+
+  MOZ_CRASH("Invalid object. Dead wrapper?");
+}
+
+template <class T>
+T* JSObject::maybeUnwrapIf() {
+  static_assert(!std::is_convertible<T*, js::Wrapper*>::value,
+                "T can't be a Wrapper type; this function discards wrappers");
+
+  if (is<T>()) {
+    return &as<T>();
+  }
+
+  JSObject* unwrapped = js::CheckedUnwrapStatic(this);
+  return (unwrapped && unwrapped->is<T>()) ? &unwrapped->as<T>() : nullptr;
 }
 
 
