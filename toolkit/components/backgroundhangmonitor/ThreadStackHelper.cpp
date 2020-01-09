@@ -210,12 +210,9 @@ namespace {
 bool IsChromeJSScript(JSScript* aScript) {
   
   
-  nsIScriptSecurityManager* const secman =
-      nsScriptSecurityManager::GetScriptSecurityManager();
-  NS_ENSURE_TRUE(secman, false);
 
   JSPrincipals* const principals = JS_GetScriptPrincipals(aScript);
-  return secman->IsSystemPrincipal(nsJSPrincipals::get(principals));
+  return nsJSPrincipals::get(principals)->IsSystemPrincipal();
 }
 
 

@@ -7571,8 +7571,8 @@ function checkEmptyPageOrigin(browser = gBrowser.selectedBrowser,
   }
   
   
-  let ssm = Services.scriptSecurityManager;
-  return ssm.isSystemPrincipal(contentPrincipal);
+
+  return contentPrincipal.isSystemPrincipal;
 }
 
 function ReportFalseDeceptiveSite() {

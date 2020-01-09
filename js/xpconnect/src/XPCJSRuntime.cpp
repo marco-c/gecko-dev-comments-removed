@@ -375,7 +375,7 @@ bool RealmPrivate::TryParseLocationURI(RealmPrivate::LocationHint aLocationHint,
 
 static bool PrincipalImmuneToScriptPolicy(nsIPrincipal* aPrincipal) {
   
-  if (nsXPConnect::SecurityManager()->IsSystemPrincipal(aPrincipal)) {
+  if (aPrincipal->IsSystemPrincipal()) {
     return true;
   }
 

@@ -126,7 +126,7 @@ void PrincipalVerifier::VerifyOnMainThread() {
 
   
   
-  if (NS_WARN_IF(actor && ssm->IsSystemPrincipal(principal))) {
+  if (NS_WARN_IF(actor && principal->IsSystemPrincipal())) {
     DispatchToInitiatingThread(NS_ERROR_FAILURE);
     return;
   }
@@ -137,7 +137,7 @@ void PrincipalVerifier::VerifyOnMainThread() {
   
   
   
-  if (!ssm->IsSystemPrincipal(principal)) {
+  if (!principal->IsSystemPrincipal()) {
     nsAutoCString origin;
     rv = principal->GetOriginNoSuffix(origin);
     if (NS_WARN_IF(NS_FAILED(rv))) {

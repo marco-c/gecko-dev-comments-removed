@@ -69,8 +69,7 @@ amContentHandler.prototype = {
       
       
       let element = window.frameElement;
-      let ssm = Services.scriptSecurityManager;
-      while (element && !ssm.isSystemPrincipal(element.ownerDocument.nodePrincipal))
+      while (element && !element.ownerDocument.nodePrincipal.isSystemPrincipal)
         element = element.ownerGlobal.frameElement;
 
       if (element) {

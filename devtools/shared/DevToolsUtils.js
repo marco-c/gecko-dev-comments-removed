@@ -323,7 +323,7 @@ exports.isSafeJSObject = function(obj) {
 
   
   const principal = Cu.getObjectPrincipal(obj);
-  if (!Services.scriptSecurityManager.isSystemPrincipal(principal)) {
+  if (!principal.isSystemPrincipal) {
     return false;
   }
 
