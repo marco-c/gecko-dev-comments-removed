@@ -29,8 +29,6 @@ Types = (
     'uintptr_t',
 
     
-    'size_t',
-    'ssize_t',
 
     
     'nsresult',
