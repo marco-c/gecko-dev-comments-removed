@@ -1,0 +1,19 @@
+
+
+
+
+
+
+#ifndef mozilla_WindowsProcessMitigations_h
+#define mozilla_WindowsProcessMitigations_h
+
+#include "mozilla/Types.h"
+
+namespace mozilla {
+
+MFBT_API bool IsWin32kLockedDown();
+
+}  
+
+#endif  
+
