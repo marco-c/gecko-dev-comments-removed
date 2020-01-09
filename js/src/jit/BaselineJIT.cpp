@@ -299,6 +299,10 @@ static MethodStatus CanEnterBaselineJIT(JSContext* cx, HandleScript script,
     return Method_Error;
   }
 
+  if (script->hasForceInterpreterOp()) {
+    return Method_CantCompile;
+  }
+
   
   
   
@@ -314,6 +318,10 @@ static MethodStatus CanEnterBaselineInterpreter(JSContext* cx,
 
   if (script->types()) {
     return Method_Compiled;
+  }
+
+  if (script->hasForceInterpreterOp()) {
+    return Method_CantCompile;
   }
 
   

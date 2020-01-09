@@ -7023,12 +7023,17 @@ bool BytecodeEmitter::emitSelfHostedResumeGenerator(BinaryNode* callNode) {
 }
 
 bool BytecodeEmitter::emitSelfHostedForceInterpreter() {
+  
+  
+  MOZ_ASSERT(bytecodeSection().code().empty());
+
   if (!emit1(JSOP_FORCEINTERPRETER)) {
     return false;
   }
   if (!emit1(JSOP_UNDEFINED)) {
     return false;
   }
+
   return true;
 }
 

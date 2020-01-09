@@ -3491,6 +3491,10 @@ bool JSScript::makeTypes(JSContext* cx) {
   MOZ_ASSERT(!types_);
   cx->check(this);
 
+  
+  
+  MOZ_ASSERT(!hasForceInterpreterOp());
+
   AutoEnterAnalysis enter(cx);
 
   UniquePtr<jit::ICScript> icScript(jit::ICScript::create(cx, this));

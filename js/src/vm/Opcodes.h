@@ -2242,6 +2242,7 @@
 
 
 
+
  \
     MACRO(JSOP_FORCEINTERPRETER, 207, "forceinterpreter", NULL, 1, 0, 0, JOF_BYTE) \
     

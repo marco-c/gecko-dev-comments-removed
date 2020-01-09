@@ -1535,16 +1535,6 @@ bool BaselineCodeGen<Handler>::emit_JSOP_NOP() {
   return true;
 }
 
-template <>
-bool BaselineCompilerCodeGen::emit_JSOP_FORCEINTERPRETER() {
-  MOZ_CRASH("Unexpected JSOP_FORCEINTERPRETER in compiler");
-}
-
-template <>
-bool BaselineInterpreterCodeGen::emit_JSOP_FORCEINTERPRETER() {
-  return true;
-}
-
 template <typename Handler>
 bool BaselineCodeGen<Handler>::emit_JSOP_ITERNEXT() {
   return true;
@@ -5785,10 +5775,14 @@ bool BaselineCodeGen<Handler>::emitGeneratorResume(
   
   
   
+  
   Label interpret;
   Register scratch1 = regs.takeAny();
   masm.loadPtr(Address(callee, JSFunction::offsetOfScript()), scratch1);
-  if (!JitOptions.baselineInterpreter) {
+  if (JitOptions.baselineInterpreter) {
+    Address typesAddr(scratch1, JSScript::offsetOfTypes());
+    masm.branchPtr(Assembler::Equal, typesAddr, ImmPtr(nullptr), &interpret);
+  } else {
     Address baselineAddr(scratch1, JSScript::offsetOfBaselineScript());
     masm.branchPtr(Assembler::BelowOrEqual, baselineAddr,
                    ImmPtr(BASELINE_DISABLED_SCRIPT), &interpret);
@@ -6005,28 +5999,27 @@ bool BaselineCodeGen<Handler>::emitGeneratorResume(
   }
 
   
-  if (interpret.used()) {
-    masm.bind(&interpret);
+  
+  masm.bind(&interpret);
 
-    prepareVMCall();
-    if (resumeKind == GeneratorResumeKind::Next) {
-      pushArg(ImmGCPtr(cx->names().next));
-    } else if (resumeKind == GeneratorResumeKind::Throw) {
-      pushArg(ImmGCPtr(cx->names().throw_));
-    } else {
-      MOZ_ASSERT(resumeKind == GeneratorResumeKind::Return);
-      pushArg(ImmGCPtr(cx->names().return_));
-    }
+  prepareVMCall();
+  if (resumeKind == GeneratorResumeKind::Next) {
+    pushArg(ImmGCPtr(cx->names().next));
+  } else if (resumeKind == GeneratorResumeKind::Throw) {
+    pushArg(ImmGCPtr(cx->names().throw_));
+  } else {
+    MOZ_ASSERT(resumeKind == GeneratorResumeKind::Return);
+    pushArg(ImmGCPtr(cx->names().return_));
+  }
 
-    masm.loadValue(frame.addressOfStackValue(-1), retVal);
-    pushArg(retVal);
-    pushArg(genObj);
+  masm.loadValue(frame.addressOfStackValue(-1), retVal);
+  pushArg(retVal);
+  pushArg(genObj);
 
-    using Fn = bool (*)(JSContext*, HandleObject, HandleValue,
-                        HandlePropertyName, MutableHandleValue);
-    if (!callVM<Fn, jit::InterpretResume>()) {
-      return false;
-    }
+  using Fn = bool (*)(JSContext*, HandleObject, HandleValue, HandlePropertyName,
+                      MutableHandleValue);
+  if (!callVM<Fn, jit::InterpretResume>()) {
+    return false;
   }
 
   
@@ -6573,17 +6566,12 @@ MethodStatus BaselineCompiler::emitBody() {
     }
 
     switch (op) {
-      
       case JSOP_FORCEINTERPRETER:
         
       case JSOP_UNUSED71:
       case JSOP_UNUSED149:
       case JSOP_LIMIT:
-        
-        
-        
-        JitSpew(JitSpew_BaselineAbort, "Unhandled op: %s", CodeName[op]);
-        return Method_CantCompile;
+        MOZ_CRASH("Unexpected op");
 
 #define EMIT_OP(OP)                                            \
   case OP:                                                     \
