@@ -162,7 +162,7 @@ class UrlbarView {
 
     if (queryContext.lastResultCount == 0) {
       if (queryContext.preselected) {
-        this._selectItem(fragment.firstElementChild);
+        this._selectItem(fragment.firstElementChild, false);
       } else {
         
         this._selectItem(null);
@@ -172,7 +172,7 @@ class UrlbarView {
       
       
       let resultIndex = this._selected.getAttribute("resultIndex");
-      this._selectItem(fragment.children[resultIndex]);
+      this._selectItem(fragment.children[resultIndex], false);
     }
 
     
