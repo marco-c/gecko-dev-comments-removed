@@ -2033,14 +2033,12 @@ nsresult Element::SetSMILOverrideStyleDeclaration(
 
   slots->mSMILOverrideStyleDeclaration = aDeclaration;
 
-  Document* doc = GetComposedDoc();
   
   
   
-  if (doc) {
-    nsCOMPtr<nsIPresShell> shell = doc->GetShell();
-    if (shell) {
-      shell->RestyleForAnimation(this, eRestyle_StyleAttribute_Animations);
+  if (Document* doc = GetComposedDoc()) {
+    if (nsIPresShell* shell = doc->GetShell()) {
+      shell->RestyleForAnimation(this, StyleRestyleHint_RESTYLE_SMIL);
     }
   }
 

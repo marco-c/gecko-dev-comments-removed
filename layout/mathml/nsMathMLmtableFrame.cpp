@@ -900,7 +900,8 @@ void nsMathMLmtableFrame::RestyleTable() {
   
   
   PresContext()->RestyleManager()->PostRestyleEvent(
-      mContent->AsElement(), eRestyle_Subtree, nsChangeHint_AllReflowHints);
+      mContent->AsElement(), RestyleHint::RestyleSubtree(),
+      nsChangeHint_AllReflowHints);
 }
 
 nscoord nsMathMLmtableFrame::GetColSpacing(int32_t aColIndex) {

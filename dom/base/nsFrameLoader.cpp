@@ -849,11 +849,12 @@ void nsFrameLoader::MarginsChanged(uint32_t aMarginWidth,
 
   
   
-  RefPtr<nsPresContext> presContext = mDocShell->GetPresContext();
-  if (presContext)
+  if (nsPresContext* presContext = mDocShell->GetPresContext()) {
     
     
-    presContext->RebuildAllStyleData(nsChangeHint(0), eRestyle_Subtree);
+    presContext->RebuildAllStyleData(nsChangeHint(0),
+                                     RestyleHint::RestyleSubtree());
+  }
 }
 
 bool nsFrameLoader::ShowRemoteFrame(const ScreenIntSize& size,

@@ -258,34 +258,17 @@ class nsPresContext : public nsISupports,
 
 
 
-  void RebuildAllStyleData(nsChangeHint aExtraHint, nsRestyleHint aRestyleHint);
+  void RebuildAllStyleData(nsChangeHint aExtraHint, mozilla::RestyleHint);
   
 
 
 
   void PostRebuildAllStyleDataEvent(nsChangeHint aExtraHint,
-                                    nsRestyleHint aRestyleHint);
+                                    mozilla::RestyleHint);
 
   void ContentLanguageChanged();
 
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
   void MediaFeatureValuesChanged(const mozilla::MediaFeatureChange& aChange) {

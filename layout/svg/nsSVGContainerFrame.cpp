@@ -188,7 +188,7 @@ void nsSVGDisplayContainerFrame::RemoveFrame(ChildListID aListID,
   
   SchedulePaint();
   PresContext()->RestyleManager()->PostRestyleEvent(
-      mContent->AsElement(), nsRestyleHint(0), nsChangeHint_UpdateOverflow);
+      mContent->AsElement(), RestyleHint{0}, nsChangeHint_UpdateOverflow);
 
   nsSVGContainerFrame::RemoveFrame(aListID, aOldFrame);
 }

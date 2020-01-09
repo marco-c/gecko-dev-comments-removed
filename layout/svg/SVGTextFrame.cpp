@@ -5026,7 +5026,7 @@ void SVGTextFrame::NotifyGlyphMetricsChange() {
   
   AddStateBits(NS_STATE_SVG_TEXT_CORRESPONDENCE_DIRTY |
                NS_STATE_SVG_POSITIONING_DIRTY);
-  nsLayoutUtils::PostRestyleEvent(mContent->AsElement(), nsRestyleHint(0),
+  nsLayoutUtils::PostRestyleEvent(mContent->AsElement(), RestyleHint{0},
                                   nsChangeHint_InvalidateRenderingObservers);
   ScheduleReflowSVG();
 }

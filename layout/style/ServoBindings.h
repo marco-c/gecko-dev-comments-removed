@@ -810,9 +810,8 @@ void Servo_InitializeCooperativeThread();
 void Servo_Shutdown();
 
 
-void Servo_NoteExplicitHints(RawGeckoElementBorrowed element,
-                             nsRestyleHint restyle_hint,
-                             nsChangeHint change_hint);
+void Servo_NoteExplicitHints(RawGeckoElementBorrowed, mozilla::RestyleHint,
+                             nsChangeHint);
 
 
 

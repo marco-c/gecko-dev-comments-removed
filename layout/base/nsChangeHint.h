@@ -12,6 +12,7 @@
 #include "mozilla/Types.h"
 #include "nsDebug.h"
 #include "nsTArray.h"
+#include "mozilla/ServoStyleConsts.h"
 
 
 
@@ -518,127 +519,25 @@ inline nsChangeHint NS_RemoveSubsumedHints(nsChangeHint aOurChange,
   return result;
 }
 
+namespace mozilla {
 
+using RestyleHint = StyleRestyleHint;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-enum nsRestyleHint : uint32_t {
-  
-  
-  
-  
-  eRestyle_Self = 1 << 0,
-
-  
-  
-  eRestyle_SomeDescendants = 1 << 1,
-
-  
-  
-  
-  
-  eRestyle_Subtree = 1 << 2,
-
-  
-  
-  eRestyle_LaterSiblings = 1 << 3,
-
-  
-  
-  
-  
-  
-  eRestyle_CSSTransitions = 1 << 4,
-
-  
-  
-  
-  
-  
-  eRestyle_CSSAnimations = 1 << 5,
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  eRestyle_StyleAttribute = 1 << 6,
-
-  
-  
-  eRestyle_StyleAttribute_Animations = 1 << 7,
-
-  
-  
-  eRestyle_Force = 1 << 8,
-
-  
-  
-  
-  
-  
-  eRestyle_ForceDescendants = 1 << 9,
-
-  
-  eRestyle_AllHintsWithAnimations = eRestyle_CSSTransitions |
-                                    eRestyle_CSSAnimations |
-                                    eRestyle_StyleAttribute_Animations,
-};
-
-
-
-typedef decltype(nsRestyleHint(0) + nsRestyleHint(0)) nsRestyleHint_size_t;
-
-inline constexpr nsRestyleHint operator|(nsRestyleHint aLeft,
-                                         nsRestyleHint aRight) {
-  return nsRestyleHint(nsRestyleHint_size_t(aLeft) |
-                       nsRestyleHint_size_t(aRight));
+inline RestyleHint RestyleHint::RestyleSubtree() {
+  return StyleRestyleHint_RESTYLE_SELF | StyleRestyleHint_RESTYLE_DESCENDANTS;
 }
 
-inline constexpr nsRestyleHint operator&(nsRestyleHint aLeft,
-                                         nsRestyleHint aRight) {
-  return nsRestyleHint(nsRestyleHint_size_t(aLeft) &
-                       nsRestyleHint_size_t(aRight));
+inline RestyleHint RestyleHint::RecascadeSubtree() {
+  return StyleRestyleHint_RECASCADE_SELF |
+         StyleRestyleHint_RECASCADE_DESCENDANTS;
 }
 
-inline nsRestyleHint& operator|=(nsRestyleHint& aLeft, nsRestyleHint aRight) {
-  return aLeft = aLeft | aRight;
+inline RestyleHint RestyleHint::ForAnimations() {
+  return StyleRestyleHint_RESTYLE_CSS_TRANSITIONS |
+         StyleRestyleHint_RESTYLE_CSS_ANIMATIONS |
+         StyleRestyleHint_RESTYLE_SMIL;
 }
 
-inline nsRestyleHint& operator&=(nsRestyleHint& aLeft, nsRestyleHint aRight) {
-  return aLeft = aLeft & aRight;
-}
-
-inline constexpr nsRestyleHint operator~(nsRestyleHint aArg) {
-  return nsRestyleHint(~nsRestyleHint_size_t(aArg));
-}
-
-inline constexpr nsRestyleHint operator^(nsRestyleHint aLeft,
-                                         nsRestyleHint aRight) {
-  return nsRestyleHint(nsRestyleHint_size_t(aLeft) ^
-                       nsRestyleHint_size_t(aRight));
-}
-
-inline nsRestyleHint operator^=(nsRestyleHint& aLeft, nsRestyleHint aRight) {
-  return aLeft = aLeft ^ aRight;
-}
+}  
 
 #endif 

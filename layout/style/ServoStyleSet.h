@@ -116,7 +116,7 @@ class ServoStyleSet {
 
   bool StyleSheetsHaveChanged() const { return StylistNeedsUpdate(); }
 
-  nsRestyleHint MediumFeaturesChanged(MediaFeatureChangeReason);
+  RestyleHint MediumFeaturesChanged(MediaFeatureChangeReason);
 
   
   

@@ -2565,8 +2565,7 @@ class nsLayoutUtils {
 
 
 
-  static void PostRestyleEvent(mozilla::dom::Element* aElement,
-                               nsRestyleHint aRestyleHint,
+  static void PostRestyleEvent(mozilla::dom::Element*, mozilla::RestyleHint,
                                nsChangeHint aMinChangeHint);
 
   

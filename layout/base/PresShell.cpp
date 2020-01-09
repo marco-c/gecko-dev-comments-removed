@@ -2922,11 +2922,8 @@ void nsIPresShell::DestroyFramesForAndRestyle(Element* aElement) {
   auto changeHint =
       didReconstruct ? nsChangeHint(0) : nsChangeHint_ReconstructFrame;
 
-  
-  
-  
-  mPresContext->RestyleManager()->PostRestyleEvent(aElement, eRestyle_Subtree,
-                                                   changeHint);
+  mPresContext->RestyleManager()->PostRestyleEvent(
+      aElement, RestyleHint::RestyleSubtree(), changeHint);
 
   --mChangeNestCount;
 }
@@ -2939,10 +2936,10 @@ void nsIPresShell::PostRecreateFramesFor(Element* aElement) {
   }
 
   mPresContext->RestyleManager()->PostRestyleEvent(
-      aElement, nsRestyleHint(0), nsChangeHint_ReconstructFrame);
+      aElement, RestyleHint{0}, nsChangeHint_ReconstructFrame);
 }
 
-void nsIPresShell::RestyleForAnimation(Element* aElement, nsRestyleHint aHint) {
+void nsIPresShell::RestyleForAnimation(Element* aElement, RestyleHint aHint) {
   
   
   
@@ -6528,7 +6525,8 @@ nsresult PresShell::EventHandler::HandleEvent(nsIFrame* aFrameForPresShell,
       mPresShell->mCurrentEventFrame = nullptr;
       
       
-      return HandleEventWithCurrentEventInfo(aGUIEvent, aEventStatus, true, nullptr);
+      return HandleEventWithCurrentEventInfo(aGUIEvent, aEventStatus, true,
+                                             nullptr);
     }
 
     if (aGUIEvent->HasKeyEventMessage()) {
@@ -7452,7 +7450,8 @@ nsresult PresShell::EventHandler::HandleEventAtFocusedContent(
     return RetargetEventToParent(aGUIEvent, aEventStatus);
   }
 
-  nsresult rv = HandleEventWithCurrentEventInfo(aGUIEvent, aEventStatus, true, nullptr);
+  nsresult rv =
+      HandleEventWithCurrentEventInfo(aGUIEvent, aEventStatus, true, nullptr);
 
 #ifdef DEBUG
   mPresShell->ShowEventTargetDebug();
@@ -7556,7 +7555,8 @@ nsresult PresShell::EventHandler::HandleEventWithFrameForPresShell(
 
   nsresult rv = NS_OK;
   if (mPresShell->GetCurrentEventFrame()) {
-    rv = HandleEventWithCurrentEventInfo(aGUIEvent, aEventStatus, true, nullptr);
+    rv =
+        HandleEventWithCurrentEventInfo(aGUIEvent, aEventStatus, true, nullptr);
   }
 
 #ifdef DEBUG
@@ -9407,7 +9407,7 @@ static bool ReResolveMenusAndTrees(nsIFrame* aFrame) {
 static bool ReframeImageBoxes(nsIFrame* aFrame) {
   if (aFrame->IsImageBoxFrame()) {
     aFrame->PresContext()->RestyleManager()->PostRestyleEvent(
-        aFrame->GetContent()->AsElement(), nsRestyleHint(0),
+        aFrame->GetContent()->AsElement(), RestyleHint{0},
         nsChangeHint_ReconstructFrame);
     return false;  
   }
