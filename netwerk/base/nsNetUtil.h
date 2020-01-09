@@ -376,8 +376,7 @@ nsresult NS_NewStreamLoaderInternal(
     nsIPrincipal* aLoadingPrincipal, nsSecurityFlags aSecurityFlags,
     nsContentPolicyType aContentPolicyType, nsILoadGroup* aLoadGroup = nullptr,
     nsIInterfaceRequestor* aCallbacks = nullptr,
-    nsLoadFlags aLoadFlags = nsIRequest::LOAD_NORMAL,
-    nsIURI* aReferrer = nullptr);
+    nsLoadFlags aLoadFlags = nsIRequest::LOAD_NORMAL);
 
 nsresult NS_NewStreamLoader(nsIStreamLoader** outStream, nsIURI* aUri,
                             nsIStreamLoaderObserver* aObserver,
@@ -386,8 +385,7 @@ nsresult NS_NewStreamLoader(nsIStreamLoader** outStream, nsIURI* aUri,
                             nsContentPolicyType aContentPolicyType,
                             nsILoadGroup* aLoadGroup = nullptr,
                             nsIInterfaceRequestor* aCallbacks = nullptr,
-                            nsLoadFlags aLoadFlags = nsIRequest::LOAD_NORMAL,
-                            nsIURI* aReferrer = nullptr);
+                            nsLoadFlags aLoadFlags = nsIRequest::LOAD_NORMAL);
 
 nsresult NS_NewStreamLoader(nsIStreamLoader** outStream, nsIURI* aUri,
                             nsIStreamLoaderObserver* aObserver,
@@ -396,8 +394,7 @@ nsresult NS_NewStreamLoader(nsIStreamLoader** outStream, nsIURI* aUri,
                             nsContentPolicyType aContentPolicyType,
                             nsILoadGroup* aLoadGroup = nullptr,
                             nsIInterfaceRequestor* aCallbacks = nullptr,
-                            nsLoadFlags aLoadFlags = nsIRequest::LOAD_NORMAL,
-                            nsIURI* aReferrer = nullptr);
+                            nsLoadFlags aLoadFlags = nsIRequest::LOAD_NORMAL);
 
 nsresult NS_NewSyncStreamListener(nsIStreamListener** result,
                                   nsIInputStream** stream);
@@ -463,8 +460,7 @@ nsresult NS_GetURLSpecFromDir(nsIFile* file, nsACString& url,
 
 
 
-
-nsresult NS_GetReferrerFromChannel(nsIChannel* channel, nsIURI** referrer);
+void NS_GetReferrerFromChannel(nsIChannel* channel, nsIURI** referrer);
 
 nsresult NS_ParseRequestContentType(const nsACString& rawContentType,
                                     nsCString& contentType,
@@ -924,20 +920,6 @@ nsresult NS_ShouldSecureUpgrade(
 nsresult NS_GetSecureUpgradedURI(nsIURI* aURI, nsIURI** aUpgradedURI);
 
 nsresult NS_CompareLoadInfoAndLoadContext(nsIChannel* aChannel);
-
-
-
-
-
-
-
-
-
-
-
-uint32_t NS_GetDefaultReferrerPolicy(nsIHttpChannel* aChannel = nullptr,
-                                     nsIURI* aURI = nullptr,
-                                     bool privateBrowsing = false);
 
 
 

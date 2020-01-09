@@ -2445,11 +2445,9 @@ nsresult nsHttpChannel::ProcessResponse() {
   
   
   
-  
-  
   nsCOMPtr<nsIURI> referrer = GetReferringPage();
-  if (!referrer) {
-    referrer = mReferrer;
+  if (!referrer && mReferrerInfo) {
+    referrer = mReferrerInfo->GetOriginalReferrer();
   }
 
   if (referrer) {
@@ -9607,7 +9605,7 @@ void nsHttpChannel::SetOriginHeader() {
   mLoadInfo->TriggeringPrincipal()->GetURI(getter_AddRefs(referrer));
 
   nsAutoCString origin("null");
-  if (referrer && IsReferrerSchemeAllowed(referrer)) {
+  if (referrer && dom::ReferrerInfo::IsReferrerSchemeAllowed(referrer)) {
     nsContentUtils::GetASCIIOrigin(referrer, origin);
   }
 
@@ -9620,7 +9618,7 @@ void nsHttpChannel::SetOriginHeader() {
       
       return;
     }
-  } else if (gHttpHandler->HideOnionReferrerSource()) {
+  } else if (dom::ReferrerInfo::HideOnionReferrerSource()) {
     nsAutoCString host;
     if (referrer && NS_SUCCEEDED(referrer->GetAsciiHost(host)) &&
         StringEndsWith(host, NS_LITERAL_CSTRING(".onion"))) {
@@ -10223,18 +10221,24 @@ nsresult nsHttpChannel::RedirectToInterceptedChannel() {
 void nsHttpChannel::ReEvaluateReferrerAfterTrackingStatusIsKnown() {
   if (StaticPrefs::network_cookie_cookieBehavior() ==
       nsICookieService::BEHAVIOR_REJECT_TRACKER) {
-    
-    
-    
-    
-    
-    
     bool isPrivate =
         mLoadInfo && mLoadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
-    if (mOriginalReferrer && mOriginalReferrerPolicy == REFERRER_POLICY_UNSET &&
-        mReferrerPolicy ==
-            NS_GetDefaultReferrerPolicy(nullptr, nullptr, isPrivate)) {
-      SetReferrer(mOriginalReferrer);
+    
+    
+    
+    
+    if (mReferrerInfo) {
+      dom::ReferrerInfo* referrerInfo =
+          static_cast<dom::ReferrerInfo*>(mReferrerInfo.get());
+
+      if (referrerInfo->IsPolicyOverrided() &&
+          referrerInfo->GetReferrerPolicy() ==
+              ReferrerInfo::GetDefaultReferrerPolicy(nullptr, nullptr,
+                                                     isPrivate)) {
+        nsCOMPtr<nsIReferrerInfo> newReferrerInfo =
+            referrerInfo->CloneWithNewPolicy(RP_Unset);
+        SetReferrerInfo(newReferrerInfo, false, true);
+      }
     }
   }
 }

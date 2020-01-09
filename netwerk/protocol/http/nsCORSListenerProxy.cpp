@@ -969,7 +969,7 @@ nsresult nsCORSListenerProxy::UpdateChannel(nsIChannel* aChannel,
   NS_ENSURE_TRUE(http, NS_ERROR_FAILURE);
 
   
-  if (gHttpHandler->HideOnionReferrerSource()) {
+  if (dom::ReferrerInfo::HideOnionReferrerSource()) {
     nsCOMPtr<nsIURI> potentialOnionUri;  
     rv = mOriginHeaderPrincipal->GetURI(getter_AddRefs(potentialOnionUri));
     NS_ENSURE_SUCCESS(rv, rv);
@@ -1537,14 +1537,15 @@ nsresult nsCORSListenerProxy::StartCORSPreflight(
 
   
   
-  uint32_t referrerPolicy = nsIHttpChannel::REFERRER_POLICY_UNSET;
-  rv = reqCh->GetReferrerPolicy(&referrerPolicy);
+  nsCOMPtr<nsIReferrerInfo> referrerInfo;
+  rv = reqCh->GetReferrerInfo(getter_AddRefs(referrerInfo));
   NS_ENSURE_SUCCESS(rv, rv);
-  nsCOMPtr<nsIURI> requestReferrerURI;
-  rv = reqCh->GetReferrer(getter_AddRefs(requestReferrerURI));
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = preCh->SetReferrerWithPolicy(requestReferrerURI, referrerPolicy);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (referrerInfo) {
+    nsCOMPtr<nsIReferrerInfo> newReferrerInfo =
+        static_cast<dom::ReferrerInfo*>(referrerInfo.get())->Clone();
+    rv = preCh->SetReferrerInfo(newReferrerInfo);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
 
   
   rv = preflightChannel->AsyncOpen(preflightListener);
