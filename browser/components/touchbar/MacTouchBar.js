@@ -252,14 +252,20 @@ class TouchBarHelper {
 
 
 
-  _updateTouchBarInputs(inputName, ...otherInputs) {
-    let input = this.getTouchBarInput(inputName);
-    if (!input || !this.window) {
+  _updateTouchBarInputs(...inputNames) {
+    if (!this.window) {
       return;
     }
-    let inputs = [input];
-    for (let otherInputName of otherInputs) {
-      input = this.getTouchBarInput(otherInputName);
+
+    let inputs = [];
+    for (let inputName of inputNames) {
+      
+      
+      if (!this._storedLayout.includes(inputName)) {
+        continue;
+      }
+
+      let input = this.getTouchBarInput(inputName);
       if (!input) {
         continue;
       }
