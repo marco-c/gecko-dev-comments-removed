@@ -6558,7 +6558,7 @@ nsresult PresShell::EventHandler::HandleEvent(nsIFrame* aFrame,
     
     
     
-    nsIContent* capturingContent =
+    nsCOMPtr<nsIContent> capturingContent =
         EventHandler::GetCapturingContentFor(aGUIEvent);
     if (GetDocument()) {
       if (aGUIEvent->mClass == eTouchEventClass) {
