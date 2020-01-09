@@ -406,6 +406,10 @@ pref("permissions.default.geo", 0);
 pref("permissions.default.desktop-notification", 0);
 pref("permissions.default.shortcuts", 0);
 
+pref("permissions.desktop-notification.postPrompt.enabled", false);
+
+pref("permissions.postPrompt.animate", true);
+
 
 
 pref("browser.link.open_newwindow", 3);

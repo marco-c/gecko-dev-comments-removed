@@ -79,6 +79,11 @@ XPCOMUtils.defineLazyGetter(this, "gBrowserBundle", function() {
                  .createBundle("chrome://browser/locale/browser.properties");
 });
 
+XPCOMUtils.defineLazyPreferenceGetter(this, "animationsEnabled",
+                                      "toolkit.cosmeticAnimations.enabled");
+XPCOMUtils.defineLazyPreferenceGetter(this, "postPromptAnimationEnabled",
+                                      "permissions.postPrompt.animate");
+
 var PermissionUI = {};
 
 
@@ -164,6 +169,19 @@ var PermissionPromptPrototype = {
 
   get popupOptions() {
     return {};
+  },
+
+  
+
+
+
+
+
+
+
+
+  get postPromptEnabled() {
+    return false;
   },
 
   
@@ -257,8 +275,32 @@ var PermissionPromptPrototype = {
 
 
 
+
+
   get promptActions() {
     return [];
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  get postPromptActions() {
+    return null;
   },
 
   
@@ -314,6 +356,13 @@ var PermissionPromptPrototype = {
                                         this.browser);
 
       if (state == SitePermissions.BLOCK) {
+        
+        
+        
+        if (this.postPromptEnabled &&
+            SitePermissions.getDefault(this.permissionKey) == SitePermissions.BLOCK) {
+          this.postPrompt();
+        }
         this.cancel();
         return;
       }
@@ -341,6 +390,9 @@ var PermissionPromptPrototype = {
     }
 
     if (this.requiresUserInput && !this.request.isHandlingUserInput) {
+      if (this.postPromptEnabled) {
+        this.postPrompt();
+      }
       this.cancel();
       return;
     }
@@ -415,18 +467,80 @@ var PermissionPromptPrototype = {
       popupNotificationActions.push(action);
     }
 
-    let mainAction = popupNotificationActions.length ?
-                     popupNotificationActions[0] : null;
-    let secondaryActions = popupNotificationActions.splice(1);
+    this._showNotification(popupNotificationActions);
+  },
+
+  postPrompt() {
+    let browser = this.browser;
+    let principal = this.principal;
+    let chromeWin = browser.ownerGlobal;
+    if (!chromeWin.PopupNotifications) {
+      return;
+    }
+
+    if (!this.permissionKey) {
+      throw new Error("permissionKey is required to show a post-prompt");
+    }
+
+    if (!this.postPromptActions) {
+      throw new Error("postPromptActions are required to show a post-prompt");
+    }
+
+    
+    let popupNotificationActions = [];
+    for (let promptAction of this.postPromptActions) {
+      let action = {
+        label: promptAction.label,
+        accessKey: promptAction.accessKey,
+        callback: state => {
+          if (promptAction.callback) {
+            promptAction.callback();
+          }
+
+          
+          
+          
+          
+          let scope = SitePermissions.SCOPE_PERSISTENT;
+          
+          if (PrivateBrowsingUtils.isBrowserPrivate(browser)) {
+            scope = SitePermissions.SCOPE_SESSION;
+          }
+          SitePermissions.set(principal.URI,
+                              this.permissionKey,
+                              promptAction.action,
+                              scope);
+        },
+      };
+      popupNotificationActions.push(action);
+    }
+
+    if (animationsEnabled && postPromptAnimationEnabled) {
+      let anchor = chromeWin.document.getElementById(this.anchorID);
+      
+      anchor.addEventListener("animationend", () => anchor.removeAttribute("animate"), {once: true});
+      anchor.setAttribute("animate", "true");
+    }
+
+    this._showNotification(popupNotificationActions, true);
+  },
+
+  _showNotification(actions, postPrompt = false) {
+    let mainAction = actions.length ? actions[0] : null;
+    let secondaryActions = actions.splice(1);
 
     let options = this.popupOptions;
 
     if (!options.hasOwnProperty("displayURI") || options.displayURI) {
       options.displayURI = this.principal.URI;
     }
-    
-    options.persistent = true;
-    options.hideClose = true;
+
+    if (!postPrompt) {
+      
+      options.persistent = true;
+      options.hideClose = true;
+    }
+
     options.eventCallback = (topic) => {
       
       
@@ -435,17 +549,33 @@ var PermissionPromptPrototype = {
         return true;
       }
       
-      if (topic == "shown") {
+      
+      
+      
+      
+      if (topic == "shown" && !postPrompt) {
         this.onShown();
       }
       
-      if (topic == "removed") {
+      
+      
+      
+      
+      if (topic == "removed" && !postPrompt) {
         this.onAfterShow();
       }
       return false;
     };
 
-    if (this.onBeforeShow() !== false) {
+    
+    options.dismissed = postPrompt;
+
+    
+    
+    
+    
+    if (postPrompt || this.onBeforeShow() !== false) {
+      let chromeWin = this.browser.ownerGlobal;
       chromeWin.PopupNotifications.show(this.browser,
                                         this.notificationID,
                                         this.message,
@@ -586,6 +716,8 @@ function DesktopNotificationPermissionPrompt(request) {
 
   XPCOMUtils.defineLazyPreferenceGetter(this, "requiresUserInput",
                                         "dom.webnotifications.requireuserinteraction");
+  XPCOMUtils.defineLazyPreferenceGetter(this, "postPromptEnabled",
+                                        "permissions.desktop-notification.postPrompt.enabled");
 }
 
 DesktopNotificationPermissionPrompt.prototype = {
@@ -645,6 +777,23 @@ DesktopNotificationPermissionPrompt.prototype = {
       });
     }
     return actions;
+  },
+
+  get postPromptActions() {
+    return [
+      {
+        label: gBrowserBundle.GetStringFromName("webNotifications.allow"),
+        accessKey:
+          gBrowserBundle.GetStringFromName("webNotifications.allow.accesskey"),
+        action: SitePermissions.ALLOW,
+      },
+      {
+        label: gBrowserBundle.GetStringFromName("webNotifications.never"),
+        accessKey:
+          gBrowserBundle.GetStringFromName("webNotifications.never.accesskey"),
+        action: SitePermissions.BLOCK,
+      },
+    ];
   },
 };
 
