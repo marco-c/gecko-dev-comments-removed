@@ -12,7 +12,6 @@
 
 #include "mozilla/ArenaAllocator.h"
 #include "mozilla/ArenaObjectID.h"
-#include "mozilla/ArenaRefPtr.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/MemoryChecking.h"  
 #include "mozilla/MemoryReporting.h"
@@ -62,47 +61,6 @@ class nsPresArena {
 
 
 
-
-
-
-
-
-
-  template <typename T>
-  void RegisterArenaRefPtr(mozilla::ArenaRefPtr<T>* aPtr) {
-    MOZ_ASSERT(!mArenaRefPtrs.Contains(aPtr));
-    mArenaRefPtrs.Put(aPtr, T::ArenaObjectID());
-  }
-
-  
-
-
-
-  template <typename T>
-  void DeregisterArenaRefPtr(mozilla::ArenaRefPtr<T>* aPtr) {
-    MOZ_ASSERT(mArenaRefPtrs.Contains(aPtr));
-    mArenaRefPtrs.Remove(aPtr);
-  }
-
-  
-
-
-
-
-  void ClearArenaRefPtrs();
-
-  
-
-
-
-
-
-  void ClearArenaRefPtrs(mozilla::ArenaObjectID aObjectID);
-
-  
-
-
-
   void AddSizeOfExcludingThis(nsWindowSizes& aWindowSizes) const;
 
   void Check() { mPool.Check(); }
@@ -110,9 +68,6 @@ class nsPresArena {
  private:
   void* Allocate(uint32_t aCode, size_t aSize);
   void Free(uint32_t aCode, void* aPtr);
-
-  inline void ClearArenaRefPtrWithoutDeregistering(
-      void* aPtr, mozilla::ArenaObjectID aObjectID);
 
   class FreeList {
    public:
@@ -129,7 +84,6 @@ class nsPresArena {
 
   FreeList mFreeLists[mozilla::eArenaObjectID_COUNT];
   mozilla::ArenaAllocator<ArenaSize, 8> mPool;
-  nsDataHashtable<nsPtrHashKey<void>, mozilla::ArenaObjectID> mArenaRefPtrs;
 };
 
 #endif
