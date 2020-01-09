@@ -31,6 +31,7 @@ import android.util.Log;
 
 import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.GeckoAppShell;
+import org.mozilla.gecko.GeckoNetworkManager;
 import org.mozilla.gecko.GeckoScreenOrientation;
 import org.mozilla.gecko.GeckoSystemStateListener;
 import org.mozilla.gecko.GeckoThread;
@@ -115,11 +116,16 @@ public final class GeckoRuntime implements Parcelable {
         @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
         void onResume() {
             Log.d(LOGTAG, "Lifecycle: onResume");
+            
+            
+            GeckoNetworkManager.getInstance().start(GeckoAppShell.getApplicationContext());
         }
 
         @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
         void onPause() {
             Log.d(LOGTAG, "Lifecycle: onPause");
+            
+            GeckoNetworkManager.getInstance().stop();
         }
     }
 
