@@ -137,7 +137,12 @@ var gSync = {
     syncNow.setAttribute("label", label);
     
     
+    
+    
+    
+    
     document.getElementById("sync-setup").hidden = false;
+    document.getElementById("PanelUI-remotetabs-setupsync").hidden = false;
 
     for (let topic of this._obs) {
       Services.obs.addObserver(this, topic, true);
