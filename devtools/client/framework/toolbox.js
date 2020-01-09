@@ -477,10 +477,15 @@ Toolbox.prototype = {
       Services.prefs.addObserver("devtools.serviceWorkers.testing.enabled",
                                  this._applyServiceWorkersTestingSettings);
 
+      
+      
+      
+      
       this.doc.addEventListener("contextmenu", (e) => {
         if (e.originalTarget.closest("input[type=text]") ||
             e.originalTarget.closest("input[type=search]") ||
             e.originalTarget.closest("input:not([type])") ||
+            e.originalTarget.closest(".devtools-input") ||
             e.originalTarget.closest("textarea")) {
           e.stopPropagation();
           e.preventDefault();
