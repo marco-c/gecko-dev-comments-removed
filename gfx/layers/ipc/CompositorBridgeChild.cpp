@@ -43,7 +43,6 @@
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/Unused.h"
 #include "mozilla/DebugOnly.h"
-#include "nsThreadUtils.h"
 #if defined(XP_WIN)
 #  include "WinUtils.h"
 #endif
@@ -109,16 +108,6 @@ bool CompositorBridgeChild::IsSameProcess() const {
   return OtherPid() == base::GetCurrentProcId();
 }
 
-void CompositorBridgeChild::PrepareFinalDestroy() {
-  
-  
-  
-  nsCOMPtr<nsIRunnable> runnable =
-      NewRunnableMethod("CompositorBridgeChild::AfterDestroy", this,
-                        &CompositorBridgeChild::AfterDestroy);
-  NS_DispatchToCurrentThreadQueue(runnable.forget(), EventQueuePriority::High);
-}
-
 void CompositorBridgeChild::AfterDestroy() {
   
   
@@ -165,8 +154,8 @@ void CompositorBridgeChild::Destroy() {
     
     
     MessageLoop::current()->PostTask(
-        NewRunnableMethod("CompositorBridgeChild::PrepareFinalDestroy", selfRef,
-                          &CompositorBridgeChild::PrepareFinalDestroy));
+        NewRunnableMethod("CompositorBridgeChild::AfterDestroy", selfRef,
+                          &CompositorBridgeChild::AfterDestroy));
     return;
   }
 
@@ -212,8 +201,8 @@ void CompositorBridgeChild::Destroy() {
 
   
   MessageLoop::current()->PostTask(
-      NewRunnableMethod("CompositorBridgeChild::PrepareFinalDestroy", selfRef,
-                        &CompositorBridgeChild::PrepareFinalDestroy));
+      NewRunnableMethod("CompositorBridgeChild::AfterDestroy", selfRef,
+                        &CompositorBridgeChild::AfterDestroy));
 }
 
 
