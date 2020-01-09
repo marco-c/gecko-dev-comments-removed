@@ -276,98 +276,6 @@ int JitcodeGlobalEntry::compare(const JitcodeGlobalEntry& ent1,
   return flip * -1;
 }
 
-
-char* JitcodeGlobalEntry::createScriptString(JSContext* cx, JSScript* script,
-                                             size_t* length) {
-  
-  bool hasName = false;
-  size_t nameLength = 0;
-  UniqueChars nameStr;
-  JSFunction* func = script->functionDelazifying();
-  if (func && func->displayAtom()) {
-    nameStr = StringToNewUTF8CharsZ(cx, *func->displayAtom());
-    if (!nameStr) {
-      return nullptr;
-    }
-
-    nameLength = strlen(nameStr.get());
-    hasName = true;
-  }
-
-  
-  const char* filenameStr = script->filename() ? script->filename() : "(null)";
-  size_t filenameLength = strlen(filenameStr);
-
-  
-  bool hasLineAndColumn = false;
-  size_t lineAndColumnLength = 0;
-  char lineAndColumnStr[30];
-  if (hasName || (script->functionNonDelazifying() || script->isForEval())) {
-    lineAndColumnLength = SprintfLiteral(lineAndColumnStr, "%u:%u",
-                                         script->lineno(), script->column());
-    hasLineAndColumn = true;
-  }
-
-  
-  
-  
-  
-  
-  
-
-  
-  size_t fullLength = 0;
-  if (hasName) {
-    MOZ_ASSERT(hasLineAndColumn);
-    fullLength = nameLength + 2 + filenameLength + 1 + lineAndColumnLength + 1;
-  } else if (hasLineAndColumn) {
-    fullLength = filenameLength + 1 + lineAndColumnLength;
-  } else {
-    fullLength = filenameLength;
-  }
-
-  
-  char* str = cx->pod_malloc<char>(fullLength + 1);
-  if (!str) {
-    return nullptr;
-  }
-
-  size_t cur = 0;
-
-  
-  if (hasName) {
-    memcpy(str + cur, nameStr.get(), nameLength);
-    cur += nameLength;
-    str[cur++] = ' ';
-    str[cur++] = '(';
-  }
-
-  
-  memcpy(str + cur, filenameStr, filenameLength);
-  cur += filenameLength;
-
-  
-  if (hasLineAndColumn) {
-    str[cur++] = ':';
-    memcpy(str + cur, lineAndColumnStr, lineAndColumnLength);
-    cur += lineAndColumnLength;
-  }
-
-  
-  if (hasName) {
-    str[cur++] = ')';
-  }
-
-  MOZ_ASSERT(cur == fullLength);
-  str[cur] = 0;
-
-  if (length) {
-    *length = fullLength;
-  }
-
-  return str;
-}
-
 JitcodeGlobalTable::Enum::Enum(JitcodeGlobalTable& table, JSRuntime* rt)
     : Range(table), rt_(rt), next_(cur_ ? cur_->tower_->next(0) : nullptr) {
   for (int level = JitcodeSkiplistTower::MAX_HEIGHT - 1; level >= 0; level--) {
@@ -1420,11 +1328,11 @@ bool JitcodeIonTable::makeIonEntry(JSContext* cx, JitCode* code,
   });
 
   for (uint32_t i = 0; i < numScripts; i++) {
-    char* str = JitcodeGlobalEntry::createScriptString(cx, scripts[i]);
+    UniqueChars str = GeckoProfilerRuntime::allocProfileString(cx, scripts[i]);
     if (!str) {
       return false;
     }
-    if (!profilingStrings.append(str)) {
+    if (!profilingStrings.append(str.release())) {
       return false;
     }
   }
