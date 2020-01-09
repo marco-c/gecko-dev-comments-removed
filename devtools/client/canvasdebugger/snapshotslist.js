@@ -5,6 +5,9 @@
 
 "use strict";
 
+var promise = require("promise");
+var defer = require("devtools/shared/defer");
+
 
 
 
@@ -421,7 +424,7 @@ var SnapshotsListView = extend(WidgetMethods, {
       const screenshot = snapshotItem.attachment.screenshot;
 
       
-      await DevToolsUtils.yieldingEach(functionCalls, (call, i) => {
+      await yieldingEach(functionCalls, (call, i) => {
         const { type, name, file, line, timestamp, argsPreview, callerPreview } = call;
         return call.getDetails().then(({ stack }) => {
           data.calls[i] = {
@@ -438,7 +441,7 @@ var SnapshotsListView = extend(WidgetMethods, {
       });
 
       
-      await DevToolsUtils.yieldingEach(thumbnails, (thumbnail, i) => {
+      await yieldingEach(thumbnails, (thumbnail, i) => {
         const { index, width, height, flipped, pixels } = thumbnail;
         data.thumbnails.push({ index, width, height, flipped, pixels });
       });
@@ -494,4 +497,53 @@ function showNotification(toolbox, name, message) {
   if (!notification) {
     notificationBox.appendNotification(message, name, "", notificationBox.PRIORITY_WARNING_HIGH);
   }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function yieldingEach(array, fn) {
+  const deferred = defer();
+
+  let i = 0;
+  const len = array.length;
+  const outstanding = [deferred.promise];
+
+  (function loop() {
+    const start = Date.now();
+
+    while (i < len) {
+      
+      
+      
+      
+      if (Date.now() - start > 16) {
+        DevToolsUtils.executeSoon(loop);
+        return;
+      }
+
+      try {
+        outstanding.push(fn(array[i], i++));
+      } catch (e) {
+        deferred.reject(e);
+        return;
+      }
+    }
+
+    deferred.resolve();
+  }());
+
+  return promise.all(outstanding);
 }
