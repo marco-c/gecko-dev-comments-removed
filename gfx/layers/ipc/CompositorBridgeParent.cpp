@@ -24,7 +24,6 @@
 #ifdef MOZ_WIDGET_GTK
 #  include "gfxPlatformGtk.h"  
 #endif
-#include "gfxPrefs.h"                 
 #include "mozilla/AutoRestore.h"      
 #include "mozilla/ClearOnShutdown.h"  
 #include "mozilla/DebugOnly.h"        
@@ -298,7 +297,7 @@ static int32_t CalculateCompositionFrameRate() {
   int32_t compositionFrameRatePref = StaticPrefs::LayersCompositionFrameRate();
   if (compositionFrameRatePref < 0) {
     
-    int32_t layoutFrameRatePref = gfxPrefs::LayoutFrameRate();
+    int32_t layoutFrameRatePref = StaticPrefs::LayoutFrameRate();
     if (layoutFrameRatePref < 0) {
       
       
