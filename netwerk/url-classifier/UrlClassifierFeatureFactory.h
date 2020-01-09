@@ -45,6 +45,8 @@ class UrlClassifierFeatureFactory final {
   
   static bool IsClassifierBlockingEventCode(uint32_t aEventCode);
 
+  static uint32_t GetClassifierBlockingEventCode(nsresult aErrorCode);
+
   
   
   static const char* ClassifierBlockingErrorCodeToConsoleMessage(

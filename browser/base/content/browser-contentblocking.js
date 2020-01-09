@@ -85,12 +85,16 @@ var TrackingProtection = {
     this.categoryLabel.textContent = label ? gNavigatorBundle.getString(label) : "";
   },
 
+  
   isBlocking(state) {
-    return (state & Ci.nsIWebProgressListener.STATE_BLOCKED_TRACKING_CONTENT) != 0;
+    return (state & Ci.nsIWebProgressListener.STATE_BLOCKED_TRACKING_CONTENT) != 0 ||
+           (state & Ci.nsIWebProgressListener.STATE_BLOCKED_FINGERPRINTING_CONTENT) != 0;
   },
 
+  
   isAllowing(state) {
-    return (state & Ci.nsIWebProgressListener.STATE_LOADED_TRACKING_CONTENT) != 0;
+    return (state & Ci.nsIWebProgressListener.STATE_LOADED_TRACKING_CONTENT) != 0 ||
+           (state & Ci.nsIWebProgressListener.STATE_LOADED_FINGERPRINTING_CONTENT) != 0;
   },
 
   isDetected(state) {

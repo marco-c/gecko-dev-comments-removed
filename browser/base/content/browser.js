@@ -4915,6 +4915,7 @@ var XULBrowserWindow = {
   
   
   
+  
   onContentBlockingEvent(aWebProgress, aRequest, aEvent, aIsSimulated) {
     
     
