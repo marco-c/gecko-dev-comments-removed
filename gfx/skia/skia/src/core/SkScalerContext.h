@@ -26,6 +26,7 @@ class SkMaskFilter;
 class SkPathEffect;
 class SkScalerContext;
 class SkScalerContext_DW;
+class SkTypeface_Mac;
 
 enum SkScalerContextFlags : uint32_t {
     kNone                      = 0,
@@ -207,6 +208,7 @@ private:
     
     friend class SkScalerContext;
     friend class SkScalerContext_DW;
+    friend class SkTypeface_Mac;
 
     SkColor getLuminanceColor() const {
         return fLumBits;
@@ -251,6 +253,8 @@ public:
         
         
         kGenA8FromLCD_Flag        = 0x0800, 
+
+        kLightOnDark_Flag         = 0x8000, 
     };
 
     
