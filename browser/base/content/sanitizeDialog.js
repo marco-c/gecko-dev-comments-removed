@@ -53,6 +53,15 @@ var gSanitizePromptDialog = {
     } else {
       this.warningBox.hidden = true;
     }
+
+    
+    if (!("gSubDialog" in window.opener)) {
+      
+      
+      document.l10n.translateElements([document.documentElement]).then(() => {
+        window.sizeToContent();
+      });
+    }
   },
 
   selectByTimespan() {
