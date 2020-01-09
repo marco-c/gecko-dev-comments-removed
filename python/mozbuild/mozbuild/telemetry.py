@@ -218,10 +218,7 @@ def get_build_opts(substs):
         compiler = substs.get('CC_TYPE', None)
         if compiler:
             opts['compiler'] = str(compiler)
-        
-        
-        prefix = os.path.basename(substs.get('CCACHE_PREFIX', ''))
-        if substs.get('CXX_IS_ICECREAM', None) or prefix == 'icecc':
+        if substs.get('CXX_IS_ICECREAM', None):
             opts['icecream'] = True
         return opts
     except BuildEnvironmentNotFoundException:
