@@ -34,13 +34,6 @@
   padding: 0 3px;
 }
 
-.devtools-toolbar td {
-  border-bottom-width: 1px;
-  border-bottom-style: solid;
-  border-bottom-color: var(--theme-splitter-color);
-}
-
-
 .devtools-toolbar-bottom {
   border-top-width: 1px;
   border-bottom: none;
