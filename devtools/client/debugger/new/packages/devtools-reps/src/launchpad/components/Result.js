@@ -32,6 +32,7 @@ class Result extends Component {
     e.stopPropagation();
 
     const textField = document.createElement("textarea");
+    
     textField.innerHTML = JSON.stringify(packet, null, "  ");
     document.body.appendChild(textField);
     textField.select();
