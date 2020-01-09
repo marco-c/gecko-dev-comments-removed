@@ -10,6 +10,7 @@
 #include "ParentInternal.h"
 
 #include "chrome/common/mach_ipc_mac.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/dom/TabChild.h"
@@ -163,7 +164,9 @@ void UpdateGraphicsInUIProcess(const PaintMessage* aMsg) {
   AutoSafeJSContext cx;
   JSAutoRealm ar(cx, xpc::PrivilegedJunkScope());
 
-  JSObject* bufferObject =
+  
+  JS::RootedObject bufferObject(cx);
+  bufferObject =
       JS_NewArrayBufferWithExternalContents(cx, width * height * 4, memory);
   MOZ_RELEASE_ASSERT(bufferObject);
 
@@ -173,6 +176,11 @@ void UpdateGraphicsInUIProcess(const PaintMessage* aMsg) {
   if (NS_FAILED(gGraphics->UpdateCanvas(buffer, width, height, hadFailure))) {
     MOZ_CRASH("UpdateGraphicsInUIProcess");
   }
+
+  
+  
+  
+  MOZ_ALWAYS_TRUE(JS_DetachArrayBuffer(cx, bufferObject));
 }
 
 static void MaybeTriggerExplicitPaint() {

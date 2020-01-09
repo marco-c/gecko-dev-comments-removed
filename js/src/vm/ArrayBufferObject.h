@@ -175,17 +175,25 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
   };
 
   enum BufferKind {
-    PLAIN = 0b000,  
-    WASM = 0b001,
-    MAPPED = 0b010,
-    EXTERNAL = 0b011,
+    
+    PLAIN_DATA = 0b000,
+
+    
+
+
+
+
+    USER_OWNED = 0b001,
+
+    WASM = 0b010,
+    MAPPED = 0b011,
+    EXTERNAL = 0b100,
 
     
     
-    BAD1 = 0b100,
-    BAD2 = 0b101,
-    BAD3 = 0b110,
-    BAD4 = 0b111,
+    BAD1 = 0b101,
+    BAD2 = 0b110,
+    BAD3 = 0b111,
 
     KIND_MASK = 0b111
   };
@@ -211,6 +219,7 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
     
     TYPED_OBJECT_VIEWS = 0b10'0000,
 
+    
     
     
     FOR_ASMJS = 0b100'0000,
@@ -249,8 +258,12 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
       return BufferContents(static_cast<uint8_t*>(data), Kind);
     }
 
-    static BufferContents createPlain(void* data) {
-      return BufferContents(static_cast<uint8_t*>(data), PLAIN);
+    static BufferContents createPlainData(void* data) {
+      return BufferContents(static_cast<uint8_t*>(data), PLAIN_DATA);
+    }
+
+    static BufferContents createUserOwned(void* data) {
+      return BufferContents(static_cast<uint8_t*>(data), USER_OWNED);
     }
 
     static BufferContents createExternal(void* data,
@@ -261,7 +274,7 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
     }
 
     static BufferContents createFailed() {
-      return BufferContents(nullptr, PLAIN);
+      return BufferContents(nullptr, PLAIN_DATA);
     }
 
     uint8_t* data() const { return data_; }
@@ -383,7 +396,10 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
   BufferKind bufferKind() const {
     return BufferKind(flags() & BUFFER_KIND_MASK);
   }
-  bool isPlain() const { return bufferKind() == PLAIN; }
+
+  bool isPlainData() const { return bufferKind() == PLAIN_DATA; }
+  bool hasUserOwnedData() const { return bufferKind() == USER_OWNED; }
+
   bool isWasm() const { return bufferKind() == WASM; }
   bool isMapped() const { return bufferKind() == MAPPED; }
   bool isExternal() const { return bufferKind() == EXTERNAL; }
@@ -432,7 +448,8 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
   void setIsDetached() { setFlags(flags() | DETACHED); }
   void setIsPreparedForAsmJS() {
     MOZ_ASSERT(!isWasm());
-    MOZ_ASSERT(isPlain() || isMapped() || isExternal());
+    MOZ_ASSERT(!hasUserOwnedData());
+    MOZ_ASSERT(isPlainData() || isMapped() || isExternal());
     setFlags(flags() | FOR_ASMJS);
   }
 

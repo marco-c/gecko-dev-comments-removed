@@ -1945,6 +1945,8 @@ extern JS_FRIEND_API JSObject* JS_GetArrayBufferViewBuffer(
 
 
 
+
+
 extern JS_FRIEND_API bool JS_DetachArrayBuffer(JSContext* cx,
                                                JS::HandleObject obj);
 
