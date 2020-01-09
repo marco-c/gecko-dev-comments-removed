@@ -1464,8 +1464,13 @@ bool nsGlobalWindowOuter::IsBlackForCC(bool aTracingNeeded) {
     return false;
   }
 
+  
+  
+  
+  
+  
   return (nsCCUncollectableMarker::InGeneration(GetMarkedCCGeneration()) ||
-          HasKnownLiveWrapper()) &&
+          (mInnerWindow && HasKnownLiveWrapper())) &&
          (!aTracingNeeded || HasNothingToTrace(ToSupports(this)));
 }
 
