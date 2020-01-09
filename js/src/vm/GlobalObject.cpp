@@ -570,6 +570,17 @@ GlobalObject* GlobalObject::new_(JSContext* cx, const Class* clasp,
   MOZ_ASSERT(!cx->isExceptionPending());
   MOZ_ASSERT_IF(cx->zone(), !cx->zone()->isAtomsZone());
 
+  
+  
+  
+  Rooted<GlobalObject*> existingGlobal(cx);
+  const JS::RealmCreationOptions& creationOptions = options.creationOptions();
+  if (creationOptions.compartmentSpecifier() ==
+      JS::CompartmentSpecifier::ExistingCompartment) {
+    Compartment* comp = creationOptions.compartment();
+    existingGlobal = &comp->firstGlobal();
+  }
+
   Realm* realm = NewRealm(cx, principals, options);
   if (!realm) {
     return nullptr;
