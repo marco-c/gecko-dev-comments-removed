@@ -21,7 +21,7 @@ add_task(async function test_simple() {
     "set": [
       ["security.insecure_password.ui.enabled", true],
       
-      ["network.proxy.no_proxies_on", ""],
+      ["network.proxy.allow_hijacking_localhost", true],
     ],
   });
 

@@ -386,6 +386,7 @@ class nsProtocolProxyService final : public nsIProtocolProxyService2,
   bool mSOCKSProxyRemoteDNS;
   bool mProxyOverTLS;
   bool mWPADOverDHCPEnabled;
+  bool mAllowHijackingLocalhost;
 
   RefPtr<nsPACMan> mPACMan;  
   nsCOMPtr<nsISystemProxySettings> mSystemProxySettings;

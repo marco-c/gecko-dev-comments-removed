@@ -762,6 +762,7 @@ nsProtocolProxyService::nsProtocolProxyService()
       mSOCKSProxyRemoteDNS(false),
       mProxyOverTLS(true),
       mWPADOverDHCPEnabled(false),
+      mAllowHijackingLocalhost(false),
       mPACMan(nullptr),
       mSessionStart(PR_Now()),
       mFailedProxyTimeout(30 * 60)  
@@ -1009,6 +1010,11 @@ void nsProtocolProxyService::PrefsChanged(nsIPrefBranch *prefBranch,
     reloadPAC = reloadPAC || mProxyConfig == PROXYCONFIG_WPAD;
   }
 
+  if (!pref || !strcmp(pref, PROXY_PREF("allow_hijacking_localhost"))) {
+    proxy_GetBoolPref(prefBranch, PROXY_PREF("allow_hijacking_localhost"),
+                      mAllowHijackingLocalhost);
+  }
+
   if (!pref || !strcmp(pref, PROXY_PREF("failover_timeout")))
     proxy_GetIntPref(prefBranch, PROXY_PREF("failover_timeout"),
                      mFailedProxyTimeout);
@@ -1052,8 +1058,6 @@ void nsProtocolProxyService::PrefsChanged(nsIPrefBranch *prefBranch,
 }
 
 bool nsProtocolProxyService::CanUseProxy(nsIURI *aURI, int32_t defaultPort) {
-  if (mHostFiltersArray.Length() == 0 && !mFilterLocalHosts) return true;
-
   int32_t port;
   nsAutoCString host;
 
@@ -1084,7 +1088,10 @@ bool nsProtocolProxyService::CanUseProxy(nsIURI *aURI, int32_t defaultPort) {
 
   
   if ((!is_ipaddr && mFilterLocalHosts && !host.Contains('.')) ||
-      host.EqualsLiteral("127.0.0.1") || host.EqualsLiteral("::1")) {
+      (!mAllowHijackingLocalhost &&
+           (host.EqualsLiteral("127.0.0.1") ||
+            host.EqualsLiteral("::1") ||
+            host.EqualsLiteral("localhost")))) {
     LOG(("Not using proxy for this local host [%s]!\n", host.get()));
     return false;  
   }
@@ -1765,6 +1772,10 @@ void nsProtocolProxyService::LoadHostFilters(const nsACString &aFilters) {
     mHostFiltersArray.Clear();
   }
 
+  
+  
+  mFilterLocalHosts = false;
+
   if (aFilters.IsEmpty()) {
     return;
   }
@@ -1773,10 +1784,6 @@ void nsProtocolProxyService::LoadHostFilters(const nsACString &aFilters) {
   
   
   
-  
-  
-  mFilterLocalHosts = false;
-
   mozilla::Tokenizer t(aFilters);
   mozilla::Tokenizer::Token token;
   bool eof = false;

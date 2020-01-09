@@ -2239,7 +2239,7 @@ BrowserGlue.prototype = {
   _migrateUI: function BG__migrateUI() {
     
     
-    const UI_VERSION = 79;
+    const UI_VERSION = 80;
     const BROWSER_DOCURL = AppConstants.BROWSER_CHROME_URL;
 
     let currentUIVersion;
@@ -2612,6 +2612,14 @@ BrowserGlue.prototype = {
       
       
       Services.prefs.setCharPref("browser.handlers.migrations", "30boxes");
+    }
+
+    if (currentUIVersion < 80) {
+      let hosts = Services.prefs.getCharPref("network.proxy.no_proxies_on");
+      
+      const kLocalHosts = new Set(["localhost", "127.0.0.1"]);
+      hosts = hosts.split(/[ ,]+/).filter(host => !kLocalHosts.has(host)).join(", ");
+      Services.prefs.setCharPref("network.proxy.no_proxies_on", hosts);
     }
 
     
