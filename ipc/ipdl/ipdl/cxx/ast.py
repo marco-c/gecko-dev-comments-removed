@@ -13,6 +13,13 @@ class Visitor:
     def visitWhitespace(self, ws):
         pass
 
+    def visitVerbatimNode(self, verb):
+        pass
+
+    def visitGroupNode(self, group):
+        for node in group.nodes:
+            node.accept(self)
+
     def visitFile(self, f):
         for thing in f.stuff:
             thing.accept(self)
@@ -239,6 +246,28 @@ class Whitespace(Node):
 Whitespace.NL = Whitespace('\n')
 
 
+class VerbatimNode(Node):
+    
+    
+    
+    
+    def __init__(self, text, indent=0):
+        Node.__init__(self)
+        self.text = text
+        self.indent = indent
+
+
+class GroupNode(Node):
+    
+    
+    
+    
+    def __init__(self, nodes, offset=0):
+        Node.__init__(self)
+        self.nodes = nodes
+        self.offset = offset
+
+
 class File(Node):
     def __init__(self, filename):
         Node.__init__(self)
@@ -266,6 +295,10 @@ class File(Node):
         for s in stmts:
             self.addstmt(s)
 
+    def addcode(self, tmpl, **context):
+        from ipdl.cxx.code import StmtCode
+        self.addstmt(StmtCode(tmpl, **context))
+
 
 class CppDirective(Node):
     '''represents |#[directive] [rest]|, where |rest| is any string'''
@@ -289,6 +322,10 @@ class Block(Node):
     def addstmts(self, stmts):
         for s in stmts:
             self.addstmt(s)
+
+    def addcode(self, tmpl, **context):
+        from ipdl.cxx.code import StmtCode
+        self.addstmt(StmtCode(tmpl, **context))
 
 
 
