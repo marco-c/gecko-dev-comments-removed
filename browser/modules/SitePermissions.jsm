@@ -245,8 +245,6 @@ var SitePermissions = {
 
 
   getAllByURI(uri) {
-    if (!(uri instanceof Ci.nsIURI))
-      throw new Error("uri parameter should be an nsIURI");
     let result = [];
     if (!this.isSupportedURI(uri)) {
       return result;
@@ -452,8 +450,6 @@ var SitePermissions = {
 
 
   get(uri, permissionID, browser) {
-    if ((!uri && !browser) || (uri && !(uri instanceof Ci.nsIURI)))
-      throw new Error("uri parameter should be an nsIURI or a browser parameter is needed");
     let defaultState = this.getDefault(permissionID);
     let result = { state: defaultState, scope: this.SCOPE_PERSISTENT };
     if (this.isSupportedURI(uri)) {
@@ -508,8 +504,6 @@ var SitePermissions = {
 
 
   set(uri, permissionID, state, scope = this.SCOPE_PERSISTENT, browser = null) {
-    if ((!uri && !browser) || (uri && !(uri instanceof Ci.nsIURI)))
-      throw new Error("uri parameter should be an nsIURI or a browser parameter is needed");
     if (scope == this.SCOPE_GLOBAL && state == this.BLOCK) {
       GloballyBlockedPermissions.set(browser, permissionID);
       browser.dispatchEvent(new browser.ownerGlobal.CustomEvent("PermissionStateChange"));
@@ -577,8 +571,6 @@ var SitePermissions = {
 
 
   remove(uri, permissionID, browser) {
-    if ((!uri && !browser) || (uri && !(uri instanceof Ci.nsIURI)))
-      throw new Error("uri parameter should be an nsIURI or a browser parameter is needed");
     if (this.isSupportedURI(uri))
       Services.perms.remove(uri, permissionID);
 
