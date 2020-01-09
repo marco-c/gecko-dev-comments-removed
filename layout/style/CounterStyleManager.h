@@ -7,6 +7,7 @@
 #define mozilla_CounterStyleManager_h_
 
 #include "nsAtom.h"
+#include "nsGkAtoms.h"
 #include "nsStringFwd.h"
 #include "nsDataHashtable.h"
 #include "nsHashKeys.h"
@@ -48,7 +49,6 @@ class CounterStyle {
   
   bool IsDependentStyle() const;
 
-  virtual nsAtom* GetStyleName() const = 0;
   virtual void GetPrefix(nsAString& aResult) = 0;
   virtual void GetSuffix(nsAString& aResult) = 0;
   void GetCounterText(CounterValue aOrdinal, WritingMode aWritingMode,
@@ -98,7 +98,6 @@ class AnonymousCounterStyle final : public CounterStyle {
   AnonymousCounterStyle(uint8_t aSystem, nsTArray<nsString> aSymbols);
   explicit AnonymousCounterStyle(const nsCSSValue::Array* aValue);
 
-  virtual nsAtom* GetStyleName() const override;
   virtual void GetPrefix(nsAString& aResult) override;
   virtual void GetSuffix(nsAString& aResult) override;
   virtual bool IsBullet() override;
@@ -138,16 +137,17 @@ class CounterStylePtr {
  public:
   CounterStylePtr() : mRaw(0) {}
   CounterStylePtr(const CounterStylePtr& aOther) : mRaw(aOther.mRaw) {
+    if (!mRaw) {
+      return;
+    }
     switch (GetType()) {
-      case eCounterStyle:
-        break;
       case eAnonymousCounterStyle:
         AsAnonymous()->AddRef();
         break;
-      case eUnresolvedAtom:
+      case eAtom:
         AsAtom()->AddRef();
         break;
-      case eMask:
+      default:
         MOZ_ASSERT_UNREACHABLE("Unknown type");
         break;
     }
@@ -176,50 +176,39 @@ class CounterStylePtr {
     Reset();
     return *this;
   }
+  CounterStylePtr& operator=(nsStaticAtom* aStaticAtom) {
+    Reset();
+    mRaw = reinterpret_cast<uintptr_t>(aStaticAtom) | eAtom;
+    return *this;
+  }
   CounterStylePtr& operator=(already_AddRefed<nsAtom> aAtom) {
     Reset();
-    if (nsAtom* raw = aAtom.take()) {
-      AssertPointerAligned(raw);
-      mRaw = reinterpret_cast<uintptr_t>(raw) | eUnresolvedAtom;
-    }
+    mRaw = reinterpret_cast<uintptr_t>(aAtom.take()) | eAtom;
     return *this;
   }
   CounterStylePtr& operator=(AnonymousCounterStyle* aCounterStyle) {
     Reset();
     if (aCounterStyle) {
       CounterStyle* raw = do_AddRef(aCounterStyle).take();
-      AssertPointerAligned(raw);
       mRaw = reinterpret_cast<uintptr_t>(raw) | eAnonymousCounterStyle;
     }
     return *this;
   }
-  CounterStylePtr& operator=(CounterStyle* aCounterStyle) {
-    Reset();
-    if (aCounterStyle) {
-      MOZ_ASSERT(!aCounterStyle->AsAnonymous());
-      AssertPointerAligned(aCounterStyle);
-      mRaw = reinterpret_cast<uintptr_t>(aCounterStyle) | eCounterStyle;
-    }
-    return *this;
-  }
 
-  operator CounterStyle*() const& { return Get(); }
-  operator CounterStyle*() const&& = delete;
-  CounterStyle* operator->() const { return Get(); }
   explicit operator bool() const { return !!mRaw; }
   bool operator!() const { return !mRaw; }
   bool operator==(const CounterStylePtr& aOther) const {
+    
+    
+    
     return mRaw == aOther.mRaw;
   }
   bool operator!=(const CounterStylePtr& aOther) const {
     return mRaw != aOther.mRaw;
   }
 
-  bool IsResolved() const { return !IsUnresolved(); }
-  inline void Resolve(CounterStyleManager* aManager);
-
   nsAtom* AsAtom() const {
-    MOZ_ASSERT(IsUnresolved());
+    MOZ_ASSERT(IsAtom());
     return reinterpret_cast<nsAtom*>(mRaw & ~eMask);
   }
   AnonymousCounterStyle* AsAnonymous() const {
@@ -228,52 +217,43 @@ class CounterStylePtr {
         reinterpret_cast<CounterStyle*>(mRaw & ~eMask));
   }
 
- private:
-  CounterStyle* Get() const {
-    MOZ_ASSERT(IsResolved());
-    return reinterpret_cast<CounterStyle*>(mRaw & ~eMask);
-  }
-  template <typename T>
-  void AssertPointerAligned(T* aPointer) {
-    
-    
-    
-    
-    
-    
-    MOZ_ASSERT(!(reinterpret_cast<uintptr_t>(aPointer) & eMask));
-  }
-
-  enum Type : uintptr_t {
-    eCounterStyle = 0,
-    eAnonymousCounterStyle = 1,
-    eUnresolvedAtom = 2,
-    eMask = 3,
-  };
-
-  Type GetType() const { return static_cast<Type>(mRaw & eMask); }
-  bool IsUnresolved() const { return GetType() == eUnresolvedAtom; }
+  bool IsAtom() const { return GetType() == eAtom; }
   bool IsAnonymous() const { return GetType() == eAnonymousCounterStyle; }
 
+  bool IsNone() const { return IsAtom() && AsAtom() == nsGkAtoms::none; }
+
+ private:
+  enum Type : uintptr_t {
+    eAnonymousCounterStyle = 0,
+    eAtom = 1,
+    eMask = 1,
+  };
+
+  static_assert(alignof(CounterStyle) >= 1 << eMask,
+                "We're gonna tag the pointer, so it better fit");
+  static_assert(alignof(nsAtom) >= 1 << eMask,
+                "We're gonna tag the pointer, so it better fit");
+
+  Type GetType() const { return static_cast<Type>(mRaw & eMask); }
+
   void Reset() {
+    if (!mRaw) {
+      return;
+    }
     switch (GetType()) {
-      case eCounterStyle:
-        break;
       case eAnonymousCounterStyle:
         AsAnonymous()->Release();
         break;
-      case eUnresolvedAtom:
+      case eAtom:
         AsAtom()->Release();
         break;
-      case eMask:
+      default:
         MOZ_ASSERT_UNREACHABLE("Unknown type");
         break;
     }
     mRaw = 0;
   }
 
-  
-  
   
   
   
@@ -304,7 +284,13 @@ class CounterStyleManager final {
   }
   
   
-  CounterStyle* BuildCounterStyle(nsAtom* aName);
+  CounterStyle* ResolveCounterStyle(nsAtom* aName);
+  CounterStyle* ResolveCounterStyle(const CounterStylePtr& aPtr) {
+    if (aPtr.IsAtom()) {
+      return ResolveCounterStyle(aPtr.AsAtom());
+    }
+    return aPtr.AsAnonymous();
+  }
 
   static CounterStyle* GetBuiltinStyle(int32_t aStyle);
   static CounterStyle* GetNoneStyle() {
@@ -316,8 +302,6 @@ class CounterStyleManager final {
   static CounterStyle* GetDiscStyle() {
     return GetBuiltinStyle(NS_STYLE_LIST_STYLE_DISC);
   }
-
-  static nsAtom* GetStyleNameFromType(int32_t aStyle);
 
   
   
@@ -340,12 +324,6 @@ class CounterStyleManager final {
   nsDataHashtable<nsRefPtrHashKey<nsAtom>, CounterStyle*> mStyles;
   nsTArray<CounterStyle*> mRetiredStyles;
 };
-
-void CounterStylePtr::Resolve(CounterStyleManager* aManager) {
-  if (IsUnresolved()) {
-    *this = aManager->BuildCounterStyle(AsAtom());
-  }
-}
 
 }  
 

@@ -136,21 +136,32 @@ static nscoord FontSizeInflationListMarginAdjustment(const nsIFrame* aFrame) {
   }
 
   float inflation = nsLayoutUtils::FontSizeInflationFor(aFrame);
-  if (inflation > 1.0f) {
-    auto listStyleType = aFrame->StyleList()->mCounterStyle->GetStyle();
-    if (listStyleType != NS_STYLE_LIST_STYLE_NONE &&
-        listStyleType != NS_STYLE_LIST_STYLE_DISC &&
-        listStyleType != NS_STYLE_LIST_STYLE_CIRCLE &&
-        listStyleType != NS_STYLE_LIST_STYLE_SQUARE &&
-        listStyleType != NS_STYLE_LIST_STYLE_DISCLOSURE_CLOSED &&
-        listStyleType != NS_STYLE_LIST_STYLE_DISCLOSURE_OPEN) {
-      
-      
-      
-      
-      
-      return nsPresContext::CSSPixelsToAppUnits(40) * (inflation - 1);
-    }
+  if (inflation <= 1.0f) {
+    return 0;
+  }
+
+  
+  
+  
+  
+  
+  auto margin = nsPresContext::CSSPixelsToAppUnits(40) * (inflation - 1);
+
+  auto* list = aFrame->StyleList();
+  if (!list->mCounterStyle.IsAtom()) {
+    return margin;
+  }
+
+  
+  
+  
+  
+  nsAtom* type = list->mCounterStyle.AsAtom();
+  if (type != nsGkAtoms::none && type != nsGkAtoms::disc &&
+      type != nsGkAtoms::circle && type != nsGkAtoms::square &&
+      type != nsGkAtoms::disclosure_closed &&
+      type != nsGkAtoms::disclosure_open) {
+    return margin;
   }
 
   return 0;

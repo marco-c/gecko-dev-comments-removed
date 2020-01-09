@@ -459,7 +459,7 @@ nsStyleList::nsStyleList(const Document& aDocument)
   MOZ_COUNT_CTOR(nsStyleList);
   MOZ_ASSERT(NS_IsMainThread());
 
-  mCounterStyle = CounterStyleManager::GetDiscStyle();
+  mCounterStyle = nsGkAtoms::disc;
   mQuotes = Servo_Quotes_GetInitialValue().Consume();
 }
 
@@ -482,7 +482,6 @@ void nsStyleList::FinishStyle(nsPresContext* aPresContext,
     mListStyleImage->Resolve(
         aPresContext, aOldStyle ? aOldStyle->mListStyleImage.get() : nullptr);
   }
-  mCounterStyle.Resolve(aPresContext->CounterStyleManager());
 }
 
 nsChangeHint nsStyleList::CalcDifference(
@@ -3637,24 +3636,15 @@ bool nsStyleContentData::operator==(const nsStyleContentData& aOther) const {
 
 void nsStyleContentData::Resolve(nsPresContext* aPresContext,
                                  const nsStyleContentData* aOldStyle) {
-  switch (mType) {
-    case StyleContentType::Image:
-      if (!mContent.mImage->IsResolved()) {
-        const nsStyleImageRequest* oldRequest =
-            (aOldStyle && aOldStyle->mType == StyleContentType::Image)
-                ? aOldStyle->mContent.mImage
-                : nullptr;
-        mContent.mImage->Resolve(aPresContext, oldRequest);
-      }
-      break;
-    case StyleContentType::Counter:
-    case StyleContentType::Counters: {
-      mContent.mCounters->mCounterStyle.Resolve(
-          aPresContext->CounterStyleManager());
-      break;
-    }
-    default:
-      break;
+  if (mType != StyleContentType::Image) {
+    return;
+  }
+  if (!mContent.mImage->IsResolved()) {
+    const nsStyleImageRequest* oldRequest =
+        (aOldStyle && aOldStyle->mType == StyleContentType::Image)
+            ? aOldStyle->mContent.mImage
+            : nullptr;
+    mContent.mImage->Resolve(aPresContext, oldRequest);
   }
 }
 
@@ -3688,22 +3678,6 @@ nsStyleContent::nsStyleContent(const nsStyleContent& aSource)
 
 nsChangeHint nsStyleContent::CalcDifference(
     const nsStyleContent& aNewData) const {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-  
   
   
   
