@@ -1635,6 +1635,8 @@ pref("browser.contentblocking.introCount", 0);
 
 pref("browser.contentblocking.maxIntroCount", 5);
 
+pref("browser.contentblocking.introDelaySeconds", 1800);
+
 pref("privacy.trackingprotection.introURL", "https://www.mozilla.org/%LOCALE%/firefox/%VERSION%/content-blocking/start/");
 
 
