@@ -81,6 +81,9 @@ function init_all() {
   if (Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
     document.getElementById("category-sync").hidden = false;
     register_module("paneSync", gSyncPane);
+  } else {
+    
+    document.getElementById("template-paneSync").remove();
   }
   register_module("paneSearchResults", gSearchResultsPane);
   gSearchResultsPane.init();
