@@ -592,11 +592,16 @@ void ElfLoader::Init() {
     self_elf = LoadedElf::Create(info.dli_fname, info.dli_fbase);
   }
 #if defined(ANDROID)
-  if (dladdr(FunctionPtr(syscall), &info) != 0) {
-    libc = LoadedElf::Create(info.dli_fname, info.dli_fbase);
-  }
-  if (dladdr(FunctionPtr<int (*)(double)>(isnan), &info) != 0) {
-    libm = LoadedElf::Create(info.dli_fname, info.dli_fbase);
+  
+  
+  
+  if (GetAndroidSDKVersion() < 21) {
+    if (dladdr(FunctionPtr(syscall), &info) != 0) {
+      libc = LoadedElf::Create(info.dli_fname, info.dli_fbase);
+    }
+    if (dladdr(FunctionPtr<int (*)(double)>(isnan), &info) != 0) {
+      libm = LoadedElf::Create(info.dli_fname, info.dli_fbase);
+    }
   }
 #endif
 }
