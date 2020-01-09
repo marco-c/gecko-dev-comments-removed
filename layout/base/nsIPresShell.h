@@ -1697,10 +1697,7 @@ class nsIPresShell : public nsStubDocumentObserver {
   
   void SetPendingVisualScrollUpdate(
       const nsPoint& aVisualViewportOffset,
-      FrameMetrics::ScrollOffsetUpdateType aUpdateType) {
-    mPendingVisualScrollUpdate =
-        mozilla::Some(VisualScrollUpdate{aVisualViewportOffset, aUpdateType});
-  }
+      FrameMetrics::ScrollOffsetUpdateType aUpdateType);
   void ClearPendingVisualScrollUpdate() {
     mPendingVisualScrollUpdate = mozilla::Nothing();
   }
