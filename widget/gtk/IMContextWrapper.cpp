@@ -2465,6 +2465,7 @@ already_AddRefed<TextRangeArray> IMContextWrapper::CreateTextRangeArray(
   }
 
   uint32_t minOffsetOfClauses = aCompositionString.Length();
+  uint32_t maxOffsetOfClauses = 0;
   do {
     TextRange range;
     if (!SetTextRange(iter, preedit_string, caretOffsetInUTF16, range)) {
@@ -2472,6 +2473,7 @@ already_AddRefed<TextRangeArray> IMContextWrapper::CreateTextRangeArray(
     }
     MOZ_ASSERT(range.Length());
     minOffsetOfClauses = std::min(minOffsetOfClauses, range.mStartOffset);
+    maxOffsetOfClauses = std::max(maxOffsetOfClauses, range.mEndOffset);
     textRangeArray->AppendElement(range);
   } while (pango_attr_iterator_next(iter));
 
@@ -2485,9 +2487,29 @@ already_AddRefed<TextRangeArray> IMContextWrapper::CreateTextRangeArray(
     dummyClause.mEndOffset = minOffsetOfClauses;
     dummyClause.mRangeType = TextRangeType::eRawClause;
     textRangeArray->InsertElementAt(0, dummyClause);
+    maxOffsetOfClauses = std::max(maxOffsetOfClauses, dummyClause.mEndOffset);
     MOZ_LOG(gGtkIMLog, LogLevel::Warning,
             ("0x%p   CreateTextRangeArray(), inserting a dummy clause "
              "at the beginning of the composition string mStartOffset=%u, "
+             "mEndOffset=%u, mRangeType=%s",
+             this, dummyClause.mStartOffset, dummyClause.mEndOffset,
+             ToChar(dummyClause.mRangeType)));
+  }
+
+  
+  
+  
+  
+  if (!textRangeArray->IsEmpty() &&
+      maxOffsetOfClauses < aCompositionString.Length()) {
+    TextRange dummyClause;
+    dummyClause.mStartOffset = maxOffsetOfClauses;
+    dummyClause.mEndOffset = aCompositionString.Length();
+    dummyClause.mRangeType = TextRangeType::eRawClause;
+    textRangeArray->AppendElement(dummyClause);
+    MOZ_LOG(gGtkIMLog, LogLevel::Warning,
+            ("0x%p   CreateTextRangeArray(), inserting a dummy clause "
+             "at the end of the composition string mStartOffset=%u, "
              "mEndOffset=%u, mRangeType=%s",
              this, dummyClause.mStartOffset, dummyClause.mEndOffset,
              ToChar(dummyClause.mRangeType)));
@@ -2661,14 +2683,6 @@ bool IMContextWrapper::SetTextRange(PangoAttrIterator* aPangoAttrIter,
 
 
 
-
-  if (!attrUnderline && !attrForeground && !attrBackground) {
-    MOZ_LOG(gGtkIMLog, LogLevel::Warning,
-            ("0x%p   SetTextRange(), FAILED, due to no attr, "
-             "aTextRange= { mStartOffset=%u, mEndOffset=%u }",
-             this, aTextRange.mStartOffset, aTextRange.mEndOffset));
-    return false;
-  }
 
   
   
