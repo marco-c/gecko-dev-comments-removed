@@ -41,11 +41,11 @@ export const selectLayoutRender = createSelector(
       
       
       components: row.components.map(component => {
-        if (!component.feed || !feeds[component.feed.url]) {
+        if (!component.feed || !feeds.data[component.feed.url]) {
           return component;
         }
 
-        return {...component, data: maybeInjectSpocs(feeds[component.feed.url].data, component.spocs)};
+        return {...component, data: maybeInjectSpocs(feeds.data[component.feed.url].data, component.spocs)};
       }),
     }));
   }

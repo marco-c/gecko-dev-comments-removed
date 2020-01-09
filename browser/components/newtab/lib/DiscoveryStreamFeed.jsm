@@ -11,6 +11,7 @@ const {PersistentCache} = ChromeUtils.import("resource://activity-stream/lib/Per
 
 const CACHE_KEY = "discovery_stream";
 const LAYOUT_UPDATE_TIME = 30 * 60 * 1000; 
+const STARTUP_CACHE_EXPIRE_TIME = 7 * 24 * 60 * 60 * 1000; 
 const COMPONENT_FEEDS_UPDATE_TIME = 30 * 60 * 1000; 
 const SPOCS_FEEDS_UPDATE_TIME = 30 * 60 * 1000; 
 const MAX_LIFETIME_CAP = 500; 
@@ -90,35 +91,52 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
 
 
 
-  isExpired(cacheData, key, url) {
-    const {layout, spocs, feeds} = cacheData;
+
+  isExpired({cachedData, key, url, isStartup}) {
+    const {layout, spocs, feeds} = cachedData;
+    const updateTimePerComponent = {
+      "layout": LAYOUT_UPDATE_TIME,
+      "spocs": SPOCS_FEEDS_UPDATE_TIME,
+      "feed": COMPONENT_FEEDS_UPDATE_TIME,
+    };
+    const EXPIRATION_TIME = isStartup ? STARTUP_CACHE_EXPIRE_TIME : updateTimePerComponent[key];
     switch (key) {
       case "layout":
-        return (!layout || !(Date.now() - layout._timestamp < LAYOUT_UPDATE_TIME));
+        return (!layout || !(Date.now() - layout._timestamp < EXPIRATION_TIME));
       case "spocs":
-        return (!spocs || !(Date.now() - spocs.lastUpdated < SPOCS_FEEDS_UPDATE_TIME));
+        return (!spocs || !(Date.now() - spocs.lastUpdated < EXPIRATION_TIME));
       case "feed":
-        return (!feeds || !feeds[url] || !(Date.now() - feeds[url].lastUpdated < COMPONENT_FEEDS_UPDATE_TIME));
+        return (!feeds || !feeds[url] || !(Date.now() - feeds[url].lastUpdated < EXPIRATION_TIME));
       default:
+        
         throw new Error(`${key} is not a valid key`);
     }
+  }
+
+  async _checkExpirationPerComponent() {
+    const cachedData = await this.cache.get() || {};
+    const {feeds} = cachedData;
+    return {
+      layout: this.isExpired({cachedData, key: "layout"}),
+      spocs: this.isExpired({cachedData, key: "spocs"}),
+      feeds: !feeds || Object.keys(feeds).some(url => this.isExpired({cachedData, key: "feed", url})),
+    };
   }
 
   
 
 
   async checkIfAnyCacheExpired() {
-    const cachedData = await this.cache.get() || {};
-    const {feeds} = cachedData;
-    return this.isExpired(cachedData, "layout") ||
-      this.isExpired(cachedData, "spocs") ||
-      !feeds || Object.keys(feeds).some(url => this.isExpired(cachedData, "feed", url));
+    const expirationPerComponent = await this._checkExpirationPerComponent();
+    return expirationPerComponent.layout ||
+      expirationPerComponent.spocs ||
+      expirationPerComponent.feeds;
   }
 
-  async loadLayout(sendUpdate) {
+  async loadLayout(sendUpdate, isStartup) {
     const cachedData = await this.cache.get() || {};
     let {layout: layoutResponse} = cachedData;
-    if (this.isExpired(cachedData, "layout")) {
+    if (this.isExpired({cachedData, key: "layout", isStartup})) {
       layoutResponse = await this.fetchFromEndpoint(this.config.layout_endpoint);
       if (layoutResponse && layoutResponse.layout) {
         layoutResponse._timestamp = Date.now();
@@ -145,7 +163,7 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
     }
   }
 
-  async loadComponentFeeds(sendUpdate) {
+  async loadComponentFeeds(sendUpdate, isStartup) {
     const {DiscoveryStream} = this.store.getState();
     const newFeeds = {};
     if (DiscoveryStream && DiscoveryStream.layout) {
@@ -156,7 +174,7 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
         for (let component of row.components) {
           if (component && component.feed) {
             const {url} = component.feed;
-            newFeeds[url] = await this.getComponentFeed(url);
+            newFeeds[url] = await this.getComponentFeed(url, isStartup);
           }
         }
       }
@@ -166,13 +184,13 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
     }
   }
 
-  async loadSpocs(sendUpdate) {
+  async loadSpocs(sendUpdate, isStartup) {
     const cachedData = await this.cache.get() || {};
     let spocs;
 
     if (this.showSpocs) {
       spocs = cachedData.spocs;
-      if (this.isExpired(cachedData, "spocs")) {
+      if (this.isExpired({cachedData, key: "spocs", isStartup})) {
         const endpoint = this.store.getState().DiscoveryStream.spocs.spocs_endpoint;
         const spocsResponse = await this.fetchFromEndpoint(endpoint);
         if (spocsResponse) {
@@ -258,11 +276,11 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
     return true;
   }
 
-  async getComponentFeed(feedUrl) {
+  async getComponentFeed(feedUrl, isStartup) {
     const cachedData = await this.cache.get() || {};
     const {feeds} = cachedData;
     let feed = feeds ? feeds[feedUrl] : null;
-    if (this.isExpired(cachedData, "feed", feedUrl)) {
+    if (this.isExpired({cachedData, key: "feed", url: feedUrl, isStartup})) {
       const feedResponse = await this.fetchFromEndpoint(feedUrl);
       if (feedResponse) {
         feed = {
@@ -280,24 +298,49 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
   
 
 
+  async _maybeUpdateCachedData() {
+    const expirationPerComponent = await this._checkExpirationPerComponent();
+    
+    if (expirationPerComponent.layout) {
+      await this.loadLayout(this.store.dispatch);
+    }
+    if (expirationPerComponent.spocs) {
+      await this.loadSpocs(this.store.dispatch);
+    }
+    if (expirationPerComponent.feeds) {
+      await this.loadComponentFeeds(this.store.dispatch);
+    }
+  }
+
+  
+
+
+
 
 
 
 
 
   async refreshAll(options = {}) {
-    const dispatch = options.updateOpenTabs ?
+    const {updateOpenTabs, isStartup} = options;
+    const dispatch = updateOpenTabs ?
       action => this.store.dispatch(ac.BroadcastToContent(action)) :
       this.store.dispatch;
 
-    await this.loadLayout(dispatch);
-    await this.loadComponentFeeds(dispatch);
-    await this.loadSpocs(dispatch);
+    await this.loadLayout(dispatch, isStartup);
+    await Promise.all([
+      this.loadComponentFeeds(dispatch, isStartup).catch(error => Cu.reportError(`Error trying to load component feeds: ${error}`)),
+      this.loadSpocs(dispatch, isStartup).catch(error => Cu.reportError(`Error trying to load spocs feed: ${error}`)),
+    ]);
+    if (isStartup) {
+      await this._maybeUpdateCachedData();
+    }
+
     this.loaded = true;
   }
 
   async enable() {
-    await this.refreshAll({updateOpenTabs: true});
+    await this.refreshAll({updateOpenTabs: true, isStartup: true});
   }
 
   async disable() {
