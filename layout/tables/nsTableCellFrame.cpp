@@ -450,12 +450,14 @@ void nsTableCellFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
           aBuilder, this);
     }
 
+    nsRect bgRect = GetRectRelativeToSelf() + aBuilder->ToReferenceFrame(this);
+
     
     if (aBuilder->IsForEventDelivery() ||
         !StyleBackground()->IsTransparent(this) ||
         StyleDisplay()->HasAppearance()) {
       nsDisplayBackgroundImage::AppendBackgroundItemsToTop(
-          aBuilder, this, GetRectRelativeToSelf(), aLists.BorderBackground());
+          aBuilder, this, bgRect, aLists.BorderBackground());
     }
 
     
