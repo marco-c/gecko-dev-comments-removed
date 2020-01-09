@@ -13,6 +13,7 @@
 #include "mozilla/EventForwards.h"
 #include "mozilla/FlushType.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/ScrollTypes.h"
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/StyleSheet.h"
@@ -1693,12 +1694,6 @@ class nsIPresShell : public nsStubDocumentObserver {
   
   
   
-  enum class ScrollMode { eInstant, eSmooth };
-
-  
-  
-  
-  
   
   
   
@@ -1707,7 +1702,7 @@ class nsIPresShell : public nsStubDocumentObserver {
   
   void ScrollToVisual(const nsPoint& aVisualViewportOffset,
                       FrameMetrics::ScrollOffsetUpdateType aUpdateType,
-                      ScrollMode aMode);
+                      mozilla::ScrollMode aMode);
   void ClearPendingVisualScrollUpdate() {
     mPendingVisualScrollUpdate = mozilla::Nothing();
   }

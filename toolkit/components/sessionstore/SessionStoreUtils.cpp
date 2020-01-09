@@ -296,8 +296,7 @@ void SessionStoreUtils::RestoreScrollPosition(const GlobalObject& aGlobal,
         
         presContext->PresShell()->ScrollToVisual(
             CSSPoint::ToAppUnits(CSSPoint(pos_X, pos_Y)),
-            layers::FrameMetrics::eMainThread,
-            nsIPresShell::ScrollMode::eInstant);
+            layers::FrameMetrics::eMainThread, ScrollMode::eInstant);
       }
     }
   }
