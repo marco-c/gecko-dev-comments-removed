@@ -178,7 +178,7 @@ IE7FormPasswords.prototype = {
         let data;
         try {
           
-          data = this._crypto.decryptData(value, url, true);
+          data = this._crypto.decryptData(value, url);
         } catch (e) {
           continue;
         }
