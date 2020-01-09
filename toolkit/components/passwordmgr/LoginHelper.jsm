@@ -222,6 +222,31 @@ var LoginHelper = {
 
 
 
+  getLoginOrigin(uriString, allowJS) {
+    let realm = "";
+    try {
+      let uri = Services.io.newURI(uriString);
+
+      if (allowJS && uri.scheme == "javascript") {
+        return "javascript:";
+      }
+
+      
+      realm = uri.scheme + "://" + uri.displayHostPort;
+    } catch (e) {
+      
+      
+      log.warn("Couldn't parse origin for", uriString, e);
+      realm = null;
+    }
+
+    return realm;
+  },
+
+  
+
+
+
 
 
 
