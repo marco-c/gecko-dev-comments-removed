@@ -77,8 +77,6 @@ class ThrottledEventQueue final : public nsISerialEventTarget {
   
   uint32_t Length() const;
 
-  already_AddRefed<nsIRunnable> GetEvent();
-
   
   
   
