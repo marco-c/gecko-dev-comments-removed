@@ -1698,7 +1698,7 @@ template XDRResult js::XDRObjectLiteral(XDRState<XDR_DECODE>* xdr,
 
 
 bool NativeObject::fillInAfterSwap(JSContext* cx, HandleNativeObject obj,
-                                   const AutoValueVector& values, void* priv) {
+                                   HandleValueVector values, void* priv) {
   
   
   
@@ -1746,9 +1746,8 @@ void JSObject::fixDictionaryShapeAfterSwap() {
   }
 }
 
-static MOZ_MUST_USE bool CopyProxyValuesBeforeSwap(JSContext* cx,
-                                                   ProxyObject* proxy,
-                                                   AutoValueVector& values) {
+static MOZ_MUST_USE bool CopyProxyValuesBeforeSwap(
+    JSContext* cx, ProxyObject* proxy, MutableHandleValueVector values) {
   MOZ_ASSERT(values.empty());
 
   
@@ -1774,7 +1773,7 @@ static MOZ_MUST_USE bool CopyProxyValuesBeforeSwap(JSContext* cx,
 }
 
 bool ProxyObject::initExternalValueArrayAfterSwap(
-    JSContext* cx, const AutoValueVector& values) {
+    JSContext* cx, const HandleValueVector values) {
   MOZ_ASSERT(getClass()->isProxy());
 
   size_t nreserved = numReservedSlots();
@@ -1896,7 +1895,7 @@ void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b) {
     NativeObject* nb = b->isNative() ? &b->as<NativeObject>() : nullptr;
 
     
-    AutoValueVector avals(cx);
+    RootedValueVector avals(cx);
     void* apriv = nullptr;
     if (na) {
       apriv = na->hasPrivate() ? na->getPrivate() : nullptr;
@@ -1906,7 +1905,7 @@ void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b) {
         }
       }
     }
-    AutoValueVector bvals(cx);
+    RootedValueVector bvals(cx);
     void* bpriv = nullptr;
     if (nb) {
       bpriv = nb->hasPrivate() ? nb->getPrivate() : nullptr;
@@ -1924,12 +1923,12 @@ void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b) {
         b->is<ProxyObject>() ? &b->as<ProxyObject>() : nullptr;
 
     if (aIsProxyWithInlineValues) {
-      if (!CopyProxyValuesBeforeSwap(cx, proxyA, avals)) {
+      if (!CopyProxyValuesBeforeSwap(cx, proxyA, &avals)) {
         oomUnsafe.crash("CopyProxyValuesBeforeSwap");
       }
     }
     if (bIsProxyWithInlineValues) {
-      if (!CopyProxyValuesBeforeSwap(cx, proxyB, bvals)) {
+      if (!CopyProxyValuesBeforeSwap(cx, proxyB, &bvals)) {
         oomUnsafe.crash("CopyProxyValuesBeforeSwap");
       }
     }

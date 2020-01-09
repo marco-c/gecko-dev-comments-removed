@@ -2260,7 +2260,7 @@ bool internal_JSKeyedHistogram_Keys(JSContext* cx, unsigned argc,
   }
 
   
-  JS::AutoValueVector autoKeys(cx);
+  JS::RootedVector<JS::Value> autoKeys(cx);
   if (!autoKeys.reserve(keys.Length())) {
     return false;
   }

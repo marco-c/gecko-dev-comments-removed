@@ -776,8 +776,8 @@ JSObject* StructMetaTypeDescr::create(JSContext* cx, HandleObject metaTypeDescr,
   
   
   
-  AutoValueVector fieldTypeObjs(cx);  
-  bool opaque = false;                
+  RootedValueVector fieldTypeObjs(cx);  
+  bool opaque = false;                  
 
   Vector<StructFieldProps> fieldProps(cx);
 
@@ -838,15 +838,15 @@ JSObject* StructMetaTypeDescr::create(JSContext* cx, HandleObject metaTypeDescr,
 
 StructTypeDescr* StructMetaTypeDescr::createFromArrays(
     JSContext* cx, HandleObject structTypePrototype, bool opaque,
-    bool allowConstruct, AutoIdVector& ids, AutoValueVector& fieldTypeObjs,
+    bool allowConstruct, AutoIdVector& ids, JS::HandleValueVector fieldTypeObjs,
     Vector<StructFieldProps>& fieldProps) {
-  StringBuffer stringBuffer(cx);      
-  AutoValueVector fieldNames(cx);     
-  AutoValueVector fieldOffsets(cx);   
-  AutoValueVector fieldMuts(cx);      
-  RootedObject userFieldOffsets(cx);  
-  RootedObject userFieldTypes(cx);    
-  Layout layout;                      
+  StringBuffer stringBuffer(cx);       
+  RootedValueVector fieldNames(cx);    
+  RootedValueVector fieldOffsets(cx);  
+  RootedValueVector fieldMuts(cx);     
+  RootedObject userFieldOffsets(cx);   
+  RootedObject userFieldTypes(cx);     
+  Layout layout;                       
 
   userFieldOffsets = NewBuiltinClassInstance<PlainObject>(cx, TenuredObject);
   if (!userFieldOffsets) {

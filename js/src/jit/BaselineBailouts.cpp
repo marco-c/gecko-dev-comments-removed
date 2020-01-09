@@ -903,7 +903,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
   
   
   uint32_t pushedSlots = 0;
-  AutoValueVector savedCallerArgs(cx);
+  RootedValueVector savedCallerArgs(cx);
   bool needToSaveArgs =
       op == JSOP_FUNAPPLY || IsIonInlinableGetterOrSetterPC(pc);
   if (iter.moreFrames() && (op == JSOP_FUNCALL || needToSaveArgs)) {

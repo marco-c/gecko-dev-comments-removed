@@ -452,7 +452,7 @@ class ElementSpecific {
 
     
     
-    AutoValueVector values(cx);
+    RootedValueVector values(cx);
     if (!values.append(srcValues + i, len - i)) {
       return false;
     }

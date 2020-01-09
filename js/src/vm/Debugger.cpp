@@ -202,10 +202,6 @@ static const Class DebuggerSource_class = {
 
 
 
-static inline bool IsInterpretedNonSelfHostedFunction(JSFunction* fun) {
-  return fun->isInterpreted() && !fun->isSelfHostedBuiltin();
-}
-
 static inline bool EnsureFunctionHasScript(JSContext* cx, HandleFunction fun) {
   if (fun->isInterpretedLazy()) {
     AutoRealm ar(cx, fun);
@@ -216,7 +212,7 @@ static inline bool EnsureFunctionHasScript(JSContext* cx, HandleFunction fun) {
 
 static inline JSScript* GetOrCreateFunctionScript(JSContext* cx,
                                                   HandleFunction fun) {
-  MOZ_ASSERT(IsInterpretedNonSelfHostedFunction(fun));
+  MOZ_ASSERT(fun->isInterpreted());
   if (!EnsureFunctionHasScript(cx, fun)) {
     return nullptr;
   }
@@ -2091,7 +2087,7 @@ ResumeMode Debugger::dispatchHook(JSContext* cx, HookIsEnabledFun hookIsEnabled,
   
   
   
-  AutoValueVector triggered(cx);
+  RootedValueVector triggered(cx);
   Handle<GlobalObject*> global = cx->global();
   if (GlobalObject::DebuggerVector* debuggers = global->getDebuggers()) {
     for (auto p = debuggers->begin(); p != debuggers->end(); p++) {
@@ -4051,7 +4047,7 @@ bool Debugger::getDebuggees(JSContext* cx, unsigned argc, Value* vp) {
   
   
   unsigned count = dbg->debuggees.count();
-  AutoValueVector debuggees(cx);
+  RootedValueVector debuggees(cx);
   if (!debuggees.resize(count)) {
     return false;
   }
@@ -6337,7 +6333,7 @@ static bool DebuggerScript_getChildScripts(JSContext* cx, unsigned argc,
       if (obj->is<JSFunction>()) {
         fun = &obj->as<JSFunction>();
         
-        if (!IsInterpretedNonSelfHostedFunction(fun)) {
+        if (fun->isNative()) {
           continue;
         }
         funScript = GetOrCreateFunctionScript(cx, fun);
@@ -9299,7 +9295,7 @@ static bool DebuggerGenericEval(JSContext* cx,
   
   
   AutoIdVector keys(cx);
-  AutoValueVector values(cx);
+  RootedValueVector values(cx);
   if (bindings) {
     if (!GetPropertyKeys(cx, bindings, JSITER_OWNONLY, &keys) ||
         !values.growBy(keys.length())) {
@@ -10322,7 +10318,7 @@ bool DebuggerObject::scriptGetter(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   RootedFunction fun(cx, &obj->as<JSFunction>());
-  if (!IsInterpretedNonSelfHostedFunction(fun)) {
+  if (!fun->isInterpreted()) {
     args.rval().setUndefined();
     return true;
   }
@@ -10361,7 +10357,7 @@ bool DebuggerObject::environmentGetter(JSContext* cx, unsigned argc,
   }
 
   RootedFunction fun(cx, &obj->as<JSFunction>());
-  if (!IsInterpretedNonSelfHostedFunction(fun)) {
+  if (!fun->isInterpreted()) {
     args.rval().setUndefined();
     return true;
   }
@@ -11473,7 +11469,7 @@ bool DebuggerObject::getParameterNames(JSContext* cx,
   if (!result.growBy(referent->nargs())) {
     return false;
   }
-  if (IsInterpretedNonSelfHostedFunction(referent)) {
+  if (referent->isInterpreted()) {
     RootedScript script(cx, GetOrCreateFunctionScript(cx, referent));
     if (!script) {
       return false;

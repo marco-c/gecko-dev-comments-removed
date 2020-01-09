@@ -64,6 +64,7 @@
 using namespace js;
 
 using JS::CanonicalizeNaN;
+using JS::RootedValueVector;
 using mozilla::BitwiseCast;
 using mozilla::NativeEndian;
 using mozilla::NumbersAreIdentical;
@@ -426,7 +427,7 @@ struct JSStructuredCloneReader {
   JS::StructuredCloneScope allowedScope;
 
   
-  AutoValueVector objs;
+  RootedValueVector objs;
 
   
   
@@ -439,7 +440,7 @@ struct JSStructuredCloneReader {
   
   
   
-  AutoValueVector allObjs;
+  RootedValueVector allObjs;
 
   
   const JSStructuredCloneCallbacks* callbacks;
@@ -520,7 +521,7 @@ struct JSStructuredCloneWriter {
   
   
   
-  AutoValueVector objs;
+  RootedValueVector objs;
 
   
   
@@ -532,7 +533,7 @@ struct JSStructuredCloneWriter {
   
   
   
-  AutoValueVector otherEntries;
+  RootedValueVector otherEntries;
 
   
   

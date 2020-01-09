@@ -968,7 +968,7 @@ bool NormalSuspend(JSContext* cx, HandleObject obj, BaselineFrame* frame,
   
   
   
-  AutoValueVector exprStack(cx);
+  RootedValueVector exprStack(cx);
   if (!exprStack.reserve(stackDepth - 1)) {
     return false;
   }

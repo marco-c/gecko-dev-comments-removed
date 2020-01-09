@@ -429,7 +429,7 @@ class StructMetaTypeDescr : public NativeObject {
   
   static StructTypeDescr* createFromArrays(
       JSContext* cx, HandleObject structTypePrototype, bool opaque,
-      bool allowConstruct, AutoIdVector& ids, AutoValueVector& fieldTypeObjs,
+      bool allowConstruct, AutoIdVector& ids, HandleValueVector fieldTypeObjs,
       Vector<StructFieldProps>& fieldProps);
 
   

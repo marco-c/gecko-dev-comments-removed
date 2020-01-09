@@ -586,7 +586,7 @@ nsresult SerializeEventsArray(const EventRecordArray& events, JSContext* cx,
     
     
     
-    JS::AutoValueVector items(cx);
+    JS::RootedVector<JS::Value> items(cx);
 
     
     JS::Rooted<JS::Value> val(cx);

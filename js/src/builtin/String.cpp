@@ -3080,7 +3080,7 @@ static ArrayObject* SplitHelper(JSContext* cx, HandleLinearString str,
   }
 
   
-  AutoValueVector splits(cx);
+  RootedValueVector splits(cx);
 
   
   size_t lastEndIndex = 0;
