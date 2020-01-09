@@ -1173,9 +1173,7 @@ void ContentChild::LaunchRDDProcess() {
         nsresult rv;
         Endpoint<PRemoteDecoderManagerChild> endpoint;
         Unused << SendLaunchRDDProcess(&rv, &endpoint);
-        
-        
-        if (rv == NS_OK && endpoint.IsValid()) {
+        if (rv == NS_OK) {
           RemoteDecoderManagerChild::InitForContent(std::move(endpoint));
         }
       }));
