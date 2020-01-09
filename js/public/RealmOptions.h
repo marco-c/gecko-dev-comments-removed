@@ -242,6 +242,15 @@ class JS_PUBLIC_API RealmBehaviors {
     return *this;
   }
 
+  
+  
+  
+  bool isNonLive() const { return isNonLive_; }
+  RealmBehaviors& setNonLive() {
+    isNonLive_ = true;
+    return *this;
+  }
+
  private:
   bool discardSource_ = false;
   bool disableLazyParsing_ = false;
@@ -251,6 +260,7 @@ class JS_PUBLIC_API RealmBehaviors {
   
   
   bool singletonsAsTemplates_ = true;
+  bool isNonLive_ = false;
 };
 
 
