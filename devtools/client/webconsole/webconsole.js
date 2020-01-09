@@ -113,6 +113,31 @@ class WebConsole {
 
 
 
+  getInputValue() {
+    if (!this.jsterm) {
+      return null;
+    }
+
+    return this.jsterm._getValue();
+  }
+
+  
+
+
+
+
+  setInputValue(newValue) {
+    if (!this.jsterm) {
+      return;
+    }
+
+    this.jsterm._setValue(newValue);
+  }
+
+  
+
+
+
   setFilterState() {
     this.ui && this.ui.setFilterState.apply(this.ui, arguments);
   }
