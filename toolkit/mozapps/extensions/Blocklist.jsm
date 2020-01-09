@@ -19,11 +19,6 @@ ChromeUtils.defineModuleGetter(this, "AddonManager",
                                "resource://gre/modules/AddonManager.jsm");
 ChromeUtils.defineModuleGetter(this, "AddonManagerPrivate",
                                "resource://gre/modules/AddonManager.jsm");
-
-
-
-ChromeUtils.defineModuleGetter(this, "BlocklistClients",
-                               "resource://services-common/blocklist-clients.js");
 ChromeUtils.defineModuleGetter(this, "CertUtils",
                                "resource://gre/modules/CertUtils.jsm");
 ChromeUtils.defineModuleGetter(this, "FileUtils",
@@ -2561,10 +2556,6 @@ let BlocklistRS = {
     ExtensionBlocklistRS._onUpdate();
     PluginBlocklistRS._onUpdate();
   },
-
-  initializeClients() {
-    BlocklistClients.initialize();
-  },
 };
 
 const kSharedAPIs = [
@@ -2586,12 +2577,6 @@ let Blocklist = {
     Services.prefs.addObserver("extensions.blocklist.", this);
     Services.prefs.addObserver(PREF_EM_LOGGING_ENABLED, this);
 
-    
-    
-    
-    
-    
-    BlocklistRS.initializeClients();
     
     for (let k of kSharedAPIs) {
       this[k] = (...args) => this._impl[k](...args);

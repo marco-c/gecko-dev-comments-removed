@@ -184,7 +184,6 @@ async function updatePinningList({ data: { current: records } }) {
 
 var OneCRLBlocklistClient;
 var PinningBlocklistClient;
-var RemoteSecuritySettingsClient;
 
 function initialize(options = {}) {
   const { verifySignature = true } = options;
@@ -204,21 +203,6 @@ function initialize(options = {}) {
   });
   PinningBlocklistClient.verifySignature = verifySignature;
   PinningBlocklistClient.on("sync", updatePinningList);
-
-  if (AppConstants.MOZ_NEW_CERT_STORAGE) {
-    const { RemoteSecuritySettings } = ChromeUtils.import("resource://gre/modules/psm/RemoteSecuritySettings.jsm");
-
-    
-    
-    RemoteSecuritySettingsClient = new RemoteSecuritySettings();
-    RemoteSecuritySettingsClient.verifySignature = verifySignature;
-
-    return {
-      OneCRLBlocklistClient,
-      PinningBlocklistClient,
-      RemoteSecuritySettingsClient,
-    };
-  }
 
   return {
     OneCRLBlocklistClient,
