@@ -1702,7 +1702,6 @@ class JSScript : public js::gc::TenuredCell {
     FunHasExtensibleScope = 1 << 6,
 
     
-    FunHasAnyAliasedFormal = 1 << 7,
 
     
     HasSingletons = 1 << 8,
@@ -2113,9 +2112,6 @@ class JSScript : public js::gc::TenuredCell {
   }
   bool funHasExtensibleScope() const {
     return hasFlag(ImmutableFlags::FunHasExtensibleScope);
-  }
-  bool funHasAnyAliasedFormal() const {
-    return hasFlag(ImmutableFlags::FunHasAnyAliasedFormal);
   }
 
   bool hasSingletons() const { return hasFlag(ImmutableFlags::HasSingletons); }

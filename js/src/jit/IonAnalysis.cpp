@@ -4904,8 +4904,12 @@ bool jit::AnalyzeArgumentsUsage(JSContext* cx, JSScript* scriptArg) {
   
   
   
-  if (script->funHasAnyAliasedFormal() && argumentsContentsObserved) {
-    return true;
+  if (argumentsContentsObserved) {
+    for (PositionalFormalParameterIter fi(script); fi; fi++) {
+      if (fi.closedOver()) {
+        return true;
+      }
+    }
   }
 
   script->setNeedsArgsObj(false);
