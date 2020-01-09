@@ -18,7 +18,7 @@ fn g() {
         let _ = f.sync_all();
     });
     
-    file.write(b"test me\n").unwrap();
+    file.write_all(b"test me\n").unwrap();
 }
 
 fn main() {

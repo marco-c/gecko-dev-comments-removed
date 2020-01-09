@@ -5,62 +5,59 @@
 
 
 
-use std::sync::{Condvar, Mutex, MutexGuard};
-use std::cell::Cell;
-use std::time::Instant;
+
+
+
+use core::sync::atomic::{spin_loop_hint, AtomicBool, Ordering};
+use std::{thread, time::Instant};
 
 
 pub struct ThreadParker {
-    should_park: Cell<bool>,
-    mutex: Mutex<()>,
-    condvar: Condvar,
+    parked: AtomicBool,
 }
 
 impl ThreadParker {
+    pub const IS_CHEAP_TO_CONSTRUCT: bool = true;
+
+    #[inline]
     pub fn new() -> ThreadParker {
         ThreadParker {
-            should_park: Cell::new(false),
-            mutex: Mutex::new(()),
-            condvar: Condvar::new(),
+            parked: AtomicBool::new(false),
         }
     }
 
     
-    pub unsafe fn prepare_park(&self) {
-        self.should_park.set(true);
+    #[inline]
+    pub fn prepare_park(&self) {
+        self.parked.store(true, Ordering::Relaxed);
     }
 
     
     
-    pub unsafe fn timed_out(&self) -> bool {
-        
-        
-        
-        let _lock = self.mutex.lock().unwrap();
-        self.should_park.get()
+    #[inline]
+    pub fn timed_out(&self) -> bool {
+        self.parked.load(Ordering::Relaxed) != false
     }
 
     
     
-    pub unsafe fn park(&self) {
-        let mut lock = self.mutex.lock().unwrap();
-        while self.should_park.get() {
-            lock = self.condvar.wait(lock).unwrap();
+    #[inline]
+    pub fn park(&self) {
+        while self.parked.load(Ordering::Acquire) != false {
+            spin_loop_hint();
         }
     }
 
     
     
     
-    pub unsafe fn park_until(&self, timeout: Instant) -> bool {
-        let mut lock = self.mutex.lock().unwrap();
-        while self.should_park.get() {
-            let now = Instant::now();
-            if timeout <= now {
+    #[inline]
+    pub fn park_until(&self, timeout: Instant) -> bool {
+        while self.parked.load(Ordering::Acquire) != false {
+            if Instant::now() >= timeout {
                 return false;
             }
-            let (new_lock, _) = self.condvar.wait_timeout(lock, timeout - now).unwrap();
-            lock = new_lock;
+            spin_loop_hint();
         }
         true
     }
@@ -68,31 +65,27 @@ impl ThreadParker {
     
     
     
-    pub unsafe fn unpark_lock(&self) -> UnparkHandle {
-        UnparkHandle {
-            thread_parker: self,
-            _guard: self.mutex.lock().unwrap(),
-        }
+    #[inline]
+    pub fn unpark_lock(&self) -> UnparkHandle {
+        
+        self.parked.store(false, Ordering::Release);
+        UnparkHandle(())
     }
 }
 
 
 
 
-pub struct UnparkHandle<'a> {
-    thread_parker: *const ThreadParker,
-    _guard: MutexGuard<'a, ()>,
+pub struct UnparkHandle(());
+
+impl UnparkHandle {
+    
+    
+    #[inline]
+    pub fn unpark(self) {}
 }
 
-impl<'a> UnparkHandle<'a> {
-    
-    
-    pub unsafe fn unpark(self) {
-        (*self.thread_parker).should_park.set(false);
-
-        
-        
-        
-        (*self.thread_parker).condvar.notify_one();
-    }
+#[inline]
+pub fn thread_yield() {
+    thread::yield_now();
 }

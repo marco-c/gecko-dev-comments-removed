@@ -5,8 +5,8 @@
 
 
 
+use crate::raw_mutex::RawMutex;
 use lock_api;
-use raw_mutex::RawMutex;
 
 
 
@@ -105,11 +105,14 @@ pub type MappedMutexGuard<'a, T> = lock_api::MappedMutexGuard<'a, RawMutex, T>;
 
 #[cfg(test)]
 mod tests {
+    use crate::{Condvar, Mutex};
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::mpsc::channel;
     use std::sync::Arc;
     use std::thread;
-    use {Condvar, Mutex};
+
+    #[cfg(feature = "serde")]
+    use bincode::{deserialize, serialize};
 
     struct Packet<T>(Arc<(Mutex<T>, Condvar)>);
 
@@ -253,7 +256,8 @@ mod tests {
             }
             let _u = Unwinder { i: arc2 };
             panic!();
-        }).join();
+        })
+        .join();
         let lock = arc.lock();
         assert_eq!(*lock, 2);
     }
@@ -283,16 +287,20 @@ mod tests {
         let mutex = Mutex::new(vec![0u8, 10]);
 
         assert_eq!(format!("{:?}", mutex), "Mutex { data: [0, 10] }");
-        assert_eq!(
-            format!("{:#?}", mutex),
-            "Mutex {
-    data: [
-        0,
-        10
-    ]
-}"
-        );
         let _lock = mutex.lock();
-        assert_eq!(format!("{:?}", mutex), "Mutex { <locked> }");
+        assert_eq!(format!("{:?}", mutex), "Mutex { data: <locked> }");
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn test_serde() {
+        let contents: Vec<u8> = vec![0, 1, 2];
+        let mutex = Mutex::new(contents.clone());
+
+        let serialized = serialize(&mutex).unwrap();
+        let deserialized: Mutex<Vec<u8>> = deserialize(&serialized).unwrap();
+
+        assert_eq!(*(mutex.lock()), *(deserialized.lock()));
+        assert_eq!(contents, *(deserialized.lock()));
     }
 }
