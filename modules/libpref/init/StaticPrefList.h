@@ -561,7 +561,7 @@ VARCACHE_PREF(
 VARCACHE_PREF(
   "html5.flushtimer.initialdelay",
    html5_flushtimer_initialdelay,
-  RelaxedAtomicInt32, 120
+  RelaxedAtomicInt32, 16
 )
 
 
@@ -569,7 +569,7 @@ VARCACHE_PREF(
 VARCACHE_PREF(
   "html5.flushtimer.subsequentdelay",
    html5_flushtimer_subsequentdelay,
-  RelaxedAtomicInt32, 120
+  RelaxedAtomicInt32, 16
 )
 
 
