@@ -403,14 +403,7 @@ class MOZ_NON_PARAM Vector final : private AllocPolicy {
         : CapacityAndReserved(aCapacity, aReserved) {}
     CRAndStorage() = default;
 
-    T* storage() {
-      
-      
-      
-      
-      
-      return reinterpret_cast<T*>(sizeof(T));
-    }
+    T* storage() { return nullptr; }
   };
 
   CRAndStorage<kInlineCapacity, 0> mTail;
