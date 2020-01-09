@@ -66,6 +66,7 @@ class TreeNode extends Component {
       item: PropTypes.any.isRequired,
       isExpandable: PropTypes.bool.isRequired,
       onClick: PropTypes.func,
+      shouldItemUpdate: PropTypes.func,
       renderItem: PropTypes.func.isRequired
     };
   }
@@ -96,6 +97,8 @@ class TreeNode extends Component {
   shouldComponentUpdate(nextProps) {
     return (
       this.props.item !== nextProps.item ||
+      (this.props.shouldItemUpdate &&
+        this.props.shouldItemUpdate(this.props.item, nextProps.item)) ||
       this.props.focused !== nextProps.focused ||
       this.props.expanded !== nextProps.expanded
     );
@@ -337,6 +340,17 @@ class Tree extends Component {
       
       
       getChildren: PropTypes.func.isRequired,
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      shouldItemUpdate: PropTypes.func,
 
       
       
@@ -929,6 +943,7 @@ class Tree extends Component {
         index: i,
         item,
         depth,
+        shouldItemUpdate: this.props.shouldItemUpdate,
         renderItem: this.props.renderItem,
         focused: focused === item,
         active: active === item,

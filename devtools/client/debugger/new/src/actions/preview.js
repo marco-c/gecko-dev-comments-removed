@@ -104,7 +104,11 @@ export function setPreview(
           thread: selectedFrame.thread
         });
 
-        if (!result) {
+        
+        
+        
+        
+        if (result === null) {
           return;
         }
 

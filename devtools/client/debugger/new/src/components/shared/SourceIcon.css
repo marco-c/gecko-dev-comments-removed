@@ -9,10 +9,6 @@
 
 .source-icon {
   margin-inline-end: 4px;
-  
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: contain;
 }
 
 
@@ -141,7 +137,9 @@
   mask-image: url(/images/sources/underscore.svg);
 }
 
-.img.vue {
+
+.img.vue,
+.img.vuejs {
   background-image: url(/images/sources/vuejs.svg);
   background-color: transparent !important;
 }

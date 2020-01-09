@@ -1,6 +1,7 @@
 
 
 
+
 async function previews(dbg, fnName, previews) {
   const invokeResult = invokeInTab(fnName);
   await waitForPaused(dbg);
@@ -18,8 +19,8 @@ add_task(async function() {
   await selectSource(dbg, "preview.js");
 
   await previews(dbg, "empties", [
-    
-    
+    { line: 2, column: 9, expression: "a", result: '""' },
+    { line: 3, column: 9, expression: "b", result: "false" },
     { line: 4, column: 9, expression: "c", result: "undefined" },
     { line: 5, column: 9, expression: "d", result: "null" }
   ]);

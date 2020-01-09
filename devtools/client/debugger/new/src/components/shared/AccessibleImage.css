@@ -12,6 +12,12 @@
   mask-size: contain;
   mask-repeat: no-repeat;
   mask-position: center;
+  
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  
+  flex-shrink: 0;
 }
 
 
