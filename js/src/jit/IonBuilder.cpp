@@ -8891,6 +8891,11 @@ AbortReasonOr<Ok> IonBuilder::getElemTryDense(bool* emitted, MDefinition* obj,
 
   
   
+  
+  if (inspector->hasSeenNonIntegerIndex(pc)) {
+    trackOptimizationOutcome(TrackedOutcome::ArraySeenNonIntegerIndex);
+    return Ok();
+  }
   if (inspector->hasSeenNegativeIndexGetElement(pc)) {
     trackOptimizationOutcome(TrackedOutcome::ArraySeenNegativeIndex);
     return Ok();
@@ -8911,6 +8916,18 @@ AbortReasonOr<Ok> IonBuilder::getElemTryTypedArray(bool* emitted,
   Scalar::Type arrayType;
   if (!ElementAccessIsTypedArray(constraints(), obj, index, &arrayType)) {
     trackOptimizationOutcome(TrackedOutcome::AccessNotTypedArray);
+    return Ok();
+  }
+
+  
+  
+  
+  if (inspector->hasSeenNonIntegerIndex(pc)) {
+    trackOptimizationOutcome(TrackedOutcome::ArraySeenNonIntegerIndex);
+    return Ok();
+  }
+  if (inspector->hasSeenNegativeIndexGetElement(pc)) {
+    trackOptimizationOutcome(TrackedOutcome::ArraySeenNegativeIndex);
     return Ok();
   }
 

@@ -2029,6 +2029,14 @@ static bool DoGetElemFallback(JSContext* cx, BaselineFrame* frame,
     stub->noteNegativeIndex();
   }
 
+  
+  
+  int32_t representable;
+  if (rhs.isNumber() && rhs.isDouble() &&
+      !mozilla::NumberEqualsInt32(rhs.toDouble(), &representable)) {
+    stub->setSawNonIntegerIndex();
+  }
+
   return true;
 }
 
@@ -2097,6 +2105,14 @@ static bool DoGetElemSuperFallback(JSContext* cx, BaselineFrame* frame,
   
   if (rhs.isNumber() && rhs.toNumber() < 0) {
     stub->noteNegativeIndex();
+  }
+
+  
+  
+  int32_t representable;
+  if (rhs.isNumber() && rhs.isDouble() &&
+      !mozilla::NumberEqualsInt32(rhs.toDouble(), &representable)) {
+    stub->setSawNonIntegerIndex();
   }
 
   return true;

@@ -110,6 +110,9 @@ enum BailoutKind {
   Bailout_NegativeIndex,
 
   
+  Bailout_NonIntegerIndex,
+
+  
   
   
   
@@ -210,6 +213,8 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "Bailout_Hole";
     case Bailout_NegativeIndex:
       return "Bailout_NegativeIndex";
+    case Bailout_NonIntegerIndex:
+      return "Bailout_NonIntegerIndex";
     case Bailout_ObjectIdentityOrTypeGuard:
       return "Bailout_ObjectIdentityOrTypeGuard";
     case Bailout_NonInt32Input:
