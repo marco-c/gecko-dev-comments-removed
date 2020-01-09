@@ -575,6 +575,10 @@ class TryOptionSyntax(object):
             return False
 
         
+        if 'windows10-aarch64' in attr("test_platform", ""):
+            return False
+
+        
         if 'android-hw' in task.label:
             return False
 
