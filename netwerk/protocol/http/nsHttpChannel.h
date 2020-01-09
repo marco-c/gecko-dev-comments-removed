@@ -655,7 +655,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   uint32_t mCacheEntryIsWriteOnly : 1;
   
   uint32_t mCacheEntriesToWaitFor : 2;
-  uint32_t mHasQueryString : 1;
   
   
   
