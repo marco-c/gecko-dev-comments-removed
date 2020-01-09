@@ -1108,8 +1108,14 @@ class PresShell final : public nsIPresShell,
 
 
 
+
+
+
+
     MOZ_CAN_RUN_SCRIPT
-    bool PrepareToDispatchEvent(WidgetEvent* aEvent, bool* aIsUserInteraction);
+    bool PrepareToDispatchEvent(WidgetEvent* aEvent,
+                                nsEventStatus* aEventStatus,
+                                bool* aIsUserInteraction, bool* aTouchIsNew);
 
     
 
