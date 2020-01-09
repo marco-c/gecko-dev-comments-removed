@@ -149,12 +149,10 @@ extern JS_PUBLIC_API bool EvaluateUtf8Path(
 
 
 
-
-extern JS_PUBLIC_API JSScript* Compile(JSContext* cx,
-                                       const ReadOnlyCompileOptions& options,
-                                       SourceText<char16_t>& srcBuf);
-
-
+extern JS_PUBLIC_API bool Compile(JSContext* cx,
+                                  const ReadOnlyCompileOptions& options,
+                                  SourceText<char16_t>& srcBuf,
+                                  MutableHandle<JSScript*> script);
 
 
 
@@ -165,18 +163,47 @@ extern JS_PUBLIC_API JSScript* Compile(JSContext* cx,
 
 
 
-extern JS_PUBLIC_API JSScript* CompileDontInflate(
+
+
+extern JS_PUBLIC_API bool CompileDontInflate(
     JSContext* cx, const ReadOnlyCompileOptions& options,
-    SourceText<mozilla::Utf8Unit>& srcBuf);
+    SourceText<mozilla::Utf8Unit>& srcBuf, MutableHandle<JSScript*> script);
 
 
 
 
 
 
-extern JS_PUBLIC_API JSScript* CompileUtf8(
+
+extern JS_PUBLIC_API bool CompileUtf8(JSContext* cx,
+                                      const ReadOnlyCompileOptions& options,
+                                      const char* bytes, size_t length,
+                                      MutableHandle<JSScript*> script);
+
+
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API bool CompileUtf8DontInflate(
     JSContext* cx, const ReadOnlyCompileOptions& options, const char* bytes,
-    size_t length);
+    size_t length, MutableHandle<JSScript*> script);
+
+
+
+
+
+
+
+extern JS_PUBLIC_API bool CompileUtf8File(JSContext* cx,
+                                          const ReadOnlyCompileOptions& options,
+                                          FILE* file,
+                                          MutableHandle<JSScript*> script);
 
 
 
@@ -187,17 +214,10 @@ extern JS_PUBLIC_API JSScript* CompileUtf8(
 
 
 
-extern JS_PUBLIC_API JSScript* CompileUtf8DontInflate(
-    JSContext* cx, const ReadOnlyCompileOptions& options, const char* bytes,
-    size_t length);
 
-
-
-
-
-
-extern JS_PUBLIC_API JSScript* CompileUtf8File(
-    JSContext* cx, const ReadOnlyCompileOptions& options, FILE* file);
+extern JS_PUBLIC_API bool CompileUtf8FileDontInflate(
+    JSContext* cx, const ReadOnlyCompileOptions& options, FILE* file,
+    MutableHandle<JSScript*> script);
 
 
 
@@ -206,32 +226,23 @@ extern JS_PUBLIC_API JSScript* CompileUtf8File(
 
 
 
+extern JS_PUBLIC_API bool CompileUtf8Path(JSContext* cx,
+                                          const ReadOnlyCompileOptions& options,
+                                          const char* filename,
+                                          MutableHandle<JSScript*> script);
 
-
-extern JS_PUBLIC_API JSScript* CompileUtf8FileDontInflate(
-    JSContext* cx, const ReadOnlyCompileOptions& options, FILE* file);
-
-
-
-
-
-
-
-extern JS_PUBLIC_API JSScript* CompileUtf8Path(
-    JSContext* cx, const ReadOnlyCompileOptions& options, const char* filename);
-
-extern JS_PUBLIC_API JSScript* CompileForNonSyntacticScope(
+extern JS_PUBLIC_API bool CompileForNonSyntacticScope(
     JSContext* cx, const ReadOnlyCompileOptions& options,
-    SourceText<char16_t>& srcBuf);
+    SourceText<char16_t>& srcBuf, MutableHandle<JSScript*> script);
 
 
 
 
 
 
-extern JS_PUBLIC_API JSScript* CompileUtf8ForNonSyntacticScope(
+extern JS_PUBLIC_API bool CompileUtf8ForNonSyntacticScope(
     JSContext* cx, const ReadOnlyCompileOptions& options, const char* bytes,
-    size_t length);
+    size_t length, MutableHandle<JSScript*> script);
 
 
 
