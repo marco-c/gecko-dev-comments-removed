@@ -285,9 +285,7 @@ WebConsoleClient.prototype = {
 
 
 
-
-
-  evaluateJS: function(string, onResponse, options = {}) {
+  evaluateJS: function(string, options = {}) {
     const packet = {
       to: this.actorID,
       type: "evaluateJS",
@@ -298,14 +296,14 @@ WebConsoleClient.prototype = {
       selectedNodeActor: options.selectedNodeActor,
       selectedObjectActor: options.selectedObjectActor,
     };
-    return this._client.request(packet, onResponse);
+    return this._client.request(packet);
   },
 
   
 
 
 
-  evaluateJSAsync: function(string, onResponse, options = {}) {
+  evaluateJSAsync: function(string, options = {}) {
     const packet = {
       to: this.actorID,
       type: "evaluateJSAsync",
@@ -324,9 +322,6 @@ WebConsoleClient.prototype = {
         
         if (this.pendingEvaluationResults) {
           this.pendingEvaluationResults.set(response.resultID, resp => {
-            if (onResponse) {
-              onResponse(resp);
-            }
             if (resp.error) {
               reject(resp);
             } else {
