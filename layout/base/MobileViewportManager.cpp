@@ -506,7 +506,7 @@ void MobileViewportManager::RefreshViewportSize(bool aForceAdjustResolution) {
   MVM_LOG("%p: Updating properties because %d || %d\n", this, mIsFirstPaint,
           mMobileViewportSize != viewport);
 
-  if (gfxPrefs::APZAllowZooming()) {
+  if (nsLayoutUtils::AllowZoomingForDocument(mDocument)) {
     UpdateResolution(viewportInfo, displaySize, viewport,
                      displayWidthChangeRatio, UpdateType::ViewportSize);
   } else {
@@ -545,7 +545,7 @@ void MobileViewportManager::ShrinkToDisplaySizeIfNeeded(
     return;
   }
 
-  if (!gfxPrefs::APZAllowZooming()) {
+  if (!nsLayoutUtils::AllowZoomingForDocument(mDocument)) {
     
     
     

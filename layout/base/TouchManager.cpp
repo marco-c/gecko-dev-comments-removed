@@ -114,7 +114,8 @@ nsIFrame* TouchManager::SetupTarget(WidgetTouchEvent* aEvent,
   
   
   
-  if (gfxPrefs::APZAllowZooming()) {
+  dom::Document* doc = aFrame->PresContext()->Document();
+  if (nsLayoutUtils::AllowZoomingForDocument(doc)) {
     flags |= INPUT_IGNORE_ROOT_SCROLL_FRAME;
   }
 
