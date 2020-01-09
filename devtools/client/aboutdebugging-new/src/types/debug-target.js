@@ -19,6 +19,13 @@ const extensionTargetDetails = {
   warnings: PropTypes.arrayOf(PropTypes.string).isRequired,
 };
 
+const processTargetDetails = {
+  
+  description: PropTypes.string.isRequired,
+  
+  processId: PropTypes.number.isRequired,
+};
+
 const tabTargetDetails = {
   
   url: PropTypes.string.isRequired,
@@ -39,6 +46,7 @@ const debugTarget = {
   
   details: PropTypes.oneOfType([
     PropTypes.shape(extensionTargetDetails),
+    PropTypes.shape(processTargetDetails),
     PropTypes.shape(tabTargetDetails),
     PropTypes.shape(workerTargetDetails),
   ]).isRequired,

@@ -37,7 +37,6 @@ function debugTargetListenerMiddleware(store) {
 
         
         clientWrapper.addListener("workersUpdated", onWorkersUpdated);
-
         break;
       }
       case UNWATCH_RUNTIME_START: {
@@ -52,7 +51,6 @@ function debugTargetListenerMiddleware(store) {
 
         
         clientWrapper.removeListener("workersUpdated", onWorkersUpdated);
-
         break;
       }
     }

@@ -71,6 +71,8 @@ function createClientMock() {
     
     listAddons: () => [],
     
+    listProcesses: () => [],
+    
     listTabs: () => [],
     
     listWorkers: () => ({
