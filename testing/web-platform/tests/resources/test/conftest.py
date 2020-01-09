@@ -27,7 +27,11 @@ def pytest_collect_file(path, parent):
         return
 
     
-    test_type = os.path.relpath(str(path), HERE).split(os.path.sep)[1]
+    test_type = os.path.relpath(str(path), HERE)
+    if os.path.sep not in test_type or ".." in test_type:
+        
+        return
+    test_type = test_type.split(os.path.sep)[1]
 
     return HTMLItem(str(path), test_type, parent)
 
