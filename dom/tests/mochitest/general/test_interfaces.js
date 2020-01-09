@@ -656,8 +656,6 @@ var interfaceNamesInGlobalScope =
 
     {name: "MediaStreamAudioSourceNode", insecureContext: true},
 
-    {name: "MediaStreamTrackAudioSourceNode", insecureContext: true},
-
     {name: "MediaStreamEvent", insecureContext: true},
 
     {name: "MediaStreamTrackEvent", insecureContext: true},
