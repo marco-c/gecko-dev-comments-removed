@@ -2,8 +2,8 @@
 
 "use strict";
 
-ChromeUtils.defineModuleGetter(this, "PlacesUtils",
-                               "resource://gre/modules/PlacesUtils.jsm");
+var {PlacesUtils} = ChromeUtils.import("resource://gre/modules/PlacesUtils.jsm");
+
 ChromeUtils.defineModuleGetter(this, "Services",
                                "resource://gre/modules/Services.jsm");
 
