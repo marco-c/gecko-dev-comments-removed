@@ -1412,6 +1412,25 @@ NS_IMETHODIMP nsDocLoader::OnSecurityChange(nsISupports* aContext,
   return NS_OK;
 }
 
+NS_IMETHODIMP nsDocLoader::OnContentBlockingEvent(nsISupports* aContext,
+                                                  uint32_t aEvent) {
+  
+  
+  
+
+  nsCOMPtr<nsIRequest> request = do_QueryInterface(aContext);
+  nsIWebProgress* webProgress = static_cast<nsIWebProgress*>(this);
+
+  NOTIFY_LISTENERS(nsIWebProgress::NOTIFY_SECURITY,
+                   listener->OnSecurityChange(webProgress, request, aEvent););
+
+  
+  if (mParent) {
+    mParent->OnContentBlockingEvent(aContext, aEvent);
+  }
+  return NS_OK;
+}
+
 
 
 
