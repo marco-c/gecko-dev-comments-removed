@@ -70,7 +70,13 @@ async function withNewWindow(callback) {
                     "", "chrome");
   await BrowserTestUtils.waitForEvent(win, "load");
 
-  win.gBrowser = {};
+  win.gBrowser = {
+    selectedBrowser: {
+      getAttribute() {
+        return undefined;
+      },
+    },
+  };
 
   
   

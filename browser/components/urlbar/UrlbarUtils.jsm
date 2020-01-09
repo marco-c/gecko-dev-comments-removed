@@ -396,6 +396,8 @@ class UrlbarQueryContext {
 
 
 
+
+
   constructor(options = {}) {
     this._checkRequiredOptions(options, [
       "allowAutofill",
@@ -418,6 +420,8 @@ class UrlbarQueryContext {
         (!Array.isArray(options.sources) || !options.sources.length)) {
       throw new Error(`Invalid sources list`);
     }
+
+    this.userContextId = options.userContextId;
   }
 
   

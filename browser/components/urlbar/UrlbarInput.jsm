@@ -554,6 +554,7 @@ class UrlbarInput {
       muxer: "UnifiedComplete",
       providers: ["UnifiedComplete"],
       searchString,
+      userContextId: this.window.gBrowser.selectedBrowser.getAttribute("usercontextid"),
     }));
   }
 
@@ -989,12 +990,18 @@ class UrlbarInput {
 
   _loadURL(url, openUILinkWhere, params, result = {},
            browser = this.window.gBrowser.selectedBrowser) {
-    this.value = url;
-    browser.userTypedValue = url;
+    
+    if (openUILinkWhere == "current") {
+      this.value = url;
+      browser.userTypedValue = url;
+    }
 
-    if (this.window.gInitialPages.includes(url)) {
+    
+    if (openUILinkWhere != "window" &&
+        this.window.gInitialPages.includes(url)) {
       browser.initialPageLoadedFromUserAction = url;
     }
+
     try {
       UrlbarUtils.addToUrlbarHistory(url, this.window);
     } catch (ex) {
