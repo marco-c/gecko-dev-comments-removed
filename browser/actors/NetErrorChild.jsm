@@ -483,16 +483,6 @@ class NetErrorChild extends ActorChild {
         if (Math.abs(difference) > 60 * 60 * 24 && (now - lastFetched) <= 60 * 60 * 24 * 5 &&
             certRange.notBefore < approximateDate && certRange.notAfter > approximateDate) {
           clockSkew = true;
-          let systemDate = formatter.format(new Date());
-          
-          approximateDate = formatter.format(new Date(approximateDate));
-
-          doc.getElementById("wrongSystemTime_URL").textContent = doc.location.hostname;
-          doc.getElementById("wrongSystemTime_systemDate").textContent = systemDate;
-          doc.getElementById("wrongSystemTime_actualDate").textContent = approximateDate;
-
-          doc.getElementById("errorShortDesc").style.display = "none";
-          doc.getElementById("wrongSystemTimePanel").style.display = "block";
 
         
         
@@ -512,11 +502,6 @@ class NetErrorChild extends ActorChild {
           
           if (buildDate > systemDate && new Date(certRange.notAfter) > buildDate) {
             clockSkew = true;
-
-            doc.getElementById("wrongSystemTimeWithoutReference_URL")
-              .textContent = doc.location.hostname;
-            doc.getElementById("wrongSystemTimeWithoutReference_systemDate")
-              .textContent = formatter.format(systemDate);
           }
         }
 
@@ -530,7 +515,6 @@ class NetErrorChild extends ActorChild {
           doc.querySelector(".title-text").textContent = clockErrTitle.textContent;
           let desc = doc.getElementById("errorShortDescText");
           doc.getElementById("errorShortDesc").style.display = "block";
-          doc.getElementById("wrongSystemTimePanel").style.display = "none";
           doc.getElementById("certificateErrorReporting").style.display = "none";
           if (desc) {
             
