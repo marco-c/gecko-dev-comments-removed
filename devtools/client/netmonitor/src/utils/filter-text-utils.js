@@ -30,7 +30,7 @@
 
 "use strict";
 
-const { FILTER_FLAGS } = require("../constants");
+const { FILTER_FLAGS, SUPPORTED_HTTP_CODES } = require("../constants");
 const { getFormattedIPAndPort } = require("./format-utils");
 const { getUnicodeUrl } = require("devtools/client/shared/unicode-url");
 
@@ -53,6 +53,23 @@ function parseFilters(query) {
     }
     const colonIndex = part.indexOf(":");
     if (colonIndex === -1) {
+      const isNegative = part.startsWith("-");
+      
+      const filteredStatusCodes = SUPPORTED_HTTP_CODES.filter((item) => {
+        item = isNegative ? item.substr(1) : item;
+        return item.toLowerCase().startsWith(part.toLowerCase());
+      });
+
+      if (filteredStatusCodes.length > 0) {
+        flags.push({
+          type: "status-code", 
+          value: isNegative ? part.substring(1) : part,
+          isNegative,
+        });
+        continue;
+      }
+
+      
       text.push(part);
       continue;
     }
@@ -118,7 +135,7 @@ function isFlagFilterMatch(item, { type, value, negative }) {
   responseCookies = responseCookies.cookies || responseCookies;
   switch (type) {
     case "status-code":
-      match = item.status === value;
+      match = item.status && item.status.toString() === value;
       break;
     case "method":
       match = item.method.toLowerCase() === value;

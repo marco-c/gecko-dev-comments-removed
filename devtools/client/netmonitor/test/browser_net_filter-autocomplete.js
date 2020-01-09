@@ -57,8 +57,29 @@ add_task(async function() {
     "Autocomplete Popup still hidden");
 
   document.querySelector(".devtools-filterinput").focus();
+
   
-  EventUtils.sendString("s");
+  EventUtils.sendString("2");
+  ok(document.querySelector(".devtools-autocomplete-popup"),
+    "Autocomplete Popup Created");
+  testAutocompleteContents([
+    "status-code:200",
+    "status-code:201",
+    "status-code:202",
+    "status-code:203",
+    "status-code:204",
+    "status-code:205",
+    "status-code:206",
+  ], document);
+  EventUtils.synthesizeKey("KEY_Enter");
+  is(document.querySelector(".devtools-filterinput").value,
+    "status-code:200", "Value correctly set after Enter");
+  ok(!document.querySelector(".devtools-autocomplete-popup"),
+    "Autocomplete Popup hidden after keyboard Enter key");
+
+  
+  
+  EventUtils.sendString(" s");
   ok(document.querySelector(".devtools-autocomplete-popup"),
     "Autocomplete Popup Created");
   testAutocompleteContents([
@@ -80,7 +101,7 @@ add_task(async function() {
 
   EventUtils.synthesizeKey("KEY_Enter");
   is(document.querySelector(".devtools-filterinput").value,
-    "scheme:http", "Value correctly set after Enter");
+    "status-code:200 scheme:http", "Value correctly set after Enter");
   ok(!document.querySelector(".devtools-autocomplete-popup"),
     "Autocomplete Popup hidden after keyboard Enter key");
 
@@ -95,7 +116,7 @@ add_task(async function() {
   
   EventUtils.synthesizeKey("KEY_Enter");
   is(document.querySelector(".devtools-filterinput").value,
-    "scheme:http protocol:HTTP/1.1",
+    "status-code:200 scheme:http protocol:HTTP/1.1",
     "Tokenized click generates correct value in input box");
 
   

@@ -4,7 +4,7 @@
 
 "use strict";
 
-const { FILTER_FLAGS } = require("../constants");
+const { FILTER_FLAGS, SUPPORTED_HTTP_CODES } = require("../constants");
 
 
 
@@ -158,11 +158,28 @@ function autocompleteProvider(filter, requests) {
   if (availableValues.length > 0) {
     autocompleteList = availableValues;
   } else {
-    autocompleteList = baseList
-      .filter((item) => {
-        return item.toLowerCase().startsWith(lastToken.toLowerCase())
-          && item.toLowerCase() !== lastToken.toLowerCase();
-      });
+    const isNegativeFlag = lastToken.startsWith("-");
+
+    
+    const filteredStatusCodes = SUPPORTED_HTTP_CODES.filter((item) => {
+      item = isNegativeFlag ? item.substr(1) : item;
+      return item.toLowerCase().startsWith(lastToken.toLowerCase());
+    });
+
+    if (filteredStatusCodes.length > 0) {
+      
+      autocompleteList = isNegativeFlag ?
+        filteredStatusCodes.map((item) => `-status-code:${item}`) :
+        filteredStatusCodes.map((item) => `status-code:${item}`);
+    } else {
+      
+      
+      autocompleteList = baseList
+        .filter((item) => {
+          return item.toLowerCase().startsWith(lastToken.toLowerCase())
+            && item.toLowerCase() !== lastToken.toLowerCase();
+        });
+    }
   }
 
   return autocompleteList
