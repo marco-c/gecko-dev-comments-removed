@@ -65,6 +65,8 @@ const prefs = {
       PERSIST: "devtools.webconsole.persistlog",
       
       INPUT_HISTORY_COUNT: "devtools.webconsole.inputHistoryCount",
+      
+      EDITOR: "devtools.webconsole.input.editor",
     },
     FEATURES: {
       

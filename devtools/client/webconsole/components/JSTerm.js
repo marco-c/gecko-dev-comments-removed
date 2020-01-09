@@ -79,6 +79,8 @@ class JSTerm extends Component {
       autocompleteUpdate: PropTypes.func.isRequired,
       
       autocompleteData: PropTypes.object.isRequired,
+      
+      editorMode: PropTypes.bool,
     };
   }
 
@@ -592,7 +594,11 @@ class JSTerm extends Component {
     this.props.appendToHistory(executeString);
 
     WebConsoleUtils.usageCount++;
-    this._setValue("");
+
+    if (!this.props.editorMode) {
+      this._setValue("");
+    }
+
     this.clearCompletion();
 
     let selectedNodeActor = null;
