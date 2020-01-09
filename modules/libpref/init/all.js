@@ -5082,6 +5082,15 @@ pref("layers.prefer-opengl", false);
 
 pref("layers.shared-buffer-provider.enabled", true);
 
+#ifdef XP_WIN
+pref("layers.shared-buffer-provider.enabled", false);
+#endif
+
+#ifdef XP_MACOSX
+
+pref("layers.shared-buffer-provider.enabled", false);
+#endif
+
 
 pref("layers.force-active", false);
 
