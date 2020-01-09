@@ -75,6 +75,15 @@ warning heuristic.
 '''
 
 
+
+
+def run_one_clang_format_batch(args):
+    try:
+        subprocess.check_output(args)
+    except subprocess.CalledProcessError as e:
+        return e
+
+
 class StoreDebugParamsAndWarnAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         sys.stderr.write('The --debugparams argument is deprecated. Please ' +
@@ -2871,13 +2880,10 @@ class StaticAnalysis(MachCommandBase):
 
         print("Processing %d file(s)..." % len(path_list))
 
-        batchsize = 200
         if show:
-            batchsize = 1
+            for i in range(0, len(path_list)):
+                l = path_list[i: (i + 1)]
 
-        for i in range(0, len(path_list), batchsize):
-            l = path_list[i: (i + batchsize)]
-            if show:
                 
                 
                 
@@ -2890,15 +2896,14 @@ class StaticAnalysis(MachCommandBase):
                 shutil.copy(l[0], faketmpdir)
                 l[0] = target_file
 
-            
-            try:
-                check_output(args + l)
-            except CalledProcessError as e:
                 
-                print("clang-format: An error occured while running clang-format.")
-                return e.returncode
+                try:
+                    check_output(args + l)
+                except CalledProcessError as e:
+                    
+                    print("clang-format: An error occured while running clang-format.")
+                    return e.returncode
 
-            if show:
                 
                 diff_command = ["diff", "-u", original_path, target_file]
                 try:
@@ -2909,8 +2914,37 @@ class StaticAnalysis(MachCommandBase):
                     
                     if e.output:
                         print(e.output)
-        if show:
+
             shutil.rmtree(tmpdir)
+            return 0
+
+        
+        import concurrent.futures
+        import multiprocessing
+        import math
+
+        max_workers = multiprocessing.cpu_count()
+        batchsize = int(math.ceil(float(len(path_list)) / max_workers))
+
+        batches = []
+        for i in range(0, len(path_list), batchsize):
+            batches.append(args + path_list[i: (i + batchsize)])
+
+        error_code = None
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = []
+            for batch in batches:
+                futures.append(executor.submit(run_one_clang_format_batch, batch))
+
+            for future in concurrent.futures.as_completed(futures):
+                
+                ret_val = future.result()
+                if ret_val is not None:
+                    error_code = ret_val
+
+            if error_code is not None:
+                return error_code
         return 0
 
 @CommandProvider
