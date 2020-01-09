@@ -37,6 +37,7 @@ Preferences.addAll([
   { id: "network.proxy.backup.socks_port", type: "int" },
   { id: "network.trr.mode", type: "int" },
   { id: "network.trr.uri", type: "string" },
+  { id: "network.trr.resolvers", type: "string" },
   { id: "network.trr.custom_uri", "type": "string" },
 ]);
 
@@ -46,11 +47,21 @@ window.addEventListener("DOMContentLoaded", () => {
   Preferences.get("network.proxy.socks_version").on("change",
     gConnectionsDialog.updateDNSPref.bind(gConnectionsDialog));
 
+  Preferences.get("network.trr.uri").on("change", () => {
+    gConnectionsDialog.updateDnsOverHttpsUI();
+  });
+
+  Preferences.get("network.trr.resolvers").on("change", () => {
+    gConnectionsDialog.initDnsOverHttpsUI();
+  });
+
+  
+  
   
   gConnectionsDialog.uiReady = new Promise(resolve => {
-    gConnectionsDialog._initialPrefsAdded = resolve;
+    gConnectionsDialog._areTrrPrefsReady = false;
+    gConnectionsDialog._handleTrrPrefsReady = resolve;
   }).then(() => {
-    delete gConnectionsDialog._initialPrefsAdded;
     gConnectionsDialog.initDnsOverHttpsUI();
   });
 
@@ -65,8 +76,16 @@ window.addEventListener("DOMContentLoaded", () => {
 
 var gConnectionsDialog = {
   beforeAccept() {
-    if (document.getElementById("customDnsOverHttpsUrlRadio").selected) {
-      Services.prefs.setStringPref("network.trr.uri", document.getElementById("customDnsOverHttpsInput").value);
+    let dnsOverHttpsResolverChoice = document.getElementById("networkDnsOverHttpsResolverChoices").value;
+    if (dnsOverHttpsResolverChoice == "custom") {
+      let customValue = document.getElementById("networkCustomDnsOverHttpsInput").value.trim();
+      if (customValue) {
+        Services.prefs.setStringPref("network.trr.uri", customValue);
+      } else {
+        Services.prefs.clearUserPref("network.trr.uri");
+      }
+    } else {
+      Services.prefs.setStringPref("network.trr.uri", dnsOverHttpsResolverChoice);
     }
 
     var proxyTypePref = Preferences.get("network.proxy.type");
@@ -296,6 +315,31 @@ var gConnectionsDialog = {
     }
   },
 
+  get dnsOverHttpsResolvers() {
+    let rawValue = Preferences.get("network.trr.resolvers", "").value;
+    
+    let defaultURI = Preferences.get("network.trr.uri", "").defaultValue;
+    let providers = [];
+    if (rawValue) {
+      try {
+        providers = JSON.parse(rawValue);
+      } catch (ex) {
+        Cu.reportError(`Bad JSON data in pref network.trr.resolvers: ${rawValue}`);
+      }
+    }
+    if (!Array.isArray(providers)) {
+        Cu.reportError(`Expected a JSON array in network.trr.resolvers: ${rawValue}`);
+        providers = [];
+    }
+    let defaultIndex = providers.findIndex(p => p.url == defaultURI);
+    if (defaultIndex == -1 && defaultURI) {
+      
+      
+      providers.unshift({ url: defaultURI });
+    }
+    return providers;
+  },
+
   isDnsOverHttpsLocked() {
     return Services.prefs.prefIsLocked("network.trr.mode");
   },
@@ -309,12 +353,16 @@ var gConnectionsDialog = {
 
   readDnsOverHttpsMode() {
     
-    
     let enabled = this.isDnsOverHttpsEnabled();
     let uriPref = Preferences.get("network.trr.uri");
     uriPref.disabled = !enabled || this.isDnsOverHttpsLocked();
-    if (this._initialPrefsAdded) {
-      this._initialPrefsAdded();
+    
+    
+    if (!this._areTrrPrefsReady) {
+      this._areTrrPrefsReady = true;
+      this._handleTrrPrefsReady();
+    } else {
+      this.updateDnsOverHttpsUI();
     }
     return enabled;
   },
@@ -328,41 +376,90 @@ var gConnectionsDialog = {
 
   updateDnsOverHttpsUI() {
     
-    
-    let parentCheckbox = document.getElementById("networkDnsOverHttps");
-    let customDnsOverHttpsUrlRadio = document.getElementById("customDnsOverHttpsUrlRadio");
-    let customDnsOverHttpsInput = document.getElementById("customDnsOverHttpsInput");
-    customDnsOverHttpsInput.disabled = !parentCheckbox.checked || !customDnsOverHttpsUrlRadio.selected;
-    customDnsOverHttpsUrlRadio.disabled = !parentCheckbox.checked;
+    if (!this._areTrrPrefsReady) {
+      return;
+    }
+    let [menu, customInput] = this.getDnsOverHttpsControls();
+    let customContainer = document.getElementById("customDnsOverHttpsContainer");
+    let customURI = Preferences.get("network.trr.custom_uri").value;
+    let currentURI = Preferences.get("network.trr.uri").value;
+    let resolvers = this.dnsOverHttpsResolvers;
+    let isCustom = menu.value == "custom";
+
+    if (this.isDnsOverHttpsEnabled()) {
+      this.toggleDnsOverHttpsUI(false);
+      if (isCustom) {
+        
+        if (currentURI && !customURI && !resolvers.find(r => r.url == currentURI)) {
+          Services.prefs.setStringPref("network.trr.custom_uri", currentURI);
+        }
+      }
+    } else {
+      this.toggleDnsOverHttpsUI(true);
+    }
+
+    if (!menu.disabled && isCustom) {
+      customContainer.hidden = false;
+      customInput.disabled = false;
+      customContainer.scrollIntoView();
+    } else {
+      customContainer.hidden = true;
+      customInput.disabled = true;
+    }
   },
 
   getDnsOverHttpsControls() {
     return [
-      document.getElementById("networkDnsOverHttps"),
-      document.getElementById("customDnsOverHttpsUrlRadio"),
-      document.getElementById("defaultDnsOverHttpsUrlRadio"),
-      document.getElementById("customDnsOverHttpsInput"),
+      document.getElementById("networkDnsOverHttpsResolverChoices"),
+      document.getElementById("networkCustomDnsOverHttpsInput"),
+      document.getElementById("networkDnsOverHttpsResolverChoicesLabel"),
+      document.getElementById("networkCustomDnsOverHttpsInputLabel"),
     ];
   },
 
-  disableDnsOverHttpsUI(disabled) {
+  toggleDnsOverHttpsUI(disabled) {
     for (let element of this.getDnsOverHttpsControls()) {
       element.disabled = disabled;
     }
   },
 
   initDnsOverHttpsUI() {
-    
-    this.disableDnsOverHttpsUI(this.isDnsOverHttpsLocked());
+    let resolvers = this.dnsOverHttpsResolvers;
+    let defaultURI = Preferences.get("network.trr.uri").defaultValue;
+    let currentURI = Preferences.get("network.trr.uri").value;
+    let menu = document.getElementById("networkDnsOverHttpsResolverChoices");
 
-    let defaultDnsOverHttpsUrlRadio = document.getElementById("defaultDnsOverHttpsUrlRadio");
-    let defaultPrefUrl = Preferences.get("network.trr.uri").defaultValue;
-    document.l10n.setAttributes(defaultDnsOverHttpsUrlRadio, "connection-dns-over-https-url-default", {
-      url: defaultPrefUrl,
-    });
-    defaultDnsOverHttpsUrlRadio.value = defaultPrefUrl;
-    let radioGroup = document.getElementById("DnsOverHttpsUrlRadioGroup");
-    radioGroup.selectedIndex = Preferences.get("network.trr.uri").hasUserValue ? 1 : 0;
-    this.updateDnsOverHttpsUI();
+    
+    menu.removeAllItems();
+    for (let resolver of resolvers) {
+      let item = menu.appendItem(undefined, resolver.url);
+      if (resolver.url == defaultURI) {
+        document.l10n.setAttributes(item, "connection-dns-over-https-url-item-default", {
+          name: resolver.name || resolver.url,
+        });
+      } else {
+        item.label = resolver.name || resolver.url;
+      }
+    }
+    let lastItem = menu.appendItem(undefined, "custom");
+    document.l10n.setAttributes(lastItem, "connection-dns-over-https-url-custom");
+
+    
+    let selectedIndex = currentURI ? resolvers.findIndex(r => r.url == currentURI) : 0;
+    if (selectedIndex == -1) {
+      
+      selectedIndex = menu.itemCount - 1;
+    }
+    menu.selectedIndex = selectedIndex;
+
+    if (this.isDnsOverHttpsLocked()) {
+      
+      this.toggleDnsOverHttpsUI(true);
+      document.getElementById("networkDnsOverHttps").disabled = true;
+    } else {
+      this.toggleDnsOverHttpsUI(false);
+      this.updateDnsOverHttpsUI();
+      document.getElementById("networkDnsOverHttps").disabled = false;
+    }
   },
 };
