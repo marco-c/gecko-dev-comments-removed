@@ -1745,33 +1745,24 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   modifySelector: function(node, value, editAuthored = false) {
-    return this.modifySelector2(node, value, editAuthored);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  modifySelector2: function(node, value, editAuthored = false) {
     if (this.type === ELEMENT_STYLE ||
         this.rawRule.selectorText === value) {
       return { ruleProps: null, isMatching: true };
