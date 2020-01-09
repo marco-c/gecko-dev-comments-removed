@@ -72,6 +72,12 @@ class nsSVGIntegrationUtils final {
 
 
 
+  static bool UsingSimpleClipPathForFrame(const nsIFrame* aFrame);
+
+  
+
+
+
   static nsSize GetContinuationUnionSize(nsIFrame* aNonSVGFrame);
 
   

@@ -9532,19 +9532,12 @@ static Maybe<wr::WrClipId> CreateSimpleClipRegion(
   nsIFrame* frame = aDisplayItem.Frame();
   auto* style = frame->StyleSVGReset();
   MOZ_ASSERT(style->HasClipPath() || style->HasMask());
-  if (style->HasMask()) {
+  if (!nsSVGIntegrationUtils::UsingSimpleClipPathForFrame(frame)) {
     return Nothing();
   }
 
   const auto& clipPath = style->mClipPath;
-  if (clipPath.GetType() != StyleShapeSourceType::Shape) {
-    return Nothing();
-  }
-
   const auto& shape = clipPath.BasicShape();
-  if (shape.GetShapeType() == StyleBasicShapeType::Polygon) {
-    return Nothing();
-  }
 
   auto appUnitsPerDevPixel = frame->PresContext()->AppUnitsPerDevPixel();
   const nsRect refBox =
