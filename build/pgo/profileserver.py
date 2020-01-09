@@ -97,9 +97,6 @@ if __name__ == '__main__':
                     break
 
         
-        env["MOZ_OBJDIR"] = build.topobjdir
-
-        
         process_args = {}
         if 'UPLOAD_PATH' in env:
             process_args['logfile'] = os.path.join(env['UPLOAD_PATH'], 'profile-run-1.log')
