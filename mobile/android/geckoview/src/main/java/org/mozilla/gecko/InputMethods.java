@@ -16,8 +16,11 @@ import android.view.inputmethod.InputMethodManager;
 
 final public class InputMethods {
     public static final String METHOD_ANDROID_LATINIME = "com.android.inputmethod.latin/.LatinIME";
-    public static final String METHOD_ATOK = "com.justsystems.atokmobile.service/.AtokInputMethodService";
+    
+    public static final String METHOD_ATOK_PREFIX = "com.justsystems.atokmobile.";
+    public static final String METHOD_ATOK_OEM_PREFIX = "com.atok.mobile.";
     public static final String METHOD_GOOGLE_JAPANESE_INPUT = "com.google.android.inputmethod.japanese/.MozcService";
+    public static final String METHOD_ATOK_OEM_SOFTBANK = "com.mobiroo.n.justsystems.atok/.AtokInputMethodService";
     public static final String METHOD_GOOGLE_LATINIME = "com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME";
     public static final String METHOD_HTC_TOUCH_INPUT = "com.htc.android.htcime/.HTCIMEService";
     public static final String METHOD_IWNN = "jp.co.omronsoft.iwnnime.ml/.standardcommon.IWnnLanguageSwitcher";
@@ -59,14 +62,29 @@ final public class InputMethods {
         }
     }
 
-    public static boolean needsSoftResetWorkaround(String inputMethod) {
+    public static boolean needsSoftResetWorkaround(final String inputMethod) {
         
         return Build.VERSION.SDK_INT >= 17 &&
                (METHOD_ANDROID_LATINIME.equals(inputMethod) ||
                 METHOD_GOOGLE_LATINIME.equals(inputMethod));
     }
 
-    public static boolean shouldCommitCharAsKey(String inputMethod) {
+    
+
+
+
+
+
+
+
+
+    public static boolean needsRestartInput(final String inputMethod) {
+        return inputMethod.startsWith(METHOD_ATOK_PREFIX) ||
+               inputMethod.startsWith(METHOD_ATOK_OEM_PREFIX) ||
+               METHOD_ATOK_OEM_SOFTBANK.equals(inputMethod);
+    }
+
+    public static boolean shouldCommitCharAsKey(final String inputMethod) {
         return METHOD_HTC_TOUCH_INPUT.equals(inputMethod);
     }
 
