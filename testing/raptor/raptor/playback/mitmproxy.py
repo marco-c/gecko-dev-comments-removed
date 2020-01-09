@@ -394,7 +394,7 @@ class MitmproxyAndroid(Mitmproxy):
             tooltool_download(_dest, self.config['run_local'], self.raptor_dir)
 
             
-            self.certutil = os.path.join(self.raptor_dir, 'host-utils-66.0a1.en-US.linux-x86_64')
+            self.certutil = os.path.join(self.raptor_dir, 'host-utils-67.0a1.en-US.linux-x86_64')
 
             
             os.environ['LD_LIBRARY_PATH'] = self.certutil
