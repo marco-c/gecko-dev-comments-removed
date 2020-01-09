@@ -96,14 +96,18 @@ var E10SUtils = {
     return useHttpResponseProcessSelection;
   },
 
-  canLoadURIInRemoteType(aURL, aRemoteType = DEFAULT_REMOTE_TYPE) {
+  canLoadURIInRemoteType(aURL, aRemoteType = DEFAULT_REMOTE_TYPE,
+                         aPreferredRemoteType = undefined) {
     
     
     
-    let preferredRemoteType = aRemoteType === NOT_REMOTE
-      ? NOT_REMOTE
-      : DEFAULT_REMOTE_TYPE;
-    return aRemoteType == this.getRemoteTypeForURI(aURL, true, preferredRemoteType);
+    if (aPreferredRemoteType === undefined) {
+      aPreferredRemoteType = aRemoteType === NOT_REMOTE
+        ? NOT_REMOTE
+        : DEFAULT_REMOTE_TYPE;
+    }
+
+    return aRemoteType == this.getRemoteTypeForURI(aURL, true, aPreferredRemoteType);
   },
 
   getRemoteTypeForURI(aURL, aMultiProcess,
