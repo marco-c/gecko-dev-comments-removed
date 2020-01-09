@@ -102,7 +102,7 @@ function TypedArraySpeciesConstructor(obj) {
 
 
 
-function ValidateTypedArray(obj, error) {
+function ValidateTypedArray(obj) {
     if (IsObject(obj)) {
         
         if (IsTypedArray(obj)) {
@@ -120,7 +120,7 @@ function ValidateTypedArray(obj, error) {
     }
 
     
-    ThrowTypeError(error);
+    ThrowTypeError(JSMSG_NON_TYPED_ARRAY_RETURNED);
 }
 
 
@@ -130,7 +130,7 @@ function TypedArrayCreateWithLength(constructor, length) {
     var newTypedArray = new constructor(length);
 
     
-    var isTypedArray = ValidateTypedArray(newTypedArray, JSMSG_NON_TYPED_ARRAY_RETURNED);
+    var isTypedArray = ValidateTypedArray(newTypedArray);
 
     
     var len;
@@ -155,7 +155,7 @@ function TypedArrayCreateWithBuffer(constructor, buffer, byteOffset, length) {
     var newTypedArray = new constructor(buffer, byteOffset, length);
 
     
-    ValidateTypedArray(newTypedArray, JSMSG_NON_TYPED_ARRAY_RETURNED);
+    ValidateTypedArray(newTypedArray);
 
     
 
