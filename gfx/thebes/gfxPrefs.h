@@ -289,8 +289,6 @@ class gfxPrefs final {
   
   
 
-  DECL_GFX_PREF(Once, "layers.windowrecording.path",           LayersWindowRecordingPath, std::string, std::string());
-
   
   
   
