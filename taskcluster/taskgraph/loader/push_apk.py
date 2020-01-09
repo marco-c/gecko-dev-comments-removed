@@ -40,16 +40,12 @@ def get_dependent_loaded_tasks(config, params, loaded_tasks):
 
     
     
-    aarch64_tasks_only_on_central = (
-        task for task in android_tasks
-        if params['project'] == 'mozilla-central' or
-        'aarch64' not in task.attributes.get('build_platform', '')
-    )
+    if params['project'] in ('mozilla-central', 'try'):
+        shipping_tasks = list(android_tasks)
+    else:
+        shipping_tasks = [
+            task for task in android_tasks
+            if 'aarch64' not in task.attributes.get('build_platform', '')
+        ]
 
-    
-    non_shipping_tasks = [
-        task for task in aarch64_tasks_only_on_central
-        if 'x86_64' not in task.attributes.get('build_platform', '')
-    ]
-
-    return non_shipping_tasks
+    return shipping_tasks
