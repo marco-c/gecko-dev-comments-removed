@@ -162,8 +162,13 @@ void HTMLLinkElement::UnbindFromTree(bool aDeep, bool aNullParent) {
   Document* oldDoc = GetUncomposedDoc();
   ShadowRoot* oldShadowRoot = GetContainingShadow();
 
-  if (oldDoc && this->AttrValueIs(kNameSpaceID_None, nsGkAtoms::rel,
-                                  nsGkAtoms::localization, eIgnoreCase)) {
+  
+  
+  
+  bool ignore;
+  if (oldDoc && oldDoc->GetScriptHandlingObject(ignore) &&
+      this->AttrValueIs(kNameSpaceID_None, nsGkAtoms::rel,
+                        nsGkAtoms::localization, eIgnoreCase)) {
     oldDoc->LocalizationLinkRemoved(this);
   }
 
