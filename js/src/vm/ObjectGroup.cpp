@@ -203,27 +203,23 @@ void ObjectGroup::setAddendum(AddendumKind kind, void* addendum,
                                                              jsbytecode* pc,
                                                              JSProtoKey key) {
   
-  
-  JS_STATIC_ASSERT(GenericObject == 0);
-
-  
 
 
 
 
 
   if (script->functionNonDelazifying() && !script->treatAsRunOnce()) {
-    return GenericObject;
+    return false;
   }
 
   if (key != JSProto_Object) {
-    return GenericObject;
+    return false;
   }
 
   
 
   if (!script->hasTrynotes()) {
-    return SingletonObject;
+    return true;
   }
 
   uint32_t offset = script->pcToOffset(pc);
@@ -235,11 +231,11 @@ void ObjectGroup::setAddendum(AddendumKind kind, void* addendum,
     }
 
     if (tn.start <= offset && offset < tn.start + tn.length) {
-      return GenericObject;
+      return false;
     }
   }
 
-  return SingletonObject;
+  return true;
 }
 
 
