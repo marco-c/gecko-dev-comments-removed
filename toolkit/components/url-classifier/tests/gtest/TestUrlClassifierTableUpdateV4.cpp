@@ -187,16 +187,10 @@ static void testUpdate(TableUpdateArray& tableUpdates,
   nsCOMPtr<nsIFile> file;
   NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR, getter_AddRefs(file));
 
-  {
-    
-    
-    
-    nsresult rv;
-    nsCOMPtr<nsIUrlClassifierUtils> dummy =
-        components::UrlClassifierUtils::Service(&rv);
-    Unused << dummy;
-    ASSERT_TRUE(NS_SUCCEEDED(rv));
-  }
+  
+  
+  
+  nsUrlClassifierUtils::GetInstance();
 
   RefPtr<Classifier> classifier = new Classifier();
   classifier->Open(*file);

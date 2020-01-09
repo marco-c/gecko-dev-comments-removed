@@ -91,16 +91,10 @@ void ApplyUpdate(TableUpdateArray& updates) {
   RefPtr<Classifier> classifier = new Classifier();
   classifier->Open(*file);
 
-  {
-    
-    
-    
-    nsresult rv;
-    nsCOMPtr<nsIUrlClassifierUtils> dummy =
-        mozilla::components::UrlClassifierUtils::Service(&rv);
-    Unused << dummy;
-    ASSERT_TRUE(NS_SUCCEEDED(rv));
-  }
+  
+  
+  
+  nsUrlClassifierUtils::GetInstance();
 
   SyncApplyUpdates(classifier, updates);
 }
