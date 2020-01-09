@@ -3985,6 +3985,38 @@ AsyncTransform AsyncPanZoomController::GetCurrentAsyncTransform(
   return AsyncTransform(compositedAsyncZoom, -translation);
 }
 
+AsyncTransform AsyncPanZoomController::GetCurrentAsyncViewportRelativeTransform(
+    AsyncTransformConsumer aMode) const {
+  RecursiveMutexAutoLock lock(mRecursiveMutex);
+
+  if (aMode == eForCompositing && mScrollMetadata.IsApzForceDisabled()) {
+    return AsyncTransform();
+  }
+
+  CSSPoint lastPaintRelativeViewportOffset;
+  if (mLastContentPaintMetrics.IsScrollable()) {
+    lastPaintRelativeViewportOffset =
+        mLastContentPaintMetrics.GetScrollOffset() -
+        mLastContentPaintMetrics.GetLayoutViewport().TopLeft();
+  }
+
+  CSSPoint currentRelativeViewportOffset =
+      GetEffectiveScrollOffset(aMode) -
+      GetEffectiveLayoutViewport(aMode).TopLeft();
+
+  
+  
+  
+  
+  CSSToParentLayerScale2D effectiveZoom =
+      Metrics().LayersPixelsPerCSSPixel() * LayerToParentLayerScale(1.0f);
+  ParentLayerPoint translation =
+      (currentRelativeViewportOffset - lastPaintRelativeViewportOffset) *
+      effectiveZoom;
+
+  return AsyncTransform(LayerToParentLayerScale{}, -translation);
+}
+
 AsyncTransform
 AsyncPanZoomController::GetCurrentAsyncTransformForFixedAdjustment(
     AsyncTransformConsumer aMode) const {

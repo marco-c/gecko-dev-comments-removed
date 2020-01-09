@@ -1106,6 +1106,16 @@ class AsyncPanZoomController {
 
 
 
+
+
+
+  AsyncTransform GetCurrentAsyncViewportRelativeTransform(
+      AsyncTransformConsumer aMode) const;
+
+  
+
+
+
   AsyncTransform GetCurrentAsyncTransformForFixedAdjustment(
       AsyncTransformConsumer aMode) const;
 
