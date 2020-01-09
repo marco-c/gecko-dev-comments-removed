@@ -286,10 +286,15 @@ class ArtifactJob(object):
                              'matched an archive path.'.format(
                                  patterns=LinuxArtifactJob.test_artifact_patterns))
 
-    def process_symbols_archive(self, filename, processed_filename):
+    def process_symbols_archive(self, filename, processed_filename, skip_compressed=False):
         with JarWriter(file=processed_filename, compress_level=5) as writer:
             reader = JarReader(filename)
             for filename in reader.entries:
+                if skip_compressed and filename.endswith('.gz'):
+                    self.log(logging.INFO, 'artifact',
+                             {'filename': filename},
+                             'Skipping compressed ELF debug symbol file {filename}')
+                    continue
                 destpath = mozpath.join('crashreporter-symbols', filename)
                 self.log(logging.INFO, 'artifact',
                          {'destpath': destpath},
@@ -333,6 +338,35 @@ class AndroidArtifactJob(ArtifactJob):
                     basedir = mozpath.join('bin', dirname.lstrip('assets/'))
                 basename = mozpath.join(basedir, basename)
                 writer.add(basename.encode('utf-8'), f.open())
+
+    def process_symbols_archive(self, filename, processed_filename):
+        ArtifactJob.process_symbols_archive(self, filename, processed_filename, skip_compressed=True)
+
+        if self._symbols_archive_suffix != 'crashreporter-symbols-full.zip':
+            return
+
+        import gzip
+
+        with JarWriter(file=processed_filename, compress_level=5) as writer:
+            reader = JarReader(filename)
+            for filename in reader.entries:
+                if not filename.endswith('.gz'):
+                    continue
+
+                
+                
+                
+                
+                
+                
+                
+                basename = os.path.basename(filename).replace('.gz', '')
+                destpath = mozpath.join('crashreporter-symbols', basename)
+                self.log(logging.INFO, 'artifact',
+                         {'destpath': destpath},
+                         'Adding uncompressed ELF debug symbol file {destpath} to processed archive')
+                writer.add(destpath.encode('utf-8'),
+                           gzip.GzipFile(fileobj=reader[filename].uncompressed_data))
 
 
 class LinuxArtifactJob(ArtifactJob):
