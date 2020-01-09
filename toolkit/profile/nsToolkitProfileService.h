@@ -150,6 +150,10 @@ class nsToolkitProfileService final : public nsIToolkitProfileService {
   nsString mStartupReason;
   bool mMaybeLockProfile;
 
+  
+  
+  nsCString mUpdateChannel;
+
   static nsToolkitProfileService* gService;
 
   class ProfileEnumerator final : public nsSimpleEnumerator {
