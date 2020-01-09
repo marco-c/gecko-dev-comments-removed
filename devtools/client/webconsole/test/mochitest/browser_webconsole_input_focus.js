@@ -52,6 +52,6 @@ function waitForBlurredInput(hud) {
     node.addEventListener("focusout", lostFocus, { once: true });
 
     
-    node.ownerDocument.querySelector("input.text-filter").focus();
+    getFilterInput(hud).focus();
   });
 }

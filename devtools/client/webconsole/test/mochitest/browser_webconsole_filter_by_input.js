@@ -87,14 +87,14 @@ add_task(async function() {
   }
   
   
-  clearFilterInput(hud);
-  is(hud.ui.clearButton.hidden, true, "Clear button is hidden");
-  setFilterInput(hud, JS_ASCII_FILENAME);
-  is(hud.ui.clearButton.hidden, false, "Clear button is visible");
+  await setFilterState(hud, {text: ""});
+  is(getClearButton(hud).hidden, true, "Clear button is hidden");
+  await setFilterState(hud, {text: JS_ASCII_FILENAME});
+  is(getClearButton(hud).hidden, false, "Clear button is visible");
 
   
   
-  setFilterInput(hud, JS_ASCII_FILENAME);
+  await setFilterState(hud, {text: JS_ASCII_FILENAME});
   visibleLogs = getVisibleLogs(hud);
   is(visibleLogs.length, SEASONS.length,
        `the number of all the logs containing ${JS_ASCII_FILENAME}`);
@@ -104,7 +104,7 @@ add_task(async function() {
 
   
   for (const curSeason of SEASONS) {
-    setFilterInput(hud, curSeason.english);
+    await setFilterState(hud, {text: curSeason.english});
     visibleLogs = getVisibleLogs(hud);
     is(visibleLogs.length, 1,
          `the number of all the logs containing ${curSeason.english}`);
@@ -113,7 +113,7 @@ add_task(async function() {
 
   
   
-  setFilterInput(hud, JS_UNICODE_FILENAME);
+  await setFilterState(hud, {text: JS_UNICODE_FILENAME});
   visibleLogs = getVisibleLogs(hud);
   is(visibleLogs.length, SEASONS.length,
        `the number of all the logs containing ${JS_UNICODE_FILENAME}`);
@@ -123,7 +123,7 @@ add_task(async function() {
 
   
   for (const curSeason of SEASONS) {
-    setFilterInput(hud, curSeason.chinese);
+    await setFilterState(hud, {text: curSeason.chinese});
     visibleLogs = getVisibleLogs(hud);
     is(visibleLogs.length, 1,
          `the number of all the logs containing ${curSeason.chinese}`);
@@ -135,7 +135,7 @@ add_task(async function() {
   
   
   
-  setFilterInput(hud, SEASON.english);
+  await setFilterState(hud, {text: SEASON.english});
   visibleLogs = getVisibleLogs(hud);
   is(visibleLogs.length, SEASONS.length + 1,
        `the number of all the logs containing ${SEASON.english}`);
@@ -147,7 +147,7 @@ add_task(async function() {
   
   
   
-  setFilterInput(hud, SEASON.chinese);
+  await setFilterState(hud, {text: SEASON.chinese});
   visibleLogs = getVisibleLogs(hud);
   is(visibleLogs.length, SEASONS.length,
        `the number of all the logs containing ${SEASON.chinese}`);
@@ -157,15 +157,16 @@ add_task(async function() {
 
   
   
-  clearFilterInput(hud);
+  await setFilterState(hud, {text: ""});
   checkAllMessagesAreVisible(hud);
 
   
   
-  setFilterInput(hud, JS_ASCII_FILENAME);
+  await setFilterState(hud, {text: JS_ASCII_FILENAME});
 
   info("Click the input clear button");
   clickClearButton(hud);
+  await waitFor(() => getClearButton(hud).hidden === true);
   checkAllMessagesAreVisible(hud);
 });
 
@@ -209,25 +210,18 @@ function createServerAndGetTestUrl() {
   return `http://localhost:${port}/${HTML_FILENAME}`;
 }
 
-function setFilterInput(hud, value) {
-  hud.ui.filterBox.focus();
-  hud.ui.filterBox.select();
-  EventUtils.sendString(value);
+function getClearButton(hud) {
+  return hud.ui.outputNode
+    .querySelector(".devtools-searchbox .devtools-searchinput-clear");
 }
 
-function clearFilterInput(hud) {
-  hud.ui.filterBox.focus();
-  hud.ui.filterBox.select();
-  EventUtils.synthesizeKey("KEY_Delete");
+function clickClearButton(hud) {
+  getClearButton(hud).click();
 }
 
 function getVisibleLogs(hud) {
   const outputNode = hud.outputNode;
   return outputNode.querySelectorAll(".message");
-}
-
-function clickClearButton(hud) {
-  hud.ui.clearButton.click();
 }
 
 function checkAllMessagesAreVisible(hud) {
