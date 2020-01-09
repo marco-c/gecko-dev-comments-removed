@@ -1637,6 +1637,14 @@ class Document : public nsINode,
 
   
   
+  void RecordShadowStyleChange(ShadowRoot&);
+
+  
+  
+  void ApplicableStylesChanged();
+
+  
+  
   bool StyleSetFilled() const { return mStyleSetFilled; }
 
   

@@ -114,18 +114,6 @@ nsPresContext* ServoStyleSet::GetPresContext() {
   return mDocument->GetPresContext();
 }
 
-void ServoStyleSet::ShellAttachedToDocument() {
-  
-  
-  
-  
-  
-  
-  
-  
-  SetStylistXBLStyleSheetsDirty();
-}
-
 template <typename Functor>
 void EnumerateShadowRoots(const Document& aDoc, const Functor& aCb) {
   const Document::ShadowRootSet& shadowRoots = aDoc.ComposedShadowRoots();
@@ -138,6 +126,9 @@ void EnumerateShadowRoots(const Document& aDoc, const Functor& aCb) {
 }
 
 void ServoStyleSet::ShellDetachedFromDocument() {
+  
+  
+  
   
   
   ClearNonInheritingComputedStyles();

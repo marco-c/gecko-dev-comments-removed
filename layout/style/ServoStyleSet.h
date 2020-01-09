@@ -98,7 +98,6 @@ class ServoStyleSet {
   explicit ServoStyleSet(dom::Document&);
   ~ServoStyleSet();
 
-  void ShellAttachedToDocument();
   void ShellDetachedFromDocument();
 
   

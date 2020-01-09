@@ -290,12 +290,6 @@ class nsIPresShell : public nsStubDocumentObserver {
 
 
 
-  void ApplicableStylesChanged();
-
-  
-
-
-
   void UpdatePreferenceStyles();
 
   
@@ -534,10 +528,6 @@ class nsIPresShell : public nsStubDocumentObserver {
 
   void PostRecreateFramesFor(mozilla::dom::Element*);
   void RestyleForAnimation(mozilla::dom::Element*, mozilla::RestyleHint);
-
-  
-  
-  void RecordShadowStyleChange(mozilla::dom::ShadowRoot& aShadowRoot);
 
   
 
