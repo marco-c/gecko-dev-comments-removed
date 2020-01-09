@@ -16,7 +16,13 @@ import android.provider.Settings;
 import android.support.annotation.UiThread;
 import android.util.Log;
 
-class GeckoFontScaleListener
+
+
+
+
+
+
+ final class GeckoFontScaleListener
         extends ContentObserver {
     private static final String LOGTAG = "GeckoFontScaleListener";
 
@@ -44,6 +50,10 @@ class GeckoFontScaleListener
         super(ThreadUtils.getUiHandler());
     }
 
+    
+
+
+
     public void attachToContext(final Context context) {
         ThreadUtils.assertOnUiThread();
 
@@ -56,6 +66,9 @@ class GeckoFontScaleListener
         mApplicationContext = context.getApplicationContext();
         onEnabledChange();
     }
+
+    
+
 
     public void detachFromContext() {
         ThreadUtils.assertOnUiThread();
@@ -70,11 +83,25 @@ class GeckoFontScaleListener
         mAttached = false;
     }
 
+    
+
+
+
+
+
+
+
+
     public void setEnabled(boolean enabled) {
         ThreadUtils.assertOnUiThread();
         mEnabled = enabled;
         onEnabledChange();
     }
+
+    
+
+
+
 
     public boolean getEnabled() {
         return mEnabled;
