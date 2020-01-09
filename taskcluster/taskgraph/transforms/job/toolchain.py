@@ -123,7 +123,7 @@ def docker_worker_toolchain(config, job, taskdesc):
     if not any(artifact.get('name') == 'public/build' for artifact in artifacts):
         docker_worker_add_artifacts(config, job, taskdesc)
 
-    support_vcs_checkout(config, job, taskdesc, sparse=('sparse-profile' in run))
+    support_vcs_checkout(config, job, taskdesc, sparse=True)
 
     
     workspace = '{workdir}/workspace/build'.format(**run)
@@ -197,11 +197,7 @@ def windows_toolchain(config, job, taskdesc):
     }]
     worker['chain-of-trust'] = True
 
-    
-    
-    
-    run['use-caches'] = False
-    support_vcs_checkout(config, job, taskdesc, sparse=('sparse-profile' in run))
+    support_vcs_checkout(config, job, taskdesc)
 
     env = worker['env']
     env.update({
@@ -210,15 +206,11 @@ def windows_toolchain(config, job, taskdesc):
         'MOZ_AUTOMATION': '1',
     })
 
-    sparse_profile = run.get('sparse-profile')
-    if sparse_profile:
-        sparse_profile = 'build/sparse-profiles/{}'.format(run['sparse-profile'])
-
     hg_command = generic_worker_hg_commands(
         'https://hg.mozilla.org/mozilla-unified',
         env['GECKO_HEAD_REPOSITORY'],
         env['GECKO_HEAD_REV'],
-        r'.\build\src', sparse_profile=sparse_profile)[0]
+        r'.\build\src')[0]
 
     
     if run['script'].endswith('.py'):
