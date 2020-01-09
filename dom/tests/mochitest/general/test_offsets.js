@@ -7,6 +7,12 @@ function testElements(baseid, callback)
   var elements = $(baseid).getElementsByTagName("*");
   for (var t = 0; t < elements.length; t++) {
     var element = elements[t];
+
+    
+    if (element.closest("menu") && element.closest("[aria-hidden=true]")) {
+      continue;
+    }
+
     testElement(element);
   }
 
