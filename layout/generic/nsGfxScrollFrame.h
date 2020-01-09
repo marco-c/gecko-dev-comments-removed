@@ -220,6 +220,15 @@ class ScrollFrameHelper : public nsIReflowCallback {
   nsRect GetScrollRange(nscoord aWidth, nscoord aHeight) const;
   nsSize GetVisualViewportSize() const;
   nsPoint GetVisualViewportOffset() const;
+
+  
+
+
+
+
+
+  nsRect GetVisualOptimalViewingRect() const;
+
   
 
 
