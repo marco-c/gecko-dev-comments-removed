@@ -16,9 +16,9 @@ pub use crate::values::generics::transform::TransformStyle;
 
 
 pub type TransformOperation =
-    generic::TransformOperation<Angle, Number, Length, Integer, LengthPercentage>;
+    generic::GenericTransformOperation<Angle, Number, Length, Integer, LengthPercentage>;
 
-pub type Transform = generic::Transform<TransformOperation>;
+pub type Transform = generic::GenericTransform<TransformOperation>;
 
 
 pub type TransformOrigin =
@@ -540,13 +540,13 @@ impl ToAnimatedZero for Transform {
             self.0
                 .iter()
                 .map(|op| op.to_animated_zero())
-                .collect::<Result<Vec<_>, _>>()?,
+                .collect::<Result<crate::OwnedSlice<_>, _>>()?,
         ))
     }
 }
 
 
-pub type Rotate = generic::Rotate<Number, Angle>;
+pub type Rotate = generic::GenericRotate<Number, Angle>;
 
 impl Rotate {
     
@@ -573,7 +573,7 @@ impl Rotate {
 }
 
 
-pub type Translate = generic::Translate<LengthPercentage, Length>;
+pub type Translate = generic::GenericTranslate<LengthPercentage, Length>;
 
 impl Translate {
     
@@ -602,7 +602,7 @@ impl Translate {
 }
 
 
-pub type Scale = generic::Scale<Number>;
+pub type Scale = generic::GenericScale<Number>;
 
 impl Scale {
     

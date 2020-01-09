@@ -597,41 +597,47 @@ gfx::Matrix4x4 AnimationHelper::ServoAnimationValueToMatrix4x4(
     const TransformData& aTransformData) {
   
   
+  auto noneTranslate = StyleTranslate::None();
+  auto noneRotate = StyleRotate::None();
+  auto noneScale = StyleScale::None();
+  const StyleTransform noneTransform;
+
+  const StyleTranslate* translate = nullptr;
+  const StyleRotate* rotate = nullptr;
+  const StyleScale* scale = nullptr;
+  const StyleTransform* transform = nullptr;
+
   
-  RefPtr<nsCSSValueSharedList> transform, translate, rotate, scale;
   for (const auto& value : aValues) {
     MOZ_ASSERT(value);
-    RefPtr<nsCSSValueSharedList> list;
-    nsCSSPropertyID id = Servo_AnimationValue_GetTransform(value, &list);
+    nsCSSPropertyID id = Servo_AnimationValue_GetPropertyId(value);
     switch (id) {
       case eCSSProperty_transform:
         MOZ_ASSERT(!transform);
-        transform = list.forget();
+        transform = Servo_AnimationValue_GetTransform(value);
         break;
       case eCSSProperty_translate:
         MOZ_ASSERT(!translate);
-        translate = list.forget();
+        translate = Servo_AnimationValue_GetTranslate(value);
         break;
       case eCSSProperty_rotate:
         MOZ_ASSERT(!rotate);
-        rotate = list.forget();
+        rotate = Servo_AnimationValue_GetRotate(value);
         break;
       case eCSSProperty_scale:
         MOZ_ASSERT(!scale);
-        scale = list.forget();
+        scale = Servo_AnimationValue_GetScale(value);
         break;
       default:
         MOZ_ASSERT_UNREACHABLE("Unsupported transform-like property");
     }
   }
-  RefPtr<nsCSSValueSharedList> individualList =
-      nsStyleDisplay::GenerateCombinedIndividualTransform(translate, rotate,
-                                                          scale);
-
   
   gfx::Point3D transformOrigin = aTransformData.transformOrigin();
   nsDisplayTransform::FrameTransformProperties props(
-      std::move(individualList), std::move(transform), transformOrigin);
+      translate ? *translate : noneTranslate, rotate ? *rotate : noneRotate,
+      scale ? *scale : noneScale, transform ? *transform : noneTransform,
+      transformOrigin);
 
   return nsDisplayTransform::GetResultingTransformMatrix(
       props, aTransformData.origin(), aTransformData.appUnitsPerDevPixel(), 0,

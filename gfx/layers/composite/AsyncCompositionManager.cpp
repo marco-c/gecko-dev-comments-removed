@@ -46,8 +46,6 @@
 #include "TreeTraversal.h"  
 #include "VsyncSource.h"
 
-struct nsCSSValueSharedList;
-
 namespace mozilla {
 namespace layers {
 
