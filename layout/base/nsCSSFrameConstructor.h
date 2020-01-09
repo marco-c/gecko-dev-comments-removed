@@ -770,22 +770,16 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   
   
   struct MOZ_STACK_CLASS XBLBindingLoadInfo {
-    RefPtr<ComputedStyle> mStyle;
     mozilla::UniquePtr<PendingBinding> mPendingBinding;
-
-    
-    XBLBindingLoadInfo(nsIContent&, ComputedStyle&);
-
-    
-    XBLBindingLoadInfo(already_AddRefed<ComputedStyle>&& aStyle,
-                       mozilla::UniquePtr<PendingBinding> aPendingBinding);
+    bool mSuccess = false;
 
     
     XBLBindingLoadInfo();
+    explicit XBLBindingLoadInfo(mozilla::UniquePtr<PendingBinding>);
   };
 
   
-  XBLBindingLoadInfo LoadXBLBindingIfNeeded(nsIContent&, ComputedStyle&,
+  XBLBindingLoadInfo LoadXBLBindingIfNeeded(nsIContent&, const ComputedStyle&,
                                             uint32_t aFlags);
 
   const FrameConstructionData* FindDataForContent(nsIContent&, ComputedStyle&,

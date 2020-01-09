@@ -16,13 +16,10 @@ typedef uint8_t XBLBindingSerializeDetails;
 
 
 
-#define XBLBinding_Serialize_Version 0x00000006
+#define XBLBinding_Serialize_Version 0x00000007
 
 
 #define XBLBinding_Serialize_IsFirstBinding (1 << 0)
-
-
-#define XBLBinding_Serialize_InheritStyle (1 << 1)
 
 
 
@@ -49,8 +46,6 @@ typedef uint8_t XBLBindingSerializeDetails;
 #define XBLBinding_Serialize_Constructor 6
 #define XBLBinding_Serialize_Destructor 7
 #define XBLBinding_Serialize_Handler 8
-#define XBLBinding_Serialize_Image 9
-#define XBLBinding_Serialize_Stylesheet 10
 #define XBLBinding_Serialize_Attribute 0xA
 #define XBLBinding_Serialize_Mask 0x0F
 #define XBLBinding_Serialize_ReadOnly 0x80

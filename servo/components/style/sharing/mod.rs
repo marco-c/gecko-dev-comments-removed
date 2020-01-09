@@ -733,27 +733,6 @@ impl<E: TElement> StyleSharingCache<E> {
         
         
         
-        
-        
-        
-        
-        
-        
-        
-        if !target
-            .element
-            .has_same_xbl_proto_binding_as(candidate.element)
-        {
-            trace!("Miss: Different proto bindings");
-            return None;
-        }
-
-        
-        
-        
-        
-        
-        
         if target.element.assigned_slot() != candidate.element.assigned_slot() {
             
             

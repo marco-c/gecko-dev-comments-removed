@@ -145,11 +145,6 @@ impl PerDocumentStyleData {
     
     pub fn new(document: *const structs::Document) -> Self {
         let device = Device::new(document);
-
-        
-        
-        
-        
         let quirks_mode = device.document().mCompatMode;
 
         PerDocumentStyleData(AtomicRefCell::new(PerDocumentStyleDataImpl {

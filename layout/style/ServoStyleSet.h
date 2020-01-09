@@ -59,7 +59,7 @@ enum class StylistState : uint8_t {
 
   
   
-  XBLStyleSheetsDirty = 1 << 1,
+  ShadowDOMStyleSheetsDirty = 1 << 1,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(StylistState)
@@ -480,7 +480,7 @@ class ServoStyleSet {
 
   void SetStylistStyleSheetsDirty();
 
-  void SetStylistXBLStyleSheetsDirty();
+  void SetStylistShadowDOMStyleSheetsDirty();
 
   bool StylistNeedsUpdate() const {
     return mStylistState != StylistState::NotDirty;

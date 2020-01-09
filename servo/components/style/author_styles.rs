@@ -27,9 +27,6 @@ where
     pub stylesheets: AuthorStylesheetSet<S>,
     
     pub data: CascadeData,
-    
-    
-    pub quirks_mode: QuirksMode,
 }
 
 impl<S> AuthorStyles<S>
@@ -42,7 +39,6 @@ where
         Self {
             stylesheets: AuthorStylesheetSet::new(),
             data: CascadeData::new(),
-            quirks_mode: QuirksMode::NoQuirks,
         }
     }
 
@@ -63,10 +59,6 @@ where
         let flusher = self
             .stylesheets
             .flush::<E>( None,  None);
-
-        if flusher.sheets.dirty() {
-            self.quirks_mode = quirks_mode;
-        }
 
         
         let _ = self
