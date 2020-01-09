@@ -14,6 +14,7 @@
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/Unused.h"
 #include "nsIXULRuntime.h"
 #include "mozJSComponentLoader.h"
 
@@ -25,8 +26,9 @@ using namespace JS;
 
 
 
-XPCWrappedNativeScope* XPCWrappedNativeScope::gScopes = nullptr;
-XPCWrappedNativeScope* XPCWrappedNativeScope::gDyingScopes = nullptr;
+static XPCWrappedNativeScopeList& AllScopes() {
+  return XPCJSRuntime::Get()->GetWrappedNativeScopes();
+}
 
 static bool RemoteXULForbidsXBLScopeForPrincipal(nsIPrincipal* aPrincipal) {
   
@@ -66,17 +68,14 @@ XPCWrappedNativeScope::XPCWrappedNativeScope(JS::Compartment* aCompartment,
       mWrappedNativeProtoMap(
           ClassInfo2WrappedNativeProtoMap::newMap(XPC_NATIVE_PROTO_MAP_LENGTH)),
       mComponents(nullptr),
-      mNext(nullptr),
       mCompartment(aCompartment) {
 #ifdef DEBUG
-  for (XPCWrappedNativeScope* cur = gScopes; cur; cur = cur->mNext) {
+  for (XPCWrappedNativeScope* cur : AllScopes()) {
     MOZ_ASSERT(aCompartment != cur->Compartment(), "dup object");
   }
 #endif
 
-  
-  mNext = gScopes;
-  gScopes = this;
+  AllScopes().insertBack(this);
 
   MOZ_COUNT_CTOR(XPCWrappedNativeScope);
 
@@ -253,7 +252,8 @@ JSObject* GetUAWidgetScope(JSContext* cx, nsIPrincipal* principal) {
 bool AllowContentXBLScope(JS::Realm* realm) {
   JS::Compartment* comp = GetCompartmentForRealm(realm);
   XPCWrappedNativeScope* scope = CompartmentPrivate::Get(comp)->scope;
-  return scope && scope->AllowContentXBLScope(realm);
+  MOZ_ASSERT(scope);
+  return scope->AllowContentXBLScope(realm);
 }
 
 } 
@@ -279,22 +279,21 @@ XPCWrappedNativeScope::~XPCWrappedNativeScope() {
   
   mComponents = nullptr;
 
-  if (mXrayExpandos.initialized()) {
-    mXrayExpandos.destroy();
-  }
+  MOZ_RELEASE_ASSERT(!mXrayExpandos.initialized());
 
-  JSContext* cx = dom::danger::GetJSContext();
-  mIDProto.finalize(cx);
-  mIIDProto.finalize(cx);
-  mCIDProto.finalize(cx);
   mCompartment = nullptr;
 }
 
 
-void XPCWrappedNativeScope::TraceWrappedNativesInAllScopes(JSTracer* trc) {
+void XPCWrappedNativeScope::TraceWrappedNativesInAllScopes(XPCJSRuntime* xpcrt,
+                                                           JSTracer* trc) {
   
   
-  for (XPCWrappedNativeScope* cur = gScopes; cur; cur = cur->mNext) {
+  
+  
+  
+
+  for (XPCWrappedNativeScope* cur : xpcrt->GetWrappedNativeScopes()) {
     for (auto i = cur->mWrappedNativeMap->Iter(); !i.Done(); i.Next()) {
       auto entry = static_cast<Native2WrappedNativeMap::Entry*>(i.Get());
       XPCWrappedNative* wrapper = entry->value;
@@ -308,32 +307,9 @@ void XPCWrappedNativeScope::TraceWrappedNativesInAllScopes(JSTracer* trc) {
 
 void XPCWrappedNativeScope::SuspectAllWrappers(
     nsCycleCollectionNoteRootCallback& cb) {
-  for (XPCWrappedNativeScope* cur = gScopes; cur; cur = cur->mNext) {
+  for (XPCWrappedNativeScope* cur : AllScopes()) {
     for (auto i = cur->mWrappedNativeMap->Iter(); !i.Done(); i.Next()) {
       static_cast<Native2WrappedNativeMap::Entry*>(i.Get())->value->Suspect(cb);
-    }
-  }
-}
-
-
-void XPCWrappedNativeScope::UpdateWeakPointersInAllScopesAfterGC() {
-  
-  
-  
-  
-  MOZ_ASSERT(!gDyingScopes, "JSGC_MARK_END without JSGC_FINALIZE_END");
-
-  XPCWrappedNativeScope** scopep = &gScopes;
-  while (*scopep) {
-    XPCWrappedNativeScope* cur = *scopep;
-    cur->UpdateWeakPointersAfterGC();
-    if (cur->Compartment()) {
-      scopep = &cur->mNext;
-    } else {
-      
-      *scopep = cur->mNext;
-      cur->mNext = gDyingScopes;
-      gDyingScopes = cur;
     }
   }
 }
@@ -348,12 +324,20 @@ void XPCWrappedNativeScope::UpdateWeakPointersAfterGC() {
     return;
   }
 
-  
   if (!js::CompartmentHasLiveGlobal(mCompartment)) {
-    CompartmentPrivate::Get(mCompartment)->scope = nullptr;
-    mCompartment = nullptr;
     GetWrappedNativeMap()->Clear();
     mWrappedNativeProtoMap->Clear();
+
+    
+    
+    
+    if (mXrayExpandos.initialized()) {
+      mXrayExpandos.destroy();
+    }
+    JSContext* cx = dom::danger::GetJSContext();
+    mIDProto.finalize(cx);
+    mIIDProto.finalize(cx);
+    mCIDProto.finalize(cx);
     return;
   }
 
@@ -387,7 +371,7 @@ void XPCWrappedNativeScope::UpdateWeakPointersAfterGC() {
 
 
 void XPCWrappedNativeScope::SweepAllWrappedNativeTearOffs() {
-  for (XPCWrappedNativeScope* cur = gScopes; cur; cur = cur->mNext) {
+  for (XPCWrappedNativeScope* cur : AllScopes()) {
     for (auto i = cur->mWrappedNativeMap->Iter(); !i.Done(); i.Next()) {
       auto entry = static_cast<Native2WrappedNativeMap::Entry*>(i.Get());
       entry->value->SweepTearOffs();
@@ -396,45 +380,27 @@ void XPCWrappedNativeScope::SweepAllWrappedNativeTearOffs() {
 }
 
 
-void XPCWrappedNativeScope::KillDyingScopes() {
-  XPCWrappedNativeScope* cur = gDyingScopes;
-  while (cur) {
-    XPCWrappedNativeScope* next = cur->mNext;
-    if (cur->Compartment()) {
-      CompartmentPrivate::Get(cur->Compartment())->scope = nullptr;
-    }
-    delete cur;
-    cur = next;
-  }
-  gDyingScopes = nullptr;
-}
-
-
 void XPCWrappedNativeScope::SystemIsBeingShutDown() {
-  int liveScopeCount = 0;
-
-  XPCWrappedNativeScope* cur;
-
-  
-
-  cur = gScopes;
-  while (cur) {
-    XPCWrappedNativeScope* next = cur->mNext;
-    cur->mNext = gDyingScopes;
-    gDyingScopes = cur;
-    cur = next;
-    liveScopeCount++;
-  }
-  gScopes = nullptr;
-
   
   
   
 
-  for (cur = gDyingScopes; cur; cur = cur->mNext) {
+  for (XPCWrappedNativeScope* cur : AllScopes()) {
     
     if (cur->mComponents) {
       cur->mComponents->SystemIsBeingShutDown();
+    }
+
+    
+    
+    JSContext* cx = dom::danger::GetJSContext();
+    cur->mIDProto.finalize(cx);
+    cur->mIIDProto.finalize(cx);
+    cur->mCIDProto.finalize(cx);
+
+    
+    if (cur->mXrayExpandos.initialized()) {
+      cur->mXrayExpandos.destroy();
     }
 
     
@@ -457,9 +423,6 @@ void XPCWrappedNativeScope::SystemIsBeingShutDown() {
     CompartmentPrivate* priv = CompartmentPrivate::Get(cur->Compartment());
     priv->SystemIsBeingShutDown();
   }
-
-  
-  KillDyingScopes();
 }
 
 
@@ -500,16 +463,15 @@ void XPCWrappedNativeScope::DebugDumpAllScopes(int16_t depth) {
 
   
   int count = 0;
-  XPCWrappedNativeScope* cur;
-  for (cur = gScopes; cur; cur = cur->mNext) {
+  for (XPCWrappedNativeScope* cur : AllScopes()) {
+    mozilla::Unused << cur;
     count++;
   }
 
   XPC_LOG_ALWAYS(("chain of %d XPCWrappedNativeScope(s)", count));
   XPC_LOG_INDENT();
-  XPC_LOG_ALWAYS(("gDyingScopes @ %p", gDyingScopes));
   if (depth) {
-    for (cur = gScopes; cur; cur = cur->mNext) {
+    for (XPCWrappedNativeScope* cur : AllScopes()) {
       cur->DebugDump(depth);
     }
   }
@@ -522,7 +484,7 @@ void XPCWrappedNativeScope::DebugDump(int16_t depth) {
   depth--;
   XPC_LOG_ALWAYS(("XPCWrappedNativeScope @ %p", this));
   XPC_LOG_INDENT();
-  XPC_LOG_ALWAYS(("mNext @ %p", mNext));
+  XPC_LOG_ALWAYS(("next @ %p", getNext()));
   XPC_LOG_ALWAYS(("mComponents @ %p", mComponents.get()));
   XPC_LOG_ALWAYS(("mCompartment @ %p", mCompartment));
 
@@ -556,7 +518,7 @@ void XPCWrappedNativeScope::DebugDump(int16_t depth) {
 
 void XPCWrappedNativeScope::AddSizeOfAllScopesIncludingThis(
     JSContext* cx, ScopeSizeInfo* scopeSizeInfo) {
-  for (XPCWrappedNativeScope* cur = gScopes; cur; cur = cur->mNext) {
+  for (XPCWrappedNativeScope* cur : AllScopes()) {
     cur->AddSizeOfIncludingThis(cx, scopeSizeInfo);
   }
 }

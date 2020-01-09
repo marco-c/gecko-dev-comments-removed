@@ -418,10 +418,9 @@ void xpc::TraceXPCGlobal(JSTracer* trc, JSObject* obj) {
 
   
   
-  
-  xpc::CompartmentPrivate* compPrivate = xpc::CompartmentPrivate::Get(obj);
-  if (compPrivate && compPrivate->scope) {
-    compPrivate->scope->TraceInside(trc);
+  if (xpc::CompartmentPrivate* priv = xpc::CompartmentPrivate::Get(obj)) {
+    MOZ_ASSERT(priv->scope);
+    priv->scope->TraceInside(trc);
   }
 }
 
