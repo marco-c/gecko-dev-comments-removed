@@ -43,7 +43,7 @@ class nsImageMap final : public nsStubMutationObserver,
 
 
 
-  nsIContent* GetArea(nscoord aX, nscoord aY) const;
+  mozilla::dom::HTMLAreaElement* GetArea(nscoord aX, nscoord aY) const;
 
   
 
@@ -53,7 +53,7 @@ class nsImageMap final : public nsStubMutationObserver,
   
 
 
-  nsIContent* GetAreaAt(uint32_t aIndex) const;
+  mozilla::dom::HTMLAreaElement* GetAreaAt(uint32_t aIndex) const;
 
   void Draw(nsIFrame* aFrame, DrawTarget& aDrawTarget,
             const ColorPattern& aColor,

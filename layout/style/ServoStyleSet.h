@@ -131,10 +131,6 @@ class ServoStyleSet {
   void SetAuthorStyleDisabled(bool aStyleDisabled);
 
   
-  already_AddRefed<ComputedStyle> ResolveStyleFor(
-      dom::Element* aElement, LazyComputeBehavior aMayCompute);
-
-  
   
   
   
@@ -181,9 +177,12 @@ class ServoStyleSet {
   
   
   
+  
+  
   already_AddRefed<ComputedStyle> ResolveStyleLazily(
-      dom::Element* aElement, PseudoStyleType,
-      StyleRuleInclusion aRules = StyleRuleInclusion::All);
+      dom::Element&,
+      PseudoStyleType = PseudoStyleType::NotPseudo,
+      StyleRuleInclusion = StyleRuleInclusion::All);
 
   
   
@@ -487,10 +486,6 @@ class ServoStyleSet {
 
 
   void UpdateStylist();
-
-  already_AddRefed<ComputedStyle> ResolveStyleLazilyInternal(
-      dom::Element* aElement, PseudoStyleType aPseudoType,
-      StyleRuleInclusion aRules = StyleRuleInclusion::All);
 
   void RunPostTraversalTasks();
 

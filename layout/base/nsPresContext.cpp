@@ -1039,6 +1039,7 @@ static bool CheckOverflow(const nsStyleDisplay* aDisplay,
   return true;
 }
 
+
 static Element* GetPropagatedScrollStylesForViewport(
     nsPresContext* aPresContext, ScrollStyles* aStyles) {
   Document* document = aPresContext->Document();
@@ -1051,8 +1052,7 @@ static Element* GetPropagatedScrollStylesForViewport(
 
   
   ServoStyleSet* styleSet = aPresContext->StyleSet();
-  RefPtr<ComputedStyle> rootStyle =
-      styleSet->ResolveStyleFor(docElement, LazyComputeBehavior::Allow);
+  RefPtr<ComputedStyle> rootStyle = styleSet->ResolveStyleLazily(*docElement);
   if (CheckOverflow(rootStyle->StyleDisplay(), aStyles)) {
     
     return docElement;
@@ -1076,8 +1076,12 @@ static Element* GetPropagatedScrollStylesForViewport(
   MOZ_ASSERT(bodyElement->IsHTMLElement(nsGkAtoms::body),
              "GetBodyElement returned something bogus");
 
-  RefPtr<ComputedStyle> bodyStyle =
-      styleSet->ResolveStyleFor(bodyElement, LazyComputeBehavior::Allow);
+  
+  
+  
+  
+  
+  RefPtr<ComputedStyle> bodyStyle = styleSet->ResolveStyleLazily(*bodyElement);
 
   if (CheckOverflow(bodyStyle->StyleDisplay(), aStyles)) {
     
