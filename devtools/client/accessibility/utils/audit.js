@@ -1,0 +1,7 @@
+
+
+
+
+"use strict";
+
+exports.isFiltered = filters => Object.values(filters).some(active => active);

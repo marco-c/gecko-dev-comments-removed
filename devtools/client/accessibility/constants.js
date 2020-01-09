@@ -3,6 +3,8 @@
 
 "use strict";
 
+const { accessibility: { AUDIT_TYPE } } = require("devtools/shared/constants");
+
 
 exports.TREE_ROW_HEIGHT = 21;
 
@@ -29,6 +31,13 @@ exports.ENABLE = "ENABLE";
 exports.DISABLE = "DISABLE";
 exports.UPDATE_CAN_BE_DISABLED = "UPDATE_CAN_BE_DISABLED";
 exports.UPDATE_CAN_BE_ENABLED = "UPDATE_CAN_BE_ENABLED";
+exports.FILTER_TOGGLE = "FILTER_TOGGLE";
+exports.AUDIT = "AUDIT";
+
+
+exports.FILTERS = {
+  [AUDIT_TYPE.CONTRAST]: "CONTRAST",
+};
 
 
 exports.ORDERED_PROPS = [
