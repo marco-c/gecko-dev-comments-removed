@@ -4104,11 +4104,7 @@ extern JS_PUBLIC_API bool IsUnwrappedSavedFrame(JSObject* obj);
 
 } 
 
-
-
 namespace js {
-
-class AutoStopwatch;
 
 
 
