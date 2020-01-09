@@ -479,7 +479,13 @@ nscoord nsColumnSetFrame::GetMinISize(gfxContext* aRenderingContext) {
   nscoord iSize = 0;
   DISPLAY_MIN_INLINE_SIZE(this, iSize);
 
-  if (mFrames.FirstChild() && !StyleDisplay()->IsContainSize()) {
+  if (mFrames.FirstChild() && (StaticPrefs::layout_css_column_span_enabled() ||
+                               !StyleDisplay()->IsContainSize())) {
+    
+    
+    
+    
+    
     
     
     
@@ -520,7 +526,14 @@ nscoord nsColumnSetFrame::GetPrefISize(gfxContext* aRenderingContext) {
   if (colStyle->mColumnWidth.IsLength()) {
     colISize =
         ColumnUtils::ClampUsedColumnWidth(colStyle->mColumnWidth.AsLength());
-  } else if (mFrames.FirstChild() && !StyleDisplay()->IsContainSize()) {
+  } else if (mFrames.FirstChild() &&
+             (StaticPrefs::layout_css_column_span_enabled() ||
+              !StyleDisplay()->IsContainSize())) {
+    
+    
+    
+    
+    
     
     
     
