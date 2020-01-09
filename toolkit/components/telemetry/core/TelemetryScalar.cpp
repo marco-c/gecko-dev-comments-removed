@@ -2277,7 +2277,7 @@ void internal_ApplyKeyedScalarActions(
     if (NS_FAILED(rv)) {
       
       if (rv != NS_ERROR_NOT_AVAILABLE) {
-        NS_WARNING("NS_FAILED internal_GetScalarByEnum for CHILD");
+        NS_WARNING("NS_FAILED internal_GetKeyedScalarByEnum for CHILD");
       }
       continue;
     }
