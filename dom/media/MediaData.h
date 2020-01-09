@@ -298,8 +298,8 @@ class MediaData {
 
   
   
-  virtual bool AdjustForStartTime(int64_t aStartTime) {
-    mTime -= media::TimeUnit::FromMicroseconds(aStartTime);
+  virtual bool AdjustForStartTime(const media::TimeUnit& aStartTime) {
+    mTime -= aStartTime;
     return mTime.IsValid();
   }
 
@@ -371,7 +371,7 @@ class AudioData : public MediaData {
 
   
   
-  bool AdjustForStartTime(int64_t aStartTime) override;
+  bool AdjustForStartTime(const media::TimeUnit& aStartTime) override;
 
   const uint32_t mChannels;
   
