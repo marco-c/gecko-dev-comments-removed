@@ -2,19 +2,24 @@
 
 
 
-#include "gtest/gtest.h"
 #include <algorithm>
 
-#include "prtime.h"
-#include "mozilla/ArrayUtils.h"
-#include "VP8TrackEncoder.h"
+#include "DriftCompensation.h"
 #include "ImageContainer.h"
 #include "MediaStreamGraph.h"
 #include "MediaStreamListener.h"
+#include "VP8TrackEncoder.h"
 #include "WebMWriter.h"  
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "mozilla/ArrayUtils.h"
+#include "prtime.h"
 
 #define VIDEO_TRACK_RATE 90000
 
+using ::testing::_;
+using ::testing::Invoke;
+using ::testing::NiceMock;
 using ::testing::TestWithParam;
 using ::testing::Values;
 
@@ -179,10 +184,26 @@ struct InitParam {
   int mHeight;          
 };
 
+class MockDriftCompensator : public DriftCompensator {
+ public:
+  MockDriftCompensator()
+      : DriftCompensator(GetCurrentThreadEventTarget(), VIDEO_TRACK_RATE) {
+    ON_CALL(*this, GetVideoTime(_, _))
+        .WillByDefault(Invoke([](TimeStamp, TimeStamp t) { return t; }));
+  }
+
+  MOCK_METHOD2(GetVideoTime, TimeStamp(TimeStamp, TimeStamp));
+};
+
 class TestVP8TrackEncoder : public VP8TrackEncoder {
  public:
   explicit TestVP8TrackEncoder(TrackRate aTrackRate = VIDEO_TRACK_RATE)
-      : VP8TrackEncoder(aTrackRate, FrameDroppingMode::DISALLOW) {}
+      : VP8TrackEncoder(MakeRefPtr<NiceMock<MockDriftCompensator>>(),
+                        aTrackRate, FrameDroppingMode::DISALLOW) {}
+
+  MockDriftCompensator* DriftCompensator() {
+    return static_cast<MockDriftCompensator*>(mDriftCompensator.get());
+  }
 
   ::testing::AssertionResult TestInit(const InitParam& aParam) {
     nsresult result =

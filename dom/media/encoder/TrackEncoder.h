@@ -16,6 +16,7 @@
 namespace mozilla {
 
 class AbstractThread;
+class DriftCompensator;
 class TrackEncoder;
 
 class TrackEncoderListener {
@@ -386,7 +387,8 @@ enum class FrameDroppingMode {
 
 class VideoTrackEncoder : public TrackEncoder {
  public:
-  explicit VideoTrackEncoder(TrackRate aTrackRate,
+  explicit VideoTrackEncoder(RefPtr<DriftCompensator> aDriftCompensator,
+                             TrackRate aTrackRate,
                              FrameDroppingMode aFrameDroppingMode);
 
   
@@ -480,6 +482,12 @@ class VideoTrackEncoder : public TrackEncoder {
 
   virtual nsresult Init(int aWidth, int aHeight, int aDisplayWidth,
                         int aDisplayHeight) = 0;
+
+  
+
+
+
+  const RefPtr<DriftCompensator> mDriftCompensator;
 
   
 
