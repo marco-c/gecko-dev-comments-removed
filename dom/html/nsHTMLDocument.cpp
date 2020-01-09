@@ -1098,7 +1098,15 @@ Document* nsHTMLDocument::Open(const Optional<nsAString>& ,
   }
 
   
-  DisconnectNodeTree();
+  {
+    
+    
+    
+    
+    
+    IgnoreOpensDuringUnload ignoreOpenGuard(this);
+    DisconnectNodeTree();
+  }
 
   
   
