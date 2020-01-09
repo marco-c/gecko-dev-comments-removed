@@ -1,0 +1,8 @@
+
+
+
+
+:host([editing]) .locked-value,
+:host(:not([editing])) .unlocked-value {
+  display: none;
+}
