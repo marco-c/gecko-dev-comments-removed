@@ -1,0 +1,23 @@
+
+
+
+
+
+
+import { getSelectedLocation } from "./source-maps";
+import type { BreakpointPositions, Source } from "../types";
+
+export function findBreakableLines(
+  source: Source,
+  breakpointPositions: BreakpointPositions
+): number[] {
+  if (!breakpointPositions || source.isWasm) {
+    return [];
+  }
+
+  return Array.from(
+    new Set(
+      breakpointPositions.map(point => getSelectedLocation(point, source).line)
+    )
+  );
+}
