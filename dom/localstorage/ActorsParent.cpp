@@ -2819,8 +2819,6 @@ class QuotaClient final : public mozilla::dom::quota::Client {
 
   void ReleaseIOThreadObjects() override;
 
-  void OnStorageInitFailed() override;
-
   void AbortOperations(const nsACString& aOrigin) override;
 
   void AbortOperationsForProcess(ContentParentId aContentParentId) override;
@@ -2966,7 +2964,7 @@ void InitUsageForOrigin(const nsACString& aOrigin, int64_t aUsage) {
     gUsages = new UsageHashtable();
   }
 
-  MOZ_ASSERT(!gUsages->Contains(aOrigin));
+  MOZ_DIAGNOSTIC_ASSERT(!gUsages->Contains(aOrigin));
   gUsages->Put(aOrigin, aUsage);
 }
 
@@ -8805,14 +8803,6 @@ void QuotaClient::ReleaseIOThreadObjects() {
   
 
   gArchivedOrigins = nullptr;
-}
-
-void QuotaClient::OnStorageInitFailed() {
-  AssertIsOnIOThread();
-  MOZ_DIAGNOSTIC_ASSERT(QuotaManager::Get());
-  MOZ_DIAGNOSTIC_ASSERT(!QuotaManager::Get()->IsTemporaryStorageInitialized());
-
-  gUsages = nullptr;
 }
 
 void QuotaClient::AbortOperations(const nsACString& aOrigin) {
