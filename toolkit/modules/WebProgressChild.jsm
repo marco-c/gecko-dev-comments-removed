@@ -28,9 +28,11 @@ class WebProgressChild {
     this.inLoadURI = false;
 
     
+    
     let notifyCode = Ci.nsIWebProgress.NOTIFY_ALL &
-                        ~Ci.nsIWebProgress.NOTIFY_CONTENT_BLOCKING &
-                        ~Ci.nsIWebProgress.NOTIFY_STATUS;
+                        ~Ci.nsIWebProgress.NOTIFY_PROGRESS &
+                        ~Ci.nsIWebProgress.NOTIFY_STATUS &
+                        ~Ci.nsIWebProgress.NOTIFY_CONTENT_BLOCKING;
 
     this._filter = Cc["@mozilla.org/appshell/component/browser-status-filter;1"]
                      .createInstance(Ci.nsIWebProgress);
@@ -116,24 +118,6 @@ class WebProgressChild {
     }
 
     this._send("Content:StateChange", json);
-  }
-
-  
-  
-  
-  onProgressChange(aWebProgress, aRequest, aCurSelf, aMaxSelf, aCurTotal, aMaxTotal) {
-    let json = this._setupJSON(aWebProgress, aRequest);
-
-    json.curSelf = aCurSelf;
-    json.maxSelf = aMaxSelf;
-    json.curTotal = aCurTotal;
-    json.maxTotal = aMaxTotal;
-
-    this._send("Content:ProgressChange", json);
-  }
-
-  onProgressChange64(aWebProgress, aRequest, aCurSelf, aMaxSelf, aCurTotal, aMaxTotal) {
-    this.onProgressChange(aWebProgress, aRequest, aCurSelf, aMaxSelf, aCurTotal, aMaxTotal);
   }
 
   onLocationChange(aWebProgress, aRequest, aLocationURI, aFlags) {

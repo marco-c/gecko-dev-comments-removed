@@ -430,7 +430,6 @@ MessageManagerTunnel.prototype = {
     
     "Content:LoadURIResult",
     "Content:LocationChange",
-    "Content:ProgressChange",
     "Content:SecurityChange",
     "Content:StateChange",
     
