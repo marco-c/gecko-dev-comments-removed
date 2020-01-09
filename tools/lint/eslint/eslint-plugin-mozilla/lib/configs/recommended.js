@@ -287,6 +287,10 @@ module.exports = {
     "no-tabs": "error",
 
     
+    
+    "no-throw-literal": "error",
+
+    
     "no-trailing-spaces": "error",
 
     

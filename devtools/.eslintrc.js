@@ -331,9 +331,6 @@ module.exports = {
     
     "no-ternary": "off",
     
-    
-    "no-throw-literal": "error",
-    
     "no-underscore-dangle": "off",
     
     "no-undefined": "off",

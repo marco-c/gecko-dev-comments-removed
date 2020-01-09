@@ -58,10 +58,6 @@ module.exports = {
     "no-this-before-super": "error",
 
     
-    
-    "no-throw-literal": "error",
-
-    
     "no-unmodified-loop-condition": "error",
 
     

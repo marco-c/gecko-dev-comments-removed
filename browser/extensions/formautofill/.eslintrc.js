@@ -89,10 +89,6 @@ module.exports = {
     "no-return-assign": "error",
 
     
-    
-    "no-throw-literal": "error",
-
-    
     "radix": "error",
 
     
