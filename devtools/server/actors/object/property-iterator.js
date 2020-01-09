@@ -173,6 +173,7 @@ function enumObjectProperties(objectActor, options) {
     
     
     
+    
     if (options.ignoreIndexedProperties) {
       
       names = names.slice(sliceIndex);

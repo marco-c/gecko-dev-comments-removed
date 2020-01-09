@@ -230,6 +230,15 @@ pref("devtools.screenshot.clipboard.enabled", false);
 pref("devtools.screenshot.audio.enabled", true);
 
 
+pref("devtools.shadereditor.enabled", false);
+
+
+pref("devtools.canvasdebugger.enabled", false);
+
+
+pref("devtools.webaudioeditor.enabled", false);
+
+
 pref("devtools.scratchpad.enabled", false);
 
 
@@ -237,6 +246,9 @@ pref("devtools.dom.enabled", false);
 
 
 pref("devtools.accessibility.enabled", true);
+
+
+pref("devtools.webaudioeditor.inspectorWidth", 300);
 
 
 pref("devtools.webconsole.filter.error", true);
