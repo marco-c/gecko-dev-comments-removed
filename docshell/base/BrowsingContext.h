@@ -42,6 +42,7 @@ struct IPDLParamTraits;
 }  
 
 namespace dom {
+class BrowsingContent;
 class BrowsingContextGroup;
 class CanonicalBrowsingContext;
 class ContentParent;
@@ -52,71 +53,18 @@ class Sequence;
 struct WindowPostMessageOptions;
 class WindowProxyHolder;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define MOZ_FOR_EACH_SYNCED_BC_FIELD(declare, ...)           \
-  declare(Name, nsString, nsAString)                         \
-  declare(Closed, bool, bool)                                \
-  declare(CrossOriginPolicy, nsILoadInfo::CrossOriginPolicy, nsILoadInfo::CrossOriginPolicy) \
-  declare(Opener, RefPtr<BrowsingContext>, BrowsingContext*) \
-  declare(IsActivatedByUserGesture, bool, bool)              \
-  __VA_ARGS__
-
-
-#define MOZ_SYNCED_BC_FIELD_NAME(name, ...) m##name
-#define MOZ_SYNCED_BC_FIELD_ARGUMENT(name, type, atype) \
-  transaction->MOZ_SYNCED_BC_FIELD_NAME(name),
-#define MOZ_SYNCED_BC_FIELD_GETTER(name, type, atype) \
-  type const& Get##name() const { return MOZ_SYNCED_BC_FIELD_NAME(name); }
-#define MOZ_SYNCED_BC_FIELD_SETTER(name, type, atype) \
-  void Set##name(atype const& aValue) {               \
-    Transaction t;                                    \
-    t.MOZ_SYNCED_BC_FIELD_NAME(name).emplace(aValue); \
-    t.Commit(this);                                   \
+class BrowsingContextBase {
+ protected:
+  BrowsingContextBase() {
+    
+#define MOZ_BC_FIELD(name, type) m##name = type();
+#include "mozilla/dom/BrowsingContextFieldList.h"
   }
-#define MOZ_SYNCED_BC_FIELD_MEMBER(name, type, atype) \
-  type MOZ_SYNCED_BC_FIELD_NAME(name);
-#define MOZ_SYNCED_BC_FIELD_MAYBE_MEMBER(name, type, atype) \
-  mozilla::Maybe<type> MOZ_SYNCED_BC_FIELD_NAME(name);
-#define MOZ_SYNCED_BC_FIELD_APPLIER(name, type, atype) \
-  if (MOZ_SYNCED_BC_FIELD_NAME(name)) {                \
-    aOwner->MOZ_SYNCED_BC_FIELD_NAME(name) =           \
-        std::move(*MOZ_SYNCED_BC_FIELD_NAME(name));    \
-    MOZ_SYNCED_BC_FIELD_NAME(name).reset();            \
-  }
+  ~BrowsingContextBase() = default;
 
-#define MOZ_SYNCED_BC_FIELDS                                              \
- public:                                                                  \
-  MOZ_FOR_EACH_SYNCED_BC_FIELD(MOZ_SYNCED_BC_FIELD_GETTER)                \
-  MOZ_FOR_EACH_SYNCED_BC_FIELD(MOZ_SYNCED_BC_FIELD_SETTER)                \
-  class Transaction {                                                     \
-   public:                                                                \
-    void Commit(BrowsingContext* aOwner);                                 \
-    void Apply(BrowsingContext* aOwner) {                                 \
-      MOZ_FOR_EACH_SYNCED_BC_FIELD(MOZ_SYNCED_BC_FIELD_APPLIER)           \
-      return; /* without this return clang-format messes up formatting */ \
-    }                                                                     \
-                                                                          \
-    MOZ_FOR_EACH_SYNCED_BC_FIELD(MOZ_SYNCED_BC_FIELD_MAYBE_MEMBER)        \
-   private:                                                               \
-    friend struct mozilla::ipc::IPDLParamTraits<Transaction>;             \
-  };                                                                      \
-                                                                          \
- private:                                                                 \
-  MOZ_FOR_EACH_SYNCED_BC_FIELD(MOZ_SYNCED_BC_FIELD_MEMBER)
+#define BC_FIELD(name, type) type m##name;
+#include "mozilla/dom/BCFieldList.h"
+};
 
 
 
@@ -136,10 +84,8 @@ class WindowProxyHolder;
 
 class BrowsingContext : public nsWrapperCache,
                         public SupportsWeakPtr<BrowsingContext>,
-                        public LinkedListElement<RefPtr<BrowsingContext>> {
-  
-  MOZ_SYNCED_BC_FIELDS
-
+                        public LinkedListElement<RefPtr<BrowsingContext>>,
+                        public BrowsingContextBase {
  public:
   enum class Type { Chrome, Content };
 
@@ -288,9 +234,43 @@ class BrowsingContext : public nsWrapperCache,
 
   JSObject* WrapObject(JSContext* aCx);
 
-  nsILoadInfo::CrossOriginPolicy CrossOriginPolicy() {
-    return mCrossOriginPolicy;
-  }
+  
+
+
+
+  class Transaction {
+   public:
+    
+    
+    
+    
+    
+    void Commit(BrowsingContext* aOwner);
+
+    
+    
+    
+    
+    
+    void Apply(BrowsingContext* aOwner, ContentParent* aSource);
+
+#define MOZ_BC_FIELD(name, type) mozilla::Maybe<type> m##name;
+#include "mozilla/dom/BrowsingContextFieldList.h"
+
+   private:
+    friend struct mozilla::ipc::IPDLParamTraits<Transaction>;
+  };
+
+#define MOZ_BC_FIELD(name, type)                        \
+  template <typename... Args>                           \
+  void Set##name(Args&&... aValue) {                    \
+    Transaction txn;                                    \
+    txn.m##name.emplace(std::forward<Args>(aValue)...); \
+    txn.Commit(this);                                   \
+  }                                                     \
+                                                        \
+  type const& Get##name() const { return m##name; }
+#include "mozilla/dom/BrowsingContextFieldList.h"
 
  protected:
   virtual ~BrowsingContext();
