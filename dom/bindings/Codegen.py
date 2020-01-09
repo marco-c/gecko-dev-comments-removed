@@ -11463,14 +11463,18 @@ class CGProxyNamedOperation(CGProxySpecialOperation):
     resultVar: See the docstring for CGCallGenerator.
 
     foundVar: See the docstring for CGProxySpecialOperation.
+
+    tailCode: if we end up with a non-symbol string id, run this code after
+              we do all our other work.
     """
     def __init__(self, descriptor, name, value=None, argumentHandleValue=None,
-                 resultVar=None, foundVar=None):
+                 resultVar=None, foundVar=None, tailCode=""):
         CGProxySpecialOperation.__init__(self, descriptor, name,
                                          argumentHandleValue=argumentHandleValue,
                                          resultVar=resultVar,
                                          foundVar=foundVar)
         self.value = value
+        self.tailCode = tailCode
 
     def define(self):
         
@@ -11489,9 +11493,11 @@ class CGProxyNamedOperation(CGProxySpecialOperation):
             """
             ${nativeType}* self = UnwrapProxy(proxy);
             $*{op}
+            $*{tailCode}
             """,
             nativeType=self.descriptor.nativeType,
-            op=CGProxySpecialOperation.define(self))
+            op=CGProxySpecialOperation.define(self),
+            tailCode=self.tailCode)
 
         if self.value is None:
             return fill(
@@ -11565,9 +11571,10 @@ class CGProxyNamedSetter(CGProxyNamedOperation):
     """
     Class to generate a call to a named setter.
     """
-    def __init__(self, descriptor, argumentHandleValue=None):
+    def __init__(self, descriptor, tailCode, argumentHandleValue=None):
         CGProxyNamedOperation.__init__(self, descriptor, 'NamedSetter',
-                                       argumentHandleValue=argumentHandleValue)
+                                       argumentHandleValue=argumentHandleValue,
+                                       tailCode=tailCode)
 
 
 class CGProxyNamedDeleter(CGProxyNamedOperation):
@@ -11800,16 +11807,12 @@ class CGDOMJSProxyHandler_defineProperty(ClassMethod):
                 raise TypeError("Can't handle a named setter on an interface "
                                 "that has unforgeables.  Figure out how that "
                                 "should work!")
-            
-            
-            set += fill(
+            tailCode = dedent(
                 """
                 *defined = true;
-                $*{callSetter}
-
                 return opresult.succeed();
-                """,
-                callSetter=CGProxyNamedSetter(self.descriptor).define())
+                """)
+            set += CGProxyNamedSetter(self.descriptor, tailCode).define()
         else:
             
             
@@ -11836,7 +11839,10 @@ class CGDOMJSProxyHandler_defineProperty(ClassMethod):
                     MOZ_ASSERT(js::IsObjectInContextCompartment(proxy, cx),
                                "Why did the MaybeCrossOriginObject defineProperty override fail?");
                     """)
-            set += ("return mozilla::dom::DOMProxyHandler::defineProperty(%s);\n" %
+
+        
+        
+        set += ("return mozilla::dom::DOMProxyHandler::defineProperty(%s);\n" %
                     ", ".join(a.name for a in self.args))
         return set
 
@@ -12458,11 +12464,21 @@ class CGDOMJSProxyHandler_setCustom(ClassMethod):
                 raise ValueError("In interface " + self.descriptor.name + ": " +
                                  "Can't cope with [OverrideBuiltins] and unforgeable members")
 
-            callSetter = CGProxyNamedSetter(self.descriptor, argumentHandleValue="v")
-            return (assertion +
-                    callSetter.define() +
-                    "*done = true;\n"
-                    "return true;\n")
+            tailCode = dedent(
+                """
+                *done = true;
+                return true;
+                """)
+            callSetter = CGProxyNamedSetter(self.descriptor, tailCode, argumentHandleValue="v")
+            return fill(
+                """
+                $*{assertion}
+                $*{callSetter}
+                *done = false;
+                return true;
+                """,
+                assertion=assertion,
+                callSetter=callSetter.define())
 
         
         
