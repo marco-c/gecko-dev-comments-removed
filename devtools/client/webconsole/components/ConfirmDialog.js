@@ -35,7 +35,7 @@ class ConfirmDialog extends Component {
       autocompleteUpdate: PropTypes.func.isRequired,
       autocompleteClear: PropTypes.func.isRequired,
       
-      getterPath: PropTypes.array.isRequired,
+      getterPath: PropTypes.array,
       serviceContainer: PropTypes.object.isRequired,
     };
   }
