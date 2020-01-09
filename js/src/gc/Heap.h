@@ -789,6 +789,7 @@ struct Chunk {
   void recycleArena(Arena* arena, SortedArenaList& dest, size_t thingsPerArena);
 
   MOZ_MUST_USE bool decommitOneFreeArena(JSRuntime* rt, AutoLockGC& lock);
+  void decommitAllArenas();
 
   
   
@@ -798,8 +799,6 @@ struct Chunk {
   void init(JSRuntime* rt);
 
  private:
-  void decommitAllArenas();
-
   
   unsigned findDecommittedArenaOffset();
   Arena* fetchNextDecommittedArena();
