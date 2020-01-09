@@ -88,23 +88,21 @@ bool AnimationInfo::StartPendingAnimations(const TimeStamp& aReadyTime) {
 
     
     
-    if (!std::isnan(anim.previousPlaybackRate()) &&
-        anim.startTime().type() == MaybeTimeDuration::TTimeDuration &&
+    if (!std::isnan(anim.previousPlaybackRate()) && anim.startTime().isSome() &&
         !anim.originTime().IsNull() && !anim.isNotPlaying()) {
       TimeDuration readyTime = aReadyTime - anim.originTime();
       anim.holdTime() = dom::Animation::CurrentTimeFromTimelineTime(
-          readyTime, anim.startTime().get_TimeDuration(),
-          anim.previousPlaybackRate());
+          readyTime, anim.startTime().ref(), anim.previousPlaybackRate());
       
-      anim.startTime() = null_t();
+      anim.startTime() = Nothing();
     }
 
     
-    if (anim.startTime().type() == MaybeTimeDuration::Tnull_t &&
-        !anim.originTime().IsNull() && !anim.isNotPlaying()) {
+    if (anim.startTime().isNothing() && !anim.originTime().IsNull() &&
+        !anim.isNotPlaying()) {
       TimeDuration readyTime = aReadyTime - anim.originTime();
-      anim.startTime() = dom::Animation::StartTimeFromTimelineTime(
-          readyTime, anim.holdTime(), anim.playbackRate());
+      anim.startTime() = Some(dom::Animation::StartTimeFromTimelineTime(
+          readyTime, anim.holdTime(), anim.playbackRate()));
       updated = true;
     }
   }

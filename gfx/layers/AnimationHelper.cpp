@@ -166,8 +166,7 @@ static AnimationHelper::SampleResult SampleAnimationForProperty(
   
   for (PropertyAnimation& animation : aPropertyAnimations) {
     MOZ_ASSERT(
-        (!animation.mOriginTime.IsNull() &&
-         animation.mStartTime.type() == MaybeTimeDuration::TTimeDuration) ||
+        (!animation.mOriginTime.IsNull() && animation.mStartTime.isSome()) ||
             animation.mIsNotPlaying,
         "If we are playing, we should have an origin time and a start time");
 
@@ -192,7 +191,7 @@ static AnimationHelper::SampleResult SampleAnimationForProperty(
       
       const TimeStamp readyTime =
           animation.mOriginTime +
-          (animation.mStartTime.get_TimeDuration() +
+          (animation.mStartTime.ref() +
            animation.mHoldTime.MultDouble(1.0 / animation.mPlaybackRate));
       hasFutureReadyTime =
           !readyTime.IsNull() && readyTime > aPreviousFrameTime;
@@ -216,11 +215,9 @@ static AnimationHelper::SampleResult SampleAnimationForProperty(
     
     
     TimeDuration elapsedDuration =
-        animation.mIsNotPlaying ||
-                animation.mStartTime.type() != MaybeTimeDuration::TTimeDuration
+        animation.mIsNotPlaying || animation.mStartTime.isNothing()
             ? animation.mHoldTime
-            : (timeStamp - animation.mOriginTime -
-               animation.mStartTime.get_TimeDuration())
+            : (timeStamp - animation.mOriginTime - animation.mStartTime.ref())
                   .MultDouble(animation.mPlaybackRate);
 
     ComputedTiming computedTiming = dom::AnimationEffect::GetComputedTimingAt(
