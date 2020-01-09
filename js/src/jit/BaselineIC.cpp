@@ -581,6 +581,8 @@ void ICStub::updateCode(JitCode* code) {
 
 
 void ICStub::trace(JSTracer* trc) {
+  checkTraceMagic();
+
   
   if (!usesTrampolineCode()) {
     JitCode* stubJitCode = jitCode();
@@ -984,6 +986,7 @@ void ICFallbackStub::unlinkStub(Zone* zone, ICStub* prev, ICStub* stub) {
     stub->toMonitoredStub()->resetFirstMonitorStub(monitorFallback);
   }
 
+  stub->checkTraceMagic();
 #ifdef DEBUG
   
   
