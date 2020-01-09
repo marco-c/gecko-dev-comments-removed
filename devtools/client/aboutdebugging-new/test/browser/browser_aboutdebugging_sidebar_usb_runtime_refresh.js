@@ -32,7 +32,7 @@ add_task(async function() {
   });
 
   
-  mocks.usbRuntimesMock.refreshUSBRuntimes = () => mocks.emitUSBUpdate();
+  mocks.adbMock.adb.updateRuntimes = () => mocks.emitUSBUpdate();
   document.querySelector(".js-refresh-devices-button").click();
 
   info(`Wait until the sidebar item for ${OTHER_RUNTIME_APP_NAME} appears`);

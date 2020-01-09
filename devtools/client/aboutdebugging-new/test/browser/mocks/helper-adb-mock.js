@@ -1,0 +1,88 @@
+
+
+
+"use strict";
+
+
+
+
+
+
+
+
+
+
+
+
+function enableAdbMock(mock) {
+  const { setMockedModule } = require("devtools/client/shared/browser-loader-mocks");
+  setMockedModule(mock, "devtools/shared/adb/adb");
+}
+
+
+
+
+
+function disableAdbMock() {
+  const { removeMockedModule } = require("devtools/client/shared/browser-loader-mocks");
+  removeMockedModule("devtools/shared/adb/adb");
+}
+
+
+
+
+
+
+function createAdbMock() {
+  const adbMock = {};
+  adbMock.registerListener = function(listener) {
+    console.log("MOCKED METHOD registerListener");
+  };
+
+  adbMock.getRuntimes = function() {
+    console.log("MOCKED METHOD getRuntimes");
+  };
+
+  adbMock.getDevices = function() {
+    console.log("MOCKED METHOD getDevices");
+  };
+
+  adbMock.updateRuntimes = function() {
+    console.log("MOCKED METHOD updateRuntimes");
+  };
+
+  adbMock.unregisterListener = function(listener) {
+    console.log("MOCKED METHOD unregisterListener");
+  };
+
+  return { adb: adbMock };
+}
+
+
+
+
+
+
+
+
+
+
+
+function addObserverMock(adbMock) {
+  const EventEmitter = require("devtools/shared/event-emitter");
+
+  const observerMock = {};
+  EventEmitter.decorate(observerMock);
+  adbMock.registerListener = function(listener) {
+    console.log("MOCKED METHOD registerListener with mock scanner");
+    observerMock.on("runtime-list-updated", listener);
+  };
+
+  
+  
+  
+  
+
+  return observerMock;
+}
+

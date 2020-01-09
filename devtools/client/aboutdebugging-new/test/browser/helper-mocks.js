@@ -7,12 +7,12 @@
 
 const MOCKS_ROOT = CHROME_URL_ROOT + "mocks/";
 
+Services.scriptloader.loadSubScript(MOCKS_ROOT + "helper-adb-mock.js", this);
+
 Services.scriptloader.loadSubScript(MOCKS_ROOT + "helper-client-wrapper-mock.js", this);
 
 Services.scriptloader.loadSubScript(MOCKS_ROOT + "helper-runtime-client-factory-mock.js",
   this);
-
-Services.scriptloader.loadSubScript(MOCKS_ROOT + "helper-usb-runtimes-mock.js", this);
 
 const { RUNTIMES } = require("devtools/client/aboutdebugging-new/src/constants");
 
@@ -24,20 +24,26 @@ const { RUNTIMES } = require("devtools/client/aboutdebugging-new/src/constants")
 class Mocks {
   constructor() {
     
-    this.usbRuntimesMock = createUsbRuntimesMock();
+    this.adbMock = createAdbMock();
     this._usbRuntimes = [];
-    this.usbRuntimesMock.getUSBRuntimes = () => {
+    this._usbDevices = [];
+    this.adbMock.adb.getRuntimes = () => {
       return this._usbRuntimes;
+    };
+    this.adbMock.adb.getDevices = () => {
+      const runtimeDevices = this._usbRuntimes.map(r => {
+        return { id: r.deviceId, name: r.deviceName };
+      });
+      return runtimeDevices.concat(this._usbDevices);
     };
 
     
-    
-    this.usbRuntimesMock.refreshUSBRuntimes = () => {
+    this.adbMock.adb.updateRuntimes = () => {
       this.emitUSBUpdate();
     };
 
     
-    this._observerMock = addObserverMock(this.usbRuntimesMock);
+    this._observerMock = addObserverMock(this.adbMock.adb);
 
     
     this.runtimeClientFactoryMock = createRuntimeClientFactoryMock();
@@ -65,12 +71,12 @@ class Mocks {
   }
 
   enableMocks() {
-    enableUsbRuntimesMock(this.usbRuntimesMock);
+    enableAdbMock(this.adbMock);
     enableRuntimeClientFactoryMock(this.runtimeClientFactoryMock);
   }
 
   disableMocks() {
-    disableUsbRuntimesMock();
+    disableAdbMock();
     disableRuntimeClientFactoryMock();
 
     for (const host of Object.keys(this._clients[RUNTIMES.NETWORK])) {
@@ -124,18 +130,14 @@ class Mocks {
 
 
 
+
   createUSBRuntime(id, runtimeInfo = {}) {
     
     this._usbRuntimes.push({
       id: id,
       socketPath: runtimeInfo.socketPath || "test/path",
+      deviceId: runtimeInfo.deviceId || "test device id",
       deviceName: runtimeInfo.deviceName || "test device name",
-      get isUnknown() {
-        return runtimeInfo.isUnknown || false;
-      },
-      get isUnplugged() {
-        return runtimeInfo.isUnplugged || false;
-      },
       shortName: runtimeInfo.shortName || "testshort",
     });
 
@@ -156,6 +158,19 @@ class Mocks {
   removeUSBRuntime(id) {
     this._usbRuntimes = this._usbRuntimes.filter(runtime => runtime.id !== id);
     delete this._clients[RUNTIMES.USB][id];
+  }
+
+  addDevice(deviceId, deviceName) {
+    this._usbDevices.push({
+      id: deviceId,
+      name: deviceName,
+    });
+  }
+
+  removeDevice(deviceId) {
+    this._usbDevices = this._usbDevices.filter(d => {
+      return d.id !== deviceId;
+    });
   }
 
   removeRuntime(id) {
