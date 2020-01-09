@@ -12,6 +12,7 @@ add_task(async function() {
   
   await reload(dbg, "doc-html-breakpoints.html");
 
+  await waitForBreakableLine(dbg, "doc-html-breakpoints.html", 8);
   await addBreakpoint(dbg, "doc-html-breakpoints.html", 8);
 
   
