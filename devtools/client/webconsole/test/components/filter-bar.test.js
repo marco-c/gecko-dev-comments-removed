@@ -53,11 +53,20 @@ describe("FilterBar component:", () => {
     expect(toolbar.children().eq(1).attr("class")).toBe("devtools-separator");
 
     
-    const textFilter = toolbar.children().eq(2);
+    const textInput = toolbar.children().eq(2);
+    expect(textInput.attr("class")).toBe("devtools-searchbox has-clear-btn");
+
+    
+    const textFilter = textInput.children().eq(0);
     expect(textFilter.attr("class")).toBe("devtools-plaininput text-filter");
     expect(textFilter.attr("placeholder")).toBe("Filter output");
     expect(textFilter.attr("type")).toBe("search");
     expect(textFilter.attr("value")).toBe("");
+
+    
+    const textFilterClearButton = textInput.children().eq(1);
+    expect(textFilterClearButton.attr("class"))
+      .toBe("devtools-searchinput-clear clear-button");
 
     
     expect(wrapper.find(".filter-checkbox input").length).toBe(1);
