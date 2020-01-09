@@ -1479,6 +1479,41 @@ var AddonTestUtils = {
 
 
 
+
+
+
+
+
+
+
+
+  async waitForSearchProviderStartup(extension, {expectPending = false} = {}) {
+    
+    let {equal, ok} = this.testScope;
+    if (!equal || !ok) {
+      
+      let {Assert} = this.testScope;
+      equal = Assert.equal.bind(Assert);
+      ok = Assert.ok.bind(Assert);
+    }
+
+    equal(extension.state, "running", "Search provider extension should be running");
+    ok(extension.id, "Extension ID of search provider should be set");
+
+    
+    let {pendingSearchSetupTasks} = Management.global;
+    let searchStartupPromise = pendingSearchSetupTasks.get(extension.id);
+    if (expectPending) {
+      ok(searchStartupPromise, "Search provider registration should be in progress");
+    }
+    return searchStartupPromise;
+  },
+
+  
+
+
+
+
   initializeURLPreloader() {
     Services.prefs.setBoolPref(PREF_DISABLE_SECURITY, true);
     aomStartup.initializeURLPreloader();
