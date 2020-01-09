@@ -102,8 +102,7 @@ nsIWidget* nsWebBrowser::EnsureWidget() {
 already_AddRefed<nsWebBrowser> nsWebBrowser::Create(
     nsIWebBrowserChrome* aContainerWindow, nsIWidget* aParentWidget,
     const OriginAttributes& aOriginAttributes,
-    dom::BrowsingContext* aBrowsingContext,
-    bool aDisableHistory ) {
+    dom::BrowsingContext* aBrowsingContext) {
   RefPtr<nsWebBrowser> browser = new nsWebBrowser(
       aBrowsingContext->IsContent() ? typeContentWrapper : typeChromeWrapper);
 
@@ -153,7 +152,7 @@ already_AddRefed<nsWebBrowser> nsWebBrowser::Create(
 
   docShell->InitSessionHistory();
 
-  if (XRE_IsParentProcess() && !aDisableHistory) {
+  if (XRE_IsParentProcess()) {
     
     DebugOnly<nsresult> rv =
         browser->EnableGlobalHistory(browser->mShouldEnableHistory);

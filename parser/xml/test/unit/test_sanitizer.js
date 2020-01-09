@@ -1,23 +1,7 @@
-
-
-do_get_profile();
-
 function run_test() {
   
   load("results.js"); 
   
-
-  
-  
-  
-  
-  
-  
-  
-  
-
-  let {PlacesUtils} = ChromeUtils.import("resource://gre/modules/PlacesUtils.jsm");
-  Assert.ok(PlacesUtils.history.databaseStatus <= 1, "ensure places database is successfully initialized.");
 
   var ParserUtils =  Cc["@mozilla.org/parserutils;1"].getService(Ci.nsIParserUtils);
   var sanitizeFlags = ParserUtils.SanitizerCidEmbedsOnly | ParserUtils.SanitizerDropForms | ParserUtils.SanitizerDropNonCSSPresentation;
