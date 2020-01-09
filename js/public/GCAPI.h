@@ -571,6 +571,14 @@ extern JS_PUBLIC_API void IncrementalGCSlice(JSContext* cx, GCReason reason,
 
 
 
+extern JS_PUBLIC_API bool IncrementalGCHasForegroundWork(JSContext* cx);
+
+
+
+
+
+
+
 extern JS_PUBLIC_API void FinishIncrementalGC(JSContext* cx, GCReason reason);
 
 

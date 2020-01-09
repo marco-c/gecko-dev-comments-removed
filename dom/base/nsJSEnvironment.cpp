@@ -1772,9 +1772,8 @@ bool InterSliceGCRunnerFired(TimeStamp aDeadline, void* aData) {
   
   
   
-  
-  
-  return int64_t(sliceDuration.ToMilliseconds()) >= budget;
+  JSContext* cx = danger::GetJSContext();
+  return JS::IncrementalGCHasForegroundWork(cx);
 }
 
 
