@@ -230,9 +230,6 @@ pref("devtools.screenshot.clipboard.enabled", false);
 pref("devtools.screenshot.audio.enabled", true);
 
 
-pref("devtools.shadereditor.enabled", false);
-
-
 pref("devtools.webaudioeditor.enabled", false);
 
 
