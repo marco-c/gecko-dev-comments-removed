@@ -96,6 +96,15 @@ void WeakMap<K, V>::trace(JSTracer* trc) {
   if (trc->isMarkingTracer()) {
     MOZ_ASSERT(trc->weakMapAction() == ExpandWeakMaps);
     auto marker = GCMarker::fromTracer(trc);
+
+    
+    
+    
+    if (marked && markColor == gc::MarkColor::Black &&
+        marker->markColor() == gc::MarkColor::Gray) {
+      return;
+    }
+
     marked = true;
     markColor = marker->markColor();
     (void)markIteratively(marker);

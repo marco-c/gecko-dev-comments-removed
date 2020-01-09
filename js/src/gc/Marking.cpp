@@ -738,30 +738,6 @@ void DoMarking(GCMarker* gcmarker, const T& thing) {
   ApplyGCThingTyped(thing, [gcmarker](auto t) { DoMarking(gcmarker, t); });
 }
 
-JS_PUBLIC_API void js::gc::PerformIncrementalReadBarrier(JS::GCCellPtr thing) {
-  
-  
-  
-  
-
-  MOZ_ASSERT(thing);
-  MOZ_ASSERT(!JS::RuntimeHeapIsMajorCollecting());
-
-  TenuredCell* cell = &thing.asCell()->asTenured();
-  Zone* zone = cell->zone();
-  MOZ_ASSERT(zone->needsIncrementalBarrier());
-
-  
-  GCMarker* gcmarker = GCMarker::fromTracer(zone->barrierTracer());
-
-  
-  ApplyGCThingTyped(thing, [gcmarker](auto thing) {
-                             MOZ_ASSERT(ShouldMark(gcmarker, thing));
-                             CheckTracedThing(gcmarker, thing);
-                             gcmarker->traverse(thing);
-                           });
-}
-
 template <typename T>
 void NoteWeakEdge(GCMarker* gcmarker, T** thingp) {
   
@@ -1548,6 +1524,7 @@ bool GCMarker::markUntilBudgetExhausted(SliceBudget& budget) {
     if (hasGrayEntries()) {
       AutoSetMarkColor autoSetGray(*this, MarkColor::Gray);
       do {
+        MOZ_ASSERT(!hasBlackEntries());
         processMarkStackTop(budget);
         if (budget.isOverBudget()) {
           return false;
