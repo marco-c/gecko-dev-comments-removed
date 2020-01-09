@@ -1129,8 +1129,23 @@ void nsHttpTransaction::Close(nsresult reason) {
     if ((mHttpResponseCode / 100 == 2) && (mHttpVersion >= HttpVersion::v1_1)) {
       FrameCheckLevel clevel = gHttpHandler->GetEnforceH1Framing();
       if (clevel >= FRAMECHECK_BARELY) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         if ((clevel == FRAMECHECK_STRICT) ||
-            (mChunkedDecoder && mChunkedDecoder->GetChunkRemaining()) ||
+            (mChunkedDecoder &&
+             (mChunkedDecoder->GetChunkRemaining() ||
+              (clevel == FRAMECHECK_STRICT_CHUNKED))) ||
             (!mChunkedDecoder && !mContentDecoding && mContentDecodingCheck)) {
           reason = NS_ERROR_NET_PARTIAL_TRANSFER;
           LOG(("Partial transfer, incomplete HTTP response received: %s",
