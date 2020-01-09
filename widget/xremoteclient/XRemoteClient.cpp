@@ -6,12 +6,11 @@
 
 
 
-#include "nsDebug.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/Unused.h"
-#include "nsXRemoteClient.h"
+#include "XRemoteClient.h"
 #include "RemoteUtils.h"
 #include "plstr.h"
 #include "prsystem.h"
@@ -55,12 +54,12 @@
 using mozilla::LogLevel;
 using mozilla::Unused;
 
-static mozilla::LazyLogModule sRemoteLm("nsXRemoteClient");
+static mozilla::LazyLogModule sRemoteLm("XRemoteClient");
 
 static int (*sOldHandler)(Display *, XErrorEvent *);
 static bool sGotBadWindow;
 
-nsXRemoteClient::nsXRemoteClient() {
+XRemoteClient::XRemoteClient() {
   mDisplay = 0;
   mInitialized = false;
   mMozVersionAtom = 0;
@@ -72,11 +71,11 @@ nsXRemoteClient::nsXRemoteClient() {
   mMozProfileAtom = 0;
   mMozProgramAtom = 0;
   mLockData = 0;
-  MOZ_LOG(sRemoteLm, LogLevel::Debug, ("nsXRemoteClient::nsXRemoteClient"));
+  MOZ_LOG(sRemoteLm, LogLevel::Debug, ("XRemoteClient::XRemoteClient"));
 }
 
-nsXRemoteClient::~nsXRemoteClient() {
-  MOZ_LOG(sRemoteLm, LogLevel::Debug, ("nsXRemoteClient::~nsXRemoteClient"));
+XRemoteClient::~XRemoteClient() {
+  MOZ_LOG(sRemoteLm, LogLevel::Debug, ("XRemoteClient::~XRemoteClient"));
   if (mInitialized) Shutdown();
 }
 
@@ -87,8 +86,8 @@ static const char *XAtomNames[] = {
     MOZILLA_PROGRAM_PROP, MOZILLA_COMMANDLINE_PROP};
 static Atom XAtoms[MOZ_ARRAY_LENGTH(XAtomNames)];
 
-nsresult nsXRemoteClient::Init() {
-  MOZ_LOG(sRemoteLm, LogLevel::Debug, ("nsXRemoteClient::Init"));
+nsresult XRemoteClient::Init() {
+  MOZ_LOG(sRemoteLm, LogLevel::Debug, ("XRemoteClient::Init"));
 
   if (mInitialized) return NS_OK;
 
@@ -115,8 +114,8 @@ nsresult nsXRemoteClient::Init() {
   return NS_OK;
 }
 
-void nsXRemoteClient::Shutdown(void) {
-  MOZ_LOG(sRemoteLm, LogLevel::Debug, ("nsXRemoteClient::Shutdown"));
+void XRemoteClient::Shutdown(void) {
+  MOZ_LOG(sRemoteLm, LogLevel::Debug, ("XRemoteClient::Shutdown"));
 
   if (!mInitialized) return;
 
@@ -139,12 +138,13 @@ static int HandleBadWindow(Display *display, XErrorEvent *event) {
   return (*sOldHandler)(display, event);
 }
 
-nsresult nsXRemoteClient::SendCommandLine(
-    const char *aProgram, const char *aProfile, int32_t argc, char **argv,
-    const char *aDesktopStartupID, char **aResponse, bool *aWindowFound) {
-  NS_ENSURE_TRUE(aProgram, NS_ERROR_INVALID_ARG);
-
-  MOZ_LOG(sRemoteLm, LogLevel::Debug, ("nsXRemoteClient::SendCommandLine"));
+nsresult XRemoteClient::SendCommandLine(const char *aProgram,
+                                        const char *aUsername,
+                                        const char *aProfile, int32_t argc,
+                                        char **argv,
+                                        const char *aDesktopStartupID,
+                                        char **aResponse, bool *aWindowFound) {
+  MOZ_LOG(sRemoteLm, LogLevel::Debug, ("XRemoteClient::SendCommandLine"));
 
   *aWindowFound = false;
 
@@ -152,7 +152,7 @@ nsresult nsXRemoteClient::SendCommandLine(
   
   sOldHandler = XSetErrorHandler(HandleBadWindow);
 
-  Window w = FindBestWindow(aProgram, aProfile);
+  Window w = FindBestWindow(aProgram, aUsername, aProfile);
 
   nsresult rv = NS_OK;
 
@@ -193,7 +193,7 @@ nsresult nsXRemoteClient::SendCommandLine(
   return rv;
 }
 
-Window nsXRemoteClient::CheckWindow(Window aWindow) {
+Window XRemoteClient::CheckWindow(Window aWindow) {
   Atom type = None;
   int format;
   unsigned long nitems, bytesafter;
@@ -217,7 +217,7 @@ Window nsXRemoteClient::CheckWindow(Window aWindow) {
   return aWindow;
 }
 
-Window nsXRemoteClient::CheckChildren(Window aWindow) {
+Window XRemoteClient::CheckChildren(Window aWindow) {
   Window root, parent;
   Window *children;
   unsigned int nchildren;
@@ -252,7 +252,7 @@ Window nsXRemoteClient::CheckChildren(Window aWindow) {
   return retval;
 }
 
-nsresult nsXRemoteClient::GetLock(Window aWindow, bool *aDestroyed) {
+nsresult XRemoteClient::GetLock(Window aWindow, bool *aDestroyed) {
   bool locked = false;
   bool waited = false;
   *aDestroyed = false;
@@ -373,8 +373,9 @@ nsresult nsXRemoteClient::GetLock(Window aWindow, bool *aDestroyed) {
   return rv;
 }
 
-Window nsXRemoteClient::FindBestWindow(const char *aProgram,
-                                       const char *aProfile) {
+Window XRemoteClient::FindBestWindow(const char *aProgram,
+                                     const char *aUsername,
+                                     const char *aProfile) {
   Window root = RootWindowOfScreen(DefaultScreenOfDisplay(mDisplay));
   Window bestWindow = 0;
   Window root2, parent, *kids;
@@ -384,7 +385,7 @@ Window nsXRemoteClient::FindBestWindow(const char *aProgram,
   
   if (!XQueryTree(mDisplay, root, &root2, &parent, &kids, &nkids)) {
     MOZ_LOG(sRemoteLm, LogLevel::Debug,
-            ("XQueryTree failed in nsXRemoteClient::FindBestWindow"));
+            ("XQueryTree failed in XRemoteClient::FindBestWindow"));
     return 0;
   }
 
@@ -422,29 +423,39 @@ Window nsXRemoteClient::FindBestWindow(const char *aProgram,
     if (status != Success || type == None) continue;
 
     
-    Unused << XGetWindowProperty(
-        mDisplay, w, mMozProgramAtom, 0, (65536 / sizeof(long)), False,
-        XA_STRING, &type, &format, &nitems, &bytesafter, &data_return);
+    
+    
+    
+    if (aProgram && strcmp(aProgram, "any")) {
+      Unused << XGetWindowProperty(
+          mDisplay, w, mMozProgramAtom, 0, (65536 / sizeof(long)), False,
+          XA_STRING, &type, &format, &nitems, &bytesafter, &data_return);
 
-    
-    
-    if (data_return) {
-      if (strcmp(aProgram, (const char *)data_return)) {
+      
+      
+      if (data_return) {
+        if (strcmp(aProgram, (const char *)data_return)) {
+          XFree(data_return);
+          continue;
+        }
+
+        
         XFree(data_return);
+      } else {
+        
+        
         continue;
       }
-
-      
-      XFree(data_return);
-    } else {
-      
-      
-      continue;
     }
 
     
     
-    const char *username = PR_GetEnv("LOGNAME");
+    const char *username;
+    if (aUsername) {
+      username = aUsername;
+    } else {
+      username = PR_GetEnv("LOGNAME");
+    }
 
     if (username) {
       Unused << XGetWindowProperty(
@@ -466,22 +477,21 @@ Window nsXRemoteClient::FindBestWindow(const char *aProgram,
     
     
     
-    Unused << XGetWindowProperty(
-        mDisplay, w, mMozProfileAtom, 0, (65536 / sizeof(long)), False,
-        XA_STRING, &type, &format, &nitems, &bytesafter, &data_return);
+    if (aProfile) {
+      Unused << XGetWindowProperty(
+          mDisplay, w, mMozProfileAtom, 0, (65536 / sizeof(long)), False,
+          XA_STRING, &type, &format, &nitems, &bytesafter, &data_return);
 
-    
-    if (data_return) {
       
-      if (strcmp(aProfile, (const char *)data_return)) {
+      if (data_return) {
+        
+        if (strcmp(aProfile, (const char *)data_return)) {
+          XFree(data_return);
+          continue;
+        }
+
         XFree(data_return);
-        continue;
       }
-
-      XFree(data_return);
-    } else {
-      
-      continue;
     }
 
     
@@ -498,7 +508,7 @@ Window nsXRemoteClient::FindBestWindow(const char *aProgram,
   return bestWindow;
 }
 
-nsresult nsXRemoteClient::FreeLock(Window aWindow) {
+nsresult XRemoteClient::FreeLock(Window aWindow) {
   int result;
   Atom actual_type;
   int actual_format;
@@ -530,11 +540,10 @@ nsresult nsXRemoteClient::FreeLock(Window aWindow) {
   return NS_OK;
 }
 
-nsresult nsXRemoteClient::DoSendCommandLine(Window aWindow, int32_t argc,
-                                            char **argv,
-                                            const char *aDesktopStartupID,
-                                            char **aResponse,
-                                            bool *aDestroyed) {
+nsresult XRemoteClient::DoSendCommandLine(Window aWindow, int32_t argc,
+                                          char **argv,
+                                          const char *aDesktopStartupID,
+                                          char **aResponse, bool *aDestroyed) {
   *aDestroyed = false;
 
   int commandLineLength;
@@ -551,8 +560,8 @@ nsresult nsXRemoteClient::DoSendCommandLine(Window aWindow, int32_t argc,
   return NS_OK;
 }
 
-bool nsXRemoteClient::WaitForResponse(Window aWindow, char **aResponse,
-                                      bool *aDestroyed, Atom aCommandAtom) {
+bool XRemoteClient::WaitForResponse(Window aWindow, char **aResponse,
+                                    bool *aDestroyed, Atom aCommandAtom) {
   bool done = false;
   bool accepted = false;
 

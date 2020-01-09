@@ -5,24 +5,32 @@
 
 
 
-#ifndef NSXREMOTESERVER_H
-#define NSXREMOTESERVER_H
+#ifndef NSXREMOTESERVICE_H
+#define NSXREMOTESERVICE_H
 
 #include "nsString.h"
-#include "nsRemoteServer.h"
-#include "nsUnixRemoteServer.h"
 
 #include <X11/Xlib.h>
 #include <X11/X.h>
 
+class nsIDOMWindow;
+
+#ifdef IS_BIG_ENDIAN
+#  define TO_LITTLE_ENDIAN32(x)                           \
+    ((((x)&0xff000000) >> 24) | (((x)&0x00ff0000) >> 8) | \
+     (((x)&0x0000ff00) << 8) | (((x)&0x000000ff) << 24))
+#else
+#  define TO_LITTLE_ENDIAN32(x) (x)
+#endif
 
 
 
-class nsXRemoteServer : public nsRemoteServer, public nsUnixRemoteServer {
+
+class nsXRemoteService {
  protected:
-  nsXRemoteServer();
-  bool HandleNewProperty(Window aWindowId, Display* aDisplay, Time aEventTime,
-                         Atom aChangedAtom);
+  nsXRemoteService();
+  static bool HandleNewProperty(Window aWindowId, Display* aDisplay,
+                                Time aEventTime, Atom aChangedAtom);
   void XRemoteBaseStartup(const char* aAppName, const char* aProfileName);
   void HandleCommandsFor(Window aWindowId);
 

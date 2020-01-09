@@ -5,165 +5,48 @@
 
 
 
-#ifdef XP_UNIX
-#  include <sys/types.h>
-#  include <pwd.h>
-#endif
-
-#ifdef MOZ_WIDGET_GTK
-#  include "nsGTKRemoteServer.h"
-#  include "nsXRemoteClient.h"
-#  ifdef MOZ_ENABLE_DBUS
-#    include "nsDBusRemoteServer.h"
-#    include "nsDBusRemoteClient.h"
-#  endif
-#elif defined(XP_WIN)
-#  include "nsWinRemoteServer.h"
-#  include "nsWinRemoteClient.h"
+#include "nsGTKRemoteService.h"
+#ifdef MOZ_ENABLE_DBUS
+#  include "nsDBusRemoteService.h"
 #endif
 #include "nsRemoteService.h"
 
+#include <gtk/gtk.h>
+#include <gdk/gdk.h>
+#include <gdk/gdkx.h>
+
+#include "nsIServiceManager.h"
+#include "nsIAppShellService.h"
+#include "nsAppShellCID.h"
+#include "nsInterfaceHashtable.h"
+#include "nsGTKToolkit.h"
+#include "nsICommandLineRunner.h"
+#include "nsCommandLine.h"
 #include "nsString.h"
-#include "nsServiceManagerUtils.h"
-#include "mozilla/ModuleUtils.h"
-#include "SpecialSystemDirectory.h"
-#include "mozilla/CmdLineAndEnvUtils.h"
+#include "nsIFile.h"
 
+NS_IMPL_ISUPPORTS(nsRemoteService, nsIRemoteService, nsIObserver)
 
-#define START_TIMEOUT_SEC 5
-#define START_SLEEP_MSEC 100
+NS_IMETHODIMP
+nsRemoteService::Startup(const char* aAppName, const char* aProfileName) {
+  bool useX11Remote = GDK_IS_X11_DISPLAY(gdk_display_get_default());
 
-using namespace mozilla;
-
-extern int gArgc;
-extern char** gArgv;
-
-using namespace mozilla;
-
-NS_IMPL_ISUPPORTS(nsRemoteService, nsIObserver)
-
-nsRemoteService::nsRemoteService(const char* aProgram) : mProgram(aProgram) {
-  ToLowerCase(mProgram);
-}
-
-void nsRemoteService::SetProfile(nsACString& aProfile) {
-  mProfile = aProfile;
-}
-
-void nsRemoteService::LockStartup() {
-  nsCOMPtr<nsIFile> mutexDir;
-  nsresult rv = GetSpecialSystemDirectory(OS_TemporaryDirectory,
-                                          getter_AddRefs(mutexDir));
-  if (NS_SUCCEEDED(rv)) {
-    mutexDir->AppendNative(mProgram);
-
-    rv = mutexDir->Create(nsIFile::DIRECTORY_TYPE, 0700);
-    if (NS_SUCCEEDED(rv) || rv == NS_ERROR_FILE_ALREADY_EXISTS) {
-      mRemoteLockDir = mutexDir;
-    }
-  }
-
-  if (mRemoteLockDir) {
-    const mozilla::TimeStamp epoch = mozilla::TimeStamp::Now();
-    do {
-      rv = mRemoteLock.Lock(mRemoteLockDir, nullptr);
-      if (NS_SUCCEEDED(rv)) break;
-      PR_Sleep(START_SLEEP_MSEC);
-    } while ((mozilla::TimeStamp::Now() - epoch) <
-             mozilla::TimeDuration::FromSeconds(START_TIMEOUT_SEC));
+#if defined(MOZ_ENABLE_DBUS)
+  if (!useX11Remote) {
+    nsresult rv;
+    mDBusRemoteService = new nsDBusRemoteService();
+    rv = mDBusRemoteService->Startup(aAppName, aProfileName);
     if (NS_FAILED(rv)) {
-      NS_WARNING("Cannot lock remote start mutex");
+      mDBusRemoteService = nullptr;
     }
   }
-}
-
-void nsRemoteService::UnlockStartup() {
-  mRemoteLock.Unlock();
-  mRemoteLock.Cleanup();
-
-  if (mRemoteLockDir) {
-    mRemoteLockDir->Remove(false);
-    mRemoteLockDir = nullptr;
-  }
-}
-
-RemoteResult nsRemoteService::StartClient(const char* aDesktopStartupID) {
-  if (mProfile.IsEmpty()) {
-    return REMOTE_NOT_FOUND;
-  }
-
-  nsAutoPtr<nsRemoteClient> client;
-
-#ifdef MOZ_WIDGET_GTK
-  bool useX11Remote = GDK_IS_X11_DISPLAY(gdk_display_get_default());
-
-#  if defined(MOZ_ENABLE_DBUS)
-  if (!useX11Remote) {
-    client = new nsDBusRemoteClient();
-  }
-#  endif
-  if (useX11Remote) {
-    client = new nsXRemoteClient();
-  }
-#elif defined(XP_WIN)
-  client = new nsWinRemoteClient();
-#else
-  return REMOTE_NOT_FOUND;
 #endif
-
-  nsresult rv = client ? client->Init() : NS_ERROR_FAILURE;
-  if (NS_FAILED(rv)) return REMOTE_NOT_FOUND;
-
-  nsCString response;
-  bool success = false;
-  rv = client->SendCommandLine(mProgram.get(), mProfile.get(), gArgc, gArgv,
-                               aDesktopStartupID, getter_Copies(response),
-                               &success);
-  
-  if (!success) return REMOTE_NOT_FOUND;
-
-  
-  
-  if (response.EqualsLiteral("500 command not parseable"))
-    return REMOTE_ARG_BAD;
-
-  if (NS_FAILED(rv)) return REMOTE_NOT_FOUND;
-
-  return REMOTE_FOUND;
-}
-
-void nsRemoteService::StartupServer() {
-  if (mRemoteServer) {
-    return;
-  }
-
-  if (mProfile.IsEmpty()) {
-    return;
-  }
-
-#ifdef MOZ_WIDGET_GTK
-  bool useX11Remote = GDK_IS_X11_DISPLAY(gdk_display_get_default());
-
-#  if defined(MOZ_ENABLE_DBUS)
-  if (!useX11Remote) {
-    mRemoteServer = MakeUnique<nsDBusRemoteServer>();
-  }
-#  endif
   if (useX11Remote) {
-    mRemoteServer = MakeUnique<nsGTKRemoteServer>();
+    mGtkRemoteService = new nsGTKRemoteService();
+    mGtkRemoteService->Startup(aAppName, aProfileName);
   }
-#elif defined(XP_WIN)
-  mRemoteServer = MakeUnique<nsWinRemoteServer>();
-#else
-  return;
-#endif
 
-  nsresult rv = mRemoteServer->Startup(mProgram.get(), mProfile.get());
-
-  if (NS_FAILED(rv)) {
-    mRemoteServer = nullptr;
-    return;
-  }
+  if (!mDBusRemoteService && !mGtkRemoteService) return NS_ERROR_FAILURE;
 
   nsCOMPtr<nsIObserverService> obs(
       do_GetService("@mozilla.org/observer-service;1"));
@@ -171,17 +54,130 @@ void nsRemoteService::StartupServer() {
     obs->AddObserver(this, "xpcom-shutdown", false);
     obs->AddObserver(this, "quit-application", false);
   }
+
+  return NS_OK;
 }
 
-void nsRemoteService::ShutdownServer() { mRemoteServer = nullptr; }
+NS_IMETHODIMP
+nsRemoteService::Shutdown() {
+#if defined(MOZ_ENABLE_DBUS)
+  if (mDBusRemoteService) {
+    mDBusRemoteService->Shutdown();
+    mDBusRemoteService = nullptr;
+  }
+#endif
+  if (mGtkRemoteService) {
+    mGtkRemoteService->Shutdown();
+    mGtkRemoteService = nullptr;
+  }
+  return NS_OK;
+}
 
-nsRemoteService::~nsRemoteService() { ShutdownServer(); }
+nsRemoteService::~nsRemoteService() { Shutdown(); }
 
 NS_IMETHODIMP
 nsRemoteService::Observe(nsISupports* aSubject, const char* aTopic,
                          const char16_t* aData) {
   
   
-  ShutdownServer();
+  Shutdown();
   return NS_OK;
+}
+
+
+
+
+
+
+
+void nsRemoteService::SetDesktopStartupIDOrTimestamp(
+    const nsACString& aDesktopStartupID, uint32_t aTimestamp) {
+  nsGTKToolkit* toolkit = nsGTKToolkit::GetToolkit();
+  if (!toolkit) return;
+
+  if (!aDesktopStartupID.IsEmpty()) {
+    toolkit->SetDesktopStartupID(aDesktopStartupID);
+  }
+
+  toolkit->SetFocusTimestamp(aTimestamp);
+}
+
+static bool FindExtensionParameterInCommand(const char* aParameterName,
+                                            const nsACString& aCommand,
+                                            char aSeparator,
+                                            nsACString* aValue) {
+  nsAutoCString searchFor;
+  searchFor.Append(aSeparator);
+  searchFor.Append(aParameterName);
+  searchFor.Append('=');
+
+  nsACString::const_iterator start, end;
+  aCommand.BeginReading(start);
+  aCommand.EndReading(end);
+  if (!FindInReadable(searchFor, start, end)) return false;
+
+  nsACString::const_iterator charStart, charEnd;
+  charStart = end;
+  aCommand.EndReading(charEnd);
+  nsACString::const_iterator idStart = charStart, idEnd;
+  if (FindCharInReadable(aSeparator, charStart, charEnd)) {
+    idEnd = charStart;
+  } else {
+    idEnd = charEnd;
+  }
+  *aValue = nsDependentCSubstring(idStart, idEnd);
+  return true;
+}
+
+const char* nsRemoteService::HandleCommandLine(const char* aBuffer,
+                                               uint32_t aTimestamp) {
+  nsCOMPtr<nsICommandLineRunner> cmdline(new nsCommandLine());
+
+  
+  
+  
+  
+  
+
+  int32_t argc = TO_LITTLE_ENDIAN32(*reinterpret_cast<const int32_t*>(aBuffer));
+  const char* wd = aBuffer + ((argc + 1) * sizeof(int32_t));
+
+  nsCOMPtr<nsIFile> lf;
+  nsresult rv =
+      NS_NewNativeLocalFile(nsDependentCString(wd), true, getter_AddRefs(lf));
+  if (NS_FAILED(rv)) return "509 internal error";
+
+  nsAutoCString desktopStartupID;
+
+  const char** argv = (const char**)malloc(sizeof(char*) * argc);
+  if (!argv) return "509 internal error";
+
+  const int32_t* offset = reinterpret_cast<const int32_t*>(aBuffer) + 1;
+
+  for (int i = 0; i < argc; ++i) {
+    argv[i] = aBuffer + TO_LITTLE_ENDIAN32(offset[i]);
+
+    if (i == 0) {
+      nsDependentCString cmd(argv[0]);
+      FindExtensionParameterInCommand("DESKTOP_STARTUP_ID", cmd, ' ',
+                                      &desktopStartupID);
+    }
+  }
+
+  rv = cmdline->Init(argc, argv, lf, nsICommandLine::STATE_REMOTE_AUTO);
+
+  free(argv);
+  if (NS_FAILED(rv)) {
+    return "509 internal error";
+  }
+
+  SetDesktopStartupIDOrTimestamp(desktopStartupID, aTimestamp);
+
+  rv = cmdline->Run();
+
+  if (NS_ERROR_ABORT == rv) return "500 command not parseable";
+
+  if (NS_FAILED(rv)) return "509 internal error";
+
+  return "200 executed command";
 }
