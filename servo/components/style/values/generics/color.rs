@@ -7,7 +7,6 @@
 
 
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToAnimatedValue, ToShmem)]
-#[repr(C)]
 pub struct ComplexColorRatios {
     
     pub bg: f32,
@@ -19,41 +18,33 @@ impl ComplexColorRatios {
     
     pub const NUMERIC: ComplexColorRatios = ComplexColorRatios { bg: 1., fg: 0. };
     
-    pub const CURRENT_COLOR: ComplexColorRatios = ComplexColorRatios { bg: 0., fg: 1. };
+    pub const FOREGROUND: ComplexColorRatios = ComplexColorRatios { bg: 0., fg: 1. };
 }
 
 
 
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToAnimatedValue, ToShmem)]
-#[repr(C, u8)]
-pub enum GenericColor<RGBA> {
+pub enum Color<RGBA> {
     
     Numeric(RGBA),
 
     
-    CurrentColor,
+    Foreground,
 
     
     
-    Complex {
-        
-        color: RGBA,
-        
-        ratios: ComplexColorRatios,
-    }
+    Complex(RGBA, ComplexColorRatios),
 }
-
-pub use self::GenericColor as Color;
 
 impl<RGBA> Color<RGBA> {
     
     pub fn with_ratios(color: RGBA, ratios: ComplexColorRatios) -> Self {
         if ratios == ComplexColorRatios::NUMERIC {
             Color::Numeric(color)
-        } else if ratios == ComplexColorRatios::CURRENT_COLOR {
-            Color::CurrentColor
+        } else if ratios == ComplexColorRatios::FOREGROUND {
+            Color::Foreground
         } else {
-            Color::Complex { color, ratios }
+            Color::Complex(color, ratios)
         }
     }
 
@@ -64,7 +55,7 @@ impl<RGBA> Color<RGBA> {
 
     
     pub fn currentcolor() -> Self {
-        Color::CurrentColor
+        Color::Foreground
     }
 
     
@@ -74,7 +65,7 @@ impl<RGBA> Color<RGBA> {
 
     
     pub fn is_currentcolor(&self) -> bool {
-        matches!(*self, Color::CurrentColor)
+        matches!(*self, Color::Foreground)
     }
 }
 
@@ -101,12 +92,9 @@ impl<RGBA> From<RGBA> for Color<RGBA> {
     ToCss,
     ToShmem,
 )]
-#[repr(C, u8)]
-pub enum GenericColorOrAuto<C> {
+pub enum ColorOrAuto<C> {
     
     Color(C),
     
     Auto,
 }
-
-pub use self::GenericColorOrAuto as ColorOrAuto;

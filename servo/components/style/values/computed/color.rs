@@ -33,8 +33,8 @@ impl Color {
             
             
             GenericColor::Numeric(color) => return color,
-            GenericColor::CurrentColor => return fg_color,
-            GenericColor::Complex { color, ratios } => (color, ratios),
+            GenericColor::Foreground => return fg_color,
+            GenericColor::Complex(color, ratios) => (color, ratios),
         };
 
         
@@ -76,7 +76,7 @@ impl ToCss for Color {
     {
         match *self {
             GenericColor::Numeric(color) => color.to_css(dest),
-            GenericColor::CurrentColor => CSSParserColor::CurrentColor.to_css(dest),
+            GenericColor::Foreground => CSSParserColor::CurrentColor.to_css(dest),
             _ => Ok(()),
         }
     }
