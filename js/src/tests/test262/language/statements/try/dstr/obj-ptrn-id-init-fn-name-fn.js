@@ -1,0 +1,44 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var ranCatch = false;
+
+try {
+  throw {};
+} catch ({ fn = function () {}, xFn = function x() {} }) {
+  assert.sameValue(fn.name, 'fn');
+  assert.notSameValue(xFn.name, 'xFn');
+  ranCatch = true;
+}
+
+assert(ranCatch, 'executed `catch` block');
+
+reportCompare(0, 0);

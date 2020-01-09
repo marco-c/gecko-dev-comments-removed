@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const c = null;
+
+assert.throws(TypeError, function() {
+  0, { c } = { c: 1 };
+});
+
+reportCompare(0, 0);

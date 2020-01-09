@@ -1,0 +1,39 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var s = Symbol();
+
+var counter = 0;
+
+for ({} of [s]) {
+  
+  counter += 1;
+}
+
+assert.sameValue(counter, 1);
+
+reportCompare(0, 0);
