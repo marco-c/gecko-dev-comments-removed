@@ -1064,12 +1064,11 @@ void nsLineLayout::ReflowFrame(nsIFrame* aFrame, nsReflowStatus& aReflowStatus,
       }
 
       if (!continuingTextRun && !psd->mNoWrap) {
-        if (!LineIsEmpty()) {
+        if (!LineIsEmpty() || placedFloat) {
           
           
           
-          if (!aFrame->IsPlaceholderFrame() &&
-              NotifyOptionalBreakPosition(aFrame, INT32_MAX,
+          if (NotifyOptionalBreakPosition(aFrame, INT32_MAX,
                                           optionalBreakAfterFits,
                                           gfxBreakPriority::eNormalBreak)) {
             
