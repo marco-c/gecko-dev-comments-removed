@@ -108,8 +108,8 @@ void ICEntry::trace(JSTracer* trc) {
   }
 }
 
- UniquePtr<ICScript> ICScript::create(JSContext* cx,
-                                                  JSScript* script) {
+
+UniquePtr<ICScript> ICScript::create(JSContext* cx, JSScript* script) {
   MOZ_ASSERT(cx->realm()->jitRealm());
   MOZ_ASSERT(jit::IsBaselineEnabled(cx));
 
@@ -463,7 +463,8 @@ void ICStubIterator::unlink(JSContext* cx) {
   unlinked_ = true;
 }
 
- bool ICStub::NonCacheIRStubMakesGCCalls(Kind kind) {
+
+bool ICStub::NonCacheIRStubMakesGCCalls(Kind kind) {
   MOZ_ASSERT(IsValidKind(kind));
   MOZ_ASSERT(!IsCacheIRKind(kind));
 
@@ -514,7 +515,8 @@ void ICStub::updateCode(JitCode* code) {
   stubCode_ = code->raw();
 }
 
- void ICStub::trace(JSTracer* trc) {
+
+void ICStub::trace(JSTracer* trc) {
   traceCode(trc, "shared-stub-jitcode");
 
   
@@ -1043,8 +1045,9 @@ bool ICUpdatedStub::initUpdatingChain(JSContext* cx, ICStubSpace* space) {
   return true;
 }
 
- ICStubSpace* ICStubCompiler::StubSpaceForStub(bool makesGCCalls,
-                                                           JSScript* script) {
+
+ICStubSpace* ICStubCompiler::StubSpaceForStub(bool makesGCCalls,
+                                              JSScript* script) {
   if (makesGCCalls) {
     return script->icScript()->fallbackStubSpace();
   }

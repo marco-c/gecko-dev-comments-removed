@@ -73,8 +73,9 @@ bool NativeObject::canHaveNonEmptyElements() {
 
 #endif  
 
- void ObjectElements::ConvertElementsToDoubles(
-    JSContext* cx, uintptr_t elementsPtr) {
+
+void ObjectElements::ConvertElementsToDoubles(JSContext* cx,
+                                              uintptr_t elementsPtr) {
   
 
 
@@ -99,8 +100,8 @@ bool NativeObject::canHaveNonEmptyElements() {
   header->setShouldConvertDoubleElements();
 }
 
- bool ObjectElements::MakeElementsCopyOnWrite(JSContext* cx,
-                                                          NativeObject* obj) {
+
+bool ObjectElements::MakeElementsCopyOnWrite(JSContext* cx, NativeObject* obj) {
   static_assert(sizeof(HeapSlot) >= sizeof(GCPtrObject),
                 "there must be enough room for the owner object pointer at "
                 "the end of the elements");
@@ -120,8 +121,8 @@ bool NativeObject::canHaveNonEmptyElements() {
   return true;
 }
 
- bool ObjectElements::PreventExtensions(JSContext* cx,
-                                                    NativeObject* obj) {
+
+bool ObjectElements::PreventExtensions(JSContext* cx, NativeObject* obj) {
   if (!obj->maybeCopyElementsForWrite(cx)) {
     return false;
   }
@@ -137,8 +138,9 @@ bool NativeObject::canHaveNonEmptyElements() {
   return true;
 }
 
- void ObjectElements::FreezeOrSeal(JSContext* cx, NativeObject* obj,
-                                               IntegrityLevel level) {
+
+void ObjectElements::FreezeOrSeal(JSContext* cx, NativeObject* obj,
+                                  IntegrityLevel level) {
   MOZ_ASSERT_IF(level == IntegrityLevel::Frozen && obj->is<ArrayObject>(),
                 !obj->as<ArrayObject>().lengthIsWritable());
   MOZ_ASSERT(!obj->denseElementsAreCopyOnWrite());
@@ -163,7 +165,8 @@ static mozilla::Atomic<bool, mozilla::Relaxed,
                        mozilla::recordreplay::Behavior::DontPreserve>
     gShapeConsistencyChecksEnabled(false);
 
- void js::NativeObject::enableShapeConsistencyChecks() {
+
+void js::NativeObject::enableShapeConsistencyChecks() {
   gShapeConsistencyChecksEnabled = true;
 }
 
@@ -416,8 +419,9 @@ bool NativeObject::growSlots(JSContext* cx, uint32_t oldCount,
   return true;
 }
 
- bool NativeObject::growSlotsPure(JSContext* cx, NativeObject* obj,
-                                              uint32_t newCount) {
+
+bool NativeObject::growSlotsPure(JSContext* cx, NativeObject* obj,
+                                 uint32_t newCount) {
   
   AutoUnsafeCallWithABI unsafe;
 
@@ -428,8 +432,8 @@ bool NativeObject::growSlots(JSContext* cx, uint32_t oldCount,
   return true;
 }
 
- bool NativeObject::addDenseElementPure(JSContext* cx,
-                                                    NativeObject* obj) {
+
+bool NativeObject::addDenseElementPure(JSContext* cx, NativeObject* obj) {
   
   AutoUnsafeCallWithABI unsafe;
 
@@ -516,7 +520,8 @@ bool NativeObject::willBeSparseElements(uint32_t requiredCapacity,
   return true;
 }
 
- DenseElementResult NativeObject::maybeDensifySparseElements(
+
+DenseElementResult NativeObject::maybeDensifySparseElements(
     JSContext* cx, HandleNativeObject obj) {
   
 
@@ -781,9 +786,11 @@ bool NativeObject::tryUnshiftDenseElements(uint32_t count) {
 
 
 
- bool NativeObject::goodElementsAllocationAmount(
-    JSContext* cx, uint32_t reqCapacity, uint32_t length,
-    uint32_t* goodAmount) {
+
+bool NativeObject::goodElementsAllocationAmount(JSContext* cx,
+                                                uint32_t reqCapacity,
+                                                uint32_t length,
+                                                uint32_t* goodAmount) {
   if (reqCapacity > MAX_DENSE_ELEMENTS_COUNT) {
     ReportOutOfMemory(cx);
     return false;
@@ -1006,8 +1013,8 @@ void NativeObject::shrinkElements(JSContext* cx, uint32_t reqCapacity) {
   getElementsHeader()->capacity = newCapacity;
 }
 
- bool NativeObject::CopyElementsForWrite(JSContext* cx,
-                                                     NativeObject* obj) {
+
+bool NativeObject::CopyElementsForWrite(JSContext* cx, NativeObject* obj) {
   MOZ_ASSERT(obj->denseElementsAreCopyOnWrite());
   MOZ_ASSERT(obj->isExtensible());
 
@@ -1046,9 +1053,9 @@ void NativeObject::shrinkElements(JSContext* cx, uint32_t reqCapacity) {
   return true;
 }
 
- bool NativeObject::allocDictionarySlot(JSContext* cx,
-                                                    HandleNativeObject obj,
-                                                    uint32_t* slotp) {
+
+bool NativeObject::allocDictionarySlot(JSContext* cx, HandleNativeObject obj,
+                                       uint32_t* slotp) {
   MOZ_ASSERT(obj->inDictionaryMode());
 
   uint32_t slot = obj->slotSpan();
@@ -1121,11 +1128,10 @@ void NativeObject::freeSlot(JSContext* cx, uint32_t slot) {
   setSlot(slot, UndefinedValue());
 }
 
- Shape* NativeObject::addDataProperty(JSContext* cx,
-                                                  HandleNativeObject obj,
-                                                  HandlePropertyName name,
-                                                  uint32_t slot,
-                                                  unsigned attrs) {
+
+Shape* NativeObject::addDataProperty(JSContext* cx, HandleNativeObject obj,
+                                     HandlePropertyName name, uint32_t slot,
+                                     unsigned attrs) {
   MOZ_ASSERT(!(attrs & (JSPROP_GETTER | JSPROP_SETTER)));
   RootedId id(cx, NameToId(name));
   return addDataProperty(cx, obj, id, slot, attrs);
@@ -1379,13 +1385,15 @@ static MOZ_ALWAYS_INLINE bool ReshapeForShadowedProp(JSContext* cx,
   return true;
 }
 
- bool NativeObject::reshapeForShadowedProp(JSContext* cx,
-                                                       HandleNativeObject obj) {
+
+bool NativeObject::reshapeForShadowedProp(JSContext* cx,
+                                          HandleNativeObject obj) {
   return generateOwnShape(cx, obj);
 }
 
- bool NativeObject::reshapeForProtoMutation(
-    JSContext* cx, HandleNativeObject obj) {
+
+bool NativeObject::reshapeForProtoMutation(JSContext* cx,
+                                           HandleNativeObject obj) {
   return generateOwnShape(cx, obj);
 }
 

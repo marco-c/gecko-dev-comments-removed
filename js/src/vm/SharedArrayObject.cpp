@@ -296,7 +296,8 @@ uint32_t SharedArrayBufferObject::wasmBoundsCheckLimit() const {
 }
 #endif
 
- void SharedArrayBufferObject::addSizeOfExcludingThis(
+
+void SharedArrayBufferObject::addSizeOfExcludingThis(
     JSObject* obj, mozilla::MallocSizeOf mallocSizeOf, JS::ClassInfo* info) {
   
   
@@ -309,7 +310,8 @@ uint32_t SharedArrayBufferObject::wasmBoundsCheckLimit() const {
       buf.byteLength() / buf.rawBufferObject()->refcount();
 }
 
- void SharedArrayBufferObject::copyData(
+
+void SharedArrayBufferObject::copyData(
     Handle<SharedArrayBufferObject*> toBuffer, uint32_t toIndex,
     Handle<SharedArrayBufferObject*> fromBuffer, uint32_t fromIndex,
     uint32_t count) {

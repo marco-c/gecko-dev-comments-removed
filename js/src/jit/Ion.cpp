@@ -532,8 +532,8 @@ uint8_t* jit::LazyLinkTopActivation(JSContext* cx,
   return calleeScript->jitCodeRaw();
 }
 
- void JitRuntime::Trace(JSTracer* trc,
-                                    const AutoAccessAtomsZone& access) {
+
+void JitRuntime::Trace(JSTracer* trc, const AutoAccessAtomsZone& access) {
   MOZ_ASSERT(!JS::RuntimeHeapIsMinorCollecting());
 
   
@@ -549,7 +549,8 @@ uint8_t* jit::LazyLinkTopActivation(JSContext* cx,
   }
 }
 
- void JitRuntime::TraceJitcodeGlobalTableForMinorGC(JSTracer* trc) {
+
+void JitRuntime::TraceJitcodeGlobalTableForMinorGC(JSTracer* trc) {
   if (trc->runtime()->geckoProfiler().enabled() &&
       trc->runtime()->hasJitRuntime() &&
       trc->runtime()->jitRuntime()->hasJitcodeGlobalTable()) {
@@ -557,8 +558,8 @@ uint8_t* jit::LazyLinkTopActivation(JSContext* cx,
   }
 }
 
- bool JitRuntime::MarkJitcodeGlobalTableIteratively(
-    GCMarker* marker) {
+
+bool JitRuntime::MarkJitcodeGlobalTableIteratively(GCMarker* marker) {
   if (marker->runtime()->hasJitRuntime() &&
       marker->runtime()->jitRuntime()->hasJitcodeGlobalTable()) {
     return marker->runtime()
@@ -569,7 +570,8 @@ uint8_t* jit::LazyLinkTopActivation(JSContext* cx,
   return false;
 }
 
- void JitRuntime::SweepJitcodeGlobalTable(JSRuntime* rt) {
+
+void JitRuntime::SweepJitcodeGlobalTable(JSRuntime* rt) {
   if (rt->hasJitRuntime() && rt->jitRuntime()->hasJitcodeGlobalTable()) {
     rt->jitRuntime()->getJitcodeGlobalTable()->sweep(rt);
   }
@@ -904,7 +906,8 @@ void IonScript::trace(JSTracer* trc) {
   }
 }
 
- void IonScript::writeBarrierPre(Zone* zone, IonScript* ionScript) {
+
+void IonScript::writeBarrierPre(Zone* zone, IonScript* ionScript) {
   if (zone->needsIncrementalBarrier()) {
     ionScript->trace(zone->barrierTracer());
   }

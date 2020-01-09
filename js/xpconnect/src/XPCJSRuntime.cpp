@@ -221,8 +221,8 @@ RealmPrivate::RealmPrivate(JS::Realm* realm) : scriptability(realm) {
   mozilla::PodArrayZero(wrapperDenialWarnings);
 }
 
- void RealmPrivate::Init(HandleObject aGlobal,
-                                     const SiteIdentifier& aSite) {
+
+void RealmPrivate::Init(HandleObject aGlobal, const SiteIdentifier& aSite) {
   MOZ_ASSERT(aGlobal);
   DebugOnly<const js::Class*> clasp = js::GetObjectClass(aGlobal);
   MOZ_ASSERT(clasp->flags &
@@ -604,8 +604,9 @@ bool CompartmentOriginInfo::IsSameOrigin(nsIPrincipal* aOther) const {
   return mOrigin->FastEquals(aOther);
 }
 
- bool CompartmentOriginInfo::Subsumes(JS::Compartment* aCompA,
-                                                  JS::Compartment* aCompB) {
+
+bool CompartmentOriginInfo::Subsumes(JS::Compartment* aCompA,
+                                     JS::Compartment* aCompB) {
   CompartmentPrivate* apriv = CompartmentPrivate::Get(aCompA);
   CompartmentPrivate* bpriv = CompartmentPrivate::Get(aCompB);
   MOZ_ASSERT(apriv);
@@ -613,8 +614,9 @@ bool CompartmentOriginInfo::IsSameOrigin(nsIPrincipal* aOther) const {
   return apriv->originInfo.mOrigin->FastSubsumes(bpriv->originInfo.mOrigin);
 }
 
- bool CompartmentOriginInfo::SubsumesIgnoringFPD(
-    JS::Compartment* aCompA, JS::Compartment* aCompB) {
+
+bool CompartmentOriginInfo::SubsumesIgnoringFPD(JS::Compartment* aCompA,
+                                                JS::Compartment* aCompB) {
   CompartmentPrivate* apriv = CompartmentPrivate::Get(aCompA);
   CompartmentPrivate* bpriv = CompartmentPrivate::Get(aCompB);
   MOZ_ASSERT(apriv);
@@ -815,9 +817,9 @@ void xpc_UnmarkSkippableJSHolders() {
   }
 }
 
- void XPCJSRuntime::GCSliceCallback(JSContext* cx,
-                                                JS::GCProgress progress,
-                                                const JS::GCDescription& desc) {
+
+void XPCJSRuntime::GCSliceCallback(JSContext* cx, JS::GCProgress progress,
+                                   const JS::GCDescription& desc) {
   XPCJSRuntime* self = nsXPConnect::GetRuntimeInstance();
   if (!self) {
     return;
@@ -830,7 +832,8 @@ void xpc_UnmarkSkippableJSHolders() {
   }
 }
 
- void XPCJSRuntime::DoCycleCollectionCallback(JSContext* cx) {
+
+void XPCJSRuntime::DoCycleCollectionCallback(JSContext* cx) {
   
   
   NS_DispatchToCurrentThread(
@@ -854,9 +857,9 @@ void XPCJSRuntime::CustomGCCallback(JSGCStatus status) {
   }
 }
 
- void XPCJSRuntime::FinalizeCallback(JSFreeOp* fop,
-                                                 JSFinalizeStatus status,
-                                                 void* data) {
+
+void XPCJSRuntime::FinalizeCallback(JSFreeOp* fop, JSFinalizeStatus status,
+                                    void* data) {
   XPCJSRuntime* self = nsXPConnect::GetRuntimeInstance();
   if (!self) {
     return;
@@ -959,8 +962,8 @@ void XPCJSRuntime::CustomGCCallback(JSGCStatus status) {
   }
 }
 
- void XPCJSRuntime::WeakPointerZonesCallback(JSContext* cx,
-                                                         void* data) {
+
+void XPCJSRuntime::WeakPointerZonesCallback(JSContext* cx, void* data) {
   
   
   
@@ -972,8 +975,10 @@ void XPCJSRuntime::CustomGCCallback(JSGCStatus status) {
   XPCWrappedNativeScope::UpdateWeakPointersInAllScopesAfterGC();
 }
 
- void XPCJSRuntime::WeakPointerCompartmentCallback(
-    JSContext* cx, JS::Compartment* comp, void* data) {
+
+void XPCJSRuntime::WeakPointerCompartmentCallback(JSContext* cx,
+                                                  JS::Compartment* comp,
+                                                  void* data) {
   
   
   CompartmentPrivate* xpcComp = CompartmentPrivate::Get(comp);

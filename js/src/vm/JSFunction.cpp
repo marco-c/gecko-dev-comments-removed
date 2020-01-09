@@ -1235,8 +1235,9 @@ bool JSFunction::isDerivedClassConstructor() {
   return derived;
 }
 
- bool JSFunction::getLength(JSContext* cx, HandleFunction fun,
-                                        uint16_t* length) {
+
+bool JSFunction::getLength(JSContext* cx, HandleFunction fun,
+                           uint16_t* length) {
   MOZ_ASSERT(!fun->isBoundFunction());
   if (fun->isInterpretedLazy() && !getOrCreateScript(cx, fun)) {
     return false;
@@ -1246,9 +1247,9 @@ bool JSFunction::isDerivedClassConstructor() {
   return true;
 }
 
- bool JSFunction::getUnresolvedLength(JSContext* cx,
-                                                  HandleFunction fun,
-                                                  MutableHandleValue v) {
+
+bool JSFunction::getUnresolvedLength(JSContext* cx, HandleFunction fun,
+                                     MutableHandleValue v) {
   MOZ_ASSERT(!IsInternalFunctionObject(*fun));
   MOZ_ASSERT(!fun->hasResolvedLength());
 
@@ -1285,9 +1286,9 @@ JSAtom* JSFunction::infallibleGetUnresolvedName(JSContext* cx) {
   return cx->names().empty;
 }
 
- bool JSFunction::getUnresolvedName(JSContext* cx,
-                                                HandleFunction fun,
-                                                MutableHandleString v) {
+
+bool JSFunction::getUnresolvedName(JSContext* cx, HandleFunction fun,
+                                   MutableHandleString v) {
   if (fun->isBoundFunction()) {
     JSLinearString* name = JSFunction::getBoundFunctionName(cx, fun);
     if (!name) {
@@ -1302,8 +1303,9 @@ JSAtom* JSFunction::infallibleGetUnresolvedName(JSContext* cx) {
   return true;
 }
 
- JSLinearString* JSFunction::getBoundFunctionName(
-    JSContext* cx, HandleFunction fun) {
+
+JSLinearString* JSFunction::getBoundFunctionName(JSContext* cx,
+                                                 HandleFunction fun) {
   MOZ_ASSERT(fun->isBoundFunction());
   JSAtom* name = fun->explicitName();
 
@@ -1408,10 +1410,10 @@ static JSAtom* AppendBoundFunctionPrefix(JSContext* cx, JSString* str) {
   return sb.finishAtom();
 }
 
- bool JSFunction::finishBoundFunctionInit(JSContext* cx,
-                                                      HandleFunction bound,
-                                                      HandleObject targetObj,
-                                                      int32_t argCount) {
+
+bool JSFunction::finishBoundFunctionInit(JSContext* cx, HandleFunction bound,
+                                         HandleObject targetObj,
+                                         int32_t argCount) {
   bound->setIsBoundFunction();
   MOZ_ASSERT(bound->getBoundFunctionTarget() == targetObj);
 
@@ -1534,8 +1536,9 @@ static JSAtom* AppendBoundFunctionPrefix(JSContext* cx, JSString* str) {
   return true;
 }
 
- bool JSFunction::createScriptForLazilyInterpretedFunction(
-    JSContext* cx, HandleFunction fun) {
+
+bool JSFunction::createScriptForLazilyInterpretedFunction(JSContext* cx,
+                                                          HandleFunction fun) {
   MOZ_ASSERT(fun->isInterpretedLazy());
   MOZ_ASSERT(cx->compartment() == fun->compartment());
 

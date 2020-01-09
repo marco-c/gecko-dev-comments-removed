@@ -260,8 +260,9 @@ FOR_EACH_NONOBJECT_NONNURSERY_ALLOCKIND(DECL_ALLOCATOR_INSTANCES)
 #undef DECL_ALLOCATOR_INSTANCES
 
 template <typename T, AllowGC allowGC>
- T* GCRuntime::tryNewTenuredThing(JSContext* cx, AllocKind kind,
-                                              size_t thingSize) {
+
+T* GCRuntime::tryNewTenuredThing(JSContext* cx, AllocKind kind,
+                                 size_t thingSize) {
   
   T* t = reinterpret_cast<T*>(cx->freeLists().allocate(kind));
   if (MOZ_UNLIKELY(!t)) {
@@ -358,7 +359,8 @@ bool GCRuntime::gcIfNeededAtAllocation(JSContext* cx) {
 }
 
 template <typename T>
- void GCRuntime::checkIncrementalZoneState(JSContext* cx, T* t) {
+
+void GCRuntime::checkIncrementalZoneState(JSContext* cx, T* t) {
 #ifdef DEBUG
   if (cx->helperThread() || !t) {
     return;
@@ -401,8 +403,9 @@ bool GCRuntime::startBackgroundAllocTaskIfIdle() {
   return allocTask.startWithLockHeld(helperLock);
 }
 
- TenuredCell* GCRuntime::refillFreeListFromAnyThread(
-    JSContext* cx, AllocKind thingKind) {
+
+TenuredCell* GCRuntime::refillFreeListFromAnyThread(JSContext* cx,
+                                                    AllocKind thingKind) {
   MOZ_ASSERT(cx->freeLists().isEmpty(thingKind));
 
   if (!cx->helperThread()) {
@@ -412,8 +415,9 @@ bool GCRuntime::startBackgroundAllocTaskIfIdle() {
   return refillFreeListFromHelperThread(cx, thingKind);
 }
 
- TenuredCell* GCRuntime::refillFreeListFromMainThread(
-    JSContext* cx, AllocKind thingKind) {
+
+TenuredCell* GCRuntime::refillFreeListFromMainThread(JSContext* cx,
+                                                     AllocKind thingKind) {
   
   
   MOZ_ASSERT(!JS::RuntimeHeapIsBusy(), "allocating while under GC");
@@ -422,8 +426,9 @@ bool GCRuntime::startBackgroundAllocTaskIfIdle() {
       cx->freeLists(), thingKind, ShouldCheckThresholds::CheckThresholds);
 }
 
- TenuredCell* GCRuntime::refillFreeListFromHelperThread(
-    JSContext* cx, AllocKind thingKind) {
+
+TenuredCell* GCRuntime::refillFreeListFromHelperThread(JSContext* cx,
+                                                       AllocKind thingKind) {
   
   
   Zone* zone = cx->zone();
@@ -433,8 +438,8 @@ bool GCRuntime::startBackgroundAllocTaskIfIdle() {
       cx->freeLists(), thingKind, ShouldCheckThresholds::CheckThresholds);
 }
 
- TenuredCell* GCRuntime::refillFreeListInGC(Zone* zone,
-                                                        AllocKind thingKind) {
+
+TenuredCell* GCRuntime::refillFreeListInGC(Zone* zone, AllocKind thingKind) {
   
   MOZ_ASSERT(JS::RuntimeHeapIsCollecting());
   MOZ_ASSERT_IF(!JS::RuntimeHeapIsMinorCollecting(),
@@ -717,7 +722,8 @@ void BackgroundAllocTask::run() {
   }
 }
 
- Chunk* Chunk::allocate(JSRuntime* rt) {
+
+Chunk* Chunk::allocate(JSRuntime* rt) {
   Chunk* chunk = static_cast<Chunk*>(MapAlignedPages(ChunkSize, ChunkSize));
   if (!chunk) {
     return nullptr;

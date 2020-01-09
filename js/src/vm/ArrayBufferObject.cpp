@@ -463,8 +463,9 @@ static uint8_t* NewCopiedBufferContents(JSContext* cx,
   return dataCopy;
 }
 
- void ArrayBufferObject::detach(JSContext* cx,
-                                            Handle<ArrayBufferObject*> buffer) {
+
+void ArrayBufferObject::detach(JSContext* cx,
+                               Handle<ArrayBufferObject*> buffer) {
   cx->check(buffer);
   MOZ_ASSERT(!buffer->isPreparedForAsmJS());
 
@@ -683,7 +684,8 @@ class js::WasmArrayRawBuffer {
 #endif  
 };
 
- WasmArrayRawBuffer* WasmArrayRawBuffer::Allocate(
+
+WasmArrayRawBuffer* WasmArrayRawBuffer::Allocate(
     uint32_t numBytes, const Maybe<uint32_t>& maxSize) {
   MOZ_RELEASE_ASSERT(numBytes <= ArrayBufferObject::MaxBufferByteLength);
 
@@ -715,7 +717,8 @@ class js::WasmArrayRawBuffer {
   return rawBuf;
 }
 
- void WasmArrayRawBuffer::Release(void* mem) {
+
+void WasmArrayRawBuffer::Release(void* mem) {
   WasmArrayRawBuffer* header =
       (WasmArrayRawBuffer*)((uint8_t*)mem - sizeof(WasmArrayRawBuffer));
 
@@ -1029,7 +1032,8 @@ static void CheckStealPreconditions(Handle<ArrayBufferObject*> buffer,
              "asm.js-prepared buffers don't have detachable/stealable data");
 }
 
- bool ArrayBufferObject::wasmGrowToSizeInPlace(
+
+bool ArrayBufferObject::wasmGrowToSizeInPlace(
     uint32_t newSize, HandleArrayBufferObject oldBuf,
     MutableHandleArrayBufferObject newBuf, JSContext* cx) {
   CheckStealPreconditions(oldBuf, cx);
@@ -1073,7 +1077,8 @@ static void CheckStealPreconditions(Handle<ArrayBufferObject*> buffer,
 }
 
 #ifndef WASM_HUGE_MEMORY
- bool ArrayBufferObject::wasmMovingGrowToSize(
+
+bool ArrayBufferObject::wasmMovingGrowToSize(
     uint32_t newSize, HandleArrayBufferObject oldBuf,
     MutableHandleArrayBufferObject newBuf, JSContext* cx) {
   
@@ -1403,7 +1408,8 @@ ArrayBufferObject::extractStructuredCloneContents(
   return BufferContents::createFailed();
 }
 
- void ArrayBufferObject::addSizeOfExcludingThis(
+
+void ArrayBufferObject::addSizeOfExcludingThis(
     JSObject* obj, mozilla::MallocSizeOf mallocSizeOf, JS::ClassInfo* info) {
   ArrayBufferObject& buffer = AsArrayBuffer(obj);
   switch (buffer.bufferKind()) {
@@ -1443,13 +1449,16 @@ ArrayBufferObject::extractStructuredCloneContents(
   }
 }
 
- void ArrayBufferObject::finalize(FreeOp* fop, JSObject* obj) {
+
+void ArrayBufferObject::finalize(FreeOp* fop, JSObject* obj) {
   obj->as<ArrayBufferObject>().releaseData(fop);
 }
 
- void ArrayBufferObject::copyData(
-    Handle<ArrayBufferObject*> toBuffer, uint32_t toIndex,
-    Handle<ArrayBufferObject*> fromBuffer, uint32_t fromIndex, uint32_t count) {
+
+void ArrayBufferObject::copyData(Handle<ArrayBufferObject*> toBuffer,
+                                 uint32_t toIndex,
+                                 Handle<ArrayBufferObject*> fromBuffer,
+                                 uint32_t fromIndex, uint32_t count) {
   MOZ_ASSERT(toBuffer->byteLength() >= count);
   MOZ_ASSERT(toBuffer->byteLength() >= toIndex + count);
   MOZ_ASSERT(fromBuffer->byteLength() >= fromIndex);
@@ -1459,8 +1468,8 @@ ArrayBufferObject::extractStructuredCloneContents(
          fromBuffer->dataPointer() + fromIndex, count);
 }
 
- size_t ArrayBufferObject::objectMoved(JSObject* obj,
-                                                   JSObject* old) {
+
+size_t ArrayBufferObject::objectMoved(JSObject* obj, JSObject* old) {
   ArrayBufferObject& dst = obj->as<ArrayBufferObject>();
   const ArrayBufferObject& src = old->as<ArrayBufferObject>();
 
@@ -1568,8 +1577,8 @@ void InnerViewTable::removeViews(ArrayBufferObject* buffer) {
   map.remove(p);
 }
 
- bool InnerViewTable::sweepEntry(JSObject** pkey,
-                                             ViewVector& views) {
+
+bool InnerViewTable::sweepEntry(JSObject** pkey, ViewVector& views) {
   if (IsAboutToBeFinalizedUnbarriered(pkey)) {
     return true;
   }

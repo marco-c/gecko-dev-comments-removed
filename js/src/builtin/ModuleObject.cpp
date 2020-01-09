@@ -94,12 +94,14 @@ DEFINE_ATOM_ACCESSOR_METHOD(ImportEntryObject, localName)
 DEFINE_UINT32_ACCESSOR_METHOD(ImportEntryObject, lineNumber)
 DEFINE_UINT32_ACCESSOR_METHOD(ImportEntryObject, columnNumber)
 
- bool ImportEntryObject::isInstance(HandleValue value) {
+
+bool ImportEntryObject::isInstance(HandleValue value) {
   return value.isObject() && value.toObject().is<ImportEntryObject>();
 }
 
- bool GlobalObject::initImportEntryProto(
-    JSContext* cx, Handle<GlobalObject*> global) {
+
+bool GlobalObject::initImportEntryProto(JSContext* cx,
+                                        Handle<GlobalObject*> global) {
   static const JSPropertySpec protoAccessors[] = {
       JS_PSG("moduleRequest", ImportEntryObject_moduleRequestGetter, 0),
       JS_PSG("importName", ImportEntryObject_importNameGetter, 0),
@@ -122,7 +124,8 @@ DEFINE_UINT32_ACCESSOR_METHOD(ImportEntryObject, columnNumber)
   return true;
 }
 
- ImportEntryObject* ImportEntryObject::create(
+
+ImportEntryObject* ImportEntryObject::create(
     JSContext* cx, HandleAtom moduleRequest, HandleAtom importName,
     HandleAtom localName, uint32_t lineNumber, uint32_t columnNumber) {
   RootedObject proto(
@@ -165,12 +168,14 @@ DEFINE_ATOM_OR_NULL_ACCESSOR_METHOD(ExportEntryObject, localName)
 DEFINE_UINT32_ACCESSOR_METHOD(ExportEntryObject, lineNumber)
 DEFINE_UINT32_ACCESSOR_METHOD(ExportEntryObject, columnNumber)
 
- bool ExportEntryObject::isInstance(HandleValue value) {
+
+bool ExportEntryObject::isInstance(HandleValue value) {
   return value.isObject() && value.toObject().is<ExportEntryObject>();
 }
 
- bool GlobalObject::initExportEntryProto(
-    JSContext* cx, Handle<GlobalObject*> global) {
+
+bool GlobalObject::initExportEntryProto(JSContext* cx,
+                                        Handle<GlobalObject*> global) {
   static const JSPropertySpec protoAccessors[] = {
       JS_PSG("exportName", ExportEntryObject_exportNameGetter, 0),
       JS_PSG("moduleRequest", ExportEntryObject_moduleRequestGetter, 0),
@@ -198,7 +203,8 @@ static Value StringOrNullValue(JSString* maybeString) {
   return maybeString ? StringValue(maybeString) : NullValue();
 }
 
- ExportEntryObject* ExportEntryObject::create(
+
+ExportEntryObject* ExportEntryObject::create(
     JSContext* cx, HandleAtom maybeExportName, HandleAtom maybeModuleRequest,
     HandleAtom maybeImportName, HandleAtom maybeLocalName, uint32_t lineNumber,
     uint32_t columnNumber) {
@@ -243,12 +249,14 @@ DEFINE_ATOM_ACCESSOR_METHOD(RequestedModuleObject, moduleSpecifier)
 DEFINE_UINT32_ACCESSOR_METHOD(RequestedModuleObject, lineNumber)
 DEFINE_UINT32_ACCESSOR_METHOD(RequestedModuleObject, columnNumber)
 
- bool RequestedModuleObject::isInstance(HandleValue value) {
+
+bool RequestedModuleObject::isInstance(HandleValue value) {
   return value.isObject() && value.toObject().is<RequestedModuleObject>();
 }
 
- bool GlobalObject::initRequestedModuleProto(
-    JSContext* cx, Handle<GlobalObject*> global) {
+
+bool GlobalObject::initRequestedModuleProto(JSContext* cx,
+                                            Handle<GlobalObject*> global) {
   static const JSPropertySpec protoAccessors[] = {
       JS_PSG("moduleSpecifier", RequestedModuleObject_moduleSpecifierGetter, 0),
       JS_PSG("lineNumber", RequestedModuleObject_lineNumberGetter, 0),
@@ -269,9 +277,11 @@ DEFINE_UINT32_ACCESSOR_METHOD(RequestedModuleObject, columnNumber)
   return true;
 }
 
- RequestedModuleObject* RequestedModuleObject::create(
-    JSContext* cx, HandleAtom moduleSpecifier, uint32_t lineNumber,
-    uint32_t columnNumber) {
+
+RequestedModuleObject* RequestedModuleObject::create(JSContext* cx,
+                                                     HandleAtom moduleSpecifier,
+                                                     uint32_t lineNumber,
+                                                     uint32_t columnNumber) {
   RootedObject proto(
       cx, GlobalObject::getOrCreateRequestedModulePrototype(cx, cx->global()));
   if (!proto) {
@@ -357,14 +367,16 @@ bool IndirectBindingMap::lookup(jsid name, ModuleEnvironmentObject** envOut,
 
 
 
- const ModuleNamespaceObject::ProxyHandler
-    ModuleNamespaceObject::proxyHandler;
 
- bool ModuleNamespaceObject::isInstance(HandleValue value) {
+const ModuleNamespaceObject::ProxyHandler ModuleNamespaceObject::proxyHandler;
+
+
+bool ModuleNamespaceObject::isInstance(HandleValue value) {
   return value.isObject() && value.toObject().is<ModuleNamespaceObject>();
 }
 
- ModuleNamespaceObject* ModuleNamespaceObject::create(
+
+ModuleNamespaceObject* ModuleNamespaceObject::create(
     JSContext* cx, HandleModuleObject module, HandleObject exports,
     UniquePtr<IndirectBindingMap> bindings) {
   RootedValue priv(cx, ObjectValue(*module));
@@ -708,11 +720,13 @@ DEFINE_ARRAY_SLOT_ACCESSOR(ModuleObject, indirectExportEntries,
 DEFINE_ARRAY_SLOT_ACCESSOR(ModuleObject, starExportEntries,
                            StarExportEntriesSlot)
 
- bool ModuleObject::isInstance(HandleValue value) {
+
+bool ModuleObject::isInstance(HandleValue value) {
   return value.isObject() && value.toObject().is<ModuleObject>();
 }
 
- ModuleObject* ModuleObject::create(JSContext* cx) {
+
+ModuleObject* ModuleObject::create(JSContext* cx) {
   RootedObject proto(
       cx, GlobalObject::getOrCreateModulePrototype(cx, cx->global()));
   if (!proto) {
@@ -741,7 +755,8 @@ DEFINE_ARRAY_SLOT_ACCESSOR(ModuleObject, starExportEntries,
   return self;
 }
 
- void ModuleObject::finalize(js::FreeOp* fop, JSObject* obj) {
+
+void ModuleObject::finalize(js::FreeOp* fop, JSObject* obj) {
   MOZ_ASSERT(fop->maybeOnHelperThread());
   ModuleObject* self = &obj->as<ModuleObject>();
   if (self->hasImportBindings()) {
@@ -836,7 +851,8 @@ static bool FreezeObjectProperty(JSContext* cx, HandleNativeObject obj,
   return FreezeObject(cx, property);
 }
 
- bool ModuleObject::Freeze(JSContext* cx, HandleModuleObject self) {
+
+bool ModuleObject::Freeze(JSContext* cx, HandleModuleObject self) {
   return FreezeObjectProperty(cx, self, RequestedModulesSlot) &&
          FreezeObjectProperty(cx, self, ImportEntriesSlot) &&
          FreezeObjectProperty(cx, self, LocalExportEntriesSlot) &&
@@ -949,7 +965,8 @@ Scope* ModuleObject::enclosingScope() const {
   return script()->enclosingScope();
 }
 
- void ModuleObject::trace(JSTracer* trc, JSObject* obj) {
+
+void ModuleObject::trace(JSTracer* trc, JSObject* obj) {
   ModuleObject& module = obj->as<ModuleObject>();
 
   if (module.hasImportBindings()) {
@@ -972,8 +989,9 @@ bool ModuleObject::noteFunctionDeclaration(JSContext* cx, HandleAtom name,
   return true;
 }
 
- bool ModuleObject::instantiateFunctionDeclarations(
-    JSContext* cx, HandleModuleObject self) {
+
+bool ModuleObject::instantiateFunctionDeclarations(JSContext* cx,
+                                                   HandleModuleObject self) {
 #ifdef DEBUG
   MOZ_ASSERT(self->status() == MODULE_STATUS_INSTANTIATING);
   if (!AssertFrozen(cx, self)) {
@@ -1011,8 +1029,9 @@ bool ModuleObject::noteFunctionDeclaration(JSContext* cx, HandleAtom name,
   return true;
 }
 
- bool ModuleObject::execute(JSContext* cx, HandleModuleObject self,
-                                        MutableHandleValue rval) {
+
+bool ModuleObject::execute(JSContext* cx, HandleModuleObject self,
+                           MutableHandleValue rval) {
 #ifdef DEBUG
   MOZ_ASSERT(self->status() == MODULE_STATUS_EVALUATING);
   if (!AssertFrozen(cx, self)) {
@@ -1036,8 +1055,10 @@ bool ModuleObject::noteFunctionDeclaration(JSContext* cx, HandleAtom name,
   return Execute(cx, script, *scope, rval.address());
 }
 
- ModuleNamespaceObject* ModuleObject::createNamespace(
-    JSContext* cx, HandleModuleObject self, HandleObject exports) {
+
+ModuleNamespaceObject* ModuleObject::createNamespace(JSContext* cx,
+                                                     HandleModuleObject self,
+                                                     HandleObject exports) {
   MOZ_ASSERT(!self->namespace_());
   MOZ_ASSERT(exports->is<ArrayObject>());
 
@@ -1065,17 +1086,18 @@ static bool InvokeSelfHostedMethod(JSContext* cx, HandleModuleObject self,
   return CallSelfHostedFunction(cx, name, thisv, args, &ignored);
 }
 
- bool ModuleObject::Instantiate(JSContext* cx,
-                                            HandleModuleObject self) {
+
+bool ModuleObject::Instantiate(JSContext* cx, HandleModuleObject self) {
   return InvokeSelfHostedMethod(cx, self, cx->names().ModuleInstantiate);
 }
 
- bool ModuleObject::Evaluate(JSContext* cx,
-                                         HandleModuleObject self) {
+
+bool ModuleObject::Evaluate(JSContext* cx, HandleModuleObject self) {
   return InvokeSelfHostedMethod(cx, self, cx->names().ModuleEvaluate);
 }
 
- ModuleNamespaceObject* ModuleObject::GetOrCreateModuleNamespace(
+
+ModuleNamespaceObject* ModuleObject::GetOrCreateModuleNamespace(
     JSContext* cx, HandleModuleObject self) {
   FixedInvokeArgs<1> args(cx);
   args[0].setObject(*self);
@@ -1102,8 +1124,9 @@ DEFINE_GETTER_FUNCTIONS(ModuleObject, starExportEntries, StarExportEntriesSlot)
 DEFINE_GETTER_FUNCTIONS(ModuleObject, dfsIndex, DFSIndexSlot)
 DEFINE_GETTER_FUNCTIONS(ModuleObject, dfsAncestorIndex, DFSAncestorIndexSlot)
 
- bool GlobalObject::initModuleProto(JSContext* cx,
-                                                Handle<GlobalObject*> global) {
+
+bool GlobalObject::initModuleProto(JSContext* cx,
+                                   Handle<GlobalObject*> global) {
   static const JSPropertySpec protoAccessors[] = {
       JS_PSG("namespace", ModuleObject_namespace_Getter, 0),
       JS_PSG("status", ModuleObject_statusGetter, 0),

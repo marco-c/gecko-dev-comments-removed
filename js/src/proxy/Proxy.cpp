@@ -162,8 +162,9 @@ JS_FRIEND_API bool js::AppendUnique(JSContext* cx, AutoIdVector& base,
   return base.appendAll(uniqueOthers);
 }
 
- bool Proxy::getPrototype(JSContext* cx, HandleObject proxy,
-                                      MutableHandleObject proto) {
+
+bool Proxy::getPrototype(JSContext* cx, HandleObject proxy,
+                         MutableHandleObject proto) {
   MOZ_ASSERT(proxy->hasDynamicPrototype());
   if (!CheckRecursionLimit(cx)) {
     return false;
@@ -171,9 +172,9 @@ JS_FRIEND_API bool js::AppendUnique(JSContext* cx, AutoIdVector& base,
   return proxy->as<ProxyObject>().handler()->getPrototype(cx, proxy, proto);
 }
 
- bool Proxy::setPrototype(JSContext* cx, HandleObject proxy,
-                                      HandleObject proto,
-                                      ObjectOpResult& result) {
+
+bool Proxy::setPrototype(JSContext* cx, HandleObject proxy, HandleObject proto,
+                         ObjectOpResult& result) {
   MOZ_ASSERT(proxy->hasDynamicPrototype());
   if (!CheckRecursionLimit(cx)) {
     return false;
@@ -182,10 +183,10 @@ JS_FRIEND_API bool js::AppendUnique(JSContext* cx, AutoIdVector& base,
                                                           result);
 }
 
- bool Proxy::getPrototypeIfOrdinary(JSContext* cx,
-                                                HandleObject proxy,
-                                                bool* isOrdinary,
-                                                MutableHandleObject proto) {
+
+bool Proxy::getPrototypeIfOrdinary(JSContext* cx, HandleObject proxy,
+                                   bool* isOrdinary,
+                                   MutableHandleObject proto) {
   if (!CheckRecursionLimit(cx)) {
     return false;
   }
@@ -193,9 +194,9 @@ JS_FRIEND_API bool js::AppendUnique(JSContext* cx, AutoIdVector& base,
       cx, proxy, isOrdinary, proto);
 }
 
- bool Proxy::setImmutablePrototype(JSContext* cx,
-                                               HandleObject proxy,
-                                               bool* succeeded) {
+
+bool Proxy::setImmutablePrototype(JSContext* cx, HandleObject proxy,
+                                  bool* succeeded) {
   if (!CheckRecursionLimit(cx)) {
     return false;
   }
@@ -203,8 +204,9 @@ JS_FRIEND_API bool js::AppendUnique(JSContext* cx, AutoIdVector& base,
   return handler->setImmutablePrototype(cx, proxy, succeeded);
 }
 
- bool Proxy::preventExtensions(JSContext* cx, HandleObject proxy,
-                                           ObjectOpResult& result) {
+
+bool Proxy::preventExtensions(JSContext* cx, HandleObject proxy,
+                              ObjectOpResult& result) {
   if (!CheckRecursionLimit(cx)) {
     return false;
   }
@@ -212,8 +214,8 @@ JS_FRIEND_API bool js::AppendUnique(JSContext* cx, AutoIdVector& base,
   return handler->preventExtensions(cx, proxy, result);
 }
 
- bool Proxy::isExtensible(JSContext* cx, HandleObject proxy,
-                                      bool* extensible) {
+
+bool Proxy::isExtensible(JSContext* cx, HandleObject proxy, bool* extensible) {
   if (!CheckRecursionLimit(cx)) {
     return false;
   }
@@ -612,9 +614,9 @@ bool Proxy::boxedValue_unbox(JSContext* cx, HandleObject proxy,
 
 JSObject* const TaggedProto::LazyProto = reinterpret_cast<JSObject*>(0x1);
 
- bool Proxy::getElements(JSContext* cx, HandleObject proxy,
-                                     uint32_t begin, uint32_t end,
-                                     ElementAdder* adder) {
+
+bool Proxy::getElements(JSContext* cx, HandleObject proxy, uint32_t begin,
+                        uint32_t end, ElementAdder* adder) {
   if (!CheckRecursionLimit(cx)) {
     return false;
   }
@@ -632,7 +634,8 @@ JSObject* const TaggedProto::LazyProto = reinterpret_cast<JSObject*>(0x1);
   return handler->getElements(cx, proxy, begin, end, adder);
 }
 
- void Proxy::trace(JSTracer* trc, JSObject* proxy) {
+
+void Proxy::trace(JSTracer* trc, JSObject* proxy) {
   const BaseProxyHandler* handler = proxy->as<ProxyObject>().handler();
   handler->trace(trc, proxy);
 }
@@ -663,12 +666,13 @@ static bool proxy_DeleteProperty(JSContext* cx, HandleObject obj, HandleId id,
   return SuppressDeletedProperty(cx, obj, id);  
 }
 
- void ProxyObject::traceEdgeToTarget(JSTracer* trc,
-                                                 ProxyObject* obj) {
+
+void ProxyObject::traceEdgeToTarget(JSTracer* trc, ProxyObject* obj) {
   TraceCrossCompartmentEdge(trc, obj, obj->slotOfPrivate(), "proxy target");
 }
 
- void ProxyObject::trace(JSTracer* trc, JSObject* obj) {
+
+void ProxyObject::trace(JSTracer* trc, JSObject* obj) {
   ProxyObject* proxy = &obj->as<ProxyObject>();
 
   TraceEdge(trc, proxy->shapePtr(), "ProxyObject_shape");

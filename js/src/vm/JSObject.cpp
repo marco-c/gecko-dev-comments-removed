@@ -1235,18 +1235,19 @@ JSObject* js::CreateThisForFunction(JSContext* cx, HandleFunction callee,
   return obj;
 }
 
- bool JSObject::nonNativeSetProperty(JSContext* cx,
-                                                 HandleObject obj, HandleId id,
-                                                 HandleValue v,
-                                                 HandleValue receiver,
-                                                 ObjectOpResult& result) {
+
+bool JSObject::nonNativeSetProperty(JSContext* cx, HandleObject obj,
+                                    HandleId id, HandleValue v,
+                                    HandleValue receiver,
+                                    ObjectOpResult& result) {
   return obj->getOpsSetProperty()(cx, obj, id, v, receiver, result);
 }
 
- bool JSObject::nonNativeSetElement(JSContext* cx, HandleObject obj,
-                                                uint32_t index, HandleValue v,
-                                                HandleValue receiver,
-                                                ObjectOpResult& result) {
+
+bool JSObject::nonNativeSetElement(JSContext* cx, HandleObject obj,
+                                   uint32_t index, HandleValue v,
+                                   HandleValue receiver,
+                                   ObjectOpResult& result) {
   RootedId id(cx);
   if (!IndexToId(cx, index, &id)) {
     return false;
@@ -1711,10 +1712,9 @@ template XDRResult js::XDRObjectLiteral(XDRState<XDR_ENCODE>* xdr,
 template XDRResult js::XDRObjectLiteral(XDRState<XDR_DECODE>* xdr,
                                         MutableHandleObject obj);
 
- bool NativeObject::fillInAfterSwap(JSContext* cx,
-                                                HandleNativeObject obj,
-                                                const AutoValueVector& values,
-                                                void* priv) {
+
+bool NativeObject::fillInAfterSwap(JSContext* cx, HandleNativeObject obj,
+                                   const AutoValueVector& values, void* priv) {
   
   
   
@@ -2222,7 +2222,8 @@ static bool SetProto(JSContext* cx, HandleObject obj,
   return true;
 }
 
- bool JSObject::changeToSingleton(JSContext* cx, HandleObject obj) {
+
+bool JSObject::changeToSingleton(JSContext* cx, HandleObject obj) {
   MOZ_ASSERT(!obj->isSingleton());
 
   MarkObjectGroupUnknownProperties(cx, obj->group());
@@ -4120,9 +4121,9 @@ static JSAtom* displayAtomFromObjectGroup(ObjectGroup& group) {
   return script->function()->displayAtom();
 }
 
- bool JSObject::constructorDisplayAtom(JSContext* cx,
-                                                   js::HandleObject obj,
-                                                   js::MutableHandleAtom name) {
+
+bool JSObject::constructorDisplayAtom(JSContext* cx, js::HandleObject obj,
+                                      js::MutableHandleAtom name) {
   ObjectGroup* g = JSObject::getGroup(cx, obj);
   if (!g) {
     return false;
@@ -4243,10 +4244,10 @@ bool js::Unbox(JSContext* cx, HandleObject obj, MutableHandleValue vp) {
 }
 
 #ifdef DEBUG
- void JSObject::debugCheckNewObject(ObjectGroup* group,
-                                                Shape* shape,
-                                                js::gc::AllocKind allocKind,
-                                                js::gc::InitialHeap heap) {
+
+void JSObject::debugCheckNewObject(ObjectGroup* group, Shape* shape,
+                                   js::gc::AllocKind allocKind,
+                                   js::gc::InitialHeap heap) {
   const js::Class* clasp = group->clasp();
   MOZ_ASSERT(clasp != &ArrayObject::class_);
 

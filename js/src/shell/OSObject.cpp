@@ -380,8 +380,8 @@ static bool osfile_writeTypedArrayToFile(JSContext* cx, unsigned argc,
   return true;
 }
 
- RCFile* RCFile::create(JSContext* cx, const char* filename,
-                                    const char* mode) {
+
+RCFile* RCFile::create(JSContext* cx, const char* filename, const char* mode) {
   FILE* fp = fopen(filename, mode);
   if (!fp) {
     return nullptr;

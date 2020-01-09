@@ -65,8 +65,9 @@ void UnboxedLayout::setNewScript(TypeNewScript* newScript,
 
 static const uintptr_t CLEAR_CONSTRUCTOR_CODE_TOKEN = 0x1;
 
- bool UnboxedLayout::makeConstructorCode(JSContext* cx,
-                                                     HandleObjectGroup group) {
+
+bool UnboxedLayout::makeConstructorCode(JSContext* cx,
+                                        HandleObjectGroup group) {
   gc::AutoSuppressGC suppress(cx);
 
   using namespace jit;
@@ -499,7 +500,8 @@ void UnboxedPlainObject::trace(JSTracer* trc, JSObject* obj) {
   MOZ_ASSERT(*(list + 1) == -1);
 }
 
- UnboxedExpandoObject* UnboxedPlainObject::ensureExpando(
+
+UnboxedExpandoObject* UnboxedPlainObject::ensureExpando(
     JSContext* cx, Handle<UnboxedPlainObject*> obj) {
   if (obj->maybeExpando()) {
     return obj->maybeExpando();
@@ -590,8 +592,8 @@ static PlainObject* MakeReplacementTemplateObject(JSContext* cx,
   return obj;
 }
 
- bool UnboxedLayout::makeNativeGroup(JSContext* cx,
-                                                 ObjectGroup* group) {
+
+bool UnboxedLayout::makeNativeGroup(JSContext* cx, ObjectGroup* group) {
   MOZ_ASSERT(cx->realm() == group->realm());
 
   AutoEnterAnalysis enter(cx);
@@ -737,8 +739,9 @@ static PlainObject* MakeReplacementTemplateObject(JSContext* cx,
   return true;
 }
 
- NativeObject* UnboxedPlainObject::convertToNative(JSContext* cx,
-                                                               JSObject* obj) {
+
+NativeObject* UnboxedPlainObject::convertToNative(JSContext* cx,
+                                                  JSObject* obj) {
   
   
   
@@ -912,9 +915,11 @@ UnboxedPlainObject* UnboxedPlainObject::create(JSContext* cx,
   return uobj;
 }
 
- JSObject* UnboxedPlainObject::createWithProperties(
-    JSContext* cx, HandleObjectGroup group, NewObjectKind newKind,
-    IdValuePair* properties) {
+
+JSObject* UnboxedPlainObject::createWithProperties(JSContext* cx,
+                                                   HandleObjectGroup group,
+                                                   NewObjectKind newKind,
+                                                   IdValuePair* properties) {
   MOZ_ASSERT(newKind == GenericObject || newKind == TenuredObject);
 
   {
@@ -978,7 +983,8 @@ UnboxedPlainObject* UnboxedPlainObject::create(JSContext* cx,
   return obj;
 }
 
- bool UnboxedPlainObject::obj_lookupProperty(
+
+bool UnboxedPlainObject::obj_lookupProperty(
     JSContext* cx, HandleObject obj, HandleId id, MutableHandleObject objp,
     MutableHandle<PropertyResult> propp) {
   if (obj->as<UnboxedPlainObject>().containsUnboxedOrExpandoProperty(cx, id)) {
@@ -997,9 +1003,11 @@ UnboxedPlainObject* UnboxedPlainObject::create(JSContext* cx,
   return LookupProperty(cx, proto, id, objp, propp);
 }
 
- bool UnboxedPlainObject::obj_defineProperty(
-    JSContext* cx, HandleObject obj, HandleId id,
-    Handle<PropertyDescriptor> desc, ObjectOpResult& result) {
+
+bool UnboxedPlainObject::obj_defineProperty(JSContext* cx, HandleObject obj,
+                                            HandleId id,
+                                            Handle<PropertyDescriptor> desc,
+                                            ObjectOpResult& result) {
   const UnboxedLayout& layout = obj->as<UnboxedPlainObject>().layout();
 
   if (const UnboxedLayout::Property* property = layout.lookup(id)) {
@@ -1033,10 +1041,9 @@ UnboxedPlainObject* UnboxedPlainObject::create(JSContext* cx,
   return DefineProperty(cx, expando, id, desc, result);
 }
 
- bool UnboxedPlainObject::obj_hasProperty(JSContext* cx,
-                                                      HandleObject obj,
-                                                      HandleId id,
-                                                      bool* foundp) {
+
+bool UnboxedPlainObject::obj_hasProperty(JSContext* cx, HandleObject obj,
+                                         HandleId id, bool* foundp) {
   if (obj->as<UnboxedPlainObject>().containsUnboxedOrExpandoProperty(cx, id)) {
     *foundp = true;
     return true;
@@ -1051,11 +1058,10 @@ UnboxedPlainObject* UnboxedPlainObject::create(JSContext* cx,
   return HasProperty(cx, proto, id, foundp);
 }
 
- bool UnboxedPlainObject::obj_getProperty(JSContext* cx,
-                                                      HandleObject obj,
-                                                      HandleValue receiver,
-                                                      HandleId id,
-                                                      MutableHandleValue vp) {
+
+bool UnboxedPlainObject::obj_getProperty(JSContext* cx, HandleObject obj,
+                                         HandleValue receiver, HandleId id,
+                                         MutableHandleValue vp) {
   const UnboxedLayout& layout = obj->as<UnboxedPlainObject>().layout();
 
   if (const UnboxedLayout::Property* property = layout.lookup(id)) {
@@ -1080,9 +1086,11 @@ UnboxedPlainObject* UnboxedPlainObject::create(JSContext* cx,
   return GetProperty(cx, proto, receiver, id, vp);
 }
 
- bool UnboxedPlainObject::obj_setProperty(
-    JSContext* cx, HandleObject obj, HandleId id, HandleValue v,
-    HandleValue receiver, ObjectOpResult& result) {
+
+bool UnboxedPlainObject::obj_setProperty(JSContext* cx, HandleObject obj,
+                                         HandleId id, HandleValue v,
+                                         HandleValue receiver,
+                                         ObjectOpResult& result) {
   const UnboxedLayout& layout = obj->as<UnboxedPlainObject>().layout();
 
   if (const UnboxedLayout::Property* property = layout.lookup(id)) {
@@ -1114,7 +1122,8 @@ UnboxedPlainObject* UnboxedPlainObject::create(JSContext* cx,
   return SetPropertyOnProto(cx, obj, id, v, receiver, result);
 }
 
- bool UnboxedPlainObject::obj_getOwnPropertyDescriptor(
+
+bool UnboxedPlainObject::obj_getOwnPropertyDescriptor(
     JSContext* cx, HandleObject obj, HandleId id,
     MutableHandle<PropertyDescriptor> desc) {
   const UnboxedLayout& layout = obj->as<UnboxedPlainObject>().layout();
@@ -1144,18 +1153,20 @@ UnboxedPlainObject* UnboxedPlainObject::create(JSContext* cx,
   return true;
 }
 
- bool UnboxedPlainObject::obj_deleteProperty(
-    JSContext* cx, HandleObject obj, HandleId id, ObjectOpResult& result) {
+
+bool UnboxedPlainObject::obj_deleteProperty(JSContext* cx, HandleObject obj,
+                                            HandleId id,
+                                            ObjectOpResult& result) {
   if (!convertToNative(cx, obj)) {
     return false;
   }
   return DeleteProperty(cx, obj, id, result);
 }
 
- bool UnboxedPlainObject::newEnumerate(JSContext* cx,
-                                                   HandleObject obj,
-                                                   AutoIdVector& properties,
-                                                   bool enumerableOnly) {
+
+bool UnboxedPlainObject::newEnumerate(JSContext* cx, HandleObject obj,
+                                      AutoIdVector& properties,
+                                      bool enumerableOnly) {
   
   
 

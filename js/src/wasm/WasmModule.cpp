@@ -181,7 +181,8 @@ void Module::testingBlockOnTier2Complete() const {
   }
 }
 
- size_t Module::serializedSize(const LinkData& linkData) const {
+
+size_t Module::serializedSize(const LinkData& linkData) const {
   JS::BuildIdCharVector buildId;
   {
     AutoEnterOOMUnsafeRegion oom;
@@ -197,8 +198,9 @@ void Module::testingBlockOnTier2Complete() const {
          SerializedVectorSize(customSections_) + code_->serializedSize();
 }
 
- void Module::serialize(const LinkData& linkData, uint8_t* begin,
-                                     size_t size) const {
+
+void Module::serialize(const LinkData& linkData, uint8_t* begin,
+                       size_t size) const {
   MOZ_RELEASE_ASSERT(!metadata().debugEnabled);
   MOZ_RELEASE_ASSERT(code_->hasTier(Tier::Serialized));
 
@@ -222,9 +224,9 @@ void Module::testingBlockOnTier2Complete() const {
   MOZ_RELEASE_ASSERT(cursor == begin + size);
 }
 
- MutableModule Module::deserialize(const uint8_t* begin,
-                                               size_t size,
-                                               Metadata* maybeMetadata) {
+
+MutableModule Module::deserialize(const uint8_t* begin, size_t size,
+                                  Metadata* maybeMetadata) {
   MutableMetadata metadata(maybeMetadata);
   if (!metadata) {
     metadata = js_new<Metadata>();
@@ -318,7 +320,8 @@ void Module::serialize(const LinkData& linkData,
   listener.storeOptimizedEncoding(bytes.begin(), bytes.length());
 }
 
- JSObject* Module::createObject(JSContext* cx) {
+
+JSObject* Module::createObject(JSContext* cx) {
   if (!GlobalObject::ensureConstructor(cx, cx->global(), JSProto_WebAssembly)) {
     return nullptr;
   }
@@ -443,11 +446,12 @@ RefPtr<JS::WasmModule> wasm::DeserializeModule(PRFileDesc* bytecodeFile,
   return RefPtr<JS::WasmModule>(const_cast<Module*>(module.get()));
 }
 
- void Module::addSizeOfMisc(MallocSizeOf mallocSizeOf,
-                                         Metadata::SeenSet* seenMetadata,
-                                         ShareableBytes::SeenSet* seenBytes,
-                                         Code::SeenSet* seenCode, size_t* code,
-                                         size_t* data) const {
+
+void Module::addSizeOfMisc(MallocSizeOf mallocSizeOf,
+                           Metadata::SeenSet* seenMetadata,
+                           ShareableBytes::SeenSet* seenBytes,
+                           Code::SeenSet* seenCode, size_t* code,
+                           size_t* data) const {
   code_->addSizeOfMiscIfNotSeen(mallocSizeOf, seenMetadata, seenCode, code,
                                 data);
   *data += mallocSizeOf(this) +

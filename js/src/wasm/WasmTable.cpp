@@ -51,8 +51,9 @@ Table::Table(JSContext* cx, const TableDesc& desc,
   MOZ_ASSERT(kind_ == TableKind::AnyRef);
 }
 
- SharedTable Table::create(JSContext* cx, const TableDesc& desc,
-                                       HandleWasmTableObject maybeObject) {
+
+SharedTable Table::create(JSContext* cx, const TableDesc& desc,
+                          HandleWasmTableObject maybeObject) {
   switch (desc.kind) {
     case TableKind::AnyFunction:
     case TableKind::TypedFunction: {

@@ -165,8 +165,9 @@ inline MapObject::IteratorKind MapIteratorObject::kind() const {
   return MapObject::IteratorKind(i);
 }
 
- bool GlobalObject::initMapIteratorProto(
-    JSContext* cx, Handle<GlobalObject*> global) {
+
+bool GlobalObject::initMapIteratorProto(JSContext* cx,
+                                        Handle<GlobalObject*> global) {
   Rooted<JSObject*> base(
       cx, GlobalObject::getOrCreateIteratorPrototype(cx, global));
   if (!base) {
@@ -342,7 +343,8 @@ bool MapIteratorObject::next(Handle<MapIteratorObject*> mapIterator,
   return false;
 }
 
- JSObject* MapIteratorObject::createResultPair(JSContext* cx) {
+
+JSObject* MapIteratorObject::createResultPair(JSContext* cx) {
   RootedArrayObject resultPairObj(
       cx, NewDenseFullyAllocatedArray(cx, 2, nullptr, TenuredObject));
   if (!resultPairObj) {
@@ -626,7 +628,8 @@ void MapObject::finalize(FreeOp* fop, JSObject* obj) {
   }
 }
 
- void MapObject::sweepAfterMinorGC(FreeOp* fop, MapObject* mapobj) {
+
+void MapObject::sweepAfterMinorGC(FreeOp* fop, MapObject* mapobj) {
   if (IsInsideNursery(mapobj) && !IsForwarded(mapobj)) {
     finalize(fop, mapobj);
     return;
@@ -935,8 +938,9 @@ inline SetObject::IteratorKind SetIteratorObject::kind() const {
   return SetObject::IteratorKind(i);
 }
 
- bool GlobalObject::initSetIteratorProto(
-    JSContext* cx, Handle<GlobalObject*> global) {
+
+bool GlobalObject::initSetIteratorProto(JSContext* cx,
+                                        Handle<GlobalObject*> global) {
   Rooted<JSObject*> base(
       cx, GlobalObject::getOrCreateIteratorPrototype(cx, global));
   if (!base) {
@@ -1082,7 +1086,8 @@ bool SetIteratorObject::next(Handle<SetIteratorObject*> setIterator,
   return false;
 }
 
- JSObject* SetIteratorObject::createResult(JSContext* cx) {
+
+JSObject* SetIteratorObject::createResult(JSContext* cx) {
   RootedArrayObject resultObj(
       cx, NewDenseFullyAllocatedArray(cx, 1, nullptr, TenuredObject));
   if (!resultObj) {
@@ -1241,7 +1246,8 @@ void SetObject::finalize(FreeOp* fop, JSObject* obj) {
   }
 }
 
- void SetObject::sweepAfterMinorGC(FreeOp* fop, SetObject* setobj) {
+
+void SetObject::sweepAfterMinorGC(FreeOp* fop, SetObject* setobj) {
   if (IsInsideNursery(setobj) && !IsForwarded(setobj)) {
     finalize(fop, setobj);
     return;

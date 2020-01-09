@@ -1036,7 +1036,8 @@ static void FlushICacheLocked(SimulatorProcess::ICacheMap& i_cache,
   }
 }
 
- void SimulatorProcess::checkICacheLocked(SimInstruction* instr) {
+
+void SimulatorProcess::checkICacheLocked(SimInstruction* instr) {
   intptr_t address = reinterpret_cast<intptr_t>(instr);
   void* page = reinterpret_cast<void*>(address & (~CachePage::kPageMask));
   void* line = reinterpret_cast<void*>(address & (~CachePage::kLineMask));
@@ -1075,7 +1076,8 @@ void Simulator::setLastDebuggerInput(char* input) {
   lastDebuggerInput_ = input;
 }
 
- void SimulatorProcess::FlushICache(void* start_addr, size_t size) {
+
+void SimulatorProcess::FlushICache(void* start_addr, size_t size) {
   JitSpewCont(JitSpew_CacheFlush, "[%p %zx]", start_addr, size);
   if (!ICacheCheckingDisableCount) {
     AutoLockSimulatorCache als;
@@ -1241,8 +1243,9 @@ SimulatorProcess::~SimulatorProcess() {
   }
 }
 
- void* Simulator::RedirectNativeFunction(void* nativeFunction,
-                                                     ABIFunctionType type) {
+
+void* Simulator::RedirectNativeFunction(void* nativeFunction,
+                                        ABIFunctionType type) {
   Redirection* redirection = Redirection::Get(nativeFunction, type);
   return redirection->addressOfSwiInstruction();
 }

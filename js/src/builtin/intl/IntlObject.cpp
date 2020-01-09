@@ -519,8 +519,8 @@ static const JSFunctionSpec intl_static_methods[] = {
 
 
 
- bool GlobalObject::initIntlObject(JSContext* cx,
-                                               Handle<GlobalObject*> global) {
+
+bool GlobalObject::initIntlObject(JSContext* cx, Handle<GlobalObject*> global) {
   RootedObject proto(cx, GlobalObject::getOrCreateObjectPrototype(cx, global));
   if (!proto) {
     return false;

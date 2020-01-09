@@ -6222,7 +6222,8 @@ JSObject* StructType::BuildFieldsArray(JSContext* cx, JSObject* obj) {
   return fieldsProp;
 }
 
- bool StructType::IsStruct(HandleValue v) {
+
+bool StructType::IsStruct(HandleValue v) {
   if (!v.isObject()) {
     return false;
   }

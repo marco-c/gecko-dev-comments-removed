@@ -58,8 +58,8 @@ static uint32_t HashStringChars(JSString* s) {
   return hash;
 }
 
- HashNumber InefficientNonFlatteningStringHashPolicy::hash(
-    const Lookup& l) {
+
+HashNumber InefficientNonFlatteningStringHashPolicy::hash(const Lookup& l) {
   return l->hasLatin1Chars() ? HashStringChars<Latin1Char>(l)
                              : HashStringChars<char16_t>(l);
 }
@@ -98,8 +98,9 @@ static bool EqualStringsPure(JSString* s1, JSString* s2) {
   return EqualChars(c1, c2, s1->length());
 }
 
- bool InefficientNonFlatteningStringHashPolicy::match(
-    const JSString* const& k, const Lookup& l) {
+
+bool InefficientNonFlatteningStringHashPolicy::match(const JSString* const& k,
+                                                     const Lookup& l) {
   
   JSString* s1 = const_cast<JSString*>(k);
   if (k->hasLatin1Chars()) {

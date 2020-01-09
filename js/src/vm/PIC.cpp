@@ -321,8 +321,9 @@ const Class ForOfPIC::class_ = {
     "ForOfPIC", JSCLASS_HAS_PRIVATE | JSCLASS_BACKGROUND_FINALIZE,
     &ForOfPICClassOps};
 
- NativeObject* js::ForOfPIC::createForOfPICObject(
-    JSContext* cx, Handle<GlobalObject*> global) {
+
+NativeObject* js::ForOfPIC::createForOfPICObject(JSContext* cx,
+                                                 Handle<GlobalObject*> global) {
   cx->check(global);
   NativeObject* obj = NewNativeObjectWithGivenProto(cx, &ForOfPIC::class_,
                                                     nullptr, TenuredObject);

@@ -146,7 +146,8 @@ bool JitRuntime::generateVMWrappers(JSContext* cx, MacroAssembler& masm) {
 }
 
 
- VMFunction* VMFunction::functions;
+
+VMFunction* VMFunction::functions;
 
 AutoDetectInvalidation::AutoDetectInvalidation(JSContext* cx,
                                                MutableHandleValue rval)

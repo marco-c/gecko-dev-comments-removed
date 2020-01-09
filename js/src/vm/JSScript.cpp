@@ -544,10 +544,11 @@ static XDRResult XDRScope(XDRState<mode>* xdr, js::PrivateScriptData* data,
 }
 
 template <XDRMode mode>
- XDRResult js::PrivateScriptData::XDR(
-    XDRState<mode>* xdr, HandleScript script,
-    HandleScriptSourceObject sourceObject, HandleScope scriptEnclosingScope,
-    HandleFunction fun) {
+
+XDRResult js::PrivateScriptData::XDR(XDRState<mode>* xdr, HandleScript script,
+                                     HandleScriptSourceObject sourceObject,
+                                     HandleScope scriptEnclosingScope,
+                                     HandleFunction fun) {
   uint32_t nconsts = 0;
   uint32_t nobjects = 0;
   uint32_t nscopes = 0;
@@ -673,8 +674,8 @@ template <XDRMode mode>
 }
 
 template <XDRMode mode>
- XDRResult SharedScriptData::XDR(XDRState<mode>* xdr,
-                                             HandleScript script) {
+
+XDRResult SharedScriptData::XDR(XDRState<mode>* xdr, HandleScript script) {
   uint32_t natoms = 0;
   uint32_t codeLength = 0;
   uint32_t noteLength = 0;
@@ -728,11 +729,13 @@ template <XDRMode mode>
 }
 
 template
-     XDRResult
+    
+    XDRResult
     SharedScriptData::XDR(XDRState<XDR_ENCODE>* xdr, HandleScript script);
 
 template
-     XDRResult
+    
+    XDRResult
     SharedScriptData::XDR(XDRState<XDR_DECODE>* xdr, HandleScript script);
 
 template <XDRMode mode>
@@ -1499,7 +1502,8 @@ ScriptSourceObject* ScriptSourceObject::unwrappedCanonical() const {
   return &UncheckedUnwrap(obj)->as<ScriptSourceObject>();
 }
 
- bool ScriptSourceObject::initFromOptions(
+
+bool ScriptSourceObject::initFromOptions(
     JSContext* cx, HandleScriptSourceObject source,
     const ReadOnlyCompileOptions& options) {
   cx->releaseCheck(source);
@@ -1542,9 +1546,11 @@ ScriptSourceObject* ScriptSourceObject::unwrappedCanonical() const {
   return true;
 }
 
- bool ScriptSourceObject::initElementProperties(
-    JSContext* cx, HandleScriptSourceObject source, HandleObject element,
-    HandleString elementAttrName) {
+
+bool ScriptSourceObject::initElementProperties(JSContext* cx,
+                                               HandleScriptSourceObject source,
+                                               HandleObject element,
+                                               HandleString elementAttrName) {
   MOZ_ASSERT(source->isCanonical());
 
   RootedValue elementValue(cx, ObjectOrNullValue(element));
@@ -1577,8 +1583,8 @@ void ScriptSourceObject::setPrivate(JSRuntime* rt, const Value& value) {
   rt->addRefScriptPrivate(value);
 }
 
- bool JSScript::loadSource(JSContext* cx, ScriptSource* ss,
-                                       bool* worked) {
+
+bool JSScript::loadSource(JSContext* cx, ScriptSource* ss, bool* worked) {
   MOZ_ASSERT(!ss->hasSourceText());
   *worked = false;
   if (!cx->runtime()->sourceHook.ref() || !ss->sourceRetrievable()) {
@@ -1603,8 +1609,8 @@ void ScriptSourceObject::setPrivate(JSRuntime* rt, const Value& value) {
   return true;
 }
 
- JSFlatString* JSScript::sourceData(JSContext* cx,
-                                                HandleScript script) {
+
+JSFlatString* JSScript::sourceData(JSContext* cx, HandleScript script) {
   MOZ_ASSERT(script->scriptSource()->hasSourceText());
   return script->scriptSource()->substring(cx, script->sourceStart(),
                                            script->sourceEnd());
@@ -2445,9 +2451,10 @@ XDRResult ScriptSource::xdrUncompressedSource<XDR_ENCODE>(
 }  
 
 template <XDRMode mode>
- XDRResult ScriptSource::XDR(
-    XDRState<mode>* xdr, const mozilla::Maybe<JS::CompileOptions>& options,
-    MutableHandle<ScriptSourceHolder> holder) {
+
+XDRResult ScriptSource::XDR(XDRState<mode>* xdr,
+                            const mozilla::Maybe<JS::CompileOptions>& options,
+                            MutableHandle<ScriptSourceHolder> holder) {
   JSContext* cx = xdr->cx();
   ScriptSource* ss = nullptr;
 
@@ -3022,9 +3029,11 @@ static void DefaultInitializeElements(void* arrayPtr, size_t length) {
   }
 }
 
- size_t PrivateScriptData::AllocationSize(
-    uint32_t nscopes, uint32_t nconsts, uint32_t nobjects, uint32_t ntrynotes,
-    uint32_t nscopenotes, uint32_t nresumeoffsets) {
+
+size_t PrivateScriptData::AllocationSize(uint32_t nscopes, uint32_t nconsts,
+                                         uint32_t nobjects, uint32_t ntrynotes,
+                                         uint32_t nscopenotes,
+                                         uint32_t nresumeoffsets) {
   size_t size = sizeof(PrivateScriptData);
 
   if (nconsts) {
@@ -3184,10 +3193,13 @@ PrivateScriptData::PrivateScriptData(uint32_t nscopes_, uint32_t nconsts,
                             nresumeoffsets) == cursor);
 }
 
- PrivateScriptData* PrivateScriptData::new_(
-    JSContext* cx, uint32_t nscopes, uint32_t nconsts, uint32_t nobjects,
-    uint32_t ntrynotes, uint32_t nscopenotes, uint32_t nresumeoffsets,
-    uint32_t* dataSize) {
+
+PrivateScriptData* PrivateScriptData::new_(JSContext* cx, uint32_t nscopes,
+                                           uint32_t nconsts, uint32_t nobjects,
+                                           uint32_t ntrynotes,
+                                           uint32_t nscopenotes,
+                                           uint32_t nresumeoffsets,
+                                           uint32_t* dataSize) {
   
   size_t size = AllocationSize(nscopes, nconsts, nobjects, ntrynotes,
                                nscopenotes, nresumeoffsets);
@@ -3246,11 +3258,10 @@ JSScript::JSScript(JS::Realm* realm, uint8_t* stubEntry,
   setSourceObject(sourceObject);
 }
 
- JSScript* JSScript::New(JSContext* cx,
-                                     HandleScriptSourceObject sourceObject,
-                                     uint32_t sourceStart, uint32_t sourceEnd,
-                                     uint32_t toStringStart,
-                                     uint32_t toStringEnd) {
+
+JSScript* JSScript::New(JSContext* cx, HandleScriptSourceObject sourceObject,
+                        uint32_t sourceStart, uint32_t sourceEnd,
+                        uint32_t toStringStart, uint32_t toStringEnd) {
   void* script = Allocate<JSScript>(cx);
   if (!script) {
     return nullptr;
@@ -3278,10 +3289,11 @@ static bool ShouldTrackRecordReplayProgress(JSScript* script) {
          mozilla::recordreplay::ShouldUpdateProgressCounter(script->filename());
 }
 
- JSScript* JSScript::Create(
-    JSContext* cx, const ReadOnlyCompileOptions& options,
-    HandleScriptSourceObject sourceObject, uint32_t sourceStart,
-    uint32_t sourceEnd, uint32_t toStringStart, uint32_t toStringEnd) {
+
+JSScript* JSScript::Create(JSContext* cx, const ReadOnlyCompileOptions& options,
+                           HandleScriptSourceObject sourceObject,
+                           uint32_t sourceStart, uint32_t sourceEnd,
+                           uint32_t toStringStart, uint32_t toStringEnd) {
   RootedScript script(cx, JSScript::New(cx, sourceObject, sourceStart,
                                         sourceEnd, toStringStart, toStringEnd));
   if (!script) {
@@ -3364,10 +3376,12 @@ bool JSScript::initScriptName(JSContext* cx) {
   return true;
 }
 
- bool JSScript::createPrivateScriptData(
-    JSContext* cx, HandleScript script, uint32_t nscopes, uint32_t nconsts,
-    uint32_t nobjects, uint32_t ntrynotes, uint32_t nscopenotes,
-    uint32_t nresumeoffsets) {
+
+bool JSScript::createPrivateScriptData(JSContext* cx, HandleScript script,
+                                       uint32_t nscopes, uint32_t nconsts,
+                                       uint32_t nobjects, uint32_t ntrynotes,
+                                       uint32_t nscopenotes,
+                                       uint32_t nresumeoffsets) {
   cx->check(script);
 
   uint32_t dataSize;
@@ -3384,8 +3398,9 @@ bool JSScript::initScriptName(JSContext* cx) {
   return true;
 }
 
- bool JSScript::initFunctionPrototype(
-    JSContext* cx, HandleScript script, HandleFunction functionProto) {
+
+bool JSScript::initFunctionPrototype(JSContext* cx, HandleScript script,
+                                     HandleFunction functionProto) {
   uint32_t numScopes = 1;
   uint32_t numConsts = 0;
   uint32_t numObjects = 0;
@@ -3435,8 +3450,9 @@ static void InitAtomMap(frontend::AtomIndexMap& indices, GCPtrAtom* atoms) {
   }
 }
 
- void JSScript::initFromFunctionBox(HandleScript script,
-                                                frontend::FunctionBox* funbox) {
+
+void JSScript::initFromFunctionBox(HandleScript script,
+                                   frontend::FunctionBox* funbox) {
   JSFunction* fun = funbox->function();
   if (fun->isInterpretedLazy()) {
     fun->setUnlazifiedScript(script);
@@ -3485,7 +3501,8 @@ static void InitAtomMap(frontend::AtomIndexMap& indices, GCPtrAtom* atoms) {
       (fun->needsCallObject() || fun->needsNamedLambdaEnvironment()));
 }
 
- void JSScript::initFromModuleContext(HandleScript script) {
+
+void JSScript::initFromModuleContext(HandleScript script) {
   script->setFlag(ImmutableFlags::IsModule);
 
   
@@ -3494,8 +3511,9 @@ static void InitAtomMap(frontend::AtomIndexMap& indices, GCPtrAtom* atoms) {
   MOZ_ASSERT(!script->hasRunOnce());
 }
 
- bool JSScript::fullyInitFromEmitter(
-    JSContext* cx, HandleScript script, frontend::BytecodeEmitter* bce) {
+
+bool JSScript::fullyInitFromEmitter(JSContext* cx, HandleScript script,
+                                    frontend::BytecodeEmitter* bce) {
   
   MOZ_ASSERT(bce->atomIndices->count() <= INDEX_LIMIT);
   MOZ_ASSERT(bce->objectList.length <= INDEX_LIMIT);
@@ -4012,9 +4030,9 @@ static JSObject* CloneInnerInterpretedFunction(
   return clone;
 }
 
- bool PrivateScriptData::Clone(
-    JSContext* cx, HandleScript src, HandleScript dst,
-    MutableHandle<GCVector<Scope*>> scopes) {
+
+bool PrivateScriptData::Clone(JSContext* cx, HandleScript src, HandleScript dst,
+                              MutableHandle<GCVector<Scope*>> scopes) {
   PrivateScriptData* srcData = src->data_;
   uint32_t nscopes = srcData->scopes().size();
   uint32_t nconsts = srcData->hasConsts() ? srcData->consts().size() : 0;
@@ -4688,8 +4706,8 @@ void js::SetFrameArgumentsObject(JSContext* cx, AbstractFramePtr frame,
   }
 }
 
- bool JSScript::argumentsOptimizationFailed(JSContext* cx,
-                                                        HandleScript script) {
+
+bool JSScript::argumentsOptimizationFailed(JSContext* cx, HandleScript script) {
   MOZ_ASSERT(script->functionNonDelazifying());
   MOZ_ASSERT(script->analyzedArgsUsage());
   MOZ_ASSERT(script->argumentsHasVarBinding());
@@ -4845,10 +4863,12 @@ uint64_t LazyScript::packedFieldsForXDR() const {
   return packedFields;
 }
 
- LazyScript* LazyScript::CreateRaw(
-    JSContext* cx, HandleFunction fun, HandleScriptSourceObject sourceObject,
-    uint64_t packedFields, uint32_t sourceStart, uint32_t sourceEnd,
-    uint32_t toStringStart, uint32_t lineno, uint32_t column) {
+
+LazyScript* LazyScript::CreateRaw(JSContext* cx, HandleFunction fun,
+                                  HandleScriptSourceObject sourceObject,
+                                  uint64_t packedFields, uint32_t sourceStart,
+                                  uint32_t sourceEnd, uint32_t toStringStart,
+                                  uint32_t lineno, uint32_t column) {
   cx->check(fun);
 
   MOZ_ASSERT(sourceObject);
@@ -4885,12 +4905,14 @@ uint64_t LazyScript::packedFieldsForXDR() const {
                  sourceEnd, toStringStart, lineno, column);
 }
 
- LazyScript* LazyScript::Create(
-    JSContext* cx, HandleFunction fun, HandleScriptSourceObject sourceObject,
-    const frontend::AtomVector& closedOverBindings,
-    Handle<GCVector<JSFunction*, 8>> innerFunctions, uint32_t sourceStart,
-    uint32_t sourceEnd, uint32_t toStringStart, uint32_t lineno,
-    uint32_t column, frontend::ParseGoal parseGoal) {
+
+LazyScript* LazyScript::Create(JSContext* cx, HandleFunction fun,
+                               HandleScriptSourceObject sourceObject,
+                               const frontend::AtomVector& closedOverBindings,
+                               Handle<GCVector<JSFunction*, 8>> innerFunctions,
+                               uint32_t sourceStart, uint32_t sourceEnd,
+                               uint32_t toStringStart, uint32_t lineno,
+                               uint32_t column, frontend::ParseGoal parseGoal) {
   union {
     PackedView p;
     uint64_t packedFields;
@@ -4937,7 +4959,8 @@ uint64_t LazyScript::packedFieldsForXDR() const {
   return res;
 }
 
- LazyScript* LazyScript::CreateForXDR(
+
+LazyScript* LazyScript::CreateForXDR(
     JSContext* cx, HandleFunction fun, HandleScript script,
     HandleScope enclosingScope, HandleScriptSourceObject sourceObject,
     uint64_t packedFields, uint32_t sourceStart, uint32_t sourceEnd,

@@ -880,8 +880,9 @@ MOZ_MUST_USE ReadableStream* CreateReadableStream(
 
 
 
-MOZ_MUST_USE  ReadableStream* ReadableStream::create(
-    JSContext* cx, HandleObject proto ) {
+MOZ_MUST_USE 
+    ReadableStream*
+    ReadableStream::create(JSContext* cx, HandleObject proto ) {
   
   
   Rooted<ReadableStream*> stream(

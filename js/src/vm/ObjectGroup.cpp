@@ -109,7 +109,8 @@ void ObjectGroup::setAddendum(AddendumKind kind, void* addendum,
   addendum_ = addendum;
 }
 
- bool ObjectGroup::useSingletonForClone(JSFunction* fun) {
+
+bool ObjectGroup::useSingletonForClone(JSFunction* fun) {
   if (!fun->isInterpreted()) {
     return false;
   }
@@ -164,9 +165,9 @@ void ObjectGroup::setAddendum(AddendumKind kind, void* addendum,
   return end - begin <= 100;
 }
 
- bool ObjectGroup::useSingletonForNewObject(JSContext* cx,
-                                                        JSScript* script,
-                                                        jsbytecode* pc) {
+
+bool ObjectGroup::useSingletonForNewObject(JSContext* cx, JSScript* script,
+                                           jsbytecode* pc) {
   
 
 
@@ -199,9 +200,10 @@ void ObjectGroup::setAddendum(AddendumKind kind, void* addendum,
   return false;
 }
 
- bool ObjectGroup::useSingletonForAllocationSite(JSScript* script,
-                                                             jsbytecode* pc,
-                                                             JSProtoKey key) {
+
+bool ObjectGroup::useSingletonForAllocationSite(JSScript* script,
+                                                jsbytecode* pc,
+                                                JSProtoKey key) {
   
 
 
@@ -249,8 +251,9 @@ bool GlobalObject::shouldSplicePrototype() {
   return staticPrototype() == nullptr;
 }
 
- bool JSObject::splicePrototype(JSContext* cx, HandleObject obj,
-                                            Handle<TaggedProto> proto) {
+
+bool JSObject::splicePrototype(JSContext* cx, HandleObject obj,
+                               Handle<TaggedProto> proto) {
   MOZ_ASSERT(cx->compartment() == obj->compartment());
 
   
@@ -294,8 +297,8 @@ bool GlobalObject::shouldSplicePrototype() {
   return true;
 }
 
- ObjectGroup* JSObject::makeLazyGroup(JSContext* cx,
-                                                  HandleObject obj) {
+
+ObjectGroup* JSObject::makeLazyGroup(JSContext* cx, HandleObject obj) {
   MOZ_ASSERT(obj->hasLazyGroup());
   MOZ_ASSERT(cx->compartment() == obj->compartment());
 
@@ -336,10 +339,10 @@ bool GlobalObject::shouldSplicePrototype() {
   return group;
 }
 
- bool JSObject::setNewGroupUnknown(JSContext* cx,
-                                               ObjectGroupRealm& realm,
-                                               const js::Class* clasp,
-                                               JS::HandleObject obj) {
+
+bool JSObject::setNewGroupUnknown(JSContext* cx, ObjectGroupRealm& realm,
+                                  const js::Class* clasp,
+                                  JS::HandleObject obj) {
   ObjectGroup::setDefaultNewGroupUnknown(cx, realm, clasp, obj);
   return JSObject::setFlags(cx, obj, BaseShape::NEW_GROUP_UNKNOWN);
 }
@@ -472,10 +475,10 @@ MOZ_ALWAYS_INLINE ObjectGroup* ObjectGroupRealm::DefaultNewGroupCache::lookup(
   return nullptr;
 }
 
- ObjectGroup* ObjectGroup::defaultNewGroup(JSContext* cx,
-                                                       const Class* clasp,
-                                                       TaggedProto proto,
-                                                       JSObject* associated) {
+
+ObjectGroup* ObjectGroup::defaultNewGroup(JSContext* cx, const Class* clasp,
+                                          TaggedProto proto,
+                                          JSObject* associated) {
   MOZ_ASSERT_IF(associated, proto.isObject());
   MOZ_ASSERT_IF(proto.isObject(),
                 cx->isInsideCurrentCompartment(proto.toObject()));
@@ -628,10 +631,11 @@ MOZ_ALWAYS_INLINE ObjectGroup* ObjectGroupRealm::DefaultNewGroupCache::lookup(
   return group;
 }
 
- ObjectGroup* ObjectGroup::lazySingletonGroup(JSContext* cx,
-                                                          ObjectGroup* oldGroup,
-                                                          const Class* clasp,
-                                                          TaggedProto proto) {
+
+ObjectGroup* ObjectGroup::lazySingletonGroup(JSContext* cx,
+                                             ObjectGroup* oldGroup,
+                                             const Class* clasp,
+                                             TaggedProto proto) {
   ObjectGroupRealm& realm = oldGroup ? ObjectGroupRealm::get(oldGroup)
                                      : ObjectGroupRealm::getForNewObject(cx);
 
@@ -674,9 +678,11 @@ MOZ_ALWAYS_INLINE ObjectGroup* ObjectGroupRealm::DefaultNewGroupCache::lookup(
   return group;
 }
 
- void ObjectGroup::setDefaultNewGroupUnknown(
-    JSContext* cx, ObjectGroupRealm& realm, const Class* clasp,
-    HandleObject obj) {
+
+void ObjectGroup::setDefaultNewGroupUnknown(JSContext* cx,
+                                            ObjectGroupRealm& realm,
+                                            const Class* clasp,
+                                            HandleObject obj) {
   
   ObjectGroupRealm::NewTable* table = realm.defaultNewTable;
   if (table) {
@@ -691,9 +697,9 @@ MOZ_ALWAYS_INLINE ObjectGroup* ObjectGroupRealm::DefaultNewGroupCache::lookup(
 }
 
 #ifdef DEBUG
- bool ObjectGroup::hasDefaultNewGroup(JSObject* proto,
-                                                  const Class* clasp,
-                                                  ObjectGroup* group) {
+
+bool ObjectGroup::hasDefaultNewGroup(JSObject* proto, const Class* clasp,
+                                     ObjectGroup* group) {
   ObjectGroupRealm::NewTable* table =
       ObjectGroupRealm::get(group).defaultNewTable;
 
@@ -732,8 +738,8 @@ inline const Class* GetClassForProtoKey(JSProtoKey key) {
   }
 }
 
- ObjectGroup* ObjectGroup::defaultNewGroup(JSContext* cx,
-                                                       JSProtoKey key) {
+
+ObjectGroup* ObjectGroup::defaultNewGroup(JSContext* cx, JSProtoKey key) {
   JSObject* proto = nullptr;
   if (key != JSProto_Null) {
     proto = GlobalObject::getOrCreatePrototype(cx, key);
@@ -797,11 +803,10 @@ static inline TypeSet::Type GetValueTypeForTable(const Value& v) {
   return type;
 }
 
- ArrayObject* ObjectGroup::newArrayObject(JSContext* cx,
-                                                      const Value* vp,
-                                                      size_t length,
-                                                      NewObjectKind newKind,
-                                                      NewArrayKind arrayKind) {
+
+ArrayObject* ObjectGroup::newArrayObject(JSContext* cx, const Value* vp,
+                                         size_t length, NewObjectKind newKind,
+                                         NewArrayKind arrayKind) {
   MOZ_ASSERT(newKind != SingletonObject);
 
   
@@ -1180,10 +1185,10 @@ PlainObject* js::NewPlainObjectWithProperties(JSContext* cx,
   return obj;
 }
 
- JSObject* ObjectGroup::newPlainObject(JSContext* cx,
-                                                   IdValuePair* properties,
-                                                   size_t nproperties,
-                                                   NewObjectKind newKind) {
+
+JSObject* ObjectGroup::newPlainObject(JSContext* cx, IdValuePair* properties,
+                                      size_t nproperties,
+                                      NewObjectKind newKind) {
   
   if (newKind == SingletonObject || nproperties == 0 ||
       nproperties >= PropertyTree::MAX_HEIGHT) {
@@ -1446,7 +1451,8 @@ class ObjectGroupRealm::AllocationSiteTable
   explicit AllocationSiteTable(Zone* zone) : Base(zone) {}
 };
 
- ObjectGroup* ObjectGroup::allocationSiteGroup(
+
+ObjectGroup* ObjectGroup::allocationSiteGroup(
     JSContext* cx, JSScript* scriptArg, jsbytecode* pc, JSProtoKey kind,
     HandleObject protoArg ) {
   MOZ_ASSERT(!useSingletonForAllocationSite(scriptArg, pc, kind));
@@ -1543,8 +1549,10 @@ void ObjectGroupRealm::replaceAllocationSiteGroup(JSScript* script,
   }
 }
 
- ObjectGroup* ObjectGroup::callingAllocationSiteGroup(
-    JSContext* cx, JSProtoKey key, HandleObject proto) {
+
+ObjectGroup* ObjectGroup::callingAllocationSiteGroup(JSContext* cx,
+                                                     JSProtoKey key,
+                                                     HandleObject proto) {
   MOZ_ASSERT_IF(proto, key == JSProto_Array);
 
   jsbytecode* pc;
@@ -1558,11 +1566,11 @@ void ObjectGroupRealm::replaceAllocationSiteGroup(JSScript* script,
   return defaultNewGroup(cx, key);
 }
 
- bool ObjectGroup::setAllocationSiteObjectGroup(JSContext* cx,
-                                                            HandleScript script,
-                                                            jsbytecode* pc,
-                                                            HandleObject obj,
-                                                            bool singleton) {
+
+bool ObjectGroup::setAllocationSiteObjectGroup(JSContext* cx,
+                                               HandleScript script,
+                                               jsbytecode* pc, HandleObject obj,
+                                               bool singleton) {
   JSProtoKey key = JSCLASS_CACHED_PROTO_KEY(obj->getClass());
   MOZ_ASSERT(key != JSProto_Null);
   MOZ_ASSERT(singleton == useSingletonForAllocationSite(script, pc, key));
@@ -1587,8 +1595,10 @@ void ObjectGroupRealm::replaceAllocationSiteGroup(JSScript* script,
   return true;
 }
 
- ArrayObject* ObjectGroup::getOrFixupCopyOnWriteObject(
-    JSContext* cx, HandleScript script, jsbytecode* pc) {
+
+ArrayObject* ObjectGroup::getOrFixupCopyOnWriteObject(JSContext* cx,
+                                                      HandleScript script,
+                                                      jsbytecode* pc) {
   
   
   RootedArrayObject obj(
@@ -1624,8 +1634,9 @@ void ObjectGroupRealm::replaceAllocationSiteGroup(JSScript* script,
   return obj;
 }
 
- ArrayObject* ObjectGroup::getCopyOnWriteObject(JSScript* script,
-                                                            jsbytecode* pc) {
+
+ArrayObject* ObjectGroup::getCopyOnWriteObject(JSScript* script,
+                                               jsbytecode* pc) {
   
   
   
@@ -1638,10 +1649,9 @@ void ObjectGroupRealm::replaceAllocationSiteGroup(JSScript* script,
   return obj;
 }
 
- bool ObjectGroup::findAllocationSite(JSContext* cx,
-                                                  const ObjectGroup* group,
-                                                  JSScript** script,
-                                                  uint32_t* offset) {
+
+bool ObjectGroup::findAllocationSite(JSContext* cx, const ObjectGroup* group,
+                                     JSScript** script, uint32_t* offset) {
   *script = nullptr;
   *offset = 0;
 
@@ -1813,7 +1823,8 @@ void ObjectGroupRealm::clearTables() {
   defaultNewGroupCache.purge();
 }
 
- bool ObjectGroupRealm::PlainObjectTableSweepPolicy::needsSweep(
+
+bool ObjectGroupRealm::PlainObjectTableSweepPolicy::needsSweep(
     PlainObjectKey* key, PlainObjectEntry* entry) {
   if (!(JS::GCPolicy<PlainObjectKey>::needsSweep(key) ||
         entry->needsSweep(key->nproperties))) {

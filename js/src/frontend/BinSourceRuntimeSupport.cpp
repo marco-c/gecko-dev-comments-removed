@@ -13,7 +13,8 @@
 namespace js {
 namespace frontend {
 
- BinASTSourceMetadata* BinASTSourceMetadata::Create(
+
+BinASTSourceMetadata* BinASTSourceMetadata::Create(
     const Vector<BinKind>& binKinds, uint32_t numStrings) {
   uint32_t numBinKinds = binKinds.length();
 

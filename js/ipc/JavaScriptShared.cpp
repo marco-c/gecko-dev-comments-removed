@@ -386,7 +386,8 @@ JS::Symbol* JavaScriptShared::fromSymbolVariant(JSContext* cx,
   }
 }
 
- void JavaScriptShared::ConvertID(const nsID& from, JSIID* to) {
+
+void JavaScriptShared::ConvertID(const nsID& from, JSIID* to) {
   to->m0() = from.m0;
   to->m1() = from.m1;
   to->m2() = from.m2;
@@ -400,7 +401,8 @@ JS::Symbol* JavaScriptShared::fromSymbolVariant(JSContext* cx,
   to->m3_7() = from.m3[7];
 }
 
- void JavaScriptShared::ConvertID(const JSIID& from, nsID* to) {
+
+void JavaScriptShared::ConvertID(const JSIID& from, nsID* to) {
   to->m0 = from.m0();
   to->m1 = from.m1();
   to->m2 = from.m2();

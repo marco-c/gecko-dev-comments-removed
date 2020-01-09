@@ -45,10 +45,10 @@ static gc::AllocKind GetProxyGCObjectKind(const Class* clasp,
   return kind;
 }
 
- ProxyObject* ProxyObject::New(JSContext* cx,
-                                           const BaseProxyHandler* handler,
-                                           HandleValue priv, TaggedProto proto_,
-                                           const ProxyOptions& options) {
+
+ProxyObject* ProxyObject::New(JSContext* cx, const BaseProxyHandler* handler,
+                              HandleValue priv, TaggedProto proto_,
+                              const ProxyOptions& options) {
   Rooted<TaggedProto> proto(cx, proto_);
 
   const Class* clasp = options.clasp();

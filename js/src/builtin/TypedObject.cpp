@@ -259,7 +259,8 @@ bool ScalarTypeDescr::call(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
- TypeDescr* GlobalObject::getOrCreateScalarTypeDescr(
+
+TypeDescr* GlobalObject::getOrCreateScalarTypeDescr(
     JSContext* cx, Handle<GlobalObject*> global, Scalar::Type scalarType) {
   int32_t slot = 0;
   switch (scalarType) {
@@ -287,7 +288,8 @@ bool ScalarTypeDescr::call(JSContext* cx, unsigned argc, Value* vp) {
   return &module->getReservedSlot(slot).toObject().as<TypeDescr>();
 }
 
- TypeDescr* GlobalObject::getOrCreateReferenceTypeDescr(
+
+TypeDescr* GlobalObject::getOrCreateReferenceTypeDescr(
     JSContext* cx, Handle<GlobalObject*> global, ReferenceType type) {
   int32_t slot = 0;
   switch (type) {
@@ -762,9 +764,9 @@ CheckedInt32 StructMetaTypeDescr::Layout::close(int32_t* alignment) {
   return RoundUpToAlignment(sizeSoFar, structAlignment);
 }
 
- JSObject* StructMetaTypeDescr::create(JSContext* cx,
-                                                   HandleObject metaTypeDescr,
-                                                   HandleObject fields) {
+
+JSObject* StructMetaTypeDescr::create(JSContext* cx, HandleObject metaTypeDescr,
+                                      HandleObject fields) {
   
   AutoIdVector ids(cx);
   if (!GetPropertyKeys(cx, fields, JSITER_OWNONLY | JSITER_SYMBOLS, &ids)) {
@@ -833,7 +835,8 @@ CheckedInt32 StructMetaTypeDescr::Layout::close(int32_t* alignment) {
                           fieldProps);
 }
 
- StructTypeDescr* StructMetaTypeDescr::createFromArrays(
+
+StructTypeDescr* StructMetaTypeDescr::createFromArrays(
     JSContext* cx, HandleObject structTypePrototype, bool opaque,
     bool allowConstruct, AutoIdVector& ids, AutoValueVector& fieldTypeObjs,
     Vector<StructFieldProps>& fieldProps) {
@@ -1313,8 +1316,9 @@ static JSObject* DefineMetaTypeDescr(JSContext* cx, const char* name,
 
 
 
- bool GlobalObject::initTypedObjectModule(
-    JSContext* cx, Handle<GlobalObject*> global) {
+
+bool GlobalObject::initTypedObjectModule(JSContext* cx,
+                                         Handle<GlobalObject*> global) {
   RootedObject objProto(cx,
                         GlobalObject::getOrCreateObjectPrototype(cx, global));
   if (!objProto) {
@@ -1490,8 +1494,8 @@ bool TypedObject::isAttached() const {
   return true;
 }
 
- bool TypedObject::GetByteOffset(JSContext* cx, unsigned argc,
-                                             Value* vp) {
+
+bool TypedObject::GetByteOffset(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   args.rval().setInt32(
       AssertedCast<int32_t>(args[0].toObject().as<TypedObject>().offset()));
@@ -1502,8 +1506,10 @@ bool TypedObject::isAttached() const {
 
 
 
- OutlineTypedObject* OutlineTypedObject::createUnattached(
-    JSContext* cx, HandleTypeDescr descr, gc::InitialHeap heap) {
+
+OutlineTypedObject* OutlineTypedObject::createUnattached(JSContext* cx,
+                                                         HandleTypeDescr descr,
+                                                         gc::InitialHeap heap) {
   if (descr->opaque()) {
     return createUnattachedWithClass(cx, &OutlineOpaqueTypedObject::class_,
                                      descr, heap);
@@ -1539,7 +1545,8 @@ void OutlineTypedObject::setOwnerAndData(JSObject* owner, uint8_t* data) {
   }
 }
 
- OutlineTypedObject* OutlineTypedObject::createUnattachedWithClass(
+
+OutlineTypedObject* OutlineTypedObject::createUnattachedWithClass(
     JSContext* cx, const Class* clasp, HandleTypeDescr descr,
     gc::InitialHeap heap) {
   MOZ_ASSERT(clasp == &OutlineTransparentTypedObject::class_ ||
@@ -1606,7 +1613,8 @@ void OutlineTypedObject::attach(JSContext* cx, TypedObject& typedObj,
   }
 }
 
- OutlineTypedObject* OutlineTypedObject::createDerived(
+
+OutlineTypedObject* OutlineTypedObject::createDerived(
     JSContext* cx, HandleTypeDescr type, HandleTypedObject typedObj,
     uint32_t offset) {
   MOZ_ASSERT(offset <= typedObj->size());
@@ -1625,9 +1633,9 @@ void OutlineTypedObject::attach(JSContext* cx, TypedObject& typedObj,
   return obj;
 }
 
- TypedObject* TypedObject::createZeroed(JSContext* cx,
-                                                  HandleTypeDescr descr,
-                                                  gc::InitialHeap heap) {
+
+TypedObject* TypedObject::createZeroed(JSContext* cx, HandleTypeDescr descr,
+                                       gc::InitialHeap heap) {
   
   if (InlineTypedObject::canAccommodateType(descr)) {
     AutoSetNewObjectMetadata metadata(cx);
@@ -1660,8 +1668,8 @@ void OutlineTypedObject::attach(JSContext* cx, TypedObject& typedObj,
   return obj;
 }
 
- void OutlineTypedObject::obj_trace(JSTracer* trc,
-                                                JSObject* object) {
+
+void OutlineTypedObject::obj_trace(JSTracer* trc, JSObject* object) {
   OutlineTypedObject& typedObj = object->as<OutlineTypedObject>();
 
   TraceEdge(trc, typedObj.shapePtr(), "OutlineTypedObject_shape");
@@ -1722,9 +1730,10 @@ bool TypeDescr::hasProperty(const JSAtomState& names, jsid id) {
   MOZ_CRASH("Unexpected kind");
 }
 
- bool TypedObject::obj_lookupProperty(
-    JSContext* cx, HandleObject obj, HandleId id, MutableHandleObject objp,
-    MutableHandle<PropertyResult> propp) {
+
+bool TypedObject::obj_lookupProperty(JSContext* cx, HandleObject obj,
+                                     HandleId id, MutableHandleObject objp,
+                                     MutableHandle<PropertyResult> propp) {
   if (obj->as<TypedObject>().typeDescr().hasProperty(cx->names(), id)) {
     propp.setNonNativeProperty();
     objp.set(obj);
@@ -1877,11 +1886,11 @@ bool TypedObject::obj_getElement(JSContext* cx, HandleObject obj,
   return GetElement(cx, proto, receiver, index, vp);
 }
 
- bool TypedObject::obj_getArrayElement(JSContext* cx,
-                                                 Handle<TypedObject*> typedObj,
-                                                 Handle<TypeDescr*> typeDescr,
-                                                 uint32_t index,
-                                                 MutableHandleValue vp) {
+
+bool TypedObject::obj_getArrayElement(JSContext* cx,
+                                      Handle<TypedObject*> typedObj,
+                                      Handle<TypeDescr*> typeDescr,
+                                      uint32_t index, MutableHandleValue vp) {
   
   if (index >= (size_t)typedObj->length()) {
     vp.setUndefined();
@@ -2117,8 +2126,10 @@ void OutlineTypedObject::notifyBufferDetached(void* newData) {
 
 
 
- InlineTypedObject* InlineTypedObject::create(
-    JSContext* cx, HandleTypeDescr descr, gc::InitialHeap heap) {
+
+InlineTypedObject* InlineTypedObject::create(JSContext* cx,
+                                             HandleTypeDescr descr,
+                                             gc::InitialHeap heap) {
   gc::AllocKind allocKind = allocKindForTypeDescriptor(descr);
 
   const Class* clasp = descr->opaque() ? &InlineOpaqueTypedObject::class_
@@ -2136,7 +2147,8 @@ void OutlineTypedObject::notifyBufferDetached(void* newData) {
   return NewObjectWithGroup<InlineTypedObject>(cx, group, allocKind, newKind);
 }
 
- InlineTypedObject* InlineTypedObject::createCopy(
+
+InlineTypedObject* InlineTypedObject::createCopy(
     JSContext* cx, Handle<InlineTypedObject*> templateObject,
     gc::InitialHeap heap) {
   AutoSetNewObjectMetadata metadata(cx);
@@ -2152,8 +2164,8 @@ void OutlineTypedObject::notifyBufferDetached(void* newData) {
   return res;
 }
 
- void InlineTypedObject::obj_trace(JSTracer* trc,
-                                               JSObject* object) {
+
+void InlineTypedObject::obj_trace(JSTracer* trc, JSObject* object) {
   InlineTypedObject& typedObj = object->as<InlineTypedObject>();
 
   TraceEdge(trc, typedObj.shapePtr(), "InlineTypedObject_shape");
@@ -2168,7 +2180,8 @@ void OutlineTypedObject::notifyBufferDetached(void* newData) {
   typedObj.typeDescr().traceInstances(trc, typedObj.inlineTypedMem(), 1);
 }
 
- size_t InlineTypedObject::obj_moved(JSObject* dst, JSObject* src) {
+
+size_t InlineTypedObject::obj_moved(JSObject* dst, JSObject* src) {
   if (!IsInsideNursery(src)) {
     return 0;
   }
@@ -2240,8 +2253,8 @@ DEFINE_TYPEDOBJ_CLASS(InlineTransparentTypedObject,
 DEFINE_TYPEDOBJ_CLASS(InlineOpaqueTypedObject, InlineTypedObject::obj_trace,
                       InlineTypedObject::obj_moved);
 
- bool TypedObject::construct(JSContext* cx, unsigned int argc,
-                                       Value* vp) {
+
+bool TypedObject::construct(JSContext* cx, unsigned int argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   MOZ_ASSERT(args.callee().is<TypeDescr>());
@@ -2900,7 +2913,8 @@ static bool CreateTraceList(JSContext* cx, HandleTypeDescr descr) {
   return true;
 }
 
- void TypeDescr::finalize(FreeOp* fop, JSObject* obj) {
+
+void TypeDescr::finalize(FreeOp* fop, JSObject* obj) {
   TypeDescr& descr = obj->as<TypeDescr>();
   if (descr.hasTraceList()) {
     js_free(const_cast<int32_t*>(descr.traceList()));

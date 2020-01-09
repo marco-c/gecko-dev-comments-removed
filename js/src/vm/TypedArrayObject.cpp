@@ -67,12 +67,14 @@ using mozilla::IsAsciiDigit;
 
 
 
- bool TypedArrayObject::is(HandleValue v) {
+
+bool TypedArrayObject::is(HandleValue v) {
   return v.isObject() && v.toObject().is<TypedArrayObject>();
 }
 
- bool TypedArrayObject::ensureHasBuffer(
-    JSContext* cx, Handle<TypedArrayObject*> tarray) {
+
+bool TypedArrayObject::ensureHasBuffer(JSContext* cx,
+                                       Handle<TypedArrayObject*> tarray) {
   if (tarray->hasBuffer()) {
     return true;
   }
@@ -141,8 +143,8 @@ void TypedArrayObject::finalize(FreeOp* fop, JSObject* obj) {
   }
 }
 
- size_t TypedArrayObject::objectMoved(JSObject* obj,
-                                                  JSObject* old) {
+
+size_t TypedArrayObject::objectMoved(JSObject* obj, JSObject* old) {
   TypedArrayObject* newObj = &obj->as<TypedArrayObject>();
   const TypedArrayObject* oldObj = &old->as<TypedArrayObject>();
   MOZ_ASSERT(newObj->elementsRaw() == oldObj->elementsRaw());
@@ -1435,9 +1437,10 @@ static bool GetTemplateObjectForNative(JSContext* cx, const CallArgs& args,
   return true;
 }
 
- bool TypedArrayObject::GetTemplateObjectForNative(
-    JSContext* cx, Native native, const CallArgs& args,
-    MutableHandleObject res) {
+
+bool TypedArrayObject::GetTemplateObjectForNative(JSContext* cx, Native native,
+                                                  const CallArgs& args,
+                                                  MutableHandleObject res) {
   MOZ_ASSERT(!res);
 #define CHECK_TYPED_ARRAY_CONSTRUCTOR(T, N)                        \
   if (native == &TypedArrayObjectTemplate<T>::class_constructor) { \
@@ -1469,8 +1472,8 @@ bool BufferGetterImpl(JSContext* cx, const CallArgs& args) {
   return true;
 }
 
- bool js::TypedArray_bufferGetter(JSContext* cx, unsigned argc,
-                                            Value* vp) {
+
+bool js::TypedArray_bufferGetter(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   return CallNonGenericMethod<TypedArrayObject::is, BufferGetterImpl>(cx, args);
 }
@@ -1550,8 +1553,8 @@ static inline bool SetFromNonTypedArray(JSContext* cx,
 
 
 
- bool TypedArrayObject::set_impl(JSContext* cx,
-                                             const CallArgs& args) {
+
+bool TypedArrayObject::set_impl(JSContext* cx, const CallArgs& args) {
   MOZ_ASSERT(TypedArrayObject::is(args.thisv()));
 
   
@@ -1722,8 +1725,8 @@ static inline bool SetFromNonTypedArray(JSContext* cx,
   return true;
 }
 
- bool TypedArrayObject::set(JSContext* cx, unsigned argc,
-                                        Value* vp) {
+
+bool TypedArrayObject::set(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   return CallNonGenericMethod<TypedArrayObject::is, TypedArrayObject::set_impl>(
       cx, args);
@@ -2032,11 +2035,13 @@ const Class TypedArrayObject::protoClasses[Scalar::MaxTypedArrayViewType] = {
 #undef IMPL_TYPED_ARRAY_PROTO_CLASS
 };
 
- bool TypedArrayObject::isOriginalLengthGetter(Native native) {
+
+bool TypedArrayObject::isOriginalLengthGetter(Native native) {
   return native == TypedArray_lengthGetter;
 }
 
- bool TypedArrayObject::isOriginalByteOffsetGetter(Native native) {
+
+bool TypedArrayObject::isOriginalByteOffsetGetter(Native native) {
   return native == TypedArray_byteOffsetGetter;
 }
 

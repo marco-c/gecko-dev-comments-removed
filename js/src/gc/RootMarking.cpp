@@ -217,13 +217,15 @@ inline void AutoGCRooter::trace(JSTracer* trc) {
   MOZ_CRASH("Bad AutoGCRooter::Tag");
 }
 
- void AutoGCRooter::traceAll(JSContext* cx, JSTracer* trc) {
+
+void AutoGCRooter::traceAll(JSContext* cx, JSTracer* trc) {
   for (AutoGCRooter* gcr = cx->autoGCRooters_; gcr; gcr = gcr->down) {
     gcr->trace(trc);
   }
 }
 
- void AutoGCRooter::traceAllWrappers(JSContext* cx, JSTracer* trc) {
+
+void AutoGCRooter::traceAllWrappers(JSContext* cx, JSTracer* trc) {
   for (AutoGCRooter* gcr = cx->autoGCRooters_; gcr; gcr = gcr->down) {
     if (gcr->tag_ == Tag::WrapperVector || gcr->tag_ == Tag::Wrapper) {
       gcr->trace(trc);

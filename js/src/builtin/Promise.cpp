@@ -2130,9 +2130,10 @@ static bool PromiseConstructor(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 
- PromiseObject* PromiseObject::create(
-    JSContext* cx, HandleObject executor, HandleObject proto ,
-    bool needsWrapping ) {
+
+PromiseObject* PromiseObject::create(JSContext* cx, HandleObject executor,
+                                     HandleObject proto ,
+                                     bool needsWrapping ) {
   MOZ_ASSERT(executor->isCallable());
 
   RootedObject usedProto(cx, proto);
@@ -2220,8 +2221,8 @@ static bool PromiseConstructor(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
- PromiseObject* PromiseObject::createSkippingExecutor(
-    JSContext* cx) {
+
+PromiseObject* PromiseObject::createSkippingExecutor(JSContext* cx) {
   return CreatePromiseObjectWithoutResolutionFunctions(cx);
 }
 
@@ -3175,8 +3176,8 @@ static bool Promise_reject(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
- JSObject* PromiseObject::unforgeableReject(JSContext* cx,
-                                                        HandleValue value) {
+
+JSObject* PromiseObject::unforgeableReject(JSContext* cx, HandleValue value) {
   JSObject* promiseCtor = JS::GetPromiseConstructor(cx);
   if (!promiseCtor) {
     return nullptr;
@@ -3204,8 +3205,8 @@ static bool Promise_static_resolve(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
- JSObject* PromiseObject::unforgeableResolve(JSContext* cx,
-                                                         HandleValue value) {
+
+JSObject* PromiseObject::unforgeableResolve(JSContext* cx, HandleValue value) {
   JSObject* promiseCtor = JS::GetPromiseConstructor(cx);
   if (!promiseCtor) {
     return nullptr;
@@ -4485,9 +4486,9 @@ bool PromiseObject::dependentPromises(JSContext* cx,
   return true;
 }
 
- bool PromiseObject::resolve(JSContext* cx,
-                                         Handle<PromiseObject*> promise,
-                                         HandleValue resolutionValue) {
+
+bool PromiseObject::resolve(JSContext* cx, Handle<PromiseObject*> promise,
+                            HandleValue resolutionValue) {
   MOZ_ASSERT(!PromiseHasAnyFlag(*promise, PROMISE_FLAG_ASYNC));
   if (promise->state() != JS::PromiseState::Pending) {
     return true;
@@ -4515,9 +4516,9 @@ bool PromiseObject::dependentPromises(JSContext* cx,
   return Call(cx, funVal, UndefinedHandleValue, resolutionValue, &dummy);
 }
 
- bool PromiseObject::reject(JSContext* cx,
-                                        Handle<PromiseObject*> promise,
-                                        HandleValue rejectionValue) {
+
+bool PromiseObject::reject(JSContext* cx, Handle<PromiseObject*> promise,
+                           HandleValue rejectionValue) {
   MOZ_ASSERT(!PromiseHasAnyFlag(*promise, PROMISE_FLAG_ASYNC));
   if (promise->state() != JS::PromiseState::Pending) {
     return true;
@@ -4535,8 +4536,8 @@ bool PromiseObject::dependentPromises(JSContext* cx,
   return Call(cx, funVal, UndefinedHandleValue, rejectionValue, &dummy);
 }
 
- void PromiseObject::onSettled(JSContext* cx,
-                                           Handle<PromiseObject*> promise) {
+
+void PromiseObject::onSettled(JSContext* cx, Handle<PromiseObject*> promise) {
   PromiseDebugInfo::setResolutionInfo(cx, promise);
 
   if (promise->state() == JS::PromiseState::Rejected &&
@@ -5039,7 +5040,8 @@ void OffThreadPromiseRuntimeState::init(
   MOZ_ASSERT(initialized());
 }
 
- bool OffThreadPromiseRuntimeState::internalDispatchToEventLoop(
+
+bool OffThreadPromiseRuntimeState::internalDispatchToEventLoop(
     void* closure, JS::Dispatchable* d) {
   OffThreadPromiseRuntimeState& state =
       *reinterpret_cast<OffThreadPromiseRuntimeState*>(closure);

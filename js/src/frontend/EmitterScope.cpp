@@ -129,8 +129,8 @@ Scope* EmitterScope::enclosingScope(BytecodeEmitter* bce) const {
   return bce->sc->compilationEnclosingScope();
 }
 
- bool EmitterScope::nameCanBeFree(BytecodeEmitter* bce,
-                                              JSAtom* name) {
+
+bool EmitterScope::nameCanBeFree(BytecodeEmitter* bce, JSAtom* name) {
   
   return name != bce->cx->names().dotGenerator;
 }
@@ -167,9 +167,9 @@ static bool NameIsOnEnvironment(Scope* scope, JSAtom* name) {
 }
 #endif
 
- NameLocation EmitterScope::searchInEnclosingScope(JSAtom* name,
-                                                               Scope* scope,
-                                                               uint8_t hops) {
+
+NameLocation EmitterScope::searchInEnclosingScope(JSAtom* name, Scope* scope,
+                                                  uint8_t hops) {
   for (ScopeIter si(scope); si; si++) {
     MOZ_ASSERT(NameIsOnEnvironment(si.scope(), name));
 

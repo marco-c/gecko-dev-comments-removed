@@ -19,7 +19,8 @@ JSRuntime* CompileRuntime::runtime() {
   return reinterpret_cast<JSRuntime*>(this);
 }
 
- CompileRuntime* CompileRuntime::get(JSRuntime* rt) {
+
+CompileRuntime* CompileRuntime::get(JSRuntime* rt) {
   return reinterpret_cast<CompileRuntime*>(rt);
 }
 
@@ -99,7 +100,8 @@ bool CompileRuntime::runtimeMatches(JSRuntime* rt) { return rt == runtime(); }
 
 Zone* CompileZone::zone() { return reinterpret_cast<Zone*>(this); }
 
- CompileZone* CompileZone::get(Zone* zone) {
+
+CompileZone* CompileZone::get(Zone* zone) {
   return reinterpret_cast<CompileZone*>(zone);
 }
 
@@ -168,7 +170,8 @@ void CompileZone::setMinorGCShouldCancelIonCompilations() {
 
 JS::Realm* CompileRealm::realm() { return reinterpret_cast<JS::Realm*>(this); }
 
- CompileRealm* CompileRealm::get(JS::Realm* realm) {
+
+CompileRealm* CompileRealm::get(JS::Realm* realm) {
   return reinterpret_cast<CompileRealm*>(realm);
 }
 

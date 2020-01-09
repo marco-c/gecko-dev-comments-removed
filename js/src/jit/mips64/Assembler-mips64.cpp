@@ -135,8 +135,9 @@ static void TraceOneDataRelocation(JSTracer* trc, Instruction* inst) {
   }
 }
 
- void Assembler::TraceDataRelocations(JSTracer* trc, JitCode* code,
-                                                  CompactBufferReader& reader) {
+
+void Assembler::TraceDataRelocations(JSTracer* trc, JitCode* code,
+                                     CompactBufferReader& reader) {
   while (reader.more()) {
     size_t offset = reader.readUnsigned();
     Instruction* inst = (Instruction*)(code->raw() + offset);

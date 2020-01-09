@@ -129,8 +129,8 @@ const char16_t JS::ubi::Concrete<JSString>::concreteTypeName[] = u"JSString";
 #if defined(DEBUG) || defined(JS_JITSPEW)
 
 template <typename CharT>
- void JSString::dumpChars(const CharT* s, size_t n,
-                                     js::GenericPrinter& out) {
+
+void JSString::dumpChars(const CharT* s, size_t n, js::GenericPrinter& out) {
   if (n == SIZE_MAX) {
     n = 0;
     while (s[n]) {
@@ -1018,8 +1018,9 @@ bool js::StringEqualsAscii(JSLinearString* str, const char* asciiBytes) {
 }
 
 template <typename CharT>
- bool JSFlatString::isIndexSlow(const CharT* s, size_t length,
-                                            uint32_t* indexp) {
+
+bool JSFlatString::isIndexSlow(const CharT* s, size_t length,
+                               uint32_t* indexp) {
   CharT ch = *s;
 
   if (!IsAsciiDigit(ch)) {
@@ -1196,7 +1197,8 @@ void StaticStrings::trace(JSTracer* trc) {
 }
 
 template <typename CharT>
- bool StaticStrings::isStatic(const CharT* chars, size_t length) {
+
+bool StaticStrings::isStatic(const CharT* chars, size_t length) {
   switch (length) {
     case 1: {
       char16_t c = chars[0];
@@ -1218,7 +1220,8 @@ template <typename CharT>
   }
 }
 
- bool StaticStrings::isStatic(JSAtom* atom) {
+
+bool StaticStrings::isStatic(JSAtom* atom) {
   AutoCheckCannotGC nogc;
   return atom->hasLatin1Chars()
              ? isStatic(atom->latin1Chars(nogc), atom->length())
@@ -2017,8 +2020,8 @@ static bool FillWithRepresentatives(JSContext* cx, HandleArrayObject array,
   return true;
 }
 
- bool JSString::fillWithRepresentatives(JSContext* cx,
-                                                    HandleArrayObject array) {
+
+bool JSString::fillWithRepresentatives(JSContext* cx, HandleArrayObject array) {
   uint32_t index = 0;
 
   auto CheckTwoByte = [](JSString* str) { return str->hasTwoByteChars(); };

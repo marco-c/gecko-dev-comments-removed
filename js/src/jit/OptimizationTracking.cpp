@@ -205,8 +205,8 @@ static HashNumber HashVectorContents(const Vec* xs, HashNumber h) {
   return h;
 }
 
- HashNumber UniqueTrackedOptimizations::Key::hash(
-    const Lookup& lookup) {
+
+HashNumber UniqueTrackedOptimizations::Key::hash(const Lookup& lookup) {
   HashNumber h = HashVectorContents(lookup.types, 0);
   h = HashVectorContents(lookup.attempts, h);
   h += (h << 3);
@@ -215,8 +215,9 @@ static HashNumber HashVectorContents(const Vec* xs, HashNumber h) {
   return h;
 }
 
- bool UniqueTrackedOptimizations::Key::match(const Key& key,
-                                                         const Lookup& lookup) {
+
+bool UniqueTrackedOptimizations::Key::match(const Key& key,
+                                            const Lookup& lookup) {
   return VectorContentsMatch(key.attempts, lookup.attempts) &&
          VectorContentsMatch(key.types, lookup.types);
 }
@@ -526,7 +527,8 @@ IonTrackedOptimizationsRegionTable::findRegion(uint32_t offset) const {
   return Nothing();
 }
 
- uint32_t IonTrackedOptimizationsRegion::ExpectedRunLength(
+
+uint32_t IonTrackedOptimizationsRegion::ExpectedRunLength(
     const NativeToTrackedOptimizations* start,
     const NativeToTrackedOptimizations* end) {
   MOZ_ASSERT(start < end);
@@ -577,9 +579,11 @@ bool OptimizationTypeInfo::writeCompact(CompactBufferWriter& writer,
   return true;
 }
 
- void IonTrackedOptimizationsRegion::ReadDelta(
-    CompactBufferReader& reader, uint32_t* startDelta, uint32_t* length,
-    uint8_t* index) {
+
+void IonTrackedOptimizationsRegion::ReadDelta(CompactBufferReader& reader,
+                                              uint32_t* startDelta,
+                                              uint32_t* length,
+                                              uint8_t* index) {
   
   
   const uint32_t firstByte = reader.readByte();
@@ -630,9 +634,10 @@ bool OptimizationTypeInfo::writeCompact(CompactBufferWriter& writer,
   MOZ_ASSERT(length != 0);
 }
 
- void IonTrackedOptimizationsRegion::WriteDelta(
-    CompactBufferWriter& writer, uint32_t startDelta, uint32_t length,
-    uint8_t index) {
+
+void IonTrackedOptimizationsRegion::WriteDelta(CompactBufferWriter& writer,
+                                               uint32_t startDelta,
+                                               uint32_t length, uint8_t index) {
   
   
   if (startDelta <= ENC1_START_DELTA_MAX && length <= ENC1_LENGTH_MAX &&
@@ -692,7 +697,8 @@ bool OptimizationTypeInfo::writeCompact(CompactBufferWriter& writer,
   MOZ_CRASH("startDelta,length,index triple too large to encode.");
 }
 
- bool IonTrackedOptimizationsRegion::WriteRun(
+
+bool IonTrackedOptimizationsRegion::WriteRun(
     CompactBufferWriter& writer, const NativeToTrackedOptimizations* start,
     const NativeToTrackedOptimizations* end,
     const UniqueTrackedOptimizations& unique) {

@@ -64,7 +64,8 @@ using mozilla::PodZero;
 using mozilla::PositiveInfinity;
 
  MOZ_THREAD_LOCAL(JSContext*) js::TlsContext;
- Atomic<size_t> JSRuntime::liveRuntimesCount;
+
+Atomic<size_t> JSRuntime::liveRuntimesCount;
 Atomic<JS::LargeAllocationFailureCallback> js::OnLargeAllocationFailure;
 
 namespace js {

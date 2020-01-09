@@ -102,7 +102,8 @@ static bool MatchJSScript(JSScript* script, const char* pattern) {
   return result != nullptr;
 }
 
- bool StructuredSpewer::enabled(JSScript* script) {
+
+bool StructuredSpewer::enabled(JSScript* script) {
   
   if (mozilla::recordreplay::IsRecordingOrReplaying()) {
     return false;
@@ -139,8 +140,9 @@ void StructuredSpewer::startObject(JSContext* cx, const JSScript* script,
   json.endObject();
 }
 
- void StructuredSpewer::spew(JSContext* cx, SpewChannel channel,
-                                         const char* fmt, ...) {
+
+void StructuredSpewer::spew(JSContext* cx, SpewChannel channel, const char* fmt,
+                            ...) {
   
   
   if (!cx->spewer().filter().enabled(channel)) {

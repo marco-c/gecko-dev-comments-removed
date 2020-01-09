@@ -300,7 +300,8 @@ static unsigned EncodeImmediateType(ValType vt) {
   MOZ_CRASH("bad ValType");
 }
 
- bool FuncTypeIdDesc::isGlobal(const FuncType& funcType) {
+
+bool FuncTypeIdDesc::isGlobal(const FuncType& funcType) {
   unsigned numTypes =
       (funcType.ret() == ExprType::Void ? 0 : 1) + (funcType.args().length());
   if (numTypes > sMaxTypes) {
@@ -321,8 +322,9 @@ static unsigned EncodeImmediateType(ValType vt) {
   return false;
 }
 
- FuncTypeIdDesc FuncTypeIdDesc::global(const FuncType& funcType,
-                                                   uint32_t globalDataOffset) {
+
+FuncTypeIdDesc FuncTypeIdDesc::global(const FuncType& funcType,
+                                      uint32_t globalDataOffset) {
   MOZ_ASSERT(isGlobal(funcType));
   return FuncTypeIdDesc(FuncTypeIdDescKind::Global, globalDataOffset);
 }
@@ -333,8 +335,8 @@ static ImmediateType LengthToBits(uint32_t length) {
   return length;
 }
 
- FuncTypeIdDesc FuncTypeIdDesc::immediate(
-    const FuncType& funcType) {
+
+FuncTypeIdDesc FuncTypeIdDesc::immediate(const FuncType& funcType) {
   ImmediateType immediate = ImmediateBit;
   uint32_t shift = sTagBits;
 
@@ -620,7 +622,8 @@ size_t wasm::ComputeMappedSize(uint32_t maxSize) {
 
 #endif  
 
- DebugFrame* DebugFrame::from(Frame* fp) {
+
+DebugFrame* DebugFrame::from(Frame* fp) {
   MOZ_ASSERT(fp->tls->instance->code().metadata().debugEnabled);
   auto* df =
       reinterpret_cast<DebugFrame*>((uint8_t*)fp - DebugFrame::offsetOfFrame());

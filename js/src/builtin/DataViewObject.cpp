@@ -247,9 +247,11 @@ bool DataViewObject::construct(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 template <typename NativeType>
- SharedMem<uint8_t*> DataViewObject::getDataPointer(
-    JSContext* cx, Handle<DataViewObject*> obj, uint64_t offset,
-    bool* isSharedMemory) {
+
+SharedMem<uint8_t*> DataViewObject::getDataPointer(JSContext* cx,
+                                                   Handle<DataViewObject*> obj,
+                                                   uint64_t offset,
+                                                   bool* isSharedMemory) {
   const size_t TypeSize = sizeof(NativeType);
   if (offset > UINT32_MAX - TypeSize || offset + TypeSize > obj->byteLength()) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
@@ -374,9 +376,9 @@ struct DataViewIO {
 };
 
 template <typename NativeType>
- bool DataViewObject::read(JSContext* cx,
-                                       Handle<DataViewObject*> obj,
-                                       const CallArgs& args, NativeType* val) {
+
+bool DataViewObject::read(JSContext* cx, Handle<DataViewObject*> obj,
+                          const CallArgs& args, NativeType* val) {
   
   
 
@@ -476,9 +478,9 @@ inline bool WebIDLCast<double>(JSContext* cx, HandleValue value, double* out) {
 
 
 template <typename NativeType>
- bool DataViewObject::write(JSContext* cx,
-                                        Handle<DataViewObject*> obj,
-                                        const CallArgs& args) {
+
+bool DataViewObject::write(JSContext* cx, Handle<DataViewObject*> obj,
+                           const CallArgs& args) {
   
   
 

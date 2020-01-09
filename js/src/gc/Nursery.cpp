@@ -86,8 +86,8 @@ inline void js::NurseryChunk::poisonAfterSweep(size_t extent) {
   Poison(this, JS_SWEPT_NURSERY_PATTERN, extent, MemCheckKind::MakeNoAccess);
 }
 
- inline js::NurseryChunk* js::NurseryChunk::fromChunk(
-    Chunk* chunk) {
+
+inline js::NurseryChunk* js::NurseryChunk::fromChunk(Chunk* chunk) {
   return reinterpret_cast<NurseryChunk*>(chunk);
 }
 
@@ -658,7 +658,8 @@ void js::Nursery::renderProfileJSON(JSONPrinter& json) const {
   json.endObject();
 }
 
- void js::Nursery::printProfileHeader() {
+
+void js::Nursery::printProfileHeader() {
   fprintf(stderr, "MinorGC:               Reason  PRate Size        ");
 #define PRINT_HEADER(name, text) fprintf(stderr, " %6s", text);
   FOR_EACH_NURSERY_PROFILE_TIME(PRINT_HEADER)
@@ -666,8 +667,8 @@ void js::Nursery::renderProfileJSON(JSONPrinter& json) const {
   fprintf(stderr, "\n");
 }
 
- void js::Nursery::printProfileDurations(
-    const ProfileDurations& times) {
+
+void js::Nursery::printProfileDurations(const ProfileDurations& times) {
   for (auto time : times) {
     fprintf(stderr, " %6" PRIi64, static_cast<int64_t>(time.ToMicroseconds()));
   }
@@ -1219,26 +1220,21 @@ void js::Nursery::maybeResizeNursery(JS::GCReason reason) {
 
 
   const float factor = promotionRate / PromotionGoal;
-  MOZ_ASSERT(factor >= 0.0f);
-
-  MOZ_ASSERT((float(capacity()) * factor) <= SIZE_MAX);
-  const size_t newCapacity = size_t(float(capacity()) * factor);
+  const unsigned newCapacity = unsigned(float(capacity()) * factor);
 
   
   
   
   if (maxChunkCount() < chunkCountLimit() && promotionRate > GrowThreshold) {
-    size_t lowLimit = (CheckedInt<size_t>(capacity()) + SubChunkStep).value();
-    size_t highLimit =
-        Min((CheckedInt<size_t>(chunkCountLimit()) * NurseryChunkUsableSize)
-                .value(),
-            (CheckedInt<size_t>(capacity()) * 2).value());
+    unsigned lowLimit = capacity() + SubChunkStep;
+    unsigned highLimit =
+        Min(chunkCountLimit() * NurseryChunkUsableSize, capacity() * 2);
 
     growAllocableSpace(mozilla::Clamp(newCapacity, lowLimit, highLimit));
   } else if (capacity() >= SubChunkLimit + SubChunkStep &&
              promotionRate < ShrinkThreshold) {
-    size_t lowLimit = Max(SubChunkLimit, capacity() / 2);
-    size_t highLimit = (CheckedInt<size_t>(capacity()) - SubChunkStep).value();
+    unsigned lowLimit = Max(SubChunkLimit, capacity() / 2);
+    unsigned highLimit = capacity() - SubChunkStep;
 
     shrinkAllocableSpace(mozilla::Clamp(newCapacity, lowLimit, highLimit));
   }
@@ -1250,7 +1246,7 @@ void js::Nursery::maybeResizeNursery(JS::GCReason reason) {
       "Nursery limit must be at least one step from the full chunk size");
 }
 
-void js::Nursery::growAllocableSpace(size_t newCapacity) {
+void js::Nursery::growAllocableSpace(unsigned newCapacity) {
   MOZ_ASSERT_IF(!isSubChunkMode(),
                 newCapacity > currentChunk_ * NurseryChunkUsableSize);
   if (isSubChunkMode()) {
@@ -1274,16 +1270,16 @@ void js::Nursery::freeChunksFrom(unsigned firstFreeChunk) {
   chunks_.shrinkTo(firstFreeChunk);
 }
 
-void js::Nursery::shrinkAllocableSpace(size_t newCapacity) {
+void js::Nursery::shrinkAllocableSpace(unsigned newCapacity) {
 #ifdef JS_GC_ZEAL
   if (runtime()->hasZealMode(ZealMode::GenerationalGC)) {
     return;
   }
 #endif
 
-  size_t stepSize = newCapacity < NurseryChunkUsableSize
-                        ? SubChunkStep
-                        : NurseryChunkUsableSize;
+  unsigned stepSize = newCapacity < NurseryChunkUsableSize
+                          ? SubChunkStep
+                          : NurseryChunkUsableSize;
   newCapacity -= newCapacity % stepSize;
   
   
