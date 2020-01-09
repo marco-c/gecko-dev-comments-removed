@@ -242,6 +242,9 @@ const RECOMMENDED_PREFS = new Map([
   ["network.sntp.pools", "%(server)s"],
 
   
+  ["security.certerrors.mitm.priming.enabled", false],
+
+  
   
   ["security.fileuri.strict_origin_policy", false],
 
