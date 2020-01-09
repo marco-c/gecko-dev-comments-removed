@@ -142,26 +142,6 @@ function checkUnmodifiedForm(formNum) {
   }
 }
 
-
-
-
-
-function getSubmitMessage(aFilterFn = undefined) {
-  info("getSubmitMessage");
-  return new Promise((resolve, reject) => {
-    PWMGR_COMMON_PARENT.addMessageListener("formSubmissionProcessed", function processed(...args) {
-      if (aFilterFn && !aFilterFn(...args)) {
-        
-        return;
-      }
-
-      info("got formSubmissionProcessed");
-      PWMGR_COMMON_PARENT.removeMessageListener("formSubmissionProcessed", processed);
-      resolve(...args);
-    });
-  });
-}
-
 function registerRunTests() {
   return new Promise(resolve => {
     function onDOMContentLoaded() {
