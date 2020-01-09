@@ -42,7 +42,8 @@ const PREF_SETTINGS_LOAD_DUMP          = "load_dump";
 
 
 const TELEMETRY_COMPONENT = "remotesettings";
-const TELEMETRY_SOURCE = "settings-changes-monitoring";
+const TELEMETRY_SOURCE_POLL = "settings-changes-monitoring";
+const TELEMETRY_SOURCE_SYNC = "settings-sync";
 
 
 const BROADCAST_ID = "remote-settings/monitor_changes";
@@ -157,8 +158,9 @@ function remoteSettingsFunction() {
 
 
   remoteSettings.pollChanges = async ({ expectedTimestamp, trigger = "manual" } = {}) => {
-    let telemetryArgs = {
-      source: TELEMETRY_SOURCE,
+    const startedAt = new Date();
+    let pollTelemetryArgs = {
+      source: TELEMETRY_SOURCE_POLL,
       trigger,
     };
 
@@ -168,7 +170,7 @@ function remoteSettingsFunction() {
       const remainingMilliseconds = parseInt(backoffReleaseTime, 10) - Date.now();
       if (remainingMilliseconds > 0) {
         
-        await UptakeTelemetry.report(TELEMETRY_COMPONENT, UptakeTelemetry.STATUS.BACKOFF, telemetryArgs);
+        await UptakeTelemetry.report(TELEMETRY_COMPONENT, UptakeTelemetry.STATUS.BACKOFF, pollTelemetryArgs);
         throw new Error(`Server is asking clients to back off; retry in ${Math.ceil(remainingMilliseconds / 1000)}s.`);
       } else {
         gPrefs.clearUserPref(PREF_SETTINGS_SERVER_BACKOFF);
@@ -198,7 +200,7 @@ function remoteSettingsFunction() {
       } else {
         reportStatus = UptakeTelemetry.STATUS.UNKNOWN_ERROR;
       }
-      await UptakeTelemetry.report(TELEMETRY_COMPONENT, reportStatus, telemetryArgs);
+      await UptakeTelemetry.report(TELEMETRY_COMPONENT, reportStatus, pollTelemetryArgs);
       
       throw new Error(`Polling for changes failed: ${e.message}.`);
     }
@@ -206,12 +208,12 @@ function remoteSettingsFunction() {
     const { serverTimeMillis, changes, currentEtag, backoffSeconds, ageSeconds } = pollResult;
 
     
-    telemetryArgs = { age: ageSeconds, ...telemetryArgs };
+    pollTelemetryArgs = { age: ageSeconds, ...pollTelemetryArgs };
 
     
     const reportStatus = changes.length === 0 ? UptakeTelemetry.STATUS.UP_TO_DATE
                                               : UptakeTelemetry.STATUS.SUCCESS;
-    await UptakeTelemetry.report(TELEMETRY_COMPONENT, reportStatus, telemetryArgs);
+    await UptakeTelemetry.report(TELEMETRY_COMPONENT, reportStatus, pollTelemetryArgs);
 
     
     if (backoffSeconds) {
@@ -238,6 +240,7 @@ function remoteSettingsFunction() {
 
       const client = await _client(bucket, collection);
       if (!client) {
+        
         continue;
       }
       
@@ -254,7 +257,13 @@ function remoteSettingsFunction() {
         }
       }
     }
+    
+    const durationMilliseconds = new Date() - startedAt;
+    const syncTelemetryArgs = { source: TELEMETRY_SOURCE_SYNC, duration: durationMilliseconds, trigger };
+
     if (firstError) {
+      
+      await UptakeTelemetry.report(TELEMETRY_COMPONENT, UptakeTelemetry.STATUS.SYNC_ERROR, syncTelemetryArgs);
       
       throw firstError;
     }
@@ -263,6 +272,9 @@ function remoteSettingsFunction() {
     if (currentEtag) {
       gPrefs.setCharPref(PREF_SETTINGS_LAST_ETAG, currentEtag);
     }
+
+    
+    await UptakeTelemetry.report(TELEMETRY_COMPONENT, UptakeTelemetry.STATUS.SUCCESS, syncTelemetryArgs);
 
     Services.obs.notifyObservers(null, "remote-settings:changes-poll-end");
   };
