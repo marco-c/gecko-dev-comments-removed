@@ -5858,7 +5858,7 @@ void nsTextFrame::PaintOneShadow(const PaintShadowParams& aParams,
 
     
     
-    wrShadow.should_inflate = false;
+    wrShadow.should_inflate = true;
 
     wrShadow.offset = {
         PresContext()->AppUnitsToFloatDevPixels(aShadowDetails->mXOffset),
