@@ -178,7 +178,7 @@ class PresShell final : public nsIPresShell,
 
   void Paint(nsView* aViewToPaint, const nsRegion& aDirtyRegion,
              uint32_t aFlags) override;
-  MOZ_CAN_RUN_SCRIPT nsresult HandleEvent(nsIFrame* aFrame,
+  MOZ_CAN_RUN_SCRIPT nsresult HandleEvent(nsIFrame* aFrameForPresShell,
                                           WidgetGUIEvent* aEvent,
                                           bool aDontRetargetEvents,
                                           nsEventStatus* aEventStatus) override;
@@ -523,9 +523,13 @@ class PresShell final : public nsIPresShell,
 
 
 
+
+
+
     MOZ_CAN_RUN_SCRIPT
-    nsresult HandleEvent(nsIFrame* aFrame, WidgetGUIEvent* aGUIEvent,
-                         bool aDontRetargetEvents, nsEventStatus* aEventStatus);
+    nsresult HandleEvent(nsIFrame* aFrameForPresShell,
+                         WidgetGUIEvent* aGUIEvent, bool aDontRetargetEvents,
+                         nsEventStatus* aEventStatus);
 
     
 
@@ -575,6 +579,8 @@ class PresShell final : public nsIPresShell,
         PresShell& aPresShell);
 
     
+
+
 
 
 
@@ -724,6 +730,7 @@ class PresShell final : public nsIPresShell,
 
 
 
+
     MOZ_CAN_RUN_SCRIPT
     bool DispatchPrecedingPointerEvent(nsIFrame* aFrameForPresShell,
                                        WidgetGUIEvent* aGUIEvent,
@@ -779,12 +786,12 @@ class PresShell final : public nsIPresShell,
 
 
 
-
     nsIFrame* GetFrameForHandlingEventWith(WidgetGUIEvent* aGUIEvent,
                                            Document* aRetargetDocument,
                                            nsIFrame* aFrameForPresShell);
 
     
+
 
 
 
@@ -862,10 +869,13 @@ class PresShell final : public nsIPresShell,
 
 
 
+
     MOZ_CAN_RUN_SCRIPT
     nsIFrame* MaybeFlushThrottledStyles(nsIFrame* aFrameForPresShell);
 
     
+
+
 
 
 
@@ -938,6 +948,7 @@ class PresShell final : public nsIPresShell,
         bool* aIsCapturingContentIgnored, bool* aIsCaptureRetargeted);
 
     
+
 
 
 

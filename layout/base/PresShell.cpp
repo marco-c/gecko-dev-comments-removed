@@ -6439,16 +6439,17 @@ PresShell* PresShell::GetShellForTouchEvent(WidgetGUIEvent* aEvent) {
   return shell;
 }
 
-nsresult PresShell::HandleEvent(nsIFrame* aFrame, WidgetGUIEvent* aGUIEvent,
+nsresult PresShell::HandleEvent(nsIFrame* aFrameForPresShell,
+                                WidgetGUIEvent* aGUIEvent,
                                 bool aDontRetargetEvents,
                                 nsEventStatus* aEventStatus) {
   MOZ_ASSERT(aGUIEvent);
   EventHandler eventHandler(*this);
-  return eventHandler.HandleEvent(aFrame, aGUIEvent, aDontRetargetEvents,
-                                  aEventStatus);
+  return eventHandler.HandleEvent(aFrameForPresShell, aGUIEvent,
+                                  aDontRetargetEvents, aEventStatus);
 }
 
-nsresult PresShell::EventHandler::HandleEvent(nsIFrame* aFrame,
+nsresult PresShell::EventHandler::HandleEvent(nsIFrame* aFrameForPresShell,
                                               WidgetGUIEvent* aGUIEvent,
                                               bool aDontRetargetEvents,
                                               nsEventStatus* aEventStatus) {
@@ -6472,7 +6473,7 @@ nsresult PresShell::EventHandler::HandleEvent(nsIFrame* aFrame,
   }
 #endif
 
-  NS_ASSERTION(aFrame, "aFrame should be not null");
+  NS_ASSERTION(aFrameForPresShell, "aFrameForPresShell should be not null");
 
   
   
@@ -6503,8 +6504,8 @@ nsresult PresShell::EventHandler::HandleEvent(nsIFrame* aFrame,
     
     
     nsresult rv = NS_OK;
-    if (MaybeHandleEventWithAnotherPresShell(aFrame, aGUIEvent, aEventStatus,
-                                             &rv)) {
+    if (MaybeHandleEventWithAnotherPresShell(aFrameForPresShell, aGUIEvent,
+                                             aEventStatus, &rv)) {
       
       return rv;
     }
@@ -6516,13 +6517,13 @@ nsresult PresShell::EventHandler::HandleEvent(nsIFrame* aFrame,
   }
 
   if (aGUIEvent->IsUsingCoordinates()) {
-    return HandleEventUsingCoordinates(aFrame, aGUIEvent, aEventStatus,
-                                       aDontRetargetEvents);
+    return HandleEventUsingCoordinates(aFrameForPresShell, aGUIEvent,
+                                       aEventStatus, aDontRetargetEvents);
   }
 
   
   
-  if (!aFrame) {
+  if (!aFrameForPresShell) {
     if (!NS_EVENT_NEEDS_FRAME(aGUIEvent)) {
       mPresShell->mCurrentEventFrame = nullptr;
       
@@ -6543,7 +6544,8 @@ nsresult PresShell::EventHandler::HandleEvent(nsIFrame* aFrame,
     return HandleEventAtFocusedContent(aGUIEvent, aEventStatus);
   }
 
-  return HandleEventWithFrameForPresShell(aFrame, aGUIEvent, aEventStatus);
+  return HandleEventWithFrameForPresShell(aFrameForPresShell, aGUIEvent,
+                                          aEventStatus);
 }
 
 nsresult PresShell::EventHandler::HandleEventUsingCoordinates(
