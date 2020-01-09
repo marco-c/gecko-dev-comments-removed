@@ -4,41 +4,23 @@
 "use strict";
 
 
-Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "helper-addons.js", this);
+
 
 
 add_task(async function() {
-  const EXTENSION_NAME = "Temporary web extension";
-  const EXTENSION_ID = "test-devtools@mozilla.org";
+  const { document, tab } = await openAboutDebugging();
 
-  const { document, tab, window } = await openAboutDebugging();
-  await selectThisFirefoxPage(document, window.AboutDebugging.store);
+  const usbStatusElement = document.querySelector(".js-sidebar-usb-status");
+  ok(usbStatusElement, "Sidebar shows the USB status element");
+  ok(usbStatusElement.textContent.includes("USB disabled"),
+    "USB status element has the expected content");
 
-  await installTemporaryExtensionFromXPI({
-    id: EXTENSION_ID,
-    name: EXTENSION_NAME,
-    extraProperties: {
-      
-      "wrongProperty": {},
-    },
-  }, document);
-
-  info("Wait until a debug target item appears");
-  await waitUntil(() => findDebugTargetByText(EXTENSION_NAME, document));
-  const target = findDebugTargetByText(EXTENSION_NAME, document);
-
-  const warningMessage = target.querySelector(".js-message");
-  ok(!!warningMessage, "A warning message is displayed for the installed addon");
-
-  const button = warningMessage.querySelector(".qa-message-button-close");
-  ok(!!button, "The warning message has a close button");
-
-  info("Closing the message and waiting for it to disappear");
+  const button = document.querySelector(".js-sidebar-item .qa-message-button-close");
   button.click();
-  await waitUntil(() => {
-    return target.querySelector(".js-message") === null;
-  });
 
-  await removeTemporaryExtension(EXTENSION_NAME, document);
+  
+  ok(document.querySelector(".js-sidebar-usb-status") === null,
+    "USB status element is no longer displayed");
+
   await removeTab(tab);
 });
