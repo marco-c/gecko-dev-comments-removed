@@ -144,6 +144,13 @@ class Storage : public nsISupports, public nsWrapperCache {
 
   virtual void LastRelease() {}
 
+  
+  
+  
+  virtual bool ShouldThrowWhenStorageAccessDenied(uint32_t aRejectedReason) {
+    return true;
+  }
+
  private:
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
   nsCOMPtr<nsIPrincipal> mPrincipal;
