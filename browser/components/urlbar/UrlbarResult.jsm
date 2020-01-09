@@ -36,13 +36,13 @@ class UrlbarResult {
 
 
 
-  constructor(matchType, matchSource, payload, payloadHighlights = {}) {
+  constructor(resultType, matchSource, payload, payloadHighlights = {}) {
     
     
-    if (!Object.values(UrlbarUtils.MATCH_TYPE).includes(matchType)) {
-      throw new Error("Invalid match type");
+    if (!Object.values(UrlbarUtils.RESULT_TYPE).includes(resultType)) {
+      throw new Error("Invalid result type");
     }
-    this.type = matchType;
+    this.type = resultType;
 
     
     
@@ -54,12 +54,12 @@ class UrlbarResult {
     
     
     if (!payload || (typeof payload != "object")) {
-      throw new Error("Invalid match payload");
+      throw new Error("Invalid result payload");
     }
     this.payload = payload;
 
     if (!payloadHighlights || (typeof payloadHighlights != "object")) {
-      throw new Error("Invalid match payload highlights");
+      throw new Error("Invalid result payload highlights");
     }
     this.payloadHighlights = payloadHighlights;
 
@@ -95,14 +95,14 @@ class UrlbarResult {
 
   get _titleAndHighlights() {
     switch (this.type) {
-      case UrlbarUtils.MATCH_TYPE.TAB_SWITCH:
-      case UrlbarUtils.MATCH_TYPE.URL:
-      case UrlbarUtils.MATCH_TYPE.OMNIBOX:
-      case UrlbarUtils.MATCH_TYPE.REMOTE_TAB:
+      case UrlbarUtils.RESULT_TYPE.TAB_SWITCH:
+      case UrlbarUtils.RESULT_TYPE.URL:
+      case UrlbarUtils.RESULT_TYPE.OMNIBOX:
+      case UrlbarUtils.RESULT_TYPE.REMOTE_TAB:
         return this.payload.title ?
                [this.payload.title, this.payloadHighlights.title] :
                [this.payload.url || "", this.payloadHighlights.url || []];
-      case UrlbarUtils.MATCH_TYPE.SEARCH:
+      case UrlbarUtils.RESULT_TYPE.SEARCH:
         return this.payload.suggestion ?
                [this.payload.suggestion, this.payloadHighlights.suggestion] :
                [this.payload.query, this.payloadHighlights.query];
