@@ -31,8 +31,8 @@ NS_QUERYFRAME_TAIL_INHERITING(nsSVGContainerFrame)
 
 nsIFrame* NS_NewSVGContainerFrame(nsIPresShell* aPresShell,
                                   ComputedStyle* aStyle) {
-  nsIFrame* frame = new (aPresShell)
-      nsSVGContainerFrame(aStyle, nsSVGContainerFrame::kClassID);
+  nsIFrame* frame = new (aPresShell) nsSVGContainerFrame(
+      aStyle, aPresShell->GetPresContext(), nsSVGContainerFrame::kClassID);
   
   
   

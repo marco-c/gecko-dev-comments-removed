@@ -9,8 +9,6 @@
 #ifndef nsComputedDOMStyle_h__
 #define nsComputedDOMStyle_h__
 
-#include "mozilla/ArenaRefPtr.h"
-#include "mozilla/ArenaRefPtrInlines.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/StyleComplexColor.h"
 #include "mozilla/UniquePtr.h"
@@ -502,10 +500,7 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
 
 
 
-
-
-
-  mozilla::ArenaRefPtr<mozilla::ComputedStyle> mComputedStyle;
+  RefPtr<mozilla::ComputedStyle> mComputedStyle;
   RefPtr<nsAtom> mPseudo;
 
   

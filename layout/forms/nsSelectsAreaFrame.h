@@ -30,8 +30,9 @@ class nsSelectsAreaFrame final : public nsBlockFrame {
   nscoord BSizeOfARow() const { return mBSizeOfARow; }
 
  protected:
-  explicit nsSelectsAreaFrame(ComputedStyle* aStyle)
-      : nsBlockFrame(aStyle, kClassID),
+  explicit nsSelectsAreaFrame(ComputedStyle* aStyle,
+                              nsPresContext* aPresContext)
+      : nsBlockFrame(aStyle, aPresContext, kClassID),
         
         
         mBSizeOfARow(nscoord_MIN) {}

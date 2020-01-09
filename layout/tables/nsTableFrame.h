@@ -567,7 +567,8 @@ class nsTableFrame : public nsContainerFrame {
   
 
 
-  explicit nsTableFrame(ComputedStyle* aStyle, ClassID aID = kClassID);
+  explicit nsTableFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,
+                        ClassID aID = kClassID);
 
   
   virtual ~nsTableFrame();

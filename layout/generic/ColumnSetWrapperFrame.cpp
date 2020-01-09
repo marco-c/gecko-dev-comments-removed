@@ -15,7 +15,8 @@ using namespace mozilla;
 nsBlockFrame* NS_NewColumnSetWrapperFrame(nsIPresShell* aPresShell,
                                           ComputedStyle* aStyle,
                                           nsFrameState aStateFlags) {
-  ColumnSetWrapperFrame* frame = new (aPresShell) ColumnSetWrapperFrame(aStyle);
+  ColumnSetWrapperFrame* frame = new (aPresShell)
+      ColumnSetWrapperFrame(aStyle, aPresShell->GetPresContext());
 
   
   
@@ -30,8 +31,9 @@ NS_QUERYFRAME_HEAD(ColumnSetWrapperFrame)
   NS_QUERYFRAME_ENTRY(ColumnSetWrapperFrame)
 NS_QUERYFRAME_TAIL_INHERITING(nsBlockFrame)
 
-ColumnSetWrapperFrame::ColumnSetWrapperFrame(ComputedStyle* aStyle)
-    : nsBlockFrame(aStyle, kClassID) {}
+ColumnSetWrapperFrame::ColumnSetWrapperFrame(ComputedStyle* aStyle,
+                                             nsPresContext* aPresContext)
+    : nsBlockFrame(aStyle, aPresContext, kClassID) {}
 
 void ColumnSetWrapperFrame::Init(nsIContent* aContent,
                                  nsContainerFrame* aParent,

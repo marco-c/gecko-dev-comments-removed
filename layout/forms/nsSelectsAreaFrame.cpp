@@ -14,7 +14,8 @@ using namespace mozilla;
 nsContainerFrame* NS_NewSelectsAreaFrame(nsIPresShell* aShell,
                                          ComputedStyle* aStyle,
                                          nsFrameState aFlags) {
-  nsSelectsAreaFrame* it = new (aShell) nsSelectsAreaFrame(aStyle);
+  nsSelectsAreaFrame* it =
+      new (aShell) nsSelectsAreaFrame(aStyle, aShell->GetPresContext());
 
   
   
