@@ -6785,7 +6785,10 @@ nsMargin ScrollFrameHelper::GetScrollPadding() const {
   } else {
     styleFrame = mOuter;
   }
-  MOZ_ASSERT(styleFrame);
+
+  if (!styleFrame) {
+    return nsMargin();
+  }
 
   
   
