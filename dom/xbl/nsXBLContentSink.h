@@ -21,6 +21,7 @@ typedef enum {
   eXBL_InDocument,       
   eXBL_InBindings,       
   eXBL_InBinding,        
+  eXBL_InResources,      
   eXBL_InImplementation, 
   eXBL_InHandlers,       
   eXBL_Error 
@@ -88,8 +89,7 @@ class nsXBLContentSink : public nsXMLContentSink {
                          nsIContent** aResult, bool* aAppendContent,
                          mozilla::dom::FromParser aFromParser) override;
 
-  nsresult AddAttributes(const char16_t** aAtts,
-                         mozilla::dom::Element* aElement) override;
+  nsresult AddAttributes(const char16_t** aAtts, Element* aElement) override;
 
 #ifdef MOZ_XUL
   nsresult AddAttributesToXULPrototype(const char16_t** aAtts,
@@ -100,6 +100,7 @@ class nsXBLContentSink : public nsXMLContentSink {
   
   nsresult ConstructBinding(uint32_t aLineNumber);
   void ConstructHandler(const char16_t** aAtts, uint32_t aLineNumber);
+  void ConstructResource(const char16_t** aAtts, nsAtom* aResourceType);
   void ConstructImplementation(const char16_t** aAtts);
   void ConstructProperty(const char16_t** aAtts, uint32_t aLineNumber);
   void ConstructMethod(const char16_t** aAtts);

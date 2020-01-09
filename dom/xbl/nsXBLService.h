@@ -24,7 +24,6 @@ class nsIPrincipal;
 namespace mozilla {
 namespace dom {
 class Document;
-class Element;
 class EventTarget;
 }  
 }  
@@ -45,8 +44,8 @@ class nsXBLService final : public nsSupportsWeakReference {
   
   
   nsresult LoadBindings(mozilla::dom::Element* aElement, nsIURI* aURL,
-                        nsIPrincipal* aOriginPrincipal,
-                        nsXBLBinding** aBinding);
+                        nsIPrincipal* aOriginPrincipal, nsXBLBinding** aBinding,
+                        bool* aResolveStyle);
 
   
   nsresult BindingReady(nsIContent* aBoundElement, nsIURI* aURI,

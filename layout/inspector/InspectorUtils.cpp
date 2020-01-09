@@ -185,6 +185,22 @@ void InspectorUtils::GetCSSStyleRules(
   }
 
   
+  for (nsIContent* bindingContent = &aElement; bindingContent;
+       bindingContent = bindingContent->GetBindingParent()) {
+    for (nsXBLBinding* binding = bindingContent->GetXBLBinding(); binding;
+         binding = binding->GetBaseBinding()) {
+      if (auto* map = binding->PrototypeBinding()->GetServoStyleRuleMap()) {
+        maps.AppendElement(map);
+      }
+    }
+    
+    
+    
+    
+    
+  }
+
+  
   if (auto* shadow = aElement.GetShadowRoot()) {
     maps.AppendElement(&shadow->ServoStyleRuleMap());
   }

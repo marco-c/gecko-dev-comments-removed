@@ -35,6 +35,7 @@
 #include "mozilla/dom/DocumentInlines.h"
 #include "nsMediaFeatures.h"
 #include "nsPrintfCString.h"
+#include "nsXBLPrototypeBinding.h"
 #include "gfxUserFontSet.h"
 #include "nsBindingManager.h"
 #include "nsWindowSizes.h"
@@ -140,7 +141,7 @@ void ServoStyleSet::ShellDetachedFromDocument() {
 void ServoStyleSet::RecordShadowStyleChange(ShadowRoot& aShadowRoot) {
   
   
-  SetStylistShadowDOMStyleSheetsDirty();
+  SetStylistXBLStyleSheetsDirty();
 
   
   if (nsPresContext* pc = GetPresContext()) {
@@ -167,6 +168,7 @@ void ServoStyleSet::InvalidateStyleForDocumentStateChanges(
   
   
   
+  
   AutoTArray<const RawServoAuthorStyles*, 20> nonDocumentStyles;
 
   EnumerateShadowRoots(*mDocument, [&](ShadowRoot& aShadowRoot) {
@@ -174,6 +176,14 @@ void ServoStyleSet::InvalidateStyleForDocumentStateChanges(
       nonDocumentStyles.AppendElement(authorStyles);
     }
   });
+
+  mDocument->BindingManager()->EnumerateBoundContentProtoBindings(
+      [&](nsXBLPrototypeBinding* aProto) {
+        if (auto* authorStyles = aProto->GetServoStyles()) {
+          nonDocumentStyles.AppendElement(authorStyles);
+        }
+        return true;
+      });
 
   Servo_InvalidateStyleForDocStateChanges(
       root, mRawSet.get(), &nonDocumentStyles, aStatesChanged.ServoValue());
@@ -198,6 +208,15 @@ RestyleHint ServoStyleSet::MediumFeaturesChanged(
     }
   });
 
+  
+  mDocument->BindingManager()->EnumerateBoundContentProtoBindings(
+      [&](nsXBLPrototypeBinding* aProto) {
+        if (auto* authorStyles = aProto->GetServoStyles()) {
+          nonDocumentStyles.AppendElement(authorStyles);
+        }
+        return true;
+      });
+
   bool mayAffectDefaultStyle =
       bool(aReason & kMediaFeaturesAffectingDefaultStyle);
 
@@ -213,7 +232,7 @@ RestyleHint ServoStyleSet::MediumFeaturesChanged(
   }
 
   if (result.mAffectsNonDocumentRules) {
-    SetStylistShadowDOMStyleSheetsDirty();
+    SetStylistXBLStyleSheetsDirty();
   }
 
   if (rulesChanged) {
@@ -643,11 +662,14 @@ StyleSheet* ServoStyleSet::SheetAt(Origin aOrigin, size_t aIndex) const {
 
 void ServoStyleSet::AppendAllNonDocumentAuthorSheets(
     nsTArray<StyleSheet*>& aArray) const {
-  EnumerateShadowRoots(*mDocument, [&](ShadowRoot& aShadowRoot) {
-    for (auto index : IntegerRange(aShadowRoot.SheetCount())) {
-      aArray.AppendElement(aShadowRoot.SheetAt(index));
-    }
-  });
+  if (mDocument) {
+    mDocument->BindingManager()->AppendAllSheets(aArray);
+    EnumerateShadowRoots(*mDocument, [&](ShadowRoot& aShadowRoot) {
+      for (auto index : IntegerRange(aShadowRoot.SheetCount())) {
+        aArray.AppendElement(aShadowRoot.SheetAt(index));
+      }
+    });
+  }
 }
 
 void ServoStyleSet::AddDocStyleSheet(StyleSheet* aSheet) {
@@ -871,8 +893,8 @@ void ServoStyleSet::SetStylistStyleSheetsDirty() {
   }
 }
 
-void ServoStyleSet::SetStylistShadowDOMStyleSheetsDirty() {
-  mStylistState |= StylistState::ShadowDOMStyleSheetsDirty;
+void ServoStyleSet::SetStylistXBLStyleSheetsDirty() {
+  mStylistState |= StylistState::XBLStyleSheetsDirty;
   if (nsPresContext* presContext = GetPresContext()) {
     presContext->RestyleManager()->IncrementUndisplayedRestyleGeneration();
   }
@@ -982,7 +1004,8 @@ already_AddRefed<RawServoAnimationValue> ServoStyleSet::ComputeAnimationValue(
 }
 
 bool ServoStyleSet::EnsureUniqueInnerOnCSSSheets() {
-  using SheetOwner = Variant<ServoStyleSet*, ShadowRoot*>;
+  using SheetOwner =
+      Variant<ServoStyleSet*, nsXBLPrototypeBinding*, ShadowRoot*>;
 
   AutoTArray<Pair<StyleSheet*, SheetOwner>, 32> queue;
   EnumerateStyleSheets([&](StyleSheet& aSheet) {
@@ -996,6 +1019,16 @@ bool ServoStyleSet::EnsureUniqueInnerOnCSSSheets() {
     }
   });
 
+  mDocument->BindingManager()->EnumerateBoundContentProtoBindings(
+      [&](nsXBLPrototypeBinding* aProto) {
+        AutoTArray<StyleSheet*, 3> sheets;
+        aProto->AppendStyleSheetsTo(sheets);
+        for (auto* sheet : sheets) {
+          queue.AppendElement(MakePair(sheet, SheetOwner{aProto}));
+        }
+        return true;
+      });
+
   bool anyNonDocStyleChanged = false;
   while (!queue.IsEmpty()) {
     uint32_t idx = queue.Length() - 1;
@@ -1003,9 +1036,13 @@ bool ServoStyleSet::EnsureUniqueInnerOnCSSSheets() {
     SheetOwner owner = queue[idx].second();
     queue.RemoveElementAt(idx);
 
-    if (!sheet->HasUniqueInner() && owner.is<ShadowRoot*>()) {
-      RawServoAuthorStyles* authorStyles =
-          owner.as<ShadowRoot*>()->GetServoStyles();
+    if (!sheet->HasUniqueInner()) {
+      RawServoAuthorStyles* authorStyles = nullptr;
+      if (owner.is<ShadowRoot*>()) {
+        authorStyles = owner.as<ShadowRoot*>()->GetServoStyles();
+      } else if (owner.is<nsXBLPrototypeBinding*>()) {
+        authorStyles = owner.as<nsXBLPrototypeBinding*>()->GetServoStyles();
+      }
 
       if (authorStyles) {
         Servo_AuthorStyles_ForceDirty(authorStyles);
@@ -1033,7 +1070,7 @@ bool ServoStyleSet::EnsureUniqueInnerOnCSSSheets() {
   }
 
   if (anyNonDocStyleChanged) {
-    SetStylistShadowDOMStyleSheetsDirty();
+    SetStylistXBLStyleSheetsDirty();
   }
 
   if (mNeedsRestyleAfterEnsureUniqueInner) {
@@ -1063,7 +1100,7 @@ void ServoStyleSet::CompatibilityModeChanged() {
     }
   });
   if (anyShadow) {
-    SetStylistShadowDOMStyleSheetsDirty();
+    SetStylistXBLStyleSheetsDirty();
   }
 }
 
@@ -1153,6 +1190,9 @@ void ServoStyleSet::UpdateStylist() {
   MOZ_ASSERT(StylistNeedsUpdate());
 
   if (mStylistState & StylistState::StyleSheetsDirty) {
+    
+    
+    
     Element* root = mDocument->GetRootElement();
     const ServoElementSnapshotTable* snapshots = nullptr;
     if (nsPresContext* pc = GetPresContext()) {
@@ -1161,12 +1201,20 @@ void ServoStyleSet::UpdateStylist() {
     Servo_StyleSet_FlushStyleSheets(mRawSet.get(), root, snapshots);
   }
 
-  if (MOZ_UNLIKELY(mStylistState & StylistState::ShadowDOMStyleSheetsDirty)) {
+  if (MOZ_UNLIKELY(mStylistState & StylistState::XBLStyleSheetsDirty)) {
     EnumerateShadowRoots(*mDocument, [&](ShadowRoot& aShadowRoot) {
       if (auto* authorStyles = aShadowRoot.GetServoStyles()) {
         Servo_AuthorStyles_Flush(authorStyles, mRawSet.get());
       }
     });
+
+    mDocument->BindingManager()->EnumerateBoundContentProtoBindings(
+        [&](nsXBLPrototypeBinding* aProto) {
+          if (auto* authorStyles = aProto->GetServoStyles()) {
+            Servo_AuthorStyles_Flush(authorStyles, mRawSet.get());
+          }
+          return true;
+        });
   }
 
   mStylistState = StylistState::NotDirty;
