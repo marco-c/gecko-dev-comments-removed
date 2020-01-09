@@ -230,6 +230,12 @@ pref("dom.keyboardevent.keypress.hack.dispatch_non_printable_keys", "www.icloud.
 pref("dom.keyboardevent.keypress.hack.use_legacy_keycode_and_charcode", "*.collabserv.com,*.gov.online.office365.us,*.officeapps-df.live.com,*.officeapps.live.com,*.online.office.de,*.partner.officewebapps.cn,*.scniris.com");
 
 
+
+
+
+pref("dom.mouseevent.click.hack.use_legacy_non-primary_dispatch", "");
+
+
 pref("dom.inputevent.data.enabled", true);
 
 

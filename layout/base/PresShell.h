@@ -1429,6 +1429,11 @@ class PresShell final : public nsIPresShell,
   
   bool mInitializedWithKeyPressEventDispatchingBlacklist : 1;
 
+  
+  bool mForceUseLegacyNonPrimaryDispatch : 1;
+  
+  bool mInitializedWithClickEventDispatchingBlacklist : 1;
+
   static bool sDisableNonTestMouseEvents;
 
   TimeStamp mLastOSWake;

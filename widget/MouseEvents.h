@@ -212,7 +212,8 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
         mContextMenuTrigger(eNormal),
         mExitFrom(eChild),
         mIgnoreRootScrollFrame(false),
-        mClickCount(0) {}
+        mClickCount(0),
+        mUseLegacyNonPrimaryDispatch(false) {}
 
   WidgetMouseEvent(bool aIsTrusted, EventMessage aMessage, nsIWidget* aWidget,
                    EventClassID aEventClassID, Reason aReason)
@@ -221,7 +222,8 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
         mContextMenuTrigger(eNormal),
         mExitFrom(eChild),
         mIgnoreRootScrollFrame(false),
-        mClickCount(0) {}
+        mClickCount(0),
+        mUseLegacyNonPrimaryDispatch(false) {}
 
  public:
   virtual WidgetMouseEvent* AsMouseEvent() override { return this; }
@@ -234,7 +236,8 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
         mContextMenuTrigger(aContextMenuTrigger),
         mExitFrom(eChild),
         mIgnoreRootScrollFrame(false),
-        mClickCount(0) {
+        mClickCount(0),
+        mUseLegacyNonPrimaryDispatch(false) {
     if (aMessage == eContextMenu) {
       button = (mContextMenuTrigger == eNormal) ? eRightButton : eLeftButton;
     }
@@ -289,12 +292,17 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
   
   uint32_t mClickCount;
 
+  
+  
+  bool mUseLegacyNonPrimaryDispatch;
+
   void AssignMouseEventData(const WidgetMouseEvent& aEvent, bool aCopyTargets) {
     AssignMouseEventBaseData(aEvent, aCopyTargets);
     AssignPointerHelperData(aEvent,  true);
 
     mIgnoreRootScrollFrame = aEvent.mIgnoreRootScrollFrame;
     mClickCount = aEvent.mClickCount;
+    mUseLegacyNonPrimaryDispatch = aEvent.mUseLegacyNonPrimaryDispatch;
   }
 
   

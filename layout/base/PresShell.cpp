@@ -837,7 +837,9 @@ PresShell::PresShell()
       mHasHandledUserInput(false),
       mForceDispatchKeyPressEventsForNonPrintableKeys(false),
       mForceUseLegacyKeyCodeAndCharCodeValues(false),
-      mInitializedWithKeyPressEventDispatchingBlacklist(false) {
+      mInitializedWithKeyPressEventDispatchingBlacklist(false),
+      mForceUseLegacyNonPrimaryDispatch(false),
+      mInitializedWithClickEventDispatchingBlacklist(false) {
   MOZ_LOG(gLog, LogLevel::Debug, ("PresShell::PresShell this=%p", this));
 
 #ifdef MOZ_REFLOW_PERF
@@ -8183,6 +8185,26 @@ nsresult PresShell::EventHandler::DispatchEventToDOM(
       }
       if (mPresShell->mForceUseLegacyKeyCodeAndCharCodeValues) {
         aEvent->AsKeyboardEvent()->mUseLegacyKeyCodeAndCharCodeValues = true;
+      }
+    } else if (aEvent->mMessage == eMouseUp) {
+      
+      
+      
+      
+      
+      
+      
+      if (!mPresShell->mInitializedWithClickEventDispatchingBlacklist) {
+        mPresShell->mInitializedWithClickEventDispatchingBlacklist = true;
+        nsCOMPtr<nsIURI> uri =
+            GetDocumentURIToCompareWithBlacklist(*mPresShell);
+        mPresShell->mForceUseLegacyNonPrimaryDispatch =
+            nsContentUtils::IsURIInPrefList(
+                uri,
+                "dom.mouseevent.click.hack.use_legacy_non-primary_dispatch");
+      }
+      if (mPresShell->mForceUseLegacyNonPrimaryDispatch) {
+        aEvent->AsMouseEvent()->mUseLegacyNonPrimaryDispatch = true;
       }
     }
 
