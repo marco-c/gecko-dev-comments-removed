@@ -258,7 +258,7 @@
   display: inherit;
   
 
-  height: 100%;
+  max-block-size: 100%;
 }
 
 *|*::-moz-column-set {

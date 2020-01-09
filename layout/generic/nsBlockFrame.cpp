@@ -3345,9 +3345,30 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
 
     
     Maybe<ReflowInput> blockReflowInput;
-    blockReflowInput.emplace(
-        aState.mPresContext, aState.mReflowInput, frame,
-        availSpace.Size(wm).ConvertTo(frame->GetWritingMode(), wm));
+    if (Style()->GetPseudoType() == PseudoStyleType::columnContent) {
+      
+      
+      const ReflowInput* cbReflowInput =
+          StaticPrefs::layout_css_column_span_enabled()
+              ? aState.mReflowInput.mParentReflowInput->mCBReflowInput
+              : aState.mReflowInput.mCBReflowInput;
+      MOZ_ASSERT(cbReflowInput->mFrame->StyleColumn()->IsColumnContainerStyle(),
+                 "Get unexpected reflow input of multicol containing block!");
+
+      
+      
+      LogicalSize cbSize = LogicalSize(wm, aState.mReflowInput.ComputedISize(),
+                                       cbReflowInput->ComputedBSize())
+                               .ConvertTo(frame->GetWritingMode(), wm);
+
+      blockReflowInput.emplace(
+          aState.mPresContext, aState.mReflowInput, frame,
+          availSpace.Size(wm).ConvertTo(frame->GetWritingMode(), wm), &cbSize);
+    } else {
+      blockReflowInput.emplace(
+          aState.mPresContext, aState.mReflowInput, frame,
+          availSpace.Size(wm).ConvertTo(frame->GetWritingMode(), wm));
+    }
 
     nsFloatManager::SavedState floatManagerState;
     nsReflowStatus frameReflowStatus;

@@ -312,6 +312,11 @@ nsColumnSetFrame::ReflowConfig nsColumnSetFrame::ChooseColumnStrategy(
     colBSize = aReflowInput.ComputedBSize();
   } else if (aReflowInput.ComputedMaxBSize() != NS_INTRINSICSIZE) {
     colBSize = std::min(colBSize, aReflowInput.ComputedMaxBSize());
+  } else if (StaticPrefs::layout_css_column_span_enabled() &&
+             aReflowInput.mCBReflowInput->ComputedMaxBSize() !=
+                 NS_INTRINSICSIZE) {
+    colBSize =
+        std::min(colBSize, aReflowInput.mCBReflowInput->ComputedMaxBSize());
   }
 
   nscoord colGap = GetColumnGap(this, aReflowInput.ComputedISize());
@@ -419,8 +424,9 @@ nsColumnSetFrame::ReflowConfig nsColumnSetFrame::ChooseColumnStrategy(
 
   COLUMN_SET_LOG(
       "%s: numColumns=%d, colISize=%d, expectedISizeLeftOver=%d,"
-      " colBSize=%d, colGap=%d",
-      __func__, numColumns, colISize, expectedISizeLeftOver, colBSize, colGap);
+      " colBSize=%d, colGap=%d, isBalancing %d",
+      __func__, numColumns, colISize, expectedISizeLeftOver, colBSize, colGap,
+      isBalancing);
 
   ReflowConfig config;
   config.mBalanceColCount = numColumns;
@@ -705,7 +711,10 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
         availSize.BSize(wm) = GetAvailableContentBSize(aReflowInput);
       }
 
-      LogicalSize computedSize = aReflowInput.ComputedSize(wm);
+      LogicalSize computedSize =
+          StaticPrefs::layout_css_column_span_enabled()
+              ? aReflowInput.mCBReflowInput->ComputedSize(wm)
+              : aReflowInput.ComputedSize(wm);
 
       if (reflowNext) child->AddStateBits(NS_FRAME_IS_DIRTY);
 
@@ -720,8 +729,10 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
       
       kidReflowInput.mFlags.mMustReflowPlaceholders = !colBSizeChanged;
 
-      COLUMN_SET_LOG("%s: Reflowing child #%d %p: availBSize=%d", __func__,
-                     columnCount, child, availSize.BSize(wm));
+      COLUMN_SET_LOG(
+          "%s: Reflowing child #%d %p: availSize=(%d,%d), kidCBSize=(%d,%d)",
+          __func__, columnCount, child, availSize.ISize(wm),
+          availSize.BSize(wm), kidCBSize.ISize(wm), kidCBSize.BSize(wm));
 
       
       
@@ -835,7 +846,9 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
       }
 
       if ((contentBEnd > aReflowInput.ComputedMaxBSize() ||
-           contentBEnd > aReflowInput.ComputedBSize()) &&
+           contentBEnd > aReflowInput.ComputedBSize() ||
+           (StaticPrefs::layout_css_column_span_enabled() &&
+            contentBEnd > aReflowInput.mCBReflowInput->ComputedMaxBSize())) &&
           aConfig.mIsBalancing) {
         
         
@@ -1137,6 +1150,10 @@ void nsColumnSetFrame::Reflow(nsPresContext* aPresContext,
   DO_GLOBAL_REFLOW_COUNT("nsColumnSetFrame");
   DISPLAY_REFLOW(aPresContext, this, aReflowInput, aDesiredSize, aStatus);
   MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
+
+  MOZ_ASSERT_IF(StaticPrefs::layout_css_column_span_enabled(),
+                aReflowInput.mCBReflowInput->mFrame->StyleColumn()
+                    ->IsColumnContainerStyle());
 
   
   if (aReflowInput.ComputedBSize() != NS_AUTOHEIGHT) {
