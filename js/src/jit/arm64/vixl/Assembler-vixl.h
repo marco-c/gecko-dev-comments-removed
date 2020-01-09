@@ -4057,11 +4057,9 @@ class Assembler : public MozBaseAssembler {
                 const MemOperand& addr,
                 LoadStoreScalingOption option = PreferScaledOffset);
 
-  
-  
   BufferOffset Logical(const Register& rd,
                        const Register& rn,
-                       const Operand operand,
+                       const Operand& operand,
                        LogicalOp op);
   BufferOffset LogicalImmediate(const Register& rd,
                                 const Register& rn,
