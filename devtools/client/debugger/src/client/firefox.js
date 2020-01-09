@@ -53,14 +53,14 @@ export async function onConnect(connection: any, actions: Object) {
   
   
   
-  const sources = await clientCommands.fetchSources();
+  const sourceInfo = await clientCommands.fetchSources();
   const traits = tabTarget.traits;
   await actions.connect(
     tabTarget.url,
     threadClient.actor,
     traits && traits.canRewind
   );
-  await actions.newSources(sources);
+  await actions.newGeneratedSources(sourceInfo);
 
   
   
