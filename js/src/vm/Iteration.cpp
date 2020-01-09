@@ -524,8 +524,8 @@ static bool Snapshot(JSContext* cx, HandleObject pobj_, unsigned flags,
 
 
 
-  jsid* ids = props->begin();
-  size_t n = props->length();
+  jsid* ids = props.begin();
+  size_t n = props.length();
 
   RootedIdVector tmp(cx);
   if (!tmp.resize(n)) {
