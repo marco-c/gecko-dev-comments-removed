@@ -1554,13 +1554,9 @@ class MOZ_STACK_CLASS OriginParser final {
 };
 
 class RepositoryOperationBase : public StorageOperationBase {
-  int32_t mStorageVersion;
-
  public:
-  RepositoryOperationBase(nsIFile* aDirectory, bool aPersistent,
-                          int32_t aStorageVersion)
-      : StorageOperationBase(aDirectory, aPersistent),
-        mStorageVersion(aStorageVersion) {}
+  RepositoryOperationBase(nsIFile* aDirectory, bool aPersistent)
+      : StorageOperationBase(aDirectory, aPersistent) {}
 
   nsresult ProcessRepository();
 
@@ -1585,9 +1581,8 @@ class CreateOrUpgradeDirectoryMetadataHelper final
   nsCOMPtr<nsIFile> mPermanentStorageDir;
 
  public:
-  CreateOrUpgradeDirectoryMetadataHelper(nsIFile* aDirectory, bool aPersistent,
-                                         int32_t aStorageVersion)
-      : RepositoryOperationBase(aDirectory, aPersistent, aStorageVersion) {}
+  CreateOrUpgradeDirectoryMetadataHelper(nsIFile* aDirectory, bool aPersistent)
+      : RepositoryOperationBase(aDirectory, aPersistent) {}
 
  private:
   nsresult MaybeUpgradeOriginDirectory(nsIFile* aDirectory);
@@ -1600,9 +1595,8 @@ class CreateOrUpgradeDirectoryMetadataHelper final
 
 class UpgradeStorageFrom0_0To1_0Helper final : public RepositoryOperationBase {
  public:
-  UpgradeStorageFrom0_0To1_0Helper(nsIFile* aDirectory, bool aPersistent,
-                                   int32_t aStorageVersion)
-      : RepositoryOperationBase(aDirectory, aPersistent, aStorageVersion) {}
+  UpgradeStorageFrom0_0To1_0Helper(nsIFile* aDirectory, bool aPersistent)
+      : RepositoryOperationBase(aDirectory, aPersistent) {}
 
  private:
   nsresult PrepareOriginDirectory(OriginProps& aOriginProps,
@@ -1613,9 +1607,8 @@ class UpgradeStorageFrom0_0To1_0Helper final : public RepositoryOperationBase {
 
 class UpgradeStorageFrom1_0To2_0Helper final : public RepositoryOperationBase {
  public:
-  UpgradeStorageFrom1_0To2_0Helper(nsIFile* aDirectory, bool aPersistent,
-                                   int32_t aStorageVersion)
-      : RepositoryOperationBase(aDirectory, aPersistent, aStorageVersion) {}
+  UpgradeStorageFrom1_0To2_0Helper(nsIFile* aDirectory, bool aPersistent)
+      : RepositoryOperationBase(aDirectory, aPersistent) {}
 
  private:
   nsresult MaybeRemoveMorgueDirectory(const OriginProps& aOriginProps);
@@ -1633,9 +1626,8 @@ class UpgradeStorageFrom1_0To2_0Helper final : public RepositoryOperationBase {
 
 class UpgradeStorageFrom2_0To2_1Helper final : public RepositoryOperationBase {
  public:
-  UpgradeStorageFrom2_0To2_1Helper(nsIFile* aDirectory, bool aPersistent,
-                                   int32_t aStorageVersion)
-      : RepositoryOperationBase(aDirectory, aPersistent, aStorageVersion) {}
+  UpgradeStorageFrom2_0To2_1Helper(nsIFile* aDirectory, bool aPersistent)
+      : RepositoryOperationBase(aDirectory, aPersistent) {}
 
  private:
   nsresult PrepareOriginDirectory(OriginProps& aOriginProps,
@@ -1646,9 +1638,8 @@ class UpgradeStorageFrom2_0To2_1Helper final : public RepositoryOperationBase {
 
 class UpgradeStorageFrom2_1To2_2Helper final : public RepositoryOperationBase {
  public:
-  UpgradeStorageFrom2_1To2_2Helper(nsIFile* aDirectory, bool aPersistent,
-                                   int32_t aStorageVersion)
-      : RepositoryOperationBase(aDirectory, aPersistent, aStorageVersion) {}
+  UpgradeStorageFrom2_1To2_2Helper(nsIFile* aDirectory, bool aPersistent)
+      : RepositoryOperationBase(aDirectory, aPersistent) {}
 
  private:
   nsresult PrepareOriginDirectory(OriginProps& aOriginProps,
@@ -4056,11 +4047,31 @@ nsresult QuotaManager::InitializeOrigin(PersistenceType aPersistenceType,
     }
 
     Client::Type clientType;
-    rv = Client::TypeFromText(leafName, clientType, kStorageVersion);
+    rv = Client::TypeFromText(leafName, clientType);
     if (NS_FAILED(rv)) {
       UNKNOWN_FILE_WARNING(leafName);
       REPORT_TELEMETRY_INIT_ERR(kInternalError, Ori_UnexpectedClient);
       RECORD_IN_NIGHTLY(statusKeeper, NS_ERROR_UNEXPECTED);
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (Client::IsDeprecatedClient(leafName)) {
+        rv = file->Remove(true);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          CONTINUE_IN_NIGHTLY_RETURN_IN_OTHERS(rv);
+        }
+
+        MOZ_DIAGNOSTIC_ASSERT(true, "Found a deprecated client");
+      }
+
       CONTINUE_IN_NIGHTLY_RETURN_IN_OTHERS(NS_ERROR_UNEXPECTED);
     }
 
@@ -4155,8 +4166,7 @@ nsresult QuotaManager::MaybeUpgradeIndexedDBDirectory() {
   return NS_OK;
 }
 
-nsresult QuotaManager::MaybeUpgradePersistentStorageDirectory(
-    int32_t aStorageVersion) {
+nsresult QuotaManager::MaybeUpgradePersistentStorageDirectory() {
   AssertIsOnIOThread();
 
   nsCOMPtr<nsIFile> persistentStorageDir;
@@ -4214,8 +4224,7 @@ nsresult QuotaManager::MaybeUpgradePersistentStorageDirectory(
   
   RefPtr<CreateOrUpgradeDirectoryMetadataHelper> helper =
       new CreateOrUpgradeDirectoryMetadataHelper(persistentStorageDir,
-                                                  true,
-                                                 aStorageVersion);
+                                                  true);
 
   rv = helper->ProcessRepository();
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -4246,9 +4255,9 @@ nsresult QuotaManager::MaybeUpgradePersistentStorageDirectory(
       return NS_OK;
     }
 
-    helper = new CreateOrUpgradeDirectoryMetadataHelper(temporaryStorageDir,
-                                                         false,
-                                                        aStorageVersion);
+    helper =
+        new CreateOrUpgradeDirectoryMetadataHelper(temporaryStorageDir,
+                                                    false);
 
     rv = helper->ProcessRepository();
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -4351,8 +4360,7 @@ nsresult QuotaManager::UpgradeStorage(const int32_t aOldVersion,
     }
 
     bool persistent = persistenceType == PERSISTENCE_TYPE_PERSISTENT;
-    RefPtr<RepositoryOperationBase> helper =
-        new Helper(directory, persistent, aOldVersion);
+    RefPtr<RepositoryOperationBase> helper = new Helper(directory, persistent);
     rv = helper->ProcessRepository();
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
@@ -4389,7 +4397,7 @@ nsresult QuotaManager::UpgradeStorageFrom0_0To1_0(
     return rv;
   }
 
-  rv = MaybeUpgradePersistentStorageDirectory( 0);
+  rv = MaybeUpgradePersistentStorageDirectory();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -6988,15 +6996,6 @@ nsresult QuotaUsageRequestBase::GetUsageForOrigin(
     rv = directory->GetDirectoryEntries(getter_AddRefs(entries));
     NS_ENSURE_SUCCESS(rv, rv);
 
-    
-    
-    
-    
-    
-    
-    
-    int32_t storageVersion =
-        mNeedsQuotaManagerInit ? kStorageVersion :  0;
     nsCOMPtr<nsIFile> file;
     while (NS_SUCCEEDED((rv = entries->GetNextFile(getter_AddRefs(file)))) &&
            file && !mCanceled) {
@@ -7044,7 +7043,7 @@ nsresult QuotaUsageRequestBase::GetUsageForOrigin(
       }
 
       Client::Type clientType;
-      rv = Client::TypeFromText(leafName, clientType, storageVersion);
+      rv = Client::TypeFromText(leafName, clientType);
       if (NS_FAILED(rv)) {
         UNKNOWN_FILE_WARNING(leafName);
         if (!initialized) {
@@ -9035,12 +9034,15 @@ nsresult RepositoryOperationBase::MaybeUpgradeClients(
 
     bool removed;
     rv = PrepareClientDirectory(file, leafName, removed);
-    if (NS_FAILED(rv) || removed) {
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    if (removed) {
       continue;
     }
 
     Client::Type clientType;
-    rv = Client::TypeFromText(leafName, clientType, mStorageVersion);
+    rv = Client::TypeFromText(leafName, clientType);
     if (NS_FAILED(rv)) {
       UNKNOWN_FILE_WARNING(leafName);
       continue;
