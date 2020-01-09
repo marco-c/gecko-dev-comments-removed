@@ -6057,6 +6057,19 @@ void nsGlobalWindowOuter::PostMessageMozOuter(JSContext* aCx,
     return;
   }
 
+  if (StaticPrefs::dom_separate_event_queue_for_post_message_enabled()) {
+    if (mDoc) {
+      Document* doc = mDoc->GetTopLevelContentDocument();
+      if (doc && doc->GetReadyStateEnum() < Document::READYSTATE_COMPLETE) {
+        
+        
+        mozilla::dom::TabGroup* tabGroup = TabGroup();
+        aError = tabGroup->QueuePostMessageEvent(event.forget());
+        return;
+      }
+    }
+  }
+
   aError = Dispatch(TaskCategory::Other, event.forget());
 }
 
