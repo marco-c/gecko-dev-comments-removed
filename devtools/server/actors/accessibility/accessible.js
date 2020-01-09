@@ -366,16 +366,29 @@ const AccessibleActor = ActorClassWithSpec(accessibleSpec, {
       actor: this.actorID,
       role: this.role,
       name: this.name,
+      childCount: this.childCount,
+      checks: this._lastAudit,
+    };
+  },
+
+  
+
+
+
+
+
+
+
+  hydrate() {
+    return {
       value: this.value,
       description: this.description,
       keyboardShortcut: this.keyboardShortcut,
-      childCount: this.childCount,
       domNodeType: this.domNodeType,
       indexInParent: this.indexInParent,
       states: this.states,
       actions: this.actions,
       attributes: this.attributes,
-      checks: this._lastAudit,
     };
   },
 

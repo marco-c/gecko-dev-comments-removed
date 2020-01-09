@@ -79,8 +79,12 @@ AccessibilityView.prototype = {
     window.emit(EVENTS.NEW_ACCESSIBLE_FRONT_HIGHLIGHTED);
   },
 
-  async selectNodeAccessible(walker, node) {
+  async selectNodeAccessible(walker, node, supports) {
     let accessible = await walker.getAccessibleFor(node);
+    if (accessible && supports.hydration) {
+      await accessible.hydrate();
+    }
+
     
     
     
@@ -90,7 +94,13 @@ AccessibilityView.prototype = {
       for (const child of children) {
         if (child.nodeType === nodeConstants.TEXT_NODE) {
           accessible = await walker.getAccessibleFor(child);
-          if (accessible && accessible.indexInParent >= 0) {
+          
+          
+          if (accessible && supports.hydration) {
+            await accessible.hydrate();
+          }
+
+          if (accessible.indexInParent >= 0) {
             break;
           }
         }
