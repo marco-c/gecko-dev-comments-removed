@@ -10,7 +10,7 @@
 
 namespace mozilla {
 
-class MediaTransportHandlerChild;
+class MediaTransportChild;
 
 
 
@@ -72,10 +72,10 @@ class MediaTransportHandlerIPC : public MediaTransportHandler {
       std::unique_ptr<dom::RTCStatsReportInternal>&& aReport) override;
 
  private:
-  friend class MediaTransportHandlerChild;
+  friend class MediaTransportChild;
 
   
-  MediaTransportHandlerChild* mChild = nullptr;
+  MediaTransportChild* mChild = nullptr;
 
   
   
