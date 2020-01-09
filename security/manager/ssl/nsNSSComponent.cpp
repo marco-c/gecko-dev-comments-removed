@@ -444,98 +444,9 @@ static nsresult AccountHasFamilySafetyEnabled(bool& enabled) {
   enabled = loggingRequired == 1 || webFilterOn == 1;
   return NS_OK;
 }
-
-nsresult nsNSSComponent::MaybeImportFamilySafetyRoot(
-    PCCERT_CONTEXT certificate, bool& wasFamilySafetyRoot) {
-  MutexAutoLock lock(mMutex);
-  MOZ_ASSERT(NS_IsMainThread());
-  if (!NS_IsMainThread()) {
-    return NS_ERROR_NOT_SAME_THREAD;
-  }
-  MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("MaybeImportFamilySafetyRoot"));
-  wasFamilySafetyRoot = false;
-
-  UniqueCERTCertificate nssCertificate(
-      PCCERT_CONTEXTToCERTCertificate(certificate));
-  if (!nssCertificate) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("couldn't decode certificate"));
-    return NS_ERROR_FAILURE;
-  }
-  
-  UniquePORTString subjectName(CERT_GetCommonName(&nssCertificate->subject));
-  MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-          ("subject name is '%s'", subjectName.get()));
-  if (kMicrosoftFamilySafetyCN.Equals(subjectName.get())) {
-    wasFamilySafetyRoot = true;
-    MOZ_ASSERT(!mFamilySafetyRoot);
-    mFamilySafetyRoot = std::move(nssCertificate);
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("added Family Safety root"));
-  }
-  return NS_OK;
-}
-
-nsresult nsNSSComponent::LoadFamilySafetyRoot() {
-  ScopedCertStore certstore(
-      CertOpenSystemStore(0, kWindowsDefaultRootStoreName));
-  if (!certstore.get()) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-            ("couldn't get certstore '%S'", kWindowsDefaultRootStoreName));
-    return NS_ERROR_FAILURE;
-  }
-  
-  
-  PCCERT_CONTEXT certificate = nullptr;
-  while ((certificate = CertFindCertificateInStore(
-              certstore.get(), X509_ASN_ENCODING, 0, CERT_FIND_ANY, nullptr,
-              certificate))) {
-    bool wasFamilySafetyRoot = false;
-    nsresult rv = MaybeImportFamilySafetyRoot(certificate, wasFamilySafetyRoot);
-    if (NS_SUCCEEDED(rv) && wasFamilySafetyRoot) {
-      return NS_OK;  
-    }
-  }
-  return NS_ERROR_FAILURE;
-}
 #endif  
 
-void nsNSSComponent::UnloadFamilySafetyRoot() {
-  MOZ_ASSERT(NS_IsMainThread());
-  if (!NS_IsMainThread()) {
-    return;
-  }
-  MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("UnloadFamilySafetyRoot"));
 
-  
-  
-  
-  
-  
-  UniqueCERTCertificate familySafetyRoot;
-  {
-    MutexAutoLock lock(mMutex);
-    if (!mFamilySafetyRoot) {
-      MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-              ("Family Safety Root wasn't present"));
-      return;
-    }
-    familySafetyRoot = std::move(mFamilySafetyRoot);
-    MOZ_ASSERT(!mFamilySafetyRoot);
-  }
-  MOZ_ASSERT(familySafetyRoot);
-  
-  
-  
-  
-  
-  
-  
-  CERTCertTrust trust = {CERTDB_USER, 0, 0};
-  if (ChangeCertTrustWithPossibleAuthentication(familySafetyRoot, trust,
-                                                nullptr) != SECSuccess) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-            ("couldn't untrust certificate for TLS server auth"));
-  }
-}
 
 
 
@@ -544,40 +455,23 @@ void nsNSSComponent::UnloadFamilySafetyRoot() {
 const char* kFamilySafetyModePref = "security.family_safety.mode";
 const uint32_t kFamilySafetyModeDefault = 0;
 
-
-
-
-
-
-
-
-void nsNSSComponent::MaybeEnableFamilySafetyCompatibility(
+bool nsNSSComponent::ShouldEnableEnterpriseRootsForFamilySafety(
     uint32_t familySafetyMode) {
 #ifdef XP_WIN
   if (!(IsWin8Point1OrLater() && !IsWin10OrLater())) {
-    return;
+    return false;
   }
-  if (familySafetyMode > 2) {
-    familySafetyMode = 0;
-  }
-  if (familySafetyMode == 0) {
-    return;
+  if (familySafetyMode != 2) {
+    return false;
   }
   bool familySafetyEnabled;
   nsresult rv = AccountHasFamilySafetyEnabled(familySafetyEnabled);
   if (NS_FAILED(rv)) {
-    return;
+    return false;
   }
-  if (!familySafetyEnabled) {
-    return;
-  }
-  if (familySafetyMode == 2) {
-    rv = LoadFamilySafetyRoot();
-    if (NS_FAILED(rv)) {
-      MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-              ("failed to load Family Safety root"));
-    }
-  }
+  return familySafetyEnabled;
+#else
+  return false;
 #endif  
 }
 
@@ -641,10 +535,16 @@ void nsNSSComponent::MaybeImportEnterpriseRoots() {
   }
   bool importEnterpriseRoots =
       Preferences::GetBool(kEnterpriseRootModePref, false);
-  if (!importEnterpriseRoots) {
-    return;
+  uint32_t familySafetyMode =
+      Preferences::GetUint(kFamilySafetyModePref, kFamilySafetyModeDefault);
+  
+  
+  if (ShouldEnableEnterpriseRootsForFamilySafety(familySafetyMode)) {
+    importEnterpriseRoots = true;
   }
-  ImportEnterpriseRoots();
+  if (importEnterpriseRoots) {
+    ImportEnterpriseRoots();
+  }
 }
 
 void nsNSSComponent::ImportEnterpriseRoots() {
@@ -695,25 +595,6 @@ nsresult nsNSSComponent::TrustLoaded3rdPartyRoots() {
       }
     }
   }
-#ifdef XP_WIN
-  
-  
-  UniqueCERTCertificate familySafetyRoot;
-  {
-    MutexAutoLock lock(mMutex);
-    if (mFamilySafetyRoot) {
-      familySafetyRoot.reset(CERT_DupCertificate(mFamilySafetyRoot.get()));
-      if (!familySafetyRoot) {
-        return NS_ERROR_OUT_OF_MEMORY;
-      }
-    }
-  }
-  if (familySafetyRoot && ChangeCertTrustWithPossibleAuthentication(
-                              familySafetyRoot, trust, nullptr) != SECSuccess) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-            ("couldn't trust family safety certificate for TLS server auth"));
-  }
-#endif
   return NS_OK;
 }
 
@@ -822,10 +703,15 @@ LoadLoadableRootsTask::Run() {
     }
   }
 
+  
+  
+  if (mNSSComponent->ShouldEnableEnterpriseRootsForFamilySafety(
+          mFamilySafetyMode)) {
+    mImportEnterpriseRoots = true;
+  }
   if (mImportEnterpriseRoots) {
     mNSSComponent->ImportEnterpriseRoots();
   }
-  mNSSComponent->MaybeEnableFamilySafetyCompatibility(mFamilySafetyMode);
   nsresult rv = mNSSComponent->TrustLoaded3rdPartyRoots();
   if (NS_FAILED(rv)) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Error,
@@ -1986,10 +1872,7 @@ void nsNSSComponent::ShutdownNSS() {
   ::mozilla::psm::UnloadLoadableRoots();
 
   MutexAutoLock lock(mMutex);
-#ifdef XP_WIN
-  mFamilySafetyRoot = nullptr;
   mEnterpriseRoots = nullptr;
-#endif
 
   PK11_SetPasswordFunc((PK11PasswordFunc) nullptr);
 
@@ -2107,20 +1990,13 @@ nsNSSComponent::Observe(nsISupports* aSubject, const char* aTopic,
       Preferences::GetString("security.test.built_in_root_hash",
                              mTestBuiltInRootHash);
 #endif
-    } else if (prefName.Equals(kFamilySafetyModePref)) {
-      
-      
-      UnloadFamilySafetyRoot();
-      uint32_t familySafetyMode =
-          Preferences::GetUint(kFamilySafetyModePref, kFamilySafetyModeDefault);
-      MaybeEnableFamilySafetyCompatibility(familySafetyMode);
-      TrustLoaded3rdPartyRoots();
     } else if (prefName.EqualsLiteral("security.content.signature.root_hash")) {
       MutexAutoLock lock(mMutex);
       mContentSigningRootHash.Truncate();
       Preferences::GetString("security.content.signature.root_hash",
                              mContentSigningRootHash);
-    } else if (prefName.Equals(kEnterpriseRootModePref)) {
+    } else if (prefName.Equals(kEnterpriseRootModePref) ||
+               prefName.Equals(kFamilySafetyModePref)) {
       
       
       UnloadEnterpriseRoots();

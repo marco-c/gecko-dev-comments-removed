@@ -86,16 +86,9 @@ class nsNSSComponent final : public nsINSSComponent, public nsIObserver {
   void ImportEnterpriseRoots();
   void UnloadEnterpriseRoots();
 
-  void MaybeEnableFamilySafetyCompatibility(uint32_t familySafetyMode);
-  void UnloadFamilySafetyRoot();
+  bool ShouldEnableEnterpriseRootsForFamilySafety(uint32_t familySafetyMode);
 
   nsresult TrustLoaded3rdPartyRoots();
-
-#ifdef XP_WIN
-  nsresult MaybeImportFamilySafetyRoot(PCCERT_CONTEXT certificate,
-                                       bool& wasFamilySafetyRoot);
-  nsresult LoadFamilySafetyRoot();
-#endif  
 
   
   mozilla::Monitor mLoadableRootsLoadedMonitor;
@@ -115,7 +108,6 @@ class nsNSSComponent final : public nsINSSComponent, public nsIObserver {
   nsString mMitmCanaryIssuer;
   bool mMitmDetecionEnabled;
   mozilla::UniqueCERTCertList mEnterpriseRoots;
-  mozilla::UniqueCERTCertificate mFamilySafetyRoot;
 
   
   static int mInstanceCount;

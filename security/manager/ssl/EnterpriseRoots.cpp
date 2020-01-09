@@ -21,7 +21,6 @@ using namespace mozilla;
 
 #ifdef XP_WIN
 const wchar_t* kWindowsDefaultRootStoreName = L"ROOT";
-NS_NAMED_LITERAL_CSTRING(kMicrosoftFamilySafetyCN, "Microsoft Family Safety");
 
 
 
@@ -100,6 +99,24 @@ UniqueCERTCertificate PCCERT_CONTEXTToCERTCertificate(PCCERT_CONTEXT pccert) {
 
 
 
+class ScopedCertStore final {
+ public:
+  explicit ScopedCertStore(HCERTSTORE certstore) : certstore(certstore) {}
+
+  ~ScopedCertStore() { CertCloseStore(certstore, 0); }
+
+  HCERTSTORE get() { return certstore; }
+
+ private:
+  ScopedCertStore(const ScopedCertStore&) = delete;
+  ScopedCertStore& operator=(const ScopedCertStore&) = delete;
+  HCERTSTORE certstore;
+};
+
+
+
+
+
 
 
 
@@ -153,20 +170,13 @@ static void GatherEnterpriseRootsForLocation(DWORD locationFlag,
       MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("couldn't decode certificate"));
       continue;
     }
-    
-    
-    
-    UniquePORTString subjectName(CERT_GetCommonName(&nssCertificate->subject));
-    if (kMicrosoftFamilySafetyCN.Equals(subjectName.get())) {
-      MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("skipping Family Safety Root"));
-      continue;
-    }
     if (CERT_AddCertToListTail(roots.get(), nssCertificate.get()) !=
         SECSuccess) {
       MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("couldn't add cert to list"));
       continue;
     }
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("Imported '%s'", subjectName.get()));
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+            ("Imported '%s'", nssCertificate->subjectName));
     numImported++;
     
     Unused << nssCertificate.release();
