@@ -962,6 +962,12 @@ class ScriptSource {
   MOZ_MUST_USE bool setSource(JSContext* cx, EntryUnits<Unit>&& source,
                               size_t length);
 
+  
+  
+  template <typename Unit>
+  MOZ_MUST_USE bool setRetrievedSource(JSContext* cx, EntryUnits<Unit>&& source,
+                                       size_t length);
+
   template <typename Unit>
   void setSource(
       typename SourceTypeTraits<Unit>::SharedImmutableString uncompressed);
