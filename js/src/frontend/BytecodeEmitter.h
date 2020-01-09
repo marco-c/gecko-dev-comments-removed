@@ -21,6 +21,7 @@
 
 #include "frontend/BCEParserHandle.h"            
 #include "frontend/BytecodeControlStructures.h"  
+#include "frontend/BytecodeOffset.h"             
 #include "frontend/BytecodeSection.h"  
 #include "frontend/DestructuringFlavor.h"  
 #include "frontend/EitherParser.h"         
@@ -360,7 +361,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   
   
   MOZ_MUST_USE bool addTryNote(JSTryNoteKind kind, uint32_t stackDepth,
-                               size_t start, size_t end);
+                               BytecodeOffset start, BytecodeOffset end);
 
   
   
@@ -373,7 +374,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
   void copySrcNotes(jssrcnote* destination, uint32_t nsrcnotes);
   MOZ_MUST_USE bool setSrcNoteOffset(unsigned index, unsigned which,
-                                     ptrdiff_t offset);
+                                     BytecodeOffsetDiff offset);
 
   
   enum EmitLineNumberNote { EMIT_LINENOTE, SUPPRESS_LINENOTE };
@@ -399,7 +400,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
   JSOp strictifySetNameOp(JSOp op);
 
-  MOZ_MUST_USE bool emitCheck(JSOp op, ptrdiff_t delta, ptrdiff_t* offset);
+  MOZ_MUST_USE bool emitCheck(JSOp op, ptrdiff_t delta, BytecodeOffset* offset);
 
   
   MOZ_MUST_USE bool emit1(JSOp op);
@@ -435,7 +436,8 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   MOZ_MUST_USE bool emitUint32Operand(JSOp op, uint32_t operand);
 
   
-  MOZ_MUST_USE bool emitN(JSOp op, size_t extra, ptrdiff_t* offset = nullptr);
+  MOZ_MUST_USE bool emitN(JSOp op, size_t extra,
+                          BytecodeOffset* offset = nullptr);
 
   MOZ_MUST_USE bool emitDouble(double dval);
   MOZ_MUST_USE bool emitNumberOp(double dval);
@@ -450,7 +452,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   MOZ_MUST_USE bool emitCheckDerivedClassConstructorReturn();
 
   
-  MOZ_MUST_USE bool emitJumpTargetOp(JSOp op, ptrdiff_t* off);
+  MOZ_MUST_USE bool emitJumpTargetOp(JSOp op, BytecodeOffset* off);
   MOZ_MUST_USE bool emitJumpTarget(JumpTarget* target);
   MOZ_MUST_USE bool emitJumpNoFallthrough(JSOp op, JumpList* jump);
   MOZ_MUST_USE bool emitJump(JSOp op, JumpList* jump);
@@ -491,7 +493,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   MOZ_NEVER_INLINE MOZ_MUST_USE bool emitObject(ListNode* objNode);
 
   MOZ_MUST_USE bool replaceNewInitWithNewObject(JSObject* obj,
-                                                ptrdiff_t offset);
+                                                BytecodeOffset offset);
 
   MOZ_MUST_USE bool emitHoistedFunctionsInList(ListNode* stmtList);
 
@@ -548,10 +550,10 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   }
   MOZ_MUST_USE bool emitGetDotGeneratorInScope(EmitterScope& currentScope);
 
-  MOZ_MUST_USE bool allocateResumeIndex(ptrdiff_t offset,
+  MOZ_MUST_USE bool allocateResumeIndex(BytecodeOffset offset,
                                         uint32_t* resumeIndex);
-  MOZ_MUST_USE bool allocateResumeIndexRange(mozilla::Span<ptrdiff_t> offsets,
-                                             uint32_t* firstResumeIndex);
+  MOZ_MUST_USE bool allocateResumeIndexRange(
+      mozilla::Span<BytecodeOffset> offsets, uint32_t* firstResumeIndex);
 
   MOZ_MUST_USE bool emitInitialYield(UnaryNode* yieldNode);
   MOZ_MUST_USE bool emitYield(UnaryNode* yieldNode);

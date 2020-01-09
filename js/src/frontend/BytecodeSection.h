@@ -14,6 +14,7 @@
 #include <stdint.h>  
 
 #include "NamespaceImports.h"          
+#include "frontend/BytecodeOffset.h"   
 #include "frontend/JumpList.h"         
 #include "frontend/NameCollections.h"  
 #include "frontend/SourceNotes.h"      
@@ -72,7 +73,7 @@ struct CGTryNoteList {
   explicit CGTryNoteList(JSContext* cx) : list(cx) {}
 
   MOZ_MUST_USE bool append(JSTryNoteKind kind, uint32_t stackDepth,
-                           size_t start, size_t end);
+                           BytecodeOffset start, BytecodeOffset end);
   size_t length() const { return list.length(); }
   void finish(mozilla::Span<JSTryNote> array);
 };
@@ -86,11 +87,15 @@ struct CGScopeNoteList {
   Vector<CGScopeNote> list;
   explicit CGScopeNoteList(JSContext* cx) : list(cx) {}
 
-  MOZ_MUST_USE bool append(uint32_t scopeIndex, uint32_t offset,
+  MOZ_MUST_USE bool append(uint32_t scopeIndex, BytecodeOffset offset,
                            uint32_t parent);
-  void recordEnd(uint32_t index, uint32_t offse);
+  void recordEnd(uint32_t index, BytecodeOffset offset);
+  void recordEndFunctionBodyVar(uint32_t index);
   size_t length() const { return list.length(); }
   void finish(mozilla::Span<ScopeNote> array);
+
+ private:
+  void recordEndImpl(uint32_t index, uint32_t offset);
 };
 
 struct CGResumeOffsetList {
@@ -121,33 +126,40 @@ class BytecodeSection {
   BytecodeVector& code() { return code_; }
   const BytecodeVector& code() const { return code_; }
 
-  jsbytecode* code(ptrdiff_t offset) { return code_.begin() + offset; }
-  ptrdiff_t offset() const { return code_.end() - code_.begin(); }
+  jsbytecode* code(BytecodeOffset offset) {
+    return code_.begin() + offset.value();
+  }
+  BytecodeOffset offset() const {
+    return BytecodeOffset(code_.end() - code_.begin());
+  }
 
   
 
   SrcNotesVector& notes() { return notes_; }
   const SrcNotesVector& notes() const { return notes_; }
 
-  ptrdiff_t lastNoteOffset() const { return lastNoteOffset_; }
-  void setLastNoteOffset(ptrdiff_t offset) { lastNoteOffset_ = offset; }
+  BytecodeOffset lastNoteOffset() const { return lastNoteOffset_; }
+  void setLastNoteOffset(BytecodeOffset offset) { lastNoteOffset_ = offset; }
 
   
 
-  ptrdiff_t lastTargetOffset() const { return lastTarget_.offset; }
-  void setLastTargetOffset(ptrdiff_t offset) { lastTarget_.offset = offset; }
+  BytecodeOffset lastTargetOffset() const { return lastTarget_.offset; }
+  void setLastTargetOffset(BytecodeOffset offset) {
+    lastTarget_.offset = offset;
+  }
 
   
   bool lastOpcodeIsJumpTarget() const {
-    return lastTarget_.offset != -1 &&
-           offset() - lastTarget_.offset == ptrdiff_t(JSOP_JUMPTARGET_LENGTH);
+    return lastTarget_.offset.valid() &&
+           offset() - lastTarget_.offset ==
+               BytecodeOffsetDiff(JSOP_JUMPTARGET_LENGTH);
   }
 
   
   
   
   
-  ptrdiff_t lastNonJumpTargetOffset() const {
+  BytecodeOffset lastNonJumpTargetOffset() const {
     return lastOpcodeIsJumpTarget() ? lastTarget_.offset : offset();
   }
 
@@ -158,7 +170,7 @@ class BytecodeSection {
 
   uint32_t maxStackDepth() const { return maxStackDepth_; }
 
-  void updateDepth(ptrdiff_t target);
+  void updateDepth(BytecodeOffset target);
 
   
 
@@ -235,12 +247,12 @@ class BytecodeSection {
   SrcNotesVector notes_;
 
   
-  ptrdiff_t lastNoteOffset_ = 0;
+  BytecodeOffset lastNoteOffset_;
 
   
 
   
-  JumpTarget lastTarget_ = {-1};
+  JumpTarget lastTarget_ = {BytecodeOffset::invalidOffset()};
 
   
 

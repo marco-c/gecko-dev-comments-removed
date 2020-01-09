@@ -1055,12 +1055,15 @@ bool EmitterScope::leave(BytecodeEmitter* bce, bool nonLocal) {
     
     
     if (ScopeKindIsInBody(kind)) {
-      
-      
-      uint32_t offset = kind == ScopeKind::FunctionBodyVar
-                            ? UINT32_MAX
-                            : bce->bytecodeSection().offset();
-      bce->bytecodeSection().scopeNoteList().recordEnd(noteIndex_, offset);
+      if (kind == ScopeKind::FunctionBodyVar) {
+        
+        
+        bce->bytecodeSection().scopeNoteList().recordEndFunctionBodyVar(
+            noteIndex_);
+      } else {
+        bce->bytecodeSection().scopeNoteList().recordEnd(
+            noteIndex_, bce->bytecodeSection().offset());
+      }
     }
   }
 

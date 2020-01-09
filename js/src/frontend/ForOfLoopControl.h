@@ -10,12 +10,12 @@
 #include "mozilla/Attributes.h"  
 #include "mozilla/Maybe.h"       
 
-#include <stddef.h>  
 #include <stdint.h>  
 
 #include "jsapi.h"  
 
 #include "frontend/BytecodeControlStructures.h"  
+#include "frontend/BytecodeOffset.h"             
 #include "frontend/TryEmitter.h"                 
 #include "vm/Iteration.h"                        
 
@@ -85,7 +85,7 @@ class ForOfLoopControl : public LoopControl {
 
   MOZ_MUST_USE bool emitPrepareForNonLocalJumpFromScope(
       BytecodeEmitter* bce, EmitterScope& currentScope, bool isTarget,
-      ptrdiff_t* tryNoteStart);
+      BytecodeOffset* tryNoteStart);
 };
 template <>
 inline bool NestableControl::is<ForOfLoopControl>() const {

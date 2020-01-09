@@ -13,13 +13,14 @@
 #include <stddef.h>  
 #include <stdint.h>  
 
-#include "frontend/EmitterScope.h"   
-#include "frontend/TDZCheckCache.h"  
-#include "js/RootingAPI.h"           
-#include "vm/BytecodeUtil.h"         
-#include "vm/JSAtom.h"               
-#include "vm/NativeObject.h"         
-#include "vm/Scope.h"                
+#include "frontend/BytecodeOffset.h"  
+#include "frontend/EmitterScope.h"    
+#include "frontend/TDZCheckCache.h"   
+#include "js/RootingAPI.h"            
+#include "vm/BytecodeUtil.h"          
+#include "vm/JSAtom.h"                
+#include "vm/NativeObject.h"          
+#include "vm/Scope.h"                 
 
 namespace js {
 
@@ -383,7 +384,7 @@ class MOZ_STACK_CLASS ObjectEmitter : public PropertyEmitter {
  private:
   
   
-  ptrdiff_t top_ = 0;
+  BytecodeOffset top_;
 
 #ifdef DEBUG
   

@@ -7,9 +7,8 @@
 #ifndef frontend_JumpList_h
 #define frontend_JumpList_h
 
-#include <stddef.h>  
-
-#include "js/TypeDecls.h"  
+#include "frontend/BytecodeOffset.h"  
+#include "js/TypeDecls.h"             
 
 namespace js {
 namespace frontend {
@@ -56,19 +55,20 @@ namespace frontend {
 
 
 struct JumpTarget {
-  ptrdiff_t offset;
+  BytecodeOffset offset;
 };
 
 struct JumpList {
   
   static const ptrdiff_t END_OF_LIST_DELTA = 0;
 
-  JumpList() {}
   
-  ptrdiff_t offset = -1;
+  JumpList() : offset(BytecodeOffset::invalidOffset()) {}
+
+  BytecodeOffset offset;
 
   
-  void push(jsbytecode* code, ptrdiff_t jumpOffset);
+  void push(jsbytecode* code, BytecodeOffset jumpOffset);
 
   
   

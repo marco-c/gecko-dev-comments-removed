@@ -11,11 +11,11 @@
 #include "mozilla/Attributes.h"  
 #include "mozilla/Maybe.h"       
 
-#include <stddef.h>  
 #include <stdint.h>  
 
-#include "ds/Nestable.h"        
-#include "frontend/JumpList.h"  
+#include "ds/Nestable.h"               
+#include "frontend/BytecodeSection.h"  
+#include "frontend/JumpList.h"         
 #include "frontend/SharedContext.h"  
 #include "frontend/TDZCheckCache.h"  
 #include "gc/Rooting.h"              
@@ -73,14 +73,14 @@ class LabelControl : public BreakableControl {
   RootedAtom label_;
 
   
-  ptrdiff_t startOffset_;
+  BytecodeOffset startOffset_;
 
  public:
-  LabelControl(BytecodeEmitter* bce, JSAtom* label, ptrdiff_t startOffset);
+  LabelControl(BytecodeEmitter* bce, JSAtom* label, BytecodeOffset startOffset);
 
   HandleAtom label() const { return label_; }
 
-  ptrdiff_t startOffset() const { return startOffset_; }
+  BytecodeOffset startOffset() const { return startOffset_; }
 };
 template <>
 inline bool NestableControl::is<LabelControl>() const {
@@ -115,20 +115,20 @@ class LoopControl : public BreakableControl {
   
 
   
-  ptrdiff_t loopEndOffset_ = -1;
+  BytecodeOffset loopEndOffset_ = BytecodeOffset::invalidOffset();
 
   
   JumpList entryJump_;
 
   
-  JumpTarget head_ = {-1};
+  JumpTarget head_ = {BytecodeOffset::invalidOffset()};
 
   
-  JumpTarget breakTarget_ = {-1};
+  JumpTarget breakTarget_ = {BytecodeOffset::invalidOffset()};
 
   
   
-  JumpTarget continueTarget_ = {-1};
+  JumpTarget continueTarget_ = {BytecodeOffset::invalidOffset()};
 
   
   int32_t stackDepth_;
@@ -146,26 +146,26 @@ class LoopControl : public BreakableControl {
 
   LoopControl(BytecodeEmitter* bce, StatementKind loopKind);
 
-  ptrdiff_t headOffset() const { return head_.offset; }
-  ptrdiff_t loopEndOffset() const { return loopEndOffset_; }
-  ptrdiff_t breakTargetOffset() const { return breakTarget_.offset; }
-  ptrdiff_t continueTargetOffset() const { return continueTarget_.offset; }
+  BytecodeOffset headOffset() const { return head_.offset; }
+  BytecodeOffset loopEndOffset() const { return loopEndOffset_; }
+  BytecodeOffset breakTargetOffset() const { return breakTarget_.offset; }
+  BytecodeOffset continueTargetOffset() const { return continueTarget_.offset; }
 
   
   
-  ptrdiff_t loopEndOffsetFromEntryJump() const {
+  BytecodeOffsetDiff loopEndOffsetFromEntryJump() const {
     return loopEndOffset_ - entryJump_.offset;
   }
 
   
   
-  ptrdiff_t loopEndOffsetFromLoopHead() const {
+  BytecodeOffsetDiff loopEndOffsetFromLoopHead() const {
     return loopEndOffset_ - head_.offset;
   }
 
   
   
-  ptrdiff_t continueTargetOffsetFromLoopHead() const {
+  BytecodeOffsetDiff continueTargetOffsetFromLoopHead() const {
     return continueTarget_.offset - head_.offset;
   }
 
@@ -173,7 +173,9 @@ class LoopControl : public BreakableControl {
   
   
   
-  void setContinueTarget(ptrdiff_t offset) { continueTarget_.offset = offset; }
+  void setContinueTarget(BytecodeOffset offset) {
+    continueTarget_.offset = offset;
+  }
   MOZ_MUST_USE bool emitContinueTarget(BytecodeEmitter* bce);
 
   

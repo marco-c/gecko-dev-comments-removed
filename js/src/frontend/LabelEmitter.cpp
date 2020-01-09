@@ -41,9 +41,10 @@ bool LabelEmitter::emitEnd() {
 
   
   jsbytecode* labelpc = bce_->bytecodeSection().code(top_);
-  int32_t offset = bce_->bytecodeSection().lastNonJumpTargetOffset() - top_;
+  BytecodeOffsetDiff offset =
+      bce_->bytecodeSection().lastNonJumpTargetOffset() - top_;
   MOZ_ASSERT(*labelpc == JSOP_LABEL);
-  SET_CODE_OFFSET(labelpc, offset);
+  SET_CODE_OFFSET(labelpc, offset.value());
 
   
   if (!controlInfo_->patchBreaks(bce_)) {

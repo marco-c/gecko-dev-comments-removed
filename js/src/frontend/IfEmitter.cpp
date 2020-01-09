@@ -111,7 +111,7 @@ bool BranchEmitterBase::emitEndInternal() {
 
   calculateOrCheckPushed();
 
-  if (jumpAroundThen_.offset != -1) {
+  if (jumpAroundThen_.offset.valid()) {
     
     
     if (!bce_->emitJumpTargetAndPatch(jumpAroundThen_)) {
@@ -212,8 +212,8 @@ bool IfEmitter::emitEnd() {
   MOZ_ASSERT(state_ == State::Then || state_ == State::Else);
   
   
-  MOZ_ASSERT_IF(state_ == State::Then, jumpAroundThen_.offset != -1);
-  MOZ_ASSERT_IF(state_ == State::Else, jumpAroundThen_.offset == -1);
+  MOZ_ASSERT_IF(state_ == State::Then, jumpAroundThen_.offset.valid());
+  MOZ_ASSERT_IF(state_ == State::Else, !jumpAroundThen_.offset.valid());
 
   if (!emitEndInternal()) {
     return false;
@@ -271,7 +271,7 @@ bool CondEmitter::emitElse() {
 
 bool CondEmitter::emitEnd() {
   MOZ_ASSERT(state_ == State::Else);
-  MOZ_ASSERT(jumpAroundThen_.offset == -1);
+  MOZ_ASSERT(!jumpAroundThen_.offset.valid());
 
   if (!emitEndInternal()) {
     return false;

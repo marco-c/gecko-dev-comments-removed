@@ -10,10 +10,10 @@
 #include "mozilla/Attributes.h"  
 #include "mozilla/Maybe.h"       
 
-#include <stddef.h>  
 #include <stdint.h>  
 
 #include "frontend/BytecodeControlStructures.h"  
+#include "frontend/BytecodeOffset.h"             
 #include "frontend/TDZCheckCache.h"              
 
 namespace js {
@@ -83,10 +83,10 @@ class MOZ_STACK_CLASS CForEmitter {
 
   
   
-  ptrdiff_t condOffset_ = 0;
+  BytecodeOffset condOffset_;
 
   
-  ptrdiff_t biasedTop_ = 0;
+  BytecodeOffset biasedTop_;
 
   
   Cond cond_ = Cond::Missing;

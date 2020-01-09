@@ -10,10 +10,10 @@
 #include "mozilla/Attributes.h"  
 #include "mozilla/Maybe.h"       
 
-#include <stddef.h>  
 #include <stdint.h>  
 
 #include "frontend/BytecodeControlStructures.h"  
+#include "frontend/BytecodeOffset.h"             
 #include "frontend/JumpList.h"                   
 
 namespace js {
@@ -139,7 +139,7 @@ class MOZ_STACK_CLASS TryEmitter {
   unsigned noteIndex_;
 
   
-  ptrdiff_t tryStart_;
+  BytecodeOffset tryStart_;
 
   
   JumpList catchAndFinallyJump_;

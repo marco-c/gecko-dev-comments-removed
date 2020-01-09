@@ -205,7 +205,8 @@ bool SwitchEmitter::emitTable(const TableGenerator& tableGen) {
   }
 
   
-  jsbytecode* pc = bce_->bytecodeSection().code(top_ + JUMP_OFFSET_LEN);
+  jsbytecode* pc =
+      bce_->bytecodeSection().code(top_ + BytecodeOffsetDiff(JUMP_OFFSET_LEN));
 
   
   SET_JUMP_OFFSET(pc, tableGen.low());
@@ -394,7 +395,7 @@ bool SwitchEmitter::emitEnd() {
       return false;
     }
   }
-  MOZ_ASSERT(defaultJumpTargetOffset_.offset != -1);
+  MOZ_ASSERT(defaultJumpTargetOffset_.offset.valid());
 
   
   jsbytecode* pc;
@@ -405,7 +406,7 @@ bool SwitchEmitter::emitEnd() {
   } else {
     
     pc = bce_->bytecodeSection().code(top_);
-    SET_JUMP_OFFSET(pc, defaultJumpTargetOffset_.offset - top_);
+    SET_JUMP_OFFSET(pc, (defaultJumpTargetOffset_.offset - top_).value());
     pc += JUMP_OFFSET_LEN;
   }
 
@@ -426,14 +427,14 @@ bool SwitchEmitter::emitEnd() {
 
     
     for (uint32_t i = 0, length = caseOffsets_.length(); i < length; i++) {
-      if (caseOffsets_[i] == 0) {
+      if (caseOffsets_[i].value() == 0) {
         caseOffsets_[i] = defaultJumpTargetOffset_.offset;
       }
     }
 
     
     uint32_t firstResumeIndex = 0;
-    mozilla::Span<ptrdiff_t> offsets =
+    mozilla::Span<BytecodeOffset> offsets =
         mozilla::MakeSpan(caseOffsets_.begin(), caseOffsets_.end());
     if (!bce_->allocateResumeIndexRange(offsets, &firstResumeIndex)) {
       return false;

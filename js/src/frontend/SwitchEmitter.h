@@ -312,13 +312,13 @@ class MOZ_STACK_CLASS SwitchEmitter {
   uint32_t caseIndex_ = 0;
 
   
-  ptrdiff_t top_ = 0;
+  BytecodeOffset top_;
 
   
-  ptrdiff_t lastCaseOffset_ = 0;
+  BytecodeOffset lastCaseOffset_;
 
   
-  JumpTarget defaultJumpTargetOffset_ = {-1};
+  JumpTarget defaultJumpTargetOffset_ = {BytecodeOffset::invalidOffset()};
 
   
   JumpList condSwitchDefaultOffset_;
@@ -339,7 +339,7 @@ class MOZ_STACK_CLASS SwitchEmitter {
   
   
   
-  js::Vector<ptrdiff_t, 32, SystemAllocPolicy> caseOffsets_;
+  js::Vector<BytecodeOffset, 32, SystemAllocPolicy> caseOffsets_;
 
   
   

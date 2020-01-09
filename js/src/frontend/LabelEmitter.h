@@ -10,9 +10,8 @@
 #include "mozilla/Attributes.h"  
 #include "mozilla/Maybe.h"       
 
-#include <stddef.h>  
-
 #include "frontend/BytecodeControlStructures.h"  
+#include "frontend/BytecodeOffset.h"             
 #include "frontend/JumpList.h"                   
 #include "js/TypeDecls.h"                        
 
@@ -35,7 +34,7 @@ class MOZ_STACK_CLASS LabelEmitter {
   BytecodeEmitter* bce_;
 
   
-  ptrdiff_t top_ = 0;
+  BytecodeOffset top_;
 
   mozilla::Maybe<LabelControl> controlInfo_;
 

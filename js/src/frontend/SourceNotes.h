@@ -7,6 +7,7 @@
 #ifndef frontend_SourceNotes_h
 #define frontend_SourceNotes_h
 
+#include <stddef.h>  
 #include <stdint.h>
 
 #include "jstypes.h"
