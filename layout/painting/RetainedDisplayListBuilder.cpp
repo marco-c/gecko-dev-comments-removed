@@ -447,6 +447,11 @@ class MergeState {
       return true;
     }
 
+    if (type == DisplayItemType::TYPE_TRANSFORM) {
+      
+      return true;
+    }
+
     return false;
   }
 
