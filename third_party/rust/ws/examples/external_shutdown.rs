@@ -1,22 +1,24 @@
 extern crate ws;
 
+use std::sync::mpsc::channel;
 use std::thread;
 use std::time::Duration;
-use std::sync::mpsc::channel;
-
 
 fn main() {
     let (tx, rx) = channel();
 
-    let socket = ws::Builder::new().build(move |out: ws::Sender| {
+    let socket = ws::Builder::new()
+        .build(move |out: ws::Sender| {
+            
+            tx.send(out).unwrap();
 
-        
-        tx.send(out).unwrap();
-
-        
-        move |_| Ok(println!("Message handler called."))
-
-    }).unwrap();
+            
+            move |_| {
+                println!("Message handler called.");
+                Ok(())
+            }
+        })
+        .unwrap();
 
     let handle = socket.broadcaster();
 
@@ -27,15 +29,12 @@ fn main() {
     
     thread::sleep(Duration::from_millis(5000));
 
-    if let Err(_) = rx.try_recv() {
-
+    if rx.try_recv().is_err() {
         
         handle.shutdown().unwrap();
         println!("Shutting down server because no connections were established.");
-
     }
 
     
     t.join().unwrap();
-
 }

@@ -1,19 +1,17 @@
-
+extern crate env_logger;
 
 
 extern crate ws;
-extern crate env_logger;
 
 use std::thread;
 use std::thread::sleep;
 use std::time::Duration;
 
-use ws::{connect, listen, CloseCode, Sender, Handler, Message, Result};
+use ws::{connect, listen, CloseCode, Handler, Message, Result, Sender};
 
-fn main () {
-
+fn main() {
     
-    env_logger::init().unwrap();
+    env_logger::init();
 
     
     struct Server {
@@ -21,7 +19,6 @@ fn main () {
     }
 
     impl Handler for Server {
-
         fn on_message(&mut self, msg: Message) -> Result<()> {
             println!("Server got message '{}'. ", msg);
             self.out.send(msg)
@@ -35,31 +32,21 @@ fn main () {
     }
 
     
-    let server = thread::spawn(move || {
-        listen("127.0.0.1:3012", |out| {
-
-            Server { out: out }
-
-        }).unwrap()
-    });
+    let server = thread::spawn(move || listen("127.0.0.1:3012", |out| Server { out }).unwrap());
 
     
     sleep(Duration::from_millis(10));
 
     
     let client = thread::spawn(move || {
-
         connect("ws://127.0.0.1:3012", |out| {
-
             out.send("Hello WebSocket").unwrap();
 
             move |msg| {
                 println!("Client got message '{}'. ", msg);
                 out.close(CloseCode::Normal)
             }
-
         }).unwrap()
-
     });
 
     let _ = server.join();
@@ -67,4 +54,3 @@ fn main () {
 
     println!("All done.")
 }
-
