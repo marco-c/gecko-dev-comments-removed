@@ -98,13 +98,28 @@ this.CookiePolicyHelper = {
       await BrowserTestUtils.browserLoaded(browser);
 
       
+      await ContentTask.spawn(browser, { url: TEST_TOP_PAGE },
+                              async obj => {
+        return new content.Promise(resolve => {
+          let ifr = content.document.createElement('iframe');
+          ifr.setAttribute("id", "iframe");
+          ifr.src = obj.url;
+          ifr.onload = resolve;
+          content.document.body.appendChild(ifr);
+        });
+      });
+
+      
       info("Executing the test after setting the cookie behavior to " + config.fromBehavior + " and permission to " + config.fromPermission);
       await ContentTask.spawn(browser,
                               { callback: goodCb.toString() },
                               async obj => {
         let runnableStr = `(() => {return (${obj.callback});})();`;
         let runnable = eval(runnableStr); 
-        await runnable();
+        await runnable(content);
+
+        let ifr = content.document.getElementById("iframe");
+        await runnable(ifr.contentWindow);
       });
 
       
@@ -120,7 +135,10 @@ this.CookiePolicyHelper = {
                               async obj => {
         let runnableStr = `(() => {return (${obj.callback});})();`;
         let runnable = eval(runnableStr); 
-        await runnable.call(content.window);
+        await runnable(content);
+
+        let ifr = content.document.getElementById("iframe");
+        await runnable(ifr.contentWindow);
       });
 
       
@@ -140,7 +158,7 @@ this.CookiePolicyHelper = {
                               async obj => {
         let runnableStr = `(() => {return (${obj.callback});})();`;
         let runnable = eval(runnableStr); 
-        await runnable.call(content.window);
+        await runnable(content);
       });
 
       

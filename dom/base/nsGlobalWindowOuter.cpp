@@ -1264,10 +1264,6 @@ nsGlobalWindowOuter::~nsGlobalWindowOuter() {
   if (obs) {
     obs->RemoveObserver(this, PERM_CHANGE_NOTIFICATION);
   }
-  nsCOMPtr<nsIPrefBranch> prefBranch = do_GetService(NS_PREFSERVICE_CONTRACTID);
-  if (prefBranch) {
-    prefBranch->RemoveObserver("network.cookie.cookieBehavior", this);
-  }
 
   nsLayoutStatics::Release();
 }
@@ -2324,20 +2320,18 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
 
   mHasStorageAccess = false;
   nsIURI* uri = aDocument->GetDocumentURI();
-  if (newInnerWindow) {
-    if (StaticPrefs::network_cookie_cookieBehavior() ==
-            nsICookieService::BEHAVIOR_REJECT_TRACKER &&
-        nsContentUtils::IsThirdPartyWindowOrChannel(newInnerWindow, nullptr,
-                                                    uri) &&
-        nsContentUtils::IsTrackingResourceWindow(newInnerWindow)) {
-      
-      
-      
-      
-      mHasStorageAccess =
-          AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(
-              newInnerWindow, uri, nullptr);
-    }
+  if (newInnerWindow &&
+      aDocument->CookieSettings()->GetCookieBehavior() ==
+          nsICookieService::BEHAVIOR_REJECT_TRACKER &&
+      nsContentUtils::IsThirdPartyWindowOrChannel(newInnerWindow, nullptr,
+                                                  uri) &&
+      nsContentUtils::IsTrackingResourceWindow(newInnerWindow)) {
+    
+    
+    
+    
+    mHasStorageAccess = AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(
+        newInnerWindow, uri, nullptr);
   }
 
   return NS_OK;
@@ -6975,11 +6969,6 @@ NS_IMETHODIMP
 nsGlobalWindowOuter::Observe(nsISupports* aSupports, const char* aTopic,
                              const char16_t* aData) {
   if (!nsCRT::strcmp(aTopic, PERM_CHANGE_NOTIFICATION)) {
-    if (!nsCRT::strcmp(aData, u"cleared") && !aSupports) {
-      
-      mHasStorageAccess = false;
-      return NS_OK;
-    }
     nsCOMPtr<nsIPermission> permission = do_QueryInterface(aSupports);
     if (!permission) {
       return NS_OK;
@@ -7011,10 +7000,6 @@ nsGlobalWindowOuter::Observe(nsISupports* aSupports, const char* aTopic,
         return NS_OK;
       }
     }
-  } else if (!nsCRT::strcmp(aTopic, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID)) {
-    
-    mHasStorageAccess = false;
-    return NS_OK;
   }
   return NS_OK;
 }
@@ -7810,10 +7795,6 @@ mozilla::dom::TabGroup* nsPIDOMWindowOuter::TabGroup() {
         NS_NewRunnableFunction("PermChangeDelayRunnable", [obs, window] {
           obs->AddObserver(window, PERM_CHANGE_NOTIFICATION, true);
         }));
-  }
-  nsCOMPtr<nsIPrefBranch> prefBranch = do_GetService(NS_PREFSERVICE_CONTRACTID);
-  if (prefBranch) {
-    prefBranch->AddObserver("network.cookie.cookieBehavior", window, true);
   }
   return window.forget();
 }
