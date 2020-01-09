@@ -13,9 +13,9 @@
 #include <cstddef>
 #include <vector>
 
+#include <GLSLANG/ShaderLang.h>
 #include "angle_gl.h"
 #include "blocklayout.h"
-#include <GLSLANG/ShaderLang.h>
 
 namespace sh
 {
@@ -35,8 +35,8 @@ class HLSLBlockEncoder : public BlockLayoutEncoder
 
     HLSLBlockEncoder(HLSLBlockEncoderStrategy strategy, bool transposeMatrices);
 
-    void enterAggregateType() override;
-    void exitAggregateType() override;
+    void enterAggregateType(const ShaderVariable &structVar) override;
+    void exitAggregateType(const ShaderVariable &structVar) override;
     void skipRegisters(unsigned int numRegisters);
 
     bool isPacked() const { return mEncoderStrategy == ENCODE_PACKED; }
@@ -63,6 +63,6 @@ class HLSLBlockEncoder : public BlockLayoutEncoder
 
 
 unsigned int HLSLVariableRegisterCount(const Uniform &variable, ShShaderOutput outputType);
-}
+}  
 
 #endif  

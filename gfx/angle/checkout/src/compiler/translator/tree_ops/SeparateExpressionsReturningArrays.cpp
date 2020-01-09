@@ -45,8 +45,7 @@ SeparateExpressionsTraverser::SeparateExpressionsTraverser(TSymbolTable *symbolT
     : TIntermTraverser(true, false, false, symbolTable),
       mFoundArrayExpression(false),
       mPatternToSeparateMatcher(IntermNodePatternMatcher::kExpressionReturningArray)
-{
-}
+{}
 
 
 

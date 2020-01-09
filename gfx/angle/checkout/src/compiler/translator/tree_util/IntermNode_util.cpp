@@ -86,18 +86,6 @@ TIntermTyped *CreateZeroNode(const TType &type)
         return node;
     }
 
-    if (type.getBasicType() == EbtVoid)
-    {
-        
-        
-        
-        while (constType.isArray())
-        {
-            constType.toArrayElementType();
-        }
-        return CreateZeroNode(constType);
-    }
-
     TIntermSequence *arguments = new TIntermSequence();
 
     if (type.isArray())

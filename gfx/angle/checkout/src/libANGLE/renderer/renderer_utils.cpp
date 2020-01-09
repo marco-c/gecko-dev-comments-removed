@@ -79,9 +79,7 @@ void ClipChannelsAlpha(gl::ColorF *color)
     color->blue  = 0.0f;
 }
 
-void ClipChannelsNoOp(gl::ColorF *color)
-{
-}
+void ClipChannelsNoOp(gl::ColorF *color) {}
 
 void WriteUintColor(const gl::ColorF &color,
                     PixelWriteFunction colorWriteFunction,
@@ -163,25 +161,21 @@ bool ExpandMatrix(T *target, const GLfloat *value)
 
 PackPixelsParams::PackPixelsParams()
     : destFormat(nullptr), outputPitch(0), packBuffer(nullptr), offset(0)
-{
-}
+{}
 
 PackPixelsParams::PackPixelsParams(const gl::Rectangle &areaIn,
                                    const angle::Format &destFormat,
                                    GLuint outputPitchIn,
-                                   const gl::PixelPackState &packIn,
+                                   bool reverseRowOrderIn,
                                    gl::Buffer *packBufferIn,
                                    ptrdiff_t offsetIn)
     : area(areaIn),
       destFormat(&destFormat),
       outputPitch(outputPitchIn),
       packBuffer(packBufferIn),
-      pack(),
+      reverseRowOrder(reverseRowOrderIn),
       offset(offsetIn)
-{
-    pack.alignment       = packIn.alignment;
-    pack.reverseRowOrder = packIn.reverseRowOrder;
-}
+{}
 
 void PackPixels(const PackPixelsParams &params,
                 const angle::Format &sourceFormat,
@@ -194,7 +188,7 @@ void PackPixels(const PackPixelsParams &params,
     const uint8_t *source = sourceIn;
     int inputPitch        = inputPitchIn;
 
-    if (params.pack.reverseRowOrder)
+    if (params.reverseRowOrder)
     {
         source += inputPitch * (params.area.height - 1);
         inputPitch = -inputPitch;
@@ -307,15 +301,18 @@ bool ShouldUseVirtualizedContexts(const egl::AttributeMap &attribs, bool default
 void CopyImageCHROMIUM(const uint8_t *sourceData,
                        size_t sourceRowPitch,
                        size_t sourcePixelBytes,
+                       size_t sourceDepthPitch,
                        PixelReadFunction pixelReadFunction,
                        uint8_t *destData,
                        size_t destRowPitch,
                        size_t destPixelBytes,
+                       size_t destDepthPitch,
                        PixelWriteFunction pixelWriteFunction,
                        GLenum destUnsizedFormat,
                        GLenum destComponentType,
                        size_t width,
                        size_t height,
+                       size_t depth,
                        bool unpackFlipY,
                        bool unpackPremultiplyAlpha,
                        bool unpackUnmultiplyAlpha)
@@ -356,43 +353,44 @@ void CopyImageCHROMIUM(const uint8_t *sourceData,
 
     auto writeFunction = (destComponentType == GL_UNSIGNED_INT) ? WriteUintColor : WriteFloatColor;
 
-    for (size_t y = 0; y < height; y++)
+    for (size_t z = 0; z < depth; z++)
     {
-        for (size_t x = 0; x < width; x++)
+        for (size_t y = 0; y < height; y++)
         {
-            const uint8_t *sourcePixelData = sourceData + y * sourceRowPitch + x * sourcePixelBytes;
-
-            gl::ColorF sourceColor;
-            pixelReadFunction(sourcePixelData, reinterpret_cast<uint8_t *>(&sourceColor));
-
-            conversionFunction(&sourceColor);
-            clipChannelsFunction(&sourceColor);
-
-            size_t destY = 0;
-            if (unpackFlipY)
+            for (size_t x = 0; x < width; x++)
             {
-                destY += (height - 1);
-                destY -= y;
-            }
-            else
-            {
-                destY += y;
-            }
+                const uint8_t *sourcePixelData =
+                    sourceData + y * sourceRowPitch + x * sourcePixelBytes + z * sourceDepthPitch;
 
-            uint8_t *destPixelData = destData + destY * destRowPitch + x * destPixelBytes;
-            writeFunction(sourceColor, pixelWriteFunction, destPixelData);
+                gl::ColorF sourceColor;
+                pixelReadFunction(sourcePixelData, reinterpret_cast<uint8_t *>(&sourceColor));
+
+                conversionFunction(&sourceColor);
+                clipChannelsFunction(&sourceColor);
+
+                size_t destY = 0;
+                if (unpackFlipY)
+                {
+                    destY += (height - 1);
+                    destY -= y;
+                }
+                else
+                {
+                    destY += y;
+                }
+
+                uint8_t *destPixelData =
+                    destData + destY * destRowPitch + x * destPixelBytes + z * destDepthPitch;
+                writeFunction(sourceColor, pixelWriteFunction, destPixelData);
+            }
         }
     }
 }
 
 
-IncompleteTextureSet::IncompleteTextureSet()
-{
-}
+IncompleteTextureSet::IncompleteTextureSet() {}
 
-IncompleteTextureSet::~IncompleteTextureSet()
-{
-}
+IncompleteTextureSet::~IncompleteTextureSet() {}
 
 void IncompleteTextureSet::onDestroy(const gl::Context *context)
 {
@@ -401,13 +399,13 @@ void IncompleteTextureSet::onDestroy(const gl::Context *context)
     {
         if (incompleteTexture.get() != nullptr)
         {
-            ANGLE_SWALLOW_ERR(incompleteTexture->onDestroy(context));
+            incompleteTexture->onDestroy(context);
             incompleteTexture.set(context, nullptr);
         }
     }
 }
 
-gl::Error IncompleteTextureSet::getIncompleteTexture(
+angle::Result IncompleteTextureSet::getIncompleteTexture(
     const gl::Context *context,
     gl::TextureType type,
     MultisampleTextureInitializer *multisampleInitializer,
@@ -416,7 +414,7 @@ gl::Error IncompleteTextureSet::getIncompleteTexture(
     *textureOut = mIncompleteTextures[type].get();
     if (*textureOut != nullptr)
     {
-        return gl::NoError();
+        return angle::Result::Continue;
     }
 
     ContextImpl *implFactory = context->getImplementation();
@@ -433,20 +431,24 @@ gl::Error IncompleteTextureSet::getIncompleteTexture(
     gl::Texture *tex = new gl::Texture(implFactory, std::numeric_limits<GLuint>::max(), createType);
     angle::UniqueObjectPointer<gl::Texture, gl::Context> t(tex, context);
 
+    
+    gl::Context *mutableContext = const_cast<gl::Context *>(context);
+
     if (createType == gl::TextureType::_2DMultisample)
     {
-        ANGLE_TRY(t->setStorageMultisample(context, createType, 1, GL_RGBA8, colorSize, true));
+        ANGLE_TRY(
+            t->setStorageMultisample(mutableContext, createType, 1, GL_RGBA8, colorSize, true));
     }
     else
     {
-        ANGLE_TRY(t->setStorage(context, createType, 1, GL_RGBA8, colorSize));
+        ANGLE_TRY(t->setStorage(mutableContext, createType, 1, GL_RGBA8, colorSize));
     }
 
     if (type == gl::TextureType::CubeMap)
     {
         for (gl::TextureTarget face : gl::AllCubeFaceTextureTargets())
         {
-            ANGLE_TRY(t->setSubImage(context, unpack, nullptr, face, 0, area, GL_RGBA,
+            ANGLE_TRY(t->setSubImage(mutableContext, unpack, nullptr, face, 0, area, GL_RGBA,
                                      GL_UNSIGNED_BYTE, color));
         }
     }
@@ -457,7 +459,7 @@ gl::Error IncompleteTextureSet::getIncompleteTexture(
     }
     else
     {
-        ANGLE_TRY(t->setSubImage(context, unpack, nullptr,
+        ANGLE_TRY(t->setSubImage(mutableContext, unpack, nullptr,
                                  gl::NonCubeTextureTypeToTarget(createType), 0, area, GL_RGBA,
                                  GL_UNSIGNED_BYTE, color));
     }
@@ -466,7 +468,7 @@ gl::Error IncompleteTextureSet::getIncompleteTexture(
 
     mIncompleteTextures[type].set(context, t.release());
     *textureOut = mIncompleteTextures[type].get();
-    return gl::NoError();
+    return angle::Result::Continue;
 }
 
 #define ANGLE_INSTANTIATE_SET_UNIFORM_MATRIX_FUNC(cols, rows)                            \
@@ -549,5 +551,61 @@ const angle::Format &GetFormatFromFormatType(GLenum format, GLenum type)
     GLenum sizedInternalFormat    = gl::GetInternalFormatInfo(format, type).sizedInternalFormat;
     angle::FormatID angleFormatID = angle::Format::InternalFormatToID(sizedInternalFormat);
     return angle::Format::Get(angleFormatID);
+}
+
+angle::Result ComputeStartVertex(ContextImpl *contextImpl,
+                                 const gl::IndexRange &indexRange,
+                                 GLint baseVertex,
+                                 GLint *firstVertexOut)
+{
+    
+    
+    ASSERT(indexRange.start <= std::numeric_limits<uint32_t>::max() &&
+           indexRange.end <= std::numeric_limits<uint32_t>::max());
+
+    
+    
+    int64_t startVertexInt64 =
+        static_cast<int64_t>(baseVertex) + static_cast<int64_t>(indexRange.start);
+
+    
+    
+    ANGLE_CHECK_GL_MATH(contextImpl, startVertexInt64 >= 0);
+
+    
+    
+    
+    
+    
+    ANGLE_CHECK_GL_MATH(contextImpl, startVertexInt64 <= std::numeric_limits<GLint>::max());
+
+    *firstVertexOut = static_cast<GLint>(startVertexInt64);
+    return angle::Result::Continue;
+}
+
+angle::Result GetVertexRangeInfo(const gl::Context *context,
+                                 GLint firstVertex,
+                                 GLsizei vertexOrIndexCount,
+                                 gl::DrawElementsType indexTypeOrInvalid,
+                                 const void *indices,
+                                 GLint baseVertex,
+                                 GLint *startVertexOut,
+                                 size_t *vertexCountOut)
+{
+    if (indexTypeOrInvalid != gl::DrawElementsType::InvalidEnum)
+    {
+        gl::IndexRange indexRange;
+        ANGLE_TRY(context->getState().getVertexArray()->getIndexRange(
+            context, indexTypeOrInvalid, vertexOrIndexCount, indices, &indexRange));
+        ANGLE_TRY(ComputeStartVertex(context->getImplementation(), indexRange, baseVertex,
+                                     startVertexOut));
+        *vertexCountOut = indexRange.vertexCount();
+    }
+    else
+    {
+        *startVertexOut = firstVertex;
+        *vertexCountOut = vertexOrIndexCount;
+    }
+    return angle::Result::Continue;
 }
 }  

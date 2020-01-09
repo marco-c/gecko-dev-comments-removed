@@ -31,44 +31,45 @@ struct Config
     Config(const Config &other);
     Config &operator=(const Config &other);
 
-    GLenum renderTargetFormat;      
-    GLenum depthStencilFormat;      
+    GLenum renderTargetFormat;  
+    GLenum depthStencilFormat;  
 
-    EGLint bufferSize;              
-    EGLint redSize;                 
-    EGLint greenSize;               
-    EGLint blueSize;                
-    EGLint luminanceSize;           
-    EGLint alphaSize;               
-    EGLint alphaMaskSize;           
-    EGLBoolean bindToTextureRGB;    
-    EGLBoolean bindToTextureRGBA;   
-    EGLenum colorBufferType;        
-    EGLenum configCaveat;           
-    EGLint configID;                
-    EGLint conformant;              
-    EGLint depthSize;               
-    EGLint level;                   
-    EGLBoolean matchNativePixmap;   
-    EGLint maxPBufferWidth;         
-    EGLint maxPBufferHeight;        
-    EGLint maxPBufferPixels;        
-    EGLint maxSwapInterval;         
-    EGLint minSwapInterval;         
-    EGLBoolean nativeRenderable;    
-    EGLint nativeVisualID;          
-    EGLint nativeVisualType;        
-    EGLint renderableType;          
-    EGLint sampleBuffers;           
-    EGLint samples;                 
-    EGLint stencilSize;             
-    EGLint surfaceType;             
-    EGLenum transparentType;        
-    EGLint transparentRedValue;     
-    EGLint transparentGreenValue;   
-    EGLint transparentBlueValue;    
-    EGLint optimalOrientation;      
-    EGLenum colorComponentType;     
+    EGLint bufferSize;             
+    EGLint redSize;                
+    EGLint greenSize;              
+    EGLint blueSize;               
+    EGLint luminanceSize;          
+    EGLint alphaSize;              
+    EGLint alphaMaskSize;          
+    EGLBoolean bindToTextureRGB;   
+    EGLBoolean bindToTextureRGBA;  
+    EGLenum colorBufferType;       
+    EGLenum configCaveat;          
+    EGLint configID;               
+    EGLint conformant;             
+    EGLint depthSize;              
+    EGLint level;                  
+    EGLBoolean matchNativePixmap;  
+    EGLint maxPBufferWidth;        
+    EGLint maxPBufferHeight;       
+    EGLint maxPBufferPixels;       
+    EGLint maxSwapInterval;        
+    EGLint minSwapInterval;        
+    EGLBoolean nativeRenderable;   
+    EGLint nativeVisualID;         
+    EGLint nativeVisualType;       
+    EGLint renderableType;         
+    EGLint sampleBuffers;          
+    EGLint samples;                
+    EGLint stencilSize;            
+    EGLint surfaceType;            
+    EGLenum transparentType;       
+    EGLint transparentRedValue;    
+    EGLint transparentGreenValue;  
+    EGLint transparentBlueValue;   
+    EGLint optimalOrientation;     
+    EGLenum colorComponentType;    
+    EGLBoolean recordable;         
 };
 
 class ConfigSet
@@ -92,7 +93,7 @@ class ConfigSet
     bool contains(const Config *config) const;
 
     
-    std::vector<const Config*> filter(const AttributeMap &attributeMap) const;
+    std::vector<const Config *> filter(const AttributeMap &attributeMap) const;
 
     ConfigMap::iterator begin();
     ConfigMap::iterator end();
@@ -101,6 +102,6 @@ class ConfigSet
     ConfigMap mConfigs;
 };
 
-}
+}  
 
-#endif   
+#endif  

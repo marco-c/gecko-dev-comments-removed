@@ -148,15 +148,13 @@ class StrictNumeric
     
     template <typename Src>
     constexpr StrictNumeric(const StrictNumeric<Src> &rhs) : value_(strict_cast<T>(rhs.value_))
-    {
-    }
+    {}
 
     
     
     template <typename Src>
     constexpr StrictNumeric(Src value) : value_(strict_cast<T>(value))
-    {
-    }
+    {}
 
     
     template <typename Dst>

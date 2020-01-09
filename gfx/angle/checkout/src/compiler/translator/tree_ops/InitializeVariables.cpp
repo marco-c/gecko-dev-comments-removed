@@ -214,8 +214,7 @@ class InitializeLocalsTraverser : public TIntermTraverser
           mShaderVersion(shaderVersion),
           mCanUseLoopsToInitialize(canUseLoopsToInitialize),
           mHighPrecisionSupported(highPrecisionSupported)
-    {
-    }
+    {}
 
   protected:
     bool visitDeclaration(Visit visit, TIntermDeclaration *node) override

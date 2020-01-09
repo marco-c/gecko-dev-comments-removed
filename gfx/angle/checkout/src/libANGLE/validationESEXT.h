@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+#ifndef LIBANGLE_VALIDATION_ESEXT_H_
+#define LIBANGLE_VALIDATION_ESEXT_H_
+
+#include "libANGLE/ErrorStrings.h"
+#include "libANGLE/validationESEXT_autogen.h"
+
+namespace gl
+{
+
+}  
+
+#endif  

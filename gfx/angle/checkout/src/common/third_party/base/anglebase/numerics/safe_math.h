@@ -64,13 +64,11 @@ class CheckedNumeric
     
     template <typename Src>
     CheckedNumeric(const CheckedNumeric<Src> &rhs) : state_(rhs.ValueUnsafe(), rhs.validity())
-    {
-    }
+    {}
 
     template <typename Src>
     CheckedNumeric(Src value, RangeConstraint validity) : state_(value, validity)
-    {
-    }
+    {}
 
     
     
@@ -86,8 +84,7 @@ class CheckedNumeric
     template <typename Src>
     CheckedNumeric(StrictNumeric<Src> value)  
         : state_(static_cast<Src>(value))
-    {
-    }
+    {}
 
     
     bool IsValid() const { return validity() == RANGE_VALID; }

@@ -71,6 +71,12 @@ struct ShaderVariable
     bool isArrayOfArrays() const { return arraySizes.size() >= 2u; }
     bool isArray() const { return !arraySizes.empty(); }
     unsigned int getArraySizeProduct() const;
+    
+    
+    
+    
+    
+    unsigned int getInnerArraySizeProduct() const;
 
     
     
@@ -106,9 +112,10 @@ struct ShaderVariable
     
     bool findInfoByMappedName(const std::string &mappedFullName,
                               const ShaderVariable **leafVar,
-                              std::string* originalFullName) const;
+                              std::string *originalFullName) const;
 
     bool isBuiltIn() const;
+    bool isEmulatedBuiltIn() const;
 
     GLenum type;
     GLenum precision;
@@ -124,7 +131,14 @@ struct ShaderVariable
     
     
     
-    unsigned int flattenedOffsetInParentArrays;
+    int parentArrayIndex() const
+    {
+        return hasParentArrayIndex() ? flattenedOffsetInParentArrays : 0;
+    }
+
+    void setParentArrayIndex(int index) { flattenedOffsetInParentArrays = index; }
+
+    bool hasParentArrayIndex() const { return flattenedOffsetInParentArrays != -1; }
 
     
     bool staticUse;
@@ -135,16 +149,18 @@ struct ShaderVariable
     std::vector<ShaderVariable> fields;
     std::string structName;
 
+    
+    bool isRowMajorLayout;
+
   protected:
     bool isSameVariableAtLinkTime(const ShaderVariable &other,
                                   bool matchPrecision,
                                   bool matchName) const;
 
     bool operator==(const ShaderVariable &other) const;
-    bool operator!=(const ShaderVariable &other) const
-    {
-        return !operator==(other);
-    }
+    bool operator!=(const ShaderVariable &other) const { return !operator==(other); }
+
+    int flattenedOffsetInParentArrays;
 };
 
 
@@ -168,12 +184,10 @@ struct Uniform : public VariableWithLocation
     Uniform(const Uniform &other);
     Uniform &operator=(const Uniform &other);
     bool operator==(const Uniform &other) const;
-    bool operator!=(const Uniform &other) const
-    {
-        return !operator==(other);
-    }
+    bool operator!=(const Uniform &other) const { return !operator==(other); }
 
     int binding;
+    GLenum imageUnitFormat;
     int offset;
     bool readonly;
     bool writeonly;
@@ -203,6 +217,9 @@ struct OutputVariable : public VariableWithLocation
     OutputVariable &operator=(const OutputVariable &other);
     bool operator==(const OutputVariable &other) const;
     bool operator!=(const OutputVariable &other) const { return !operator==(other); }
+
+    
+    int index;
 };
 
 struct InterfaceBlockField : public ShaderVariable
@@ -212,19 +229,13 @@ struct InterfaceBlockField : public ShaderVariable
     InterfaceBlockField(const InterfaceBlockField &other);
     InterfaceBlockField &operator=(const InterfaceBlockField &other);
     bool operator==(const InterfaceBlockField &other) const;
-    bool operator!=(const InterfaceBlockField &other) const
-    {
-        return !operator==(other);
-    }
+    bool operator!=(const InterfaceBlockField &other) const { return !operator==(other); }
 
     
     
     
     
-    bool isSameInterfaceBlockFieldAtLinkTime(
-        const InterfaceBlockField &other) const;
-
-    bool isRowMajorLayout;
+    bool isSameInterfaceBlockFieldAtLinkTime(const InterfaceBlockField &other) const;
 };
 
 struct Varying : public VariableWithLocation
@@ -234,10 +245,7 @@ struct Varying : public VariableWithLocation
     Varying(const Varying &other);
     Varying &operator=(const Varying &other);
     bool operator==(const Varying &other) const;
-    bool operator!=(const Varying &other) const
-    {
-        return !operator==(other);
-    }
+    bool operator!=(const Varying &other) const { return !operator==(other); }
 
     
     
@@ -292,11 +300,8 @@ struct InterfaceBlock
 struct WorkGroupSize
 {
     
-    WorkGroupSize() = default;
-    explicit constexpr WorkGroupSize(int initialSize)
-        : localSizeQualifiers{initialSize, initialSize, initialSize}
-    {
-    }
+    inline WorkGroupSize() = default;
+    inline explicit constexpr WorkGroupSize(int initialSize);
 
     void fill(int fillValue);
     void setLocalSize(int localSizeX, int localSizeY, int localSizeZ);
@@ -319,9 +324,13 @@ struct WorkGroupSize
     
     bool isLocalSizeValid() const;
 
-    std::array<int, 3> localSizeQualifiers;
+    int localSizeQualifiers[3];
 };
+
+inline constexpr WorkGroupSize::WorkGroupSize(int initialSize)
+    : localSizeQualifiers{initialSize, initialSize, initialSize}
+{}
 
 }  
 
-#endif 
+#endif  

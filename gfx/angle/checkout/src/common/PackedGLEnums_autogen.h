@@ -116,6 +116,22 @@ template <>
 CullFaceMode FromGLenum<CullFaceMode>(GLenum from);
 GLenum ToGLenum(CullFaceMode from);
 
+enum class FilterMode : uint8_t
+{
+    Nearest              = 0,
+    Linear               = 1,
+    NearestMipmapNearest = 2,
+    NearestMipmapLinear  = 3,
+    LinearMipmapLinear   = 4,
+
+    InvalidEnum = 5,
+    EnumCount   = 5,
+};
+
+template <>
+FilterMode FromGLenum<FilterMode>(GLenum from);
+GLenum ToGLenum(FilterMode from);
+
 enum class FogMode : uint8_t
 {
     Exp    = 0,
@@ -239,27 +255,18 @@ template <>
 PointParameter FromGLenum<PointParameter>(GLenum from);
 GLenum ToGLenum(PointParameter from);
 
-enum class PrimitiveMode : uint8_t
+enum class ProvokingVertex : uint8_t
 {
-    Points                 = 0,
-    Lines                  = 1,
-    LineLoop               = 2,
-    LineStrip              = 3,
-    Triangles              = 4,
-    TriangleStrip          = 5,
-    TriangleFan            = 6,
-    LinesAdjacency         = 7,
-    LineStripAdjacency     = 8,
-    TrianglesAdjacency     = 9,
-    TriangleStripAdjacency = 10,
+    FirstVertexConvention = 0,
+    LastVertexConvention  = 1,
 
-    InvalidEnum = 11,
-    EnumCount   = 11,
+    InvalidEnum = 2,
+    EnumCount   = 2,
 };
 
 template <>
-PrimitiveMode FromGLenum<PrimitiveMode>(GLenum from);
-GLenum ToGLenum(PrimitiveMode from);
+ProvokingVertex FromGLenum<ProvokingVertex>(GLenum from);
+GLenum ToGLenum(ProvokingVertex from);
 
 enum class QueryType : uint8_t
 {
@@ -474,6 +481,21 @@ enum class VertexArrayType : uint8_t
 template <>
 VertexArrayType FromGLenum<VertexArrayType>(GLenum from);
 GLenum ToGLenum(VertexArrayType from);
+
+enum class WrapMode : uint8_t
+{
+    ClampToEdge    = 0,
+    ClampToBorder  = 1,
+    MirroredRepeat = 2,
+    Repeat         = 3,
+
+    InvalidEnum = 4,
+    EnumCount   = 4,
+};
+
+template <>
+WrapMode FromGLenum<WrapMode>(GLenum from);
+GLenum ToGLenum(WrapMode from);
 
 }  
 

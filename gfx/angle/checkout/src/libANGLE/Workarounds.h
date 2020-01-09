@@ -23,6 +23,11 @@ struct Workarounds
     
     
     bool disableProgramCachingForTransformFeedback = false;
+
+    
+    
+    
+    bool syncFramebufferBindingsOnTexImage = false;
 };
 }  
 

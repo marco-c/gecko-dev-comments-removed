@@ -32,13 +32,13 @@ class VertexArrayImpl : angle::NonCopyable
 {
   public:
     VertexArrayImpl(const gl::VertexArrayState &state) : mState(state) {}
-    virtual gl::Error syncState(const gl::Context *context,
-                                const gl::VertexArray::DirtyBits &dirtyBits,
-                                const gl::VertexArray::DirtyAttribBitsArray &attribBits,
-                                const gl::VertexArray::DirtyBindingBitsArray &bindingBits)
-    {
-        return gl::NoError();
-    }
+
+    
+    
+    virtual angle::Result syncState(const gl::Context *context,
+                                    const gl::VertexArray::DirtyBits &dirtyBits,
+                                    gl::VertexArray::DirtyAttribBitsArray *attribBits,
+                                    gl::VertexArray::DirtyBindingBitsArray *bindingBits);
 
     virtual void destroy(const gl::Context *context) {}
     virtual ~VertexArrayImpl() {}
@@ -49,6 +49,14 @@ class VertexArrayImpl : angle::NonCopyable
     const gl::VertexArrayState &mState;
 };
 
+inline angle::Result VertexArrayImpl::syncState(const gl::Context *context,
+                                                const gl::VertexArray::DirtyBits &dirtyBits,
+                                                gl::VertexArray::DirtyAttribBitsArray *attribBits,
+                                                gl::VertexArray::DirtyBindingBitsArray *bindingBits)
+{
+    return angle::Result::Continue;
+}
+
 }  
 
-#endif 
+#endif  

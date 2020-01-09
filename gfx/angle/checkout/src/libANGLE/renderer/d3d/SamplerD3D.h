@@ -20,6 +20,6 @@ class SamplerD3D : public SamplerImpl
     SamplerD3D(const gl::SamplerState &state) : SamplerImpl(state) {}
     ~SamplerD3D() override {}
 };
-}
+}  
 
 #endif  

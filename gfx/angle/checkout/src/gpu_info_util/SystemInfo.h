@@ -59,10 +59,13 @@ struct SystemInfo
     int primaryGPUIndex = -1;
     
     
-    int activeGPUIndex  = -1;
+    int activeGPUIndex = -1;
 
     bool isOptimus       = false;
     bool isAMDSwitchable = false;
+
+    
+    std::string machineManufacturer;
 
     
     std::string machineModelName;

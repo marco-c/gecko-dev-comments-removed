@@ -27,8 +27,7 @@ struct ASTMetadataHLSL
           mCalledInDiscontinuousLoop(false),
           mHasGradientLoopInCallGraph(false),
           mNeedsLod0(false)
-    {
-    }
+    {}
 
     
     

@@ -25,6 +25,6 @@ struct MappedStruct
 };
 
 std::vector<MappedStruct> FlagStd140Structs(TIntermNode *node);
-}
+}  
 
 #endif  

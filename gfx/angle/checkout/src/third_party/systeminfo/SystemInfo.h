@@ -26,10 +26,11 @@
 #ifndef THIRD_PARTY_SYSTEMINFO_SYSTEMINFO_H_
 #define THIRD_PARTY_SYSTEMINFO_SYSTEMINFO_H_
 
-namespace rx {
+namespace rx
+{
 
 bool isWindowsVistaOrGreater();
 
-} 
+}  
 
-#endif 
+#endif  

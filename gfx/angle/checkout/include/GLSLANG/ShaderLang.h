@@ -12,6 +12,7 @@
 
 #include <array>
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -25,7 +26,7 @@
 
 
 
-#define ANGLE_SH_VERSION 198
+#define ANGLE_SH_VERSION 205
 
 enum ShShaderSpec
 {
@@ -266,6 +267,14 @@ const ShCompileOptions SH_CLAMP_FRAG_DEPTH = UINT64_C(1) << 38;
 const ShCompileOptions SH_REWRITE_REPEATED_ASSIGN_TO_SWIZZLED = UINT64_C(1) << 39;
 
 
+const ShCompileOptions SH_EMULATE_GL_DRAW_ID = UINT64_C(1) << 40;
+
+
+
+
+const ShCompileOptions SH_INIT_SHARED_VARIABLES = UINT64_C(1) << 41;
+
+
 enum ShArrayIndexClampingStrategy
 {
     
@@ -314,6 +323,8 @@ struct ShBuiltInResources
     int EXT_YUV_target;
     int EXT_geometry_shader;
     int OES_texture_storage_multisample_2d_array;
+    int ANGLE_texture_multisample;
+    int ANGLE_multi_draw;
 
     
     
@@ -599,6 +610,17 @@ bool CheckVariablesWithinPackingLimits(int maxVectors,
 
 
 
+bool GetShaderStorageBlockRegister(const ShHandle handle,
+                                   const std::string &shaderStorageBlockName,
+                                   unsigned int *indexOut);
+
+
+
+
+
+
+
+
 bool GetUniformBlockRegister(const ShHandle handle,
                              const std::string &uniformBlockName,
                              unsigned int *indexOut);
@@ -606,6 +628,19 @@ bool GetUniformBlockRegister(const ShHandle handle,
 
 
 const std::map<std::string, unsigned int> *GetUniformRegisterMap(const ShHandle handle);
+
+
+
+
+
+unsigned int GetReadonlyImage2DRegisterIndex(const ShHandle handle);
+unsigned int GetImage2DRegisterIndex(const ShHandle handle);
+
+
+
+
+
+const std::set<std::string> *GetUsedImage2DFunctionNames(const ShHandle handle);
 
 bool HasValidGeometryShaderInputPrimitiveType(const ShHandle handle);
 bool HasValidGeometryShaderOutputPrimitiveType(const ShHandle handle);
@@ -615,6 +650,13 @@ GLenum GetGeometryShaderOutputPrimitiveType(const ShHandle handle);
 int GetGeometryShaderInvocations(const ShHandle handle);
 int GetGeometryShaderMaxVertices(const ShHandle handle);
 
+
+
+
+inline bool IsWebGLBasedSpec(ShShaderSpec spec)
+{
+    return (spec == SH_WEBGL_SPEC || spec == SH_WEBGL2_SPEC || spec == SH_WEBGL3_SPEC);
+}
 }  
 
 #endif  

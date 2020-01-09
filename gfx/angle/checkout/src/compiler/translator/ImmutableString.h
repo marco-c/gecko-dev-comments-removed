@@ -33,7 +33,7 @@ constexpr size_t constStrlen(const char *str)
     }
     return len;
 }
-}
+}  
 
 class ImmutableString
 {
@@ -44,15 +44,13 @@ class ImmutableString
     
     
     explicit constexpr ImmutableString(const char *data) : mData(data), mLength(constStrlen(data))
-    {
-    }
+    {}
 
     constexpr ImmutableString(const char *data, size_t length) : mData(data), mLength(length) {}
 
     ImmutableString(const std::string &str)
         : mData(AllocatePoolCharArray(str.c_str(), str.size())), mLength(str.size())
-    {
-    }
+    {}
 
     constexpr ImmutableString(const ImmutableString &) = default;
 

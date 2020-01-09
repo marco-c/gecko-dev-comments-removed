@@ -24,7 +24,7 @@ struct Token
     {
         
         GOT_ERROR = -1,
-        LAST  = 0,  
+        LAST      = 0,  
 
         IDENTIFIER = 258,
 
@@ -105,6 +105,8 @@ inline bool operator!=(const Token &lhs, const Token &rhs)
 }
 
 std::ostream &operator<<(std::ostream &out, const Token &token);
+
+constexpr char kDefined[] = "defined";
 
 }  
 

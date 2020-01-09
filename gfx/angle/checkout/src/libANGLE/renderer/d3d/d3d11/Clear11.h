@@ -12,9 +12,9 @@
 #include <map>
 #include <vector>
 
-#include "libANGLE/angletypes.h"
 #include "libANGLE/Error.h"
 #include "libANGLE/Framebuffer.h"
+#include "libANGLE/angletypes.h"
 #include "libANGLE/renderer/d3d/d3d11/renderer11_utils.h"
 
 namespace rx
@@ -37,6 +37,7 @@ class Clear11 : angle::NonCopyable
     explicit Clear11(Renderer11 *renderer);
     ~Clear11();
 
+    
     
     angle::Result clearFramebuffer(const gl::Context *context,
                                    const ClearParameters &clearParams,
@@ -98,4 +99,4 @@ class Clear11 : angle::NonCopyable
 
 }  
 
-#endif 
+#endif  

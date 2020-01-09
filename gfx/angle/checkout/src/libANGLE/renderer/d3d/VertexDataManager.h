@@ -22,7 +22,7 @@ class State;
 struct VertexAttribute;
 class VertexBinding;
 struct VertexAttribCurrentValueData;
-}
+}  
 
 namespace rx
 {
@@ -61,10 +61,10 @@ struct TranslatedAttribute
 
     const gl::VertexAttribute *attribute;
     const gl::VertexBinding *binding;
-    GLenum currentValueType;
+    gl::VertexAttribType currentValueType;
     unsigned int baseOffset;
     bool usesFirstVertexOffset;
-    unsigned int stride;   
+    unsigned int stride;  
 
     VertexBufferBinding vertexBuffer;
     BufferD3D *storage;
@@ -157,4 +157,4 @@ class VertexDataManager : angle::NonCopyable
 
 }  
 
-#endif   
+#endif  

@@ -11,6 +11,7 @@
 #include "compiler/translator/tree_util/IntermNodePatternMatcher.h"
 #include "compiler/translator/tree_util/IntermNode_util.h"
 #include "compiler/translator/tree_util/IntermTraverse.h"
+#include "compiler/translator/util.h"
 
 namespace sh
 {
@@ -18,45 +19,95 @@ namespace
 {
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class RewriteAtomicFunctionExpressionsTraverser : public TIntermTraverser
 {
   public:
-    RewriteAtomicFunctionExpressionsTraverser(TSymbolTable *symbolTable);
+    RewriteAtomicFunctionExpressionsTraverser(TSymbolTable *symbolTable, int shaderVersion);
 
     bool visitAggregate(Visit visit, TIntermAggregate *node) override;
+    bool visitBlock(Visit visit, TIntermBlock *node) override;
 
   private:
     static bool IsAtomicExchangeOrCompSwapNoReturnValue(TIntermAggregate *node,
                                                         TIntermNode *parentNode);
+    static bool IsAtomicFunctionInsideExpression(TIntermAggregate *node, TIntermNode *parentNode);
 
-    void separateAtomicFunctionCallNode(TIntermAggregate *oldAtomicFunctionNode);
+    void rewriteAtomicFunctionCallNode(TIntermAggregate *oldAtomicFunctionNode);
+
+    const TVariable *getTempVariable(const TType *type);
+
+    int mShaderVersion;
+    TIntermSequence mTempVariables;
 };
 
 RewriteAtomicFunctionExpressionsTraverser::RewriteAtomicFunctionExpressionsTraverser(
-    TSymbolTable *symbolTable)
-    : TIntermTraverser(true, false, false, symbolTable)
-{
-}
+    TSymbolTable *symbolTable,
+    int shaderVersion)
+    : TIntermTraverser(false, false, true, symbolTable), mShaderVersion(shaderVersion)
+{}
 
-void RewriteAtomicFunctionExpressionsTraverser::separateAtomicFunctionCallNode(
+void RewriteAtomicFunctionExpressionsTraverser::rewriteAtomicFunctionCallNode(
     TIntermAggregate *oldAtomicFunctionNode)
 {
     ASSERT(oldAtomicFunctionNode);
 
-    TIntermSequence insertions;
+    const TVariable *returnVariable = getTempVariable(&oldAtomicFunctionNode->getType());
 
-    
-    TIntermDeclaration *returnVariableDeclaration;
-    TVariable *returnVariable = DeclareTempVariable(mSymbolTable, &oldAtomicFunctionNode->getType(),
-                                                    EvqTemporary, &returnVariableDeclaration);
-    insertions.push_back(returnVariableDeclaration);
-
-    
-    TIntermBinary *atomicFunctionAssignment = new TIntermBinary(
+    TIntermBinary *rewrittenNode = new TIntermBinary(
         TOperator::EOpAssign, CreateTempSymbolNode(returnVariable), oldAtomicFunctionNode);
 
-    insertStatementsInParentBlock(insertions);
-    queueReplacement(atomicFunctionAssignment, OriginalNode::IS_DROPPED);
+    auto *parentNode = getParentNode();
+
+    auto *parentBinary = parentNode->getAsBinaryNode();
+    if (parentBinary && parentBinary->getOp() == EOpInitialize)
+    {
+        insertStatementInParentBlock(rewrittenNode);
+        queueReplacement(CreateTempSymbolNode(returnVariable), OriginalNode::IS_DROPPED);
+    }
+    else
+    {
+        
+        
+        
+        if (!parentNode->getAsBlock())
+        {
+            rewrittenNode = TIntermBinary::CreateComma(
+                rewrittenNode, new TIntermSymbol(returnVariable), mShaderVersion);
+        }
+
+        queueReplacement(rewrittenNode, OriginalNode::IS_DROPPED);
+    }
+}
+
+const TVariable *RewriteAtomicFunctionExpressionsTraverser::getTempVariable(const TType *type)
+{
+    TIntermDeclaration *variableDeclaration;
+    TVariable *returnVariable =
+        DeclareTempVariable(mSymbolTable, type, EvqTemporary, &variableDeclaration);
+    mTempVariables.push_back(variableDeclaration);
+    return returnVariable;
 }
 
 bool RewriteAtomicFunctionExpressionsTraverser::IsAtomicExchangeOrCompSwapNoReturnValue(
@@ -68,21 +119,63 @@ bool RewriteAtomicFunctionExpressionsTraverser::IsAtomicExchangeOrCompSwapNoRetu
            parentNode && parentNode->getAsBlock();
 }
 
+bool RewriteAtomicFunctionExpressionsTraverser::IsAtomicFunctionInsideExpression(
+    TIntermAggregate *node,
+    TIntermNode *parentNode)
+{
+    ASSERT(node);
+    
+    
+    if (!IsAtomicFunction(node->getOp()) || parentNode->getAsBlock())
+    {
+        return false;
+    }
+
+    auto *parentAsBinary = parentNode->getAsBinaryNode();
+    
+    return !parentAsBinary || parentAsBinary->getOp() != EOpAssign;
+}
+
 bool RewriteAtomicFunctionExpressionsTraverser::visitAggregate(Visit visit, TIntermAggregate *node)
 {
-    if (IsAtomicExchangeOrCompSwapNoReturnValue(node, getParentNode()))
+    ASSERT(visit == PostVisit);
+    
+    if (IsAtomicFunction(node->getOp()) &&
+        IsInShaderStorageBlock((*node->getSequence())[0]->getAsTyped()))
     {
-        separateAtomicFunctionCallNode(node);
         return false;
+    }
+
+    TIntermNode *parentNode = getParentNode();
+    if (IsAtomicExchangeOrCompSwapNoReturnValue(node, parentNode) ||
+        IsAtomicFunctionInsideExpression(node, parentNode))
+    {
+        rewriteAtomicFunctionCallNode(node);
     }
 
     return true;
 }
+
+bool RewriteAtomicFunctionExpressionsTraverser::visitBlock(Visit visit, TIntermBlock *node)
+{
+    ASSERT(visit == PostVisit);
+
+    if (!mTempVariables.empty() && getParentNode()->getAsFunctionDefinition())
+    {
+        insertStatementsInBlockAtPosition(node, 0, mTempVariables, TIntermSequence());
+        mTempVariables.clear();
+    }
+
+    return true;
+}
+
 }  
 
-void RewriteAtomicFunctionExpressions(TIntermNode *root, TSymbolTable *symbolTable)
+void RewriteAtomicFunctionExpressions(TIntermNode *root,
+                                      TSymbolTable *symbolTable,
+                                      int shaderVersion)
 {
-    RewriteAtomicFunctionExpressionsTraverser traverser(symbolTable);
+    RewriteAtomicFunctionExpressionsTraverser traverser(symbolTable, shaderVersion);
     traverser.traverse(root);
     traverser.updateTree();
 }

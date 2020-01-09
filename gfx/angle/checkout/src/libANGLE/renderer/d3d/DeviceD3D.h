@@ -32,6 +32,6 @@ class DeviceD3D : public DeviceImpl
     bool mIsInitialized;
 };
 
-}
+}  
 
-#endif 
+#endif  

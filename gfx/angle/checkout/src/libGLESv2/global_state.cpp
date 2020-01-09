@@ -12,32 +12,27 @@
 #include "common/platform.h"
 #include "common/tls.h"
 
-#include "libANGLE/Debug.h"
-#include "libANGLE/Thread.h"
-
 namespace gl
 {
 
-Context *GetGlobalContext()
-{
-    egl::Thread *thread = egl::GetCurrentThread();
-    return thread->getContext();
-}
 
-Context *GetValidGlobalContext()
-{
-    egl::Thread *thread = egl::GetCurrentThread();
-    return thread->getValidContext();
-}
 
+
+
+
+
+
+
+
+
+Context *gSingleThreadedContext = nullptr;
+bool gIsMultiThreadedContext    = false;
 }  
 
 namespace egl
 {
-
 namespace
 {
-
 static TLSIndex threadTLS = TLS_INVALID_INDEX;
 Debug *g_Debug            = nullptr;
 
@@ -91,7 +86,43 @@ Debug *GetDebug()
     return g_Debug;
 }
 
+void SetContextCurrent(Thread *thread, gl::Context *context)
+{
+    
+    
+    if (!gl::gIsMultiThreadedContext)
+    {
+        
+        if (gl::gSingleThreadedContext == nullptr ||
+            gl::gSingleThreadedContext == thread->getContext())
+        {
+            gl::gSingleThreadedContext = context;
+        }
+        else
+        {
+            
+            gl::gSingleThreadedContext  = nullptr;
+            gl::gIsMultiThreadedContext = true;
+        }
+    }
+    thread->setCurrent(context);
+}
 }  
+
+#if ANGLE_FORCE_THREAD_SAFETY == ANGLE_ENABLED
+namespace angle
+{
+namespace
+{
+std::mutex g_Mutex;
+}  
+
+std::mutex &GetGlobalMutex()
+{
+    return g_Mutex;
+}
+}  
+#endif
 
 #ifdef ANGLE_PLATFORM_WINDOWS
 namespace egl

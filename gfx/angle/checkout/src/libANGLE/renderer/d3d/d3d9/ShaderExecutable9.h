@@ -30,6 +30,6 @@ class ShaderExecutable9 : public ShaderExecutableD3D
     IDirect3DVertexShader9 *mVertexExecutable;
 };
 
-}
+}  
 
-#endif 
+#endif  

@@ -20,8 +20,7 @@ namespace sh
 
 TranslatorGLSL::TranslatorGLSL(sh::GLenum type, ShShaderSpec spec, ShShaderOutput output)
     : TCompiler(type, spec, output)
-{
-}
+{}
 
 void TranslatorGLSL::initBuiltInFunctionEmulator(BuiltInFunctionEmulator *emu,
                                                  ShCompileOptions compileOptions)
@@ -141,7 +140,7 @@ void TranslatorGLSL::translate(TIntermBlock *root,
         bool hasGLSecondaryFragColor = false;
         bool hasGLSecondaryFragData  = false;
 
-        for (const auto &outputVar : outputVariables)
+        for (const auto &outputVar : mOutputVariables)
         {
             if (declareGLFragmentOutputs)
             {
@@ -286,6 +285,14 @@ void TranslatorGLSL::writeExtensionBehavior(TIntermNode *root, ShCompileOptions 
             
             
             sink << "#extension GL_NV_viewport_array2 : require\n";
+        }
+
+        
+        if (getShaderVersion() >= 300 && iter.first == TExtension::ANGLE_texture_multisample &&
+            getOutputType() < SH_GLSL_330_CORE_OUTPUT)
+        {
+            sink << "#extension GL_ARB_texture_multisample : " << GetBehaviorString(iter.second)
+                 << "\n";
         }
     }
 

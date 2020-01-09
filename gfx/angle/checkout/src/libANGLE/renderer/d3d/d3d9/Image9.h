@@ -10,8 +10,8 @@
 #ifndef LIBANGLE_RENDERER_D3D_D3D9_IMAGE9_H_
 #define LIBANGLE_RENDERER_D3D_D3D9_IMAGE9_H_
 
-#include "libANGLE/renderer/d3d/ImageD3D.h"
 #include "common/debug.h"
+#include "libANGLE/renderer/d3d/ImageD3D.h"
 
 namespace gl
 {
@@ -101,11 +101,12 @@ class Image9 : public ImageD3D
 
     Renderer9 *mRenderer;
 
-    D3DPOOL mD3DPool;   
+    D3DPOOL mD3DPool;  
+                       
     D3DFORMAT mD3DFormat;
 
     IDirect3DSurface9 *mSurface;
 };
-}
+}  
 
-#endif   
+#endif  

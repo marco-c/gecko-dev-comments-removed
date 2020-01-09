@@ -34,8 +34,7 @@ class GLFragColorBroadcastTraverser : public TIntermTraverser
           mGLFragColorUsed(false),
           mMaxDrawBuffers(maxDrawBuffers),
           mShaderVersion(shaderVersion)
-    {
-    }
+    {}
 
     void broadcastGLFragColor(TIntermBlock *root);
 

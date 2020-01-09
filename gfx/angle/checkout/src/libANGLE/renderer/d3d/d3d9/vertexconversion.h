@@ -10,9 +10,9 @@
 #ifndef LIBANGLE_RENDERER_D3D_D3D9_VERTEXCONVERSION_H_
 #define LIBANGLE_RENDERER_D3D_D3D9_VERTEXCONVERSION_H_
 
-#include <limits>
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
+#include <limits>
 
 namespace rx
 {
@@ -29,10 +29,7 @@ struct Identity
 
     typedef T OutputType;
 
-    static T convert(T x)
-    {
-        return x;
-    }
+    static T convert(T x) { return x; }
 };
 
 template <class FromT, class ToT>
@@ -42,10 +39,7 @@ struct Cast
 
     typedef ToT OutputType;
 
-    static ToT convert(FromT x)
-    {
-        return static_cast<ToT>(x);
-    }
+    static ToT convert(FromT x) { return static_cast<ToT>(x); }
 };
 
 template <class T>
@@ -55,10 +49,7 @@ struct Cast<T, T>
 
     typedef T OutputType;
 
-    static T convert(T x)
-    {
-        return static_cast<T>(x);
-    }
+    static T convert(T x) { return static_cast<T>(x); }
 };
 
 template <class T>
@@ -77,12 +68,13 @@ struct Normalize
         {
             
             
-            const float divisor = 1.0f/(2*static_cast<float>(NL::max())+1);
-            return (2*f+1)*divisor;
+            
+            const float divisor = 1.0f / (2 * static_cast<float>(NL::max()) + 1);
+            return (2 * f + 1) * divisor;
         }
         else
         {
-            return f/NL::max();
+            return f / NL::max();
         }
     }
 };
@@ -110,7 +102,7 @@ template <std::size_t N>
 struct NoWiden
 {
     static const std::size_t initialWidth = N;
-    static const std::size_t finalWidth = N;
+    static const std::size_t finalWidth   = N;
 };
 
 
@@ -118,14 +110,14 @@ template <std::size_t N>
 struct WidenToEven
 {
     static const std::size_t initialWidth = N;
-    static const std::size_t finalWidth = N+(N&1);
+    static const std::size_t finalWidth   = N + (N & 1);
 };
 
 template <std::size_t N>
 struct WidenToFour
 {
     static const std::size_t initialWidth = N;
-    static const std::size_t finalWidth = 4;
+    static const std::size_t finalWidth   = 4;
 };
 
 
@@ -149,6 +141,7 @@ struct NormalizedDefaultValues
 
 
 
+
 template <class InT,
           class WidenRule,
           class Converter,
@@ -158,16 +151,17 @@ struct VertexDataConverter
     typedef typename Converter::OutputType OutputType;
     typedef InT InputType;
 
-    static const bool identity = (WidenRule::initialWidth == WidenRule::finalWidth) && Converter::identity;
+    static const bool identity =
+        (WidenRule::initialWidth == WidenRule::finalWidth) && Converter::identity;
     static const std::size_t finalSize = WidenRule::finalWidth * sizeof(OutputType);
 
     static void convertArray(const uint8_t *input, size_t stride, size_t n, uint8_t *output)
     {
-        OutputType *out = reinterpret_cast<OutputType*>(output);
+        OutputType *out = reinterpret_cast<OutputType *>(output);
 
         for (std::size_t i = 0; i < n; i++)
         {
-            const InputType *ein = reinterpret_cast<const InputType*>(input + i * stride);
+            const InputType *ein = reinterpret_cast<const InputType *>(input + i * stride);
 
             copyComponent(out, ein, 0, static_cast<OutputType>(DefaultValueRule::zero()));
             copyComponent(out, ein, 1, static_cast<OutputType>(DefaultValueRule::zero()));
@@ -179,7 +173,10 @@ struct VertexDataConverter
     }
 
   private:
-    static void copyComponent(OutputType *out, const InputType *in, std::size_t elementindex, OutputType defaultvalue)
+    static void copyComponent(OutputType *out,
+                              const InputType *in,
+                              std::size_t elementindex,
+                              OutputType defaultvalue)
     {
         if (WidenRule::finalWidth > elementindex)
         {
@@ -195,6 +192,6 @@ struct VertexDataConverter
     }
 };
 
-}
+}  
 
-#endif   
+#endif  

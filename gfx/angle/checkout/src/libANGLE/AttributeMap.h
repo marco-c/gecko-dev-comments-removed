@@ -61,6 +61,6 @@ class AttributeMap final
   private:
     std::map<EGLAttrib, EGLAttrib> mAttributes;
 };
-}
+}  
 
 #endif  

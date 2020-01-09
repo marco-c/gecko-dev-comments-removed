@@ -70,11 +70,11 @@ class SwapChain9 : public SwapChainD3D
     IDirect3DSurface9 *mBackBuffer;
     IDirect3DSurface9 *mRenderTarget;
     IDirect3DSurface9 *mDepthStencil;
-    IDirect3DTexture9* mOffscreenTexture;
+    IDirect3DTexture9 *mOffscreenTexture;
 
     SurfaceRenderTarget9 mColorRenderTarget;
     SurfaceRenderTarget9 mDepthStencilRenderTarget;
 };
 
-}
-#endif 
+}  
+#endif  

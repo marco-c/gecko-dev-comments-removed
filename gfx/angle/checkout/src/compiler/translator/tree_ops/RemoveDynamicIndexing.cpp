@@ -7,6 +7,8 @@
 
 
 
+
+
 #include "compiler/translator/tree_ops/RemoveDynamicIndexing.h"
 
 #include "compiler/translator/Diagnostics.h"
@@ -294,8 +296,7 @@ RemoveDynamicIndexingTraverser::RemoveDynamicIndexingTraverser(
       mUsedTreeInsertion(false),
       mRemoveIndexSideEffectsInSubtree(false),
       mPerfDiagnostics(perfDiagnostics)
-{
-}
+{}
 
 void RemoveDynamicIndexingTraverser::insertHelperDefinitions(TIntermNode *root)
 {
@@ -374,7 +375,7 @@ bool RemoveDynamicIndexingTraverser::visitBinary(Visit visit, TIntermBinary *nod
             TIntermSymbol *tempIndex = CreateTempSymbolNode(indexVariable);
             queueReplacementWithParent(node, node->getRight(), tempIndex, OriginalNode::IS_DROPPED);
         }
-        else if (IntermNodePatternMatcher::IsDynamicIndexingOfVectorOrMatrix(node))
+        else if (IntermNodePatternMatcher::IsDynamicIndexingOfNonSSBOVectorOrMatrix(node))
         {
             mPerfDiagnostics->warning(node->getLine(),
                                       "Performance: dynamic indexing of vectors and "
@@ -429,7 +430,7 @@ bool RemoveDynamicIndexingTraverser::visitBinary(Visit visit, TIntermBinary *nod
 
                 TIntermBinary *leftBinary = node->getLeft()->getAsBinaryNode();
                 if (leftBinary != nullptr &&
-                    IntermNodePatternMatcher::IsDynamicIndexingOfVectorOrMatrix(leftBinary))
+                    IntermNodePatternMatcher::IsDynamicIndexingOfNonSSBOVectorOrMatrix(leftBinary))
                 {
                     
                     

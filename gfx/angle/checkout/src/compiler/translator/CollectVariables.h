@@ -31,6 +31,6 @@ void CollectVariables(TIntermBlock *root,
                       TSymbolTable *symbolTable,
                       GLenum shaderType,
                       const TExtensionBehavior &extensionBehavior);
-}
+}  
 
 #endif  

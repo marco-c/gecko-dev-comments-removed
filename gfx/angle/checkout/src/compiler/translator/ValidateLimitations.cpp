@@ -42,8 +42,7 @@ class ValidateConstIndexExpr : public TIntermTraverser
   public:
     ValidateConstIndexExpr(const std::vector<int> &loopSymbols)
         : TIntermTraverser(true, false, false), mValid(true), mLoopSymbolIds(loopSymbols)
-    {
-    }
+    {}
 
     
     bool isValid() const { return mValid; }
@@ -56,7 +55,7 @@ class ValidateConstIndexExpr : public TIntermTraverser
         {
             bool isLoopSymbol = std::find(mLoopSymbolIds.begin(), mLoopSymbolIds.end(),
                                           symbol->uniqueId().get()) != mLoopSymbolIds.end();
-            mValid = (symbol->getQualifier() == EvqConst) || isLoopSymbol;
+            mValid            = (symbol->getQualifier() == EvqConst) || isLoopSymbol;
         }
     }
 

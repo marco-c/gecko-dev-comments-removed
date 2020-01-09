@@ -17,7 +17,7 @@ namespace angle
 
 
 const uintptr_t DirtyPointer = std::numeric_limits<uintptr_t>::max();
-}
+}  
 
 std::string ArrayString(unsigned int i)
 {
@@ -47,7 +47,7 @@ std::string ArrayIndexString(const std::vector<unsigned int> &indices)
     return strstr.str();
 }
 
-size_t FormatStringIntoVector(const char *fmt, va_list vararg, std::vector<char>& outBuffer)
+size_t FormatStringIntoVector(const char *fmt, va_list vararg, std::vector<char> &outBuffer)
 {
     
     

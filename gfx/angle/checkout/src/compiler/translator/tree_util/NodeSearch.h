@@ -51,6 +51,6 @@ class FindDiscard : public NodeSearchTraverser<FindDiscard>
         return !mFound;
     }
 };
-}
+}  
 
 #endif  

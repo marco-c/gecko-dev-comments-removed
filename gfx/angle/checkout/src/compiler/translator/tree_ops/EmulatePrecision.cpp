@@ -56,8 +56,7 @@ class RoundingHelperWriterGLSL : public RoundingHelperWriter
   public:
     RoundingHelperWriterGLSL(const ShShaderOutput outputLanguage)
         : RoundingHelperWriter(outputLanguage)
-    {
-    }
+    {}
 
   private:
     std::string getTypeString(const char *glslType) override;
@@ -74,8 +73,7 @@ class RoundingHelperWriterESSL : public RoundingHelperWriterGLSL
   public:
     RoundingHelperWriterESSL(const ShShaderOutput outputLanguage)
         : RoundingHelperWriterGLSL(outputLanguage)
-    {
-    }
+    {}
 
   private:
     std::string getTypeString(const char *glslType) override;
@@ -86,8 +84,7 @@ class RoundingHelperWriterHLSL : public RoundingHelperWriter
   public:
     RoundingHelperWriterHLSL(const ShShaderOutput outputLanguage)
         : RoundingHelperWriter(outputLanguage)
-    {
-    }
+    {}
 
   private:
     std::string getTypeString(const char *glslType) override;
@@ -479,8 +476,7 @@ bool ParentConstructorTakesCareOfRounding(TIntermNode *parent, TIntermTyped *nod
 
 EmulatePrecision::EmulatePrecision(TSymbolTable *symbolTable)
     : TLValueTrackingTraverser(true, true, true, symbolTable), mDeclaringVariables(false)
-{
-}
+{}
 
 void EmulatePrecision::visitSymbol(TIntermSymbol *node)
 {

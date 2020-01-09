@@ -85,13 +85,19 @@ void InitMinimumTextureCapsMap(const Version &clientVersion,
                                const Extensions &extensions,
                                TextureCapsMap *capsMap);
 
+
+
+bool DetermineCompressedTextureETCSupport(const TextureCapsMap &textureCaps);
+
 struct Extensions
 {
     Extensions();
+    Extensions(const Extensions &other);
 
     
     std::vector<std::string> getStrings() const;
 
+    
     
     
     
@@ -183,6 +189,9 @@ struct Extensions
     bool textureCompressionASTCLDR;
 
     
+    bool textureCompressionBPTC;
+
+    
     
     bool compressedETC1RGB8Texture;
 
@@ -215,6 +224,13 @@ struct Extensions
 
     
     bool compressedEACRG11SignedTexture;
+
+    
+    
+    
+    
+    
+    bool compressedTextureETC;
 
     
     
@@ -268,7 +284,11 @@ struct Extensions
     bool framebufferMultisample;
 
     
-    bool instancedArrays;
+    bool instancedArraysANGLE;
+    
+    bool instancedArraysEXT;
+    
+    bool instancedArraysAny() const { return (instancedArraysANGLE || instancedArraysEXT); }
 
     
     bool packReverseRowOrder;
@@ -311,6 +331,9 @@ struct Extensions
     bool eglImageExternalEssl3;
 
     
+    bool eglSync;
+
+    
     bool eglStreamConsumerExternal;
 
     
@@ -348,6 +371,9 @@ struct Extensions
     bool copyCompressedTexture;
 
     
+    bool copyTexture3d;
+
+    
     bool webglCompatibility;
 
     
@@ -358,6 +384,9 @@ struct Extensions
 
     
     bool robustClientMemory;
+
+    
+    bool textureBorderClamp;
 
     
     bool textureSRGBDecode;
@@ -428,7 +457,29 @@ struct Extensions
     bool parallelShaderCompile;
 
     
-    bool textureMultisampleArray;
+    bool textureStorageMultisample2DArray;
+
+    
+    bool multiviewMultisample;
+
+    
+    bool blendFuncExtended;
+    GLuint maxDualSourceDrawBuffers;
+
+    
+    bool floatBlend;
+
+    
+    bool memorySize;
+
+    
+    bool textureMultisample;
+
+    
+    bool multiDraw;
+
+    
+    bool provokingVertex = false;
 };
 
 struct ExtensionInfo
@@ -469,6 +520,9 @@ struct Limitations
 
     
     bool noFlexibleVaryingPacking;
+
+    
+    bool noDoubleBoundTransformFeedbackBuffers;
 };
 
 struct TypePrecision
@@ -642,7 +696,7 @@ struct Caps
 };
 
 Caps GenerateMinimumCaps(const Version &clientVersion, const Extensions &extensions);
-}
+}  
 
 namespace egl
 {
@@ -726,6 +780,9 @@ struct DisplayExtensions
     bool directComposition;
 
     
+    bool windowsUIComposition;
+
+    
     bool createContextNoError;
 
     
@@ -739,6 +796,12 @@ struct DisplayExtensions
 
     
     bool streamProducerD3DTexture;
+
+    
+    bool fenceSync;
+
+    
+    bool waitSync;
 
     
     bool createContextWebGLCompatibility;
@@ -777,10 +840,19 @@ struct DisplayExtensions
     bool createContextExtensionsEnabled;
 
     
-    bool provokingVertexDontCare;
-
-  
     bool presentationTime;
+
+    
+    bool blobCache;
+
+    
+    bool imageNativeBuffer;
+
+    
+    bool getFrameTimestamps;
+
+    
+    bool recordable;
 };
 
 struct DeviceExtensions

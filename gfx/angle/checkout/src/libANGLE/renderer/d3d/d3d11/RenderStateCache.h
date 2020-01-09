@@ -120,4 +120,4 @@ class RenderStateCache : angle::NonCopyable
 
 }  
 
-#endif 
+#endif  

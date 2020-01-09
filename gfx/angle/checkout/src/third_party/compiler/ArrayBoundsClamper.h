@@ -43,17 +43,14 @@ class ArrayBoundsClamper
 
     
     
-    void MarkIndirectArrayBoundsForClamping(TIntermNode* root);
+    void MarkIndirectArrayBoundsForClamping(TIntermNode *root);
 
     
-    void OutputClampingFunctionDefinition(TInfoSinkBase& out) const;
+    void OutputClampingFunctionDefinition(TInfoSinkBase &out) const;
 
-    void Cleanup()
-    {
-        mArrayBoundsClampDefinitionNeeded = false;
-    }
+    void Cleanup() { mArrayBoundsClampDefinitionNeeded = false; }
 
-private:
+  private:
     bool GetArrayBoundsClampDefinitionNeeded() const { return mArrayBoundsClampDefinitionNeeded; }
     void SetArrayBoundsClampDefinitionNeeded() { mArrayBoundsClampDefinitionNeeded = true; }
 
@@ -63,4 +60,4 @@ private:
 
 }  
 
-#endif 
+#endif  

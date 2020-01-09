@@ -13,88 +13,55 @@
 #include <array>
 
 #include "common/MemoryBuffer.h"
+#include "libANGLE/BlobCache.h"
 #include "libANGLE/Error.h"
-#include "libANGLE/SizedMRUCache.h"
-#include "libANGLE/renderer/ProgramImpl.h"
-
-namespace gl
-{
-
-constexpr size_t kProgramHashLength = 20;
-using ProgramHash                   = std::array<uint8_t, kProgramHashLength>;
-}  
-
-namespace std
-{
-template <>
-struct hash<gl::ProgramHash>
-{
-    
-    size_t operator()(const gl::ProgramHash &programHash) const
-    {
-        unsigned int hash = 0;
-        for (uint32_t num : programHash)
-        {
-            hash *= 37;
-            hash += num;
-        }
-        return hash;
-    }
-};
-}  
 
 namespace gl
 {
 class Context;
-class InfoLog;
 class Program;
 class ProgramState;
 
 class MemoryProgramCache final : angle::NonCopyable
 {
   public:
-    MemoryProgramCache(size_t maxCacheSizeBytes);
+    explicit MemoryProgramCache(egl::BlobCache &blobCache);
     ~MemoryProgramCache();
 
-    
-    static void Serialize(const Context *context,
-                          const Program *program,
-                          angle::MemoryBuffer *binaryOut);
+    static void ComputeHash(const Context *context,
+                            const Program *program,
+                            egl::BlobCache::Key *hashOut);
 
     
-    static std::unique_ptr<rx::LinkEvent> Deserialize(const Context *context,
-                                                      const Program *program,
-                                                      ProgramState *state,
-                                                      const uint8_t *binary,
-                                                      size_t length,
-                                                      InfoLog &infoLog);
-
-    static void ComputeHash(const Context *context, const Program *program, ProgramHash *hashOut);
+    bool get(const Context *context,
+             const egl::BlobCache::Key &programHash,
+             egl::BlobCache::Value *programOut);
 
     
-    bool get(const ProgramHash &programHash, const angle::MemoryBuffer **programOut);
+    bool getAt(size_t index,
+               const egl::BlobCache::Key **hashOut,
+               egl::BlobCache::Value *programOut);
 
     
-    bool getAt(size_t index, ProgramHash *hashOut, const angle::MemoryBuffer **programOut);
+    void remove(const egl::BlobCache::Key &programHash);
 
     
-    void remove(const ProgramHash &programHash);
-
-    
-    void putProgram(const ProgramHash &programHash, const Context *context, const Program *program);
+    void putProgram(const egl::BlobCache::Key &programHash,
+                    const Context *context,
+                    const Program *program);
 
     
     void updateProgram(const Context *context, const Program *program);
 
     
-    void putBinary(const ProgramHash &programHash, const uint8_t *binary, size_t length);
+    
+    void putBinary(const egl::BlobCache::Key &programHash, const uint8_t *binary, size_t length);
 
     
     
-    LinkResult getProgram(const Context *context,
-                          const Program *program,
-                          ProgramState *state,
-                          ProgramHash *hashOut);
+    angle::Result getProgram(const Context *context,
+                             Program *program,
+                             egl::BlobCache::Key *hashOut);
 
     
     void clear();
@@ -115,14 +82,7 @@ class MemoryProgramCache final : angle::NonCopyable
     size_t maxSize() const;
 
   private:
-    enum class CacheSource
-    {
-        PutProgram,
-        PutBinary,
-    };
-
-    using CacheEntry = std::pair<angle::MemoryBuffer, CacheSource>;
-    angle::SizedMRUCache<ProgramHash, CacheEntry> mProgramBinaryCache;
+    egl::BlobCache &mBlobCache;
     unsigned int mIssuedWarnings;
 };
 

@@ -26,6 +26,6 @@ void EmulateGLFragColorBroadcast(TIntermBlock *root,
                                  std::vector<OutputVariable> *outputVariables,
                                  TSymbolTable *symbolTable,
                                  int shaderVersion);
-}
+}  
 
 #endif  

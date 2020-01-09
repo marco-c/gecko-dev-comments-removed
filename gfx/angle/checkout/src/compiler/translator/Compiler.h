@@ -24,6 +24,7 @@
 #include "compiler/translator/InfoSink.h"
 #include "compiler/translator/Pragma.h"
 #include "compiler/translator/SymbolTable.h"
+#include "compiler/translator/ValidateAST.h"
 #include "third_party/compiler/ArrayBoundsClamper.h"
 
 namespace sh
@@ -34,11 +35,6 @@ class TParseContext;
 #ifdef ANGLE_ENABLE_HLSL
 class TranslatorHLSL;
 #endif  
-
-
-
-
-bool IsWebGLBasedSpec(ShShaderSpec spec);
 
 
 
@@ -71,7 +67,7 @@ class TShHandleBase
   protected:
     
     
-    TPoolAllocator allocator;
+    angle::PoolAllocator allocator;
 };
 
 
@@ -99,8 +95,8 @@ class TCompiler : public TShHandleBase
                  ShCompileOptions compileOptions);
 
     
-    int getShaderVersion() const { return shaderVersion; }
-    TInfoSink &getInfoSink() { return infoSink; }
+    int getShaderVersion() const { return mShaderVersion; }
+    TInfoSink &getInfoSink() { return mInfoSink; }
 
     bool isComputeShaderLocalSizeDeclared() const { return mComputeShaderLocalSizeDeclared; }
     const sh::WorkGroupSize &getComputeShaderLocalSize() const { return mComputeShaderLocalSize; }
@@ -109,25 +105,25 @@ class TCompiler : public TShHandleBase
     
     void clearResults();
 
-    const std::vector<sh::Attribute> &getAttributes() const { return attributes; }
-    const std::vector<sh::OutputVariable> &getOutputVariables() const { return outputVariables; }
-    const std::vector<sh::Uniform> &getUniforms() const { return uniforms; }
-    const std::vector<sh::Varying> &getInputVaryings() const { return inputVaryings; }
-    const std::vector<sh::Varying> &getOutputVaryings() const { return outputVaryings; }
-    const std::vector<sh::InterfaceBlock> &getInterfaceBlocks() const { return interfaceBlocks; }
-    const std::vector<sh::InterfaceBlock> &getUniformBlocks() const { return uniformBlocks; }
+    const std::vector<sh::Attribute> &getAttributes() const { return mAttributes; }
+    const std::vector<sh::OutputVariable> &getOutputVariables() const { return mOutputVariables; }
+    const std::vector<sh::Uniform> &getUniforms() const { return mUniforms; }
+    const std::vector<sh::Varying> &getInputVaryings() const { return mInputVaryings; }
+    const std::vector<sh::Varying> &getOutputVaryings() const { return mOutputVaryings; }
+    const std::vector<sh::InterfaceBlock> &getInterfaceBlocks() const { return mInterfaceBlocks; }
+    const std::vector<sh::InterfaceBlock> &getUniformBlocks() const { return mUniformBlocks; }
     const std::vector<sh::InterfaceBlock> &getShaderStorageBlocks() const
     {
-        return shaderStorageBlocks;
+        return mShaderStorageBlocks;
     }
-    const std::vector<sh::InterfaceBlock> &getInBlocks() const { return inBlocks; }
+    const std::vector<sh::InterfaceBlock> &getInBlocks() const { return mInBlocks; }
 
-    ShHashFunction64 getHashFunction() const { return hashFunction; }
-    NameMap &getNameMap() { return nameMap; }
-    TSymbolTable &getSymbolTable() { return symbolTable; }
-    ShShaderSpec getShaderSpec() const { return shaderSpec; }
-    ShShaderOutput getOutputType() const { return outputType; }
-    const std::string &getBuiltInResourcesString() const { return builtInResourcesString; }
+    ShHashFunction64 getHashFunction() const { return mResources.HashFunction; }
+    NameMap &getNameMap() { return mNameMap; }
+    TSymbolTable &getSymbolTable() { return mSymbolTable; }
+    ShShaderSpec getShaderSpec() const { return mShaderSpec; }
+    ShShaderOutput getOutputType() const { return mOutputType; }
+    const std::string &getBuiltInResourcesString() const { return mBuiltInResourcesString; }
 
     bool shouldRunLoopAndIndexingValidation(ShCompileOptions compileOptions) const;
 
@@ -145,36 +141,17 @@ class TCompiler : public TShHandleBase
         return mGeometryShaderOutputPrimitiveType;
     }
 
-    sh::GLenum getShaderType() const { return shaderType; }
+    sh::GLenum getShaderType() const { return mShaderType; }
 
   protected:
     
-    bool InitBuiltInSymbolTable(const ShBuiltInResources &resources);
-    
-    void setResourceString();
-    
-    bool checkCallDepth();
-    
     virtual void initBuiltInFunctionEmulator(BuiltInFunctionEmulator *emu,
-                                             ShCompileOptions compileOptions){};
+                                             ShCompileOptions compileOptions)
+    {}
     
     virtual void translate(TIntermBlock *root,
                            ShCompileOptions compileOptions,
                            PerformanceDiagnostics *perfDiagnostics) = 0;
-    
-    
-    
-    void useAllMembersInUnusedStandardAndSharedBlocks(TIntermBlock *root);
-    
-    
-    void initializeOutputVariables(TIntermBlock *root);
-    
-    
-    
-    
-    void initializeGLPosition(TIntermBlock *root);
-    
-    bool limitExpressionComplexity(TIntermBlock *root);
     
     const TExtensionBehavior &getExtensionBehavior() const;
     const char *getSourcePath() const;
@@ -191,28 +168,46 @@ class TCompiler : public TShHandleBase
     virtual bool shouldCollectVariables(ShCompileOptions compileOptions);
 
     bool wereVariablesCollected() const;
-    std::vector<sh::Attribute> attributes;
-    std::vector<sh::OutputVariable> outputVariables;
-    std::vector<sh::Uniform> uniforms;
-    std::vector<sh::Varying> inputVaryings;
-    std::vector<sh::Varying> outputVaryings;
-    std::vector<sh::InterfaceBlock> interfaceBlocks;
-    std::vector<sh::InterfaceBlock> uniformBlocks;
-    std::vector<sh::InterfaceBlock> shaderStorageBlocks;
-    std::vector<sh::InterfaceBlock> inBlocks;
+    std::vector<sh::Attribute> mAttributes;
+    std::vector<sh::OutputVariable> mOutputVariables;
+    std::vector<sh::Uniform> mUniforms;
+    std::vector<sh::Varying> mInputVaryings;
+    std::vector<sh::Varying> mOutputVaryings;
+    std::vector<sh::InterfaceBlock> mInterfaceBlocks;
+    std::vector<sh::InterfaceBlock> mUniformBlocks;
+    std::vector<sh::InterfaceBlock> mShaderStorageBlocks;
+    std::vector<sh::InterfaceBlock> mInBlocks;
 
   private:
+    
+    bool initBuiltInSymbolTable(const ShBuiltInResources &resources);
+    
+    void setResourceString();
+    
+    bool checkCallDepth();
+    
+    
+    
+    void useAllMembersInUnusedStandardAndSharedBlocks(TIntermBlock *root);
+    
+    
+    void initializeOutputVariables(TIntermBlock *root);
+    
+    
+    
+    
+    void initializeGLPosition(TIntermBlock *root);
+    
+    bool limitExpressionComplexity(TIntermBlock *root);
     
     bool initCallDag(TIntermNode *root);
     
     bool tagUsedFunctions();
     void internalTagUsedFunction(size_t index);
 
-    void initSamplerDefaultPrecision(TBasicType samplerType);
-
     void collectInterfaceBlocks();
 
-    bool variablesCollected;
+    bool mVariablesCollected;
 
     bool mGLPositionInitialized;
 
@@ -236,9 +231,9 @@ class TCompiler : public TShHandleBase
                              const TParseContext &parseContext,
                              ShCompileOptions compileOptions);
 
-    sh::GLenum shaderType;
-    ShShaderSpec shaderSpec;
-    ShShaderOutput outputType;
+    sh::GLenum mShaderType;
+    ShShaderSpec mShaderSpec;
+    ShShaderOutput mOutputType;
 
     struct FunctionMetadata
     {
@@ -247,30 +242,23 @@ class TCompiler : public TShHandleBase
     };
 
     CallDAG mCallDag;
-    std::vector<FunctionMetadata> functionMetadata;
+    std::vector<FunctionMetadata> mFunctionMetadata;
 
-    int maxUniformVectors;
-    int maxExpressionComplexity;
-    int maxCallStackDepth;
-    int maxFunctionParameters;
-
-    ShBuiltInResources compileResources;
-    std::string builtInResourcesString;
+    ShBuiltInResources mResources;
+    std::string mBuiltInResourcesString;
 
     
     
-    TSymbolTable symbolTable;
+    TSymbolTable mSymbolTable;
     
-    TExtensionBehavior extensionBehavior;
-    bool fragmentPrecisionHigh;
+    TExtensionBehavior mExtensionBehavior;
 
-    ArrayBoundsClamper arrayBoundsClamper;
-    ShArrayIndexClampingStrategy clampingStrategy;
-    BuiltInFunctionEmulator builtInFunctionEmulator;
+    ArrayBoundsClamper mArrayBoundsClamper;
+    BuiltInFunctionEmulator mBuiltInFunctionEmulator;
 
     
-    int shaderVersion;
-    TInfoSink infoSink;       
+    int mShaderVersion;
+    TInfoSink mInfoSink;  
     TDiagnostics mDiagnostics;
     const char *mSourcePath;  
 
@@ -288,10 +276,12 @@ class TCompiler : public TShHandleBase
     TLayoutPrimitiveType mGeometryShaderOutputPrimitiveType;
 
     
-    ShHashFunction64 hashFunction;
-    NameMap nameMap;
+    NameMap mNameMap;
 
     TPragma mPragma;
+
+    
+    ValidateASTOptions mValidateASTOptions;
 };
 
 

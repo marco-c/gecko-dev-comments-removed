@@ -30,7 +30,9 @@ namespace sh
 class TIntermNode;
 class TSymbolTable;
 
-void RewriteAtomicFunctionExpressions(TIntermNode *root, TSymbolTable *symbolTable);
+void RewriteAtomicFunctionExpressions(TIntermNode *root,
+                                      TSymbolTable *symbolTable,
+                                      int shaderVersion);
 }  
 
 #endif  

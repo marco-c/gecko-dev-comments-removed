@@ -150,12 +150,11 @@ struct NarrowingRange
     
     
     
-    static const int shift = (MaxExponent<Src>::value > MaxExponent<Dst>::value &&
-                              SrcLimits::digits < DstLimits::digits &&
-                              SrcLimits::is_iec559 &&
-                              DstLimits::is_integer)
-                                 ? (DstLimits::digits - SrcLimits::digits)
-                                 : 0;
+    static const int shift =
+        (MaxExponent<Src>::value > MaxExponent<Dst>::value &&
+         SrcLimits::digits < DstLimits::digits && SrcLimits::is_iec559 && DstLimits::is_integer)
+            ? (DstLimits::digits - SrcLimits::digits)
+            : 0;
 
     static constexpr Dst max()
     {

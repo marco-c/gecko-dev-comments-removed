@@ -7,12 +7,12 @@
 
 
 
-#include "common/angleutils.h"
 #include "GLSLANG/ShaderLang.h"
+#include "common/angleutils.h"
 #include "libANGLE/Error.h"
 
 #ifndef LIBANGLE_RENDERER_COMPILERIMPL_H_
-#define LIBANGLE_RENDERER_COMPILERIMPL_H_
+#    define LIBANGLE_RENDERER_COMPILERIMPL_H_
 
 namespace rx
 {
@@ -23,12 +23,10 @@ class CompilerImpl : angle::NonCopyable
     CompilerImpl() {}
     virtual ~CompilerImpl() {}
 
-    virtual gl::Error release() = 0;
-
     
     virtual ShShaderOutput getTranslatorOutputType() const = 0;
 };
 
-}
+}  
 
-#endif 
+#endif  

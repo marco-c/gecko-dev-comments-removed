@@ -52,8 +52,7 @@ SimplifyLoopConditionsTraverser::SimplifyLoopConditionsTraverser(
       mFoundLoopToChange(false),
       mInsideLoopInitConditionOrExpression(false),
       mConditionsToSimplify(conditionsToSimplifyMask)
-{
-}
+{}
 
 
 

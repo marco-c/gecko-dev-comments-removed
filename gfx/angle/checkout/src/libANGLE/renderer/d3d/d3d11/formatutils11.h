@@ -54,7 +54,7 @@ struct VertexFormat : private angle::NonCopyable
     VertexCopyFunction copyFunction;
 };
 
-const VertexFormat &GetVertexFormatInfo(gl::VertexFormatType vertexFormatType,
+const VertexFormat &GetVertexFormatInfo(angle::FormatID vertexFormatID,
                                         D3D_FEATURE_LEVEL featureLevel);
 
 
@@ -69,4 +69,4 @@ const angle::Format &GetFormat(DXGI_FORMAT dxgiFormat);
 
 }  
 
-#endif 
+#endif  

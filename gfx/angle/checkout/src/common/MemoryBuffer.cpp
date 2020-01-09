@@ -15,10 +15,6 @@ namespace angle
 {
 
 
-MemoryBuffer::MemoryBuffer() : mSize(0), mData(nullptr)
-{
-}
-
 MemoryBuffer::~MemoryBuffer()
 {
     free(mData);
@@ -82,13 +78,9 @@ MemoryBuffer &MemoryBuffer::operator=(MemoryBuffer &&other)
 
 
 
-ScratchBuffer::ScratchBuffer(uint32_t lifetime) : mLifetime(lifetime), mResetCounter(lifetime)
-{
-}
+ScratchBuffer::ScratchBuffer(uint32_t lifetime) : mLifetime(lifetime), mResetCounter(lifetime) {}
 
-ScratchBuffer::~ScratchBuffer()
-{
-}
+ScratchBuffer::~ScratchBuffer() {}
 
 bool ScratchBuffer::get(size_t requestedSize, MemoryBuffer **memoryBufferOut)
 {

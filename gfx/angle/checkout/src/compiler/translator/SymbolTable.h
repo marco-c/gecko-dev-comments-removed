@@ -46,10 +46,10 @@ namespace sh
 
 
 typedef int ESymbolLevel;
-const int COMMON_BUILTINS    = 0;
-const int ESSL1_BUILTINS     = 1;
-const int ESSL3_BUILTINS     = 2;
-const int ESSL3_1_BUILTINS   = 3;
+const int COMMON_BUILTINS  = 0;
+const int ESSL1_BUILTINS   = 1;
+const int ESSL3_BUILTINS   = 2;
+const int ESSL3_1_BUILTINS = 3;
 
 
 const int GLSL_BUILTINS      = 4;
@@ -128,6 +128,8 @@ class TSymbolTable : angle::NonCopyable, TSymbolTableBase
     
     void addInvariantVarying(const TVariable &variable);
 
+    
+    
     
     bool isVaryingInvariant(const TVariable &variable) const;
 

@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+#include "libANGLE/renderer/QueryImpl.h"
+
+namespace rx
+{
+
+void QueryImpl::onDestroy(const gl::Context *context) {}
+
+}  

@@ -67,7 +67,7 @@ class StructureHLSL : angle::NonCopyable
 
     struct TStructProperties : public angle::NonCopyable
     {
-        POOL_ALLOCATOR_NEW_DELETE();
+        POOL_ALLOCATOR_NEW_DELETE
 
         TStructProperties() {}
 
@@ -93,6 +93,6 @@ class StructureHLSL : angle::NonCopyable
                             bool useStd140Packing);
     DefinedStructs::iterator defineVariants(const TStructure &structure, const TString &name);
 };
-}
+}  
 
 #endif  

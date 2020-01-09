@@ -47,8 +47,7 @@ class ScalarizeArgsTraverser : public TIntermTraverser
           mShaderType(shaderType),
           mFragmentPrecisionHigh(fragmentPrecisionHigh),
           mNodesToScalarize(IntermNodePatternMatcher::kScalarizedVecOrMatConstructor)
-    {
-    }
+    {}
 
   protected:
     bool visitAggregate(Visit visit, TIntermAggregate *node) override;

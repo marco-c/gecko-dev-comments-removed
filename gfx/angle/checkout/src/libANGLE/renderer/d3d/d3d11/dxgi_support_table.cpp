@@ -3007,7 +3007,7 @@ const DXGISupport &GetDXGISupport_11_1(DXGI_FORMAT dxgiFormat)
     
 }
 
-}
+}  
 
 #undef F_2D
 #undef F_3D
@@ -3037,6 +3037,6 @@ const DXGISupport &GetDXGISupport(DXGI_FORMAT dxgiFormat, D3D_FEATURE_LEVEL feat
     }
 }
 
-} 
+}  
 
-} 
+}  

@@ -17,6 +17,6 @@ class TIntermNode;
 class TSymbolTable;
 
 void RewriteElseBlocks(TIntermNode *node, TSymbolTable *symbolTable);
-}
+}  
 
 #endif  

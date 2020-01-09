@@ -20,6 +20,6 @@ class TIntermBlock;
 class TSymbolTable;
 
 void PruneNoOps(TIntermBlock *root, TSymbolTable *symbolTable);
-}
+}  
 
 #endif  

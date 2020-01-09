@@ -682,6 +682,17 @@ TLayoutQualifier JoinLayoutQualifiers(TLayoutQualifier leftQualifier,
         joinedQualifier.maxVertices = rightQualifier.maxVertices;
     }
 
+    if (rightQualifier.index != -1)
+    {
+        if (joinedQualifier.index != -1)
+        {
+            
+            diagnostics->error(rightQualifierLocation, "Cannot have multiple index specifiers",
+                               "index");
+        }
+        joinedQualifier.index = rightQualifier.index;
+    }
+
     return joinedQualifier;
 }
 

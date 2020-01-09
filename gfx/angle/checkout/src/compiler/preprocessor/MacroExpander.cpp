@@ -6,6 +6,7 @@
 
 #include "compiler/preprocessor/MacroExpander.h"
 
+#include <GLSLANG/ShaderLang.h>
 #include <algorithm>
 
 #include "common/debug.h"
@@ -73,7 +74,7 @@ MacroExpander::ScopedMacroReenabler::ScopedMacroReenabler(MacroExpander *expande
 MacroExpander::ScopedMacroReenabler::~ScopedMacroReenabler()
 {
     mExpander->mDeferReenablingMacros = false;
-    for (auto macro : mExpander->mMacrosToReenable)
+    for (const std::shared_ptr<Macro> &macro : mExpander->mMacrosToReenable)
     {
         
         
@@ -86,15 +87,16 @@ MacroExpander::ScopedMacroReenabler::~ScopedMacroReenabler()
 MacroExpander::MacroExpander(Lexer *lexer,
                              MacroSet *macroSet,
                              Diagnostics *diagnostics,
-                             int allowedMacroExpansionDepth)
+                             const PreprocessorSettings &settings,
+                             bool parseDefined)
     : mLexer(lexer),
       mMacroSet(macroSet),
       mDiagnostics(diagnostics),
+      mParseDefined(parseDefined),
       mTotalTokensInContexts(0),
-      mAllowedMacroExpansionDepth(allowedMacroExpansionDepth),
+      mSettings(settings),
       mDeferReenablingMacros(false)
-{
-}
+{}
 
 MacroExpander::~MacroExpander()
 {
@@ -113,6 +115,51 @@ void MacroExpander::lex(Token *token)
 
         if (token->type != Token::IDENTIFIER)
             break;
+
+        
+        
+        
+        
+        
+        if (mParseDefined && token->text == kDefined)
+        {
+            
+            if (!mContextStack.empty() && sh::IsWebGLBasedSpec(mSettings.shaderSpec))
+                break;
+
+            bool paren = false;
+            getToken(token);
+            if (token->type == '(')
+            {
+                paren = true;
+                getToken(token);
+            }
+            if (token->type != Token::IDENTIFIER)
+            {
+                mDiagnostics->report(Diagnostics::PP_UNEXPECTED_TOKEN, token->location,
+                                     token->text);
+                break;
+            }
+            auto iter              = mMacroSet->find(token->text);
+            std::string expression = iter != mMacroSet->end() ? "1" : "0";
+
+            if (paren)
+            {
+                getToken(token);
+                if (token->type != ')')
+                {
+                    mDiagnostics->report(Diagnostics::PP_UNEXPECTED_TOKEN, token->location,
+                                         token->text);
+                    break;
+                }
+            }
+
+            
+            
+            token->type = Token::CONST_INT;
+            token->text = expression;
+            break;
+        }
 
         if (token->expansionDisabled())
             break;
@@ -386,13 +433,15 @@ bool MacroExpander::collectMacroArgs(const Macro &macro,
     for (auto &arg : *args)
     {
         TokenLexer lexer(&arg);
-        if (mAllowedMacroExpansionDepth < 1)
+        if (mSettings.maxMacroExpansionDepth < 1)
         {
             mDiagnostics->report(Diagnostics::PP_MACRO_INVOCATION_CHAIN_TOO_DEEP, token.location,
                                  token.text);
             return false;
         }
-        MacroExpander expander(&lexer, mMacroSet, mDiagnostics, mAllowedMacroExpansionDepth - 1);
+        PreprocessorSettings nestedSettings(mSettings.shaderSpec);
+        nestedSettings.maxMacroExpansionDepth = mSettings.maxMacroExpansionDepth - 1;
+        MacroExpander expander(&lexer, mMacroSet, mDiagnostics, nestedSettings, mParseDefined);
 
         arg.clear();
         expander.lex(&token);
@@ -457,13 +506,9 @@ void MacroExpander::replaceMacroParams(const Macro &macro,
     }
 }
 
-MacroExpander::MacroContext::MacroContext() : macro(0), index(0)
-{
-}
+MacroExpander::MacroContext::MacroContext() : macro(0), index(0) {}
 
-MacroExpander::MacroContext::~MacroContext()
-{
-}
+MacroExpander::MacroContext::~MacroContext() {}
 
 bool MacroExpander::MacroContext::empty() const
 {

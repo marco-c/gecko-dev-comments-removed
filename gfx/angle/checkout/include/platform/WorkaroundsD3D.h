@@ -26,6 +26,9 @@ struct CompilerWorkaroundsD3D
 
 struct WorkaroundsD3D
 {
+    WorkaroundsD3D();
+    WorkaroundsD3D(const WorkaroundsD3D &other);
+
     
     
     
@@ -129,6 +132,9 @@ struct WorkaroundsD3D
     
     bool skipVSConstantRegisterZero = false;
 };
+
+inline WorkaroundsD3D::WorkaroundsD3D()                            = default;
+inline WorkaroundsD3D::WorkaroundsD3D(const WorkaroundsD3D &other) = default;
 
 }  
 

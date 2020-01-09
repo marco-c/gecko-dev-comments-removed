@@ -12,28 +12,31 @@
 #include <stdint.h>
 #include <array>
 
+#define EGL_PLATFORM_ANGLE_PLATFORM_METHODS_ANGLEX 0x3482
+
 #if defined(_WIN32)
-#   if !defined(LIBANGLE_IMPLEMENTATION)
-#       define ANGLE_PLATFORM_EXPORT __declspec(dllimport)
-#   else
-#       define ANGLE_PLATFORM_EXPORT __declspec(dllexport)
-#   endif
+#    if !defined(LIBANGLE_IMPLEMENTATION)
+#        define ANGLE_PLATFORM_EXPORT __declspec(dllimport)
+#    else
+#        define ANGLE_PLATFORM_EXPORT __declspec(dllexport)
+#    endif
 #elif defined(__GNUC__) || defined(__clang__)
-#   define ANGLE_PLATFORM_EXPORT __attribute__((visibility ("default")))
+#    define ANGLE_PLATFORM_EXPORT __attribute__((visibility("default")))
 #endif
 #if !defined(ANGLE_PLATFORM_EXPORT)
-#   define ANGLE_PLATFORM_EXPORT
+#    define ANGLE_PLATFORM_EXPORT
 #endif
 
 #if defined(_WIN32)
-#   define ANGLE_APIENTRY __stdcall
+#    define ANGLE_APIENTRY __stdcall
 #else
-#   define ANGLE_APIENTRY
+#    define ANGLE_APIENTRY
 #endif
 
 namespace angle
 {
 struct WorkaroundsD3D;
+struct FeaturesVk;
 using TraceEventHandle = uint64_t;
 using EGLDisplayType   = void *;
 struct PlatformMethods;
@@ -65,21 +68,15 @@ inline double DefaultMonotonicallyIncreasingTime(PlatformMethods *platform)
 
 
 using LogErrorFunc = void (*)(PlatformMethods *platform, const char *errorMessage);
-inline void DefaultLogError(PlatformMethods *platform, const char *errorMessage)
-{
-}
+inline void DefaultLogError(PlatformMethods *platform, const char *errorMessage) {}
 
 
 using LogWarningFunc = void (*)(PlatformMethods *platform, const char *warningMessage);
-inline void DefaultLogWarning(PlatformMethods *platform, const char *warningMessage)
-{
-}
+inline void DefaultLogWarning(PlatformMethods *platform, const char *warningMessage) {}
 
 
 using LogInfoFunc = void (*)(PlatformMethods *platform, const char *infoMessage);
-inline void DefaultLogInfo(PlatformMethods *platform, const char *infoMessage)
-{
-}
+inline void DefaultLogInfo(PlatformMethods *platform, const char *infoMessage) {}
 
 
 
@@ -180,8 +177,7 @@ inline void DefaultUpdateTraceEventDuration(PlatformMethods *platform,
                                             const unsigned char *categoryEnabledFlag,
                                             const char *name,
                                             angle::TraceEventHandle eventHandle)
-{
-}
+{}
 
 
 
@@ -198,8 +194,7 @@ inline void DefaultHistogramCustomCounts(PlatformMethods *platform,
                                          int min,
                                          int max,
                                          int bucketCount)
-{
-}
+{}
 
 
 using HistogramEnumerationFunc = void (*)(PlatformMethods *platform,
@@ -210,26 +205,26 @@ inline void DefaultHistogramEnumeration(PlatformMethods *platform,
                                         const char *name,
                                         int sample,
                                         int boundaryValue)
-{
-}
+{}
 
 using HistogramSparseFunc = void (*)(PlatformMethods *platform, const char *name, int sample);
-inline void DefaultHistogramSparse(PlatformMethods *platform, const char *name, int sample)
-{
-}
+inline void DefaultHistogramSparse(PlatformMethods *platform, const char *name, int sample) {}
 
 using HistogramBooleanFunc = void (*)(PlatformMethods *platform, const char *name, bool sample);
-inline void DefaultHistogramBoolean(PlatformMethods *platform, const char *name, bool sample)
-{
-}
+inline void DefaultHistogramBoolean(PlatformMethods *platform, const char *name, bool sample) {}
 
 
 using OverrideWorkaroundsD3DFunc = void (*)(PlatformMethods *platform,
                                             angle::WorkaroundsD3D *workaroundsD3D);
 inline void DefaultOverrideWorkaroundsD3D(PlatformMethods *platform,
                                           angle::WorkaroundsD3D *workaroundsD3D)
-{
-}
+{}
+
+using OverrideFeaturesVkFunc = void (*)(PlatformMethods *platform,
+                                        angle::FeaturesVk *workaroundsVulkan);
+inline void DefaultOverrideFeaturesVk(PlatformMethods *platform,
+                                      angle::FeaturesVk *workaroundsVulkan)
+{}
 
 
 
@@ -242,8 +237,7 @@ inline void DefaultCacheProgram(PlatformMethods *platform,
                                 const ProgramKeyType &key,
                                 size_t programSize,
                                 const uint8_t *programBytes)
-{
-}
+{}
 
 
 #define ANGLE_PLATFORM_OP(OP)                                    \
@@ -260,21 +254,24 @@ inline void DefaultCacheProgram(PlatformMethods *platform,
     OP(histogramSparse, HistogramSparse)                         \
     OP(histogramBoolean, HistogramBoolean)                       \
     OP(overrideWorkaroundsD3D, OverrideWorkaroundsD3D)           \
+    OP(overrideFeaturesVk, OverrideFeaturesVk)                   \
     OP(cacheProgram, CacheProgram)
 
 #define ANGLE_PLATFORM_METHOD_DEF(Name, CapsName) CapsName##Func Name = Default##CapsName;
 
 struct ANGLE_PLATFORM_EXPORT PlatformMethods
 {
-    PlatformMethods() {}
+    inline PlatformMethods();
 
     
     
     
     void *context = 0;
 
-    ANGLE_PLATFORM_OP(ANGLE_PLATFORM_METHOD_DEF);
+    ANGLE_PLATFORM_OP(ANGLE_PLATFORM_METHOD_DEF)
 };
+
+inline PlatformMethods::PlatformMethods() = default;
 
 #undef ANGLE_PLATFORM_METHOD_DEF
 
@@ -324,4 +321,4 @@ typedef void(ANGLE_APIENTRY *ResetDisplayPlatformFunc)(angle::EGLDisplayType);
 
 angle::PlatformMethods *ANGLEPlatformCurrent();
 
-#endif 
+#endif

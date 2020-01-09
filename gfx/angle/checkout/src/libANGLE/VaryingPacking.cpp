@@ -30,9 +30,9 @@ bool ComparePackedVarying(const PackedVarying &x, const PackedVarying &y)
     const sh::ShaderVariable *px, *py;
     if (x.isArrayElement())
     {
-        vx           = *x.varying;
+        vx = *x.varying;
         vx.arraySizes.clear();
-        px           = &vx;
+        px = &vx;
     }
     else
     {
@@ -41,9 +41,9 @@ bool ComparePackedVarying(const PackedVarying &x, const PackedVarying &y)
 
     if (y.isArrayElement())
     {
-        vy           = *y.varying;
+        vy = *y.varying;
         vy.arraySizes.clear();
-        py           = &vy;
+        py = &vy;
     }
     else
     {
@@ -58,8 +58,7 @@ bool ComparePackedVarying(const PackedVarying &x, const PackedVarying &y)
 
 VaryingPacking::VaryingPacking(GLuint maxVaryingVectors, PackMode packMode)
     : mRegisterMap(maxVaryingVectors), mPackMode(packMode)
-{
-}
+{}
 
 VaryingPacking::~VaryingPacking() = default;
 
@@ -189,12 +188,12 @@ bool VaryingPacking::packVarying(const PackedVarying &packedVarying)
                 {
                     
                     PackedVaryingRegister registerInfo;
-                    registerInfo.packedVarying     = &packedVarying;
-                    registerInfo.registerRow       = row + arrayIndex;
-                    registerInfo.registerColumn    = bestColumn;
+                    registerInfo.packedVarying  = &packedVarying;
+                    registerInfo.registerRow    = row + arrayIndex;
+                    registerInfo.registerColumn = bestColumn;
                     registerInfo.varyingArrayIndex =
                         (packedVarying.isArrayElement() ? packedVarying.arrayIndex : arrayIndex);
-                    registerInfo.varyingRowIndex   = 0;
+                    registerInfo.varyingRowIndex = 0;
                     
                     
                     if (!packedVarying.varying->isBuiltIn())

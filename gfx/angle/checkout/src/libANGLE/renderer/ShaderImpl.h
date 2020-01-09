@@ -19,7 +19,7 @@ class ShaderImpl : angle::NonCopyable
 {
   public:
     ShaderImpl(const gl::ShaderState &data) : mData(data) {}
-    virtual ~ShaderImpl() { }
+    virtual ~ShaderImpl() {}
 
     virtual void destroy() {}
 
@@ -27,8 +27,12 @@ class ShaderImpl : angle::NonCopyable
     virtual ShCompileOptions prepareSourceAndReturnOptions(const gl::Context *context,
                                                            std::stringstream *sourceStream,
                                                            std::string *sourcePath) = 0;
+
     
-    virtual bool postTranslateCompile(gl::Compiler *compiler, std::string *infoLog) = 0;
+    virtual void compileAsync(const std::string &source, std::string &infoLog) {}
+
+    
+    virtual bool postTranslateCompile(gl::ShCompilerInstance *compiler, std::string *infoLog) = 0;
 
     virtual std::string getDebugInfo() const = 0;
 
@@ -38,6 +42,6 @@ class ShaderImpl : angle::NonCopyable
     const gl::ShaderState &mData;
 };
 
-}
+}  
 
-#endif 
+#endif  
