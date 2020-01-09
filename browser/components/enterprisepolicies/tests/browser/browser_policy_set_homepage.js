@@ -45,7 +45,7 @@ async function check_homepage({expectedURL, expectedPageVal = -1, locked = false
       
       return;
     }
-    content.document.getElementById("category-home").click();
+    await content.gotoPref("paneHome");
 
     let homepageTextbox = content.document.getElementById("homePageUrl");
     

@@ -35,9 +35,9 @@ var gSearchResultsPane = {
     helpContainer.querySelector("a").href = helpUrl;
   },
 
-  handleEvent(event) {
+  async handleEvent(event) {
     
-    this.initializeCategories();
+    await this.initializeCategories();
     this.searchFunction(event);
   },
 
@@ -63,14 +63,14 @@ var gSearchResultsPane = {
   
 
 
-  initializeCategories() {
+  async initializeCategories() {
     
     if (!this.categoriesInitialized) {
       this.categoriesInitialized = true;
       
       for (let [, category] of gCategoryInits) {
         if (!category.inited) {
-          category.init();
+          await category.init();
         }
       }
     }
@@ -223,10 +223,10 @@ var gSearchResultsPane = {
 
     let srHeader = document.getElementById("header-searchResults");
     let noResultsEl = document.getElementById("no-results-message");
-    srHeader.hidden = !this.query;
     if (this.query) {
       
-      gotoPref("paneSearchResults");
+      await gotoPref("paneSearchResults");
+      srHeader.hidden = false;
 
       let resultsFound = false;
 
@@ -307,7 +307,8 @@ var gSearchResultsPane = {
       noResultsEl.hidden = true;
       document.getElementById("sorry-message-query").textContent = "";
       
-      gotoPref("paneGeneral");
+      await gotoPref("paneGeneral");
+      srHeader.hidden = true;
 
       
       for (let element of document.querySelectorAll(".search-header")) {

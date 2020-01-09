@@ -510,6 +510,13 @@ class DOMLocalization extends Localization {
 
 
   connectRoot(newRoot) {
+    
+    
+    
+    if (!newRoot.ownerGlobal) {
+      return;
+    }
+
     for (const root of this.roots) {
       if (root === newRoot ||
           root.contains(newRoot) ||
