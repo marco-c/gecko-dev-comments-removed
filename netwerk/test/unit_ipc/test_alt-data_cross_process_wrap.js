@@ -9,6 +9,12 @@ var cacheFlushObserver = { observe: function() {
 
 var URL = null;
 
+
+var cacheFlushObserver2 = { observe: function() {
+  cacheFlushObserver2 = null;
+  openAltChannel();
+}};
+
 function run_test() {
   do_get_profile();
   do_await_remote_message('flush').then(() => {
@@ -44,7 +50,31 @@ function readTextData(request, buffer)
   
   var altContent = "altContentParentGenerated";
   executeSoon(() => {
-    Assert.throws(() => cc.openAlternativeOutputStream("text/parent-binary", altContent.length), /NS_ERROR_NOT_AVAILABLE/);
-    do_send_remote_message('finish');
+    var os = cc.openAlternativeOutputStream("text/parent-binary", altContent.length);
+    os.write(altContent, altContent.length);
+    os.close();
+
+    executeSoon(() => {
+      Services.cache2.QueryInterface(Ci.nsICacheTesting).flush(cacheFlushObserver2);
+    });
   });
+}
+
+function openAltChannel() {
+  var chan = make_channel(URL);
+  var cc = chan.QueryInterface(Ci.nsICacheInfoChannel);
+  cc.preferAlternativeDataType("text/parent-binary", "", true);
+  chan.asyncOpen(new ChannelListener(readAltData, null));
+}
+
+function readAltData(request, buffer)
+{
+  var cc = request.QueryInterface(Ci.nsICacheInfoChannel);
+
+  
+  Assert.equal(buffer, "altContentParentGenerated");
+  Assert.equal(cc.alternativeDataType, "text/parent-binary");
+
+  
+  do_send_remote_message('finish');
 }
