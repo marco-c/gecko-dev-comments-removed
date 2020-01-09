@@ -431,7 +431,10 @@ class GCSchedulingTunables {
 
 
 
+
+
   UnprotectedData<uint32_t> nurseryFreeThresholdForIdleCollection_;
+  UnprotectedData<float> nurseryFreeThresholdForIdleCollectionFraction_;
 
   
 
@@ -487,6 +490,9 @@ class GCSchedulingTunables {
   unsigned maxEmptyChunkCount() const { return maxEmptyChunkCount_; }
   uint32_t nurseryFreeThresholdForIdleCollection() const {
     return nurseryFreeThresholdForIdleCollection_;
+  }
+  float nurseryFreeThresholdForIdleCollectionFraction() const {
+    return nurseryFreeThresholdForIdleCollectionFraction_;
   }
 
   bool attemptPretenuring() const { return pretenureThreshold_ < 1.0f; }

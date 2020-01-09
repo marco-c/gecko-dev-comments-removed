@@ -698,8 +698,35 @@ inline void js::Nursery::endProfile(ProfileKey key) {
 }
 
 bool js::Nursery::shouldCollect() const {
-  uint32_t threshold = tunables().nurseryFreeThresholdForIdleCollection();
-  return !isEmpty() && (minorGCRequested() || freeSpace() < threshold);
+  if (minorGCRequested()) {
+    return true;
+  }
+
+  bool belowBytesThreshold =
+      freeSpace() < tunables().nurseryFreeThresholdForIdleCollection();
+  bool belowFractionThreshold =
+      float(freeSpace()) / float(capacity()) <
+      tunables().nurseryFreeThresholdForIdleCollectionFraction();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  return belowBytesThreshold && belowFractionThreshold;
 }
 
 static inline bool IsFullStoreBufferReason(JS::GCReason reason) {
