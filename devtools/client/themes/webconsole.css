@@ -103,6 +103,11 @@ a {
   color: var(--object-color);
 }
 
+
+.webconsole-output:first-child.message.navigationMarker {
+  border-top: none;
+}
+
 .message.warn {
   color: var(--warning-color);
   background-color: var(--warning-background-color);
