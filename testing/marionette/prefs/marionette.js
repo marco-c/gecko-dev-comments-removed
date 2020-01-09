@@ -36,9 +36,3 @@ pref("marionette.prefs.recommended", true);
 
 
 pref("marionette.contentListener", false);
-
-
-pref("dom.push.connection.enabled", false);
-
-
-pref("privacy.trackingprotection.enabled", false);
