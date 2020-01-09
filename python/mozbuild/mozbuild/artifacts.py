@@ -733,8 +733,10 @@ class TaskCache(CacheManager):
         
         
         
+        
         if not job.startswith('android-'):
-            if job.endswith('-pgo') or job in ('macosx64-opt', 'linux-opt'):
+            if job.endswith('-pgo') or job in ('macosx64-opt', 'linux-opt',
+                                               'win64-opt'):
                 tree += '.shippable'
             if job.endswith('-pgo'):
                 job = job.replace('-pgo', '-opt')
