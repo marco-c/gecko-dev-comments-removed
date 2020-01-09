@@ -52,9 +52,9 @@ const tests = [{
     }],
   },
 }, {
-  desc: "Click on the badge.",
+  desc: "Click on the contrast filter.",
   setup: async ({ doc }) => {
-    await toggleBadge(doc, 2, 0);
+    await toggleFilter(doc, 0);
   },
   expected: {
     tree: [{
@@ -69,9 +69,9 @@ const tests = [{
     }],
   },
 }, {
-  desc: "Click on the badge again.",
+  desc: "Click on the contrast filter again.",
   setup: async ({ doc }) => {
-    await toggleBadge(doc, 0, 0);
+    await toggleFilter(doc, 0);
   },
   expected: {
     tree: [{
@@ -100,5 +100,6 @@ const tests = [{
 
 
 
+
 addA11yPanelTestsTask(tests, TEST_URI,
-  "Test Accessibility panel tree with contrast badge audit activation.");
+  "Test Accessibility panel tree with contrast badge present.");

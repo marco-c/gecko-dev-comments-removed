@@ -444,22 +444,6 @@ async function toggleRow(doc, rowNumber) {
 
 
 
-async function toggleBadge(doc, rowNumber, badgeIndex) {
-  const win = doc.defaultView;
-  const row = doc.querySelectorAll(".treeRow")[rowNumber];
-  const badge = row.querySelectorAll(".audit-badge.badge")[badgeIndex];
-  const expected = !badge.classList.contains("checked");
-
-  EventUtils.synthesizeMouseAtCenter(badge, {}, win);
-  await BrowserTestUtils.waitForCondition(() =>
-    expected === badge.classList.contains("checked"), "Badge updated.");
-}
-
-
-
-
-
-
 async function toggleFilter(doc, filterIndex) {
   const win = doc.defaultView;
   const filter = doc.querySelectorAll(

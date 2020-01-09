@@ -4,95 +4,28 @@
 "use strict";
 
 
-const { Component, createFactory } = require("devtools/client/shared/vendor/react");
+const { Component } = require("devtools/client/shared/vendor/react");
+const { span } = require("devtools/client/shared/vendor/react-dom-factories");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
-const { connect } = require("devtools/client/shared/vendor/react-redux");
-
-const ToggleButton = createFactory(require("./Button").ToggleButton);
-
-const { audit, auditing, filterToggle } = require("../actions/audit");
-const { preventDefaultAndStopPropagation } = require("devtools/client/shared/events");
 
 class Badge extends Component {
   static get propTypes() {
     return {
-      active: PropTypes.bool.isRequired,
-      filterKey: PropTypes.string.isRequired,
-      dispatch: PropTypes.func.isRequired,
       label: PropTypes.string.isRequired,
       tooltip: PropTypes.string,
-      walker: PropTypes.object.isRequired,
     };
   }
 
-  constructor(props) {
-    super(props);
-
-    this.toggleFilter = this.toggleFilter.bind(this);
-    this.onClick = this.onClick.bind(this);
-    this.onKeyDown = this.onKeyDown.bind(this);
-  }
-
-  shouldComponentUpdate(nextProps) {
-    return nextProps.active !== this.props.active;
-  }
-
-  async toggleFilter() {
-    const { dispatch, filterKey, walker, active } = this.props;
-    if (!active) {
-      dispatch(auditing(filterKey));
-      await dispatch(audit(walker, filterKey));
-    }
-
-    
-    
-    
-    dispatch(filterToggle(filterKey));
-  }
-
-  onClick(e) {
-    preventDefaultAndStopPropagation(e);
-    const { mozInputSource, MOZ_SOURCE_KEYBOARD } = e.nativeEvent;
-    if (e.isTrusted && mozInputSource === MOZ_SOURCE_KEYBOARD) {
-      
-      return;
-    }
-
-    this.toggleFilter();
-  }
-
-  onKeyDown(e) {
-    
-    
-    
-    
-    
-    
-    
-    if (![" ", "Enter"].includes(e.key)) {
-      return;
-    }
-
-    preventDefaultAndStopPropagation(e);
-    this.toggleFilter();
-  }
-
   render() {
-    const { active, label, tooltip } = this.props;
+    const { label, tooltip } = this.props;
 
-    return ToggleButton({
+    return span({
       className: "audit-badge badge",
-      label,
-      active,
-      tooltip,
-      onClick: this.onClick,
-      onKeyDown: this.onKeyDown,
-    });
+      title: tooltip,
+      "aria-label": label,
+    },
+      label);
   }
 }
 
-const mapStateToProps = ({ audit: { filters } }, { filterKey }) => ({
-  active: filters[filterKey],
-});
-
-module.exports = connect(mapStateToProps)(Badge);
+module.exports = Badge;

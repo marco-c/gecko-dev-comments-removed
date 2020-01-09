@@ -58,7 +58,7 @@ const tests = [{
 }, {
   desc: "Click on the filter again.",
   setup: async ({ doc }) => {
-    await toggleBadge(doc, 0, 0);
+    await toggleFilter(doc, 0);
   },
   expected: {
     tree: [{
