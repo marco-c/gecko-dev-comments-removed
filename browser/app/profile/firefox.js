@@ -480,6 +480,13 @@ pref("browser.tabs.remote.separatePrivilegedContentProcess", true);
 
 pref("browser.tabs.remote.useHTTPResponseProcessSelection", true);
 
+
+#ifdef RELEASE_OR_BETA
+pref("browser.tabs.unloadOnLowMemory", false);
+#else
+pref("browser.tabs.unloadOnLowMemory", true);
+#endif
+
 pref("browser.ctrlTab.recentlyUsedOrder", true);
 
 
