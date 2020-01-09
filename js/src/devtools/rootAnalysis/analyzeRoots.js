@@ -453,26 +453,28 @@ function edgeInvalidatesVariable(edge, variable, body)
         expressionIsVariable(edge.PEdgeCallInstance.Exp, variable))
     do {
         const typeName = edge.Type.TypeFunctionCSU.Type.Name;
-        const m = typeName.match(/^mozilla::(\w+)</);
+        const m = typeName.match(/^(((\w|::)+?)(\w+))</);
         if (!m)
             break;
-        const type = m[1];
-        if (!["Maybe", "UniquePtr"].includes(type))
-            break;
+        const [, type, namespace,, classname] = m;
 
         
+        
         if (callee.Kind == 'Var' &&
-            callee.Variable.Name[1] == 'reset')
+            typesWithSafeConstructors.has(type) &&
+            callee.Variable.Name[0].includes(`${namespace}${classname}<T>::${classname}()`))
         {
             return true;
         }
 
         
         if (callee.Kind == 'Var' &&
-            callee.Variable.Name[0].includes(`mozilla::${type}<T>::${type}()`))
+            type in resetterMethods &&
+            resetterMethods[type].has(callee.Variable.Name[1]))
         {
             return true;
         }
+
     } while(0);
 
     

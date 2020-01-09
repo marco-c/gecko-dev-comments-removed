@@ -250,6 +250,13 @@ void safevals() {
   use(unsafe3);
 
   
+  Cell* unsafe3b = &cell;
+  unsafe3b = nullptr;
+  unsafe3b = &cell;
+  GC();
+  use(unsafe3b);
+
+  
   {
     mozilla::UniquePtr<Cell> unsafe4(&cell);
     GC();
