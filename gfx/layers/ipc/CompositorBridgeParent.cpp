@@ -45,6 +45,7 @@
 #include "mozilla/layers/APZUpdater.h"             
 #include "mozilla/layers/AsyncCompositionManager.h"
 #include "mozilla/layers/BasicCompositor.h"          
+#include "mozilla/layers/CompositionRecorder.h"      
 #include "mozilla/layers/Compositor.h"               
 #include "mozilla/layers/CompositorManagerParent.h"  
 #include "mozilla/layers/CompositorOGL.h"            
@@ -2597,6 +2598,20 @@ int32_t RecordContentFrameTime(
   }
 
   return 0;
+}
+
+mozilla::ipc::IPCResult CompositorBridgeParent::RecvBeginRecording(
+    const TimeStamp& aRecordingStart) {
+  mCompositionRecorder.reset(new CompositionRecorder(aRecordingStart));
+  mLayerManager->SetCompositionRecorder(mCompositionRecorder.get());
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult CompositorBridgeParent::RecvEndRecording() {
+  mLayerManager->SetCompositionRecorder(nullptr);
+  mCompositionRecorder->WriteCollectedFrames();
+  mCompositionRecorder.reset(nullptr);
+  return IPC_OK();
 }
 
 }  
