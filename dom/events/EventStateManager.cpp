@@ -1236,11 +1236,16 @@ void EventStateManager::DispatchCrossProcessEvent(WidgetEvent* aEvent,
     }
     
     
+  } else {
+    
+    
+    TabParent* preciseRemote = TabParent::GetFocused();
+    if (preciseRemote) {
+      remote = preciseRemote;
+    }
+    
+    
   }
-  
-  
-  
-  
 
   switch (aEvent->mClass) {
     case eMouseEventClass: {
@@ -2872,19 +2877,17 @@ void EventStateManager::PostHandleKeyboardEvent(
       RefPtr<TabParent> remote =
           aTargetFrame ? TabParent::GetFrom(aTargetFrame->GetContent())
                        : nullptr;
-      if (remote && aKeyboardEvent->mLayersId.IsValid()) {
+      if (remote) {
         
         
         
         
         
         
-        TabParent* preciseRemote =
-            TabParent::GetTabParentFromLayersId(aKeyboardEvent->mLayersId);
+        TabParent* preciseRemote = TabParent::GetFocused();
         if (preciseRemote) {
           remote = preciseRemote;
         }
-        
         
       }
       if (remote && !remote->IsReadyToHandleInputEvents()) {

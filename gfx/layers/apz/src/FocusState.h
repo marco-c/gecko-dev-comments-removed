@@ -125,8 +125,6 @@ class FocusState final {
 
   bool CanIgnoreKeyboardShortcutMisses() const;
 
-  LayersId GetFocusLayersId() const;
-
  private:
   
 

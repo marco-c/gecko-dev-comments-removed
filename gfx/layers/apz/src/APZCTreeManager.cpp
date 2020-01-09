@@ -1498,7 +1498,6 @@ nsEventStatus APZCTreeManager::ReceiveInputEvent(
       break;
     }
     case KEYBOARD_INPUT: {
-      aEvent.mLayersId = mFocusState.GetFocusLayersId();
       
       
       if (!gfxPrefs::APZKeyboardEnabled() ||
