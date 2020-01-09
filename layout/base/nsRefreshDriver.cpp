@@ -679,10 +679,15 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
       }
 
       
+      
+      
+#if !defined(_WIN32)
+      
       DebugOnly<TimeStamp> rightnow = TimeStamp::Now();
       MOZ_ASSERT_IF(
           (*&rightnow).UsedCanonicalNow() == aVsyncTimestamp.UsedCanonicalNow(),
           aVsyncTimestamp <= *&rightnow);
+#endif
 
       
       
