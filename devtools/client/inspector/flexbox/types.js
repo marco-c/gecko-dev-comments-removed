@@ -30,10 +30,10 @@ const flexItemProperties = exports.flexItemProperties = {
   "max-width": PropTypes.string,
 
   
-  "height": PropTypes.number,
+  "height": PropTypes.string,
 
   
-  "width": PropTypes.number,
+  "width": PropTypes.string,
 
 };
 
