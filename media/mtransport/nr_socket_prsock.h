@@ -70,6 +70,12 @@
 #include "mozilla/ClearOnShutdown.h"
 
 
+extern "C" {
+#include "transport_addr.h"
+#include "async_wait.h"
+}
+
+
 typedef struct nr_socket_vtbl_ nr_socket_vtbl;
 typedef struct nr_socket_ nr_socket;
 

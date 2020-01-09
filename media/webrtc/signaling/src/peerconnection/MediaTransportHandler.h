@@ -15,6 +15,7 @@
 #include "nricectx.h"               
 #include "nsDOMNavigationTiming.h"  
 #include "signaling/src/common/CandidateInfo.h"
+#include "nr_socket_proxy_config.h"
 
 #include "nsString.h"
 
@@ -38,7 +39,19 @@ class MediaTransportHandler {
  public:
   
   
-  static already_AddRefed<MediaTransportHandler> Create();
+  
+  
+  
+  static already_AddRefed<MediaTransportHandler> Create(
+      nsISerialEventTarget* aCallbackThread);
+
+  explicit MediaTransportHandler(nsISerialEventTarget* aCallbackThread)
+      : mCallbackThread(aCallbackThread) {}
+
+  static nsresult ConvertIceServers(
+      const nsTArray<dom::RTCIceServer>& aIceServers,
+      std::vector<NrIceStunServer>* aStunServers,
+      std::vector<NrIceTurnServer>* aTurnServers);
 
   typedef MozPromise<dom::Sequence<nsString>, nsresult, true> IceLogPromise;
 
@@ -50,10 +63,11 @@ class MediaTransportHandler {
   virtual void EnterPrivateMode() = 0;
   virtual void ExitPrivateMode() = 0;
 
-  virtual nsresult Init(const std::string& aName,
-                        const nsTArray<dom::RTCIceServer>& aIceServers,
-                        dom::RTCIceTransportPolicy aIcePolicy) = 0;
   virtual void Destroy() = 0;
+
+  virtual nsresult CreateIceCtx(const std::string& aName,
+                                const nsTArray<dom::RTCIceServer>& aIceServers,
+                                dom::RTCIceTransportPolicy aIcePolicy) = 0;
 
   
   
@@ -95,9 +109,6 @@ class MediaTransportHandler {
 
   virtual void UpdateNetworkState(bool aOnline) = 0;
 
-  virtual TransportLayer::State GetState(const std::string& aTransportId,
-                                         bool aRtcp) const = 0;
-
   
   typedef MozPromise<std::unique_ptr<dom::RTCStatsReportInternal>, nsresult,
                      true>
@@ -118,8 +129,26 @@ class MediaTransportHandler {
       SignalRtcpStateChange;
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaTransportHandler)
 
+  TransportLayer::State GetState(const std::string& aTransportId,
+                                 bool aRtcp) const;
+
  protected:
+  void OnCandidate(const std::string& aTransportId,
+                   const CandidateInfo& aCandidateInfo);
+  void OnAlpnNegotiated(const std::string& aAlpn);
+  void OnGatheringStateChange(dom::PCImplIceGatheringState aState);
+  void OnConnectionStateChange(dom::PCImplIceConnectionState aState);
+  void OnPacketReceived(const std::string& aTransportId, MediaPacket& aPacket);
+  void OnEncryptedSending(const std::string& aTransportId,
+                          MediaPacket& aPacket);
+  void OnStateChange(const std::string& aTransportId,
+                     TransportLayer::State aState);
+  void OnRtcpStateChange(const std::string& aTransportId,
+                         TransportLayer::State aState);
   virtual ~MediaTransportHandler() = default;
+  std::map<std::string, TransportLayer::State> mStateCache;
+  std::map<std::string, TransportLayer::State> mRtcpStateCache;
+  RefPtr<nsISerialEventTarget> mCallbackThread;
 };
 
 }  
