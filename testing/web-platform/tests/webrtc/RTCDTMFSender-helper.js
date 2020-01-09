@@ -78,13 +78,24 @@ function createDtmfSender(pc = new RTCPeerConnection()) {
 
 
 function test_tone_change_events(testFunc, toneChanges, desc) {
-  async_test(t => {
+  
+  let cumulativeTime = 0;
+  const cumulativeToneChanges = toneChanges.map(c => {
+    cumulativeTime += c[2];
+    return [c[0], c[1], cumulativeTime];
+  });
+
+  
+  
+  
+  const lastWait = toneChanges.pop()[2] + 100;
+
+  promise_test(async t => {
     const pc = new RTCPeerConnection();
+    const dtmfSender = await createDtmfSender(pc);
+    const start = Date.now();
 
-    createDtmfSender(pc)
-    .then(dtmfSender => {
-      let lastEventTime = Date.now();
-
+    const allEventsReceived = new Promise(resolve => {
       const onToneChange = t.step_func(ev => {
         assert_true(ev instanceof RTCDTMFToneChangeEvent,
           'Expect tone change event object to be an RTCDTMFToneChangeEvent');
@@ -93,12 +104,12 @@ function test_tone_change_events(testFunc, toneChanges, desc) {
         assert_equals(typeof tone, 'string',
           'Expect event.tone to be the tone string');
 
-        assert_greater_than(toneChanges.length, 0,
+        assert_greater_than(cumulativeToneChanges.length, 0,
           'More tonechange event is fired than expected');
 
         const [
-          expectedTone, expectedToneBuffer, expectedDuration
-        ] = toneChanges.shift();
+          expectedTone, expectedToneBuffer, expectedTime
+        ] = cumulativeToneChanges.shift();
 
         assert_equals(tone, expectedTone,
           `Expect current event.tone to be ${expectedTone}`);
@@ -106,37 +117,24 @@ function test_tone_change_events(testFunc, toneChanges, desc) {
         assert_equals(dtmfSender.toneBuffer, expectedToneBuffer,
           `Expect dtmfSender.toneBuffer to be updated to ${expectedToneBuffer}`);
 
-        const now = Date.now();
-        const duration = now - lastEventTime;
-
         
         
         
-        assert_between_inclusive(duration, expectedDuration,
-                                 expectedDuration + 4000,
-          `Expect tonechange event for "${tone}" to be fired approximately after ${expectedDuration} milliseconds`);
-
-        lastEventTime = now;
-
-        if (toneChanges.length === 0) {
-          
-          
-          
-          t.step_timeout(
-            t.step_func(() => {
-              t.done();
-              pc.close();
-              pc.otherPc.close();
-            }), expectedDuration + 100);
+        assert_between_inclusive(Date.now() - start, expectedTime,
+                                 expectedTime + 4000,
+          `Expect tonechange event for "${tone}" to be fired approximately after ${expectedTime} milliseconds`);
+        if (cumulativeToneChanges.length === 0) {
+          resolve();
         }
       });
 
       dtmfSender.addEventListener('tonechange', onToneChange);
-      testFunc(t, dtmfSender, pc);
-    })
-    .catch(t.step_func(err => {
-      assert_unreached(`Unexpected promise rejection: ${err}`);
-    }));
+    });
+
+    testFunc(t, dtmfSender, pc);
+    await allEventsReceived;
+    const wait = ms => new Promise(resolve => t.step_timeout(resolve, ms));
+    await wait(lastWait);
   }, desc);
 }
 
