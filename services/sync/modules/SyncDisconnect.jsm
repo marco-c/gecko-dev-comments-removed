@@ -14,6 +14,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.jsm",
   fxAccounts: "resource://gre/modules/FxAccounts.jsm",
   setTimeout: "resource://gre/modules/Timer.jsm",
+  Utils: "resource://services-sync/util.js",
 });
 
 XPCOMUtils.defineLazyGetter(this, "FxAccountsCommon", function() {
@@ -157,6 +158,15 @@ this.SyncDisconnectInternal = {
     
     
     let log = Log.repository.getLogger("Sync.Service");
+
+    
+    
+    log.info("checking master-password state");
+    if (!Utils.ensureMPUnlocked()) {
+      log.warn("The master-password needs to be unlocked to fully disconnect from sync");
+      return;
+    }
+
     log.info("waiting for any existing syncs to complete");
     let locked = await this.promiseNotSyncing(abortController);
 
